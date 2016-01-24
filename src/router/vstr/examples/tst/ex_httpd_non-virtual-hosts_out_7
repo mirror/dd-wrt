@@ -1,0 +1,27 @@
+HTTP/1.1 200 OK
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Accept-Ranges: bytes
+Content-Length: 0
+Allow: GET, HEAD, OPTIONS, TRACE
+
+HTTP/1.1 400 Bad Request
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified:
+Connection: close
+Content-Type: text/html
+Content-Length: 337
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+  <head>
+    <title>400 Bad Request</title>
+  </head>
+  <body>
+    <h1>400 Bad Request</h1>
+    <p>The request could not be understood.</p>
+  <hr>
+  Generated using the <a href="http://www.and.org/vstr/httpd">Vstr httpd example Web Server</a>.
+  </body>
+</html>

@@ -1,0 +1,43 @@
+HTTP/1.1 412 Precondition Failed
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified:
+Accept-Ranges: bytes
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Length: 403
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+  <head>
+    <title>412 Precondition Failed</title>
+  </head>
+  <body>
+    <h1>412 Precondition Failed</h1>
+    <p>The precondition given in one or more of the request-header fields evaluated to false.</p>
+  <hr>
+  Generated using the <a href="http://www.and.org/vstr/httpd">Vstr httpd example Web Server</a>.
+  </body>
+</html>
+HTTP/1.1 412 Precondition Failed
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified:
+Connection: close
+Accept-Ranges: bytes
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Length: 403
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+  <head>
+    <title>412 Precondition Failed</title>
+  </head>
+  <body>
+    <h1>412 Precondition Failed</h1>
+    <p>The precondition given in one or more of the request-header fields evaluated to false.</p>
+  <hr>
+  Generated using the <a href="http://www.and.org/vstr/httpd">Vstr httpd example Web Server</a>.
+  </body>
+</html>

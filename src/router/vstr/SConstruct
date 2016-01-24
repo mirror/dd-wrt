@@ -1,0 +1,32 @@
+opts = Options('custom.py')
+opts.Add(ListOption('shared',
+                    'libraries to build as shared libraries',
+                    'all',
+                    names = ['vstr']))
+opts.Add(ListOption('static',
+                    'libraries to build as static libraries',
+                    'all',
+                    names = ['vstr']))
+opts.Add(EnumOption('FMT_FLOAT', 'host',
+                    'Set for behaviour when formatting floating point numbers',
+                    allowed_values=('host', 'glibc', 'none'),
+                    map={'zero' : 'none',
+                         'native' : 'glibc'},
+                    ignore_case=true))
+opts.Add(BoolOption('DEBUG', 0, 'Set debugging'))
+
+Help("""
+      Type: 'scons vstr' to build the library.
+            'scons examples' to build the examples.
+            'scons tst' to build the library and the unit tests (and run them).
+            'scons install-vstr' to install the library.
+            'scons install-examples' to install the examples.
+            'scons' to build and install everything.
+""")
+
+
+src_gen = Split('vstr.c vstr_add.c vstr_del.c')
+#TargetSignatures('content')
+
+StaticLibrary(target = 'vstr', source = src_gen)
+SharedLibrary(target = 'vstr', source = src_gen)

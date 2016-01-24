@@ -1,0 +1,49 @@
+;;
+;; This is a configuration for httpd_none tests...
+;;
+;;
+
+(org.and.jhttpd-conf-main-1.0
+
+  (match-init [true]
+   match-init [! false]
+   match-init []
+   match-init [version-compare>= 0.99.1]
+   org.and.daemon-conf-1.0
+    (listen addr 127.0.3.1)
+
+    (policy conf-httpd-tst-3.1
+       timeout idle 16)
+
+     pid-file ex_httpd_root/abcd
+     cntl-file ex_httpd_cntl)
+
+  (match-connection [policy-eq <default> server-ipv4-cidr-eq 127.0.3.1]
+    policy conf-httpd-tst-4.1)
+
+   policy conf-httpd-tst-4.1
+
+     ; Required by the tests...
+     unspecified-hostname "default" ; -- so we always match in tests
+     unspecified-hostname-append-port off
+     secure-directory-filename no
+
+     virtual-hosts true
+    (HTTP
+        keep-alive FALSE
+        range false
+        encoded-content-replacement false
+        error-406 false
+       (limit header-size 2_048)
+        canonize-host true
+        error-host-400 false)
+     
+     MIME/types-default-type bar/baz 
+     MIME/types-filename-main (= ENV SRCDIR /mime_types_extra.txt)
+     MIME/types-filename-xtra (= ENV SRCDIR /tst/ex_httpd_bad_mime)
+     server-name r"Apache/2.0.40 (Red Hat Linux)"
+     directory-filename 'welcome.html'
+
+     document-root @'ex_httpd_root'
+     request-configuration-directory @"ex_httpd_conf"
+     req-err-dir r'ex_httpd_err/')

@@ -1,0 +1,159 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <title>Speed comparison of Vstr vs. other string APIs</title>
+  </head>
+
+  <body>
+    <h1>Speed comparison of Vstr vs. other string APIs</h1>
+
+   <p> While it's possible that there is a minor speed
+overhead
+<a href="http://groups.google.com/groups?frame=right&rnum=41&thl=1072576581,1072221362,0&seekm=57b29eef.0305211542.7311e84a%40posting.google.com#link41">in practice</a> it depends a lot on the implemention use of the string API.
+ A real string API will often work well in the <a href="http://groups.google.com/groups?frame=right&rnum=41&thl=1072576581,1072221362,0&seekm=57b29eef.0305211542.7311e84a%40posting.google.com#link41">weird corner cases as well</a>. Note
+that in the above the original "fast" C string style version had <b>4
+<a href="security">security flaws</a></b> and was about
+<b>2.0 times slower</b> than the Vstr version, the hand
+optimized goto based version was about 0.7 of the Vstr speed ... but if you
+needed it to be that fast, I'm sure the Vstr version would be very close if you
+used the same "design".
+ However, saying all that, I have done some "theoretical" benchmarks...
+
+<p> The thing to understand is that Vstr is <a href="design">designed</a>
+for use cases where you have N connections to the internet,
+and are getting/sending data to M of them in a non-blocking fashion at once.
+In this case Vstr can share all the
+spare/cached memory in the configuration among just the M connections, while
+having close to zero memory allocated for the M-N connections that aren't
+active. Whereas a normal buffer based API often just has N * BUFFER_SIZE,
+always allocated.
+<p> Anyway here are the benchmarks. This was a benchmark to measure how fast
+memory is moved into the string API. They were configured in a number of ways.
+First is the size of each _BUF node in the Vstr, second is the "extra" ammount
+of malloc() activity, all iteractions were done with number of iteractions = 4096 and each config. was done twice in case one got a weird result for some
+reason. <a href="examples/ex_perf_nodesize_foreach.c">Here</a> is the code for the
+benchmark, and <a href="examples/ex_perf.h">here</a> is the header.
+</p>
+
+<h3>key</h3>
+ Top file (red): Vstr using copy semantics, but with memory from the cache.<br>
+ 2nd file (green): memcpy() without allocation.<br>
+ 3rd file (blue): Glib GString type, uses single block of memory but rounds allocations uptp power of two.<br>
+ 4th file (purple): Vstr using <a href="functions#vstr_add_ptr()">copy pointer</a> semantics.<br>
+ 5th file (yellow/cyan): Direct calls to realloc(), always for exactly the right ammount of memory needed.<br>
+ 6th file (brown/yellow): Vstr using copy semantics, Ie. all memory allocated.<br>
+<br><br>
+
+<p> The X axis is always the length to be added to the string API. The y axis is either the time in seconds, or the memory used.</p>
+
+<ul>
+<li>
+ <b>Speed</b>: node size is 40 bytes, and extra is 0 bytes (node overhead is 16
+and malloc takes 8, so this is a power of 2).
+<a href="perf_graphs/speed_num=4096_extra=0_nodesz=40.png"> (png)</a>
+<a href="perf_graphs/speed_num=4096_extra=0_nodesz=40.ps"> (ps)</a>
+</li>
+
+<li>
+ <b>Speed</b>: node size is 40 bytes, and extra is 2048 bytes.
+<a href="perf_graphs/speed_num=4096_extra=2048_nodesz=40.png"> (png)</a>
+<a href="perf_graphs/speed_num=4096_extra=2048_nodesz=40.ps"> (ps)</a>
+</li>
+
+<li>
+ <b>Speed</b>: node size is 232 bytes, and extra is 0 bytes.
+<a href="perf_graphs/speed_num=4096_extra=0_nodesz=232.png"> (png)</a>
+<a href="perf_graphs/speed_num=4096_extra=0_nodesz=232.ps"> (ps)</a>
+</li>
+
+<li>
+ <b>Speed</b>: node size is 232 bytes, and extra is 2048 bytes.
+<a href="perf_graphs/speed_num=4096_extra=2048_nodesz=232.png"> (png)</a>
+<a href="perf_graphs/speed_num=4096_extra=2048_nodesz=232.ps"> (ps)</a>
+</li>
+
+<li>
+ <b>Speed</b>: node size is 488 bytes, and extra is 0 bytes.
+<a href="perf_graphs/speed_num=4096_extra=0_nodesz=488.png"> (png)</a>
+<a href="perf_graphs/speed_num=4096_extra=0_nodesz=488.ps"> (ps)</a>
+</li>
+
+<li>
+ <b>Speed</b>: node size is 488 bytes, and extra is 2048 bytes.
+<a href="perf_graphs/speed_num=4096_extra=2048_nodesz=488.png"> (png)</a>
+<a href="perf_graphs/speed_num=4096_extra=2048_nodesz=488.ps"> (ps)</a>. Note
+that from my testing the graph doesn't change significantly as the node size
+gets bigger than 488.
+</li>
+
+<li>
+ <b>Memory usage</b>: node size is 232 bytes, and extra is 0 bytes.
+<a href="perf_graphs/mem_num=4096_extra=0_nodesz=232.png"> (png)</a>
+<a href="perf_graphs/mem_num=4096_extra=0_nodesz=232.ps"> (ps)</a>
+</li>
+
+<li>
+ <b>Memory usage</b>: node size is 232 bytes, and extra is 2048 bytes.
+<a href="perf_graphs/mem_num=4096_extra=2048_nodesz=232.png"> (png)</a>
+<a href="perf_graphs/mem_num=4096_extra=2048_nodesz=232.ps"> (ps)</a>. Note that
+the graph looks very similar as the node size changes, with only a slight
+variation similar to what would be <a href="size_cmp.gnumeric">expected</a>.
+</li>
+
+<li>
+ <b>Unused memory usage</b>: (<i>this tries to find out how much memory was
+allocated but isn't referenced in the program, Ie. is allocated to the program
+but uselssly inside the malloc implementation -- this can be a problem with a
+single block of memory as you have fragmentation issues</i>) node size is
+232 bytes, and extra is 0 bytes.
+<a href="perf_graphs/unusedmem_num=4096_extra=0_nodesz=232.png"> (png)</a>
+<a href="perf_graphs/unusedmem_num=4096_extra=0_nodesz=232.ps"> (ps)</a>
+</li>
+
+<li>
+ <b>Unused memory usage</b>: node size is 232 bytes, and extra is 2048 bytes.
+<a href="perf_graphs/unusedmem_num=4096_extra=2048_nodesz=232.png"> (png)</a>
+<a href="perf_graphs/unusedmem_num=4096_extra=2048_nodesz=232.ps"> (ps)</a>
+</li>
+</ul>
+
+<p> You can get the data files for the above, and more, <a href="perf_data/">here</a>. For format of the file is &lt;length&gt; &lt;speed&gt; &lt;memory used&gt;
+      &lt;unused memory&gt;. You can plot this in gnuplot by doing...
+</p>
+
+<pre>
+
+#  Using the data files with 0 extra memory allocations per call,
+# and 488 _BUF siazed nodes...
+
+# Plot memory usage...
+set xlabel "Length"
+set ylabel "Mem"
+
+plot "cpy-4096_0_488_A.csv" using 1:3, \
+     "cpy-4096_0_488_B.csv" using 1:3, \
+     "cpy-4096_0_488_G.csv" using 1:3, \
+     "cpy-4096_0_488_P.csv" using 1:3, \
+     "cpy-4096_0_488_S.csv" using 1:3, \
+     "cpy-4096_0_488_V.csv" using 1:3
+
+# Plot speed...
+set xlabel "Length"
+set ylabel "Speed"
+
+plot "cpy-4096_0_488_A.csv" using 1:2, \
+     "cpy-4096_0_488_B.csv" using 1:2, \
+     "cpy-4096_0_488_G.csv" using 1:2, \
+     "cpy-4096_0_488_P.csv" using 1:2, \
+     "cpy-4096_0_488_S.csv" using 1:2, \
+     "cpy-4096_0_488_V.csv" using 1:2
+</pre>
+
+    <hr>
+    <address><a href="mailto:james-web@and.org">James Antill</a></address>
+<!-- Created: Mon Jul 28 19:59:20 EDT 2003 -->
+<!-- hhmts start -->
+Last modified: Sun Jul 31 00:25:36 EDT 2005
+<!-- hhmts end -->
+  </body>
+</html>

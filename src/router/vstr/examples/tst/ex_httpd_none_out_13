@@ -1,0 +1,7 @@
+HTTP/1.1 200 OK
+Date:
+Server: Apache/2.0.40 (Red Hat Linux)
+Connection: close
+Content-Length: 0
+Allow: GET, HEAD, OPTIONS, TRACE
+

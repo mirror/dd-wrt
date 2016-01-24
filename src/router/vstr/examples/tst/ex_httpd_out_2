@@ -1,0 +1,187 @@
+HTTP/1.1 404 Not Found
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified:
+Content-Type: text/html
+Content-Length: 334
+
+HTTP/1.1 200 OK
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified:
+Content-Type: message/http
+Content-Length: 50
+
+TRACE / HTTP / 1 . 1
+Host:
+ blah            
+
+HTTP/1.1 200 OK
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Mon, 11 Oct 2004 07:02:24 GMT
+Accept-Ranges: bytes
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Length: 159
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+  <head>
+    <title>Foo norm</title>
+  </head>
+  <body>
+    <h1>Foo norm</h1>
+  </body>
+</html>
+HTTP/1.1 304 Not Modified
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Sun, 10 Oct 2004 07:02:24 GMT
+Accept-Ranges: bytes
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Length: 159
+
+HTTP/1.1 206 Partial content
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Sun, 10 Oct 2004 07:02:24 GMT
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Length: 8
+Content-Range: bytes 2-9/159
+
+DOCTYPE HTTP/1.1 200 OK
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Mon, 11 Oct 2004 07:02:24 GMT
+Accept-Ranges: bytes
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Length: 159
+
+HTTP/1.1 206 Partial content
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Mon, 11 Oct 2004 07:02:24 GMT
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Length: 8
+Content-Range: bytes 2-9/159
+
+DOCTYPE HTTP/1.1 403 Forbidden
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified:
+Content-Type: text/html
+Content-Length: 322
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+  <head>
+    <title>403 Forbidden</title>
+  </head>
+  <body>
+    <h1>403 Forbidden</h1>
+    <p>The request is forbidden.</p>
+  <hr>
+  Generated using the <a href="http://www.and.org/vstr/httpd">Vstr httpd example Web Server</a>.
+  </body>
+</html>
+HTTP/1.1 403 Forbidden
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified:
+Content-Type: text/html
+Content-Length: 322
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+  <head>
+    <title>403 Forbidden</title>
+  </head>
+  <body>
+    <h1>403 Forbidden</h1>
+    <p>The request is forbidden.</p>
+  <hr>
+  Generated using the <a href="http://www.and.org/vstr/httpd">Vstr httpd example Web Server</a>.
+  </body>
+</html>
+HTTP/1.1 206 Partial content
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Mon, 11 Oct 2004 07:02:24 GMT
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Length: 8
+Content-Range: bytes 151-158/159
+
+</html>
+HTTP/1.1 206 Partial content
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Mon, 11 Oct 2004 07:02:24 GMT
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Length: 8
+Content-Range: bytes 151-158/159
+
+</html>
+HTTP/1.1 206 Partial content
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Mon, 11 Oct 2004 07:02:24 GMT
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Length: 8
+Content-Range: bytes 151-158/159
+
+</html>
+HTTP/1.1 206 Partial content
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Mon, 11 Oct 2004 07:02:24 GMT
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Length: 8
+Content-Range: bytes 151-158/159
+
+</html>
+HTTP/1.1 304 Not Modified
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Mon, 11 Oct 2004 07:02:24 GMT
+Accept-Ranges: bytes
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Length: 159
+
+HTTP/1.1 200 OK
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Thu, 14 Oct 2004 07:02:24 GMT
+Accept-Ranges: bytes
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Length: 161
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+  <head>
+    <title>Foo privs</title>
+  </head>
+  <body>
+    <h1>Foo privs</h1>
+  </body>
+</html>
+HTTP/1.1 206 Partial content
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Mon, 11 Oct 2004 07:02:24 GMT
+Connection: close
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Length: 8
+Content-Range: bytes 2-9/159
+

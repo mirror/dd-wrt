@@ -1,0 +1,3 @@
+(org.and.jhttpd-conf-req-1.0
+  (Location: http://localhost:8008/foo/)
+  (return 307))

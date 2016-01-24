@@ -1,0 +1,106 @@
+
+ Note that some of these are almost certainly better off in seperate libraries.
+
+ Maybe During 1.0.x
+ ------------------
+
+. ____ make vstr_fmt.c faster ____
+
+. vstr_spn_cstr_buf_fwd
+  vstr_spn_cstr_buf_rev
+
+. VSTR_FLAG_PARSE_NUM_LOC_SEP
+
+. test len=0 on _sc_*()
+
+. glibc printf tests ... enable all three forms of fmt for coverage?
+
+. restrict  (speed)
+
+. autodetect linker-script options (build)
+
+. AM_CFLAGS (build)
+
+. timeval custom formatter (feature)
+
+. rfc2732 for ipv4/ipv6 addresses and port
+
+. Some way to say use a _BUF if we are subbing in a _BUF and use a _PTR/_REF
+  otherwise. Or a way to say how much data can I add into this _BUF node
+ (Ie. currently, is it a _BUF and does it have free space). (feature/speed)
+
+. malloc_bad might be able to be set when all of the functions have worked
+  (Ie. position cache allocation used to fail) (testing).
+
+. comparison.html ... portability plus ...
+  can you copy and paste the code ... or need a shared lib. (docs)
+
+. vstr_mov() doesn't move cache information. (speed)
+
+. Get rid of inet_ntop() ? (portability)
+
+. wcrtomb() doesn't exist on FreeBSD ... relies on LC_CTYPE (portability)
+
+. del() inline kills cache too easily ... make cb's extern inline and call
+   directly. (speed)
+
+ 1.2.x
+ -----
+
+. utf-8 character class, utf-8 searching etc.
+
+ Misc
+ ----
+
+. Vstr_ref->ptr non const. but possibly never altered, kind of needed for free()
+  calls *sigh*
+
+# This is all one feature, I think... vstr_ref* API needs a new external home.
+. Allocator - seperate library
+. _SEF type ... like a _REF but you can do substitution on it when ref == 1,
+  splitting the node changes behaviour here so probably not worth it *sigh*.
+  Could do a copy when you move it to a different Vstr string, but that doesn't
+ really do much more then _BUF nodes. Although you could convert _BUF nodes to
+ it on a copy, which might be worth it.
+  Could put a double indirect _ref in there ... with the _ref for the Vstr
+ string and the second for all strings ... then allow subs if the second == 1.
+   Will do "strange" things on mmap() read/write areas on _conv_ functions
+  as it's not obvious what it should/could do on expansion.
+. Vstr_lref which has a length? So we can implement...
+   vstr_lref_*_malloc()
+   vstr_lref_*_realloc()
+  ...which will do the right thing if ref->ref == 1 ? (feature)
+  This also implies some memory pool like semantics? (feature)
+  Memory pools can kind of be done using a Vstr and adding the _REF nodes
+ (mmap is hard ... as is sharing across strings).
+
+. Add vstr_parse_double()/long_double()
+
+. vstr_conv_canon_path() Ie. /foo/bar/../abcd -=> /foo/abcd
+
+. http://burtleburtle.net/bob/hash/doobs.html .. vstr_x_hash ?
+  vstr_x_hash_md5 vstr_x_hash_sha1
+
+. vstr_x_pcre_*
+
+. Use c99 _Bool ? (speed, API breakage)
+
+. {S...:%s} for chopped strings to replace end with "...".
+
+. _conv_tr_buf_buf() ? ...
+   Ie. vstr_conv_tr_buf_buf(s1, 1, s1->len, "\t\r", 2, " ?", 2)
+
+. _conv_sub_buf_buf() ? ...
+   Ie. vstr_conv_sub_buf_buf(s1, 1, s1->len, "\t", 1, "    ", 4)
+
+. Fast inline parsing of ints when using certain flags.
+
+. vstr_add_fmt() internal cleanup to use struct blah {Vstr_fmt ... }
+
+. ASN.1 (International Standard 8824)
+
+. More locale related stuff, incl. vstr_loc_ functions for cmp/srch/etc.
+
+. vstr_conv_encode_qp (quoted printable rfc2045.txt)
+. vstr_conv_encode_b64 (base64 rfc2045.txt)
+

@@ -1,0 +1,44 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <title>Doing IO with request and truncate</title>
+  </head>
+
+  <body>
+    <h1>Doing IO with request and truncate</h1>
+
+<p> While some string APIs that use a single block of memory for each string
+don't have a specific function to read X bytes from this
+file/socket onto the end of the string, they do have both a request space and
+a truncate space function. This makes it possible to do zero copy, possibly
+non-blocking, read IO onto the end of your string.
+<p> The idea is that, assuming you have a string <b>s1</b>,
+a file descriptor <b>fd</b>, and
+a number of bytes to read <b>num</b>. You can create a function which does...
+<pre>
+len = API_len(s1);
+
+API_request(s1, num);
+
+bytes = read(fd, API_buf(s1) + len, num);
+if (bytes == -1)
+{
+  /* deal with the error */ ;
+  bytes = 0;
+}
+
+API_truncate(s1, len + bytes);
+</pre>
+...and it can be called for non-blocking IO, and be fairly efficient. However
+note that the string is still going to grow inefficently (possibly
+copying data a lot) as you request space ... and any space allocated in the
+string for IO is lost until the string is free'd. This may or may not be a
+problem, depending.
+    <hr>
+    <address><a href="mailto:james-web@and.org">James Antill</a></address>
+<!-- Created: Thu Jul 10 02:49:04 EDT 2003 -->
+<!-- hhmts start -->
+Last modified: Sun Jul 31 00:33:46 EDT 2005
+<!-- hhmts end -->
+  </body>
+</html>

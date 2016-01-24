@@ -1,0 +1,2559 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+<head>
+<title>Vstr documentation -- constants</title>
+    <style type="text/css">
+      A:visited { color: #ff4040; }
+      A:hover { color: #20b2aa; }
+
+      P { text-indent: 1em; }
+
+      body     { background: #FFF; color: #000; }
+
+      h2.ind   { background: #DDF; }
+
+      td.title { background: #DFD; }
+      td.sect  { background: #DDF; }
+      td.obj   { background: #DDD; }
+
+      ul li                       { list-style-type: lower-roman; }
+      ul li:hover                 { list-style-type: square; }
+      ul:hover li                 { list-style-type: decimal; }
+      ul li:hover ul li.obj       { list-style-type: decimal; }
+      ul li:hover ul li.obj:hover { list-style-type: square; }
+    </style>
+
+  </head>
+  <body>
+<table width="100%"><tr><td class="title"><h1>Vstr documentation -- constants (245)</h1>
+</td></tr></table><table width="90%"><tr><td>
+<h2 class="ind">Index of sections</h2>
+<ul>
+<li><a href="#indx-Compile%20switch%20constants">Compile switch constants (5)</a>
+<li><a href="#indx-Global%20constants">Global constants (2)</a>
+<li><a href="#indx-Constants%20passed%20to%20vstr_make_spare_nodes%28%29%20and%20vstr_free_spare_nodes%28%29">Constants passed to vstr_make_spare_nodes() and vstr_free_spare_nodes() (4)</a>
+<li><a href="#indx-Constants%20passed%20to%20vstr_add_vstr%28%29%20and%20vstr_sub_vstr%28%29">Constants passed to vstr_add_vstr() and vstr_sub_vstr() (10)</a>
+<li><a href="#indx-Constants%20passed%20to%20vstr_fmt_add%28%29">Constants passed to vstr_fmt_add() (26)</a>
+<li><a href="#indx-Constants%20returned%20from%20vstr_iter_fwd_%2a%28%29">Constants returned from vstr_iter_fwd_*() (3)</a>
+<li><a href="#indx-Constants%20passed%20to%20vstr_sc_fmt_cb_beg%28%29">Constants passed to vstr_sc_fmt_cb_beg() (10)</a>
+<li><a href="#indx-Constants%20passed%20to%20vstr_conv_unprintable_del%28%29%20and%20vstr_conv_unprintable_chr%28%29">Constants passed to vstr_conv_unprintable_del() and vstr_conv_unprintable_chr() (18)</a>
+<li><a href="#indx-Constants%20passed%20to%20vstr_parse_num%28%29%20etc%2e">Constants passed to vstr_parse_num() etc. (16)</a>
+<li><a href="#indx-Constants%20passed%20to%20vstr_parse_ipv4%28%29">Constants passed to vstr_parse_ipv4() (17)</a>
+<li><a href="#indx-Constants%20passed%20to%20vstr_parse_ipv6%28%29">Constants passed to vstr_parse_ipv6() (12)</a>
+<li><a href="#indx-Constants%20used%20with%20the%20custom%20output%20formatter%20for%20ipv6%20addresses">Constants used with the custom output formatter for ipv6 addresses (6)</a>
+<li><a href="#indx-Constants%20passed%20to%20vstr_split_buf%28%29%2c%20vstr_split_cstr_buf%28%29%2c%20VSTR_SPLIT_CSTR_BUF%28%29%2c%20vstr_split_chrs%28%29%2c%20vstr_split_cstr_chrs%28%29%20and%20VSTR_SPLIT_CSTR_CHRS%28%29">Constants passed to vstr_split_buf(), vstr_split_cstr_buf(), VSTR_SPLIT_CSTR_BUF(), vstr_split_chrs(), vstr_split_cstr_chrs() and VSTR_SPLIT_CSTR_CHRS() (7)</a>
+<li><a href="#indx-Constants%20passed%20to%20vstr_sects_foreach%28%29">Constants passed to vstr_sects_foreach() (6)</a>
+<li><a href="#indx-Constants%20used%20with%20the%20callback%20from%20vstr_cache_add_cb%28%29">Constants used with the callback from vstr_cache_add_cb() (4)</a>
+<li><a href="#indx-Constants%20passed%20to%20vstr_sc_mmap_fd%28%29%20and%20vstr_sc_mmap_file%28%29">Constants passed to vstr_sc_mmap_fd() and vstr_sc_mmap_file() (12)</a>
+<li><a href="#indx-Constants%20passed%20to%20vstr_sc_read_iov_fd%28%29%2c%20vstr_sc_read_len_fd%28%29%2c%20vstr_sc_read_iov_file%28%29%20and%20vstr_sc_read_len_file%28%29">Constants passed to vstr_sc_read_iov_fd(), vstr_sc_read_len_fd(), vstr_sc_read_iov_file() and vstr_sc_read_len_file() (15)</a>
+<li><a href="#indx-Constants%20passed%20to%20vstr_sc_write_fd%28%29%20and%20vstr_sc_write_file%28%29">Constants passed to vstr_sc_write_fd() and vstr_sc_write_file() (9)</a>
+<li><a href="#indx-Constants%20passed%20to%20vstr_cntl_base%28%29">Constants passed to vstr_cntl_base() (4)</a>
+<li><a href="#indx-Constants%20passed%20to%20vstr_cntl_conf%28%29">Constants passed to vstr_cntl_conf() (53)</a>
+<li><a href="#indx-Constants%20passed%20to%20vstr_cntl_opt%28%29">Constants passed to vstr_cntl_opt() (2)</a>
+<li><a href="#indx-Constants%20passed%20to%20vstr_cntl_conf%28%2e%2e%2e%2c%20VSTR_CNTL_CONF_SET_TYPE_GRPALLOC_CACHE">Constants passed to vstr_cntl_conf(..., VSTR_CNTL_CONF_SET_TYPE_GRPALLOC_CACHE (4)</a></ul>
+<h2 class="ind">Index of sections, and their contents</h2>
+<ul>
+<li><a id="indx-Compile%20switch%20constants" href="#Compile%20switch%20constants">Compile switch constants</a>
+<ul>
+<li class="obj"><a href="#VSTR_COMPILE_ATTRIBUTES">VSTR_COMPILE_ATTRIBUTES</a>
+<li class="obj"><a href="#VSTR_COMPILE_INCLUDE">VSTR_COMPILE_INCLUDE</a>
+<li class="obj"><a href="#VSTR_COMPILE_INLINE">VSTR_COMPILE_INLINE</a>
+<li class="obj"><a href="#VSTR_COMPILE_MACRO_FUNCTIONS">VSTR_COMPILE_MACRO_FUNCTIONS</a>
+<li class="obj"><a href="#VSTR_COMPILE_TYPEDEF">VSTR_COMPILE_TYPEDEF</a>
+</ul><li><a id="indx-Global%20constants" href="#Global%20constants">Global constants</a>
+<ul>
+<li class="obj"><a href="#VSTR_MAX_NODE_ALL">VSTR_MAX_NODE_ALL</a>
+<li class="obj"><a href="#VSTR_MAX_NODE_BUF">VSTR_MAX_NODE_BUF</a>
+</ul><li><a id="indx-Constants%20passed%20to%20vstr_make_spare_nodes%28%29%20and%20vstr_free_spare_nodes%28%29" href="#Constants%20passed%20to%20vstr_make_spare_nodes%28%29%20and%20vstr_free_spare_nodes%28%29">Constants passed to vstr_make_spare_nodes() and vstr_free_spare_nodes()</a>
+<ul>
+<li class="obj"><a href="#VSTR_TYPE_NODE_BUF">VSTR_TYPE_NODE_BUF</a>
+<li class="obj"><a href="#VSTR_TYPE_NODE_NON">VSTR_TYPE_NODE_NON</a>
+<li class="obj"><a href="#VSTR_TYPE_NODE_PTR">VSTR_TYPE_NODE_PTR</a>
+<li class="obj"><a href="#VSTR_TYPE_NODE_REF">VSTR_TYPE_NODE_REF</a>
+</ul><li><a id="indx-Constants%20passed%20to%20vstr_add_vstr%28%29%20and%20vstr_sub_vstr%28%29" href="#Constants%20passed%20to%20vstr_add_vstr%28%29%20and%20vstr_sub_vstr%28%29">Constants passed to vstr_add_vstr() and vstr_sub_vstr()</a>
+<ul>
+<li class="obj"><a href="#VSTR_TYPE_ADD_DEF">VSTR_TYPE_ADD_DEF</a>
+<li class="obj"><a href="#VSTR_TYPE_SUB_DEF">VSTR_TYPE_SUB_DEF</a>
+<li class="obj"><a href="#VSTR_TYPE_ADD_BUF_PTR">VSTR_TYPE_ADD_BUF_PTR</a>
+<li class="obj"><a href="#VSTR_TYPE_SUB_BUF_PTR">VSTR_TYPE_SUB_BUF_PTR</a>
+<li class="obj"><a href="#VSTR_TYPE_ADD_BUF_REF">VSTR_TYPE_ADD_BUF_REF</a>
+<li class="obj"><a href="#VSTR_TYPE_SUB_BUF_REF">VSTR_TYPE_SUB_BUF_REF</a>
+<li class="obj"><a href="#VSTR_TYPE_ADD_ALL_REF">VSTR_TYPE_ADD_ALL_REF</a>
+<li class="obj"><a href="#VSTR_TYPE_SUB_ALL_REF">VSTR_TYPE_SUB_ALL_REF</a>
+<li class="obj"><a href="#VSTR_TYPE_ADD_ALL_BUF">VSTR_TYPE_ADD_ALL_BUF</a>
+<li class="obj"><a href="#VSTR_TYPE_SUB_ALL_BUF">VSTR_TYPE_SUB_ALL_BUF</a>
+</ul><li><a id="indx-Constants%20passed%20to%20vstr_fmt_add%28%29" href="#Constants%20passed%20to%20vstr_fmt_add%28%29">Constants passed to vstr_fmt_add()</a>
+<ul>
+<li class="obj"><a href="#VSTR_TYPE_FMT_END">VSTR_TYPE_FMT_END</a>
+<li class="obj"><a href="#VSTR_TYPE_FMT_INT">VSTR_TYPE_FMT_INT</a>
+<li class="obj"><a href="#VSTR_TYPE_FMT_UINT">VSTR_TYPE_FMT_UINT</a>
+<li class="obj"><a href="#VSTR_TYPE_FMT_LONG">VSTR_TYPE_FMT_LONG</a>
+<li class="obj"><a href="#VSTR_TYPE_FMT_ULONG">VSTR_TYPE_FMT_ULONG</a>
+<li class="obj"><a href="#VSTR_TYPE_FMT_LONG_LONG">VSTR_TYPE_FMT_LONG_LONG</a>
+<li class="obj"><a href="#VSTR_TYPE_FMT_ULONG_LONG">VSTR_TYPE_FMT_ULONG_LONG</a>
+<li class="obj"><a href="#VSTR_TYPE_FMT_SSIZE_T">VSTR_TYPE_FMT_SSIZE_T</a>
+<li class="obj"><a href="#VSTR_TYPE_FMT_SIZE_T">VSTR_TYPE_FMT_SIZE_T</a>
+<li class="obj"><a href="#VSTR_TYPE_FMT_PTRDIFF_T">VSTR_TYPE_FMT_PTRDIFF_T</a>
+<li class="obj"><a href="#VSTR_TYPE_FMT_INTMAX_T">VSTR_TYPE_FMT_INTMAX_T</a>
+<li class="obj"><a href="#VSTR_TYPE_FMT_UINTMAX_T">VSTR_TYPE_FMT_UINTMAX_T</a>
+<li class="obj"><a href="#VSTR_TYPE_FMT_DOUBLE">VSTR_TYPE_FMT_DOUBLE</a>
+<li class="obj"><a href="#VSTR_TYPE_FMT_DOUBLE_LONG">VSTR_TYPE_FMT_DOUBLE_LONG</a>
+<li class="obj"><a href="#VSTR_TYPE_FMT_PTR_VOID">VSTR_TYPE_FMT_PTR_VOID</a>
+<li class="obj"><a href="#VSTR_TYPE_FMT_PTR_CHAR">VSTR_TYPE_FMT_PTR_CHAR</a>
+<li class="obj"><a href="#VSTR_TYPE_FMT_PTR_WCHAR_T">VSTR_TYPE_FMT_PTR_WCHAR_T</a>
+<li class="obj"><a href="#VSTR_TYPE_FMT_PTR_INT">VSTR_TYPE_FMT_PTR_INT</a>
+<li class="obj"><a href="#VSTR_TYPE_FMT_PTR_INTMAX_T">VSTR_TYPE_FMT_PTR_INTMAX_T</a>
+<li class="obj"><a href="#VSTR_TYPE_FMT_PTR_LONG">VSTR_TYPE_FMT_PTR_LONG</a>
+<li class="obj"><a href="#VSTR_TYPE_FMT_PTR_LONG_LONG">VSTR_TYPE_FMT_PTR_LONG_LONG</a>
+<li class="obj"><a href="#VSTR_TYPE_FMT_PTR_PTRDIFF_T">VSTR_TYPE_FMT_PTR_PTRDIFF_T</a>
+<li class="obj"><a href="#VSTR_TYPE_FMT_PTR_SHORT">VSTR_TYPE_FMT_PTR_SHORT</a>
+<li class="obj"><a href="#VSTR_TYPE_FMT_PTR_SIGNED_CHAR">VSTR_TYPE_FMT_PTR_SIGNED_CHAR</a>
+<li class="obj"><a href="#VSTR_TYPE_FMT_PTR_SSIZE_T">VSTR_TYPE_FMT_PTR_SSIZE_T</a>
+<li class="obj"><a href="#VSTR_TYPE_FMT_ERRNO">VSTR_TYPE_FMT_ERRNO</a>
+</ul><li><a id="indx-Constants%20returned%20from%20vstr_iter_fwd_%2a%28%29" href="#Constants%20returned%20from%20vstr_iter_fwd_%2a%28%29">Constants returned from vstr_iter_fwd_*()</a>
+<ul>
+<li class="obj"><a href="#VSTR_TYPE_ITER_DEF">VSTR_TYPE_ITER_DEF</a>
+<li class="obj"><a href="#VSTR_TYPE_ITER_END">VSTR_TYPE_ITER_END</a>
+<li class="obj"><a href="#VSTR_TYPE_ITER_NON">VSTR_TYPE_ITER_NON</a>
+</ul><li><a id="indx-Constants%20passed%20to%20vstr_sc_fmt_cb_beg%28%29" href="#Constants%20passed%20to%20vstr_sc_fmt_cb_beg%28%29">Constants passed to vstr_sc_fmt_cb_beg()</a>
+<ul>
+<li class="obj"><a href="#VSTR_FLAG_SC_FMT_CB_BEG_DEF">VSTR_FLAG_SC_FMT_CB_BEG_DEF</a>
+<li class="obj"><a href="#VSTR_FLAG_SC_FMT_CB_BEG_OBJ_STR">VSTR_FLAG_SC_FMT_CB_BEG_OBJ_STR</a>
+<li class="obj"><a href="#VSTR_FLAG_SC_FMT_CB_BEG_OBJ_ATOM">VSTR_FLAG_SC_FMT_CB_BEG_OBJ_ATOM</a>
+<li class="obj"><a href="#VSTR_FLAG_SC_FMT_CB_BEG_OBJ_NUM">VSTR_FLAG_SC_FMT_CB_BEG_OBJ_NUM</a>
+<li class="obj"><a href="#VSTR_FLAG_SC_FMT_CB_BEG_OBJ_NEG">VSTR_FLAG_SC_FMT_CB_BEG_OBJ_NEG</a>
+<li class="obj"><a href="#VSTR_FLAG_SC_FMT_CB_BEG_OBJ_HEXNUM_H">VSTR_FLAG_SC_FMT_CB_BEG_OBJ_HEXNUM_H</a>
+<li class="obj"><a href="#VSTR_FLAG_SC_FMT_CB_BEG_OBJ_HEXNUM_L">VSTR_FLAG_SC_FMT_CB_BEG_OBJ_HEXNUM_L</a>
+<li class="obj"><a href="#VSTR_FLAG_SC_FMT_CB_BEG_OBJ_OCTNUM">VSTR_FLAG_SC_FMT_CB_BEG_OBJ_OCTNUM</a>
+<li class="obj"><a href="#VSTR_FLAG_SC_FMT_CB_BEG_OBJ_BINNUM_H">VSTR_FLAG_SC_FMT_CB_BEG_OBJ_BINNUM_H</a>
+<li class="obj"><a href="#VSTR_FLAG_SC_FMT_CB_BEG_OBJ_BINNUM_L">VSTR_FLAG_SC_FMT_CB_BEG_OBJ_BINNUM_L</a>
+</ul><li><a id="indx-Constants%20passed%20to%20vstr_conv_unprintable_del%28%29%20and%20vstr_conv_unprintable_chr%28%29" href="#Constants%20passed%20to%20vstr_conv_unprintable_del%28%29%20and%20vstr_conv_unprintable_chr%28%29">Constants passed to vstr_conv_unprintable_del() and vstr_conv_unprintable_chr()</a>
+<ul>
+<li class="obj"><a href="#VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_NONE">VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_NONE</a>
+<li class="obj"><a href="#VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_NUL">VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_NUL</a>
+<li class="obj"><a href="#VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_BEL">VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_BEL</a>
+<li class="obj"><a href="#VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_BS">VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_BS</a>
+<li class="obj"><a href="#VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_HT">VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_HT</a>
+<li class="obj"><a href="#VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_LF">VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_LF</a>
+<li class="obj"><a href="#VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_VT">VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_VT</a>
+<li class="obj"><a href="#VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_FF">VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_FF</a>
+<li class="obj"><a href="#VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_CR">VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_CR</a>
+<li class="obj"><a href="#VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_SP">VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_SP</a>
+<li class="obj"><a href="#VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_COMMA">VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_COMMA</a>
+<li class="obj"><a href="#VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_DOT">VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_DOT</a>
+<li class="obj"><a href="#VSTR_FLAG_CONV_UNPRINTABLE_ALLOW__">VSTR_FLAG_CONV_UNPRINTABLE_ALLOW__</a>
+<li class="obj"><a href="#VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_ESC">VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_ESC</a>
+<li class="obj"><a href="#VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_DEL">VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_DEL</a>
+<li class="obj"><a href="#VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_HSP">VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_HSP</a>
+<li class="obj"><a href="#VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_HIGH">VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_HIGH</a>
+<li class="obj"><a href="#VSTR_FLAG_CONV_UNPRINTABLE_DEF">VSTR_FLAG_CONV_UNPRINTABLE_DEF</a>
+</ul><li><a id="indx-Constants%20passed%20to%20vstr_parse_num%28%29%20etc%2e" href="#Constants%20passed%20to%20vstr_parse_num%28%29%20etc%2e">Constants passed to vstr_parse_num() etc.</a>
+<ul>
+<li class="obj"><a href="#VSTR_TYPE_PARSE_NUM_ERR_NONE">VSTR_TYPE_PARSE_NUM_ERR_NONE</a>
+<li class="obj"><a href="#VSTR_TYPE_PARSE_NUM_ERR_ONLY_S">VSTR_TYPE_PARSE_NUM_ERR_ONLY_S</a>
+<li class="obj"><a href="#VSTR_TYPE_PARSE_NUM_ERR_ONLY_SPM">VSTR_TYPE_PARSE_NUM_ERR_ONLY_SPM</a>
+<li class="obj"><a href="#VSTR_TYPE_PARSE_NUM_ERR_ONLY_SPMX">VSTR_TYPE_PARSE_NUM_ERR_ONLY_SPMX</a>
+<li class="obj"><a href="#VSTR_TYPE_PARSE_NUM_ERR_OOB">VSTR_TYPE_PARSE_NUM_ERR_OOB</a>
+<li class="obj"><a href="#VSTR_TYPE_PARSE_NUM_ERR_OVERFLOW">VSTR_TYPE_PARSE_NUM_ERR_OVERFLOW</a>
+<li class="obj"><a href="#VSTR_TYPE_PARSE_NUM_ERR_NEGATIVE">VSTR_TYPE_PARSE_NUM_ERR_NEGATIVE</a>
+<li class="obj"><a href="#VSTR_TYPE_PARSE_NUM_ERR_BEG_ZERO">VSTR_TYPE_PARSE_NUM_ERR_BEG_ZERO</a>
+<li class="obj"><a href="#VSTR_FLAG_PARSE_NUM_DEF">VSTR_FLAG_PARSE_NUM_DEF</a>
+<li class="obj"><a href="#VSTR_FLAG_PARSE_NUM_LOCAL">VSTR_FLAG_PARSE_NUM_LOCAL</a>
+<li class="obj"><a href="#VSTR_FLAG_PARSE_NUM_SEP">VSTR_FLAG_PARSE_NUM_SEP</a>
+<li class="obj"><a href="#VSTR_FLAG_PARSE_NUM_OVERFLOW">VSTR_FLAG_PARSE_NUM_OVERFLOW</a>
+<li class="obj"><a href="#VSTR_FLAG_PARSE_NUM_SPACE">VSTR_FLAG_PARSE_NUM_SPACE</a>
+<li class="obj"><a href="#VSTR_FLAG_PARSE_NUM_NO_BEG_ZERO">VSTR_FLAG_PARSE_NUM_NO_BEG_ZERO</a>
+<li class="obj"><a href="#VSTR_FLAG_PARSE_NUM_NO_BEG_PM">VSTR_FLAG_PARSE_NUM_NO_BEG_PM</a>
+<li class="obj"><a href="#VSTR_FLAG_PARSE_NUM_NO_NEGATIVE">VSTR_FLAG_PARSE_NUM_NO_NEGATIVE</a>
+</ul><li><a id="indx-Constants%20passed%20to%20vstr_parse_ipv4%28%29" href="#Constants%20passed%20to%20vstr_parse_ipv4%28%29">Constants passed to vstr_parse_ipv4()</a>
+<ul>
+<li class="obj"><a href="#VSTR_TYPE_PARSE_IPV4_ERR_NONE">VSTR_TYPE_PARSE_IPV4_ERR_NONE</a>
+<li class="obj"><a href="#VSTR_TYPE_PARSE_IPV4_ERR_IPV4_OOB">VSTR_TYPE_PARSE_IPV4_ERR_IPV4_OOB</a>
+<li class="obj"><a href="#VSTR_TYPE_PARSE_IPV4_ERR_IPV4_FULL">VSTR_TYPE_PARSE_IPV4_ERR_IPV4_FULL</a>
+<li class="obj"><a href="#VSTR_TYPE_PARSE_IPV4_ERR_ONLY">VSTR_TYPE_PARSE_IPV4_ERR_ONLY</a>
+<li class="obj"><a href="#VSTR_TYPE_PARSE_IPV4_ERR_CIDR_OOB">VSTR_TYPE_PARSE_IPV4_ERR_CIDR_OOB</a>
+<li class="obj"><a href="#VSTR_TYPE_PARSE_IPV4_ERR_CIDR_FULL">VSTR_TYPE_PARSE_IPV4_ERR_CIDR_FULL</a>
+<li class="obj"><a href="#VSTR_TYPE_PARSE_IPV4_ERR_NETMASK_OOB">VSTR_TYPE_PARSE_IPV4_ERR_NETMASK_OOB</a>
+<li class="obj"><a href="#VSTR_TYPE_PARSE_IPV4_ERR_NETMASK_FULL">VSTR_TYPE_PARSE_IPV4_ERR_NETMASK_FULL</a>
+<li class="obj"><a href="#VSTR_FLAG_PARSE_IPV4_DEF">VSTR_FLAG_PARSE_IPV4_DEF</a>
+<li class="obj"><a href="#VSTR_FLAG_PARSE_IPV4_LOCAL">VSTR_FLAG_PARSE_IPV4_LOCAL</a>
+<li class="obj"><a href="#VSTR_FLAG_PARSE_IPV4_ZEROS">VSTR_FLAG_PARSE_IPV4_ZEROS</a>
+<li class="obj"><a href="#VSTR_FLAG_PARSE_IPV4_FULL">VSTR_FLAG_PARSE_IPV4_FULL</a>
+<li class="obj"><a href="#VSTR_FLAG_PARSE_IPV4_CIDR">VSTR_FLAG_PARSE_IPV4_CIDR</a>
+<li class="obj"><a href="#VSTR_FLAG_PARSE_IPV4_CIDR_FULL">VSTR_FLAG_PARSE_IPV4_CIDR_FULL</a>
+<li class="obj"><a href="#VSTR_FLAG_PARSE_IPV4_NETMASK">VSTR_FLAG_PARSE_IPV4_NETMASK</a>
+<li class="obj"><a href="#VSTR_FLAG_PARSE_IPV4_NETMASK_FULL">VSTR_FLAG_PARSE_IPV4_NETMASK_FULL</a>
+<li class="obj"><a href="#VSTR_FLAG_PARSE_IPV4_ONLY">VSTR_FLAG_PARSE_IPV4_ONLY</a>
+</ul><li><a id="indx-Constants%20passed%20to%20vstr_parse_ipv6%28%29" href="#Constants%20passed%20to%20vstr_parse_ipv6%28%29">Constants passed to vstr_parse_ipv6()</a>
+<ul>
+<li class="obj"><a href="#VSTR_TYPE_PARSE_IPV6_ERR_NONE">VSTR_TYPE_PARSE_IPV6_ERR_NONE</a>
+<li class="obj"><a href="#VSTR_TYPE_PARSE_IPV6_ERR_IPV6_OOB">VSTR_TYPE_PARSE_IPV6_ERR_IPV6_OOB</a>
+<li class="obj"><a href="#VSTR_TYPE_PARSE_IPV6_ERR_IPV6_FULL">VSTR_TYPE_PARSE_IPV6_ERR_IPV6_FULL</a>
+<li class="obj"><a href="#VSTR_TYPE_PARSE_IPV6_ERR_ONLY">VSTR_TYPE_PARSE_IPV6_ERR_ONLY</a>
+<li class="obj"><a href="#VSTR_TYPE_PARSE_IPV6_ERR_CIDR_OOB">VSTR_TYPE_PARSE_IPV6_ERR_CIDR_OOB</a>
+<li class="obj"><a href="#VSTR_TYPE_PARSE_IPV6_ERR_CIDR_FULL">VSTR_TYPE_PARSE_IPV6_ERR_CIDR_FULL</a>
+<li class="obj"><a href="#VSTR_TYPE_PARSE_IPV6_ERR_IPV6_NULL">VSTR_TYPE_PARSE_IPV6_ERR_IPV6_NULL</a>
+<li class="obj"><a href="#VSTR_FLAG_PARSE_IPV6_DEF">VSTR_FLAG_PARSE_IPV6_DEF</a>
+<li class="obj"><a href="#VSTR_FLAG_PARSE_IPV6_LOCAL">VSTR_FLAG_PARSE_IPV6_LOCAL</a>
+<li class="obj"><a href="#VSTR_FLAG_PARSE_IPV6_CIDR">VSTR_FLAG_PARSE_IPV6_CIDR</a>
+<li class="obj"><a href="#VSTR_FLAG_PARSE_IPV6_CIDR_FULL">VSTR_FLAG_PARSE_IPV6_CIDR_FULL</a>
+<li class="obj"><a href="#VSTR_FLAG_PARSE_IPV6_ONLY">VSTR_FLAG_PARSE_IPV6_ONLY</a>
+</ul><li><a id="indx-Constants%20used%20with%20the%20custom%20output%20formatter%20for%20ipv6%20addresses" href="#Constants%20used%20with%20the%20custom%20output%20formatter%20for%20ipv6%20addresses">Constants used with the custom output formatter for ipv6 addresses</a>
+<ul>
+<li class="obj"><a href="#VSTR_TYPE_SC_FMT_CB_IPV6_ALIGNED">VSTR_TYPE_SC_FMT_CB_IPV6_ALIGNED</a>
+<li class="obj"><a href="#VSTR_TYPE_SC_FMT_CB_IPV6_COMPACT">VSTR_TYPE_SC_FMT_CB_IPV6_COMPACT</a>
+<li class="obj"><a href="#VSTR_TYPE_SC_FMT_CB_IPV6_STD">VSTR_TYPE_SC_FMT_CB_IPV6_STD</a>
+<li class="obj"><a href="#VSTR_TYPE_SC_FMT_CB_IPV6_IPV4_ALIGNED">VSTR_TYPE_SC_FMT_CB_IPV6_IPV4_ALIGNED</a>
+<li class="obj"><a href="#VSTR_TYPE_SC_FMT_CB_IPV6_IPV4_COMPACT">VSTR_TYPE_SC_FMT_CB_IPV6_IPV4_COMPACT</a>
+<li class="obj"><a href="#VSTR_TYPE_SC_FMT_CB_IPV6_IPV4_STD">VSTR_TYPE_SC_FMT_CB_IPV6_IPV4_STD</a>
+</ul><li><a id="indx-Constants%20passed%20to%20vstr_split_buf%28%29%2c%20vstr_split_cstr_buf%28%29%2c%20VSTR_SPLIT_CSTR_BUF%28%29%2c%20vstr_split_chrs%28%29%2c%20vstr_split_cstr_chrs%28%29%20and%20VSTR_SPLIT_CSTR_CHRS%28%29" href="#Constants%20passed%20to%20vstr_split_buf%28%29%2c%20vstr_split_cstr_buf%28%29%2c%20VSTR_SPLIT_CSTR_BUF%28%29%2c%20vstr_split_chrs%28%29%2c%20vstr_split_cstr_chrs%28%29%20and%20VSTR_SPLIT_CSTR_CHRS%28%29">Constants passed to vstr_split_buf(), vstr_split_cstr_buf(), VSTR_SPLIT_CSTR_BUF(), vstr_split_chrs(), vstr_split_cstr_chrs() and VSTR_SPLIT_CSTR_CHRS()</a>
+<ul>
+<li class="obj"><a href="#VSTR_FLAG_SPLIT_DEF">VSTR_FLAG_SPLIT_DEF</a>
+<li class="obj"><a href="#VSTR_FLAG_SPLIT_BEG_NULL">VSTR_FLAG_SPLIT_BEG_NULL</a>
+<li class="obj"><a href="#VSTR_FLAG_SPLIT_MID_NULL">VSTR_FLAG_SPLIT_MID_NULL</a>
+<li class="obj"><a href="#VSTR_FLAG_SPLIT_END_NULL">VSTR_FLAG_SPLIT_END_NULL</a>
+<li class="obj"><a href="#VSTR_FLAG_SPLIT_POST_NULL">VSTR_FLAG_SPLIT_POST_NULL</a>
+<li class="obj"><a href="#VSTR_FLAG_SPLIT_NO_RET">VSTR_FLAG_SPLIT_NO_RET</a>
+<li class="obj"><a href="#VSTR_FLAG_SPLIT_REMAIN">VSTR_FLAG_SPLIT_REMAIN</a>
+</ul><li><a id="indx-Constants%20passed%20to%20vstr_sects_foreach%28%29" href="#Constants%20passed%20to%20vstr_sects_foreach%28%29">Constants passed to vstr_sects_foreach()</a>
+<ul>
+<li class="obj"><a href="#VSTR_FLAG_SECTS_FOREACH_DEF">VSTR_FLAG_SECTS_FOREACH_DEF</a>
+<li class="obj"><a href="#VSTR_FLAG_SECTS_FOREACH_BACKWARD">VSTR_FLAG_SECTS_FOREACH_BACKWARD</a>
+<li class="obj"><a href="#VSTR_FLAG_SECTS_FOREACH_ALLOW_NULL">VSTR_FLAG_SECTS_FOREACH_ALLOW_NULL</a>
+<li class="obj"><a href="#VSTR_TYPE_SECTS_FOREACH_DEF">VSTR_TYPE_SECTS_FOREACH_DEF</a>
+<li class="obj"><a href="#VSTR_TYPE_SECTS_FOREACH_DEL">VSTR_TYPE_SECTS_FOREACH_DEL</a>
+<li class="obj"><a href="#VSTR_TYPE_SECTS_FOREACH_RET">VSTR_TYPE_SECTS_FOREACH_RET</a>
+</ul><li><a id="indx-Constants%20used%20with%20the%20callback%20from%20vstr_cache_add_cb%28%29" href="#Constants%20used%20with%20the%20callback%20from%20vstr_cache_add_cb%28%29">Constants used with the callback from vstr_cache_add_cb()</a>
+<ul>
+<li class="obj"><a href="#VSTR_TYPE_CACHE_ADD">VSTR_TYPE_CACHE_ADD</a>
+<li class="obj"><a href="#VSTR_TYPE_CACHE_DEL">VSTR_TYPE_CACHE_DEL</a>
+<li class="obj"><a href="#VSTR_TYPE_CACHE_SUB">VSTR_TYPE_CACHE_SUB</a>
+<li class="obj"><a href="#VSTR_TYPE_CACHE_FREE">VSTR_TYPE_CACHE_FREE</a>
+</ul><li><a id="indx-Constants%20passed%20to%20vstr_sc_mmap_fd%28%29%20and%20vstr_sc_mmap_file%28%29" href="#Constants%20passed%20to%20vstr_sc_mmap_fd%28%29%20and%20vstr_sc_mmap_file%28%29">Constants passed to vstr_sc_mmap_fd() and vstr_sc_mmap_file()</a>
+<ul>
+<li class="obj"><a href="#VSTR_TYPE_SC_MMAP_FD_ERR_NONE">VSTR_TYPE_SC_MMAP_FD_ERR_NONE</a>
+<li class="obj"><a href="#VSTR_TYPE_SC_MMAP_FILE_ERR_NONE">VSTR_TYPE_SC_MMAP_FILE_ERR_NONE</a>
+<li class="obj"><a href="#VSTR_TYPE_SC_MMAP_FILE_ERR_OPEN_ERRNO">VSTR_TYPE_SC_MMAP_FILE_ERR_OPEN_ERRNO</a>
+<li class="obj"><a href="#VSTR_TYPE_SC_MMAP_FD_ERR_FSTAT_ERRNO">VSTR_TYPE_SC_MMAP_FD_ERR_FSTAT_ERRNO</a>
+<li class="obj"><a href="#VSTR_TYPE_SC_MMAP_FILE_ERR_FSTAT_ERRNO">VSTR_TYPE_SC_MMAP_FILE_ERR_FSTAT_ERRNO</a>
+<li class="obj"><a href="#VSTR_TYPE_SC_MMAP_FD_ERR_MMAP_ERRNO">VSTR_TYPE_SC_MMAP_FD_ERR_MMAP_ERRNO</a>
+<li class="obj"><a href="#VSTR_TYPE_SC_MMAP_FILE_ERR_MMAP_ERRNO">VSTR_TYPE_SC_MMAP_FILE_ERR_MMAP_ERRNO</a>
+<li class="obj"><a href="#VSTR_TYPE_SC_MMAP_FILE_ERR_CLOSE_ERRNO">VSTR_TYPE_SC_MMAP_FILE_ERR_CLOSE_ERRNO</a>
+<li class="obj"><a href="#VSTR_TYPE_SC_MMAP_FD_ERR_MEM">VSTR_TYPE_SC_MMAP_FD_ERR_MEM</a>
+<li class="obj"><a href="#VSTR_TYPE_SC_MMAP_FILE_ERR_MEM">VSTR_TYPE_SC_MMAP_FILE_ERR_MEM</a>
+<li class="obj"><a href="#VSTR_TYPE_SC_MMAP_FD_ERR_TOO_LARGE">VSTR_TYPE_SC_MMAP_FD_ERR_TOO_LARGE</a>
+<li class="obj"><a href="#VSTR_TYPE_SC_MMAP_FILE_ERR_TOO_LARGE">VSTR_TYPE_SC_MMAP_FILE_ERR_TOO_LARGE</a>
+</ul><li><a id="indx-Constants%20passed%20to%20vstr_sc_read_iov_fd%28%29%2c%20vstr_sc_read_len_fd%28%29%2c%20vstr_sc_read_iov_file%28%29%20and%20vstr_sc_read_len_file%28%29" href="#Constants%20passed%20to%20vstr_sc_read_iov_fd%28%29%2c%20vstr_sc_read_len_fd%28%29%2c%20vstr_sc_read_iov_file%28%29%20and%20vstr_sc_read_len_file%28%29">Constants passed to vstr_sc_read_iov_fd(), vstr_sc_read_len_fd(), vstr_sc_read_iov_file() and vstr_sc_read_len_file()</a>
+<ul>
+<li class="obj"><a href="#VSTR_TYPE_SC_READ_FD_ERR_NONE">VSTR_TYPE_SC_READ_FD_ERR_NONE</a>
+<li class="obj"><a href="#VSTR_TYPE_SC_READ_FILE_ERR_NONE">VSTR_TYPE_SC_READ_FILE_ERR_NONE</a>
+<li class="obj"><a href="#VSTR_TYPE_SC_READ_FILE_ERR_OPEN_ERRNO">VSTR_TYPE_SC_READ_FILE_ERR_OPEN_ERRNO</a>
+<li class="obj"><a href="#VSTR_TYPE_SC_READ_FD_ERR_FSTAT_ERRNO">VSTR_TYPE_SC_READ_FD_ERR_FSTAT_ERRNO</a>
+<li class="obj"><a href="#VSTR_TYPE_SC_READ_FILE_ERR_FSTAT_ERRNO">VSTR_TYPE_SC_READ_FILE_ERR_FSTAT_ERRNO</a>
+<li class="obj"><a href="#VSTR_TYPE_SC_READ_FILE_ERR_SEEK_ERRNO">VSTR_TYPE_SC_READ_FILE_ERR_SEEK_ERRNO</a>
+<li class="obj"><a href="#VSTR_TYPE_SC_READ_FD_ERR_READ_ERRNO">VSTR_TYPE_SC_READ_FD_ERR_READ_ERRNO</a>
+<li class="obj"><a href="#VSTR_TYPE_SC_READ_FILE_ERR_READ_ERRNO">VSTR_TYPE_SC_READ_FILE_ERR_READ_ERRNO</a>
+<li class="obj"><a href="#VSTR_TYPE_SC_READ_FILE_ERR_CLOSE_ERRNO">VSTR_TYPE_SC_READ_FILE_ERR_CLOSE_ERRNO</a>
+<li class="obj"><a href="#VSTR_TYPE_SC_READ_FD_ERR_EOF">VSTR_TYPE_SC_READ_FD_ERR_EOF</a>
+<li class="obj"><a href="#VSTR_TYPE_SC_READ_FILE_ERR_EOF">VSTR_TYPE_SC_READ_FILE_ERR_EOF</a>
+<li class="obj"><a href="#VSTR_TYPE_SC_READ_FD_ERR_MEM">VSTR_TYPE_SC_READ_FD_ERR_MEM</a>
+<li class="obj"><a href="#VSTR_TYPE_SC_READ_FILE_ERR_MEM">VSTR_TYPE_SC_READ_FILE_ERR_MEM</a>
+<li class="obj"><a href="#VSTR_TYPE_SC_READ_FD_ERR_TOO_LARGE">VSTR_TYPE_SC_READ_FD_ERR_TOO_LARGE</a>
+<li class="obj"><a href="#VSTR_TYPE_SC_READ_FILE_ERR_TOO_LARGE">VSTR_TYPE_SC_READ_FILE_ERR_TOO_LARGE</a>
+</ul><li><a id="indx-Constants%20passed%20to%20vstr_sc_write_fd%28%29%20and%20vstr_sc_write_file%28%29" href="#Constants%20passed%20to%20vstr_sc_write_fd%28%29%20and%20vstr_sc_write_file%28%29">Constants passed to vstr_sc_write_fd() and vstr_sc_write_file()</a>
+<ul>
+<li class="obj"><a href="#VSTR_TYPE_SC_WRITE_FD_ERR_NONE">VSTR_TYPE_SC_WRITE_FD_ERR_NONE</a>
+<li class="obj"><a href="#VSTR_TYPE_SC_WRITE_FILE_ERR_NONE">VSTR_TYPE_SC_WRITE_FILE_ERR_NONE</a>
+<li class="obj"><a href="#VSTR_TYPE_SC_WRITE_FILE_ERR_SEEK_ERRNO">VSTR_TYPE_SC_WRITE_FILE_ERR_SEEK_ERRNO</a>
+<li class="obj"><a href="#VSTR_TYPE_SC_WRITE_FILE_ERR_OPEN_ERRNO">VSTR_TYPE_SC_WRITE_FILE_ERR_OPEN_ERRNO</a>
+<li class="obj"><a href="#VSTR_TYPE_SC_WRITE_FD_ERR_WRITE_ERRNO">VSTR_TYPE_SC_WRITE_FD_ERR_WRITE_ERRNO</a>
+<li class="obj"><a href="#VSTR_TYPE_SC_WRITE_FILE_ERR_WRITE_ERRNO">VSTR_TYPE_SC_WRITE_FILE_ERR_WRITE_ERRNO</a>
+<li class="obj"><a href="#VSTR_TYPE_SC_WRITE_FILE_ERR_CLOSE_ERRNO">VSTR_TYPE_SC_WRITE_FILE_ERR_CLOSE_ERRNO</a>
+<li class="obj"><a href="#VSTR_TYPE_SC_WRITE_FD_ERR_MEM">VSTR_TYPE_SC_WRITE_FD_ERR_MEM</a>
+<li class="obj"><a href="#VSTR_TYPE_SC_WRITE_FILE_ERR_MEM">VSTR_TYPE_SC_WRITE_FILE_ERR_MEM</a>
+</ul><li><a id="indx-Constants%20passed%20to%20vstr_cntl_base%28%29" href="#Constants%20passed%20to%20vstr_cntl_base%28%29">Constants passed to vstr_cntl_base()</a>
+<ul>
+<li class="obj"><a href="#VSTR_CNTL_BASE_GET_CONF">VSTR_CNTL_BASE_GET_CONF</a>
+<li class="obj"><a href="#VSTR_CNTL_BASE_SET_CONF">VSTR_CNTL_BASE_SET_CONF</a>
+<li class="obj"><a href="#VSTR_CNTL_BASE_GET_FLAG_HAVE_CACHE">VSTR_CNTL_BASE_GET_FLAG_HAVE_CACHE</a>
+<li class="obj"><a href="#VSTR_CNTL_BASE_GET_TYPE_GRPALLOC_CACHE">VSTR_CNTL_BASE_GET_TYPE_GRPALLOC_CACHE</a>
+</ul><li><a id="indx-Constants%20passed%20to%20vstr_cntl_conf%28%29" href="#Constants%20passed%20to%20vstr_cntl_conf%28%29">Constants passed to vstr_cntl_conf()</a>
+<ul>
+<li class="obj"><a href="#VSTR_CNTL_CONF_GET_NUM_BUF_SZ">VSTR_CNTL_CONF_GET_NUM_BUF_SZ</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_SET_NUM_BUF_SZ">VSTR_CNTL_CONF_SET_NUM_BUF_SZ</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_GET_NUM_IOV_MIN_ALLOC">VSTR_CNTL_CONF_GET_NUM_IOV_MIN_ALLOC</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_SET_NUM_IOV_MIN_ALLOC">VSTR_CNTL_CONF_SET_NUM_IOV_MIN_ALLOC</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_GET_NUM_IOV_MIN_OFFSET">VSTR_CNTL_CONF_GET_NUM_IOV_MIN_OFFSET</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_SET_NUM_IOV_MIN_OFFSET">VSTR_CNTL_CONF_SET_NUM_IOV_MIN_OFFSET</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_GET_NUM_REF">VSTR_CNTL_CONF_GET_NUM_REF</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_SET_LOC_CSTR_AUTO_NAME_NUMERIC">VSTR_CNTL_CONF_SET_LOC_CSTR_AUTO_NAME_NUMERIC</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_GET_LOC_CSTR_NAME_NUMERIC">VSTR_CNTL_CONF_GET_LOC_CSTR_NAME_NUMERIC</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_SET_LOC_CSTR_NAME_NUMERIC">VSTR_CNTL_CONF_SET_LOC_CSTR_NAME_NUMERIC</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_GET_LOC_CSTR_DEC_POINT">VSTR_CNTL_CONF_GET_LOC_CSTR_DEC_POINT</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_SET_LOC_CSTR_DEC_POINT">VSTR_CNTL_CONF_SET_LOC_CSTR_DEC_POINT</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_GET_LOC_CSTR_THOU_SEP">VSTR_CNTL_CONF_GET_LOC_CSTR_THOU_SEP</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_SET_LOC_CSTR_THOU_SEP">VSTR_CNTL_CONF_SET_LOC_CSTR_THOU_SEP</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_GET_LOC_CSTR_THOU_GRP">VSTR_CNTL_CONF_GET_LOC_CSTR_THOU_GRP</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_SET_LOC_CSTR_THOU_GRP">VSTR_CNTL_CONF_SET_LOC_CSTR_THOU_GRP</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_GET_FLAG_IOV_UPDATE">VSTR_CNTL_CONF_GET_FLAG_IOV_UPDATE</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_SET_FLAG_IOV_UPDATE">VSTR_CNTL_CONF_SET_FLAG_IOV_UPDATE</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_GET_FLAG_DEL_SPLIT">VSTR_CNTL_CONF_GET_FLAG_DEL_SPLIT</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_SET_FLAG_DEL_SPLIT">VSTR_CNTL_CONF_SET_FLAG_DEL_SPLIT</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_GET_FLAG_ALLOC_CACHE">VSTR_CNTL_CONF_GET_FLAG_ALLOC_CACHE</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_SET_FLAG_ALLOC_CACHE">VSTR_CNTL_CONF_SET_FLAG_ALLOC_CACHE</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_GET_FMT_CHAR_ESC">VSTR_CNTL_CONF_GET_FMT_CHAR_ESC</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_SET_FMT_CHAR_ESC">VSTR_CNTL_CONF_SET_FMT_CHAR_ESC</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_GET_NUM_SPARE_BUF">VSTR_CNTL_CONF_GET_NUM_SPARE_BUF</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_GET_NUM_SPARE_NON">VSTR_CNTL_CONF_GET_NUM_SPARE_NON</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_GET_NUM_SPARE_PTR">VSTR_CNTL_CONF_GET_NUM_SPARE_PTR</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_GET_NUM_SPARE_REF">VSTR_CNTL_CONF_GET_NUM_SPARE_REF</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_SET_NUM_SPARE_BUF">VSTR_CNTL_CONF_SET_NUM_SPARE_BUF</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_SET_NUM_SPARE_NON">VSTR_CNTL_CONF_SET_NUM_SPARE_NON</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_SET_NUM_SPARE_PTR">VSTR_CNTL_CONF_SET_NUM_SPARE_PTR</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_SET_NUM_SPARE_REF">VSTR_CNTL_CONF_SET_NUM_SPARE_REF</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_GET_FLAG_ATOMIC_OPS">VSTR_CNTL_CONF_GET_FLAG_ATOMIC_OPS</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_SET_FLAG_ATOMIC_OPS">VSTR_CNTL_CONF_SET_FLAG_ATOMIC_OPS</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_SET_NUM_RANGE_SPARE_BUF">VSTR_CNTL_CONF_SET_NUM_RANGE_SPARE_BUF</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_SET_NUM_RANGE_SPARE_NON">VSTR_CNTL_CONF_SET_NUM_RANGE_SPARE_NON</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_SET_NUM_RANGE_SPARE_PTR">VSTR_CNTL_CONF_SET_NUM_RANGE_SPARE_PTR</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_SET_NUM_RANGE_SPARE_REF">VSTR_CNTL_CONF_SET_NUM_RANGE_SPARE_REF</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_GET_NUM_SPARE_BASE">VSTR_CNTL_CONF_GET_NUM_SPARE_BASE</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_SET_NUM_SPARE_BASE">VSTR_CNTL_CONF_SET_NUM_SPARE_BASE</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_SET_NUM_RANGE_SPARE_BASE">VSTR_CNTL_CONF_SET_NUM_RANGE_SPARE_BASE</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_GET_TYPE_GRPALLOC_CACHE">VSTR_CNTL_CONF_GET_TYPE_GRPALLOC_CACHE</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_SET_TYPE_GRPALLOC_CACHE">VSTR_CNTL_CONF_SET_TYPE_GRPALLOC_CACHE</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_GET_LOC_REF_NAME_NUMERIC">VSTR_CNTL_CONF_GET_LOC_REF_NAME_NUMERIC</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_SET_LOC_REF_NAME_NUMERIC">VSTR_CNTL_CONF_SET_LOC_REF_NAME_NUMERIC</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_GET_LOC_REF_DEC_POINT">VSTR_CNTL_CONF_GET_LOC_REF_DEC_POINT</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_SET_LOC_REF_DEC_POINT">VSTR_CNTL_CONF_SET_LOC_REF_DEC_POINT</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_GET_LOC_REF_THOU_SEP">VSTR_CNTL_CONF_GET_LOC_REF_THOU_SEP</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_SET_LOC_REF_THOU_SEP">VSTR_CNTL_CONF_SET_LOC_REF_THOU_SEP</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_GET_LOC_REF_THOU_GRP">VSTR_CNTL_CONF_GET_LOC_REF_THOU_GRP</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_SET_LOC_REF_THOU_GRP">VSTR_CNTL_CONF_SET_LOC_REF_THOU_GRP</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_GET_LOC_REF_NULL_PTR">VSTR_CNTL_CONF_GET_LOC_REF_NULL_PTR</a>
+<li class="obj"><a href="#VSTR_CNTL_CONF_SET_LOC_REF_NULL_PTR">VSTR_CNTL_CONF_SET_LOC_REF_NULL_PTR</a>
+</ul><li><a id="indx-Constants%20passed%20to%20vstr_cntl_opt%28%29" href="#Constants%20passed%20to%20vstr_cntl_opt%28%29">Constants passed to vstr_cntl_opt()</a>
+<ul>
+<li class="obj"><a href="#VSTR_CNTL_OPT_GET_CONF">VSTR_CNTL_OPT_GET_CONF</a>
+<li class="obj"><a href="#VSTR_CNTL_OPT_SET_CONF">VSTR_CNTL_OPT_SET_CONF</a>
+</ul><li><a id="indx-Constants%20passed%20to%20vstr_cntl_conf%28%2e%2e%2e%2c%20VSTR_CNTL_CONF_SET_TYPE_GRPALLOC_CACHE" href="#Constants%20passed%20to%20vstr_cntl_conf%28%2e%2e%2e%2c%20VSTR_CNTL_CONF_SET_TYPE_GRPALLOC_CACHE">Constants passed to vstr_cntl_conf(..., VSTR_CNTL_CONF_SET_TYPE_GRPALLOC_CACHE</a>
+<ul>
+<li class="obj"><a href="#VSTR_TYPE_CNTL_CONF_GRPALLOC_NONE">VSTR_TYPE_CNTL_CONF_GRPALLOC_NONE</a>
+<li class="obj"><a href="#VSTR_TYPE_CNTL_CONF_GRPALLOC_POS">VSTR_TYPE_CNTL_CONF_GRPALLOC_POS</a>
+<li class="obj"><a href="#VSTR_TYPE_CNTL_CONF_GRPALLOC_IOVEC">VSTR_TYPE_CNTL_CONF_GRPALLOC_IOVEC</a>
+<li class="obj"><a href="#VSTR_TYPE_CNTL_CONF_GRPALLOC_CSTR">VSTR_TYPE_CNTL_CONF_GRPALLOC_CSTR</a>
+</ul></ul>
+</td></tr></table><table width="90%"><tr><td class="sect"><h2><a id="Compile%20switch%20constants">Compile switch constants</a></h2>
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_COMPILE_ATTRIBUTES">VSTR_COMPILE_ATTRIBUTES</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This switch controls whether gcc type __attribute__() statements are used in
+ the public headers headers for the library. If the value is 1 then if they are
+ supported by the compiler that built the library they will be used, if the
+ value is 0 they won't be used at all.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_COMPILE_INCLUDE">VSTR_COMPILE_INCLUDE</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This switch controls whether including &lt;vstr.h&gt; will include all the system
+ headers needed for the exported interfaces. If the value is 1 then if they are
+ included, if the value is 0 they won't be included.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_COMPILE_INLINE">VSTR_COMPILE_INLINE</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This switch controls whether inline functions will be used in the public
+ headers for the library. If the value is 1 then if they are supported by the
+ compiler that built the library they will be used, if the value is 0 they
+ won't be used.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_COMPILE_MACRO_FUNCTIONS">VSTR_COMPILE_MACRO_FUNCTIONS</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This switch controls whether macro functions will be used in the public
+ headers for the library. If the value is 1 then they will be used, if the
+ value is 0 they won't be used.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  This only includes the macro  functions which also have real function
+ replacements. For example <a href="functions#VSTR_ADD_CSTR_BUF%28%29">VSTR_ADD_CSTR_BUF()</a> won't be defined because there
+ is a <a href="functions#vstr_add_cstr_buf%28%29">vstr_add_cstr_buf()</a> function, but <a href="functions#VSTR_FMT_CB_ARG_PTR%28%29">VSTR_FMT_CB_ARG_PTR()</a> will always be
+ defined.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_COMPILE_TYPEDEF">VSTR_COMPILE_TYPEDEF</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This switch controls whether typedef will be used for the structs in the
+ public headers for the library. If the value is 1 then they will be used,
+ if the value is 0 they won't be used at all (and your code will have to use
+ struct tags instead -- note all libraries using vstr should compile with
+ this option set).
+
+
+</td></tr></table><table width="90%"><tr><td class="sect"><h2><a id="Global%20constants">Global constants</a></h2>
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_MAX_NODE_ALL">VSTR_MAX_NODE_ALL</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This is the largest size a node can be, if you pass values greater than this
+ to <a href="functions#vstr_add_ptr%28%29">vstr_add_ptr()</a> etc. then multiple nodes will be allocated.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_MAX_NODE_BUF">VSTR_MAX_NODE_BUF</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This is the largest size a node _BUF type can be, if you pass values greater
+ than this to <a href="functions#vstr_add_buf%28%29">vstr_add_buf()</a> etc. then multiple nodes will be allocated.
+
+
+</td></tr></table><table width="90%"><tr><td class="sect"><h2><a id="Constants%20passed%20to%20vstr_make_spare_nodes%28%29%20and%20vstr_free_spare_nodes%28%29">Constants passed to
+			 	<a id="vstr_make_spare_nodes()"><a href="functions#vstr_make_spare_nodes%28%29">vstr_make_spare_nodes()</a></a>
+
+		       and
+			 	<a id="vstr_free_spare_nodes()"><a href="functions#vstr_free_spare_nodes%28%29">vstr_free_spare_nodes()</a></a>
+
+		      </a></h2>
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_NODE_BUF">VSTR_TYPE_NODE_BUF</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This type when passed to <a href="functions#vstr_make_space_nodes%28%29">vstr_make_space_nodes()</a> specifies nodes of type _BUF,
+ which are the only nodes that can be "written" to. These nodes are added into
+ a <a href="structs#struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">Vstr string</a> by the <a href="functions#vstr_add_buf%28%29">vstr_add_buf()</a> function and the vstr_add_iovec_buf_*()
+ functions.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  A call to <a href="functions#vstr_sub_buf%28%29">vstr_sub_buf()</a> with a <a href="structs#struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">Vstr string</a> consisting of _BUF nodes means
+ that data will be substituted inplace.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_NODE_NON">VSTR_TYPE_NODE_NON</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This type when passed to <a href="functions#vstr_make_space_nodes%28%29">vstr_make_space_nodes()</a> specifies nodes of type _NON,
+ which are nodes that contain "nothing". These nodes can be used as placeholders
+ for data, and are added into a <a href="structs#struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">Vstr string</a> by the <a href="functions#vstr_add_non%28%29">vstr_add_non()</a> function.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_NODE_PTR">VSTR_TYPE_NODE_PTR</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This type when passed to <a href="functions#vstr_make_space_nodes%28%29">vstr_make_space_nodes()</a> specifies nodes of type _PTR,
+ which are nodes that contain a memory pointer to an area of memory.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_NODE_REF">VSTR_TYPE_NODE_REF</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This type when passed to <a href="functions#vstr_make_space_nodes%28%29">vstr_make_space_nodes()</a> specifies nodes of type _REF,
+ which are nodes that contain a Vstr memory reference.
+
+
+</td></tr></table><table width="90%"><tr><td class="sect"><h2><a id="Constants%20passed%20to%20vstr_add_vstr%28%29%20and%20vstr_sub_vstr%28%29">Constants passed to
+			 	<a id="vstr_add_vstr()"><a href="functions#vstr_add_vstr%28%29">vstr_add_vstr()</a></a>
+
+		       and
+			 	<a id="vstr_sub_vstr()"><a href="functions#vstr_sub_vstr%28%29">vstr_sub_vstr()</a></a>
+
+		      </a></h2>
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_ADD_DEF">VSTR_TYPE_ADD_DEF</a>
+<br><strong>Constant: </strong> <a id="VSTR_TYPE_SUB_DEF">VSTR_TYPE_SUB_DEF</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This type when passed to either <a href="functions#vstr_sub_vstr%28%29">vstr_sub_vstr()</a> or <a href="functions#vstr_add_vstr%28%29">vstr_add_vstr()</a> specifies
+ that all types of nodes are added as their respective type.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_ADD_BUF_PTR">VSTR_TYPE_ADD_BUF_PTR</a>
+<br><strong>Constant: </strong> <a id="VSTR_TYPE_SUB_BUF_PTR">VSTR_TYPE_SUB_BUF_PTR</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This type when passed to either <a href="functions#vstr_sub_vstr%28%29">vstr_sub_vstr()</a> or <a href="functions#vstr_add_vstr%28%29">vstr_add_vstr()</a> specifies
+ that all nodes of type _BUF are added as type _PTR.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  If you add/del/sub data in the original <a href="structs#struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">Vstr string</a> then because the added
+ data is only pointers to the old data, life may become interesting for you.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_ADD_BUF_REF">VSTR_TYPE_ADD_BUF_REF</a>
+<br><strong>Constant: </strong> <a id="VSTR_TYPE_SUB_BUF_REF">VSTR_TYPE_SUB_BUF_REF</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This type when passed to either <a href="functions#vstr_sub_vstr%28%29">vstr_sub_vstr()</a> or <a href="functions#vstr_add_vstr%28%29">vstr_add_vstr()</a> specifies
+ that all nodes of type _BUF are converted to type _REF before being added.
+
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  This means that if you do a substitution on the original <a href="structs#struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">Vstr string</a> it will
+ now be less efficient, as the _REF nodes cannot have data substituted in place.
+</p><p>  The _BUF nodes will not go back to the pool in the <a href="structs#struct%20Vstr_conf%20%28aka%2e%20Vstr%20configuration%29">Vstr configuration</a> as
+ happens if you deleted them.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_ADD_ALL_REF">VSTR_TYPE_ADD_ALL_REF</a>
+<br><strong>Constant: </strong> <a id="VSTR_TYPE_SUB_ALL_REF">VSTR_TYPE_SUB_ALL_REF</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This type when passed to either <a href="functions#vstr_sub_vstr%28%29">vstr_sub_vstr()</a> or <a href="functions#vstr_add_vstr%28%29">vstr_add_vstr()</a> specifies
+ that the data should be taken as though <a href="functions#vstr_export_ref%28%29">vstr_export_ref()</a> was called on the
+ original <a href="structs#struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">Vstr string</a>.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_ADD_ALL_BUF">VSTR_TYPE_ADD_ALL_BUF</a>
+<br><strong>Constant: </strong> <a id="VSTR_TYPE_SUB_ALL_BUF">VSTR_TYPE_SUB_ALL_BUF</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This type when passed to either <a href="functions#vstr_sub_vstr%28%29">vstr_sub_vstr()</a> or <a href="functions#vstr_add_vstr%28%29">vstr_add_vstr()</a> specifies
+ that the data should all be added via. <a href="functions#vstr_add_buf%28%29">vstr_add_buf()</a>.
+
+
+</td></tr></table><table width="90%"><tr><td class="sect"><h2><a id="Constants%20passed%20to%20vstr_fmt_add%28%29">Constants passed to
+			 	<a id="vstr_fmt_add()"><a href="functions#vstr_fmt_add%28%29">vstr_fmt_add()</a></a>
+
+		      </a></h2>
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_FMT_END">VSTR_TYPE_FMT_END</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag means that there are no more arguments to be expected.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  Because you can have multiple arguments associated with one custom &quot;fmt&quot;
+ specification this has to be the last argument to every call to
+ <a href="functions#vstr_fmt_add%28%29">vstr_fmt_add()</a>.
+</p><p>  Just specifying this type means that there are no arguments used, by the
+ custom "fmt" specification.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_FMT_INT">VSTR_TYPE_FMT_INT</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag means that <a href="functions#vstr_add_vfmt%28%29">vstr_add_vfmt()</a> should expect a &quot;int&quot; type from
+ the argument list passed to it
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_FMT_UINT">VSTR_TYPE_FMT_UINT</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag means that <a href="functions#vstr_add_vfmt%28%29">vstr_add_vfmt()</a> should expect an &quot;unsigned int&quot; type from
+ the argument list passed to it
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_FMT_LONG">VSTR_TYPE_FMT_LONG</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag means that <a href="functions#vstr_add_vfmt%28%29">vstr_add_vfmt()</a> should expect a &quot;long&quot; type from
+ the argument list passed to it
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_FMT_ULONG">VSTR_TYPE_FMT_ULONG</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag means that <a href="functions#vstr_add_vfmt%28%29">vstr_add_vfmt()</a> should expect an &quot;unsigned long&quot; type
+ from the argument list passed to it
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_FMT_LONG_LONG">VSTR_TYPE_FMT_LONG_LONG</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag means that <a href="functions#vstr_add_vfmt%28%29">vstr_add_vfmt()</a> should expect a &quot;long long&quot; type from
+ the argument list passed to it
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_FMT_ULONG_LONG">VSTR_TYPE_FMT_ULONG_LONG</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag means that <a href="functions#vstr_add_vfmt%28%29">vstr_add_vfmt()</a> should expect an &quot;unsigned long long&quot;
+ type from the argument list passed to it
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_FMT_SSIZE_T">VSTR_TYPE_FMT_SSIZE_T</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag means that <a href="functions#vstr_add_vfmt%28%29">vstr_add_vfmt()</a> should expect a &quot;ssize_t&quot; type
+ from the argument list passed to it
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_FMT_SIZE_T">VSTR_TYPE_FMT_SIZE_T</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag means that <a href="functions#vstr_add_vfmt%28%29">vstr_add_vfmt()</a> should expect a &quot;size_t&quot; type
+ from the argument list passed to it
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_FMT_PTRDIFF_T">VSTR_TYPE_FMT_PTRDIFF_T</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag means that <a href="functions#vstr_add_vfmt%28%29">vstr_add_vfmt()</a> should expect a &quot;ptrdiff_t&quot; type
+ from the argument list passed to it
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_FMT_INTMAX_T">VSTR_TYPE_FMT_INTMAX_T</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag means that <a href="functions#vstr_add_vfmt%28%29">vstr_add_vfmt()</a> should expect a &quot;intmax_t&quot; type
+ from the argument list passed to it
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_FMT_UINTMAX_T">VSTR_TYPE_FMT_UINTMAX_T</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag means that <a href="functions#vstr_add_vfmt%28%29">vstr_add_vfmt()</a> should expect a &quot;uintmax_t&quot; type
+ from the argument list passed to it
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_FMT_DOUBLE">VSTR_TYPE_FMT_DOUBLE</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag means that <a href="functions#vstr_add_vfmt%28%29">vstr_add_vfmt()</a> should expect a &quot;double&quot; type
+ from the argument list passed to it
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_FMT_DOUBLE_LONG">VSTR_TYPE_FMT_DOUBLE_LONG</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag means that <a href="functions#vstr_add_vfmt%28%29">vstr_add_vfmt()</a> should expect a &quot;long double&quot; type
+ from the argument list passed to it
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_FMT_PTR_VOID">VSTR_TYPE_FMT_PTR_VOID</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag means that <a href="functions#vstr_add_vfmt%28%29">vstr_add_vfmt()</a> should expect a &quot;void *&quot; type
+ from the argument list passed to it
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_FMT_PTR_CHAR">VSTR_TYPE_FMT_PTR_CHAR</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag means that <a href="functions#vstr_add_vfmt%28%29">vstr_add_vfmt()</a> should expect a &quot;char *&quot; type
+ from the argument list passed to it
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_FMT_PTR_WCHAR_T">VSTR_TYPE_FMT_PTR_WCHAR_T</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag means that <a href="functions#vstr_add_vfmt%28%29">vstr_add_vfmt()</a> should expect a &quot;wchar_t *&quot; type
+ from the argument list passed to it
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_FMT_PTR_INT">VSTR_TYPE_FMT_PTR_INT</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag means that <a href="functions#vstr_add_vfmt%28%29">vstr_add_vfmt()</a> should expect an &quot;int *&quot; type
+ from the argument list passed to it
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_FMT_PTR_INTMAX_T">VSTR_TYPE_FMT_PTR_INTMAX_T</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag means that <a href="functions#vstr_add_vfmt%28%29">vstr_add_vfmt()</a> should expect an &quot;intmax_t *&quot; type
+ from the argument list passed to it
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_FMT_PTR_LONG">VSTR_TYPE_FMT_PTR_LONG</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag means that <a href="functions#vstr_add_vfmt%28%29">vstr_add_vfmt()</a> should expect an &quot;long *&quot; type
+ from the argument list passed to it
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_FMT_PTR_LONG_LONG">VSTR_TYPE_FMT_PTR_LONG_LONG</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag means that <a href="functions#vstr_add_vfmt%28%29">vstr_add_vfmt()</a> should expect an &quot;long long *&quot; type
+ from the argument list passed to it
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_FMT_PTR_PTRDIFF_T">VSTR_TYPE_FMT_PTR_PTRDIFF_T</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag means that <a href="functions#vstr_add_vfmt%28%29">vstr_add_vfmt()</a> should expect an &quot;ptrdiff_t *&quot; type
+ from the argument list passed to it
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_FMT_PTR_SHORT">VSTR_TYPE_FMT_PTR_SHORT</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag means that <a href="functions#vstr_add_vfmt%28%29">vstr_add_vfmt()</a> should expect an &quot;short *&quot; type
+ from the argument list passed to it
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_FMT_PTR_SIGNED_CHAR">VSTR_TYPE_FMT_PTR_SIGNED_CHAR</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag means that <a href="functions#vstr_add_vfmt%28%29">vstr_add_vfmt()</a> should expect an &quot;signed char *&quot; type
+ from the argument list passed to it
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_FMT_PTR_SSIZE_T">VSTR_TYPE_FMT_PTR_SSIZE_T</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag means that <a href="functions#vstr_add_vfmt%28%29">vstr_add_vfmt()</a> should expect an &quot;ssize_t *&quot; type
+ from the argument list passed to it
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_FMT_ERRNO">VSTR_TYPE_FMT_ERRNO</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag means that <a href="functions#vstr_add_vfmt%28%29">vstr_add_vfmt()</a> should not expect any arguments passed,
+ but should set the value of errno, just before calling the user callback, to
+ the value upon entering <a href="functions#vstr_add_vfmt%28%29">vstr_add_vfmt()</a>.
+
+
+</td></tr></table><table width="90%"><tr><td class="sect"><h2><a id="Constants%20returned%20from%20vstr_iter_fwd_%2a%28%29">Constants returned from vstr_iter_fwd_*()</a></h2>
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_ITER_DEF">VSTR_TYPE_ITER_DEF</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This return flag is 0, and is generally only used as programmer
+ documentation to mean nothing special is meant for this data.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_ITER_END">VSTR_TYPE_ITER_END</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This return flag means that the data is at an end.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_ITER_NON">VSTR_TYPE_ITER_NON</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This return flag means that the data is actually from within a node of type
+ <a href="constants#VSTR_TYPE_NODE_NON">VSTR_TYPE_NODE_NON</a>.
+
+
+</td></tr></table><table width="90%"><tr><td class="sect"><h2><a id="Constants%20passed%20to%20vstr_sc_fmt_cb_beg%28%29">Constants passed to
+			 	<a id="vstr_sc_fmt_cb_beg()"><a href="functions#vstr_sc_fmt_cb_beg%28%29">vstr_sc_fmt_cb_beg()</a></a>
+
+		      </a></h2>
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_SC_FMT_CB_BEG_DEF">VSTR_FLAG_SC_FMT_CB_BEG_DEF</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag is the same as just specifying <a href="constants#VSTR_FLAG_SC_FMT_CB_BEG_OBJ_STR">VSTR_FLAG_SC_FMT_CB_BEG_OBJ_STR</a>.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_SC_FMT_CB_BEG_OBJ_STR">VSTR_FLAG_SC_FMT_CB_BEG_OBJ_STR</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag indicates that the object should be treated as a C style string,
+ so it is assumed that number orientated flags should be ignored and that
+ the length of the object can be arbitrarily truncated.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_SC_FMT_CB_BEG_OBJ_ATOM">VSTR_FLAG_SC_FMT_CB_BEG_OBJ_ATOM</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag indicates that the object should be treated as an atomic piece of
+ data, so it is assumed that number orientated flags should be ignored and
+ that the length of the object can't be truncated.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_SC_FMT_CB_BEG_OBJ_NUM">VSTR_FLAG_SC_FMT_CB_BEG_OBJ_NUM</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag indicates that the object you are printing should be treated as a
+ number. For instance setting a precision will truncate the length of the
+ object, unless it is a number. Also +/-/<space> leaders and zero padding will
+ only be done for numbers.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_SC_FMT_CB_BEG_OBJ_NEG">VSTR_FLAG_SC_FMT_CB_BEG_OBJ_NEG</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag indicates that the number object you are printing should be
+ treated as negative number. This flag has no meaning if
+ <a href="constants#VSTR_FLAG_SC_FMT_CB_BEG_OBJ_NUM">VSTR_FLAG_SC_FMT_CB_BEG_OBJ_NUM</a> is not set.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_SC_FMT_CB_BEG_OBJ_HEXNUM_H">VSTR_FLAG_SC_FMT_CB_BEG_OBJ_HEXNUM_H</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag indicates that the number object you are printing should be
+ treated as an uppercase hexadecimal (base 16) number. This flag has no meaning
+ if <a href="constants#VSTR_FLAG_SC_FMT_CB_BEG_OBJ_NUM">VSTR_FLAG_SC_FMT_CB_BEG_OBJ_NUM</a> is not set.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_SC_FMT_CB_BEG_OBJ_HEXNUM_L">VSTR_FLAG_SC_FMT_CB_BEG_OBJ_HEXNUM_L</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag indicates that the number object you are printing should be
+ treated as a lowercase hexadecimal (base 16) number. This flag has no meaning
+ if <a href="constants#VSTR_FLAG_SC_FMT_CB_BEG_OBJ_NUM">VSTR_FLAG_SC_FMT_CB_BEG_OBJ_NUM</a> is not set.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_SC_FMT_CB_BEG_OBJ_OCTNUM">VSTR_FLAG_SC_FMT_CB_BEG_OBJ_OCTNUM</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag indicates that the number object you are printing should be
+ treated as octal (base 8) number. This flag has no meaning if
+ <a href="constants#VSTR_FLAG_SC_FMT_CB_BEG_OBJ_NUM">VSTR_FLAG_SC_FMT_CB_BEG_OBJ_NUM</a> is not set.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_SC_FMT_CB_BEG_OBJ_BINNUM_H">VSTR_FLAG_SC_FMT_CB_BEG_OBJ_BINNUM_H</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag indicates that the number object you are printing should be
+ treated as an uppercase base 2 number. This flag has no meaning if
+ <a href="constants#VSTR_FLAG_SC_FMT_CB_BEG_OBJ_NUM">VSTR_FLAG_SC_FMT_CB_BEG_OBJ_NUM</a> is not set.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_SC_FMT_CB_BEG_OBJ_BINNUM_L">VSTR_FLAG_SC_FMT_CB_BEG_OBJ_BINNUM_L</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag indicates that the number object you are printing should be
+ treated as a lowercase base 2 number. This flag has no meaning if
+ <a href="constants#VSTR_FLAG_SC_FMT_CB_BEG_OBJ_NUM">VSTR_FLAG_SC_FMT_CB_BEG_OBJ_NUM</a> is not set.
+
+
+</td></tr></table><table width="90%"><tr><td class="sect"><h2><a id="Constants%20passed%20to%20vstr_conv_unprintable_del%28%29%20and%20vstr_conv_unprintable_chr%28%29">Constants passed to
+			 	<a id="vstr_conv_unprintable_del()"><a href="functions#vstr_conv_unprintable_del%28%29">vstr_conv_unprintable_del()</a></a>
+
+		       and
+			 	<a id="vstr_conv_unprintable_chr()"><a href="functions#vstr_conv_unprintable_chr%28%29">vstr_conv_unprintable_chr()</a></a>
+
+		      </a></h2>
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_NONE">VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_NONE</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag is 0, and is generally only used as programmer documentation to mean
+ no flags are applied to this function.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  Because it is sometimes hard are to notice certain characters, they are
+ classified as "unprintable" by default, the value
+ <a href="constants#VSTR_FLAG_CONV_UNPRINTABLE_DEF">VSTR_FLAG_CONV_UNPRINTABLE_DEF</a> is a default that is what most people would
+ expect to be classified as unprintable.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_NUL">VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_NUL</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag allows the ASCII 0x00 byte, aka. NULL, through as a &quot;printable&quot;
+ character.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_BEL">VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_BEL</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag allows the ASCII 0x07 byte, aka. terminal bell, through as a
+ "printable" character.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_BS">VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_BS</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag allows the ASCII 0x08 byte, aka. backspace, through as a
+ "printable" character.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_HT">VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_HT</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag allows the ASCII 0x09 byte, aka. horizontal tab, through as a
+ "printable" character.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_LF">VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_LF</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag allows the ASCII 0x0A byte, aka. line feed, through as a
+ "printable" character.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_VT">VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_VT</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag allows the ASCII 0x0B byte, aka. vertical tab, through as a
+ "printable" character.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_FF">VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_FF</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag allows the ASCII 0x0C byte, aka. form feed, through as a
+ "printable" character.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_CR">VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_CR</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag allows the ASCII 0x0D byte, aka. carriage return, through as a
+ "printable" character.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_SP">VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_SP</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag allows the ASCII 0x20 byte, aka. space, through as a
+ "printable" character.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_COMMA">VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_COMMA</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag allows the ASCII 0x2C byte, aka. comma, through as a
+ "printable" character.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_DOT">VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_DOT</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag allows the ASCII 0x2E byte, aka. dot, through as a
+ "printable" character.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_CONV_UNPRINTABLE_ALLOW__">VSTR_FLAG_CONV_UNPRINTABLE_ALLOW__</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag allows the ASCII 0x5F byte, aka. underbar, through as a
+ "printable" character.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_ESC">VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_ESC</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag allows the ASCII 0x1B byte, aka. escape, through as a
+ "printable" character.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_DEL">VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_DEL</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag allows the ASCII 0x7F byte, aka. delete, through as a
+ "printable" character.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_HSP">VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_HSP</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag allows the ASCII 0xA0 byte through as a &quot;printable&quot; character.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  The value 0xA0 is 0x20 with the high bit set, and this character it often
+ printed as space when in an ASCII like encoding.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_HIGH">VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_HIGH</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag allows the all ASCII bytes greater than or equal to 0xA1 through as
+ "printable" characters.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  This includes all the extra characters like not, degree, copyright and micro
+ when in an ASCII like encoding.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_CONV_UNPRINTABLE_DEF">VSTR_FLAG_CONV_UNPRINTABLE_DEF</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag is the same as using the flags for space, comma, dot and underbar.
+ Using just this flag is probably what you'd expect an "unprintable" function
+ to do.
+
+
+</td></tr></table><table width="90%"><tr><td class="sect"><h2><a id="Constants%20passed%20to%20vstr_parse_num%28%29%20etc%2e">Constants passed to
+			 	<a id="vstr_parse_num()"><a href="functions#vstr_parse_num%28%29">vstr_parse_num()</a></a>
+
+		       etc.</a></h2>
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_PARSE_NUM_ERR_NONE">VSTR_TYPE_PARSE_NUM_ERR_NONE</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This error code has the value 0, and means that no error occurred parsing the
+ number from the <a href="structs#struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">Vstr string</a>.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_PARSE_NUM_ERR_ONLY_S">VSTR_TYPE_PARSE_NUM_ERR_ONLY_S</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This error code means that the <a href="structs#struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">Vstr string</a> consisted only of spaces.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_PARSE_NUM_ERR_ONLY_SPM">VSTR_TYPE_PARSE_NUM_ERR_ONLY_SPM</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This error code means that the <a href="structs#struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">Vstr string</a> consisted only spaces, and a plus
+ or minus sign.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_PARSE_NUM_ERR_ONLY_SPMX">VSTR_TYPE_PARSE_NUM_ERR_ONLY_SPMX</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This error code means that the <a href="structs#struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">Vstr string</a> consisted only spaces, a plus
+ or minus sign and a "0x" base 16 prefix.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_PARSE_NUM_ERR_OOB">VSTR_TYPE_PARSE_NUM_ERR_OOB</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This error code means that the <a href="structs#struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">Vstr string</a> had characters in it that where
+ out of bounds from the working set.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  This out of bounds includes the <a href="structs#struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">Vstr string</a> &quot;++&quot; as well as &quot;4A&quot;, when
+ parsing in a base less than 11.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_PARSE_NUM_ERR_OVERFLOW">VSTR_TYPE_PARSE_NUM_ERR_OVERFLOW</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This error code means that the number parsed from the <a href="structs#struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">Vstr string</a> would
+ overflow the type it is being parsed into, this is only returned when the
+ <a href="constants#VSTR_FLAG_PARSE_NUM_OVERFLOW">VSTR_FLAG_PARSE_NUM_OVERFLOW</a> flag was passed to the parse function.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_PARSE_NUM_ERR_NEGATIVE">VSTR_TYPE_PARSE_NUM_ERR_NEGATIVE</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This error code means that the number parsed from the <a href="structs#struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">Vstr string</a> starts
+ with a '-' (Hyphen) character when it is supposed to be an unsigned type.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_PARSE_NUM_ERR_BEG_ZERO">VSTR_TYPE_PARSE_NUM_ERR_BEG_ZERO</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This error code means that the number parsed from the <a href="structs#struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">Vstr string</a> starts
+ with a '0' (Digit Zero) character, when the <a href="constants#VSTR_FLAG_PARSE_NUM_NO_BEG_ZERO">VSTR_FLAG_PARSE_NUM_NO_BEG_ZERO</a>
+ flag was passed to the parse function.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_PARSE_NUM_DEF">VSTR_FLAG_PARSE_NUM_DEF</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag is 0, and is generally only used as programmer documentation to mean
+ no flags are applied to this function.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_PARSE_NUM_LOCAL">VSTR_FLAG_PARSE_NUM_LOCAL</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag changes the parsing from ASCII numbers into &quot;local&quot; numbers
+ (whatever is generated by '0 .. '9' by the host compiler). This can be ignored
+ by anyone not using an EBCDIC character set, or something equally weird.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_PARSE_NUM_SEP">VSTR_FLAG_PARSE_NUM_SEP</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag allows the parsing of the '_' (Low Line) separator character
+ between the digits of the number, so "1234" and "1_234" would both parse the
+ same.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  The separator is only allowed within the digits of the number, so &quot; _+_1234&quot;
+ would fail as would "_1234".
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_PARSE_NUM_OVERFLOW">VSTR_FLAG_PARSE_NUM_OVERFLOW</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag turns on the overflow checking, in other words without it
+ <a href="constants#VSTR_TYPE_PARSE_NUM_ERR_OVERFLOW">VSTR_TYPE_PARSE_NUM_ERR_OVERFLOW</a> will never be returned as an error code.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  The return value with this set is the highest number that can be parsed from
+ the beginning of the <a href="structs#struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">Vstr string</a>, while the value without this flag would be
+ the parsed number modulo the highest number of the type.
+</p><p>  For example given a type that had a maximum of 10, then parsing &quot;64&quot; would
+ give you 6 with the flag, and 4 without.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_PARSE_NUM_SPACE">VSTR_FLAG_PARSE_NUM_SPACE</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag allows one or more ' ' (Space) characters before the number or
+ number prefix (Plus Sign, Hyphen).
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_PARSE_NUM_NO_BEG_ZERO">VSTR_FLAG_PARSE_NUM_NO_BEG_ZERO</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag disallows one or more '0' (Digit Zero) characters before the number.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_PARSE_NUM_NO_BEG_PM">VSTR_FLAG_PARSE_NUM_NO_BEG_PM</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag disallows a plus or a minus character before the number.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_PARSE_NUM_NO_NEGATIVE">VSTR_FLAG_PARSE_NUM_NO_NEGATIVE</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag disallows negative values.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  While this flag can be passed to <a href="functions#vstr_parse_int%28%29">vstr_parse_int()</a> etc. it is most useful when
+ passed to the generic function <a href="functions#vstr_parse_num%28%29">vstr_parse_num()</a>.
+
+
+</td></tr></table><table width="90%"><tr><td class="sect"><h2><a id="Constants%20passed%20to%20vstr_parse_ipv4%28%29">Constants passed to
+			 	<a id="vstr_parse_ipv4()"><a href="functions#vstr_parse_ipv4%28%29">vstr_parse_ipv4()</a></a>
+
+		      </a></h2>
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_PARSE_IPV4_ERR_NONE">VSTR_TYPE_PARSE_IPV4_ERR_NONE</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This error code has the value 0, and means that no error occurred parsing the
+ ipv4 address from the <a href="structs#struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">Vstr string</a>.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_PARSE_IPV4_ERR_IPV4_OOB">VSTR_TYPE_PARSE_IPV4_ERR_IPV4_OOB</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This error code means that the numbers for the ipv4 address in the
+ <a href="structs#struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">Vstr string</a> where out of bounds.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_PARSE_IPV4_ERR_IPV4_FULL">VSTR_TYPE_PARSE_IPV4_ERR_IPV4_FULL</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This error code means that the ipv4 address wasn't full (Ie. 127/8 is a non
+ full ipv4 address with CIDR mask).
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_PARSE_IPV4_ERR_ONLY">VSTR_TYPE_PARSE_IPV4_ERR_ONLY</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This error code means that the ipv4 address, and option mask, wasn't the only
+ thing in the <a href="structs#struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">Vstr string</a>.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  When this error code is returned, the ip address is still parsed out and as
+ usable as if no error had occurred.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_PARSE_IPV4_ERR_CIDR_OOB">VSTR_TYPE_PARSE_IPV4_ERR_CIDR_OOB</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This error code means that the numbers for the ipv4 CIDR mask in the
+ <a href="structs#struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">Vstr string</a> where out of bounds.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_PARSE_IPV4_ERR_CIDR_FULL">VSTR_TYPE_PARSE_IPV4_ERR_CIDR_FULL</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This error code means that the ipv4 CIDR mask wasn't full (Ie. 127.0.0.1/ is
+ an ipv4 address with a non full ipv4 CIDR mask).
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_PARSE_IPV4_ERR_NETMASK_OOB">VSTR_TYPE_PARSE_IPV4_ERR_NETMASK_OOB</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This error code means that the numbers for the ipv4 netmask in the
+ <a href="structs#struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">Vstr string</a> where out of bounds.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_PARSE_IPV4_ERR_NETMASK_FULL">VSTR_TYPE_PARSE_IPV4_ERR_NETMASK_FULL</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This error code means that the ipv4 NETMASK mask wasn't full (Ie.
+ 127.0.0.1/255.0 is an ipv4 address with a non full ipv4 netmask).
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_PARSE_IPV4_DEF">VSTR_FLAG_PARSE_IPV4_DEF</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag is 0, and is generally only used as programmer documentation to mean
+ no flags are applied to this function.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_PARSE_IPV4_LOCAL">VSTR_FLAG_PARSE_IPV4_LOCAL</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag changes the parsing from ASCII numbers into &quot;local&quot; numbers
+ (whatever is generated by '0 .. '9' by the host compiler). This can be ignored
+ by anyone not using an EBCDIC character set, or something equally weird.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_PARSE_IPV4_ZEROS">VSTR_FLAG_PARSE_IPV4_ZEROS</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag allows the use of leading zeros in the ipv4 address and masks.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_PARSE_IPV4_FULL">VSTR_FLAG_PARSE_IPV4_FULL</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag changes the parsing so that the function will return an error if a
+ non full ipv4 address is given (Ie. 127/8 is a non full ipv4 with a CIDR mask).
+ If this flag isn't given the missing numbers are assumed to be zero.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_PARSE_IPV4_CIDR">VSTR_FLAG_PARSE_IPV4_CIDR</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag allows the parsing out of a CIDR mask, if one is present.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_PARSE_IPV4_CIDR_FULL">VSTR_FLAG_PARSE_IPV4_CIDR_FULL</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag changes the parsing so that the function will return an error if a
+ non full ipv4 CIDR mask is given (Ie. 127.0.0.1/ is an ipv4 with a non full
+ ipv4 CIDR mask). If this flag isn't given the missing CIDR mask is assumed to
+ be 32.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_PARSE_IPV4_NETMASK">VSTR_FLAG_PARSE_IPV4_NETMASK</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag allows the parsing out of a ipv4 netmask, if one is present.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  If both this and the <a href="constants#VSTR_FLAG_PARSE_IPV4_CIDR">VSTR_FLAG_PARSE_IPV4_CIDR</a> flag is given, then either
+ masking interface will be parsed out (it will try a CIDR mask first and if
+ that filas, fall back to a netmask prefix).
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_PARSE_IPV4_NETMASK_FULL">VSTR_FLAG_PARSE_IPV4_NETMASK_FULL</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag changes the parsing so that the function will return an error if a
+ non full ipv4 NETMASK mask is given (Ie. 127.0.0.1/255.0 is an ipv4 with a non
+ full ipv4 netmask). If this flag isn't given the missing numbers are assumed to
+ be zero.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_PARSE_IPV4_ONLY">VSTR_FLAG_PARSE_IPV4_ONLY</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag changes the parsing so that the function will return an error if the
+ entire string isn't used to contain the ipv4 and option mask.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  When this error code is returned, the ip address is still parsed out and as
+ usable as if no error had occurred.
+
+
+</td></tr></table><table width="90%"><tr><td class="sect"><h2><a id="Constants%20passed%20to%20vstr_parse_ipv6%28%29">Constants passed to
+			 	<a id="vstr_parse_ipv6()"><a href="functions#vstr_parse_ipv6%28%29">vstr_parse_ipv6()</a></a>
+
+		      </a></h2>
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_PARSE_IPV6_ERR_NONE">VSTR_TYPE_PARSE_IPV6_ERR_NONE</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This error code has the value 0, and means that no error occurred parsing the
+ ipv6 address from the <a href="structs#struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">Vstr string</a>.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_PARSE_IPV6_ERR_IPV6_OOB">VSTR_TYPE_PARSE_IPV6_ERR_IPV6_OOB</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This error code means that the numbers for the ipv6 address in the
+ <a href="structs#struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">Vstr string</a> where out of bounds.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_PARSE_IPV6_ERR_IPV6_FULL">VSTR_TYPE_PARSE_IPV6_ERR_IPV6_FULL</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This error code means that the ipv6 address wasn't full (Ie. FFFF/8 is a non
+ full ipv6 address with CIDR mask).
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_PARSE_IPV6_ERR_ONLY">VSTR_TYPE_PARSE_IPV6_ERR_ONLY</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This error code means that the ipv6 address, and option mask, wasn't the only
+ thing in the <a href="structs#struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">Vstr string</a>.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  When this error code is returned, the ip address is still parsed out and as
+ usable as if no error had occurred.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_PARSE_IPV6_ERR_CIDR_OOB">VSTR_TYPE_PARSE_IPV6_ERR_CIDR_OOB</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This error code means that the numbers for the ipv6 CIDR mask in the
+ <a href="structs#struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">Vstr string</a> where out of bounds.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_PARSE_IPV6_ERR_CIDR_FULL">VSTR_TYPE_PARSE_IPV6_ERR_CIDR_FULL</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This error code means that the ipv6 CIDR mask wasn't full (Ie. F::1/ is
+ an ipv6 address with a non full ipv6 CIDR mask).
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_PARSE_IPV6_ERR_IPV6_NULL">VSTR_TYPE_PARSE_IPV6_ERR_IPV6_NULL</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This error code means that there is more than one &quot;NULL&quot; point in the
+ ipv6 address, for example "F::E::1" has two NULL points and is impossible
+ to parse.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_PARSE_IPV6_DEF">VSTR_FLAG_PARSE_IPV6_DEF</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag is 0, and is generally only used as programmer documentation to mean
+ no flags are applied to this function.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_PARSE_IPV6_LOCAL">VSTR_FLAG_PARSE_IPV6_LOCAL</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag changes the parsing from ASCII numbers into &quot;local&quot; numbers
+ (whatever is generated by '0 .. '9' by the host compiler). This can be ignored
+ by anyone not using an EBCDIC character set, or something equally weird.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_PARSE_IPV6_CIDR">VSTR_FLAG_PARSE_IPV6_CIDR</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag allows the parsing out of a CIDR mask, if one is present.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_PARSE_IPV6_CIDR_FULL">VSTR_FLAG_PARSE_IPV6_CIDR_FULL</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag changes the parsing so that the function will return an error if a
+ non full ipv6 CIDR mask is given (Ie. ::1/ is an ipv6 with a non full
+ ipv6 CIDR mask). If this flag isn't given the missing CIDR mask is assumed to
+ be 32.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_PARSE_IPV6_ONLY">VSTR_FLAG_PARSE_IPV6_ONLY</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag changes the parsing so that the function will return an error if the
+ entire string isn't used to contain the ipv6 and option mask.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  When this error code is returned, the ip address is still parsed out and as
+ usable as if no error had occurred.
+
+
+</td></tr></table><table width="90%"><tr><td class="sect"><h2><a id="Constants%20used%20with%20the%20custom%20output%20formatter%20for%20ipv6%20addresses">Constants used with the custom output formatter for ipv6 addresses</a></h2>
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_SC_FMT_CB_IPV6_ALIGNED">VSTR_TYPE_SC_FMT_CB_IPV6_ALIGNED</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag outputs the ipv6 address as 8 groups of 4 hexadecimal values.
+ For example "FFFF:0EEE:00DD:000C:0000:0000:0001:0002" would be an ipv6 address
+ output in aligned mode.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_SC_FMT_CB_IPV6_COMPACT">VSTR_TYPE_SC_FMT_CB_IPV6_COMPACT</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag outputs the ipv6 address in as small a representation as possible,
+ for example "FFFF:EEE:DD:C::1:2" would be an ipv6 address
+ output in compact mode.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_SC_FMT_CB_IPV6_STD">VSTR_TYPE_SC_FMT_CB_IPV6_STD</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag outputs the ipv6 address as 8 groups of hexadecimal numbers between
+ 0 and FFFF, this is the format mostly used in standards. documents,
+ for example "FFFF:EEE:DD:C:0:0:1:2" would be an ipv6 address
+ output in compact mode.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_SC_FMT_CB_IPV6_IPV4_ALIGNED">VSTR_TYPE_SC_FMT_CB_IPV6_IPV4_ALIGNED</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag outputs the ipv6 address in the same way as
+ <a href="constants#VSTR_TYPE_SC_FMT_CB_IPV6_ALIGNED">VSTR_TYPE_SC_FMT_CB_IPV6_ALIGNED</a>, except that the last 2 groups of hexadecimal
+ values (the last 4 octets) are replaced with an ipv4 address.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_SC_FMT_CB_IPV6_IPV4_COMPACT">VSTR_TYPE_SC_FMT_CB_IPV6_IPV4_COMPACT</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag outputs the ipv6 address in the same way as
+ <a href="constants#VSTR_TYPE_SC_FMT_CB_IPV6_COMPACT">VSTR_TYPE_SC_FMT_CB_IPV6_COMPACT</a>, except that the last 2 groups of hexadecimal
+ values (the last 4 octets) are replaced with an ipv4 address.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_SC_FMT_CB_IPV6_IPV4_STD">VSTR_TYPE_SC_FMT_CB_IPV6_IPV4_STD</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag outputs the ipv6 address in the same way as
+ <a href="constants#VSTR_TYPE_SC_FMT_CB_IPV6_STD">VSTR_TYPE_SC_FMT_CB_IPV6_STD</a>, except that the last 2 groups of hexadecimal
+ values (the last 4 octets) are replaced with an ipv4 address.
+
+
+</td></tr></table><table width="90%"><tr><td class="sect"><h2><a id="Constants%20passed%20to%20vstr_split_buf%28%29%2c%20vstr_split_cstr_buf%28%29%2c%20VSTR_SPLIT_CSTR_BUF%28%29%2c%20vstr_split_chrs%28%29%2c%20vstr_split_cstr_chrs%28%29%20and%20VSTR_SPLIT_CSTR_CHRS%28%29">Constants passed to
+			 	<a id="vstr_split_buf()"><a href="functions#vstr_split_buf%28%29">vstr_split_buf()</a></a>
+
+		      ,
+			 	<a id="vstr_split_cstr_buf()"><a href="functions#vstr_split_cstr_buf%28%29">vstr_split_cstr_buf()</a></a>
+
+		      , <a href="functions#VSTR_SPLIT_CSTR_BUF%28%29">VSTR_SPLIT_CSTR_BUF()</a>,
+			 	<a id="vstr_split_chrs()"><a href="functions#vstr_split_chrs%28%29">vstr_split_chrs()</a></a>
+
+		      ,
+			 	<a id="vstr_split_cstr_chrs()"><a href="functions#vstr_split_cstr_chrs%28%29">vstr_split_cstr_chrs()</a></a>
+
+		       and <a href="functions#VSTR_SPLIT_CSTR_CHRS%28%29">VSTR_SPLIT_CSTR_CHRS()</a></a></h2>
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_SPLIT_DEF">VSTR_FLAG_SPLIT_DEF</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag is 0, and is generally only used as programmer documentation to mean
+ no flags are applied to this function.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_SPLIT_BEG_NULL">VSTR_FLAG_SPLIT_BEG_NULL</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag allows the split functions to add sections at the beginning of the
+ input that have a null string before the match. For example the input
+ "::abcd:..." split on ":" would have 2 sections at positions 1 and 2
+ of length 0, without this flag the first section would be at position 3 with
+ length 4.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_SPLIT_MID_NULL">VSTR_FLAG_SPLIT_MID_NULL</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag allows the split functions to add sections in the middle of the
+ input that have a null string between 2 matches. For example the input
+ "a::abcd:..." split on ":" would have the second section at position 3
+ of length 0, without this flag the second section would be at position 4 of
+ length 4.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_SPLIT_END_NULL">VSTR_FLAG_SPLIT_END_NULL</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag allows the split functions to add sections at the end of the
+ input that have a null string after a match. For example the input
+ "a::" split on ":" would have the second section at position 3
+ of length 0, without this flag there would only be one section added.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_SPLIT_POST_NULL">VSTR_FLAG_SPLIT_POST_NULL</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag allows the split functions to add a final post section of the
+ input that ends with a match. For example the input "a:" split on ":" would
+ have the second section at position 3 (outside the range of the input)
+ of length 0, without this flag there would only be one section added.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_SPLIT_NO_RET">VSTR_FLAG_SPLIT_NO_RET</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag allows the split functions to return 1, when the <a href="structs#struct%20Vstr_sects%20%28aka%2e%20Vstr%20sections%29">Vstr sections</a>
+ doesn't have any more room. Without the flag the split functions would
+ calculate the number of splits that would have been added if there was room
+ in the <a href="structs#struct%20Vstr_sects%20%28aka%2e%20Vstr%20sections%29">Vstr sections</a>.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_SPLIT_REMAIN">VSTR_FLAG_SPLIT_REMAIN</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag changes the split functions, when used with a limit, so that the
+ last section added is for the remainder of the input.
+
+
+</td></tr></table><table width="90%"><tr><td class="sect"><h2><a id="Constants%20passed%20to%20vstr_sects_foreach%28%29">Constants passed to
+			 	<a id="vstr_sects_foreach()"><a href="functions#vstr_sects_foreach%28%29">vstr_sects_foreach()</a></a>
+
+		      </a></h2>
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_SECTS_FOREACH_DEF">VSTR_FLAG_SECTS_FOREACH_DEF</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag is 0, and is generally only used as programmer documentation to mean
+ no flags are applied to this function.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_SECTS_FOREACH_BACKWARD">VSTR_FLAG_SECTS_FOREACH_BACKWARD</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag changes the foreach function so that it goes through the sections
+ backward (from the end to the beginning).
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_FLAG_SECTS_FOREACH_ALLOW_NULL">VSTR_FLAG_SECTS_FOREACH_ALLOW_NULL</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag changes the foreach function so that it calls the foreach callback
+ on sections of null length (a non zero position with a zero length).
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_SECTS_FOREACH_DEF">VSTR_TYPE_SECTS_FOREACH_DEF</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This return value is 0, and is generally only used as programmer
+ documentation to mean nothing special should happen on return from the
+ callback.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_SECTS_FOREACH_DEL">VSTR_TYPE_SECTS_FOREACH_DEL</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This return value tells the foreach function to delete the current section
+ before the next callback is called.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_SECTS_FOREACH_RET">VSTR_TYPE_SECTS_FOREACH_RET</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This return value tells the foreach function to return immediately (it does
+ the same thing as a break statement in a C for loop.
+
+
+</td></tr></table><table width="90%"><tr><td class="sect"><h2><a id="Constants%20used%20with%20the%20callback%20from%20vstr_cache_add_cb%28%29">Constants used with the callback from <a href="functions#vstr_cache_add_cb%28%29">vstr_cache_add_cb()</a></a></h2>
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_CACHE_ADD">VSTR_TYPE_CACHE_ADD</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This type means that an add operation has just happened on the <a href="structs#struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">Vstr string</a>,
+ the position and length arguments are as taken from one of the vstr_add_*
+ functions.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_CACHE_DEL">VSTR_TYPE_CACHE_DEL</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This type means that a delete operation has just happened on the <a href="structs#struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">Vstr string</a>,
+ the position and length arguments are as taken from the <a href="functions#vstr_del%28%29">vstr_del()</a> function.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_CACHE_SUB">VSTR_TYPE_CACHE_SUB</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This type means that a substitute operation has just happened on the
+ <a href="structs#struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">Vstr string</a>, the position and length arguments are as taken from one of the
+ vstr_sub_* functions.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_CACHE_FREE">VSTR_TYPE_CACHE_FREE</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This type means that the data in the cache needs to be free()'d, the callback
+ should always return NULL when this type is passed in.
+</p><p>  The position and length arguments are undefined.
+
+
+</td></tr></table><table width="90%"><tr><td class="sect"><h2><a id="Constants%20passed%20to%20vstr_sc_mmap_fd%28%29%20and%20vstr_sc_mmap_file%28%29">Constants passed to
+			 	<a id="vstr_sc_mmap_fd()"><a href="functions#vstr_sc_mmap_fd%28%29">vstr_sc_mmap_fd()</a></a>
+
+		       and
+			 	<a id="vstr_sc_mmap_file()"><a href="functions#vstr_sc_mmap_file%28%29">vstr_sc_mmap_file()</a></a>
+
+		      </a></h2>
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_SC_MMAP_FD_ERR_NONE">VSTR_TYPE_SC_MMAP_FD_ERR_NONE</a>
+<br><strong>Constant: </strong> <a id="VSTR_TYPE_SC_MMAP_FILE_ERR_NONE">VSTR_TYPE_SC_MMAP_FILE_ERR_NONE</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This error code has the value 0, and means that no error occurred adding the
+ mapping into the <a href="structs#struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">Vstr string</a>.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_SC_MMAP_FILE_ERR_OPEN_ERRNO">VSTR_TYPE_SC_MMAP_FILE_ERR_OPEN_ERRNO</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This error code means that the call to open() returned -1, errno is set.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_SC_MMAP_FD_ERR_FSTAT_ERRNO">VSTR_TYPE_SC_MMAP_FD_ERR_FSTAT_ERRNO</a>
+<br><strong>Constant: </strong> <a id="VSTR_TYPE_SC_MMAP_FILE_ERR_FSTAT_ERRNO">VSTR_TYPE_SC_MMAP_FILE_ERR_FSTAT_ERRNO</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This error code means that the call to fstat() returned -1, errno is set.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_SC_MMAP_FD_ERR_MMAP_ERRNO">VSTR_TYPE_SC_MMAP_FD_ERR_MMAP_ERRNO</a>
+<br><strong>Constant: </strong> <a id="VSTR_TYPE_SC_MMAP_FILE_ERR_MMAP_ERRNO">VSTR_TYPE_SC_MMAP_FILE_ERR_MMAP_ERRNO</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This error code means that the call to mmap() returned -1, errno is set.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_SC_MMAP_FILE_ERR_CLOSE_ERRNO">VSTR_TYPE_SC_MMAP_FILE_ERR_CLOSE_ERRNO</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This error code means that the call to close() returned -1, errno is set.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  Even though this is an error, the mapping has already occurred and was
+ successful.
+</p><p>  If another error occurred (Eg. fstat()/mmap()), then any errors from close()
+ will be hidden.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_SC_MMAP_FD_ERR_MEM">VSTR_TYPE_SC_MMAP_FD_ERR_MEM</a>
+<br><strong>Constant: </strong> <a id="VSTR_TYPE_SC_MMAP_FILE_ERR_MEM">VSTR_TYPE_SC_MMAP_FILE_ERR_MEM</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This error code means that memory could not be allocated.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  To help the programer unify error paths base-&gt;conf-&gt;malloc_bad is set to
+ TRUE, and errno is set to ENOMEM.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_SC_MMAP_FD_ERR_TOO_LARGE">VSTR_TYPE_SC_MMAP_FD_ERR_TOO_LARGE</a>
+<br><strong>Constant: </strong> <a id="VSTR_TYPE_SC_MMAP_FILE_ERR_TOO_LARGE">VSTR_TYPE_SC_MMAP_FILE_ERR_TOO_LARGE</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This error code means that the memory mapping was too big to fit in the
+ <a href="structs#struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">Vstr string</a> (with LFS extensions files are 63 bits, while on a 32 bit
+ computer memory space is still only 32 bits so this isn't a corner case).
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  To help the programer unify error paths errno is set to EFBIG.
+
+
+</td></tr></table><table width="90%"><tr><td class="sect"><h2><a id="Constants%20passed%20to%20vstr_sc_read_iov_fd%28%29%2c%20vstr_sc_read_len_fd%28%29%2c%20vstr_sc_read_iov_file%28%29%20and%20vstr_sc_read_len_file%28%29">Constants passed to
+			 	<a id="vstr_sc_read_iov_fd()"><a href="functions#vstr_sc_read_iov_fd%28%29">vstr_sc_read_iov_fd()</a></a>
+
+		      ,
+			 	<a id="vstr_sc_read_len_fd()"><a href="functions#vstr_sc_read_len_fd%28%29">vstr_sc_read_len_fd()</a></a>
+
+		      ,
+			 	<a id="vstr_sc_read_iov_file()"><a href="functions#vstr_sc_read_iov_file%28%29">vstr_sc_read_iov_file()</a></a>
+
+		       and
+			 	<a id="vstr_sc_read_len_file()"><a href="functions#vstr_sc_read_len_file%28%29">vstr_sc_read_len_file()</a></a>
+
+		      </a></h2>
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_SC_READ_FD_ERR_NONE">VSTR_TYPE_SC_READ_FD_ERR_NONE</a>
+<br><strong>Constant: </strong> <a id="VSTR_TYPE_SC_READ_FILE_ERR_NONE">VSTR_TYPE_SC_READ_FILE_ERR_NONE</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This error code has the value 0, and means that no error occurred adding the
+ read() data into the <a href="structs#struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">Vstr string</a>.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_SC_READ_FILE_ERR_OPEN_ERRNO">VSTR_TYPE_SC_READ_FILE_ERR_OPEN_ERRNO</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This error code means that the call to open() returned -1, errno is set.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_SC_READ_FD_ERR_FSTAT_ERRNO">VSTR_TYPE_SC_READ_FD_ERR_FSTAT_ERRNO</a>
+<br><strong>Constant: </strong> <a id="VSTR_TYPE_SC_READ_FILE_ERR_FSTAT_ERRNO">VSTR_TYPE_SC_READ_FILE_ERR_FSTAT_ERRNO</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This error code means that the call to fstat() returned -1, errno is set.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_SC_READ_FILE_ERR_SEEK_ERRNO">VSTR_TYPE_SC_READ_FILE_ERR_SEEK_ERRNO</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This error code means that the call to lseek() returned -1, errno is set.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_SC_READ_FD_ERR_READ_ERRNO">VSTR_TYPE_SC_READ_FD_ERR_READ_ERRNO</a>
+<br><strong>Constant: </strong> <a id="VSTR_TYPE_SC_READ_FILE_ERR_READ_ERRNO">VSTR_TYPE_SC_READ_FILE_ERR_READ_ERRNO</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This error code means that the call to readv() returned -1, errno is set.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_SC_READ_FILE_ERR_CLOSE_ERRNO">VSTR_TYPE_SC_READ_FILE_ERR_CLOSE_ERRNO</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This error code means that the call to close() returned -1, errno is set.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  Even though this is an error, the readv() has already occurred and was
+ successful.
+</p><p>  If another error occurred (Eg. fstat()/readv()), then any errors from close()
+ will be hidden.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_SC_READ_FD_ERR_EOF">VSTR_TYPE_SC_READ_FD_ERR_EOF</a>
+<br><strong>Constant: </strong> <a id="VSTR_TYPE_SC_READ_FILE_ERR_EOF">VSTR_TYPE_SC_READ_FILE_ERR_EOF</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This error code means that the call to readv() returned 0.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  If you pass 0 as the length to the read_*_file functions, you can still get
+ the _EOF error if the file is truncated while it is being read.
+</p><p>  To help the programer unify error paths errno is set to ENOSPC.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_SC_READ_FD_ERR_MEM">VSTR_TYPE_SC_READ_FD_ERR_MEM</a>
+<br><strong>Constant: </strong> <a id="VSTR_TYPE_SC_READ_FILE_ERR_MEM">VSTR_TYPE_SC_READ_FILE_ERR_MEM</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This error code means that memory could not be allocated.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  To help the programer unify error paths base-&gt;conf-&gt;malloc_bad is set to
+ TRUE, and errno is set to ENOMEM.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_SC_READ_FD_ERR_TOO_LARGE">VSTR_TYPE_SC_READ_FD_ERR_TOO_LARGE</a>
+<br><strong>Constant: </strong> <a id="VSTR_TYPE_SC_READ_FILE_ERR_TOO_LARGE">VSTR_TYPE_SC_READ_FILE_ERR_TOO_LARGE</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This error code means that the memory mapping was too big to fit in the
+ <a href="structs#struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">Vstr string</a> (with LFS extensions files are 63 bits, while on a 32 bit
+ computer memory space is still hard limited to 32 bits so this isn't a
+ corner case).
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  To help the programer unify error paths errno is set to EFBIG.
+
+
+</td></tr></table><table width="90%"><tr><td class="sect"><h2><a id="Constants%20passed%20to%20vstr_sc_write_fd%28%29%20and%20vstr_sc_write_file%28%29">Constants passed to
+			 	<a id="vstr_sc_write_fd()"><a href="functions#vstr_sc_write_fd%28%29">vstr_sc_write_fd()</a></a>
+
+		       and
+			 	<a id="vstr_sc_write_file()"><a href="functions#vstr_sc_write_file%28%29">vstr_sc_write_file()</a></a>
+
+		      </a></h2>
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_SC_WRITE_FD_ERR_NONE">VSTR_TYPE_SC_WRITE_FD_ERR_NONE</a>
+<br><strong>Constant: </strong> <a id="VSTR_TYPE_SC_WRITE_FILE_ERR_NONE">VSTR_TYPE_SC_WRITE_FILE_ERR_NONE</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This error code has the value 0, and means that no error occurred adding the
+ read() data into the <a href="structs#struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">Vstr string</a>.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_SC_WRITE_FILE_ERR_SEEK_ERRNO">VSTR_TYPE_SC_WRITE_FILE_ERR_SEEK_ERRNO</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This error code means that the call to lseek() returned -1, errno is set.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_SC_WRITE_FILE_ERR_OPEN_ERRNO">VSTR_TYPE_SC_WRITE_FILE_ERR_OPEN_ERRNO</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This error code means that the call to open() returned -1, errno is set.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_SC_WRITE_FD_ERR_WRITE_ERRNO">VSTR_TYPE_SC_WRITE_FD_ERR_WRITE_ERRNO</a>
+<br><strong>Constant: </strong> <a id="VSTR_TYPE_SC_WRITE_FILE_ERR_WRITE_ERRNO">VSTR_TYPE_SC_WRITE_FILE_ERR_WRITE_ERRNO</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This error code means that the call to writev() returned -1, errno is set.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_SC_WRITE_FILE_ERR_CLOSE_ERRNO">VSTR_TYPE_SC_WRITE_FILE_ERR_CLOSE_ERRNO</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This error code means that the call to close() returned -1, errno is set.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  Even though this is an error, the mapping has already occurred and happened
+ successfully.
+</p><p>  If another error occurred (Eg. writev()), then any errors from close() will be
+ hidden.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_SC_WRITE_FD_ERR_MEM">VSTR_TYPE_SC_WRITE_FD_ERR_MEM</a>
+<br><strong>Constant: </strong> <a id="VSTR_TYPE_SC_WRITE_FILE_ERR_MEM">VSTR_TYPE_SC_WRITE_FILE_ERR_MEM</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This error code means that memory could not be allocated.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  To help the programer unify error paths base-&gt;conf-&gt;malloc_bad is set to
+ TRUE, and errno is set to ENOMEM.
+
+
+</td></tr></table><table width="90%"><tr><td class="sect"><h2><a id="Constants%20passed%20to%20vstr_cntl_base%28%29">Constants passed to
+			 	<a id="vstr_cntl_base()"><a href="functions#vstr_cntl_base%28%29">vstr_cntl_base()</a></a>
+
+		      </a></h2>
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_BASE_GET_CONF">VSTR_CNTL_BASE_GET_CONF</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Return <a href="structs#struct%20Vstr_conf%20%28aka%2e%20Vstr%20configuration%29">Vstr configuration</a><br>Type<strong>[1]</strong>: struct Vstr_conf **
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option will get the <a href="structs#struct%20Vstr_conf%20%28aka%2e%20Vstr%20configuration%29">Vstr configuration</a> for the <a href="structs#struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">Vstr string</a>
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_BASE_SET_CONF">VSTR_CNTL_BASE_SET_CONF</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: <a href="structs#struct%20Vstr_conf%20%28aka%2e%20Vstr%20configuration%29">Vstr configuration</a><br>Type<strong>[1]</strong>: struct Vstr_conf *
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option will set the <a href="structs#struct%20Vstr_conf%20%28aka%2e%20Vstr%20configuration%29">Vstr configuration</a> for the <a href="structs#struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">Vstr string</a>.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  This will only return successfully if either the <a href="structs#struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">Vstr string</a> is empty, or
+ the Vstr configurations have the same value for the _NUM_BUF_SZ attribute and
+ the new configuration has the same caches registered. See <a href="functions#vstr_swap_cache%28%29">vstr_swap_cache()</a>
+ for a function that tries to do what you want.
+</p><p>  If the <a href="structs#struct%20Vstr_conf%20%28aka%2e%20Vstr%20configuration%29">Vstr configuration</a> (Parameter[1]) is NULL, then the default
+ <a href="structs#struct%20Vstr_conf%20%28aka%2e%20Vstr%20configuration%29">Vstr configuration</a> will be used.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_BASE_GET_FLAG_HAVE_CACHE">VSTR_CNTL_BASE_GET_FLAG_HAVE_CACHE</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Returns value of flag<br>Type<strong>[1]</strong>: int *
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option lets you know if the <a href="structs#struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">Vstr string</a> can cache data, this can only
+ be controlled using the <a href="constants#VSTR_CNTL_CONF_GET_FLAG_ALLOC_CACHE">VSTR_CNTL_CONF_GET_FLAG_ALLOC_CACHE</a> flag before
+ allocation.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_BASE_GET_TYPE_GRPALLOC_CACHE">VSTR_CNTL_BASE_GET_TYPE_GRPALLOC_CACHE</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Returns type of group malloc (VSTR_TYPE_CNTL_CONF_GRPALLOC_*)<br>Type<strong>[1]</strong>: unsigned int *
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option will get the type of the group allocation for the Vstr base,
+ this can only be controlled using the <a href="constants#VSTR_CNTL_CONF_SET_TYPE_GRPALLOC_CACHE">VSTR_CNTL_CONF_SET_TYPE_GRPALLOC_CACHE</a>
+ type before allocation.
+
+
+</td></tr></table><table width="90%"><tr><td class="sect"><h2><a id="Constants%20passed%20to%20vstr_cntl_conf%28%29">Constants passed to
+			 	<a id="vstr_cntl_conf()"><a href="functions#vstr_cntl_conf%28%29">vstr_cntl_conf()</a></a>
+
+		      </a></h2>
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_CONF_GET_NUM_BUF_SZ">VSTR_CNTL_CONF_GET_NUM_BUF_SZ</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Returns allocated size of data portion of _BUF nodes<br>Type<strong>[1]</strong>: unsigned int *
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option will get the size of the allocated portion of a _BUF type node.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  The default value of this attribute is currently 48, the reason for this is
+ that 8 bytes are used for generic node storage and 8 more bytes are overhead
+ used as in glibc's malloc() implementation. This means that 64 bytes are
+ allocated for each node of data. Looking at the data given in the size_cmp 
+ spreadsheet and the ex_perf_nodesize example my guess is that node sizes above
+ 512 probably gain very little, while consumiung more space.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_CONF_SET_NUM_BUF_SZ">VSTR_CNTL_CONF_SET_NUM_BUF_SZ</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Allocated size of data portion of _BUF nodes<br>Type<strong>[1]</strong>: unsigned int
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option will set the size of the allocated portion of a _BUF type node.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  This will fail if Vstr strings are using the <a href="structs#struct%20Vstr_conf%20%28aka%2e%20Vstr%20configuration%29">Vstr configuration</a>.
+</p><p>  The value cannot be higher than <a href="constants#VSTR_MAX_NODE_BUF">VSTR_MAX_NODE_BUF</a>.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_CONF_GET_NUM_IOV_MIN_ALLOC">VSTR_CNTL_CONF_GET_NUM_IOV_MIN_ALLOC</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Returns size of minimum iovec allocation<br>Type<strong>[1]</strong>: unsigned int *
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option will get the size of the minimum allocation to do when expanding
+ the iovec cache.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_CONF_SET_NUM_IOV_MIN_ALLOC">VSTR_CNTL_CONF_SET_NUM_IOV_MIN_ALLOC</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Size of minimum iovec allocation<br>Type<strong>[1]</strong>: unsigned int
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option will set the size of the minimum allocation to do when expanding
+ the iovec cache.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_CONF_GET_NUM_IOV_MIN_OFFSET">VSTR_CNTL_CONF_GET_NUM_IOV_MIN_OFFSET</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Returns post allocation offset for iovec cache<br>Type<strong>[1]</strong>: unsigned int *
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option will get the offset on the iovec cache after an iovec allocation.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_CONF_SET_NUM_IOV_MIN_OFFSET">VSTR_CNTL_CONF_SET_NUM_IOV_MIN_OFFSET</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Post allocation offset for iovec cache<br>Type<strong>[1]</strong>: unsigned int
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option will set the offset on the iovec cache after an iovec allocation.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_CONF_GET_NUM_REF">VSTR_CNTL_CONF_GET_NUM_REF</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Returns number of references<br>Type<strong>[1]</strong>: unsigned int *
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option will get the number of references to the <a href="structs#struct%20Vstr_conf%20%28aka%2e%20Vstr%20configuration%29">Vstr configuration</a>.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_CONF_SET_LOC_CSTR_AUTO_NAME_NUMERIC">VSTR_CNTL_CONF_SET_LOC_CSTR_AUTO_NAME_NUMERIC</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Name of system LC_NUMERIC locale<br>Type<strong>[1]</strong>: const char *
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option will set the LC_NUMERIC variables in the <a href="structs#struct%20Vstr_conf%20%28aka%2e%20Vstr%20configuration%29">Vstr configuration</a> to be
+ those specified in the system locale (Parameter[1]).
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  Passing NULL as the name will use the current system LC_NUMERIC locale.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_CONF_GET_LOC_CSTR_NAME_NUMERIC">VSTR_CNTL_CONF_GET_LOC_CSTR_NAME_NUMERIC</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Returns name of current LC_NUMERIC locale.<br>Type<strong>[1]</strong>: const char **
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option will get the name of the LC_NUMERIC locale.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_CONF_SET_LOC_CSTR_NAME_NUMERIC">VSTR_CNTL_CONF_SET_LOC_CSTR_NAME_NUMERIC</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Name of LC_NUMERIC locale in <a href="structs#struct%20Vstr_conf%20%28aka%2e%20Vstr%20configuration%29">Vstr configuration</a><br>Type<strong>[1]</strong>: const char *
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option will set the name of the LC_NUMERIC locale.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_CONF_GET_LOC_CSTR_DEC_POINT">VSTR_CNTL_CONF_GET_LOC_CSTR_DEC_POINT</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Returns decimal point C string, for default base<br>Type<strong>[1]</strong>: const char **
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option will get the value of the decimal point LC_NUMERIC locale
+ variable.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_CONF_SET_LOC_CSTR_DEC_POINT">VSTR_CNTL_CONF_SET_LOC_CSTR_DEC_POINT</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Decimal point C string, for default base<br>Type<strong>[1]</strong>: const char *
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option will set the value of the decimal point LC_NUMERIC locale
+ variable.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_CONF_GET_LOC_CSTR_THOU_SEP">VSTR_CNTL_CONF_GET_LOC_CSTR_THOU_SEP</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Returns thousands separator C string, for default base<br>Type<strong>[1]</strong>: const char **
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option will get the value of the thousands separator LC_NUMERIC locale
+ variable.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_CONF_SET_LOC_CSTR_THOU_SEP">VSTR_CNTL_CONF_SET_LOC_CSTR_THOU_SEP</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Thousands separator C string, for default base<br>Type<strong>[1]</strong>: const char *
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option will set the value of the thousands separator LC_NUMERIC locale
+ variable.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_CONF_GET_LOC_CSTR_THOU_GRP">VSTR_CNTL_CONF_GET_LOC_CSTR_THOU_GRP</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Returns value locale thousands grouping, for the default base<br>Type<strong>[1]</strong>: const char **
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option will get the value of the thousands grouping LC_NUMERIC locale
+ variable.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_CONF_SET_LOC_CSTR_THOU_GRP">VSTR_CNTL_CONF_SET_LOC_CSTR_THOU_GRP</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Value locale thousands grouping, for the default base<br>Type<strong>[1]</strong>: const char *
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option will set the value of the thousands grouping LC_NUMERIC locale
+ variable.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_CONF_GET_FLAG_IOV_UPDATE">VSTR_CNTL_CONF_GET_FLAG_IOV_UPDATE</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Returns value of flag<br>Type<strong>[1]</strong>: int *
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option will return the status of the flag that allows the vstr functions
+ to update the iovec cache when doing add/del operations on Vstr strings.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_CONF_SET_FLAG_IOV_UPDATE">VSTR_CNTL_CONF_SET_FLAG_IOV_UPDATE</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Value of flag<br>Type<strong>[1]</strong>: int
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option will allow the vstr functions to update the iovec cache when
+ doing add/del operations on Vstr strings.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_CONF_GET_FLAG_DEL_SPLIT">VSTR_CNTL_CONF_GET_FLAG_DEL_SPLIT</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Returns value of flag<br>Type<strong>[1]</strong>: int *
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option will return the status of the flag that allows the vstr functions
+ to split _BUF nodes on del operations to Vstr strings.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_CONF_SET_FLAG_DEL_SPLIT">VSTR_CNTL_CONF_SET_FLAG_DEL_SPLIT</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Value of flag<br>Type<strong>[1]</strong>: int
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option will allow the vstr functions to split _BUF nodes on a
+ del operations to Vstr strings.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_CONF_GET_FLAG_ALLOC_CACHE">VSTR_CNTL_CONF_GET_FLAG_ALLOC_CACHE</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Returns value of flag<br>Type<strong>[1]</strong>: int *
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option will return the status of the flag that allows Vstr strings to
+ cache data.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_CONF_SET_FLAG_ALLOC_CACHE">VSTR_CNTL_CONF_SET_FLAG_ALLOC_CACHE</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Value of flag<br>Type<strong>[1]</strong>: int
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option will allow the Vstr strings made from the <a href="structs#struct%20Vstr_conf%20%28aka%2e%20Vstr%20configuration%29">Vstr configuration</a> to
+ cache data.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  If this option is turned off <a href="functions#vstr_cache_add_cb%28%29">vstr_cache_add_cb()</a> will not work on Vstr strings
+ made from the the <a href="structs#struct%20Vstr_conf%20%28aka%2e%20Vstr%20configuration%29">Vstr configuration</a>. However each <a href="structs#struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">Vstr string</a> will become
+ smaller due to the lack of cache.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_CONF_GET_FMT_CHAR_ESC">VSTR_CNTL_CONF_GET_FMT_CHAR_ESC</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Returns value of escape character for custom format specifiers<br>Type<strong>[1]</strong>: char *
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option will return the character used for specifying custom format
+ specifiers in the <a href="functions#vstr_add_vfmt%28%29">vstr_add_vfmt()</a> function.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_CONF_SET_FMT_CHAR_ESC">VSTR_CNTL_CONF_SET_FMT_CHAR_ESC</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Value of escape character for custom format specifiers<br>Type<strong>[1]</strong>: int
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option will allow the Vstr strings using the <a href="structs#struct%20Vstr_conf%20%28aka%2e%20Vstr%20configuration%29">Vstr configuration</a> to
+ use custom format specifiers in the <a href="functions#vstr_fmt_vfmt%28%29">vstr_fmt_vfmt()</a> function.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  If this option is set to 0 ('\0') then <a href="functions#vstr_fmt_vfmt%28%29">vstr_fmt_vfmt()</a> acts like
+ <a href="functions#vstr_fmt_vsysfmt%28%29">vstr_fmt_vsysfmt()</a>.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_CONF_GET_NUM_SPARE_BUF">VSTR_CNTL_CONF_GET_NUM_SPARE_BUF</a>
+<br><strong>Constant: </strong> <a id="VSTR_CNTL_CONF_GET_NUM_SPARE_NON">VSTR_CNTL_CONF_GET_NUM_SPARE_NON</a>
+<br><strong>Constant: </strong> <a id="VSTR_CNTL_CONF_GET_NUM_SPARE_PTR">VSTR_CNTL_CONF_GET_NUM_SPARE_PTR</a>
+<br><strong>Constant: </strong> <a id="VSTR_CNTL_CONF_GET_NUM_SPARE_REF">VSTR_CNTL_CONF_GET_NUM_SPARE_REF</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Returns number of spare nodes to have for the specified type<br>Type<strong>[1]</strong>: unsigned int *
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option gets the current number of spare nodes of the specified type.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_CONF_SET_NUM_SPARE_BUF">VSTR_CNTL_CONF_SET_NUM_SPARE_BUF</a>
+<br><strong>Constant: </strong> <a id="VSTR_CNTL_CONF_SET_NUM_SPARE_NON">VSTR_CNTL_CONF_SET_NUM_SPARE_NON</a>
+<br><strong>Constant: </strong> <a id="VSTR_CNTL_CONF_SET_NUM_SPARE_PTR">VSTR_CNTL_CONF_SET_NUM_SPARE_PTR</a>
+<br><strong>Constant: </strong> <a id="VSTR_CNTL_CONF_SET_NUM_SPARE_REF">VSTR_CNTL_CONF_SET_NUM_SPARE_REF</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Number of spare nodes to have for the specified type<br>Type<strong>[1]</strong>: unsigned int
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option is will set the number of spare nodes of the specified type,
+ by calling either <a href="functions#vstr_make_spare_nodes%28%29">vstr_make_spare_nodes()</a> or <a href="functions#vstr_free_spare_nodes%28%29">vstr_free_spare_nodes()</a>.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  When the value specified is higher and it calls <a href="functions#vstr_make_spare_nodes%28%29">vstr_make_spare_nodes()</a> then
+ a return value of FALSE means that there was a malloc error, just as if you
+ called <a href="functions#vstr_make_spare_nodes%28%29">vstr_make_spare_nodes()</a> directly.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_CONF_GET_FLAG_ATOMIC_OPS">VSTR_CNTL_CONF_GET_FLAG_ATOMIC_OPS</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Returns value of flag<br>Type<strong>[1]</strong>: int *
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option will return the status of the flag that makes the vstr functions
+ do atomic alterations to the string data. If the flag is set then all functions
+ will either return successfully, or not alter the data of the vstr from the
+ point of view of <a href="functions#vstr_cmp%28%29">vstr_cmp()</a>.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  This is mainly a speedup to the vstr_sub_*() functions and the functions that
+ use them, like vstr_conv_*(). It is true by default, so all function
+ operations are atomic.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_CONF_SET_FLAG_ATOMIC_OPS">VSTR_CNTL_CONF_SET_FLAG_ATOMIC_OPS</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Value of flag<br>Type<strong>[1]</strong>: int
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option will set the status of the flag that makes the vstr functions
+ do atomic alterations to the string data. If the flag is set then all functions
+ will either return successfully, or not alter the data of the vstr from the
+ point of view of <a href="functions#vstr_cmp%28%29">vstr_cmp()</a>.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  This is mainly a speedup to the vstr_sub_*() functions and the functions that
+ use them, like vstr_conv_*(). It is true by default, so all function
+ operations are atomic.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_CONF_SET_NUM_RANGE_SPARE_BUF">VSTR_CNTL_CONF_SET_NUM_RANGE_SPARE_BUF</a>
+<br><strong>Constant: </strong> <a id="VSTR_CNTL_CONF_SET_NUM_RANGE_SPARE_NON">VSTR_CNTL_CONF_SET_NUM_RANGE_SPARE_NON</a>
+<br><strong>Constant: </strong> <a id="VSTR_CNTL_CONF_SET_NUM_RANGE_SPARE_PTR">VSTR_CNTL_CONF_SET_NUM_RANGE_SPARE_PTR</a>
+<br><strong>Constant: </strong> <a id="VSTR_CNTL_CONF_SET_NUM_RANGE_SPARE_REF">VSTR_CNTL_CONF_SET_NUM_RANGE_SPARE_REF</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Minimum number of spare nodes to have for the specified type<br>Type<strong>[1]</strong>: unsigned int
+</td></tr><tr><td>Parameter<strong>[2]</strong>: Maximum number of spare nodes to have for the specified type<br>Type<strong>[2]</strong>: unsigned int
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option will make the number of spare nodes of the specified type fit
+ into the range given, by calling either <a href="functions#vstr_make_spare_nodes%28%29">vstr_make_spare_nodes()</a> or
+ <a href="functions#vstr_free_spare_nodes%28%29">vstr_free_spare_nodes()</a>.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  When the value specified is higher it calls <a href="functions#vstr_make_spare_nodes%28%29">vstr_make_spare_nodes()</a> at which
+ point a return value of FALSE means that there was a malloc error, just as if
+ you called <a href="functions#vstr_make_spare_nodes%28%29">vstr_make_spare_nodes()</a> directly.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_CONF_GET_NUM_SPARE_BASE">VSTR_CNTL_CONF_GET_NUM_SPARE_BASE</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Returns number of spare Vstr_base objects<br>Type<strong>[1]</strong>: unsigned int *
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option gets the current number of spare Vstr_base objects.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_CONF_SET_NUM_SPARE_BASE">VSTR_CNTL_CONF_SET_NUM_SPARE_BASE</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Number of spare base objects to have<br>Type<strong>[1]</strong>: unsigned int
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option is will set the number of spare nodes of the specified type.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  When the value specified is higher it has to create spare base objects
+ at which point a return value of FALSE means that there was a malloc error,
+ just as if you called <a href="functions#vstr_make_base%28%29">vstr_make_base()</a> directly and that had to create them.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_CONF_SET_NUM_RANGE_SPARE_BASE">VSTR_CNTL_CONF_SET_NUM_RANGE_SPARE_BASE</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Minimum number of spare base objects to have<br>Type<strong>[1]</strong>: unsigned int
+</td></tr><tr><td>Parameter<strong>[2]</strong>: Maximum number of spare base objects to have<br>Type<strong>[2]</strong>: unsigned int
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option will make the number of spare base objects fit into the range
+ given, by calling either creating spare base objects or destroying them.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  When the value specified is higher it has to creates spare base objects
+ at which point a return value of FALSE means that there was a malloc error,
+ just as if you called <a href="functions#vstr_make_base%28%29">vstr_make_base()</a> directly and that had to create them.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_CONF_GET_TYPE_GRPALLOC_CACHE">VSTR_CNTL_CONF_GET_TYPE_GRPALLOC_CACHE</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Returns type of group malloc (VSTR_TYPE_CNTL_CONF_GRPALLOC_*)<br>Type<strong>[1]</strong>: unsigned int *
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option will get the type of the group allocation that a <a href="functions#vstr_make_base%28%29">vstr_make_base()</a>
+ will create with this configuration.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_CONF_SET_TYPE_GRPALLOC_CACHE">VSTR_CNTL_CONF_SET_TYPE_GRPALLOC_CACHE</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Type of group malloc (VSTR_TYPE_CNTL_CONF_GRPALLOC_*)<br>Type<strong>[1]</strong>: unsigned int
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option will set the type of the group allocation that a <a href="functions#vstr_make_base%28%29">vstr_make_base()</a>
+ will create with this configuration.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  If this call changes the type of group malloc to perform, then all current
+ spare base objects will have to be deleted. And future base objects of the old
+ type will be directly free'd.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_CONF_GET_LOC_REF_NAME_NUMERIC">VSTR_CNTL_CONF_GET_LOC_REF_NAME_NUMERIC</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Returns Vstr memory reference to numeric locale name C string<br>Type<strong>[1]</strong>: struct Vstr_ref **
+</td></tr><tr><td>Parameter<strong>[2]</strong>: Returns length of Vstr memory reference<br>Type<strong>[2]</strong>: size_t *
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option will get the value of the name of the LC_NUMERIC locale
+ configuration.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_CONF_SET_LOC_REF_NAME_NUMERIC">VSTR_CNTL_CONF_SET_LOC_REF_NAME_NUMERIC</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Vstr memory reference to numeric locale name C string<br>Type<strong>[1]</strong>: struct Vstr_ref *
+</td></tr><tr><td>Parameter<strong>[2]</strong>: Length of Vstr memory reference<br>Type<strong>[2]</strong>: size_t
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option will set the value of the name of the LC_NUMERIC locale
+ configuration.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  The library takes a reference to the memory reference provided, so if you
+ are finished with it you need to remove your reference.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_CONF_GET_LOC_REF_DEC_POINT">VSTR_CNTL_CONF_GET_LOC_REF_DEC_POINT</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Number base of locale information<br>Type<strong>[1]</strong>: unsigned int
+</td></tr><tr><td>Parameter<strong>[2]</strong>: Returns Vstr memory reference to decimal point C string<br>Type<strong>[2]</strong>: struct Vstr_ref **
+</td></tr><tr><td>Parameter<strong>[3]</strong>: Returns length of Vstr memory reference<br>Type<strong>[3]</strong>: size_t *
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option will get the value of the decimal point LC_NUMERIC locale
+ variable.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_CONF_SET_LOC_REF_DEC_POINT">VSTR_CNTL_CONF_SET_LOC_REF_DEC_POINT</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Number base of locale information<br>Type<strong>[1]</strong>: unsigned int
+</td></tr><tr><td>Parameter<strong>[2]</strong>: Vstr memory reference to decimal point C string<br>Type<strong>[2]</strong>: struct Vstr_ref *
+</td></tr><tr><td>Parameter<strong>[3]</strong>: Length of Vstr memory reference<br>Type<strong>[3]</strong>: size_t
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option will set the value of the decimal point LC_NUMERIC locale
+ variable.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  The library takes a reference to the memory reference provided, so if you
+ are finished with it you need to remove your reference.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_CONF_GET_LOC_REF_THOU_SEP">VSTR_CNTL_CONF_GET_LOC_REF_THOU_SEP</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Number base of locale information<br>Type<strong>[1]</strong>: unsigned int
+</td></tr><tr><td>Parameter<strong>[2]</strong>: Returns Vstr memory reference to thousands separator C string<br>Type<strong>[2]</strong>: struct Vstr_ref **
+</td></tr><tr><td>Parameter<strong>[3]</strong>: Returns length of Vstr memory reference<br>Type<strong>[3]</strong>: size_t *
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option will get the value of the thousands seperator LC_NUMERIC locale
+ variable.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_CONF_SET_LOC_REF_THOU_SEP">VSTR_CNTL_CONF_SET_LOC_REF_THOU_SEP</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Number base of locale information<br>Type<strong>[1]</strong>: unsigned int
+</td></tr><tr><td>Parameter<strong>[2]</strong>: Vstr memory reference to thousands separator C string<br>Type<strong>[2]</strong>: struct Vstr_ref *
+</td></tr><tr><td>Parameter<strong>[3]</strong>: Length of Vstr memory reference<br>Type<strong>[3]</strong>: size_t
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option will set the value of the thousands seperator LC_NUMERIC locale
+ variable.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  The library takes a reference to the memory reference provided, so if you
+ are finished with it you need to remove your reference.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_CONF_GET_LOC_REF_THOU_GRP">VSTR_CNTL_CONF_GET_LOC_REF_THOU_GRP</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Number base of locale information<br>Type<strong>[1]</strong>: unsigned int
+</td></tr><tr><td>Parameter<strong>[2]</strong>: Returns Vstr memory reference to thousands grouping C string<br>Type<strong>[2]</strong>: struct Vstr_ref **
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option will get the value of the thousands grouping LC_NUMERIC locale
+ variable.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_CONF_SET_LOC_REF_THOU_GRP">VSTR_CNTL_CONF_SET_LOC_REF_THOU_GRP</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Number base of locale information<br>Type<strong>[1]</strong>: unsigned int
+</td></tr><tr><td>Parameter<strong>[2]</strong>: Vstr memory reference to thousands grouping C string<br>Type<strong>[2]</strong>: struct Vstr_ref *
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option will set the value of the thousands grouping LC_NUMERIC locale
+ variable.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  The library takes a reference to the memory reference provided, so if you
+ are finished with it you need to remove your reference.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_CONF_GET_LOC_REF_NULL_PTR">VSTR_CNTL_CONF_GET_LOC_REF_NULL_PTR</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Returns Vstr memory reference to locale NULL pointer C string<br>Type<strong>[1]</strong>: struct Vstr_ref **
+</td></tr><tr><td>Parameter<strong>[2]</strong>: Returns length of Vstr memory reference<br>Type<strong>[2]</strong>: size_t *
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option will get the value of the locale NULL pointer
+ variable. This is what is printed when you pass NULL to "%s".
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_CONF_SET_LOC_REF_NULL_PTR">VSTR_CNTL_CONF_SET_LOC_REF_NULL_PTR</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Vstr memory reference to numeric locale NULL pointer C string<br>Type<strong>[1]</strong>: struct Vstr_ref *
+</td></tr><tr><td>Parameter<strong>[2]</strong>: Length of Vstr memory reference<br>Type<strong>[2]</strong>: size_t
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option will set the value of the locale NULL pointer
+ variable. This is what is printed when you pass NULL to "%s".
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  The library takes a reference to the memory reference provided, so if you
+ are finished with it you need to remove your reference.
+
+
+</td></tr></table><table width="90%"><tr><td class="sect"><h2><a id="Constants%20passed%20to%20vstr_cntl_opt%28%29">Constants passed to
+			 	<a id="vstr_cntl_opt()"><a href="functions#vstr_cntl_opt%28%29">vstr_cntl_opt()</a></a>
+
+		      </a></h2>
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_OPT_GET_CONF">VSTR_CNTL_OPT_GET_CONF</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: Returns <a href="structs#struct%20Vstr_conf%20%28aka%2e%20Vstr%20configuration%29">Vstr configuration</a><br>Type<strong>[1]</strong>: struct Vstr_conf **
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option will get the default <a href="structs#struct%20Vstr_conf%20%28aka%2e%20Vstr%20configuration%29">Vstr configuration</a>.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  This adds a reference to the configuration, so when you are finished with it
+ you'll have to call <a href="functions#vstr_freee_conf%28%29">vstr_freee_conf()</a> on it.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_CNTL_OPT_SET_CONF">VSTR_CNTL_OPT_SET_CONF</a>
+
+</td></tr><tr><td>Parameter<strong>[1]</strong>: <a href="structs#struct%20Vstr_conf%20%28aka%2e%20Vstr%20configuration%29">Vstr configuration</a><br>Type<strong>[1]</strong>: struct Vstr_conf *
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This option will set the default <a href="structs#struct%20Vstr_conf%20%28aka%2e%20Vstr%20configuration%29">Vstr configuration</a>.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  This is one of the few functions that take a configuration, but cannot take a
+ NULL pointer instead.
+
+
+</td></tr></table><table width="90%"><tr><td class="sect"><h2><a id="Constants%20passed%20to%20vstr_cntl_conf%28%2e%2e%2e%2c%20VSTR_CNTL_CONF_SET_TYPE_GRPALLOC_CACHE">Constants passed to vstr_cntl_conf(..., <a href="constants#VSTR_CNTL_CONF_SET_TYPE_GRPALLOC_CACHE">VSTR_CNTL_CONF_SET_TYPE_GRPALLOC_CACHE</a></a></h2>
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_CNTL_CONF_GRPALLOC_NONE">VSTR_TYPE_CNTL_CONF_GRPALLOC_NONE</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This type means that there is a group allocation configuration to not
+ allocating a cache.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  This is type will mean that <a href="constants#VSTR_CNTL_CONF_GET_FLAG_ALLOC_CACHE">VSTR_CNTL_CONF_GET_FLAG_ALLOC_CACHE</a> is FALSE.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_CNTL_CONF_GRPALLOC_POS">VSTR_TYPE_CNTL_CONF_GRPALLOC_POS</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This type means that there is a group allocation configuration to allocating
+ a cache and allocating room to store a position cache.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_CNTL_CONF_GRPALLOC_IOVEC">VSTR_TYPE_CNTL_CONF_GRPALLOC_IOVEC</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This type means that there is a group allocation configuration to allocating
+ a cache and allocating room to store a position cache and an iovec cache.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  The only way to guarantee that you have an iovec available immediately after
+ calling <a href="functions#vstr_make_base%28%29">vstr_make_base()</a> is to have at least this group allocation
+ configuration.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Constant: </strong> <a id="VSTR_TYPE_CNTL_CONF_GRPALLOC_CSTR">VSTR_TYPE_CNTL_CONF_GRPALLOC_CSTR</a>
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This type means that there is a group allocation configuration to allocating
+ a cache and allocating room to store a position cache, an iovec cache and a
+ cstr cache holder.
+
+
+</td></tr></table>
+</body></html>

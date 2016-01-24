@@ -1,0 +1,10 @@
+Usage: jrot13 [FILENAME]...
+   or: jrot13 OPTION
+Output filenames.
+
+      --help     Display this help and exit
+      --version  Output version information and exit
+      --mmap     Toggle use of mmap() to load input files
+      --         Treat rest of cmd line as input filenames
+
+Report bugs to James Antill <james@and.org>.

@@ -1,0 +1,52 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>Vstr documentation -- namespace</title>
+  </head>
+
+  <body bgcolor="#FFFFFF">
+    <table width="100%"><tr><td bgcolor="#DDFFDD">
+	    <h1>Vstr documentation -- namespace</h1>
+	  </td></tr></table>
+    <!-- this is basically copy and paste from the .txt file... */ ... errr -->
+
+    <table width="80%"><tr><td><p>
+	      The library itself claims <b>/^vstr[a-z0-9_]*$/i</b> as a namespace.<br>
+	      Saying that all types are under...
+	      <br><pre>
+
+   vstr_[a-z0-9]*
+
+	    </pre>...all other global symbols (Ie. functions/variables) are under...
+	    <br><pre>
+
+   vstr_[a-z0-9]*
+
+	    </pre>...and all CPP symbols/constants are under...
+	    <br><pre>
+
+   VSTR_[A-Z0-9]*
+
+	    </pre>...this is mainly to make it easier to see what you are dealing with.
+
+	  </p></td></tr><tr><td><p>
+
+	      All of the namespace where a double _ appears is not supposed to be used
+	      directly by _you_ the user of the library. If these interfaces change and
+	      it isn't visible via. the normal interfaces then the binary/source interface
+	      numbers will _NOT_ be changed on the library.
+
+	    </p></td></tr>
+
+    </table>
+
+
+    <hr>
+    <address><a href="mailto:james-web@and.org">James Antill</a></address>
+    <!-- Created: Sun Oct 14 20:51:59 EDT 2001 -->
+    <!-- hhmts start -->
+Last modified: Sun Jul 31 00:33:15 EDT 2005
+<!-- hhmts end -->
+  </body>
+</html>
+

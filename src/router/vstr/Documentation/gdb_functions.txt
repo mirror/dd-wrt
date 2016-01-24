@@ -1,0 +1,142 @@
+
+###############################################################################
+#  gdb "user functions" to help when developing with Vstr                     #
+###############################################################################
+
+
+# Simple wrapper for export function
+define pvstrcstr
+ print (char *)vstr_export_cstr_ptr($arg0, $arg1, $arg2)
+end
+
+# Simple wrapper for export function
+define pvstrcstrall
+ print (char *)vstr_export_cstr_ptr($arg0, 1, $arg0->len)
+end
+
+# Basically write() ... needed by below functions
+define vstr__out_bytes
+  set $___ptr = $arg0
+  set $___len = $arg1
+  while $___len > 0
+     printf "%c", *$___ptr
+     set $___ptr = $___ptr + 1
+     set $___len = $___len - 1
+  end
+end
+
+# Should be the same as pvstrcstr but is all done in the debugger, so works on
+# core files etc. ... also prints the length of the Vstr out.
+# Is also slightly better in that it highlights any _NON nodes.
+define pvstr
+ set $__vl = $arg0->len
+ set $__a1 = $arg1 - 1
+ set $__a2 = $arg2
+ 
+ set $__node = $arg0->beg
+ set $__a1 = $__a1 + $arg0->used
+ printf "Vstr(%p[%u] -> %u) = \"", $arg0, $arg0->num, $__vl
+ while $__a2 > 0 && $__vl > 0 && $__node
+   set $__nl = $__node->len
+   set $__len = $__nl - $__a1
+
+   if $__len > $__a2
+     set $__len = $__a2
+   end
+
+   if $__nl <= $__a1
+     set $__a1 = $__a1 - $__nl
+   else
+     set $__off = $__a1
+     set $__a1 = 0
+
+     if $__node->type == 1
+       set $__buf = (char *)((Vstr_node_buf *)$__node)->buf
+     end
+     if $__node->type == 3
+       set $__buf = (char *)((Vstr_node_ptr *)$__node)->ptr
+     end
+     if $__node->type == 4
+       set $__ref = ((Vstr_node_ref *)$__node)
+       set $__buf = (char *)$__ref->ref->ptr + $__ref->off
+     end
+     if $__node->type == 2
+       printf "\n<none:%d>\n", $__len
+     else
+       set $__buf = $__buf + $__off
+       vstr__out_bytes $__buf $__len
+     end
+
+     set $__a2 = $__a2 - $__len
+   end
+
+   set $__vl   = $__vl - $__len
+   set $__node = $__node->next
+ end
+ printf "\"\n"
+end
+
+# Simple wrapper for pvstr, to print all of a Vstr
+define pvstrall
+  pvstr $arg0 1 $arg0->len
+end
+
+# Same as pvstr, except prints each node on a seperate line ... somewhat less
+# readable for the output, but gives more info about iovec boundries
+define pvstr_info
+ set $__vl = $arg0->len
+ set $__a1 = $arg1 - 1
+ set $__a2 = $arg2
+ 
+ set $__num = 0
+
+ set $__node = $arg0->beg
+ set $__a1 = $__a1 + $arg0->used
+ printf "Vstr(%p[%u] -> %u) =\n", $arg0, $arg0->num, $__vl
+ while $__a2 > 0 && $__vl > 0 && $__node
+   set $__nl = $__node->len
+   set $__len = $__nl - $__a1
+
+   if $__len > $__a2
+     set $__len = $__a2
+   end
+
+   set $__num = $__num + 1
+
+   if $__nl <= $__a1
+     set $__a1 = $__a1 - $__nl
+   else
+     set $__off = $__a1
+     set $__a1 = 0
+
+     if $__node->type == 1
+       set $__buf = (char *)((Vstr_node_buf *)$__node)->buf
+     end
+     if $__node->type == 3
+       set $__buf = (char *)((Vstr_node_ptr *)$__node)->ptr
+     end
+     if $__node->type == 4
+       set $__ref = ((Vstr_node_ref *)$__node)
+       set $__buf = (char *)$__ref->ref->ptr + $__ref->off
+     end
+     if $__node->type == 2
+       printf "  %u. <none:%d>\n", $__num, $__len
+     else
+       set $__buf = $__buf + $__off
+       printf "  %u. \"", $__num
+       vstr__out_bytes $__buf $__len
+       printf "\"\n"
+     end
+
+     set $__a2 = $__a2 - $__len
+   end
+
+   set $__vl   = $__vl - $__len
+   set $__node = $__node->next
+ end
+end
+
+# Simple wrapper for pvstr_info, to print all of a Vstr
+define pvstrall_info
+  pvstr_info $arg0 1 $arg0->len
+end

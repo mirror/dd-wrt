@@ -1,0 +1,4 @@
+(org.and.jhttpd-conf-req-1.0
+  (filename blah-missing-is)
+  (Content-Type: text/plain)
+  (Expires: <now>))

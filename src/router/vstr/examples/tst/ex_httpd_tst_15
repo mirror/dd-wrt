@@ -1,0 +1,16 @@
+OPTIONS * HTTP/1.1
+Host: default
+
+OPTIONS / HTTP/1.1
+Host: default
+
+OPTIONS http://default/ HTTP/1.1
+
+OPTIONS http://default/%2f./ HTTP/1.1
+
+OPTIONS ! HTTP/1.1
+Host: default
+
+OPTIONS * HTTP/1.1
+Host: default
+

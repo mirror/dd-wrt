@@ -1,0 +1,38 @@
+This software and associated documentation is copyright 1995, 1996, 1997,
+1998, 1999, 2000, and 2001 Peter Seebach, and may be distributed as noted
+below.
+
+This software is distributed `as is', free of charge.  No warranty of
+suitability or reliability is offered; use this at your own risk.  The
+author of this code assumes NO RESPONSIBILITY for any damages, direct or
+incidental, resulting from the use of this software.
+
+This software may be distributed under the terms of the "Berkeley License",
+or the Artistic License , at your option. It may not be distributed under
+other terms or licenses without prior written agreement with the author.
+Please read the associated files in the subdirectory "LICENSES" for
+licensing information.  and remember, you may choose *either* of these
+licenses.  (You are also welcome to try to distribute it under all of them,
+but this may prove more difficult.) Other distribution terms may be
+available by explicit request; mail me for details.
+
+This software is no longer available under the GPL.  I am not comfortable
+with a "free" license which so strenuously requires that every program
+it touches must distribute a political screed.  (Note, for instance, that if
+you don't like this, you're welcome to distribute my code without this
+comment, which stays clearly *OUT* of the actual license text.)  One of
+the things which influenced this decision was an FSF person telling me that,
+if I release code under some other license, and I don't tell people that
+they aren't allowed to link my code with GPL'd code, that as soon as someone
+does link my code with GPL'd code, I am *REQUIRED* to make my code available
+under the GPL.  I believe this to be somewhere on the fine line between
+morally reprehensible and simply insane; in either event, it's not happening.
+
+This is mine.  Use it however you want, with or without credit, as long as you
+never say you wrote it.
+
+Questions?  Comments?  Problems?  Write seebs@plethora.net, or
+seebs@pobox.com.
+
+My web page is http://www.plethora.net/~seebs/, and may have newer versions
+or FAQs at some time in the future.

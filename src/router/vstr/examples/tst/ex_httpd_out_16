@@ -1,0 +1,57 @@
+HTTP/1.1 304 Not Modified
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Sun, 10 Oct 2004 07:02:24 GMT
+Accept-Ranges: bytes
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Length: 159
+
+HTTP/1.1 412 Precondition Failed
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified:
+Accept-Ranges: bytes
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Length: 403
+
+HTTP/1.1 206 Partial content
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Sun, 10 Oct 2004 07:02:24 GMT
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Length: 1
+Content-Range: bytes 158-158/159
+
+
+HTTP/1.1 304 Not Modified
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Sun, 10 Oct 2004 07:02:24 GMT
+Accept-Ranges: bytes
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Length: 159
+
+HTTP/1.1 412 Precondition Failed
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified:
+Accept-Ranges: bytes
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Length: 403
+
+HTTP/1.1 206 Partial content
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Sun, 10 Oct 2004 07:02:24 GMT
+Connection: close
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Length: 1
+Content-Range: bytes 158-158/159
+
+

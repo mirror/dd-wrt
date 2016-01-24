@@ -1,0 +1,1300 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <title>String library comparison</title>
+
+    <style>
+      A:hover { color: #20b2aa; }
+      P { text-indent: 2em; }
+
+      body { background: #FFF; }
+
+      td.heading { background: #DDD; }
+
+      table.ent   { border-bottom: solid; margin-bottom: 2em; }
+
+                      td.sl   { text-align: center; font-weight: bold;
+                                background: #EEE;}
+                      td.sl a { color: #000; }
+      table.ent:hover td.sl a { color: #20b2aa; }
+
+      td.sn       { text-align: right;  font-weight: bold; }
+      td.sv       { color: #444; }
+    </style>
+
+  </head>
+
+  <body>
+    <h1>String library comparison</h1>
+
+    <p> This page is a rough comparison between different string libraries
+ (and some APIs, embedded in other libraries/programs)
+      that I've seen. The comparison deals with: how the library stores the
+ data in the string, how the library deals with IO on the strings (strings
+ have to come from/goto places), how much of the problem of
+ searching/comparing and parsing strings is dealt with for you, and how much
+ testing the library does. This page also only lists code for which I can get
+ the source code, that source code can be altered and is possible to use
+ from another program (it's no good telling you about how great something is,
+ if you can't use it with your code -- note however that not all licenses are
+ compatible still, for instance as far as I know the <a href="#postfix">postfix</a> code isn't compatible with the GPL).
+</p><p>
+One of the biggest advantages of using a string library in C is the better
+ security that it can provide. However I've tried to not talk about that
+ directly below, as it is somewhat subjective and comprised of a few factors. On
+ <a href="security">this page</a> I give an outline of which things you should look for, to
+make an informed opinion about the security of all of the libraries.
+</p><p>
+ It's probably worth noting that I wrote one of the string library, <a href="#vstr">Vstr</a>. However I have a section for links to replies if you feel
+that you want to say something I've failed to, or just refute what I've said.
+      For a comparison of printf() like functions see
+      <a href="printf_comparison">this page</a>.
+    </p>
+
+<br>
+<br>
+<br>
+<br>
+
+  <!-- BEG OF string libraries -->
+<table class="ent"> <tr> <td class="sn">Name:</td> <td class="sl">
+<a id="vstring"></a> <!-- avoid confusion -->
+<a id="vstr" href="overview">Vstr string library</a>
+</td> </tr><tr> <td class="sn">Language:</td> <td class="sv">C
+</td> </tr><tr> <td class="sn">Type:</td> <td class="sv">String library
+</td> </tr><tr> <td class="sn">Model:</td> <td class="sv">
+Complicated (list of nodes containing legnth of data of different types, including inline data pointer to data and references to data)
+</td> </tr><tr> <td class="sn">License:</td> <td class="sv">
+<a href="http://www.gnu.org/copyleft/lesser.html">LGPL (Lesser)</a>
+</td> </tr><tr> <td class="sn">Namespace:</td> <td class="sv">
+Self contained namespace of "vstr_" on everything but members of structs, internal symbols are hidden if that is available. Typedef's can be removed with a feature macro. The few macro functions can be removed with a feature macro.
+</td> </tr><tr> <td class="sn">IO:</td> <td class="sv">
+IO is easy anywhere into or out of a string, appending and writing from the begining are O(1) operations. Non-blocking IO functions are provided. Deals with any binary data. Has <a href="http://cr.yp.to/proto/netstrings.txt">netstring</a> functions.
+</td> </tr><tr> <td class="sn">Testing:</td> <td class="sv">
+<!-- sloccount ../src/*.c ../include/vstr-*inline.h ../src/vstr_dbl/vstr_add_fmt_dbl_host.c src/vstr_version.c = 13,333  -->
+<!-- sloccount ../tst/**/*.c = 11,106 -->
+ Moderate amount of user testing. Testsuite <b>every line of code in the default build</b>, 100% coverage. (83% size ratio between implementation and testsuite -- <a href="http://www.dwheeler.com/sloccount/">sloccount</a>).
+ </td> </tr><tr> <td class="sn">Version:</td> <td class="sv">
+1.0.15
+</td> </tr><tr> <td class="sn">Pro:</td> <td class="sv">
+Heavily recommended for IO,
+ is as good as it gets when talking to many network connections with
+ non-blocking IO.  Due to the API
+lots of small parts of a big string can be done by just refering to the
+original with the offset and length of the substring.
+</td> </tr><tr> <td class="sn">Con:</td> <td class="sv">
+Using it directly for lots of different small strings can cause a lot of
+memory overhead, due to the API this can be worked around ... but that requires
+some extra work.
+</td> </tr><tr> <td class="sn">Notes:</td> </tr><tr> <td colspan="2" class="main"> <p>
+It is designed for network communication. Its design uses blocks of
+ptr+length data, so adding, substituting, and deleting data are all
+fast operations. It has a full API of all the usual string tasks:
+ searching, comparing, splitting, substitution, converting between upper and lower case, and parsing numbers and strings.
+Has a full POSIX and ISO 9899:1999 compliant printf()
+implementation including gcc warning compatible custom formatters.
+For more detail see the other pages on this site.
+</p></td></tr></table>
+
+
+<table class="ent"> <tr> <td class="sn">Name:</td> <td class="sl">
+<a id="stlrope" href="http://www.sgi.com/tech/stl/Rope.html">C++ STL rope</a>
+</td> </tr><tr> <td class="sn">Language:</td> <td class="sv">C++ (std::string compat. API)
+</td> </tr><tr> <td class="sn">Type:</td> <td class="sv">String API
+</td> </tr><tr> <td class="sn">Model:</td> <td class="sv">
+Complicated (list of nodes containing data, "data producing functions" or references to rope strings -- evolution of the cord design)
+</td> </tr><tr> <td class="sn">License:</td> <td class="sv">
+<a href="http://www.and.org/vstr/compare_licenses/rope.txt">GPL (with exceptions to make it LGPL like, I think)</a>
+</td> </tr><tr> <td class="sn">Namespace:</td> <td class="sv">
+Uses standard C++ namespaces, and no #define's.
+</td> </tr><tr> <td class="sn">IO:</td> <td class="sv">
+Can be used as both a consumer and a producer in the C++ IO model.
+Deals with any binary data. No <a href="http://cr.yp.to/proto/netstrings.txt">netstring</a> support.
+</td> </tr><tr> <td class="sn">Testing:</td> <td class="sv">
+Included in libstdc++-v3, so possibly good user testing. No testsuite.
+</td> </tr><tr> <td class="sn">Version:</td> <td class="sv">
+unknown (libstdc++-v3 cvs from 2003-02-24)
+</td> </tr><tr> <td class="sn">Pro:</td> <td class="sv">
+Recommended for C++ programs implementing simple text editors, possible also
+a good C++ solution for IO. Comes with g++.
+</td> </tr><tr> <td class="sn">Con:</td> <td class="sv">
+Although the interface is the same as C++ std::string, it is a very different
+implementation than what code may be written assuming.
+Using it directly for lots of small strings can cause a lot of memory overhead.
+</td> </tr><tr> <td class="sn">Notes:</td> </tr><tr> <td colspan="2" class="main"> <p>
+ This library tries to do something similar to what Vstr does.
+	  The major differences are that:</p>
+	  <ul>
+	    <li> ropes can have a function as a string
+	      generator whereas Vstr doesn't allow that (error cases are
+	      a nightmare here), however the major use of
+	      this is file IO, and Vstr has functions to help there. </li>
+	      <li> Vstr substitution is much faster than in ropes.</li>
+	      <li> Vstr easily allows you to add references to data, so that
+	    you can add mmap() memory to the string etc.
+	    It's not obvious if it's possible to do this with a rope, so that
+	    you can make sure it isn't copied and/or cleanup properly when no
+    strings references the data (this may be possible with inheritance).</li>
+	  </ul>
+      <p>
+Also, due to conforming to the std::string C++ API, it isn't
+      possible to act with a substring of a Rope, you
+      can only make a copy of a substring using the substr call (however
+      that substring should make internal references to all data). Vstr
+      doesn't have a true distinction between the entire Vstr and a portion
+	  thereof.
+</p></td></tr></table>
+
+
+<table class="ent"> <tr> <td class="sn">Name:</td> <td class="sl">
+<a id="glib" href="http://developer.gnome.org/doc/API/2.0/glib/glib-strings.html">GLib</a>
+</td> </tr><tr> <td class="sn">Language:</td> <td class="sv">C
+</td> </tr><tr> <td class="sn">Type:</td> <td class="sv">General purpose Library
+</td> </tr><tr> <td class="sn">Model:</td> <td class="sv">
+Pointer, length and size (expansion of length/pointer is done to the nearest power of 2).
+</td> </tr><tr> <td class="sn">License:</td> <td class="sv">
+<a href="http://www.gnu.org/copyleft/lesser.html">LGPL (Lesser)</a>
+</td> </tr><tr> <td class="sn">Namespace:</td> <td class="sv">
+Needs entire glib API, so mostly self contained namespace of "g_" on everything but members of structs (a couple of exceptions are made for things like the MAX() macro).
+</td> </tr><tr> <td class="sn">IO:</td> <td class="sv">
+<a href="req_trunc_io">Has request/truncate functions</a>, so appending
+reads aren't bad. But writing non-blocking is non-trivial.
+Can add/delete any binary data, but only has an equal function so no generic comparison/search functions. No <a href="http://cr.yp.to/proto/netstrings.txt">netstring</a> functions.
+</td> </tr><tr> <td class="sn">Testing:</td> <td class="sv">
+<!-- perl -ne '/(g_string_[a-z_]+)\s*\(/ && print "$1\n"' glib/gstring.h | egrep -v g_string_chunk -->
+<!-- perl -ne '/(g_string_[a-z_]+)\s*\(/ && print "$1\n"' tests/string-test.c | egrep -v g_string_chunk -->
+<!-- sloccount glib/gstring.c -->
+<!-- sloccount tests/string-test.c -->
+Included in glib, so very good user testing. Testsuite tests 11 functions, implementation has 28 functions (31% size ratio between implementation and testsuite -- <a href="http://www.dwheeler.com/sloccount/">sloccount</a>).
+</td> </tr><tr> <td class="sn">Version:</td> <td class="sv">
+2.2.1
+</td> </tr><tr> <td class="sn">Pro:</td> <td class="sv">
+Comes with glib, so no extra dependancies for glib/gtk/gnome/etc. applications.
+Fairly efficent for lots of small strings. Small implementation and massive
+userbase basically guarantees no errors (although you should note the
+portability guarantees that the printf functions provide).
+</td> </tr><tr> <td class="sn">Con:</td> <td class="sv">
+Very small provided API functionality, can't printf() a GString without doing a convertion to a C-style string, substitution isn't provided and adding string data to yourself will silently die. API is overly large for what it does. Failure to allocate memory calls abort().
+</td> </tr><tr> <td class="sn">Notes:</td> </tr><tr> <td colspan="2" class="main"> <p>
+ This is probably the most used C string library, and comes with the
+    glib utility library. This works on a simple start pointer and
+    length, model. This makes it much more memory effiecient for small
+    strings. This feature also makes it pretty much impossible to do IO
+    into the strings, share data between strings and kills performance
+    on substitutions.</p>
+
+	<p>There is no substitution API in glib, probably because you can't
+	  share data so you just do a memcpy() and an overwrite (but it's <b>far too easy to get this wrong</b>). It's also
+	  worth noting that your program may crash if you try and add data in
+	  a GString to itself (there is no safe glib API to do this).</p>
+	<p>Note that vstr_split_chrs()-like functions are available in glib, as
+	      part of the "C string" helper functions
+	  (Eg. g_strsplit() in the case of vstr_split_chrs()). However this
+	      means that although a GString can contain a NIL these helper
+ functions will
+ silently truncate at the embeded NIL. There is also
+	  limited support in glib for doing things in ASCII regardless of the
+	  current user locale.
+</p></td></tr></table>
+
+
+<table class="ent"> <tr> <td class="sn">Name:</td> <td class="sl">
+<a id="qt" href="http://doc.trolltech.com/3.0/qstring.html">Qt QString</a>
+</td> </tr><tr> <td class="sn">Language:</td> <td class="sv">C++ (std::string compat. API)
+</td> </tr><tr> <td class="sn">Type:</td> <td class="sv">General purpose Library
+</td> </tr><tr> <td class="sn">Model:</td> <td class="sv">
+Pointer, length, size and reference count (shares entire strings only)
+</td> </tr><tr> <td class="sn">License:</td> <td class="sv">
+<a href="http://www.gnu.org/copyleft/gpl.html">GPL</a> or
+<a href="http://www.trolltech.com/licenses/qpl-annotated.html">QPL</a>
+<a href="http://www.trolltech.com/products/qt/licensing.html">(comercial license specifically offered)</a>
+</td> </tr><tr> <td class="sn">Namespace:</td> <td class="sv">
+Needs entire Qt API, so mostly self contained namespace of "Q".
+</td> </tr><tr> <td class="sn">IO:</td> <td class="sv">
+Can be used as both a consumer and a producer in the C++ IO model.
+Deals with any binary data. No <a href="http://cr.yp.to/proto/netstrings.txt">netstring</a> support.
+</td> </tr><tr> <td class="sn">Testing:</td> <td class="sv">
+Included in Qt, so very good user testing. No public testsuite,  (I've not seen trolltech's internal testsuite, just spoken to someone who has).
+</td> </tr><tr> <td class="sn">Version:</td> <td class="sv">
+3.0.5
+</td> </tr><tr> <td class="sn">Pro:</td> <td class="sv">
+Comes with Qt, so no extra dependancies for Qt/KDE applications. Provides printf() like call directly to QString, so you can mix C++ style and C style.
+</td> </tr><tr> <td class="sn">Con:</td> <td class="sv">
+Although entire strings are referenced instead of copied, identical sub-strings
+are copied ... so lots of small strings, or lots of references to a large piece of data can cause a lot of memory overhead.
+</td> </tr><tr> <td class="sn">Notes:</td> </tr><tr> <td colspan="2" class="main"> <p>
+	  Again, C++ ... uses a pointer and length model but allows reference
+	  counting on entire QString objects. This means that an assignment
+	  of an entire string from a to b will share most of the storage, but
+	  a substring or altering any part of either object will nullify all
+	  sharing.
+	  The printf like function has an internal implementation for parsing
+	  the format string (which doesn't allow i18n argument number
+	  specifiers --
+	  or even l ll h hh size modifiers), but it also
+	  calls out to the host sprintf() implementation for numbers, pointers
+	  and doubles.
+</p></td></tr></table>
+
+
+<table class="ent"> <tr> <td class="sn">Name:</td> <td class="sl">
+<a id="safestr" href="http://www.zork.org/safestr/">SafeStr</a>
+</td> </tr><tr> <td class="sn">Language:</td> <td class="sv">C
+</td> </tr><tr> <td class="sn">Type:</td> <td class="sv">String Library
+</td> </tr><tr> <td class="sn">License:</td> <td class="sv">
+<a href="http://www.and.org/vstr/compare_licenses/SafeStr.txt">Custom (new BSD-ish, I think)</a>
+</td> </tr><tr> <td class="sn">Namespace:</td> <td class="sv">
+Self contained namespace of "safestr_".
+</td> </tr><tr> <td class="sn">IO:</td> <td class="sv">
+<a href="req_trunc_io">Has request/truncate functions</a>, so appending
+reads aren't bad ... however the "request" function "safestr_truncate"
+memset()'s the requested extra space (for safety), in theory you can call the
+internal function safestr_resize(). Writing non-blocking is non-trivial.
+Some nice helper functions for blocking IO. Also includes a function to read
+a password from the terminal.
+</td> </tr><tr> <td class="sn">Testing:</td> <td class="sv">
+<!-- perl -ne '/((safestr_)[a-z2_]+)\s*\(/ && print "$1\n"'  safestr.h.in -->
+<!-- perl -ne '/((safestr_)[a-z2_]+)\s*\(/ && print "$1\n"'  safetest.c -->
+<!-- sloccount safefmt.c safestr.c safeutil.c -->
+<!-- sloccount safetest.c -->
+Testsuite tests 30 functions, implementation has 50 functions
+  (26% size ratio between implementation and testsuite -- <a href="http://www.dwheeler.com/sloccount/">sloccount</a>).
+</td> </tr><tr> <td class="sn">Version:</td> <td class="sv">
+0.9.6
+</td> </tr><tr> <td class="sn">Pro:</td> <td class="sv">
+Has idea of "trusted" and "untrusted" strings. Gives errors for all uses of %n
+in it's printf() function.
+Basic type can be casted directly to a (char *), so
+this library is probably the best for working with APIs that expect C-style
+strings.
+</td> </tr><tr> <td class="sn">Con:</td> <td class="sv">
+Gives errors for all uses of %n in it's printf() function.
+Errors are dealt with by using another library to provide "exceptions" in C.
+Due to embedding the string with the in metadata, you need to pass pointers to
+your string pointer to all the allocating functions ... this doesn mean that if
+you want to have a pointer to the string in two or more places and have them
+update when either is updated, you have to store a pointer to the pointer.
+However if you just want the value, you can take a "reference" to the string
+which will keep that string valid.
+</td> </tr><tr> <td class="sn">Notes:</td> </tr><tr> <td colspan="2" class="main"> <p>
+ This string library seems partly a project to get a good
+"security conscious" (because there aren't enough, obviously) string library
+for C, and partly as a reference for the authors book on security.
+You can take references to entire strings, and there are quite a few utility
+funtions.
+</p><p>
+ The strict focus on security also means that the API has a notion
+of "trusted" and "untrusted" strings, as perl does. However, this is only really
+useful if there are functions that happen/don't happen depending on the
+trustedness of the string (Ie. popen/system/etc.). Currently there are no such
+functions, even in the library, so in my opinion it doesn't buy you much.
+It also has a cookie in the string header, so that it can tell if the string
+has been misused.
+</p></td></tr></table>
+
+
+<table class="ent"> <tr> <td class="sn">Name:</td> <td class="sl">
+<a id="bstring" href="http://bstring.sf.net/">bstring</a>
+</td> </tr><tr> <td class="sn">Response:</td> <td class="sv">
+<a href="http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/*checkout*/bstring/tree/bstrlib.txt">Review of string libraries, by author</a>
+</td> </tr><tr> <td class="sn">Language:</td> <td class="sv">C
+</td> </tr><tr> <td class="sn">Type:</td> <td class="sv">String Library
+</td> </tr><tr> <td class="sn">Model:</td> <td class="sv">
+Pointer, length and size (reallocates in powers of 2) -- uses a negative size to denote read-only strings.
+</td> </tr><tr> <td class="sn">License:</td> <td class="sv">
+<a href="http://www.and.org/vstr/compare_licenses/bstring.txt">Custom (new BSD-ish, I think)</a>
+</td> </tr><tr> <td class="sn">Namespace:</td> <td class="sv">
+Self contained namespace of "b", however there are a few somewhat gratuitiuos
+exceptions.
+</td> </tr><tr> <td class="sn">IO:</td> <td class="sv">
+<a href="req_trunc_io">Has request/truncate functions</a>, so appending
+reads aren't bad. But writing non-blocking is non-trivial.
+Some nice helper functions for blocking IO.
+Deals with any binary data. No <a href="http://cr.yp.to/proto/netstrings.txt">netstring</a> support.
+</td> </tr><tr> <td class="sn">Testing:</td> <td class="sv">
+Some testing via. the C++ wrapper.
+</td> </tr><tr> <td class="sn">Version:</td> <td class="sv">
+06222003
+</td> </tr><tr> <td class="sn">Pro:</td> <td class="sv">
+Pretty good assortment of comparison/searching functions. Allows you to create
+read-only strings fairly easyily.
+</td> </tr><tr> <td class="sn">Con:</td> <td class="sv">
+The library isn't 1.0 yet, and still seems to be evolving ... for instance
+the bvformat function was removed in the last version, but is still in the
+header file. The function names are mostly very small, but not all of them
+are uniq to 6 characters ... so the reason it a mystery.
+</td> </tr><tr> <td class="sn">Notes:</td> </tr><tr> <td colspan="2" class="main"> <p>
+  This is a good string library, on the pointer, length and size model. The
+ API names could use some work IMO, and the similarity will cause problems ...
+however the underlying implementation seems good, and the only serious things
+missing are: 1) non-blocking IO support. 2) substituion/replacement of data.
+3) a non-host printf(). The library lets you make constant/read-only strings,
+which is somewhat unique.
+ However the author has his description
+<a href="http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/*checkout*/bstring/tree/bstrlib.txt">here</a> along with comparisons of the library to others, including Vstr.
+</p></td></tr></table>
+
+
+<table class="ent"> <tr> <td class="sn">Name:</td> <td class="sl">
+<a id="sz" href="http://herd.plethora.net/~seebs/c/sz.html">sz</a>
+<!-- Peter Seebs -->
+</td> </tr><tr> <td class="sn">Language:</td> <td class="sv">C
+</td> </tr><tr> <td class="sn">Type:</td> <td class="sv">String Library
+</td> </tr><tr> <td class="sn">Model:</td> <td class="sv">
+Complicated (A tree of nodes to make up the string, all of which have a pointer and length).
+</td> </tr><tr> <td class="sn">License:</td> <td class="sv">
+<a href="http://www.and.org/vstr/compare_licenses/sz.txt">Custom</a>
+</td> </tr><tr> <td class="sn">Namespace:</td> <td class="sv">
+Somewhat confined to namespace of "sz" however there are a few leaks for "mem2" and "str2" importer functions whioch are in the system namespace (also has a str_decode() function which is in the system namespace).
+</td> </tr><tr> <td class="sn">IO:</td> <td class="sv">
+Has functions to read and write to ISO C FILE objects.
+It's not obvious, to me, if it has a usable request function ... although it does
+have a truncate call. No <a href="http://cr.yp.to/proto/netstrings.txt">netstring</a> functions.
+</td> </tr><tr> <td class="sn">Testing:</td> <td class="sv">
+<!-- perl -ne '/((sz|mem|str)[a-z2_]+)\s*\(/ && print "$1\n"'  sz.h -->
+<!-- perl -ne '/((sz|mem|str)[a-z2_]+)\s*\(/ && print "$1\n"'  test/*.c samples/szcat.c sztest.c sztr.c -->
+<!-- sloccount sz.c -->
+<!-- sloccount test/*.c samples/szcat.c sztest.c sztr.c -->
+Testsuite tests 30 functions, implementation has 48 functions (9% size ratio between implementation and testsuite -- <a href="http://www.dwheeler.com/sloccount/">sloccount</a>).
+</td> </tr><tr> <td class="sn">Version:</td> <td class="sv">
+0.9.2
+</td> </tr><tr> <td class="sn">Pro:</td> <td class="sv">
+ Is a very ISO C compliant library, apart from some minor namespace violations. All functions adhear to the old 6 character limits. Implementation is comparitivly small given the complexity of design. It seems that lots of read only copies should be very space efficent.
+</td> </tr><tr> <td class="sn">Con:</td> <td class="sv">
+6 character limits will probably hurt readability until you get very familiar with the code. Non-blocking IO seems like it would be very hard to do. No printf(). The license says it's "BSD or artistic, at your option. It may not be distributed under other terms or licenses without prior written agreement with the author." ... which implies a lot more limits than BSD imposes. The use of (void *) in a lot of places may lead to errors.
+</td> </tr><tr> <td class="sn">Notes:</td> </tr><tr> <td colspan="2" class="main"> <p>
+	  An interesting library, it uses an opaque type for the string which
+	  is suitably non simplistic internally to allow quite a few
+	  opimisations. The function names all obey the 6 character C89
+	  identifier limit (a limitation Vstr completely ignores so as to
+	  be more consistant, and hopefuly more readable).
+	  It's not obvious if it would use more or less memory
+	  than Vstr in general ... I'm sure there are cases where either is more, or less.
+	</p>
+	<p>
+	  It uses (void *) in most places and takes either a C string or an
+	  (sz *) [the internal opaque type]. It distinguishes between these by
+	  a 2 character magic constant, so if you try and use a C string with
+	  that constant life becomes interesting. There is no printf like
+	  function.
+</p></td></tr></table>
+
+<table class="ent"> <tr> <td class="sn">Name:</td> <td class="sl">
+<a id="vsftpd" href="http://vsftpd.beasts.org/">vsftpd</a>
+</td> </tr><tr> <td class="sn">Language:</td> <td class="sv">C
+</td> </tr><tr> <td class="sn">Type:</td> <td class="sv">Program
+</td> </tr><tr> <td class="sn">Model:</td> <td class="sv">
+Pointer, length and size (expansion of length/pointer is done to exact size needed).
+</td> </tr><tr> <td class="sn">License:</td> <td class="sv">
+<a href="http://www.gnu.org/copyleft/gpl.html">GPL</a>
+</td> </tr><tr> <td class="sn">Namespace:</td> <td class="sv">
+Self contained namespace of "str_" on all functions and "mystr" and "str_" for structure tag, structure members are in private namespace of "PRIVATE_HANDS_OFF_".
+</td> </tr><tr> <td class="sn">IO:</td> <td class="sv">
+<a href="req_trunc_io">Has request/truncate functions</a>, so appending
+reads aren't bad. But writing non-blocking is non-trivial.
+Internally the program uses blocking IO.
+</td> </tr><tr> <td class="sn">Testing:</td> <td class="sv">
+User testing as part of the application.
+</td> </tr><tr> <td class="sn">Version:</td> <td class="sv">
+1.0.0 of vsftpd
+</td> </tr><tr> <td class="sn">Notes:</td> </tr><tr> <td colspan="2" class="main"> <p>
+	  This has a fairly well abstracted namespace, esp. considering it is
+	  only bundled with the <emp>vsftpd</emp> ftp server. It works on the
+	  start pointer and length model, does dynamic resizing of strings and
+	  has quite a few utility functions. The only missing piece is a printf
+	  like function (the vsftpd code itself just calls snprintf() and then
+	  only for extremly simple cases). Failure to allocate memory calls
+	  abort().
+	</p>
+	<p>
+	  It is somewhat ammusing that even though this isn't a string library,
+	  it is much better than most of the other string libraries here.
+</p></td></tr></table>
+
+
+<table class="ent"> <tr> <td class="sn">Name:</td> <td class="sl">
+<a id="vmailer"></a> <!-- old name -->
+<a id="venema"></a> <!-- Wietse Venema -->
+<a id="postfix" href="http://www.postfix.org/ftp-sites.html">postfix</a>
+</td> </tr><tr> <td class="sn">Language:</td> <td class="sv">C
+</td> </tr><tr> <td class="sn">Type:</td> <td class="sv">Program
+</td> </tr><tr> <td class="sn">Model:</td> <td class="sv">
+Pointers, length, and a bunch of memebers (allocation policy can be chaned
+via. function pointers)
+</td> </tr><tr> <td class="sn">License:</td> <td class="sv">
+<a href="http://oss.software.ibm.com/developerworks/opensource/license10.html">IBM Public License</a>
+</td> </tr><tr> <td class="sn">Namespace:</td> <td class="sv">
+There are at least 3 parts you might want, and eash has a seperate namespace for everything but members of structs.
+</td> </tr><tr> <td class="sn">IO:</td> <td class="sv">
+ The design is around IO, blocking IO is obviously supported. With a small amount of work non-blocking IO could be done for both reading appends and writing from the begining. Deals with any binary data. Has <a href="http://cr.yp.to/proto/netstrings.txt">netstring</a> APIs (and they are used by postfix), although they may mean doing extra copies due to their API.
+</td> </tr><tr> <td class="sn">Testing:</td> <td class="sv">
+User testing as part of the application, possibly other regession tests (it's obviously meant to be moved to other projects easily via. copying the source files).
+</td> </tr><tr> <td class="sn">Version:</td> <td class="sv">
+1.7.1 of postfix
+</td> </tr><tr> <td class="sn">Pro:</td> <td class="sv">
+Should be easy to just copy into another project, so no extra dependancies are needed. Good APIs for IO.
+</td> </tr><tr> <td class="sn">Con:</td> <td class="sv">
+The stream design will be hard to use for any non-IO related string operations (Eg. comparisons/searches). The string structure is heavy weight for lots of string instances. There is also no way to share string data.
+</td> </tr><tr> <td class="sn">Notes:</td> </tr><tr> <td colspan="2" class="main"> <p>
+	  This is a set of functions used in the <emp>postfix</emp> MTA daemon
+	  but obviously well abstracted so that they can be easily used in
+	  other applications. It works on a pointer and length model, although
+	  it also has "end pointer" and "amount left" variables. The
+	  abstraction seems somewhat weird to me, as the underlying objects
+	  want to look and act like (FILE *) and so have IO error flags ... and
+	  then on top of this are built Objects that are variable length
+	  strings and they'll never do any IO.
+	</p>
+	<p>
+	  It is upto the user of the library whether you have a fixed or
+	  dynamically sized buffer, and I think you can return
+	  failure if memory isn't available but the vstream.c and vstring.c
+	  implementations just assumes this can't happen.
+	  The functions to act on the buffer are just copied APIs of ISO C
+	  (FILE *) manipulators, str* and mem* (with the addition of
+	  memcat()). Importantly there are no interfaces for removing data
+	  or substituting data in the string (you could probably do remove from
+	  the end of the string easily by playing with the pointers and
+	  counters, but you'd have to write your own function for it).
+	  There is no way to access anything but the entire string, using the
+	  API, or add data anywhere but the end of the string.
+	</p>
+	<p>
+	  There is an interface for using <a href="http://cr.yp.to/proto/netstrings.txt">netstrings</a>, but instead of the simple
+	  begin and end semantics in Vstr the interface overloads the string
+	  interface ... so you have to say <a href="http://cr.yp.to/proto/netstrings.txt">netstring</a>_memcpy( ... ) which will
+	  copy data and encapsulate it as a <a href="http://cr.yp.to/proto/netstrings.txt">netstring</a>.
+	  It's also worth noting that the counters are of type "int", and the
+	  negative bit is used in the code ... so it's not possible to have a
+	  string bigger than INT_MAX.
+	</p>
+	<p>
+<!-- FIXME: wrong file... -->
+	  The printf like functions are implemented by parsing the format
+	  string and then passing known good formats through to
+	  the host implementation sprintf() (after requesting enough space to
+	  hold them). It doesn't accept long long or
+	  long doulbe types, i18n
+	  argument number specifiers or thousand seperator modifiers.
+</p></td></tr></table>
+
+<table class="ent"> <tr> <td class="sn">Name:</td> <td class="sl">
+<a id="qmail"></a> <!-- most famous -->
+<a id="daemontools"></a> <!-- released in -->
+<a id="djb" href="http://cr.yp.to/daemontools.html">DJB string APIs</a>
+</td> </tr><tr> <td class="sn">Language:</td> <td class="sv">C
+</td> </tr><tr> <td class="sn">Type:</td> <td class="sv">String APIs
+</td> </tr><tr> <td class="sn">Model:</td> <td class="sv">
+Pointer, length and size
+</td> </tr><tr> <td class="sn">License:</td> <td class="sv">
+Marked as "Public Domain" inside daemontools
+</td> </tr><tr> <td class="sn">Namespace:</td> <td class="sv">
+Each bit is in a seperate namesapce (most of the dynamic string API is in the "stralloc_" namespace)
+</td> </tr><tr> <td class="sn">IO:</td> <td class="sv">
+The DJB substdio APIs are missing from daemontools.
+</td> </tr><tr> <td class="sn">Testing:</td> <td class="sv">
+This is DJB code, so you can just assume it works.
+</td> </tr><tr> <td class="sn">Version:</td> <td class="sv">
+0.9.8
+</td> </tr><tr> <td class="sn">Pro:</td> <td class="sv">
+Infinatly better implementation than the one in libowfat. Interesting to look
+at, for a view of the world where each function really does do only one
+thing (highly recommended to read).
+</td> </tr><tr> <td class="sn">Con:</td> <td class="sv">
+DJB style tends to be somewhat hard for other people to use, it's also
+impossible to do things like i18n and keep your sanity ... due to printf()
+being a bunch of small functions.
+There are more than a few useful functions that are in qmail that aren't in
+daemontools ... so aren't available to use (and the headers haven't
+been updated).
+</td> </tr><tr> <td class="sn">Notes:</td> </tr><tr> <td colspan="2" class="main"> <p>
+	  As with all DJB code though, the API is written as a set of small
+	  atomic operations. For instance printf like functionality is
+	  implemented over 12 different functions named fmt_* (which don't
+	  check for overflows, but <b>some</b> are also reimplemented as a as
+	  stralloc functions). This design makes using the API much more clumsy,
+	  for a minor speedup, makes doing i18n almost impossible and goes
+	  directly against "premature optimization is bad".
+	</p>
+	<p>
+	  It's worth nothing that although the stralloc functions deal with
+	  dynamic memory a lot of the other function ignore bounds checking
+	  and/or assume things are terminated with a '\0' character.
+</p></td></tr></table>
+
+</p></td></tr></table>
+
+<table class="ent"> <tr> <td class="sn">Name:</td> <td class="sl">
+<a id="ossp" href="http://www.ossp.org/pkg/lib/str/">OSSP str</a>
+</td> </tr><tr> <td class="sn">Language:</td> <td class="sv">C
+</td> </tr><tr> <td class="sn">Type:</td> <td class="sv">String Library
+</td> </tr><tr> <td class="sn">Model:</td> <td class="sv">
+C Style strings (so embedded NIL characters aren't allowed)
+</td> </tr><tr> <td class="sn">License:</td> <td class="sv">
+<a href="http://www.and.org/vstr/compare_licenses/ossp-str.txt">Custom (new BSD-ish, I think)</a>
+</td> </tr><tr> <td class="sn">Namespace:</td> <td class="sv">
+Mostly self contained namespace of "str_" on everything but members of structs, which is a system namespace in C (exceptions are TRUE and FALSE etc.).
+</td> </tr><tr> <td class="sn">IO:</td> <td class="sv">
+No direct support
+</td> </tr><tr> <td class="sn">Testing:</td> <td class="sv">
+<!-- perl -ne '/(str_[a-z_]+)\s*\(/ && print "$1\n"' str.h -->
+<!-- perl -ne '/(str_[a-z_]+)\s*\(/ && print "$1\n"' str_test.c ts.c -->
+<!-- sloccount str_base64.c str_basic.c str_format.c str_hash.c str_memory.c str_parse.c str_pcre.c str_search.c str_token.c str_version.c -->
+<!-- sloccount str_test.c ts.c -->
+Small amount of user testing. Testsuite tests 7 functions, implementation has 15 functions ... at least 4 constants are also untested (31% size ratio between implementation and testsuite -- <a href="http://www.dwheeler.com/sloccount/">sloccount</a>).
+</td> </tr><tr> <td class="sn">Version:</td> <td class="sv">
+0.9.8
+</td> </tr><tr> <td class="sn">Pro:</td> <td class="sv">
+None
+</td> </tr><tr> <td class="sn">Con:</td> <td class="sv">
+Buffer overflows, no real type, no IO.
+</td> </tr><tr> <td class="sn">Notes:</td> </tr><tr> <td colspan="2" class="main"> <p>
+	  This library is a slightly saner version of the ISO C str* functions,
+	  with a few extentions. It works with (char *) as the native type,
+	  and doesn't do automatic allocation ... so buffer overflows are still
+	  a concern.
+	</p>
+	<p>
+<!-- FIXME: wrong file... -->
+	  The printf implementation is internal and based on the Apache
+	  snprintf() function,
+	  '\'' (thousand modifiers), 'a', 'F', 'Lf', 'lld', 'td', 'zd', 'hhd' , etc.
+	  and i18n format parameter modifiers are all completly missing
+	  Unspecified precision is
+	  broken, as is corner cases for octal etc. also infinity/nan output
+	  is not correct with regard to case. <b>Buffer overflows are possible
+	    in the integer formatting paths</b>
+	  You can have custom modifiers, but
+	  only triggered on the system '%' character ... so gcc will currently
+	  spam warnings. It also looks like the ISO C std. is completely ignored
+	  for certain corner cases. Also note that due to the fact that the
+	  strings cannot be resized by the library the printf implementation
+	  uses a snprint() interface, this means that data can be lost using the
+	  interface if the programer isn't carefull.
+</p></td></tr></table>
+
+<table class="ent"> <tr> <td class="sn">Name:</td> <td class="sl">
+<a id="c2lib" href="http://www.annexia.org/freeware/c2lib/">c2lib</a>
+</td> </tr><tr> <td class="sn">Language:</td> <td class="sv">C
+</td> </tr><tr> <td class="sn">Type:</td> <td class="sv">General purpose Library
+</td> </tr><tr> <td class="sn">Model:</td> <td class="sv">
+C Style strings (so embedded NIL characters aren't allowed)
+</td> </tr><tr> <td class="sn">License:</td> <td class="sv">
+<a href="http://www.gnu.org/copyleft/lgpl.html">LGPL (Library)</a>
+</td> </tr><tr> <td class="sn">Namespace:</td> <td class="sv">
+Very bad, many namespace violations in the APIs you'll use directly ... also
+has other sections in the library that are in other namespaces (that are
+equally violated)
+</td> </tr><tr> <td class="sn">IO:</td> <td class="sv">
+No direct support
+</td> </tr><tr> <td class="sn">Testing:</td> <td class="sv">
+<!-- perl -ne '/(pstr[a-z_]+)\s*\(/ && print "$1\n"' pstring.h -->
+<!-- perl -ne '/(pstr[a-z_]+)\s*\(/ && print "$1\n"' test_pstring.c -->
+<!-- sloccount pool.c pstring.c vector.c -->
+<!-- sloccount test_pstring.c test_vector.c -->
+Testsuite tests all 10 functions (27% size ratio between implementation and testsuite -- <a href="http://www.dwheeler.com/sloccount/">sloccount</a>).
+ </td> </tr><tr> <td class="sn">Version:</td> <td class="sv">
+1.4.1
+</td> </tr><tr> <td class="sn">Pro:</td> <td class="sv">
+Interoperation with C-style strings is very good, the only minor
+problem being that you need to call a special free function for all
+c2lib strings. Has pcre short cut functions builtin.
+</td> </tr><tr> <td class="sn">Con:</td> <td class="sv">
+Terrible namespace. No IO. Requires pcre to be install to build/run.
+</td> </tr><tr> <td class="sn">Notes:</td> </tr><tr> <td colspan="2" class="main"> <p>
+          This library works with (char *) as the base type, although
+          all allocator functions are also passed a "pool" that the (char *)
+	  comes from, and so resizing can be done by the library.
+	</p>
+	<p>
+<!-- FIXME: wrong file... -->
+	  By version 1.4.1 there is a printf like function, it uses the
+	  system asprintf() call if it is available and fails the
+ <a href="security.html#asprintf-ex1">Linux test</a>. If asprintf doesn't exist
+ it <a href="security.html#libcsprintf">assumes a snprintf() conforming to the
+ ISO 9899:1999 return value semantics</a> -- also this code path probably
+ won't work on Sparc or other weird platforms.
+
+	  It does declare a
+	  "vector" type that is roughly equivalent to a Vstr_sects type however
+	  it only contains a "ptr" to the data ... so doing a split on a string
+	  involves at least doing a memdup() (it actually does a strndup()).
+	</p>
+	<p>
+	  Major namespace corruption, for example by using the string function
+	  you'll get definitions for "pool" and "vector"; Also the constructor
+	  functions tend to have names like "new_pool", "new_subpool" and
+	  "new_vecotr" as well as "pool_register_malloc" and
+	  "vector_push_back" etc. There are also lots of uses of
+	  macro functions in lower case, for instance vector_push_back() is
+	  a macro function calling _vector_push_back() (which also violates
+	  ISO 9899:1999 7.1.3/1 "All identifiers that begin with an underscore
+	  are always reserved for use as identifiers with file scope in both
+	  the ordinary and tag name spaces."
+</p></td></tr></table>
+
+
+<table class="ent"> <tr> <td class="sn">Name:</td> <td class="sl">
+<a id="my_string" href="http://freshmeat.net/projects/my_string/">my_string</a>
+</td> </tr><tr> <td class="sn">Language:</td> <td class="sv">C
+</td> </tr><tr> <td class="sn">Type:</td> <td class="sv">String Library
+</td> </tr><tr> <td class="sn">Model:</td> <td class="sv">
+C Style strings (so embedded NIL characters aren't allowed)
+</td> </tr><tr> <td class="sn">License:</td> <td class="sv">
+<a href="http://www.gnu.org/copyleft/gpl.html">GPL</a>
+</td> </tr><tr> <td class="sn">Namespace:</td> <td class="sv">
+No real namespace, a few functions are in the "Str" system namespace, and the rest are named randomly (presumably the same as the php versions).
+</td> </tr><tr> <td class="sn">IO:</td> <td class="sv">
+No direct support
+</td> </tr><tr> <td class="sn">Testing:</td> <td class="sv">
+Testsuite tests 4 functions, implementation has 13 functions (7% size ratio between implementation and testsuite -- <a href="http://www.dwheeler.com/sloccount/">sloccount</a>).
+ </td> </tr><tr> <td class="sn">Version:</td> <td class="sv">
+1.0.0
+</td> </tr><tr> <td class="sn">Pro:</td> <td class="sv">
+If you have used php a lot, and C very little ... you might appreciate this.
+</td> </tr><tr> <td class="sn">Con:</td> <td class="sv">
+Buffer overflows, no real type, no IO.
+</td> </tr><tr> <td class="sn">Notes:</td> </tr><tr> <td colspan="2" class="main"> <p>
+	  This is a bunch of add on functions to the std. C string functions,
+	  inspired by PHP.
+</p></td></tr></table>
+
+
+<table class="ent"> <tr> <td class="sn">Name:</td> <td class="sl">
+<a id="libtext" href="http://libtext.sourceforge.net/">libtext</a>
+</td> </tr><tr> <td class="sn">Language:</td> <td class="sv">C
+</td> </tr><tr> <td class="sn">Type:</td> <td class="sv">String Library
+</td> </tr><tr> <td class="sn">Model:</td> <td class="sv">
+C Style strings (so embedded NIL characters aren't allowed)
+</td> </tr><tr> <td class="sn">License:</td> <td class="sv">
+<a href="http://www.gnu.org/copyleft/gpl.html">GPL</a>
+</td> </tr><tr> <td class="sn">Namespace:</td> <td class="sv">
+Mostly self contained namespaces of "t_" and "Text" on everything but members of structs, however it also uses "_Text" which is a system namespace in C and a couple starting "__" which is also a system namespace (exceptions are SHOWBUFINFO and PrintTinfo which are for debuging the library and will be removed).
+</td> </tr><tr> <td class="sn">IO:</td> <td class="sv">
+Has truncate function ... but no obvious request function, so non-blocking
+appending reads are non-trivial. writing non-blocking is also non-trivial.
+</td> </tr><tr> <td class="sn">Testing:</td> <td class="sv">
+<!-- perl -ne '/(t_[a-z_]+)\s*\(/ && print "$1\n"'  -->
+<!-- perl -ne '/(t_[a-z_]+)\s*\(/ && print "$1\n"'  -->
+<!-- sloccount text/*.c -->
+<!-- sloccount test/*.c -->
+Testsuite test 15 functions, implementation has 67 functions (8% size ratio between implementation and testsuite -- <a href="http://www.dwheeler.com/sloccount/">sloccount</a>).
+</td> </tr><tr> <td class="sn">Version:</td> <td class="sv">
+0.0.0-beta1
+</td> </tr><tr> <td class="sn">Pro:</td> <td class="sv">
+Does dynamic allocation and uses malloc/free directly.
+</td> </tr><tr> <td class="sn">Con:</td> <td class="sv">
+Very little help with IO. API has weird names.
+</td> </tr><tr> <td class="sn">Notes:</td> </tr><tr> <td colspan="2" class="main"> <p>
+	  This library doesn't allow "binary" (!isgraph &amp;&amp; !isspace --
+	  so changes depending on global locale) characters.
+	  Printf like function calls the host implementation. Has a large API
+	  for add, find, delete and substitue. A couple of other APIs for
+          reverse, uppercasing and lowercasing.
+Allows you to specify a max size for the string.
+</p></td></tr></table>
+
+<table class="ent"> <tr> <td class="sn">Name:</td> <td class="sl">
+<a id="boehm"></a>
+<a id="bohem"></a> <!-- typos -->
+<a id="cords" href="http://www.hpl.hp.com/personal/Hans_Boehm/gc/gc_source/cordh.txt">Cords, part of Boehm GC</a>
+</td> </tr><tr> <td class="sn">Language:</td> <td class="sv">C
+</td> </tr><tr> <td class="sn">Type:</td> <td class="sv">String API
+</td> </tr><tr> <td class="sn">Model:</td> <td class="sv">
+Complicated (tree of nodes containing data, "data producing functions" or references to cord strings - data is all read only).
+</td> </tr><tr> <td class="sn">License:</td> <td class="sv">
+<a href="http://www.and.org/vstr/compare_licenses/cords.txt">Custom (new BSD-ish)</a>
+</td> </tr><tr> <td class="sn">Namespace:</td> <td class="sv">
+Mostly self contained namespace of "CORD" on everything except structure members (which are all private -- exceptions are MAX_DEPTH and FUNCTION_BUF_SZ).
+</td> </tr><tr> <td class="sn">IO:</td> <td class="sv">
+Has functions to read and write to ISO C FILE objects. No <a href="http://cr.yp.to/proto/netstrings.txt">netstring</a> support.
+</td> </tr><tr> <td class="sn">Testing:</td> <td class="sv">
+Probably good user testing. No apparent testsuite.
+</td> </tr><tr> <td class="sn">Version:</td> <td class="sv">
+not obvious
+</td> </tr><tr> <td class="sn">Pro:</td> <td class="sv">
+Useful if you are using the Boehm Garbage Collector in your C code.
+</td> </tr><tr> <td class="sn">Con:</td> <td class="sv">
+Probably useless otherwise.
+</td> </tr><tr> <td class="sn">Notes:</td> </tr><tr> <td colspan="2" class="main"> <p>
+This is the string implementation that comes with the Boehm
+	  Garbage Collector (and so is included in gcc etc.). It pretty much
+	  requires a GC as you can't "alter"
+	  a string, only make a new string with the alterations in it.
+	  Sharing data is a main point of this implementation, however again
+	  it isn't possible to do things directly on a "substring" you must
+	  first create that substring as a first class string.
+	</p>
+	<p>
+	  Although the basic APIs are there, add/del/sub/etc. there are few
+	  added functions to help you deal with the strings (although it does
+	  provide something equivilent to vstr_sc_read_len_file() but it uses
+	  stdio, and there isn't any good way to deal with IO errors).
+	</p>
+	<p>Also note that the printf implementation just calls the host
+	  implementation of sprintf/asprintf/etc. directly for anything that
+	  isn't one of the 's', 'r', 'c' or 'n' format specifiers. The custom
+	  format specifier of 'r' is the only one possible and will make gcc
+	  barf warnings if you use it. It also doesn't allow i18n argument
+	  number specifiers.
+	  This is an "old" implementation though, with the last copyright from
+	  1994 so some of these problems probably stem from that.
+</p></td></tr></table>
+
+
+<table class="ent"> <tr> <td class="sn">Name:</td> <td class="sl">
+<a id="libretto" href="http://www.praeclarus.demon.co.uk/tech/libretto/">libretto</a>
+</td> </tr><tr> <td class="sn">Language:</td> <td class="sv">C
+</td> </tr><tr> <td class="sn">Type:</td> <td class="sv">General purpose Library
+</td> </tr><tr> <td class="sn">Model:</td> <td class="sv">
+Pointer, length, size
+</td> </tr><tr> <td class="sn">License:</td> <td class="sv">
+<a href="http://www.gnu.org/copyleft/lgpl.html">LGPL (Library)</a>
+</td> </tr><tr> <td class="sn">Namespace:</td> <td class="sv">
+Needs entire libretto API, so terrible ... each subsystem takes it's own namespace, with some other random stuff.
+</td> </tr><tr> <td class="sn">IO:</td> <td class="sv">
+</td> </tr><tr> <td class="sn">Testing:</td> <td class="sv">
+<!--
+     perl -nle '/(abuf_[a-z_]+)\s*(?:__P)?\s*\(/ && print $1' include/libretto/autobuf.h 
+     perl -nle '/(astr_[a-z_]+)\s*(?:__P)?\s*\(/ && print $1' include/libretto/autostr.h
+ -->
+<!-- 
+    perl -nle '/(abuf_[a-z_]+)\s*\(/ && print $1' tests/t-autobuf.c
+    perl -nle '/(astr_[a-z_]+)\s*\(/ && print $1' tests/t-autostr.c
+ -->
+<!-- sloccount src/autostr.c src/autostr-func.c src/autobuf.c  -->
+<!-- sloccount tests/t-autobuf.c tests/t-autostr.c -->
+Testsuite tests 32 autostr and 32 autobuf functions, implementation has 53 autostr functions and 36 autobuf functions (86% size ratio between implementation and testsuite -- <a href="http://www.dwheeler.com/sloccount/">sloccount</a>).
+</td> </tr><tr> <td class="sn">Version:</td> <td class="sv">
+2.1
+</td> </tr><tr> <td class="sn">Pro:</td> <td class="sv">
+</td> </tr><tr> <td class="sn">Con:</td> <td class="sv">
+Glib is a lot more common, is maintained and has a real namespace ... use
+that instead.
+</td> </tr><tr> <td class="sn">Notes:</td> </tr><tr> <td colspan="2" class="main"> <p>
+         Similar implementation to glib, however there are a lot more utility
+         functions for finding data dna comparing strings. There are really two
+         string APIs, one for strings (Autostr) and one fo "dynamic buffers"
+         (Autobuf) ... these type would be interchangable apart from the fact
+         that the members are ordered differently in their structure
+         definitions. Autobuf's can handle data with NIL bytes in it, while
+         Autostr calls the ISO C str*() functions and silently fails. Both
+         string types share features, however the Autostr API
+         has a few more functions.
+         This library is now unmaintained, according to
+         the original author.
+	</p>
+	<p>
+<!-- FIXME: wrong file... -->
+        Like glib printf() like function calls the host seperately for each
+        % token after calculating the max possible size of that tokens output.
+        It doesn't
+        include '\'' (thousand modifiers), 'A', 'a', 'td', 'zd' and
+	  i18n format parameter modifiers. However they will be equally
+        unportable everywhere.
+	</p>
+	<p>
+         Note that there are static extentions to the printf() like function so
+         that you can print the Autostr string type.
+</p></td></tr></table>
+
+
+<table class="ent"> <tr> <td class="sn">Name:</td> <td class="sl">
+<a id="pingutil">
+<a id="cfl" href="http://www2.dystance.net:8080/software/cfl/">cfl</a>
+</a>
+</td> </tr><tr> <td class="sn">Language:</td> <td class="sv">C
+</td> </tr><tr> <td class="sn">Type:</td> <td class="sv">General purpose Library
+</td> </tr><tr> <td class="sn">Model:</td> <td class="sv">Dynamic allocation with pointer, length, and size and "C style strings".
+</td> </tr><tr> <td class="sn">License:</td> <td class="sv">
+<a href="http://www.gnu.org/copyleft/lesser.html">LGPL (Lesser)</a>
+</td> </tr><tr> <td class="sn">Namespace:</td> <td class="sv">Mostly confined to namespace of "c_", however types are in the POSIX
+namespace of *_t and there are preprocessing symbols in the system
+namespace __*. Has exceptions for `TRUE', `FALSE', `NUL', and `CRLF'
+</td> </tr><tr> <td class="sn">IO:</td> <td class="sv">
+Has a few different IO functions, all designed for sync. c_buffer can but used
+for <a href="req_trunc_io">request/truncate</a>, but it is very simple and
+you can't convert that into something more useful. C_dstring_load can
+overflow memory.
+</td> </tr><tr> <td class="sn">Testing:</td> <td class="sv">
+No public test suite.
+</td> </tr><tr> <td class="sn">Version:</td> <td class="sv">1.2
+</td> </tr><tr> <td class="sn">Pro:</td> <td class="sv"> Has at least 4, string
+like APIs. c_dstring, c_string, c_strbuffer and c_buffer.
+ Pretty good documentation.
+</td> </tr><tr> <td class="sn">Con:</td> <td class="sv"> Has at least 4, string
+like APIs. Some of which differ mostly by their allocation policies, and there
+seems no way to move data between them (without just copying it). c_string and c_strbuffer call strncpy() which is grossly inifficent.
+</td> </tr><tr> <td class="sn">Notes:</td> </tr><tr> <td colspan="2" class="main"> <p>
+	      It has functions for slightly saner versions of the
+ ISO C str* functions. And also has dynamic allocation APIs.
+	  The library has some vector functions, but it uses (char **) as the
+	  vector type and alters the original string in it's verison of split.
+ As a general observation the library seems like it should split out some of
+ the code, as it has low level code like strings, trees, linked lists ... and
+ high level things like http server, and fortune file loader. Bad direct uses
+of ISO C str* functions in other parts of API (specifically strncpy() in
+httpserver allows non-terminated strings).
+	</p>
+	<p> Has nice texinfo documentation.
+</p></td></tr></table>
+
+<table class="ent"> <tr> <td class="sn">Name:</td> <td class="sl">
+<a id="mimelib" href="http://www.kde.org/">Mimelib DwString (part of kdenetwork)</a>
+</td> </tr><tr> <td class="sn">Language:</td> <td class="sv">C++ (std::string compat. API)
+</td> </tr><tr> <td class="sn">Type:</td> <td class="sv">Mime Library, which includes a string API
+</td> </tr><tr> <td class="sn">Model:</td> <td class="sv">
+Pointer, length, size and reference count (shares any substring)
+</td> </tr><tr> <td class="sn">IO:</td> <td class="sv">
+Can be used as both a consumer and a producer in the C++ IO model.
+Deals with any binary data. No <a href="http://cr.yp.to/proto/netstrings.txt">netstring</a> support.
+</td> </tr><tr> <td class="sn">Namespace:</td> <td class="sv">
+Needs entire MimeLib API, so mostly self contained namespace of "dw".
+</td> </tr><tr> <td class="sn">Testing:</td> <td class="sv">
+Included in MimeLib, so good user testing. Testsuite doesn't test entire string API (EG. DwStrcasecmp isn't tested), however being C++ it is non-trivial to tell automatically how much is (this is made worse by the fact that there are not specific string tests, just entire mimelib tests).
+</td> </tr><tr> <td class="sn">Version:</td> <td class="sv">
+3.0.0 of kdenetwork
+</td> </tr><tr> <td class="sn">Pro:</td> <td class="sv">
+If you are writting for KDE, and need/want sub-string auto sharing of data then it's easily available.
+</td> </tr><tr> <td class="sn">Con:</td> <td class="sv">
+Qt has to be available to everfy application that uses this, and the Qt version
+will have more users ... so it's the better choice if you don't need the sub-string sharing. Also doesn't have a printf() call, and has support to compile using just std::string (but I assume they'd only do that if the std::string did sub-string sharing as well). Project pages seem to have disappeared, so it's possible it's unmaintained.
+</td> </tr><tr> <td class="sn">Notes:</td> </tr><tr> <td colspan="2" class="main"> <p>
+	  C++ ... uses a pointer and length model but allows reference
+	  counting the Dwtring objects. This means that an assignment
+	  of an entire string, or a substring from a to b will share most of
+	  the storage, but altering any part of either object will nullify all
+	  sharing. Apart from that it is much like QString in the QT library.
+</p></td></tr></table>
+
+<table class="ent"> <tr> <td class="sn">Name:</td> <td class="sl">
+<a id="libast" href="http://freshmeat.net/projects/libast/">libast (formerly libmej)</a>
+</td> </tr><tr> <td class="sn">Response:</td> <td class="sv">
+<a href="http://freshmeat.net/projects/libast/#comment-25727">Response by author</a>
+</td> </tr><tr> <td class="sn">Language:</td> <td class="sv">C
+</td> </tr><tr> <td class="sn">Type:</td> <td class="sv">General purpose Library
+</td> </tr><tr> <td class="sn">Model:</td> <td class="sv">
+Pointer, length and size
+</td> </tr><tr> <td class="sn">License:</td> <td class="sv">
+<a href="http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/enlightenment/eterm/libast/debian/copyright?rev=HEAD&content-type=text/vnd.viewcvs-markup">Custom (new BSD-ish)</a>
+</td> </tr><tr> <td class="sn">Namespace:</td> <td class="sv">
+Needs entire libast API, so terrible ... namespace is all over the place for large parts of the library, although strings tend to stay in spif_str_*() ... but there is no way to get just those functions.
+</td> </tr><tr> <td class="sn">IO:</td> <td class="sv">
+<a href="req_trunc_io">Has request/truncate functions</a>, so appending
+reads aren't bad -- however as of 0.5 the set_len() function which is the only way of truncating in the API prints a message on stderr saying you are a moron.
+writing non-blocking is non-trivial. Blocking read functions are in the API for file descriptors and ISO C FILE objects. Can deal with binary data as input, but
+a lot of the utility functions assume C-style strings.
+</td> </tr><tr> <td class="sn">Testing:</td> <td class="sv">
+<!-- perl -ne 'while (/\W(spif_str\w+)/ig) { print $1 . "\n"; }' include/libast/str.h | egrep -v '^spif_str_t$' -->
+<!-- perl -ne 'while (/\W(spif_str\w+)\W/g) { print "$1\n"; }' test/test.c | egrep -v '^spif_str_t$' -->
+Testsuite tests 40 APIs, implementation has 55 APIs (46% size ratio between implementation and testsuite -- simple line count)
+</td> </tr><tr> <td class="sn">Version:</td> <td class="sv">
+0.5
+</td> </tr><tr> <td class="sn">Pro:</td> <td class="sv">
+Has some nice utility functions, including things like turning an int into a string ... which are uncommon.
+</td> </tr><tr> <td class="sn">Con:</td> <td class="sv">
+Hidden assumption of C-style strings. Stupid error message when you use the truncate API for a non-blocking read(). All the extra baggage, and the namespace destruction, you get.
+</td> </tr><tr> <td class="sn">Notes:</td> </tr><tr> <td colspan="2" class="main"> <p>
+	  Has a start pointer and length model, however it does grow the strings
+	  itself ... and call abort() is the allocations fails. However, note
+	  that altough the library includes a bad snprintf() implementation
+          (see the printf comparison page)
+	  it doesn't have a sprintf() call to write into the "spif string".
+	  typedef's and macro's appear to be used just to make the code less
+	  readable.
+	  It has an "interesting"
+	  set of APIs, mainly due to the overhead of adding data to a
+	  string or getting a substring. For instance you can "splice" part of
+	  a string and another string, but you can't substitue data inside a
+	  string without copying it multiple times.
+	</p>
+	<p>
+	  The fact that almost all searching/comparing APIs map
+	  onto C library APIs means that embeded NIL characters silently
+	  fail -- even though there are APIs to initialise strings from a file
+	  descriptor.
+	</p>
+	<p>
+	  It has terrible abuse of the namespace, outside of the str.c file
+	  (and even in the string.c file it exports a function called "join")
+          however it looks like you could seperate the string.c code out
+	  without a lot of work -- at which point the namespace is well
+	  contained (but it also is built assuming that you'll be using the
+	  "spif" object model -- however this doesn't seem to be a
+         requirement).
+</p></td></tr></table>
+
+
+<table class="ent"> <tr> <td class="sn">Name:</td> <td class="sl">
+<a href="http://www.mibsoftware.com/librock/text/">librock text processing</a>
+</td> </tr><tr> <td class="sn">Language:</td> <td class="sv">C
+</td> </tr><tr> <td class="sn">Type:</td> <td class="sv">General purpose Library
+C Style strings (so embedded NIL characters aren't allowed)
+</td> </tr><tr> <td class="sn">License:</td> <td class="sv">
+<a href="http://www.mibsoftware.com/librock/librock/license/librock.txt">Custom (new BSD-ish, I think)</a>
+</td> </tr><tr> <td class="sn">Namespace:</td> <td class="sv">
+Self contained namespace of "librock_".
+</td> </tr><tr> <td class="sn">IO:</td> <td class="sv">
+<a href="req_trunc_io">Has request/truncate functions</a>, so appending
+reads aren't bad. But writing non-blocking is non-trivial.
+Some nice helper functions for blocking IO.
+Binary data with NIL values will screw up the representation of the string.
+</td> </tr><tr> <td class="sn">Testing:</td> <td class="sv">
+No public testsuite, private testsuite doesn't
+ cover everything (I've not seen it, just spoken to the author).
+</td> </tr><tr> <td class="sn">Version:</td> <td class="sv">
+unknown (2003-02-25)
+</td> </tr><tr> <td class="sn">Pro:</td> <td class="sv">
+Has some nice functions to use if you need to keep compatability with C-style
+strings elsewhere in your code above all things. Allows different allocators.
+</td> </tr><tr> <td class="sn">Con:</td> <td class="sv">
+Requires a lot of baggage. Weird API names, and large function prefix.
+</td> </tr><tr> <td class="sn">Notes:</td> </tr><tr> <td colspan="2" class="main"> <p>
+	  This library has allocating versions of most of the std. modifying
+          str*() library functions. It has a specialised version of strspn()
+          for matching "C identifier" like names.
+          It also has a couple of utility functions
+          for reading IO ... however blocking is mandatory, and speed may be a
+          problem due to numerous realloc() calls for large datasets.
+	</p>
+	<p>
+<!-- FIXME: wrong file... -->
+          The printf() like function just calls the host implementation. Note
+          that before 2003-02-25 the failure path was broken, and would crash.
+</p></td></tr></table>
+
+
+<!-- -->
+<!-- More C -->
+<table class="ent"> <tr> <td class="sn">Name:</td> <td class="sl">
+<a id="knetstring" href="http://www.kiva.net/~systhug/mcfeely/dist/">knetstring</a>
+</td> </tr><tr> <td class="sn">Language:</td> <td class="sv">C
+</td> </tr><tr> <td class="sn">Type:</td> <td class="sv">String Library
+</td> </tr><tr> <td class="sn">License:</td> <td class="sv">
+<a href="http://www.gnu.org/copyleft/gpl.html">GPL</a>
+</td> </tr><tr> <td class="sn">Namespace:</td> <td class="sv">
+Self contained namespace of "kns_".
+</td> </tr><tr> <td class="sn">IO:</td> <td class="sv">
+Implementing the <a href="req_trunc_io">request/truncate functions</a>, so appending reads aren't bad, isn't too hard ... and within the API.
+But writing non-blocking is non-trivial.
+Some nice helper functions for blocking IO.
+</td> </tr><tr> <td class="sn">Testing:</td> <td class="sv">
+</td> </tr><tr> <td class="sn">Version:</td> <td class="sv">
+1.0.4
+</td> </tr><tr> <td class="sn">Pro:</td> <td class="sv">
+If you want to just add <a href="http://cr.yp.to/proto/netstrings.txt">netstring</a> APIs, this isn't too bad.
+</td> </tr><tr> <td class="sn">Con:</td> <td class="sv">
+Needs another string library for anything but dealing with <a href="http://cr.yp.to/proto/netstrings.txt">netstrings</a> (and some IO).
+</td> </tr><tr> <td class="sn">Notes:</td> </tr><tr> <td colspan="2" class="main"> <p>
+	  Has a start pointer and length model. Only has APIs specific to
+ doing IO using <a href="http://cr.yp.to/proto/netstrings.txt">netstrings</a>. Recovering from temporary IO errors is next to
+ impossible.
+</p></td></tr></table>
+
+
+<table class="ent"> <tr> <td class="sn">Name:</td> <td class="sl">
+<a id="toolbox" href="http://www.alphazed.co.uk/software/toolbox/download.php">toolbox</a>
+</td> </tr><tr> <td class="sn">Language:</td> <td class="sv">C
+</td> </tr><tr> <td class="sn">Type:</td> <td class="sv">General purpose Library (although not much more than just the string APIs)
+</td> </tr><tr> <td class="sn">Model:</td> <td class="sv">
+Pointer and size
+</td> </tr><tr> <td class="sn">License:</td> <td class="sv">
+<a href="http://www.and.org/vstr/compare_licenses/toolbox.txt">Custom</a>
+</td> </tr><tr> <td class="sn">Namespace:</td> <td class="sv">
+Self contained namespace of "tb_".
+</td> </tr><tr> <td class="sn">IO:</td> <td class="sv">
+Just strcpy() etc. anything else you'll have to do yourself.
+</td> </tr><tr> <td class="sn">Testing:</td> <td class="sv">
+</td> </tr><tr> <td class="sn">Version:</td> <td class="sv">
+2003-03-10
+</td> </tr><tr> <td class="sn">Pro:</td> <td class="sv">
+It returns (char *) types that, in theory, you can treat as if you allocated them yourself with "malloc" ... however this isn't true.
+</td> </tr><tr> <td class="sn">Con:</td> <td class="sv">
+The theory doesn't match up with reality. The price for the theory that
+doesn't really work is massive overhead for each function call. SafeStr is about
+as good as you are going to get, just don't mixup where your data came from and
+call the correct free function.
+</td> </tr><tr> <td class="sn">Notes:</td> </tr><tr> <td colspan="2" class="main"> <p>
+  This library was the basis of an "article" in <a href="http://www.cuj.com">CUJ</a>, however try not to judge CUJ that badly based on that ... it is often ok.
+</p><p>
+ The idea is that everything the library deals with looks like a
+generic (char *), so you can forget about having to maintain state about which
+of your strings is from strdup() and which from the library. However you can't
+pass a malloc()'d string to the library (it'll call abort()), and if you
+free()/realloc() a pointer returned from the library then you'll corrupt
+it's internal state on a subsequent allocation.
+</p><p>
+ However to keep this illusion that you could do those things the library has
+to do a looup for the metadata, which is kept seperately, on each call into
+the library. Currently this is done via. a sequential scan through an unsorted
+array (O(n/2) time).
+</p><p>
+ In theory you might be able to reduce the errors to not calling abort() on
+invalid strings when you should, by doing an extra lookup at
+allocation/reallocation time. Although this would reduce the speed even further,
+and is not strictly conforming C.
+</p></td></tr></table>
+
+
+<table class="ent"> <tr> <td class="sn">Name:</td> <td class="sl">
+<a id="firestring" href="http://freshmeat.net/projects/firestring/">firestring</a>
+</td> </tr><tr> <td class="sn">Response:</td> <td class="sv">
+<a href="http://freshmeat.net/projects/firestring/#comment-26661">Response by author</a>
+</td> </tr><tr> <td class="sn">Language:</td> <td class="sv">C
+</td> </tr><tr> <td class="sn">Type:</td> <td class="sv">String Library
+</td> </tr><tr> <td class="sn">Model:</td> <td class="sv">
+Pointer, length and size (expansion of length/pointer is done to exact size
+needed). Some functions will dynamically allocate, some will just return an
+error if the size is exceeded. Also contains C-style string wrappers
+(although note that firestring_strcasecmp("a", "ab") isn't valid).
+</td> </tr><tr> <td class="sn">License:</td> <td class="sv">
+<a href="http://www.gnu.org/copyleft/gpl.html">GPL</a>
+</td> </tr><tr> <td class="sn">Namespace:</td> <td class="sv">
+Mostly confined to namespace of "firestring_", however types are in the POSIX
+namespace of *_t and there are two "ESTR_" namespaced macros.
+</td> </tr><tr> <td class="sn">IO:</td> <td class="sv">
+Although it doesn't have a direct API for
+<a href="req_trunc_io">request/truncate functions</a>, it seems like you
+should be able to alter the structure manually. Also it has a read function
+that is just as efficient as a request/truncate API.
+</td> </tr><tr> <td class="sn">Testing:</td> <td class="sv">
+<!-- perl -ne '/((firestring_|ESTR_)[A-Za-z_]+)\s*\(/ && print "$1\n"'  firestring.h -->
+<!-- perl -ne '/((firestring_|ESTR_)[A-Za-z_]+)\s*\(/ && print "$1\n"'  tester.c -->
+<!-- sloccount firestring.c -->
+<!-- sloccount tester.c -->
+Testsuite tests 20 functions, implementation has 68 functions (%15 size ratio between implementation and testsuite -- <a href="http://www.dwheeler.com/sloccount/">sloccount</a>).
+</td> </tr><tr> <td class="sn">Version:</td> <td class="sv">
+0.9.1
+</td> </tr><tr> <td class="sn">Pro:</td> <td class="sv">
+Has intgrated encode/decode functions for a few things and a config. parser.
+</td> </tr><tr> <td class="sn">Con:</td> <td class="sv">
+There is a function that purports to be a printf like function however about
+the only commonality is that "%d" prints an int and "%s" prints a NIL
+terminated character array. This will almost certainly cause confusion and
+ problems.
+ Due to the useage of restrict it isn't possible to compare a string with
+itself. Failure to allocate memory calls abort().
+</td> </tr><tr> <td class="sn">Notes:</td> </tr><tr> <td colspan="2" class="main"> <p>
+	  It provides a function to do a read, which is nice. Also has a
+	  simple to use "parse configuration file" function.
+      It provides functions to operate on C-style strings, with the advantage
+that they are broken everywhere that honours restrict. Functions which operate
+on real dynamically sized strings and ones that take the same type that
+<a href="security#alloc">just limit the length of strings</a>. This
+may well lead to consufion, for instance there
+is a function called "firestring_estr_chug()" which would corrupt data data
+when used with a dynamically allocated freistring (and could lead to a remote
+sercurity vulnerability) but would just be confusing with stack allocated
+limited data (note that at least "firestring_estr_trim()" calls this function).
+	</p>
+	<p>
+Gratuitous usage of "restrict" in the API makes a lot of the functions severly
+suspect, and some just obviously broken. Note that the test suite "tests" this
+case, so it's likely that the default compiler is ignoring these obvious errors.
+</p></td></tr></table>
+
+<table class="ent"> <tr> <td class="sn">Name:</td> <td class="sl">
+<a id="libowfat" href="http://www.fefe.de/libowfat/">libowfat</a>
+</td> </tr><tr> <td class="sn">Language:</td> <td class="sv">C
+</td> </tr><tr> <td class="sn">Type:</td> <td class="sv">General purpose Library
+</td> </tr><tr> <td class="sn">License:</td> <td class="sv">
+<a href="http://www.gnu.org/copyleft/gpl.html">GPL</a>
+<!--
+</td> </tr><tr> <td class="sn">Namespace:</td> <td class="sv">
+</td> </tr><tr> <td class="sn">IO:</td> <td class="sv">
+</td> </tr><tr> <td class="sn">Testing:</td> <td class="sv">
+-->
+</td> </tr><tr> <td class="sn">Version:</td> <td class="sv">
+0.13
+</td> </tr><tr> <td class="sn">Pro:</td> <td class="sv">
+</td> </tr><tr> <td class="sn">Con:</td> <td class="sv">
+Most of the original string functions that DJB wrote, are now released as
+"public domain" ... just see those.
+</td> </tr><tr> <td class="sn">Notes:</td> </tr><tr> <td colspan="2" class="main"> <p>
+	  This is a reimplementation of the functions in qmail, but under a GPL
+	  license.
+	  It does have a stralloc set of calls
+	  that operate on a start pointer and length model, they do dynamically
+	  reallocate memory and pass memory failure back to the caller.
+	  As with all DJB code though, the API is written as a set of small
+	  atomic operations. For instance printf like functionality is
+	  implemented over 12 different functions named fmt_* (which don't
+	  check for overflows, but <b>some</b> are also reimplemented as a as
+	  stralloc functions). This design makes using the API much more clumsy,
+	  for a minor speedup, makes doing i18n almost impossible and goes
+	  directly against "premature optimization is bad".
+	</p>
+	<p>
+	  It's worth nothing that although the stralloc functions deal with
+	  dynamic memory a lot of the other function ignore bounds checking
+	  and/or assume things are terminated with a '\0' character. Even more
+	  so than the DJB functions, although this is probably bad just
+	  implementation rather than deliberate -- but then why would you
+	  think you can write good code with an interface when the
+	  implementor can't
+	  (for
+	  instance the scan_long and scan_8long functions are almost completely
+	  broken in libowfat ... but fine in qmail).
+</p></td></tr></table>
+
+
+<table class="ent"> <tr> <td class="sn">Name:</td> <td class="sl">
+<a id="xstring" href="http://www.prism.gatech.edu/~gte477n/languages/c/xstring.html">xstring</a>
+</td> </tr><tr> <td class="sn">Language:</td> <td class="sv">C
+</td> </tr><tr> <td class="sn">Type:</td> <td class="sv">String Library
+</td> </tr><tr> <td class="sn">Model:</td> <td class="sv">
+Pointer, length and size
+<!--
+</td> </tr><tr> <td class="sn">License:</td> <td class="sv">
+</td> </tr><tr> <td class="sn">Namespace:</td> <td class="sv">
+</td> </tr><tr> <td class="sn">IO:</td> <td class="sv">
+</td> </tr><tr> <td class="sn">Testing:</td> <td class="sv">
+</td> </tr><tr> <td class="sn">Version:</td> <td class="sv">
+-->
+</td> </tr><tr> <td class="sn">Pro:</td> <td class="sv">
+</td> </tr><tr> <td class="sn">Con:</td> <td class="sv">
+There are much better implementations of the design.
+</td> </tr><tr> <td class="sn">Notes:</td> </tr><tr> <td colspan="2" class="main"> <p>
+	  This library works on a simple start pointer and length, model. It
+	  is mostly a subset of the glib functionality, and like glib also
+	  calls abort() on memory errors. One of the obvious missing pieces is
+	  a printf() like function.
+	</p>
+	<p> The namespace isn't terrible, apart from the fact that the
+	  identifiers "xmalloc", "xrealloc" and "xfree" are all defined and
+	  exported from the library (which is compiled shared, but given a
+	  static library ".a" suffix).
+</p></td></tr></table>
+
+<!-- More C++ -->
+<table class="ent"> <tr> <td class="sn">Name:</td> <td class="sl">
+<a id="cppvstring" href="http://cade.webbg.com/away/vstring/">VSTRING</a>
+</td> </tr><tr> <td class="sn">Language:</td> <td class="sv">C++
+</td> </tr><tr> <td class="sn">Type:</td> <td class="sv">String Library
+<!--
+</td> </tr><tr> <td class="sn">License:</td> <td class="sv">
+</td> </tr><tr> <td class="sn">Namespace:</td> <td class="sv">
+</td> </tr><tr> <td class="sn">IO:</td> <td class="sv">
+</td> </tr><tr> <td class="sn">Testing:</td> <td class="sv">
+</td> </tr><tr> <td class="sn">Version:</td> <td class="sv">
+-->
+</td> </tr><tr> <td class="sn">Pro:</td> <td class="sv">
+</td> </tr><tr> <td class="sn">Con:</td> <td class="sv">
+It would be better to use the std::string class.
+</td> </tr><tr> <td class="sn">Notes:</td> </tr><tr> <td colspan="2" class="main"> <p>
+	  This is currently just a C++ wrapper class around a (char *), with
+	  a couple of extra functions not available in std. C. It does to
+	  auto matic resizing. It also look looks like the implementation
+	  could be changed to fix a lot of
+	  problems with this (Eg. the length is calculated using strlen(), so
+	  embeded '\0' characters corrupt data)
+	  without affecting source compatability. The printf like function calls
+	  the host implementation.
+</p></td></tr></table>
+
+<table class="ent"> <tr> <td class="sn">Name:</td> <td class="sl">
+<a id="mstring" href="http://freshmeat.net/projects/mstringandmstringarray/">MString</a>
+</td> </tr><tr> <td class="sn">Language:</td> <td class="sv">C++
+</td> </tr><tr> <td class="sn">Type:</td> <td class="sv">String Library
+<!--
+</td> </tr><tr> <td class="sn">License:</td> <td class="sv">
+</td> </tr><tr> <td class="sn">Namespace:</td> <td class="sv">
+</td> </tr><tr> <td class="sn">IO:</td> <td class="sv">
+</td> </tr><tr> <td class="sn">Testing:</td> <td class="sv">
+</td> </tr><tr> <td class="sn">Version:</td> <td class="sv">
+-->
+</td> </tr><tr> <td class="sn">Pro:</td> <td class="sv">
+Is you need MFC compatability, this might be your only choice.
+</td> </tr><tr> <td class="sn">Con:</td> <td class="sv">
+It would be better to use the std::string class.
+</td> </tr><tr> <td class="sn">Notes:</td> </tr><tr> <td colspan="2" class="main"> <p>
+	  This is a C++ library designed to be compatible with the string
+	  library that comes with the Microsoft Foundation Classes. <b>Each
+	  character</b> in the string is actually a <b>class itself</b>. This
+	  could probably be fixed without changing source compatability.
+</p></td></tr></table>
+
+ <!-- OTHERS -->
+
+<p> There are a few other string APIs that, for one reason or another, I haven't
+got artound to looking at. Feel free to have a look at them, or check back every
+now and again when I might have looked at them.
+</p>
+
+<ul>
+
+<li>
+<a href="http://www.wxwindows.org/manuals/2.4.2/wx368.htm#wxstring">wxString</a>
+, C++, diff. API from std::string
+</li>
+
+<li>
+<a href="http://www.nongnu.org/nsl/libutils/libutils.html#0005">nsl/libutils</a>
+</li>
+
+<li>
+<a href="http://kfa.cx/products/libcuf/docs/strings_8c.html">libcuf</a>
+</li>
+
+<li>
+<a href="http://openvpn.sourceforge.net/">openvpn</a>
+</li>
+
+<li>
+<a href="http://libh.slashusr.org/">libh</a>
+</li>
+
+<li>
+<a href="http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/gift/giFT/lib/fdbuf.c?rev=1.4&content-type=text/vnd.viewcvs-markup">giFT</a>
+</li>
+
+<li>
+<a href="http://www.robertnz.net/string.htm">robertnz string</a>
+, maybe std::string compat. API
+</li>
+
+<li>
+<a href="http://open.nit.ca/wvstreams/tutorial/">wvstreams</a>
+, maybe std::string compat. API + extra functions
+</li>
+
+<li>
+<a href="http://www.rainingdata.com/support/techpubs/0852head.html">rainingdata</a>
+, maybe proprietary ... looks like it uses a weird namespace.
+</li>
+
+<li>
+<a href="http://vigna.dsi.unimi.it/ViolinStrings/docs/ViolinStrings/package-summary.html">violin strings</a>
+</li>
+
+<li>
+<a href="http://www.roguewave.com/support/docs/sourcepro/toolsref/rwcstring.html">Rogue Wave</a>
+, std::string with extensions ... proprietary but used a lot.
+</li>
+
+<li>
+<a href="http://www.utilitycode.com/str/">Utility Code</a>
+,  Str ... proprietary but has fast benchmarks.
+</li>
+
+<li>
+<a href="http://www.perl.com/">perl</a>
+</li>
+
+</ul>
+
+   <!-- need to do perl/python/ruby/rep -->
+
+    <!-- END OF string libraries -->
+
+    <p> Any corrections or omissions you see in the above, feel free to contact
+      me at the address below </p>
+
+    <hr>
+    <address><a href="mailto:james-web@and.org">James Antill</a></address>
+<!-- Created: Mon Sep  2 15:43:34 EDT 2002 -->
+<!-- hhmts start -->
+Last modified: Mon Nov 21 15:18:57 EST 2005
+<!-- hhmts end -->
+  </body>
+</html>

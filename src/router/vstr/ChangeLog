@@ -1,0 +1,2475 @@
+2006-03-06  James Antill  <james@and.org>
+
+	* NEWS: Release 1.0.15
+
+2006-03-05  James Antill  <james@and.org>
+
+	* src/vstr_fmt.c (vstr__fmt_beg): Create a simple hash for the custom
+	format names.
+
+	* Documentation/functions.txt: Document vstr_sc_bmap_init_eq_spn_buf,
+	vstr_sc_bmap_init_or_spn_buf, vstr_sc_bmap_init_eq_spn_cstr,
+	vstr_sc_bmap_init_or_spn_cstr.
+
+	* src/vstr_fmt.c (vstr_fmt_del): Minor possible speedup, by reenabling
+	bracketed speedups when empty.
+
+	* Documentation/functions.txt: Document vstr_spn_bmap_eq_fwd,
+	vstr_spn_bmap_eq_rev, vstr_spn_bmap_and_fwd, vstr_spn_bmap_and_rev.
+	
+	* Documentation/functions.txt: Document vstr_cspn_bmap_eq_fwd,
+	vstr_cspn_bmap_eq_rev, vstr_cspn_bmap_and_fwd, vstr_cspn_bmap_and_rev.
+
+2006-03-02  James Antill  <james@and.org>
+
+	* src/vstr_add.c (vstr__convert_buf_ref): Fix integer overflow bug
+	(mostly harmless in non-debug mode).
+
+2005-09-15  James Antill  <james@and.org>
+
+	* src/vstr_sc_posix.c (VSTR__UIO_MAXDATA): Add work around for moron
+	Linux 2GB limit.
+
+2005-07-31  James Antill  <james@and.org>
+
+	* src/vstr_add_fmt.c (vstr__fmt_write_spec): Use strerror_r() if
+	available.
+
+2005-07-26  James Antill  <james@and.org>
+
+	* include/vstr-inline.h (vstr_cmp_fast): Added function.
+	(vstr_cmp_fast_buf): Added function.
+	(vstr_cmp_fast_cstr): Added function.
+
+	* include/vstr-inline.h (vstr_sc_bmap_init_eq_spn_buf): Added function.
+	(vstr_sc_bmap_init_or_spn_buf): Added function.
+	(vstr_sc_bmap_init_eq_spn_cstr): Added function.
+	(vstr_sc_bmap_init_or_spn_cstr): Added function.
+
+	* src/vstr_spn.c (vstr_spn_bmap_eq_fwd): Added function.
+	(vstr_spn_bmap_eq_rev): Added function.
+	(vstr_spn_bmap_and_fwd): Added function.
+	(vstr_spn_bmap_and_rev): Added function.
+	(vstr_cspn_bmap_eq_fwd): Added function.
+	(vstr_cspn_bmap_eq_rev): Added function.
+	(vstr_cspn_bmap_and_fwd): Added function.
+	(vstr_cspn_bmap_and_rev): Added function.
+
+2005-06-23  James Antill  <james@and.org>
+
+	* src/vstr_sub.c (vstr_sub_ptr): Fixed bug when replacing a ref node
+	with a pointer node (reference didn't get deleted).
+	(vstr_sub_ref): Move reference addition to after possible failure.
+
+2005-04-17  James Antill  <james@and.org>
+
+	* include/vstr-switch.h: Added VSTR_COMPILE_BUILTINS switch.
+	(VSTR__AT_COMPILE_STRLEN): Added code to use __builtin_strlen() in GCC.
+
+	* src/vstr.c (vstr_init): Factor the malloc-check APIs out into
+	malloc-check.h
+
+	* include/vstr-inline.h (vstr_wrap_memcpy): Do more "inline".
+	(vstr_wrap_memcmp): Do more "inline".
+	(vstr_wrap_memchr): Do more "inline".
+	(vstr_wrap_memset): Do more "inline".
+
+2005-02-16  James Antill  <james@and.org>
+
+	* src/vstr_sc_posix.c (vstr__sc_get_size): Fix loading of zero sized
+	files.
+
+2005-01-09  James Antill  <james@and.org>
+
+	* NEWS (2005-01-09): Release 1.0.14
+
+2004-12-15  James Antill  <james@and.org>
+
+	* include/vstr-inline.h (vstr_data_set): Fix gcc extension of allowing
+	"return void;".
+
+2004-12-06  James Antill  <james@and.org>
+
+	* src/vstr_sc_posix.c (vstr_sc_mmap_file): Add O_NONBLOCK to stop hang
+	on FIFOs.
+	(vstr_sc_read_iov_file): Add O_NONBLOCK to stop hang on FIFOs.
+	(vstr_sc_read_len_file): Add O_NONBLOCK to stop hang on FIFOs.
+	(vstr_sc_write_file): Add O_NONBLOCK to default open flags to stop hang
+	on FIFOs.
+
+	* src/vstr_conv.c (vstr_conv_encode_uri): Add extra chars to encode.
+
+2004-10-14  James Antill  <james@and.org>
+
+	* tst/regression/tst_regression_conv.c (tst): Added testcase for conv
+	bug.
+
+	* src/vstr_conv.c (vstr_conv_lowercase): Fixed major logic bug in conv
+	helper macro, where function could return having done nothing when it
+	should have done something.
+
+2004-10-06  James Antill  <james@and.org>
+
+	* src/vstr_sc_posix.c (vstr_sc_write_fd): Fixed bug when UIO_MAXIOV is
+	too big.
+	(vstr_sc_read_len_file): Changed code to block until error or all data
+	is read, makes function much more useful.
+	(vstr_sc_write_file): Changed code to block until error or all data
+	is written, makes function much more useful.
+	(vstr_sc_read_iov_file): Changed code to block until error or all data
+	is read, makes function much more useful.
+
+2004-10-04  James Antill  <james@and.org>
+
+	* src/vstr_sc_posix.c (vstr_sc_read_len_fd): Fixed OOB zero length fail
+	return.
+	(vstr_sc_read_len_file): Dito.
+	(vstr_sc_write_fd): Fixed zero length fail return.
+
+2004-09-20  James Antill  <james@and.org>
+
+	* src/vstr_add_fmt.c (vstr__add_fmt_spec): Flags processing should
+	happen after i18n processing.
+
+2004-09-07  James Antill  <james@and.org>
+
+	* src/vstr_add_fmt.c (vstr__add_fmt_usr_write_spec): Fix endian issue
+	for ptrdiff_t.
+
+2004-09-03  James Antill  <james@and.org>
+
+	* src/vstr_cntl.c (vstr_cntl_conf): Fix endian issue, on returned 
+	flag value.
+
+2004-08-29  James Antill  <james@and.org>
+
+	* NEWS (2004-08-29): Release 1.0.13
+	
+2004-08-20  James Antill  <james@and.org>
+
+	* include/vstr-inline.h (vstr_sc_add_b_uint16): Added function.
+	(vstr_sc_add_b_uint32): Added function.
+	(vstr_sc_sub_b_uint16): Added function.
+	(vstr_sc_sub_b_uint32): Added function.
+	(vstr_sc_parse_b_uint16): Added function.
+	(vstr_sc_parse_b_uint32): Added function.
+	(vstr_iter_fwd_buf): Added function.
+	(vstr_iter_fwd_cstr): Added function.
+
+2004-07-30  James Antill  <james@and.org>
+
+	* src/vstr_dbl/vstr_add_fmt_dbl_none.c (vstr__add_fmt_dbl): Use Vstr
+	locale of decimal point.
+
+2004-06-08  James Antill  <james@and.org>
+
+	* include/fix.h: open63 -> open for FreeBSD builds.
+
+2004-05-14  James Antill  <james@and.org>
+
+	* include/vstr-const.h (VSTR_TYPE_FMT_PTR_SIGNED_CHAR): Added type.
+	(VSTR_TYPE_FMT_PTR_SHORT): Added type.
+	(VSTR_TYPE_FMT_PTR_INT): Added type.
+	(VSTR_TYPE_FMT_PTR_LONG): Added type.
+	(VSTR_TYPE_FMT_PTR_LONG_LONG): Added type.
+	(VSTR_TYPE_FMT_PTR_SSIZE_T): Added type.
+	(VSTR_TYPE_FMT_PTR_PTRDIFF_T): Added type.
+	(VSTR_TYPE_FMT_PTR_INTMAX_T): Added type.
+
+2004-05-12  James Antill  <james@and.org>
+
+	* src/vstr_add.c (vstr__cache_iovec_maybe_add): Remove old use of
+	iovec_auto_update flag.
+
+2004-05-04  James Antill  <james@and.org>
+
+	* src/vstr_add_fmt.c (vstr__add_fmt_number): Added uintptr_t as the
+	convertion for %p.
+
+2004-04-07  James Antill  <james@and.org>
+
+	* src/vstr_parse.c (vstr_parse_num): Added function.
+
+2004-04-05  James Antill  <james@and.org>
+
+	* include/vstr-inline.h (vstr_iter_fwd_chr): Added function.
+	(vstr_iter_pos): Added function.
+	(vstr_iter_len): Added function.
+
+	* src/vstr_split.c (vstr__split_hdl_null_mid): Fix null mid splitting
+	return value on malloc error cases.
+	(vstr__split_hdl_null_beg): Fix null beg splitting return value on
+	malloc error cases.
+
+2004-04-01  James Antill  <james@and.org>
+
+	* src/vstr_sc_posix.c (vstr_sc_write_file): Fix return when close fails.
+	(vstr_sc_read_len_file): Fix return when close fails.
+	(vstr_sc_read_iov_file): Fix return when close fails.
+	(vstr_sc_mmap_file): Fix return when close fails.
+	(vstr_sc_read_len_file): Fix uninit err variable.
+
+2004-03-19  James Antill  <james@and.org>
+
+	* include/vstr-inline.h (vstr_srch_cstr_buf_fwd): Added const to Vstr string
+	(vstr_srch_cstr_buf_rev): Added const to Vstr string
+	(vstr_srch_cstr_chrs_fwd): Added const to Vstr string
+	(vstr_srch_cstr_chrs_rev): Added const to Vstr string
+	(vstr_csrch_cstr_chrs_fwd): Added const to Vstr string
+	(vstr_csrch_cstr_chrs_rev): Added const to Vstr string
+	(vstr_srch_case_cstr_buf_fwd): Added const to Vstr string
+	(vstr_srch_case_cstr_buf_rev): Added const to Vstr string
+	(vstr_spn_cstr_chrs_fwd): Added const to Vstr string
+	(vstr_spn_cstr_chrs_rev): Added const to Vstr string
+	(vstr_cspn_cstr_chrs_fwd): Added const to Vstr string
+	(vstr_cspn_cstr_chrs_rev): Added const to Vstr string
+	(vstr_split_cstr_buf): Added const to Vstr string
+	(vstr_split_cstr_chrs): Added const to Vstr string
+
+2004-03-17  James Antill  <james@and.org>
+
+	* src/vstr_add_fmt.c (vstr__add_fmt_wide_cstr): Fixed crash on win32
+	(and other platforms wcsnrtombs doesn't act weird when first arg is
+	NULL).
+
+2004-03-10  James Antill  <james@and.org>
+
+	* src/vstr_sc.c (vstr_sc_fmt_add_bkmg_Byte_uintmax): Added function.
+	(vstr_sc_fmt_add_bkmg_Bytes_uintmax): Added function.
+	(vstr_sc_fmt_add_bkmg_bit_uintmax): Added function.
+	(vstr_sc_fmt_add_bkmg_bits_uintmax): Added function.
+
+	* include/vstr-extern.h (VSTR_SC_FMT_ADD): Added macro function.
+
+2004-02-18  James Antill  <james@and.org>
+
+	* src/vstr_sc.c (vstr_sc_fmt_cb_beg): Fix bug where base was always
+	taken as 16 for grouping lookups.
+
+2004-02-08  James Antill  <james@and.org>
+
+	* include/vstr-extern.h: Add ability to work out that off64_t isn't
+	going to work at compile time, and skip those functions.
+
+	* include/vstr-arch.h: Move include processing into a seperate file.
+
+2004-01-27  James Antill  <james@and.org>
+
+	* include/vstr.exported_symbols: Removed vstr_version_func from
+	exported list of symbols ... running the library should work again.
+	Removed vstr_extern_inline_make_cache_pos due to not being called
+	from any internal code anymore.
+
+2004-01-25  James Antill  <james@and.org>
+
+	* NEWS (2004-01-25): Release 1.0.12.
+
+2004-01-25  James Antill  <james@and.org>
+
+	* src/vstr_split.c (vstr_split_chrs): Fix _POST_NULL flag to be the
+	same as the _buf function and increment the return value.
+
+	* src/vstr_sect.c (vstr_sects_update_add): Set malloc_bad flag in wrong
+	side of test in the 1.0.10 changes.
+
+	* src/vstr_sub.c (vstr_sub_ref): Fix bug when doing a fast replacement
+	of a non _REF node.
+
+2004-01-23  James Antill  <james@and.org>
+
+	* src/vstr_parse.c (vstr__parse_ipv4_netmask): Allow non-full netmasks
+	that don't end in ".".
+
+	* include/vstr-inline.h (vstr_export_chr): Fixed NULL de-reference with
+	_NON nodes.
+
+	* src/vstr_add.c (vstr_add_vstr): Fix bug where memcpy() was called on
+	overlapping data.
+
+2004-01-22  James Antill  <james@and.org>
+
+	* src/vstr_split.c (vstr__split_hdl_null_end): Fix handling of end run
+	of null splits.
+
+	* src/vstr_add_fmt.c (vstr__fmt_fillin_spec): Allow multiple parameters
+	to be used via. i18n including fieldwidth and precision.
+
+	* src/vstr_srch.c (vstr__cmp_eq_rev_buf): Fixed bug when searching
+	backwards with _NON nodes just before a partial match.
+
+2004-01-21  James Antill  <james@and.org>
+
+	* src/vstr_add_fmt.c (vstr__add_fmt_usr_esc): Allow mixed i18n in
+	custom formatters.
+
+	* src/vstr_srch_case.c (vstr_srch_case_chr_rev): Made function much
+	faster.
+
+2004-01-20  James Antill  <james@and.org>
+
+	* src/vstr_srch_case.c (vstr_srch_case_vstr_fwd): Fix assert().
+
+	* src/vstr_srch.c (vstr_srch_vstr_fwd): Fix assert().
+
+2004-01-19  James Antill  <james@and.org>
+
+	* include/vstr-switch.h (VSTR_COMPILE_INLINE): Change default to 1.
+
+2004-01-17  James Antill  <james@and.org>
+
+	* src/vstr_cache.c (vstr_cache_add): Added dup checks.
+
+	* scripts/export_check.sh: Add script to check exported symbols.
+	Found out no versioning was happening for
+
+2004-01-14  James Antill  <james@and.org>
+
+	* src/vstr_conv.c (vstr_conv_lowercase): Fix memory allocation for split
+	nodes.
+	(vstr_conv_uppercase): Fix memory allocation for split nodes.
+	(vstr_conv_unprintable_chr): Fix memory allocation for split nodes.
+
+	* src/vstr.c (vstr__make_base_cache): Fixed allocation of vector when
+	mimum allocations are set to zero.
+
+	* include/vstr-extern.h (VSTR_SC_POSLAST): Added macro function of
+	vstr_sc_poslast() inline.
+
+	* include/vstr-inline.h (vstr_sc_poslast): Added inline function to
+	calc. the position of the last character.
+
+	* include/vstr-inline.h (vstr_del): Don't free the reference, just 0
+	the length. This is what the callback does.
+
+	* src/vstr_export.c (vstr_export_ref): Fix bug when export a cached
+	cstr ptr that has been deallocated (added regression test).
+
+	* src/vstr_cache.c (vstr__cache_cstr_cpy): Fix bug when export a cached
+	cstr ptr that has been deallocated (added regression test). Also make
+	section tests correct.
+
+2004-01-09  James Antill  <james@and.org>
+
+	* include/vstr-extern.h (vstr_sub_cstr_buf): Removed inline keyword
+	from prototype.
+	(vstr_sub_cstr_ptr): Removed inline keyword from prototype.
+	(vstr_sub_cstr_ref): Removed inline keyword from prototype.
+
+2003-12-14  James Antill  <james@and.org>
+
+	* NEWS: Release 1.0.11
+
+2003-12-14  James Antill  <james@and.org>
+
+	* src/vstr_sc.c (vstr_sc_fmt_add_all): Add a "%d" and "%d%d" static
+	format checker compat. Mainly because GCC "knows" %p can't take a
+	precision ".*".
+	(vstr__sc_fmt_add_cb_buf): Fix custom formatter to use the Vstr locale
+	NULL string.
+	(vstr__sc_fmt_add_cb_ptr): Fix custom formatter to use the Vstr locale
+	NULL string.
+	(vstr__sc_fmt_add_cb_ptr): Fix type passed to vstr_sc_fmt_cb_beg() in
+	the callback.
+
+	* configure.in (debug): Remove -Winline from warning list.
+
+	* Documentation/txt2man.pl (convert): Fix vstr_const man page
+	generation.
+
+	* src/vstr.c (vstr__del_conf): Fix check for internally allocated
+	memory in debug mode, on objects that can come from externally.
+
+2003-12-14  Martin Pool <mbp@sourcefrog.net>
+
+	* src/vstr_sc.c (vstr__sc_fmt_num_ipv6_compact): 64bit clean patch.
+
+2003-12-09  James Antill  <james@and.org>
+
+	* include/vstr-extern.h: Made vstr_export_chr() pure.
+
+2003-11-08  James Antill  <james@and.org>
+
+	* src/vstr_add_fmt.c (vstr__fmt_mv_spec): Fix for ICC warning.
+
+2003-11-06  James Antill  <james@and.org>
+
+	* src/fix.c: Build fixes for --enable-noposix-host
+
+2003-10-30  James Antill  <james@and.org>
+
+	* NEWS (2003-09-29): Release 1.0.10
+
+2003-10-29  James Antill  <james@and.org>
+
+	* include/vstr-extern.h (VSTR_SC_ADD_CSTR_GRPBASENUM_BUF): New helper
+	macro funcion for printing numbers.
+	(VSTR_SC_ADD_CSTR_GRPBASENUM_PTR): New helper macro funcion for printing
+	numbers.
+	(VSTR_SC_ADD_CSTR_GRPBASENUM_REF): New helper macro funcion for printing
+	numbers.
+
+	* include/vstr-inline.h (vstr_sc_add_cstr_grpbasenum_buf): New helper
+	funcion for printing numbers.
+	(vstr_sc_add_cstr_grpbasenum_ptr): New helper funcion for printing
+	numbers.
+	(vstr_sc_add_cstr_grpbasenum_ref): New helper funcion for printing
+	numbers.
+
+	* include/vstr-const.h (VSTR_FLAG_SC_FMT_CB_BEG_OBJ_BINNUM_L): New
+	macro for specifying base 2.
+	(VSTR_FLAG_SC_FMT_CB_BEG_OBJ_BINNUM_H): New macro for specifying base 2.
+	(VSTR_CNTL_CONF_GET_LOC_REF_NAME_NUMERIC): Reference interface for
+	altering locale data, also allows overrides for specific number bases.
+	(VSTR_CNTL_CONF_SET_LOC_REF_NAME_NUMERIC): Dito.
+	(VSTR_CNTL_CONF_GET_LOC_REF_DEC_POINT): Dito.
+	(VSTR_CNTL_CONF_SET_LOC_REF_DEC_POINT): Dito.
+	(VSTR_CNTL_CONF_GET_LOC_REF_THOU_SEP): Dito.
+	(VSTR_CNTL_CONF_SET_LOC_REF_THOU_SEP): Dito.
+	(VSTR_CNTL_CONF_GET_LOC_REF_THOU_GRP): Dito.
+	(VSTR_CNTL_CONF_SET_LOC_REF_THOU_GRP): Dito.
+	(VSTR_CNTL_CONF_GET_LOC_REF_NULL_PTR): Allows different values when
+	printing a NULL string. Allows compat. with win32 system *printf().
+	(VSTR_CNTL_CONF_SET_LOC_REF_NULL_PTR): Allows different values when
+	printing a NULL string. Allows compat. with win32 system *printf().
+
+	* src/vstr_sc.c (vstr_sc_add_grpbasenum_buf): Allows locale overrides
+	for specific number bases. So hex and oct can be grouped differently.
+	(vstr_sc_add_grpbasenum_ptr): Same as vstr_sc_add_grpbasenum_buf, but
+	data isn't copied.
+	(vstr_sc_add_grpbasenum_ref): Same as vstr_sc_add_grpbasenum_buf, but
+	data is referenced.
+	(vstr_sc_fmt_add_upper_base2_uint): Base 2 custom formatter.
+	(vstr_sc_fmt_add_upper_base2_ulong): Base 2 custom formatter.
+	(vstr_sc_fmt_add_upper_base2_size): Base 2 custom formatter.
+	(vstr_sc_fmt_add_upper_base2_uintmax): Base 2 custom formatter.
+	(vstr_sc_fmt_add_lower_base2_uint): Base 2 custom formatter.
+	(vstr_sc_fmt_add_lower_base2_ulong): Base 2 custom formatter.
+	(vstr_sc_fmt_add_lower_base2_size): Base 2 custom formatter.
+	(vstr_sc_fmt_add_lower_base2_uintmax): Base 2 custom formatter.
+
+2003-10-27  James Antill  <james@and.org>
+
+	* include/vstr-const.h (VSTR_CNTL_CONF_GET_TYPE_GRPALLOC_CACHE):
+	Interface to cache Vstr base strings, thus. not needing to allocate
+	memory for temporary strings.
+	(VSTR_CNTL_CONF_SET_TYPE_GRPALLOC_CACHE): Dito.
+	(VSTR_CNTL_CONF_GET_NUM_SPARE_BASE): Dito.
+	(VSTR_CNTL_CONF_SET_NUM_SPARE_BASE): Dito.
+	(VSTR_CNTL_CONF_SET_NUM_RANGE_SPARE_BASE): Dito.
+	(VSTR_TYPE_CNTL_CONF_GRPALLOC_NONE): Dito.
+	(VSTR_TYPE_CNTL_CONF_GRPALLOC_POS): Dito.
+	(VSTR_TYPE_CNTL_CONF_GRPALLOC_IOVEC): Dito.
+	(VSTR_TYPE_CNTL_CONF_GRPALLOC_CSTR): Dito.
+
+2003-10-24  James Antill  <james@and.org>
+
+	* src/vstr_conv.c (vstr_conv_encode_uri): Fixes for
+	pre-memory allocation when splitting nodes.
+	(vstr_conv_decode_uri): Fixes for pre-memory allocation when splitting
+	nodes.
+
+	* src/vstr_sub.c (vstr__sub_buf_slow): Fix corner case memory
+	allocation bug.
+
+	* src/vstr.c (vstr_make_base): Do changes so that we call malloc() less,
+	also allow zero malloc() calls via. reusing Vstr_base objects.
+
+2003-10-15  James Antill  <james@and.org>
+
+	* include/main_system.h: Added build portability fix, always explicitly
+	include stdin/inttype.
+
+2003-10-08  James Antill  <james@and.org>
+
+	* include/vstr-inline.h (VSTR__TRUE): Cleanup the inline code, only
+	compiles as C again.
+
+2003-10-02  James Antill  <james@and.org>
+
+	* src/vstr_sect.c (vstr__sects_add): Extra protection from sz overflow.
+	(vstr__sects_update_cb): Fix cache updating on some cases of delete.
+
+2003-10-01  James Antill  <james@and.org>
+
+	* include/vstr-nx-inline.h (vstr__base_scan_rev_beg): Fix bug in
+	ASSERT_RET, doesn't affect non-debug code.
+
+	* src/vstr.c (vstr__swap_node_X_X): Fix bug when substituting the last
+	node.
+
+	* src/vstr_cache.c (vstr__cache_iovec_alloc): Fix delayed allocation
+	even when NUM_IOV_MIN_ALLOC was set.
+	(vstr__cache_iovec_alloc): Bad pointer was left if initial malloc
+	failed.
+
+	* src/vstr_del.c (vstr_extern_inline_del): Fix bug with deleting
+	data in the middle of a string and the type of the node not updating
+	int the cache.
+
+	* src/vstr_add.c (vstr_add_iovec_buf_beg): Allow extra node.
+
+	* src/vstr_sc.c (vstr_sc_fmt_cb_beg): Fix problem with using grouping,
+	precision and left shifting at once.
+	(vstr_sc_fmt_cb_end): Fix problem with using grouping,
+	precision and left shifting at once.
+
+2003-09-29  James Antill  <james@and.org>
+
+	* NEWS (2003-09-29): Relase-1.0.9
+
+2003-09-28  James Antill  <james@and.org>
+
+	* include/vstr-inline.h (vstr_sc_add_cstr_grpnum_buf): Added function.
+
+	* include/vstr-extern.h (VSTR_SC_ADD_CSTR_GRPNUM_BUF): Added macro
+	function.
+
+	* src/vstr_sc.c (vstr_sc_fmt_cb_beg): Fix formatting problems with
+	printing numbers.
+	(vstr_sc_add_grpnum_buf): Added function.
+	(vstr_sc_conv_num_uint): Added function.
+	(vstr_sc_conv_num10_uint): Added function.
+	(vstr_sc_conv_num_ulong): Added function.
+	(vstr_sc_conv_num10_ulong): Added function.
+	(vstr_sc_conv_num_size): Added function.
+	(vstr_sc_conv_num10_size): Added function.
+	(vstr_sc_conv_num_uintmax): Added function.
+	(vstr_sc_conv_num10_uintmax): Added function.
+
+	* include/vstr-const.h (VSTR_FLAG_SC_FMT_CB_BEG_OBJ_HEXNUM_L): Added
+	flag.
+	(VSTR_FLAG_SC_FMT_CB_BEG_OBJ_HEXNUM_H): Added flag.
+	(VSTR_FLAG_SC_FMT_CB_BEG_OBJ_OCTNUM): Added flag.
+
+	* src/vstr.c (vstr__ref_cb_relink_bufnode_ref): Fix minor memory leak
+	when memory allocation failed in vstr__chg_node_buf_ref.
+
+2003-09-27  James Antill  <james@and.org>
+
+	* src/vstr_add_fmt.c (vstr__add_fmt_number): Remove #ifdef and use
+	internal type for long long.
+	(vstr__fmt_write_spec): Remove #ifdef and use internal type for
+	long long.
+	(vstr__fmt_fillin_spec):  Remove #ifdef and use internal type for
+	long long.
+
+	* include/vstr-internal.h: Create internal types for long long.
+
+2003-09-25  James Antill  <james@and.org>
+
+	* src/vstr_sc_posix.c (vstr_sc_write_fd): Fix minor issues with doing
+	writes on block sockets, only a real problem when giving invalid
+	parameters.
+
+2003-09-23  James Antill  <james@and.org>
+
+	* include/vstr-extern.h (VSTR_REF_MAKE_STRDUP): Changed semantics to
+	allocate a NIL terminator, which means it can be used in
+	vstr_add_cstr_ref().
+
+2003-09-22  James Antill  <james@and.org>
+
+	* NEWS: Release-1.0.8
+
+2003-09-20  James Antill  <james@and.org>
+
+	* src/vstr_sc.c (vstr__sc_fmt_num_ipv6): Fix couple of bugs for length
+	ipv6 output with IPV4 at the end.
+
+2003-09-18  James Antill  <james@and.org>
+
+	* include/vstr-switch.h (VSTR__COMPILE_ATTR_WARN_UNUSED_RET): Add
+	warn_unused_return gcc compiler attribute.
+
+	* include/vstr-extern.h (vstr_dup_rep_chr): Remove nonnull attribute.
+
+	* src/vstr_cntl.c (vstr_cntl_opt): Fix fallthrough error when compiling
+	in debug mode.
+
+	* src/vstr_ref.c (vstr_ref_make_memdup): Add test for malloc failure.
+	(vstr_ref_make_memdup): Change pointer to const, this is ABI compatible.
+	(vstr_ref_make_ptr): Change pointer to const, this is ABI compatible.
+
+2003-09-12  James Antill  <james@and.org>
+
+	* include/vstr-inline.h (vstr_ref_make_strdup): Added function.
+
+2003-09-02  James Antill  <james@and.org>
+
+	* src/vstr_parse.c (vstr_parse_ipv4): Minor cidr wasn't written if
+	ip was entire size of section.
+
+2003-08-23  James Antill  <james@and.org>
+
+	* Documentation/security_problems.txt: Added more
+	classifications
+
+2003-08-23  James Antill  <james@and.org>
+
+	* NEWS: Release-1.0.7
+
+2003-08-19  James Antill  <james@and.org>
+
+	* src/vstr_add_netstr.c (vstr_add_netstr2_end): Fix non-ASCII '0'
+	characters.
+	(vstr_add_netstr2_end): Corner case bug from vstr_sub_buf() below.
+	(vstr_add_netstr_end): Corner case bug from vstr_sub_buf() below.
+
+	* src/vstr_sub.c (vstr__sub_buf_slow): Only allocate extra nodes if
+	we need any at all.
+
+2003-08-14  James Antill  <james@and.org>
+
+	* src/vstr_sc_posix.c (vstr_sc_mmap_file): Changed open with
+	O_LARGEFILE -> open64
+	(vstr_sc_read_iov_file): Changed open with O_LARGEFILE -> open64
+	(vstr_sc_read_len_file): Changed open with O_LARGEFILE -> open64
+	(vstr_sc_write_file): Changed open -> open64
+
+2003-08-12  James Antill  <james@and.org>
+
+	* src/vstr_sect.c (vstr__sects_add): Doubling large numbers, and 0
+	didn't do anything useful.
+
+	* src/vstr.c (vstr__chg_node_buf_ref): Fix malloc failure path,
+	possible double free.
+
+	* src/vstr_fmt.c (vstr__fmt_usr_match): Fix matching after deleting
+	a custom formatter.
+
+2003-08-11  James Antill  <james@and.org>
+
+	* src/vstr_mov.c (vstr__mov_single_node): Fixed bug in mov where it
+	could write to read only memory.
+	(vstr__mov_slow): Off by one corruption in failure path.
+
+2003-08-07  James Antill  <james@and.org>
+
+	* include/vstr-inline.h (vstr_del): Fixed NULL dereference, in
+	corner case.
+
+2003-08-03  James Antill  <james@and.org>
+
+	* src/vstr_conv.c (vstr_conv_encode_uri): Choose a small default sects
+	size for testing.
+
+2003-08-01  James Antill  <james@and.org>
+
+	* NEWS: Ran... find . -type f -print0 | xargs -0 perl -pe 's/[ \t]+$//
+	to fix the white space at end of line.
+
+2003-07-23  James Antill  <james@and.org>
+
+	* src/vstr.c (vstr_make_conf): Add 8 to size, as glibc uses that for
+	overhead.
+
+2003-07-21  James Antill  <james@and.org>
+
+	* Makefile.am (pkgconfigdir): Change := to = for non-GNU make can
+	handle it, not needed anyway.
+
+2003-07-18  James Antill  <james@and.org>
+
+	* include/vstr-internal.h (VSTR__MV): Changed calling convention to
+	conform to ISO C.
+
+	* src/vstr_sub.c (vstr_sub_ptr): Fix the MAX_NODE test to get an extra
+	byte.
+	(vstr_sub_ref): Fix the MAX_NODE test to get an extra byte.
+
+2003-07-17  James Antill  <james@and.org>
+
+	* include/vstr-internal.h (VSTR__ITER_EQ_ALL_NODE): Fix fast path for
+	substitution of _REF and _PTR nodes, when a _BUF is the first node
+	and has had a prefix deleted.
+
+	* src/vstr_spn.c (vstr__spn_chr_fwd): Added fast path for single
+	character spanning.
+
+	* src/vstr_conv.c (vstr_conv_encode_uri): Change type so everything
+	fits.
+
+2003-05-31  James Antill  <james@and.org>
+
+	* NEWS: Release-1.0.6
+
+	* examples/ex_csv.c: Added simple example from c.l.c discussion.
+
+	* src/vstr_add.c (vstr_add_iovec_buf_end): Fix iovec cache when adding
+	at 0 in a Vstr that has data, but then adding 0 bytes.
+	(vstr_add_iovec_buf_beg): Fix bugs when adding at the begining.
+
+	* src/vstr_srch.c (vstr__cmp_eq_rev_non): Fix fast reverse searching
+	for _NON data.
+
+	* src/vstr_add.c (vstr_add_non): Fixed bugs in merged append of
+	non data.
+
+	* src/vstr_sc.c (vstr_sc_fmt_add_all): Fix {ref} custom formatter add
+	for gcc work around case (kept old types for backwards compat.).
+
+	* src/vstr_sub.c (vstr_sub_buf): Fix the case when you are really just
+	calling vstr_del() indirectly.
+	(vstr_sub_ptr): Fix the case when you are really just calling
+	vstr_del() or vstr_add_ptr() indirectly.
+	(vstr_sub_ref): Fix the case when you are really just calling
+	vstr_del() or vstr_add_ref() indirectly.
+	(vstr_sub_rep_chr): Fix the case when you are doing nothing.
+
+	* src/vstr_add.c (vstr_add_vstr): Fix off by one error when coying
+	a vstr into itself.
+
+2003-05-30  James Antill  <james@and.org>
+
+	* include/vstr-inline.h (vstr_add_cstr_ref): Fixed length bug when
+	using an offset.
+	(vstr_dup_cstr_ref): Fixed length bug when using an offset.
+	(vstr_sub_cstr_ref): Fixed length bug when using an offset.
+
+	* src/vstr_sc_posix.c (vstr__sc_read_slow_len_fd): Fix memory leak
+	on slow read path (no iovec cache).
+
+2003-05-26  James Antill  <james@and.org>
+
+	* include/assert_loop-extern.h (ASSERT_RET): Add macros.
+
+	* src/vstr_add.c (vstr__cache_iovec_maybe_add): Fix return type to
+	void, as it always returned TRUE.
+
+	* src/vstr_spn.c (vstr_cspn_chrs_fwd): Fix for NULL dereference on
+	search for NON nodes with a length of 1.
+	(vstr_cspn_chrs_rev): Fix for NULL dereference on search for NON
+	nodes with a length of 1.
+	(vstr__cspn_chrs_rev_fast): Fix fast reverse searching involving NON
+	spans/data.
+
+	* src/vstr_add_fmt.c (vstr__fmt_fillin_spec): Remove NULL check on
+	pointer from generic code for %s/%S.
+
+	* src/vstr_add_fmt.c (vstr__add_vfmt): Fix SEGV on malloc failure of
+	first spec node.
+
+	* src/vstr_fmt.c (vstr_fmt_add): Fixed memory leak on memory failure.
+
+2003-05-17  James Antill  <james@and.org>
+
+	* NEWS: Release-1.0.5
+
+	* src/vstr_sc.c (vstr_sc_fmt_add_rep_chr): Added new function.
+	(vstr_sc_fmt_add_all): Added rep_chr formatter to "all".
+
+2003-05-02  James Antill  <james@and.org>
+
+	* src/vstr_fmt.c (vstr_fmt_add): Allow multiple types of brackets and
+	still be fast.
+	(vstr__fmt_usr_match): Dito.
+
+2003-04-26  James Antill  <james@and.org>
+
+	* examples/ex_hexdump.c (EX_HEXDUMP_BYTE): Make the fast output,
+	somewhat more generic.
+	(main): Add getopt type arguments.
+
+2003-03-28  James Antill  <james@and.org>
+
+	* examples/ex_tar_decompress.c (main): Added a new example command, I've
+	wanted this command for a while ... so I wrote it.
+
+	* examples/ex_rot13.c (ex_rot13_read_fd_write_stdout): Don't busy
+	spin when no data can be read yet.
+
+	* examples/ex_hexdump.c (ex_hexdump_read_fd_write_stdout): Don't busy
+	spin when no data can be read yet.
+
+2003-03-15  James Antill  <james@and.org>
+
+	* Documentation/Makefile.am (confexec_DATA): Added
+	printf_comparison.html, design.html and internal_structure.dia to set
+	of installed documentation.
+
+2003-03-15  James Antill  <james@and.org>
+
+	* NEWS: Release 1.0.4
+
+	* src/vstr_cstr.c (vstr_export_cstr_ptr): Change return value to be
+	const qualified.
+
+	* Documentation/design.html: Documentation that gives a look at the
+	internal design of the library.
+
+	* src/vstr_cache.c (vstr__cache_cstr_cb): Keep malloc'd cstr data
+	around, even when not currently valid.
+
+2003-03-13  James Antill  <james@and.org>
+
+	* include/vstr-def.h (struct Vstr__cache_data_cstr): Fix ABI breakage in
+	1.0.3
+
+2003-03-07  James Antill  <james@and.org>
+
+	* src/vstr.c (vstr__swap_node_X_X): Fix test for old node, for updating
+	position cache node.
+
+2003-03-04  James Antill  <james@and.org>
+
+	* NEWS: Release 1.0.3
+
+	* src/vstr_add.c (vstr_add_vstr): Fix off by one error in malloc()
+	failure cleanup path.
+
+	* src/vstr.c (vstr_make_base): Fixed reference leak on memory failure.
+	(vstr_make_base): Fix non setting of conf->malloc_bad flag, on memory
+	failure.
+
+	* include/vstr-nx-inline.h (vstr__debug_malloc): Added special test
+	code so we can manually fail malloc()/calloc()/realloc() ... only to
+	be used in testsuite.
+
+	* src/vstr_srch_case.c (vstr_srch_case_buf_rev): Fix return value when
+	searching for empty strings.
+
+	* src/vstr_srch.c (vstr_srch_buf_rev): Fix return value when searching
+	for empty strings.
+
+	* src/vstr_srch_case.c (vstr_srch_case_buf_rev): Fixed bug when
+	searching for 1	length _NON data.
+
+	* src/vstr_srch.c (vstr_srch_buf_fwd): Fixed bug when searching for 1
+	length _NON data.
+	(vstr_srch_buf_rev): Fixed bug when searching for 1 length _NON data.
+	(vstr_srch_buf_fwd): Fixed bug when searching for any length of _NON
+	data.
+
+2003-03-03  James Antill  <james@and.org>
+
+	* include/vstr-inline.h (vstr_del): Fixed bug when deleteing from
+	end of single node Vstr string, that has a ->used amount.
+
+	* tst/export/tst_export_iovec_ptr_all.c (tst_iovec): Added tests for
+	expanding iovec cache.
+
+	* src/vstr_cstr.c (vstr__export_cstr_cache): Implement offset and size
+	as part of the data cache, so we don't have to enter malloc/free so
+	much.
+
+	* include/vstr-inline.h (vstr_del): Fixed bug in cached data when
+	deleteing from the front (introduced in the optomisations
+	in 1.0.2).
+
+	* tst/del/tst_del_beg.c (tst): Added test coverage for optomisations
+	added in 1.0.2.
+
+	* tst/del/tst_del_end.c (tst): Added test coverage for optomisations
+	added in 1.0.2.
+
+	* include/vstr-const.h (VSTR_CNTL_BASE_GET_FLAG_HAVE_CACHE): Add
+	constant so you can find out if the Vstr string can cache data.
+
+2003-02-28  James Antill  <james@and.org>
+
+	* examples/ex_hexdump.c (main): Fall back to read/write if fstat,
+	filesize == 0, fails.
+
+	* examples/ex_nl.c (main): Fall back to read/write if fstat,
+	filesize == 0, fails.
+
+	* examples/ex_rot13.c (main): Fall back to read/write if fstat,
+	filesize == 0, fails.
+
+2003-02-27  James Antill  <james@and.org>
+
+	* include/vstr-inline.h (VSTR__ASSERT): Added assert() checks for inline
+	functions (when not compiled inline)
+
+	* include/vstr-inline.h (vstr_wrap_memcpy): Call "system" memcpy() if
+	the argument is a constant, as it'll be picked up by gcc.
+	(vstr_wrap_memcmp): Call "system" memcmp() if
+	the argument is a constant, as it'll be picked up by gcc.
+	(vstr_wrap_memset): Call "system" memset() if
+	the argument is a constant, as it'll be picked up by gcc.
+
+	* include/vstr-switch.h: Check for GNUC/non-ansi-strict on all
+	attribute uses, simple way to mostly do the right thing.
+	(VSTR__BULTIN_CONST_P): Add ability to call builtin_constant_p() in
+	gcc.
+
+2003-02-21  James Antill  <james@and.org>
+
+	* NEWS: Release 1.0.2
+
+	* include/vstr-extern.h (VSTR_SC_POSDIFF): Added macro function.
+
+	* include/vstr-inline.h (vstr_num): Moved to inline.
+	(vstr_del): Optomised delete last couple of chars case.
+	(vstr_sc_posdiff): Added function.
+	(vstr_sc_reduce): Added function.
+
+2003-02-17  James Antill  <james@and.org>
+
+	* configure.in (cmsghdr struct): Fixes for compile on broken
+	BSD headers.
+
+2003-02-16  James Antill  <james@and.org>
+
+	* include/vstr-inline.h: Fixup inline code to also compile for C++.
+
+	* include/vstr-extern.h: Fixup prototypes from void * -> char * for the
+	_case and _vers functions.
+
+2003-02-14  James Antill  <james@and.org>
+
+	* Documentation/txt2html.pl (conv_A_refs): Did cross references in the
+	html documentation.
+
+2003-02-13  James Antill  <james@and.org>
+
+	* scripts/autogen.sh: Add code to fixup the license after an automake
+	run.
+
+	* COPYING: Fix license back to LGPL, again.
+
+2003-02-12  James Antill  <james@and.org>
+
+	* NEWS: Release 1.0.1
+
+	* src/vstr_cache.c (vstr__cache_dup_cbs): Fixed resize bug, when
+	conf < dupconf.
+
+2003-02-11  James Antill  <james@and.org>
+
+	* include/vstr-switch.h (VSTR_COMPILE_MACRO_FUNCTIONS): Added constant
+	to toggle use of macro functions and have an normal function partner.
+
+	* include/vstr-inline.h (vstr_cmp_eq): Added function.
+	(vstr_cmp_buf_eq): Added function.
+	(vstr_cmp_cstr): Added function.
+	(vstr_cmp_cstr_eq): Added function.
+	(vstr_cmp_case_eq): Added function.
+	(vstr_cmp_case_buf_eq): Added function.
+	(vstr_cmp_case_cstr): Added function.
+	(vstr_cmp_case_cstr_eq): Added function.
+	(vstr_cmp_vers_eq): Added function.
+	(vstr_cmp_vers_buf_eq): Added function.
+	(vstr_cmp_vers_cstr): Added function.
+	(vstr_cmp_vers_cstr_eq): Added function.
+	(vstr_add_cstr_buf): Added function.
+	(vstr_add_cstr_ptr): Added function.
+	(vstr_add_cstr_ref): Added function.
+	(vstr_dup_cstr_buf): Added function.
+	(vstr_dup_cstr_ptr): Added function.
+	(vstr_dup_cstr_ref): Added function.
+	(vstr_sub_cstr_buf): Added function.
+	(vstr_sub_cstr_ptr): Added function.
+	(vstr_sub_cstr_ref): Added function.
+	(vstr_srch_cstr_buf_fwd): Added function.
+	(vstr_srch_cstr_buf_rev): Added function.
+	(vstr_srch_cstr_chrs_fwd): Added function.
+	(vstr_srch_cstr_chrs_rev): Added function.
+	(vstr_csrch_cstr_chrs_fwd): Added function.
+	(vstr_csrch_cstr_chrs_rev): Added function.
+	(vstr_srch_case_cstr_buf_fwd): Added function.
+	(vstr_srch_case_cstr_buf_rev): Added function.
+	(vstr_spn_cstr_chrs_fwd): Added function.
+	(vstr_spn_cstr_chrs_rev): Added function.
+	(vstr_cspn_cstr_chrs_fwd): Added function.
+	(vstr_cspn_cstr_chrs_rev): Added function.
+	(vstr_split_cstr_buf): Added function.
+	(vstr_split_cstr_chrs): Added function.
+	(vstr_cmp_eod): Added function.
+	(vstr_cmp_bod_eq): Added function.
+	(vstr_cmp_bod_eq): Added function.
+	(vstr_cmp_eod_eq): Added function.
+	(vstr_cmp_eod_buf): Added function.
+	(vstr_cmp_bod_buf_eq): Added function.
+	(vstr_cmp_bod_buf_eq): Added function.
+	(vstr_cmp_eod_buf_eq): Added function.
+	(vstr_cmp_bod_cstr): Added function.
+	(vstr_cmp_eod_cstr): Added function.
+	(vstr_cmp_bod_cstr_eq): Added function.
+	(vstr_cmp_eod_cstr_eq): Added function.
+	(vstr_cmp_case_eod): Added function.
+	(vstr_cmp_case_bod_eq): Added function.
+	(vstr_cmp_case_bod_eq): Added function.
+	(vstr_cmp_case_eod_eq): Added function.
+	(vstr_cmp_case_eod_buf): Added function.
+	(vstr_cmp_case_bod_buf_eq): Added function.
+	(vstr_cmp_case_bod_buf_eq): Added function.
+	(vstr_cmp_case_eod_buf_eq): Added function.
+	(vstr_cmp_case_bod_cstr): Added function.
+	(vstr_cmp_case_eod_cstr): Added function.
+	(vstr_cmp_case_bod_cstr_eq): Added function.
+	(vstr_cmp_case_eod_cstr_eq): Added function.
+	(vstr_cmp_vers_eod): Added function.
+	(vstr_cmp_vers_bod_eq): Added function.
+	(vstr_cmp_vers_bod_eq): Added function.
+	(vstr_cmp_vers_eod_eq): Added function.
+	(vstr_cmp_vers_eod_buf): Added function.
+	(vstr_cmp_vers_bod_buf_eq): Added function.
+	(vstr_cmp_vers_bod_buf_eq): Added function.
+	(vstr_cmp_vers_eod_buf_eq): Added function.
+	(vstr_cmp_vers_bod_cstr): Added function.
+	(vstr_cmp_vers_eod_cstr): Added function.
+	(vstr_cmp_vers_bod_cstr_eq): Added function.
+	(vstr_cmp_vers_eod_cstr_eq): Added function.
+
+2003-02-09  James Antill  <james@and.org>
+
+	* src/vstr_sub.c (vstr__sub_buf_slow): Massive code path removal, speed
+	should be similar ... fixed bug while doing it
+
+2003-02-08  James Antill  <james@and.org>
+
+	* src/vstr_cache.c (vstr__cache_cstr_cpy): Fix caching bug when copying
+	cstr cache information from one vstr to another.
+
+	* src/vstr_conv.c (vstr_conv_encode_uri): Refactored error path, and
+	discovered memory leak in error path.
+	(vstr_conv_decode_uri): Refactored error path, and discovered memory
+	leak in error path.
+
+	* src/vstr_add_fmt.c (vstr__add_fmt_char): Fixed "%3c" in formatted
+	output (it used to put out one too many spaces).
+	(vstr__add_fmt_wide_char): Fixed "%3c" in formatted output (it used to
+	put out one too many spaces).
+	(vstr__add_fmt_wide_cstr): Fixes for printing wide character strings
+	with precision.
+
+	* src/vstr_export.c (vstr_export_ref): Move code so that a ref export
+	looks at the cstr cache first, and so returns the same ref as
+	export_cstr_ref().
+
+2003-02-07  James Antill  <james@and.org>
+
+	* src/vstr_del.c (vstr_extern_inline_del): Fixed bug with iovec cache
+	when you've got an offset and then delete from the end.
+
+	* src/vstr.c (vstr_swap_conf): Fix bad test, always failed if buffer
+	size or cache callbacks weren't compatible.
+
+2003-02-03  James Antill  <james@and.org>
+
+	* src/vstr_sc_posix.c (vstr_sc_mmap_fd): Fix bug where mmap() wouldn't
+	be called for zero sized files, if you asked vstr to work out the
+	filesize for you. Now fstat() of files bigger than or equal to the
+	offset give ENOSPAC as an fstat() value.
+	(vstr_sc_read_len_file): Now fstat() of files bigger than or equal to
+	the offset give ENOSPAC as an fstat() value.
+	(vstr_sc_read_len_fd): Now fstat() of files equal to zero give
+	ENOSPAC as an fstat() value.
+
+
+2003-01-30  James Antill  <james@and.org>
+
+	* src/vstr_cntl.c (vstr_cntl_conf): Fix bug where the return value for
+	VSTR_CNTL_CONF_SET_NUM_SPARE_BUF was always false, even though it
+	worked.
+	(vstr_cntl_conf): Fixed bug where VSTR_CNTL_CONF_SET_NUM_SPARE_NON,
+	VSTR_CNTL_CONF_SET_NUM_SPARE_PTR, and VSTR_CNTL_CONF_SET_NUM_SPARE_REF
+	would allocate the wrong ammount of nodes.
+
+	* include/vstr-const.h
+	(VSTR_CNTL_CONF_SET_NUM_RANGE_SPARE_BUF): Added constant.
+	(VSTR_CNTL_CONF_SET_NUM_RANGE_SPARE_NON): Added constant.
+	(VSTR_CNTL_CONF_SET_NUM_RANGE_SPARE_PTR): Added constant.
+	(VSTR_CNTL_CONF_SET_NUM_RANGE_SPARE_REF): Added constant.
+
+	* src/vstr_sub.c (vstr_sub_ref): Speed up function for replacing one
+	reference with another.
+
+	* include/vstr-extern.h (vstr_cmp_vers_buf): Fix nonnull attribute.
+	(vstr_cmp_case_buf): Fix nonnull attribute.
+	(vstr_srch_chrs_fwd): Fix nonnull attribute.
+	(vstr_srch_chrs_rev): Fix nonnull attribute.
+	(vstr_csrch_chrs_fwd): Fix nonnull attribute.
+	(vstr_csrch_chrs_rev): Fix nonnull attribute.
+	(vstr_srch_buf_fwd): Fix nonnull attribute.
+	(vstr_srch_buf_rev): Fix nonnull attribute.
+	(vstr_srch_case_buf_fwd): Fix nonnull attribute.
+	(vstr_srch_case_buf_rev): Fix nonnull attribute.
+	(vstr_spn_chrs_fwd): Fix nonnull attribute.
+	(vstr_spn_chrs_rev): Fix nonnull attribute.
+	(vstr_cspn_chrs_fwd): Fix nonnull attribute.
+	(vstr_cspn_chrs_rev): Fix nonnull attribute.
+	(vstr_split_buf): Fix nonnull attribute.
+	(vstr_split_chrs): Fix nonnull attribute.
+
+2003-01-28  James Antill  <james@and.org>
+
+	* scripts/ncc.sh: ncc program analysis script.
+
+2003-01-27  James Antill  <james@and.org>
+
+	* tst/Makefile.am (tst): Do all checks in one pass.
+
+	* src/vstr_version.c.in: Change the version info. output slightly.
+
+2003-01-25  James Antill  <james@and.org>
+
+	* tst/add_fmt/tst_double.c (tst): Change test slightly to work around
+	broken glibc double formating.
+
+	* tst/add_fmt/tst_usr.c (tst): Allow checks to pass with fmt double
+	none.
+
+	* tst/add_fmt/tst_double.c (tst): Re-add accidently removed checks.
+
+	* src/*.c: Changed vstr_nx_ symbols to just vstr_ ... do
+	the remapping automatically.
+	Also reindented everything.
+
+2003-01-20  James Antill  <james@and.org>
+
+	* NEWS: Release 1.0.0
+
+	* include/vstr-const.h (VSTR_FLAG_SECTS_FOREACH_BACKWARD): Renamed
+	variable, to match english usage (ispell is your friend).
+
+	* src/vstr_sc.c (vstr_sc_fmt_add_ipv6_vec_cidr): Massive rename
+	cipe -> cidr, *sigh*.
+	(vstr_sc_fmt_add_ipv4_vec_cidr): Massive rename cipe -> cidr, *sigh*.
+
+	* src/vstr_add.c (vstr__cache_iovec_add_beg): Fixed bug for iovec cache,
+	when adding data to the begining of the string.
+
+2003-01-19  James Antill  <james@and.org>
+
+	* src/vstr_split.c (vstr__split_hdl_null_end): Fixed return count on
+	POST_NULL split, fixes both split_buf and split_chrs.
+
+2003-01-18  James Antill  <james@and.org>
+
+	* src/vstr_add_fmt.c (vstr__add_fmt_usr_write_spec): Fixed bug, where
+	not enough memory was allocated for specifications with entries over 8
+	items ... also fixed memory leak for same if the code didn't crash.
+
+2003-01-14  James Antill  <james@and.org>
+
+	* include/vstr-const.h (VSTR_CNTL_CONF_GET_FLAG_ATOMIC_OPS): Renamed
+	constant.
+	(VSTR_CNTL_CONF_SET_FLAG_ATOMIC_OPS): Renamed constant.
+	(VSTR_CNTL_CONF_GET_FLAG_ALLOC_CACHE): Renamed constant.
+	(VSTR_CNTL_CONF_SET_FLAG_ALLOC_CACHE): Renamed constant.
+
+2003-01-12  James Antill  <james@and.org>
+
+	* NEWS: Release 0.9.21
+
+2003-01-09  James Antill  <james@and.org>
+
+	* src/vstr_add.c (vstr_add_vstr): Fixed bug when adding a vstr to
+	the end of itself.
+
+2002-12-23  James Antill  <james@and.org>
+
+	* src/vstr_sc.c (vstr_sc_fmt_add_ipv6_vec_cipe): Added function.
+	(vstr_sc_fmt_add_ipv4_vec_cipe): Added function.
+	(vstr_sc_fmt_add_ipv6_vec): Added function.
+	(vstr_sc_fmt_add_ipv4_vec): Added function.
+
+	* configure.in: Add extra []'s for the default values.
+
+2002-12-18  James Antill  <james@and.org>
+
+	* include/vstr-inline.h (vstr_iter_fwd_beg): Add function.
+	(vstr_iter_fwd_nxt): Add function.
+
+2002-12-16  James Antill  <james@and.org>
+
+	* src/vstr_ref.c (vstr_ref_make_memdup): Add function.
+
+2002-12-14  James Antill  <james@and.org>
+
+	* src/vstr_parse.c (vstr_parse_ipv6): Add function.
+
+2002-12-13  James Antill  <james@and.org>
+
+	* src/vstr_cntl.c (vstr_cntl_conf): Allowed NULL configuration to
+	refer to global one.
+
+	* src/vstr.c (vstr_free_spare_nodes): Allowed NULL configuration to
+	refer to global one.
+	(vstr_make_spare_nodes): Dito.
+
+	* src/vstr_cache.c (vstr_cache_add): Allowed NULL configuration to
+	refer to global one.
+	(vstr_cache_srch): Dito.
+
+	* src/vstr_fmt.c (vstr_fmt_add): Allowed NULL configuration to refer
+	to global one.
+	(vstr_fmt_del): Dito.
+	(vstr_fmt_srch): Dito.
+
+2002-12-12  James Antill  <james@and.org>
+
+	* src/vstr_sc.c (vstr_sc_fmt_add_all): Added function.
+
+	* src/vstr_add.c (vstr__convert_buf_ref): Cleanup code.
+
+	* src/vstr_export.c (vstr_export_ref): Used chg_node to export data
+	inside on _BUF node as a _REF without doing any copying.
+
+	* src/vstr.c (vstr__chg_node_buf_ref): Added internal function, and
+	cleaned code up in vstr_add_vstr().
+
+2002-11-29  James Antill  <james@and.org>
+
+	* src/vstr_dbl/glibc/sysdeps/generic/printf_fphex.c (__printf_fphex):
+	Update to latest glibc release.
+
+2002-11-26  James Antill  <james@and.org>
+
+	* Fixup references to vstr_nx_ in the ChangeLog.
+
+	* src/vstr_sc_posix.c (vstr_sc_mmap_fd): Change MAP_SHARED to
+	MAP_PRIVATE, as we are doing PROT_READ anyway so it doesn't matter ...
+	and MAP_SHARED fails if you have a writeable fd.
+
+2002-11-21  James Antill  <james@and.org>
+
+	* src/vstr_sc_posix.c (vstr_sc_write_fd): Limit vectors to UIO_MAXIOV.
+	(vstr_sc_read_*): Limit vectors to UIO_MAXIOV.
+
+	* tst/tst-main.c (PRNT_DEBUG_VSTR): Change %zu for %lu and cast ...
+	as that isn't always on the system.
+	(PRNT_CSTR): Change %zu for %lu and cast ... as that isn't always on
+	the system.
+	(PRNT_VSTR): Change %zu for %lu and cast ... as that isn't always on
+	the system.
+
+	* configure.in: Build fixes for SunOS 5.8
+
+2002-11-20  James Antill  <james@and.org>
+
+	* src/vstr_add_fmt.c (vstr__add_fmt_free_conf): Remove global variables
+	for vstr_add_*fmt specification allocation. All functions should now
+	be mostly called reentrent, if using different configurations ... and
+	no _BUF -> _REF data is shared bewteen them.
+
+2002-11-18  James Antill  <james@and.org>
+
+	* NEWS: Release 0.9.20
+
+	* src/vstr_add_fmt.c (vstr__add_fmt_number): Fixed some corner cases.
+
+	* tst/add_fmt/tst_num.c (tst): Added more tests for
+	field width + precision.
+
+	* src/vstr_cache.c (vstr__free_cache): Fixed warning.
+
+2002-11-16  James Antill  <james@and.org>
+
+	* NEWS: Release 0.9.19
+
+	* src/vstr_sect.c (vstr_sects_update_add): Add function, to auto
+	update sections.
+	(vstr_sects_update_del): Add function, to auto update sections.
+
+	* src/vstr.c (vstr_free_base): Make dealoction faster, and don't
+	call cache cbs except to say free yourself.
+
+2002-11-09  James Antill  <james@and.org>
+
+	* Documentation/Makefile.am (confexec_DATA): Add comparison to
+	installed documentation.
+
+2002-10-16  James Antill  <james@and.org>
+
+	* configure.in (HAVE_ATTRIB_PURE): Fixup configure.in test so it dies
+	on the stupid dietlibc headers, run...
+	perl -pi -e 's/__pure__/__dietlibc_pure__/;' dietlibc/include/**/*.h
+	...if you care.
+
+2002-10-13  James Antill  <james@and.org>
+
+	* src/vstr_dbl/glibc/sysdeps/generic/printf_fphex.c (__printf_fphex):
+	Fixed 2 formatting bugs for width accounting and 0 flag, in the glibc
+	code ... forwarded the fixes.
+
+2002-10-12  James Antill  <james@and.org>
+
+	* NEWS: Release 0.9.18
+
+2002-10-11  James Antill  <james@and.org>
+
+	* src/vstr_sect.c (vstr_sects_srch): Fixed off by one bug.
+
+	* src/vstr_dbl/glibc/sysdeps/generic/printf_fphex.c (__printf_fphex):
+	Fixed an amazingly subtle bug in the glibc implementation of %a/%A ...
+	forwarded the fix to the glibc maintainers.
+
+2002-10-10  James Antill  <james@and.org>
+
+	* src/vstr_add.c (vstr__convert_buf_ref): Fixed data bug when adding
+	vstr to a vstr with VSTR_TYPE_ADD_BUF_REF.
+	(vstr__convert_buf_ref): Fixup VSTR_TYPE_ADD_BUF_REF so it relinks the
+	node instead of free'ing it.
+
+	* src/vstr_ref.c (vstr_ref_make_ptr): Renamed API.
+	(vstr_ref_make_malloc): Renamed API.
+
+2002-10-06  James Antill  <james@and.org>
+
+	* src/vstr_srch.c (vstr__srch_chr_rev_slow): Fix bug where the last
+	character could be missed.
+	(vstr__srch_buf_rev_slow): Same bug as for _chr_rev_slow.
+	(vstr__srch_vstr_rev_slow): Same bug as for _chr_rev_slow.
+
+	* src/vstr_sc.c (vstr_sc_basename): Added function.
+	(vstr_sc_dirname): Added function.
+
+	* src/vstr_cstr.c (vstr__export_cstr_cache): Fast path was never reached
+	for export_ref/export_cstr etc. when you moved forward and exported.
+
+	* src/vstr_export.c (vstr_export_ref): Fixed bugs where the wrong data
+	would be exported.
+
+2002-10-05  James Antill  <james@and.org>
+
+	* include/vstr-extern.h (VSTR_CMP_EQ): Fix bug where the positions had
+	to be the same in both Vstr strings, as only the first was used.
+
+	* src/vstr_dup.c (vstr_dup_rep_chr): Added function.
+
+	* scripts/tst_diff.sh: Added function to test "make check" coverage of
+	functions.
+
+	* src/vstr_dbl/vstr_add_fmt_dbl_glibc.c: Resync with latest glibc,
+	include endian.h and ieee754 locally ... hopefully can build on non
+	glibc platforms now. Also fixed signbit().
+
+2002-10-03  James Antill  <james@and.org>
+
+	* NEWS: Released 0.9.17
+
+2002-10-02  James Antill  <james@and.org>
+
+	* src/vstr_cache.c (vstr_cache_set): Changed API.
+	(vstr_cache_add): Changed API.
+	(vstr_cache_cb_sub): Changed API.
+
+	* include/vstr-inline.h (vstr_cache_get): Changed API.
+
+2002-10-01  James Antill  <james@and.org>
+
+	* include/vstr-switch.h (VSTR__COMPILE_ATTR_PURE): Added attribute to
+	some functions.
+	(VSTR__COMPILE_ATTR_MALLOC): Added attribute to	some functions.
+
+	* src/vstr_cstr.c (vstr_export_cstr_malloc): Added function.
+
+2002-09-30  James Antill  <james@and.org>
+
+	* tst/tst-main.c: Changes to allow vstr to be built in a sub directory.
+
+2002-09-28  James Antill  <james@and.org>
+
+	* examples/ex_mon_cp.c (main): Fix bkmg functions to be the final API.
+
+2002-09-28  James Antill  <james@and.org>
+
+	* NEWS: Relase 0.9.16
+
+2002-09-25  James Antill  <james@and.org>
+
+	* include/vstr-inline.h: Fixup uses of typedef's.
+
+	* src/vstr_sc.c (vstr_sc_fmt_add_bkmg_bit_uint_buf): Added function.
+	(vstr_sc_fmt_add_bkmg_bits_uint_buf): Added function.
+
+	* src/vstr_mov.c (vstr__mov_single_node): Add optimisation for moving
+	a small ammount of data in a single node.
+
+2002-09-24  James Antill  <james@and.org>
+
+	* examples/ex_mon_cp.c (main): Added example for monitoring copies.
+
+	* src/vstr_mov.c (vstr_mov): Fix move, when moving data in the vstr down
+	inside a single node.
+
+	* src/vstr_sc.c (vstr_sc_fmt_add_bkmg_Byte_uint_buf): Added function.
+	(vstr_sc_fmt_add_bkmg_Bytes_uint_buf): Added function.
+
+2002-09-22  James Antill  <james@and.org>
+
+	* src/vstr_version.c (vstr_version_func): Added compiler version of gcc
+	to the about output when you run the library.
+
+	* include/vstr-extern.h (VSTR_SRCH_CSTR_CHRS_FWD): Added macro function.
+	(VSTR_SRCH_CSTR_CHRS_REV): Added macro function.
+	(VSTR_CSRCH_CSTR_CHRS_FWD): Added macro function.
+	(VSTR_CSRCH_CSTR_CHRS_REV): Added macro function.
+	(VSTR_SRCH_CASE_CSTR_BUF_FWD): Added macro function.
+	(VSTR_SRCH_CASE_CSTR_BUF_REV): Added macro function.
+
+	* src/vstr_srch_case.c (vstr_srch_case_chr_fwd): Added function.
+	(vstr_srch_case_chr_rev): Added function.
+	(vstr_srch_case_buf_fwd): Added function.
+	(vstr_srch_case_buf_rev): Added function.
+	(vstr_srch_case_vstr_fwd): Added function.
+	(vstr_srch_case_vstr_rev): Added function.
+
+	* src/vstr_add_fmt.c (vstr_add_vfmt): Added "%m" formatter as standard.
+
+	* include/vstr-const.h (VSTR_TYPE_FMT_ERRNO): Added constant.
+
+2002-09-21  James Antill  <james@and.org>
+
+	* include/vstr-extern.h (VSTR_CMP_VERS_BUF_EQ): Changed macro to call
+	vstr_cmp() as that's faster.
+	(VSTR_CMP_VERS_EQ): Changed macro to call vstr_cmp() as that's faster.
+
+2002-09-21  James Antill  <james@and.org>
+
+	* NEWS: Release 0.9.15
+
+	* scripts/rpms-create-james.sh: Added script to create rpms.
+
+	* src/vstr_srch.c (vstr__srch_buf_rev_fast): Fixed bugs.
+	(vstr__srch_chr_rev_fast): Fixed bugs.
+
+	* src/vstr_spn.c (vstr__spn_chrs_rev_fast): Fixed bugs.
+	(vstr__cspn_chrs_rev_fast): Fixed bugs.
+
+	* src/vstr.c (vstr__base_scan_rev_beg): Fixed major bug for all reverse
+	function fast paths.
+
+2002-09-20  James Antill  <james@and.org>
+
+	* tst/spn/tst_c_chrs.c (tst): Check fast, as well as slow paths, for
+	reverse	functions.
+
+	* tst/spn/tst_chrs.c (tst): Check fast, as well as slow paths, for
+	reverse	functions.
+
+	* tst/srch/tst_vstr.c (tst): Check fast, as well as slow paths, for
+	reverse	functions (although they aren't implemented atm.).
+
+	* tst/srch/tst_chr.c (tst): Check fast, as well as slow paths, for
+	reverse	functions.
+
+	* tst/srch/tst_buf.c (tst): Check fast, as well as slow paths, for
+	reverse	functions.
+
+	* src/vstr_export.c (vstr_export_iovec_ptr_all): Allow NULL
+	parameters.
+
+2002-09-19  James Antill  <james@and.org>
+
+	* include/vstr-const.h (VSTR_TYPE_FMT_PTR_CHAR): Added constant.
+	(VSTR_TYPE_FMT_PTR_WCHAR_T): Added constant.
+
+2002-09-18  James Antill  <james@and.org>
+
+	* include/vstr-extern.h (VSTR_FMT_CB_ARG_VAL): Added macro function.
+	(VSTR_FMT_CB_ARG_PTR): Added macro function.
+
+	* src/vstr_sc.c (vstr_sc_fmt_add_buf): Added function.
+	(vstr_sc_fmt_add_ptr): Added function.
+	(vstr_sc_fmt_add_non): Added function.
+	(vstr_sc_fmt_add_ref): Added function.
+
+	* src/vstr_parse_netstr.c (vstr__parse_netstr): Always set the returned
+	position and data length to zero, so we can test for found but not
+	available easily.
+
+2002-09-17  James Antill  <james@and.org>
+
+	* src/vstr_cmp.c (vstr_cmp_vers_buf): Added function.
+
+2002-09-11  James Antill  <james@and.org>
+
+	* NEWS: Release 0.9.14
+
+	* src/vstr_add_fmt.c (vstr__add_vfmt): Fixed bug when the user specifier
+	escape was %.
+
+2002-09-10  James Antill  <james@and.org>
+
+	* src/vstr_add_fmt.c (VSTR__ADD_FMT_STRTOL): Fix bug with 3 or more
+	digit static field widths and precisions.
+
+	* src/vstr_spn.c (vstr_cspn_chrs_fwd): Add fast path for single char
+	spanning.
+
+	* src/vstr_sc.c (vstr_sc_fmt_add_ipv6_ptr): Added function.
+	(vstr_sc_fmt_add_ipv4_ptr): Added function.
+	(vstr_sc_fmt_cb_beg): Added function.
+	(vstr_sc_fmt_cb_end): Added function.
+
+2002-09-02  James Antill  <james@and.org>
+
+	* src/vstr_sc_posix.c (vstr_sc_mmap_fd): Add checks for mmap()
+	counts, when in debugging mode.
+
+	* src/vstr.c (vstr_exit): Add checks for mmap() counts, when in
+	debugging mode.
+
+2002-09-02  James Antill  <james@and.org>
+
+	* NEWS: Release 0.9.13
+
+	* include/vstr-const.h (VSTR_CNTL_CONF_GET_FMT_CHAR_ESC): Add constant.
+	(VSTR_CNTL_CONF_SET_FMT_CHAR_ESC): Add constant.
+	(VSTR_CNTL_CONF_GET_NUM_SPARE_BUF): Add constant.
+	(VSTR_CNTL_CONF_SET_NUM_SPARE_BUF): Add constant.
+	(VSTR_CNTL_CONF_GET_NUM_SPARE_NON): Add constant.
+	(VSTR_CNTL_CONF_SET_NUM_SPARE_NON): Add constant.
+	(VSTR_CNTL_CONF_GET_NUM_SPARE_PTR): Add constant.
+	(VSTR_CNTL_CONF_SET_NUM_SPARE_PTR): Add constant.
+	(VSTR_CNTL_CONF_GET_NUM_SPARE_REF): Add constant.
+	(VSTR_CNTL_CONF_SET_NUM_SPARE_REF): Add constant.
+
+	* src/vstr_add_fmt_dbl_asm.S: Finish the glibc format double work, now
+	Vstr can be ported to output double's the same way on all platforms.
+
+	* src/vstr_join.c (vstr_join_buf): Remove undocumented function.
+
+2002-09-01  James Antill  <james@and.org>
+
+	* include/vstr.h (_LARGEFILE64_SOURCE): Allow external program to
+	compile on Linux that don't #define _GNU_SOURCE or anything which
+	brings in off64_t.
+
+2002-08-27  James Antill  <james@and.org>
+
+	* NEWS: Release 0.9.12
+
+	* src/vstr_sc_posix.c (vstr_sc_mmap_fd): Now directly returns ENOSYS
+	as a mmap() error if mmap() didn't exist at compile time.
+
+	* src/vstr_conv.c (vstr_conv_encode_uri): Made the conversion walk
+	forwards through the Vstr string, for speed.
+	(vstr_conv_decode_uri): Made the conversion walk forwards through
+	the Vstr string, for speed.
+	(VSTR__BUF_NEEDED): Fast path when buf/non nodes are the only ones
+	in the Vstr string.
+
+	* src/vstr_add_fmt_dbl_none.c (vstr__add_fmt_dbl): Fixed conformance
+	issues.
+
+	* src/vstr_sc.c (vstr_sc_fmt_add_vstr): Added function.
+
+	* src/vstr_sub.c (vstr_sub_rep_chr): Added function.
+
+	* src/vstr_add.c (vstr_add_rep_chr): Added function.
+
+	* src/vstr.c (vstr_swap_conf): Added function, needed for other
+	libraries.
+
+	* src/vstr_add_fmt.c (vstr_fmt_del): Added function.
+	(vstr_fmt_srch): Added function.
+	(vstr_add_sysfmt): Added function, ignores custom specifiers.
+	(vstr_add_vsysfmt): Added function, ignores custom specifiers.
+
+	* src/vstr_sub.c (vstr__sub_buf_fast): Added fast path when substitution
+	is the length and buffers are the only nodes in the vstr.
+
+2002-08-21  James Antill  <james@and.org>
+
+	* src/vstr_add_fmt.c (vstr__fmt_fillin_spec): Handle negative precisions
+	according to the std.
+
+2002-08-20  James Antill  <james@and.org>
+
+	* src/vstr_cntl.c (vstr_cntl_base): Changed VSTR_CNTL_BASE_GET_CONF
+	so you have to call vstr_free_conf() when you have finished with
+	the Vstr_conf.
+
+	* src/vstr_srch.c (vstr__srch_buf_rev_fast): Added function, speeded up
+	reverse buf search.
+
+	* src/vstr_add_fmt.c (vstr_fmt_add): Add function for custom specifiers.
+
+2002-08-18  James Antill  <james@and.org>
+
+	* src/vstr_srch.c (vstr_srch_buf_fwd): Fixed a bug when last element
+	of a node was the start of the srch.
+
+2002-08-16  James Antill  <james@and.org>
+
+	* src/vstr_srch.c (vstr_srch_vstr_fwd): Major bug fix.
+	(vstr__srch_chr_rev_fast): Added function, speeded up reverse character
+	search.
+
+2002-08-15  James Antill  <james@and.org>
+
+	* include/vstr-const.h (VSTR_CNTL_CONF_GET_FLAG_NO_ALLOC_CACHE): Added
+	constant.
+	(VSTR_CNTL_CONF_SET_FLAG_NO_ALLOC_CACHE): Added constant.
+
+2002-08-13  James Antill  <james@and.org>
+
+	* src/vstr_sc_posix.c (vstr_sc_mmap_fd): Changed name, changed off_t
+	to off64_t.
+	(vstr_sc_mmap_file): Changed name, added offset and len parameters.
+	(vstr_sc_read_iov_fd): Changed name.
+	(vstr_sc_read_len_fd): Added function.
+	(vstr_sc_read_iov_file): Added function.
+	(vstr_sc_read_len_file): Added function.
+	(vstr_sc_write_file): Added offset parameter, change mode parameter to
+	mode_t.
+
+2002-08-12  James Antill  <james@and.org>
+
+	* scripts/check.sh: Rewrote large parts of script ... much hacky code,
+	now requires zsh :(.
+
+	* examples/ex_hexdump.c (EX_HEXDUMP_X2X2): Make hexdump much faster.
+
+2002-08-12  James Antill  <james@and.org>
+
+	* NEWS: Release 0.9.11
+
+	* examples/ex_hexdump.c (main): Made example better.
+
+	* tst/conv/tst_uppercase.c (tst): Added test.
+
+	* tst/conv/tst_lowercase.c (tst): Added test.
+
+	* src/vstr_add.c (vstr_add_ptr): Allow zero lengths.
+	(vstr_add_non): Allow zero lengths.
+	(vstr_add_ref): Allow zero lengths.
+
+	* include/vstr-inline.h (vstr_add_buf: Allow zero lengths.
+
+2002-08-11  James Antill  <james@and.org>
+
+	* include/vstr-internal.h (VSTR__ATTR_D): Fix definition of macro,
+	worked anyway for std. compliant compilers.
+
+	* src/vstr_version.c.in: Cleanup version printing function.
+
+	* Documentation/txt2html.pl (convert_index()): Added functions to the
+	index.
+
+2002-08-10  James Antill  <james@and.org>
+
+	* Fixup references to vstr_nx_ in the ChangeLog.
+
+	* NEWS: Release 0.9.10
+
+2002-08-09  James Antill  <james@and.org>
+
+	* src/vstr_ref.c (vstr_make_ref_malloc): Added function.
+	(vstr_make_ref_ptr): Added function.
+
+	* src/vstr_split.c (vstr_split_chrs): Fixed infinite loop when REMAIN
+	wasn't specified and you had a null addition as your last section.
+	(vstr_split_buf): Fixed infinite loop when REMAIN wasn't specified
+	and you had a null addition as your last section.
+	(vstr_split_buf): Fixed meaning of the NO_RET flage, as it was
+	reversed.
+	(vstr_split_chrs): Fixed meaning of the NO_RET flage, as it was
+	reversed.
+
+	* src/vstr_parse_netstr.c (vstr__parse_netstr): Fix the return position
+	from the netstr functions from pointing to the ':' to the first piece
+	of data.
+
+	* include/vstr-extern.h (VSTR_SPLIT_CSTR_BUF): Added macro function.
+	(VSTR_SPLIT_CSTR_CHRS): Added macro function.
+
+	* src/vstr_mov.c (vstr_mov): Fixed bug, internal state got corrupted if
+	you tried to move the last node of a Vstr_base to another node, and it
+	could be done fast.
+
+2002-08-08  James Antill  <james@and.org>
+
+	* src/vstr_sub.c (VSTR__SUB_BUF): Add small copy calls outside of
+	memcpy() for speed.
+
+	* src/vstr_srch.c (vstr_srch_buf_fwd): Fix return value when
+	searching for _NON data.
+	(vstr_srch_buf_fwd): Fix test for is there enough room left.
+
+	* include/vstr-const.h (VSTR_FLAG01): Added macro function.
+	(VSTR_FLAG02): Added macro function.
+	(VSTR_FLAG03): Added macro function.
+	(VSTR_FLAG04): Added macro function.
+	(VSTR_FLAG05): Added macro function.
+	(VSTR_FLAG06): Added macro function.
+	(VSTR_FLAG07): Added macro function.
+	(VSTR_FLAG08): Added macro function.
+	(VSTR_FLAG09): Added macro function.
+	(VSTR_FLAG10): Added macro function.
+	(VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_SP): Allow space.
+	(VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_COMMA): Allow commas.
+	(VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_DOT): Allow full stops.
+	(VSTR_FLAG_CONV_UNPRINTABLE_ALLOW__): Allow Underbar.
+	(VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_HSP): Allow space with high bit set.
+	(VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_NONE): Allow nothing.
+	(VSTR_FLAG_CONV_UNPRINTABLE_DEF): Due to above additions changed
+	default to be what most people would expect.
+
+	* src/vstr_del.c (vstr_extern_inline_del): Fix non decrement of
+	reference for ref nodes at the begining of a deleteion.
+
+2002-08-07  James Antill  <james@and.org>
+
+	* src/vstr_spn.c (vstr_spn_chrs_fwd): Rename function from
+	buf to chrs, as the parameter isn't treated as a buf.
+	(vstr_spn_chrs_rev): Rename function from buf to chrs, as the
+	parameter isn't treated as a buf.
+	(vstr_cspn_chrs_fwd): Rename function from buf to chrs, as the
+	parameter isn't treated as a buf.
+	(vstr_cspn_chrs_rev): Rename function from buf to chrs, as the
+	parameter isn't treated as a buf.
+
+2002-08-04  James Antill  <james@and.org>
+
+	* src/vstr_sub.c (vstr_sub_buf): Allowed Vstr to be empty.
+	(vstr_sub_ptr): Allowed Vstr to be empty.
+	(vstr_sub_non): Allowed Vstr to be empty.
+	(vstr_sub_ref): Allowed Vstr to be empty.
+	(vstr_sub_vstr): Allowed both Vstrs to be empty.
+
+	* src/vstr_dup.c (vstr_dup_ref): Added function.
+
+	* include/vstr-extern.h.pre (VSTR_ADD_CSTR_REF): Added macro function.
+	(VSTR_DUP_CSTR_REF): Added macro function.
+	(VSTR_SUB_CSTR_REF): Added macro function.
+
+2002-07-30  James Antill  <james@and.org>
+
+	* examples/ex_hexdump.c (main): Fixed a couple of semi-bugs.
+
+	* src/vstr_conv.c (vstr_conv_unprintable_del): Fixed bugs found by
+	test.
+
+	* tst/conv/tst_unprintable.c (tst): Added test.
+
+	* include/vstr-inline.h.pre (vstr_add_buf): Add small copy calls
+	outside memcpy() so for speed.
+
+	* src/vstr_add_fmt.c (VSTR__ADD_FMT_STRTOL): Add small length nums
+	inline.
+
+	* src/vstr_add_fmt.c (VSTR__ADD_FMT_ISDIGIT): Stop being so paranoid
+	about digits, digits are always next to each other ... just alphas
+	that are weird.
+
+	* examples/ex_hexdump.c (ex_hexdump_process): Fixup the
+	vstr_export_buf() calls.
+
+	* src/vstr_add_fmt_dbl_glibc.c (PRINT_FPHEX_LONG_DOUBLE): Add long
+	double support for dbl-fmt=glibc (still only %a style works though).
+
+2002-07-30  James Antill  <james@and.org>
+
+	* NEWS: Release 0.9.9
+
+	* tst/add_fmt/tst_double.c (tst): Remove ' flag from formats that
+	can't use it.
+
+	* tst/add_fmt/tst_long_double.c (tst): Remove ' flag from formats that
+	can't use it.
+
+	* README: Add text about inline helper functions.
+
+	* include/vstr-extern.h.pre: Always include helper functions are you
+	can't compile without inline support.
+
+2002-07-29  James Antill  <james@and.org>
+
+	* scripts/autocheck.sh (conf): Change valgrind to only output stuff on
+	error (and then into the err log).
+
+	* README: Document how to add functions.
+
+	* configure.in (AC_ARG_ENABLE(tst-noline)): Added option for testing.
+	(AC_ARG_ENABLE(tst-noattr-alias)): Added option for testing.
+	(AC_ARG_ENABLE(tst-noattr-visibility)): Added option for testing.
+
+	* src/vstr_export.c (vstr_export_buf): Added a size limiter for the
+	data ... probably not needed most of the time, but it's better than
+	having people get it wrong.
+	(vstr_export_iovec_cpy_buf): Fixed return value to be correct.
+	(vstr_export_iovec_cpy_buf): Fixed major bug of using the wrong
+	int causing an infinite loop.
+
+2002-07-26  James Antill  <james@and.org>
+
+	* Documentation/constants.txt (Constant): Added documentation for
+	VSTR_COMPILE_ constants.
+
+2002-07-23  James Antill  <james@and.org>
+
+	* src/vstr_sc_posix.c (vstr__sc_read_slow_fd): Added code so that
+	vstr_sc_read_fd() won't just fail if a cache isn't available on the
+	Vstr.
+
+	* src/vstr_conv.c (vstr_conv_encode_uri): Remove sprintf() call so we
+	don't drag half of libc in.
+
+2002-07-22  James Antill  <james@and.org>
+
+	* src/assert_loop.c (vstr__assert_loop): Only compile function is
+	NDEBUG isn't set.
+
+	* include/main.h (FIX_NAMESPACE_SYMBOL): Make the autoconf functions
+	internal (linker script will now make them inaccessible).
+
+2002-07-18  James Antill  <james@and.org>
+
+	* include/vstr-internal.h (VSTR__I): Add internal attribute for symbols
+	not called directly from outside the module.
+
+	* include/vstr-inline.h (vstr_ref_del): Made inline.
+	(vstr_ref_add): Made inline.
+
+2002-07-17  James Antill  <james@and.org>
+
+	* NEWS: Release 0.9.8
+
+	* include/Makefile.am: Install the vstr-inline.h header. *sigh*
+
+2002-07-16  James Antill  <james@and.org>
+
+	* include/vstr-internal.h (VSTR__H): Add visibility hidden attribute to
+	internal variables that are above file scope.
+	(VSTR__AH): Add alias and visibility hidden attributes to exported
+	functions when used with the internal API of vstr_nx_*.
+
+2002-07-15  James Antill  <james@and.org>
+
+	* NEWS: Release 0.9.7
+
+	* src/vstr_cache.c (vstr__cache_cbs): Allow cache_internal to be enabled
+	again.
+
+	* src/vstr.c (vstr_free_conf): Make vstr_free_conf() have the std. free
+	semantics.
+
+2002-07-09  James Antill  <james@and.org>
+
+	* include/vstr-inline.h (vstr_del): Add inline vstr_del() for deleting
+	from the begining of Vstrs.
+
+	* src/vstr_ref.c (vstr_ref_del): Make vstr_ref_del() have the std. free
+	semantics.
+
+2002-07-07  James Antill  <james@and.org>
+
+	* src/vstr.c (vstr_free_base): Must free conf last, as it might be the
+	last reference.
+
+2002-07-05  James Antill  <james@and.org>
+
+	* src/vstr_srch.c (vstr_srch_buf_fwd): Speed up search buf fwd.
+
+	* src/vstr_inline.c: Include out of line inlines.
+
+2002-07-04  James Antill  <james@and.org>
+
+	* src/vstr_add_fmt_dbl_host.c (vstr__add_fmt_dbl): Do thousand
+	seperation on 'g' in 'f' style as well as 'f' itself.
+
+	* include/vstr-switch.h (VSTR_COMPILE_INLINE): Added runtime compile
+	switch to turn off inline'ing.
+
+	* src/vstr_cache.c (vstr_cache_set_data): Turn cache_internal off if a
+	cache data value is set that isn't internal to the library. This is
+	speeds up the vstr_add_buf() inline.
+
+	* Documentation/functions.txt: Added doco. for vstr_exit(), vstr_num(),
+	VSTR_SRCH_CSTR_BUF_FWD(), VSTR_SRCH_CSTR_BUF_REV(),
+	VSTR_SPN_CSTR_BUF_FWD(), VSTR_SPN_CSTR_BUF_REV(),
+	VSTR_CSPN_CSTR_BUF_FWD(), VSTR_CSPN_CSTR_BUF_REV(), and vstr_cache_sub()
+
+2002-07-03  James Antill  <james@and.org>
+
+	* src/vstr_parse.c (vstr_parse_ipv4): Only increment the length for the
+	'/' if we are looking for more than just the ip.
+
+	* src/vstr_add_fmt.c (vstr__add_number): Only always show octal zero
+	when # flag is on.
+
+	* tst/tst-main.c (main): Added "make check"
+
+	* src/vstr.c (vstr__make_conf_loc_def_numeric): Setup decimal point
+	properly.
+
+2002-06-24  James Antill  <james@and.org>
+
+	* include/vstr-inline.h (vstr_add_buf): Add inline function.
+	(vstr_sects_add): Add inline function.
+
+2002-06-24  James Antill  <james@and.org>
+
+	* NEWS: Release 0.9.6
+
+2002-06-24  James Antill  <james@and.org>
+
+	* configure.in (enable-nonposix-host): Added option to remove all
+	dependancies on POSIX, so the library can be compiled just using C89.
+
+2002-06-20  James Antill  <james@and.org>
+
+	* include/vstr-extern.h (VSTR_SRCH_CSTR_BUF_FWD): Added function macro.
+	(VSTR_SRCH_CSTR_BUF_REV): Added function macro.
+	(VSTR_SRCH_SECTS_ADD_CSTR_BUF_FWD): Added function macro.
+	(VSTR_SPN_CSTR_BUF_FWD): Added function macro.
+	(VSTR_SPN_CSTR_BUF_REV): Added function macro.
+	(VSTR_CSPN_CSTR_BUF_FWD): Added function macro.
+	(VSTR_CSPN_CSTR_BUF_REV): Added function macro.
+
+	* src/vstr.c (vstr_num): Added function.
+
+2002-06-19  James Antill  <james@and.org>
+
+	* src/vstr_add.c (vstr_add_vstr): Allow a vstr_add_vstr() to be used
+	with a single vstr.
+
+	* src/vstr_mov.c (vstr_mov): Allow a vstr_mov() to be used
+	with a single vstr.
+	(vstr_mov): Add code for "quick" move operations between compatible
+	vstrs.
+
+	* src/vstr_sub.c (vstr_sub_vstr): Allow a vstr_sub_vstr() to be used
+	with a single vstr.
+
+	* src/vstr_del.c (vstr__del_beg): Only use ->used for _BUF type nodes.
+	(vstr_del): Fix accounting of nodes on delete.
+
+2002-06-18  James Antill  <james@and.org>
+
+	* src/vstr.c (vstr__make_conf_loc_numeric): Minor memory leak if
+	deciaml_point_str allocation failed.
+
+2002-06-13  James Antill  <james@and.org>
+
+	* src/vstr.c (vstr_make_conf): Change behavour of vstr_make_conf() and
+	hence vstr_init() so that they both default to the C locale.
+
+2002-06-04  James Antill  <james@and.org>
+
+	* NEWS: Release 0.9.5
+
+2002-05-22  James Antill  <james@and.org>
+
+	* src/vstr_version.c.in (vstr_version_func): Rewrite function in inline
+	asm so it always works in x86 Linux.
+
+2002-05-21  James Antill  <james@and.org>
+
+	* src/vstr_add_fmt.c (vstr_add_vfmt): Fix stupid for loop error.
+
+2002-05-20  James Antill  <james@and.org>
+
+	* src/vstr_add_fmt_dbl_none.c (vstr__add_fmt_dbl): Added generic switch
+	for float printing, can currently do host and none. glibc support
+	comming soonish.
+
+2002-05-07  James Antill  <james@and.org>
+
+	* NEWS: Release 0.9.4
+
+2002-05-03  James Antill  <james@and.org>
+
+	* src/vstr.c (vstr_exit): Added vstr_exit() function which will cleanup
+	memory used by vstr, the only function that's valid to call after this
+	is vstr_init().
+
+	* src/vstr_add_fmt.c (vstr__fmt_init_spec): Fixed memory leak in fmt
+	spec allocation.
+
+2002-04-17  James Antill  <james@and.org>
+
+	* NEWS: Release 0.9.3
+
+2002-04-16  James Antill  <james@and.org>
+
+	* src/vstr.c (vstr__cache_iovec_valid): Move upto date assignment for
+	the iovec cache.
+
+	* src/vstr_cache.c (vstr__cache_iovec_alloc): Don't memmove() iovec
+	cache if it isn't valid ... Duh!
+
+2002-04-05  James Antill  <james@and.org>
+
+	* NEWS: Release 0.9.2
+
+	* src/vstr_add.c (vstr_add_iovec_buf_end): Fixup base->end.
+	(vstr__cache_iovec_add_node_end): Take into account the offset when
+	adding to the end.
+
+	* src/vstr_sc.c (vstr_sc_read_fd): Fix doing a read into a non end part
+	of the Vstr string.
+
+	* src/vstr_add.c (vstr_add_iovec_buf_end): Fix premature adding of
+	base->len as that confuses find.
+
+2002-04-03  James Antill  <james@and.org>
+
+	* src/vstr.c (vstr__base_scan_fwd_beg): Allow a whole bunch of stuff to
+	access the entire string even if it's empty.
+
+2002-03-21  James Antill  <james@and.org>
+
+	* NEWS: Release 0.9.1
+
+2002-03-12  James Antill  <james@and.org>
+
+	* src/vstr_dup.c (vstr_dup_vstr): Allow len to be zero.
+	(vstr_dup_non): Allow len to be zero.
+	(vstr_dup_ptr): Allow len to be zero.
+	(vstr_dup_buf): Allow len to be zero.
+
+2002-03-02  James Antill  <james@and.org>
+
+	* src/vstr.c (vstr_make_spare_nodes): Renamed function from
+	vstr_add_space_nodes() -- consistancy.
+	(vstr_free_spare_nodes): Renamed function from
+	vstr_del_space_nodes() -- consistancy.
+
+	* include/vstr-const.h (VSTR_FLAG_PARSE_NUM_NO_BEG_ZERO): Added
+	constant, so that you can specify that no zeros should precede the
+	number.
+
+	* include/vstr-extern.h (VSTR_SECTS_NUM): Returned object is now a
+	pointer to a Section node, instead of a section node.
+
+	* include/vstr-const.h (VSTR_FLAG_SPLIT_REMAIN): Added constant, so you
+	can not have non perl style stuff.
+
+2002-02-26  James Antill  <james@and.org>
+
+	* Makefile.am (pkgconfigdir): Changed to pkg-config from gnome-config
+
+	* src/vstr_add.c (vstr__add_setup_pos): Allow updates to the end of a
+	node without deleteing the iovec cache.
+	(VSTR__ADD_MID): Fix corruption when you delete some of the first node,
+	and then add data to the begining of the Vstr string.
+
+2002-02-22  James Antill  <james@and.org>
+
+	* src/vstr_cache.c (vstr__cache_iovec_free): Fix memory leak.
+
+2002-02-21  James Antill  <james@and.org>
+
+	* src/vstr_parse.c (vstr_parse_int): Use right type.
+	(vstr_parse_short): Use right type.
+
+2002-02-20  James Antill  <james@and.org>
+
+	* src/vstr_sub.c (vstr_sub_buf): Fixes.
+
+	* include/vstr-extern.h (VSTR_CMP_EQ): Added macro function.
+	(VSTR_CMP_BUF_EQ): Added macro function.
+	(VSTR_CMP_CASE_EQ): Added macro function.
+	(VSTR_CMP_CASE_BUF_EQ): Added macro function.
+
+2002-02-19  James Antill  <james@and.org>
+
+	* src/vstr.c (vstr_make_conf): Make locale malloc() right size.
+	(vstr_make_conf): Add cache initialisation.
+
+2002-02-18  James Antill  <james@and.org>
+
+	* src/vstr_cache.c (vstr_cache_add_cb): Added function.
+	(vstr_cache_get_data): Added function.
+	(vstr_cache_set_data): Added function.
+	(vstr_cache_srch): Added function.
+
+2002-02-17  James Antill  <james@and.org>
+
+	* src/vstr_sect.c (vstr_sects_foreach): Fixed the return value.
+
+2002-02-15  James Antill  <james@and.org>
+
+	* src/vstr_parse_netstr.c (vstr_parse_netstr): Added function.
+	(vstr_parse_netstr2): Added function.
+
+	* src/vstr_srch_netstr.c (vstr_srch_netstr_fwd): Deleted function.
+	(vstr_srch_netstr2_fwd): Deleted function.
+
+2002-02-11  James Antill  <james@and.org>
+
+	* src/vstr_cmp.c (vstr_cmp_case_buf): Added function.
+
+	* src/vstr.c (vstr_init): Allow it to be called myultiple times without
+	doing anything bad.
+
+2002-02-10  James Antill  <james@and.org>
+
+	* src/vstr_split.c (vstr_split_chrs): Added function.
+
+	* src/vstr_srch.c (vstr_srch_chrs_fwd): Added function.
+	(vstr_srch_chrs_rev): Added function.
+
+	* src/vstr_ref.c (vstr__ref_cb_free_buf_ref): Added debug function.
+
+	* src/vstr_cstr.c (vstr_export_cstr_ref): Altered prototype so an
+	offset is passed back as well.
+
+	* src/vstr_conv.c (VSTR__BUF_NEEDED): Fixed major bug, in common code
+	for uppercase, lowercase and unprintable_chr()
+	(vstr_conv_unprintable_chr): Renamed function from
+	vstr_conv_unprintable().
+	(vstr_conv_unprintable_del): Added function.
+
+2002-02-08  James Antill  <james@and.org>
+
+	* src/vstr_export.c (vstr_export_ref): Added function.
+
+2002-02-03  James Antill  <james@and.org>
+
+	* NEWS: Release 0.7.3
+
+2002-02-03  James Antill  <james@and.org>
+
+	* include/vstr-extern.h (VSTR_SECTS_DECL): Changed macro function, it's
+	now a single declaration and ISO C89 compliant.
+	(VSTR_SECTS_INIT): Added macro function.
+	(VSTR_SECTS_DECL_INIT): Added macro function, must be called as well as
+	VSTR_SECTS_DECL.
+	(VSTR_SECTS_EXTERN_DECL): Added macro function, so you can have
+	global static sects.
+
+	* src/vstr_sect.c (vstr_sects_make): Moved function to be inside the
+	vstr_sect namespace.
+	(vstr_sects_free): Dito.
+
+	* configure.in (--enable-ansi):  Added enable-ansi argument.
+
+	* src/vstr_sc.c (vstr_sc_write_fd): Made errno a usable value for all
+	error cases.
+	(vstr_sc_read_fd): Dito.
+	(vstr_sc_add_fd): Dito.
+
+2002-02-01  James Antill  <james@and.org>
+
+	* src/vstr_sc.c (vstr_sc_write_file): Save and restore errno when an
+	error occurs before close().
+	(vstr_sc_add_file): Save and restore errno when an error occurs before
+	close().
+
+2002-02-01  James Antill  <james@and.org>
+
+	* NEWS: Release 0.7.2
+
+2002-02-01  James Antill  <james@and.org>
+
+	* include/vstr-switch.h (VSTR_COMPILE_INCLUDE): Added compile switch
+	function, so to automatic includes.
+
+	* src/vstr_cstr.c (vstr_export_cstr_buf): Added function.
+
+	* src/vstr_ref.c (vstr_ref_add): Changed function name.
+	(vstr_ref_del): Changed function name.
+
+	* include/vstr-extern.h (VSTR_DECL_INIT_SECTS): Added macro function.
+	(VSTR_DECL_SECTS): Added macro function.
+	(VSTR_SECTS_NUM): Added macro function.
+
+	* include/vstr-def.h (struct Vstr_base): Saved some space.
+	(struct Vstr_node): Saved some space.
+
+	* src/vstr_sc.c (vstr_sc_add_fd):
+	(vstr_sc_add_file): Added function.
+	(vstr_sc_read_fd): Added function.
+	(vstr_sc_write_file): Added function.
+
+	* src/vstr_sect.c (vstr_make_sects): Added function.
+	(vstr_free_sects): Added function.
+	(vstr_sects_add): Added function.
+	(vstr_sects_del): Added function.
+	(vstr_sects_srch): Added function.
+	(vstr_sects_foreach): Added function.
+
+	* src/vstr_split.c (vstr_split_buf): Added function.
+
+	* src/vstr_parse.c (vstr_parse_short): Added function.
+	(vstr_parse_ushort): Added function.
+	(vstr_parse_int): Added function.
+	(vstr_parse_uint): Added function.
+	(vstr_parse_long): Added function.
+	(vstr_parse_ulong): Added function.
+	(vstr_parse_intmax): Added function.
+	(vstr_parse_uintmax): Added function.
+
+	* src/vstr_add.c (vstr_add_vstr): Added _ALL_BUF type.
+
+2002-01-12  James Antill  <james@and.org>
+
+	* src/vstr_fmt.c (vstr__add_number): Bunch of fixes for
+	field widths on ints, moved thousands_sep printing to use
+	vstr__grouping_add_num as that's cleaner.
+
+2002-01-07  James Antill  <james@and.org>
+
+	* src/vstr_srch_netstr.c (vstr__srch_netstr): Make ASCII everywhere.
+
+	* src/vstr.c (vstr__base_scan_rev_beg): Add type information.
+	(vstr__base_scan_rev_nxt): Add type information.
+
+	* src/vstr_fmt.c (vstr__add_number): Use the Vstr locale for ints.
+	(vstr__fmt_write_spec): Use the Vstr locale for floats/doubles.
+
+	* src/vstr.c (vstr_make_conf): Add vstr locale.
+
+	* src/vstr_cmp.c (vstr_cmp_vers): Make ASCII everywhere.
+
+	* src/vstr_add_netstr.c (vstr_add_netstr2_beg): Make ASCII everywhere.
+	(vstr_add_netstr2_end): Make ASCII everywhere.
+
+	* include/vstr-def.h (Vstr_base): Saved some space.
+
+	* src/vstr_fmt.c
+
+	* src/vstr_conv.c (vstr_conv_unprintable): Added function (not atomic
+	atm.)
+	(vstr_conv_lowercase): Added function (not atomic atm.)
+	(vstr_conv_uppercase): Added function (not atomic atm.)
+
+2002-01-05  James Antill  <james@and.org>
+
+	* src/vstr.c (vstr_make_conf): Bookkeep when a non Vstr_base has a
+	reference to a conf.
+
+2001-12-30  James Antill  <james@and.org>
+
+	* src/vstr.c (vstr_make_conf): Change default buf_sz, given size_cmp
+	documentation.
+
+2001-12-27  James Antill  <james@and.org>
+
+	* src/vstr_cmp.c (vstr__cmp_memcasecmp): Make ASCII everywhere.
+
+2001-12-07  James Antill  <james@and.org>
+
+	* src/vstr.c (vstr_free_base): Remove test on vstr_del() for all of
+	the Vstr.
+
+	* src/vstr_cstr.c (vstr__export_cstr): Allow len == 0, when Vstr_base
+	is empty. This is so you can always do
+	vstr_export_vstr_*(a, 1, a->len); and not get assert() fails.
+
+
+	* src/vstr_del.c (vstr_del): Allow len == 0, when Vstr_base is empty.
+	This is so you can always do vstr_del(a, 1, a->len); and not get
+	assert() fails.
+
+2001-12-07  James Antill  <james@and.org>
+
+	* src/vstr_fmt.c (vstr__fmt_write_spec): Fix use of thousands sep. in
+	asprintf call.
+
+2001-12-06  James Antill  <james@and.org>
+
+	* examples/ex1.c (main): Print double values, so we know they at least
+	sort of work.
+
+	* src/vstr_fmt.c (vstr__fmt_write_spec): Fix printing of double values.
+
+2001-12-05  James Antill  <james@and.org>
+
+	* src/vstr_sub.c (vstr_sub_buf): Add validity checks when running in
+	debugging mode.
+
+	* src/vstr_add.c (vstr_add_vstr): Add validity checks when running in
+	debugging mode.
+
+	* src/vstr.c (vstr_free_base): Don't delete if there is no data in the
+	VStr.
+	(vstr__check_spare_nodes): Check that the nodes are the right type for
+	the list they are on.
+	(vstr__base_scan_fwd_beg): Insist len > 0.
+	(vstr__base_scan_rev_beg): Insist len > 0.
+
+	* src/vstr_add.c (vstr__convert_buf_ref): Decrement count of available
+	ref nodes when you convert a _buf to a ref.
+	(vstr__convert_buf_ref): Fix positioning code.
+	(vstr__convert_buf_ref): Change the position cache to point to the
+	_ref node if it points to a _buf node we are changing.
+
+	* src/vstr.c (vstr_add_spare_nodes): Added checks.
+	(vstr_del_spare_nodes): Added checks.
+
+2001-12-04  James Antill  <james@and.org>
+
+	* src/vstr_spn.c (vstr__spn_buf_rev_fast): Added function to speed up
+	reverse traversal.
+	(vstr__cspn_buf_rev_fast): Added function to speed up reverse traversal.
+
+	* src/vstr_add.c (vstr__add_setup_pos): Make sure we aren't called with
+	pos == 0.
+	(vstr_add_buf): Make work for pos == 0, when we already have data.
+	(vstr_add_ptr): Make work for pos == 0, when we already have data.
+	(vstr_add_non): Make work for pos == 0, when we already have data.
+	(vstr_add_ref): Make work for pos == 0, when we already have data.
+	(vstr_add_iovec_buf_beg): Added pos argument.
+	(vstr_add_iovec_buf_end): Added pos argument.
+
+2001-12-03  James Antill  <james@and.org>
+
+	* src/vstr.c (vstr__base_iovec_reset_node): Fix vector usage when
+	offset is used.
+	(vstr__base_scan_rev_nxt): Fix vector usage when offset is used.
+	(vstr__base_split_node): Fix ->end ptr on a split.
+
+2001-12-02  James Antill  <james@and.org>
+
+	* src/vstr_mov.c (vstr_mov): Added function.
+
+	* src/vstr_sub.c (vstr_sub_buf): Make function atomic.
+
+	* src/vstr_srch.c (vstr_srch_chr_fwd): Changed char to char type.
+	(vstr_srch_chr_rev): Changed char to char type.
+
+	* src/vstr.c (vstr_init_base): Switched arguments aroudn to match other
+	functions.
+
+	* examples/ex3.c: Made the file test non typedef compile mode.
+
+	* src/vstr_add_netstr.c (vstr_add_netstr2_beg): Added pos argument.
+	(vstr_add_netstr_beg): Added pos argument.
+	(vstr_add_netstr2_end): Added end pos argument.
+	(vstr_add_netstr_end): Added end pos argument.
+
+2001-11-29  James Antill  <james@and.org>
+
+	* src/vstr_export.c (vstr_export_iovec_cpy_buf): Added function.
+	(vstr_export_iovec_cpy_ptr): Added function.
+
+2001-11-21  James Antill  <james@and.org>
+
+	* src/vstr_add.c (vstr__add_all_ref): Add de-ref for the
+	export_cstr_ref.
+
+	* src/vstr_sub.c (vstr_sub_buf): Added function.
+	(vstr_sub_ptr): Added function.
+	(vstr_sub_non): Added function.
+	(vstr_sub_ref): Added function.
+	(vstr_sub_vstr): Added function.
+
+2001-11-19  James Antill  <james@and.org>
+
+	* src/vstr_srch.c (vstr_srch_buf_fwd): Fixup for the no below API
+	change.
+
+	* src/vstr_cmp.c (vstr_cmp_vers):
+	(vstr_cmp_case):
+	(vstr_cmp_buf):
+	(vstr_cmp): Don't special case the second cmp being zero to mean
+	use the length of the first string, as that means you can't cmp against
+	the empty string.
+
+	* src/vstr_srch.c (vstr__srch_chr_rev_slow): Made the function much
+	simpler by just calling vstr_srch_chr_fwd.
+	(vstr_srch_buf_rev): Added function.
+
+2001-05-02  James Antill  <james@and.org>
+
+	* src/vstr_add.c (vstr__convert_buf_ref): Add code for
+	VSTR_ADD_TYPE_BUF_REF.
+
+	* src/vstr_del.c (vstr_del): Add code so that we split buf's instead
+	of moving memory about in the node itself.
+
+2001-03-29  James Antill  <james@and.org>
+
+	* src/vstr_fmt.c (vstr_add_vfmt): Add support for explicitly specified
+	arguments (needed for l12n), _fmt is now almost a complete C99 printf
+	like function.
+
+	* TODO: Added TODO file.
+
+2001-03-27  James Antill  <james@and.org>
+
+	* src/vstr_fmt.c (vstr_add_vfmt): Add support for: size_t, long long,
+	intmax_t, ptrdiff_t, char int's ... also fixed some bugs by accident.
+
+	* src/vstr_fmt.c (vstr_add_vfmt): Make NULL string look like
+	glibc/dietlibc.
+
+2001-03-25  James Antill  <james@and.org>
+
+	* src/vstr_srch_netstr.c (vstr__srch_netstr): Don't skip a netstr that
+	starts valid but the end would be out of bounds.
+
+2001-03-24  James Antill  <james@and.org>
+
+	* src/vstr_del.c (vstr__base_iovec_del_beg): Another bug in bug
+	checking code.
+
+	* src/vstr.c (vstr__base_iovec_check): Bug in bug checking code :).
+
+	* src/vstr_add.c (vstr_add_iovec_buf_beg): s/||/&&/; in if.
+	(vstr_add_iovec_buf_end): Fixed bug in iovs[] start.
+	(vstr_add_iovec_buf_beg): Fixed bug in iovs[] start.
+	(vstr_add_iovec_buf_end): Reset iovs.len to correct length when it
+	isn't full.
+
+2001-03-23  James Antill  <james@and.org>
+
+	* src/vstr_fmt.c (vstr_add_vfmt): Fix bug when passing NULL as %s.
+
+	* src/vstr_ref.c (vstr_ref_del_ref): Stupid bug assuming you can free
+	the reference, that's done in the function call.
+
+2001-03-22  James Antill  <james@and.org>
+
+	* src/vstr_cstr.c (vstr_export_cstr_ptr): Added ability to export a
+	"C string" to try and minimise integration pain.
+
+	* src/vstr_add.c (vstr_add_ref): Added offset parameter to add_ref().
+
+	* include/vstr-def.h (VSTR__DECL_TYPEDEF1): Added cache struct to cache
+	searches for a position and cstr exports.
+
+	* src/vstr_add.c (vstr_add_vstr): Add ability to add the vstr as a
+	reference to one chunk of memory.
+
+	* src/vstr.c (vstr_del_beg): Fixed bug, when deleting inside the first
+	node.
+
+	* src/vstr_cntl.c (vstr__del_conf): Get rid of vstr__destory_conf, and
+	use this.
+
+2001-03-20  James Antill  <james@and.org>
+
+	* src/vstr_ref.c (vstr_ref_cb_free_nothing): Changed name, and moved
+	all the vstr_ref_* subsystem into a seperate file.
+
+	* src/vstr.c (vstr_add_ref): Added offset paramter to add_ref.
+
+2001-03-19  James Antill  <james@and.org>
+
+	* src/vstr_spn.c (vstr_spn_buf_rev): Added function.
+	(vstr_cspn_buf_rev): Added function.
+
+	* src/vstr_cmp.c (vstr__cmp_memcasecmp): Use local memcasecmp(), as
+	we don't want locale specific one.
+	(vstr_cmp_case): Move the scan streings along in the non _non node case.
+	(vstr_cmp): Move the scan streings along in the non _non node case.
+
+	* src/vstr_spn.c (vstr_spn_buf_fwd): Changed from _str_ to _buf_.
+	(vstr_cspn_buf_fwd):  Changed from _str_ to _buf_.
+
+2001-03-16  James Antill  <james@and.org>
+
+	* examples/ex4.c (main): Added example of vstr_srch_netstr().
+
+	* src/vstr_cmp.c (vstr_cmp_buf): Allow cmp's against non, by passing
+	NULL as the buf.
+
+	* src/vstr_add_netstr.c (vstr__netstr_end_start): Make the add_buff
+	parameter autodetecting (do it the last node is a _buf).
+
+	* src/vstr_srch_netstr.c (vstr__srch_netstr): Added code to search out
+	netstr/netstr2 data from a vstr.
+
+	* src/vstr_srch.c (vstr_srch_spn_fwd): Allow span counts for "non"
+	nodes, by passing NULL as the span string.
+	(vstr_srch_cspn_fwd): Allow compliment span counts for "non" nodes,
+	by passing NULL as the compliment span string.
+	(vstr_srch_buf_fwd):  Allow searches for a length of "non" nodes, by
+	passing NULL as the buf.
+	(vstr_srch_buf_fwd): the len param. now applies to the first character
+	in the buffer.
+
+2001-03-15  James Antill  <james@and.org>
+
+	* src/vstr.c (VSTR_C): Initial non me release.
+
