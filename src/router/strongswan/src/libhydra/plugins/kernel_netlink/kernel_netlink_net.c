@@ -37,6 +37,8 @@
  * THE SOFTWARE.
  */
 
+#include "musl.h"
+
 #include <sys/socket.h>
 #include <sys/utsname.h>
 #include <linux/netlink.h>

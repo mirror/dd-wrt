@@ -118,6 +118,7 @@
 #include "utils/leak_detective.h"
 #include "plugins/plugin_loader.h"
 #include "settings/settings.h"
+#include "musl.h"
 
 typedef struct library_t library_t;
 
