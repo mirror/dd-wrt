@@ -2271,7 +2271,6 @@ void start_restore_defaults(void)
 					if (!strcmp(t->name, u->name)) {
 						nvcnt++;
 						nvram_set(u->name, u->value);
-						fprintf(stderr, "Name: %s Value: %s\n", u->name, u->value);
 						break;
 					}
 				}
