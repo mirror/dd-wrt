@@ -381,7 +381,7 @@ int __handle_domain_irq(struct irq_domain *domain, unsigned int hwirq,
 	 * Some hardware gives randomly wrong interrupts.  Rather
 	 * than crashing, do something sensible.
 	 */
-	if (unlikely(!irq || irq >= nr_irqs)) {
+	if (unlikely(irq >= nr_irqs)) {
 		ack_bad_irq(irq);
 		ret = -EINVAL;
 	} else {
