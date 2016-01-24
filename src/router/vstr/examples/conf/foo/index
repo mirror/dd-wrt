@@ -1,3 +1,0 @@
-(org.and.jhttpd-conf-req-1.0
-  (Content-Location: http://localhost:8008/foo/)
-  (filename index.txt))
