@@ -1,0 +1,207 @@
+HTTP/1.1 200 OK
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Tue, 12 Oct 2004 07:02:24 GMT
+Accept-Ranges: bytes
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Length: 165
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+  <head>
+    <title>Foo default</title>
+  </head>
+  <body>
+    <h1>Foo default</h1>
+  </body>
+</html>
+HTTP/1.1 200 OK
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Tue, 12 Oct 2004 07:02:24 GMT
+Accept-Ranges: bytes
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Length: 165
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+  <head>
+    <title>Foo default</title>
+  </head>
+  <body>
+    <h1>Foo default</h1>
+  </body>
+</html>
+HTTP/1.1 200 OK
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Tue, 12 Oct 2004 07:02:24 GMT
+Accept-Ranges: bytes
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Length: 165
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+  <head>
+    <title>Foo default</title>
+  </head>
+  <body>
+    <h1>Foo default</h1>
+  </body>
+</html>
+HTTP/1.1 200 OK
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Tue, 12 Oct 2004 07:02:24 GMT
+Accept-Ranges: bytes
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Length: 165
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+  <head>
+    <title>Foo default</title>
+  </head>
+  <body>
+    <h1>Foo default</h1>
+  </body>
+</html>
+HTTP/1.1 200 OK
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Tue, 12 Oct 2004 07:02:24 GMT
+Accept-Ranges: bytes
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Length: 165
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+  <head>
+    <title>Foo default</title>
+  </head>
+  <body>
+    <h1>Foo default</h1>
+  </body>
+</html>
+HTTP/1.1 200 OK
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Tue, 12 Oct 2004 07:02:24 GMT
+Accept-Ranges: bytes
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Length: 165
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+  <head>
+    <title>Foo default</title>
+  </head>
+  <body>
+    <h1>Foo default</h1>
+  </body>
+</html>
+HTTP/1.1 416 Requested Range Not Satisfiable
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified:
+Accept-Ranges: bytes
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Length: 382
+Content-Range: bytes */165
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+  <head>
+    <title>416 Requested Range Not Satisfiable</title>
+  </head>
+  <body>
+    <h1>416 Requested Range Not Satisfiable</h1>
+    <p>The document request range was not valid.</p>
+  <hr>
+  Generated using the <a href="http://www.and.org/vstr/httpd">Vstr httpd example Web Server</a>.
+  </body>
+</html>
+HTTP/1.1 200 OK
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Tue, 12 Oct 2004 07:02:24 GMT
+Accept-Ranges: bytes
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Length: 165
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+  <head>
+    <title>Foo default</title>
+  </head>
+  <body>
+    <h1>Foo default</h1>
+  </body>
+</html>
+HTTP/1.1 200 OK
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Tue, 12 Oct 2004 07:02:24 GMT
+Accept-Ranges: bytes
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Length: 165
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+  <head>
+    <title>Foo default</title>
+  </head>
+  <body>
+    <h1>Foo default</h1>
+  </body>
+</html>
+HTTP/1.1 416 Requested Range Not Satisfiable
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified:
+Accept-Ranges: bytes
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Length: 382
+Content-Range: bytes */165
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+  <head>
+    <title>416 Requested Range Not Satisfiable</title>
+  </head>
+  <body>
+    <h1>416 Requested Range Not Satisfiable</h1>
+    <p>The document request range was not valid.</p>
+  <hr>
+  Generated using the <a href="http://www.and.org/vstr/httpd">Vstr httpd example Web Server</a>.
+  </body>
+</html>
+HTTP/1.1 206 Partial content
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Tue, 12 Oct 2004 07:02:24 GMT
+Connection: close
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Length: 164
+Content-Range: bytes 1-164/165
+
+!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+  <head>
+    <title>Foo default</title>
+  </head>
+  <body>
+    <h1>Foo default</h1>
+  </body>
+</html>

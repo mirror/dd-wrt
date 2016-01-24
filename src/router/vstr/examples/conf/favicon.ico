@@ -1,0 +1,6 @@
+(org.and.jhttpd-conf-req-1.0
+  (Vary:_* off)
+  (Expires: <never>)
+  (Cache-Control: <expires-never>)
+  (Content-Type: image/ico)
+  (filename [(limit <none>)] /home/james/stuff/huge_file2))

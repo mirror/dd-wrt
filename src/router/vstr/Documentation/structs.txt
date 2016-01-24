@@ -1,0 +1,281 @@
+
+Section: struct Vstr_ref (aka. Vstr reference)
+
+Member: func
+
+ Explanation:
+
+  This is the cleanup function to be called when noone wants a reference to the
+ memory help by the reference anymore.
+
+ Note:
+
+  This function should free() the memory accociated with the reference struct
+ itself, if that is required.
+
+
+Member: ptr
+
+ Explanation:
+
+  This is a ptr to a block of memory.
+
+
+Member: ref
+
+ Explanation:
+
+  When this reaches the value 0, you are free to call the func member.
+
+ Note:
+
+  It is safest to only change this by calling either vstr_ref_add_ref() or
+ vstr_ref_del_ref(). These will automatically call the cleanup function when
+ the reference reaches zero.
+
+
+Section: struct Vstr_conf (aka. Vstr configuration)
+
+Member: malloc_bad
+
+ Explanation:
+
+  This is a bitflag which is set to TRUE by any function which does an
+ allocation on a Vstr string or Vstr configuration that fails, this allows the
+ programmer to call multiple allocation functions and then do a single test.
+
+
+Section: struct Vstr_base (aka. Vstr string)
+
+Member: len
+
+ Explanation:
+
+  This is the length of the Vstr string.
+
+
+Member: conf
+
+ Explanation:
+
+  This is a pointer to the Vstr configuration used by the Vstr string.
+
+
+Section: struct Vstr_sects (aka. Vstr sections)
+
+Member: num
+
+ Explanation:
+
+  This is the number of used sections in the Vstr sections.
+
+ Note:
+
+  Some of the section nodes may be used by null or deleted sections.
+
+
+Member: sz
+
+ Explanation:
+
+  This is the size of space allocated for sections in the Vstr sections.
+
+
+Member: malloc_bad
+
+ Explanation:
+
+  This is a bitflag which is set to TRUE by any function which does an
+ allocation on a section that fails, this allows the programmer to call
+ multiple allocation functions and then do a single test.
+
+
+Member: free_ptr
+
+ Explanation:
+
+  This is a bitflag which is set to TRUE when the data in ->ptr can be passed
+ to free().
+
+
+Member: can_add_sz
+
+ Explanation:
+
+  This is a bitflag which is set to TRUE when the data in ->ptr can be passed
+ to realloc() to make it bigger.
+
+
+Member: can_del_sz
+
+ Explanation:
+
+  This is a bitflag which is set to TRUE when the data in ->ptr can be passed
+ to realloc() to make it smaller.
+
+
+Member: alloc_double
+
+ Explanation:
+
+  This is a bitflag which is set to TRUE when the data in ->ptr should be
+ realloc()'d at twice it's current size when it needs to be bigger.
+
+
+Member: ptr
+
+ Explanation:
+
+  This is a pointer to the section nodes.
+
+
+Section: struct Vstr_fmt_spec (aka. Vstr format specifier)
+
+Member: vstr_orig_len
+
+ Explanation:
+
+  This is the length of the Vstr string prior to vstr_add_vfmt() being called,
+ this allows you to work out how much data has been added to the Vstr string
+ already.
+
+
+Member: fmt_precision
+
+ Explanation:
+
+  This flag specifies that the caller passed a precision, either directory or
+ via. an argument. The precision itself is then passed as obj_precision.
+
+
+Member: obj_precision
+
+ Explanation:
+
+  This is the value passed as the precision, if one is set.
+
+ Note:
+
+  Even though the obj_precision argument is an unsigned type, as an argument
+ the type has to be treated as signed as ISO 9899:1999 specifies that
+ a negative precision means that the precision should be ignored (hence in this
+ case fmt_precision will be 0). This doesn't apply to a precision typed
+ directly into the format.
+
+
+Member: fmt_field_width
+
+ Explanation:
+
+  This flag specifies that the caller passed a field width, either directory or
+ via. an argument. The field width itself is then passed as obj_field_width.
+
+
+Member: obj_field_width
+
+ Explanation:
+
+  This is the value passed as the field_width, if one is set.
+
+ Note:
+
+  Even though the obj_field_width is an unsigned type, as an argument
+ the type has to be treated as signed as ISO 9899:1999 specifies that
+ a negative field width means that the fmt_minus flag should be set and
+ the field width should become it's positive counter part (in vstr this
+ work properly for INT_MIN). This doesn't apply to a field width typed
+ directly into the format.
+
+
+Member: fmt_minus
+
+ Explanation:
+
+  This is a flag specifing that the user put a '-' attribute on the format,
+ either directly or via. a negative field width value.
+
+
+Member: fmt_plus
+
+ Explanation:
+
+  This is a flag specifing that the user put a '+' attribute on the format.
+
+
+Member: fmt_space
+
+ Explanation:
+
+  This is a flag specifing that the user put a ' ' attribute on the format.
+
+
+Member: fmt_hash
+
+ Explanation:
+
+  This is a flag specifing that the user put a '#' attribute on the format.
+
+
+Member: fmt_zero
+
+ Explanation:
+
+  This is a flag specifing that the user put a '0' attribute on the format.
+
+
+Member: fmt_quote
+
+ Explanation:
+
+  This is a flag specifing that the user put a '\'' attribute on the format.
+
+
+Member: fmt_I
+
+ Explanation:
+
+  This is a flag specifing that the user put a 'I' attribute on the format.
+
+ Note:
+
+  This is used by glibc to mean that integers should come out as locale
+ dependant bytes. This flag currently does nothing in vstr, apart from being
+ passed to custom specifiers.
+
+
+Section: struct Vstr_iter (aka. Vstr iteration)
+
+Member: ptr
+
+ Explanation:
+
+  This member is a pointer to the start of the current part of the iteration.
+
+ Note:
+
+  You can alter the pointer itself.
+  You shouldn't write to the memory through this pointer, as it may be
+ read-only.
+
+
+Member: len
+
+ Explanation:
+
+  This member is the length of the current part of the iteration.
+
+ Note:
+
+  You can alter the length.
+
+
+Member: num
+
+ Explanation:
+
+  This member is the number of the current node given an iteration of the
+ entire Vstr string.
+
+ Note:
+
+  You should not alter this value.

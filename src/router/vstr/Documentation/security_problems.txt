@@ -1,0 +1,603 @@
+Name: MySQL
+RH-ref: RHSA-2003:281-01
+Type: BO
+Range: R
+
+Name: sane
+RH-ref: RHSA-2003:278-01
+Type: PE (First connection after starting isn't checked)
+Range: R
+Type: DOS (read of memory after allocation)
+Range: R
+Type: DOS (random amount of memory is attempted for allocation)
+Range: R
+Type: DOS (when debug printing, non-NIL terminated strings are assumed NIL terminated)
+Range: R
+Type: DOS (unbounded allocation)
+Range: R
+
+Name: perl
+RH-ref: RHSA-2003:256-02
+Type: IV ( (Redefining @_))
+Range: L
+Type: XSS
+Range: R
+
+Name: openssl
+RH-ref: RHSA-2003:292-01
+Type: IV ( (ASN.1 tag parsing))
+Range: R
+Type: DF
+Range: R
+
+Name: perl
+RH-ref: RHSA-2003:256-01
+Type: PE (can break out of safe.pm sandboxes)
+Range: R
+Type: XSS
+Range: R
+
+Name: apache httpd
+RH-ref: RHSA-2003:243-01
+Type: IV ( (Cipher restrictions ignored on renegotiation))
+Range: R
+Type: DOS (infinite loop handling internal redirects and nested subrequests)
+Range: R
+Type: DOS (temporarily, if using multiple ports)
+Range: R
+Type: DOS (ftp proxy and IPV6 only)
+Range: R
+
+Name: openssh
+RH-ref: RHSA-2003:279-02
+Type: IO
+Range: R
+
+Name: sendmail
+RH-ref: RHSA-2003:283-01
+Type: BO
+Range: R
+
+Name: KDE
+RH-ref: RHSA-2003:269-01
+Type: PE (bad session credentials)
+Range: L
+
+Name: openssh
+RH-ref: RHSA-2003:279-01
+Type: IO
+Range: R
+
+Name: pine
+RH-ref: RHSA-2003:273-01
+Type: BO
+Range: R
+Type: IO
+Range: R
+
+Name: gtkhtml
+RH-ref: RHSA-2003:264-01
+Type: DOS (NULL pointer de-reference)
+Range: R
+
+Name: apache httpd
+RH-ref: RHSA-2003:240-01
+Type: IV ( (Cipher restrictions ignored on renegotiation))
+Range: R
+Type: DOS (infinite loop handling internal redirects and nested subrequests)
+Range: R
+Type: DOS (temporarily, if using multiple ports)
+Range: R
+Type: DOS (ftp proxy and IPV6 only)
+Range: R
+
+Name: up2date
+RH-ref: RHSA-2003:267-01
+Type: BP (Expired Certificate Authority)
+Range: L
+
+Name: sendmail
+RH-ref: RHSA-2003:265-01
+Type: FUM
+Range: R
+
+Name: pam_smb
+RH-ref: RHSA-2003:261-01
+Type: BO
+Range: R
+
+Name: iptables
+RH-ref: RHSA-2003:213-01
+Type: BP (bad dependancies cause kernel updates to stop iptables firewall)
+Range: R
+
+Name: GDM
+RH-ref: RHSA-2003:258-01
+Type: PE (read files)
+Range: L
+
+Name: KDE
+RH-ref: RHSA-2003:235-01
+Type: IL
+Range: R
+
+Name: ddskk
+RH-ref: RHSA-2003:241-01
+Type: TF
+Range: L
+
+Name: up2date
+RH-ref: RHSA-2003:255-01
+Type: IV
+Range: R
+
+Name: postfix
+RH-ref: RHSA-2003:251-01
+Type: IV
+Range: R
+
+Name: unzip
+RH-ref: RHSA-2003:199-01
+Type: IV
+
+Name: Xterm
+RH-ref: RHSA-2003:067-02
+Type: IV
+Range: L
+
+Name: php
+RH-ref: RHSA-2003:204-01
+Type: XSS
+Range: R
+
+Name: ethereal
+RH-ref: RHSA-2003:203-01
+Type: BO
+Range: R
+Type: IO
+Range: R
+Type: OBO
+Range: R
+
+Name: nfs-utils
+RH-ref: RHSA-2003:206-01
+Type: BO
+Range: R
+
+Name: mozilla
+RH-ref: RHSA-2003:162-01
+Type: BO
+Range: R
+
+Name: Xpdf
+RH-ref: RHSA-2003:196-02
+Type: IV
+Type: XSS
+Range: R
+
+Name: kernel
+RH-ref: RHSA-2003:238-01
+Type: IL
+Type: PE (read files)
+Range: L
+Type: PE (UDP port binding)
+Range: L
+Type: IV
+
+Name: semi
+RH-ref: RHSA-2003:234-01
+Type: IV
+Range: R
+
+Name: stunnel
+RH-ref: RHSA-2003:221-01
+Type: DOS (Signal handling code)
+Range: R
+
+Name: OpenSSH
+RH-ref: RHSA-2003:222-01
+Type: IL
+Range: R
+
+Name: wu-ftpd
+RH-ref: RHSA-2003:245-01
+Type: OBO
+Range: R
+
+Name: kernel
+RH-ref: RHSA-2003:187-01
+Type: DOS (Crash)
+Range: L
+
+Name: kon2
+RH-ref: RHSA-2003:047-01
+Type: BO
+Range: R
+
+Name: KDE
+RH-ref: RHSA-2003:192-01
+Type: MITM
+Range: R
+
+Name: hanterm
+RH-ref: RHSA-2003:070-01
+Type: IV
+Range: L
+
+Name: ypserv
+RH-ref: RHSA-2003:173-01
+Type: DOS (Blocking write)
+Range: R
+
+Name: man
+RH-ref: RHSA-2003:133-01
+Type: IV
+Range: L
+
+Name: mod_auth_any
+RH-ref: RHSA-2003:113-01
+Type: IE (shell callout)
+Range: R
+
+Name: KDE
+RH-ref: RHSA-2003:002-01
+Type: IE (shell callout)
+Range: R
+Type: IV ( (Run postscript as user))
+Range: R
+
+Name: xinetd
+RH-ref: RHSA-2003:160-01
+Type: DOS (Memory leak)
+Range: R
+
+Name: kernel
+RH-ref: RHSA-2003:172-00
+Type: DOS (CPU)
+Type: PE (I/O ports)
+Range: L
+
+Name: tcpdump
+RH-ref: RHSA-2003:174-01
+Type: PE (failure to drop privileges and looks at the network)
+Range: R
+
+Name: lv
+RH-ref: RHSA-2003:169-01
+Type: PE (Run commands as other users)
+Range: L
+
+Name: gnupg
+RH-ref: RHSA-2003:175-01
+Type: IV
+Range: L
+
+Name: CUPS
+RH-ref: RHSA-2003:171-01
+Type: DOS (Blocking read)
+Range: R
+
+Name: apache httpd
+RH-ref: RHSA-2003:186-01
+Type: VSTRFIU
+Range: R
+
+Name: ghostscript
+RH-ref: RHSA-2003:181-01
+Type: IV
+
+Name: OpenSSL
+RH-ref: RHSA-2003:101-01
+Type: IL
+Range: R
+
+Name: vsftpd
+RH-ref: RHSA-2003:084-01
+Type: BP (disabled hosts.allow/hosts.deny)
+Range: R
+
+Name: kerberos
+RH-ref: RHSA-2003:091-01
+Type: APE (leverage auth. in one relm to gain auth. in another)
+Range: L
+Type: IO
+Range: R
+
+Name: eog
+RH-ref: RHSA-2003:128-01
+Type: BO
+Range: R
+
+Name: NetPBM
+RH-ref: RHSA-2003:060-01
+Type: BO
+Type: IO
+
+Name: mutt
+RH-ref: RHSA-2003:109-03
+Type: BO
+Range: R
+
+Name: balsa
+RH-ref: RHSA-2003:109-03
+Type: BO
+Range: R
+
+Name: samba
+RH-ref: RHSA-2003:137-01
+Type: BO
+Range: R
+
+Name: mgetty
+RH-ref: RHSA-2003:036-01
+Type: BO
+
+Name: kernel
+RH-ref: RHSA-2003:135-00
+Type: PE (ptrace)
+Range: L
+
+Name: apache httpd
+RH-ref: RHSA-2003:139-01
+Type: DOS (Memory leak)
+Range: R
+Type: IV
+Range: R
+Type: IE (Corrupted log files)
+Range: R
+
+Name: tcpdump
+RH-ref: RHSA-2003:032-01
+Type: BO
+Range: R
+Type: IV
+Range: R
+
+Name: ethereal
+RH-ref: RHSA-2003:076-01
+Type: BO
+Range: R
+
+Name: squirrelmail
+RH-ref: RHSA-2003:112-01
+Type: XSS
+Range: R
+
+Name: LPRng
+RH-ref: RHSA-2003:142-01
+Type: TF
+Range: L
+
+Name: mICQ
+RH-ref: RHSA-2003:118-01
+Type: VSTRIV
+Range: R
+
+Name: zlib
+RH-ref: RHSA-2003:079-01
+Type: BO
+Range: R
+
+Name: MySQL
+RH-ref: RHSA-2003:093-01
+Type: DF
+Range: R
+Type: IV
+Range: R
+
+Name: sendmail
+RH-ref: RHSA-2003:073-06
+Type: BO
+Range: R
+
+Name: squirrelmail
+RH-ref: RHSA-2003:042-07
+Type: XSS
+Range: R
+
+Name: im
+RH-ref: RHSA-2003:039-06
+Type: TF
+Range: L
+
+Name: OpenSSL
+RH-ref: RHSA-2003:062-11
+Type: IL
+Range: R
+
+Name: file
+RH-ref: RHSA-2003:086-07
+Type: BO
+Range: L
+
+Name: Gnome-lokkit
+RH-ref: RHSA-2003:072-00
+Type: IV ( (Doesn't do anything for FORWARD rule packets))
+Range: R
+
+Name: rxvt
+RH-ref: RHSA-2003:054-00
+Type: IV
+Range: L
+
+Name: kernel
+RH-ref: RHSA-2003:098-00
+Type: PE (ptrace)
+Range: L
+
+Name: samba
+RH-ref: RHSA-2003:095-01
+Type: BO
+Range: R
+
+Name: glibc (sun rpc code)
+RH-ref: RHSA-2003:089-00
+Type: IO
+Range: R
+
+Name: kernel
+RH-ref: RHSA-2003:088-01
+Type: PE (module loading)
+Range: L
+Type: IL
+Range: R
+
+Name: evolution
+RH-ref: RHSA-2003:108-01
+Type: VSTRIV
+Range: R
+
+Name: kerberos
+RH-ref: RHSA-2003:051-01
+Type: IO
+Range: R
+Type: VSTRIV
+Type: IV
+Type: IV ( (Vulnerabilities in the support for triple-DES keys))
+Type: APE (leverage auth. in one relm to gain auth. in another)
+Range: R
+Type: IO
+
+Name: sendmail
+RH-ref: RHSA-2003:120-01
+Type: BO
+Range: R
+
+Name: dhcp
+RH-ref: RHSA-2003:034-01
+Type: DOS (sends data constantly to the broadcast address)
+Range: R
+
+Name: php
+RH-ref: RHSA-2003:017-06
+Type: BO
+Range: R
+
+Name: openldap
+RH-ref: RHSA-2003:040-07
+Type: BO
+Range: R
+
+Name: WindowMaker
+RH-ref: RHSA-2003:043-01
+Type: BO
+Range: L
+
+Name: Xpdf
+RH-ref: RHSA-2003:037-09
+Type: IO
+Range: R
+
+Name: w3m
+RH-ref: RHSA-2003:044-20
+Type: XSS
+Range: R
+
+Name: kernel-utils
+RH-ref: RHSA-2003:056-08
+Type: BP (unsafe program was setuid)
+Range: L
+
+Name: lynx
+RH-ref: RHSA-2003:029-06
+Type: IV
+Range: L
+
+Name: pam_xauth
+RH-ref: RHSA-2003:035-10
+Type: IL
+Range: L
+
+Name: fileutils
+RH-ref: RHSA-2003:015-05
+Type: PE (delete other users files)
+Range: L
+
+Name: shadow-utils
+RH-ref: RHSA-2003:057-06
+Type: PE (read/write other users incoming mailbox)
+Range: L
+
+Name: VNC
+RH-ref: RHSA-2003:041-12
+Type: IV ( (Replay authorization))
+Range: R
+
+Name: vte
+RH-ref: RHSA-2003:053-10
+Type: IV
+Range: L
+
+Name: pine
+RH-ref: RHSA-2002:270-16
+Type: BO
+Range: R
+
+Name: cyrus-sasl
+RH-ref: RHSA-2002:283-09
+Type: BO
+Range: R
+
+Name: libpng
+RH-ref: RHSA-2003:006-06
+Type: BO
+Range: R
+
+Name: CUPS
+RH-ref: RHSA-2002:295-07
+Type: BO
+Range: R
+Type: IO
+Range: R
+Type: TF
+Range: L
+Type: IV
+Type: XSS
+Range: R
+Type: DOS (attack recovery)
+
+Name: postgresql
+RH-ref: RHSA-2003:010-10
+Type: BO
+Range: R
+
+Name: postgresql
+RH-ref: RHSA-2003:001-16
+Type: PE (delete transaction log files)
+Range: L
+Type: BO
+Range: R
+
+Name: MySQL
+RH-ref: RHSA-2002:288-22
+Type: IO
+Range: R
+Type: IV
+Type: BO
+Range: R
+
+Name: dhcp
+RH-ref: RHSA-2003:011-07
+Type: BO
+Range: R
+
+Name: vim
+RH-ref: RHSA-2002:297-17
+Type: IV
+Range: L
+
+Name: cvs
+RH-ref: RHSA-2003:012-07
+Type: PE (write to any files)
+Range: L
+
+Name: python
+RH-ref: RHSA-2002:202-25
+Type: TF
+Range: L
+
+Name: kerberos
+RH-ref: RHSA-2003:020-10
+Type: IV
+Range: R
+

@@ -1,0 +1,1567 @@
+dnl #
+dnl #  Copyright (C) 1999, 2000, 2001, 2002, 2003, 2004, 2005 James Antill
+dnl #
+dnl #  This program is free software; you can redistribute it and/or modify
+dnl #  it under the terms of the GNU General Public License as published by
+dnl #  the Free Software Foundation; either version 2 of the License, or
+dnl #  (at your option) any later version.
+dnl #
+dnl #  This program is distributed in the hope that it will be useful,
+dnl #  but WITHOUT ANY WARRANTY; without even the implied warranty of
+dnl #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+dnl #  GNU General Public License for more details.
+dnl #
+dnl #  You should have received a copy of the GNU General Public License
+dnl #  along with this program; if not, write to the Free Software
+dnl #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+dnl #
+dnl # email: james@and.org
+dnl #
+
+
+dnl Configure script...
+dnl
+
+AC_INIT(include/vstr.h)
+
+AC_PREREQ(2.12)dnl
+AC_REVISION(1.0)
+
+
+AM_CONFIG_HEADER(include/autoconf.h)
+
+
+dnl define a msg macro...
+
+define(TWOCAN_CONF_MSG,[dnl
+AC_MSG_RESULT()
+AC_MSG_RESULT(${T_MD}$1:${T_ME})
+])dnl
+
+
+
+
+# Scary shtool stuff... borowed from pth-1.0
+if test ".`echo dummy $@ | grep help`" = .; then
+    ac_shtool="$srcdir/shtool"
+    T_MD="`$ac_shtool echo -n -e %B 2>/dev/null`"
+    T_ME="`$ac_shtool echo -n -e %b 2>/dev/null`"
+    echo "Configuring ${T_MD}vstr${T_ME}, (Library)${T_ME}"
+    echo "Copyright (c) 1999-2005 James Antill <james@and.org>"
+    echo "                   See ${T_MD}AUTHORS${T_ME} file for more info."
+
+# Could just del this, but it looks cool and like I know what I'm doing :)
+    PLATFORM=`$ac_shtool guessos`
+    echo "Platform: ${T_MD}${PLATFORM}${T_ME}"
+fi
+
+TWOCAN_CONF_MSG(Initial phase)
+
+AC_SUBST(CFLAGS)
+AC_SUBST(CPPFLAGS)
+AC_SUBST(LDFLAGS)
+
+# Seriously butchered from glib...
+
+# inc. mico.
+#   inc. interface on no additions
+#   zero interface on additions
+#   inc. binary if compat.
+
+VSTR_MAJOR_VERSION=1
+VSTR_MINOR_VERSION=0
+VSTR_MICRO_VERSION=15
+VSTR_INTERFACE_AGE=2
+VSTR_BINARY_AGE=15
+VSTR_VERSION=$VSTR_MAJOR_VERSION.$VSTR_MINOR_VERSION.$VSTR_MICRO_VERSION
+
+# libtool versioning
+LT_RELEASE=$VSTR_MAJOR_VERSION.$VSTR_MINOR_VERSION
+LT_CURRENT=`expr $VSTR_MICRO_VERSION - $VSTR_INTERFACE_AGE`
+LT_REVISION=$VSTR_INTERFACE_AGE
+LT_AGE=`expr $VSTR_BINARY_AGE - $VSTR_INTERFACE_AGE`
+AC_SUBST(LT_RELEASE)
+AC_SUBST(LT_CURRENT)
+AC_SUBST(LT_REVISION)
+AC_SUBST(LT_AGE)
+
+VERSION=$VSTR_VERSION
+PACKAGE=vstr
+
+AM_INIT_AUTOMAKE($PACKAGE, $VERSION)
+
+
+#
+# FIXME: Need to be able to check for ASCII and if not set... HAVE_NON_ASCII
+#
+
+AC_ISC_POSIX
+
+AC_PROG_MAKE_SET
+AC_PROG_CC
+AC_EXEEXT
+
+# This could be better...
+CCAS=$CC
+AC_SUBST(CCAS)
+CCASFLAGS="\$(DEFAULT_INCLUDES) \$(INCLUDES)"
+AC_SUBST(CCASFLAGS)
+
+
+TWOCAN_CONF_MSG(Libtool stuff)
+
+AM_PROG_LIBTOOL
+AC_SUBST(LIBTOOL_DEPS)
+
+TWOCAN_CONF_MSG(Checking location of programs)
+
+AC_PATH_PROG(TRUE_PATH, true, /dev/null,
+             $PATH:/bin:/usr/bin:/bin:/usr/local/bin:/usr/gnu/bin:/usr/local/gnu/bin:/opt/gnu/bin)
+
+# Ignore autoheader
+AUTOHEADER="$TRUE_PATH"
+
+AC_PATH_PROG(GZIP_PATH, gzip, $TRUE_PATH,
+             $PATH:/usr/bin:/bin:/usr/local/bin:/usr/gnu/bin:/usr/local/gnu/bin:/opt/gnu/bin)
+AC_PATH_PROG(BZIP2_PATH, bzip2, $TRUE_PATH,
+             $PATH:/usr/bin:/bin:/usr/local/bin:/usr/gnu/bin:/usr/local/gnu/bin:/opt/gnu/bin)
+
+AC_PATH_PROG(SENDMAIL_PATH, sendmail, $TRUE_PATH,
+             $PATH:/usr/sbin:/usr/lib)
+
+AC_PATH_PROG(MAKE_PATH, gmake, make,
+             $PATH:/usr/bin:/bin:/usr/local/bin:/usr/gnu/bin:/usr/local/gnu/bin:/opt/gnu/bin)
+
+AC_PATH_PROG(ETAGS_PATH, etags, $TRUE_PATH,
+             $PATH:/usr/bin:/bin:/usr/local/bin:/usr/gnu/bin:/usr/local/gnu/bin:/opt/gnu/bin)
+
+AC_PATH_PROG(SED_PATH, sed, $TRUE_PATH,
+             $PATH:/usr/bin:/bin:/usr/local/bin:/usr/gnu/bin:/usr/local/gnu/bin:/opt/gnu/bin)
+
+AC_PATH_PROG(PERL_PATH, perl, $TRUE_PATH,
+             $PATH:/usr/bin:/bin:/usr/local/bin:/usr/local/perl:/usr/gnu/bin:/usr/local/gnu/bin:/opt/gnu/bin)
+
+if test "x$PERL_CONFIG" = "x/usr/bin/perl" ; then
+  AM_CONDITIONAL(PERL_USR_BIN_AVAIL, false)
+else
+  AM_CONDITIONAL(PERL_USR_BIN_AVAIL, true)
+fi
+
+AC_PATH_PROG(TAR_PATH, tar, $TRUE_PATH,
+             $PATH:/usr/bin:/bin:/usr/local/bin:/usr/gnu/bin:/usr/local/gnu/bin:/opt/gnu/bin)
+
+AC_PATH_PROG(CHMOD_PATH, chmod, $TRUE_PATH,
+             $PATH:/usr/bin:/bin:/usr/local/bin:/usr/gnu/bin:/usr/local/gnu/bin:/opt/gnu/bin)
+
+#
+# Find pkg-config
+#
+AC_PATH_PROG(PKG_CONFIG, pkg-config, no)
+if test x$PKG_CONFIG = xno ; then
+  AC_MSG_WARN([*** pkg-config not found. See http://www.freedesktop.org/software/pkgconfig/])
+fi
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.5 ; then
+  :
+else
+  AC_MSG_WARN([*** pkg-config too old; version 0.5 or better required. See http://www.freedesktop.org/software/pkgconfig/])
+fi
+
+if $PKG_CONFIG --exists timer_q ; then
+  AM_CONDITIONAL(TIMER_Q_AVAIL, true)
+  TIMER_Q_CFLAGS="`$PKG_CONFIG --cflags timer_q`"
+  TIMER_Q_LDLIBS="`$PKG_CONFIG --libs   timer_q`"
+  AC_SUBST(TIMER_Q_CFLAGS)
+  AC_SUBST(TIMER_Q_LDLIBS)
+else
+  AM_CONDITIONAL(TIMER_Q_AVAIL, false)
+fi
+
+if $PKG_CONFIG --exists socket_poll ; then
+  AM_CONDITIONAL(SOCKET_POLL_AVAIL, true)
+  SOCKET_POLL_CFLAGS="`$PKG_CONFIG --cflags socket_poll`"
+  SOCKET_POLL_LDLIBS="`$PKG_CONFIG --libs   socket_poll`"
+  AC_SUBST(SOCKET_POLL_CFLAGS)
+  AC_SUBST(SOCKET_POLL_LDLIBS)
+else
+  AM_CONDITIONAL(SOCKET_POLL_AVAIL, false)
+fi
+
+if $PKG_CONFIG --exists openssl ; then
+  AM_CONDITIONAL(OPENSSL_AVAIL, true)
+  OPENSSL_CFLAGS="`$PKG_CONFIG --cflags openssl`"
+  OPENSSL_LDLIBS="`$PKG_CONFIG --libs   openssl`"
+  AC_SUBST(OPENSSL_CFLAGS)
+  AC_SUBST(OPENSSL_LDLIBS)
+else
+  AM_CONDITIONAL(OPENSSL_AVAIL, false)
+fi
+
+if $PKG_CONFIG --exists glib-2.0 ; then
+  AM_CONDITIONAL(GLIB20_AVAIL, true)
+  GLIB20_CFLAGS="`$PKG_CONFIG --cflags glib-2.0`"
+  GLIB20_LDLIBS="`$PKG_CONFIG --libs   glib-2.0`"
+  AC_SUBST(GLIB20_CFLAGS)
+  AC_SUBST(GLIB20_LDLIBS)
+else
+  AM_CONDITIONAL(GLIB20_AVAIL, false)
+fi
+
+WARNS=""
+AC_ARG_ENABLE(debug, [  --enable-debug          turn on debugging (assumes gcc/gdb) [[default=no]]],[ WARNS="-W -Wall -Wundef -Wshadow -Wpointer-arith -Wbad-function-cast -Wcast-align -Wwrite-strings -Waggregate-return -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wno-format-zero-length -Wformat-nonliteral -Wformat-security -Wfloat-equal -O1 -ggdb3"; AM_CONDITIONAL(NDEBUG, false) ],[ AC_DEFINE(NDEBUG) AM_CONDITIONAL(NDEBUG, true) ])
+AC_ARG_ENABLE(ansi, [  --enable-ansi           turn on ansi stuff (assumes gcc/gdb) [[default=no]]],WARNS="$WARNS -ansi -pedantic",)
+AC_ARG_ENABLE(tst-noopt, [  --enable-tst-noopt      turn on no optomizations (assumes gcc/gdb) [[default=no]]],WARNS="$WARNS -O0",)
+AC_SUBST(WARNS)
+
+AC_ARG_ENABLE(noposix-host, [  --enable-noposix-host   turn off all the POSIX extentions [[default=no]]], local_cv_have_posix_host=false,local_cv_have_posix_host=true)
+AM_CONDITIONAL(HAVE_POSIX_HOST, $local_cv_have_posix_host)
+case x$local_cv_have_posix_host in
+ xtrue) AC_DEFINE(HAVE_POSIX_HOST) ;;
+esac
+
+AC_ARG_ENABLE(linker-script, [  --enable-linker-script  turn on linker version script [[default=no]]], local_cv_linker_have_version_script=true,local_cv_linker_have_version_script=false)
+AM_CONDITIONAL(HAVE_LINKER_VERSION_SCRIPT, $local_cv_linker_have_version_script)
+case x$local_cv_linker_have_version_script in
+xtrue) AC_DEFINE(HAVE_LINKER_SCRIPT) ;;
+esac
+
+
+AC_ARG_ENABLE(tst-noinline, [  --enable-tst-noinline   turn off use of inline [[default=no]]], local_cv_have_tst_noinline=true,local_cv_have_tst_noinline=false)
+AC_ARG_ENABLE(tst-noattr-visibility, [  --enable-tst-noattr-visibility turn off use of attribute visibility [[default=no]]], local_cv_have_tst_noattr_visibility=true,local_cv_have_tst_noattr_visibility=false)
+AC_ARG_ENABLE(tst-noattr-alias, [  --enable-tst-noattr-alias turn off use of attribute alias [[default=no]]], local_cv_have_tst_noattr_alias=true,local_cv_have_tst_noattr_alias=false)
+AC_ARG_ENABLE(tst-nosyscall-asm, [  --enable-tst-nosyscall-asm turn off use of asm syscalls in version [[default=no]]],,AC_DEFINE(USE_SYSCALL_ASM))
+AC_ARG_ENABLE(tst-noassert-loop, [  --enable-tst-noassert-loop changes asserts from looping to raise SIGABRT [[default=no]]],AM_CONDITIONAL(USE_ASSERT_LOOP, false),[ AC_DEFINE(USE_ASSERT_LOOP) AM_CONDITIONAL(USE_ASSERT_LOOP, true)])
+
+AC_ARG_ENABLE(wrap-memcpy, [  --enable-wrap-memcpy    turn on wrapper memcpy [[default=no]]], local_cv_linker_use_wrap_memcpy=true,local_cv_linker_use_wrap_memcpy=false)
+AM_CONDITIONAL(USE_WRAP_MEMCPY, $local_cv_linker_use_wrap_memcpy)
+case x$local_cv_linker_use_wrap_memcpy in
+xtrue) AC_DEFINE(USE_WRAP_MEMCPY) ;;
+esac
+AC_ARG_ENABLE(wrap-memcmp, [  --enable-wrap-memcmp    turn on wrapper for memcmp [[default=no]]], local_cv_linker_use_wrap_memcmp=true,local_cv_linker_use_wrap_memcmp=false)
+AM_CONDITIONAL(USE_WRAP_MEMCMP, $local_cv_linker_use_wrap_memcmp)
+case x$local_cv_linker_use_wrap_memcmp in
+xtrue) AC_DEFINE(USE_WRAP_MEMCMP) ;;
+esac
+AC_ARG_ENABLE(wrap-memchr, [  --enable-wrap-memchr    turn on wrapper for memchr [[default=no]]], local_cv_linker_use_wrap_memchr=true,local_cv_linker_use_wrap_memchr=false)
+AM_CONDITIONAL(USE_WRAP_MEMCHR, $local_cv_linker_use_wrap_memchr)
+case x$local_cv_linker_use_wrap_memchr in
+xtrue) AC_DEFINE(USE_WRAP_MEMCHR) ;;
+esac
+AC_ARG_ENABLE(wrap-memrchr, [  --enable-wrap-memrchr   turn on wrapper for memrchr [[default=no]]], local_cv_linker_use_wrap_memrchr=true,local_cv_linker_use_wrap_memrchr=false)
+AM_CONDITIONAL(USE_WRAP_MEMRCHR, $local_cv_linker_use_wrap_memrchr)
+case x$local_cv_linker_use_wrap_memrchr in
+xtrue) AC_DEFINE(USE_WRAP_MEMRCHR) ;;
+esac
+AC_ARG_ENABLE(wrap-memset, [  --enable-wrap-memset    turn on wrapper for memset [[default=no]]], local_cv_linker_use_wrap_memset=true,local_cv_linker_use_wrap_memset=false)
+AM_CONDITIONAL(USE_WRAP_MEMSET, $local_cv_linker_use_wrap_memset)
+case x$local_cv_linker_use_wrap_memset in
+xtrue) AC_DEFINE(USE_WRAP_MEMSET) ;;
+esac
+AC_ARG_ENABLE(wrap-memmove, [  --enable-wrap-memmove   turn on wrapper for memmove [[default=no]]], local_cv_linker_use_wrap_memmove=true,local_cv_linker_use_wrap_memmove=false)
+AM_CONDITIONAL(USE_WRAP_MEMMOVE, $local_cv_linker_use_wrap_memmove)
+case x$local_cv_linker_use_wrap_memmove in
+xtrue) AC_DEFINE(USE_WRAP_MEMMOVE) ;;
+esac
+
+AC_ARG_ENABLE(examples, [  --enable-examples   turn on compilation of example program binaries [[default=no]]], AM_CONDITIONAL(USE_COMPILE_EXAMPLES, true),AM_CONDITIONAL(USE_COMPILE_EXAMPLES, false))
+
+LOCAL_EX_PROG_LIBS="-L../src -lvstr"
+AC_ARG_ENABLE(examples-static, [  --enable-examples-static   turn on static compilation of example program binaries [[default=no]]], local_cv_ex_static=true,local_cv_ex_static=false)
+AM_CONDITIONAL(USE_EX_STATIC_LIBS, $local_cv_ex_static)
+case x$local_cv_ex_static in
+xtrue) LOCAL_EX_PROG_LIBS="../src/.libs/libvstr.a" ;;
+esac
+AC_SUBST(LOCAL_EX_PROG_LIBS)
+
+LOCAL_TST_PROG_LIBS="-L../src -lvstr"
+AC_ARG_ENABLE(tsts-static, [  --enable-tsts-static   turn on static compilation of test suite binaries [[default=no]]], local_cv_tst_static=true,local_cv_tst_static=false)
+case x$local_cv_tst_static in
+xtrue) LOCAL_TST_PROG_LIBS="../src/.libs/libvstr.a" ;;
+esac
+AC_SUBST(LOCAL_TST_PROG_LIBS)
+
+AC_ARG_WITH(fmt-float, [  --with-fmt-float=TYPE   float conversion (glibc,none,host) [[default=host]]], local_cv_fmt_float=$withval,local_cv_fmt_float=host)
+case x$local_cv_fmt_float in
+xhost)
+   AM_CONDITIONAL(FMT_DBL_host,  true)
+   AM_CONDITIONAL(FMT_DBL_none,  false)
+   AM_CONDITIONAL(FMT_DBL_glibc, false)
+   AC_DEFINE(FMT_DBL_host) ;;
+xnone)
+   AM_CONDITIONAL(FMT_DBL_host,  false)
+   AM_CONDITIONAL(FMT_DBL_none,  true)
+   AM_CONDITIONAL(FMT_DBL_glibc, false)
+   AC_DEFINE(FMT_DBL_none) ;;
+xglibc)
+   AM_CONDITIONAL(FMT_DBL_host,  false)
+   AM_CONDITIONAL(FMT_DBL_none,  false)
+   AM_CONDITIONAL(FMT_DBL_glibc, true)
+   AC_DEFINE(FMT_DBL_glibc) ;;
+*)
+   AC_MSG_ERROR(fmt float value "$local_cv_fmt_float" unknown) ;;
+esac
+
+
+TWOCAN_CONF_MSG(Checking for headers)
+
+AC_HEADER_STDC
+AC_HEADER_TIME
+
+# AC_ARG_PROGRAM
+
+AC_CHECK_HEADER(malloc.h, AC_DEFINE(HAVE_MALLOC_H))
+
+# This needs to be a _lot_ better
+#  For instance... doesn't work on 2.0.x kernels, with glibc-2.x.x
+AC_CHECK_HEADER(poll.h, AC_DEFINE(HAVE_POLL_H))
+
+AC_CHECK_HEADER(sys/epoll.h, AC_DEFINE(HAVE_SYS_EPOLL_H))
+
+AC_CHECK_HEADER(sys/mman.h, AC_DEFINE(HAVE_SYS_MMAN_H))
+
+AC_CHECK_HEADER(dlfcn.h, AC_DEFINE(HAVE_DLFCN_H))
+
+AC_CHECK_HEADER(termcap.h, AC_DEFINE(HAVE_TERMCAP_H))
+
+# Assume we can use if it is there
+AC_CHECK_HEADER(sys/filio.h, AC_DEFINE(HAVE_SYS_FILIO_H))
+
+AC_CHECK_HEADER(sys/uio.h, AC_DEFINE(HAVE_SYS_UIO_H))
+
+AC_CHECK_HEADER(sys/un.h, AC_DEFINE(HAVE_SYS_UN_H))
+
+AC_CHECK_HEADER(zlib.h, AC_DEFINE(HAVE_ZLIB_H))
+
+AC_CHECK_HEADER(sys/prctl.h, AC_DEFINE(HAVE_SYS_PRCTL_H))
+
+#  This needs to be improved. -- as we probably want to support the
+# crappy FreeBSD version too (don't argue the interface is sick --
+# hello TCP_CORK).
+AC_CHECK_HEADER(sys/sendfile.h, AC_DEFINE(HAVE_SENDFILE))
+
+AC_CHECK_HEADER(gmp.h, [
+AM_CONDITIONAL(GMP_AVAIL, true)
+GMP_CFLAGS="";      AC_SUBST(GMP_CFLAGS)
+GMP_LDLIBS="-lgmp"; AC_SUBST(GMP_LDLIBS)
+],AM_CONDITIONAL(GMP_AVAIL, false))
+
+AC_CHECK_HEADER(zlib.h, [
+AM_CONDITIONAL(ZLIB_AVAIL, true)
+ZLIB_CFLAGS="";    AC_SUBST(ZLIB_CFLAGS)
+ZLIB_LDLIBS="-lz"; AC_SUBST(ZLIB_LDLIBS)
+],AM_CONDITIONAL(ZLIB_AVAIL, false))
+
+AC_CHECK_HEADER(bzlib.h, [
+AM_CONDITIONAL(BZ2_AVAIL, true)
+BZ2_CFLAGS="";      AC_SUBST(BZ2_CFLAGS)
+BZ2_LDLIBS="-lbz2"; AC_SUBST(BZ2_LDLIBS)
+],AM_CONDITIONAL(BZ2_AVAIL, false))
+
+TWOCAN_CONF_MSG(Checking for types, and defing if needed)
+
+AC_C_CONST
+
+AC_TYPE_SIGNAL
+
+AC_TYPE_MODE_T
+
+AC_TYPE_OFF_T
+
+# New autoconf goodness... or not
+XCFLAGS=$CFLAGS
+CFLAGS="-D_LARGEFILE64_SOURCE $CFLAGS"
+AC_CHECK_TYPE(off64_t, AC_DEFINE(HAVE_OFF64_T), AC_DEFINE_UNQUOTED(off64_t, off_t))
+CFLAGS=$XCFLAGS
+
+AC_TYPE_PID_T
+
+AC_TYPE_SIZE_T
+
+AC_TYPE_UID_T
+
+AC_DEFUN(AC_TYPE_SOCKLEN_T,
+[AC_CACHE_CHECK(for socklen_t in sys/socket.h, ac_cv_type_socklen_t,
+[AC_EGREP_HEADER(socklen_t, sys/socket.h,
+  ac_cv_type_socklen_t=yes, ac_cv_type_socklen_t=no)])
+if test $ac_cv_type_socklen_t = no; then
+  AC_DEFINE(socklen_t, int)
+fi
+])
+
+AC_TYPE_SOCKLEN_T
+
+# New autoconf goodness
+AC_CHECK_TYPE(intmax_t, long)
+AC_CHECK_TYPE(uintmax_t, unsigned long)
+AC_CHECK_TYPE(uintptr_t, unsigned long)
+
+AC_CHECK_TYPE(uint_least16_t, unsigned short)
+AC_CHECK_TYPE(uint_least32_t, unsigned long)
+
+AC_MSG_CHECKING(for long long)
+AC_CACHE_VAL(local_cv_has_long_long,[
+AC_TRY_RUN([
+#include <stdlib.h>
+
+long long a = 0;
+
+int main() {
+ unsigned long long b = (unsigned long long)a;
+ return (0);
+}],
+local_cv_has_long_long=yes,
+local_cv_has_long_long=no,
+)])
+AC_MSG_RESULT($local_cv_has_long_long)
+case x$local_cv_has_long_long in
+xyes) AC_DEFINE(HAVE_LONG_LONG) ;;
+esac
+
+TWOCAN_CONF_MSG(Checking for libraries to link against)
+
+
+# AC_CHECK_LIB(m, log10)
+AC_SUBST(LIBS)
+
+TWOCAN_CONF_MSG(Checking for functions)
+
+AC_FUNC_MMAP
+
+AC_FUNC_ALLOCA
+AC_FUNC_STRFTIME
+AC_FUNC_VFORK
+
+# L_IBOBJS is spelt with an _ because autoconf uses grep and doesn't know
+# the below are in comments...
+# now autoconf barfs on the L_IBOBJS stuff below...
+AC_CHECK_FUNCS(memcmp, AC_DEFINE(HAVE_MEMCMP),)
+# L_IBOBJS=""
+# AC_FUNC_MEMCMP
+# if test "x$L_IBOBJS" = "x"; then
+#  AC_DEFINE(HAVE_MEMCMP)
+# fi
+# L_IBOBJS=""
+
+# C String functions...
+AC_CHECK_FUNCS(memchr, AC_DEFINE(HAVE_MEMCHR),)
+AC_CHECK_FUNCS(memrchr, AC_DEFINE(HAVE_MEMRCHR),)
+AC_CHECK_FUNCS(memcpy, AC_DEFINE(HAVE_MEMCPY),)
+AC_CHECK_FUNCS(mempcpy, AC_DEFINE(HAVE_MEMPCPY),)
+AC_CHECK_FUNCS(memmem, AC_DEFINE(HAVE_MEMMEM),)
+AC_CHECK_FUNCS(strspn, AC_DEFINE(HAVE_STRSPN),)
+AC_CHECK_FUNCS(strcspn, AC_DEFINE(HAVE_STRCSPN),)
+AC_CHECK_FUNCS(stpcpy, AC_DEFINE(HAVE_STPCPY),)
+AC_CHECK_FUNCS(strncmp, AC_DEFINE(HAVE_STRNCMP),)
+AC_CHECK_FUNCS(strcasecmp, AC_DEFINE(HAVE_STRCASECMP),)
+AC_CHECK_FUNCS(strncasecmp, AC_DEFINE(HAVE_STRNCASECMP),)
+AC_CHECK_FUNCS(strnlen, AC_DEFINE(HAVE_STRNLEN),)
+AC_CHECK_FUNCS(asprintf, AC_DEFINE(HAVE_ASPRINTF),)
+AC_CHECK_FUNCS(strerror_r, AC_DEFINE(HAVE_STRERROR_R),)
+
+# Other functions...
+AC_CHECK_FUNCS(mmap64, AC_DEFINE(HAVE_MMAP64),)
+AC_CHECK_FUNCS(open64, AC_DEFINE(HAVE_OPEN64),)
+AC_CHECK_FUNCS(wcsnrtombs, AC_DEFINE(HAVE_WCSNRTOMBS),)
+AC_CHECK_FUNCS(wcrtomb, AC_DEFINE(USE_WIDE_CHAR_T),)
+AC_CHECK_FUNCS(getopt_long, AC_DEFINE(HAVE_GETOPT_LONG),)
+AC_CHECK_FUNCS(sigemptyset, AC_DEFINE(HAVE_SIGEMPTYSET),)
+AC_CHECK_FUNCS(difftime, AC_DEFINE(HAVE_DIFFTIME),)
+AC_CHECK_FUNCS(sigaction, AC_DEFINE(HAVE_SIGACTION),
+                          AC_MSG_ERROR(Need sigaction))
+
+AC_CHECK_FUNCS(inet_ntop, AC_DEFINE(HAVE_INET_NTOP),
+AC_CHECK_LIB(nsl, inet_ntop,
+                  [ LIBS="-lnsl $LIBS"; AC_DEFINE(HAVE_INET_NTOP) ]),
+AC_CHECK_FUNCS(inet_ntoa, AC_DEFINE(HAVE_INET_NTOA),
+AC_CHECK_LIB(nsl, inet_ntoa,
+                  [ LIBS="-lnsl $LIBS"; AC_DEFINE(HAVE_INET_NTOA) ])))
+
+AC_CHECK_FUNCS(inet_pton, AC_DEFINE(HAVE_INET_PTON),
+AC_CHECK_LIB(nsl, inet_pton,
+                  [ LIBS="-lnsl $LIBS"; AC_DEFINE(HAVE_INET_PTON) ]),
+AC_CHECK_FUNCS(inet_aton, AC_DEFINE(HAVE_INET_ATON),
+AC_CHECK_LIB(nsl, inet_aton,
+                  [ LIBS="-lnsl $LIBS"; AC_DEFINE(HAVE_INET_ATON) ]),
+AC_CHECK_FUNCS(inet_addr, AC_DEFINE(HAVE_INET_ADDR),
+AC_CHECK_LIB(nsl, inet_addr,
+                  [ LIBS="-lnsl $LIBS"; AC_DEFINE(HAVE_INET_ADDR) ]))))
+
+AC_CHECK_FUNCS(pread, AC_DEFINE(HAVE_PREAD),)
+
+# mmap repeated above for autoconf...
+AC_CHECK_FUNCS(mmap64,, AC_DEFINE(mmap64, mmap))
+AC_CHECK_FUNCS(open64,, AC_DEFINE(mmap64, open))
+AC_CHECK_FUNCS(lseek64,,AC_DEFINE(lseek64, lseek))
+AC_CHECK_FUNCS(fstat64,,AC_DEFINE(fstat64, fstat))
+# NOTE: this does the struct ... sick but works.
+AC_CHECK_FUNCS(stat64,,AC_DEFINE(stat64, stat))
+
+TWOCAN_CONF_MSG(Checking custom stuff, mainly does stuff exist/work)
+
+# Custom stuff from glibc...
+AC_CACHE_CHECK(for assembler global-symbol directive,
+               libc_cv_asm_global_directive, [dnl
+libc_cv_asm_global_directive=UNKNOWN
+for ac_globl in .globl .global .EXPORT; do
+  cat > conftest.s <<EOF
+        ${libc_cv_dot_text}
+        ${ac_globl} foo
+foo:
+EOF
+  if ${CC-cc} $CFLAGS -c conftest.s 2>/dev/null; then
+    libc_cv_asm_global_directive=${ac_globl}
+  fi
+  rm -f conftest*
+  test $libc_cv_asm_global_directive != UNKNOWN && break
+done])
+if test $libc_cv_asm_global_directive = UNKNOWN; then
+  AC_MSG_WARN(cannot determine asm global directive)
+else
+  AC_DEFINE_UNQUOTED(ASM_GLOBAL_DIRECTIVE, ${libc_cv_asm_global_directive})
+fi
+
+# My Custom stuff...
+AC_MSG_CHECKING(for an implementation of offsetof)
+AC_CACHE_VAL(local_cv_has_offsetof,[
+AC_TRY_RUN([
+#include <stddef.h>
+typedef struct abcd { int a; int b; } abcd;
+
+int main() {
+ int tmp = offsetof(abcd, b);
+ return (0);
+}],
+local_cv_has_offsetof=yes,
+local_cv_has_offsetof=no,
+)])
+AC_MSG_RESULT($local_cv_has_offsetof)
+case x$local_cv_has_offsetof in
+xyes) AC_DEFINE(HAVE_OFFSETOF) ;;
+xno) AC_MSG_WARN(Trying local offsetof -- it might not work though)
+esac
+
+AC_MSG_CHECKING(for an implementation of strerror)
+AC_CACHE_VAL(local_cv_has_strerror,[
+AC_TRY_RUN([
+#include <stddef.h>
+#include <stdlib.h>
+#include <errno.h>
+const char *msg = NULL;
+
+int main() {
+ msg = strerror(0);
+ return (0);
+}],
+local_cv_has_strerror=yes,
+local_cv_has_strerror=no,
+)])
+AC_MSG_RESULT($local_cv_has_strerror)
+case x$local_cv_has_strerror in
+xyes) AC_DEFINE(HAVE_STRERROR) ;;
+xno) AC_MSG_WARN(You won't get errno error messages.)
+esac
+
+AC_MSG_CHECKING(for an implementation of va_copy())
+AC_CACHE_VAL(local_cv_has_va_copy,[
+AC_TRY_RUN([
+#include <stdarg.h>
+void f (int i, ...)
+{
+va_list args1, args2;
+va_start (args1, i);
+va_copy (args2, args1);
+if (va_arg (args2, int) != 42 || va_arg (args1, int) != 42)
+  exit (1);
+va_end (args1); va_end (args2);
+}
+int main()
+{
+  f (0, 42);
+  return 0;
+}],
+local_cv_has_va_copy=yes,
+local_cv_has_va_copy=no,
+)])
+AC_MSG_RESULT($local_cv_has_va_copy)
+case x$local_cv_has_va_copy in
+xyes) AC_DEFINE(HAVE_VA_COPY)
+esac
+
+AC_MSG_CHECKING(for an implementation of __va_copy())
+AC_CACHE_VAL(local_cv_has___va_copy,[
+AC_TRY_RUN([
+#include <stdarg.h>
+void f (int i, ...)
+{
+va_list args1, args2;
+va_start (args1, i);
+__va_copy (args2, args1);
+if (va_arg (args2, int) != 42 || va_arg (args1, int) != 42)
+  exit (1);
+va_end (args1); va_end (args2);
+}
+int main()
+{
+  f (0, 42);
+  return 0;
+}],
+local_cv_has___va_copy=yes,
+local_cv_has___va_copy=no,
+)])
+AC_MSG_RESULT($local_cv_has___va_copy)
+case x$local_cv_has___va_copy in
+xyes) AC_DEFINE(HAVE___VA_COPY)
+esac
+
+AC_MSG_CHECKING(for a _WORKING_ implementation of poll())
+AC_CACHE_VAL(local_cv_has_poll,[
+AC_TRY_RUN([
+#include <poll.h>
+int main() {
+ struct pollfd fds[3];
+ fds[0].fd = 1;
+ fds[1].fd = 2;
+ fds[2].fd = 9999; /* some emulations don't work, Ie. glibc */
+ fds[0].events = fds[1].events = fds[2].events = POLLIN|POLLOUT;
+ fds[0].revents = fds[1].revents = fds[2].revents = 0;
+ if (poll(fds, 3, 0) == -1)
+   exit (1);
+ if (!(fds[0].revents & POLLOUT))
+   exit (2);
+ if (fds[0].revents & (POLLERR|POLLNVAL|POLLHUP))
+   exit (3);
+ if (!(fds[1].revents & POLLOUT))
+   exit (4);
+ if (fds[1].revents & (POLLERR|POLLNVAL|POLLHUP))
+   exit (5);
+ if (!(fds[2].revents & (POLLERR|POLLNVAL|POLLHUP)))
+   exit (6);
+ return 0;
+}],
+local_cv_has_poll=yes,
+local_cv_has_poll=no,
+)])
+
+AC_MSG_RESULT($local_cv_has_poll)
+case x$local_cv_has_poll in
+xyes) AC_DEFINE(HAVE_POLL)
+esac
+
+AC_MSG_CHECKING(for a RTLD_GLOBAL def)
+AC_CACHE_VAL(local_cv_has_dl_rtld_global,[
+AC_TRY_RUN([
+#include <stdlib.h>
+#ifdef HAVE_DLFCN_H
+#include <dlfcn.h>
+#endif
+
+int main() {
+ int tmp = RTLD_GLOBAL;
+ return 0;
+}],
+local_cv_has_dl_rtld_global=yes,
+local_cv_has_dl_rtld_global=no,
+)])
+AC_MSG_RESULT($local_cv_has_dl_rtld_global)
+case x$local_cv_has_dl_rtld_global in
+xyes) AC_DEFINE(HAVE_DL_RTLD_GLOBAL)
+esac
+
+# This is complicated because many sprintf()'s are broken...
+AC_MSG_CHECKING(for a C9x snprintf() return)
+AC_CACHE_VAL(local_cv_has_C9x_snprintf_ret,[
+AC_TRY_RUN([
+#define _GNU_SOURCE
+#include <stdlib.h>
+#include <stdio.h>
+
+int main() {
+ char buffer[4];
+ int tmp = snprintf(buffer, 4, "%s", "123456");
+
+ if (tmp != 6)
+  exit (1);
+
+ if (!( (buffer[0] == '1') && (buffer[1] == '2') && (buffer[2] == '3') &&
+        (buffer[3] == 0) ))
+  exit (1);
+ return 0;
+}],
+local_cv_has_C9x_snprintf_ret=yes,
+local_cv_has_C9x_snprintf_ret=no,
+)])
+AC_MSG_RESULT($local_cv_has_C9x_snprintf_ret)
+case x$local_cv_has_C9x_snprintf_ret in
+xyes) AC_DEFINE(HAVE_C9X_SNPRINTF_RET)
+esac
+
+AC_MSG_CHECKING(for a C9x sprintf() format F)
+AC_CACHE_VAL(local_cv_has_C9x_sprintf_fmt_F,[
+AC_TRY_RUN([
+#define _GNU_SOURCE
+#include <stdlib.h>
+#include <stdio.h>
+
+int main() {
+ char buffer[1024];
+
+ sprintf(buffer, "%F", 0.0);
+
+ if (!( (buffer[0] == '0') && (buffer[1] == '.') && (buffer[2] == '0') &&
+        (buffer[3] == '0') && (buffer[4] == '0') && (buffer[5] == '0') &&
+        (buffer[6] == '0') && (buffer[7] == '0') &&
+        (buffer[8] == 0) ))
+  exit (1);
+ return 0;
+}],
+local_cv_has_C9x_sprintf_fmt_F=yes,
+local_cv_has_C9x_sprintf_fmt_F=no,
+)])
+AC_MSG_RESULT($local_cv_has_C9x_sprintf_fmt_F)
+case x$local_cv_has_C9x_sprintf_fmt_F in
+xyes) AC_DEFINE(HAVE_C9X_SPRINTF_FMT_F)
+esac
+
+AC_MSG_CHECKING(for a C9x sprintf() format A)
+AC_CACHE_VAL(local_cv_has_C9x_sprintf_fmt_A,[
+AC_TRY_RUN([
+#define _GNU_SOURCE
+#include <stdlib.h>
+#include <stdio.h>
+
+int main() {
+ char buffer[1024];
+
+ sprintf(buffer, "%A", 0.0);
+
+ if (!( (buffer[0] == '0') && (buffer[1] == 'X') && (buffer[2] == '0') &&
+        (buffer[3] == 'P') && (buffer[4] == '+') && (buffer[5] == '0') &&
+        (buffer[6] == 0) ))
+  exit (1);
+ return 0;
+}],
+local_cv_has_C9x_sprintf_fmt_A=yes,
+local_cv_has_C9x_sprintf_fmt_A=no,
+)])
+AC_MSG_RESULT($local_cv_has_C9x_sprintf_fmt_A)
+case x$local_cv_has_C9x_sprintf_fmt_A in
+xyes) AC_DEFINE(HAVE_C9X_SPRINTF_FMT_A)
+esac
+
+AC_MSG_CHECKING(for a C9x sprintf() format a)
+AC_CACHE_VAL(local_cv_has_C9x_sprintf_fmt_a,[
+AC_TRY_RUN([
+#define _GNU_SOURCE
+#include <stdlib.h>
+#include <stdio.h>
+
+int main() {
+ char buffer[1024];
+
+ sprintf(buffer, "%a", 0.0);
+
+ if (!( (buffer[0] == '0') && (buffer[1] == 'x') && (buffer[2] == '0') &&
+        (buffer[3] == 'p') && (buffer[4] == '+') && (buffer[5] == '0') &&
+        (buffer[6] == 0) ))
+  exit (1);
+ return 0;
+}],
+local_cv_has_C9x_sprintf_fmt_a=yes,
+local_cv_has_C9x_sprintf_fmt_a=no,
+)])
+AC_MSG_RESULT($local_cv_has_C9x_sprintf_fmt_a)
+case x$local_cv_has_C9x_sprintf_fmt_a in
+xyes) AC_DEFINE(HAVE_C9X_SPRINTF_FMT_a)
+esac
+
+AC_MSG_CHECKING(if char works as a bitflag type)
+AC_CACHE_VAL(local_cv_has_char_bitflag,[
+AC_TRY_RUN([
+#define _GNU_SOURCE
+#include <stdlib.h>
+#include <stdio.h>
+
+typedef struct abcd {
+ int num;
+
+ unsigned char one : 1;
+ unsigned char two : 1;
+ unsigned char three : 1;
+ unsigned char four : 1;
+ unsigned char five : 1;
+ unsigned char six : 1;
+ unsigned char seven : 1;
+ unsigned char eight : 1;
+} abcd;
+
+int main() {
+  abcd tmp = {8, 0, 0, 0, 0, 1, 1, 1, 1};
+
+ if ((tmp.num != 8) || tmp.one || tmp.two || tmp.three || tmp.four
+     || !tmp.five || !tmp.six || !tmp.seven || !tmp.eight)
+  exit (1);
+
+ return 0;
+}],
+local_cv_has_char_bitflag=yes,
+local_cv_has_char_bitflag=no,
+)])
+AC_MSG_RESULT($local_cv_has_char_bitflag)
+case x$local_cv_has_char_bitflag in
+xyes) AC_DEFINE(HAVE_CHAR_BITFLAG)
+esac
+
+AC_MSG_CHECKING(if setrlimit/getrlimit work)
+AC_CACHE_VAL(local_cv_has_setrlimit,[
+AC_TRY_RUN([
+#define _GNU_SOURCE
+#include <stdlib.h>
+#include <stdio.h>
+#include <sys/time.h>
+#include <sys/resource.h>
+#include <unistd.h>
+
+int main() {
+
+ struct rlimit tmp;
+ getrlimit(RLIMIT_CORE, &tmp);
+ tmp.rlim_cur = RLIM_INFINITY;
+ setrlimit(RLIMIT_CORE, &tmp);
+}],
+local_cv_has_setrlimit=yes,
+local_cv_has_setrlimit=no,
+)])
+AC_MSG_RESULT($local_cv_has_setrlimit)
+case x$local_cv_has_setrlimit in
+xyes) AC_DEFINE(HAVE_SETRLIMIT)
+esac
+
+AC_MSG_CHECKING(for prctl)
+AC_CACHE_VAL(local_cv_has_prctl,[
+AC_TRY_RUN([
+#define _GNU_SOURCE
+#include <stdlib.h>
+#include <stdio.h>
+
+#define PR_SET_PDEATHSIG 1
+
+int main() {
+ prctl(PR_SET_PDEATHSIG, 9, 0, 0, 0);
+ return (0);
+}],
+local_cv_has_prctl=yes,
+local_cv_has_prctl=no,
+)])
+AC_MSG_RESULT($local_cv_has_prctl)
+case x$local_cv_has_prctl in
+xyes) AC_DEFINE(HAVE_PRCTL)
+esac
+
+AC_MSG_CHECKING(for linux compat sigcontext)
+AC_CACHE_VAL(local_cv_has_sigcontext,[
+AC_TRY_RUN([
+#define _GNU_SOURCE
+#include <stdlib.h>
+#include <sys/time.h>
+#include <signal.h>
+
+int main() {
+  struct sigcontext con;
+
+       con.gs = 0; con.__gsh = 0;
+       con.fs = 0; con.__fsh = 0;
+       con.es = 0; con.__esh = 0;
+       con.ds = 0; con.__dsh = 0;
+       con.edi = 0;
+       con.esi = 0;
+       con.ebp = 0;
+       con.esp = 0;
+       con.ebx = 0;
+       con.edx = 0;
+       con.ecx = 0;
+       con.eax = 0;
+       con.trapno = 0;
+       con.err = 0;
+       con.eip = 0;
+       con.cs = 0; con.__csh = 0;
+       con.eflags = 0;
+       con.esp_at_signal = 0;
+       con.ss = 0; con.__ssh = 0;
+       con.fpstate = 0;
+       con.fpstate ?
+        (con.fpstate->status = 0) : 0;
+       con.oldmask = 0;
+       con.cr2 = 0;
+
+
+ return 0;
+}],
+local_cv_has_sigcontext=yes,
+local_cv_has_sigcontext=no,
+)])
+AC_MSG_RESULT($local_cv_has_sigcontext)
+case x$local_cv_has_sigcontext in
+xyes) AC_DEFINE(HAVE_SIGCONTEXT)
+esac
+
+AC_MSG_CHECKING(for _old_ linux compat sigcontext)
+AC_CACHE_VAL(local_cv_has_old_sigcontext,[
+AC_TRY_RUN([
+#define _GNU_SOURCE
+#include <stdlib.h>
+#include <sys/time.h>
+#include <signal.h>
+#include <asm/sigcontext.h>
+
+#define sigcontext sigcontext_struct
+
+int main() {
+  struct sigcontext con;
+
+       con.gs = 0; con.__gsh = 0;
+       con.fs = 0; con.__fsh = 0;
+       con.es = 0; con.__esh = 0;
+       con.ds = 0; con.__dsh = 0;
+       con.edi = 0;
+       con.esi = 0;
+       con.ebp = 0;
+       con.esp = 0;
+       con.ebx = 0;
+       con.edx = 0;
+       con.ecx = 0;
+       con.eax = 0;
+       con.trapno = 0;
+       con.err = 0;
+       con.eip = 0;
+       con.cs = 0; con.__csh = 0;
+       con.eflags = 0;
+       con.esp_at_signal = 0;
+       con.ss = 0; con.__ssh = 0;
+       con.fpstate = 0;
+       con.fpstate ?
+        (con.fpstate->status = 0) : 0;
+       con.oldmask = 0;
+       con.cr2 = 0;
+
+
+ return 0;
+}],
+local_cv_has_old_sigcontext=yes,
+local_cv_has_old_sigcontext=no,
+)])
+AC_MSG_RESULT($local_cv_has_old_sigcontext)
+case x$local_cv_has_old_sigcontext in
+xyes) AC_DEFINE(HAVE_OLD_SIGCONTEXT)
+esac
+
+AC_MSG_CHECKING(for mallinfo)
+AC_CACHE_VAL(local_cv_has_mallinfo,[
+AC_TRY_RUN([
+#define _GNU_SOURCE
+#include <stdlib.h>
+#include <malloc.h>
+
+int main() {
+ struct mallinfo mem_info = mallinfo(); /* produces a warning */
+ mem_info.arena = 0;
+ mem_info.ordblks = 0;
+ mem_info.smblks = 0;
+ mem_info.hblks = 0;
+ mem_info.hblkhd = 0;
+ mem_info.usmblks = 0;
+ mem_info.fsmblks = 0;
+ mem_info.uordblks = 0;
+ mem_info.fordblks = 0;
+ mem_info.keepcost = 0;
+
+ return (0);
+}],
+local_cv_has_mallinfo=yes,
+local_cv_has_mallinfo=no,
+)])
+AC_MSG_RESULT($local_cv_has_mallinfo)
+case x$local_cv_has_mallinfo in
+xyes) AC_DEFINE(HAVE_MALLINFO)
+      AM_CONDITIONAL(MALLINFO_AVAIL, true)
+      ;;
+xno)  AM_CONDITIONAL(MALLINFO_AVAIL, false)
+esac
+
+AC_MSG_CHECKING(for termcap variables)
+AC_CACHE_VAL(local_cv_has_decl_termcap_vars,[
+AC_TRY_RUN([
+#define _GNU_SOURCE
+#include <stdlib.h>
+
+#include <termcap.h>
+
+int main() {
+ PC = 0;
+ ospeed = 0;
+
+ return (0);
+}],
+local_cv_has_decl_termcap_vars=yes,
+local_cv_has_decl_termcap_vars=no,
+)])
+AC_MSG_RESULT($local_cv_has_decl_termcap_vars)
+case x$local_cv_has_decl_termcap_vars in
+xyes) AC_DEFINE(HAVE_DECL_TERMCAP_VARS)
+esac
+
+AC_MSG_CHECKING(for time_t as int's)
+AC_CACHE_VAL(local_cv_use_quick_add_time,[
+AC_TRY_RUN([
+#define _GNU_SOURCE
+#include <stdlib.h>
+#include <sys/time.h>
+#include <time.h>
+
+int main() {
+ time_t abcd = time(NULL);
+ time_t abcd2 = abcd + 234;
+ struct tm *tm = localtime(&abcd);
+
+ tm->tm_sec += 234;
+ if (abcd2 != mktime(tm)) exit (1);
+
+ return 0;
+}],
+local_cv_use_quick_add_time=yes,
+local_cv_use_quick_add_time=no,
+)])
+AC_MSG_RESULT($local_cv_use_quick_add_time)
+case x$local_cv_use_quick_add_time in
+xyes) AC_DEFINE(USE_QUICK_ADD_TIME)
+esac
+
+AC_MSG_CHECKING(for usable sigaltstack)
+AC_CACHE_VAL(local_cv_have_sigaltstack,[
+AC_TRY_RUN([
+#define _GNU_SOURCE
+#include <stdlib.h>
+#include <signal.h>
+
+int main() {
+ char buffer[SIGSTKSZ];
+ struct sigaltstack alt_stack;
+ int abcd = SA_ONSTACK;
+
+ alt_stack.ss_size = SIGSTKSZ;
+ alt_stack.ss_sp = buffer;
+
+ sigaltstack(&alt_stack, NULL);
+
+ return (0);
+}],
+local_cv_have_sigaltstack=yes,
+local_cv_have_sigaltstack=no,
+)])
+AC_MSG_RESULT($local_cv_have_sigaltstack)
+case x$local_cv_have_sigaltstack in
+xyes) AC_DEFINE(HAVE_SIGALTSTACK)
+esac
+
+AC_MSG_CHECKING(for C9x struct hack support)
+AC_CACHE_VAL(local_cv_have_C9x_struct_hack,[
+AC_TRY_RUN([
+#define _GNU_SOURCE
+#include <stddef.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+struct abcd
+{
+ int len;
+ char buffer[];
+};
+
+int main() {
+ struct abcd *abcd = malloc(sizeof(struct abcd) + 256);
+
+ abcd->len = 256;
+ memset(abcd->buffer, 0, 256);
+ return (0);
+}],
+local_cv_have_C9x_struct_hack=yes,
+local_cv_have_C9x_struct_hack=no,
+)])
+AC_MSG_RESULT($local_cv_have_C9x_struct_hack)
+case x$local_cv_have_C9x_struct_hack in
+xyes) AC_DEFINE(HAVE_C9x_STRUCT_HACK)
+esac
+
+AC_MSG_CHECKING(for cmsghdr struct)
+AC_CACHE_VAL(local_cv_have_struct_cmsghdr,[
+AC_TRY_RUN([
+#define _GNU_SOURCE
+#include <sys/types.h>
+#include <sys/socket.h>
+
+struct abcd
+{
+ struct cmsghdr cmsg;
+ int fd;
+};
+
+int main() {
+ struct abcd abcd;
+
+ abcd.cmsg.cmsg_len = 0;
+ abcd.cmsg.cmsg_level = SOL_SOCKET;
+ abcd.cmsg.cmsg_type = 0;
+
+ return (0);
+}],
+local_cv_have_struct_cmsghdr=yes,
+local_cv_have_struct_cmsghdr=no,
+)])
+AC_MSG_RESULT($local_cv_have_struct_cmsghdr)
+case x$local_cv_have_struct_cmsghdr in
+xyes) AC_DEFINE(HAVE_CMSGHDR_STRUCT)
+esac
+
+AC_MSG_CHECKING(for fd passing in cmsghdr)
+AC_CACHE_VAL(local_cv_have_cmsghdr_rights,[
+AC_TRY_RUN([
+#define _GNU_SOURCE
+#include <sys/types.h>
+#include <sys/socket.h>
+
+struct abcd
+{
+ struct cmsghdr cmsg;
+ int fd;
+};
+
+int main() {
+ struct abcd abcd;
+
+ abcd.cmsg.cmsg_len = 0;
+ abcd.cmsg.cmsg_level = SOL_SOCKET;
+ abcd.cmsg.cmsg_type = SCM_RIGHTS;
+
+ return (0);
+}],
+local_cv_have_cmsghdr_rights=yes,
+local_cv_have_cmsghdr_rights=no,
+)])
+AC_MSG_RESULT($local_cv_have_cmsghdr_rights)
+case x$local_cv_have_cmsghdr_rights in
+xyes) AC_DEFINE(HAVE_CMSGHDR_RIGHTS)
+esac
+
+AC_MSG_CHECKING(for credentials passing in cmsghdr)
+AC_CACHE_VAL(local_cv_have_cmsghdr_credentials,[
+AC_TRY_RUN([
+#define _GNU_SOURCE
+#include <sys/types.h>
+#include <sys/socket.h>
+
+struct abcd
+{
+ struct cmsghdr cmsg;
+ int fd;
+};
+
+int main() {
+ struct abcd abcd;
+
+ abcd.cmsg.cmsg_len = 0;
+ abcd.cmsg.cmsg_level = SOL_SOCKET;
+ abcd.cmsg.cmsg_type = SCM_CREDENTIALS;
+
+ return (0);
+}],
+local_cv_have_cmsghdr_credentials=yes,
+local_cv_have_cmsghdr_credentials=no,
+)])
+AC_MSG_RESULT($local_cv_have_cmsghdr_credentials)
+case x$local_cv_have_cmsghdr_credentials in
+xyes) AC_DEFINE(HAVE_CMSGHDR_CREDENTIALS)
+esac
+
+AC_MSG_CHECKING(for credentials passing in setsockopt)
+AC_CACHE_VAL(local_cv_have_so_peercreds,[
+AC_TRY_RUN([
+#define _GNU_SOURCE
+#include <sys/types.h>
+#include <sys/socket.h>
+
+int main() {
+ int val1 = SOL_SOCKET;
+ int val2 = SO_PEERCRED;
+
+ return (0);
+}],
+local_cv_have_so_peercreds=yes,
+local_cv_have_so_peercreds=no,
+)])
+AC_MSG_RESULT($local_cv_have_so_peercreds)
+case x$local_cv_have_so_peercreds in
+xyes) AC_DEFINE(HAVE_SO_PEERCREDS)
+esac
+
+AC_MSG_CHECKING(for CMSG_DATA macro)
+AC_CACHE_VAL(local_cv_have_cmsg_data,[
+AC_TRY_RUN([
+#define _GNU_SOURCE
+#include <sys/types.h>
+#include <sys/socket.h>
+
+struct abcd
+{
+ struct cmsghdr cmsg;
+ int fd;
+};
+
+int main() {
+ struct abcd abcd;
+ char *tmp = CMSG_DATA(&abcd.cmsg);
+
+ return (0);
+}],
+local_cv_have_cmsg_data=yes,
+local_cv_have_cmsg_data=no,
+)])
+AC_MSG_RESULT($local_cv_have_cmsg_data)
+case x$local_cv_have_cmsg_data in
+xyes) AC_DEFINE(HAVE_CMSG_DATA)
+esac
+
+AC_MSG_CHECKING(for TCP_CORK socket option)
+AC_CACHE_VAL(local_cv_have_tcp_cork,[
+AC_TRY_RUN([
+#define _GNU_SOURCE
+#include <stddef.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <sys/socket.h>
+#include <netinet/tcp.h>
+
+int main() {
+ int val1 = SOL_TCP;
+ int val2 = TCP_CORK;
+
+ return (0);
+}],
+local_cv_have_tcp_cork=yes,
+local_cv_have_tcp_cork=no,
+)])
+AC_MSG_RESULT($local_cv_have_tcp_cork)
+case x$local_cv_have_tcp_cork in
+xyes) AC_DEFINE(HAVE_TCP_CORK)
+esac
+
+AC_MSG_CHECKING(for ipv6 sockaddr structure)
+AC_CACHE_VAL(local_cv_have_sockaddr_in6,[
+AC_TRY_RUN([
+#define _GNU_SOURCE
+#include <stddef.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+
+int main() {
+ struct sockaddr_in6 sa_in6;
+ return (0);
+}],
+local_cv_have_sockaddr_in6=yes,
+local_cv_have_sockaddr_in6=no,
+)])
+AC_MSG_RESULT($local_cv_have_sockaddr_in6)
+case x$local_cv_have_sockaddr_in6 in
+xyes) AC_DEFINE(HAVE_SOCKADDR_IN6)
+esac
+
+XLDFLAGS="$LDFLAGS"
+LDFLAGS="$LDFLAGS -Wl,-e,relocated_main"
+
+AC_MSG_CHECKING(for linker main symbol redirection)
+AC_CACHE_VAL(local_cv_linker_have_relocationable_main,[
+AC_TRY_RUN([
+#define _GNU_SOURCE
+
+int relocated_main() {
+ _exit (0);
+}
+int main() {
+ return (1);
+}],
+local_cv_linker_have_relocationable_main=true,
+local_cv_linker_have_relocationable_main=false,
+)])
+AC_MSG_RESULT($local_cv_linker_have_relocationable_main)
+AM_CONDITIONAL(HAVE_LINKER_MAIN_RELOCATE, $local_cv_linker_have_relocationable_main)
+
+LDFLAGS="$XLDFLAGS"
+
+
+AC_MSG_CHECKING(for the length of ULONG_MAX as a string)
+AC_CACHE_VAL(local_cv_has_ULONG_MAX_len_sprintf,[
+AC_TRY_RUN([
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <limits.h>
+
+int main() {
+ char buffer[1024 + (CHAR_BIT * sizeof(unsigned long))];
+ int len;
+ sprintf(buffer, "%lu", ULONG_MAX);
+ len = strlen(buffer);
+ { FILE *f = fopen("conftestval", "w");
+   if (!f) exit (1);
+   fprintf(f, "%d\n", len);
+ }
+ return 0;
+}],
+[local_cv_has_ULONG_MAX_len_sprintf=`cat conftestval`],
+local_cv_has_ULONG_MAX_len_sprintf="nope",
+)])
+AC_MSG_RESULT($local_cv_has_ULONG_MAX_len_sprintf)
+case x$local_cv_has_ULONG_MAX_len_sprintf in
+xnope) ;;
+*) AC_DEFINE_UNQUOTED(ULONG_MAX_LEN, $local_cv_has_ULONG_MAX_len_sprintf)
+esac
+
+
+case x$local_cv_have_tst_noinline in
+ xfalse)
+AC_MSG_CHECKING(if inline is a valid keyword)
+AC_CACHE_VAL(local_cv_has_inline,[
+AC_TRY_RUN([
+#include <stdlib.h>
+#include <stdio.h>
+
+inline int func(void) { return (0); }
+
+int main() {
+ return func();
+}],
+local_cv_has_inline=yes,
+local_cv_has_inline=no,
+)])
+AC_MSG_RESULT($local_cv_has_inline)
+;;
+esac
+case x$local_cv_has_inline in
+xyes) AC_DEFINE(HAVE_INLINE) ;;
+esac
+
+# Beg testing attributes ... turn warnings into errors...
+XCFLAGS=$CFLAGS
+CFLAGS="-Werror $CFLAGS"
+
+
+case x$local_cv_have_tst_noattr_alias in
+ xfalse)
+AC_MSG_CHECKING(if alias is a valid attribute)
+AC_CACHE_VAL(local_cv_has_attrib_alias,[
+AC_TRY_RUN([
+#include <stdlib.h>
+#include <stdio.h>
+
+int abcd(void) { return (0); }
+extern int func(void) __attribute__((alias("abcd"))) ;
+
+int main() {
+ return func();
+}],
+local_cv_has_attrib_alias=yes,
+local_cv_has_attrib_alias=no,
+)])
+AC_MSG_RESULT($local_cv_has_attrib_alias)
+;;
+esac
+case x$local_cv_has_attrib_alias in
+xyes) AC_DEFINE(HAVE_ATTRIB_ALIAS) ;;
+esac
+
+AC_MSG_CHECKING(if deprecated is a valid attribute)
+AC_CACHE_VAL(local_cv_has_attrib_deprecated,[
+AC_TRY_RUN([
+#include <stdlib.h>
+#include <stdio.h>
+
+int abcd(void) { return (0); }
+extern int func(void) __attribute__((deprecated)) ;
+
+int main() {
+ return abcd();
+}],
+local_cv_has_attrib_deprecated=yes,
+local_cv_has_attrib_deprecated=no,
+)])
+AC_MSG_RESULT($local_cv_has_attrib_deprecated)
+case x$local_cv_has_attrib_deprecated in
+xyes) AC_DEFINE(HAVE_ATTRIB_DEPRECATED) ;;
+esac
+
+AC_MSG_CHECKING(if malloc is a valid attribute)
+AC_CACHE_VAL(local_cv_has_attrib_malloc,[
+AC_TRY_RUN([
+#include <stdlib.h>
+#include <stdio.h>
+
+int abcd(void *p) { return (!p); }
+void *func(void) __attribute__((malloc)) ;
+void *func(void) { return (malloc(4)); }
+
+int main() {
+ return abcd(func());
+}],
+local_cv_has_attrib_malloc=yes,
+local_cv_has_attrib_malloc=no,
+)])
+AC_MSG_RESULT($local_cv_has_attrib_malloc)
+case x$local_cv_has_attrib_malloc in
+xyes) AC_DEFINE(HAVE_ATTRIB_MALLOC) ;;
+esac
+
+AC_MSG_CHECKING(if nonnull is a valid attribute)
+AC_CACHE_VAL(local_cv_has_attrib_nonnull,[
+AC_TRY_RUN([
+#include <stdlib.h>
+#include <stdio.h>
+
+int func(char *) __attribute__((nonnull)) ;
+int func(char *abcd) { return (!abcd); }
+
+int main() {
+ return func("abcd");
+}],
+local_cv_has_attrib_nonnull=yes,
+local_cv_has_attrib_nonnull=no,
+)])
+AC_MSG_RESULT($local_cv_has_attrib_nonnull)
+case x$local_cv_has_attrib_nonnull in
+xyes) AC_DEFINE(HAVE_ATTRIB_NONNULL) ;;
+esac
+
+AC_MSG_CHECKING(if pure is a valid attribute)
+AC_CACHE_VAL(local_cv_has_attrib_pure,[
+AC_TRY_RUN([
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
+int abcd(int n)  __attribute__((__pure__)) ;
+int abcd(int n) { return (!n); }
+
+int main() {
+ return abcd(2);
+}],
+local_cv_has_attrib_pure=yes,
+local_cv_has_attrib_pure=no,
+)])
+AC_MSG_RESULT($local_cv_has_attrib_pure)
+case x$local_cv_has_attrib_pure in
+xyes) AC_DEFINE(HAVE_ATTRIB_PURE) ;;
+esac
+
+AC_MSG_CHECKING(if const is a valid attribute)
+AC_CACHE_VAL(local_cv_has_attrib_const,[
+AC_TRY_RUN([
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
+int abcd(int n)  __attribute__((__const__)) ;
+int abcd(int n) { return (!n); }
+
+int main() {
+ return abcd(2);
+}],
+local_cv_has_attrib_const=yes,
+local_cv_has_attrib_const=no,
+)])
+AC_MSG_RESULT($local_cv_has_attrib_const)
+case x$local_cv_has_attrib_const in
+xyes) AC_DEFINE(HAVE_ATTRIB_CONST) ;;
+esac
+
+case x$local_cv_have_tst_noattr_visibility in
+ xfalse)
+AC_MSG_CHECKING(if visibility is a valid attribute)
+AC_CACHE_VAL(local_cv_has_attrib_visibility,[
+AC_TRY_RUN([
+#include <stdlib.h>
+#include <stdio.h>
+
+int func(void) __attribute__((visibility("hidden"))) ;
+int func(void) { return (0); }
+
+int main() {
+ return func();
+}],
+local_cv_has_attrib_visibility=yes,
+local_cv_has_attrib_visibility=no,
+)])
+AC_MSG_RESULT($local_cv_has_attrib_visibility)
+;;
+esac
+case x$local_cv_has_attrib_visibility in
+xyes) AC_DEFINE(HAVE_ATTRIB_VISIBILITY) ;;
+esac
+
+AC_MSG_CHECKING(if warn_unused_result is a valid attribute)
+AC_CACHE_VAL(local_cv_has_attrib_warn_unused_ret,[
+AC_TRY_RUN([
+#include <stdlib.h>
+#include <stdio.h>
+
+int func(char *) __attribute__((warn_unused_result)) ;
+int func(char *abcd) { return (!abcd); }
+
+int main() {
+ return func("abcd");
+}],
+local_cv_has_attrib_warn_unused_ret=yes,
+local_cv_has_attrib_warn_unused_ret=no,
+)])
+AC_MSG_RESULT($local_cv_has_attrib_warn_unused_ret)
+case x$local_cv_has_attrib_warn_unused_ret in
+xyes) AC_DEFINE(HAVE_ATTRIB_WARN_UNUSED_RET) ;;
+esac
+
+
+CFLAGS=$XCFLAGS
+# End testing attributes ... turn CFLAGS back to normal
+
+AC_MSG_CHECKING(if __typeof is a valid keyword)
+AC_CACHE_VAL(local_cv_has___typeof,[
+AC_TRY_RUN([
+#include <stdlib.h>
+#include <stdio.h>
+
+int func(void) { return (0); }
+extern __typeof(func) abcd;
+
+int main() {
+ return func();
+}],
+local_cv_has___typeof=yes,
+local_cv_has___typeof=no,
+)])
+AC_MSG_RESULT($local_cv_has___typeof)
+case x$local_cv_has___typeof in
+xyes) AC_DEFINE(HAVE___TYPEOF) ;;
+esac
+
+TWOCAN_CONF_MSG(Output Substitution)
+
+AC_OUTPUT([Makefile
+           vstr.pc
+           vstr-debug.pc
+           src/Makefile
+           include/Makefile
+           Documentation/Makefile
+           tst/Makefile
+           examples/Makefile
+           examples/init.d/jechod
+           src/vstr_version.c
+           vstr.spec
+           VERSION
+])
+
+$SED_PATH 's%^#define *%#define VSTR_AUTOCONF_%' < include/autoconf.h > include/vstr-conf.h

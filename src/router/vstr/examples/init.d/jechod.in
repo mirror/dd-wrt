@@ -1,0 +1,78 @@
+#! /bin/bash
+#
+# jechod          Start/Stop a echo daemon.
+#
+# chkconfig: 345 90 60
+# description: jechod is a simple echo server
+# processname: ex_echod
+# pidfile: /var/run/jechod.pid
+ 
+# Source function library.
+. /etc/init.d/functions
+
+# Needed to resolve sbindir ... *sigh*
+prefix="@prefix@"
+exec_prefix="@exec_prefix@"
+localstatedir="@localstatedir@"
+
+prog_name=jechod
+prog_exe="@sbindir@/${prog_name}"
+
+I_ARG_PID='--pid-file "${localstatedir}/run/${prog_name}"'
+I_ARG_CNTL='--cntl-file "${localstatedir}/run/${prog_name}"'
+JECHOD_ARGS='--drop-privs --chroot "%{localstatedir}/empty/jechod"'
+[ -r /etc/sysconfig/jechod ] && . /etc/sysconfig/jechod
+
+PI_ARGS="--priv-uid 442 --priv-gid 442"
+I_ARGS="--daemon $I_ARG_PID.pid $I_ARG_CNTL.cntl $PI_ARGS"
+
+function start()
+{
+        echo -n $"Starting $prog_name: "
+        daemon --check $prog_name $prog_exe $I_ARGS $JECHOD_ARGS
+        RETVAL=$?
+        echo
+        [ $RETVAL -eq 0 ] && touch /var/lock/subsys/$prog_name
+        return $RETVAL
+}
+
+function stop()
+{
+        echo -n $"Shutting down $prog_name: "
+        killproc $prog_name
+        RETVAL=$?
+        echo
+        [ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/$prog_name
+        return $RETVAL
+}
+
+function restart()
+{
+        stop; start;
+}
+
+case "$1" in
+  start)
+        start
+        ;;
+  stop)
+        stop
+        ;;
+  restart)
+        restart
+        ;;
+  reload)
+        restart
+        ;;
+  status)
+        status $prog_name
+        ;;
+  condrestart)
+        [ -f /var/lock/subsys/$prog_name ] && restart || :
+        ;;
+  *)
+	echo $"Usage: $0 {start|stop|restart|condrestart|status}"
+        exit 1
+esac
+                                                                             
+exit $?

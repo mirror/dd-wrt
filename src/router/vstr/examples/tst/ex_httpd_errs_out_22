@@ -1,0 +1,22 @@
+HTTP/1.1 301 Moved Permanently
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified:
+Connection: close
+Accept-Ranges: bytes
+Content-Type: text/html
+Content-Length: 375
+Location: http://default/fifo
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+  <head>
+    <title>301 Moved Permanently</title>
+  </head>
+  <body>
+    <h1>301 Moved Permanently</h1>
+    <p>The document has moved <a href="http://default/fifo">here</a>.</p>
+  <hr>
+  Generated using the <a href="http://www.and.org/vstr/httpd">Vstr httpd example Web Server</a>.
+  </body>
+</html>

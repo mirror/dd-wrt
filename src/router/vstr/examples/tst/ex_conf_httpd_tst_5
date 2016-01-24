@@ -1,0 +1,77 @@
+;;
+;; This is a configuration for httpd_conf_5 tests...
+;;
+;;
+
+(org.and.jhttpd-conf-main-1.0
+
+  (org.and.daemon-conf-1.0
+    (listen addr 127.0.4.1)
+
+    (pid-file ex_httpd_root/abcd)
+    (cntl-file ex_httpd_cntl)
+
+    (policy conf-httpd-tst-5.1
+       timeout idle 32)
+
+     procs 1)
+
+  (match-request [(OR
+                   policy-eq conf-httpd-tst-5.1
+                   policy-eq conf-httpd-tst-5.2
+                   policy-eq conf-httpd-tst-5.3)
+                  OR false
+                  path-end = / <directory-filename>]
+    org.and.jhttpd-conf-req-1.0
+      Location: [limit <path>-end (= <directory-filename>)] r''
+      return 301)
+  (match-request [policy-eq conf-httpd-tst-5.1
+                  path== /nothere/5.1-switch-5.2]
+    connection-policy conf-httpd-tst-5.2)
+  (match-request [policy-eq conf-httpd-tst-5.1
+                  path== /nothere/5.1-switch-5.3]
+    connection-policy conf-httpd-tst-5.3)
+
+  (match-request [policy-eq conf-httpd-tst-5.2
+                  path== /nothere/5.2-neg-CT]
+    org.and.jhttpd-conf-req-1.0
+     (negotiate-content-type text/plain r".txt" (text/html .html))
+     (filename [limit <path>] = /there/5.2-neg-CT )
+      filename += <content-type-extension>)
+  (match-request [policy-eq conf-httpd-tst-5.2
+                  path== /nothere/5.2-neg-AL]
+    org.and.jhttpd-conf-req-1.0
+     (negotiate-content-language en r'''''' jp-foo-bar r'''.jpfb'''  jp .jp (fr .fr))
+      filename [limit <path>] = /there/5.2-neg-AL
+                                <content-language-extension> .txt)
+  (match-request [policy-eq conf-httpd-tst-5.2
+                  path== /nothere/5.2-neg]
+    org.and.jhttpd-conf-req-1.0
+     (negotiate-content-type (text/plain .txt) (text/html .html))
+     (negotiate-content-language en r"""""" jp-foo-bar r""".jpfb"""  jp .jp (fr .fr))
+      filename [limit <path>]= /there/5.2-neg
+                               <content-language-extension>
+                               <content-type-extension>)
+
+  (match-connection [policy-eq <default>
+                     server-ipv4-cidr-eq 127.0.4.1]
+    policy conf-httpd-tst-5.1)
+
+   policy conf-httpd-tst-5.1
+
+     ; Required by the tests...
+     unspecified-hostname foo.example.com ; -- so we always match in tests
+     unspecified-hostname-append-port off
+     MIME/types-filename-xtra (= ENV SRCDIR /mime_types_extra.txt)
+     (HTTP limit nodes Range: 2)
+
+     virtual-hosts true
+     document-root ex_httpd_root
+     request-configuration-directory ex_httpd_conf
+     req-err-dir ex_httpd_err/)
+(org.and.daemon-conf-1.0 ; done using switch...
+  (policy conf-httpd-tst-5.2 [inherit conf-httpd-tst-5.1]))
+(org.and.jhttpd-conf-main-1.0 ; done using switch...
+  (policy conf-httpd-tst-5.3 [inherit conf-httpd-tst-5.1]
+     directory-filename index
+     HTTP limit nodes Range: 4))

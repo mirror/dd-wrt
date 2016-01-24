@@ -1,0 +1,237 @@
+/* auto maticaly */
+#undef STDC_HEADERS
+
+#undef HAVE_INTTYPES_H
+
+#undef HAVE_STDINT_H
+
+#undef TIME_WITH_SYS_TIME
+
+#undef HAVE_SYS_TIME_H
+
+
+#undef HAVE_MALLOC_H
+
+#undef HAVE_POLL_H
+
+#undef HAVE_SYS_EPOLL_H
+
+#undef HAVE_SYS_MMAN_H
+
+#undef HAVE_DLFCN_H
+
+#undef HAVE_TERMCAP_H
+
+#undef USE_NCURSES_DB
+
+#undef HAVE_SYS_FILIO_H
+
+#undef HAVE_SYS_UIO_H
+
+#undef HAVE_SYS_UN_H
+
+#undef HAVE_ZLIB_H
+
+#undef HAVE_SYS_PRCTL_H
+
+
+#undef const
+
+
+#undef mode_t
+#undef off_t
+#undef off64_t
+#define HAVE_OFF64_T 0
+#undef pid_t
+#undef size_t
+#undef ssize_t
+#undef uid_t
+#undef gid_t
+#undef ptrdiff_t
+#undef intmax_t
+#undef uintmax_t
+#undef uintptr_t
+#undef HAVE_LONG_LONG
+#undef uint_least16_t
+#undef uint_least32_t
+
+/* auto macors... */
+#undef HAVE_UNISTD_H
+#undef HAVE_MMAP
+#undef HAVE_ALLOCA_H
+#undef HAVE_ALLOCA
+#undef HAVE_STRFTIME
+#undef HAVE_VFORK_H
+#undef vfork
+
+
+#undef HAVE_MEMCHR
+
+#undef HAVE_MEMRCHR
+
+#undef HAVE_MEMCPY
+
+#undef HAVE_MEMPCPY
+
+#undef HAVE_MEMCMP
+
+#undef HAVE_MEMMEM
+
+#undef HAVE_STRSPN
+
+#undef HAVE_STRCSPN
+
+#undef HAVE_STPCPY
+
+#undef HAVE_STRNCMP
+
+#undef HAVE_STRCASECMP
+
+#undef HAVE_STRNCASECMP
+
+#undef HAVE_STRNLEN
+
+#undef HAVE_ASPRINTF
+
+#undef HAVE_STRERROR_R
+
+
+#undef HAVE_OPEN64
+
+#undef HAVE_MMAP64
+
+#undef HAVE_WCSNRTOMBS
+
+#define USE_WIDE_CHAR_T 0
+
+#undef HAVE_GETOPT_LONG
+
+#undef HAVE_SIGEMPTYSET
+
+#undef HAVE_DIFFTIME
+
+#undef HAVE_SIGACTION
+
+#undef HAVE_STRERROR
+
+
+#undef HAVE_INET_NTOP
+
+#undef HAVE_INET_NTOA
+
+#undef HAVE_INET_PTON
+
+#undef HAVE_INET_ATON
+
+#undef HAVE_INET_ADDR
+
+#undef HAVE_PREAD
+
+#undef open64
+#undef mmap64
+#undef lseek64
+#undef fstat64
+#undef stat64
+
+#undef ASM_GLOBAL_DIRECTIVE
+
+#undef HAVE_OFFSETOF
+
+#undef HAVE_VA_COPY
+
+#undef HAVE___VA_COPY
+
+#undef HAVE_POLL
+
+#undef HAVE_WRITEV
+
+#undef HAVE_DL_RTLD_GLOBAL
+
+#undef HAVE_C9X_SNPRINTF_RET
+#undef HAVE_C9X_SPRINTF_FMT_F
+#undef HAVE_C9X_SPRINTF_FMT_A
+#undef HAVE_C9X_SPRINTF_FMT_a
+
+#undef HAVE_SETRLIMIT
+
+#undef HAVE_PRCTL
+
+#undef HAVE_SIGCONTEXT
+
+#undef HAVE_OLD_SIGCONTEXT
+
+#undef HAVE_MALLINFO
+
+#undef HAVE_DECL_TERMCAP_VARS
+
+#undef USE_QUICK_ADD_TIME
+
+#undef HAVE_SIGALTSTACK
+
+#undef HAVE_C9x_STRUCT_HACK
+
+#undef HAVE_CMSGHDR_STRUCT
+
+#define HAVE_CMSGHDR_RIGHTS 0
+
+#define HAVE_CMSGHDR_CREDENTIALS 0
+
+#define HAVE_SO_PEERCREDS 0
+
+#define HAVE_TCP_CORK 0
+
+#undef HAVE_CMSG_DATA
+
+#undef HAVE_SENDFILE
+
+#undef HAVE_SENDFILE_FREEBSD
+
+#undef HAVE_SOCKADDR_IN6
+
+#undef ULONG_MAX_LEN
+
+#undef NDEBUG
+
+#undef FMT_DBL_host
+#undef FMT_DBL_glibc
+#undef FMT_DBL_none
+
+#undef HAVE_LINKER_SCRIPT
+
+#undef HAVE_POSIX_HOST
+
+#undef HAVE_INLINE
+
+#undef HAVE_ATTRIB_ALIAS
+
+#undef HAVE_ATTRIB_DEPRECATED
+
+#undef HAVE_ATTRIB_MALLOC
+
+#undef HAVE_ATTRIB_NONNULL
+
+#undef HAVE_ATTRIB_PURE
+
+#undef HAVE_ATTRIB_CONST
+
+#undef HAVE_ATTRIB_VISIBILITY
+
+#undef HAVE_ATTRIB_WARN_UNUSED_RET
+
+#undef HAVE___TYPEOF
+
+#undef USE_WRAP_MEMCPY
+
+#undef USE_WRAP_MEMCMP
+
+#undef USE_WRAP_MEMCHR
+
+#undef USE_WRAP_MEMRCHR
+
+#undef USE_WRAP_MEMSET
+
+#undef USE_WRAP_MEMMOVE
+
+#undef USE_SYSCALL_ASM
+
+#undef USE_ASSERT_LOOP

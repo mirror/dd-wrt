@@ -1,0 +1,759 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>Vstr documentation -- overview</title>
+
+    <style>
+      A:visited { color: #ff4040; }
+      A:hover { color: #20b2aa; }
+
+      P { text-indent: 1.5em; }
+
+      body { background: #FFF; color: #000; }
+
+      td.heading { background: #DDDDDD; }
+    </style>
+
+  </head>
+
+  <body bgcolor="#FFFFFF">
+
+    <table width="100%"><tr><td bgcolor="#DDFFDD">
+	  <h1>Vstr documentation -- overview</h1>
+	</td></tr></table>
+
+    <table width="90%"><tr><td bgcolor="#DDDDFF">
+	  <h2><a name="contents"></a>Contents</h2>
+	</td></tr></table>
+
+    <table width="80%">
+      <tr><td>
+	  <ul>
+	    <li> <a href="#download">Download</a> - A list of places and
+	      formats to download the library.
+	    </li>
+
+	    <li> <a href="#about">About</a> - A description of the
+	      library, and it's features, speed, testing, usability and
+	      standards compliance.
+	    </li>
+
+	    <li> <a href="http://www.freshmeat.net/projects/vstr/">subscription</a> - If you wish to subscribe to new releases, you should go here.
+	    </li>
+
+	    <li> <a href="tutorial">Tutorial</a> - A tutorial of how you
+	      can use the library, and it's features.
+	    </li>
+
+	    <li> <a href="cost_tutorial">Cost Tutorial</a> - A tutorial of
+	      the costs associated with the different interfaces for
+	      manipulating data.
+	    </li>
+
+	    <li> <a href="#testing">Testing</a> - A description of the
+	      testing done for the library.
+	    </li>
+
+	    <li> <a href="#debug">Debugging</a> - A description of how to
+	      debug code when using the library.
+	    </li>
+
+	    <li> <a href="comparison">String library comparison</a> -
+	      Other libraries, and how
+	      they compare in features, speed, usability etc.
+	    </li>
+
+	    <li> <a href="printf_comparison">printf() comparison</a> -
+	      Other implementations of printf(), and how they compare in standards
+	      compliance and ability to register custom formatters.
+	    </li>
+
+	    <li> <a href="security">security of string APIs</a> -
+	      The security argument for using a string library, also see
+	      <a href="security_problems">this page</a> which shows which
+	      security problems wouldn't have existed if the programers had
+	      used a real string API.
+	    </li>
+
+	    <li> <a href="speed">speed of string APIs</a> -
+	      An analysis of the assumption that a "real" string API has to be
+	      slower and use more memory than working directly with the
+	      strcpy()/memcpy() functions.
+	    </li>
+
+	    <li> <a href="#reference">API Reference</a> - The API reference
+	      documentation.
+	    </li>
+
+	    <li> <a href="#APItp">API layout</a> - An introduction to the API,
+	      how to think of it so you can easily use it.
+	    </li>
+
+	    <li> <a href="#reentrant">Reentrancy</a> - How to use the library
+	      API with threads and/or signals.
+	    </li>
+
+	    <li> <a href="#cust-fmt">Custom Formatters</a> - How to use the
+	      custom formatters ability of the printf() like function, while
+	      keeping warnings enabled in gcc, or similar static printf()
+	      checkers.
+	    </li>
+
+	    <li> <a href="#examples">Examples</a> - Programs using the API,
+	      some of which are heavily commented.
+	    </li>
+
+	    <li> <a href="COPYING.LIB">License</a> - The license that
+	      comes with the Vstr string library is the LGPL.
+	    </li>
+	  </ul>
+	</td></tr>
+    </table>
+
+<!-- Section -->
+
+<table width="90%"><tr><td bgcolor="#DDDDFF">
+	  <h2><a name="download"></a>Download Information</h2>
+	</td></tr></table>
+
+<table width="80%"><tr><td>
+	  <h2>Current version is 1.0.14</h2>
+	  <ul>
+            <li> Tar balls are available via.
+              <a href="ftp://ftp.and.org/pub/james/vstr/latest/">ftp</a> and
+              <a href="latest/"><b>http</b></a>.
+	    </li>
+            <li> An upto date <a href="http://www.phy.duke.edu/~rgb/General/yum_article/yum_article/yum_article.html">YUM</a> repository is available (containing only the non debug versions of the rpms)...<br>
+<pre>
+[and-org-james]
+name=And.org James' packages
+baseurl=ftp://ftp.and.org/yum/fc$releasever-james
+</pre>
+	      ...at which point you can just "yum install vstr".
+	    </li>
+            <li> I build RPMs for i386, they are available via.
+              <a href="ftp://ftp.and.org/pub/james/vstr/rpms/">ftp</a> and
+              <a href="rpms/"><b>http</b></a>. <br>
+	      <a href="http://rpm.pbone.net/index.php3/stat/15/pakman/1206/com/James%20Antill%20%3Cjames_and_org%3E.html">Pbone.net</a> seem to generate rpms for other architectures (although they are often older versions). <br>
+	      <a href="http://www.freshports.org/devel/vstr/">Freshports</a>
+	      seems to have at least a FreeBSD version.
+	    </li>
+            <li>If you want to look at the <b><a href="http://www.gnu.org/software/gnu-arch">arch</a> repository</b> that
+	      vstr is now developed in, then it is available using
+<pre>tla register-archive \
+    james@and.org--2004-code <a href="ftp://ftp.and.org/pub/james/ARCH-2004-code">ftp://ftp.and.org/pub/james/ARCH-2004-code</a>
+    tla get james@and.org--2004-code/vstr--main--1
+</pre>
+              <a href="BUGS">here</a>.
+	    </li>
+            <li> ChangeLog file can be found
+              <a href="ChangeLog">here</a>
+	    </li>
+            <li> NEWS file can be found
+              <a href="NEWS">here</a>
+	    </li>
+            <li> TODO file can be found
+              <a href="TODO">here</a>
+	    </li>
+            <li> BUGS file can be found
+              <a href="BUGS">here</a>
+	    </li>
+            <li> A set of gdb functions, to help with debugging, can be found
+              <a href="gdb_functions.txt">here</a>
+	    </li>
+	  </ul>
+</td></tr></table>
+
+<!-- Section -->
+
+    <table width="90%"><tr><td bgcolor="#DDDDFF">
+	  <h2><a name="about"></a>About</h2>
+	</td></tr></table>
+
+    <table width="80%"><tr><td>
+	  <p>
+	    Vstr is a string library, it's designed so you can work optimally
+	    with readv()/writev() for input/output. This means that, for
+	    instance, you can readv() data to the end of the string and
+	    writev() data from the beginning of the string without having to
+	    allocate or move memory. It also
+	    means that the library is completely happy with data that has
+	    multiple zero bytes in it.
+	  </p>
+	  <p>
+	    This design constraint means that unlike
+	    most string libraries Vstr doesn't have an internal representation
+	    of the string where everything can be accessed from a single
+	    (char *) pointer in C, the internal representation is of multiple
+	    "blocks" or nodes each carrying some of the data for the string.
+	    This model of representing the data also means that as a string gets
+	    bigger the Vstr memory usage only goes up linearly and has no
+	    inherent copying (due to other string libraries increasing space
+	    for the string via. realloc() the memory usage can be triple the
+            required size and require a complete copy of the string).
+	  </p>
+	  <p>
+	    It also means that adding, substituting or moving data anywhere in
+	    the string can be optimized a lot, to require O(1) copying instead
+	    of O(n).
+	    Speaking of O(1), it's worth remembering that if you have a
+	    Vstr string with caching it is O(1) to get all the data to the
+	    writev() system call (the cat example below shows an example of
+	    this, the write call is <emp>always constant time</emp>.
+	  </p>
+
+	  As well as having features directly related to doing IO well
+	  it contains functions for:
+	  <ul>
+	    <li> a printf like function that is fully ISO 9899:1999 (C99)
+	      compliant, also having %m as standard and POSIX i18n parameter
+	      number modifiers. It also allows gcc warning compatible customer
+	      format specifiers (and includes pre-written custom format
+	      specifiers for ipv4 and ipv6 addresses, Vstr strings and more)
+	    <li> splitting of strings into parameter/record chunks (a la perl).
+	    <li> substituting data in a Vstr string
+	    <li> moving data from one Vstr string to another (or within a Vstr
+	      string).
+	    <li> comparing strings (without regard for case, or taking into
+	      account version information)
+	    <li> searching for data in strings (with or without regard for
+	      case).
+	    <li> counting spans of data in a string (the equivalent of
+	      strspn() in ISO C).
+	    <li> converting data in a Vstr (Ie. delete/substitute unprintable
+	      characters or making a Vstr string lowercase/uppercase).
+	    <li> parsing data from a Vstr string (Ie. numbers, or ipv4
+	      addresses).
+	    <li> easily parsing and wrapping outgoing data in netstrings, for
+	      fast and simple (and hence less error prone) network communication
+	    <li> the ability to cache aspects of data about a Vstr string, to
+	      both simplify and speedup use of the string.
+	    <li> the ability to have empty data as part of the string, this
+	      is somewhat useful for representing file transfers as a string
+	      as you can represent the file data as empty data in the string.
+
+	  </ul>
+	  It also has a number of functions for exporting data from a
+	  Vstr string so you can easily use data generated with the Vstr
+	  outside of the library.
+
+	  <p>
+	    The other unusual aspect of the Vstr string library is that it
+	    attaches a notion of a locale to the string configuration
+	    and not globally (as POSIX, and pretty much everything else does).
+	    This means that you can do Network I/O in the C locale and
+	    user IO in the users locale.
+	  </p>
+
+	  <p>
+	    For a look at the internal design of the Vstr string library, you
+	    can read <a href="design">this</a>. For a look at the main
+	    security problems I wanted to solve you can read
+	    <a href="security">this</a>.
+	  </p>
+
+</td></tr>
+
+</table>
+
+<!-- Section -->
+
+<table width="90%"><tr><td bgcolor="#DDDDFF">
+	  <h2><a name="testing"></a>Testing</h2>
+	</td></tr></table>
+
+<table width="80%"><tr><td>
+	  <p>
+	    The Vstr string
+	    library comes with a "make check" test suite with almost
+	  <emp>twelve thousand lines</emp> of code in it.
+	  This is over a third of the size of the library itself, and more
+	  lines of code than some string library implementations.
+	</p><p>
+	    The test suite has at least one test for each function call, and
+	    at least one usage of each constant. This is automatically checked
+	    using the "scripts/tst_coverage_diff.sh" script included in the
+	    distribution (note that you need to compile without inline
+	    support, or inline functions won't be seen to be part of the test
+	    suite).
+	  </p><p>
+	    Using the coverage analysis available with gcc the test suite has
+	  <a href="coverage/"><b>coverage of 100% of the source</b></a>. Ie.
+	    every single line of code in the library is run by at least one
+	    unit test.
+	</p><p>
+	    Note that this still doesn't mean that there are no bugs in the
+	    code (you need a test for every code path, for that).
+	  </p>
+</td></tr>
+
+</table>
+
+<!-- Section -->
+
+<table width="90%"><tr><td bgcolor="#DDDDFF">
+	  <h2><a name="debug"></a>Debugging Vstr APIs</h2>
+	</td></tr></table>
+
+<table width="80%"><tr><td>
+	  <p>
+	    While I've tried to make the API simple enough that you don't have
+	    to do anything complicated to get things done, there might still be
+	    times when you do a bunch of calls that you aren't sure are ok
+	    or maybe you get some memory management wrong, and pass invalid/NULL
+	    pointers to the Vstr API functions. The easiest way to find out
+	    what is going wrong is to compile without inline support and with
+	    debug support (Eg. --enable-tst-noinline --enable-debug options
+	    to ./configure). Then as you call the functions almost all calls
+	    check input values for validity, and all calls that modify a Vstr
+	    will check the Vstr both
+	    before and after their operations. Finaly if you call vstr_exit()
+	    the number of memory allocations/deallocations and
+	    mmap()/munmap() operations will be counted and assert() calls will
+	    be raised if data hasn't been freed.
+	    NOTE: If you are using rpms, then there are already rpms for the
+	    debug build ... and they should be accepted as "newer" than the
+	    normal rpms so you can just install them while you develop.
+</p><p>
+	    As well as that, in all builds gcc attribute support is checked for
+	    the following attrbiutes nonnull, pure, const, format and malloc.
+	    the const and pure attributes let the optomiser do some things
+	    that can be supprising if you are trying to debug something
+	    (for example if you call vstr_cmp() and don't use the return
+	    value, gcc will never even do the call in the first place)
+	    ... so you need to watch for that.
+	    The nonnull attribute should catch errors if you obviously pass
+	    NULL pointers to function that don't take them, and the format
+	    attribute will catch errors in the calls to printf() like functions.
+	    However you may want to temporarily disable attributes due to the
+	    opomising problems (if so define VSTR_COMPILE_ATTRIBUTES to be 0
+	    before include the vstr.h header).
+	  </p>
+</td></tr>
+
+</table>
+
+<!-- Section -->
+
+<table width="90%"><tr><td bgcolor="#DDDDFF">
+	  <h2><a name="reference"></a>API Reference Documentation</h2>
+	</td></tr></table>
+
+<table width="80%"><tr><td><p>
+ All exported interfaces are documented, anything which isn't documented isn't
+guaranteed by the API or the ABI of the library ... so don't use it. There is a
+script as part of the distribution "scripts/diff_symbols.sh" which checks this.
+So I haven't just forgotten, if it isn't documented it's undefined what it does
+and it might change type signature or disappear completely.</p>
+<ul>
+<li>
+	  <a href="functions">functions</a> - List, and explanation,
+of all public functions exported by the Vstr string library. This is also
+available as a Unix man page.
+</li>
+<li>
+	  <a href="constants">constants</a> - List, and explanation,
+of all public constants exported by the Vstr string library. This is also
+available as a Unix man page.
+</li>
+<li>
+	  <a href="structs">structs</a> - List, and explanation,
+of all publicly readable or writable struct members exported by the
+Vstr string library.
+</li>
+<li>
+	  <a href="functions">namespace</a> - An explanation of
+the namespace used by the Vstr string library, anything export that is not
+in this namespace is a bug (so report it if you see it, but I don't think
+there is any).
+</li>
+</ul>
+</td></tr>
+
+</table>
+
+<!-- Section -->
+
+<table width="90%"><tr><td bgcolor="#DDDDFF">
+	  <h2><a name="APItp"></a>Mental model to the layout of the API</h2>
+	</td></tr></table>
+
+<table width="80%"><tr><td><p>
+
+ At first glace the Vstr API <b>looks huge</b> as there are over
+<b>Two hundred and eighty</b> functions. However the API was designed so
+that you can mentally build functions from an API template ... so
+instead of having to remember 280 functions you just need to remember
+10 to 20 pieces of the API template.
+
+</p><p>
+ Vstr functions try to obey a template where each part alternates between an
+object name and an action like...<br>
+ <br>
+&lt;namespace&gt; "_" &lt;verb&gt; <br>
+&lt;namespace&gt; "_" &lt;verb&gt; "_" &lt;noun&gt; <br>
+&lt;namespace&gt; "_" &lt;verb&gt; "_" &lt;noun&gt; "_" &lt;verb&gt; <br>
+ <br>
+...or...<br>
+ <br>
+&lt;namespace&gt; "_" &lt;noun&gt; <br>
+&lt;namespace&gt; "_" &lt;noun&gt; "_" &lt;verb&gt; <br>
+&lt;namespace&gt; "_" &lt;noun&gt; "_" &lt;verb&gt; "_" &lt;noun&gt; <br>
+ <br>
+...a good example is searching for data in a Vstr string, here is a list of the
+functions that you can use to search for data in a vstr...<br>
+ <br>
+ vstr_csrch_chrs_fwd() <br>
+ vstr_csrch_chrs_rev() <br>
+ vstr_csrch_cstr_chrs_fwd() <br>
+ vstr_csrch_cstr_chrs_rev() <br>
+ vstr_srch_buf_fwd() <br>
+ vstr_srch_buf_rev() <br>
+ vstr_srch_case_buf_fwd() <br>
+ vstr_srch_case_buf_rev() <br>
+ vstr_srch_case_chr_fwd() <br>
+ vstr_srch_case_chr_rev() <br>
+ vstr_srch_case_cstr_buf_fwd() <br>
+ vstr_srch_case_cstr_buf_rev() <br>
+ vstr_srch_case_vstr_fwd() <br>
+ vstr_srch_case_vstr_rev() <br>
+ vstr_srch_chr_fwd() <br>
+ vstr_srch_chr_rev() <br>
+ vstr_srch_chrs_fwd() <br>
+ vstr_srch_chrs_rev() <br>
+ vstr_srch_cstr_buf_fwd() <br>
+ vstr_srch_cstr_buf_rev() <br>
+ vstr_srch_cstr_chrs_fwd() <br>
+ vstr_srch_cstr_chrs_rev() <br>
+ vstr_srch_vstr_fwd() <br>
+ vstr_srch_vstr_rev() <br>
+
+ vstr_cspn_chrs_fwd() <br>
+ vstr_cspn_chrs_rev() <br>
+ vstr_cspn_cstr_chrs_fwd() <br>
+ vstr_cspn_cstr_chrs_rev() <br>
+ vstr_spn_chrs_fwd() <br>
+ vstr_spn_chrs_rev() <br>
+ vstr_spn_cstr_chrs_fwd() <br>
+ vstr_spn_cstr_chrs_rev() <br>
+ <br>
+...which is a <u>lot</u> of functions just to search for
+some data. However that can be broken up into... </p>
+
+<table>
+<tr>
+<td>&lt;namespace&gt;</td><td>&lt;verb&gt;</td><td>&lt;noun&gt;</td><td>&lt;verb&gt;</td>
+</tr>
+<tr><td>"vstr_"</td><td> cspn      </td><td> buf       </td><td> fwd </td></tr>
+<tr><td>       </td><td> csrch     </td><td> chr       </td><td> rev </td></tr>
+<tr><td>       </td><td> spn       </td><td> chrs      </td><td>     </td></tr>
+<tr><td>       </td><td> srch      </td><td> cstr_buf  </td><td>     </td></tr>
+<tr><td>       </td><td> srch_case </td><td> cstr_chrs </td><td>     </td></tr>
+<tr><td>       </td><td>           </td><td> vstr      </td><td>     </td></tr>
+</table>
+ <p>
+...which is much less information to remember. It is also consistent in that
+the same object names are used everywhere and are prefixed by cstr_ when
+they're length is assumed by looking for a NIL terminator.
+
+</p></td></tr>
+
+</table>
+
+<!-- Section -->
+
+<table width="90%"><tr><td bgcolor="#DDDDFF">
+	  <h2><a name="reentrant"></a>Threads and signals</h2>
+	</td></tr></table>
+
+<table width="80%"><tr><td><p>
+	    All operations are local to the object(s) they are manipulating,
+	    and no locking is done inside the library. Synchronization
+	    belongs <i>above</i> simple data type primitives like strings.
+	    Saying that if you want to use the Vstr string library from
+	    multiple threads,
+	    then everything should mostly <i>just work</i> if you have
+	    a separate Vstr configuration for each thread and operate on
+	    strings created
+	    by those configurations local to that thread. Using <a href="functions#vstr_conf_swap()">vstr_conf_swap()</a>
+	    you could have a pool of objects using Vstr strings and then
+	    localize them to a thread's configuration as you want to operate on
+	    those objects.
+	  </p><p>
+	    For all data that you wish to move between two Vstr strings that
+	    are "owned" by different threads you will need to do some higher
+	    level locking around the copying. One caveat is if you
+	    have a Vstr_ref node inside a Vstr string, and then copy that
+	    to a string owned by another thread (or do a VSTR_TYPE_ADD_BUF_REF
+	    or VSTR_TYPE_ADD_ALL_REF copy of any data) there will be unlocked
+	    reference counting on the Vstr_ref ... so basically you can't do
+	    that unless you <i>really</i> know what you are doing.
+	  </p><br><p>
+	    For Vstr string operations you wish to do from a signal handler,
+	    life is more complicated, unless you're using a malloc()
+	    implementation that is guaranteed to be reentrant safe
+	    (this is generally not the case, and not the same as a
+	    thread-safe malloc() ... as you can be inside malloc() when you get
+	    a signal).
+	    The obvious way to get around this is to pre-allocate enough storage
+	    in the Vstr configuration to be used in the signal handler, Ie. call
+	    <a href="functions#vstr_make_spare_nodes()">vstr_make_spare_nodes()</a>.
+	    If you absolutely need to use a Vstr string in a signal handler,
+	    that is also used outside a signal handler, you would need to block
+	    the signals it could be accessed in around each manipulation of it
+	    (or each access to it, if you manipulate it inside a signal
+	    handler). Yes, <b>this will be slow</b>, the solution is <b>do
+	      not do that</b>.
+	  </p><p>
+	    For most sane uses of signals, the only time you want to do things
+	    with strings in the handler is from the SIGSEGV handler, so you
+	    can create some debugging information etc. At which
+	    point you can probably just do it.
+</p></td></tr>
+
+</table>
+
+<!-- Section -->
+
+<table width="90%"><tr><td bgcolor="#DDDDFF">
+	  <h2><a name="cust-fmt"></a>Custom formatters</h2>
+	</td></tr></table>
+
+<table width="80%"><tr><td><p>
+	    If you want to write a number to a string in C, you would normally
+	    write code such as...</p>
+	  <pre>
+ sprintf(my_str, "%d", num);
+	  </pre>
+	<p>
+	  ...and to append the same to a Vstr string it's a simple API change to...
+	</p>
+	  <pre>
+<a href="functions#vstr_add_fmt()">vstr_add_fmt</a>(my_vstr, my_vstr->len, "%d", num);
+	  </pre>
+	<p>
+	  ...however if you want to write an IPv4 addres, a Vstr
+	  string or any other type that isn't in ISO 9899:1999 to a string
+	  you have to resort to doing to by hand. And if you want to format that
+	  output you have to either convert it to a C style string and use the
+	  "%s" option to the *printf() like function, or do all the formatting
+	  yourself. This is all pretty ugly, often unreliable, slow
+	  and takes significant programer resources.
+	</p><p>
+	    This is where custom formatters can help and give you back
+	    code clarity, reliability, speed and ease of use. Assuming you want
+	    to print an IPv4 address, then you can initialize
+	    the Vstr configuration like so...</p>
+	  <pre>
+<a href="functions#vstr_sc_fmt_add_all()">vstr_sc_fmt_add_all</a>(my_vstr->conf);
+<a href="functions#vstr_cntl_conf()">vstr_cntl_conf</a>(my_vstr->conf, VSTR_CNTL_CONF_SET_FMT_CHAR_ESC, '%');
+	  </pre>
+	  <p>...you then you can write...</p>
+	  <pre>
+struct sockaddr_in sa;
+struct in_addr ipv4;
+
+<a href="functions#vstr_add_fmt()">vstr_add_fmt</a>(my_vstr, my_vstr->len, "%-20{ipv4.p}", (void *)&ipv4);
+<a href="functions#vstr_add_fmt()">vstr_add_fmt</a>(my_vstr, my_vstr->len, "%*{ipv4.p}", 20,
+             (void *)&sa.sin_addr.s_addr);
+	  </pre>
+	  <p>...and to add the Vstr string you do...</p>
+	  <pre>
+<a href="functions#vstr_add_fmt()">vstr_add_fmt</a>(my_vstr, my_vstr->len, "%*.*{vstr}", 50, 50,
+             (void *)my_vstr, 1, my_vstr->len);
+	  </pre>
+	  <p>...all normal printf() like formatting options work, as you would
+	  expect them to including being able to use i18n format specifiers to
+	  easily change the orde4r of output for different locales.
+         <b>However</b> if you try the above, you'll note that all
+	  of the calls to <a href="functions#vstr_add_fmt()">vstr_add_fmt()</a>
+	  will produce warnings with gcc, because "%{" isn't the start of a
+	  valid formatting character under gcc's static printf() parsing rules.
+	  <b>This deficiency makes custom formatters as used above mostly useless</b>,
+          as you
+	  have to either turn warnings off for format strings (which is
+          basically insanity in C) or see at least one warning for every
+	  usage of a custom formatter.
+	  </p><p>
+	    To deal with this, the Vstr custom formatter code allows you to
+	    work around the static checkers by using the following
+	    initialization code...
+	  </p>
+	  <pre>
+<a href="functions#vstr_sc_fmt_add_all()">vstr_sc_fmt_add_all</a>(my_vstr->conf);
+<a href="functions#vstr_cntl_conf()">vstr_cntl_conf</a>(my_vstr->conf, VSTR_CNTL_CONF_SET_FMT_CHAR_ESC, '$');
+	  </pre>
+<p>
+	  ...you can then call the custom formatters, using code like...
+</p>
+	  <pre>
+struct sockaddr_in sa;
+struct in_addr ipv4;
+
+<a href="functions#vstr_add_fmt()">vstr_add_fmt</a>(my_vstr, my_vstr->len, "$-20{ipv4.p:%p}", (void *)&ipv4);
+<a href="functions#vstr_add_fmt()">vstr_add_fmt</a>(my_vstr, my_vstr->len, "$*{ipv4.p:%d%p}", 20,
+             (void *)&sa.sin_addr.s_addr);
+
+<a href="functions#vstr_add_fmt()">vstr_add_fmt</a>(my_vstr, my_vstr->len, "$*.*{vstr:%d%d%p%zu%zu%u}", 50, 50,
+             (void *)my_vstr, (size_t)1, my_vstr->len, VSTR_TYPE_ADD_DEF);
+	  </pre>
+	  <p>
+	  ...which although it isn't quite as nice as true support for
+          customer formating in static analyzers like gcc it does
+	  make sure that custom
+	  formatters will not do anything obviously stupid (without
+          producing spurious warnings) and provides
+          complete protection for non-custom formatter calls.
+	  <b>One final note</b> is that in all sane environments you don't
+	  need the cast to (void *), however it is "in theory" required to
+          be conforming ISO 9899:1999 C.
+	  </p><p>
+	    You may also want to look at the tutorial section on
+ <a href="tutorial#cust-fmt">creating custom formatters</a>.
+</p></td></tr>
+
+</table>
+
+<!-- Section -->
+
+<table width="90%"><tr><td bgcolor="#DDDDFF">
+	  <h2><a name="examples"></a>Simple and heavily commented examples</h2>
+	</td></tr></table>
+
+<table width="80%"><tr><td><p>
+
+ Note that some of these are explained in much more detail in the <a href="tutorial">tutorial</a>. To get a rough overview of how to use the library you
+can see the following <b>heavily commented</b> examples:</p>
+<ul>
+<li>
+<a href="examples/ex_hello_world.c">hello world</a> - A program
+that just does a "Hello World".
+</li>
+<li>
+<a href="examples/ex_cat.c">cat</a> - A program that just
+transfers information from stdin to stdout ... mmap() is never used.
+</li>
+<li>
+<a href="examples/ex_nl.c">nl</a> - This does something
+similar to the Unix "nl" program. Each input line is printed along with a
+number. This uses the split functions to get each line.
+</li>
+<li>
+<a href="examples/ex_hexdump.c">hexdump</a> - An ASCII
+hexdump utility, it prints in the "programmer" format of 16 bytes per line
+with Hex first, and then ASCII. High ASCII characters are printed, or not
+depending on a configuration. This also
+uses mmap() on the input files, if possible.
+</li>
+<li>
+<a href="examples/ex_lookup_ip.c">lookup_ip</a> -
+A program that will change a DNS domain name (Ie. www.and.org) into an IPv4
+address (or print an error). This uses the std. custom formatter for printing
+IPv4 addresses.
+</li>
+<li>
+<a href="examples/ex_gmp_factorials.c">gmp_factorials</a> -
+A program that will output each factorial leading upto a number supplied on
+the cmd line. This creates a custom formatter for printing GMP mpz_t variables.
+</li>
+</ul>
+
+<p>
+ To get a better understanding, there are other example programs which
+aren't as heavily commented but should show how you can solve certain
+problems. They are:</p>
+
+<ul>
+<li>
+<a href="examples/ex_rot13.c">rot13</a> - This does a
+rot13 transform (or Caesar cipher) on the input, and then outputs it. This shows
+the different methods you can use for iterating through a string. You can also
+use it to measure the differences between those methods.
+</li>
+<li>
+<a href="examples/ex_yes.c">yes</a> - This just
+shows text repeatedly, it does show the difference between the different
+methods of copying data between Vstr strings. You can use this program to
+measure those copying affects. One minor note is that it does allow you to use the string "--version" as the output ... which the GNU version doesn't (as of
+fileutils-2.0.12).
+</li>
+<li>
+<a href="examples/ex_csv.c">csv</a> - This is a csv parser
+I wrote for a thread on <a href="http://groups.google.com/groups?frame=right&rnum=31&thl=1073158423,1073070142,1072982584,1072441920,1072224867,1073014437,1072922046,1072792273,1072704301,1072628334,1072576581,1072221362&seekm=57b29eef.0305191804.518f8f67%40posting.google.com#link34">comp.lang.c</a>. I'll probably
+turn into a library function at some point, but for now it's useful on it's own.
+</li>
+<li>
+<a href="examples/ex_mon_cp.c">monitor copy</a> - This
+program will monitor a file as it gets bigger, and report Bytes per second etc.
+statistics. This is done through Vstr string custom formatter API calls, and
+should show how much simpler you can make your code using those features.
+</li>
+<li>
+<a href="examples/ex_slowcat.c">slowcat</a> (this also requires the
+<a href="http://www.and.org/timer_q/">Timer_q</a> library, and getopt_long) - This is like the cat program, except that you can specify a delay between blocks of output ... this is especially useful for ASCII art programs.
+</li>
+<li>
+<a href="examples/ex_highlight.c">C to html converter</a> - This program implements something similar to
+<a href="http://freshmeat.net/projects/highlight/"></a>, but just for C,
+this is used to turn the tutorial examples into html.
+</li>
+<li>
+<a href="examples/ex_ssi.c">Simple Server Side Includes processor</a> - This program implements something similar to Apache httpd SSI,
+but it only does the include statement. I use this to generate some
+documentation.
+</li>
+<li>
+<a href="examples/ex_httpd.c">HTTP/1.1 server</a> - Serves static files over HTTP/1.1, this shows off Vstr how it was designed to be used ... as a non-blocking IO server.
+</li>
+<li>
+<a href="examples/ex_perf_sgopenssl.c">Scatter gather comparison</a> (this also requires the
+<a href="http://www.openssl.org/">OpenSSL</a> library) - This program times
+the usage of the MD5 or SHA1 functions from OpenSSL, with a all of: A single chunk of data, an iovec list of the data at the default buffer size, and
+an iovec list of the data at a configured buffer size. This was written to
+disprove the theory that iovec lists are always too slow to use, I believe I
+did this, assuming you have a chunk size that isn't tiny (and the default chunk
+size is probably good enough).
+</li>
+<li>
+<a href="examples/ex_perf_add.c">Adding data to Vstr comparison</a> - This
+program times the overhead of adding data to a Vstr, in a few different ways.
+Note that the hand optimized way depends on internals that aren't guaranteed by
+the API, however the hand iovec method is basically as fast and only uses the
+documented API (this isn't surprising in my opinion, as the library was
+designed with the idea that the performance critical data would be comming in
+through iovecs).
+</li>
+</ul>
+
+<p> All of the examples can be seen <a href="examples/">HERE</a>.
+</p>
+
+<p>
+ For the truly adventurous the "make check" test suite root
+is <a href="vstr-latest/vstr/tst/">HERE</a>
+(<b>NOTE:</b> the test suite is written to try and break the Vstr string
+library, so although it uses all of the APIs it may not be code you want to
+copy and paste into your programs/libraries --  however given that everything in
+the test suite works, you know that those uses do work). However do note that
+a couple of the tests do use undocumentation members of structs etc., and you
+still shouldn't use those.
+</p><p>
+ There is also a <i>"port"</i> of the
+<a href="http://freshmeat.net/projects/vsftpd/">vsftpd</a> FTP server to
+use the Vstr string library. It can be found
+<a href="ftp://ftp.and.org/pub/james/vstr/apps/and-vsftpd/">here</a>. This was
+mainly an experiment in how well/easily Vstr would work inside an application
+designed for a traditional String API model.
+
+</p></td></tr>
+
+</table>
+
+    <hr>
+    <address><a href="mailto:james-web@and.org">James Antill</a></address>
+<!-- Created: Sun Oct 14 20:53:50 EDT 2001 -->
+<!-- hhmts start -->
+Last modified: Sat Oct 15 20:44:11 EDT 2005
+<!-- hhmts end -->
+  </body>
+</html>

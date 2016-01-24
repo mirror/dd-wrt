@@ -1,0 +1,132 @@
+#! /bin/bash
+#
+# jhttpd          Start/Stop a http daemon.
+#
+# chkconfig: 345 90 60
+# description: jhttpd is a simple http/1.0 server
+# processname: jhttpd
+# pidfile: /var/run/jhttpd1.pid
+#
+### BEGIN INIT INFO
+# Provides: jhttpd
+# Required-Start: $local_fs $named $network $remote_fs $syslog $time
+# Required-Stop:
+# Default-Start: 2 3 4 5
+# Default-Stop: 0 1 6
+# Short-Description: A fast, secure and configurable HTTP/1.1 server
+# Description: jhttpd is currently only a URL to file mapping daemon,
+#              in other words in can take an incomming URL and map it
+#              to a file in a number of ways. However it cannot do CGI
+#              or anything like apache-httpd mod_python etc. ... it cannot
+#              even dynamically create directory listings.
+### END INIT INFO
+
+# Source function library.
+. /etc/init.d/functions
+
+# Needed to resolve sbindir ... *sigh*
+prefix="/usr/local"
+exec_prefix="${prefix}"
+localstatedir="${prefix}/var"
+
+prog_name=jhttpd
+prog_exe="${exec_prefix}/sbin/${prog_name}"
+
+cntl_exe="${exec_prefix}/sbin/jcntl"
+
+MIME_EXTRAS_FILE="${exec_prefix}/lib/vstr-1.0.15/examples/data/mime_types_extra.txt"
+
+FILE_BASE="${localstatedir}/run/${prog_name}"
+CNTL_FILE="${FILE_BASE}.cntl"
+PID_FILE="${FILE_BASE}.pid"
+
+JHTTPD_ARGS='--configuration-file /etc/jhttpd/jhttpd.conf'
+[ -r /etc/sysconfig/jhttpd ] && . /etc/sysconfig/jhttpd
+
+GLOB_I_ARGS="--daemon --mime-types-xtra $MIME_EXTRAS_FILE"
+
+function start()
+{
+        I_ARGS="${GLOB_I_ARGS} --cntl-file ${CNTL_FILE} --pid-file ${PID_FILE}"
+        echo -n $"Starting $prog_name: "
+        daemon --check $prog_name $prog_exe $I_ARGS $JHTTPD_ARGS
+        RETVAL=$?
+	echo
+        [ $RETVAL -eq 0 ] && touch /var/lock/subsys/$prog_name
+        return $RETVAL
+}
+
+function stop()
+{
+        echo -n $"Shutting down $prog_name: "
+        killproc $prog_name
+        RETVAL=$?
+        echo
+        [ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/$prog_name
+        return $RETVAL
+}
+
+function softstop()
+{
+        echo -n $"Soft shutdown $prog_name: "
+        $cntl_exe $CNTL_FILE -e close > /dev/null
+        RETVAL=$?
+        [ $RETVAL -eq 0 ] && success $"$prog_name soft shutdown" || \
+	     failure $"$prog_name soft shutdown"
+        [ $RETVAL -eq 0 ] && rm -- "${PID_FILE}"
+        echo
+        [ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/$prog_name
+        return $RETVAL
+}
+
+function restart()
+{
+        stop; start;
+}
+
+function softrestart()
+{
+        softstop; start;
+}
+
+function statuses()
+{
+        status $prog_name $i
+        RETVAL=$?
+        [ $RETVAL -eq 0 ] && $cntl_exe $CNTL_FILE -e status
+}
+
+case "$1" in
+  start)
+        start
+        ;;
+  stop)
+        stop
+        ;;
+  restart)
+        restart
+        ;;
+  softstop)
+        softstop
+        ;;
+  softrestart)
+        softrestart
+        ;;
+  graceful)
+        softstop
+        ;;
+  reload)
+        softrestart
+        ;;
+  status)
+        statuses
+        ;;
+  condrestart)
+        [ -f /var/lock/subsys/${prog_name} ] && softrestart || :
+        ;;
+  *)
+	echo $"Usage: $0 {start|stop|restart|softstop|softrestart|reload|status|condrestart}"
+        exit 1
+esac
+                                                                             
+exit $?

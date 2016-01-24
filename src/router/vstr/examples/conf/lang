@@ -1,0 +1,4 @@
+(org.and.jhttpd-conf-req-1.0
+  (negotiate-content-type     (text/plain .txt) (text/html .html))
+  (negotiate-content-language (en-gb      .en)  (fr        .fr))
+  (filename (+= <content-language-extension> <content-type-extension>)))

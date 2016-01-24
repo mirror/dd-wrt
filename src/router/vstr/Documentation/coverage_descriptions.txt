@@ -1,0 +1,10 @@
+tst_add_buf
+	Program showing adding _BUF type data to a Vstr (copying)
+
+tst_add_ptr
+	Program showing adding _PTR type data to a Vstr (simple reference)
+
+tst_add_ref
+	Program showing adding _REF type data to a Vstr (counted reference,
+	with cleanup handler)
+

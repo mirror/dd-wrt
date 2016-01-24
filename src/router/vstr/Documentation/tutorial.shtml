@@ -1,0 +1,555 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <title>Tutorial</title>
+
+<!--#include file="style.shtml" -->
+
+  </head>
+
+  <body>
+    <h1>Tutorial</h1>
+
+<p>
+ <a href="overview">Vstr</a> is a string library designed to work
+easily and efficiently in network applications. This means that it is
+<a href="design"> designed </a>
+to perform IO operations in a non-blocking fashion, and allow the programer to
+take data from various places and join them in an IO operation without having
+to do any copies.
+</p>
+
+<p>
+ Often IO primitives are assumed to be blocking (Ie. all possible data will be
+done before IO operation completes). This does make "Hello World" type
+applications somewhat simpler, however networked applications have different
+requirements. However, don't be detered functions will be introduced for those
+simple applications to make them more readable.
+</p>
+
+<p>
+ Also note that <b>all error checking</b> is included in every example, it may
+make the examples somewhat easier to read if it wasn't included ... however
+including error checking is what the code <i>must</i> look like in a real
+application.
+</p>
+
+<ul>
+<li><a href="#hw_s">Hello World</a>: The Simplest Hello World example. </li>
+<li><a href="#hw_h">Hello World - Header</a>: Header for Simple IO functions in the hello world examples. </li>
+<li><a href="#hw_s2">Hello World - Revistited</a>: The Simple Hello World examples, now using the <a href="#hw_h">header</a>. </li>
+<li><a href="#hw_m">Hello World - With multiple points of data</a>: This still outputs Hello World, but is now a little more real by having multiple sources for the data. </li>
+<li><a href="#hw_x">Hello World - Complicated</a>: This still outputs Hello World, but uses copies of data; substitution of one set of data for another; and Vstr_references. </li>
+<li><a href="#ex_h">Example Header</a>: The original header from Hello World, with the extra simple functions needed for working with simple non-blocking IO both reading and writing. </li>
+<li><a href="#ex_cat">Unix cat</a>: An example of a simple Unix cat command. </li>
+<li><a href="#ex_nl">Unix nl</a>: A example of a simple Unix nl command. </li>
+<li><a href="#ex_hexdump">Unix hexdump</a>: An example of a simple Unix hexdump command. </li>
+<li><a href="#ex_lookup_ip">Unix lookup_ip</a>: An example of a simple program to lookup an ip address (simple custom formatter example). </li>
+<li><a href="#ex_gmp_factorials">factorials</a>: Using GMP and custom
+formatters, a real life example of creating your own custom formatters and
+the benifits of doing so. </li>
+<li><a href="overview#examples">Other examples</a>: Other examples. </li>
+<li><a href="#cstrvstr">Convertion table</a>: From std. C functions to Vstr functions. </li>
+<li><a href="#cppstrvstr">Convertion table</a>: From std. C++ std::string functions to Vstr functions. </li>
+</ul>
+
+<a class="anchor" id="hw_s">
+<h2> Simplest Hello World </h2>
+</a>
+<p> Here is about the most simple Vstr application, this is a single function
+that prints "Hello World" on a single line in a POSIX environment...</p>
+
+<!--#exec cmd="ex_highlight ../examples/ex_hello_world.c"-->
+<span class="lastmod">Last modified: <!--#flastmod file="../examples/ex_hello_world.c" --></p>
+
+<p>
+...however this example is somewhat too simplistic because, normally, a Vstr
+string contains multiple nodes of informtion that are treated internally as a
+single entity.
+</p>
+
+<a class="anchor" id="hw_h">
+<h2> Hello World Header </h2>
+</a>
+
+<p>
+ So first we'll clean up the above example to move all the header inclusion into one file and create some helper functions to simplify the actually "hello world" code. Here's a quick overview of the functions moved into the header file...
+</p>
+
+<ul>
+<li><b>io_put</b>: This function will move data from a Vstr string to a file
+descriptor (doesn't work well with non-blocking mode file descriptors).</li>
+<li><b>hw_init</b>: This initializes the library and creates a Vstr string objects.</li>
+<li><b>hw_exit</b>: This does cleanup on the resources aquired in hw_init.</li>
+</ul>
+
+<!-- #exec cmd="ex_highlight ../examples/ex_hello_world.h"-->
+<blockquote>
+This example is available 
+<a href="examples/ex_hello_world.h">here</a>
+(<!--#fsize file="../examples/ex_hello_world.h" -->,
+<span class="lastmod">Last modified: <!--#flastmod file="../examples/ex_hello_world.h" --></span>).
+</blockquote>
+
+<a class="anchor" id="hw_s2">
+<h2> Simple Hello World, using the helper functions </h2>
+</a>
+
+<p>
+ Now using the above header file, we can re-write the initial example in a much more readable form...
+</p>
+
+<!--#exec cmd="ex_highlight ../examples/ex_hello_world_s.c"-->
+<span class="lastmod">Last modified: <!--#flastmod file="../examples/ex_hello_world_s.c" --></span>
+
+<a class="anchor" id="hw_m">
+<h2> Hello World, using multiple sources of data </h2>
+</a>
+
+<p>
+ We can now alter the above to still
+print "Hello World" on a line, but have the data come from multiple sources
+which is then stored internally in mutliple nodes (remember there is no copying
+of data still). However can treat this all as a single string from our point of
+view. Although this example is obviously contrived, this is much more
+representative of what a networked application looks like...
+</p>
+
+<!--#exec cmd="ex_highlight ../examples/ex_hello_world_m.c"-->
+<span class="lastmod">Last modified: <!--#flastmod file="../examples/ex_hello_world_m.c" --></span>
+
+<a class="anchor" id="hw_x">
+<h2> Complicated Hello World </h2>
+</a>
+
+<p>
+ This is the final Hello World example, this is the first one that actually
+copies some of the data for the string. It also shows how you can add data at
+any point in the string, and substitute data within the string. Note that when
+giving the position to add data to the string you give the position before the
+position you wish the start of the data to be at, and when giving the
+position/length for a section (or sub-string) the position given is
+included within the section.
+</p><p>
+ For people familiar with C++ this works out to be the
+same way that C++ std::string encodes positions for adding data
+(Ie. insert()), but not for getting sections (C++ often explains it as having
+a 0 index'd string and data is added before the point given, Vstr does uses a
+1 poition for the first byte as that means that appending data is always done
+at the current length ... and a position of 0 can be used as invalid for
+searching etc.).
+</p>
+
+<table class="conv">
+<tr class="heading"><td>Description of operation</td><td>Position</td><td>Legnth</td></tr>
+<tr class="r1"><td>Prepend data to X</td><td>0 (Zero)</td><td>N/A</td></tr>
+<tr class="r2"><td>Append data to X</td><td>X-&gt;len (Length of Vstr string)</td><td>N/A</td></tr>
+<tr class="r1"><td>Last byte</td><td>X-&gt;len (Length of Vstr string)</td><td>1 (One)</td></tr>
+<tr class="r2"><td>First byte</td><td>1 (One)</td><td>1 (One)</td></tr>
+<tr class="r1"><td>Entire Vstr string</td><td>1 (One)</td><td>X-&gt;len (Length of Vstr string)</td></tr>
+<tr class="r2"><td>All of X, but the first and last bytes</td><td>2 (Two)</td><td>X-&gt;len - 2 (Length of Vstr string minus Two)</td></tr>
+</table>
+
+<!--#exec cmd="ex_highlight ../examples/ex_hello_world_x.c"-->
+<span class="lastmod">Last modified: <!--#flastmod file="../examples/ex_hello_world_x.c" --></span>
+
+<hr>
+
+<a class="anchor" id="ex_h">
+<h2> IO header file </h2>
+</a>
+
+<p>
+ This is a full header file needed to do simple non-blocking IO operations, it
+also puts into functions the common init and exit sections. This will be used
+by all of the following examples. The Simple GETOPT implementation isn't used
+for a while, so you can ignore that for now. A quick overview of the
+<b>changes</b> from the hello_world.h header file are...
+</p>
+
+<ul>
+<li><b>io_put</b>: This can now work with non-blocking file descriptors.</li>
+<li><b>ex_init</b>: (renamed hw_init) This now alters the Node size to be
+more efficient for IO,
+can create another Vstr string object, will create some data storage space for
+use by either Vstr string object and sets standard output to be
+non-blocking (allowing us to block on input and output at the same time).</li>
+<li><b>ex_exit</b>: (renamed hw_init) This can now cleanup two Vstr string
+objects.</li>
+</ul>
+
+<p>
+ And a quick review of the <b>additions</b>...
+</p>
+
+<ul>
+<li><b>io_block</b>: This is how applications block, now that all IO should be in non-blocking mode. This API only allows a single input and single output source to be blocked on, which is fine for the following examples (but networked applications will often wish to block on many sources).</li>
+<li><b>io_put_all</b>: This can thought of as a blocking io_put(), even when dealing with non-blocking IO.</li>
+<li><b>io_get</b>: This is a non-blocking read wrapper, in the same way that io_put is a non-blocking write wrapper.</li>
+<li><b>io_limit</b>: This is calls io_block if the return values from both io_get and io_put are IO_BLOCK or either one is in the IO_BLOCK state and must be dealt with now.</li>
+<li><b>io_fd_set_o_nonblock</b>: This is a simple function to set the O_NONBLOCK flag on a file descriptor.</li>
+<li><b>io_open</b>: This is a simple function to open a file, and set the O_NONBLOCK flag on it (note that although real files tend not to honour the O_NONBLOCK flag, file system objects might not be files).</li>
+</ul>
+
+<!-- #exec cmd="ex_highlight ../examples/ex_utils.h"-->
+<blockquote>
+This example is available 
+<a href="examples/ex_utils.h">here</a>
+(<!--#fsize file="../examples/ex_utils.h" -->,
+<span class="lastmod">Last modified: <!--#flastmod file="../examples/ex_utils.h" --></span>).
+</blockquote>
+
+<hr>
+
+<a class="anchor" id="ex_cat">
+<h2> Unix cat command </h2>
+</a>
+
+<p>
+ This is the unix cat command, implemented with the help of the functions in
+the above ex_utils.h header file. This uses the same Vstr string for both
+input and output and uses non-blocking IO, both of which are done for
+efficiency.
+</p><p>
+If you have seen something like the
+<a href="http://people.redhat.com/johnsonm/lad/src/cat.c.html">"simple" cat in LAD</a> this version <b>looks much bigger</b>.
+ However one of the main reasons for this is that the
+<b>LAD version has many bugs</b>.
+ The main problem is the lack of checking on
+the IO calls, this is most easily demonstrated by running it
+like so...
+</p>
+
+<pre>
+perl -e 'use Fcntl; fcntl(STDIN, F_SETFL, O_NONBLOCK); exec(@ARGV);' ./cat
+</pre>
+
+<p>
+...will cause the LAD version to exit immediatley due to an EAGAIN being
+returned from read. This problem also affects the LAD version being used in a
+blocking pipe due to the fact that write() isn't required to write() all
+it's data.
+</p><p>
+The LAD version also doesn't open() any files, which is significant
+functionality. So after fixing those bugs we
+<a href="basic_cat.c">get something</a> that
+is much closer to 
+the Vstr version <b>and it still suffers from performance problems</b>
+due to the need to
+block on input and output separately. It is possible to create a version using read, write and poll that would perform the same as the Vstr version ...
+however even the simplest method would have to implement it's own ring buffer
+which is very prone to error and would almost certainly make it bigger than
+ex_cat.c and ex_utils.h combined.
+</p>
+
+<!--#exec cmd="ex_highlight ../examples/ex_cat.c"-->
+<span class="lastmod">Last modified:  <!--#flastmod file="../examples/ex_cat.c" --></span>
+
+<hr>
+
+<a class="anchor" id="ex_nl">
+<h2> Unix nl command </h2>
+</a>
+
+<p>
+ This is somewhat like the "nl" unix command, this is implemented in much the
+same way as the cat command. However the data has to have something added to
+the start of each line before it can be output, so we now have two string
+objects: One for input and one for output. <b>Note</b> that as the data is
+"moved" from the input to the output string object, it isn't copied instead
+a reference is created and shared between the two strings.
+</p>
+
+<!-- #exec cmd="ex_highlight ../examples/ex_nl.c"-->
+<blockquote>
+This example is available <a href="examples/ex_nl.c">here</a>
+(<!--#fsize file="../examples/ex_nl.c" -->,
+<span class="lastmod">Last modified: <!--#flastmod file="../examples/ex_nl.c" --></span>).
+</blockquote>
+
+<hr>
+
+
+<a class="anchor" id="ex_hexdump">
+<h2> Unix simple hexdump command </h2>
+</a>
+
+<p>
+ This is somewhat like the "hexdump" unix command, it also uses the same simple
+IO model used in the cat and nl commands. However the data is now output twice
+once as hex values, and a second time as characters (converting unprintable
+characters into '.' characters). So again we have two string
+objects: One for input and one for output. To get two copies of the data, we
+initially export the data to a buffer and then convert that to hex via
+vstr_add_fmt() (the printf like function). We then convert the data that is
+still in the string object so it is printable and move it from the input to the
+output string objcet. <b>Note</b> that as the data is
+"moved" from the input to the output string object, it is always copied even
+if it was a reference on input (Ie. mmap()ed).
+</p>
+<p>
+ One other thing that is new in the hexdump command is the use of the
+<a href="functions#VSTR_FLAGXX()">VSTR_FLAGXX()</a> macro fucntion, this
+is a convienience feature for when you need to specify multiple flags at once.
+</p>
+
+<!-- #exec cmd="ex_highlight ../examples/ex_hexdump.c"-->
+
+<blockquote>
+This example is available <a href="examples/ex_hexdump.c">here</a>
+(<!--#fsize file="../examples/ex_hexdump.c" -->,
+<span class="lastmod">Last modified: <!--#flastmod file="../examples/ex_hexdump.c" --></span>).
+</blockquote>
+<hr>
+
+<a class="anchor" id="cust-fmt">
+<a class="anchor" id="ex_lookup_ip">
+<h2> Lookup a hostname and print the IP, a simple custom formatter example </h2>
+</a>
+</a>
+
+<p>
+ <a href="overview#cust-fmt">Custom formatters</a> are an exteremly useful
+feature of the Vstr string library, allowing you to safely implement one or
+more methods of printing a pointer to an arbitrary object. The most
+simple uses are to use the builtin custom formatters.
+This examples shows how you enable the IPv4 and Vstr custom formatters and
+then use how you can use them.
+</p>
+
+<p>
+ This example also includes
+<a href="functions#vstr_sc_basename()">vstr_sc_basename()</a> which acts
+in a similar way to the POSIX basename function.
+</p>
+
+<!-- #exec cmd="ex_highlight ../examples/ex_lookup_ip.c"-->
+<blockquote>
+This example is available <a href="examples/ex_lookup_ip.c">here</a>
+(<!--#fsize file="../examples/ex_lookup_ip.c" -->,
+<span class="lastmod">Last modified: <!--#flastmod file="../examples/ex_lookup_ip.c" --></span>).
+
+
+</blockquote>
+
+
+<hr>
+
+<a class="anchor" id="ex_gmp_factorials">
+<h2> Factorials, GMP MPZ variables with custom formatters  </h2>
+</a>
+
+<p>
+  So, printing ipv4 address is nice ... but the big benifit, with custom
+formatters, come with using them on types that you have to deal with a lot. This
+usually means types that you've defined yourself, or are defined in a library
+you are using.
+So this example will show you how to create your own custom formatters.
+ I'll use the
+ <a href="http://www.gnu.org/manual/gmp/">GNU multiple precision arithmetic library</a>
+which is a well used library for creating arbitrary precision numbers
+(Ie. numbers that can represent any value). One of the annoying features of
+using this library is that it is non-trivial to easily turn these numbers into
+strings and/or output them as you would with a normal
+int/long/size_t/intmax_t/etc.
+</p>
+
+<p>
+  The GMP library has a set of
+<a href="http://www.gnu.org/manual/gmp/html_mono/gmp.html#Formatted%20Output%20Strings">printf like functions</a>,
+ and while you can create a limited length string, newly allocated string or
+create output to a file using these functions they fail the "Easy" test for a
+number of reasons...
+</p>
+
+<ul>
+<li><p>It is not possible to use the grouping format specifier with
+the GNU MP variables. This means that when running under Linux/glibc, while...
+</p>
+
+<!--#exec cmd="ex_highlight tut/mpz1.c" -->
+
+<p>
+...creates a C style string for the number in a readable format for the locale,
+the GNU MP variable equvilent...
+</p>
+
+<!--#exec cmd="ex_highlight tut/mpz2.c" -->
+
+<p>
+...doesn't do anything other than create the number.
+</p>
+ </li>
+
+<li><p>Any <b>static printf</b> like function format specifier
+<b>checking has to be disabled</b> for these functions due to the way
+the hard coded custom formaters are implemented. This means that although
+if you do...
+</p>
+
+<!--#exec cmd="ex_highlight tut/mpz3.c" -->
+
+<p>
+...gcc will tell you there is an error, when you do...
+</p>
+
+<!--#exec cmd="ex_highlight tut/mpz4.c" -->
+
+<p>
+...the code will happily compile, and then almost certainly crash when you
+run it.
+</p>
+ </li>
+
+<li><p>You also lose all of the great benifits of using
+<b>vstr_add_fmt()</b>, the biggest problem here is that the gmp printf like
+functions pass all non gmp types directly to the underlying snprintf/etc.
+call. Although the extra speed/memory benifits of Vstr are nice too :).</p></li>
+
+<li><p>Even <b>if</b> all of these problems were fixed in some future version,
+this still only solves the problem for GMP types. So if you have one or more
+other custom types that you need to format, you'd need yet another function.</p></li>
+</ul>
+
+<p>
+  The custom formatter for mpz_t is about 25 lines of code in this example,
+it could be a little less if you removed some features
+(Ie. supporting positive or negative values) or always got libgmp to
+allocate storage and then free it (or if some libgmp APIs were defined in a more
+user friendly manner).
+</p>
+<p>
+ However the actual complexity is pretty small, and this not only fully
+implements everything that gmp_printf() can do for that variable (safely),
+but <b>also implements grouping</b>.
+</p>
+
+<!-- #exec cmd="ex_highlight ../examples/ex_gmp_factorials.c"-->
+<blockquote>
+This example is available <a href="examples/ex_gmp_factorials.c">here</a>
+(<!--#fsize file="../examples/ex_gmp_factorials.c" -->,
+<span class="lastmod">Last modified: <!--#flastmod file="../examples/ex_gmp_factorials.c" --></span>).
+</blockquote>
+
+<p>
+  The above implements the equivalent of "%d", however with a couple of
+1 line changes "%x" and "%o" can be done (and they can be signed, if desired).
+For instance, here is just the custom formatter callback code to implement all
+three...
+</p>
+
+<!-- #exec cmd="ex_highlight ../examples/ex_gmp_nums.c"-->
+<blockquote>
+This example is available 
+<a href="examples/ex_gmp_nums.c">here</a>
+(<!--#fsize file="../examples/ex_gmp_nums.c" -->,
+<span class="lastmod">Last modified: <!--#flastmod file="../examples/ex_gmp_nums.c" --></span>).
+</blockquote>
+
+<hr>
+
+<a class="anchor" id="cstrvstr">
+<h2> Convertion table for C functions to Vstr functions </h2>
+</a>
+
+<p>
+ This is a mapping from std. C functions operating on C-style strings to
+Vstr string functions...
+</p>
+
+<table class="conv">
+<tr class="heading"><td>Common C string functions</td><td>Vstr string functions</td></tr>
+<tr class="r1"><td>memcpy</td><td>vstr_add_buf</td></tr>
+<tr class="r2"><td>memmove</td><td>vstr_add_vstr</td></tr>
+<tr class="r1"><td>memmove</td><td>vstr_sub_vstr</td></tr>
+<tr class="r2"><td>memmove</td><td>vstr_mov</td></tr>
+<tr class="r1"><td>strcpy</td><td>vstr_add_cstr_buf</td></tr>
+<tr class="r2"><td>strncpy</td><td>vstr_add_cstr_buf</td></tr>
+<tr class="r1"><td>strcat</td><td>vstr_add_cstr_buf</td></tr>
+<tr class="r2"><td>strncat</td><td>vstr_add_cstr_buf</td></tr>
+<tr class="r1"><td>memcmp</td><td>vstr_cmp_buf</td></tr>
+<tr class="r2"><td>strcmp</td><td>vstr_cmp_cstr_buf</td></tr>
+<tr class="r1"><td>strcmp</td><td>vstr_cmp</td></tr>
+<tr class="r2"><td>strncmp</td><td>vstr_cmp_buf</td></tr>
+<tr class="r1"><td>strncmp</td><td>vstr_cmp</td></tr>
+<tr class="r2"><td>strcasecmp</td><td>vstr_cmp_case_cstr_buf</td></tr>
+<tr class="r1"><td>strcasecmp</td><td>vstr_cmp_case</td></tr>
+<tr class="r2"><td>strncasecmp</td><td>vstr_cmp_case_buf</td></tr>
+<tr class="r1"><td>strncasecmp</td><td>vstr_cmp_case</td></tr>
+<tr class="r2"><td>strncmp</td><td>vstr_cmp_cstr_buf</td></tr>
+<tr class="r1"><td>strcoll</td><td>N/A</td></tr>
+<tr class="r2"><td>strxfrm</td><td>N/A</td></tr>
+<tr class="r1"><td>memchr</td><td>vstr_srch_chr_fwd</td></tr>
+<tr class="r2"><td>strchr</td><td>vstr_srch_chr_fwd</td></tr>
+<tr class="r1"><td>strnchr</td><td>vstr_srch_chr_fwd</td></tr>
+<tr class="r2"><td>strrchr</td><td>vstr_srch_chr_rev</td></tr>
+<tr class="r1"><td>strtok</td><td>vstr_split_chrs</td></tr>
+<tr class="r2"><td>memset</td><td>vstr_add_rep_chr</td></tr>
+<tr class="r1"><td>memmem</td><td>vstr_srch_buf_fwd</td></tr>
+<tr class="r2"><td>strstr</td><td>vstr_srch_cstr_buf_fwd</td></tr>
+<tr class="r1"><td>strspn</td><td>vstr_spn_chrs_buf_fwd</td></tr>
+<tr class="r2"><td>strcspn</td><td>vstr_cspn_chrs_buf_fwd</td></tr>
+<tr class="r1"><td>sprintf</td><td>vstr_add_sysfmt</td></tr>
+<tr class="r2"><td>strlen</td><td>-&gt;len (member variable, also always passed to functions)</td></tr>
+</table>
+
+<a class="anchor" id="cppstrvstr">
+<h2> Convertion table for C++ std::string functions to Vstr functions </h2>
+</a>
+
+<p>
+ This is a mapping from C++ std::string functions to Vstr string functions...
+</p>
+
+<table class="conv">
+<tr class="heading"><td>Common C++ string functions</td><td>Vstr string functions</td></tr>
+<tr class="r1"><td>append</td><td>vstr_add_buf</td></tr>
+<tr class="r2"><td>append</td><td>vstr_add_rep_chr</td></tr>
+<tr class="r1"><td>append</td><td>vstr_add_vstr</td></tr>
+<tr class="r2"><td>insert</td><td>vstr_add_buf</td></tr>
+<tr class="r1"><td>insert</td><td>vstr_add_rep_chr</td></tr>
+<tr class="r2"><td>insert</td><td>vstr_add_vstr</td></tr>
+<tr class="r1"><td>replace</td><td>vstr_sub_buf</td></tr>
+<tr class="r2"><td>replace</td><td>vstr_sub_rep_chr</td></tr>
+<tr class="r1"><td>replace</td><td>vstr_sub_vstr</td></tr>
+<tr class="r2"><td>substr</td><td>Fundamental part of Vstr</td></tr>
+<tr class="r1"><td>find</td><td>vstr_srch_cstr_buf_fwd</td></tr>
+<tr class="r2"><td>find</td><td>vstr_srch_buf_fwd</td></tr>
+<tr class="r1"><td>find</td><td>vstr_srch_chr_fwd</td></tr>
+<tr class="r2"><td>find</td><td>vstr_srch_vstr_fwd</td></tr>
+<tr class="r1"><td>find_first_of</td><td>vstr_srch_cstr_chrs_fwd</td></tr>
+<tr class="r2"><td>find_last_of</td><td>vstr_srch_cstr_chrs_rev</td></tr>
+<tr class="r1"><td>find_first_not_of</td><td>vstr_csrch_cstr_chrs_fwd</td></tr>
+<tr class="r2"><td>find_last_not_of</td><td>vstr_csrch_cstr_chrs_rev</td></tr>
+<tr class="r1"><td>rfind</td><td>vstr_srch_cstr_buf_rev</td></tr>
+<tr class="r2"><td>rfind</td><td>vstr_srch_buf_rev</td></tr>
+<tr class="r1"><td>rfind</td><td>vstr_srch_chr_rev</td></tr>
+<tr class="r2"><td>rfind</td><td>vstr_srch_vstr_rev</td></tr>
+<tr class="r1"><td>erase</td><td>vstr_del</td></tr>
+<tr class="r2"><td>resize</td><td>vstr_sc_reduce</td></tr>
+<tr class="r1"><td>compare</td><td>vstr_cmp</td></tr>
+<tr class="r2"><td>compare</td><td>vstr_cmp_cstr</td></tr>
+<tr class="r1"><td>swap</td><td>vstr_mov</td></tr>
+<tr class="r2"><td>==</td><td>vstr_cmp_eq</td></tr>
+<tr class="r1"><td>==</td><td>vstr_cmp_cstr_eq</td></tr>
+<tr class="r2"><td>c_str</td><td>vstr_export_cstr_ptr</td></tr>
+<tr class="r1"><td>data</td><td>vstr_export_cstr_ref</td></tr>
+<tr class="r2"><td>reserve</td><td>vstr_make_spare_nodes<!-- vstr_cntl_base(impl, VSTR_CNTL_CONF_SET_NUM_RANGE_SPARE_BUF, X, Y) --></td></tr>
+<tr class="r1"><td>assign</td><td>vstr_sub_vstr</td></tr>
+<tr class="r2"><td>copy</td><td>vstr_export_cstr_buf</td></tr>
+<tr class="r1"><td>copy</td><td>vstr_export_cstr_ptr</td></tr>
+<tr class="r2"><td>copy</td><td>vstr_export_cstr_malloc</td></tr>
+<tr class="r1"><td>copy</td><td>vstr_dup_vstr</td></tr>
+<tr class="r2"><td>length</td><td>-&gt;len (member variable, also always passed to functions)</td></tr>
+</table>
+
+    <hr>
+    <address><a href="mailto:james-web@and.org">James Antill</a></address>
+<!-- Created: Sat Aug  3 15:35:00 EDT 2003 -->
+<!-- hhmts start -->
+Last modified: Sun Jul 31 00:37:45 EDT 2005
+<!-- hhmts end -->
+<!--#config timefmt="%a %b %d %H:%M:%S %Z %Y" -->
+<BR>Last regenerated: <!--#echo encoding="none" var="DATE_LOCAL"-->
+  </body>
+</html>

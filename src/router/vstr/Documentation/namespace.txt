@@ -1,0 +1,20 @@
+
+ The library itself claims /^vstr[a-z0-9_]*$/i as a namespace.
+ Saying that all types are under...
+
+   Vstr_[a-z0-9]*
+
+...all other global symbols (Ie. functions/variables) are under...
+
+   vstr_[a-z0-9]*
+
+...and all CPP symbols/constants are under...
+
+   VSTR_[A-Z0-9]*
+
+...this is mainly to make it easier to see what you are dealing with.
+
+ All of the namespace where a double _ appears is not supposed to be used
+directly by _you_ the user of the library. If these interfaces change and
+it isn't visible via. the normal interfaces then the binary/source interface
+numbers will _NOT_ be changed on the library.

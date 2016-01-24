@@ -1,0 +1,61 @@
+HTTP/1.1 301 Moved Permanently
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified:
+Accept-Ranges: bytes
+Content-Type: text/html
+Content-Length: 386
+Location: http://foo.example.com/corner/
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+  <head>
+    <title>301 Moved Permanently</title>
+  </head>
+  <body>
+    <h1>301 Moved Permanently</h1>
+    <p>The document has moved <a href="http://foo.example.com/corner/">here</a>.</p>
+  <hr>
+  Generated using the <a href="http://www.and.org/vstr/httpd">Vstr httpd example Web Server</a>.
+  </body>
+</html>
+HTTP/1.1 301 Moved Permanently
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified:
+Accept-Ranges: bytes
+Content-Type: text/html
+Content-Length: 397
+Location: http://foo.example.com/corner/index.html/
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+  <head>
+    <title>301 Moved Permanently</title>
+  </head>
+  <body>
+    <h1>301 Moved Permanently</h1>
+    <p>The document has moved <a href="http://foo.example.com/corner/index.html/">here</a>.</p>
+  <hr>
+  Generated using the <a href="http://www.and.org/vstr/httpd">Vstr httpd example Web Server</a>.
+  </body>
+</html>
+HTTP/1.1 200 OK
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Sat, 09 Oct 2004 07:02:24 GMT
+Connection: close
+Accept-Ranges: bytes
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Length: 163
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+  <head>
+    <title>Foo corner</title>
+  </head>
+  <body>
+    <h1>Foo corner</h1>
+  </body>
+</html>

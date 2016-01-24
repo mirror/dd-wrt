@@ -1,0 +1,150 @@
+"Advisory count","Red Hat Package","Red Hat Advisory","Type of Vulnerability","Range of Vulnerability"
+1,MySQL,http://rhn.redhat.com/errata/RHSA-2003-281.html,BO,R
+2,sane,http://rhn.redhat.com/errata/RHSA-2003-278.html,PE (First connection after starting isn't checked),R
+2,sane,http://rhn.redhat.com/errata/RHSA-2003-278.html,DOS (read of memory after allocation),R
+2,sane,http://rhn.redhat.com/errata/RHSA-2003-278.html,DOS (random amount of memory is attempted for allocation),R
+2,sane,http://rhn.redhat.com/errata/RHSA-2003-278.html,DOS (when debug printing, non-NIL terminated strings are assumed NIL terminated),R
+2,sane,http://rhn.redhat.com/errata/RHSA-2003-278.html,DOS (unbounded allocation),R
+3,perl,http://rhn.redhat.com/errata/RHSA-2003-256.html,IV ( (Redefining @_)),L
+3,perl,http://rhn.redhat.com/errata/RHSA-2003-256.html,XSS,R
+4,openssl,http://rhn.redhat.com/errata/RHSA-2003-292.html,IV ( (ASN.1 tag parsing)),R
+4,openssl,http://rhn.redhat.com/errata/RHSA-2003-292.html,DF,R
+5,perl,http://rhn.redhat.com/errata/RHSA-2003-256.html,PE (can break out of safe.pm sandboxes),R
+5,perl,http://rhn.redhat.com/errata/RHSA-2003-256.html,XSS,R
+6,apache httpd,http://rhn.redhat.com/errata/RHSA-2003-243.html,IV ( (Cipher restrictions ignored on renegotiation)),R
+6,apache httpd,http://rhn.redhat.com/errata/RHSA-2003-243.html,DOS (infinite loop handling internal redirects and nested subrequests),R
+6,apache httpd,http://rhn.redhat.com/errata/RHSA-2003-243.html,DOS (temporarily, if using multiple ports),R
+6,apache httpd,http://rhn.redhat.com/errata/RHSA-2003-243.html,DOS (ftp proxy and IPV6 only),R
+7,openssh,http://rhn.redhat.com/errata/RHSA-2003-279.html,IO,R
+8,sendmail,http://rhn.redhat.com/errata/RHSA-2003-283.html,BO,R
+9,KDE,http://rhn.redhat.com/errata/RHSA-2003-269.html,PE (bad session credentials),L
+10,openssh,http://rhn.redhat.com/errata/RHSA-2003-279.html,IO,R
+11,pine,http://rhn.redhat.com/errata/RHSA-2003-273.html,BO,R
+11,pine,http://rhn.redhat.com/errata/RHSA-2003-273.html,IO,R
+12,gtkhtml,http://rhn.redhat.com/errata/RHSA-2003-264.html,DOS (NULL pointer de-reference),R
+13,apache httpd,http://rhn.redhat.com/errata/RHSA-2003-240.html,IV ( (Cipher restrictions ignored on renegotiation)),R
+13,apache httpd,http://rhn.redhat.com/errata/RHSA-2003-240.html,DOS (infinite loop handling internal redirects and nested subrequests),R
+13,apache httpd,http://rhn.redhat.com/errata/RHSA-2003-240.html,DOS (temporarily, if using multiple ports),R
+13,apache httpd,http://rhn.redhat.com/errata/RHSA-2003-240.html,DOS (ftp proxy and IPV6 only),R
+14,up2date,http://rhn.redhat.com/errata/RHSA-2003-267.html,BP (Expired Certificate Authority),L
+15,sendmail,http://rhn.redhat.com/errata/RHSA-2003-265.html,FUM,R
+16,pam_smb,http://rhn.redhat.com/errata/RHSA-2003-261.html,BO,R
+17,iptables,http://rhn.redhat.com/errata/RHSA-2003-213.html,BP (bad dependancies cause kernel updates to stop iptables firewall),R
+18,GDM,http://rhn.redhat.com/errata/RHSA-2003-258.html,PE (read files),L
+19,KDE,http://rhn.redhat.com/errata/RHSA-2003-235.html,IL,R
+20,ddskk,http://rhn.redhat.com/errata/RHSA-2003-241.html,TF,L
+21,up2date,http://rhn.redhat.com/errata/RHSA-2003-255.html,IV,R
+22,postfix,http://rhn.redhat.com/errata/RHSA-2003-251.html,IV,R
+23,unzip,http://rhn.redhat.com/errata/RHSA-2003-199.html,IV,P
+24,Xterm,http://rhn.redhat.com/errata/RHSA-2003-067.html,IV,L
+25,php,http://rhn.redhat.com/errata/RHSA-2003-204.html,XSS,R
+26,ethereal,http://rhn.redhat.com/errata/RHSA-2003-203.html,BO,R
+26,ethereal,http://rhn.redhat.com/errata/RHSA-2003-203.html,IO,R
+26,ethereal,http://rhn.redhat.com/errata/RHSA-2003-203.html,OBO,R
+27,nfs-utils,http://rhn.redhat.com/errata/RHSA-2003-206.html,BO,R
+28,mozilla,http://rhn.redhat.com/errata/RHSA-2003-162.html,BO,R
+29,Xpdf,http://rhn.redhat.com/errata/RHSA-2003-196.html,IV,P
+29,Xpdf,http://rhn.redhat.com/errata/RHSA-2003-196.html,XSS,R
+30,kernel,http://rhn.redhat.com/errata/RHSA-2003-238.html,IL,P
+30,kernel,http://rhn.redhat.com/errata/RHSA-2003-238.html,PE (read files),L
+30,kernel,http://rhn.redhat.com/errata/RHSA-2003-238.html,PE (UDP port binding),L
+30,kernel,http://rhn.redhat.com/errata/RHSA-2003-238.html,IV,P
+31,semi,http://rhn.redhat.com/errata/RHSA-2003-234.html,IV,R
+32,stunnel,http://rhn.redhat.com/errata/RHSA-2003-221.html,DOS (Signal handling code),R
+33,OpenSSH,http://rhn.redhat.com/errata/RHSA-2003-222.html,IL,R
+34,wu-ftpd,http://rhn.redhat.com/errata/RHSA-2003-245.html,OBO,R
+35,kernel,http://rhn.redhat.com/errata/RHSA-2003-187.html,DOS (Crash),L
+36,kon2,http://rhn.redhat.com/errata/RHSA-2003-047.html,BO,R
+37,KDE,http://rhn.redhat.com/errata/RHSA-2003-192.html,MITM,R
+38,hanterm,http://rhn.redhat.com/errata/RHSA-2003-070.html,IV,L
+39,ypserv,http://rhn.redhat.com/errata/RHSA-2003-173.html,DOS (Blocking write),R
+40,man,http://rhn.redhat.com/errata/RHSA-2003-133.html,IV,L
+41,mod_auth_any,http://rhn.redhat.com/errata/RHSA-2003-113.html,IE (shell callout),R
+42,KDE,http://rhn.redhat.com/errata/RHSA-2003-002.html,IE (shell callout),R
+42,KDE,http://rhn.redhat.com/errata/RHSA-2003-002.html,IV ( (Run postscript as user)),R
+43,xinetd,http://rhn.redhat.com/errata/RHSA-2003-160.html,DOS (Memory leak),R
+44,kernel,http://rhn.redhat.com/errata/RHSA-2003-172.html,DOS (CPU),P
+44,kernel,http://rhn.redhat.com/errata/RHSA-2003-172.html,PE (I/O ports),L
+45,tcpdump,http://rhn.redhat.com/errata/RHSA-2003-174.html,PE (failure to drop privileges and looks at the network),R
+46,lv,http://rhn.redhat.com/errata/RHSA-2003-169.html,PE (Run commands as other users),L
+47,gnupg,http://rhn.redhat.com/errata/RHSA-2003-175.html,IV,L
+48,CUPS,http://rhn.redhat.com/errata/RHSA-2003-171.html,DOS (Blocking read),R
+49,apache httpd,http://rhn.redhat.com/errata/RHSA-2003-186.html,VSTRFIU,R
+50,ghostscript,http://rhn.redhat.com/errata/RHSA-2003-181.html,IV,P
+51,OpenSSL,http://rhn.redhat.com/errata/RHSA-2003-101.html,IL,R
+52,vsftpd,http://rhn.redhat.com/errata/RHSA-2003-084.html,BP (disabled hosts.allow/hosts.deny),R
+53,kerberos,http://rhn.redhat.com/errata/RHSA-2003-091.html,APE (leverage auth. in one relm to gain auth. in another),L
+53,kerberos,http://rhn.redhat.com/errata/RHSA-2003-091.html,IO,R
+54,eog,http://rhn.redhat.com/errata/RHSA-2003-128.html,BO,R
+55,NetPBM,http://rhn.redhat.com/errata/RHSA-2003-060.html,BO,P
+55,NetPBM,http://rhn.redhat.com/errata/RHSA-2003-060.html,IO,P
+56,mutt,http://rhn.redhat.com/errata/RHSA-2003-109.html,BO,R
+57,balsa,http://rhn.redhat.com/errata/RHSA-2003-109.html,BO,R
+58,samba,http://rhn.redhat.com/errata/RHSA-2003-137.html,BO,R
+59,mgetty,http://rhn.redhat.com/errata/RHSA-2003-036.html,BO,P
+60,kernel,http://rhn.redhat.com/errata/RHSA-2003-135.html,PE (ptrace),L
+61,apache httpd,http://rhn.redhat.com/errata/RHSA-2003-139.html,DOS (Memory leak),R
+61,apache httpd,http://rhn.redhat.com/errata/RHSA-2003-139.html,IV,R
+61,apache httpd,http://rhn.redhat.com/errata/RHSA-2003-139.html,IE (Corrupted log files),R
+62,tcpdump,http://rhn.redhat.com/errata/RHSA-2003-032.html,BO,R
+62,tcpdump,http://rhn.redhat.com/errata/RHSA-2003-032.html,IV,R
+63,ethereal,http://rhn.redhat.com/errata/RHSA-2003-076.html,BO,R
+64,squirrelmail,http://rhn.redhat.com/errata/RHSA-2003-112.html,XSS,R
+65,LPRng,http://rhn.redhat.com/errata/RHSA-2003-142.html,TF,L
+66,mICQ,http://rhn.redhat.com/errata/RHSA-2003-118.html,VSTRIV,R
+67,zlib,http://rhn.redhat.com/errata/RHSA-2003-079.html,BO,R
+68,MySQL,http://rhn.redhat.com/errata/RHSA-2003-093.html,DF,R
+68,MySQL,http://rhn.redhat.com/errata/RHSA-2003-093.html,IV,R
+69,sendmail,http://rhn.redhat.com/errata/RHSA-2003-073.html,BO,R
+70,squirrelmail,http://rhn.redhat.com/errata/RHSA-2003-042.html,XSS,R
+71,im,http://rhn.redhat.com/errata/RHSA-2003-039.html,TF,L
+72,OpenSSL,http://rhn.redhat.com/errata/RHSA-2003-062.html,IL,R
+73,file,http://rhn.redhat.com/errata/RHSA-2003-086.html,BO,L
+74,Gnome-lokkit,http://rhn.redhat.com/errata/RHSA-2003-072.html,IV ( (Doesn't do anything for FORWARD rule packets)),R
+75,rxvt,http://rhn.redhat.com/errata/RHSA-2003-054.html,IV,L
+76,kernel,http://rhn.redhat.com/errata/RHSA-2003-098.html,PE (ptrace),L
+77,samba,http://rhn.redhat.com/errata/RHSA-2003-095.html,BO,R
+78,glibc (sun rpc code),http://rhn.redhat.com/errata/RHSA-2003-089.html,IO,R
+79,kernel,http://rhn.redhat.com/errata/RHSA-2003-088.html,PE (module loading),L
+79,kernel,http://rhn.redhat.com/errata/RHSA-2003-088.html,IL,R
+80,evolution,http://rhn.redhat.com/errata/RHSA-2003-108.html,VSTRIV,R
+81,kerberos,http://rhn.redhat.com/errata/RHSA-2003-051.html,IO,R
+81,kerberos,http://rhn.redhat.com/errata/RHSA-2003-051.html,VSTRIV,P
+81,kerberos,http://rhn.redhat.com/errata/RHSA-2003-051.html,IV,P
+81,kerberos,http://rhn.redhat.com/errata/RHSA-2003-051.html,IV ( (Vulnerabilities in the support for triple-DES keys)),P
+81,kerberos,http://rhn.redhat.com/errata/RHSA-2003-051.html,APE (leverage auth. in one relm to gain auth. in another),R
+81,kerberos,http://rhn.redhat.com/errata/RHSA-2003-051.html,IO,P
+82,sendmail,http://rhn.redhat.com/errata/RHSA-2003-120.html,BO,R
+83,dhcp,http://rhn.redhat.com/errata/RHSA-2003-034.html,DOS (sends data constantly to the broadcast address),R
+84,php,http://rhn.redhat.com/errata/RHSA-2003-017.html,BO,R
+85,openldap,http://rhn.redhat.com/errata/RHSA-2003-040.html,BO,R
+86,WindowMaker,http://rhn.redhat.com/errata/RHSA-2003-043.html,BO,L
+87,Xpdf,http://rhn.redhat.com/errata/RHSA-2003-037.html,IO,R
+88,w3m,http://rhn.redhat.com/errata/RHSA-2003-044.html,XSS,R
+89,kernel-utils,http://rhn.redhat.com/errata/RHSA-2003-056.html,BP (unsafe program was setuid),L
+90,lynx,http://rhn.redhat.com/errata/RHSA-2003-029.html,IV,L
+91,pam_xauth,http://rhn.redhat.com/errata/RHSA-2003-035.html,IL,L
+92,fileutils,http://rhn.redhat.com/errata/RHSA-2003-015.html,PE (delete other users files),L
+93,shadow-utils,http://rhn.redhat.com/errata/RHSA-2003-057.html,PE (read/write other users incoming mailbox),L
+94,VNC,http://rhn.redhat.com/errata/RHSA-2003-041.html,IV ( (Replay authorization)),R
+95,vte,http://rhn.redhat.com/errata/RHSA-2003-053.html,IV,L
+96,pine,http://rhn.redhat.com/errata/RHSA-2002-270.html,BO,R
+97,cyrus-sasl,http://rhn.redhat.com/errata/RHSA-2002-283.html,BO,R
+98,libpng,http://rhn.redhat.com/errata/RHSA-2003-006.html,BO,R
+99,CUPS,http://rhn.redhat.com/errata/RHSA-2002-295.html,BO,R
+99,CUPS,http://rhn.redhat.com/errata/RHSA-2002-295.html,IO,R
+99,CUPS,http://rhn.redhat.com/errata/RHSA-2002-295.html,TF,L
+99,CUPS,http://rhn.redhat.com/errata/RHSA-2002-295.html,IV,P
+99,CUPS,http://rhn.redhat.com/errata/RHSA-2002-295.html,XSS,R
+99,CUPS,http://rhn.redhat.com/errata/RHSA-2002-295.html,DOS (attack recovery),P
+100,postgresql,http://rhn.redhat.com/errata/RHSA-2003-010.html,BO,R
+101,postgresql,http://rhn.redhat.com/errata/RHSA-2003-001.html,PE (delete transaction log files),L
+101,postgresql,http://rhn.redhat.com/errata/RHSA-2003-001.html,BO,R
+102,MySQL,http://rhn.redhat.com/errata/RHSA-2002-288.html,IO,R
+102,MySQL,http://rhn.redhat.com/errata/RHSA-2002-288.html,IV,P
+102,MySQL,http://rhn.redhat.com/errata/RHSA-2002-288.html,BO,R
+103,dhcp,http://rhn.redhat.com/errata/RHSA-2003-011.html,BO,R
+104,vim,http://rhn.redhat.com/errata/RHSA-2002-297.html,IV,L
+105,cvs,http://rhn.redhat.com/errata/RHSA-2003-012.html,PE (write to any files),L
+106,python,http://rhn.redhat.com/errata/RHSA-2002-202.html,TF,L
+107,kerberos,http://rhn.redhat.com/errata/RHSA-2003-020.html,IV,R
