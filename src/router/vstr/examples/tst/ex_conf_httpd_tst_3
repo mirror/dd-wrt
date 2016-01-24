@@ -1,0 +1,33 @@
+;;
+;; This is a configuration for httpd_non-virtual-hosts tests...
+;;
+;;
+
+(org.and.jhttpd-conf-main-1.0
+
+  (org.and.daemon-conf-1.0
+    (listen addr 127.0.2.1)
+
+     pid-file ex_httpd_root/abcd
+     cntl-file ex_httpd_cntl
+
+    (policy conf-httpd-tst-3.1
+       timeout idle 16)
+
+     procs 1)
+
+  (match-connection [policy-eq <default> server-ipv4-cidr-eq 127.0.2.1]
+    policy conf-httpd-tst-3.1)
+
+   policy conf-httpd-tst-3.1
+
+     ; Required by the tests...
+     unspecified-hostname default ; -- so we always match in tests
+     unspecified-hostname-append-port off
+     secure-directory-filename no
+     MIME/types-filename-xtra (+= ENV SRCDIR /mime_types_extra.txt)
+
+     document-root ex_httpd_root
+     request-configuration-directory ex_httpd_conf
+     req-err-dir ex_httpd_err/)
+

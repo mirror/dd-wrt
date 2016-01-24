@@ -1,0 +1,86 @@
+           GALEON
+           ------
+Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,image/jpeg,image/gif;q=0.2,*/*;q=0.1
+Accept-Encoding: gzip, deflate, compress;q=0.9
+Accept-Language: en
+Accept-Charset: UTF-8,*
+
+
+           FIREFOX
+           -------
+Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+Accept-Language: en-us,en;q=0.5
+Accept-Encoding: gzip,deflate
+Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7
+
+...note both of the above also just do "Accept: text/css,*/*;q=0.1" when
+requesting stylesheet links.
+
+
+           konqueror
+           ---------
+Accept: text/html, image/jpeg, image/png, text/*, image/*, */*
+Accept-Encoding: x-gzip, x-deflate, gzip, deflate, identity
+Accept-Charset: utf-8, utf-8;q=0.5, *;q=0.5
+Accept-Language: en
+
+...note the above also just does "Accept: text/css" when requesting
+stylesheet links.
+
+
+           Lynx
+           ----
+Accept: text/html, text/plain, application/vnd.sun.xml.writer, application/vnd.sun.xml.writer.global, application/vnd.stardivision.writer, application/vnd.stardivision.writer-global, application/x-starwriter, application/vnd.sun.xml.writer.template
+Accept: application/vnd.sun.xml.calc, application/vnd.stardivision.calc, application/x-starcalc, application/vnd.sun.xml.calc.template, application/vnd.sun.xml.impress, application/vnd.stardivision.impress, application/vnd.stardivision.impress-packed
+Accept: application/x-starimpress, application/vnd.sun.xml.impress.template, application/vnd.sun.xml.draw, application/vnd.stardivision.draw, application/x-stardraw, application/vnd.sun.xml.draw.template, application/vnd.sun.xml.math
+Accept: application/vnd.stardivision.math, application/x-starmath, audio/x-pn-realaudio, audio/vnd.rn-realaudio, application/smil, text/vnd.rn-realtext, video/vnd.rn-realvideo, image/vnd.rn-realflash, application/x-shockwave-flash2-preview
+Accept: application/sdp, application/x-sdp, application/vnd.rn-realmedia, image/vnd.rn-realpix, audio/wav, audio/x-wav, audio/x-pn-wav, audio/x-pn-windows-acm, audio/basic, audio/x-pn-au, audio/aiff, audio/x-aiff, audio/x-pn-aiff
+Accept: application/x-java-jnlp-file, audio/mod, image/*, application/msword, application/pdf, application/postscript, type=application/x-java-jnlp-file, text/sgml, video/mpeg, */*;q=0.01
+Accept-Language: en
+
+
+           elinks
+           ------
+Accept: */*
+Accept-Encoding: bzip2, gzip
+Accept-Charset: us-ascii, ISO-8859-1, ISO-8859-2, ISO-8859-3, ISO-8859-4, ISO-8895-5, ISO-8859-6, ISO-8859-7, ISO-8859-8, ISO-8895-9, ISO-8859-10, ISO-8859-13, ISO-8859-14, ISO-8859-15, ISO-8859-16, windows-1250, windows-1251, windows-1252, windows-1256, windows-1257, cp437, cp737, cp850, cp852, cp866, x-cp866-u, x-mac, x-mac-ce, x-kam-cs, koi8-r, koi8-u, koi8-ru, TCVN-5712, VISCII, utf-8
+Accept-Language: en
+
+
+           w3m
+           ---
+Accept: text/*, image/*, audio/*, application/*, type=application/*
+Accept-Encoding: gzip, compress, bzip, bzip2, deflate
+Accept-Language: en;q=1.0
+
+
+           curl
+           ----
+Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, */*
+
+
+           straw
+           -----
+HTTP/1.0
+User-Agent: Straw/0.22.1
+Accept-Encoding: gzip
+
+
+dillo, snarf == HTTP/1.0
+
+
+           zsync-0.3.3
+           -----------
+
+GET /vstr-1.0.14.tar.zsync HTTP/1.0
+Host: localhost
+Accept-Ranges: bytes
+User-Agent: zsync/0.3.3
+
+
+GET /vstr-1.0.14.tar.gz HTTP/1.1
+User-Agent: zsync/0.3.3
+Host: localhost
+Referer: http://localhost:8008/vstr-1.0.14.tar.zsync
+Accept-Ranges: bytes
+Range: bytes=26-889,181726-181926,185413-198962,201440-204446,214041-214241,228508-230116,304883-305083,333562-334479,336423-336691,337331-337868,339821-340476,342328-342552,344639-362729,363275-363475,364377-364933,369283-386278,386658-387048,388546-388890,393277-393477,409042-409191

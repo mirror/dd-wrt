@@ -1,0 +1,23 @@
+
+ Format: ex_echod [options]
+  Daemon options
+    --daemon          - Toggle becoming a daemon (default: off).
+    --chroot          - Change root.
+    --drop-privs      - Toggle droping privilages (default: off).
+    --priv-uid        - Drop privilages to this uid.
+    --priv-gid        - Drop privilages to this gid.
+    --pid-file        - Log pid to file.
+    --cntl-file       - Create control file.
+    --accept-filter-file
+                      - Load Linux Socket Filter code for accept().
+    --processes       - Number of processes to use (default: 1).
+    --debug -d        - Raise debug level (can be used upto 3 times).
+    --host -H         - IPv4 address to bind (default: "all").
+    --help -h         - Print this message.
+    --max-connections
+                  -M  - Max connections allowed (0 = no limit).
+    --nagle -n        - Toggle usage of nagle TCP option (default: off).
+    --port -P         - Port to bind to.
+    --idle-timeout -t - Timeout (usecs) for connections that are idle.
+    --defer-accept    - Time to defer dataless connections (default: 8s)
+    --version -V      - Print the version string.

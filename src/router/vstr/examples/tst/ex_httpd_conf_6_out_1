@@ -1,0 +1,20 @@
+HTTP/1.1 301 Moved Permanently
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified:
+Connection: Keep-Alive
+Accept-Ranges: bytes
+Content-Type: text/html
+Content-Length: 389
+Location: http://foo.example.com/index.html
+
+HTTP/1.1 301 Moved Permanently
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified:
+Connection: close
+Accept-Ranges: bytes
+Content-Type: text/html
+Content-Length: 389
+Location: http://foo.example.com/index.html
+

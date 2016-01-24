@@ -1,0 +1,217 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+<head>
+<title>Classification of Red Hat security alerts 2003</title>
+    <style type="text/css">
+      A:visited { color: #ff4040; }
+      A:hover { color: #20b2aa; }
+
+      P { text-indent: 1cm; }
+
+      body { background: #FFF; }
+
+  tr.rh { font-weight: bold; font-size: 150%;
+          background: #DDD; }
+
+  tr.r10                   { background: #fff; }
+  tr.r10:hover             { background: #bbb; }
+  tr.r20                   { background: #eee; }
+  tr.r20:hover             { background: #bbb; }
+  tr.r11                   { background: #fff; text-decoration: underline; }
+  tr.r11:hover             { background: #bbb; text-decoration: underline; }
+  tr.r21                   { background: #eee; text-decoration: underline; }
+  tr.r21:hover             { background: #bbb; text-decoration: underline; }
+
+
+      strong.sapi  { color: #F00; background: white; }
+      strong.msapi { color: #00F; background: white; }
+
+    </style>
+
+  </head>
+  <body>
+<h1>Classification of Red Hat security alerts 2003</h1>
+ <p> This is a list of vulnerabilities release in 2003, with an
+attempt to classify them into if they would have been avoided if the code had
+used a real dynamic string API and to classify them into a Vulnerability range
+(ie. Can you only exploit it from the local machine or can you do it remotely).
+ However note that esp. in the later classifications it's possible that my
+classification is wrong for your environment (for instance if you don't pass
+untrusted data from the network to unzip, that is a local vulnerability,
+if you only allow connections from the local machine to postgresql that becomes
+a local vulnerability, if you download arbitrary themes from the network
+and load them into WindowMaker that becomes a remote vulnerability or if you
+run commands over untrusted NFS mounts then most filesystem vulnerabilities can
+become remote vulnerabilities). I've tried to classify each with the most
+commmonly expected value.
+ <p> A <strong class="sapi">RED</strong> error indicates an error
+that <b>could not have occured</b> if the program had been using a
+<a href="comparison">real
+dynamic string API</a>. </p>
+ <p> A <strong class="msapi">BLUE</strong> error indicates an error
+that <b>could not have occured</b> it the program had been using
+<a href="overview">Vstr</a>. </p>
+ <p> You can go straight to the
+     <a href="#summary-types">summary of the types</a> of the vulnerabilities or
+to the
+     <a href="#summary-range">summary of the range</a> of the vulnerabilities.
+<table width="100%"><tr class="rh"><td>Red Hat Package</td><td>Types of Vulnerability</td><td>Range of Vulnerability</td><td>Range, if Vstr was used</td><td>Range, if any dynamic string API was used</td></tr>
+<tr class="r11"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-281.html"><strong class="sapi">MySQL</strong></a></td><td><a href="http://www.dwheeler.com/secure-programs/Secure-Programs-HOWTO.html#BUFFER-OVERFLOW"><strong class="sapi">Buffer Overflow</strong></a><br></td><td>Remote vulnerability</td><td><strong class="sapi">Not applicable</strong></td><td><strong class="sapi">Not applicable</strong></td></tr>
+<tr class="r20"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-278.html">sane</a></td><td>Privilage Escalation (First connection after starting isn't checked)<br>Denial of Service (read of memory after allocation)<br>Denial of Service (random amount of memory is attempted for allocation)<br>Denial of Service (when debug printing, non-NIL terminated strings are assumed NIL terminated)<br>Denial of Service (unbounded allocation)<br></td><td>Remote vulnerability</td><td>Remote vulnerability</td><td>Remote vulnerability</td></tr>
+<tr class="r10"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-256.html">perl</a></td><td>Input Validation (Redefining @_)<br>Cross Site Scripting<br></td><td>Remote vulnerability</td><td>Remote vulnerability</td><td>Remote vulnerability</td></tr>
+<tr class="r20"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-292.html">openssl</a></td><td>Input Validation (ASN.1 tag parsing)<br>Double Free<br></td><td>Remote vulnerability</td><td>Remote vulnerability</td><td>Remote vulnerability</td></tr>
+<tr class="r10"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-256.html">perl</a></td><td>Privilage Escalation (can break out of safe.pm sandboxes)<br>Cross Site Scripting<br></td><td>Remote vulnerability</td><td>Remote vulnerability</td><td>Remote vulnerability</td></tr>
+<tr class="r20"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-243.html">apache httpd</a></td><td>Input Validation (Cipher restrictions ignored on renegotiation)<br>Denial of Service (infinite loop handling internal redirects and nested subrequests)<br>Denial of Service (temporarily, if using multiple ports)<br>Denial of Service (ftp proxy and IPV6 only)<br></td><td>Remote vulnerability</td><td>Remote vulnerability</td><td>Remote vulnerability</td></tr>
+<tr class="r11"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-279.html"><strong class="sapi">openssh</strong></a></td><td><strong class="sapi">Integer Overflow</strong><br></td><td>Remote vulnerability</td><td><strong class="sapi">Not applicable</strong></td><td><strong class="sapi">Not applicable</strong></td></tr>
+<tr class="r21"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-283.html"><strong class="sapi">sendmail</strong></a></td><td><a href="http://www.dwheeler.com/secure-programs/Secure-Programs-HOWTO.html#BUFFER-OVERFLOW"><strong class="sapi">Buffer Overflow</strong></a><br></td><td>Remote vulnerability</td><td><strong class="sapi">Not applicable</strong></td><td><strong class="sapi">Not applicable</strong></td></tr>
+<tr class="r10"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-269.html">KDE</a></td><td>Privilage Escalation (bad session credentials)<br></td><td>Local vulnerability</td><td>Local vulnerability</td><td>Local vulnerability</td></tr>
+<tr class="r21"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-279.html"><strong class="sapi">openssh</strong></a></td><td><strong class="sapi">Integer Overflow</strong><br></td><td>Remote vulnerability</td><td><strong class="sapi">Not applicable</strong></td><td><strong class="sapi">Not applicable</strong></td></tr>
+<tr class="r11"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-273.html"><strong class="sapi">pine</strong></a></td><td><a href="http://www.dwheeler.com/secure-programs/Secure-Programs-HOWTO.html#BUFFER-OVERFLOW"><strong class="sapi">Buffer Overflow</strong></a><br><strong class="sapi">Integer Overflow</strong><br></td><td>Remote vulnerability</td><td><strong class="sapi">Not applicable</strong></td><td><strong class="sapi">Not applicable</strong></td></tr>
+<tr class="r20"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-264.html">gtkhtml</a></td><td>Denial of Service (NULL pointer de-reference)<br></td><td>Remote vulnerability</td><td>Remote vulnerability</td><td>Remote vulnerability</td></tr>
+<tr class="r10"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-240.html">apache httpd</a></td><td>Input Validation (Cipher restrictions ignored on renegotiation)<br>Denial of Service (infinite loop handling internal redirects and nested subrequests)<br>Denial of Service (temporarily, if using multiple ports)<br>Denial of Service (ftp proxy and IPV6 only)<br></td><td>Remote vulnerability</td><td>Remote vulnerability</td><td>Remote vulnerability</td></tr>
+<tr class="r20"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-267.html">up2date</a></td><td>Broken Packaging (Expired Certificate Authority)<br></td><td>Local vulnerability</td><td>Local vulnerability</td><td>Local vulnerability</td></tr>
+<tr class="r10"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-265.html">sendmail</a></td><td>Free uninitialized memory location<br></td><td>Remote vulnerability</td><td>Remote vulnerability</td><td>Remote vulnerability</td></tr>
+<tr class="r21"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-261.html"><strong class="sapi">pam_smb</strong></a></td><td><a href="http://www.dwheeler.com/secure-programs/Secure-Programs-HOWTO.html#BUFFER-OVERFLOW"><strong class="sapi">Buffer Overflow</strong></a><br></td><td>Remote vulnerability</td><td><strong class="sapi">Not applicable</strong></td><td><strong class="sapi">Not applicable</strong></td></tr>
+<tr class="r10"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-213.html">iptables</a></td><td>Broken Packaging (bad dependancies cause kernel updates to stop iptables firewall)<br></td><td>Remote vulnerability</td><td>Remote vulnerability</td><td>Remote vulnerability</td></tr>
+<tr class="r20"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-258.html">GDM</a></td><td>Privilage Escalation (read files)<br></td><td>Local vulnerability</td><td>Local vulnerability</td><td>Local vulnerability</td></tr>
+<tr class="r10"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-235.html">KDE</a></td><td>Information Leak<br></td><td>Remote vulnerability</td><td>Remote vulnerability</td><td>Remote vulnerability</td></tr>
+<tr class="r20"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-241.html">ddskk</a></td><td>Temporary File Creation<br></td><td>Local vulnerability</td><td>Local vulnerability</td><td>Local vulnerability</td></tr>
+<tr class="r10"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-255.html">up2date</a></td><td>Input Validation<br></td><td>Remote vulnerability</td><td>Remote vulnerability</td><td>Remote vulnerability</td></tr>
+<tr class="r20"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-251.html">postfix</a></td><td>Input Validation<br></td><td>Remote vulnerability</td><td>Remote vulnerability</td><td>Remote vulnerability</td></tr>
+<tr class="r10"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-199.html">unzip</a></td><td>Input Validation<br></td><td>Possibly remote vulnerability</td><td>Possibly remote vulnerability</td><td>Possibly remote vulnerability</td></tr>
+<tr class="r20"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-067.html">Xterm</a></td><td>Input Validation<br></td><td>Local vulnerability</td><td>Local vulnerability</td><td>Local vulnerability</td></tr>
+<tr class="r10"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-204.html">php</a></td><td>Cross Site Scripting<br></td><td>Remote vulnerability</td><td>Remote vulnerability</td><td>Remote vulnerability</td></tr>
+<tr class="r21"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-203.html"><strong class="sapi">ethereal</strong></a></td><td><a href="http://www.dwheeler.com/secure-programs/Secure-Programs-HOWTO.html#BUFFER-OVERFLOW"><strong class="sapi">Buffer Overflow</strong></a><br><strong class="sapi">Integer Overflow</strong><br><strong class="sapi">Off By One</strong><br></td><td>Remote vulnerability</td><td><strong class="sapi">Not applicable</strong></td><td><strong class="sapi">Not applicable</strong></td></tr>
+<tr class="r11"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-206.html"><strong class="sapi">nfs-utils</strong></a></td><td><a href="http://www.dwheeler.com/secure-programs/Secure-Programs-HOWTO.html#BUFFER-OVERFLOW"><strong class="sapi">Buffer Overflow</strong></a><br></td><td>Remote vulnerability</td><td><strong class="sapi">Not applicable</strong></td><td><strong class="sapi">Not applicable</strong></td></tr>
+<tr class="r21"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-162.html"><strong class="sapi">mozilla</strong></a></td><td><a href="http://www.dwheeler.com/secure-programs/Secure-Programs-HOWTO.html#BUFFER-OVERFLOW"><strong class="sapi">Buffer Overflow</strong></a><br></td><td>Remote vulnerability</td><td><strong class="sapi">Not applicable</strong></td><td><strong class="sapi">Not applicable</strong></td></tr>
+<tr class="r10"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-196.html">Xpdf</a></td><td>Input Validation<br>Cross Site Scripting<br></td><td>Remote vulnerability</td><td>Remote vulnerability</td><td>Remote vulnerability</td></tr>
+<tr class="r20"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-238.html">kernel</a></td><td>Information Leak<br>Privilage Escalation (read files)<br>Privilage Escalation (UDP port binding)<br>Input Validation<br></td><td>Possibly remote vulnerability</td><td>Possibly remote vulnerability</td><td>Possibly remote vulnerability</td></tr>
+<tr class="r10"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-234.html">semi</a></td><td>Input Validation<br></td><td>Remote vulnerability</td><td>Remote vulnerability</td><td>Remote vulnerability</td></tr>
+<tr class="r20"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-221.html">stunnel</a></td><td>Denial of Service (Signal handling code)<br></td><td>Remote vulnerability</td><td>Remote vulnerability</td><td>Remote vulnerability</td></tr>
+<tr class="r10"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-222.html">OpenSSH</a></td><td>Information Leak<br></td><td>Remote vulnerability</td><td>Remote vulnerability</td><td>Remote vulnerability</td></tr>
+<tr class="r21"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-245.html"><strong class="sapi">wu-ftpd</strong></a></td><td><strong class="sapi">Off By One</strong><br></td><td>Remote vulnerability</td><td><strong class="sapi">Not applicable</strong></td><td><strong class="sapi">Not applicable</strong></td></tr>
+<tr class="r10"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-187.html">kernel</a></td><td>Denial of Service (Crash)<br></td><td>Local vulnerability</td><td>Local vulnerability</td><td>Local vulnerability</td></tr>
+<tr class="r21"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-047.html"><strong class="sapi">kon2</strong></a></td><td><a href="http://www.dwheeler.com/secure-programs/Secure-Programs-HOWTO.html#BUFFER-OVERFLOW"><strong class="sapi">Buffer Overflow</strong></a><br></td><td>Remote vulnerability</td><td><strong class="sapi">Not applicable</strong></td><td><strong class="sapi">Not applicable</strong></td></tr>
+<tr class="r10"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-192.html">KDE</a></td><td>Man in the Middle<br></td><td>Remote vulnerability</td><td>Remote vulnerability</td><td>Remote vulnerability</td></tr>
+<tr class="r20"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-070.html">hanterm</a></td><td>Input Validation<br></td><td>Local vulnerability</td><td>Local vulnerability</td><td>Local vulnerability</td></tr>
+<tr class="r10"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-173.html">ypserv</a></td><td>Denial of Service (Blocking write)<br></td><td>Remote vulnerability</td><td>Remote vulnerability</td><td>Remote vulnerability</td></tr>
+<tr class="r20"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-133.html">man</a></td><td>Input Validation<br></td><td>Local vulnerability</td><td>Local vulnerability</td><td>Local vulnerability</td></tr>
+<tr class="r10"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-113.html">mod_auth_any</a></td><td>Improper Encoding (shell callout)<br></td><td>Remote vulnerability</td><td>Remote vulnerability</td><td>Remote vulnerability</td></tr>
+<tr class="r20"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-002.html">KDE</a></td><td>Improper Encoding (shell callout)<br>Input Validation (Run postscript as user)<br></td><td>Remote vulnerability</td><td>Remote vulnerability</td><td>Remote vulnerability</td></tr>
+<tr class="r10"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-160.html">xinetd</a></td><td>Denial of Service (Memory leak)<br></td><td>Remote vulnerability</td><td>Remote vulnerability</td><td>Remote vulnerability</td></tr>
+<tr class="r20"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-172.html">kernel</a></td><td>Denial of Service (CPU)<br>Privilage Escalation (I/O ports)<br></td><td>Local vulnerability</td><td>Local vulnerability</td><td>Local vulnerability</td></tr>
+<tr class="r10"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-174.html">tcpdump</a></td><td>Privilage Escalation (failure to drop privileges and looks at the network)<br></td><td>Remote vulnerability</td><td>Remote vulnerability</td><td>Remote vulnerability</td></tr>
+<tr class="r20"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-169.html">lv</a></td><td>Privilage Escalation (Run commands as other users)<br></td><td>Local vulnerability</td><td>Local vulnerability</td><td>Local vulnerability</td></tr>
+<tr class="r10"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-175.html">gnupg</a></td><td>Input Validation<br></td><td>Local vulnerability</td><td>Local vulnerability</td><td>Local vulnerability</td></tr>
+<tr class="r20"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-171.html">CUPS</a></td><td>Denial of Service (Blocking read)<br></td><td>Remote vulnerability</td><td>Remote vulnerability</td><td>Remote vulnerability</td></tr>
+<tr class="r1-1"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-186.html"><strong class="msapi">apache httpd</strong></a></td><td><strong class="msapi">Free memory that is in use</strong><br></td><td>Remote vulnerability</td><td><strong class="msapi">Not applicable</strong></td><td>Remote vulnerability</td></tr>
+<tr class="r20"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-181.html">ghostscript</a></td><td>Input Validation<br></td><td>Possibly remote vulnerability</td><td>Possibly remote vulnerability</td><td>Possibly remote vulnerability</td></tr>
+<tr class="r10"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-101.html">OpenSSL</a></td><td>Information Leak<br></td><td>Remote vulnerability</td><td>Remote vulnerability</td><td>Remote vulnerability</td></tr>
+<tr class="r20"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-084.html">vsftpd</a></td><td>Broken Packaging (disabled hosts.allow/hosts.deny)<br></td><td>Remote vulnerability</td><td>Remote vulnerability</td><td>Remote vulnerability</td></tr>
+<tr class="r10"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-091.html">kerberos</a></td><td>Authenticated Privilage Escalation (leverage auth. in one relm to gain auth. in another)<br><strong class="sapi">Integer Overflow</strong><br></td><td>Remote vulnerability</td><td>Local vulnerability</td><td>Local vulnerability</td></tr>
+<tr class="r21"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-128.html"><strong class="sapi">eog</strong></a></td><td><a href="http://www.dwheeler.com/secure-programs/Secure-Programs-HOWTO.html#BUFFER-OVERFLOW"><strong class="sapi">Buffer Overflow</strong></a><br></td><td>Remote vulnerability</td><td><strong class="sapi">Not applicable</strong></td><td><strong class="sapi">Not applicable</strong></td></tr>
+<tr class="r11"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-060.html"><strong class="sapi">NetPBM</strong></a></td><td><a href="http://www.dwheeler.com/secure-programs/Secure-Programs-HOWTO.html#BUFFER-OVERFLOW"><strong class="sapi">Buffer Overflow</strong></a><br><strong class="sapi">Integer Overflow</strong><br></td><td>Possibly remote vulnerability</td><td><strong class="sapi">Not applicable</strong></td><td><strong class="sapi">Not applicable</strong></td></tr>
+<tr class="r21"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-109.html"><strong class="sapi">mutt</strong></a></td><td><a href="http://www.dwheeler.com/secure-programs/Secure-Programs-HOWTO.html#BUFFER-OVERFLOW"><strong class="sapi">Buffer Overflow</strong></a><br></td><td>Remote vulnerability</td><td><strong class="sapi">Not applicable</strong></td><td><strong class="sapi">Not applicable</strong></td></tr>
+<tr class="r11"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-109.html"><strong class="sapi">balsa</strong></a></td><td><a href="http://www.dwheeler.com/secure-programs/Secure-Programs-HOWTO.html#BUFFER-OVERFLOW"><strong class="sapi">Buffer Overflow</strong></a><br></td><td>Remote vulnerability</td><td><strong class="sapi">Not applicable</strong></td><td><strong class="sapi">Not applicable</strong></td></tr>
+<tr class="r21"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-137.html"><strong class="sapi">samba</strong></a></td><td><a href="http://www.dwheeler.com/secure-programs/Secure-Programs-HOWTO.html#BUFFER-OVERFLOW"><strong class="sapi">Buffer Overflow</strong></a><br></td><td>Remote vulnerability</td><td><strong class="sapi">Not applicable</strong></td><td><strong class="sapi">Not applicable</strong></td></tr>
+<tr class="r11"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-036.html"><strong class="sapi">mgetty</strong></a></td><td><a href="http://www.dwheeler.com/secure-programs/Secure-Programs-HOWTO.html#BUFFER-OVERFLOW"><strong class="sapi">Buffer Overflow</strong></a><br></td><td>Possibly remote vulnerability</td><td><strong class="sapi">Not applicable</strong></td><td><strong class="sapi">Not applicable</strong></td></tr>
+<tr class="r20"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-135.html">kernel</a></td><td>Privilage Escalation (ptrace)<br></td><td>Local vulnerability</td><td>Local vulnerability</td><td>Local vulnerability</td></tr>
+<tr class="r10"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-139.html">apache httpd</a></td><td>Denial of Service (Memory leak)<br>Input Validation<br>Improper Encoding (Corrupted log files)<br></td><td>Remote vulnerability</td><td>Remote vulnerability</td><td>Remote vulnerability</td></tr>
+<tr class="r20"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-032.html">tcpdump</a></td><td><a href="http://www.dwheeler.com/secure-programs/Secure-Programs-HOWTO.html#BUFFER-OVERFLOW"><strong class="sapi">Buffer Overflow</strong></a><br>Input Validation<br></td><td>Remote vulnerability</td><td>Remote vulnerability</td><td>Remote vulnerability</td></tr>
+<tr class="r11"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-076.html"><strong class="sapi">ethereal</strong></a></td><td><a href="http://www.dwheeler.com/secure-programs/Secure-Programs-HOWTO.html#BUFFER-OVERFLOW"><strong class="sapi">Buffer Overflow</strong></a><br></td><td>Remote vulnerability</td><td><strong class="sapi">Not applicable</strong></td><td><strong class="sapi">Not applicable</strong></td></tr>
+<tr class="r20"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-112.html">squirrelmail</a></td><td>Cross Site Scripting<br></td><td>Remote vulnerability</td><td>Remote vulnerability</td><td>Remote vulnerability</td></tr>
+<tr class="r10"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-142.html">LPRng</a></td><td>Temporary File Creation<br></td><td>Local vulnerability</td><td>Local vulnerability</td><td>Local vulnerability</td></tr>
+<tr class="r2-1"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-118.html"><strong class="msapi">mICQ</strong></a></td><td><strong class="msapi">Input Validation</strong><br></td><td>Remote vulnerability</td><td><strong class="msapi">Not applicable</strong></td><td>Remote vulnerability</td></tr>
+<tr class="r11"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-079.html"><strong class="sapi">zlib</strong></a></td><td><a href="http://www.dwheeler.com/secure-programs/Secure-Programs-HOWTO.html#BUFFER-OVERFLOW"><strong class="sapi">Buffer Overflow</strong></a><br></td><td>Remote vulnerability</td><td><strong class="sapi">Not applicable</strong></td><td><strong class="sapi">Not applicable</strong></td></tr>
+<tr class="r20"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-093.html">MySQL</a></td><td>Double Free<br>Input Validation<br></td><td>Remote vulnerability</td><td>Remote vulnerability</td><td>Remote vulnerability</td></tr>
+<tr class="r11"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-073.html"><strong class="sapi">sendmail</strong></a></td><td><a href="http://www.dwheeler.com/secure-programs/Secure-Programs-HOWTO.html#BUFFER-OVERFLOW"><strong class="sapi">Buffer Overflow</strong></a><br></td><td>Remote vulnerability</td><td><strong class="sapi">Not applicable</strong></td><td><strong class="sapi">Not applicable</strong></td></tr>
+<tr class="r20"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-042.html">squirrelmail</a></td><td>Cross Site Scripting<br></td><td>Remote vulnerability</td><td>Remote vulnerability</td><td>Remote vulnerability</td></tr>
+<tr class="r10"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-039.html">im</a></td><td>Temporary File Creation<br></td><td>Local vulnerability</td><td>Local vulnerability</td><td>Local vulnerability</td></tr>
+<tr class="r20"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-062.html">OpenSSL</a></td><td>Information Leak<br></td><td>Remote vulnerability</td><td>Remote vulnerability</td><td>Remote vulnerability</td></tr>
+<tr class="r11"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-086.html"><strong class="sapi">file</strong></a></td><td><a href="http://www.dwheeler.com/secure-programs/Secure-Programs-HOWTO.html#BUFFER-OVERFLOW"><strong class="sapi">Buffer Overflow</strong></a><br></td><td>Local vulnerability</td><td><strong class="sapi">Not applicable</strong></td><td><strong class="sapi">Not applicable</strong></td></tr>
+<tr class="r20"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-072.html">Gnome-lokkit</a></td><td>Input Validation (Doesn't do anything for FORWARD rule packets)<br></td><td>Remote vulnerability</td><td>Remote vulnerability</td><td>Remote vulnerability</td></tr>
+<tr class="r10"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-054.html">rxvt</a></td><td>Input Validation<br></td><td>Local vulnerability</td><td>Local vulnerability</td><td>Local vulnerability</td></tr>
+<tr class="r20"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-098.html">kernel</a></td><td>Privilage Escalation (ptrace)<br></td><td>Local vulnerability</td><td>Local vulnerability</td><td>Local vulnerability</td></tr>
+<tr class="r11"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-095.html"><strong class="sapi">samba</strong></a></td><td><a href="http://www.dwheeler.com/secure-programs/Secure-Programs-HOWTO.html#BUFFER-OVERFLOW"><strong class="sapi">Buffer Overflow</strong></a><br></td><td>Remote vulnerability</td><td><strong class="sapi">Not applicable</strong></td><td><strong class="sapi">Not applicable</strong></td></tr>
+<tr class="r21"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-089.html"><strong class="sapi">glibc (sun rpc code)</strong></a></td><td><strong class="sapi">Integer Overflow</strong><br></td><td>Remote vulnerability</td><td><strong class="sapi">Not applicable</strong></td><td><strong class="sapi">Not applicable</strong></td></tr>
+<tr class="r10"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-088.html">kernel</a></td><td>Privilage Escalation (module loading)<br>Information Leak<br></td><td>Remote vulnerability</td><td>Remote vulnerability</td><td>Remote vulnerability</td></tr>
+<tr class="r2-1"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-108.html"><strong class="msapi">evolution</strong></a></td><td><strong class="msapi">Input Validation</strong><br></td><td>Remote vulnerability</td><td><strong class="msapi">Not applicable</strong></td><td>Remote vulnerability</td></tr>
+<tr class="r10"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-051.html">kerberos</a></td><td><strong class="sapi">Integer Overflow</strong><br><strong class="msapi">Input Validation</strong><br>Input Validation<br>Input Validation (Vulnerabilities in the support for triple-DES keys)<br>Authenticated Privilage Escalation (leverage auth. in one relm to gain auth. in another)<br><strong class="sapi">Integer Overflow</strong><br></td><td>Remote vulnerability</td><td>Remote vulnerability</td><td>Remote vulnerability</td></tr>
+<tr class="r21"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-120.html"><strong class="sapi">sendmail</strong></a></td><td><a href="http://www.dwheeler.com/secure-programs/Secure-Programs-HOWTO.html#BUFFER-OVERFLOW"><strong class="sapi">Buffer Overflow</strong></a><br></td><td>Remote vulnerability</td><td><strong class="sapi">Not applicable</strong></td><td><strong class="sapi">Not applicable</strong></td></tr>
+<tr class="r10"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-034.html">dhcp</a></td><td>Denial of Service (sends data constantly to the broadcast address)<br></td><td>Remote vulnerability</td><td>Remote vulnerability</td><td>Remote vulnerability</td></tr>
+<tr class="r21"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-017.html"><strong class="sapi">php</strong></a></td><td><a href="http://www.dwheeler.com/secure-programs/Secure-Programs-HOWTO.html#BUFFER-OVERFLOW"><strong class="sapi">Buffer Overflow</strong></a><br></td><td>Remote vulnerability</td><td><strong class="sapi">Not applicable</strong></td><td><strong class="sapi">Not applicable</strong></td></tr>
+<tr class="r11"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-040.html"><strong class="sapi">openldap</strong></a></td><td><a href="http://www.dwheeler.com/secure-programs/Secure-Programs-HOWTO.html#BUFFER-OVERFLOW"><strong class="sapi">Buffer Overflow</strong></a><br></td><td>Remote vulnerability</td><td><strong class="sapi">Not applicable</strong></td><td><strong class="sapi">Not applicable</strong></td></tr>
+<tr class="r21"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-043.html"><strong class="sapi">WindowMaker</strong></a></td><td><a href="http://www.dwheeler.com/secure-programs/Secure-Programs-HOWTO.html#BUFFER-OVERFLOW"><strong class="sapi">Buffer Overflow</strong></a><br></td><td>Local vulnerability</td><td><strong class="sapi">Not applicable</strong></td><td><strong class="sapi">Not applicable</strong></td></tr>
+<tr class="r11"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-037.html"><strong class="sapi">Xpdf</strong></a></td><td><strong class="sapi">Integer Overflow</strong><br></td><td>Remote vulnerability</td><td><strong class="sapi">Not applicable</strong></td><td><strong class="sapi">Not applicable</strong></td></tr>
+<tr class="r20"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-044.html">w3m</a></td><td>Cross Site Scripting<br></td><td>Remote vulnerability</td><td>Remote vulnerability</td><td>Remote vulnerability</td></tr>
+<tr class="r10"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-056.html">kernel-utils</a></td><td>Broken Packaging (unsafe program was setuid)<br></td><td>Local vulnerability</td><td>Local vulnerability</td><td>Local vulnerability</td></tr>
+<tr class="r20"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-029.html">lynx</a></td><td>Input Validation<br></td><td>Local vulnerability</td><td>Local vulnerability</td><td>Local vulnerability</td></tr>
+<tr class="r10"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-035.html">pam_xauth</a></td><td>Information Leak<br></td><td>Local vulnerability</td><td>Local vulnerability</td><td>Local vulnerability</td></tr>
+<tr class="r20"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-015.html">fileutils</a></td><td>Privilage Escalation (delete other users files)<br></td><td>Local vulnerability</td><td>Local vulnerability</td><td>Local vulnerability</td></tr>
+<tr class="r10"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-057.html">shadow-utils</a></td><td>Privilage Escalation (read/write other users incoming mailbox)<br></td><td>Local vulnerability</td><td>Local vulnerability</td><td>Local vulnerability</td></tr>
+<tr class="r20"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-041.html">VNC</a></td><td>Input Validation (Replay authorization)<br></td><td>Remote vulnerability</td><td>Remote vulnerability</td><td>Remote vulnerability</td></tr>
+<tr class="r10"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-053.html">vte</a></td><td>Input Validation<br></td><td>Local vulnerability</td><td>Local vulnerability</td><td>Local vulnerability</td></tr>
+<tr class="r21"><td><a href="http://rhn.redhat.com/errata/RHSA-2002-270.html"><strong class="sapi">pine</strong></a></td><td><a href="http://www.dwheeler.com/secure-programs/Secure-Programs-HOWTO.html#BUFFER-OVERFLOW"><strong class="sapi">Buffer Overflow</strong></a><br></td><td>Remote vulnerability</td><td><strong class="sapi">Not applicable</strong></td><td><strong class="sapi">Not applicable</strong></td></tr>
+<tr class="r11"><td><a href="http://rhn.redhat.com/errata/RHSA-2002-283.html"><strong class="sapi">cyrus-sasl</strong></a></td><td><a href="http://www.dwheeler.com/secure-programs/Secure-Programs-HOWTO.html#BUFFER-OVERFLOW"><strong class="sapi">Buffer Overflow</strong></a><br></td><td>Remote vulnerability</td><td><strong class="sapi">Not applicable</strong></td><td><strong class="sapi">Not applicable</strong></td></tr>
+<tr class="r21"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-006.html"><strong class="sapi">libpng</strong></a></td><td><a href="http://www.dwheeler.com/secure-programs/Secure-Programs-HOWTO.html#BUFFER-OVERFLOW"><strong class="sapi">Buffer Overflow</strong></a><br></td><td>Remote vulnerability</td><td><strong class="sapi">Not applicable</strong></td><td><strong class="sapi">Not applicable</strong></td></tr>
+<tr class="r10"><td><a href="http://rhn.redhat.com/errata/RHSA-2002-295.html">CUPS</a></td><td><a href="http://www.dwheeler.com/secure-programs/Secure-Programs-HOWTO.html#BUFFER-OVERFLOW"><strong class="sapi">Buffer Overflow</strong></a><br><strong class="sapi">Integer Overflow</strong><br>Temporary File Creation<br>Input Validation<br>Cross Site Scripting<br>Denial of Service (attack recovery)<br></td><td>Remote vulnerability</td><td>Remote vulnerability</td><td>Remote vulnerability</td></tr>
+<tr class="r21"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-010.html"><strong class="sapi">postgresql</strong></a></td><td><a href="http://www.dwheeler.com/secure-programs/Secure-Programs-HOWTO.html#BUFFER-OVERFLOW"><strong class="sapi">Buffer Overflow</strong></a><br></td><td>Remote vulnerability</td><td><strong class="sapi">Not applicable</strong></td><td><strong class="sapi">Not applicable</strong></td></tr>
+<tr class="r10"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-001.html">postgresql</a></td><td>Privilage Escalation (delete transaction log files)<br><a href="http://www.dwheeler.com/secure-programs/Secure-Programs-HOWTO.html#BUFFER-OVERFLOW"><strong class="sapi">Buffer Overflow</strong></a><br></td><td>Remote vulnerability</td><td>Local vulnerability</td><td>Local vulnerability</td></tr>
+<tr class="r20"><td><a href="http://rhn.redhat.com/errata/RHSA-2002-288.html">MySQL</a></td><td><strong class="sapi">Integer Overflow</strong><br>Input Validation<br><a href="http://www.dwheeler.com/secure-programs/Secure-Programs-HOWTO.html#BUFFER-OVERFLOW"><strong class="sapi">Buffer Overflow</strong></a><br></td><td>Remote vulnerability</td><td>Possibly remote vulnerability</td><td>Possibly remote vulnerability</td></tr>
+<tr class="r11"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-011.html"><strong class="sapi">dhcp</strong></a></td><td><a href="http://www.dwheeler.com/secure-programs/Secure-Programs-HOWTO.html#BUFFER-OVERFLOW"><strong class="sapi">Buffer Overflow</strong></a><br></td><td>Remote vulnerability</td><td><strong class="sapi">Not applicable</strong></td><td><strong class="sapi">Not applicable</strong></td></tr>
+<tr class="r20"><td><a href="http://rhn.redhat.com/errata/RHSA-2002-297.html">vim</a></td><td>Input Validation<br></td><td>Local vulnerability</td><td>Local vulnerability</td><td>Local vulnerability</td></tr>
+<tr class="r10"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-012.html">cvs</a></td><td>Privilage Escalation (write to any files)<br></td><td>Local vulnerability</td><td>Local vulnerability</td><td>Local vulnerability</td></tr>
+<tr class="r20"><td><a href="http://rhn.redhat.com/errata/RHSA-2002-202.html">python</a></td><td>Temporary File Creation<br></td><td>Local vulnerability</td><td>Local vulnerability</td><td>Local vulnerability</td></tr>
+<tr class="r10"><td><a href="http://rhn.redhat.com/errata/RHSA-2003-020.html">kerberos</a></td><td>Input Validation<br></td><td>Remote vulnerability</td><td>Remote vulnerability</td><td>Remote vulnerability</td></tr>
+</table>
+<br>
+<a id="summary-types"><h2>Summary of types of vulnerabilities</h2></a>
+<table width="100%">
+<tr class="rh"><td> Type of Vulnerability </td><td> Number of Vulnerabilities </td></tr>
+
+<tr><td><a href="http://www.dwheeler.com/secure-programs/Secure-Programs-HOWTO.html#BUFFER-OVERFLOW"><strong class="sapi">Buffer Overflow</strong></a><br></td><td>32</td></tr>
+<tr><td>Input Validation<br></td><td>30</td></tr>
+<tr><td>Denial of Service (All)<br></td><td>20</td></tr>
+<tr><td>Privilage Escalation (All)<br></td><td>16</td></tr>
+<tr><td><strong class="sapi">Integer Overflow</strong><br></td><td>12</td></tr>
+<tr><td>Cross Site Scripting<br></td><td>8</td></tr>
+<tr><td>Information Leak<br></td><td>7</td></tr>
+<tr><td>Temporary File Creation<br></td><td>5</td></tr>
+<tr><td>Broken Packaging (All)<br></td><td>4</td></tr>
+<tr><td><strong class="msapi">Input Validation</strong><br></td><td>3</td></tr>
+<tr><td>Improper Encoding (All)<br></td><td>3</td></tr>
+<tr><td>Double Free<br></td><td>2</td></tr>
+<tr><td><strong class="sapi">Off By One</strong><br></td><td>2</td></tr>
+<tr><td>Authenticated Privilage Escalation (All)<br></td><td>2</td></tr>
+<tr><td>Free uninitialized memory location<br></td><td>1</td></tr>
+<tr><td><strong class="msapi">Free memory that is in use</strong><br></td><td>1</td></tr>
+<tr><td>Man in the Middle<br></td><td>1</td></tr>
+</table>
+<a id="summary-range"><h2>Summary of range of vulnerabilities</h2></a>
+
+<h3>What happened</h3>
+<table width="100%">
+<tr class="rh"><td> Range of Vulnerability </td><td> Number of Vulnerabilities </td></tr>
+<tr><td>Remote vulnerabilities</td><td>75</td></tr>
+<tr><td>Possible remote vulnerabilities</td><td>5</td></tr>
+<tr><td>Local vulnerabilities</td><td>27</td></tr>
+<tr><td>All Vulnerabilities</td><td>107</td></tr>
+</table>
+<h3>What would have happened if all the packages had used a dynamic string API</h3>
+<table width="100%">
+<tr class="rh"><td> Range of Vulnerability </td><td> Number of Vulnerabilities </td></tr>
+<tr><td>Remote vulnerabilities</td><td>43 (57%)</td></tr>
+<tr><td>Possible remote vulnerabilities</td><td>4 (80%)</td></tr>
+<tr><td>Local vulnerabilities</td><td>27 (100%)</td></tr>
+<tr><td>All Vulnerabilities</td><td>74 (69%)</td></tr>
+</table>
+<h3>What would have happened if all the packages had used <a href="overview">Vstr</a></h3>
+<table width="100%">
+<tr class="rh"><td> Range of Vulnerability </td><td> Number of Vulnerabilities </td></tr>
+<tr><td>Remote vulnerabilities</td><td>40 (53%)</td></tr>
+<tr><td>Possible remote vulnerabilities</td><td>4 (80%)</td></tr>
+<tr><td>Local vulnerabilities</td><td>27 (100%)</td></tr>
+<tr><td>All Vulnerabilities</td><td>71 (66%)</td></tr>
+</table>
+
+</body></html>

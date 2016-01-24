@@ -1,0 +1,123 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <title>HTTPD using Vstr</title>
+
+<style>
+  A:hover { color: #20bbaa; }
+                                                                                
+  P { text-indent: 0.4cm; }
+
+  body { background: #FFF; color: #000; }
+</style>
+
+  </head>
+
+  <body>
+    <h1>HTTPD using Vstr</h1>
+
+<p> You can see the source of the JHTTPD daemon
+<a href="examples/ex_httpd.c">here</a>, some writing in general about
+HTTP/1.1 after implementing a server is
+<a href="http://www.and.org/texts/server-http">here</a>.</p>
+
+<pre>
+    Simple. Secure. Unit tests (over 90% coverage).
+
+% LC_ALL=C egrep '[^_.>a-zA-Z0-9](mem|rawmem|bcopy|bzero|bcmp|str(n?cpy|n?cat|n?cmp|coll|xfrm|n?dup|r?chr|c?spn|str|pbrk|tok|n?case|sep|verscmp|fry|_)|stpn?cpy|r?index[^.]|basename|dirname|a?sn?printf|byte_)' examples/ex_httpd.c
+%
+
+    Design is a statemachine triggering off IO events, somewhat like thttpd and boa (among others).
+     Simple tests with ab show it to be about twice as fast as thttpd-2.20c (note that thttpd doesn't support keep-alive, which gives jhttpd a significant advantage -- mainly due to usage of Vstr).
+
+    Uses the following system utilities:
+     poll or epoll, multiplexing
+     multiple process support. for MP systems
+     sendfile or mmap, for file contents
+     LFS
+     TCP_CORK
+     TCP_DEFER_ACCEPT
+     posix_fadvise()
+     chroot, privilage de-escalation (can also easily be started as non-root)
+     does a bind mount for /dev/log when in a chroot.
+     socket filters
+     IP binding
+
+    Is HTTP/1.1 conditionally compliant, as far as I know.
+    Supports optional HTTP/1.1 features:
+     Accept header for Content-Type.
+     0.9 HTTP compatability support
+     keep-alive, on by default for 1.1 and 1.0
+     virtual hosts (via. prefix directories and explicit configuration
+                    statements)
+     if-modified-since/if-unmodified-since
+     byte ranges (single and multipart/byteranges)
+       if-range
+       multipart/byteranges can also be limited to prevent DOS attacks.
+     accept-encoding/content-encoding for gzip/bzip2 (via. pre-generated files)
+      Also fully obeys identity
+     ETags
+     accept-language negotiation to serve multiple languages
+     
+
+    Parses /etc/mime.types file
+      plus extensions for disallowing certain file types.
+
+    Configuration file parser.
+     Also has optional "per request" configuration files (using the same code, 
+     and thus layout, as the main configuration files), allowing you to:
+      Generate explicit Content-Types.
+       Generate negotiated Content-Types for requests with multiple types.
+       Eg. http://www.and.org/vstr/examples/httpd.c
+         is available as text/plain and text/html
+      Generate Content-MD5 data.
+      Generate Content-Location data.
+      Generate Expires and Cache-Control data.
+      Generate all four types of redirect's.
+      Generate the usable types of error conditions.
+      Change the file object used to serve the data.
+      Has a native ACL configuration (can also use Linux socket filters).
+      All "configuration parameters" done through policies.
+       Change configuration policy based on ip address connections.
+       Change configuration policy based on many parameters of the request.
+        Automatically generate the "right" Vary header based on which fields
+        of the request were tested.
+
+    includes init.d file, and allows "local controller" connections for soft
+    restarts, status information etc.
+
+    Converter to make log files that look like apache-httpd combined log files.
+
+    DOES NOT:
+      Auto generate directory listings (see ex_dir_list2html in Vstr examples)
+
+      SSI, or other file contents parsing (see ex_ssi in Vstr examples)
+
+      Run programs (doesn't call exec at all, only calls fork() at startup
+                    for MP systems).
+
+      Call any i18n/gettext libc functions (will be fixed).
+
+      Parse or honor the Accept-Charset header.
+
+      Full date parser (not a problem, string matches work well).
+
+   NMAP simple service fingerprint(s):
+
+Probe TCP GetRequest q|GET / HTTP/1.0\r\n\r\n|
+ports 70,79,80-85,88,113,139,143,280,497,515,540,554,631,783,993,995,1220,1503,2030,3052,3128,3372,3531,3689,5000,5432,5800,5900,6699,7070,8000-8010,8080-8085,8880-8888,9090,9999,10000,10005,11371,13722,15000,40193,4711
+
+match http m|^HTTP/1\.1 \d\d\d .*\r\nServer: jhttpd/(\d+\.\d+\.[-.\w]+) \(Vstr\)|s v/jhttpd - Vstr example/$1//
+match http m|^HTTP/1\.1 \d\d\d .*\r\nServer: jhttpd/(\d+\.\d+\.[-.\w]+) ([^\r\n]+)|s v/jhttpd/$1/$2/
+match http m|^HTTP/1\.1 \d\d\d .*\r\nServer: jhttpd| v/jhttpd///
+
+</pre>
+
+    <hr>
+    <address><a href="mailto:james-web@and.org">James Antill</a></address>
+<!-- Created: Mon Jan 17 18:09:46 EST 2005 -->
+<!-- hhmts start -->
+Last modified: Tue Aug 23 19:35:09 EDT 2005
+<!-- hhmts end -->
+  </body>
+</html>

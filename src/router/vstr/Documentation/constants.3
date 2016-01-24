@@ -1,0 +1,3413 @@
+.TH vstr_const 3 "06-Mar-2006" "Vstr 1.0.15" "Vstr String Library"
+.SH "SYNOPSIS"
+.in \w'  'u
+#include <vstr.h>
+.sp
+.NH
+.sp
+.br
+.ti \w'  'u
+\fBVSTR_COMPILE_ATTRIBUTES\fR
+.br
+.ti \w'  'u
+\fBVSTR_COMPILE_INCLUDE\fR
+.br
+.ti \w'  'u
+\fBVSTR_COMPILE_INLINE\fR
+.br
+.ti \w'  'u
+\fBVSTR_COMPILE_MACRO_FUNCTIONS\fR
+.br
+.ti \w'  'u
+\fBVSTR_COMPILE_TYPEDEF\fR
+.sp
+.br
+.ti \w'  'u
+\fBVSTR_MAX_NODE_ALL\fR
+.br
+.ti \w'  'u
+\fBVSTR_MAX_NODE_BUF\fR
+.sp
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_NODE_BUF\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_NODE_NON\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_NODE_PTR\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_NODE_REF\fR
+.sp
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_ADD_DEF\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SUB_DEF\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_ADD_BUF_PTR\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SUB_BUF_PTR\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_ADD_BUF_REF\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SUB_BUF_REF\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_ADD_ALL_REF\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SUB_ALL_REF\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_ADD_ALL_BUF\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SUB_ALL_BUF\fR
+.sp
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_FMT_END\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_FMT_INT\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_FMT_UINT\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_FMT_LONG\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_FMT_ULONG\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_FMT_LONG_LONG\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_FMT_ULONG_LONG\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_FMT_SSIZE_T\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_FMT_SIZE_T\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_FMT_PTRDIFF_T\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_FMT_INTMAX_T\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_FMT_UINTMAX_T\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_FMT_DOUBLE\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_FMT_DOUBLE_LONG\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_FMT_PTR_VOID\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_FMT_PTR_CHAR\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_FMT_PTR_WCHAR_T\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_FMT_PTR_INT\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_FMT_PTR_INTMAX_T\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_FMT_PTR_LONG\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_FMT_PTR_LONG_LONG\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_FMT_PTR_PTRDIFF_T\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_FMT_PTR_SHORT\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_FMT_PTR_SIGNED_CHAR\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_FMT_PTR_SSIZE_T\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_FMT_ERRNO\fR
+.sp
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_ITER_DEF\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_ITER_END\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_ITER_NON\fR
+.sp
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_SC_FMT_CB_BEG_DEF\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_SC_FMT_CB_BEG_OBJ_STR\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_SC_FMT_CB_BEG_OBJ_ATOM\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_SC_FMT_CB_BEG_OBJ_NUM\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_SC_FMT_CB_BEG_OBJ_NEG\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_SC_FMT_CB_BEG_OBJ_HEXNUM_H\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_SC_FMT_CB_BEG_OBJ_HEXNUM_L\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_SC_FMT_CB_BEG_OBJ_OCTNUM\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_SC_FMT_CB_BEG_OBJ_BINNUM_H\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_SC_FMT_CB_BEG_OBJ_BINNUM_L\fR
+.sp
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_CONV_UNPRINTABLE_ALLOW_NONE\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_CONV_UNPRINTABLE_ALLOW_NUL\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_CONV_UNPRINTABLE_ALLOW_BEL\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_CONV_UNPRINTABLE_ALLOW_BS\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_CONV_UNPRINTABLE_ALLOW_HT\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_CONV_UNPRINTABLE_ALLOW_LF\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_CONV_UNPRINTABLE_ALLOW_VT\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_CONV_UNPRINTABLE_ALLOW_FF\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_CONV_UNPRINTABLE_ALLOW_CR\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_CONV_UNPRINTABLE_ALLOW_SP\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_CONV_UNPRINTABLE_ALLOW_COMMA\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_CONV_UNPRINTABLE_ALLOW_DOT\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_CONV_UNPRINTABLE_ALLOW__\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_CONV_UNPRINTABLE_ALLOW_ESC\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_CONV_UNPRINTABLE_ALLOW_DEL\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_CONV_UNPRINTABLE_ALLOW_HSP\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_CONV_UNPRINTABLE_ALLOW_HIGH\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_CONV_UNPRINTABLE_DEF\fR
+.sp
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_PARSE_NUM_ERR_NONE\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_PARSE_NUM_ERR_ONLY_S\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_PARSE_NUM_ERR_ONLY_SPM\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_PARSE_NUM_ERR_ONLY_SPMX\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_PARSE_NUM_ERR_OOB\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_PARSE_NUM_ERR_OVERFLOW\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_PARSE_NUM_ERR_NEGATIVE\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_PARSE_NUM_ERR_BEG_ZERO\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_PARSE_NUM_DEF\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_PARSE_NUM_LOCAL\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_PARSE_NUM_SEP\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_PARSE_NUM_OVERFLOW\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_PARSE_NUM_SPACE\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_PARSE_NUM_NO_BEG_ZERO\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_PARSE_NUM_NO_BEG_PM\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_PARSE_NUM_NO_NEGATIVE\fR
+.sp
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_PARSE_IPV4_ERR_NONE\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_PARSE_IPV4_ERR_IPV4_OOB\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_PARSE_IPV4_ERR_IPV4_FULL\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_PARSE_IPV4_ERR_ONLY\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_PARSE_IPV4_ERR_CIDR_OOB\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_PARSE_IPV4_ERR_CIDR_FULL\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_PARSE_IPV4_ERR_NETMASK_OOB\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_PARSE_IPV4_ERR_NETMASK_FULL\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_PARSE_IPV4_DEF\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_PARSE_IPV4_LOCAL\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_PARSE_IPV4_ZEROS\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_PARSE_IPV4_FULL\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_PARSE_IPV4_CIDR\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_PARSE_IPV4_CIDR_FULL\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_PARSE_IPV4_NETMASK\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_PARSE_IPV4_NETMASK_FULL\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_PARSE_IPV4_ONLY\fR
+.sp
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_PARSE_IPV6_ERR_NONE\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_PARSE_IPV6_ERR_IPV6_OOB\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_PARSE_IPV6_ERR_IPV6_FULL\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_PARSE_IPV6_ERR_ONLY\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_PARSE_IPV6_ERR_CIDR_OOB\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_PARSE_IPV6_ERR_CIDR_FULL\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_PARSE_IPV6_ERR_IPV6_NULL\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_PARSE_IPV6_DEF\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_PARSE_IPV6_LOCAL\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_PARSE_IPV6_CIDR\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_PARSE_IPV6_CIDR_FULL\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_PARSE_IPV6_ONLY\fR
+.sp
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SC_FMT_CB_IPV6_ALIGNED\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SC_FMT_CB_IPV6_COMPACT\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SC_FMT_CB_IPV6_STD\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SC_FMT_CB_IPV6_IPV4_ALIGNED\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SC_FMT_CB_IPV6_IPV4_COMPACT\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SC_FMT_CB_IPV6_IPV4_STD\fR
+.sp
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_SPLIT_DEF\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_SPLIT_BEG_NULL\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_SPLIT_MID_NULL\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_SPLIT_END_NULL\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_SPLIT_POST_NULL\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_SPLIT_NO_RET\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_SPLIT_REMAIN\fR
+.sp
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_SECTS_FOREACH_DEF\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_SECTS_FOREACH_BACKWARD\fR
+.br
+.ti \w'  'u
+\fBVSTR_FLAG_SECTS_FOREACH_ALLOW_NULL\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SECTS_FOREACH_DEF\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SECTS_FOREACH_DEL\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SECTS_FOREACH_RET\fR
+.sp
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_CACHE_ADD\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_CACHE_DEL\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_CACHE_SUB\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_CACHE_FREE\fR
+.sp
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SC_MMAP_FD_ERR_NONE\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SC_MMAP_FILE_ERR_NONE\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SC_MMAP_FILE_ERR_OPEN_ERRNO\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SC_MMAP_FD_ERR_FSTAT_ERRNO\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SC_MMAP_FILE_ERR_FSTAT_ERRNO\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SC_MMAP_FD_ERR_MMAP_ERRNO\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SC_MMAP_FILE_ERR_MMAP_ERRNO\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SC_MMAP_FILE_ERR_CLOSE_ERRNO\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SC_MMAP_FD_ERR_MEM\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SC_MMAP_FILE_ERR_MEM\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SC_MMAP_FD_ERR_TOO_LARGE\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SC_MMAP_FILE_ERR_TOO_LARGE\fR
+.sp
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SC_READ_FD_ERR_NONE\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SC_READ_FILE_ERR_NONE\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SC_READ_FILE_ERR_OPEN_ERRNO\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SC_READ_FD_ERR_FSTAT_ERRNO\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SC_READ_FILE_ERR_FSTAT_ERRNO\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SC_READ_FILE_ERR_SEEK_ERRNO\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SC_READ_FD_ERR_READ_ERRNO\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SC_READ_FILE_ERR_READ_ERRNO\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SC_READ_FILE_ERR_CLOSE_ERRNO\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SC_READ_FD_ERR_EOF\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SC_READ_FILE_ERR_EOF\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SC_READ_FD_ERR_MEM\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SC_READ_FILE_ERR_MEM\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SC_READ_FD_ERR_TOO_LARGE\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SC_READ_FILE_ERR_TOO_LARGE\fR
+.sp
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SC_WRITE_FD_ERR_NONE\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SC_WRITE_FILE_ERR_NONE\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SC_WRITE_FILE_ERR_SEEK_ERRNO\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SC_WRITE_FILE_ERR_OPEN_ERRNO\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SC_WRITE_FD_ERR_WRITE_ERRNO\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SC_WRITE_FILE_ERR_WRITE_ERRNO\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SC_WRITE_FILE_ERR_CLOSE_ERRNO\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SC_WRITE_FD_ERR_MEM\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_SC_WRITE_FILE_ERR_MEM\fR
+.sp
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_BASE_GET_CONF\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_BASE_SET_CONF\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_BASE_GET_FLAG_HAVE_CACHE\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_BASE_GET_TYPE_GRPALLOC_CACHE\fR
+.sp
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_GET_NUM_BUF_SZ\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_SET_NUM_BUF_SZ\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_GET_NUM_IOV_MIN_ALLOC\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_SET_NUM_IOV_MIN_ALLOC\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_GET_NUM_IOV_MIN_OFFSET\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_SET_NUM_IOV_MIN_OFFSET\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_GET_NUM_REF\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_SET_LOC_CSTR_AUTO_NAME_NUMERIC\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_GET_LOC_CSTR_NAME_NUMERIC\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_SET_LOC_CSTR_NAME_NUMERIC\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_GET_LOC_CSTR_DEC_POINT\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_SET_LOC_CSTR_DEC_POINT\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_GET_LOC_CSTR_THOU_SEP\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_SET_LOC_CSTR_THOU_SEP\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_GET_LOC_CSTR_THOU_GRP\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_SET_LOC_CSTR_THOU_GRP\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_GET_FLAG_IOV_UPDATE\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_SET_FLAG_IOV_UPDATE\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_GET_FLAG_DEL_SPLIT\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_SET_FLAG_DEL_SPLIT\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_GET_FLAG_ALLOC_CACHE\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_SET_FLAG_ALLOC_CACHE\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_GET_FMT_CHAR_ESC\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_SET_FMT_CHAR_ESC\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_GET_NUM_SPARE_BUF\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_GET_NUM_SPARE_NON\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_GET_NUM_SPARE_PTR\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_GET_NUM_SPARE_REF\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_SET_NUM_SPARE_BUF\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_SET_NUM_SPARE_NON\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_SET_NUM_SPARE_PTR\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_SET_NUM_SPARE_REF\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_GET_FLAG_ATOMIC_OPS\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_SET_FLAG_ATOMIC_OPS\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_SET_NUM_RANGE_SPARE_BUF\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_SET_NUM_RANGE_SPARE_NON\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_SET_NUM_RANGE_SPARE_PTR\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_SET_NUM_RANGE_SPARE_REF\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_GET_NUM_SPARE_BASE\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_SET_NUM_SPARE_BASE\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_SET_NUM_RANGE_SPARE_BASE\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_GET_TYPE_GRPALLOC_CACHE\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_SET_TYPE_GRPALLOC_CACHE\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_GET_LOC_REF_NAME_NUMERIC\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_SET_LOC_REF_NAME_NUMERIC\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_GET_LOC_REF_DEC_POINT\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_SET_LOC_REF_DEC_POINT\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_GET_LOC_REF_THOU_SEP\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_SET_LOC_REF_THOU_SEP\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_GET_LOC_REF_THOU_GRP\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_SET_LOC_REF_THOU_GRP\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_GET_LOC_REF_NULL_PTR\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_CONF_SET_LOC_REF_NULL_PTR\fR
+.sp
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_OPT_GET_CONF\fR
+.br
+.ti \w'  'u
+\fBVSTR_CNTL_OPT_SET_CONF\fR
+.sp
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_CNTL_CONF_GRPALLOC_NONE\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_CNTL_CONF_GRPALLOC_POS\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_CNTL_CONF_GRPALLOC_IOVEC\fR
+.br
+.ti \w'  'u
+\fBVSTR_TYPE_CNTL_CONF_GRPALLOC_CSTR\fR
+
+.ti
+.HY
+.SH "DESCRIPTION"
+.SH Compile switch constants
+
+.br
+\fBConstant: \fR VSTR_COMPILE_ATTRIBUTES
+
+.br
+\fBExplanation:\fR
+
+.br
+  This switch controls whether gcc type __attribute__() statements are used in the public headers headers for the library. If the value is 1 then if they are supported by the compiler that built the library they will be used, if the value is 0 they won't be used at all.
+
+.br
+\fBConstant: \fR VSTR_COMPILE_INCLUDE
+
+.br
+\fBExplanation:\fR
+
+.br
+  This switch controls whether including <vstr.h> will include all the system headers needed for the exported interfaces. If the value is 1 then if they are included, if the value is 0 they won't be included.
+
+.br
+\fBConstant: \fR VSTR_COMPILE_INLINE
+
+.br
+\fBExplanation:\fR
+
+.br
+  This switch controls whether inline functions will be used in the public headers for the library. If the value is 1 then if they are supported by the compiler that built the library they will be used, if the value is 0 they won't be used.
+
+.br
+\fBConstant: \fR VSTR_COMPILE_MACRO_FUNCTIONS
+
+.br
+\fBExplanation:\fR
+
+.br
+  This switch controls whether macro functions will be used in the public headers for the library. If the value is 1 then they will be used, if the value is 0 they won't be used.
+.sp
+\fBNote:\fR
+
+.br
+  This only includes the macro  functions which also have real function replacements. For example VSTR_ADD_CSTR_BUF() won't be defined because there is a vstr_add_cstr_buf() function, but VSTR_FMT_CB_ARG_PTR() will always be defined.
+
+.br
+\fBConstant: \fR VSTR_COMPILE_TYPEDEF
+
+.br
+\fBExplanation:\fR
+
+.br
+  This switch controls whether typedef will be used for the structs in the public headers for the library. If the value is 1 then they will be used, if the value is 0 they won't be used at all (and your code will have to use struct tags instead -- note all libraries using vstr should compile with this option set).
+
+.SH Global constants
+
+.br
+\fBConstant: \fR VSTR_MAX_NODE_ALL
+
+.br
+\fBExplanation:\fR
+
+.br
+  This is the largest size a node can be, if you pass values greater than this to vstr_add_ptr() etc. then multiple nodes will be allocated.
+
+.br
+\fBConstant: \fR VSTR_MAX_NODE_BUF
+
+.br
+\fBExplanation:\fR
+
+.br
+  This is the largest size a node _BUF type can be, if you pass values greater than this to vstr_add_buf() etc. then multiple nodes will be allocated.
+
+.SH Constants passed to vstr_make_spare_nodes() and vstr_free_spare_nodes()
+
+.br
+\fBConstant: \fR VSTR_TYPE_NODE_BUF
+
+.br
+\fBExplanation:\fR
+
+.br
+  This type when passed to vstr_make_space_nodes() specifies nodes of type _BUF, which are the only nodes that can be "written" to. These nodes are added into a Vstr string by the vstr_add_buf() function and the vstr_add_iovec_buf_*() functions.
+.sp
+\fBNote:\fR
+
+.br
+  A call to vstr_sub_buf() with a Vstr string consisting of _BUF nodes means that data will be substituted inplace.
+
+.br
+\fBConstant: \fR VSTR_TYPE_NODE_NON
+
+.br
+\fBExplanation:\fR
+
+.br
+  This type when passed to vstr_make_space_nodes() specifies nodes of type _NON, which are nodes that contain "nothing". These nodes can be used as placeholders for data, and are added into a Vstr string by the vstr_add_non() function.
+
+.br
+\fBConstant: \fR VSTR_TYPE_NODE_PTR
+
+.br
+\fBExplanation:\fR
+
+.br
+  This type when passed to vstr_make_space_nodes() specifies nodes of type _PTR, which are nodes that contain a memory pointer to an area of memory.
+
+.br
+\fBConstant: \fR VSTR_TYPE_NODE_REF
+
+.br
+\fBExplanation:\fR
+
+.br
+  This type when passed to vstr_make_space_nodes() specifies nodes of type _REF, which are nodes that contain a Vstr memory reference.
+
+.SH Constants passed to vstr_add_vstr() and vstr_sub_vstr()
+
+.br
+\fBConstant: \fR VSTR_TYPE_ADD_DEF
+
+\fBConstant: \fR VSTR_TYPE_SUB_DEF
+
+.br
+\fBExplanation:\fR
+
+.br
+  This type when passed to either vstr_sub_vstr() or vstr_add_vstr() specifies that all types of nodes are added as their respective type.
+
+.br
+\fBConstant: \fR VSTR_TYPE_ADD_BUF_PTR
+
+\fBConstant: \fR VSTR_TYPE_SUB_BUF_PTR
+
+.br
+\fBExplanation:\fR
+
+.br
+  This type when passed to either vstr_sub_vstr() or vstr_add_vstr() specifies that all nodes of type _BUF are added as type _PTR.
+.sp
+\fBNote:\fR
+
+.br
+  If you add/del/sub data in the original Vstr string then because the added data is only pointers to the old data, life may become interesting for you.
+
+.br
+\fBConstant: \fR VSTR_TYPE_ADD_BUF_REF
+
+\fBConstant: \fR VSTR_TYPE_SUB_BUF_REF
+
+.br
+\fBExplanation:\fR
+
+.br
+  This type when passed to either vstr_sub_vstr() or vstr_add_vstr() specifies that all nodes of type _BUF are converted to type _REF before being added.
+
+.sp
+\fBNote:\fR
+
+.br
+  This means that if you do a substitution on the original Vstr string it will now be less efficient, as the _REF nodes cannot have data substituted in place.
+.br
+  The _BUF nodes will not go back to the pool in the Vstr configuration as happens if you deleted them.
+
+.br
+\fBConstant: \fR VSTR_TYPE_ADD_ALL_REF
+
+\fBConstant: \fR VSTR_TYPE_SUB_ALL_REF
+
+.br
+\fBExplanation:\fR
+
+.br
+  This type when passed to either vstr_sub_vstr() or vstr_add_vstr() specifies that the data should be taken as though vstr_export_ref() was called on the original Vstr string.
+
+.br
+\fBConstant: \fR VSTR_TYPE_ADD_ALL_BUF
+
+\fBConstant: \fR VSTR_TYPE_SUB_ALL_BUF
+
+.br
+\fBExplanation:\fR
+
+.br
+  This type when passed to either vstr_sub_vstr() or vstr_add_vstr() specifies that the data should all be added via. vstr_add_buf().
+
+.SH Constants passed to vstr_fmt_add()
+
+.br
+\fBConstant: \fR VSTR_TYPE_FMT_END
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag means that there are no more arguments to be expected.
+.sp
+\fBNote:\fR
+
+.br
+  Because you can have multiple arguments associated with one custom "fmt" specification this has to be the last argument to every call to vstr_fmt_add().
+.br
+  Just specifying this type means that there are no arguments used, by the custom "fmt" specification.
+
+.br
+\fBConstant: \fR VSTR_TYPE_FMT_INT
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag means that vstr_add_vfmt() should expect a "int" type from the argument list passed to it
+
+.br
+\fBConstant: \fR VSTR_TYPE_FMT_UINT
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag means that vstr_add_vfmt() should expect an "unsigned int" type from the argument list passed to it
+
+.br
+\fBConstant: \fR VSTR_TYPE_FMT_LONG
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag means that vstr_add_vfmt() should expect a "long" type from the argument list passed to it
+
+.br
+\fBConstant: \fR VSTR_TYPE_FMT_ULONG
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag means that vstr_add_vfmt() should expect an "unsigned long" type from the argument list passed to it
+
+.br
+\fBConstant: \fR VSTR_TYPE_FMT_LONG_LONG
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag means that vstr_add_vfmt() should expect a "long long" type from the argument list passed to it
+
+.br
+\fBConstant: \fR VSTR_TYPE_FMT_ULONG_LONG
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag means that vstr_add_vfmt() should expect an "unsigned long long" type from the argument list passed to it
+
+.br
+\fBConstant: \fR VSTR_TYPE_FMT_SSIZE_T
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag means that vstr_add_vfmt() should expect a "ssize_t" type from the argument list passed to it
+
+.br
+\fBConstant: \fR VSTR_TYPE_FMT_SIZE_T
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag means that vstr_add_vfmt() should expect a "size_t" type from the argument list passed to it
+
+.br
+\fBConstant: \fR VSTR_TYPE_FMT_PTRDIFF_T
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag means that vstr_add_vfmt() should expect a "ptrdiff_t" type from the argument list passed to it
+
+.br
+\fBConstant: \fR VSTR_TYPE_FMT_INTMAX_T
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag means that vstr_add_vfmt() should expect a "intmax_t" type from the argument list passed to it
+
+.br
+\fBConstant: \fR VSTR_TYPE_FMT_UINTMAX_T
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag means that vstr_add_vfmt() should expect a "uintmax_t" type from the argument list passed to it
+
+.br
+\fBConstant: \fR VSTR_TYPE_FMT_DOUBLE
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag means that vstr_add_vfmt() should expect a "double" type from the argument list passed to it
+
+.br
+\fBConstant: \fR VSTR_TYPE_FMT_DOUBLE_LONG
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag means that vstr_add_vfmt() should expect a "long double" type from the argument list passed to it
+
+.br
+\fBConstant: \fR VSTR_TYPE_FMT_PTR_VOID
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag means that vstr_add_vfmt() should expect a "void *" type from the argument list passed to it
+
+.br
+\fBConstant: \fR VSTR_TYPE_FMT_PTR_CHAR
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag means that vstr_add_vfmt() should expect a "char *" type from the argument list passed to it
+
+.br
+\fBConstant: \fR VSTR_TYPE_FMT_PTR_WCHAR_T
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag means that vstr_add_vfmt() should expect a "wchar_t *" type from the argument list passed to it
+
+.br
+\fBConstant: \fR VSTR_TYPE_FMT_PTR_INT
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag means that vstr_add_vfmt() should expect an "int *" type from the argument list passed to it
+
+.br
+\fBConstant: \fR VSTR_TYPE_FMT_PTR_INTMAX_T
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag means that vstr_add_vfmt() should expect an "intmax_t *" type from the argument list passed to it
+
+.br
+\fBConstant: \fR VSTR_TYPE_FMT_PTR_LONG
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag means that vstr_add_vfmt() should expect an "long *" type from the argument list passed to it
+
+.br
+\fBConstant: \fR VSTR_TYPE_FMT_PTR_LONG_LONG
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag means that vstr_add_vfmt() should expect an "long long *" type from the argument list passed to it
+
+.br
+\fBConstant: \fR VSTR_TYPE_FMT_PTR_PTRDIFF_T
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag means that vstr_add_vfmt() should expect an "ptrdiff_t *" type from the argument list passed to it
+
+.br
+\fBConstant: \fR VSTR_TYPE_FMT_PTR_SHORT
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag means that vstr_add_vfmt() should expect an "short *" type from the argument list passed to it
+
+.br
+\fBConstant: \fR VSTR_TYPE_FMT_PTR_SIGNED_CHAR
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag means that vstr_add_vfmt() should expect an "signed char *" type from the argument list passed to it
+
+.br
+\fBConstant: \fR VSTR_TYPE_FMT_PTR_SSIZE_T
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag means that vstr_add_vfmt() should expect an "ssize_t *" type from the argument list passed to it
+
+.br
+\fBConstant: \fR VSTR_TYPE_FMT_ERRNO
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag means that vstr_add_vfmt() should not expect any arguments passed, but should set the value of errno, just before calling the user callback, to the value upon entering vstr_add_vfmt().
+
+.SH Constants returned from vstr_iter_fwd_*()
+
+
+.br
+\fBConstant: \fR VSTR_TYPE_ITER_DEF
+
+.br
+\fBExplanation:\fR
+
+.br
+  This return flag is 0, and is generally only used as programmer documentation to mean nothing special is meant for this data.
+
+.br
+\fBConstant: \fR VSTR_TYPE_ITER_END
+
+.br
+\fBExplanation:\fR
+
+.br
+  This return flag means that the data is at an end.
+
+.br
+\fBConstant: \fR VSTR_TYPE_ITER_NON
+
+.br
+\fBExplanation:\fR
+
+.br
+  This return flag means that the data is actually from within a node of type VSTR_TYPE_NODE_NON.
+
+.SH Constants passed to vstr_sc_fmt_cb_beg()
+
+.br
+\fBConstant: \fR VSTR_FLAG_SC_FMT_CB_BEG_DEF
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag is the same as just specifying VSTR_FLAG_SC_FMT_CB_BEG_OBJ_STR.
+
+.br
+\fBConstant: \fR VSTR_FLAG_SC_FMT_CB_BEG_OBJ_STR
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag indicates that the object should be treated as a C style string, so it is assumed that number orientated flags should be ignored and that the length of the object can be arbitrarily truncated.
+
+.br
+\fBConstant: \fR VSTR_FLAG_SC_FMT_CB_BEG_OBJ_ATOM
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag indicates that the object should be treated as an atomic piece of data, so it is assumed that number orientated flags should be ignored and that the length of the object can't be truncated.
+
+.br
+\fBConstant: \fR VSTR_FLAG_SC_FMT_CB_BEG_OBJ_NUM
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag indicates that the object you are printing should be treated as a number. For instance setting a precision will truncate the length of the object, unless it is a number. Also +/-/<space> leaders and zero padding will only be done for numbers.
+
+.br
+\fBConstant: \fR VSTR_FLAG_SC_FMT_CB_BEG_OBJ_NEG
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag indicates that the number object you are printing should be treated as negative number. This flag has no meaning if VSTR_FLAG_SC_FMT_CB_BEG_OBJ_NUM is not set.
+
+.br
+\fBConstant: \fR VSTR_FLAG_SC_FMT_CB_BEG_OBJ_HEXNUM_H
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag indicates that the number object you are printing should be treated as an uppercase hexadecimal (base 16) number. This flag has no meaning if VSTR_FLAG_SC_FMT_CB_BEG_OBJ_NUM is not set.
+
+.br
+\fBConstant: \fR VSTR_FLAG_SC_FMT_CB_BEG_OBJ_HEXNUM_L
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag indicates that the number object you are printing should be treated as a lowercase hexadecimal (base 16) number. This flag has no meaning if VSTR_FLAG_SC_FMT_CB_BEG_OBJ_NUM is not set.
+
+.br
+\fBConstant: \fR VSTR_FLAG_SC_FMT_CB_BEG_OBJ_OCTNUM
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag indicates that the number object you are printing should be treated as octal (base 8) number. This flag has no meaning if VSTR_FLAG_SC_FMT_CB_BEG_OBJ_NUM is not set.
+
+.br
+\fBConstant: \fR VSTR_FLAG_SC_FMT_CB_BEG_OBJ_BINNUM_H
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag indicates that the number object you are printing should be treated as an uppercase base 2 number. This flag has no meaning if VSTR_FLAG_SC_FMT_CB_BEG_OBJ_NUM is not set.
+
+.br
+\fBConstant: \fR VSTR_FLAG_SC_FMT_CB_BEG_OBJ_BINNUM_L
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag indicates that the number object you are printing should be treated as a lowercase base 2 number. This flag has no meaning if VSTR_FLAG_SC_FMT_CB_BEG_OBJ_NUM is not set.
+
+.SH Constants passed to vstr_conv_unprintable_del() and vstr_conv_unprintable_chr()
+
+.br
+\fBConstant: \fR VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_NONE
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag is 0, and is generally only used as programmer documentation to mean no flags are applied to this function.
+.sp
+\fBNote:\fR
+
+.br
+  Because it is sometimes hard are to notice certain characters, they are classified as "unprintable" by default, the value VSTR_FLAG_CONV_UNPRINTABLE_DEF is a default that is what most people would expect to be classified as unprintable.
+
+.br
+\fBConstant: \fR VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_NUL
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag allows the ASCII 0x00 byte, aka. NULL, through as a "printable" character.
+
+.br
+\fBConstant: \fR VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_BEL
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag allows the ASCII 0x07 byte, aka. terminal bell, through as a "printable" character.
+
+.br
+\fBConstant: \fR VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_BS
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag allows the ASCII 0x08 byte, aka. backspace, through as a "printable" character.
+
+.br
+\fBConstant: \fR VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_HT
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag allows the ASCII 0x09 byte, aka. horizontal tab, through as a "printable" character.
+
+.br
+\fBConstant: \fR VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_LF
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag allows the ASCII 0x0A byte, aka. line feed, through as a "printable" character.
+
+.br
+\fBConstant: \fR VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_VT
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag allows the ASCII 0x0B byte, aka. vertical tab, through as a "printable" character.
+
+.br
+\fBConstant: \fR VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_FF
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag allows the ASCII 0x0C byte, aka. form feed, through as a "printable" character.
+
+.br
+\fBConstant: \fR VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_CR
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag allows the ASCII 0x0D byte, aka. carriage return, through as a "printable" character.
+
+.br
+\fBConstant: \fR VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_SP
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag allows the ASCII 0x20 byte, aka. space, through as a "printable" character.
+
+.br
+\fBConstant: \fR VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_COMMA
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag allows the ASCII 0x2C byte, aka. comma, through as a "printable" character.
+
+.br
+\fBConstant: \fR VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_DOT
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag allows the ASCII 0x2E byte, aka. dot, through as a "printable" character.
+
+.br
+\fBConstant: \fR VSTR_FLAG_CONV_UNPRINTABLE_ALLOW__
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag allows the ASCII 0x5F byte, aka. underbar, through as a "printable" character.
+
+.br
+\fBConstant: \fR VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_ESC
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag allows the ASCII 0x1B byte, aka. escape, through as a "printable" character.
+
+.br
+\fBConstant: \fR VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_DEL
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag allows the ASCII 0x7F byte, aka. delete, through as a "printable" character.
+
+.br
+\fBConstant: \fR VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_HSP
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag allows the ASCII 0xA0 byte through as a "printable" character.
+.sp
+\fBNote:\fR
+
+.br
+  The value 0xA0 is 0x20 with the high bit set, and this character it often printed as space when in an ASCII like encoding.
+
+.br
+\fBConstant: \fR VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_HIGH
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag allows the all ASCII bytes greater than or equal to 0xA1 through as "printable" characters.
+.sp
+\fBNote:\fR
+
+.br
+  This includes all the extra characters like not, degree, copyright and micro when in an ASCII like encoding.
+
+.br
+\fBConstant: \fR VSTR_FLAG_CONV_UNPRINTABLE_DEF
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag is the same as using the flags for space, comma, dot and underbar. Using just this flag is probably what you'd expect an "unprintable" function to do.
+
+.SH Constants passed to vstr_parse_num() etc.
+
+.br
+\fBConstant: \fR VSTR_TYPE_PARSE_NUM_ERR_NONE
+
+.br
+\fBExplanation:\fR
+
+.br
+  This error code has the value 0, and means that no error occurred parsing the number from the Vstr string.
+
+.br
+\fBConstant: \fR VSTR_TYPE_PARSE_NUM_ERR_ONLY_S
+
+.br
+\fBExplanation:\fR
+
+.br
+  This error code means that the Vstr string consisted only of spaces.
+
+.br
+\fBConstant: \fR VSTR_TYPE_PARSE_NUM_ERR_ONLY_SPM
+
+.br
+\fBExplanation:\fR
+
+.br
+  This error code means that the Vstr string consisted only spaces, and a plus or minus sign.
+
+.br
+\fBConstant: \fR VSTR_TYPE_PARSE_NUM_ERR_ONLY_SPMX
+
+.br
+\fBExplanation:\fR
+
+.br
+  This error code means that the Vstr string consisted only spaces, a plus or minus sign and a "0x" base 16 prefix.
+
+.br
+\fBConstant: \fR VSTR_TYPE_PARSE_NUM_ERR_OOB
+
+.br
+\fBExplanation:\fR
+
+.br
+  This error code means that the Vstr string had characters in it that where out of bounds from the working set.
+.sp
+\fBNote:\fR
+
+.br
+  This out of bounds includes the Vstr string "++" as well as "4A", when parsing in a base less than 11.
+
+.br
+\fBConstant: \fR VSTR_TYPE_PARSE_NUM_ERR_OVERFLOW
+
+.br
+\fBExplanation:\fR
+
+.br
+  This error code means that the number parsed from the Vstr string would overflow the type it is being parsed into, this is only returned when the VSTR_FLAG_PARSE_NUM_OVERFLOW flag was passed to the parse function.
+
+.br
+\fBConstant: \fR VSTR_TYPE_PARSE_NUM_ERR_NEGATIVE
+
+.br
+\fBExplanation:\fR
+
+.br
+  This error code means that the number parsed from the Vstr string starts with a '-' (Hyphen) character when it is supposed to be an unsigned type.
+
+.br
+\fBConstant: \fR VSTR_TYPE_PARSE_NUM_ERR_BEG_ZERO
+
+.br
+\fBExplanation:\fR
+
+.br
+  This error code means that the number parsed from the Vstr string starts with a '0' (Digit Zero) character, when the VSTR_FLAG_PARSE_NUM_NO_BEG_ZERO flag was passed to the parse function.
+
+.br
+\fBConstant: \fR VSTR_FLAG_PARSE_NUM_DEF
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag is 0, and is generally only used as programmer documentation to mean no flags are applied to this function.
+
+.br
+\fBConstant: \fR VSTR_FLAG_PARSE_NUM_LOCAL
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag changes the parsing from ASCII numbers into "local" numbers (whatever is generated by '0 .. '9' by the host compiler). This can be ignored by anyone not using an EBCDIC character set, or something equally weird.
+
+.br
+\fBConstant: \fR VSTR_FLAG_PARSE_NUM_SEP
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag allows the parsing of the '_' (Low Line) separator character between the digits of the number, so "1234" and "1_234" would both parse the same.
+.sp
+\fBNote:\fR
+
+.br
+  The separator is only allowed within the digits of the number, so " _+_1234" would fail as would "_1234".
+
+.br
+\fBConstant: \fR VSTR_FLAG_PARSE_NUM_OVERFLOW
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag turns on the overflow checking, in other words without it VSTR_TYPE_PARSE_NUM_ERR_OVERFLOW will never be returned as an error code.
+.sp
+\fBNote:\fR
+
+.br
+  The return value with this set is the highest number that can be parsed from the beginning of the Vstr string, while the value without this flag would be the parsed number modulo the highest number of the type.
+.br
+  For example given a type that had a maximum of 10, then parsing "64" would give you 6 with the flag, and 4 without.
+
+.br
+\fBConstant: \fR VSTR_FLAG_PARSE_NUM_SPACE
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag allows one or more ' ' (Space) characters before the number or number prefix (Plus Sign, Hyphen).
+
+.br
+\fBConstant: \fR VSTR_FLAG_PARSE_NUM_NO_BEG_ZERO
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag disallows one or more '0' (Digit Zero) characters before the number.
+
+.br
+\fBConstant: \fR VSTR_FLAG_PARSE_NUM_NO_BEG_PM
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag disallows a plus or a minus character before the number.
+
+.br
+\fBConstant: \fR VSTR_FLAG_PARSE_NUM_NO_NEGATIVE
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag disallows negative values.
+.sp
+\fBNote:\fR
+
+.br
+  While this flag can be passed to vstr_parse_int() etc. it is most useful when passed to the generic function vstr_parse_num().
+
+.SH Constants passed to vstr_parse_ipv4()
+
+.br
+\fBConstant: \fR VSTR_TYPE_PARSE_IPV4_ERR_NONE
+
+.br
+\fBExplanation:\fR
+
+.br
+  This error code has the value 0, and means that no error occurred parsing the ipv4 address from the Vstr string.
+
+.br
+\fBConstant: \fR VSTR_TYPE_PARSE_IPV4_ERR_IPV4_OOB
+
+.br
+\fBExplanation:\fR
+
+.br
+  This error code means that the numbers for the ipv4 address in the Vstr string where out of bounds.
+
+.br
+\fBConstant: \fR VSTR_TYPE_PARSE_IPV4_ERR_IPV4_FULL
+
+.br
+\fBExplanation:\fR
+
+.br
+  This error code means that the ipv4 address wasn't full (Ie. 127/8 is a non full ipv4 address with CIDR mask).
+
+.br
+\fBConstant: \fR VSTR_TYPE_PARSE_IPV4_ERR_ONLY
+
+.br
+\fBExplanation:\fR
+
+.br
+  This error code means that the ipv4 address, and option mask, wasn't the only thing in the Vstr string.
+.sp
+\fBNote:\fR
+
+.br
+  When this error code is returned, the ip address is still parsed out and as usable as if no error had occurred.
+
+.br
+\fBConstant: \fR VSTR_TYPE_PARSE_IPV4_ERR_CIDR_OOB
+
+.br
+\fBExplanation:\fR
+
+.br
+  This error code means that the numbers for the ipv4 CIDR mask in the Vstr string where out of bounds.
+
+.br
+\fBConstant: \fR VSTR_TYPE_PARSE_IPV4_ERR_CIDR_FULL
+
+.br
+\fBExplanation:\fR
+
+.br
+  This error code means that the ipv4 CIDR mask wasn't full (Ie. 127.0.0.1/ is an ipv4 address with a non full ipv4 CIDR mask).
+
+.br
+\fBConstant: \fR VSTR_TYPE_PARSE_IPV4_ERR_NETMASK_OOB
+
+.br
+\fBExplanation:\fR
+
+.br
+  This error code means that the numbers for the ipv4 netmask in the Vstr string where out of bounds.
+
+.br
+\fBConstant: \fR VSTR_TYPE_PARSE_IPV4_ERR_NETMASK_FULL
+
+.br
+\fBExplanation:\fR
+
+.br
+  This error code means that the ipv4 NETMASK mask wasn't full (Ie. 127.0.0.1/255.0 is an ipv4 address with a non full ipv4 netmask).
+
+.br
+\fBConstant: \fR VSTR_FLAG_PARSE_IPV4_DEF
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag is 0, and is generally only used as programmer documentation to mean no flags are applied to this function.
+
+.br
+\fBConstant: \fR VSTR_FLAG_PARSE_IPV4_LOCAL
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag changes the parsing from ASCII numbers into "local" numbers (whatever is generated by '0 .. '9' by the host compiler). This can be ignored by anyone not using an EBCDIC character set, or something equally weird.
+
+.br
+\fBConstant: \fR VSTR_FLAG_PARSE_IPV4_ZEROS
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag allows the use of leading zeros in the ipv4 address and masks.
+
+.br
+\fBConstant: \fR VSTR_FLAG_PARSE_IPV4_FULL
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag changes the parsing so that the function will return an error if a non full ipv4 address is given (Ie. 127/8 is a non full ipv4 with a CIDR mask). If this flag isn't given the missing numbers are assumed to be zero.
+
+.br
+\fBConstant: \fR VSTR_FLAG_PARSE_IPV4_CIDR
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag allows the parsing out of a CIDR mask, if one is present.
+
+.br
+\fBConstant: \fR VSTR_FLAG_PARSE_IPV4_CIDR_FULL
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag changes the parsing so that the function will return an error if a non full ipv4 CIDR mask is given (Ie. 127.0.0.1/ is an ipv4 with a non full ipv4 CIDR mask). If this flag isn't given the missing CIDR mask is assumed to be 32.
+
+.br
+\fBConstant: \fR VSTR_FLAG_PARSE_IPV4_NETMASK
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag allows the parsing out of a ipv4 netmask, if one is present.
+.sp
+\fBNote:\fR
+
+.br
+  If both this and the VSTR_FLAG_PARSE_IPV4_CIDR flag is given, then either masking interface will be parsed out (it will try a CIDR mask first and if that filas, fall back to a netmask prefix).
+
+.br
+\fBConstant: \fR VSTR_FLAG_PARSE_IPV4_NETMASK_FULL
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag changes the parsing so that the function will return an error if a non full ipv4 NETMASK mask is given (Ie. 127.0.0.1/255.0 is an ipv4 with a non full ipv4 netmask). If this flag isn't given the missing numbers are assumed to be zero.
+
+.br
+\fBConstant: \fR VSTR_FLAG_PARSE_IPV4_ONLY
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag changes the parsing so that the function will return an error if the entire string isn't used to contain the ipv4 and option mask.
+.sp
+\fBNote:\fR
+
+.br
+  When this error code is returned, the ip address is still parsed out and as usable as if no error had occurred.
+
+.SH Constants passed to vstr_parse_ipv6()
+
+.br
+\fBConstant: \fR VSTR_TYPE_PARSE_IPV6_ERR_NONE
+
+.br
+\fBExplanation:\fR
+
+.br
+  This error code has the value 0, and means that no error occurred parsing the ipv6 address from the Vstr string.
+
+.br
+\fBConstant: \fR VSTR_TYPE_PARSE_IPV6_ERR_IPV6_OOB
+
+.br
+\fBExplanation:\fR
+
+.br
+  This error code means that the numbers for the ipv6 address in the Vstr string where out of bounds.
+
+.br
+\fBConstant: \fR VSTR_TYPE_PARSE_IPV6_ERR_IPV6_FULL
+
+.br
+\fBExplanation:\fR
+
+.br
+  This error code means that the ipv6 address wasn't full (Ie. FFFF/8 is a non full ipv6 address with CIDR mask).
+
+.br
+\fBConstant: \fR VSTR_TYPE_PARSE_IPV6_ERR_ONLY
+
+.br
+\fBExplanation:\fR
+
+.br
+  This error code means that the ipv6 address, and option mask, wasn't the only thing in the Vstr string.
+.sp
+\fBNote:\fR
+
+.br
+  When this error code is returned, the ip address is still parsed out and as usable as if no error had occurred.
+
+.br
+\fBConstant: \fR VSTR_TYPE_PARSE_IPV6_ERR_CIDR_OOB
+
+.br
+\fBExplanation:\fR
+
+.br
+  This error code means that the numbers for the ipv6 CIDR mask in the Vstr string where out of bounds.
+
+.br
+\fBConstant: \fR VSTR_TYPE_PARSE_IPV6_ERR_CIDR_FULL
+
+.br
+\fBExplanation:\fR
+
+.br
+  This error code means that the ipv6 CIDR mask wasn't full (Ie. F::1/ is an ipv6 address with a non full ipv6 CIDR mask).
+
+.br
+\fBConstant: \fR VSTR_TYPE_PARSE_IPV6_ERR_IPV6_NULL
+
+.br
+\fBExplanation:\fR
+
+.br
+  This error code means that there is more than one "NULL" point in the ipv6 address, for example "F::E::1" has two NULL points and is impossible to parse.
+
+.br
+\fBConstant: \fR VSTR_FLAG_PARSE_IPV6_DEF
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag is 0, and is generally only used as programmer documentation to mean no flags are applied to this function.
+
+.br
+\fBConstant: \fR VSTR_FLAG_PARSE_IPV6_LOCAL
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag changes the parsing from ASCII numbers into "local" numbers (whatever is generated by '0 .. '9' by the host compiler). This can be ignored by anyone not using an EBCDIC character set, or something equally weird.
+
+.br
+\fBConstant: \fR VSTR_FLAG_PARSE_IPV6_CIDR
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag allows the parsing out of a CIDR mask, if one is present.
+
+.br
+\fBConstant: \fR VSTR_FLAG_PARSE_IPV6_CIDR_FULL
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag changes the parsing so that the function will return an error if a non full ipv6 CIDR mask is given (Ie. ::1/ is an ipv6 with a non full ipv6 CIDR mask). If this flag isn't given the missing CIDR mask is assumed to be 32.
+
+.br
+\fBConstant: \fR VSTR_FLAG_PARSE_IPV6_ONLY
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag changes the parsing so that the function will return an error if the entire string isn't used to contain the ipv6 and option mask.
+.sp
+\fBNote:\fR
+
+.br
+  When this error code is returned, the ip address is still parsed out and as usable as if no error had occurred.
+
+.SH Constants used with the custom output formatter for ipv6 addresses
+
+.br
+\fBConstant: \fR VSTR_TYPE_SC_FMT_CB_IPV6_ALIGNED
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag outputs the ipv6 address as 8 groups of 4 hexadecimal values. For example "FFFF:0EEE:00DD:000C:0000:0000:0001:0002" would be an ipv6 address output in aligned mode.
+
+.br
+\fBConstant: \fR VSTR_TYPE_SC_FMT_CB_IPV6_COMPACT
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag outputs the ipv6 address in as small a representation as possible, for example "FFFF:EEE:DD:C::1:2" would be an ipv6 address output in compact mode.
+
+.br
+\fBConstant: \fR VSTR_TYPE_SC_FMT_CB_IPV6_STD
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag outputs the ipv6 address as 8 groups of hexadecimal numbers between 0 and FFFF, this is the format mostly used in standards. documents, for example "FFFF:EEE:DD:C:0:0:1:2" would be an ipv6 address output in compact mode.
+
+.br
+\fBConstant: \fR VSTR_TYPE_SC_FMT_CB_IPV6_IPV4_ALIGNED
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag outputs the ipv6 address in the same way as VSTR_TYPE_SC_FMT_CB_IPV6_ALIGNED, except that the last 2 groups of hexadecimal values (the last 4 octets) are replaced with an ipv4 address.
+
+.br
+\fBConstant: \fR VSTR_TYPE_SC_FMT_CB_IPV6_IPV4_COMPACT
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag outputs the ipv6 address in the same way as VSTR_TYPE_SC_FMT_CB_IPV6_COMPACT, except that the last 2 groups of hexadecimal values (the last 4 octets) are replaced with an ipv4 address.
+
+.br
+\fBConstant: \fR VSTR_TYPE_SC_FMT_CB_IPV6_IPV4_STD
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag outputs the ipv6 address in the same way as VSTR_TYPE_SC_FMT_CB_IPV6_STD, except that the last 2 groups of hexadecimal values (the last 4 octets) are replaced with an ipv4 address.
+
+.SH Constants passed to vstr_split_buf(), vstr_split_cstr_buf(), VSTR_SPLIT_CSTR_BUF(), vstr_split_chrs(), vstr_split_cstr_chrs() and VSTR_SPLIT_CSTR_CHRS()
+
+.br
+\fBConstant: \fR VSTR_FLAG_SPLIT_DEF
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag is 0, and is generally only used as programmer documentation to mean no flags are applied to this function.
+
+.br
+\fBConstant: \fR VSTR_FLAG_SPLIT_BEG_NULL
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag allows the split functions to add sections at the beginning of the input that have a null string before the match. For example the input "::abcd:..." split on ":" would have 2 sections at positions 1 and 2 of length 0, without this flag the first section would be at position 3 with length 4.
+
+.br
+\fBConstant: \fR VSTR_FLAG_SPLIT_MID_NULL
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag allows the split functions to add sections in the middle of the input that have a null string between 2 matches. For example the input "a::abcd:..." split on ":" would have the second section at position 3 of length 0, without this flag the second section would be at position 4 of length 4.
+
+.br
+\fBConstant: \fR VSTR_FLAG_SPLIT_END_NULL
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag allows the split functions to add sections at the end of the input that have a null string after a match. For example the input "a::" split on ":" would have the second section at position 3 of length 0, without this flag there would only be one section added.
+
+.br
+\fBConstant: \fR VSTR_FLAG_SPLIT_POST_NULL
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag allows the split functions to add a final post section of the input that ends with a match. For example the input "a:" split on ":" would have the second section at position 3 (outside the range of the input) of length 0, without this flag there would only be one section added.
+
+.br
+\fBConstant: \fR VSTR_FLAG_SPLIT_NO_RET
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag allows the split functions to return 1, when the Vstr sections doesn't have any more room. Without the flag the split functions would calculate the number of splits that would have been added if there was room in the Vstr sections.
+
+.br
+\fBConstant: \fR VSTR_FLAG_SPLIT_REMAIN
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag changes the split functions, when used with a limit, so that the last section added is for the remainder of the input.
+
+.SH Constants passed to vstr_sects_foreach()
+
+.br
+\fBConstant: \fR VSTR_FLAG_SECTS_FOREACH_DEF
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag is 0, and is generally only used as programmer documentation to mean no flags are applied to this function.
+
+.br
+\fBConstant: \fR VSTR_FLAG_SECTS_FOREACH_BACKWARD
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag changes the foreach function so that it goes through the sections backward (from the end to the beginning).
+
+.br
+\fBConstant: \fR VSTR_FLAG_SECTS_FOREACH_ALLOW_NULL
+
+.br
+\fBExplanation:\fR
+
+.br
+  This flag changes the foreach function so that it calls the foreach callback on sections of null length (a non zero position with a zero length).
+
+.br
+\fBConstant: \fR VSTR_TYPE_SECTS_FOREACH_DEF
+
+.br
+\fBExplanation:\fR
+
+.br
+  This return value is 0, and is generally only used as programmer documentation to mean nothing special should happen on return from the callback.
+
+.br
+\fBConstant: \fR VSTR_TYPE_SECTS_FOREACH_DEL
+
+.br
+\fBExplanation:\fR
+
+.br
+  This return value tells the foreach function to delete the current section before the next callback is called.
+
+.br
+\fBConstant: \fR VSTR_TYPE_SECTS_FOREACH_RET
+
+.br
+\fBExplanation:\fR
+
+.br
+  This return value tells the foreach function to return immediately (it does the same thing as a break statement in a C for loop.
+
+.SH Constants used with the callback from vstr_cache_add_cb()
+
+.br
+\fBConstant: \fR VSTR_TYPE_CACHE_ADD
+
+.br
+\fBExplanation:\fR
+
+.br
+  This type means that an add operation has just happened on the Vstr string, the position and length arguments are as taken from one of the vstr_add_* functions.
+
+.br
+\fBConstant: \fR VSTR_TYPE_CACHE_DEL
+
+.br
+\fBExplanation:\fR
+
+.br
+  This type means that a delete operation has just happened on the Vstr string, the position and length arguments are as taken from the vstr_del() function.
+
+.br
+\fBConstant: \fR VSTR_TYPE_CACHE_SUB
+
+.br
+\fBExplanation:\fR
+
+.br
+  This type means that a substitute operation has just happened on the Vstr string, the position and length arguments are as taken from one of the vstr_sub_* functions.
+
+.br
+\fBConstant: \fR VSTR_TYPE_CACHE_FREE
+
+.br
+\fBExplanation:\fR
+
+.br
+  This type means that the data in the cache needs to be free()'d, the callback should always return NULL when this type is passed in.
+.br
+  The position and length arguments are undefined.
+
+.SH Constants passed to vstr_sc_mmap_fd() and vstr_sc_mmap_file()
+
+.br
+\fBConstant: \fR VSTR_TYPE_SC_MMAP_FD_ERR_NONE
+
+\fBConstant: \fR VSTR_TYPE_SC_MMAP_FILE_ERR_NONE
+
+.br
+\fBExplanation:\fR
+
+.br
+  This error code has the value 0, and means that no error occurred adding the mapping into the Vstr string.
+
+.br
+\fBConstant: \fR VSTR_TYPE_SC_MMAP_FILE_ERR_OPEN_ERRNO
+
+.br
+\fBExplanation:\fR
+
+.br
+  This error code means that the call to open() returned -1, errno is set.
+
+.br
+\fBConstant: \fR VSTR_TYPE_SC_MMAP_FD_ERR_FSTAT_ERRNO
+
+\fBConstant: \fR VSTR_TYPE_SC_MMAP_FILE_ERR_FSTAT_ERRNO
+
+.br
+\fBExplanation:\fR
+
+.br
+  This error code means that the call to fstat() returned -1, errno is set.
+
+.br
+\fBConstant: \fR VSTR_TYPE_SC_MMAP_FD_ERR_MMAP_ERRNO
+
+\fBConstant: \fR VSTR_TYPE_SC_MMAP_FILE_ERR_MMAP_ERRNO
+
+.br
+\fBExplanation:\fR
+
+.br
+  This error code means that the call to mmap() returned -1, errno is set.
+
+.br
+\fBConstant: \fR VSTR_TYPE_SC_MMAP_FILE_ERR_CLOSE_ERRNO
+
+.br
+\fBExplanation:\fR
+
+.br
+  This error code means that the call to close() returned -1, errno is set.
+.sp
+\fBNote:\fR
+
+.br
+  Even though this is an error, the mapping has already occurred and was successful.
+.br
+  If another error occurred (Eg. fstat()/mmap()), then any errors from close() will be hidden.
+
+.br
+\fBConstant: \fR VSTR_TYPE_SC_MMAP_FD_ERR_MEM
+
+\fBConstant: \fR VSTR_TYPE_SC_MMAP_FILE_ERR_MEM
+
+.br
+\fBExplanation:\fR
+
+.br
+  This error code means that memory could not be allocated.
+.sp
+\fBNote:\fR
+
+.br
+  To help the programer unify error paths base->conf->malloc_bad is set to TRUE, and errno is set to ENOMEM.
+
+.br
+\fBConstant: \fR VSTR_TYPE_SC_MMAP_FD_ERR_TOO_LARGE
+
+\fBConstant: \fR VSTR_TYPE_SC_MMAP_FILE_ERR_TOO_LARGE
+
+.br
+\fBExplanation:\fR
+
+.br
+  This error code means that the memory mapping was too big to fit in the Vstr string (with LFS extensions files are 63 bits, while on a 32 bit computer memory space is still only 32 bits so this isn't a corner case).
+.sp
+\fBNote:\fR
+
+.br
+  To help the programer unify error paths errno is set to EFBIG.
+
+.SH Constants passed to vstr_sc_read_iov_fd(), vstr_sc_read_len_fd(), vstr_sc_read_iov_file() and vstr_sc_read_len_file()
+
+.br
+\fBConstant: \fR VSTR_TYPE_SC_READ_FD_ERR_NONE
+
+\fBConstant: \fR VSTR_TYPE_SC_READ_FILE_ERR_NONE
+
+.br
+\fBExplanation:\fR
+
+.br
+  This error code has the value 0, and means that no error occurred adding the read() data into the Vstr string.
+
+.br
+\fBConstant: \fR VSTR_TYPE_SC_READ_FILE_ERR_OPEN_ERRNO
+
+.br
+\fBExplanation:\fR
+
+.br
+  This error code means that the call to open() returned -1, errno is set.
+
+.br
+\fBConstant: \fR VSTR_TYPE_SC_READ_FD_ERR_FSTAT_ERRNO
+
+\fBConstant: \fR VSTR_TYPE_SC_READ_FILE_ERR_FSTAT_ERRNO
+
+.br
+\fBExplanation:\fR
+
+.br
+  This error code means that the call to fstat() returned -1, errno is set.
+
+.br
+\fBConstant: \fR VSTR_TYPE_SC_READ_FILE_ERR_SEEK_ERRNO
+
+.br
+\fBExplanation:\fR
+
+.br
+  This error code means that the call to lseek() returned -1, errno is set.
+
+.br
+\fBConstant: \fR VSTR_TYPE_SC_READ_FD_ERR_READ_ERRNO
+
+\fBConstant: \fR VSTR_TYPE_SC_READ_FILE_ERR_READ_ERRNO
+
+.br
+\fBExplanation:\fR
+
+.br
+  This error code means that the call to readv() returned -1, errno is set.
+
+.br
+\fBConstant: \fR VSTR_TYPE_SC_READ_FILE_ERR_CLOSE_ERRNO
+
+.br
+\fBExplanation:\fR
+
+.br
+  This error code means that the call to close() returned -1, errno is set.
+.sp
+\fBNote:\fR
+
+.br
+  Even though this is an error, the readv() has already occurred and was successful.
+.br
+  If another error occurred (Eg. fstat()/readv()), then any errors from close() will be hidden.
+
+.br
+\fBConstant: \fR VSTR_TYPE_SC_READ_FD_ERR_EOF
+
+\fBConstant: \fR VSTR_TYPE_SC_READ_FILE_ERR_EOF
+
+.br
+\fBExplanation:\fR
+
+.br
+  This error code means that the call to readv() returned 0.
+.sp
+\fBNote:\fR
+
+.br
+  If you pass 0 as the length to the read_*_file functions, you can still get the _EOF error if the file is truncated while it is being read.
+.br
+  To help the programer unify error paths errno is set to ENOSPC.
+
+.br
+\fBConstant: \fR VSTR_TYPE_SC_READ_FD_ERR_MEM
+
+\fBConstant: \fR VSTR_TYPE_SC_READ_FILE_ERR_MEM
+
+.br
+\fBExplanation:\fR
+
+.br
+  This error code means that memory could not be allocated.
+.sp
+\fBNote:\fR
+
+.br
+  To help the programer unify error paths base->conf->malloc_bad is set to TRUE, and errno is set to ENOMEM.
+
+.br
+\fBConstant: \fR VSTR_TYPE_SC_READ_FD_ERR_TOO_LARGE
+
+\fBConstant: \fR VSTR_TYPE_SC_READ_FILE_ERR_TOO_LARGE
+
+.br
+\fBExplanation:\fR
+
+.br
+  This error code means that the memory mapping was too big to fit in the Vstr string (with LFS extensions files are 63 bits, while on a 32 bit computer memory space is still hard limited to 32 bits so this isn't a corner case).
+.sp
+\fBNote:\fR
+
+.br
+  To help the programer unify error paths errno is set to EFBIG.
+
+.SH Constants passed to vstr_sc_write_fd() and vstr_sc_write_file()
+
+.br
+\fBConstant: \fR VSTR_TYPE_SC_WRITE_FD_ERR_NONE
+
+\fBConstant: \fR VSTR_TYPE_SC_WRITE_FILE_ERR_NONE
+
+.br
+\fBExplanation:\fR
+
+.br
+  This error code has the value 0, and means that no error occurred adding the read() data into the Vstr string.
+
+.br
+\fBConstant: \fR VSTR_TYPE_SC_WRITE_FILE_ERR_SEEK_ERRNO
+
+.br
+\fBExplanation:\fR
+
+.br
+  This error code means that the call to lseek() returned -1, errno is set.
+
+.br
+\fBConstant: \fR VSTR_TYPE_SC_WRITE_FILE_ERR_OPEN_ERRNO
+
+.br
+\fBExplanation:\fR
+
+.br
+  This error code means that the call to open() returned -1, errno is set.
+
+.br
+\fBConstant: \fR VSTR_TYPE_SC_WRITE_FD_ERR_WRITE_ERRNO
+
+\fBConstant: \fR VSTR_TYPE_SC_WRITE_FILE_ERR_WRITE_ERRNO
+
+.br
+\fBExplanation:\fR
+
+.br
+  This error code means that the call to writev() returned -1, errno is set.
+
+.br
+\fBConstant: \fR VSTR_TYPE_SC_WRITE_FILE_ERR_CLOSE_ERRNO
+
+.br
+\fBExplanation:\fR
+
+.br
+  This error code means that the call to close() returned -1, errno is set.
+.sp
+\fBNote:\fR
+
+.br
+  Even though this is an error, the mapping has already occurred and happened successfully.
+.br
+  If another error occurred (Eg. writev()), then any errors from close() will be hidden.
+
+.br
+\fBConstant: \fR VSTR_TYPE_SC_WRITE_FD_ERR_MEM
+
+\fBConstant: \fR VSTR_TYPE_SC_WRITE_FILE_ERR_MEM
+
+.br
+\fBExplanation:\fR
+
+.br
+  This error code means that memory could not be allocated.
+.sp
+\fBNote:\fR
+
+.br
+  To help the programer unify error paths base->conf->malloc_bad is set to TRUE, and errno is set to ENOMEM.
+
+.SH Constants passed to vstr_cntl_base()
+
+.br
+\fBConstant: \fR VSTR_CNTL_BASE_GET_CONF
+
+.br
+Parameter\fB[1]\fR: Return Vstr configuration
+.br
+Type\fB[1]\fR: struct Vstr_conf **
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option will get the Vstr configuration for the Vstr string
+
+.br
+\fBConstant: \fR VSTR_CNTL_BASE_SET_CONF
+
+.br
+Parameter\fB[1]\fR: Vstr configuration
+.br
+Type\fB[1]\fR: struct Vstr_conf *
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option will set the Vstr configuration for the Vstr string.
+.sp
+\fBNote:\fR
+
+.br
+  This will only return successfully if either the Vstr string is empty, or the Vstr configurations have the same value for the _NUM_BUF_SZ attribute and the new configuration has the same caches registered. See vstr_swap_cache() for a function that tries to do what you want.
+.br
+  If the Vstr configuration (Parameter[1]) is NULL, then the default Vstr configuration will be used.
+
+.br
+\fBConstant: \fR VSTR_CNTL_BASE_GET_FLAG_HAVE_CACHE
+
+.br
+Parameter\fB[1]\fR: Returns value of flag
+.br
+Type\fB[1]\fR: int *
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option lets you know if the Vstr string can cache data, this can only be controlled using the VSTR_CNTL_CONF_GET_FLAG_ALLOC_CACHE flag before allocation.
+
+.br
+\fBConstant: \fR VSTR_CNTL_BASE_GET_TYPE_GRPALLOC_CACHE
+
+.br
+Parameter\fB[1]\fR: Returns type of group malloc (VSTR_TYPE_CNTL_CONF_GRPALLOC_*)
+.br
+Type\fB[1]\fR: unsigned int *
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option will get the type of the group allocation for the Vstr base, this can only be controlled using the VSTR_CNTL_CONF_SET_TYPE_GRPALLOC_CACHE type before allocation.
+
+.SH Constants passed to vstr_cntl_conf()
+
+.br
+\fBConstant: \fR VSTR_CNTL_CONF_GET_NUM_BUF_SZ
+
+.br
+Parameter\fB[1]\fR: Returns allocated size of data portion of _BUF nodes
+.br
+Type\fB[1]\fR: unsigned int *
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option will get the size of the allocated portion of a _BUF type node.
+.sp
+\fBNote:\fR
+
+.br
+  The default value of this attribute is currently 48, the reason for this is that 8 bytes are used for generic node storage and 8 more bytes are overhead used as in glibc's malloc() implementation. This means that 64 bytes are allocated for each node of data. Looking at the data given in the size_cmp  spreadsheet and the ex_perf_nodesize example my guess is that node sizes above 512 probably gain very little, while consumiung more space.
+
+.br
+\fBConstant: \fR VSTR_CNTL_CONF_SET_NUM_BUF_SZ
+
+.br
+Parameter\fB[1]\fR: Allocated size of data portion of _BUF nodes
+.br
+Type\fB[1]\fR: unsigned int
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option will set the size of the allocated portion of a _BUF type node.
+.sp
+\fBNote:\fR
+
+.br
+  This will fail if Vstr strings are using the Vstr configuration.
+.br
+  The value cannot be higher than VSTR_MAX_NODE_BUF.
+
+.br
+\fBConstant: \fR VSTR_CNTL_CONF_GET_NUM_IOV_MIN_ALLOC
+
+.br
+Parameter\fB[1]\fR: Returns size of minimum iovec allocation
+.br
+Type\fB[1]\fR: unsigned int *
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option will get the size of the minimum allocation to do when expanding the iovec cache.
+
+.br
+\fBConstant: \fR VSTR_CNTL_CONF_SET_NUM_IOV_MIN_ALLOC
+
+.br
+Parameter\fB[1]\fR: Size of minimum iovec allocation
+.br
+Type\fB[1]\fR: unsigned int
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option will set the size of the minimum allocation to do when expanding the iovec cache.
+
+.br
+\fBConstant: \fR VSTR_CNTL_CONF_GET_NUM_IOV_MIN_OFFSET
+
+.br
+Parameter\fB[1]\fR: Returns post allocation offset for iovec cache
+.br
+Type\fB[1]\fR: unsigned int *
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option will get the offset on the iovec cache after an iovec allocation.
+
+.br
+\fBConstant: \fR VSTR_CNTL_CONF_SET_NUM_IOV_MIN_OFFSET
+
+.br
+Parameter\fB[1]\fR: Post allocation offset for iovec cache
+.br
+Type\fB[1]\fR: unsigned int
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option will set the offset on the iovec cache after an iovec allocation.
+
+.br
+\fBConstant: \fR VSTR_CNTL_CONF_GET_NUM_REF
+
+.br
+Parameter\fB[1]\fR: Returns number of references
+.br
+Type\fB[1]\fR: unsigned int *
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option will get the number of references to the Vstr configuration.
+
+.br
+\fBConstant: \fR VSTR_CNTL_CONF_SET_LOC_CSTR_AUTO_NAME_NUMERIC
+
+.br
+Parameter\fB[1]\fR: Name of system LC_NUMERIC locale
+.br
+Type\fB[1]\fR: const char *
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option will set the LC_NUMERIC variables in the Vstr configuration to be those specified in the system locale (Parameter[1]).
+.sp
+\fBNote:\fR
+
+.br
+  Passing NULL as the name will use the current system LC_NUMERIC locale.
+
+.br
+\fBConstant: \fR VSTR_CNTL_CONF_GET_LOC_CSTR_NAME_NUMERIC
+
+.br
+Parameter\fB[1]\fR: Returns name of current LC_NUMERIC locale.
+.br
+Type\fB[1]\fR: const char **
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option will get the name of the LC_NUMERIC locale.
+
+.br
+\fBConstant: \fR VSTR_CNTL_CONF_SET_LOC_CSTR_NAME_NUMERIC
+
+.br
+Parameter\fB[1]\fR: Name of LC_NUMERIC locale in Vstr configuration
+.br
+Type\fB[1]\fR: const char *
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option will set the name of the LC_NUMERIC locale.
+
+.br
+\fBConstant: \fR VSTR_CNTL_CONF_GET_LOC_CSTR_DEC_POINT
+
+.br
+Parameter\fB[1]\fR: Returns decimal point C string, for default base
+.br
+Type\fB[1]\fR: const char **
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option will get the value of the decimal point LC_NUMERIC locale variable.
+
+.br
+\fBConstant: \fR VSTR_CNTL_CONF_SET_LOC_CSTR_DEC_POINT
+
+.br
+Parameter\fB[1]\fR: Decimal point C string, for default base
+.br
+Type\fB[1]\fR: const char *
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option will set the value of the decimal point LC_NUMERIC locale variable.
+
+.br
+\fBConstant: \fR VSTR_CNTL_CONF_GET_LOC_CSTR_THOU_SEP
+
+.br
+Parameter\fB[1]\fR: Returns thousands separator C string, for default base
+.br
+Type\fB[1]\fR: const char **
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option will get the value of the thousands separator LC_NUMERIC locale variable.
+
+.br
+\fBConstant: \fR VSTR_CNTL_CONF_SET_LOC_CSTR_THOU_SEP
+
+.br
+Parameter\fB[1]\fR: Thousands separator C string, for default base
+.br
+Type\fB[1]\fR: const char *
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option will set the value of the thousands separator LC_NUMERIC locale variable.
+
+.br
+\fBConstant: \fR VSTR_CNTL_CONF_GET_LOC_CSTR_THOU_GRP
+
+.br
+Parameter\fB[1]\fR: Returns value locale thousands grouping, for the default base
+.br
+Type\fB[1]\fR: const char **
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option will get the value of the thousands grouping LC_NUMERIC locale variable.
+
+.br
+\fBConstant: \fR VSTR_CNTL_CONF_SET_LOC_CSTR_THOU_GRP
+
+.br
+Parameter\fB[1]\fR: Value locale thousands grouping, for the default base
+.br
+Type\fB[1]\fR: const char *
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option will set the value of the thousands grouping LC_NUMERIC locale variable.
+
+.br
+\fBConstant: \fR VSTR_CNTL_CONF_GET_FLAG_IOV_UPDATE
+
+.br
+Parameter\fB[1]\fR: Returns value of flag
+.br
+Type\fB[1]\fR: int *
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option will return the status of the flag that allows the vstr functions to update the iovec cache when doing add/del operations on Vstr strings.
+
+.br
+\fBConstant: \fR VSTR_CNTL_CONF_SET_FLAG_IOV_UPDATE
+
+.br
+Parameter\fB[1]\fR: Value of flag
+.br
+Type\fB[1]\fR: int
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option will allow the vstr functions to update the iovec cache when doing add/del operations on Vstr strings.
+
+.br
+\fBConstant: \fR VSTR_CNTL_CONF_GET_FLAG_DEL_SPLIT
+
+.br
+Parameter\fB[1]\fR: Returns value of flag
+.br
+Type\fB[1]\fR: int *
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option will return the status of the flag that allows the vstr functions to split _BUF nodes on del operations to Vstr strings.
+
+.br
+\fBConstant: \fR VSTR_CNTL_CONF_SET_FLAG_DEL_SPLIT
+
+.br
+Parameter\fB[1]\fR: Value of flag
+.br
+Type\fB[1]\fR: int
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option will allow the vstr functions to split _BUF nodes on a del operations to Vstr strings.
+
+.br
+\fBConstant: \fR VSTR_CNTL_CONF_GET_FLAG_ALLOC_CACHE
+
+.br
+Parameter\fB[1]\fR: Returns value of flag
+.br
+Type\fB[1]\fR: int *
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option will return the status of the flag that allows Vstr strings to cache data.
+
+.br
+\fBConstant: \fR VSTR_CNTL_CONF_SET_FLAG_ALLOC_CACHE
+
+.br
+Parameter\fB[1]\fR: Value of flag
+.br
+Type\fB[1]\fR: int
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option will allow the Vstr strings made from the Vstr configuration to cache data.
+.sp
+\fBNote:\fR
+
+.br
+  If this option is turned off vstr_cache_add_cb() will not work on Vstr strings made from the the Vstr configuration. However each Vstr string will become smaller due to the lack of cache.
+
+.br
+\fBConstant: \fR VSTR_CNTL_CONF_GET_FMT_CHAR_ESC
+
+.br
+Parameter\fB[1]\fR: Returns value of escape character for custom format specifiers
+.br
+Type\fB[1]\fR: char *
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option will return the character used for specifying custom format specifiers in the vstr_add_vfmt() function.
+
+.br
+\fBConstant: \fR VSTR_CNTL_CONF_SET_FMT_CHAR_ESC
+
+.br
+Parameter\fB[1]\fR: Value of escape character for custom format specifiers
+.br
+Type\fB[1]\fR: int
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option will allow the Vstr strings using the Vstr configuration to use custom format specifiers in the vstr_fmt_vfmt() function.
+.sp
+\fBNote:\fR
+
+.br
+  If this option is set to 0 ('\0') then vstr_fmt_vfmt() acts like vstr_fmt_vsysfmt().
+
+.br
+\fBConstant: \fR VSTR_CNTL_CONF_GET_NUM_SPARE_BUF
+
+\fBConstant: \fR VSTR_CNTL_CONF_GET_NUM_SPARE_NON
+
+\fBConstant: \fR VSTR_CNTL_CONF_GET_NUM_SPARE_PTR
+
+\fBConstant: \fR VSTR_CNTL_CONF_GET_NUM_SPARE_REF
+
+.br
+Parameter\fB[1]\fR: Returns number of spare nodes to have for the specified type
+.br
+Type\fB[1]\fR: unsigned int *
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option gets the current number of spare nodes of the specified type.
+
+.br
+\fBConstant: \fR VSTR_CNTL_CONF_SET_NUM_SPARE_BUF
+
+\fBConstant: \fR VSTR_CNTL_CONF_SET_NUM_SPARE_NON
+
+\fBConstant: \fR VSTR_CNTL_CONF_SET_NUM_SPARE_PTR
+
+\fBConstant: \fR VSTR_CNTL_CONF_SET_NUM_SPARE_REF
+
+.br
+Parameter\fB[1]\fR: Number of spare nodes to have for the specified type
+.br
+Type\fB[1]\fR: unsigned int
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option is will set the number of spare nodes of the specified type, by calling either vstr_make_spare_nodes() or vstr_free_spare_nodes().
+.sp
+\fBNote:\fR
+
+.br
+  When the value specified is higher and it calls vstr_make_spare_nodes() then a return value of FALSE means that there was a malloc error, just as if you called vstr_make_spare_nodes() directly.
+
+.br
+\fBConstant: \fR VSTR_CNTL_CONF_GET_FLAG_ATOMIC_OPS
+
+.br
+Parameter\fB[1]\fR: Returns value of flag
+.br
+Type\fB[1]\fR: int *
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option will return the status of the flag that makes the vstr functions do atomic alterations to the string data. If the flag is set then all functions will either return successfully, or not alter the data of the vstr from the point of view of vstr_cmp().
+.sp
+\fBNote:\fR
+
+.br
+  This is mainly a speedup to the vstr_sub_*() functions and the functions that use them, like vstr_conv_*(). It is true by default, so all function operations are atomic.
+
+.br
+\fBConstant: \fR VSTR_CNTL_CONF_SET_FLAG_ATOMIC_OPS
+
+.br
+Parameter\fB[1]\fR: Value of flag
+.br
+Type\fB[1]\fR: int
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option will set the status of the flag that makes the vstr functions do atomic alterations to the string data. If the flag is set then all functions will either return successfully, or not alter the data of the vstr from the point of view of vstr_cmp().
+.sp
+\fBNote:\fR
+
+.br
+  This is mainly a speedup to the vstr_sub_*() functions and the functions that use them, like vstr_conv_*(). It is true by default, so all function operations are atomic.
+
+.br
+\fBConstant: \fR VSTR_CNTL_CONF_SET_NUM_RANGE_SPARE_BUF
+
+\fBConstant: \fR VSTR_CNTL_CONF_SET_NUM_RANGE_SPARE_NON
+
+\fBConstant: \fR VSTR_CNTL_CONF_SET_NUM_RANGE_SPARE_PTR
+
+\fBConstant: \fR VSTR_CNTL_CONF_SET_NUM_RANGE_SPARE_REF
+
+.br
+Parameter\fB[1]\fR: Minimum number of spare nodes to have for the specified type
+.br
+Type\fB[1]\fR: unsigned int
+
+.br
+Parameter\fB[2]\fR: Maximum number of spare nodes to have for the specified type
+.br
+Type\fB[2]\fR: unsigned int
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option will make the number of spare nodes of the specified type fit into the range given, by calling either vstr_make_spare_nodes() or vstr_free_spare_nodes().
+.sp
+\fBNote:\fR
+
+.br
+  When the value specified is higher it calls vstr_make_spare_nodes() at which point a return value of FALSE means that there was a malloc error, just as if you called vstr_make_spare_nodes() directly.
+
+.br
+\fBConstant: \fR VSTR_CNTL_CONF_GET_NUM_SPARE_BASE
+
+.br
+Parameter\fB[1]\fR: Returns number of spare Vstr_base objects
+.br
+Type\fB[1]\fR: unsigned int *
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option gets the current number of spare Vstr_base objects.
+
+.br
+\fBConstant: \fR VSTR_CNTL_CONF_SET_NUM_SPARE_BASE
+
+.br
+Parameter\fB[1]\fR: Number of spare base objects to have
+.br
+Type\fB[1]\fR: unsigned int
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option is will set the number of spare nodes of the specified type.
+.sp
+\fBNote:\fR
+
+.br
+  When the value specified is higher it has to create spare base objects at which point a return value of FALSE means that there was a malloc error, just as if you called vstr_make_base() directly and that had to create them.
+
+.br
+\fBConstant: \fR VSTR_CNTL_CONF_SET_NUM_RANGE_SPARE_BASE
+
+.br
+Parameter\fB[1]\fR: Minimum number of spare base objects to have
+.br
+Type\fB[1]\fR: unsigned int
+
+.br
+Parameter\fB[2]\fR: Maximum number of spare base objects to have
+.br
+Type\fB[2]\fR: unsigned int
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option will make the number of spare base objects fit into the range given, by calling either creating spare base objects or destroying them.
+.sp
+\fBNote:\fR
+
+.br
+  When the value specified is higher it has to creates spare base objects at which point a return value of FALSE means that there was a malloc error, just as if you called vstr_make_base() directly and that had to create them.
+
+.br
+\fBConstant: \fR VSTR_CNTL_CONF_GET_TYPE_GRPALLOC_CACHE
+
+.br
+Parameter\fB[1]\fR: Returns type of group malloc (VSTR_TYPE_CNTL_CONF_GRPALLOC_*)
+.br
+Type\fB[1]\fR: unsigned int *
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option will get the type of the group allocation that a vstr_make_base() will create with this configuration.
+
+.br
+\fBConstant: \fR VSTR_CNTL_CONF_SET_TYPE_GRPALLOC_CACHE
+
+.br
+Parameter\fB[1]\fR: Type of group malloc (VSTR_TYPE_CNTL_CONF_GRPALLOC_*)
+.br
+Type\fB[1]\fR: unsigned int
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option will set the type of the group allocation that a vstr_make_base() will create with this configuration.
+.sp
+\fBNote:\fR
+
+.br
+  If this call changes the type of group malloc to perform, then all current spare base objects will have to be deleted. And future base objects of the old type will be directly free'd.
+
+.br
+\fBConstant: \fR VSTR_CNTL_CONF_GET_LOC_REF_NAME_NUMERIC
+
+.br
+Parameter\fB[1]\fR: Returns Vstr memory reference to numeric locale name C string
+.br
+Type\fB[1]\fR: struct Vstr_ref **
+
+.br
+Parameter\fB[2]\fR: Returns length of Vstr memory reference
+.br
+Type\fB[2]\fR: size_t *
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option will get the value of the name of the LC_NUMERIC locale configuration.
+
+.br
+\fBConstant: \fR VSTR_CNTL_CONF_SET_LOC_REF_NAME_NUMERIC
+
+.br
+Parameter\fB[1]\fR: Vstr memory reference to numeric locale name C string
+.br
+Type\fB[1]\fR: struct Vstr_ref *
+
+.br
+Parameter\fB[2]\fR: Length of Vstr memory reference
+.br
+Type\fB[2]\fR: size_t
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option will set the value of the name of the LC_NUMERIC locale configuration.
+.sp
+\fBNote:\fR
+
+.br
+  The library takes a reference to the memory reference provided, so if you are finished with it you need to remove your reference.
+
+.br
+\fBConstant: \fR VSTR_CNTL_CONF_GET_LOC_REF_DEC_POINT
+
+.br
+Parameter\fB[1]\fR: Number base of locale information
+.br
+Type\fB[1]\fR: unsigned int
+
+.br
+Parameter\fB[2]\fR: Returns Vstr memory reference to decimal point C string
+.br
+Type\fB[2]\fR: struct Vstr_ref **
+
+.br
+Parameter\fB[3]\fR: Returns length of Vstr memory reference
+.br
+Type\fB[3]\fR: size_t *
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option will get the value of the decimal point LC_NUMERIC locale variable.
+
+.br
+\fBConstant: \fR VSTR_CNTL_CONF_SET_LOC_REF_DEC_POINT
+
+.br
+Parameter\fB[1]\fR: Number base of locale information
+.br
+Type\fB[1]\fR: unsigned int
+
+.br
+Parameter\fB[2]\fR: Vstr memory reference to decimal point C string
+.br
+Type\fB[2]\fR: struct Vstr_ref *
+
+.br
+Parameter\fB[3]\fR: Length of Vstr memory reference
+.br
+Type\fB[3]\fR: size_t
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option will set the value of the decimal point LC_NUMERIC locale variable.
+.sp
+\fBNote:\fR
+
+.br
+  The library takes a reference to the memory reference provided, so if you are finished with it you need to remove your reference.
+
+.br
+\fBConstant: \fR VSTR_CNTL_CONF_GET_LOC_REF_THOU_SEP
+
+.br
+Parameter\fB[1]\fR: Number base of locale information
+.br
+Type\fB[1]\fR: unsigned int
+
+.br
+Parameter\fB[2]\fR: Returns Vstr memory reference to thousands separator C string
+.br
+Type\fB[2]\fR: struct Vstr_ref **
+
+.br
+Parameter\fB[3]\fR: Returns length of Vstr memory reference
+.br
+Type\fB[3]\fR: size_t *
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option will get the value of the thousands seperator LC_NUMERIC locale variable.
+
+.br
+\fBConstant: \fR VSTR_CNTL_CONF_SET_LOC_REF_THOU_SEP
+
+.br
+Parameter\fB[1]\fR: Number base of locale information
+.br
+Type\fB[1]\fR: unsigned int
+
+.br
+Parameter\fB[2]\fR: Vstr memory reference to thousands separator C string
+.br
+Type\fB[2]\fR: struct Vstr_ref *
+
+.br
+Parameter\fB[3]\fR: Length of Vstr memory reference
+.br
+Type\fB[3]\fR: size_t
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option will set the value of the thousands seperator LC_NUMERIC locale variable.
+.sp
+\fBNote:\fR
+
+.br
+  The library takes a reference to the memory reference provided, so if you are finished with it you need to remove your reference.
+
+.br
+\fBConstant: \fR VSTR_CNTL_CONF_GET_LOC_REF_THOU_GRP
+
+.br
+Parameter\fB[1]\fR: Number base of locale information
+.br
+Type\fB[1]\fR: unsigned int
+
+.br
+Parameter\fB[2]\fR: Returns Vstr memory reference to thousands grouping C string
+.br
+Type\fB[2]\fR: struct Vstr_ref **
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option will get the value of the thousands grouping LC_NUMERIC locale variable.
+
+.br
+\fBConstant: \fR VSTR_CNTL_CONF_SET_LOC_REF_THOU_GRP
+
+.br
+Parameter\fB[1]\fR: Number base of locale information
+.br
+Type\fB[1]\fR: unsigned int
+
+.br
+Parameter\fB[2]\fR: Vstr memory reference to thousands grouping C string
+.br
+Type\fB[2]\fR: struct Vstr_ref *
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option will set the value of the thousands grouping LC_NUMERIC locale variable.
+.sp
+\fBNote:\fR
+
+.br
+  The library takes a reference to the memory reference provided, so if you are finished with it you need to remove your reference.
+
+.br
+\fBConstant: \fR VSTR_CNTL_CONF_GET_LOC_REF_NULL_PTR
+
+.br
+Parameter\fB[1]\fR: Returns Vstr memory reference to locale NULL pointer C string
+.br
+Type\fB[1]\fR: struct Vstr_ref **
+
+.br
+Parameter\fB[2]\fR: Returns length of Vstr memory reference
+.br
+Type\fB[2]\fR: size_t *
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option will get the value of the locale NULL pointer variable. This is what is printed when you pass NULL to "%s".
+
+.br
+\fBConstant: \fR VSTR_CNTL_CONF_SET_LOC_REF_NULL_PTR
+
+.br
+Parameter\fB[1]\fR: Vstr memory reference to numeric locale NULL pointer C string
+.br
+Type\fB[1]\fR: struct Vstr_ref *
+
+.br
+Parameter\fB[2]\fR: Length of Vstr memory reference
+.br
+Type\fB[2]\fR: size_t
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option will set the value of the locale NULL pointer variable. This is what is printed when you pass NULL to "%s".
+.sp
+\fBNote:\fR
+
+.br
+  The library takes a reference to the memory reference provided, so if you are finished with it you need to remove your reference.
+
+.SH Constants passed to vstr_cntl_opt()
+
+.br
+\fBConstant: \fR VSTR_CNTL_OPT_GET_CONF
+
+.br
+Parameter\fB[1]\fR: Returns Vstr configuration
+.br
+Type\fB[1]\fR: struct Vstr_conf **
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option will get the default Vstr configuration.
+.sp
+\fBNote:\fR
+
+.br
+  This adds a reference to the configuration, so when you are finished with it you'll have to call vstr_freee_conf() on it.
+
+.br
+\fBConstant: \fR VSTR_CNTL_OPT_SET_CONF
+
+.br
+Parameter\fB[1]\fR: Vstr configuration
+.br
+Type\fB[1]\fR: struct Vstr_conf *
+
+.br
+\fBExplanation:\fR
+
+.br
+  This option will set the default Vstr configuration.
+.sp
+\fBNote:\fR
+
+.br
+  This is one of the few functions that take a configuration, but cannot take a NULL pointer instead.
+
+.SH Constants passed to vstr_cntl_conf(..., VSTR_CNTL_CONF_SET_TYPE_GRPALLOC_CACHE
+
+.br
+\fBConstant: \fR VSTR_TYPE_CNTL_CONF_GRPALLOC_NONE
+
+.br
+\fBExplanation:\fR
+
+.br
+  This type means that there is a group allocation configuration to not allocating a cache.
+.sp
+\fBNote:\fR
+
+.br
+  This is type will mean that VSTR_CNTL_CONF_GET_FLAG_ALLOC_CACHE is FALSE.
+
+.br
+\fBConstant: \fR VSTR_TYPE_CNTL_CONF_GRPALLOC_POS
+
+.br
+\fBExplanation:\fR
+
+.br
+  This type means that there is a group allocation configuration to allocating a cache and allocating room to store a position cache.
+
+.br
+\fBConstant: \fR VSTR_TYPE_CNTL_CONF_GRPALLOC_IOVEC
+
+.br
+\fBExplanation:\fR
+
+.br
+  This type means that there is a group allocation configuration to allocating a cache and allocating room to store a position cache and an iovec cache.
+.sp
+\fBNote:\fR
+
+.br
+  The only way to guarantee that you have an iovec available immediately after calling vstr_make_base() is to have at least this group allocation configuration.
+
+.br
+\fBConstant: \fR VSTR_TYPE_CNTL_CONF_GRPALLOC_CSTR
+
+.br
+\fBExplanation:\fR
+
+.br
+  This type means that there is a group allocation configuration to allocating a cache and allocating room to store a position cache, an iovec cache and a cstr cache holder.
+.SH "SEE ALSO"
+.BR vstr (3)

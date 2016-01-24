@@ -1,0 +1,20 @@
+HTTP/1.1 404 Not Found
+Date:
+Server: Apache/2.0.40 (Red Hat Linux)
+Last-Modified:
+Connection: close
+Content-Type: text/html
+Content-Length: 334
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+  <head>
+    <title>404 Not Found</title>
+  </head>
+  <body>
+    <h1>404 Not Found</h1>
+    <p>The document requested was not found.</p>
+  <hr>
+  Generated using the <a href="http://www.and.org/vstr/httpd">Vstr httpd example Web Server</a>.
+  </body>
+</html>

@@ -1,0 +1,48 @@
+
+ Format: ex_httpd [options] <dir>
+  Daemon options
+    --daemon          - Toggle becoming a daemon (default: off).
+    --chroot          - Change root.
+    --drop-privs      - Toggle droping privilages (default: off).
+    --priv-uid        - Drop privilages to this uid.
+    --priv-gid        - Drop privilages to this gid.
+    --pid-file        - Log pid to file.
+    --cntl-file       - Create control file.
+    --accept-filter-file
+                      - Load Linux Socket Filter code for accept().
+    --processes       - Number of processes to use (default: 1).
+    --debug -d        - Raise debug level (can be used upto 3 times).
+    --host -H         - IPv4 address to bind (default: "all").
+    --help -h         - Print this message.
+    --max-connections
+                  -M  - Max connections allowed (0 = no limit).
+    --nagle -n        - Toggle usage of nagle TCP option (default: off).
+    --port -P         - Port to bind to.
+    --idle-timeout -t - Timeout (usecs) for connections that are idle.
+    --defer-accept    - Time to defer dataless connections (default: 8s)
+    --version -V      - Print the version string.
+
+  HTTPD options
+    --mmap            - Toggle use of mmap() to load files (default: off).
+    --sendfile        - Toggle use of sendfile() to load files (default: on).
+    --keep-alive      - Toggle use of Keep-Alive handling (default: on).
+    --keep-alive-1.0  - Toggle use of Keep-Alive handling for HTTP/1.0 (default: on).
+    --virtual-hosts
+    --vhosts          - Toggle use of directory virtual hostnames (default: off).
+    --range           - Toggle use of partial responces (default: on).
+    --range-1.0       - Toggle use of partial responces for HTTP/1.0 (default: on).
+    --public-only     - Toggle use of public only privilages (default: off).
+    --directory-filename
+    --dir-filename    - Filename to use when requesting directories.
+    --server-name     - Contents of server header used in replies.
+    --gzip-content-replacement
+                      - Toggle use of gzip content replacement (default: on).
+    --mime-types-main - Main mime types filename (default: /etc/mime.types).
+    --mime-types-xtra - Additional mime types filename.
+    --error-406       - Toggle sending 406 responses (default: on).
+    --canonize-host   - Strip leading 'www.', strip trailing '.' (default: off).
+    --error-host-400  - Give an 400 error for a bad host (default: on).
+    --check-host      - Whether we check host headers at all (default: on).
+    --unspecified-hostname
+                      - Used for req with no Host header (default is hostname).
+    --max-header-sz   - Max size of http header (0 = no limit).

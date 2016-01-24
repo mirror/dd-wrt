@@ -1,0 +1,356 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+<head>
+<title>Vstr documentation -- structs</title>
+    <style type="text/css">
+      A:visited { color: #ff4040; }
+      A:hover { color: #20b2aa; }
+
+      P { text-indent: 1em; }
+
+      body     { background: #FFF; color: #000; }
+
+      h2.ind   { background: #DDF; }
+
+      td.title { background: #DFD; }
+      td.sect  { background: #DDF; }
+      td.obj   { background: #DDD; }
+
+      ul li                       { list-style-type: lower-roman; }
+      ul li:hover                 { list-style-type: square; }
+      ul:hover li                 { list-style-type: decimal; }
+      ul li:hover ul li.obj       { list-style-type: decimal; }
+      ul li:hover ul li.obj:hover { list-style-type: square; }
+    </style>
+
+  </head>
+  <body>
+<table width="100%"><tr><td bgcolor="#DDFFDD"><h1>Vstr documentation -- structs (29)</h1>
+</td></tr></table><table width="90%"><tr><td>
+<h2 class="ind">Index of sections</h2>
+<ul>
+<li><a href="#indx-struct%20Vstr_ref%20%28aka%2e%20Vstr%20reference%29">struct Vstr_ref (aka. Vstr reference) (3)</a>
+<li><a href="#indx-struct%20Vstr_conf%20%28aka%2e%20Vstr%20configuration%29">struct Vstr_conf (aka. Vstr configuration) (1)</a>
+<li><a href="#indx-struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">struct Vstr_base (aka. Vstr string) (2)</a>
+<li><a href="#indx-struct%20Vstr_sects%20%28aka%2e%20Vstr%20sections%29">struct Vstr_sects (aka. Vstr sections) (8)</a>
+<li><a href="#indx-struct%20Vstr_fmt_spec%20%28aka%2e%20Vstr%20format%20specifier%29">struct Vstr_fmt_spec (aka. Vstr format specifier) (12)</a>
+<li><a href="#indx-struct%20Vstr_iter%20%28aka%2e%20Vstr%20iteration%29">struct Vstr_iter (aka. Vstr iteration) (3)</a></ul>
+<h2 class="ind">Index of sections, and their contents</h2>
+<ul>
+<li><a id="indx-struct%20Vstr_ref%20%28aka%2e%20Vstr%20reference%29" href="#struct%20Vstr_ref%20%28aka%2e%20Vstr%20reference%29">struct Vstr_ref (aka. Vstr reference)</a>
+<ul>
+<li class="obj"><a href="#func">func</a>
+<li class="obj"><a href="#ptr">ptr</a>
+<li class="obj"><a href="#ref">ref</a>
+</ul><li><a id="indx-struct%20Vstr_conf%20%28aka%2e%20Vstr%20configuration%29" href="#struct%20Vstr_conf%20%28aka%2e%20Vstr%20configuration%29">struct Vstr_conf (aka. Vstr configuration)</a>
+<ul>
+<li class="obj"><a href="#malloc_bad">malloc_bad</a>
+</ul><li><a id="indx-struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29" href="#struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">struct Vstr_base (aka. Vstr string)</a>
+<ul>
+<li class="obj"><a href="#len">len</a>
+<li class="obj"><a href="#conf">conf</a>
+</ul><li><a id="indx-struct%20Vstr_sects%20%28aka%2e%20Vstr%20sections%29" href="#struct%20Vstr_sects%20%28aka%2e%20Vstr%20sections%29">struct Vstr_sects (aka. Vstr sections)</a>
+<ul>
+<li class="obj"><a href="#num">num</a>
+<li class="obj"><a href="#sz">sz</a>
+<li class="obj"><a href="#malloc_bad">malloc_bad</a>
+<li class="obj"><a href="#free_ptr">free_ptr</a>
+<li class="obj"><a href="#can_add_sz">can_add_sz</a>
+<li class="obj"><a href="#can_del_sz">can_del_sz</a>
+<li class="obj"><a href="#alloc_double">alloc_double</a>
+<li class="obj"><a href="#ptr">ptr</a>
+</ul><li><a id="indx-struct%20Vstr_fmt_spec%20%28aka%2e%20Vstr%20format%20specifier%29" href="#struct%20Vstr_fmt_spec%20%28aka%2e%20Vstr%20format%20specifier%29">struct Vstr_fmt_spec (aka. Vstr format specifier)</a>
+<ul>
+<li class="obj"><a href="#vstr_orig_len">vstr_orig_len</a>
+<li class="obj"><a href="#fmt_precision">fmt_precision</a>
+<li class="obj"><a href="#obj_precision">obj_precision</a>
+<li class="obj"><a href="#fmt_field_width">fmt_field_width</a>
+<li class="obj"><a href="#obj_field_width">obj_field_width</a>
+<li class="obj"><a href="#fmt_minus">fmt_minus</a>
+<li class="obj"><a href="#fmt_plus">fmt_plus</a>
+<li class="obj"><a href="#fmt_space">fmt_space</a>
+<li class="obj"><a href="#fmt_hash">fmt_hash</a>
+<li class="obj"><a href="#fmt_zero">fmt_zero</a>
+<li class="obj"><a href="#fmt_quote">fmt_quote</a>
+<li class="obj"><a href="#fmt_I">fmt_I</a>
+</ul><li><a id="indx-struct%20Vstr_iter%20%28aka%2e%20Vstr%20iteration%29" href="#struct%20Vstr_iter%20%28aka%2e%20Vstr%20iteration%29">struct Vstr_iter (aka. Vstr iteration)</a>
+<ul>
+<li class="obj"><a href="#ptr">ptr</a>
+<li class="obj"><a href="#len">len</a>
+<li class="obj"><a href="#num">num</a>
+</ul></ul>
+
+</td></tr></table><table width="90%"><tr><td class="sect"><h2><a id="struct%20Vstr_ref%20%28aka%2e%20Vstr%20reference%29">struct Vstr_ref (aka. Vstr reference)</a></h2>
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Member: </strong> func
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This is the cleanup function to be called when noone wants a reference to the
+ memory help by the reference anymore.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  This function should free() the memory accociated with the reference struct
+ itself, if that is required.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Member: </strong> ptr
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This is a ptr to a block of memory.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Member: </strong> ref
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  When this reaches the value 0, you are free to call the func member.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  It is safest to only change this by calling either <a href="functions#vstr_ref_add_ref%28%29">vstr_ref_add_ref()</a> or
+ <a href="functions#vstr_ref_del_ref%28%29">vstr_ref_del_ref()</a>. These will automatically call the cleanup function when
+ the reference reaches zero.
+
+
+</td></tr></table><table width="90%"><tr><td class="sect"><h2><a id="struct%20Vstr_conf%20%28aka%2e%20Vstr%20configuration%29">struct Vstr_conf (aka. <a href="structs#struct%20Vstr_conf%20%28aka%2e%20Vstr%20configuration%29">Vstr configuration</a>)</a></h2>
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Member: </strong> malloc_bad
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This is a bitflag which is set to TRUE by any function which does an
+ allocation on a <a href="structs#struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">Vstr string</a> or <a href="structs#struct%20Vstr_conf%20%28aka%2e%20Vstr%20configuration%29">Vstr configuration</a> that fails, this allows the
+ programmer to call multiple allocation functions and then do a single test.
+
+
+</td></tr></table><table width="90%"><tr><td class="sect"><h2><a id="struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">struct Vstr_base (aka. <a href="structs#struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">Vstr string</a>)</a></h2>
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Member: </strong> len
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This is the length of the <a href="structs#struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">Vstr string</a>.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Member: </strong> conf
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This is a pointer to the <a href="structs#struct%20Vstr_conf%20%28aka%2e%20Vstr%20configuration%29">Vstr configuration</a> used by the <a href="structs#struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">Vstr string</a>.
+
+
+</td></tr></table><table width="90%"><tr><td class="sect"><h2><a id="struct%20Vstr_sects%20%28aka%2e%20Vstr%20sections%29">struct Vstr_sects (aka. <a href="structs#struct%20Vstr_sects%20%28aka%2e%20Vstr%20sections%29">Vstr sections</a>)</a></h2>
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Member: </strong> num
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This is the number of used sections in the <a href="structs#struct%20Vstr_sects%20%28aka%2e%20Vstr%20sections%29">Vstr sections</a>.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  Some of the section nodes may be used by null or deleted sections.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Member: </strong> sz
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This is the size of space allocated for sections in the <a href="structs#struct%20Vstr_sects%20%28aka%2e%20Vstr%20sections%29">Vstr sections</a>.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Member: </strong> malloc_bad
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This is a bitflag which is set to TRUE by any function which does an
+ allocation on a section that fails, this allows the programmer to call
+ multiple allocation functions and then do a single test.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Member: </strong> free_ptr
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This is a bitflag which is set to TRUE when the data in -&gt;ptr can be passed
+ to free().
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Member: </strong> can_add_sz
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This is a bitflag which is set to TRUE when the data in -&gt;ptr can be passed
+ to realloc() to make it bigger.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Member: </strong> can_del_sz
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This is a bitflag which is set to TRUE when the data in -&gt;ptr can be passed
+ to realloc() to make it smaller.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Member: </strong> alloc_double
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This is a bitflag which is set to TRUE when the data in -&gt;ptr should be
+ realloc()'d at twice it's current size when it needs to be bigger.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Member: </strong> ptr
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This is a pointer to the section nodes.
+
+
+</td></tr></table><table width="90%"><tr><td class="sect"><h2><a id="struct%20Vstr_fmt_spec%20%28aka%2e%20Vstr%20format%20specifier%29">struct Vstr_fmt_spec (aka. Vstr format specifier)</a></h2>
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Member: </strong> vstr_orig_len
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This is the length of the <a href="structs#struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">Vstr string</a> prior to <a href="functions#vstr_add_vfmt%28%29">vstr_add_vfmt()</a> being called,
+ this allows you to work out how much data has been added to the <a href="structs#struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">Vstr string</a>
+ already.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Member: </strong> fmt_precision
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag specifies that the caller passed a precision, either directory or
+ via. an argument. The precision itself is then passed as obj_precision.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Member: </strong> obj_precision
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This is the value passed as the precision, if one is set.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  Even though the obj_precision argument is an unsigned type, as an argument
+ the type has to be treated as signed as ISO 9899:1999 specifies that
+ a negative precision means that the precision should be ignored (hence in this
+ case fmt_precision will be 0). This doesn't apply to a precision typed
+ directly into the format.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Member: </strong> fmt_field_width
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This flag specifies that the caller passed a field width, either directory or
+ via. an argument. The field width itself is then passed as obj_field_width.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Member: </strong> obj_field_width
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This is the value passed as the field_width, if one is set.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  Even though the obj_field_width is an unsigned type, as an argument
+ the type has to be treated as signed as ISO 9899:1999 specifies that
+ a negative field width means that the fmt_minus flag should be set and
+ the field width should become it's positive counter part (in vstr this
+ work properly for INT_MIN). This doesn't apply to a field width typed
+ directly into the format.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Member: </strong> fmt_minus
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This is a flag specifing that the user put a '-' attribute on the format,
+ either directly or via. a negative field width value.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Member: </strong> fmt_plus
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This is a flag specifing that the user put a '+' attribute on the format.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Member: </strong> fmt_space
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This is a flag specifing that the user put a ' ' attribute on the format.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Member: </strong> fmt_hash
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This is a flag specifing that the user put a '#' attribute on the format.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Member: </strong> fmt_zero
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This is a flag specifing that the user put a '0' attribute on the format.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Member: </strong> fmt_quote
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This is a flag specifing that the user put a '\'' attribute on the format.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Member: </strong> fmt_I
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This is a flag specifing that the user put a 'I' attribute on the format.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  This is used by glibc to mean that integers should come out as locale
+ dependant bytes. This flag currently does nothing in vstr, apart from being
+ passed to custom specifiers.
+
+
+</td></tr></table><table width="90%"><tr><td class="sect"><h2><a id="struct%20Vstr_iter%20%28aka%2e%20Vstr%20iteration%29">struct Vstr_iter (aka. <a href="structs#struct%20Vstr_iter%20%28aka%2e%20Vstr%20iterator%29">Vstr iteration</a>)</a></h2>
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Member: </strong> ptr
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This member is a pointer to the start of the current part of the iteration.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  You can alter the pointer itself.
+</p><p>  You shouldn't write to the memory through this pointer, as it may be
+ read-only.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Member: </strong> len
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This member is the length of the current part of the iteration.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  You can alter the length.
+
+
+</td></tr></table><table width="80%"><tr><td class="obj">
+<strong>Member: </strong> num
+
+</td></tr><tr><td><strong>Explanation:</strong></td></tr><tr><td><p>
+</p><p>  This member is the number of the current node given an iteration of the
+ entire <a href="structs#struct%20Vstr_base%20%28aka%2e%20Vstr%20string%29">Vstr string</a>.
+
+</td></tr><tr><td><strong>Note:</strong></td></tr><tr><td><p>
+</p><p>  You should not alter this value.
+
+</td></tr></table>
+</body></html>

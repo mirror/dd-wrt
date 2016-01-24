@@ -1,0 +1,5 @@
+GET http://default/index.html~ HTTP/1.1
+
+GET http:///index.html HTTP/1.1
+Connection: close
+

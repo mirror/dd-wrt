@@ -1,0 +1,4 @@
+(org.and.jhttpd-conf-req-1.0
+  (Content-Location: http://localhost:8008/foo/)
+  (allow-accept-encoding off)
+  (filename [(limit <path>)] (= /foo/index.txt)))

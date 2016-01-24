@@ -1,0 +1,20 @@
+
+
+import scons_jhttpd_helpers as hlprs
+
+path = "/usr/local/bin:/usr/bin:/bin:/home/james/bin"
+
+hlprs.init_builders(Builder)
+blders = {'Highlight'    : hlprs.jhighlight_bld,
+          'SSI'          : hlprs.jssi_bld,
+          'Make_indx'    : hlprs.make_index_bld,
+          'Make_ex_indx' : hlprs.make_examples_index_bld,
+          'LN'           : hlprs.ln_bld}
+env = Environment(ENV = {'PATH' : path}, BUILDERS = blders)
+
+srcs = []
+ssi = hlprs.gen_files_sam_ext(env, srcs, "foo", True)
+
+ssi('')
+
+hlprs.apply_sam_ssi(srcs, env.SSI)

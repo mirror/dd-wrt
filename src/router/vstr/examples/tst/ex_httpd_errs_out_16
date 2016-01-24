@@ -1,0 +1,21 @@
+HTTP/1.1 405 Method Not Allowed
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified:
+Connection: close
+Content-Type: text/html
+Content-Length: 351
+Allow: GET, HEAD, OPTIONS, TRACE
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+  <head>
+    <title>405 Method Not Allowed</title>
+  </head>
+  <body>
+    <h1>405 Method Not Allowed</h1>
+    <p>The method specified is not allowed.</p>
+  <hr>
+  Generated using the <a href="http://www.and.org/vstr/httpd">Vstr httpd example Web Server</a>.
+  </body>
+</html>

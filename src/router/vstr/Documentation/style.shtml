@@ -1,0 +1,33 @@
+ <link rel="stylesheet" type="text/css" href="f_c.css">
+  <style>
+      A       { background: #FFF; color: #44F; }
+      A:hover {                   color: #20b2aa; }
+
+      A.anchor       { color: #000; }
+      A.anchor:hover { color: #000; }
+
+      P { text-indent: 2em; }
+
+      body { background: #FFF; }
+
+      tr.heading { background: #DDD; }
+      tr.heading:hover { background: #ccc; }
+
+      table.conv       { border-bottom: solid; margin-bottom: 2em; }
+
+      table.conv tr.r1 { background: #eee; }
+      table.conv tr.r2 { }
+      table.conv tr.r1:hover { background: #ccc; }
+      table.conv tr.r2:hover { background: #ccc; }
+
+      table.fig1   { text-align: center; }
+
+      td.ent1     { color: #080; }
+      td.ent2     { color: #800; }
+
+      span.blk        a.anc     {  display: none; }
+      span.blk:hover  a.anc     {  display: inline; color: #d7f;   }
+
+      span.lastmod              {  text-size: 50%; }
+  </style>
+

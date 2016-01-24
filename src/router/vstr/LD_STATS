@@ -1,0 +1,89 @@
+
+ This is an anaylysis of what doing all the alias and
+visibility=hidden symbols does, the first bit is the relocation cost
+found using LD_DEBUG=statistics and the second is a look at the asm of
+vstr_dup_ptr() upto the first function call.
+
+ Before
+ ------
+
+27584:
+27584:	runtime linker statistics:
+27584:	  total startup time in dynamic loader: 770848 clock cycles
+27584:	            time needed for relocation: 345263 clock cycles (44.7%)
+27584:	                 number of relocations: 136
+27584:	      number of relocations from cache: 5
+27584:	           time needed to load objects: 300629 clock cycles (38.9%)
+27584:
+27584:	runtime linker statistics:
+27584:	           final number of relocations: 203
+27584:	final number of relocations from cache: 5
+
+ Now enabled
+ -----------
+
+27687:
+27687:	runtime linker statistics:
+27687:	  total startup time in dynamic loader: 1157547 clock cycles
+27687:	            time needed for relocation: 722024 clock cycles (62.3%)
+27687:	                 number of relocations: 173
+27687:	      number of relocations from cache: 156
+27687:	           time needed to load objects: 303069 clock cycles (26.1%)
+27687:
+27687:	runtime linker statistics:
+27687:	           final number of relocations: 232
+27687:	final number of relocations from cache: 156
+
+ Now disabled
+ ------------
+
+01437:
+01437:	runtime linker statistics:
+01437:	  total startup time in dynamic loader: 760191 clock cycles
+01437:	            time needed for relocation: 346647 clock cycles (45.5%)
+01437:	                 number of relocations: 136
+01437:	      number of relocations from cache: 5
+01437:	           time needed to load objects: 292981 clock cycles (38.5%)
+01437:
+01437:	runtime linker statistics:
+01437:	           final number of relocations: 203
+01437:	final number of relocations from cache: 5
+
+ Asm Disabled
+ ------------
+
+0xc9e0:
+mov    (%esp,1),%ebx
+ret
+
+;; Stuff...
+
+0xcb00:
+push   %ebp
+mov    %esp,%ebp
+push   %edi
+push   %esi
+push   %ebx
+sub    $0x18,%esp
+call   0xc9e0
+add    $0x9eb6,%ebx
+mov    0x8(%ebp),%ecx
+mov    0x10(%ebp),%edi
+0xcb1a:
+
+len = 26 + 4 bytes
+
+ Asm After
+ ---------
+
+0xb250:
+push   %ebp
+mov    %esp,%ebp
+push   %edi
+mov    0x10(%ebp),%edi
+push   %esi
+mov    0x8(%ebp),%esi
+sub    $0xc,%esp
+0xb25e:
+
+len = 14 bytes

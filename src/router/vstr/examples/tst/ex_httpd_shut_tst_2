@@ -1,0 +1,2 @@
+GET http://defaulT/bin#blah HTTP/1.1
+

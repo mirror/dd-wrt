@@ -1,0 +1,19 @@
+
+ table.dir_list              { border-bottom: solid; }
+
+ table.dir_list  tr.rh       { background: #DDD; }
+ table.dir_list  tr.rh:hover { background: #CCC; }
+
+ table.dir_list  tr.r1       { background: #EEE; }
+ table.dir_list  tr.r1:hover { background: #CCC; }
+
+ table.dir_list  tr.r2       { background: #FFF; }
+ table.dir_list  tr.r2:hover { background: #CCC; }
+
+ table.dir_list  td.c1       { width: 65%; padding: 0.2em; }
+ table.dir_list  td.c2       { width: 10%; padding: 0.2em; text-align: right; }
+ table.dir_list  td.c3       { width: 15%; padding: 0.2em; text-align: right; }
+
+ table.dir_list  th.c1       { width: 65%; padding: 0.2em; }
+ table.dir_list  th.c2       { width: 10%; padding: 0.2em; text-align: right; }
+ table.dir_list  th.c3       { width: 15%; padding: 0.2em; text-align: right; }
