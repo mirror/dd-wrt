@@ -18,6 +18,8 @@
  * for more details.
  */
 
+#include <musl.h>
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <stdint.h>

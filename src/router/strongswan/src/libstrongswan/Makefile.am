@@ -303,6 +303,13 @@ if MONOLITHIC
 endif
 endif
 
+if USE_GMPDH
+  SUBDIRS += plugins/gmpdh
+if MONOLITHIC
+  libstrongswan_la_LIBADD += plugins/gmpdh/libstrongswan-gmpdh.la
+endif
+endif
+
 if USE_RDRAND
   SUBDIRS += plugins/rdrand
 if MONOLITHIC
