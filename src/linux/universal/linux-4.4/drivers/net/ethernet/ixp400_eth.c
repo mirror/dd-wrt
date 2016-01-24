@@ -372,7 +372,7 @@ MODULE_PARM_DESC(hss_coexist, "If non-zero, HSS-Ethernet coexist feature will be
 #define IX_ETH_NPE_A_IMAGE_ID		IX_NPEDL_NPEIMAGE_NPEA_ETH
 
 /* NPE-A Functionality: HSS co-exist */
-#define IX_HSS_ETH_NPE_A_IMAGE_ID	IX_NPEDL_NPEIMAGE_NPEA_ETH_MACFILTERLEARN_HSSCHAN_COEXIST
+//#define IX_HSS_ETH_NPE_A_IMAGE_ID	IX_NPEDL_NPEIMAGE_NPEA_ETH_MACFILTERLEARN_HSSCHAN_COEXIST
 
 /* NPE-B Functionality: Ethernet only */
 #define IX_ETH_NPE_B_IMAGE_ID		IX_NPEDL_NPEIMAGE_NPEB_ETH
@@ -4523,7 +4523,7 @@ static int __init ixp400_eth_init(void)
      * 2. Ethernet-HSS coexist capability
      * 3. NPE software error handler
      */
-#if defined (CONFIG_CPU_IXP46X) || defined (CONFIG_CPU_IXP43X)
+#if 0 //defined (CONFIG_CPU_IXP46X) || defined (CONFIG_CPU_IXP43X)
     {
          UINT32 expbusCtrlReg;
 
