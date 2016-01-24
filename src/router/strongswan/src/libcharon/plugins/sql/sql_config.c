@@ -153,6 +153,7 @@ static void add_esp_proposals(private_sql_config_t *this,
 	if (use_default)
 	{
 		child->add_proposal(child, proposal_create_default(PROTO_ESP));
+		child->add_proposal(child, proposal_create_default_aead(PROTO_ESP));
 	}
 }
 
@@ -242,6 +243,7 @@ static void add_ike_proposals(private_sql_config_t *this,
 	if (use_default)
 	{
 		ike_cfg->add_proposal(ike_cfg, proposal_create_default(PROTO_IKE));
+		ike_cfg->add_proposal(ike_cfg, proposal_create_default_aead(PROTO_IKE));
 	}
 }
 
@@ -258,11 +260,9 @@ static ike_cfg_t *build_ike_cfg(private_sql_config_t *this, enumerator_t *e,
 	{
 		ike_cfg_t *ike_cfg;
 
-		ike_cfg = ike_cfg_create(IKEV2, certreq, force_encap,
-								 local, FALSE,
+		ike_cfg = ike_cfg_create(IKEV2, certreq, force_encap, local,
 								 charon->socket->get_port(charon->socket, FALSE),
-								 remote, FALSE, IKEV2_UDP_PORT,
-								 FRAGMENTATION_NO, 0);
+								 remote, IKEV2_UDP_PORT, FRAGMENTATION_NO, 0);
 		add_ike_proposals(this, ike_cfg, id);
 		return ike_cfg;
 	}
@@ -324,6 +324,14 @@ static peer_cfg_t *get_peer_cfg_by_id(private_sql_config_t *this, int id)
 }
 
 /**
+ * Check if the two IDs match (the first one is optional)
+ */
+static inline bool id_matches(identification_t *id, identification_t *sql_id)
+{
+	return !id || id->matches(id, sql_id) || sql_id->matches(sql_id, id);
+}
+
+/**
  * Build a peer config from an SQL query
  */
 static peer_cfg_t *build_peer_cfg(private_sql_config_t *this, enumerator_t *e,
@@ -352,8 +360,7 @@ static peer_cfg_t *build_peer_cfg(private_sql_config_t *this, enumerator_t *e,
 
 		local_id = identification_create_from_encoding(l_type, l_data);
 		remote_id = identification_create_from_encoding(r_type, r_data);
-		if ((me && !me->matches(me, local_id)) ||
-			(other && !other->matches(other, remote_id)))
+		if (!id_matches(me, local_id) || !id_matches(other, remote_id))
 		{
 			local_id->destroy(local_id);
 			remote_id->destroy(remote_id);
@@ -374,7 +381,7 @@ static peer_cfg_t *build_peer_cfg(private_sql_config_t *this, enumerator_t *e,
 			peer_cfg = peer_cfg_create(
 					name, ike, cert_policy, uniqueid,
 					keyingtries, rekeytime, reauthtime, jitter, overtime,
-					mobike, FALSE, dpd_delay, 0,
+					mobike, FALSE, TRUE, dpd_delay, 0,
 					mediation, mediated_cfg, peer_id);
 			if (vip)
 			{

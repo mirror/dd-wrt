@@ -23,14 +23,9 @@
 typedef struct private_keymat_v1_t private_keymat_v1_t;
 
 /**
- * Max. number of IVs to track.
+ * Max. number of IVs/QMs to track.
  */
-#define MAX_IV 3
-
-/**
- * Max. number of Quick Modes to track.
- */
-#define MAX_QM 2
+#define MAX_EXCHANGES_DEFAULT 3
 
 /**
  * Data stored for IVs
@@ -110,6 +105,11 @@ struct private_keymat_v1_t {
 	 * of QMs are tracked at the same time. Stores qm_data_t objects.
 	 */
 	linked_list_t *qms;
+
+	/**
+	 * Max. number of IVs/Quick Modes to track.
+	 */
+	int max_exchanges;
 };
 
 
@@ -194,6 +194,13 @@ METHOD(aead_t, get_iv_size, size_t,
 {
 	/* in order to create the messages properly we return 0 here */
 	return 0;
+}
+
+METHOD(aead_t, get_iv_gen, iv_gen_t*,
+	private_aead_t *this)
+{
+	/* IVs are retrieved via keymat_v1.get_iv() */
+	return NULL;
 }
 
 METHOD(aead_t, get_key_size, size_t,
@@ -304,6 +311,7 @@ static aead_t *create_aead(proposal_t *proposal, prf_t *prf, chunk_t skeyid_e)
 			.get_block_size = _get_block_size,
 			.get_icv_size = _get_icv_size,
 			.get_iv_size = _get_iv_size,
+			.get_iv_gen = _get_iv_gen,
 			.get_key_size = _get_key_size,
 			.set_key = _set_key,
 			.destroy = _aead_destroy,
@@ -417,7 +425,7 @@ METHOD(keymat_v1_t, derive_ike_keys, bool,
 		return FALSE;
 	}
 
-	if (dh->get_shared_secret(dh, &g_xy) != SUCCESS)
+	if (!dh->get_shared_secret(dh, &g_xy))
 	{
 		return FALSE;
 	}
@@ -552,7 +560,10 @@ METHOD(keymat_v1_t, derive_ike_keys, bool,
 		return FALSE;
 	}
 
-	dh->get_my_public_value(dh, &dh_me);
+	if (!dh->get_my_public_value(dh, &dh_me))
+	{
+		return FALSE;
+	}
 	g_xi = this->initiator ? dh_me : dh_other;
 	g_xr = this->initiator ? dh_other : dh_me;
 
@@ -653,7 +664,7 @@ METHOD(keymat_v1_t, derive_child_keys, bool,
 	protocol = proposal->get_protocol(proposal);
 	if (dh)
 	{
-		if (dh->get_shared_secret(dh, &secret) != SUCCESS)
+		if (!dh->get_shared_secret(dh, &secret))
 		{
 			return FALSE;
 		}
@@ -783,7 +794,7 @@ METHOD(keymat_v1_t, get_hash, bool,
 static bool get_nonce(message_t *message, chunk_t *n)
 {
 	nonce_payload_t *nonce;
-	nonce = (nonce_payload_t*)message->get_payload(message, NONCE_V1);
+	nonce = (nonce_payload_t*)message->get_payload(message, PLV1_NONCE);
 	if (nonce)
 	{
 		*n = nonce->get_nonce(nonce);
@@ -807,7 +818,7 @@ static chunk_t get_message_data(message_t *message, generator_t *generator)
 		enumerator = message->create_payload_enumerator(message);
 		while (enumerator->enumerate(enumerator, &payload))
 		{
-			if (payload->get_type(payload) == HASH_V1)
+			if (payload->get_type(payload) == PLV1_HASH)
 			{
 				continue;
 			}
@@ -827,7 +838,7 @@ static chunk_t get_message_data(message_t *message, generator_t *generator)
 				generator->generate_payload(generator, payload);
 				payload = next;
 			}
-			payload->set_next_type(payload, NO_PAYLOAD);
+			payload->set_next_type(payload, PL_NONE);
 			generator->generate_payload(generator, payload);
 		}
 		enumerator->destroy(enumerator);
@@ -863,7 +874,7 @@ static qm_data_t *lookup_quick_mode(private_keymat_v1_t *this, u_int32_t mid)
 	}
 	this->qms->insert_first(this->qms, found);
 	/* remove least recently used state if maximum reached */
-	if (this->qms->get_count(this->qms) > MAX_QM &&
+	if (this->qms->get_count(this->qms) > this->max_exchanges &&
 		this->qms->remove_last(this->qms, (void**)&qm) == SUCCESS)
 	{
 		qm_data_destroy(qm);
@@ -1037,7 +1048,7 @@ static iv_data_t *lookup_iv(private_keymat_v1_t *this, u_int32_t mid)
 	}
 	this->ivs->insert_first(this->ivs, found);
 	/* remove least recently used IV if maximum reached */
-	if (this->ivs->get_count(this->ivs) > MAX_IV &&
+	if (this->ivs->get_count(this->ivs) > this->max_exchanges &&
 		this->ivs->remove_last(this->ivs, (void**)&iv) == SUCCESS)
 	{
 		iv_data_destroy(iv);
@@ -1152,6 +1163,8 @@ keymat_v1_t *keymat_v1_create(bool initiator)
 		.ivs = linked_list_create(),
 		.qms = linked_list_create(),
 		.initiator = initiator,
+		.max_exchanges = lib->settings->get_int(lib->settings,
+					"%s.max_ikev1_exchanges", MAX_EXCHANGES_DEFAULT, lib->ns),
 	);
 
 	return &this->public;

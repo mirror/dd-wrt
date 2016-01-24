@@ -87,7 +87,7 @@ METHOD(simaka_card_t, get_quintuplet, status_t,
 	{
 		return FAILED;
 	}
-	if (!memeq(mac, xmac, AKA_MAC_LEN))
+	if (!memeq_const(mac, xmac, AKA_MAC_LEN))
 	{
 		DBG1(DBG_IKE, "received MAC does not match XMAC");
 		DBG3(DBG_IKE, "MAC %b\nXMAC %b", mac, AKA_MAC_LEN, xmac, AKA_MAC_LEN);
@@ -177,11 +177,10 @@ eap_aka_3gpp2_card_t *eap_aka_3gpp2_card_create(eap_aka_3gpp2_functions_t *f)
 #else /* !SEQ_CHECK */
 									FALSE,
 #endif /* SEQ_CHECK */
-									charon->name),
+									lib->ns),
 	);
 
 	eap_aka_3gpp2_get_sqn(this->sqn, 0);
 
 	return &this->public;
 }
-

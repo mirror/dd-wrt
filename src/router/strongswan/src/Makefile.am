@@ -40,10 +40,6 @@ if USE_IMCV
   SUBDIRS += libimcv
 endif
 
-if USE_PTS
-  SUBDIRS += libpts
-endif
-
 if USE_LIBCHARON
   SUBDIRS += libcharon
 endif
@@ -60,6 +56,10 @@ if USE_CHARON
   SUBDIRS += charon
 endif
 
+if USE_SYSTEMD
+  SUBDIRS += charon-systemd
+endif
+
 if USE_NM
   SUBDIRS += charon-nm
 endif
@@ -69,11 +69,19 @@ if USE_STROKE
 endif
 
 if USE_UPDOWN
-  SUBDIRS += _updown _updown_espmark
+  SUBDIRS += _updown
 endif
 
-if USE_TOOLS
-  SUBDIRS += openac scepclient pki
+if USE_SCEPCLIENT
+  SUBDIRS += scepclient
+endif
+
+if USE_PKI
+  SUBDIRS += pki
+endif
+
+if USE_SWANCTL
+  SUBDIRS += swanctl
 endif
 
 if USE_CONFTEST
@@ -96,16 +104,34 @@ if USE_MEDSRV
   SUBDIRS += medsrv
 endif
 
-if USE_INTEGRITY_TEST
-  SUBDIRS += checksum
+if USE_ATTR_SQL
+  SUBDIRS += pool
+else
+if USE_SQL
+  SUBDIRS += pool
+endif
 endif
 
 if USE_TKM
   SUBDIRS += charon-tkm
 endif
 
-EXTRA_DIST = strongswan.conf
+if USE_CMD
+  SUBDIRS += charon-cmd
+endif
 
-install-exec-local :
-		test -e "$(DESTDIR)${sysconfdir}" || $(INSTALL) -d "$(DESTDIR)$(sysconfdir)"
-		test -e "$(DESTDIR)$(sysconfdir)/strongswan.conf" || $(INSTALL) -m 640 $(srcdir)/strongswan.conf $(DESTDIR)$(sysconfdir)/strongswan.conf || true
+if USE_SVC
+  SUBDIRS += charon-svc
+endif
+
+if USE_LIBPTTLS
+  SUBDIRS += pt-tls-client
+endif
+
+if USE_INTEGRITY_TEST
+  SUBDIRS += checksum
+endif
+
+if USE_AIKGEN
+  SUBDIRS += aikgen
+endif

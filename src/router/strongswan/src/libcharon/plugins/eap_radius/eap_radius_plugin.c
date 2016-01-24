@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2013 Tobias Brunner
  * Copyright (C) 2009 Martin Willi
  * Hochschule fuer Technik Rapperswil
  *
@@ -13,9 +14,32 @@
  * for more details.
  */
 
+/*
+ * Copyright (C) 2015 Thom Troy
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
 #include "eap_radius_plugin.h"
 
 #include "eap_radius.h"
+#include "eap_radius_xauth.h"
 #include "eap_radius_accounting.h"
 #include "eap_radius_dae.h"
 #include "eap_radius_forward.h"
@@ -24,7 +48,7 @@
 #include <radius_client.h>
 #include <radius_config.h>
 
-#include <hydra.h>
+#include <daemon.h>
 #include <threading/rwlock.h>
 #include <processing/jobs/callback_job.h>
 #include <processing/jobs/delete_ike_sa_job.h>
@@ -96,27 +120,39 @@ static void load_configs(private_eap_radius_plugin_t *this)
 	radius_config_t *config;
 	char *nas_identifier, *secret, *address, *section;
 	int auth_port, acct_port, sockets, preference;
+	u_int retransmit_tries;
+	double retransmit_timeout, retransmit_base;
 
 	address = lib->settings->get_str(lib->settings,
-					"%s.plugins.eap-radius.server", NULL, charon->name);
+								"%s.plugins.eap-radius.server", NULL, lib->ns);
 	if (address)
 	{	/* legacy configuration */
 		secret = lib->settings->get_str(lib->settings,
-					"%s.plugins.eap-radius.secret", NULL, charon->name);
+								"%s.plugins.eap-radius.secret", NULL, lib->ns);
 		if (!secret)
 		{
 			DBG1(DBG_CFG, "no RADIUS secret defined");
 			return;
 		}
 		nas_identifier = lib->settings->get_str(lib->settings,
-					"%s.plugins.eap-radius.nas_identifier", "strongSwan",
-					charon->name);
+						"%s.plugins.eap-radius.nas_identifier", "strongSwan",
+						lib->ns);
 		auth_port = lib->settings->get_int(lib->settings,
-					"%s.plugins.eap-radius.port", AUTH_PORT, charon->name);
+						"%s.plugins.eap-radius.port", AUTH_PORT, lib->ns);
 		sockets = lib->settings->get_int(lib->settings,
-					"%s.plugins.eap-radius.sockets", 1, charon->name);
+						"%s.plugins.eap-radius.sockets", 1, lib->ns);
+
+		retransmit_tries = lib->settings->get_int(lib->settings,
+						"%s.plugins.eap-radius.retransmit_tries", 4, lib->ns);
+		retransmit_timeout = lib->settings->get_double(lib->settings,
+						"%s.plugins.eap-radius.retransmit_timeout", 2, lib->ns);
+		retransmit_base = lib->settings->get_double(lib->settings,
+						"%s.plugins.eap-radius.retransmit_base", 1.4, lib->ns);
+
 		config = radius_config_create(address, address, auth_port, ACCT_PORT,
-									  nas_identifier, secret, sockets, 0);
+									  nas_identifier, secret, sockets, 0,
+									  retransmit_tries, retransmit_timeout,
+									  retransmit_base);
 		if (!config)
 		{
 			DBG1(DBG_CFG, "no RADUIS server defined");
@@ -127,12 +163,12 @@ static void load_configs(private_eap_radius_plugin_t *this)
 	}
 
 	enumerator = lib->settings->create_section_enumerator(lib->settings,
-								"%s.plugins.eap-radius.servers", charon->name);
+									"%s.plugins.eap-radius.servers", lib->ns);
 	while (enumerator->enumerate(enumerator, &section))
 	{
 		address = lib->settings->get_str(lib->settings,
 							"%s.plugins.eap-radius.servers.%s.address", NULL,
-							charon->name, section);
+							lib->ns, section);
 		if (!address)
 		{
 			DBG1(DBG_CFG, "RADIUS server '%s' misses address, skipped", section);
@@ -140,32 +176,61 @@ static void load_configs(private_eap_radius_plugin_t *this)
 		}
 		secret = lib->settings->get_str(lib->settings,
 							"%s.plugins.eap-radius.servers.%s.secret", NULL,
-							charon->name, section);
+							lib->ns, section);
 		if (!secret)
 		{
 			DBG1(DBG_CFG, "RADIUS server '%s' misses secret, skipped", section);
 			continue;
 		}
 		nas_identifier = lib->settings->get_str(lib->settings,
-				"%s.plugins.eap-radius.servers.%s.nas_identifier", "strongSwan",
-				charon->name, section);
+				"%s.plugins.eap-radius.servers.%s.nas_identifier",
+					lib->settings->get_str(lib->settings,
+						"%s.plugins.eap-radius.nas_identifier", "strongSwan",
+						lib->ns),
+				lib->ns, section);
 		auth_port = lib->settings->get_int(lib->settings,
 			"%s.plugins.eap-radius.servers.%s.auth_port",
 				lib->settings->get_int(lib->settings,
 					"%s.plugins.eap-radius.servers.%s.port",
-					AUTH_PORT, charon->name, section),
-			charon->name, section);
+						lib->settings->get_int(lib->settings,
+							"%s.plugins.eap-radius.port", AUTH_PORT, lib->ns),
+					lib->ns, section),
+			lib->ns, section);
 		acct_port = lib->settings->get_int(lib->settings,
 				"%s.plugins.eap-radius.servers.%s.acct_port", ACCT_PORT,
-				charon->name, section);
+				lib->ns, section);
 		sockets = lib->settings->get_int(lib->settings,
-				"%s.plugins.eap-radius.servers.%s.sockets", 1,
-				charon->name, section);
+				"%s.plugins.eap-radius.servers.%s.sockets",
+					lib->settings->get_int(lib->settings,
+						"%s.plugins.eap-radius.sockets", 1, lib->ns),
+				lib->ns, section);
+
+		retransmit_tries = lib->settings->get_int(lib->settings,
+				"%s.plugins.eap-radius.servers.%s.retransmit_tries",
+					lib->settings->get_int(lib->settings,
+						"%s.plugins.eap-radius.retransmit_tries", 4, lib->ns),
+				lib->ns, section);
+
+		retransmit_timeout = lib->settings->get_double(lib->settings,
+				"%s.plugins.eap-radius.servers.%s.retransmit_timeout",
+					lib->settings->get_double(lib->settings,
+						"%s.plugins.eap-radius.retransmit_timeout", 2, lib->ns),
+				lib->ns, section);
+
+		retransmit_base = lib->settings->get_double(lib->settings,
+				"%s.plugins.eap-radius.servers.%s.retransmit_base",
+					lib->settings->get_double(lib->settings,
+						"%s.plugins.eap-radius.retransmit_base", 1.4, lib->ns),
+				lib->ns, section);
+
 		preference = lib->settings->get_int(lib->settings,
 				"%s.plugins.eap-radius.servers.%s.preference", 0,
-				charon->name, section);
+				lib->ns, section);
+
 		config = radius_config_create(section, address, auth_port, acct_port,
-								nas_identifier, secret, sockets, preference);
+								nas_identifier, secret, sockets, preference,
+								retransmit_tries, retransmit_timeout,
+								retransmit_base);
 		if (!config)
 		{
 			DBG1(DBG_CFG, "loading RADIUS server '%s' failed, skipped", section);
@@ -186,12 +251,60 @@ METHOD(plugin_t, get_name, char*,
 	return "eap-radius";
 }
 
+/**
+ * Register listener
+ */
+static bool plugin_cb(private_eap_radius_plugin_t *this,
+					  plugin_feature_t *feature, bool reg, void *cb_data)
+{
+	if (reg)
+	{
+		this->accounting = eap_radius_accounting_create();
+		this->forward = eap_radius_forward_create();
+		this->provider = eap_radius_provider_create();
+
+		load_configs(this);
+
+		if (lib->settings->get_bool(lib->settings,
+						"%s.plugins.eap-radius.dae.enable", FALSE, lib->ns))
+		{
+			this->dae = eap_radius_dae_create(this->accounting);
+		}
+		if (this->forward)
+		{
+			charon->bus->add_listener(charon->bus, &this->forward->listener);
+		}
+		charon->attributes->add_provider(charon->attributes,
+										 &this->provider->provider);
+	}
+	else
+	{
+		charon->attributes->remove_provider(charon->attributes,
+											&this->provider->provider);
+		if (this->forward)
+		{
+			charon->bus->remove_listener(charon->bus, &this->forward->listener);
+			this->forward->destroy(this->forward);
+		}
+		DESTROY_IF(this->dae);
+		this->provider->destroy(this->provider);
+		this->accounting->destroy(this->accounting);
+	}
+	return TRUE;
+}
+
 METHOD(plugin_t, get_features, int,
-	eap_radius_plugin_t *this, plugin_feature_t *features[])
+	private_eap_radius_plugin_t *this, plugin_feature_t *features[])
 {
 	static plugin_feature_t f[] = {
 		PLUGIN_CALLBACK(eap_method_register, eap_radius_create),
 			PLUGIN_PROVIDE(EAP_SERVER, EAP_RADIUS),
+				PLUGIN_DEPENDS(CUSTOM, "eap-radius"),
+		PLUGIN_CALLBACK(xauth_method_register, eap_radius_xauth_create_server),
+			PLUGIN_PROVIDE(XAUTH_SERVER, "radius"),
+				PLUGIN_DEPENDS(CUSTOM, "eap-radius"),
+		PLUGIN_CALLBACK((plugin_feature_callback_t)plugin_cb, NULL),
+			PLUGIN_PROVIDE(CUSTOM, "eap-radius"),
 				PLUGIN_DEPENDS(HASHER, HASH_MD5),
 				PLUGIN_DEPENDS(SIGNER, AUTH_HMAC_MD5_128),
 				PLUGIN_DEPENDS(RNG, RNG_WEAK),
@@ -215,19 +328,9 @@ METHOD(plugin_t, reload, bool,
 METHOD(plugin_t, destroy, void,
 	private_eap_radius_plugin_t *this)
 {
-	hydra->attributes->remove_provider(hydra->attributes,
-									   &this->provider->provider);
-	this->provider->destroy(this->provider);
-	if (this->forward)
-	{
-		charon->bus->remove_listener(charon->bus, &this->forward->listener);
-		this->forward->destroy(this->forward);
-	}
-	DESTROY_IF(this->dae);
 	this->configs->destroy_offset(this->configs,
 								  offsetof(radius_config_t, destroy));
 	this->lock->destroy(this->lock);
-	this->accounting->destroy(this->accounting);
 	free(this);
 	instance = NULL;
 }
@@ -250,25 +353,8 @@ plugin_t *eap_radius_plugin_create()
 		},
 		.configs = linked_list_create(),
 		.lock = rwlock_create(RWLOCK_TYPE_DEFAULT),
-		.accounting = eap_radius_accounting_create(),
-		.forward = eap_radius_forward_create(),
-		.provider = eap_radius_provider_create(),
 	);
-
-	load_configs(this);
 	instance = this;
-
-	if (lib->settings->get_bool(lib->settings,
-					"%s.plugins.eap-radius.dae.enable", FALSE, charon->name))
-	{
-		this->dae = eap_radius_dae_create(this->accounting);
-	}
-	if (this->forward)
-	{
-		charon->bus->add_listener(charon->bus, &this->forward->listener);
-	}
-	hydra->attributes->add_provider(hydra->attributes,
-									&this->provider->provider);
 
 	return &this->public.plugin;
 }
@@ -345,7 +431,7 @@ void eap_radius_handle_timeout(ike_sa_id_t *id)
 
 	if (lib->settings->get_bool(lib->settings,
 								"%s.plugins.eap-radius.close_all_on_timeout",
-								FALSE, charon->name))
+								FALSE, lib->ns))
 	{
 		DBG1(DBG_CFG, "deleting all IKE_SAs after RADIUS timeout");
 		lib->processor->queue_job(lib->processor,

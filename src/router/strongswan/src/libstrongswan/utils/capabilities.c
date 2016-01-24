@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Tobias Brunner
+ * Copyright (C) 2012-2015 Tobias Brunner
  * Hochschule fuer Technik Rapperswil
  * Copyright (C) 2012 Martin Willi
  * Copyright (C) 2012 revosec AG
@@ -17,17 +17,19 @@
 
 #include "capabilities.h"
 
+#include <utils/debug.h>
+
 #include <errno.h>
 #include <string.h>
 #include <sys/types.h>
+#include <unistd.h>
+
+#ifndef WIN32
 #include <pwd.h>
 #include <grp.h>
-#include <unistd.h>
 #ifdef HAVE_PRCTL
 # include <sys/prctl.h>
 #endif /* HAVE_PRCTL */
-
-#include <utils/debug.h>
 
 #if !defined(HAVE_GETPWNAM_R) || \
     !defined(HAVE_GETGRNAM_R) || \
@@ -35,6 +37,7 @@
 # include <threading/mutex.h>
 # define EMULATE_R_FUNCS
 #endif
+#endif /* !WIN32 */
 
 typedef struct private_capabilities_t private_capabilities_t;
 
@@ -76,8 +79,131 @@ struct private_capabilities_t {
 #endif
 };
 
-METHOD(capabilities_t, keep, void,
-	private_capabilities_t *this, u_int cap)
+#ifndef WIN32
+
+/**
+ * Returns TRUE if the current process/user is member of the given group
+ */
+static bool has_group(gid_t group)
+{
+	gid_t *groups;
+	long ngroups, i;
+	bool found = FALSE;
+
+	if (group == getegid())
+	{	/* it's unspecified if this is part of the list below or not */
+		return TRUE;
+	}
+	ngroups = sysconf(_SC_NGROUPS_MAX);
+	if (ngroups == -1)
+	{
+		DBG1(DBG_LIB, "getting groups for current process failed: %s",
+			 strerror(errno));
+		return FALSE;
+	}
+	groups = calloc(ngroups + 1, sizeof(gid_t));
+	ngroups = getgroups(ngroups, groups);
+	if (ngroups == -1)
+	{
+		DBG1(DBG_LIB, "getting groups for current process failed: %s",
+			 strerror(errno));
+		free(groups);
+		return FALSE;
+	}
+	for (i = 0; i < ngroups; i++)
+	{
+		if (group == groups[i])
+		{
+			found = TRUE;
+			break;
+		}
+	}
+	free(groups);
+	return found;
+}
+
+/**
+ * Verify that the current process has the given capability
+ */
+static bool has_capability(private_capabilities_t *this, u_int cap,
+						   bool *ignore)
+{
+	if (cap == CAP_CHOWN)
+	{	/* if new files/UNIX sockets are created they should be owned by the
+		 * configured user and group.  This requires a call to chown(2).  But
+		 * CAP_CHOWN is not always required. */
+		if (!this->uid || geteuid() == this->uid)
+		{	/* if the owner does not change CAP_CHOWN is not needed */
+			if (!this->gid || has_group(this->gid))
+			{	/* the same applies if the owner is a member of the group */
+				if (ignore)
+				{	/* we don't have to keep this, if requested */
+					*ignore = TRUE;
+				}
+				return TRUE;
+			}
+		}
+	}
+#ifndef CAPABILITIES
+	/* if we can't check the actual capabilities assume only root has it */
+	return geteuid() == 0;
+#endif /* !CAPABILITIES */
+#ifdef CAPABILITIES_LIBCAP
+	cap_flag_value_t val;
+	cap_t caps;
+	bool ok;
+
+	caps = cap_get_proc();
+	if (!caps)
+	{
+		return FALSE;
+	}
+	ok = cap_get_flag(caps, cap, CAP_PERMITTED, &val) == 0 && val == CAP_SET;
+	cap_free(caps);
+	return ok;
+#endif /* CAPABILITIES_LIBCAP */
+#ifdef CAPABILITIES_NATIVE
+	struct __user_cap_header_struct header = {
+#if defined(_LINUX_CAPABILITY_VERSION_3)
+		.version = _LINUX_CAPABILITY_VERSION_3,
+#elif defined(_LINUX_CAPABILITY_VERSION_2)
+		.version = _LINUX_CAPABILITY_VERSION_2,
+#elif defined(_LINUX_CAPABILITY_VERSION_1)
+		.version = _LINUX_CAPABILITY_VERSION_1,
+#else
+		.version = _LINUX_CAPABILITY_VERSION,
+#endif
+	};
+	struct __user_cap_data_struct caps[2];
+	int i = 0;
+
+	if (cap >= 32)
+	{
+		i++;
+		cap -= 32;
+	}
+	return capget(&header, caps) == 0 && caps[i].permitted & (1 << cap);
+#endif /* CAPABILITIES_NATIVE */
+}
+
+#else /* WIN32 */
+
+/**
+ * Verify that the current process has the given capability, dummy variant
+ */
+static bool has_capability(private_capabilities_t *this, u_int cap,
+						   bool *ignore)
+{
+	return TRUE;
+}
+
+#endif /* WIN32 */
+
+/**
+ * Keep the given capability if it is held by the current process.  Returns
+ * FALSE, if this is not the case.
+ */
+static bool keep_capability(private_capabilities_t *this, u_int cap)
 {
 #ifdef CAPABILITIES_LIBCAP
 	cap_set_flag(this->caps, CAP_EFFECTIVE, 1, &cap, CAP_SET);
@@ -96,18 +222,49 @@ METHOD(capabilities_t, keep, void,
 	this->caps[i].permitted |= 1 << cap;
 	this->caps[i].inheritable |= 1 << cap;
 #endif /* CAPABILITIES_NATIVE */
+	return TRUE;
+}
+
+METHOD(capabilities_t, keep, bool,
+	private_capabilities_t *this, u_int cap)
+{
+	bool ignore = FALSE;
+
+	if (!has_capability(this, cap, &ignore))
+	{
+		return FALSE;
+	}
+	else if (ignore)
+	{	/* don't keep capabilities that are not required */
+		return TRUE;
+	}
+	return keep_capability(this, cap);
+}
+
+METHOD(capabilities_t, check, bool,
+	private_capabilities_t *this, u_int cap)
+{
+	return has_capability(this, cap, NULL);
 }
 
 METHOD(capabilities_t, get_uid, uid_t,
 	private_capabilities_t *this)
 {
+#ifdef WIN32
 	return this->uid;
+#else
+	return this->uid ?: geteuid();
+#endif
 }
 
 METHOD(capabilities_t, get_gid, gid_t,
 	private_capabilities_t *this)
 {
+#ifdef WIN32
 	return this->gid;
+#else
+	return this->gid ?: getegid();
+#endif
 }
 
 METHOD(capabilities_t, set_uid, void,
@@ -125,18 +282,31 @@ METHOD(capabilities_t, set_gid, void,
 METHOD(capabilities_t, resolve_uid, bool,
 	private_capabilities_t *this, char *username)
 {
+#ifndef WIN32
 	struct passwd *pwp;
 	int err;
 
 #ifdef HAVE_GETPWNAM_R
 	struct passwd passwd;
-	char buf[1024];
+	size_t buflen = 1024;
+	char *buf = NULL;
 
-	err = getpwnam_r(username, &passwd, buf, sizeof(buf), &pwp);
-	if (pwp)
+	while (TRUE)
 	{
-		this->uid = pwp->pw_uid;
+		buf = realloc(buf, buflen);
+		err = getpwnam_r(username, &passwd, buf, buflen, &pwp);
+		if (err == ERANGE)
+		{
+			buflen *= 2;
+			continue;
+		}
+		if (pwp)
+		{
+			this->uid = pwp->pw_uid;
+		}
+		break;
 	}
+	free(buf);
 #else /* HAVE GETPWNAM_R */
 	this->mutex->lock(this->mutex);
 	pwp = getpwnam(username);
@@ -153,24 +323,38 @@ METHOD(capabilities_t, resolve_uid, bool,
 	}
 	DBG1(DBG_LIB, "resolving user '%s' failed: %s", username,
 		 err ? strerror(err) : "user not found");
+#endif /* !WIN32 */
 	return FALSE;
 }
 
 METHOD(capabilities_t, resolve_gid, bool,
 	private_capabilities_t *this, char *groupname)
 {
+#ifndef WIN32
 	struct group *grp;
 	int err;
 
 #ifdef HAVE_GETGRNAM_R
 	struct group group;
-	char buf[1024];
+	size_t buflen = 1024;
+	char *buf = NULL;
 
-	err = getgrnam_r(groupname, &group, buf, sizeof(buf), &grp);
-	if (grp)
+	while (TRUE)
 	{
-		this->gid = grp->gr_gid;
+		buf = realloc(buf, buflen);
+		err = getgrnam_r(groupname, &group, buf, buflen, &grp);
+		if (err == ERANGE)
+		{
+			buflen *= 2;
+			continue;
+		}
+		if (grp)
+		{
+			this->gid = grp->gr_gid;
+		}
+		break;
 	}
+	free(buf);
 #else /* HAVE_GETGRNAM_R */
 	this->mutex->lock(this->mutex);
 	grp = getgrnam(groupname);
@@ -187,9 +371,11 @@ METHOD(capabilities_t, resolve_gid, bool,
 	}
 	DBG1(DBG_LIB, "resolving user '%s' failed: %s", groupname,
 		 err ? strerror(err) : "group not found");
+#endif /* !WIN32 */
 	return FALSE;
 }
 
+#ifndef WIN32
 /**
  * Initialize supplementary groups for unprivileged user
  */
@@ -200,12 +386,24 @@ static bool init_supplementary_groups(private_capabilities_t *this)
 
 #ifdef HAVE_GETPWUID_R
 	struct passwd pwd;
-	char buf[1024];
+	size_t buflen = 1024;
+	char *buf = NULL;
 
-	if (getpwuid_r(this->uid, &pwd, buf, sizeof(buf), &pwp) == 0 && pwp)
+	while (TRUE)
 	{
-		res = initgroups(pwp->pw_name, this->gid);
+		buf = realloc(buf, buflen);
+		if (getpwuid_r(this->uid, &pwd, buf, buflen, &pwp) == ERANGE)
+		{
+			buflen *= 2;
+			continue;
+		}
+		if (pwp)
+		{
+			res = initgroups(pwp->pw_name, this->gid);
+		}
+		break;
 	}
+	free(buf);
 #else /* HAVE_GETPWUID_R */
 	this->mutex->lock(this->mutex);
 	pwp = getpwuid(this->uid);
@@ -217,15 +415,17 @@ static bool init_supplementary_groups(private_capabilities_t *this)
 #endif /* HAVE_GETPWUID_R */
 	return res == 0;
 }
+#endif /* WIN32 */
 
 METHOD(capabilities_t, drop, bool,
 	private_capabilities_t *this)
 {
+#ifndef WIN32
 #ifdef HAVE_PRCTL
 	prctl(PR_SET_KEEPCAPS, 1, 0, 0, 0);
 #endif
 
-	if (!init_supplementary_groups(this))
+	if (this->uid && !init_supplementary_groups(this))
 	{
 		DBG1(DBG_LIB, "initializing supplementary groups for %u failed",
 			 this->uid);
@@ -271,8 +471,9 @@ METHOD(capabilities_t, drop, bool,
 #endif /* CAPABILITIES_NATIVE */
 #ifdef CAPABILITIES
 	DBG1(DBG_LIB, "dropped capabilities, running as uid %u, gid %u",
-		 this->uid, this->gid);
+		 geteuid(), getegid());
 #endif /* CAPABILITIES */
+#endif /*!WIN32 */
 	return TRUE;
 }
 
@@ -298,6 +499,7 @@ capabilities_t *capabilities_create()
 	INIT(this,
 		.public = {
 			.keep = _keep,
+			.check = _check,
 			.get_uid = _get_uid,
 			.get_gid = _get_gid,
 			.set_uid = _set_uid,
@@ -309,15 +511,9 @@ capabilities_t *capabilities_create()
 		},
 	);
 
-#ifdef CAPABILITIES
 #ifdef CAPABILITIES_LIBCAP
 	this->caps = cap_init();
 #endif /* CAPABILITIES_LIBCAP */
-	if (lib->leak_detective)
-	{
-		keep(this, CAP_SYS_NICE);
-	}
-#endif /* CAPABILITIES */
 
 #ifdef EMULATE_R_FUNCS
 	this->mutex = mutex_create(MUTEX_TYPE_DEFAULT);

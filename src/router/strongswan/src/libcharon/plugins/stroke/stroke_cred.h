@@ -29,6 +29,8 @@
 #include <credentials/certificates/certificate.h>
 #include <collections/linked_list.h>
 
+#include "stroke_ca.h"
+
 typedef struct stroke_cred_t stroke_cred_t;
 
 /**
@@ -50,14 +52,6 @@ struct stroke_cred_t {
 	void (*reread)(stroke_cred_t *this, stroke_msg_t *msg, FILE *prompt);
 
 	/**
-	 * Load a CA certificate, and serve it through the credential_set.
-	 *
-	 * @param filename		file to load CA cert from
-	 * @return				reference to loaded certificate, or NULL
-	 */
-	certificate_t* (*load_ca)(stroke_cred_t *this, char *filename);
-
-	/**
 	 * Load a peer certificate and serve it through the credential_set.
 	 *
 	 * @param filename		file to load peer cert from
@@ -68,13 +62,12 @@ struct stroke_cred_t {
 	/**
 	 * Load a raw public key and serve it through the credential_set.
 	 *
-	 * @param type			type of the raw public key (RSA or ECDSA)
-	 * @param filename		file to load raw public key from
+	 * @param filename		encoding or file to load raw public key from
 	 * @param identity		identity of the raw public key owner
 	 * @return				reference to loaded raw public key, or NULL
 	 */
-	certificate_t* (*load_pubkey)(stroke_cred_t *this, key_type_t type,
-								  char *filename, identification_t *identity);
+	certificate_t* (*load_pubkey)(stroke_cred_t *this, char *filename,
+								  identification_t *identity);
 
 	/**
 	 * Add a shared secret to serve through the credential_set.
@@ -101,6 +94,6 @@ struct stroke_cred_t {
 /**
  * Create a stroke_cred instance.
  */
-stroke_cred_t *stroke_cred_create();
+stroke_cred_t *stroke_cred_create(stroke_ca_t *ca);
 
 #endif /** STROKE_CRED_H_ @}*/

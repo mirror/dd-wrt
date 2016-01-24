@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2012 Andreas Steffen
+ * Copyright (C) 2011-2015 Andreas Steffen
  * HSR Hochschule fuer Technik Rapperswil
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
 #include <pen/pen.h>
 #include <utils/debug.h>
 
-
 typedef struct private_pa_tnc_msg_t private_pa_tnc_msg_t;
 
 /**
@@ -38,29 +37,7 @@ typedef struct private_pa_tnc_msg_t private_pa_tnc_msg_t;
  *  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  */
 
-#define PA_TNC_HEADER_SIZE	8
 #define PA_TNC_RESERVED		0x000000
-
-/**
- *  PA-TNC attribute
- *
- *                       1                   2                   3
- *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
- *  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- *  |     Flags     |          PA-TNC Attribute Vendor ID           |
- *  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- *  |                     PA-TNC Attribute Type                     |
- *  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- *  |                    PA-TNC Attribute Length                    |
- *  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- *  |                 Attribute Value (Variable Length)             |
- *  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- */
-
-#define PA_TNC_ATTR_FLAG_NONE			0x00
-#define PA_TNC_ATTR_FLAG_NOSKIP			(1<<7)
-#define PA_TNC_ATTR_HEADER_SIZE			12
-#define PA_TNC_ATTR_INFO_SIZE			8
 
 /**
  * Private data of a pa_tnc_msg_t object.
@@ -86,7 +63,7 @@ struct private_pa_tnc_msg_t {
 	/**
 	 * Message identifier
 	 */
-	u_int32_t identifier;
+	uint32_t identifier;
 
 	/**
 	 * Current PA-TNC Message size
@@ -97,6 +74,11 @@ struct private_pa_tnc_msg_t {
 	 * Maximum PA-TNC Message size
 	 */
 	size_t max_msg_len;
+
+	/**
+	 * TRUE if attribute was extracted from data
+	 */
+	bool from_data;
 
 	/**
 	 * Encoded message
@@ -110,23 +92,31 @@ METHOD(pa_tnc_msg_t, get_encoding, chunk_t,
 	return this->encoding;
 }
 
+METHOD(pa_tnc_msg_t, get_space, size_t,
+	private_pa_tnc_msg_t *this)
+{
+	return this->max_msg_len ? this->max_msg_len - this->msg_len : 0;
+}
+
 METHOD(pa_tnc_msg_t, add_attribute, bool,
 	private_pa_tnc_msg_t *this, pa_tnc_attr_t *attr)
 {
 	chunk_t attr_value;
 	size_t attr_len;
 
-	attr->build(attr);
-	attr_value = attr->get_value(attr);
-	attr_len = PA_TNC_ATTR_HEADER_SIZE + attr_value.len;
-
-	if (this->max_msg_len && this->msg_len + attr_len > this->max_msg_len)
+	if (!this->from_data)
 	{
-		/* attribute just does not fit into this message */
-		return FALSE;
-	}
-	this->msg_len += attr_len;
+		attr->build(attr);
+		attr_value = attr->get_value(attr);
+		attr_len = PA_TNC_ATTR_HEADER_SIZE + attr_value.len;
 
+		if (this->max_msg_len && this->msg_len + attr_len > this->max_msg_len)
+		{
+			/* attribute just does not fit into this message */
+			return FALSE;
+		}
+		this->msg_len += attr_len;
+	}
 	this->attributes->insert_last(this->attributes, attr);
 	return TRUE;
 }
@@ -139,13 +129,13 @@ METHOD(pa_tnc_msg_t, build, bool,
 	pa_tnc_attr_t *attr;
 	enum_name_t *pa_attr_names;
 	pen_type_t type;
-	u_int8_t flags;
+	uint8_t flags;
 	chunk_t value;
 	nonce_gen_t *ng;
 
 	/* generate a nonce as a message identifier */
 	ng = lib->crypto->create_nonce_gen(lib->crypto);
-	if (!ng || !ng->get_nonce(ng, 4, (u_int8_t*)&this->identifier))
+	if (!ng || !ng->get_nonce(ng, 4, (uint8_t*)&this->identifier))
 	{
 		DBG1(DBG_TNC, "failed to generate random PA-TNC message identifier");
 		DESTROY_IF(ng);
@@ -204,9 +194,11 @@ METHOD(pa_tnc_msg_t, process, status_t,
 	private_pa_tnc_msg_t *this)
 {
 	bio_reader_t *reader;
-	pa_tnc_attr_t *error;
-	u_int8_t version;
-	u_int32_t reserved, offset, attr_offset;
+	pa_tnc_attr_t *attr, *error;
+	pen_type_t attr_type;
+	chunk_t attr_value;
+	uint8_t version;
+	uint32_t reserved, offset, attr_offset;
 	pen_type_t error_code = { PEN_IETF, PA_ERROR_INVALID_PARAMETER };
 
 	/* process message header */
@@ -234,119 +226,45 @@ METHOD(pa_tnc_msg_t, process, status_t,
 	offset = PA_TNC_HEADER_SIZE;
 
 	/* pre-process PA-TNC attributes */
-	while (reader->remaining(reader) >= PA_TNC_ATTR_HEADER_SIZE)
+	while (reader->remaining(reader) > 0)
 	{
-		pen_t vendor_id;
-		u_int8_t flags;
-		u_int32_t type, length;
-		chunk_t value, attr_info;
-		pa_tnc_attr_t *attr;
-		enum_name_t *pa_attr_names;
-		ietf_attr_pa_tnc_error_t *error_attr;
-
-		attr_info = reader->peek(reader);
-		attr_info.len = PA_TNC_ATTR_INFO_SIZE;
-		reader->read_uint8 (reader, &flags);
-		reader->read_uint24(reader, &vendor_id);
-		reader->read_uint32(reader, &type);
-		reader->read_uint32(reader, &length);
-
-		pa_attr_names = imcv_pa_tnc_attributes->get_names(imcv_pa_tnc_attributes,
-														  vendor_id);
-		if (pa_attr_names)
-		{
-			DBG2(DBG_TNC, "processing PA-TNC attribute type '%N/%N' "
-						  "0x%06x/0x%08x", pen_names, vendor_id,
-						   pa_attr_names, type, vendor_id, type);
-		}
-		else
-		{
-			DBG2(DBG_TNC, "processing PA-TNC attribute type '%N' "
-						  "0x%06x/0x%08x", pen_names, vendor_id,
-						   vendor_id, type);
-		}
-
-		if (length < PA_TNC_ATTR_HEADER_SIZE)
-		{
-			DBG1(DBG_TNC, "%u bytes too small for PA-TNC attribute length",
-						   length);
-			error = ietf_attr_pa_tnc_error_create_with_offset(error_code,
-						this->encoding, offset + PA_TNC_ATTR_INFO_SIZE);
-			goto err;
-		}
-
-		if (!reader->read_data(reader, length - PA_TNC_ATTR_HEADER_SIZE, &value))
-		{
-			DBG1(DBG_TNC, "insufficient bytes for PA-TNC attribute value");
-			error = ietf_attr_pa_tnc_error_create_with_offset(error_code,
-						this->encoding, offset + PA_TNC_ATTR_INFO_SIZE);
-			goto err;
-		}
-		DBG3(DBG_TNC, "%B", &value);
-
-		if (vendor_id == PEN_RESERVED)
-		{
-			error = ietf_attr_pa_tnc_error_create_with_offset(error_code,
-						this->encoding, offset + 1);
-			goto err;
-		}
-		if (type == IETF_ATTR_RESERVED)
-		{
-			error = ietf_attr_pa_tnc_error_create_with_offset(error_code,
-						this->encoding, offset + 4);
-			goto err;
-		}
 		attr = imcv_pa_tnc_attributes->create(imcv_pa_tnc_attributes,
-											  vendor_id, type, value);
+							reader, FALSE, &offset, this->encoding, &error);
 		if (!attr)
 		{
-			if (flags & PA_TNC_ATTR_FLAG_NOSKIP)
+			if (error)
 			{
-				DBG1(DBG_TNC, "unsupported PA-TNC attribute with NOSKIP flag");
-				error_code = pen_type_create(PEN_IETF,
-											 PA_ERROR_ATTR_TYPE_NOT_SUPPORTED);
-				error = ietf_attr_pa_tnc_error_create(error_code,
-							this->encoding);
-				error_attr = (ietf_attr_pa_tnc_error_t*)error;
-				error_attr->set_attr_info(error_attr, attr_info);
 				goto err;
 			}
 			else
 			{
-				DBG1(DBG_TNC, "skipping unsupported PA-TNC attribute");
-				offset += length;
 				continue;
 			}
 		}
+		attr_value = attr->get_value(attr);
+		attr_type  = attr->get_type(attr);
 
 		if (attr->process(attr, &attr_offset) != SUCCESS)
 		{
 			attr->destroy(attr);
-			if (vendor_id == PEN_IETF && type == IETF_ATTR_PA_TNC_ERROR)
+
+			if (attr_type.vendor_id == PEN_IETF &&
+				attr_type.type == IETF_ATTR_PA_TNC_ERROR)
 			{
-				/* error while processing a PA-TNC error attribute - abort */
-				reader->destroy(reader);
-				return FAILED;
+				/* suppress error while processing a PA-TNC error attribute */
+				offset += attr_value.len;
+				continue;
 			}
-			error_code = pen_type_create(PEN_IETF,
-										 PA_ERROR_INVALID_PARAMETER);
+			error_code = pen_type_create(PEN_IETF, PA_ERROR_INVALID_PARAMETER);
 			error = ietf_attr_pa_tnc_error_create_with_offset(error_code,
-						this->encoding,
-						offset + PA_TNC_ATTR_HEADER_SIZE + attr_offset);
+									this->encoding, offset + attr_offset);
 			goto err;
 		}
+		offset += attr_value.len;
 		this->attributes->insert_last(this->attributes, attr);
-		offset += length;
 	}
-
-	if (reader->remaining(reader) == 0)
-	{
-		reader->destroy(reader);
-		return SUCCESS;
-	}
-	DBG1(DBG_TNC, "insufficient bytes for PA-TNC attribute header");
-	error = ietf_attr_pa_tnc_error_create_with_offset(error_code,
-						this->encoding, offset);
+	reader->destroy(reader);
+	return SUCCESS;
 
 err:
 	reader->destroy(reader);
@@ -355,24 +273,27 @@ err:
 }
 
 METHOD(pa_tnc_msg_t, process_ietf_std_errors, bool,
-	private_pa_tnc_msg_t *this)
+	private_pa_tnc_msg_t *this, linked_list_t *non_fatal_types)
 {
-	enumerator_t *enumerator;
+	enumerator_t *e1, *e2;
+	enum_name_t *pa_attr_names;
 	pa_tnc_attr_t *attr;
-	pen_type_t type;
+	pen_type_t type, unsupported_type;
+	uint8_t flags;
 	bool fatal_error = FALSE;
 
-	enumerator = this->attributes->create_enumerator(this->attributes);
-	while (enumerator->enumerate(enumerator, &attr))
+	e1 = this->attributes->create_enumerator(this->attributes);
+	while (e1->enumerate(e1, &attr))
 	{
 		type = attr->get_type(attr);
 
 		if (type.vendor_id == PEN_IETF && type.type == IETF_ATTR_PA_TNC_ERROR)
 		{
 			ietf_attr_pa_tnc_error_t *error_attr;
-			pen_type_t error_code;
-			chunk_t msg_info, attr_info;
-			u_int32_t offset;
+			pen_type_t error_code, *non_fatal_type;
+			chunk_t msg_info;
+			uint32_t offset;
+			bool fatal_current_error = TRUE;
 
 			error_attr = (ietf_attr_pa_tnc_error_t*)attr;
 			error_code = error_attr->get_error_code(error_attr);
@@ -394,16 +315,49 @@ METHOD(pa_tnc_msg_t, process_ietf_std_errors, bool,
 					DBG1(DBG_TNC, "  occurred at offset of %u bytes", offset);
 					break;
 				case PA_ERROR_ATTR_TYPE_NOT_SUPPORTED:
-					attr_info = error_attr->get_attr_info(error_attr);
-					DBG1(DBG_TNC, "  unsupported attribute %#B", &attr_info);
+					unsupported_type =
+						error_attr->get_unsupported_attr(error_attr, &flags);
+					pa_attr_names =
+						imcv_pa_tnc_attributes->get_names(imcv_pa_tnc_attributes,
+													unsupported_type.vendor_id);
+					if (pa_attr_names)
+					{
+						DBG1(DBG_TNC, "  unsupported attribute type '%N/%N' "
+							 "0x%06x/0x%08x, flags 0x%02x",
+							 pen_names, unsupported_type.vendor_id,
+							 pa_attr_names, unsupported_type.type,
+							 unsupported_type.vendor_id, unsupported_type.type,
+							 flags);
+					}
+					else
+					{
+						DBG1(DBG_TNC, "  unsupported attribute type '%N' "
+							 "0x%06x/0x%08x, flags 0x%02x",
+							 pen_names, unsupported_type.vendor_id,
+							 unsupported_type.vendor_id, unsupported_type.type,
+							 flags);
+					}
+					e2 = non_fatal_types->create_enumerator(non_fatal_types);
+					while (e2->enumerate(e2, &non_fatal_type))
+					{
+						if (pen_type_equals(unsupported_type, *non_fatal_type))
+						{
+							fatal_current_error = FALSE;
+							break;
+						}
+					}
+					e2->destroy(e2);
 					break;
 				default:
 					break;
 			}
-			fatal_error = TRUE;
+			if (fatal_current_error)
+			{
+				fatal_error = TRUE;
+			}
 		}
 	}
-	enumerator->destroy(enumerator);
+	e1->destroy(e1);
 
 	return fatal_error;
 }
@@ -441,6 +395,7 @@ pa_tnc_msg_t *pa_tnc_msg_create(size_t max_msg_len)
 	INIT(this,
 		.public = {
 			.get_encoding = _get_encoding,
+			.get_space = _get_space,
 			.add_attribute = _add_attribute,
 			.build = _build,
 			.process = _process,
@@ -468,6 +423,7 @@ pa_tnc_msg_t *pa_tnc_msg_create_from_data(chunk_t data)
 	INIT(this,
 		.public = {
 			.get_encoding = _get_encoding,
+			.get_space = _get_space,
 			.add_attribute = _add_attribute,
 			.build = _build,
 			.process = _process,
@@ -479,6 +435,7 @@ pa_tnc_msg_t *pa_tnc_msg_create_from_data(chunk_t data)
 		.encoding = chunk_clone(data),
 		.attributes = linked_list_create(),
 		.errors = linked_list_create(),
+		.from_data = TRUE,
 	);
 
 	return &this->public;

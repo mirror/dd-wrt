@@ -46,7 +46,7 @@ typedef crypter_t* (*crypter_constructor_t)(encryption_algorithm_t algo,
  * Constructor function for aead transforms
  */
 typedef aead_t* (*aead_constructor_t)(encryption_algorithm_t algo,
-									  size_t key_size);
+									  size_t key_size, size_t salt_size);
 /**
  * Constructor function for signers
  */
@@ -100,10 +100,12 @@ struct crypto_factory_t {
 	 *
 	 * @param algo			encryption algorithm
 	 * @param key_size		length of the key in bytes
+	 * @param salt_size		size of salt, implicit part of the nonce
 	 * @return				aead_t instance, NULL if not supported
 	 */
 	aead_t* (*create_aead)(crypto_factory_t *this,
-						   encryption_algorithm_t algo, size_t key_size);
+						   encryption_algorithm_t algo,
+						   size_t key_size, size_t salt_size);
 
 	/**
 	 * Create a symmetric signer instance.
@@ -160,12 +162,14 @@ struct crypto_factory_t {
 	 * Register a crypter constructor.
 	 *
 	 * @param algo			algorithm to constructor
+	 * @param key size		key size to peform benchmarking for
 	 * @param plugin_name	plugin that registered this algorithm
 	 * @param create		constructor function for that algorithm
-	 * @return
+	 * @return				TRUE if registered, FALSE if test vector failed
 	 */
-	void (*add_crypter)(crypto_factory_t *this, encryption_algorithm_t algo,
-						const char *plugin_name, crypter_constructor_t create);
+	bool (*add_crypter)(crypto_factory_t *this, encryption_algorithm_t algo,
+						size_t key_size, const char *plugin_name,
+						crypter_constructor_t create);
 
 	/**
 	 * Unregister a crypter constructor.
@@ -185,12 +189,14 @@ struct crypto_factory_t {
 	 * Register a aead constructor.
 	 *
 	 * @param algo			algorithm to constructor
+	 * @param key size		key size to peform benchmarking for
 	 * @param plugin_name	plugin that registered this algorithm
 	 * @param create		constructor function for that algorithm
-	 * @return
+	 * @return				TRUE if registered, FALSE if test vector failed
 	 */
-	void (*add_aead)(crypto_factory_t *this, encryption_algorithm_t algo,
-					 const char *plugin_name, aead_constructor_t create);
+	bool (*add_aead)(crypto_factory_t *this, encryption_algorithm_t algo,
+					 size_t key_size, const char *plugin_name,
+					 aead_constructor_t create);
 
 	/**
 	 * Register a signer constructor.
@@ -198,9 +204,9 @@ struct crypto_factory_t {
 	 * @param algo			algorithm to constructor
 	 * @param plugin_name	plugin that registered this algorithm
 	 * @param create		constructor function for that algorithm
-	 * @return
+	 * @return				TRUE if registered, FALSE if test vector failed
 	 */
-	void (*add_signer)(crypto_factory_t *this, integrity_algorithm_t algo,
+	bool (*add_signer)(crypto_factory_t *this, integrity_algorithm_t algo,
 					    const char *plugin_name, signer_constructor_t create);
 
 	/**
@@ -213,15 +219,12 @@ struct crypto_factory_t {
 	/**
 	 * Register a hasher constructor.
 	 *
-	 * The first added hasher is the preferred hasher returned on
-	 * create_hasher(HASH_PREFERRED).
-	 *
 	 * @param algo			algorithm to constructor
 	 * @param plugin_name	plugin that registered this algorithm
 	 * @param create		constructor function for that algorithm
-	 * @return
+	 * @return				TRUE if registered, FALSE if test vector failed
 	 */
-	void (*add_hasher)(crypto_factory_t *this, hash_algorithm_t algo,
+	bool (*add_hasher)(crypto_factory_t *this, hash_algorithm_t algo,
 					   const char *plugin_name, hasher_constructor_t create);
 
 	/**
@@ -237,9 +240,9 @@ struct crypto_factory_t {
 	 * @param algo			algorithm to constructor
 	 * @param plugin_name	plugin that registered this algorithm
 	 * @param create		constructor function for that algorithm
-	 * @return
+	 * @return				TRUE if registered, FALSE if test vector failed
 	 */
-	void (*add_prf)(crypto_factory_t *this, pseudo_random_function_t algo,
+	bool (*add_prf)(crypto_factory_t *this, pseudo_random_function_t algo,
 					const char *plugin_name, prf_constructor_t create);
 
 	/**
@@ -255,8 +258,9 @@ struct crypto_factory_t {
 	 * @param quality		quality of randomness this RNG serves
 	 * @param plugin_name	plugin that registered this algorithm
 	 * @param create		constructor function for such a quality
+	 * @return				TRUE if registered, FALSE if test vector failed
 	 */
-	void (*add_rng)(crypto_factory_t *this, rng_quality_t quality,
+	bool (*add_rng)(crypto_factory_t *this, rng_quality_t quality,
 					const char *plugin_name, rng_constructor_t create);
 
 	/**
@@ -271,8 +275,9 @@ struct crypto_factory_t {
 	 *
 	 * @param plugin_name	plugin that registered this algorithm
 	 * @param create		constructor function for that nonce generator
+	 * @return				TRUE if registered, FALSE if test vector failed
 	 */
-	void (*add_nonce_gen)(crypto_factory_t *this, const char *plugin_name,
+	bool (*add_nonce_gen)(crypto_factory_t *this, const char *plugin_name,
 						  nonce_gen_constructor_t create);
 
 	/**
@@ -289,9 +294,9 @@ struct crypto_factory_t {
 	 * @param group			dh group to constructor
 	 * @param plugin_name	plugin that registered this algorithm
 	 * @param create		constructor function for that algorithm
-	 * @return
+	 * @return				TRUE if registered, FALSE if test vector failed
 	 */
-	void (*add_dh)(crypto_factory_t *this, diffie_hellman_group_t group,
+	bool (*add_dh)(crypto_factory_t *this, diffie_hellman_group_t group,
 				   const char *plugin_name, dh_constructor_t create);
 
 	/**
@@ -365,6 +370,19 @@ struct crypto_factory_t {
 	 */
 	void (*add_test_vector)(crypto_factory_t *this, transform_type_t type,
 							void *vector);
+
+	/**
+	 * Create an enumerator verifying transforms using known test vectors.
+	 *
+	 * The resulting enumerator enumerates over an u_int with the type
+	 * specific transform identifier, the plugin name providing the transform,
+	 * and a boolean value indicating success/failure for the given transform.
+	 *
+	 * @param type			transform type to test
+	 * @return				enumerator over (u_int, char*, bool)
+	 */
+	enumerator_t* (*create_verify_enumerator)(crypto_factory_t *this,
+											  transform_type_t type);
 
 	/**
 	 * Destroy a crypto_factory instance.

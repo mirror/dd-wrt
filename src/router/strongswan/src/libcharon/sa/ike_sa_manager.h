@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008 Tobias Brunner
+ * Copyright (C) 2008-2015 Tobias Brunner
  * Copyright (C) 2005-2008 Martin Willi
  * Copyright (C) 2005 Jan Hutter
  * Hochschule fuer Technik Rapperswil
@@ -29,6 +29,16 @@ typedef struct ike_sa_manager_t ike_sa_manager_t;
 #include <sa/ike_sa.h>
 #include <encoding/message.h>
 #include <config/peer_cfg.h>
+
+/**
+ * Callback called to generate an IKE SPI.
+ *
+ * This may be called from multiple threads concurrently.
+ *
+ * @param data		data supplied during registration of the callback
+ * @return			allocated SPI, 0 on failure
+ */
+typedef u_int64_t (*spi_cb_t)(void *data);
 
 /**
  * Manages and synchronizes access to all IKE_SAs.
@@ -129,19 +139,15 @@ struct ike_sa_manager_t {
 	/**
 	 * Check out an IKE_SA a unique ID.
 	 *
-	 * Every IKE_SA and every CHILD_SA is uniquely identified by an ID.
-	 * These checkout function uses, depending
-	 * on the child parameter, the unique ID of the IKE_SA or the reqid
-	 * of one of a IKE_SAs CHILD_SA.
+	 * Every IKE_SA is uniquely identified by a numerical ID. This checkout
+	 * function uses the unique ID of the IKE_SA to check it out.
 	 *
 	 * @param id				unique ID of the object
-	 * @param child				TRUE to use CHILD, FALSE to use IKE_SA
 	 * @return
 	 * 							- checked out IKE_SA, if found
 	 * 							- NULL, if not found
 	 */
-	ike_sa_t* (*checkout_by_id) (ike_sa_manager_t* this, u_int32_t id,
-								 bool child);
+	ike_sa_t* (*checkout_by_id) (ike_sa_manager_t* this, u_int32_t id);
 
 	/**
 	 * Check out an IKE_SA by the policy/connection name.
@@ -220,14 +226,24 @@ struct ike_sa_manager_t {
 	 * To prevent the server from resource exhaustion, cookies and other
 	 * mechanisms are used. The number of half open IKE_SAs is a good
 	 * indicator to see if a peer is flooding the server.
-	 * If a host is supplied, only the number of half open IKE_SAs initiated
-	 * from this IP are counted.
-	 * Only SAs for which we are the responder are counted.
+	 * If a host is supplied, only the number of half open IKE_SAs with this IP
+	 * are counted.
 	 *
 	 * @param ip				NULL for all, IP for half open IKE_SAs with IP
+	 * @param responder_only	TRUE to return only the number of responding SAs
 	 * @return					number of half open IKE_SAs
 	 */
-	u_int (*get_half_open_count) (ike_sa_manager_t *this, host_t *ip);
+	u_int (*get_half_open_count)(ike_sa_manager_t *this, host_t *ip,
+								 bool responder_only);
+
+	/**
+	 * Set the callback to generate IKE SPIs
+	 *
+	 * @param callback		callback to register
+	 * @param data			data provided to callback
+	 */
+	void (*set_spi_cb)(ike_sa_manager_t *this, spi_cb_t callback,
+					   void *data);
 
 	/**
 	 * Delete all existing IKE_SAs and destroy them immediately.

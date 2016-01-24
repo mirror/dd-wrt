@@ -36,6 +36,10 @@
 
 #include "hook.h"
 
+/* this hook is currently only supported on Linux (systems like FreeBSD don't
+ * actually provide an interface to change the sequence numbers of SAs) */
+#ifdef __linux__
+
 #include <linux/xfrm.h>
 #include <unistd.h>
 #include <errno.h>
@@ -104,7 +108,7 @@ static job_requeue_t reset_cb(struct reset_cb_data_t *data)
 
 	memset(&request, 0, sizeof(request));
 
-	hdr = (struct nlmsghdr*)request;
+	hdr = &request.hdr;
 	hdr->nlmsg_flags = NLM_F_REQUEST | NLM_F_ACK | NLM_F_REPLACE;
 	hdr->nlmsg_seq = 201;
 	hdr->nlmsg_pid = getpid();
@@ -214,3 +218,5 @@ hook_t *reset_seq_hook_create(char *name)
 
 	return &this->hook;
 }
+
+#endif /* __linux__ */

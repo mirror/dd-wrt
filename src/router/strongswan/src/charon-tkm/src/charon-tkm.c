@@ -24,6 +24,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <libgen.h>
+#include <errno.h>
 
 #include <hydra.h>
 #include <daemon.h>
@@ -42,6 +43,7 @@
 #include "tkm_public_key.h"
 #include "tkm_cred.h"
 #include "tkm_encoder.h"
+#include "tkm_spi_generator.h"
 
 /**
  * TKM bus listener for IKE authorize events.
@@ -98,12 +100,15 @@ static void run()
 	while (TRUE)
 	{
 		int sig;
-		int error;
 
-		error = sigwait(&set, &sig);
-		if (error)
+		sig = sigwaitinfo(&set, NULL);
+		if (sig == -1)
 		{
-			DBG1(DBG_DMN, "error %d while waiting for a signal", error);
+			if (errno == EINTR)
+			{	/* ignore signals we didn't wait for */
+				continue;
+			}
+			DBG1(DBG_DMN, "waiting for signal failed: %s", strerror(errno));
 			return;
 		}
 		switch (sig)
@@ -119,11 +124,6 @@ static void run()
 				DBG1(DBG_DMN, "signal of type SIGTERM received. Shutting down");
 				charon->bus->alert(charon->bus, ALERT_SHUTDOWN_SIGNAL, sig);
 				return;
-			}
-			default:
-			{
-				DBG1(DBG_DMN, "unknown signal %d received. Ignored", sig);
-				break;
 			}
 		}
 	}
@@ -151,13 +151,13 @@ static void segv_handler(int signal)
 static bool lookup_uid_gid()
 {
 #ifdef IPSEC_USER
-	if (!charon->caps->resolve_uid(charon->caps, IPSEC_USER))
+	if (!lib->caps->resolve_uid(lib->caps, IPSEC_USER))
 	{
 		return FALSE;
 	}
 #endif
 #ifdef IPSEC_GROUP
-	if (!charon->caps->resolve_gid(charon->caps, IPSEC_GROUP))
+	if (!lib->caps->resolve_gid(lib->caps, IPSEC_GROUP))
 	{
 		return FALSE;
 	}
@@ -201,8 +201,8 @@ static bool check_pidfile()
 	if (pidfile)
 	{
 		ignore_result(fchown(fileno(pidfile),
-							 charon->caps->get_uid(charon->caps),
-							 charon->caps->get_gid(charon->caps)));
+							 lib->caps->get_uid(lib->caps),
+							 lib->caps->get_gid(lib->caps)));
 		fprintf(pidfile, "%d\n", getpid());
 		fflush(pidfile);
 	}
@@ -250,13 +250,13 @@ int main(int argc, char *argv[])
 	dbg = dbg_syslog;
 
 	/* initialize library */
-	if (!library_init(NULL))
+	if (!library_init(NULL, dmn_name))
 	{
 		library_deinit();
 		exit(status);
 	}
 
-	if (!libhydra_init(dmn_name))
+	if (!libhydra_init())
 	{
 		dbg_syslog(DBG_DMN, 1, "initialization failed - aborting %s", dmn_name);
 		libhydra_deinit();
@@ -264,7 +264,7 @@ int main(int argc, char *argv[])
 		exit(status);
 	}
 
-	if (!libcharon_init(dmn_name))
+	if (!libcharon_init())
 	{
 		dbg_syslog(DBG_DMN, 1, "initialization failed - aborting %s", dmn_name);
 		goto deinit;
@@ -275,6 +275,10 @@ int main(int argc, char *argv[])
 		dbg_syslog(DBG_DMN, 1, "invalid uid/gid - aborting %s", dmn_name);
 		goto deinit;
 	}
+
+	/* the authorize hook currently does not support RFC 7427 signature auth */
+	lib->settings->set_bool(lib->settings, "%s.signature_authentication", FALSE,
+							dmn_name);
 
 	/* make sure we log to the DAEMON facility by default */
 	lib->settings->set_int(lib->settings, "%s.syslog.daemon.default",
@@ -288,19 +292,24 @@ int main(int argc, char *argv[])
 	static plugin_feature_t features[] = {
 		PLUGIN_REGISTER(NONCE_GEN, tkm_nonceg_create),
 			PLUGIN_PROVIDE(NONCE_GEN),
-		PLUGIN_REGISTER(DH, tkm_diffie_hellman_create),
-			PLUGIN_PROVIDE(DH, MODP_2048_BIT),
-			PLUGIN_PROVIDE(DH, MODP_3072_BIT),
-			PLUGIN_PROVIDE(DH, MODP_4096_BIT),
 		PLUGIN_REGISTER(PUBKEY, tkm_public_key_load, TRUE),
 			PLUGIN_PROVIDE(PUBKEY, KEY_RSA),
 			PLUGIN_PROVIDE(PUBKEY_VERIFY, SIGN_RSA_EMSA_PKCS1_SHA1),
 			PLUGIN_PROVIDE(PUBKEY_VERIFY, SIGN_RSA_EMSA_PKCS1_SHA256),
 		PLUGIN_CALLBACK(kernel_ipsec_register, tkm_kernel_ipsec_create),
 			PLUGIN_PROVIDE(CUSTOM, "kernel-ipsec"),
+		PLUGIN_CALLBACK(tkm_spi_generator_register, NULL),
+			PLUGIN_PROVIDE(CUSTOM, "tkm-spi-generator"),
+				PLUGIN_DEPENDS(CUSTOM, "libcharon-sa-managers"),
 	};
 	lib->plugins->add_static_features(lib->plugins, "tkm-backend", features,
-			countof(features), TRUE);
+			countof(features), TRUE, NULL, NULL);
+
+	if (!register_dh_mapping())
+	{
+		DBG1(DBG_DMN, "no DH group mapping defined - aborting %s", dmn_name);
+		goto deinit;
+	}
 
 	/* register TKM keymat variant */
 	keymat_register_constructor(IKEV2, (keymat_constructor_t)tkm_keymat_create);
@@ -311,6 +320,7 @@ int main(int argc, char *argv[])
 		DBG1(DBG_DMN, "initialization failed - aborting %s", dmn_name);
 		goto deinit;
 	}
+	lib->plugins->status(lib->plugins, LEVEL_CTRL);
 
 	/* set global pidfile name depending on daemon name */
 	if (asprintf(&pidfile_name, IPSEC_PIDDIR"/%s.pid", dmn_name) < 0)
@@ -326,7 +336,7 @@ int main(int argc, char *argv[])
 		goto deinit;
 	}
 
-	if (!charon->caps->drop(charon->caps))
+	if (!lib->caps->drop(lib->caps))
 	{
 		DBG1(DBG_DMN, "capability dropping failed - aborting %s", dmn_name);
 		goto deinit;
@@ -351,7 +361,7 @@ int main(int argc, char *argv[])
 	lib->encoding->add_encoder(lib->encoding, tkm_encoder_encode);
 
 	/* add handler for SEGV and ILL,
-	 * INT and TERM are handled by sigwait() in run() */
+	 * INT and TERM are handled by sigwaitinfo() in run() */
 	action.sa_handler = segv_handler;
 	action.sa_flags = 0;
 	sigemptyset(&action.sa_mask);
@@ -379,6 +389,7 @@ int main(int argc, char *argv[])
 	lib->encoding->remove_encoder(lib->encoding, tkm_encoder_encode);
 
 deinit:
+	destroy_dh_mapping();
 	libcharon_deinit();
 	libhydra_deinit();
 	library_deinit();

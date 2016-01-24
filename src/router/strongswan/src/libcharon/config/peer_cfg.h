@@ -176,7 +176,7 @@ struct peer_cfg_t {
 	/**
 	 * Add an authentication config to the peer configuration.
 	 *
-	 * @param config		config to add
+	 * @param cfg			config to add
 	 * @param local			TRUE for local rules, FALSE for remote constraints
 	 */
 	void (*add_auth_cfg)(peer_cfg_t *this, auth_cfg_t *cfg, bool local);
@@ -190,7 +190,7 @@ struct peer_cfg_t {
 	enumerator_t* (*create_auth_cfg_enumerator)(peer_cfg_t *this, bool local);
 
 	/**
-	 * Should be sent a certificate for this connection?
+	 * Should a certificate be sent for this connection?
 	 *
 	 * @return			certificate sending policy
 	 */
@@ -246,6 +246,13 @@ struct peer_cfg_t {
 	 * @return			TRUE to use aggressive mode
 	 */
 	bool (*use_aggressive)(peer_cfg_t *this);
+
+	/**
+	 * Use pull or push mode for mode config?
+	 *
+	 * @return			TRUE to use pull, FALSE to use push mode
+	 */
+	bool (*use_pull_mode)(peer_cfg_t *this);
 
 	/**
 	 * Get the DPD check interval.
@@ -366,6 +373,7 @@ struct peer_cfg_t {
  * @param over_time			maximum overtime before closing a rekeying/reauth SA
  * @param mobike			use MOBIKE (RFC4555) if peer supports it
  * @param aggressive		use/accept aggressive mode with IKEv1
+ * @param pull_mode			TRUE to use modeconfig pull, FALSE for push
  * @param dpd				DPD check interval, 0 to disable
  * @param dpd_timeout		DPD timeout interval (IKEv1 only), if 0 default applies
  * @param mediation			TRUE if this is a mediation connection
@@ -378,8 +386,8 @@ peer_cfg_t *peer_cfg_create(char *name,
 							unique_policy_t unique, u_int32_t keyingtries,
 							u_int32_t rekey_time, u_int32_t reauth_time,
 							u_int32_t jitter_time, u_int32_t over_time,
-							bool mobike, bool aggressive, u_int32_t dpd,
-							u_int32_t dpd_timeout,
+							bool mobike, bool aggressive, bool pull_mode,
+							u_int32_t dpd, u_int32_t dpd_timeout,
 							bool mediation, peer_cfg_t *mediated_by,
 							identification_t *peer_id);
 

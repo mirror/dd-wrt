@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Andreas Steffen
+ * Copyright (C) 2012-2014 Andreas Steffen
  * HSR Hochschule fuer Technik Rapperswil
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -13,11 +13,12 @@
  * for more details.
  */
 
+#define _GNU_SOURCE /* for stdndup() */
+#include <string.h>
+
 #include "imv_os_database.h"
 
 #include <utils/debug.h>
-
-#include <string.h>
 
 typedef struct private_imv_os_database_t private_imv_os_database_t;
 
@@ -40,55 +41,49 @@ struct private_imv_os_database_t {
 };
 
 METHOD(imv_os_database_t, check_packages, status_t,
-	private_imv_os_database_t *this, imv_os_state_t *state,
+	private_imv_os_database_t *this, imv_os_state_t *os_state,
 	enumerator_t *package_enumerator)
 {
-	char *product, *package, *release, *cur_release;
-	u_char *pos;
-	chunk_t os_name, os_version, name, version;
+	imv_state_t *state;
+	imv_session_t *session;
+	imv_os_info_t *os_info;
 	os_type_t os_type;
-	size_t os_version_len;
-	os_package_state_t package_state;
-	int pid, gid;
+	char *product, *package, *release, *cur_release;
+	chunk_t name, version;
+	int pid, gid, security, blacklist;
 	int count = 0, count_ok = 0, count_no_match = 0, count_blacklist = 0;
 	enumerator_t *e;
 	status_t status = SUCCESS;
 	bool found, match;
 
-	state->get_info(state, &os_type, &os_name, &os_version);
+	state = &os_state->interface;
+	session = state->get_session(state);
+	session->get_session_id(session, &pid, NULL);
+	os_info = session->get_os_info(session);
+	os_type = os_info->get_type(os_info);
+	product = os_info->get_info(os_info);
 
 	if (os_type == OS_TYPE_ANDROID)
 	{
 		/*no package dependency on Android version */
-		product = strdup(enum_to_name(os_type_names, os_type));
-	}
-	else
-	{
-		/* remove appended platform info */
-		pos = memchr(os_version.ptr, ' ', os_version.len);
-		os_version_len = pos ? (pos - os_version.ptr) : os_version.len;
-		product = malloc(os_name.len + 1 + os_version_len + 1);
-		sprintf(product, "%.*s %.*s", (int)os_name.len, os_name.ptr,
-									  (int)os_version_len, os_version.ptr);
+		product = enum_to_name(os_type_names, os_type);
+
+		/* Get primary key of product */
+		e = this->db->query(this->db,
+					"SELECT id FROM products WHERE name = ?",
+					DB_TEXT, product, DB_INT);
+		if (!e)
+		{
+			return FAILED;
+		}
+		if (!e->enumerate(e, &pid))
+		{
+			e->destroy(e);
+			return NOT_FOUND;
+		}
+		e->destroy(e);
 	}
 	DBG1(DBG_IMV, "processing installed '%s' packages", product);
-
-	/* Get primary key of product */
-	e = this->db->query(this->db,
-				"SELECT id FROM products WHERE name = ?",
-				DB_TEXT, product, DB_INT);
-	if (!e)
-	{
-		free(product);
-		return FAILED;
-	}
-	if (!e->enumerate(e, &pid))
-	{
-		e->destroy(e);
-		free(product);
-		return NOT_FOUND;
-	}
-	e->destroy(e);
 
 	while (package_enumerator->enumerate(package_enumerator, &name, &version))
 	{
@@ -102,7 +97,6 @@ METHOD(imv_os_database_t, check_packages, status_t,
 					DB_TEXT, package, DB_INT);
 		if (!e)
 		{
-			free(product);
 			free(package);
 			return FAILED;
 		}
@@ -125,12 +119,11 @@ METHOD(imv_os_database_t, check_packages, status_t,
 
 		/* Enumerate over all acceptable versions */
 		e = this->db->query(this->db,
-				"SELECT release, security FROM versions "
+				"SELECT release, security, blacklist FROM versions "
 				"WHERE product = ? AND package = ?",
-				DB_INT, pid, DB_INT, gid, DB_TEXT, DB_INT);
+				DB_INT, pid, DB_INT, gid, DB_TEXT, DB_INT, DB_INT);
 		if (!e)
 		{
-			free(product);
 			free(package);
 			free(release);
 			return FAILED;
@@ -138,7 +131,7 @@ METHOD(imv_os_database_t, check_packages, status_t,
 		found = FALSE;
 		match = FALSE;
 
-		while (e->enumerate(e, &cur_release, &package_state))
+		while (e->enumerate(e, &cur_release, &security, &blacklist))
 		{
 			found = TRUE;
 			if (streq(release, cur_release) || streq("*", cur_release))
@@ -153,17 +146,18 @@ METHOD(imv_os_database_t, check_packages, status_t,
 		{
 			if (match)
 			{
-				if (package_state == OS_PACKAGE_STATE_BLACKLIST)
+				if (blacklist)
 				{
 					DBG2(DBG_IMV, "package '%s' (%s) is blacklisted",
 								   package, release);
 					count_blacklist++;
-					state->add_bad_package(state, package, package_state);
+					os_state->add_bad_package(os_state, package,
+											  OS_PACKAGE_STATE_BLACKLIST);
 				}
 				else
 				{
-					DBG2(DBG_IMV, "package '%s' (%s)%N is ok", package, release,
-								   os_package_state_names, package_state);
+					DBG2(DBG_IMV, "package '%s' (%s)%s is ok", package, release,
+								   security ? " [s]" : "");
 					count_ok++;
 				}
 			}
@@ -171,7 +165,8 @@ METHOD(imv_os_database_t, check_packages, status_t,
 			{
 				DBG1(DBG_IMV, "package '%s' (%s) no match", package, release);
 				count_no_match++;
-				state->add_bad_package(state, package, package_state);
+				os_state->add_bad_package(os_state, package,
+										  OS_PACKAGE_STATE_SECURITY);
 			}
 		}
 		else
@@ -181,153 +176,37 @@ METHOD(imv_os_database_t, check_packages, status_t,
 		free(package);
 		free(release);
 	}
-	free(product);
-	state->set_count(state, count, count_no_match, count_blacklist, count_ok);
+	os_state->set_count(os_state, count, count_no_match,
+								  count_blacklist, count_ok);
 
 	return status;
-}
-
-METHOD(imv_os_database_t, get_device_id, int,
-	private_imv_os_database_t *this, chunk_t value)
-{
-	enumerator_t *e;
-	int id;
-
-	/* get primary key of device ID */
-	e = this->db->query(this->db, "SELECT id FROM devices WHERE value = ?",
-						DB_BLOB, value, DB_INT);
-	if (!e)
-	{
-		return 0;
-	}
-	if (e->enumerate(e, &id))
-	{
-		/* device ID already exists in database - return primary key */
-		e->destroy(e);
-		return id;
-	}
-	e->destroy(e);
-
-	/* register new device ID in database and return primary key */
-	return (this->db->execute(this->db, &id,
-			"INSERT INTO devices (value) VALUES (?)", DB_BLOB, value) == 1) ?
-			id : 0;
-}
-
-METHOD(imv_os_database_t, set_device_info, void,
-	private_imv_os_database_t *this,  int device_id, u_int32_t ar_id_type,
-	chunk_t ar_id_value, char *os_info, int count, int count_update,
-	int count_blacklist, u_int flags)
-{
-	enumerator_t *e;
-	time_t last_time;
-	int pid = 0, last_pid = 0, iid = 0, last_iid;
-	int last_count_update = 0, last_count_blacklist = 0;
-	u_int last_flags;
-	bool found = FALSE;
-
-	/* get primary key of OS info string if it exists */
-	e = this->db->query(this->db,
-			"SELECT id FROM products WHERE name = ?", DB_TEXT, os_info,
-			 DB_INT);
-	if (e)
-	{
-		e->enumerate(e, &pid);
-		e->destroy(e);
-	}
-
-	/* if OS info string has not been found - register it */
-	if (!pid)
-	{
-		this->db->execute(this->db, &pid,
-			"INSERT INTO products (name) VALUES (?)", DB_TEXT, os_info);
-	}
-
-	/* get primary key of AR identity if it exists */
-	e = this->db->query(this->db,
-			"SELECT id FROM identities WHERE type = ? AND data = ?",
-			 DB_INT,  ar_id_type, DB_BLOB, ar_id_value, DB_INT);
-	if (e)
-	{
-		e->enumerate(e, &iid);
-		e->destroy(e);
-	}
-
-	/* if AR identity has not been found - register it */
-	if (!iid)
-	{
-		this->db->execute(this->db, &iid,
-			"INSERT INTO identities (type, data) VALUES (?, ?)",
-			 DB_INT, ar_id_type, DB_BLOB, ar_id_value);
-	}
-
-	/* get latest device info record if it exists */
-	e = this->db->query(this->db,
-			"SELECT time, ar_id, product, count_update, count_blacklist, flags "
-			"FROM device_infos WHERE device = ? ORDER BY time DESC",
-			 DB_INT, device_id, DB_INT, DB_INT, DB_INT, DB_INT, DB_INT, DB_UINT);
-	if (e)
-	{
-		found = e->enumerate(e, &last_time, &last_iid, &last_pid,
-								&last_count_update, &last_count_blacklist,
-								&last_flags);
-		e->destroy(e);
-	}
-	if (found && !last_count_update && !last_count_blacklist && !last_flags &&
-		iid == last_iid && pid == last_pid)
-	{
-		/* update device info */
-		this->db->execute(this->db, NULL,
-			"UPDATE device_infos SET time = ?, count = ?, count_update = ?, "
-			"count_blacklist = ?, flags = ? WHERE device = ? AND time = ?",
-			 DB_UINT, time(NULL), DB_INT, count, DB_INT, count_update,
-			 DB_INT, count_blacklist, DB_UINT, flags,
-			 DB_INT, device_id, DB_UINT, last_time);
-	}
-	else
-	{
-		/* insert device info */
-		this->db->execute(this->db, NULL,
-			"INSERT INTO device_infos (device, time, ar_id, product, count, "
-			"count_update, count_blacklist, flags) "
-			"VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-			 DB_INT, device_id, DB_UINT, time(NULL), DB_INT, iid, DB_INT, pid,
-			 DB_INT, count, DB_INT, count_update, DB_INT, count_blacklist,
-			 DB_UINT, flags);
-	}
 }
 
 METHOD(imv_os_database_t, destroy, void,
 	private_imv_os_database_t *this)
 {
-	this->db->destroy(this->db);
 	free(this);
 }
 
 /**
  * See header
  */
-imv_os_database_t *imv_os_database_create(char *uri)
+imv_os_database_t *imv_os_database_create(imv_database_t *imv_db)
 {
 	private_imv_os_database_t *this;
+
+	if (!imv_db)
+	{
+		return NULL;
+	}
 
 	INIT(this,
 		.public = {
 			.check_packages = _check_packages,
-			.get_device_id = _get_device_id,
-			.set_device_info = _set_device_info,
 			.destroy = _destroy,
 		},
-		.db = lib->db->create(lib->db, uri),
+		.db = imv_db->get_database(imv_db),
 	);
-
-	if (!this->db)
-	{
-		DBG1(DBG_IMV,
-			 "failed to connect to OS database '%s'", uri);
-		free(this);
-		return NULL;
-	}
 
 	return &this->public;
 }

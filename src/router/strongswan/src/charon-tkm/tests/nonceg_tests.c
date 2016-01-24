@@ -14,7 +14,8 @@
  * for more details.
  */
 
-#include <check.h>
+#include <tests/test_suite.h>
+
 #include <tkm/client.h>
 
 #include "tkm.h"
@@ -26,7 +27,6 @@ START_TEST(test_nonceg_creation)
 
 	ng = tkm_nonceg_create();
 	fail_if(ng == NULL, "Error creating tkm nonce generator");
-	fail_if(ng->get_id(ng) == 0, "Invalid context id (0)");
 
 	ng->nonce_gen.destroy(&ng->nonce_gen);
 }
@@ -82,12 +82,24 @@ START_TEST(test_nonceg_get_nonce)
 }
 END_TEST
 
-TCase *make_nonceg_tests(void)
+Suite *make_nonceg_tests()
 {
-	TCase *tc = tcase_create("Nonce generator tests");
-	tcase_add_test(tc, test_nonceg_creation);
-	tcase_add_test(tc, test_nonceg_allocate_nonce);
-	tcase_add_test(tc, test_nonceg_get_nonce);
+	Suite *s;
+	TCase *tc;
 
-	return tc;
+	s = suite_create("nonce generator");
+
+	tc = tcase_create("creation");
+	tcase_add_test(tc, test_nonceg_creation);
+	suite_add_tcase(s, tc);
+
+	tc = tcase_create("allocate");
+	tcase_add_test(tc, test_nonceg_allocate_nonce);
+	suite_add_tcase(s, tc);
+
+	tc = tcase_create("get");
+	tcase_add_test(tc, test_nonceg_get_nonce);
+	suite_add_tcase(s, tc);
+
+	return s;
 }

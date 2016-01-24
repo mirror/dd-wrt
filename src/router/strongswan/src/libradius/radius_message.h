@@ -186,6 +186,11 @@ enum radius_attribute_type_t {
 	RAT_DELEGATED_IPV6_PREFIX = 123,
 	RAT_MIP6_FEATURE_VECTOR = 124,
 	RAT_MIP6_HOME_LINK_PREFIX = 125,
+	RAT_FRAMED_IPV6_ADDRESS = 168,
+	RAT_FRAMED_IPV6_DNS_SERVER = 169,
+	RAT_ROUTE_IPV6_INFORMATION = 170,
+	RAT_DELEGATED_IPV6_PREFIX_POOL = 171,
+	RAT_STATEFUL_IPV6_ADDRESS_POOL = 172,
 };
 
 /**
@@ -283,6 +288,22 @@ struct radius_message_t {
 	 */
 	bool (*verify)(radius_message_t *this, u_int8_t *req_auth, chunk_t secret,
 				   hasher_t *hasher, signer_t *signer);
+
+	/**
+	 * Perform RADIUS attribute en-/decryption.
+	 *
+	 * Performs en-/decryption by XOring the hash-extended secret into data,
+	 * as specified in RFC 2865 5.2 and used by RFC 2548.
+	 *
+	 * @param salt			salt to append to message authenticator, if any
+	 * @param in			data to en-/decrypt, multiple of HASH_SIZE_MD5
+	 * @param out			en-/decrypted data, length equal to in
+	 * @param secret		RADIUS secret
+	 * @param hasher		MD5 hasher
+	 * @return				TRUE if en-/decryption successful
+	 */
+	bool (*crypt)(radius_message_t *this, chunk_t salt, chunk_t in, chunk_t out,
+				  chunk_t secret, hasher_t *hasher);
 
 	/**
 	 * Destroy the message.

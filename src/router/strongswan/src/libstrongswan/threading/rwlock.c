@@ -27,6 +27,13 @@
 #include "mutex.h"
 #include "lock_profiler.h"
 
+#ifdef __APPLE__
+/* while pthread_rwlock_rdlock(3) says that it supports multiple read locks,
+ * this does not seem to be true. After releasing a recursive rdlock,
+ * a subsequent wrlock fails... */
+# undef HAVE_PTHREAD_RWLOCK_INIT
+#endif
+
 typedef struct private_rwlock_t private_rwlock_t;
 typedef struct private_rwlock_condvar_t private_rwlock_condvar_t;
 
@@ -254,6 +261,7 @@ METHOD(rwlock_t, read_lock, void,
 	private_rwlock_t *this)
 {
 	uintptr_t reading;
+	bool old;
 
 	reading = (uintptr_t)pthread_getspecific(is_reader);
 	profiler_start(&this->profile);
@@ -265,10 +273,12 @@ METHOD(rwlock_t, read_lock, void,
 	}
 	else
 	{
+		old = thread_cancelability(FALSE);
 		while (this->writer || this->waiting_writers)
 		{
 			this->readers->wait(this->readers, this->mutex);
 		}
+		thread_cancelability(old);
 	}
 	this->reader_count++;
 	profiler_end(&this->profile);
@@ -279,13 +289,17 @@ METHOD(rwlock_t, read_lock, void,
 METHOD(rwlock_t, write_lock, void,
 	private_rwlock_t *this)
 {
+	bool old;
+
 	profiler_start(&this->profile);
 	this->mutex->lock(this->mutex);
 	this->waiting_writers++;
+	old = thread_cancelability(FALSE);
 	while (this->writer || this->reader_count)
 	{
 		this->writers->wait(this->writers, this->mutex);
 	}
+	thread_cancelability(old);
 	this->waiting_writers--;
 	this->writer = TRUE;
 	profiler_end(&this->profile);
@@ -417,7 +431,7 @@ METHOD(rwlock_condvar_t, timed_wait_abs, bool,
 	thread_cleanup_push((thread_cleanup_t)this->mutex->unlock, this->mutex);
 	timed_out = this->condvar->timed_wait_abs(this->condvar, this->mutex, time);
 	thread_cleanup_pop(TRUE);
-	thread_cleanup_pop(!timed_out);
+	thread_cleanup_pop(TRUE);
 	return timed_out;
 }
 

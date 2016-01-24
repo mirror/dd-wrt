@@ -165,8 +165,10 @@ static void write_childend(xmlTextWriterPtr writer, child_sa_t *child, bool loca
 
 	xmlTextWriterWriteFormatElement(writer, "spi", "%x",
 									htonl(child->get_spi(child, local)));
-	list = child->get_traffic_selectors(child, local);
+	list = linked_list_create_from_enumerator(
+									child->create_ts_enumerator(child, local));
 	write_networks(writer, "networks", list);
+	list->destroy(list);
 }
 
 /**
@@ -307,9 +309,9 @@ static void request_query_config(xmlTextReaderPtr reader, xmlTextWriterPtr write
 		ike_cfg = peer_cfg->get_ike_cfg(peer_cfg);
 		xmlTextWriterStartElement(writer, "ikeconfig");
 		xmlTextWriterWriteElement(writer, "local",
-								  ike_cfg->get_my_addr(ike_cfg, NULL));
+								  ike_cfg->get_my_addr(ike_cfg));
 		xmlTextWriterWriteElement(writer, "remote",
-								  ike_cfg->get_other_addr(ike_cfg, NULL));
+								  ike_cfg->get_other_addr(ike_cfg));
 		xmlTextWriterEndElement(writer);
 		/* </ikeconfig> */
 
@@ -486,7 +488,7 @@ static void request_control_initiate(xmlTextReaderPtr reader,
 			{
 				status = charon->controller->initiate(charon->controller,
 							peer, child, (controller_cb_t)xml_callback,
-							writer, 0);
+							writer, 0, FALSE);
 			}
 			else
 			{
@@ -712,6 +714,17 @@ METHOD(plugin_t, get_name, char*,
 	return "smp";
 }
 
+METHOD(plugin_t, get_features, int,
+	private_smp_t *this, plugin_feature_t *features[])
+{
+	static plugin_feature_t f[] = {
+		PLUGIN_NOOP,
+			PLUGIN_PROVIDE(CUSTOM, "smp"),
+	};
+	*features = f;
+	return countof(f);
+}
+
 METHOD(plugin_t, destroy, void,
 	private_smp_t *this)
 {
@@ -728,11 +741,17 @@ plugin_t *smp_plugin_create()
 	private_smp_t *this;
 	mode_t old;
 
+	if (!lib->caps->check(lib->caps, CAP_CHOWN))
+	{	/* required to chown(2) control socket */
+		DBG1(DBG_CFG, "smp plugin requires CAP_CHOWN capability");
+		return NULL;
+	}
+
 	INIT(this,
 		.public = {
 			.plugin = {
 				.get_name = _get_name,
-				.reload = (void*)return_false,
+				.get_features = _get_features,
 				.destroy = _destroy,
 			},
 		},
@@ -748,7 +767,7 @@ plugin_t *smp_plugin_create()
 	}
 
 	unlink(unix_addr.sun_path);
-	old = umask(~(S_IRWXU | S_IRWXG));
+	old = umask(S_IRWXO);
 	if (bind(this->socket, (struct sockaddr *)&unix_addr, sizeof(unix_addr)) < 0)
 	{
 		DBG1(DBG_CFG, "could not bind XML socket: %s", strerror(errno));
@@ -757,8 +776,8 @@ plugin_t *smp_plugin_create()
 		return NULL;
 	}
 	umask(old);
-	if (chown(unix_addr.sun_path, charon->caps->get_uid(charon->caps),
-			  charon->caps->get_gid(charon->caps)) != 0)
+	if (chown(unix_addr.sun_path, lib->caps->get_uid(lib->caps),
+			  lib->caps->get_gid(lib->caps)) != 0)
 	{
 		DBG1(DBG_CFG, "changing XML socket permissions failed: %s", strerror(errno));
 	}
@@ -777,4 +796,3 @@ plugin_t *smp_plugin_create()
 
 	return &this->public.plugin;
 }
-

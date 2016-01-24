@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Andreas Steffen
+ * Copyright (C) 2012-2015 Andreas Steffen
  * HSR Hochschule fuer Technik Rapperswil
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -18,9 +18,17 @@
 
 #include <errno.h>
 #include <unistd.h>
+#include <time.h>
 
 #include <radius_message.h>
 #include <radius_mppe.h>
+
+#include <pt_tls_server.h>
+
+#include <tnc/tnc.h>
+
+#include <tncifimv.h>
+#include <tncif_names.h>
 
 #include <daemon.h>
 #include <utils/debug.h>
@@ -30,11 +38,18 @@
 #include <sa/eap/eap_method.h>
 
 typedef struct private_tnc_pdp_t private_tnc_pdp_t;
+typedef struct client_entry_t client_entry_t;
+/**
+ * Default RADIUS port, when not configured
+ */
+#define RADIUS_PORT 1812
 
 /**
  * Maximum size of a RADIUS IP packet
  */
 #define MAX_PACKET 4096
+
+#define RADIUS_RETRANSMIT_TIMEOUT	30 /* seconds */
 
 /**
  * private data of tnc_pdp_t
@@ -57,19 +72,39 @@ struct private_tnc_pdp_t {
 	eap_type_t type;
 
 	/**
-	 * IPv4 RADIUS socket
+	 * PT-TLS port of the server
 	 */
-	int ipv4;
+	u_int16_t pt_tls_port;
 
 	/**
-	 * IPv6 RADIUS socket
+	 * PT-TLS IPv4 socket
 	 */
-	int ipv6;
+	int pt_tls_ipv4;
+
+	/**
+	 * PT-TLS IPv6 socket
+	 */
+	int pt_tls_ipv6;
+
+	/**
+	 * RADIUS IPv4 socket
+	 */
+	int radius_ipv4;
+
+	/**
+	 * RADIUS IPv6 socket
+	 */
+	int radius_ipv6;
 
 	/**
 	 * RADIUS shared secret
 	 */
 	chunk_t secret;
+
+	/**
+	 * RADIUS clients
+	 */
+	linked_list_t *clients;
 
 	/**
 	 * MD5 hasher
@@ -90,13 +125,40 @@ struct private_tnc_pdp_t {
 	 * List of registered TNC-PDP connections
 	 */
 	tnc_pdp_connections_t *connections;
+
 };
 
+/**
+ * Client entry helping to detect RADIUS packet retransmissions
+ */
+struct client_entry_t {
+
+	/**
+	 * IP host address and port of client
+	 */
+	host_t *host;
+
+	/**
+	 * Time of last RADIUS Access-Request received from client
+	 */
+	time_t last_time;
+
+	/**
+	 * Identifier of last RADIUS Access-Request received from client
+	 */
+	uint8_t last_id;
+};
+
+static void free_client_entry(client_entry_t *this)
+{
+	this->host->destroy(this->host);
+	free(this);
+}
 
 /**
- * Open IPv4 or IPv6 UDP RADIUS socket
+ * Open IPv4 or IPv6 UDP socket
  */
-static int open_socket(int family, u_int16_t port)
+static int open_udp_socket(int family, u_int16_t port)
 {
 	int on = TRUE;
 	struct sockaddr_storage addr;
@@ -135,20 +197,115 @@ static int open_socket(int family, u_int16_t port)
 	skt = socket(family, SOCK_DGRAM, IPPROTO_UDP);
 	if (skt < 0)
 	{
-		DBG1(DBG_CFG, "opening RADIUS socket failed: %s", strerror(errno));
+		DBG1(DBG_CFG, "opening UDP socket failed: %s", strerror(errno));
 		return 0;
 	}
 	if (setsockopt(skt, SOL_SOCKET, SO_REUSEADDR, (void*)&on, sizeof(on)) < 0)
 	{
-		DBG1(DBG_CFG, "unable to set SO_REUSEADDR on socket: %s", strerror(errno));
+		DBG1(DBG_CFG, "unable to set SO_REUSEADDR on socket: %s",
+					   strerror(errno));
 		close(skt);
 		return 0;
+	}
+	if (family == AF_INET6)
+	{
+		if (setsockopt(skt, IPPROTO_IPV6, IPV6_V6ONLY,
+							(void *)&on, sizeof(on)) < 0)
+		{
+			DBG1(DBG_CFG, "unable to set IPV6_V6ONLY on socket: %s",
+						   strerror(errno));
+			close(skt);
+			return 0;
+		}
 	}
 
 	/* bind the socket */
 	if (bind(skt, (struct sockaddr *)&addr, addrlen) < 0)
 	{
-		DBG1(DBG_CFG, "unable to bind RADIUS socket: %s", strerror(errno));
+		DBG1(DBG_CFG, "unable to bind UDP socket: %s", strerror(errno));
+		close(skt);
+		return 0;
+	}
+
+	return skt;
+}
+
+/**
+ * Open IPv4 or IPv6 TCP socket
+ */
+static int open_tcp_socket(int family, u_int16_t port)
+{
+	int on = TRUE;
+	struct sockaddr_storage addr;
+	socklen_t addrlen;
+	int skt;
+
+	memset(&addr, 0, sizeof(addr));
+	addr.ss_family = family;
+
+	/* precalculate constants depending on address family */
+	switch (family)
+	{
+		case AF_INET:
+		{
+			struct sockaddr_in *sin = (struct sockaddr_in *)&addr;
+
+			htoun32(&sin->sin_addr.s_addr, INADDR_ANY);
+			htoun16(&sin->sin_port, port);
+			addrlen = sizeof(struct sockaddr_in);
+			break;
+		}
+		case AF_INET6:
+		{
+			struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)&addr;
+
+			memcpy(&sin6->sin6_addr, &in6addr_any, sizeof(in6addr_any));
+			htoun16(&sin6->sin6_port, port);
+			addrlen = sizeof(struct sockaddr_in6);
+			break;
+		}
+		default:
+			return 0;
+	}
+
+	/* open the socket */
+	skt = socket(family, SOCK_STREAM, IPPROTO_TCP);
+	if (skt < 0)
+	{
+		DBG1(DBG_CFG, "opening TCP socket failed: %s", strerror(errno));
+		return 0;
+	}
+	if (setsockopt(skt, SOL_SOCKET, SO_REUSEADDR, (void*)&on, sizeof(on)) < 0)
+	{
+		DBG1(DBG_CFG, "unable to set SO_REUSEADDR on socket: %s",
+					   strerror(errno));
+		close(skt);
+		return 0;
+	}
+	if (family == AF_INET6)
+	{
+	if (setsockopt(skt, IPPROTO_IPV6, IPV6_V6ONLY,
+							(void *)&on, sizeof(on)) < 0)
+		{
+			DBG1(DBG_CFG, "unable to set IPV6_V6ONLY on socket: %s",
+						   strerror(errno));
+			close(skt);
+			return 0;
+		}
+	}
+
+	/* bind the socket */
+	if (bind(skt, (struct sockaddr *)&addr, addrlen) < 0)
+	{
+		DBG1(DBG_CFG, "unable to bind TCP socket: %s", strerror(errno));
+		close(skt);
+		return 0;
+	}
+
+	/* start listening on socket */
+	if (listen(skt, 5) == -1)
+	{
+		DBG1(DBG_TNC, "listen on TCP socket failed: %s", strerror(errno));
 		close(skt);
 		return 0;
 	}
@@ -165,7 +322,8 @@ static void send_message(private_tnc_pdp_t *this, radius_message_t *message,
 	int fd;
 	chunk_t data;
 
-	fd = (client->get_family(client) == AF_INET) ? this->ipv4 : this->ipv6;
+	fd = (client->get_family(client) == AF_INET) ?
+			this->radius_ipv4 : this->radius_ipv6;
 	data = message->get_encoding(message);
 
 	DBG2(DBG_CFG, "sending RADIUS packet to %#H", client);
@@ -448,116 +606,229 @@ end:
 }
 
 /**
+ * Callback function to get recommendation from TNCCS connection
+ */
+static bool get_recommendation(TNC_IMV_Action_Recommendation rec,
+							   TNC_IMV_Evaluation_Result eval)
+{
+	DBG1(DBG_TNC, "final recommendation is '%N' and evaluation is '%N'",
+		 TNC_IMV_Action_Recommendation_names, rec,
+		 TNC_IMV_Evaluation_Result_names, eval);
+
+	return TRUE;
+}
+
+/**
+ * Get more data on a PT-TLS connection
+ */
+static bool pt_tls_receive_more(pt_tls_server_t *this, int fd,
+								watcher_event_t event)
+{
+	switch (this->handle(this))
+	{
+		case NEED_MORE:
+			return TRUE;
+		case FAILED:
+		case SUCCESS:
+		default:
+			DBG1(DBG_TNC, "PT-TLS connection terminates");
+			this->destroy(this);
+			close(fd);
+			return FALSE;
+	}
+}
+
+/**
+ * Accept TCP connection received on the PT-TLS listening socket
+ */
+static bool pt_tls_receive(private_tnc_pdp_t *this, int fd, watcher_event_t event)
+{
+	int pt_tls_fd;
+	struct sockaddr_storage addr;
+	socklen_t addrlen = sizeof(addr);
+	identification_t *client_id;
+	host_t *server_ip, *client_ip;
+	pt_tls_server_t *pt_tls;
+	tnccs_t *tnccs;
+	pt_tls_auth_t auth = PT_TLS_AUTH_TLS_OR_SASL;
+
+	pt_tls_fd = accept(fd, (sockaddr_t*)&addr, &addrlen);
+	if (pt_tls_fd == -1)
+	{
+		DBG1(DBG_TNC, "accepting PT-TLS stream failed: %s", strerror(errno));
+		return FALSE;
+	}
+	client_ip = host_create_from_sockaddr((sockaddr_t*)&addr);
+	DBG1(DBG_TNC, "accepting PT-TLS stream from %H", client_ip);
+
+	/* Currently we do not determine the IP address of the server interface */
+	server_ip = host_create_any(client_ip->get_family(client_ip));
+
+	/* At this moment the client identity is not known yet */
+	client_id = identification_create_from_encoding(ID_ANY, chunk_empty),
+
+	tnccs = tnc->tnccs->create_instance(tnc->tnccs, TNCCS_2_0, TRUE,
+										this->server, client_id, server_ip,
+										client_ip, TNC_IFT_TLS_2_0,
+										(tnccs_cb_t)get_recommendation);
+	client_id->destroy(client_id);
+	server_ip->destroy(server_ip);
+	client_ip->destroy(client_ip);
+
+	if (!tnccs)
+	{
+		DBG1(DBG_TNC, "could not create TNCCS 2.0 connection instance");
+		close(pt_tls_fd);
+		return FALSE;
+	}
+
+	pt_tls = pt_tls_server_create(this->server, pt_tls_fd, auth, tnccs);
+	if (!pt_tls)
+	{
+		DBG1(DBG_TNC, "could not create PT-TLS connection instance");
+		close(pt_tls_fd);
+		return FALSE;
+	}
+
+	lib->watcher->add(lib->watcher, pt_tls_fd, WATCHER_READ,
+							 (watcher_cb_t)pt_tls_receive_more, pt_tls);
+
+	return TRUE;
+}
+
+/**
  * Process packets received on the RADIUS socket
  */
-static job_requeue_t receive(private_tnc_pdp_t *this)
+static bool radius_receive(private_tnc_pdp_t *this, int fd, watcher_event_t event)
 {
-	while (TRUE)
+	radius_message_t *request;
+	char buffer[MAX_PACKET];
+	client_entry_t *client;
+	bool retransmission = FALSE, found = FALSE, stale;
+	enumerator_t *enumerator;
+	int bytes_read = 0;
+	host_t *source;
+	uint8_t id;
+	time_t now;
+
+	union {
+		struct sockaddr_in in4;
+		struct sockaddr_in6 in6;
+	} src;
+
+	struct iovec iov = {
+		.iov_base = buffer,
+		.iov_len = MAX_PACKET,
+	};
+
+	struct msghdr msg = {
+		.msg_name = &src,
+		.msg_namelen = sizeof(src),
+		.msg_iov = &iov,
+		.msg_iovlen = 1,
+	};
+
+	/* read received packet */
+	bytes_read = recvmsg(fd, &msg, 0);
+	if (bytes_read < 0)
 	{
-		radius_message_t *request;
-		char buffer[MAX_PACKET];
-		int max_fd = 0, selected = 0, bytes_read = 0;
-		fd_set rfds;
-		bool oldstate;
-		host_t *source;
-		struct msghdr msg;
-		struct iovec iov;
-		union {
-			struct sockaddr_in in4;
-			struct sockaddr_in6 in6;
-		} src;
+		DBG1(DBG_CFG, "error reading RADIUS socket: %s", strerror(errno));
+		return FALSE;
+	}
+	if (msg.msg_flags & MSG_TRUNC)
+	{
+		DBG1(DBG_CFG, "receive buffer too small, RADIUS packet discarded");
+		return FALSE;
+	}
+	source = host_create_from_sockaddr((sockaddr_t*)&src);
+	DBG2(DBG_CFG, "received RADIUS packet from %#H", source);
+	DBG3(DBG_CFG, "%b", buffer, bytes_read);
+	request = radius_message_parse(chunk_create(buffer, bytes_read));
+	if (request)
+	{
+		DBG1(DBG_CFG, "received RADIUS %N from client '%H'",
+		radius_message_code_names, request->get_code(request), source);
 
-		FD_ZERO(&rfds);
+		if (request->verify(request, NULL, this->secret, this->hasher,
+										   this->signer))
+		{
+			id = request->get_identifier(request);
+			now = time(NULL);
 
-		if (this->ipv4)
-		{
-			FD_SET(this->ipv4, &rfds);
-		}
-		if (this->ipv6)
-		{
-			FD_SET(this->ipv6, &rfds);
-		}
-		max_fd = max(this->ipv4, this->ipv6);
+			enumerator = this->clients->create_enumerator(this->clients);
+			while (enumerator->enumerate(enumerator, &client))
+			{
+				stale = client->last_time < now - RADIUS_RETRANSMIT_TIMEOUT;
 
-		DBG2(DBG_CFG, "waiting for data on RADIUS sockets");
-		oldstate = thread_cancelability(TRUE);
-		if (select(max_fd + 1, &rfds, NULL, NULL, NULL) <= 0)
-		{
-			thread_cancelability(oldstate);
-			continue;
-		}
-		thread_cancelability(oldstate);
+				if (source->equals(source, client->host))
+				{
+					retransmission = !stale && client->last_id == id;
+					client->last_id = id;
+					client->last_time = now;
+					found = TRUE;
+				}
+				else if (stale)
+				{
+					this->clients->remove_at(this->clients, enumerator);
+					free_client_entry(client);
+				}
+			}
+			enumerator->destroy(enumerator);
 
-		if (FD_ISSET(this->ipv4, &rfds))
-		{
-			selected = this->ipv4;
-		}
-		else if (FD_ISSET(this->ipv6, &rfds))
-		{
-			selected = this->ipv6;
-		}
-		else
-		{
-			/* oops, shouldn't happen */
-			continue;
-		}
-
-		/* read received packet */
-		msg.msg_name = &src;
-		msg.msg_namelen = sizeof(src);
-		iov.iov_base = buffer;
-		iov.iov_len = MAX_PACKET;
-		msg.msg_iov = &iov;
-		msg.msg_iovlen = 1;
-		msg.msg_flags = 0;
-
-		bytes_read = recvmsg(selected, &msg, 0);
-		if (bytes_read < 0)
-		{
-			DBG1(DBG_CFG, "error reading RADIUS socket: %s", strerror(errno));
-			continue;
-		}
-		if (msg.msg_flags & MSG_TRUNC)
-		{
-			DBG1(DBG_CFG, "receive buffer too small, RADIUS packet discarded");
-			continue;
-		}
-		source = host_create_from_sockaddr((sockaddr_t*)&src);
-		DBG2(DBG_CFG, "received RADIUS packet from %#H", source);
-		DBG3(DBG_CFG, "%b", buffer, bytes_read);
-		request = radius_message_parse(chunk_create(buffer, bytes_read));
-		if (request)
-		{
-			DBG1(DBG_CFG, "received RADIUS %N from client '%H'",
-				 radius_message_code_names, request->get_code(request), source);
-
-			if (request->verify(request, NULL, this->secret, this->hasher,
-											   this->signer))
+			if (!found)
+			{
+				client = malloc_thing(client_entry_t);
+				client->host = source->clone(source);
+				client->last_id = id;
+				client->last_time = now;
+				this->clients->insert_last(this->clients, client);
+			}
+			if (retransmission)
+			{
+				DBG1(DBG_CFG, "ignoring RADIUS Access-Request 0x%02x, "
+							  "already processing", id);
+			}
+			else
 			{
 				process_eap(this, request, source);
 			}
-			request->destroy(request);
-
 		}
-		else
-		{
-			DBG1(DBG_CFG, "received invalid RADIUS message, ignored");
-		}
-		source->destroy(source);
+		request->destroy(request);
 	}
-	return JOB_REQUEUE_FAIR;
+	else
+	{
+		DBG1(DBG_CFG, "received invalid RADIUS message, ignored");
+	}
+	source->destroy(source);
+	return TRUE;
 }
 
 METHOD(tnc_pdp_t, destroy, void,
 	private_tnc_pdp_t *this)
 {
-	if (this->ipv4)
+	if (this->pt_tls_ipv4)
 	{
-		close(this->ipv4);
+		lib->watcher->remove(lib->watcher, this->pt_tls_ipv4);
+		close(this->pt_tls_ipv4);
 	}
-	if (this->ipv6)
+	if (this->pt_tls_ipv6)
 	{
-		close(this->ipv6);
+		lib->watcher->remove(lib->watcher, this->pt_tls_ipv6);
+		close(this->pt_tls_ipv6);
+	}
+	if (this->radius_ipv4)
+	{
+		lib->watcher->remove(lib->watcher, this->radius_ipv4);
+		close(this->radius_ipv4);
+	}
+	if (this->radius_ipv6)
+	{
+		lib->watcher->remove(lib->watcher, this->radius_ipv6);
+		close(this->radius_ipv6);
+	}
+	if (this->clients)
+	{
+		this->clients->destroy_function(this->clients, (void*)free_client_entry);
 	}
 	DESTROY_IF(this->server);
 	DESTROY_IF(this->signer);
@@ -570,84 +841,150 @@ METHOD(tnc_pdp_t, destroy, void,
 /*
  * see header file
  */
-tnc_pdp_t *tnc_pdp_create(u_int16_t port)
+tnc_pdp_t *tnc_pdp_create(void)
 {
 	private_tnc_pdp_t *this;
 	char *secret, *server, *eap_type_str;
+	int radius_port, pt_tls_port;
+	bool radius_enable, pt_tls_enable;
+
+	server = lib->settings->get_str(lib->settings,
+						"%s.plugins.tnc-pdp.server", NULL, lib->ns);
+	pt_tls_enable = lib->settings->get_bool(lib->settings,
+						"%s.plugins.tnc-pdp.pt_tls.enable", TRUE, lib->ns);
+	pt_tls_port = lib->settings->get_int(lib->settings,
+						"%s.plugins.tnc-pdp.pt_tls.port", PT_TLS_PORT, lib->ns);
+	radius_enable = lib->settings->get_bool(lib->settings,
+						"%s.plugins.tnc-pdp.radius.enable", TRUE, lib->ns);
+	radius_port = lib->settings->get_int(lib->settings,
+						"%s.plugins.tnc-pdp.radius.port", RADIUS_PORT, lib->ns);
+	secret = lib->settings->get_str(lib->settings,
+						"%s.plugins.tnc-pdp.radius.secret", NULL, lib->ns);
+	eap_type_str = lib->settings->get_str(lib->settings,
+						"%s.plugins.tnc-pdp.radius.method", "ttls", lib->ns);
+
+	if (!pt_tls_enable && !radius_enable)
+	{
+		DBG1(DBG_CFG, " neither PT-TLS and RADIUS protocols enabled, PDP disabled");
+		return NULL;
+	}
+	if (!server)
+	{
+		DBG1(DBG_CFG, "missing PDP server name, PDP disabled");
+		return NULL;
+	}
 
 	INIT(this,
 		.public = {
 			.destroy = _destroy,
 		},
-		.ipv4 = open_socket(AF_INET,  port),
-		.ipv6 = open_socket(AF_INET6, port),
-		.hasher = lib->crypto->create_hasher(lib->crypto, HASH_MD5),
-		.signer = lib->crypto->create_signer(lib->crypto, AUTH_HMAC_MD5_128),
-		.ng = lib->crypto->create_nonce_gen(lib->crypto),
+		.server = identification_create_from_string(server),
 		.connections = tnc_pdp_connections_create(),
 	);
 
-	if (!this->hasher || !this->signer || !this->ng)
+	/* Create IPv4 and IPv6 PT-TLS listening sockets */
+	if (pt_tls_enable)
 	{
-		DBG1(DBG_CFG, "RADIUS initialization failed, HMAC/MD5/NG required");
-		destroy(this);
-		return NULL;
+		this->pt_tls_ipv4 = open_tcp_socket(AF_INET,  pt_tls_port);
+		this->pt_tls_ipv6 = open_tcp_socket(AF_INET6, pt_tls_port);
+
+		if (!this->pt_tls_ipv4 && !this->pt_tls_ipv6)
+		{
+			DBG1(DBG_NET, "could not create any PT-TLS sockets");
+			destroy(this);
+			return NULL;
+		}
+		this->pt_tls_port = pt_tls_port;
+
+		if (this->pt_tls_ipv4)
+		{
+			lib->watcher->add(lib->watcher, this->pt_tls_ipv4, WATCHER_READ,
+							 (watcher_cb_t)pt_tls_receive, this);
+		}
+		else
+		{
+			DBG1(DBG_NET, "could not open IPv4 PT-TLS socket, IPv4 disabled");
+		}
+
+		if (this->pt_tls_ipv6)
+		{
+			lib->watcher->add(lib->watcher, this->pt_tls_ipv6, WATCHER_READ,
+							 (watcher_cb_t)pt_tls_receive, this);
+		}
+		else
+		{
+			DBG1(DBG_NET, "could not open IPv6 PT-TLS socket, IPv6 disabled");
+		}
+
+		/* register PT-TLS service */
+		lib->set(lib, "pt-tls-server", this->server);
+		lib->set(lib, "pt-tls-port", &this->pt_tls_port);
 	}
-	if (!this->ipv4 && !this->ipv6)
+
+	/* Create IPv4 and IPv6 RADIUS listening sockets */
+	if (radius_enable)
 	{
-		DBG1(DBG_NET, "could not create any RADIUS sockets");
-		destroy(this);
-		return NULL;
-	}
-	if (!this->ipv4)
-	{
-		DBG1(DBG_NET, "could not open IPv4 RADIUS socket, IPv4 disabled");
-	}
-	if (!this->ipv6)
-	{
+		if (!secret)
+		{
+			DBG1(DBG_CFG, "missing RADIUS secret, PDP disabled");
+			destroy(this);
+			return NULL;
+		}
+
+		this->radius_ipv4 = open_udp_socket(AF_INET,  radius_port);
+		this->radius_ipv6 = open_udp_socket(AF_INET6, radius_port);
+		this->secret = chunk_from_str(secret);
+		this->clients = linked_list_create();
+		this->type = eap_type_from_string(eap_type_str);
+		this->hasher = lib->crypto->create_hasher(lib->crypto, HASH_MD5);
+		this->signer = lib->crypto->create_signer(lib->crypto, AUTH_HMAC_MD5_128);
+		this->ng = lib->crypto->create_nonce_gen(lib->crypto);
+
+		if (!this->hasher || !this->signer || !this->ng)
+		{
+			DBG1(DBG_CFG, "RADIUS initialization failed, HMAC/MD5/NG required");
+			destroy(this);
+			return NULL;
+		}
+		if (!this->radius_ipv4 && !this->radius_ipv6)
+		{
+			DBG1(DBG_NET, "could not create any RADIUS sockets");
+			destroy(this);
+			return NULL;
+		}
+		if (this->radius_ipv4)
+		{
+			lib->watcher->add(lib->watcher, this->radius_ipv4, WATCHER_READ,
+							 (watcher_cb_t)radius_receive, this);
+		}
+		else
+		{
+			DBG1(DBG_NET, "could not open IPv4 RADIUS socket, IPv4 disabled");
+		}
+		if (this->radius_ipv6)
+		{
+			lib->watcher->add(lib->watcher, this->radius_ipv6, WATCHER_READ,
+							 (watcher_cb_t)radius_receive, this);
+		}
+		else
+		{
 		DBG1(DBG_NET, "could not open IPv6 RADIUS socket, IPv6 disabled");
-	}
+		}
 
-	server = lib->settings->get_str(lib->settings,
-						"%s.plugins.tnc-pdp.server", NULL, charon->name);
-	if (!server)
-	{
-		DBG1(DBG_CFG, "missing PDP server name, PDP disabled");
-		destroy(this);
-		return NULL;
+		if (!this->signer->set_key(this->signer, this->secret))
+		{
+			DBG1(DBG_CFG, "could not set signer key");
+			destroy(this);
+			return NULL;
+		}
+		if (this->type == 0)
+		{
+			DBG1(DBG_CFG, "unrecognized eap method \"%s\"", eap_type_str);
+			destroy(this);
+			return NULL;
+		}
+		DBG1(DBG_IKE, "eap method %N selected", eap_type_names, this->type);
 	}
-	this->server = identification_create_from_string(server);
-
-	secret = lib->settings->get_str(lib->settings,
-						"%s.plugins.tnc-pdp.secret", NULL, charon->name);
-	if (!secret)
-	{
-		DBG1(DBG_CFG, "missing RADIUS secret, PDP disabled");
-		destroy(this);
-		return NULL;
-	}
-	this->secret = chunk_create(secret, strlen(secret));
-	if (!this->signer->set_key(this->signer, this->secret))
-	{
-		DBG1(DBG_CFG, "could not set signer key");
-		destroy(this);
-		return NULL;
-	}
-
-	eap_type_str = lib->settings->get_str(lib->settings,
-						"%s.plugins.tnc-pdp.method", "ttls", charon->name);
-	this->type = eap_type_from_string(eap_type_str);
-	if (this->type == 0)
-	{
-		DBG1(DBG_CFG, "unrecognized eap method \"%s\"", eap_type_str);
-		destroy(this);
-		return NULL;
-	}
-	DBG1(DBG_IKE, "eap method %N selected", eap_type_names, this->type);
-
-	lib->processor->queue_job(lib->processor,
-		(job_t*)callback_job_create_with_prio((callback_job_cb_t)receive, this,
-				NULL, (callback_job_cancel_t)return_false, JOB_PRIO_CRITICAL));
 
 	return &this->public;
 }

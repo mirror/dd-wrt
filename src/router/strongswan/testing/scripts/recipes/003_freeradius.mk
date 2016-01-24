@@ -1,9 +1,9 @@
 #!/usr/bin/make
 
-PV  = 2.2.0
+PV  = 2.2.1
 PKG = freeradius-server-$(PV)
 TAR = $(PKG).tar.bz2
-SRC = ftp://ftp.freeradius.org/pub/freeradius/$(TAR)
+SRC = ftp://ftp.freeradius.org/pub/freeradius/old/$(TAR)
 
 NUM_CPUS := $(shell getconf _NPROCESSORS_ONLN)
 
@@ -16,7 +16,6 @@ CONFIG_OPTS = \
 
 PATCHES = \
 	freeradius-eap-sim-identity \
-	freeradius-avp-size \
 	freeradius-tnc-fhh
 
 all: install

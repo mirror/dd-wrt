@@ -18,13 +18,6 @@
 
 #include <kernel/kernel_ipsec.h>
 
-#include "ipsec-parser.h"
-
-/** to mark seen keywords */
-typedef u_int64_t seen_t;
-#define SEEN_NONE 0;
-#define SEEN_KW(kw, base) ((seen_t)1 << ((kw) - (base)))
-
 typedef enum {
 		STARTUP_NO,
 		STARTUP_ADD,
@@ -78,7 +71,6 @@ typedef enum {
 
 typedef enum {
 		/* IPsec options */
-		SA_OPTION_AUTHENTICATE	= 1 << 0, /* use AH instead of ESP? */
 		SA_OPTION_COMPRESS      = 1 << 1, /* use IPComp */
 
 		/* IKE and other other options */
@@ -93,7 +85,6 @@ typedef enum {
 typedef struct starter_end starter_end_t;
 
 struct starter_end {
-		seen_t          seen;
 		char            *auth;
 		char            *auth2;
 		char            *id;
@@ -122,22 +113,10 @@ struct starter_end {
 		char            *dns;
 };
 
-typedef struct also also_t;
-
-struct also {
-		char            *name;
-		bool            included;
-		also_t          *next;
-};
-
 typedef struct starter_conn starter_conn_t;
 
 struct starter_conn {
-		seen_t          seen;
 		char            *name;
-		also_t          *also;
-		kw_list_t       *kw;
-		u_int           visit;
 		startup_t       startup;
 		starter_state_t state;
 
@@ -163,6 +142,7 @@ struct starter_conn {
 		u_int32_t       reqid;
 		mark_t          mark_in;
 		mark_t          mark_out;
+		u_int32_t       replay_window;
 		u_int32_t       tfc;
 		bool            install_policy;
 		bool            aggressive;
@@ -171,6 +151,7 @@ struct starter_conn {
 		unsigned long   id;
 
 		char            *esp;
+		char            *ah;
 		char            *ike;
 
 		time_t          dpd_delay;
@@ -192,11 +173,7 @@ struct starter_conn {
 typedef struct starter_ca starter_ca_t;
 
 struct starter_ca {
-		seen_t          seen;
 		char            *name;
-		also_t          *also;
-		kw_list_t       *kw;
-		u_int           visit;
 		startup_t       startup;
 		starter_state_t state;
 
@@ -216,8 +193,6 @@ typedef struct starter_config starter_config_t;
 
 struct starter_config {
 		struct {
-				seen_t  seen;
-				bool     charonstart;
 				char     *charondebug;
 				bool     uniqueids;
 				bool     cachecrls;
@@ -228,23 +203,14 @@ struct starter_config {
 		u_int err;
 		u_int non_fatal_err;
 
-		/* do we parse also statements */
-		bool parse_also;
-
-		/* ca %default */
-		starter_ca_t ca_default;
-
-		/* connections list (without %default) */
+		/* connections list */
 		starter_ca_t *ca_first, *ca_last;
 
-		/* conn %default */
-		starter_conn_t conn_default;
-
-		/* connections list (without %default) */
+		/* connections list */
 		starter_conn_t *conn_first, *conn_last;
 };
 
-extern starter_config_t *confread_load(const char *file);
-extern void confread_free(starter_config_t *cfg);
+starter_config_t *confread_load(const char *file);
+void confread_free(starter_config_t *cfg);
 
 #endif /* _IPSEC_CONFREAD_H_ */

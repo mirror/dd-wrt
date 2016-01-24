@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2012 Tobias Brunner
+ * Copyright (C) 2006-2013 Tobias Brunner
  * Copyright (C) 2006 Daniel Roethlisberger
  * Copyright (C) 2005-2010 Martin Willi
  * Copyright (C) 2005 Jan Hutter
@@ -41,9 +41,6 @@
 #include <threading/thread.h>
 #include <threading/rwlock.h>
 #include <collections/hashtable.h>
-
-/* Maximum size of a packet */
-#define MAX_PACKET 10000
 
 /* these are not defined on some platforms */
 #ifndef SOL_IP
@@ -326,13 +323,60 @@ METHOD(socket_t, receiver, status_t,
 }
 
 /**
+ * Get the port allocated dynamically using bind()
+ */
+static bool get_dynamic_port(int fd, int family, u_int16_t *port)
+{
+	union {
+		struct sockaddr_storage ss;
+		struct sockaddr s;
+		struct sockaddr_in sin;
+		struct sockaddr_in6 sin6;
+	} addr;
+	socklen_t addrlen;
+
+	addrlen = sizeof(addr);
+	if (getsockname(fd, &addr.s, &addrlen) != 0)
+	{
+		DBG1(DBG_NET, "unable to getsockname: %s", strerror(errno));
+		return FALSE;
+	}
+	switch (family)
+	{
+		case AF_INET:
+			if (addrlen != sizeof(addr.sin) || addr.sin.sin_family != family)
+			{
+				break;
+			}
+			*port = ntohs(addr.sin.sin_port);
+			return TRUE;
+		case AF_INET6:
+			if (addrlen != sizeof(addr.sin6) || addr.sin6.sin6_family != family)
+			{
+				break;
+			}
+			*port = ntohs(addr.sin6.sin6_port);
+			return TRUE;
+		default:
+			return FALSE;
+	}
+	DBG1(DBG_NET, "received invalid getsockname() result");
+	return FALSE;
+}
+
+/**
  * open a socket to send and receive packets
  */
 static int open_socket(private_socket_dynamic_socket_t *this,
-					   int family, u_int16_t port)
+					   int family, u_int16_t *port)
 {
+	union {
+		struct sockaddr_storage ss;
+		struct sockaddr s;
+		struct sockaddr_in sin;
+		struct sockaddr_in6 sin6;
+	} addr;
 	int on = TRUE;
-	struct sockaddr_storage addr;
 	socklen_t addrlen;
 	u_int sol, pktinfo = 0;
 	int fd;
@@ -342,27 +386,21 @@ static int open_socket(private_socket_dynamic_socket_t *this,
 	switch (family)
 	{
 		case AF_INET:
-		{
-			struct sockaddr_in *sin = (struct sockaddr_in *)&addr;
-			sin->sin_family = AF_INET;
-			sin->sin_addr.s_addr = INADDR_ANY;
-			sin->sin_port = htons(port);
-			addrlen = sizeof(struct sockaddr_in);
+			addr.sin.sin_family = AF_INET;
+			addr.sin.sin_addr.s_addr = INADDR_ANY;
+			addr.sin.sin_port = htons(*port);
+			addrlen = sizeof(addr.sin);
 			sol = SOL_IP;
 			pktinfo = IP_PKTINFO;
 			break;
-		}
 		case AF_INET6:
-		{
-			struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)&addr;
-			sin6->sin6_family = AF_INET6;
-			memset(&sin6->sin6_addr, 0, sizeof(sin6->sin6_addr));
-			sin6->sin6_port = htons(port);
-			addrlen = sizeof(struct sockaddr_in6);
+			addr.sin6.sin6_family = AF_INET6;
+			memset(&addr.sin6.sin6_addr, 0, sizeof(addr.sin6.sin6_addr));
+			addr.sin6.sin6_port = htons(*port);
+			addrlen = sizeof(addr.sin6);
 			sol = SOL_IPV6;
 			pktinfo = IPV6_RECVPKTINFO;
 			break;
-		}
 		default:
 			return 0;
 	}
@@ -380,10 +418,14 @@ static int open_socket(private_socket_dynamic_socket_t *this,
 		return 0;
 	}
 
-	/* bind the socket */
-	if (bind(fd, (struct sockaddr *)&addr, addrlen) < 0)
+	if (bind(fd, &addr.s, addrlen) < 0)
 	{
 		DBG1(DBG_NET, "unable to bind socket: %s", strerror(errno));
+		close(fd);
+		return 0;
+	}
+	if (*port == 0 && !get_dynamic_port(fd, family, port))
+	{
 		close(fd);
 		return 0;
 	}
@@ -404,13 +446,38 @@ static int open_socket(private_socket_dynamic_socket_t *this,
 
 	/* enable UDP decapsulation on each socket */
 	if (!hydra->kernel_interface->enable_udp_decap(hydra->kernel_interface,
-												   fd, family, port))
+												   fd, family, *port))
 	{
 		DBG1(DBG_NET, "enabling UDP decapsulation for %s on port %d failed",
-			 family == AF_INET ? "IPv4" : "IPv6", port);
+			 family == AF_INET ? "IPv4" : "IPv6", *port);
 	}
 
 	return fd;
+}
+
+/**
+ * Get the first usable socket for an address family
+ */
+static dynsock_t *get_any_socket(private_socket_dynamic_socket_t *this,
+								 int family)
+{
+	dynsock_t *key, *value, *found = NULL;
+	enumerator_t *enumerator;
+
+	this->lock->read_lock(this->lock);
+	enumerator = this->sockets->create_enumerator(this->sockets);
+	while (enumerator->enumerate(enumerator, &key, &value))
+	{
+		if (value->family == family)
+		{
+			found = value;
+			break;
+		}
+	}
+	enumerator->destroy(enumerator);
+	this->lock->unlock(this->lock);
+
+	return found;
 }
 
 /**
@@ -433,7 +500,15 @@ static dynsock_t *find_socket(private_socket_dynamic_socket_t *this,
 	{
 		return skt;
 	}
-	fd = open_socket(this, family, port);
+	if (!port)
+	{
+		skt = get_any_socket(this, family);
+		if (skt)
+		{
+			return skt;
+		}
+	}
+	fd = open_socket(this, family, &port);
 	if (!fd)
 	{
 		return NULL;
@@ -452,24 +527,77 @@ static dynsock_t *find_socket(private_socket_dynamic_socket_t *this,
 	return skt;
 }
 
+/**
+ * Generic function to send a message.
+ */
+static ssize_t send_msg_generic(int skt, struct msghdr *msg)
+{
+	return sendmsg(skt, msg, 0);
+}
+
+/**
+ * Send a message with the IPv4 source address set.
+ */
+static ssize_t send_msg_v4(int skt, struct msghdr *msg, host_t *src)
+{
+	char buf[CMSG_SPACE(sizeof(struct in_pktinfo))] = {};
+	struct cmsghdr *cmsg;
+	struct in_addr *addr;
+	struct in_pktinfo *pktinfo;
+	struct sockaddr_in *sin;
+
+	msg->msg_control = buf;
+	msg->msg_controllen = sizeof(buf);
+	cmsg = CMSG_FIRSTHDR(msg);
+	cmsg->cmsg_level = SOL_IP;
+	cmsg->cmsg_type = IP_PKTINFO;
+	cmsg->cmsg_len = CMSG_LEN(sizeof(struct in_pktinfo));
+
+	pktinfo = (struct in_pktinfo*)CMSG_DATA(cmsg);
+	addr = &pktinfo->ipi_spec_dst;
+
+	sin = (struct sockaddr_in*)src->get_sockaddr(src);
+	memcpy(addr, &sin->sin_addr, sizeof(struct in_addr));
+	return send_msg_generic(skt, msg);
+}
+
+/**
+ * Send a message with the IPv6 source address set.
+ */
+static ssize_t send_msg_v6(int skt, struct msghdr *msg, host_t *src)
+{
+	char buf[CMSG_SPACE(sizeof(struct in6_pktinfo))] = {};
+	struct cmsghdr *cmsg;
+	struct in6_pktinfo *pktinfo;
+	struct sockaddr_in6 *sin;
+
+	msg->msg_control = buf;
+	msg->msg_controllen = sizeof(buf);
+	cmsg = CMSG_FIRSTHDR(msg);
+	cmsg->cmsg_level = SOL_IPV6;
+	cmsg->cmsg_type = IPV6_PKTINFO;
+	cmsg->cmsg_len = CMSG_LEN(sizeof(struct in6_pktinfo));
+	pktinfo = (struct in6_pktinfo*)CMSG_DATA(cmsg);
+	sin = (struct sockaddr_in6*)src->get_sockaddr(src);
+	memcpy(&pktinfo->ipi6_addr, &sin->sin6_addr, sizeof(struct in6_addr));
+	return send_msg_generic(skt, msg);
+}
+
 METHOD(socket_t, sender, status_t,
 	private_socket_dynamic_socket_t *this, packet_t *packet)
 {
 	dynsock_t *skt;
 	host_t *src, *dst;
-	int port, family;
+	int family;
 	ssize_t len;
 	chunk_t data;
 	struct msghdr msg;
-	struct cmsghdr *cmsg;
 	struct iovec iov;
 
 	src = packet->get_source(packet);
 	dst = packet->get_destination(packet);
 	family = src->get_family(src);
-	port = src->get_port(src);
-	port = port ?: CHARON_UDP_PORT;
-	skt = find_socket(this, family, port);
+	skt = find_socket(this, family, src->get_port(src));
 	if (!skt)
 	{
 		return FAILED;
@@ -491,43 +619,18 @@ METHOD(socket_t, sender, status_t,
 	{
 		if (family == AF_INET)
 		{
-			struct in_addr *addr;
-			struct sockaddr_in *sin;
-			char buf[CMSG_SPACE(sizeof(struct in_pktinfo))];
-			struct in_pktinfo *pktinfo;
-
-			msg.msg_control = buf;
-			msg.msg_controllen = sizeof(buf);
-			cmsg = CMSG_FIRSTHDR(&msg);
-			cmsg->cmsg_level = SOL_IP;
-			cmsg->cmsg_type = IP_PKTINFO;
-			cmsg->cmsg_len = CMSG_LEN(sizeof(struct in_pktinfo));
-			pktinfo = (struct in_pktinfo*)CMSG_DATA(cmsg);
-			memset(pktinfo, 0, sizeof(struct in_pktinfo));
-			addr = &pktinfo->ipi_spec_dst;
-			sin = (struct sockaddr_in*)src->get_sockaddr(src);
-			memcpy(addr, &sin->sin_addr, sizeof(struct in_addr));
+			len = send_msg_v4(skt->fd, &msg, src);
 		}
 		else
 		{
-			char buf[CMSG_SPACE(sizeof(struct in6_pktinfo))];
-			struct in6_pktinfo *pktinfo;
-			struct sockaddr_in6 *sin;
-
-			msg.msg_control = buf;
-			msg.msg_controllen = sizeof(buf);
-			cmsg = CMSG_FIRSTHDR(&msg);
-			cmsg->cmsg_level = SOL_IPV6;
-			cmsg->cmsg_type = IPV6_PKTINFO;
-			cmsg->cmsg_len = CMSG_LEN(sizeof(struct in6_pktinfo));
-			pktinfo = (struct in6_pktinfo*)CMSG_DATA(cmsg);
-			memset(pktinfo, 0, sizeof(struct in6_pktinfo));
-			sin = (struct sockaddr_in6*)src->get_sockaddr(src);
-			memcpy(&pktinfo->ipi6_addr, &sin->sin6_addr, sizeof(struct in6_addr));
+			len = send_msg_v6(skt->fd, &msg, src);
 		}
 	}
+	else
+	{
+		len = send_msg_generic(skt->fd, &msg);
+	}
 
-	len = sendmsg(skt->fd, &msg, 0);
 	if (len != data.len)
 	{
 		DBG1(DBG_NET, "error writing to socket: %s", strerror(errno));
@@ -542,6 +645,14 @@ METHOD(socket_t, get_port, u_int16_t,
 	/* we return 0 here for users that have no explicit port configured, the
 	 * sender will default to the default port in this case */
 	return 0;
+}
+
+METHOD(socket_t, supported_families, socket_family_t,
+	private_socket_dynamic_socket_t *this)
+{
+	/* we could return only the families of the opened sockets, but it could
+	 * be that both families are supported even if no socket is yet open */
+	return SOCKET_FAMILY_BOTH;
 }
 
 METHOD(socket_t, destroy, void,
@@ -578,12 +689,13 @@ socket_dynamic_socket_t *socket_dynamic_socket_create()
 				.send = _sender,
 				.receive = _receiver,
 				.get_port = _get_port,
+				.supported_families = _supported_families,
 				.destroy = _destroy,
 			},
 		},
 		.lock = rwlock_create(RWLOCK_TYPE_DEFAULT),
 		.max_packet = lib->settings->get_int(lib->settings,
-									"%s.max_packet", MAX_PACKET, charon->name),
+								"%s.max_packet", PACKET_MAX_DEFAULT, lib->ns),
 	);
 
 	if (pipe(this->notify) != 0)
@@ -597,4 +709,3 @@ socket_dynamic_socket_t *socket_dynamic_socket_create()
 
 	return &this->public;
 }
-

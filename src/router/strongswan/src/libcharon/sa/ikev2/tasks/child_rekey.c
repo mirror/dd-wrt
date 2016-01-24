@@ -96,9 +96,9 @@ static void schedule_delayed_rekey(private_child_rekey_t *this)
 
 	retry = RETRY_INTERVAL - (random() % RETRY_JITTER);
 	job = (job_t*)rekey_child_sa_job_create(
-						this->child_sa->get_reqid(this->child_sa),
 						this->child_sa->get_protocol(this->child_sa),
-						this->child_sa->get_spi(this->child_sa, TRUE));
+						this->child_sa->get_spi(this->child_sa, TRUE),
+						this->ike_sa->get_my_host(this->ike_sa));
 	DBG1(DBG_IKE, "CHILD_SA rekeying failed, trying again in %d seconds", retry);
 	this->child_sa->set_state(this->child_sa, CHILD_INSTALLED);
 	lib->scheduler->schedule_job(lib->scheduler, job, retry);
@@ -170,13 +170,8 @@ METHOD(task_t, build_i, status_t,
 	}
 	config = this->child_sa->get_config(this->child_sa);
 
-	/* we just need the rekey notify ... */
-	notify = notify_payload_create_from_protocol_and_type(NOTIFY,
-													this->protocol, REKEY_SA);
-	notify->set_spi(notify, this->spi);
-	message->add_payload(message, (payload_t*)notify);
 
-	/* ... our CHILD_CREATE task does the hard work for us. */
+	/* our CHILD_CREATE task does the hard work for us */
 	if (!this->child_create)
 	{
 		this->child_create = child_create_create(this->ike_sa,
@@ -184,12 +179,23 @@ METHOD(task_t, build_i, status_t,
 	}
 	reqid = this->child_sa->get_reqid(this->child_sa);
 	this->child_create->use_reqid(this->child_create, reqid);
+	this->child_create->use_marks(this->child_create,
+						this->child_sa->get_mark(this->child_sa, TRUE).value,
+						this->child_sa->get_mark(this->child_sa, FALSE).value);
 
 	if (this->child_create->task.build(&this->child_create->task,
 									   message) != NEED_MORE)
 	{
 		schedule_delayed_rekey(this);
 		return FAILED;
+	}
+	if (message->get_exchange_type(message) == CREATE_CHILD_SA)
+	{
+		/* don't add the notify if the CHILD_CREATE task changed the exchange */
+		notify = notify_payload_create_from_protocol_and_type(PLV2_NOTIFY,
+													this->protocol, REKEY_SA);
+		notify->set_spi(notify, this->spi);
+		message->add_payload(message, (payload_t*)notify);
 	}
 	this->child_sa->set_state(this->child_sa, CHILD_REKEYING);
 
@@ -224,11 +230,14 @@ METHOD(task_t, build_r, status_t,
 	/* let the CHILD_CREATE task build the response */
 	reqid = this->child_sa->get_reqid(this->child_sa);
 	this->child_create->use_reqid(this->child_create, reqid);
+	this->child_create->use_marks(this->child_create,
+						this->child_sa->get_mark(this->child_sa, TRUE).value,
+						this->child_sa->get_mark(this->child_sa, FALSE).value);
 	config = this->child_sa->get_config(this->child_sa);
 	this->child_create->set_config(this->child_create, config->get_ref(config));
 	this->child_create->task.build(&this->child_create->task, message);
 
-	if (message->get_payload(message, SECURITY_ASSOCIATION) == NULL)
+	if (message->get_payload(message, PLV2_SECURITY_ASSOCIATION) == NULL)
 	{
 		/* rekeying failed, reuse old child */
 		this->child_sa->set_state(this->child_sa, CHILD_INSTALLED);
@@ -328,11 +337,10 @@ METHOD(task_t, process_i, status_t,
 	if (this->child_create->task.process(&this->child_create->task,
 										 message) == NEED_MORE)
 	{
-		/* bad DH group while rekeying, try again */
-		this->child_create->task.migrate(&this->child_create->task, this->ike_sa);
+		/* bad DH group while rekeying, retry, or failure requiring deletion */
 		return NEED_MORE;
 	}
-	if (message->get_payload(message, SECURITY_ASSOCIATION) == NULL)
+	if (message->get_payload(message, PLV2_SECURITY_ASSOCIATION) == NULL)
 	{
 		/* establishing new child failed, reuse old. but not when we
 		 * received a delete in the meantime */
@@ -399,12 +407,19 @@ METHOD(child_rekey_t, collide, void,
 	else if (other->get_type(other) == TASK_CHILD_DELETE)
 	{
 		child_delete_t *del = (child_delete_t*)other;
-		if (del->get_child(del) == this->child_create->get_child(this->child_create))
+		if (this->collision &&
+			this->collision->get_type(this->collision) == TASK_CHILD_REKEY)
 		{
-			/* peer deletes redundant child created in collision */
-			this->other_child_destroyed = TRUE;
-			other->destroy(other);
-			return;
+			private_child_rekey_t *rekey;
+
+			rekey = (private_child_rekey_t*)this->collision;
+			if (del->get_child(del) == rekey->child_create->get_child(rekey->child_create))
+			{
+				/* peer deletes redundant child created in collision */
+				this->other_child_destroyed = TRUE;
+				other->destroy(other);
+				return;
+			}
 		}
 		if (del->get_child(del) != this->child_sa)
 		{

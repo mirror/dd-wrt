@@ -16,6 +16,14 @@
 #include "pt_tls.h"
 
 #include <utils/debug.h>
+#include <pen/pen.h>
+/**
+ * Described in header.
+ */
+void libpttls_init(void)
+{
+	/* empty */
+}
 
 /*
  * PT-TNC Message format:
@@ -33,6 +41,26 @@
  *  |                Message Value (e.g. PB-TNC Batch) . . .        |
  *  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  */
+
+ENUM(pt_tls_message_type_names, PT_TLS_EXPERIMENTAL, PT_TLS_ERROR,
+	"Experimental",
+	"Version Request",
+	"Version Response",
+	"SASL Mechanisms",
+	"SASL Mechanism Selection",
+	"SASL Authentication Data",
+	"SASL Result",
+	"PB-TNC Batch",
+	"PT-TLS Error"
+);
+
+ENUM(pt_tls_sasl_result_names, PT_TLS_SASL_RESULT_SUCCESS,
+							   PT_TLS_SASL_RESULT_MECH_FAILURE,
+	"Success",
+	"Failure",
+	"Abort",
+	"Mechanism Failure"
+);
 
 /**
  * Read a chunk of data from TLS, returning a reader for it
@@ -87,34 +115,51 @@ bio_reader_t* pt_tls_read(tls_socket_t *tls, u_int32_t *vendor,
 		DBG1(DBG_TNC, "received short PT-TLS header (%d bytes)", len);
 		return NULL;
 	}
+
+	if (*vendor == PEN_IETF)
+	{
+		DBG2(DBG_TNC, "received PT-TLS message #%d of type '%N' (%d bytes)",
+					  *identifier, pt_tls_message_type_names, *type, len);
+	}
+	else
+	{
+		DBG2(DBG_TNC, "received PT-TLS message #%d of unknown type "
+					  "0x%06x/0x%08x (%d bytes)",
+					  *identifier, *vendor, *type, len);
+	}
+
 	return read_tls(tls, len - PT_TLS_HEADER_LEN);
 }
 
 /**
  * Prepend a PT-TLS header to a writer, send data, destroy writer
  */
-bool pt_tls_write(tls_socket_t *tls, bio_writer_t *writer,
-				  pt_tls_message_type_t type, u_int32_t identifier)
+bool pt_tls_write(tls_socket_t *tls, pt_tls_message_type_t type,
+				  u_int32_t identifier, chunk_t data)
 {
-	bio_writer_t *header;
+	bio_writer_t *writer;
+	chunk_t out;
 	ssize_t len;
-	chunk_t data;
 
-	data =  writer->get_buf(writer);
 	len = PT_TLS_HEADER_LEN + data.len;
-	header = bio_writer_create(len);
-	header->write_uint8(header, 0);
-	header->write_uint24(header, 0);
-	header->write_uint32(header, type);
-	header->write_uint32(header, len);
-	header->write_uint32(header, identifier);
+	writer = bio_writer_create(len);
 
-	header->write_data(header, data);
+	/* write PT-TLS header */
+	writer->write_uint8 (writer, 0);
+	writer->write_uint24(writer, 0);
+	writer->write_uint32(writer, type);
+	writer->write_uint32(writer, len);
+	writer->write_uint32(writer, identifier);
+
+	/* write PT-TLS body */
+	writer->write_data(writer, data);
+
+	DBG2(DBG_TNC, "sending PT-TLS message #%d of type '%N' (%d bytes)",
+				   identifier, pt_tls_message_type_names, type, len);
+
+	out = writer->get_buf(writer);
+	len = tls->write(tls, out.ptr, out.len);
 	writer->destroy(writer);
 
-	data = header->get_buf(header);
-	len = tls->write(tls, data.ptr, data.len);
-	header->destroy(header);
-
-	return len == data.len;
+	return len == out.len;
 }

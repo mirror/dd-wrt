@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2012 Andreas Steffen
+ * Copyright (C) 2011-2014 Andreas Steffen
  * HSR Hochschule fuer Technik Rapperswil
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -13,13 +13,14 @@
  * for more details.
  */
 
+#define _GNU_SOURCE /* for stdndup() */
+#include <string.h>
+
 #include "ita_attr.h"
 #include "ita_attr_command.h"
 
 #include <pen/pen.h>
 #include <utils/debug.h>
-
-#include <string.h>
 
 typedef struct private_ita_attr_command_t private_ita_attr_command_t;
 
@@ -39,7 +40,12 @@ struct private_ita_attr_command_t {
 	pen_type_t type;
 
 	/**
-	 * Attribute value
+	 * Length of attribute value
+	 */
+	size_t length;
+
+	/**
+	 * Attribute value or segment
 	 */
 	chunk_t value;
 
@@ -90,16 +96,28 @@ METHOD(pa_tnc_attr_t, build, void,
 	{
 		return;
 	}
-	this->value = chunk_create(this->command, strlen(this->command));
-	this->value = chunk_clone(this->value);
+	this->value = chunk_clone(chunk_from_str(this->command));
+	this->length = this->value.len;
 }
 
 METHOD(pa_tnc_attr_t, process, status_t,
 	private_ita_attr_command_t *this, u_int32_t *offset)
 {
+	*offset = 0;
+
+	if (this->value.len < this->length)
+	{
+		return NEED_MORE;
+	}
 	this->command = strndup(this->value.ptr, this->value.len);
 
 	return SUCCESS;
+}
+
+METHOD(pa_tnc_attr_t, add_segment, void,
+	private_ita_attr_command_t *this, chunk_t segment)
+{
+	this->value = chunk_cat("mc", this->value, segment);
 }
 
 METHOD(pa_tnc_attr_t, get_ref, pa_tnc_attr_t*,
@@ -142,6 +160,7 @@ pa_tnc_attr_t *ita_attr_command_create(char *command)
 				.set_noskip_flag = _set_noskip_flag,
 				.build = _build,
 				.process = _process,
+				.add_segment = _add_segment,
 				.get_ref = _get_ref,
 				.destroy = _destroy,
 			},
@@ -158,7 +177,7 @@ pa_tnc_attr_t *ita_attr_command_create(char *command)
 /**
  * Described in header.
  */
-pa_tnc_attr_t *ita_attr_command_create_from_data(chunk_t data)
+pa_tnc_attr_t *ita_attr_command_create_from_data(size_t length, chunk_t data)
 {
 	private_ita_attr_command_t *this;
 
@@ -171,12 +190,14 @@ pa_tnc_attr_t *ita_attr_command_create_from_data(chunk_t data)
 				.set_noskip_flag = _set_noskip_flag,
 				.build = _build,
 				.process = _process,
+				.add_segment = _add_segment,
 				.get_ref = _get_ref,
 				.destroy = _destroy,
 			},
 			.get_command = _get_command,
 		},
 		.type = {PEN_ITA, ITA_ATTR_COMMAND },
+		.length = length,
 		.value = chunk_clone(data),
 		.ref = 1,
 	);

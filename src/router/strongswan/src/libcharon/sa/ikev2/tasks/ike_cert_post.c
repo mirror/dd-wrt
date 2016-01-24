@@ -22,6 +22,7 @@
 #include <encoding/payloads/certreq_payload.h>
 #include <encoding/payloads/auth_payload.h>
 #include <credentials/certificates/x509.h>
+#include <credentials/certificates/ac.h>
 
 
 typedef struct private_ike_cert_post_t private_ike_cert_post_t;
@@ -62,14 +63,14 @@ static cert_payload_t *build_cert_payload(private_ike_cert_post_t *this,
 
 	if (!this->ike_sa->supports_extension(this->ike_sa, EXT_HASH_AND_URL))
 	{
-		return cert_payload_create_from_cert(CERTIFICATE, cert);
+		return cert_payload_create_from_cert(PLV2_CERTIFICATE, cert);
 	}
 
 	hasher = lib->crypto->create_hasher(lib->crypto, HASH_SHA1);
 	if (!hasher)
 	{
 		DBG1(DBG_IKE, "unable to use hash-and-url: sha1 not supported");
-		return cert_payload_create_from_cert(CERTIFICATE, cert);
+		return cert_payload_create_from_cert(PLV2_CERTIFICATE, cert);
 	}
 
 	if (!cert->get_encoding(cert, CERT_ASN1_DER, &encoded))
@@ -82,7 +83,7 @@ static cert_payload_t *build_cert_payload(private_ike_cert_post_t *this,
 	{
 		hasher->destroy(hasher);
 		chunk_free(&encoded);
-		return cert_payload_create_from_cert(CERTIFICATE, cert);
+		return cert_payload_create_from_cert(PLV2_CERTIFICATE, cert);
 	}
 	chunk_free(&encoded);
 	hasher->destroy(hasher);
@@ -96,12 +97,108 @@ static cert_payload_t *build_cert_payload(private_ike_cert_post_t *this,
 	}
 	else
 	{
-		payload = cert_payload_create_from_cert(CERTIFICATE, cert);
+		payload = cert_payload_create_from_cert(PLV2_CERTIFICATE, cert);
 	}
 	enumerator->destroy(enumerator);
 	chunk_free(&hash);
 	id->destroy(id);
 	return payload;
+}
+
+/**
+ * Add subject certificate to message
+ */
+static bool add_subject_cert(private_ike_cert_post_t *this, auth_cfg_t *auth,
+							 message_t *message)
+{
+	cert_payload_t *payload;
+	certificate_t *cert;
+
+	cert = auth->get(auth, AUTH_RULE_SUBJECT_CERT);
+	if (!cert)
+	{
+		return FALSE;
+	}
+	payload = build_cert_payload(this, cert);
+	if (!payload)
+	{
+		return FALSE;
+	}
+	DBG1(DBG_IKE, "sending end entity cert \"%Y\"", cert->get_subject(cert));
+	message->add_payload(message, (payload_t*)payload);
+	return TRUE;
+}
+
+/**
+ * Add intermediate CA certificates to message
+ */
+static void add_im_certs(private_ike_cert_post_t *this, auth_cfg_t *auth,
+						 message_t *message)
+{
+	cert_payload_t *payload;
+	enumerator_t *enumerator;
+	certificate_t *cert;
+	auth_rule_t type;
+
+	enumerator = auth->create_enumerator(auth);
+	while (enumerator->enumerate(enumerator, &type, &cert))
+	{
+		if (type == AUTH_RULE_IM_CERT)
+		{
+			payload = cert_payload_create_from_cert(PLV2_CERTIFICATE, cert);
+			if (payload)
+			{
+				DBG1(DBG_IKE, "sending issuer cert \"%Y\"",
+					 cert->get_subject(cert));
+				message->add_payload(message, (payload_t*)payload);
+			}
+		}
+	}
+	enumerator->destroy(enumerator);
+}
+
+/**
+ * Add any valid attribute certificates of subject to message
+ */
+static void add_attribute_certs(private_ike_cert_post_t *this,
+								auth_cfg_t *auth, message_t *message)
+{
+	certificate_t *subject, *cert;
+
+	subject = auth->get(auth, AUTH_RULE_SUBJECT_CERT);
+	if (subject && subject->get_type(subject) == CERT_X509)
+	{
+		x509_t *x509 = (x509_t*)subject;
+		identification_t *id, *serial;
+		enumerator_t *enumerator;
+		cert_payload_t *payload;
+		ac_t *ac;
+
+		/* we look for attribute certs having our serial and holder issuer,
+		 * which is recommended by RFC 5755 */
+		serial = identification_create_from_encoding(ID_KEY_ID,
+													 x509->get_serial(x509));
+		enumerator = lib->credmgr->create_cert_enumerator(lib->credmgr,
+										CERT_X509_AC, KEY_ANY, serial, FALSE);
+		while (enumerator->enumerate(enumerator, &ac))
+		{
+			cert = &ac->certificate;
+			id = ac->get_holderIssuer(ac);
+			if (id && id->equals(id, subject->get_issuer(subject)) &&
+				cert->get_validity(cert, NULL, NULL, NULL))
+			{
+				payload = cert_payload_create_from_cert(PLV2_CERTIFICATE, cert);
+				if (payload)
+				{
+					DBG1(DBG_IKE, "sending attribute certificate "
+						 "issued by \"%Y\"", cert->get_issuer(cert));
+					message->add_payload(message, (payload_t*)payload);
+				}
+			}
+		}
+		enumerator->destroy(enumerator);
+		serial->destroy(serial);
+	}
 }
 
 /**
@@ -111,8 +208,9 @@ static void build_certs(private_ike_cert_post_t *this, message_t *message)
 {
 	peer_cfg_t *peer_cfg;
 	auth_payload_t *payload;
+	auth_cfg_t *auth;
 
-	payload = (auth_payload_t*)message->get_payload(message, AUTHENTICATION);
+	payload = (auth_payload_t*)message->get_payload(message, PLV2_AUTH);
 	peer_cfg = this->ike_sa->get_peer_cfg(this->ike_sa);
 	if (!peer_cfg || !payload || payload->get_auth_method(payload) == AUTH_PSK)
 	{	/* no CERT payload for EAP/PSK */
@@ -130,46 +228,13 @@ static void build_certs(private_ike_cert_post_t *this, message_t *message)
 			}
 			/* FALL */
 		case CERT_ALWAYS_SEND:
-		{
-			cert_payload_t *payload;
-			enumerator_t *enumerator;
-			certificate_t *cert;
-			auth_rule_t type;
-			auth_cfg_t *auth;
-
 			auth = this->ike_sa->get_auth_cfg(this->ike_sa, TRUE);
-
-			/* get subject cert first, then issuing certificates */
-			cert = auth->get(auth, AUTH_RULE_SUBJECT_CERT);
-			if (!cert)
+			if (add_subject_cert(this, auth, message))
 			{
-				break;
+				add_im_certs(this, auth, message);
+				add_attribute_certs(this, auth, message);
 			}
-			payload = build_cert_payload(this, cert);
-			if (!payload)
-			{
-				break;
-			}
-			DBG1(DBG_IKE, "sending end entity cert \"%Y\"",
-				 cert->get_subject(cert));
-			message->add_payload(message, (payload_t*)payload);
-
-			enumerator = auth->create_enumerator(auth);
-			while (enumerator->enumerate(enumerator, &type, &cert))
-			{
-				if (type == AUTH_RULE_IM_CERT)
-				{
-					payload = cert_payload_create_from_cert(CERTIFICATE, cert);
-					if (payload)
-					{
-						DBG1(DBG_IKE, "sending issuer cert \"%Y\"",
-							 cert->get_subject(cert));
-						message->add_payload(message, (payload_t*)payload);
-					}
-				}
-			}
-			enumerator->destroy(enumerator);
-		}
+			break;
 	}
 }
 

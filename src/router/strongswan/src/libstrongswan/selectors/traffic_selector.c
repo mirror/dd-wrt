@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2009 Tobias Brunner
+ * Copyright (C) 2007-2013 Tobias Brunner
  * Copyright (C) 2005-2007 Martin Willi
  * Copyright (C) 2005 Jan Hutter
  * Hochschule fuer Technik Rapperswil
@@ -15,16 +15,15 @@
  * for more details.
  */
 
-#include <arpa/inet.h>
 #include <string.h>
-#include <netdb.h>
 #include <stdio.h>
 
 #include "traffic_selector.h"
 
-#include <collections/linked_list.h>
-#include <utils/identification.h>
 #include <utils/debug.h>
+#include <utils/utils.h>
+#include <utils/identification.h>
+#include <collections/linked_list.h>
 
 #define NON_SUBNET_ADDRESS_RANGE	255
 
@@ -194,6 +193,22 @@ static bool is_any(private_traffic_selector_t *this)
 }
 
 /**
+ * Print ICMP/ICMPv6 type and code
+ */
+static int print_icmp(printf_hook_data_t *data, u_int16_t port)
+{
+	u_int8_t type, code;
+
+	type = traffic_selector_icmp_type(port);
+	code = traffic_selector_icmp_code(port);
+	if (code)
+	{
+		return print_in_hook(data, "%d(%d)", type, code);
+	}
+	return print_in_hook(data, "%d", type);
+}
+
+/**
  * Described in header.
  */
 int traffic_selector_printf_hook(printf_hook_data_t *data,
@@ -204,9 +219,8 @@ int traffic_selector_printf_hook(printf_hook_data_t *data,
 	enumerator_t *enumerator;
 	char from_str[INET6_ADDRSTRLEN] = "";
 	char to_str[INET6_ADDRSTRLEN] = "";
-	char *serv_proto = NULL;
-	bool has_proto;
-	bool has_ports;
+	char *serv_proto = NULL, *sep = "";
+	bool has_proto, has_ports;
 	size_t written = 0;
 	u_int32_t from[4], to[4];
 
@@ -220,8 +234,8 @@ int traffic_selector_printf_hook(printf_hook_data_t *data,
 		enumerator = list->create_enumerator(list);
 		while (enumerator->enumerate(enumerator, (void**)&this))
 		{
-			/* call recursivly */
-			written += print_in_hook(data, "%R ", this);
+			written += print_in_hook(data, "%s%R", sep, this);
+			sep = " ";
 		}
 		enumerator->destroy(enumerator);
 		return written;
@@ -302,19 +316,34 @@ int traffic_selector_printf_hook(printf_hook_data_t *data,
 		{
 			struct servent *serv;
 
-			serv = getservbyport(htons(this->from_port), serv_proto);
-			if (serv)
+			if (this->protocol == IPPROTO_ICMP ||
+				this->protocol == IPPROTO_ICMPV6)
 			{
-				written += print_in_hook(data, "%s", serv->s_name);
+				written += print_icmp(data, this->from_port);
 			}
 			else
 			{
-				written += print_in_hook(data, "%d", this->from_port);
+				serv = getservbyport(htons(this->from_port), serv_proto);
+				if (serv)
+				{
+					written += print_in_hook(data, "%s", serv->s_name);
+				}
+				else
+				{
+					written += print_in_hook(data, "%d", this->from_port);
+				}
 			}
 		}
 		else if (is_opaque(this))
 		{
 			written += print_in_hook(data, "OPAQUE");
+		}
+		else if (this->protocol == IPPROTO_ICMP ||
+				 this->protocol == IPPROTO_ICMPV6)
+		{
+			written += print_icmp(data, this->from_port);
+			written += print_in_hook(data, "-");
+			written += print_icmp(data, this->to_port);
 		}
 		else
 		{
@@ -419,41 +448,9 @@ METHOD(traffic_selector_t, get_subset, traffic_selector_t*,
 }
 
 METHOD(traffic_selector_t, equals, bool,
-	private_traffic_selector_t *this, traffic_selector_t *other_public)
+	private_traffic_selector_t *this, traffic_selector_t *other)
 {
-	private_traffic_selector_t *other;
-
-	other = (private_traffic_selector_t*)other_public;
-	if (this->type != other->type)
-	{
-		return FALSE;
-	}
-	if (!(this->from_port == other->from_port &&
-		  this->to_port == other->to_port &&
-		  this->protocol == other->protocol))
-	{
-		return FALSE;
-	}
-	switch (this->type)
-	{
-		case TS_IPV4_ADDR_RANGE:
-			if (memeq(this->from4, other->from4, sizeof(this->from4)) &&
-				memeq(this->to4, other->to4, sizeof(this->to4)))
-			{
-				return TRUE;
-			}
-			break;
-		case TS_IPV6_ADDR_RANGE:
-			if (memeq(this->from6, other->from6, sizeof(this->from6)) &&
-				memeq(this->to6, other->to6, sizeof(this->to6)))
-			{
-				return TRUE;
-			}
-			break;
-		default:
-			break;
-	}
-	return FALSE;
+	return traffic_selector_cmp(&this->public, other, NULL) == 0;
 }
 
 METHOD(traffic_selector_t, get_from_address, chunk_t,
@@ -687,10 +684,94 @@ METHOD(traffic_selector_t, clone_, traffic_selector_t*,
 	}
 }
 
+METHOD(traffic_selector_t, hash, u_int,
+	private_traffic_selector_t *this, u_int hash)
+{
+	return chunk_hash_inc(get_from_address(this),
+			chunk_hash_inc(get_to_address(this),
+			 chunk_hash_inc(chunk_from_thing(this->from_port),
+			  chunk_hash_inc(chunk_from_thing(this->to_port),
+			   chunk_hash_inc(chunk_from_thing(this->protocol),
+				hash)))));
+}
+
 METHOD(traffic_selector_t, destroy, void,
 	private_traffic_selector_t *this)
 {
 	free(this);
+}
+
+/**
+ * Compare two integers
+ */
+static int compare_int(int a, int b)
+{
+	return a - b;
+}
+
+/*
+ * See header
+ */
+int traffic_selector_cmp(traffic_selector_t *a_pub, traffic_selector_t *b_pub,
+						 void *opts)
+{
+	private_traffic_selector_t *a, *b;
+	int res;
+
+	a = (private_traffic_selector_t*)a_pub;
+	b = (private_traffic_selector_t*)b_pub;
+
+	/* IPv4 before IPv6 */
+	res = compare_int(a->type, b->type);
+	if (res)
+	{
+		return res;
+	}
+	switch (a->type)
+	{
+		case TS_IPV4_ADDR_RANGE:
+			/* lower starting subnets first */
+			res = memcmp(a->from4, b->from4, sizeof(a->from4));
+			if (res)
+			{
+				return res;
+			}
+			/* larger subnets first */
+			res = memcmp(b->to4, a->to4, sizeof(a->to4));
+			if (res)
+			{
+				return res;
+			}
+			break;
+		case TS_IPV6_ADDR_RANGE:
+			res = memcmp(a->from6, b->from6, sizeof(a->from6));
+			if (res)
+			{
+				return res;
+			}
+			res = memcmp(b->to6, a->to6, sizeof(a->to6));
+			if (res)
+			{
+				return res;
+			}
+			break;
+		default:
+			return 1;
+	}
+	/* lower protocols first */
+	res = compare_int(a->protocol, b->protocol);
+	if (res)
+	{
+		return res;
+	}
+	/* lower starting ports first */
+	res = compare_int(a->from_port, b->from_port);
+	if (res)
+	{
+		return res;
+	}
+	/* larger port ranges first */
+	return compare_int(b->to_port, a->to_port);
 }
 
 /*
@@ -767,8 +848,7 @@ traffic_selector_t *traffic_selector_create_from_rfc3779_format(ts_type_t type,
 		memcpy(this->to, to.ptr+1, to.len-1);
 		this->to[to.len-2] |= mask;
 	}
-	this->netbits = chunk_equals(from, to) ? (from.len-1)*8 - from.ptr[0]
-										   : NON_SUBNET_ADDRESS_RANGE;
+	calc_netbits(this);
 	return (&this->public);
 }
 
@@ -814,38 +894,32 @@ traffic_selector_t *traffic_selector_create_from_string(
 										char *from_addr, u_int16_t from_port,
 										char *to_addr, u_int16_t to_port)
 {
-	private_traffic_selector_t *this = traffic_selector_create(protocol, type,
-															from_port, to_port);
+	private_traffic_selector_t *this;
+	int family;
 
 	switch (type)
 	{
 		case TS_IPV4_ADDR_RANGE:
-			if (inet_pton(AF_INET, from_addr, (struct in_addr*)this->from4) < 0)
-			{
-				free(this);
-				return NULL;
-			}
-			if (inet_pton(AF_INET, to_addr, (struct in_addr*)this->to4) < 0)
-			{
-				free(this);
-				return NULL;
-			}
+			family = AF_INET;
 			break;
 		case TS_IPV6_ADDR_RANGE:
-			if (inet_pton(AF_INET6, from_addr, (struct in6_addr*)this->from6) < 0)
-			{
-				free(this);
-				return NULL;
-			}
-			if (inet_pton(AF_INET6, to_addr, (struct in6_addr*)this->to6) < 0)
-			{
-				free(this);
-				return NULL;
-			}
+			family = AF_INET6;
 			break;
+		default:
+			return NULL;
 	}
+
+	this = traffic_selector_create(protocol, type, from_port, to_port);
+
+	if (inet_pton(family, from_addr, this->from) != 1 ||
+		inet_pton(family, to_addr, this->to) != 1)
+	{
+		free(this);
+		return NULL;
+	}
+
 	calc_netbits(this);
-	return (&this->public);
+	return &this->public;
 }
 
 /*
@@ -909,6 +983,7 @@ static private_traffic_selector_t *traffic_selector_create(u_int8_t protocol,
 			.set_address = _set_address,
 			.to_subnet = _to_subnet,
 			.clone = _clone_,
+			.hash = _hash,
 			.destroy = _destroy,
 		},
 		.from_port = from_port,
@@ -916,6 +991,10 @@ static private_traffic_selector_t *traffic_selector_create(u_int8_t protocol,
 		.protocol = protocol,
 		.type = type,
 	);
-
+	if (protocol == IPPROTO_ICMP || protocol == IPPROTO_ICMPV6)
+	{
+		this->from_port = from_port < 256 ? from_port << 8 : from_port;
+		this->to_port = to_port < 256 ? to_port << 8 : to_port;
+	}
 	return this;
 }

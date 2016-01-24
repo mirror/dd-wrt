@@ -15,7 +15,7 @@
  */
 
 /*
- * Copyright (C) 2012 Volker Rümelin
+ * Copyright (C) 2012-2014 Volker Rümelin
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -67,6 +67,11 @@ struct private_isakmp_vendor_t {
 	 * Index of best nat traversal VID found
 	 */
 	int best_natt_ext;
+
+	/**
+	 * Number of times we have been invoked
+	 */
+	int count;
 };
 
 /**
@@ -101,9 +106,14 @@ static struct {
 	  "\x12\xf5\xf2\x8c\x45\x71\x68\xa9\x70\x2d\x9f\xe2\x74\xcc\x01\x00"},
 
 	/* Proprietary IKE fragmentation extension. Capabilities are handled
-	 * specially on receipt of this VID. */
+	 * specially on receipt of this VID. Windows peers send this VID
+	 * without capabilities, but accept it with and without capabilities. */
 	{ "FRAGMENTATION", EXT_IKE_FRAGMENTATION, FALSE, 20,
 	  "\x40\x48\xb7\xd5\x6e\xbc\xe8\x85\x25\xe7\xde\x7f\x00\xd6\xc2\xd3\x80\x00\x00\x00"},
+
+	/* Windows peers send this VID and a version number */
+	{ "MS NT5 ISAKMPOAKLEY", EXT_MS_WINDOWS, FALSE, 20,
+	  "\x1e\x2b\x51\x69\x05\x99\x1c\x7d\x7c\x96\xfc\xbf\xb5\x87\xe4\x61\x00\x00\x00\x00"},
 
 }, vendor_natt_ids[] = {
 
@@ -162,21 +172,35 @@ static struct {
  */
 static const u_int32_t fragmentation_ike = 0x80000000;
 
-/**
- * Check if the given vendor ID indicate support for fragmentation
- */
-static bool fragmentation_supported(chunk_t data, int i)
+static bool is_known_vid(chunk_t data, int i)
 {
-	if (vendor_ids[i].extension  == EXT_IKE_FRAGMENTATION &&
-		data.len == 20 && memeq(data.ptr, vendor_ids[i].id, 16))
+	switch (vendor_ids[i].extension)
 	{
-		return untoh32(&data.ptr[16]) & fragmentation_ike;
+		case EXT_IKE_FRAGMENTATION:
+			if (data.len >= 16 && memeq(data.ptr, vendor_ids[i].id, 16))
+			{
+				switch (data.len)
+				{
+					case 16:
+						return TRUE;
+					case 20:
+						return untoh32(&data.ptr[16]) & fragmentation_ike;
+				}
+			}
+			break;
+		case EXT_MS_WINDOWS:
+			return data.len == 20 && memeq(data.ptr, vendor_ids[i].id, 16);
+		default:
+			return chunk_equals(data, chunk_create(vendor_ids[i].id,
+												   vendor_ids[i].len));
 	}
 	return FALSE;
 }
 
-METHOD(task_t, build, status_t,
-	private_isakmp_vendor_t *this, message_t *message)
+/**
+ * Add supported vendor ID payloads
+ */
+static void build(private_isakmp_vendor_t *this, message_t *message)
 {
 	vendor_id_payload_t *vid_payload;
 	bool strongswan, cisco_unity, fragmentation;
@@ -184,9 +208,9 @@ METHOD(task_t, build, status_t,
 	int i;
 
 	strongswan = lib->settings->get_bool(lib->settings,
-								"%s.send_vendor_id", FALSE, charon->name);
+										 "%s.send_vendor_id", FALSE, lib->ns);
 	cisco_unity = lib->settings->get_bool(lib->settings,
-								"%s.cisco_unity", FALSE, charon->name);
+										 "%s.cisco_unity", FALSE, lib->ns);
 	ike_cfg = this->ike_sa->get_ike_cfg(this->ike_sa);
 	fragmentation = ike_cfg->fragmentation(ike_cfg) != FRAGMENTATION_NO;
 	if (!this->initiator && fragmentation)
@@ -202,7 +226,7 @@ METHOD(task_t, build, status_t,
 		   (vendor_ids[i].extension == EXT_IKE_FRAGMENTATION && fragmentation))
 		{
 			DBG2(DBG_IKE, "sending %s vendor ID", vendor_ids[i].desc);
-			vid_payload = vendor_id_payload_create_data(VENDOR_ID_V1,
+			vid_payload = vendor_id_payload_create_data(PLV1_VENDOR_ID,
 				chunk_clone(chunk_create(vendor_ids[i].id, vendor_ids[i].len)));
 			message->add_payload(message, &vid_payload->payload_interface);
 		}
@@ -213,17 +237,18 @@ METHOD(task_t, build, status_t,
 			this->best_natt_ext == i)
 		{
 			DBG2(DBG_IKE, "sending %s vendor ID", vendor_natt_ids[i].desc);
-			vid_payload = vendor_id_payload_create_data(VENDOR_ID_V1,
+			vid_payload = vendor_id_payload_create_data(PLV1_VENDOR_ID,
 							chunk_clone(chunk_create(vendor_natt_ids[i].id,
 													 vendor_natt_ids[i].len)));
 			message->add_payload(message, &vid_payload->payload_interface);
 		}
 	}
-	return this->initiator ? NEED_MORE : SUCCESS;
 }
 
-METHOD(task_t, process, status_t,
-	private_isakmp_vendor_t *this, message_t *message)
+/**
+ * Process vendor ID payloads
+ */
+static void process(private_isakmp_vendor_t *this, message_t *message)
 {
 	enumerator_t *enumerator;
 	payload_t *payload;
@@ -232,7 +257,7 @@ METHOD(task_t, process, status_t,
 	enumerator = message->create_payload_enumerator(message);
 	while (enumerator->enumerate(enumerator, &payload))
 	{
-		if (payload->get_type(payload) == VENDOR_ID_V1)
+		if (payload->get_type(payload) == PLV1_VENDOR_ID)
 		{
 			vendor_id_payload_t *vid;
 			bool found = FALSE;
@@ -243,9 +268,7 @@ METHOD(task_t, process, status_t,
 
 			for (i = 0; i < countof(vendor_ids); i++)
 			{
-				if (chunk_equals(data, chunk_create(vendor_ids[i].id,
-													vendor_ids[i].len)) ||
-					fragmentation_supported(data, i))
+				if (is_known_vid(data, i))
 				{
 					DBG1(DBG_IKE, "received %s vendor ID", vendor_ids[i].desc);
 					if (vendor_ids[i].extension)
@@ -289,14 +312,64 @@ METHOD(task_t, process, status_t,
 		this->ike_sa->enable_extension(this->ike_sa,
 								vendor_natt_ids[this->best_natt_ext].extension);
 	}
+}
 
-	return this->initiator ? SUCCESS : NEED_MORE;
+METHOD(task_t, build_i, status_t,
+	private_isakmp_vendor_t *this, message_t *message)
+{
+	if (this->count++ == 0)
+	{
+		build(this, message);
+	}
+	if (message->get_exchange_type(message) == AGGRESSIVE && this->count > 1)
+	{
+		return SUCCESS;
+	}
+	return NEED_MORE;
+}
+
+METHOD(task_t, process_r, status_t,
+	private_isakmp_vendor_t *this, message_t *message)
+{
+	this->count++;
+	process(this, message);
+	if (message->get_exchange_type(message) == AGGRESSIVE && this->count > 1)
+	{
+		return SUCCESS;
+	}
+	return NEED_MORE;
+}
+
+METHOD(task_t, build_r, status_t,
+	private_isakmp_vendor_t *this, message_t *message)
+{
+	if (this->count == 1)
+	{
+		build(this, message);
+	}
+	if (message->get_exchange_type(message) == ID_PROT && this->count > 2)
+	{
+		return SUCCESS;
+	}
+	return NEED_MORE;
+}
+
+METHOD(task_t, process_i, status_t,
+	private_isakmp_vendor_t *this, message_t *message)
+{
+	process(this, message);
+	if (message->get_exchange_type(message) == ID_PROT && this->count > 2)
+	{
+		return SUCCESS;
+	}
+	return NEED_MORE;
 }
 
 METHOD(task_t, migrate, void,
 	private_isakmp_vendor_t *this, ike_sa_t *ike_sa)
 {
 	this->ike_sa = ike_sa;
+	this->count = 0;
 }
 
 METHOD(task_t, get_type, task_type_t,
@@ -321,8 +394,6 @@ isakmp_vendor_t *isakmp_vendor_create(ike_sa_t *ike_sa, bool initiator)
 	INIT(this,
 		.public = {
 			.task = {
-				.build = _build,
-				.process = _process,
 				.migrate = _migrate,
 				.get_type = _get_type,
 				.destroy = _destroy,
@@ -332,6 +403,17 @@ isakmp_vendor_t *isakmp_vendor_create(ike_sa_t *ike_sa, bool initiator)
 		.ike_sa = ike_sa,
 		.best_natt_ext = -1,
 	);
+
+	if (initiator)
+	{
+		this->public.task.build = _build_i;
+		this->public.task.process = _process_i;
+	}
+	else
+	{
+		this->public.task.build = _build_r;
+		this->public.task.process = _process_r;
+	}
 
 	return &this->public;
 }

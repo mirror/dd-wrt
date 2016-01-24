@@ -34,7 +34,6 @@ type,              KW_TYPE
 compress,          KW_COMPRESS
 installpolicy,     KW_INSTALLPOLICY
 aggressive,        KW_AGGRESSIVE
-auth,              KW_AUTH
 authby,            KW_AUTHBY
 eap_identity,      KW_EAP_IDENTITY
 aaa_identity,      KW_AAA_IDENTITY
@@ -57,6 +56,7 @@ rekey,             KW_REKEY
 reauth,            KW_REAUTH
 ike,               KW_IKE
 esp,               KW_ESP
+ah,                KW_AH
 dpddelay,          KW_DPDDELAY
 dpdtimeout,        KW_DPDTIMEOUT
 dpdaction,         KW_DPDACTION
@@ -69,6 +69,7 @@ mediation,         KW_MEDIATION
 mediated_by,       KW_MEDIATED_BY
 me_peerid,         KW_ME_PEERID
 reqid,             KW_REQID
+replay_window,     KW_REPLAY_WINDOW
 mark,              KW_MARK
 mark_in,           KW_MARK_IN
 mark_out,          KW_MARK_OUT
@@ -96,7 +97,8 @@ leftauth,          KW_LEFTAUTH
 leftauth2,         KW_LEFTAUTH2
 leftid,            KW_LEFTID
 leftid2,           KW_LEFTID2
-leftrsasigkey,     KW_LEFTRSASIGKEY
+leftsigkey,        KW_LEFTSIGKEY
+leftrsasigkey,     KW_LEFTSIGKEY
 leftcert,          KW_LEFTCERT
 leftcert2,         KW_LEFTCERT2
 leftcertpolicy,    KW_LEFTCERTPOLICY
@@ -120,7 +122,8 @@ rightauth,         KW_RIGHTAUTH
 rightauth2,        KW_RIGHTAUTH2
 rightid,           KW_RIGHTID
 rightid2,          KW_RIGHTID2
-rightrsasigkey,    KW_RIGHTRSASIGKEY
+rightsigkey,       KW_RIGHTSIGKEY
+rightrsasigkey,    KW_RIGHTSIGKEY
 rightcert,         KW_RIGHTCERT
 rightcert2,        KW_RIGHTCERT2
 rightcertpolicy,   KW_RIGHTCERTPOLICY

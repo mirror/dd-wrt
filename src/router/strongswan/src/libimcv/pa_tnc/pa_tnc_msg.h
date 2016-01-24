@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2012 Andreas Steffen
+ * Copyright (C) 2011-2015 Andreas Steffen
  * HSR Hochschule fuer Technik Rapperswil
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 typedef struct pa_tnc_msg_t pa_tnc_msg_t;
 
 #define PA_TNC_VERSION		0x01
+#define PA_TNC_HEADER_SIZE	8
 
 #include "pa_tnc_attr.h"
 
@@ -41,6 +42,13 @@ struct pa_tnc_msg_t {
 	 * @return					encoded PA-TNC message
 	 */
 	chunk_t (*get_encoding)(pa_tnc_msg_t *this);
+
+	/**
+	 * Get the remaining space in octets left in the PA-TNC message
+	 *
+	 * @return					remaining space or 0 if max_msg_len is not set
+	 */
+	size_t (*get_space)(pa_tnc_msg_t *this);
 
 	/**
 	 * Add a PA-TNC attribute
@@ -67,9 +75,11 @@ struct pa_tnc_msg_t {
 	/**
 	 * Process all IETF standard error PA-TNC attributes
 	 *
-	 * @return					TRUE if at least one error attribute processed
+	 * @param non_fatal_types	list of non fatal unsupported attribute types
+	 * @return					TRUE if at least one fatal error processed
 	 */
-	bool (*process_ietf_std_errors)(pa_tnc_msg_t *this);
+	bool (*process_ietf_std_errors)(pa_tnc_msg_t *this,
+								    linked_list_t *non_fatal_types);
 
 	/**
 	 * Enumerates over all PA-TNC attributes

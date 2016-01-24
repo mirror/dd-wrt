@@ -1,13 +1,9 @@
-dist_man_MANS = ipsec.conf.5 ipsec.secrets.5 strongswan.conf.5
-EXTRA_DIST = ipsec.conf.5.in ipsec.secrets.5.in strongswan.conf.5.in
-CLEANFILES = ipsec.conf.5 ipsec.secrets.5 strongswan.conf.5
+man_MANS =
 
-SUFFIXES = .in
+if USE_FILE_CONFIG
+  man_MANS += \
+	ipsec.conf.5 \
+	ipsec.secrets.5
+endif
 
-.in:
-	sed \
-	-e "s:@IPSEC_VERSION@:$(PACKAGE_VERSION):" \
-	-e "s:@DEV_URANDOM@:$(urandom_device):" \
-	-e "s:@DEV_RANDOM@:$(random_device):" \
-	$(srcdir)/$@.in > $@
-
+CLEANFILES = $(man_MANS)

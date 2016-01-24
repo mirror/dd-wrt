@@ -425,7 +425,7 @@ static status_t process_challenge(private_eap_aka_server_t *this,
 	enumerator->destroy(enumerator);
 
 	/* compare received RES against stored XRES */
-	if (!chunk_equals(res, this->xres))
+	if (!chunk_equals_const(res, this->xres))
 	{
 		DBG1(DBG_IKE, "received RES does not match XRES");
 		return FAILED;
@@ -486,7 +486,7 @@ static status_t process_reauthentication(private_eap_aka_server_t *this,
 		this->crypto->clear_keys(this->crypto);
 		return challenge(this, out);
 	}
-	if (!chunk_equals(counter, this->counter))
+	if (!chunk_equals_const(counter, this->counter))
 	{
 		DBG1(DBG_IKE, "received counter does not match");
 		return FAILED;
@@ -721,7 +721,7 @@ eap_aka_server_t *eap_aka_server_create(identification_t *server,
 	this->permanent = peer->clone(peer);
 	this->use_reauth = this->use_pseudonym = this->use_permanent =
 		lib->settings->get_bool(lib->settings,
-					"%s.plugins.eap-aka.request_identity", TRUE, charon->name);
+						"%s.plugins.eap-aka.request_identity", TRUE, lib->ns);
 
 	/* generate a non-zero identifier */
 	do {
@@ -730,4 +730,3 @@ eap_aka_server_t *eap_aka_server_create(identification_t *server,
 
 	return &this->public;
 }
-

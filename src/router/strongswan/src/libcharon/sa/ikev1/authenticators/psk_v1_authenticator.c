@@ -74,7 +74,10 @@ METHOD(authenticator_t, build, status_t,
 	keymat_v1_t *keymat;
 	chunk_t hash, dh;
 
-	this->dh->get_my_public_value(this->dh, &dh);
+	if (!this->dh->get_my_public_value(this->dh, &dh))
+	{
+		return FAILED;
+	}
 	keymat = (keymat_v1_t*)this->ike_sa->get_keymat(this->ike_sa);
 	if (!keymat->get_hash(keymat, this->initiator, dh, this->dh_value,
 					this->ike_sa->get_id(this->ike_sa), this->sa_payload,
@@ -85,7 +88,7 @@ METHOD(authenticator_t, build, status_t,
 	}
 	free(dh.ptr);
 
-	hash_payload = hash_payload_create(HASH_V1);
+	hash_payload = hash_payload_create(PLV1_HASH);
 	hash_payload->set_hash(hash_payload, hash);
 	message->add_payload(message, &hash_payload->payload_interface);
 	free(hash.ptr);
@@ -101,14 +104,17 @@ METHOD(authenticator_t, process, status_t,
 	chunk_t hash, dh;
 	auth_cfg_t *auth;
 
-	hash_payload = (hash_payload_t*)message->get_payload(message, HASH_V1);
+	hash_payload = (hash_payload_t*)message->get_payload(message, PLV1_HASH);
 	if (!hash_payload)
 	{
 		DBG1(DBG_IKE, "HASH payload missing in message");
 		return FAILED;
 	}
 
-	this->dh->get_my_public_value(this->dh, &dh);
+	if (!this->dh->get_my_public_value(this->dh, &dh))
+	{
+		return FAILED;
+	}
 	keymat = (keymat_v1_t*)this->ike_sa->get_keymat(this->ike_sa);
 	if (!keymat->get_hash(keymat, !this->initiator, this->dh_value, dh,
 					this->ike_sa->get_id(this->ike_sa), this->sa_payload,
@@ -118,7 +124,7 @@ METHOD(authenticator_t, process, status_t,
 		return FAILED;
 	}
 	free(dh.ptr);
-	if (chunk_equals(hash, hash_payload->get_hash(hash_payload)))
+	if (chunk_equals_const(hash, hash_payload->get_hash(hash_payload)))
 	{
 		free(hash.ptr);
 		if (!this->hybrid)

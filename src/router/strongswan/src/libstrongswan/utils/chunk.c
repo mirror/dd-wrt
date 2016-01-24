@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2009 Tobias Brunner
+ * Copyright (C) 2008-2013 Tobias Brunner
  * Copyright (C) 2005-2006 Martin Willi
  * Copyright (C) 2005 Jan Hutter
  * Hochschule fuer Technik Rapperswil
@@ -16,23 +16,18 @@
  */
 
 #include <stdio.h>
+#include <sys/types.h>
 #include <sys/stat.h>
+#ifdef HAVE_MMAP
+# include <sys/mman.h>
+#endif
+#include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
 #include <ctype.h>
+#include <time.h>
 
 #include "chunk.h"
-#include "debug.h"
-
-/* required for chunk_hash */
-#undef get16bits
-#if (defined(__GNUC__) && defined(__i386__))
-#define get16bits(d) (*((const u_int16_t*)(d)))
-#endif
-#if !defined (get16bits)
-#define get16bits(d) ((((u_int32_t)(((const u_int8_t*)(d))[1])) << 8)\
-                      + (u_int32_t)(((const u_int8_t*)(d))[0]) )
-#endif
 
 /**
  * Empty chunk.
@@ -213,43 +208,242 @@ void chunk_split(chunk_t chunk, const char *mode, ...)
 /**
  * Described in header.
  */
-bool chunk_write(chunk_t chunk, char *path, char *label, mode_t mask, bool force)
+bool chunk_write(chunk_t chunk, char *path, mode_t mask, bool force)
 {
 	mode_t oldmask;
 	FILE *fd;
 	bool good = FALSE;
+	int tmp = 0;
 
 	if (!force && access(path, F_OK) == 0)
 	{
-		DBG1(DBG_LIB, "  %s file '%s' already exists", label, path);
+		errno = EEXIST;
 		return FALSE;
 	}
 	oldmask = umask(mask);
-	fd = fopen(path, "w");
+	fd = fopen(path,
+#ifdef WIN32
+				"wb"
+#else
+				"w"
+#endif
+	);
+
 	if (fd)
 	{
 		if (fwrite(chunk.ptr, sizeof(u_char), chunk.len, fd) == chunk.len)
 		{
-			DBG1(DBG_LIB, "  written %s file '%s' (%d bytes)",
-				 label, path, chunk.len);
 			good = TRUE;
 		}
 		else
 		{
-			DBG1(DBG_LIB, "  writing %s file '%s' failed: %s",
-				 label, path, strerror(errno));
+			tmp = errno;
 		}
 		fclose(fd);
 	}
 	else
 	{
-		DBG1(DBG_LIB, "  could not open %s file '%s': %s", label, path,
-			 strerror(errno));
+		tmp = errno;
 	}
 	umask(oldmask);
+	errno = tmp;
 	return good;
 }
 
+/**
+ * Described in header.
+ */
+bool chunk_from_fd(int fd, chunk_t *out)
+{
+	struct stat sb;
+	char *buf, *tmp;
+	ssize_t len, total = 0, bufsize;
+
+	if (fstat(fd, &sb) == 0 && S_ISREG(sb.st_mode))
+	{
+		bufsize = sb.st_size;
+	}
+	else
+	{
+		bufsize = 256;
+	}
+	buf = malloc(bufsize);
+	if (!buf)
+	{	/* for huge files */
+		return FALSE;
+	}
+
+	while (TRUE)
+	{
+		len = read(fd, buf + total, bufsize - total);
+#ifdef WIN32
+		if (len == -1 && errno == EBADF)
+		{	/* operating on a Winsock socket? */
+			len = recv(fd, buf + total, bufsize - total, 0);
+		}
+#endif
+		if (len < 0)
+		{
+			free(buf);
+			return FALSE;
+		}
+		if (len == 0)
+		{
+			break;
+		}
+		total += len;
+		if (total == bufsize)
+		{
+			bufsize *= 2;
+			tmp = realloc(buf, bufsize);
+			if (!tmp)
+			{
+				free(buf);
+				return FALSE;
+			}
+			buf = tmp;
+		}
+	}
+	if (total == 0)
+	{
+		free(buf);
+		buf = NULL;
+	}
+	else if (total < bufsize)
+	{
+		buf = realloc(buf, total);
+	}
+	*out = chunk_create(buf, total);
+	return TRUE;
+}
+
+/**
+ * Implementation for mmap()ed chunks
+ */
+typedef struct {
+	/* public chunk interface */
+	chunk_t public;
+	/* FD of open file */
+	int fd;
+	/* mmap() address */
+	void *map;
+	/* size of map */
+	size_t len;
+	/* do we write? */
+	bool wr;
+} mmaped_chunk_t;
+
+/**
+ * See header.
+ */
+chunk_t *chunk_map(char *path, bool wr)
+{
+	mmaped_chunk_t *chunk;
+	struct stat sb;
+	int tmp, flags;
+
+	flags = wr ? O_RDWR : O_RDONLY;
+#ifdef WIN32
+	flags |= O_BINARY;
+#endif
+
+	INIT(chunk,
+		.fd = open(path, flags),
+		.wr = wr,
+	);
+
+	if (chunk->fd == -1)
+	{
+		free(chunk);
+		return NULL;
+	}
+	if (fstat(chunk->fd, &sb) == -1)
+	{
+		tmp = errno;
+		chunk_unmap(&chunk->public);
+		errno = tmp;
+		return NULL;
+	}
+#ifdef HAVE_MMAP
+	chunk->len = sb.st_size;
+	/* map non-empty files only, as mmap() complains otherwise */
+	if (chunk->len)
+	{
+		/* in read-only mode, we allow writes, but don't sync to disk */
+		chunk->map = mmap(NULL, chunk->len, PROT_READ | PROT_WRITE,
+						  wr ? MAP_SHARED : MAP_PRIVATE, chunk->fd, 0);
+		if (chunk->map == MAP_FAILED)
+		{
+			tmp = errno;
+			chunk_unmap(&chunk->public);
+			errno = tmp;
+			return NULL;
+		}
+	}
+	chunk->public = chunk_create(chunk->map, chunk->len);
+#else /* !HAVE_MMAP */
+	if (!chunk_from_fd(chunk->fd, &chunk->public))
+	{
+		tmp = errno;
+		chunk_unmap(&chunk->public);
+		errno = tmp;
+		return NULL;
+	}
+	chunk->map = chunk->public.ptr;
+	chunk->len = chunk->public.len;
+#endif /* !HAVE_MMAP */
+	return &chunk->public;
+}
+
+/**
+ * See header.
+ */
+bool chunk_unmap(chunk_t *public)
+{
+	mmaped_chunk_t *chunk;
+	bool ret = FALSE;
+	int tmp = 0;
+
+	chunk = (mmaped_chunk_t*)public;
+#ifdef HAVE_MMAP
+	if (chunk->map && chunk->map != MAP_FAILED)
+	{
+		ret = munmap(chunk->map, chunk->len) == 0;
+		tmp = errno;
+	}
+#else /* !HAVE_MMAP */
+	if (chunk->wr)
+	{
+		if (lseek(chunk->fd, 0, SEEK_SET) != -1)
+		{
+			int len, total = 0;
+
+			ret = TRUE;
+			while (total < chunk->len)
+			{
+				len = write(chunk->fd, chunk->map + total, chunk->len - total);
+				if (len <= 0)
+				{
+					ret = FALSE;
+					break;
+				}
+				total += len;
+			}
+		}
+		tmp = errno;
+	}
+	else
+	{
+		ret = TRUE;
+	}
+	free(chunk->map);
+#endif /* !HAVE_MMAP */
+	close(chunk->fd);
+	free(chunk);
+	errno = tmp;
+
+	return ret;
+}
 
 /** hex conversion digits */
 static char hexdig_upper[] = "0123456789ABCDEF";
@@ -579,72 +773,194 @@ bool chunk_printable(chunk_t chunk, chunk_t *sane, char replace)
 }
 
 /**
+ * Helper functions for chunk_mac()
+ */
+static inline u_int64_t sipget(u_char *in)
+{
+	u_int64_t v = 0;
+	int i;
+
+	for (i = 0; i < 64; i += 8, ++in)
+	{
+		v |= ((u_int64_t)*in) << i;
+	}
+	return v;
+}
+
+static inline u_int64_t siprotate(u_int64_t v, int shift)
+{
+        return (v << shift) | (v >> (64 - shift));
+}
+
+static inline void sipround(u_int64_t *v0, u_int64_t *v1, u_int64_t *v2,
+							u_int64_t *v3)
+{
+	*v0 += *v1;
+	*v1 = siprotate(*v1, 13);
+	*v1 ^= *v0;
+	*v0 = siprotate(*v0, 32);
+
+	*v2 += *v3;
+	*v3 = siprotate(*v3, 16);
+	*v3 ^= *v2;
+
+	*v2 += *v1;
+	*v1 = siprotate(*v1, 17);
+	*v1 ^= *v2;
+	*v2 = siprotate(*v2, 32);
+
+	*v0 += *v3;
+	*v3 = siprotate(*v3, 21);
+	*v3 ^= *v0;
+}
+
+static inline void sipcompress(u_int64_t *v0, u_int64_t *v1, u_int64_t *v2,
+							   u_int64_t *v3, u_int64_t m)
+{
+	*v3 ^= m;
+	sipround(v0, v1, v2, v3);
+	sipround(v0, v1, v2, v3);
+	*v0 ^= m;
+}
+
+static inline u_int64_t siplast(size_t len, u_char *pos)
+{
+	u_int64_t b;
+	int rem = len & 7;
+
+	b = ((u_int64_t)len) << 56;
+	switch (rem)
+	{
+		case 7:
+			b |= ((u_int64_t)pos[6]) << 48;
+		case 6:
+			b |= ((u_int64_t)pos[5]) << 40;
+		case 5:
+			b |= ((u_int64_t)pos[4]) << 32;
+		case 4:
+			b |= ((u_int64_t)pos[3]) << 24;
+		case 3:
+			b |= ((u_int64_t)pos[2]) << 16;
+		case 2:
+			b |= ((u_int64_t)pos[1]) <<  8;
+		case 1:
+			b |= ((u_int64_t)pos[0]);
+			break;
+		case 0:
+			break;
+	}
+	return b;
+}
+
+/**
+ * Caculate SipHash-2-4 with an optional first block given as argument.
+ */
+static u_int64_t chunk_mac_inc(chunk_t chunk, u_char *key, u_int64_t m)
+{
+	u_int64_t v0, v1, v2, v3, k0, k1;
+	size_t len = chunk.len;
+	u_char *pos = chunk.ptr, *end;
+
+	end = chunk.ptr + len - (len % 8);
+
+	k0 = sipget(key);
+	k1 = sipget(key + 8);
+
+	v0 = k0 ^ 0x736f6d6570736575ULL;
+	v1 = k1 ^ 0x646f72616e646f6dULL;
+	v2 = k0 ^ 0x6c7967656e657261ULL;
+	v3 = k1 ^ 0x7465646279746573ULL;
+
+	if (m)
+	{
+		sipcompress(&v0, &v1, &v2, &v3, m);
+	}
+
+	/* compression with c = 2 */
+	for (; pos != end; pos += 8)
+	{
+		m = sipget(pos);
+		sipcompress(&v0, &v1, &v2, &v3, m);
+	}
+	sipcompress(&v0, &v1, &v2, &v3, siplast(len, pos));
+
+	/* finalization with d = 4 */
+	v2 ^= 0xff;
+	sipround(&v0, &v1, &v2, &v3);
+	sipround(&v0, &v1, &v2, &v3);
+	sipround(&v0, &v1, &v2, &v3);
+	sipround(&v0, &v1, &v2, &v3);
+	return v0 ^ v1 ^ v2  ^ v3;
+}
+
+/**
  * Described in header.
- *
- * The implementation is based on Paul Hsieh's SuperFastHash:
- *	 http://www.azillionmonkeys.com/qed/hash.html
+ */
+u_int64_t chunk_mac(chunk_t chunk, u_char *key)
+{
+	return chunk_mac_inc(chunk, key, 0);
+}
+
+/**
+ * Secret key allocated randomly with chunk_hash_seed().
+ */
+static u_char key[16] = {};
+
+/**
+ * Static key used in case predictable hash values are required.
+ */
+static u_char static_key[] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+							  0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f};
+
+/**
+ * See header
+ */
+void chunk_hash_seed()
+{
+	static bool seeded = FALSE;
+	ssize_t len;
+	size_t done = 0;
+	int fd;
+
+	if (seeded)
+	{
+		/* just once to have the same seed during the whole process lifetimes */
+		return;
+	}
+
+	fd = open("/dev/urandom", O_RDONLY);
+	if (fd >= 0)
+	{
+		while (done < sizeof(key))
+		{
+			len = read(fd, key + done, sizeof(key) - done);
+			if (len < 0)
+			{
+				break;
+			}
+			done += len;
+		}
+		close(fd);
+	}
+	/* on error we use random() to generate the key (better than nothing) */
+	if (done < sizeof(key))
+	{
+		srandom(time(NULL) + getpid());
+		for (; done < sizeof(key); done++)
+		{
+			key[done] = (u_char)random();
+		}
+	}
+	seeded = TRUE;
+}
+
+/**
+ * Described in header.
  */
 u_int32_t chunk_hash_inc(chunk_t chunk, u_int32_t hash)
 {
-	u_char *data = chunk.ptr;
-	size_t len = chunk.len;
-	u_int32_t tmp;
-	int rem;
-
-	if (!len || data == NULL)
-	{
-		return 0;
-	}
-
-	rem = len & 3;
-	len >>= 2;
-
-	/* Main loop */
-	for (; len > 0; --len)
-	{
-		hash += get16bits(data);
-		tmp   = (get16bits(data + 2) << 11) ^ hash;
-		hash  = (hash << 16) ^ tmp;
-		data += 2 * sizeof(u_int16_t);
-		hash += hash >> 11;
-	}
-
-	/* Handle end cases */
-	switch (rem)
-	{
-		case 3:
-		{
-			hash += get16bits(data);
-			hash ^= hash << 16;
-			hash ^= data[sizeof(u_int16_t)] << 18;
-			hash += hash >> 11;
-			break;
-		}
-		case 2:
-		{
-			hash += get16bits(data);
-			hash ^= hash << 11;
-			hash += hash >> 17;
-			break;
-		}
-		case 1:
-		{
-			hash += *data;
-			hash ^= hash << 10;
-			hash += hash >> 1;
-			break;
-		}
-	}
-
-	/* Force "avalanching" of final 127 bits */
-	hash ^= hash << 3;
-	hash += hash >> 5;
-	hash ^= hash << 4;
-	hash += hash >> 17;
-	hash ^= hash << 25;
-	hash += hash >> 6;
-
-	return hash;
+	/* we could use a mac of the previous hash, but this is faster */
+	return chunk_mac_inc(chunk, key, ((u_int64_t)hash) << 32 | hash);
 }
 
 /**
@@ -652,7 +968,54 @@ u_int32_t chunk_hash_inc(chunk_t chunk, u_int32_t hash)
  */
 u_int32_t chunk_hash(chunk_t chunk)
 {
-	return chunk_hash_inc(chunk, chunk.len);
+	return chunk_mac(chunk, key);
+}
+
+/**
+ * Described in header.
+ */
+u_int32_t chunk_hash_static_inc(chunk_t chunk, u_int32_t hash)
+{	/* we could use a mac of the previous hash, but this is faster */
+	return chunk_mac_inc(chunk, static_key, ((u_int64_t)hash) << 32 | hash);
+}
+
+/**
+ * Described in header.
+ */
+u_int32_t chunk_hash_static(chunk_t chunk)
+{
+	return chunk_mac(chunk, static_key);
+}
+
+/**
+ * Described in header.
+ */
+u_int16_t chunk_internet_checksum_inc(chunk_t data, u_int16_t checksum)
+{
+	u_int32_t sum = ntohs((u_int16_t)~checksum);
+
+	while (data.len > 1)
+	{
+		sum += untoh16(data.ptr);
+		data = chunk_skip(data, 2);
+	}
+	if (data.len)
+	{
+		sum += (u_int16_t)*data.ptr << 8;
+	}
+	while (sum >> 16)
+	{
+		sum = (sum & 0xffff) + (sum >> 16);
+	}
+	return htons(~sum);
+}
+
+/**
+ * Described in header.
+ */
+u_int16_t chunk_internet_checksum(chunk_t data)
+{
+	return chunk_internet_checksum_inc(data, 0xffff);
 }
 
 /**
@@ -666,7 +1029,7 @@ int chunk_printf_hook(printf_hook_data_t *data, printf_hook_spec_t *spec,
 	chunk_t copy = *chunk;
 	int written = 0;
 
-	if (!spec->hash)
+	if (!spec->hash && !spec->plus)
 	{
 		u_int chunk_len = chunk->len;
 		const void *new_args[] = {&chunk->ptr, &chunk_len};
@@ -679,7 +1042,7 @@ int chunk_printf_hook(printf_hook_data_t *data, printf_hook_spec_t *spec,
 		{
 			first = FALSE;
 		}
-		else
+		else if (!spec->plus)
 		{
 			written += print_in_hook(data, ":");
 		}

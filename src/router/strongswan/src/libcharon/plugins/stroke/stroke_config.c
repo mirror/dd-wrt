@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Tobias Brunner
+ * Copyright (C) 2012-2014 Tobias Brunner
  * Copyright (C) 2008 Martin Willi
  * Hochschule fuer Technik Rapperswil
  *
@@ -20,6 +20,8 @@
 #include <daemon.h>
 #include <threading/mutex.h>
 #include <utils/lexparser.h>
+
+#include <netdb.h>
 
 typedef struct private_stroke_config_t private_stroke_config_t;
 
@@ -129,19 +131,14 @@ METHOD(backend_t, get_peer_cfg_by_name, peer_cfg_t*,
  * parse a proposal string, either into ike_cfg or child_cfg
  */
 static void add_proposals(private_stroke_config_t *this, char *string,
-						  ike_cfg_t *ike_cfg, child_cfg_t *child_cfg)
+				ike_cfg_t *ike_cfg, child_cfg_t *child_cfg, protocol_id_t proto)
 {
 	if (string)
 	{
 		char *single;
 		char *strict;
 		proposal_t *proposal;
-		protocol_id_t proto = PROTO_ESP;
 
-		if (ike_cfg)
-		{
-			proto = PROTO_IKE;
-		}
 		strict = string + strlen(string) - 1;
 		if (*strict == '!')
 		{
@@ -176,11 +173,78 @@ static void add_proposals(private_stroke_config_t *this, char *string,
 	}
 	if (ike_cfg)
 	{
-		ike_cfg->add_proposal(ike_cfg, proposal_create_default(PROTO_IKE));
+		ike_cfg->add_proposal(ike_cfg, proposal_create_default(proto));
+		ike_cfg->add_proposal(ike_cfg, proposal_create_default_aead(proto));
 	}
 	else
 	{
-		child_cfg->add_proposal(child_cfg, proposal_create_default(PROTO_ESP));
+		child_cfg->add_proposal(child_cfg, proposal_create_default(proto));
+		child_cfg->add_proposal(child_cfg, proposal_create_default_aead(proto));
+	}
+}
+
+/**
+ * Check if any addresses in the given string are local
+ */
+static bool is_local(char *address, bool any_allowed)
+{
+	enumerator_t *enumerator;
+	host_t *host;
+	char *token;
+	bool found = FALSE;
+
+	enumerator = enumerator_create_token(address, ",", " ");
+	while (enumerator->enumerate(enumerator, &token))
+	{
+		if (!strchr(token, '/'))
+		{
+			host = host_create_from_dns(token, 0, 0);
+			if (host)
+			{
+				if (hydra->kernel_interface->get_interface(
+										hydra->kernel_interface, host, NULL))
+				{
+					found = TRUE;
+				}
+				else if (any_allowed && host->is_anyaddr(host))
+				{
+					found = TRUE;
+				}
+				host->destroy(host);
+				if (found)
+				{
+					break;
+				}
+			}
+		}
+	}
+	enumerator->destroy(enumerator);
+	return found;
+}
+
+/**
+ * Swap ends if indicated by left|right
+ */
+static void swap_ends(stroke_msg_t *msg)
+{
+	if (!lib->settings->get_bool(lib->settings, "%s.plugins.stroke.allow_swap",
+								 TRUE, lib->ns))
+	{
+		return;
+	}
+
+	if (is_local(msg->add_conn.other.address, FALSE))
+	{
+		stroke_end_t tmp_end;
+
+		DBG2(DBG_CFG, "left is other host, swapping ends");
+		tmp_end = msg->add_conn.me;
+		msg->add_conn.me = msg->add_conn.other;
+		msg->add_conn.other = tmp_end;
+	}
+	else if (!is_local(msg->add_conn.me.address, TRUE))
+	{
+		DBG1(DBG_CFG, "left nor right host is our side, assuming left=local");
 	}
 }
 
@@ -189,38 +253,21 @@ static void add_proposals(private_stroke_config_t *this, char *string,
  */
 static ike_cfg_t *build_ike_cfg(private_stroke_config_t *this, stroke_msg_t *msg)
 {
-	stroke_end_t tmp_end;
 	ike_cfg_t *ike_cfg;
-	host_t *host;
 	u_int16_t ikeport;
+	char me[256], other[256];
 
-	host = host_create_from_dns(msg->add_conn.other.address, 0, 0);
-	if (host)
+	swap_ends(msg);
+
+	if (msg->add_conn.me.allow_any)
 	{
-		if (hydra->kernel_interface->get_interface(hydra->kernel_interface,
-												   host, NULL))
-		{
-			DBG2(DBG_CFG, "left is other host, swapping ends");
-			tmp_end = msg->add_conn.me;
-			msg->add_conn.me = msg->add_conn.other;
-			msg->add_conn.other = tmp_end;
-			host->destroy(host);
-		}
-		else
-		{
-			host->destroy(host);
-			host = host_create_from_dns(msg->add_conn.me.address, 0, 0);
-			if (host)
-			{
-				if (!hydra->kernel_interface->get_interface(
-										hydra->kernel_interface, host, NULL))
-				{
-					DBG1(DBG_CFG, "left nor right host is our side, "
-						 "assuming left=local");
-				}
-				host->destroy(host);
-			}
-		}
+		snprintf(me, sizeof(me), "%s,0.0.0.0/0,::/0",
+				 msg->add_conn.me.address);
+	}
+	if (msg->add_conn.other.allow_any)
+	{
+		snprintf(other, sizeof(other), "%s,0.0.0.0/0,::/0",
+				 msg->add_conn.other.address);
 	}
 	ikeport = msg->add_conn.me.ikeport;
 	ikeport = (ikeport == IKEV2_UDP_PORT) ?
@@ -228,15 +275,16 @@ static ike_cfg_t *build_ike_cfg(private_stroke_config_t *this, stroke_msg_t *msg
 	ike_cfg = ike_cfg_create(msg->add_conn.version,
 							 msg->add_conn.other.sendcert != CERT_NEVER_SEND,
 							 msg->add_conn.force_encap,
-							 msg->add_conn.me.address,
-							 msg->add_conn.me.allow_any,
+							 msg->add_conn.me.allow_any ?
+								me : msg->add_conn.me.address,
 							 ikeport,
-							 msg->add_conn.other.address,
-							 msg->add_conn.other.allow_any,
+							 msg->add_conn.other.allow_any ?
+								other : msg->add_conn.other.address,
 							 msg->add_conn.other.ikeport,
 							 msg->add_conn.fragmentation,
 							 msg->add_conn.ikedscp);
-	add_proposals(this, msg->add_conn.algorithms.ike, ike_cfg, NULL);
+
+	add_proposals(this, msg->add_conn.algorithms.ike, ike_cfg, NULL, PROTO_IKE);
 	return ike_cfg;
 }
 
@@ -270,7 +318,8 @@ static void build_crl_policy(auth_cfg_t *cfg, bool local, int policy)
 static void parse_pubkey_constraints(char *auth, auth_cfg_t *cfg)
 {
 	enumerator_t *enumerator;
-	bool rsa = FALSE, ecdsa = FALSE, rsa_len = FALSE, ecdsa_len = FALSE;
+	bool rsa = FALSE, ecdsa = FALSE, bliss = FALSE,
+		 rsa_len = FALSE, ecdsa_len = FALSE, bliss_strength = FALSE;
 	int strength;
 	char *token;
 
@@ -297,9 +346,12 @@ static void parse_pubkey_constraints(char *auth, auth_cfg_t *cfg)
 			{ "sha256",		SIGN_ECDSA_256,					KEY_ECDSA,	},
 			{ "sha384",		SIGN_ECDSA_384,					KEY_ECDSA,	},
 			{ "sha512",		SIGN_ECDSA_521,					KEY_ECDSA,	},
+			{ "sha256",		SIGN_BLISS_WITH_SHA2_256,		KEY_BLISS,	},
+			{ "sha384",		SIGN_BLISS_WITH_SHA2_384,		KEY_BLISS,	},
+			{ "sha512",		SIGN_BLISS_WITH_SHA2_512,		KEY_BLISS,	},
 		};
 
-		if (rsa_len || ecdsa_len)
+		if (rsa_len || ecdsa_len || bliss_strength)
 		{	/* expecting a key strength token */
 			strength = atoi(token);
 			if (strength)
@@ -312,8 +364,12 @@ static void parse_pubkey_constraints(char *auth, auth_cfg_t *cfg)
 				{
 					cfg->add(cfg, AUTH_RULE_ECDSA_STRENGTH, (uintptr_t)strength);
 				}
+				else if (bliss_strength)
+				{
+					cfg->add(cfg, AUTH_RULE_BLISS_STRENGTH, (uintptr_t)strength);
+				}
 			}
-			rsa_len = ecdsa_len = FALSE;
+			rsa_len = ecdsa_len = bliss_strength = FALSE;
 			if (strength)
 			{
 				continue;
@@ -327,6 +383,11 @@ static void parse_pubkey_constraints(char *auth, auth_cfg_t *cfg)
 		if (streq(token, "ecdsa"))
 		{
 			ecdsa = ecdsa_len = TRUE;
+			continue;
+		}
+		if (streq(token, "bliss"))
+		{
+			bliss = bliss_strength = TRUE;
 			continue;
 		}
 		if (streq(token, "pubkey"))
@@ -345,7 +406,8 @@ static void parse_pubkey_constraints(char *auth, auth_cfg_t *cfg)
 				 */
 				if ((rsa && schemes[i].key == KEY_RSA) ||
 					(ecdsa && schemes[i].key == KEY_ECDSA) ||
-					(!rsa && !ecdsa))
+					(bliss && schemes[i].key == KEY_BLISS) ||
+					(!rsa && !ecdsa && !bliss))
 				{
 					cfg->add(cfg, AUTH_RULE_SIGNATURE_SCHEME,
 							 (uintptr_t)schemes[i].scheme);
@@ -489,8 +551,7 @@ static auth_cfg_t *build_auth_cfg(private_stroke_config_t *this,
 	pubkey = end->rsakey;
 	if (pubkey && !streq(pubkey, "") && !streq(pubkey, "%cert"))
 	{
-		certificate = this->cred->load_pubkey(this->cred, KEY_RSA, pubkey,
-											  identity);
+		certificate = this->cred->load_pubkey(this->cred, pubkey, identity);
 		if (certificate)
 		{
 			cfg->add(cfg, AUTH_RULE_SUBJECT_CERT, certificate);
@@ -558,9 +619,10 @@ static auth_cfg_t *build_auth_cfg(private_stroke_config_t *this,
 	}
 
 	/* authentication metod (class, actually) */
-	if (strneq(auth, "pubkey", strlen("pubkey")) ||
-		strneq(auth, "rsa", strlen("rsa")) ||
-		strneq(auth, "ecdsa", strlen("ecdsa")))
+	if (strpfx(auth, "pubkey") ||
+		strpfx(auth, "rsa") ||
+		strpfx(auth, "ecdsa") ||
+		strpfx(auth, "bliss"))
 	{
 		cfg->add(cfg, AUTH_RULE_AUTH_CLASS, AUTH_CLASS_PUBKEY);
 		build_crl_policy(cfg, local, msg->add_conn.crl_policy);
@@ -571,7 +633,7 @@ static auth_cfg_t *build_auth_cfg(private_stroke_config_t *this,
 	{
 		cfg->add(cfg, AUTH_RULE_AUTH_CLASS, AUTH_CLASS_PSK);
 	}
-	else if (strneq(auth, "xauth", 5))
+	else if (strpfx(auth, "xauth"))
 	{
 		char *pos;
 
@@ -587,12 +649,19 @@ static auth_cfg_t *build_auth_cfg(private_stroke_config_t *this,
 				identification_create_from_string(msg->add_conn.xauth_identity));
 		}
 	}
-	else if (strneq(auth, "eap", 3))
+	else if (strpfx(auth, "eap"))
 	{
 		eap_vendor_type_t *type;
+		char *pos;
 
 		cfg->add(cfg, AUTH_RULE_AUTH_CLASS, AUTH_CLASS_EAP);
-
+		/* check for public key constraints for EAP-TLS etc. */
+		pos = strchr(auth, ':');
+		if (pos)
+		{
+			*pos = 0;
+			parse_pubkey_constraints(pos + 1, cfg);
+		}
 		type = eap_vendor_type_from_string(auth);
 		if (type)
 		{
@@ -634,6 +703,24 @@ static auth_cfg_t *build_auth_cfg(private_stroke_config_t *this,
 		build_crl_policy(cfg, local, msg->add_conn.crl_policy);
 	}
 	return cfg;
+}
+
+/**
+ * build a mem_pool_t from an address range
+ */
+static mem_pool_t *create_pool_range(char *str)
+{
+	mem_pool_t *pool;
+	host_t *from, *to;
+
+	if (!host_create_from_range(str, &from, &to))
+	{
+		return NULL;
+	}
+	pool = mem_pool_create_range(str, from, to);
+	from->destroy(from);
+	to->destroy(to);
+	return pool;
 }
 
 /**
@@ -730,6 +817,7 @@ static peer_cfg_t *build_peer_cfg(private_stroke_config_t *this,
 		msg->add_conn.me.sendcert, unique,
 		msg->add_conn.rekey.tries, rekey, reauth, jitter, over,
 		msg->add_conn.mobike, msg->add_conn.aggressive,
+		msg->add_conn.pushmode == 0,
 		msg->add_conn.dpd.delay, msg->add_conn.dpd.timeout,
 		msg->add_conn.ikeme.mediation, mediated_by, peer_id);
 
@@ -758,17 +846,25 @@ static peer_cfg_t *build_peer_cfg(private_stroke_config_t *this,
 			}
 			else
 			{
-				/* in-memory pool, named using CIDR notation */
+				/* in-memory pool, using range or CIDR notation */
+				mem_pool_t *pool;
 				host_t *base;
 				int bits;
 
-				base = host_create_from_subnet(token, &bits);
-				if (base)
+				pool = create_pool_range(token);
+				if (!pool)
 				{
-					this->attributes->add_pool(this->attributes,
-										mem_pool_create(token, base, bits));
+					base = host_create_from_subnet(token, &bits);
+					if (base)
+					{
+						pool = mem_pool_create(token, base, bits);
+						base->destroy(base);
+					}
+				}
+				if (pool)
+				{
+					this->attributes->add_pool(this->attributes, pool);
 					peer_cfg->add_pool(peer_cfg, token);
-					base->destroy(base);
 				}
 				else
 				{
@@ -779,7 +875,13 @@ static peer_cfg_t *build_peer_cfg(private_stroke_config_t *this,
 		enumerator->destroy(enumerator);
 	}
 
-	if (msg->add_conn.me.sourceip)
+	if (msg->add_conn.me.sourceip && msg->add_conn.other.sourceip)
+	{
+		DBG1(DBG_CFG, "'%s' has both left- and rightsourceip, but IKE can "
+			 "negotiate one virtual IP only, ignoring local virtual IP",
+			 msg->add_conn.name);
+	}
+	else if (msg->add_conn.me.sourceip)
 	{
 		enumerator_t *enumerator;
 		char *token;
@@ -816,7 +918,15 @@ static peer_cfg_t *build_peer_cfg(private_stroke_config_t *this,
 				}
 				else
 				{
-					if (strchr(ike_cfg->get_my_addr(ike_cfg, NULL), ':'))
+					char *addr, *next, *hit;
+
+					/* guess virtual IP family based on local address. If
+					 * multiple addresses are specified, we look at the first
+					 * only, as with leftallowany a ::/0 is always appended. */
+					addr = ike_cfg->get_my_addr(ike_cfg);
+					next = strchr(addr, ',');
+					hit = strchr(addr, ':');
+					if (hit && (!next || hit < next))
 					{
 						vip = host_create_any(AF_INET6);
 					}
@@ -837,7 +947,7 @@ static peer_cfg_t *build_peer_cfg(private_stroke_config_t *this,
 			else
 			{
 				vip = host_create_from_string(token, 0);
-				if (vip)
+				if (!vip)
 				{
 					DBG1(DBG_CFG, "ignored invalid subnet token: %s", token);
 				}
@@ -884,6 +994,96 @@ static peer_cfg_t *build_peer_cfg(private_stroke_config_t *this,
 }
 
 /**
+ * Parse a protoport specifier
+ */
+static bool parse_protoport(char *token, u_int16_t *from_port,
+							u_int16_t *to_port, u_int8_t *protocol)
+{
+	char *sep, *port = "", *endptr;
+	struct protoent *proto;
+	struct servent *svc;
+	long int p;
+
+	sep = strrchr(token, ']');
+	if (!sep)
+	{
+		return FALSE;
+	}
+	*sep = '\0';
+
+	sep = strchr(token, '/');
+	if (sep)
+	{	/* protocol/port */
+		*sep = '\0';
+		port = sep + 1;
+	}
+
+	if (streq(token, "%any"))
+	{
+		*protocol = 0;
+	}
+	else
+	{
+		proto = getprotobyname(token);
+		if (proto)
+		{
+			*protocol = proto->p_proto;
+		}
+		else
+		{
+			p = strtol(token, &endptr, 0);
+			if ((*token && *endptr) || p < 0 || p > 0xff)
+			{
+				return FALSE;
+			}
+			*protocol = (u_int8_t)p;
+		}
+	}
+	if (streq(port, "%any"))
+	{
+		*from_port = 0;
+		*to_port = 0xffff;
+	}
+	else if (streq(port, "%opaque"))
+	{
+		*from_port = 0xffff;
+		*to_port = 0;
+	}
+	else if (*port)
+	{
+		svc = getservbyname(port, NULL);
+		if (svc)
+		{
+			*from_port = *to_port = ntohs(svc->s_port);
+		}
+		else
+		{
+			p = strtol(port, &endptr, 0);
+			if (p < 0 || p > 0xffff)
+			{
+				return FALSE;
+			}
+			*from_port = p;
+			if (*endptr == '-')
+			{
+				port = endptr + 1;
+				p = strtol(port, &endptr, 0);
+				if (p < 0 || p > 0xffff)
+				{
+					return FALSE;
+				}
+			}
+			*to_port = p;
+			if (*endptr)
+			{
+				return FALSE;
+			}
+		}
+	}
+	return TRUE;
+}
+
+/**
  * build a traffic selector from a stroke_end
  */
 static void add_ts(private_stroke_config_t *this,
@@ -914,13 +1114,38 @@ static void add_ts(private_stroke_config_t *this,
 		else
 		{
 			enumerator_t *enumerator;
-			char *subnet;
+			char *subnet, *pos;
+			u_int16_t from_port, to_port;
+			u_int8_t proto;
 
 			enumerator = enumerator_create_token(end->subnets, ",", " ");
 			while (enumerator->enumerate(enumerator, &subnet))
 			{
-				ts = traffic_selector_create_from_cidr(subnet, end->protocol,
-												end->from_port, end->to_port);
+				from_port = end->from_port;
+				to_port = end->to_port;
+				proto = end->protocol;
+
+				pos = strchr(subnet, '[');
+				if (pos)
+				{
+					*(pos++) = '\0';
+					if (!parse_protoport(pos, &from_port, &to_port, &proto))
+					{
+						DBG1(DBG_CFG, "invalid proto/port: %s, skipped subnet",
+							 pos);
+						continue;
+					}
+				}
+				if (streq(subnet, "%dynamic"))
+				{
+					ts = traffic_selector_create_dynamic(proto,
+														 from_port, to_port);
+				}
+				else
+				{
+					ts = traffic_selector_create_from_cidr(subnet, proto,
+														   from_port, to_port);
+				}
 				if (ts)
 				{
 					child_cfg->add_traffic_selector(child_cfg, local, ts);
@@ -991,13 +1216,25 @@ static child_cfg_t *build_child_cfg(private_stroke_config_t *this,
 				map_action(msg->add_conn.close_action), msg->add_conn.ipcomp,
 				msg->add_conn.inactivity, msg->add_conn.reqid,
 				&mark_in, &mark_out, msg->add_conn.tfc);
+	if (msg->add_conn.replay_window != -1)
+	{
+		child_cfg->set_replay_window(child_cfg, msg->add_conn.replay_window);
+	}
 	child_cfg->set_mipv6_options(child_cfg, msg->add_conn.proxy_mode,
 											msg->add_conn.install_policy);
 	add_ts(this, &msg->add_conn.me, child_cfg, TRUE);
 	add_ts(this, &msg->add_conn.other, child_cfg, FALSE);
 
-	add_proposals(this, msg->add_conn.algorithms.esp, NULL, child_cfg);
-
+	if (msg->add_conn.algorithms.ah)
+	{
+		add_proposals(this, msg->add_conn.algorithms.ah,
+					  NULL, child_cfg, PROTO_AH);
+	}
+	else
+	{
+		add_proposals(this, msg->add_conn.algorithms.esp,
+					  NULL, child_cfg, PROTO_ESP);
+	}
 	return child_cfg;
 }
 
@@ -1072,7 +1309,7 @@ METHOD(stroke_config_t, del, void,
 
 	this->mutex->lock(this->mutex);
 	enumerator = this->list->create_enumerator(this->list);
-	while (enumerator->enumerate(enumerator, (void**)&peer))
+	while (enumerator->enumerate(enumerator, &peer))
 	{
 		bool keep = FALSE;
 
@@ -1093,12 +1330,11 @@ METHOD(stroke_config_t, del, void,
 		}
 		children->destroy(children);
 
-		/* if peer config matches, or has no children anymore, remove it */
-		if (!keep || streq(peer->get_name(peer), msg->del_conn.name))
+		/* if peer config has no children anymore, remove it */
+		if (!keep)
 		{
 			this->list->remove_at(this->list, enumerator);
 			peer->destroy(peer);
-			deleted = TRUE;
 		}
 	}
 	enumerator->destroy(enumerator);

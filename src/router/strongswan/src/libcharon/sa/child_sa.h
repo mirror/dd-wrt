@@ -68,6 +68,16 @@ enum child_sa_state_t {
 	CHILD_REKEYING,
 
 	/**
+	 * CHILD_SA that was rekeyed, but stays installed
+	 */
+	CHILD_REKEYED,
+
+	/**
+	 * CHILD_SA negotiation failed, but gets retried
+	 */
+	CHILD_RETRYING,
+
+	/**
 	 * CHILD_SA in progress of delete
 	 */
 	CHILD_DELETING,
@@ -119,6 +129,16 @@ struct child_sa_t {
 	 * @return 			reqid of the CHILD SA
 	 */
 	u_int32_t (*get_reqid)(child_sa_t *this);
+
+	/**
+	 * Get the unique numerical identifier for this CHILD_SA.
+	 *
+	 * While the same reqid might be shared between multiple SAs, the unique_id
+	 * is truly unique for all CHILD_SA instances.
+	 *
+	 * @return			unique CHILD_SA identifier
+	 */
+	u_int32_t (*get_unique_id)(child_sa_t *this);
 
 	/**
 	 * Get the config used to set up this child sa.
@@ -231,7 +251,7 @@ struct child_sa_t {
 	/**
 	 * Override the DPD action specified by the CHILD_SA config.
 	 *
-	 * @param			close action to enforce
+	 * @param			dpd action to enforce
 	 */
 	void (*set_dpd_action)(child_sa_t *this, action_t action);
 
@@ -265,6 +285,13 @@ struct child_sa_t {
 	time_t (*get_lifetime)(child_sa_t *this, bool hard);
 
 	/**
+	 * Get the absolute time when this SA has been installed.
+	 *
+	 * @return			monotonic absolute install time
+	 */
+	time_t (*get_installtime)(child_sa_t *this);
+
+	/**
 	 * Get last use time and the number of bytes processed.
 	 *
 	 * @param inbound		TRUE for inbound traffic, FALSE for outbound
@@ -284,17 +311,20 @@ struct child_sa_t {
 	mark_t (*get_mark)(child_sa_t *this, bool inbound);
 
 	/**
-	 * Get the traffic selectors list added for one side.
+	 * Create an enumerator over traffic selectors of one side.
 	 *
-	 * @param local		TRUE for own traffic selectors, FALSE for remote
-	 * @return			list of traffic selectors
+	 * @param local		TRUE for own traffic selectors, FALSE for remote.
+	 * @return			enumerator over traffic_selector_t*
 	 */
-	linked_list_t* (*get_traffic_selectors) (child_sa_t *this, bool local);
+	enumerator_t* (*create_ts_enumerator)(child_sa_t *this, bool local);
 
 	/**
 	 * Create an enumerator over installed policies.
 	 *
-	 * @return			enumerator over pairs of traffic selectors.
+	 * The enumerated traffic selectors is a full mesh of compatible local
+	 * and remote traffic selectors.
+	 *
+	 * @return			enumerator over a pair of traffic_selector_t*
 	 */
 	enumerator_t* (*create_policy_enumerator)(child_sa_t *this);
 
@@ -321,6 +351,7 @@ struct child_sa_t {
 	 * @param integ		integrity key
 	 * @param spi		SPI to use, allocated for inbound
 	 * @param cpi		CPI to use, allocated for outbound
+	 * @param initiator	TRUE if initiator of exchange resulting in this SA
 	 * @param inbound	TRUE to install an inbound SA, FALSE for outbound
 	 * @param tfcv3		TRUE if peer supports ESPv3 TFC
 	 * @param my_ts		negotiated local traffic selector list
@@ -328,7 +359,8 @@ struct child_sa_t {
 	 * @return			SUCCESS or FAILED
 	 */
 	status_t (*install)(child_sa_t *this, chunk_t encr, chunk_t integ,
-						u_int32_t spi, u_int16_t cpi, bool inbound, bool tfcv3,
+						u_int32_t spi, u_int16_t cpi,
+						bool initiator, bool inbound, bool tfcv3,
 						linked_list_t *my_ts, linked_list_t *other_ts);
 	/**
 	 * Install the policies using some traffic selectors.
@@ -348,7 +380,7 @@ struct child_sa_t {
 	 * @param me		the new local host
 	 * @param other		the new remote host
 	 * @param vips		list of local virtual IPs
-	 * @param			TRUE to use UDP encapsulation for NAT traversal
+	 * @param encap		TRUE to use UDP encapsulation for NAT traversal
 	 * @return			SUCCESS or FAILED
 	 */
 	status_t (*update)(child_sa_t *this, host_t *me, host_t *other,
@@ -367,9 +399,12 @@ struct child_sa_t {
  * @param config			config to use for this CHILD_SA
  * @param reqid				reqid of old CHILD_SA when rekeying, 0 otherwise
  * @param encap				TRUE to enable UDP encapsulation (NAT traversal)
+ * @param mark_in			explicit inbound mark value to use, 0 for config
+ * @param mark_out			explicit outbound mark value to use, 0 for config
  * @return					child_sa_t object
  */
 child_sa_t * child_sa_create(host_t *me, host_t *other, child_cfg_t *config,
-							 u_int32_t reqid, bool encap);
+							 u_int32_t reqid, bool encap,
+							 u_int mark_in, u_int mark_out);
 
 #endif /** CHILD_SA_H_ @}*/

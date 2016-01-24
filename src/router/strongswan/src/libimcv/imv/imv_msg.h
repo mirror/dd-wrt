@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Andreas Steffen
+ * Copyright (C) 2012-2014 Andreas Steffen
  * HSR Hochschule fuer Technik Rapperswil
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -79,10 +79,12 @@ struct imv_msg_t {
 	/**
 	 * Processes a received PA-TNC message
 	 *
+	 * @param out_msg			outgoing PA-TN message
 	 * @param fatal_error		TRUE if IMC sent a fatal error message
 	 * @return					TNC result code
 	 */
-	TNC_Result (*receive)(imv_msg_t *this, bool *fatal_error);
+	TNC_Result (*receive)(imv_msg_t *this, imv_msg_t *out_msg,
+						  bool *fatal_error);
 
 	/**
 	 * Add a PA-TNC attribute to the send queue
@@ -90,6 +92,13 @@ struct imv_msg_t {
 	 * @param attr				PA-TNC attribute to be added
 	 */
 	void (*add_attribute)(imv_msg_t *this, pa_tnc_attr_t *attr);
+
+	/**
+	 * Get the number of PA-TNC attributes in the send queue
+	 *
+	 * @return					number of PA-TNC attribute in send queue
+	 */
+	int (*get_attribute_count)(imv_msg_t *this);
 
 	/**
 	 * Enumerator over PA-TNC attributes contained in the PA-TNC message

@@ -27,6 +27,9 @@ ENUM(action_names, ACTION_NONE, ACTION_RESTART,
 	"restart",
 );
 
+/** Default replay window size, if not set using charon.replay_window */
+#define DEFAULT_REPLAY_WINDOW 32
+
 typedef struct private_child_cfg_t private_child_cfg_t;
 
 /**
@@ -138,6 +141,11 @@ struct private_child_cfg_t {
 	 * enable installation and removal of kernel IPsec policies
 	 */
 	bool install_policy;
+
+	/**
+	 * anti-replay window size
+	 */
+	u_int32_t replay_window;
 };
 
 METHOD(child_cfg_t, get_name, char*,
@@ -149,7 +157,15 @@ METHOD(child_cfg_t, get_name, char*,
 METHOD(child_cfg_t, add_proposal, void,
 	private_child_cfg_t *this, proposal_t *proposal)
 {
-	this->proposals->insert_last(this->proposals, proposal);
+	if (proposal)
+	{
+		this->proposals->insert_last(this->proposals, proposal);
+	}
+}
+
+static bool match_proposal(proposal_t *item, proposal_t *proposal)
+{
+	return item->equals(item, proposal);
 }
 
 METHOD(child_cfg_t, get_proposals, linked_list_t*,
@@ -166,6 +182,12 @@ METHOD(child_cfg_t, get_proposals, linked_list_t*,
 		if (strip_dh)
 		{
 			current->strip_dh(current, MODP_NONE);
+		}
+		if (proposals->find_first(proposals, (linked_list_match_t)match_proposal,
+								  NULL, current) == SUCCESS)
+		{
+			current->destroy(current);
+			continue;
 		}
 		proposals->insert_last(proposals, current);
 	}
@@ -286,15 +308,17 @@ METHOD(child_cfg_t, get_traffic_selectors, linked_list_t*,
 			DBG2(DBG_CFG, " %R", ts1);
 			result->insert_last(result, ts1);
 		}
+		derived->destroy(derived);
 	}
 	else
 	{
-		e1 = supplied->create_enumerator(supplied);
+		e1 = derived->create_enumerator(derived);
+		e2 = supplied->create_enumerator(supplied);
 		/* enumerate all configured/derived selectors */
-		while (derived->remove_first(derived, (void**)&ts1) == SUCCESS)
+		while (e1->enumerate(e1, &ts1))
 		{
 			/* enumerate all supplied traffic selectors */
-			while (e1->enumerate(e1, &ts2))
+			while (e2->enumerate(e2, &ts2))
 			{
 				selected = ts1->get_subset(ts1, ts2);
 				if (selected)
@@ -309,12 +333,28 @@ METHOD(child_cfg_t, get_traffic_selectors, linked_list_t*,
 						 ts1, ts2);
 				}
 			}
-			supplied->reset_enumerator(supplied, e1);
-			ts1->destroy(ts1);
+			supplied->reset_enumerator(supplied, e2);
 		}
 		e1->destroy(e1);
+		e2->destroy(e2);
+
+		/* check if we/peer did any narrowing, raise alert */
+		e1 = derived->create_enumerator(derived);
+		e2 = result->create_enumerator(result);
+		while (e1->enumerate(e1, &ts1))
+		{
+			if (!e2->enumerate(e2, &ts2) || !ts1->equals(ts1, ts2))
+			{
+				charon->bus->alert(charon->bus, ALERT_TS_NARROWED,
+								   local, result, this);
+				break;
+			}
+		}
+		e1->destroy(e1);
+		e2->destroy(e2);
+
+		derived->destroy_offset(derived, offsetof(traffic_selector_t, destroy));
 	}
-	derived->destroy(derived);
 
 	/* remove any redundant traffic selectors in the list */
 	e1 = result->create_enumerator(result);
@@ -336,11 +376,11 @@ METHOD(child_cfg_t, get_traffic_selectors, linked_list_t*,
 				{
 					result->remove_at(result, e1);
 					ts1->destroy(ts1);
-					result->reset_enumerator(result, e2);
 					break;
 				}
 			}
 		}
+		result->reset_enumerator(result, e2);
 	}
 	e1->destroy(e1);
 	e2->destroy(e2);
@@ -460,6 +500,18 @@ METHOD(child_cfg_t, get_tfc, u_int32_t,
 	return this->tfc;
 }
 
+METHOD(child_cfg_t, get_replay_window, u_int32_t,
+	private_child_cfg_t *this)
+{
+	return this->replay_window;
+}
+
+METHOD(child_cfg_t, set_replay_window, void,
+	private_child_cfg_t *this, u_int32_t replay_window)
+{
+	this->replay_window = replay_window;
+}
+
 METHOD(child_cfg_t, set_mipv6_options, void,
 	private_child_cfg_t *this, bool proxy_mode, bool install_policy)
 {
@@ -537,6 +589,8 @@ child_cfg_t *child_cfg_create(char *name, lifetime_cfg_t *lifetime,
 			.get_reqid = _get_reqid,
 			.get_mark = _get_mark,
 			.get_tfc = _get_tfc,
+			.get_replay_window = _get_replay_window,
+			.set_replay_window = _set_replay_window,
 			.use_proxy_mode = _use_proxy_mode,
 			.install_policy = _install_policy,
 			.get_ref = _get_ref,
@@ -559,6 +613,8 @@ child_cfg_t *child_cfg_create(char *name, lifetime_cfg_t *lifetime,
 		.my_ts = linked_list_create(),
 		.other_ts = linked_list_create(),
 		.tfc = tfc,
+		.replay_window = lib->settings->get_int(lib->settings,
+				"%s.replay_window", DEFAULT_REPLAY_WINDOW, lib->ns),
 	);
 
 	if (mark_in)
@@ -573,4 +629,3 @@ child_cfg_t *child_cfg_create(char *name, lifetime_cfg_t *lifetime,
 
 	return &this->public;
 }
-

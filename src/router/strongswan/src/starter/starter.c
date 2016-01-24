@@ -61,6 +61,8 @@ char *cmd = NULL;
 char *pid_file = NULL;
 char *starter_pid_file = NULL;
 
+static char *config_file = NULL;
+
 /* logging */
 static bool log_to_stderr = TRUE;
 static bool log_to_syslog = TRUE;
@@ -259,10 +261,14 @@ static void fatal_signal_handler(int signal)
 #ifdef GENERATE_SELFCERT
 static void generate_selfcert()
 {
+	const char *secrets_file;
 	struct stat stb;
 
+	secrets_file = lib->settings->get_str(lib->settings,
+							"charon.plugins.stroke.secrets_file", SECRETS_FILE);
+
 	/* if ipsec.secrets file is missing then generate RSA default key pair */
-	if (stat(SECRETS_FILE, &stb) != 0)
+	if (stat(secrets_file, &stb) != 0)
 	{
 		mode_t oldmask;
 		FILE *f;
@@ -291,16 +297,16 @@ static void generate_selfcert()
 			}
 		}
 #endif
-		setegid(gid);
-		seteuid(uid);
-		ignore_result(system("ipsec scepclient --out pkcs1 --out cert-self --quiet"));
-		seteuid(0);
-		setegid(0);
+		ignore_result(setegid(gid));
+		ignore_result(seteuid(uid));
+		ignore_result(system(IPSEC_SCRIPT " scepclient --out pkcs1 --out cert-self --quiet"));
+		ignore_result(seteuid(0));
+		ignore_result(setegid(0));
 
 		/* ipsec.secrets is root readable only */
 		oldmask = umask(0066);
 
-		f = fopen(SECRETS_FILE, "w");
+		f = fopen(secrets_file, "w");
 		if (f)
 		{
 			fprintf(f, "# /etc/ipsec.secrets - strongSwan IPsec secrets file\n");
@@ -308,7 +314,7 @@ static void generate_selfcert()
 			fprintf(f, ": RSA myKey.der\n");
 			fclose(f);
 		}
-		ignore_result(chown(SECRETS_FILE, uid, gid));
+		ignore_result(chown(secrets_file, uid, gid));
 		umask(oldmask);
 	}
 }
@@ -393,7 +399,8 @@ static void usage(char *name)
 {
 	fprintf(stderr, "Usage: starter [--nofork] [--auto-update <sec>]\n"
 			"               [--debug|--debug-more|--debug-all|--nolog]\n"
-			"               [--attach-gdb] [--daemon <name>]\n");
+			"               [--attach-gdb] [--daemon <name>]\n"
+			"               [--conf <path to ipsec.conf>]\n");
 	exit(LSB_RC_INVALID_ARGUMENT);
 }
 
@@ -415,11 +422,12 @@ int main (int argc, char **argv)
 	bool no_fork = FALSE;
 	bool attach_gdb = FALSE;
 	bool load_warning = FALSE;
+	bool conftest = FALSE;
 
-	library_init(NULL);
+	library_init(NULL, "starter");
 	atexit(library_deinit);
 
-	libhydra_init("starter");
+	libhydra_init();
 	atexit(libhydra_deinit);
 
 	/* parse command line */
@@ -460,6 +468,14 @@ int main (int argc, char **argv)
 		{
 			daemon_name = argv[++i];
 		}
+		else if (streq(argv[i], "--conf") && i+1 < argc)
+		{
+			config_file = argv[++i];
+		}
+		else if (streq(argv[i], "--conftest"))
+		{
+			conftest = TRUE;
+		}
 		else
 		{
 			usage(argv[0]);
@@ -471,8 +487,42 @@ int main (int argc, char **argv)
 		DBG1(DBG_APP, "unable to set daemon name");
 		exit(LSB_RC_FAILURE);
 	}
+	if (!config_file)
+	{
+		config_file = lib->settings->get_str(lib->settings,
+											 "starter.config_file", CONFIG_FILE);
+	}
 
 	init_log("ipsec_starter");
+
+	if (conftest)
+	{
+		int status = LSB_RC_SUCCESS;
+
+		cfg = confread_load(config_file);
+		if (cfg == NULL || cfg->err > 0)
+		{
+			DBG1(DBG_APP, "config invalid!");
+			status = LSB_RC_INVALID_ARGUMENT;
+		}
+		else
+		{
+			DBG1(DBG_APP, "config OK");
+		}
+		if (cfg)
+		{
+			confread_free(cfg);
+		}
+		cleanup();
+		exit(status);
+	}
+
+	if (stat(cmd, &stb) != 0)
+	{
+		DBG1(DBG_APP, "IKE daemon '%s' not found", cmd);
+		cleanup();
+		exit(LSB_RC_FAILURE);
+	}
 
 	DBG1(DBG_APP, "Starting %sSwan "VERSION" IPsec [starter]...",
 		lib->settings->get_bool(lib->settings,
@@ -524,7 +574,7 @@ int main (int argc, char **argv)
 		exit(LSB_RC_FAILURE);
 	}
 
-	cfg = confread_load(CONFIG_FILE);
+	cfg = confread_load(config_file);
 	if (cfg == NULL || cfg->err > 0)
 	{
 		DBG1(DBG_APP, "unable to start strongSwan -- fatal errors in config");
@@ -574,7 +624,6 @@ int main (int argc, char **argv)
 				int fnull;
 
 				close_log();
-				closefrom(3);
 
 				fnull = open("/dev/null", O_RDWR);
 				if (fnull >= 0)
@@ -654,7 +703,6 @@ int main (int argc, char **argv)
 			{
 				starter_stop_charon();
 			}
-			starter_netkey_cleanup();
 			confread_free(cfg);
 			unlink(starter_pid_file);
 			cleanup();
@@ -706,7 +754,7 @@ int main (int argc, char **argv)
 		if (_action_ & FLAG_ACTION_UPDATE)
 		{
 			DBG2(DBG_APP, "Reloading config...");
-			new_cfg = confread_load(CONFIG_FILE);
+			new_cfg = confread_load(config_file);
 
 			if (new_cfg && (new_cfg->err == 0))
 			{
@@ -794,7 +842,7 @@ int main (int argc, char **argv)
 		 */
 		if (_action_ & FLAG_ACTION_START_CHARON)
 		{
-			if (cfg->setup.charonstart && !starter_charon_pid())
+			if (!starter_charon_pid())
 			{
 				DBG2(DBG_APP, "Attempting to start %s...", daemon_name);
 				if (starter_start_charon(cfg, no_fork, attach_gdb))
@@ -898,4 +946,3 @@ int main (int argc, char **argv)
 	}
 	exit(LSB_RC_SUCCESS);
 }
-

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2013 Andreas Steffen
+ * Copyright (C) 2011-2014 Andreas Steffen
  * HSR Hochschule fuer Technik Rapperswil
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -22,6 +22,9 @@
 #ifndef IMV_STATE_H_
 #define IMV_STATE_H_
 
+#include "imv_session.h"
+#include "seg/seg_contract_manager.h"
+
 #include <tncifimv.h>
 
 #include <library.h>
@@ -34,9 +37,9 @@ typedef struct imv_state_t imv_state_t;
 struct imv_state_t {
 
 	/**
-	 * Get the TNCS connection ID attached to the state
+	 * Get the TNCCS connection ID attached to the state
 	 *
-	 * @return				TNCS connection ID of the state
+	 * @return				TNCCS connection ID of the state
 	 */
 	 TNC_ConnectionID (*get_connection_id)(imv_state_t *this);
 
@@ -68,31 +71,49 @@ struct imv_state_t {
 	 *
 	 * @param max_msg_len	maximum size of a PA-TNC message
 	 */
-	void (*set_max_msg_len)(imv_state_t *this, u_int32_t max_msg_len);
+	void (*set_max_msg_len)(imv_state_t *this, uint32_t max_msg_len);
 
 	/**
 	 * Get the maximum size of a PA-TNC message for this TNCCS connection
 	 *
 	 * @return				maximum size of a PA-TNC message
 	 */
-	u_int32_t (*get_max_msg_len)(imv_state_t *this);
+	uint32_t (*get_max_msg_len)(imv_state_t *this);
 
 	/**
-	 * Set Access Requestor ID
+	 * Set flags for completed actions
 	 *
-	 * @param id_type		Access Requestor TCG Standard ID Type
-	 * @param id_value		Access Requestor TCG Standard ID Value
-	 *
+	 * @param flags			Flags to be set
 	 */
-	void (*set_ar_id)(imv_state_t *this, u_int32_t id_type, chunk_t id_value);
+	void (*set_action_flags)(imv_state_t *this, uint32_t flags);
 
 	/**
-	 * Get Access Requestor ID
+	 * Get flags set for completed actions
 	 *
-	 * @param id_type		Access Requestor TCG Standard ID Type
-	 * @return				Access Requestor TCG Standard ID Value
+	 * @return				Flags set for completed actions
 	 */
-	chunk_t (*get_ar_id)(imv_state_t *this, u_int32_t *id_type);
+	uint32_t (*get_action_flags)(imv_state_t *this);
+
+	/**
+	 * Set session associated with TNCCS Connection
+	 *
+	 * @param session		Session associated with TNCCS Connection
+	 */
+	void (*set_session)(imv_state_t *this, imv_session_t *session);
+
+	/**
+	 * Get session associated with TNCCS Connection
+	 *
+	 * @return				Session associated with TNCCS Connection
+	 */
+	imv_session_t* (*get_session)(imv_state_t *this);
+
+	/**
+	 * Get attribute segmentation contracts associated with TNCCS Connection
+	 *
+	 * @return				Contracts associated with TNCCS Connection
+	 */
+	seg_contract_manager_t* (*get_contracts)(imv_state_t *this);
 
 	/**
 	 * Change the connection state
@@ -122,6 +143,17 @@ struct imv_state_t {
 	void (*set_recommendation)(imv_state_t *this,
 							   TNC_IMV_Action_Recommendation rec,
 							   TNC_IMV_Evaluation_Result eval);
+
+	/**
+	 * Update IMV action recommendation and evaluation result
+	 *
+	 * @param rec			IMV action recommendation
+	 * @param eval			IMV evaluation result
+	 *
+	 */
+	void (*update_recommendation)(imv_state_t *this,
+								  TNC_IMV_Action_Recommendation rec,
+								  TNC_IMV_Evaluation_Result eval);
 
 	/**
 	 * Get reason string based on the preferred language

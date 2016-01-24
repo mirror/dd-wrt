@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2010-2014 Tobias Brunner
  * Copyright (C) 2008 Martin Willi
  * Hochschule fuer Technik Rapperswil
  *
@@ -58,6 +59,9 @@
  * @defgroup networking networking
  * @ingroup libstrongswan
  *
+ * @defgroup streams streams
+ * @ingroup networking
+ *
  * @defgroup plugins plugins
  * @ingroup libstrongswan
  *
@@ -67,11 +71,17 @@
  * @defgroup jobs jobs
  * @ingroup processing
  *
+ * @defgroup selectors selectors
+ * @ingroup libstrongswan
+ *
  * @defgroup threading threading
  * @ingroup libstrongswan
  *
  * @defgroup utils utils
  * @ingroup libstrongswan
+ *
+ * @defgroup compat compat
+ * @ingroup utils
  */
 
 /**
@@ -87,11 +97,13 @@
 #endif
 
 /* make sure we include printf_hook.h and utils.h first */
-#include "utils/printf_hook.h"
+#include "utils/printf_hook/printf_hook.h"
 #include "utils/utils.h"
 #include "networking/host_resolver.h"
+#include "networking/streams/stream_manager.h"
 #include "processing/processor.h"
 #include "processing/scheduler.h"
+#include "processing/watcher.h"
 #include "crypto/crypto_factory.h"
 #include "crypto/proposal/proposal_keywords.h"
 #include "fetcher/fetcher_manager.h"
@@ -101,10 +113,11 @@
 #include "credentials/credential_manager.h"
 #include "credentials/cred_encoding.h"
 #include "utils/chunk.h"
+#include "utils/capabilities.h"
 #include "utils/integrity_checker.h"
 #include "utils/leak_detective.h"
-#include "utils/settings.h"
 #include "plugins/plugin_loader.h"
+#include "settings/settings.h"
 
 typedef struct library_t library_t;
 
@@ -131,6 +144,17 @@ struct library_t {
 	bool (*set)(library_t *this, char *name, void *object);
 
 	/**
+	 * Namespace used for settings etc. (i.e. the name of the binary that uses
+	 * the library)
+	 */
+	const char *ns;
+
+	/**
+	 * Main configuration file passed to library_init(), the default, or NULL
+	 */
+	char *conf;
+
+	/**
 	 * Printf hook registering facility
 	 */
 	printf_hook_t *printf_hook;
@@ -139,6 +163,11 @@ struct library_t {
 	 * Proposal keywords registry
 	 */
 	proposal_keywords_t *proposal;
+
+	/**
+	 * POSIX capability dropping
+	 */
+	capabilities_t *caps;
 
 	/**
 	 * crypto algorithm registry and factory
@@ -191,6 +220,16 @@ struct library_t {
 	scheduler_t *scheduler;
 
 	/**
+	 * File descriptor monitoring
+	 */
+	watcher_t *watcher;
+
+	/**
+	 * Streams and Services
+	 */
+	stream_manager_t *streams;
+
+	/**
 	 * resolve hosts by DNS name
 	 */
 	host_resolver_t *hosts;
@@ -215,12 +254,17 @@ struct library_t {
  * Initialize library, creates "lib" instance.
  *
  * library_init() may be called multiple times in a single process, but each
- * caller should call library_deinit() for each call to library_init().
+ * caller must call library_deinit() for each call to library_init().
+ *
+ * The settings and namespace arguments are only used on the first call.
  *
  * @param settings		file to read settings from, may be NULL for default
+ * @param namespace		name of the binary that uses the library, determines
+ *						the first section name when reading config options.
+ *						Defaults to libstrongswan if NULL.
  * @return				FALSE if integrity check failed
  */
-bool library_init(char *settings);
+bool library_init(char *settings, const char *namespace);
 
 /**
  * Deinitialize library, destroys "lib" instance.

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Tobias Brunner
+ * Copyright (C) 2012-2015 Tobias Brunner
  * Copyright (C) 2006-2009 Martin Willi
  * Hochschule fuer Technik Rapperswil
  *
@@ -86,7 +86,7 @@ enum alert_t {
 	ALERT_RADIUS_NOT_RESPONDING,
 	/** a shutdown signal has been received, argument is the signal (int) */
 	ALERT_SHUTDOWN_SIGNAL,
-	/** creating local authentication data failed, no arguments */
+	/** local peer authentication failed (by us or by peer), no arguments */
 	ALERT_LOCAL_AUTH_FAILED,
 	/** peer authentication failed, no arguments */
 	ALERT_PEER_AUTH_FAILED,
@@ -101,9 +101,11 @@ enum alert_t {
 	/** received IKE message with invalid body, argument is message_t*,
 	 *  followed by a status_t result returned by message_t.parse_body(). */
 	ALERT_PARSE_ERROR_BODY,
-	/** sending a retransmit for a message, argument is packet_t */
+	/** sending a retransmit for a message, argument is packet_t, if the message
+	 *  got fragmented only the first fragment is passed */
 	ALERT_RETRANSMIT_SEND,
-	/** sending retransmits timed out, argument is packet_t, if available */
+	/** sending retransmits timed out, argument is packet_t, if available and if
+	 *  the message got fragmented only the first fragment is passed */
 	ALERT_RETRANSMIT_SEND_TIMEOUT,
 	/** received a retransmit for a message, argument is message_t */
 	ALERT_RETRANSMIT_RECEIVE,
@@ -116,6 +118,10 @@ enum alert_t {
 	/** traffic selectors do not match, arguments are two linked_list_t
 	 *  containing traffic_selector_t for initiator and for responder */
 	ALERT_TS_MISMATCH,
+	/** traffic selectors have been narrowed by the peer, arguments are
+	 *  an int (TRUE for local TS), a linked_list_t* (final TS list), and the
+	 *  child_cfg_t*. */
+	ALERT_TS_NARROWED,
 	/** Installation of IPsec SAs failed, argument is child_sa_t */
 	ALERT_INSTALL_CHILD_SA_FAILED,
 	/** Installation of IPsec Policy failed, argument is child_sa_t */
@@ -124,7 +130,8 @@ enum alert_t {
 	ALERT_UNIQUE_REPLACE,
 	/** IKE_SA deleted because of "keep" unique policy, no argument */
 	ALERT_UNIQUE_KEEP,
-	/** IKE_SA kept on failed child SA establishment, no argument */
+	/** IKE_SA kept on failed child SA establishment, argument is an int (!=0 if
+	 * first child SA) */
 	ALERT_KEEP_ON_CHILD_SA_FAILURE,
 	/** allocating virtual IP failed, linked_list_t of host_t requested */
 	ALERT_VIP_FAILURE,
@@ -132,6 +139,20 @@ enum alert_t {
 	ALERT_AUTHORIZATION_FAILED,
 	/** IKE_SA hit the hard lifetime limit before it could be rekeyed */
 	ALERT_IKE_SA_EXPIRED,
+	/** Certificate rejected; it has expired, certificate_t */
+	ALERT_CERT_EXPIRED,
+	/** Certificate rejected; it has been revoked, certificate_t */
+	ALERT_CERT_REVOKED,
+	/** Validating certificate status failed, certificate_t */
+	ALERT_CERT_VALIDATION_FAILED,
+	/** Certificate rejected; no trusted issuer found, certificate_t */
+	ALERT_CERT_NO_ISSUER,
+	/** Certificate rejected; root not trusted, certificate_t */
+	ALERT_CERT_UNTRUSTED_ROOT,
+	/** Certificate rejected; trustchain length exceeds limit, certificate_t */
+	ALERT_CERT_EXCEEDED_PATH_LEN,
+	/** Certificate rejected; other policy violation, certificate_t */
+	ALERT_CERT_POLICY_VIOLATION,
 };
 
 /**
@@ -362,12 +383,32 @@ struct bus_t {
 	void (*ike_rekey)(bus_t *this, ike_sa_t *old, ike_sa_t *new);
 
 	/**
-	 * IKE_SA reestablishing hook.
+	 * IKE_SA peer endpoint update hook.
+	 *
+	 * @param ike_sa	updated IKE_SA, having old endpoints set
+	 * @param local		TRUE if local endpoint gets updated, FALSE for remote
+	 * @param new		new endpoint address and port
+	 */
+	void (*ike_update)(bus_t *this, ike_sa_t *ike_sa, bool local, host_t *new);
+
+	/**
+	 * IKE_SA reestablishing hook (before resolving hosts).
 	 *
 	 * @param old		reestablished and obsolete IKE_SA
 	 * @param new		new IKE_SA replacing old
 	 */
-	void (*ike_reestablish)(bus_t *this, ike_sa_t *old, ike_sa_t *new);
+	void (*ike_reestablish_pre)(bus_t *this, ike_sa_t *old, ike_sa_t *new);
+
+	/**
+	 * IKE_SA reestablishing hook (after configuring and initiating the new
+	 * IKE_SA).
+	 *
+	 * @param old		reestablished and obsolete IKE_SA
+	 * @param new		new IKE_SA replacing old
+	 * @param initiated	TRUE if initiated successfully, FALSE otherwise
+	 */
+	void (*ike_reestablish_post)(bus_t *this, ike_sa_t *old, ike_sa_t *new,
+								 bool initiated);
 
 	/**
 	 * CHILD_SA up/down hook.
@@ -386,12 +427,28 @@ struct bus_t {
 	void (*child_rekey)(bus_t *this, child_sa_t *old, child_sa_t *new);
 
 	/**
+	 * CHILD_SA migration hook.
+	 *
+	 * @param new		ID of new SA when called for the old, NULL otherwise
+	 * @param uniue		unique ID of new SA when called for the old, 0 otherwise
+	 */
+	void (*children_migrate)(bus_t *this, ike_sa_id_t *new, u_int32_t unique);
+
+	/**
 	 * Virtual IP assignment hook.
 	 *
 	 * @param ike_sa	IKE_SA the VIPs are assigned to
 	 * @param assign	TRUE if assigned to IKE_SA, FALSE if released
 	 */
 	void (*assign_vips)(bus_t *this, ike_sa_t *ike_sa, bool assign);
+
+	/**
+	 * Virtual IP handler hook.
+	 *
+	 * @param ike_sa	IKE_SA the VIPs/attributes got handled on
+	 * @param assign	TRUE after installing attributes, FALSE on release
+	 */
+	void (*handle_vips)(bus_t *this, ike_sa_t *ike_sa, bool handle);
 
 	/**
 	 * Destroy the event bus.

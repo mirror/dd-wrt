@@ -18,6 +18,7 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <errno.h>
 
 #include <hydra.h>
 #include <daemon.h>
@@ -27,6 +28,17 @@
 #include <threading/thread.h>
 
 #include <nm/nm_backend.h>
+
+/**
+ * Default user and group
+ */
+#ifndef IPSEC_USER
+#define IPSEC_USER NULL
+#endif
+
+#ifndef IPSEC_GROUP
+#define IPSEC_GROUP NULL
+#endif
 
 /**
  * Hook in library for debugging messages
@@ -69,12 +81,15 @@ static void run()
 	while (TRUE)
 	{
 		int sig;
-		int error;
 
-		error = sigwait(&set, &sig);
-		if (error)
+		sig = sigwaitinfo(&set, NULL);
+		if (sig == -1)
 		{
-			DBG1(DBG_DMN, "error %d while waiting for a signal", error);
+			if (errno == EINTR)
+			{	/* ignore signals we didn't wait for */
+				continue;
+			}
+			DBG1(DBG_DMN, "waiting for signal failed: %s", strerror(errno));
 			return;
 		}
 		switch (sig)
@@ -90,11 +105,6 @@ static void run()
 				DBG1(DBG_DMN, "signal of type SIGTERM received. Shutting down");
 				charon->bus->alert(charon->bus, ALERT_SHUTDOWN_SIGNAL, sig);
 				return;
-			}
-			default:
-			{
-				DBG1(DBG_DMN, "unknown signal %d received. Ignored", sig);
-				break;
 			}
 		}
 	}
@@ -121,18 +131,20 @@ static void segv_handler(int signal)
  */
 static bool lookup_uid_gid()
 {
-#ifdef IPSEC_USER
-	if (!charon->caps->resolve_uid(charon->caps, IPSEC_USER))
+	char *name;
+
+	name = lib->settings->get_str(lib->settings, "charon-nm.user",
+								  IPSEC_USER);
+	if (name && !lib->caps->resolve_uid(lib->caps, name))
 	{
 		return FALSE;
 	}
-#endif
-#ifdef IPSEC_GROUP
-	if (!charon->caps->resolve_gid(charon->caps, IPSEC_GROUP))
+	name = lib->settings->get_str(lib->settings, "charon-nm.group",
+								  IPSEC_GROUP);
+	if (name && !lib->caps->resolve_gid(lib->caps, name))
 	{
 		return FALSE;
 	}
-#endif
 	return TRUE;
 }
 
@@ -147,8 +159,11 @@ int main(int argc, char *argv[])
 	/* logging for library during initialization, as we have no bus yet */
 	dbg = dbg_syslog;
 
+	/* LD causes a crash probably due to Glib */
+	setenv("LEAK_DETECTIVE_DISABLE", "1", 1);
+
 	/* initialize library */
-	if (!library_init(NULL))
+	if (!library_init(NULL, "charon-nm"))
 	{
 		library_deinit();
 		exit(SS_RC_LIBSTRONGSWAN_INTEGRITY);
@@ -162,7 +177,7 @@ int main(int argc, char *argv[])
 		exit(SS_RC_DAEMON_INTEGRITY);
 	}
 
-	if (!libhydra_init("charon-nm"))
+	if (!libhydra_init())
 	{
 		dbg_syslog(DBG_DMN, 1, "initialization failed - aborting charon-nm");
 		libhydra_deinit();
@@ -170,7 +185,7 @@ int main(int argc, char *argv[])
 		exit(SS_RC_INITIALIZATION_FAILED);
 	}
 
-	if (!libcharon_init("charon-nm"))
+	if (!libcharon_init())
 	{
 		dbg_syslog(DBG_DMN, 1, "initialization failed - aborting charon-nm");
 		goto deinit;
@@ -212,15 +227,16 @@ int main(int argc, char *argv[])
 		DBG1(DBG_DMN, "initialization failed - aborting charon-nm");
 		goto deinit;
 	}
+	lib->plugins->status(lib->plugins, LEVEL_CTRL);
 
-	if (!charon->caps->drop(charon->caps))
+	if (!lib->caps->drop(lib->caps))
 	{
 		DBG1(DBG_DMN, "capability dropping failed - aborting charon-nm");
 		goto deinit;
 	}
 
 	/* add handler for SEGV and ILL,
-	 * INT and TERM are handled by sigwait() in run() */
+	 * INT and TERM are handled by sigwaitinfo() in run() */
 	action.sa_handler = segv_handler;
 	action.sa_flags = 0;
 	sigemptyset(&action.sa_mask);

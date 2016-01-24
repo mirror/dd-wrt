@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2013 Tobias Brunner
  * Copyright (C) 2009 Martin Willi
  * Copyright (C) 2001-2008 Andreas Steffen
  * Hochschule fuer Technik Rapperswil
@@ -24,7 +25,6 @@
 #include <stddef.h>
 #include <fcntl.h>
 #include <sys/types.h>
-#include <sys/mman.h>
 #include <sys/stat.h>
 
 #include <utils/debug.h>
@@ -365,6 +365,29 @@ static status_t pem_to_bin(chunk_t *blob, bool *pgp)
 }
 
 /**
+ * Check if a blob looks like an ASN1 SEQUENCE or SET with BER indefinite length
+ */
+static bool is_ber_indefinite_length(chunk_t blob)
+{
+	if (blob.len >= 4)
+	{
+		switch (blob.ptr[0])
+		{
+			case ASN1_SEQUENCE:
+			case ASN1_SET:
+				/* BER indefinite length uses 0x80, and is terminated with
+				 * end-of-content using 0x00,0x00 */
+				return blob.ptr[1] == 0x80 &&
+					   blob.ptr[blob.len - 2] == 0 &&
+					   blob.ptr[blob.len - 1] == 0;
+			default:
+				break;
+		}
+	}
+	return FALSE;
+}
+
+/**
  * load the credential from a blob
  */
 static void *load_from_blob(chunk_t blob, credential_type_t type, int subtype,
@@ -374,7 +397,7 @@ static void *load_from_blob(chunk_t blob, credential_type_t type, int subtype,
 	bool pgp = FALSE;
 
 	blob = chunk_clone(blob);
-	if (!is_asn1(blob))
+	if (!is_ber_indefinite_length(blob) && !is_asn1(blob))
 	{
 		if (pem_to_bin(&blob, &pgp) != SUCCESS)
 		{
@@ -417,74 +440,18 @@ static void *load_from_blob(chunk_t blob, credential_type_t type, int subtype,
 static void *load_from_file(char *file, credential_type_t type, int subtype,
 							identification_t *subject, x509_flag_t flags)
 {
-	void *cred = NULL;
-	struct stat sb;
-	void *addr;
-	int fd;
+	void *cred;
+	chunk_t *chunk;
 
-	fd = open(file, O_RDONLY);
-	if (fd == -1)
+	chunk = chunk_map(file, FALSE);
+	if (!chunk)
 	{
 		DBG1(DBG_LIB, "  opening '%s' failed: %s", file, strerror(errno));
 		return NULL;
 	}
-
-	if (fstat(fd, &sb) == -1)
-	{
-		DBG1(DBG_LIB, "  getting file size of '%s' failed: %s", file,
-			 strerror(errno));
-		close(fd);
-		return NULL;
-	}
-
-	addr = mmap(NULL, sb.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-	if (addr == MAP_FAILED)
-	{
-		DBG1(DBG_LIB, "  mapping '%s' failed: %s", file, strerror(errno));
-		close(fd);
-		return NULL;
-	}
-
-	cred = load_from_blob(chunk_create(addr, sb.st_size), type, subtype,
-									   subject, flags);
-
-	munmap(addr, sb.st_size);
-	close(fd);
+	cred = load_from_blob(*chunk, type, subtype, subject, flags);
+	chunk_unmap(chunk);
 	return cred;
-}
-
-/**
- * load the credential from a file descriptor
- */
-static void *load_from_fd(int fd, credential_type_t type, int subtype,
-						  identification_t *subject, x509_flag_t flags)
-{
-	char buf[8096];
-	char *pos = buf;
-	ssize_t len, total = 0;
-
-	while (TRUE)
-	{
-		len = read(fd, pos, buf + sizeof(buf) - pos);
-		if (len < 0)
-		{
-			DBG1(DBG_LIB, "reading from file descriptor failed: %s",
-				 strerror(errno));
-			return NULL;
-		}
-		if (len == 0)
-		{
-			break;
-		}
-		total += len;
-		if (total == sizeof(buf))
-		{
-			DBG1(DBG_LIB, "buffer too small to read from file descriptor");
-			return NULL;
-		}
-	}
-	return load_from_blob(chunk_create(buf, total), type, subtype,
-						  subject, flags);
 }
 
 /**
@@ -493,7 +460,6 @@ static void *load_from_fd(int fd, credential_type_t type, int subtype,
 static void *pem_load(credential_type_t type, int subtype, va_list args)
 {
 	char *file = NULL;
-	int fd = -1;
 	chunk_t pem = chunk_empty;
 	identification_t *subject = NULL;
 	int flags = 0;
@@ -505,9 +471,7 @@ static void *pem_load(credential_type_t type, int subtype, va_list args)
 			case BUILD_FROM_FILE:
 				file = va_arg(args, char*);
 				continue;
-			case BUILD_FROM_FD:
-				fd = va_arg(args, int);
-				continue;
+			case BUILD_BLOB:
 			case BUILD_BLOB_PEM:
 				pem = va_arg(args, chunk_t);
 				continue;
@@ -532,10 +496,6 @@ static void *pem_load(credential_type_t type, int subtype, va_list args)
 	if (file)
 	{
 		return load_from_file(file, type, subtype, subject, flags);
-	}
-	if (fd != -1)
-	{
-		return load_from_fd(fd, type, subtype, subject, flags);
 	}
 	return NULL;
 }
@@ -564,3 +524,10 @@ certificate_t *pem_certificate_load(certificate_type_t type, va_list args)
 	return pem_load(CRED_CERTIFICATE, type, args);
 }
 
+/**
+ * Container PEM loader.
+ */
+container_t *pem_container_load(container_type_t type, va_list args)
+{
+	return pem_load(CRED_CONTAINER, type, args);
+}

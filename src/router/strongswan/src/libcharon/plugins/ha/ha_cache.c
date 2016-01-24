@@ -43,6 +43,11 @@ struct private_ha_cache_t {
 	ha_socket_t *socket;
 
 	/**
+	 * Tunnel securing sync messages
+	 */
+	ha_tunnel_t *tunnel;
+
+	/**
 	 * Total number of segments
 	 */
 	u_int count;
@@ -57,22 +62,6 @@ struct private_ha_cache_t {
 	 */
 	mutex_t *mutex;
 };
-
-/**
- * Hashtable hash function
- */
-static u_int hash(void *key)
-{
-	return (uintptr_t)key;
-}
-
-/**
- * Hashtable equals function
- */
-static bool equals(void *a, void *b)
-{
-	return a == b;
-}
 
 /**
  * Cache entry for an IKE_SA
@@ -212,9 +201,26 @@ static status_t rekey_children(ike_sa_t *ike_sa)
 	enumerator_t *enumerator;
 	child_sa_t *child_sa;
 	status_t status = SUCCESS;
+	linked_list_t *children;
+	struct {
+		protocol_id_t protocol;
+		u_int32_t spi;
+	} *info;
 
+	children = linked_list_create();
 	enumerator = ike_sa->create_child_sa_enumerator(ike_sa);
-	while (enumerator->enumerate(enumerator, (void**)&child_sa))
+	while (enumerator->enumerate(enumerator, &child_sa))
+	{
+		INIT(info,
+			.protocol = child_sa->get_protocol(child_sa),
+			.spi = child_sa->get_spi(child_sa, TRUE),
+		);
+		children->insert_last(children, info);
+	}
+	enumerator->destroy(enumerator);
+
+	enumerator = children->create_enumerator(children);
+	while (enumerator->enumerate(enumerator, &info))
 	{
 		if (ike_sa->supports_extension(ike_sa, EXT_MS_WINDOWS) &&
 			ike_sa->has_condition(ike_sa, COND_NAT_THERE))
@@ -223,17 +229,13 @@ static status_t rekey_children(ike_sa_t *ike_sa)
 			 * with an "invalid situation" error. We just close the CHILD_SA,
 			 * Windows will reestablish it immediately if required. */
 			DBG1(DBG_CFG, "resyncing CHILD_SA using a delete");
-			status = ike_sa->delete_child_sa(ike_sa,
-											 child_sa->get_protocol(child_sa),
-											 child_sa->get_spi(child_sa, TRUE),
+			status = ike_sa->delete_child_sa(ike_sa, info->protocol, info->spi,
 											 FALSE);
 		}
 		else
 		{
 			DBG1(DBG_CFG, "resyncing CHILD_SA using a rekey");
-			status = ike_sa->rekey_child_sa(ike_sa,
-											child_sa->get_protocol(child_sa),
-											child_sa->get_spi(child_sa, TRUE));
+			status = ike_sa->rekey_child_sa(ike_sa, info->protocol, info->spi);
 		}
 		if (status == DESTROY_ME)
 		{
@@ -241,6 +243,8 @@ static status_t rekey_children(ike_sa_t *ike_sa)
 		}
 	}
 	enumerator->destroy(enumerator);
+	children->destroy_function(children, free);
+
 	return status;
 }
 
@@ -260,6 +264,10 @@ static void rekey_segment(private_ha_cache_t *this, u_int segment)
 												charon->ike_sa_manager, TRUE);
 	while (enumerator->enumerate(enumerator, &ike_sa))
 	{
+		if (this->tunnel && this->tunnel->is_sa(this->tunnel, ike_sa))
+		{
+			continue;
+		}
 		if (ike_sa->get_state(ike_sa) == IKE_ESTABLISHED &&
 			this->kernel->get_segment(this->kernel,
 						ike_sa->get_other_host(ike_sa)) == segment)
@@ -366,7 +374,7 @@ METHOD(ha_cache_t, destroy, void,
  * See header
  */
 ha_cache_t *ha_cache_create(ha_kernel_t *kernel, ha_socket_t *socket,
-							bool sync, u_int count)
+							ha_tunnel_t *tunnel, bool sync, u_int count)
 {
 	private_ha_cache_t *this;
 
@@ -380,7 +388,8 @@ ha_cache_t *ha_cache_create(ha_kernel_t *kernel, ha_socket_t *socket,
 		.count = count,
 		.kernel = kernel,
 		.socket = socket,
-		.cache = hashtable_create(hash, equals, 8),
+		.tunnel = tunnel,
+		.cache = hashtable_create(hashtable_hash_ptr, hashtable_equals_ptr, 8),
 		.mutex = mutex_create(MUTEX_TYPE_DEFAULT),
 	);
 

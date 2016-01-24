@@ -45,8 +45,6 @@ typedef void* (*builder_function_t)(int subtype, va_list args);
 enum builder_part_t {
 	/** path to a file encoded in any format, char* */
 	BUILD_FROM_FILE,
-	/** file descriptor to read data, encoded in any format, int */
-	BUILD_FROM_FD,
 	/** unix socket of a ssh/pgp agent, char* */
 	BUILD_AGENT_SOCKET,
 	/** An arbitrary blob of data, chunk_t */
@@ -59,6 +57,8 @@ enum builder_part_t {
 	BUILD_BLOB_PGP,
 	/** DNS public key blob (RFC 4034, RSA specifc RFC 3110), chunk_t */
 	BUILD_BLOB_DNSKEY,
+	/** SSH public key blob (RFC 4253), chunk_t */
+	BUILD_BLOB_SSHKEY,
 	/** parameters from algorithmIdentifier (ASN.1 blob), chunk_t */
 	BUILD_BLOB_ALGID_PARAMS,
 	/** key size in bits, as used for key generation, u_int */
@@ -87,8 +87,8 @@ enum builder_part_t {
 	BUILD_DIGEST_ALG,
 	/** encryption algorithm to use, encryption_algorithm_t */
 	BUILD_ENCRYPTION_ALG,
-	/** a comma-separated list of ietf group attributes, char* */
-	BUILD_IETF_GROUP_ATTR,
+	/** list of AC group memberships, linked_list_t* with char* */
+	BUILD_AC_GROUP_STRINGS,
 	/** a ca certificate, certificate_t* */
 	BUILD_CA_CERT,
 	/** a certificate, certificate_t* */

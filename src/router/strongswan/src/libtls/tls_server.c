@@ -494,8 +494,13 @@ static status_t process_key_exchange_dhe(private_tls_server_t *this,
 		}
 		pub = chunk_skip(pub, 1);
 	}
-	this->dh->set_other_public_value(this->dh, pub);
-	if (this->dh->get_shared_secret(this->dh, &premaster) != SUCCESS)
+	if (!this->dh->set_other_public_value(this->dh, pub))
+	{
+		DBG1(DBG_TLS, "applying DH public value failed");
+		this->alert->add(this->alert, TLS_FATAL, TLS_INTERNAL_ERROR);
+		return NEED_MORE;
+	}
+	if (!this->dh->get_shared_secret(this->dh, &premaster))
 	{
 		DBG1(DBG_TLS, "calculating premaster from DH failed");
 		this->alert->add(this->alert, TLS_FATAL, TLS_INTERNAL_ERROR);
@@ -551,6 +556,7 @@ static status_t process_cert_verify(private_tls_server_t *this,
 		sig->destroy(sig);
 		if (verified)
 		{
+			this->peer_auth->merge(this->peer_auth, auth, FALSE);
 			break;
 		}
 		DBG1(DBG_TLS, "signature verification failed, trying another key");
@@ -601,7 +607,7 @@ static status_t process_finished(private_tls_server_t *this,
 		this->alert->add(this->alert, TLS_FATAL, TLS_INTERNAL_ERROR);
 		return NEED_MORE;
 	}
-	if (!chunk_equals(received, chunk_from_thing(buf)))
+	if (!chunk_equals_const(received, chunk_from_thing(buf)))
 	{
 		DBG1(DBG_TLS, "received client finished invalid");
 		this->alert->add(this->alert, TLS_FATAL, TLS_DECRYPT_ERROR);
@@ -914,7 +920,11 @@ static status_t send_server_key_exchange(private_tls_server_t *this,
 		this->alert->add(this->alert, TLS_FATAL, TLS_INTERNAL_ERROR);
 		return NEED_MORE;
 	}
-	this->dh->get_my_public_value(this->dh, &chunk);
+	if (!this->dh->get_my_public_value(this->dh, &chunk))
+	{
+		this->alert->add(this->alert, TLS_FATAL, TLS_INTERNAL_ERROR);
+		return NEED_MORE;
+	}
 	if (params)
 	{
 		writer->write_data16(writer, chunk);
@@ -1073,6 +1083,12 @@ METHOD(tls_handshake_t, get_server_id, identification_t*,
 	return this->server;
 }
 
+METHOD(tls_handshake_t, get_auth, auth_cfg_t*,
+	private_tls_server_t *this)
+{
+	return this->peer_auth;
+}
+
 METHOD(tls_handshake_t, destroy, void,
 	private_tls_server_t *this)
 {
@@ -1107,6 +1123,7 @@ tls_server_t *tls_server_create(tls_t *tls,
 				.finished = _finished,
 				.get_peer_id = _get_peer_id,
 				.get_server_id = _get_server_id,
+				.get_auth = _get_auth,
 				.destroy = _destroy,
 			},
 		},

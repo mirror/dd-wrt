@@ -247,7 +247,7 @@ static bool cookie_verify(private_receiver_t *this, message_t *message,
 	{
 		return FALSE;
 	}
-	if (chunk_equals(reference, cookie))
+	if (chunk_equals_const(reference, cookie))
 	{
 		chunk_free(&reference);
 		return TRUE;
@@ -261,23 +261,20 @@ static bool cookie_verify(private_receiver_t *this, message_t *message,
  */
 static bool check_cookie(private_receiver_t *this, message_t *message)
 {
-	packet_t *packet;
 	chunk_t data;
 
 	/* check for a cookie. We don't use our parser here and do it
 	 * quick and dirty for performance reasons.
 	 * we assume the cookie is the first payload (which is a MUST), and
 	 * the cookie's SPI length is zero. */
-	packet = message->get_packet(message);
-	data = packet->get_data(packet);
+	data = message->get_packet_data(message);
 	if (data.len <
 		 IKE_HEADER_LENGTH + NOTIFY_PAYLOAD_HEADER_LENGTH +
 		 sizeof(u_int32_t) + this->hasher->get_hash_size(this->hasher) ||
-		*(data.ptr + 16) != NOTIFY ||
+		*(data.ptr + 16) != PLV2_NOTIFY ||
 		*(u_int16_t*)(data.ptr + IKE_HEADER_LENGTH + 6) != htons(COOKIE))
 	{
 		/* no cookie found */
-		packet->destroy(packet);
 		return FALSE;
 	}
 	data.ptr += IKE_HEADER_LENGTH + NOTIFY_PAYLOAD_HEADER_LENGTH;
@@ -285,7 +282,6 @@ static bool check_cookie(private_receiver_t *this, message_t *message)
 	if (!cookie_verify(this, message, data))
 	{
 		DBG2(DBG_NET, "found cookie, but content invalid");
-		packet->destroy(packet);
 		return FALSE;
 	}
 	return TRUE;
@@ -326,16 +322,18 @@ static bool cookie_required(private_receiver_t *this,
  */
 static bool drop_ike_sa_init(private_receiver_t *this, message_t *message)
 {
-	u_int half_open;
+	u_int half_open, half_open_r;
 	u_int32_t now;
 
 	now = time_monotonic(NULL);
 	half_open = charon->ike_sa_manager->get_half_open_count(
-										charon->ike_sa_manager, NULL);
+										charon->ike_sa_manager, NULL, FALSE);
+	half_open_r = charon->ike_sa_manager->get_half_open_count(
+										charon->ike_sa_manager, NULL, TRUE);
 
 	/* check for cookies in IKEv2 */
 	if (message->get_major_version(message) == IKEV2_MAJOR_VERSION &&
-		cookie_required(this, half_open, now) && !check_cookie(this, message))
+		cookie_required(this, half_open_r, now) && !check_cookie(this, message))
 	{
 		chunk_t cookie;
 
@@ -376,7 +374,7 @@ static bool drop_ike_sa_init(private_receiver_t *this, message_t *message)
 	/* check if peer has too many IKE_SAs half open */
 	if (this->block_threshold &&
 		charon->ike_sa_manager->get_half_open_count(charon->ike_sa_manager,
-				message->get_source(message)) >= this->block_threshold)
+				message->get_source(message), TRUE) >= this->block_threshold)
 	{
 		DBG1(DBG_NET, "ignoring IKE_SA setup from %H, "
 			 "peer too aggressive", message->get_source(message));
@@ -385,7 +383,7 @@ static bool drop_ike_sa_init(private_receiver_t *this, message_t *message)
 
 	/* check if global half open IKE_SA limit reached */
 	if (this->init_limit_half_open &&
-		half_open >= this->init_limit_half_open)
+	    half_open >= this->init_limit_half_open)
 	{
 		DBG1(DBG_NET, "ignoring IKE_SA setup from %H, half open IKE_SA "
 			 "count of %d exceeds limit of %d", message->get_source(message),
@@ -528,8 +526,7 @@ static job_requeue_t receive_packets(private_receiver_t *this)
 #ifdef USE_IKEV2
 			send_notify(message, IKEV2_MAJOR_VERSION, INFORMATIONAL,
 						INVALID_MAJOR_VERSION, chunk_empty);
-#endif /* USE_IKEV2 */
-#ifdef USE_IKEV1
+#elif defined(USE_IKEV1)
 			send_notify(message, IKEV1_MAJOR_VERSION, INFORMATIONAL_V1,
 						INVALID_MAJOR_VERSION, chunk_empty);
 #endif /* USE_IKEV1 */
@@ -547,7 +544,9 @@ static job_requeue_t receive_packets(private_receiver_t *this)
 	if (message->get_request(message) &&
 		message->get_exchange_type(message) == IKE_SA_INIT)
 	{
-		if (this->initiator_only || drop_ike_sa_init(this, message))
+		id = message->get_ike_sa_id(message);
+		if (this->initiator_only || !id->is_initiator(id) ||
+			drop_ike_sa_init(this, message))
 		{
 			message->destroy(message);
 			return JOB_REQUEUE_DIRECT;
@@ -637,29 +636,29 @@ receiver_t *receiver_create()
 	);
 
 	if (lib->settings->get_bool(lib->settings,
-				"%s.dos_protection", TRUE, charon->name))
+								"%s.dos_protection", TRUE, lib->ns))
 	{
 		this->cookie_threshold = lib->settings->get_int(lib->settings,
-				"%s.cookie_threshold", COOKIE_THRESHOLD_DEFAULT, charon->name);
+					"%s.cookie_threshold", COOKIE_THRESHOLD_DEFAULT, lib->ns);
 		this->block_threshold = lib->settings->get_int(lib->settings,
-				"%s.block_threshold", BLOCK_THRESHOLD_DEFAULT, charon->name);
+					"%s.block_threshold", BLOCK_THRESHOLD_DEFAULT, lib->ns);
 	}
 	this->init_limit_job_load = lib->settings->get_int(lib->settings,
-				"%s.init_limit_job_load", 0, charon->name);
+					"%s.init_limit_job_load", 0, lib->ns);
 	this->init_limit_half_open = lib->settings->get_int(lib->settings,
-				"%s.init_limit_half_open", 0, charon->name);
+					"%s.init_limit_half_open", 0, lib->ns);
 	this->receive_delay = lib->settings->get_int(lib->settings,
-				"%s.receive_delay", 0, charon->name);
+					"%s.receive_delay", 0, lib->ns);
 	this->receive_delay_type = lib->settings->get_int(lib->settings,
-				"%s.receive_delay_type", 0, charon->name),
+					"%s.receive_delay_type", 0, lib->ns),
 	this->receive_delay_request = lib->settings->get_bool(lib->settings,
-				"%s.receive_delay_request", TRUE, charon->name),
+					"%s.receive_delay_request", TRUE, lib->ns),
 	this->receive_delay_response = lib->settings->get_bool(lib->settings,
-				"%s.receive_delay_response", TRUE, charon->name),
+					"%s.receive_delay_response", TRUE, lib->ns),
 	this->initiator_only = lib->settings->get_bool(lib->settings,
-				"%s.initiator_only", FALSE, charon->name),
+					"%s.initiator_only", FALSE, lib->ns),
 
-	this->hasher = lib->crypto->create_hasher(lib->crypto, HASH_PREFERRED);
+	this->hasher = lib->crypto->create_hasher(lib->crypto, HASH_SHA1);
 	if (!this->hasher)
 	{
 		DBG1(DBG_NET, "creating cookie hasher failed, no hashers supported");
@@ -688,4 +687,3 @@ receiver_t *receiver_create()
 
 	return &this->public;
 }
-

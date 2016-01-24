@@ -93,7 +93,7 @@ METHOD(task_t, process_r, status_t,
 	{
 		switch (payload->get_type(payload))
 		{
-			case NOTIFY_V1:
+			case PLV1_NOTIFY:
 				notify = (notify_payload_t*)payload;
 				type = notify->get_notify_type(notify);
 
@@ -112,16 +112,16 @@ METHOD(task_t, process_r, status_t,
 													  IKEV2_UDP_PORT);
 					if (redirect)
 					{	/* treat the redirect as reauthentication */
-						DBG1(DBG_IKE, "received %N notify. redirected to %H",
+						DBG1(DBG_IKE, "received %N notify, redirected to %H",
 							 notify_type_names, type, redirect);
 						/* Cisco boxes reject the first message from 4500 */
 						me = this->ike_sa->get_my_host(this->ike_sa);
 						me->set_port(me, charon->socket->get_port(
 														charon->socket, FALSE));
 						this->ike_sa->set_other_host(this->ike_sa, redirect);
-						this->ike_sa->reauth(this->ike_sa);
+						status = this->ike_sa->reauth(this->ike_sa);
 						enumerator->destroy(enumerator);
-						return DESTROY_ME;
+						return status;
 					}
 					else
 					{
@@ -153,7 +153,7 @@ METHOD(task_t, process_r, status_t,
 						 notify_type_names, type);
 				}
 				continue;
-			case DELETE_V1:
+			case PLV1_DELETE:
 				if (!this->del)
 				{
 					delete = (delete_payload_t*)payload;

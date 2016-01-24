@@ -53,6 +53,11 @@ bool pem_encoder_encode(cred_encoding_type_t type, chunk_t *encoding,
 					break;
 				}
 			}
+			if (cred_encoding_args(args, CRED_PART_BLISS_PUB_ASN1_DER,
+								   &asn1, CRED_PART_END))
+			{
+				break;
+			}
 			return FALSE;
 		case PRIVKEY_PEM:
 			label ="RSA PRIVATE KEY";
@@ -86,6 +91,12 @@ bool pem_encoder_encode(cred_encoding_type_t type, chunk_t *encoding,
 				label ="EC PRIVATE KEY";
 				break;
 			}
+			if (cred_encoding_args(args, CRED_PART_BLISS_PRIV_ASN1_DER,
+								   &asn1, CRED_PART_END))
+			{
+				label ="BLISS PRIVATE KEY";
+				break;
+			}
 			return FALSE;
 		case CERT_PEM:
 			if (cred_encoding_args(args, CRED_PART_X509_ASN1_DER,
@@ -104,6 +115,12 @@ bool pem_encoder_encode(cred_encoding_type_t type, chunk_t *encoding,
 								   &asn1, CRED_PART_END))
 			{	/* PEM encode PKCS10 certificate reqeuest */
 				label = "CERTIFICATE REQUEST";
+				break;
+			}
+			if (cred_encoding_args(args, CRED_PART_X509_AC_ASN1_DER,
+								   &asn1, CRED_PART_END))
+			{
+				label = "ATTRIBUTE CERTIFICATE";
 				break;
 			}
 		default:
@@ -154,4 +171,3 @@ bool pem_encoder_encode(cred_encoding_type_t type, chunk_t *encoding,
 	encoding->len = pos - encoding->ptr;
 	return TRUE;
 }
-

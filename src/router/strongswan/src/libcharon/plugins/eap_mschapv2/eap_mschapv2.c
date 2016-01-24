@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 Tobias Brunner
+ * Copyright (C) 2009-2015 Tobias Brunner
  * Copyright (C) 2010 Martin Willi
  * Hochschule fuer Technik Rapperswil
  *
@@ -81,6 +81,21 @@ struct private_eap_mschapv2_t
 	 * Number of retries
 	 */
 	int retries;
+
+	/**
+	 * Provide EAP-Identity
+	 */
+	auth_cfg_t *auth;
+
+	/**
+	 * Current state
+	 */
+	enum {
+		S_EXPECT_CHALLENGE,
+		S_EXPECT_RESPONSE,
+		S_EXPECT_SUCCESS,
+		S_DONE,
+	} state;
 };
 
 /**
@@ -628,6 +643,7 @@ METHOD(eap_method_t, initiate_server, status_t,
 	memcpy(cha->name, name, sizeof(MSCHAPV2_HOST_NAME) - 1);
 
 	*out = eap_payload_create_data(chunk_create((void*) eap, len));
+	this->state = S_EXPECT_RESPONSE;
 	return NEED_MORE;
 }
 
@@ -747,6 +763,7 @@ static status_t process_peer_challenge(private_eap_mschapv2_t *this,
 	memcpy(res->name, userid.ptr, userid.len);
 
 	*out = eap_payload_create_data(chunk_create((void*) eap, len));
+	this->state = S_EXPECT_SUCCESS;
 	return NEED_MORE;
 }
 
@@ -782,7 +799,7 @@ static status_t process_peer_success(private_eap_mschapv2_t *this,
 	enumerator = enumerator_create_token(message, " ", " ");
 	while (enumerator->enumerate(enumerator, &token))
 	{
-		if (strneq(token, "S=", 2))
+		if (strpfx(token, "S="))
 		{
 			chunk_t hex;
 			token += 2;
@@ -792,12 +809,14 @@ static status_t process_peer_success(private_eap_mschapv2_t *this,
 					 "invalid auth string");
 				goto error;
 			}
+			chunk_free(&auth_string);
 			hex = chunk_create(token, AUTH_RESPONSE_LEN - 2);
 			auth_string = chunk_from_hex(hex, NULL);
 		}
-		else if (strneq(token, "M=", 2))
+		else if (strpfx(token, "M="))
 		{
 			token += 2;
+			free(msg);
 			msg = strdup(token);
 		}
 	}
@@ -810,7 +829,7 @@ static status_t process_peer_success(private_eap_mschapv2_t *this,
 		goto error;
 	}
 
-	if (!chunk_equals(this->auth_response, auth_string))
+	if (!chunk_equals_const(this->auth_response, auth_string))
 	{
 		DBG1(DBG_IKE, "EAP-MS-CHAPv2 verification failed");
 		goto error;
@@ -827,6 +846,7 @@ static status_t process_peer_success(private_eap_mschapv2_t *this,
 
 	*out = eap_payload_create_data(chunk_create((void*) eap, len));
 	status = NEED_MORE;
+	this->state = S_DONE;
 
 error:
 	chunk_free(&auth_string);
@@ -864,16 +884,16 @@ static status_t process_peer_failure(private_eap_mschapv2_t *this,
 	enumerator = enumerator_create_token(message, " ", " ");
 	while (enumerator->enumerate(enumerator, &token))
 	{
-		if (strneq(token, "E=", 2))
+		if (strpfx(token, "E="))
 		{
 			token += 2;
 			error = atoi(token);
 		}
-		else if (strneq(token, "R=", 2))
+		else if (strpfx(token, "R="))
 		{
 			/* ignore retriable */
 		}
-		else if (strneq(token, "C=", 2))
+		else if (strpfx(token, "C="))
 		{
 			chunk_t hex;
 			token += 2;
@@ -883,16 +903,18 @@ static status_t process_peer_failure(private_eap_mschapv2_t *this,
 					 "invalid challenge");
 				goto error;
 			}
+			chunk_free(&challenge);
 			hex = chunk_create(token, 2 * CHALLENGE_LEN);
 			challenge = chunk_from_hex(hex, NULL);
 		}
-		else if (strneq(token, "V=", 2))
+		else if (strpfx(token, "V="))
 		{
 			/* ignore version */
 		}
-		else if (strneq(token, "M=", 2))
+		else if (strpfx(token, "M="))
 		{
 			token += 2;
+			free(msg);
 			msg = strdup(token);
 		}
 	}
@@ -918,6 +940,7 @@ static status_t process_peer_failure(private_eap_mschapv2_t *this,
 	 */
 
 	status = FAILED;
+	this->state = S_DONE;
 
 error:
 	chunk_free(&challenge);
@@ -942,26 +965,38 @@ METHOD(eap_method_t, process_peer, status_t,
 
 	eap = (eap_mschapv2_header_t*)data.ptr;
 
+	switch (this->state)
+	{
+		case S_EXPECT_CHALLENGE:
+			if (eap->opcode == MSCHAPV2_CHALLENGE)
+			{
+				return process_peer_challenge(this, in, out);
+			}
+			break;
+		case S_EXPECT_SUCCESS:
+			switch (eap->opcode)
+			{
+				case MSCHAPV2_SUCCESS:
+					return process_peer_success(this, in, out);
+				case MSCHAPV2_FAILURE:
+					return process_peer_failure(this, in, out);
+			}
+			break;
+		default:
+			break;
+	}
 	switch (eap->opcode)
 	{
 		case MSCHAPV2_CHALLENGE:
-		{
-			return process_peer_challenge(this, in, out);
-		}
 		case MSCHAPV2_SUCCESS:
-		{
-			return process_peer_success(this, in, out);
-		}
 		case MSCHAPV2_FAILURE:
-		{
-			return process_peer_failure(this, in, out);
-		}
+			DBG1(DBG_IKE, "received unexpected EAP-MS-CHAPv2 message with "
+				 "OpCode (%N)!", mschapv2_opcode_names, eap->opcode);
+			break;
 		default:
-		{
 			DBG1(DBG_IKE, "EAP-MS-CHAPv2 received packet with unsupported "
 				 "OpCode (%N)!", mschapv2_opcode_names, eap->opcode);
 			break;
-		}
 	}
 	return FAILED;
 }
@@ -1023,6 +1058,8 @@ static status_t process_server_retry(private_eap_mschapv2_t *this,
 	/* delay the response for some time to make brute-force attacks harder */
 	sleep(RETRY_DELAY);
 
+	/* since the error is retryable the state does not change, we still
+	 * expect an MSCHAPV2_RESPONSE from the peer */
 	return NEED_MORE;
 }
 
@@ -1054,7 +1091,10 @@ static status_t process_server_response(private_eap_mschapv2_t *this,
 	name_len = min(data.len - RESPONSE_PAYLOAD_LEN, 255);
 	snprintf(buf, sizeof(buf), "%.*s", name_len, res->name);
 	userid = identification_create_from_string(buf);
-	DBG2(DBG_IKE, "EAP-MS-CHAPv2 username: '%Y'", userid);
+	if (!userid->equals(userid, this->peer))
+	{
+		DBG1(DBG_IKE, "EAP-MS-CHAPv2 username: '%Y'", userid);
+	}
 	/* userid can only be destroyed after the last use of username */
 	username = extract_username(userid->get_encoding(userid));
 
@@ -1080,11 +1120,10 @@ static status_t process_server_response(private_eap_mschapv2_t *this,
 		chunk_clear(&nt_hash);
 		return FAILED;
 	}
-	userid->destroy(userid);
 	chunk_clear(&nt_hash);
 
-	if (memeq(res->response.nt_response, this->nt_response.ptr,
-			  this->nt_response.len))
+	if (memeq_const(res->response.nt_response, this->nt_response.ptr,
+					this->nt_response.len))
 	{
 		chunk_t hex;
 		char msg[AUTH_RESPONSE_LEN + sizeof(SUCCESS_MESSAGE)];
@@ -1105,9 +1144,12 @@ static status_t process_server_response(private_eap_mschapv2_t *this,
 		chunk_free(&hex);
 		memcpy(eap->data, msg, AUTH_RESPONSE_LEN + sizeof(SUCCESS_MESSAGE));
 		*out = eap_payload_create_data(chunk_create((void*) eap, len));
+
+		this->auth->add(this->auth, AUTH_RULE_EAP_IDENTITY, userid);
+		this->state = S_EXPECT_SUCCESS;
 		return NEED_MORE;
 	}
-
+	userid->destroy(userid);
 	return process_server_retry(this, out);
 }
 
@@ -1133,30 +1175,39 @@ METHOD(eap_method_t, process_server, status_t,
 
 	eap = (eap_mschapv2_header_t*)data.ptr;
 
-	switch (eap->opcode)
+	switch (this->state)
 	{
-		case MSCHAPV2_RESPONSE:
-		{
-			return process_server_response(this, in, out);
-		}
-		case MSCHAPV2_SUCCESS:
-		{
-			if (this->msk.ptr)
+		case S_EXPECT_RESPONSE:
+			if (eap->opcode == MSCHAPV2_RESPONSE)
+			{
+				return process_server_response(this, in, out);
+			}
+			break;
+		case S_EXPECT_SUCCESS:
+			if (eap->opcode == MSCHAPV2_SUCCESS &&
+				this->msk.ptr)
 			{
 				return SUCCESS;
 			}
 			break;
-		}
-		case MSCHAPV2_FAILURE:
-		{
-			return FAILED;
-		}
 		default:
-		{
+			break;
+	}
+	switch (eap->opcode)
+	{
+		case MSCHAPV2_FAILURE:
+			/* the client may abort the authentication by sending us a failure
+			 * in any state */
+			return FAILED;
+		case MSCHAPV2_RESPONSE:
+		case MSCHAPV2_SUCCESS:
+			DBG1(DBG_IKE, "received unexpected EAP-MS-CHAPv2 message with "
+				 "OpCode (%N)!", mschapv2_opcode_names, eap->opcode);
+			break;
+		default:
 			DBG1(DBG_IKE, "EAP-MS-CHAPv2 received packet with unsupported "
 				 "OpCode (%N)!", mschapv2_opcode_names, eap->opcode);
 			break;
-		}
 	}
 	return FAILED;
 }
@@ -1197,11 +1248,18 @@ METHOD(eap_method_t, is_mutual, bool,
 	return FALSE;
 }
 
+METHOD(eap_method_t, get_auth, auth_cfg_t*,
+	private_eap_mschapv2_t *this)
+{
+	return this->auth;
+}
+
 METHOD(eap_method_t, destroy, void,
 	 private_eap_mschapv2_t *this)
 {
 	this->peer->destroy(this->peer);
 	this->server->destroy(this->server);
+	this->auth->destroy(this->auth);
 	chunk_free(&this->challenge);
 	chunk_free(&this->nt_response);
 	chunk_free(&this->auth_response);
@@ -1224,11 +1282,14 @@ static private_eap_mschapv2_t *eap_mschapv2_create_generic(identification_t *ser
 				.get_msk = _get_msk,
 				.get_identifier = _get_identifier,
 				.set_identifier = _set_identifier,
+				.get_auth = _get_auth,
 				.destroy = _destroy,
 			},
 		},
 		.peer = peer->clone(peer),
 		.server = server->clone(server),
+		.auth = auth_cfg_create(),
+		.state = S_EXPECT_CHALLENGE,
 	);
 
 	return this;
@@ -1267,4 +1328,3 @@ eap_mschapv2_t *eap_mschapv2_create_peer(identification_t *server, identificatio
 
 	return &this->public;
 }
-
