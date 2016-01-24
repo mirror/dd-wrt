@@ -682,10 +682,10 @@ Modules/_testembed: Modules/_testembed.o $(LIBRARY) $(LDLIBRARY) $(PY3LIBRARY)
 Modules/_freeze_importlib: Modules/_freeze_importlib.o $(LIBRARY_OBJS_OMIT_FROZEN)
 	$(LINKCC) $(PY_LDFLAGS) -o $@ Modules/_freeze_importlib.o $(LIBRARY_OBJS_OMIT_FROZEN) $(LIBS) $(MODLIBS) $(SYSLIBS) $(LDLAST)
 
-Python/importlib.h: $(srcdir)/Lib/importlib/_bootstrap.py Modules/_freeze_importlib.c
-	$(MAKE) Modules/_freeze_importlib
-	./Modules/_freeze_importlib \
-		$(srcdir)/Lib/importlib/_bootstrap.py Python/importlib.h
+Python/importlib.h: $(srcdir)/Lib/importlib/_bootstrap.py
+#	$(MAKE) Modules/_freeze_importlib
+#	./Modules/_freeze_importlib \
+#		$(srcdir)/Lib/importlib/_bootstrap.py Python/importlib.h
 
 
 ############################################################################
