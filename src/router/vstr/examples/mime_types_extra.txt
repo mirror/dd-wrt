@@ -1,0 +1,39 @@
+
+# These should be std. in /etc/mime.types but fuckwittage prevails
+application/x-bittorrent torrent
+application/x-zsync      zsync
+image/x-icon             ico
+
+# Open Office files should be seen...
+application/vnd.oasis.opendocument.text                  odt
+application/vnd.oasis.opendocument.text-template         ott
+application/vnd.oasis.opendocument.text-master           otm
+application/vnd.oasis.opendocument.text-web              oth
+application/vnd.oasis.opendocument.spreadsheet           ods
+application/vnd.oasis.opendocument.spreadsheet-template  ots
+application/vnd.oasis.opendocument.graphics              odg
+application/vnd.oasis.opendocument.graphics-template     otg
+application/vnd.oasis.opendocument.presentation          odp
+application/vnd.oasis.opendocument.presentation-template otp
+application/vnd.oasis.opendocument.image                 odi
+application/vnd.oasis.opendocument.image-template        oti
+application/vnd.oasis.opendocument.formula               odf
+application/vnd.oasis.opendocument.formula-template      otf
+application/vnd.oasis.opendocument.chart                 odc
+application/vnd.oasis.opendocument.chart-template        otc
+
+
+#  These are needed because, unlike apache-httpd, jhttpd doesn't default to
+# text/plain MIME type
+text/plain  C c cc cpp cxx H h hh txt
+
+#  This is an extension with the jhttpd parser, mainly needed because
+# we don't default to text/plain like Apache
+text/plain  ./AUTHORS ./BUGS ./COPYING ./COPYING.LIB ./INSTALL
+text/plain  ./Makefile ./Makefile.am ./Makefile.in ./NEWS
+text/plain  ./README ./SConstruct ./THANKS ./TODO
+
+#  Another extension, allow files to be filtered based on extension
+# note that because of gzip you'll probably want the .gz version too
+# Valid: codes are 400, 403, 404, 410, 500 and 503
+/403/			  shtml shtml.gz .~ .# tmp htaccess sconsign

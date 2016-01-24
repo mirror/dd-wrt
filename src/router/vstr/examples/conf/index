@@ -1,0 +1,4 @@
+(org.and.jhttpd-conf-req-1.0
+  (Content-Type: text/html)
+  (Content-Location: [(limit <basename>)] '')
+  (filename index.html))

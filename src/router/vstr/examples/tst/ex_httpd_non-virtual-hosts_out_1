@@ -1,0 +1,73 @@
+HTTP/1.1 404 Not Found
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified:
+Connection: Keep-Alive
+Content-Type: text/html
+Content-Length: 334
+
+HTTP/1.1 200 OK
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Mon, 11 Oct 2004 07:02:24 GMT
+Connection: Keep-Alive
+Accept-Ranges: bytes
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Length: 159
+
+HTTP/1.1 301 Moved Permanently
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified:
+Connection: Keep-Alive
+Accept-Ranges: bytes
+Content-Type: text/html
+Content-Length: 373
+Location: http://X/default/
+
+HTTP/1.1 301 Moved Permanently
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified:
+Connection: Keep-Alive
+Accept-Ranges: bytes
+Content-Type: text/html
+Content-Length: 379
+Location: http://default/default/
+
+HTTP/1.1 403 Forbidden
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified:
+Connection: Keep-Alive
+Content-Type: text/html
+Content-Length: 322
+
+HTTP/1.1 403 Forbidden
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified:
+Connection: Keep-Alive
+Content-Type: text/html
+Content-Length: 322
+
+HTTP/1.1 200 OK
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Wed, 13 Oct 2004 07:02:24 GMT
+Connection: close
+Accept-Ranges: bytes
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Length: 159
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+  <head>
+    <title>Foo root</title>
+  </head>
+  <body>
+    <h1>Foo root</h1>
+  </body>
+</html>

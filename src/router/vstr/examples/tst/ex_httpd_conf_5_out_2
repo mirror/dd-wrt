@@ -1,0 +1,49 @@
+HTTP/1.1 200 OK
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Mon, 11 Oct 2004 07:02:24 GMT
+Accept-Ranges: bytes
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Length: 159
+
+HTTP/1.1 404 Not Found
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified:
+Content-Type: text/html
+Content-Length: 334
+
+HTTP/1.1 200 OK
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Mon, 11 Oct 2004 07:02:24 GMT
+Accept-Ranges: bytes
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Length: 159
+
+HTTP/1.1 206 Partial content
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Mon, 11 Oct 2004 07:02:24 GMT
+Vary: Accept-Encoding
+Content-Type: multipart/byteranges; boundary=SEP
+
+HTTP/1.1 206 Partial content
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Mon, 11 Oct 2004 07:02:24 GMT
+Connection: close
+Vary: Accept-Encoding
+Content-Type: multipart/byteranges; boundary=SEP
+
+--SEP
+Content-Type: text/html
+Content-Range: bytes 0-1/159
+
+<!--SEP
+Content-Type: text/html
+Content-Range: bytes 2-4/159
+
+DOC--SEP--

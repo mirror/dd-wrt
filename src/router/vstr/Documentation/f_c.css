@@ -1,0 +1,89 @@
+
+/* default text/background ... */
+/* and a cute bar on the left */
+ pre.c2html { color: #111; background: #FFF; border-left: 0.4em solid #EEE; }
+
+ pre.c2html  span.comment     { color: #292; }
+
+ pre.c2html  span.str         { color: #292; font-weight: bold; }
+ pre.c2html  span.chr         { color: #292; font-weight: bold; }
+
+ pre.c2html  span.cppif       { color: #628; font-weight: bold; }
+ pre.c2html  span.cppifndef   { color: #628; font-weight: bold; }
+ pre.c2html  span.cppifdef    { color: #628; font-weight: bold; }
+ pre.c2html  span.cppelse     { color: #628; font-weight: bold; }
+ pre.c2html  span.cppelif     { color: #628; font-weight: bold; }
+ pre.c2html  span.cppendif    { color: #628; font-weight: bold; }
+ pre.c2html  span.cppdefined  { color: #628; font-weight: bold; }
+ pre.c2html  span.cppdefine   { color: #628; font-weight: bold; }
+ pre.c2html  span.cppinclude  { color: #628; font-weight: bold; }
+
+ pre.c2html  span.if          { color: #44F; }
+ pre.c2html  span.else        { color: #44F; }
+ pre.c2html  span.do          { color: #44F; }
+ pre.c2html  span.while       { color: #44F; }
+ pre.c2html  span.for         { color: #44F; }
+ pre.c2html  span.return      { color: #628; }
+ pre.c2html  span.switch      { color: #44F; }
+ pre.c2html  span.case        { color: #44F; }
+ pre.c2html  span.default     { color: #44F; }
+ pre.c2html  span.break       { color: #628; }
+ pre.c2html  span.goto        { color: #628; font-weight: bold; }
+
+ pre.c2html  span.char        { color: #628; }
+ pre.c2html  span.short       { color: #628; }
+ pre.c2html  span.int         { color: #628; }
+ pre.c2html  span.long        { color: #628; }
+ pre.c2html  span.float       { color: #628; }
+ pre.c2html  span.double      { color: #628; }
+ pre.c2html  span.ssizet      { color: #628; }
+ pre.c2html  span.sizet       { color: #628; }
+ pre.c2html  span.offt        { color: #628; }
+ pre.c2html  span.off64t      { color: #628; }
+ pre.c2html  span.intmaxt     { color: #628; }
+ pre.c2html  span.uintmaxt    { color: #628; }
+ pre.c2html  span.void        { color: #628; }
+ pre.c2html  span.unsigned    { color: #628; }
+ pre.c2html  span.extern      { color: #628; }
+ pre.c2html  span.static      { color: #628; }
+ pre.c2html  span.const       { color: #628; }
+ pre.c2html  span.restrict    { color: #628; }
+ pre.c2html  span.inline      { color: #628; }
+
+ pre.c2html  span.vstrbase    { color: #44F; font-weight: bold; }
+ pre.c2html  span.vstrsects   { color: #44F; font-weight: bold; }
+ pre.c2html  span.vstrfmt     { color: #44F; font-weight: bold; }
+ pre.c2html  span.pollfd      { color: #44F; font-weight: bold; }
+ pre.c2html  span.mpzt        { color: #44F; font-weight: bold; }
+
+ pre.c2html  span.exit        { color: #628; }
+ pre.c2html  span.abort       { color: #628; font-weight: bold; }
+ pre.c2html  span.err         { color: #F22; font-weight: bold; }
+ pre.c2html  span.warn        { color: #F22; }
+ pre.c2html  span.assert      { color: #F22; }
+
+ pre.c2html  span.compdate    { color: #628; }
+ pre.c2html  span.compversion { color: #628; }
+ pre.c2html  span.compfile    { color: #628; }
+ pre.c2html  span.compline    { color: #628; }
+
+ pre.c2html  span.charbi      { color: #628; }
+ pre.c2html  span.intmax      { color: #628; }
+ pre.c2html  span.intmin      { color: #628; }
+ pre.c2html  span.intjmax     { color: #628; }
+ pre.c2html  span.intjmin     { color: #628; }
+
+ pre.c2html  span.stdin       { color: #628; }
+ pre.c2html  span.stdout      { color: #628; }
+ pre.c2html  span.stderr      { color: #F22; font-weight: bold; }
+
+ pre.c2html  span.errno       { color: #F22; }
+
+ pre.c2html  span.exitsucs    { color: #292; font-weight: bold; }
+ pre.c2html  span.exitfail    { color: #F22; font-weight: bold; }
+
+ pre.c2html  span.true        { color: #44F; }
+ pre.c2html  span.false       { color: #44F; }
+ pre.c2html  span.null        { color: #44F; }
+ pre.c2html  span.num0        { color: #F22; }
+ pre.c2html  span.numm1       { color: #F22; font-weight: bold; }

@@ -1,0 +1,125 @@
+HTTP/1.1 200 OK
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Tue, 12 Oct 2004 07:02:24 GMT
+Accept-Ranges: bytes
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Encoding: gzip
+Content-Length: 136
+
+HTTP/1.1 200 OK
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Tue, 12 Oct 2004 07:02:24 GMT
+Accept-Ranges: bytes
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Encoding: gzip
+Content-Length: 136
+
+HTTP/1.1 200 OK
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Thu, 14 Oct 2004 07:02:24 GMT
+Accept-Ranges: bytes
+Vary: Accept-Encoding
+Content-Type: application/x-gzip
+Content-Length: 136
+
+HTTP/1.1 200 OK
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Tue, 12 Oct 2004 07:02:24 GMT
+Accept-Ranges: bytes
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Length: 165
+
+HTTP/1.1 206 Partial content
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Tue, 12 Oct 2004 07:02:24 GMT
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Encoding: gzip
+Content-Length: 135
+Content-Range: bytes 1-135/136
+
+HTTP/1.1 200 OK
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Tue, 12 Oct 2004 07:02:24 GMT
+Accept-Ranges: bytes
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Length: 165
+
+HTTP/1.1 200 OK
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Tue, 12 Oct 2004 07:02:24 GMT
+Accept-Ranges: bytes
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Length: 165
+
+HTTP/1.1 200 OK
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Tue, 12 Oct 2004 07:02:24 GMT
+Accept-Ranges: bytes
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Length: 165
+
+HTTP/1.1 200 OK
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Tue, 12 Oct 2004 07:02:24 GMT
+Accept-Ranges: bytes
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Length: 165
+
+HTTP/1.1 200 OK
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Tue, 12 Oct 2004 07:02:24 GMT
+Accept-Ranges: bytes
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Encoding: bzip2
+Content-Length: 207
+
+HTTP/1.1 200 OK
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Tue, 12 Oct 2004 07:02:24 GMT
+Accept-Ranges: bytes
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Encoding: gzip
+Content-Length: 299
+
+HTTP/1.1 206 Partial content
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Tue, 12 Oct 2004 07:02:24 GMT
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Encoding: gzip
+Content-Length: 5
+Content-Range: bytes 0-4/136
+
+HTTP/1.1 206 Partial content
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Tue, 12 Oct 2004 07:02:24 GMT
+Connection: close
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Encoding: x-gzip
+Content-Length: 16
+Content-Range: bytes 120-135/136
+

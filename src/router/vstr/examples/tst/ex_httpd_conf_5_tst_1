@@ -1,0 +1,14 @@
+HEAD /index.html HTTP/1.0
+Connection: keep-alive
+
+HEAD /index HTTP/1.0
+Connection: keep-alive
+
+HEAD /nothere/5.1-switch-5.3 HTTP/1.0
+Connection: keep-alive
+
+HEAD /index.html HTTP/1.0
+Connection: keep-alive
+
+HEAD /index HTTP/1.0
+

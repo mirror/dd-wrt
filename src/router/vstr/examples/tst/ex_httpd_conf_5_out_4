@@ -1,0 +1,80 @@
+HTTP/1.1 404 Not Found
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified:
+Connection: Keep-Alive
+Content-Type: text/html
+Content-Length: 334
+
+HTTP/1.1 200 OK
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Mon, 04 Oct 2004 07:02:24 GMT
+Connection: Keep-Alive
+Accept-Ranges: bytes
+Vary: Accept,Accept-Encoding
+Content-Type: text/plain
+Content-Length: 6
+
+a txt
+HTTP/1.1 200 OK
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Mon, 04 Oct 2004 07:02:24 GMT
+Connection: Keep-Alive
+Accept-Ranges: bytes
+Vary: Accept,Accept-Encoding
+Content-Type: text/plain
+Content-Length: 6
+
+a txt
+HTTP/1.1 200 OK
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Mon, 04 Oct 2004 07:02:24 GMT
+Accept-Ranges: bytes
+Vary: Accept,Accept-Encoding
+Content-Type: text/html
+Content-Length: 7
+
+a html
+HTTP/1.1 200 OK
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Mon, 04 Oct 2004 07:02:24 GMT
+Accept-Ranges: bytes
+Vary: Accept,Accept-Encoding
+Content-Type: text/plain
+Content-Length: 6
+
+a txt
+HTTP/1.1 200 OK
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Mon, 04 Oct 2004 07:02:24 GMT
+Accept-Ranges: bytes
+Vary: Accept,Accept-Encoding
+Content-Type: text/html
+Content-Length: 7
+
+a html
+HTTP/1.1 200 OK
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Mon, 04 Oct 2004 07:02:24 GMT
+Accept-Ranges: bytes
+Vary: Accept,Accept-Encoding
+Content-Type: text/plain
+Content-Length: 6
+
+a txt
+HTTP/1.1 200 OK
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Mon, 04 Oct 2004 07:02:24 GMT
+Connection: close
+Accept-Ranges: bytes
+Vary: Accept,Accept-Encoding
+Content-Length: 7
+
+a none

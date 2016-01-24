@@ -1,0 +1,2310 @@
+Section: Compile switch constants
+
+Constant: VSTR_COMPILE_ATTRIBUTES
+
+ Explanation:
+
+  This switch controls whether gcc type __attribute__() statements are used in
+ the public headers headers for the library. If the value is 1 then if they are
+ supported by the compiler that built the library they will be used, if the
+ value is 0 they won't be used at all.
+
+
+Constant: VSTR_COMPILE_INCLUDE
+
+ Explanation:
+
+  This switch controls whether including <vstr.h> will include all the system
+ headers needed for the exported interfaces. If the value is 1 then if they are
+ included, if the value is 0 they won't be included.
+
+
+Constant: VSTR_COMPILE_INLINE
+
+ Explanation:
+
+  This switch controls whether inline functions will be used in the public
+ headers for the library. If the value is 1 then if they are supported by the
+ compiler that built the library they will be used, if the value is 0 they
+ won't be used.
+
+
+Constant: VSTR_COMPILE_MACRO_FUNCTIONS
+
+ Explanation:
+
+  This switch controls whether macro functions will be used in the public
+ headers for the library. If the value is 1 then they will be used, if the
+ value is 0 they won't be used.
+
+ Note:
+
+  This only includes the macro  functions which also have real function
+ replacements. For example VSTR_ADD_CSTR_BUF() won't be defined because there
+ is a vstr_add_cstr_buf() function, but VSTR_FMT_CB_ARG_PTR() will always be
+ defined.
+
+
+Constant: VSTR_COMPILE_TYPEDEF
+
+ Explanation:
+
+  This switch controls whether typedef will be used for the structs in the
+ public headers for the library. If the value is 1 then they will be used,
+ if the value is 0 they won't be used at all (and your code will have to use
+ struct tags instead -- note all libraries using vstr should compile with
+ this option set).
+
+
+Section: Global constants
+
+Constant: VSTR_MAX_NODE_ALL
+
+ Explanation:
+
+  This is the largest size a node can be, if you pass values greater than this
+ to vstr_add_ptr() etc. then multiple nodes will be allocated.
+
+
+Constant: VSTR_MAX_NODE_BUF
+
+ Explanation:
+
+  This is the largest size a node _BUF type can be, if you pass values greater
+ than this to vstr_add_buf() etc. then multiple nodes will be allocated.
+
+
+Section: Constants passed to vstr_make_spare_nodes() and vstr_free_spare_nodes()
+
+Constant: VSTR_TYPE_NODE_BUF
+
+ Explanation:
+
+  This type when passed to vstr_make_space_nodes() specifies nodes of type _BUF,
+ which are the only nodes that can be "written" to. These nodes are added into
+ a Vstr string by the vstr_add_buf() function and the vstr_add_iovec_buf_*()
+ functions.
+
+ Note:
+
+  A call to vstr_sub_buf() with a Vstr string consisting of _BUF nodes means
+ that data will be substituted inplace.
+
+
+Constant: VSTR_TYPE_NODE_NON
+
+ Explanation:
+
+  This type when passed to vstr_make_space_nodes() specifies nodes of type _NON,
+ which are nodes that contain "nothing". These nodes can be used as placeholders
+ for data, and are added into a Vstr string by the vstr_add_non() function.
+
+
+Constant: VSTR_TYPE_NODE_PTR
+
+ Explanation:
+
+  This type when passed to vstr_make_space_nodes() specifies nodes of type _PTR,
+ which are nodes that contain a memory pointer to an area of memory.
+
+
+Constant: VSTR_TYPE_NODE_REF
+
+ Explanation:
+
+  This type when passed to vstr_make_space_nodes() specifies nodes of type _REF,
+ which are nodes that contain a Vstr memory reference.
+
+
+Section: Constants passed to vstr_add_vstr() and vstr_sub_vstr()
+
+Constant: VSTR_TYPE_ADD_DEF
+Constant: VSTR_TYPE_SUB_DEF
+
+ Explanation:
+
+  This type when passed to either vstr_sub_vstr() or vstr_add_vstr() specifies
+ that all types of nodes are added as their respective type.
+
+
+Constant: VSTR_TYPE_ADD_BUF_PTR
+Constant: VSTR_TYPE_SUB_BUF_PTR
+
+ Explanation:
+
+  This type when passed to either vstr_sub_vstr() or vstr_add_vstr() specifies
+ that all nodes of type _BUF are added as type _PTR.
+
+ Note:
+
+  If you add/del/sub data in the original Vstr string then because the added
+ data is only pointers to the old data, life may become interesting for you.
+
+
+Constant: VSTR_TYPE_ADD_BUF_REF
+Constant: VSTR_TYPE_SUB_BUF_REF
+
+ Explanation:
+
+  This type when passed to either vstr_sub_vstr() or vstr_add_vstr() specifies
+ that all nodes of type _BUF are converted to type _REF before being added.
+
+
+ Note:
+
+  This means that if you do a substitution on the original Vstr string it will
+ now be less efficient, as the _REF nodes cannot have data substituted in place.
+  The _BUF nodes will not go back to the pool in the Vstr configuration as
+ happens if you deleted them.
+
+
+Constant: VSTR_TYPE_ADD_ALL_REF
+Constant: VSTR_TYPE_SUB_ALL_REF
+
+ Explanation:
+
+  This type when passed to either vstr_sub_vstr() or vstr_add_vstr() specifies
+ that the data should be taken as though vstr_export_ref() was called on the
+ original Vstr string.
+
+
+Constant: VSTR_TYPE_ADD_ALL_BUF
+Constant: VSTR_TYPE_SUB_ALL_BUF
+
+ Explanation:
+
+  This type when passed to either vstr_sub_vstr() or vstr_add_vstr() specifies
+ that the data should all be added via. vstr_add_buf().
+
+
+Section: Constants passed to vstr_fmt_add()
+
+Constant: VSTR_TYPE_FMT_END
+
+ Explanation:
+
+  This flag means that there are no more arguments to be expected.
+
+ Note:
+
+  Because you can have multiple arguments associated with one custom "fmt"
+ specification this has to be the last argument to every call to
+ vstr_fmt_add().
+  Just specifying this type means that there are no arguments used, by the
+ custom "fmt" specification.
+
+
+Constant: VSTR_TYPE_FMT_INT
+
+ Explanation:
+
+  This flag means that vstr_add_vfmt() should expect a "int" type from
+ the argument list passed to it
+
+
+Constant: VSTR_TYPE_FMT_UINT
+
+ Explanation:
+
+  This flag means that vstr_add_vfmt() should expect an "unsigned int" type from
+ the argument list passed to it
+
+
+Constant: VSTR_TYPE_FMT_LONG
+
+ Explanation:
+
+  This flag means that vstr_add_vfmt() should expect a "long" type from
+ the argument list passed to it
+
+
+Constant: VSTR_TYPE_FMT_ULONG
+
+ Explanation:
+
+  This flag means that vstr_add_vfmt() should expect an "unsigned long" type
+ from the argument list passed to it
+
+
+Constant: VSTR_TYPE_FMT_LONG_LONG
+
+ Explanation:
+
+  This flag means that vstr_add_vfmt() should expect a "long long" type from
+ the argument list passed to it
+
+
+Constant: VSTR_TYPE_FMT_ULONG_LONG
+
+ Explanation:
+
+  This flag means that vstr_add_vfmt() should expect an "unsigned long long"
+ type from the argument list passed to it
+
+
+Constant: VSTR_TYPE_FMT_SSIZE_T
+
+ Explanation:
+
+  This flag means that vstr_add_vfmt() should expect a "ssize_t" type
+ from the argument list passed to it
+
+
+Constant: VSTR_TYPE_FMT_SIZE_T
+
+ Explanation:
+
+  This flag means that vstr_add_vfmt() should expect a "size_t" type
+ from the argument list passed to it
+
+
+Constant: VSTR_TYPE_FMT_PTRDIFF_T
+
+ Explanation:
+
+  This flag means that vstr_add_vfmt() should expect a "ptrdiff_t" type
+ from the argument list passed to it
+
+
+Constant: VSTR_TYPE_FMT_INTMAX_T
+
+ Explanation:
+
+  This flag means that vstr_add_vfmt() should expect a "intmax_t" type
+ from the argument list passed to it
+
+
+Constant: VSTR_TYPE_FMT_UINTMAX_T
+
+ Explanation:
+
+  This flag means that vstr_add_vfmt() should expect a "uintmax_t" type
+ from the argument list passed to it
+
+
+Constant: VSTR_TYPE_FMT_DOUBLE
+
+ Explanation:
+
+  This flag means that vstr_add_vfmt() should expect a "double" type
+ from the argument list passed to it
+
+
+Constant: VSTR_TYPE_FMT_DOUBLE_LONG
+
+ Explanation:
+
+  This flag means that vstr_add_vfmt() should expect a "long double" type
+ from the argument list passed to it
+
+
+Constant: VSTR_TYPE_FMT_PTR_VOID
+
+ Explanation:
+
+  This flag means that vstr_add_vfmt() should expect a "void *" type
+ from the argument list passed to it
+
+
+Constant: VSTR_TYPE_FMT_PTR_CHAR
+
+ Explanation:
+
+  This flag means that vstr_add_vfmt() should expect a "char *" type
+ from the argument list passed to it
+
+
+Constant: VSTR_TYPE_FMT_PTR_WCHAR_T
+
+ Explanation:
+
+  This flag means that vstr_add_vfmt() should expect a "wchar_t *" type
+ from the argument list passed to it
+
+
+Constant: VSTR_TYPE_FMT_PTR_INT
+
+ Explanation:
+
+  This flag means that vstr_add_vfmt() should expect an "int *" type
+ from the argument list passed to it
+
+
+Constant: VSTR_TYPE_FMT_PTR_INTMAX_T
+
+ Explanation:
+
+  This flag means that vstr_add_vfmt() should expect an "intmax_t *" type
+ from the argument list passed to it
+
+
+Constant: VSTR_TYPE_FMT_PTR_LONG
+
+ Explanation:
+
+  This flag means that vstr_add_vfmt() should expect an "long *" type
+ from the argument list passed to it
+
+
+Constant: VSTR_TYPE_FMT_PTR_LONG_LONG
+
+ Explanation:
+
+  This flag means that vstr_add_vfmt() should expect an "long long *" type
+ from the argument list passed to it
+
+
+Constant: VSTR_TYPE_FMT_PTR_PTRDIFF_T
+
+ Explanation:
+
+  This flag means that vstr_add_vfmt() should expect an "ptrdiff_t *" type
+ from the argument list passed to it
+
+
+Constant: VSTR_TYPE_FMT_PTR_SHORT
+
+ Explanation:
+
+  This flag means that vstr_add_vfmt() should expect an "short *" type
+ from the argument list passed to it
+
+
+Constant: VSTR_TYPE_FMT_PTR_SIGNED_CHAR
+
+ Explanation:
+
+  This flag means that vstr_add_vfmt() should expect an "signed char *" type
+ from the argument list passed to it
+
+
+Constant: VSTR_TYPE_FMT_PTR_SSIZE_T
+
+ Explanation:
+
+  This flag means that vstr_add_vfmt() should expect an "ssize_t *" type
+ from the argument list passed to it
+
+
+Constant: VSTR_TYPE_FMT_ERRNO
+
+ Explanation:
+
+  This flag means that vstr_add_vfmt() should not expect any arguments passed,
+ but should set the value of errno, just before calling the user callback, to
+ the value upon entering vstr_add_vfmt().
+
+
+Section: Constants returned from vstr_iter_fwd_*()
+
+
+Constant: VSTR_TYPE_ITER_DEF
+
+ Explanation:
+
+  This return flag is 0, and is generally only used as programmer
+ documentation to mean nothing special is meant for this data.
+
+
+Constant: VSTR_TYPE_ITER_END
+
+ Explanation:
+
+  This return flag means that the data is at an end.
+
+
+Constant: VSTR_TYPE_ITER_NON
+
+ Explanation:
+
+  This return flag means that the data is actually from within a node of type
+ VSTR_TYPE_NODE_NON.
+
+
+Section: Constants passed to vstr_sc_fmt_cb_beg()
+
+Constant: VSTR_FLAG_SC_FMT_CB_BEG_DEF
+
+ Explanation:
+
+  This flag is the same as just specifying VSTR_FLAG_SC_FMT_CB_BEG_OBJ_STR.
+
+
+Constant: VSTR_FLAG_SC_FMT_CB_BEG_OBJ_STR
+
+ Explanation:
+
+  This flag indicates that the object should be treated as a C style string,
+ so it is assumed that number orientated flags should be ignored and that
+ the length of the object can be arbitrarily truncated.
+
+
+Constant: VSTR_FLAG_SC_FMT_CB_BEG_OBJ_ATOM
+
+ Explanation:
+
+  This flag indicates that the object should be treated as an atomic piece of
+ data, so it is assumed that number orientated flags should be ignored and
+ that the length of the object can't be truncated.
+
+
+Constant: VSTR_FLAG_SC_FMT_CB_BEG_OBJ_NUM
+
+ Explanation:
+
+  This flag indicates that the object you are printing should be treated as a
+ number. For instance setting a precision will truncate the length of the
+ object, unless it is a number. Also +/-/<space> leaders and zero padding will
+ only be done for numbers.
+
+
+Constant: VSTR_FLAG_SC_FMT_CB_BEG_OBJ_NEG
+
+ Explanation:
+
+  This flag indicates that the number object you are printing should be
+ treated as negative number. This flag has no meaning if
+ VSTR_FLAG_SC_FMT_CB_BEG_OBJ_NUM is not set.
+
+
+Constant: VSTR_FLAG_SC_FMT_CB_BEG_OBJ_HEXNUM_H
+
+ Explanation:
+
+  This flag indicates that the number object you are printing should be
+ treated as an uppercase hexadecimal (base 16) number. This flag has no meaning
+ if VSTR_FLAG_SC_FMT_CB_BEG_OBJ_NUM is not set.
+
+
+Constant: VSTR_FLAG_SC_FMT_CB_BEG_OBJ_HEXNUM_L
+
+ Explanation:
+
+  This flag indicates that the number object you are printing should be
+ treated as a lowercase hexadecimal (base 16) number. This flag has no meaning
+ if VSTR_FLAG_SC_FMT_CB_BEG_OBJ_NUM is not set.
+
+
+Constant: VSTR_FLAG_SC_FMT_CB_BEG_OBJ_OCTNUM
+
+ Explanation:
+
+  This flag indicates that the number object you are printing should be
+ treated as octal (base 8) number. This flag has no meaning if
+ VSTR_FLAG_SC_FMT_CB_BEG_OBJ_NUM is not set.
+
+
+Constant: VSTR_FLAG_SC_FMT_CB_BEG_OBJ_BINNUM_H
+
+ Explanation:
+
+  This flag indicates that the number object you are printing should be
+ treated as an uppercase base 2 number. This flag has no meaning if
+ VSTR_FLAG_SC_FMT_CB_BEG_OBJ_NUM is not set.
+
+
+Constant: VSTR_FLAG_SC_FMT_CB_BEG_OBJ_BINNUM_L
+
+ Explanation:
+
+  This flag indicates that the number object you are printing should be
+ treated as a lowercase base 2 number. This flag has no meaning if
+ VSTR_FLAG_SC_FMT_CB_BEG_OBJ_NUM is not set.
+
+
+Section: Constants passed to vstr_conv_unprintable_del() and vstr_conv_unprintable_chr()
+
+Constant: VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_NONE
+
+ Explanation:
+
+  This flag is 0, and is generally only used as programmer documentation to mean
+ no flags are applied to this function.
+
+ Note:
+
+  Because it is sometimes hard are to notice certain characters, they are
+ classified as "unprintable" by default, the value
+ VSTR_FLAG_CONV_UNPRINTABLE_DEF is a default that is what most people would
+ expect to be classified as unprintable.
+
+
+Constant: VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_NUL
+
+ Explanation:
+
+  This flag allows the ASCII 0x00 byte, aka. NULL, through as a "printable"
+ character.
+
+
+Constant: VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_BEL
+
+ Explanation:
+
+  This flag allows the ASCII 0x07 byte, aka. terminal bell, through as a
+ "printable" character.
+
+
+Constant: VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_BS
+
+ Explanation:
+
+  This flag allows the ASCII 0x08 byte, aka. backspace, through as a
+ "printable" character.
+
+
+Constant: VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_HT
+
+ Explanation:
+
+  This flag allows the ASCII 0x09 byte, aka. horizontal tab, through as a
+ "printable" character.
+
+
+Constant: VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_LF
+
+ Explanation:
+
+  This flag allows the ASCII 0x0A byte, aka. line feed, through as a
+ "printable" character.
+
+
+Constant: VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_VT
+
+ Explanation:
+
+  This flag allows the ASCII 0x0B byte, aka. vertical tab, through as a
+ "printable" character.
+
+
+Constant: VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_FF
+
+ Explanation:
+
+  This flag allows the ASCII 0x0C byte, aka. form feed, through as a
+ "printable" character.
+
+
+Constant: VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_CR
+
+ Explanation:
+
+  This flag allows the ASCII 0x0D byte, aka. carriage return, through as a
+ "printable" character.
+
+
+Constant: VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_SP
+
+ Explanation:
+
+  This flag allows the ASCII 0x20 byte, aka. space, through as a
+ "printable" character.
+
+
+Constant: VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_COMMA
+
+ Explanation:
+
+  This flag allows the ASCII 0x2C byte, aka. comma, through as a
+ "printable" character.
+
+
+Constant: VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_DOT
+
+ Explanation:
+
+  This flag allows the ASCII 0x2E byte, aka. dot, through as a
+ "printable" character.
+
+
+Constant: VSTR_FLAG_CONV_UNPRINTABLE_ALLOW__
+
+ Explanation:
+
+  This flag allows the ASCII 0x5F byte, aka. underbar, through as a
+ "printable" character.
+
+
+Constant: VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_ESC
+
+ Explanation:
+
+  This flag allows the ASCII 0x1B byte, aka. escape, through as a
+ "printable" character.
+
+
+Constant: VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_DEL
+
+ Explanation:
+
+  This flag allows the ASCII 0x7F byte, aka. delete, through as a
+ "printable" character.
+
+
+Constant: VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_HSP
+
+ Explanation:
+
+  This flag allows the ASCII 0xA0 byte through as a "printable" character.
+
+ Note:
+
+  The value 0xA0 is 0x20 with the high bit set, and this character it often
+ printed as space when in an ASCII like encoding.
+
+
+Constant: VSTR_FLAG_CONV_UNPRINTABLE_ALLOW_HIGH
+
+ Explanation:
+
+  This flag allows the all ASCII bytes greater than or equal to 0xA1 through as
+ "printable" characters.
+
+ Note:
+
+  This includes all the extra characters like not, degree, copyright and micro
+ when in an ASCII like encoding.
+
+
+Constant: VSTR_FLAG_CONV_UNPRINTABLE_DEF
+
+ Explanation:
+
+  This flag is the same as using the flags for space, comma, dot and underbar.
+ Using just this flag is probably what you'd expect an "unprintable" function
+ to do.
+
+
+Section: Constants passed to vstr_parse_num() etc.
+
+Constant: VSTR_TYPE_PARSE_NUM_ERR_NONE
+
+ Explanation:
+
+  This error code has the value 0, and means that no error occurred parsing the
+ number from the Vstr string.
+
+
+Constant: VSTR_TYPE_PARSE_NUM_ERR_ONLY_S
+
+ Explanation:
+
+  This error code means that the Vstr string consisted only of spaces.
+
+
+Constant: VSTR_TYPE_PARSE_NUM_ERR_ONLY_SPM
+
+ Explanation:
+
+  This error code means that the Vstr string consisted only spaces, and a plus
+ or minus sign.
+
+
+Constant: VSTR_TYPE_PARSE_NUM_ERR_ONLY_SPMX
+
+ Explanation:
+
+  This error code means that the Vstr string consisted only spaces, a plus
+ or minus sign and a "0x" base 16 prefix.
+
+
+Constant: VSTR_TYPE_PARSE_NUM_ERR_OOB
+
+ Explanation:
+
+  This error code means that the Vstr string had characters in it that where
+ out of bounds from the working set.
+
+ Note:
+
+  This out of bounds includes the Vstr string "++" as well as "4A", when
+ parsing in a base less than 11.
+
+
+Constant: VSTR_TYPE_PARSE_NUM_ERR_OVERFLOW
+
+ Explanation:
+
+  This error code means that the number parsed from the Vstr string would
+ overflow the type it is being parsed into, this is only returned when the
+ VSTR_FLAG_PARSE_NUM_OVERFLOW flag was passed to the parse function.
+
+
+Constant: VSTR_TYPE_PARSE_NUM_ERR_NEGATIVE
+
+ Explanation:
+
+  This error code means that the number parsed from the Vstr string starts
+ with a '-' (Hyphen) character when it is supposed to be an unsigned type.
+
+
+Constant: VSTR_TYPE_PARSE_NUM_ERR_BEG_ZERO
+
+ Explanation:
+
+  This error code means that the number parsed from the Vstr string starts
+ with a '0' (Digit Zero) character, when the VSTR_FLAG_PARSE_NUM_NO_BEG_ZERO
+ flag was passed to the parse function.
+
+
+Constant: VSTR_FLAG_PARSE_NUM_DEF
+
+ Explanation:
+
+  This flag is 0, and is generally only used as programmer documentation to mean
+ no flags are applied to this function.
+
+
+Constant: VSTR_FLAG_PARSE_NUM_LOCAL
+
+ Explanation:
+
+  This flag changes the parsing from ASCII numbers into "local" numbers
+ (whatever is generated by '0 .. '9' by the host compiler). This can be ignored
+ by anyone not using an EBCDIC character set, or something equally weird.
+
+
+Constant: VSTR_FLAG_PARSE_NUM_SEP
+
+ Explanation:
+
+  This flag allows the parsing of the '_' (Low Line) separator character
+ between the digits of the number, so "1234" and "1_234" would both parse the
+ same.
+
+ Note:
+
+  The separator is only allowed within the digits of the number, so " _+_1234"
+ would fail as would "_1234".
+
+
+Constant: VSTR_FLAG_PARSE_NUM_OVERFLOW
+
+ Explanation:
+
+  This flag turns on the overflow checking, in other words without it
+ VSTR_TYPE_PARSE_NUM_ERR_OVERFLOW will never be returned as an error code.
+
+ Note:
+
+  The return value with this set is the highest number that can be parsed from
+ the beginning of the Vstr string, while the value without this flag would be
+ the parsed number modulo the highest number of the type.
+  For example given a type that had a maximum of 10, then parsing "64" would
+ give you 6 with the flag, and 4 without.
+
+
+Constant: VSTR_FLAG_PARSE_NUM_SPACE
+
+ Explanation:
+
+  This flag allows one or more ' ' (Space) characters before the number or
+ number prefix (Plus Sign, Hyphen).
+
+
+Constant: VSTR_FLAG_PARSE_NUM_NO_BEG_ZERO
+
+ Explanation:
+
+  This flag disallows one or more '0' (Digit Zero) characters before the number.
+
+
+Constant: VSTR_FLAG_PARSE_NUM_NO_BEG_PM
+
+ Explanation:
+
+  This flag disallows a plus or a minus character before the number.
+
+
+Constant: VSTR_FLAG_PARSE_NUM_NO_NEGATIVE
+
+ Explanation:
+
+  This flag disallows negative values.
+
+ Note:
+
+  While this flag can be passed to vstr_parse_int() etc. it is most useful when
+ passed to the generic function vstr_parse_num().
+
+
+Section: Constants passed to vstr_parse_ipv4()
+
+Constant: VSTR_TYPE_PARSE_IPV4_ERR_NONE
+
+ Explanation:
+
+  This error code has the value 0, and means that no error occurred parsing the
+ ipv4 address from the Vstr string.
+
+
+Constant: VSTR_TYPE_PARSE_IPV4_ERR_IPV4_OOB
+
+ Explanation:
+
+  This error code means that the numbers for the ipv4 address in the
+ Vstr string where out of bounds.
+
+
+Constant: VSTR_TYPE_PARSE_IPV4_ERR_IPV4_FULL
+
+ Explanation:
+
+  This error code means that the ipv4 address wasn't full (Ie. 127/8 is a non
+ full ipv4 address with CIDR mask).
+
+
+Constant: VSTR_TYPE_PARSE_IPV4_ERR_ONLY
+
+ Explanation:
+
+  This error code means that the ipv4 address, and option mask, wasn't the only
+ thing in the Vstr string.
+
+ Note:
+
+  When this error code is returned, the ip address is still parsed out and as
+ usable as if no error had occurred.
+
+
+Constant: VSTR_TYPE_PARSE_IPV4_ERR_CIDR_OOB
+
+ Explanation:
+
+  This error code means that the numbers for the ipv4 CIDR mask in the
+ Vstr string where out of bounds.
+
+
+Constant: VSTR_TYPE_PARSE_IPV4_ERR_CIDR_FULL
+
+ Explanation:
+
+  This error code means that the ipv4 CIDR mask wasn't full (Ie. 127.0.0.1/ is
+ an ipv4 address with a non full ipv4 CIDR mask).
+
+
+Constant: VSTR_TYPE_PARSE_IPV4_ERR_NETMASK_OOB
+
+ Explanation:
+
+  This error code means that the numbers for the ipv4 netmask in the
+ Vstr string where out of bounds.
+
+
+Constant: VSTR_TYPE_PARSE_IPV4_ERR_NETMASK_FULL
+
+ Explanation:
+
+  This error code means that the ipv4 NETMASK mask wasn't full (Ie.
+ 127.0.0.1/255.0 is an ipv4 address with a non full ipv4 netmask).
+
+
+Constant: VSTR_FLAG_PARSE_IPV4_DEF
+
+ Explanation:
+
+  This flag is 0, and is generally only used as programmer documentation to mean
+ no flags are applied to this function.
+
+
+Constant: VSTR_FLAG_PARSE_IPV4_LOCAL
+
+ Explanation:
+
+  This flag changes the parsing from ASCII numbers into "local" numbers
+ (whatever is generated by '0 .. '9' by the host compiler). This can be ignored
+ by anyone not using an EBCDIC character set, or something equally weird.
+
+
+Constant: VSTR_FLAG_PARSE_IPV4_ZEROS
+
+ Explanation:
+
+  This flag allows the use of leading zeros in the ipv4 address and masks.
+
+
+Constant: VSTR_FLAG_PARSE_IPV4_FULL
+
+ Explanation:
+
+  This flag changes the parsing so that the function will return an error if a
+ non full ipv4 address is given (Ie. 127/8 is a non full ipv4 with a CIDR mask).
+ If this flag isn't given the missing numbers are assumed to be zero.
+
+
+Constant: VSTR_FLAG_PARSE_IPV4_CIDR
+
+ Explanation:
+
+  This flag allows the parsing out of a CIDR mask, if one is present.
+
+
+Constant: VSTR_FLAG_PARSE_IPV4_CIDR_FULL
+
+ Explanation:
+
+  This flag changes the parsing so that the function will return an error if a
+ non full ipv4 CIDR mask is given (Ie. 127.0.0.1/ is an ipv4 with a non full
+ ipv4 CIDR mask). If this flag isn't given the missing CIDR mask is assumed to
+ be 32.
+
+
+Constant: VSTR_FLAG_PARSE_IPV4_NETMASK
+
+ Explanation:
+
+  This flag allows the parsing out of a ipv4 netmask, if one is present.
+
+ Note:
+
+  If both this and the VSTR_FLAG_PARSE_IPV4_CIDR flag is given, then either
+ masking interface will be parsed out (it will try a CIDR mask first and if
+ that filas, fall back to a netmask prefix).
+
+
+Constant: VSTR_FLAG_PARSE_IPV4_NETMASK_FULL
+
+ Explanation:
+
+  This flag changes the parsing so that the function will return an error if a
+ non full ipv4 NETMASK mask is given (Ie. 127.0.0.1/255.0 is an ipv4 with a non
+ full ipv4 netmask). If this flag isn't given the missing numbers are assumed to
+ be zero.
+
+
+Constant: VSTR_FLAG_PARSE_IPV4_ONLY
+
+ Explanation:
+
+  This flag changes the parsing so that the function will return an error if the
+ entire string isn't used to contain the ipv4 and option mask.
+
+ Note:
+
+  When this error code is returned, the ip address is still parsed out and as
+ usable as if no error had occurred.
+
+
+Section: Constants passed to vstr_parse_ipv6()
+
+Constant: VSTR_TYPE_PARSE_IPV6_ERR_NONE
+
+ Explanation:
+
+  This error code has the value 0, and means that no error occurred parsing the
+ ipv6 address from the Vstr string.
+
+
+Constant: VSTR_TYPE_PARSE_IPV6_ERR_IPV6_OOB
+
+ Explanation:
+
+  This error code means that the numbers for the ipv6 address in the
+ Vstr string where out of bounds.
+
+
+Constant: VSTR_TYPE_PARSE_IPV6_ERR_IPV6_FULL
+
+ Explanation:
+
+  This error code means that the ipv6 address wasn't full (Ie. FFFF/8 is a non
+ full ipv6 address with CIDR mask).
+
+
+Constant: VSTR_TYPE_PARSE_IPV6_ERR_ONLY
+
+ Explanation:
+
+  This error code means that the ipv6 address, and option mask, wasn't the only
+ thing in the Vstr string.
+
+ Note:
+
+  When this error code is returned, the ip address is still parsed out and as
+ usable as if no error had occurred.
+
+
+Constant: VSTR_TYPE_PARSE_IPV6_ERR_CIDR_OOB
+
+ Explanation:
+
+  This error code means that the numbers for the ipv6 CIDR mask in the
+ Vstr string where out of bounds.
+
+
+Constant: VSTR_TYPE_PARSE_IPV6_ERR_CIDR_FULL
+
+ Explanation:
+
+  This error code means that the ipv6 CIDR mask wasn't full (Ie. F::1/ is
+ an ipv6 address with a non full ipv6 CIDR mask).
+
+
+Constant: VSTR_TYPE_PARSE_IPV6_ERR_IPV6_NULL
+
+ Explanation:
+
+  This error code means that there is more than one "NULL" point in the
+ ipv6 address, for example "F::E::1" has two NULL points and is impossible
+ to parse.
+
+
+Constant: VSTR_FLAG_PARSE_IPV6_DEF
+
+ Explanation:
+
+  This flag is 0, and is generally only used as programmer documentation to mean
+ no flags are applied to this function.
+
+
+Constant: VSTR_FLAG_PARSE_IPV6_LOCAL
+
+ Explanation:
+
+  This flag changes the parsing from ASCII numbers into "local" numbers
+ (whatever is generated by '0 .. '9' by the host compiler). This can be ignored
+ by anyone not using an EBCDIC character set, or something equally weird.
+
+
+Constant: VSTR_FLAG_PARSE_IPV6_CIDR
+
+ Explanation:
+
+  This flag allows the parsing out of a CIDR mask, if one is present.
+
+
+Constant: VSTR_FLAG_PARSE_IPV6_CIDR_FULL
+
+ Explanation:
+
+  This flag changes the parsing so that the function will return an error if a
+ non full ipv6 CIDR mask is given (Ie. ::1/ is an ipv6 with a non full
+ ipv6 CIDR mask). If this flag isn't given the missing CIDR mask is assumed to
+ be 32.
+
+
+Constant: VSTR_FLAG_PARSE_IPV6_ONLY
+
+ Explanation:
+
+  This flag changes the parsing so that the function will return an error if the
+ entire string isn't used to contain the ipv6 and option mask.
+
+ Note:
+
+  When this error code is returned, the ip address is still parsed out and as
+ usable as if no error had occurred.
+
+
+Section: Constants used with the custom output formatter for ipv6 addresses
+
+Constant: VSTR_TYPE_SC_FMT_CB_IPV6_ALIGNED
+
+ Explanation:
+
+  This flag outputs the ipv6 address as 8 groups of 4 hexadecimal values.
+ For example "FFFF:0EEE:00DD:000C:0000:0000:0001:0002" would be an ipv6 address
+ output in aligned mode.
+
+
+Constant: VSTR_TYPE_SC_FMT_CB_IPV6_COMPACT
+
+ Explanation:
+
+  This flag outputs the ipv6 address in as small a representation as possible,
+ for example "FFFF:EEE:DD:C::1:2" would be an ipv6 address
+ output in compact mode.
+
+
+Constant: VSTR_TYPE_SC_FMT_CB_IPV6_STD
+
+ Explanation:
+
+  This flag outputs the ipv6 address as 8 groups of hexadecimal numbers between
+ 0 and FFFF, this is the format mostly used in standards. documents,
+ for example "FFFF:EEE:DD:C:0:0:1:2" would be an ipv6 address
+ output in compact mode.
+
+
+Constant: VSTR_TYPE_SC_FMT_CB_IPV6_IPV4_ALIGNED
+
+ Explanation:
+
+  This flag outputs the ipv6 address in the same way as
+ VSTR_TYPE_SC_FMT_CB_IPV6_ALIGNED, except that the last 2 groups of hexadecimal
+ values (the last 4 octets) are replaced with an ipv4 address.
+
+
+Constant: VSTR_TYPE_SC_FMT_CB_IPV6_IPV4_COMPACT
+
+ Explanation:
+
+  This flag outputs the ipv6 address in the same way as
+ VSTR_TYPE_SC_FMT_CB_IPV6_COMPACT, except that the last 2 groups of hexadecimal
+ values (the last 4 octets) are replaced with an ipv4 address.
+
+
+Constant: VSTR_TYPE_SC_FMT_CB_IPV6_IPV4_STD
+
+ Explanation:
+
+  This flag outputs the ipv6 address in the same way as
+ VSTR_TYPE_SC_FMT_CB_IPV6_STD, except that the last 2 groups of hexadecimal
+ values (the last 4 octets) are replaced with an ipv4 address.
+
+
+Section: Constants passed to vstr_split_buf(), vstr_split_cstr_buf(), VSTR_SPLIT_CSTR_BUF(), vstr_split_chrs(), vstr_split_cstr_chrs() and VSTR_SPLIT_CSTR_CHRS()
+
+Constant: VSTR_FLAG_SPLIT_DEF
+
+ Explanation:
+
+  This flag is 0, and is generally only used as programmer documentation to mean
+ no flags are applied to this function.
+
+
+Constant: VSTR_FLAG_SPLIT_BEG_NULL
+
+ Explanation:
+
+  This flag allows the split functions to add sections at the beginning of the
+ input that have a null string before the match. For example the input
+ "::abcd:..." split on ":" would have 2 sections at positions 1 and 2
+ of length 0, without this flag the first section would be at position 3 with
+ length 4.
+
+
+Constant: VSTR_FLAG_SPLIT_MID_NULL
+
+ Explanation:
+
+  This flag allows the split functions to add sections in the middle of the
+ input that have a null string between 2 matches. For example the input
+ "a::abcd:..." split on ":" would have the second section at position 3
+ of length 0, without this flag the second section would be at position 4 of
+ length 4.
+
+
+Constant: VSTR_FLAG_SPLIT_END_NULL
+
+ Explanation:
+
+  This flag allows the split functions to add sections at the end of the
+ input that have a null string after a match. For example the input
+ "a::" split on ":" would have the second section at position 3
+ of length 0, without this flag there would only be one section added.
+
+
+Constant: VSTR_FLAG_SPLIT_POST_NULL
+
+ Explanation:
+
+  This flag allows the split functions to add a final post section of the
+ input that ends with a match. For example the input "a:" split on ":" would
+ have the second section at position 3 (outside the range of the input)
+ of length 0, without this flag there would only be one section added.
+
+
+Constant: VSTR_FLAG_SPLIT_NO_RET
+
+ Explanation:
+
+  This flag allows the split functions to return 1, when the Vstr sections
+ doesn't have any more room. Without the flag the split functions would
+ calculate the number of splits that would have been added if there was room
+ in the Vstr sections.
+
+
+Constant: VSTR_FLAG_SPLIT_REMAIN
+
+ Explanation:
+
+  This flag changes the split functions, when used with a limit, so that the
+ last section added is for the remainder of the input.
+
+
+Section: Constants passed to vstr_sects_foreach()
+
+Constant: VSTR_FLAG_SECTS_FOREACH_DEF
+
+ Explanation:
+
+  This flag is 0, and is generally only used as programmer documentation to mean
+ no flags are applied to this function.
+
+
+Constant: VSTR_FLAG_SECTS_FOREACH_BACKWARD
+
+ Explanation:
+
+  This flag changes the foreach function so that it goes through the sections
+ backward (from the end to the beginning).
+
+
+Constant: VSTR_FLAG_SECTS_FOREACH_ALLOW_NULL
+
+ Explanation:
+
+  This flag changes the foreach function so that it calls the foreach callback
+ on sections of null length (a non zero position with a zero length).
+
+
+Constant: VSTR_TYPE_SECTS_FOREACH_DEF
+
+ Explanation:
+
+  This return value is 0, and is generally only used as programmer
+ documentation to mean nothing special should happen on return from the
+ callback.
+
+
+Constant: VSTR_TYPE_SECTS_FOREACH_DEL
+
+ Explanation:
+
+  This return value tells the foreach function to delete the current section
+ before the next callback is called.
+
+
+Constant: VSTR_TYPE_SECTS_FOREACH_RET
+
+ Explanation:
+
+  This return value tells the foreach function to return immediately (it does
+ the same thing as a break statement in a C for loop.
+
+
+Section: Constants used with the callback from vstr_cache_add_cb()
+
+Constant: VSTR_TYPE_CACHE_ADD
+
+ Explanation:
+
+  This type means that an add operation has just happened on the Vstr string,
+ the position and length arguments are as taken from one of the vstr_add_*
+ functions.
+
+
+Constant: VSTR_TYPE_CACHE_DEL
+
+ Explanation:
+
+  This type means that a delete operation has just happened on the Vstr string,
+ the position and length arguments are as taken from the vstr_del() function.
+
+
+Constant: VSTR_TYPE_CACHE_SUB
+
+ Explanation:
+
+  This type means that a substitute operation has just happened on the
+ Vstr string, the position and length arguments are as taken from one of the
+ vstr_sub_* functions.
+
+
+Constant: VSTR_TYPE_CACHE_FREE
+
+ Explanation:
+
+  This type means that the data in the cache needs to be free()'d, the callback
+ should always return NULL when this type is passed in.
+  The position and length arguments are undefined.
+
+
+Section: Constants passed to vstr_sc_mmap_fd() and vstr_sc_mmap_file()
+
+Constant: VSTR_TYPE_SC_MMAP_FD_ERR_NONE
+Constant: VSTR_TYPE_SC_MMAP_FILE_ERR_NONE
+
+ Explanation:
+
+  This error code has the value 0, and means that no error occurred adding the
+ mapping into the Vstr string.
+
+
+Constant: VSTR_TYPE_SC_MMAP_FILE_ERR_OPEN_ERRNO
+
+ Explanation:
+
+  This error code means that the call to open() returned -1, errno is set.
+
+
+Constant: VSTR_TYPE_SC_MMAP_FD_ERR_FSTAT_ERRNO
+Constant: VSTR_TYPE_SC_MMAP_FILE_ERR_FSTAT_ERRNO
+
+ Explanation:
+
+  This error code means that the call to fstat() returned -1, errno is set.
+
+
+Constant: VSTR_TYPE_SC_MMAP_FD_ERR_MMAP_ERRNO
+Constant: VSTR_TYPE_SC_MMAP_FILE_ERR_MMAP_ERRNO
+
+ Explanation:
+
+  This error code means that the call to mmap() returned -1, errno is set.
+
+
+Constant: VSTR_TYPE_SC_MMAP_FILE_ERR_CLOSE_ERRNO
+
+ Explanation:
+
+  This error code means that the call to close() returned -1, errno is set.
+
+ Note:
+
+  Even though this is an error, the mapping has already occurred and was
+ successful.
+  If another error occurred (Eg. fstat()/mmap()), then any errors from close()
+ will be hidden.
+
+
+Constant: VSTR_TYPE_SC_MMAP_FD_ERR_MEM
+Constant: VSTR_TYPE_SC_MMAP_FILE_ERR_MEM
+
+ Explanation:
+
+  This error code means that memory could not be allocated.
+
+ Note:
+
+  To help the programer unify error paths base->conf->malloc_bad is set to
+ TRUE, and errno is set to ENOMEM.
+
+
+Constant: VSTR_TYPE_SC_MMAP_FD_ERR_TOO_LARGE
+Constant: VSTR_TYPE_SC_MMAP_FILE_ERR_TOO_LARGE
+
+ Explanation:
+
+  This error code means that the memory mapping was too big to fit in the
+ Vstr string (with LFS extensions files are 63 bits, while on a 32 bit
+ computer memory space is still only 32 bits so this isn't a corner case).
+
+ Note:
+
+  To help the programer unify error paths errno is set to EFBIG.
+
+
+Section: Constants passed to vstr_sc_read_iov_fd(), vstr_sc_read_len_fd(), vstr_sc_read_iov_file() and vstr_sc_read_len_file()
+
+Constant: VSTR_TYPE_SC_READ_FD_ERR_NONE
+Constant: VSTR_TYPE_SC_READ_FILE_ERR_NONE
+
+ Explanation:
+
+  This error code has the value 0, and means that no error occurred adding the
+ read() data into the Vstr string.
+
+
+Constant: VSTR_TYPE_SC_READ_FILE_ERR_OPEN_ERRNO
+
+ Explanation:
+
+  This error code means that the call to open() returned -1, errno is set.
+
+
+Constant: VSTR_TYPE_SC_READ_FD_ERR_FSTAT_ERRNO
+Constant: VSTR_TYPE_SC_READ_FILE_ERR_FSTAT_ERRNO
+
+ Explanation:
+
+  This error code means that the call to fstat() returned -1, errno is set.
+
+
+Constant: VSTR_TYPE_SC_READ_FILE_ERR_SEEK_ERRNO
+
+ Explanation:
+
+  This error code means that the call to lseek() returned -1, errno is set.
+
+
+Constant: VSTR_TYPE_SC_READ_FD_ERR_READ_ERRNO
+Constant: VSTR_TYPE_SC_READ_FILE_ERR_READ_ERRNO
+
+ Explanation:
+
+  This error code means that the call to readv() returned -1, errno is set.
+
+
+Constant: VSTR_TYPE_SC_READ_FILE_ERR_CLOSE_ERRNO
+
+ Explanation:
+
+  This error code means that the call to close() returned -1, errno is set.
+
+ Note:
+
+  Even though this is an error, the readv() has already occurred and was
+ successful.
+  If another error occurred (Eg. fstat()/readv()), then any errors from close()
+ will be hidden.
+
+
+Constant: VSTR_TYPE_SC_READ_FD_ERR_EOF
+Constant: VSTR_TYPE_SC_READ_FILE_ERR_EOF
+
+ Explanation:
+
+  This error code means that the call to readv() returned 0.
+
+ Note:
+
+  If you pass 0 as the length to the read_*_file functions, you can still get
+ the _EOF error if the file is truncated while it is being read.
+  To help the programer unify error paths errno is set to ENOSPC.
+
+
+Constant: VSTR_TYPE_SC_READ_FD_ERR_MEM
+Constant: VSTR_TYPE_SC_READ_FILE_ERR_MEM
+
+ Explanation:
+
+  This error code means that memory could not be allocated.
+
+ Note:
+
+  To help the programer unify error paths base->conf->malloc_bad is set to
+ TRUE, and errno is set to ENOMEM.
+
+
+Constant: VSTR_TYPE_SC_READ_FD_ERR_TOO_LARGE
+Constant: VSTR_TYPE_SC_READ_FILE_ERR_TOO_LARGE
+
+ Explanation:
+
+  This error code means that the memory mapping was too big to fit in the
+ Vstr string (with LFS extensions files are 63 bits, while on a 32 bit
+ computer memory space is still hard limited to 32 bits so this isn't a
+ corner case).
+
+ Note:
+
+  To help the programer unify error paths errno is set to EFBIG.
+
+
+Section: Constants passed to vstr_sc_write_fd() and vstr_sc_write_file()
+
+Constant: VSTR_TYPE_SC_WRITE_FD_ERR_NONE
+Constant: VSTR_TYPE_SC_WRITE_FILE_ERR_NONE
+
+ Explanation:
+
+  This error code has the value 0, and means that no error occurred adding the
+ read() data into the Vstr string.
+
+
+Constant: VSTR_TYPE_SC_WRITE_FILE_ERR_SEEK_ERRNO
+
+ Explanation:
+
+  This error code means that the call to lseek() returned -1, errno is set.
+
+
+Constant: VSTR_TYPE_SC_WRITE_FILE_ERR_OPEN_ERRNO
+
+ Explanation:
+
+  This error code means that the call to open() returned -1, errno is set.
+
+
+Constant: VSTR_TYPE_SC_WRITE_FD_ERR_WRITE_ERRNO
+Constant: VSTR_TYPE_SC_WRITE_FILE_ERR_WRITE_ERRNO
+
+ Explanation:
+
+  This error code means that the call to writev() returned -1, errno is set.
+
+
+Constant: VSTR_TYPE_SC_WRITE_FILE_ERR_CLOSE_ERRNO
+
+ Explanation:
+
+  This error code means that the call to close() returned -1, errno is set.
+
+ Note:
+
+  Even though this is an error, the mapping has already occurred and happened
+ successfully.
+  If another error occurred (Eg. writev()), then any errors from close() will be
+ hidden.
+
+
+Constant: VSTR_TYPE_SC_WRITE_FD_ERR_MEM
+Constant: VSTR_TYPE_SC_WRITE_FILE_ERR_MEM
+
+ Explanation:
+
+  This error code means that memory could not be allocated.
+
+ Note:
+
+  To help the programer unify error paths base->conf->malloc_bad is set to
+ TRUE, and errno is set to ENOMEM.
+
+
+Section: Constants passed to vstr_cntl_base()
+
+Constant: VSTR_CNTL_BASE_GET_CONF
+
+ Parameter[1]: Return Vstr configuration
+ Type[1]: struct Vstr_conf **
+
+ Explanation:
+
+  This option will get the Vstr configuration for the Vstr string
+
+
+Constant: VSTR_CNTL_BASE_SET_CONF
+
+ Parameter[1]: Vstr configuration
+ Type[1]: struct Vstr_conf *
+
+ Explanation:
+
+  This option will set the Vstr configuration for the Vstr string.
+
+ Note:
+
+  This will only return successfully if either the Vstr string is empty, or
+ the Vstr configurations have the same value for the _NUM_BUF_SZ attribute and
+ the new configuration has the same caches registered. See vstr_swap_cache()
+ for a function that tries to do what you want.
+  If the Vstr configuration (Parameter[1]) is NULL, then the default
+ Vstr configuration will be used.
+
+
+Constant: VSTR_CNTL_BASE_GET_FLAG_HAVE_CACHE
+
+ Parameter[1]: Returns value of flag
+ Type[1]: int *
+
+ Explanation:
+
+  This option lets you know if the Vstr string can cache data, this can only
+ be controlled using the VSTR_CNTL_CONF_GET_FLAG_ALLOC_CACHE flag before
+ allocation.
+
+
+Constant: VSTR_CNTL_BASE_GET_TYPE_GRPALLOC_CACHE
+
+ Parameter[1]: Returns type of group malloc (VSTR_TYPE_CNTL_CONF_GRPALLOC_*)
+ Type[1]: unsigned int *
+
+ Explanation:
+
+  This option will get the type of the group allocation for the Vstr base,
+ this can only be controlled using the VSTR_CNTL_CONF_SET_TYPE_GRPALLOC_CACHE
+ type before allocation.
+
+
+Section: Constants passed to vstr_cntl_conf()
+
+Constant: VSTR_CNTL_CONF_GET_NUM_BUF_SZ
+
+ Parameter[1]: Returns allocated size of data portion of _BUF nodes
+ Type[1]: unsigned int *
+
+ Explanation:
+
+  This option will get the size of the allocated portion of a _BUF type node.
+
+ Note:
+
+  The default value of this attribute is currently 48, the reason for this is
+ that 8 bytes are used for generic node storage and 8 more bytes are overhead
+ used as in glibc's malloc() implementation. This means that 64 bytes are
+ allocated for each node of data. Looking at the data given in the size_cmp 
+ spreadsheet and the ex_perf_nodesize example my guess is that node sizes above
+ 512 probably gain very little, while consumiung more space.
+
+
+Constant: VSTR_CNTL_CONF_SET_NUM_BUF_SZ
+
+ Parameter[1]: Allocated size of data portion of _BUF nodes
+ Type[1]: unsigned int
+
+ Explanation:
+
+  This option will set the size of the allocated portion of a _BUF type node.
+
+ Note:
+
+  This will fail if Vstr strings are using the Vstr configuration.
+  The value cannot be higher than VSTR_MAX_NODE_BUF.
+
+
+Constant: VSTR_CNTL_CONF_GET_NUM_IOV_MIN_ALLOC
+
+ Parameter[1]: Returns size of minimum iovec allocation
+ Type[1]: unsigned int *
+
+ Explanation:
+
+  This option will get the size of the minimum allocation to do when expanding
+ the iovec cache.
+
+
+Constant: VSTR_CNTL_CONF_SET_NUM_IOV_MIN_ALLOC
+
+ Parameter[1]: Size of minimum iovec allocation
+ Type[1]: unsigned int
+
+ Explanation:
+
+  This option will set the size of the minimum allocation to do when expanding
+ the iovec cache.
+
+
+Constant: VSTR_CNTL_CONF_GET_NUM_IOV_MIN_OFFSET
+
+ Parameter[1]: Returns post allocation offset for iovec cache
+ Type[1]: unsigned int *
+
+ Explanation:
+
+  This option will get the offset on the iovec cache after an iovec allocation.
+
+
+Constant: VSTR_CNTL_CONF_SET_NUM_IOV_MIN_OFFSET
+
+ Parameter[1]: Post allocation offset for iovec cache
+ Type[1]: unsigned int
+
+ Explanation:
+
+  This option will set the offset on the iovec cache after an iovec allocation.
+
+
+Constant: VSTR_CNTL_CONF_GET_NUM_REF
+
+ Parameter[1]: Returns number of references
+ Type[1]: unsigned int *
+
+ Explanation:
+
+  This option will get the number of references to the Vstr configuration.
+
+
+Constant: VSTR_CNTL_CONF_SET_LOC_CSTR_AUTO_NAME_NUMERIC
+
+ Parameter[1]: Name of system LC_NUMERIC locale
+ Type[1]: const char *
+
+ Explanation:
+
+  This option will set the LC_NUMERIC variables in the Vstr configuration to be
+ those specified in the system locale (Parameter[1]).
+
+ Note:
+
+  Passing NULL as the name will use the current system LC_NUMERIC locale.
+
+
+Constant: VSTR_CNTL_CONF_GET_LOC_CSTR_NAME_NUMERIC
+
+ Parameter[1]: Returns name of current LC_NUMERIC locale.
+ Type[1]: const char **
+
+ Explanation:
+
+  This option will get the name of the LC_NUMERIC locale.
+
+
+Constant: VSTR_CNTL_CONF_SET_LOC_CSTR_NAME_NUMERIC
+
+ Parameter[1]: Name of LC_NUMERIC locale in Vstr configuration
+ Type[1]: const char *
+
+ Explanation:
+
+  This option will set the name of the LC_NUMERIC locale.
+
+
+Constant: VSTR_CNTL_CONF_GET_LOC_CSTR_DEC_POINT
+
+ Parameter[1]: Returns decimal point C string, for default base
+ Type[1]: const char **
+
+ Explanation:
+
+  This option will get the value of the decimal point LC_NUMERIC locale
+ variable.
+
+
+Constant: VSTR_CNTL_CONF_SET_LOC_CSTR_DEC_POINT
+
+ Parameter[1]: Decimal point C string, for default base
+ Type[1]: const char *
+
+ Explanation:
+
+  This option will set the value of the decimal point LC_NUMERIC locale
+ variable.
+
+
+Constant: VSTR_CNTL_CONF_GET_LOC_CSTR_THOU_SEP
+
+ Parameter[1]: Returns thousands separator C string, for default base
+ Type[1]: const char **
+
+ Explanation:
+
+  This option will get the value of the thousands separator LC_NUMERIC locale
+ variable.
+
+
+Constant: VSTR_CNTL_CONF_SET_LOC_CSTR_THOU_SEP
+
+ Parameter[1]: Thousands separator C string, for default base
+ Type[1]: const char *
+
+ Explanation:
+
+  This option will set the value of the thousands separator LC_NUMERIC locale
+ variable.
+
+
+Constant: VSTR_CNTL_CONF_GET_LOC_CSTR_THOU_GRP
+
+ Parameter[1]: Returns value locale thousands grouping, for the default base
+ Type[1]: const char **
+
+ Explanation:
+
+  This option will get the value of the thousands grouping LC_NUMERIC locale
+ variable.
+
+
+Constant: VSTR_CNTL_CONF_SET_LOC_CSTR_THOU_GRP
+
+ Parameter[1]: Value locale thousands grouping, for the default base
+ Type[1]: const char *
+
+ Explanation:
+
+  This option will set the value of the thousands grouping LC_NUMERIC locale
+ variable.
+
+
+Constant: VSTR_CNTL_CONF_GET_FLAG_IOV_UPDATE
+
+ Parameter[1]: Returns value of flag
+ Type[1]: int *
+
+ Explanation:
+
+  This option will return the status of the flag that allows the vstr functions
+ to update the iovec cache when doing add/del operations on Vstr strings.
+
+
+Constant: VSTR_CNTL_CONF_SET_FLAG_IOV_UPDATE
+
+ Parameter[1]: Value of flag
+ Type[1]: int
+
+ Explanation:
+
+  This option will allow the vstr functions to update the iovec cache when
+ doing add/del operations on Vstr strings.
+
+
+Constant: VSTR_CNTL_CONF_GET_FLAG_DEL_SPLIT
+
+ Parameter[1]: Returns value of flag
+ Type[1]: int *
+
+ Explanation:
+
+  This option will return the status of the flag that allows the vstr functions
+ to split _BUF nodes on del operations to Vstr strings.
+
+
+Constant: VSTR_CNTL_CONF_SET_FLAG_DEL_SPLIT
+
+ Parameter[1]: Value of flag
+ Type[1]: int
+
+ Explanation:
+
+  This option will allow the vstr functions to split _BUF nodes on a
+ del operations to Vstr strings.
+
+
+Constant: VSTR_CNTL_CONF_GET_FLAG_ALLOC_CACHE
+
+ Parameter[1]: Returns value of flag
+ Type[1]: int *
+
+ Explanation:
+
+  This option will return the status of the flag that allows Vstr strings to
+ cache data.
+
+
+Constant: VSTR_CNTL_CONF_SET_FLAG_ALLOC_CACHE
+
+ Parameter[1]: Value of flag
+ Type[1]: int
+
+ Explanation:
+
+  This option will allow the Vstr strings made from the Vstr configuration to
+ cache data.
+
+ Note:
+
+  If this option is turned off vstr_cache_add_cb() will not work on Vstr strings
+ made from the the Vstr configuration. However each Vstr string will become
+ smaller due to the lack of cache.
+
+
+Constant: VSTR_CNTL_CONF_GET_FMT_CHAR_ESC
+
+ Parameter[1]: Returns value of escape character for custom format specifiers
+ Type[1]: char *
+
+ Explanation:
+
+  This option will return the character used for specifying custom format
+ specifiers in the vstr_add_vfmt() function.
+
+
+Constant: VSTR_CNTL_CONF_SET_FMT_CHAR_ESC
+
+ Parameter[1]: Value of escape character for custom format specifiers
+ Type[1]: int
+
+ Explanation:
+
+  This option will allow the Vstr strings using the Vstr configuration to
+ use custom format specifiers in the vstr_fmt_vfmt() function.
+
+ Note:
+
+  If this option is set to 0 ('\0') then vstr_fmt_vfmt() acts like
+ vstr_fmt_vsysfmt().
+
+
+Constant: VSTR_CNTL_CONF_GET_NUM_SPARE_BUF
+Constant: VSTR_CNTL_CONF_GET_NUM_SPARE_NON
+Constant: VSTR_CNTL_CONF_GET_NUM_SPARE_PTR
+Constant: VSTR_CNTL_CONF_GET_NUM_SPARE_REF
+
+ Parameter[1]: Returns number of spare nodes to have for the specified type
+ Type[1]: unsigned int *
+
+ Explanation:
+
+  This option gets the current number of spare nodes of the specified type.
+
+
+Constant: VSTR_CNTL_CONF_SET_NUM_SPARE_BUF
+Constant: VSTR_CNTL_CONF_SET_NUM_SPARE_NON
+Constant: VSTR_CNTL_CONF_SET_NUM_SPARE_PTR
+Constant: VSTR_CNTL_CONF_SET_NUM_SPARE_REF
+
+ Parameter[1]: Number of spare nodes to have for the specified type
+ Type[1]: unsigned int
+
+ Explanation:
+
+  This option is will set the number of spare nodes of the specified type,
+ by calling either vstr_make_spare_nodes() or vstr_free_spare_nodes().
+
+ Note:
+
+  When the value specified is higher and it calls vstr_make_spare_nodes() then
+ a return value of FALSE means that there was a malloc error, just as if you
+ called vstr_make_spare_nodes() directly.
+
+
+Constant: VSTR_CNTL_CONF_GET_FLAG_ATOMIC_OPS
+
+ Parameter[1]: Returns value of flag
+ Type[1]: int *
+
+ Explanation:
+
+  This option will return the status of the flag that makes the vstr functions
+ do atomic alterations to the string data. If the flag is set then all functions
+ will either return successfully, or not alter the data of the vstr from the
+ point of view of vstr_cmp().
+
+ Note:
+
+  This is mainly a speedup to the vstr_sub_*() functions and the functions that
+ use them, like vstr_conv_*(). It is true by default, so all function
+ operations are atomic.
+
+
+Constant: VSTR_CNTL_CONF_SET_FLAG_ATOMIC_OPS
+
+ Parameter[1]: Value of flag
+ Type[1]: int
+
+ Explanation:
+
+  This option will set the status of the flag that makes the vstr functions
+ do atomic alterations to the string data. If the flag is set then all functions
+ will either return successfully, or not alter the data of the vstr from the
+ point of view of vstr_cmp().
+
+ Note:
+
+  This is mainly a speedup to the vstr_sub_*() functions and the functions that
+ use them, like vstr_conv_*(). It is true by default, so all function
+ operations are atomic.
+
+
+Constant: VSTR_CNTL_CONF_SET_NUM_RANGE_SPARE_BUF
+Constant: VSTR_CNTL_CONF_SET_NUM_RANGE_SPARE_NON
+Constant: VSTR_CNTL_CONF_SET_NUM_RANGE_SPARE_PTR
+Constant: VSTR_CNTL_CONF_SET_NUM_RANGE_SPARE_REF
+
+ Parameter[1]: Minimum number of spare nodes to have for the specified type
+ Type[1]: unsigned int
+
+ Parameter[2]: Maximum number of spare nodes to have for the specified type
+ Type[2]: unsigned int
+
+ Explanation:
+
+  This option will make the number of spare nodes of the specified type fit
+ into the range given, by calling either vstr_make_spare_nodes() or
+ vstr_free_spare_nodes().
+
+ Note:
+
+  When the value specified is higher it calls vstr_make_spare_nodes() at which
+ point a return value of FALSE means that there was a malloc error, just as if
+ you called vstr_make_spare_nodes() directly.
+
+
+Constant: VSTR_CNTL_CONF_GET_NUM_SPARE_BASE
+
+ Parameter[1]: Returns number of spare Vstr_base objects
+ Type[1]: unsigned int *
+
+ Explanation:
+
+  This option gets the current number of spare Vstr_base objects.
+
+
+Constant: VSTR_CNTL_CONF_SET_NUM_SPARE_BASE
+
+ Parameter[1]: Number of spare base objects to have
+ Type[1]: unsigned int
+
+ Explanation:
+
+  This option is will set the number of spare nodes of the specified type.
+
+ Note:
+
+  When the value specified is higher it has to create spare base objects
+ at which point a return value of FALSE means that there was a malloc error,
+ just as if you called vstr_make_base() directly and that had to create them.
+
+
+Constant: VSTR_CNTL_CONF_SET_NUM_RANGE_SPARE_BASE
+
+ Parameter[1]: Minimum number of spare base objects to have
+ Type[1]: unsigned int
+
+ Parameter[2]: Maximum number of spare base objects to have
+ Type[2]: unsigned int
+
+ Explanation:
+
+  This option will make the number of spare base objects fit into the range
+ given, by calling either creating spare base objects or destroying them.
+
+ Note:
+
+  When the value specified is higher it has to creates spare base objects
+ at which point a return value of FALSE means that there was a malloc error,
+ just as if you called vstr_make_base() directly and that had to create them.
+
+
+Constant: VSTR_CNTL_CONF_GET_TYPE_GRPALLOC_CACHE
+
+ Parameter[1]: Returns type of group malloc (VSTR_TYPE_CNTL_CONF_GRPALLOC_*)
+ Type[1]: unsigned int *
+
+ Explanation:
+
+  This option will get the type of the group allocation that a vstr_make_base()
+ will create with this configuration.
+
+
+Constant: VSTR_CNTL_CONF_SET_TYPE_GRPALLOC_CACHE
+
+ Parameter[1]: Type of group malloc (VSTR_TYPE_CNTL_CONF_GRPALLOC_*)
+ Type[1]: unsigned int
+
+ Explanation:
+
+  This option will set the type of the group allocation that a vstr_make_base()
+ will create with this configuration.
+
+ Note:
+
+  If this call changes the type of group malloc to perform, then all current
+ spare base objects will have to be deleted. And future base objects of the old
+ type will be directly free'd.
+
+
+Constant: VSTR_CNTL_CONF_GET_LOC_REF_NAME_NUMERIC
+
+ Parameter[1]: Returns Vstr memory reference to numeric locale name C string
+ Type[1]: struct Vstr_ref **
+
+ Parameter[2]: Returns length of Vstr memory reference
+ Type[2]: size_t *
+
+ Explanation:
+
+  This option will get the value of the name of the LC_NUMERIC locale
+ configuration.
+
+
+Constant: VSTR_CNTL_CONF_SET_LOC_REF_NAME_NUMERIC
+
+ Parameter[1]: Vstr memory reference to numeric locale name C string
+ Type[1]: struct Vstr_ref *
+
+ Parameter[2]: Length of Vstr memory reference
+ Type[2]: size_t
+
+ Explanation:
+
+  This option will set the value of the name of the LC_NUMERIC locale
+ configuration.
+
+ Note:
+
+  The library takes a reference to the memory reference provided, so if you
+ are finished with it you need to remove your reference.
+
+
+Constant: VSTR_CNTL_CONF_GET_LOC_REF_DEC_POINT
+
+ Parameter[1]: Number base of locale information
+ Type[1]: unsigned int
+
+ Parameter[2]: Returns Vstr memory reference to decimal point C string
+ Type[2]: struct Vstr_ref **
+
+ Parameter[3]: Returns length of Vstr memory reference
+ Type[3]: size_t *
+
+ Explanation:
+
+  This option will get the value of the decimal point LC_NUMERIC locale
+ variable.
+
+
+Constant: VSTR_CNTL_CONF_SET_LOC_REF_DEC_POINT
+
+ Parameter[1]: Number base of locale information
+ Type[1]: unsigned int
+
+ Parameter[2]: Vstr memory reference to decimal point C string
+ Type[2]: struct Vstr_ref *
+
+ Parameter[3]: Length of Vstr memory reference
+ Type[3]: size_t
+
+ Explanation:
+
+  This option will set the value of the decimal point LC_NUMERIC locale
+ variable.
+
+ Note:
+
+  The library takes a reference to the memory reference provided, so if you
+ are finished with it you need to remove your reference.
+
+
+Constant: VSTR_CNTL_CONF_GET_LOC_REF_THOU_SEP
+
+ Parameter[1]: Number base of locale information
+ Type[1]: unsigned int
+
+ Parameter[2]: Returns Vstr memory reference to thousands separator C string
+ Type[2]: struct Vstr_ref **
+
+ Parameter[3]: Returns length of Vstr memory reference
+ Type[3]: size_t *
+
+ Explanation:
+
+  This option will get the value of the thousands seperator LC_NUMERIC locale
+ variable.
+
+
+Constant: VSTR_CNTL_CONF_SET_LOC_REF_THOU_SEP
+
+ Parameter[1]: Number base of locale information
+ Type[1]: unsigned int
+
+ Parameter[2]: Vstr memory reference to thousands separator C string
+ Type[2]: struct Vstr_ref *
+
+ Parameter[3]: Length of Vstr memory reference
+ Type[3]: size_t
+
+ Explanation:
+
+  This option will set the value of the thousands seperator LC_NUMERIC locale
+ variable.
+
+ Note:
+
+  The library takes a reference to the memory reference provided, so if you
+ are finished with it you need to remove your reference.
+
+
+Constant: VSTR_CNTL_CONF_GET_LOC_REF_THOU_GRP
+
+ Parameter[1]: Number base of locale information
+ Type[1]: unsigned int
+
+ Parameter[2]: Returns Vstr memory reference to thousands grouping C string
+ Type[2]: struct Vstr_ref **
+
+ Explanation:
+
+  This option will get the value of the thousands grouping LC_NUMERIC locale
+ variable.
+
+
+Constant: VSTR_CNTL_CONF_SET_LOC_REF_THOU_GRP
+
+ Parameter[1]: Number base of locale information
+ Type[1]: unsigned int
+
+ Parameter[2]: Vstr memory reference to thousands grouping C string
+ Type[2]: struct Vstr_ref *
+
+ Explanation:
+
+  This option will set the value of the thousands grouping LC_NUMERIC locale
+ variable.
+
+ Note:
+
+  The library takes a reference to the memory reference provided, so if you
+ are finished with it you need to remove your reference.
+
+
+Constant: VSTR_CNTL_CONF_GET_LOC_REF_NULL_PTR
+
+ Parameter[1]: Returns Vstr memory reference to locale NULL pointer C string
+ Type[1]: struct Vstr_ref **
+
+ Parameter[2]: Returns length of Vstr memory reference
+ Type[2]: size_t *
+
+ Explanation:
+
+  This option will get the value of the locale NULL pointer
+ variable. This is what is printed when you pass NULL to "%s".
+
+
+Constant: VSTR_CNTL_CONF_SET_LOC_REF_NULL_PTR
+
+ Parameter[1]: Vstr memory reference to numeric locale NULL pointer C string
+ Type[1]: struct Vstr_ref *
+
+ Parameter[2]: Length of Vstr memory reference
+ Type[2]: size_t
+
+ Explanation:
+
+  This option will set the value of the locale NULL pointer
+ variable. This is what is printed when you pass NULL to "%s".
+
+ Note:
+
+  The library takes a reference to the memory reference provided, so if you
+ are finished with it you need to remove your reference.
+
+
+Section: Constants passed to vstr_cntl_opt()
+
+Constant: VSTR_CNTL_OPT_GET_CONF
+
+ Parameter[1]: Returns Vstr configuration
+ Type[1]: struct Vstr_conf **
+
+ Explanation:
+
+  This option will get the default Vstr configuration.
+
+ Note:
+
+  This adds a reference to the configuration, so when you are finished with it
+ you'll have to call vstr_freee_conf() on it.
+
+
+Constant: VSTR_CNTL_OPT_SET_CONF
+
+ Parameter[1]: Vstr configuration
+ Type[1]: struct Vstr_conf *
+
+ Explanation:
+
+  This option will set the default Vstr configuration.
+
+ Note:
+
+  This is one of the few functions that take a configuration, but cannot take a
+ NULL pointer instead.
+
+
+Section: Constants passed to vstr_cntl_conf(..., VSTR_CNTL_CONF_SET_TYPE_GRPALLOC_CACHE
+
+Constant: VSTR_TYPE_CNTL_CONF_GRPALLOC_NONE
+
+ Explanation:
+
+  This type means that there is a group allocation configuration to not
+ allocating a cache.
+
+ Note:
+
+  This is type will mean that VSTR_CNTL_CONF_GET_FLAG_ALLOC_CACHE is FALSE.
+
+
+Constant: VSTR_TYPE_CNTL_CONF_GRPALLOC_POS
+
+ Explanation:
+
+  This type means that there is a group allocation configuration to allocating
+ a cache and allocating room to store a position cache.
+
+
+Constant: VSTR_TYPE_CNTL_CONF_GRPALLOC_IOVEC
+
+ Explanation:
+
+  This type means that there is a group allocation configuration to allocating
+ a cache and allocating room to store a position cache and an iovec cache.
+
+ Note:
+
+  The only way to guarantee that you have an iovec available immediately after
+ calling vstr_make_base() is to have at least this group allocation
+ configuration.
+
+
+Constant: VSTR_TYPE_CNTL_CONF_GRPALLOC_CSTR
+
+ Explanation:
+
+  This type means that there is a group allocation configuration to allocating
+ a cache and allocating room to store a position cache, an iovec cache and a
+ cstr cache holder.
+

@@ -1,0 +1,34 @@
+#! /bin/true
+# Simple tester...
+
+[1 2] ; simple list
+
+beg   ; simple symbol
+
+(abcd "foo" ; Not so simple list
+ [ xyz """\
+zoom \a foo
+""" ;zoom
+          r"raw str\" r'''\
+\
+one at beg''' blah]) # See if stuff works again, now...
+
+(bart baz)  # simple list 2
+[foo 'bar'] # simple list 3
+
+() # Empty lists...
+[ ]
+
+"""\
+line on it's own ... unescaped
+"""
+
+<> # Some symbols
+{}
+
+@blah
+
+ready ; testing raw string parsing...
+
+#no-comment;here# 
+-end-

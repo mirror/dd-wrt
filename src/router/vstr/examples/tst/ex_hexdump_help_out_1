@@ -1,0 +1,13 @@
+Usage: jhexdump [FILENAME]...
+   or: jhexdump OPTION
+Output filenames in human hexdump format.
+
+      --help     Display this help and exit
+      --version  Output version information and exit
+      --high     Allow space and high characters in ASCII output
+      --none     Allow only small amount of characters ASCII output
+      --space    Allow space characters in ASCII output (default)
+      --mmap     Toggle use of mmap() to load input files
+      --         Treat rest of cmd line as input filenames
+
+Report bugs to James Antill <james@and.org>.

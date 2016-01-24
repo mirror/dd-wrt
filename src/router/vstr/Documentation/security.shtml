@@ -1,0 +1,567 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <title>Security with string APIs</title>
+
+<!--#include file="style.shtml" -->
+
+  </head>
+
+  <body>
+    <h1>Security with string APIs</h1>
+
+<p id="intro">
+<span class="blk">
+ If you are writing a program in C without a a real string API
+then it is likely your program 
+<a href="security_problems">will end up on a list like this</a>, and all
+programs need to care about security and/or reliability. As a somewhat
+graphic example of this, consider the following two groups of programs found
+on many Linux machines...
+<a class="anc" href="#intro">&para;</a></span>
+</p>
+
+<table class="fig1" width="75%"><tr>
+<td class="ent1">vsftpd</td>  <td class="ent2">wu-ftpd</td> </tr><tr>
+<td class="ent1">postfix</td> <td class="ent2">sendmail</td> </tr><tr>
+<td class="ent1">djbdns</td>  <td class="ent2">bind</td> </tr><tr>
+<td class="ent1">And-httpd</td><td class="ent2">LPRng</td> </tr><tr>
+<td class="ent1"></td>        <td class="ent2">cups</td> </tr><tr>
+<td class="ent1"></td>        <td class="ent2">nfs</td> </tr><tr>
+<td class="ent1"></td>        <td class="ent2">vixie-cron</td> </tr><tr>
+<td class="ent1"></td>        <td class="ent2">squid</td> </tr><tr>
+<td class="ent1"></td>        <td class="ent2">apache-httpd</td> </tr><tr>
+<td class="ent1"></td>        <td class="ent2">openssh</td>
+</tr></table>
+
+<p>
+     ...the left column all have had <b>zero remote buffer overflow</b>
+attacks, three of the four have had "security guarantees" where the authors
+were so sure they were secure money was offered for anyone who could prove
+otherwise. They all consistently use a <b>dynamic string API</b>.
+</p><p>
+ While the right column have all had
+<b>at least one remote buffer overflow</b> and try to use just the
+ <a href="#libcstring">standard C-style string.h functions</a>, and possibly
+a couple of helpers in the vein of strdup() ... this is far from enough.
+
+</p><p id="reason">
+<span class="blk">
+ The "common" reasons for not using
+a string library include: 1) You "just have to be careful" and you'll be
+alright. 2) It is too slow to use one.
+<a class="anc" href="#reason">&para;</a></span>
+</p><p>
+      The first argument just ignores reality,
+the squid maintainers are good but ...
+<a href="http://cert.uni-stuttgart.de/archive/bugtraq/2002/02/msg00315.html">
+they still missed one</a>, the apache team
+are careful and have code inspections,
+but ...
+<a href="http://cert.uni-stuttgart.de/archive/bugtraq/2002/06/msg00295.html">
+they still missed one</a>, and in neither case was it "obvious" by looking
+at the code that there would be a problem. For a list of recent security bugs
+against Red Hat Linux, and an indication of how many wouldn't exist with a
+string API see <a href="security_problems">this page</a>.
+</p><p>
+      Humans just don't do that well with repeated tasks, in fact I'd say that
+given a formula of "do X marginally difficult thing Y times"
+X has to get smaller exponentially as Y gets bigger ... and when dealing with
+string types in code Y gets very big.
+The only tenable solution is to make X be 0. The way to do that is to have all
+of your string operations go through an API that guarantees you can't overflow
+buffers.
+ This means that for the API X is comparatively large but Y,
+the problem of not overflowing a buffer, is reduced to 1. Whereas for each call
+to the API (which is a lot so Y is big), X is zero.
+</p><p>
+      So given that you want a good string API, then the quickest/safest way to
+get one is just to reuse one that is known to do what you want.
+There is a good list <a href="comparison">on
+this page</a>. However there are certain things that you should look for when
+evaluating which library to choose (or possibly writing your own, although
+I'd heavily recommend against that).
+Note that, as I said on the
+<a href="comparison">string library API comparison page</a> security is
+somewhat subjective so you must think about <b>your situation</b>.
+It's possible that <a href="#io">IO</a> is much less important to you than
+having a simple <a href="#sprintf">sprintf</a> that always aborts() on '%n'.
+Or that <a href="#sprintf">sprintf</a> won't be used, and so that important
+to you.
+</p><p>
+      The speed argument is discounted pretty well by the information
+<a href="speed">here</a>.
+</p>
+
+
+<h2 id="stringapi">
+<span class="blk">
+ Security relevant things to look for in a string library API
+<a class="anc" href="#stringapi">&para;</a></span>
+</h2>
+
+<ul>
+<li>
+<span class="blk">
+<b id="alloc">Dynamic allocation</b>: 
+<a class="anc" href="#alloc">&para;</a></span>
+<p>Some APIs will use statically sized
+buffers, and limit the size of data that goes into that buffer.
+This isn't enough as Y in the above formula can still grow due to the fact
+that you can <i>always</i> have problems like...
+</p>
+
+<!--#exec cmd="ex_highlight --id=alloc-ex1 --beg='<span class=\"blk\"><a class=\"anc\" href=\"#alloc-ex1\">&para;</a>
+' --end='</span>' sec/alloc1.c" -->
+
+<p>
+...where both "abcd " and " xyz" need to be in s1 at the end, of course the
+above will seem to "work" until one day someone makes external_data too large
+and then anything can happen. The other problem is that this is almost always
+implemented with the data (the string) and the metadata (it's length) passed to
+the functions separately, this creates some great code like...
+</p>
+
+<!--#exec cmd="ex_highlight --id=alloc-ex2 --beg='<span class=\"blk\"><a class=\"anc\" href=\"#alloc-ex2\">&para;</a>
+' --end='</span>' sec/alloc2.c" -->
+
+<p>
+...which looks OK at first glance, but of course the middle add didn't add
+strlen(external_data) it added strlen(external_data) or l1 ... whichever
+was smaller. So, due to underflow, you get the same affect as just having
+no limit at all.
+</p><p>
+
+ Or code like...
+
+</p>
+
+<!--#exec cmd="ex_highlight --id=alloc-ex3 --beg='<span class=\"blk\"><a class=\"anc\" href=\"#alloc-ex3\">&para;</a>
+' --end='</span>' sec/alloc3.c" -->
+
+<p>
+ And, again, the above code <b>seems to work fine</b>. And even looks
+reasonable, you are swapping a directory "/a/" for "../" and they are the same
+number of characters ... until someone thinks about two directories
+where "/a/b/" becomes "../../", and then it can be seen that you now have 1 more
+in the destination than in the source.
+</p><p>
+
+ Or code like...
+
+</p>
+
+<!--#exec cmd="ex_highlight --id=alloc-ex4 --beg='<span class=\"blk\"><a class=\"anc\" href=\"#alloc-ex4\">&para;</a>
+' --end='</span>' sec/alloc4.c" -->
+
+<p>
+ And, again, the above code <b>seems to work fine</b>, until somone sees that
+the length isn't shortened on non-substitutions.
+</p><p>
+
+ Or code like...
+
+</p>
+
+<!--#exec cmd="ex_highlight --id=alloc-ex5 --beg='<span class=\"blk\"><a class=\"anc\" href=\"#alloc-ex5\">&para;</a>
+' --end='</span>' sec/alloc5.c" -->
+
+<p>
+ And, again, the above code <b>seems to work fine</b>, until someone sees
+that "tmp" can be bigger than X bytes.
+</p><p>
+ Remember that if
+you had a good allocating string API, none of the above errors would be
+possible ... and the kind of errors that would be possible are <b>much more
+likely to happen all the time</b>, they don't <b>seem to work</b> and then
+fail horribly on the "corner cases".
+</p>
+
+<p>
+	  It's also worth noting that fixed size buffer APIs often use more
+memory to store the same amount of data (and with a clever allocating API like
+<a href="design">Vstr</a> it is pretty much guaranteed that they'll take
+much more space).
+</p>
+
+</li>
+
+<li><b id="io">IO and binary data</b>:<p> Some APIs will represent strings as an
+array of characters followed by a '\0' (aka. NIL) character. While saving
+you a theoretical maximum of 4 bytes of metadata, on a 32bit system or 8 on a
+64bit system, (often this doesn't happen due to overhead in the malloc()
+implementation though) you now have the problem of what happens when you
+read your data from a file or over the network and the
+<b>data itself contains a NIL character</b>. Of course as you read the
+data you can convert all NIL bytes (slow), or you can add the data to the
+string API and check the old length and the added length against the APIs idea
+of the new length. However this is both somewhat slow (remember it has to get
+the length by calling strlen()) and prone to error (Y goes up).
+</p><p>
+	Also you should look to see if the API has IO functions supplied,
+strings are sometimes used internally to compare/search against other strings
+but often have to goto or come from some outside resource. If you are having
+to write your own functions to move your data between the string API and the
+network/file system/etc. then those are all sources of potential security
+problems. Most of the average and better libraries provide at least good
+blocking IO support.
+</p><p>
+	Of course where you need this common functionality done for you most
+often, is when it's most difficult ... and that's when you have multiple
+forms of IO going on at once, and can't block on one at the expense of the
+others. For OK non-blocking IO support, the library should provide at least
+a way to do multiple reads to the string appending data if it is available and
+a way to do a write of the string writing as much as possible and then being
+able to store how much was written so that it can be resumed later when there
+is more room on the network connection/whatever.
+</p><p>
+	Also note that if the library provides a read IO operation it
+must either:
+</p>
+
+<ul>
+<li> Accept and deal with NIL bytes across all it's functions. </li>
+<li> Auto filter NIL bytes on read. </li>
+<li> Give you some way of working out that it's read input it can't deal with.
+     </li>
+</ul>
+
+<p>
+	...if it doesn't do any of these it is worthless, as it'll just
+corrupt it's own input. If it just gives you some way to work out the data
+is corrupt, for instance it keeps
+a length as metadata but all the other functions for searching/comparison/etc.
+assume a C-style string, then you need to be extremely careful as each
+"supplied" read IO function is a danger on it's own but there is no way of
+enforcing that people call a conversion function afterward.
+</p>
+
+</li>
+
+<li><b id="solved">Problems solved in the APIs</b>:<p> Solving problems is what your
+code is for, solving string problems is what the string API is supposed to be
+for ... so if you need to search for data, compare data, split data into tokens
+or substitute X data with Y data inside a string you <b>shouldn't</b> have to
+write that code yourself. It's just too common, and
+<a href="#alloc-ex1">can too often lead to
+accessing or writing to data out of bounds</a> of the string.
+</p><p>
+	Of course this doesn't mean that a larger API is always better, in fact
+it's better if you just have to remember a few functions that you need to use.
+But as occasionally you'll want a higher level string related operation, such
+as decoding a URI or splitting a string ... if you find yourself having to
+write it then that is bad.
+</p>
+</li>
+
+<li><b id="testing">Testing</b>:<p> Not much needs to be said about this.
+Testing is the process by which you prove code isn't full of bugs, therefore
+if there is no obvious testing ... <b>the code is full of bugs</b>. It is
+also true that the simpler the implementation the more likely it is to have
+less bugs, ergo. the more efficient/bigger the implementation the more testing
+should be provided.
+</p><p>
+ The final check is to make sure that the testing code
+tests both the default path of the code you are interested in (as it doesn't
+matter if the code you dont' use gets tested 1,000 times if you are do use
+isn't tested at all), and the corner cases of said code (malloc() error paths,
+open() failure paths, read()/write() failure paths, and substituting larger/smaller values etc.).
+</p>
+</li>
+
+<li><span id="sprintf1"><b id="sprintf">Allocating sprintf()</b></span>:<p>
+      Almost all C programmers use the functions in the printf() family on a
+regular basis, and if you want to do i18n formatting of output then doing it
+using the POSIX i18n argument modifiers to the printf() family of functions
+means that half of the job is done for you.
+So, in short, having a safe and portable version of sprintf() for your
+chosen string API is something that will pay off.
+</p><p>
+	The first thing to consider is that just using the default
+<a href="#libcsprintf">sprintf()/snprintf() functions isn't a good idea</a>.
+This problem also arises with naive string APIs which just call directly to
+the host implementation.
+</p><p>
+	The next thing to consider is that having some string data, and then
+wanting to append some data to it that comes from a printf() like function is
+common enough that the string API really needs to provide a printf like function
+variant that does this (indeed it could be the only implementation, assuming
+there is an easy way to delete all). If the string API doesn't provide an
+append variant, then it's very likely that the programmer will try and make
+something work on their own ... which is open to problems.
+</p><p>
+	The final thing is an easy way to put non-fundamental types in the
+printf "language". The most obvious need is to output strings of the
+string APIs type. Eg.
+</p>
+
+<!--#exec cmd="ex_highlight --id=sprintf-ex1 --beg='<span class=\"blk\"><a class=\"anc\" href=\"#sprintf-ex1\">&para;</a>
+' --end='</span>' sec/sprintf1.c" -->
+
+<p>
+However extensions for printing IP addresses or other types of data can be
+very useful as well, and it is even better if there is a way to "register"
+callback functions to format user supplied data.
+The biggest obstacle here is static format checkers, like gcc, which will give
+an error on the above code due to %{ not being a recognized format. The common
+solution to this is to ignore it, which makes the feature very hard to use.
+<a href="overview#cust-fmt">Vstr uses a system</a>
+ that lets the static checker into skipping over the bits it doesn't
+understand, which while
+not perfect (you can still typo the formatter name) at least makes sure that
+the format string won't do anything worse than format the output incorrectly (as
+opposed to crashing, or causing a security hole). However,
+as far as I know, Vstr is the only string library to offer this.
+</p>
+
+</li>
+
+<li><b id="copying">Insider copying</b>: <p>Just as with the biggest problem in the
+<a href="#libcstring">C-style string.h API</a>, a string API shouldn't just
+silently die if you pass it the same string for both an input and an output.
+It is possibly acceptable to have two kinds of functions for every operation,
+one where the strings are assumed to not overlap and one where they can. However
+I'd strongly suggest that you just use a string API that does the single if
+check for you.
+</p><p>
+	Note however that it's probably prohibitively expensive for the string
+API to do this checking, if you just give it internal data and not the string
+object itself.
+</p>
+</li>
+
+</ul>
+
+<h2 id="libcstring"> The standard C-style string functions, and their many problems </h2>
+
+<p>
+      The standard C string functions have a number of problems, some of
+which you'll see above as things you should watch for when evaluating other
+string APIs and some of which are somewhat "unique" to the standard C functions.
+</p>
+
+ <h3>Problem 1: Copying inside a string.</h3>
+
+<p>
+ ISO 9899:1999 says this in the last sentence about memcpy() (at 7.21.2.1)...
+</p>
+
+<blockquote type="cite" cite="http://www.iso.org/iso/en/CatalogueDetailPage.CatalogueDetail?CSNUMBER=29237">
+If copying takes place between objects that overlap, the behavior is undefined.
+</blockquote>
+
+<p>
+...where "undefined" is std. speak for broken. The safe way to do this is
+seen in the last sentence about memmove() (at 7.21.2.2)...
+</p>
+
+<blockquote type="cite" cite="http://www.iso.org/iso/en/CatalogueDetailPage.CatalogueDetail?CSNUMBER=29237">
+Copying takes place as if the n characters from the object pointed to by s2
+are first copied into a temporary array of n characters that does not overlap
+the objects pointed to by s1 and s2, and then the n characters from the
+temporary array are copied into the object pointed to by s1.
+</blockquote>
+
+<p>
+...both of which most C programmers are at least vaguely aware of, due to the
+two functions doing the same thing apart from that single difference.
+However a lot of C programmers <i>aren't</i> aware that strcpy(), strncpy(), strcat(), strncat() and sprintf() all follow the memcpy() behavior for
+overlapping objects. So the following code is broken...
+</p>
+
+<!--#exec cmd="ex_highlight --id=strcpy-ex1 --beg='<span class=\"blk\"><a class=\"anc\" href=\"#strcpy-ex1\">&para;</a>
+' --end='</span>' sec/strcpy1.c" -->
+
+<p>
+...as is the following...
+</p>
+
+<!--#exec cmd="ex_highlight --id=sprintf-ex2 --beg='<span class=\"blk\"><a class=\"anc\" href=\"#sprintf-ex2\">&para;</a>
+' --end='</span>' sec/sprintf2.c" -->
+
+<p>
+...it also means that <b>there is no way to
+<i>copy n bytes within a string</i></b> using the std. string
+functions. You have to resort to calculating the right lengths and calling
+memmove().
+</p>
+
+<p>
+ If that wasn't enough, <b>strncpy()</b> the std. function that most
+C programmers use to safely copy no more than N characters to a string is all
+but useless in all conditions. Consider...
+</p>
+
+<!--#exec cmd="ex_highlight --id=strncpy-ex1 --beg='<span class=\"blk\"><a class=\"anc\" href=\"#strncpy-ex1\">&para;</a>
+' --end='</span>' sec/strncpy1.c" -->
+
+<p>
+...in case 1 strncpy() copies {'a', 'b', 'c', 'd'}, which means that the
+string isn't terminated and will almost certainly cause problems very soon,
+even strncat() doesn't work in this case and that's described on the next page.
+In case 2 strncpy() copies {'a', 'b', 'c', '\0'}, which is exactly what memcpy()
+would have done ... but it does it slower. In case 4 strncpy() copies
+{'a', '\0', '\0', '\0'} which is a nice 100% overhead, that is useless to pretty
+much everybody. Of course normally the array have a much bigger size than 3, so
+the overhead can be 25,500% (a 16 byte filename into a PATH_MAX array).
+</p>
+
+<p>
+      The problem in case 1 means that it's common to see code calling
+strncpy() do either...
+</p>
+
+<!--#exec cmd="ex_highlight --id=strncpy-ex2 --beg='<span class=\"blk\"><a class=\"anc\" href=\"#strncpy-ex2\">&para;</a>
+' --end='</span>' sec/strncpy2.c" -->
+
+<p>
+...or...
+</p>
+
+<!--#exec cmd="ex_highlight --id=strncpy-ex3 --beg='<span class=\"blk\"><a class=\"anc\" href=\"#strncpy-ex3\">&para;</a>
+' --end='</span>' sec/strncpy3.c" -->
+
+<p>
+...or...
+</p>
+
+<!--#exec cmd="ex_highlight --id=strncpy-ex4 --beg='<span class=\"blk\"><a class=\"anc\" href=\"#strncpy-ex4\">&para;</a>
+' --end='</span>' sec/strncpy4.c" -->
+
+<p>
+      All of which are a source of bugs, when one of the values is even
+slightly wrong. The second is particularly sad, as the reason it's done that
+way is to improve performance (using an interface that can cause over
+25,000% overhead, in the common case).
+</p><p>
+      Note that the last example listed above...
+</p>
+
+<!--#exec cmd="ex_highlight --id=strncpy-ex5 --beg='<span class=\"blk\"><a class=\"anc\" href=\"#strncpy-ex5\">&para;</a>
+' --end='</span>' sec/strncpy4.c" -->
+
+<p>...works by "getting rid" of the problem (not remembering to write NIL
+terminator) by "knowing" that the last byte will always be a NIL and so not
+overwriting that. However this is a very big trap for those that don't
+intimately know what is happening, due to...
+</p>
+
+<!--#exec cmd="ex_highlight --id=strncpy-ex6 --beg='<span class=\"blk\"><a class=\"anc\" href=\"#strncpy-ex6\">&para;</a>
+' --end='</span>' sec/strncpy5.c" -->
+
+<p>
+...or...
+</p>
+
+<!--#exec cmd="ex_highlight --id=strncpy-ex7 --beg='<span class=\"blk\"><a class=\"anc\" href=\"#strncpy-ex7\">&para;</a>
+' --end='</span>' sec/strncpy6.c" -->
+
+<p>
+...being errors.
+</p><p>
+      It's also worth noting that two very recently introduced interfaces have
+been included in a number of systems: strlcpy() and strlcat(). Neither of
+these are specified to fix the copying inside a string problem, and both
+can cause different problems as they assume that all input is NIL terminated.
+However they aren't specified by anything more than their source, which is
+different for a few of the implementations. This has already led to the Solaris
+version acting differently than the original OpenBSD version, and a broken
+implementation in an <a href="http://www.oreillynet.com/pub/a/network/2003/05/20/secureprogckbk.html">O'Reilly article</a>.
+</p>
+
+<span id="sprintf2">
+ <h3 id="libcsprintf">Problem 2: sprintf() and snprintf() etc.</h3></span>
+<p>
+ The original specification for the C run time only specified the
+function sprintf() as an easy way to put formatted data into a C-style string.
+The obvious problem was that you always have a limited amount of space
+allocated, so to make sure you don't overflow the buffer the "extension"
+snprintf() was added ... or I should say at least 3 different
+implementations of an extension called snprintf() was added. The differences
+centered around what the function should return. The choices being:
+1) The value sprintf() would return, Ie. the space needed. 2) The value
+sprintf() would return or the limit, whichever is smaller. 3) The value
+sprintf() would return if it is smaller than the limit, and -1 if it is not.
+ All of these different return values have to be dealt with by a portable
+program, or you can have buffer overflows (esp. in the second case). This
+is especially a problem due to the fact that a lot of uses of snprintf() are
+so that people can implement a function that allocates the correct amount of
+storage for sprintf() and then call that,
+<a href="#alloc">because doing blanket limiting is a bad idea</a>. The
+ISO 9899:199 standard chose the first choice (the value sprintf() would return),
+so now we just wait 5 years for most systems to have the standard semantics.
+</p><p>
+      This led to implementations offering an extension called "asprintf()"
+which will allocate the correct amount of space and sprintf() into it. However
+the interface had to be created to be able to return an error separate from
+the obvious "could not allocate memory" (mainly due to wchar_t conversions,
+which hardly anyone cares about) defying all previous experience with
+snprintf() and all expectations of the average programmer the version of the
+interface shipped with most Linux distributions is both different to every
+other implementation and is the only interface that returns a pointer to memory
+that you <b>cannot use</b>
+(this has been changed in a CVS commit on 2004-06-06). For instance the
+following code works everywhere
+but on those glibc based Linux systems, where it is a security problem...
+</p>
+
+<!--#exec cmd="ex_highlight --id=asprintf-ex1 --beg='<span class=\"blk\"><a class=\"anc\" href=\"#asprintf-ex1\">&para;</a>
+' --end='</span>' sec/asprintf1.c" -->
+
+<p>
+...due to a strcpy() buffer overflow and an invalid value passed to free().
+</p>
+
+<h3 id="sprintf-i18n">i18n causes more joy with sprintf() functions</h3>
+<p>
+  So here's a quick quiz, what does "ret" contain in the following code...
+</p>
+
+<!--#exec cmd="ex_highlight --id=snprintf-ex1 --beg='<span class=\"blk\"><a class=\"anc\" href=\"#snprintf-ex1\">&para;</a>
+' --end='</span>' sec/snprintf1.c" -->
+
+<p>
+...of course after the discussion about
+<a href="#libcsprintf">what the return value should be for overflow</a>
+you'll have said depends on the implementation. But let's assume that in the
+following code "ret" is 14 (Fourteen)...
+</p>
+
+<!--#exec cmd="ex_highlight --id=snprintf-ex2 --beg='<span class=\"blk\"><a class=\"anc\" href=\"#snprintf-ex2\">&para;</a>
+' --end='</span>' sec/snprintf2.c" -->
+
+<p>
+  Ah, you say "it follows the ISO 9899:1999 behaviour" so the value of ret
+must be 14 (Fourteen). However, you'd be wrong, the value returned is
+-1 (Minus one) on Linux if you are in a UTF-8 locale due to the
+ <a href="printf_comparison#glibc">multibyte "issue"</a>. More generally
+ISO 9899:1999 says:
+</p>
+<blockquote type="cite" cite="http://www.iso.ch/iso/en/CatalogueDetailPage.CatalogueDetail?CSNUMBER=29237">
+7.19.6.5/3<br>
+The snprintf function returns the number of characters that would have been written had n been sufficiently large, not counting the terminating null character, or a negative value if an encoding error occurred. Thus, the null-terminated output has been completely written if and only if the returned value is nonnegative and less than n.
+</blockquote>
+<p>
+Also note that the std. declares that mixing use and non use of i18n
+parameter numbers is "undefined" in std. C ...
+which is great for the libc developers, but not so much fun from a security
+point of view.
+</p>
+
+<p>
+      You also have to remember that there is no way to tell what version of
+a sprintf() routine you are going to be using, or if it is as bad a quality as
+say the <a href="printf_comparison#dietlibc">dietlibc implementation</a>.
+So you have all of the problems that other string APIs have with
+<a>re-implementing a printf like function</a>, but no way to tell which you
+are using (and test against them) when you write it.
+</p>
+
+    <hr>
+    <address><a href="mailto:james-web@and.org">James Antill</a></address>
+<!-- Created: Fri Jul 11 19:38:53 EDT 2003 -->
+<!-- hhmts start -->
+Last modified: Fri Oct 21 19:26:20 EDT 2005
+<!-- hhmts end -->
+  </body>
+</html>

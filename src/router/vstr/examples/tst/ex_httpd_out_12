@@ -1,0 +1,39 @@
+HTTP/1.1 406 Not Acceptable
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified:
+Accept-Ranges: bytes
+Content-Type: text/html
+Content-Length: 496
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+  <head>
+    <title>406 Not Acceptable</title>
+  </head>
+  <body>
+    <h1>406 Not Acceptable</h1>
+    <p>The resource identified by the request is only capable of generating response entities which have content characteristics not acceptable according to the accept headers sent in the request.</p>
+  <hr>
+  Generated using the <a href="http://www.and.org/vstr/httpd">Vstr httpd example Web Server</a>.
+  </body>
+</html>
+HTTP/1.1 200 OK
+Date:
+Server: jhttpd/0.99.1 (Vstr)
+Last-Modified: Tue, 12 Oct 2004 07:02:24 GMT
+Connection: close
+Accept-Ranges: bytes
+Vary: Accept-Encoding
+Content-Type: text/html
+Content-Length: 165
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+  <head>
+    <title>Foo default</title>
+  </head>
+  <body>
+    <h1>Foo default</h1>
+  </body>
+</html>

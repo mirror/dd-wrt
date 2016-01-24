@@ -1,0 +1,81 @@
+2006-02-06: Version 1.0.15 ... Added bytemap functions to parse
+faster. Speedup custom formatters, with a hash. Work around hidden
+Linux UIO 2GB limit. Work around gcc-4.x symbol aliasing
+braindamge. Solaris build fixes. Fix loading zero sized files with
+vstr_sc_*_file(), two other minor fixes.
+
+2005-01-09: Version 1.0.14 ... Couple of corner case bug fixes. In
+vstr_sc_*file_ no use O_NONBLOCK on open() to stop hangs on FIFOs, also repeat
+read() request until all file is read or have error. Encoded more characters in
+vstr_conv_encode_uri() by default. HTTPD example is now pretty compliant with
+HTTP/1.1, and has more than just better security going for it. Build fixes for
+non-Linux platforms.
+
+2004-08-29: Version 1.0.13 ... More testing, now at 100% code coverage.
+Some functions were added for working with binary data, using iterators,
+doing user friend byte output with large numbers, and working with things
+like gmp. Build is now much nicer, with the examples being built by default
+compiling on FreeBSD working by default and LFS support being more developer
+friendly.
+
+2004-01-25: Version 1.0.12 ... More testing, now at over 99% code coverage.
+One largish bug was found, and regression tests added for it. A couple of
+smaller bugs were also found and fixed. A couple of new functions for storing
+constant data in the configuration, for use in callbacks or whatever. And
+a group allocator for Vstr_ref is now used internally for some operations.
+
+2003-12-14: Version 1.0.11 ... Make vstr_export_chr() easier to optimize for
+GCC. Custom formatters now accept %d instead of the field width or precision in
+the static format checkers compat. (this fixes custom formatters starting with a
+%p which have both a field width _and_ a precision). Build fixes for cygwin,
+64bit arches and ICC.
+
+2003-09-30: Version 1.0.10 ... More testing, now at over 98% code coverage.
+A bunch of new features so that the printf like function can easily emulate
+some more common extensions, including configurable grouping per base and the
+ability to print numbers in base 2. Added code so that temporary strings can
+be created used and destroyed without entering malloc(). Changes to
+documentation and examples. Removed C++ inline code, now C++ just calls the
+out of line versions.
+
+2003-09-29: Version 1.0.9 ... Slightly more testing, now at over 96% code
+coverage. Another set of corner cases got fixed. More documentation, including
+a tutorial on custom formatters. Added a bunch of functions to help with
+creating custom formatters for number types.
+
+2003-09-22: Version 1.0.8 ... Slightly more testing, now at almost 96% code
+coverage. Another set of corner cases got fixed. More documentation, including
+a tutorial. Added a simple C to html converter example, re-did parts of the
+examples to be simpler (for the tutorial).
+
+2003-08-23: Version 1.0.7 ... Added more tests, now at over 95% code
+coverage. Another set of corner cases got fixed. More documentation. Some
+portability fixes.
+
+2003-05-31: Version 1.0.6 ... Added a pile of more tests, now at 89% code
+coverage. A large amount of corner cases got fixed.
+
+2003-05-07: Version 1.0.5 ... Added speedups for vstr_fmt_add(). Added some
+documentation. Added vstr_sc_fmt_add_rep_chr function.
+
+2003-03-15: Version 1.0.4 ... fixed an ABI bug introduced in 1.0.3 ... speed up
+export_cstr_ptr() in certain cases ... fixed problem with substituting data of
+_ptr and _ref types and having a bad position cache ... added documentation
+about the internal design.
+
+2003-03-04: Version 1.0.3 ... a few corner case bugs fixed ... Added a
+HAVE_CACHE control for Vstr strings ... fixed the examples to work on 0
+length proc files ... added assert calls to inline functions ... added
+builtin_constant_p() and speedups related to that.
+
+2003-02-21: Version 1.0.2 ... a couple more functions added to make life
+easier for calculating lengths given positions ... build fixes for
+FreeBSD ... runtime fixes for using code from C++.
+
+2003-02-12: Version 1.0.1 ... first binary compatible release, more testsuite
+code which made a pile of bug fixes ... also a lot of simple functions added
+to make life easier.
+
+2003-01-20: Version 1.0.0 ... the first truley stable release has now been
+made. ABI is frozen for 1.0.x lifetime ... API will only have things added to
+it etc.

@@ -1,0 +1,130 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <title>Vstr design</title>
+
+    <style>
+      A:visited { color: #ff4040; }
+      A:hover { color: #20b2aa; }
+
+      P { text-indent: 5%; }
+
+      body { background: #FFFFFF; }
+
+      td.heading { background: #DDDDDD; }
+    </style>
+
+  </head>
+
+  <body>
+    <h1>Vstr design</h1>
+
+    <h2> Requirements </h2>
+
+    <p>
+      The <A href="overview">Vstr string library</a>
+      is designed to be as fast as possible for
+      doing IO, specifically <a href="http://www.and.org/texts/network_io">scalable Network IO</a>  -- and
+      even more specifically when you are doing that non-blocking IO for
+      <a href="http://www.kegel.com/c10k.html">large numbers of network connections</a>.
+    </p>
+    <p>
+      This meant that I wanted an API that would:
+    </p>
+
+    <ul>
+      <li> append data to the string (Eg. via. a read() from a socket) in as
+	close to constant time as possible.
+      </li>
+
+      <li> delete data from the begining of the string (Eg. a write() to a
+	socket) in as close to constant time as possible. </li>
+
+      <li> call malloc() rarely when network IO is occuring, even if it's
+	occuring over multiple connections.</li>
+
+      <li> not to waste large amounts of memory on each connection.</li>
+
+      <li> support for mmap() data and out of
+      bound data (Ie. calling sendfile() but with the head and tail of the
+      connection in a string).</li>
+
+      <li>
+	Support for having "network strings" in the default C locale, and user
+	strings in whatever locale the user wanted.
+      </li>
+
+      <li>
+	Easy to use support for <a href="http://cr.yp.to/proto/netstrings.txt">netstrings</a>.
+      </li>
+
+      <li>
+	Have all the other "string like API" abilities, (ie. comparison,
+	searching, parsing and formated output).
+      </li>
+
+    </ul>
+
+
+    <p> I'm not the only person who thinks these things, for instance in
+<a href="http://pl.atyp.us/content/tech/servers.html">Jeff Darcy's notes on high
+performance network server IO design</a> his first and third points are
+basically the same as my first three requirements.
+    </p>
+
+    <h2> Implementation </h2>
+
+    <p>
+      To make the append/delete case very fast, the internal design uses an
+      ordered set of nodes. Each node has some data and a length.
+      Each string is associated with a configuration, which stores the size of
+      the modifiable data nodes. Thus to append data to the string,
+      you can either use the remaining amount of space in the last data
+      node (assuming it's writeable) or append a new writable
+      data node. The configuration also has a set of spare data nodes.
+    </p>
+    <p>
+      This makes the worst case cost, for append, to be allocation for enough
+      nodes of storage to cover the amount needed to be added to the
+      string. The worst case cost, for delete from the begining, to be
+      a movement from the begining of the set of the string to the spare set
+      in the configuration. However after a delete from a string using a
+      configuration, another string using that same configuration will have
+      spare data and so not need to do allocation for that amount, so the worst
+      case behaviour for append tends to towards never happening.
+    </p>
+
+    <p>
+      To deal with mmap() areas, a node can be of a non-writeable type. The two
+      main ones being a pointer to some external data and a reference to some
+      external data (the reference has a cleanup function called on it, when
+      the reference count reaches zero).
+    </p>
+
+    <p>
+      To deal with out of bound data, a node can be of a non-data type. This
+      means that there is a specified length of data, but no pointer to said
+      data.
+    </p>
+
+    <h2> visual data </h2>
+    <p>
+      There is a simple diagram of the
+      <a href="internal_structure.dia">internal structure</a> discussed above.
+    </p>
+
+    <p>
+      There is a <a href="size_cmp.gnumeric">size analysis</a> of a
+      Vstr string as data is added to it, note that this assumes only
+      writeable nodes.
+    </p>
+
+
+    <hr>
+    <address><a href="mailto:james-web@and.org">James Antill</a></address>
+<!-- Created: Wed Feb 26 03:20:15 EST 2003 -->
+<!-- hhmts start -->
+Last modified: Sun Jul 31 00:34:33 EDT 2005
+<!-- hhmts end -->
+  </body>
+</html>

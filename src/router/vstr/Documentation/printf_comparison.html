@@ -1,0 +1,531 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <title>printf() implementation comparison</title>
+
+    <style>
+      A:hover { color: #20b2aa; }
+      P { text-indent: 2cm; }
+
+      body { background: #FFFFFF; }
+
+      td.heading { background: #DDDDDD; }
+
+      dt { font-weight: bold;  }
+    </style>
+  </head>
+
+  <body>
+    <h1>printf() implementation comparison</h1>
+
+    <p> This page is a rough comparison between various printf() implementaions.
+      Not all printf() implementations are equal, while almost all will do
+      the 'd', 'ld', 'u', 'lu', and 's' convertions ... even just adding
+      a precision to one of the int formatters might not do the right thing.
+    </p><p>
+      Note that if you want a portable version of printf() in your code, you are
+      <strong>much</strong> better off using something that natively parses
+       the format string. This ensures that you get the same parsing behaviour
+      on all platforms. Otherwise you are just waiting for
+      your code to be run on some weird platform, and crash or possibly have
+      a security problem. Note that
+      <a href="security#sprintf">this page</a> gives information about
+      what you should look for in a string library printf implementation, and
+      the problems with just using the host implementation sprintf()/snprintf()
+      calls.
+    </p><p>
+       For a comparison of string libraries, some of which include a portable
+       printf() like function, you should look at <a href="comparison">this
+       page</a>
+    </p><p>If you want to learn how printf() implementations are written, you
+      can look at
+ <a href="http://www.and.org/texts/simple_printf.c">this simple printf</a>
+ code. However if you want to use one I'd recommend one of the better ones from
+the below list as they have more features and comply to the standards better.
+    </p>
+
+    <ul>
+
+    <!-- BEG OF printf() like libraries -->
+<a id="glibc"></a>
+      <li>
+	<h2> <a href="http://www.gnu.org/software/libc/">GNU libc 2.3.x</a></h2>
+	<dl>
+	<dt>Allocation policy:</dt> <dd>Automatic</dd>
+	<dt>Format parsing:</dt> <dd>Native</dd>
+	<dt>Double printing:</dt> <dd>Native</dd>
+	<dt>Problems:</dt> <dd>None</dd>
+	<dt>User extensions:</dt> <dd>Can register single letter customer
+	format specifiers, can't be done in warning compatible way for static
+	format checkers.
+	<dt>Version:</dt> <dd>2.3.2</dd>
+      </dd>
+	</dl>
+
+	<p>
+	  Looks like a conformaing implementation, I reported a couple of
+          corner case bugs that were fixed for 2.3.x. However there is an
+          "issue" where if you pass an invalid multibyte string to the printf
+          like functions then it fails <b>only if</b> you give it a precision.
+	</p>
+	<p>
+          There is a 'I' flag extension, which is pretty much zero availability
+          elsewhere.
+          There are also the std. extentions of 'S' and 'C'.
+      User formatters are possible, but static format checkers can't cope,
+      and they are limited to single characters.
+	</p>
+      </li> <hr width="80%" />
+
+<a id="freebsd5"></a>
+    <li>
+	<h2> <a href="http://www.freebsd.org/cgi/man.cgi?query=sprintf&apropos=0&sektion=0&manpath=FreeBSD+5.0-RELEASE&format=html">FreeBSD-5.0</a></h2>
+	<dl>
+	<dt>Allocation policy:</dt> <dd>Automatic</dd>
+	<dt>Format parsing:</dt> <dd>Native</dd>
+	<dt>Double printing:</dt> <dd>Native</dd>
+	<dt>Problems:</dt> <dd>None</dd>
+	<dt>User extensions:</dt> <dd>No</dd>
+	<dt>Version:</dt> <dd>FreeBSD-5.0-RELEASE</dd>
+	</dl>
+
+	<p>
+	  Looks like a conformaing implementation.
+	</p>
+	<p>
+          There are quite a few "extentions" like 'D', 'O', 'U' and 'qd' ...
+          which have limited availability elsewhere, however they are
+          deprecated. There are also the std. extentions of 'S' and 'C'.
+      No way to have user
+	  defined formatters.
+	</p>
+
+  </li> <hr width="80%" />
+
+<a id="uclibc"></a>
+<li>
+    <h2> <a href="http://www.uclibc.org/">uClibc</a></h2>
+    <dl>
+      <dt>Allocation policy:</dt> <dd>Automatic</dd>
+      <dt>Format parsing:</dt> <dd>Native</dd>
+      <dt>Double printing:</dt> <dd>Native</dd>
+      <dt>Problems:</dt> <dd>Fails for thousands
+	seperator support for non base 10 integer printing (this is std.
+	  compliant).</dd>
+      <dt>User extensions:</dt> <dd>Can register single letter customer
+	format specifiers, can't be done in warning compatible way for static
+	format checkers. Has problems with zero argument custom formatters.
+	  Also has a hard limit on the number of
+	custom formatters.</dd>
+      <dt>Version:</dt> <dd>cvs (2003-09-24)</dd>
+    </dl>
+
+    <p>
+      This looks like a conforming implementation.
+    </p>
+    <p>
+      Supports a bunch of common extentions, like 'm', 'q', 'I'. Has
+      register_printf_function() which is an API copy from GNU libc, and works
+      the same way .. however it has a hard limit on the number of formatters
+      you can add. Currently has a bug where using a i18n positional
+	precision/width will error out of the printf function, <b>if the custom
+    format is defined to not take any arguments</b>.
+    </p>
+  </li> <hr width="80%" />
+
+<a id="klibc"></a>
+    <li>
+      <h2> <a href="http://www.kernel.org/pub/linux/libs/klibc/">klibc</a></h2>
+      <dl>
+	<dt>Allocation policy:</dt> <dd>Limited</dd>
+	<dt>Format parsing:</dt> <dd>Native</dd>
+	<dt>Double printing:</dt> <dd>N/A</dd>
+  <dt>Problems:</dt> <dd>No double support, of any kind.
+    Thousands seperator support only does a specific "kernel" locale.
+    No i18n support. Doesn't support corner cases with regard to precision etc.
+  </dd>
+  <dt>User extensions:</dt> <dd>No</dd>
+  <dt>Version:</dt> <dd>0.77</dd>
+</dl>
+
+  <p>
+    A simple printf() like function. It's not very stds. compliant, but the
+    code itself is quite nice (mainly because it doesn't try to follow the
+    stds. in many cases) ... if you just need the different types of int
+    outputing, C style strings and don't
+    care about complete stds. compliance this is a good place to start.
+    Note however that I'm somewhat biased, as a very old version of this is
+    what the Vstr printf() like function evolved from.
+  </p>
+
+</li> <hr width="80%" />
+
+<a id="dietlibc"></a>
+    <li>
+      <h2> <a href="http://www.fefe.de/dietlibc/">dietlibc</a></h2>
+      <dl>
+	<dt>Allocation policy:</dt> <dd>Automatic (implemented via. two calls
+	to snprintf)</dd>
+	<dt>Format parsing:</dt> <dd>Native</dd>
+	<dt>Double printing:</dt> <dd>N/A</dd>
+  <dt>Problems:</dt> <dd>No i18n support. No thousands seperator support.
+  Only implements 'f' and 'g' (which maps directly to 'f') for double support.
+  't' 'j' and 'z' prefixes
+  aren't supported for int types.
+  Precision support is almost completely broken.
+  </dd>
+  <dt>User extensions:</dt> <dd>No</dd>
+  <dt>Version:</dt> <dd>0.22</dd>
+</dl>
+
+  <p>
+    A simple printf() like function. It's not very stds. compliant, and the
+    code itself is a terrible #ifdef and goto hell which looks much worse
+  than many full implementations.
+  As well as non support for some asspects of the std.
+  'g' is implemented and broken, precision support is just brainddead and it
+  actually has an option to disable NULL checking in printf (a single if
+  statement -- which stops your programs from crashing) but yet always leaves in
+  and extension which does integer output in base 2.
+  </p>
+
+</li> <hr width="80%" />
+
+    <li>
+      <h2> <a href="overview">Vstr string library</a> </h2>
+	<dl>
+	<dt>Allocation policy:</dt> <dd>Automatic</dd>
+	<dt>Format parsing:</dt> <dd>Native</dd>
+	<dt>Double printing:</dt> <dd>Native, host or zero (depending on
+    build time options)</dd>
+	<dt>Problems:</dt> <dd>None</dd>
+	<dt>User extensions:</dt> <dd>Yes</dd>
+	<dt>Version:</dt> <dd>1.0.13</dd>
+	</dl>
+
+      <p>
+	A conformaing implementation.
+      </p>
+      <p>
+	There are ways to specify custom formatters, and do it in such a way
+	that static checkers of format strings won't be confused. For a lot more
+    information, see other pages on this site. Note that I wrote this, so I'm
+    possibly biased.
+      </p>
+    </li> <hr width="80%" />
+
+<a id="trio"></a>
+      <li>
+	<h2> <a href="http://www.contactor.se/~dast/trio/">Trio I/O library</a></h2>
+	<dl>
+	<dt>Allocation policy:</dt> <dd>Automatic</dd>
+	<dt>Format parsing:</dt> <dd>Native</dd>
+	<dt>Double printing:</dt> <dd>Native</dd>
+	<dt>Problems:</dt> <dd>Has a hard limit on the number of formats
+      per call.</dd>
+	<dt>User extensions:</dt> <dd>Yes, but can't be done in warning
+ compatible way for static format checkers.</dd>
+	<dt>Version:</dt> <dd>1.10 (April 2003)</dd>
+	</dl>
+
+	<p>
+	  The printf() like function appears to be stds. compliant, note that
+ the previous versions had a number of issues and as other projects just copy
+ the C files into their build you should check which version of trio they used.
+ Of particular note, glib-2.2.1 and libxml2-2.4.24 both have buggy versions.
+
+	  Also worth noting is that the i18n format parameter modifiers have
+	  an arbitrary limit, and the double output is custom code that may
+	  well not produce the same output as a real implementation and as an
+	  I/O library the output model isn't very good for a dynamically
+	  expanding string.
+	</p>
+	<p>
+	  User defined formaters are supported, however they are done in such a
+	  way that the gcc warning parser (and any other static, non
+    programable, format checker) makes them useless.
+	</p>
+      </li> <hr width="80%" />
+
+<a id="glib"></a>
+    <li>
+	<h2> <a href="http://developer.gnome.org/doc/API/2.0/glib/glib-strings.html">GLib</a></h2>
+
+	<dl>
+	<dt>Allocation policy:</dt> <dd>Automatic</dd>
+	<dt>Format parsing:</dt> <dd>Native checker, and trio
+	  (passes directly to host if build time checker passes)</dd>
+	<dt>Double printing:</dt> <dd>Host or Native (via. trio)</dd>
+	<dt>Problems:</dt> <dd>Has a hard limit on the number of formats
+      per call (in trio mode). Relies on host implementation not changing from
+	build time (in host mode). Printing NIL chacters silently fails.  </dd>
+	<dt>User extensions:</dt> <dd>No</dd>
+	<dt>Version:</dt> <dd>2.2.1</dd>
+	</dl>
+
+      <p>
+The printf implementation calls the host
+	  implementation of sprintf/asprintf/etc. if it looks like a valid C99
+ implementation, and uses the trio library internally otherwise (this is only
+true as of version 2.2.0 though -- before that it'll just crash in some
+ instances).
+ So it's impossible
+	  to have custom formatters (the most obvious annoying fallout of this is that
+	  you can't add a GString to a GString as part of a printf() call) and
+	  portability is a problem
+	  (Although it is supposed to be valid to work with data that has NIL
+ bytes in it doing so loses data in certain cases --
+I've submitted a patch for the last problem).</p>
+    </li> <hr width="80%" />
+
+<a id="freebsd4"></a>
+	<h2> <a href="http://www.freebsd.org/cgi/man.cgi?query=sprintf&apropos=0&sektion=0&manpath=FreeBSD+4.7-RELEASE&format=html">FreeBSD-4.7 </a></h2>
+	<dl>
+	<dt>Allocation policy:</dt> <dd>Automatic</dd>
+	<dt>Format parsing:</dt> <dd>Native</dd>
+	<dt>Double printing:</dt> <dd>Native</dd>
+	<dt>Problems:</dt> <dd>Unimplemented most newer formats</dd>
+	<dt>User extensions:</dt> <dd>No</dd>
+	<dt>Version:</dt> <dd>FreeBSD-4.7-RELEASE</dd>
+	</dl>
+
+	<p>
+	  Doesn't understand 'A', 'a', 'F', 'hhd', 'td', 'zd', 'ls', 'lc' or
+          thousands seperators.
+	</p>
+	<p>
+          There are quite a few "extentions" like 'D', 'O', 'U' and 'qd' ...
+          which have limited availability elsewhere. No way to have user
+	  defined formatters.
+	</p>
+      </li> <hr width="80%" />
+
+<a id="mark"></a>
+<a id="martinec"></a>
+<a id="mark-martinec"></a>
+      <li>
+	<h2> <a href="http://www.ijs.si/software/snprintf/">Mark Martinec snprintf (include asprintf())</a></h2>
+	<dl>
+	<dt>Allocation policy:</dt> <dd>Automatic</dd>
+	<dt>Format parsing:</dt> <dd>Native</dd>
+	<dt>Double printing:</dt> <dd>N/A</dd>
+	<dt>Problems:</dt> <dd>Unimplemented most newer formats, no
+    double support at all. No i18n support.</dd>
+	<dt>User extensions:</dt> <dd>No</dd>
+	</dl>
+
+	<p>
+	  Not a bad implementation for what is actually done (it seems to be
+	  fairly stds. compliant, and has optional platform specific behaviour,
+	  it seems to have been written by reading man pages from what I can
+	  see -- no small feat), however there is a lot of missing
+	  functionality (most of which it readily admits to on the web page).
+	  Probably the most noticable are the missing 'F', 'f', 'E', 'e',
+    'zu', 'zd', 'ju',
+	  'jd', 'td', 'hhd', 'n' etc. formats.
+	  Next being missng i18n format modifiers, and the 'n' format.
+	</p>
+	<p>
+	No way to have user
+	defined formatters.
+	</p>
+      </li> <hr width="80%" />
+
+<a id="patrick"></a>
+<a id="powell"></a>
+<a id="patrick-powell"></a>
+      <li>
+	<h2> <a href="http://samba.org/cgi-bin/cvsweb/samba/source/lib/snprintf.c">Samba's Patrick Powell snprintf() variant</a></h2>
+	<dl>
+	<dt>Allocation policy:</dt> <dd>Automatic</dd>
+	<dt>Format parsing:</dt> <dd>Native (passes directly to host if build time checker passes)</dd>
+	<dt>Double printing:</dt> <dd>Native</dd>
+	<dt>Problems:</dt> <dd>Unimplemented most newer formats.
+      No i18n support. Bad precision handling on double formatting.
+      Bad empty precision handling. Relies on host implementation not changing
+ from build time (in host mode).</dd>
+	<dt>User extensions:</dt> <dd>No</dd>
+	<dt>Version:</dt> <dd>2.2.7, of samba</dd>
+	</dl>
+
+	<p>
+	  This code was originally posted to BrugTraq, and has since been
+	  hacked on by at least four more people. This is the version in
+	  Samba, however there are other versions of this code floating around
+	  as it was a favourite for people to just copy and paste into their
+	  project. Note that the version of patrick powell's code in in samba
+    is <strong>improved</strong> upon the original.
+	</p>
+
+	<p>
+	  This is very poor for stds. compliance, it doesn't even support '#x'
+	  to print a leading "0x" before the number.
+	  '\'' (thousand modifiers), 'A', 'a', 'F', 'zd', 'td', 'hhd', etc. and
+	  i18n format parameter modifiers are all completly missing.
+	  An empty precision format doesn't make the precision zero. Unspecified
+	  precisions are wrong on double values, and zero specified ones aren't
+	  correct for octal etc.
+	</p>
+      </li> <hr width="80%" />
+
+<a id="apache"></a>
+      <li>
+	<h2> <a href="http://httpd.apache.org/dev/">Apache HTTPD snprintf()</a></h2>
+	<dl>
+	<dt>Allocation policy:</dt> <dd>Specified limit</dd>
+	<dt>Format parsing:</dt> <dd>Native</dd>
+	<dt>Double printing:</dt> <dd>Native</dd>
+	<dt>Problems:</dt> <dd>Unimplemented most newer formats.
+      No i18n support. <strong>Buffer overflows</strong>. Unspecified
+      precision is broken. Corner cases for "special" flag are broken. </dd>
+	<dt>User extensions:</dt> <dd>No</dd>
+	<dt>Version:</dt> <dd>2.0.40, of apache-httpd</dd>
+	</dl>
+
+	<p>
+	  '\'' (thousand modifiers), 'a', 'F', 'Lf', 'lld', 'td', 'zd', 'hhd' , etc.
+	  and i18n format parameter modifiers are all completly missing
+	  (although 'qd' is available for "long long" ints). 'A'
+	  isn't the std. formatter but a custom one. Unspecified precision is
+	  broken, as is corner cases for octal etc. also infinity/nan output
+	  is not correct with regard to case. <b>Buffer overflows are possible
+	    in the integer formatting paths</b>
+	</p>
+	<p>
+	  Apart from the static extensions 'A' and 'I', this is the basis of
+	  the OSSP str library implementation.
+	</p>
+      </li> <hr width="80%" />
+
+<a id="sfio"></a>
+      <li>
+	<h2> <a href="http://www.research.att.com/sw/tools/sfio/">Sfio fprintf</a></h2>
+	<dl>
+	<dt>Allocation policy:</dt> <dd>Does output flushes at limits (so
+ atomic operations aren't possible)</dd>
+	<dt>Format parsing:</dt> <dd>Native</dd>
+	<dt>Double printing:</dt> <dd>Native</dd>
+	<dt>Problems:</dt> <dd>Unimplemented most newer formats, incomplete
+    double support. No i18n support. Bad case handling for uppercase
+        double infinity</dd>
+	<dt>User extensions:</dt> <dd>No</dd>
+	<dt>Version:</dt> <dd>sfio97, of sfio</dd>
+	</dl>
+
+	<p>
+	  The sfio97 version available <a href="http://www.cpan.org/src/misc/sfio97.src.unix.tar.gz">here</a> is the version I
+	  looked at, it's possible that the 2002 versions fixes some of the
+	  problems. However I didn't get access to it.
+	<p>
+	<p>
+	  This is fairly stds. compliant, for when it was written. However it
+	  doesn't support '\'' (thousand seperators) 'td', 'jd', 'zd', 'hhd',
+	  'a', 'A', or i18n parameter modifiers etc.
+	  Also double printing of infinity is wrong with regard to case.
+	</p>
+	<p>
+	  This code contains a bunch of static extensions, and no way to define
+	  your own.
+	</p>
+      </li> <hr width="80%" />
+
+<a id="postfix"></a>
+      <li>
+	<h2> <a href="http://www.postfix.org/ftp-sites.html">postfix</a></h2>
+	<dl>
+	<dt>Allocation policy:</dt> <dd>Automatic</dd>
+	<dt>Format parsing:</dt> <dd>Native</dd>
+	<dt>Double printing:</dt> <dd>Host</dd>
+	<dt>Problems:</dt> <dd>Unimplemented most newer formats.
+No i18n support.
+After being checked by the native parser all output is done via. calls to a host sprintf() function.</dd>
+	<dt>User extensions:</dt> <dd>No</dd>
+	<dt>Version:</dt> <dd>1.7.1 of postfix</dd>
+	</dl>
+      </li>
+
+<a id="libretto"></a>
+      <li>
+	<h2> <a href="http://www.praeclarus.demon.co.uk/tech/libretto/">libretto</a></h2>
+	<dl>
+	<dt>Allocation policy:</dt> <dd>Automatic</dd>
+	<dt>Format parsing:</dt> <dd>Native</dd>
+	<dt>Double printing:</dt> <dd>Host</dd>
+	<dt>Problems:</dt> <dd>Unimplemented most newer formats.
+No i18n support.
+After being checked by the native parser all output is done via. calls to a host sprintf() function.</dd>
+	<dt>User extensions:</dt> <dd>No</dd>
+	<dt>Version:</dt> <dd>2.1</dd>
+	</dl>
+      </li>
+
+      <li>
+	<h2> <a href="http://freshmeat.net/projects/libast/">libast (formerly libmej)</a></h2>
+	<dl>
+	<dt>Allocation policy:</dt> <dd>Limited</dd>
+	<dt>Format parsing:</dt> <dd>Native</dd>
+	<dt>Double printing:</dt> <dd>Native (terrible)</dd>
+	<dt>Problems:</dt> <dd>Patrick Powell's code, all the problems of the
+ samba variant and lots more.</dd>
+	<dt>User extensions:</dt> <dd>No</dd>
+	<dt>Version:</dt> <dd>0.5</dd>
+	</dl>
+	<p>
+	  The printf() like function is a version of Patrick Powell's
+	  snprtinf() with a really bad version of a floating point formatter
+	  added to it.
+	</p>
+      </li>
+
+<a id="librock"></a>
+      <li>
+	<h2> <a href="http://www.mibsoftware.com/librock/text/">librock text processing</a></h2>
+	<dl>
+	<dt>Allocation policy:</dt> <dd>Automatic</dd>
+	<dt>Format parsing:</dt> <dd>Host</dd>
+	<dt>Double printing:</dt> <dd>Host</dd>
+	<dt>Problems:</dt> <dd>Relies directly on host implementation, so
+crashes are possible if you move code from one platform to another. If
+asprintf() isn't available on the host, handles very simple formats internally and passes it off to fprintf() if that fails.
+.</dd>
+	<dt>User extensions:</dt> <dd>No</dd>
+	<dt>Version:</dt> <dd> unknown (2003-02-25) </dd>
+	</dl>
+	<p>
+          Note
+          that before 2003-02-25 the failure path was broken, and would crash.
+       </p>
+      </li>
+
+      <li>
+	<h2> <a href="http://www.annexia.org/freeware/c2lib/">c2lib</a></h2>
+	<dl>
+	<dt>Allocation policy:</dt> <dd>Automatic/Limited</dd>
+	<dt>Format parsing:</dt> <dd>Host</dd>
+	<dt>Double printing:</dt> <dd>Host</dd>
+	<dt>Problems:</dt> <dd>Relies directly on host implementation, so
+crashes are possible if you move code from one platform to another. If
+asprintf() isn't available on the host, it calls snprintf() and will silently
+truncate input.</dd>
+	<dt>User extensions:</dt> <dd>No</dd>
+	<dt>Version:</dt> <dd>1.4.1</dd>
+	</dl>
+<p>
+Note that before 2003-02-25 the failure path was broken, and would crash.
+</p>
+      </li>
+
+    <!-- END OF printf() like libraries -->
+    </ul>
+
+    <p> Any corrections or omissions you see in the above, feel free to contact
+      me at the address below </p>
+
+    <hr>
+    <address><a href="mailto:james-web@and.org">James Antill</a></address>
+<!-- Created: Tue Feb 25 12:03:25 EST 2003 -->
+<!-- hhmts start -->
+Last modified: Sun Jul 31 00:33:54 EDT 2005
+<!-- hhmts end -->
+  </body>
+</html>

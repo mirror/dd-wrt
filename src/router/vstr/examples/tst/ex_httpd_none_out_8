@@ -1,0 +1,20 @@
+HTTP/1.1 503 Service Unavailable
+Date:
+Server: Apache/2.0.40 (Red Hat Linux)
+Last-Modified:
+Connection: close
+Content-Type: text/html
+Content-Length: 430
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+  <head>
+    <title>503 Service Unavailable</title>
+  </head>
+  <body>
+    <h1>503 Service Unavailable</h1>
+    <p>The server is currently unable to handle the request due to a temporary overloading or maintenance of the server.</p>
+  <hr>
+  Generated using the <a href="http://www.and.org/vstr/httpd">Vstr httpd example Web Server</a>.
+  </body>
+</html>

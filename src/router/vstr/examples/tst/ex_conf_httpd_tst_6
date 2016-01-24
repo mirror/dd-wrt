@@ -1,0 +1,34 @@
+#########################################################
+###                                                   ###
+### This is a configuration for httpd_conf_6 tests... ###
+###                                                   ###
+#########################################################
+
+(org.and.jhttpd-conf-main-1.0
+
+  (org.and.daemon-conf-1.0
+    (listen addr 127.0.5.1)
+
+    (pid-file ex_httpd_root/abcd)
+    (cntl-file ex_httpd_cntl)
+
+    (policy conf-httpd-tst-6.1
+       timeout idle 32))
+
+  (match-connection [policy-eq <default>
+                     server-ipv4-cidr-eq 127.0.5.1]
+    policy conf-httpd-tst-6.1)
+
+   policy conf-httpd-tst-6.1
+
+     ; Required by the tests...
+     unspecified-hostname foo.example.com ; -- so we always match in tests
+     unspecified-hostname-append-port off
+     MIME/types-filename-xtra (= ENV SRCDIR /mime_types_extra.txt)
+
+     virtual-hosts true
+     document-root ex_httpd_root
+     request-configuration-directory ex_httpd_conf
+     req-err-dir ex_httpd_err/)
+(org.and.daemon-conf-1.0 ; done using switch...
+  (policy conf-httpd-tst-6.2 [inherit conf-httpd-tst-6.1]))

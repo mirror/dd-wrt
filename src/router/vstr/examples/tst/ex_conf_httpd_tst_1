@@ -1,0 +1,69 @@
+;;
+;; This is a configuration for httpd, httpd_nonroot, httpd_errs and
+;; httpd_shut tests...
+;;
+;;
+
+(org.and.jhttpd-conf-main-1.0
+
+  (org.and.daemon-conf-1.0
+; Make daemon
+    # daemonize
+
+    (listen
+       addr 127.0.0.1
+       max-connections 4
+       port 0
+       queue-length 512)
+
+    (listen
+       addr 127.0.0.2
+      (max-connections 0)
+      (defer-accept 0) ; Turn off deferals
+      (queue-length 512))
+
+    (listen addr 127.0.0.3 defer-accept 1)
+
+    (pid-file ex_httpd_root/abcd)
+    (cntl-file ex_httpd_cntl)
+
+    (policy conf-httpd-tst-1.1
+       timeout idle 32)
+
+     procs 1)
+
+  (match-connection [policy-eq <default> ||
+                     server-ipv4-cidr-eq 127.0.0.1
+                     server-ipv4-cidr-eq 127.0.0.2
+                     ! true]
+    policy conf-httpd-tst-1.1)
+
+   policy conf-httpd-tst-1.1
+
+     ; Required by the tests...
+     unspecified-hostname default ; -- so we always match in tests
+     unspecified-hostname-append-port off
+     secure-directory-filename no
+     (HTTP header-names-strict false)
+     MIME/types-filename-xtra (= ENV SRCDIR /mime_types_extra.txt)
+
+     virtual-hosts true
+     mmap     FALSE
+     sendfile false
+     document-root ex_httpd_root
+     request-configuration-directory ex_httpd_conf
+     req-err-dir ex_httpd_err/)
+
+(org.and.jhttpd-conf-main-1.0
+  (policy conf-httpd-tst-1.2 [inherit conf-httpd-tst-1.1]
+     mmap     TRUE
+     sendfile false)
+
+  (policy conf-httpd-tst-1.3 [copy conf-httpd-tst-1.2]
+     mmap     false
+     sendfile true)
+
+  (match-connection [policy-eq <default> server-ipv4-cidr-eq 127.0.0.2]
+    policy conf-httpd-tst-1.2)
+   match-connection [policy-eq <default> server-ipv4-cidr-eq 127.0.0.3]
+    policy conf-httpd-tst-1.3)

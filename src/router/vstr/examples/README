@@ -1,0 +1,130 @@
+ These are all examples of how you can use the Vstr library, they are often
+centered around IO (as that's the main design of the library) but some show
+features like custom formatters.
+ They all require a POSIX like environment ... although the library should
+happily work on win32 etc.
+
+ All code in this dir. is also under the LGPL, not the GPL.
+
+ NEW
+
+  ex_dnsd
+
+  ex_relay
+
+  ex_bt
+
+
+ CHANGES
+
+  ex_utils
+
+	Allow '-' filename, for stdin
+
+
+  evnt
+
+	allow groups, make Evnt smaller (moveout cb's/conf to group data)
+	have enumeration bind, Ie. bind to each IP address ... 
+          helps for testing recv socket.
+
+
+  cntl
+	Remove race when multiple commands are done from multiple connections.
+	timeout's for connections
+
+
+  vlg
+	syslog restart ... tst.
+
+
+  ex_sock_filter
+
+	All asm calls should have names
+
+
+  ex_dir_list2html
+
+	Should produce sort by size
+	Should produce sort by mtime
+	Should produce sort by reverse (6 html pages in all?)
+	Output mtime column
+	Keep netstr list for mime: application/dir-list ?
+
+
+  opt_serv
+
+	conf
+	 max timeout for keep-alive
+        limiting IO
+	  easyish to do per proc.
+	    not to easy to do multi proc. ... need to pass data/connections
+	    Already fucked with limit connections
+
+
+  ex_httpd
+
+http://www.sans.org/top20/#u2
+
+	man page
+         Allow req_conf to have matches (maybe (match-allow [] ...) ?)
+          Match needed for different ETags for content neg.
+         allow turn off shutdown()
+        Fix req_conf_err (full pathname, uses 404 for conf and 404.html)
+        test secure dirs, conf + main
+        test useable dirs, conf + main
+
+        Allow none 
+	Redirect for non-canonical URLs (Ie. %61 used) -- like %2e/%2f fixup
+	mime_types speed, by having explicit filename/ext matches
+        nice()
+	public/symlinks path checking
+         allowdev - http://www.arctic.org/~dean/apache/1.3/mod_allowdev.c
+	 fd cache
+	 stat cache
+	conf
+         allow setting socket options?
+         Location: + custom error files?
+	 memory allocation errors == 503 for conf?
+         auth token-file cdb /path - allows multiple user/pass
+	 Delta encoding: http://www.ietf.org/rfc/rfc3229.txt
+	  http://bobwyman.pubsub.com/main/2004/09/implementations.html
+         limit location/content-location somehow ?
+         Support charset/accept-charset (appended to text/* Content types)
+	  Support default
+	  Support per file. -- http://www.w3.org/TR/chips/
+         Random extra headers
+	 406 error file per. request
+         Have more match types, so we can change policy for early parts of
+          request processing.
+         Allow req_conf to change to a defined set of policies
+         Allow policy limiting of what "commands" req_conf can do.
+	 userdirs? - problem due to getpwnam() braindamage
+	IP_TOS && IP_RECVTOS
+	Child dies in --procs, when sent SIGCONT after SIGTSTP or SIGSTOP
+         C-z fg
+	jhttpd -> vstr-httpd?
+	ipv6
+	edge triggered events
+	FreeBSD sendfile
+	FreeBSD kqueue
+
+    BUGS?
+	GMT time convertion isn't done ... fuck the broken apps.
+	CRLF should be done as (CR)?LF ... fuck the broken apps. Although we
+       check for response splitting.
+
+    tst
+
+	LFS
+	half response splitting requests
+	mtime in future
+	too many clients
+	getopt:
+		daemon, chroot, drop-privs
+	signals
+	mmap failure
+	seek failure
+	sendfile failure
+	mem failure
+
