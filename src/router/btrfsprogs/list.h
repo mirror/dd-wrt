@@ -19,8 +19,8 @@
 #ifndef _LINUX_LIST_H
 #define _LINUX_LIST_H
 
-#define LIST_POISON1  ((void *) 0x00100100)
-#define LIST_POISON2  ((void *) 0x00200200)
+#define LIST_POISON1  ((struct list_head *) 0x00100100)
+#define LIST_POISON2  ((struct list_head *) 0x00200200)
 
 /*
  * Simple doubly linked list implementation.
@@ -54,17 +54,17 @@ static inline void INIT_LIST_HEAD(struct list_head *list)
  * the prev/next entries already!
  */
 #ifndef CONFIG_DEBUG_LIST
-static inline void __list_add(struct list_head *new,
+static inline void __list_add(struct list_head *xnew,
 			      struct list_head *prev,
 			      struct list_head *next)
 {
-	next->prev = new;
-	new->next = next;
-	new->prev = prev;
-	prev->next = new;
+	next->prev = xnew;
+	xnew->next = next;
+	xnew->prev = prev;
+	prev->next = xnew;
 }
 #else
-extern void __list_add(struct list_head *new,
+extern void __list_add(struct list_head *xnew,
 			      struct list_head *prev,
 			      struct list_head *next);
 #endif
@@ -78,12 +78,12 @@ extern void __list_add(struct list_head *new,
  * This is good for implementing stacks.
  */
 #ifndef CONFIG_DEBUG_LIST
-static inline void list_add(struct list_head *new, struct list_head *head)
+static inline void list_add(struct list_head *xnew, struct list_head *head)
 {
-	__list_add(new, head, head->next);
+	__list_add(xnew, head, head->next);
 }
 #else
-extern void list_add(struct list_head *new, struct list_head *head);
+extern void list_add(struct list_head *xnew, struct list_head *head);
 #endif
 
 
@@ -95,9 +95,9 @@ extern void list_add(struct list_head *new, struct list_head *head);
  * Insert a new entry before the specified head.
  * This is useful for implementing queues.
  */
-static inline void list_add_tail(struct list_head *new, struct list_head *head)
+static inline void list_add_tail(struct list_head *xnew, struct list_head *head)
 {
-	__list_add(new, head->prev, head);
+	__list_add(xnew, head->prev, head);
 }
 
 /*
@@ -137,18 +137,18 @@ extern void list_del(struct list_head *entry);
  * Note: if 'old' was empty, it will be overwritten.
  */
 static inline void list_replace(struct list_head *old,
-				struct list_head *new)
+				struct list_head *xnew)
 {
-	new->next = old->next;
-	new->next->prev = new;
-	new->prev = old->prev;
-	new->prev->next = new;
+	xnew->next = old->next;
+	xnew->next->prev = xnew;
+	xnew->prev = old->prev;
+	xnew->prev->next = xnew;
 }
 
 static inline void list_replace_init(struct list_head *old,
-					struct list_head *new)
+					struct list_head *xnew)
 {
-	list_replace(old, new);
+	list_replace(old, xnew);
 	INIT_LIST_HEAD(old);
 }
 /**
@@ -223,18 +223,18 @@ static inline int list_empty_careful(const struct list_head *head)
 	return (next == head) && (next == head->prev);
 }
 
-static inline void __list_splice(struct list_head *list,
-				 struct list_head *head)
+static inline void __list_splice(const struct list_head *list,
+				 struct list_head *prev,
+				 struct list_head *next)
 {
 	struct list_head *first = list->next;
 	struct list_head *last = list->prev;
-	struct list_head *at = head->next;
 
-	first->prev = head;
-	head->next = first;
+	first->prev = prev;
+	prev->next = first;
 
-	last->next = at;
-	at->prev = last;
+	last->next = next;
+	next->prev = last;
 }
 
 /**
@@ -245,7 +245,19 @@ static inline void __list_splice(struct list_head *list,
 static inline void list_splice(struct list_head *list, struct list_head *head)
 {
 	if (!list_empty(list))
-		__list_splice(list, head);
+		__list_splice(list, head, head->next);
+}
+
+/**
+ * list_splice_tail - join two lists, each list being a queue
+ * @list: the new list to add.
+ * @head: the place to add it in the first list.
+ */
+static inline void list_splice_tail(struct list_head *list,
+				struct list_head *head)
+{
+	if (!list_empty(list))
+		__list_splice(list, head->prev, head);
 }
 
 /**
@@ -259,7 +271,24 @@ static inline void list_splice_init(struct list_head *list,
 				    struct list_head *head)
 {
 	if (!list_empty(list)) {
-		__list_splice(list, head);
+		__list_splice(list, head, head->next);
+		INIT_LIST_HEAD(list);
+	}
+}
+
+/**
+ * list_splice_tail_init - join two lists and reinitialise the emptied list
+ * @list: the new list to add.
+ * @head: the place to add it in the first list.
+ *
+ * Each of the lists is a queue.
+ * The list at @list is reinitialised
+ */
+static inline void list_splice_tail_init(struct list_head *list,
+					 struct list_head *head)
+{
+	if (!list_empty(list)) {
+		__list_splice(list, head->prev, head);
 		INIT_LIST_HEAD(list);
 	}
 }
@@ -272,6 +301,27 @@ static inline void list_splice_init(struct list_head *list,
  */
 #define list_entry(ptr, type, member) \
 	container_of(ptr, type, member)
+
+/**
+ * list_first_entry - get the first element from a list
+ * @ptr:	the list head to take the element from.
+ * @type:	the type of the struct this is embedded in.
+ * @member:	the name of the list_struct within the struct.
+ *
+ * Note, that list is expected to be not empty.
+ */
+#define list_first_entry(ptr, type, member) \
+	list_entry((ptr)->next, type, member)
+
+/**
+ * list_next_entry - get the next element from a list
+ * @ptr:	the list head to take the element from.
+ * @member:	the name of the list_struct within the struct.
+ *
+ * Note, that next is expected to be not null.
+ */
+#define list_next_entry(ptr, member) \
+	list_entry((ptr)->member.next, typeof(*ptr), member)
 
 /**
  * list_for_each	-	iterate over a list

@@ -1,48 +1,79 @@
-Install Instructions
+Installation instructions
+=========================
 
-Btrfs puts snapshots and subvolumes into the root directory of the FS.  This
-directory can only be changed by btrfsctl right now, and normal filesystem
-operations do not work on it.  The default subvolume is called 'default',
-and you can create files and directories in mount_point/default
+The Btrfs utility programs require the following libraries/tools to build:
 
-Btrfs uses libcrc32c in the kernel for file and metadata checksums.  You need
-to compile the kernel with:
+- libuuid - provided by util-linux, e2fsprogs/e2fslibs or libuuid
+- libblkid - block device id library
+- liblzo2 - LZO data compression library
+- zlib - ZLIB data compression library
 
-CONFIG_LIBCRC32C=m
+For the btrfs-convert utility:
 
-libcrc32c can be static as well.  Once your kernel is setup, typing make in the
-btrfs module sources will build against the running kernel.  When the build is
-complete:
+- e2fsprogs - ext2/ext3/ext4 file system libraries, or called e2fslibs
 
-modprobe libcrc32c
-insmod btrfs.ko
+Generating documentation:
 
-The Btrfs utility programs require libuuid to build.  This can be found
-in the e2fsprogs sources, and is usually available as libuuid or
-e2fsprogs-devel from various distros.
+- asciidoc - text document format tool
+- xmlto - text document format tool
 
-Building the utilities is just make ; make install.  The programs go
-into /usr/local/bin.  The commands available are:
+XATTR library should be provided by the standard C library or by
 
-mkfs.btrfs: create a filesystem
+- libattr - extended attribute library
 
-btrfsctl: control program to create snapshots and subvolumes:
+Please note that the package names may differ according to the distribution.
+See https://btrfs.wiki.kernel.org/index.php/Btrfs_source_repositories#Dependencies .
 
-	mount /dev/sda2 /mnt
-	btrfsctl -s new_subvol_name /mnt
-	btrfsctl -s snapshot_of_default /mnt/default
-	btrfsctl -s snapshot_of_new_subvol /mnt/new_subvol_name
-	btrfsctl -s snapshot_of_a_snapshot /mnt/snapshot_of_new_subvol
-	ls /mnt
-	default snapshot_of_a_snapshot snapshot_of_new_subvol
-	new_subvol_name snapshot_of_default
 
-	Snapshots and subvolumes cannot be deleted right now, but you can
-	rm -rf all the files and directories inside them.
+Building from sources
+---------------------
 
-btrfsck: do a limited check of the FS extent trees.</li>
+To build from git sources you need to generate the configure script using the
+autotools:
 
-debug-tree: print all of the FS metadata in text form.  Example:
+ $ ./autogen.sh
 
-	debug-tree /dev/sda2 >& big_output_file
+To build from the released tarballs:
 
+ $ ./configure
+ $ make
+ $ make install
+
+You may disable building some parts like documentation, btrfs-convert or
+backtrace support. See ./configure --help for more.
+
+Specific CFLAGS or LDFLAGS should be set like
+
+ $ CFLAGS=... LDFLAGS=... ./configure --prefix=/usr
+
+and not as arguments to make. You can specify additional flags to build via
+variables EXTRA_CFLAGS and EXTRA_LDFLAGS that get appended to the predefined
+values of the respective variables.
+
+ $ make EXTRA_CFLAGS=-ggdb3
+
+The build utilizes autotools, dependencies for generating the configure
+scripts are:
+
+* autconf, autoheader
+* automake, aclocal
+* pkg-config
+
+
+Staticly built binaries
+-----------------------
+
+The makefiles are ready to let you build static binaries of the utilities. This
+may be handy in rescue environments. Your system has to provide static version
+of the libraries.
+
+$ make static
+$ make btrfs.static
+$ make btrfs-convert.static
+
+The resulting static binaries have the '.static' suffix, the intermediate object
+files do not conflict with the normal (dynamic) build.
+
+
+References:
+* https://btrfs.wiki.kernel.org

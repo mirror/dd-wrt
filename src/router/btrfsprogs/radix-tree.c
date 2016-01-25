@@ -73,12 +73,7 @@ struct radix_tree_preload {
 	int nr;
 	struct radix_tree_node *nodes[RADIX_TREE_MAX_PATH];
 };
-struct radix_tree_preload radix_tree_preloads = { 0, };
-
-static inline gfp_t root_gfp_mask(struct radix_tree_root *root)
-{
-	return root->gfp_mask & __GFP_BITS_MASK;
-}
+static struct radix_tree_preload radix_tree_preloads = { 0, };
 
 static int internal_nodes = 0;
 /*
@@ -833,10 +828,10 @@ int radix_tree_tagged(struct radix_tree_root *root, unsigned int tag)
 static unsigned long __maxindex(unsigned int height)
 {
 	unsigned int tmp = height * RADIX_TREE_MAP_SHIFT;
-	unsigned long index = (~0UL >> (RADIX_TREE_INDEX_BITS - tmp - 1)) >> 1;
+	unsigned long index = ~0UL;
 
-	if (tmp >= RADIX_TREE_INDEX_BITS)
-		index = ~0UL;
+	if (tmp < RADIX_TREE_INDEX_BITS)
+		index = (index >> (RADIX_TREE_INDEX_BITS - tmp - 1)) >> 1;
 	return index;
 }
 

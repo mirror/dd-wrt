@@ -16,8 +16,6 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 021110-1307, USA.
  */
-#define _XOPEN_SOURCE 600
-#define __USE_XOPEN2K
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -27,8 +25,8 @@
 #include "kerncompat.h"
 #include "extent_io.h"
 #include "list.h"
-
-u64 cache_max = 1024 * 1024 * 32;
+#include "ctree.h"
+#include "volumes.h"
 
 void extent_io_tree_init(struct extent_io_tree *tree)
 {
@@ -45,13 +43,14 @@ static struct extent_state *alloc_extent_state(void)
 	state = malloc(sizeof(*state));
 	if (!state)
 		return NULL;
+	state->cache_node.objectid = 0;
 	state->refs = 1;
 	state->state = 0;
-	state->private = 0;
+	state->xprivate = 0;
 	return state;
 }
 
-static void free_extent_state(struct extent_state *state)
+static void btrfs_free_extent_state(struct extent_state *state)
 {
 	state->refs--;
 	BUG_ON(state->refs < 0);
@@ -59,30 +58,27 @@ static void free_extent_state(struct extent_state *state)
 		free(state);
 }
 
-void extent_io_tree_cleanup(struct extent_io_tree *tree)
+static void free_extent_state_func(struct cache_extent *cache)
 {
 	struct extent_state *es;
+
+	es = container_of(cache, struct extent_state, cache_node);
+	btrfs_free_extent_state(es);
+}
+
+void extent_io_tree_cleanup(struct extent_io_tree *tree)
+{
 	struct extent_buffer *eb;
-	struct cache_extent *cache;
 
 	while(!list_empty(&tree->lru)) {
 		eb = list_entry(tree->lru.next, struct extent_buffer, lru);
-		if (eb->refs != 1) {
-			fprintf(stderr, "extent buffer leak: "
-				"start %llu len %u\n",
-				(unsigned long long)eb->start, eb->len);
-			eb->refs = 1;
-		}
+		fprintf(stderr, "extent buffer leak: "
+			"start %llu len %u\n",
+			(unsigned long long)eb->start, eb->len);
 		free_extent_buffer(eb);
 	}
-	while (1) {
-		cache = find_first_cache_extent(&tree->state, 0);
-		if (!cache)
-			break;
-		es = container_of(cache, struct extent_state, cache_node);
-		remove_cache_extent(&tree->state, &es->cache_node);
-		free_extent_state(es);
-	}
+
+	cache_tree_free_extents(&tree->state, free_extent_state_func);
 }
 
 static inline void update_extent_state(struct extent_state *state)
@@ -115,7 +111,7 @@ static int merge_state(struct extent_io_tree *tree,
 			state->start = other->start;
 			update_extent_state(state);
 			remove_cache_extent(&tree->state, &other->cache_node);
-			free_extent_state(other);
+			btrfs_free_extent_state(other);
 		}
 	}
 	other_node = next_cache_extent(&state->cache_node);
@@ -127,7 +123,7 @@ static int merge_state(struct extent_io_tree *tree,
 			other->start = state->start;
 			update_extent_state(other);
 			remove_cache_extent(&tree->state, &state->cache_node);
-			free_extent_state(state);
+			btrfs_free_extent_state(state);
 		}
 	}
 	return 0;
@@ -148,7 +144,7 @@ static int insert_state(struct extent_io_tree *tree,
 	state->start = start;
 	state->end = end;
 	update_extent_state(state);
-	ret = insert_existing_cache_extent(&tree->state, &state->cache_node);
+	ret = insert_cache_extent(&tree->state, &state->cache_node);
 	BUG_ON(ret);
 	merge_state(tree, state);
 	return 0;
@@ -169,8 +165,7 @@ static int split_state(struct extent_io_tree *tree, struct extent_state *orig,
 	update_extent_state(prealloc);
 	orig->start = split;
 	update_extent_state(orig);
-	ret = insert_existing_cache_extent(&tree->state,
-					   &prealloc->cache_node);
+	ret = insert_cache_extent(&tree->state, &prealloc->cache_node);
 	BUG_ON(ret);
 	return 0;
 }
@@ -186,7 +181,7 @@ static int clear_state_bit(struct extent_io_tree *tree,
 	state->state &= ~bits;
 	if (state->state == 0) {
 		remove_cache_extent(&tree->state, &state->cache_node);
-		free_extent_state(state);
+		btrfs_free_extent_state(state);
 	} else {
 		merge_state(tree, state);
 	}
@@ -194,7 +189,7 @@ static int clear_state_bit(struct extent_io_tree *tree,
 }
 
 /*
- * set some bits on a range in the tree.
+ * clear some bits on a range in the tree.
  */
 int clear_extent_bits(struct extent_io_tree *tree, u64 start,
 		      u64 end, int bits, gfp_t mask)
@@ -207,15 +202,17 @@ int clear_extent_bits(struct extent_io_tree *tree, u64 start,
 	int set = 0;
 
 again:
-	prealloc = alloc_extent_state();
-	if (!prealloc)
-		return -ENOMEM;
+	if (!prealloc) {
+		prealloc = alloc_extent_state();
+		if (!prealloc)
+			return -ENOMEM;
+	}
 
 	/*
 	 * this search will find the extents that end after
 	 * our range starts
 	 */
-	node = find_first_cache_extent(&tree->state, start);
+	node = search_cache_extent(&tree->state, start);
 	if (!node)
 		goto out;
 	state = container_of(node, struct extent_state, cache_node);
@@ -277,7 +274,7 @@ again:
 	goto search_again;
 out:
 	if (prealloc)
-		free_extent_state(prealloc);
+		btrfs_free_extent_state(prealloc);
 	return set;
 
 search_again:
@@ -296,19 +293,20 @@ int set_extent_bits(struct extent_io_tree *tree, u64 start,
 	struct extent_state *prealloc = NULL;
 	struct cache_extent *node;
 	int err = 0;
-	int set;
 	u64 last_start;
 	u64 last_end;
 again:
-	prealloc = alloc_extent_state();
-	if (!prealloc)
-		return -ENOMEM;
+	if (!prealloc) {
+		prealloc = alloc_extent_state();
+		if (!prealloc)
+			return -ENOMEM;
+	}
 
 	/*
 	 * this search will find the extents that end after
 	 * our range starts
 	 */
-	node = find_first_cache_extent(&tree->state, start);
+	node = search_cache_extent(&tree->state, start);
 	if (!node) {
 		err = insert_state(tree, prealloc, start, end, bits);
 		BUG_ON(err == -EEXIST);
@@ -327,7 +325,6 @@ again:
 	 * Just lock what we found and keep going
 	 */
 	if (state->start == start && state->end <= end) {
-		set = state->state & bits;
 		state->state |= bits;
 		merge_state(tree, state);
 		if (last_end == (u64)-1)
@@ -352,7 +349,6 @@ again:
 	 * desired bit on it.
 	 */
 	if (state->start < start) {
-		set = state->state & bits;
 		err = split_state(tree, state, prealloc, start);
 		BUG_ON(err == -EEXIST);
 		prealloc = NULL;
@@ -398,7 +394,6 @@ again:
 	 * We need to split the extent, and set the bit
 	 * on the first half
 	 */
-	set = state->state & bits;
 	err = split_state(tree, state, prealloc, end + 1);
 	BUG_ON(err == -EEXIST);
 
@@ -407,7 +402,7 @@ again:
 	prealloc = NULL;
 out:
 	if (prealloc)
-		free_extent_state(prealloc);
+		btrfs_free_extent_state(prealloc);
 	return err;
 search_again:
 	if (start > end)
@@ -438,7 +433,7 @@ int find_first_extent_bit(struct extent_io_tree *tree, u64 start,
 	 * this search will find all the extents that end after
 	 * our range starts.
 	 */
-	node = find_first_cache_extent(&tree->state, start);
+	node = search_cache_extent(&tree->state, start);
 	if (!node)
 		goto out;
 
@@ -465,7 +460,7 @@ int test_range_bit(struct extent_io_tree *tree, u64 start, u64 end,
 	struct cache_extent *node;
 	int bitset = 0;
 
-	node = find_first_cache_extent(&tree->state, start);
+	node = search_cache_extent(&tree->state, start);
 	while (node && start <= end) {
 		state = container_of(node, struct extent_state, cache_node);
 
@@ -502,7 +497,7 @@ int set_state_private(struct extent_io_tree *tree, u64 start, u64 private)
 	struct extent_state *state;
 	int ret = 0;
 
-	node = find_first_cache_extent(&tree->state, start);
+	node = search_cache_extent(&tree->state, start);
 	if (!node) {
 		ret = -ENOENT;
 		goto out;
@@ -512,7 +507,7 @@ int set_state_private(struct extent_io_tree *tree, u64 start, u64 private)
 		ret = -ENOENT;
 		goto out;
 	}
-	state->private = private;
+	state->xprivate = private;
 out:
 	return ret;
 }
@@ -523,7 +518,7 @@ int get_state_private(struct extent_io_tree *tree, u64 start, u64 *private)
 	struct extent_state *state;
 	int ret = 0;
 
-	node = find_first_cache_extent(&tree->state, start);
+	node = search_cache_extent(&tree->state, start);
 	if (!node) {
 		ret = -ENOENT;
 		goto out;
@@ -533,41 +528,17 @@ int get_state_private(struct extent_io_tree *tree, u64 start, u64 *private)
 		ret = -ENOENT;
 		goto out;
 	}
-	*private = state->private;
+	*private = state->xprivate;
 out:
 	return ret;
-}
-
-static int free_some_buffers(struct extent_io_tree *tree)
-{
-	u32 nrscan = 0;
-	struct extent_buffer *eb;
-	struct list_head *node, *next;
-
-	if (tree->cache_size < cache_max)
-		return 0;
-	list_for_each_safe(node, next, &tree->lru) {
-		eb = list_entry(node, struct extent_buffer, lru);
-		if (eb->refs == 1) {
-			free_extent_buffer(eb);
-			if (tree->cache_size < cache_max)
-				break;
-		} else {
-			list_move_tail(&eb->lru, &tree->lru);
-		}
-		if (nrscan++ > 64)
-			break;
-	}
-	return 0;
 }
 
 static struct extent_buffer *__alloc_extent_buffer(struct extent_io_tree *tree,
 						   u64 bytenr, u32 blocksize)
 {
 	struct extent_buffer *eb;
-	int ret;
 
-	eb = malloc(sizeof(struct extent_buffer) + blocksize);
+	eb = calloc(1, sizeof(struct extent_buffer) + blocksize);
 	if (!eb) {
 		BUG();
 		return NULL;
@@ -575,28 +546,35 @@ static struct extent_buffer *__alloc_extent_buffer(struct extent_io_tree *tree,
 
 	eb->start = bytenr;
 	eb->len = blocksize;
-	eb->refs = 2;
+	eb->refs = 1;
 	eb->flags = 0;
 	eb->tree = tree;
 	eb->fd = -1;
 	eb->dev_bytenr = (u64)-1;
 	eb->cache_node.start = bytenr;
 	eb->cache_node.size = blocksize;
+	INIT_LIST_HEAD(&eb->recow);
 
-	free_some_buffers(tree);
-	ret = insert_existing_cache_extent(&tree->cache, &eb->cache_node);
-	if (ret) {
-		free(eb);
-		return NULL;
-	}
-	list_add_tail(&eb->lru, &tree->lru);
-	tree->cache_size += blocksize;
 	return eb;
+}
+
+struct extent_buffer *btrfs_clone_extent_buffer(struct extent_buffer *src)
+{
+	struct extent_buffer *new;
+
+	new = __alloc_extent_buffer(NULL, src->start, src->len);
+	if (new == NULL)
+		return NULL;
+
+	copy_extent_buffer(new, src, 0, 0, src->len);
+	new->flags |= EXTENT_BUFFER_DUMMY;
+
+	return new;
 }
 
 void free_extent_buffer(struct extent_buffer *eb)
 {
-	if (!eb)
+	if (!eb || IS_ERR(eb))
 		return;
 
 	eb->refs--;
@@ -605,9 +583,12 @@ void free_extent_buffer(struct extent_buffer *eb)
 		struct extent_io_tree *tree = eb->tree;
 		BUG_ON(eb->flags & EXTENT_DIRTY);
 		list_del_init(&eb->lru);
-		remove_cache_extent(&tree->cache, &eb->cache_node);
-		BUG_ON(tree->cache_size < eb->len);
-		tree->cache_size -= eb->len;
+		list_del_init(&eb->recow);
+		if (!(eb->flags & EXTENT_BUFFER_DUMMY)) {
+			BUG_ON(tree->cache_size < eb->len);
+			remove_cache_extent(&tree->cache, &eb->cache_node);
+			tree->cache_size -= eb->len;
+		}
 		free(eb);
 	}
 }
@@ -618,8 +599,9 @@ struct extent_buffer *find_extent_buffer(struct extent_io_tree *tree,
 	struct extent_buffer *eb = NULL;
 	struct cache_extent *cache;
 
-	cache = find_cache_extent(&tree->cache, bytenr, blocksize);
-	if (cache && cache->start == bytenr && cache->size == blocksize) {
+	cache = lookup_cache_extent(&tree->cache, bytenr, blocksize);
+	if (cache && cache->start == bytenr &&
+	    cache->size == blocksize) {
 		eb = container_of(cache, struct extent_buffer, cache_node);
 		list_move_tail(&eb->lru, &tree->lru);
 		eb->refs++;
@@ -633,7 +615,7 @@ struct extent_buffer *find_first_extent_buffer(struct extent_io_tree *tree,
 	struct extent_buffer *eb = NULL;
 	struct cache_extent *cache;
 
-	cache = find_first_cache_extent(&tree->cache, start);
+	cache = search_cache_extent(&tree->cache, start);
 	if (cache) {
 		eb = container_of(cache, struct extent_buffer, cache_node);
 		list_move_tail(&eb->lru, &tree->lru);
@@ -648,30 +630,44 @@ struct extent_buffer *alloc_extent_buffer(struct extent_io_tree *tree,
 	struct extent_buffer *eb;
 	struct cache_extent *cache;
 
-	cache = find_cache_extent(&tree->cache, bytenr, blocksize);
-	if (cache && cache->start == bytenr && cache->size == blocksize) {
+	cache = lookup_cache_extent(&tree->cache, bytenr, blocksize);
+	if (cache && cache->start == bytenr &&
+	    cache->size == blocksize) {
 		eb = container_of(cache, struct extent_buffer, cache_node);
 		list_move_tail(&eb->lru, &tree->lru);
 		eb->refs++;
 	} else {
+		int ret;
+
 		if (cache) {
 			eb = container_of(cache, struct extent_buffer,
 					  cache_node);
-			BUG_ON(eb->refs != 1);
 			free_extent_buffer(eb);
 		}
 		eb = __alloc_extent_buffer(tree, bytenr, blocksize);
+		if (!eb)
+			return NULL;
+		ret = insert_cache_extent(&tree->cache, &eb->cache_node);
+		if (ret) {
+			free(eb);
+			return NULL;
+		}
+		list_add_tail(&eb->lru, &tree->lru);
+		tree->cache_size += blocksize;
 	}
 	return eb;
 }
 
-int read_extent_from_disk(struct extent_buffer *eb)
+int read_extent_from_disk(struct extent_buffer *eb,
+			  unsigned long offset, unsigned long len)
 {
 	int ret;
-	ret = pread(eb->fd, eb->data, eb->len, eb->dev_bytenr);
-	if (ret < 0)
+	ret = pread(eb->fd, eb->data + offset, len, eb->dev_bytenr);
+	if (ret < 0) {
+		ret = -errno;
 		goto out;
-	if (ret != eb->len) {
+	}
+	if (ret != len) {
 		ret = -EIO;
 		goto out;
 	}
@@ -695,23 +691,138 @@ out:
 	return ret;
 }
 
-int set_extent_buffer_uptodate(struct extent_buffer *eb)
+int read_data_from_disk(struct btrfs_fs_info *info, void *buf, u64 offset,
+			u64 bytes, int mirror)
 {
-	eb->flags |= EXTENT_UPTODATE;
+	struct btrfs_multi_bio *multi = NULL;
+	struct btrfs_device *device;
+	u64 bytes_left = bytes;
+	u64 read_len;
+	u64 total_read = 0;
+	int ret;
+
+	while (bytes_left) {
+		read_len = bytes_left;
+		ret = btrfs_map_block(&info->mapping_tree, READ, offset,
+				      &read_len, &multi, mirror, NULL);
+		if (ret) {
+			fprintf(stderr, "Couldn't map the block %Lu\n",
+				offset);
+			return -EIO;
+		}
+		device = multi->stripes[0].dev;
+
+		read_len = min(bytes_left, read_len);
+		if (device->fd <= 0) {
+			kfree(multi);
+			return -EIO;
+		}
+
+		ret = pread(device->fd, buf + total_read, read_len,
+			    multi->stripes[0].physical);
+		kfree(multi);
+		if (ret < 0) {
+			fprintf(stderr, "Error reading %Lu, %d\n", offset,
+				ret);
+			return ret;
+		}
+		if (ret != read_len) {
+			fprintf(stderr, "Short read for %Lu, read %d, "
+				"read_len %Lu\n", offset, ret, read_len);
+			return -EIO;
+		}
+
+		bytes_left -= read_len;
+		offset += read_len;
+		total_read += read_len;
+	}
+
 	return 0;
 }
 
-int clear_extent_buffer_uptodate(struct extent_io_tree *tree,
-				struct extent_buffer *eb)
+int write_data_to_disk(struct btrfs_fs_info *info, void *buf, u64 offset,
+		      u64 bytes, int mirror)
 {
-	eb->flags &= ~EXTENT_UPTODATE;
-	return 0;
-}
+	struct btrfs_multi_bio *multi = NULL;
+	struct btrfs_device *device;
+	u64 bytes_left = bytes;
+	u64 this_len;
+	u64 total_write = 0;
+	u64 *raid_map = NULL;
+	u64 dev_bytenr;
+	int dev_nr;
+	int ret = 0;
 
-int extent_buffer_uptodate(struct extent_buffer *eb)
-{
-	if (eb->flags & EXTENT_UPTODATE)
-		return 1;
+	while (bytes_left > 0) {
+		this_len = bytes_left;
+		dev_nr = 0;
+
+		ret = btrfs_map_block(&info->mapping_tree, WRITE, offset,
+				      &this_len, &multi, mirror, &raid_map);
+		if (ret) {
+			fprintf(stderr, "Couldn't map the block %Lu\n",
+				offset);
+			return -EIO;
+		}
+
+		if (raid_map) {
+			struct extent_buffer *eb;
+			u64 stripe_len = this_len;
+
+			this_len = min(this_len, bytes_left);
+			this_len = min(this_len, (u64)info->tree_root->leafsize);
+
+			eb = malloc(sizeof(struct extent_buffer) + this_len);
+			BUG_ON(!eb);
+
+			memset(eb, 0, sizeof(struct extent_buffer) + this_len);
+			eb->start = offset;
+			eb->len = this_len;
+
+			memcpy(eb->data, buf + total_write, this_len);
+			ret = write_raid56_with_parity(info, eb, multi,
+						       stripe_len, raid_map);
+			BUG_ON(ret);
+
+			free(eb);
+			kfree(raid_map);
+			raid_map = NULL;
+		} else while (dev_nr < multi->num_stripes) {
+			device = multi->stripes[dev_nr].dev;
+			if (device->fd <= 0) {
+				kfree(multi);
+				return -EIO;
+			}
+
+			dev_bytenr = multi->stripes[dev_nr].physical;
+			this_len = min(this_len, bytes_left);
+			dev_nr++;
+
+			ret = pwrite(device->fd, buf + total_write, this_len, dev_bytenr);
+			if (ret != this_len) {
+				if (ret < 0) {
+					fprintf(stderr, "Error writing to "
+						"device %d\n", errno);
+					ret = errno;
+					kfree(multi);
+					return ret;
+				} else {
+					fprintf(stderr, "Short write\n");
+					kfree(multi);
+					return -EIO;
+				}
+			}
+		}
+
+		BUG_ON(bytes_left < this_len);
+
+		bytes_left -= this_len;
+		offset += this_len;
+		total_write += this_len;
+
+		kfree(multi);
+		multi = NULL;
+	}
 	return 0;
 }
 
@@ -762,12 +873,6 @@ void copy_extent_buffer(struct extent_buffer *dst, struct extent_buffer *src,
 	memcpy(dst->data + dst_offset, src->data + src_offset, len);
 }
 
-void memcpy_extent_buffer(struct extent_buffer *dst, unsigned long dst_offset,
-			  unsigned long src_offset, unsigned long len)
-{
-	memcpy(dst->data + dst_offset, dst->data + src_offset, len);
-}
-
 void memmove_extent_buffer(struct extent_buffer *dst, unsigned long dst_offset,
 			   unsigned long src_offset, unsigned long len)
 {
@@ -778,4 +883,10 @@ void memset_extent_buffer(struct extent_buffer *eb, char c,
 			  unsigned long start, unsigned long len)
 {
 	memset(eb->data + start, c, len);
+}
+
+int extent_buffer_test_bit(struct extent_buffer *eb, unsigned long start,
+			   unsigned long nr)
+{
+	return test_bit(nr, (unsigned long *)(eb->data + start));
 }
