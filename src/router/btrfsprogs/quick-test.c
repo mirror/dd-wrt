@@ -27,7 +27,7 @@
 #include "transaction.h"
 
 /* for testing only */
-int next_key(int i, int max_key) {
+static int next_key(int i, int max_key) {
 	return rand() % max_key;
 	// return i;
 }
@@ -46,12 +46,15 @@ int main(int ac, char **av) {
 	struct btrfs_root *root;
 	struct btrfs_trans_handle *trans;
 
-	buf = malloc(512);
-	memset(buf, 0, 512);
+	buf = calloc(1, 512);
 
 	radix_tree_init();
 
-	root = open_ctree(av[1], BTRFS_SUPER_INFO_OFFSET, O_RDWR);
+	root = open_ctree(av[1], BTRFS_SUPER_INFO_OFFSET, OPEN_CTREE_WRITES);
+	if (!root) {
+		fprintf(stderr, "Open ctree failed\n");
+		exit(1);
+	}
 	trans = btrfs_start_transaction(root, 1);
 	srand(55);
 	btrfs_set_key_type(&ins, BTRFS_STRING_ITEM_KEY);
@@ -74,7 +77,11 @@ int main(int ac, char **av) {
 	btrfs_commit_transaction(trans, root);
 	close_ctree(root);
 	exit(1);
-	root = open_ctree(av[1], BTRFS_SUPER_INFO_OFFSET, O_RDWR);
+	root = open_ctree(av[1], BTRFS_SUPER_INFO_OFFSET, OPEN_CTREE_WRITES);
+	if (!root) {
+		fprintf(stderr, "Open ctree failed\n");
+		exit(1);
+	}
 	printf("starting search\n");
 	srand(55);
 	for (i = 0; i < run_size; i++) {
@@ -85,15 +92,19 @@ int main(int ac, char **av) {
 			fprintf(stderr, "search %d:%d\n", num, i);
 		ret = btrfs_search_slot(NULL, root, &ins, &path, 0, 0);
 		if (ret) {
-			btrfs_print_tree(root, root->node);
+			btrfs_print_tree(root, root->node, 1);
 			printf("unable to find %d\n", num);
 			exit(1);
 		}
-		btrfs_release_path(root, &path);
+		btrfs_release_path(&path);
 	}
 	close_ctree(root);
 
-	root = open_ctree(av[1], BTRFS_SUPER_INFO_OFFSET, O_RDWR);
+	root = open_ctree(av[1], BTRFS_SUPER_INFO_OFFSET, OPEN_CTREE_WRITES);
+	if (!root) {
+		fprintf(stderr, "Open ctree failed\n");
+		exit(1);
+	}
 	printf("node %p level %d total ptrs %d free spc %lu\n", root->node,
 	        btrfs_header_level(root->node),
 		btrfs_header_nritems(root->node),
@@ -116,12 +127,16 @@ int main(int ac, char **av) {
 				BUG();
 			tree_size--;
 		}
-		btrfs_release_path(root, &path);
+		btrfs_release_path(&path);
 	}
 	btrfs_commit_transaction(trans, root);
 	close_ctree(root);
 
-	root = open_ctree(av[1], BTRFS_SUPER_INFO_OFFSET, O_RDWR);
+	root = open_ctree(av[1], BTRFS_SUPER_INFO_OFFSET, OPEN_CTREE_WRITES);
+	if (!root) {
+		fprintf(stderr, "Open ctree failed\n");
+		exit(1);
+	}
 	trans = btrfs_start_transaction(root, 1);
 	srand(128);
 	for (i = 0; i < run_size; i++) {
@@ -137,7 +152,11 @@ int main(int ac, char **av) {
 	btrfs_commit_transaction(trans, root);
 	close_ctree(root);
 
-	root = open_ctree(av[1], BTRFS_SUPER_INFO_OFFSET, O_RDWR);
+	root = open_ctree(av[1], BTRFS_SUPER_INFO_OFFSET, OPEN_CTREE_WRITES);
+	if (!root) {
+		fprintf(stderr, "Open ctree failed\n");
+		exit(1);
+	}
 	srand(128);
 	printf("starting search2\n");
 	for (i = 0; i < run_size; i++) {
@@ -148,11 +167,11 @@ int main(int ac, char **av) {
 			fprintf(stderr, "search %d:%d\n", num, i);
 		ret = btrfs_search_slot(NULL, root, &ins, &path, 0, 0);
 		if (ret) {
-			btrfs_print_tree(root, root->node);
+			btrfs_print_tree(root, root->node, 1);
 			printf("unable to find %d\n", num);
 			exit(1);
 		}
-		btrfs_release_path(root, &path);
+		btrfs_release_path(&path);
 	}
 	printf("starting big long delete run\n");
 	trans = btrfs_start_transaction(root, 1);
@@ -185,7 +204,7 @@ int main(int ac, char **av) {
 			}
 			tree_size--;
 		}
-		btrfs_release_path(root, &path);
+		btrfs_release_path(&path);
 	}
 	/*
 	printf("previous tree:\n");
@@ -196,7 +215,7 @@ int main(int ac, char **av) {
 	btrfs_commit_transaction(trans, root);
 	printf("tree size is now %d\n", tree_size);
 	printf("root %p commit root %p\n", root->node, root->commit_root);
-	btrfs_print_tree(root, root->node);
+	btrfs_print_tree(root, root->node, 1);
 	close_ctree(root);
 	return 0;
 }

@@ -1,0 +1,240 @@
+#!/bin/bash
+#
+# Common routines for all tests
+#
+
+_fail()
+{
+	echo "$*" | tee -a $RESULTS
+	exit 1
+}
+
+# log a message to the results file
+_log()
+{
+	echo "$*" | tee -a $RESULTS
+}
+
+_not_run()
+{
+	echo "    [NOTRUN] $*"
+	exit 0
+}
+
+run_check()
+{
+	echo "############### $@" >> $RESULTS 2>&1
+	if [ "$TEST_LOG" = 'tty' ]; then echo "CMD: $@" > /dev/tty; fi
+	if [ "$1" = 'root_helper' ]; then
+		"$@" >> $RESULTS 2>&1 || _fail "failed: $@"
+	else
+		$INSTRUMENT "$@" >> $RESULTS 2>&1 || _fail "failed: $@"
+	fi
+}
+
+# same as run_check but the stderr+stdout output is duplicated on stdout and
+# can be processed further
+run_check_stdout()
+{
+	echo "############### $@" >> $RESULTS 2>&1
+	if [ "$TEST_LOG" = 'tty' ]; then echo "CMD(stdout): $@" > /dev/tty; fi
+	if [ "$1" = 'root_helper' ]; then
+		"$@" 2>&1 | tee -a $RESULTS || _fail "failed: $@"
+	else
+		$INSTRUMENT "$@" 2>&1 | tee -a $RESULTS || _fail "failed: $@"
+	fi
+}
+
+# same as run_check but does not fail the test, output is logged
+run_mayfail()
+{
+	echo "############### $@" >> $RESULTS 2>&1
+	if [ "$TEST_LOG" = 'tty' ]; then echo "CMD(mayfail): $@" > /dev/tty; fi
+	if [ "$1" = 'root_helper' ]; then
+		"$@" >> $RESULTS 2>&1
+	else
+		$INSTRUMENT "$@" >> $RESULTS 2>&1
+	fi
+	if [ $? != 0 ]; then
+		echo "failed (ignored): $@" >> $RESULTS
+		return 1
+	fi
+}
+
+check_prereq()
+{
+	if ! [ -f $TOP/$1 ]; then
+		_fail "Failed prerequisities: $1";
+	fi
+}
+
+check_image()
+{
+	local image
+
+	image=$1
+	echo "testing image $(basename $image)" >> $RESULTS
+	$TOP/btrfs check $image >> $RESULTS 2>&1
+	[ $? -eq 0 ] && _fail "btrfs check should have detected corruption"
+
+	run_check $TOP/btrfs check --repair $image
+	run_check $TOP/btrfs check $image
+}
+
+# Extract a usable image from packed formats
+# - raw btrfs filesystem images, suffix .raw
+# - dtto compressed by XZ, suffix .raw.xz
+# - meta-dump images with suffix .img
+# - dtto compressed by XZ, suffix .img.xz
+extract_image()
+{
+	local image
+	local cleanme
+
+	image="$1"
+	case "$image" in
+	*.img)
+		rm -f $image.restored
+		: ;;
+	*.img.xz)
+		xz --decompress --keep "$image" || \
+			_fail "failed to decompress image $image" >&2
+		image=${image%%.xz}
+		rm -f $image.restored
+		cleanme=$image
+		;;
+	*.raw)
+		cp --sparse=auto $image $image.restored
+		;;
+	*.raw.xz)
+		xz --decompress --keep "$image" || \
+			_fail "failed to decompress image $image" >&2
+		image=${image%%.xz}
+		mv "$image" "$image".restored
+		;;
+	esac
+
+	if ! [ -f $image.restored ]; then
+		echo "restoring image $(basename $image)" >> $RESULTS
+		$TOP/btrfs-image -r $image $image.restored \
+			&>> $RESULTS \
+			|| _fail "failed to restore image $image" >&2
+	fi
+
+	[ -f "$cleanme" ] && rm -f "$cleanme"
+
+	echo "$image.restored"
+}
+
+# Process all image dumps in a given directory
+check_all_images()
+{
+	local dir
+	local extracted
+
+	dir="$1"
+	for image in $(find $dir \( -iname '*.img' -o	\
+				-iname '*.img.xz' -o 	\
+				-iname '*.raw' -o 	\
+				-iname '*.raw.xz' \) | sort)
+	do
+		extracted=$(extract_image "$image")
+		check_image "$extracted"
+		rm -f "$extracted"
+	done
+}
+
+# some tests need to mount the recovered image and do verifications call
+# 'setup_root_helper' and then check for have_root_helper == 1 if the test
+# needs to fail otherwise; using sudo by default for now
+SUDO_HELPER=
+NEED_SUDO_VALIDATE=unknown
+export SUDO_HELPER
+export NEED_SUDO_VALIDATE
+root_helper()
+{
+	if [ $UID -eq 0 ]; then
+		"$@"
+	else
+		if [ "$NEED_SUDO_VALIDATE" = 'yes' ]; then
+			sudo -v -n &>/dev/null || \
+				_not_run "Need to validate sudo credentials"
+			sudo -n "$@"
+		elif [ "$NEED_SUDO_VALIDATE" = 'no' ]; then
+			sudo -n /bin/true &> /dev/null || \
+				_not_run "Need to validate sudo user settings"
+			sudo -n "$@"
+		else
+			# should not happen
+			_not_run "Need to validate root privileges"
+		fi
+	fi
+}
+
+setup_root_helper()
+{
+	if [ $UID -eq 0 -o -n "$SUDO_HELPER" ]; then
+		return
+	fi
+
+	# Test for old sudo or special settings, which make sudo -v fail even
+	# if user setting is NOPASSWD
+	sudo -n /bin/true &>/dev/null && NEED_SUDO_VALIDATE=no
+
+	# Newer sudo or default sudo setting
+	sudo -v -n &>/dev/null && NEED_SUDO_VALIDATE=yes
+
+	if [ "$NEED_SUDO_VALIDATE" = 'unknown' ]; then
+		_not_run "Need to validate root privileges"
+	fi
+	SUDO_HELPER=root_helper
+}
+
+prepare_test_dev()
+{
+	# num[K/M/G/T...]
+	local size="$1"
+
+	[[ "$TEST_DEV" ]] && return
+	[[ "$size" ]] || size='2G'
+
+	echo "\$TEST_DEV not given, use $TOP/test/test.img as fallback" >> \
+		$RESULTS
+	TEST_DEV="$TOP/tests/test.img"
+
+	truncate -s "$size" "$TEST_DEV" || _not_run "create file for loop device failed"
+}
+
+run_check_mount_test_dev()
+{
+	setup_root_helper
+
+	local loop_opt
+	if [[ -b "$TEST_DEV" ]]; then
+		loop_opt=""
+	elif [[ -f "$TEST_DEV" ]]; then
+		loop_opt="-o loop"
+	else
+		_fail "Invalid \$TEST_DEV: $TEST_DEV"
+	fi
+
+	[[ -d "$TEST_MNT" ]] || {
+		_fail "Invalid \$TEST_MNT: $TEST_MNT"
+	}
+
+	run_check $SUDO_HELPER mount $loop_opt "$@" "$TEST_DEV" "$TEST_MNT"
+}
+
+run_check_umount_test_dev()
+{
+	setup_root_helper
+	run_check $SUDO_HELPER umount "$@" "$TEST_DEV"
+}
+
+init_env()
+{
+	TEST_MNT="${TEST_MNT:-$TOP/tests/mnt}"
+	export TEST_MNT
+	mkdir -p "$TEST_MNT" || { echo "Failed mkdir -p $TEST_MNT"; exit 1; }
+}
+init_env

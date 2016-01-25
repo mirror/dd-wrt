@@ -16,8 +16,11 @@
  * Boston, MA 021110-1307, USA.
  */
 
-#ifndef __TRANSACTION__
-#define __TRANSACTION__
+#ifndef __BTRFS_TRANSACTION_H__
+#define __BTRFS_TRANSACTION_H__
+
+#include "kerncompat.h"
+#include "ctree.h"
 
 struct btrfs_trans_handle {
 	u64 transid;
@@ -34,6 +37,7 @@ btrfs_start_transaction(struct btrfs_root *root, int num_blocks)
 	struct btrfs_fs_info *fs_info = root->fs_info;
 	struct btrfs_trans_handle *h = malloc(sizeof(*h));
 
+	BUG_ON(!h);
 	BUG_ON(root->commit_root);
 	BUG_ON(fs_info->running_transaction);
 	fs_info->running_transaction = h;
