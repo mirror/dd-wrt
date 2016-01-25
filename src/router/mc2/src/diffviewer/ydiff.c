@@ -28,7 +28,6 @@
 #include <config.h>
 #include <ctype.h>
 #include <errno.h>
-#include <fcntl.h>
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -2004,6 +2003,8 @@ get_current_hunk (WDiff * dview, int *start_line1, int *end_line1, int *start_li
         case CHG_CH:
             res = DIFF_CHG;
             break;
+        default:
+            break;
         }
         while (pos > 0 && ((DIFFLN *) & g_array_index (a0, DIFFLN, pos))->ch != EQU_CH)
             pos--;
@@ -2238,6 +2239,8 @@ do_merge_hunk (WDiff * dview, action_direction_t merge_direction)
             break;
         case DIFF_CHG:
             dview_replace_hunk (dview, merge_file, from1, to1, from2, to2, merge_direction);
+            break;
+        default:
             break;
         }
         fflush (merge_file);
@@ -2493,7 +2496,7 @@ dview_fini (WDiff * dview)
         f_close (dview->f[DIFF_LEFT]);
     }
 
-#if HAVE_CHARSET
+#ifdef HAVE_CHARSET
     if (dview->converter != str_cnv_from_term)
         str_close_conv (dview->converter);
 #endif
@@ -2616,7 +2619,7 @@ dview_display_file (const WDiff * dview, diff_place_t ord, int r, int c, int hei
 #ifdef HAVE_CHARSET
                         if (dview->utf8)
                         {
-                            int ch_len;
+                            int ch_len = 0;
 
                             next_ch = dview_get_utf (buf + cnt, &ch_len, &ch_res);
                             if (ch_len > 1)
@@ -2693,7 +2696,7 @@ dview_display_file (const WDiff * dview, diff_place_t ord, int r, int c, int hei
 #ifdef HAVE_CHARSET
             if (dview->utf8)
             {
-                int ch_len;
+                int ch_len = 0;
 
                 next_ch = dview_get_utf (buf + cnt, &ch_len, &ch_res);
                 if (ch_len > 1)
@@ -2910,21 +2913,21 @@ dview_edit (WDiff * dview, diff_place_t ord)
 static void
 dview_goto_cmd (WDiff * dview, diff_place_t ord)
 {
+    static gboolean first_run = TRUE;
+
     /* *INDENT-OFF* */
     static const char *title[2] = {
         N_("Goto line (left)"),
         N_("Goto line (right)")
     };
     /* *INDENT-ON* */
-    static char prev[256];
-    /* XXX some statics here, to be remembered between runs */
 
     int newline;
     char *input;
 
     input =
-        input_dialog (_(title[ord]), _("Enter line:"), MC_HISTORY_YDIFF_GOTO_LINE, prev,
-                      INPUT_COMPLETE_NONE);
+        input_dialog (_(title[ord]), _("Enter line:"), MC_HISTORY_YDIFF_GOTO_LINE,
+                      first_run ? NULL : INPUT_LAST_TEXT, INPUT_COMPLETE_NONE);
     if (input != NULL)
     {
         const char *s = input;
@@ -2945,10 +2948,11 @@ dview_goto_cmd (WDiff * dview, diff_place_t ord)
                 }
             }
             dview->skip_rows = dview->search.last_accessed_num_line = (ssize_t) i;
-            g_snprintf (prev, sizeof (prev), "%d", newline);
         }
         g_free (input);
     }
+
+    first_run = FALSE;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -3208,7 +3212,7 @@ dview_execute_cmd (WDiff * dview, unsigned long command)
             find_prev_hunk (dview->a[DIFF_LEFT], dview->skip_rows);
         break;
     case CK_Goto:
-        dview_goto_cmd (dview, TRUE);
+        dview_goto_cmd (dview, DIFF_RIGHT);
         break;
     case CK_Edit:
         dview_edit (dview, dview->ord);

@@ -538,7 +538,7 @@
 /* MC configure arguments */
 #undef MC_CONFIGURE_ARGS
 
-/* Define to enable XDG standard support */
+/* Define to disble XDG standard support */
 #undef MC_HOMEDIR_XDG
 
 /* Where configs will be placed relative to $HOME */
@@ -585,19 +585,16 @@
 #undef MOUNTED_GETMNTINFO2
 
 /* Define if we are on interix, and ought to use statvfs plus some special
-   knowledge on where mounted filesystems can be found. (Interix) */
+   knowledge on where mounted file systems can be found. (Interix) */
 #undef MOUNTED_INTERIX_STATVFS
 
 /* Define if there is a function named listmntent that can be used to list all
    mounted file systems. (UNICOS) */
 #undef MOUNTED_LISTMNTENT
 
-/* Define if want to use /proc/self/mountinfo on Linux. */
-#undef MOUNTED_PROC_MOUNTINFO
-
 /* Define if there is a function named mntctl that can be used to read the
    list of mounted file systems, and there is a system header file that
-   declares 'struct vmount.' (AIX) */
+   declares 'struct vmount'. (AIX) */
 #undef MOUNTED_VMOUNT
 
 /* Define to 1 if assertions should be disabled. */

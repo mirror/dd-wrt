@@ -48,7 +48,6 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <fcntl.h>
 
 #ifdef HAVE_EXT2FS_EXT2_FS_H
 #include <ext2fs/ext2_fs.h>
@@ -369,13 +368,13 @@ undelfs_opendir (const vfs_path_t * vpath)
         message (D_ERROR, undelfserr, _("Cannot open file %s"), ext2_fname);
         return 0;
     }
-    vfs_print_message (_("undelfs: reading inode bitmap..."));
+    vfs_print_message ("%s", _("undelfs: reading inode bitmap..."));
     if (ext2fs_read_inode_bitmap (fs))
     {
         message (D_ERROR, undelfserr, _("Cannot load inode bitmap from:\n%s"), ext2_fname);
         goto quit_opendir;
     }
-    vfs_print_message (_("undelfs: reading block bitmap..."));
+    vfs_print_message ("%s", _("undelfs: reading block bitmap..."));
     if (ext2fs_read_block_bitmap (fs))
     {
         message (D_ERROR, undelfserr, _("Cannot load block bitmap from:\n%s"), ext2_fname);
@@ -414,8 +413,6 @@ undelfs_readdir (void *vfs_info)
         g_snprintf (dirent_dest, MC_MAXPATHLEN, "%ld:%d",
                     (long) delarray[readdir_ptr].ino, delarray[readdir_ptr].num_blocks);
     readdir_ptr++;
-
-    compute_namelen (&undelfs_readdir_data.dent);
 
     return &undelfs_readdir_data;
 }

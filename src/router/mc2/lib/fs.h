@@ -14,34 +14,69 @@
 
 /*** typedefs(not structures) and defined constants **********************************************/
 
+#ifdef S_ISREG
+#define HAVE_S_ISREG 1
+#else
+#define HAVE_S_ISREG 0
+#define S_ISREG(x) 0
+#endif
+
+#ifdef S_ISDIR
+#define HAVE_S_ISDIR 1
+#else
+#define HAVE_S_ISDIR 0
+#define S_ISDIR(x) 0
+#endif
+
 /* Replacement for permission bits missing in sys/stat.h */
-#ifndef S_ISLNK
+#ifdef S_ISLNK
+#define HAVE_S_ISLNK 1
+#else
+#define HAVE_S_ISLNK 0
 #define S_ISLNK(x) 0
 #endif
 
-#ifndef S_ISSOCK
+#ifdef S_ISSOCK
+#define HAVE_S_ISSOCK 1
+#else
+#define HAVE_S_ISSOCK 0
 #define S_ISSOCK(x) 0
 #endif
 
-#ifndef S_ISFIFO
+#ifdef S_ISFIFO
+#define HAVE_S_ISFIFO 1
+#else
+#define HAVE_S_ISFIFO 0
 #define S_ISFIFO(x) 0
 #endif
 
-#ifndef S_ISCHR
+#ifdef S_ISCHR
+#define HAVE_S_ISCHR 1
+#else
+#define HAVE_S_ISCHR 0
 #define S_ISCHR(x) 0
 #endif
 
-#ifndef S_ISBLK
+#ifdef S_ISBLK
+#define HAVE_S_ISBLK 1
+#else
+#define HAVE_S_ISBLK 0
 #define S_ISBLK(x) 0
 #endif
 
 /* Door is something that only exists on Solaris */
-#ifndef S_ISDOOR
+#ifdef S_ISDOOR
+#define HAVE_S_ISDOOR 1
+#else
+#define HAVE_S_ISDOOR 0
 #define S_ISDOOR(x) 0
 #endif
 
 /* Special named files are widely used in QNX6 */
-#ifndef S_ISNAM
+#ifdef S_ISNAM
+#define HAVE_S_ISNAM 1
+#else
+#define HAVE_S_ISNAM 0
 #define S_ISNAM(x) 0
 #endif
 
@@ -65,7 +100,6 @@
 
 /* unistd.h defines _POSIX_VERSION on POSIX.1 systems. */
 #define NLENGTH(dirent) (strlen ((dirent)->d_name))
-#define DIRENT_LENGTH_COMPUTED 1
 
 /* DragonFlyBSD doesn't provide MAXNAMLEN macro */
 #ifndef MAXNAMLEN
@@ -86,16 +120,5 @@
 /*** declarations of public functions ************************************************************/
 
 /*** inline functions ****************************************************************************/
-
-static inline void
-compute_namelen (struct dirent *dent __attribute__ ((unused)))
-{
-#ifdef DIRENT_LENGTH_COMPUTED
-    (void) dent;
-    return;
-#else
-    dent->d_namlen = strlen (dent);
-#endif
-}
 
 #endif

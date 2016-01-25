@@ -49,6 +49,10 @@ Alexander Dong <ado@software-ag.de>
 Alex I. Tkachenko <alex@bcs.zp.ua>
 	SCO UNIX support.
 
+Andreas Mohr <and@gmx.li>
+	Find a lot of memory leaks.
+	A lot of code cleanups.
+
 Andrzej Zaborowski <balroog@gmail.com>
 	Polish translation.
 
@@ -58,6 +62,9 @@ Anton Chumak <nightfast@yahoo.co.uk>
 
 Antonio Palama, DOS port <palama@posso.dm.unipi.it>
 	DOS port.
+
+Dmitry Koterov <dmitry.koterov@gmail.com>
+	s3 extfs bugfixes and emprovements
 
 Egmont Koblinger <egmont@gmail.com>
         Support of 256 colors
@@ -72,6 +79,9 @@ Erwin van Eijk <wabbit@corner.iaf.nl>
 Gerd Knorr <kraxel@cs.tu-berlin.de>
 
 Ilya Rybkin <rybkin@rouge.phys.lsu.edu>
+
+Jakob Kemi <jakob.kemi@gmail.com>
+	s3 extfs
 
 Jean-Daniel Luiset <luiset@cih.hcuge.ch>
 

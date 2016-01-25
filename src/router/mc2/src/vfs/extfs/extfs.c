@@ -47,7 +47,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <signal.h>
-#include <fcntl.h>
 #include <errno.h>
 #include <sys/wait.h>
 
@@ -66,8 +65,6 @@
 #include "extfs.h"
 
 /*** global variables ****************************************************************************/
-
-GArray *extfs_plugins = NULL;
 
 /*** file scope macro definitions ****************************************************************/
 
@@ -135,6 +132,8 @@ typedef struct
 } extfs_plugin_info_t;
 
 /*** file scope variables ************************************************************************/
+
+static GArray *extfs_plugins = NULL;
 
 static gboolean errloop;
 static gboolean notadir;
@@ -1062,7 +1061,6 @@ extfs_readdir (void *data)
 
     g_strlcpy (dir.dent.d_name, (*info)->name, MC_MAXPATHLEN);
 
-    compute_namelen (&dir.dent);
     *info = (*info)->next_in_dir;
 
     return (void *) &dir;
