@@ -47,14 +47,14 @@ CFLAGS = @CFLAGS@ \
 LDFLAGS = @LDFLAGS@ \
 	  -rdynamic $(EXTRA_LDFLAGS)
 
-LIBS = @UUID_LIBS@ @BLKID_LIBS@ @ZLIB_LIBS@ @LZO2_LIBS@ -L. -pthread
+LIBS = @UUID_LIBS@ @BLKID_LIBS@ @LZO2_LIBS@ -L. -pthread
 LIBBTRFS_LIBS = $(LIBS)
 
 # Static compilation flags
 STATIC_CFLAGS = $(CFLAGS) -ffunction-sections -fdata-sections
 STATIC_LDFLAGS = -static -Wl,--gc-sections
 STATIC_LIBS = @UUID_LIBS_STATIC@ @BLKID_LIBS_STATIC@ \
-	      @ZLIB_LIBS_STATIC@ @LZO2_LIBS_STATIC@ -L. -pthread
+	      @LZO2_LIBS_STATIC@ -L. -pthread
 
 # don't use FORTIFY with sparse because glibc with FORTIFY can
 # generate so many sparse errors that sparse stops parsing,
@@ -369,7 +369,7 @@ $(CLEANDIRS):
 install: $(libs) $(progs_install) $(INSTALLDIRS)
 	$(INSTALL) -m755 -d $(DESTDIR)$(bindir)
 	$(INSTALL) $(progs_install) $(DESTDIR)$(bindir)
-	$(INSTALL) fsck.btrfs $(DESTDIR)$(bindir)
+	-$(INSTALL) fsck.btrfs $(DESTDIR)$(bindir)
 	# btrfsck is a link to btrfs in the src tree, make it so for installed file as well
 	$(LN_S) -f btrfs $(DESTDIR)$(bindir)/btrfsck
 	$(INSTALL) -m755 -d $(DESTDIR)$(libdir)
