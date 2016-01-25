@@ -1,0 +1,84 @@
+btrfs-inspect-internal(8)
+=========================
+
+NAME
+----
+btrfs-inspect-internal - query various internal information
+
+SYNOPSIS
+--------
+*btrfs inspect-internal* <subcommand> <args>
+
+DESCRIPTION
+-----------
+
+This command group provides an interface to query internal information. The
+functionality ranges from a simple UI to an ioctl or a more complex query that
+assembles the result from several internal structures. The latter usually
+requires calls to privileged ioctls.
+
+SUBCOMMAND
+----------
+*inode-resolve* [-v] <ino> <path>::
+(needs root privileges)
++
+resolve paths to all files with given inode number 'ino' in a given subvolume
+at 'path', ie. all hardlinks
++
+`Options`
++
+-v::::
+verbose mode, print count of returned paths and ioctl() return value
+
+*logical-resolve* [-Pv] [-s <bufsize>] <logical> <path>::
+(needs root privileges)
++
+resolve paths to all files at given 'logical' address in the linear filesystem space
++
+`Options`
++
+-P::::
+skip the path resolving and print the inodes instead
+-v::::
+verbose mode, print count of returned paths and all ioctl() return values
+-s <bufsize>::::
+set internal buffer for storing the file names to 'bufsize', default is 4096, maximum 64k
+
+*min-dev-size* [options] <path>::
+(needs root privileges)
++
+return the minimum size the device can be shrunk to, without performing any
+resize operation, this may be useful before executing the actual resize operation
++
+`Options`
++
+--id <id>::::
+specify the device 'id' to query, default is 1 if this option is not used
+
+*rootid* <path>::
+for a given file or directory, return the containing tree root id, for a
+subvolume itself return it's own tree id (ie. subvol id)
++
+NOTE: The result is undefined for the so-called empty subvolumes (identified by
+inode number 2), but such subvolume does not contain any files anyway
+
+*subvolid-resolve* <subvolid> <path>::
+(needs root privileges)
++
+resolve the absolute path of a the subvolume id 'subvolid'
+
+EXIT STATUS
+-----------
+*btrfs inspect-internal* returns a zero exit status if it succeeds. Non zero is
+returned in case of failure.
+
+AVAILABILITY
+------------
+*btrfs* is part of btrfs-progs.
+Please refer to the btrfs wiki http://btrfs.wiki.kernel.org for
+further details.
+
+SEE ALSO
+--------
+`mkfs.btrfs`(8),
+`btrfs-debug-tree`(8)
