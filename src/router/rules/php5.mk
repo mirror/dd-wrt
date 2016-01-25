@@ -160,13 +160,11 @@ php5-clean:
 	if test -e "php5/Makefile"; then make -C php5 clean; fi
 
 php5-install:
-ifeq ($(CONFIG_PHP),y)
+ifeq ($(CONFIG_PHPCMD),y)
 	install -D php5/sapi/cli/.libs/php $(INSTALLDIR)/php5/usr/bin/php
-	$(STRIP) $(INSTALLDIR)/php5/usr/bin/php
 endif
 ifeq ($(CONFIG_PHPCGI),y)
 	install -D php5/sapi/cgi/.libs/php-cgi $(INSTALLDIR)/php5/usr/bin/php-cgi
-	$(STRIP) $(INSTALLDIR)/php5/usr/bin/php-cgi
 	mkdir -p $(INSTALLDIR)/php5/etc
 	printf "short_open_tag=on\ncgi.fix_pathinfo=1\n" >$(INSTALLDIR)/php5/etc/php.ini
 	printf "post_max_size = 32M\n" >>$(INSTALLDIR)/php5/etc/php.ini
@@ -175,7 +173,6 @@ ifeq ($(CONFIG_PHPCGI),y)
 endif
 ifeq ($(CONFIG_LIGHTTPD),y)
 	install -D php5/sapi/cgi/.libs/php-cgi $(INSTALLDIR)/php5/usr/bin/php-cgi
-	$(STRIP) $(INSTALLDIR)/php5/usr/bin/php-cgi
 	mkdir -p $(INSTALLDIR)/php5/etc
 	printf "short_open_tag=on\ncgi.fix_pathinfo=1\n" >$(INSTALLDIR)/php5/etc/php.ini
 	printf "post_max_size = 32M\n" >>$(INSTALLDIR)/php5/etc/php.ini
