@@ -11,11 +11,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2015-03-20 21:10+0300\n"
-"PO-Revision-Date: 2015-02-26 09:48+0000\n"
-"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
-"Language-Team: Hungarian (http://www.transifex.com/projects/p/mc/language/"
-"hu/)\n"
+"POT-Creation-Date: 2015-11-06 14:43+0300\n"
+"PO-Revision-Date: 2015-06-07 11:33+0000\n"
+"Last-Translator: Rezső Páder <rezso@rezso.net>\n"
+"Language-Team: Hungarian (http://www.transifex.com/mc/mc/language/hu/)\n"
 "Language: hu\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -488,8 +487,16 @@ msgstr "Hiba a régi hiba-cső duplikálásakor"
 msgid "Directory cache expired for %s"
 msgstr "A könyvtár gyorstárának adatai elévültek: %s"
 
+#, c-format
+msgid "%s: %s: %s %3d%% %<PRIuMAX> %s"
+msgstr ""
+
 msgid "bytes transferred"
 msgstr "bájt átvive"
+
+#, c-format
+msgid "%s: %s: %s %<PRIuMAX> %s"
+msgstr ""
 
 msgid "Starting linear transfer..."
 msgstr "Lineáris átvitel indítása..."
@@ -756,7 +763,7 @@ msgstr "Argumentum feldolgozási hiba!"
 msgid "No arguments given to the viewer."
 msgstr "Hiányzó paraméterek a nézethez."
 
-msgid "Two files are required to evoke the diffviewer."
+msgid "Two files are required to envoke the diffviewer."
 msgstr "Két fájl kell a diff-nézet indításához."
 
 msgid "Background protocol error"
@@ -1571,7 +1578,7 @@ msgstr ""
 "a Midnight Commander-hez készítve"
 
 msgid "Copyright (C) 1996-2015 the Free Software Foundation"
-msgstr ""
+msgstr "Copyright (C) 1996-2015 the Free Software Foundation"
 
 msgid "About"
 msgstr "Névjegy"
@@ -1942,14 +1949,17 @@ msgstr ""
 msgid "&Full file list"
 msgstr "&Teljes"
 
-msgid "&Brief file list"
-msgstr "Tömö&r"
+msgid "&Brief file list:"
+msgstr ""
 
 msgid "&Long file list"
 msgstr "&Duplaszéles"
 
 msgid "&User defined:"
 msgstr "Sa&ját:"
+
+msgid "columns"
+msgstr "oszlopok"
 
 msgid "User &mini status"
 msgstr "Saját extra adat&sor"
@@ -3065,31 +3075,31 @@ msgid "Free space: %s/%s (%d%%)"
 msgstr "Szabad hely: %s/%s (%d%%)"
 
 #, c-format
-msgid "Type:      %s"
-msgstr "Fájlr.-típus: %s"
+msgid "Type:       %s"
+msgstr "Típus: %s"
 
 msgid "non-local vfs"
 msgstr "távoli VFS"
 
 #, c-format
-msgid "Device:    %s"
-msgstr "Eszköz:       %s"
+msgid "Device:     %s"
+msgstr "Eszköz: %s"
 
 #, c-format
 msgid "Filesystem: %s"
 msgstr "Fájlrendszer: %s"
 
 #, c-format
-msgid "Accessed:  %s"
+msgid "Accessed:   %s"
 msgstr "Elérés ideje: %s"
 
 #, c-format
-msgid "Modified:  %s"
-msgstr "Módosítás:    %s"
+msgid "Modified:   %s"
+msgstr "Módosítás: %s"
 
 #. TRANSLATORS: Time of last status change as in stat(2) man.
 #, c-format
-msgid "Changed:   %s"
+msgid "Changed:    %s"
 msgstr "Változtatás:  %s"
 
 #, c-format
@@ -3097,8 +3107,8 @@ msgid "Dev. type: major %lu, minor %lu"
 msgstr "Eszköztípus:  fő: %lu, al: %lu"
 
 #, c-format
-msgid "Size:      %s"
-msgstr "Méret:        %s"
+msgid "Size:       %s"
+msgstr "Méret: %s"
 
 #, c-format
 msgid " (%ld block)"
@@ -3107,20 +3117,20 @@ msgstr[0] "(%ld blokk)"
 msgstr[1] "(%ld blokk)"
 
 #, c-format
-msgid "Owner:     %s/%s"
-msgstr "Tulajdonos:   %s/%s"
+msgid "Owner:      %s/%s"
+msgstr "Tulajdonos: %s/%s"
 
 #, c-format
-msgid "Links:     %d"
+msgid "Links:      %d"
 msgstr "Linkek száma: %d"
 
 #, c-format
-msgid "Mode:      %s (%04o)"
+msgid "Mode:       %s (%04o)"
 msgstr "Típus+jogok:  %s (%04o)"
 
 #, c-format
-msgid "Location:  %Xh:%Xh"
-msgstr "Hely:         %Xh:%Xh"
+msgid "Location:   %Xh:%Xh"
+msgstr "Hely: %Xh:%Xh"
 
 msgid "&Equal split"
 msgstr "S&zimmetrikus elosztás"

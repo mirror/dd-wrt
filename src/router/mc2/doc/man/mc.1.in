@@ -826,8 +826,8 @@ and
 The full directory view shows the file name, the size of the file and
 the modification time.
 .PP
-The brief view shows only the file name and it has two columns
-(therefore showing twice as many files as other views). The long view
+The brief view shows only the file name and it has from 1 up to 9 columns
+(therefore showing more files unlike other views). The long view
 is similar to the output of
 .B "ls \-l"
 command. The long view takes the whole screen width.
@@ -3737,7 +3737,7 @@ color of input lines used in query dialogs
 .I inputmark
 color of input selected text
 .TP
-.I inputunhanged
+.I inputunchanged
 color of input text before first modification or cursor movement
 .TP
 .I commandlinemark
@@ -4108,7 +4108,7 @@ utility like 'xclip' to read text into X selection from file.
 For example:
 .PP
 .nf
-clipboard_store=/usr/bin/xclip \-i
+clipboard_store=xclip \-i
 .fi
 .TP
 .I clipboard_paste
@@ -4117,7 +4117,7 @@ utility like 'xclip' to print the selection to standard out.
 For example:
 .PP
 .nf
-clipboard_paste=/usr/bin/xclip \-o
+clipboard_paste=xclip \-o
 .fi
 .TP
 .I autodetect_codeset

@@ -5,7 +5,7 @@
 # Translators:
 # flipthegreat <flipthegreat@hotmail.com>, 2011
 # Heimen Stoffels <vistausss@outlook.com>, 2013
-# Richard E. van der Luit <nippur@fedoraproject.org>, 2012-2014
+# Richard E. van der Luit <nippur@fedoraproject.org>, 2012-2015
 # Slava Zanko <slavazanko@gmail.com>, 2011
 # toniotonba <TonioTonBa@gmail.com>, 2011
 # bucovaina78 <wannessmet@gmail.com>, 2012
@@ -13,10 +13,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2015-03-20 21:10+0300\n"
-"PO-Revision-Date: 2015-02-26 09:48+0000\n"
-"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
-"Language-Team: Dutch (http://www.transifex.com/projects/p/mc/language/nl/)\n"
+"POT-Creation-Date: 2015-11-06 14:43+0300\n"
+"PO-Revision-Date: 2015-06-27 12:27+0000\n"
+"Last-Translator: Richard E. van der Luit <nippur@fedoraproject.org>\n"
+"Language-Team: Dutch (http://www.transifex.com/mc/mc/language/nl/)\n"
 "Language: nl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -352,7 +352,7 @@ msgid "Colon"
 msgstr "Dubbele punt"
 
 msgid "Semicolon"
-msgstr ""
+msgstr "Semicolon"
 
 msgid "Exclamation mark"
 msgstr "Uitroepteken"
@@ -491,8 +491,16 @@ msgstr "Fout bij het dup'ing van de oude pipe error"
 msgid "Directory cache expired for %s"
 msgstr "Map-cache verlopen voor %s"
 
+#, c-format
+msgid "%s: %s: %s %3d%% %<PRIuMAX> %s"
+msgstr ""
+
 msgid "bytes transferred"
 msgstr "bytes overgebracht"
+
+#, c-format
+msgid "%s: %s: %s %<PRIuMAX> %s"
+msgstr ""
 
 msgid "Starting linear transfer..."
 msgstr "Starten van lineaire overdracht"
@@ -709,6 +717,17 @@ msgid ""
 "Attributes:\n"
 "   bold, italic, underline, reverse, blink; append more with '+'\n"
 msgstr ""
+"Standaardkleuren: \n"
+"   zwart, grijs, rood, felrood, groen, felgroen, bruin, \n"
+"   geel, blauw, felblauw, magenta, lichtmagenta, cyaan,\n"
+"   lichtcyaan, lichtgrijs en wit\n"
+"\n"
+"Meer kleuren, indien 256 kleuren beschikbaar zijn:\n"
+"   color16 tot color255, of rgb000 tot rgb555 en gray0 tot gray23\n"
+"\n"
+"Attributen:\n"
+"   vet, onderlijnd, reverse, knipperen; voeg meer toe met '+'\n"
+" \n"
 
 msgid "Color options"
 msgstr "Kleur instellingen"
@@ -747,7 +766,7 @@ msgstr "Parsefout argumenten!"
 msgid "No arguments given to the viewer."
 msgstr "Geen argumenten opgegevan aan de viewer"
 
-msgid "Two files are required to evoke the diffviewer."
+msgid "Two files are required to envoke the diffviewer."
 msgstr "Voor de diffviewer zijn 2 files nodig"
 
 msgid "Background protocol error"
@@ -1558,7 +1577,7 @@ msgstr ""
 "geschreven voor de Midnight Commander"
 
 msgid "Copyright (C) 1996-2015 the Free Software Foundation"
-msgstr ""
+msgstr "Copyright (C) 1996-2015 the Free Software Foundation"
 
 msgid "About"
 msgstr "Over"
@@ -1931,14 +1950,17 @@ msgstr ""
 msgid "&Full file list"
 msgstr "&Complete bestandenlijst"
 
-msgid "&Brief file list"
-msgstr "&Korte bestandenlijst"
+msgid "&Brief file list:"
+msgstr "&Korte bestandenlijst:"
 
 msgid "&Long file list"
 msgstr "&Lange bestandenlijst"
 
 msgid "&User defined:"
 msgstr "Aange&past:"
+
+msgid "columns"
+msgstr "kolommen"
 
 msgid "User &mini status"
 msgstr "&Ministatus gebruiker"
@@ -3054,40 +3076,40 @@ msgid "Free space: %s/%s (%d%%)"
 msgstr "Vrij ruimte: %s/%s (%d%%)"
 
 #, c-format
-msgid "Type:      %s"
-msgstr "Type:      %s"
+msgid "Type:       %s"
+msgstr "Type:       %s"
 
 msgid "non-local vfs"
 msgstr "non-lokaal vfs"
 
 #, c-format
-msgid "Device:    %s"
-msgstr "Apparaat:     %s"
+msgid "Device:     %s"
+msgstr "Apparaat: %s"
 
 #, c-format
 msgid "Filesystem: %s"
 msgstr "Bestandssysteem: %s"
 
 #, c-format
-msgid "Accessed:  %s"
+msgid "Accessed:   %s"
 msgstr "Benaderd: %s"
 
 #, c-format
-msgid "Modified:  %s"
-msgstr "Veranderd:  %s"
+msgid "Modified:   %s"
+msgstr "Aangepast: %s"
 
 #. TRANSLATORS: Time of last status change as in stat(2) man.
 #, c-format
-msgid "Changed:   %s"
-msgstr "Veranderd:   %s"
+msgid "Changed:    %s"
+msgstr "Veranderd: %s"
 
 #, c-format
 msgid "Dev. type: major %lu, minor %lu"
 msgstr "Dev. type: major %lu, minor %lu"
 
 #, c-format
-msgid "Size:      %s"
-msgstr "Grootte:     %s"
+msgid "Size:       %s"
+msgstr "Grootte: %s"
 
 #, c-format
 msgid " (%ld block)"
@@ -3096,20 +3118,20 @@ msgstr[0] " (%ld blok)"
 msgstr[1] " (%ld blokken)"
 
 #, c-format
-msgid "Owner:     %s/%s"
-msgstr "Eigenaar:  %s/%s"
+msgid "Owner:      %s/%s"
+msgstr "Eigenaar: %s/%s"
 
 #, c-format
-msgid "Links:     %d"
-msgstr "Links:     %d"
+msgid "Links:      %d"
+msgstr "Links: %d"
 
 #, c-format
-msgid "Mode:      %s (%04o)"
-msgstr "Modus:      %s (%04o)"
+msgid "Mode:       %s (%04o)"
+msgstr "Modus: %s (%04o)"
 
 #, c-format
-msgid "Location:  %Xh:%Xh"
-msgstr "Locatie:       %Xh:%Xh"
+msgid "Location:   %Xh:%Xh"
+msgstr "Locatie: %Xh:%Xh"
 
 msgid "&Equal split"
 msgstr "Gelijkmatig verd&elen"

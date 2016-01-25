@@ -572,6 +572,8 @@ smbfs_browsing_helper (const char *name, uint32 type, const char *comment, void 
     case STYPE_IPC:
         typestr = "IPC";
         break;
+    default:
+        break;
     }
     DEBUG (3, ("\t%-15.15s%-10.10s%s\n", name, typestr, comment));
 }
@@ -938,8 +940,6 @@ smbfs_readdir (void *info)
     }
     g_strlcpy (dirent_dest, smbfs_info->current->text, MC_MAXPATHLEN);
     smbfs_info->current = smbfs_info->current->next;
-
-    compute_namelen (&smbfs_readdir_data.dent);
 
     return &smbfs_readdir_data;
 }
@@ -1860,6 +1860,8 @@ smbfs_lseek (void *data, off_t offset, int whence)
         }
         info->nread = size + offset;
         break;
+    default:
+        break;
     }
 
     return info->nread;
@@ -2029,6 +2031,8 @@ smbfs_setctl (const vfs_path_t * vpath, int ctlop, void *arg)
         break;
     case VFS_SETCTL_LOGFILE:
         smbfs_set_debugf ((const char *) arg);
+        break;
+    default:
         break;
     }
     return 0;
