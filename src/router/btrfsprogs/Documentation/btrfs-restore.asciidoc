@@ -1,0 +1,91 @@
+btrfs-restore(8)
+================
+
+NAME
+----
+btrfs-restore - try to restore files from a damaged btrfs filesystem image
+
+SYNOPSIS
+--------
+*btrfs restore* [options] <device> <path> | -l <device>
+
+DESCRIPTION
+-----------
+*btrfs restore* is used to try to salvage files from a damaged filesystem and
+restore them into <path> or just list the tree roots.
+
+Since current `btrfs-check`(8) or `btrfs-rescue`(8) only has very limited usage,
+*btrfs restore* is normally a better choice.
+
+NOTE: It is recommended to read the following btrfs wiki page if your data is
+not salvaged with default option: +
+https://btrfs.wiki.kernel.org/index.php/Restore
+
+OPTIONS
+-------
+-s|--snapshots::
+get snapshots, btrfs restore skips snapshots in default.
+
+-x|--xattr::
+get extended attributes.
+
+-m|--metadata::
+restore owner, mode and times.
+
+-S|--symlinks::
+restore symbolic links as well as normal files.
+
+-v|--verbose::
+verbose.
+
+-i|--ignore-errors::
+ignore errors.
+
+-o|--overwrite::
+overwrite directories/files in <path>.
+
+-t <bytenr>::
+use <bytenr> to read root tree.
+
+-f <bytenr>::
+only restore files that are under specified root whose root bytenr is <bytenr>.
+
+-u|--super <mirror>::
+use given superblock mirror identified by <mirror>, it can be 0,1,2.
+
+-r|--root <rootid>::
+only restore files that are under specified root whose objectid is <rootid>.
+
+-d::
+find dir.
+
+-l|--list-roots::
+list tree roots.
+
+-D|--dry-run::
+dry run (only list files that would be recovered).
+
+--path-regex <regex>::
+restore only filenames matching regex, you have to use following syntax (possibly quoted):
++
++^/(|home(|/username(|/Desktop(|/.*))))$+
+
+-c::
+ignore case (--path-regex only).
+
+EXIT STATUS
+-----------
+*btrfs restore* returns a zero exit status if it succeeds. Non zero is
+returned in case of failure.
+
+AVAILABILITY
+------------
+*btrfs* is part of btrfs-progs.
+Please refer to the btrfs wiki http://btrfs.wiki.kernel.org for
+further details.
+
+SEE ALSO
+--------
+`mkfs.btrfs`(8),
+`btrfs-rescue`(8),
+`btrfs-check`(8)
