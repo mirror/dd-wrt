@@ -23,16 +23,8 @@ util-linux-install:
 	make -C util-linux clean
 	make -C util-linux
 	make -C util-linux install DESTDIR=$(INSTALLDIR)/util-linux
-	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.so.1.3.0
-	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.so.1
-	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.so
-	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.la
-	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.lai
-	rm -f $(TOP)/util-linux/.libs/libuuid.so.1.3.0
-	rm -f $(TOP)/util-linux/.libs/libuuid.so.1
-	rm -f $(TOP)/util-linux/.libs/libuuid.so
-	rm -f $(TOP)/util-linux/.libs/libuuid.la
-	rm -f $(TOP)/util-linux/.libs/libuuid.lai
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.a
+	rm -f $(TOP)/util-linux/.libs/libuuid.a
 
 asterisk-configure: util-linux-configure util-linux-install jansson
 	rm -f asterisk/menuselect.makeopts && \
