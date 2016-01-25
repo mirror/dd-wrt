@@ -1,5 +1,5 @@
 xfsprogs-configure:
-	cd xfsprogs && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS)  -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -I$(TOP)/e2fsprogs/lib -DNEED_PRINTF" LDFLAGS="-L$(TOP)/e2fsprogs/lib/uuid" CC="$(CC) $(COPTS)" --disable-static --enable-shared --with-gnu-ld --disable-rpath --enable-gettext=no --enable-lib64=no root_prefix=$(INSTALLDIR)/xfsprogs
+	cd xfsprogs && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections  -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -I$(TOP)/e2fsprogs/lib -DNEED_PRINTF" LDFLAGS="-L$(TOP)/e2fsprogs/lib/uuid  -ffunction-sections -fdata-sections -Wl,--gc-sections" CC="$(CC) $(COPTS)" --disable-static --enable-shared --with-gnu-ld --disable-rpath --enable-gettext=no --enable-lib64=no root_prefix=$(INSTALLDIR)/xfsprogs
 
 xfsprogs:
 	make -C xfsprogs DEBUG= Q= 
@@ -16,14 +16,16 @@ xfsprogs-install:
 
 btrfsprogs-configure:
 	cd btrfsprogs && ./autogen.sh
-	cd btrfsprogs && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS) -I$(TOP)/e2fsprogs/lib -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -I$(TOP)/zlib -I$(TOP)/lzo/include -I$(TOP)/$(ARCH)-uclibc/install/util-linux/usr/include -DNEED_PRINTF" LDFLAGS="-L$(TOP)/zlib -L$(TOP)/$(ARCH)-uclibc/install/util-linux/usr/lib  -L$(TOP)/e2fsprogs/lib -L$(TOP)/lzo/src/.libs -lz" CC="$(CC) $(COPTS)" --disable-backtrace root_prefix=$(INSTALLDIR)/btrfsprogs  ac_cv_env_ZLIB_CFLAGS="-lz"
+	cd btrfsprogs && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/$(ARCH)-uclibc/install/util-linux/usr/include -I$(TOP)/e2fsprogs/lib -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -I$(TOP)/zlib -I$(TOP)/lzo/include -DNEED_PRINTF" LDFLAGS="-L$(TOP)/zlib -L$(TOP)/$(ARCH)-uclibc/install/util-linux/usr/lib  -L$(TOP)/e2fsprogs/lib -L$(TOP)/lzo/src/.libs -lz  -ffunction-sections -fdata-sections -Wl,--gc-sections" CC="$(CC) $(COPTS)" --disable-backtrace --disable-documentation root_prefix=$(INSTALLDIR)/btrfsprogs  ac_cv_env_ZLIB_CFLAGS="-lz"
 
 btrfsprogs: util-linux
 	make -C util-linux clean
 	make -C util-linux
 	make -C util-linux install DESTDIR=$(INSTALLDIR)/util-linux
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.a
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.a
 	rm -f $(TOP)/util-linux/.libs/libuuid.a
+	rm -f $(TOP)/util-linux/.libs/libblkid.a
 	make -C btrfsprogs 
 
 btrfsprogs-clean:
@@ -36,7 +38,7 @@ btrfsprogs-install:
 	-rm -rf $(INSTALLDIR)/btrfsprogs/usr/share
 	
 e2fsprogs-configure:
-	cd e2fsprogs && ./configure --host=$(ARCH)-linux CC="$(CC) $(COPTS) -D_GNU_SOURCE  -DNEED_PRINTF -std=gnu89" --disable-static --enable-shared --with-gnu-ld --disable-rpath --enable-elf-shlibs --enable-compression --enable-htree --enable-symlink-install --disable-tls --libdir=/lib root_prefix=$(INSTALLDIR)/e2fsprogs
+	cd e2fsprogs && ./configure --host=$(ARCH)-linux CC="$(CC) $(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -D_GNU_SOURCE  -DNEED_PRINTF -std=gnu89" --disable-static --enable-shared --with-gnu-ld --disable-rpath --enable-elf-shlibs --enable-compression --enable-htree --enable-symlink-install --disable-tls --libdir=/lib root_prefix=$(INSTALLDIR)/e2fsprogs
 	make -C e2fsprogs
 
 e2fsprogs:
