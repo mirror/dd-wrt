@@ -3,16 +3,15 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
-# Kristjan Räts <kristjanrats@gmail.com>, 2013-2014
+# Kristjan Räts <kristjanrats@gmail.com>, 2013-2015
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2015-03-20 21:10+0300\n"
-"PO-Revision-Date: 2015-02-26 09:48+0000\n"
-"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
-"Language-Team: Estonian (http://www.transifex.com/projects/p/mc/language/"
-"et/)\n"
+"POT-Creation-Date: 2015-11-06 14:43+0300\n"
+"PO-Revision-Date: 2015-07-12 11:24+0000\n"
+"Last-Translator: Kristjan Räts <kristjanrats@gmail.com>\n"
+"Language-Team: Estonian (http://www.transifex.com/mc/mc/language/et/)\n"
 "Language: et\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -489,8 +488,16 @@ msgstr "Tõrge vana veatoru paljundamisel"
 msgid "Directory cache expired for %s"
 msgstr "Kataloogi %s vahemälu sisu on aegunud"
 
+#, c-format
+msgid "%s: %s: %s %3d%% %<PRIuMAX> %s"
+msgstr ""
+
 msgid "bytes transferred"
 msgstr "baiti saadetud"
+
+#, c-format
+msgid "%s: %s: %s %<PRIuMAX> %s"
+msgstr ""
 
 msgid "Starting linear transfer..."
 msgstr "Alustatakse lineaarset saatmist..."
@@ -708,6 +715,16 @@ msgid ""
 "Attributes:\n"
 "   bold, italic, underline, reverse, blink; append more with '+'\n"
 msgstr ""
+"Standardvärvid:\n"
+"   black, gray, red, brightred, green, brightgreen, brown,\n"
+"   yellow, blue, brightblue, magenta, brightmagenta, cyan,\n"
+"   brightcyan, lightgray and white\n"
+"\n"
+"Laiendatud värvid, kui kasutada saab 256 värvust:\n"
+"   color16 kuni color255, või rgb000 kuni rgb555 ja gray0 kuni gray23\n"
+"\n"
+"Omadused:\n"
+"   bold, italic, underline, reverse, blink; mitme valimiseks lisa '+'\n"
 
 msgid "Color options"
 msgstr "Värvi suvandid"
@@ -746,7 +763,7 @@ msgstr "Parameetrite parsimise viga!"
 msgid "No arguments given to the viewer."
 msgstr "Vaaturile parameetreid ei antud."
 
-msgid "Two files are required to evoke the diffviewer."
+msgid "Two files are required to envoke the diffviewer."
 msgstr "Erinevuste vaatamiseks on vaja kahte faili."
 
 msgid "Background protocol error"
@@ -1561,7 +1578,7 @@ msgstr ""
 "on loodud Midnight Commanderile."
 
 msgid "Copyright (C) 1996-2015 the Free Software Foundation"
-msgstr ""
+msgstr "Autoriõigus (C) 1996-2015 the Free Software Foundation"
 
 msgid "About"
 msgstr "Programmist"
@@ -1931,14 +1948,17 @@ msgstr ""
 msgid "&Full file list"
 msgstr "&Täielik failide loend"
 
-msgid "&Brief file list"
-msgstr "&Lühike failide loend"
+msgid "&Brief file list:"
+msgstr "&Lühike failide loend:"
 
 msgid "&Long file list"
 msgstr "&Pikk failide loend"
 
 msgid "&User defined:"
 msgstr "&Kasutaja määratud:"
+
+msgid "columns"
+msgstr "veerud"
 
 msgid "User &mini status"
 msgstr "Kasutaja &mini info"
@@ -3051,14 +3071,14 @@ msgid "Free space: %s/%s (%d%%)"
 msgstr "Vaba ruum: %s/%s (%d%%)"
 
 #, c-format
-msgid "Type:      %s"
+msgid "Type:       %s"
 msgstr "Tüüp: %s"
 
 msgid "non-local vfs"
 msgstr "kaug VFS"
 
 #, c-format
-msgid "Device:    %s"
+msgid "Device:     %s"
 msgstr "Seade: %s"
 
 #, c-format
@@ -3066,16 +3086,16 @@ msgid "Filesystem: %s"
 msgstr "Failisüsteem: %s"
 
 #, c-format
-msgid "Accessed:  %s"
+msgid "Accessed:   %s"
 msgstr "Kasutatud: %s"
 
 #, c-format
-msgid "Modified:  %s"
+msgid "Modified:   %s"
 msgstr "Muudetud: %s"
 
 #. TRANSLATORS: Time of last status change as in stat(2) man.
 #, c-format
-msgid "Changed:   %s"
+msgid "Changed:    %s"
 msgstr "Muudeti: %s"
 
 #, c-format
@@ -3083,7 +3103,7 @@ msgid "Dev. type: major %lu, minor %lu"
 msgstr "Seadme tüüp: %lu, %lu"
 
 #, c-format
-msgid "Size:      %s"
+msgid "Size:       %s"
 msgstr "Suurus: %s"
 
 #, c-format
@@ -3093,19 +3113,19 @@ msgstr[0] "(%ld plokk)"
 msgstr[1] "(%ld plokki)"
 
 #, c-format
-msgid "Owner:     %s/%s"
+msgid "Owner:      %s/%s"
 msgstr "Omanik: %s/%s"
 
 #, c-format
-msgid "Links:     %d"
+msgid "Links:      %d"
 msgstr "Viidad: %d"
 
 #, c-format
-msgid "Mode:      %s (%04o)"
+msgid "Mode:       %s (%04o)"
 msgstr "Režiim: %s (%04o)"
 
 #, c-format
-msgid "Location:  %Xh:%Xh"
+msgid "Location:   %Xh:%Xh"
 msgstr "Asukoht: %Xh:%Xh"
 
 msgid "&Equal split"

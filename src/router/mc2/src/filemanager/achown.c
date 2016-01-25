@@ -303,6 +303,8 @@ chl_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *dat
                 h->ret_value = parm;
                 dlg_stop (h);
             }
+        default:
+            break;
         }
 
     default:
@@ -341,13 +343,14 @@ do_enter_key (WDialog * h, int f_pos)
 
         /* get new listboxes */
         chl_list = listbox_new (1, 1, 11, 15, FALSE, NULL);
-        listbox_add_item (chl_list, LISTBOX_APPEND_AT_END, 0, "<Unknown>", NULL);
+        listbox_add_item (chl_list, LISTBOX_APPEND_AT_END, 0, "<Unknown>", NULL, FALSE);
         if (is_owner)
         {
             /* get and put user names in the listbox */
             setpwent ();
             while ((chl_pass = getpwent ()) != NULL)
-                listbox_add_item (chl_list, LISTBOX_APPEND_SORTED, 0, chl_pass->pw_name, NULL);
+                listbox_add_item (chl_list, LISTBOX_APPEND_SORTED, 0, chl_pass->pw_name, NULL,
+                                  FALSE);
             endpwent ();
             fe = listbox_search_text (chl_list, get_owner (sf_stat->st_uid));
         }
@@ -356,7 +359,8 @@ do_enter_key (WDialog * h, int f_pos)
             /* get and put group names in the listbox */
             setgrent ();
             while ((chl_grp = getgrent ()) != NULL)
-                listbox_add_item (chl_list, LISTBOX_APPEND_SORTED, 0, chl_grp->gr_name, NULL);
+                listbox_add_item (chl_list, LISTBOX_APPEND_SORTED, 0, chl_grp->gr_name, NULL,
+                                  FALSE);
             endgrent ();
             fe = listbox_search_text (chl_list, get_group (sf_stat->st_gid));
         }
@@ -614,6 +618,9 @@ advanced_chown_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm
                 if (flag_pos > 8 || (flag_pos % 3) == 0)
                     dlg_one_down (h);
             }
+            break;
+
+        default:
             break;
         }
         return MSG_NOT_HANDLED;
@@ -887,6 +894,7 @@ chown_advanced_cmd (void)
             break;
 
         case B_SKIP:
+        default:
             break;
         }
 

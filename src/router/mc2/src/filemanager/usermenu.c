@@ -550,7 +550,7 @@ execute_menu_command (WEdit * edit_widget, const char *commands, gboolean show_p
     mc_chmod (file_name_vpath, S_IRWXU);
     if (run_view)
     {
-        mcview_viewer (vfs_path_as_str (file_name_vpath), NULL, 0);
+        mcview_viewer (vfs_path_as_str (file_name_vpath), NULL, 0, 0, 0);
         dialog_switch_process_pending ();
     }
     else
@@ -792,17 +792,15 @@ expand_format (struct WEdit *edit_widget, char c, gboolean do_quote)
         goto ret;
     case 'd':
         {
-            char *cwd;
+            const char *cwd;
             char *qstr;
 
-            if (panel)
-                cwd = g_strdup (vfs_path_as_str (panel->cwd_vpath));
+            if (panel != NULL)
+                cwd = vfs_path_as_str (panel->cwd_vpath);
             else
                 cwd = vfs_get_current_dir ();
 
             qstr = quote_func (cwd, FALSE);
-
-            g_free (cwd);
 
             result = qstr;
             goto ret;
@@ -905,7 +903,10 @@ expand_format (struct WEdit *edit_widget, char c, gboolean do_quote)
             result = g_string_free (block, FALSE);
             goto ret;
         }                       /* sub case block */
+    default:
+        break;
     }                           /* switch */
+
     result = g_strdup ("% ");
     result[1] = c;
   ret:
@@ -1104,7 +1105,7 @@ user_menu_cmd (struct WEdit * edit_widget, const char *menu_file, int selected_e
             {
                 p = entries[i];
                 LISTBOX_APPEND_TEXT (listbox, (unsigned char) p[0],
-                                     extract_line (p, p + MAX_ENTRY_LEN), p);
+                                     extract_line (p, p + MAX_ENTRY_LEN), p, FALSE);
             }
             /* Select the default entry */
             listbox_select_entry (listbox->list, selected);

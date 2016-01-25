@@ -9,17 +9,17 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2015-03-20 21:10+0300\n"
-"PO-Revision-Date: 2015-02-26 09:48+0000\n"
+"POT-Creation-Date: 2015-11-06 14:43+0300\n"
+"PO-Revision-Date: 2015-06-04 08:38+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
-"Language-Team: Belarusian (http://www.transifex.com/projects/p/mc/language/"
-"be/)\n"
+"Language-Team: Belarusian (http://www.transifex.com/mc/mc/language/be/)\n"
 "Language: be\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=4; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
-"%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || (n"
+"%100>=11 && n%100<=14)? 2 : 3);\n"
 
 # "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 msgid "Warning: cannot load codepages list"
@@ -488,8 +488,16 @@ msgstr "Не ўдалося падвоіць стары канал памыла�
 msgid "Directory cache expired for %s"
 msgstr "Запасьнік каталёґу састарэў для %s"
 
+#, c-format
+msgid "%s: %s: %s %3d%% %<PRIuMAX> %s"
+msgstr ""
+
 msgid "bytes transferred"
 msgstr "перададзеных байтаў"
+
+#, c-format
+msgid "%s: %s: %s %<PRIuMAX> %s"
+msgstr ""
 
 msgid "Starting linear transfer..."
 msgstr "Пачынаем перадаваць лінейна…"
@@ -743,8 +751,8 @@ msgstr "Не ўдалося разабраць довады!"
 msgid "No arguments given to the viewer."
 msgstr "Праглядніку не перадалі довадаў."
 
-msgid "Two files are required to evoke the diffviewer."
-msgstr "Каб выклікаць праґраму параўнаньня, трэба два файлы."
+msgid "Two files are required to envoke the diffviewer."
+msgstr ""
 
 msgid "Background protocol error"
 msgstr "Даў хібу пратакол на тле"
@@ -1930,14 +1938,17 @@ msgstr ""
 msgid "&Full file list"
 msgstr "&Звычайны сьпіс"
 
-msgid "&Brief file list"
-msgstr "&Скарочаны сьпіс"
+msgid "&Brief file list:"
+msgstr ""
 
 msgid "&Long file list"
 msgstr "&Шырокі сьпіс"
 
 msgid "&User defined:"
 msgstr "&Абранае карыстальнікам:"
+
+msgid "columns"
+msgstr ""
 
 msgid "User &mini status"
 msgstr "Адмысловы &радок стану панэлі:"
@@ -3050,40 +3061,40 @@ msgid "Free space: %s/%s (%d%%)"
 msgstr "Прастора:    %s/%s (%d%%)"
 
 #, c-format
-msgid "Type:      %s"
-msgstr "Від:         %s"
+msgid "Type:       %s"
+msgstr ""
 
 msgid "non-local vfs"
 msgstr "нелякальная УФС"
 
 #, c-format
-msgid "Device:    %s"
-msgstr "Прылада:     %s"
+msgid "Device:     %s"
+msgstr ""
 
 #, c-format
 msgid "Filesystem: %s"
 msgstr "Файл. сыст.: %s"
 
 #, c-format
-msgid "Accessed:  %s"
-msgstr "Зьвярталіся: %s"
+msgid "Accessed:   %s"
+msgstr ""
 
 #, c-format
-msgid "Modified:  %s"
-msgstr "Рэдаґавалі:  %s"
+msgid "Modified:   %s"
+msgstr ""
 
 #. TRANSLATORS: Time of last status change as in stat(2) man.
 #, c-format
-msgid "Changed:   %s"
-msgstr "Зьмянілі:    %s"
+msgid "Changed:    %s"
+msgstr ""
 
 #, c-format
 msgid "Dev. type: major %lu, minor %lu"
 msgstr "Від прылады: мажор %lu, мінор %lu"
 
 #, c-format
-msgid "Size:      %s"
-msgstr "Памер:       %s"
+msgid "Size:       %s"
+msgstr ""
 
 #, c-format
 msgid " (%ld block)"
@@ -3094,20 +3105,20 @@ msgstr[2] " (%ld блёкаў)"
 msgstr[3] " (%ld блёкаў)"
 
 #, c-format
-msgid "Owner:     %s/%s"
-msgstr "Уладальнік:  %s/%s"
+msgid "Owner:      %s/%s"
+msgstr ""
 
 #, c-format
-msgid "Links:     %d"
-msgstr "Спасылкі:    %d"
+msgid "Links:      %d"
+msgstr ""
 
 #, c-format
-msgid "Mode:      %s (%04o)"
-msgstr "Дазволы:     %s (%04o)"
+msgid "Mode:       %s (%04o)"
+msgstr ""
 
 #, c-format
-msgid "Location:  %Xh:%Xh"
-msgstr "Месца:       %Xh:%Xh"
+msgid "Location:   %Xh:%Xh"
+msgstr ""
 
 msgid "&Equal split"
 msgstr "&Аднолькавыя памеры"

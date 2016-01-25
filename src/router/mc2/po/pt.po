@@ -11,11 +11,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2015-03-20 21:10+0300\n"
-"PO-Revision-Date: 2015-02-26 10:27+0000\n"
+"POT-Creation-Date: 2015-11-06 14:43+0300\n"
+"PO-Revision-Date: 2015-06-04 10:52+0000\n"
 "Last-Translator: Gilberto Jorge <gmj125@gmail.com>\n"
-"Language-Team: Portuguese (http://www.transifex.com/projects/p/mc/language/"
-"pt/)\n"
+"Language-Team: Portuguese (http://www.transifex.com/mc/mc/language/pt/)\n"
 "Language: pt\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -492,8 +491,16 @@ msgstr "Erro dup'ing erro antigo de pipe"
 msgid "Directory cache expired for %s"
 msgstr "Cache de diretório expirou para %s"
 
+#, c-format
+msgid "%s: %s: %s %3d%% %<PRIuMAX> %s"
+msgstr ""
+
 msgid "bytes transferred"
 msgstr "bytes transferidos"
+
+#, c-format
+msgid "%s: %s: %s %<PRIuMAX> %s"
+msgstr ""
 
 msgid "Starting linear transfer..."
 msgstr "A iniciar transferência linear..."
@@ -763,8 +770,8 @@ msgstr "Erro de parseamento de argumentos!"
 msgid "No arguments given to the viewer."
 msgstr "Nenhum argumento dado ao visualizador."
 
-msgid "Two files are required to evoke the diffviewer."
-msgstr "São necessários dois ficheiros para invocar o diffviewer."
+msgid "Two files are required to envoke the diffviewer."
+msgstr "São necessários 2 ficheiros para invocar o diffviewer."
 
 msgid "Background protocol error"
 msgstr "Erro de protocolo em background"
@@ -1950,14 +1957,17 @@ msgstr ""
 msgid "&Full file list"
 msgstr "Listagem de todos &ficheiros"
 
-msgid "&Brief file list"
-msgstr "Listagem a&breviada de ficheiros"
+msgid "&Brief file list:"
+msgstr "&Breve lista de ficheiros:"
 
 msgid "&Long file list"
 msgstr "Listagem &longa de ficheiros"
 
 msgid "&User defined:"
 msgstr "Definido pelo &utilizador:"
+
+msgid "columns"
+msgstr "colunas"
 
 msgid "User &mini status"
 msgstr "&Mini status do utilizador"
@@ -3072,40 +3082,40 @@ msgid "Free space: %s/%s (%d%%)"
 msgstr "Espaço livre: %s/%s (%d%%)"
 
 #, c-format
-msgid "Type:      %s"
-msgstr "Tipo:         %s"
+msgid "Type:       %s"
+msgstr "Tipo:       %s"
 
 msgid "non-local vfs"
 msgstr "vfs não local"
 
 #, c-format
-msgid "Device:    %s"
-msgstr "Dispositivo:  %s"
+msgid "Device:     %s"
+msgstr "Dispositivo:     %s"
 
 #, c-format
 msgid "Filesystem: %s"
 msgstr "Sist. Fich.:  %s"
 
 #, c-format
-msgid "Accessed:  %s"
-msgstr "Acedido:      %s"
+msgid "Accessed:   %s"
+msgstr "Acedido:   %s"
 
 #, c-format
-msgid "Modified:  %s"
+msgid "Modified:   %s"
 msgstr "Modificado:   %s"
 
 #. TRANSLATORS: Time of last status change as in stat(2) man.
 #, c-format
-msgid "Changed:   %s"
-msgstr "Alterado:     %s"
+msgid "Changed:    %s"
+msgstr "Alterado:    %s"
 
 #, c-format
 msgid "Dev. type: major %lu, minor %lu"
 msgstr "Dev. tipo: maior %lu, menor %lu"
 
 #, c-format
-msgid "Size:      %s"
-msgstr "Tamanho:      %s"
+msgid "Size:       %s"
+msgstr "Tamanho:       %s"
 
 #, c-format
 msgid " (%ld block)"
@@ -3114,20 +3124,20 @@ msgstr[0] " (%ld bloco)"
 msgstr[1] " (%ld blocos)"
 
 #, c-format
-msgid "Owner:     %s/%s"
-msgstr "Proprietário: %s/%s"
+msgid "Owner:      %s/%s"
+msgstr "Proprietário:      %s/%s"
 
 #, c-format
-msgid "Links:     %d"
-msgstr "Ligações:     %d"
+msgid "Links:      %d"
+msgstr "Ligações:      %d"
 
 #, c-format
-msgid "Mode:      %s (%04o)"
-msgstr "Modo:         %s (%04o)"
+msgid "Mode:       %s (%04o)"
+msgstr "Modo:       %s (%04o)"
 
 #, c-format
-msgid "Location:  %Xh:%Xh"
-msgstr "Localização:  %Xh:%Xh"
+msgid "Location:   %Xh:%Xh"
+msgstr "Localização:   %Xh:%Xh"
 
 msgid "&Equal split"
 msgstr "Divisão i&gual"

@@ -8,11 +8,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2015-03-20 21:10+0300\n"
-"PO-Revision-Date: 2015-02-26 09:48+0000\n"
-"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
-"Language-Team: Esperanto (http://www.transifex.com/projects/p/mc/language/"
-"eo/)\n"
+"POT-Creation-Date: 2015-11-06 14:43+0300\n"
+"PO-Revision-Date: 2015-06-20 23:14+0000\n"
+"Last-Translator: Keith Bowes <zooplah@gmail.com>\n"
+"Language-Team: Esperanto (http://www.transifex.com/mc/mc/language/eo/)\n"
 "Language: eo\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -489,8 +488,16 @@ msgstr "Erara dum duplikati malnovan eraran dukton"
 msgid "Directory cache expired for %s"
 msgstr "Dosieruja tenejo eksvalidiĝis por %s"
 
+#, c-format
+msgid "%s: %s: %s %3d%% %<PRIuMAX> %s"
+msgstr ""
+
 msgid "bytes transferred"
 msgstr "bajtoj transigitaj"
+
+#, c-format
+msgid "%s: %s: %s %<PRIuMAX> %s"
+msgstr ""
 
 msgid "Starting linear transfer..."
 msgstr "Komencanta linian transigon..."
@@ -757,8 +764,8 @@ msgstr "Eraro dum analizi parametrojn!"
 msgid "No arguments given to the viewer."
 msgstr "Neniuj parametroj donitaj al la legilo."
 
-msgid "Two files are required to evoke the diffviewer."
-msgstr "Du dosieroj estas bezonitaj por voki la flikaĵo-legilon."
+msgid "Two files are required to envoke the diffviewer."
+msgstr "Du dosieroj estas postulitaj por voki la flikaĵo-legilon."
 
 msgid "Background protocol error"
 msgstr "Eraro ĉe fona protokolo"
@@ -1574,6 +1581,8 @@ msgstr ""
 
 msgid "Copyright (C) 1996-2015 the Free Software Foundation"
 msgstr ""
+"Kopirajto © 1996–2015 Free Software Foundation (Fondaĵo pri liberaj "
+"programoj)"
 
 msgid "About"
 msgstr "Pri"
@@ -1945,14 +1954,17 @@ msgstr ""
 msgid "&Full file list"
 msgstr "&Kompleta dosierlisto"
 
-msgid "&Brief file list"
-msgstr "&Mallonga dosierlisto"
+msgid "&Brief file list:"
+msgstr "&Mallonga dosierlisto:"
 
 msgid "&Long file list"
 msgstr "&Longa dosierlisto"
 
 msgid "&User defined:"
 msgstr "&Uzanto difinata:"
+
+msgid "columns"
+msgstr "kolumnojn"
 
 msgid "User &mini status"
 msgstr "Miniatura &stato de uzanto"
@@ -3056,7 +3068,7 @@ msgid "No node information"
 msgstr "Neniuj nodaj informoj"
 
 msgid "Free nodes:"
-msgstr "Liberaj nodoj:"
+msgstr "Liberaj nodoj: "
 
 msgid "No space information"
 msgstr "Neniuj spacaj informoj"
@@ -3066,40 +3078,40 @@ msgid "Free space: %s/%s (%d%%)"
 msgstr "Restanta spaco: %s el %s (%d%%)"
 
 #, c-format
-msgid "Type:      %s"
-msgstr "Tipo:      %s"
+msgid "Type:       %s"
+msgstr "Tipo:           %s"
 
 msgid "non-local vfs"
 msgstr "fora virtuala dosiersistemo"
 
 #, c-format
-msgid "Device:    %s"
-msgstr "Aparato:    %s"
+msgid "Device:     %s"
+msgstr "Aparato:        %s"
 
 #, c-format
 msgid "Filesystem: %s"
-msgstr "Dosiersistemo: %s"
+msgstr "Dosiersistemo:  %s"
 
 #, c-format
-msgid "Accessed:  %s"
-msgstr "Atingita:  %s"
+msgid "Accessed:   %s"
+msgstr "Atingita:       %s"
 
 #, c-format
-msgid "Modified:  %s"
-msgstr "Modifita:  %s"
+msgid "Modified:   %s"
+msgstr "Modifita:       %s"
 
 #. TRANSLATORS: Time of last status change as in stat(2) man.
 #, c-format
-msgid "Changed:   %s"
-msgstr "Ŝanĝita:   %s"
+msgid "Changed:    %s"
+msgstr "Ŝanĝita:        %s"
 
 #, c-format
 msgid "Dev. type: major %lu, minor %lu"
 msgstr "Aparata tipo: granda %lu, malgranda %lu"
 
 #, c-format
-msgid "Size:      %s"
-msgstr "Grando:      %s"
+msgid "Size:       %s"
+msgstr "Grando:         %s"
 
 #, c-format
 msgid " (%ld block)"
@@ -3108,20 +3120,20 @@ msgstr[0] " (%ld bloko)"
 msgstr[1] " (%ld blokoj)"
 
 #, c-format
-msgid "Owner:     %s/%s"
-msgstr "Estro:     %s/%s"
+msgid "Owner:      %s/%s"
+msgstr "Estro:          %s/%s"
 
 #, c-format
-msgid "Links:     %d"
-msgstr "Ligiloj:     %d"
+msgid "Links:      %d"
+msgstr "Ligiloj:        %d"
 
 #, c-format
-msgid "Mode:      %s (%04o)"
-msgstr "Permesoj:      %s (%04o)"
+msgid "Mode:       %s (%04o)"
+msgstr "Permesoj:       %s (%04o)"
 
 #, c-format
-msgid "Location:  %Xh:%Xh"
-msgstr "Loko:  %Xh:%Xh"
+msgid "Location:   %Xh:%Xh"
+msgstr "Loko:           %Xh:%Xh"
 
 msgid "&Equal split"
 msgstr "&Same granda"

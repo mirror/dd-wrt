@@ -21,6 +21,9 @@
 #include <sys/param.h>
 #endif
 
+/* for O_* macros */
+#include <fcntl.h>
+
 /* for sig_atomic_t */
 #include <signal.h>
 
@@ -61,6 +64,7 @@
 #include <glib.h>
 #include "glibcompat.h"
 
+/* For SMB VFS only */
 #ifndef __GNUC__
 #define __attribute__(x)
 #endif
