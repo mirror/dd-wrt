@@ -887,7 +887,7 @@ static int scan_devices(struct recover_control *rc)
 		for (i = 0; i < devidx; i++) {
 			if (dev_scans[i].bytenr == -1)
 				continue;
-			ret = pthread_tryjoin_np(t_scans[i],
+			ret = pthread_join(t_scans[i],
 						 (void **)&t_rets[i]);
 			if (ret == EBUSY) {
 				all_done = 0;
