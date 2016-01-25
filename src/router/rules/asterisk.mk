@@ -22,7 +22,9 @@ util-linux-install:
 	make -C util-linux
 	make -C util-linux install DESTDIR=$(INSTALLDIR)/util-linux
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.a
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.a
 	rm -f $(TOP)/util-linux/.libs/libuuid.a
+	rm -f $(TOP)/util-linux/.libs/libblkid.a
 
 asterisk-configure: util-linux-configure util-linux-install jansson
 	rm -f asterisk/menuselect.makeopts && \
