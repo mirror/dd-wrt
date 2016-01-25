@@ -206,7 +206,9 @@ asterisk-install:
 	rm -rf $(INSTALLDIR)/util-linux/bin
 	rm -rf $(INSTALLDIR)/util-linux/sbin
 	rm -f $(INSTALLDIR)/util-linux/lib/libmount.so*
+ifneq ($(CONFIG_E2FSPROGS_ADV),y)
 	rm -f $(INSTALLDIR)/util-linux/lib/libblkid.so*
+endif
 	rm -f $(INSTALLDIR)/util-linux/lib/libfdisk.so*
 	rm -f $(INSTALLDIR)/util-linux/lib/libsmartcols.so*
 
