@@ -10,8 +10,6 @@ util-linux-configure:
 	--with-ncurses
 	make -C util-linux
 
-
-
 util-linux-clean:
 	make -C util-linux clean
 
