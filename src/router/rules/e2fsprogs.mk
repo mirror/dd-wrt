@@ -18,7 +18,12 @@ btrfsprogs-configure:
 	cd btrfsprogs && ./autogen.sh
 	cd btrfsprogs && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS) -I$(TOP)/e2fsprogs/lib -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -I$(TOP)/zlib -I$(TOP)/lzo/include -I$(TOP)/$(ARCH)-uclibc/install/util-linux/usr/include -DNEED_PRINTF" LDFLAGS="-L$(TOP)/zlib -L$(TOP)/$(ARCH)-uclibc/install/util-linux/usr/lib  -L$(TOP)/e2fsprogs/lib -L$(TOP)/lzo/src/.libs -lz" CC="$(CC) $(COPTS)" --disable-backtrace root_prefix=$(INSTALLDIR)/btrfsprogs  ac_cv_env_ZLIB_CFLAGS="-lz"
 
-btrfsprogs:
+btrfsprogs: util-linux
+	make -C util-linux clean
+	make -C util-linux
+	make -C util-linux install DESTDIR=$(INSTALLDIR)/util-linux
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.a
+	rm -f $(TOP)/util-linux/.libs/libuuid.a
 	make -C btrfsprogs 
 
 btrfsprogs-clean:
