@@ -12,10 +12,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2015-03-20 21:10+0300\n"
-"PO-Revision-Date: 2015-02-26 09:48+0000\n"
+"POT-Creation-Date: 2015-11-06 14:43+0300\n"
+"PO-Revision-Date: 2015-06-04 08:38+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
-"Language-Team: Slovak (http://www.transifex.com/projects/p/mc/language/sk/)\n"
+"Language-Team: Slovak (http://www.transifex.com/mc/mc/language/sk/)\n"
 "Language: sk\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -493,8 +493,16 @@ msgstr "Chyba pri duplikácii starej chybovej rúry"
 msgid "Directory cache expired for %s"
 msgstr "Vyrovnávacia pamäť adresárov vypršala pre %s"
 
+#, c-format
+msgid "%s: %s: %s %3d%% %<PRIuMAX> %s"
+msgstr ""
+
 msgid "bytes transferred"
 msgstr "prenesených bajtov"
+
+#, c-format
+msgid "%s: %s: %s %<PRIuMAX> %s"
+msgstr ""
 
 msgid "Starting linear transfer..."
 msgstr "Začína sa lineárny prenos..."
@@ -712,6 +720,16 @@ msgid ""
 "Attributes:\n"
 "   bold, italic, underline, reverse, blink; append more with '+'\n"
 msgstr ""
+"Štandardné farby:\n"
+"   black, gray, red, brightred, green, brightgreen, brown,\n"
+"   yellow, blue, brightblue, magenta, brightmagenta, cyan,\n"
+"   brightcyan, lightgray a white\n"
+"\n"
+"Rozšírené farby ak je dostupných 256 farieb:\n"
+"   color16 až color255 alebo rgb000 až rgb555 a gray0 až gray23\n"
+"\n"
+"Atribúty:\n"
+"   bold, italic, underline, reverse, blink; pridať ďalšie pomocou „+“\n"
 
 msgid "Color options"
 msgstr "Možnosti farieb"
@@ -750,8 +768,8 @@ msgstr "Chyba pri spracovaní argumentov!"
 msgid "No arguments given to the viewer."
 msgstr "Prehliadaču neboli odovzdané žiadne argumenty."
 
-msgid "Two files are required to evoke the diffviewer."
-msgstr "Na vyvolanie prehliadača rozdielov je potrebné zadať dva súbory."
+msgid "Two files are required to envoke the diffviewer."
+msgstr ""
 
 msgid "Background protocol error"
 msgstr "Chyba protokolu na pozadí"
@@ -1567,7 +1585,7 @@ msgstr ""
 "napísaný pre Midnight Commander."
 
 msgid "Copyright (C) 1996-2015 the Free Software Foundation"
-msgstr ""
+msgstr "Copyright (C) 1996-2015 the Free Software Foundation"
 
 msgid "About"
 msgstr "O aplikácii"
@@ -1939,14 +1957,17 @@ msgstr ""
 msgid "&Full file list"
 msgstr "&Plný výpis súborov"
 
-msgid "&Brief file list"
-msgstr "Stručný výpis sú&borov "
+msgid "&Brief file list:"
+msgstr ""
 
 msgid "&Long file list"
 msgstr "D&lhý výpis súborov"
 
 msgid "&User defined:"
 msgstr "Definovaný po&užívateľom:"
+
+msgid "columns"
+msgstr ""
 
 msgid "User &mini status"
 msgstr "Používateľ. &mini status"
@@ -3062,40 +3083,40 @@ msgid "Free space: %s/%s (%d%%)"
 msgstr "Voľné miesto: %s/%s (%d%%)"
 
 #, c-format
-msgid "Type:      %s"
-msgstr "Typ:       %s"
+msgid "Type:       %s"
+msgstr "Typ: %s"
 
 msgid "non-local vfs"
 msgstr "nie je lokálny vfs"
 
 #, c-format
-msgid "Device:    %s"
-msgstr "Zariadenie:  %s"
+msgid "Device:     %s"
+msgstr "Zariadenie: %s"
 
 #, c-format
 msgid "Filesystem: %s"
 msgstr "Súborový systém: %s"
 
 #, c-format
-msgid "Accessed:  %s"
-msgstr "Posl. prístup:  %s"
+msgid "Accessed:   %s"
+msgstr "Prístup: %s"
 
 #, c-format
-msgid "Modified:  %s"
-msgstr "Zmenený:  %s"
+msgid "Modified:   %s"
+msgstr "Zmena: %s"
 
 #. TRANSLATORS: Time of last status change as in stat(2) man.
 #, c-format
-msgid "Changed:   %s"
-msgstr "Zmenené:   %s"
+msgid "Changed:    %s"
+msgstr "Zmena: %s"
 
 #, c-format
 msgid "Dev. type: major %lu, minor %lu"
 msgstr "Typ zariad.: major %lu, minor %lu"
 
 #, c-format
-msgid "Size:      %s"
-msgstr "Veľkosť:     %s"
+msgid "Size:       %s"
+msgstr "Veľkosť: %s"
 
 #, c-format
 msgid " (%ld block)"
@@ -3105,20 +3126,20 @@ msgstr[1] " (%ld blocks)"
 msgstr[2] " (%ld blokov)"
 
 #, c-format
-msgid "Owner:     %s/%s"
-msgstr "Vlastník    %s/%s"
+msgid "Owner:      %s/%s"
+msgstr "Vlastník: %s/%s"
 
 #, c-format
-msgid "Links:     %d"
-msgstr "Odkazy:    %d"
+msgid "Links:      %d"
+msgstr "Odkazy: %d"
 
 #, c-format
-msgid "Mode:      %s (%04o)"
-msgstr "Režim:    %s (%04o)"
+msgid "Mode:       %s (%04o)"
+msgstr "Režim: %s (%04o)"
 
 #, c-format
-msgid "Location:  %Xh:%Xh"
-msgstr "Umiestnenie:  %Xh:%Xh"
+msgid "Location:   %Xh:%Xh"
+msgstr "Umiestnenie: %Xh:%Xh"
 
 msgid "&Equal split"
 msgstr "Rovnako rozd&eliť"

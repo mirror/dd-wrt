@@ -7,11 +7,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2015-03-20 21:10+0300\n"
-"PO-Revision-Date: 2015-02-26 09:48+0000\n"
+"POT-Creation-Date: 2015-11-06 14:43+0300\n"
+"PO-Revision-Date: 2015-06-04 08:38+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
-"Language-Team: Croatian (http://www.transifex.com/projects/p/mc/language/"
-"hr/)\n"
+"Language-Team: Croatian (http://www.transifex.com/mc/mc/language/hr/)\n"
 "Language: hr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -467,7 +466,15 @@ msgstr ""
 msgid "Directory cache expired for %s"
 msgstr ""
 
+#, c-format
+msgid "%s: %s: %s %3d%% %<PRIuMAX> %s"
+msgstr ""
+
 msgid "bytes transferred"
+msgstr ""
+
+#, c-format
+msgid "%s: %s: %s %<PRIuMAX> %s"
 msgstr ""
 
 msgid "Starting linear transfer..."
@@ -702,7 +709,7 @@ msgstr ""
 msgid "No arguments given to the viewer."
 msgstr ""
 
-msgid "Two files are required to evoke the diffviewer."
+msgid "Two files are required to envoke the diffviewer."
 msgstr ""
 
 msgid "Background protocol error"
@@ -1850,13 +1857,16 @@ msgstr ""
 msgid "&Full file list"
 msgstr ""
 
-msgid "&Brief file list"
+msgid "&Brief file list:"
 msgstr ""
 
 msgid "&Long file list"
 msgstr ""
 
 msgid "&User defined:"
+msgstr ""
+
+msgid "columns"
 msgstr ""
 
 msgid "User &mini status"
@@ -2879,14 +2889,14 @@ msgid "Free space: %s/%s (%d%%)"
 msgstr ""
 
 #, c-format
-msgid "Type:      %s"
+msgid "Type:       %s"
 msgstr ""
 
 msgid "non-local vfs"
 msgstr ""
 
 #, c-format
-msgid "Device:    %s"
+msgid "Device:     %s"
 msgstr ""
 
 #, c-format
@@ -2894,16 +2904,16 @@ msgid "Filesystem: %s"
 msgstr ""
 
 #, c-format
-msgid "Accessed:  %s"
+msgid "Accessed:   %s"
 msgstr ""
 
 #, c-format
-msgid "Modified:  %s"
+msgid "Modified:   %s"
 msgstr ""
 
 #. TRANSLATORS: Time of last status change as in stat(2) man.
 #, c-format
-msgid "Changed:   %s"
+msgid "Changed:    %s"
 msgstr ""
 
 #, c-format
@@ -2911,7 +2921,7 @@ msgid "Dev. type: major %lu, minor %lu"
 msgstr ""
 
 #, c-format
-msgid "Size:      %s"
+msgid "Size:       %s"
 msgstr ""
 
 #, c-format
@@ -2922,19 +2932,19 @@ msgstr[1] ""
 msgstr[2] ""
 
 #, c-format
-msgid "Owner:     %s/%s"
+msgid "Owner:      %s/%s"
 msgstr ""
 
 #, c-format
-msgid "Links:     %d"
+msgid "Links:      %d"
 msgstr ""
 
 #, c-format
-msgid "Mode:      %s (%04o)"
+msgid "Mode:       %s (%04o)"
 msgstr ""
 
 #, c-format
-msgid "Location:  %Xh:%Xh"
+msgid "Location:   %Xh:%Xh"
 msgstr ""
 
 msgid "&Equal split"

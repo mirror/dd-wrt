@@ -11,8 +11,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2015-03-20 21:10+0300\n"
-"PO-Revision-Date: 2015-03-13 11:25+0100\n"
+"POT-Creation-Date: 2015-11-06 14:43+0300\n"
+"PO-Revision-Date: 2015-10-26 17:16+0100\n"
 "Last-Translator: Marco Ciampa <ciampix@libero.it>\n"
 "Language-Team: Italian (http://www.transifex.com/projects/p/mc/language/"
 "it/)\n"
@@ -491,8 +491,16 @@ msgstr "Errore facendo il dup della vecchia pipe errori"
 msgid "Directory cache expired for %s"
 msgstr "Cache dir scaduta per %s"
 
+#, c-format
+msgid "%s: %s: %s %3d%% %<PRIuMAX> %s"
+msgstr ""
+
 msgid "bytes transferred"
 msgstr "byte trasferiti"
+
+#, c-format
+msgid "%s: %s: %s %<PRIuMAX> %s"
+msgstr ""
 
 msgid "Starting linear transfer..."
 msgstr "Inizio trasferimento lineare..."
@@ -759,8 +767,8 @@ msgstr "Errore di analisi argomenti!"
 msgid "No arguments given to the viewer."
 msgstr "Nessun argomento fornito al visualizzatore"
 
-msgid "Two files are required to evoke the diffviewer."
-msgstr "Sono necessari due file nell'esecuzione del visualizzatore diff."
+msgid "Two files are required to envoke the diffviewer."
+msgstr "Sono necessari due file il visualizzatore diff."
 
 msgid "Background protocol error"
 msgstr "Errore del protocollo in background "
@@ -1947,14 +1955,17 @@ msgstr ""
 msgid "&Full file list"
 msgstr "Lista &completa"
 
-msgid "&Brief file list"
-msgstr "Lista &breve"
+msgid "&Brief file list:"
+msgstr "Lista file &breve:"
 
 msgid "&Long file list"
-msgstr "Lista &lunga"
+msgstr "Lista file &lunga"
 
 msgid "&User defined:"
 msgstr "&Definita dall'utente:"
+
+msgid "columns"
+msgstr "colonne"
 
 msgid "User &mini status"
 msgstr "&Mini stato utente"
@@ -2749,7 +2760,7 @@ msgid "Sorry, I could not put the job in background"
 msgstr "Spiacente, non posso mettere il programma in background"
 
 msgid "S&uspend"
-msgstr "Sospendi"
+msgstr "S&ospendi"
 
 msgid "Con&tinue"
 msgstr "Con&tinua"
@@ -2845,7 +2856,7 @@ msgid "Source"
 msgstr "Sorgente"
 
 msgid "Target"
-msgstr "Destinaz"
+msgstr "Destinazione"
 
 msgid "Deleting"
 msgstr "Sto eliminando"
@@ -3058,7 +3069,7 @@ msgid "No node information"
 msgstr "Nessuna info sui nodi"
 
 msgid "Free nodes:"
-msgstr "Nodi liberi:"
+msgstr "Nodi liberi:  "
 
 msgid "No space information"
 msgstr "Nessuna info sullo spazio"
@@ -3068,40 +3079,40 @@ msgid "Free space: %s/%s (%d%%)"
 msgstr "Spazio libero: %s/%s (%d%%)"
 
 #, c-format
-msgid "Type:      %s"
-msgstr "Tipo:      %s"
+msgid "Type:       %s"
+msgstr "Tipo:          %s"
 
 msgid "non-local vfs"
 msgstr "vfs non-locale"
 
 #, c-format
-msgid "Device:    %s"
-msgstr "Periferica: %s"
+msgid "Device:     %s"
+msgstr "Periferica:    %s"
 
 #, c-format
 msgid "Filesystem: %s"
-msgstr "Filesystem: %s"
+msgstr "Filesystem:    %s"
 
 #, c-format
-msgid "Accessed:  %s"
-msgstr "Aperto:     %s"
+msgid "Accessed:   %s"
+msgstr "Aperto:        %s"
 
 #, c-format
-msgid "Modified:  %s"
-msgstr "Modificato: %s"
+msgid "Modified:   %s"
+msgstr "Modificato:    %s"
 
 #. TRANSLATORS: Time of last status change as in stat(2) man.
 #, c-format
-msgid "Changed:   %s"
-msgstr "Cambiato:  %s"
+msgid "Changed:    %s"
+msgstr "Cambiato:      %s"
 
 #, c-format
 msgid "Dev. type: major %lu, minor %lu"
 msgstr "Tipo dis.: major %lu, minor %lu"
 
 #, c-format
-msgid "Size:      %s"
-msgstr "Dimensione: %s"
+msgid "Size:       %s"
+msgstr "Dimensione:    %s"
 
 #, c-format
 msgid " (%ld block)"
@@ -3110,20 +3121,20 @@ msgstr[0] " (%ld blocco)"
 msgstr[1] " (%ld blocchi)"
 
 #, c-format
-msgid "Owner:     %s/%s"
-msgstr "Proprietà:  %s/%s"
+msgid "Owner:      %s/%s"
+msgstr "Proprietà:     %s/%s"
 
 #, c-format
-msgid "Links:     %d"
-msgstr "Collegamenti:   %d"
+msgid "Links:      %d"
+msgstr "Collegamenti:  %d"
 
 #, c-format
-msgid "Mode:      %s (%04o)"
-msgstr "Permessi:   %s (%04o)"
+msgid "Mode:       %s (%04o)"
+msgstr "Permessi:      %s (%04o)"
 
 #, c-format
-msgid "Location:  %Xh:%Xh"
-msgstr "Posizione:  %Xh:%Xh"
+msgid "Location:   %Xh:%Xh"
+msgstr "Posizione:     %Xh:%Xh"
 
 msgid "&Equal split"
 msgstr "&Divisione schermo uguale"

@@ -35,7 +35,6 @@
 
 #include <config.h>
 #include <errno.h>
-#include <fcntl.h>
 
 #include "lib/global.h"
 #include "lib/tty/tty.h"
@@ -84,7 +83,7 @@ char *mcview_show_eof = NULL;
 
 /** Both views */
 static gboolean
-do_mcview_event (mcview_t * view, Gpm_Event * event, int *result)
+do_mcview_event (WView * view, Gpm_Event * event, int *result)
 {
     screen_dimen y, x;
     Gpm_Event local;
@@ -180,7 +179,7 @@ do_mcview_event (mcview_t * view, Gpm_Event * event, int *result)
 static int
 mcview_event (Gpm_Event * event, void *data)
 {
-    mcview_t *view = (mcview_t *) data;
+    WView *view = (WView *) data;
     int result;
 
     if (!mouse_global_in_widget (event, WIDGET (data)))
@@ -195,12 +194,12 @@ mcview_event (Gpm_Event * event, void *data)
 /*** public functions ****************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 
-mcview_t *
+WView *
 mcview_new (int y, int x, int lines, int cols, gboolean is_panel)
 {
-    mcview_t *view;
+    WView *view;
 
-    view = g_new0 (mcview_t, 1);
+    view = g_new0 (WView, 1);
     widget_init (WIDGET (view), y, x, lines, cols, mcview_callback, mcview_event);
 
     view->hex_mode = FALSE;
@@ -233,10 +232,11 @@ mcview_new (int y, int x, int lines, int cols, gboolean is_panel)
 /** Real view only */
 
 gboolean
-mcview_viewer (const char *command, const vfs_path_t * file_vpath, int start_line)
+mcview_viewer (const char *command, const vfs_path_t * file_vpath, int start_line,
+               off_t search_start, off_t search_end)
 {
     gboolean succeeded;
-    mcview_t *lc_mcview;
+    WView *lc_mcview;
     WDialog *view_dlg;
 
     /* Create dialog and widgets, put them on the dialog */
@@ -250,7 +250,9 @@ mcview_viewer (const char *command, const vfs_path_t * file_vpath, int start_lin
 
     view_dlg->get_title = mcview_get_title;
 
-    succeeded = mcview_load (lc_mcview, command, vfs_path_as_str (file_vpath), start_line);
+    succeeded =
+        mcview_load (lc_mcview, command, vfs_path_as_str (file_vpath), start_line, search_start,
+                     search_end);
 
     if (succeeded)
         dlg_run (view_dlg);
@@ -268,7 +270,8 @@ mcview_viewer (const char *command, const vfs_path_t * file_vpath, int start_lin
 /* --------------------------------------------------------------------------------------------- */
 
 gboolean
-mcview_load (mcview_t * view, const char *command, const char *file, int start_line)
+mcview_load (WView * view, const char *command, const char *file, int start_line,
+             off_t search_start, off_t search_end)
 {
     gboolean retval = FALSE;
     vfs_path_t *vpath = NULL;
@@ -294,7 +297,7 @@ mcview_load (mcview_t * view, const char *command, const char *file, int start_l
         }
         else
         {
-            /* try extract path form filename */
+            /* try extract path from filename */
             const char *fname;
             char *dir;
 
@@ -410,8 +413,6 @@ mcview_load (mcview_t * view, const char *command, const char *file, int start_l
     mcview_state_machine_init (&view->dpy_state_top, 0);
     view->dpy_wrap_dirty = FALSE;
     view->force_max = -1;
-    view->search_start = 0;
-    view->search_end = 0;
     view->dpy_text_column = 0;
 
     mcview_compute_areas (view);
@@ -442,6 +443,8 @@ mcview_load (mcview_t * view, const char *command, const char *file, int start_l
     else if (start_line > 0)
         mcview_moveto (view, start_line - 1, 0);
 
+    view->search_start = search_start;
+    view->search_end = search_end;
     view->hexedit_lownibble = FALSE;
     view->hexview_in_text = FALSE;
     view->change_list = NULL;

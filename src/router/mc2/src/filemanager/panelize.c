@@ -179,7 +179,7 @@ init_panelize (void)
 
     l_panelize = listbox_new (y, UX + 1, 10, panelize_cols - UX * 2 - 2, FALSE, NULL);
     for (current = panelize; current != NULL; current = current->next)
-        listbox_add_item (l_panelize, LISTBOX_APPEND_AT_END, 0, current->label, current);
+        listbox_add_item (l_panelize, LISTBOX_APPEND_AT_END, 0, current->label, current, FALSE);
     listbox_select_entry (l_panelize, listbox_search_text (l_panelize, _("Other command")));
     add_widget (panelize_dlg, l_panelize);
 
@@ -516,9 +516,7 @@ external_panelize (void)
     /* display file info */
     tty_setcolor (SELECTED_COLOR);
 
-    dlg_run (panelize_dlg);
-
-    switch (panelize_dlg->ret_value)
+    switch (dlg_run (panelize_dlg))
     {
     case B_CANCEL:
         break;
@@ -548,6 +546,9 @@ external_panelize (void)
             repaint_screen ();
             return;
         }
+        break;
+
+    default:
         break;
     }
 

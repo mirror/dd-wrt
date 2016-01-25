@@ -40,7 +40,6 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <fcntl.h>
 
 #include "lib/global.h"
 
@@ -163,7 +162,7 @@ history_get (const char *input_name)
 /* --------------------------------------------------------------------------------------------- */
 
 /**
- * Load history form the mc_config
+ * Load history from the mc_config
  */
 GList *
 history_load (struct mc_config_t * cfg, const char *name)

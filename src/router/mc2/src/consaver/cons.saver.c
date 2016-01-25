@@ -64,7 +64,9 @@
 #ifdef HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
 #endif
+#ifdef HAVE_FCNTL_H
 #include <fcntl.h>
+#endif
 #include <termios.h>
 
 #include "lib/unixcompat.h"     /* STDERR_FILENO */
@@ -206,7 +208,6 @@ main (int argc, char **argv)
         break;
     default:
         die ();
-        break;
     }
 
     snprintf (console_name, sizeof (console_name), p, console_minor);
@@ -266,6 +267,8 @@ main (int argc, char **argv)
             break;
         case CONSOLE_CONTENTS:
             send_contents (buffer + 4, winsz.ws_col, winsz.ws_row);
+            break;
+        default:
             break;
         }
 

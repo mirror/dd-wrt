@@ -5417,7 +5417,15 @@ case "$CC" in
 $as_echo_n "checking whether ${CC} accepts -fdiagnostics-show-option... " >&6; }
 
   safe_CFLAGS=$CFLAGS
-  CFLAGS="-fdiagnostics-show-option"
+
+  case "$CC" in
+    clang*)
+      CFLAGS="-Werror -fdiagnostics-show-option"
+      ;;
+    *)
+      CFLAGS="-fdiagnostics-show-option"
+      ;;
+  esac
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -5452,11 +5460,61 @@ esac
 
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wbad-function-cast" >&5
+$as_echo_n "checking whether ${CC} accepts -Wbad-function-cast... " >&6; }
+
+  safe_CFLAGS=$CFLAGS
+
+  case "$CC" in
+    clang*)
+      CFLAGS="-Werror -Wbad-function-cast"
+      ;;
+    *)
+      CFLAGS="-Wbad-function-cast"
+      ;;
+  esac
+
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+return 0;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  mc_check_one_cflag=yes
+else
+  mc_check_one_cflag=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+  CFLAGS=$safe_CFLAGS
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $mc_check_one_cflag" >&5
+$as_echo "$mc_check_one_cflag" >&6; }
+
+  if test x$mc_check_one_cflag = xyes; then
+    mc_configured_cflags="$mc_configured_cflags -Wbad-function-cast"
+  fi
+
+
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wcomment" >&5
 $as_echo_n "checking whether ${CC} accepts -Wcomment... " >&6; }
 
   safe_CFLAGS=$CFLAGS
-  CFLAGS="-Wcomment"
+
+  case "$CC" in
+    clang*)
+      CFLAGS="-Werror -Wcomment"
+      ;;
+    *)
+      CFLAGS="-Wcomment"
+      ;;
+  esac
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -5490,7 +5548,15 @@ $as_echo "$mc_check_one_cflag" >&6; }
 $as_echo_n "checking whether ${CC} accepts -Wdeclaration-after-statement... " >&6; }
 
   safe_CFLAGS=$CFLAGS
-  CFLAGS="-Wdeclaration-after-statement"
+
+  case "$CC" in
+    clang*)
+      CFLAGS="-Werror -Wdeclaration-after-statement"
+      ;;
+    *)
+      CFLAGS="-Wdeclaration-after-statement"
+      ;;
+  esac
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -5524,7 +5590,15 @@ $as_echo "$mc_check_one_cflag" >&6; }
 $as_echo_n "checking whether ${CC} accepts -Wfloat-equal... " >&6; }
 
   safe_CFLAGS=$CFLAGS
-  CFLAGS="-Wfloat-equal"
+
+  case "$CC" in
+    clang*)
+      CFLAGS="-Werror -Wfloat-equal"
+      ;;
+    *)
+      CFLAGS="-Wfloat-equal"
+      ;;
+  esac
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -5558,7 +5632,15 @@ $as_echo "$mc_check_one_cflag" >&6; }
 $as_echo_n "checking whether ${CC} accepts -Wformat... " >&6; }
 
   safe_CFLAGS=$CFLAGS
-  CFLAGS="-Wformat"
+
+  case "$CC" in
+    clang*)
+      CFLAGS="-Werror -Wformat"
+      ;;
+    *)
+      CFLAGS="-Wformat"
+      ;;
+  esac
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -5592,7 +5674,15 @@ $as_echo "$mc_check_one_cflag" >&6; }
 $as_echo_n "checking whether ${CC} accepts -Wformat-security... " >&6; }
 
   safe_CFLAGS=$CFLAGS
-  CFLAGS="-Wformat-security"
+
+  case "$CC" in
+    clang*)
+      CFLAGS="-Werror -Wformat-security"
+      ;;
+    *)
+      CFLAGS="-Wformat-security"
+      ;;
+  esac
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -5626,7 +5716,15 @@ $as_echo "$mc_check_one_cflag" >&6; }
 $as_echo_n "checking whether ${CC} accepts -Wimplicit... " >&6; }
 
   safe_CFLAGS=$CFLAGS
-  CFLAGS="-Wimplicit"
+
+  case "$CC" in
+    clang*)
+      CFLAGS="-Werror -Wimplicit"
+      ;;
+    *)
+      CFLAGS="-Wimplicit"
+      ;;
+  esac
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -5660,7 +5758,15 @@ $as_echo "$mc_check_one_cflag" >&6; }
 $as_echo_n "checking whether ${CC} accepts -Wignored-qualifiers... " >&6; }
 
   safe_CFLAGS=$CFLAGS
-  CFLAGS="-Wignored-qualifiers"
+
+  case "$CC" in
+    clang*)
+      CFLAGS="-Werror -Wignored-qualifiers"
+      ;;
+    *)
+      CFLAGS="-Wignored-qualifiers"
+      ;;
+  esac
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -5690,11 +5796,61 @@ $as_echo "$mc_check_one_cflag" >&6; }
 
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wmaybe-uninitialized" >&5
+$as_echo_n "checking whether ${CC} accepts -Wmaybe-uninitialized... " >&6; }
+
+  safe_CFLAGS=$CFLAGS
+
+  case "$CC" in
+    clang*)
+      CFLAGS="-Werror -Wmaybe-uninitialized"
+      ;;
+    *)
+      CFLAGS="-Wmaybe-uninitialized"
+      ;;
+  esac
+
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+return 0;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  mc_check_one_cflag=yes
+else
+  mc_check_one_cflag=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+  CFLAGS=$safe_CFLAGS
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $mc_check_one_cflag" >&5
+$as_echo "$mc_check_one_cflag" >&6; }
+
+  if test x$mc_check_one_cflag = xyes; then
+    mc_configured_cflags="$mc_configured_cflags -Wmaybe-uninitialized"
+  fi
+
+
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wmissing-braces" >&5
 $as_echo_n "checking whether ${CC} accepts -Wmissing-braces... " >&6; }
 
   safe_CFLAGS=$CFLAGS
-  CFLAGS="-Wmissing-braces"
+
+  case "$CC" in
+    clang*)
+      CFLAGS="-Werror -Wmissing-braces"
+      ;;
+    *)
+      CFLAGS="-Wmissing-braces"
+      ;;
+  esac
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -5728,7 +5884,15 @@ $as_echo "$mc_check_one_cflag" >&6; }
 $as_echo_n "checking whether ${CC} accepts -Wmissing-declarations... " >&6; }
 
   safe_CFLAGS=$CFLAGS
-  CFLAGS="-Wmissing-declarations"
+
+  case "$CC" in
+    clang*)
+      CFLAGS="-Werror -Wmissing-declarations"
+      ;;
+    *)
+      CFLAGS="-Wmissing-declarations"
+      ;;
+  esac
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -5758,11 +5922,103 @@ $as_echo "$mc_check_one_cflag" >&6; }
 
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wmissing-field-initializers" >&5
+$as_echo_n "checking whether ${CC} accepts -Wmissing-field-initializers... " >&6; }
+
+  safe_CFLAGS=$CFLAGS
+
+  case "$CC" in
+    clang*)
+      CFLAGS="-Werror -Wmissing-field-initializers"
+      ;;
+    *)
+      CFLAGS="-Wmissing-field-initializers"
+      ;;
+  esac
+
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+return 0;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  mc_check_one_cflag=yes
+else
+  mc_check_one_cflag=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+  CFLAGS=$safe_CFLAGS
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $mc_check_one_cflag" >&5
+$as_echo "$mc_check_one_cflag" >&6; }
+
+  if test x$mc_check_one_cflag = xyes; then
+    mc_configured_cflags="$mc_configured_cflags -Wmissing-field-initializers"
+  fi
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wmissing-format-attribute" >&5
+$as_echo_n "checking whether ${CC} accepts -Wmissing-format-attribute... " >&6; }
+
+  safe_CFLAGS=$CFLAGS
+
+  case "$CC" in
+    clang*)
+      CFLAGS="-Werror -Wmissing-format-attribute"
+      ;;
+    *)
+      CFLAGS="-Wmissing-format-attribute"
+      ;;
+  esac
+
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+return 0;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  mc_check_one_cflag=yes
+else
+  mc_check_one_cflag=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+  CFLAGS=$safe_CFLAGS
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $mc_check_one_cflag" >&5
+$as_echo "$mc_check_one_cflag" >&6; }
+
+  if test x$mc_check_one_cflag = xyes; then
+    mc_configured_cflags="$mc_configured_cflags -Wmissing-format-attribute"
+  fi
+
+
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wmissing-parameter-type" >&5
 $as_echo_n "checking whether ${CC} accepts -Wmissing-parameter-type... " >&6; }
 
   safe_CFLAGS=$CFLAGS
-  CFLAGS="-Wmissing-parameter-type"
+
+  case "$CC" in
+    clang*)
+      CFLAGS="-Werror -Wmissing-parameter-type"
+      ;;
+    *)
+      CFLAGS="-Wmissing-parameter-type"
+      ;;
+  esac
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -5796,7 +6052,15 @@ $as_echo "$mc_check_one_cflag" >&6; }
 $as_echo_n "checking whether ${CC} accepts -Wmissing-prototypes... " >&6; }
 
   safe_CFLAGS=$CFLAGS
-  CFLAGS="-Wmissing-prototypes"
+
+  case "$CC" in
+    clang*)
+      CFLAGS="-Werror -Wmissing-prototypes"
+      ;;
+    *)
+      CFLAGS="-Wmissing-prototypes"
+      ;;
+  esac
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -5826,11 +6090,61 @@ $as_echo "$mc_check_one_cflag" >&6; }
 
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wmissing-variable-declarations" >&5
+$as_echo_n "checking whether ${CC} accepts -Wmissing-variable-declarations... " >&6; }
+
+  safe_CFLAGS=$CFLAGS
+
+  case "$CC" in
+    clang*)
+      CFLAGS="-Werror -Wmissing-variable-declarations"
+      ;;
+    *)
+      CFLAGS="-Wmissing-variable-declarations"
+      ;;
+  esac
+
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+return 0;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  mc_check_one_cflag=yes
+else
+  mc_check_one_cflag=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+  CFLAGS=$safe_CFLAGS
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $mc_check_one_cflag" >&5
+$as_echo "$mc_check_one_cflag" >&6; }
+
+  if test x$mc_check_one_cflag = xyes; then
+    mc_configured_cflags="$mc_configured_cflags -Wmissing-variable-declarations"
+  fi
+
+
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wnested-externs" >&5
 $as_echo_n "checking whether ${CC} accepts -Wnested-externs... " >&6; }
 
   safe_CFLAGS=$CFLAGS
-  CFLAGS="-Wnested-externs"
+
+  case "$CC" in
+    clang*)
+      CFLAGS="-Werror -Wnested-externs"
+      ;;
+    *)
+      CFLAGS="-Wnested-externs"
+      ;;
+  esac
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -5864,7 +6178,15 @@ $as_echo "$mc_check_one_cflag" >&6; }
 $as_echo_n "checking whether ${CC} accepts -Wno-long-long... " >&6; }
 
   safe_CFLAGS=$CFLAGS
-  CFLAGS="-Wno-long-long"
+
+  case "$CC" in
+    clang*)
+      CFLAGS="-Werror -Wno-long-long"
+      ;;
+    *)
+      CFLAGS="-Wno-long-long"
+      ;;
+  esac
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -5898,7 +6220,15 @@ $as_echo "$mc_check_one_cflag" >&6; }
 $as_echo_n "checking whether ${CC} accepts -Wno-unreachable-code... " >&6; }
 
   safe_CFLAGS=$CFLAGS
-  CFLAGS="-Wno-unreachable-code"
+
+  case "$CC" in
+    clang*)
+      CFLAGS="-Werror -Wno-unreachable-code"
+      ;;
+    *)
+      CFLAGS="-Wno-unreachable-code"
+      ;;
+  esac
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -5932,7 +6262,15 @@ $as_echo "$mc_check_one_cflag" >&6; }
 $as_echo_n "checking whether ${CC} accepts -Wparentheses... " >&6; }
 
   safe_CFLAGS=$CFLAGS
-  CFLAGS="-Wparentheses"
+
+  case "$CC" in
+    clang*)
+      CFLAGS="-Werror -Wparentheses"
+      ;;
+    *)
+      CFLAGS="-Wparentheses"
+      ;;
+  esac
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -5962,11 +6300,61 @@ $as_echo "$mc_check_one_cflag" >&6; }
 
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wpointer-arith" >&5
+$as_echo_n "checking whether ${CC} accepts -Wpointer-arith... " >&6; }
+
+  safe_CFLAGS=$CFLAGS
+
+  case "$CC" in
+    clang*)
+      CFLAGS="-Werror -Wpointer-arith"
+      ;;
+    *)
+      CFLAGS="-Wpointer-arith"
+      ;;
+  esac
+
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+return 0;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  mc_check_one_cflag=yes
+else
+  mc_check_one_cflag=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+  CFLAGS=$safe_CFLAGS
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $mc_check_one_cflag" >&5
+$as_echo "$mc_check_one_cflag" >&6; }
+
+  if test x$mc_check_one_cflag = xyes; then
+    mc_configured_cflags="$mc_configured_cflags -Wpointer-arith"
+  fi
+
+
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wpointer-sign" >&5
 $as_echo_n "checking whether ${CC} accepts -Wpointer-sign... " >&6; }
 
   safe_CFLAGS=$CFLAGS
-  CFLAGS="-Wpointer-sign"
+
+  case "$CC" in
+    clang*)
+      CFLAGS="-Werror -Wpointer-sign"
+      ;;
+    *)
+      CFLAGS="-Wpointer-sign"
+      ;;
+  esac
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -5996,11 +6384,61 @@ $as_echo "$mc_check_one_cflag" >&6; }
 
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wredundant-decls" >&5
+$as_echo_n "checking whether ${CC} accepts -Wredundant-decls... " >&6; }
+
+  safe_CFLAGS=$CFLAGS
+
+  case "$CC" in
+    clang*)
+      CFLAGS="-Werror -Wredundant-decls"
+      ;;
+    *)
+      CFLAGS="-Wredundant-decls"
+      ;;
+  esac
+
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+return 0;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  mc_check_one_cflag=yes
+else
+  mc_check_one_cflag=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+  CFLAGS=$safe_CFLAGS
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $mc_check_one_cflag" >&5
+$as_echo "$mc_check_one_cflag" >&6; }
+
+  if test x$mc_check_one_cflag = xyes; then
+    mc_configured_cflags="$mc_configured_cflags -Wredundant-decls"
+  fi
+
+
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wreturn-type" >&5
 $as_echo_n "checking whether ${CC} accepts -Wreturn-type... " >&6; }
 
   safe_CFLAGS=$CFLAGS
-  CFLAGS="-Wreturn-type"
+
+  case "$CC" in
+    clang*)
+      CFLAGS="-Werror -Wreturn-type"
+      ;;
+    *)
+      CFLAGS="-Wreturn-type"
+      ;;
+  esac
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -6034,7 +6472,15 @@ $as_echo "$mc_check_one_cflag" >&6; }
 $as_echo_n "checking whether ${CC} accepts -Wsequence-point... " >&6; }
 
   safe_CFLAGS=$CFLAGS
-  CFLAGS="-Wsequence-point"
+
+  case "$CC" in
+    clang*)
+      CFLAGS="-Werror -Wsequence-point"
+      ;;
+    *)
+      CFLAGS="-Wsequence-point"
+      ;;
+  esac
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -6068,7 +6514,15 @@ $as_echo "$mc_check_one_cflag" >&6; }
 $as_echo_n "checking whether ${CC} accepts -Wshadow... " >&6; }
 
   safe_CFLAGS=$CFLAGS
-  CFLAGS="-Wshadow"
+
+  case "$CC" in
+    clang*)
+      CFLAGS="-Werror -Wshadow"
+      ;;
+    *)
+      CFLAGS="-Wshadow"
+      ;;
+  esac
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -6102,7 +6556,15 @@ $as_echo "$mc_check_one_cflag" >&6; }
 $as_echo_n "checking whether ${CC} accepts -Wsign-compare... " >&6; }
 
   safe_CFLAGS=$CFLAGS
-  CFLAGS="-Wsign-compare"
+
+  case "$CC" in
+    clang*)
+      CFLAGS="-Werror -Wsign-compare"
+      ;;
+    *)
+      CFLAGS="-Wsign-compare"
+      ;;
+  esac
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -6132,11 +6594,61 @@ $as_echo "$mc_check_one_cflag" >&6; }
 
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wstrict-prototypes" >&5
+$as_echo_n "checking whether ${CC} accepts -Wstrict-prototypes... " >&6; }
+
+  safe_CFLAGS=$CFLAGS
+
+  case "$CC" in
+    clang*)
+      CFLAGS="-Werror -Wstrict-prototypes"
+      ;;
+    *)
+      CFLAGS="-Wstrict-prototypes"
+      ;;
+  esac
+
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+return 0;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  mc_check_one_cflag=yes
+else
+  mc_check_one_cflag=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+  CFLAGS=$safe_CFLAGS
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $mc_check_one_cflag" >&5
+$as_echo "$mc_check_one_cflag" >&6; }
+
+  if test x$mc_check_one_cflag = xyes; then
+    mc_configured_cflags="$mc_configured_cflags -Wstrict-prototypes"
+  fi
+
+
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wswitch" >&5
 $as_echo_n "checking whether ${CC} accepts -Wswitch... " >&6; }
 
   safe_CFLAGS=$CFLAGS
-  CFLAGS="-Wswitch"
+
+  case "$CC" in
+    clang*)
+      CFLAGS="-Werror -Wswitch"
+      ;;
+    *)
+      CFLAGS="-Wswitch"
+      ;;
+  esac
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -6166,11 +6678,61 @@ $as_echo "$mc_check_one_cflag" >&6; }
 
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wswitch-default" >&5
+$as_echo_n "checking whether ${CC} accepts -Wswitch-default... " >&6; }
+
+  safe_CFLAGS=$CFLAGS
+
+  case "$CC" in
+    clang*)
+      CFLAGS="-Werror -Wswitch-default"
+      ;;
+    *)
+      CFLAGS="-Wswitch-default"
+      ;;
+  esac
+
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+return 0;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  mc_check_one_cflag=yes
+else
+  mc_check_one_cflag=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+  CFLAGS=$safe_CFLAGS
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $mc_check_one_cflag" >&5
+$as_echo "$mc_check_one_cflag" >&6; }
+
+  if test x$mc_check_one_cflag = xyes; then
+    mc_configured_cflags="$mc_configured_cflags -Wswitch-default"
+  fi
+
+
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wtype-limits" >&5
 $as_echo_n "checking whether ${CC} accepts -Wtype-limits... " >&6; }
 
   safe_CFLAGS=$CFLAGS
-  CFLAGS="-Wtype-limits"
+
+  case "$CC" in
+    clang*)
+      CFLAGS="-Werror -Wtype-limits"
+      ;;
+    *)
+      CFLAGS="-Wtype-limits"
+      ;;
+  esac
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -6200,11 +6762,61 @@ $as_echo "$mc_check_one_cflag" >&6; }
 
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wundef" >&5
+$as_echo_n "checking whether ${CC} accepts -Wundef... " >&6; }
+
+  safe_CFLAGS=$CFLAGS
+
+  case "$CC" in
+    clang*)
+      CFLAGS="-Werror -Wundef"
+      ;;
+    *)
+      CFLAGS="-Wundef"
+      ;;
+  esac
+
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+return 0;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  mc_check_one_cflag=yes
+else
+  mc_check_one_cflag=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+  CFLAGS=$safe_CFLAGS
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $mc_check_one_cflag" >&5
+$as_echo "$mc_check_one_cflag" >&6; }
+
+  if test x$mc_check_one_cflag = xyes; then
+    mc_configured_cflags="$mc_configured_cflags -Wundef"
+  fi
+
+
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wuninitialized" >&5
 $as_echo_n "checking whether ${CC} accepts -Wuninitialized... " >&6; }
 
   safe_CFLAGS=$CFLAGS
-  CFLAGS="-Wuninitialized"
+
+  case "$CC" in
+    clang*)
+      CFLAGS="-Werror -Wuninitialized"
+      ;;
+    *)
+      CFLAGS="-Wuninitialized"
+      ;;
+  esac
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -6234,11 +6846,61 @@ $as_echo "$mc_check_one_cflag" >&6; }
 
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wunreachable-code" >&5
+$as_echo_n "checking whether ${CC} accepts -Wunreachable-code... " >&6; }
+
+  safe_CFLAGS=$CFLAGS
+
+  case "$CC" in
+    clang*)
+      CFLAGS="-Werror -Wunreachable-code"
+      ;;
+    *)
+      CFLAGS="-Wunreachable-code"
+      ;;
+  esac
+
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+return 0;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  mc_check_one_cflag=yes
+else
+  mc_check_one_cflag=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+  CFLAGS=$safe_CFLAGS
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $mc_check_one_cflag" >&5
+$as_echo "$mc_check_one_cflag" >&6; }
+
+  if test x$mc_check_one_cflag = xyes; then
+    mc_configured_cflags="$mc_configured_cflags -Wunreachable-code"
+  fi
+
+
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wunused-but-set-variable" >&5
 $as_echo_n "checking whether ${CC} accepts -Wunused-but-set-variable... " >&6; }
 
   safe_CFLAGS=$CFLAGS
-  CFLAGS="-Wunused-but-set-variable"
+
+  case "$CC" in
+    clang*)
+      CFLAGS="-Werror -Wunused-but-set-variable"
+      ;;
+    *)
+      CFLAGS="-Wunused-but-set-variable"
+      ;;
+  esac
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -6272,7 +6934,15 @@ $as_echo "$mc_check_one_cflag" >&6; }
 $as_echo_n "checking whether ${CC} accepts -Wunused-function... " >&6; }
 
   safe_CFLAGS=$CFLAGS
-  CFLAGS="-Wunused-function"
+
+  case "$CC" in
+    clang*)
+      CFLAGS="-Werror -Wunused-function"
+      ;;
+    *)
+      CFLAGS="-Wunused-function"
+      ;;
+  esac
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -6306,7 +6976,15 @@ $as_echo "$mc_check_one_cflag" >&6; }
 $as_echo_n "checking whether ${CC} accepts -Wunused-label... " >&6; }
 
   safe_CFLAGS=$CFLAGS
-  CFLAGS="-Wunused-label"
+
+  case "$CC" in
+    clang*)
+      CFLAGS="-Werror -Wunused-label"
+      ;;
+    *)
+      CFLAGS="-Wunused-label"
+      ;;
+  esac
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -6340,7 +7018,15 @@ $as_echo "$mc_check_one_cflag" >&6; }
 $as_echo_n "checking whether ${CC} accepts -Wunused-parameter... " >&6; }
 
   safe_CFLAGS=$CFLAGS
-  CFLAGS="-Wunused-parameter"
+
+  case "$CC" in
+    clang*)
+      CFLAGS="-Werror -Wunused-parameter"
+      ;;
+    *)
+      CFLAGS="-Wunused-parameter"
+      ;;
+  esac
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -6374,7 +7060,15 @@ $as_echo "$mc_check_one_cflag" >&6; }
 $as_echo_n "checking whether ${CC} accepts -Wunused-result... " >&6; }
 
   safe_CFLAGS=$CFLAGS
-  CFLAGS="-Wunused-result"
+
+  case "$CC" in
+    clang*)
+      CFLAGS="-Werror -Wunused-result"
+      ;;
+    *)
+      CFLAGS="-Wunused-result"
+      ;;
+  esac
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -6408,7 +7102,15 @@ $as_echo "$mc_check_one_cflag" >&6; }
 $as_echo_n "checking whether ${CC} accepts -Wunused-value... " >&6; }
 
   safe_CFLAGS=$CFLAGS
-  CFLAGS="-Wunused-value"
+
+  case "$CC" in
+    clang*)
+      CFLAGS="-Werror -Wunused-value"
+      ;;
+    *)
+      CFLAGS="-Wunused-value"
+      ;;
+  esac
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -6442,7 +7144,15 @@ $as_echo "$mc_check_one_cflag" >&6; }
 $as_echo_n "checking whether ${CC} accepts -Wunused-variable... " >&6; }
 
   safe_CFLAGS=$CFLAGS
-  CFLAGS="-Wunused-variable"
+
+  case "$CC" in
+    clang*)
+      CFLAGS="-Werror -Wunused-variable"
+      ;;
+    *)
+      CFLAGS="-Wunused-variable"
+      ;;
+  esac
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -6476,7 +7186,15 @@ $as_echo "$mc_check_one_cflag" >&6; }
 $as_echo_n "checking whether ${CC} accepts -Wwrite-strings... " >&6; }
 
   safe_CFLAGS=$CFLAGS
-  CFLAGS="-Wwrite-strings"
+
+  case "$CC" in
+    clang*)
+      CFLAGS="-Werror -Wwrite-strings"
+      ;;
+    *)
+      CFLAGS="-Wwrite-strings"
+      ;;
+  esac
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -6536,7 +7254,15 @@ if test "x$enable_werror" = xyes; then
 $as_echo_n "checking whether ${CC} accepts -Werror... " >&6; }
 
   safe_CFLAGS=$CFLAGS
-  CFLAGS="-Werror"
+
+  case "$CC" in
+    clang*)
+      CFLAGS="-Werror -Werror"
+      ;;
+    *)
+      CFLAGS="-Werror"
+      ;;
+  esac
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -14383,12 +15109,12 @@ if test -n "$GLIB_CFLAGS"; then
     pkg_cv_GLIB_CFLAGS="$GLIB_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"glib-2.0 >= 2.14\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "glib-2.0 >= 2.14") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"glib-2.0 >= 2.26\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "glib-2.0 >= 2.26") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_GLIB_CFLAGS=`$PKG_CONFIG --cflags "glib-2.0 >= 2.14" 2>/dev/null`
+  pkg_cv_GLIB_CFLAGS=`$PKG_CONFIG --cflags "glib-2.0 >= 2.26" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -14400,12 +15126,12 @@ if test -n "$GLIB_LIBS"; then
     pkg_cv_GLIB_LIBS="$GLIB_LIBS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"glib-2.0 >= 2.14\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "glib-2.0 >= 2.14") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"glib-2.0 >= 2.26\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "glib-2.0 >= 2.26") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_GLIB_LIBS=`$PKG_CONFIG --libs "glib-2.0 >= 2.14" 2>/dev/null`
+  pkg_cv_GLIB_LIBS=`$PKG_CONFIG --libs "glib-2.0 >= 2.26" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -14426,9 +15152,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        GLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "glib-2.0 >= 2.14" 2>&1`
+	        GLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "glib-2.0 >= 2.26" 2>&1`
         else
-	        GLIB_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "glib-2.0 >= 2.14" 2>&1`
+	        GLIB_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "glib-2.0 >= 2.26" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$GLIB_PKG_ERRORS" >&5
@@ -14446,7 +15172,7 @@ $as_echo "yes" >&6; }
 	glib_found=yes
 fi
     if test x"$glib_found" = xno; then
-        as_fn_error $? "glib-2.0 not found or version too old (must be >= 2.14)" "$LINENO" 5
+        as_fn_error $? "glib-2.0 not found or version too old (must be >= 2.26)" "$LINENO" 5
     fi
 
 
@@ -14464,12 +15190,12 @@ if test -n "$GMODULE_CFLAGS"; then
     pkg_cv_GMODULE_CFLAGS="$GMODULE_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gmodule-no-export-2.0 >= 2.14\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "gmodule-no-export-2.0 >= 2.14") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gmodule-no-export-2.0 >= 2.26\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gmodule-no-export-2.0 >= 2.26") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_GMODULE_CFLAGS=`$PKG_CONFIG --cflags "gmodule-no-export-2.0 >= 2.14" 2>/dev/null`
+  pkg_cv_GMODULE_CFLAGS=`$PKG_CONFIG --cflags "gmodule-no-export-2.0 >= 2.26" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -14481,12 +15207,12 @@ if test -n "$GMODULE_LIBS"; then
     pkg_cv_GMODULE_LIBS="$GMODULE_LIBS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gmodule-no-export-2.0 >= 2.14\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "gmodule-no-export-2.0 >= 2.14") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gmodule-no-export-2.0 >= 2.26\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gmodule-no-export-2.0 >= 2.26") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_GMODULE_LIBS=`$PKG_CONFIG --libs "gmodule-no-export-2.0 >= 2.14" 2>/dev/null`
+  pkg_cv_GMODULE_LIBS=`$PKG_CONFIG --libs "gmodule-no-export-2.0 >= 2.26" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -14507,9 +15233,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        GMODULE_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "gmodule-no-export-2.0 >= 2.14" 2>&1`
+	        GMODULE_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "gmodule-no-export-2.0 >= 2.26" 2>&1`
         else
-	        GMODULE_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "gmodule-no-export-2.0 >= 2.14" 2>&1`
+	        GMODULE_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "gmodule-no-export-2.0 >= 2.26" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$GMODULE_PKG_ERRORS" >&5
@@ -14538,12 +15264,12 @@ if test -n "$GMODULE_CFLAGS"; then
     pkg_cv_GMODULE_CFLAGS="$GMODULE_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gmodule-2.0 >= 2.14\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "gmodule-2.0 >= 2.14") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gmodule-2.0 >= 2.26\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gmodule-2.0 >= 2.26") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_GMODULE_CFLAGS=`$PKG_CONFIG --cflags "gmodule-2.0 >= 2.14" 2>/dev/null`
+  pkg_cv_GMODULE_CFLAGS=`$PKG_CONFIG --cflags "gmodule-2.0 >= 2.26" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -14555,12 +15281,12 @@ if test -n "$GMODULE_LIBS"; then
     pkg_cv_GMODULE_LIBS="$GMODULE_LIBS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gmodule-2.0 >= 2.14\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "gmodule-2.0 >= 2.14") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gmodule-2.0 >= 2.26\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gmodule-2.0 >= 2.26") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_GMODULE_LIBS=`$PKG_CONFIG --libs "gmodule-2.0 >= 2.14" 2>/dev/null`
+  pkg_cv_GMODULE_LIBS=`$PKG_CONFIG --libs "gmodule-2.0 >= 2.26" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -14581,9 +15307,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        GMODULE_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "gmodule-2.0 >= 2.14" 2>&1`
+	        GMODULE_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "gmodule-2.0 >= 2.26" 2>&1`
         else
-	        GMODULE_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "gmodule-2.0 >= 2.14" 2>&1`
+	        GMODULE_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "gmodule-2.0 >= 2.26" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$GMODULE_PKG_ERRORS" >&5
@@ -18629,7 +19355,7 @@ if test $ac_cv_func_getmntent = yes; then
   # Determine whether it's the one-argument variant or the two-argument one.
 
   if test -z "$ac_list_mounted_fs"; then
-    # 4.3BSD, SunOS, HP-UX, Dynix, Irix
+    # GNU/Linux, 4.3BSD, SunOS, HP-UX, Dynix, Irix
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for one-argument getmntent function" >&5
 $as_echo_n "checking for one-argument getmntent function... " >&6; }
     if ${fu_cv_sys_mounted_getmntent1+:} false; then :
@@ -18689,64 +19415,6 @@ _ACEOF
 fi
 done
 
-
-      # Check for libmount to support /proc/self/mountinfo on Linux
-      if ${ac_cv_lib_libmount_mnt_table_parse_stream+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for mnt_new_table_from_file in -lmount" >&5
-$as_echo_n "checking for mnt_new_table_from_file in -lmount... " >&6; }
-if ${ac_cv_lib_mount_mnt_new_table_from_file+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lmount  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char mnt_new_table_from_file ();
-int
-main ()
-{
-return mnt_new_table_from_file ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_mount_mnt_new_table_from_file=yes
-else
-  ac_cv_lib_mount_mnt_new_table_from_file=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_mount_mnt_new_table_from_file" >&5
-$as_echo "$ac_cv_lib_mount_mnt_new_table_from_file" >&6; }
-if test "x$ac_cv_lib_mount_mnt_new_table_from_file" = xyes; then :
-  ac_cv_lib_mount_mnt_table_parse_stream=yes
-else
-  ac_cv_lib_mount_mnt_table_parse_stream=no
-fi
-
-fi
-
-      if test $ac_cv_lib_mount_mnt_table_parse_stream = yes; then
-
-$as_echo "#define MOUNTED_PROC_MOUNTINFO 1" >>confdefs.h
-
-         LIBS="-lmount $LIBS"
-      elif test -f /proc/self/mountinfo; then
-         { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: /proc/self/mountinfo present but libmount is missing." >&5
-$as_echo "$as_me: WARNING: /proc/self/mountinfo present but libmount is missing." >&2;}
-      fi
     fi
   fi
 
@@ -19399,7 +20067,7 @@ if test $ac_cv_func_getmntent = yes; then
   # Determine whether it's the one-argument variant or the two-argument one.
 
   if test -z "$ac_list_mounted_fs"; then
-    # 4.3BSD, SunOS, HP-UX, Dynix, Irix
+    # GNU/Linux, 4.3BSD, SunOS, HP-UX, Dynix, Irix
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for one-argument getmntent function" >&5
 $as_echo_n "checking for one-argument getmntent function... " >&6; }
     if ${fu_cv_sys_mounted_getmntent1+:} false; then :
@@ -19459,64 +20127,6 @@ _ACEOF
 fi
 done
 
-
-      # Check for libmount to support /proc/self/mountinfo on Linux
-      if ${ac_cv_lib_libmount_mnt_table_parse_stream+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for mnt_new_table_from_file in -lmount" >&5
-$as_echo_n "checking for mnt_new_table_from_file in -lmount... " >&6; }
-if ${ac_cv_lib_mount_mnt_new_table_from_file+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lmount  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char mnt_new_table_from_file ();
-int
-main ()
-{
-return mnt_new_table_from_file ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_mount_mnt_new_table_from_file=yes
-else
-  ac_cv_lib_mount_mnt_new_table_from_file=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_mount_mnt_new_table_from_file" >&5
-$as_echo "$ac_cv_lib_mount_mnt_new_table_from_file" >&6; }
-if test "x$ac_cv_lib_mount_mnt_new_table_from_file" = xyes; then :
-  ac_cv_lib_mount_mnt_table_parse_stream=yes
-else
-  ac_cv_lib_mount_mnt_table_parse_stream=no
-fi
-
-fi
-
-      if test $ac_cv_lib_mount_mnt_table_parse_stream = yes; then
-
-$as_echo "#define MOUNTED_PROC_MOUNTINFO 1" >>confdefs.h
-
-         LIBS="-lmount $LIBS"
-      elif test -f /proc/self/mountinfo; then
-         { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: /proc/self/mountinfo present but libmount is missing." >&5
-$as_echo "$as_me: WARNING: /proc/self/mountinfo present but libmount is missing." >&2;}
-      fi
     fi
   fi
 
@@ -20495,21 +21105,21 @@ $ac_includes_default
 "
   statfs_includes="\
 $ac_includes_default
-#if HAVE_SYS_VFS_H
+#ifdef HAVE_SYS_VFS_H
 # include <sys/vfs.h>
-#elif HAVE_SYS_MOUNT_H && HAVE_SYS_PARAM_H
+#elif defined HAVE_SYS_MOUNT_H && defined HAVE_SYS_PARAM_H
 # include <sys/param.h>
 # include <sys/mount.h>
-# if HAVE_NETINET_IN_H && HAVE_NFS_NFS_CLNT_H && HAVE_NFS_VFS_H
+# if defined HAVE_NETINET_IN_H && defined HAVE_NFS_NFS_CLNT_H && defined HAVE_NFS_VFS_H
 #  include <netinet/in.h>
 #  include <nfs/nfs_clnt.h>
 #  include <nfs/vfs.h>
 # endif
-#elif HAVE_OS_H
+#elif defined HAVE_OS_H
 # include <fs_info.h>
 #endif
 "
-      if case "$fu_cv_sys_stat_statvfs$fu_cv_sys_stat_statvfs64" in
+  if case "$fu_cv_sys_stat_statvfs$fu_cv_sys_stat_statvfs64" in
        *yes*) ;; *) false;; esac &&
      { ac_fn_c_check_member "$LINENO" "struct statvfs" "f_basetype" "ac_cv_member_struct_statvfs_f_basetype" "$statvfs_includes
 "
@@ -24309,6 +24919,9 @@ if test x$with_homedir = xXDG; then
 $as_echo "#define MC_HOMEDIR_XDG 1" >>confdefs.h
 
 else
+
+$as_echo "#define MC_HOMEDIR_XDG 0" >>confdefs.h
+
 
 cat >>confdefs.h <<_ACEOF
 #define MC_USERCONF_DIR "$with_homedir"

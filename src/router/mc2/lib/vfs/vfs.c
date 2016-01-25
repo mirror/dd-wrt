@@ -59,14 +59,17 @@
 #include "utilvfs.h"
 #include "gc.h"
 
+/* TODO: move it to the separate .h */
 extern struct dirent *mc_readdir_result;
+extern GPtrArray *vfs__classes_list;
+extern GString *vfs_str_buffer;
+extern struct vfs_class *current_vfs;
+
 /*** global variables ****************************************************************************/
 
 GPtrArray *vfs__classes_list = NULL;
-
 GString *vfs_str_buffer = NULL;
 struct vfs_class *current_vfs = NULL;
-
 
 /*** file scope macro definitions ****************************************************************/
 
@@ -361,11 +364,24 @@ vfs_translate_path_n (const char *path)
 /**
  * Get current directory without any OS calls.
  *
- * @return string contain current path
+ * @return string contains current path
+ */
+
+const char *
+vfs_get_current_dir (void)
+{
+    return current_path->str;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+/**
+ * Get current directory without any OS calls.
+ *
+ * @return newly allocated string contains current path
  */
 
 char *
-vfs_get_current_dir (void)
+vfs_get_current_dir_n (void)
 {
     return g_strdup (current_path->str);
 }
@@ -512,12 +528,13 @@ void
 vfs_print_message (const char *msg, ...)
 {
     ev_vfs_print_message_t event_data;
+    va_list ap;
 
-    va_start (event_data.ap, msg);
-    event_data.msg = msg;
+    va_start (ap, msg);
+    event_data.msg = g_strdup_vprintf (msg, ap);
+    va_end (ap);
 
     mc_event_raise (MCEVENT_GROUP_CORE, "vfs_print_message", (gpointer) & event_data);
-    va_end (event_data.ap);
 }
 
 /* --------------------------------------------------------------------------------------------- */

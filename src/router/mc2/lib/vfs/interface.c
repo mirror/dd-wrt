@@ -41,7 +41,6 @@
 #include <sys/types.h>
 #include <signal.h>
 #include <ctype.h>              /* is_digit() */
-#include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <dirent.h>
@@ -60,8 +59,10 @@
 #include "gc.h"
 #include "xdirentry.h"
 
+/* TODO: move it to separate private .h */
 extern GString *vfs_str_buffer;
 extern struct vfs_class *current_vfs;
+extern struct dirent *mc_readdir_result;
 
 /*** global variables ****************************************************************************/
 
