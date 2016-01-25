@@ -16,8 +16,14 @@
  * Boston, MA 021110-1307, USA.
  */
 
-#ifndef __BTRFS_VOLUMES_
-#define __BTRFS_VOLUMES_
+#ifndef __BTRFS_VOLUMES_H__
+#define __BTRFS_VOLUMES_H__
+
+#include "kerncompat.h"
+#include "ctree.h"
+
+#define BTRFS_STRIPE_LEN	(64 * 1024)
+
 struct btrfs_device {
 	struct list_head dev_list;
 	struct btrfs_root *dev_root;
@@ -35,6 +41,8 @@ struct btrfs_device {
 	char *label;
 	u64 total_devs;
 	u64 super_bytes_used;
+
+	u64 generation;
 
 	/* the internal btrfs device id */
 	u64 devid;
@@ -64,7 +72,7 @@ struct btrfs_device {
 struct btrfs_fs_devices {
 	u8 fsid[BTRFS_FSID_SIZE]; /* FS specific uuid */
 
-	/* the device with this id has the most recent coyp of the super */
+	/* the device with this id has the most recent copy of the super */
 	u64 latest_devid;
 	u64 latest_trans;
 	u64 lowest_devid;
@@ -88,17 +96,94 @@ struct btrfs_multi_bio {
 	struct btrfs_bio_stripe stripes[];
 };
 
+struct map_lookup {
+	struct cache_extent ce;
+	u64 type;
+	int io_align;
+	int io_width;
+	int stripe_len;
+	int sector_size;
+	int num_stripes;
+	int sub_stripes;
+	struct btrfs_bio_stripe stripes[];
+};
+
 #define btrfs_multi_bio_size(n) (sizeof(struct btrfs_multi_bio) + \
 			    (sizeof(struct btrfs_bio_stripe) * (n)))
+#define btrfs_map_lookup_size(n) (sizeof(struct map_lookup) + \
+				 (sizeof(struct btrfs_bio_stripe) * (n)))
 
-int btrfs_alloc_dev_extent(struct btrfs_trans_handle *trans,
-			   struct btrfs_device *device,
-			   u64 chunk_tree, u64 chunk_objectid,
-			   u64 chunk_offset,
-			   u64 num_bytes, u64 *start);
+/*
+ * Restriper's general type filter
+ */
+#define BTRFS_BALANCE_DATA		(1ULL << 0)
+#define BTRFS_BALANCE_SYSTEM		(1ULL << 1)
+#define BTRFS_BALANCE_METADATA		(1ULL << 2)
+
+#define BTRFS_BALANCE_TYPE_MASK		(BTRFS_BALANCE_DATA |	    \
+					 BTRFS_BALANCE_SYSTEM |	    \
+					 BTRFS_BALANCE_METADATA)
+
+#define BTRFS_BALANCE_FORCE		(1ULL << 3)
+#define BTRFS_BALANCE_RESUME		(1ULL << 4)
+
+/*
+ * Balance filters
+ */
+#define BTRFS_BALANCE_ARGS_PROFILES	(1ULL << 0)
+#define BTRFS_BALANCE_ARGS_USAGE	(1ULL << 1)
+#define BTRFS_BALANCE_ARGS_DEVID	(1ULL << 2)
+#define BTRFS_BALANCE_ARGS_DRANGE	(1ULL << 3)
+#define BTRFS_BALANCE_ARGS_VRANGE	(1ULL << 4)
+#define BTRFS_BALANCE_ARGS_LIMIT	(1ULL << 5)
+#define BTRFS_BALANCE_ARGS_LIMIT_RANGE	(1ULL << 6)
+#define BTRFS_BALANCE_ARGS_STRIPES_RANGE (1ULL << 7)
+#define BTRFS_BALANCE_ARGS_USAGE_RANGE	(1ULL << 10)
+
+/*
+ * Profile changing flags.  When SOFT is set we won't relocate chunk if
+ * it already has the target profile (even though it may be
+ * half-filled).
+ */
+#define BTRFS_BALANCE_ARGS_CONVERT	(1ULL << 8)
+#define BTRFS_BALANCE_ARGS_SOFT		(1ULL << 9)
+
+#define BTRFS_RAID5_P_STRIPE ((u64)-2)
+#define BTRFS_RAID6_Q_STRIPE ((u64)-1)
+
+/*
+ * Check if the given range cross stripes.
+ * To ensure kernel scrub won't causing bug on with METADATA in mixed
+ * block group
+ */
+static inline int check_crossing_stripes(u64 start, u64 len)
+{
+	return (start / BTRFS_STRIPE_LEN) !=
+	       ((start + len - 1) / BTRFS_STRIPE_LEN);
+}
+
+int __btrfs_map_block(struct btrfs_mapping_tree *map_tree, int rw,
+		      u64 logical, u64 *length, u64 *type,
+		      struct btrfs_multi_bio **multi_ret, int mirror_num,
+		      u64 **raid_map);
 int btrfs_map_block(struct btrfs_mapping_tree *map_tree, int rw,
 		    u64 logical, u64 *length,
-		    struct btrfs_multi_bio **multi_ret, int mirror_num);
+		    struct btrfs_multi_bio **multi_ret, int mirror_num,
+		    u64 **raid_map_ret);
+int btrfs_next_bg(struct btrfs_mapping_tree *map_tree, u64 *logical,
+		     u64 *size, u64 type);
+static inline int btrfs_next_bg_metadata(struct btrfs_mapping_tree *map_tree,
+				      u64 *logical, u64 *size)
+{
+	return btrfs_next_bg(map_tree, logical, size,
+			BTRFS_BLOCK_GROUP_METADATA);
+}
+static inline int btrfs_next_bg_system(struct btrfs_mapping_tree *map_tree,
+				    u64 *logical, u64 *size)
+{
+	return btrfs_next_bg(map_tree, logical, size,
+			BTRFS_BLOCK_GROUP_SYSTEM);
+}
 int btrfs_rmap_block(struct btrfs_mapping_tree *map_tree,
 		     u64 chunk_start, u64 physical, u64 devid,
 		     u64 **logical, int *naddrs, int *stripe_len);
@@ -107,6 +192,9 @@ int btrfs_read_chunk_tree(struct btrfs_root *root);
 int btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
 		      struct btrfs_root *extent_root, u64 *start,
 		      u64 *num_bytes, u64 type);
+int btrfs_alloc_data_chunk(struct btrfs_trans_handle *trans,
+			   struct btrfs_root *extent_root, u64 *start,
+			   u64 num_bytes, u64 type);
 int btrfs_read_super_device(struct btrfs_root *root, struct extent_buffer *buf);
 int btrfs_add_device(struct btrfs_trans_handle *trans,
 		     struct btrfs_root *root,
@@ -114,6 +202,7 @@ int btrfs_add_device(struct btrfs_trans_handle *trans,
 int btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
 		       int flags);
 int btrfs_close_devices(struct btrfs_fs_devices *fs_devices);
+void btrfs_close_all_devices(void);
 int btrfs_add_device(struct btrfs_trans_handle *trans,
 		     struct btrfs_root *root,
 		     struct btrfs_device *device);
@@ -121,13 +210,20 @@ int btrfs_update_device(struct btrfs_trans_handle *trans,
 			struct btrfs_device *device);
 int btrfs_scan_one_device(int fd, const char *path,
 			  struct btrfs_fs_devices **fs_devices_ret,
-			  u64 *total_devs, u64 super_offset);
+			  u64 *total_devs, u64 super_offset, int super_recover);
 int btrfs_num_copies(struct btrfs_mapping_tree *map_tree, u64 logical, u64 len);
-int btrfs_bootstrap_super_map(struct btrfs_mapping_tree *map_tree,
-			      struct btrfs_fs_devices *fs_devices);
 struct list_head *btrfs_scanned_uuids(void);
 int btrfs_add_system_chunk(struct btrfs_trans_handle *trans,
 			   struct btrfs_root *root, struct btrfs_key *key,
 			   struct btrfs_chunk *chunk, int item_size);
 int btrfs_chunk_readonly(struct btrfs_root *root, u64 chunk_offset);
+struct btrfs_device *
+btrfs_find_device_by_devid(struct btrfs_fs_devices *fs_devices,
+			   u64 devid, int instance);
+struct btrfs_device *btrfs_find_device(struct btrfs_root *root, u64 devid,
+				       u8 *uuid, u8 *fsid);
+int write_raid56_with_parity(struct btrfs_fs_info *info,
+			     struct extent_buffer *eb,
+			     struct btrfs_multi_bio *multi,
+			     u64 stripe_len, u64 *raid_map);
 #endif

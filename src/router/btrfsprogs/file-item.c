@@ -29,12 +29,6 @@
 #define MAX_CSUM_ITEMS(r,size) ((((BTRFS_LEAF_DATA_SIZE(r) - \
 			       sizeof(struct btrfs_item) * 2) / \
 			       size) - 1))
-int btrfs_create_file(struct btrfs_trans_handle *trans,
-		      struct btrfs_root *root, u64 dirid, u64 *objectid)
-{
-	return 0;
-}
-
 int btrfs_insert_file_extent(struct btrfs_trans_handle *trans,
 			     struct btrfs_root *root,
 			     u64 objectid, u64 pos, u64 offset,
@@ -122,10 +116,11 @@ fail:
 	return err;
 }
 
-struct btrfs_csum_item *btrfs_lookup_csum(struct btrfs_trans_handle *trans,
-					  struct btrfs_root *root,
-					  struct btrfs_path *path,
-					  u64 bytenr, int cow)
+static struct btrfs_csum_item *
+btrfs_lookup_csum(struct btrfs_trans_handle *trans,
+		  struct btrfs_root *root,
+		  struct btrfs_path *path,
+		  u64 bytenr, int cow)
 {
 	int ret;
 	struct btrfs_key file_key;
@@ -134,7 +129,7 @@ struct btrfs_csum_item *btrfs_lookup_csum(struct btrfs_trans_handle *trans,
 	struct extent_buffer *leaf;
 	u64 csum_offset = 0;
 	u16 csum_size =
-		btrfs_super_csum_size(&root->fs_info->super_copy);
+		btrfs_super_csum_size(root->fs_info->super_copy);
 	int csums_in_item;
 
 	file_key.objectid = BTRFS_EXTENT_CSUM_OBJECTID;
@@ -172,28 +167,11 @@ fail:
 	return ERR_PTR(ret);
 }
 
-int btrfs_lookup_file_extent(struct btrfs_trans_handle *trans,
-			     struct btrfs_root *root,
-			     struct btrfs_path *path, u64 objectid,
-			     u64 offset, int mod)
-{
-	int ret;
-	struct btrfs_key file_key;
-	int ins_len = mod < 0 ? -1 : 0;
-	int cow = mod != 0;
-
-	file_key.objectid = objectid;
-	file_key.offset = offset;
-	btrfs_set_key_type(&file_key, BTRFS_EXTENT_DATA_KEY);
-	ret = btrfs_search_slot(trans, root, &file_key, path, ins_len, cow);
-	return ret;
-}
-
 int btrfs_csum_file_block(struct btrfs_trans_handle *trans,
 			  struct btrfs_root *root, u64 alloc_end,
 			  u64 bytenr, char *data, size_t len)
 {
-	int ret;
+	int ret = 0;
 	struct btrfs_key file_key;
 	struct btrfs_key found_key;
 	u64 next_offset = (u64)-1;
@@ -206,7 +184,7 @@ int btrfs_csum_file_block(struct btrfs_trans_handle *trans,
 	u32 nritems;
 	u32 ins_size;
 	u16 csum_size =
-		btrfs_super_csum_size(&root->fs_info->super_copy);
+		btrfs_super_csum_size(root->fs_info->super_copy);
 
 	path = btrfs_alloc_path();
 	BUG_ON(!path);
@@ -218,6 +196,7 @@ int btrfs_csum_file_block(struct btrfs_trans_handle *trans,
 	item = btrfs_lookup_csum(trans, root, path, bytenr, 1);
 	if (!IS_ERR(item)) {
 		leaf = path->nodes[0];
+		ret = 0;
 		goto found;
 	}
 	ret = PTR_ERR(item);
@@ -257,7 +236,7 @@ int btrfs_csum_file_block(struct btrfs_trans_handle *trans,
 	 * at this point, we know the tree has an item, but it isn't big
 	 * enough yet to put our csum in.  Grow it
 	 */
-	btrfs_release_path(root, path);
+	btrfs_release_path(path);
 	ret = btrfs_search_slot(trans, root, &file_key, path,
 				csum_size, 1);
 	if (ret < 0)
@@ -289,7 +268,7 @@ int btrfs_csum_file_block(struct btrfs_trans_handle *trans,
 	}
 
 insert:
-	btrfs_release_path(root, path);
+	btrfs_release_path(path);
 	csum_offset = 0;
 	if (found_next) {
 		u64 tmp = min(alloc_end, next_offset);
@@ -327,7 +306,6 @@ found:
 			    csum_size);
 	btrfs_mark_buffer_dirty(path->nodes[0]);
 fail:
-	btrfs_release_path(root, path);
 	btrfs_free_path(path);
 	return ret;
 }
@@ -351,7 +329,7 @@ static noinline int truncate_one_csum(struct btrfs_trans_handle *trans,
 {
 	struct extent_buffer *leaf;
 	u16 csum_size =
-		btrfs_super_csum_size(&root->fs_info->super_copy);
+		btrfs_super_csum_size(root->fs_info->super_copy);
 	u64 csum_end;
 	u64 end_byte = bytenr + len;
 	u32 blocksize = root->sectorsize;
@@ -388,7 +366,7 @@ static noinline int truncate_one_csum(struct btrfs_trans_handle *trans,
 		BUG_ON(ret);
 
 		key->offset = end_byte;
-		ret = btrfs_set_item_key_safe(trans, root, path, key);
+		ret = btrfs_set_item_key_safe(root, path, key);
 		BUG_ON(ret);
 	} else {
 		BUG();
@@ -410,12 +388,14 @@ int btrfs_del_csums(struct btrfs_trans_handle *trans,
 	struct extent_buffer *leaf;
 	int ret;
 	u16 csum_size =
-		btrfs_super_csum_size(&root->fs_info->super_copy);
+		btrfs_super_csum_size(root->fs_info->super_copy);
 	int blocksize = root->sectorsize;
 
 	root = root->fs_info->csum_root;
 
 	path = btrfs_alloc_path();
+	if (!path)
+		return -ENOMEM;
 
 	while (1) {
 		key.objectid = BTRFS_EXTENT_CSUM_OBJECTID;
@@ -498,7 +478,7 @@ int btrfs_del_csums(struct btrfs_trans_handle *trans,
 						&key, bytenr, len);
 			BUG_ON(ret);
 		}
-		btrfs_release_path(root, path);
+		btrfs_release_path(path);
 	}
 out:
 	btrfs_free_path(path);
