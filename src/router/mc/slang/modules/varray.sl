@@ -1,2 +1,0 @@
-import("varray");
-provide("varray");

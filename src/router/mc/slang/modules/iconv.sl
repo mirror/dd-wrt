@@ -1,2 +1,0 @@
-import("iconv");
-provide("iconv");
