@@ -16,11 +16,18 @@
  * Boston, MA 021110-1307, USA.
  */
 
-#ifndef __EXTENTMAP__
-#define __EXTENTMAP__
+#ifndef __BTRFS_EXTENT_IO_H__
+#define __BTRFS_EXTENT_IO_H__
+
+#if BTRFS_FLAT_INCLUDES
 #include "kerncompat.h"
 #include "extent-cache.h"
 #include "list.h"
+#else
+#include <btrfs/kerncompat.h>
+#include <btrfs/extent-cache.h>
+#include <btrfs/list.h>
+#endif /* BTRFS_FLAT_INCLUDES */
 
 #define EXTENT_DIRTY 1
 #define EXTENT_WRITEBACK (1 << 1)
@@ -32,7 +39,17 @@
 #define EXTENT_DEFRAG_DONE (1 << 7)
 #define EXTENT_BUFFER_FILLED (1 << 8)
 #define EXTENT_CSUM (1 << 9)
+#define EXTENT_BAD_TRANSID (1 << 10)
+#define EXTENT_BUFFER_DUMMY (1 << 11)
 #define EXTENT_IOBITS (EXTENT_LOCKED | EXTENT_WRITEBACK)
+
+#define BLOCK_GROUP_DATA     EXTENT_WRITEBACK
+#define BLOCK_GROUP_METADATA EXTENT_UPTODATE
+#define BLOCK_GROUP_SYSTEM   EXTENT_NEW
+
+#define BLOCK_GROUP_DIRTY EXTENT_DIRTY
+
+struct btrfs_fs_info;
 
 struct extent_io_tree {
 	struct cache_tree state;
@@ -47,7 +64,7 @@ struct extent_state {
 	u64 end;
 	int refs;
 	unsigned long state;
-	u64 private;
+	u64 xprivate;
 };
 
 struct extent_buffer {
@@ -57,6 +74,7 @@ struct extent_buffer {
 	u32 len;
 	struct extent_io_tree *tree;
 	struct list_head lru;
+	struct list_head recow;
 	int refs;
 	int flags;
 	int fd;
@@ -82,20 +100,40 @@ int set_extent_dirty(struct extent_io_tree *tree, u64 start,
 		     u64 end, gfp_t mask);
 int clear_extent_dirty(struct extent_io_tree *tree, u64 start,
 		       u64 end, gfp_t mask);
-int extent_buffer_uptodate(struct extent_buffer *eb);
-int set_extent_buffer_uptodate(struct extent_buffer *eb);
-int clear_extent_buffer_uptodate(struct extent_io_tree *tree,
-				struct extent_buffer *eb);
-int set_state_private(struct extent_io_tree *tree, u64 start, u64 private);
-int get_state_private(struct extent_io_tree *tree, u64 start, u64 *private);
+static inline int set_extent_buffer_uptodate(struct extent_buffer *eb)
+{
+	eb->flags |= EXTENT_UPTODATE;
+	return 0;
+}
+
+static inline int clear_extent_buffer_uptodate(struct extent_io_tree *tree,
+				struct extent_buffer *eb)
+{
+	eb->flags &= ~EXTENT_UPTODATE;
+	return 0;
+}
+
+static inline int extent_buffer_uptodate(struct extent_buffer *eb)
+{
+	if (!eb || IS_ERR(eb))
+		return 0;
+	if (eb->flags & EXTENT_UPTODATE)
+		return 1;
+	return 0;
+}
+
+int set_state_private(struct extent_io_tree *tree, u64 start, u64 xprivate);
+int get_state_private(struct extent_io_tree *tree, u64 start, u64 *xprivate);
 struct extent_buffer *find_extent_buffer(struct extent_io_tree *tree,
 					 u64 bytenr, u32 blocksize);
 struct extent_buffer *find_first_extent_buffer(struct extent_io_tree *tree,
 					       u64 start);
 struct extent_buffer *alloc_extent_buffer(struct extent_io_tree *tree,
 					  u64 bytenr, u32 blocksize);
+struct extent_buffer *btrfs_clone_extent_buffer(struct extent_buffer *src);
 void free_extent_buffer(struct extent_buffer *eb);
-int read_extent_from_disk(struct extent_buffer *eb);
+int read_extent_from_disk(struct extent_buffer *eb,
+			  unsigned long offset, unsigned long len);
 int write_extent_to_disk(struct extent_buffer *eb);
 int memcmp_extent_buffer(struct extent_buffer *eb, const void *ptrv,
 			 unsigned long start, unsigned long len);
@@ -106,12 +144,16 @@ void write_extent_buffer(struct extent_buffer *eb, const void *src,
 void copy_extent_buffer(struct extent_buffer *dst, struct extent_buffer *src,
 			unsigned long dst_offset, unsigned long src_offset,
 			unsigned long len);
-void memcpy_extent_buffer(struct extent_buffer *dst, unsigned long dst_offset,
-			  unsigned long src_offset, unsigned long len);
 void memmove_extent_buffer(struct extent_buffer *dst, unsigned long dst_offset,
 			   unsigned long src_offset, unsigned long len);
 void memset_extent_buffer(struct extent_buffer *eb, char c,
 			  unsigned long start, unsigned long len);
+int extent_buffer_test_bit(struct extent_buffer *eb, unsigned long start,
+			   unsigned long nr);
 int set_extent_buffer_dirty(struct extent_buffer *eb);
 int clear_extent_buffer_dirty(struct extent_buffer *eb);
+int read_data_from_disk(struct btrfs_fs_info *info, void *buf, u64 offset,
+			u64 bytes, int mirror);
+int write_data_to_disk(struct btrfs_fs_info *info, void *buf, u64 offset,
+		       u64 bytes, int mirror);
 #endif
