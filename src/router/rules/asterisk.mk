@@ -211,9 +211,6 @@ asterisk-install:
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.a
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.la
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.so*
-ifneq ($(CONFIG_E2FSPROGS_ADV),y)
-	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.so*
-endif
 	rm -rf $(INSTALLDIR)/util-linux/bin
 	rm -rf $(INSTALLDIR)/util-linux/sbin
 	rm -f $(INSTALLDIR)/util-linux/lib/libmount.so*
