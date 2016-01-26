@@ -107,7 +107,7 @@ void __flush_dcache_page(struct page *page)
 	 * get faulted into the tlb (and thus flushed) anyways.
 	 */
 	if (PageHighMem(page)) {
-		flush_highmem_page(page)
+		flush_highmem_page(page);
 	} else {
 		addr = (void *) page_address(page);
 		flush_data_cache_page((unsigned long)addr);
