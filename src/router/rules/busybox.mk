@@ -412,7 +412,13 @@ endif
 	echo "# CONFIG_FEATURE_MOUNT_OTHERTAB is not set" >> busybox/.config
 	echo "CONFIG_FEATURE_IP_ROUTE_DIR=\"/etc/iproute2\"" >> busybox/.config
 	sed -i 's/\# CONFIG_ASH_OPTIMIZE_FOR_SIZE is not set/CONFIG_ASH_OPTIMIZE_FOR_SIZE=y/g' busybox/.config
-
+ifeq ($(CONFIG_TFTP),y)
+	sed -i 's/\# CONFIG_TFTP is not set/CONFIG_TFTP=y/g' busybox/.config
+	sed -i 's/\# CONFIG_FEATURE_TFTP_GET is not set/CONFIG_FEATURE_TFTP_GET=y/g' busybox/.config
+	sed -i 's/\# CONFIG_FEATURE_TFTP_PUT is not set/CONFIG_FEATURE_TFTP_PUT=y/g' busybox/.config
+	sed -i 's/\# CONFIG_FEATURE_TFTP_PROGRESS_BAR is not set/CONFIG_FEATURE_TFTP_PROGRESS_BAR=y/g' busybox/.config
+	sed -i 's/\# CONFIG_FEATURE_TFTP_BLOCKSIZE is not set/CONFIG_FEATURE_TFTP_BLOCKSIZE=y/g' busybox/.config
+endif
 	cd busybox && make oldconfig
 	
 	$(MAKE) -j 4 -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox
