@@ -32,6 +32,10 @@ btrfsprogs-clean:
 	make -C btrfsprogs clean
 
 btrfsprogs-install:	
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.a
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.so*
+	rm -f $(TOP)/util-linux/.libs/libuuid.a
+	rm -f $(TOP)/util-linux/.libs/libblkid.so*
 	-make -C btrfsprogs install DESTDIR=$(INSTALLDIR)/btrfsprogs prefix=/usr
 	-rm -rf $(INSTALLDIR)/btrfsprogs/usr/include
 	-rm -rf $(INSTALLDIR)/btrfsprogs/usr/lib

@@ -22,7 +22,7 @@ util-linux-install:
 	make -C util-linux
 	make -C util-linux install DESTDIR=$(INSTALLDIR)/util-linux
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.a
-	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.a
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.so*
 	rm -f $(TOP)/util-linux/.libs/libuuid.a
 	rm -f $(TOP)/util-linux/.libs/libblkid.a
 
