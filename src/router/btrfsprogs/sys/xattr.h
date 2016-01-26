@@ -20,7 +20,15 @@
 
 #include <features.h>
 #include <sys/types.h>
-
+#ifndef __THROW
+#define __THROW
+#endif
+#ifndef __BEGIN_DECLS
+#define __BEGIN_DECLS
+#endif
+#ifndef __END_DECLS
+#define __END_DECLS
+#endif
 
 __BEGIN_DECLS
 
