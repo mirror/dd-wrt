@@ -202,13 +202,21 @@ asterisk-install:
 	rm -rf $(INSTALLDIR)/util-linux/usr/bin
 	rm -rf $(INSTALLDIR)/util-linux/usr/share
 	rm -rf $(INSTALLDIR)/util-linux/usr/include
-	rm -rf $(INSTALLDIR)/util-linux/usr/lib
+	rm -rf $(INSTALLDIR)/util-linux/usr/lib/pkgconfig
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount*
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libfdisk*
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libsmartcols*
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.a
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.la
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.a
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.la
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.so*
+ifneq ($(CONFIG_E2FSPROGS_ADV),y)
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.so*
+endif
 	rm -rf $(INSTALLDIR)/util-linux/bin
 	rm -rf $(INSTALLDIR)/util-linux/sbin
 	rm -f $(INSTALLDIR)/util-linux/lib/libmount.so*
-ifneq ($(CONFIG_E2FSPROGS_ADV),y)
-	rm -f $(INSTALLDIR)/util-linux/lib/libblkid.so*
-endif
 	rm -f $(INSTALLDIR)/util-linux/lib/libfdisk.so*
 	rm -f $(INSTALLDIR)/util-linux/lib/libsmartcols.so*
 
