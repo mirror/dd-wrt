@@ -163,6 +163,9 @@ php5-install:
 ifeq ($(CONFIG_PHPCMD),y)
 	install -D php5/sapi/cli/.libs/php $(INSTALLDIR)/php5/usr/bin/php
 endif
+ifneq ($(CONFIG_PHPCGI),y)
+	install -D php5/sapi/cli/.libs/php $(INSTALLDIR)/php5/usr/bin/php
+endif
 ifeq ($(CONFIG_PHPCGI),y)
 	install -D php5/sapi/cgi/.libs/php-cgi $(INSTALLDIR)/php5/usr/bin/php-cgi
 	mkdir -p $(INSTALLDIR)/php5/etc
