@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r2792 | BrainSlayer | 2016-01-26 12:55:16 +0100 (Tue, 26 Jan 2016) | 1 line
+
+init default values for eeprom swapping. this can explain issues with AR928x devices
+------------------------------------------------------------------------
 r2791 | BrainSlayer | 2016-01-24 16:18:10 +0100 (Sun, 24 Jan 2016) | 1 line
 
 delete older compat wireless trees
