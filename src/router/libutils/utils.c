@@ -984,6 +984,7 @@ int check_vlan_support(void)
 #else
 
 	int brand = getRouterBrand();
+	sysprintf("echo 1  brand %d>> /tmp/debuglog", brand);
 
 	switch (brand) {
 #ifndef HAVE_BUFFALO
@@ -1012,14 +1013,21 @@ int check_vlan_support(void)
 	}
 
 	unsigned long boardflags = strtoul(nvram_safe_get("boardflags"), NULL, 0);
+	sysprintf("echo 2  flags %d>> /tmp/debuglog", boardflags);
 
 	if (boardflags & BFL_ENETVLAN)
 		return 1;
 
-	if (nvram_match("boardtype", "bcm94710dev")
-	    || nvram_match("boardtype", "0x0101") || (boardflags & 0x0100))
+	sysprintf("echo 3  flags %d>> /tmp/debuglog", boardflags);
+	if (nvram_match("boardtype", "bcm94710dev")) 
 		return 1;
-	else
+	sysprintf("echo 4  flags %d>> /tmp/debuglog", boardflags);
+	if (nvram_match("boardtype", "0x0101")) 
+		return 1;
+	sysprintf("echo 5  flags %d>> /tmp/debuglog", boardflags);
+	if (boardflags & 0x0100) 
+		return 1;
+
 		return 0;
 #endif
 }
