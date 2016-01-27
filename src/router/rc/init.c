@@ -530,6 +530,7 @@ int main(int argc, char **argv)
 	case ROUTER_WRT350N:
 	case ROUTER_BUFFALO_WZRG144NH:
 	case ROUTER_DELL_TRUEMOBILE_2300_V2:
+	case ROUTER_WRT54G1X:
 		start_service_force("config_vlan");
 		break;
 	case ROUTER_UBNT_UNIFIAC:
