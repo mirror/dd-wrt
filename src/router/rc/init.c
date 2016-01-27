@@ -519,7 +519,6 @@ int main(int argc, char **argv)
 	 */
 	boardflags = strtoul(nvram_safe_get("boardflags"), NULL, 0);
 	nvram_set("wanup", "0");
-	sysprintf("echo 1 >> /tmp/debuglog");
 #ifndef HAVE_RB500
 	switch (brand) {
 	case ROUTER_WRT600N:
@@ -531,19 +530,15 @@ int main(int argc, char **argv)
 	case ROUTER_WRT350N:
 	case ROUTER_BUFFALO_WZRG144NH:
 	case ROUTER_DELL_TRUEMOBILE_2300_V2:
-	sysprintf("echo 2 >> /tmp/debuglog");
 		start_service_force("config_vlan");
 		break;
 	case ROUTER_UBNT_UNIFIAC:
-	sysprintf("echo 3 >> /tmp/debuglog");
 		nvram_set("vlan1ports", "0 8*");
 		nvram_set("vlan2ports", "1 8");
 		start_service_force("config_vlan");
 		break;
 	default:
-	sysprintf("echo 4 >> /tmp/debuglog");
 		if (check_vlan_support()) {
-			sysprintf("echo 5 >> /tmp/debuglog");
 			start_service_force("config_vlan");
 		}
 		break;
