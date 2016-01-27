@@ -6726,10 +6726,10 @@ int insmod(char *module)
 {
 	static char word[256];
 	char *next, *wordlist;
-	int ret;
+	int ret = 0;
 	wordlist = module;
 	foreach(word, wordlist, next) {
-		_evalpid((char *[]) {
+		ret |= _evalpid((char *[]) {
 			 "insmod", word, NULL}, ">/dev/null", 0, NULL);
 	}
 	return ret;
