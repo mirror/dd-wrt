@@ -76,7 +76,7 @@ struct ra_msg {
         struct icmp6hdr		icmph;
 	__be32			reachable_time;
 	__be32			retrans_timer;
-} __attribute__((packed, aligned(2)));
+} MIPS_ENABLED(__attribute__((packed, aligned(2))));
 
 struct rd_msg {
 	struct icmp6hdr icmph;

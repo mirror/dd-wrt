@@ -68,7 +68,8 @@ struct arpt_arp {
 	__u8 flags;
 	/* Inverse flags */
 	__u16 invflags;
-};
+} MIPS_ENABLED( __attribute__((aligned(4))));
+
 
 /* Values for "flag" field in struct arpt_ip (general arp structure).
  * No flags defined yet.
