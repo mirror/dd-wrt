@@ -127,18 +127,18 @@ int main(int argc, char **argv)
 				}
 			}
 #elif HAVE_RT2880
-			if (nvram_match("wifi_display","wl0")) {
-			nvram_set("wl0_mode", nvram_safe_get("wl0_oldmode"));
-			sysprintf("startservice configurewifi");
-			if (nvram_match("wl0_mode", "sta") || nvram_match("wl0_mode", "apsta")) {
-				sysprintf("startstop wan");
-			}
-			}else{
-			nvram_set("wl1_mode", nvram_safe_get("wl1_oldmode"));
-			sysprintf("startservice configurewifi");
-			if (nvram_match("wl1_mode", "sta") || nvram_match("wl1_mode", "apsta")) {
-				sysprintf("startstop wan");
-			}
+			if (nvram_match("wifi_display", "wl0")) {
+				nvram_set("wl0_mode", nvram_safe_get("wl0_oldmode"));
+				sysprintf("startservice configurewifi");
+				if (nvram_match("wl0_mode", "sta") || nvram_match("wl0_mode", "apsta")) {
+					sysprintf("startstop wan");
+				}
+			} else {
+				nvram_set("wl1_mode", nvram_safe_get("wl1_oldmode"));
+				sysprintf("startservice configurewifi");
+				if (nvram_match("wl1_mode", "sta") || nvram_match("wl1_mode", "apsta")) {
+					sysprintf("startstop wan");
+				}
 			}
 #else
 			oldMonitor = 0;
@@ -175,25 +175,25 @@ int main(int argc, char **argv)
 	}
 
 #elif HAVE_RT2880
-	if (nvram_match("wifi_display","wl0")) {
-	nvram_set("wl0_oldmode", nvram_safe_get("wl0_mode"));
-	nvram_set("wl0_mode", "sta");
-	if (!nvram_match("wl0_oldmode", "sta"))
-		sysprintf("startservice configurewifi");
-	sysprintf("iwconfig ra0 mode monitor");
+	if (nvram_match("wifi_display", "wl0")) {
+		nvram_set("wl0_oldmode", nvram_safe_get("wl0_mode"));
+		nvram_set("wl0_mode", "sta");
+		if (!nvram_match("wl0_oldmode", "sta"))
+			sysprintf("startservice configurewifi");
+		sysprintf("iwconfig ra0 mode monitor");
 	} else {
-	nvram_set("wl1_oldmode", nvram_safe_get("wl1_mode"));
-	nvram_set("wl1_mode", "sta");
-	if (!nvram_match("wl1_oldmode", "sta"))
-		sysprintf("startservice configurewifi");
-	sysprintf("iwconfig ba0 mode monitor");
-	
+		nvram_set("wl1_oldmode", nvram_safe_get("wl1_mode"));
+		nvram_set("wl1_mode", "sta");
+		if (!nvram_match("wl1_oldmode", "sta"))
+			sysprintf("startservice configurewifi");
+		sysprintf("iwconfig ba0 mode monitor");
+
 	}
 	cfg.readFromWl = 1;
 #else
 #ifdef HAVE_ATH9K
 	if (is_ath9k(nvram_safe_get("wifi_display"))) {
-		sysprintf("iw phy phy%d interface add %s type monitor", get_ath9k_phy_ifname(nvram_safe_get("wifi_display")),get_monitor());
+		sysprintf("iw phy phy%d interface add %s type monitor", get_ath9k_phy_ifname(nvram_safe_get("wifi_display")), get_monitor());
 		sysprintf("ifconfig %s up", get_monitor());
 	}
 #endif
@@ -409,10 +409,10 @@ void reloadConfig()
 						set_channel(wl_dev, cfg->curChannel);
 //          sysprintf("iwconfig %s channel %d\n",wl_dev,cfg->curChannel);
 #elif HAVE_RT2880
-						if (nvram_match("wifi_display","wl0"))
-						sysprintf("iwpriv ra0 set Channel=%d", cfg->curChannel);
+						if (nvram_match("wifi_display", "wl0"))
+							sysprintf("iwpriv ra0 set Channel=%d", cfg->curChannel);
 						else
-						sysprintf("iwpriv ba0 set Channel=%d", cfg->curChannel);
+							sysprintf("iwpriv ba0 set Channel=%d", cfg->curChannel);
 #else
 						if (wl_ioctl(wl_dev, WLC_SET_CHANNEL, &cfg->curChannel, 4) < 0) {
 							printf("Channel set to %i failed\n", cfg->curChannel);
@@ -932,12 +932,12 @@ void readWL(wiviz_cfg * cfg)
 	if (!nonzeromac(mac))
 		return;
 #ifdef HAVE_RT2880
-	if (nvram_match("wifi_display","wl0")) {
-	if (nvram_match("ap", "wl0_oldmode"))
-		ap = 1;
-	}else{
-	if (nvram_match("ap", "wl1_oldmode"))
-		ap = 1;
+	if (nvram_match("wifi_display", "wl0")) {
+		if (nvram_match("ap", "wl0_oldmode"))
+			ap = 1;
+	} else {
+		if (nvram_match("ap", "wl1_oldmode"))
+			ap = 1;
 	}
 #else
 	if (nvram_nmatch("ap", "%s_mode", wl_dev))
@@ -951,14 +951,14 @@ void readWL(wiviz_cfg * cfg)
 		host->isSelf = 1;
 #if defined(HAVE_MADWIFI) || defined(HAVE_RT2880)
 #ifdef HAVE_RT2880
-		
-	if (nvram_match("wifi_display","wl0")) {
-		strcpy(host->apInfo->ssid, nvram_safe_get("wl0_ssid"));
-		ether_atoe(nvram_safe_get("wl0_hwaddr"), buf);
-	} else {
-		strcpy(host->apInfo->ssid, nvram_safe_get("wl1_ssid"));
-		ether_atoe(nvram_safe_get("wl1_hwaddr"), buf);
-	}
+
+		if (nvram_match("wifi_display", "wl0")) {
+			strcpy(host->apInfo->ssid, nvram_safe_get("wl0_ssid"));
+			ether_atoe(nvram_safe_get("wl0_hwaddr"), buf);
+		} else {
+			strcpy(host->apInfo->ssid, nvram_safe_get("wl1_ssid"));
+			ether_atoe(nvram_safe_get("wl1_hwaddr"), buf);
+		}
 		host->apInfo->ssidlen = strlen(host->apInfo->ssid);
 		memcpy(host->apInfo->bssid, buf, 6);
 #else
@@ -977,7 +977,7 @@ void readWL(wiviz_cfg * cfg)
 #ifdef HAVE_MADWIFI
 		host->apInfo->channel = wifi_getchannel(wl_dev);
 #elif HAVE_RT2880
-		if (nvram_match("wifi_display","wl0"))
+		if (nvram_match("wifi_display", "wl0"))
 			host->apInfo->channel = atoi(nvram_safe_get("wl0_channel"));
 		else
 			host->apInfo->channel = atoi(nvram_safe_get("wl1_channel"));
