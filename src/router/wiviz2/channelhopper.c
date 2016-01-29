@@ -37,11 +37,10 @@
 #include "channelhopper.h"
 #include "structs.h"
 
+void ch_sig_handler(int i)
+{
 
-
-void ch_sig_handler(int i) {
-
-  }
+}
 
 #ifdef HAVE_MADWIFI
 #define IEEE80211_CHAN_2GHZ 1
@@ -83,90 +82,93 @@ u_int ieee80211_ieee2mhz(u_int chan, u_int flags)
 
 char *get_monitor(void);
 
-int set_channel(char *dev,int channel)
+int set_channel(char *dev, int channel)
 {
-    struct iwreq wrq;
+	struct iwreq wrq;
 #ifdef HAVE_ATH9K
-    int flags=0;
+	int flags = 0;
 	if (is_ath9k(nvram_safe_get("wifi_display"))) {
-    		if (channel>14) flags=2;
-    		else flags=1;
-		sysprintf("iw dev %s scan freq %d passive",dev,ieee80211_ieee2mhz(channel,flags));
-	}
-	else
+		if (channel > 14)
+			flags = 2;
+		else
+			flags = 1;
+		sysprintf("iw dev %s scan freq %d passive", dev, ieee80211_ieee2mhz(channel, flags));
+	} else
 #endif
-   {
-    memset( &wrq, 0, sizeof( struct iwreq ) );
-    strncpy( wrq.ifr_name, get_monitor(), IFNAMSIZ );
-    if (channel>14)
-	wrq.u.freq.m = (double) ieee80211_ieee2mhz(channel,2) * 100000;
-    else
-	wrq.u.freq.m = (double) ieee80211_ieee2mhz(channel,1) * 100000;
-    wrq.u.freq.e = (double) 1;
-    
-    if( ioctl( getsocket(), SIOCSIWFREQ, &wrq ) < 0 )
-    {
-	return -1;
+	{
+		memset(&wrq, 0, sizeof(struct iwreq));
+		strncpy(wrq.ifr_name, get_monitor(), IFNAMSIZ);
+		if (channel > 14)
+			wrq.u.freq.m = (double)ieee80211_ieee2mhz(channel, 2) * 100000;
+		else
+			wrq.u.freq.m = (double)ieee80211_ieee2mhz(channel, 1) * 100000;
+		wrq.u.freq.e = (double)1;
+
+		if (ioctl(getsocket(), SIOCSIWFREQ, &wrq) < 0) {
+			return -1;
 //        usleep( 10000 ); /* madwifi needs a second chance */
 
 //        if( ioctl( getsocket(), SIOCSIWFREQ, &wrq ) < 0 )
 //        {
 //            return;
 //        }
-    }
+		}
+	}
+	return 0;
 }
-return 0;
+#endif
+void channelHopper(wiviz_cfg * cfg)
+{
+	int hopPos;
+	int nc;
+
+	//Turn off signal handling from parent process
+	signal(SIGUSR1, &ch_sig_handler);
+	signal(SIGUSR2, &ch_sig_handler);
+
+	//Start hoppin'!
+	hopPos = 0;
+	printf("set hop %d\n", nc);
+	while (1) {
+		int hop = cfg->channelHopSeq[hopPos];
+		if (hop == 0)
+			nc++;
+		else {
+			nc = hop;
+			hopPos = (hopPos + 1) % cfg->channelHopSeqLen;
+		}
+#ifdef HAVE_MADWIFI
+		if (nc > 255)
+			nc = 1;
+#elif HAVE_RT2880
+		if (nc > 14)
+			nc = 1;
+#else
+		if (nc > 255)
+			nc = 1;
+#endif
+		//Set the channel
+#ifdef HAVE_MADWIFI
+		{
+			printf("set channel %d\n", nc);
+			int ret = set_channel(nvram_safe_get("wifi_display"), nc);
+			if (ret == -1)
+				continue;
+		}
+#elif HAVE_RT2880
+		if (nvram_match("wifi_display", "wl0"))
+			sysprintf("iwpriv ra0 set Channel=%d", nc);
+		else
+			sysprintf("iwpriv ba0 set Channel=%d", nc);
+
+#else
+		char tmp[32];
+		sprintf(tmp, "%s_ifname", nvram_safe_get("wifi_display"));
+		char *wl_dev = nvram_safe_get(tmp);
+		if (wl_ioctl(wl_dev, WLC_SET_CHANNEL, &nc, 4) < 0)
+			continue;
+#endif
+		//Sleep
+		usleep(cfg->channelDwellTime * 1000);
+	}
 }
-#endif
-void channelHopper(wiviz_cfg * cfg) {
-  int hopPos;
-  int nc;
-
-  //Turn off signal handling from parent process
-  signal(SIGUSR1, &ch_sig_handler);
-  signal(SIGUSR2, &ch_sig_handler);
-
-  //Start hoppin'!
-  hopPos = 0;
-    printf("set hop %d\n",nc);
-  while (1) {
-    int hop = cfg->channelHopSeq[hopPos];
-    if (hop==0)
-	nc++;
-    else
-    {
-    nc = hop;
-    hopPos = (hopPos + 1) % cfg->channelHopSeqLen;
-    }
-#ifdef HAVE_MADWIFI
-    if (nc>255)nc=1;
-#elif HAVE_RT2880
-    if (nc>14)nc=1;
-#else
-    if (nc>255)nc=1;
-#endif
-    //Set the channel
-#ifdef HAVE_MADWIFI
-   {
-    printf("set channel %d\n",nc);
-    int ret = set_channel(nvram_safe_get("wifi_display"),nc);
-    if (ret==-1)
-	continue;
-   }
-#elif HAVE_RT2880
-    if (nvram_match("wifi_display","wl0")) 
-    sysprintf("iwpriv ra0 set Channel=%d",nc);
-    else
-    sysprintf("iwpriv ba0 set Channel=%d",nc);
-    
-#else
-    char tmp[32];
-    sprintf( tmp, "%s_ifname", nvram_safe_get( "wifi_display" ) );
-    char *wl_dev = nvram_safe_get( tmp );
-    if (wl_ioctl(wl_dev, WLC_SET_CHANNEL, &nc, 4)<0)
-	continue;
-#endif
-    //Sleep
-    usleep(cfg->channelDwellTime * 1000);
-    }
-  }
