@@ -83,7 +83,7 @@ enum {
 /* Internet address. */
 struct in_addr {
 	__be32	s_addr;
-} __attribute__((packed, aligned(2)));
+} MIPS_ENABLED(__attribute__((packed, aligned(2))));
 #endif
 
 #define IP_TOS		1
