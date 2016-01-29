@@ -35,15 +35,13 @@
 
 #include "wl_access.h"
 
-
-
 #ifndef HAVE_MADWIFI
 
 #ifdef HAVE_RT2880
 
 char *get_monitor(void)
 {
-return getRADev(nvram_safe_get("wifi_display"));
+	return getRADev(nvram_safe_get("wifi_display"));
 }
 
 #else
@@ -52,7 +50,7 @@ int wl_ioctl(char *name, int cmd, void *buf, int len)
 	struct ifreq ifr;
 	wl_ioctl_t ioc;
 	int ret = 0;
- 	int s;
+	int s;
 
 	/* open socket to kernel */
 	if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
@@ -65,7 +63,7 @@ int wl_ioctl(char *name, int cmd, void *buf, int len)
 	ioc.buf = buf;
 	ioc.len = len;
 	strncpy(ifr.ifr_name, name, IFNAMSIZ);
-	ifr.ifr_data = (caddr_t) &ioc;
+	ifr.ifr_data = (caddr_t) & ioc;
 	ret = ioctl(s, SIOCDEVPRIVATE, &ifr);
 
 	/* cleanup */
@@ -75,14 +73,13 @@ int wl_ioctl(char *name, int cmd, void *buf, int len)
 #endif
 #else
 
-
-
-char *get_monitor(void) {
+char *get_monitor(void)
+{
 	char *ifname = nvram_safe_get("wifi_display");
 	int devcount;
-	sscanf( ifname, "ath%d", &devcount );
+	sscanf(ifname, "ath%d", &devcount);
 	static char mon[32];
-	sprintf(mon,"mon%d",devcount);
+	sprintf(mon, "mon%d", devcount);
 	return mon;
 }
 #endif
@@ -91,7 +88,7 @@ int get_mac(char *name, void *buf)
 {
 	struct ifreq ifr;
 	int ret = 0;
- 	int s;
+	int s;
 
 	/* open socket to kernel */
 	if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
@@ -102,7 +99,7 @@ int get_mac(char *name, void *buf)
 	strncpy(ifr.ifr_name, name, IFNAMSIZ);
 	//ifr.ifr_data = (caddr_t) buf;
 	if ((ret = ioctl(s, SIOCGIFHWADDR, &ifr)) < 0)
-			perror(ifr.ifr_name);
+		perror(ifr.ifr_name);
 
 	/* cleanup */
 	close(s);
