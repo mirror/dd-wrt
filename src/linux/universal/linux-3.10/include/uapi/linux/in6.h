@@ -36,7 +36,7 @@ struct in6_addr {
 #define s6_addr			in6_u.u6_addr8
 #define s6_addr16		in6_u.u6_addr16
 #define s6_addr32		in6_u.u6_addr32
-} __attribute__((packed, aligned(2)));
+} MIPS_ENABLED(__attribute__((packed, aligned(2))));
 
 struct sockaddr_in6 {
 	unsigned short int	sin6_family;    /* AF_INET6 */

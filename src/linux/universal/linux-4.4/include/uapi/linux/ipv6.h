@@ -129,7 +129,7 @@ struct ipv6hdr {
 
 	struct	in6_addr	saddr;
 	struct	in6_addr	daddr;
-} __packed __attribute__((aligned(2)));
+} MIPS_ENABLED(__packed __attribute__((aligned(2))));
 
 
 /* index values for the variables in ipv6_devconf */
