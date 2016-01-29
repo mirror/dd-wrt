@@ -239,7 +239,7 @@ struct net_hdr_word {
 
 #define net_hdr_word(_p) (((struct net_hdr_word *) (_p))->words[0])
 #else
-#define net_hdr_word(_p) *((u32*)(_p)
+#define net_hdr_word(_p) (*((u32 *)_p))
 #endif
 
 #ifdef CONFIG_MIPS
