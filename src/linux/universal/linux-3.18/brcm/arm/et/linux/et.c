@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: et.c 474170 2014-04-30 08:52:19Z $
+ * $Id: et.c 549959 2015-04-17 12:30:47Z $
  */
 
 #include <stdio.h>
@@ -103,8 +103,10 @@ main(int ac, char *av[])
 	if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
 		syserr("socket");
 
-	if (interface)
+	if (interface) {
 		strncpy(ifr.ifr_name, interface, sizeof(ifr.ifr_name));
+		ifr.ifr_name[sizeof(ifr.ifr_name)-1] = '\0';
+	}
 	else
 		et_find(s, &ifr);
 
@@ -128,6 +130,7 @@ main(int ac, char *av[])
 			syserr("etcloop");
 	} else if ((strcmp(av[optind], "dump") == 0) && (optind == (ac - 1))) {
 		DUMP_BUF_ALLOC(dbuf_alloc, dbuf, dbuf_len);
+		var.set = 0;
 		var.cmd = IOV_DUMP;
 		var.buf = dbuf;
 		var.len = dbuf_len;
@@ -648,7 +651,7 @@ static void
 et_find(int s, struct ifreq *ifr)
 {
 	char proc_net_dev[] = "/proc/net/dev";
-	FILE *fp;
+	FILE *fp = NULL;
 	char buf[512], *c, *name;
 
 	ifr->ifr_name[0] = '\0';
@@ -657,7 +660,7 @@ et_find(int s, struct ifreq *ifr)
 	if (!(fp = fopen(proc_net_dev, "r")) ||
 	    !fgets(buf, sizeof(buf), fp) ||
 	    !fgets(buf, sizeof(buf), fp))
-		return;
+		goto done;
 
 	while (fgets(buf, sizeof(buf), fp)) {
 		c = buf;
@@ -668,12 +671,15 @@ et_find(int s, struct ifreq *ifr)
 		if (!strncmp(name, "aux", 3))
 			continue;
 		strncpy(ifr->ifr_name, name, IFNAMSIZ);
+		ifr->ifr_name[IFNAMSIZ-1] = '\0';
 		if (et_check(s, ifr) == 0)
 			break;
 		ifr->ifr_name[0] = '\0';
 	}
 
-	fclose(fp);
+done:
+	if (fp)
+		fclose(fp);
 }
 
 static int

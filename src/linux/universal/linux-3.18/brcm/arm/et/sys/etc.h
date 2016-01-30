@@ -16,7 +16,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: etc.h 468275 2014-04-07 05:21:13Z $
+ * $Id: etc.h 578047 2015-08-10 07:47:45Z $
  */
 
 #ifndef _etc_h_
@@ -103,6 +103,7 @@ typedef struct etc_info {
 	uint		rxlazy_timeout; /* rxlazy timeout configuration */
 	uint		rxlazy_framecnt; /* rxlazy framecount configuration */
 
+	int         hwrxoff;	/* HW RXOFFSET */
 	int         pktcbnd;	/* max # of packets to chain */
 	int         quota;		/* max # of packets to recv */
 
@@ -197,6 +198,7 @@ typedef struct etc_info {
 #ifdef ETFA
 	void		*fa;		/* optional fa private data */
 #endif
+	uint32		rxrecord;
 } etc_info_t;
 
 typedef struct et_sw_port_info {
@@ -244,7 +246,12 @@ typedef struct et_sw_port_info {
  * Must be >= size of largest rxhdr
  * Must be 2-mod-4 aligned so IP is 0-mod-4
  */
-#define	HWRXOFF		30
+#define	HWRXOFF				30
+
+/* In GMAC3 mode, the fwder GMAC uses a smaller HWRXOFF so as to ensure that
+ * the DMA(s)LAN and WLAN are aligned to 32B boundaries
+ */
+#define GMAC_FWDER_HWRXOFF	18
 
 #define TC_BK		0	/* background traffic class */
 #define TC_BE		1	/* best effort traffic class */
