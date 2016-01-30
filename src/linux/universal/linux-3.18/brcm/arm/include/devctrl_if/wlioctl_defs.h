@@ -135,7 +135,8 @@
 #define WL_STA_RIFS_CAP		0x00080000	/* rifs enabled */
 #define WL_STA_VHT_CAP		0x00100000	/* STA VHT(11ac) capable */
 #define WL_STA_WPS		0x00200000	/* WPS state */
-
+#define WL_STA_DWDS_CAP		0x01000000	/* DWDS CAP */
+#define WL_STA_DWDS		0x02000000	/* DWDS active */
 #define WL_WDS_LINKUP		WL_STA_WDS_LINKUP	/* deprecated */
 
 /* STA HT cap fields */
@@ -1025,8 +1026,9 @@
 #define ACPHY_ACI_HWACI_PKTGAINLMT 2      /* bit 1 */
 #define ACPHY_ACI_W2NB_PKTGAINLMT 4       /* bit 2 */
 #define ACPHY_ACI_PREEMPTION 8            /* bit 3 */
-#define ACPHY_HWACI_MITIGATION 16            /* bit 4 */
-#define ACPHY_ACI_MAX_MODE 31
+#define ACPHY_HWACI_MITIGATION 16         /* bit 4 */
+#define ACPHY_LPD_PREEMPTION 32           /* bit 5 */
+#define ACPHY_ACI_MAX_MODE 63
 
 /* AP environment */
 #define AP_ENV_DETECT_NOT_USED		0 /* We aren't using AP environment detection */
@@ -1218,7 +1220,8 @@
 #define	WL_LED_NUMBEHAVIOR	25
 
 /* led behavior numeric value format */
-#define	WL_LED_BEH_MASK		0x7f		/* behavior mask */
+#define	WL_LED_BEH_MASK		0x3f		/* behavior mask */
+#define	WL_LED_PMU_OVERRIDE	0x40		/* need to set PMU Override bit for the GPIO */
 #define	WL_LED_AL_MASK		0x80		/* activelow (polarity) bit */
 
 /* number of bytes needed to define a proper bit mask for MAC event reporting */
@@ -1256,13 +1259,19 @@
  */
 #define SPECT_MNGMT_LOOSE_11H_D		4		/* operation defined above */
 
-#define WL_CHAN_VALID_HW	(1 << 0)	/* valid with current HW */
-#define WL_CHAN_VALID_SW	(1 << 1)	/* valid with current country setting */
-#define WL_CHAN_BAND_5G		(1 << 2)	/* 5GHz-band channel */
-#define WL_CHAN_RADAR		(1 << 3)	/* radar sensitive  channel */
-#define WL_CHAN_INACTIVE	(1 << 4)	/* temporarily inactive due to radar */
-#define WL_CHAN_PASSIVE		(1 << 5)	/* channel is in passive mode */
-#define WL_CHAN_RESTRICTED	(1 << 6)	/* restricted use channel */
+/* bit position in per_chan_info; these depend on current country/regulatory domain */
+#define WL_CHAN_VALID_HW		(1 << 0)	/* valid with current HW */
+#define WL_CHAN_VALID_SW		(1 << 1)	/* valid with current country setting */
+#define WL_CHAN_BAND_5G			(1 << 2)	/* 5GHz-band channel */
+#define WL_CHAN_RADAR			(1 << 3)	/* radar sensitive channel */
+#define WL_CHAN_INACTIVE		(1 << 4)	/* temporarily inactive due to radar */
+#define WL_CHAN_PASSIVE			(1 << 5)	/* channel is in passive mode */
+#define WL_CHAN_RESTRICTED		(1 << 6)	/* restricted use channel */
+#define WL_CHAN_RADAR_EU_WEATHER	(1 << 7)	/* EU Radar weather channel. Implies an
+							 * EU Radar channel.
+							 */
+/* following definition is for precommit; will be removed once wl, acsd switch to the new def */
+#define WL_CHAN_WEATHER_RADAR		WL_CHAN_RADAR_EU_WEATHER
 
 /* BTC mode used by "btc_mode" iovar */
 #define	WL_BTC_DISABLE		0	/* disable BT coexistence */

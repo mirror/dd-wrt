@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: bcmutils.h 476411 2014-05-08 17:07:45Z $
+ * $Id: bcmutils.h 547946 2015-04-10 02:11:19Z $
  */
 
 #ifndef	_bcmutils_h_
@@ -1004,6 +1004,14 @@ DECLARE_MAP_API(4,  3, 2,  7U, 0x000F) /* setbit4() and getbit4() */
 								((uint32)addr & 0x0000ff00) >> 8, \
 								((uint32)addr & 0x000000ff)
 
+#if !defined(SIMPLE_MAC_PRINT)
+#define MACDBG "%02x:%02x:%02x:%02x:%02x:%02x"
+#define MAC2STRDBG(ea) (ea)[0], (ea)[1], (ea)[2], (ea)[3], (ea)[4], (ea)[5]
+#else
+#define MACDBG				"%02x:%02x:%02x"
+#define MAC2STRDBG(ea) (ea)[0], (ea)[4], (ea)[5]
+#endif /* SIMPLE_MAC_PRINT */
+
 /* bcm_format_flags() bit description structure */
 typedef struct bcm_bit_desc {
 	uint32	bit;
@@ -1082,9 +1090,49 @@ typedef struct bcm_tlv {
 	uint8	data[1];
 } bcm_tlv_t;
 
-#define BCM_TLV_MAX_DATA_SIZE (255)
+/* packing is required if struct is passed across the bus */
+#include <packed_section_start.h>
+/* bcm tlv w/ 16 bit id/len */
+typedef BWL_PRE_PACKED_STRUCT struct bcm_xtlv {
+	uint16	id;
+	uint16	len;
+	uint8	data[1];
+} BWL_POST_PACKED_STRUCT bcm_xtlv_t;
+#include <packed_section_end.h>
 
+
+/* descriptor of xtlv data src or dst  */
+typedef struct {
+	uint16	type;
+	uint16	len;
+	void	*ptr; /* ptr to memory location */
+} xtlv_desc_t;
+
+/* xtlv options */
+#define BCM_XTLV_OPTION_NONE	0x0000
+#define BCM_XTLV_OPTION_ALIGN32	0x0001
+
+typedef uint16 bcm_xtlv_opts_t;
+struct bcm_xtlvbuf {
+	bcm_xtlv_opts_t opts;
+	uint16 size;
+	uint8 *head; /* point to head of buffer */
+	uint8 *buf; /* current position of buffer */
+	/* allocated buffer may follow, but not necessarily */
+};
+typedef struct bcm_xtlvbuf bcm_xtlvbuf_t;
+
+#define BCM_TLV_MAX_DATA_SIZE (255)
+#define BCM_XTLV_MAX_DATA_SIZE (65535)
 #define BCM_TLV_HDR_SIZE (OFFSETOF(bcm_tlv_t, data))
+
+#define BCM_XTLV_HDR_SIZE (OFFSETOF(bcm_xtlv_t, data))
+/* LEN only stores the value's length without padding */
+#define BCM_XTLV_LEN(elt) ltoh16_ua(&(elt->len))
+#define BCM_XTLV_ID(elt) ltoh16_ua(&(elt->id))
+/* entire size of the XTLV including header, data, and optional padding */
+#define BCM_XTLV_SIZE(elt, opts) bcm_xtlv_size(elt, opts)
+#define bcm_valid_xtlv(elt, buflen, opts) (elt && ((int)(buflen) >= (int)BCM_XTLV_SIZE(elt, opts)))
 
 /* Check that bcm_tlv_t fits into the given buflen */
 #define bcm_valid_tlv(elt, buflen) (\
@@ -1104,6 +1152,68 @@ extern uint8 *bcm_write_tlv_safe(int type, const void *data, int datalen, uint8 
 
 extern uint8 *bcm_copy_tlv(const void *src, uint8 *dst);
 extern uint8 *bcm_copy_tlv_safe(const void *src, uint8 *dst, int dst_maxlen);
+
+/* xtlv */
+
+/* return the next xtlv element, and update buffer len (remaining). Buffer length
+ * updated includes padding as specified by options
+ */
+extern bcm_xtlv_t *bcm_next_xtlv(bcm_xtlv_t *elt, int *buflen, bcm_xtlv_opts_t opts);
+
+/* initialize an xtlv buffer. Use options specified for packing/unpacking using
+ * the buffer. Caller is responsible for allocating both buffers.
+ */
+extern int bcm_xtlv_buf_init(bcm_xtlvbuf_t *tlv_buf, uint8 *buf, uint16 len,
+	bcm_xtlv_opts_t opts);
+
+extern uint16 bcm_xtlv_buf_len(struct bcm_xtlvbuf *tbuf);
+extern uint16 bcm_xtlv_buf_rlen(struct bcm_xtlvbuf *tbuf);
+extern uint8 *bcm_xtlv_buf(struct bcm_xtlvbuf *tbuf);
+extern uint8 *bcm_xtlv_head(struct bcm_xtlvbuf *tbuf);
+extern int bcm_xtlv_put_data(bcm_xtlvbuf_t *tbuf, uint16 type, const void *data, uint16 dlen);
+extern int bcm_xtlv_put_8(bcm_xtlvbuf_t *tbuf, uint16 type, const int8 data);
+extern int bcm_xtlv_put_16(bcm_xtlvbuf_t *tbuf, uint16 type, const int16 data);
+extern int bcm_xtlv_put_32(bcm_xtlvbuf_t *tbuf, uint16 type, const int32 data);
+extern int bcm_unpack_xtlv_entry(uint8 **buf, uint16 xpct_type, uint16 xpct_len,
+	void *dst, bcm_xtlv_opts_t opts);
+extern int bcm_pack_xtlv_entry(uint8 **buf, uint16 *buflen, uint16 type, uint16 len,
+	void *src, bcm_xtlv_opts_t opts);
+extern int bcm_xtlv_size(const bcm_xtlv_t *elt, bcm_xtlv_opts_t opts);
+
+/* callback for unpacking xtlv from a buffer into context. */
+typedef int (bcm_xtlv_unpack_cbfn_t)(void *ctx, uint8 *buf, uint16 type, uint16 len);
+
+/* unpack a tlv buffer using buffer, options, and callback */
+extern int bcm_unpack_xtlv_buf(void *ctx, uint8 *buf, uint16 buflen,
+	bcm_xtlv_opts_t opts, bcm_xtlv_unpack_cbfn_t *cbfn);
+
+/* unpack a set of tlvs from the buffer using provided xtlv desc */
+extern int bcm_unpack_xtlv_buf_to_mem(void *buf, int *buflen, xtlv_desc_t *items,
+	bcm_xtlv_opts_t opts);
+
+/* pack a set of tlvs into buffer using provided xtlv desc */
+extern int bcm_pack_xtlv_buf_from_mem(void **buf, uint16 *buflen, xtlv_desc_t *items,
+	bcm_xtlv_opts_t opts);
+
+/* return data pointer of a given ID from xtlv buffer
+ * xtlv data length is given to *datalen_out, if the pointer is valid
+ */
+extern void *bcm_get_data_from_xtlv_buf(uint8 *tlv_buf, uint16 buflen, uint16 id,
+	uint16 *datalen_out, bcm_xtlv_opts_t opts);
+
+/* callback to return next tlv id and len to pack, if there is more tlvs to come and
+ * options e.g. alignment
+ */
+typedef bool (*bcm_pack_xtlv_next_info_cbfn_t)(void *ctx, uint16 *tlv_id, uint16 *tlv_len);
+
+/* callback to pack the tlv into length validated buffer */
+typedef void (*bcm_pack_xtlv_pack_next_cbfn_t)(void *ctx,
+	uint16 tlv_id, uint16 tlv_len, uint8* buf);
+
+/* pack a set of tlvs into buffer using get_next to interate */
+int bcm_pack_xtlv_buf(void *ctx, void *tlv_buf, uint16 buflen,
+	bcm_xtlv_opts_t opts, bcm_pack_xtlv_next_info_cbfn_t get_next,
+	bcm_pack_xtlv_pack_next_cbfn_t pack_next, int *outlen);
 
 /* bcmerror */
 extern const char *bcmerrorstr(int bcmerror);

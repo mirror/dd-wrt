@@ -26,12 +26,14 @@
 #include <bcmendian.h>
 #include <bcmnvram.h>
 #include <sbsdram.h>
-#include <linux/vmalloc.h>
+
+extern void *MMALLOC(size_t size);
+extern void MMFREE(void *addr);
 
 #ifdef MAX_NVRAM_SPACE
 // nothign
 
-#elif NVRAM_SPACE_256
+#elif defined(NVRAM_SPACE_256)
 #define MAX_NVRAM_SPACE NVRAMSIZEREAL
 #define DEF_NVRAM_SPACE NVRAMSIZEREAL
 extern int NVRAMSIZEREAL;
@@ -102,7 +104,7 @@ BCMINITFN(nvram_rehash)(struct nvram_header *header)
 {
 	char buf[] = "0xXXXXXXXX", *name, *value, *end, *eq;
 	char *nvram_space_str = _nvram_get("nvram_space");
-	unsigned long nvram_space = MAX_NVRAM_SPACE;
+	unsigned long nvram_space = DEF_NVRAM_SPACE; // default, not max
 
 	if (nvram_space_str)
 		nvram_space =  bcm_strtoul(nvram_space_str, NULL, 0);
@@ -270,7 +272,6 @@ BCMINITFN(_nvram_commit)(struct nvram_header *header)
 
 	if (nvram_space < DEF_NVRAM_SPACE)
 		nvram_space = DEF_NVRAM_SPACE;
-
 	/* Regenerate header */
 	header->magic = NVRAM_MAGIC;
 	header->crc_ver_init = (NVRAM_VERSION << 8);
@@ -326,7 +327,7 @@ BCMINITFN(_nvram_init)(void *sih)
 	int ret;
 	printk(KERN_INFO "max nvram space = %d\n",MAX_NVRAM_SPACE);
 
-	if (!(header = (struct nvram_header *) vmalloc(MAX_NVRAM_SPACE))) {
+	if (!(header = (struct nvram_header *) MMALLOC(MAX_NVRAM_SPACE))) {
 		printf("nvram_init: out of memory\n");
 		return -12; /* -ENOMEM */
 	}
@@ -335,7 +336,7 @@ BCMINITFN(_nvram_init)(void *sih)
 	    header->magic == NVRAM_MAGIC)
 		nvram_rehash(header);
 
-	vfree(header);
+	MMFREE(header);
 	return ret;
 }
 

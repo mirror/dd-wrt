@@ -1811,7 +1811,7 @@ fa_et_up(fa_t *fa)
 	/* Enable AUX and et_up */
 	if (aux_dev) {
 		robo_fa_aux_enable(fai->robo, TRUE);
-		et_up(aux_dev->et);
+		et_fa_up(aux_dev->et);
 	}
 }
 
