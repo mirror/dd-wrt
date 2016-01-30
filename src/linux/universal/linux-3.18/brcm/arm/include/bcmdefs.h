@@ -15,11 +15,12 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: bcmdefs.h 493132 2014-07-25 05:06:17Z $
+ * $Id: bcmdefs.h 549999 2015-04-17 16:16:58Z $
  */
 
 #ifndef	_bcmdefs_h_
 #define	_bcmdefs_h_
+
 /*
  * One doesn't need to include this file explicitly, gets included automatically if
  * typedefs.h is included.
@@ -294,7 +295,7 @@ typedef struct  {
  */
 #define MAX_DMA_SEGS 32
 #elif defined(linux)
-#define MAX_DMA_SEGS 8
+#define MAX_DMA_SEGS 32
 #else
 #define MAX_DMA_SEGS 4
 #endif

@@ -1,3 +1,5 @@
+
+
 #
 #  Top level Makerules
 #  it uses Makerules.env for build env vars and optional branding.inc
@@ -16,7 +18,10 @@
 #  OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 #  CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #
-# $Id: Makerules 484261 2014-06-12 21:28:48Z $
+#
+#  <<Broadcom-WL-IPTag/Open:>>
+#
+# $Id: Makerules 530004 2015-01-29 00:08:18Z $
 
 # This is the TOP level makefile rules, which is used by many makefiles.
 # Please be cautious on changes, especially compatibilities.
@@ -76,15 +81,18 @@ ifeq ($(TARGETOS), unix)
 	ifeq ($(TARGETARCH), arm_android)
 		GCDEFS	:= $(GCDEFS) -D_ARM_
 	endif
+	ifeq ($(TARGETARCH), arm64_android)
+		GCDEFS	:= $(GCDEFS) -D_ARM_
+	endif
 	ifeq ($(TARGETARCH), arm_android_ndk_r6b)
 		GCDEFS	:= $(GCDEFS) -D_ARM_
 	endif
 
-	ifeq ($(TARGETENV), freebsd)
-		ifeq ($(HOSTENV), freebsd)
-			GCINCS	:= $(GCINCS) -I/usr/include
-		endif
-	endif
+#	ifeq ($(TARGETENV), freebsd)
+#		ifeq ($(HOSTENV), freebsd)
+#			GCINCS	:= $(GCINCS) -I/usr/include
+#		endif
+#	endif
 	ifeq ($(TARGETENV), sun4)
 		GCDEFS	:= $(GCDEFS) -D_SPARC_
 	endif
@@ -145,12 +153,8 @@ ifeq ($(TARGETOS), unix)
 		TARGET_PREFIX = arm-linux-
 	else
 	ifeq ($(TARGETENV), android)
-		TARGET_PREFIX = arm-eabi-
-		GCFLAGS += -Dlinux
-		GCFLAGS += -I/projects/hnd/tools/linux/hndtools-arm-eabi-4.2.1/android-ndk-r3/build/platforms/android-3/arch-arm/usr/include
-#		GCFLAGS += -I/projects/hnd/tools/linux/hndtools-arm-eabi-4.2.1/arm-eabi/include/bionic/libc/include
-#		GCFLAGS += -I/projects/hnd/tools/linux/hndtools-arm-eabi-4.2.1/arm-eabi/include/bionic/libc/arch-arm/include/
-		GCFLAGS += -I/tools/linux/src/linux-2.6.25-01843-gfea26b0/include/
+		TARGET_PREFIX ?= arm-eabi-
+		GCFLAGS += -Dlinux -DTARGETENV_android
 	else
 	ifeq ($(TARGETENV), android_ndk_r6b)
 		#TARGET_PREFIX = arm-linux-androideabi-
@@ -202,6 +206,9 @@ $(warning : LINUXDIR is not set!)
 	TCFLAGS =
 
 	ifeq ($(TARGETENV), freebsd)
+		GLDFLAGS = -static
+	endif
+	ifeq ($(TARGETENV), freebsd_be)
 		GLDFLAGS = -static
 	endif
 	ifeq ($(TARGETENV), linuxarm)

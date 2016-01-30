@@ -242,7 +242,7 @@ struct net_hdr_word {
 #define net_hdr_word(_p) (*((u32 *)_p))
 #endif
 
-#ifdef CONFIG_MIPS
+#ifdef CONFIG_MACH_AR7100
 #define MIPS_ENABLED(a) a
 #else
 #define MIPS_ENABLED(a)

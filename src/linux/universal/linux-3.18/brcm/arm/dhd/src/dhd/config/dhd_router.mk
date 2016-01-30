@@ -26,18 +26,13 @@ ifeq ($(WLTEST),1)
 endif
 #endif
 
-
-#ifdef BCMDBG_MEM
-ifeq ($(BCMDBG_MEM),1)
-    DHDFLAGS += -DBCMDBG_MEM
+#ifdef BCMDBG
+ifeq ($(BCMDBG),1)
+    DHDFLAGS += -DBCMDBG
 endif
 #endif
 
-#ifdef BCMDBG_ASSERT
-ifeq ($(BCMDBG_ASSERT),1)
-    DHDFLAGS += -DBCMDBG_ASSERT
-endif
-#endif
+
 
 ifeq ($(BCMQT),1)
     DHDFLAGS += -DBCMSLTGT -DBCMQT
@@ -57,11 +52,24 @@ DHDFLAGS        += -DBCM_ROUTER_DHD
 DHDFLAGS        += -DDHD_DEBUG
 DHDFLAGS        += -DBCMEMBEDIMAGE=\"rtecdc_router.h\"
 DHDFLAGS        += -DDHD_UNICAST_DHCP
-DHDFLAGS	   	+= -DDHD_L2_FILTER
-DHDFLAGS		+= -DDHD_PSTA
+DHDFLAGS        += -DDHD_L2_FILTER
+DHDFLAGS        += -DQOS_MAP_SET
+DHDFLAGS        += -DDHD_PSTA
+DHDFLAGS        += -DDHD_WET
+DHDFLAGS        += -DDHD_MCAST_REGEN
+
+#M2M host memory allocation
+DHDFLAGS		+= -DBCM_HOST_MEM_SCB -DDMA_HOST_BUFFER_LEN=0x80000
+
 ifeq ($(BCM_BUZZZ),1)
 DHDFLAGS        += -DBCM_BUZZZ
 endif
+
+# Dongle DMAs indices to from TCM.
+# If BCM_INDX_DMA is defined, then dongle MUST support DMAing of indices.
+# When not defined, DHD learns dongle's DMAing capability and adopts the
+# advertized RD/WR index size.
+# DHDFLAGS        += -DBCM_INDX_DMA
 
 # WMF Specific Flags
 #ifneq ($(CONFIG_EMF_ENABLED),)
@@ -79,6 +87,7 @@ DHDIFLAGS       += -I$(SRCBASE_DHD)/shared/bcmwifi/include
 DHDIFLAGS       += -I$(SRCBASE_DHD)/dhd/sys
 DHDIFLAGS       += -I$(SRCBASE_DHD)/dongle/include
 DHDIFLAGS       += -I$(SRCBASE_DHD)/wl/sys
+
 
 # DHD Source files - For pciefd-msgbuf target
 DHDFILES_SRC    := src/shared/aiutils.c
@@ -110,6 +119,7 @@ DHDFILES_SRC    += src/dhd/sys/dhd_wmf_linux.c
 #endif
 DHDFILES_SRC    += src/dhd/sys/dhd_l2_filter.c
 DHDFILES_SRC    += src/dhd/sys/dhd_psta.c
+DHDFILES_SRC    += src/dhd/sys/dhd_wet.c
 
 DHD_OBJS := $(sort $(patsubst %.c,%.o,$(addprefix $(SRCBASE_OFFSET)/,$(patsubst src/%,%,$(DHDFILES_SRC)))))
 
