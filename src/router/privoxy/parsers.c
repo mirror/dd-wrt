@@ -1,11 +1,11 @@
-const char parsers_rcs[] = "$Id: parsers.c,v 1.298 2015/01/24 16:41:51 fabiankeil Exp $";
+const char parsers_rcs[] = "$Id: parsers.c,v 1.307 2016/01/17 14:31:47 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/parsers.c,v $
  *
  * Purpose     :  Declares functions to parse/crunch headers and pages.
  *
- * Copyright   :  Written by and Copyright (C) 2001-2014 the
+ * Copyright   :  Written by and Copyright (C) 2001-2016 the
  *                Privoxy team. http://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -436,7 +436,9 @@ jb_err decompress_iob(struct client_state *csp)
        * This is to protect the parsing of gzipped data,
        * but it should(?) be valid for deflated data also.
        */
-      log_error(LOG_LEVEL_ERROR, "Buffer too small decompressing iob");
+      log_error(LOG_LEVEL_ERROR,
+         "Insufficient data to start decompression. Bytes in buffer: %d",
+         csp->iob->eod - csp->iob->cur);
       return JB_ERR_COMPRESS;
    }
 
@@ -2370,8 +2372,7 @@ static jb_err server_content_encoding(struct client_state *csp, char **header)
       /*
        * Log a warning if the user expects the content to be filtered.
        */
-      if ((csp->rlist != NULL) &&
-         (!list_is_empty(csp->action->multi[ACTION_MULTI_FILTER])))
+      if (content_filters_enabled(csp->action))
       {
          log_error(LOG_LEVEL_INFO,
             "Compressed content detected, content filtering disabled. "
@@ -3285,6 +3286,13 @@ static jb_err client_host(struct client_state *csp, char **header)
 {
    char *p, *q;
 
+   if (strlen(*header) < 7)
+   {
+      log_error(LOG_LEVEL_HEADER, "Removing empty Host header");
+      freez(*header);
+      return JB_ERR_OK;
+   }
+
    if (!csp->http->hostport || (*csp->http->hostport == '*') ||
        *csp->http->hostport == ' ' || *csp->http->hostport == '\0')
    {
@@ -3598,9 +3606,8 @@ static jb_err client_host_adder(struct client_state *csp)
 
    if (!csp->http->hostport || !*(csp->http->hostport))
    {
-      /* XXX: When does this happen and why is it OK? */
-      log_error(LOG_LEVEL_INFO, "Weirdness in client_host_adder detected and ignored.");
-      return JB_ERR_OK;
+      log_error(LOG_LEVEL_ERROR, "Destination host unknown.");
+      return JB_ERR_PARSE;
    }
 
    /*
@@ -4400,6 +4407,8 @@ jb_err get_destination_from_headers(const struct list *headers, struct http_requ
    char *p;
    char *host;
 
+   assert(!http->ssl);
+
    host = get_header_value(headers, "Host:");
 
    if (NULL == host)
@@ -4425,12 +4434,12 @@ jb_err get_destination_from_headers(const struct list *headers, struct http_requ
    }
    else
    {
-      http->port = http->ssl ? 443 : 80;
+      http->port = 80;
    }
 
    /* Rebuild request URL */
    freez(http->url);
-   http->url = strdup(http->ssl ? "https://" : "http://");
+   http->url = strdup("http://");
    string_append(&http->url, http->hostport);
    string_append(&http->url, http->path);
    if (http->url == NULL)
@@ -4438,8 +4447,25 @@ jb_err get_destination_from_headers(const struct list *headers, struct http_requ
       return JB_ERR_MEMORY;
    }
 
-   log_error(LOG_LEVEL_HEADER, "Destination extracted from \"Host:\" header. New request URL: %s",
+   log_error(LOG_LEVEL_HEADER,
+      "Destination extracted from \"Host\" header. New request URL: %s",
       http->url);
+
+   /*
+    * Regenerate request line in "proxy format"
+    * to make rewrites more convenient.
+    */
+   assert(http->cmd != NULL);
+   freez(http->cmd);
+   http->cmd = strdup_or_die(http->gpc);
+   string_append(&http->cmd, " ");
+   string_append(&http->cmd, http->url);
+   string_append(&http->cmd, " ");
+   string_append(&http->cmd, http->ver);
+   if (http->cmd == NULL)
+   {
+      return JB_ERR_MEMORY;
+   }
 
    return JB_ERR_OK;
 

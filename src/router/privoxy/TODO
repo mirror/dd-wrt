@@ -1,4 +1,4 @@
-$Id: TODO,v 1.130 2014/12/19 12:36:06 fabiankeil Exp $
+$Id: TODO,v 1.141 2016/01/21 15:57:30 fabiankeil Exp $
 
 Some Privoxy-related tasks, sorted by the time they
 have been added, not by priority.
@@ -47,6 +47,8 @@ http://www.privoxy.org/faq/general.html#DONATE
 11) CGI templates should use semantically-correct HTML
     and scale properly.
 
+    Work in progress.
+
 12) Support pipelining for outgoing connections.
 
 14) Allow to filter POST parameters.
@@ -62,6 +64,8 @@ http://www.privoxy.org/faq/general.html#DONATE
 
     This should be good enough for most of the content the
     user would want to filter.
+
+    Interested donors: 1.
 
 19) enable-forward-fallback. Syntax? Suggested by K.R.
 
@@ -378,10 +382,13 @@ http://www.privoxy.org/faq/general.html#DONATE
      Interested donors: 1.
 
 132) Provide a Tor hidden service to reach the Privoxy website.
+     Work in progress: http://jvauzb4sb3bwlsnc.onion/
+     This hidden service serves a copy of the www.privoxy.org content
+     (filtered through Privoxy to replace some absolute URLs).
      Interested donors: 1.
 
 133) Consider allowing bitcoin donations.
-     Interested donors: 1.
+     Interested donors: 2.
 
 134) Track the total number of bytes written to and received from a socket.
 
@@ -399,6 +406,47 @@ http://www.privoxy.org/faq/general.html#DONATE
      They have been unusable for years and have thus been disabled,
      but making the reporting mechanism available again would be a
      good idea.
+
+140) Toggling Privoxy off currently also disables stuff that
+     probably shouldn't be affected (such as actions like
+     forward-override). Investigate and fix or document.
+
+141) Port Privoxy to CloudABI, which, despite the name, is actually
+     rather neet. https://github.com/NuxiNL/cloudlibc
+
+142) Remove or update the "internal" pcre version.
+
+143) Add support for OpenBSD's pledge feature once it's stablelized.
+     This should be a lot less work then #124.
+
+144) Allow Privoxy admins to pre-define tags that are be set for
+     clients that previously opted-in through the CGI interface.
+
+     This would be useful in multi-user setups where admins may
+     want to allow users to disable certain actions and filters
+     for themselves without affecting others.
+
+     Even in single-user setups this could be useful to allow
+     more fine-grained toggling. For example to disable request
+     blocking while still crunching cookies, or to disable
+     experimental filters only.
+
+     Interested donors: 1.
+
+145) Once #144 is implemented, allow clients to opt-in to the
+     tagging for a limited amount of time (or number of requests).
+
+     Interested donors: 1.
+
+146) Once #144 is implemented, optionally allow to save the opt-in
+     status to disk.
+
+147) Improve "Building from Source" section in the user manual.
+     A common problem seems to be that it's not obvious to non-technical
+     users how the listed dependencies can be installed on the commonly
+     used platforms. Adding a couple of examples should also be useful for
+     technical users (like Privoxy developers) who want to install or test
+     Privoxy on platforms they are not familiar with.
 
 ##########################################################################
 

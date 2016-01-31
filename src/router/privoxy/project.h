@@ -1,7 +1,7 @@
 #ifndef PROJECT_H_INCLUDED
 #define PROJECT_H_INCLUDED
 /** Version string. */
-#define PROJECT_H_VERSION "$Id: project.h,v 1.209 2014/11/16 18:43:48 fabiankeil Exp $"
+#define PROJECT_H_VERSION "$Id: project.h,v 1.212 2016/01/16 12:30:43 fabiankeil Exp $"
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/project.h,v $
@@ -642,7 +642,7 @@ struct url_actions
 };
 
 enum forwarder_type {
-   /**< Don't use a SOCKS server               */
+   /**< Don't use a SOCKS server, forward to a HTTP proxy directly */
    SOCKS_NONE =  0,
    /**< original SOCKS 4 protocol              */
    SOCKS_4    = 40,
@@ -652,6 +652,12 @@ enum forwarder_type {
    SOCKS_5    = 50,
    /**< Like SOCKS5, but uses non-standard Tor extensions (currently only optimistic data) */
    SOCKS_5T,
+   /**<
+    * Don't use a SOCKS server, forward to the specified webserver.
+    * The difference to SOCKS_NONE is that a request line without
+    * full URL is sent.
+    */
+   FORWARD_WEBSERVER,
 };
 
 /*
@@ -859,13 +865,13 @@ struct reusable_connection
  */
 
 /**
- * Flag for process return code: Set if exiting porcess has been toggled
+ * Flag for process return code: Set if exiting process has been toggled
  * during its lifetime.
  */
 #define RC_FLAG_TOGGLED   0x10
 
 /**
- * Flag for process return code: Set if exiting porcess has blocked its
+ * Flag for process return code: Set if exiting process has blocked its
  * request.
  */
 #define RC_FLAG_BLOCKED   0x20

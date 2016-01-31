@@ -13,11 +13,11 @@
 <!entity p-authors SYSTEM "p-authors.sgml">
 <!entity config SYSTEM "p-config.sgml">
 <!entity changelog SYSTEM "changelog.sgml">
-<!entity p-version "3.0.22">
-<!entity p-status "UNRELEASED">
+<!entity p-version "3.0.24">
+<!entity p-status "stable">
 <!entity % p-authors-formal "INCLUDE"> <!-- include additional text, etc  -->
-<!entity % p-not-stable "INCLUDE">
-<!entity % p-stable "IGNORE">
+<!entity % p-not-stable "IGNORE">
+<!entity % p-stable "INCLUDE">
 <!entity % p-text "IGNORE">        <!-- define we are not a text only doc -->
 <!entity % p-doc "INCLUDE">        <!-- and we are a formal doc           -->
 <!entity % p-readme "IGNORE">
@@ -36,7 +36,7 @@
                 This file belongs into
                 ijbswa.sourceforge.net:/home/groups/i/ij/ijbswa/htdocs/
 
- $Id: user-manual.sgml,v 2.194 2014/10/21 15:30:52 fabiankeil Exp $
+ $Id: user-manual.sgml,v 2.199 2016/01/21 15:55:49 fabiankeil Exp $
 
  Copyright (C) 2001-2014 Privoxy Developers http://www.privoxy.org/
  See LICENSE.
@@ -62,7 +62,7 @@
  </subscript>
 </pubdate>
 
-<pubdate>$Id: user-manual.sgml,v 2.194 2014/10/21 15:30:52 fabiankeil Exp $</pubdate>
+<pubdate>$Id: user-manual.sgml,v 2.199 2016/01/21 15:55:49 fabiankeil Exp $</pubdate>
 
 <!--
 
@@ -2778,7 +2778,7 @@ for details.
   <term>Type:</term>
   <!-- boolean, parameterized, Multi-value -->
   <listitem>
-   <para>Parameterized.</para>
+   <para>Multi-value.</para>
   </listitem>
  </varlistentry>
 
@@ -2865,7 +2865,7 @@ for details.
   <term>Type:</term>
   <!-- boolean, parameterized, Multi-value -->
   <listitem>
-   <para>Parameterized.</para>
+   <para>Multi-value.</para>
   </listitem>
  </varlistentry>
 
@@ -3616,7 +3616,7 @@ problem-host.example.com</screen>
   <term>Type:</term>
   <!-- boolean, parameterized, Multi-value -->
   <listitem>
-   <para>Parameterized.</para>
+   <para>Multi-value.</para>
   </listitem>
  </varlistentry>
 
@@ -3828,7 +3828,7 @@ problem-host.example.com</screen>
   <term>Type:</term>
   <!-- boolean, parameterized, Multi-value -->
   <listitem>
-   <para>Parameterized.</para>
+   <para>Multi-value.</para>
   </listitem>
  </varlistentry>
 
@@ -4145,7 +4145,7 @@ new action
   <term>Type:</term>
   <!-- Boolean, Parameterized, Multi-value -->
   <listitem>
-   <para>Multi-value.</para>
+   <para>Parameterized.</para>
   </listitem>
  </varlistentry>
 
@@ -4176,6 +4176,32 @@ new action
       Replace <quote>forward-socks4a</quote> with <quote>forward-socks4</quote> to use a socks4 connection
       (with local DNS resolution) instead, use <quote>forward-socks5</quote>
       for socks5 connections (with remote DNS resolution).
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      <quote>forward-webserver 127.0.0.1:80</quote> to use the HTTP
+      server listening at 127.0.0.1 port 80 without adjusting the
+      request headers.
+     </para>
+     <para>
+      This makes it more convenient to use Privoxy to make
+      existing websites available as onion services as well.
+     </para>
+     <para>
+      Many websites serve content with hardcoded URLs and
+      can't be easily adjusted to change the domain based
+      on the one used by the client.
+     </para>
+     <para>
+      Putting Privoxy between Tor and the webserver (or an stunnel
+      that forwards to the webserver) allows to rewrite headers and
+      content to make client and server happy at the same time.
+     </para>
+     <para>
+      Using Privoxy for webservers that are only reachable through
+      onion addresses and whose location is supposed to be secret
+      is not recommended and should not be necessary anyway.
      </para>
     </listitem>
    </itemizedlist>
@@ -5460,7 +5486,7 @@ www.privoxy.org/user-manual/</screen>
   <term>Type:</term>
   <!-- boolean, parameterized, Multi-value -->
   <listitem>
-   <para>Parameterized.</para>
+   <para>Multi-value.</para>
   </listitem>
  </varlistentry>
 
@@ -5543,7 +5569,7 @@ example.org/instance-that-is-delivered-as-xml-but-is-not
   <term>Type:</term>
   <!-- boolean, parameterized, Multi-value -->
   <listitem>
-   <para>Parameterized.</para>
+   <para>Multi-value.</para>
   </listitem>
  </varlistentry>
 

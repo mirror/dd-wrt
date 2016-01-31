@@ -1,4 +1,4 @@
-const char gateway_rcs[] = "$Id: gateway.c,v 1.93 2012/12/07 12:45:20 fabiankeil Exp $";
+const char gateway_rcs[] = "$Id: gateway.c,v 1.96 2016/01/16 12:30:43 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/gateway.c,v $
@@ -67,6 +67,7 @@ const char gateway_rcs[] = "$Id: gateway.c,v 1.93 2012/12/07 12:45:20 fabiankeil
 #include "gateway.h"
 #include "miscutil.h"
 #include "list.h"
+#include "parsers.h"
 
 #ifdef FEATURE_CONNECTION_KEEP_ALIVE
 #ifdef HAVE_POLL
@@ -634,6 +635,7 @@ jb_socket forwarded_connect(const struct forward_spec * fwd,
    switch (fwd->type)
    {
       case SOCKS_NONE:
+      case FORWARD_WEBSERVER:
          sfd = connect_to(dest_host, dest_port, csp);
          break;
       case SOCKS_4:
@@ -893,7 +895,7 @@ static const char *translate_socks5_error(int socks_error)
       case SOCKS5_REQUEST_NETWORK_UNREACHABLE:
          return "SOCKS5 network unreachable";
       case SOCKS5_REQUEST_HOST_UNREACHABLE:
-         return "SOCKS5 host unreachable";
+         return "SOCKS5 destination host unreachable";
       case SOCKS5_REQUEST_CONNECTION_REFUSED:
          return "SOCKS5 connection refused";
       case SOCKS5_REQUEST_TTL_EXPIRED:
@@ -1082,14 +1084,11 @@ static jb_socket socks5_connect(const struct forward_spec *fwd,
    }
 
    /*
-    * Optimistically send the request headers with the initial
-    * request if the user requested use of Tor extensions, the
-    * CONNECT method isn't being used (in which case the client
+    * Optimistically send the HTTP request with the initial
+    * SOCKS request if the user enabled the use of Tor extensions,
+    * the CONNECT method isn't being used (in which case the client
     * doesn't send data until it gets our 200 response) and the
-    * client request has been already read completely.
-    *
-    * Not optimistically sending the request body (if there is one)
-    * makes it easier to implement, but isn't an actual requirement.
+    * client request has actually been completely read already.
     */
    if ((fwd->type == SOCKS_5T) && (csp->http->ssl == 0)
       && (csp->flags & CSP_FLAG_CLIENT_REQUEST_COMPLETELY_READ))
@@ -1116,6 +1115,23 @@ static jb_socket socks5_connect(const struct forward_spec *fwd,
          return(JB_INVALID_SOCKET);
       }
       freez(client_headers);
+      if (csp->expected_client_content_length != 0)
+      {
+         unsigned long long buffered_request_bytes =
+            (unsigned long long)(csp->client_iob->eod - csp->client_iob->cur);
+         log_error(LOG_LEVEL_CONNECT,
+            "Optimistically sending %d bytes of client body. Expected %d",
+            csp->expected_client_content_length, buffered_request_bytes);
+         assert(csp->expected_client_content_length == buffered_request_bytes);
+         if (write_socket(sfd, csp->client_iob->cur, buffered_request_bytes))
+         {
+            log_error(LOG_LEVEL_CONNECT,
+               "optimistically writing %d bytes of client body to: %s failed: %E",
+               buffered_request_bytes, csp->http->hostport);
+            return(JB_INVALID_SOCKET);
+         }
+         clear_iob(csp->client_iob);
+      }
    }
 
    server_size = read_socket(sfd, sbuf, sizeof(sbuf));

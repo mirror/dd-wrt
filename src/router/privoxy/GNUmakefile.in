@@ -1,6 +1,6 @@
 # Note:  Makefile is built automatically from Makefile.in
 #
-# $Id: GNUmakefile.in,v 1.228 2014/10/21 15:31:16 fabiankeil Exp $
+# $Id: GNUmakefile.in,v 1.231 2015/12/27 12:50:57 fabiankeil Exp $
 #
 # Written by and Copyright (C) 2001-2014 members of the
 # Privoxy team. http://www.privoxy.org/
@@ -471,8 +471,8 @@ man: dok-release
 	mkdir -p doc/source/temp && cd doc/source/temp && $(RM) * ;\
 	nsgmls ../privoxy-man-page.sgml  | sgmlspl ../../../utils/docbook2man/docbook2man-spec.pl &&\
 	perl -pi.bak -e 's/ <URL:.*>//; s/\[ /\[/g' $(MAN_PAGE) ;\
-	perl -pi.bak -e "s/\[ /\[/g;s/á/\\\\['a]/g;s/é/\\\\['e]/g" $(MAN_PAGE); \
-	perl -pi.bak -e "s/ö/\\\\[:o]/g" $(MAN_PAGE); \
+	perl -pi.bak -e "s/\[ /\[/g;s/ï¿½/\\\\['a]/g;s/ï¿½/\\\\['e]/g" $(MAN_PAGE); \
+	perl -pi.bak -e "s/ï¿½/\\\\[:o]/g" $(MAN_PAGE); \
 	perl -pi.bak -e 's/([ {])-([a-z])/$$1\\-$$2/g' $(MAN_PAGE); \
 	perl -pi.bak -e 's/ --([a-z])/ \\-\\-$$1/g' $(MAN_PAGE); \
 	perl -pi.bak -e 's/\\fB--/\\fB\\-\\-/g' $(MAN_PAGE); \
@@ -587,15 +587,6 @@ generate-config-file:
 	$(W3M_DUMP) -cols 67 config.html > config
 	$(PERL) -i.bak utils/prepare-configfile.pl config
 
-# config file, alternate version using lynx (perl stuff unfinished). Lynx
-# does not do so good a job.
-config-file-alt:
-	cd doc/source && $(ECHO) -e ".h2 JUSTIFY\\nJUSTIFY:FALSE" > __tmp.lynx_cfg &&\
-	$(DB)-notoc -iconfig-file -V nochunks config.sgml > __tmp.html &&\
-	lynx -cfg=__tmp.lynx_cfg -width=78 -dump __tmp.html > ../../config.new && $(RM) -r __tmp.*
-	$(PERL) -pi -e 's/^(   )//;\
-	                s/:$\/:\n/' config.new
-
 #############################################################################
 #
 # Webserver
@@ -646,14 +637,20 @@ web-faq:
 	@$(ECHO) Enforcing reasonable permissions ...
 	@$(SSH) shell.sourceforge.net 'find $(WWW_ROOT)/htdocs/faq/ -type f | xargs chmod 664 2>/dev/null'
 
+web-user-manual:
+	@$(ECHO) Updating the user manual on the webserver (do not use in case of version changes) ...
+	@$(RSYNC) doc/webserver/user-manual/*.html shell.sourceforge.net:$(WWW_ROOT)/htdocs/user-manual/
+	@$(ECHO) Enforcing reasonable permissions ...
+	@$(SSH) shell.sourceforge.net 'find $(WWW_ROOT)/htdocs/user-manual/ -type f | xargs chmod 664 2>/dev/null'
+
 #############################################################################
 #
 # Try to clean up the generated HTML files.
 #
-# The files are a such a mess that some of them require two tidy runs
-# in row as the first abort prematurely. The vanilla tidy output renders
-# poorly as it contains a bit too much white-space, so we additionally run
-# the files through perl to fix this again.
+# The files are such a mess that some of them require two tidy runs in a
+# row as the first one aborts prematurely. The vanilla tidy output renders
+# poorly because it contains a bit too much whitespace, so we additionally
+# run the files through perl to fix this again.
 #
 #############################################################################
 dok-tidy:

@@ -1,4 +1,4 @@
-const char urlmatch_rcs[] = "$Id: urlmatch.c,v 1.85 2014/07/25 11:56:26 fabiankeil Exp $";
+const char urlmatch_rcs[] = "$Id: urlmatch.c,v 1.86 2015/12/27 12:47:17 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/urlmatch.c,v $
@@ -1281,6 +1281,7 @@ static int port_matches(const int port, const char *port_list)
 static int host_matches(const struct http_request *http,
                         const struct pattern_spec *pattern)
 {
+   assert(http->host != NULL);
 #ifdef FEATURE_EXTENDED_HOST_PATTERNS
    return ((NULL == pattern->pattern.url_spec.host_regex)
       || (0 == regexec(pattern->pattern.url_spec.host_regex, http->host, 0, NULL, 0)));

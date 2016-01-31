@@ -1,11 +1,11 @@
-const char filters_rcs[] = "$Id: filters.c,v 1.192 2014/10/18 11:30:24 fabiankeil Exp $";
+const char filters_rcs[] = "$Id: filters.c,v 1.199 2016/01/16 12:33:35 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/filters.c,v $
  *
  * Purpose     :  Declares functions to parse/crunch headers and pages.
  *
- * Copyright   :  Written by and Copyright (C) 2001-2014 the
+ * Copyright   :  Written by and Copyright (C) 2001-2016 the
  *                Privoxy team. http://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -386,13 +386,19 @@ int acl_addr(const char *aspec, struct access_control_addr *aca)
    {
       p = strchr(acl_spec, ':');
    }
+   if (p != NULL)
+   {
+      assert(*p == ':');
+      *p = '\0';
+      p++;
+   }
 
 #ifdef HAVE_RFC2553
    memset(&hints, 0, sizeof(struct addrinfo));
    hints.ai_family = AF_UNSPEC;
    hints.ai_socktype = SOCK_STREAM;
 
-   i = getaddrinfo(acl_spec, ((p) ? ++p : NULL), &hints, &result);
+   i = getaddrinfo(acl_spec, p, &hints, &result);
 
    if (i != 0)
    {
@@ -411,7 +417,6 @@ int acl_addr(const char *aspec, struct access_control_addr *aca)
    {
       char *endptr;
 
-      *p++ = '\0';
       port = strtol(p, &endptr, 10);
 
       if (port <= 0 || port > 65535 || *endptr != '\0')
@@ -1871,7 +1876,8 @@ static char *execute_external_filter(const struct client_state *csp,
       return NULL;
    }
 
-   filter_output = malloc_or_die(*size);
+   /* Allocate at least one byte */
+   filter_output = malloc_or_die(*size + 1);
 
    new_size = 0;
    while (!feof(fp) && !ferror(fp))
@@ -1885,7 +1891,7 @@ static char *execute_external_filter(const struct client_state *csp,
          char *p;
 
          /* Could be considered wasteful if the content is 'large'. */
-         *size = (*size != 0) ? *size * 2 : READ_LENGTH;
+         *size += (*size >= READ_LENGTH) ? *size : READ_LENGTH;
 
          p = realloc(filter_output, *size);
          if (p == NULL)
@@ -1896,6 +1902,7 @@ static char *execute_external_filter(const struct client_state *csp,
          }
          filter_output = p;
       }
+      assert(new_size + READ_LENGTH < *size);
       len = fread(&filter_output[new_size], 1, READ_LENGTH, fp);
       if (len > 0)
       {
@@ -2046,6 +2053,7 @@ static jb_err remove_chunked_transfer_coding(char *buffer, size_t *size)
    size_t newsize = 0;
    unsigned int chunksize = 0;
    char *from_p, *to_p;
+   const char *end_of_buffer = buffer + *size;
 
    assert(buffer);
    from_p = to_p = buffer;
@@ -2058,13 +2066,12 @@ static jb_err remove_chunked_transfer_coding(char *buffer, size_t *size)
 
    while (chunksize > 0U)
    {
-      if (NULL == (from_p = strstr(from_p, "\r\n")))
-      {
-         log_error(LOG_LEVEL_ERROR, "Parse error while stripping \"chunked\" transfer coding");
-         return JB_ERR_PARSE;
-      }
-
-      if (chunksize >= *size - newsize)
+      /*
+       * If the chunk-size is valid, we should have at least
+       * chunk-size bytes of chunk-data and five bytes of
+       * meta data (chunk-size, CRLF, CRLF) left in the buffer.
+       */
+      if (chunksize + 5 >= *size - newsize)
       {
          log_error(LOG_LEVEL_ERROR,
             "Chunk size %u exceeds buffered data left. "
@@ -2072,13 +2079,49 @@ static jb_err remove_chunked_transfer_coding(char *buffer, size_t *size)
             chunksize, (unsigned int)newsize, (unsigned int)*size);
          return JB_ERR_PARSE;
       }
-      newsize += chunksize;
+
+      /*
+       * Skip the chunk-size, the optional chunk-ext and the CRLF
+       * that is supposed to be located directly before the start
+       * of chunk-data.
+       */
+      if (NULL == (from_p = strstr(from_p, "\r\n")))
+      {
+         log_error(LOG_LEVEL_ERROR, "Parse error while stripping \"chunked\" transfer coding");
+         return JB_ERR_PARSE;
+      }
       from_p += 2;
 
-      memmove(to_p, from_p, (size_t) chunksize);
-      to_p = buffer + newsize;
-      from_p += chunksize + 2;
+      /*
+       * The previous strstr() does not enforce chunk-validity
+       * and is sattisfied as long a CRLF is left in the buffer.
+       *
+       * Make sure the bytes we consider chunk-data are within
+       * the valid range.
+       */
+      if (from_p + chunksize >= end_of_buffer)
+      {
+         log_error(LOG_LEVEL_ERROR,
+            "End of chunk is beyond the end of the buffer.");
+         return JB_ERR_PARSE;
+      }
 
+      memmove(to_p, from_p, (size_t) chunksize);
+      newsize += chunksize;
+      to_p = buffer + newsize;
+      from_p += chunksize;
+
+      /*
+       * Not merging this check with the previous one allows us
+       * to keep chunks without trailing CRLF. It's not clear
+       * if we actually have to care about those, though.
+       */
+      if (from_p + 2 >= end_of_buffer)
+      {
+         log_error(LOG_LEVEL_ERROR, "Not enough room for trailing CRLF.");
+         return JB_ERR_PARSE;
+      }
+      from_p += 2;
       if (sscanf(from_p, "%x", &chunksize) != 1)
       {
          log_error(LOG_LEVEL_INFO, "Invalid \"chunked\" transfer encoding detected and ignored.");
@@ -2396,6 +2439,14 @@ static const struct forward_spec *get_forward_override_settings(struct client_st
       fwd->type = SOCKS_NONE;
 
       /* Parse the parent HTTP proxy host:port */
+      http_parent = vec[1];
+
+   }
+   else if ((vec_count == 2) && !strcasecmp(vec[0], "forward-webserver"))
+   {
+      fwd->type = FORWARD_WEBSERVER;
+
+      /* Parse the parent HTTP server host:port */
       http_parent = vec[1];
 
    }

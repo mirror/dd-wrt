@@ -1,4 +1,4 @@
-const char cgisimple_rcs[] = "$Id: cgisimple.c,v 1.131 2014/10/18 11:28:49 fabiankeil Exp $";
+const char cgisimple_rcs[] = "$Id: cgisimple.c,v 1.132 2015/11/06 13:38:13 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/cgisimple.c,v $
@@ -970,7 +970,6 @@ jb_err cgi_show_status(struct client_state *csp,
 
 #ifdef FEATURE_CGI_EDIT_ACTIONS
          if ((csp->config->feature_flags & RUNTIME_FEATURE_CGI_EDIT_ACTIONS)
-            && (NULL == strstr(csp->actions_list[i]->filename, "standard.action"))
             && (NULL != csp->config->actions_file_short[i]))
          {
 #ifdef HAVE_ACCESS
