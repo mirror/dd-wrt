@@ -23,6 +23,7 @@
 #include <mach/cns3xxx.h>
 #include "core.h"
 
+#define IRQ_LOCALTIMER 29
 
 
 static struct map_desc cns3xxx_io_desc[] __initdata = {
@@ -326,13 +327,26 @@ void __init cns3xxx_timer_init(void)
 
 #ifdef CONFIG_CACHE_L2X0
 
-void __init cns3xxx_l2x0_init(void)
+static int cns3xxx_l2x0_enable = 1;
+
+static int __init cns3xxx_l2x0_disable(char *s)
 {
-	void __iomem *base = ioremap(CNS3XXX_L2C_BASE, SZ_4K);
+	cns3xxx_l2x0_enable = 0;
+	return 1;
+}
+__setup("nol2x0", cns3xxx_l2x0_disable);
+
+static int __init cns3xxx_l2x0_init(void)
+{
+	void __iomem *base;
 	u32 val;
 
+	if (!cns3xxx_l2x0_enable)
+		return 0;
+
+	base = ioremap(CNS3XXX_L2C_BASE, SZ_4K);
 	if (WARN_ON(!base))
-		return;
+		return 0;
 
 	/*
 	 * Tag RAM Control register
@@ -362,7 +376,10 @@ void __init cns3xxx_l2x0_init(void)
 
 	/* 32 KiB, 8-way, parity disable */
 	l2x0_init(base, 0x00500000, 0xfe0f0fff);
+
+	return 0;
 }
+arch_initcall(cns3xxx_l2x0_init);
 
 #endif /* CONFIG_CACHE_L2X0 */
 
