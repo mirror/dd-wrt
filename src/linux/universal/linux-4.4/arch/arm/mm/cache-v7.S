@@ -18,10 +18,6 @@
 
 #include "proc-macros.S"
 
-//#ifdef CONFIG_BCM47XX
-//	.section .text.fastpath, "a"
-//#endif
-
 /*
  * The secondary kernel init calls v7_flush_dcache_all before it enables
  * the L1; however, the L1 comes out of reset in an undefined state, so

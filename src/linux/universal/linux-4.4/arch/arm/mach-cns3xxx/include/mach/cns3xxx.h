@@ -532,6 +532,7 @@ int cns3xxx_cpu_clock(void);
 /*
  * ARM11 MPCore interrupt sources (primary GIC)
  */
+#define IRQ_TC11MP_GIC_START	32
 #define IRQ_CNS3XXX_PMU			(IRQ_TC11MP_GIC_START + 0)
 #define IRQ_CNS3XXX_SDIO		(IRQ_TC11MP_GIC_START + 1)
 #define IRQ_CNS3XXX_L2CC		(IRQ_TC11MP_GIC_START + 2)
