@@ -6,7 +6,7 @@
   <title>Actions Files</title>
   <meta name="GENERATOR" content=
   "Modular DocBook HTML Stylesheet Version 1.79">
-  <link rel="HOME" title="Privoxy 3.0.23 User Manual" href="index.html">
+  <link rel="HOME" title="Privoxy 3.0.24 User Manual" href="index.html">
   <link rel="PREVIOUS" title="The Main Configuration File" href=
   "config.html">
   <link rel="NEXT" title="Filter Files" href="filter-file.html">
@@ -21,7 +21,7 @@
     <table summary="Header navigation table" width="100%" border="0"
     cellpadding="0" cellspacing="0">
       <tr>
-        <th colspan="3" align="center">Privoxy 3.0.23 User Manual</th>
+        <th colspan="3" align="center">Privoxy 3.0.24 User Manual</th>
       </tr>
 
       <tr>
@@ -117,7 +117,7 @@
         in <tt class="FILENAME">default.action</tt> are:</p>
 
         <div class="TABLE">
-          <a name="AEN2543" id="AEN2543"></a>
+          <a name="AEN2599" id="AEN2599"></a>
 
           <p><b>Table 1. Default Configurations</b></p>
 
@@ -314,7 +314,7 @@
     actions</a>.</p>
 
     <div class="SECT2">
-      <h2 class="SECT2"><a name="AEN2642" id="AEN2642">8.1. Finding the Right
+      <h2 class="SECT2"><a name="AEN2698" id="AEN2698">8.1. Finding the Right
       Mix</a></h2>
 
       <p>Note that some <a href="actions-file.html#ACTIONS">actions</a>, like
@@ -339,7 +339,7 @@
     </div>
 
     <div class="SECT2">
-      <h2 class="SECT2"><a name="AEN2649" id="AEN2649">8.2. How to
+      <h2 class="SECT2"><a name="AEN2705" id="AEN2705">8.2. How to
       Edit</a></h2>
 
       <p>The easiest way to edit the actions files is with a browser by using
@@ -644,7 +644,7 @@
       </div>
 
       <div class="SECT3">
-        <h3 class="SECT3"><a name="AEN2843" id="AEN2843">8.4.2. The Path
+        <h3 class="SECT3"><a name="AEN2899" id="AEN2899">8.4.2. The Path
         Pattern</a></h3>
 
         <p><span class="APPLICATION">Privoxy</span> uses <span class=
@@ -1201,7 +1201,7 @@
             <dt>Type:</dt>
 
             <dd>
-              <p>Parameterized.</p>
+              <p>Multi-value.</p>
             </dd>
 
             <dt>Parameter:</dt>
@@ -1277,7 +1277,7 @@
             <dt>Type:</dt>
 
             <dd>
-              <p>Parameterized.</p>
+              <p>Multi-value.</p>
             </dd>
 
             <dt>Parameter:</dt>
@@ -2026,7 +2026,7 @@ problem-host.example.com
             <dt>Type:</dt>
 
             <dd>
-              <p>Parameterized.</p>
+              <p>Multi-value.</p>
             </dd>
 
             <dt>Parameter:</dt>
@@ -2246,7 +2246,7 @@ problem-host.example.com
             <dt>Type:</dt>
 
             <dd>
-              <p>Parameterized.</p>
+              <p>Multi-value.</p>
             </dd>
 
             <dt>Parameter:</dt>
@@ -2794,7 +2794,7 @@ problem-host.example.com
             <dt>Type:</dt>
 
             <dd>
-              <p>Multi-value.</p>
+              <p>Parameterized.</p>
             </dd>
 
             <dt>Parameter:</dt>
@@ -2832,6 +2832,30 @@ problem-host.example.com
                   connection (with local DNS resolution) instead, use
                   <span class="QUOTE">"forward-socks5"</span> for socks5
                   connections (with remote DNS resolution).</p>
+                </li>
+
+                <li>
+                  <p><span class="QUOTE">"forward-webserver
+                  127.0.0.1:80"</span> to use the HTTP server listening at
+                  127.0.0.1 port 80 without adjusting the request
+                  headers.</p>
+
+                  <p>This makes it more convenient to use Privoxy to make
+                  existing websites available as onion services as well.</p>
+
+                  <p>Many websites serve content with hardcoded URLs and
+                  can't be easily adjusted to change the domain based on the
+                  one used by the client.</p>
+
+                  <p>Putting Privoxy between Tor and the webserver (or an
+                  stunnel that forwards to the webserver) allows to rewrite
+                  headers and content to make client and server happy at the
+                  same time.</p>
+
+                  <p>Using Privoxy for webservers that are only reachable
+                  through onion addresses and whose location is supposed to
+                  be secret is not recommended and should not be necessary
+                  anyway.</p>
                 </li>
               </ul>
             </dd>
@@ -4119,7 +4143,7 @@ www.privoxy.org/user-manual/
             <dt>Type:</dt>
 
             <dd>
-              <p>Parameterized.</p>
+              <p>Multi-value.</p>
             </dd>
 
             <dt>Parameter:</dt>
@@ -4192,7 +4216,7 @@ example.org/instance-that-is-delivered-as-xml-but-is-not
             <dt>Type:</dt>
 
             <dd>
-              <p>Parameterized.</p>
+              <p>Multi-value.</p>
             </dd>
 
             <dt>Parameter:</dt>
@@ -4489,7 +4513,7 @@ TAG:^image/
       </div>
 
       <div class="SECT3">
-        <h3 class="SECT3"><a name="AEN4575" id="AEN4575">8.5.36.
+        <h3 class="SECT3"><a name="AEN4638" id="AEN4638">8.5.36.
         Summary</a></h3>
 
         <p>Note that many of these actions have the potential to cause a page
@@ -4648,7 +4672,7 @@ TAG:^image/
       together:</p>
 
       <div class="SECT3">
-        <h3 class="SECT3"><a name="AEN4639" id="AEN4639">8.7.1.
+        <h3 class="SECT3"><a name="AEN4702" id="AEN4702">8.7.1.
         match-all.action</a></h3>
 
         <p>Remember <span class="emphasis"><i class="EMPHASIS">all actions
@@ -4697,7 +4721,7 @@ TAG:^image/
       </div>
 
       <div class="SECT3">
-        <h3 class="SECT3"><a name="AEN4661" id="AEN4661">8.7.2.
+        <h3 class="SECT3"><a name="AEN4724" id="AEN4724">8.7.2.
         default.action</a></h3>
 
         <p>If you aren't a developer, there's no need for you to edit the
@@ -5040,7 +5064,7 @@ wiki.
       </div>
 
       <div class="SECT3">
-        <h3 class="SECT3"><a name="AEN4774" id="AEN4774">8.7.3.
+        <h3 class="SECT3"><a name="AEN4837" id="AEN4837">8.7.3.
         user.action</a></h3>
 
         <p>So far we are painting with a broad brush by setting general

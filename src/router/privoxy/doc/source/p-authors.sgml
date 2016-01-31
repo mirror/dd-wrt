@@ -3,7 +3,7 @@
 
  Purpose     :  Entity included in other project documents.
 
- $Id: p-authors.sgml,v 2.64 2015/01/24 16:43:11 fabiankeil Exp $
+ $Id: p-authors.sgml,v 2.73 2016/01/16 12:29:40 fabiankeil Exp $
 
  Copyright (C) 2001-2013 Privoxy Developers http://www.privoxy.org/
  See LICENSE.
@@ -77,6 +77,7 @@ Current Privoxy Team:
  These include (in alphabetical order):
 </para>
 <literallayout>
+ Rustam Abdullaev
  Anatoly Arzhnikov
  Ken Arromdee
  Natxo Asenjo
@@ -89,6 +90,7 @@ Current Privoxy Team:
  Andrew J. Caines
  Clifford Caoile
  Edward Carrel
+ Pak Chan
  Wan-Teh Chang
  Sam Chen
  Ramkumar Chinchani
@@ -126,7 +128,9 @@ Current Privoxy Team:
  Julien Joubert
  Ralf Jungblut
  Petr Kadlec
+ Robert Klemme
  Steven Kolins
+ Korda
  Stefan Kurtz
  Zeno Kugy
  David Laight
@@ -140,6 +144,7 @@ Current Privoxy Team:
  Raphael Marichez
  Francois Marier
  Angelina Matson
+ Jonathan McKenzie
  David Mediavilla
  Raphael Moll
  Mathew Murphy
@@ -155,6 +160,7 @@ Current Privoxy Team:
  Maynard Riley
  Andreas Rutkauskas
  Bart Schelstraete
+ Gregory Seidman
  Chung-chieh Shan
  Benjamin C. Wiley Sittler
  Simon South
@@ -165,6 +171,8 @@ Current Privoxy Team:
  Peter Thoenen
  Martin Thomas
  Reuben Thomas
+ Guybrush Threepwood
+ Joel Verhagen
  Bobby G. Vinyard
  Jochen Voss
  David Wagner
@@ -173,6 +181,8 @@ Current Privoxy Team:
  J�rg Weinmann
  Darren Wiebe
  Anduin Withers
+ Yang Xia
+ Jarry Xu
  Oliver Yeoh
  Jamie Zawinski
 </literallayout>

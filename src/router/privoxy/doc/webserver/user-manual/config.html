@@ -6,7 +6,7 @@
   <title>The Main Configuration File</title>
   <meta name="GENERATOR" content=
   "Modular DocBook HTML Stylesheet Version 1.79">
-  <link rel="HOME" title="Privoxy 3.0.22 User Manual" href="index.html">
+  <link rel="HOME" title="Privoxy 3.0.24 User Manual" href="index.html">
   <link rel="PREVIOUS" title="Privoxy Configuration" href=
   "configuration.html">
   <link rel="NEXT" title="Actions Files" href="actions-file.html">
@@ -21,7 +21,7 @@
     <table summary="Header navigation table" width="100%" border="0"
     cellpadding="0" cellspacing="0">
       <tr>
-        <th colspan="3" align="center">Privoxy 3.0.22 User Manual</th>
+        <th colspan="3" align="center">Privoxy 3.0.24 User Manual</th>
       </tr>
 
       <tr>
@@ -2072,6 +2072,12 @@
                 </tr>
               </table>
 
+              <p>Note that if you got Tor through one of the bundles, you may
+              have to change the port from 9050 to 9150 (or even another
+              one). For details, please check the documentation on the
+              <a href="https://torproject.org/" target="_top">Tor
+              website</a>.</p>
+
               <p>The public <span class="APPLICATION">Tor</span> network
               can't be used to reach your local network, if you need to
               access local servers you therefore might want to make some
@@ -2948,10 +2954,10 @@
 
             <dd>
               <p>This directive was added as a work-around for Firefox bug
-              492459: <span class="QUOTE">" Websites are no longer rendered
-              if SSL requests for JavaScripts are blocked by a proxy.
-              "</span> (<a href=
-              "https://bugzilla.mozilla.org/show_bug.cgi?id=492459" target=
+              492459: <span class="QUOTE">"Websites are no longer rendered if
+              SSL requests for JavaScripts are blocked by a proxy."</span>
+              (<a href="https://bugzilla.mozilla.org/show_bug.cgi?id=492459"
+              target=
               "_top">https://bugzilla.mozilla.org/show_bug.cgi?id=492459</a>),
               the bug has been fixed for quite some time, but this directive
               is also useful to make it harder for websites to detect whether

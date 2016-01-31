@@ -1,4 +1,4 @@
-const char w32log_rcs[] = "$Id: w32log.c,v 1.48 2012/05/27 15:45:05 fabiankeil Exp $";
+const char w32log_rcs[] = "$Id: w32log.c,v 1.49 2015/12/27 12:53:54 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/w32log.c,v $
@@ -724,8 +724,8 @@ HWND CreateLogWindow(HINSTANCE hInstance, int nCmdShow)
 /* SendMessage(g_hwndLogBox, EM_SETWORDWRAPMODE, 0, 0); */
 
    /* Subclass the control to catch certain messages */
-   g_fnLogBox = (WNDPROC) GetWindowLong(g_hwndLogBox, GWL_WNDPROC);
-   SetWindowLong(g_hwndLogBox, GWL_WNDPROC, (LONG) LogRichEditProc);
+   g_fnLogBox = (WNDPROC) GetWindowLongPtr(g_hwndLogBox, GWLP_WNDPROC);
+   SetWindowLongPtr(g_hwndLogBox, GWLP_WNDPROC, (LONG_PTR) LogRichEditProc);
 
    /* Minimizing looks stupid when the log window is not on the task bar, so hide instead */
    if (!g_bShowOnTaskBar &&

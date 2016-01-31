@@ -1,4 +1,4 @@
-const char loadcfg_rcs[] = "$Id: loadcfg.c,v 1.142 2014/10/18 11:27:28 fabiankeil Exp $";
+const char loadcfg_rcs[] = "$Id: loadcfg.c,v 1.145 2016/01/16 12:33:36 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/loadcfg.c,v $
@@ -8,7 +8,7 @@ const char loadcfg_rcs[] = "$Id: loadcfg.c,v 1.142 2014/10/18 11:27:28 fabiankei
  *                routine to load the configuration and the global
  *                variables it writes to.
  *
- * Copyright   :  Written by and Copyright (C) 2001-2014 the
+ * Copyright   :  Written by and Copyright (C) 2001-2016 the
  *                Privoxy team. http://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -279,6 +279,47 @@ void unload_current_config_file(void)
    }
 }
 #endif
+
+
+/*********************************************************************
+ *
+ * Function    :  parse_numeric_value
+ *
+ * Description :  Parse the value of a directive that can only have
+ *                a single numeric value. Terminates with a fatal error
+ *                if the value is NULL or not numeric.
+ *
+ * Parameters  :
+ *          1  :  name:  The name of the directive. Used for log messages.
+ *          2  :  value: The value to parse
+ *
+ *
+ * Returns     :  The numerical value as integer
+ *
+ *********************************************************************/
+static int parse_numeric_value(const char *name, const char *value)
+{
+   int number;
+   char *endptr;
+
+   assert(name != NULL);
+   assert(value != NULL);
+
+   if ((value == NULL) || (*value == '\0'))
+   {
+      log_error(LOG_LEVEL_FATAL, "Directive %s used without argument", name);
+   }
+
+   number = (int)strtol(value, &endptr, 0);
+   if (*endptr != '\0')
+   {
+      log_error(LOG_LEVEL_FATAL,
+         "Directive '%s' used with non-numerical value: '%s'", name, value);
+   }
+
+   return number;
+
+}
 
 
 /*********************************************************************
@@ -623,7 +664,7 @@ struct configuration_spec * load_config(void)
  * buffer-limit n
  * *************************************************************************/
          case hash_buffer_limit :
-            config->buffer_limit = (size_t)(1024 * atoi(arg));
+            config->buffer_limit = (size_t)(1024 * parse_numeric_value(cmd, arg));
             break;
 
 /* *************************************************************************
@@ -647,25 +688,19 @@ struct configuration_spec * load_config(void)
  * *************************************************************************/
 #ifdef FEATURE_COMPRESSION
          case hash_compression_level :
-            if (*arg != '\0')
+         {
+            int compression_level = parse_numeric_value(cmd, arg);
+            if (-1 <= compression_level && compression_level <= 9)
             {
-               int compression_level = atoi(arg);
-               if (-1 <= compression_level && compression_level <= 9)
-               {
-                  config->compression_level = compression_level;;
-               }
-               else
-               {
-                  log_error(LOG_LEVEL_FATAL,
-                     "Invalid compression-level value: %s", arg);
-               }
+               config->compression_level = compression_level;;
             }
             else
             {
                log_error(LOG_LEVEL_FATAL,
-                  "Invalid compression-level directive. Compression value missing");
+                  "Invalid compression-level value: %s", arg);
             }
             break;
+         }
 #endif
 
 /* *************************************************************************
@@ -689,7 +724,7 @@ struct configuration_spec * load_config(void)
  * Specifies debug level, multiple values are ORed together.
  * *************************************************************************/
          case hash_debug :
-            config->debug |= atoi(arg);
+            config->debug |= parse_numeric_value(cmd, arg);
             break;
 
 /* *************************************************************************
@@ -697,20 +732,19 @@ struct configuration_spec * load_config(void)
  * *************************************************************************/
 #ifdef FEATURE_CONNECTION_KEEP_ALIVE
          case hash_default_server_timeout :
-            if (*arg != '\0')
+         {
+            int timeout = parse_numeric_value(cmd, arg);
+            if (0 <= timeout)
             {
-               int timeout = atoi(arg);
-               if (0 <= timeout)
-               {
-                  config->default_server_timeout = (unsigned int)timeout;
-               }
-               else
-               {
-                  log_error(LOG_LEVEL_FATAL,
-                     "Invalid default-server-timeout value: %s", arg);
-               }
+               config->default_server_timeout = (unsigned int)timeout;
+            }
+            else
+            {
+               log_error(LOG_LEVEL_FATAL,
+                  "Invalid default-server-timeout value: %s", arg);
             }
             break;
+         }
 #endif
 
 /* *************************************************************************
@@ -1046,11 +1080,14 @@ struct configuration_spec * load_config(void)
 
             if (vec_count != 3)
             {
-               log_error(LOG_LEVEL_ERROR, "Wrong number of parameters for "
-                     "forward-socks4a directive in configuration file.");
+               log_error(LOG_LEVEL_ERROR,
+                  "Wrong number of parameters for %s in configuration file.",
+                  cmd);
                string_append(&config->proxy_args,
-                  "<br>\nWARNING: Wrong number of parameters for "
-                  "forward-socks4a directive in configuration file.");
+                  "<br>\nWARNING: Wrong number of parameters for ");
+               string_append(&config->proxy_args, cmd);
+               string_append(&config->proxy_args,
+                  "directive in configuration file.");
                break;
             }
 
@@ -1080,11 +1117,14 @@ struct configuration_spec * load_config(void)
             /* Save the URL pattern */
             if (create_pattern_spec(cur_fwd->url, vec[0]))
             {
-               log_error(LOG_LEVEL_ERROR, "Bad URL specifier for forward-socks4a "
-                     "directive in configuration file.");
+               log_error(LOG_LEVEL_ERROR,
+                  "Bad URL specifier for %s in configuration file.",
+                  cmd);
                string_append(&config->proxy_args,
-                  "<br>\nWARNING: Bad URL specifier for "
-                  "forward-socks4a directive in configuration file.");
+                  "<br>\nWARNING: Bad URL specifier for ");
+               string_append(&config->proxy_args, cmd);
+               string_append(&config->proxy_args,
+                  "directive in configuration file.");
                freez(cur_fwd);
                break;
             }
@@ -1116,7 +1156,7 @@ struct configuration_spec * load_config(void)
  * forwarded-connect-retries n
  * *************************************************************************/
          case hash_forwarded_connect_retries :
-            config->forwarded_connect_retries = atoi(arg);
+            config->forwarded_connect_retries = parse_numeric_value(cmd, arg);
             break;
 
 /* *************************************************************************
@@ -1156,20 +1196,19 @@ struct configuration_spec * load_config(void)
  * *************************************************************************/
 #ifdef FEATURE_CONNECTION_KEEP_ALIVE
          case hash_keep_alive_timeout :
-            if (*arg != '\0')
+         {
+            int timeout = parse_numeric_value(cmd, arg);
+            if (0 < timeout)
             {
-               int timeout = atoi(arg);
-               if (0 < timeout)
-               {
-                  config->feature_flags |= RUNTIME_FEATURE_CONNECTION_KEEP_ALIVE;
-                  config->keep_alive_timeout = (unsigned int)timeout;
-               }
-               else
-               {
-                  config->feature_flags &= ~RUNTIME_FEATURE_CONNECTION_KEEP_ALIVE;
-               }
+               config->feature_flags |= RUNTIME_FEATURE_CONNECTION_KEEP_ALIVE;
+               config->keep_alive_timeout = (unsigned int)timeout;
+            }
+            else
+            {
+               config->feature_flags &= ~RUNTIME_FEATURE_CONNECTION_KEEP_ALIVE;
             }
             break;
+         }
 #endif
 
 /* *************************************************************************
@@ -1222,15 +1261,15 @@ struct configuration_spec * load_config(void)
  * max-client-connections number
  * *************************************************************************/
          case hash_max_client_connections :
-            if (*arg != '\0')
+         {
+            int max_client_connections = parse_numeric_value(cmd, arg);
+            if (0 <= max_client_connections)
             {
-               int max_client_connections = atoi(arg);
-               if (0 <= max_client_connections)
-               {
-                  config->max_client_connections = max_client_connections;
-               }
+               /* XXX: log error */
+               config->max_client_connections = max_client_connections;
             }
             break;
+         }
 
 /* *************************************************************************
  * permit-access source-ip[/significant-bits] [dest-ip[/significant-bits]]
@@ -1334,20 +1373,18 @@ struct configuration_spec * load_config(void)
  * socket-timeout numer_of_seconds
  * *************************************************************************/
          case hash_socket_timeout :
-            if (*arg != '\0')
+         {
+            int socket_timeout = parse_numeric_value(cmd, arg);
+            if (0 <= socket_timeout)
             {
-               int socket_timeout = atoi(arg);
-               if (0 <= socket_timeout)
-               {
-                  config->socket_timeout = socket_timeout;
-               }
-               else
-               {
-                  log_error(LOG_LEVEL_FATAL,
-                     "Invalid socket-timeout: '%s'", arg);
-               }
+               config->socket_timeout = socket_timeout;
+            }
+            else
+            {
+               log_error(LOG_LEVEL_FATAL, "Invalid socket-timeout: '%s'", arg);
             }
             break;
+         }
 
 /* *************************************************************************
  * split-large-cgi-forms
@@ -1494,7 +1531,7 @@ struct configuration_spec * load_config(void)
  * log-font-size n
  * *************************************************************************/
          case hash_log_font_size :
-            g_nFontSize = atoi(arg);
+            g_nFontSize = parse_numeric_value(cmd, arg);
             break;
 
 /* *************************************************************************
@@ -1508,7 +1545,7 @@ struct configuration_spec * load_config(void)
  * log-max-lines n
  * *************************************************************************/
          case hash_log_max_lines :
-            g_nMaxBufferLines = atoi(arg);
+            g_nMaxBufferLines = parse_numeric_value(cmd, arg);
             break;
 
 /* *************************************************************************
