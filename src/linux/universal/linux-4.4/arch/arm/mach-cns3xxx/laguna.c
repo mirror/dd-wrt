@@ -971,6 +971,8 @@ static int __init laguna_pcie_init_irq(void)
 	return 0;
 }
 
+subsys_initcall(laguna_pcie_init_irq);
+
 extern void __init cns3xxx_gpio_init(int gpio_base, int ngpio,
 	u32 base, int irq, int secondary_irq_base);
 
