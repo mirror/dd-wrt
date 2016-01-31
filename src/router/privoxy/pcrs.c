@@ -1,4 +1,4 @@
-const char pcrs_rcs[] = "$Id: pcrs.c,v 1.47 2015/01/24 16:40:59 fabiankeil Exp $";
+const char pcrs_rcs[] = "$Id: pcrs.c,v 1.48 2015/12/27 12:45:46 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/pcrs.c,v $
@@ -80,6 +80,8 @@ static int              is_hex_sequence(const char *sequence);
  *********************************************************************/
 const char *pcrs_strerror(const int error)
 {
+   static char buf[100];
+
    if (error != 0)
    {
       switch (error)
@@ -119,7 +121,11 @@ const char *pcrs_strerror(const int error)
           * version. If Privoxy is linked against a newer
           * PCRE version all bets are off ...
           */
-         default:  return "Unknown error. Privoxy out of sync with PCRE?";
+         default:
+            snprintf(buf, sizeof(buf),
+               "Error code %d. For details, check the pcre documentation.",
+               error);
+            return buf;
       }
    }
    /* error >= 0: No error */

@@ -8,10 +8,10 @@
 <!entity history SYSTEM "history.sgml">
 <!entity copyright SYSTEM "copyright.sgml">
 <!entity license SYSTEM "license.sgml">
-<!entity p-version "3.0.22">
-<!entity p-status "UNRELEASED">
-<!entity % p-not-stable "INCLUDE">
-<!entity % p-stable "IGNORE">
+<!entity p-version "3.0.24">
+<!entity p-status "stable">
+<!entity % p-not-stable "IGNORE">
+<!entity % p-stable "INCLUDE">
 <!entity % p-text "IGNORE">        <!-- define we are not a text only doc -->
 <!entity % p-doc "INCLUDE">        <!-- and we are a formal doc           -->
 <!entity % p-supp-userman "INCLUDE"> <!-- Include all from supported.sgml -->
@@ -27,7 +27,7 @@
                 This file belongs into
                 ijbswa.sourceforge.net:/home/groups/i/ij/ijbswa/htdocs/
 
- $Id: faq.sgml,v 2.107 2014/12/19 12:31:46 fabiankeil Exp $
+ $Id: faq.sgml,v 2.111 2016/01/21 15:55:49 fabiankeil Exp $
 
  Copyright (C) 2001-2014 Privoxy Developers http://www.privoxy.org/
  See LICENSE.
@@ -78,7 +78,7 @@
  </subscript>
 </pubdate>
 
-<pubdate>$Id: faq.sgml,v 2.107 2014/12/19 12:31:46 fabiankeil Exp $</pubdate>
+<pubdate>$Id: faq.sgml,v 2.111 2016/01/21 15:55:49 fabiankeil Exp $</pubdate>
 
 <!--
 
@@ -2080,7 +2080,7 @@ ads, but also its own internal CGI pages. What is a <quote>crunch</quote>?</titl
 </sect2>
 
 <sect2 renderas="sect3" id="downloads">
-<title>Can Privoxy effect files that I download
+<title>Can Privoxy affect files that I download
 from a webserver? FTP server?</title>
 <para>
  From the webserver's perspective, there is no difference between
@@ -2233,11 +2233,11 @@ and related issues?</title>
 </para>
 <para>
  Lately there have been reports of problems with some kind of
- Privoxy versions that come preinstalled on some Netbooks.
- Some of the problems described are inconsistent with the behaviour
- of official Privoxy versions, which suggests that the preinstalled
- software may contain vendor modifications that we don't know about
- and thus can't debug.
+ "parental control" software based on Privoxy that came preinstalled on
+ certain <ulink url="http://sourceforge.net/p/ijbswa/bugs/813/">ASUS Netbooks</ulink>.
+ The problems described are inconsistent with the behaviour of official
+ Privoxy versions, which suggests that the preinstalled software may
+ contain vendor modifications that we don't know about and thus can't debug.
 </para>
 <para>
  Privoxy's <link linkend="copyright">license</link> allows vendor
@@ -2460,7 +2460,7 @@ What can I do?</title>
 every time I start IE. What gives?</title>
 
 <para>
- This is a quirk that effects the installation of
+ This is a quirk that affects the installation of
  <application>Privoxy</application>, in conjunction with Internet Explorer and
  Internet Connection Sharing on Windows 2000 and Windows XP. The symptoms may
  appear to be corrupted or invalid DUN settings, or passwords.

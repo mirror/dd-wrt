@@ -2486,6 +2486,7 @@ const uschar *ptr;
 compile_data compile_block;
 int brastack[BRASTACK_SIZE];
 uschar bralenstack[BRASTACK_SIZE];
+const size_t pattern_length = strlen(pattern);
 
 #ifdef DEBUG
 uschar *code_base, *code_end;
@@ -3011,6 +3012,12 @@ while ((c = *(++ptr)) != 0)
       /* Ordinary character or single-char escape */
 
       runlength++;
+
+      if ((const char *)ptr > pattern + pattern_length)
+        {
+        *errorptr = "internal error";
+        goto PCRE_ERROR_RETURN;
+        }
       }
 
     /* This "while" is the end of the "do" above. */

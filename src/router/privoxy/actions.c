@@ -1,11 +1,11 @@
-const char actions_rcs[] = "$Id: actions.c,v 1.92 2013/12/24 13:35:23 fabiankeil Exp $";
+const char actions_rcs[] = "$Id: actions.c,v 1.95 2016/01/16 12:33:35 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/actions.c,v $
  *
  * Purpose     :  Declares functions to work with actions files
  *
- * Copyright   :  Written by and Copyright (C) 2001-2011 the
+ * Copyright   :  Written by and Copyright (C) 2001-2016 the
  *                Privoxy team. http://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -518,7 +518,13 @@ jb_err get_actions(char *line,
             switch (action->value_type)
             {
             case AV_NONE:
-               /* ignore any option. */
+               if (value != NULL)
+               {
+                  log_error(LOG_LEVEL_ERROR,
+                     "Action %s does not take parameters but %s was given.",
+                     action->name, value);
+                  return JB_ERR_PARSE;
+               }
                break;
             case AV_ADD_STRING:
                {
@@ -1375,10 +1381,13 @@ static int load_one_actions_file(struct client_state *csp, int fileid)
              *
              * buf + 1 to skip the leading '{'
              */
-            actions_buf = strdup_or_die(buf + 1);
+            actions_buf = end = strdup_or_die(buf + 1);
 
             /* check we have a trailing } and then trim it */
-            end = actions_buf + strlen(actions_buf) - 1;
+            if (strlen(actions_buf))
+            {
+               end += strlen(actions_buf) - 1;
+            }
             if (*end != '}')
             {
                /* No closing } */

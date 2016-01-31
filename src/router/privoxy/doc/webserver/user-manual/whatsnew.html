@@ -6,7 +6,7 @@
   <title>What's New in this Release</title>
   <meta name="GENERATOR" content=
   "Modular DocBook HTML Stylesheet Version 1.79">
-  <link rel="HOME" title="Privoxy 3.0.23 User Manual" href="index.html">
+  <link rel="HOME" title="Privoxy 3.0.24 User Manual" href="index.html">
   <link rel="PREVIOUS" title="Installation" href="installation.html">
   <link rel="NEXT" title="Quickstart to Using Privoxy" href=
   "quickstart.html">
@@ -21,7 +21,7 @@
     <table summary="Header navigation table" width="100%" border="0"
     cellpadding="0" cellspacing="0">
       <tr>
-        <th colspan="3" align="center">Privoxy 3.0.23 User Manual</th>
+        <th colspan="3" align="center">Privoxy 3.0.24 User Manual</th>
       </tr>
 
       <tr>
@@ -41,46 +41,117 @@
     <h1 class="SECT1"><a name="WHATSNEW" id="WHATSNEW">3. What's New in this
     Release</a></h1>
 
-    <p><span class="APPLICATION">Privoxy 3.0.23</span> stable is a bug-fix
-    release, some of the fixed bugs are security issues (CVE requests
-    pending):</p>
+    <p><span class="APPLICATION">Privoxy 3.0.24</span> stable contains a
+    couple of new features but is mainly a bug-fix release. Two of the fixed
+    bugs are security issues and may be used to remotely trigger crashes on
+    platforms that carefully check memory accesses (most don't).</p>
 
     <ul>
+      <li>
+        <p>Security fixes (denial of service):</p>
+
+        <ul>
+          <li>
+            <p>Prevent invalid reads in case of corrupt chunk-encoded
+            content. CVE-2016-1982. Bug discovered with afl-fuzz and
+            AddressSanitizer.</p>
+          </li>
+
+          <li>
+            <p>Remove empty Host headers in client requests. Previously they
+            would result in invalid reads. CVE-2016-1983. Bug discovered with
+            afl-fuzz and AddressSanitizer.</p>
+          </li>
+        </ul>
+      </li>
+
       <li>
         <p>Bug fixes:</p>
 
         <ul>
           <li>
-            <p>Fixed a DoS issue in case of client requests with incorrect
-            chunk-encoded body. When compiled with assertions enabled (the
-            default) they could previously cause Privoxy to abort(). Reported
-            by Matthew Daley.</p>
+            <p>When using socks5t, send the request body optimistically as
+            well. Previously the request body wasn't guaranteed to be sent at
+            all and the error message incorrectly blamed the server. Fixes
+            #1686 reported by Peter M&uuml;ller and G4JC.</p>
           </li>
 
           <li>
-            <p>Fixed multiple segmentation faults and memory leaks in the
-            pcrs code. This fix also increases the chances that an invalid
-            pcrs command is rejected as such. Previously some invalid
-            commands would be loaded without error. Note that Privoxy's pcrs
-            sources (action and filter files) are considered trustworthy
-            input and should not be writable by untrusted third-parties.</p>
+            <p>Fixed buffer scaling in execute_external_filter() that could
+            lead to crashes. Submitted by Yang Xia in #892.</p>
           </li>
 
           <li>
-            <p>Fixed an 'invalid read' bug which could at least theoretically
-            cause Privoxy to crash. So far, no crashes have been
-            observed.</p>
+            <p>Fixed crashes when executing external filters on platforms
+            like Mac OS X. Reported by Jonathan McKenzie on
+            ijbswa-users@.</p>
           </li>
 
           <li>
-            <p>Compiles with --disable-force again. Reported by Kay
-            Raven.</p>
+            <p>Properly parse ACL directives with ports when compiled with
+            HAVE_RFC2553. Previously the port wasn't removed from the host
+            and in case of 'permit-access 127.0.0.1 example.org:80' Privoxy
+            would try (and fail) to resolve "example.org:80" instead of
+            example.org. Reported by Pak Chan on ijbswa-users@.</p>
           </li>
 
           <li>
-            <p>Client requests with body that can't be delivered no longer
-            cause pipelined requests behind them to be rejected as invalid.
-            Reported by Basil Hussain.</p>
+            <p>Check requests more carefully before serving them forcefully
+            when blocks aren't enforced. Privoxy always adds the force token
+            at the beginning of the path, but would previously accept it
+            anywhere in the request line. This could result in requests being
+            served that should be blocked. For example in case of pages that
+            were loaded with force and contained JavaScript to create
+            additionally requests that embed the origin URL (thus inheriting
+            the force prefix). The bug is not considered a security issue and
+            the fix does not make it harder for remote sites to intentionally
+            circumvent blocks if Privoxy isn't configured to enforce them.
+            Fixes #1695 reported by Korda.</p>
+          </li>
+
+          <li>
+            <p>Normalize the request line in intercepted requests to make
+            rewriting the destination more convenient. Previously rewrites
+            for intercepted requests were expected to fail unless $hostport
+            was being used, but they failed "the wrong way" and would result
+            in an out-of-memory message (vanilla host patterns) or a crash
+            (extended host patterns). Reported by "Guybrush Threepwood" in
+            #1694.</p>
+          </li>
+
+          <li>
+            <p>Enable socket lingering for the correct socket. Previously it
+            was repeatedly enabled for the listen socket instead of for the
+            accepted socket. The bug was found by code inspection and did not
+            cause any (reported) issues.</p>
+          </li>
+
+          <li>
+            <p>Detect and reject parameters for parameter-less actions.
+            Previously they were silently ignored.</p>
+          </li>
+
+          <li>
+            <p>Fixed invalid reads in internal and outdated pcre code. Found
+            with afl-fuzz and AddressSanitizer.</p>
+          </li>
+
+          <li>
+            <p>Prevent invalid read when loading invalid action files. Found
+            with afl-fuzz and AddressSanitizer.</p>
+          </li>
+
+          <li>
+            <p>Windows build: Use the correct function to close the event
+            handle. It's unclear if this bug had a negative impact on
+            Privoxy's behaviour. Reported by Jarry Xu in #891.</p>
+          </li>
+
+          <li>
+            <p>In case of invalid forward-socks5(t) directives, use the
+            correct directive name in the error messages. Previously they
+            referred to forward-socks4t failures. Reported by Joel Verhagen
+            in #889.</p>
           </li>
         </ul>
       </li>
@@ -90,13 +161,65 @@
 
         <ul>
           <li>
-            <p>If a pcrs command is rejected as invalid, Privoxy now logs the
-            cause of the problem as text. Previously the pcrs error code was
-            logged.</p>
+            <p>Set NO_DELAY flag for the accepting socket. This significantly
+            reduces the latency if the operating system is not configured to
+            set the flag by default. Reported by Johan Sintorn in #894.</p>
           </li>
 
           <li>
-            <p>The tests are less likely to cause false positives.</p>
+            <p>Allow to build with mingw x86_64. Submitted by Rustam
+            Abdullaev in #135.</p>
+          </li>
+
+          <li>
+            <p>Introduce the new forwarding type 'forward-webserver'.
+            Currently it is only supported by the forward-override{} action
+            and there's no config directive with the same name. The
+            forwarding type is similar to 'forward', but the request line
+            only contains the path instead of the complete URL.</p>
+          </li>
+
+          <li>
+            <p>The CGI editor no longer treats 'standard.action' special.
+            Nowadays the official "standards" are part of default.action and
+            there's no obvious reason to disallow editing them through the
+            cgi editor anyway (if the user decided that the lack of
+            authentication isn't an issue in her environment).</p>
+          </li>
+
+          <li>
+            <p>Improved error messages when rejecting intercepted requests
+            with unknown destination.</p>
+          </li>
+
+          <li>
+            <p>A couple of log messages now include the number of active
+            threads.</p>
+          </li>
+
+          <li>
+            <p>Removed non-standard Proxy-Agent headers in HTTP snipplets to
+            make testing more convenient.</p>
+          </li>
+
+          <li>
+            <p>Include the error code for pcre errors Privoxy does not
+            recognize.</p>
+          </li>
+
+          <li>
+            <p>Config directives with numerical arguments are checked more
+            carefully.</p>
+          </li>
+
+          <li>
+            <p>Privoxy's malloc() wrapper has been changed to prevent
+            zero-size allocations which should only occur as the result of
+            bugs.</p>
+          </li>
+
+          <li>
+            <p>Various cosmetic changes.</p>
           </li>
         </ul>
       </li>
@@ -106,13 +229,42 @@
 
         <ul>
           <li>
-            <p>'.sify.com/' is no longer blocked. Apparently it is not
-            actually a pure tracking site (anymore?). Reported by Andrew on
-            ijbswa-users@.</p>
+            <p>Unblock ".deutschlandradiokultur.de/". Reported by u302320 in
+            #924.</p>
           </li>
 
           <li>
-            <p>Unblock banners on .amnesty.de/ which aren't ads.</p>
+            <p>Add two fast-redirect exceptions for "yandex.ru".</p>
+          </li>
+
+          <li>
+            <p>Disable filter{banners-by-size} for ".plasmaservice.de/".</p>
+          </li>
+
+          <li>
+            <p>Unblock "klikki.fi/adv/".</p>
+          </li>
+
+          <li>
+            <p>Block requests for "resources.infolinks.com/". Reported by
+            "Black Rider" on ijbswa-users@.</p>
+          </li>
+
+          <li>
+            <p>Block a bunch of criteo domains. Reported by Black Rider.</p>
+          </li>
+
+          <li>
+            <p>Block "abs.proxistore.com/abe/". Reported by Black Rider.</p>
+          </li>
+
+          <li>
+            <p>Disable filter{banners-by-size} for
+            ".black-mosquito.org/".</p>
+          </li>
+
+          <li>
+            <p>Disable fast-redirects for "disqus.com/".</p>
           </li>
         </ul>
       </li>
@@ -122,29 +274,38 @@
 
         <ul>
           <li>
-            <p>The 'Would you like to donate?' section now also contains a
-            "Paypal" address.</p>
+            <p>FAQ: Explicitly point fingers at ASUS as an example of a
+            company that has been reported to force malware based on Privoxy
+            upon its customers.</p>
           </li>
 
           <li>
-            <p>The list of supported operating systems has been updated.</p>
-          </li>
-
-          <li>
-            <p>The existence of the SF support and feature trackers has been
-            deemphasized because they have been broken for months. Most of
-            the time the mailing lists still work.</p>
-          </li>
-
-          <li>
-            <p>The claim that default.action updates are sometimes released
-            on their own has been removed. It hasn't happened in years.</p>
-          </li>
-
-          <li>
-            <p>Explicitly mention that Tor's port may deviate from the
-            default when using a bundle. Requested by Andrew on
+            <p>Correctly document the action type for a bunch of
+            "multi-value" actions that were incorrectly documented to be
+            "parameterized". Reported by Gregory Seidman on
             ijbswa-users@.</p>
+          </li>
+
+          <li>
+            <p>Fixed the documented type of the forward-override{} action
+            which is obviously 'parameterized'.</p>
+          </li>
+        </ul>
+      </li>
+
+      <li>
+        <p>Website improvements:</p>
+
+        <ul>
+          <li>
+            <p>Users who don't trust binaries served by SourceForge can get
+            them from a mirror. Migrating away from SourceForge is planned
+            for 2016 (TODO list item #53).</p>
+          </li>
+
+          <li>
+            <p>The website is now available as onion service
+            (http://jvauzb4sb3bwlsnc.onion/).</p>
           </li>
         </ul>
       </li>

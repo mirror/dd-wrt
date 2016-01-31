@@ -1,4 +1,4 @@
-const char jcc_rcs[] = "$Id: jcc.c,v 1.435 2015/01/24 16:42:57 fabiankeil Exp $";
+const char jcc_rcs[] = "$Id: jcc.c,v 1.440 2016/01/16 12:33:36 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/jcc.c,v $
@@ -6,7 +6,7 @@ const char jcc_rcs[] = "$Id: jcc.c,v 1.435 2015/01/24 16:42:57 fabiankeil Exp $"
  * Purpose     :  Main file.  Contains main() method, main loop, and
  *                the main connection-handling function.
  *
- * Copyright   :  Written by and Copyright (C) 2001-2014 the
+ * Copyright   :  Written by and Copyright (C) 2001-2016 the
  *                Privoxy team. http://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -212,12 +212,10 @@ static int received_hup_signal = 0;
 
 /* HTTP snipplets. */
 static const char CSUCCEED[] =
-   "HTTP/1.1 200 Connection established\r\n"
-   "Proxy-Agent: Privoxy/" VERSION "\r\n\r\n";
+   "HTTP/1.1 200 Connection established\r\n\r\n";
 
 static const char CHEADER[] =
    "HTTP/1.1 400 Invalid header received from client\r\n"
-   "Proxy-Agent: Privoxy " VERSION "\r\n"
    "Content-Type: text/plain\r\n"
    "Connection: close\r\n\r\n"
    "Invalid header received from client.\r\n";
@@ -237,7 +235,6 @@ static const char GOPHER_RESPONSE[] =
 /* XXX: should be a template */
 static const char MISSING_DESTINATION_RESPONSE[] =
    "HTTP/1.1 400 Bad request received from client\r\n"
-   "Proxy-Agent: Privoxy " VERSION "\r\n"
    "Content-Type: text/plain\r\n"
    "Connection: close\r\n\r\n"
    "Bad request. Privoxy was unable to extract the destination.\r\n";
@@ -245,7 +242,6 @@ static const char MISSING_DESTINATION_RESPONSE[] =
 /* XXX: should be a template */
 static const char INVALID_SERVER_HEADERS_RESPONSE[] =
    "HTTP/1.1 502 Server or forwarder response invalid\r\n"
-   "Proxy-Agent: Privoxy " VERSION "\r\n"
    "Content-Type: text/plain\r\n"
    "Connection: close\r\n\r\n"
    "Bad response. The server or forwarder response doesn't look like HTTP.\r\n";
@@ -253,35 +249,30 @@ static const char INVALID_SERVER_HEADERS_RESPONSE[] =
 /* XXX: should be a template */
 static const char MESSED_UP_REQUEST_RESPONSE[] =
    "HTTP/1.1 400 Malformed request after rewriting\r\n"
-   "Proxy-Agent: Privoxy " VERSION "\r\n"
    "Content-Type: text/plain\r\n"
    "Connection: close\r\n\r\n"
    "Bad request. Messed up with header filters.\r\n";
 
 static const char TOO_MANY_CONNECTIONS_RESPONSE[] =
    "HTTP/1.1 503 Too many open connections\r\n"
-   "Proxy-Agent: Privoxy " VERSION "\r\n"
    "Content-Type: text/plain\r\n"
    "Connection: close\r\n\r\n"
    "Maximum number of open connections reached.\r\n";
 
 static const char CLIENT_CONNECTION_TIMEOUT_RESPONSE[] =
    "HTTP/1.1 504 Connection timeout\r\n"
-   "Proxy-Agent: Privoxy " VERSION "\r\n"
    "Content-Type: text/plain\r\n"
    "Connection: close\r\n\r\n"
    "The connection timed out because the client request didn't arrive in time.\r\n";
 
 static const char CLIENT_BODY_PARSE_ERROR_RESPONSE[] =
    "HTTP/1.1 400 Failed reading client body\r\n"
-   "Proxy-Agent: Privoxy " VERSION "\r\n"
    "Content-Type: text/plain\r\n"
    "Connection: close\r\n\r\n"
    "Failed parsing or buffering the chunk-encoded client body.\r\n";
 
 static const char UNSUPPORTED_CLIENT_EXPECTATION_ERROR_RESPONSE[] =
    "HTTP/1.1 417 Expecting too much\r\n"
-   "Proxy-Agent: Privoxy " VERSION "\r\n"
    "Content-Type: text/plain\r\n"
    "Connection: close\r\n\r\n"
    "Privoxy detected an unsupported Expect header value.\r\n";
@@ -918,7 +909,7 @@ static void build_request_line(struct client_state *csp, const struct forward_sp
    *request_line = strdup(http->gpc);
    string_append(request_line, " ");
 
-   if (fwd->forward_host)
+   if (fwd->forward_host && fwd->type != FORWARD_WEBSERVER)
    {
       string_append(request_line, http->url);
    }
@@ -1465,6 +1456,70 @@ static jb_err receive_chunked_client_request_body(struct client_state *csp)
 
 }
 
+
+#ifdef FEATURE_FORCE_LOAD
+/*********************************************************************
+ *
+ * Function    :  force_required
+ *
+ * Description : Checks a request line to see if it contains
+ *               the FORCE_PREFIX. If it does, it is removed
+ *               unless enforcing requests has beend disabled.
+ *
+ * Parameters  :
+ *          1  :  request_line = HTTP request line
+ *
+ * Returns     :  TRUE if force is required, FALSE otherwise.
+ *
+ *********************************************************************/
+static int force_required(const struct client_state *csp, char *request_line)
+{
+   char *p;
+
+   p = strstr(request_line, "http://");
+   if (p != NULL)
+   {
+      /* Skip protocol */
+      p += strlen("http://");
+   }
+   else
+   {
+      /* Intercepted request usually don't specify the protocol. */
+      p = request_line;
+   }
+
+   /* Go to the beginning of the path */
+   p = strstr(p, "/");
+   if (p == NULL)
+   {
+      /*
+       * If the path is missing the request line is invalid and we
+       * are done here. The client-visible rejection happens later on.
+       */
+      return 0;
+   }
+
+   if (0 == strncmpic(p, FORCE_PREFIX, strlen(FORCE_PREFIX) - 1))
+   {
+      if (!(csp->config->feature_flags & RUNTIME_FEATURE_ENFORCE_BLOCKS))
+      {
+         /* XXX: Should clean more carefully */
+         strclean(request_line, FORCE_PREFIX);
+         log_error(LOG_LEVEL_FORCE,
+            "Enforcing request: \"%s\".", request_line);
+
+         return 1;
+      }
+      log_error(LOG_LEVEL_FORCE,
+         "Ignored force prefix in request: \"%s\".", request_line);
+   }
+
+   return 0;
+
+}
+#endif /* def FEATURE_FORCE_LOAD */
+
+
 /*********************************************************************
  *
  * Function    :  receive_client_request
@@ -1512,23 +1567,9 @@ static jb_err receive_client_request(struct client_state *csp)
    }
 
 #ifdef FEATURE_FORCE_LOAD
-   /*
-    * If this request contains the FORCE_PREFIX and blocks
-    * aren't enforced, get rid of it and set the force flag.
-    */
-   if (strstr(req, FORCE_PREFIX))
+   if (force_required(csp, req))
    {
-      if (csp->config->feature_flags & RUNTIME_FEATURE_ENFORCE_BLOCKS)
-      {
-         log_error(LOG_LEVEL_FORCE,
-            "Ignored force prefix in request: \"%s\".", req);
-      }
-      else
-      {
-         strclean(req, FORCE_PREFIX);
-         log_error(LOG_LEVEL_FORCE, "Enforcing request: \"%s\".", req);
-         csp->flags |= CSP_FLAG_FORCED;
-      }
+      csp->flags |= CSP_FLAG_FORCED;
    }
 #endif /* def FEATURE_FORCE_LOAD */
 
@@ -1936,7 +1977,7 @@ static void chat(struct client_state *csp)
 
       if (csp->server_connection.sfd == JB_INVALID_SOCKET)
       {
-         if (fwd->type != SOCKS_NONE)
+         if ((fwd->type != SOCKS_NONE) && (fwd->type != FORWARD_WEBSERVER))
          {
             /* Socks error. */
             rsp = error_response(csp, "forwarding-failed");
@@ -3934,7 +3975,9 @@ static void listen_loop(void)
       }
       csp = &csp_list->csp;
 
-      log_error(LOG_LEVEL_CONNECT, "Listening for new connections ... ");
+      log_error(LOG_LEVEL_CONNECT,
+         "Waiting for the next client connection. Currently active threads: %d",
+         active_threads);
 
       if (!accept_connection(csp, bfds))
       {
@@ -4188,7 +4231,8 @@ static void listen_loop(void)
              * XXX: If you assume ...
              */
             log_error(LOG_LEVEL_ERROR,
-               "Unable to take any additional connections: %E");
+               "Unable to take any additional connections: %E. Active threads: %d",
+               active_threads);
             write_socket(csp->cfd, TOO_MANY_CONNECTIONS_RESPONSE,
                strlen(TOO_MANY_CONNECTIONS_RESPONSE));
             close_socket(csp->cfd);
