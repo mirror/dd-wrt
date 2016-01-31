@@ -1,4 +1,4 @@
-const char jbsockets_rcs[] = "$Id: jbsockets.c,v 1.131 2014/11/14 10:40:24 fabiankeil Exp $";
+const char jbsockets_rcs[] = "$Id: jbsockets.c,v 1.135 2016/01/16 12:33:35 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/jbsockets.c,v $
@@ -8,7 +8,7 @@ const char jbsockets_rcs[] = "$Id: jbsockets.c,v 1.131 2014/11/14 10:40:24 fabia
  *                OS-independent.  Contains #ifdefs to make this work
  *                on many platforms.
  *
- * Copyright   :  Written by and Copyright (C) 2001-2014 the
+ * Copyright   :  Written by and Copyright (C) 2001-2016 the
  *                Privoxy team. http://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -122,6 +122,33 @@ static jb_socket rfc2553_connect_to(const char *host, int portnum, struct client
 #else
 static jb_socket no_rfc2553_connect_to(const char *host, int portnum, struct client_state *csp);
 #endif
+
+/*********************************************************************
+ *
+ * Function    :  set_no_delay_flag
+ *
+ * Description :  Disables TCP coalescence for the given socket.
+ *
+ * Parameters  :
+ *          1  :  fd = The file descriptor to operate on
+ *
+ * Returns     :  void
+ *
+ *********************************************************************/
+static void set_no_delay_flag(int fd)
+{
+#ifdef TCP_NODELAY
+   int mi = 1;
+
+   if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &mi, sizeof(int)))
+   {
+      log_error(LOG_LEVEL_ERROR,
+         "Failed to disable TCP coalescence for socket %d", fd);
+   }
+#else
+#warning set_no_delay_flag() is a nop due to lack of TCP_NODELAY
+#endif /* def TCP_NODELAY */
+}
 
 /*********************************************************************
  *
@@ -288,12 +315,7 @@ static jb_socket rfc2553_connect_to(const char *host, int portnum, struct client
       mark_socket_for_close_on_execute(fd);
 #endif
 
-#ifdef TCP_NODELAY
-      {  /* turn off TCP coalescence */
-         int mi = 1;
-         setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, (char *) &mi, sizeof (int));
-      }
-#endif /* def TCP_NODELAY */
+      set_no_delay_flag(fd);
 
 #if !defined(_WIN32) && !defined(__BEOS__) && !defined(AMIGA) && !defined(__OS2__)
       if ((flags = fcntl(fd, F_GETFL, 0)) != -1)
@@ -481,12 +503,7 @@ static jb_socket no_rfc2553_connect_to(const char *host, int portnum, struct cli
    }
 #endif
 
-#ifdef TCP_NODELAY
-   {  /* turn off TCP coalescence */
-      int mi = 1;
-      setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, (char *) &mi, sizeof (int));
-   }
-#endif /* def TCP_NODELAY */
+   set_no_delay_flag(fd);
 
 #if !defined(_WIN32) && !defined(__BEOS__) && !defined(AMIGA) && !defined(__OS2__)
    if ((flags = fcntl(fd, F_GETFL, 0)) != -1)
@@ -1290,7 +1307,7 @@ int accept_connection(struct client_state * csp, jb_socket fds[])
       struct linger linger_options;
       linger_options.l_onoff  = 1;
       linger_options.l_linger = 5;
-      if (0 != setsockopt(fd, SOL_SOCKET, SO_LINGER, &linger_options, sizeof(linger_options)))
+      if (0 != setsockopt(afd, SOL_SOCKET, SO_LINGER, &linger_options, sizeof(linger_options)))
       {
          log_error(LOG_LEVEL_ERROR, "Setting SO_LINGER on socket %d failed.", afd);
       }
@@ -1311,6 +1328,8 @@ int accept_connection(struct client_state * csp, jb_socket fds[])
 #ifdef FEATURE_EXTERNAL_FILTERS
    mark_socket_for_close_on_execute(afd);
 #endif
+
+   set_no_delay_flag(afd);
 
    csp->cfd = afd;
 #ifdef HAVE_RFC2553

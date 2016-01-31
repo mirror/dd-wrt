@@ -3,7 +3,7 @@
 ##############################################################################################
 # uagen (http://www.fabiankeil.de/sourcecode/uagen/)
 #
-# $Id: uagen.pl,v 1.25 2013/01/17 14:28:57 fabiankeil Exp $
+# $Id: uagen.pl,v 1.26 2016/01/16 12:27:56 fabiankeil Exp $
 #
 # Generates a pseudo-random Firefox user agent and writes it into a Privoxy action file
 # and optionally into a Mozilla prefs file. For documentation see 'perldoc uagen(.pl)'.
@@ -133,7 +133,7 @@ sub generate_platform_and_os() {
         FreeBSD => {
             karma             => 1,
             platform          => 'X11',
-            architectures     => [ 'i386', 'amd64', 'sparc64', 'alpha' ],
+            architectures     => [ 'i386', 'amd64', 'sparc64' ],
             order_is_inversed => 0,
         },
         OpenBSD => {

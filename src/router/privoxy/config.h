@@ -53,12 +53,12 @@
 /*
  * Version number - Point (_._.X)
  */
-#define VERSION_POINT 23
+#define VERSION_POINT 24
 
 /*
  * Version number, as a string
  */
-#define VERSION "3.0.23"
+#define VERSION "3.0.24"
 
 /*
  * Status of the code: "alpha", "beta" or "stable".

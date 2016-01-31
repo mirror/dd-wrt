@@ -1,4 +1,4 @@
-const char win32_rcs[] = "$Id: win32.c,v 1.19 2012/03/09 16:23:50 fabiankeil Exp $";
+const char win32_rcs[] = "$Id: win32.c,v 1.20 2015/08/12 10:39:16 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/win32.c,v $
@@ -204,7 +204,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
    g_nCmdShow = nCmdShow;
    _beginthread(UserInterfaceThread, 0, &hInitCompleteEvent);
    WaitForSingleObject(hInitCompleteEvent, INFINITE);
-   DeleteObject(hInitCompleteEvent);
+   CloseHandle(hInitCompleteEvent);
 #endif
 
 #ifdef __MINGW32__

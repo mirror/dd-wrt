@@ -1,4 +1,4 @@
-const char miscutil_rcs[] = "$Id: miscutil.c,v 1.78 2012/11/24 13:58:17 fabiankeil Exp $";
+const char miscutil_rcs[] = "$Id: miscutil.c,v 1.80 2016/01/16 12:33:36 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/miscutil.c,v $
@@ -8,7 +8,7 @@ const char miscutil_rcs[] = "$Id: miscutil.c,v 1.78 2012/11/24 13:58:17 fabianke
  *                to deserve their own file but don't really fit in
  *                any other file.
  *
- * Copyright   :  Written by and Copyright (C) 2001-2012 the
+ * Copyright   :  Written by and Copyright (C) 2001-2016 the
  *                Privoxy team. http://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -150,6 +150,14 @@ char *strdup_or_die(const char *str)
 void *malloc_or_die(size_t buffer_size)
 {
    char *new_buf;
+
+   if (buffer_size == 0)
+   {
+      log_error(LOG_LEVEL_ERROR,
+         "malloc_or_die() called with buffer size 0");
+      assert(buffer_size != 0);
+      buffer_size = 4096;
+   }
 
    new_buf = malloc(buffer_size);
 
@@ -893,7 +901,7 @@ time_t timegm(struct tm *tm)
 Author
 
    Mark Martinec <mark.martinec@ijs.si>, April 1999, June 2000
-   Copyright © 1999, Mark Martinec
+   Copyright ï¿½ 1999, Mark Martinec
 
  */
 
