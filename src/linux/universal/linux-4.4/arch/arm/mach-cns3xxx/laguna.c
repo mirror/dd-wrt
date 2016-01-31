@@ -1109,7 +1109,12 @@ static int __init laguna_model_setup(void)
 		platform_device_register(&laguna_uart);
 
 		printk(KERN_EMERG "notflash size %d\n",laguna_info.nor_flash_size);
-		if ((laguna_info.config2_bitmap & (NOR_FLASH_LOAD)) && (strncmp(laguna_info.model, "GW2388", 6) == 0 || strncmp(laguna_info.model, "GW2387", 6) == 0 || strncmp(laguna_info.model, "GW2389", 6) == 0 || strncmp(laguna_info.model, "GW2391", 6) == 0)) {
+		if ((laguna_info.config2_bitmap & (NOR_FLASH_LOAD)) && ( 
+		strncmp(laguna_info.model, "GW2388", 6) == 0 || 
+		strncmp(laguna_info.model, "GW2387", 6) == 0 || 
+		strncmp(laguna_info.model, "GW2389", 6) == 0 || 
+		strncmp(laguna_info.model, "GW2391", 6) == 0 || 
+		strncmp(laguna_info.model, "GW2393", 6) == 0)) {
 			printk(KERN_EMERG "detecting NOR FLASH\n");
 //			if (laguna_info.nor_flash_size < 1 || laguna_info.nor_flash_size > 5)
 //			    laguna_info.nor_flash_size = 2; //guess default for wrong config 
@@ -1147,7 +1152,7 @@ static int __init laguna_model_setup(void)
 			{
 			if (*((__u32 *) buf) == SQUASHFS_MAGIC) 
 			{
-		//	printk(KERN_EMERG "found squashfs\n");
+			printk(KERN_EMERG "found squashfs on %X\n",offset);
 	    		struct squashfs_super_block *sb = (struct squashfs_super_block *) buf;
 			filesyssize = sb->bytes_used;
 			tmplen = offset + filesyssize;
@@ -1298,7 +1303,7 @@ static int __init laguna_model_setup(void)
 			laguna_gpio_leds[0].gpio = 107;
 			laguna_gpio_leds[1].gpio = 106;
 			laguna_gpio_leds_data.num_leds = 2;
-		} else if (strncmp(laguna_info.model, "GW2391", 6) == 0) {
+		} else if (strncmp(laguna_info.model, "GW2391", 6) == 0 || strncmp(laguna_info.model, "GW2393", 6) == 0) {
 			// configure GPIO's
 			laguna_register_gpio(ARRAY_AND_SIZE(laguna_gpio_gw2391));
 			// configure LED's
