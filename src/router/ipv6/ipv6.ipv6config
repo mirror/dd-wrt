@@ -64,7 +64,7 @@
 		<!-- end only 6in4 selected-->
 		<div class="setting">
 				<div class="label"><% tran("idx.mtu"); %></div>
-					<input size="4" maxlength="4" type="number" min="1260" max="1480" class="text" name="ipv6_mtu" value="<% nvram_get("ipv6_mtu"); %>" />
+					<input size="4" maxlength="4" type="number" min="1280" max="1480" class="text" name="ipv6_mtu" value="<% nvram_get("ipv6_mtu"); %>" />
 				</select>
 		</div>
 		<br><hr><br>
