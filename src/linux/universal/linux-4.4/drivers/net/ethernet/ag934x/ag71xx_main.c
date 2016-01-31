@@ -18,6 +18,7 @@ static inline void skb_free_frag(void *data)
 {
 	put_page(virt_to_head_page(data));
 }
+#define napi_alloc_frag netdev_alloc_frag
 #endif
 
 #define AG71XX_DEFAULT_MSG_ENABLE	\
