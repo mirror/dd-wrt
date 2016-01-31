@@ -562,6 +562,9 @@ static char *s_conditions[] = {
 #ifdef HAVE_USBIP
 	"USBIP",
 #endif
+#ifdef HAVE_80211AC
+	"80211AC",
+#endif
 	NULL
 };
 
