@@ -23,6 +23,14 @@
 #include <linux/skbuff.h>
 #include <mach/platform.h>
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,2,0)
+static inline void skb_free_frag(void *data)
+{
+	put_page(virt_to_head_page(data));
+}
+#define napi_alloc_frag netdev_alloc_frag
+#endif
+
 #define DRV_NAME "cns3xxx_eth"
 
 #define RX_DESCS 256
