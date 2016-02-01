@@ -38,32 +38,10 @@
 #define SIOCGMIIREG	0x8948	/* Read MII PHY register.  */
 #define SIOCSMIIREG	0x8949	/* Write MII PHY register.  */
 
-static void getMac(char *newmac)
-{
-	int brand = getRouterBrand();
-	switch (brand) {
-	case ROUTER_ASUS_AC87U:
-	case ROUTER_ASUS_AC88U:
-	case ROUTER_ASUS_AC5300:
-		strcpy(newmac, nvram_safe_get("et1macaddr"));
-		break;
-	case ROUTER_NETGEAR_R8000:
-	case ROUTER_NETGEAR_R8500:
-	case ROUTER_TRENDNET_TEW828:
-	case ROUTER_DLINK_DIR885:
-		strcpy(newmac, nvram_safe_get("et2macaddr"));
-		break;
-	default:
-		strcpy(newmac, nvram_safe_get("et0macaddr"));
-		break;
-	}
-	
-}
-
 void getLANMac(char *newmac)
 {
 
-	getMac(newmac);
+	getSystemMac(newmac);
 
 #ifndef HAVE_BUFFALO
 
@@ -122,7 +100,7 @@ void getWirelessMac(char *newmac, int instance)
 			}
 
 		} else {
-			getMac(newmac);
+			getSystemMac(newmac);
 			MAC_ADD(newmac);	// et0macaddr +2
 			MAC_ADD(newmac);
 			if (instance > 0)
@@ -172,7 +150,7 @@ void getWANMac(char *newmac)
 		return;
 	}
 #endif
-	getMac(newmac);
+	getSystemMac(newmac);
 
 #if !defined(HAVE_BUFFALO) && !defined(HAVE_WZRG300NH) && !defined(HAVE_WHRHPGN)
 	if (getRouterBrand() != ROUTER_ASUS_AC66U) {
