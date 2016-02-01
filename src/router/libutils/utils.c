@@ -983,7 +983,6 @@ int check_vlan_support(void)
 	return 0;
 #else
 
-
 	int brand = getRouterBrand();
 
 	switch (brand) {
@@ -1015,15 +1014,15 @@ int check_vlan_support(void)
 
 	unsigned long boardflags = strtoul(nvram_safe_get("boardflags"), NULL, 0);
 	if (boardflags & BFL_ENETVLAN)
-		return 1;	
-	if (nvram_match("boardtype", "bcm94710dev")) 
 		return 1;
-	if (nvram_match("boardtype", "0x0101")) 
+	if (nvram_match("boardtype", "bcm94710dev"))
 		return 1;
-	if (boardflags & 0x0100) 
+	if (nvram_match("boardtype", "0x0101"))
+		return 1;
+	if (boardflags & 0x0100)
 		return 1;
 
-		return 0;
+	return 0;
 #endif
 }
 
@@ -2440,7 +2439,7 @@ int internal_getRouterBrand()
 		{"UniFi UAP-AC v2", 0xe912, 3, 3, ROUTER_BOARD_UNIFI, 0, 10},	//
 		{"UniFi UAP v2", 0xe572, 3, 3, ROUTER_BOARD_UNIFI, 0, 10},	//
 		{"UniFi UAP-LR v2", 0xe582, 3, 3, ROUTER_BOARD_UNIFI, 0, 10},	//
-		{NULL, 0, 0, 0, 0, 0,0},	//
+		{NULL, 0, 0, 0, 0, 0, 0},	//
 	};
 
 #undef M35
@@ -6733,7 +6732,7 @@ int insmod(char *module)
 	wordlist = module;
 	foreach(word, wordlist, next) {
 		ret |= _evalpid((char *[]) {
-			 "insmod", word, NULL}, ">/dev/null", 0, NULL);
+				"insmod", word, NULL}, ">/dev/null", 0, NULL);
 	}
 	return ret;
 }
@@ -7660,8 +7659,13 @@ void getSystemMac(char *newmac)
 	case ROUTER_NETGEAR_R8000:
 	case ROUTER_NETGEAR_R8500:
 	case ROUTER_TRENDNET_TEW828:
-	case ROUTER_DLINK_DIR885:
 		strcpy(newmac, nvram_safe_get("et2macaddr"));
+		break;
+	case ROUTER_DLINK_DIR885:
+		if (nvram_get("et0macaddr"))
+			strcpy(newmac, nvram_safe_get("et0macaddr"));
+		else
+			strcpy(newmac, nvram_safe_get("et2macaddr"));
 		break;
 	default:
 		strcpy(newmac, nvram_safe_get("et0macaddr"));
