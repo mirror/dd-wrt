@@ -580,7 +580,7 @@ int mtd_write(const char *path, const char *mtd)
 		// count +=
 		// http_get (path, &buf[off], len - off, erase_info.start + off);
 
-#if defined(HAVE_MVEBU) || defined(HAVE_IPQ806X)	// erase all blocks first
+#if defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_VENTANA)	// erase all blocks first
 		if (!first) {
 			mtd_erase(mtd);
 			first = 1;
