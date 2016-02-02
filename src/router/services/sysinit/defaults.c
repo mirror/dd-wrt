@@ -832,9 +832,9 @@ struct nvram_param srouter_defaults[] = {
 	{"wl2_wmf_ucast_upnp", "1"},	/* Disable Converting upnp to ucast (default) */
 	{"wl2_wmf_igmpq_filter", "0"},	/* Disable igmp query filter */
 	/* Airtime fairness */
-	{"wl0_atf", "1"},	/* 0= off 1= on */
-	{"wl1_atf", "1"},
-	{"wl2_atf", "1"},
+	{"wl0_atf", "0"},	/* 0= off 1= on */
+	{"wl1_atf", "0"},
+	{"wl2_atf", "0"},
 
 	{"wl0_txbf", "0"},
 	{"wl1_txbf", "0"},
