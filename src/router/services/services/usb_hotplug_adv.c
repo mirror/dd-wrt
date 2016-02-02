@@ -283,11 +283,8 @@ static bool usb_load_modules(char *fs)
 		insmod("mbcache ext2");
 	}
 #ifdef HAVE_USB_ADVANCED
-	if (!strcmp(fs, "ext3")) {
-		insmod("mbcache ext2 jbd ext3");
-	}
-	if (!strcmp(fs, "ext4")) {
-		insmod("crc16 mbcache jbd2 ext4");
+	if (!strcmp(fs, "ext3") || !strcmp(fs, "ext4")) {
+		insmod("crc16 mbcache ext2 jbd jbd2 ext3 ext4");
 	}
 	if (!strcmp(fs, "btrfs")) {
 		insmod("libcrc32c crc32c_generic lzo_compress lzo_decompress raid6_pq xor-neon xor btrfs");
