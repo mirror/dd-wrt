@@ -2611,7 +2611,7 @@ void start_firewall6(void)
 
 	fprintf(stderr, "start firewall6\n");
 
-	insmod("nf_defrag_ipv6 ip6_tables nf_conntrack_ipv6 ip6table_filter");
+	insmod("nf_defrag_ipv6 nf_log_ipv6 ip6_tables nf_conntrack_ipv6 ip6table_filter");
 
 	eval("ip6tables", "-F", "INPUT");
 	eval("ip6tables", "-F", "FORWARD");
