@@ -62,13 +62,6 @@ extern int br_add_interface(const char *br, const char *dev);
 
 // returns the number of installed atheros devices/cards
 
-static char iflist[1024];
-
-char *getiflist(void)
-{
-	return iflist;
-}
-
 static int need_commit = 0;
 
 void setupSupplicant(char *prefix)
@@ -691,17 +684,17 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 		strcat(keyidstr, "1");
 	else
 		strcat(keyidstr, nvram_nget("wl%d_key", idx));
-
+	char tmp[256];
 	if (idx == 0) {
 		if (nvram_nmatch("0", "ra%d_bridged", idx))
 			strcat(eapifname, "ra0");
 		else
-			strcat(eapifname, getBridge("ra0"));
+			strcat(eapifname, getBridge("ra0", tmp));
 	} else {
 		if (nvram_nmatch("0", "ba%d_bridged", idx))
 			strcat(eapifname, "ba0");
 		else
-			strcat(eapifname, getBridge("ba0"));
+			strcat(eapifname, getBridge("ba0", tmp));
 
 	}
 	if (nvram_nmatch("wep", "wl%d_akm", idx)) {
@@ -817,7 +810,7 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 		if (nvram_nmatch("0", "%s_bridged", getRADev(var)))
 			strcat(eapifname, getRADev(var));
 		else
-			strcat(eapifname, getBridge(getRADev(var)));
+			strcat(eapifname, getBridge(getRADev(var), tmp));
 		strcat(keyidstr, ";");
 		if (nvram_nmatch("", "%s_key", var))
 			strcat(keyidstr, "1");
@@ -1187,7 +1180,7 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 		if (nvram_default_match(bridged, "1", "1")) {
 			sysprintf("ifconfig %s 0.0.0.0 up", raif);
 			if (nvram_nmatch("infra", "wl%d_mode", idx)) {
-				br_add_interface(getBridge(raif), raif);
+				br_add_interface(getBridge(raif, tmp), raif);
 			}
 		} else {
 			sysprintf("ifconfig %s mtu %s", raif, getMTU(raif));
@@ -1249,6 +1242,7 @@ void init_network(int idx)
 	char *raif = get_wl_instance_name(idx);
 	char apcliif[32];
 	int s;
+	char tmp[256];
 
 	if (!isSTA(idx)) {
 
@@ -1259,12 +1253,12 @@ void init_network(int idx)
 			if (getSTA() || getWET()) {
 				sysprintf("ifconfig %s 0.0.0.0 up", raif);
 				sysprintf("ifconfig %s 0.0.0.0 up", apcliif);
-				br_add_interface(getBridge(apcliif), raif);
+				br_add_interface(getBridge(apcliif, tmp), raif);
 				if (getWET())
-					br_add_interface(getBridge(apcliif), apcliif);
+					br_add_interface(getBridge(apcliif, tmp), apcliif);
 			} else {
 				sysprintf("ifconfig %s 0.0.0.0 up", raif);
-				br_add_interface(getBridge(raif), raif);
+				br_add_interface(getBridge(raif, tmp), raif);
 			}
 		} else {
 			if (getSTA() || getWET()) {
@@ -1298,7 +1292,7 @@ void init_network(int idx)
 
 					sprintf(ra, "ra%d", count + (8 * idx));
 					sysprintf("ifconfig ra%d 0.0.0.0 up", count + (8 * idx));
-					br_add_interface(getBridge(getRADev(var)), ra);
+					br_add_interface(getBridge(getRADev(var, tmp)), ra);
 				} else {
 					char ip[32];
 					char mask[32];
@@ -1438,7 +1432,7 @@ void init_network(int idx)
 		} else if (nvram_match(wdsvarname, "3")) {
 			ifconfig(dev, IFUP, 0, 0);
 			sleep(1);
-			br_add_interface(getBridge(dev), dev);
+			br_add_interface(getBridge(dev, tmp), dev);
 		}
 	}
 

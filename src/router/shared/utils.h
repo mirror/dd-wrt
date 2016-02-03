@@ -749,8 +749,8 @@ typedef struct {
 extern void update_timezone(void);
 extern TIMEZONE_TO_TZSTRING allTimezones[];
 
-extern char *getBridge(char *ifname);
-extern char *getRealBridge(char *ifname);
+extern char *getBridge(char *ifname, char *word);
+extern char *getRealBridge(char *ifname, char *word);
 extern char *getWDSSTA(void);
 extern char *getSTA(void);
 extern char *getWET(void);
@@ -989,7 +989,7 @@ void lcdmessaged(char *dual, char *message);
 #define lcdmessaged(a,b)
 #endif
 
-extern char *getBridgeMTU(char *);
+extern char *getBridgeMTU(char *, char *word);
 extern char *getMTU(char *);
 extern int getBridgeSTP(char *br);
 extern char *get_NFServiceMark(char *service, uint32 mark);
@@ -1002,7 +1002,7 @@ extern char *get_tcfmark(uint32 mark);
 #endif
 
 extern char *get_wshaper_dev(void);
-extern char *get_mtu_val(void);
+extern char *get_mtu_val(char *buf);
 extern void add_client_dev_srvfilter(char *name, char *type, char *data, char *level, int base, char *chain);
 extern void add_client_mac_srvfilter(char *name, char *type, char *data, char *level, int base, char *client);
 extern void add_client_ip_srvfilter(char *name, char *type, char *data, char *level, int base, char *client);

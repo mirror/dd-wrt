@@ -277,7 +277,7 @@ void start_pppoeserver(void)
 			fclose(fp);
 
 			// parse chaps from nvram to file
-			static char word[256];
+			char word[256];
 			char *next, *wordlist;
 			char *user, *pass, *ip, *enable;
 
