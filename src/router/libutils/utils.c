@@ -7677,7 +7677,7 @@ void getSystemMac(char *newmac)
 
 }
 
-static void strcpyto(char *dest, char *src, char c)
+void strcpyto(char *dest, char *src, char c)
 {
 	int cnt = 0;
 	int len = strlen(src);
