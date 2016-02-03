@@ -60,11 +60,6 @@
 
 int debug_value = 0;
 
-// static char * rfctime(const time_t *timep);
-// static char * reltime(unsigned int seconds);
-
-// #if defined(linux)
-
 #include <fcntl.h>
 #include <signal.h>
 #include <time.h>

@@ -37,7 +37,7 @@ void port_forward_table(webs_t wp, char *type, int which)
 	char word[256];
 	char *next, *wordlist;
 	char *name, *from, *to, *proto, *ip, *enable;
-	static char new_name[200];
+	char new_name[200];
 	int temp;
 
 	wordlist = nvram_safe_get("forward_port");
@@ -124,7 +124,7 @@ void port_forward_spec(webs_t wp, char *type, int which)
 	char word[256];
 	char *next, *wordlist;
 	char *name, *from, *to, *proto, *ip, *enable, *src = NULL;
-	static char new_name[200];
+	char new_name[200];
 	int temp;
 
 	wordlist = nvram_safe_get("forward_spec");
@@ -229,7 +229,7 @@ void port_trigger_table(webs_t wp, char *type, int which)
 	char word[256];
 	char *next, *wordlist;
 	char *name = NULL, *enable = NULL, *proto = NULL, *i_from = NULL, *i_to = NULL, *o_from = NULL, *o_to = NULL;
-	static char new_name[200];
+	char new_name[200];
 	int temp;
 
 	wordlist = nvram_safe_get("port_trigger");

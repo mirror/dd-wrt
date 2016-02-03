@@ -68,10 +68,9 @@ void show_default_info(webs_t wp)
 	return;
 }
 
-static char *exec_cmd(char *cmd)
+static char *exec_cmd(char *cmd, char *line)
 {
 	FILE *fp;
-	static char line[254];
 
 	bzero(line, sizeof(line));
 
@@ -89,6 +88,7 @@ void show_other_info(webs_t wp)
 {
 	int ret = 0;
 	struct sysinfo info;
+	char line[256];
 
 	websDone(wp, 200);	// Let header in first packet, and bellow
 	// information in second packet.
@@ -99,12 +99,12 @@ void show_other_info(webs_t wp)
 	websWrite(wp, "Write Mac Address = %s\n", nvram_safe_get("et0macaddr"));
 	websWrite(wp, "\n");
 	websWrite(wp, "get wl_gmode = %s\n", nvram_safe_get("wl_gmode"));
-	websWrite(wp, "wl_gmode = %s\n", exec_cmd("wl gmode"));
+	websWrite(wp, "wl_gmode = %s\n", exec_cmd("wl gmode", line));
 
 	websWrite(wp, "get wl_afterburner = %s\n", nvram_safe_get("wl_afterburner"));
-	websWrite(wp, "wl afterburner = %s\n", exec_cmd("wl afterburner"));
+	websWrite(wp, "wl afterburner = %s\n", exec_cmd("wl afterburner", line));
 
-	websWrite(wp, "wl afterburner_override = %s\n", exec_cmd("wl afterburner_override"));
+	websWrite(wp, "wl afterburner_override = %s\n", exec_cmd("wl afterburner_override", line));
 	websWrite(wp, "\n");
 
 	sysinfo(&info);
