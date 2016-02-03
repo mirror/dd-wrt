@@ -53,7 +53,7 @@ static int client_bridged_enabled(void)
 	iflist[0] = 0;		// workaround for bug in getIfList()
 	getIfList(iflist, NULL);
 
-	static char word[256];
+	char word[256];
 	char *next;
 	int bridged_clients = 0;
 
@@ -67,7 +67,7 @@ static int client_bridged_enabled(void)
 
 #ifdef HAVE_SVQOS
 
-extern char *get_mtu_val(void);
+extern char *get_mtu_val(char *buf);
 extern void add_client_mac_srvfilter(char *name, char *type, char *data, char *level, int base, char *client);
 extern void add_client_ip_srvfilter(char *name, char *type, char *data, char *level, int base, char *client);
 extern char *get_NFServiceMark(char *service, uint32 mark);
@@ -694,7 +694,7 @@ static int svqos_iptables(void)
 #ifdef HAVE_OPENVPN
 	if (nvram_invmatch("openvpn_enable", "0") || nvram_invmatch("openvpncl_enable", "0")) {
 		char iflist[256];
-		static char word[256];
+		char word[256];
 		char *next;
 		bool unbridged_tap = 0;
 
@@ -1012,7 +1012,7 @@ void start_wshaper(void)
 	char *wan_dev;
 	char *aqd;
 	char *script_name;
-
+	char buf[256];
 	wan_dev = get_wanface();
 	if (!wan_dev)
 		wan_dev = "xx";
@@ -1037,7 +1037,7 @@ void start_wshaper(void)
 		return;
 	if ((ul_val = nvram_safe_get("wshaper_uplink")) == NULL && atoi(ul_val) > 0)
 		return;
-	mtu_val = get_mtu_val();
+	mtu_val = get_mtu_val(buf);
 
 #ifdef HAVE_SVQOS
 	aqd = nvram_safe_get("svqos_aqd");

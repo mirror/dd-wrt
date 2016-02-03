@@ -214,13 +214,13 @@ void showmemdebugstat();
  */
 #define foreach(word, foreachwordlist, next) \
 	for (next = &foreachwordlist[strspn(foreachwordlist, " ")], \
-	     strncpy(word, next, sizeof(word)), \
+	     strcpy(word, next), \
 	     word[strcspn(word, " ")] = '\0', \
 	     word[sizeof(word) - 1] = '\0', \
 	     next = strchr(next, ' '); \
 	     strlen(word); \
 	     next = next ? &next[strspn(next, " ")] : "", \
-	     strncpy(word, next, sizeof(word)), \
+	     strcpy(word, next), \
 	     word[strcspn(word, " ")] = '\0', \
 	     word[sizeof(word) - 1] = '\0', \
 	     next = strchr(next, ' ')) \

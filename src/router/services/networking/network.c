@@ -734,10 +734,10 @@ static void do_portsetup(char *lan, char *ifname)
 {
 	char var[64];
 	char var2[64];
-
+	char tmp[256];
 	sprintf(var, "%s_bridged", IFMAP(ifname));
 	if (nvram_default_match(var, "1", "1")) {
-		br_add_interface(getBridge(IFMAP(ifname)), IFMAP(ifname));
+		br_add_interface(getBridge(IFMAP(ifname), tmp), IFMAP(ifname));
 	} else {
 		ifconfig(ifname, IFUP, nvram_nget("%s_ipaddr", IFMAP(ifname)), nvram_nget("%s_netmask", ifname));
 		eval("gratarp", ifname);
@@ -827,14 +827,14 @@ void start_lan(void)
 #ifdef HAVE_DHDAP
 	int is_dhd;
 #endif /*__CONFIG_DHDAP__ */
-	static char eabuf[32];
-	static char lan_ifname[64];	//= strdup(nvram_safe_get("lan_ifname"));
-	static char wan_ifname[64];	//= strdup(nvram_safe_get("wan_ifname"));
-	static char lan_ifnames[128];	//= strdup(nvram_safe_get("lan_ifnames"));
-	static char name[80];
+	char eabuf[32];
+	char lan_ifname[64];	//= strdup(nvram_safe_get("lan_ifname"));
+	char wan_ifname[64];	//= strdup(nvram_safe_get("wan_ifname"));
+	char lan_ifnames[128];	//= strdup(nvram_safe_get("lan_ifnames"));
+	char name[80];
 	char *next, *svbuf;
-	static char realname[80];
-	static char wl_face[10];
+	char realname[80];
+	char wl_face[10];
 
 	// don't let packages pass to iptables without ebtables loaded
 	writeproc("/proc/sys/net/bridge/bridge-nf-call-arptables", "0");
@@ -2108,7 +2108,6 @@ void start_lan(void)
 	char *eadline = NULL;
 
 #endif
-
 	if (strncmp(lan_ifname, "br0", 3) == 0) {
 		br_add_bridge(lan_ifname);
 		eval("ifconfig", lan_ifname, "promisc");
@@ -2256,13 +2255,13 @@ void start_lan(void)
 				/*
 				 * Do not attach the main wl i/f if in wds or client/adhoc 
 				 */
-
+				char tmp[256];
 				led_control(LED_BRIDGE, LED_OFF);
 				if (nvram_match(wl_name, "wet")
 				    || nvram_match(wl_name, "apstawet")) {
 					ifconfig(name, IFUP | IFF_ALLMULTI, NULL, NULL);	// from 
 					// up
-					br_add_interface(getBridge(IFMAP(name)), name);
+					br_add_interface(getBridge(IFMAP(name), tmp), name);
 					led_control(LED_BRIDGE, LED_ON);
 					/* Enable host DHCP relay */
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
@@ -2290,7 +2289,7 @@ void start_lan(void)
 				if (nvram_match(wl_name, "bridge")) {
 					ifconfig(name, IFUP | IFF_ALLMULTI, NULL, NULL);	// from 
 					// up
-					br_add_interface(getBridge(IFMAP(name)), name);
+					br_add_interface(getBridge(IFMAP(name), tmp), name);
 					led_control(LED_BRIDGE, LED_ON);
 				}
 #endif
@@ -2609,7 +2608,8 @@ void start_lan(void)
 			} else if (nvram_match(wdsvarname, "3")) {
 				ifconfig(dev, IFUP, 0, 0);
 				sleep(1);
-				br_add_interface(getBridge(dev), dev);
+				char tmp[256];
+				br_add_interface(getBridge(dev, tmp), dev);
 			}
 		}
 	}
@@ -4338,11 +4338,10 @@ void start_wan_service(void)
 }
 
 #ifdef HAVE_IPV6
-static const char *ipv6_router_address(struct in6_addr *in6addr)
+static const char *ipv6_router_address(struct in6_addr *in6addr, char *addr6)
 {
 	char *p;
 	struct in6_addr addr;
-	static char addr6[INET6_ADDRSTRLEN];
 
 	addr6[0] = '\0';
 
@@ -4418,8 +4417,9 @@ static void start_wan6_done(char *wan_ifname)
 
 		char ip[INET6_ADDRSTRLEN + 4];
 		const char *p;
+		char addr6[INET6_ADDRSTRLEN];
 
-		p = ipv6_router_address(NULL);
+		p = ipv6_router_address(NULL, addr6);
 		if (*p) {
 			snprintf(ip, sizeof(ip), "%s/%d", p, atoi(nvram_safe_get("ipv6_pf_len")) ? : 64);
 			eval("ip", "-6", "addr", "add", ip, "dev", nvram_safe_get("lan_ifname"));
@@ -5050,17 +5050,17 @@ void start_hotplug_net(void)
 	char bridged[32];
 
 	sprintf(bridged, "%s_bridged", ifname);
-
+	char tmp[256];
 	if (!strcmp(action, "add")) {
 
 		eval("ifconfig", interface, "up");
 		if (nvram_match(bridged, "1"))
-			br_add_interface(getBridge(ifname), interface);
+			br_add_interface(getBridge(ifname, tmp), interface);
 	}
 	if (!strcmp(action, "remove")) {
 		eval("ifconfig", interface, "down");
 		if (nvram_match(bridged, "1"))
-			br_del_interface(getBridge(ifname), interface);
+			br_del_interface(getBridge(ifname, tmp), interface);
 	}
 	return;
 #else

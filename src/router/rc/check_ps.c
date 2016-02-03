@@ -224,7 +224,6 @@ static void softcontrol_wlan_led(void)	// done in watchdog.c for non-micro build
 /* 
  * end software wlan led control 
  */
-
 static void checkupgrade(void)
 {
 #ifndef HAVE_X86

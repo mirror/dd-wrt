@@ -32,7 +32,6 @@
 #include <rc.h>
 #include <iptables.h>
 
-static char range_buf[1024] = "";
 
 // iptc_handle_t handle = NULL;
 /*
@@ -149,7 +148,7 @@ int count_bits(unsigned char *sin, unsigned char *ein)
 	return len;
 }
 
-void subrange(unsigned char *sin, unsigned char *ein)
+static void subrange(unsigned char *sin, unsigned char *ein, char *range_buf)
 // recursive function to divide ip range
 {
 	unsigned char nets[4], nete[4];
@@ -186,7 +185,7 @@ void subrange(unsigned char *sin, unsigned char *ein)
 		sprintf(range_buf + strlen(range_buf), "%u.%u.%u.%u/%d ", nets[0], nets[1], nets[2], nets[3], nextlen);
 		cprintf("%u.%u.%u.%u/%d\n", nets[0], nets[1], nets[2], nets[3], nextlen);
 	} else			// continue check
-		subrange(sin, nete);
+		subrange(sin, nete, range_buf);
 
 	getse(ein, nets, nete, nextlen);
 
@@ -197,11 +196,11 @@ void subrange(unsigned char *sin, unsigned char *ein)
 		sprintf(range_buf + strlen(range_buf), "%u.%u.%u.%u/%d ", nets[0], nets[1], nets[2], nets[3], nextlen);
 		cprintf("%u.%u.%u.%u/%d\n", nets[0], nets[1], nets[2], nets[3], nextlen);
 	} else			// continue check
-		subrange(nets, ein);
+		subrange(nets, ein, range_buf);
 
 }
 
-char *range(char *start, char *end)
+char *range(char *start, char *end, char *range_buf)
 {
 
 	unsigned char startipc[4], endipc[4];
@@ -212,7 +211,7 @@ char *range(char *start, char *end)
 
 	cprintf("start=[%s] end=[%s]\n", start, end);
 
-	strcpy(range_buf, "");
+	memset(range_buf,0,1024);
 
 	retcount = sscanf(start, "%u.%u.%u.%u", &startip[0], &startip[1], &startip[2], &startip[3]);
 
@@ -231,11 +230,11 @@ char *range(char *start, char *end)
 		endipc[i] = (unsigned char)endip[i];
 	}
 
-	subrange(startipc, endipc);
+	subrange(startipc, endipc, range_buf);
 
 	cprintf("range_buf=[%s]\n", range_buf);
 
-	return (char *)&range_buf;
+	return (char *)range_buf;
 
 }
 

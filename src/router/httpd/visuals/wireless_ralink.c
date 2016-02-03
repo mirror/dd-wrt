@@ -381,7 +381,6 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 	return cnt;
 }
 
-extern char *getiflist(void);
 
 void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 {

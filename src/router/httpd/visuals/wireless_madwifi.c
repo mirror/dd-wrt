@@ -194,8 +194,6 @@ extern int ej_active_wireless_if_11n(webs_t wp, int argc, char_t ** argv, char *
 extern int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifname, int cnt, int turbo, int macmask);
 #endif
 
-extern char *getiflist(void);
-
 void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 {
 	int c = getdevicecount();

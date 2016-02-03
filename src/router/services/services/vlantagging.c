@@ -64,7 +64,7 @@
 
 void start_vlantagging(void)
 {
-	static char word[256];
+	char word[256];
 	char *next, *wordlist;
 
 	wordlist = nvram_safe_get("vlan_tags");
@@ -123,7 +123,7 @@ void start_vlantagging(void)
 
 void stop_vlantagging(void)
 {
-	static char word[256];
+	char word[256];
 	char *next, *wordlist;
 
 	wordlist = nvram_safe_get("vlan_tags");
@@ -146,7 +146,7 @@ void stop_vlantagging(void)
 int getBridgeSTP(char *br)
 {
 
-	static char word[256];
+	char word[256];
 	char *next, *wordlist;
 	wordlist = nvram_safe_get("bridges");
 	foreach(word, wordlist, next) {
@@ -172,7 +172,7 @@ void start_bridgesif(void)
 
 	br_set_stp_state("br0", getBridgeSTP("br0"));
 
-	static char word[256];
+	char word[256];
 	char *next, *wordlist;
 
 	wordlist = nvram_safe_get("bridgesif");
@@ -200,7 +200,7 @@ void start_bridgesif(void)
 
 void start_bridging(void)
 {
-	static char word[256];
+	char word[256];
 	char *next, *wordlist;
 	char hwaddr[32];
 
@@ -253,12 +253,11 @@ void start_bridging(void)
 	start_set_routes();
 }
 
-extern char *getBridgeMTU(char *);
+extern char *getBridgeMTU(char *, char *buf);
 extern char *getMTU(char *);
 
-char *getRealBridge(char *ifname)
+char *getRealBridge(char *ifname, char *word)
 {
-	static char word[256];
 	char *next, *wordlist;
 
 	wordlist = nvram_safe_get("bridgesif");
@@ -276,9 +275,8 @@ char *getRealBridge(char *ifname)
 	return NULL;
 }
 
-char *getBridgePrio(char *ifname)
+char *getBridgePrio(char *ifname, char *word)
 {
-	static char word[256];
 	char *next, *wordlist;
 
 	wordlist = nvram_safe_get("bridgesif");
@@ -298,7 +296,7 @@ char *getBridgePrio(char *ifname)
 
 void stop_bridgesif(void)
 {
-	static char word[256];
+	char word[256];
 	char *next, *wordlist;
 #ifdef HAVE_MICRO
 	br_init();
@@ -349,17 +347,17 @@ void stop_bridging(void)
 }
 
 #else
-char *getBridge(char *ifname)
+char *getBridge(char *ifname, char *buf)
 {
 	return nvram_safe_get("lan_ifname");
 }
 
-char *getRealBridge(char *ifname)
+char *getRealBridge(char *ifname, char *word)
 {
 	return NULL;
 }
 
-char *getBridgePrio(char *ifname)
+char *getBridgePrio(char *ifname, char *word)
 {
 	return "0";
 }
@@ -371,7 +369,8 @@ int getbridge_main(int argc, char *argv[])
 		fprintf(stderr, "syntax: getbridge [ifname]\n");
 		return -1;
 	}
-	char *bridge = getBridge(argv[1]);
+	char tmp[256];
+	char *bridge = getBridge(argv[1], tmp);
 
 	fprintf(stdout, "%s\n", bridge);
 	return 0;
@@ -383,7 +382,8 @@ int getbridgeprio_main(int argc, char *argv[])
 		fprintf(stderr, "syntax: getbridgeprio [ifname]\n");
 		return -1;
 	}
-	char *bridge = getBridgePrio(argv[1]);
+	char tmp[256];
+	char *bridge = getBridgePrio(argv[1], tmp);
 
 	fprintf(stdout, "%s\n", bridge);
 	return 0;
