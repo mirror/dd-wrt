@@ -86,9 +86,8 @@ struct lease_table {
 	char hwaddr[20];
 } *dhcp_lease_table;
 
-char *wl_filter_mac_get(char *ifname2, char *type, int which)
+static char *wl_filter_mac_get(char *ifname2, char *type, int which, char *word)
 {
-	static char word[50];
 	char *wordlist, *next;
 	int temp;
 	char ifname[32];
@@ -163,6 +162,7 @@ void ej_wireless_filter_table(webs_t wp, int argc, char_t ** argv)
 	}
 
 	if (!strcmp(type, "input")) {
+		char word[50];
 		websWrite(wp, "<div class=\"col2l\">\n");
 		websWrite(wp, "<fieldset><legend>Table 1</legend>\n");
 		for (i = 0; i < WL_FILTER_MAC_NUM / 2; i++) {
@@ -175,7 +175,7 @@ void ej_wireless_filter_table(webs_t wp, int argc, char_t ** argv)
 #else
 				  "<div class=\"setting\"><div class=\"label\" style=\"width: 16%%\">%s %03d : </div><input maxlength=\"17\" style=\"float: left; width: 30%%;\" onblur=\"valid_macs_all(this)\" size=%d name=\"%s_mac%d\" value=\"%s\"/>",
 #endif
-				  mac_mess, item, BOX_LEN, ifname, item - 1, wl_filter_mac_get(ifname, "mac", item - 1));
+				  mac_mess, item, BOX_LEN, ifname, item - 1, wl_filter_mac_get(ifname, "mac", item - 1, word));
 
 			websWrite(wp,
 #ifdef HAVE_SPOTPASS
@@ -183,7 +183,7 @@ void ej_wireless_filter_table(webs_t wp, int argc, char_t ** argv)
 #else
 				  "<div class=\"label\" style=\"width: 16%%; margin-left: 7px;\">%s %03d : </div><input style=\"width: 30%%;\" maxlength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"%s_mac%d\" value=\"%s\"/></div>\n",
 #endif
-				  mac_mess, item + (WL_FILTER_MAC_NUM / 2), BOX_LEN, ifname, item + (WL_FILTER_MAC_NUM / 2) - 1, wl_filter_mac_get(ifname, "mac", item + (WL_FILTER_MAC_NUM / 2) - 1));
+				  mac_mess, item + (WL_FILTER_MAC_NUM / 2), BOX_LEN, ifname, item + (WL_FILTER_MAC_NUM / 2) - 1, wl_filter_mac_get(ifname, "mac", item + (WL_FILTER_MAC_NUM / 2) - 1, word));
 
 		}
 
@@ -197,11 +197,11 @@ void ej_wireless_filter_table(webs_t wp, int argc, char_t ** argv)
 
 			websWrite(wp,
 				  "<div class=\"setting\"><div class=\"label\" style=\"width: 16%%\">%s %03d : </div><input maxlength=\"17\" style=\"float: left; width: 30%%;\" onblur=\"valid_macs_all(this)\" size=%d name=\"%s_mac%d\" value=\"%s\"/>",
-				  mac_mess, item, BOX_LEN, ifname, item - 1, wl_filter_mac_get(ifname, "mac", item - 1));
+				  mac_mess, item, BOX_LEN, ifname, item - 1, wl_filter_mac_get(ifname, "mac", item - 1, word));
 
 			websWrite(wp,
 				  "<div class=\"label\" style=\"width: 16%%; margin-left: 7px;\">%s %03d : </div><input style=\"width: 30%%;\" maxlength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"%s_mac%d\" value=\"%s\"/></div>\n",
-				  mac_mess, item + (WL_FILTER_MAC_NUM / 2), BOX_LEN, ifname, item + (WL_FILTER_MAC_NUM / 2) - 1, wl_filter_mac_get(ifname, "mac", item + (WL_FILTER_MAC_NUM / 2) - 1));
+				  mac_mess, item + (WL_FILTER_MAC_NUM / 2), BOX_LEN, ifname, item + (WL_FILTER_MAC_NUM / 2) - 1, wl_filter_mac_get(ifname, "mac", item + (WL_FILTER_MAC_NUM / 2) - 1, word));
 
 		}
 
