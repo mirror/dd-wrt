@@ -691,8 +691,8 @@ static char *selmatch(char *var, char *is, char *ret)
 
 static void show_security_prefix(webs_t wp, int argc, char_t ** argv, char *prefix, int primary)
 {
-	static char var[80];
-	static char sta[80];
+	char var[80];
+	char sta[80];
 
 	// char p2[80];
 	cprintf("show security prefix\n");

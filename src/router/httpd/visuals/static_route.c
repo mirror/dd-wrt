@@ -38,8 +38,8 @@ void ej_show_routeif(webs_t wp, int argc, char_t ** argv)
 	char word[256];
 	char *next = NULL, *page = NULL;
 	char *ipaddr = NULL, *netmask = NULL, *gateway = NULL, *metric = NULL, *ifname = NULL;
-	static char ifnamecopy[32];
-	static char bufferif[512];
+	char ifnamecopy[32];
+	char bufferif[512];
 
 	page = websGetVar(wp, "route_page", NULL);
 	if (!page)

@@ -1279,7 +1279,7 @@ void ej_get_syskernel(webs_t wp, int argc, char_t ** argv)
 void ej_get_totaltraff(webs_t wp, int argc, char_t ** argv)
 {
 	char *type;
-	static char wanface[32];
+	char wanface[32];
 	char line[256];
 	unsigned long long rcvd, sent, megcounti, megcounto;
 	FILE *in;
@@ -1353,7 +1353,7 @@ void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 	char var[80];
 	char eths[256];
 	char eths2[256];
-	static char bword[256];
+	char bword[256];
 	char bufferif[512];
 #ifdef HAVE_ATH9K
 	glob_t globbuf;
@@ -1588,8 +1588,8 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 		{"admin", "adminManagement", "adminAlive", "adminDiag", "adminWol", "adminFactory", "adminUpgrade", "adminBackup", "", "", "", "", ""},	//
 		{"statu", "statuRouter", "statuInet", "statuLAN", "statuWLAN", "statuSputnik", "statuVPN", "statuBand", "statuSyslog", "statuSysInfo", "statuActivate", "statuMyPage", "statuGpio", "statuCWMP"}	//
 	};
-	static char menu[8][13][32];
-	static char menuname[8][14][32];
+	char menu[8][13][32];
+	char menuname[8][14][32];
 	memcpy(menu, menu_t, 8 * 13 * 32);
 	memcpy(menuname, menuname_t, 8 * 14 * 32);
 #if HAVE_ERC
