@@ -209,6 +209,8 @@ void showmemdebugstat();
 #define cprintf(fmt, args...)
 #endif
 
+void strcpyto(char *dest, char *src, char c);
+
 /*
  * Copy each token in wordlist delimited by space into word 
  */
