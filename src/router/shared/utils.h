@@ -1101,6 +1101,7 @@ int nvram_restore(char *filename);
 
 void nvram_clear(void);
 int nvram_critical(char *name);
+void getSystemMac(char *mac);
 
 int do80211priv(const char *ifname, int op, void *data, size_t len);
 int getsocket(void);
