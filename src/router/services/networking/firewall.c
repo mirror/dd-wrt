@@ -676,13 +676,13 @@ static void nat_prerouting(void)
 	/*
 	 * Enable remote Web GUI management 
 	 */
+	char tmp[1024];
 	if (remotemanage) {
 		if (remote_any) {
 			save2file("-A PREROUTING -p tcp -d %s --dport %s " "-j DNAT --to-destination %s:%d\n", wanaddr, nvram_safe_get("http_wanport"), lan_ip, web_lanport);
 		} else {
 			sscanf(remote_ip, "%s %s", from, to);
-
-			wordlist = range(from, get_complete_ip(from, to));
+			wordlist = range(from, get_complete_ip(from, to), tmp);
 
 			foreach(var, wordlist, next) {
 				save2file("-A PREROUTING -p tcp -s %s -d %s --dport %s " "-j DNAT --to-destination %s:%d\n", var, wanaddr, nvram_safe_get("http_wanport"), lan_ip, web_lanport);
@@ -699,7 +699,7 @@ static void nat_prerouting(void)
 		} else {
 			sscanf(remote_ip, "%s %s", from, to);
 
-			wordlist = range(from, get_complete_ip(from, to));
+			wordlist = range(from, get_complete_ip(from, to), tmp);
 
 			foreach(var, wordlist, next) {
 				save2file("-A PREROUTING -p tcp -s %s -d %s --dport %s " "-j DNAT --to-destination %s:%s\n", var, wanaddr, nvram_safe_get("sshd_wanport"), lan_ip, nvram_safe_get("sshd_port"));
@@ -718,7 +718,7 @@ static void nat_prerouting(void)
 		} else {
 			sscanf(remote_ip, "%s %s", from, to);
 
-			wordlist = range(from, get_complete_ip(from, to));
+			wordlist = range(from, get_complete_ip(from, to), tmp);
 
 			foreach(var, wordlist, next) {
 				save2file("-A PREROUTING -p tcp -s %s -d %s --dport %s " "-j DNAT --to-destination %s:23\n", var, wanaddr, nvram_safe_get("telnet_wanport"), lan_ip);
@@ -1152,8 +1152,9 @@ static void ipgrp_chain(int seq, unsigned int mark, int urlenable)
 	char var1[256], *wordlist1, *next1;
 	char var2[256], *wordlist2, *next2;
 	char from[100], to[100];
+	char tmp[1024];
 	int a1 = 0, a2 = 0;
-	static char s1[32], s2[32];
+	char s1[32], s2[32];
 
 	wordlist1 = nvram_nget("filter_ip_grp%d", seq);
 	if (strcmp(wordlist1, "") == 0)
@@ -1185,7 +1186,7 @@ static void ipgrp_chain(int seq, unsigned int mark, int urlenable)
 			/*
 			 * The return value of range() is global string array 
 			 */
-			wordlist2 = range(from, to);
+			wordlist2 = range(from, to, tmp);
 		} else if (sscanf(var1, "%d", &a1) == 1) {
 			if (a1 == 0)	/* unset */
 				continue;
@@ -1783,7 +1784,7 @@ static void parse_trigger_out(char *wordlist)
 #ifdef HAVE_VLANTAGGING
 static void add_bridges(char *chain, int forward)
 {
-	static char word[256];
+	char word[256];
 	char *next, *wordlist;
 	char *wan = get_wan_face();
 	wordlist = nvram_safe_get("bridges");

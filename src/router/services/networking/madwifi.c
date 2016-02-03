@@ -223,6 +223,7 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 	char wmode[16];
 	char *background = "-B";
 	char *debug;
+	char tmp[256];
 	int i;
 	debug = nvram_nget("%s_wpa_debug", prefix);
 	if (debug != NULL) {
@@ -305,13 +306,13 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 #ifdef HAVE_RELAYD
 		if ((nvram_match(wmode, "wdssta"))
 		    && nvram_match(bridged, "1"))
-			eval("wpa_supplicant", "-b", getBridge(prefix), background, driver, psk, "-c", fstr);
+			eval("wpa_supplicant", "-b", getBridge(prefix, tmp), background, driver, psk, "-c", fstr);
 		else
 			eval("wpa_supplicant", background, driver, psk, "-c", fstr);
 #else
 		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "wet"))
 		    && nvram_match(bridged, "1"))
-			eval("wpa_supplicant", "-b", getBridge(prefix), background, driver, psk, "-c", fstr);
+			eval("wpa_supplicant", "-b", getBridge(prefix, tmp), background, driver, psk, "-c", fstr);
 		else
 			eval("wpa_supplicant", background, driver, psk, "-c", fstr);
 #endif
@@ -547,13 +548,13 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 #ifdef HAVE_RELAYD
 		if ((nvram_match(wmode, "wdssta"))
 		    && nvram_match(bridged, "1"))
-			eval("wpa_supplicant", "-b", getBridge(prefix), background, driver, psk, "-c", fstr);
+			eval("wpa_supplicant", "-b", getBridge(prefix, tmp), background, driver, psk, "-c", fstr);
 		else
 			eval("wpa_supplicant", background, driver, psk, "-c", fstr);
 #else
 		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "wet"))
 		    && nvram_match(bridged, "1"))
-			eval("wpa_supplicant", "-b", getBridge(prefix), background, driver, psk, "-c", fstr);
+			eval("wpa_supplicant", "-b", getBridge(prefix, tmp), background, driver, psk, "-c", fstr);
 		else
 			eval("wpa_supplicant", background, driver, psk, "-c", fstr);
 #endif
@@ -927,6 +928,7 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 	char psk[32];
 	char akm[16];
 	char fstr[32];
+	char tmp[256];
 	char *types;
 
 	sprintf(akm, "%s_akm", prefix);
@@ -953,7 +955,7 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 		FILE *fp = fopen(fstr, "wb");
 		fprintf(fp, "interface=%s\n", prefix);
 		if (nvram_nmatch("1", "%s_bridged", prefix))
-			fprintf(fp, "bridge=%s\n", getBridge(prefix));
+			fprintf(fp, "bridge=%s\n", getBridge(prefix, tmp));
 		fprintf(fp, "driver=%s\n", driver);
 		fprintf(fp, "logger_syslog=-1\n");
 		fprintf(fp, "logger_syslog_level=2\n");
@@ -992,7 +994,7 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 		fprintf(fp, "interface=%s\n", prefix);
 		// sprintf(buf, "rsn_preauth_interfaces=%s\n", "br0");
 		if (nvram_nmatch("1", "%s_bridged", prefix))
-			fprintf(fp, "bridge=%s\n", getBridge(prefix));
+			fprintf(fp, "bridge=%s\n", getBridge(prefix, tmp));
 		fprintf(fp, "driver=%s\n", driver);
 		fprintf(fp, "logger_syslog=-1\n");
 		fprintf(fp, "logger_syslog_level=2\n");
@@ -1409,30 +1411,31 @@ static void configure_single(int count)
 {
 
 	char *next;
-	static char var[80];
-	static char mode[80];
+	char var[80];
+	char mode[80];
 	int cnt = 0;
-	static char dev[10];
-	static char wif[10];
-	static char mtikie[32];
-	static char wl[16];
-	static char channel[16];
-	static char ssid[16];
-	static char net[16];
-	static char wifivifs[16];
-	static char broadcast[16];
-	static char power[32];
-	static char sens[32];
-	static char basedev[16];
-	static char diversity[32];
-	static char rxantenna[32];
-	static char txantenna[32];
-	static char athmac[19];
-	static char maxassoc[32];
-	static char wl_poll[32];
+	char dev[10];
+	char wif[10];
+	char mtikie[32];
+	char wl[16];
+	char channel[16];
+	char ssid[16];
+	char net[16];
+	char wifivifs[16];
+	char broadcast[16];
+	char power[32];
+	char sens[32];
+	char basedev[16];
+	char diversity[32];
+	char rxantenna[32];
+	char txantenna[32];
+	char athmac[19];
+	char maxassoc[32];
+	char wl_poll[32];
 	static int vapcount = 0;
-	static char inact[36];
-	static char inact_tick[40];
+	char inact[36];
+	char inact_tick[40];
+	char tmp[256];
 	if (count == 0)
 		vapcount = 0;
 
@@ -2080,7 +2083,7 @@ static void configure_single(int count)
 		sprintf(bridged, "%s_bridged", dev);
 		if (nvram_default_match(bridged, "1", "1")) {
 			eval("ifconfig", dev, "0.0.0.0", "up");
-			br_add_interface(getBridge(dev), dev);
+			br_add_interface(getBridge(dev, tmp), dev);
 			eval("ifconfig", dev, "0.0.0.0", "up");
 		} else {
 			eval("ifconfig", dev, "mtu", getMTU(dev));
@@ -2129,7 +2132,7 @@ static void configure_single(int count)
 				sprintf(bridged, "%s_bridged", var);
 				if (nvram_default_match(bridged, "1", "1")) {
 					eval("ifconfig", var, "0.0.0.0", "up");
-					br_add_interface(getBridge(var), var);
+					br_add_interface(getBridge(var, tmp), var);
 				} else {
 					char ip[32];
 					char mask[32];
@@ -2224,6 +2227,7 @@ void start_vifs(void)
 	char wifivifs[32];
 	int c = getdevicecount();
 	int count = 0;
+	char tmp[256];
 
 	for (count = 0; count < c; count++) {
 		sprintf(wifivifs, "ath%d_vifs", count);
@@ -2241,7 +2245,7 @@ void start_vifs(void)
 					sprintf(bridged, "%s_bridged", var);
 					if (nvram_default_match(bridged, "1", "1")) {
 						eval("ifconfig", var, "0.0.0.0", "up");
-						br_add_interface(getBridge(var), var);
+						br_add_interface(getBridge(var, tmp), var);
 					} else {
 						char ip[32];
 						char mask[32];
@@ -2324,6 +2328,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 	deconfigure_wifi();
 	int c = getdevicecount();
 	int i;
+	char tmp[256];
 	int changed = 0;
 #ifdef HAVE_ATH9K
 	char dev[32];
@@ -2520,7 +2525,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 				br_add_interface("br1", dev);
 			} else if (nvram_match(wdsvarname, "3")) {
 				ifconfig(dev, IFUP, 0, 0);
-				br_add_interface(getBridge(dev), dev);
+				br_add_interface(getBridge(dev, tmp), dev);
 			}
 		}
 	}

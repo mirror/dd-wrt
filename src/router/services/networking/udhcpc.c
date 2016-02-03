@@ -170,9 +170,9 @@ static int bound(void)
 	nvram_unset("dhcpc_done");
 	char *wan_ifname = safe_getenv("interface");
 	char *value;
-	static char temp_wan_ipaddr[16], temp_wan_netmask[16], temp_wan_gateway[16];
+	char temp_wan_ipaddr[16], temp_wan_netmask[16], temp_wan_gateway[16];
 	int changed = 0;
-	static char *cidr;
+	char *cidr;
 	if (nvram_match("wan_proto", "iphone"))
 		stop_process("ipheth-loop", "IPhone Pairing Daemon");
 
@@ -438,15 +438,11 @@ int udhcpc_main(int argc, char **argv)
 
 static int bound_tv(void)
 {
-	static char *ifname;
-	ifname = safe_getenv("interface");
-	static char *ip;
-	ip = safe_getenv("ip");
-	static char *net;
-	net = safe_getenv("subnet");
+	char *ifname = safe_getenv("interface");
+	char *ip = safe_getenv("ip");
+	char *net = safe_getenv("subnet");
 #ifndef HAVE_BUSYBOX_UDHCPC
-	static char *cidr;
-	cidr = safe_getenv("cidrroute");
+	char *cidr = safe_getenv("cidrroute");
 #endif
 	if (ip && net && ifname) {
 		static char bcast[32];

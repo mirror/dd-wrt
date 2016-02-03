@@ -186,9 +186,8 @@ const char *getifaddr(char *ifname, int family, int linklocal)
 }
 #endif
 #ifdef HAVE_VLANTAGGING
-char *getBridge(char *ifname)
+char *getBridge(char *ifname, char *word)
 {
-	static char word[256];
 	char *next, *wordlist;
 
 	wordlist = nvram_safe_get("bridgesif");
@@ -206,15 +205,14 @@ char *getBridge(char *ifname)
 	return nvram_safe_get("lan_ifname");
 }
 #else
-char *getBridge(char *ifname)
+char *getBridge(char *ifname, char *word)
 {
 	return nvram_safe_get("lan_ifname");
 }
 #endif
 
-char *getBridgeMTU(char *ifname)
+char *getBridgeMTU(char *ifname, char *word)
 {
-	static char word[256];
 	char *next, *wordlist;
 
 	wordlist = nvram_safe_get("bridges");
@@ -282,7 +280,7 @@ char
 }
 
 char
-*get_mtu_val(void)
+*get_mtu_val(char *buf)
 {
 	if (nvram_match("wshaper_dev", "WAN")
 	    && !strcmp(get_wshaper_dev(), "ppp0"))
@@ -293,7 +291,7 @@ char
 		else
 			return nvram_safe_get("wan_mtu");
 	} else
-		return getBridgeMTU(get_wshaper_dev());
+		return getBridgeMTU(get_wshaper_dev(), buf);
 }
 
 void add_client_dev_srvfilter(char *name, char *type, char *data, char *level, int base, char *chain)
@@ -616,8 +614,9 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 	unsigned int lanlimit = 1000000;
 	unsigned int prio;
 	unsigned int parent;
+	char buf[256];
 
-	unsigned int quantum = atoi(get_mtu_val()) + 14;
+	unsigned int quantum = atoi(get_mtu_val(buf)) + 14;
 
 	if (lanrate < 1)
 		lanrate = lanlimit;
@@ -632,8 +631,9 @@ void add_client_classes(unsigned int base, unsigned int level)
 	unsigned int lanlimit = 1000000;
 	unsigned int prio;
 	unsigned int parent;
+	char buf[256];
 
-	unsigned int quantum = atoi(get_mtu_val()) + 14;
+	unsigned int quantum = atoi(get_mtu_val(buf)) + 14;
 
 	unsigned int uprate = 0, downrate = 0;
 	int lanrate = lanlimit;

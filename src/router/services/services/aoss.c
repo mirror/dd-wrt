@@ -122,7 +122,7 @@ void start_aoss(void)
 		configure_single_ath9k(0);
 		hasaoss = 1;
 		char *next;
-		static char var[80];
+		char var[80];
 		char *vifs = nvram_safe_get("ath0_vifs");
 		int counter = 1;
 		foreach(var, vifs, next) {
@@ -148,7 +148,7 @@ void start_aoss(void)
 		configure_single_ath9k(1);
 		hasaoss = 1;
 		char *next;
-		static char var[80];
+		char var[80];
 		char *vifs = nvram_safe_get("ath1_vifs");
 		int counter = 1;
 		foreach(var, vifs, next) {
@@ -211,7 +211,7 @@ void start_aoss(void)
 			configure_single_ath9k(0);
 			hasaoss = 1;
 			char *next;
-			static char var[80];
+			char var[80];
 			char *vifs = nvram_safe_get("ath0_vifs");
 			int counter = 1;
 			foreach(var, vifs, next) {

@@ -117,9 +117,9 @@ void setupSupplicant(char *prefix)
 			sprintf(psk, "-i%s", nvram_safe_get("wl2_ifname"));
 		else
 			sprintf(psk, "-i%s", prefix);
-
+		char tmp[256];
 		if (nvram_match(wmode, "wdssta") || nvram_match(wmode, "wet"))
-			eval("wpa_supplicant", "-b", getBridge(prefix), "-B", "-Dwext", psk, "-c", fstr);
+			eval("wpa_supplicant", "-b", getBridge(prefix, tmp), "-B", "-Dwext", psk, "-c", fstr);
 		else
 			eval("wpa_supplicant", "-B", "-Dwext", psk, "-c", fstr);
 	} else if (nvram_match(akm, "8021X")) {

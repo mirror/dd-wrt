@@ -34,7 +34,7 @@
 /*
  * BPsmythe: Return the local network for the NOCAT conf file 
  */
-static char *_get_network(char *ipaddr, char *snmask)
+static char *_get_network(char *ipaddr, char *snmask, char *network)
 {
 	unsigned int ipaddr2long(char *ipstr) {
 		int ip[4];
@@ -58,17 +58,15 @@ static char *_get_network(char *ipaddr, char *snmask)
 		return ((ip[0] << 24) + (ip[1] << 16) + (ip[2] << 8) + ip[3]);
 	}
 
-	char *long2ipaddr(unsigned int addr) {
-		static char buff[32];
+	char *long2ipaddr(unsigned int addr, char *buff) {
 
 		sprintf(buff, "%d.%d.%d.%d", (addr >> 24 & 0xff), (addr >> 16 & 0xff), (addr >> 8 & 0xff), (addr & 0xff));
 
 		return buff;
 	}
 
-	static char network[32];
-
-	strcpy(network, long2ipaddr(ipaddr2long(ipaddr) & ipaddr2long(snmask)));
+	char buff[256];
+	strcpy(network, long2ipaddr(ipaddr2long(ipaddr) & ipaddr2long(snmask), buff));
 
 	return network;
 }

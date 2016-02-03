@@ -251,14 +251,14 @@ static void setup_channel(char *dev, char *use)
 
 static void set_netmode(char *wif, char *dev, char *use)
 {
-	static char net[16];
-	static char mode[16];
-	static char xr[16];
-	static char comp[32];
-	static char ff[16];
-	static char bw[16];
-	static char rxantenna[32];
-	static char txantenna[32];
+	char net[16];
+	char mode[16];
+	char xr[16];
+	char comp[32];
+	char ff[16];
+	char bw[16];
+	char rxantenna[32];
+	char txantenna[32];
 
 	sprintf(mode, "%s_mode", dev);
 	sprintf(net, "%s_net_mode", dev);
@@ -540,25 +540,25 @@ static void setMacFilter(char *iface)
 void configure_single_11n(int count)
 {
 	char *next;
-	static char var[80];
-	static char mode[80];
+	char var[80];
+	char mode[80];
 	int cnt = 0;
-	static char dev[10];
-	static char wif[10];
-	static char mtikie[32];
-	static char wl[16];
-	static char channel[16];
-	static char ssid[16];
-	static char net[16];
-	static char wifivifs[16];
-	static char broadcast[16];
-	static char power[32];
-	static char sens[32];
-	static char basedev[16];
-	static char diversity[32];
-	static char athmac[16];
-	static char maxassoc[32];
-	static char wl_poll[32];
+	char dev[10];
+	char wif[10];
+	char mtikie[32];
+	char wl[16];
+	char channel[16];
+	char ssid[16];
+	char net[16];
+	char wifivifs[16];
+	char broadcast[16];
+	char power[32];
+	char sens[32];
+	char basedev[16];
+	char diversity[32];
+	char athmac[16];
+	char maxassoc[32];
+	char wl_poll[32];
 	static int vapcount = 0;
 	if (count == 0)
 		vapcount = 0;
@@ -1082,7 +1082,8 @@ void configure_single_11n(int count)
 		sprintf(bridged, "%s_bridged", dev);
 		if (nvram_default_match(bridged, "1", "1")) {
 			sysprintf("ifconfig %s 0.0.0.0 up", dev);
-			br_add_interface(getBridge(dev), dev);
+			char tmp[256];
+			br_add_interface(getBridge(dev, tmp), dev);
 			sysprintf("ifconfig %s 0.0.0.0 up", dev);
 		} else {
 			sysprintf("ifconfig %s mtu %s", dev, getMTU(dev));
@@ -1121,7 +1122,8 @@ void configure_single_11n(int count)
 				sprintf(bridged, "%s_bridged", var);
 				if (nvram_default_match(bridged, "1", "1")) {
 					sysprintf("ifconfig %s 0.0.0.0 up", var);
-					br_add_interface(getBridge(var), var);
+					char tmp[256];
+					br_add_interface(getBridge(var, tmp), var);
 				} else {
 					char ip[32];
 					char mask[32];

@@ -76,7 +76,8 @@ void configure_wimax(void)
 		sprintf(bridged, "%s_bridged", dev);
 		if (nvram_default_match(bridged, "1", "1")) {
 			eval("ifconfig", dev, "0.0.0.0", "up");
-			br_add_interface(getBridge(dev), dev);
+			char tmp[256];
+			br_add_interface(getBridge(dev, tmp), dev);
 			eval("ifconfig", dev, "0.0.0.0", "up");
 		} else {
 			eval("ifconfig", dev, nvram_nget("%s_ipaddr", dev), "netmask", nvram_nget("%s_netmask", dev), "up");
