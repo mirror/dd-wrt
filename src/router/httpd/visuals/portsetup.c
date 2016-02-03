@@ -26,7 +26,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 	char *next, *bnext;
 	char var[64];
 	char eths[256];
-	static char bword[256];
+	char bword[256];
 	char bufferif[512];
 
 	websWrite(wp, "<h2><script type=\"text/javascript\">Capture(idx.portsetup)</script></h2>\n");
