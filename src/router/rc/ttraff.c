@@ -153,7 +153,7 @@ int main(int argc, char **argv)
 	/* 
 	 * now we have time, let's start 
 	 */
-	static char wanface[32];
+	char wanface[32];
 	char line[256];
 	unsigned long long in_dev = 0;
 	unsigned long long out_dev = 0;
