@@ -120,6 +120,7 @@ old:
 int br_add_bridge(const char *brname)
 {
 	int ret;
+	char tmp[256];
 
 	dd_syslog(LOG_INFO, "bridge added successfully\n");
 	char ipaddr[32];
@@ -143,9 +144,9 @@ int br_add_bridge(const char *brname)
 	if (nvram_get(ipaddr) && nvram_get(netmask)
 	    && !nvram_match(ipaddr, "0.0.0.0")
 	    && !nvram_match(netmask, "0.0.0.0")) {
-		eval("ifconfig", brname, nvram_safe_get(ipaddr), "netmask", nvram_safe_get(netmask), "mtu", getBridgeMTU(brname), "promisc", "up");
+		eval("ifconfig", brname, nvram_safe_get(ipaddr), "netmask", nvram_safe_get(netmask), "mtu", getBridgeMTU(brname, tmp), "promisc", "up");
 	} else
-		eval("ifconfig", brname, "mtu", getBridgeMTU(brname), "promisc");
+		eval("ifconfig", brname, "mtu", getBridgeMTU(brname, tmp), "promisc");
 
 	return ret < 0 ? errno : 0;
 }
@@ -189,9 +190,9 @@ int br_add_interface(const char *bridge, const char *dev)
 	if (nvram_get(ipaddr) && nvram_get(netmask)
 	    && !nvram_match(ipaddr, "0.0.0.0")
 	    && !nvram_match(netmask, "0.0.0.0")) {
-		eval("ifconfig", dev, nvram_safe_get(ipaddr), "netmask", nvram_safe_get(netmask), "mtu", getBridgeMTU(bridge));
+		eval("ifconfig", dev, nvram_safe_get(ipaddr), "netmask", nvram_safe_get(netmask), "mtu", getBridgeMTU(bridge, tmp));
 	} else
-		eval("ifconfig", dev, "mtu", getBridgeMTU(bridge));
+		eval("ifconfig", dev, "mtu", getBridgeMTU(bridge, tmp));
 
 	if (strncmp(dev, "ath", 3) != 0) {	// this is not an ethernet driver
 		eval("ifconfig", dev, "up");

@@ -143,6 +143,7 @@ int br_add_bridge(const char *brname)
 	char ipaddr[32];
 	char brmcast[32];
 	char hwaddr[32];
+	char tmp[256];
 
 	sprintf(brmcast, "%s_mcast", brname);
 	sprintf(ipaddr, "%s_ipaddr", brname);
@@ -169,9 +170,9 @@ int br_add_bridge(const char *brname)
 	if (nvram_get(ipaddr) && nvram_get(netmask)
 	    && !nvram_match(ipaddr, "0.0.0.0")
 	    && !nvram_match(netmask, "0.0.0.0")) {
-		eval("ifconfig", brname, nvram_safe_get(ipaddr), "netmask", nvram_safe_get(netmask), "mtu", getBridgeMTU(brname), "up");
+		eval("ifconfig", brname, nvram_safe_get(ipaddr), "netmask", nvram_safe_get(netmask), "mtu", getBridgeMTU(brname, tmp), "up");
 	} else
-		eval("ifconfig", brname, "mtu", getBridgeMTU(brname));
+		eval("ifconfig", brname, "mtu", getBridgeMTU(brname, tmp));
 
 	if (strcmp(brname, "br0") && strlen(nvram_safe_get(hwaddr)) > 0) {
 		eval("ifconfig", brname, "hw", "ether", nvram_safe_get(hwaddr));
@@ -201,6 +202,7 @@ int br_add_interface(const char *br, const char *dev)
 {
 	struct ifreq ifr;
 	char eabuf[32];
+	char tmp[256];
 	int s;
 
 	if (!ifexists(dev))
@@ -221,7 +223,7 @@ int br_add_interface(const char *br, const char *dev)
 	if (strncmp(dev, "ath", 3) != 0) {	// this is not an ethernet driver
 		eval("ifconfig", dev, "down");	//fixup for some ethernet drivers
 	}
-	eval("ifconfig", dev, "mtu", getBridgeMTU(br));
+	eval("ifconfig", dev, "mtu", getBridgeMTU(br, tmp));
 	if (strncmp(dev, "ath", 3) != 0) {	// this is not an ethernet driver
 		eval("ifconfig", dev, "up");
 	}

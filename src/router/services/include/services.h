@@ -203,7 +203,7 @@ void start_wanup(void);
 
 char *getMTU(char *ifname);
 char *getTXQ(char *ifname);
-char *getBridgeMTU(char *ifname);
+char *getBridgeMTU(char *ifname, char *tmp);
 
 int br_add_bridge(const char *brname);
 int br_del_bridge(const char *brname);

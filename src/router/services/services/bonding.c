@@ -35,7 +35,8 @@ void stop_bonding(void)
 
 		sprintf(bond, "bond%d", i);
 		if (ifexists(bond)) {
-			char *br = getRealBridge(bond);
+			char word[256];
+			char *br = getRealBridge(bond, word);
 
 			if (br)
 				br_del_interface(br, bond);
@@ -55,7 +56,7 @@ void start_bonding(void)
 	sprintf(mode, "mode=%s", nvram_default_get("bonding_type", "balance-rr"));
 	sprintf(count, "max_bonds=%s", nvram_default_get("bonding_number", "1"));
 
-	static char word[256];
+	char word[256];
 	char *next, *wordlist;
 	int first = 0;
 	wordlist = nvram_safe_get("bondings");
@@ -84,7 +85,8 @@ void start_bonding(void)
 
 	for (i = 0; i < c; i++) {
 		sprintf(word, "bond%d", i);
-		char *br = getRealBridge(word);
+		char tmp[256];
+		char *br = getRealBridge(word, tmp);
 
 		if (br)
 			br_add_interface(br, word);
@@ -94,7 +96,7 @@ void start_bonding(void)
 
 int isBond(char *ifname)
 {
-	static char word[256];
+	char word[256];
 	char *next, *wordlist;
 
 	wordlist = nvram_safe_get("bondings");

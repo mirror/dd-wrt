@@ -502,7 +502,7 @@ void start_nas_single(char *type, char *prefix)
 	sprintf(index, "%s_key", prefix);
 
 	key = getKey(prefix);
-
+	char tmp[256];
 	{
 		// char *argv[] = {"nas", "-P", pidfile, "-l",
 		// nvram_safe_get("lan_ifname"), "-H", "34954", "-i", iface,
@@ -520,7 +520,7 @@ void start_nas_single(char *type, char *prefix)
 			if (nvram_nmatch("wet", "%s_mode", prefix)
 			    || nvram_nmatch("apstawet", "%s_mode", prefix)) {
 				argv = (char *[]) {
-				"nas", "-P", pidfile, "-H", "34954", "-l", getBridge(iface), "-i", iface, mode, "-m", auth_mode, "-k", key, "-s", nvram_safe_get(ssid), "-w", sec_mode, "-g",
+				"nas", "-P", pidfile, "-H", "34954", "-l", getBridge(iface, tmp), "-i", iface, mode, "-m", auth_mode, "-k", key, "-s", nvram_safe_get(ssid), "-w", sec_mode, "-g",
 					    nvram_default_get(rekey, "3600"), NULL};
 			} else {
 				argv = (char *[]) {
@@ -555,7 +555,7 @@ void start_nas_single(char *type, char *prefix)
 				} else {
 					char *argv[] = { "nas", "-P", pidfile,
 						"-H", "34954", "-l",
-						getBridge(iface), "-i",
+						getBridge(iface, tmp), "-i",
 						iface, mode, "-m",
 						auth_mode, "-r", key,
 						"-s",
@@ -601,7 +601,7 @@ void start_nas_single(char *type, char *prefix)
 				} else {
 					char *argv[] = { "nas", "-P", pidfile,
 						"-H", "34954", "-l",
-						getBridge(iface), "-i",
+						getBridge(iface, tmp), "-i",
 						iface, mode, "-m",
 						auth_mode, "-r", key,
 						"-s",
@@ -640,7 +640,7 @@ void start_nas_single(char *type, char *prefix)
 				} else {
 					char *argv[] = { "nas", "-P", pidfile,
 						"-H", "34954", "-l",
-						getBridge(iface), "-i",
+						getBridge(iface, tmp), "-i",
 						iface, mode, "-m",
 						auth_mode, "-k", key,
 						"-s",

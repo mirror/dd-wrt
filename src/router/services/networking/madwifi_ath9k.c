@@ -74,7 +74,7 @@ void delete_ath9k_devices(char *physical_iface)
 void deconfigure_single_ath9k(int count)
 {
 	fprintf(stderr, "ath9k deconfigure_single: phy%d ath%d\n", get_ath9k_phy_idx(count), count);
-	static char wif[10];
+	char wif[10];
 	sprintf(wif, "phy%d", get_ath9k_phy_idx(count));
 	delete_ath9k_devices(wif);
 }
@@ -82,26 +82,26 @@ void deconfigure_single_ath9k(int count)
 void configure_single_ath9k(int count)
 {
 	char *next;
-	static char var[80];
-	static char mode[80];
+	char var[80];
+	char mode[80];
 	int cnt = 0;
-	static char dev[10];
-	static char wif[10];
+	char dev[10];
+	char wif[10];
 	int phy_idx = get_ath9k_phy_idx(count);
-	static char mtikie[32];
-	static char wl[16];
-	static char channel[16];
-	static char ssid[16];
-	static char net[16];
-	static char wifivifs[16];
-	static char broadcast[16];
-	static char sens[32];
-	static char basedev[16];
-	static char diversity[32];
-	static char athmac[16];
-	static char wl_poll[32];
-	static char rxantenna[32];
-	static char txantenna[32];
+	char mtikie[32];
+	char wl[16];
+	char channel[16];
+	char ssid[16];
+	char net[16];
+	char wifivifs[16];
+	char broadcast[16];
+	char sens[32];
+	char basedev[16];
+	char diversity[32];
+	char athmac[16];
+	char wl_poll[32];
+	char rxantenna[32];
+	char txantenna[32];
 	static int vapcount = 0;
 	int isath5k = 0;
 	char *apm;
@@ -288,7 +288,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	struct wifi_channels *chan;
 	int channel = 0;
 	int freq = 0;
-	static char nfreq[16];
+	char nfreq[16];
 	int i = 0;
 	char *caps;
 	int isath5k = is_ath5k(prefix);
@@ -659,13 +659,14 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	FILE *fp = NULL;
 	char *ssid;
 	char nssid[16];
-	static char maxassoc[32];
+	char maxassoc[32];
 	char ifname[10];
 	int isrepeater = 0;
 	unsigned char hwbuff[16];
 	char macaddr[32];
 	char *types;
 	char *debug;
+	char tmp[256];
 	if (isfirst && vapid == 0) {
 		sprintf(ifname, "%s", maininterface);
 	} else {
@@ -751,7 +752,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 //                      fprintf(fp, "ieee80211n=0\n");
 
 		if (nvram_nmatch("1", "%s_bridged", ifname))
-			fprintf(fp, "bridge=%s\n", getBridge(ifname));
+			fprintf(fp, "bridge=%s\n", getBridge(ifname, tmp));
 		if (!aoss) {
 			if (!strncmp(ifname, "ath0", 4))
 				led_control(LED_SEC0, LED_ON);
@@ -806,7 +807,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			led_control(LED_SEC1, LED_ON);
 		// sprintf(buf, "rsn_preauth_interfaces=%s\n", "br0");
 		if (nvram_nmatch("1", "%s_bridged", ifname))
-			fprintf(fp, "bridge=%s\n", getBridge(ifname));
+			fprintf(fp, "bridge=%s\n", getBridge(ifname, tmp));
 		fprintf(fp, "logger_syslog=-1\n");
 		debug = nvram_nget("%s_wpa_debug", ifname);
 		if (debug != NULL) {
@@ -1248,13 +1249,14 @@ void ath9k_start_supplicant(int count)
 	char var[80];
 	char fstr[32];
 	char bridged[32];
-	static char mode[80];
-	static char dev[10];
-	static char power[32];
+	char mode[80];
+	char dev[10];
+	char power[32];
 	char *apm, *vifs;
-	static char wl[16];
-	static char ctrliface[32] = "";
-	static char wifivifs[16];
+	char wl[16];
+	char ctrliface[32] = "";
+	char wifivifs[16];
+	char tmp[256];
 #ifdef HAVE_CONFIG_DEBUG_SYSLOG
 	char *background = "-Bs";
 #else
@@ -1308,14 +1310,14 @@ void ath9k_start_supplicant(int count)
 #ifdef HAVE_RELAYD
 			if ((nvram_match(wmode, "wdssta"))
 			    && nvram_match(bridged, "1"))
-				eval("wpa_supplicant", "-b", getBridge(dev), background, "-Dnl80211", psk, "-H", ctrliface, "-c", fstr);
+				eval("wpa_supplicant", "-b", getBridge(dev, tmp), background, "-Dnl80211", psk, "-H", ctrliface, "-c", fstr);
 			else
 				eval("wpa_supplicant", background, "-Dnl80211", psk, "-H", ctrliface, "-c", fstr);
 #else
 			if ((nvram_match(wmode, "wdssta")
 			     || nvram_match(wmode, "wet"))
 			    && nvram_match(bridged, "1"))
-				eval("wpa_supplicant", "-b", getBridge(dev), background, "-Dnl80211", psk, "-H", ctrliface, "-c", fstr);
+				eval("wpa_supplicant", "-b", getBridge(dev, tmp), background, "-Dnl80211", psk, "-H", ctrliface, "-c", fstr);
 			else
 				eval("wpa_supplicant", background, "-Dnl80211", psk, "-H", ctrliface, "-c", fstr);
 #endif
@@ -1324,14 +1326,14 @@ void ath9k_start_supplicant(int count)
 #ifdef HAVE_RELAYD
 			if ((nvram_match(wmode, "wdssta"))
 			    && nvram_match(bridged, "1"))
-				eval("wpa_supplicant", "-b", getBridge(dev), background, "-Dnl80211", psk, "-c", fstr);
+				eval("wpa_supplicant", "-b", getBridge(dev, tmp), background, "-Dnl80211", psk, "-c", fstr);
 			else
 				eval("wpa_supplicant", background, "-Dnl80211", psk, "-c", fstr);
 #else
 			if ((nvram_match(wmode, "wdssta")
 			     || nvram_match(wmode, "wet"))
 			    && nvram_match(bridged, "1"))
-				eval("wpa_supplicant", "-b", getBridge(dev), background, "-Dnl80211", psk, "-c", fstr);
+				eval("wpa_supplicant", "-b", getBridge(dev, tmp), background, "-Dnl80211", psk, "-c", fstr);
 			else
 				eval("wpa_supplicant", background, "-Dnl80211", psk, "-c", fstr);
 #endif
@@ -1346,7 +1348,7 @@ void ath9k_start_supplicant(int count)
 		sprintf(bridged, "%s_bridged", dev);
 		if (nvram_default_match(bridged, "1", "1")) {
 			eval("ifconfig", dev, "0.0.0.0", "up");
-			br_add_interface(getBridge(dev), dev);
+			br_add_interface(getBridge(dev, tmp), dev);
 			eval("ifconfig", dev, "0.0.0.0", "up");
 		} else {
 			eval("ifconfig", dev, "mtu", getMTU(dev));
@@ -1380,7 +1382,7 @@ void ath9k_start_supplicant(int count)
 				sprintf(bridged, "%s_bridged", var);
 				if (nvram_default_match(bridged, "1", "1")) {
 					eval("ifconfig", dev, "0.0.0.0", "up");
-					br_add_interface(getBridge(var), var);
+					br_add_interface(getBridge(var, tmp), var);
 				} else {
 					eval("ifconfig", var, "mtu", getMTU(var));
 					eval("ifconfig", var, "txqueuelen", getTXQ(var));

@@ -71,7 +71,7 @@ void do_mssid(char *wlifname)
 	char *next;
 	char var[80];
 	char *vifs = nvram_nget("wl%d_vifs", get_wl_instance(wlifname));
-
+	char tmp[256];
 	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
 		return;
 	if (vifs != NULL)
@@ -84,7 +84,7 @@ void do_mssid(char *wlifname)
 			eval("ifconfig", var, "down");
 			ioctl(s, SIOCSIFHWADDR, &ifr);
 			eval("ifconfig", var, "up");
-			br_add_interface(getBridge(var), var);
+			br_add_interface(getBridge(var, tmp), var);
 		} else {
 			eval("ifconfig", var, "down");
 			ioctl(s, SIOCSIFHWADDR, &ifr);
