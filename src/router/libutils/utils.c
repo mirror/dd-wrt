@@ -7677,13 +7677,14 @@ void getSystemMac(char *newmac)
 
 }
 
-static void strcpyto(char *dest, char *src, char c) {
-    int cnt=0;
-    int len = strlen(src);
-    while(cnt < len && src[cnt]!=c) {
-	dest[cnt]=src[cnt];
-	cnt++;
-    }
-    dest[cnt]='\0';
-    return dest;
+static void strcpyto(char *dest, char *src, char c)
+{
+	int cnt = 0;
+	int len = strlen(src);
+	while (cnt < len && src[cnt] != c) {
+		dest[cnt] = src[cnt];
+		cnt++;
+	}
+	dest[cnt] = '\0';
+	return dest;
 }
