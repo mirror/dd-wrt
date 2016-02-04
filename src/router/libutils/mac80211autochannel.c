@@ -153,8 +153,8 @@ static int freq_list(struct unl *unl, int phy)
 				continue;
 #endif
 #ifdef HAVE_IDEXX
-			if  (ieee80211_mhz2ieee(freq_mhz) > 48)
-                                continue;
+			if (ieee80211_mhz2ieee(freq_mhz) > 48)
+				continue;
 #endif
 			f = calloc(1, sizeof(*f));
 			INIT_LIST_HEAD(&f->list);
