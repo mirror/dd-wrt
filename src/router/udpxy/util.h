@@ -168,7 +168,7 @@ check_fragments( const char* action, ssize_t total, ssize_t n_was, ssize_t n_is,
 
 /* create timestamp string in YYYY-mm-dd HH24:MI:SS.MSEC from struct timeval
  */
-static const int32_t TVSTAMP_GMT = 1;
+#define TVSTAMP_GMT 1
 
 int
 mk_tvstamp( const struct timeval* tv, char* buf, size_t* len,
