@@ -3,7 +3,7 @@ udpxy-configure:
 	@true
 
 udpxy:
-	$(MAKE) -C udpxy CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF" lean
+	$(MAKE) -C udpxy COPT="$(COPTS) $(MIPS16_OPT)  -ffunction-sections -fdata-sections -Wl,--gc-sections -DNEED_PRINTF" lean
 
 udpxy-clean:
 	$(MAKE) -C udpxy clean
