@@ -44,7 +44,7 @@
 
 void start_stabridge(void)
 {
-char tmp[256];
+	char tmp[256];
 #ifdef HAVE_RELAYD
 	if (getWET()) {
 		char label[32], debug[32], debug_string[32];

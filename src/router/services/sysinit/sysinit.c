@@ -2596,7 +2596,7 @@ void start_restore_defaults(void)
 			case ROUTER_NETGEAR_R6300V2:
 			case ROUTER_NETGEAR_R7000:
 			case ROUTER_NETGEAR_R8000:
-			case ROUTER_NETGEAR_R8500:  
+			case ROUTER_NETGEAR_R8500:
 				nvram_unset("vlan0hwname");
 				break;
 			case ROUTER_LINKSYS_WTR54GS:

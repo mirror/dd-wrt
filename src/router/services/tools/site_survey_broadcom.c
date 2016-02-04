@@ -475,7 +475,7 @@ int site_survey_main(int argc, char *argv[])
 			break;
 		}
 #endif
-		site_survey_lists[i].frequency = ieee80211_ieee2mhz(site_survey_lists[i].channel&0xff);
+		site_survey_lists[i].frequency = ieee80211_ieee2mhz(site_survey_lists[i].channel & 0xff);
 
 		site_survey_lists[i].RSSI = bss_info->RSSI;
 		site_survey_lists[i].phy_noise = bss_info->phy_noise;
