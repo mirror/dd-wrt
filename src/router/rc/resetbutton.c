@@ -19,7 +19,7 @@
 #define RESET_WAIT		3	/* seconds */
 #define RESET_WAIT_COUNT	RESET_WAIT * 10	/* 10 times a second */
 #define SES_WAIT		5	/* seconds */
-#define SES_WAIT_COUNT	SES_WAIT * 10	/* 10 times a second */
+#define SES_WAIT_COUNT	SES_WAIT	/* 10 times a second */
 #ifdef HAVE_UNFY
 #define UPGRADE_WAIT		1	/* seconds */
 #define UPGRADE_WAIT_COUNT	UPGRADE_WAIT * 10 - 5
@@ -864,6 +864,164 @@ void service_restart(void)
 	eval("rc", "restart");
 }
 
+static void handle_reset(void)
+{
+
+	if ((brand & 0x000f) != 0x000f) {
+		fprintf(stderr, "resetbutton: factory default.\n");
+		dd_syslog(LOG_DEBUG, "Reset button: restoring factory defaults now!\n");
+#if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_GATEWORX) && !defined(HAVE_LS2) && !defined(HAVE_CA8) && !defined(HAVE_TW6600) && !defined(HAVE_LS5) && !defined(HAVE_LSX) && !defined(HAVE_SOLO51)
+		led_control(LED_DIAG, LED_ON);
+#elif defined(HAVE_WHRHPGN)  || defined(HAVE_WZRG300NH) || defined(HAVE_WZRHPAG300NH) || defined(HAVE_WZRG450)
+		led_control(LED_DIAG, LED_ON);
+#endif
+		ACTION("ACT_HW_RESTORE");
+		alarmtimer(0, 0);	/* Stop the timer alarm */
+#ifdef HAVE_X86
+		eval("mount", "/usr/local", "-o", "remount,rw");
+		eval("rm", "-f", "/tmp/nvram/*");	// delete nvram
+		// database
+		unlink("/tmp/nvram/.lock");	// delete
+		// nvram
+		// database
+		eval("rm", "-f", "/usr/local/nvram/*");	// delete
+		// nvram
+		// database
+		eval("mount", "/usr/local", "-o", "remount,ro");
+#elif HAVE_RB500
+		eval("rm", "-f", "/tmp/nvram/*");	// delete nvram
+		// database
+		unlink("/tmp/nvram/.lock");	// delete
+		// nvram
+		// database
+		eval("rm", "-f", "/etc/nvram/*");	// delete nvram
+		// database
+#elif HAVE_MAGICBOX
+		eval("rm", "-f", "/tmp/nvram/*");	// delete nvram
+		// database
+		unlink("/tmp/nvram/.lock");	// delete
+		// nvram
+		// database
+		eval("erase", "nvram");
+#else
+#ifdef HAVE_BUFFALO_SA
+		int region_sa = 0;
+		if (nvram_default_match("region", "SA", ""))
+			region_sa = 1;
+#endif
+		nvram_set("sv_restore_defaults", "1");
+		nvram_commit();
+		eval("killall", "ledtool");	// stop blinking on
+		// nvram_commit
+#if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_GATEWORX) && !defined(HAVE_LS2) && !defined(HAVE_CA8) && !defined(HAVE_TW6600) && !defined(HAVE_LS5) && !defined(HAVE_LSX) && !defined(HAVE_SOLO51)
+		led_control(LED_DIAG, LED_ON);	// turn diag led on,
+		// so we know reset
+		// was pressed and
+		// we're restoring
+		// defaults.
+#elif defined(HAVE_WHRHPGN) || defined(HAVE_WZRG300NH) || defined(HAVE_WZRHPAG300NH) || defined(HAVE_WZRG450)
+		led_control(LED_DIAG, LED_ON);
+#endif
+#ifdef HAVE_BUFFALO_SA
+		nvram_set("sv_restore_defaults", "1");
+		if (region_sa)
+			nvram_set("region", "SA");
+		nvram_commit();
+#endif
+
+		// nvram_set ("sv_restore_defaults", "1");
+		// nvram_commit ();
+
+		kill(1, SIGTERM);
+#endif
+	}
+
+}
+
+static void handle_wifi(void)
+{
+
+	led_control(LED_WLAN, LED_FLASH);	// when pressed, blink white
+	count = 0;
+	switch (wifi_mode) {
+	case 1:
+		dd_syslog(LOG_DEBUG, "Wifi button: turning radio(s) on\n");
+		sysprintf("startstop radio_on");
+		wifi_mode = 0;
+		break;
+	case 0:
+		// (AOSS) led
+		dd_syslog(LOG_DEBUG, "Wifi button: turning radio(s) off\n");
+		sysprintf("startstop radio_off");
+		wifi_mode = 1;
+		break;
+	}
+
+}
+
+static void handle_ses(void)
+{
+
+	runStartup("/etc/config", ".sesbutton");
+	runStartup("/jffs/etc/config", ".sesbutton");	// if available
+	runStartup("/mmc/etc/config", ".sesbutton");	// if available
+	runStartup("/tmp/etc/config", ".sesbutton");	// if available
+	count = 0;
+	if (nvram_match("usb_ses_umount", "1")) {
+		led_control(LED_DIAG, LED_FLASH);
+		runStartup("/etc/config", ".umount");
+		sleep(5);
+		led_control(LED_DIAG, LED_FLASH);
+		sleep(1);
+		led_control(LED_DIAG, LED_FLASH);
+	}
+
+	if (nvram_match("radiooff_button", "1")) {
+		led_control(LED_SES, LED_FLASH);	// when pressed, blink white
+		switch (ses_mode) {
+
+		case 1:
+			// SES (AOSS) led
+#ifdef HAVE_RADIOOFF
+#ifndef HAVE_BUFFALO
+			dd_syslog(LOG_DEBUG, "SES / AOSS / EZ-setup button: turning radio(s) on\n");
+#else
+			dd_syslog(LOG_DEBUG, "AOSS button: turning radio(s) on\n");
+#endif
+#ifndef HAVE_ERC
+			sysprintf("startstop radio_on");
+#endif
+#endif
+
+			ses_mode = 0;
+			break;
+		case 0:
+
+			// (AOSS) led
+#ifdef HAVE_RADIOOFF
+#ifndef HAVE_BUFFALO
+			dd_syslog(LOG_DEBUG, "SES / AOSS / EZ-setup button: turning radio(s) off\n");
+#else
+			dd_syslog(LOG_DEBUG, "AOSS button: turning radio(s) off\n");
+#endif
+#ifndef HAVE_ERC
+			sysprintf("startstop radio_off");
+#endif
+#endif
+
+			ses_mode = 1;
+			break;
+		}
+
+	}
+#if defined(HAVE_AOSS) || defined(HAVE_WPS)
+	else if (nvram_match("radiooff_button", "2")) {
+		sysprintf("startstop aoss");
+	}
+#endif
+
+}
+
 void period_check(int sig)
 {
 	FILE *fp;
@@ -1424,179 +1582,41 @@ void period_check(int sig)
 			alarmtimer(0, URGENT_INTERVAL);
 			mode = 1;
 		}
-		{		/* Whenever it is pushed steady */
-			if (++count > RESET_WAIT_COUNT) {
-				if (check_action() != ACT_IDLE) {	// Don't execute during upgrading
-					fprintf(stderr, "resetbutton: nothing to do...\n");
-					alarmtimer(0, 0);	/* Stop the timer alarm */
-					return;
-				}
-				if ((brand & 0x000f) != 0x000f) {
-					fprintf(stderr, "resetbutton: factory default.\n");
-					dd_syslog(LOG_DEBUG, "Reset button: restoring factory defaults now!\n");
-#if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_GATEWORX) && !defined(HAVE_LS2) && !defined(HAVE_CA8) && !defined(HAVE_TW6600) && !defined(HAVE_LS5) && !defined(HAVE_LSX) && !defined(HAVE_SOLO51)
-					led_control(LED_DIAG, LED_ON);
-#elif defined(HAVE_WHRHPGN)  || defined(HAVE_WZRG300NH) || defined(HAVE_WZRHPAG300NH) || defined(HAVE_WZRG450)
-					led_control(LED_DIAG, LED_ON);
-#endif
-					ACTION("ACT_HW_RESTORE");
-					alarmtimer(0, 0);	/* Stop the timer alarm */
-#ifdef HAVE_X86
-					eval("mount", "/usr/local", "-o", "remount,rw");
-					eval("rm", "-f", "/tmp/nvram/*");	// delete nvram
-					// database
-					unlink("/tmp/nvram/.lock");	// delete
-					// nvram
-					// database
-					eval("rm", "-f", "/usr/local/nvram/*");	// delete
-					// nvram
-					// database
-					eval("mount", "/usr/local", "-o", "remount,ro");
-#elif HAVE_RB500
-					eval("rm", "-f", "/tmp/nvram/*");	// delete nvram
-					// database
-					unlink("/tmp/nvram/.lock");	// delete
-					// nvram
-					// database
-					eval("rm", "-f", "/etc/nvram/*");	// delete nvram
-					// database
-#elif HAVE_MAGICBOX
-					eval("rm", "-f", "/tmp/nvram/*");	// delete nvram
-					// database
-					unlink("/tmp/nvram/.lock");	// delete
-					// nvram
-					// database
-					eval("erase", "nvram");
-#else
-#ifdef HAVE_BUFFALO_SA
-					int region_sa = 0;
-					if (nvram_default_match("region", "SA", ""))
-						region_sa = 1;
-#endif
-					nvram_set("sv_restore_defaults", "1");
-					nvram_commit();
-					eval("killall", "ledtool");	// stop blinking on
-					// nvram_commit
-#if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_GATEWORX) && !defined(HAVE_LS2) && !defined(HAVE_CA8) && !defined(HAVE_TW6600) && !defined(HAVE_LS5) && !defined(HAVE_LSX) && !defined(HAVE_SOLO51)
-					led_control(LED_DIAG, LED_ON);	// turn diag led on,
-					// so we know reset
-					// was pressed and
-					// we're restoring
-					// defaults.
-#elif defined(HAVE_WHRHPGN) || defined(HAVE_WZRG300NH) || defined(HAVE_WZRHPAG300NH) || defined(HAVE_WZRG450)
-					led_control(LED_DIAG, LED_ON);
-#endif
-#ifdef HAVE_BUFFALO_SA
-					nvram_set("sv_restore_defaults", "1");
-					if (region_sa)
-						nvram_set("region", "SA");
-					nvram_commit();
-#endif
-
-					// nvram_set ("sv_restore_defaults", "1");
-					// nvram_commit ();
-
-					kill(1, SIGTERM);
-#endif
-				}
+		if (++count > RESET_WAIT_COUNT) {
+			if (check_action() != ACT_IDLE) {	// Don't execute during upgrading
+				fprintf(stderr, "resetbutton: nothing to do...\n");
+				alarmtimer(0, 0);	/* Stop the timer alarm */
+				return;
 			}
+			handle_reset();
 		}
-	} else if ((count > SES_WAIT) && (sesgpio != 0xfff)
-		   && (((sesgpio & 0x100) == 0 && (val & push))
-		       || ((sesgpio & 0x100) == 0x100 && !(val & push)))) {
-				if (check_action() != ACT_IDLE) {	// Don't execute during upgrading
-					fprintf(stderr, "resetbutton: nothing to do...\n");
-					alarmtimer(0, 0);	/* Stop the timer alarm */
-					return;
-				}
-		runStartup("/etc/config", ".sesbutton");
-		runStartup("/jffs/etc/config", ".sesbutton");	// if available
-		runStartup("/mmc/etc/config", ".sesbutton");	// if available
-		runStartup("/tmp/etc/config", ".sesbutton");	// if available
+	} else if (((sesgpio != 0xfff) && ((sesgpio & 0x100) == 0 && (val & push)) || ((sesgpio & 0x100) == 0x100 && !(val & push))) && (++count > SES_WAIT)) {
+		if (check_action() != ACT_IDLE) {	// Don't execute during upgrading
+			fprintf(stderr, "resetbutton: nothing to do...\n");
+			alarmtimer(0, 0);	/* Stop the timer alarm */
+			return;
+		}
 		count = 0;
-		if (nvram_match("usb_ses_umount", "1")) {
-			led_control(LED_DIAG, LED_FLASH);
-			runStartup("/etc/config", ".umount");
-			sleep(5);
-			led_control(LED_DIAG, LED_FLASH);
-			sleep(1);
-			led_control(LED_DIAG, LED_FLASH);
+		handle_ses();
+	} else if ((((wifigpio != 0xfff) && ((wifigpio & 0x100) == 0 && (val & pushwifi))) || ((wifigpio & 0x100) == 0x100 && !(val & pushwifi))) && (++count > SES_WAIT)) {
+		if (check_action() != ACT_IDLE) {	// Don't execute during upgrading
+			fprintf(stderr, "resetbutton: nothing to do...\n");
+			alarmtimer(0, 0);	/* Stop the timer alarm */
+			return;
 		}
-
-		if (nvram_match("radiooff_button", "1")) {
-			led_control(LED_SES, LED_FLASH);	// when pressed, blink white
-			switch (ses_mode) {
-
-			case 1:
-				// SES (AOSS) led
-#ifdef HAVE_RADIOOFF
-#ifndef HAVE_BUFFALO
-				dd_syslog(LOG_DEBUG, "SES / AOSS / EZ-setup button: turning radio(s) on\n");
-#else
-				dd_syslog(LOG_DEBUG, "AOSS button: turning radio(s) on\n");
-#endif
-#ifndef HAVE_ERC
-				sysprintf("startstop radio_on");
-#endif
-#endif
-
-				ses_mode = 0;
-				break;
-			case 0:
-
-				// (AOSS) led
-#ifdef HAVE_RADIOOFF
-#ifndef HAVE_BUFFALO
-				dd_syslog(LOG_DEBUG, "SES / AOSS / EZ-setup button: turning radio(s) off\n");
-#else
-				dd_syslog(LOG_DEBUG, "AOSS button: turning radio(s) off\n");
-#endif
-#ifndef HAVE_ERC
-				sysprintf("startstop radio_off");
-#endif
-#endif
-
-				ses_mode = 1;
-				break;
-			}
-
-		}
-#if defined(HAVE_AOSS) || defined(HAVE_WPS)
-		else if (nvram_match("radiooff_button", "2")) {
-			sysprintf("startstop aoss");
-		}
-#endif
-	} else if ((count > SES_WAIT) && (wifigpio != 0xfff)
-		   && (((wifigpio & 0x100) == 0 && (val & pushwifi))
-		       || ((wifigpio & 0x100) == 0x100 && !(val & pushwifi)))) {
-				if (check_action() != ACT_IDLE) {	// Don't execute during upgrading
-					fprintf(stderr, "resetbutton: nothing to do...\n");
-					alarmtimer(0, 0);	/* Stop the timer alarm */
-					return;
-				}
-		led_control(LED_WLAN, LED_FLASH);	// when pressed, blink white
 		count = 0;
-		switch (wifi_mode) {
-		case 1:
-			dd_syslog(LOG_DEBUG, "Wifi button: turning radio(s) on\n");
-			sysprintf("startstop radio_on");
-			wifi_mode = 0;
-			break;
-		case 0:
-			// (AOSS) led
-			dd_syslog(LOG_DEBUG, "Wifi button: turning radio(s) off\n");
-			sysprintf("startstop radio_off");
-			wifi_mode = 1;
-			break;
-		}
+		handle_wifi();
 
 	} else {
+		count = 0;	// reset counter to avoid factory default
 
 		/* 
 		 * Although it's unpushed now, it had ever been pushed 
 		 */
 		if (mode == 1) {
 //                      fprintf(stderr, "[RESETBUTTON] released %d\n", count);
+			alarmtimer(NORMAL_INTERVAL, 0);
+			mode = 0;
 #ifdef HAVE_UNFY
 			if (count > UPGRADE_WAIT_COUNT) {
 
@@ -1614,8 +1634,6 @@ void period_check(int sig)
 					}
 				}
 			}
-			count = 0;	// reset counter to avoid factory default
-			mode = 0;
 #else
 			if (check_action() != ACT_IDLE) {	// Don't execute during upgrading
 				fprintf(stderr, "resetbutton: nothing to do...\n");
