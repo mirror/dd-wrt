@@ -31,6 +31,11 @@
 #define ZBX_VMWARE_STATE_UPDATING	0x100
 #define ZBX_VMWARE_STATE_UPDATING_PERF	0x200
 
+/* the vmware performance counter state */
+#define ZBX_VMWARE_COUNTER_NEW		0x00
+#define ZBX_VMWARE_COUNTER_READY	0x01
+#define ZBX_VMWARE_COUNTER_UPDATING	0x10
+
 /* performance counter data */
 typedef struct
 {
@@ -41,6 +46,9 @@ typedef struct
 	/*    pair->first  - instance               */
 	/*    pair->second - value                  */
 	zbx_vector_ptr_pair_t	values;
+
+	/* the counter state, see ZBX_VMAWRE_COUNTER_* defines */
+	unsigned char		state;
 }
 zbx_vmware_perf_counter_t;
 
@@ -238,9 +246,13 @@ zbx_vmware_perf_entity_t	*zbx_vmware_service_get_perf_entity(zbx_vmware_service_
 	"/*/*/*/*/*[local-name()='propSet'][*[local-name()='name'][text()='summary.hardware']]"		\
 		"/*[local-name()='val']/*[local-name()='" property "']"
 
-#define ZBX_XPATH_HV_STATUS()										\
-	"/*/*/*/*/*[local-name()='propSet'][*[local-name()='name'][text()='summary.overallStatus']]"	\
-		"/*[local-name()='val']"
+#define ZBX_XPATH_HV_SENSOR_STATUS(sensor)								\
+	"/*/*/*/*/*[local-name()='propSet'][*[local-name()='name']"					\
+		"[text()='runtime.healthSystemRuntime.systemHealthInfo']]"				\
+		"/*[local-name()='val']/*[local-name()='numericSensorInfo']"				\
+		"[*[local-name()='name'][text()='" sensor "']]"						\
+		"/*[local-name()='healthState']/*[local-name()='key']"
+
 
 #define ZBX_XPATH_VMWARE_ABOUT(property)								\
 	"/*/*/*/*/*[local-name()='about']/*[local-name()='" property "']"

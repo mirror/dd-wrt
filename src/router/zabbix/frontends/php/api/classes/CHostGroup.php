@@ -695,10 +695,13 @@ class CHostGroup extends CZBXAPI {
 
 		// actions from operations
 		$dbActions = DBselect(
-			'SELECT DISTINCT o.actionid'.
+			'SELECT o.actionid'.
 			' FROM operations o,opgroup og'.
-			' WHERE o.operationid=og.operationid'.
-				' AND '.dbConditionInt('og.groupid', $groupids)
+			' WHERE o.operationid=og.operationid AND '.dbConditionInt('og.groupid', $groupids).
+			' UNION'.
+			' SELECT o.actionid'.
+			' FROM operations o,opcommand_grp ocg'.
+			' WHERE o.operationid=ocg.operationid AND '.dbConditionInt('ocg.groupid', $groupids)
 		);
 		while ($dbAction = DBfetch($dbActions)) {
 			$actionids[$dbAction['actionid']] = $dbAction['actionid'];
@@ -719,7 +722,7 @@ class CHostGroup extends CZBXAPI {
 			'value' => $groupids
 		));
 
-		// delete action operation commands
+		// delete action operation groups
 		$operationids = array();
 		$dbOperations = DBselect(
 			'SELECT DISTINCT og.operationid'.
@@ -733,13 +736,27 @@ class CHostGroup extends CZBXAPI {
 			'groupid' => $groupids
 		));
 
+		// delete action operation commands
+		$dbOperations = DBselect(
+			'SELECT DISTINCT ocg.operationid'.
+			' FROM opcommand_grp ocg'.
+			' WHERE '.dbConditionInt('ocg.groupid', $groupids)
+		);
+		while ($dbOperation = DBfetch($dbOperations)) {
+			$operationids[$dbOperation['operationid']] = $dbOperation['operationid'];
+		}
+		DB::delete('opcommand_grp', array(
+			'groupid' => $groupids
+		));
+
 		// delete empty operations
 		$delOperationids = array();
 		$dbOperations = DBselect(
 			'SELECT DISTINCT o.operationid'.
 			' FROM operations o'.
 			' WHERE '.dbConditionInt('o.operationid', $operationids).
-				' AND NOT EXISTS (SELECT NULL FROM opgroup og WHERE o.operationid=og.operationid)'
+				' AND NOT EXISTS (SELECT NULL FROM opgroup og WHERE o.operationid=og.operationid)'.
+				' AND NOT EXISTS (SELECT NULL FROM opcommand_grp ocg WHERE o.operationid=ocg.operationid)'
 		);
 		while ($dbOperation = DBfetch($dbOperations)) {
 			$delOperationids[$dbOperation['operationid']] = $dbOperation['operationid'];
@@ -1022,7 +1039,9 @@ class CHostGroup extends CZBXAPI {
 
 		// Collect both given host and template IDs.
 		$currentObjectIds = array_merge($hostIds, $templateIds);
-		$currentObjectIds = array_combine($currentObjectIds, $currentObjectIds);
+		if ($currentObjectIds) {
+			$currentObjectIds = array_combine($currentObjectIds, $currentObjectIds);
+		}
 
 		// Collect both host and template IDs that also belong to given groups, but are not given in parameters.
 		$objectIdsToRemove = array();
