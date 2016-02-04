@@ -18,6 +18,8 @@
 #define	SES_LED_CHECK_INTERVAL	"1"	/* Wait interval seconds */
 #define RESET_WAIT		3	/* seconds */
 #define RESET_WAIT_COUNT	RESET_WAIT * 10	/* 10 times a second */
+#define SES_WAIT		5	/* seconds */
+#define SES_WAIT_COUNT	SES_WAIT * 10	/* 10 times a second */
 #ifdef HAVE_UNFY
 #define UPGRADE_WAIT		1	/* seconds */
 #define UPGRADE_WAIT_COUNT	UPGRADE_WAIT * 10 - 5
@@ -1499,13 +1501,19 @@ void period_check(int sig)
 				}
 			}
 		}
-	} else if ((sesgpio != 0xfff)
+	} else if ((count > SES_WAIT) && (sesgpio != 0xfff)
 		   && (((sesgpio & 0x100) == 0 && (val & push))
 		       || ((sesgpio & 0x100) == 0x100 && !(val & push)))) {
+				if (check_action() != ACT_IDLE) {	// Don't execute during upgrading
+					fprintf(stderr, "resetbutton: nothing to do...\n");
+					alarmtimer(0, 0);	/* Stop the timer alarm */
+					return;
+				}
 		runStartup("/etc/config", ".sesbutton");
 		runStartup("/jffs/etc/config", ".sesbutton");	// if available
 		runStartup("/mmc/etc/config", ".sesbutton");	// if available
 		runStartup("/tmp/etc/config", ".sesbutton");	// if available
+		count = 0;
 		if (nvram_match("usb_ses_umount", "1")) {
 			led_control(LED_DIAG, LED_FLASH);
 			runStartup("/etc/config", ".umount");
@@ -1558,10 +1566,16 @@ void period_check(int sig)
 			sysprintf("startstop aoss");
 		}
 #endif
-	} else if ((wifigpio != 0xfff)
+	} else if ((count > SES_WAIT) && (wifigpio != 0xfff)
 		   && (((wifigpio & 0x100) == 0 && (val & pushwifi))
 		       || ((wifigpio & 0x100) == 0x100 && !(val & pushwifi)))) {
+				if (check_action() != ACT_IDLE) {	// Don't execute during upgrading
+					fprintf(stderr, "resetbutton: nothing to do...\n");
+					alarmtimer(0, 0);	/* Stop the timer alarm */
+					return;
+				}
 		led_control(LED_WLAN, LED_FLASH);	// when pressed, blink white
+		count = 0;
 		switch (wifi_mode) {
 		case 1:
 			dd_syslog(LOG_DEBUG, "Wifi button: turning radio(s) on\n");
