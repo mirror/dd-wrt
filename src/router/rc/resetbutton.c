@@ -1590,7 +1590,7 @@ void period_check(int sig)
 			}
 			handle_reset();
 		}
-	} else if ((sesgpio != 0xfff) && ( ((sesgpio & 0x100) == 0 && (val & push)) || ((sesgpio & 0x100) == 0x100 && !(val & push))) && (++count > SES_WAIT)) {
+	} else if ((sesgpio != 0xfff) && (((sesgpio & 0x100) == 0 && (val & push)) || ((sesgpio & 0x100) == 0x100 && !(val & push))) && (++count > SES_WAIT)) {
 		if (check_action() != ACT_IDLE) {	// Don't execute during upgrading
 			fprintf(stderr, "resetbutton: nothing to do...\n");
 			alarmtimer(0, 0);	/* Stop the timer alarm */
