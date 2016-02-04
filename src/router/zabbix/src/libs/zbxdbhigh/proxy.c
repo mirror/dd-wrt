@@ -432,31 +432,25 @@ static void	get_proxy_monitored_httptests(zbx_uint64_t proxy_hostid, zbx_vector_
  ******************************************************************************/
 int	get_proxyconfig_data(zbx_uint64_t proxy_hostid, struct zbx_json *j, char **error)
 {
-	typedef struct
+	static const char	*proxytable[] =
 	{
-		const char	*table;
-	}
-	proxytable_t;
-
-	static const proxytable_t pt[] =
-	{
-		{"globalmacro"},
-		{"hosts"},
-		{"interface"},
-		{"hosts_templates"},
-		{"hostmacro"},
-		{"items"},
-		{"drules"},
-		{"dchecks"},
-		{"regexps"},
-		{"expressions"},
-		{"groups"},
-		{"config"},
-		{"httptest"},
-		{"httptestitem"},
-		{"httpstep"},
-		{"httpstepitem"},
-		{NULL}
+		"globalmacro",
+		"hosts",
+		"interface",
+		"hosts_templates",
+		"hostmacro",
+		"items",
+		"drules",
+		"dchecks",
+		"regexps",
+		"expressions",
+		"groups",
+		"config",
+		"httptest",
+		"httptestitem",
+		"httpstep",
+		"httpstepitem",
+		NULL
 	};
 
 	const char		*__function_name = "get_proxyconfig_data";
@@ -475,9 +469,9 @@ int	get_proxyconfig_data(zbx_uint64_t proxy_hostid, struct zbx_json *j, char **e
 	get_proxy_monitored_hosts(proxy_hostid, &hosts);
 	get_proxy_monitored_httptests(proxy_hostid, &httptests);
 
-	for (i = 0; NULL != pt[i].table; i++)
+	for (i = 0; NULL != proxytable[i]; i++)
 	{
-		table = DBget_table(pt[i].table);
+		table = DBget_table(proxytable[i]);
 		assert(NULL != table);
 
 		if (SUCCEED != get_proxyconfig_table(proxy_hostid, j, table, &hosts, &httptests))
@@ -1032,7 +1026,8 @@ static int	process_proxyconfig_table(const ZBX_TABLE *table, struct zbx_json_par
 						break;
 					default:
 						*error = zbx_dsprintf(*error, "unsupported field type %d in \"%s.%s\"",
-								fields[f]->type, table->table, fields[f]->name);
+								(int)fields[f]->type, table->table, fields[f]->name);
+						zbx_free(value);
 						goto clean;
 
 				}
@@ -2508,9 +2503,8 @@ void	process_dhis_data(struct zbx_json_parse *jp)
 					drule.druleid);
 
 			if (NULL != (row = DBfetch(result)))
-			{
 				ZBX_STR2UINT64(drule.unique_dcheckid, row[0]);
-			}
+
 			DBfree_result(result);
 
 			last_druleid = drule.druleid;
@@ -2528,12 +2522,37 @@ void	process_dhis_data(struct zbx_json_parse *jp)
 				zbx_date2str(itemtime), zbx_time2str(itemtime), ip, dns, port, dcheck.key_, value);
 
 		DBbegin();
-		if (-1 == dcheck.type)
-			discovery_update_host(&dhost, ip, status, itemtime);
-		else
-			discovery_update_service(&drule, &dcheck, &dhost, ip, dns, port, status, value, itemtime);
-		DBcommit();
 
+		if (-1 == dcheck.type)
+		{
+			if (SUCCEED != DBlock_druleid(drule.druleid))
+			{
+				DBrollback();
+
+				zabbix_log(LOG_LEVEL_DEBUG, "druleid:" ZBX_FS_UI64 " does not exist", drule.druleid);
+
+				goto next;
+			}
+
+			discovery_update_host(&dhost, ip, status, itemtime);
+		}
+		else
+		{
+			if (SUCCEED != DBlock_dcheckid(dcheck.dcheckid, drule.druleid))
+			{
+				DBrollback();
+
+				zabbix_log(LOG_LEVEL_DEBUG, "dcheckid:" ZBX_FS_UI64 " either does not exist or does not"
+						" belong to druleid:" ZBX_FS_UI64, dcheck.dcheckid, drule.druleid);
+
+				goto next;
+			}
+
+			discovery_update_service(&drule, &dcheck, &dhost, ip, dns, port, status, value, itemtime);
+		}
+
+		DBcommit();
+next:
 		continue;
 json_parse_error:
 		zabbix_log(LOG_LEVEL_WARNING, "invalid discovery data: %s", zbx_json_strerror());

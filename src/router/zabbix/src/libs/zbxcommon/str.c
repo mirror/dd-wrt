@@ -694,6 +694,30 @@ size_t	zbx_strlcat(char *dst, const char *src, size_t siz)
 
 /******************************************************************************
  *                                                                            *
+ * Function: zbx_strlcpy_utf8                                                 *
+ *                                                                            *
+ * Purpose: copies utf-8 string + terminating zero character into specified   *
+ *          buffer                                                            *
+ *                                                                            *
+ * Return value: the number of copied bytes excluding terminating zero        *
+ *               character.                                                   *
+ *                                                                            *
+ * Comments: If the source string is larger than destination buffer then the  *
+ *           string is truncated after last valid utf-8 character rather than *
+ *           byte.                                                            *
+ *                                                                            *
+ ******************************************************************************/
+size_t	zbx_strlcpy_utf8(char *dst, const char *src, size_t size)
+{
+	size = zbx_strlen_utf8_nbytes(src, size - 1);
+	memcpy(dst, src, size);
+	dst[size] = '\0';
+
+	return size;
+}
+
+/******************************************************************************
+ *                                                                            *
  * Function: zbx_dvsprintf                                                    *
  *                                                                            *
  * Purpose: dynamical formatted output conversion                             *
@@ -3521,3 +3545,48 @@ void	zbx_trim_str_list(char *list, char delimiter)
 	}
 	*out = '\0';
 }
+
+/******************************************************************************
+ *                                                                            *
+ * Function: zbx_dyn_escape_shell_single_quote                                *
+ *                                                                            *
+ * Purpose: escape single quote in shell command arguments                    *
+ *                                                                            *
+ * Parameters: arg - [IN] the argument to escape                              *
+ *                                                                            *
+ * Return value: The escaped argument.                                        *
+ *                                                                            *
+ ******************************************************************************/
+char	*zbx_dyn_escape_shell_single_quote(const char *arg)
+{
+	int		len = 1; /* include terminating zero character */
+	const char	*pin;
+	char		*arg_esc, *pout;
+
+	for (pin = arg; '\0' != *pin; pin++)
+	{
+		if ('\'' == *pin)
+			len += 3;
+		len++;
+	}
+
+	pout = arg_esc = zbx_malloc(NULL, len);
+
+	for (pin = arg; '\0' != *pin; pin++)
+	{
+		if ('\'' == *pin)
+		{
+			*pout++ = '\'';
+			*pout++ = '\\';
+			*pout++ = '\'';
+			*pout++ = '\'';
+		}
+		else
+			*pout++ = *pin;
+	}
+
+	*pout = '\0';
+
+	return arg_esc;
+}
+
