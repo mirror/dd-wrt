@@ -149,15 +149,14 @@ extern struct wifi_channels *list_channels_11n(char *devnr);
 extern struct wifi_channels *list_channels_ath9k(char *devnr, char *country, int max_bandwidth_khz, unsigned char band);
 extern int getdevicecount(void);
 
-
 extern int mac80211_get_coverageclass(char *interface);
 extern struct mac80211_info *mac80211_assoclist(char *interface);
-extern char *mac80211_get_caps(char *interface,int shortgi);
+extern char *mac80211_get_caps(char *interface, int shortgi);
 extern int has_shortgi(char *interface);
 #ifdef HAVE_ATH10K
 extern char *mac80211_get_vhtcaps(char *interface, int shortgi);
 extern unsigned int get_ath10kreg(char *ifname, unsigned int reg);
-extern void set_ath10kreg(char *ifname, unsigned int reg,unsigned int value);
+extern void set_ath10kreg(char *ifname, unsigned int reg, unsigned int value);
 extern void set_ath10kdistance(char *ifname, unsigned int distance);
 extern unsigned int get_ath10kack(char *ifname);
 extern unsigned int get_ath10kdistance(char *ifname);
