@@ -4,9 +4,8 @@
     /*
      * 2009-05-28 
      */
-     
-typedef struct _l7filters 
-{
+
+typedef struct _l7filters {
 
 	char *name;
 	int protocol;		// 1=p2p, 0=l7, 2=opendpi
