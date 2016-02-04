@@ -339,8 +339,8 @@ void start_sysinit(void)
 	int mtd = getMTD("art");
 	char *maddr = NULL;
 	sprintf(mtdpath, "/dev/mtdblock/%d", mtd);
-	if(board != ROUTER_NETGEAR_R7500)
-	fp = fopen(mtdpath, "rb");
+	if (board != ROUTER_NETGEAR_R7500)
+		fp = fopen(mtdpath, "rb");
 	if (fp) {
 		int newmac[6];
 		if (board == ROUTER_TRENDNET_TEW827)
@@ -348,7 +348,7 @@ void start_sysinit(void)
 		if (board == ROUTER_LINKSYS_EA8500)
 			maddr = get_deviceinfo("hw_mac_addr");
 
-		if (maddr){
+		if (maddr) {
 			fprintf(stderr, "sysinit using mac %s\n", maddr);
 			sscanf(maddr, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4], &newmac[5]);
 		}
@@ -367,7 +367,7 @@ void start_sysinit(void)
 		}
 		calcchecksum(smem);
 		calcchecksum(&smem[0x4000]);
-		
+
 		fp = fopen("/tmp/board1.bin", "wb");
 		fwrite(smem, 0x4000, 1, fp);
 		fclose(fp);
@@ -395,10 +395,10 @@ void start_sysinit(void)
 	/*
 	 * network drivers 
 	 */
-	
+
 	//insmod("qdpc-host.ko");
 	eval("mount", "-t", "ubifs", "-o", "sync", "ubi0:rootfs_data", "/jffs");
-	
+
 	switch (board) {
 	case ROUTER_TRENDNET_TEW827:
 		if (maddr) {
@@ -423,7 +423,7 @@ void start_sysinit(void)
 	default:
 		break;
 	}
-	
+
 	switch (board) {
 	case ROUTER_LINKSYS_EA8500:
 		system("swconfig dev switch0 set reset 1");
@@ -442,15 +442,12 @@ void start_sysinit(void)
 		system("swconfig dev switch0 vlan 1 set ports \"6 1 2 3 4\"");
 		system("swconfig dev switch0 vlan 2 set ports \"5 0\"");
 		system("swconfig dev switch0 set apply");
-	      break;
+		break;
 	}
 
-		
-
-	
 	eval("ifconfig", "eth1", "up");
 	eval("ifconfig", "eth0", "up");
-	
+
 	detect_wireless_devices();
 
 	int s;
