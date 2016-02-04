@@ -41,10 +41,10 @@ struct dstream_ctx {
 
 /* data-stream context flags
  */
-static const int32_t F_DROP_PACKET = (1 << 1);
-static const int32_t F_CHECK_FMT   = (1 << 2);
-static const int32_t F_SCATTERED   = (1 << 3);
-static const int32_t F_FILE_INPUT  = (1 << 4);
+#define F_DROP_PACKET (1 << 1)
+#define F_CHECK_FMT   (1 << 2)
+#define F_SCATTERED   (1 << 3)
+#define F_FILE_INPUT  (1 << 4)
 
 
 #ifdef __cplusplus
