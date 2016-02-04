@@ -46,7 +46,7 @@ static void *load_service(const char *name)
 	cprintf("load service %s\n", name);
 	void *handle = dlopen(SERVICE_MODULE, RTLD_LAZY);
 	if (!handle) {
-		fprintf(stderr, "Cannot open library: %s" , dlerror());
+		fprintf(stderr, "Cannot open library: %s", dlerror());
 	}
 
 	cprintf("done()\n");

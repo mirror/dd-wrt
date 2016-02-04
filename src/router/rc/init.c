@@ -607,7 +607,7 @@ int main(int argc, char **argv)
 #else
 #ifdef DIST
 	if (strlen(DIST) > 0)
-		fprintf(fp, "DD-WRT v3.0-r%s %s (c) 2016 NewMedia-NET GmbH\nRelease: " BUILD_DATE "\n",  SVN_REVISION, DIST);
+		fprintf(fp, "DD-WRT v3.0-r%s %s (c) 2016 NewMedia-NET GmbH\nRelease: " BUILD_DATE "\n", SVN_REVISION, DIST);
 	else
 		fprintf(fp, "DD-WRT v3.0-r%s custom (c) 2016 NewMedia-NET GmbH\nRelease: " BUILD_DATE "\n", SVN_REVISION);
 #else
@@ -817,13 +817,13 @@ int main(int argc, char **argv)
 			{
 				start_service_force("radio_off");
 				start_service_force("radio_on");
-				
+
 			}
 			start_service_f("radio_timer");
 #ifdef HAVE_EMF
 			start_service("emf");
 #endif
-			
+
 			cprintf("run rc file\n");
 #ifdef HAVE_REGISTER
 #ifndef HAVE_ERC
