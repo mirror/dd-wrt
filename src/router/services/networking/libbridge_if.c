@@ -174,7 +174,7 @@ int br_del_bridge(const char *brname)
 
 int br_add_interface(const char *bridge, const char *dev)
 {
-
+	char tmp[256];
 	if (!ifexists(dev))
 		return -1;
 	char ipaddr[32];
