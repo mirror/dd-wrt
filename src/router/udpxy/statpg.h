@@ -97,7 +97,8 @@ static const char* STAT_PAGE_BASE[] = {
     "</style>\n"
     "</head>\n"
 };
-static const size_t LEN_STAT_PAGE_BASE = 3;
+
+#define LEN_STAT_PAGE_BASE 3
 
 static const char STAT_PAGE_FMT1[] =
     "<body>\n"

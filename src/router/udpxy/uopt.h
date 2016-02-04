@@ -28,16 +28,16 @@
 
 #include "udpxy.h"
 
-static const int MIN_CLIENT_COUNT       = 1;
-static const int MAX_CLIENT_COUNT       = 5000;
-static const int DEFAULT_CLIENT_COUNT   = 3;
+#define MIN_CLIENT_COUNT 1
+#define MAX_CLIENT_COUNT 5000
+#define DEFAULT_CLIENT_COUNT  3
 
-static const ssize_t MIN_MCACHE_LEN    = 4 * 1024;
-static const ssize_t MAX_MCACHE_LEN    = 2048 * 1024;
-static const ssize_t DEFAULT_CACHE_LEN = 2 * 1024;
-static const u_short DEFAULT_MCAST_REFRESH = 0;
+#define MIN_MCACHE_LEN    4 * 1024
+#define MAX_MCACHE_LEN    2048 * 1024
+#define DEFAULT_CACHE_LEN 2 * 1024
+#define DEFAULT_MCAST_REFRESH 0
 
-static const ssize_t MIN_SOCKBUF_LEN = (1024 * 64);
+#define MIN_SOCKBUF_LEN (1024 * 64)
 
 
 /* udpxy options

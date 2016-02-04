@@ -23,21 +23,21 @@
 
 #include <sys/types.h>
 
-static const int    MPEG_TS_SIG = 0x47;
-static const size_t RTP_MIN_SIZE = 4;
-static const size_t RTP_HDR_SIZE = 12; /* RFC 3550 */
-static const int    RTP_VER2 = 0x02;
+#define    MPEG_TS_SIG 0x47
+#define RTP_MIN_SIZE 4
+#define RTP_HDR_SIZE 12 /* RFC 3550 */
+#define    RTP_VER2 0x02
 
 /* offset to header extension and extension length,
     * as per RFC 3550 5.3.1 */
-static const size_t XTLEN_OFFSET = 14;
-static const size_t XTSIZE = 4;
+#define XTLEN_OFFSET 14
+#define XTSIZE 4
 
 /* minimum length to determine size of an extended RTP header
  */
 #define RTP_XTHDRLEN (XTLEN_OFFSET + XTSIZE)
 
-static const size_t CSRC_SIZE = 4;
+#define CSRC_SIZE 4
 
 /* MPEG payload-type constants - adopted from VLC 0.8.6 */
 #define P_MPGA      0x0E     /* MPEG audio */
