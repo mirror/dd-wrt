@@ -55,7 +55,7 @@ int rtkswitch_ioctl(int val, int val2, int val3)
 	}
 
 	switch (val) {
-	/* w/ no options */
+		/* w/ no options */
 	case INIT_SWITCH:
 	case INIT_SWITCH_UP:
 	case GET_EXT_TXRXDELAY:
@@ -69,7 +69,7 @@ int rtkswitch_ioctl(int val, int val2, int val3)
 		p = NULL;
 		break;
 
-	/* w/ 1 option */
+		/* w/ 1 option */
 	case RESET_PORT:
 	case GET_PORT_STAT:
 	case GET_PORT_SPEED:
@@ -78,16 +78,16 @@ int rtkswitch_ioctl(int val, int val2, int val3)
 	case GET_REG:
 	case SET_EXT_MODE:
 	case SET_CPU:
-		p = (void*)&value;
+		p = (void *)&value;
 		value = (unsigned int)val2;
 		break;
 
-	/* w/ 2 options */
+		/* w/ 2 options */
 	case TEST_REG:
 	case SET_REG:
-		p = (void*)&asics;
-		asics.rtk_reg = (rtk_uint32)val2;
-		asics.rtk_val = (rtk_uint32)val3;
+		p = (void *)&asics;
+		asics.rtk_reg = (rtk_uint32) val2;
+		asics.rtk_val = (rtk_uint32) val3;
 		break;
 
 	default:
@@ -124,15 +124,15 @@ int rtkswitch_main(int argc, char *argv[])
 
 	if (argc >= 3) {
 		cmd2 = argv[2];
-		if(argc > 3)
+		if (argc > 3)
 			cmd3 = argv[3];
 	}
 
-	val = (int) strtol(cmd, NULL, 0);
+	val = (int)strtol(cmd, NULL, 0);
 	if (cmd2)
-		val2 = (int) strtol(cmd2, NULL, 0);
+		val2 = (int)strtol(cmd2, NULL, 0);
 	if (cmd3)
-		val3 = (int) strtol(cmd3, NULL, 0);
+		val3 = (int)strtol(cmd3, NULL, 0);
 
 	return rtkswitch_ioctl(val, val2, val3);
 }
@@ -160,35 +160,35 @@ int ext_rtk_phyState(int verbose)
 	pS.link[0] = pS.link[1] = pS.link[2] = pS.link[3] = 0;
 	pS.speed[0] = pS.speed[1] = pS.speed[2] = pS.speed[3] = 0;
 
-        switch(getRouterBrand()) {
-        case ROUTER_ASUS_AC5300:
+	switch (getRouterBrand()) {
+	case ROUTER_ASUS_AC5300:
 		{
-		/* RTK_LAN  BRCM_LAN  WAN  POWER */
-		/* R0 R1 R2 R3 B4 B0 B1 B2 B3 */
-		/* L8 L7 L6 L5 L4 L3 L2 L1 W0 */
-		
-		const int porder[4] = {3,2,1,0};
-		o = porder;
+			/* RTK_LAN  BRCM_LAN  WAN  POWER */
+			/* R0 R1 R2 R3 B4 B0 B1 B2 B3 */
+			/* L8 L7 L6 L5 L4 L3 L2 L1 W0 */
 
-		break;
+			const int porder[4] = { 3, 2, 1, 0 };
+			o = porder;
+
+			break;
 		}
-        case ROUTER_ASUS_AC88U:
+	case ROUTER_ASUS_AC88U:
 		{
-		/* RTK_LAN  BRCM_LAN  WAN  POWER */
-		/* R3 R2 R1 R0 B3 B2 B1 B0 B4 */
-		/* L8 L7 L6 L5 L4 L3 L2 L1 W0 */
-		
-		const int porder[4] = {0,1,2,3};
-		o = porder;
+			/* RTK_LAN  BRCM_LAN  WAN  POWER */
+			/* R3 R2 R1 R0 B3 B2 B1 B0 B4 */
+			/* L8 L7 L6 L5 L4 L3 L2 L1 W0 */
 
-		break;
+			const int porder[4] = { 0, 1, 2, 3 };
+			o = porder;
+
+			break;
 		}
 	default:
-		{	
-		const int porder[4] = {0,1,2,3};
-		o = porder;
+		{
+			const int porder[4] = { 0, 1, 2, 3 };
+			o = porder;
 
-		break;
+			break;
 		}
 	}
 
@@ -201,15 +201,13 @@ int ext_rtk_phyState(int verbose)
 	close(fd);
 
 	sprintf(buf, portMark,
-		(pS.link[o[0]] == 1) ? (pS.speed[o[0]] == 2) ? 'G' : 'M': 'X',
-		(pS.link[o[1]] == 1) ? (pS.speed[o[1]] == 2) ? 'G' : 'M': 'X',
-		(pS.link[o[2]] == 1) ? (pS.speed[o[2]] == 2) ? 'G' : 'M': 'X',
-		(pS.link[o[3]] == 1) ? (pS.speed[o[3]] == 2) ? 'G' : 'M': 'X');
+		(pS.link[o[0]] == 1) ? (pS.speed[o[0]] == 2) ? 'G' : 'M' : 'X',
+		(pS.link[o[1]] == 1) ? (pS.speed[o[1]] == 2) ? 'G' : 'M' : 'X', (pS.link[o[2]] == 1) ? (pS.speed[o[2]] == 2) ? 'G' : 'M' : 'X', (pS.link[o[3]] == 1) ? (pS.speed[o[3]] == 2) ? 'G' : 'M' : 'X');
 
-	if(verbose)
-		fprintf(stderr,"%s\n", buf);
+	if (verbose)
+		fprintf(stderr, "%s\n", buf);
 
-	return (pS.link[o[0]] == 1)|(pS.link[o[1]] == 1)|(pS.link[o[2]] == 1)|(pS.link[o[3]] == 1);
+	return (pS.link[o[0]] == 1) | (pS.link[o[1]] == 1) | (pS.link[o[2]] == 1) | (pS.link[o[3]] == 1);
 }
 
 void usage(char *cmd)
@@ -217,30 +215,30 @@ void usage(char *cmd)
 	int ci, pa;
 
 	/* set pa */
-	for(ci = 0; ci < MAX_REQ; ++ci) {
-        	switch (ci) {
-        	case GET_PORT_STAT:
+	for (ci = 0; ci < MAX_REQ; ++ci) {
+		switch (ci) {
+		case GET_PORT_STAT:
 		case GET_PORT_SPEED:
-        	case RESET_PORT:
-        	case SET_EXT_TXDELAY:
-        	case SET_EXT_RXDELAY:
-        	case GET_REG:
+		case RESET_PORT:
+		case SET_EXT_TXDELAY:
+		case SET_EXT_RXDELAY:
+		case GET_REG:
 		case SET_EXT_MODE:
 		case SET_CPU:
 			rtk_cmds_pa[ci] = 1;
-                	break;
+			break;
 
-        	case TEST_REG:
-        	case SET_REG:
+		case TEST_REG:
+		case SET_REG:
 			rtk_cmds_pa[ci] = 2;
-                	break;
+			break;
 
 		default:
 			rtk_cmds_pa[ci] = 0;
 		}
 	}
 
-	fprintf(stderr,"Usage:\n");
-	for(ci = 0; ci < MAX_REQ; ++ci)
-		fprintf(stderr,"  %s %d %s##( %s )##\n", cmd, ci, (pa=rtk_cmds_pa[ci])?pa==1?"\t[arg1] \t":"\t[arg1] [arg2] ":ci > 9?"\t\t":" \t\t", rtk_switch_cmds[ci]);
+	fprintf(stderr, "Usage:\n");
+	for (ci = 0; ci < MAX_REQ; ++ci)
+		fprintf(stderr, "  %s %d %s##( %s )##\n", cmd, ci, (pa = rtk_cmds_pa[ci]) ? pa == 1 ? "\t[arg1] \t" : "\t[arg1] [arg2] " : ci > 9 ? "\t\t" : " \t\t", rtk_switch_cmds[ci]);
 }
