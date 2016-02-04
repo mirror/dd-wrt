@@ -1083,7 +1083,7 @@ void setRegulationDomain(char *reg)
 	nvram_set("wl0_country_code", ccode0);
 	nvram_set("wl1_country_code", ccode1);
 	nvram_set("wl2_country_code", ccode1);
-	
+
 	switch (getRouterBrand()) {
 	case ROUTER_D1800H:
 		nvram_set("wl_country_rev", rrev1);	//DH1800 wl0 is 5G so needs to be inverted
@@ -1139,7 +1139,5 @@ void setRegulationDomain(char *reg)
 		nvram_set("1:ccode", ccode1);
 		nvram_set("2:ccode", ccode1);
 	}
-
-
 
 }

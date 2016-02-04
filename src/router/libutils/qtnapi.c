@@ -1197,7 +1197,7 @@ int rpc_get_temperature(void)
 
 	if (!rpc_qtn_ready())
 		return 0;
-	qcsapi_retval = qcsapi_get_temperature_info(&temp_rficinternal,&temp_rficexternal, &temp_internal);
+	qcsapi_retval = qcsapi_get_temperature_info(&temp_rficinternal, &temp_rficexternal, &temp_internal);
 	if (qcsapi_retval >= 0) {
 		return temp_internal;
 	}
