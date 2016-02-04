@@ -7688,3 +7688,11 @@ void strcpyto(char *dest, char *src, char c)
 	dest[cnt] = '\0';
 	return dest;
 }
+
+char *chomp(char *s)
+{
+	char *c = (s) + strlen((s)) - 1;
+	while ((c > (s)) && (*c == '\n' || *c == '\r' || *c == ' '))
+		*c-- = '\0';
+	return s;
+}
