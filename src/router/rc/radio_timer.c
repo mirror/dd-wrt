@@ -26,7 +26,6 @@
 
 extern void handle_wireless(void);
 
-
 int main(int argc, char **argv)
 {
 
