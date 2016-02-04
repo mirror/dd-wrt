@@ -130,7 +130,6 @@ extern int roaming_daemon_main(int argc, char *argv[]);
 extern int pptpd_main(int argc, char **argv);
 #endif
 
-
 extern int create_rc_file(char *name);
 extern int wland_main(int argc, char **argv);
 
