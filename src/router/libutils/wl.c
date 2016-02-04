@@ -35,7 +35,7 @@ struct nvram_param router_defaults[] = {
  * DD-WRT addition (loaned from radauth) 
  */
 
-#ifndef HAVE_MADWIFI 
+#ifndef HAVE_MADWIFI
 u_int ieee80211_mhz2ieee(u_int freq)
 {
 	if (freq == 2484)
@@ -1140,31 +1140,31 @@ float wifi_getrate(char *ifname)
 			return 54.0 * MEGA;
 		struct wifi_interface *interface = mac80211_get_interface(ifname);
 		if (!interface)
-		    return -1;
+			return -1;
 		float rate;
 		switch (interface->width) {
 		case 2:
 			rate = 54.0 * MEGA;
-		break;
+			break;
 		case 5:
 			rate = 54.0 * MEGA / 4;
-		break;
+			break;
 		case 10:
 			rate = 54.0 * MEGA / 2;
-		break;
+			break;
 		case 20:
 			rate = (float)(HTTxRate20_400(mac80211_get_maxmcs(ifname))) * MEGA;
-		break;
+			break;
 		case 40:
 			rate = (float)(HTTxRate40_400(mac80211_get_maxmcs(ifname))) * MEGA;
-		break;
+			break;
 		case 80:
 			rate = (float)(HTTxRate80_400(mac80211_get_maxmcs(ifname))) * MEGA;
-		break;
+			break;
 		case 8080:
 		case 160:
 			rate = (float)(HTTxRate40_400(mac80211_get_maxmcs(ifname))) * MEGA;	// dummy, no qam256 info yet available
-		break;
+			break;
 		default:
 			rate = 54.0 * MEGA;
 		}
@@ -1598,7 +1598,7 @@ int wifi_getchannel(char *ifname)
 	if (is_ath9k(ifname)) {
 		struct wifi_interface *interface = mac80211_get_interface(ifname);
 		if (!interface)
-		    return -1;
+			return -1;
 		int f = interface->freq;
 		free(interface);
 		return ieee80211_mhz2ieee(f);
@@ -2109,7 +2109,7 @@ int getUptime(char *ifname, unsigned char *mac)
 		si = (struct ieee80211req_sta_info *)cp;
 		if (!memcmp(&si->isi_macaddr[0], mac, 6)) {
 			close(s);
-			int uptime = 0; //si->isi_uptime;
+			int uptime = 0;	//si->isi_uptime;
 
 			free(buf);
 			return uptime;
@@ -2445,8 +2445,7 @@ void radio_off(int idx)
 	}
 	//fix ticket 2991
 	eval("startservice", "nas", "-f");
-	
-	
+
 }
 
 void radio_on(int idx)
@@ -2455,8 +2454,8 @@ void radio_on(int idx)
 		eval("stopservice", "nas", "-f");
 	}
 	if (idx != -1) {
-		
-		if (!nvram_nmatch("disabled", "wl%d_net_mode", idx)){
+
+		if (!nvram_nmatch("disabled", "wl%d_net_mode", idx)) {
 			fprintf(stderr, "radio_on(%d) interface: %s \n", idx, get_wl_instance_name(idx));
 			eval("wl", "-i", get_wl_instance_name(idx), "radio", "off");
 			eval("wl", "-i", get_wl_instance_name(idx), "radio", "on");

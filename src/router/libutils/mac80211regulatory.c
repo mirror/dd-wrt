@@ -137,7 +137,6 @@ struct ieee80211_regdomain *mac80211_get_regdomain(char *varcountry)
 		fprintf(stderr, "COUNTRY environment variable must be an " "ISO ISO 3166-1-alpha-2 (uppercase) or 00\n");
 		return rd;
 	}
-
 #ifdef HAVE_IDEXX
 #ifdef HAVE_IDEXX_WORLD
 	memcpy(alpha2, "00", 2);
