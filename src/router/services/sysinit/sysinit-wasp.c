@@ -244,7 +244,7 @@ void start_sysinit(void)
 	setWirelessLed(0, 11);
 	setWirelessLed(1, 14);
 #elif  HAVE_JWAP606
-//	setWirelessLed(0, 14);
+//      setWirelessLed(0, 14);
 	setWirelessLed(1, 14);
 #elif  HAVE_WR1043V2
 	setWirelessLed(0, 12);
