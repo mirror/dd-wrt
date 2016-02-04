@@ -1784,10 +1784,10 @@ INSERT INTO items (itemid,type,snmp_community,snmp_oid,hostid,name,key_,delay,hi
 INSERT INTO items (itemid,type,snmp_community,snmp_oid,hostid,name,key_,delay,history,trends,status,value_type,trapper_hosts,units,multiplier,delta,snmpv3_securityname,snmpv3_securitylevel,snmpv3_authpassphrase,snmpv3_privpassphrase,formula,logtimefmt,templateid,valuemapid,delay_flex,params,ipmi_sensor,data_type,authtype,username,password,publickey,privatekey,flags,filter,interfaceid,port,description,inventory_link,lifetime,snmpv3_authprotocol,snmpv3_privprotocol,snmpv3_contextname) values ('23121','0','','','10076','System calls','system.stat[faults,sy]','60','7','365','0','0','','','0','0','','0','','','1','',NULL,NULL,'','','','0','0','','','','','0','',NULL,'','','0','30','0','0','')
 /
 
-INSERT INTO items (itemid,type,snmp_community,snmp_oid,hostid,name,key_,delay,history,trends,status,value_type,trapper_hosts,units,multiplier,delta,snmpv3_securityname,snmpv3_securitylevel,snmpv3_authpassphrase,snmpv3_privpassphrase,formula,logtimefmt,templateid,valuemapid,delay_flex,params,ipmi_sensor,data_type,authtype,username,password,publickey,privatekey,flags,filter,interfaceid,port,description,inventory_link,lifetime,snmpv3_authprotocol,snmpv3_privprotocol,snmpv3_contextname) values ('23122','0','','','10076','Length of the swap queue','system.stat[kthr,b]','60','7','365','0','3','','','0','0','','0','','','1','',NULL,NULL,'','','','0','0','','','','','0','',NULL,'','','0','30','0','0','')
+INSERT INTO items (itemid,type,snmp_community,snmp_oid,hostid,name,key_,delay,history,trends,status,value_type,trapper_hosts,units,multiplier,delta,snmpv3_securityname,snmpv3_securitylevel,snmpv3_authpassphrase,snmpv3_privpassphrase,formula,logtimefmt,templateid,valuemapid,delay_flex,params,ipmi_sensor,data_type,authtype,username,password,publickey,privatekey,flags,filter,interfaceid,port,description,inventory_link,lifetime,snmpv3_authprotocol,snmpv3_privprotocol,snmpv3_contextname) values ('23122','0','','','10076','Length of the swap queue','system.stat[kthr,b]','60','7','365','0','0','','','0','0','','0','','','1','',NULL,NULL,'','','','0','0','','','','','0','',NULL,'','','0','30','0','0','')
 /
 
-INSERT INTO items (itemid,type,snmp_community,snmp_oid,hostid,name,key_,delay,history,trends,status,value_type,trapper_hosts,units,multiplier,delta,snmpv3_securityname,snmpv3_securitylevel,snmpv3_authpassphrase,snmpv3_privpassphrase,formula,logtimefmt,templateid,valuemapid,delay_flex,params,ipmi_sensor,data_type,authtype,username,password,publickey,privatekey,flags,filter,interfaceid,port,description,inventory_link,lifetime,snmpv3_authprotocol,snmpv3_privprotocol,snmpv3_contextname) values ('23123','0','','','10076','Length of the run queue','system.stat[kthr,r]','60','7','365','0','3','','','0','0','','0','','','1','',NULL,NULL,'','','','0','0','','','','','0','',NULL,'','','0','30','0','0','')
+INSERT INTO items (itemid,type,snmp_community,snmp_oid,hostid,name,key_,delay,history,trends,status,value_type,trapper_hosts,units,multiplier,delta,snmpv3_securityname,snmpv3_securitylevel,snmpv3_authpassphrase,snmpv3_privpassphrase,formula,logtimefmt,templateid,valuemapid,delay_flex,params,ipmi_sensor,data_type,authtype,username,password,publickey,privatekey,flags,filter,interfaceid,port,description,inventory_link,lifetime,snmpv3_authprotocol,snmpv3_privprotocol,snmpv3_contextname) values ('23123','0','','','10076','Length of the run queue','system.stat[kthr,r]','60','7','365','0','0','','','0','0','','0','','','1','',NULL,NULL,'','','','0','0','','','','','0','',NULL,'','','0','30','0','0','')
 /
 
 INSERT INTO items (itemid,type,snmp_community,snmp_oid,hostid,name,key_,delay,history,trends,status,value_type,trapper_hosts,units,multiplier,delta,snmpv3_securityname,snmpv3_securitylevel,snmpv3_authpassphrase,snmpv3_privpassphrase,formula,logtimefmt,templateid,valuemapid,delay_flex,params,ipmi_sensor,data_type,authtype,username,password,publickey,privatekey,flags,filter,interfaceid,port,description,inventory_link,lifetime,snmpv3_authprotocol,snmpv3_privprotocol,snmpv3_contextname) values ('23124','0','','','10076','Active virtual pages','system.stat[memory,avm]','60','7','365','0','3','','','0','0','','0','','','1','',NULL,NULL,'','','','0','0','','','','','0','',NULL,'','','0','30','0','0','')
@@ -7376,7 +7376,10 @@ INSERT INTO items_applications (itemappid,applicationid,itemid) values ('5334','
 INSERT INTO items_applications (itemappid,applicationid,itemid) values ('5336','273','23121')
 /
 
-INSERT INTO items_applications (itemappid,applicationid,itemid) values ('5328','273','23123')
+INSERT INTO items_applications (itemappid,applicationid,itemid) values ('5877','273','23123')
+/
+
+INSERT INTO items_applications (itemappid,applicationid,itemid) values ('5878','279','23123')
 /
 
 INSERT INTO items_applications (itemappid,applicationid,itemid) values ('5248','274','22948')
@@ -7418,7 +7421,10 @@ INSERT INTO items_applications (itemappid,applicationid,itemid) values ('4998','
 INSERT INTO items_applications (itemappid,applicationid,itemid) values ('4999','276','22943')
 /
 
-INSERT INTO items_applications (itemappid,applicationid,itemid) values ('5340','276','23122')
+INSERT INTO items_applications (itemappid,applicationid,itemid) values ('5875','276','23122')
+/
+
+INSERT INTO items_applications (itemappid,applicationid,itemid) values ('5876','279','23122')
 /
 
 INSERT INTO items_applications (itemappid,applicationid,itemid) values ('5193','276','23124')
@@ -7922,9 +7928,6 @@ INSERT INTO items_applications (itemappid,applicationid,itemid) values ('5423','
 INSERT INTO items_applications (itemappid,applicationid,itemid) values ('5425','322','23137')
 /
 
-INSERT INTO items_applications (itemappid,applicationid,itemid) values ('5240','322','23159')
-/
-
 INSERT INTO items_applications (itemappid,applicationid,itemid) values ('5247','322','23164')
 /
 
@@ -7962,6 +7965,9 @@ INSERT INTO items_applications (itemappid,applicationid,itemid) values ('5235','
 /
 
 INSERT INTO items_applications (itemappid,applicationid,itemid) values ('5226','328','23158')
+/
+
+INSERT INTO items_applications (itemappid,applicationid,itemid) values ('5240','328','23159')
 /
 
 INSERT INTO items_applications (itemappid,applicationid,itemid) values ('5241','329','23160')

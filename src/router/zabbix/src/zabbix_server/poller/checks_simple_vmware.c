@@ -210,9 +210,15 @@ static int	vmware_service_get_counter_value_by_id(zbx_vmware_service_t *service,
 
 	perfcounter = (zbx_vmware_perf_counter_t *)entity->counters.values[i];
 
-	if (0 == perfcounter->values.values_num)
+	if (0 == (perfcounter->state & ZBX_VMWARE_COUNTER_READY))
 	{
 		ret = SYSINFO_RET_OK;
+		goto out;
+	}
+
+	if (0 == perfcounter->values.values_num)
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Performance counter data is not available."));
 		goto out;
 	}
 
@@ -1207,11 +1213,12 @@ int	check_vcenter_hv_status(AGENT_REQUEST *request, const char *username, const 
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __function_name);
 
-	ret = get_vcenter_stat(request, username, password, ZBX_OPT_XPATH, ZBX_XPATH_HV_STATUS(), result);
+	ret = get_vcenter_stat(request, username, password, ZBX_OPT_XPATH,
+			ZBX_XPATH_HV_SENSOR_STATUS("VMware Rollup Health State"), result);
 
 	if (SYSINFO_RET_OK == ret && NULL != GET_STR_RESULT(result))
 	{
-		if (0 == strcmp(result->str, "gray"))
+		if (0 == strcmp(result->str, "gray") || 0 == strcmp(result->str, "unknown"))
 			SET_UI64_RESULT(result, 0);
 		else if (0 == strcmp(result->str, "green"))
 			SET_UI64_RESULT(result, 1);
