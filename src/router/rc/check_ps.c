@@ -93,7 +93,7 @@ static int search_process(char *name, int count)
 	}
 }
 
-static void checknas(void)		// for broadcom v24 only
+static void checknas(void)	// for broadcom v24 only
 {
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 
