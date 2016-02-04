@@ -176,12 +176,7 @@ void showmemdebugstat();
 /*
  * Strip trailing CR/NL from string <s> 
  */
-#define chomp(s) ({ \
-	char *c = (s) + strlen((s)) - 1; \
-	while ((c > (s)) && (*c == '\n' || *c == '\r' || *c == ' ')) \
-		*c-- = '\0'; \
-	s; \
-})
+char *chomp(char *s);
 
 /*
  * Simple version of _backtick() 
