@@ -1292,7 +1292,7 @@ void init_network(int idx)
 
 					sprintf(ra, "ra%d", count + (8 * idx));
 					sysprintf("ifconfig ra%d 0.0.0.0 up", count + (8 * idx));
-					br_add_interface(getBridge(getRADev(var, tmp)), ra);
+					br_add_interface(getBridge(getRADev(var), tmp), ra);
 				} else {
 					char ip[32];
 					char mask[32];
