@@ -1598,7 +1598,7 @@ void period_check(int sig)
 		}
 		count = 0;
 		handle_ses();
-	} else if ((wifigpio != 0xfff) && ((((wifigpio & 0x100) == 0 && (val & pushwifi))) || ((wifigpio & 0x100) == 0x100 && !(val & pushwifi))) && (++count > SES_WAIT)) {
+	} else if ((wifigpio != 0xfff) && (((wifigpio & 0x100) == 0 && (val & pushwifi)) || ((wifigpio & 0x100) == 0x100 && !(val & pushwifi))) && (++count > SES_WAIT)) {
 		if (check_action() != ACT_IDLE) {	// Don't execute during upgrading
 			fprintf(stderr, "resetbutton: nothing to do...\n");
 			alarmtimer(0, 0);	/* Stop the timer alarm */
