@@ -31,6 +31,7 @@
 
 #include <code_pattern.h>
 #include <cy_conf.h>
+#include <revision.h>
 
 #define XSTR(s) STR(s)
 #define STR(s) #s
@@ -113,10 +114,8 @@ struct nvram_param srouter_defaults[] = {
 	/*
 	 * OS parameters 
 	 */
-	{"os_name", ""},	/* OS name string */
-	{"os_version", EPI_VERSION_STR},	/* OS revision */
+	{"os_version", SVN_REVISION},	/* OS revision */
 	{"os_date", __DATE__},	/* OS date */
-	{"ct_modules", ""},	/* CyberTAN kernel modules */
 	{"wait_time", "5"},
 	/*
 	 * Miscellaneous parameters 
