@@ -66,6 +66,7 @@
 #include <cy_conf.h>
 #include <cymac.h>
 #include <glob.h>
+#include <revision.h>
 // #include <ledcontrol.h>
 
 #define WL_IOCTL(name, cmd, buf, len) (ret = wl_ioctl((name), (cmd), (buf), (len)))
@@ -2755,8 +2756,7 @@ void start_restore_defaults(void)
 	/*
 	 * Always set OS defaults 
 	 */
-	nvram_set("os_name", "linux");
-	nvram_set("os_version", EPI_VERSION_STR);
+	nvram_set("os_version", SVN_REVISION);
 
 #ifdef HAVE_SPUTNIK_APD
 	/*
