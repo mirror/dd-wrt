@@ -3075,7 +3075,7 @@ void start_sysinit(void)
 		}
 //      fprintf( "insmod %s\n", modules );
 
-		insmod(modules)
+		insmod(modules);
 
 		    if (check_hw_type() == BCM4702_CHIP)
 			insmod("diag");
