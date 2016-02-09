@@ -3,6 +3,14 @@ set com 115200n81
 set senddelay 0.05
 send "ate0^m"
 waitquiet 1 0.2
-send "AT+CFUN=1^m"
+send "AT+CFUN?^m"
+waitfor 5 "+CME ERROR:","+CFUN:"
+if % = 0 goto cme_err
+get 2 " " $s
+if $left($s,1) = "1" goto end
+send "AT+CFUN=1,0^m"
 waitquiet 1 0.2
 
+:cme_err
+:end
+exit 0
