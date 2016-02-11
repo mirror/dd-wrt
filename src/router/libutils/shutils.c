@@ -418,7 +418,7 @@ int safe_fwrite(const void *ptr, size_t size, size_t nmemb, FILE * stream)
  * @param       e       binary data
  * @return      TRUE if conversion was successful and FALSE otherwise
  */
-int ether_atoe(const char *a, unsigned char *e)
+int ether_atoe(const char *a, char *e)
 {
 	char *c = (char *)a;
 	int i = 0;
@@ -438,7 +438,7 @@ int ether_atoe(const char *a, unsigned char *e)
  * @param       a       string in xx:xx:xx:xx:xx:xx notation
  * @return      a
  */
-char *ether_etoa(const unsigned char *e, char *a)
+char *ether_etoa(const char *e, char *a)
 {
 	char *c = a;
 	int i;
