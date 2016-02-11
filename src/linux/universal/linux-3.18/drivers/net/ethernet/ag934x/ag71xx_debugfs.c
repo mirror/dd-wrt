@@ -167,7 +167,7 @@ static ssize_t read_file_ring(struct file *file, char __user *user_buf,
 	u32 desc_hw;
 	int i;
 
-	buflen = (ring->size * DESC_PRINT_LEN);
+	buflen = (BIT(ring->order) * DESC_PRINT_LEN);
 	buf = kmalloc(buflen, GFP_KERNEL);
 	if (!buf)
 		return -ENOMEM;
@@ -178,13 +178,13 @@ static ssize_t read_file_ring(struct file *file, char __user *user_buf,
 
 	spin_lock_irqsave(&ag->lock, flags);
 
-	curr = (ring->curr % ring->size);
-	dirty = (ring->dirty % ring->size);
+	curr = (ring->curr % BIT(ring->order));
+	dirty = (ring->dirty % BIT(ring->order));
 	desc_hw = ag71xx_rr(ag, desc_reg);
-	for (i = 0; i < ring->size; i++) {
+	for (i = 0; i < BIT(ring->order); i++) {
 		struct ag71xx_buf *ab = &ring->buf[i];
 		struct ag71xx_desc *desc = ag71xx_ring_desc(ring, i);
-		u32 desc_dma = ((u32) ring->descs_dma) + i * ring->desc_size;
+		u32 desc_dma = ((u32) ring->descs_dma) + i * AG71XX_DESC_SIZE;
 
 		len += snprintf(buf + len, buflen - len,
 			"%3d %c%c%c %08x %08x %08x %08x %c %10lu\n",
