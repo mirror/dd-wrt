@@ -123,14 +123,14 @@ extern int has_beamforming(char *prefix);
 
 struct site_survey_list {
 	char SSID[33];
-	unsigned char BSSID[18];
+	char BSSID[18];
 	uint16 channel;		/* Channel no. */
 	uint16 frequency;	/* Frequency i.e. for superchannel */
 	int16 RSSI;		/* receive signal strength (in dBm) */
 	int16 phy_noise;	/* noise (in dBm) */
 	uint16 beacon_period;	/* units are Kusec */
 	uint16 capability;	/* Capability information */
-	unsigned char ENCINFO[128];	/* encryption info */
+	char ENCINFO[128];	/* encryption info */
 	uint rate_count;	/* # rates in this set */
 	uint8 dtim_period;	/* DTIM period */
 };
@@ -257,9 +257,9 @@ int isAssociated(char *ifname);
 unsigned int getRegDomain(const char *country);
 unsigned int getCountry(const char *country);
 char *getCountryList(void);
-u_int ieee80211_mhz2ieee(u_int freq);
 
 #endif
+u_int ieee80211_mhz2ieee(u_int freq);
 #if defined(HAVE_RT2880) || defined(HAVE_RT61) || defined(HAVE_MADWIFI)
 int wifi_getchannel(char *ifname);
 struct wifi_interface *wifi_getfreq(char *ifname);

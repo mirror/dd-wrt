@@ -822,7 +822,7 @@ void reset_hwaddr(char *ifname)
 void start_lan(void)
 {
 	struct ifreq ifr;
-	unsigned char mac[20];
+	char mac[20];
 	int s;
 #ifdef HAVE_DHDAP
 	int is_dhd;
@@ -2042,6 +2042,8 @@ void start_lan(void)
 	strcpy(wl_face, get_wdev());
 #if defined(HAVE_MADWIFI) || defined(HAVE_RT2880) || defined(HAVE_RT61)
 #ifndef HAVE_NOWIFI
+void deconfigure_wifi(void);
+
 	deconfigure_wifi();
 #endif
 #else
@@ -2089,7 +2091,7 @@ void start_lan(void)
 	config_macs(wl_face);
 #endif
 	if (getSTA()) {
-		unsigned char mac[20];
+		char mac[20];
 
 		getWANMac(mac);
 
@@ -2472,6 +2474,7 @@ void start_lan(void)
 //              eval("ifconfig", wifi, "up");
 	}
 	ifconfig(lan_ifname, IFUP, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
+	void configure_wifi(void);
 	configure_wifi();
 #endif
 #endif
@@ -3267,7 +3270,7 @@ void start_wan(int status)
 		wlifname = getWET();
 	}
 
-	unsigned char mac[20];
+	char mac[20];
 
 	if (nvram_match("mac_clone_enable", "1") && nvram_invmatch("def_hwaddr", "00:00:00:00:00:00") && nvram_invmatch("def_hwaddr", "")) {
 		ether_atoe(nvram_safe_get("def_hwaddr"), ifr.ifr_hwaddr.sa_data);
@@ -3665,7 +3668,7 @@ void start_wan(int status)
 					printf("Wait ppp inteface to init (2) ...\n");
 					sleep(1);
 				}
-				char *peer = inet_ntop(AF_INET,
+				const char *peer = inet_ntop(AF_INET,
 						       &sin_addr(&ifr.ifr_dstaddr),
 						       client,
 						       16);
@@ -3952,7 +3955,7 @@ void start_wan(int status)
 				printf("Wait ppp inteface to init (2) ...\n");
 				sleep(1);
 			}
-			char *peer = inet_ntop(AF_INET, &sin_addr(&ifr.ifr_dstaddr),
+			const char *peer = inet_ntop(AF_INET, &sin_addr(&ifr.ifr_dstaddr),
 					       client,
 					       16);
 
@@ -4157,7 +4160,7 @@ void start_wan(int status)
 				printf("Wait ppp inteface to init (2) ...\n");
 				sleep(1);
 			}
-			char *peer = inet_ntop(AF_INET, &sin_addr(&ifr.ifr_dstaddr),
+			const char *peer = inet_ntop(AF_INET, &sin_addr(&ifr.ifr_dstaddr),
 					       client,
 					       16);
 
@@ -4981,7 +4984,7 @@ static void writenet(char *path, int cpumask, char *ifname)
 
 	int fd = open(dev, O_WRONLY);
 	if (fd < 0)
-		return 1;
+		return;
 	char mask[32];
 	sprintf(mask, "%x", cpumask);
 	write(fd, mask, strlen(mask));
@@ -5044,7 +5047,7 @@ void start_hotplug_net(void)
 	char nr[32];
 
 	memset(nr, 0, 32);
-	strcpy(nr, ((unsigned char *)&ifname[0]) + 3);
+	strcpy(nr, ((char *)&ifname[0]) + 3);
 	memset(ifname, 0, 32);
 	strncpy(ifname, interface, index);
 	char bridged[32];

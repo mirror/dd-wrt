@@ -213,13 +213,15 @@ int site_survey_main(int argc, char *argv[])
 #endif
 #endif
 	unsigned char *buf = malloc(24 * 1024);
-
-	memset(site_survey_lists, sizeof(site_survey_lists), 0);
+	if (!buf)
+		return -1;
+	memset(site_survey_lists, 0, sizeof(site_survey_lists));
 	memset(buf, 24 * 1024, 0);
 	eval("iwlist", sta, "scan");
 	len = do80211priv(sta, IEEE80211_IOCTL_SCAN_RESULTS, buf, 24 * 1024);
 	if (len == -1) {
 		fprintf(stderr, "unable to get scan results");
+		free(buf);
 		return -1;
 	}
 	if (len < sizeof(struct ieee80211req_scan_result)) {

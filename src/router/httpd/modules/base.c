@@ -1533,7 +1533,8 @@ int do_auth(webs_t wp, char *userid, char *passwd, char *realm, char *authorisat
 	if (auth_check(userid, passwd, realm, authorisation))
 		return 1;
 	wp->userid = 1;
-	strncpy(userid, zencrypt("SuperAdmin"), AUTH_MAX);
+	char passout[MD5_OUT_BUFSIZE];
+	strncpy(userid, zencrypt("SuperAdmin", passout), AUTH_MAX);
 	strncpy(passwd, nvram_safe_get("newhttp_passwd"), AUTH_MAX);
 	if (auth_check(userid, passwd, realm, authorisation))
 		return 1;

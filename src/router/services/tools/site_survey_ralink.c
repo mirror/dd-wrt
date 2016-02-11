@@ -115,7 +115,7 @@ int site_survey_main(int argc, char *argv[])
 	int ap = 0, oldap = 0;
 	int len;
 
-	memset(site_survey_lists, sizeof(site_survey_lists), 0);
+	memset(site_survey_lists, 0, sizeof(site_survey_lists));
 	char *ifn = nvram_safe_get("wifi_display");
 	if (nvram_nmatch("ap", "%s_mode", ifn)
 	    || nvram_nmatch("apsta", "%s_mode", ifn)) {

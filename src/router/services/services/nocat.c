@@ -244,7 +244,6 @@ int mk_nocat_conf(void)
 
 void start_splashd(void)
 {
-	int ret = 0;
 	FILE *fp;
 
 	if (!nvram_match("NC_enable", "1"))
