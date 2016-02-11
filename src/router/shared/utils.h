@@ -807,6 +807,7 @@ extern void set_host_domain_name(void);
 
 extern void encode(char *buf, int len);
 extern void decode(char *buf, int len);
+#define MD5_OUT_BUFSIZE 36
 extern char *zencrypt(char *passwd, char *passout);
 
 extern void getLANMac(char *newmac);
