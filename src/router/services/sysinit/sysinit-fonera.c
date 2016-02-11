@@ -135,10 +135,10 @@ void start_sysinit(void)
 			ioctl(s, SIOCGIFHWADDR, &ifr);
 			char macaddr[32];
 
-			strcpy(macaddr, ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
+			strcpy(macaddr, ether_etoa((char *)ifr.ifr_hwaddr.sa_data, eabuf));
 			nvram_set("et0macaddr", macaddr);
 //          MAC_ADD( macaddr );
-			ether_atoe(macaddr, (unsigned char *)ifr.ifr_hwaddr.sa_data);
+			ether_atoe(macaddr, (char *)ifr.ifr_hwaddr.sa_data);
 			strncpy(ifr.ifr_name, "vlan1", IFNAMSIZ);
 			ioctl(s, SIOCSIFHWADDR, &ifr);
 			close(s);
@@ -152,7 +152,7 @@ void start_sysinit(void)
 		ioctl(s, SIOCGIFHWADDR, &ifr);
 		char macaddr[32];
 
-		strcpy(macaddr, ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
+		strcpy(macaddr, ether_etoa((char *)ifr.ifr_hwaddr.sa_data, eabuf));
 		nvram_set("et0macaddr", macaddr);
 		nvram_set("et0macaddr_safe", macaddr);
 		nvram_set("lan_hwaddr", macaddr);

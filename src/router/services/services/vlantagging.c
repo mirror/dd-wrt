@@ -253,7 +253,6 @@ void start_bridging(void)
 	start_set_routes();
 }
 
-extern char *getBridgeMTU(char *, char *buf);
 extern char *getMTU(char *);
 
 char *getRealBridge(char *ifname, char *word)

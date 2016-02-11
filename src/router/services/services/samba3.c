@@ -45,7 +45,6 @@ void start_samba3(void)
 	struct samba3_share *samba3shares;
 	int uniqueuserid = 1000;
 	FILE *fp;
-	int fd;
 
 	if (!nvram_match("samba3_enable", "1")) {	// not set txworkq 
 		set_smp_affinity(163, 2);

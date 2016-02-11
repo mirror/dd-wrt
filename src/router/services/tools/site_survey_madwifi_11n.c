@@ -37,7 +37,7 @@
 
 #include <typedefs.h>
 #include <bcmnvram.h>
-#include "wlutils.h"
+#include <wlutils.h>
 #ifndef __UCLIBC__
 /* Convenience types.  */
 typedef unsigned char __u_char;
@@ -247,19 +247,21 @@ int site_survey_main_11n(int argc, char *argv[])
 	unlink(SITE_SURVEY_DB);
 	int ap = 0, oldap = 0;
 	unsigned char *buf = malloc(24 * 1024);
-
+	if (!buf)
+		return -1;
 	char ssid[31];
 	unsigned char *cp;
 	int len;
 	char *sta = nvram_safe_get("wifi_display");
 
-	memset(site_survey_lists, sizeof(site_survey_lists), 0);
-	memset(buf, 24 * 1024, 0);
+	memset(site_survey_lists, 0, sizeof(site_survey_lists));
+	memset(buf, 0, 24 * 1024);
 	eval("iwlist", sta, "scan");
 	len = do80211priv(sta, IEEE80211_IOCTL_SCAN_RESULTS, buf, 24 * 1024);
 
 	if (len == -1) {
 		fprintf(stderr, "unable to get scan results");
+		free(buf);
 		return -1;
 	}
 	if (len < sizeof(struct ieee80211req_scan_result)) {
