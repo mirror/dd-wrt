@@ -51,7 +51,7 @@ int getassoclist_ath9k(char *ifname, unsigned char *list)
 	unsigned int *count = (unsigned int *)list;
 	struct mac80211_info *mac80211_info;
 	struct wifi_client_info *wc;
-	unsigned char *l = (unsigned char *)list;
+	char *l = (char *)list;
 	mac80211_info = mac80211_assoclist(ifname);
 	l += 4;
 	count[0] = 0;
