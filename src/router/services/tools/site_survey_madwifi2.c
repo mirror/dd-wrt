@@ -33,6 +33,7 @@
 #include <ctype.h>
 #include <getopt.h>
 #include <err.h>
+#include <wlutils.h>
 #ifndef __UCLIBC__
 /* Convenience types.  */
 typedef unsigned char __u_char;

@@ -313,7 +313,7 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 	case ROUTER_WRT600N:
 		fprintf(stderr, "fixing wrt600n\n");
 		wl_hwaddr("eth0", macbuf);
-		ether_etoa((uchar *) macbuf, eaddr);
+		ether_etoa((char *) macbuf, eaddr);
 		nvram_set("wl0_hwaddr", eaddr);
 		MAC_SUB(eaddr);
 		if (!nvram_match("et0macaddr", eaddr)) {
@@ -324,15 +324,15 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 		}
 		eval("/sbin/ifconfig", "eth2", "hw", "ether", eaddr);
 		wl_hwaddr("eth1", macbuf);
-		ether_etoa((uchar *) macbuf, eaddr);
+		ether_etoa((char *) macbuf, eaddr);
 		nvram_set("wl1_hwaddr", eaddr);
 		break;
 	case ROUTER_WRT610N:
 		wl_hwaddr("eth0", macbuf);
-		ether_etoa((uchar *) macbuf, eaddr);
+		ether_etoa((char *) macbuf, eaddr);
 		nvram_set("wl0_hwaddr", eaddr);
 		wl_hwaddr("eth1", macbuf);
-		ether_etoa((uchar *) macbuf, eaddr);
+		ether_etoa((char *) macbuf, eaddr);
 		nvram_set("wl1_hwaddr", eaddr);
 		break;
 

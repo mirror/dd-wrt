@@ -3782,7 +3782,8 @@ void changepass(webs_t wp)
 
 	if (value && pass && strcmp(value, TMP_PASSWD)
 	    && valid_name(wp, value, NULL)) {
-		nvram_set("http_username", zencrypt(value));
+		char passout[MD5_OUT_BUFSIZE];
+		nvram_set("http_username", zencrypt(value, passout));
 
 		eval("/sbin/setpasswd");
 #ifdef HAVE_IAS
@@ -3792,7 +3793,8 @@ void changepass(webs_t wp)
 
 	if (pass && value && strcmp(pass, TMP_PASSWD)
 	    && valid_name(wp, pass, NULL)) {
-		nvram_set("http_passwd", zencrypt(pass));
+		char passout[MD5_OUT_BUFSIZE];
+		nvram_set("http_passwd", zencrypt(pass, passout));
 
 		eval("/sbin/setpasswd");
 #ifdef HAVE_IAS

@@ -115,7 +115,7 @@ void start_sysinit(void)
 		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 		ioctl(s, SIOCGIFHWADDR, &ifr);
 		char macbase[32];
-		sprintf(macbase, "%s", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
+		sprintf(macbase, "%s", ether_etoa((char *)ifr.ifr_hwaddr.sa_data, eabuf));
 		close(s);
 		MAC_ADD(macbase);
 		int i;
@@ -190,8 +190,8 @@ void start_sysinit(void)
 
 		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 		ioctl(s, SIOCGIFHWADDR, &ifr);
-		nvram_set("et0macaddr_safe", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
-		nvram_set("et0macaddr", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr_safe", ether_etoa((char *)ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa((char *)ifr.ifr_hwaddr.sa_data, eabuf));
 		close(s);
 	}
 #ifndef HAVE_WDR4900

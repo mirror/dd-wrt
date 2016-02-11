@@ -273,9 +273,9 @@ void start_sysinit(void)
 				if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
 					strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 					ioctl(s, SIOCGIFHWADDR, &ifr);
-					nvram_set("et0macaddr_safe", ether_etoa((unsigned char *)
+					nvram_set("et0macaddr_safe", ether_etoa((char *)
 										ifr.ifr_hwaddr.sa_data, eabuf));
-					nvram_set("et0macaddr", ether_etoa((unsigned char *)
+					nvram_set("et0macaddr", ether_etoa((char *)
 									   ifr.ifr_hwaddr.sa_data, eabuf));
 					close(s);
 				}
@@ -293,7 +293,7 @@ void start_sysinit(void)
 					if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
 						strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 						ioctl(s, SIOCGIFHWADDR, &ifr);
-						memcpy((unsigned char *)
+						memcpy((char *)
 						       ifr.ifr_hwaddr.sa_data, mac, 6);
 						ioctl(s, SIOCSIFHWADDR, &ifr);
 						close(s);
@@ -301,9 +301,9 @@ void start_sysinit(void)
 					if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
 						strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 						ioctl(s, SIOCGIFHWADDR, &ifr);
-						nvram_set("et0macaddr_safe", ether_etoa((unsigned char *)
+						nvram_set("et0macaddr_safe", ether_etoa((char *)
 											ifr.ifr_hwaddr.sa_data, eabuf));
-						nvram_set("et0macaddr", ether_etoa((unsigned char *)
+						nvram_set("et0macaddr", ether_etoa((char *)
 										   ifr.ifr_hwaddr.sa_data, eabuf));
 						close(s);
 					}
@@ -336,23 +336,23 @@ void start_sysinit(void)
 				if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
 					strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 					ioctl(s, SIOCGIFHWADDR, &ifr);
-					memcpy((unsigned char *)ifr.ifr_hwaddr.sa_data, params.addr[0].mac, 6);
+					memcpy((char *)ifr.ifr_hwaddr.sa_data, params.addr[0].mac, 6);
 					ioctl(s, SIOCSIFHWADDR, &ifr);
 					close(s);
 				}
 				if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
 					strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
 					ioctl(s, SIOCGIFHWADDR, &ifr);
-					memcpy((unsigned char *)ifr.ifr_hwaddr.sa_data, params.addr[1].mac, 6);
+					memcpy((char *)ifr.ifr_hwaddr.sa_data, params.addr[1].mac, 6);
 					ioctl(s, SIOCSIFHWADDR, &ifr);
 					close(s);
 				}
 				if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
 					strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 					ioctl(s, SIOCGIFHWADDR, &ifr);
-					nvram_set("et0macaddr_safe", ether_etoa((unsigned char *)
+					nvram_set("et0macaddr_safe", ether_etoa((char *)
 										ifr.ifr_hwaddr.sa_data, eabuf));
-					nvram_set("et0macaddr", ether_etoa((unsigned char *)
+					nvram_set("et0macaddr", ether_etoa((char *)
 									   ifr.ifr_hwaddr.sa_data, eabuf));
 					close(s);
 				}
