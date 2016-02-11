@@ -6991,7 +6991,6 @@ int crypt_make_salt(char *p, int cnt, int x)
 }
 
 #include <crypt.h>
-#define MD5_OUT_BUFSIZE 36
 
 char *zencrypt(char *passwd, char *passout)
 {
