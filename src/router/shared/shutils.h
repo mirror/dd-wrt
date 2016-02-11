@@ -206,17 +206,19 @@ char *chomp(char *s);
 
 void strcpyto(char *dest, char *src, char c);
 
+
+char *foreach_first(char *next, char *foreachwordlist, char *word);
+
+char *foreach_last(char *next, char word);
+
+
 /*
  * Copy each token in wordlist delimited by space into word 
  */
 #define foreach(word, foreachwordlist, next) \
-	for (next = &foreachwordlist[strspn(foreachwordlist, " ")], \
-	     strcpyto(word, next, ' '), \
-	     next = strchr(next, ' '); \
+	for (next = foreach_first(next, foreachwordlist, word); \
 	     strlen(word); \
-	     next = next ? &next[strspn(next, " ")] : "", \
-	     strcpyto(word, next, ' '), \
-	     next = strchr(next, ' ')) \
+	     next = foreach_last(next, word)) 
 
 /*
  * Return NUL instead of NULL if undefined 
