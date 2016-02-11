@@ -211,7 +211,7 @@ char *getBridge(char *ifname, char *word)
 }
 #endif
 
-char *getBridgeMTU(char *ifname, char *word)
+char *getBridgeMTU(const char *ifname, char *word)
 {
 	char *next, *wordlist;
 
@@ -6993,14 +6993,13 @@ int crypt_make_salt(char *p, int cnt, int x)
 #include <crypt.h>
 #define MD5_OUT_BUFSIZE 36
 
-char *zencrypt(char *passwd)
+char *zencrypt(char *passwd, char *passout)
 {
 	char salt[sizeof("$N$XXXXXXXX")];	/* "$N$XXXXXXXX" or "XX" */
-	static char passout[MD5_OUT_BUFSIZE];
 
 	strcpy(salt, "$1$");
 	crypt_make_salt(salt + 3, 4, 0);
-	strcpy(passout, crypt((unsigned char *)passwd, (unsigned char *)salt));
+	strcpy(passout, crypt((char *)passwd, (char *)salt));
 	return passout;
 }
 
@@ -7102,11 +7101,6 @@ int is_ath5k(const char *prefix)
 		count = (int)globbuf.gl_pathc;
 	globfree(&globbuf);
 	return (count);
-}
-#else
-int is_ath5k(const char *prefix)
-{
-	return (0);
 }
 #endif
 #ifdef HAVE_MVEBU
@@ -7686,7 +7680,6 @@ void strcpyto(char *dest, char *src, char c)
 		cnt++;
 	}
 	dest[cnt] = '\0';
-	return dest;
 }
 
 char *chomp(char *s)
