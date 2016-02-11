@@ -822,7 +822,7 @@ void reset_hwaddr(char *ifname)
 void start_lan(void)
 {
 	struct ifreq ifr;
-	static unsigned char mac[20];
+	unsigned char mac[20];
 	int s;
 #ifdef HAVE_DHDAP
 	int is_dhd;
