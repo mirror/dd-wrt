@@ -7688,3 +7688,19 @@ char *chomp(char *s)
 		*c-- = '\0';
 	return s;
 }
+
+char *foreach_first(char *next, char *foreachwordlist, char *word)
+{
+	next = &foreachwordlist[strspn(foreachwordlist, " ")];
+	strcpyto(word, next, ' ');
+	next = strchr(next, ' ');
+	return next;
+}
+
+char *foreach_last(char *next, char word)
+{
+	next = next ? &next[strspn(next, " ")] : "";
+	strcpyto(word, next, ' ');
+	next = strchr(next, ' ');
+	return next;
+}
