@@ -27,8 +27,10 @@ int setuserpasswd_main(int argc, char **argv)
 		fprintf(stderr, "usage: setuserpasswd [username] [password]\n");
 		return EINVAL;
 	}
-	nvram_set("http_username", zencrypt(argv[1]));
-	nvram_set("http_passwd", zencrypt(argv[2]));
+	char passout[MD5_OUT_BUFSIZE];
+
+	nvram_set("http_username", zencrypt(argv[1], passout));
+	nvram_set("http_passwd", zencrypt(argv[2], passout));
 	nvram_commit();
 	start_mkfiles();
 	return 0;

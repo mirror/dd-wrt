@@ -33,14 +33,12 @@
  */
 void start_sputnik(void)
 {
-	int ret;
-
 	// Only start if enabled
 	if (!nvram_invmatch("apd_enable", "0"))
 		return;
 	insmod("ipt_mark ipt_mac xt_mark xt_mac");
 
-	ret = eval("sputnik");
+	eval("sputnik");
 	dd_syslog(LOG_INFO, "sputnik : sputnik daemon successfully started\n");
 	cprintf("done\n");
 	return;

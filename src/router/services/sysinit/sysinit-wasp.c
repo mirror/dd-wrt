@@ -179,8 +179,8 @@ void start_sysinit(void)
 
 		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 		ioctl(s, SIOCGIFHWADDR, &ifr);
-		nvram_set("et0macaddr", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
-		nvram_set("et0macaddr_safe", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr", ether_etoa((char *)ifr.ifr_hwaddr.sa_data, eabuf));
+		nvram_set("et0macaddr_safe", ether_etoa((char *)ifr.ifr_hwaddr.sa_data, eabuf));
 		close(s);
 	}
 #if defined(HAVE_ARCHERC7) || defined(HAVE_DIR859) || defined(HAVE_DAP3662)
@@ -197,7 +197,7 @@ void start_sysinit(void)
 
 			strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 			ioctl(s, SIOCGIFHWADDR, &ifr);
-			mac = (unsigned char *)ifr.ifr_hwaddr.sa_data;
+			mac = (char *)ifr.ifr_hwaddr.sa_data;
 			close(s);
 		}
 		for (i = 0; i < 6; i++)
@@ -223,7 +223,7 @@ void start_sysinit(void)
 
 			strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 			ioctl(s, SIOCGIFHWADDR, &ifr);
-			mac = (unsigned char *)ifr.ifr_hwaddr.sa_data;
+			mac = (char *)ifr.ifr_hwaddr.sa_data;
 			close(s);
 		}
 		for (i = 0; i < 6; i++)

@@ -807,7 +807,7 @@ extern void set_host_domain_name(void);
 
 extern void encode(char *buf, int len);
 extern void decode(char *buf, int len);
-extern char *zencrypt(char *passwd);
+extern char *zencrypt(char *passwd, char *passout);
 
 extern void getLANMac(char *newmac);
 extern void getWirelessMac(char *newmac, int instance);
@@ -989,7 +989,7 @@ void lcdmessaged(char *dual, char *message);
 #define lcdmessaged(a,b)
 #endif
 
-extern char *getBridgeMTU(char *, char *word);
+extern char *getBridgeMTU(const char *, char *word);
 extern char *getMTU(char *);
 extern int getBridgeSTP(char *br);
 extern char *get_NFServiceMark(char *service, uint32 mark);
@@ -1037,6 +1037,11 @@ extern void getIfLists(char *eths, int size);
 extern int ifexists(const char *ifname);
 extern void getinterfacelist(const char *ifprefix, char *buffer);
 extern int count_processes(char *pidName);
+#ifdef HAVE_ATH5K
+extern int is_ath5k(const char *prefix);
+#else
+#define is_ath5k(prefix) 0
+#endif
 #ifdef HAVE_ATH9K
 extern int is_ath9k(const char *prefix);
 extern int getath9kdevicecount(void);
@@ -1047,10 +1052,7 @@ extern int is_ath10k(const char *prefix);
 #ifdef HAVE_MVEBU
 extern int is_mvebu(const char *prefix);
 #else
-static int is_mvebu(const char *prefix)
-{
-	return 0;
-}
+#define is_mvebu(prefix) 0
 #endif
 extern char *get3GDeviceVendor(void);
 

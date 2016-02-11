@@ -66,9 +66,6 @@ void start_ftpsrv(void)
 	ftpsrv_umount();
 
 	FILE *fp, *tmp;
-	char buf[256];
-	char user[256];
-	char pass[128];
 
 	mkdir("/tmp/proftpd", 0700);
 	mkdir("/tmp/proftpd/etc", 0700);
@@ -81,7 +78,8 @@ void start_ftpsrv(void)
 		if (strlen(cu->username)
 		    && cu->sharetype & SHARETYPE_FTP) {
 			sysprintf("mkdir -p \"/tmp/proftpd/users/%s\"", cu->username);
-			fprintf(fp, "%s:%s:0:0:Ftp User,,,:/tmp/proftpd/users/%s:/bin/sh\n", cu->username, zencrypt(cu->password), cu->username);
+			char passout[MD5_OUT_BUFSIZE];
+			fprintf(fp, "%s:%s:0:0:Ftp User,,,:/tmp/proftpd/users/%s:/bin/sh\n", cu->username, zencrypt(cu->password, passout), cu->username);
 		}
 		cunext = cu->next;
 		free(cu);

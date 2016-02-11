@@ -38,7 +38,7 @@ void start_dhcp6c(void)
 	FILE *fp, *fpc;
 	char *buf;
 	int prefix_len;
-	unsigned char ea[ETHER_ADDR_LEN];
+	char ea[ETHER_ADDR_LEN];
 	unsigned long iaid = 0;
 	struct {
 		uint16 type;
@@ -110,7 +110,7 @@ void start_dhcp6s(void)
 	char *buf;
 	char ipv6_dns_str[1024] = "";
 
-	unsigned char ea[ETHER_ADDR_LEN];
+	char ea[ETHER_ADDR_LEN];
 	unsigned long iaid = 0;
 	struct {
 		uint16 type;

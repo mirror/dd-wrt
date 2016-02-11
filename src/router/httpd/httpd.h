@@ -141,8 +141,6 @@ struct Webenvironment {
 /* GoAhead 2.1 Embedded JavaScript compatibility */
 extern int getWebsFileLen(char *path);
 
-extern char *zencrypt(char *passwd);
-
 extern void do_filtertable(struct mime_handler *handler, char *path, webs_t stream, char *query);
 extern void do_wds(struct mime_handler *handler, char *path, webs_t stream, char *query);
 extern void do_wireless_adv(struct mime_handler *handler, char *path, webs_t stream, char *query);

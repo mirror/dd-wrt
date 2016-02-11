@@ -34,7 +34,6 @@ static int jffs = 0;
 
 void start_pptpd(void)
 {
-	int mss = 0;
 	char *lpTemp;
 	FILE *fp;
 
@@ -208,10 +207,10 @@ void start_pptpd(void)
 	 * adjust for tunneling overhead (mtu - 40 byte IP - 108 byte tunnel
 	 * overhead) 
 	 */
-	if (nvram_match("mtu_enable", "1"))
-		mss = atoi(nvram_safe_get("wan_mtu")) - 40 - 108;
-	else
-		mss = 1500 - 40 - 108;
+//	if (nvram_match("mtu_enable", "1"))
+//		mss = atoi(nvram_safe_get("wan_mtu")) - 40 - 108;
+//	else
+//		mss = 1500 - 40 - 108;
 	char bcast[32];
 
 	strcpy(bcast, nvram_safe_get("lan_ipaddr"));

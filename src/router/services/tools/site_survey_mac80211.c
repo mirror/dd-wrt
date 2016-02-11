@@ -57,6 +57,7 @@
 #include <ctype.h>
 #include <bcmnvram.h>
 #include <shutils.h>
+#include <wlutils.h>
 
 #include "linux/nl80211.h"
 
