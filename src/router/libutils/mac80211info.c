@@ -21,6 +21,7 @@
 #include <stdbool.h>
 #include <glob.h>
 #include <bcmnvram.h>
+#include <shutils.h>
 
 #include "unl.h"
 #include "mac80211regulatory.h"
