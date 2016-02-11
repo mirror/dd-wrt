@@ -207,16 +207,16 @@ char *chomp(char *s);
 void strcpyto(char *dest, char *src, char c);
 
 
-char *foreach_first(char *next, char *foreachwordlist, char *word);
+char *foreach_first(char *foreachwordlist, char *word);
 
-char *foreach_last(char *next, char word);
+char *foreach_last(char *next, char *word);
 
 
 /*
  * Copy each token in wordlist delimited by space into word 
  */
 #define foreach(word, foreachwordlist, next) \
-	for (next = foreach_first(next, foreachwordlist, word); \
+	for (next = foreach_first(foreachwordlist, word); \
 	     strlen(word); \
 	     next = foreach_last(next, word)) 
 
