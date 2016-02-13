@@ -18,7 +18,11 @@
 #define	SES_LED_CHECK_INTERVAL	"1"	/* Wait interval seconds */
 #define RESET_WAIT		3	/* seconds */
 #define RESET_WAIT_COUNT	RESET_WAIT * 10	/* 10 times a second */
+#ifdef HAVE_ERC
 #define SES_WAIT		5	/* seconds */
+#else
+#define SES_WAIT		3	/* seconds */
+#endif
 #define SES_WAIT_COUNT	SES_WAIT	/* 10 times a second */
 #ifdef HAVE_UNFY
 #define UPGRADE_WAIT		1	/* seconds */
