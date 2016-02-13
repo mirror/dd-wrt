@@ -157,6 +157,8 @@ static ssize_t read_file_ring(struct file *file, char __user *user_buf,
 			      struct ag71xx_ring *ring,
 			      unsigned desc_reg)
 {
+	int ring_size = BIT(ring->order);
+	int ring_mask = ring_size - 1;
 	char *buf;
 	unsigned int buflen;
 	unsigned int len = 0;
@@ -167,7 +169,7 @@ static ssize_t read_file_ring(struct file *file, char __user *user_buf,
 	u32 desc_hw;
 	int i;
 
-	buflen = (BIT(ring->order) * DESC_PRINT_LEN);
+	buflen = (ring_size * DESC_PRINT_LEN);
 	buf = kmalloc(buflen, GFP_KERNEL);
 	if (!buf)
 		return -ENOMEM;
@@ -178,10 +180,10 @@ static ssize_t read_file_ring(struct file *file, char __user *user_buf,
 
 	spin_lock_irqsave(&ag->lock, flags);
 
-	curr = (ring->curr % BIT(ring->order));
-	dirty = (ring->dirty % BIT(ring->order));
+	curr = (ring->curr & ring_mask);
+	dirty = (ring->dirty & ring_mask);
 	desc_hw = ag71xx_rr(ag, desc_reg);
-	for (i = 0; i < BIT(ring->order); i++) {
+	for (i = 0; i < ring_size; i++) {
 		struct ag71xx_buf *ab = &ring->buf[i];
 		struct ag71xx_desc *desc = ag71xx_ring_desc(ring, i);
 		u32 desc_dma = ((u32) ring->descs_dma) + i * AG71XX_DESC_SIZE;
