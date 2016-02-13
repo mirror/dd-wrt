@@ -1590,7 +1590,8 @@ void period_check(int sig)
 			}
 			handle_reset();
 		}
-	} else if ((sesgpio != 0xfff) && (((sesgpio & 0x100) == 0 && (val & push)) || ((sesgpio & 0x100) == 0x100 && !(val & push))) && (++count > SES_WAIT)) {
+	} else if ((sesgpio != 0xfff) && (((sesgpio & 0x100) == 0 && (val & push)) || ((sesgpio & 0x100) == 0x100 && !(val & push)))) {
+		if ((++count > SES_WAIT)) {
 		if (check_action() != ACT_IDLE) {	// Don't execute during upgrading
 			fprintf(stderr, "resetbutton: nothing to do...\n");
 			alarmtimer(0, 0);	/* Stop the timer alarm */
@@ -1598,7 +1599,9 @@ void period_check(int sig)
 		}
 		count = 0;
 		handle_ses();
-	} else if ((wifigpio != 0xfff) && (((wifigpio & 0x100) == 0 && (val & pushwifi)) || ((wifigpio & 0x100) == 0x100 && !(val & pushwifi))) && (++count > SES_WAIT)) {
+		}
+	} else if ((wifigpio != 0xfff) && (((wifigpio & 0x100) == 0 && (val & pushwifi)) || ((wifigpio & 0x100) == 0x100 && !(val & pushwifi)))) {
+		if ((++count > SES_WAIT)) {
 		if (check_action() != ACT_IDLE) {	// Don't execute during upgrading
 			fprintf(stderr, "resetbutton: nothing to do...\n");
 			alarmtimer(0, 0);	/* Stop the timer alarm */
@@ -1606,6 +1609,7 @@ void period_check(int sig)
 		}
 		count = 0;
 		handle_wifi();
+		}
 
 	} else {
 		count = 0;	// reset counter to avoid factory default
