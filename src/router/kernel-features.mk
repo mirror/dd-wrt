@@ -61,7 +61,7 @@ define kernelfeatures
 		sed -i 's/\CONFIG_NLS=y/# CONFIG_NLS is not set/g' $(LINUXDIR)/.config; \
 	fi	
 	if [ "$(CONFIG_BONDING)" != "y" ]; then \
-		sed -i 's/\CONFIG_BONDING=m/# CONFIG_CIFS is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/\CONFIG_BONDING=m/# CONFIG_BONDING is not set/g' $(LINUXDIR)/.config; \
 	fi	
 	if [ "$(CONFIG_USBIP)" = "y" ]; then \
 		sed -i 's/\# CONFIG_USBIP_CORE is not set/CONFIG_USBIP_CORE=m/g' $(LINUXDIR)/.config; \
