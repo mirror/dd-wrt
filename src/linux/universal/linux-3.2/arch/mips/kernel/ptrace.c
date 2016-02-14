@@ -130,13 +130,13 @@ int ptrace_getfpregs(struct task_struct *child, __u32 __user *data)
 			unsigned int vpflags = dvpe();
 			flags = read_c0_status();
 			__enable_fpu();
-			__asm__ __volatile__("cfc1\t%0,$0" : "=r" (tmp));
+			tmp = read_32bit_cp1_register(CP1_REVISION);
 			write_c0_status(flags);
 			evpe(vpflags);
 		} else {
 			flags = read_c0_status();
 			__enable_fpu();
-			__asm__ __volatile__("cfc1\t%0,$0" : "=r" (tmp));
+			tmp = read_32bit_cp1_register(CP1_REVISION);
 			write_c0_status(flags);
 		}
 	} else {
@@ -350,13 +350,13 @@ long arch_ptrace(struct task_struct *child, long request,
 				unsigned int vpflags = dvpe();
 				flags = read_c0_status();
 				__enable_fpu();
-				__asm__ __volatile__("cfc1\t%0,$0": "=r" (tmp));
+				tmp = read_32bit_cp1_register(CP1_REVISION);
 				write_c0_status(flags);
 				evpe(vpflags);
 			} else {
 				flags = read_c0_status();
 				__enable_fpu();
-				__asm__ __volatile__("cfc1\t%0,$0": "=r" (tmp));
+				tmp = read_32bit_cp1_register(CP1_REVISION);
 				write_c0_status(flags);
 			}
 #ifdef CONFIG_MIPS_MT_SMTC
