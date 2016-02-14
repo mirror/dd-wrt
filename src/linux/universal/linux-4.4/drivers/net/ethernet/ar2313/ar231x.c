@@ -206,7 +206,7 @@ static int get_phy_id(struct mii_bus *bus, int addr, u32 *phy_id)
 	return 0;
 }
 
-int __init ar231x_probe(struct platform_device *pdev)
+int ar231x_probe(struct platform_device *pdev)
 {
 	struct net_device *dev;
 	struct ar231x_private *sp;
