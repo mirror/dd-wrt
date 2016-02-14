@@ -104,77 +104,51 @@ int getbuttonstate()
 int getbuttonstate()
 {
 #if defined(HAVE_EAP3660) || defined(HAVE_EOC2610) || defined(HAVE_EOC1650) || defined(HAVE_ECB3500)
-	int ret = get_gpio(5);
-	return 1 - ret;
+	return !get_gpio(5);
 #elif defined(HAVE_WRT54G2)
-	int ret = get_gpio(7);
-	return 1 - ret;
+	return !get_gpio(7);
 #elif defined(HAVE_RTG32)
-	int ret = get_gpio(6);
-	return ret;
+	return get_gpio(6);
 #elif defined(HAVE_EOC5610)
-	int ret = get_gpio(6);
-	return 1 - ret;
+	return !get_gpio(6);
 #elif HAVE_WP54G
-	int ret = get_gpio(4);
-	return ret;
+	return get_gpio(4);
 #elif HAVE_NP28G
-	int ret = get_gpio(4);
-	return ret;
+	return get_gpio(4);
 #elif HAVE_WPE53G
-	int ret = get_gpio(6);
-	return ret;
+	return get_gpio(6);
 #elif HAVE_NP25G
-	int ret = get_gpio(4);
-	return ret;
+	return  get_gpio(4);
 #elif HAVE_OPENRISC
-	int ret = get_gpio(0);
-	return ret;
+	return get_gpio(0);
 #else
-	int ret = get_gpio(6);
-	return ret;
+	return get_gpio(6);
 #endif
 }
 #elif defined(HAVE_VENTANA)
 int getbuttonstate()
 {
-//      int ret = get_gpio(240);
-	int ret = get_gpio(496);
-	if (ret == 1)
-		return 0;
-	return 1;
+	return !get_gpio(496);
 }
 #elif defined(HAVE_E200)
 int getbuttonstate()
 {
-	int ret = get_gpio(0);
-	if (ret == 1)
-		return 0;
-	return 1;
+	return !get_gpio(0);
 }
 #elif defined(HAVE_EROUTER)
 int getbuttonstate()
 {
-	int ret = get_gpio(11);
-	if (ret == 1)
-		return 0;
-	return 1;
+	return !get_gpio(11);
 }
 #elif defined(HAVE_UNIWIP)
 int getbuttonstate()
 {
-	int ret = get_gpio(232);
-	if (ret == 1)
-		return 0;
-	return 1;
+	return !get_gpio(232);
 }
 #elif defined(HAVE_WDR4900)
 int getbuttonstate()
 {
-	int ret = get_gpio(3);
-	if (ret == 0)
-		return 0;
-	return 1;
+	return get_gpio(3);
 }
 #elif defined(HAVE_MVEBU)
 int getbuttonstate()
@@ -184,10 +158,7 @@ int getbuttonstate()
 		ret = get_gpio(33);
 	else
 		ret = get_gpio(29);
-
-	if (ret == 0)
-		return 1;
-	return 0;
+	return !ret;
 }
 #elif defined(HAVE_IPQ806X)
 int getbuttonstate()
@@ -201,28 +172,17 @@ int getbuttonstate()
 		ret = get_gpio(68);
 	else
 		return 0;
-
-	if (ret == 0)
-		return 1;
-	return 0;
+	return !ret;
 }
 #elif defined(HAVE_DAP3410)
 int getbuttonstate()
 {
-	int ret = get_gpio(17);
-
-	if (ret == 0)
-		return 1;
-	return 0;
+	return !get_gpio(17);
 }
 #elif defined(HAVE_UBNTM)
 int getbuttonstate()
 {
-	int ret = get_gpio(12);
-
-	if (ret == 0)
-		return 1;
-	return 0;
+	return !get_gpio(12);
 }
 #elif defined(HAVE_RB2011)
 int getbuttonstate()
@@ -232,29 +192,18 @@ int getbuttonstate()
 #elif defined(HAVE_WDR4300)
 int getbuttonstate()
 {
-	int ret = get_gpio(16);
-
-	if (ret == 0)
-		return 1;
-	return 0;
+	return !get_gpio(16);
 }
 #elif defined(HAVE_WNDR3700V4)
 int getbuttonstate()
 {
-	int ret = get_gpio(21);
-
-	if (ret == 0)
-		return 1;
-	return 0;
+	return !get_gpio(21);
 }
 #elif defined(HAVE_DIR862)
 int getbuttonstate()
 {
-	int ret = get_gpio(17);
+	return !get_gpio(17);
 
-	if (ret == 0)
-		return 1;
-	return 0;
 }
 #elif defined(HAVE_MMS344)
 int getbuttonstate()
@@ -269,378 +218,227 @@ int getbuttonstate()
 #elif defined(HAVE_WR1043V2)
 int getbuttonstate()
 {
-	int ret = get_gpio(16);
-
-	if (ret == 0)
-		return 1;
-	return 0;
+	return !get_gpio(16);
 }
 #elif defined(HAVE_WZR450HP2)
 int getbuttonstate()
 {
-	int ret = get_gpio(17);
-
-	if (ret == 0)
-		return 1;
-	return 0;
+	return !get_gpio(17);
 }
 #elif defined(HAVE_DIR859)
 int getbuttonstate()
 {
-	int ret = get_gpio(2);
-
-	if (ret == 0)
-		return 1;
-	return 0;
+	return !get_gpio(2);
 }
 #elif defined(HAVE_JWAP606)
 int getbuttonstate()
 {
-	int ret = get_gpio(15);
-
-	if (ret == 0)
-		return 1;
-	return 0;
+	return !get_gpio(15);
 }
 #elif defined(HAVE_DIR825C1)
 int getbuttonstate()
 {
-	int ret = get_gpio(17);
-
-	if (ret == 0)
-		return 1;
-	return 0;
+	return !get_gpio(17);
 }
 #elif defined(HAVE_WASP)
 int getbuttonstate()
 {
-	int ret = get_gpio(12);
-
-	if (ret == 0)
-		return 1;
-	return 0;
+	return !get_gpio(12);
 }
 #elif defined(HAVE_CARAMBOLA)
 #ifdef HAVE_ERC
 int getbuttonstate()
 {
-	int ret = get_gpio(12);
+	return get_gpio(12);
 
-	return ret;
 }
 #else
 int getbuttonstate()
 {
-	int ret = get_gpio(11);
-
-	if (ret == 0)
-		return 1;
-	return 0;
+	return !get_gpio(11);
 }
 #endif
 #elif defined(HAVE_HORNET)
 int getbuttonstate()
 {
-	int ret = get_gpio(12);
-
-	if (ret == 0)
-		return 1;
-	return 0;
+	return !get_gpio(12);
 }
 #elif defined(HAVE_WNR2200)
 int getbuttonstate()
 {
-	int ret = get_gpio(38);
-
-	if (ret == 0)
-		return 1;
-	return 0;
+	return !get_gpio(38);
 }
 #elif defined(HAVE_WNR2000)
 int getbuttonstate()
 {
-	int ret = get_gpio(40);
-
-	if (ret == 0)
-		return 1;
-	return 0;
+	return !get_gpio(40);
 }
 #elif defined(HAVE_WDR2543)
 int getbuttonstate()
 {
-	int ret = get_gpio(11);
-	if (ret == 0)
-		return 1;
-	return 0;
+	return !get_gpio(11);
 }
 #elif defined(HAVE_WHRHPGN)
 int getbuttonstate()
 {
-	int ret = get_gpio(11);
+	return !get_gpio(11);
 
-	if (ret == 0)
-		return 1;
-	return 0;
 }
 #elif defined(HAVE_DAP3320)
 int getbuttonstate()
 {
-	int ret = get_gpio(12);
-	if (ret == 0)
-		return 1;
-	return 0;
+	return !get_gpio(12);
 }
 #elif defined(HAVE_DAP2330)
 int getbuttonstate()
 {
-	int ret = get_gpio(17);
-	if (ret == 0)
-		return 1;
-	return 0;
+	return !get_gpio(17);
 }
 #elif defined(HAVE_DAP2230)
 int getbuttonstate()
 {
-	int ret = get_gpio(17);
-	if (ret == 0)
-		return 1;
-	return 0;
+	return !get_gpio(17);
 }
 #elif defined(HAVE_WR841V9)
 int getbuttonstate()
 {
-	int ret = get_gpio(12);
-	if (ret == 0)
-		return 1;
-	return 0;
+	return !get_gpio(12);
 }
 #elif defined(HAVE_DIR615I)
 int getbuttonstate()
 {
-	int ret = get_gpio(17);
-	if (ret == 0)
-		return 1;
-	return 0;
+	return !get_gpio(17);
 }
 #elif defined(HAVE_DIR615E)
 int getbuttonstate()
 {
-	int ret = get_gpio(8);
-	if (ret == 0)
-		return 1;
-	return 0;
+	return !get_gpio(8);
 }
 #elif defined(HAVE_WNDR3700)
 int getbuttonstate()
 {
-	int ret = get_gpio(8);
-
-	if (ret == 0)
-		return 1;
-	return 0;
+	return !get_gpio(8);
 }
 #elif defined(HAVE_DIR825)
 int getbuttonstate()
 {
-	int ret = get_gpio(3);
+	return !get_gpio(3);
 
-	if (ret == 0)
-		return 1;
-	return 0;
 }
 #elif defined(HAVE_WRT400)
 int getbuttonstate()
 {
-	int ret = get_gpio(8);
-
-	if (ret == 0)
-		return 1;
-	return 0;
+	return !get_gpio(8);
 }
 #elif defined(HAVE_WRT160NL)
 int getbuttonstate()
 {
-	int ret = get_gpio(21);
-
-	if (ret == 0)
-		return 1;
-	return 0;
+	return !get_gpio(21);
 }
 #elif defined(HAVE_TG2521)
 int getbuttonstate()
 {
-	int ret = get_gpio(21);
+	return !get_gpio(21);
 
-	if (ret == 0)
-		return 1;
-	return 0;
 }
 #elif defined(HAVE_TG1523)
 int getbuttonstate()
 {
-	int ret = get_gpio(0);
+	return !get_gpio(0);
 
-	if (ret == 0)
-		return 1;
-	return 0;
 }
 #elif defined(HAVE_WR941)
 int getbuttonstate()
 {
-	int ret = get_gpio(3);
+	return !get_gpio(3);
 
-	if (ret == 0)
-		return 1;
-	return 0;
 }
 #elif defined(HAVE_WR741V4)
 int getbuttonstate()
 {
-	int ret = get_gpio(11);
-
-	return ret;
+	return get_gpio(11);
 }
 #elif defined(HAVE_WR741)
 int getbuttonstate()
 {
-	int ret = get_gpio(11);
-
-	if (ret == 0)
-		return 1;
-	return 0;
+	return !get_gpio(11);
 }
 #elif defined(HAVE_WR1043)
 int getbuttonstate()
 {
-	int ret = get_gpio(3);
+	return !get_gpio(3);
 
-	if (ret == 0)
-		return 1;
-	return 0;
 }
 #elif defined(HAVE_WZRG300NH2)
 int getbuttonstate()
 {
-	int ret = get_gpio(1);	// nxp multiplexer connected
-
-	if (ret == 0)
-		return 1;
-	return 0;
+	return !get_gpio(1);	// nxp multiplexer connected
 }
 #elif defined(HAVE_WZRG450)
 int getbuttonstate()
 {
-	int ret = get_gpio(6);	// nxp multiplexer connected
-
-	if (ret == 0)
-		return 1;
-	return 0;
+	return !get_gpio(6);	// nxp multiplexer connected
 }
 #elif defined(HAVE_DIR632)
 int getbuttonstate()
 {
-	int ret = get_gpio(8);	// nxp multiplexer connected
+	return !get_gpio(8);	// nxp multiplexer connected
 
-	if (ret == 0)
-		return 1;
-	return 0;
 }
 #elif defined(HAVE_WZRG300NH)
 int getbuttonstate()
 {
-	int ret = get_gpio(24);	// nxp multiplexer connected
-
-	if (ret == 0)
-		return 1;
-	return 0;
+	return !get_gpio(24);	// nxp multiplexer connected
 }
 #elif defined(HAVE_WZRHPAG300NH)
 int getbuttonstate()
 {
-	int ret = get_gpio(11);
-
-	if (ret == 0)
-		return 1;
-	return 0;
+	return !get_gpio(11);
 }
 #elif defined(HAVE_TEW632BRP)
 int getbuttonstate()
 {
-	int ret = get_gpio(21);
-
-	if (ret == 0)
-		return 1;
-	return 0;
+	return !get_gpio(21);
 }
 #elif defined(HAVE_JA76PF)
 int getbuttonstate()
 {
-	int ret = get_gpio(11);
-
-	if (ret == 0)
-		return 1;
-	return 0;
+	return !get_gpio(11);
 }
 #elif defined(HAVE_ALFAAP94)
 int getbuttonstate()
 {
-	int ret = get_gpio(11);
-
-	if (ret == 0)
-		return 1;
-	return 0;
+	return !get_gpio(11);
 }
 #elif defined(HAVE_JWAP003)
 int getbuttonstate()
 {
-	int ret = get_gpio(11);
-
-	if (ret == 0)
-		return 1;
-	return 0;
+	return !get_gpio(11);
 }
 #elif defined(HAVE_ALFANX)
 int getbuttonstate()
 {
-	int ret = get_gpio(11);
-
-	if (ret == 0)
-		return 1;
-	return 0;
+	return !get_gpio(11);
 }
 #elif defined(HAVE_LSX)
 int getbuttonstate()
 {
-	int ret = get_gpio(8);
-
-	if (ret == 0)
-		return 1;
-	return 0;
+	return !get_gpio(8);
 }
 #elif defined(HAVE_WMBR_G300NH)
 int getbuttonstate()
 {
-	int ret = get_gpio(37);
-
-	if (ret == 0)
-		return 1;
-	return 0;
+	return !get_gpio(37);
 }
 #elif defined(HAVE_VF803)
 int getbuttonstate()
 {
-	int ret = get_gpio(28);
-
-	if (ret == 0)
-		return 1;
-	return 0;
+	return !get_gpio(28);
 }
 #elif defined(HAVE_SX763)
 int getbuttonstate()
 {
-	int ret = get_gpio(14);
-
-	return 0;
+	return get_gpio(14);
 }
 #endif
 #if defined(HAVE_GATEWORX) || defined (HAVE_STORM)
@@ -1049,17 +847,11 @@ void period_check(int sig)
 #if defined(HAVE_IPQ806X) || defined(HAVE_MVEBU) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_GATEWORX) || defined(HAVE_STORM) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600)  || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_WP54G) || defined(HAVE_NP28G) || defined(HAVE_SOLO51) || defined(HAVE_OPENRISC) || defined(HAVE_DANUBE) || defined(HAVE_WDR4900) || defined(HAVE_VENTANA) || defined(HAVE_AC622) || defined(HAVE_AC722) || defined(HAVE_EROUTER)
 	val = getbuttonstate();
 #ifdef HAVE_WRK54G
-	if (val)
-		val = 0;
-	else
-		val = 1;
+	val = !val;
 #endif
 #ifndef HAVE_ALPHA
 #ifdef HAVE_USR5453
-	if (val)
-		val = 0;
-	else
-		val = 1;
+	val = !val;
 #endif
 #endif
 
@@ -1149,7 +941,7 @@ void period_check(int sig)
 	state = val;
 	int sesgpio = 0xfff;
 	int wifigpio = 0xfff;
-	int push;
+	int pushses;
 	int pushwifi;
 #ifdef HAVE_WZRG300NH
 	sesgpio = 0x117;
@@ -1324,7 +1116,7 @@ void period_check(int sig)
 	 * 
 	 * 0xff = button disabled / not available 
 	 */
-	int push;
+	int pushses;
 	int pushwifi;
 	int sesgpio;
 	int wifigpio = 0xfff;
@@ -1568,7 +1360,7 @@ void period_check(int sig)
 	}
 #endif
 
-	push = 1 << (sesgpio & 0x0ff);	// calculate push value from ses gpio
+	pushses = 1 << (sesgpio & 0x0ff);	// calculate push value from ses gpio
 	pushwifi = 1 << (wifigpio & 0x0ff);	// calculate push value from ses gpio 
 	// 
 	// 
@@ -1596,7 +1388,7 @@ void period_check(int sig)
 			}
 			handle_reset();
 		}
-	} else if ((sesgpio != 0xfff) && (((sesgpio & 0x100) == 0 && (val & push)) || ((sesgpio & 0x100) == 0x100 && !(val & push)))) {
+	} else if ((sesgpio != 0xfff) && (((sesgpio & 0x100) == 0 && (val & pushses)) || ((sesgpio & 0x100) == 0x100 && !(val & pushses)))) {
 		if (!ses_pushed && (++count > SES_WAIT)) {
 			if (check_action() != ACT_IDLE) {	// Don't execute during upgrading
 				fprintf(stderr, "resetbutton: nothing to do...\n");
