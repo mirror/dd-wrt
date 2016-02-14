@@ -267,14 +267,6 @@ endif
 
 
 	$(kernelfeatures)
-ifneq ($(CONFIG_SAMBA),y)
-	sed -i 's/\CONFIG_CIFS=m/# CONFIG_CIFS is not set/g' $(LINUXDIR)/.config
-	sed -i 's/\CONFIG_NETWORK_FILESYSTEMS=y/# CONFIG_NETWORK_FILESYSTEMS is not set/g' $(LINUXDIR)/.config
-	sed -i 's/\CONFIG_NLS=y/# CONFIG_NLS is not set/g' $(LINUXDIR)/.config
-endif
-ifneq ($(CONFIG_JFFS2),y)
-	sed -i 's/\CONFIG_JFFS2_FS=m/# CONFIG_JFFS2_FS is not set/g' $(LINUXDIR)/.config
-endif
 ifeq ($(CONFIG_SWCONFIG),y)
 	echo CONFIG_AR8216_PHY=y >> $(LINUXDIR)/.config
 	sed -i 's/\CONFIG_SWCONFIG=y/# CONFIG_SWCONFIG is not set/g' $(LINUXDIR)/.config
@@ -753,14 +745,15 @@ endif
 #	mknod $(TARGETDIR)/dev/cfa3 b 13 3
 #	mknod $(TARGETDIR)/dev/cfa4 b 13 4
 #	umount $(TARGETDIR)
-	find $(TARGETDIR)/lib/modules -name *.ko -exec mips-linux-strip --strip-unneeded --remove-section=.comment {} +		
 	#e2fsck -y -f $(ARCH)-uclibc/root.fs
+	./busybox/examples/depmod.pl -F $(LINUXDIR)/System.map -b $(ARCH)-uclibc/target/lib/modules
 	-find $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel -name *.ko -exec mv {} $(TARGETDIR)/lib/modules/$(KERNELRELEASE) \;
 	-find $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/net -name *.ko -exec mv {} $(TARGETDIR)/lib/modules/$(KERNELRELEASE) \;
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/net
-	#e2fsck -y -f $(ARCH)-uclibc/root.fs
-	./busybox/examples/depmod.pl -F $(LINUXDIR)/System.map -b $(ARCH)-uclibc/target/lib/modules
+	export STRIP_KMOD="$(LINUXDIR)/scripts/strip-kmod.sh" && \
+	export STRIP="sstrip" && \
+	$(LINUXDIR)/scripts/rstrip.sh $(TARGETDIR)
 	
 	#cd $(TARGETDIR)
 #	tar --directory=$(TARGETDIR) --remove-files -cvvjf $(TARGETDIR)/etc/local.tar.bz2 usr/local
@@ -772,9 +765,6 @@ endif
 ifeq ($(CONFIG_RC),y)
 	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
 endif
-	export STRIP_KMOD="$(LINUXDIR)/scripts/strip-kmod.sh" && \
-	export STRIP="sstrip" && \
-	$(LINUXDIR)/scripts/rstrip.sh $(TARGETDIR)
 ifeq ($(CONFIG_WRK54G),y)
 	misc/makeDevs $(ARCH)-uclibc/target	
 endif
@@ -783,6 +773,15 @@ endif
 	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -noappend -be
 	mkfs.jffs2 --pad --big-endian --squash -e 0x10000 -o $(ARCH)-uclibc/dd-wrt.jffs2 -d $(ARCH)-uclibc/target
 	$(MAKE) -f Makefile.ar531x kernel
+	find $(TARGETDIR)/lib/modules -name *.ko -exec mips-linux-strip --strip-unneeded --remove-section=.comment {} +		
+	#e2fsck -y -f $(ARCH)-uclibc/root.fs
+	-find $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel -name *.ko -exec mv {} $(TARGETDIR)/lib/modules/$(KERNELRELEASE) \;
+	-find $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/net -name *.ko -exec mv {} $(TARGETDIR)/lib/modules/$(KERNELRELEASE) \;
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/net
+	export STRIP_KMOD="$(LINUXDIR)/scripts/strip-kmod.sh" && \
+	export STRIP="sstrip" && \
+	$(LINUXDIR)/scripts/rstrip.sh $(TARGETDIR)
 	
 	./tools/kernelopt/kernelopt.sh $(LINUXDIR) $(ARCH)-uclibc/target $(ARCH)-linux-
 	cp $(LINUXDIR)/vmlinux_opt $(ARCH)-uclibc/vmlinux
