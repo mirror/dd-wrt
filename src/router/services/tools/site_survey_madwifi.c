@@ -216,7 +216,7 @@ int site_survey_main(int argc, char *argv[])
 	if (!buf)
 		return -1;
 	memset(site_survey_lists, 0, sizeof(site_survey_lists));
-	memset(buf, 24 * 1024, 0);
+	memset(buf, 0, 24 * 1024);
 	eval("iwlist", sta, "scan");
 	len = do80211priv(sta, IEEE80211_IOCTL_SCAN_RESULTS, buf, 24 * 1024);
 	if (len == -1) {
