@@ -2213,6 +2213,7 @@ void add_vifs(webs_t wp)
 	add_vifs_single(prefix, devcount);
 }
 
+#ifdef HAVE_GUESTPORT
 void move_vif(char *prefix, char *svif, char *tvif)
 {
 
@@ -2262,7 +2263,7 @@ void move_vif(char *prefix, char *svif, char *tvif)
 		unlink(filename);
 	}
 }
-
+#endif
 void remove_vifs_single(char *prefix)
 {
 	char wif[16];
