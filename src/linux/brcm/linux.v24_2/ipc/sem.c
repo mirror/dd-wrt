@@ -423,6 +423,8 @@ static unsigned long copy_semid_to_user(void *buf, struct semid64_ds *in, int ve
 	    {
 		struct semid_ds out;
 
+		memset(&out, 0, sizeof(out));
+
 		ipc64_perm_to_ipc_perm(&in->sem_perm, &out.sem_perm);
 
 		out.sem_otime	= in->sem_otime;
