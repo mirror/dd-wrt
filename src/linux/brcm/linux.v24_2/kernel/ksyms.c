@@ -287,6 +287,7 @@ EXPORT_SYMBOL(vfs_follow_link);
 EXPORT_SYMBOL(page_readlink);
 EXPORT_SYMBOL(page_follow_link);
 EXPORT_SYMBOL(page_symlink_inode_operations);
+EXPORT_SYMBOL(__block_symlink);
 EXPORT_SYMBOL(block_symlink);
 EXPORT_SYMBOL(vfs_readdir);
 EXPORT_SYMBOL(__get_lease);

@@ -431,6 +431,16 @@ NORET_TYPE void do_exit(long code)
 		panic("Attempted to kill the idle task!");
 	if (tsk->pid == 1)
 		panic("Attempted to kill init!");
+
+	/*
+	 * If do_exit is called because this processes oopsed, it's possible
+	 * that get_fs() was left as KERNEL_DS, so reset it to USER_DS before
+	 * continuing. Amongst other possible reasons, this is to prevent
+	 * mm_release()->clear_child_tid() from writing to a user-controlled
+	 * kernel address.
+	 */
+	set_fs(USER_DS);
+
 	tsk->flags |= PF_EXITING;
 	del_timer_sync(&tsk->real_timer);
 
