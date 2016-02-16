@@ -259,7 +259,6 @@ if [ "$CONFIG_CASIO_E55" = "y" ]; then
    define_bool CONFIG_IRQ_CPU y
    define_bool CONFIG_NONCOHERENT_IO y
    define_bool CONFIG_ISA y
-   define_bool CONFIG_DUMMY_KEYB y
    define_bool CONFIG_SCSI n
 fi
 if [ "$CONFIG_MIPS_MIRAGE" = "y" ]; then
