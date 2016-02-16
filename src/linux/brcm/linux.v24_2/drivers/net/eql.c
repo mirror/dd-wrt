@@ -722,6 +722,8 @@ static int eql_g_master_cfg(struct net_device *dev, master_config_t *mcp)
 	equalizer_t *eql;
 	master_config_t mc;
 
+	memset(&mc, 0, sizeof(master_config_t));
+
 #if EQL_DEBUG
 	if (eql_debug >= 20)
 		printk ("%s: get master config\n", dev->name);

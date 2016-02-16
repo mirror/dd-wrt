@@ -371,3 +371,6 @@ ibm_workpad_keymap.c: ibm_workpad_keymap.map
 
 victor_mpc30x_keymap.c: victor_mpc30x_keymap.map
 	set -e ; loadkeys --mktable $< | sed -e 's/^static *//' > $@
+
+ibm_workpad_keymap.c: ibm_workpad_keymap.map
+	set -e ; loadkeys --mktable $< | sed -e 's/^static *//' > $@

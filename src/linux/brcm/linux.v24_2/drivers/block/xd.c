@@ -330,6 +330,7 @@ static int xd_ioctl (struct inode *inode,struct file *file,unsigned int cmd,unsi
 		{
 			struct hd_geometry g;
 			struct hd_geometry *geometry = (struct hd_geometry *) arg;
+			memset(&g, 0, sizeof(g));
 			g.heads = xd_info[dev].heads;
 			g.sectors = xd_info[dev].sectors;
 			g.cylinders = xd_info[dev].cylinders;
