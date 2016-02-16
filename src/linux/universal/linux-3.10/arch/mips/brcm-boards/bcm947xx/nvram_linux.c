@@ -144,6 +144,7 @@ static int early_nvram_init(void)
 	struct nvram_header *header_cfe = NULL;
 	struct nvram_header *header_cfe2 = NULL;
 	struct nvram_header *header_cfe3 = NULL;
+	struct nvram_header *header_cfe4 = NULL;
 	chipcregs_t *cc;
 	int i;
 	uint32 base, off, lim;
