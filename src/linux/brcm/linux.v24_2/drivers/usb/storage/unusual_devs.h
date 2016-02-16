@@ -1361,3 +1361,13 @@ UNUSUAL_DEV(  0x0482, 0x0105, 0x0100, 0x0100,
 		"Finecam L3",
 		US_SC_SCSI, US_PR_BULK, NULL,
 		US_FL_FIX_INQUIRY),
+
+/* Reported by Thomas Baechler <thomas@archlinux.org>
+ * Fixes I/O errors with Teac HD-35PU devices
+ * svr: last param was US_FL_IGNORE_RESIDUE, but unknown in 2.4
+ */
+UNUSUAL_DEV(  0x1652, 0x6600, 0x0201, 0x0201,
+		"Super Top",
+		"USB 2.0  IDE DEVICE",
+		US_SC_DEVICE, US_PR_DEVICE, NULL,
+		0),

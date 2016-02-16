@@ -3504,6 +3504,7 @@ static int fd_ioctl(struct inode *inode, struct file *filp, unsigned int cmd,
 		case HDIO_GETGEO:
 		{
 			struct hd_geometry loc;
+			memset(&loc, 0, sizeof(loc));
 			ECALL(get_floppy_geometry(drive, type, &g));
 			loc.heads = g->head;
 			loc.sectors = g->sect;
