@@ -54,6 +54,8 @@ int x25_parse_facilities(struct sk_buff *skb, struct x25_facilities *facilities,
 	while (len > 0) {
 		switch (*p & X25_FAC_CLASS_MASK) {
 			case X25_FAC_CLASS_A:
+				if (len < 2)
+					return 0;
 				switch (*p) {
 					case X25_FAC_REVERSE:
 						facilities->reverse = (p[1] & 0x01);
@@ -72,6 +74,8 @@ int x25_parse_facilities(struct sk_buff *skb, struct x25_facilities *facilities,
 				break;
 
 			case X25_FAC_CLASS_B:
+				if (len < 3)
+					return 0;
 				switch (*p) {
 					case X25_FAC_PACKET_SIZE:
 						facilities->pacsize_in  = p[1];
@@ -92,13 +96,17 @@ int x25_parse_facilities(struct sk_buff *skb, struct x25_facilities *facilities,
 				break;
 
 			case X25_FAC_CLASS_C:
+				if (len < 4)
+					return 0;
 				printk(KERN_DEBUG "X.25: unknown facility %02X, values %02X, %02X, %02X\n", p[0], p[1], p[2], p[3]);
 				p   += 4;
 				len -= 4;
 				break;
 
 			case X25_FAC_CLASS_D:
-				printk(KERN_DEBUG "X.25: unknown facility %02X, length %d, values %02X, %02X, %02X, %02X\n", p[0], p[1], p[2], p[3], p[4], p[5]);
+				if (len < p[1] + 2)
+					return 0;
+				printk(KERN_DEBUG "X.25: unknown facility %02X, length %d\n", p[0], p[1]);
 				len -= p[1] + 2;
 				p   += p[1] + 2;
 				break;
