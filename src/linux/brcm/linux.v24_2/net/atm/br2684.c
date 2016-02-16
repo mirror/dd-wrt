@@ -221,7 +221,7 @@ static int br2684_start_xmit(struct sk_buff *skb, struct net_device *dev)
 		/* netif_stop_queue(dev); */
 		dev_kfree_skb(skb);
 		read_unlock(&devs_lock);
-		return -EUNATCH;
+		return 0;
 	}
 	if (!br2684_xmit_vcc(skb, brdev, brvcc)) {
 		/*
@@ -509,6 +509,10 @@ Note: we do not have explicit unassign, but look at _push()
 		MOD_DEC_USE_COUNT;
 		return -EFAULT;
 	}
+	brvcc = kmalloc(sizeof(struct br2684_vcc), GFP_KERNEL);
+	if (!brvcc)
+		return -ENOMEM;
+	memset(brvcc, 0, sizeof(struct br2684_vcc));
 	write_lock_irq(&devs_lock);
 	brdev = br2684_find_dev(&be.ifspec);
 	if (brdev == NULL) {
@@ -530,11 +534,6 @@ Note: we do not have explicit unassign, but look at _push()
 	    BR2684_ENCAPS_VC && be.encaps != BR2684_ENCAPS_LLC) ||
 	    be.min_size != 0) {
 		err = -EINVAL;
-		goto error;
-	}
-	brvcc = kmalloc(sizeof(struct br2684_vcc), GFP_KERNEL);
-	if (!brvcc) {
-		err = -ENOMEM;
 		goto error;
 	}
 	memset(brvcc, 0, sizeof(struct br2684_vcc));
@@ -567,6 +566,7 @@ Note: we do not have explicit unassign, but look at _push()
 	return 0;
     error:
 	write_unlock_irq(&devs_lock);
+	kfree(brvcc);
 	MOD_DEC_USE_COUNT;
 	return err;
 }
