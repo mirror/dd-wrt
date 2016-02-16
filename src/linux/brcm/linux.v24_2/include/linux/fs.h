@@ -1503,6 +1503,7 @@ extern int try_to_release_page(struct page * page, int gfp_mask);
 extern int discard_bh_page(struct page *, unsigned long, int);
 #define block_flushpage(page, offset) discard_bh_page(page, offset, 1)
 #define block_invalidate_page(page) discard_bh_page(page, 0, 0)
+extern int __block_symlink(struct inode *, const char *, int, unsigned int);
 extern int block_symlink(struct inode *, const char *, int);
 extern int block_write_full_page(struct page*, get_block_t*);
 extern int block_read_full_page(struct page*, get_block_t*);
