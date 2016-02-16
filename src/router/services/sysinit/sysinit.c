@@ -88,20 +88,6 @@ extern void free_defaults(void);
 
 extern int f_exists(const char *path);
 
-int endswith(char *str, char *cmp)
-{
-	int cmp_len, str_len, i;
-
-	cmp_len = strlen(cmp);
-	str_len = strlen(str);
-	if (cmp_len > str_len)
-		return (0);
-	for (i = 0; i < cmp_len; i++) {
-		if (str[(str_len - 1) - i] != cmp[(cmp_len - 1) - i])
-			return (0);
-	}
-	return (1);
-}
 
 #ifdef HAVE_MACBIND
 #include "../../../opt/mac.h"
