@@ -268,6 +268,7 @@ static inline unsigned long copy_shmid_to_user(void *buf, struct shmid64_ds *in,
 	    {
 		struct shmid_ds out;
 
+		memset(&out, 0, sizeof(out));
 		ipc64_perm_to_ipc_perm(&in->shm_perm, &out.shm_perm);
 		out.shm_segsz	= in->shm_segsz;
 		out.shm_atime	= in->shm_atime;
