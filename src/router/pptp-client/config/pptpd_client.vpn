@@ -33,9 +33,10 @@ case $1 in
   while [ 1 ];
   do
    echo "Attempting connect..."
-   killall pppd 2>/dev/null
+   PPTPPID=`ps |grep "pppd "|grep "pptpd"|awk '{print $1}'`
+   kill $PPTPPID
    sleep 2
-   killall -9 pppd 2>/dev/null
+   kill -9 $PPTPPID
    sleep 1
    pppd pty "pptp $(nvram get pptpd_client_srvip) --nolaunchpppd" file /tmp/pptpd_client/options.vpn user "$(nvram get pptpd_client_srvuser)" password "$(nvram get pptpd_client_srvpass)"
    echo "Connection dropped..."
@@ -67,9 +68,10 @@ case $1 in
   while [ 1 ];
   do
    echo "Attempting connect..."
-   killall pppd 2>/dev/null
+   PPTPPID=`ps |grep "pppd "|grep "pptpd"|awk '{print $1}'`
+   kill $PPTPPID
    sleep 2
-   killall -9 pppd 2>/dev/null
+   kill -9 $PPTPPID
    sleep 1
    pppd pty "pptp $(nvram get pptpd_client_srvip) --nolaunchpppd" debug dump logfd 2 nodetach  file /tmp/pptpd_client/options.vpn user "$(nvram get pptpd_client_srvuser)" password "$(nvram get pptpd_client_srvpass)"
    echo "Connection dropped..."
@@ -84,7 +86,7 @@ case $1 in
   sleep 2
   kill -9 $VPNPID 2>/dev/null
 
-  PPTPPID=`pidof -s pppd`
+  PPTPPID=`ps |grep "pppd "|grep "pptpd"|awk '{print $1}'`
   echo "Killing PPTP PID $PPTPPID"
   kill $PPTPPID
   sleep 2
