@@ -866,6 +866,7 @@ static int mm_ioctl(struct inode *i, struct file *f, unsigned int cmd, unsigned 
 		 * multiple of 2048 (1M): tell we have 32 sectors, 64 heads,
 		 * whatever cylinders.
 		 */
+		memset(&geo, 0, sizeof(geo));
 		err = ! access_ok(VERIFY_WRITE, arg, sizeof(geo));
 		if (err) return -EFAULT;
 		size = cards[card_number].mm_size * (1024 / MM_HARDSECT);

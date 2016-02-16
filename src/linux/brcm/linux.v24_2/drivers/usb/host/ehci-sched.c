@@ -888,7 +888,7 @@ itd_stream_schedule (
 				stream->rescheduled++;
 				pr_debug ("ehci %s devpath %d "
 					"iso%d%s %d.%d skip %d.%d\n",
-					ehci->pdev->slot_name,
+					ehci->hcd.pdev->slot_name,
 					urb->dev->devpath,
 					stream->bEndpointAddress & 0x0f,
 					(stream->bEndpointAddress & USB_DIR_IN)

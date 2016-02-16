@@ -1489,6 +1489,7 @@ static int fd_ioctl(struct inode *inode, struct file *filp,
 	case HDIO_GETGEO:
 	{
 		struct hd_geometry loc;
+		memset(&loc, 0, sizeof(loc));
 		loc.heads = unit[drive].type->heads;
 		loc.sectors = unit[drive].dtype->sects * unit[drive].type->sect_mult;
 		loc.cylinders = unit[drive].type->tracks;

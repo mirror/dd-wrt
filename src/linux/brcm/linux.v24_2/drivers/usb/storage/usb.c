@@ -607,6 +607,9 @@ static void * storage_probe(struct usb_device *dev, unsigned int ifnum,
 	/* At this point, we know we've got a live one */
 	US_DEBUGP("USB Mass Storage device detected\n");
 
+	/* we wait one second for the device to settle */
+	ssleep(1);
+
 	/* Determine subclass and protocol, or copy from the interface */
 	subclass = (unusual_dev->useProtocol == US_SC_DEVICE) ?
 			altsetting->bInterfaceSubClass :

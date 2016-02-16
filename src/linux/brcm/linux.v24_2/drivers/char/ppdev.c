@@ -621,6 +621,7 @@ static int pp_ioctl(struct inode *inode, struct file *file,
 
 	case PPGETTIME:
 		to_jiffies = pp->pdev->timeout;
+		memset(&par_timeout, 0, sizeof(par_timeout));
 		par_timeout.tv_sec = to_jiffies / HZ;
 		par_timeout.tv_usec = (to_jiffies % (long)HZ) * (1000000/HZ);
 		if (copy_to_user ((struct timeval *)arg, &par_timeout,
