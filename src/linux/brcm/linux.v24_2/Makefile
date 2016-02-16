@@ -119,6 +119,9 @@ CFLAGS += $(call check_gcc,-Wno-pointer-sign,)
 
 
 
+# disable stupid and dangerous "optimization" in gcc 3.2+
+CFLAGS += $(call check_gcc,-fno-delete-null-pointer-checks,)
+
 #
 # ROOT_DEV specifies the default root-device when making the image.
 # This can be either FLOPPY, CURRENT, /dev/xxxx or empty, in which case
@@ -421,6 +424,10 @@ tags: dummy
 	ctags $$CTAGSF `find include/asm-$(ARCH) -name '*.h'` && \
 	find include -type d \( -name "asm-*" -o -name config \) -prune -o -name '*.h' -print | xargs ctags $$CTAGSF -a && \
 	find $(SUBDIRS) init -name '*.[ch]' | xargs ctags $$CTAGSF -a
+
+cscope: dummy
+	(echo \-k; echo \-q; find * -name '*.[chS]') > cscope.files
+	cscope -b -f cscope.out
 
 cscope: dummy
 	(echo \-k; echo \-q; find * -name '*.[chS]') > cscope.files
