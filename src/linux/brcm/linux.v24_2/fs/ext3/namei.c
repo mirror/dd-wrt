@@ -925,7 +925,8 @@ static int ext3_symlink (struct inode * dir,
 		 * We have a transaction open.  All is sweetness.  It also sets
 		 * i_size in generic_commit_write().
 		 */
-		err = block_symlink(inode, symname, l);
+		err = __block_symlink(inode, symname, l,
+		                      inode->i_mapping->gfp_mask & ~__GFP_FS);
 		if (err)
 			goto out_no_entry;
 	} else {

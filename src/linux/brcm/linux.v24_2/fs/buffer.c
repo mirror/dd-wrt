@@ -2479,10 +2479,11 @@ int brw_page(int rw, struct page *page, kdev_t dev, int b[], int size)
 	return 0;
 }
 
-int block_symlink(struct inode *inode, const char *symname, int len)
+int __block_symlink(struct inode *inode, const char *symname, int len,
+                    unsigned int gfp_mask)
 {
 	struct address_space *mapping = inode->i_mapping;
-	struct page *page = grab_cache_page(mapping, 0);
+	struct page *page = find_or_create_page(mapping, 0, gfp_mask);
 	int err = -ENOMEM;
 	char *kaddr;
 
@@ -2513,6 +2514,11 @@ fail_map:
 	page_cache_release(page);
 fail:
 	return err;
+}
+
+int block_symlink(struct inode *inode, const char *symname, int len)
+{
+	return __block_symlink(inode, symname, len, inode->i_mapping->gfp_mask);
 }
 
 static inline void link_dev_buffers(struct page * page, struct buffer_head *head)
