@@ -449,6 +449,7 @@ void * memmove(void * dest,const void *src,size_t count)
  * @ct: Another area of memory
  * @count: The size of the area.
  */
+#undef memcmp
 int memcmp(const void * cs,const void * ct,size_t count)
 {
 	const unsigned char *su1, *su2;
