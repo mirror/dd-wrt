@@ -274,10 +274,15 @@ static int fl6_renew(struct ip6_flowlabel *fl, unsigned linger, unsigned expires
 static struct ip6_flowlabel *
 fl_create(struct in6_flowlabel_req *freq, char *optval, int optlen, int *err_p)
 {
-	struct ip6_flowlabel *fl;
+	struct ip6_flowlabel *fl = NULL;
 	int olen;
 	int addr_type;
 	int err;
+
+	olen = optlen - CMSG_ALIGN(sizeof(*freq));
+	err = -EINVAL;
+	if (olen > 64 * 1024)
+		goto done;
 
 	err = -ENOMEM;
 	fl = kmalloc(sizeof(*fl), GFP_KERNEL);
@@ -285,7 +290,6 @@ fl_create(struct in6_flowlabel_req *freq, char *optval, int optlen, int *err_p)
 		goto done;
 	memset(fl, 0, sizeof(*fl));
 
-	olen = optlen - CMSG_ALIGN(sizeof(*freq));
 	if (olen > 0) {
 		struct msghdr msg;
 		struct flowi flowi;
