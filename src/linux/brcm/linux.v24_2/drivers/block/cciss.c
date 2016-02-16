@@ -702,6 +702,7 @@ static int cciss_ioctl(struct inode *inode, struct file *filep,
 	   case HDIO_GETGEO:
 	   {
 		struct hd_geometry driver_geo;
+		memset(&driver_geo, 0, sizeof(driver_geo));
 		if (hba[ctlr]->drv[dsk].cylinders) {
 			driver_geo.heads = hba[ctlr]->drv[dsk].heads;
 			driver_geo.sectors = hba[ctlr]->drv[dsk].sectors;
@@ -718,6 +719,7 @@ static int cciss_ioctl(struct inode *inode, struct file *filep,
 	case HDIO_GETGEO_BIG:
 	{
 		struct hd_big_geometry driver_geo;
+		memset(&driver_geo, 0, sizeof(driver_geo));
 		if (hba[ctlr]->drv[dsk].cylinders) {
 			driver_geo.heads = hba[ctlr]->drv[dsk].heads;
 			driver_geo.sectors = hba[ctlr]->drv[dsk].sectors;

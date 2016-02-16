@@ -282,7 +282,7 @@ static struct stripe_head *get_active_stripe(raid5_conf_t *conf, unsigned long s
 				}
 
 				if (conf->buffer_size != size) {
-					printk("raid5: switching cache buffer size, %d --> %d\n", oldsize, size);
+					PRINTK("raid5: switching cache buffer size, %d --> %d\n", oldsize, size);
 					shrink_stripe_cache(conf);
 					if (size==0) BUG();
 					conf->buffer_size = size;

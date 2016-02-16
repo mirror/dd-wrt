@@ -1034,6 +1034,7 @@ static int i2ob_ioctl(struct inode *inode, struct file *file,
 		{
 			struct hd_geometry g;
 			int u=minor&0xF0;
+			memset(&g, 0, sizeof(g));
 			i2o_block_biosparam(i2ob_sizes[u]<<1, 
 				&g.cylinders, &g.heads, &g.sectors);
 			g.start = i2ob[minor].start_sect;

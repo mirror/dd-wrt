@@ -802,6 +802,7 @@ static int nftl_ioctl(struct inode * inode, struct file * file, unsigned int cmd
 	case HDIO_GETGEO: {
 		struct hd_geometry g;
 
+		memset(&g, 0, sizeof(g));
 		g.heads = nftl->heads;
 		g.sectors = nftl->sectors;
 		g.cylinders = nftl->cylinders;

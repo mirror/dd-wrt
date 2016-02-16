@@ -523,6 +523,7 @@ static int detect_adm(void)
 	} else if ((strcmp(nvram_get("boardtype") ?: "", "bcm94710dev") == 0) &&
 			(strncmp(nvram_get("boardnum") ?: "", "42", 2) == 0)) {
 		/* WRT54G v1.1 hack */
+		printk(KERN_INFO "enable WRT54G v1.1 hack\n");
 		eecs = 2;
 		eesk = 3;
 		eedi = 5;

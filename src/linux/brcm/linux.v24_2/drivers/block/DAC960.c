@@ -5457,6 +5457,7 @@ static int DAC960_IOCTL(Inode_T *Inode, File_T *File,
     {
     case HDIO_GETGEO:
       /* Get BIOS Disk Geometry. */
+      memset(&Geometry, 0, sizeof(Geometry));
       UserGeometry = (DiskGeometry_T *) Argument;
       if (UserGeometry == NULL) return -EINVAL;
       if (Controller->FirmwareType == DAC960_V1_Controller)

@@ -477,6 +477,7 @@ static int carm_bdev_ioctl(struct inode *ino, struct file *fil,
 	case HDIO_GETGEO: {
 		struct hd_geometry geom;
 
+		memset(&geom, 0, sizeof(geom));
 		if (!usermem)
 			return -EINVAL;
 
@@ -503,6 +504,7 @@ static int carm_bdev_ioctl(struct inode *ino, struct file *fil,
 	case HDIO_GETGEO_BIG: {
 		struct hd_big_geometry geom;
 
+		memset(&geom, 0, sizeof(geom));
 		if (!usermem)
 			return -EINVAL;
 

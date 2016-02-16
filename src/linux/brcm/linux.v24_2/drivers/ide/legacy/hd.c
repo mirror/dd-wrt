@@ -637,6 +637,7 @@ static int hd_ioctl(struct inode * inode, struct file * file,
 		case HDIO_GETGEO:
 		{
 			struct hd_geometry g; 
+			memset(&g, 0, sizeof(g));
 			if (!loc)  return -EINVAL;
 			g.heads = hd_info[dev].head;
 			g.sectors = hd_info[dev].sect;

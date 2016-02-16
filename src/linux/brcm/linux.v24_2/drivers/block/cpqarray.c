@@ -1247,6 +1247,7 @@ static int ida_ioctl(struct inode *inode, struct file *filep, unsigned int cmd, 
 	{
 		struct hd_geometry driver_geo;
 
+		memset(&driver_geo, 0, sizeof(driver_geo));
 		if (hba[ctlr]->drv[dsk].cylinders) {
 			driver_geo.heads = hba[ctlr]->drv[dsk].heads;
 			driver_geo.sectors = hba[ctlr]->drv[dsk].sectors;
@@ -1268,6 +1269,7 @@ static int ida_ioctl(struct inode *inode, struct file *filep, unsigned int cmd, 
 	{
 		struct hd_big_geometry driver_geo;
 
+		memset(&driver_geo, 0, sizeof(driver_geo));
 		if (hba[ctlr]->drv[dsk].cylinders) {
 			driver_geo.heads = hba[ctlr]->drv[dsk].heads;
 			driver_geo.sectors = hba[ctlr]->drv[dsk].sectors;

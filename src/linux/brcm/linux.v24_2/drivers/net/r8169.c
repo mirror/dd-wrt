@@ -46,6 +46,8 @@ VERSION 1.2	<2002/11/30>
 #include <linux/ethtool.h>
 #include <linux/crc32.h>
 #include <linux/init.h>
+#include <linux/tqueue.h>
+#include <linux/rtnetlink.h>
 
 #include <asm/io.h>
 
@@ -93,7 +95,6 @@ static int multicast_filter_limit = 32;
 #define RX_DMA_BURST	6	/* Maximum PCI burst, '6' is 1024 */
 #define TX_DMA_BURST	6	/* Maximum PCI burst, '6' is 1024 */
 #define EarlyTxThld 	0x3F	/* 0x3F means NO early transmit */
-#define RxPacketMaxSize	0x0800	/* Maximum size supported is 16K-1 */
 #define InterFrameGap	0x03	/* 3 means InterFrameGap = the shortest one */
 
 #define NUM_TX_DESC	64	/* Number of Tx descriptor registers */
@@ -212,6 +213,7 @@ enum RTL8169_register_content {
 	RxCRC = 0x00080000,
 	RxRUNT = 0x00100000,
 	RxRWT = 0x00400000,
+	RxOVF = 0x00800000,
 
 	/*ChipCmdBits */
 	CmdReset = 0x10,
@@ -332,6 +334,7 @@ struct rtl8169_private {
 	struct timer_list timer;
 	unsigned long phy_link_down_cnt;
 	u16 cp_cmd;
+	struct tq_struct reset_task;
 };
 
 MODULE_AUTHOR("Realtek");
@@ -350,6 +353,9 @@ static int rtl8169_close(struct net_device *dev);
 static void rtl8169_set_rx_mode(struct net_device *dev);
 static void rtl8169_tx_timeout(struct net_device *dev);
 static struct net_device_stats *rtl8169_get_stats(struct net_device *netdev);
+static void rtl8169_reset_task(struct net_device *dev);
+static void rtl8169_rx_interrupt(struct net_device *dev,
+                                 struct rtl8169_private *tp, void *ioaddr);
 
 static const u16 rtl8169_intr_mask =
     RxUnderrun | RxOverflow | RxFIFOOver | TxErr | TxOK | RxErr | RxOK;
@@ -981,6 +987,8 @@ rtl8169_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
 
 	}
 
+	INIT_TQUEUE(&tp->reset_task, (void (*)(void *))rtl8169_reset_task, dev);
+
 	return 0;
 }
 
@@ -993,6 +1001,7 @@ rtl8169_remove_one(struct pci_dev *pdev)
 	assert(dev != NULL);
 	assert(tp != NULL);
 
+	flush_scheduled_tasks();
 	unregister_netdev(dev);
 	iounmap(tp->mmio_addr);
 	pci_release_regions(pdev);
@@ -1117,7 +1126,7 @@ rtl8169_hw_start(struct net_device *dev)
 	RTL_W8(EarlyTxThres, EarlyTxThld);
 
 	// For gigabit rtl8169
-	RTL_W16(RxMaxSize, RxPacketMaxSize);
+	RTL_W16(RxMaxSize, RX_BUF_SIZE);
 
 	// Set Rx Config register
 	i = rtl8169_rx_config | (RTL_R32(RxConfig) & rtl_chip_info[tp->chipset].
@@ -1178,13 +1187,13 @@ static void rtl8169_free_rx_skb(struct pci_dev *pdev, struct sk_buff **sk_buff,
 
 static inline void rtl8169_return_to_asic(struct RxDesc *desc)
 {
-	desc->status |= cpu_to_le32(OWNbit + RX_BUF_SIZE);
+	desc->status = (desc->status & EORbit) | cpu_to_le32(OWNbit + RX_BUF_SIZE);
 }
 
 static inline void rtl8169_give_to_asic(struct RxDesc *desc, dma_addr_t mapping)
 {
 	desc->addr = cpu_to_le64(mapping);
-	desc->status |= cpu_to_le32(OWNbit + RX_BUF_SIZE);
+	rtl8169_return_to_asic(desc);
 }
 
 static int rtl8169_alloc_rx_skb(struct pci_dev *pdev, struct net_device *dev,
@@ -1194,7 +1203,7 @@ static int rtl8169_alloc_rx_skb(struct pci_dev *pdev, struct net_device *dev,
 	dma_addr_t mapping;
 	int ret = 0;
 
-	skb = dev_alloc_skb(RX_BUF_SIZE);
+	skb = dev_alloc_skb(RX_BUF_SIZE + 2);
 	if (!skb)
 		goto err_out;
 
@@ -1303,6 +1312,40 @@ rtl8169_tx_clear(struct rtl8169_private *tp)
 			tp->stats.tx_dropped++;
 		}
 	}
+}
+
+static void
+rtl8169_reset_task(struct net_device *dev)
+{
+	struct rtl8169_private *tp = dev->priv;
+	void *ioaddr = tp->mmio_addr;
+
+	rtnl_lock();
+	RTL_W16(IntrMask, 0);
+
+	if (!netif_running(dev))
+		goto out_unlock;
+
+	rtl8169_rx_interrupt(dev, tp, ioaddr);
+
+	spin_lock_irq(&tp->lock);
+	rtl8169_tx_clear(tp);
+	spin_unlock_irq(&tp->lock);
+
+	if (tp->dirty_rx == tp->cur_rx) {
+		tp->dirty_tx = tp->dirty_rx = tp->cur_tx = tp->cur_rx = 0;
+		rtl8169_hw_start(dev);
+		netif_wake_queue(dev);
+	} else {
+		if (net_ratelimit()) {
+			printk(KERN_EMERG PFX "%s: Rx buffers shortage\n",
+			       dev->name);
+		}
+		schedule_task(&tp->reset_task);
+	}
+out_unlock:
+	RTL_W16(IntrMask, rtl8169_intr_mask);
+	rtnl_unlock();
 }
 
 static void
@@ -1447,6 +1490,11 @@ static inline int rtl8169_try_rx_copy(struct sk_buff **sk_buff, int pkt_size,
 	return ret;
 }
 
+static inline int rtl8169_fragmented_frame(u32 status)
+{
+	return (status & (FSbit | LSbit)) != (FSbit | LSbit);
+}
+
 static void
 rtl8169_rx_interrupt(struct net_device *dev, struct rtl8169_private *tp,
 		     void *ioaddr)
@@ -1461,7 +1509,7 @@ rtl8169_rx_interrupt(struct net_device *dev, struct rtl8169_private *tp,
 	cur_rx = tp->cur_rx;
 	rx_left = NUM_RX_DESC + tp->dirty_rx - cur_rx;
 
-	while (rx_left > 0) {
+	for (; rx_left > 0; rx_left--, cur_rx++) {
 		int entry = cur_rx % NUM_RX_DESC;
 		u32 status;
 
@@ -1472,16 +1520,37 @@ rtl8169_rx_interrupt(struct net_device *dev, struct rtl8169_private *tp,
 			break;
 
 		if (status & RxRES) {
-			printk(KERN_INFO "%s: Rx ERROR!!!\n", dev->name);
+			if (net_ratelimit())
+				printk(KERN_INFO "%s: Rx ERROR, status=0x%08x !\n",
+				       dev->name, status);
 			tp->stats.rx_errors++;
 			if (status & (RxRWT | RxRUNT))
 				tp->stats.rx_length_errors++;
 			if (status & RxCRC)
 				tp->stats.rx_crc_errors++;
+			if (status & RxOVF) {
+				tp->stats.rx_fifo_errors++;
+	                	schedule_task(&tp->reset_task);
+			}
+
+			rtl8169_return_to_asic(tp->RxDescArray + entry);
+			continue;
 		} else {
 			struct RxDesc *desc = tp->RxDescArray + entry;
 			struct sk_buff *skb = tp->Rx_skbuff[entry];
 			int pkt_size = (status & 0x00001FFF) - 4;
+
+			/* Backport from 2.6 to cover a panic on large frames.
+			 * The driver does not support incoming fragmented
+			 * frames. They are seen as a symptom of over-mtu
+			 * sized frames (0x3ff0 bytes).
+			 */
+			if (unlikely(rtl8169_fragmented_frame(status))) {
+				tp->stats.rx_dropped++;
+				tp->stats.rx_length_errors++;
+				rtl8169_return_to_asic(desc);
+				continue;
+			}
 
 			pci_dma_sync_single(tp->pci_dev, le64_to_cpu(desc->addr),
 					    RX_BUF_SIZE, PCI_DMA_FROMDEVICE);
@@ -1501,9 +1570,6 @@ rtl8169_rx_interrupt(struct net_device *dev, struct rtl8169_private *tp,
 			tp->stats.rx_bytes += pkt_size;
 			tp->stats.rx_packets++;
 		}
-		
-		cur_rx++;
-		rx_left--;
 	}
 
 	tp->cur_rx = cur_rx;
@@ -1511,7 +1577,7 @@ rtl8169_rx_interrupt(struct net_device *dev, struct rtl8169_private *tp,
 	delta = rtl8169_rx_fill(tp, dev, tp->dirty_rx, tp->cur_rx);
 	if (delta > 0)
 		tp->dirty_rx += delta;
-	else if (delta < 0)
+	else if (delta < 0 && net_ratelimit())
 		printk(KERN_INFO "%s: no Rx buffer allocated\n", dev->name);
 
 	/*
@@ -1521,7 +1587,7 @@ rtl8169_rx_interrupt(struct net_device *dev, struct rtl8169_private *tp,
 	 *   after refill ?
 	 * - how do others driver handle this condition (Uh oh...).
 	 */
-	if (tp->dirty_rx + NUM_RX_DESC == tp->cur_rx)
+	if (tp->dirty_rx + NUM_RX_DESC == tp->cur_rx && net_ratelimit())
 		printk(KERN_EMERG "%s: Rx buffers exhausted\n", dev->name);
 }
 
@@ -1569,8 +1635,9 @@ rtl8169_interrupt(int irq, void *dev_instance, struct pt_regs *regs)
 	} while (boguscnt > 0);
 
 	if (boguscnt <= 0) {
-		printk(KERN_WARNING "%s: Too much work at interrupt!\n",
-		       dev->name);
+		if (net_ratelimit())
+			printk(KERN_WARNING "%s: Too much work at interrupt!\n",
+			       dev->name);
 		/* Clear all interrupt sources. */
 		RTL_W16(IntrStatus, 0xffff);
 	}
