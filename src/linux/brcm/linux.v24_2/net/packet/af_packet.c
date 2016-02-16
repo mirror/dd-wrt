@@ -1147,6 +1147,7 @@ static int packet_getname(struct socket *sock, struct sockaddr *uaddr,
 	sll->sll_family = AF_PACKET;
 	sll->sll_ifindex = sk->protinfo.af_packet->ifindex;
 	sll->sll_protocol = sk->num;
+	sll->sll_pkttype = 0;
 	dev = dev_get_by_index(sk->protinfo.af_packet->ifindex);
 	if (dev) {
 		sll->sll_hatype = dev->type;

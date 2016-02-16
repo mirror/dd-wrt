@@ -60,7 +60,7 @@ static void br_message_age_timer_expired(struct net_bridge_port *p)
 	br = p->br;
 //	printk(KERN_INFO "%s: ", br->dev.name);
 //	printk("neighbour ");
-//	dump_bridge_id(&p->designated_bridge);
+	dump_bridge_id(&p->designated_bridge);
 //	printk(" lost on port %i(%s)\n", p->port_no, p->dev->name);
 
 	/*
