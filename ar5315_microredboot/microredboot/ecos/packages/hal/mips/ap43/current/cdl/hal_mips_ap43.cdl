@@ -98,7 +98,7 @@ cdl_package CYGPKG_HAL_MIPS_AP43 {
         $(CC) $(CFLAGS) $(INCLUDE_PATH) -Wp,-MD,plf_defs.tmp -o plf_mk_defs.tmp -S $<
         fgrep .equ plf_mk_defs.tmp | sed s/#// > $@
         @echo $@ ": \\" > $(notdir $@).deps
-        @tail +2 plf_defs.tmp >> $(notdir $@).deps
+        tail -n +2 plf_defs.tmp >> $(notdir $@).deps
         @echo >> $(notdir $@).deps
         @rm plf_defs.tmp plf_mk_defs.tmp
     }
