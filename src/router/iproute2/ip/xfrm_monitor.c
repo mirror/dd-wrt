@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <linux/xfrm.h>
+#include <sys/types.h>
 #include "utils.h"
 #include "xfrm.h"
 #include "ip_common.h"
