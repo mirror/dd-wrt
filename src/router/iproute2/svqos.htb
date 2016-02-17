@@ -111,6 +111,13 @@ then
 	$TQA $5 parent 1:20 handle 20: $6
 	$TQA $5 parent 1:30 handle 30: $6
 	$TQA $5 parent 1:40 handle 40: $6
+elif [ "$6" = "pie" ]
+then
+	$TQA $5 parent 1:100 handle 100: $6
+        $TQA $5 parent 1:10 handle 10: $6
+        $TQA $5 parent 1:20 handle 20: $6
+        $TQA $5 parent 1:30 handle 30: $6
+        $TQA $5 parent 1:40 handle 40: $6
 fi
 $TFA $5 protocol ip pref 1 handle 0x64 fw classid 1:100        
 $TFA $5 protocol ip pref 3 handle 0x0A fw classid 1:10        
@@ -147,6 +154,13 @@ then
 	$TQA $7 parent 1:20 handle 20: $6
 	$TQA $7 parent 1:30 handle 30: $6
 	$TQA $7 parent 1:40 handle 40: $6
+elif [ "$6" = "pie" ]
+then
+        $TQA $5 parent 1:100 handle 100: $6
+        $TQA $5 parent 1:10 handle 10: $6
+        $TQA $5 parent 1:20 handle 20: $6
+        $TQA $5 parent 1:30 handle 30: $6
+        $TQA $5 parent 1:40 handle 40: $6
 fi
 $TFA $7 protocol ip pref 1 handle 0x64 fw classid 1:100        
 $TFA $7 protocol ip pref 3 handle 0x0A fw classid 1:10        
