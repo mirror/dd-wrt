@@ -175,6 +175,7 @@ out:
 	return NULL;
 }
 
+#include "LzmaDecode.c"
 
 SQSH_EXTERN unsigned int squashfs_read_data(struct super_block *s, char *buffer,
 			long long index, unsigned int length,
