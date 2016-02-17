@@ -76,7 +76,7 @@ static ulg free_mem_ptr_end;
 
 #include "lib/LzmaDecode.h"
 static unsigned int icnt = 0;
-static inline int read_byte(unsigned char **buffer, UInt32 * bufferSize)
+static inline int read_byte(void *object, const unsigned char **buffer, UInt32 * bufferSize)
 {
 	static unsigned char val;
 	*bufferSize = 1;
@@ -95,14 +95,17 @@ static unsigned int uncompressedSize = 0;
 /*
  * Do the lzma decompression
  */
+static int boot_redboot(void);
 
-static int disaster = 0;
 static int lzma_unzip(void)
 {
 
 	unsigned int i;
 	unsigned char *workspace;
 	unsigned int lc, lp, pb;
+	CLzmaDecoderState vs;
+	ILzmaInCallback callback;
+
 	if (inptr >= insize)
 		fill_inbuf();
 
@@ -110,6 +113,10 @@ static int lzma_unzip(void)
 	i = get_byte();
 	lc = i % 9, i = i / 9;
 	lp = i % 5, pb = i / 5;
+
+	vs.Properties.lc = lc;
+	vs.Properties.lp = lp;
+	vs.Properties.pb = pb;
 
 	// skip dictionary size
 	for (i = 0; i < 4; i++)
@@ -122,41 +129,20 @@ static int lzma_unzip(void)
 	d = get_byte();
 	uncompressedSize = (a) + (b << 8) + (c << 16) + (d << 24);
 	if (uncompressedSize > 0x400000 || lc > 3 || pb > 3 || lp > 3) {
-		if (disaster) {
-			error
-			    ("\ndata corrupted in recovery RedBoot too, this is a disaster condition. please re-jtag\n");
-		}
-		disaster = 1;
-		puts("\ndata corrupted!\nswitching to recovery RedBoot\nloading");
-		inbuf = input_data;
-		insize = &input_data_end[0] - &input_data[0];
-		inptr = 0;
-		output_data = (uch *) 0x80000400;
-		bootoffset = 0x800004bc;
-		return lzma_unzip();
-
+		return boot_redboot();
 	}
 	workspace = output_data + uncompressedSize;
+	vs.Probs = (CProb *) workspace;
+
 	// skip high order bytes
 	for (i = 0; i < 4; i++)
 		get_byte();
 	// decompress kernel
-	if (LzmaDecode
-	    (workspace, ~0, lc, lp, pb, (unsigned char *)output_data,
-	     uncompressedSize, &i) == LZMA_RESULT_OK) {
+	callback.Read = &read_byte;
+	i = 0;
+	if (LzmaDecode(&vs, &callback, (unsigned char *)output_data, uncompressedSize, &i) != LZMA_RESULT_OK) {
 		if (i != uncompressedSize) {
-			if (disaster) {
-				error
-				    ("data corrupted in recovery RedBoot too, this is a disaster condition. please re-jtag\n");
-			}
-			disaster = 1;
-			puts("\ndata corrupted!\nswitching to recovery RedBoot\nloading");
-			inbuf = input_data;
-			insize = &input_data_end[0] - &input_data[0];
-			inptr = 0;
-			output_data = (uch *) 0x80000400;
-			bootoffset = 0x800004bc;
-			return lzma_unzip();
+			return boot_redboot();
 		}
 		//copy it back to low_buffer
 		bytes_out = i;
@@ -164,6 +150,23 @@ static int lzma_unzip(void)
 		return 0;
 	}
 	return 1;
+}
+
+static int disaster = 0;
+static int boot_redboot(void)
+{
+	if (disaster) {
+		error("\ndata corrupted in recovery RedBoot too, this is a disaster condition. please re-jtag\n");
+	}
+	disaster = 1;
+	puts("\ndata corrupted!\nswitching to recovery RedBoot\nloading");
+	inbuf = input_data;
+	insize = &input_data_end[0] - &input_data[0];
+	inptr = 0;
+	output_data = (uch *) 0x80000400;
+	bootoffset = 0x800004bc;
+	return lzma_unzip();
+
 }
 
 #ifdef AR5312
@@ -243,26 +246,24 @@ struct parmblock {
 	char text[0];
 };
 
-static int s_memcmp(unsigned char *p1,unsigned char *p2,unsigned int len)
+static int s_memcmp(unsigned char *p1, unsigned char *p2, unsigned int len)
 {
-unsigned int i;
-for (i=0;i<len;i++)
-    if (p1[i]!=p2[i])
-	return 1;
-return 0;
+	unsigned int i;
+	for (i = 0; i < len; i++)
+		if (p1[i] != p2[i])
+			return 1;
+	return 0;
 }
 
 /* initialized commandline and starts linux. we need todo this for Atheros LSDK based firmwares since they have no ramsize detection */
 static void set_cmdline(void)
 {
 /* check elf */
-	if (!s_memcmp(output_data,ELFMAG,SELFMAG))
-	    {
-	    unsigned int loadaddr;
-	    unsigned int loadaddr_end;
-	    fis_load_elf_image(output_data,0,uncompressedSize,&bootoffset,&loadaddr,&loadaddr_end);
-	    }	
-
+	if (!s_memcmp(output_data, ELFMAG, SELFMAG)) {
+		unsigned int loadaddr;
+		unsigned int loadaddr_end;
+		fis_load_elf_image(output_data, 0, uncompressedSize, &bootoffset, &loadaddr, &loadaddr_end);
+	}
 
 	char *pcmd;
 	struct parmblock *pb;
@@ -301,8 +302,7 @@ static void set_cmdline(void)
 
 }
 
-ulg
-decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p)
+ulg decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p)
 {
 	output_data = (uch *) output_start;
 	free_mem_ptr = free_mem_ptr_p;
@@ -311,9 +311,9 @@ decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p)
 	arch_decomp_setup();
 	/* initialize clock */
 	HAL_CLOCK_INITIALIZE(RTC_PERIOD);
-	printf("MicroRedBoot v1.4, (c) 2009 DD-WRT.COM (%s REVISION %s)\n", __DATE__,SVN_REVISION);
+	printf("MicroRedBoot v1.5, (c) 2012 DD-WRT.COM (%s REVISION %s)\n", __DATE__, SVN_REVISION);
 	printf("keep the reset button pushed to enter redboot!\n");
-	printf("CPU Type: Atheros AR%s\n",get_system_type());
+	printf("CPU Type: Atheros AR%s\n", get_system_type());
 	printf("CPU Clock: %dMhz\n", cpu_frequency() / 1000000);
 	nvram_init();
 	char *ddboard = nvram_get("DD_BOARD");
