@@ -43,6 +43,30 @@ extern int rta_addattr_l(struct rtattr *rta, int maxlen, int type, const void *d
 extern int parse_rtattr(struct rtattr *tb[], int max, struct rtattr *rta, int len);
 extern int parse_rtattr_byindex(struct rtattr *tb[], int max, struct rtattr *rta, int len);
 
+static inline __u8 rta_getattr_u8(const struct rtattr *rta)
+{
+        return *(__u8 *)RTA_DATA(rta);
+}
+static inline __u16 rta_getattr_u16(const struct rtattr *rta)
+{
+        return *(__u16 *)RTA_DATA(rta);
+}
+static inline __u32 rta_getattr_u32(const struct rtattr *rta)
+{
+        return *(__u32 *)RTA_DATA(rta);
+}
+static inline __u64 rta_getattr_u64(const struct rtattr *rta)
+{
+        __u64 tmp;
+        memcpy(&tmp, RTA_DATA(rta), sizeof(__u64));
+        return tmp;
+}
+static inline const char *rta_getattr_str(const struct rtattr *rta)
+{
+        return (const char *)RTA_DATA(rta);
+}
+
+
 #define parse_rtattr_nested(tb, max, rta) \
 	(parse_rtattr((tb), (max), RTA_DATA(rta), RTA_PAYLOAD(rta)))
 
