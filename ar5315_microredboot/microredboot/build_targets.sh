@@ -64,15 +64,15 @@ make ap48 RESETBUTTON=0x06 FIS=0
 mkdir images_default
 cp images/*.rom images_default
 
-rm -f images/*
-make pb44 RESETBUTTON=0x18 FIS=0
-mkdir images_default
-cp images/*.rom images_default
+#rm -f images/*
+#make pb44 RESETBUTTON=0x18 FIS=0
+#mkdir images_default
+#cp images/*.rom images_default
 
-rm -f images/*
-make pb42 RESETBUTTON=0x18 FIS=0
-mkdir images_default
-cp images/*.rom images_default
+#rm -f images/*
+#make pb42 RESETBUTTON=0x18 FIS=0
+#mkdir images_default
+#cp images/*.rom images_default
 
 
 cp -rv images_senao /GruppenLW/releases/images

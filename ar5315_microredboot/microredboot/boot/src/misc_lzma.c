@@ -311,7 +311,7 @@ ulg decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end
 	arch_decomp_setup();
 	/* initialize clock */
 	HAL_CLOCK_INITIALIZE(RTC_PERIOD);
-	printf("MicroRedBoot v1.5, (c) 2012 DD-WRT.COM (%s REVISION %s)\n", __DATE__, SVN_REVISION);
+	printf("MicroRedBoot v1.6, (c) 2016 DD-WRT.COM (%s REVISION %s)\n", __DATE__, SVN_REVISION);
 	printf("keep the reset button pushed to enter redboot!\n");
 	printf("CPU Type: Atheros AR%s\n", get_system_type());
 	printf("CPU Clock: %dMhz\n", cpu_frequency() / 1000000);
