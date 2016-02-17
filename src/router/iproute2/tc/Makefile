@@ -22,9 +22,19 @@ TCMODULES += q_ingress.o
 TCMODULES += q_hfsc.o
 TCMODULES += q_htb.o
 TCMODULES += q_multiq.o
+ifeq ($(KERNELVERSION),3.18)
 TCMODULES += q_fq_codel.o
 TCMODULES += q_fq.o
 TCMODULES += q_pie.o
+endif
+
+ifeq ($(KERNELVERSION),4.4)
+TCMODULES += q_fq_codel.o
+TCMODULES += q_fq.o
+TCMODULES += q_pie.o
+endif
+
+
 TCMODULES += m_gact.o
 TCMODULES += m_mirred.o
 TCMODULES += m_ipt.o
