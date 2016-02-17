@@ -21,14 +21,18 @@ TCMODULES += f_tcindex.o
 TCMODULES += q_ingress.o
 TCMODULES += q_hfsc.o
 TCMODULES += q_htb.o
+ifeq ($(KERNELVERSION),3.10)
 TCMODULES += q_multiq.o
+endif
 ifeq ($(KERNELVERSION),3.18)
+TCMODULES += q_multiq.o
 TCMODULES += q_fq_codel.o
 TCMODULES += q_fq.o
 TCMODULES += q_pie.o
 endif
 
 ifeq ($(KERNELVERSION),4.4)
+TCMODULES += q_multiq.o
 TCMODULES += q_fq_codel.o
 TCMODULES += q_fq.o
 TCMODULES += q_pie.o
