@@ -232,6 +232,8 @@ typedef void (*call_rcu_func_t)(struct rcu_head *head, rcu_callback_t func);
 /* clocksource cycle base type */
 typedef u64 cycle_t;
 
+#undef net_hdr_word
+#undef MIPS_ENABLED
 #ifdef CONFIG_MACH_AR7100
 struct net_hdr_word {
        u32 words[1];
