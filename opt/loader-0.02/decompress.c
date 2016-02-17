@@ -99,7 +99,7 @@ unsigned char *data;
 
 /* flash access should be aligned, so wrapper is used */
 /* read byte from the flash, all accesses are 32-bit aligned */
-static __inline__ int read_byte(unsigned char **buffer, UInt32 *bufferSize)
+static int read_byte(void *object, const unsigned char **buffer, UInt32 *bufferSize)
 {
 	static unsigned int val;
 
@@ -119,7 +119,7 @@ static __inline__ unsigned char get_byte(void)
 	unsigned char *buffer;
 	UInt32 fake;
 	
-	return read_byte(&buffer, &fake), *buffer;
+	return read_byte(0, (const unsigned char **)&buffer, &fake), *buffer;
 }
 #include "LzmaDecode.c"
 
@@ -128,11 +128,12 @@ void entry(unsigned long icache_size, unsigned long icache_lsize,
 	unsigned long dcache_size, unsigned long dcache_lsize)
 {
 	unsigned int i;  /* temp value */
-	unsigned int lc; /* literal context bits */
-	unsigned int lp; /* literal pos state bits */
-	unsigned int pb; /* pos state bits */
 	unsigned int osize; /* uncompressed size */
-	unsigned char SIGN[]="DD-WRT v24-sp2 (c) 2004 - 2011 Sebastian Gottschall / NewMedia-NET GmbH";
+	unsigned char SIGN[]="DD-WRT v24-sp2 (c) 2004 - 2016 Sebastian Gottschall / NewMedia-NET GmbH";
+
+	ILzmaInCallback callback;
+	CLzmaDecoderState vs;
+	callback.Read = read_byte;
 
 	
 	/* look for trx header, 32-bit data access */
@@ -162,8 +163,10 @@ void entry(unsigned long icache_size, unsigned long icache_lsize,
 
 	/* lzma args */
 	i = get_byte();
-	lc = i % 9, i = i / 9;
-	lp = i % 5, pb = i / 5;
+	vs.Properties.lc = i % 9, i = i / 9;
+	vs.Properties.lp = i % 5, vs.Properties.pb = i / 5;
+
+	vs.Probs = (CProb *)workspace;
 
 	/* skip rest of the LZMA coder property */
 	for (i = 0; i < 4; i++)
@@ -180,8 +183,8 @@ void entry(unsigned long icache_size, unsigned long icache_lsize,
 		get_byte();
 
 	/* decompress kernel */
-	if (LzmaDecode(workspace, ~0, lc, lp, pb,
-		(unsigned char*)LOADADDR, osize, &i) == LZMA_RESULT_OK)
+	if ((i = LzmaDecode(&vs, &callback, (unsigned char*)LOADADDR, osize, &osize)) == LZMA_RESULT_OK)
+//	if (LzmaDecode(workspace, ~0, lc, lp, pb, (unsigned char*)LOADADDR, osize, &i) == LZMA_RESULT_OK)
 	{
 		blast_dcache(dcache_size, dcache_lsize);
 		blast_icache(icache_size, icache_lsize);
