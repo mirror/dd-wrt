@@ -4,6 +4,8 @@
 #include <asm/types.h>
 #include <linux/pkt_sched.h>
 
+#define TIME_UNITS_PER_SEC 1000000
+
 long tc_core_usec2tick(long usec);
 long tc_core_tick2usec(long tick);
 unsigned tc_calc_xmittime(unsigned rate, unsigned size);
