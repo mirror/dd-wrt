@@ -54,7 +54,7 @@ HOSTCC = $(CC)
 CCOPTS = -D_GNU_SOURCE $(COPTS) -Wstrict-prototypes -Wall
 CFLAGS = -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include
 
-ifeq ($(CONFIG_NOMESSAGE),y)
+ifneq ($(CONFIG_NOMESSAGE),y)
 CFLAGS += -DNEED_PRINTF
 endif
 
