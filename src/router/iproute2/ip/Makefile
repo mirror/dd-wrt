@@ -3,6 +3,9 @@ IPOBJ=ip.o ipaddress.o iproute.o iprule.o \
     ipmaddr.o ipmroute.o ipprefix.o \
     ipxfrm.o xfrm_state.o xfrm_policy.o
 
+ifneq ($(CONFIG_NOMESSAGE),y)
+IPOBJ+=ipmonitor.o xfrm_monitor.o
+endif
 RTMONOBJ=rtmon.o
 
 ALLOBJ=$(IPOBJ) $(RTMONOBJ)
