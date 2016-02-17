@@ -53,7 +53,7 @@ HOSTCC = $(CC)
 #ipsel-linux-uclibc-gcc
 CCOPTS = -D_GNU_SOURCE $(COPTS) -Wstrict-prototypes -Wall
 CFLAGS = -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include
-
+include ../.config
 ifneq ($(CONFIG_NOMESSAGE),y)
 CFLAGS += -DNEED_PRINTF
 endif
