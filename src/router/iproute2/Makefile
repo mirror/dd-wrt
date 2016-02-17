@@ -31,6 +31,7 @@ ifeq ($(ARCH),powerpc)
 ASM_INCLUDE=-I$(LINUXDIR)/arch/powerpc/include 
 endif
 
+
 # Path to db_185.h include
 DBM_INCLUDE:=/usr/include
 
