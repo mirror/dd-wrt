@@ -1176,7 +1176,7 @@ int do_xfrm(int argc, char **argv)
 		return do_xfrm_state(argc-1, argv+1);
 	else if (matches(*argv, "policy") == 0)
 		return do_xfrm_policy(argc-1, argv+1);
-#ifdef NEED_PRINTF_DEACT
+#ifdef NEED_PRINTF
 	else if (matches(*argv, "monitor") == 0)
 		return do_xfrm_monitor(argc-1, argv+1);
 	else if (matches(*argv, "help") == 0)
