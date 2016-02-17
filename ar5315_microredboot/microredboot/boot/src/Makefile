@@ -1,4 +1,4 @@
-#
+
 # linux/arch/mips/boot/compressed/Makefile
 #
 # create a compressed vmlinuz image from the original vmlinux
@@ -35,7 +35,7 @@ LD = /xfs/toolchains/staging_dir_mips/bin/mips-linux-ld
 #LD = /home/seg/DEV/broadcom/ar5315_microredboot/microredboot/tools/ecos_build/gnutools/mipsisa32-elf/bin/mipsisa32-elf-ld
 OBJCOPY = /xfs/toolchains/staging_dir_mips/bin/mips-linux-objcopy 
 STRIP = /xfs/toolchains/staging_dir_mips/bin/mips-linux-strip
-CFLAGS = -Os -G 0 -mabi=32 -mno-abicalls -fno-pic -pipe -msoft-float -ffreestanding -Iinclude -Iarch -Ilib -I. -Iinclude/asm-mips/mach-atheros -Iinclude/asm/mach-generic -DMIPSEB -D_MIPSEB -D__MIPSEB -D__MIPSEB__ -U_MIPS_ISA -D_MIPS_ISA=_MIPS_ISA_MIPS32 -D__KERNEL__
+CFLAGS = -O2 -G 0 -mabi=32 -mno-abicalls -fno-pic -pipe -msoft-float -ffreestanding -Iinclude -Iarch -Ilib -I. -Iinclude/asm-mips/mach-atheros -Iinclude/asm/mach-generic -DMIPSEB -D_MIPSEB -D__MIPSEB -D__MIPSEB__ -U_MIPS_ISA -D_MIPS_ISA=_MIPS_ISA_MIPS32 -D__KERNEL__
 CFLAGS+= -DCONFIG_MIPS_L1_CACHE_SHIFT=5 -DCONFIG_PAGE_SIZE_4KB -DCONFIG_32BIT -DCONFIG_BOOTLOADER
 AFLAGS = -D__ASSEMBLY__ -G 0 -mabi=32 -mno-abicalls -fno-pic -pipe -msoft-float -ffreestanding -Iinclude -I. -Iinclude/asm-mips/mach-atheros -Iinclude/asm/mach-generic -DMIPSEB -D_MIPSEB -D__MIPSEB -D__MIPSEB__ -U_MIPS_ISA -D_MIPS_ISA=_MIPS_ISA_MIPS32
 AFLAGS+= -DCONFIG_MIPS_L1_CACHE_SHIFT=5 -DCONFIG_PAGE_SIZE_4KB -DCONFIG_32BIT -DCONFIG_BOOTLOADER 
