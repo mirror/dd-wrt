@@ -213,6 +213,8 @@ struct callback_head {
 };
 #define rcu_head callback_head
 
+#undef net_hdr_word
+#undef MIPS_ENABLED
 #ifdef CONFIG_MACH_AR7100
 struct net_hdr_word {
        u32 words[1];
