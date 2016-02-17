@@ -1,3 +1,4 @@
+include ../../.config
 IPOBJ=ip.o ipaddress.o iproute.o iprule.o \
     rtm_map.o iptunnel.o ipneigh.o iplink.o \
     ipmaddr.o ipmroute.o ipprefix.o \
@@ -23,5 +24,5 @@ install: all
 	install -m 0755 $(SCRIPTS) $(DESTDIR)$(SBINDIR)
 
 clean:
-	rm -f $(ALLOBJ) $(TARGETS)
+	rm -f $(ALLOBJ) $(TARGETS) *.o
 
