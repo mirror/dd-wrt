@@ -7,9 +7,9 @@
 
 RESP=0
 
-case $1 in 
+case $1 in
  "start"  )
-  echo "Launching VPN process" 
+  echo "Launching VPN process"
   echo "Waiting..."
   startservice pppmodules
   sleep 10
@@ -29,13 +29,14 @@ case $1 in
   echo "PID file created"
   echo "Attempting initial connect"
   pppd pty "pptp $(nvram get pptpd_client_srvip) --nolaunchpppd" file /tmp/pptpd_client/options.vpn user "$(nvram get pptpd_client_srvuser)" password "$(nvram get pptpd_client_srvpass)"
-  echo "Initial connection dropped" 
+  echo "Initial connection dropped"
   while [ 1 ];
   do
    echo "Attempting connect..."
-   killall pppd 2>/dev/null
+   PPTPPID=`ps |grep "pppd "|grep "pptp"|awk '{print $1}'`
+   kill $PPTPPID 2>/dev/null
    sleep 2
-   killall -9 pppd 2>/dev/null
+   kill -9 $PPTPPID 2>/dev/null
    sleep 1
    pppd pty "pptp $(nvram get pptpd_client_srvip) --nolaunchpppd" file /tmp/pptpd_client/options.vpn user "$(nvram get pptpd_client_srvuser)" password "$(nvram get pptpd_client_srvpass)"
    echo "Connection dropped..."
@@ -44,7 +45,7 @@ case $1 in
  ;;
 
  "debug"  )
-  echo "Launching VPN process in full debug mode" 
+  echo "Launching VPN process in full debug mode"
   echo "Waiting..."
   sleep 10
   PIDFILE="/var/run/vpn.pid"
@@ -67,9 +68,10 @@ case $1 in
   while [ 1 ];
   do
    echo "Attempting connect..."
-   killall pppd 2>/dev/null
+   PPTPPID=`ps |grep "pppd "|grep "pptp"|awk '{print $1}'`
+   kill $PPTPPID 2>/dev/null
    sleep 2
-   killall -9 pppd 2>/dev/null
+   kill -9 $PPTPPID 2>/dev/null
    sleep 1
    pppd pty "pptp $(nvram get pptpd_client_srvip) --nolaunchpppd" debug dump logfd 2 nodetach  file /tmp/pptpd_client/options.vpn user "$(nvram get pptpd_client_srvuser)" password "$(nvram get pptpd_client_srvpass)"
    echo "Connection dropped..."
@@ -84,7 +86,7 @@ case $1 in
   sleep 2
   kill -9 $VPNPID 2>/dev/null
 
-  PPTPPID=`pidof -s pppd`
+  PPTPPID=`ps |grep "pppd "|grep "pptp"|awk '{print $1}'`
   echo "Killing PPTP PID $PPTPPID"
   kill $PPTPPID
   sleep 2
@@ -93,16 +95,16 @@ case $1 in
   rm /var/run/vpn.pid
   #rm /tmp/pptpd_client/ -R
   echo "VPN Stopped"
- ;; 
-* ) 
+ ;;
+* )
   echo " "
-  echo "  PTPP VPN CLIENT" 
-  echo "  --------" 
-  echo " " 
-  echo "   start  -  Starts the Client" 
-  echo "   stop   -  Stops the Client" 
-  echo "   debug  -  Run the Client interactively (in full debug mode)" 
-  echo " " 
- ;; 
+  echo "  PTPP VPN CLIENT"
+  echo "  --------"
+  echo " "
+  echo "   start  -  Starts the Client"
+  echo "   stop   -  Stops the Client"
+  echo "   debug  -  Run the Client interactively (in full debug mode)"
+  echo " "
+ ;;
 esac
 return $RESP
