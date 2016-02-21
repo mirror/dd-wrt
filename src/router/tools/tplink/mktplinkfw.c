@@ -460,15 +460,6 @@ static struct board_info boards[] = {
 		.kernel_ep	= 0x80060000,
 		.rootfs_ofs	= 0xf0000,
 	}, {
-		.id		= "ARCHER-C7v1US",
-		.hw_id		= HWID_ARCHERC7_V1,
-		.area_code	= 1,
-		.hw_rev		= 1,
-		.fw_max_len	= 0x7b0000,
-		.kernel_la	= 0x80060000,
-		.kernel_ep	= 0x80060000,
-		.rootfs_ofs	= 0xf0000,
-	}, {
 		.id		= "ARCHER-C7v1",
 		.hw_id		= HWID_ARCHERC7_V1,
 		.hw_rev		= 1,
@@ -509,15 +500,6 @@ static struct board_info boards[] = {
 		.kernel_ep	= 0x80060000,
 		.rootfs_ofs	= 0xf0000,
 	}, {
-		.id		= "ARCHER-C7v2US",
-		.hw_id		= HWID_ARCHERC7_V2,
-		.hw_rev		= 1,
-		.area_code	= 1,
-		.fw_max_len	= 0xfb0000,
-		.kernel_la	= 0x80060000,
-		.kernel_ep	= 0x80060000,
-		.rootfs_ofs	= 0xf0000,
-	}, {
 		.id		= "ARCHER-C5v1",
 		.hw_id		= HWID_ARCHERC5_V1,
 		.hw_rev		= 1,
@@ -534,27 +516,9 @@ static struct board_info boards[] = {
 		.kernel_ep	= 0x80060000,
 		.rootfs_ofs	= 0xf0000,
 	}, {
-		.id		= "ARCHER-C5v1US",
-		.hw_id		= HWID_ARCHERC5_V1,
-		.area_code	= 1,
-		.hw_rev		= 1,
-		.fw_max_len	= 0xfb0000,
-		.kernel_la	= 0x80060000,
-		.kernel_ep	= 0x80060000,
-		.rootfs_ofs	= 0xf0000,
-	}, {
 		.id		= "TL-WDR4300",
 		.hw_id		= HWID_TL_WDR4300_V1,
 		.hw_rev		= 1,
-		.fw_max_len	= 0x7b0000,
-		.kernel_la	= 0x80060000,
-		.kernel_ep	= 0x80060000,
-		.rootfs_ofs	= 0x100000,
-	}, {
-		.id		= "TL-WDR4300_US",
-		.hw_id		= HWID_TL_WDR4300_V1,
-		.hw_rev		= 1,
-		.area_code	= 1,
 		.fw_max_len	= 0x7b0000,
 		.kernel_la	= 0x80060000,
 		.kernel_ep	= 0x80060000,
@@ -587,24 +551,6 @@ static struct board_info boards[] = {
 		.id		= "TL-WDR3600",
 		.hw_id		= HWID_TL_WDR3600_V1,
 		.hw_rev		= 1,
-		.fw_max_len	= 0x7b0000,
-		.kernel_la	= 0x80060000,
-		.kernel_ep	= 0x80060000,
-		.rootfs_ofs	= 0x100000,
-	}, {
-		.id		= "TL-WDR3600_US",
-		.hw_id		= HWID_TL_WDR3600_V1,
-		.hw_rev		= 1,
-		.area_code	= 1,
-		.fw_max_len	= 0x7b0000,
-		.kernel_la	= 0x80060000,
-		.kernel_ep	= 0x80060000,
-		.rootfs_ofs	= 0x100000,
-	}, {
-		.id		= "TL-WDR3500_US",
-		.hw_id		= HWID_TL_WDR3500_V1,
-		.hw_rev		= 1,
-		.area_code	= 1,
 		.fw_max_len	= 0x7b0000,
 		.kernel_la	= 0x80060000,
 		.kernel_ep	= 0x80060000,
@@ -809,6 +755,7 @@ static int check_options(void)
 	return 0;
 }
 static int trunkfile=0;
+unsigned int area_code = 0;
 
 static void fill_header(char *buf, int len)
 {
@@ -822,6 +769,8 @@ static void fill_header(char *buf, int len)
 	hdr->hw_id = HOST_TO_BE32(board->hw_id);
 	hdr->hw_rev = HOST_TO_BE32(board->hw_rev);
 	hdr->area_code = HOST_TO_BE32(board->area_code);
+	if (area_code)
+	    hdr->area_code = HOST_TO_BE32(area_code);
 	
 	if (boot_info.file_size == 0)
 		memcpy(hdr->md5sum1, md5salt_normal, sizeof(hdr->md5sum1));
@@ -938,7 +887,7 @@ int main(int argc, char *argv[])
 	while ( 1 ) {
 		int c;
 
-		c = getopt(argc, argv, "B:V:N:ck:r:o:v:h:t::");
+		c = getopt(argc, argv, "B:V:N:ck:r:o:u:v:h:t::");
 		if (c == -1)
 			break;
 
@@ -963,6 +912,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'o':
 			ofname = optarg;
+			break;
+		case 'u':
+			area_code = 1;
 			break;
 		case 'v':
 			fw_ver = optarg;
