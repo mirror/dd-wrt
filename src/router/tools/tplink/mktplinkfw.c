@@ -484,6 +484,14 @@ static struct board_info boards[] = {
 		.kernel_ep	= 0x80060000,
 		.rootfs_ofs	= 0xf0000,
 	}, {
+		.id		= "TL-WR710Nv2.1",
+		.hw_id		= HWID_TL_WR710N_V2,
+		.hw_rev		= 2,
+		.fw_max_len	= 0x3c0000,
+		.kernel_la	= 0x80060000,
+		.kernel_ep	= 0x80060000,
+		.rootfs_ofs	= 0xf0000,
+	}, {
 		.id		= "ARCHER-C7v2",
 		.hw_id		= HWID_ARCHERC7_V2,
 		.hw_rev		= 1,
