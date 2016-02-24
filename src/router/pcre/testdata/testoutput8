@@ -1273,12 +1273,12 @@ No match
     ething
 No match
 
-/^\Ѓ/
-    Ѓ
+/^\пїЅ/
+    пїЅ
  0: \x81
 
-/^я/
-    я
+/^пїЅ/
+    пїЅ
  0: \xff
 
 /^[0-9]+$/
@@ -6176,24 +6176,24 @@ No match
     aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa 
 No match
     
-/(?i)reg(?:ul(?:[aд]|ae)r|ex)/
+/(?i)reg(?:ul(?:[aпїЅ]|ae)r|ex)/
     REGular
  0: REGular
     regulaer
  0: regulaer
     Regex  
  0: Regex
-    regulдr 
+    regulпїЅr 
  0: regul\xe4r
 
-/Ежед[а-яА-Я]+/
-    Ежеда
+/пїЅпїЅпїЅпїЅ[пїЅ-пїЅпїЅ-пїЅ]+/
+    пїЅпїЅпїЅпїЅпїЅ
  0: \xc5\xe6\xe5\xe4\xe0
-    Ежедя
+    пїЅпїЅпїЅпїЅпїЅ
  0: \xc5\xe6\xe5\xe4\xff
-    ЕжедА
+    пїЅпїЅпїЅпїЅпїЅ
  0: \xc5\xe6\xe5\xe4\xc0
-    ЕжедЯ
+    пїЅпїЅпїЅпїЅпїЅ
  0: \xc5\xe6\xe5\xe4\xdf
 
 /(?<=Z)X./
@@ -7232,7 +7232,7 @@ No options
 No first char
 No need char
 Subject length lower bound = 3
-Starting byte set: a d x 
+Starting chars: a d x 
     terhjk;abcdaadsfe
  0: abc
     the quick xyz brown fox 
@@ -7776,5 +7776,19 @@ Matched, but offsets vector is too small to show all matches
  0: aaaa
  1: aaa
  2: aa
+
+'\A(?:[^\"]++|\"(?:[^\"]*+|\"\")*+\")++'
+    NON QUOTED \"QUOT\"\"ED\" AFTER \"NOT MATCHED
+ 0: NON QUOTED "QUOT""ED" AFTER 
+
+'\A(?:[^\"]++|\"(?:[^\"]++|\"\")*+\")++'
+    NON QUOTED \"QUOT\"\"ED\" AFTER \"NOT MATCHED
+ 0: NON QUOTED "QUOT""ED" AFTER 
+
+/(?(?!)a|b)/
+    bbb
+ 0: b
+    aaa 
+No match
 
 /-- End of testinput8 --/
