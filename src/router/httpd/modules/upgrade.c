@@ -153,7 +153,7 @@ static char *nv64k[] = {
 
 static int checkmagic(char *magic, char *check[])
 {
-	int cnt=0;
+	int cnt = 0;
 	while (check[cnt]) {
 		if (!memcmp(magic, check[cnt], 4))
 			return 0;
@@ -268,13 +268,18 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 			if (!strncmp(buf, "UBI#", 4)) {	// check for "UBI#"
 				char *write_argv_buf[8];
 				write_argv_buf[0] = "mtd";
-				write_argv_buf[1] = "-e";
-				write_argv_buf[2] = "/dev/mtd2";
-				write_argv_buf[3] = "-f";
-				write_argv_buf[4] = "write";
-				write_argv_buf[5] = upload_fifo;
-				write_argv_buf[6] = "rootfs";
-				write_argv_buf[7] = NULL;
+				write_argv_buf[1] = "erase";
+				write_argv_buf[2] = "rootfs";
+				write_argv_buf[3] = NULL;
+				fprintf(stderr, "erase nandflash\n");
+				_evalpid(write_argv_buf, NULL, 0, &pid);
+
+				write_argv_buf[0] = "mtd";
+				write_argv_buf[1] = "-f";
+				write_argv_buf[2] = "write";
+				write_argv_buf[3] = upload_fifo;
+				write_argv_buf[4] = "rootfs";
+				write_argv_buf[5] = NULL;
 				if (!mktemp(upload_fifo) || mkfifo(upload_fifo, S_IRWXU) < 0 || (ret = _evalpid(write_argv_buf, NULL, 0, &pid))
 				    || !(fifo = fopen(upload_fifo, "w"))) {
 					if (!ret)
