@@ -3,10 +3,10 @@
     
 < forbid W 
 
-/ÃÃÃxxx/8?DZSS
+/ï¿½ï¿½ï¿½xxx/8?DZSS
 
 /abc/8
-    Ã]
+    ï¿½]
 
 /X(\C{3})/8
     X\x{11234}Y
@@ -207,7 +207,7 @@ correctly, but that messes up comparisons). --/
     CDBABC
     \x{2000}ABC 
 
-/\R*A/SI8
+/\R*A/SI8<bsr_unicode>
     CDBABC
     \x{2028}A  
 
@@ -255,7 +255,7 @@ correctly, but that messes up comparisons). --/
     \x{10000}ab\>4
     \x{10000}ab\>5
 
-/í¼€/8
+/ï¿½/8
 
 /\w+\x{C4}/8BZ
     a\x{C4}\x{C4}

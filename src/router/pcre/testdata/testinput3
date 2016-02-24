@@ -1,26 +1,29 @@
-/-- This set of tests checks local-specific features, using the fr_FR locale. 
-    It is not Perl-compatible. There is different version called wintestinput3
-  f  or use on Windows, where the locale is called "french". --/
-  
+/-- This set of tests checks local-specific features, using the "fr_FR" locale. 
+    It is not Perl-compatible. When run via RunTest, the locale is edited to
+    be whichever of "fr_FR", "french", or "fr" is found to exist. There is
+    different version of this file called wintestinput3 for use on Windows,
+    where the locale is called "french" and the tests are run using
+    RunTest.bat. --/
+
 < forbid 8W 
 
 /^[\w]+/
     *** Failers
-    École
+    ï¿½cole
 
 /^[\w]+/Lfr_FR
-    École
+    ï¿½cole
 
 /^[\w]+/
     *** Failers
-    École
+    ï¿½cole
 
 /^[\W]+/
-    École
+    ï¿½cole
 
 /^[\W]+/Lfr_FR
     *** Failers
-    École
+    ï¿½cole
 
 /[\b]/
     \b
@@ -34,39 +37,39 @@
 
 /^\w+/
     *** Failers
-    École
+    ï¿½cole
 
 /^\w+/Lfr_FR
-    École
+    ï¿½cole
 
 /(.+)\b(.+)/
-    École
+    ï¿½cole
 
 /(.+)\b(.+)/Lfr_FR
     *** Failers
-    École
+    ï¿½cole
 
-/École/i
-    École
+/ï¿½cole/i
+    ï¿½cole
     *** Failers
-    école
+    ï¿½cole
 
-/École/iLfr_FR
-    École
-    école
+/ï¿½cole/iLfr_FR
+    ï¿½cole
+    ï¿½cole
 
 /\w/IS
 
 /\w/ISLfr_FR
 
 /^[\xc8-\xc9]/iLfr_FR
-    École
-    école
+    ï¿½cole
+    ï¿½cole
 
 /^[\xc8-\xc9]/Lfr_FR
-    École
+    ï¿½cole
     *** Failers 
-    école
+    ï¿½cole
 
 /\W+/Lfr_FR
     >>>\xaa<<<
