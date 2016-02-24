@@ -2036,7 +2036,7 @@
 /* Whether iconv supports IGNORE */
 #undef ICONV_BROKEN_IGNORE
 
-/* Whether iconv supports IGNORE */
+/* Whether iconv supports error no or not */
 #undef ICONV_SUPPORTS_ERRNO
 
 /* */
