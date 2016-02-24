@@ -38,23 +38,29 @@ No match
 
 /-- Test \h --/
 
-/^A\ˆ/
+/^A\ï¿½/
     A B
  0: A\x20
+    A\x41B
+ 0: AA
 
 /-- Test \H --/
 
-/^A\È/
+/^A\ï¿½/
     AB
+ 0: AB
+    A\x42B
  0: AB
     ** Fail
 No match
     A B
 No match
+    A\x41B
+No match
 
 /-- Test \R --/
 
-/^A\Ù/
+/^A\ï¿½/
     A\x15B
  0: A\x15
     A\x0dB
@@ -72,7 +78,7 @@ No match
 
 /-- Test \v --/
 
-/^A\¥/
+/^A\ï¿½/
     A\x15B
  0: A\x15
     A\x0dB
@@ -90,7 +96,7 @@ No match
 
 /-- Test \V --/
 
-/^A\å/
+/^A\ï¿½/
     A B
  0: A\x20
     ** Fail
@@ -111,13 +117,13 @@ for DFA matching (otherwise it may show multiple matches). --/
 
 /-- Test \h+ --/
 
-/^A(?>\ˆ+)/
+/^A(?>\ï¿½+)/
     A B
  0: A\x20
 
 /-- Test \H+ --/
 
-/^A(?>\È+)/
+/^A(?>\ï¿½+)/
     AB
  0: AB
     ** Fail
@@ -127,7 +133,7 @@ No match
 
 /-- Test \R+ --/
 
-/^A(?>\Ù+)/
+/^A(?>\ï¿½+)/
     A\x15B
  0: A\x15
     A\x0dB
@@ -145,7 +151,7 @@ No match
 
 /-- Test \v+ --/
 
-/^A(?>\¥+)/
+/^A(?>\ï¿½+)/
     A\x15B
  0: A\x15
     A\x0dB
@@ -163,7 +169,7 @@ No match
 
 /-- Test \V+ --/
 
-/^A(?>\å+)/
+/^A(?>\ï¿½+)/
     A B
  0: A\x20B
     ** Fail

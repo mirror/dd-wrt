@@ -16,7 +16,7 @@
   +----------------------------------------------------------------------+
 */
 
-/* $Id: c268059b54296d6ea21e8b1178f40a28a88f0024 $ */
+/* $Id: 99c293c6d7426a83c60d234956aa10f0b56218fb $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -174,7 +174,7 @@ static int php_zip_extract_file(struct zip * za, char *dest, char *file, int fil
 
 	/* it is a directory only, see #40228 */
 	if (path_cleaned_len > 1 && IS_SLASH(path_cleaned[path_cleaned_len - 1])) {
-		len = spprintf(&file_dirname_fullpath, 0, "%s/%s", dest, file);
+		len = spprintf(&file_dirname_fullpath, 0, "%s/%s", dest, path_cleaned);
 		is_dir_only = 1;
 	} else {
 		memcpy(file_dirname, path_cleaned, path_cleaned_len);
@@ -1865,7 +1865,7 @@ static ZIPARCHIVE_METHOD(addFromString)
 	}
 fail:
 	zip_source_free(zs);
-	RETURN_FALSE;	
+	RETURN_FALSE;
 }
 /* }}} */
 
@@ -2874,7 +2874,7 @@ static PHP_MINFO_FUNCTION(zip)
 	php_info_print_table_start();
 
 	php_info_print_table_row(2, "Zip", "enabled");
-	php_info_print_table_row(2, "Extension Version","$Id: c268059b54296d6ea21e8b1178f40a28a88f0024 $");
+	php_info_print_table_row(2, "Extension Version","$Id: 99c293c6d7426a83c60d234956aa10f0b56218fb $");
 	php_info_print_table_row(2, "Zip version", PHP_ZIP_VERSION_STRING);
 	php_info_print_table_row(2, "Libzip version", LIBZIP_VERSION);
 

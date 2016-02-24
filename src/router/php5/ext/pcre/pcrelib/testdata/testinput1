@@ -156,11 +156,11 @@
     dthing
     ething
 
-/^\Ѓ/
-    Ѓ
+/^\пїЅ/
+    пїЅ
 
-/^я/
-    я
+/^пїЅ/
+    пїЅ
 
 /^[0-9]+$/
     0
@@ -3821,17 +3821,17 @@
 /(a+)*b/
     aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa 
     
-/(?i)reg(?:ul(?:[aд]|ae)r|ex)/
+/(?i)reg(?:ul(?:[aпїЅ]|ae)r|ex)/
     REGular
     regulaer
     Regex  
-    regulдr 
+    regulпїЅr 
 
-/Ежед[а-яА-Я]+/
-    Ежеда
-    Ежедя
-    ЕжедА
-    ЕжедЯ
+/пїЅпїЅпїЅпїЅ[пїЅ-пїЅпїЅ-пїЅ]+/
+    пїЅпїЅпїЅпїЅпїЅ
+    пїЅпїЅпїЅпїЅпїЅ
+    пїЅпїЅпїЅпїЅпїЅ
+    пїЅпїЅпїЅпїЅпїЅ
 
 /(?<=Z)X./
   \x84XAZXB
@@ -5719,5 +5719,18 @@ AbcdCBefgBhiBqz
 
 /[\Q]a\E]+/
     aa]]
+
+/(?:((abcd))|(((?:(?:(?:(?:abc|(?:abcdef))))b)abcdefghi)abc)|((*ACCEPT)))/
+    1234abcd
+
+/(\2)(\1)/
+
+"Z*(|d*){216}"
+
+"(?1)(?#?'){8}(a)"
+    baaaaaaaaac
+
+"(?|(\k'Pm')|(?'Pm'))"
+    abcd
 
 /-- End of testinput1 --/
