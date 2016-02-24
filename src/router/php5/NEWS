@@ -1,5 +1,181 @@
 PHP                                                                        NEWS
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+04 Feb 2016, PHP 5.5.32
+
+- Core:
+  . Fixed bug #71039 (exec functions ignore length but look for NULL termination).
+    (Anatol)
+  . Fixed bug #71323 (Output of stream_get_meta_data can be falsified by its 
+    input). (Leo Gaspard)
+  . Fixed bug #71459 (Integer overflow in iptcembed()). (Stas)
+
+- GD:
+  . Improved the fix for bug #70976. (Remi)
+
+- PCRE:
+  . Upgraded pcrelib to 8.38. 
+
+- Phar:
+  . Fixed bug #71354 (Heap corruption in tar/zip/phar parser). (Stas)
+  . Fixed bug #71391 (NULL Pointer Dereference in phar_tar_setupmetadata()).
+    (Stas)
+  . Fixed bug #71488 (Stack overflow when decompressing tar archives). (Stas)
+
+- WDDX:
+  . Fixed bug #71335 (Type Confusion in WDDX Packet Deserialization). (Stas)
+  
+07 Jan 2015, PHP 5.5.31
+
+- FPM:
+  . Fixed bug #70755 (fpm_log.c memory leak and buffer overflow). (Stas)
+
+- GD:
+  . Fixed bug #70976 (Memory Read via gdImageRotateInterpolated Array Index
+    Out of Bounds). (emmanuel dot law at gmail dot com).
+
+- WDDX:
+  . Fixed bug #70661 (Use After Free Vulnerability in WDDX Packet Deserialization).
+    (taoguangchen at icloud dot com)
+  . Fixed bug #70741 (Session WDDX Packet Deserialization Type Confusion
+    Vulnerability). (taoguangchen at icloud dot com)
+
+- XMLRPC:
+  . Fixed bug #70728 (Type Confusion Vulnerability in PHP_to_XMLRPC_worker()).
+    (Julien)
+
+01 Oct 2015, PHP 5.5.30
+
+- Phar:
+  . Fixed bug #69720 (Null pointer dereference in phar_get_fp_offset()). (Stas)
+  . Fixed bug #70433 (Uninitialized pointer in phar_make_dirstream when zip
+    entry filename is "/"). (Stas)
+
+03 Sep 2015, PHP 5.5.29
+
+- Core:
+  . Fixed bug #70172 (Use After Free Vulnerability in unserialize()). (Stas)
+  . Fixed bug #70219 (Use after free vulnerability in session deserializer). 
+    (taoguangchen at icloud dot com)
+
+- EXIF:
+  . Fixed bug #70385 (Buffer over-read in exif_read_data with TIFF IFD tag byte
+    value of 32 bytes). (Stas) 
+
+- hash:
+  . Fixed bug #70312 (HAVAL gives wrong hashes in specific cases). (letsgolee 
+    at naver dot com)
+
+- PCRE:
+  . Fixed bug #70345 (Multiple vulnerabilities related to PCRE functions).
+    (Anatol Belski)
+
+- SOAP:
+  . Fixed bug #70388 (SOAP serialize_function_call() type confusion / RCE).
+    (Stas)
+  
+- SPL:
+  . Fixed bug #70365 (Use-after-free vulnerability in unserialize() with
+    SplObjectStorage). (taoguangchen at icloud dot com)
+  . Fixed bug #70366 (Use-after-free vulnerability in unserialize() with
+    SplDoublyLinkedList). (taoguangchen at icloud dot com)
+
+- XSLT:
+  . Fixed bug #69782 (NULL pointer dereference). (Stas)
+
+- ZIP:
+  . Fixed bug #70350 (ZipArchive::extractTo allows for directory traversal when 
+    creating directories). (neal at fb dot com)
+
+06 Aug 2015, PHP 5.5.28
+
+- Core:
+  . Fixed bug #69793 (Remotely triggerable stack exhaustion via recursive
+    method calls). (Stas)
+  . Fixed bug #69892 (Different arrays compare indentical due to integer key
+    truncation). (Nikita)
+  . Fixed bug #70002 (TS issues with temporary dir handling). (Anatol)
+  . Fixed bug #70121 (unserialize() could lead to unexpected methods execution
+    / NULL pointer deref). (Stas)
+
+- OpenSSL:
+  . Fixed bug #70014 (openssl_random_pseudo_bytes() is not cryptographically
+    secure). (Stas)
+
+- Phar:
+  . Improved fix for bug #69441. (Anatol Belski)
+  . Fixed bug #70019 (Files extracted from archive may be placed outside of 
+    destination directory). (Anatol Belski)
+
+- SOAP:
+  . Fixed bug #70081 (SoapClient info leak / null pointer dereference via
+     multiple type confusions). (Stas)
+
+- SPL:
+  . Fixed bug #70068 (Dangling pointer in the unserialization of ArrayObject
+    items). (sean.heelan)
+  . Fixed bug #70166 (Use After Free Vulnerability in unserialize() with
+    SPLArrayObject). (taoguangchen at icloud dot com)
+  . Fixed bug #70168 (Use After Free Vulnerability in unserialize() with
+    SplObjectStorage). (taoguangchen at icloud dot com)
+  . Fixed bug #70169 (Use After Free Vulnerability in unserialize() with
+    SplDoublyLinkedList). (taoguangchen at icloud dot com)
+
+9 Jul 2015, PHP 5.5.27
+
+- Core:
+  . Fixed bug #69768 (escapeshell*() doesn't cater to !). (cmb)
+  . Fixed bug #69703 (Use __builtin_clzl on PowerPC).
+    (dja at axtens dot net, Kalle)
+  . Fixed bug #69732 (can induce segmentation fault with basic php code).
+    (Dmitry)
+  . Fixed bug #69642 (Windows 10 reported as Windows 8).
+    (Christian Wenz, Anatol Belski)
+  . Fixed bug #69551 (parse_ini_file() and parse_ini_string() segmentation
+    fault). (Christoph M. Becker)
+  . Fixed bug #69781 (phpinfo() reports Professional Editions of Windows
+    7/8/8.1/10 as "Business"). (Christian Wenz)
+  . Fixed bug #69835 (phpinfo() does not report many Windows SKUs).
+    (Christian Wenz)
+  . Fixed bug #69892 (Different arrays compare indentical due to integer key
+    truncation). (Nikita)
+  . Fixed bug #69874 (Can't set empty additional_headers for mail()), regression
+    from fix to bug #68776. (Yasuo)
+
+- GD:
+  . Fixed bug #61221 (imagegammacorrect function loses alpha channel). (cmb)
+
+- Mysqlnd:
+  . Fixed bug #69669 (mysqlnd is vulnerable to BACKRONYM) (CVE-2015-3152).
+    (Andrey)
+
+- PCRE:
+  . Fixed Bug #53823 (preg_replace: * qualifier on unicode replace garbles the
+    string). (cmb)
+  . Fixed bug #69864 (Segfault in preg_replace_callback) (cmb, ab)
+
+- PDO_pgsql:
+  . Fixed bug #69752 (PDOStatement::execute() leaks memory with DML
+    Statements when closeCuror() is u). (Philip Hofstetter)
+  . Fixed bug #69362 (PDO-pgsql fails to connect if password contains a
+    leading single quote). (Matteo)
+  . Fixed bug #69344 (PDO PgSQL Incorrect binding numeric array with gaps).
+    (Matteo)
+
+- Phar:
+  . Fixed bug #69958 (Segfault in Phar::convertToData on invalid file).
+    (CVE-2015-5589) (Stas)
+  . Fixed bug #69923 (Buffer overflow and stack smashing error in 
+    phar_fix_filepath). (CVE-2015-5590) (Stas)
+
+- SimpleXML:
+  . Refactored the fix for bug #66084 (simplexml_load_string() mangles empty
+    node name). (Christoph Michael Becker)
+
+- SPL:
+  . Fixed bug #69737 (Segfault when SplMinHeap::compare produces fatal error).
+    (Stas)
+  . Fixed bug #67805 (SplFileObject setMaxLineLength). (Willian Gustavo Veiga).
+
 11 Jun 2015, PHP 5.5.26
 
 - Core:
@@ -9,13 +185,11 @@ PHP                                                                        NEWS
     (Julien)
   . Fixed bug #69628 (complex GLOB_BRACE fails on Windows).
     (Christoph M. Becker)
+  . Improved fix for bug #69545 (Integer overflow in ftp_genlist() resulting in
+    heap overflow). (CVE-2015-4643) (Max Spelsberg)
   . Fixed bug #69646 (OS command injection vulnerability in escapeshellarg).
-    (Anatol Belski)
+    (CVE-2015-4642) (Anatol Belski)
   . Fixed bug #69719 (Incorrect handling of paths with NULs). (Stas)
-
-- FTP:
-  . Improved fix for bug #69545 (Integer overflow in ftp_genlist()
-    resulting in heap overflow). (Max Spelsberg)
 
 - GD:
   . Fixed bug #69479 (GD fails to build with newer libvpx). (Remi)
@@ -33,10 +207,6 @@ PHP                                                                        NEWS
 - MCrypt:
   . Added file descriptor caching to mcrypt_create_iv() (Leigh)
 
-- Opcache
-  . Fixed bug #69549 (Memory leak with opcache.optimization_level=0xFFFFFFFF).
-    (Laruence, Dmitry)
-
 - PCRE:
   . Upgraded pcrelib to 8.37. (CVE-2015-2325, CVE-2015-2326)
 
@@ -45,7 +215,11 @@ PHP                                                                        NEWS
     (Matteo Bernardini, Remi)
 
 - Postgres:
-  . Fixed bug #69667 (segfault in php_pgsql_meta_data). (Remi)
+  . Fixed bug #69667 (segfault in php_pgsql_meta_data). (CVE-2015-4644) (Remi)
+
+- Opcache
+  . Fixed bug #69549 (Memory leak with opcache.optimization_level=0xFFFFFFFF).
+    (Laruence, Dmitry)
 
 - Sqlite3:
   . Upgrade bundled sqlite to 3.8.10.2. (CVE-2015-3414, CVE-2015-3415,
@@ -263,7 +437,8 @@ PHP                                                                        NEWS
 
 - SOAP:
   . Fixed bug #69085 (SoapClient's __call() type confusion through
-    unserialize()). (andrea dot palazzo at truel dot it, Laruence)
+    unserialize()). (CVE-2015-4147, CVE-2015-4148)
+	(andrea dot palazzo at truel dot it, Laruence)
 
 - SPL:
   . Fixed bug #69108 ("Segmentation fault" when (de)serializing

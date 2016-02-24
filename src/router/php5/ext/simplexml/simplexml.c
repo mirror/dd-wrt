@@ -18,7 +18,7 @@
   +----------------------------------------------------------------------+
 */
 
-/* $Id: e0de6ee7ef8280a12d77d76f1f971a944cbc8090 $ */
+/* $Id: 6b8e23a01a85046737ef7d31346da5164505c179 $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -1129,7 +1129,7 @@ static HashTable * sxe_get_prop_hash(zval *object, int is_debug TSRMLS_DC) /* {{
 			node = NULL;
 		} else if (sxe->iter.type != SXE_ITER_CHILD) {
 
-			if ( !node->children || !node->parent || !node->next || node->children->next || node->children->children || node->parent->children == node->parent->last ) {
+			if ( sxe->iter.type == SXE_ITER_NONE || !node->children || !node->parent || node->children->next || node->children->children || node->parent->children == node->parent->last ) {
 				node = node->children;
 			} else {
 				iter_data = sxe->iter.data;
@@ -2658,7 +2658,7 @@ PHP_MINFO_FUNCTION(simplexml)
 {
 	php_info_print_table_start();
 	php_info_print_table_header(2, "Simplexml support", "enabled");
-	php_info_print_table_row(2, "Revision", "$Id: e0de6ee7ef8280a12d77d76f1f971a944cbc8090 $");
+	php_info_print_table_row(2, "Revision", "$Id: 6b8e23a01a85046737ef7d31346da5164505c179 $");
 	php_info_print_table_row(2, "Schema support",
 #ifdef LIBXML_SCHEMAS_ENABLED
 		"enabled");

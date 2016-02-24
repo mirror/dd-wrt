@@ -39,8 +39,6 @@
 
 #include "php_iconv.h"
 
-#undef LIBICONV_PLUG
-
 #ifdef HAVE_ICONV
 
 #ifdef PHP_ICONV_H_PATH
