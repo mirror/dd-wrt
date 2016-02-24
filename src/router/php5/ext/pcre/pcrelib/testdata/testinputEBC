@@ -27,19 +27,22 @@ in EBCDIC, but can be specified as escapes. --/
 
 /-- Test \h --/
 
-/^A\ˆ/
+/^A\ï¿½/
     A B
+    A\x41B
 
 /-- Test \H --/
 
-/^A\È/
+/^A\ï¿½/
     AB
+    A\x42B
     ** Fail
     A B
+    A\x41B
 
 /-- Test \R --/
 
-/^A\Ù/
+/^A\ï¿½/
     A\x15B
     A\x0dB
     A\x25B
@@ -50,7 +53,7 @@ in EBCDIC, but can be specified as escapes. --/
 
 /-- Test \v --/
 
-/^A\¥/
+/^A\ï¿½/
     A\x15B
     A\x0dB
     A\x25B
@@ -61,7 +64,7 @@ in EBCDIC, but can be specified as escapes. --/
 
 /-- Test \V --/
 
-/^A\å/
+/^A\ï¿½/
     A B
     ** Fail
     A\x15B
@@ -75,19 +78,19 @@ for DFA matching (otherwise it may show multiple matches). --/
 
 /-- Test \h+ --/
 
-/^A(?>\ˆ+)/
+/^A(?>\ï¿½+)/
     A B
 
 /-- Test \H+ --/
 
-/^A(?>\È+)/
+/^A(?>\ï¿½+)/
     AB
     ** Fail
     A B
 
 /-- Test \R+ --/
 
-/^A(?>\Ù+)/
+/^A(?>\ï¿½+)/
     A\x15B
     A\x0dB
     A\x25B
@@ -98,7 +101,7 @@ for DFA matching (otherwise it may show multiple matches). --/
 
 /-- Test \v+ --/
 
-/^A(?>\¥+)/
+/^A(?>\ï¿½+)/
     A\x15B
     A\x0dB
     A\x25B
@@ -109,7 +112,7 @@ for DFA matching (otherwise it may show multiple matches). --/
 
 /-- Test \V+ --/
 
-/^A(?>\å+)/
+/^A(?>\ï¿½+)/
     A B
     ** Fail
     A\x15B

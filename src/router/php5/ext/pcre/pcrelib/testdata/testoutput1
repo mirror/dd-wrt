@@ -303,12 +303,12 @@ No match
     ething
 No match
 
-/^\Ѓ/
-    Ѓ
+/^\пїЅ/
+    пїЅ
  0: \x81
 
-/^я/
-    я
+/^пїЅ/
+    пїЅ
  0: \xff
 
 /^[0-9]+$/
@@ -6247,24 +6247,24 @@ No match
     aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa 
 No match
     
-/(?i)reg(?:ul(?:[aд]|ae)r|ex)/
+/(?i)reg(?:ul(?:[aпїЅ]|ae)r|ex)/
     REGular
  0: REGular
     regulaer
  0: regulaer
     Regex  
  0: Regex
-    regulдr 
+    regulпїЅr 
  0: regul\xe4r
 
-/Ежед[а-яА-Я]+/
-    Ежеда
+/пїЅпїЅпїЅпїЅ[пїЅ-пїЅпїЅ-пїЅ]+/
+    пїЅпїЅпїЅпїЅпїЅ
  0: \xc5\xe6\xe5\xe4\xe0
-    Ежедя
+    пїЅпїЅпїЅпїЅпїЅ
  0: \xc5\xe6\xe5\xe4\xff
-    ЕжедА
+    пїЅпїЅпїЅпїЅпїЅ
  0: \xc5\xe6\xe5\xe4\xc0
-    ЕжедЯ
+    пїЅпїЅпїЅпїЅпїЅ
  0: \xc5\xe6\xe5\xe4\xdf
 
 /(?<=Z)X./
@@ -9410,5 +9410,28 @@ No match
 /[\Q]a\E]+/
     aa]]
  0: aa]]
+
+/(?:((abcd))|(((?:(?:(?:(?:abc|(?:abcdef))))b)abcdefghi)abc)|((*ACCEPT)))/
+    1234abcd
+ 0: 
+ 1: <unset>
+ 2: <unset>
+ 3: <unset>
+ 4: <unset>
+ 5: 
+
+/(\2)(\1)/
+
+"Z*(|d*){216}"
+
+"(?1)(?#?'){8}(a)"
+    baaaaaaaaac
+ 0: aaaaaaaaa
+ 1: a
+
+"(?|(\k'Pm')|(?'Pm'))"
+    abcd
+ 0: 
+ 1: 
 
 /-- End of testinput1 --/

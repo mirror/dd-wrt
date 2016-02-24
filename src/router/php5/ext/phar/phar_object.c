@@ -1252,7 +1252,7 @@ PHP_METHOD(Phar, __construct)
 	INIT_PZVAL(&arg2);
 	ZVAL_LONG(&arg2, flags);
 
-	zend_call_method_with_2_params(&zobj, Z_OBJCE_P(zobj), 
+	zend_call_method_with_2_params(&zobj, Z_OBJCE_P(zobj),
 		&spl_ce_RecursiveDirectoryIterator->constructor, "__construct", NULL, &arg1, &arg2);
 
 	if (!phar_data->is_persistent) {
@@ -1276,7 +1276,7 @@ PHP_METHOD(Phar, getSupportedSignatures)
 	if (zend_parse_parameters_none() == FAILURE) {
 		return;
 	}
-	
+
 	array_init(return_value);
 
 	add_next_index_stringl(return_value, "MD5", 3, 1);
@@ -1303,7 +1303,7 @@ PHP_METHOD(Phar, getSupportedCompression)
 	if (zend_parse_parameters_none() == FAILURE) {
 		return;
 	}
-	
+
 	array_init(return_value);
 	phar_request_initialize(TSRMLS_C);
 
@@ -1548,7 +1548,7 @@ phar_spl_fileinfo:
 			}
 			return ZEND_HASH_APPLY_STOP;
 		}
-		
+
 		base = temp;
 		base_len = strlen(base);
 
@@ -1737,7 +1737,7 @@ after_open_fp:
 /* {{{ proto array Phar::buildFromDirectory(string base_dir[, string regex])
  * Construct a phar archive from an existing directory, recursively.
  * Optional second parameter is a regular expression for filtering directory contents.
- * 
+ *
  * Return value is an array mapping phar index to actual files added.
  */
 PHP_METHOD(Phar, buildFromDirectory)
@@ -1773,7 +1773,7 @@ PHP_METHOD(Phar, buildFromDirectory)
 	INIT_PZVAL(&arg2);
 	ZVAL_LONG(&arg2, SPL_FILE_DIR_SKIPDOTS|SPL_FILE_DIR_UNIXPATHS);
 
-	zend_call_method_with_2_params(&iter, spl_ce_RecursiveDirectoryIterator, 
+	zend_call_method_with_2_params(&iter, spl_ce_RecursiveDirectoryIterator,
 			&spl_ce_RecursiveDirectoryIterator->constructor, "__construct", NULL, &arg, &arg2);
 
 	if (EG(exception)) {
@@ -1790,7 +1790,7 @@ PHP_METHOD(Phar, buildFromDirectory)
 		RETURN_FALSE;
 	}
 
-	zend_call_method_with_1_params(&iteriter, spl_ce_RecursiveIteratorIterator, 
+	zend_call_method_with_1_params(&iteriter, spl_ce_RecursiveIteratorIterator,
 			&spl_ce_RecursiveIteratorIterator->constructor, "__construct", NULL, iter);
 
 	if (EG(exception)) {
@@ -1815,7 +1815,7 @@ PHP_METHOD(Phar, buildFromDirectory)
 		INIT_PZVAL(&arg2);
 		ZVAL_STRINGL(&arg2, regex, regex_len, 0);
 
-		zend_call_method_with_2_params(&regexiter, spl_ce_RegexIterator, 
+		zend_call_method_with_2_params(&regexiter, spl_ce_RegexIterator,
 			&spl_ce_RegexIterator->constructor, "__construct", NULL, iteriter, &arg2);
 	}
 
@@ -1936,7 +1936,7 @@ PHP_METHOD(Phar, buildFromIterator)
 PHP_METHOD(Phar, count)
 {
 	PHAR_ARCHIVE_OBJECT();
-	
+
 	if (zend_parse_parameters_none() == FAILURE) {
 		return;
 	}
@@ -2017,9 +2017,10 @@ static int phar_copy_file_contents(phar_entry_info *entry, php_stream *fp TSRMLS
 }
 /* }}} */
 
-static zval *phar_rename_archive(phar_archive_data *phar, char *ext, zend_bool compress TSRMLS_DC) /* {{{ */
+static zval *phar_rename_archive(phar_archive_data **sphar, char *ext, zend_bool compress TSRMLS_DC) /* {{{ */
 {
 	const char *oldname = NULL;
+	phar_archive_data *phar = *sphar;
 	char *oldpath = NULL;
 	char *basename = NULL, *basepath = NULL;
 	char *newname = NULL, *newpath = NULL;
@@ -2101,7 +2102,7 @@ static zval *phar_rename_archive(phar_archive_data *phar, char *ext, zend_bool c
 	spprintf(&newname, 0, "%s.%s", strtok(basename, "."), ext);
 	efree(basename);
 
-	
+
 
 	basepath = estrndup(oldpath, (strlen(oldpath) - oldname_len));
 	phar->fname_len = spprintf(&newpath, 0, "%s%s", basepath, newname);
@@ -2126,7 +2127,9 @@ static zval *phar_rename_archive(phar_archive_data *phar, char *ext, zend_bool c
 				(*pphar)->fp = phar->fp;
 				phar->fp = NULL;
 				phar_destroy_phar_data(phar TSRMLS_CC);
+				*sphar = NULL;
 				phar = *pphar;
+				*sphar = NULL;
 				phar->refcount++;
 				newpath = oldpath;
 				goto its_ok;
@@ -2333,15 +2336,19 @@ no_copy:
 		phar_add_virtual_dirs(phar, newentry.filename, newentry.filename_len TSRMLS_CC);
 	}
 
-	if ((ret = phar_rename_archive(phar, ext, 0 TSRMLS_CC))) {
+	if ((ret = phar_rename_archive(&phar, ext, 0 TSRMLS_CC))) {
 		return ret;
 	} else {
-		zend_hash_destroy(&(phar->manifest));
-		zend_hash_destroy(&(phar->mounted_dirs));
-		zend_hash_destroy(&(phar->virtual_dirs));
-		php_stream_close(phar->fp);
-		efree(phar->fname);
-		efree(phar);
+		if(phar != NULL) {
+			zend_hash_destroy(&(phar->manifest));
+			zend_hash_destroy(&(phar->mounted_dirs));
+			zend_hash_destroy(&(phar->virtual_dirs));
+			if (phar->fp) {
+				php_stream_close(phar->fp);
+			}
+			efree(phar->fname);
+			efree(phar);
+		}
 		return NULL;
 	}
 }
@@ -2559,7 +2566,7 @@ PHP_METHOD(Phar, convertToData)
 PHP_METHOD(Phar, isCompressed)
 {
 	PHAR_ARCHIVE_OBJECT();
-	
+
 	if (zend_parse_parameters_none() == FAILURE) {
 		return;
 	}
@@ -2583,7 +2590,7 @@ PHP_METHOD(Phar, isWritable)
 {
 	php_stream_statbuf ssb;
 	PHAR_ARCHIVE_OBJECT();
-	
+
 	if (zend_parse_parameters_none() == FAILURE) {
 		return;
 	}
@@ -2661,7 +2668,7 @@ PHP_METHOD(Phar, delete)
 PHP_METHOD(Phar, getAlias)
 {
 	PHAR_ARCHIVE_OBJECT();
-	
+
 	if (zend_parse_parameters_none() == FAILURE) {
 		return;
 	}
@@ -2678,7 +2685,7 @@ PHP_METHOD(Phar, getAlias)
 PHP_METHOD(Phar, getPath)
 {
 	PHAR_ARCHIVE_OBJECT();
-	
+
 	if (zend_parse_parameters_none() == FAILURE) {
 		return;
 	}
@@ -2794,7 +2801,7 @@ valid_alias:
 PHP_METHOD(Phar, getVersion)
 {
 	PHAR_ARCHIVE_OBJECT();
-	
+
 	if (zend_parse_parameters_none() == FAILURE) {
 		return;
 	}
@@ -2809,7 +2816,7 @@ PHP_METHOD(Phar, getVersion)
 PHP_METHOD(Phar, startBuffering)
 {
 	PHAR_ARCHIVE_OBJECT();
-	
+
 	if (zend_parse_parameters_none() == FAILURE) {
 		return;
 	}
@@ -2824,7 +2831,7 @@ PHP_METHOD(Phar, startBuffering)
 PHP_METHOD(Phar, isBuffering)
 {
 	PHAR_ARCHIVE_OBJECT();
-	
+
 	if (zend_parse_parameters_none() == FAILURE) {
 		return;
 	}
@@ -2841,7 +2848,7 @@ PHP_METHOD(Phar, stopBuffering)
 	char *error;
 
 	PHAR_ARCHIVE_OBJECT();
-	
+
 	if (zend_parse_parameters_none() == FAILURE) {
 		return;
 	}
@@ -3076,7 +3083,7 @@ PHP_METHOD(Phar, setSignatureAlgorithm)
 PHP_METHOD(Phar, getSignature)
 {
 	PHAR_ARCHIVE_OBJECT();
-	
+
 	if (zend_parse_parameters_none() == FAILURE) {
 		return;
 	}
@@ -3120,7 +3127,7 @@ PHP_METHOD(Phar, getSignature)
 PHP_METHOD(Phar, getModified)
 {
 	PHAR_ARCHIVE_OBJECT();
-	
+
 	if (zend_parse_parameters_none() == FAILURE) {
 		return;
 	}
@@ -3382,7 +3389,7 @@ PHP_METHOD(Phar, decompressFiles)
 {
 	char *error;
 	PHAR_ARCHIVE_OBJECT();
-	
+
 	if (zend_parse_parameters_none() == FAILURE) {
 		return;
 	}
@@ -3899,7 +3906,7 @@ PHP_METHOD(Phar, getStub)
 	phar_entry_info *stub;
 
 	PHAR_ARCHIVE_OBJECT();
-	
+
 	if (zend_parse_parameters_none() == FAILURE) {
 		return;
 	}
@@ -4002,7 +4009,7 @@ PHP_METHOD(Phar, hasMetadata)
 PHP_METHOD(Phar, getMetadata)
 {
 	PHAR_ARCHIVE_OBJECT();
-	
+
 	if (zend_parse_parameters_none() == FAILURE) {
 		return;
 	}
@@ -4110,6 +4117,9 @@ static int phar_extract_file(zend_bool overwrite, phar_entry_info *entry, char *
 	char *fullpath;
 	const char *slash;
 	mode_t mode;
+	cwd_state new_state;
+	char *filename;
+	size_t filename_len;
 
 	if (entry->is_mounted) {
 		/* silently ignore mounted entries */
@@ -4119,8 +4129,39 @@ static int phar_extract_file(zend_bool overwrite, phar_entry_info *entry, char *
 	if (entry->filename_len >= sizeof(".phar")-1 && !memcmp(entry->filename, ".phar", sizeof(".phar")-1)) {
 		return SUCCESS;
 	}
+	/* strip .. from path and restrict it to be under dest directory */
+	new_state.cwd = (char*)malloc(2);
+	new_state.cwd[0] = DEFAULT_SLASH;
+	new_state.cwd[1] = '\0';
+	new_state.cwd_length = 1;
+	if (virtual_file_ex(&new_state, entry->filename, NULL, CWD_EXPAND TSRMLS_CC) != 0 ||
+			new_state.cwd_length <= 1) {
+		if (EINVAL == errno && entry->filename_len > 50) {
+			char *tmp = estrndup(entry->filename, 50);
+			spprintf(error, 4096, "Cannot extract \"%s...\" to \"%s...\", extracted filename is too long for filesystem", tmp, dest);
+			efree(tmp);
+		} else {
+			spprintf(error, 4096, "Cannot extract \"%s\", internal error", entry->filename);
+		}
+		free(new_state.cwd);
+		return FAILURE;
+	}
+	filename = new_state.cwd + 1;
+	filename_len = new_state.cwd_length - 1;
+#ifdef PHP_WIN32
+	/* unixify the path back, otherwise non zip formats might be broken */
+	{
+		int cnt = filename_len;
 
-	len = spprintf(&fullpath, 0, "%s/%s", dest, entry->filename);
+		do {
+			if ('\\' == filename[cnt]) {
+				filename[cnt] = '/';
+			}
+		} while (cnt-- >= 0);
+	}
+#endif
+
+	len = spprintf(&fullpath, 0, "%s/%s", dest, filename);
 
 	if (len >= MAXPATHLEN) {
 		char *tmp;
@@ -4134,18 +4175,21 @@ static int phar_extract_file(zend_bool overwrite, phar_entry_info *entry, char *
 			spprintf(error, 4096, "Cannot extract \"%s\" to \"%s...\", extracted filename is too long for filesystem", entry->filename, fullpath);
 		}
 		efree(fullpath);
+		free(new_state.cwd);
 		return FAILURE;
 	}
 
 	if (!len) {
 		spprintf(error, 4096, "Cannot extract \"%s\", internal error", entry->filename);
 		efree(fullpath);
+		free(new_state.cwd);
 		return FAILURE;
 	}
 
 	if (PHAR_OPENBASEDIR_CHECKPATH(fullpath)) {
 		spprintf(error, 4096, "Cannot extract \"%s\" to \"%s\", openbasedir/safe mode restrictions in effect", entry->filename, fullpath);
 		efree(fullpath);
+		free(new_state.cwd);
 		return FAILURE;
 	}
 
@@ -4153,14 +4197,15 @@ static int phar_extract_file(zend_bool overwrite, phar_entry_info *entry, char *
 	if (!overwrite && SUCCESS == php_stream_stat_path(fullpath, &ssb)) {
 		spprintf(error, 4096, "Cannot extract \"%s\" to \"%s\", path already exists", entry->filename, fullpath);
 		efree(fullpath);
+		free(new_state.cwd);
 		return FAILURE;
 	}
 
 	/* perform dirname */
-	slash = zend_memrchr(entry->filename, '/', entry->filename_len);
+	slash = zend_memrchr(filename, '/', filename_len);
 
 	if (slash) {
-		fullpath[dest_len + (slash - entry->filename) + 1] = '\0';
+		fullpath[dest_len + (slash - filename) + 1] = '\0';
 	} else {
 		fullpath[dest_len] = '\0';
 	}
@@ -4170,23 +4215,27 @@ static int phar_extract_file(zend_bool overwrite, phar_entry_info *entry, char *
 			if (!php_stream_mkdir(fullpath, entry->flags & PHAR_ENT_PERM_MASK,  PHP_STREAM_MKDIR_RECURSIVE, NULL)) {
 				spprintf(error, 4096, "Cannot extract \"%s\", could not create directory \"%s\"", entry->filename, fullpath);
 				efree(fullpath);
+				free(new_state.cwd);
 				return FAILURE;
 			}
 		} else {
 			if (!php_stream_mkdir(fullpath, 0777,  PHP_STREAM_MKDIR_RECURSIVE, NULL)) {
 				spprintf(error, 4096, "Cannot extract \"%s\", could not create directory \"%s\"", entry->filename, fullpath);
 				efree(fullpath);
+				free(new_state.cwd);
 				return FAILURE;
 			}
 		}
 	}
 
 	if (slash) {
-		fullpath[dest_len + (slash - entry->filename) + 1] = '/';
+		fullpath[dest_len + (slash - filename) + 1] = '/';
 	} else {
 		fullpath[dest_len] = '/';
 	}
 
+	filename = NULL;
+	free(new_state.cwd);
 	/* it is a standalone directory, job done */
 	if (entry->is_dir) {
 		efree(fullpath);
@@ -4450,7 +4499,7 @@ PHP_METHOD(PharFileInfo, __construct)
 	INIT_PZVAL(&arg1);
 	ZVAL_STRINGL(&arg1, fname, fname_len, 0);
 
-	zend_call_method_with_1_params(&zobj, Z_OBJCE_P(zobj), 
+	zend_call_method_with_1_params(&zobj, Z_OBJCE_P(zobj),
 		&spl_ce_SplFileInfo->constructor, "__construct", NULL, &arg1);
 }
 /* }}} */
@@ -4488,7 +4537,7 @@ PHP_METHOD(PharFileInfo, __destruct)
 PHP_METHOD(PharFileInfo, getCompressedSize)
 {
 	PHAR_ENTRY_OBJECT();
-	
+
 	if (zend_parse_parameters_none() == FAILURE) {
 		return;
 	}
@@ -4530,7 +4579,7 @@ PHP_METHOD(PharFileInfo, isCompressed)
 PHP_METHOD(PharFileInfo, getCRC32)
 {
 	PHAR_ENTRY_OBJECT();
-	
+
 	if (zend_parse_parameters_none() == FAILURE) {
 		return;
 	}
@@ -4556,7 +4605,7 @@ PHP_METHOD(PharFileInfo, getCRC32)
 PHP_METHOD(PharFileInfo, isCRCChecked)
 {
 	PHAR_ENTRY_OBJECT();
-	
+
 	if (zend_parse_parameters_none() == FAILURE) {
 		return;
 	}
@@ -4571,7 +4620,7 @@ PHP_METHOD(PharFileInfo, isCRCChecked)
 PHP_METHOD(PharFileInfo, getPharFlags)
 {
 	PHAR_ENTRY_OBJECT();
-	
+
 	if (zend_parse_parameters_none() == FAILURE) {
 		return;
 	}
@@ -4649,7 +4698,7 @@ PHP_METHOD(PharFileInfo, chmod)
 PHP_METHOD(PharFileInfo, hasMetadata)
 {
 	PHAR_ENTRY_OBJECT();
-	
+
 	if (zend_parse_parameters_none() == FAILURE) {
 		return;
 	}
@@ -4664,7 +4713,7 @@ PHP_METHOD(PharFileInfo, hasMetadata)
 PHP_METHOD(PharFileInfo, getMetadata)
 {
 	PHAR_ENTRY_OBJECT();
-	
+
 	if (zend_parse_parameters_none() == FAILURE) {
 		return;
 	}
@@ -4745,7 +4794,7 @@ PHP_METHOD(PharFileInfo, delMetadata)
 	char *error;
 
 	PHAR_ENTRY_OBJECT();
-	
+
 	if (zend_parse_parameters_none() == FAILURE) {
 		return;
 	}
@@ -4803,7 +4852,7 @@ PHP_METHOD(PharFileInfo, getContent)
 	phar_entry_info *link;
 
 	PHAR_ENTRY_OBJECT();
-	
+
 	if (zend_parse_parameters_none() == FAILURE) {
 		return;
 	}
@@ -4835,6 +4884,7 @@ PHP_METHOD(PharFileInfo, getContent)
 
 	phar_seek_efp(link, 0, SEEK_SET, 0, 0 TSRMLS_CC);
 	Z_TYPE_P(return_value) = IS_STRING;
+	Z_STRVAL_P(return_value) = NULL;
 	Z_STRLEN_P(return_value) = php_stream_copy_to_mem(fp, &(Z_STRVAL_P(return_value)), link->uncompressed_filesize, 0);
 
 	if (!Z_STRVAL_P(return_value)) {
@@ -4977,7 +5027,7 @@ PHP_METHOD(PharFileInfo, decompress)
 {
 	char *error;
 	PHAR_ENTRY_OBJECT();
-	
+
 	if (zend_parse_parameters_none() == FAILURE) {
 		return;
 	}
