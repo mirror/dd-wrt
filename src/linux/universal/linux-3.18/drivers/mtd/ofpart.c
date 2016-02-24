@@ -63,6 +63,9 @@ static int parse_ofpart_partitions(struct mtd_info *master,
 
 		nr_parts++;
 	}
+	#ifdef CONFIG_SOC_IMX6
+		nr_parts++; // for nvram
+	#endif
 
 	if (nr_parts == 0)
 		return 0;
@@ -108,6 +111,17 @@ static int parse_ofpart_partitions(struct mtd_info *master,
 		if (of_get_property(pp, "lock", &len))
 			(*pparts)[i].mask_flags |= MTD_POWERUP_LOCK;
 
+		#ifdef CONFIG_SOC_IMX6
+		// for ventana, we hack a nvram partition into the layout
+		if (!strcmp(partname,"rootfs")) {
+			(*pparts)[i].size -= 0x40000;
+			i++;
+			(*pparts)[i].offset = (*pparts)[i-1].offset + (*pparts)[i-1].size;
+			(*pparts)[i].size = 0x40000;	
+			(*pparts)[i].mask_flags = 0;	
+			(*pparts)[i].name = "nvram";
+		}    
+		#endif
 		i++;
 	}
 
