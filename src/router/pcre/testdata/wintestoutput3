@@ -1,27 +1,27 @@
 /^[\w]+/
     *** Failers
 No match
-    École
+    ï¿½cole
 No match
 
 /^[\w]+/Lfrench
-    École
- 0: École
+    ï¿½cole
+ 0: ï¿½cole
 
 /^[\w]+/
     *** Failers
 No match
-    École
+    ï¿½cole
 No match
 
 /^[\W]+/
-    École
+    ï¿½cole
  0: \xc9
 
 /^[\W]+/Lfrench
     *** Failers
  0: *** 
-    École
+    ï¿½cole
 No match
 
 /[\b]/
@@ -43,15 +43,15 @@ No match
 /^\w+/
     *** Failers
 No match
-    École
+    ï¿½cole
 No match
 
 /^\w+/Lfrench
-    École
- 0: École
+    ï¿½cole
+ 0: ï¿½cole
 
 /(.+)\b(.+)/
-    École
+    ï¿½cole
  0: \xc9cole
  1: \xc9
  2: cole
@@ -61,22 +61,22 @@ No match
  0: *** Failers
  1: *** 
  2: Failers
-    École
+    ï¿½cole
 No match
 
-/École/i
-    École
+/ï¿½cole/i
+    ï¿½cole
  0: \xc9cole
     *** Failers
 No match
-    école
+    ï¿½cole
 No match
 
-/École/iLfrench
-    École
- 0: École
-    école
- 0: école
+/ï¿½cole/iLfrench
+    ï¿½cole
+ 0: ï¿½cole
+    ï¿½cole
+ 0: ï¿½cole
 
 /\w/IS
 Capturing subpattern count = 0
@@ -84,7 +84,7 @@ No options
 No first char
 No need char
 Subject length lower bound = 1
-Starting byte set: 0 1 2 3 4 5 6 7 8 9 A B C D E F G H I J K L M N O P 
+Starting chars: 0 1 2 3 4 5 6 7 8 9 A B C D E F G H I J K L M N O P 
   Q R S T U V W X Y Z _ a b c d e f g h i j k l m n o p q r s t u v w x y z 
 
 /\w/ISLfrench
@@ -93,24 +93,24 @@ No options
 No first char
 No need char
 Subject length lower bound = 1
-Starting byte set: 0 1 2 3 4 5 6 7 8 9 A B C D E F G H I J K L M N O P 
+Starting chars: 0 1 2 3 4 5 6 7 8 9 A B C D E F G H I J K L M N O P 
   Q R S T U V W X Y Z _ a b c d e f g h i j k l m n o p q r s t u v w x y z 
-  ƒ Š Œ Ž š œ ž Ÿ ª ² ³ µ ¹ º À Á Â Ã Ä Å Æ Ç È É Ê Ë Ì Í Î Ï Ð Ñ Ò Ó Ô Õ Ö 
-  Ø Ù Ú Û Ü Ý Þ ß à á â ã ä å æ ç è é ê ë ì í î ï ð ñ ò ó ô õ ö ø ù ú û ü ý 
-  þ ÿ 
+  ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ 
+  ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ 
+  ï¿½ ï¿½ 
 
 /^[\xc8-\xc9]/iLfrench
-    École
- 0: É
-    école
- 0: é
+    ï¿½cole
+ 0: ï¿½
+    ï¿½cole
+ 0: ï¿½
 
 /^[\xc8-\xc9]/Lfrench
-    École
- 0: É
+    ï¿½cole
+ 0: ï¿½
     *** Failers 
 No match
-    école
+    ï¿½cole
 No match
 
 /\W+/Lfrench
@@ -133,21 +133,21 @@ No match
 
 /\w+/Lfrench
     >>>\xaa<<<
- 0: ª
+ 0: ï¿½
     >>>\xba<<< 
- 0: º
+ 0: ï¿½
 
 /[\w]+/Lfrench
     >>>\xaa<<<
- 0: ª
+ 0: ï¿½
     >>>\xba<<< 
- 0: º
+ 0: ï¿½
 
 /[[:alpha:]]+/Lfrench
     >>>\xaa<<<
- 0: ª
+ 0: ï¿½
     >>>\xba<<< 
- 0: º
+ 0: ï¿½
     
 /[[:alpha:]][[:lower:]][[:upper:]]/DZLfrench 
 ------------------------------------------------------------------

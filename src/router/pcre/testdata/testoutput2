@@ -178,7 +178,7 @@ No options
 No first char
 No need char
 Subject length lower bound = 3
-Starting byte set: c d e 
+Starting chars: c d e 
     this sentence eventually mentions a cat
  0: cat
     this sentences rambles on and on for a while and then reaches elephant
@@ -190,7 +190,7 @@ Options: caseless
 No first char
 No need char
 Subject length lower bound = 3
-Starting byte set: C D E c d e 
+Starting chars: C D E c d e 
     this sentence eventually mentions a CAT cat
  0: CAT
     this sentences rambles on and on for a while to elephant ElePhant
@@ -202,7 +202,7 @@ No options
 No first char
 No need char
 Subject length lower bound = 1
-Starting byte set: a b c d 
+Starting chars: a b c d 
 
 /(a|[^\dZ])/IS
 Capturing subpattern count = 1
@@ -210,7 +210,7 @@ No options
 No first char
 No need char
 Subject length lower bound = 1
-Starting byte set: \x00 \x01 \x02 \x03 \x04 \x05 \x06 \x07 \x08 \x09 \x0a 
+Starting chars: \x00 \x01 \x02 \x03 \x04 \x05 \x06 \x07 \x08 \x09 \x0a 
   \x0b \x0c \x0d \x0e \x0f \x10 \x11 \x12 \x13 \x14 \x15 \x16 \x17 \x18 \x19 
   \x1a \x1b \x1c \x1d \x1e \x1f \x20 ! " # $ % & ' ( ) * + , - . / : ; < = > 
   ? @ A B C D E F G H I J K L M N O P Q R S T U V W X Y [ \ ] ^ _ ` a b c d 
@@ -231,7 +231,7 @@ No options
 No first char
 No need char
 Subject length lower bound = 1
-Starting byte set: \x09 \x0a \x0b \x0c \x0d \x20 a b 
+Starting chars: \x09 \x0a \x0b \x0c \x0d \x20 a b 
 
 /(ab\2)/
 Failed: reference to non-existent subpattern at offset 6
@@ -512,7 +512,7 @@ No options
 No first char
 No need char
 Subject length lower bound = 1
-Starting byte set: a b c d 
+Starting chars: a b c d 
 
 /(?i)[abcd]/IS
 Capturing subpattern count = 0
@@ -520,7 +520,7 @@ Options: caseless
 No first char
 No need char
 Subject length lower bound = 1
-Starting byte set: A B C D a b c d 
+Starting chars: A B C D a b c d 
 
 /(?m)[xy]|(b|c)/IS
 Capturing subpattern count = 1
@@ -528,7 +528,7 @@ Options: multiline
 No first char
 No need char
 Subject length lower bound = 1
-Starting byte set: b c x y 
+Starting chars: b c x y 
 
 /(^a|^b)/Im
 Capturing subpattern count = 1
@@ -561,7 +561,7 @@ Failed: assertion expected after (?( at offset 3
 Failed: reference to non-existent subpattern at offset 7
 
 /(?(?<ab))/
-Failed: syntax error in subpattern name (missing terminator) at offset 7
+Failed: assertion expected after (?( at offset 3
 
 /((?s)blah)\s+\1/I
 Capturing subpattern count = 1
@@ -591,7 +591,7 @@ No options
 First char = 'b' (caseless)
 No need char
 Subject length lower bound = 1
-No set of starting bytes
+No starting char list
 
 /(a*b|(?i:c*(?-i)d))/IS
 Capturing subpattern count = 1
@@ -599,7 +599,7 @@ No options
 No first char
 No need char
 Subject length lower bound = 1
-Starting byte set: C a b c d 
+Starting chars: C a b c d 
 
 /a$/I
 Capturing subpattern count = 0
@@ -666,7 +666,7 @@ No options
 No first char
 No need char
 Subject length lower bound = 1
-Starting byte set: a b 
+Starting chars: a b 
 
 /(?<!foo)(alpha|omega)/IS
 Capturing subpattern count = 1
@@ -675,7 +675,7 @@ No options
 No first char
 Need char = 'a'
 Subject length lower bound = 5
-Starting byte set: a o 
+Starting chars: a o 
 
 /(?!alphabet)[ab]/IS
 Capturing subpattern count = 0
@@ -683,7 +683,7 @@ No options
 No first char
 No need char
 Subject length lower bound = 1
-Starting byte set: a b 
+Starting chars: a b 
 
 /(?<=foo\n)^bar/Im
 Capturing subpattern count = 0
@@ -1566,30 +1566,35 @@ Need char = 'b'
 
 /a(?(1)b)(.)/I
 Capturing subpattern count = 1
+Max back reference = 1
 No options
 First char = 'a'
 No need char
 
 /a(?(1)bag|big)(.)/I
 Capturing subpattern count = 1
+Max back reference = 1
 No options
 First char = 'a'
 Need char = 'g'
 
 /a(?(1)bag|big)*(.)/I
 Capturing subpattern count = 1
+Max back reference = 1
 No options
 First char = 'a'
 No need char
 
 /a(?(1)bag|big)+(.)/I
 Capturing subpattern count = 1
+Max back reference = 1
 No options
 First char = 'a'
 Need char = 'g'
 
 /a(?(1)b..|b..)(.)/I
 Capturing subpattern count = 1
+Max back reference = 1
 No options
 First char = 'a'
 Need char = 'b'
@@ -1642,7 +1647,7 @@ Options: anchored
 No first char
 Need char = 'd'
 Subject length lower bound = 4
-No set of starting bytes
+No starting char list
 
 /\(             # ( at start
   (?:           # Non-capturing bracket
@@ -1875,7 +1880,7 @@ No options
 No first char
 No need char
 Subject length lower bound = 1
-Starting byte set: A B C D E F G H I J K L M N O P Q R S T U V W X Y Z 
+Starting chars: A B C D E F G H I J K L M N O P Q R S T U V W X Y Z 
   _ a b c d e f g h i j k l m n o p q r s t u v w x y z 
 
 /^[[:ascii:]]/DZ
@@ -1937,7 +1942,7 @@ No options
 No first char
 No need char
 Subject length lower bound = 1
-Starting byte set: \x09 \x0a \x0b \x0c \x0d \x20 
+Starting chars: \x09 \x0a \x0b \x0c \x0d \x20 
 
 /^[[:cntrl:]]/DZ
 ------------------------------------------------------------------
@@ -3178,6 +3183,10 @@ Failed: PCRE does not support \L, \l, \N{name}, \U, or \u at offset 1
 /\U/I
 Failed: PCRE does not support \L, \l, \N{name}, \U, or \u at offset 1
 
+/a{1,3}b/U
+    ab
+ 0: ab
+
 /[/I
 Failed: missing terminating ] for character class at offset 1
 
@@ -3375,24 +3384,28 @@ Need char = 'a'
 
 /(?(1)ab|ac)(.)/I
 Capturing subpattern count = 1
+Max back reference = 1
 No options
 First char = 'a'
 No need char
 
 /(?(1)abz|acz)(.)/I
 Capturing subpattern count = 1
+Max back reference = 1
 No options
 First char = 'a'
 Need char = 'z'
 
 /(?(1)abz)(.)/I
 Capturing subpattern count = 1
+Max back reference = 1
 No options
 No first char
 No need char
 
 /(?(1)abz)(1)23/I
 Capturing subpattern count = 1
+Max back reference = 1
 No options
 No first char
 Need char = '3'
@@ -3434,7 +3447,7 @@ No options
 No first char
 No need char
 Subject length lower bound = 1
-Starting byte set: a b 
+Starting chars: a b 
 
 /[^a]/I
 Capturing subpattern count = 0
@@ -3454,7 +3467,7 @@ No options
 No first char
 Need char = '6'
 Subject length lower bound = 4
-Starting byte set: 0 1 2 3 4 5 6 7 8 9 
+Starting chars: 0 1 2 3 4 5 6 7 8 9 
 
 /a^b/I
 Capturing subpattern count = 0
@@ -3488,7 +3501,7 @@ Options: caseless
 No first char
 No need char
 Subject length lower bound = 1
-Starting byte set: A B a b 
+Starting chars: A B a b 
 
 /[ab](?i)cd/IS
 Capturing subpattern count = 0
@@ -3496,7 +3509,7 @@ No options
 No first char
 Need char = 'd' (caseless)
 Subject length lower bound = 3
-Starting byte set: a b 
+Starting chars: a b 
 
 /abc(?C)def/I
 Capturing subpattern count = 0
@@ -3537,7 +3550,7 @@ No options
 No first char
 Need char = 'f'
 Subject length lower bound = 7
-Starting byte set: 0 1 2 3 4 5 6 7 8 9 
+Starting chars: 0 1 2 3 4 5 6 7 8 9 
     1234abcdef
 --->1234abcdef
   1 ^              \d
@@ -3856,7 +3869,7 @@ No options
 No first char
 No need char
 Subject length lower bound = 1
-Starting byte set: a b 
+Starting chars: a b 
 
 /(?R)/I
 Failed: recursive call could loop indefinitely at offset 3
@@ -4637,7 +4650,7 @@ Options: caseless
 No first char
 Need char = 'g' (caseless)
 Subject length lower bound = 8
-No set of starting bytes
+No starting char list
      Baby Bjorn Active Carrier - With free SHIPPING!!
  0: Baby Bjorn Active Carrier - With free SHIPPING!!
  1: Baby Bjorn Active Carrier - With free SHIPPING!!
@@ -4656,7 +4669,7 @@ No options
 No first char
 Need char = 'b'
 Subject length lower bound = 1
-No set of starting bytes
+No starting char list
 
 /(a|b)*.?c/ISDZ
 ------------------------------------------------------------------
@@ -4677,7 +4690,7 @@ No options
 No first char
 Need char = 'c'
 Subject length lower bound = 1
-No set of starting bytes
+No starting char list
 
 /abc(?C255)de(?C)f/DZ
 ------------------------------------------------------------------
@@ -4750,7 +4763,7 @@ Options:
 No first char
 Need char = 'b'
 Subject length lower bound = 1
-Starting byte set: a b 
+Starting chars: a b 
   ab
 --->ab
  +0 ^      a*
@@ -4893,7 +4906,7 @@ Options:
 No first char
 Need char = 'x'
 Subject length lower bound = 4
-Starting byte set: a d 
+Starting chars: a d 
   abcx
 --->abcx
  +0 ^        (abc|def)
@@ -5127,7 +5140,7 @@ Options:
 No first char
 No need char
 Subject length lower bound = 2
-Starting byte set: a b x 
+Starting chars: a b x 
     Note: that { does NOT introduce a quantifier
 --->Note: that { does NOT introduce a quantifier
  +0         ^                                        ([ab]{,4}c|xy)
@@ -5601,13 +5614,17 @@ No match
     123456\P
 No match
 
+//KF>testsavedregex
+Compiled pattern written to testsavedregex
+Study data written to testsavedregex
+
 /abc/IS>testsavedregex
 Capturing subpattern count = 0
 No options
 First char = 'a'
 Need char = 'c'
 Subject length lower bound = 3
-No set of starting bytes
+No starting char list
 Compiled pattern written to testsavedregex
 Study data written to testsavedregex
 <testsavedregex
@@ -5642,7 +5659,7 @@ No options
 First char = 'a'
 Need char = 'c'
 Subject length lower bound = 3
-No set of starting bytes
+No starting char list
 Compiled pattern written to testsavedregex
 Study data written to testsavedregex
 <testsavedregex
@@ -5677,7 +5694,7 @@ No options
 No first char
 No need char
 Subject length lower bound = 1
-Starting byte set: a b 
+Starting chars: a b 
 Compiled pattern written to testsavedregex
 Study data written to testsavedregex
 <testsavedregex
@@ -5716,7 +5733,7 @@ No options
 No first char
 No need char
 Subject length lower bound = 1
-Starting byte set: a b 
+Starting chars: a b 
 Compiled pattern written to testsavedregex
 Study data written to testsavedregex
 <testsavedregex
@@ -5817,13 +5834,13 @@ No match
 No match
 
 /a{11111111111111111111}/I
-Failed: number too big in {} quantifier at offset 22
+Failed: number too big in {} quantifier at offset 8
 
 /(){64294967295}/I
-Failed: number too big in {} quantifier at offset 14
+Failed: number too big in {} quantifier at offset 9
 
 /(){2,4294967295}/I
-Failed: number too big in {} quantifier at offset 15
+Failed: number too big in {} quantifier at offset 11
 
 "(?i:a)(?i:b)(?i:c)(?i:d)(?i:e)(?i:f)(?i:g)(?i:h)(?i:i)(?i:j)(k)(?i:l)A\1B"I
 Capturing subpattern count = 1
@@ -6332,6 +6349,7 @@ No need char
 
 /^(?P<A>a)?(?(A)a|b)/I
 Capturing subpattern count = 1
+Max back reference = 1
 Named capturing subpatterns:
   A   1
 Options: anchored
@@ -6349,6 +6367,7 @@ No match
 
 /(?:(?(ZZ)a|b)(?P<ZZ>X))+/I
 Capturing subpattern count = 1
+Max back reference = 1
 Named capturing subpatterns:
   ZZ   1
 No options
@@ -6366,6 +6385,7 @@ Failed: reference to non-existent subpattern at offset 9
 
 /(?:(?(ZZ)a|b)(?(ZZ)a|b)(?P<ZZ>X))+/I
 Capturing subpattern count = 1
+Max back reference = 1
 Named capturing subpatterns:
   ZZ   1
 No options
@@ -6377,6 +6397,7 @@ Need char = 'X'
 
 /(?:(?(ZZ)a|\(b\))\\(?P<ZZ>X))+/I
 Capturing subpattern count = 1
+Max back reference = 1
 Named capturing subpatterns:
   ZZ   1
 No options
@@ -6431,7 +6452,7 @@ No options
 No first char
 Need char = ','
 Subject length lower bound = 1
-Starting byte set: \x09 \x0a \x0b \x0c \x0d \x20 , 
+Starting chars: \x09 \x0a \x0b \x0c \x0d \x20 , 
     \x0b,\x0b
  0: \x0b,\x0b
     \x0c,\x0d
@@ -6738,7 +6759,7 @@ No options
 No first char
 No need char
 Subject length lower bound = 1
-Starting byte set: C a b c d 
+Starting chars: C a b c d 
 
 /()[ab]xyz/IS
 Capturing subpattern count = 1
@@ -6746,7 +6767,7 @@ No options
 No first char
 Need char = 'z'
 Subject length lower bound = 4
-Starting byte set: a b 
+Starting chars: a b 
 
 /(|)[ab]xyz/IS
 Capturing subpattern count = 1
@@ -6754,7 +6775,7 @@ No options
 No first char
 Need char = 'z'
 Subject length lower bound = 4
-Starting byte set: a b 
+Starting chars: a b 
 
 /(|c)[ab]xyz/IS
 Capturing subpattern count = 1
@@ -6762,7 +6783,7 @@ No options
 No first char
 Need char = 'z'
 Subject length lower bound = 4
-Starting byte set: a b c 
+Starting chars: a b c 
 
 /(|c?)[ab]xyz/IS
 Capturing subpattern count = 1
@@ -6770,7 +6791,7 @@ No options
 No first char
 Need char = 'z'
 Subject length lower bound = 4
-Starting byte set: a b c 
+Starting chars: a b c 
 
 /(d?|c?)[ab]xyz/IS
 Capturing subpattern count = 1
@@ -6778,7 +6799,7 @@ No options
 No first char
 Need char = 'z'
 Subject length lower bound = 4
-Starting byte set: a b c d 
+Starting chars: a b c d 
 
 /(d?|c)[ab]xyz/IS
 Capturing subpattern count = 1
@@ -6786,7 +6807,7 @@ No options
 No first char
 Need char = 'z'
 Subject length lower bound = 4
-Starting byte set: a b c d 
+Starting chars: a b c d 
 
 /^a*b\d/DZ
 ------------------------------------------------------------------
@@ -6879,7 +6900,7 @@ No options
 No first char
 No need char
 Subject length lower bound = 1
-Starting byte set: a b c d 
+Starting chars: a b c d 
 
 /(a+|b*)[cd]/IS
 Capturing subpattern count = 1
@@ -6887,7 +6908,7 @@ No options
 No first char
 No need char
 Subject length lower bound = 1
-Starting byte set: a b c d 
+Starting chars: a b c d 
 
 /(a*|b+)[cd]/IS
 Capturing subpattern count = 1
@@ -6895,7 +6916,7 @@ No options
 No first char
 No need char
 Subject length lower bound = 1
-Starting byte set: a b c d 
+Starting chars: a b c d 
 
 /(a+|b+)[cd]/IS
 Capturing subpattern count = 1
@@ -6903,7 +6924,7 @@ No options
 No first char
 No need char
 Subject length lower bound = 2
-Starting byte set: a b 
+Starting chars: a b 
 
 /((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((
  ((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((
@@ -9114,10 +9135,10 @@ Failed: subpattern name expected at offset 3
 Failed: subpattern name expected at offset 3
 
 /\k/
-Failed: \k is not followed by a braced, angle-bracketed, or quoted name at offset 2
+Failed: \k is not followed by a braced, angle-bracketed, or quoted name at offset 1
 
 /\kabc/
-Failed: \k is not followed by a braced, angle-bracketed, or quoted name at offset 5
+Failed: \k is not followed by a braced, angle-bracketed, or quoted name at offset 1
 
 /(?P=)/
 Failed: subpattern name expected at offset 4
@@ -9165,7 +9186,7 @@ Failed: unknown POSIX class name at offset 6
 Failed: unknown POSIX class name at offset 3
 
 /(^(a|b\g<-1'c))/
-Failed: \g is not followed by a braced, angle-bracketed, or quoted name/number or by a plain number at offset 15
+Failed: \g is not followed by a braced, angle-bracketed, or quoted name/number or by a plain number at offset 8
 
 /^(?+1)(?<a>x|y){0}z/
     xzxx
@@ -9307,7 +9328,7 @@ No options
 No first char
 No need char
 Subject length lower bound = 1
-Starting byte set: x y z 
+Starting chars: x y z 
 
 /(?(?=.*b)b|^)/CI
 Capturing subpattern count = 0
@@ -10096,7 +10117,7 @@ No options
 No first char
 No need char
 Subject length lower bound = 2
-Starting byte set: a b 
+Starting chars: a b 
 
 /(a|bc)\1{2,3}/SI
 Capturing subpattern count = 1
@@ -10105,7 +10126,7 @@ No options
 No first char
 No need char
 Subject length lower bound = 3
-Starting byte set: a b 
+Starting chars: a b 
 
 /(a|bc)(?1)/SI
 Capturing subpattern count = 1
@@ -10113,7 +10134,7 @@ No options
 No first char
 No need char
 Subject length lower bound = 2
-Starting byte set: a b 
+Starting chars: a b 
 
 /(a|b\1)(a|b\1)/SI
 Capturing subpattern count = 2
@@ -10122,7 +10143,7 @@ No options
 No first char
 No need char
 Subject length lower bound = 2
-Starting byte set: a b 
+Starting chars: a b 
 
 /(a|b\1){2}/SI
 Capturing subpattern count = 1
@@ -10131,7 +10152,7 @@ No options
 No first char
 No need char
 Subject length lower bound = 2
-Starting byte set: a b 
+Starting chars: a b 
 
 /(a|bbbb\1)(a|bbbb\1)/SI
 Capturing subpattern count = 2
@@ -10140,7 +10161,7 @@ No options
 No first char
 No need char
 Subject length lower bound = 2
-Starting byte set: a b 
+Starting chars: a b 
 
 /(a|bbbb\1){2}/SI
 Capturing subpattern count = 1
@@ -10149,7 +10170,7 @@ No options
 No first char
 No need char
 Subject length lower bound = 2
-Starting byte set: a b 
+Starting chars: a b 
 
 /^From +([^ ]+) +[a-zA-Z][a-zA-Z][a-zA-Z] +[a-zA-Z][a-zA-Z][a-zA-Z] +[0-9]?[0-9] +[0-9][0-9]:[0-9][0-9]/SI
 Capturing subpattern count = 1
@@ -10157,7 +10178,7 @@ Options: anchored
 No first char
 Need char = ':'
 Subject length lower bound = 22
-No set of starting bytes
+No starting char list
 
 /<tr([\w\W\s\d][^<>]{0,})><TD([\w\W\s\d][^<>]{0,})>([\d]{0,}\.)(.*)((<BR>([\w\W\s\d][^<>]{0,})|[\s]{0,}))<\/a><\/TD><TD([\w\W\s\d][^<>]{0,})>([\w\W\s\d][^<>]{0,})<\/TD><TD([\w\W\s\d][^<>]{0,})>([\w\W\s\d][^<>]{0,})<\/TD><\/TR>/isIS
 Capturing subpattern count = 11
@@ -10165,7 +10186,7 @@ Options: caseless dotall
 First char = '<'
 Need char = '>'
 Subject length lower bound = 47
-No set of starting bytes
+No starting char list
 
 "(?>.*/)foo"SI
 Capturing subpattern count = 0
@@ -10173,7 +10194,7 @@ No options
 No first char
 Need char = 'o'
 Subject length lower bound = 4
-No set of starting bytes
+No starting char list
 
 /(?(?=[^a-z]+[a-z])  \d{2}-[a-z]{3}-\d{2}  |  \d{2}-\d{2}-\d{2} ) /xSI
 Capturing subpattern count = 0
@@ -10181,7 +10202,7 @@ Options: extended
 No first char
 Need char = '-'
 Subject length lower bound = 8
-No set of starting bytes
+No starting char list
 
 /(?:(?:(?:(?:(?:(?:(?:(?:(?:(a|b|c))))))))))/iSI
 Capturing subpattern count = 1
@@ -10189,7 +10210,7 @@ Options: caseless
 No first char
 No need char
 Subject length lower bound = 1
-Starting byte set: A B C a b c 
+Starting chars: A B C a b c 
 
 /(?:c|d)(?:)(?:aaaaaaaa(?:)(?:bbbbbbbb)(?:bbbbbbbb(?:))(?:bbbbbbbb(?:)(?:bbbbbbbb)))/SI
 Capturing subpattern count = 0
@@ -10197,7 +10218,7 @@ No options
 No first char
 Need char = 'b'
 Subject length lower bound = 41
-Starting byte set: c d 
+Starting chars: c d 
 
 /<a[\s]+href[\s]*=[\s]*          # find <a href=
  ([\"\'])?                       # find single or double quote
@@ -10210,7 +10231,7 @@ Options: caseless extended dotall
 First char = '<'
 Need char = '='
 Subject length lower bound = 9
-No set of starting bytes
+No starting char list
 
 /^(?!:)                       # colon disallowed at start
   (?:                         # start of item
@@ -10222,11 +10243,12 @@ No set of starting bytes
   (?(1)|.)                    # check that there was an empty component
   /xiIS
 Capturing subpattern count = 1
+Max back reference = 1
 Options: anchored caseless extended
 No first char
 Need char = ':'
 Subject length lower bound = 2
-No set of starting bytes
+No starting char list
 
 /(?|(?<a>A)|(?<a>B))/I
 Capturing subpattern count = 1
@@ -10251,6 +10273,7 @@ Failed: different names for subpatterns of the same number are not allowed at of
     b(?<quote> (?<apostrophe>')|(?<realquote>")) ) 
     (?('quote')[a-z]+|[0-9]+)/JIx
 Capturing subpattern count = 6
+Max back reference = 1
 Named capturing subpatterns:
   apostrophe   2
   apostrophe   5
@@ -10313,6 +10336,7 @@ No match
         End
 ------------------------------------------------------------------
 Capturing subpattern count = 4
+Max back reference = 4
 Named capturing subpatterns:
   D   4
   D   1
@@ -10360,6 +10384,7 @@ No match
         End
 ------------------------------------------------------------------
 Capturing subpattern count = 4
+Max back reference = 1
 Named capturing subpatterns:
   A   1
   A   4
@@ -10450,7 +10475,7 @@ Options:
 No first char
 Need char = 'a'
 Subject length lower bound = 1
-No set of starting bytes
+No starting char list
     cat
  0: a
  1: 
@@ -10464,7 +10489,7 @@ No options
 No first char
 Need char = 'a'
 Subject length lower bound = 3
-No set of starting bytes
+No starting char list
     cat
 No match
 
@@ -10476,17 +10501,18 @@ No options
 First char = 'i'
 No need char
 Subject length lower bound = 1
-No set of starting bytes
+No starting char list
     i
  0: i
     
 /()i(?(1)a)/SI 
 Capturing subpattern count = 1
+Max back reference = 1
 No options
 No first char
 Need char = 'i'
 Subject length lower bound = 1
-Starting byte set: i 
+Starting chars: i 
     ia
  0: ia
  1: 
@@ -11080,7 +11106,7 @@ No options
 First char = 'a'
 Need char = '4'
 Subject length lower bound = 5
-No set of starting bytes
+No starting char list
 
 /([abc])++1234/SI
 Capturing subpattern count = 1
@@ -11088,7 +11114,7 @@ No options
 No first char
 Need char = '4'
 Subject length lower bound = 5
-Starting byte set: a b c 
+Starting chars: a b c 
 
 /(?<=(abc)+)X/
 Failed: lookbehind assertion is not fixed length at offset 10
@@ -11369,7 +11395,7 @@ No options
 No first char
 No need char
 Subject length lower bound = 1
-No set of starting bytes
+No starting char list
 
 /(a(?2)|b)(b(?1)|a)(?:(?1)|(?2))/SI
 Capturing subpattern count = 2
@@ -11377,7 +11403,7 @@ No options
 No first char
 No need char
 Subject length lower bound = 3
-Starting byte set: a b 
+Starting chars: a b 
 
 /(a(?2)|b)(b(?1)|a)(?1)(?2)/SI
 Capturing subpattern count = 2
@@ -11385,7 +11411,7 @@ No options
 No first char
 No need char
 Subject length lower bound = 4
-Starting byte set: a b 
+Starting chars: a b 
 
 /(abc)(?1)/SI
 Capturing subpattern count = 1
@@ -11393,7 +11419,7 @@ No options
 First char = 'a'
 Need char = 'c'
 Subject length lower bound = 6
-No set of starting bytes
+No starting char list
 
 /^(?>a)++/
     aa\M
@@ -11711,7 +11737,7 @@ No options
 First char = 't'
 Need char = 't'
 Subject length lower bound = 18
-No set of starting bytes
+No starting char list
 
 /\btype\b\W*?\btext\b\W*?\bjavascript\b|\burl\b\W*?\bshell:|<input\b.*?\btype\b\W*?\bimage\b|\bonkeyup\b\W*?\=/IS
 Capturing subpattern count = 0
@@ -11720,7 +11746,7 @@ No options
 No first char
 No need char
 Subject length lower bound = 8
-Starting byte set: < o t u 
+Starting chars: < o t u 
 
 /a(*SKIP)c|b(*ACCEPT)|/+S!I
 Capturing subpattern count = 0
@@ -11729,7 +11755,7 @@ No options
 No first char
 No need char
 Subject length lower bound = -1
-No set of starting bytes
+No starting char list
     a
  0: 
  0+ 
@@ -11740,7 +11766,7 @@ No options
 No first char
 No need char
 Subject length lower bound = -1
-Starting byte set: a b x 
+Starting chars: a b x 
     ax
  0: x
 
@@ -12436,7 +12462,7 @@ No options
 No first char
 No need char
 Subject length lower bound = -1
-No set of starting bytes
+No starting char list
 
 /(?:(a)+(?C1)bb|aa(?C2)b)/
     aab\C+
@@ -12722,7 +12748,7 @@ No options
 No first char
 Need char = 'z'
 Subject length lower bound = 2
-Starting byte set: a z 
+Starting chars: a z 
     aaaaaaaaaaaaaz
 Error -21 (recursion limit exceeded)
     aaaaaaaaaaaaaz\Q1000
@@ -12735,7 +12761,7 @@ No options
 No first char
 Need char = 'z'
 Subject length lower bound = 2
-Starting byte set: a z 
+Starting chars: a z 
     aaaaaaaaaaaaaz
 Error -21 (recursion limit exceeded)
 
@@ -12746,7 +12772,7 @@ No options
 No first char
 Need char = 'z'
 Subject length lower bound = 2
-Starting byte set: a z 
+Starting chars: a z 
     aaaaaaaaaaaaaz
 No match
     aaaaaaaaaaaaaz\Q10
@@ -12790,7 +12816,7 @@ Options: dupnames
 First char = 'a'
 Need char = 'z'
 Subject length lower bound = 5
-No set of starting bytes
+No starting char list
 
 /a*[bcd]/BZ
 ------------------------------------------------------------------
@@ -13902,7 +13928,7 @@ No options
 No first char
 Need char = 'd'
 Subject length lower bound = 1
-Starting byte set: a b c d 
+Starting chars: a b c d 
 
 /[a-c]+d/DZS
 ------------------------------------------------------------------
@@ -13917,7 +13943,7 @@ No options
 No first char
 Need char = 'd'
 Subject length lower bound = 2
-Starting byte set: a b c 
+Starting chars: a b c 
 
 /[a-c]?d/DZS
 ------------------------------------------------------------------
@@ -13932,7 +13958,7 @@ No options
 No first char
 Need char = 'd'
 Subject length lower bound = 1
-Starting byte set: a b c d 
+Starting chars: a b c d 
 
 /[a-c]{4,6}d/DZS
 ------------------------------------------------------------------
@@ -13947,7 +13973,7 @@ No options
 No first char
 Need char = 'd'
 Subject length lower bound = 5
-Starting byte set: a b c 
+Starting chars: a b c 
 
 /[a-c]{0,6}d/DZS
 ------------------------------------------------------------------
@@ -13962,7 +13988,7 @@ No options
 No first char
 Need char = 'd'
 Subject length lower bound = 1
-Starting byte set: a b c d 
+Starting chars: a b c d 
 
 /-- End of special auto-possessive tests --/
 
@@ -14072,10 +14098,10 @@ Failed: group name must start with a non-digit at offset 3
 Failed: group name must start with a non-digit at offset 4
 
 /\g'3gh'/
-Failed: \g is not followed by a braced, angle-bracketed, or quoted name/number or by a plain number at offset 7
+Failed: \g is not followed by a braced, angle-bracketed, or quoted name/number or by a plain number at offset 2
 
 /\g<5fg>/
-Failed: \g is not followed by a braced, angle-bracketed, or quoted name/number or by a plain number at offset 7
+Failed: \g is not followed by a braced, angle-bracketed, or quoted name/number or by a plain number at offset 2
 
 /(?(<4gh>)abc)/
 Failed: group name must start with a non-digit at offset 4
@@ -14088,6 +14114,30 @@ Failed: malformed number or name after (?( at offset 4
 
 /(?(R&6yh)abc)/
 Failed: group name must start with a non-digit at offset 5
+
+/(((a\2)|(a*)\g<-1>))*a?/BZ
+------------------------------------------------------------------
+        Bra
+        Brazero
+        SCBra 1
+        Once
+        CBra 2
+        CBra 3
+        a
+        \2
+        Ket
+        Alt
+        CBra 4
+        a*
+        Ket
+        Recurse
+        Ket
+        Ket
+        KetRmax
+        a?+
+        Ket
+        End
+------------------------------------------------------------------
 
 /-- Test the ugly "start or end of word" compatibility syntax --/
 
@@ -14124,5 +14174,404 @@ No match
     
 /[a[:<:]] should give error/ 
 Failed: unknown POSIX class name at offset 4
+
+/(?=ab\K)/+
+    abcd
+Start of matched string is beyond its end - displaying from end to start.
+ 0: ab
+ 0+ abcd
+
+/abcd/f<lf>
+    xx\nxabcd
+No match
+    
+/ -- Test stack check external calls --/ 
+
+/(((((a)))))/Q0
+
+/(((((a)))))/Q1
+Failed: parentheses are too deeply nested (stack check) at offset 0
+
+/(((((a)))))/Q
+** Missing 0 or 1 after /Q
+
+/^\w+(?>\s*)(?<=\w)/BZ
+------------------------------------------------------------------
+        Bra
+        ^
+        \w+
+        Once_NC
+        \s*+
+        Ket
+        AssertB
+        Reverse
+        \w
+        Ket
+        Ket
+        End
+------------------------------------------------------------------
+
+/\othing/
+Failed: missing opening brace after \o at offset 1
+
+/\o{}/
+Failed: digits missing in \x{} or \o{} at offset 1
+
+/\o{whatever}/
+Failed: non-octal character in \o{} (closing brace missing?) at offset 3
+
+/\xthing/
+
+/\x{}/
+Failed: digits missing in \x{} or \o{} at offset 3
+
+/\x{whatever}/
+Failed: non-hex character in \x{} (closing brace missing?) at offset 3
+
+"((?=(?(?=(?(?=(?(?=()))))))))"
+    a
+ 0: 
+ 1: 
+ 2: 
+
+"(?(?=)==)(((((((((?=)))))))))"
+    a
+No match
+
+/^(?:(a)|b)(?(1)A|B)/I
+Capturing subpattern count = 1
+Max back reference = 1
+Options: anchored
+No first char
+No need char
+    aA123\O3
+Matched, but too many substrings
+ 0: aA
+    aA123\O6
+ 0: aA
+ 1: a
+
+'^(?:(?<AA>a)|b)(?(<AA>)A|B)'
+    aA123\O3
+Matched, but too many substrings
+ 0: aA
+    aA123\O6
+ 0: aA
+ 1: a
+
+'^(?<AA>)(?:(?<AA>a)|b)(?(<AA>)A|B)'J
+    aA123\O3
+Matched, but too many substrings
+ 0: aA
+    aA123\O6
+Matched, but too many substrings
+ 0: aA
+ 1: 
+
+'^(?:(?<AA>X)|)(?:(?<AA>a)|b)\k{AA}'J
+    aa123\O3
+Matched, but too many substrings
+ 0: aa
+    aa123\O6
+Matched, but too many substrings
+ 0: aa
+ 1: <unset>
+
+/(?<N111>(?J)(?<N111>1(111111)11|)1|1|)(?(<N111>)1)/
+
+/(?(?=0)?)+/
+Failed: nothing to repeat at offset 7
+
+/(?(?=0)(?=00)?00765)/
+     00765
+ 0: 00765
+
+/(?(?=0)(?=00)?00765|(?!3).56)/
+     00765
+ 0: 00765
+     456
+ 0: 456
+     ** Failers
+No match
+     356   
+No match
+
+'^(a)*+(\w)'
+    g
+ 0: g
+ 1: <unset>
+ 2: g
+    g\O3
+Matched, but too many substrings
+ 0: g
+
+'^(?:a)*+(\w)'
+    g
+ 0: g
+ 1: g
+    g\O3
+Matched, but too many substrings
+ 0: g
+
+//C
+    \O\C+
+Callout 255: last capture = -1
+--->
+ +0 ^    
+Matched, but too many substrings
+
+"((?2){0,1999}())?"
+
+/((?+1)(\1))/BZ
+------------------------------------------------------------------
+        Bra
+        Once
+        CBra 1
+        Recurse
+        CBra 2
+        \1
+        Ket
+        Ket
+        Ket
+        Ket
+        End
+------------------------------------------------------------------
+
+/(?(?!)a|b)/
+    bbb
+ 0: b
+    aaa 
+No match
+
+"((?2)+)((?1))"
+
+"(?(?<E>.*!.*)?)"
+Failed: assertion expected after (?( at offset 3
+
+"X((?2)()*+){2}+"BZ
+------------------------------------------------------------------
+        Bra
+        X
+        Once
+        CBra 1
+        Recurse
+        Braposzero
+        SCBraPos 2
+        KetRpos
+        Ket
+        CBra 1
+        Recurse
+        Braposzero
+        SCBraPos 2
+        KetRpos
+        Ket
+        Ket
+        Ket
+        End
+------------------------------------------------------------------
+
+"X((?2)()*+){2}"BZ
+------------------------------------------------------------------
+        Bra
+        X
+        CBra 1
+        Recurse
+        Braposzero
+        SCBraPos 2
+        KetRpos
+        Ket
+        CBra 1
+        Recurse
+        Braposzero
+        SCBraPos 2
+        KetRpos
+        Ket
+        Ket
+        End
+------------------------------------------------------------------
+
+"(?<=((?2))((?1)))"
+Failed: lookbehind assertion is not fixed length at offset 17
+
+/(?<=\Ka)/g+
+    aaaaa
+ 0: a
+ 0+ aaaa
+ 0: a
+ 0+ aaaa
+ 0: a
+ 0+ aaa
+ 0: a
+ 0+ aa
+ 0: a
+ 0+ a
+ 0: a
+ 0+ 
+
+/(?<=\Ka)/G+
+    aaaaa
+ 0: a
+ 0+ aaaa
+ 0: a
+ 0+ aaa
+ 0: a
+ 0+ aa
+ 0: a
+ 0+ a
+ 0: a
+ 0+ 
+
+/((?2){73}(?2))((?1))/
+
+/.((?2)(?R)\1)()/BZ
+------------------------------------------------------------------
+        Bra
+        Any
+        Once
+        CBra 1
+        Recurse
+        Recurse
+        \1
+        Ket
+        Ket
+        CBra 2
+        Ket
+        Ket
+        End
+------------------------------------------------------------------
+
+/(?1)()((((((\1++))\x85)+)|))/
+
+/(\9*+(?2);\3++()2|)++{/
+Failed: reference to non-existent subpattern at offset 22
+
+/\V\x85\9*+((?2)\3++()2)*:2/
+Failed: reference to non-existent subpattern at offset 26
+
+/(((?(R)){0,2}) (?''((?'R')((?'R')))))/J
+
+/(((?(X)){0,2}) (?''((?'X')((?'X')))))/J
+
+/(((?(R)){0,2}) (?''((?'X')((?'R')))))/
+
+"(?J)(?'d'(?'d'\g{d}))"
+
+".*?\h.+.\.+\R*?\xd(?i)(?=!(?=b`b`b`\`b\xa9b!)`\a`bbbbbbbbbbbbb`bbbbbbbbbbbb*R\x85bbbbbbb\C?{((?2)(?))((
+\H){8(?<=(?1){29}\xa8bbbb\x16\xd\xc6^($(?<! )(\xa9H4){4}h}1)B))\x15')"
+
+"(?J:(?|(?'R')(\k'R')|((?'R'))))"
+
+/(?<=|(\,\$(?73591620449005828816)\xa8.{7}){6}\x09)/
+Failed: number is too big at offset 32
+
+//
+\O1
+Matched, but too many substrings
+
+/^(?:(?(1)x|)+)+$()/BZ
+------------------------------------------------------------------
+        Bra
+        ^
+        SBra
+        SCond
+      1 Cond ref
+        x
+        Alt
+        KetRmax
+        KetRmax
+        $
+        CBra 1
+        Ket
+        Ket
+        End
+------------------------------------------------------------------
+
+/(?=di(?<=(?1))|(?=(.))))/
+Failed: unmatched parentheses at offset 23
+
+/(?(R))*+/BZ
+------------------------------------------------------------------
+        Bra
+        Braposzero
+        SBraPos
+        SCond
+        Cond recurse any
+        Ket
+        KetRpos
+        Ket
+        End
+------------------------------------------------------------------
+
+/[[:\\](?'abc')[a:]/
+
+"[[[.\xe8Nq\xffq\xff\xe0\x2|||::Nq\xffq\xff\xe0\x6\x2|||::[[[:[::::::[[[[[::::::::[:[[[:[:::[[[[[[[[[[[[:::::::::::::::::[[.\xe8Nq\xffq\xff\xe0\x2|||::Nq\xffq\xff\xe0\x6\x2|||::[[[:[::::::[[[[[::::::::[:[[[:[:::[[[[[[[[[[[[[[:::E[[[:[:[[:[:::[[:::E[[[:[:[[:'[:::::E[[[:[::::::[[[:[[[[[[[::E[[[:[::::::[[[:[[[[[[[[:[[::[::::[[:::::::[[:[[[[[[[:[[::[:[[:[~"
+Failed: missing terminating ] for character class at offset 353
+
+/()(?(R)0)*+/BZ
+------------------------------------------------------------------
+        Bra
+        CBra 1
+        Ket
+        Braposzero
+        SBraPos
+        SCond
+        Cond recurse any
+        0
+        Ket
+        KetRpos
+        Ket
+        End
+------------------------------------------------------------------
+
+/(?R-:(?</
+Failed: (?R or (?[+-]digits must be followed by ) at offset 3
+
+/(?1){3918}(((((0(\k'R'))))(?J)(?'R'(?'R'\3){99})))/I
+Capturing subpattern count = 8
+Max back reference = 8
+Named capturing subpatterns:
+  R   7
+  R   8
+No options
+Duplicate name status changes
+No first char
+Need char = '0'
+
+/(?J:(?|(:(?|(?'R')(\k'R')|((?'R')))H'Rk'Rf)|s(?'R')))/
+
+/0(?0)|(1)(*THEN)(*SKIP:0)(*FAIL)/
+    01
+No match
+
+/((?(R8000000000)))/ 
+Failed: number is too big at offset 16
+
+/(?(8000000000/
+Failed: number is too big at offset 13
+
+/(?:ab)?(?:ab)(?:ab)/
+    abab
+ 0: abab
+    ababab
+ 0: ababab
+    aba
+No match
+
+/((*MARK:A))++a(*SKIP:B)b/
+    aacb
+No match
+
+/(?J:(?|(:(?|(?'R')(\z(?|(?'R')(\k'R')|((?'R')))k'R')|((?'R')))H'Ak'Rf)|s(?'R')))/
+
+/(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?&a)(?<a>1)/
+
+/a[[:punct:]b]/BZ
+------------------------------------------------------------------
+        Bra
+        a
+        [!-/:-@[-`b{-~]
+        Ket
+        End
+------------------------------------------------------------------
 
 /-- End of testinput2 --/
