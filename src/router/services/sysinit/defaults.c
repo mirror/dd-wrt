@@ -3552,7 +3552,7 @@ struct nvram_param srouter_defaults[] = {
 #ifdef HAVE_WEBSERVER
 	{"lighttpd_enable", "0"},
 	{"lighttpd_sslport", "443"},
-	{"lighttpd_port", "81"},
+	{"lighttpd_port", "8000"},
 	{"lighttpd_root", "/jffs/www"},
 	{"lighttpd_wan", "0"},
 #endif
