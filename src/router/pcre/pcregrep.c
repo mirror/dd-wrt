@@ -1582,11 +1582,14 @@ while (ptr < endptr)
   int endlinelength;
   int mrc = 0;
   int startoffset = 0;
+  int prevoffsets[2];
   unsigned int options = 0;
   BOOL match;
   char *matchptr = ptr;
   char *t = ptr;
   size_t length, linelength;
+
+  prevoffsets[0] = prevoffsets[1] = -1;
 
   /* At this point, ptr is at the start of a line. We need to find the length
   of the subject string to pass to pcre_exec(). In multiline mode, it is the
@@ -1689,9 +1692,13 @@ while (ptr < endptr)
 
     if (filenames == FN_NOMATCH_ONLY) return 1;
 
+    /* If all we want is a yes/no answer, stop now. */
+
+    if (quiet) return 0;
+
     /* Just count if just counting is wanted. */
 
-    if (count_only) count++;
+    else if (count_only) count++;
 
     /* When handling a binary file and binary-files==binary, the "binary"
     variable will be set true (it's false in all other cases). In this
@@ -1712,10 +1719,6 @@ while (ptr < endptr)
       return 0;
       }
 
-    /* Likewise, if all we want is a yes/no answer. */
-
-    else if (quiet) return 0;
-
     /* The --only-matching option prints just the substring that matched,
     and/or one or more captured portions of it, as long as these strings are
     not empty. The --file-offsets and --line-offsets options output offsets for
@@ -1729,55 +1732,86 @@ while (ptr < endptr)
       {
       if (!invert)
         {
-        if (printname != NULL) fprintf(stdout, "%s:", printname);
-        if (number) fprintf(stdout, "%d:", linenumber);
+        int oldstartoffset = startoffset;
 
-        /* Handle --line-offsets */
+        /* It is possible, when a lookbehind assertion contains \K, for the
+        same string to be found again. The code below advances startoffset, but
+        until it is past the "bumpalong" offset that gave the match, the same
+        substring will be returned. The PCRE1 library does not return the
+        bumpalong offset, so all we can do is ignore repeated strings. (PCRE2
+        does this better.) */
 
-        if (line_offsets)
-          fprintf(stdout, "%d,%d\n", (int)(matchptr + offsets[0] - ptr),
-            offsets[1] - offsets[0]);
-
-        /* Handle --file-offsets */
-
-        else if (file_offsets)
-          fprintf(stdout, "%d,%d\n",
-            (int)(filepos + matchptr + offsets[0] - ptr),
-            offsets[1] - offsets[0]);
-
-        /* Handle --only-matching, which may occur many times */
-
-        else
+        if (prevoffsets[0] != offsets[0] || prevoffsets[1] != offsets[1])
           {
-          BOOL printed = FALSE;
-          omstr *om;
+          prevoffsets[0] = offsets[0];
+          prevoffsets[1] = offsets[1];
 
-          for (om = only_matching; om != NULL; om = om->next)
+          if (printname != NULL) fprintf(stdout, "%s:", printname);
+          if (number) fprintf(stdout, "%d:", linenumber);
+
+          /* Handle --line-offsets */
+
+          if (line_offsets)
+            fprintf(stdout, "%d,%d\n", (int)(matchptr + offsets[0] - ptr),
+              offsets[1] - offsets[0]);
+
+          /* Handle --file-offsets */
+
+          else if (file_offsets)
+            fprintf(stdout, "%d,%d\n",
+              (int)(filepos + matchptr + offsets[0] - ptr),
+              offsets[1] - offsets[0]);
+
+          /* Handle --only-matching, which may occur many times */
+
+          else
             {
-            int n = om->groupnum;
-            if (n < mrc)
+            BOOL printed = FALSE;
+            omstr *om;
+
+            for (om = only_matching; om != NULL; om = om->next)
               {
-              int plen = offsets[2*n + 1] - offsets[2*n];
-              if (plen > 0)
+              int n = om->groupnum;
+              if (n < mrc)
                 {
-                if (printed) fprintf(stdout, "%s", om_separator);
-                if (do_colour) fprintf(stdout, "%c[%sm", 0x1b, colour_string);
-                FWRITE(matchptr + offsets[n*2], 1, plen, stdout);
-                if (do_colour) fprintf(stdout, "%c[00m", 0x1b);
-                printed = TRUE;
+                int plen = offsets[2*n + 1] - offsets[2*n];
+                if (plen > 0)
+                  {
+                  if (printed) fprintf(stdout, "%s", om_separator);
+                  if (do_colour) fprintf(stdout, "%c[%sm", 0x1b, colour_string);
+                  FWRITE(matchptr + offsets[n*2], 1, plen, stdout);
+                  if (do_colour) fprintf(stdout, "%c[00m", 0x1b);
+                  printed = TRUE;
+                  }
                 }
               }
-            }
 
-          if (printed || printname != NULL || number) fprintf(stdout, "\n");
+            if (printed || printname != NULL || number) fprintf(stdout, "\n");
+            }
           }
 
-        /* Prepare to repeat to find the next match */
+        /* Prepare to repeat to find the next match. If the patterned contained
+        a lookbehind tht included \K, it is possible that the end of the match
+        might be at or before the actual strting offset we have just used. We
+        need to start one character further on. Unfortunately, for unanchored
+        patterns, the actual start offset can be greater that the one that was
+        set as a result of "bumpalong". PCRE1 does not return the actual start
+        offset, so we have to check against the original start offset. This may
+        lead to duplicates - we we need the fudge above to avoid printing them.
+        (PCRE2 does this better.) */
 
         match = FALSE;
         if (line_buffered) fflush(stdout);
         rc = 0;                      /* Had some success */
         startoffset = offsets[1];    /* Restart after the match */
+        if (startoffset <= oldstartoffset)
+          {
+          if ((size_t)startoffset >= length)
+            goto END_ONE_MATCH;              /* We were at the end */
+          startoffset = oldstartoffset + 1;
+          if (utf8)
+            while ((matchptr[startoffset] & 0xc0) == 0x80) startoffset++;
+          }
         goto ONLY_MATCHING_RESTART;
         }
       }
@@ -1974,6 +2008,7 @@ while (ptr < endptr)
   /* Advance to after the newline and increment the line number. The file
   offset to the current line is maintained in filepos. */
 
+  END_ONE_MATCH:
   ptr += linelength + endlinelength;
   filepos += (int)(linelength + endlinelength);
   linenumber++;
@@ -2054,7 +2089,7 @@ if (filenames == FN_NOMATCH_ONLY)
 
 /* Print the match count if wanted */
 
-if (count_only)
+if (count_only && !quiet)
   {
   if (count > 0 || !omit_zero_count)
     {

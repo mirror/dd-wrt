@@ -829,4 +829,28 @@ of case for anything other than the ASCII letters. --/
 
 /\d+\s{0,5}=\s*\S?=\w{0,4}\W*/8WBZ
 
+/[RST]+/8iWBZ
+    
+/[R-T]+/8iWBZ 
+
+/[Q-U]+/8iWBZ 
+
+/^s?c/mi8I
+    scat
+
+/[\W\p{Any}]/BZ
+    abc
+    123 
+
+/[\W\pL]/BZ
+    abc
+    ** Failers 
+    123     
+
+/a[[:punct:]b]/WBZ
+
+/a[[:punct:]b]/8WBZ
+
+/a[b[:punct:]]/8WBZ
+
 /-- End of testinput7 --/

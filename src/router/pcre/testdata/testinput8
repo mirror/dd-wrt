@@ -662,11 +662,11 @@
     dthing
     ething
 
-/^\Ѓ/
-    Ѓ
+/^\пїЅ/
+    пїЅ
 
-/^я/
-    я
+/^пїЅ/
+    пїЅ
 
 /^[0-9]+$/
     0
@@ -3949,17 +3949,17 @@
 /(a+)*b/
     aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa 
     
-/(?i)reg(?:ul(?:[aд]|ae)r|ex)/
+/(?i)reg(?:ul(?:[aпїЅ]|ae)r|ex)/
     REGular
     regulaer
     Regex  
-    regulдr 
+    regulпїЅr 
 
-/Ежед[а-яА-Я]+/
-    Ежеда
-    Ежедя
-    ЕжедА
-    ЕжедЯ
+/пїЅпїЅпїЅпїЅ[пїЅ-пїЅпїЅ-пїЅ]+/
+    пїЅпїЅпїЅпїЅпїЅ
+    пїЅпїЅпїЅпїЅпїЅ
+    пїЅпїЅпїЅпїЅпїЅ
+    пїЅпїЅпїЅпїЅпїЅ
 
 /(?<=Z)X./
     \x84XAZXB
@@ -4830,5 +4830,15 @@
 
 /[ab]{2,}?/
     aaaa    
+
+'\A(?:[^\"]++|\"(?:[^\"]*+|\"\")*+\")++'
+    NON QUOTED \"QUOT\"\"ED\" AFTER \"NOT MATCHED
+
+'\A(?:[^\"]++|\"(?:[^\"]++|\"\")*+\")++'
+    NON QUOTED \"QUOT\"\"ED\" AFTER \"NOT MATCHED
+
+/(?(?!)a|b)/
+    bbb
+    aaa 
 
 /-- End of testinput8 --/
