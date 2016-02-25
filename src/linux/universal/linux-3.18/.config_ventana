@@ -512,7 +512,7 @@ CONFIG_ATAGS=y
 CONFIG_ZBOOT_ROM_TEXT=0
 CONFIG_ZBOOT_ROM_BSS=0
 # CONFIG_ARM_APPENDED_DTB is not set
-CONFIG_CMDLINE="console=ttymxc1,115200 panic=10 root=ubi0:rootfs ubi.mtd=2 rootfstype=ubifs noinitrd earlyprintk"
+CONFIG_CMDLINE="console=ttymxc1,115200 panic=10 root=ubi0:rootfs ubi.mtd=3 rootfstype=ubifs noinitrd earlyprintk"
 # CONFIG_CMDLINE_FROM_BOOTLOADER is not set
 # CONFIG_CMDLINE_EXTEND is not set
 CONFIG_CMDLINE_FORCE=y
