@@ -1330,7 +1330,7 @@ static void __init ubi_auto_attach(void)
 		/* check for a valid ubi magic */
 		err = mtd_read(mtd, 0, 4, &len, (void *) magic);
 		if (!err && len == 4 && strncmp(magic, "UBI#", 4)) {
-			ubi_err("no valid UBI magic found inside mtd%d", mtd->index);
+			pr_err("no valid UBI magic found inside mtd%d", mtd->index);
 			put_mtd_device(mtd);
 			return;
 		}
@@ -1341,11 +1341,11 @@ static void __init ubi_auto_attach(void)
 		    mtd->type == MTD_DATAFLASH ||
 		    mtd->type == MTD_MLCNANDFLASH) {
 			mutex_lock(&ubi_devices_mutex);
-			ubi_msg("auto-attach mtd%d", mtd->index);
+			pr_notice("auto-attach mtd%d", mtd->index);
 			err = ubi_attach_mtd_dev(mtd, UBI_DEV_NUM_AUTO, 0, 0);
 			mutex_unlock(&ubi_devices_mutex);
 			if (err < 0) {
-				ubi_err("cannot attach mtd%d", mtd->index);
+				pr_err("cannot attach mtd%d", mtd->index);
 				put_mtd_device(mtd);
 			}
 		}
