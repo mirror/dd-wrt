@@ -89,11 +89,6 @@
 			enable-active-high;
 		};
 	};
-
-	gw16083: gw16083@52 {
-		compatible = "gateworks,gw16083";
-		reg = <0x52>;
-	};
 };
 
 &fec {
@@ -152,6 +147,11 @@
 		#gpio-cells = <2>;
 	};
 
+	hwmon: gsc@29 {
+		compatible = "gw,gsp";
+		reg = <0x29>;
+	};
+
 	rtc: ds1672@68 {
 		compatible = "dallas,ds1672";
 		reg = <0x68>;
@@ -163,6 +163,11 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_i2c2>;
 	status = "okay";
+
+	gw16083: gw16083@52 {
+		compatible = "gateworks,gw16083";
+		reg = <0x52>;
+	};
 };
 
 &i2c3 {
@@ -177,6 +182,24 @@
 	pinctrl-0 = <&pinctrl_pcie>;
 	reset-gpio = <&gpio1 0 GPIO_ACTIVE_LOW>;
 	status = "okay";
+};
+
+&pwm2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_pwm2>; /* MX6_DIO1 */
+	status = "disabled";
+};
+
+&pwm3 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_pwm3>; /* MX6_DIO2 */
+	status = "disabled";
+};
+
+&pwm4 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_pwm4>; /* MX6_DIO3 */
+	status = "disabled";
 };
 
 &uart1 {
@@ -296,6 +319,24 @@
 		pinctrl_pps: ppsgrp {
 			fsl,pins = <
 				MX6QDL_PAD_ENET_RXD1__GPIO1_IO26	0x1b0b1
+			>;
+		};
+
+		pinctrl_pwm2: pwm2grp {
+			fsl,pins = <
+				MX6QDL_PAD_SD1_DAT2__PWM2_OUT		0x1b0b1
+			>;
+		};
+
+		pinctrl_pwm3: pwm3grp {
+			fsl,pins = <
+				MX6QDL_PAD_SD1_DAT1__PWM3_OUT		0x1b0b1
+			>;
+		};
+
+		pinctrl_pwm4: pwm4grp {
+			fsl,pins = <
+				MX6QDL_PAD_SD1_CMD__PWM4_OUT		0x1b0b1
 			>;
 		};
 
