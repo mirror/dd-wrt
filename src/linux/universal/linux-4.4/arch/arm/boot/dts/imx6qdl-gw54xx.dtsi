@@ -20,7 +20,6 @@
 		led2 = &led2;
 		nand = &gpmi;
 		ssi0 = &ssi1;
-		sky2 = &eth1;
 		usb0 = &usbh1;
 		usb1 = &usbotg;
 	};
@@ -143,6 +142,13 @@
 	status = "okay";
 };
 
+&clks {
+	assigned-clocks = <&clks IMX6QDL_CLK_LDB_DI0_SEL>,
+	                  <&clks IMX6QDL_CLK_LDB_DI1_SEL>;
+	assigned-clock-parents = <&clks IMX6QDL_CLK_PLL3_USB_OTG>,
+	                  <&clks IMX6QDL_CLK_PLL3_USB_OTG>;
+};
+
 &fec {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_enet>;
@@ -255,7 +261,7 @@
 				regulator-min-microvolt = <400000>;
 				regulator-max-microvolt = <1975000>;
 				regulator-boot-on;
-			regulator-always-on;
+				regulator-always-on;
 			};
 
 			sw4_reg: sw4 {
@@ -266,6 +272,8 @@
 			swbst_reg: swbst {
 				regulator-min-microvolt = <5000000>;
 				regulator-max-microvolt = <5150000>;
+				regulator-boot-on;
+				regulator-always-on;
 			};
 
 			snvs_reg: vsnvs {
@@ -315,22 +323,10 @@
 		};
 	};
 
-
-	pciswitch: pex8609@3f {
-		compatible = "plx,pex8609";
-		reg = <0x3f>;
-	};
-
-	pciclkgen: si52147@6b {
-		compatible = "sil,si52147";
-		reg = <0x6b>;
-	};
-
 	gw16083: gw16083@52 {
 		compatible = "gateworks,gw16083";
 		reg = <0x52>;
 	};
-
 };
 
 &i2c3 {
@@ -338,11 +334,6 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_i2c3>;
 	status = "okay";
-
-	accelerometer: fxos8700@1e {
-		compatible = "fsl,fxos8700";
-		reg = <0x1e>;
-	};
 
 	codec: sgtl5000@0a {
 		compatible = "fsl,sgtl5000";
@@ -352,11 +343,6 @@
 		VDDIO-supply = <&reg_3p3v>;
 	};
 
-	hdmiin: adv7611@4c {
-		compatible = "adi,adv7611";
-		reg = <0x4c>;
-	};
-
 	touchscreen: egalax_ts@04 {
 		compatible = "eeti,egalax_ts";
 		reg = <0x04>;
@@ -364,22 +350,12 @@
 		interrupts = <12 2>;
 		wakeup-gpios = <&gpio7 12 GPIO_ACTIVE_LOW>;
 	};
-
-	videoout: adv7393@2a {
-		compatible = "adi,adv7393";
-		reg = <0x2a>;
-	};
-
-	videoin: adv7180@20 {
-		compatible = "adi,adv7180";
-		reg = <0x20>;
-	};
 };
 
 &ldb {
 	status = "okay";
 
-	lvds-channel@1 {
+	lvds-channel@0 {
 		fsl,data-mapping = "spwg";
 		fsl,data-width = <18>;
 		status = "okay";
@@ -410,6 +386,24 @@
 	eth1: sky2@8 { /* MAC/PHY on bus 8 */
 		compatible = "marvell,sky2";
 	};
+};
+
+&pwm1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_pwm1>; /* MX6_DIO0 */
+	status = "disabled";
+};
+
+&pwm2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_pwm2>; /* MX6_DIO1 */
+	status = "disabled";
+};
+
+&pwm3 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_pwm3>; /* MX6_DIO2 */
+	status = "disabled";
 };
 
 &pwm4 {
@@ -470,24 +464,6 @@
 
 &iomuxc {
 	imx6qdl-gw54xx {
-		pinctrl_hog: hoggrp {
-			fsl,pins = <
-				MX6QDL_PAD_EIM_D22__GPIO3_IO22    0x80000000 /* OTG_PWR_EN */
-				MX6QDL_PAD_EIM_D19__GPIO3_IO19    0x80000000 /* SPINOR_CS0# */
-				MX6QDL_PAD_ENET_RXD1__GPIO1_IO26  0x80000000 /* GPS_PPS */
-				MX6QDL_PAD_ENET_TX_EN__GPIO1_IO28 0x80000000 /* PCIE IRQ */
-				MX6QDL_PAD_ENET_TXD1__GPIO1_IO29  0x80000000 /* PCIE RST */
-				MX6QDL_PAD_GPIO_0__CCM_CLKO1      0x000130b0 /* AUD4_MCK */
-				MX6QDL_PAD_GPIO_2__GPIO1_IO02     0x80000000 /* CAN_STBY */
-				MX6QDL_PAD_GPIO_17__GPIO7_IO12    0x80000000 /* TOUCH_IRQ# */
-				MX6QDL_PAD_KEY_COL0__GPIO4_IO06   0x80000000 /* user1 led */
-				MX6QDL_PAD_KEY_ROW0__GPIO4_IO07   0x80000000 /* user2 led */
-				MX6QDL_PAD_KEY_ROW4__GPIO4_IO15   0x80000000 /* user3 led */
-				MX6QDL_PAD_SD1_DAT0__GPIO1_IO16   0x80000000 /* USBHUB_RST# */
-				MX6QDL_PAD_SD1_DAT3__GPIO1_IO21   0x80000000 /* MIPI_DIO */
-			 >;
-		};
-
 		pinctrl_audmux: audmuxgrp {
 			fsl,pins = <
 				MX6QDL_PAD_SD2_DAT0__AUD4_RXD		0x130b0
@@ -586,6 +562,24 @@
 		pinctrl_pps: ppsgrp {
 			fsl,pins = <
 				MX6QDL_PAD_ENET_RXD1__GPIO1_IO26	0x1b0b1
+			>;
+		};
+
+		pinctrl_pwm1: pwm1grp {
+			fsl,pins = <
+				MX6QDL_PAD_GPIO_9__PWM1_OUT		0x1b0b1
+			>;
+		};
+
+		pinctrl_pwm2: pwm2grp {
+			fsl,pins = <
+				MX6QDL_PAD_SD1_DAT2__PWM2_OUT		0x1b0b1
+			>;
+		};
+
+		pinctrl_pwm3: pwm3grp {
+			fsl,pins = <
+				MX6QDL_PAD_SD4_DAT1__PWM3_OUT		0x1b0b1
 			>;
 		};
 
