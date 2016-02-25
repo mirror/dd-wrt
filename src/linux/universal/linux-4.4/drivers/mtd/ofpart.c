@@ -146,11 +146,11 @@ static int parse_ofpart_partitions(struct mtd_info *master,
 
 		#ifdef CONFIG_SOC_IMX6
 		// for ventana, we hack a nvram partition into the layout
-		if (!strcmp(partname,"rootfs")) {
-			(*pparts)[i].size -= 0x40000;
+		if (!strcmp(partname,"env")) {
+			(*pparts)[i].size -= 0x80000;
 			i++;
 			(*pparts)[i].offset = (*pparts)[i-1].offset + (*pparts)[i-1].size;
-			(*pparts)[i].size = 0x40000;	
+			(*pparts)[i].size = 0x80000;	
 			(*pparts)[i].mask_flags = 0;	
 			(*pparts)[i].name = "nvram";
 		}    
