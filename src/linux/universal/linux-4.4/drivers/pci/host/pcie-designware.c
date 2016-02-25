@@ -522,9 +522,6 @@ int dw_pcie_host_init(struct pcie_port *pp)
 					  PCIE_ATU_TYPE_MEM, pp->mem_base,
 					  pp->mem_bus_addr, pp->mem_size);
 
-	if (pp->swizzle)
-		dw_pci.swizzle = pp->swizzle;
-
 	dw_pcie_wr_own_conf(pp, PCI_BASE_ADDRESS_0, 4, 0);
 
 	/* program correct class for RC */
