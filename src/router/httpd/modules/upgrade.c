@@ -266,6 +266,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 		if (i == 0) {	// check code pattern, the first data must
 #ifdef HAVE_VENTANA
 			if (!strncmp(buf, "UBI#", 4)) {	// check for "UBI#"
+				eval("mount", "-o", "remount,ro", "/");
 				char *write_argv_buf[8];
 				write_argv_buf[0] = "mtd";
 				write_argv_buf[1] = "erase";
