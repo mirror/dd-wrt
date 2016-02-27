@@ -2509,6 +2509,28 @@ static void filter_table(void)
 			filter_output();
 			filter_forward();
 		}
+	} else {
+		char dev[16];
+		char var[80];
+		char vifs[256];
+		char *next;
+		getIfLists(vifs, 256);
+		foreach(var, vifs, next) {
+			if (strcmp(get_wan_face(), var)
+			    && strcmp(nvram_safe_get("lan_ifname"), var)) {
+				if (nvram_nmatch("1", "%s_isolation", var)) {
+					save2file("-A INPUT -i %s -p udp --dport 67 -j %s\n", var, log_accept);
+					save2file("-A INPUT -i %s -p udp --dport 53 -j %s\n", var, log_accept);
+					save2file("-A INPUT -i %s -p tcp --dport 53 -j %s\n", var, log_accept);
+					save2file("-A INPUT -i %s -m state --state NEW -j %s\n", var, log_drop);
+				}
+				if (nvram_nmatch("0", "%s_bridged", var)) {
+					save2file("-A INPUT -i %s -j %s\n", var, log_accept);
+				}
+
+			}
+		}
+	  
 	}
 
 	/*
