@@ -845,7 +845,7 @@ nas.uname="User Name";
 nas.pwd="Password";
 
 var hnas=new Object();
-hnas.right2="In order to share resources add new shares by supplying path and share name. Define users that can access the share through ftp or samba.";
+hnas.right2="In order to share resources add new shares by supplying path and share name. Define users that can access the share through ftp or samba.<br><p><b>Minidlna Warning:</b> Unless you mount a partition to /jffs the index db will be stored in ram. This can fill up your ram and will cause a reindex at every boot.";
 
 //help page
 hnas.page1="<dd>FTP Server enables you to share files : <br/><ul><li>Over the Internet - WAN</li><li>On local network</li></ul></dd>";
@@ -1443,6 +1443,7 @@ qos.aqd="Queueing Discipline";
 qos.aqd_sfq="SFQ";
 qos.aqd_codel="CODEL";
 qos.aqd_fqcodel="FQ_CODEL";
+qos.aqd_pie="PIE";
 qos.uplink="Uplink (kbps)";
 qos.dnlink="Downlink (kbps)";
 qos.legend2="Services Priority";
