@@ -934,31 +934,36 @@ static long snd_rawmidi_kernel_read1(struct snd_rawmidi_substream *substream,
 	unsigned long flags;
 	long result = 0, count1;
 	struct snd_rawmidi_runtime *runtime = substream->runtime;
+	unsigned long appl_ptr;
 
+	spin_lock_irqsave(&runtime->lock, flags);
 	while (count > 0 && runtime->avail) {
 		count1 = runtime->buffer_size - runtime->appl_ptr;
 		if (count1 > count)
 			count1 = count;
-		spin_lock_irqsave(&runtime->lock, flags);
 		if (count1 > (int)runtime->avail)
 			count1 = runtime->avail;
+
+		/* update runtime->appl_ptr before unlocking for userbuf */
+		appl_ptr = runtime->appl_ptr;
+		runtime->appl_ptr += count1;
+		runtime->appl_ptr %= runtime->buffer_size;
+		runtime->avail -= count1;
+
 		if (kernelbuf)
-			memcpy(kernelbuf + result, runtime->buffer + runtime->appl_ptr, count1);
+			memcpy(kernelbuf + result, runtime->buffer + appl_ptr, count1);
 		if (userbuf) {
 			spin_unlock_irqrestore(&runtime->lock, flags);
 			if (copy_to_user(userbuf + result,
-					 runtime->buffer + runtime->appl_ptr, count1)) {
+					 runtime->buffer + appl_ptr, count1)) {
 				return result > 0 ? result : -EFAULT;
 			}
 			spin_lock_irqsave(&runtime->lock, flags);
 		}
-		runtime->appl_ptr += count1;
-		runtime->appl_ptr %= runtime->buffer_size;
-		runtime->avail -= count1;
-		spin_unlock_irqrestore(&runtime->lock, flags);
 		result += count1;
 		count -= count1;
 	}
+	spin_unlock_irqrestore(&runtime->lock, flags);
 	return result;
 }
 
@@ -1044,23 +1049,16 @@ int snd_rawmidi_transmit_empty(struct snd_rawmidi_substream *substream)
 }
 
 /**
- * snd_rawmidi_transmit_peek - copy data from the internal buffer
+ * __snd_rawmidi_transmit_peek - copy data from the internal buffer
  * @substream: the rawmidi substream
  * @buffer: the buffer pointer
  * @count: data size to transfer
  *
- * Copies data from the internal output buffer to the given buffer.
- *
- * Call this in the interrupt handler when the midi output is ready,
- * and call snd_rawmidi_transmit_ack() after the transmission is
- * finished.
- *
- * Returns the size of copied data, or a negative error code on failure.
+ * This is a variant of snd_rawmidi_transmit_peek() without spinlock.
  */
-int snd_rawmidi_transmit_peek(struct snd_rawmidi_substream *substream,
+int __snd_rawmidi_transmit_peek(struct snd_rawmidi_substream *substream,
 			      unsigned char *buffer, int count)
 {
-	unsigned long flags;
 	int result, count1;
 	struct snd_rawmidi_runtime *runtime = substream->runtime;
 
@@ -1069,7 +1067,6 @@ int snd_rawmidi_transmit_peek(struct snd_rawmidi_substream *substream,
 		return -EINVAL;
 	}
 	result = 0;
-	spin_lock_irqsave(&runtime->lock, flags);
 	if (runtime->avail >= runtime->buffer_size) {
 		/* warning: lowlevel layer MUST trigger down the hardware */
 		goto __skip;
@@ -1094,31 +1091,52 @@ int snd_rawmidi_transmit_peek(struct snd_rawmidi_substream *substream,
 		}
 	}
       __skip:
+	return result;
+}
+EXPORT_SYMBOL(__snd_rawmidi_transmit_peek);
+
+/**
+ * snd_rawmidi_transmit_peek - copy data from the internal buffer
+ * @substream: the rawmidi substream
+ * @buffer: the buffer pointer
+ * @count: data size to transfer
+ *
+ * Copies data from the internal output buffer to the given buffer.
+ *
+ * Call this in the interrupt handler when the midi output is ready,
+ * and call snd_rawmidi_transmit_ack() after the transmission is
+ * finished.
+ *
+ * Return: The size of copied data, or a negative error code on failure.
+ */
+int snd_rawmidi_transmit_peek(struct snd_rawmidi_substream *substream,
+			      unsigned char *buffer, int count)
+{
+	struct snd_rawmidi_runtime *runtime = substream->runtime;
+	int result;
+	unsigned long flags;
+
+	spin_lock_irqsave(&runtime->lock, flags);
+	result = __snd_rawmidi_transmit_peek(substream, buffer, count);
 	spin_unlock_irqrestore(&runtime->lock, flags);
 	return result;
 }
 
 /**
- * snd_rawmidi_transmit_ack - acknowledge the transmission
+ * __snd_rawmidi_transmit_ack - acknowledge the transmission
  * @substream: the rawmidi substream
  * @count: the tranferred count
  *
- * Advances the hardware pointer for the internal output buffer with
- * the given size and updates the condition.
- * Call after the transmission is finished.
- *
- * Returns the advanced size if successful, or a negative error code on failure.
+ * This is a variant of __snd_rawmidi_transmit_ack() without spinlock.
  */
-int snd_rawmidi_transmit_ack(struct snd_rawmidi_substream *substream, int count)
+int __snd_rawmidi_transmit_ack(struct snd_rawmidi_substream *substream, int count)
 {
-	unsigned long flags;
 	struct snd_rawmidi_runtime *runtime = substream->runtime;
 
 	if (runtime->buffer == NULL) {
 		snd_printd("snd_rawmidi_transmit_ack: output is not active!!!\n");
 		return -EINVAL;
 	}
-	spin_lock_irqsave(&runtime->lock, flags);
 	snd_BUG_ON(runtime->avail + count > runtime->buffer_size);
 	runtime->hw_ptr += count;
 	runtime->hw_ptr %= runtime->buffer_size;
@@ -1128,8 +1146,31 @@ int snd_rawmidi_transmit_ack(struct snd_rawmidi_substream *substream, int count)
 		if (runtime->drain || snd_rawmidi_ready(substream))
 			wake_up(&runtime->sleep);
 	}
-	spin_unlock_irqrestore(&runtime->lock, flags);
 	return count;
+}
+EXPORT_SYMBOL(__snd_rawmidi_transmit_ack);
+
+/**
+ * snd_rawmidi_transmit_ack - acknowledge the transmission
+ * @substream: the rawmidi substream
+ * @count: the transferred count
+ *
+ * Advances the hardware pointer for the internal output buffer with
+ * the given size and updates the condition.
+ * Call after the transmission is finished.
+ *
+ * Return: The advanced size if successful, or a negative error code on failure.
+ */
+int snd_rawmidi_transmit_ack(struct snd_rawmidi_substream *substream, int count)
+{
+	struct snd_rawmidi_runtime *runtime = substream->runtime;
+	int result;
+	unsigned long flags;
+
+	spin_lock_irqsave(&runtime->lock, flags);
+	result = __snd_rawmidi_transmit_ack(substream, count);
+	spin_unlock_irqrestore(&runtime->lock, flags);
+	return result;
 }
 
 /**
@@ -1145,12 +1186,22 @@ int snd_rawmidi_transmit_ack(struct snd_rawmidi_substream *substream, int count)
 int snd_rawmidi_transmit(struct snd_rawmidi_substream *substream,
 			 unsigned char *buffer, int count)
 {
+	struct snd_rawmidi_runtime *runtime = substream->runtime;
+	int result;
+	unsigned long flags;
+
+	spin_lock_irqsave(&runtime->lock, flags);
 	if (!substream->opened)
-		return -EBADFD;
-	count = snd_rawmidi_transmit_peek(substream, buffer, count);
-	if (count < 0)
-		return count;
-	return snd_rawmidi_transmit_ack(substream, count);
+		result = -EBADFD;
+	else {
+		count = __snd_rawmidi_transmit_peek(substream, buffer, count);
+		if (count <= 0)
+			result = count;
+		else
+			result = __snd_rawmidi_transmit_ack(substream, count);
+	}
+	spin_unlock_irqrestore(&runtime->lock, flags);
+	return result;
 }
 
 static long snd_rawmidi_kernel_write1(struct snd_rawmidi_substream *substream,
@@ -1161,8 +1212,9 @@ static long snd_rawmidi_kernel_write1(struct snd_rawmidi_substream *substream,
 	unsigned long flags;
 	long count1, result;
 	struct snd_rawmidi_runtime *runtime = substream->runtime;
+	unsigned long appl_ptr;
 
-	if (snd_BUG_ON(!kernelbuf && !userbuf))
+	if (!kernelbuf && !userbuf)
 		return -EINVAL;
 	if (snd_BUG_ON(!runtime->buffer))
 		return -EINVAL;
@@ -1181,12 +1233,19 @@ static long snd_rawmidi_kernel_write1(struct snd_rawmidi_substream *substream,
 			count1 = count;
 		if (count1 > (long)runtime->avail)
 			count1 = runtime->avail;
+
+		/* update runtime->appl_ptr before unlocking for userbuf */
+		appl_ptr = runtime->appl_ptr;
+		runtime->appl_ptr += count1;
+		runtime->appl_ptr %= runtime->buffer_size;
+		runtime->avail -= count1;
+
 		if (kernelbuf)
-			memcpy(runtime->buffer + runtime->appl_ptr,
+			memcpy(runtime->buffer + appl_ptr,
 			       kernelbuf + result, count1);
 		else if (userbuf) {
 			spin_unlock_irqrestore(&runtime->lock, flags);
-			if (copy_from_user(runtime->buffer + runtime->appl_ptr,
+			if (copy_from_user(runtime->buffer + appl_ptr,
 					   userbuf + result, count1)) {
 				spin_lock_irqsave(&runtime->lock, flags);
 				result = result > 0 ? result : -EFAULT;
@@ -1194,9 +1253,6 @@ static long snd_rawmidi_kernel_write1(struct snd_rawmidi_substream *substream,
 			}
 			spin_lock_irqsave(&runtime->lock, flags);
 		}
-		runtime->appl_ptr += count1;
-		runtime->appl_ptr %= runtime->buffer_size;
-		runtime->avail -= count1;
 		result += count1;
 		count -= count1;
 	}
