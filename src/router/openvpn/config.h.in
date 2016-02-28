@@ -66,9 +66,6 @@
 /* Enable OFB and CFB cipher modes */
 #undef ENABLE_OFB_CFB_MODE
 
-/* Allow --askpass and --auth-user-pass passwords to be read from a file */
-#undef ENABLE_PASSWORD_SAVE
-
 /* Enable internal packet filter */
 #undef ENABLE_PF
 
@@ -537,6 +534,9 @@
 
 /* Define to 1 if you have the `unlink' function. */
 #undef HAVE_UNLINK
+
+/* Define to 1 if you have the <versionhelpers.h> header file. */
+#undef HAVE_VERSIONHELPERS_H
 
 /* Define to 1 if you have the `vfork' function. */
 #undef HAVE_VFORK
