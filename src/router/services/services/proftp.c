@@ -137,7 +137,7 @@ void start_ftpsrv(void)
 			goto nextshare;
 		}
 
-		fprintf(fp, "<Directory      \"~/%s\"\n", cs->label);
+		fprintf(fp, "<Directory      \"~/%s\">\n", cs->label);
 
 		fprintf(fp, "   <Limit WRITE>\n");
 		fprintf(fp, "%s", !strcmp(cs->access_perms, "ro") ? "DenyAll\n" : "\n");
