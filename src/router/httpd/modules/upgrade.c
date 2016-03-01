@@ -270,6 +270,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 				char *write_argv_buf[8];
 				fprintf(stderr, "erase nandflash\n");
 				eval("mtd", "erase", "rootfs");
+				sleep(10);
 				write_argv_buf[0] = "mtd";
 				write_argv_buf[1] = "-f";
 				write_argv_buf[2] = "write";
