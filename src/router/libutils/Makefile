@@ -1024,6 +1024,9 @@ endif
 ifeq ($(CONFIG_WR1043V2),y)
 CFLAGS += -DHAVE_WR1043V2
 endif
+ifeq ($(CONFIG_WR1043V3),y)
+CFLAGS += -DHAVE_WR1043V3
+endif
 ifeq ($(CONFIG_MMS344),y)
 CFLAGS += -DHAVE_MMS344
 endif
