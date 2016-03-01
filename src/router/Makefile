@@ -78,7 +78,7 @@ endif
 export ARCH:= mipsel
 export ARCHEXT: = .brcm24
 export ARCHITECTURE:= broadcom
-export COPTS:=$(BASEOPT) -pipe -mips32 -mtune=mips32 -funit-at-a-time  -mno-branch-likely -fno-plt
+export COPTS:=$(BASEOPT) -pipe -mips32 -mtune=mips32 -funit-at-a-time  -mno-branch-likely
 export CC := ccache $(CROSS_COMPILE)gcc
 export CXX := ccache $(CROSS_COMPILE)g++
 export AR := $(CROSS_COMPILE)ar
@@ -89,7 +89,7 @@ export RANLIB := $(CROSS_COMPILE)ranlib
 export STRIP := @true
 export SIZE := $(CROSS_COMPILE)size
 
-export CFLAGS :=$(BASEOPT) -pipe -mips32 -mtune=mips32 -funit-at-a-time  -mno-branch-likely -fno-plt
+export CFLAGS :=$(BASEOPT) -pipe -mips32 -mtune=mips32 -funit-at-a-time  -mno-branch-likely
 export LDFLAGS := 
 
 #
@@ -161,7 +161,7 @@ endif
 	make -C lzma-loader/broadcom clean
 	make -C lzma-loader/broadcom 
 	dd if=lzma-loader/broadcom/lzma.elf of=$(ARCH)-uclibc/lzma_vmlinux bs=65536 conv=sync
-	/opt/3.3.4/bin/$(ARCH)-linux-objcopy -O binary $(ARCH)-uclibc/lzma_vmlinux $(ARCH)-uclibc/lzma_vmlinus 
+	$(ARCH)-linux-objcopy -O binary $(ARCH)-uclibc/lzma_vmlinux $(ARCH)-uclibc/lzma_vmlinus 
 
 bootloader:
 	$(MAKE) -C $(LINUXDIR) oldconfig	
@@ -217,6 +217,63 @@ optimize-lib:
 	../../tools/optimize_lib.sh lib/ libpthread.so libpthread.a libphread_min.so $(TARGETDIR) $(TARGETDIR)/lib/libpthread.so.0
 #	../../tools/optimize_lib.sh services/ services.so services.a services_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/services.so
 #  ../../tools/optimize_lib.sh iptables/ libiptables.so libiptables.a libiptables_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libiptables.so
+
+optimize-libnew:
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=ld-uClibc.so.0} $(ARCH)-uclibc/target/lib/ld-uClibc.so.0 
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} $(ARCH)-uclibc/target/lib/libgcc_s.so.1 
+ifeq ($(CONFIG_LIBDL),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libdl.so.0} $(ARCH)-uclibc/target/lib/libdl.so.0 
+endif
+ifeq ($(CONFIG_LIBRT),y)
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=librt.so.0} $(ARCH)-uclibc/target/lib/librt.so.0 
+endif
+ifeq ($(CONFIG_LIBNSL),y)
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libnsl.so.0} $(ARCH)-uclibc/target/lib/libnsl.so.0 
+endif
+ifeq ($(CONFIG_LIBUTIL),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libutil.so.0} $(ARCH)-uclibc/target/lib/libutil.so.0 
+endif
+ifeq ($(CONFIG_LIBCPP),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libstdc++.so.6} $(ARCH)-uclibc/target/lib/libstdc++.so.6 
+endif
+ifeq ($(CONFIG_LIBCRYPT),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libcrypt.so.0} $(ARCH)-uclibc/target/lib/libcrypt.so.0 
+endif
+ifeq ($(CONFIG_LIBM),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libm.so.0} $(ARCH)-uclibc/target/lib/libm.so.0 
+endif
+ifeq ($(CONFIG_LIBRESOLV),y)
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libresolv.so.0} $(ARCH)-uclibc/target/lib/libresolv.so.0 
+endif
+ifeq ($(CONFIG_LIBPTHREAD),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libpthread.so.0} $(ARCH)-uclibc/target/lib/libpthread.so.0 
+endif
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.so.0} $(ARCH)-uclibc/target/lib/libc.so.0 
+
+ifneq ($(CONFIG_NOOPT),y)
+
+	rm -rf /tmp/$(ARCHITECTURE)/mklibs-out
+	rm -f /tmp/$(ARCHITECTURE)/mklibs-progs
+	-mkdir -p /tmp/$(ARCHITECTURE)/
+	find $(TARGETDIR) -type f -perm +100 -exec \
+		file -r -N -F '' {} + | \
+		awk ' /executable.*dynamically/ { print $$1 }' > /tmp/$(ARCHITECTURE)/mklibs-progs
+
+	find $(TARGETDIR) -type f -name \*.so\* -exec \
+		file -r -N -F '' {} + | \
+		awk ' /shared object/ { print $$1 }' >> /tmp/$(ARCHITECTURE)/mklibs-progs
+
+	mkdir -p /tmp/$(ARCHITECTURE)/mklibs-out
+	mklibs.py -D \
+		-d /tmp/$(ARCHITECTURE)/mklibs-out \
+		--sysroot $(TARGETDIR) \
+		-L /lib \
+		-L /usr/lib \
+		--ldlib /lib/ld-uClibc.so.0 \
+		--target $(ARCH)-linux-uclibc \
+		`cat /tmp/$(ARCHITECTURE)/mklibs-progs` 2>&1
+	cp /tmp/$(ARCHITECTURE)/mklibs-out/* $(TARGETDIR)/lib
+endif
 
 
 install package: clean_target $(filter-out lib.mipsel.brcm24-install,$(obj-install)) $(LINUXDIR)/.config
@@ -397,6 +454,9 @@ ifeq ($(CONFIG_KAID),y)
 	cp kaid/kaid $(TARGETDIR)/usr/sbin
 endif
 	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
+
+	$(TOP)/../../tools/removewhitespace.sh $(TOP)/../../tools $(TARGETDIR)/etc/config
+
 	cp $(LINUXDIR)/arch/mips/bcm947xx/compressed/piggy mipsel-uclibc/vmlinux
 
 #	./tools/kernelopt/kernelopt.sh $(LINUXDIR) $(ARCH)-uclibc/target $(ARCH)-linux-uclibc-
