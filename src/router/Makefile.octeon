@@ -104,7 +104,7 @@ ifeq ($(ARCH),armeb)
 export COPTS:=$(BASEOPT) -pipe -mtune=xscale -march=armv5te -Wa,-mcpu=xscale -mno-thumb-interwork -mno-thumb -funit-at-a-time 
 endif
 ifeq ($(ARCH),mips64)
-export COPTS:=$(BASEOPT) -pipe -march=octeon -mabi=64 -msoft-float  -fno-caller-saves  -mno-branch-likely
+export COPTS:=$(BASEOPT) -pipe -march=octeon -mabi=64 -msoft-float  -fno-caller-saves  -mno-branch-likely -fno-plt
 endif
 ifeq ($(ARCH),powerpc)
 export COPTS:=$(BASEOPT) -pipe -funit-at-a-time -mcpu=405fp -mtune=405fp -mmultiple -mstring -mno-bit-align 
