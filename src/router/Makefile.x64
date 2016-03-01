@@ -102,10 +102,10 @@ ifeq ($(ARCH),mips)
 export COPTS:=$(BASEOPT) -pipe -mips32 -mtune=mips32 -funit-at-a-time 
 endif
 ifeq ($(ARCH),i386)
-export COPTS:=$(BASEOPT) -pipe -march=i486 -mtune=i486 -fno-caller-saves 
+export COPTS:=$(BASEOPT) -pipe -march=i486 -mtune=i486 -fno-caller-saves -fno-plt
 endif
 ifeq ($(ARCH),x86_64)
-export COPTS:=$(BASEOPT) -pipe -fno-caller-saves -D_FILE_OFFSET_BITS=64
+export COPTS:=$(BASEOPT) -pipe -fno-caller-saves -D_FILE_OFFSET_BITS=64 -fno-plt
 endif
 
 export CC := ccache $(CROSS_COMPILE)gcc
