@@ -102,7 +102,16 @@ void start_sysinit(void)
 	insmod("sky2");
 	if (detect_ethernet_devices())
 		nvram_set("intel_eth", "1");
-
+	insmod("caam");
+	insmod("caam_jr");
+	insmod("caamhash");
+	insmod("caamrng");
+	insmod("authenc");
+	insmod("authencesn");
+	insmod("caamalg");
+	insmod("ocf");
+	insmod("cryptodev");
+	insmod("cryptosoft");
 	/*
 	 * network drivers 
 	 */
