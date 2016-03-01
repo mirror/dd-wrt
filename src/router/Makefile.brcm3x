@@ -74,7 +74,7 @@ export BASEOPT:=-Os
 
 export ARCH:= mipsel
 export ARCHITECTURE:= broadcom
-export COPTS:=$(BASEOPT) -pipe -mips32r2 -mtune=74kc -mdspr2 -fno-caller-saves  -msoft-float  -mno-branch-likely
+export COPTS:=$(BASEOPT) -pipe -mips32r2 -mtune=74kc -mdspr2 -fno-caller-saves  -msoft-float  -mno-branch-likely -fno-plt
 export CC := ccache $(CROSS_COMPILE)gcc
 export CXX := ccache $(CROSS_COMPILE)g++
 export AR := $(CROSS_COMPILE)ar
@@ -86,7 +86,7 @@ export STRIP := @true
 export SIZE := $(CROSS_COMPILE)size
 export MIPS16_OPT:= -minterlink-mips16 -mips16
 
-export CFLAGS :=$(BASEOPT) -pipe -mips32r2 -mtune=74kc -mdspr2 -fno-caller-saves  -msoft-float  -mno-branch-likely 
+export CFLAGS :=$(BASEOPT) -pipe -mips32r2 -mtune=74kc -mdspr2 -fno-caller-saves  -msoft-float  -mno-branch-likely -fno-plt
 export LDFLAGS := 
 
 #
