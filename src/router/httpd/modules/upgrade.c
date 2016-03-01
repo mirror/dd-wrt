@@ -269,7 +269,6 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 				eval("mount", "-o", "remount,ro", "/");
 				char *write_argv_buf[8];
 				fprintf(stderr, "erase nandflash\n");
-				_evalpid(write_argv_buf, NULL, 0, &pid);
 				eval("mtd", "erase", "rootfs");
 				write_argv_buf[0] = "mtd";
 				write_argv_buf[1] = "-f";
