@@ -268,13 +268,9 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 			if (!strncmp(buf, "UBI#", 4)) {	// check for "UBI#"
 				eval("mount", "-o", "remount,ro", "/");
 				char *write_argv_buf[8];
-				write_argv_buf[0] = "mtd";
-				write_argv_buf[1] = "erase";
-				write_argv_buf[2] = "rootfs";
-				write_argv_buf[3] = NULL;
 				fprintf(stderr, "erase nandflash\n");
 				_evalpid(write_argv_buf, NULL, 0, &pid);
-
+				eval("mtd", "erase", "rootfs");
 				write_argv_buf[0] = "mtd";
 				write_argv_buf[1] = "-f";
 				write_argv_buf[2] = "write";
