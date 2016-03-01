@@ -74,6 +74,7 @@
 #define HWID_TL_WR941ND_V4	0x09410004
 #define HWID_TL_WR1043ND_V1	0x10430001
 #define HWID_TL_WR1043ND_V2	0x10430002
+#define HWID_TL_WR1043ND_V3	0x10430003
 #define HWID_TL_WDR4300_V1	0x43000001
 #define HWID_TL_WDR4310_V1	0x43100001
 #define HWID_TL_WDR3500_V1	0x35000001
@@ -454,6 +455,14 @@ static struct board_info boards[] = {
 	}, {
 		.id		= "TL-WR1043NDv2",
 		.hw_id		= HWID_TL_WR1043ND_V2,
+		.hw_rev		= 1,
+		.fw_max_len	= 0x7b0000,
+		.kernel_la	= 0x80060000,
+		.kernel_ep	= 0x80060000,
+		.rootfs_ofs	= 0xf0000,
+	}, {
+		.id		= "TL-WR1043NDv3",
+		.hw_id		= HWID_TL_WR1043ND_V3,
 		.hw_rev		= 1,
 		.fw_max_len	= 0x7b0000,
 		.kernel_la	= 0x80060000,
