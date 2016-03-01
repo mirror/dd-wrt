@@ -95,7 +95,7 @@ ifeq ($(ARCH),armeb)
 export COPTS:=$(BASEOPT) -pipe -mtune=xscale -march=armv5te -Wa,-mcpu=xscale -mno-thumb-interwork -mno-thumb 
 endif
 ifeq ($(ARCH),arm)
-export COPTS:=$(BASEOPT) -pipe -march=armv7-a -mcpu=cortex-a9 -mtune=cortex-a9  -msoft-float -mfloat-abi=soft -fno-caller-saves
+export COPTS:=$(BASEOPT) -pipe -march=armv7-a -mcpu=cortex-a9 -mtune=cortex-a9  -msoft-float -mfloat-abi=soft -fno-caller-saves -fno-plt
 #-D_FILE_OFFSET_BITS=64
 endif
 ifeq ($(ARCH),mips)
