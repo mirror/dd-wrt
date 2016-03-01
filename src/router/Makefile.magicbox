@@ -103,7 +103,7 @@ ifeq ($(ARCH),mips)
 export COPTS:=$(BASEOPT) -pipe -mips32 -mtune=mips32 -funit-at-a-time 
 endif
 ifeq ($(ARCH),powerpc)
-export COPTS:=$(BASEOPT) -pipe -funit-at-a-time -mcpu=603e -mtune=603e -fno-caller-saves -fno-plt
+export COPTS:=$(BASEOPT) -pipe -funit-at-a-time -mcpu=603e -mtune=603e -fno-caller-saves
 #-D_FILE_OFFSET_BITS=64
 endif
 ifeq ($(ARCH),i386)
