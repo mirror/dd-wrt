@@ -42,6 +42,7 @@
 #define RA_OFF		(SIZEOF_FRAME - 1 * FFI_SIZEOF_ARG)
 
 	.abicalls
+	.set hardfloat
 	.text
 	.align	2
 	.globl	ffi_call_O32
