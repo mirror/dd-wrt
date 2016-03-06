@@ -44,6 +44,7 @@
 	.abicalls
 #endif
 	.set mips4
+	.set hardfloat
 	.text
 	.align	2
 	.globl	ffi_call_N32
