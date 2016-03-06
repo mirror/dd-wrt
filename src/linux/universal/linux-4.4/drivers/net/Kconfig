@@ -459,6 +459,10 @@ source "drivers/net/dsa/Kconfig"
 
 source "drivers/net/ethernet/Kconfig"
 
+config ADM5120_ENET
+	tristate "ADM5120 Ethernet switch support"
+	depends on ADM5120
+
 source "drivers/net/fddi/Kconfig"
 
 source "drivers/net/hippi/Kconfig"

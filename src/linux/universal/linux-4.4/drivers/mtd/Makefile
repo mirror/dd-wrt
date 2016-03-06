@@ -19,6 +19,7 @@ obj-$(CONFIG_MTD_BCM63XX_PARTS)	+= bcm63xxpart.o
 obj-$(CONFIG_MTD_BCM47XX_PARTS)	+= bcm47xxpart.o
 obj-$(CONFIG_MTD_MYLOADER_PARTS) += myloader.o
 obj-$(CONFIG_MTD_QCOM_SMEM_PARTS) += qcom_smem_part.o
+obj-$(CONFIG_MTD_TRXSPLIT)	+= trxsplit.o
 
 # 'Users' - code which presents functionality to userspace.
 obj-$(CONFIG_MTD_BLKDEVS)	+= mtd_blkdevs.o

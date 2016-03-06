@@ -16,6 +16,7 @@ obj-$(CONFIG_USB_MON)		+= mon/
 obj-$(CONFIG_USB_SUPPORT)	+= phy/
 
 obj-$(CONFIG_PCI)		+= host/
+obj-$(CONFIG_USB_ADM5120_HCD)	+= host/
 obj-$(CONFIG_USB_EHCI_HCD)	+= host/
 obj-$(CONFIG_USB_ISP116X_HCD)	+= host/
 obj-$(CONFIG_USB_OHCI_HCD)	+= host/
