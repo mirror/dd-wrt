@@ -189,6 +189,14 @@ config MTD_CFI_AMDSTD
 	  provides support for command set 0002, used on chips including
 	  the AMD Am29LV320.
 
+config MTD_CFI_FIXUP_MACRONIX_BOOTLOC
+	bool "Fix boot-block location for Macronix flash chips"
+	depends on MTD_CFI_AMDSTD
+	help
+	  Some Macronix flash chips have no/wrong boot-block location in the
+	  CFI table, and the driver may detect the type incorrectly. Select
+	  this if your board has such chip.
+
 config MTD_CFI_STAA
 	tristate "Support for CFI command set 0020 (ST (Advanced Architecture) chips)"
 	depends on MTD_GEN_PROBE

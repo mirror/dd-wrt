@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 4.4.0 Kernel Configuration
+# Linux/mips 4.4.4 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -8,6 +8,7 @@ CONFIG_MIPS=y
 # Machine selection
 #
 # CONFIG_MIPS_BRCM is not set
+# CONFIG_ADM5120 is not set
 # CONFIG_MIPS_ALCHEMY is not set
 # CONFIG_AR7 is not set
 # CONFIG_ATH25 is not set
@@ -917,6 +918,7 @@ CONFIG_MTD=y
 # CONFIG_MTD_TESTS is not set
 CONFIG_MTD_ROOTFS_ROOT_DEV=y
 # CONFIG_MTD_ROOTFS_SPLIT is not set
+# CONFIG_MTD_TRXSPLIT is not set
 # CONFIG_MTD_REDBOOT_PARTS is not set
 # CONFIG_MTD_CMDLINE_PARTS is not set
 # CONFIG_MTD_AR7_PARTS is not set
