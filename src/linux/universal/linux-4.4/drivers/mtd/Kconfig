@@ -38,6 +38,10 @@ config MTD_ROOTFS_GEN
 	depends on MTD = "y" && (RALINK_OPENWRT || PPC32)
 	default y
 
+config MTD_TRXSPLIT
+	bool "Automatically find and split TRX partitions"
+	default n
+
 config MTD_REDBOOT_PARTS
 	tristate "RedBoot partition table parsing"
 	---help---

@@ -1,5 +1,6 @@
 # All platforms listed in alphabetic order
 
+platforms += adm5120
 platforms += alchemy
 platforms += ar7
 platforms += ath25

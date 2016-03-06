@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/powerpc 4.4.0 Kernel Configuration
+# Linux/powerpc 4.4.4 Kernel Configuration
 #
 # CONFIG_PPC64 is not set
 
@@ -971,6 +971,7 @@ CONFIG_MTD=y
 # CONFIG_MTD_ROOTFS_ROOT_DEV is not set
 CONFIG_MTD_ROOTFS_SPLIT=y
 # CONFIG_MTD_ROOTFS_GEN is not set
+# CONFIG_MTD_TRXSPLIT is not set
 # CONFIG_MTD_REDBOOT_PARTS is not set
 # CONFIG_MTD_CMDLINE_PARTS is not set
 # CONFIG_MTD_OF_PARTS is not set
