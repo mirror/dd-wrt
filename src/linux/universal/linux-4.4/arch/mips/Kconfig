@@ -112,6 +112,24 @@ config MIPS_BRCM
 	select CFE
 
 
+config ADM5120
+	bool "Infineon/ADMtek ADM5120 SoC based machines"
+	select BOOT_RAW
+	select NO_EXCEPT_FILL
+	select CEVT_R4K
+	select CSRC_R4K
+	select SYS_HAS_CPU_MIPS32_R1
+	select SYS_HAS_EARLY_PRINTK
+	select DMA_NONCOHERENT
+	select IRQ_CPU
+	select SYS_SUPPORTS_LITTLE_ENDIAN
+	select SYS_SUPPORTS_BIG_ENDIAN
+	select SYS_SUPPORTS_32BIT_KERNEL
+	select ARCH_REQUIRE_GPIOLIB
+	select SWAP_IO_SPACE if CPU_BIG_ENDIAN
+	select MIPS_MACHINE
+	select HAVE_CLK
+
 config MIPS_ALCHEMY
 	bool "Alchemy processor based machines"
 	select ARCH_PHYS_ADDR_T_64BIT
@@ -1178,6 +1196,7 @@ if RALINK_DEVICE
 endif
 source "arch/mips/atheros/Kconfig"
 source "arch/mips/brcm-boards/Kconfig"
+source "arch/mips/adm5120/Kconfig"
 source "arch/mips/alchemy/Kconfig"
 source "arch/mips/ath25/Kconfig"
 source "arch/mips/ath79/Kconfig"

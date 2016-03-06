@@ -969,6 +969,15 @@ config PATA_QDI
 	help
 	  Support for QDI 6500 and 6580 PATA controllers on VESA local bus.
 
+config PATA_RB153_CF
+	tristate "RouterBOARD 153 Compact Flash support"
+	depends on ADM5120_MACH_RB_153
+	help
+	  This option enables support for a Compact Flash connected on
+	  the RouterBOARD 153.
+
+	  If unsure, say N.
+
 config PATA_RB532
 	tristate "RouterBoard 532 PATA CompactFlash support"
 	depends on MIKROTIK_RB532
