@@ -1,12 +1,3 @@
-libffi-configure:
-	cd libffi && ./configure --host=$(ARCH)-linux --build=$(ARCH) --prefix=/usr --libdir=/usr/lib CFLAGS="$(COPTS)"
-
-libffi:
-	make -C libffi
-
-libffi-install:
-	make -C libffi install DESTDIR=$(INSTALLDIR)/libffi
-
 python-configure: libffi-configure libffi libffi-install
 	cd python && ./configure --host=$(ARCH)-linux --build=$(ARCH) --sysconfdir=/etc \
 		--enable-shared \
