@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: filter.c 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: filter.c 14613 2015-12-06 22:13:10Z jordan $
  */
 
 #include <stdlib.h> /* qsort () */
@@ -52,7 +52,7 @@ enum
 static int
 pstrcmp (const void * a, const void * b)
 {
-  return g_strcmp0 (* (const char**)a, * (const char**)b);
+  return g_strcmp0 (* (const char* const *)a, * (const char* const *)b);
 }
 
 /* human-readable name; ie, Legaltorrents */
@@ -182,8 +182,8 @@ tracker_filter_model_update (gpointer gstore)
   qsort (hosts->pdata, hosts->len, sizeof (char*), pstrcmp);
 
   /* update the "all" count */
-  gtk_tree_model_iter_children (model, &iter, NULL);
-  tracker_model_update_count (store, &iter, all);
+  if (gtk_tree_model_iter_children (model, &iter, NULL))
+    tracker_model_update_count (store, &iter, all);
 
   store_pos = first_tracker_pos;
   for (i=0, n=hosts->len ; ;)
@@ -923,7 +923,7 @@ on_filter_model_row_inserted (GtkTreeModel * tree_model UNUSED,
 static void
 on_filter_model_row_deleted (GtkTreeModel * tree_model UNUSED,
                              GtkTreePath  * path       UNUSED,
-                             gpointer       data       UNUSED)
+                             gpointer       data)
 {
   update_count_label_idle (data);
 }

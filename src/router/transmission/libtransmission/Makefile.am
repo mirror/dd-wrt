@@ -5,12 +5,13 @@ AM_CPPFLAGS = \
 
 AM_CFLAGS = \
   @DHT_CFLAGS@ \
+  @LIBB64_CFLAGS@ \
   @LIBUTP_CFLAGS@ \
   @LIBUPNP_CFLAGS@ \
   @LIBNATPMP_CFLAGS@ \
   @LIBEVENT_CFLAGS@ \
   @LIBCURL_CFLAGS@ \
-  @OPENSSL_CFLAGS@ \
+  @CRYPTO_CFLAGS@ \
   @PTHREAD_CFLAGS@ \
   @ZLIB_CFLAGS@
 
@@ -28,7 +29,11 @@ libtransmission_a_SOURCES = \
   completion.c \
   ConvertUTF.c \
   crypto.c \
+  crypto-utils.c \
+  crypto-utils-fallback.c \
+  error.c \
   fdlimit.c \
+  file.c \
   handshake.c \
   history.c \
   inout.c \
@@ -67,9 +72,37 @@ libtransmission_a_SOURCES = \
   variant-benc.c \
   variant-json.c \
   verify.c \
+  watchdir.c \
+  watchdir-generic.c \
   web.c \
   webseed.c \
   wildmat.c
+
+if USE_INOTIFY
+libtransmission_a_SOURCES += watchdir-inotify.c
+AM_CPPFLAGS += -DWITH_INOTIFY
+endif
+
+if USE_KQUEUE
+libtransmission_a_SOURCES += watchdir-kqueue.c
+AM_CPPFLAGS += -DWITH_KQUEUE
+endif
+
+if WIN32
+libtransmission_a_SOURCES += file-win32.c watchdir-win32.c
+else
+libtransmission_a_SOURCES += file-posix.c
+endif
+
+if CRYPTO_USE_OPENSSL
+libtransmission_a_SOURCES += crypto-utils-openssl.c
+endif
+if CRYPTO_USE_CYASSL
+libtransmission_a_SOURCES += crypto-utils-cyassl.c
+endif
+if CRYPTO_USE_POLARSSL
+libtransmission_a_SOURCES += crypto-utils-polarssl.c
+endif
 
 noinst_HEADERS = \
   announcer.h \
@@ -81,8 +114,12 @@ noinst_HEADERS = \
   clients.h \
   ConvertUTF.h \
   crypto.h \
+  crypto-utils.h \
   completion.h \
+  error.h \
+  error-types.h \
   fdlimit.h \
+  file.h \
   handshake.h \
   history.h \
   inout.h \
@@ -125,6 +162,8 @@ noinst_HEADERS = \
   variant-common.h \
   verify.h \
   version.h \
+  watchdir.h \
+  watchdir-common.h \
   web.h \
   webseed.h
 
@@ -133,9 +172,12 @@ TESTS = \
   blocklist-test \
   clients-test \
   crypto-test \
+  error-test \
+  file-test \
   history-test \
   json-test \
   magnet-test \
+  makemeta-test \
   metainfo-test \
   move-test \
   peer-msgs-test \
@@ -145,12 +187,11 @@ TESTS = \
   session-test \
   tr-getopt-test \
   utils-test \
-  variant-test
+  variant-test \
+  watchdir-test \
+  watchdir-generic-test
 
 noinst_PROGRAMS = $(TESTS)
-
-apps_ldflags = \
-  @ZLIB_LDFLAGS@
 
 apps_ldadd = \
   ./libtransmission.a  \
@@ -158,12 +199,14 @@ apps_ldadd = \
   @LIBNATPMP_LIBS@ \
   @INTLLIBS@ \
   @DHT_LIBS@ \
+  @LIBB64_LIBS@ \
   @LIBUTP_LIBS@ \
   @LIBCURL_LIBS@ \
   @LIBEVENT_LIBS@ \
-  @OPENSSL_LIBS@ \
+  @CRYPTO_LIBS@ \
   @PTHREAD_LIBS@ \
-  @ZLIB_LIBS@
+  @ZLIB_LIBS@ \
+  ${LIBM}
 
 TEST_SOURCES = libtransmission-test.c
 
@@ -179,9 +222,17 @@ clients_test_SOURCES = clients-test.c $(TEST_SOURCES)
 clients_test_LDADD = ${apps_ldadd}
 clients_test_LDFLAGS = ${apps_ldflags}
 
-crypto_test_SOURCES = crypto-test.c $(TEST_SOURCES)
+crypto_test_SOURCES = crypto-test.c crypto-test-ref.h $(TEST_SOURCES)
 crypto_test_LDADD = ${apps_ldadd}
 crypto_test_LDFLAGS = ${apps_ldflags}
+
+error_test_SOURCES = error-test.c $(TEST_SOURCES)
+error_test_LDADD = ${apps_ldadd}
+error_test_LDFLAGS = ${apps_ldflags}
+
+file_test_SOURCES = file-test.c $(TEST_SOURCES)
+file_test_LDADD = ${apps_ldadd}
+file_test_LDFLAGS = ${apps_ldflags}
 
 history_test_SOURCES = history-test.c $(TEST_SOURCES)
 history_test_LDADD = ${apps_ldadd}
@@ -202,6 +253,10 @@ magnet_test_LDFLAGS = ${apps_ldflags}
 metainfo_test_SOURCES = metainfo-test.c $(TEST_SOURCES)
 metainfo_test_LDADD = ${apps_ldadd}
 metainfo_test_LDFLAGS = ${apps_ldflags}
+
+makemeta_test_SOURCES = makemeta-test.c $(TEST_SOURCES)
+makemeta_test_LDADD = ${apps_ldadd}
+makemeta_test_LDFLAGS = ${apps_ldflags}
 
 move_test_SOURCES = move-test.c $(TEST_SOURCES)
 move_test_LDADD = ${apps_ldadd}
@@ -230,6 +285,15 @@ utils_test_LDFLAGS = ${apps_ldflags}
 variant_test_SOURCES = variant-test.c $(TEST_SOURCES)
 variant_test_LDADD = ${apps_ldadd}
 variant_test_LDFLAGS = ${apps_ldflags}
+
+watchdir_test_SOURCES = watchdir-test.c $(TEST_SOURCES)
+watchdir_test_LDADD = ${apps_ldadd}
+watchdir_test_LDFLAGS = ${apps_ldflags}
+
+watchdir_generic_test_SOURCES = watchdir-test.c $(TEST_SOURCES)
+watchdir_generic_test_LDADD = ${apps_ldadd}
+watchdir_generic_test_LDFLAGS = ${apps_ldflags}
+watchdir_generic_test_CPPFLAGS = -DWATCHDIR_TEST_FORCE_GENERIC $(AM_CPPFLAGS)
 
 rename_test_SOURCES = rename-test.c $(TEST_SOURCES)
 rename_test_LDADD = ${apps_ldadd}

@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: details.c 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: details.c 14552 2015-07-13 00:32:48Z mikedld $
  */
 
 #include <limits.h> /* INT_MAX */
@@ -690,15 +690,22 @@ refreshInfo (struct DetailsImpl * di, tr_torrent ** torrents, int n)
           mixed_date |= (date != infos[i]->dateCreated);
         }
 
-      if (mixed_date && mixed_creator)
+      const gboolean empty_creator = !*creator;
+      const gboolean empty_date = date == 0;
+
+      if (mixed_date || mixed_creator)
         {
           str = mixed;
         }
+      else if (empty_date && empty_creator)
+        {
+          str = _("N/A");
+        }
       else
         {
-          if (mixed_date)
+          if (empty_date && !empty_creator)
             g_snprintf (buf, sizeof (buf), _("Created by %1$s"), creator);
-          else if (mixed_creator || !*creator)
+          else if (empty_creator && !empty_date)
             g_snprintf (buf, sizeof (buf), _("Created on %1$s"), datestr);
           else
             g_snprintf (buf, sizeof (buf), _("Created by %1$s on %2$s"), creator, datestr);
@@ -2435,15 +2442,19 @@ on_add_tracker_response (GtkDialog * dialog, int response, gpointer gdi)
         {
           if (tr_urlIsValidTracker (url))
             {
-              char * json = g_strdup_printf (
-                "{\n"
-                "  \"method\": \"torrent-set\",\n"
-                "  \"arguments\": { \"id\": %d, \"trackerAdd\": [ \"%s\" ] }\n"
-                "}\n",
-              torrent_id, url);
-              gtr_core_exec_json (di->core, json);
+              tr_variant top, * args, * trackers;
+
+              tr_variantInitDict (&top, 2);
+              tr_variantDictAddStr (&top, TR_KEY_method, "torrent-set");
+              args = tr_variantDictAddDict (&top, TR_KEY_arguments, 2);
+              tr_variantDictAddInt (args, TR_KEY_id, torrent_id);
+              trackers = tr_variantDictAddList (args, TR_KEY_trackerAdd, 1);
+              tr_variantListAddStr (trackers, url);
+
+              gtr_core_exec (di->core, &top);
               refresh (di);
-              g_free (json);
+
+              tr_variantFree (&top);
             }
           else
             {
@@ -2511,20 +2522,25 @@ on_tracker_list_remove_button_clicked (GtkButton * button UNUSED, gpointer gdi)
 
   if (gtk_tree_selection_get_selected (sel, &model, &iter))
     {
-      char * json;
       int torrent_id;
       int tracker_id;
+      tr_variant top, * args, * trackers;
+
       gtk_tree_model_get (model, &iter, TRACKER_COL_TRACKER_ID, &tracker_id,
                                         TRACKER_COL_TORRENT_ID, &torrent_id,
                                         -1);
-      json = g_strdup_printf ("{\n"
-                              "  \"method\": \"torrent-set\",\n"
-                              "  \"arguments\": { \"id\": %d, \"trackerRemove\": [ %d ] }\n"
-                              "}\n",
-                              torrent_id, tracker_id);
-      gtr_core_exec_json (di->core, json);
+
+      tr_variantInitDict (&top, 2);
+      tr_variantDictAddStr (&top, TR_KEY_method, "torrent-set");
+      args = tr_variantDictAddDict (&top, TR_KEY_arguments, 2);
+      tr_variantDictAddInt (args, TR_KEY_id, torrent_id);
+      trackers = tr_variantDictAddList (args, TR_KEY_trackerRemove, 1);
+      tr_variantListAddInt (trackers, tracker_id);
+
+      gtr_core_exec (di->core, &top);
       refresh (di);
-      g_free (json);
+
+      tr_variantFree (&top);
     }
 }
 

@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: peer-mgr.c 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: peer-mgr.c 14666 2016-01-07 19:20:14Z mikedld $
  */
 
 #include <assert.h>
@@ -24,7 +24,7 @@
 #include "cache.h"
 #include "clients.h"
 #include "completion.h"
-#include "crypto.h"
+#include "crypto-utils.h"
 #include "handshake.h"
 #include "log.h"
 #include "net.h"
@@ -348,11 +348,15 @@ swarmUnlock (tr_swarm * swarm)
   managerUnlock (swarm->manager);
 }
 
+#ifndef NDEBUG
+
 static inline int
 swarmIsLocked (const tr_swarm * swarm)
 {
   return tr_sessionIsLocked (swarm->manager->session);
 }
+
+#endif /* NDEBUG */
 
 /**
 ***
@@ -877,7 +881,7 @@ testForEndgame (const tr_swarm * s)
 {
   /* we consider ourselves to be in endgame if the number of bytes
      we've got requested is >= the number of bytes left to download */
-  return (s->requestCount * s->tor->blockSize)
+  return ((uint64_t) s->requestCount * s->tor->blockSize)
                >= tr_torrentGetLeftUntilDone (s->tor);
 }
 
@@ -1097,7 +1101,7 @@ pieceListRebuild (tr_swarm * s)
           struct weighted_piece * piece = pieces + i;
           piece->index = pool[i];
           piece->requestCount = 0;
-          piece->salt = tr_cryptoWeakRandInt (4096);
+          piece->salt = tr_rand_int_weak (4096);
         }
 
       /* if we already had a list of pieces, merge it into
@@ -1556,7 +1560,7 @@ addStrike (tr_swarm * s, tr_peer * peer)
     {
       struct peer_atom * atom = peer->atom;
       atom->flags2 |= MYFLAG_BANNED;
-      peer->doPurge = 1;
+      peer->doPurge = true;
       tordbg (s, "banning peer %s", tr_atomAddrStr (atom));
     }
 }
@@ -1811,7 +1815,7 @@ peerCallbackFunc (tr_peer * peer, const tr_peer_event * e, void * vs)
         if ((e->err == ERANGE) || (e->err == EMSGSIZE) || (e->err == ENOTCONN))
           {
             /* some protocol error from the peer */
-            peer->doPurge = 1;
+            peer->doPurge = true;
             tordbg (s, "setting %s doPurge flag because we got an ERANGE, EMSGSIZE, or ENOTCONN error",
                     tr_atomAddrStr (peer->atom));
           }
@@ -1863,7 +1867,7 @@ ensureAtomExists (tr_swarm          * s,
 
   if (a == NULL)
     {
-      const int jitter = tr_cryptoWeakRandInt (60*10);
+      const int jitter = tr_rand_int_weak (60*10);
       a = tr_new0 (struct peer_atom, 1);
       a->addr = *addr;
       a->port = port;
@@ -1994,6 +1998,9 @@ myHandshakeDoneCB (tr_handshake  * handshake,
 
       ensureAtomExists (s, addr, port, 0, -1, TR_PEER_FROM_INCOMING);
       atom = getExistingAtom (s, addr);
+
+      assert (atom != NULL);
+
       atom->time = tr_time ();
       atom->piece_data_time = 0;
       atom->lastConnectionAt = tr_time ();
@@ -2031,7 +2038,7 @@ myHandshakeDoneCB (tr_handshake  * handshake,
               char buf[128];
 
               if (peer_id != NULL)
-                client = tr_quark_new (tr_clientForId (buf, sizeof (buf), peer_id), -1);
+                client = tr_quark_new (tr_clientForId (buf, sizeof (buf), peer_id), TR_BAD_SIZE);
               else
                 client = TR_KEY_NONE;
 
@@ -2055,7 +2062,7 @@ void
 tr_peerMgrAddIncoming (tr_peerMgr       * manager,
                        tr_address       * addr,
                        tr_port            port,
-                       int                socket,
+                       tr_socket_t        socket,
                        struct UTPSocket * utp_socket)
 {
   tr_session * session;
@@ -2068,14 +2075,14 @@ tr_peerMgrAddIncoming (tr_peerMgr       * manager,
   if (tr_sessionIsAddressBlocked (session, addr))
     {
       tr_logAddDebug ("Banned IP address \"%s\" tried to connect to us", tr_address_to_string (addr));
-      if (socket >= 0)
+      if (socket != TR_BAD_SOCKET)
         tr_netClose (session, socket);
       else
         UTP_Close (utp_socket);
     }
   else if (getExistingHandshake (&manager->incomingHandshakes, addr))
     {
-      if (socket >= 0)
+      if (socket != TR_BAD_SOCKET)
         tr_netClose (session, socket);
       else
         UTP_Close (utp_socket);
@@ -2253,8 +2260,8 @@ tr_pexCompare (const void * va, const void * vb)
 static int
 compareAtomsByUsefulness (const void * va, const void *vb)
 {
-  const struct peer_atom * a = * (const struct peer_atom**) va;
-  const struct peer_atom * b = * (const struct peer_atom**) vb;
+  const struct peer_atom * a = * (const struct peer_atom* const *) va;
+  const struct peer_atom * b = * (const struct peer_atom* const *) vb;
 
   assert (tr_isAtom (a));
   assert (tr_isAtom (b));
@@ -2612,14 +2619,12 @@ tr_peerMgrGetDesiredAvailable (const tr_torrent * tor)
 
   /* common shortcuts... */
 
-  if (tr_torrentIsSeed (tor))
-    return 0;
-
-  if (!tr_torrentHasMetadata (tor))
+  if (!tor->isRunning || tor->isStopping ||
+      tr_torrentIsSeed (tor) || !tr_torrentHasMetadata (tor))
     return 0;
 
   s = tor->swarm;
-  if (s == NULL)
+  if (s == NULL || !s->isRunning)
     return 0;
 
   n = tr_ptrArraySize (&s->peers);
@@ -2892,9 +2897,9 @@ rechokeDownloads (tr_swarm * s)
         const double mult = MIN (timeSinceCancel, maxHistory) / (double) maxHistory;
         const int inc = maxIncrease * mult;
         maxPeers = s->maxPeers + inc;
-        tordbg (s, "time since last cancel is %li -- increasing the "
+        tordbg (s, "time since last cancel is %jd -- increasing the "
                    "number of peers we're interested in by %d",
-                   timeSinceCancel, inc);
+                   (intmax_t)timeSinceCancel, inc);
       }
   }
 
@@ -2948,7 +2953,7 @@ rechokeDownloads (tr_swarm * s)
 
               rechoke[rechoke_count].peer = peer;
               rechoke[rechoke_count].rechoke_state = rechoke_state;
-              rechoke[rechoke_count].salt = tr_cryptoWeakRandInt (INT_MAX);
+              rechoke[rechoke_count].salt = tr_rand_int_weak (INT_MAX);
               rechoke_count++;
             }
 
@@ -3053,7 +3058,7 @@ rechokeUploads (tr_swarm * s, const uint64_t now)
   tr_peer ** peers = (tr_peer**) tr_ptrArrayBase (&s->peers);
   struct ChokeData * choke = tr_new0 (struct ChokeData, peerCount);
   const tr_session * session = s->manager->session;
-  const int chokeAll = !tr_torrentIsPieceTransferAllowed (s->tor, TR_CLIENT_TO_PEER);
+  const bool chokeAll = !tr_torrentIsPieceTransferAllowed (s->tor, TR_CLIENT_TO_PEER);
   const bool isMaxedOut = isBandwidthMaxedOut (&s->tor->bandwidth, now, TR_UP);
 
   assert (swarmIsLocked (s));
@@ -3088,7 +3093,7 @@ rechokeUploads (tr_swarm * s, const uint64_t now)
           n->isInterested = tr_peerMsgsIsPeerInterested (msgs);
           n->wasChoked    = tr_peerMsgsIsPeerChoked (msgs);
           n->rate         = getRate (s->tor, atom, now);
-          n->salt         = tr_cryptoWeakRandInt (INT_MAX);
+          n->salt         = tr_rand_int_weak (INT_MAX);
           n->isChoked     = true;
         }
     }
@@ -3139,7 +3144,7 @@ rechokeUploads (tr_swarm * s, const uint64_t now)
 
       if ((n = tr_ptrArraySize (&randPool)))
         {
-          c = tr_ptrArrayNth (&randPool, tr_cryptoWeakRandInt (n));
+          c = tr_ptrArrayNth (&randPool, tr_rand_int_weak (n));
           c->isChoked = false;
           s->optimistic = c->msgs;
           s->optimisticUnchokeTimeScaler = OPTIMISTIC_UNCHOKE_MULTIPLIER;
@@ -3278,7 +3283,7 @@ getReconnectIntervalSecs (const struct peer_atom * atom, const time_t now)
       /* penalize peers that were unreachable the last time we tried */
       if (unreachable)
         step += 2;
- 
+
       switch (step)
         {
           case 0: sec = 0; break;
@@ -3658,8 +3663,8 @@ bandwidthPulse (evutil_socket_t foo UNUSED, short bar UNUSED, void * vmgr)
 static int
 compareAtomPtrsByAddress (const void * va, const void *vb)
 {
-  const struct peer_atom * a = * (const struct peer_atom**) va;
-  const struct peer_atom * b = * (const struct peer_atom**) vb;
+  const struct peer_atom * a = * (const struct peer_atom* const *) va;
+  const struct peer_atom * b = * (const struct peer_atom* const *) vb;
 
   assert (tr_isAtom (a));
   assert (tr_isAtom (b));
@@ -3673,8 +3678,8 @@ compareAtomPtrsByShelfDate (const void * va, const void *vb)
 {
   time_t atime;
   time_t btime;
-  const struct peer_atom * a = * (const struct peer_atom**) va;
-  const struct peer_atom * b = * (const struct peer_atom**) vb;
+  const struct peer_atom * a = * (const struct peer_atom* const *) va;
+  const struct peer_atom * b = * (const struct peer_atom* const *) vb;
   const int data_time_cutoff_secs = 60 * 60;
   const time_t tr_now = tr_time ();
 
@@ -3982,7 +3987,7 @@ getPeerCandidates (tr_session * session, int * candidateCount, int max)
 
           if (isPeerCandidate (tor, atom, now))
             {
-              const uint8_t salt = tr_cryptoWeakRandInt (1024);
+              const uint8_t salt = tr_rand_int_weak (1024);
               walk->tor = tor;
               walk->atom = atom;
               walk->score = getPeerCandidateScore (tor, atom, salt);

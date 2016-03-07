@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: inout.c 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: inout.c 14476 2015-03-15 11:43:32Z mikedld $
  */
 
 #include <assert.h>
@@ -13,11 +13,12 @@
 #include <string.h> /* memcmp () */
 #include <fcntl.h>
 
-#include <openssl/sha.h>
-
 #include "transmission.h"
 #include "cache.h" /* tr_cacheReadBlock () */
+#include "crypto-utils.h"
+#include "error.h"
 #include "fdlimit.h"
+#include "file.h"
 #include "inout.h"
 #include "log.h"
 #include "peer-common.h" /* MAX_BLOCK_SIZE */
@@ -47,7 +48,7 @@ readOrWriteBytes (tr_session       * session,
                   void             * buf,
                   size_t             buflen)
 {
-  int fd;
+  tr_sys_file_t fd;
   int err = 0;
   const bool doWrite = ioMode >= TR_IO_WRITE;
   const tr_info * const info = &tor->info;
@@ -65,7 +66,7 @@ readOrWriteBytes (tr_session       * session,
   ***/
 
   fd = tr_fdFileGetCached (session, tr_torrentId (tor), fileIndex, doWrite);
-  if (fd < 0)
+  if (fd == TR_BAD_SYS_FILE)
     {
       /* it's not cached, so open/create it now */
       char * subpath;
@@ -95,7 +96,7 @@ readOrWriteBytes (tr_session       * session,
                              : tor->session->preallocationMode;
           if (((fd = tr_fdFileCheckout (session, tor->uniqueId, fileIndex,
                                         filename, doWrite,
-                                        prealloc, file->length))) < 0)
+                                        prealloc, file->length))) == TR_BAD_SYS_FILE)
             {
               err = errno;
               tr_logAddTorErr (tor, "tr_fdFileCheckout failed for \"%s\": %s",
@@ -119,27 +120,29 @@ readOrWriteBytes (tr_session       * session,
 
   if (!err)
     {
+      tr_error * error = NULL;
+
       if (ioMode == TR_IO_READ)
         {
-          const int rc = tr_pread (fd, buf, buflen, fileOffset);
-          if (rc < 0)
+          if (!tr_sys_file_read_at (fd, buf, buflen, fileOffset, NULL, &error))
             {
-              err = errno;
-              tr_logAddTorErr (tor, "read failed for \"%s\": %s", file->name, tr_strerror (err));
+              err = error->code;
+              tr_logAddTorErr (tor, "read failed for \"%s\": %s", file->name, error->message);
+              tr_error_free (error);
             }
         }
       else if (ioMode == TR_IO_WRITE)
         {
-          const int rc = tr_pwrite (fd, buf, buflen, fileOffset);
-          if (rc < 0)
+          if (!tr_sys_file_write_at (fd, buf, buflen, fileOffset, NULL, &error))
             {
-              err = errno;
-              tr_logAddTorErr (tor, "write failed for \"%s\": %s", file->name, tr_strerror (err));
+              err = error->code;
+              tr_logAddTorErr (tor, "write failed for \"%s\": %s", file->name, error->message);
+              tr_error_free (error);
             }
         }
       else if (ioMode == TR_IO_PREFETCH)
         {
-          tr_prefetch (fd, fileOffset, buflen);
+          tr_sys_file_prefetch (fd, fileOffset, buflen, NULL);
         }
       else
         {
@@ -275,7 +278,7 @@ recalculateHash (tr_torrent * tor, tr_piece_index_t pieceIndex, uint8_t * setme)
   bool  success = true;
   const size_t buflen = tor->blockSize;
   void * buffer = tr_valloc (buflen);
-  SHA_CTX  sha;
+  tr_sha1_ctx_t sha;
 
   assert (tor != NULL);
   assert (pieceIndex < tor->info.pieceCount);
@@ -283,24 +286,23 @@ recalculateHash (tr_torrent * tor, tr_piece_index_t pieceIndex, uint8_t * setme)
   assert (buflen > 0);
   assert (setme != NULL);
 
-  SHA1_Init (&sha);
+  sha = tr_sha1_init ();
   bytesLeft = tr_torPieceCountBytes (tor, pieceIndex);
 
   tr_ioPrefetch (tor, pieceIndex, offset, bytesLeft);
 
   while (bytesLeft)
     {
-      const int len = MIN (bytesLeft, buflen);
+      const size_t len = MIN (bytesLeft, buflen);
       success = !tr_cacheReadBlock (tor->session->cache, tor, pieceIndex, offset, len, buffer);
       if (!success)
         break;
-      SHA1_Update (&sha, buffer, len);
+      tr_sha1_update (sha, buffer, len);
       offset += len;
       bytesLeft -= len;
     }
 
-  if (success)
-    SHA1_Final (setme, &sha);
+  tr_sha1_final (sha, success ? setme : NULL);
 
   tr_free (buffer);
   return success;

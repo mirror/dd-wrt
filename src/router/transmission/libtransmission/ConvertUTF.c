@@ -43,6 +43,9 @@
  #include <stdio.h>
 #endif
 #include <string.h> /* strlen () */
+
+#include "transmission.h"
+
 #include "ConvertUTF.h"
 
 static const int halfShift  = 10; /* used for shifting by 10 bits */
@@ -301,12 +304,12 @@ static Boolean isLegalUTF8 (const UTF8 *source, int length) {
 	/* Everything else falls through when "true"... */
     case 4: if ((a = (*--srcptr)) < 0x80 || a > 0xBF) return false;
     case 3: if ((a = (*--srcptr)) < 0x80 || a > 0xBF) return false;
-    case 2: if ((a = (*--srcptr)) > 0xBF) return false;
+    case 2: if ((a = (*--srcptr)) < 0x80 || a > 0xBF) return false;
 
 	switch (*source) {
 	    /* no fall-through in this inner switch */
 	    case 0xE0: if (a < 0xA0) return false; break;
-	    case 0xED: if ((a < 0x80) || (a > 0x9F)) return false; break;
+	    case 0xED: if (a > 0x9F) return false; break;
 	    case 0xF0: if (a < 0x90) return false; break;
 	    case 0xF4: if (a > 0x8F) return false; break;
 	    default:   if (a < 0x80) return false;
@@ -350,7 +353,7 @@ Boolean isLegalUTF8Sequence (const UTF8 *source, const UTF8 *sourceEnd) {
  * In addition to knowing if the sequence is legal, it also tells you the last good character.
  */
 Boolean
-tr_utf8_validate (const char * str, int max_len, const char ** end)
+tr_utf8_validate (const char * str, size_t max_len, const char ** end)
 {
     const UTF8* source = (const UTF8*) str;
     const UTF8* sourceEnd;
@@ -361,7 +364,7 @@ tr_utf8_validate (const char * str, int max_len, const char ** end)
     if (str == NULL)
         return false;
 
-    sourceEnd = source + ((max_len < 0) ? strlen (str) : (size_t)max_len);
+    sourceEnd = source + (max_len == TR_BAD_SIZE ? strlen (str) : max_len);
 
     if (source == sourceEnd)
     {
@@ -390,8 +393,6 @@ tr_utf8_validate (const char * str, int max_len, const char ** end)
             return true;
         }
     }
-
-    
 }
 
 
@@ -406,7 +407,7 @@ ConversionResult ConvertUTF8toUTF16 (
     while (source < sourceEnd) {
 	UTF32 ch = 0;
 	unsigned short extraBytesToRead = trailingBytesForUTF8[*source];
-	if (source + extraBytesToRead >= sourceEnd) {
+	if (extraBytesToRead >= sourceEnd - source) {
 	    result = sourceExhausted; break;
 	}
 	/* Do this check whether lenient or strict */
@@ -532,7 +533,7 @@ ConversionResult ConvertUTF8toUTF32 (
     while (source < sourceEnd) {
 	UTF32 ch = 0;
 	unsigned short extraBytesToRead = trailingBytesForUTF8[*source];
-	if (source + extraBytesToRead >= sourceEnd) {
+	if (extraBytesToRead >= sourceEnd - source) {
 	    result = sourceExhausted; break;
 	}
 	/* Do this check whether lenient or strict */

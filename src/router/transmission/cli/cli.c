@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cli.c 14077 2013-05-22 20:35:38Z jordan $
+ * $Id: cli.c 14581 2015-10-18 18:39:14Z mikedld $
  *
  * Copyright (c) Transmission authors and contributors
  *
@@ -28,6 +28,8 @@
 #include <signal.h>
 
 #include <libtransmission/transmission.h>
+#include <libtransmission/error.h>
+#include <libtransmission/file.h>
 #include <libtransmission/tr-getopt.h>
 #include <libtransmission/utils.h> /* tr_wait_msec */
 #include <libtransmission/variant.h>
@@ -220,7 +222,8 @@ getConfigDir (int argc, const char ** argv)
 }
 
 int
-main (int argc, char ** argv)
+tr_main (int    argc,
+         char * argv[])
 {
   tr_session  * h;
   tr_ctor     * ctor;
@@ -265,23 +268,23 @@ main (int argc, char ** argv)
 
   if (tr_variantDictFindStr (&settings, TR_KEY_download_dir, &str, NULL))
     {
-      if (!tr_fileExists (str, NULL))
+      if (!tr_sys_path_exists (str, NULL))
         {
-          tr_mkdirp (str, 0700);
-
-          if (!tr_fileExists (str, NULL))
+          tr_error * error = NULL;
+          if (!tr_sys_dir_create (str, TR_SYS_DIR_CREATE_PARENTS, 0700, &error))
             {
-              fprintf (stderr, "Unable to create download directory \"%s\"!\n", str);
+              fprintf (stderr, "Unable to create download directory \"%s\": %s\n", str, error->message);
+              tr_error_free (error);
               return EXIT_FAILURE;
             }
         }
     }
 
-  h = tr_sessionInit ("cli", configDir, false, &settings);
+  h = tr_sessionInit (configDir, false, &settings);
 
   ctor = tr_ctorNew (h);
 
-  fileContents = tr_loadFile (torrentPath, &fileLength);
+  fileContents = tr_loadFile (torrentPath, &fileLength, NULL);
   tr_ctorSetPaused (ctor, TR_FORCE, false);
   if (fileContents != NULL)
     {
@@ -319,7 +322,7 @@ main (int argc, char ** argv)
     }
 
   signal (SIGINT, sigHandler);
-#ifndef WIN32
+#ifndef _WIN32
   signal (SIGHUP, sigHandler);
 #endif
   tr_torrentStart (tor);
@@ -489,7 +492,7 @@ sigHandler (int signal)
         gotsig = true;
         break;
 
-#ifndef WIN32
+#ifndef _WIN32
       case SIGHUP:
         manualUpdate = true;
         break;

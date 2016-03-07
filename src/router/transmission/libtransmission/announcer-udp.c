@@ -4,10 +4,10 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: announcer-udp.c 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: announcer-udp.c 14648 2015-12-31 14:17:37Z mikedld $
  */
 
-#define __LIBTRANSMISSION_ANNOUNCER_MODULE___
+#define __LIBTRANSMISSION_ANNOUNCER_MODULE__
 
 #include <errno.h> /* errno, EAFNOSUPPORT */
 #include <string.h> /* memcpy (), memset () */
@@ -19,7 +19,7 @@
 #include "transmission.h"
 #include "announcer.h"
 #include "announcer-common.h"
-#include "crypto.h" /* tr_cryptoRandBuf () */
+#include "crypto-utils.h" /* tr_rand_buffer () */
 #include "log.h"
 #include "peer-io.h"
 #include "peer-mgr.h" /* tr_peerMgrCompactToPex () */
@@ -53,16 +53,16 @@ tau_sendto (tr_session * session,
             struct evutil_addrinfo * ai, tr_port port,
             const void * buf, size_t buflen)
 {
-    int sockfd;
+    tr_socket_t sockfd;
 
     if (ai->ai_addr->sa_family == AF_INET)
         sockfd = session->udp_socket;
     else if (ai->ai_addr->sa_family == AF_INET6)
         sockfd = session->udp6_socket;
     else
-        sockfd = -1;
+        sockfd = TR_BAD_SOCKET;
 
-    if (sockfd < 0) {
+    if (sockfd == TR_BAD_SOCKET) {
         errno = EAFNOSUPPORT;
         return -1;
     }
@@ -108,7 +108,7 @@ static tau_transaction_t
 tau_transaction_new (void)
 {
     tau_transaction_t tmp;
-    tr_cryptoRandBuf (&tmp, sizeof (tau_transaction_t));
+    tr_rand_buffer (&tmp, sizeof (tau_transaction_t));
     return tmp;
 }
 
@@ -123,7 +123,7 @@ typedef enum
 tau_action_t;
 
 static bool
-is_tau_response_message (int action, int msglen)
+is_tau_response_message (tau_action_t action, size_t msglen)
 {
     if (action == TAU_ACTION_CONNECT) return msglen == 16;
     if (action == TAU_ACTION_ANNOUNCE) return msglen >= 20;
@@ -451,10 +451,10 @@ static void tau_tracker_upkeep (struct tau_tracker *);
 static void
 tau_tracker_free (struct tau_tracker * t)
 {
+    assert (t->dns_request == NULL);
+
     if (t->addr)
         evutil_freeaddrinfo (t->addr);
-    if (t->dns_request != NULL)
-        evdns_getaddrinfo_cancel (t->dns_request);
     tr_ptrArrayDestruct (&t->announces, (PtrArrayForeachFunc)tau_announce_request_free);
     tr_ptrArrayDestruct (&t->scrapes, (PtrArrayForeachFunc)tau_scrape_request_free);
     tr_free (t->host);
@@ -500,7 +500,7 @@ tau_tracker_on_dns (int errcode, struct evutil_addrinfo *addr, void * vtracker)
     if (errcode)
     {
         char * errmsg = tr_strdup_printf (_("DNS Lookup failed: %s"),
-                                          evdns_err_to_string (errcode));
+                                          evutil_gai_strerror (errcode));
         dbgmsg (tracker->key, "%s", errmsg);
         tau_tracker_fail_all (tracker, false, false, errmsg);
         tr_free (errmsg);
@@ -654,16 +654,18 @@ static bool
 tau_tracker_is_idle (const struct tau_tracker * tracker)
 {
     return tr_ptrArrayEmpty (&tracker->announces)
-        && tr_ptrArrayEmpty (&tracker->scrapes);
+        && tr_ptrArrayEmpty (&tracker->scrapes)
+        && tracker->dns_request == NULL;
 }
 
 static void
 tau_tracker_upkeep (struct tau_tracker * tracker)
 {
     const time_t now = tr_time ();
+    const bool closing = tracker->close_at != 0;
 
     /* if the address info is too old, expire it */
-    if (tracker->addr && (tracker->addr_expiration_time <= now)) {
+    if (tracker->addr != NULL && (closing || tracker->addr_expiration_time <= now)) {
         dbgmsg (tracker->host, "Expiring old DNS result");
         evutil_freeaddrinfo (tracker->addr);
         tracker->addr = NULL;
@@ -674,7 +676,7 @@ tau_tracker_upkeep (struct tau_tracker * tracker)
         return;
 
     /* if we don't have an address yet, try & get one now. */
-    if (!tracker->addr && (tracker->dns_request == NULL))
+    if (!closing && tracker->addr == NULL && tracker->dns_request == NULL)
     {
         struct evutil_addrinfo hints;
         memset (&hints, 0, sizeof (hints));
@@ -688,7 +690,7 @@ tau_tracker_upkeep (struct tau_tracker * tracker)
         return;
     }
 
-    dbgmsg (tracker->key, "addr %p -- connected %d (%"TR_PRIuSIZE" %"TR_PRIuSIZE") -- connecting_at %"TR_PRIuSIZE,
+    dbgmsg (tracker->key, "addr %p -- connected %d (%zu %zu) -- connecting_at %zu",
             (void*)tracker->addr,
             (int)(tracker->connection_expiration_time > now),
             (size_t)tracker->connection_expiration_time,
@@ -763,7 +765,7 @@ tau_session_get_tracker (struct tr_announcer_udp * tau, const char * url)
     struct tau_tracker * tracker = NULL;
 
     /* see if we've already got a tracker that matches this host + port */
-    tr_urlParse (url, -1, NULL, &host, &port, NULL);
+    tr_urlParse (url, TR_BAD_SIZE, NULL, &host, &port, NULL);
     key = tr_strdup_printf ("%s:%d", host, port);
     for (i=0, n=tr_ptrArraySize (&tau->trackers); !tracker && i<n; ++i) {
         struct tau_tracker * tmp = tr_ptrArrayNth (&tau->trackers, i);
@@ -853,6 +855,8 @@ tr_tracker_udp_start_shutdown (tr_session * session)
         for (i=0, n=tr_ptrArraySize (&tau->trackers); i<n; ++i)
         {
             struct tau_tracker * tracker = tr_ptrArrayNth (&tau->trackers, i);
+            if (tracker->dns_request != NULL)
+                evdns_getaddrinfo_cancel (tracker->dns_request);
             tracker->close_at = now + 3;
             tau_tracker_upkeep (tracker);
         }
@@ -871,7 +875,7 @@ tau_handle_message (tr_session * session, const uint8_t * msg, size_t msglen)
     tau_transaction_t transaction_id;
     struct evbuffer * buf;
 
-    /*fprintf (stderr, "got an incoming udp message w/len %"TR_PRIuSIZE"\n", msglen);*/
+    /*fprintf (stderr, "got an incoming udp message w/len %zu\n", msglen);*/
 
     if (!session || !session->announcer_udp)
         return false;

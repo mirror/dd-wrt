@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: quark.c 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: quark.c 14666 2016-01-07 19:20:14Z mikedld $
  */
 
 #include <assert.h>
@@ -480,7 +480,7 @@ tr_quark_new (const void * str, size_t len)
 
   if (str == NULL)
     len = 0;
-  else if (len == (size_t)-1)
+  else if (len == TR_BAD_SIZE)
     len = strlen (str);
 
   if (!tr_quark_lookup (str, len, &ret))
@@ -488,7 +488,7 @@ tr_quark_new (const void * str, size_t len)
 
   return ret;
 }
-  
+
 const char *
 tr_quark_get_string (tr_quark q, size_t * len)
 {

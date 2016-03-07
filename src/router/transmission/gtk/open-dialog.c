@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: open-dialog.c 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: open-dialog.c 14666 2016-01-07 19:20:14Z mikedld $
  */
 
 #include <glib/gi18n.h>
@@ -13,7 +13,7 @@
 #include <string.h>
 
 #include <libtransmission/transmission.h>
-#include <libtransmission/utils.h> /* tr_is_same_file () */
+#include <libtransmission/file.h> /* tr_sys_path_is_same () */
 
 #include "conf.h"
 #include "file-list.h"
@@ -39,7 +39,7 @@ get_recent_destinations (void)
       char key[64];
       const char * val;
       g_snprintf (key, sizeof (key), "recent-download-dir-%d", i+1);
-      if ((val = gtr_pref_string_get (tr_quark_new(key,-1))))
+      if ((val = gtr_pref_string_get (tr_quark_new(key, TR_BAD_SIZE))))
         list = g_slist_append (list, (void*)val);
     }
 
@@ -73,7 +73,7 @@ save_recent_destination (TrCore * core, const char * dir)
     {
       char key[64];
       g_snprintf (key, sizeof (key), "recent-download-dir-%d", i + 1);
-      gtr_pref_string_set (tr_quark_new(key,-1), l->data);
+      gtr_pref_string_set (tr_quark_new(key, TR_BAD_SIZE), l->data);
     }
   gtr_pref_save (gtr_core_session (core));
 
@@ -134,7 +134,7 @@ addResponseCB (GtkDialog * dialog,
           gtr_core_add_torrent (o->core, o->tor, FALSE);
 
           if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (o->trash_check)))
-            gtr_file_trash_or_remove (o->filename);
+            gtr_file_trash_or_remove (o->filename, NULL);
 
           save_recent_destination (o->core, o->downloadDir);
         }
@@ -188,7 +188,7 @@ sourceChanged (GtkFileChooserButton * b, gpointer gdata)
       int duplicate_id = 0;
       tr_torrent * torrent;
 
-      if (filename && (!o->filename || !tr_is_same_file (filename, o->filename)))
+      if (filename && (!o->filename || !tr_sys_path_is_same (filename, o->filename, NULL)))
         {
           g_free (o->filename);
           o->filename = g_strdup (filename);
@@ -229,7 +229,7 @@ downloadDirChanged (GtkFileChooserButton * b, gpointer gdata)
   struct OpenData * data = gdata;
   char * fname = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (b));
 
-  if (fname && (!data->downloadDir || !tr_is_same_file (fname, data->downloadDir)))
+  if (fname && (!data->downloadDir || !tr_sys_path_is_same (fname, data->downloadDir, NULL)))
     {
       g_free (data->downloadDir);
       data->downloadDir = g_strdup (fname);
@@ -289,7 +289,7 @@ gtr_torrent_options_dialog_new (GtkWindow * parent, TrCore * core, tr_ctor * cto
                                            GTK_RESPONSE_CANCEL,
                                            -1);
 
-  if (tr_ctorGetDownloadDir (ctor, TR_FORCE, &str))
+  if (!tr_ctorGetDownloadDir (ctor, TR_FORCE, &str))
     g_assert_not_reached ();
   g_assert (str);
 
@@ -375,7 +375,7 @@ gtr_torrent_options_dialog_new (GtkWindow * parent, TrCore * core, tr_ctor * cto
   /* torrent priority row */
   row++;
   w = data->run_check;
-  if (tr_ctorGetPaused (ctor, TR_FORCE, &flag))
+  if (!tr_ctorGetPaused (ctor, TR_FORCE, &flag))
     g_assert_not_reached ();
   gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (w), !flag);
   gtk_grid_attach (grid, w, 0, row, 2, 1);
@@ -383,7 +383,7 @@ gtr_torrent_options_dialog_new (GtkWindow * parent, TrCore * core, tr_ctor * cto
   /* "trash .torrent file" row */
   row++;
   w = data->trash_check;
-  if (tr_ctorGetDeleteSource (ctor, &flag))
+  if (!tr_ctorGetDeleteSource (ctor, &flag))
     g_assert_not_reached ();
   gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (w), flag);
   gtk_grid_attach (grid, w, 0, row, 2, 1);

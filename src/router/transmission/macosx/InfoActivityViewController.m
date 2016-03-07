@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: InfoActivityViewController.m 14052 2013-03-12 03:33:54Z livings124 $
+ * $Id: InfoActivityViewController.m 14341 2014-10-17 05:12:00Z livings124 $
  *
  * Copyright (c) 2010-2012 Transmission authors and contributors
  *
@@ -23,6 +23,7 @@
  *****************************************************************************/
 
 #import "InfoActivityViewController.h"
+#import "NSApplicationAdditions.h"
 #import "NSStringAdditions.h"
 #import "PiecesView.h"
 #import "Torrent.h"
@@ -185,8 +186,23 @@
         //uses a relative date, so can't be set once
         [fDateAddedField setObjectValue: [torrent dateAdded]];
         
-        [fDownloadTimeField setStringValue: [NSString timeString: [torrent secondsDownloading] showSeconds: YES]];
-        [fSeedTimeField setStringValue: [NSString timeString: [torrent secondsSeeding] showSeconds: YES]];
+        if ([NSApp isOnYosemiteOrBetter]) {
+            static NSDateComponentsFormatter *timeFormatter;
+            static dispatch_once_t onceToken;
+            dispatch_once(&onceToken, ^{
+                timeFormatter = [NSDateComponentsFormatter new];
+                timeFormatter.unitsStyle = NSDateComponentsFormatterUnitsStyleShort;
+                timeFormatter.allowedUnits = NSCalendarUnitDay | NSCalendarUnitHour | NSCalendarUnitMinute | NSCalendarUnitSecond;
+                timeFormatter.zeroFormattingBehavior = NSDateComponentsFormatterZeroFormattingBehaviorDropLeading;
+            });
+            
+            [fDownloadTimeField setStringValue: [timeFormatter stringFromTimeInterval:[torrent secondsDownloading]]];
+            [fSeedTimeField setStringValue: [timeFormatter stringFromTimeInterval:[torrent secondsSeeding]]];
+        }
+        else {
+            [fDownloadTimeField setStringValue: [NSString timeString: [torrent secondsDownloading] includesTimeRemainingPhrase:NO showSeconds: YES]];
+            [fSeedTimeField setStringValue: [NSString timeString: [torrent secondsSeeding] includesTimeRemainingPhrase:NO showSeconds: YES]];
+        }
         
         [fPiecesView updateView];
     }

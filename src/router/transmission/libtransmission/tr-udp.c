@@ -25,7 +25,11 @@ THE SOFTWARE.
 #include <string.h> /* memcmp (), memcpy (), memset () */
 #include <stdlib.h> /* malloc (), free () */
 
-#include <unistd.h> /* close () */
+#ifdef _WIN32
+ #include <io.h> /* dup2 () */
+#else
+ #include <unistd.h> /* dup2 () */
+#endif
 
 #include <event2/event.h>
 
@@ -47,29 +51,31 @@ THE SOFTWARE.
 #define SMALL_BUFFER_SIZE (32 * 1024)
 
 static void
-set_socket_buffers (int fd, int large)
+set_socket_buffers (tr_socket_t fd,
+                    int         large)
 {
     int size, rbuf, sbuf, rc;
     socklen_t rbuf_len = sizeof (rbuf), sbuf_len = sizeof (sbuf);
+    char err_buf[512];
 
     size = large ? RECV_BUFFER_SIZE : SMALL_BUFFER_SIZE;
-    rc = setsockopt (fd, SOL_SOCKET, SO_RCVBUF, &size, sizeof (size));
+    rc = setsockopt (fd, SOL_SOCKET, SO_RCVBUF, (const void *) &size, sizeof (size));
     if (rc < 0)
         tr_logAddNamedError ("UDP", "Failed to set receive buffer: %s",
-                tr_strerror (errno));
+                             tr_net_strerror (err_buf, sizeof (err_buf), sockerrno));
 
     size = large ? SEND_BUFFER_SIZE : SMALL_BUFFER_SIZE;
-    rc = setsockopt (fd, SOL_SOCKET, SO_SNDBUF, &size, sizeof (size));
+    rc = setsockopt (fd, SOL_SOCKET, SO_SNDBUF, (const void *) &size, sizeof (size));
     if (rc < 0)
         tr_logAddNamedError ("UDP", "Failed to set send buffer: %s",
-                tr_strerror (errno));
+                             tr_net_strerror (err_buf, sizeof (err_buf), sockerrno));
 
     if (large) {
-        rc = getsockopt (fd, SOL_SOCKET, SO_RCVBUF, &rbuf, &rbuf_len);
+        rc = getsockopt (fd, SOL_SOCKET, SO_RCVBUF, (void *) &rbuf, &rbuf_len);
         if (rc < 0)
             rbuf = 0;
 
-        rc = getsockopt (fd, SOL_SOCKET, SO_SNDBUF, &sbuf, &sbuf_len);
+        rc = getsockopt (fd, SOL_SOCKET, SO_SNDBUF, (void *) &sbuf, &sbuf_len);
         if (rc < 0)
             sbuf = 0;
 
@@ -101,9 +107,9 @@ void
 tr_udpSetSocketBuffers (tr_session *session)
 {
     bool utp = tr_sessionIsUTPEnabled (session);
-    if (session->udp_socket >= 0)
+    if (session->udp_socket != TR_BAD_SOCKET)
         set_socket_buffers (session->udp_socket, utp);
-    if (session->udp6_socket >= 0)
+    if (session->udp6_socket != TR_BAD_SOCKET)
         set_socket_buffers (session->udp6_socket, utp);
 }
 
@@ -120,12 +126,13 @@ rebind_ipv6 (tr_session *ss, bool force)
     const struct tr_address * public_addr;
     struct sockaddr_in6 sin6;
     const unsigned char *ipv6 = tr_globalIPv6 ();
-    int s = -1, rc;
+    tr_socket_t s = TR_BAD_SOCKET;
+    int rc;
     int one = 1;
 
     /* We currently have no way to enable or disable IPv6 after initialisation.
        No way to fix that without some surgery to the DHT code itself. */
-    if (ipv6 == NULL || (!force && ss->udp6_socket < 0)) {
+    if (ipv6 == NULL || (!force && ss->udp6_socket == TR_BAD_SOCKET)) {
         if (ss->udp6_bound) {
             free (ss->udp6_bound);
             ss->udp6_bound = NULL;
@@ -137,13 +144,13 @@ rebind_ipv6 (tr_session *ss, bool force)
         return;
 
     s = socket (PF_INET6, SOCK_DGRAM, 0);
-    if (s < 0)
+    if (s == TR_BAD_SOCKET)
         goto fail;
 
 #ifdef IPV6_V6ONLY
         /* Since we always open an IPv4 socket on the same port, this
            shouldn't matter.  But I'm superstitious. */
-        setsockopt (s, IPPROTO_IPV6, IPV6_V6ONLY, &one, sizeof (one));
+        setsockopt (s, IPPROTO_IPV6, IPV6_V6ONLY, (const void *) &one, sizeof (one));
 #endif
 
     memset (&sin6, 0, sizeof (sin6));
@@ -159,13 +166,14 @@ rebind_ipv6 (tr_session *ss, bool force)
     if (rc < 0)
         goto fail;
 
-    if (ss->udp6_socket < 0) {
+    if (ss->udp6_socket == TR_BAD_SOCKET) {
         ss->udp6_socket = s;
     } else {
+        /* FIXME: dup2 doesn't work for sockets on Windows */
         rc = dup2 (s, ss->udp6_socket);
         if (rc < 0)
             goto fail;
-        close (s);
+        tr_netCloseSocket (s);
     }
 
     if (ss->udp6_bound == NULL)
@@ -179,8 +187,8 @@ rebind_ipv6 (tr_session *ss, bool force)
     /* Something went wrong.  It's difficult to recover, so let's simply
        set things up so that we try again next time. */
     tr_logAddNamedError ("UDP", "Couldn't rebind IPv6 socket");
-    if (s >= 0)
-        close (s);
+    if (s != TR_BAD_SOCKET)
+        tr_netCloseSocket (s);
     if (ss->udp6_bound) {
         free (ss->udp6_bound);
         ss->udp6_bound = NULL;
@@ -200,7 +208,7 @@ event_callback (evutil_socket_t s, short type UNUSED, void *sv)
     assert (type == EV_READ);
 
     fromlen = sizeof (from);
-    rc = recvfrom (s, buf, 4096 - 1, 0,
+    rc = recvfrom (s, (void *) buf, 4096 - 1, 0,
                 (struct sockaddr*)&from, &fromlen);
 
     /* Since most packets we receive here are ÂµTP, make quick inline
@@ -239,15 +247,15 @@ tr_udpInit (tr_session *ss)
     struct sockaddr_in sin;
     int rc;
 
-    assert (ss->udp_socket < 0);
-    assert (ss->udp6_socket < 0);
+    assert (ss->udp_socket == TR_BAD_SOCKET);
+    assert (ss->udp6_socket == TR_BAD_SOCKET);
 
     ss->udp_port = tr_sessionGetPeerPort (ss);
     if (ss->udp_port <= 0)
         return;
 
     ss->udp_socket = socket (PF_INET, SOCK_DGRAM, 0);
-    if (ss->udp_socket < 0) {
+    if (ss->udp_socket == TR_BAD_SOCKET) {
         tr_logAddNamedError ("UDP", "Couldn't create IPv4 socket");
         goto ipv6;
     }
@@ -261,8 +269,8 @@ tr_udpInit (tr_session *ss)
     rc = bind (ss->udp_socket, (struct sockaddr*)&sin, sizeof (sin));
     if (rc < 0) {
         tr_logAddNamedError ("UDP", "Couldn't bind IPv4 socket");
-        close (ss->udp_socket);
-        ss->udp_socket = -1;
+        tr_netCloseSocket (ss->udp_socket);
+        ss->udp_socket = TR_BAD_SOCKET;
         goto ipv6;
     }
     ss->udp_event =
@@ -274,7 +282,7 @@ tr_udpInit (tr_session *ss)
  ipv6:
     if (tr_globalIPv6 ())
         rebind_ipv6 (ss, true);
-    if (ss->udp6_socket >= 0) {
+    if (ss->udp6_socket != TR_BAD_SOCKET) {
         ss->udp6_event =
             event_new (ss->event_base, ss->udp6_socket, EV_READ | EV_PERSIST,
                       event_callback, ss);
@@ -298,9 +306,9 @@ tr_udpUninit (tr_session *ss)
 {
     tr_dhtUninit (ss);
 
-    if (ss->udp_socket >= 0) {
+    if (ss->udp_socket != TR_BAD_SOCKET) {
         tr_netCloseSocket (ss->udp_socket);
-        ss->udp_socket = -1;
+        ss->udp_socket = TR_BAD_SOCKET;
     }
 
     if (ss->udp_event) {
@@ -308,9 +316,9 @@ tr_udpUninit (tr_session *ss)
         ss->udp_event = NULL;
     }
 
-    if (ss->udp6_socket >= 0) {
+    if (ss->udp6_socket != TR_BAD_SOCKET) {
         tr_netCloseSocket (ss->udp6_socket);
-        ss->udp6_socket = -1;
+        ss->udp6_socket = TR_BAD_SOCKET;
     }
 
     if (ss->udp6_event) {

@@ -3,7 +3,7 @@
  * "There is no problem for me, you can license my code
  * under whatever licence you wish :)"
  *
- * $Id: icons.c 14107 2013-07-08 16:25:18Z jordan $
+ * $Id: icons.c 14613 2015-12-06 22:13:10Z jordan $
  */
 
 #include <glib.h>
@@ -237,7 +237,7 @@ gtr_get_mime_type_icon (const char   * mime_type,
 
 
 const char *
-gtr_get_mime_type_from_filename (const char * file G_GNUC_UNUSED)
+gtr_get_mime_type_from_filename (const char * file)
 {
     char * tmp = g_content_type_guess (file, NULL, 0, NULL);
     const char * ret = get_static_string (tmp);

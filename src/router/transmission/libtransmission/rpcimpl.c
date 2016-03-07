@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: rpcimpl.c 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: rpcimpl.c 14644 2015-12-29 19:37:31Z mikedld $
  */
 
 #include <assert.h>
@@ -13,15 +13,16 @@
 #include <stdlib.h> /* strtol */
 #include <string.h> /* strcmp */
 
-#ifdef HAVE_ZLIB
- #include <zlib.h>
-#endif
+#include <zlib.h>
 
 #include <event2/buffer.h>
 
 #include "transmission.h"
 #include "completion.h"
+#include "crypto-utils.h"
+#include "error.h"
 #include "fdlimit.h"
+#include "file.h"
 #include "log.h"
 #include "platform-quota.h" /* tr_device_info_get_free_space() */
 #include "rpcimpl.h"
@@ -83,29 +84,25 @@ notify (tr_session * session,
  * when the task is complete */
 struct tr_rpc_idle_data
 {
- tr_session            * session;
- tr_variant            * response;
- tr_variant            * args_out;
- tr_rpc_response_func    callback;
- void                  * callback_user_data;
+  tr_session            * session;
+  tr_variant            * response;
+  tr_variant            * args_out;
+  tr_rpc_response_func    callback;
+  void                  * callback_user_data;
 };
 
 static void
 tr_idle_function_done (struct tr_rpc_idle_data * data, const char * result)
 {
- struct evbuffer * buf;
+  if (result == NULL)
+    result = "success";
+  tr_variantDictAddStr (data->response, TR_KEY_result, result);
 
- if (result == NULL)
-   result = "success";
- tr_variantDictAddStr (data->response, TR_KEY_result, result);
+  (*data->callback)(data->session, data->response, data->callback_user_data);
 
- buf = tr_variantToBuf (data->response, TR_VARIANT_FMT_JSON_LEAN);
- (*data->callback)(data->session, buf, data->callback_user_data);
- evbuffer_free (buf);
-
- tr_variantFree (data->response);
- tr_free (data->response);
- tr_free (data);
+  tr_variantFree (data->response);
+  tr_free (data->response);
+  tr_free (data);
 }
 
 /***
@@ -250,14 +247,14 @@ queueMoveBottom (tr_session               * session,
   return NULL;
 }
 
-static int 
-compareTorrentByQueuePosition (const void * va, const void * vb) 
-{ 
-  const tr_torrent * a = * (const tr_torrent **) va; 
-  const tr_torrent * b = * (const tr_torrent **) vb; 
+static int
+compareTorrentByQueuePosition (const void * va, const void * vb)
+{
+  const tr_torrent * a = * (const tr_torrent **) va;
+  const tr_torrent * b = * (const tr_torrent **) vb;
 
-  return a->queuePosition - b->queuePosition; 
-} 
+  return a->queuePosition - b->queuePosition;
+}
 
 static const char*
 torrentStart (tr_session               * session,
@@ -272,7 +269,7 @@ torrentStart (tr_session               * session,
   assert (idle_data == NULL);
 
   torrents = getTorrents (session, args_in, &torrentCount);
-  qsort (torrents, torrentCount, sizeof (tr_torrent *), compareTorrentByQueuePosition); 
+  qsort (torrents, torrentCount, sizeof (tr_torrent *), compareTorrentByQueuePosition);
   for (i=0; i<torrentCount; ++i)
     {
       tr_torrent * tor = torrents[i];
@@ -300,7 +297,7 @@ torrentStartNow (tr_session               * session,
   assert (idle_data == NULL);
 
   torrents = getTorrents (session, args_in, &torrentCount);
-  qsort (torrents, torrentCount, sizeof (tr_torrent *), compareTorrentByQueuePosition); 
+  qsort (torrents, torrentCount, sizeof (tr_torrent *), compareTorrentByQueuePosition);
   for (i=0; i<torrentCount; ++i)
     {
       tr_torrent * tor = torrents[i];
@@ -353,12 +350,13 @@ torrentRemove (tr_session               * session,
   int i;
   int torrentCount;
   tr_rpc_callback_type type;
-  bool deleteFlag = false;
+  bool deleteFlag;
   tr_torrent ** torrents;
 
   assert (idle_data == NULL);
 
-  tr_variantDictFindBool (args_in, TR_KEY_delete_local_data, &deleteFlag);
+  if (!tr_variantDictFindBool (args_in, TR_KEY_delete_local_data, &deleteFlag))
+    deleteFlag = false;
   type = deleteFlag ? TR_RPC_TORRENT_TRASHING
                     : TR_RPC_TORRENT_REMOVING;
 
@@ -1009,7 +1007,7 @@ setFilePriorities (tr_torrent * tor,
 
 static const char*
 setFileDLs (tr_torrent * tor,
-            int          do_download,
+            bool         do_download,
             tr_variant * list)
 {
   int i;
@@ -1338,34 +1336,33 @@ torrentSetLocation (tr_session               * session,
                     tr_variant               * args_out UNUSED,
                     struct tr_rpc_idle_data  * idle_data UNUSED)
 {
-  const char * errmsg = NULL;
   const char * location = NULL;
 
   assert (idle_data == NULL);
 
   if (!tr_variantDictFindStr (args_in, TR_KEY_location, &location, NULL))
+    return "no location";
+
+  if (tr_sys_path_is_relative (location))
+    return "new location path is not absolute";
+
+  bool move;
+  int i, torrentCount;
+  tr_torrent ** torrents = getTorrents (session, args_in, &torrentCount);
+
+  if (!tr_variantDictFindBool (args_in, TR_KEY_move, &move))
+    move = false;
+
+  for (i=0; i<torrentCount; ++i)
     {
-      errmsg = "no location";
-    }
-  else
-    {
-      bool move = false;
-      int i, torrentCount;
-      tr_torrent ** torrents = getTorrents (session, args_in, &torrentCount);
-
-      tr_variantDictFindBool (args_in, TR_KEY_move, &move);
-
-      for (i=0; i<torrentCount; ++i)
-        {
-          tr_torrent * tor = torrents[i];
-          tr_torrentSetLocation (tor, location, move, NULL, NULL);
-          notify (session, TR_RPC_TORRENT_MOVED, tor);
-        }
-
-      tr_free (torrents);
+      tr_torrent * tor = torrents[i];
+      tr_torrentSetLocation (tor, location, move, NULL, NULL);
+      notify (session, TR_RPC_TORRENT_MOVED, tor);
     }
 
-  return errmsg;
+  tr_free (torrents);
+
+  return NULL;
 }
 
 /***
@@ -1404,6 +1401,7 @@ torrentRenamePath (tr_session               * session,
   tr_torrent ** torrents;
   const char * oldpath = NULL;
   const char * newname = NULL;
+  const char * errmsg = NULL;
 
   tr_variantDictFindStr (args_in, TR_KEY_path, &oldpath, NULL);
   tr_variantDictFindStr (args_in, TR_KEY_name, &newname, NULL);
@@ -1412,11 +1410,11 @@ torrentRenamePath (tr_session               * session,
   if (torrentCount == 1)
     tr_torrentRenamePath (torrents[0], oldpath, newname, torrentRenamePathDone, idle_data);
   else
-    tr_idle_function_done (idle_data, "torrent-rename-path requires 1 torrent");
+    errmsg = "torrent-rename-path requires 1 torrent";
 
   /* cleanup */
   tr_free (torrents);
-  return NULL; /* ignored */
+  return errmsg;
 }
 
 /***
@@ -1447,7 +1445,7 @@ portTested (tr_session       * session UNUSED,
       tr_snprintf (result, sizeof (result), "success");
     }
 
-    tr_idle_function_done (data, result);
+  tr_idle_function_done (data, result);
 }
 
 static const char*
@@ -1488,13 +1486,14 @@ gotNewBlocklist (tr_session       * session,
     }
   else /* successfully fetched the blocklist... */
     {
-      int fd;
+      tr_sys_file_t fd;
       int err;
       char * filename;
       z_stream stream;
       const char * configDir = tr_sessionGetConfigDir (session);
       const size_t buflen = 1024 * 128; /* 128 KiB buffer */
       uint8_t * buf = tr_valloc (buflen);
+      tr_error * error = NULL;
 
       /* this is an odd Magic Number required by zlib to enable gz support.
          See zlib's inflateInit2 () documentation for a full description */
@@ -1507,10 +1506,13 @@ gotNewBlocklist (tr_session       * session,
       stream.avail_in = response_byte_count;
       inflateInit2 (&stream, windowBits);
 
-      filename = tr_buildPath (configDir, "blocklist.tmp", NULL);
-      fd = tr_open_file_for_writing (filename);
-      if (fd < 0)
-        tr_snprintf (result, sizeof (result), _("Couldn't save file \"%1$s\": %2$s"), filename, tr_strerror (errno));
+      filename = tr_buildPath (configDir, "blocklist.tmp.XXXXXX", NULL);
+      fd = tr_sys_file_open_temp (filename, &error);
+      if (fd == TR_BAD_SYS_FILE)
+        {
+          tr_snprintf (result, sizeof (result), _("Couldn't save file \"%1$s\": %2$s"), filename, error->message);
+          tr_error_clear (&error);
+        }
 
       for (;;)
         {
@@ -1520,10 +1522,10 @@ gotNewBlocklist (tr_session       * session,
 
           if (stream.avail_out < buflen)
             {
-              const int e = write (fd, buf, buflen - stream.avail_out);
-              if (e < 0)
+              if (!tr_sys_file_write (fd, buf, buflen - stream.avail_out, NULL, &error))
                 {
-                  tr_snprintf (result, sizeof (result), _("Couldn't save file \"%1$s\": %2$s"), filename, tr_strerror (errno));
+                  tr_snprintf (result, sizeof (result), _("Couldn't save file \"%1$s\": %2$s"), filename, error->message);
+                  tr_error_clear (&error);
                   break;
                 }
             }
@@ -1539,10 +1541,13 @@ gotNewBlocklist (tr_session       * session,
       inflateEnd (&stream);
 
       if (err == Z_DATA_ERROR) /* couldn't inflate it... it's probably already uncompressed */
-        if (write (fd, response, response_byte_count) < 0)
-          tr_snprintf (result, sizeof (result), _("Couldn't save file \"%1$s\": %2$s"), filename, tr_strerror (errno));
+        if (!tr_sys_file_write (fd, response, response_byte_count, NULL, &error))
+          {
+            tr_snprintf (result, sizeof (result), _("Couldn't save file \"%1$s\": %2$s"), filename, error->message);
+            tr_error_clear (&error);
+          }
 
-      tr_close_file(fd);
+      tr_sys_file_close (fd, NULL);
 
       if (*result)
         {
@@ -1556,7 +1561,7 @@ gotNewBlocklist (tr_session       * session,
           tr_snprintf (result, sizeof (result), "success");
         }
 
-      tr_remove (filename);
+      tr_sys_path_remove (filename, NULL);
       tr_free (filename);
       tr_free (buf);
     }
@@ -1617,7 +1622,8 @@ addTorrentImpl (struct tr_rpc_idle_data * data, tr_ctor * ctor)
       tr_variantListAddStr (&fields, "name");
       tr_variantListAddStr (&fields, "hashString");
       addInfo (tor, tr_variantDictAdd (data->args_out, key), &fields);
-      notify (data->session, TR_RPC_TORRENT_ADDED, tor);
+      if (result == NULL)
+        notify (data->session, TR_RPC_TORRENT_ADDED, tor);
       tr_variantFree (&fields);
       result = NULL;
     }
@@ -1643,7 +1649,7 @@ gotMetadataFromURL (tr_session       * session UNUSED,
 {
   struct add_torrent_idle_data * data = user_data;
 
-  dbgmsg ("torrentAdd: HTTP response code was %ld (%s); response length was %"TR_PRIuSIZE" bytes",
+  dbgmsg ("torrentAdd: HTTP response code was %ld (%s); response length was %zu bytes",
           response_code, tr_webGetResponseStr (response_code), response_byte_count);
 
   if (response_code==200 || response_code==221) /* http or ftp success.. */
@@ -1706,108 +1712,110 @@ torrentAdd (tr_session               * session,
   tr_variantDictFindStr (args_in, TR_KEY_filename, &filename, NULL);
   tr_variantDictFindStr (args_in, TR_KEY_metainfo, &metainfo_base64, NULL);
   if (!filename && !metainfo_base64)
+    return "no filename or metainfo specified";
+
+  const char * download_dir = NULL;
+
+  if (tr_variantDictFindStr (args_in, TR_KEY_download_dir, &download_dir, NULL))
     {
-      return "no filename or metainfo specified";
+      if (tr_sys_path_is_relative (download_dir))
+        return "download directory path is not absolute";
+    }
+
+  int64_t i;
+  bool boolVal;
+  tr_variant * l;
+  const char * cookies = NULL;
+  tr_ctor * ctor = tr_ctorNew (session);
+
+  /* set the optional arguments */
+
+  tr_variantDictFindStr (args_in, TR_KEY_cookies, &cookies, NULL);
+
+  if (download_dir != NULL)
+    tr_ctorSetDownloadDir (ctor, TR_FORCE, download_dir);
+
+  if (tr_variantDictFindBool (args_in, TR_KEY_paused, &boolVal))
+    tr_ctorSetPaused (ctor, TR_FORCE, boolVal);
+
+  if (tr_variantDictFindInt (args_in, TR_KEY_peer_limit, &i))
+    tr_ctorSetPeerLimit (ctor, TR_FORCE, i);
+
+  if (tr_variantDictFindInt (args_in, TR_KEY_bandwidthPriority, &i))
+    tr_ctorSetBandwidthPriority (ctor, i);
+
+  if (tr_variantDictFindList (args_in, TR_KEY_files_unwanted, &l))
+    {
+      tr_file_index_t fileCount;
+      tr_file_index_t * files = fileListFromList (l, &fileCount);
+      tr_ctorSetFilesWanted (ctor, files, fileCount, false);
+      tr_free (files);
+    }
+
+  if (tr_variantDictFindList (args_in, TR_KEY_files_wanted, &l))
+    {
+      tr_file_index_t fileCount;
+      tr_file_index_t * files = fileListFromList (l, &fileCount);
+      tr_ctorSetFilesWanted (ctor, files, fileCount, true);
+      tr_free (files);
+    }
+
+  if (tr_variantDictFindList (args_in, TR_KEY_priority_low, &l))
+    {
+      tr_file_index_t fileCount;
+      tr_file_index_t * files = fileListFromList (l, &fileCount);
+      tr_ctorSetFilePriorities (ctor, files, fileCount, TR_PRI_LOW);
+      tr_free (files);
+    }
+
+  if (tr_variantDictFindList (args_in, TR_KEY_priority_normal, &l))
+    {
+      tr_file_index_t fileCount;
+      tr_file_index_t * files = fileListFromList (l, &fileCount);
+      tr_ctorSetFilePriorities (ctor, files, fileCount, TR_PRI_NORMAL);
+      tr_free (files);
+    }
+
+  if (tr_variantDictFindList (args_in, TR_KEY_priority_high, &l))
+    {
+      tr_file_index_t fileCount;
+      tr_file_index_t * files = fileListFromList (l, &fileCount);
+      tr_ctorSetFilePriorities (ctor, files, fileCount, TR_PRI_HIGH);
+      tr_free (files);
+    }
+
+  dbgmsg ("torrentAdd: filename is \"%s\"", filename ? filename : " (null)");
+
+  if (isCurlURL (filename))
+    {
+      struct add_torrent_idle_data * d = tr_new0 (struct add_torrent_idle_data, 1);
+      d->data = idle_data;
+      d->ctor = ctor;
+      tr_webRunWithCookies (session, filename, cookies, gotMetadataFromURL, d);
     }
   else
     {
-      int64_t i;
-      bool boolVal;
-      tr_variant * l;
-      const char * str;
-      const char * cookies = NULL;
-      tr_ctor * ctor = tr_ctorNew (session);
+      char * fname = tr_strstrip (tr_strdup (filename));
 
-      /* set the optional arguments */
-
-      tr_variantDictFindStr (args_in, TR_KEY_cookies, &cookies, NULL);
-
-      if (tr_variantDictFindStr (args_in, TR_KEY_download_dir, &str, NULL))
-        tr_ctorSetDownloadDir (ctor, TR_FORCE, str);
-
-      if (tr_variantDictFindBool (args_in, TR_KEY_paused, &boolVal))
-        tr_ctorSetPaused (ctor, TR_FORCE, boolVal);
-
-      if (tr_variantDictFindInt (args_in, TR_KEY_peer_limit, &i))
-        tr_ctorSetPeerLimit (ctor, TR_FORCE, i);
-
-      if (tr_variantDictFindInt (args_in, TR_KEY_bandwidthPriority, &i))
-        tr_ctorSetBandwidthPriority (ctor, i);
-
-      if (tr_variantDictFindList (args_in, TR_KEY_files_unwanted, &l))
+      if (fname == NULL)
         {
-          tr_file_index_t fileCount;
-          tr_file_index_t * files = fileListFromList (l, &fileCount);
-          tr_ctorSetFilesWanted (ctor, files, fileCount, false);
-          tr_free (files);
+          size_t len;
+          char * metainfo = tr_base64_decode_str (metainfo_base64, &len);
+          tr_ctorSetMetainfo (ctor, (uint8_t*)metainfo, len);
+          tr_free (metainfo);
         }
-
-      if (tr_variantDictFindList (args_in, TR_KEY_files_wanted, &l))
+      else if (!strncmp (fname, "magnet:?", 8))
         {
-          tr_file_index_t fileCount;
-          tr_file_index_t * files = fileListFromList (l, &fileCount);
-          tr_ctorSetFilesWanted (ctor, files, fileCount, true);
-          tr_free (files);
-        }
-
-      if (tr_variantDictFindList (args_in, TR_KEY_priority_low, &l))
-        {
-          tr_file_index_t fileCount;
-          tr_file_index_t * files = fileListFromList (l, &fileCount);
-          tr_ctorSetFilePriorities (ctor, files, fileCount, TR_PRI_LOW);
-          tr_free (files);
-        }
-
-      if (tr_variantDictFindList (args_in, TR_KEY_priority_normal, &l))
-        {
-          tr_file_index_t fileCount;
-          tr_file_index_t * files = fileListFromList (l, &fileCount);
-          tr_ctorSetFilePriorities (ctor, files, fileCount, TR_PRI_NORMAL);
-          tr_free (files);
-        }
-
-      if (tr_variantDictFindList (args_in, TR_KEY_priority_high, &l))
-        {
-          tr_file_index_t fileCount;
-          tr_file_index_t * files = fileListFromList (l, &fileCount);
-          tr_ctorSetFilePriorities (ctor, files, fileCount, TR_PRI_HIGH);
-          tr_free (files);
-        }
-
-      dbgmsg ("torrentAdd: filename is \"%s\"", filename ? filename : " (null)");
-
-      if (isCurlURL (filename))
-        {
-          struct add_torrent_idle_data * d = tr_new0 (struct add_torrent_idle_data, 1);
-          d->data = idle_data;
-          d->ctor = ctor;
-          tr_webRunWithCookies (session, filename, cookies, gotMetadataFromURL, d);
+          tr_ctorSetMetainfoFromMagnetLink (ctor, fname);
         }
       else
         {
-          char * fname = tr_strstrip (tr_strdup (filename));
-
-          if (fname == NULL)
-            {
-              int len;
-              char * metainfo = tr_base64_decode (metainfo_base64, -1, &len);
-              tr_ctorSetMetainfo (ctor, (uint8_t*)metainfo, len);
-              tr_free (metainfo);
-            }
-          else if (!strncmp (fname, "magnet:?", 8))
-            {
-              tr_ctorSetMetainfoFromMagnetLink (ctor, fname);
-            }
-          else
-            {
-              tr_ctorSetMetainfoFromFile (ctor, fname);
-            }
-
-          addTorrentImpl (idle_data, ctor);
-
-          tr_free (fname);
+          tr_ctorSetMetainfoFromFile (ctor, fname);
         }
 
+      addTorrentImpl (idle_data, ctor);
+
+      tr_free (fname);
     }
 
   return NULL;
@@ -1823,12 +1831,27 @@ sessionSet (tr_session               * session,
             tr_variant               * args_out UNUSED,
             struct tr_rpc_idle_data  * idle_data UNUSED)
 {
+  assert (idle_data == NULL);
+
+  const char * download_dir = NULL;
+  const char * incomplete_dir = NULL;
+
+  if (tr_variantDictFindStr (args_in, TR_KEY_download_dir, &download_dir, NULL))
+    {
+      if (tr_sys_path_is_relative (download_dir))
+        return "download directory path is not absolute";
+    }
+
+  if (tr_variantDictFindStr (args_in, TR_KEY_incomplete_dir, &incomplete_dir, NULL))
+    {
+      if (tr_sys_path_is_relative (incomplete_dir))
+        return "incomplete torrents directory path is not absolute";
+    }
+
   int64_t i;
   double d;
   bool boolVal;
   const char * str;
-
-  assert (idle_data == NULL);
 
   if (tr_variantDictFindInt (args_in, TR_KEY_cache_size_mb, &i))
     tr_sessionSetCacheLimit_MB (session, i);
@@ -1860,8 +1883,8 @@ sessionSet (tr_session               * session,
   if (tr_variantDictFindStr (args_in, TR_KEY_blocklist_url, &str, NULL))
     tr_blocklistSetURL (session, str);
 
-  if (tr_variantDictFindStr (args_in, TR_KEY_download_dir, &str, NULL))
-    tr_sessionSetDownloadDir (session, str);
+  if (download_dir != NULL)
+    tr_sessionSetDownloadDir (session, download_dir);
 
   if (tr_variantDictFindInt (args_in, TR_KEY_queue_stalled_minutes, &i))
     tr_sessionSetQueueStalledMinutes (session, i);
@@ -1875,8 +1898,8 @@ sessionSet (tr_session               * session,
   if (tr_variantDictFindBool (args_in, TR_KEY_download_queue_enabled, &boolVal))
     tr_sessionSetQueueEnabled (session, TR_DOWN, boolVal);
 
-  if (tr_variantDictFindStr (args_in, TR_KEY_incomplete_dir, &str, NULL))
-    tr_sessionSetIncompleteDir (session, str);
+  if (incomplete_dir != NULL)
+    tr_sessionSetIncompleteDir (session, incomplete_dir);
 
   if (tr_variantDictFindBool (args_in, TR_KEY_incomplete_dir_enabled, &boolVal))
     tr_sessionSetIncompleteDirEnabled (session, boolVal);
@@ -2097,8 +2120,13 @@ freeSpace (tr_session               * session,
   const char * err = NULL;
   int64_t free_space = -1;
 
+  if (!tr_variantDictFindStr (args_in, TR_KEY_path, &path, NULL))
+    return "directory path argument is missing";
+
+  if (tr_sys_path_is_relative (path))
+    return "directory path is not absolute";
+
   /* get the free space */
-  tr_variantDictFindStr (args_in, TR_KEY_path, &path, NULL);
   tmperr = errno;
   errno = 0;
   free_space = tr_sessionGetDirFreeSpace (session, path);
@@ -2166,28 +2194,29 @@ methods[] =
 };
 
 static void
-noop_response_callback (tr_session       * session UNUSED,
-                        struct evbuffer  * response UNUSED,
-                        void             * user_data UNUSED)
+noop_response_callback (tr_session * session UNUSED,
+                        tr_variant * response UNUSED,
+                        void       * user_data UNUSED)
 {
 }
 
-static void
-request_exec (tr_session             * session,
-              tr_variant             * request,
-              tr_rpc_response_func     callback,
-              void                   * callback_user_data)
+void
+tr_rpc_request_exec_json (tr_session            * session,
+                          const tr_variant      * request,
+                          tr_rpc_response_func    callback,
+                          void                  * callback_user_data)
 {
   int i;
   const char * str;
-  tr_variant * args_in = tr_variantDictFind (request, TR_KEY_arguments);
+  tr_variant * const mutable_request = (tr_variant *) request;
+  tr_variant * args_in = tr_variantDictFind (mutable_request, TR_KEY_arguments);
   const char * result = NULL;
 
   if (callback == NULL)
     callback = noop_response_callback;
 
   /* parse the request */
-  if (!tr_variantDictFindStr (request, TR_KEY_method, &str, NULL))
+  if (!tr_variantDictFindStr (mutable_request, TR_KEY_method, &str, NULL))
     {
       result = "no method name";
     }
@@ -2208,17 +2237,14 @@ request_exec (tr_session             * session,
     {
       int64_t tag;
       tr_variant response;
-      struct evbuffer * buf;
 
       tr_variantInitDict (&response, 3);
       tr_variantDictAddDict (&response, TR_KEY_arguments, 0);
       tr_variantDictAddStr (&response, TR_KEY_result, result);
-      if (tr_variantDictFindInt (request, TR_KEY_tag, &tag))
+      if (tr_variantDictFindInt (mutable_request, TR_KEY_tag, &tag))
         tr_variantDictAddInt (&response, TR_KEY_tag, tag);
 
-      buf = tr_variantToBuf (&response, TR_VARIANT_FMT_JSON_LEAN);
-      (*callback)(session, buf, callback_user_data);
-      evbuffer_free (buf);
+      (*callback)(session, &response, callback_user_data);
 
       tr_variantFree (&response);
     }
@@ -2227,7 +2253,6 @@ request_exec (tr_session             * session,
       int64_t tag;
       tr_variant response;
       tr_variant * args_out;
-      struct evbuffer * buf;
 
       tr_variantInitDict (&response, 3);
       args_out = tr_variantDictAddDict (&response, TR_KEY_arguments, 0);
@@ -2235,12 +2260,10 @@ request_exec (tr_session             * session,
       if (result == NULL)
         result = "success";
       tr_variantDictAddStr (&response, TR_KEY_result, result);
-      if (tr_variantDictFindInt (request, TR_KEY_tag, &tag))
+      if (tr_variantDictFindInt (mutable_request, TR_KEY_tag, &tag))
         tr_variantDictAddInt (&response, TR_KEY_tag, tag);
 
-      buf = tr_variantToBuf (&response, TR_VARIANT_FMT_JSON_LEAN);
-      (*callback)(session, buf, callback_user_data);
-      evbuffer_free (buf);
+      (*callback)(session, &response, callback_user_data);
 
       tr_variantFree (&response);
     }
@@ -2251,33 +2274,17 @@ request_exec (tr_session             * session,
       data->session = session;
       data->response = tr_new0 (tr_variant, 1);
       tr_variantInitDict (data->response, 3);
-      if (tr_variantDictFindInt (request, TR_KEY_tag, &tag))
+      if (tr_variantDictFindInt (mutable_request, TR_KEY_tag, &tag))
         tr_variantDictAddInt (data->response, TR_KEY_tag, tag);
       data->args_out = tr_variantDictAddDict (data->response, TR_KEY_arguments, 0);
       data->callback = callback;
       data->callback_user_data = callback_user_data;
-      (*methods[i].func)(session, args_in, data->args_out, data);
+      result = (*methods[i].func)(session, args_in, data->args_out, data);
+
+      /* Async operation failed prematurely? Invoke callback or else client will not get a reply */
+      if (result != NULL)
+        tr_idle_function_done (data, result);
     }
-}
-
-void
-tr_rpc_request_exec_json (tr_session            * session,
-                          const void            * request_json,
-                          int                     request_len,
-                          tr_rpc_response_func    callback,
-                          void                  * callback_user_data)
-{
-  tr_variant top;
-  int have_content;
-
-  if (request_len < 0)
-    request_len = strlen (request_json);
-
-  have_content = !tr_variantFromJson (&top, request_json, request_len);
-  request_exec (session, have_content ? &top : NULL, callback, callback_user_data);
-
-  if (have_content)
-    tr_variantFree (&top);
 }
 
 /**
@@ -2292,7 +2299,7 @@ tr_rpc_request_exec_json (tr_session            * session,
 void
 tr_rpc_parse_list_str (tr_variant  * setme,
                        const char  * str,
-                       int           len)
+                       size_t        len)
 
 {
   int valueCount;
@@ -2322,14 +2329,14 @@ tr_rpc_parse_list_str (tr_variant  * setme,
 void
 tr_rpc_request_exec_uri (tr_session           * session,
                          const void           * request_uri,
-                         int                    request_len,
+                         size_t                 request_uri_len,
                          tr_rpc_response_func   callback,
                          void                 * callback_user_data)
 {
   const char * pch;
   tr_variant top;
   tr_variant * args;
-  char * request = tr_strndup (request_uri, request_len);
+  char * request = tr_strndup (request_uri, request_uri_len);
 
   tr_variantInitDict (&top, 3);
   args = tr_variantDictAddDict (&top, TR_KEY_arguments, 0);
@@ -2342,11 +2349,11 @@ tr_rpc_request_exec_uri (tr_session           * session,
       const char * next = strchr (pch, '&');
       if (delim)
         {
-          char * key = tr_strndup (pch, delim - pch);
+          char * key = tr_strndup (pch, (size_t) (delim - pch));
           int isArg = strcmp (key, "method") && strcmp (key, "tag");
           tr_variant * parent = isArg ? args : &top;
 
-          tr_rpc_parse_list_str (tr_variantDictAdd (parent, tr_quark_new (key, delim-pch)),
+          tr_rpc_parse_list_str (tr_variantDictAdd (parent, tr_quark_new (key, (size_t) (delim - pch))),
                                  delim + 1,
                                  next ? (size_t)(next - (delim + 1)) : strlen (delim + 1));
           tr_free (key);
@@ -2355,7 +2362,7 @@ tr_rpc_request_exec_uri (tr_session           * session,
       pch = next ? next + 1 : NULL;
     }
 
-  request_exec (session, &top, callback, callback_user_data);
+  tr_rpc_request_exec_json (session, &top, callback, callback_user_data);
 
   /* cleanup */
   tr_variantFree (&top);

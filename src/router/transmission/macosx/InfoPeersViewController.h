@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: InfoPeersViewController.h 13293 2012-04-29 00:53:34Z livings124 $
+ * $Id: InfoPeersViewController.h 14706 2016-03-03 22:27:45Z mikedld $
  *
  * Copyright (c) 2010-2012 Transmission authors and contributors
  *
@@ -37,11 +37,11 @@
     
     IBOutlet NSTableView * fPeerTable;
     IBOutlet WebSeedTableView * fWebSeedTable;
-    CGFloat fWebSeedTableHeight, fSpaceBetweenWebSeedAndPeer;
-    
-    NSViewAnimation * fWebSeedTableAnimation;
     
     IBOutlet NSTextField * fConnectedPeersField;
+
+    CGFloat fViewTopMargin;
+    IBOutlet NSLayoutConstraint * fWebSeedTableTopConstraint;
 }
 
 - (void) setInfoForTorrents: (NSArray *) torrents;
@@ -49,6 +49,5 @@
 
 - (void) saveViewSize;
 - (void) clearView;
-- (void) stopWebSeedAnimation;
 
 @end

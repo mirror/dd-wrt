@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: peer-common.h 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: peer-common.h 14382 2014-12-13 15:22:39Z mikedld $
  */
 
 #ifndef __TRANSMISSION__
@@ -173,7 +173,8 @@ void tr_swarmIncrementActivePeers (struct tr_swarm * swarm, tr_direction directi
 ***/
 
 
-#ifdef WIN32
+#ifdef _WIN32
+ #undef  EMSGSIZE
  #define EMSGSIZE WSAEMSGSIZE
 #endif
 

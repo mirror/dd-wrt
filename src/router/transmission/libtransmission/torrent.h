@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: torrent.h 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: torrent.h 14634 2015-12-25 11:34:35Z mikedld $
  */
 
 #ifndef __TRANSMISSION__
@@ -31,7 +31,7 @@ void        tr_torrentFree (tr_torrent * tor);
 void        tr_ctorSetSave (tr_ctor * ctor,
                             bool      saveMetadataInOurTorrentsDir);
 
-int         tr_ctorGetSave (const tr_ctor * ctor);
+bool        tr_ctorGetSave (const tr_ctor * ctor);
 
 void        tr_ctorInitTorrentPriorities (const tr_ctor * ctor, tr_torrent * tor);
 
@@ -167,13 +167,13 @@ struct tr_torrent
     char * incompleteDir;
 
     /* Length, in bytes, of the "info" dict in the .torrent file. */
-    int infoDictLength;
+    size_t infoDictLength;
 
     /* Offset, in bytes, of the beginning of the "info" dict in the .torrent file.
      *
      * Used by the torrent-magnet code for serving metainfo to peers.
      * This field is lazy-generated and might not be initialized yet. */
-    int infoDictOffset;
+    size_t infoDictOffset;
 
     /* Where the files are now.
      * This pointer will be equal to downloadDir or incompleteDir */
@@ -303,10 +303,10 @@ tr_torBlockCountBytes (const tr_torrent * tor, const tr_block_index_t block)
                                         : tor->blockSize;
 }
 
-static inline void tr_torrentLock (const tr_torrent * tor) 
-{ 
-  tr_sessionLock (tor->session); 
-} 
+static inline void tr_torrentLock (const tr_torrent * tor)
+{
+  tr_sessionLock (tor->session);
+}
 static inline bool tr_torrentIsLocked (const tr_torrent * tor)
 {
   return tr_sessionIsLocked (tor->session);

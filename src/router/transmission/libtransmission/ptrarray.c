@@ -4,11 +4,10 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: ptrarray.c 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: ptrarray.c 14592 2015-10-25 17:13:14Z mikedld $
  */
 
 #include <assert.h>
-#include <stdlib.h> /* tr_renew () -> realloc () */
 #include <string.h> /* memmove */
 
 #include "ptrarray.h"

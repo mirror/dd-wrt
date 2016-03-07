@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: announcer.c 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: announcer.c 14644 2015-12-29 19:37:31Z mikedld $
  */
 
 #include <assert.h>
@@ -16,12 +16,12 @@
 #include <event2/buffer.h>
 #include <event2/event.h> /* evtimer */
 
-#define __LIBTRANSMISSION_ANNOUNCER_MODULE___
+#define __LIBTRANSMISSION_ANNOUNCER_MODULE__
 
 #include "transmission.h"
 #include "announcer.h"
 #include "announcer-common.h"
-#include "crypto.h" /* tr_cryptoRandInt (), tr_cryptoWeakRandInt () */
+#include "crypto-utils.h" /* tr_rand_int (), tr_rand_int_weak () */
 #include "log.h"
 #include "peer-mgr.h" /* tr_peerMgrCompactToPex () */
 #include "ptrarray.h"
@@ -167,7 +167,7 @@ tr_announcerInit (tr_session * session)
 
     a = tr_new0 (tr_announcer, 1);
     a->stops = TR_PTR_ARRAY_INIT;
-    a->key = tr_cryptoRandInt (INT_MAX);
+    a->key = tr_rand_int (INT_MAX);
     a->session = session;
     a->slotsAvailable = MAX_CONCURRENT_TASKS;
     a->upkeepTimer = evtimer_new (session->event_base, onUpkeepTimer, a);
@@ -229,7 +229,7 @@ getKey (const char * url)
     char * host = NULL;
     int port = 0;
 
-    tr_urlParse (url, -1, &scheme, &host, &port, NULL);
+    tr_urlParse (url, TR_BAD_SIZE, &scheme, &host, &port, NULL);
     ret = tr_strdup_printf ("%s://%s:%d", (scheme?scheme:"invalid"), (host?host:"invalid"), port);
 
     tr_free (host);
@@ -349,7 +349,7 @@ tierConstruct (tr_tier * tier, tr_torrent * tor)
     tier->scrapeIntervalSec = DEFAULT_SCRAPE_INTERVAL_SEC;
     tier->announceIntervalSec = DEFAULT_ANNOUNCE_INTERVAL_SEC;
     tier->announceMinIntervalSec = DEFAULT_ANNOUNCE_MIN_INTERVAL_SEC;
-    tier->scrapeAt = get_next_scrape_time (tor->session, tier, tr_cryptoWeakRandInt (180));
+    tier->scrapeAt = get_next_scrape_time (tor->session, tier, tr_rand_int_weak (180));
     tier->tor = tor;
 }
 
@@ -583,7 +583,7 @@ filter_trackers (tr_tracker_info * input, int input_count, int * setme_count)
             char * host;
             char * path;
             bool is_duplicate = false;
-            tr_urlParse (input[i].announce, -1, &scheme, &host, &port, &path);
+            tr_urlParse (input[i].announce, TR_BAD_SIZE, &scheme, &host, &port, &path);
 
             /* weed out one common source of duplicates:
              * "http://tracker/announce" +
@@ -767,7 +767,7 @@ dbgmsg_tier_announce_queue (const tr_tier * tier)
             evbuffer_add_printf (buf, "[%d:%s]", i, str);
         }
 
-        message = evbuffer_free_to_str (buf);
+        message = evbuffer_free_to_str (buf, NULL);
         tr_logAddDeep (__FILE__, __LINE__, name, "announce queue is %s", message);
         tr_free (message);
     }
@@ -963,11 +963,11 @@ getRetryInterval (const tr_tracker * t)
     {
       case 0:  return 0;
       case 1:  return 20;
-      case 2:  return tr_cryptoWeakRandInt (60) + (60 * 5);
-      case 3:  return tr_cryptoWeakRandInt (60) + (60 * 15);
-      case 4:  return tr_cryptoWeakRandInt (60) + (60 * 30);
-      case 5:  return tr_cryptoWeakRandInt (60) + (60 * 60);
-      default: return tr_cryptoWeakRandInt (60) + (60 * 120);
+      case 2:  return tr_rand_int_weak (60) + (60 * 5);
+      case 3:  return tr_rand_int_weak (60) + (60 * 15);
+      case 4:  return tr_rand_int_weak (60) + (60 * 30);
+      case 5:  return tr_rand_int_weak (60) + (60 * 60);
+      default: return tr_rand_int_weak (60) + (60 * 120);
     }
 }
 
@@ -1032,8 +1032,8 @@ on_announce_done (const tr_announce_response  * response,
                       "interval:%d "
                       "min_interval:%d "
                       "tracker_id_str:%s "
-                      "pex:%"TR_PRIuSIZE" "
-                      "pex6:%"TR_PRIuSIZE" "
+                      "pex:%zu "
+                      "pex6:%zu "
                       "err:%s "
                       "warn:%s",
                     (int)response->did_connect,
@@ -1145,7 +1145,7 @@ on_announce_done (const tr_announce_response  * response,
 
             /* if the tracker included scrape fields in its announce response,
                then a separate scrape isn't needed */
-            if ((scrape_fields >= 3) || (!tracker->scrape && (scrape_fields >= 1)))
+            if (scrape_fields >= 3 || (scrape_fields >= 1 && tracker->scrape != NULL))
             {
                 tr_logAddTorDbg (tier->tor, "Announce response contained scrape info; "
                                       "rescheduling next scrape to %d seconds from now.",
@@ -1284,8 +1284,8 @@ on_scrape_error (tr_session * session, tr_tier * tier, const char * errmsg)
 
     /* schedule a rescrape */
     interval = getRetryInterval (tier->currentTracker);
-    dbgmsg (tier, "Retrying scrape in %"TR_PRIuSIZE" seconds.", (size_t)interval);
-    tr_logAddTorInfo (tier->tor, "Retrying scrape in %"TR_PRIuSIZE" seconds.", (size_t)interval);
+    dbgmsg (tier, "Retrying scrape in %zu seconds.", (size_t)interval);
+    tr_logAddTorInfo (tier->tor, "Retrying scrape in %zu seconds.", (size_t)interval);
     tier->lastScrapeSucceeded = false;
     tier->scrapeAt = get_next_scrape_time (session, tier, interval);
 }
@@ -1351,7 +1351,7 @@ on_scrape_done (const tr_scrape_response * response, void * vsession)
                 if (!response->did_connect)
                 {
                     on_scrape_error (session, tier, _("Could not connect to tracker"));
-		}
+                }
                 else if (response->did_timeout)
                 {
                     on_scrape_error (session, tier, _("Tracker did not respond"));

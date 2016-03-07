@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: GlobalOptionsPopoverViewController.m 14226 2014-01-19 01:29:38Z jordan $
+ * $Id: GlobalOptionsPopoverViewController.m 14635 2015-12-27 01:48:27Z mikedld $
  *
  * Copyright (c) 2011-2012 Transmission authors and contributors
  *
@@ -45,6 +45,8 @@
     
     [fRatioStopField setFloatValue: [fDefaults floatForKey: @"RatioLimit"]];
     [fIdleStopField setIntegerValue: [fDefaults integerForKey: @"IdleLimitMinutes"]];
+
+    [[self view] setFrameSize: [[self view] fittingSize]];
 }
 
 - (IBAction) updatedDisplayString: (id) sender

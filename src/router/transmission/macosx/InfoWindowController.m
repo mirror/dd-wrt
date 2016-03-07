@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: InfoWindowController.m 13873 2013-01-26 19:52:08Z livings124 $
+ * $Id: InfoWindowController.m 14685 2016-02-27 20:29:57Z mikedld $
  *
  * Copyright (c) 2006-2012 Transmission authors and contributors
  *
@@ -81,6 +81,7 @@ typedef enum
     [window setFloatingPanel: NO];
     
     const CGFloat windowHeight = NSHeight([window frame]);
+    fMinWindowWidth = [window minSize].width;
     
     [window setFrameAutosaveName: @"InspectorWindow"];
     [window setFrameUsingName: @"InspectorWindow"];
@@ -169,14 +170,6 @@ typedef enum
     NSRect windowRect = [window frame];
     windowRect.size.width = [window minSize].width;
     return windowRect;
-}
-
-- (NSSize) windowWillResize: (NSWindow *) window toSize: (NSSize) proposedFrameSize
-{
-    //this is an edge-case - just stop the animation
-    [fPeersViewController stopWebSeedAnimation];
-    
-    return proposedFrameSize;
 }
 
 - (void) windowWillClose: (NSNotification *) notification
@@ -297,9 +290,12 @@ typedef enum
     
     NSRect windowRect = [window frame], viewRect = [view frame];
     
-    const CGFloat difference = (NSHeight(viewRect) - oldHeight) * [window userSpaceScaleFactor];
+    const CGFloat difference = NSHeight(viewRect) - oldHeight;
     windowRect.origin.y -= difference;
     windowRect.size.height += difference;
+    
+    const CGFloat minWindowWidth = MAX(fMinWindowWidth, [view fittingSize].width);
+    windowRect.size.width = MAX(NSWidth(windowRect), minWindowWidth);
     
     if ([fViewController respondsToSelector: @selector(saveViewSize)]) //a little bit hacky, but avoids requiring an extra method
     {
@@ -308,7 +304,7 @@ typedef enum
             const CGFloat screenHeight = NSHeight([[window screen] visibleFrame]);
             if (NSHeight(windowRect) > screenHeight)
             {
-                const CGFloat difference = (screenHeight - NSHeight(windowRect)) * [window userSpaceScaleFactor];
+                const CGFloat difference = screenHeight - NSHeight(windowRect);
                 windowRect.origin.y -= difference;
                 windowRect.size.height += difference;
                 
@@ -316,12 +312,12 @@ typedef enum
             }
         }
         
-        [window setMinSize: NSMakeSize([window minSize].width, NSHeight(windowRect) - NSHeight(viewRect) + TAB_MIN_HEIGHT)];
+        [window setMinSize: NSMakeSize(minWindowWidth, NSHeight(windowRect) - NSHeight(viewRect) + TAB_MIN_HEIGHT)];
         [window setMaxSize: NSMakeSize(FLT_MAX, FLT_MAX)];
     }
     else
     {
-        [window setMinSize: NSMakeSize([window minSize].width, NSHeight(windowRect))];
+        [window setMinSize: NSMakeSize(minWindowWidth, NSHeight(windowRect))];
         [window setMaxSize: NSMakeSize(FLT_MAX, NSHeight(windowRect))];
     }
     
@@ -330,6 +326,15 @@ typedef enum
     
     [window setFrame: windowRect display: YES animate: oldTabTag != INVALID];
     [[window contentView] addSubview: view];
+    
+    [[window contentView] addConstraints: [NSLayoutConstraint constraintsWithVisualFormat: @"H:|-0-[view]-0-|"
+                                                                                  options: 0
+                                                                                  metrics: nil
+                                                                                    views: @{ @"view": view }]];
+    [[window contentView] addConstraints: [NSLayoutConstraint constraintsWithVisualFormat: @"V:[tabs]-0-[view]-0-|"
+                                                                                  options: 0
+                                                                                  metrics: nil
+                                                                                    views: @{ @"tabs": fTabMatrix, @"view": view }]];
     
     if ((fCurrentTabTag == TAB_FILE_TAG || oldTabTag == TAB_FILE_TAG)
         && ([QLPreviewPanel sharedPreviewPanelExists] && [[QLPreviewPanel sharedPreviewPanel] isVisible]))

@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: webseed.c 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: webseed.c 14619 2015-12-13 10:23:22Z mikedld $
  */
 
 #include <string.h> /* strlen () */
@@ -162,14 +162,17 @@ write_block_func (void * vdata)
       tr_cache * cache = data->session->cache;
       const tr_piece_index_t piece = data->piece_index;
 
-      while (len > 0)
+      if (!tr_torrentPieceIsComplete (tor, piece))
         {
-          const uint32_t bytes_this_pass = MIN (len, block_size);
-          tr_cacheWriteBlock (cache, tor, piece, offset_end - len, bytes_this_pass, buf);
-          len -= bytes_this_pass;
-        }
+          while (len > 0)
+            {
+              const uint32_t bytes_this_pass = MIN (len, block_size);
+              tr_cacheWriteBlock (cache, tor, piece, offset_end - len, bytes_this_pass, buf);
+              len -= bytes_this_pass;
+            }
 
-      fire_client_got_blocks (tor, w, data->block_index, data->count);
+          fire_client_got_blocks (tor, w, data->block_index, data->count);
+        }
     }
 
   evbuffer_free (buf);
@@ -285,7 +288,7 @@ on_content_changed (struct evbuffer                * buf,
              that will be needed when writing the block in a different thread */
           evbuffer_remove_buffer (task->content, data->content,
                                   block_size * completed);
-  
+
           tr_runInEventThread (w->session, write_block_func, data);
           task->blocks_done += completed;
         }
@@ -422,7 +425,7 @@ web_response_func (tr_session    * session,
             }
             else
             {
-              if (buf_len)
+              if (buf_len && !tr_torrentPieceIsComplete (tor, t->piece_index))
                 {
                   /* on_content_changed () will not write a block if it is smaller than
                      the torrent's block size, i.e. the torrent's very last block */
@@ -491,7 +494,7 @@ task_request_next_chunk (struct tr_webseed_task * t)
       this_pass = MIN (remain, file->length - file_offset);
 
       if (!urls[file_index])
-        urls[file_index] = evbuffer_free_to_str (make_url (t->webseed, file));
+        urls[file_index] = evbuffer_free_to_str (make_url (t->webseed, file), NULL);
 
       tr_snprintf (range, sizeof range, "%"PRIu64"-%"PRIu64,
                    file_offset, file_offset + this_pass - 1);

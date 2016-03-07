@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: PrefsController.m 14161 2013-08-10 02:29:12Z livings124 $
+ * $Id: PrefsController.m 14667 2016-01-08 10:05:19Z mikedld $
  *
  * Copyright (c) 2005-2012 Transmission authors and contributors
  *
@@ -166,9 +166,8 @@
 - (void) awakeFromNib
 {
     fHasLoaded = YES;
-    
-    if ([NSApp isOnLionOrBetter])
-        [[self window] setRestorationClass: [self class]];
+
+    [[self window] setRestorationClass: [self class]];
     
     NSToolbar * toolbar = [[NSToolbar alloc] initWithIdentifier: @"Preferences Toolbar"];
     [toolbar setDelegate: self];
@@ -421,15 +420,15 @@
     {
         case PORT_STATUS_OPEN:
             [fPortStatusField setStringValue: NSLocalizedString(@"Port is open", "Preferences -> Network -> port status")];
-            [fPortStatusImage setImage: [NSImage imageNamed: @"GreenDot"]];
+            [fPortStatusImage setImage: [NSImage imageNamed: NSImageNameStatusAvailable]];
             break;
         case PORT_STATUS_CLOSED:
             [fPortStatusField setStringValue: NSLocalizedString(@"Port is closed", "Preferences -> Network -> port status")];
-            [fPortStatusImage setImage: [NSImage imageNamed: @"RedDot"]];
+            [fPortStatusImage setImage: [NSImage imageNamed: NSImageNameStatusUnavailable]];
             break;
         case PORT_STATUS_ERROR:
             [fPortStatusField setStringValue: NSLocalizedString(@"Port check site is down", "Preferences -> Network -> port status")];
-            [fPortStatusImage setImage: [NSImage imageNamed: @"YellowDot"]];
+            [fPortStatusImage setImage: [NSImage imageNamed: NSImageNameStatusPartiallyAvailable]];
             break;
         default:
             NSAssert1(NO, @"Port checker returned invalid status: %d", [fPortChecker status]);
@@ -1463,7 +1462,7 @@
         return;
     
     NSRect windowRect = [window frame];
-    const CGFloat difference = (NSHeight([view frame]) - NSHeight([[window contentView] frame])) * [window userSpaceScaleFactor];
+    const CGFloat difference = NSHeight([view frame]) - NSHeight([[window contentView] frame]);
     windowRect.origin.y -= difference;
     windowRect.size.height += difference;
     

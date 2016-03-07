@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: DragOverlayWindow.m 13340 2012-06-10 02:35:58Z livings124 $
+ * $Id: DragOverlayWindow.m 14290 2014-06-08 22:16:01Z jordan $
  *
  * Copyright (c) 2007-2012 Transmission authors and contributors
  *
@@ -110,7 +110,7 @@
                 if (count == 1)
                 {
                     name = [NSString stringWithUTF8String: info.name];
-                    folder = info.isMultifile;
+                    folder = info.isFolder;
                 }
             }
             tr_metainfoFree(&info);

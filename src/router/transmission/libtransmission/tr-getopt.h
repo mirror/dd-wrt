@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: tr-getopt.h 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: tr-getopt.h 14615 2015-12-06 22:39:14Z jordan $
  */
 
 #ifndef TR_GETOPT_H
@@ -50,11 +50,11 @@ enum
  * @brief similar to getopt ()
  * @return TR_GETOPT_DONE, TR_GETOPT_ERR, TR_GETOPT_UNK, or the matching tr_option's `val' field
  */
-int  tr_getopt (const char       * summary,
-                int                argc,
-                const char      ** argv,
-                const tr_option  * opts,
-                const char      ** setme_optarg);
+int  tr_getopt (const char          * summary,
+                int                   argc,
+                const char * const  * argv,
+                const tr_option     * opts,
+                const char         ** setme_optarg);
 
 /** @brief prints the `Usage' help section to stdout */
 void tr_getopt_usage (const char       * appName,

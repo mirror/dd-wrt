@@ -4,22 +4,15 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: remote.c 14263 2014-04-27 19:57:38Z jordan $
+ * $Id: remote.c 14707 2016-03-05 17:27:40Z mikedld $
  */
 
 #include <assert.h>
 #include <ctype.h> /* isspace */
-#include <errno.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h> /* strcmp */
-
-#ifdef WIN32
- #include <direct.h> /* getcwd */
-#else
- #include <unistd.h> /* getcwd */
-#endif
 
 #include <event2/buffer.h>
 
@@ -27,6 +20,9 @@
 #include <curl/curl.h>
 
 #include <libtransmission/transmission.h>
+#include <libtransmission/crypto-utils.h>
+#include <libtransmission/error.h>
+#include <libtransmission/file.h>
 #include <libtransmission/log.h>
 #include <libtransmission/rpcimpl.h>
 #include <libtransmission/tr-getopt.h>
@@ -268,7 +264,7 @@ static tr_option opts[] =
     { 'O', "no-dht",                 "Disable distributed hash tables (DHT)", "O", 0, NULL },
     { 'p', "port",                   "Port for incoming peers (Default: " TR_DEFAULT_PEER_PORT_STR ")", "p", 1, "<port>" },
     { 962, "port-test",              "Port testing", "pt", 0, NULL },
-    { 'P', "random-port",            "Random port for incomping peers", "P", 0, NULL },
+    { 'P', "random-port",            "Random port for incoming peers", "P", 0, NULL },
     { 900, "priority-high",          "Try to download these file(s) first", "ph", 1, "<files>" },
     { 901, "priority-normal",        "Try to download these file(s) normally", "pn", 1, "<files>" },
     { 902, "priority-low",           "Try to download these file(s) last", "pl", 1, "<files>" },
@@ -278,7 +274,7 @@ static tr_option opts[] =
     { 600, "reannounce",             "Reannounce the current torrent(s)", NULL,  0, NULL },
     { 'r', "remove",                 "Remove the current torrent(s)", "r",  0, NULL },
     { 930, "peers",                  "Set the maximum number of peers for the current torrent(s) or globally", "pr", 1, "<max>" },
-    { 'R', "remove-and-delete",      "Remove the current torrent(s) and delete local data", NULL, 0, NULL },
+    { 840, "remove-and-delete",      "Remove the current torrent(s) and delete local data", "rad", 0, NULL },
     { 800, "torrent-done-script",    "Specify a script to run when a torrent finishes", NULL, 1, "<file>" },
     { 801, "no-torrent-done-script", "Don't run a script when torrents finish", NULL, 0, NULL },
     { 950, "seedratio",              "Let the current torrent(s) seed until a specific ratio", "sr", 1, "ratio" },
@@ -475,7 +471,7 @@ getOptMode (int val)
         return MODE_PORT_TEST;
 
       case 'r': /* remove */
-      case 'R': /* remove and delete */
+      case 840: /* remove and delete */
         return MODE_TORRENT_REMOVE;
 
       case 960: /* move */
@@ -495,51 +491,11 @@ static char * sessionId = NULL;
 static bool UseSSL = false;
 
 static char*
-tr_getcwd (void)
-{
-  char * result;
-  char buf[2048];
-
-#ifdef WIN32
-  result = _getcwd (buf, sizeof (buf));
-#else
-  result = getcwd (buf, sizeof (buf));
-#endif
-
-  if (result == NULL)
-    {
-      fprintf (stderr, "getcwd error: \"%s\"", tr_strerror (errno));
-      *buf = '\0';
-    }
-
-  return tr_strdup (buf);
-}
-
-static char*
-absolutify (const char * path)
-{
-  char * buf;
-
-  if (*path == '/')
-    {
-      buf = tr_strdup (path);
-    }
-  else
-    {
-      char * cwd = tr_getcwd ();
-      buf = tr_buildPath (cwd, path, NULL);
-      tr_free (cwd);
-    }
-
-  return buf;
-}
-
-static char*
 getEncodedMetainfo (const char * filename)
 {
     size_t    len = 0;
     char *    b64 = NULL;
-    uint8_t * buf = tr_loadFile (filename, &len);
+    uint8_t * buf = tr_loadFile (filename, &len, NULL);
 
     if (buf)
     {
@@ -621,7 +577,7 @@ addDays (tr_variant * args, const tr_quark key, const char * arg)
       int valueCount;
       int * values;
 
-      values = tr_parseNumberRange (arg, -1, &valueCount);
+      values = tr_parseNumberRange (arg, TR_BAD_SIZE, &valueCount);
       for (i=0; i<valueCount; ++i)
         {
           if (values[i] < 0 || values[i] > 7)
@@ -659,7 +615,7 @@ addFiles (tr_variant      * args,
     {
       int i;
       int valueCount;
-      int * values = tr_parseNumberRange (arg, -1, &valueCount);
+      int * values = tr_parseNumberRange (arg, TR_BAD_SIZE, &valueCount);
 
       for (i=0; i<valueCount; ++i)
         tr_variantListAddInt (files, values[i]);
@@ -1199,9 +1155,9 @@ printPeers (tr_variant * top)
 }
 
 static void
-printPiecesImpl (const uint8_t * raw, size_t rawlen, int64_t j)
+printPiecesImpl (const uint8_t * raw, size_t rawlen, size_t j)
 {
-    int i, k, len;
+    size_t i, k, len;
     char * str = tr_base64_decode (raw, rawlen, &len);
     printf ("  ");
     for (i=k=0; k<len; ++k) {
@@ -1233,7 +1189,8 @@ printPieces (tr_variant * top)
             tr_variant * torrent = tr_variantListChild (torrents, i);
             if (tr_variantDictFindRaw (torrent, TR_KEY_pieces, &raw, &rawlen) &&
                 tr_variantDictFindInt (torrent, TR_KEY_pieceCount, &j)) {
-                printPiecesImpl (raw, rawlen, j);
+                assert (j >= 0);
+                printPiecesImpl (raw, rawlen, (size_t) j);
                 if (i+1<n)
                     printf ("\n");
             }
@@ -1674,7 +1631,7 @@ processResponse (const char * rpcurl, const void * response, size_t len)
     if (tr_variantFromJson (&top, response, len))
     {
         tr_logAddNamedError (MY_NAME, "Unable to parse response \"%*.*s\"", (int)len,
-               (int)len, (char*)response);
+               (int)len, (const char*)response);
         status |= EXIT_FAILURE;
     }
     else
@@ -1771,7 +1728,7 @@ tr_curl_easy_init (struct evbuffer * writebuf)
     if (UseSSL)
     {
         curl_easy_setopt (curl, CURLOPT_SSL_VERIFYHOST, 0); /* do not verify subject/hostname */
-        curl_easy_setopt (curl, CURLOPT_SSL_VERIFYPEER, 0); /* since most certs will be self-signed, do not verify against CA */		
+        curl_easy_setopt (curl, CURLOPT_SSL_VERIFYPEER, 0); /* since most certs will be self-signed, do not verify against CA */
     }
     if (sessionId) {
         char * h = tr_strdup_printf ("%s: %s", TR_RPC_SESSION_ID_HEADER, sessionId);
@@ -1877,7 +1834,7 @@ ensure_tset (tr_variant ** tset)
 }
 
 static int
-processArgs (const char * rpcurl, int argc, const char ** argv)
+processArgs (const char * rpcurl, int argc, const char * const * argv)
 {
     int c;
     int status = EXIT_SUCCESS;
@@ -1916,13 +1873,11 @@ processArgs (const char * rpcurl, int argc, const char ** argv)
                     break;
 
                 case 810: /* authenv */
+                    auth = tr_env_get_string ("TR_AUTH", NULL);
+                    if (auth == NULL)
                     {
-                        char *authenv = getenv ("TR_AUTH");
-                        if (!authenv) {
-                            fprintf (stderr, "The TR_AUTH environment variable is not set\n");
-                            exit (0);
-                        }
-                        auth = tr_strdup (authenv);
+                        fprintf (stderr, "The TR_AUTH environment variable is not set\n");
+                        exit (0);
                     }
                     break;
 
@@ -2261,14 +2216,8 @@ processArgs (const char * rpcurl, int argc, const char ** argv)
             }
             case 'w':
             {
-                char * path = absolutify (optarg);
-                if (tadd)
-                    tr_variantDictAddStr (tr_variantDictFind (tadd, TR_KEY_arguments), TR_KEY_download_dir, path);
-                else {
-                    tr_variant * args = ensure_sset (&sset);
-                    tr_variantDictAddStr (args, TR_KEY_download_dir, path);
-                }
-                tr_free (path);
+                tr_variant * args = tadd ? tr_variantDictFind (tadd, TR_KEY_arguments) : ensure_sset (&sset);
+                tr_variantDictAddStr (args, TR_KEY_download_dir, optarg);
                 break;
             }
             case 850:
@@ -2328,14 +2277,14 @@ processArgs (const char * rpcurl, int argc, const char ** argv)
                 break;
             }
             case 'r':
-            case 'R':
+            case 840:
             {
                 tr_variant * args;
                 tr_variant * top = tr_new0 (tr_variant, 1);
                 tr_variantInitDict (top, 2);
                 tr_variantDictAddStr (top, TR_KEY_method, "torrent-remove");
                 args = tr_variantDictAddDict (top, ARGUMENTS, 2);
-                tr_variantDictAddBool (args, TR_KEY_delete_local_data, c=='R');
+                tr_variantDictAddBool (args, TR_KEY_delete_local_data, c == 840);
                 addIdArg (args, id, NULL);
                 status |= flush (rpcurl, &top);
                 break;
@@ -2409,7 +2358,8 @@ getHostAndPortAndRpcUrl (int * argc, char ** argv,
 }
 
 int
-main (int argc, char ** argv)
+tr_main (int    argc,
+         char * argv[])
 {
     int port = DEFAULT_PORT;
     char * host = NULL;
@@ -2431,7 +2381,7 @@ main (int argc, char ** argv)
     if (rpcurl == NULL)
         rpcurl = tr_strdup_printf ("%s:%d%s", host, port, DEFAULT_URL);
 
-    exit_status = processArgs (rpcurl, argc, (const char**)argv);
+    exit_status = processArgs (rpcurl, argc, (const char* const *)argv);
 
     tr_free (host);
     tr_free (rpcurl);
