@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: handshake.c 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: handshake.c 14644 2015-12-29 19:37:31Z mikedld $
  */
 
 #include <assert.h>
@@ -16,7 +16,7 @@
 
 #include "transmission.h"
 #include "clients.h"
-#include "crypto.h"
+#include "crypto-utils.h"
 #include "handshake.h"
 #include "log.h"
 #include "peer-io.h"
@@ -62,26 +62,26 @@ enum
 
 
 #ifdef ENABLE_LTEP
- #define HANDSHAKE_HAS_LTEP(bits)(((bits)[5] & 0x10) ? 1 : 0)
+ #define HANDSHAKE_HAS_LTEP(bits)(((bits)[5] & 0x10) != 0)
  #define HANDSHAKE_SET_LTEP(bits)((bits)[5] |= 0x10)
 #else
- #define HANDSHAKE_HAS_LTEP(bits)(0)
+ #define HANDSHAKE_HAS_LTEP(bits)(false)
  #define HANDSHAKE_SET_LTEP(bits)((void)0)
 #endif
 
 #ifdef ENABLE_FAST
- #define HANDSHAKE_HAS_FASTEXT(bits)(((bits)[7] & 0x04) ? 1 : 0)
+ #define HANDSHAKE_HAS_FASTEXT(bits)(((bits)[7] & 0x04) != 0)
  #define HANDSHAKE_SET_FASTEXT(bits)((bits)[7] |= 0x04)
 #else
- #define HANDSHAKE_HAS_FASTEXT(bits)(0)
+ #define HANDSHAKE_HAS_FASTEXT(bits)(false)
  #define HANDSHAKE_SET_FASTEXT(bits)((void)0)
 #endif
 
 #ifdef ENABLE_DHT
- #define HANDSHAKE_HAS_DHT(bits)(((bits)[7] & 0x01) ? 1 : 0)
+ #define HANDSHAKE_HAS_DHT(bits)(((bits)[7] & 0x01) != 0)
  #define HANDSHAKE_SET_DHT(bits)((bits)[7] |= 0x01)
 #else
- #define HANDSHAKE_HAS_DHT(bits)(0)
+ #define HANDSHAKE_HAS_DHT(bits)(false)
  #define HANDSHAKE_SET_DHT(bits)((void)0)
 #endif
 
@@ -91,35 +91,11 @@ enum
 #define HANDSHAKE_GET_EXTPREF(reserved)    ((reserved)[5] & 0x03)
 #define HANDSHAKE_SET_EXTPREF(reserved, val)((reserved)[5] |= 0x03 & (val))
 
-typedef uint8_t handshake_state_t;
-
-struct tr_handshake
-{
-  bool                  haveReadAnythingFromPeer;
-  bool                  havePeerID;
-  bool                  haveSentBitTorrentHandshake;
-  tr_peerIo *           io;
-  tr_crypto *           crypto;
-  tr_session *          session;
-  uint8_t               mySecret[KEY_LEN];
-  handshake_state_t     state;
-  tr_encryption_mode    encryptionMode;
-  uint16_t              pad_c_len;
-  uint16_t              pad_d_len;
-  uint16_t              ia_len;
-  uint32_t              crypto_select;
-  uint32_t              crypto_provide;
-  uint8_t               myReq1[SHA_DIGEST_LENGTH];
-  handshakeDoneCB       doneCB;
-  void *                doneUserData;
-  struct event        * timeout_timer;
-};
-
 /**
 ***
 **/
 
-enum
+typedef enum
 {
   /* incoming */
   AWAITING_HANDSHAKE,
@@ -138,6 +114,28 @@ enum
   AWAITING_PAD_D,
 
   N_STATES
+}
+handshake_state_t;
+
+struct tr_handshake
+{
+  bool                  haveReadAnythingFromPeer;
+  bool                  havePeerID;
+  bool                  haveSentBitTorrentHandshake;
+  tr_peerIo *           io;
+  tr_crypto *           crypto;
+  tr_session *          session;
+  handshake_state_t     state;
+  tr_encryption_mode    encryptionMode;
+  uint16_t              pad_c_len;
+  uint16_t              pad_d_len;
+  uint16_t              ia_len;
+  uint32_t              crypto_select;
+  uint32_t              crypto_provide;
+  uint8_t               myReq1[SHA_DIGEST_LENGTH];
+  handshakeDoneCB       doneCB;
+  void *                doneUserData;
+  struct event        * timeout_timer;
 };
 
 /**
@@ -230,18 +228,19 @@ buildHandshakeMessage (tr_handshake * handshake, uint8_t * buf)
   return success;
 }
 
-static int tr_handshakeDone (tr_handshake * handshake,
-                             bool           isConnected);
+static ReadState tr_handshakeDone (tr_handshake * handshake,
+                                   bool           isConnected);
 
-enum
+typedef enum
 {
   HANDSHAKE_OK,
   HANDSHAKE_ENCRYPTION_WRONG,
   HANDSHAKE_BAD_TORRENT,
   HANDSHAKE_PEER_IS_SELF,
-};
+}
+handshake_parse_err_t;
 
-static int
+static handshake_parse_err_t
 parseHandshake (tr_handshake *    handshake,
                 struct evbuffer * inbuf)
 {
@@ -251,11 +250,11 @@ parseHandshake (tr_handshake *    handshake,
   tr_torrent * tor;
   uint8_t peer_id[PEER_ID_LEN];
 
-  dbgmsg (handshake, "payload: need %d, got %"TR_PRIuSIZE,
+  dbgmsg (handshake, "payload: need %d, got %zu",
           HANDSHAKE_SIZE, evbuffer_get_length (inbuf));
 
   if (evbuffer_get_length (inbuf) < HANDSHAKE_SIZE)
-    return READ_LATER;
+    return HANDSHAKE_ENCRYPTION_WRONG;
 
   /* confirm the protocol */
   tr_peerIoReadBytes (handshake->io, inbuf, name, HANDSHAKE_NAME_LEN);
@@ -324,8 +323,8 @@ sendYa (tr_handshake * handshake)
   walk += len;
 
   /* add some bullshit padding */
-  len = tr_cryptoRandInt (PadA_MAXLEN);
-  tr_cryptoRandBuf (walk, len);
+  len = tr_rand_int (PadA_MAXLEN);
+  tr_rand_buffer (walk, len);
   walk += len;
 
   /* send it */
@@ -385,11 +384,18 @@ getCryptoSelect (const tr_handshake * handshake,
   return 0;
 }
 
-static int
+static void
+computeRequestHash (const tr_handshake * handshake,
+                    const char         * name,
+                    uint8_t            * hash)
+{
+  tr_cryptoSecretKeySha1 (handshake->crypto, name, 4, NULL, 0, hash);
+}
+
+static ReadState
 readYb (tr_handshake * handshake, struct evbuffer * inbuf)
 {
-  int isEncrypted;
-  const uint8_t * secret;
+  bool isEncrypted;
   uint8_t yb[KEY_LEN];
   struct evbuffer * outbuf;
   size_t needlen = HANDSHAKE_NAME_LEN;
@@ -397,7 +403,7 @@ readYb (tr_handshake * handshake, struct evbuffer * inbuf)
   if (evbuffer_get_length (inbuf) < needlen)
     return READ_LATER;
 
-  isEncrypted = memcmp (evbuffer_pullup (inbuf, HANDSHAKE_NAME_LEN), HANDSHAKE_NAME, HANDSHAKE_NAME_LEN);
+  isEncrypted = memcmp (evbuffer_pullup (inbuf, HANDSHAKE_NAME_LEN), HANDSHAKE_NAME, HANDSHAKE_NAME_LEN) != 0;
   if (isEncrypted)
     {
       needlen = KEY_LEN;
@@ -420,8 +426,7 @@ readYb (tr_handshake * handshake, struct evbuffer * inbuf)
 
   /* compute the secret */
   evbuffer_remove (inbuf, yb, KEY_LEN);
-  secret = tr_cryptoComputeSecret (handshake->crypto, yb);
-  memcpy (handshake->mySecret, secret, KEY_LEN);
+  tr_cryptoComputeSecret (handshake->crypto, yb);
 
   /* now send these: HASH ('req1', S), HASH ('req2', SKEY) xor HASH ('req3', S),
    * ENCRYPT (VC, crypto_provide, len (PadC), PadC, len (IA)), ENCRYPT (IA) */
@@ -430,7 +435,7 @@ readYb (tr_handshake * handshake, struct evbuffer * inbuf)
   /* HASH ('req1', S) */
   {
     uint8_t req1[SHA_DIGEST_LENGTH];
-    tr_sha1 (req1, "req1", 4, secret, KEY_LEN, NULL);
+    computeRequestHash (handshake, "req1", req1);
     evbuffer_add (outbuf, req1, SHA_DIGEST_LENGTH);
   }
 
@@ -442,7 +447,7 @@ readYb (tr_handshake * handshake, struct evbuffer * inbuf)
     uint8_t buf[SHA_DIGEST_LENGTH];
 
     tr_sha1 (req2, "req2", 4, tr_cryptoGetTorrentHash (handshake->crypto), SHA_DIGEST_LENGTH, NULL);
-    tr_sha1 (req3, "req3", 4, secret, KEY_LEN, NULL);
+    computeRequestHash (handshake, "req3", req3);
 
     for (i=0; i<SHA_DIGEST_LENGTH; ++i)
       buf[i] = req2[i] ^ req3[i];
@@ -474,7 +479,7 @@ readYb (tr_handshake * handshake, struct evbuffer * inbuf)
     evbuffer_add_uint16 (outbuf, sizeof (msg));
     evbuffer_add        (outbuf, msg, sizeof (msg));
 
-    handshake->haveSentBitTorrentHandshake = 1;
+    handshake->haveSentBitTorrentHandshake = true;
   }
 
   /* send it */
@@ -487,7 +492,7 @@ readYb (tr_handshake * handshake, struct evbuffer * inbuf)
   return READ_LATER;
 }
 
-static int
+static ReadState
 readVC (tr_handshake    * handshake,
         struct evbuffer * inbuf)
 {
@@ -521,7 +526,7 @@ readVC (tr_handshake    * handshake,
   return READ_NOW;
 }
 
-static int
+static ReadState
 readCryptoSelect (tr_handshake    * handshake,
                   struct evbuffer * inbuf)
 {
@@ -556,13 +561,13 @@ readCryptoSelect (tr_handshake    * handshake,
   return READ_NOW;
 }
 
-static int
+static ReadState
 readPadD (tr_handshake    * handshake,
           struct evbuffer * inbuf)
 {
   const size_t needlen = handshake->pad_d_len;
 
-  dbgmsg (handshake, "pad d: need %"TR_PRIuSIZE", got %"TR_PRIuSIZE,
+  dbgmsg (handshake, "pad d: need %zu, got %zu",
           needlen, evbuffer_get_length (inbuf));
   if (evbuffer_get_length (inbuf) < needlen)
     return READ_LATER;
@@ -581,7 +586,7 @@ readPadD (tr_handshake    * handshake,
 ****
 ***/
 
-static int
+static ReadState
 readHandshake (tr_handshake    * handshake,
                struct evbuffer * inbuf)
 {
@@ -590,7 +595,7 @@ readHandshake (tr_handshake    * handshake,
   uint8_t reserved[HANDSHAKE_FLAGS_LEN];
   uint8_t hash[SHA_DIGEST_LENGTH];
 
-  dbgmsg (handshake, "payload: need %d, got %"TR_PRIuSIZE,
+  dbgmsg (handshake, "payload: need %d, got %zu",
           INCOMING_HANDSHAKE_LEN, evbuffer_get_length (inbuf));
 
   if (evbuffer_get_length (inbuf) < INCOMING_HANDSHAKE_LEN)
@@ -687,14 +692,14 @@ readHandshake (tr_handshake    * handshake,
       if (!buildHandshakeMessage (handshake, msg))
         return tr_handshakeDone (handshake, false);
       tr_peerIoWriteBytes (handshake->io, msg, sizeof (msg), false);
-      handshake->haveSentBitTorrentHandshake = 1;
+      handshake->haveSentBitTorrentHandshake = true;
     }
 
   setReadState (handshake, AWAITING_PEER_ID);
   return READ_NOW;
 }
 
-static int
+static ReadState
 readPeerId (tr_handshake    * handshake,
             struct evbuffer * inbuf)
 {
@@ -721,26 +726,24 @@ readPeerId (tr_handshake    * handshake,
   return tr_handshakeDone (handshake, !connected_to_self);
 }
 
-static int
+static ReadState
 readYa (tr_handshake    * handshake,
         struct evbuffer * inbuf)
 {
   uint8_t ya[KEY_LEN];
   uint8_t * walk, outbuf[KEY_LEN + PadB_MAXLEN];
   const uint8_t * myKey;
-  const uint8_t * secret;
   int len;
 
-  dbgmsg (handshake, "in readYa... need %d, have %"TR_PRIuSIZE,
+  dbgmsg (handshake, "in readYa... need %d, have %zu",
           KEY_LEN, evbuffer_get_length (inbuf));
   if (evbuffer_get_length (inbuf) < KEY_LEN)
     return READ_LATER;
 
   /* read the incoming peer's public key */
   evbuffer_remove (inbuf, ya, KEY_LEN);
-  secret = tr_cryptoComputeSecret (handshake->crypto, ya);
-  memcpy (handshake->mySecret, secret, KEY_LEN);
-  tr_sha1 (handshake->myReq1, "req1", 4, secret, KEY_LEN, NULL);
+  tr_cryptoComputeSecret (handshake->crypto, ya);
+  computeRequestHash (handshake, "req1", handshake->myReq1);
 
   /* send our public key to the peer */
   dbgmsg (handshake, "sending B->A: Diffie Hellman Yb, PadB");
@@ -748,8 +751,8 @@ readYa (tr_handshake    * handshake,
   myKey = tr_cryptoGetMyPublicKey (handshake->crypto, &len);
   memcpy (walk, myKey, len);
   walk += len;
-  len = tr_cryptoRandInt (PadB_MAXLEN);
-  tr_cryptoRandBuf (walk, len);
+  len = tr_rand_int (PadB_MAXLEN);
+  tr_rand_buffer (walk, len);
   walk += len;
 
   setReadState (handshake, AWAITING_PAD_A);
@@ -757,7 +760,7 @@ readYa (tr_handshake    * handshake,
   return READ_NOW;
 }
 
-static int
+static ReadState
 readPadA (tr_handshake * handshake, struct evbuffer * inbuf)
 {
   /* resynchronizing on HASH ('req1',S) */
@@ -779,7 +782,7 @@ readPadA (tr_handshake * handshake, struct evbuffer * inbuf)
     }
 }
 
-static int
+static ReadState
 readCryptoProvide (tr_handshake    * handshake,
                    struct evbuffer * inbuf)
 {
@@ -810,7 +813,7 @@ readCryptoProvide (tr_handshake    * handshake,
    * by building the latter and xor'ing it with what the peer sent us */
   dbgmsg (handshake, "reading obfuscated torrent hash...");
   evbuffer_remove (inbuf, req2, SHA_DIGEST_LENGTH);
-  tr_sha1 (req3, "req3", 4, handshake->mySecret, KEY_LEN, NULL);
+  computeRequestHash (handshake, "req3", req3);
   for (i=0; i<SHA_DIGEST_LENGTH; ++i)
     obfuscatedTorrentHash[i] = req2[i] ^ req3[i];
   if ((tor = tr_torrentFindFromObfuscatedHash (handshake->session, obfuscatedTorrentHash)))
@@ -849,7 +852,7 @@ readCryptoProvide (tr_handshake    * handshake,
   return READ_NOW;
 }
 
-static int
+static ReadState
 readPadC (tr_handshake    * handshake,
           struct evbuffer * inbuf)
 {
@@ -873,7 +876,7 @@ readPadC (tr_handshake    * handshake,
   return READ_NOW;
 }
 
-static int
+static ReadState
 readIA (tr_handshake    * handshake,
         struct evbuffer * inbuf)
 {
@@ -881,7 +884,7 @@ readIA (tr_handshake    * handshake,
   struct evbuffer * outbuf;
   uint32_t crypto_select;
 
-  dbgmsg (handshake, "reading IA... have %"TR_PRIuSIZE", need %"TR_PRIuSIZE,
+  dbgmsg (handshake, "reading IA... have %zu, need %zu",
           evbuffer_get_length (inbuf), needlen);
   if (evbuffer_get_length (inbuf) < needlen)
     return READ_LATER;
@@ -939,7 +942,7 @@ readIA (tr_handshake    * handshake,
       return tr_handshakeDone (handshake, false);
 
     evbuffer_add (outbuf, msg, sizeof (msg));
-    handshake->haveSentBitTorrentHandshake = 1;
+    handshake->haveSentBitTorrentHandshake = true;
   }
 
   /* send it out */
@@ -951,14 +954,14 @@ readIA (tr_handshake    * handshake,
   return READ_NOW;
 }
 
-static int
+static ReadState
 readPayloadStream (tr_handshake    * handshake,
                    struct evbuffer * inbuf)
 {
-  int i;
+  handshake_parse_err_t i;
   const size_t needlen = HANDSHAKE_SIZE;
 
-  dbgmsg (handshake, "reading payload stream... have %"TR_PRIuSIZE", need %"TR_PRIuSIZE,
+  dbgmsg (handshake, "reading payload stream... have %zu, need %zu",
           evbuffer_get_length (inbuf), needlen);
   if (evbuffer_get_length (inbuf) < needlen)
     return READ_LATER;
@@ -1090,7 +1093,7 @@ tr_handshakeFree (tr_handshake * handshake)
   tr_free (handshake);
 }
 
-static int
+static ReadState
 tr_handshakeDone (tr_handshake * handshake, bool isOK)
 {
   bool success;
@@ -1139,7 +1142,7 @@ gotError (tr_peerIo  * io,
         {
           uint8_t msg[HANDSHAKE_SIZE];
           buildHandshakeMessage (handshake, msg);
-          handshake->haveSentBitTorrentHandshake = 1;
+          handshake->haveSentBitTorrentHandshake = true;
           setReadState (handshake, AWAITING_HANDSHAKE);
           tr_peerIoWriteBytes (handshake->io, msg, sizeof (msg), false);
         }
@@ -1156,7 +1159,7 @@ gotError (tr_peerIo  * io,
 
       dbgmsg (handshake, "handshake failed, trying plaintext...");
       buildHandshakeMessage (handshake, msg);
-      handshake->haveSentBitTorrentHandshake = 1;
+      handshake->haveSentBitTorrentHandshake = true;
       setReadState (handshake, AWAITING_HANDSHAKE);
       tr_peerIoWriteBytes (handshake->io, msg, sizeof (msg), false);
     }
@@ -1214,7 +1217,7 @@ tr_handshakeNew (tr_peerIo           * io,
       uint8_t msg[HANDSHAKE_SIZE];
       buildHandshakeMessage (handshake, msg);
 
-      handshake->haveSentBitTorrentHandshake = 1;
+      handshake->haveSentBitTorrentHandshake = true;
       setReadState (handshake, AWAITING_HANDSHAKE);
       tr_peerIoWriteBytes (handshake->io, msg, sizeof (msg), false);
     }

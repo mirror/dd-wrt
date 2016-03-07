@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: net.h 13625 2012-12-05 17:29:46Z jordan $
+ * $Id: net.h 14574 2015-10-11 16:35:51Z mikedld $
  *
  * Copyright (c) Transmission authors and contributors
  *
@@ -29,27 +29,47 @@
 #ifndef _TR_NET_H_
 #define _TR_NET_H_
 
-#ifdef WIN32
+#ifdef _WIN32
  #include <inttypes.h>
  #include <ws2tcpip.h>
 #else
+ #include <errno.h>
  #include <sys/socket.h>
  #include <netinet/in.h>
 #endif
 
-#ifdef WIN32
+#ifdef _WIN32
+ typedef SOCKET tr_socket_t;
+ #define TR_BAD_SOCKET INVALID_SOCKET
+ #define TR_PRI_SOCK "Id" /* intentionally signed to print -1 nicely. */
+
+ #undef  EADDRINUSE
  #define EADDRINUSE              WSAEADDRINUSE
+ #undef  ECONNREFUSED
  #define ECONNREFUSED            WSAECONNREFUSED
+ #undef  ECONNRESET
  #define ECONNRESET              WSAECONNRESET
+ #undef  EHOSTUNREACH
  #define EHOSTUNREACH            WSAEHOSTUNREACH
+ #undef  EINPROGRESS
  #define EINPROGRESS             WSAEINPROGRESS
+ #undef  ENOTCONN
  #define ENOTCONN                WSAENOTCONN
+ #undef  EWOULDBLOCK
  #define EWOULDBLOCK             WSAEWOULDBLOCK
+ #undef  EAFNOSUPPORT
  #define EAFNOSUPPORT            WSAEAFNOSUPPORT
+ #undef  ENETUNREACH
  #define ENETUNREACH             WSAENETUNREACH
+
  #define sockerrno               WSAGetLastError ()
 #else
- #include <errno.h>
+ /** @brief Platform-specific socket descriptor type. */
+ typedef int tr_socket_t;
+ /** @brief Platform-specific invalid socket descriptor constant. */
+ #define TR_BAD_SOCKET (-1)
+ #define TR_PRI_SOCK "d"
+
  #define sockerrno errno
 #endif
 
@@ -112,10 +132,10 @@ tr_address_is_valid (const tr_address * a)
 
 struct tr_session;
 
-int  tr_netOpenPeerSocket (tr_session       * session,
-                           const tr_address * addr,
-                           tr_port            port,
-                           bool               clientIsSeed);
+tr_socket_t tr_netOpenPeerSocket (tr_session       * session,
+                                  const tr_address * addr,
+                                  tr_port            port,
+                                  bool               clientIsSeed);
 
 struct UTPSocket *
 tr_netOpenPeerUTPSocket (tr_session        * session,
@@ -123,25 +143,25 @@ tr_netOpenPeerUTPSocket (tr_session        * session,
                          tr_port             port,
                          bool                clientIsSeed);
 
-int  tr_netBindTCP (const tr_address * addr,
-                    tr_port            port,
-                    bool               suppressMsgs);
+tr_socket_t tr_netBindTCP (const tr_address * addr,
+                           tr_port            port,
+                           bool               suppressMsgs);
 
-int  tr_netAccept (tr_session * session,
-                   int          bound,
-                   tr_address * setme_addr,
-                   tr_port    * setme_port);
+tr_socket_t tr_netAccept (tr_session  * session,
+                          tr_socket_t   bound,
+                          tr_address  * setme_addr,
+                          tr_port     * setme_port);
 
-int  tr_netSetTOS (int s,
-                   int tos);
+void tr_netSetTOS (tr_socket_t s,
+                   int         tos);
 
-int tr_netSetCongestionControl (int s, const char *algorithm);
+void tr_netSetCongestionControl (tr_socket_t   s,
+                                 const char  * algorithm);
 
-void tr_netClose (tr_session * session, int s);
+void tr_netClose (tr_session  * session,
+                  tr_socket_t   s);
 
-void tr_netCloseSocket (int fd);
-
-void tr_netInit (void);
+void tr_netCloseSocket (tr_socket_t fd);
 
 bool tr_net_hasIPv6 (tr_port);
 
@@ -153,11 +173,5 @@ bool tr_net_hasIPv6 (tr_port);
 char* tr_net_strerror (char * buf, size_t buflen, int err);
 
 const unsigned char *tr_globalIPv6 (void);
-
-#if defined (WIN32) && !defined (QT_DLL)
-/* The QT exclusion is because something clashes whith the next include */
-#include <ws2tcpip.h>		/* socklen_t */
-
-#endif
 
 #endif /* _TR_NET_H_ */

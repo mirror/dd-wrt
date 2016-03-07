@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: clients-test.c 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: clients-test.c 14286 2014-06-07 15:07:51Z jordan $
  */
 
 #include "transmission.h"
@@ -28,6 +28,9 @@ main (void)
     TEST_CLIENT ("-TR111Z-", "Transmission 1.11+");
     TEST_CLIENT ("O1008132", "Osprey 1.0.0");
     TEST_CLIENT ("TIX0193-", "Tixati 1.93");
+    TEST_CLIENT ("-UT341\0-", "\xc2\xb5Torrent 3.4.1");
+    TEST_CLIENT ("-BT791\0-", "BitTorrent 7.9.1");
+    TEST_CLIENT ("-BT791B-", "BitTorrent 7.9.1 (Beta)");
 
     /* gobbledygook */
     TEST_CLIENT ("-IIO\x10\x2D\x04-", "-IIO%10-%04-");

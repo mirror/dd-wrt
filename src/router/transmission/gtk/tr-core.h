@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: tr-core.h 13983 2013-02-08 01:34:59Z jordan $
+ * $Id: tr-core.h 14681 2016-02-23 04:34:57Z mikedld $
  *
  * Copyright (c) Transmission authors and contributors
  *
@@ -34,6 +34,8 @@ G_BEGIN_DECLS
 
 #define TR_CORE_TYPE (tr_core_get_type ())
 #define TR_CORE(o)(G_TYPE_CHECK_INSTANCE_CAST ((o), TR_CORE_TYPE, TrCore))
+
+#define TR_RESOURCE_PATH "/com/transmissionbt/transmission/"
 
 typedef struct _TrCore
 {
@@ -154,8 +156,6 @@ void gtr_core_port_test (TrCore * core);
 void gtr_core_blocklist_update (TrCore * core);
 
 void gtr_core_exec (TrCore * core, const tr_variant * benc);
-
-void gtr_core_exec_json (TrCore * core, const char * json);
 
 void gtr_core_open_folder (TrCore * core, int torrent_id);
 

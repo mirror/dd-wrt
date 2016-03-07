@@ -4,7 +4,7 @@
  * It may be used under the 3-Clause BSD License, the GNU Public License v2,
  * or v3, or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: transmission.h 14225 2014-01-19 01:09:44Z jordan $
+ * $Id: transmission.h 14645 2015-12-29 19:44:50Z mikedld $
  */
 
 /*
@@ -29,11 +29,6 @@ extern "C" {
 #include <inttypes.h> /* uintN_t */
 #include <time.h> /* time_t */
 
-#ifdef WIN32
- #define __USE_MINGW_ANSI_STDIO 1
- #define __STDC_FORMAT_MACROS 1
-#endif
-
 #if !defined (__cplusplus)
  #ifdef HAVE_STDBOOL_H
   #include <stdbool.h>
@@ -44,44 +39,10 @@ extern "C" {
  #endif
 #endif
 
-#ifndef PRId64
- #ifdef WIN32
-  #define PRId64 "I64"
- #else
-  #define PRId64 "lld"
- #endif
-#endif
-
-#ifndef PRIu64
- #ifdef WIN32
-  #define PRIu64 "I64u"
- #else
-  #define PRIu64 "llu"
- #endif
-#endif
-
-#ifndef PRIu32
- #ifdef WIN32
-  #define PRIu32 "u"
- #else
-  #define PRIu32 "lu"
- #endif
-#endif
-
-#ifndef TR_PRIuSIZE
- #ifdef _MSC_VER
-  #define TR_PRIuSIZE "Iu"
- #else
-  #define TR_PRIuSIZE "zu"
- #endif
-#endif
-
-#if defined (WIN32) && defined (_MSC_VER)
- #define inline __inline
-#endif
-
 #define SHA_DIGEST_LENGTH 20
 #define TR_INET6_ADDRSTRLEN 46
+ 
+#define TR_BAD_SIZE ((size_t) -1)
 
 typedef uint32_t tr_file_index_t;
 typedef uint32_t tr_piece_index_t;
@@ -95,6 +56,7 @@ typedef struct tr_info tr_info;
 typedef struct tr_torrent tr_torrent;
 typedef struct tr_session tr_session;
 
+struct tr_error;
 struct tr_variant;
 
 typedef int8_t tr_priority_t;
@@ -245,12 +207,11 @@ void tr_sessionSaveSettings (tr_session              * session,
  *     tr_variantInitDict (&settings, 0);
  *     tr_sessionGetDefaultSettings (&settings);
  *     configDir = tr_getDefaultConfigDir ("Transmission");
- *     session = tr_sessionInit ("mac", configDir, true, &settings);
+ *     session = tr_sessionInit (configDir, true, &settings);
  *
  *     tr_variantFree (&settings);
  * @endcode
  *
- * @param tag "gtk", "macosx", "daemon", etc... this is only for pre-1.30 resume files
  * @param configDir where Transmission will look for resume files, blocklists, etc.
  * @param messageQueueingEnabled if false, messages will be dumped to stderr
  * @param settings libtransmission settings
@@ -258,8 +219,7 @@ void tr_sessionSaveSettings (tr_session              * session,
  * @see tr_sessionLoadSettings ()
  * @see tr_getDefaultConfigDir ()
  */
-tr_session * tr_sessionInit (const char        * tag,
-                             const char        * configDir,
+tr_session * tr_sessionInit (const char        * configDir,
                              bool                messageQueueingEnabled,
                              struct tr_variant * settings);
 
@@ -929,8 +889,8 @@ typedef enum
     TR_FALLBACK, /* indicates the ctor value should be used only
                     in case of missing resume settings */
 
-    TR_FORCE, /* indicates the ctor value should be used
-                 regardless of what's in the resume settings */
+    TR_FORCE /* indicates the ctor value should be used
+                regardless of what's in the resume settings */
 }
 tr_ctorMode;
 
@@ -1004,30 +964,30 @@ void        tr_ctorSetFilesWanted (tr_ctor                * ctor,
 
 
 /** @brief Get this peer constructor's peer limit */
-int         tr_ctorGetPeerLimit (const tr_ctor * ctor,
+bool        tr_ctorGetPeerLimit (const tr_ctor * ctor,
                                  tr_ctorMode     mode,
                                  uint16_t *      setmeCount);
 
 /** @brief Get the "isPaused" flag from this peer constructor */
-int         tr_ctorGetPaused (const tr_ctor * ctor,
+bool        tr_ctorGetPaused (const tr_ctor * ctor,
                               tr_ctorMode     mode,
                               bool          * setmeIsPaused);
 
 /** @brief Get the download path from this peer constructor */
-int         tr_ctorGetDownloadDir (const tr_ctor  * ctor,
+bool        tr_ctorGetDownloadDir (const tr_ctor  * ctor,
                                    tr_ctorMode      mode,
                                    const char    ** setmeDownloadDir);
 
 /** @brief Get the incomplete directory from this peer constructor */
-int         tr_ctorGetIncompleteDir (const tr_ctor  * ctor,
+bool        tr_ctorGetIncompleteDir (const tr_ctor  * ctor,
                                      const char    ** setmeIncompleteDir);
 
 /** @brief Get the metainfo from this peer constructor */
-int         tr_ctorGetMetainfo (const tr_ctor            * ctor,
+bool        tr_ctorGetMetainfo (const tr_ctor            * ctor,
                                 const struct tr_variant ** setme);
 
 /** @brief Get the "delete .torrent file" flag from this peer constructor */
-int         tr_ctorGetDeleteSource (const tr_ctor  * ctor,
+bool        tr_ctorGetDeleteSource (const tr_ctor  * ctor,
                                     bool           * setmeDoDelete);
 
 /** @brief Get the tr_session poiner from this peer constructor */
@@ -1099,7 +1059,7 @@ tr_torrent * tr_torrentNew (const tr_ctor   * ctor,
 /** @addtogroup tr_torrent Torrents
     @{ */
 
-typedef int (*tr_fileFunc) (const char * filename);
+typedef bool (*tr_fileFunc) (const char * filename, struct tr_error ** error);
 
 /** @brief Removes our .torrent and .resume files for this torrent */
 void tr_torrentRemove (tr_torrent  * torrent,
@@ -1836,7 +1796,7 @@ struct tr_info
 
     /* Flags */
     bool               isPrivate;
-    bool               isMultifile;
+    bool               isFolder;
 };
 
 static inline bool tr_torrentHasMetadata (const tr_torrent * tor)

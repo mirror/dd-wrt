@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: quark-test.c 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: quark-test.c 14669 2016-01-08 11:12:22Z mikedld $
  */
 
 #include <string.h> /* strlen() */
@@ -40,6 +40,10 @@ test_static_quarks (void)
 
       check (strcmp (str1, str2) < 0);
     }
+
+  const tr_quark q = tr_quark_new (NULL, TR_BAD_SIZE);
+  check_int_eq (TR_KEY_NONE, q);
+  check_streq ("", tr_quark_get_string (q, NULL));
 
   return 0;
 }

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: FileOutlineView.m 13251 2012-03-13 02:52:11Z livings124 $
+ * $Id: FileOutlineView.m 14665 2016-01-07 17:21:12Z mikedld $
  * 
  * Copyright (c) 2007-2012 Transmission authors and contributors
  *
@@ -96,7 +96,7 @@
     if (visibleRows.length == 0)
         return;
     
-    NSPoint mouseLocation = [self convertPoint: [[self window] convertScreenToBase: [NSEvent mouseLocation]] fromView: nil];
+    NSPoint mouseLocation = [self convertPoint: [[self window] mouseLocationOutsideOfEventStream] fromView: nil];
     
     for (NSInteger row = visibleRows.location, col = [self columnWithIdentifier: @"Priority"]; row < NSMaxRange(visibleRows); row++)
     {

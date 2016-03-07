@@ -4,10 +4,10 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: announcer-common.h 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: announcer-common.h 14521 2015-05-04 19:58:34Z mikedld $
  */
 
-#ifndef __LIBTRANSMISSION_ANNOUNCER_MODULE___
+#ifndef __LIBTRANSMISSION_ANNOUNCER_MODULE__
  #error only the libtransmission announcer module should #include this header.
 #endif
 

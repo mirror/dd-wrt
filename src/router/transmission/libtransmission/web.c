@@ -4,14 +4,13 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: web.c 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: web.c 14644 2015-12-29 19:37:31Z mikedld $
  */
 
 #include <assert.h>
 #include <string.h> /* strlen (), strstr () */
-#include <stdlib.h> /* getenv () */
 
-#ifdef WIN32
+#ifdef _WIN32
   #include <ws2tcpip.h>
 #else
   #include <sys/select.h>
@@ -22,6 +21,7 @@
 #include <event2/buffer.h>
 
 #include "transmission.h"
+#include "file.h"
 #include "list.h"
 #include "log.h"
 #include "net.h" /* tr_address */
@@ -100,7 +100,7 @@ struct tr_web
 {
   bool curl_verbose;
   bool curl_ssl_verify;
-  const char * curl_ca_bundle;
+  char * curl_ca_bundle;
   int close_mode;
   struct tr_web_task * tasks;
   tr_lock * taskLock;
@@ -130,7 +130,7 @@ writeFunc (void * ptr, size_t size, size_t nmemb, void * vtask)
     }
 
   evbuffer_add (task->response, ptr, byteCount);
-  dbgmsg ("wrote %"TR_PRIuSIZE" bytes to task %p's buffer", byteCount, (void*)task);
+  dbgmsg ("wrote %zu bytes to task %p's buffer", byteCount, (void*)task);
   return byteCount;
 }
 
@@ -147,8 +147,8 @@ sockoptfunction (void * vtask, curl_socket_t fd, curlsocktype purpose UNUSED)
     {
       const int sndbuf = isScrape ? 4096 : 1024;
       const int rcvbuf = isScrape ? 4096 : 3072;
-      setsockopt (fd, SOL_SOCKET, SO_SNDBUF, &sndbuf, sizeof (sndbuf));
-      setsockopt (fd, SOL_SOCKET, SO_RCVBUF, &rcvbuf, sizeof (rcvbuf));
+      setsockopt (fd, SOL_SOCKET, SO_SNDBUF, (const void *) &sndbuf, sizeof (sndbuf));
+      setsockopt (fd, SOL_SOCKET, SO_RCVBUF, (const void *) &rcvbuf, sizeof (rcvbuf));
     }
 
   /* return nonzero if this function encountered an error */
@@ -275,7 +275,7 @@ tr_webRunImpl (tr_session         * session,
           while (session->web == NULL)
             tr_wait_msec (20);
         }
-      
+
       task = tr_new0 (struct tr_web_task, 1);
       task->session = session;
       task->torrentId = torrentId;
@@ -347,7 +347,9 @@ tr_select (int nfds,
            fd_set * r_fd_set, fd_set * w_fd_set, fd_set * c_fd_set,
            struct timeval  * t)
 {
-#ifdef WIN32
+#ifdef _WIN32
+  (void) nfds;
+
   if (!r_fd_set->fd_count && !w_fd_set->fd_count && !c_fd_set->fd_count)
     {
       const long int msec = t->tv_sec*1000 + t->tv_usec/1000;
@@ -386,9 +388,9 @@ tr_webThreadFunc (void * vsession)
   web->close_mode = ~0;
   web->taskLock = tr_lockNew ();
   web->tasks = NULL;
-  web->curl_verbose = getenv ("TR_CURL_VERBOSE") != NULL;
-  web->curl_ssl_verify = getenv ("TR_CURL_SSL_VERIFY") != NULL;
-  web->curl_ca_bundle = getenv ("CURL_CA_BUNDLE");
+  web->curl_verbose = tr_env_key_exists ("TR_CURL_VERBOSE");
+  web->curl_ssl_verify = tr_env_key_exists ("TR_CURL_SSL_VERIFY");
+  web->curl_ca_bundle = tr_env_get_string ("CURL_CA_BUNDLE", NULL);
   if (web->curl_ssl_verify)
     {
       tr_logAddNamedInfo ("web", "will verify tracker certs using envvar CURL_CA_BUNDLE: %s",
@@ -398,7 +400,7 @@ tr_webThreadFunc (void * vsession)
     }
 
   str = tr_buildPath (session->configDir, "cookies.txt", NULL);
-  if (tr_fileExists (str, NULL))
+  if (tr_sys_path_exists (str, NULL))
     web->cookie_filename = tr_strdup (str);
   tr_free (str);
 
@@ -521,6 +523,7 @@ tr_webThreadFunc (void * vsession)
   tr_list_free (&paused_easy_handles, NULL);
   curl_multi_cleanup (multi);
   tr_lockFree (web->taskLock);
+  tr_free (web->curl_ca_bundle);
   tr_free (web->cookie_filename);
   tr_free (web);
   session->web = NULL;
@@ -604,15 +607,16 @@ tr_webGetResponseStr (long code)
 void
 tr_http_escape (struct evbuffer  * out,
                 const char       * str,
-                int                len,
+                size_t             len,
                 bool               escape_slashes)
 {
-  const char * end;
+  if (str == NULL)
+    return;
 
-  if ((len < 0) && (str != NULL))
+  if (len == TR_BAD_SIZE)
     len = strlen (str);
 
-  for (end=str+len; str && str!=end; ++str)
+  for (const char * end = str + len; str != end; ++str)
     {
       if ((*str == ',') || (*str == '-')
                         || (*str == '.')
@@ -627,7 +631,7 @@ tr_http_escape (struct evbuffer  * out,
 }
 
 char *
-tr_http_unescape (const char * str, int len)
+tr_http_unescape (const char * str, size_t len)
 {
   char * tmp = curl_unescape (str, len);
   char * ret = tr_strdup (tmp);
@@ -635,7 +639,7 @@ tr_http_unescape (const char * str, int len)
   return ret;
 }
 
-static int
+static bool
 is_rfc2396_alnum (uint8_t ch)
 {
   return ('0' <= ch && ch <= '9')

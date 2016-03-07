@@ -4,12 +4,12 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: show.c 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: show.c 14615 2015-12-06 22:39:14Z jordan $
  */
 
 #include <stdio.h> /* fprintf () */
 #include <string.h> /* strcmp (), strchr (), memcmp () */
-#include <stdlib.h> /* getenv (), qsort () */
+#include <stdlib.h> /* qsort () */
 #include <time.h>
 
 #define CURL_DISABLE_TYPECHECK /* otherwise -Wunreachable-code goes insane */
@@ -24,28 +24,10 @@
 #include <libtransmission/variant.h>
 #include <libtransmission/version.h>
 
+#include "units.h"
+
 #define MY_NAME "transmission-show"
 #define TIMEOUT_SECS 30
-
-#define MEM_K 1024
-#define MEM_K_STR "KiB"
-#define MEM_M_STR "MiB"
-#define MEM_G_STR "GiB"
-#define MEM_T_STR "TiB"
-
-#define DISK_K 1000
-#define DISK_B_STR  "B"
-#define DISK_K_STR "kB"
-#define DISK_M_STR "MB"
-#define DISK_G_STR "GB"
-#define DISK_T_STR "TB"
-
-#define SPEED_K 1000
-#define SPEED_B_STR  "B/s"
-#define SPEED_K_STR "kB/s"
-#define SPEED_M_STR "MB/s"
-#define SPEED_G_STR "GB/s"
-#define SPEED_T_STR "TB/s"
 
 static tr_option options[] =
 {
@@ -67,7 +49,7 @@ static bool showVersion = false;
 const char * filename = NULL;
 
 static int
-parseCommandLine (int argc, const char ** argv)
+parseCommandLine (int argc, const char * const * argv)
 {
   int c;
   const char * optarg;
@@ -111,8 +93,8 @@ doShowMagnet (const tr_info * inf)
 static int
 compare_files_by_name (const void * va, const void * vb)
 {
-  const tr_file * a = * (const tr_file**)va;
-  const tr_file * b = * (const tr_file**)vb;
+  const tr_file * a = * (const tr_file* const *)va;
+  const tr_file * b = * (const tr_file* const *)vb;
   return strcmp (a->name, b->name);
 }
 
@@ -206,7 +188,7 @@ tr_curl_easy_init (struct evbuffer * writebuf)
   curl_easy_setopt (curl, CURLOPT_WRITEFUNCTION, writeFunc);
   curl_easy_setopt (curl, CURLOPT_WRITEDATA, writebuf);
   curl_easy_setopt (curl, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
-  curl_easy_setopt (curl, CURLOPT_VERBOSE, getenv ("TR_CURL_VERBOSE") != NULL);
+  curl_easy_setopt (curl, CURLOPT_VERBOSE, tr_env_key_exists ("TR_CURL_VERBOSE"));
   curl_easy_setopt (curl, CURLOPT_ENCODING, "");
   return curl;
 }
@@ -301,7 +283,8 @@ doScrape (const tr_info * inf)
 }
 
 int
-main (int argc, char * argv[])
+tr_main (int    argc,
+         char * argv[])
 {
   int err;
   tr_info inf;
@@ -312,7 +295,7 @@ main (int argc, char * argv[])
   tr_formatter_size_init (DISK_K, DISK_K_STR, DISK_M_STR, DISK_G_STR, DISK_T_STR);
   tr_formatter_speed_init (SPEED_K, SPEED_K_STR, SPEED_M_STR, SPEED_G_STR, SPEED_T_STR);
 
-  if (parseCommandLine (argc, (const char**)argv))
+  if (parseCommandLine (argc, (const char* const *)argv))
     return EXIT_FAILURE;
 
   if (showVersion)

@@ -4,25 +4,21 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: metainfo.c 14264 2014-04-27 20:17:16Z jordan $
+ * $Id: metainfo.c 14634 2015-12-25 11:34:35Z mikedld $
  */
 
 #include <assert.h>
-#include <errno.h>
-#include <stdio.h> /* fopen (), fwrite (), fclose () */
 #include <string.h> /* strlen () */
-
-#include <sys/types.h>
-#include <unistd.h> /* stat */
 
 #include <event2/buffer.h>
 
 #include "transmission.h"
-#include "session.h"
-#include "crypto.h" /* tr_sha1 */
+#include "crypto-utils.h" /* tr_sha1 */
+#include "file.h"
 #include "log.h"
 #include "metainfo.h"
 #include "platform.h" /* tr_getTorrentDir () */
+#include "session.h"
 #include "utils.h"
 #include "variant.h"
 
@@ -31,7 +27,7 @@
 ***/
 
 
-#ifdef WIN32
+#ifdef _WIN32
   #define PATH_DELIMITER_CHARS "/\\"
 #else
   #define PATH_DELIMITER_CHARS "/"
@@ -76,7 +72,6 @@ static bool
 path_component_is_suspicious (const char * component)
 {
   return (component == NULL)
-      || (*component == '\0')
       || (strpbrk (component, PATH_DELIMITER_CHARS) != NULL)
       || (strcmp (component, ".") == 0)
       || (strcmp (component, "..") == 0);
@@ -86,6 +81,7 @@ static bool
 getfile (char ** setme, const char * root, tr_variant * path, struct evbuffer * buf)
 {
   bool success = false;
+  size_t root_len = 0;
 
   *setme = NULL;
 
@@ -99,7 +95,8 @@ getfile (char ** setme, const char * root, tr_variant * path, struct evbuffer * 
 
       success = true;
       evbuffer_drain (buf, evbuffer_get_length (buf));
-      evbuffer_add (buf, root, strlen (root));
+      root_len = strlen (root);
+      evbuffer_add (buf, root, root_len);
 
       for (i=0; i<n; i++)
         {
@@ -113,9 +110,17 @@ getfile (char ** setme, const char * root, tr_variant * path, struct evbuffer * 
               break;
             }
 
+          if (!*str)
+            continue;
+
           evbuffer_add (buf, TR_PATH_DELIMITER_STR, 1);
           evbuffer_add (buf, str, len);
         }
+    }
+
+  if (success && (evbuffer_get_length (buf) <= root_len))
+    {
+      success = false;
     }
 
   if (success)
@@ -146,7 +151,7 @@ parseFiles (tr_info * inf, tr_variant * files, const tr_variant * length)
       buf = evbuffer_new ();
       result = NULL;
 
-      inf->isMultifile = 1;
+      inf->isFolder = true;
       inf->fileCount = tr_variantListSize (files);
       inf->files = tr_new0 (tr_file, inf->fileCount);
 
@@ -193,7 +198,7 @@ parseFiles (tr_info * inf, tr_variant * files, const tr_variant * length)
       if (path_component_is_suspicious (inf->name))
         return "path";
 
-      inf->isMultifile      = 0;
+      inf->isFolder         = false;
       inf->fileCount        = 1;
       inf->files            = tr_new0 (tr_file, 1);
       inf->files[0].name    = tr_strdup (inf->name);
@@ -407,8 +412,8 @@ static const char*
 tr_metainfoParseImpl (const tr_session  * session,
                       tr_info           * inf,
                       bool              * hasInfoDict,
-                      int               * infoDictLength,
-                      const tr_variant     * meta_in)
+                      size_t            * infoDictLength,
+                      const tr_variant  * meta_in)
 {
   int64_t i;
   size_t len;
@@ -463,7 +468,7 @@ tr_metainfoParseImpl (const tr_session  * session,
     }
   else
     {
-      int len;
+      size_t len;
       char * bstr = tr_variantToStr (infoDict, TR_VARIANT_FMT_BENC, &len);
       tr_sha1 (inf->hash, bstr, len, NULL);
       tr_sha1_to_hex (inf->hashString, inf->hash);
@@ -571,7 +576,7 @@ tr_metainfoParse (const tr_session * session,
                   const tr_variant * meta_in,
                   tr_info          * inf,
                   bool             * hasInfoDict,
-                  int              * infoDictLength)
+                  size_t           * infoDictLength)
 {
   const char * badTag = tr_metainfoParseImpl (session,
                                               inf,
@@ -626,7 +631,7 @@ tr_metainfoRemoveSaved (const tr_session * session, const tr_info * inf)
   char * filename;
 
   filename = getTorrentFilename (session, inf);
-  tr_remove (filename);
+  tr_sys_path_remove (filename, NULL);
   tr_free (filename);
 }
 

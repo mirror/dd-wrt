@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: util.c 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: util.c 14587 2015-10-23 04:09:40Z mikedld $
  */
 
 #include <ctype.h> /* isxdigit () */
@@ -18,6 +18,7 @@
 #include <gio/gio.h> /* g_file_trash () */
 
 #include <libtransmission/transmission.h> /* TR_RATIO_NA, TR_RATIO_INF */
+#include <libtransmission/error.h>
 #include <libtransmission/utils.h> /* tr_strratio () */
 #include <libtransmission/web.h> /* tr_webResponseStr () */
 #include <libtransmission/version.h> /* SHORT_VERSION_STRING */
@@ -304,13 +305,14 @@ on_tree_view_button_released (GtkWidget *      view,
   return FALSE;
 }
 
-int
-gtr_file_trash_or_remove (const char * filename)
+bool
+gtr_file_trash_or_remove (const char * filename, tr_error ** error)
 {
   GFile * file;
   gboolean trashed = FALSE;
+  bool result = true;
 
-  g_return_val_if_fail (filename && *filename, 0);
+  g_return_val_if_fail (filename && *filename, false);
 
   file = g_file_new_for_path (filename);
 
@@ -321,6 +323,7 @@ gtr_file_trash_or_remove (const char * filename)
       if (err)
         {
           g_message ("Unable to trash file \"%s\": %s", filename, err->message);
+          tr_error_set_literal (error, err->code, err->message);
           g_clear_error (&err);
         }
     }
@@ -332,12 +335,15 @@ gtr_file_trash_or_remove (const char * filename)
       if (err)
         {
           g_message ("Unable to delete file \"%s\": %s", filename, err->message);
+          tr_error_clear (error);
+          tr_error_set_literal (error, err->code, err->message);
           g_clear_error (&err);
+          result = false;
         }
     }
 
   g_object_unref (G_OBJECT (file));
-  return 0;
+  return result;
 }
 
 const char*
@@ -347,10 +353,8 @@ gtr_get_help_uri (void)
 
   if (!uri)
     {
-      int major, minor;
       const char * fmt = "http://www.transmissionbt.com/help/gtk/%d.%dx";
-      sscanf (SHORT_VERSION_STRING, "%d.%d", &major, &minor);
-      uri = g_strdup_printf (fmt, major, minor / 10);
+      uri = g_strdup_printf (fmt, MAJOR_VERSION, MINOR_VERSION / 10);
     }
 
   return uri;
@@ -431,20 +435,25 @@ gtr_combo_box_new_enum (const char * text_1, ...)
   GtkWidget * w;
   GtkCellRenderer * r;
   GtkListStore * store;
-  va_list vl;
   const char * text;
-  va_start (vl, text_1);
 
   store = gtk_list_store_new (2, G_TYPE_INT, G_TYPE_STRING);
 
   text = text_1;
-  if (text != NULL) do
+  if (text != NULL)
     {
-      const int val = va_arg (vl, int);
-      gtk_list_store_insert_with_values (store, NULL, INT_MAX, 0, val, 1, text, -1);
-      text = va_arg (vl, const char *);
+      va_list vl;
+
+      va_start (vl, text_1);
+      do
+        {
+          const int val = va_arg (vl, int);
+          gtk_list_store_insert_with_values (store, NULL, INT_MAX, 0, val, 1, text, -1);
+          text = va_arg (vl, const char *);
+        }
+      while (text != NULL);
+      va_end (vl);
     }
-  while (text != NULL);
 
   w = gtk_combo_box_new_with_model (GTK_TREE_MODEL (store));
   r = gtk_cell_renderer_text_new ();

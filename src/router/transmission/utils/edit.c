@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: edit.c 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: edit.c 14644 2015-12-29 19:37:31Z mikedld $
  */
 
 #include <stdio.h> /* fprintf () */
@@ -14,6 +14,7 @@
 #include <event2/buffer.h>
 
 #include <libtransmission/transmission.h>
+#include <libtransmission/error.h>
 #include <libtransmission/tr-getopt.h>
 #include <libtransmission/utils.h>
 #include <libtransmission/variant.h>
@@ -44,7 +45,7 @@ getUsage (void)
 }
 
 static int
-parseCommandLine (int argc, const char ** argv)
+parseCommandLine (int argc, const char * const * argv)
 {
   int c;
   const char * optarg;
@@ -176,7 +177,7 @@ replaceSubstr (const char * str, const char * in, const char * out)
 
   evbuffer_add (buf, str, strlen (str));
 
-  return evbuffer_free_to_str (buf);
+  return evbuffer_free_to_str (buf, NULL);
 }
 
 static bool
@@ -210,7 +211,7 @@ replaceURL (tr_variant * metainfo, const char * in, const char * out)
                   char * newstr = replaceSubstr (str, in, out);
                   printf ("\tReplaced in \"announce-list\" tier %d: \"%s\" --> \"%s\"\n", tierCount, str, newstr);
                   tr_variantFree (node);
-                  tr_variantInitStr (node, newstr, -1);
+                  tr_variantInitStr (node, newstr, TR_BAD_SIZE);
                   tr_free (newstr);
                   changed = true;
                 }
@@ -276,7 +277,7 @@ addURL (tr_variant * metainfo, const char * url)
         {
           tr_variant * tier = tr_variantListAddList (announce_list, 1);
           tr_variantListAddStr (tier, url);
-          printf ("\tAdded \"%s\" to \"announce-list\" tier %"TR_PRIuSIZE"\n", url, tr_variantListSize (announce_list));
+          printf ("\tAdded \"%s\" to \"announce-list\" tier %zu\n", url, tr_variantListSize (announce_list));
           changed = true;
         }
     }
@@ -285,7 +286,8 @@ addURL (tr_variant * metainfo, const char * url)
 }
 
 int
-main (int argc, char * argv[])
+tr_main (int    argc,
+         char * argv[])
 {
   int i;
   int changedCount = 0;
@@ -294,7 +296,7 @@ main (int argc, char * argv[])
 
   tr_logSetLevel (TR_LOG_ERROR);
 
-  if (parseCommandLine (argc, (const char**)argv))
+  if (parseCommandLine (argc, (const char* const *)argv))
     return EXIT_FAILURE;
 
   if (showVersion)
@@ -324,12 +326,14 @@ main (int argc, char * argv[])
       tr_variant top;
       bool changed = false;
       const char * filename = files[i];
+      tr_error * error = NULL;
 
       printf ("%s\n", filename);
 
-      if (tr_variantFromFile (&top, TR_VARIANT_FMT_BENC, filename))
+      if (!tr_variantFromFile (&top, TR_VARIANT_FMT_BENC, filename, &error))
         {
-          printf ("\tError reading file\n");
+          printf ("\tError reading file: %s\n", error->message);
+          tr_error_free (error);
           continue;
         }
 

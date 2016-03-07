@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: blocklist.c 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: blocklist.c 14644 2015-12-29 19:37:31Z mikedld $
  */
 
 #include <assert.h>
@@ -13,32 +13,13 @@
 #include <stdlib.h> /* bsearch (), qsort () */
 #include <string.h>
 
-#include <unistd.h> /* close () */
-
-#ifdef WIN32
- #include <w32api.h>
- #define WINVER  WindowsXP
- #include <windows.h>
- #define PROT_READ      PAGE_READONLY
- #define MAP_PRIVATE    FILE_MAP_COPY
-#endif
-
-#ifndef WIN32
- #include <sys/mman.h>
-#endif
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-
 #include "transmission.h"
 #include "blocklist.h"
+#include "error.h"
+#include "file.h"
 #include "log.h"
 #include "net.h"
 #include "utils.h"
-
-#ifndef O_BINARY
- #define O_BINARY 0
-#endif
 
 
 /***
@@ -54,9 +35,9 @@ struct tr_ipv4_range
 struct tr_blocklistFile
 {
   bool                   isEnabled;
-  int                    fd;
+  tr_sys_file_t          fd;
   size_t                 ruleCount;
-  size_t                 byteCount;
+  uint64_t               byteCount;
   char *                 filename;
   struct tr_ipv4_range * rules;
 };
@@ -66,42 +47,48 @@ blocklistClose (tr_blocklistFile * b)
 {
   if (b->rules != NULL)
     {
-      munmap (b->rules, b->byteCount);
-      close (b->fd);
+      tr_sys_file_unmap (b->rules, b->byteCount, NULL);
+      tr_sys_file_close (b->fd, NULL);
       b->rules = NULL;
       b->ruleCount = 0;
       b->byteCount = 0;
-      b->fd = -1;
+      b->fd = TR_BAD_SYS_FILE;
     }
 }
 
 static void
 blocklistLoad (tr_blocklistFile * b)
 {
-  int fd;
-  size_t byteCount;
-  struct stat st;
+  tr_sys_file_t fd;
+  uint64_t byteCount;
+  tr_sys_path_info info;
   char * base;
+  tr_error * error = NULL;
   const char * err_fmt = _("Couldn't read \"%1$s\": %2$s");
 
   blocklistClose (b);
 
-  if (stat (b->filename, &st) == -1)
+  if (!tr_sys_path_get_info (b->filename, 0, &info, NULL))
     return;
 
-  fd = open (b->filename, O_RDONLY | O_BINARY);
-  if (fd == -1)
+  byteCount = info.size;
+  if (byteCount == 0)
+    return;
+
+  fd = tr_sys_file_open (b->filename, TR_SYS_FILE_READ, 0, &error);
+  if (fd == TR_BAD_SYS_FILE)
     {
-      tr_logAddError (err_fmt, b->filename, tr_strerror (errno));
+      tr_logAddError (err_fmt, b->filename, error->message);
+      tr_error_free (error);
       return;
     }
 
-  byteCount = (size_t) st.st_size;
-  b->rules = mmap (NULL, byteCount, PROT_READ, MAP_PRIVATE, fd, 0);
+  b->rules = tr_sys_file_map_for_reading (fd, 0, byteCount, &error);
   if (!b->rules)
     {
-      tr_logAddError (err_fmt, b->filename, tr_strerror (errno));
-      close (fd);
+      tr_logAddError (err_fmt, b->filename, error->message);
+      tr_sys_file_close (fd, NULL);
+      tr_error_free (error);
       return;
     }
 
@@ -109,8 +96,8 @@ blocklistLoad (tr_blocklistFile * b)
   b->byteCount = byteCount;
   b->ruleCount = byteCount / sizeof (struct tr_ipv4_range);
 
-  base = tr_basename (b->filename);
-  tr_logAddInfo (_("Blocklist \"%s\" contains %"TR_PRIuSIZE" entries"), base, b->ruleCount);
+  base = tr_sys_path_basename (b->filename, NULL);
+  tr_logAddInfo (_("Blocklist \"%s\" contains %zu entries"), base, b->ruleCount);
   tr_free (base);
 }
 
@@ -136,7 +123,7 @@ static void
 blocklistDelete (tr_blocklistFile * b)
 {
   blocklistClose (b);
-  tr_remove (b->filename);
+  tr_sys_path_remove (b->filename, NULL);
 }
 
 /***
@@ -149,7 +136,7 @@ tr_blocklistFileNew (const char * filename, bool isEnabled)
   tr_blocklistFile * b;
 
   b = tr_new0 (tr_blocklistFile, 1);
-  b->fd = -1;
+  b->fd = TR_BAD_SYS_FILE;
   b->filename = tr_strdup (filename);
   b->isEnabled = isEnabled;
 
@@ -173,7 +160,7 @@ tr_blocklistFileFree (tr_blocklistFile * b)
 bool
 tr_blocklistFileExists (const tr_blocklistFile * b)
 {
-  return tr_fileExists (b->filename, NULL);
+  return tr_sys_path_exists (b->filename, NULL);
 }
 
 int
@@ -315,14 +302,15 @@ compareAddressRangesByFirstAddress (const void * va, const void * vb)
 int
 tr_blocklistFileSetContent (tr_blocklistFile * b, const char * filename)
 {
-  FILE * in;
-  FILE * out;
+  tr_sys_file_t in;
+  tr_sys_file_t out;
   int inCount = 0;
   char line[2048];
   const char * err_fmt = _("Couldn't read \"%1$s\": %2$s");
   struct tr_ipv4_range * ranges = NULL;
   size_t ranges_alloc = 0;
   size_t ranges_count = 0;
+  tr_error * error = NULL;
 
   if (!filename)
     {
@@ -330,34 +318,33 @@ tr_blocklistFileSetContent (tr_blocklistFile * b, const char * filename)
       return 0;
     }
 
-  in = fopen (filename, "rb");
-  if (in == NULL)
+  in = tr_sys_file_open (filename, TR_SYS_FILE_READ, 0, &error);
+  if (in == TR_BAD_SYS_FILE)
     {
-      tr_logAddError (err_fmt, filename, tr_strerror (errno));
+      tr_logAddError (err_fmt, filename, error->message);
+      tr_error_free (error);
       return 0;
     }
 
   blocklistClose (b);
 
-  out = fopen (b->filename, "wb+");
-  if (out == NULL)
+  out = tr_sys_file_open (b->filename,
+                          TR_SYS_FILE_WRITE | TR_SYS_FILE_CREATE | TR_SYS_FILE_TRUNCATE,
+                          0666, &error);
+  if (out == TR_BAD_SYS_FILE)
     {
-      tr_logAddError (err_fmt, b->filename, tr_strerror (errno));
-      fclose (in);
+      tr_logAddError (err_fmt, b->filename, error->message);
+      tr_error_free (error);
+      tr_sys_file_close (in, NULL);
       return 0;
     }
 
   /* load the rules into memory */
-  while (fgets (line, sizeof (line), in) != NULL)
+  while (tr_sys_file_read_line (in, line, sizeof (line), NULL))
     {
-      char * walk;
       struct tr_ipv4_range range;
 
       ++inCount;
-
-      /* zap the linefeed */
-      if ((walk = strchr (line, '\r'))) *walk = '\0';
-      if ((walk = strchr (line, '\n'))) *walk = '\0';
 
       if (!parseLine (line, &range))
         {
@@ -410,20 +397,21 @@ tr_blocklistFileSetContent (tr_blocklistFile * b, const char * filename)
 #endif
     }
 
-  if (fwrite (ranges, sizeof (struct tr_ipv4_range), ranges_count, out) != ranges_count)
+  if (!tr_sys_file_write (out, ranges, sizeof (struct tr_ipv4_range) * ranges_count, NULL, &error))
     {
-      tr_logAddError (_("Couldn't save file \"%1$s\": %2$s"), b->filename, tr_strerror (errno));
+      tr_logAddError (_("Couldn't save file \"%1$s\": %2$s"), b->filename, error->message);
+      tr_error_free (error);
     }
   else
     {
-      char * base = tr_basename (b->filename);
-      tr_logAddInfo (_("Blocklist \"%s\" updated with %"TR_PRIuSIZE" entries"), base, ranges_count);
+      char * base = tr_sys_path_basename (b->filename, NULL);
+      tr_logAddInfo (_("Blocklist \"%s\" updated with %zu entries"), base, ranges_count);
       tr_free (base);
     }
 
   tr_free (ranges);
-  fclose (out);
-  fclose (in);
+  tr_sys_file_close (out, NULL);
+  tr_sys_file_close (in, NULL);
 
   blocklistLoad (b);
 

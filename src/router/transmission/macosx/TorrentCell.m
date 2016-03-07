@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: TorrentCell.m 14221 2014-01-10 17:50:05Z livings124 $
+ * $Id: TorrentCell.m 14665 2016-01-07 17:21:12Z mikedld $
  *
  * Copyright (c) 2006-2012 Transmission authors and contributors
  *
@@ -525,7 +525,7 @@
     NSAssert([titleString size].width >= NSWidth(realRect), @"Full rect width should not be less than the used title rect width!");
     
     if ([titleString size].width > NSWidth(realRect)
-        && NSMouseInRect([view convertPoint: [[view window] convertScreenToBase: [NSEvent mouseLocation]] fromView: nil], realRect, [view isFlipped]))
+        && NSMouseInRect([view convertPoint: [[view window] mouseLocationOutsideOfEventStream] fromView: nil], realRect, [view isFlipped]))
     {
         realRect.size.width = [titleString size].width;
         return NSInsetRect(realRect, -PADDING_EXPANSION_FRAME, -PADDING_EXPANSION_FRAME);

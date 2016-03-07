@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: makemeta.h 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: makemeta.h 14294 2014-06-10 00:43:21Z jordan $
  */
 
 #ifndef TR_MAKEMETA_H
@@ -45,7 +45,7 @@ typedef struct tr_metainfo_builder
     uint32_t                    fileCount;
     uint32_t                    pieceSize;
     uint32_t                    pieceCount;
-    int                         isSingleFile;
+    bool                        isFolder;
 
     /**
     ***  These are set inside tr_makeMetaInfo ()
@@ -93,8 +93,10 @@ tr_metainfo_builder * tr_metaInfoBuilderCreate (const char * topFile);
 /**
  * Call this before tr_makeMetaInfo() to override the builder.pieceSize
  * and builder.pieceCount values that were set by tr_metainfoBuilderCreate()
+ *
+ * @return false if the piece size isn't valid; eg, isn't a power of two.
  */
-void tr_metaInfoBuilderSetPieceSize (tr_metainfo_builder * builder,
+bool tr_metaInfoBuilderSetPieceSize (tr_metainfo_builder * builder,
                                      uint32_t              bytes);
 
 void tr_metaInfoBuilderFree (tr_metainfo_builder*);

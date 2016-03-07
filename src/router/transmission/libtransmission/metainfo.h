@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: metainfo.h 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: metainfo.h 14634 2015-12-25 11:34:35Z mikedld $
  */
 
 #ifndef __TRANSMISSION__
@@ -21,7 +21,7 @@ bool  tr_metainfoParse (const tr_session  * session,
                         const tr_variant  * variant,
                         tr_info           * setmeInfo,
                         bool              * setmeHasInfoDict,
-                        int               * setmeInfoDictLength);
+                        size_t            * setmeInfoDictLength);
 
 void tr_metainfoRemoveSaved (const tr_session * session,
                              const tr_info    * info);

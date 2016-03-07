@@ -4,25 +4,19 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: json-test.c 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: json-test.c 14640 2015-12-28 23:53:55Z mikedld $
  */
 
 #include <string.h> /* strlen () */
 
 #include <locale.h> /* setlocale() */
 
-#define __LIBTRANSMISSION_VARIANT_MODULE___
+#define __LIBTRANSMISSION_VARIANT_MODULE__
 #include "transmission.h"
 #include "utils.h" /* tr_free */
 #include "variant.h"
 #include "variant-common.h"
 #include "libtransmission-test.h"
-
-static inline tr_quark
-toQuark (const char * str)
-{
-  return tr_quark_new (str, strlen(str));
-}
 
 static int
 test_elements (void)

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: InfoFileViewController.m 13309 2012-05-20 00:19:55Z livings124 $
+ * $Id: InfoFileViewController.m 14667 2016-01-08 10:05:19Z mikedld $
  *
  * Copyright (c) 2010-2012 Transmission authors and contributors
  *
@@ -195,7 +195,7 @@
                 return NSZeroRect;
             
             frame.origin = [fileOutlineView convertPoint: frame.origin toView: nil];
-            frame.origin = [[[self view] window] convertBaseToScreen: frame.origin];
+            frame = [[[self view] window] convertRectToScreen: frame];
             frame.origin.y -= frame.size.height;
             return frame;
         }

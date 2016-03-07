@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: variant-benc.c 14301 2014-06-29 01:41:33Z jordan $
+ * $Id: variant-benc.c 14644 2015-12-29 19:37:31Z mikedld $
  */
 
 #include <assert.h>
@@ -17,7 +17,7 @@
 
 #include "ConvertUTF.h"
 
-#define __LIBTRANSMISSION_VARIANT_MODULE___
+#define __LIBTRANSMISSION_VARIANT_MODULE__
 #include "transmission.h"
 #include "ptrarray.h"
 #include "utils.h" /* tr_snprintf() */
@@ -258,8 +258,8 @@ tr_variantParseBenc (const void    * buf_in,
         break;
     }
 
-  if (!err)
-    err = !top->type || !tr_ptrArrayEmpty(&stack);
+  if (!err && (!top->type || !tr_ptrArrayEmpty(&stack)))
+    err = EILSEQ;
 
   if (!err && setme_end)
     *setme_end = (const char*) buf;
@@ -304,7 +304,7 @@ saveStringFunc (const tr_variant * v, void * evbuf)
   size_t len;
   const char * str;
   tr_variantGetStr (v, &str, &len);
-  evbuffer_add_printf (evbuf, "%"TR_PRIuSIZE":", len);
+  evbuffer_add_printf (evbuf, "%zu:", len);
   evbuffer_add (evbuf, str, len);
 }
 

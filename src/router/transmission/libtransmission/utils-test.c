@@ -4,52 +4,34 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: utils-test.c 14266 2014-04-27 23:10:01Z jordan $
+ * $Id: utils-test.c 14678 2016-02-07 11:54:01Z mikedld $
  */
 
 #include <limits.h> /* INT_MAX */
 #include <math.h> /* sqrt () */
 #include <string.h> /* strlen () */
+#include <stdlib.h> /* setenv (), unsetenv () */
+
+#ifdef _WIN32
+ #include <windows.h>
+ #define setenv(key, value, unused) SetEnvironmentVariableA (key, value)
+ #define unsetenv(key) SetEnvironmentVariableA (key, NULL)
+#endif
 
 #include "transmission.h"
 #include "ConvertUTF.h" /* tr_utf8_validate*/
 #include "platform.h"
-#include "crypto.h"
+#include "crypto-utils.h" /* tr_rand_int_weak */
 #include "utils.h"
 #include "web.h"
 
-#define NUM_LOOPS 1
 #define SPEED_TEST 0
 
 #if SPEED_TEST
  #define VERBOSE
- #undef NUM_LOOPS
- #define NUM_LOOPS 200
 #endif
 
 #include "libtransmission-test.h"
-
-static int
-test_base64 (void)
-{
-  int len;
-  char *in, *out;
-
-  /* base64 */
-  out = tr_base64_encode ("YOYO!", -1, &len);
-  check_streq ("WU9ZTyE=", out);
-  check_int_eq (8, len);
-  in = tr_base64_decode (out, -1, &len);
-  check_streq ("YOYO!", in);
-  check_int_eq (5, len);
-  tr_free (in);
-  tr_free (out);
-  out = tr_base64_encode (NULL, 0, &len);
-  check (out == NULL);
-  check_int_eq (0, len);
-
-  return 0;
-}
 
 static int
 test_strip_positional_args (void)
@@ -123,7 +105,7 @@ test_utf8 (void)
   char * out;
 
   in = "hello world";
-  out = tr_utf8clean (in, -1);
+  out = tr_utf8clean (in, TR_BAD_SIZE);
   check_streq (in, out);
   tr_free (out);
 
@@ -132,20 +114,34 @@ test_utf8 (void)
   check_streq ("hello", out);
   tr_free (out);
 
-  /* this version is not utf-8 */
-  in = "������ ���� �����";
+  /* this version is not utf-8 (but cp866) */
+  in = "\x92\xE0\xE3\xA4\xAD\xAE \xA1\xEB\xE2\xEC \x81\xAE\xA3\xAE\xAC";
   out = tr_utf8clean (in, 17);
   check (out != NULL);
-  check ((strlen (out) == 17) || (strlen (out) == 32));
-  check (tr_utf8_validate (out, -1, NULL));
+  check ((strlen (out) == 17) || (strlen (out) == 33));
+  check (tr_utf8_validate (out, TR_BAD_SIZE, NULL));
   tr_free (out);
 
   /* same string, but utf-8 clean */
-  in = "Òðóäíî áûòü Áîãîì";
-  out = tr_utf8clean (in, -1);
+  in = "Трудно быть Богом";
+  out = tr_utf8clean (in, TR_BAD_SIZE);
   check (out != NULL);
-  check (tr_utf8_validate (out, -1, NULL));
+  check (tr_utf8_validate (out, TR_BAD_SIZE, NULL));
   check_streq (in, out);
+  tr_free (out);
+
+  in = "\xF4\x00\x81\x82";
+  out = tr_utf8clean (in, 4);
+  check (out != NULL);
+  check ((strlen (out) == 1) || (strlen (out) == 2));
+  check (tr_utf8_validate (out, TR_BAD_SIZE, NULL));
+  tr_free (out);
+
+  in = "\xF4\x33\x81\x82";
+  out = tr_utf8clean (in, 4);
+  check (out != NULL);
+  check ((strlen (out) == 4) || (strlen (out) == 7));
+  check (tr_utf8_validate (out, TR_BAD_SIZE, NULL));
   tr_free (out);
 
   return 0;
@@ -158,7 +154,7 @@ test_numbers (void)
   int count;
   int * numbers;
 
-  numbers = tr_parseNumberRange ("1-10,13,16-19", -1, &count);
+  numbers = tr_parseNumberRange ("1-10,13,16-19", TR_BAD_SIZE, &count);
   check_int_eq (15, count);
   check_int_eq (1, numbers[0]);
   check_int_eq (6, numbers[5]);
@@ -168,22 +164,22 @@ test_numbers (void)
   check_int_eq (19, numbers[14]);
   tr_free (numbers);
 
-  numbers = tr_parseNumberRange ("1-5,3-7,2-6", -1, &count);
+  numbers = tr_parseNumberRange ("1-5,3-7,2-6", TR_BAD_SIZE, &count);
   check (count == 7);
   check (numbers != NULL);
   for (i=0; i<count; ++i)
     check_int_eq (i+1, numbers[i]);
   tr_free (numbers);
 
-  numbers = tr_parseNumberRange ("1-Hello", -1, &count);
+  numbers = tr_parseNumberRange ("1-Hello", TR_BAD_SIZE, &count);
   check_int_eq (0, count);
   check (numbers == NULL);
 
-  numbers = tr_parseNumberRange ("1-", -1, &count);
+  numbers = tr_parseNumberRange ("1-", TR_BAD_SIZE, &count);
   check_int_eq (0, count);
   check (numbers == NULL);
 
-  numbers = tr_parseNumberRange ("Hello", -1, &count);
+  numbers = tr_parseNumberRange ("Hello", TR_BAD_SIZE, &count);
   check_int_eq (0, count);
   check (numbers == NULL);
 
@@ -236,7 +232,7 @@ test_quickFindFirst_Iteration (const size_t k, const size_t n, int * buf, int ra
 
   /* populate buf with random ints */
   for (i=0; i<n; ++i)
-    buf[i] = tr_cryptoWeakRandInt (range);
+    buf[i] = tr_rand_int_weak (range);
 
   /* find the best k */
   tr_quickfindFirstK (buf, n, sizeof(int), compareInts, k);
@@ -292,11 +288,11 @@ test_hex (void)
 {
   char hex1[41];
   char hex2[41];
-  uint8_t sha1[20];
+  uint8_t binary[20];
 
   memcpy (hex1, "fb5ef5507427b17e04b69cef31fa3379b456735a", 41);
-  tr_hex_to_sha1 (sha1, hex1);
-  tr_sha1_to_hex (hex2, sha1);
+  tr_hex_to_binary (hex1, binary, 20);
+  tr_binary_to_hex (binary, hex2, 20);
   check_streq (hex1, hex2);
 
   return 0;
@@ -335,7 +331,7 @@ test_url (void)
   const char * url;
 
   url = "http://1";
-  check (!tr_urlParse (url, -1, &scheme, &host, &port, &path));
+  check (tr_urlParse (url, TR_BAD_SIZE, &scheme, &host, &port, &path));
   check_streq ("http", scheme);
   check_streq ("1", host);
   check_streq ("/", path);
@@ -345,7 +341,7 @@ test_url (void)
   tr_free (host);
 
   url = "http://www.some-tracker.org/some/path";
-  check (!tr_urlParse (url, -1, &scheme, &host, &port, &path));
+  check (tr_urlParse (url, TR_BAD_SIZE, &scheme, &host, &port, &path));
   check_streq ("http", scheme);
   check_streq ("www.some-tracker.org", host);
   check_streq ("/some/path", path);
@@ -355,7 +351,7 @@ test_url (void)
   tr_free (host);
 
   url = "http://www.some-tracker.org:80/some/path";
-  check (!tr_urlParse (url, -1, &scheme, &host, &port, &path));
+  check (tr_urlParse (url, TR_BAD_SIZE, &scheme, &host, &port, &path));
   check_streq ("http", scheme);
   check_streq ("www.some-tracker.org", host);
   check_streq ("/some/path", path);
@@ -399,24 +395,115 @@ test_truncd (void)
   tr_snprintf (buf, sizeof (buf), "%.0f", tr_truncd (3.3333, 0));
   check_streq ("3", buf);
 
+#if !(defined (_MSC_VER) || (defined (__MINGW32__) && defined (__MSVCRT__)))
+  /* FIXME: MSCVRT behaves differently in case of nan */
   tr_snprintf (buf, sizeof (buf), "%.2f", tr_truncd (nan, 2));
   check (strstr (buf, "nan") != NULL);
+#else
+  (void) nan;
+#endif
+
+  return 0;
+}
+
+static char *
+test_strdup_printf_valist (const char * fmt, ...)
+{
+  va_list args;
+  char * ret;
+
+  va_start (args, fmt);
+  ret = tr_strdup_vprintf (fmt, args);
+  va_end (args);
+
+  return ret;
+}
+
+static int
+test_strdup_printf (void)
+{
+  char * s, * s2, * s3;
+
+  s = tr_strdup_printf ("%s", "test");
+  check_streq ("test", s);
+  tr_free (s);
+
+  s = tr_strdup_printf ("%d %s %c %u", -1, "0", '1', 2);
+  check_streq ("-1 0 1 2", s);
+  tr_free (s);
+
+  s3 = tr_malloc0 (4098);
+  memset (s3, '-', 4097);
+  s3[2047] = 't';
+  s3[2048] = 'e';
+  s3[2049] = 's';
+  s3[2050] = 't';
+
+  s2 = tr_malloc0 (4096);
+  memset (s2, '-', 4095);
+  s2[2047] = '%';
+  s2[2048] = 's';
+
+  s = tr_strdup_printf (s2, "test");
+  check_streq (s3, s);
+  tr_free (s);
+
+  tr_free (s2);
+
+  s = tr_strdup_printf ("%s", s3);
+  check_streq (s3, s);
+  tr_free (s);
+
+  tr_free (s3);
+
+  s = test_strdup_printf_valist ("\n-%s-%s-%s-\n", "\r", "\t", "\b");
+  check_streq ("\n-\r-\t-\b-\n", s);
+  tr_free (s);
 
   return 0;
 }
 
 static int
-test_cryptoRand (void)
+test_env (void)
 {
-  int i;
+  const char * test_key = "TR_TEST_ENV";
+  int x;
+  char * s;
 
-  /* test that tr_cryptoRandInt () stays in-bounds */
-  for (i = 0; i < 100000; ++i)
-    {
-      const int val = tr_cryptoRandInt (100);
-       check (val >= 0);
-       check (val < 100);
-    }
+  unsetenv (test_key);
+
+  check (!tr_env_key_exists (test_key));
+  x = tr_env_get_int (test_key, 123);
+  check_int_eq (123, x);
+  s = tr_env_get_string (test_key, NULL);
+  check (s == NULL);
+  s = tr_env_get_string (test_key, "a");
+  check_streq ("a", s);
+  tr_free (s);
+
+  setenv (test_key, "", 1);
+
+  check (tr_env_key_exists (test_key));
+  x = tr_env_get_int (test_key, 456);
+  check_int_eq (456, x);
+  s = tr_env_get_string (test_key, NULL);
+  check_streq ("", s);
+  tr_free (s);
+  s = tr_env_get_string (test_key, "b");
+  check_streq ("", s);
+  tr_free (s);
+
+  setenv (test_key, "135", 1);
+
+  check (tr_env_key_exists (test_key));
+  x = tr_env_get_int (test_key, 789);
+  check_int_eq (135, x);
+  s = tr_env_get_string (test_key, NULL);
+  check_streq ("135", s);
+  tr_free (s);
+  s = tr_env_get_string (test_key, "c");
+  check_streq ("135", s);
+  tr_free (s);
 
   return 0;
 }
@@ -425,19 +512,19 @@ int
 main (void)
 {
   const testFunc tests[] = { test_array,
-                             test_base64,
                              test_buildpath,
-                             test_cryptoRand,
                              test_hex,
                              test_lowerbound,
                              test_quickfindFirst,
                              test_memmem,
                              test_numbers,
                              test_strip_positional_args,
+                             test_strdup_printf,
                              test_strstrip,
                              test_truncd,
                              test_url,
-                             test_utf8 };
+                             test_utf8,
+                             test_env };
 
   return runTests (tests, NUM_TESTS (tests));
 }
