@@ -80,6 +80,8 @@
 
 #define BUFSPACE  (127*1024)    /* max. input buffer size to request */
 
+static const uint8_t  zero_v6[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+
 int
 set_flag(char *ifname, short flag __attribute__ ((unused)))
 {
@@ -333,16 +335,24 @@ chk_if_changed(struct olsr_if *iface)
     }
 
     if (!iface->cnf->ipv4_multicast.v4.s_addr) {
+      struct sockaddr_in *ptr;
+
       /* Check broadcast address */
       if (ioctl(olsr_cnf->ioctl_s, SIOCGIFBRDADDR, &ifr) < 0) {
         olsr_syslog(OLSR_LOG_ERR, "%s: ioctl (get broadaddr)", ifr.ifr_name);
         goto remove_interface;
       }
+
+      ptr = (struct sockaddr_in *)ARM_NOWARN_ALIGN(&ifr.ifr_broadaddr);
+      if (ptr->sin_addr.s_addr == 0) {
+        memset(&ptr->sin_addr, 255, 4);
+      }
+
 #ifdef DEBUG
       OLSR_PRINTF(3, "\tBroadcast address:%s\n", sockaddr4_to_string(&buf, &ifr.ifr_broadaddr));
 #endif /* DEBUG */
 
-      if (ifp->int_broadaddr.sin_addr.s_addr != ((struct sockaddr_in *)ARM_NOWARN_ALIGN(&ifr.ifr_broadaddr))->sin_addr.s_addr) {
+      if (ifp->int_broadaddr.sin_addr.s_addr != ptr->sin_addr.s_addr) {
         /* New address */
         OLSR_PRINTF(1, "IPv4 broadcast changed for %s\n", ifr.ifr_name);
         OLSR_PRINTF(1, "\tOld:%s\n", ip4_to_string(&buf, ifp->int_broadaddr.sin_addr));
@@ -603,6 +613,10 @@ chk_if_up(struct olsr_if *iface, int debuglvl __attribute__ ((unused)))
     ifs.int6_multaddr.sin6_port = htons(olsr_cnf->olsrport);
     ifs.int6_multaddr.sin6_addr =  iface->cnf->ipv6_multicast.v6;
 
+    if (memcmp(zero_v6, &ifs.int6_multaddr.sin6_addr, 16) == 0) {
+      memset(&ifs.int6_multaddr.sin6_addr, 255, 16);
+    }
+
 #ifdef __APPLE__
     ifs.int6_multaddr.sin6_scope_id = 0;
 #endif /* __APPLE__ */
@@ -644,6 +658,9 @@ chk_if_up(struct olsr_if *iface, int debuglvl __attribute__ ((unused)))
       }
 
       ifs.int_broadaddr = *(struct sockaddr_in *)ARM_NOWARN_ALIGN(&ifr.ifr_broadaddr);
+      if (ifs.int_broadaddr.sin_addr.s_addr == 0) {
+        memset(&ifs.int_broadaddr.sin_addr, 255, 4);
+      }
     }
 
     /* Deactivate IP spoof filter */
