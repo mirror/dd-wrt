@@ -1,14 +1,15 @@
-0.9.0.2 -------------------------------------------------------------------
+0.9.0.3 -------------------------------------------------------------------
 
-Ferry Huberts (4):
-      conf: lock_file is derived config.
-      jsoninfo: fix a crash when there are no gateways
-      txtinfo: fix a crash when there are no gateways
-      release: fix release script
+Alex Dunn (1):
+      Makefile.osx: create .dylibs
 
-Henning Rogge (2):
-      Update version after release of v0.9.0.1
-      Release v0.9.0.2
+Ferry Huberts (1):
+      Fix CHANGELOG
+
+Henning Rogge (3):
+      Update version after release of v0.9.0.2
+      Handle interface broadcast/multicast address zero
+      Release v0.9.0.3
 
 0.9.0.2 -------------------------------------------------------------------
 
