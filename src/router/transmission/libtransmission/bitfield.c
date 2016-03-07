@@ -9,7 +9,6 @@
 
 #include <assert.h>
 #include <string.h> /* memset */
-#include <unistd.h> /* memset */
 
 #include "transmission.h"
 #include "bitfield.h"

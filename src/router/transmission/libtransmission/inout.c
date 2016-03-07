@@ -11,7 +11,6 @@
 #include <errno.h>
 #include <stdlib.h> /* bsearch () */
 #include <string.h> /* memcmp () */
-#include <fcntl.h>
 
 #include "transmission.h"
 #include "cache.h" /* tr_cacheReadBlock () */

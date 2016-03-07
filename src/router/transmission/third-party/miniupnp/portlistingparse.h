@@ -11,7 +11,7 @@
 /* for the definition of UNSIGNED_INTEGER */
 #include "miniupnpctypes.h"
 
-#ifndef __UCLIBC__
+#if defined(NO_SYS_QUEUE_H) || defined(_WIN32) || defined(__HAIKU__)
 #include "bsdqueue.h"
 #else
 #include <sys/queue.h>
