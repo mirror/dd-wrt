@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: stats.c 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: stats.c 14491 2015-04-11 10:51:59Z mikedld $
  */
 
 #include "transmission.h"
@@ -50,13 +50,13 @@ loadCumulativeStats (const tr_session * session, tr_session_stats * setme)
   bool loaded = false;
 
   filename = getFilename (session);
-  loaded = !tr_variantFromFile (&top, TR_VARIANT_FMT_JSON, filename);
+  loaded = tr_variantFromFile (&top, TR_VARIANT_FMT_JSON, filename, NULL);
   tr_free (filename);
 
   if (!loaded)
     {
       filename = getOldFilename (session);
-      loaded = !tr_variantFromFile (&top, TR_VARIANT_FMT_BENC, filename);
+      loaded = tr_variantFromFile (&top, TR_VARIANT_FMT_BENC, filename, NULL);
       tr_free (filename);
     }
 

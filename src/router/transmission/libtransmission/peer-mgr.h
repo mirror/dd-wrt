@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: peer-mgr.h 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: peer-mgr.h 14479 2015-03-18 07:34:26Z mikedld $
  */
 
 #ifndef __TRANSMISSION__
@@ -16,7 +16,7 @@
 
 #include <inttypes.h> /* uint16_t */
 
-#ifdef WIN32
+#ifdef _WIN32
  #include <winsock2.h> /* struct in_addr */
 #endif
 
@@ -107,7 +107,7 @@ void         tr_peerMgrRebuildRequests      (tr_torrent          * torrent);
 void         tr_peerMgrAddIncoming          (tr_peerMgr          * manager,
                                              tr_address          * addr,
                                              tr_port               port,
-                                             int                   socket,
+                                             tr_socket_t           socket,
                                              struct UTPSocket    * utp_socket);
 
 tr_pex *     tr_peerMgrCompactToPex         (const void          * compact,
@@ -183,7 +183,7 @@ void         tr_peerMgrGotBadPiece          (tr_torrent         * tor,
 
 void         tr_peerMgrPieceCompleted       (tr_torrent         * tor,
                                              tr_piece_index_t     pieceIndex);
- 
+
 
 
 /* @} */

@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: tr-getopt.c 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: tr-getopt.c 14615 2015-12-06 22:39:14Z jordan $
  */
 
 #include <ctype.h> /* isspace () */
@@ -187,11 +187,11 @@ findOption (const tr_option * opts,
 }
 
 int
-tr_getopt (const char *      usage,
-           int               argc,
-           const char **     argv,
-           const tr_option * opts,
-           const char **     setme_optarg)
+tr_getopt (const char         * usage,
+           int                  argc,
+           const char * const  * argv,
+           const tr_option     * opts,
+           const char         ** setme_optarg)
 {
     int               i;
     const char *      arg = NULL;

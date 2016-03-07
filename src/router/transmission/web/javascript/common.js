@@ -28,7 +28,7 @@ $.fn.tabbedDialog = function (dialog_opts) {
 	this.find('.ui-tab-dialog-close').css({'position':'absolute','right':'0', 'top':'16px'});
 	this.find('.ui-tab-dialog-close > a').css({'float':'none','padding':'0'});
 	var tabul = this.find('ul:first');
-	this.parent().addClass('ui-tabs').prepend(tabul).draggable('option','handle',tabul); 
+	this.parent().addClass('ui-tabs').prepend(tabul).draggable('option','handle',tabul);
 	this.siblings('.ui-dialog-titlebar').remove();
 	tabul.addClass('ui-dialog-titlebar');
 }
@@ -64,11 +64,7 @@ $(document).ready(function() {
 		$("label[for=torrent_upload_url]").text("URL: ");
 	} else {
 		// Fix for non-Safari-3 browsers: dark borders to replace shadows.
-		// Opera messes up the menu if we use a border on .trans_menu
-		// div.outerbox so use ul instead
-		$('.trans_menu ul, div#jqContextMenu, div.dialog_container div.dialog_window').css('border', '1px solid #777');
-		// and this kills the border we used to have
-		$('.trans_menu div.outerbox').css('border', 'none');
+		$('div.dialog_container div.dialog_window').css('border', '1px solid #777');
 	}
 
 	// Initialise the dialog controller
@@ -250,7 +246,7 @@ jQuery.fn.forceNumeric = function () {
 		$(this).keydown(function (e) {
 			var key = e.which || e.keyCode;
 			return !e.shiftKey && !e.altKey && !e.ctrlKey &&
-				// numbers   
+				// numbers
 				key >= 48 && key <= 57 ||
 				// Numeric keypad
 				key >= 96 && key <= 105 ||

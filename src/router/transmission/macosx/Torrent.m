@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: Torrent.m 14215 2013-10-27 20:56:10Z livings124 $
+ * $Id: Torrent.m 14667 2016-01-08 10:05:19Z mikedld $
  *
  * Copyright (c) 2006-2012 Transmission authors and contributors
  *
@@ -25,11 +25,13 @@
 #import "Torrent.h"
 #import "GroupsController.h"
 #import "FileListNode.h"
+#import "NSApplicationAdditions.h"
 #import "NSStringAdditions.h"
 #import "TrackerNode.h"
 
 #import "log.h"
 #import "transmission.h" // required by utils.h
+#import "error.h"
 #import "utils.h" // tr_new()
 
 #define ETA_IDLE_DISPLAY_SEC (2*60)
@@ -111,14 +113,22 @@ void renameCallback(tr_torrent * torrent, const char * oldPathCharString, const 
     }
 }
 
-int trashDataFile(const char * filename)
+bool trashDataFile(const char * filename, tr_error ** error)
 {
+    if (filename == NULL)
+        return false;
+
     @autoreleasepool
     {
-        if (filename != NULL)
-            [Torrent trashFile: [NSString stringWithUTF8String: filename]];
+        NSError * localError;
+        if (![Torrent trashFile: [NSString stringWithUTF8String: filename] error: &localError])
+        {
+            tr_error_set_literal(error, [localError code], [[localError description] UTF8String]);
+            return false;
+        }
     }
-    return 0;
+
+    return true;
 }
 
 @implementation Torrent
@@ -138,7 +148,7 @@ int trashDataFile(const char * filename)
     if (self)
     {
         if (torrentDelete && ![[self torrentLocation] isEqualToString: path])
-            [Torrent trashFile: path];
+            [Torrent trashFile: path error: nil];
     }
     return self;
 }
@@ -315,8 +325,12 @@ int trashDataFile(const char * filename)
     
     //make sure the "active" filter is updated when stalled-ness changes
     if (wasStalled != [self isStalled])
-        [[NSNotificationCenter defaultCenter] postNotificationName: @"UpdateQueue" object: self];
-    
+        //posting asynchronously with coalescing to prevent stack overflow on lots of torrents changing state at the same time
+        [[NSNotificationQueue defaultQueue] enqueueNotification: [NSNotification notificationWithName: @"UpdateQueue" object: self]
+                                                   postingStyle: NSPostASAP
+                                                   coalesceMask: NSNotificationCoalescingOnName
+                                                       forModes: nil];
+
     //when the torrent is first loaded, update the time machine exclusion
     if (!fTimeMachineExcludeInitialized)
         [self updateTimeMachineExclude];
@@ -511,7 +525,7 @@ int trashDataFile(const char * filename)
     return tr_torrentSetPriority(fHandle, priority);
 }
 
-+ (void) trashFile: (NSString *) path
++ (BOOL) trashFile: (NSString *) path error: (NSError **) error
 {
     //attempt to move to trash
     if (![[NSWorkspace sharedWorkspace] performFileOperation: NSWorkspaceRecycleOperation
@@ -519,11 +533,21 @@ int trashDataFile(const char * filename)
                                                        files: [NSArray arrayWithObject: [path lastPathComponent]] tag: nil])
     {
         //if cannot trash, just delete it (will work if it's on a remote volume)
-        NSError * error;
-        if (![[NSFileManager defaultManager] removeItemAtPath: path error: &error])
-            NSLog(@"old Could not trash %@: %@", path, [error localizedDescription]);
-        else {NSLog(@"old removed %@", path);}
+        NSError * localError;
+        if (![[NSFileManager defaultManager] removeItemAtPath: path error: &localError])
+        {
+            NSLog(@"old Could not trash %@: %@", path, [localError localizedDescription]);
+            if (error != nil)
+                *error = localError;
+            return NO;
+        }
+        else
+        {
+            NSLog(@"old removed %@", path);
+        }
     }
+
+    return YES;
 }
 
 - (void) moveTorrentDataFileTo: (NSString *) folder
@@ -628,10 +652,9 @@ int trashDataFile(const char * filename)
     if ([self isMagnet])
         return [NSImage imageNamed: @"Magnet"];
     
-    #warning replace kGenericFolderIcon stuff with NSImageNameFolder on 10.6
     if (!fIcon)
-        fIcon = [[[NSWorkspace sharedWorkspace] iconForFileType: [self isFolder] ? NSFileTypeForHFSTypeCode(kGenericFolderIcon)
-                                                                                : [[self name] pathExtension]] retain];
+        fIcon = [self isFolder] ? [[NSImage imageNamed: NSImageNameFolder] retain]
+                                : [[[NSWorkspace sharedWorkspace] iconForFileType: [[self name] pathExtension]] retain];
     return fIcon;
 }
 
@@ -642,7 +665,7 @@ int trashDataFile(const char * filename)
 
 - (BOOL) isFolder
 {
-    return fInfo->isMultifile;
+    return fInfo->isFolder;
 }
 
 - (uint64_t) size
@@ -1980,10 +2003,28 @@ int trashDataFile(const char * filename)
     else
         return NSLocalizedString(@"remaining time unknown", "Torrent -> eta string");
     
-    NSString * idleString = [NSString stringWithFormat: NSLocalizedString(@"%@ remaining", "Torrent -> eta string"),
-                                [NSString timeString: eta showSeconds: YES maxFields: 2]];
-    if (fromIdle)
+    NSString * idleString;
+    
+    if ([NSApp isOnYosemiteOrBetter]) {
+        static NSDateComponentsFormatter *formatter;
+        static dispatch_once_t onceToken;
+        dispatch_once(&onceToken, ^{
+            formatter = [NSDateComponentsFormatter new];
+            formatter.unitsStyle = NSDateComponentsFormatterUnitsStyleShort;
+            formatter.maximumUnitCount = 2;
+            formatter.collapsesLargestUnit = YES;
+            formatter.includesTimeRemainingPhrase = YES;
+        });
+        
+        idleString = [formatter stringFromTimeInterval: eta];
+    }
+    else {
+        idleString = [NSString timeString: eta includesTimeRemainingPhrase: YES showSeconds: YES maxFields: 2];
+    }
+    
+    if (fromIdle) {
         idleString = [idleString stringByAppendingFormat: @" (%@)", NSLocalizedString(@"inactive", "Torrent -> eta string")];
+    }
     
     return idleString;
 }

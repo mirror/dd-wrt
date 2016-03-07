@@ -4,10 +4,10 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: announcer-common.h 13625 2012-12-05 17:29:46Z jordan $
+ * $Id: variant-common.h 14521 2015-05-04 19:58:34Z mikedld $
  */
 
-#ifndef __LIBTRANSMISSION_VARIANT_MODULE___
+#ifndef __LIBTRANSMISSION_VARIANT_MODULE__
  #error only libtransmission/variant-*.c should #include this header.
 #endif
 

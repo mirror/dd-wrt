@@ -4,39 +4,113 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: variant.c 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: variant.c 14634 2015-12-25 11:34:35Z mikedld $
  */
+
+#if defined (HAVE_USELOCALE) && (!defined (_XOPEN_SOURCE) || _XOPEN_SOURCE < 700)
+ #undef _XOPEN_SOURCE
+ #define _XOPEN_SOURCE 700
+#endif
+
+#if defined (HAVE_USELOCALE) && !defined (_GNU_SOURCE)
+ #define _GNU_SOURCE
+#endif
 
 #include <assert.h>
 #include <errno.h>
-#include <stdio.h> /* rename() */
-#include <stdlib.h> /* strtod(), realloc(), qsort(), mkstemp() */
+#include <stdlib.h> /* strtod(), realloc(), qsort() */
 #include <string.h>
 
-#ifdef WIN32 /* tr_mkstemp() */
- #include <fcntl.h>
+#ifdef _WIN32
  #include <share.h>
- #include <sys/stat.h>
 #endif
 
 #include <locale.h> /* setlocale() */
-#include <unistd.h> /* write() */
+
+#if defined (HAVE_USELOCALE) && defined (HAVE_XLOCALE_H)
+ #include <xlocale.h>
+#endif
 
 #include <event2/buffer.h>
 
-#define __LIBTRANSMISSION_VARIANT_MODULE___
+#define __LIBTRANSMISSION_VARIANT_MODULE__
 #include "transmission.h"
-#include "ConvertUTF.h"  
-#include "fdlimit.h" /* tr_close_file() */
+#include "ConvertUTF.h"
+#include "error.h"
+#include "file.h"
 #include "log.h"
-#include "platform.h" /* TR_PATH_MAX */
 #include "utils.h" /* tr_new(), tr_free() */
 #include "variant.h"
 #include "variant-common.h"
 
+/* don't use newlocale/uselocale on old versions of uClibc because they're buggy.
+ * https://trac.transmissionbt.com/ticket/6006 */
+#if defined (__UCLIBC__) && !TR_UCLIBC_CHECK_VERSION (0, 9, 34)
+ #undef HAVE_USELOCALE
+#endif
+
 /**
 ***
 **/
+
+struct locale_context
+{
+#ifdef HAVE_USELOCALE
+  locale_t new_locale;
+  locale_t old_locale;
+#else
+#if defined (HAVE__CONFIGTHREADLOCALE) && defined (_ENABLE_PER_THREAD_LOCALE)
+  int      old_thread_config;
+#endif
+  int      category;
+  char     old_locale[128];
+#endif
+};
+
+static void
+use_numeric_locale (struct locale_context * context,
+                    const char            * locale_name)
+{
+#ifdef HAVE_USELOCALE
+
+  context->new_locale = newlocale (LC_NUMERIC_MASK, locale_name, NULL);
+  context->old_locale = uselocale (context->new_locale);
+
+#else
+
+#if defined (HAVE__CONFIGTHREADLOCALE) && defined (_ENABLE_PER_THREAD_LOCALE)
+  context->old_thread_config = _configthreadlocale (_ENABLE_PER_THREAD_LOCALE);
+#endif
+
+  context->category = LC_NUMERIC;
+  tr_strlcpy (context->old_locale, setlocale (context->category, NULL), sizeof (context->old_locale));
+  setlocale (context->category, locale_name);
+
+#endif
+}
+
+static void
+restore_locale (struct locale_context * context)
+{
+#ifdef HAVE_USELOCALE
+
+  uselocale (context->old_locale);
+  freelocale (context->new_locale);
+
+#else
+
+  setlocale (context->category, context->old_locale);
+
+#if defined (HAVE__CONFIGTHREADLOCALE) && defined (_ENABLE_PER_THREAD_LOCALE)
+  _configthreadlocale (context->old_thread_config);
+#endif
+
+#endif
+}
+
+/***
+****
+***/
 
 static bool
 tr_variantIsContainer (const tr_variant * v)
@@ -113,16 +187,16 @@ tr_variant_string_set_quark (struct tr_variant_string  * str,
 static void
 tr_variant_string_set_string (struct tr_variant_string  * str,
                               const char                * bytes,
-                              int                         len)
+                              size_t                      len)
 {
   tr_variant_string_clear (str);
 
   if (bytes == NULL)
     len = 0;
-  else if (len < 0)
+  else if (len == TR_BAD_SIZE)
     len = strlen (bytes);
 
-  if ((size_t)len < sizeof(str->str.buf))
+  if (len < sizeof (str->str.buf))
     {
       str->type = TR_STRING_TYPE_BUF;
       memcpy (str->str.buf, bytes, len);
@@ -305,14 +379,13 @@ tr_variantGetReal (const tr_variant * v, double * setme)
   if (!success && tr_variantIsString (v))
     {
       char * endptr;
-      char locale[128];
+      struct locale_context locale_ctx;
       double d;
 
       /* the json spec requires a '.' decimal point regardless of locale */
-      tr_strlcpy (locale, setlocale (LC_NUMERIC, NULL), sizeof (locale));
-      setlocale (LC_NUMERIC, "POSIX");
+      use_numeric_locale (&locale_ctx, "C");
       d  = strtod (getStr (v), &endptr);
-      setlocale (LC_NUMERIC, locale);
+      restore_locale (&locale_ctx);
 
       if ((success = (getStr (v) != endptr) && !*endptr))
         *setme = d;
@@ -403,7 +476,7 @@ tr_variantInitQuark (tr_variant * v, const tr_quark q)
 }
 
 void
-tr_variantInitStr (tr_variant * v, const void * str, int len)
+tr_variantInitStr (tr_variant * v, const void * str, size_t len)
 {
   tr_variantInit (v, TR_VARIANT_TYPE_STR);
   tr_variant_string_set_string (&v->val.s, str, len);
@@ -525,7 +598,7 @@ tr_variantListAddStr (tr_variant  * list,
                       const char  * val)
 {
   tr_variant * child = tr_variantListAdd (list);
-  tr_variantInitStr (child, val, -1);
+  tr_variantInitStr (child, val, TR_BAD_SIZE);
   return child;
 }
 
@@ -654,7 +727,7 @@ tr_variantDictAddStr (tr_variant      * dict,
                       const char      * val)
 {
   tr_variant * child = dictFindOrAdd (dict, key, TR_VARIANT_TYPE_STR);
-  tr_variantInitStr (child, val, -1);
+  tr_variantInitStr (child, val, TR_BAD_SIZE);
   return child;
 }
 
@@ -686,6 +759,18 @@ tr_variantDictAddDict (tr_variant     * dict,
 {
   tr_variant * child = tr_variantDictAdd (dict, key);
   tr_variantInitDict (child, reserve_count);
+  return child;
+}
+
+tr_variant *
+tr_variantDictSteal (tr_variant       * dict,
+                     const tr_quark     key,
+                     tr_variant       * value)
+{
+  tr_variant * child = tr_variantDictAdd (dict, key);
+  *child = *value;
+  child->key = key;
+  tr_variantInit (value, value->type);
   return child;
 }
 
@@ -1085,12 +1170,11 @@ tr_variantMergeDicts (tr_variant * target, const tr_variant * source)
 struct evbuffer *
 tr_variantToBuf (const tr_variant * v, tr_variant_fmt fmt)
 {
-  char lc_numeric[128];
+  struct locale_context locale_ctx;
   struct evbuffer * buf = evbuffer_new();
 
   /* parse with LC_NUMERIC="C" to ensure a "." decimal separator */
-  tr_strlcpy (lc_numeric, setlocale (LC_NUMERIC, NULL), sizeof (lc_numeric));
-  setlocale (LC_NUMERIC, "C");
+  use_numeric_locale (&locale_ctx, "C");
 
   evbuffer_expand (buf, 4096); /* alloc a little memory to start off with */
 
@@ -1110,46 +1194,15 @@ tr_variantToBuf (const tr_variant * v, tr_variant_fmt fmt)
     }
 
   /* restore the previous locale */
-  setlocale (LC_NUMERIC, lc_numeric);
+  restore_locale (&locale_ctx);
   return buf;
 }
 
 char*
-tr_variantToStr (const tr_variant * v, tr_variant_fmt fmt, int * len)
+tr_variantToStr (const tr_variant * v, tr_variant_fmt fmt, size_t * len)
 {
   struct evbuffer * buf = tr_variantToBuf (v, fmt);
-  const size_t n = evbuffer_get_length (buf);
-  char * ret = evbuffer_free_to_str (buf);
-  if (len != NULL)
-    *len = (int) n;
-  return ret;
-}
-
-/* portability wrapper for mkstemp(). */
-static int
-tr_mkstemp (char * template)
-{
-#ifdef WIN32
-
-  const int n = strlen (template) + 1;
-  const int flags = O_RDWR | O_BINARY | O_CREAT | O_EXCL | _O_SHORT_LIVED;
-  const mode_t mode = _S_IREAD | _S_IWRITE;
-  wchar_t templateUTF16[n];
-
-  if (MultiByteToWideChar(CP_UTF8, 0, template, -1, templateUTF16, n))
-    {
-      _wmktemp(templateUTF16);
-      WideCharToMultiByte(CP_UTF8, 0, templateUTF16, -1, template, n, NULL, NULL);
-      return _wopen(chkFilename(templateUTF16), flags, mode);
-    }
-  errno = EINVAL;
-  return -1;
-
-#else
-
-  return mkstemp (template);
-
-#endif
+  return evbuffer_free_to_str (buf, len);
 }
 
 int
@@ -1158,22 +1211,22 @@ tr_variantToFile (const tr_variant  * v,
                   const char        * filename)
 {
   char * tmp;
-  int fd;
+  tr_sys_file_t fd;
   int err = 0;
-  char buf[TR_PATH_MAX];
+  char * real_filename;
+  tr_error * error = NULL;
 
   /* follow symlinks to find the "real" file, to make sure the temporary
-   * we build with tr_mkstemp() is created on the right partition */
-  if (tr_realpath (filename, buf) != NULL)
-    filename = buf;
+   * we build with tr_sys_file_open_temp() is created on the right partition */
+  if ((real_filename = tr_sys_path_resolve (filename, NULL)) != NULL)
+    filename = real_filename;
 
   /* if the file already exists, try to move it out of the way & keep it as a backup */
   tmp = tr_strdup_printf ("%s.tmp.XXXXXX", filename);
-  fd = tr_mkstemp (tmp);
-  tr_set_file_for_single_pass (fd);
-  if (fd >= 0)
+  fd = tr_sys_file_open_temp (tmp, &error);
+  if (fd != TR_BAD_SYS_FILE)
     {
-      int nleft;
+      uint64_t nleft;
 
       /* save the variant to a temporary file */
       {
@@ -1183,51 +1236,53 @@ tr_variantToFile (const tr_variant  * v,
 
         while (nleft > 0)
           {
-            const int n = write (fd, walk, nleft);
-            if (n >= 0)
+            uint64_t n;
+            if (!tr_sys_file_write (fd, walk, nleft, &n, &error))
               {
-                nleft -= n;
-                walk += n;
-              }
-            else if (errno != EAGAIN)
-              {
-                err = errno;
+                err = error->code;
                 break;
               }
+
+            nleft -= n;
+            walk += n;
           }
 
         evbuffer_free (buf);
       }
 
+      tr_sys_file_close (fd, NULL);
+
       if (nleft > 0)
         {
-          tr_logAddError (_("Couldn't save temporary file \"%1$s\": %2$s"), tmp, tr_strerror (err));
-          tr_close_file (fd);
-          tr_remove (tmp);
+          tr_logAddError (_("Couldn't save temporary file \"%1$s\": %2$s"), tmp, error->message);
+          tr_sys_path_remove (tmp, NULL);
+          tr_error_free (error);
         }
       else
         {
-          tr_close_file (fd);
-
-          if (!tr_rename (tmp, filename))
+          tr_error_clear (&error);
+          if (tr_sys_path_rename (tmp, filename, &error))
             {
               tr_logAddInfo (_("Saved \"%s\""), filename);
             }
           else
             {
-              err = errno;
-              tr_logAddError (_("Couldn't save file \"%1$s\": %2$s"), filename, tr_strerror (err));
-              tr_remove (tmp);
+              err = error->code;
+              tr_logAddError (_("Couldn't save file \"%1$s\": %2$s"), filename, error->message);
+              tr_sys_path_remove (tmp, NULL);
+              tr_error_free (error);
             }
         }
     }
   else
     {
-      err = errno;
-      tr_logAddError (_("Couldn't save temporary file \"%1$s\": %2$s"), tmp, tr_strerror (err));
+      err = error->code;
+      tr_logAddError (_("Couldn't save temporary file \"%1$s\": %2$s"), tmp, error->message);
+      tr_error_free (error);
     }
 
   tr_free (tmp);
+  tr_free (real_filename);
   return err;
 }
 
@@ -1235,27 +1290,28 @@ tr_variantToFile (const tr_variant  * v,
 ****
 ***/
 
-int
+bool
 tr_variantFromFile (tr_variant      * setme,
                     tr_variant_fmt    fmt,
-                    const char      * filename)
+                    const char      * filename,
+                    tr_error       ** error)
 {
-  int err;
-  size_t buflen;
+  bool ret = false;
   uint8_t * buf;
-  const int old_errno = errno;
+  size_t buflen;
 
-  errno = 0;
-  buf = tr_loadFile (filename, &buflen);
+  buf = tr_loadFile (filename, &buflen, error);
+  if (buf != NULL)
+    {
+      if (tr_variantFromBuf (setme, fmt, buf, buflen, filename, NULL) == 0)
+        ret = true;
+      else
+        tr_error_set_literal (error, 0, _("Unable to parse file content"));
 
-  if (errno)
-    err = errno;
-  else
-    err = tr_variantFromBuf (setme, fmt, buf, buflen, filename, NULL);
+      tr_free (buf);
+    }
 
-  tr_free (buf);
-  errno = old_errno;
-  return err;
+  return ret;
 }
 
 int
@@ -1267,11 +1323,10 @@ tr_variantFromBuf (tr_variant      * setme,
                    const char     ** setme_end)
 {
   int err;
-  char lc_numeric[128];
+  struct locale_context locale_ctx;
 
   /* parse with LC_NUMERIC="C" to ensure a "." decimal separator */
-  tr_strlcpy (lc_numeric, setlocale (LC_NUMERIC, NULL), sizeof (lc_numeric));
-  setlocale (LC_NUMERIC, "C");
+  use_numeric_locale (&locale_ctx, "C");
 
   switch (fmt)
     {
@@ -1286,6 +1341,6 @@ tr_variantFromBuf (tr_variant      * setme,
     }
 
   /* restore the previous locale */
-  setlocale (LC_NUMERIC, lc_numeric);
+  restore_locale (&locale_ctx);
   return err;
 }

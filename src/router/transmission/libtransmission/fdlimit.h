@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: fdlimit.h 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: fdlimit.h 14479 2015-03-18 07:34:26Z mikedld $
  */
 
 #ifndef __TRANSMISSION__
@@ -12,6 +12,7 @@
 #endif
 
 #include "transmission.h"
+#include "file.h"
 #include "net.h"
 
 /**
@@ -22,21 +23,6 @@
 /***
 ****
 ***/
-
-void tr_set_file_for_single_pass (int fd);
-
-int tr_open_file_for_scanning (const char * filename);
-
-int tr_open_file_for_writing (const char * filename);
-
-void tr_close_file (int fd);
-
-int tr_fsync (int fd);
-
-ssize_t tr_pread (int fd, void *buf, size_t count, off_t offset);
-ssize_t tr_pwrite (int fd, const void *buf, size_t count, off_t offset);
-int tr_prefetch (int fd, off_t offset, size_t count);
-
 
 /**
  * Returns an fd to the specified filename.
@@ -49,22 +35,22 @@ int tr_prefetch (int fd, off_t offset, size_t count);
  * - if do_write is true, the target file is created if necessary.
  *
  * on success, a file descriptor >= 0 is returned.
- * on failure, a -1 is returned and errno is set.
+ * on failure, a TR_BAD_SYS_FILE is returned and errno is set.
  *
  * @see tr_fdFileClose
  */
-int  tr_fdFileCheckout (tr_session             * session,
-                        int                      torrent_id,
-                        tr_file_index_t          file_num,
-                        const char             * filename,
-                        bool                     do_write,
-                        tr_preallocation_mode    preallocation_mode,
-                        uint64_t                 preallocation_file_size);
+tr_sys_file_t  tr_fdFileCheckout (tr_session             * session,
+                                  int                      torrent_id,
+                                  tr_file_index_t          file_num,
+                                  const char             * filename,
+                                  bool                     do_write,
+                                  tr_preallocation_mode    preallocation_mode,
+                                  uint64_t                 preallocation_file_size);
 
-int tr_fdFileGetCached (tr_session             * session,
-                        int                      torrent_id,
-                        tr_file_index_t          file_num,
-                        bool                  doWrite);
+tr_sys_file_t tr_fdFileGetCached (tr_session             * session,
+                                  int                      torrent_id,
+                                  tr_file_index_t          file_num,
+                                  bool                     doWrite);
 
 bool tr_fdFileGetCachedMTime (tr_session       * session,
                               int                torrent_id,
@@ -94,14 +80,17 @@ void tr_fdTorrentClose (tr_session * session, int torrentId);
 /***********************************************************************
  * Sockets
  **********************************************************************/
-int      tr_fdSocketCreate (tr_session * session, int domain, int type);
+tr_socket_t tr_fdSocketCreate (tr_session  * session,
+                               int           domain,
+                               int           type);
 
-int      tr_fdSocketAccept (tr_session  * session,
-                            int           listening_sockfd,
-                            tr_address  * addr,
-                            tr_port     * port);
+tr_socket_t tr_fdSocketAccept (tr_session  * session,
+                               tr_socket_t   listening_sockfd,
+                               tr_address  * addr,
+                               tr_port     * port);
 
-void     tr_fdSocketClose (tr_session * session, int s);
+void        tr_fdSocketClose  (tr_session  * session,
+                               tr_socket_t   s);
 
 /***********************************************************************
  * tr_fdClose

@@ -4,12 +4,12 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: bitfield-test.c 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: bitfield-test.c 14669 2016-01-08 11:12:22Z mikedld $
  */
 
 #include <string.h> /* strlen () */
 #include "transmission.h"
-#include "crypto.h"
+#include "crypto-utils.h"
 #include "bitfield.h"
 #include "utils.h" /* tr_free */
 
@@ -24,16 +24,16 @@ test_bitfield_count_range (void)
   int end;
   int count1;
   int count2;
-  const int bitCount = 100 + tr_cryptoWeakRandInt (1000);
+  const int bitCount = 100 + tr_rand_int_weak (1000);
   tr_bitfield bf;
 
   /* generate a random bitfield */
   tr_bitfieldConstruct (&bf, bitCount);
-  for (i=0, n=tr_cryptoWeakRandInt (bitCount); i<n; ++i)
-    tr_bitfieldAdd (&bf, tr_cryptoWeakRandInt (bitCount));
-  begin = tr_cryptoWeakRandInt (bitCount);
+  for (i=0, n=tr_rand_int_weak (bitCount); i<n; ++i)
+    tr_bitfieldAdd (&bf, tr_rand_int_weak (bitCount));
+  begin = tr_rand_int_weak (bitCount);
   do
-    end = tr_cryptoWeakRandInt (bitCount);
+    end = tr_rand_int_weak (bitCount);
   while (end == begin);
 
   /* ensure end <= begin */
@@ -78,7 +78,15 @@ test_bitfields (void)
   for (i=0; i<bitcount; i++)
     check (tr_bitfieldHas (&field, i));
 
+  /* test tr_bitfieldRem */
+  for (i=0; i<bitcount; i++)
+    if ((i % 7) != 0)
+      tr_bitfieldRem (&field, i);
+  for (i=0; i<bitcount; i++)
+    check (tr_bitfieldHas (&field, i) == (! (i % 7)));
+
   /* test tr_bitfieldRemRange in the middle of a boundary */
+  tr_bitfieldAddRange (&field, 0, 64);
   tr_bitfieldRemRange (&field, 4, 21);
   for (i=0; i<64; i++)
     check (tr_bitfieldHas (&field, i) == ((i < 4) || (i >= 21)));
@@ -117,12 +125,71 @@ test_bitfields (void)
   return 0;
 }
 
+static int
+test_bitfield_has_all_none (void)
+{
+  tr_bitfield field;
+
+  tr_bitfieldConstruct (&field, 3);
+
+  check (!tr_bitfieldHasAll (&field));
+  check (tr_bitfieldHasNone (&field));
+
+  tr_bitfieldAdd (&field, 0);
+  check (!tr_bitfieldHasAll (&field));
+  check (!tr_bitfieldHasNone (&field));
+
+  tr_bitfieldRem (&field, 0);
+  tr_bitfieldAdd (&field, 1);
+  check (!tr_bitfieldHasAll (&field));
+  check (!tr_bitfieldHasNone (&field));
+
+  tr_bitfieldRem (&field, 1);
+  tr_bitfieldAdd (&field, 2);
+  check (!tr_bitfieldHasAll (&field));
+  check (!tr_bitfieldHasNone (&field));
+
+  tr_bitfieldAdd (&field, 0);
+  tr_bitfieldAdd (&field, 1);
+  check (tr_bitfieldHasAll (&field));
+  check (!tr_bitfieldHasNone (&field));
+
+  tr_bitfieldSetHasNone (&field);
+  check (!tr_bitfieldHasAll (&field));
+  check (tr_bitfieldHasNone (&field));
+
+  tr_bitfieldSetHasAll (&field);
+  check (tr_bitfieldHasAll (&field));
+  check (!tr_bitfieldHasNone (&field));
+
+  tr_bitfieldDestruct (&field);
+  tr_bitfieldConstruct (&field, 0);
+
+  check (!tr_bitfieldHasAll (&field));
+  check (!tr_bitfieldHasNone (&field));
+
+  tr_bitfieldSetHasNone (&field);
+  check (!tr_bitfieldHasAll (&field));
+  check (tr_bitfieldHasNone (&field));
+
+  tr_bitfieldSetHasAll (&field);
+  check (tr_bitfieldHasAll (&field));
+  check (!tr_bitfieldHasNone (&field));
+
+  tr_bitfieldDestruct (&field);
+  return 0;
+}
+
 int
 main (void)
 {
   int l;
   int ret;
-  const testFunc tests[] = { test_bitfields };
+  const testFunc tests[] =
+    {
+      test_bitfields,
+      test_bitfield_has_all_none
+    };
 
   if ((ret = runTests (tests, NUM_TESTS (tests))))
     return ret;

@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: tr-prefs.c 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: tr-prefs.c 14639 2015-12-28 23:52:26Z mikedld $
  */
 
 #include <ctype.h> /* isspace */
@@ -501,8 +501,8 @@ static void
 on_blocklist_url_changed (GtkEditable * e, gpointer gbutton)
 {
   gchar * url = gtk_editable_get_chars (e, 0, -1);
-  const gboolean err = tr_urlParse (url, -1, NULL, NULL, NULL, NULL);
-  gtk_widget_set_sensitive (GTK_WIDGET (gbutton), !err);
+  const gboolean is_url_valid = tr_urlParse (url, TR_BAD_SIZE, NULL, NULL, NULL, NULL);
+  gtk_widget_set_sensitive (GTK_WIDGET (gbutton), is_url_valid);
   g_free (url);
 }
 
@@ -970,11 +970,7 @@ new_time_combo (GObject * core, const tr_quark key)
     {
       char buf[128];
       GtkTreeIter iter;
-      struct tm   tm;
-      tm.tm_hour = i / 60;
-      tm.tm_min = i % 60;
-      tm.tm_sec = 0;
-      strftime (buf, sizeof (buf), "%H:%M", &tm);
+      g_snprintf (buf, sizeof (buf), "%02d:%02d", i / 60, i % 60);
       gtk_list_store_append (store, &iter);
       gtk_list_store_set (store, &iter, 0, i, 1, buf, -1);
     }

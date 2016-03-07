@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: variant-json.c 14266 2014-04-27 23:10:01Z jordan $
+ * $Id: variant-json.c 14644 2015-12-29 19:37:31Z mikedld $
  */
 
 #include <assert.h>
@@ -21,7 +21,7 @@
 #include "jsonsl.h"
 #include "jsonsl.c"
 
-#define __LIBTRANSMISSION_VARIANT_MODULE___
+#define __LIBTRANSMISSION_VARIANT_MODULE__
 #include "transmission.h"
 #include "ConvertUTF.h"
 #include "list.h"
@@ -88,7 +88,7 @@ error_handler (jsonsl_t                  jsn,
 
   if (data->source)
     {
-      tr_logAddError ("JSON parse failed in %s at pos %"TR_PRIuSIZE": %s -- remaining text \"%.16s\"",
+      tr_logAddError ("JSON parse failed in %s at pos %zu: %s -- remaining text \"%.16s\"",
               data->source,
               jsn->pos,
               jsonsl_strerror (error),
@@ -96,7 +96,7 @@ error_handler (jsonsl_t                  jsn,
     }
   else
     {
-      tr_logAddError ("JSON parse failed at pos %"TR_PRIuSIZE": %s -- remaining text \"%.16s\"",
+      tr_logAddError ("JSON parse failed at pos %zu: %s -- remaining text \"%.16s\"",
               jsn->pos,
               jsonsl_strerror (error),
               buf);
@@ -216,14 +216,14 @@ extract_escaped_string (const char       * in,
                           UTF8 str8_buf[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
                           UTF8 * str8_walk = str8_buf;
                           UTF8 * str8_end = str8_buf + 8;
-    
+
                           if (ConvertUTF32toUTF8 (&str32_walk, str32_end, &str8_walk, str8_end, 0) == 0)
                             {
                               const size_t len = str8_walk - str8_buf;
                               evbuffer_add (buf, str8_buf, len);
                               unescaped = true;
                             }
-    
+
                           in += 6;
                           break;
                         }
@@ -428,7 +428,7 @@ jsonChildFunc (struct jsonWalk * data)
 
                   if (!isLast)
                     {
-                      evbuffer_add (data->out, ", ", data->doIndent ? 2 : 1);
+                      evbuffer_add (data->out, ",", 1);
                       jsonIndent (data);
                     }
                 }
@@ -440,7 +440,7 @@ jsonChildFunc (struct jsonWalk * data)
               const bool isLast = ++pstate->childIndex == pstate->childCount;
               if (!isLast)
                 {
-                  evbuffer_add (data->out, ", ", data->doIndent ? 2 : 1);
+                  evbuffer_add (data->out, ",", 1);
                   jsonIndent (data);
                 }
               break;
@@ -547,7 +547,7 @@ jsonStringFunc (const tr_variant * val,
           case '\\': *outwalk++ = '\\'; *outwalk++ = '\\'; break;
 
           default:
-            if (isascii (*it))
+            if (isprint (*it))
               {
                 *outwalk++ = *it;
               }

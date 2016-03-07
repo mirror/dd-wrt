@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: peer-io.h 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: peer-io.h 14479 2015-03-18 07:34:26Z mikedld $
  */
 
 #ifndef __TRANSMISSION__
@@ -86,7 +86,7 @@ typedef struct tr_peerIo
     bool                  isSeed;
 
     tr_port               port;
-    int                   socket;
+    tr_socket_t           socket;
     struct UTPSocket    * utp_socket;
 
     int                   refCount;
@@ -132,7 +132,7 @@ tr_peerIo*  tr_peerIoNewIncoming (tr_session              * session,
                                   struct tr_bandwidth     * parent,
                                   const struct tr_address * addr,
                                   tr_port                   port,
-                                  int                       socket,
+                                  tr_socket_t               socket,
                                   struct UTPSocket *        utp_socket);
 
 void tr_peerIoRefImpl            (const char              * file,
@@ -217,7 +217,7 @@ const struct tr_address * tr_peerIoGetAddress (const tr_peerIo * io,
 
 const uint8_t*       tr_peerIoGetTorrentHash (tr_peerIo * io);
 
-int                  tr_peerIoHasTorrentHash (const tr_peerIo * io);
+bool                 tr_peerIoHasTorrentHash (const tr_peerIo * io);
 
 void                 tr_peerIoSetTorrentHash (tr_peerIo *     io,
                                               const uint8_t * hash);

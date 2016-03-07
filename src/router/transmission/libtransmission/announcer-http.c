@@ -4,18 +4,17 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: announcer-http.c 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: announcer-http.c 14644 2015-12-29 19:37:31Z mikedld $
  */
 
 #include <limits.h> /* USHRT_MAX */
 #include <stdio.h> /* fprintf () */
-#include <stdlib.h> /* getenv () */
 #include <string.h> /* strchr (), memcmp (), memcpy () */
 
 #include <event2/buffer.h>
 #include <event2/http.h> /* for HTTP_OK */
 
-#define __LIBTRANSMISSION_ANNOUNCER_MODULE___
+#define __LIBTRANSMISSION_ANNOUNCER_MODULE__
 
 #include "transmission.h"
 #include "announcer-common.h"
@@ -115,10 +114,10 @@ announce_url_new (const tr_session * session, const tr_announce_request * req)
         char ipv6_readable[INET6_ADDRSTRLEN];
         evutil_inet_ntop (AF_INET6, ipv6, ipv6_readable, INET6_ADDRSTRLEN);
         evbuffer_add_printf (buf, "&ipv6=");
-        tr_http_escape (buf, ipv6_readable, -1, true);
+        tr_http_escape (buf, ipv6_readable, TR_BAD_SIZE, true);
     }
 
-    return evbuffer_free_to_str (buf);
+    return evbuffer_free_to_str (buf, NULL);
 }
 
 static tr_pex*
@@ -211,12 +210,12 @@ on_announce_done (tr_session   * session,
         tr_variant benc;
         const bool variant_loaded = !tr_variantFromBenc (&benc, msg, msglen);
 
-        if (getenv ("TR_CURL_VERBOSE") != NULL)
+        if (tr_env_key_exists ("TR_CURL_VERBOSE"))
         {
             if (!variant_loaded)
                 fprintf (stderr, "%s", "Announce response was not in benc format\n");
             else {
-                int i, len;
+                size_t i, len;
                 char * str = tr_variantToStr (&benc, TR_VARIANT_FMT_JSON, &len);
                 fprintf (stderr, "%s", "Announce response:\n< ");
                 for (i=0; i<len; ++i)
@@ -259,18 +258,18 @@ on_announce_done (tr_session   * session,
                 response->downloads = i;
 
             if (tr_variantDictFindRaw (&benc, TR_KEY_peers6, &raw, &len)) {
-                dbgmsg (data->log_name, "got a peers6 length of %"TR_PRIuSIZE, len);
+                dbgmsg (data->log_name, "got a peers6 length of %zu", len);
                 response->pex6 = tr_peerMgrCompact6ToPex (raw, len,
                                               NULL, 0, &response->pex6_count);
             }
 
             if (tr_variantDictFindRaw (&benc, TR_KEY_peers, &raw, &len)) {
-                dbgmsg (data->log_name, "got a compact peers length of %"TR_PRIuSIZE, len);
+                dbgmsg (data->log_name, "got a compact peers length of %zu", len);
                 response->pex = tr_peerMgrCompactToPex (raw, len,
                                                NULL, 0, &response->pex_count);
             } else if (tr_variantDictFindList (&benc, TR_KEY_peers, &tmp)) {
                 response->pex = listToPex (tmp, &response->pex_count);
-                dbgmsg (data->log_name, "got a peers list with %"TR_PRIuSIZE" entries",
+                dbgmsg (data->log_name, "got a peers list with %zu entries",
                         response->pex_count);
             }
         }
@@ -366,12 +365,12 @@ on_scrape_done (tr_session   * session,
         const char * str;
         const bool variant_loaded = !tr_variantFromBenc (&top, msg, msglen);
 
-        if (getenv ("TR_CURL_VERBOSE") != NULL)
+        if (tr_env_key_exists ("TR_CURL_VERBOSE"))
         {
             if (!variant_loaded)
                 fprintf (stderr, "%s", "Scrape response was not in benc format\n");
             else {
-                int i, len;
+                size_t i, len;
                 char * str = tr_variantToStr (&top, TR_VARIANT_FMT_JSON, &len);
                 fprintf (stderr, "%s", "Scrape response:\n< ");
                 for (i=0; i<len; ++i)
@@ -448,7 +447,7 @@ scrape_url_new (const tr_scrape_request * req)
         delimiter = '&';
     }
 
-    return evbuffer_free_to_str (buf);
+    return evbuffer_free_to_str (buf, NULL);
 }
 
 void

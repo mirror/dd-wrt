@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: session.c 14266 2014-04-27 23:10:01Z jordan $
+ * $Id: session.c 14666 2016-01-07 19:20:14Z mikedld $
  */
 
 #include <assert.h>
@@ -14,10 +14,11 @@
 #include <string.h> /* memcpy */
 
 #include <signal.h>
-#include <sys/types.h> /* stat (), umask () */
-#include <sys/stat.h> /* stat (), umask () */
-#include <unistd.h> /* stat */
-#include <dirent.h> /* opendir */
+
+#ifndef _WIN32
+ #include <sys/types.h> /* umask () */
+ #include <sys/stat.h> /* umask () */
+#endif
 
 #include <event2/dns.h> /* evdns_base_free () */
 #include <event2/event.h>
@@ -30,8 +31,11 @@
 #include "bandwidth.h"
 #include "blocklist.h"
 #include "cache.h"
-#include "crypto.h"
+#include "crypto-utils.h"
+#include "error.h"
+#include "error-types.h"
 #include "fdlimit.h"
+#include "file.h"
 #include "list.h"
 #include "log.h"
 #include "net.h"
@@ -79,7 +83,7 @@ enum
 static tr_port
 getRandomPort (tr_session * s)
 {
-  return tr_cryptoWeakRandInt (s->randomPortHigh - s->randomPortLow + 1) + s->randomPortLow;
+  return tr_rand_int_weak (s->randomPortHigh - s->randomPortLow + 1) + s->randomPortLow;
 }
 
 /* Generate a peer id : "-TRxyzb-" + 12 random alphanumeric
@@ -97,7 +101,7 @@ tr_peerIdInit (uint8_t * buf)
 
   memcpy (buf, PEERID_PREFIX, 8);
 
-  tr_cryptoRandBuf (buf+8, 11);
+  tr_rand_buffer (buf+8, 11);
   for (i=8; i<19; ++i)
     {
       val = buf[i] % base;
@@ -140,7 +144,7 @@ tr_sessionSetEncryption (tr_session          * session,
 
 struct tr_bindinfo
 {
-  int socket;
+  tr_socket_t socket;
   tr_address addr;
   struct event * ev;
 };
@@ -149,7 +153,7 @@ struct tr_bindinfo
 static void
 close_bindinfo (struct tr_bindinfo * b)
 {
-  if ((b != NULL) && (b->socket >=0))
+  if ((b != NULL) && (b->socket != TR_BAD_SOCKET))
     {
       event_free (b->ev);
       b->ev = NULL;
@@ -179,15 +183,15 @@ free_incoming_peer_port (tr_session * session)
 static void
 accept_incoming_peer (evutil_socket_t fd, short what UNUSED, void * vsession)
 {
-  int clientSocket;
+  tr_socket_t clientSocket;
   tr_port clientPort;
   tr_address clientAddr;
   tr_session * session = vsession;
 
   clientSocket = tr_netAccept (session, fd, &clientAddr, &clientPort);
-  if (clientSocket > 0)
+  if (clientSocket != TR_BAD_SOCKET)
     {
-      tr_logAddDeep (__FILE__, __LINE__, NULL, "new incoming connection %d (%s)",
+      tr_logAddDeep (__FILE__, __LINE__, NULL, "new incoming connection %"TR_PRI_SOCK" (%s)",
                        clientSocket, tr_peerIoAddrStr (&clientAddr, clientPort));
       tr_peerMgrAddIncoming (session->peerMgr, &clientAddr, clientPort,
                              clientSocket, NULL);
@@ -202,7 +206,7 @@ open_incoming_peer_port (tr_session * session)
   /* bind an ipv4 port to listen for incoming peers... */
   b = session->public_ipv4;
   b->socket = tr_netBindTCP (&b->addr, session->private_peer_port, false);
-  if (b->socket >= 0)
+  if (b->socket != TR_BAD_SOCKET)
     {
       b->ev = event_new (session->event_base, b->socket, EV_READ | EV_PERSIST, accept_incoming_peer, session);
       event_add (b->ev, NULL);
@@ -213,7 +217,7 @@ open_incoming_peer_port (tr_session * session)
     {
       b = session->public_ipv6;
       b->socket = tr_netBindTCP (&b->addr, session->private_peer_port, false);
-      if (b->socket >= 0)
+      if (b->socket != TR_BAD_SOCKET)
         {
           b->ev = event_new (session->event_base, b->socket, EV_READ | EV_PERSIST, accept_incoming_peer, session);
           event_add (b->ev, NULL);
@@ -413,7 +417,7 @@ tr_sessionGetSettings (tr_session * s, tr_variant * d)
   tr_variantDictAddBool (d, TR_KEY_pex_enabled,                  s->isPexEnabled);
   tr_variantDictAddBool (d, TR_KEY_port_forwarding_enabled,      tr_sessionIsPortForwardingEnabled (s));
   tr_variantDictAddInt  (d, TR_KEY_preallocation,                s->preallocationMode);
-  tr_variantDictAddInt  (d, TR_KEY_prefetch_enabled,             s->isPrefetchEnabled);
+  tr_variantDictAddBool (d, TR_KEY_prefetch_enabled,             s->isPrefetchEnabled);
   tr_variantDictAddInt  (d, TR_KEY_peer_id_ttl_hours,            s->peer_id_ttl_hours);
   tr_variantDictAddBool (d, TR_KEY_queue_stalled_enabled,        tr_sessionGetQueueStalledEnabled (s));
   tr_variantDictAddInt  (d, TR_KEY_queue_stalled_minutes,        tr_sessionGetQueueStalledMinutes (s));
@@ -454,23 +458,21 @@ tr_sessionGetSettings (tr_session * s, tr_variant * d)
 bool
 tr_sessionLoadSettings (tr_variant * dict, const char * configDir, const char * appName)
 {
-  int err = 0;
   char * filename;
+  tr_variant oldDict;
   tr_variant fileSettings;
-  tr_variant sessionDefaults;
-  tr_variant tmp;
-  bool success = false;
+  bool success;
+  tr_error * error = NULL;
 
   assert (tr_variantIsDict (dict));
 
   /* initializing the defaults: caller may have passed in some app-level defaults.
    * preserve those and use the session defaults to fill in any missing gaps. */
-  tr_variantInitDict (&sessionDefaults, 0);
-  tr_sessionGetDefaultSettings (&sessionDefaults);
-  tr_variantMergeDicts (&sessionDefaults, dict);
-  tmp = *dict;
-  *dict = sessionDefaults;
-  sessionDefaults = tmp;
+  oldDict = *dict;
+  tr_variantInitDict (dict, 0);
+  tr_sessionGetDefaultSettings (dict);
+  tr_variantMergeDicts (dict, &oldDict);
+  tr_variantFree (&oldDict);
 
   /* if caller didn't specify a config dir, use the default */
   if (!configDir || !*configDir)
@@ -478,17 +480,20 @@ tr_sessionLoadSettings (tr_variant * dict, const char * configDir, const char * 
 
   /* file settings override the defaults */
   filename = tr_buildPath (configDir, "settings.json", NULL);
-  err = tr_variantFromFile (&fileSettings, TR_VARIANT_FMT_JSON, filename);
-  if (!err)
+  if (tr_variantFromFile (&fileSettings, TR_VARIANT_FMT_JSON, filename, &error))
     {
       tr_variantMergeDicts (dict, &fileSettings);
       tr_variantFree (&fileSettings);
+      success = true;
+    }
+  else
+    {
+      success = TR_ERROR_IS_ENOENT (error->code);
+      tr_error_free (error);
     }
 
   /* cleanup */
-  tr_variantFree (&sessionDefaults);
   tr_free (filename);
-  success = (err==0) || (err==ENOENT);
   return success;
 }
 
@@ -507,8 +512,7 @@ tr_sessionSaveSettings (tr_session       * session,
   /* the existing file settings are the fallback values */
   {
     tr_variant fileSettings;
-    const int err = tr_variantFromFile (&fileSettings, TR_VARIANT_FMT_JSON, filename);
-    if (!err)
+    if (tr_variantFromFile (&fileSettings, TR_VARIANT_FMT_JSON, filename, NULL))
       {
         tr_variantMergeDicts (&settings, &fileSettings);
         tr_variantFree (&fileSettings);
@@ -577,10 +581,9 @@ struct init_data
 };
 
 tr_session *
-tr_sessionInit (const char  * tag,
-                const char  * configDir,
-                bool          messageQueuingEnabled,
-                tr_variant     * clientSettings)
+tr_sessionInit (const char * configDir,
+                bool         messageQueuingEnabled,
+                tr_variant * clientSettings)
 {
   int64_t i;
   tr_session * session;
@@ -592,11 +595,10 @@ tr_sessionInit (const char  * tag,
 
   /* initialize the bare skeleton of the session object */
   session = tr_new0 (tr_session, 1);
-  session->udp_socket = -1;
-  session->udp6_socket = -1;
+  session->udp_socket = TR_BAD_SOCKET;
+  session->udp6_socket = TR_BAD_SOCKET;
   session->lock = tr_lockNew ();
   session->cache = tr_cacheNew (1024*1024*2);
-  session->tag = tr_strdup (tag);
   session->magicNumber = SESSION_MAGIC_NUMBER;
   tr_bandwidthConstruct (&session->bandwidth, session, NULL);
   tr_variantInitList (&session->removedTorrents, 0);
@@ -606,7 +608,7 @@ tr_sessionInit (const char  * tag,
     tr_logSetLevel (i);
 
   /* start the libtransmission thread */
-  tr_netInit (); /* must go before tr_eventInit */
+  tr_net_init (); /* must go before tr_eventInit */
   tr_eventInit (session);
   assert (session->events != NULL);
 
@@ -673,7 +675,7 @@ onNowTimer (evutil_socket_t foo UNUSED, short bar UNUSED, void * vsession)
   if (usec < min)
     usec = min;
   tr_timerAdd (session->nowTimer, 0, usec);
-  /* fprintf (stderr, "time %"TR_PRIuSIZE" sec, %"TR_PRIuSIZE" microsec\n", (size_t)tr_time (), (size_t)tv.tv_usec); */
+  /* fprintf (stderr, "time %zu sec, %zu microsec\n", (size_t)tr_time (), (size_t)tv.tv_usec); */
 }
 
 static void loadBlocklists (tr_session * session);
@@ -700,7 +702,7 @@ tr_sessionInitImpl (void * vdata)
   session->nowTimer = evtimer_new (session->event_base, onNowTimer, session);
   onNowTimer (0, 0, session);
 
-#ifndef WIN32
+#ifndef _WIN32
   /* Don't exit when writing on a broken socket */
   signal (SIGPIPE, SIG_IGN);
 #endif
@@ -719,7 +721,7 @@ tr_sessionInitImpl (void * vdata)
 
   {
     char * filename = tr_buildPath (session->configDir, "blocklists", NULL);
-    tr_mkdirp (filename, 0777);
+    tr_sys_dir_create (filename, TR_SYS_DIR_CREATE_PARENTS, 0777, NULL);
     tr_free (filename);
     loadBlocklists (session);
   }
@@ -772,11 +774,13 @@ sessionSetImpl (void * vdata)
   if (tr_variantDictFindInt (settings, TR_KEY_message_level, &i))
     tr_logSetLevel (i);
 
+#ifndef _WIN32
   if (tr_variantDictFindInt (settings, TR_KEY_umask, &i))
     {
       session->umask = (mode_t)i;
       umask (session->umask);
     }
+#endif
 
   /* misc features */
   if (tr_variantDictFindInt (settings, TR_KEY_cache_size_mb, &i))
@@ -850,13 +854,13 @@ sessionSetImpl (void * vdata)
   tr_variantDictFindStr (settings, TR_KEY_bind_address_ipv4, &str, NULL);
   if (!tr_address_from_string (&b.addr, str) || (b.addr.type != TR_AF_INET))
     b.addr = tr_inaddr_any;
-  b.socket = -1;
+  b.socket = TR_BAD_SOCKET;
   session->public_ipv4 = tr_memdup (&b, sizeof (struct tr_bindinfo));
 
   tr_variantDictFindStr (settings, TR_KEY_bind_address_ipv6, &str, NULL);
   if (!tr_address_from_string (&b.addr, str) || (b.addr.type != TR_AF_INET6))
     b.addr = tr_in6addr_any;
-  b.socket = -1;
+  b.socket = TR_BAD_SOCKET;
   session->public_ipv6 = tr_memdup (&b, sizeof (struct tr_bindinfo));
 
   /* incoming peer port */
@@ -1758,7 +1762,7 @@ tr_sessionGetTorrents (tr_session * session, int * setme_n)
     torrents[i] = tor = tr_torrentNext (session, tor);
 
   return torrents;
-} 
+}
 
 static int
 compareTorrentByCur (const void * va, const void * vb)
@@ -1777,13 +1781,15 @@ compareTorrentByCur (const void * va, const void * vb)
 static void closeBlocklists (tr_session *);
 
 static void
-sessionCloseImpl (void * vsession)
+sessionCloseImplWaitForIdleUdp (evutil_socket_t   foo UNUSED,
+                                short             bar UNUSED,
+                                void            * vsession);
+
+static void
+sessionCloseImplStart (tr_session * session)
 {
   int i, n;
   tr_torrent ** torrents;
-  tr_session * session = vsession;
-
-  assert (tr_isSession (session));
 
   session->isClosing = true;
 
@@ -1826,14 +1832,39 @@ sessionCloseImpl (void * vsession)
   tr_cacheFree (session->cache);
   session->cache = NULL;
 
+  /* saveTimer is not used at this point, reusing for UDP shutdown wait */
+  assert (session->saveTimer == NULL);
+  session->saveTimer = evtimer_new (session->event_base, sessionCloseImplWaitForIdleUdp, session);
+  tr_timerAdd (session->saveTimer, 0, 0);
+}
+
+static void
+sessionCloseImplFinish (tr_session * session);
+
+static void
+sessionCloseImplWaitForIdleUdp (evutil_socket_t   foo UNUSED,
+                                short             bar UNUSED,
+                                void            * vsession)
+{
+  tr_session * session = vsession;
+
+  assert (tr_isSession (session));
+
   /* gotta keep udp running long enough to send out all
      the &event=stopped UDP tracker messages */
-  while (!tr_tracker_udp_is_idle (session))
+  if (!tr_tracker_udp_is_idle (session))
     {
       tr_tracker_udp_upkeep (session);
-      tr_wait_msec (100);
+      tr_timerAdd (session->saveTimer, 0, 100000);
+      return;
     }
 
+  sessionCloseImplFinish (session);
+}
+
+static void
+sessionCloseImplFinish (tr_session * session)
+{
   /* we had to wait until UDP trackers were closed before closing these: */
   evdns_base_free (session->evdns_base, 0);
   session->evdns_base = NULL;
@@ -1848,6 +1879,16 @@ sessionCloseImpl (void * vsession)
   tr_fdClose (session);
 
   session->isClosed = true;
+}
+
+static void
+sessionCloseImpl (void * vsession)
+{
+  tr_session * session = vsession;
+
+  assert (tr_isSession (session));
+
+  sessionCloseImplStart (session);
 }
 
 static int
@@ -1865,7 +1906,7 @@ tr_sessionClose (tr_session * session)
 
   assert (tr_isSession (session));
 
-  dbgmsg ("shutting down transmission session %p... now is %"TR_PRIuSIZE", deadline is %"TR_PRIuSIZE, (void*)session, (size_t)time (NULL), (size_t)deadline);
+  dbgmsg ("shutting down transmission session %p... now is %zu, deadline is %zu", (void*)session, (size_t)time (NULL), (size_t)deadline);
 
   /* close the session */
   tr_runInEventThread (session, sessionCloseImpl, session);
@@ -1882,7 +1923,7 @@ tr_sessionClose (tr_session * session)
   while ((session->shared || session->web || session->announcer || session->announcer_udp)
            && !deadlineReached (deadline))
     {
-      dbgmsg ("waiting on port unmap (%p) or announcer (%p)... now %"TR_PRIuSIZE" deadline %"TR_PRIuSIZE,
+      dbgmsg ("waiting on port unmap (%p) or announcer (%p)... now %zu deadline %zu",
               (void*)session->shared, (void*)session->announcer, (size_t)time (NULL), (size_t)deadline);
       tr_wait_msec (50);
     }
@@ -1894,7 +1935,7 @@ tr_sessionClose (tr_session * session)
   while (session->events != NULL)
     {
       static bool forced = false;
-      dbgmsg ("waiting for libtransmission thread to finish... now %"TR_PRIuSIZE" deadline %"TR_PRIuSIZE, (size_t)time (NULL), (size_t)deadline);
+      dbgmsg ("waiting for libtransmission thread to finish... now %zu deadline %zu", (size_t)time (NULL), (size_t)deadline);
       tr_wait_msec (100);
 
       if (deadlineReached (deadline) && !forced)
@@ -1923,7 +1964,6 @@ tr_sessionClose (tr_session * session)
     }
   tr_device_info_free (session->downloadDir);
   tr_free (session->torrentDoneScript);
-  tr_free (session->tag);
   tr_free (session->configDir);
   tr_free (session->resumeDir);
   tr_free (session->torrentDir);
@@ -1947,8 +1987,8 @@ sessionLoadTorrents (void * vdata)
 {
   int i;
   int n = 0;
-  struct stat sb;
-  DIR * odir = NULL;
+  tr_sys_path_info info;
+  tr_sys_dir_t odir = NULL;
   tr_list * l = NULL;
   tr_list * list = NULL;
   struct sessionLoadTorrentsData * data = vdata;
@@ -1958,17 +1998,17 @@ sessionLoadTorrents (void * vdata)
 
   tr_ctorSetSave (data->ctor, false); /* since we already have them */
 
-  if (!stat (dirname, &sb)
-      && S_ISDIR (sb.st_mode)
-      && ((odir = opendir (dirname))))
+  if (tr_sys_path_get_info (dirname, 0, &info, NULL) &&
+      info.type == TR_SYS_PATH_IS_DIRECTORY &&
+      (odir = tr_sys_dir_open (dirname, NULL)) != TR_BAD_SYS_DIR)
     {
-      struct dirent *d;
-      for (d = readdir (odir); d != NULL; d = readdir (odir))
+      const char * name;
+      while ((name = tr_sys_dir_read_name (odir, NULL)) != NULL)
         {
-          if (tr_str_has_suffix (d->d_name, ".torrent"))
+          if (tr_str_has_suffix (name, ".torrent"))
             {
               tr_torrent * tor;
-              char * path = tr_buildPath (dirname, d->d_name, NULL);
+              char * path = tr_buildPath (dirname, name, NULL);
               tr_ctorSetMetainfoFromFile (data->ctor, path);
               if ((tor = tr_torrentNew (data->ctor, NULL, NULL)))
                 {
@@ -1978,7 +2018,7 @@ sessionLoadTorrents (void * vdata)
               tr_free (path);
             }
         }
-      closedir (odir);
+      tr_sys_dir_close (odir, NULL);
     }
 
   data->torrents = tr_new (tr_torrent *, n);
@@ -2229,31 +2269,31 @@ tr_stringEndsWith (const char * str, const char * end)
 static void
 loadBlocklists (tr_session * session)
 {
-  DIR * odir;
+  tr_sys_dir_t odir;
   char * dirname;
-  struct dirent * d;
+  const char * name;
   tr_list * blocklists = NULL;
   tr_ptrArray loadme = TR_PTR_ARRAY_INIT;
   const bool isEnabled = session->isBlocklistEnabled;
 
   /* walk the blocklist directory... */
   dirname = tr_buildPath (session->configDir, "blocklists", NULL);
-  odir = opendir (dirname);
-  if (odir == NULL)
+  odir = tr_sys_dir_open (dirname, NULL);
+  if (odir == TR_BAD_SYS_DIR)
     {
       tr_free (dirname);
       return;
     }
 
-  while ((d = readdir (odir)))
+  while ((name = tr_sys_dir_read_name (odir, NULL)) != NULL)
     {
       char * path;
       char * load = NULL;
- 
-      if (!d->d_name || (d->d_name[0]=='.')) /* ignore dotfiles */
+
+      if (name[0] == '.') /* ignore dotfiles */
         continue;
 
-      path = tr_buildPath (dirname, d->d_name, NULL);
+      path = tr_buildPath (dirname, name, NULL);
 
       if (tr_stringEndsWith (path, ".bin"))
         {
@@ -2263,13 +2303,13 @@ loadBlocklists (tr_session * session)
         {
           char * binname;
           char * basename;
-          time_t path_mtime = 0;
-          time_t binname_mtime = 0;
+          tr_sys_path_info path_info;
+          tr_sys_path_info binname_info;
 
-          basename = tr_basename (d->d_name);
+          basename = tr_sys_path_basename (name, NULL);
           binname = tr_strdup_printf ("%s" TR_PATH_DELIMITER_STR "%s.bin", dirname, basename);
 
-          if (!tr_fileExists (binname, &binname_mtime)) /* create it */
+          if (!tr_sys_path_get_info (binname, 0, &binname_info, NULL)) /* create it */
             {
               tr_blocklistFile * b = tr_blocklistFileNew (binname, isEnabled);
               const int n = tr_blocklistFileSetContent (b, path);
@@ -2278,23 +2318,24 @@ loadBlocklists (tr_session * session)
 
               tr_blocklistFileFree (b);
             }
-          else if (tr_fileExists(path,&path_mtime) && (path_mtime>=binname_mtime)) /* update it */
+          else if (tr_sys_path_get_info (path, 0, &path_info, NULL) &&
+                   path_info.last_modified_at >= binname_info.last_modified_at) /* update it */
             {
               char * old;
               tr_blocklistFile * b;
 
               old = tr_strdup_printf ("%s.old", binname);
-              tr_remove (old);
-              tr_rename (binname, old);
+              tr_sys_path_remove (old, NULL);
+              tr_sys_path_rename (binname, old, NULL);
               b = tr_blocklistFileNew (binname, isEnabled);
               if (tr_blocklistFileSetContent (b, path) > 0)
                 {
-                  tr_remove (old);
+                  tr_sys_path_remove (old, NULL);
                 }
               else
                 {
-                  tr_remove (binname);
-                  tr_rename (old, binname);
+                  tr_sys_path_remove (binname, NULL);
+                  tr_sys_path_rename (old, binname, NULL);
                 }
 
               tr_blocklistFileFree (b);
@@ -2320,14 +2361,14 @@ loadBlocklists (tr_session * session)
     {
       int i;
       const int n = tr_ptrArraySize (&loadme);
-      const char ** paths = (const char **) tr_ptrArrayBase (&loadme);
+      const char * const * paths = (const char * const *) tr_ptrArrayBase (&loadme);
 
       for (i=0; i<n; ++i)
         tr_list_append (&blocklists, tr_blocklistFileNew (paths[i], isEnabled));
     }
 
   /* cleanup */
-  closedir (odir);
+  tr_sys_dir_close (odir, NULL);
   tr_free (dirname);
   tr_ptrArrayDestruct (&loadme, (PtrArrayForeachFunc)tr_free);
   session->blocklists = blocklists;
@@ -2457,9 +2498,9 @@ tr_blocklistGetURL (const tr_session * session)
 static void
 metainfoLookupInit (tr_session * session)
 {
-  struct stat sb;
+  tr_sys_path_info info;
   const char * dirname = tr_getTorrentDir (session);
-  DIR * odir = NULL;
+  tr_sys_dir_t odir;
   tr_ctor * ctor = NULL;
   tr_variant * lookup;
   int n = 0;
@@ -2471,25 +2512,27 @@ metainfoLookupInit (tr_session * session)
   tr_variantInitDict (lookup, 0);
   ctor = tr_ctorNew (session);
   tr_ctorSetSave (ctor, false); /* since we already have them */
-  if (!stat (dirname, &sb) && S_ISDIR (sb.st_mode) && ((odir = opendir (dirname))))
+  if (tr_sys_path_get_info (dirname, 0, &info, NULL) &&
+      info.type == TR_SYS_PATH_IS_DIRECTORY &&
+      (odir = tr_sys_dir_open (dirname, NULL)) != TR_BAD_SYS_DIR)
     {
-      struct dirent *d;
-      while ((d = readdir (odir)))
+      const char * name;
+      while ((name = tr_sys_dir_read_name (odir, NULL)) != NULL)
         {
-          if (tr_str_has_suffix (d->d_name, ".torrent"))
+          if (tr_str_has_suffix (name, ".torrent"))
             {
               tr_info inf;
-              char * path = tr_buildPath (dirname, d->d_name, NULL);
+              char * path = tr_buildPath (dirname, name, NULL);
               tr_ctorSetMetainfoFromFile (ctor, path);
               if (!tr_torrentParse (ctor, &inf))
                 {
                   ++n;
-                  tr_variantDictAddStr (lookup, tr_quark_new(inf.hashString,-1), path);
+                  tr_variantDictAddStr (lookup, tr_quark_new(inf.hashString, TR_BAD_SIZE), path);
                 }
               tr_free (path);
             }
         }
-      closedir (odir);
+      tr_sys_dir_close (odir, NULL);
     }
   tr_ctorFree (ctor);
 
@@ -2505,7 +2548,7 @@ tr_sessionFindTorrentFile (const tr_session * session,
 
   if (!session->metainfoLookup)
     metainfoLookupInit ((tr_session*)session);
-  tr_variantDictFindStr (session->metainfoLookup, tr_quark_new(hashString,-1), &filename, NULL);
+  tr_variantDictFindStr (session->metainfoLookup, tr_quark_new(hashString, TR_BAD_SIZE), &filename, NULL);
 
   return filename;
 }
@@ -2520,7 +2563,7 @@ tr_sessionSetTorrentFile (tr_session * session,
    * in that same directory, we don't need to do anything here if the
    * lookup table hasn't been built yet */
   if (session->metainfoLookup)
-    tr_variantDictAddStr (session->metainfoLookup, tr_quark_new(hashString,-1), filename);
+    tr_variantDictAddStr (session->metainfoLookup, tr_quark_new(hashString, TR_BAD_SIZE), filename);
 }
 
 /***

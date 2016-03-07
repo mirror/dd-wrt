@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: InfoWindowController.h 13162 2012-01-14 17:12:04Z livings124 $
+ * $Id: InfoWindowController.h 14685 2016-02-27 20:29:57Z mikedld $
  *
  * Copyright (c) 2006-2012 Transmission authors and contributors
  *
@@ -36,6 +36,8 @@
 @interface InfoWindowController : NSWindowController
 {
     NSArray * fTorrents;
+    
+    CGFloat fMinWindowWidth;
     
     NSViewController <InfoViewController> * fViewController;
     NSInteger fCurrentTabTag;

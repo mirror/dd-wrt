@@ -4,12 +4,8 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: rpc-test.c 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: rpc-test.c 14633 2015-12-25 10:19:50Z mikedld $
  */
-
-#include <string.h>
-
-#include <event2/buffer.h>
 
 #include "transmission.h"
 #include "rpcimpl.h"
@@ -26,7 +22,7 @@ test_list (void)
   const char * str;
   tr_variant top;
 
-  tr_rpc_parse_list_str (&top, "12", -1);
+  tr_rpc_parse_list_str (&top, "12", TR_BAD_SIZE);
   check (tr_variantIsInt (&top));
   check (tr_variantGetInt (&top, &i));
   check_int_eq (12, i);
@@ -38,7 +34,7 @@ test_list (void)
   check_int_eq (1, i);
   tr_variantFree (&top);
 
-  tr_rpc_parse_list_str (&top, "6,7", -1);
+  tr_rpc_parse_list_str (&top, "6,7", TR_BAD_SIZE);
   check (tr_variantIsList (&top));
   check (tr_variantListSize (&top) == 2);
   check (tr_variantGetInt (tr_variantListChild (&top, 0), &i));
@@ -47,14 +43,14 @@ test_list (void)
   check_int_eq (7, i);
   tr_variantFree (&top);
 
-  tr_rpc_parse_list_str (&top, "asdf", -1);
+  tr_rpc_parse_list_str (&top, "asdf", TR_BAD_SIZE);
   check (tr_variantIsString (&top));
   check (tr_variantGetStr (&top, &str, &len));
   check_int_eq (4, len);
   check_streq ("asdf", str);
   tr_variantFree (&top);
 
-  tr_rpc_parse_list_str (&top, "1,3-5", -1);
+  tr_rpc_parse_list_str (&top, "1,3-5", TR_BAD_SIZE);
   check (tr_variantIsList (&top));
   check (tr_variantListSize (&top) == 4);
   check (tr_variantGetInt (tr_variantListChild (&top, 0), &i));
@@ -75,18 +71,19 @@ test_list (void)
 ***/
 
 static void
-rpc_response_func (tr_session      * session    UNUSED,
-                   struct evbuffer * response,
-                   void            * setme)
+rpc_response_func (tr_session * session    UNUSED,
+                   tr_variant * response,
+                   void       * setme)
 {
-  tr_variantFromBuf (setme, TR_VARIANT_FMT_JSON, evbuffer_pullup(response,-1), evbuffer_get_length(response), NULL, NULL);
+  *(tr_variant *) setme = *response;
+  tr_variantInitBool (response, false);
 }
 
 static int
 test_session_get_and_set (void)
 {
   tr_session * session;
-  const char * json;
+  tr_variant request;
   tr_variant response;
   tr_variant * args;
   tr_torrent * tor;
@@ -95,10 +92,11 @@ test_session_get_and_set (void)
   tor= libttest_zero_torrent_init (session);
   check (tor != NULL);
 
-  json = "{\"method\":\"session-get\"}";
-  tr_rpc_request_exec_json (session, json, strlen(json), rpc_response_func, &response);
+  tr_variantInitDict (&request, 1);
+  tr_variantDictAddStr (&request, TR_KEY_method, "session-get");
+  tr_rpc_request_exec_json (session, &request, rpc_response_func, &response);
+  tr_variantFree (&request);
 
-  check (tr_variantIsDict(&response));
   check (tr_variantIsDict(&response));
   check (tr_variantDictFindDict (&response, TR_KEY_arguments, &args));
   check (tr_variantDictFind (args, TR_KEY_alt_speed_down) != NULL);

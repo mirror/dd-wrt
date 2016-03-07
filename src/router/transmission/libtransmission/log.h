@@ -4,13 +4,15 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: list.c 14224 2014-01-18 20:56:57Z jordan $
+ * $Id: log.h 14476 2015-03-15 11:43:32Z mikedld $
  */
 
 #ifndef TR_LOG_H
 #define TR_LOG_H 1
 
 #include <stddef.h> /* size_t */
+
+#include "file.h" /* tr_sys_file_t */
 #include "utils.h" /* TR_GNUC_PRINTF, TR_GNUC_NONNULL */
 
 #ifdef __cplusplus
@@ -107,7 +109,7 @@ void tr_logAddMessage (const char   * file,
 
 
 
-void* tr_logGetFile (void);
+tr_sys_file_t tr_logGetFile (void);
 
 /** @brief return true if deep logging has been enabled by the user; false otherwise */
 bool tr_logGetDeepEnabled (void);
@@ -119,7 +121,7 @@ void tr_logAddDeep (const char * file,
                     ...) TR_GNUC_PRINTF (4, 5) TR_GNUC_NONNULL (1,4);
 
 /** @brief set the buffer with the current time formatted for deep logging. */
-char* tr_logGetTimeStr (char * buf, int buflen) TR_GNUC_NONNULL (1);
+char* tr_logGetTimeStr (char * buf, size_t buflen) TR_GNUC_NONNULL (1);
 
 #ifdef __cplusplus
 }

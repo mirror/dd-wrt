@@ -4,18 +4,14 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: rpc-server.c 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: rpc-server.c 14663 2016-01-07 15:28:58Z mikedld $
  */
 
 #include <assert.h>
 #include <errno.h>
 #include <string.h> /* memcpy */
 
-#include <unistd.h>    /* close */
-
-#ifdef HAVE_ZLIB
- #include <zlib.h>
-#endif
+#include <zlib.h>
 
 #include <event2/buffer.h>
 #include <event2/event.h>
@@ -23,7 +19,9 @@
 #include <event2/http_struct.h> /* TODO: eventually remove this */
 
 #include "transmission.h"
-#include "crypto.h" /* tr_cryptoRandBuf (), tr_ssha1_matches () */
+#include "crypto.h" /* tr_ssha1_matches () */
+#include "crypto-utils.h" /* tr_rand_buffer () */
+#include "error.h"
 #include "fdlimit.h"
 #include "list.h"
 #include "log.h"
@@ -58,6 +56,8 @@ struct tr_rpc_server
     char             * url;
     struct in_addr     bindAddress;
     struct evhttp    * httpd;
+    struct event     * start_retry_timer;
+    int                start_retry_counter;
     tr_session       * session;
     char             * username;
     char             * password;
@@ -67,10 +67,8 @@ struct tr_rpc_server
     char             * sessionId;
     time_t             sessionIdExpiresAt;
 
-#ifdef HAVE_ZLIB
     bool               isStreamInitialized;
     z_stream           stream;
-#endif
 };
 
 #define dbgmsg(...) \
@@ -97,7 +95,7 @@ get_current_session_id (struct tr_rpc_server * server)
       const size_t pool_size = strlen (pool);
       unsigned char * buf = tr_new (unsigned char, n+1);
 
-      tr_cryptoRandBuf (buf, n);
+      tr_rand_buffer (buf, n);
       for (i=0; i<n; ++i)
         buf[i] = pool[ buf[i] % pool_size ];
       buf[n] = '\0';
@@ -134,9 +132,9 @@ send_simple_response (struct evhttp_request * req,
 struct tr_mimepart
 {
   char * headers;
-  int headers_len;
+  size_t headers_len;
   char * body;
-  int body_len;
+  size_t body_len;
 };
 
 static void
@@ -180,9 +178,9 @@ extract_parts_from_multipart (const struct evkeyvalq  * headers,
           if (rnrn)
             {
               struct tr_mimepart * p = tr_new (struct tr_mimepart, 1);
-              p->headers_len = rnrn - part;
+              p->headers_len = (size_t) (rnrn - part);
               p->headers = tr_strndup (part, p->headers_len);
-              p->body_len = (part+part_len) - (rnrn + 4);
+              p->body_len = (size_t) ((part + part_len) - (rnrn + 4));
               p->body = tr_strndup (rnrn+4, p->body_len);
               tr_ptrArrayAppend (setme_parts, p);
             }
@@ -225,7 +223,7 @@ handle_upload (struct evhttp_request * req,
         {
           const struct tr_mimepart * p = tr_ptrArrayNth (&parts, i);
           const char * ours = get_current_session_id (server);
-          const int ourlen = strlen (ours);
+          const size_t ourlen = strlen (ours);
           hasSessionId = ourlen<=p->body_len && !memcmp (p->body, ours, ourlen);
         }
 
@@ -241,7 +239,7 @@ handle_upload (struct evhttp_request * req,
       else for (i=0; i<n; ++i)
         {
           struct tr_mimepart * p = tr_ptrArrayNth (&parts, i);
-          int body_len = p->body_len;
+          size_t body_len = p->body_len;
           tr_variant top, *args;
           tr_variant test;
           bool have_source = false;
@@ -269,14 +267,7 @@ handle_upload (struct evhttp_request * req,
             }
 
           if (have_source)
-            {
-              struct evbuffer * json = tr_variantToBuf (&top, TR_VARIANT_FMT_JSON);
-              tr_rpc_request_exec_json (server->session,
-                                        evbuffer_pullup (json, -1),
-                                        evbuffer_get_length (json),
-                                        NULL, NULL);
-              evbuffer_free (json);
-            }
+            tr_rpc_request_exec_json (server->session, &top, NULL, NULL);
 
           tr_variantFree (&top);
         }
@@ -331,9 +322,6 @@ add_response (struct evhttp_request * req,
               struct evbuffer       * out,
               struct evbuffer       * content)
 {
-#ifndef HAVE_ZLIB
-  evbuffer_add_buffer (out, content);
-#else
   const char * key = "Accept-Encoding";
   const char * encoding = evhttp_find_header (req->input_headers, key);
   const int do_compress = encoding && strstr (encoding, "gzip");
@@ -384,7 +372,7 @@ add_response (struct evhttp_request * req,
           iovec[0].iov_len -= server->stream.avail_out;
 
 #if 0
-          fprintf (stderr, "compressed response is %.2f of original (raw==%"TR_PRIuSIZE" bytes; compressed==%"TR_PRIuSIZE")\n",
+          fprintf (stderr, "compressed response is %.2f of original (raw==%zu bytes; compressed==%zu)\n",
                    (double)evbuffer_get_length (out)/content_len,
                    content_len, evbuffer_get_length (out));
 #endif
@@ -400,7 +388,6 @@ add_response (struct evhttp_request * req,
       evbuffer_commit_space (out, iovec, 1);
       deflateReset (&server->stream);
     }
-#endif
 }
 
 static void
@@ -438,27 +425,27 @@ serve_file (struct evhttp_request  * req,
     {
       void * file;
       size_t file_len;
-      struct evbuffer * content;
-      const int error = errno;
+      tr_error * error = NULL;
 
-      errno = 0;
       file_len = 0;
-      file = tr_loadFile (filename, &file_len);
-      content = evbuffer_new ();
-      evbuffer_add_reference (content, file, file_len, evbuffer_ref_cleanup_tr_free, file);
+      file = tr_loadFile (filename, &file_len, &error);
 
-      if (errno)
+      if (file == NULL)
         {
-          char * tmp = tr_strdup_printf ("%s (%s)", filename, tr_strerror (errno));
+          char * tmp = tr_strdup_printf ("%s (%s)", filename, error->message);
           send_simple_response (req, HTTP_NOTFOUND, tmp);
           tr_free (tmp);
+          tr_error_free (error);
         }
       else
         {
+          struct evbuffer * content;
           struct evbuffer * out;
           const time_t now = tr_time ();
 
-          errno = error;
+          content = evbuffer_new ();
+          evbuffer_add_reference (content, file, file_len, evbuffer_ref_cleanup_tr_free, file);
+
           out = evbuffer_new ();
           evhttp_add_header (req->output_headers, "Content-Type", mimetype_guess (filename));
           add_time_header (req->output_headers, "Date", now);
@@ -467,9 +454,8 @@ serve_file (struct evhttp_request  * req,
           evhttp_send_reply (req, HTTP_OK, "OK", out);
 
           evbuffer_free (out);
+          evbuffer_free (content);
         }
-
-      evbuffer_free (content);
     }
 }
 
@@ -509,7 +495,7 @@ handle_web_client (struct evhttp_request * req,
           char * filename = tr_strdup_printf ("%s%s%s",
                                               webClientDir,
                                               TR_PATH_DELIMITER_STR,
-                                              subpath && *subpath ? subpath : "index.html");
+                                              *subpath != '\0' ? subpath : "index.html");
           serve_file (req, server, filename);
           tr_free (filename);
         }
@@ -525,19 +511,21 @@ struct rpc_response_data
 };
 
 static void
-rpc_response_func (tr_session      * session UNUSED,
-                   struct evbuffer * response,
-                   void            * user_data)
+rpc_response_func (tr_session * session UNUSED,
+                   tr_variant * response,
+                   void       * user_data)
 {
   struct rpc_response_data * data = user_data;
+  struct evbuffer * response_buf = tr_variantToBuf (response, TR_VARIANT_FMT_JSON_LEAN);
   struct evbuffer * buf = evbuffer_new ();
 
-  add_response (data->req, data->server, buf, response);
+  add_response (data->req, data->server, buf, response_buf);
   evhttp_add_header (data->req->output_headers,
                      "Content-Type", "application/json; charset=UTF-8");
   evhttp_send_reply (data->req, HTTP_OK, "OK", buf);
 
   evbuffer_free (buf);
+  evbuffer_free (response_buf);
   tr_free (data);
 }
 
@@ -547,13 +535,18 @@ handle_rpc_from_json (struct evhttp_request * req,
                       const char            * json,
                       size_t                  json_len)
 {
+  tr_variant top;
+  bool have_content = tr_variantFromJson (&top, json, json_len) == 0;
   struct rpc_response_data * data;
 
   data = tr_new0 (struct rpc_response_data, 1);
   data->req = req;
   data->server = server;
 
-  tr_rpc_request_exec_json (server->session, json, json_len, rpc_response_func, data);
+  tr_rpc_request_exec_json (server->session, have_content ? &top : NULL, rpc_response_func, data);
+
+  if (have_content)
+    tr_variantFree (&top);
 }
 
 static void
@@ -572,7 +565,7 @@ handle_rpc (struct evhttp_request * req, struct tr_rpc_server  * server)
       struct rpc_response_data * data = tr_new0 (struct rpc_response_data, 1);
       data->req = req;
       data->server = server;
-      tr_rpc_request_exec_uri (server->session, q+1, -1, rpc_response_func, data);
+      tr_rpc_request_exec_uri (server->session, q + 1, TR_BAD_SIZE, rpc_response_func, data);
     }
   else
     {
@@ -620,12 +613,19 @@ handle_request (struct evhttp_request * req, void * arg)
       auth = evhttp_find_header (req->input_headers, "Authorization");
       if (auth && !evutil_ascii_strncasecmp (auth, "basic ", 6))
         {
-          int plen;
-          char * p = tr_base64_decode (auth + 6, 0, &plen);
-          if (p && plen && ((pass = strchr (p, ':'))))
+          size_t plen;
+          char * p = tr_base64_decode_str (auth + 6, &plen);
+          if (p != NULL)
             {
-              user = p;
-              *pass++ = '\0';
+              if (plen > 0 && (pass = strchr (p, ':')) != NULL)
+                {
+                  user = p;
+                  *pass++ = '\0';
+                }
+              else
+                {
+                  tr_free (p);
+                }
             }
         }
 
@@ -696,30 +696,109 @@ handle_request (struct evhttp_request * req, void * arg)
     }
 }
 
+enum
+{
+  SERVER_START_RETRY_COUNT = 10,
+  SERVER_START_RETRY_DELAY_STEP = 3,
+  SERVER_START_RETRY_DELAY_INCREMENT = 5,
+  SERVER_START_RETRY_MAX_DELAY = 60
+};
+
+static void
+startServer (void * vserver);
+
+static void
+rpc_server_on_start_retry (evutil_socket_t   fd UNUSED,
+                           short             type UNUSED,
+                           void            * context)
+{
+  startServer (context);
+}
+
+static int
+rpc_server_start_retry (tr_rpc_server * server)
+{
+  int retry_delay = (server->start_retry_counter / SERVER_START_RETRY_DELAY_STEP + 1) *
+                    SERVER_START_RETRY_DELAY_INCREMENT;
+  retry_delay = MIN (retry_delay, SERVER_START_RETRY_MAX_DELAY);
+
+  if (server->start_retry_timer == NULL)
+    server->start_retry_timer = evtimer_new (server->session->event_base,
+                                             rpc_server_on_start_retry, server);
+
+  tr_timerAdd (server->start_retry_timer, retry_delay, 0);
+  ++server->start_retry_counter;
+
+  return retry_delay;
+}
+
+static void
+rpc_server_start_retry_cancel (tr_rpc_server * server)
+{
+  if (server->start_retry_timer != NULL)
+    {
+      event_free (server->start_retry_timer);
+      server->start_retry_timer = NULL;
+    }
+
+  server->start_retry_counter = 0;
+}
+
 static void
 startServer (void * vserver)
 {
-  tr_rpc_server * server  = vserver;
-  tr_address addr;
+  tr_rpc_server * server = vserver;
 
-  if (!server->httpd)
+  if (server->httpd != NULL)
+    return;
+
+  struct evhttp * httpd = evhttp_new (server->session->event_base);
+  const char * address = tr_rpcGetBindAddress (server);
+  const int port = server->port;
+
+  if (evhttp_bind_socket (httpd, address, port) == -1)
     {
-      addr.type = TR_AF_INET;
-      addr.addr.addr4 = server->bindAddress;
-      server->httpd = evhttp_new (server->session->event_base);
-      evhttp_bind_socket (server->httpd, tr_address_to_string (&addr), server->port);
-      evhttp_set_gencb (server->httpd, handle_request, server);
+      evhttp_free (httpd);
+
+      if (server->start_retry_counter < SERVER_START_RETRY_COUNT)
+        {
+          const int retry_delay = rpc_server_start_retry (server);
+
+          tr_logAddNamedDbg (MY_NAME, "Unable to bind to %s:%d, retrying in %d seconds",
+                             address, port, retry_delay);
+          return;
+        }
+
+      tr_logAddNamedError (MY_NAME, "Unable to bind to %s:%d after %d attempts, giving up",
+                           address, port, SERVER_START_RETRY_COUNT);
     }
+  else
+    {
+      evhttp_set_gencb (httpd, handle_request, server);
+      server->httpd = httpd;
+
+      tr_logAddNamedDbg (MY_NAME, "Started listening on %s:%d", address, port);
+    }
+
+  rpc_server_start_retry_cancel (server);
 }
 
 static void
 stopServer (tr_rpc_server * server)
 {
-  if (server->httpd)
-    {
-      evhttp_free (server->httpd);
-      server->httpd = NULL;
-    }
+  rpc_server_start_retry_cancel (server);
+
+  struct evhttp * httpd = server->httpd;
+  if (httpd == NULL)
+    return;
+
+  const char * address = tr_rpcGetBindAddress (server);
+  const int port = server->port;
+
+  server->httpd = NULL;
+  evhttp_free (httpd);
+
+  tr_logAddNamedDbg (MY_NAME, "Stopped listening on %s:%d", address, port);
 }
 
 static void
@@ -923,10 +1002,8 @@ closeServer (void * vserver)
   stopServer (s);
   while ((tmp = tr_list_pop_front (&s->whitelist)))
     tr_free (tmp);
-#ifdef HAVE_ZLIB
   if (s->isStreamInitialized)
     deflateEnd (&s->stream);
-#endif
   tr_free (s->url);
   tr_free (s->sessionId);
   tr_free (s->whitelistStr);
@@ -947,7 +1024,7 @@ missing_settings_key (const tr_quark q)
 {
   const char * str = tr_quark_get_string (q, NULL);
   tr_logAddNamedError (MY_NAME, _("Couldn't find settings key \"%s\""), str);
-} 
+}
 
 tr_rpc_server *
 tr_rpcInit (tr_session  * session, tr_variant * settings)

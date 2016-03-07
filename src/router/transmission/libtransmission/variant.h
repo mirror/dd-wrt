@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: variant.h 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: variant.h 14634 2015-12-25 11:34:35Z mikedld $
  */
 
 #ifndef TR_VARIANT_H
@@ -18,6 +18,8 @@ extern "C" {
 #include "quark.h"
 
 struct evbuffer;
+
+struct tr_error;
 
 /**
  * @addtogroup tr_variant Variant
@@ -49,7 +51,7 @@ struct tr_variant_string
   size_t len;
   union { char buf[16]; const char * str; } str;
 };
-  
+
 
 /* these are PRIVATE IMPLEMENTATION details that should not be touched.
  * I'll probably change them just to break your code! HA HA HA!
@@ -114,15 +116,16 @@ int tr_variantToFile (const tr_variant * variant,
 
 char* tr_variantToStr (const tr_variant * variant,
                        tr_variant_fmt     fmt,
-                       int              * len);
+                       size_t           * len);
 
 struct evbuffer * tr_variantToBuf (const tr_variant * variant,
                                    tr_variant_fmt     fmt);
 
 /* TR_VARIANT_FMT_JSON_LEAN and TR_VARIANT_FMT_JSON are equivalent here. */
-int tr_variantFromFile (tr_variant      * setme,
-                        tr_variant_fmt    fmt,
-                        const char      * filename);
+bool tr_variantFromFile (tr_variant       * setme,
+                         tr_variant_fmt     fmt,
+                         const char       * filename,
+                         struct tr_error ** error);
 
 /* TR_VARIANT_FMT_JSON_LEAN and TR_VARIANT_FMT_JSON are equivalent here. */
 int tr_variantFromBuf (tr_variant     * setme,
@@ -200,10 +203,10 @@ tr_variantIsString (const tr_variant * b)
 bool         tr_variantGetStr          (const tr_variant * variant,
                                         const char      ** setme_str,
                                         size_t           * setme_len);
-                                                                 
+
 void         tr_variantInitStr         (tr_variant       * initme,
                                         const void       * str,
-                                        int                str_len);
+                                        size_t             str_len);
 
 void         tr_variantInitQuark       (tr_variant       * initme,
                                         const tr_quark     quark);
@@ -365,6 +368,10 @@ tr_variant * tr_variantDictAddList     (tr_variant       * dict,
 tr_variant * tr_variantDictAddDict     (tr_variant       * dict,
                                         const tr_quark     key,
                                         size_t             reserve_count);
+
+tr_variant * tr_variantDictSteal       (tr_variant       * dict,
+                                        const tr_quark     key,
+                                        tr_variant       * value);
 
 tr_variant * tr_variantDictAddRaw      (tr_variant       * dict,
                                         const tr_quark     key,

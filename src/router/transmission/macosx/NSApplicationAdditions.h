@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: NSApplicationAdditions.h 13411 2012-07-25 12:46:49Z livings124 $
+ * $Id: NSApplicationAdditions.h 14662 2016-01-06 11:05:37Z mikedld $
  *
  * Copyright (c) 2009-2012 Transmission authors and contributors
  *
@@ -22,15 +22,13 @@
  * DEALINGS IN THE SOFTWARE.
  *****************************************************************************/
 
-#define NSPopoverLion NSClassFromString(@"NSPopover")
-#define NSDataDetectorLion NSClassFromString(@"NSDataDetector")
 #define NSByteCountFormatterMtLion NSClassFromString(@"NSByteCountFormatter")
 #define NSUserNotificationMtLion NSClassFromString(@"NSUserNotification")
 #define NSUserNotificationCenterMtLion NSClassFromString(@"NSUserNotificationCenter")
 
 @interface NSApplication (NSApplicationAdditions)
 
-- (BOOL) isOnLionOrBetter;
 - (BOOL) isOnMountainLionOrBetter;
+- (BOOL) isOnYosemiteOrBetter;
 
 @end

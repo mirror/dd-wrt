@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: libtransmission-test.h 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: libtransmission-test.h 14382 2014-12-13 15:22:39Z mikedld $
  */
 
 /* Note VERBOSE needs to be (un)defined before including this file */
@@ -13,6 +13,7 @@
 #define LIBTRANSMISSION_TEST_H 1
 
 #include <stdio.h>
+#include <string.h> /* strlen() */
 
 #include "transmission.h"
 #include "utils.h" /* tr_strcmp0 () */
@@ -83,6 +84,13 @@ tr_torrent * libttest_zero_torrent_init (tr_session * session);
 
 void         libttest_blockingTorrentVerify (tr_torrent * tor);
 
+void         libtest_create_file_with_contents (const char * path, const void* contents, size_t n);
+void         libtest_create_tmpfile_with_contents (char* tmpl, const void* payload, size_t n);
+void         libtest_create_file_with_string_contents (const char * path, const char* str);
 
+char*        libtest_sandbox_create (void);
+void         libtest_sandbox_destroy (const char * sandbox);
+
+void         libttest_sync (void);
 
 #endif /* !LIBTRANSMISSION_TEST_H */

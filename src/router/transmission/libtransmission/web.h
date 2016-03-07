@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: web.h 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: web.h 14634 2015-12-25 11:34:35Z mikedld $
  */
 
 #ifndef TR_HTTP_H
@@ -37,8 +37,8 @@ tr_web_close_mode;
 void tr_webClose (tr_session * session, tr_web_close_mode close_mode);
 
 typedef void (*tr_web_done_func)(tr_session       * session,
-                                 bool               timeout_flag,
                                  bool               did_connect_flag,
+                                 bool               timeout_flag,
                                  long               response_code,
                                  const void       * response,
                                  size_t             response_byte_count,
@@ -68,11 +68,11 @@ struct tr_web_task * tr_webRunWebseed (tr_torrent        * tor,
 
 void tr_webGetTaskInfo (struct tr_web_task * task, tr_web_task_info info, void * dst);
 
-void tr_http_escape (struct evbuffer *out, const char *str, int len, bool escape_slashes);
+void tr_http_escape (struct evbuffer *out, const char *str, size_t len, bool escape_slashes);
 
 void tr_http_escape_sha1 (char * out, const uint8_t * sha1_digest);
 
-char* tr_http_unescape (const char * str, int len);
+char* tr_http_unescape (const char * str, size_t len);
 
 #ifdef __cplusplus
 }

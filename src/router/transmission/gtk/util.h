@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: util.h 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: util.h 14587 2015-10-23 04:09:40Z mikedld $
  */
 
 #ifndef GTR_UTIL_H
@@ -48,7 +48,7 @@ extern const char * speed_T_str;
                                                                          \
   return q;                                                             \
  }
-#endif 
+#endif
 
 
 /* macro to shut up "unused parameter" warnings */
@@ -155,7 +155,7 @@ gboolean on_tree_view_button_released (GtkWidget      * view,
 
 
 /* move a file to the trashcan if GIO is available; otherwise, delete it */
-int gtr_file_trash_or_remove (const char * filename);
+bool gtr_file_trash_or_remove (const char * filename, struct tr_error ** error);
 
 void gtr_paste_clipboard_url_into_entry (GtkWidget * entry);
 

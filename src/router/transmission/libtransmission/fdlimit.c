@@ -4,42 +4,24 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: fdlimit.c 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: fdlimit.c 14548 2015-07-01 00:54:41Z mikedld $
  */
-
-#ifdef HAVE_POSIX_FADVISE
- #ifdef _XOPEN_SOURCE
-  #undef _XOPEN_SOURCE
- #endif
- #define _XOPEN_SOURCE 600
-#endif
 
 #include <assert.h>
 #include <errno.h>
 #include <inttypes.h>
 #include <string.h>
-#ifdef SYS_DARWIN
- #include <fcntl.h>
-#endif
 
-#ifdef HAVE_FALLOCATE64
-  /* FIXME can't find the right #include voodoo to pick up the declaration.. */
-  extern int fallocate64 (int fd, int mode, uint64_t offset, uint64_t len);
+#ifndef _WIN32
+ #include <sys/time.h> /* getrlimit */
+ #include <sys/resource.h> /* getrlimit */
 #endif
-
-#ifdef HAVE_XFS_XFS_H
- #include <xfs/xfs.h>
-#endif
-
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/time.h> /* getrlimit */
-#include <sys/resource.h> /* getrlimit */
-#include <fcntl.h> /* O_LARGEFILE posix_fadvise */
-#include <unistd.h> /* lseek (), write (), ftruncate (), pread (), pwrite (), etc */
 
 #include "transmission.h"
+#include "error.h"
+#include "error-types.h"
 #include "fdlimit.h"
+#include "file.h"
 #include "log.h"
 #include "session.h"
 #include "torrent.h" /* tr_isTorrent () */
@@ -58,232 +40,75 @@
 ****
 ***/
 
-#ifndef O_LARGEFILE
- #define O_LARGEFILE 0
-#endif
-
-#ifndef O_BINARY
- #define O_BINARY 0
-#endif
-
-#ifndef O_SEQUENTIAL
- #define O_SEQUENTIAL 0
-#endif
-
-
 static bool
-preallocate_file_sparse (int fd, uint64_t length)
+preallocate_file_sparse (tr_sys_file_t fd, uint64_t length, tr_error ** error)
 {
-  const char zero = '\0';
-  bool success = 0;
+  tr_error * my_error = NULL;
 
-  if (!length)
-    success = true;
+  if (length == 0)
+    return true;
 
-#ifdef HAVE_FALLOCATE64
-  if (!success) /* fallocate64 is always preferred, so try it first */
-    success = !fallocate64 (fd, 0, 0, length);
-#endif
+  if (tr_sys_file_preallocate (fd, length, TR_SYS_FILE_PREALLOC_SPARSE, &my_error))
+    return true;
 
-  if (!success) /* fallback: the old-style seek-and-write */
-    success = (lseek (fd, length-1, SEEK_SET) != -1)
-           && (write (fd, &zero, 1) != -1)
-           && (ftruncate (fd, length) != -1);
+  dbgmsg ("Preallocating (sparse, normal) failed (%d): %s", my_error->code, my_error->message);
 
-  return success;
+  if (!TR_ERROR_IS_ENOSPC (my_error->code))
+    {
+      const char zero = '\0';
+
+      tr_error_clear (&my_error);
+
+      /* fallback: the old-style seek-and-write */
+      if (tr_sys_file_write_at (fd, &zero, 1, length - 1, NULL, &my_error) &&
+          tr_sys_file_truncate (fd, length, &my_error))
+        return true;
+
+      dbgmsg ("Preallocating (sparse, fallback) failed (%d): %s", my_error->code, my_error->message);
+    }
+
+  tr_error_propagate (error, &my_error);
+  return false;
 }
 
 static bool
-preallocate_file_full (const char * filename, uint64_t length)
+preallocate_file_full (tr_sys_file_t fd, uint64_t length, tr_error ** error)
 {
-  bool success = 0;
+  tr_error * my_error = NULL;
 
-#ifdef WIN32
+  if (length == 0)
+    return true;
 
-  HANDLE hFile = CreateFile (filename, GENERIC_WRITE, 0, 0, CREATE_NEW, FILE_FLAG_RANDOM_ACCESS, 0);
-  if (hFile != INVALID_HANDLE_VALUE)
+  if (tr_sys_file_preallocate (fd, length, 0, &my_error))
+    return true;
+
+  dbgmsg ("Preallocating (full, normal) failed (%d): %s", my_error->code, my_error->message);
+
+  if (!TR_ERROR_IS_ENOSPC (my_error->code))
     {
-      LARGE_INTEGER li;
-      li.QuadPart = length;
-      success = SetFilePointerEx (hFile, li, NULL, FILE_BEGIN) && SetEndOfFile (hFile);
-      CloseHandle (hFile);
-    }
+      uint8_t buf[4096];
+      bool success = true;
 
-#else
+      memset (buf, 0, sizeof (buf));
+      tr_error_clear (&my_error);
 
-  int flags = O_RDWR | O_CREAT | O_LARGEFILE;
-  int fd = open (filename, flags, 0666);
-  if (fd >= 0)
-    {
-# ifdef HAVE_FALLOCATE64
-      if (!success)
-        success = !fallocate64 (fd, 0, 0, length);
-# endif
-# ifdef HAVE_XFS_XFS_H
-      if (!success && platform_test_xfs_fd (fd))
+      /* fallback: the old-fashioned way */
+      while (success && length > 0)
         {
-          xfs_flock64_t fl;
-          fl.l_whence = 0;
-          fl.l_start = 0;
-          fl.l_len = length;
-          success = !xfsctl (NULL, fd, XFS_IOC_RESVSP64, &fl);
-        }
-# endif
-# ifdef SYS_DARWIN
-      if (!success)
-        {
-          fstore_t fst;
-          fst.fst_flags = F_ALLOCATECONTIG;
-          fst.fst_posmode = F_PEOFPOSMODE;
-          fst.fst_offset = 0;
-          fst.fst_length = length;
-          fst.fst_bytesalloc = 0;
-          success = !fcntl (fd, F_PREALLOCATE, &fst);
-        }
-# endif
-# ifdef HAVE_POSIX_FALLOCATE
-      if (!success)
-        success = !posix_fallocate (fd, 0, length);
-# endif
-
-      if (!success) /* if nothing else works, do it the old-fashioned way */
-        {
-          uint8_t buf[ 4096 ];
-          memset (buf, 0, sizeof (buf));
-          success = true;
-          while (success && (length > 0))
-            {
-              const int thisPass = MIN (length, sizeof (buf));
-              success = write (fd, buf, thisPass) == thisPass;
-              length -= thisPass;
-            }
+          const uint64_t thisPass = MIN (length, sizeof (buf));
+          uint64_t bytes_written;
+          success = tr_sys_file_write (fd, buf, thisPass, &bytes_written, &my_error);
+          length -= bytes_written;
         }
 
-      close (fd);
+      if (success)
+        return true;
+
+      dbgmsg ("Preallocating (full, fallback) failed (%d): %s", my_error->code, my_error->message);
     }
 
-#endif
-
-  return success;
-}
-
-
-/* portability wrapper for fsync (). */
-int
-tr_fsync (int fd)
-{
-#ifdef WIN32
-  return _commit (fd);
-#else
-  return fsync (fd);
-#endif
-}
-
-
-/* Like pread and pwrite, except that the position is undefined afterwards.
-   And of course they are not thread-safe. */
-
-/* don't use pread/pwrite on old versions of uClibc because they're buggy.
- * https://trac.transmissionbt.com/ticket/3826 */
-#ifdef __UCLIBC__
-#define TR_UCLIBC_CHECK_VERSION(major,minor,micro) \
-  (__UCLIBC_MAJOR__ > (major) || \
-   (__UCLIBC_MAJOR__ == (major) && __UCLIBC_MINOR__ > (minor)) || \
-   (__UCLIBC_MAJOR__ == (major) && __UCLIBC_MINOR__ == (minor) && \
-      __UCLIBC_SUBLEVEL__ >= (micro)))
-#if !TR_UCLIBC_CHECK_VERSION (0,9,28)
- #undef HAVE_PREAD
- #undef HAVE_PWRITE
-#endif
-#endif
-
-#ifdef SYS_DARWIN
- #define HAVE_PREAD
- #define HAVE_PWRITE
-#endif
-
-ssize_t
-tr_pread (int fd, void *buf, size_t count, off_t offset)
-{
-#ifdef HAVE_PREAD
-  return pread (fd, buf, count, offset);
-#else
-  const off_t lrc = lseek (fd, offset, SEEK_SET);
-  if (lrc < 0)
-    return -1;
-  return read (fd, buf, count);
-#endif
-}
-
-ssize_t
-tr_pwrite (int fd, const void *buf, size_t count, off_t offset)
-{
-#ifdef HAVE_PWRITE
-  return pwrite (fd, buf, count, offset);
-#else
-  const off_t lrc = lseek (fd, offset, SEEK_SET);
-  if (lrc < 0)
-    return -1;
-  return write (fd, buf, count);
-#endif
-}
-
-int
-tr_prefetch (int fd UNUSED, off_t offset UNUSED, size_t count UNUSED)
-{
-#ifdef HAVE_POSIX_FADVISE
-  return posix_fadvise (fd, offset, count, POSIX_FADV_WILLNEED);
-#elif defined (SYS_DARWIN)
-  struct radvisory radv;
-  radv.ra_offset = offset;
-  radv.ra_count = count;
-  return fcntl (fd, F_RDADVISE, &radv);
-#else
-  return 0;
-#endif
-}
-
-void
-tr_set_file_for_single_pass (int fd)
-{
-  if (fd >= 0)
-    {
-      /* Set hints about the lookahead buffer and caching. It's okay
-         for these to fail silently, so don't let them affect errno */
-      const int err = errno;
-#ifdef HAVE_POSIX_FADVISE
-      posix_fadvise (fd, 0, 0, POSIX_FADV_SEQUENTIAL);
-#endif
-#ifdef SYS_DARWIN
-      fcntl (fd, F_RDAHEAD, 1);
-      fcntl (fd, F_NOCACHE, 1);
-#endif
-      errno = err;
-    }
-}
-
-static int
-open_local_file (const char * filename, int flags)
-{
-  const int fd = open (filename, flags, 0666);
-  tr_set_file_for_single_pass (fd);
-  return fd;
-}
-int
-tr_open_file_for_writing (const char * filename)
-{
-  return open_local_file (filename, O_LARGEFILE|O_BINARY|O_CREAT|O_WRONLY);
-}
-int
-tr_open_file_for_scanning (const char * filename)
-{
-  return open_local_file (filename, O_LARGEFILE|O_BINARY|O_SEQUENTIAL|O_RDONLY);
-}
-
-void
-tr_close_file (int fd)
-{
-  close (fd);
+  tr_error_propagate (error, &my_error);
+  return false;
 }
 
 /*****
@@ -295,7 +120,7 @@ tr_close_file (int fd)
 struct tr_cached_file
 {
   bool is_writable;
-  int fd;
+  tr_sys_file_t fd;
   int torrent_id;
   tr_file_index_t file_index;
   time_t used_at;
@@ -306,7 +131,7 @@ cached_file_is_open (const struct tr_cached_file * o)
 {
   assert (o != NULL);
 
-  return o->fd >= 0;
+  return o->fd != TR_BAD_SYS_FILE;
 }
 
 static void
@@ -314,14 +139,14 @@ cached_file_close (struct tr_cached_file * o)
 {
   assert (cached_file_is_open (o));
 
-  tr_close_file (o->fd);
-  o->fd = -1;
+  tr_sys_file_close (o->fd, NULL);
+  o->fd = TR_BAD_SYS_FILE;
 }
 
 /**
  * returns 0 on success, or an errno value on failure.
  * errno values include ENOENT if the parent folder doesn't exist,
- * plus the errno values set by tr_mkdirp () and open ().
+ * plus the errno values set by tr_sys_dir_create () and tr_sys_file_open ().
  */
 static int
 cached_file_open (struct tr_cached_file  * o,
@@ -331,44 +156,68 @@ cached_file_open (struct tr_cached_file  * o,
                   uint64_t                 file_size)
 {
   int flags;
-  struct stat sb;
+  tr_sys_path_info info;
   bool already_existed;
   bool resize_needed;
+  tr_sys_file_t fd = TR_BAD_SYS_FILE;
+  tr_error * error = NULL;
 
   /* create subfolders, if any */
   if (writable)
     {
-      char * dir = tr_dirname (filename);
-      const int err = tr_mkdirp (dir, 0777) ? errno : 0;
-      if (err)
+      char * dir = tr_sys_path_dirname (filename, NULL);
+      if (!tr_sys_dir_create (dir, TR_SYS_DIR_CREATE_PARENTS, 0777, &error))
         {
-          tr_logAddError (_("Couldn't create \"%1$s\": %2$s"), dir, tr_strerror (err));
+          tr_logAddError (_("Couldn't create \"%1$s\": %2$s"), dir, error->message);
           tr_free (dir);
-          return err;
+          goto fail;
         }
       tr_free (dir);
     }
 
-  already_existed = !stat (filename, &sb) && S_ISREG (sb.st_mode);
-
-  if (writable && !already_existed && (allocation == TR_PREALLOCATE_FULL))
-    if (preallocate_file_full (filename, file_size))
-      tr_logAddDebug ("Preallocated file \"%s\"", filename);
+  already_existed = tr_sys_path_get_info (filename, 0, &info, NULL) && info.type == TR_SYS_PATH_IS_FILE;
 
   /* we can't resize the file w/o write permissions */
-  resize_needed = already_existed && (file_size < (uint64_t)sb.st_size);
+  resize_needed = already_existed && (file_size < info.size);
   writable |= resize_needed;
 
   /* open the file */
-  flags = writable ? (O_RDWR | O_CREAT) : O_RDONLY;
-  flags |= O_LARGEFILE | O_BINARY | O_SEQUENTIAL;
-  o->fd = open (filename, flags, 0666);
+  flags = writable ? (TR_SYS_FILE_WRITE | TR_SYS_FILE_CREATE) : 0;
+  flags |= TR_SYS_FILE_READ | TR_SYS_FILE_SEQUENTIAL;
+  fd = tr_sys_file_open (filename, flags, 0666, &error);
 
-  if (o->fd == -1)
+  if (fd == TR_BAD_SYS_FILE)
     {
-      const int err = errno;
-      tr_logAddError (_("Couldn't open \"%1$s\": %2$s"), filename, tr_strerror (err));
-      return err;
+      tr_logAddError (_("Couldn't open \"%1$s\": %2$s"), filename, error->message);
+      goto fail;
+    }
+
+  if (writable && !already_existed && allocation != TR_PREALLOCATE_NONE)
+    {
+      bool success = false;
+      const char * type = NULL;
+
+      if (allocation == TR_PREALLOCATE_FULL)
+        {
+          success = preallocate_file_full (fd, file_size, &error);
+          type = _("full");
+        }
+      else if (allocation == TR_PREALLOCATE_SPARSE)
+        {
+          success = preallocate_file_sparse (fd, file_size, &error);
+          type = _("sparse");
+        }
+
+      assert (type != NULL);
+
+      if (!success)
+        {
+          tr_logAddError (_("Couldn't preallocate file \"%1$s\" (%2$s, size: %3$"PRIu64"): %4$s"),
+            filename, type, file_size, error->message);
+          goto fail;
+        }
+
+      tr_logAddDebug (_("Preallocated file \"%1$s\" (%2$s, size: %3$"PRIu64")"), filename, type, file_size);
     }
 
   /* If the file already exists and it's too large, truncate it.
@@ -377,22 +226,25 @@ cached_file_open (struct tr_cached_file  * o,
    * http://trac.transmissionbt.com/ticket/2228
    * https://bugs.launchpad.net/ubuntu/+source/transmission/+bug/318249
    */
-  if (resize_needed && (ftruncate (o->fd, file_size) == -1))
+  if (resize_needed && !tr_sys_file_truncate (fd, file_size, &error))
     {
-      const int err = errno;
-      tr_logAddError (_("Couldn't truncate \"%1$s\": %2$s"), filename, tr_strerror (err));
-      return err;
+      tr_logAddError (_("Couldn't truncate \"%1$s\": %2$s"), filename, error->message);
+      goto fail;
     }
 
-  if (writable && !already_existed && (allocation == TR_PREALLOCATE_SPARSE))
-    preallocate_file_sparse (o->fd, file_size);
-
-  /* Many (most?) clients request blocks in ascending order,
-   * so increase the readahead buffer.
-   * Also, disable OS-level caching because "inactive memory" angers users. */
-  tr_set_file_for_single_pass (o->fd);
-
+  o->fd = fd;
   return 0;
+
+fail:
+  {
+    const int err = error->code;
+    tr_error_free (error);
+
+    if (fd != TR_BAD_SYS_FILE)
+      tr_sys_file_close (fd, NULL);
+
+    return err;
+  }
 }
 
 /***
@@ -409,7 +261,7 @@ static void
 fileset_construct (struct tr_fileset * set, int n)
 {
   struct tr_cached_file * o;
-  const struct tr_cached_file TR_CACHED_FILE_INIT = { 0, -1, 0, 0, 0 };
+  const struct tr_cached_file TR_CACHED_FILE_INIT = { false, TR_BAD_SYS_FILE, 0, 0, 0 };
 
   set->begin = tr_new (struct tr_cached_file, n);
   set->end = set->begin + n;
@@ -505,7 +357,6 @@ ensureSessionFdInfoExists (tr_session * session)
 
   if (session->fdInfo == NULL)
     {
-      struct rlimit limit;
       struct tr_fdInfo * i;
       const int FILE_CACHE_SIZE = 32;
 
@@ -514,7 +365,9 @@ ensureSessionFdInfoExists (tr_session * session)
       fileset_construct (&i->fileset, FILE_CACHE_SIZE);
       session->fdInfo = i;
 
+#ifndef _WIN32
       /* set the open-file limit to the largest safe size wrt FD_SETSIZE */
+      struct rlimit limit;
       if (!getrlimit (RLIMIT_NOFILE, &limit))
         {
           const int old_limit = (int) limit.rlim_cur;
@@ -527,6 +380,7 @@ ensureSessionFdInfoExists (tr_session * session)
               tr_logAddInfo ("Changed open file limit from %d to %d", old_limit, (int)limit.rlim_cur);
             }
         }
+#endif
     }
 }
 
@@ -566,39 +420,33 @@ tr_fdFileClose (tr_session * s, const tr_torrent * tor, tr_file_index_t i)
       /* flush writable files so that their mtimes will be
        * up-to-date when this function returns to the caller... */
       if (o->is_writable)
-        tr_fsync (o->fd);
+        tr_sys_file_flush (o->fd, NULL);
 
       cached_file_close (o);
     }
 }
 
-int
+tr_sys_file_t
 tr_fdFileGetCached (tr_session * s, int torrent_id, tr_file_index_t i, bool writable)
 {
   struct tr_cached_file * o = fileset_lookup (get_fileset (s), torrent_id, i);
 
   if (!o || (writable && !o->is_writable))
-    return -1;
+    return TR_BAD_SYS_FILE;
 
   o->used_at = tr_time ();
   return o->fd;
 }
 
-#ifdef SYS_DARWIN
- #define TR_STAT_MTIME(sb)((sb).st_mtimespec.tv_sec)
-#else
- #define TR_STAT_MTIME(sb)((sb).st_mtime)
-#endif
-
 bool
 tr_fdFileGetCachedMTime (tr_session * s, int torrent_id, tr_file_index_t i, time_t * mtime)
 {
   bool success;
-  struct stat sb;
+  tr_sys_path_info info;
   struct tr_cached_file * o = fileset_lookup (get_fileset (s), torrent_id, i);
 
-  if ((success = (o != NULL) && !fstat (o->fd, &sb)))
-    *mtime = TR_STAT_MTIME (sb);
+  if ((success = (o != NULL) && tr_sys_file_get_info (o->fd, &info, NULL)))
+    *mtime = info.last_modified_at;
 
   return success;
 }
@@ -611,8 +459,8 @@ tr_fdTorrentClose (tr_session * session, int torrent_id)
   fileset_close_torrent (get_fileset (session), torrent_id);
 }
 
-/* returns an fd on success, or a -1 on failure and sets errno */
-int
+/* returns an fd on success, or a TR_BAD_SYS_FILE on failure and sets errno */
+tr_sys_file_t
 tr_fdFileCheckout (tr_session             * session,
                    int                      torrent_id,
                    tr_file_index_t          i,
@@ -635,7 +483,7 @@ tr_fdFileCheckout (tr_session             * session,
       if (err)
         {
           errno = err;
-          return -1;
+          return TR_BAD_SYS_FILE;
         }
 
       dbgmsg ("opened '%s' writable %c", filename, writable?'y':'n');
@@ -655,10 +503,12 @@ tr_fdFileCheckout (tr_session             * session,
 ****
 ***/
 
-int
-tr_fdSocketCreate (tr_session * session, int domain, int type)
+tr_socket_t
+tr_fdSocketCreate (tr_session * session,
+                   int          domain,
+                   int          type)
 {
-  int s = -1;
+  tr_socket_t s = TR_BAD_SOCKET;
   struct tr_fdInfo * gFd;
   assert (tr_isSession (session));
 
@@ -666,16 +516,20 @@ tr_fdSocketCreate (tr_session * session, int domain, int type)
   gFd = session->fdInfo;
 
   if (gFd->peerCount < session->peerLimit)
-    if ((s = socket (domain, type, 0)) < 0)
+    if ((s = socket (domain, type, 0)) == TR_BAD_SOCKET)
       if (sockerrno != EAFNOSUPPORT)
-        tr_logAddError (_("Couldn't create socket: %s"), tr_strerror (sockerrno));
+        {
+          char err_buf[512];
+          tr_logAddError (_("Couldn't create socket: %s"),
+                          tr_net_strerror (err_buf, sizeof (err_buf), sockerrno));
+        }
 
-  if (s > -1)
+  if (s != TR_BAD_SOCKET)
     ++gFd->peerCount;
 
   assert (gFd->peerCount >= 0);
 
-  if (s >= 0)
+  if (s != TR_BAD_SOCKET)
     {
       static bool buf_logged = false;
       if (!buf_logged)
@@ -683,9 +537,9 @@ tr_fdSocketCreate (tr_session * session, int domain, int type)
           int i;
           socklen_t size = sizeof (int);
           buf_logged = true;
-          getsockopt (s, SOL_SOCKET, SO_SNDBUF, &i, &size);
+          getsockopt (s, SOL_SOCKET, SO_SNDBUF, (void *) &i, &size);
           tr_logAddDebug ("SO_SNDBUF size is %d", i);
-          getsockopt (s, SOL_SOCKET, SO_RCVBUF, &i, &size);
+          getsockopt (s, SOL_SOCKET, SO_RCVBUF, (void *) &i, &size);
           tr_logAddDebug ("SO_RCVBUF size is %d", i);
         }
     }
@@ -693,11 +547,14 @@ tr_fdSocketCreate (tr_session * session, int domain, int type)
   return s;
 }
 
-int
-tr_fdSocketAccept (tr_session * s, int sockfd, tr_address * addr, tr_port * port)
+tr_socket_t
+tr_fdSocketAccept (tr_session  * s,
+                   tr_socket_t   sockfd,
+                   tr_address  * addr,
+                   tr_port     * port)
 {
-  int fd;
-  unsigned int len;
+  tr_socket_t fd;
+  socklen_t len;
   struct tr_fdInfo * gFd;
   struct sockaddr_storage sock;
 
@@ -711,17 +568,17 @@ tr_fdSocketAccept (tr_session * s, int sockfd, tr_address * addr, tr_port * port
   len = sizeof (struct sockaddr_storage);
   fd = accept (sockfd, (struct sockaddr *) &sock, &len);
 
-  if (fd >= 0)
+  if (fd != TR_BAD_SOCKET)
     {
       if ((gFd->peerCount < s->peerLimit)
           && tr_address_from_sockaddr_storage (addr, port, &sock))
         {
           ++gFd->peerCount;
         }
-        else
+      else
         {
           tr_netCloseSocket (fd);
-          fd = -1;
+          fd = TR_BAD_SOCKET;
         }
     }
 
@@ -729,7 +586,8 @@ tr_fdSocketAccept (tr_session * s, int sockfd, tr_address * addr, tr_port * port
 }
 
 void
-tr_fdSocketClose (tr_session * session, int fd)
+tr_fdSocketClose (tr_session  * session,
+                  tr_socket_t   fd)
 {
   assert (tr_isSession (session));
 
@@ -737,7 +595,7 @@ tr_fdSocketClose (tr_session * session, int fd)
     {
       struct tr_fdInfo * gFd = session->fdInfo;
 
-      if (fd >= 0)
+      if (fd != TR_BAD_SOCKET)
         {
           tr_netCloseSocket (fd);
           --gFd->peerCount;
