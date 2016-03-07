@@ -51,6 +51,8 @@ transmission-configure: libevent-configure curl-configure
 	CFLAGS="$(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE -ffunction-sections -fdata-sections -Wl,--gc-sections  -I$(TOP)/zlib   -I$(TOP)/curl/include -I$(TOP)/openssl/include -I$(TOP)/libevent/include" \
 	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE -ffunction-sections -fdata-sections -Wl,--gc-sections  -I$(TOP)/zlib  -I$(TOP)/curl/include  -I$(TOP)/openssl/include  -I$(TOP)/libevent/include" \
 	LDFLAGS="$(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE  -L$(TOP)/zlib   -L$(TOP)/openssl -L$(TOP)/libevent/.libs  -L$(TOP)/curl/lib/.libs -ldl" \
+	ZLIB_LIBS="-L$(TOP)/zlib" \
+	ZLIB_CFLAGS="-I$(TOP)/zlib" \
 	LIBCURL_CFLAGS="-I$(TOP)/curl/include" \
 	LIBCURL_LIBS="-L$(TOP)/curl/lib/.libs -lcurl" \
 	LIBEVENT_CFLAGS="-I$(TOP)/libevent/include" \
