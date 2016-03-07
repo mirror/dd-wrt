@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: platform.c 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: platform.c 14633 2015-12-25 10:19:50Z mikedld $
  */
 
 #define _XOPEN_SOURCE 600  /* needed for recursive locks. */
@@ -13,18 +13,19 @@
 #endif
 
 #include <assert.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h> /* getuid(), close() */
-#include <sys/stat.h>
 
-#ifdef WIN32
- #include <w32api.h>
- #define WINVER  WindowsXP
+#ifdef __HAIKU__
+ #include <limits.h> /* PATH_MAX */
+#endif
+
+#ifdef _WIN32
+ #include <process.h> /* _beginthreadex (), _endthreadex () */
  #include <windows.h>
- #include <shlobj.h> /* for CSIDL_APPDATA, CSIDL_MYDOCUMENTS */
+ #include <shlobj.h> /* SHGetKnownFolderPath (), FOLDERID_... */
 #else
+#include <unistd.h> /* getuid() */
  #ifdef BUILD_MAC_CLIENT
   #include <CoreFoundation/CoreFoundation.h>
  #endif
@@ -34,21 +35,19 @@
  #include <pthread.h>
 #endif
 
-#ifdef WIN32
-#include <libgen.h> /* dirname() */
-#endif
-
 #include "transmission.h"
-#include "session.h"
+#include "file.h"
 #include "list.h"
 #include "log.h"
 #include "platform.h"
+#include "session.h"
+#include "utils.h"
 
 /***
 ****  THREADS
 ***/
 
-#ifdef WIN32
+#ifdef _WIN32
 typedef DWORD tr_thread_id;
 #else
 typedef pthread_t tr_thread_id;
@@ -57,7 +56,7 @@ typedef pthread_t tr_thread_id;
 static tr_thread_id
 tr_getCurrentThread (void)
 {
-#ifdef WIN32
+#ifdef _WIN32
   return GetCurrentThreadId ();
 #else
   return pthread_self ();
@@ -67,7 +66,7 @@ tr_getCurrentThread (void)
 static bool
 tr_areThreadsEqual (tr_thread_id a, tr_thread_id b)
 {
-#ifdef WIN32
+#ifdef _WIN32
   return a == b;
 #else
   return pthread_equal (a, b) != 0;
@@ -80,7 +79,7 @@ struct tr_thread
   void          (* func)(void *);
   void           * arg;
   tr_thread_id     thread;
-#ifdef WIN32
+#ifdef _WIN32
   HANDLE           thread_handle;
 #endif
 };
@@ -91,7 +90,7 @@ tr_amInThread (const tr_thread * t)
   return tr_areThreadsEqual (tr_getCurrentThread (), t->thread);
 }
 
-#ifdef WIN32
+#ifdef _WIN32
  #define ThreadFuncReturnType unsigned WINAPI
 #else
  #define ThreadFuncReturnType void
@@ -105,7 +104,7 @@ ThreadFunc (void * _t)
   t->func (t->arg);
 
   tr_free (t);
-#ifdef WIN32
+#ifdef _WIN32
   _endthreadex (0);
   return 0;
 #endif
@@ -119,7 +118,7 @@ tr_threadNew (void (*func)(void *), void * arg)
   t->func = func;
   t->arg  = arg;
 
-#ifdef WIN32
+#ifdef _WIN32
   {
     unsigned int id;
     t->thread_handle = (HANDLE) _beginthreadex (NULL, 0, &ThreadFunc, t, 0, &id);
@@ -141,7 +140,7 @@ tr_threadNew (void (*func)(void *), void * arg)
 struct tr_lock
 {
   int                 depth;
-#ifdef WIN32
+#ifdef _WIN32
   CRITICAL_SECTION    lock;
   DWORD               lockThread;
 #else
@@ -155,7 +154,7 @@ tr_lockNew (void)
 {
   tr_lock * l = tr_new0 (tr_lock, 1);
 
-#ifdef WIN32
+#ifdef _WIN32
   InitializeCriticalSection (&l->lock); /* supports recursion */
 #else
   pthread_mutexattr_t attr;
@@ -170,7 +169,7 @@ tr_lockNew (void)
 void
 tr_lockFree (tr_lock * l)
 {
-#ifdef WIN32
+#ifdef _WIN32
     DeleteCriticalSection (&l->lock);
 #else
     pthread_mutex_destroy (&l->lock);
@@ -181,7 +180,7 @@ tr_lockFree (tr_lock * l)
 void
 tr_lockLock (tr_lock * l)
 {
-#ifdef WIN32
+#ifdef _WIN32
   EnterCriticalSection (&l->lock);
 #else
   pthread_mutex_lock (&l->lock);
@@ -193,7 +192,7 @@ tr_lockLock (tr_lock * l)
   ++l->depth;
 }
 
-int
+bool
 tr_lockHave (const tr_lock * l)
 {
   return (l->depth > 0) &&
@@ -208,7 +207,7 @@ tr_lockUnlock (tr_lock * l)
 
   --l->depth;
   assert (l->depth >= 0);
-#ifdef WIN32
+#ifdef _WIN32
   LeaveCriticalSection (&l->lock);
 #else
   pthread_mutex_unlock (&l->lock);
@@ -219,8 +218,28 @@ tr_lockUnlock (tr_lock * l)
 ****  PATHS
 ***/
 
-#ifndef WIN32
+#ifndef _WIN32
  #include <pwd.h>
+#endif
+
+#ifdef _WIN32
+
+static char *
+win32_get_known_folder (REFKNOWNFOLDERID folder_id)
+{
+  char * ret = NULL;
+  PWSTR path;
+
+  if (SHGetKnownFolderPath (folder_id, KF_FLAG_DONT_UNEXPAND | KF_FLAG_DONT_VERIFY,
+                            NULL, &path) == S_OK)
+    {
+      ret = tr_win32_native_to_utf8 (path, -1);
+      CoTaskMemFree (path);
+    }
+
+  return ret;
+}
+
 #endif
 
 static const char *
@@ -230,15 +249,12 @@ getHomeDir (void)
 
   if (!home)
     {
-      home = tr_strdup (getenv ("HOME"));
+      home = tr_env_get_string ("HOME", NULL);
 
       if (!home)
         {
-#ifdef WIN32
-          char appdata[MAX_PATH]; /* SHGetFolderPath () requires MAX_PATH */
-          *appdata = '\0';
-          SHGetFolderPath (NULL, CSIDL_PERSONAL, NULL, 0, appdata);
-          home = tr_strdup (appdata);
+#ifdef _WIN32
+          home = win32_get_known_folder (&FOLDERID_Profile);
 #else
           struct passwd * pw = getpwuid (getuid ());
           if (pw)
@@ -254,7 +270,7 @@ getHomeDir (void)
   return home;
 }
 
-#if defined (SYS_DARWIN) || defined (WIN32)
+#if defined (__APPLE__) || defined (_WIN32)
  #define RESUME_SUBDIR  "Resume"
  #define TORRENT_SUBDIR "Torrents"
 #else
@@ -270,11 +286,11 @@ tr_setConfigDir (tr_session * session, const char * configDir)
   session->configDir = tr_strdup (configDir);
 
   path = tr_buildPath (configDir, RESUME_SUBDIR, NULL);
-  tr_mkdirp (path, 0777);
+  tr_sys_dir_create (path, TR_SYS_DIR_CREATE_PARENTS, 0777, NULL);
   session->resumeDir = path;
 
   path = tr_buildPath (configDir, TORRENT_SUBDIR, NULL);
-  tr_mkdirp (path, 0777);
+  tr_sys_dir_create (path, TR_SYS_DIR_CREATE_PARENTS, 0777, NULL);
   session->torrentDir = path;
 }
 
@@ -306,27 +322,31 @@ tr_getDefaultConfigDir (const char * appname)
 
   if (!s)
     {
-      if ((s = getenv ("TRANSMISSION_HOME")))
+      s = tr_env_get_string ("TRANSMISSION_HOME", NULL);
+
+      if (s == NULL)
         {
-          s = tr_strdup (s);
-        }
-      else
-        {
-#ifdef SYS_DARWIN
+#ifdef __APPLE__
           s = tr_buildPath (getHomeDir (), "Library", "Application Support", appname, NULL);
-#elif defined (WIN32)
-          char appdata[TR_PATH_MAX]; /* SHGetFolderPath () requires MAX_PATH */
-          SHGetFolderPath (NULL, CSIDL_APPDATA, NULL, 0, appdata);
+#elif defined (_WIN32)
+          char * appdata = win32_get_known_folder (&FOLDERID_LocalAppData);
           s = tr_buildPath (appdata, appname, NULL);
+          tr_free (appdata);
 #elif defined (__HAIKU__)
-          char buf[TR_PATH_MAX];
+          char buf[PATH_MAX];
           find_directory (B_USER_SETTINGS_DIRECTORY, -1, true, buf, sizeof (buf));
           s = tr_buildPath (buf, appname, NULL);
 #else
-          if ((s = getenv ("XDG_CONFIG_HOME")))
-            s = tr_buildPath (s, appname, NULL);
+          char * const xdg_config_home = tr_env_get_string ("XDG_CONFIG_HOME", NULL);
+          if (xdg_config_home != NULL)
+            {
+              s = tr_buildPath (xdg_config_home, appname, NULL);
+              tr_free (xdg_config_home);
+            }
           else
-            s = tr_buildPath (getHomeDir (), ".config", appname, NULL);
+            {
+              s = tr_buildPath (getHomeDir (), ".config", appname, NULL);
+            }
 #endif
         }
     }
@@ -341,20 +361,21 @@ tr_getDefaultDownloadDir (void)
 
   if (user_dir == NULL)
     {
-      const char * config_home;
+      char * config_home;
       char * config_file;
       char * content;
       size_t content_len;
 
       /* figure out where to look for user-dirs.dirs */
-      config_home = getenv ("XDG_CONFIG_HOME");
+      config_home = tr_env_get_string ("XDG_CONFIG_HOME", NULL);
       if (config_home && *config_home)
         config_file = tr_buildPath (config_home, "user-dirs.dirs", NULL);
       else
         config_file = tr_buildPath (getHomeDir (), ".config", "user-dirs.dirs", NULL);
+      tr_free (config_home);
 
       /* read in user-dirs.dirs and look for the download dir entry */
-      content = (char *) tr_loadFile (config_file, &content_len);
+      content = (char *) tr_loadFile (config_file, &content_len, NULL);
       if (content && content_len>0)
         {
           const char * key = "XDG_DOWNLOAD_DIR=\"";
@@ -378,6 +399,11 @@ tr_getDefaultDownloadDir (void)
             }
         }
 
+#ifdef _WIN32
+      if (user_dir == NULL)
+        user_dir = win32_get_known_folder (&FOLDERID_Downloads);
+#endif
+
       if (user_dir == NULL)
 #ifdef __HAIKU__
         user_dir = tr_buildPath (getHomeDir (), "Desktop", NULL);
@@ -396,12 +422,11 @@ tr_getDefaultDownloadDir (void)
 ****
 ***/
 
-static int
+static bool
 isWebClientDir (const char * path)
 {
-  struct stat sb;
   char * tmp = tr_buildPath (path, "index.html", NULL);
-  const int ret = !stat (tmp, &sb);
+  const bool ret = tr_sys_path_exists (tmp, NULL);
   tr_logAddInfo (_("Searching for web interface file \"%s\""), tmp);
   tr_free (tmp);
 
@@ -415,15 +440,10 @@ tr_getWebClientDir (const tr_session * session UNUSED)
 
   if (!s)
     {
-      if ((s = getenv ("CLUTCH_HOME")))
-        {
-          s = tr_strdup (s);
-        }
-      else if ((s = getenv ("TRANSMISSION_WEB_HOME")))
-        {
-          s = tr_strdup (s);
-        }
-      else
+      s = tr_env_get_string ("CLUTCH_HOME", NULL);
+      if (s == NULL)
+        s = tr_env_get_string ("TRANSMISSION_WEB_HOME", NULL);
+      if (s == NULL)
         {
 
 #ifdef BUILD_MAC_CLIENT /* on Mac, look in the Application Support folder first, then in the app bundle. */
@@ -458,29 +478,23 @@ tr_getWebClientDir (const tr_session * session UNUSED)
               tr_free (appString);
             }
 
-#elif defined (WIN32)
-
-          /* SHGetFolderPath explicitly requires MAX_PATH length */
-          char dir[MAX_PATH];
+#elif defined (_WIN32)
 
           /* Generally, Web interface should be stored in a Web subdir of
            * calling executable dir. */
 
-          if (s == NULL) /* check personal AppData/Transmission/Web */
+          static REFKNOWNFOLDERID known_folder_ids[] =
             {
-              SHGetFolderPath (NULL, CSIDL_COMMON_APPDATA, NULL, 0, dir);
-              s = tr_buildPath (dir, "Transmission", "Web", NULL);
-              if (!isWebClientDir (s))
-                {
-                  tr_free (s);
-                  s = NULL;
-                }
-            }
+              &FOLDERID_LocalAppData,
+              &FOLDERID_RoamingAppData,
+              &FOLDERID_ProgramData
+            };
 
-          if (s == NULL) /* check personal AppData */
+          for (size_t i = 0; s == NULL && i < ARRAYSIZE (known_folder_ids); ++i)
             {
-              SHGetFolderPath (NULL, CSIDL_APPDATA, NULL, 0, dir);
+              char * dir = win32_get_known_folder (known_folder_ids[i]);
               s = tr_buildPath (dir, "Transmission", "Web", NULL);
+              tr_free (dir);
               if (!isWebClientDir (s))
                 {
                   tr_free (s);
@@ -490,8 +504,16 @@ tr_getWebClientDir (const tr_session * session UNUSED)
 
             if (s == NULL) /* check calling module place */
               {
-                GetModuleFileName (GetModuleHandle (NULL), dir, sizeof (dir));
-                s = tr_buildPath (dirname (dir), "Web", NULL);
+                wchar_t wide_module_path[MAX_PATH];
+                char * module_path;
+                char * dir;
+                GetModuleFileNameW (NULL, wide_module_path,
+                                    sizeof (wide_module_path) / sizeof (*wide_module_path));
+                module_path = tr_win32_native_to_utf8 (wide_module_path, -1);
+                dir = tr_sys_path_dirname (module_path, NULL);
+                tr_free (module_path);
+                s = tr_buildPath (dir, "Web", NULL);
+                tr_free (dir);
                 if (!isWebClientDir (s))
                   {
                     tr_free (s);
@@ -502,26 +524,28 @@ tr_getWebClientDir (const tr_session * session UNUSED)
 #else /* everyone else, follow the XDG spec */
 
           tr_list *candidates = NULL, *l;
-          const char * tmp;
+          char * tmp;
 
           /* XDG_DATA_HOME should be the first in the list of candidates */
-          tmp = getenv ("XDG_DATA_HOME");
+          tmp = tr_env_get_string ("XDG_DATA_HOME", NULL);
           if (tmp && *tmp)
             {
-              tr_list_append (&candidates, tr_strdup (tmp));
+              tr_list_append (&candidates, tmp);
             }
           else
             {
               char * dhome = tr_buildPath (getHomeDir (), ".local", "share", NULL);
               tr_list_append (&candidates, dhome);
+              tr_free (tmp);
             }
 
           /* XDG_DATA_DIRS are the backup directories */
           {
             const char * pkg = PACKAGE_DATA_DIR;
-            const char * xdg = getenv ("XDG_DATA_DIRS");
+            char * xdg = tr_env_get_string ("XDG_DATA_DIRS", NULL);
             const char * fallback = "/usr/local/share:/usr/share";
             char * buf = tr_strdup_printf ("%s:%s:%s", (pkg?pkg:""), (xdg?xdg:""), fallback);
+            tr_free (xdg);
             tmp = buf;
             while (tmp && *tmp)
               {
@@ -529,8 +553,8 @@ tr_getWebClientDir (const tr_session * session UNUSED)
                 if (end)
                   {
                     if ((end - tmp) > 1)
-                      tr_list_append (&candidates, tr_strndup (tmp, end - tmp));
-                    tmp = end + 1;
+                      tr_list_append (&candidates, tr_strndup (tmp, (size_t) (end - tmp)));
+                    tmp = (char *) end + 1;
                   }
                 else if (tmp && *tmp)
                   {
@@ -563,123 +587,3 @@ tr_getWebClientDir (const tr_session * session UNUSED)
 
   return s;
 }
-
-
-#ifdef WIN32
-
-/* The following mmap functions are by Joerg Walter, and were taken from
- * his paper at: http://www.genesys-e.de/jwalter/mix4win.htm */
-
-#if defined (_MSC_VER)
-__declspec (align (4)) static LONG volatile g_sl;
-#else
-static LONG volatile g_sl __attribute__((aligned (4)));
-#endif
-
-/* Wait for spin lock */
-static int
-slwait (LONG volatile *sl)
-{
-  while (InterlockedCompareExchange (sl, 1, 0) != 0)
-    Sleep (0);
-
-  return 0;
-}
-
-/* Release spin lock */
-static int
-slrelease (LONG volatile *sl)
-{
-  InterlockedExchange (sl, 0);
-  return 0;
-}
-
-/* getpagesize for windows */
-static long
-getpagesize (void)
-{
-  static long g_pagesize = 0;
-
-  if (!g_pagesize)
-    {
-      SYSTEM_INFO system_info;
-      GetSystemInfo (&system_info);
-      g_pagesize = system_info.dwPageSize;
-    }
-
-  return g_pagesize;
-}
-
-static long
-getregionsize (void)
-{
-  static long g_regionsize = 0;
-
-  if (!g_regionsize)
-    {
-      SYSTEM_INFO system_info;
-      GetSystemInfo (&system_info);
-      g_regionsize = system_info.dwAllocationGranularity;
-    }
-
-  return g_regionsize;
-}
-
-void *
-mmap (void *ptr, long  size, long  prot, long  type, long  handle, long  arg)
-{
-  static long g_pagesize;
-  static long g_regionsize;
-
-  /* Wait for spin lock */
-  slwait (&g_sl);
-
-  /* First time initialization */
-  if (!g_pagesize)
-    g_pagesize = getpagesize ();
-  if (!g_regionsize)
-    g_regionsize = getregionsize ();
-
-  /* Allocate this */
-  ptr = VirtualAlloc (ptr, size, MEM_RESERVE | MEM_COMMIT | MEM_TOP_DOWN, PAGE_READWRITE);
-  if (!ptr)
-    {
-      ptr = (void *) -1;
-      goto mmap_exit;
-    }
-
-mmap_exit:
-  /* Release spin lock */
-  slrelease (&g_sl);
-  return ptr;
-}
-
-long
-munmap (void *ptr, long size)
-{
-  static long g_pagesize;
-  static long g_regionsize;
-  int rc = -1;
-
-  /* Wait for spin lock */
-  slwait (&g_sl);
-
-  /* First time initialization */
-  if (!g_pagesize)
-    g_pagesize = getpagesize ();
-  if (!g_regionsize)
-    g_regionsize = getregionsize ();
-
-  /* Free this */
-  if (!VirtualFree (ptr, 0, MEM_RELEASE))
-    goto munmap_exit;
-
-  rc = 0;
-
-munmap_exit:
-  /* Release spin lock */
-  slrelease (&g_sl);
-  return rc;
-}
-
-#endif

@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: variant-test.c 14301 2014-06-29 01:41:33Z jordan $
+ * $Id: variant-test.c 14666 2016-01-07 19:20:14Z mikedld $
  */
 
 #include <ctype.h> /* isspace () */
@@ -13,7 +13,7 @@
 
 #include <event2/buffer.h>
 
-#define __LIBTRANSMISSION_VARIANT_MODULE___
+#define __LIBTRANSMISSION_VARIANT_MODULE__
 #include "transmission.h"
 #include "utils.h" /* tr_free */
 #include "variant.h"
@@ -21,7 +21,7 @@
 
 #include "libtransmission-test.h"
 
-#ifndef WIN32
+#ifndef _WIN32
 #define STACK_SMASH_DEPTH (1 * 1000 * 1000)
 #else
 #define STACK_SMASH_DEPTH ( 100 * 1000)
@@ -113,7 +113,7 @@ testStr (void)
   err = tr_bencParseStr (buf, buf+n, &end, &str, &len);
   check_int_eq (0, err);
   check_int_eq (4, len);
-  check (!strncmp ((char*)str, "boat", len));
+  check (!strncmp ((const char*)str, "boat", len));
   check (end == buf + 6);
   str = NULL;
   end = NULL;
@@ -143,7 +143,7 @@ testStr (void)
   err = tr_bencParseStr (buf, buf+n, &end, &str, &len);
   check_int_eq (0, err);
   check_int_eq (3, len);
-  check (!strncmp ((char*)str, "boa", len));
+  check (!strncmp ((const char*)str, "boa", len));
   check (end == buf + 5);
   str = NULL;
   end = NULL;
@@ -159,7 +159,7 @@ testString (const char * str, bool isGood)
   const char * end = NULL;
   char * saved;
   const size_t    len = strlen (str);
-  int savedLen;
+  size_t savedLen;
   int err;
 
   err = tr_variantFromBencFull (&val, str, len, NULL, &end);
@@ -195,7 +195,7 @@ testParse (void)
   char buf[512];
   const char * end;
   int err;
-  int len;
+  size_t len;
   int64_t i;
   char * saved;
 
@@ -435,7 +435,7 @@ static int
 testStackSmash (void)
 {
   int i;
-  int len;
+  size_t len;
   int err;
   char * in;
   const char * end;
@@ -509,14 +509,14 @@ testParse2 (void)
   const char * strVal;
   double realVal;
   bool boolVal;
-  int len;
+  size_t len;
   char * benc;
   const char * end;
   size_t strLen;
-  const tr_quark key_bool = tr_quark_new ("this-is-a-bool", -1);
-  const tr_quark key_real = tr_quark_new ("this-is-a-real", -1);
-  const tr_quark key_int  = tr_quark_new ("this-is-an-int", -1);
-  const tr_quark key_str  = tr_quark_new ("this-is-a-string", -1);
+  const tr_quark key_bool = tr_quark_new ("this-is-a-bool", TR_BAD_SIZE);
+  const tr_quark key_real = tr_quark_new ("this-is-a-real", TR_BAD_SIZE);
+  const tr_quark key_int  = tr_quark_new ("this-is-an-int", TR_BAD_SIZE);
+  const tr_quark key_str  = tr_quark_new ("this-is-a-string", TR_BAD_SIZE);
 
   tr_variantInitDict (&top, 0);
   tr_variantDictAddBool (&top, key_bool, true);

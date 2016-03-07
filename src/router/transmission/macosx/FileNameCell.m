@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: FileNameCell.m 13600 2012-10-29 22:17:08Z livings124 $
+ * $Id: FileNameCell.m 14665 2016-01-07 17:21:12Z mikedld $
  * 
  * Copyright (c) 2007-2012 Transmission authors and contributors
  *
@@ -149,7 +149,7 @@
     NSRect realRect = [self rectForTitleWithString: titleString inBounds: cellFrame];
     
     if ([titleString size].width > NSWidth(realRect)
-        && NSMouseInRect([view convertPoint: [[view window] convertScreenToBase: [NSEvent mouseLocation]] fromView: nil], realRect, [view isFlipped]))
+        && NSMouseInRect([view convertPoint: [[view window] mouseLocationOutsideOfEventStream] fromView: nil], realRect, [view isFlipped]))
     {
         realRect.size.width = [titleString size].width;
         return NSInsetRect(realRect, -PADDING_EXPANSION_FRAME, -PADDING_EXPANSION_FRAME);

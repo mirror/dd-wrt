@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: utils.c 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: utils.c 14682 2016-02-23 05:07:43Z mikedld $
  */
 
 #ifdef HAVE_MEMMEM
@@ -13,49 +13,46 @@
 
 #if defined (XCODE_BUILD)
  #define HAVE_GETPAGESIZE
- #define HAVE_ICONV_OPEN
- #define HAVE_MKDTEMP
  #define HAVE_VALLOC
 #endif
 
 #include <assert.h>
-#include <ctype.h> /* isdigit (), isalpha (), tolower () */
+#include <ctype.h> /* isdigit (), tolower () */
 #include <errno.h>
 #include <float.h> /* DBL_EPSILON */
 #include <locale.h> /* localeconv () */
 #include <math.h> /* pow (), fabs (), floor () */
-#include <stdarg.h>
 #include <stdio.h>
-#include <stdlib.h>
+#include <stdlib.h> /* getenv () */
 #include <string.h> /* strerror (), memset (), memmem () */
 #include <time.h> /* nanosleep () */
 
-#ifdef HAVE_ICONV_OPEN
+#ifdef _WIN32
+ #include <ws2tcpip.h> /* WSAStartup () */
+ #include <windows.h> /* Sleep (), GetSystemTimeAsFileTime (), GetEnvironmentVariable () */
+ #include <shellapi.h> /* CommandLineToArgv () */
+#else
+ #include <sys/time.h>
+ #include <unistd.h> /* getpagesize () */
+#endif
+
+#ifdef HAVE_ICONV
  #include <iconv.h>
 #endif
-#include <libgen.h> /* basename () */
-#include <sys/time.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h> /* stat (), getcwd (), getpagesize () */
 
 #include <event2/buffer.h>
 #include <event2/event.h>
 
-#ifdef WIN32
- #include <w32api.h>
- #define WINVER WindowsXP /* freeaddrinfo (), getaddrinfo (), getnameinfo () */
- #include <direct.h> /* _getcwd () */
- #include <windows.h> /* Sleep (), GetSystemTimeAsFileTime () */
-#endif
-
 #include "transmission.h"
-#include "fdlimit.h"
+#include "error.h"
+#include "error-types.h"
+#include "file.h"
 #include "ConvertUTF.h"
 #include "list.h"
 #include "log.h"
+#include "net.h"
 #include "utils.h"
-#include "platform.h" /* tr_lockLock (), TR_PATH_MAX */
+#include "platform.h" /* tr_lockLock () */
 #include "platform-quota.h" /* tr_device_info_create(), tr_device_info_get_free_space(), tr_device_info_free() */
 #include "variant.h"
 #include "version.h"
@@ -83,8 +80,8 @@ tr_localtime_r (const time_t *_clock, struct tm *_result)
 int
 tr_gettimeofday (struct timeval * tv)
 {
-#ifdef _MSC_VER
-#define DELTA_EPOCH_IN_MICROSECS 11644473600000000Ui64
+#ifdef _WIN32
+#define DELTA_EPOCH_IN_MICROSECS 11644473600000000ULL
 
   FILETIME ft;
   uint64_t tmp = 0;
@@ -129,6 +126,15 @@ void*
 tr_malloc0 (size_t size)
 {
   return size ? calloc (1, size) : NULL;
+}
+
+void *
+tr_realloc (void * p, size_t size)
+{
+  void * result = size != 0 ? realloc (p, size) : NULL;
+  if (result == NULL)
+    tr_free (p);
+  return result;
 }
 
 void
@@ -216,238 +222,59 @@ tr_timerAddMsec (struct event * timer, int msec)
 **/
 
 uint8_t *
-tr_loadFile (const char * path,
-             size_t     * size)
+tr_loadFile (const char  * path,
+             size_t      * size,
+             tr_error   ** error)
 {
   uint8_t * buf;
-  struct stat  sb;
-  int fd;
-  ssize_t n;
+  tr_sys_path_info info;
+  tr_sys_file_t fd;
+  tr_error * my_error = NULL;
   const char * const err_fmt = _("Couldn't read \"%1$s\": %2$s");
 
   /* try to stat the file */
-  errno = 0;
-  if (stat (path, &sb))
+  if (!tr_sys_path_get_info (path, 0, &info, &my_error))
     {
-      const int err = errno;
-      tr_logAddDebug (err_fmt, path, tr_strerror (errno));
-      errno = err;
+      tr_logAddDebug (err_fmt, path, my_error->message);
+      tr_error_propagate (error, &my_error);
       return NULL;
     }
 
-  if ((sb.st_mode & S_IFMT) != S_IFREG)
+  if (info.type != TR_SYS_PATH_IS_FILE)
     {
       tr_logAddError (err_fmt, path, _("Not a regular file"));
-      errno = EISDIR;
+      tr_error_set_literal (error, TR_ERROR_EISDIR, _("Not a regular file"));
       return NULL;
     }
+
+  /* file size should be able to fit into size_t */
+  if (sizeof(info.size) > sizeof(*size))
+    assert (info.size <= SIZE_MAX);
 
   /* Load the torrent file into our buffer */
-  fd = tr_open_file_for_scanning (path);
-  if (fd < 0)
+  fd = tr_sys_file_open (path, TR_SYS_FILE_READ | TR_SYS_FILE_SEQUENTIAL, 0, &my_error);
+  if (fd == TR_BAD_SYS_FILE)
     {
-      const int err = errno;
-      tr_logAddError (err_fmt, path, tr_strerror (errno));
-      errno = err;
+      tr_logAddError (err_fmt, path, my_error->message);
+      tr_error_propagate (error, &my_error);
       return NULL;
     }
-  buf = tr_malloc (sb.st_size + 1);
-  if (!buf)
+
+  buf = tr_malloc (info.size + 1);
+
+  if (!tr_sys_file_read (fd, buf, info.size, NULL, &my_error))
     {
-      const int err = errno;
-      tr_logAddError (err_fmt, path, _("Memory allocation failed"));
-      tr_close_file (fd);
-      errno = err;
-      return NULL;
-    }
-  n = read (fd, buf, (size_t)sb.st_size);
-  if (n == -1)
-    {
-      const int err = errno;
-      tr_logAddError (err_fmt, path, tr_strerror (errno));
-      tr_close_file (fd);
+      tr_logAddError (err_fmt, path, my_error->message);
+      tr_sys_file_close (fd, NULL);
       free (buf);
-      errno = err;
+      tr_error_propagate (error, &my_error);
       return NULL;
     }
 
-  tr_close_file (fd);
-  buf[ sb.st_size ] = '\0';
-  *size = sb.st_size;
+  tr_sys_file_close (fd, NULL);
+  buf[info.size] = '\0';
+  *size = info.size;
   return buf;
-}
-
-char*
-tr_basename (const char * path)
-{
-#ifdef _MSC_VER
-
-  char fname[_MAX_FNAME], ext[_MAX_EXT];
-  if (_splitpath_s (path, NULL, 0, NULL, 0, fname, sizeof (fname), ext, sizeof (ext)) == 0)
-    {
-      const size_t tmpLen = strlen(fname) + strlen(ext) + 2;
-      char * const tmp = tr_malloc (tmpLen);
-      if (tmp != NULL)
-        {
-          if (_makepath_s (tmp, tmpLen, NULL, NULL, fname, ext) == 0)
-            return tmp;
-
-          tr_free (tmp);
-        }
-    }
-
-  return tr_strdup (".");
-
-#else
-
-  char * tmp = tr_strdup (path);
-  char * ret = tr_strdup (basename (tmp));
-  tr_free (tmp);
-  return ret;
-
-#endif
-}
-
-char*
-tr_dirname (const char * path)
-{
-#ifdef _MSC_VER
-
-  char drive[_MAX_DRIVE], dir[_MAX_DIR];
-  if (_splitpath_s (path, drive, sizeof (drive), dir, sizeof (dir), NULL, 0, NULL, 0) == 0)
-    {
-      const size_t tmpLen = strlen(drive) + strlen(dir) + 2;
-      char * const tmp = tr_malloc (tmpLen);
-      if (tmp != NULL)
-        {
-          if (_makepath_s (tmp, tmpLen, drive, dir, NULL, NULL) == 0)
-            {
-              size_t len = strlen(tmp);
-              while (len > 0 && (tmp[len - 1] == '/' || tmp[len - 1] == '\\'))
-                tmp[--len] = '\0';
-
-              return tmp;
-            }
-
-          tr_free (tmp);
-        }
-    }
-
-  return tr_strdup (".");
-
-#else
-
-  char * tmp = tr_strdup (path);
-  char * ret = tr_strdup (dirname (tmp));
-  tr_free (tmp);
-  return ret;
-
-#endif
-}
-
-char*
-tr_mkdtemp (char * template)
-{
-#ifdef HAVE_MKDTEMP
-  return mkdtemp (template);
-#else
-  if (!mktemp (template) || mkdir (template, 0700))
-    return NULL;
-  return template;
-#endif
-}
-
-/**
- * @brief Portability wrapper for mkdir ()
- *
- * A portability wrapper around mkdir ().
- * On WIN32, the `permissions' argument is unused.
- *
- * @return zero on success, or -1 if an error occurred
- * (in which case errno is set appropriately).
- */
-static int
-tr_mkdir (const char * path, int permissions UNUSED)
-{
-#ifdef WIN32
-  if (path && isalpha (path[0]) && path[1] == ':' && !path[2])
-    return 0;
-  return mkdir (path);
-#else
-  return mkdir (path, permissions);
-#endif
-}
-
-int
-tr_mkdirp (const char * path_in,
-           int          permissions)
-{
-  char * p;
-  char * pp;
-  bool done;
-  int tmperr;
-  int rv;
-  struct stat sb;
-  char * path;
-
-  /* make a temporary copy of path */
-  path = tr_strdup (path_in);
-  if (path == NULL)
-    {
-      errno = ENOMEM;
-      return -1;
-    }
-
-  /* walk past the root */
-  p = path;
-  while (*p == TR_PATH_DELIMITER)
-    ++p;
-
-  pp = p;
-  done = false;
-  while ((p = strchr (pp, TR_PATH_DELIMITER)) || (p = strchr (pp, '\0')))
-    {
-      if (!*p)
-        done = true;
-      else
-        *p = '\0';
-
-      tmperr = errno;
-      rv = stat (path, &sb);
-      errno = tmperr;
-      if (rv)
-        {
-          /* Folder doesn't exist yet */
-          if (tr_mkdir (path, permissions))
-            {
-              tmperr = errno;
-              tr_logAddError (_("Couldn't create \"%1$s\": %2$s"), path, tr_strerror (tmperr));
-              tr_free (path);
-              errno = tmperr;
-              return -1;
-            }
-        }
-      else if ((sb.st_mode & S_IFMT) != S_IFDIR)
-        {
-          /* Node exists but isn't a folder */
-          char * buf = tr_strdup_printf (_("File \"%s\" is in the way"), path);
-          tr_logAddError (_("Couldn't create \"%1$s\": %2$s"), path_in, buf);
-          tr_free (buf);
-          tr_free (path);
-          errno = ENOTDIR;
-          return -1;
-        }
-
-      if (done)
-        break;
-
-      *p = TR_PATH_DELIMITER;
-      p++;
-      pp = p;
-    }
-
-  tr_free (path);
-  return 0;
 }
 
 char*
@@ -491,26 +318,8 @@ tr_buildPath (const char *first_element, ...)
   *pch++ = '\0';
 
   /* sanity checks & return */
-  assert (pch - buf == (off_t)bufLen);
+  assert (pch - buf == (ptrdiff_t)bufLen);
   return buf;
-}
-
-#ifdef SYS_DARWIN
- #define TR_STAT_MTIME(sb)((sb).st_mtimespec.tv_sec)
-#else
- #define TR_STAT_MTIME(sb)((sb).st_mtime)
-#endif
-
-bool
-tr_fileExists (const char * filename, time_t * mtime)
-{
-  struct stat sb;
-  const bool ok = !stat (filename, &sb);
-
-  if (ok && (mtime != NULL))
-    *mtime = TR_STAT_MTIME (sb);
-
-  return ok;
 }
 
 int64_t
@@ -539,28 +348,31 @@ tr_getDirFreeSpace (const char * dir)
 ****/
 
 char*
-evbuffer_free_to_str (struct evbuffer * buf)
+evbuffer_free_to_str (struct evbuffer * buf,
+                      size_t          * result_len)
 {
   const size_t n = evbuffer_get_length (buf);
   char * ret = tr_new (char, n + 1);
   evbuffer_copyout (buf, ret, n);
   evbuffer_free (buf);
   ret[n] = '\0';
+  if (result_len != NULL)
+    *result_len = n;
   return ret;
 }
 
 char*
 tr_strdup (const void * in)
 {
-  return tr_strndup (in, in ? (int)strlen ((const char *)in) : 0);
+  return tr_strndup (in, in != NULL ? strlen (in) : 0);
 }
 
 char*
-tr_strndup (const void * in, int len)
+tr_strndup (const void * in, size_t len)
 {
   char * out = NULL;
 
-  if (len < 0)
+  if (len == TR_BAD_SIZE)
     {
       out = tr_strdup (in);
     }
@@ -602,26 +414,21 @@ tr_strdup_printf (const char * fmt, ...)
 {
   va_list ap;
   char * ret;
-  size_t len;
-  char statbuf[2048];
 
   va_start (ap, fmt);
-  len = evutil_vsnprintf (statbuf, sizeof (statbuf), fmt, ap);
+  ret = tr_strdup_vprintf (fmt, ap);
   va_end (ap);
 
-  if (len < sizeof (statbuf))
-    {
-      ret = tr_strndup (statbuf, len);
-    }
-  else
-    {
-      ret = tr_new (char, len + 1);
-      va_start (ap, fmt);
-      evutil_vsnprintf (ret, len + 1, fmt, ap);
-      va_end (ap);
-    }
-
   return ret;
+}
+
+char *
+tr_strdup_vprintf (const char * fmt,
+                   va_list      args)
+{
+  struct evbuffer * buf = evbuffer_new ();
+  evbuffer_add_vprintf (buf, fmt, args);
+  return evbuffer_free_to_str (buf, NULL);
 }
 
 const char*
@@ -736,7 +543,7 @@ tr_time_msec (void)
 void
 tr_wait_msec (long int msec)
 {
-#ifdef WIN32
+#ifdef _WIN32
   Sleep ((DWORD)msec);
 #else
   struct timespec ts;
@@ -799,7 +606,7 @@ tr_strlcpy (char * dst, const void * src, size_t siz)
         ;
     }
 
-  return s - (char*)src - 1;  /* count does not include NUL */
+  return s - (const char*)src - 1;  /* count does not include NUL */
 #endif
 }
 
@@ -823,32 +630,38 @@ tr_getRatio (uint64_t numerator, uint64_t denominator)
 }
 
 void
-tr_sha1_to_hex (char * out, const uint8_t * sha1)
+tr_binary_to_hex (const void * input,
+                  char       * output,
+                  size_t       byte_length)
 {
-  int i;
   static const char hex[] = "0123456789abcdef";
+  const uint8_t * input_octets = input;
+  size_t i;
 
-  for (i=0; i<20; ++i)
+  for (i = 0; i < byte_length; ++i)
     {
-      const unsigned int val = *sha1++;
-      *out++ = hex[val >> 4];
-      *out++ = hex[val & 0xf];
+      const unsigned int val = *input_octets++;
+      *output++ = hex[val >> 4];
+      *output++ = hex[val & 0xf];
     }
 
-  *out = '\0';
+  *output = '\0';
 }
 
 void
-tr_hex_to_sha1 (uint8_t * out, const char * in)
+tr_hex_to_binary (const char * input,
+                  void       * output,
+                  size_t       byte_length)
 {
-  int i;
   static const char hex[] = "0123456789abcdef";
+  uint8_t * output_octets = output;
+  size_t i;
 
-  for (i=0; i<20; ++i)
+  for (i = 0; i < byte_length; ++i)
     {
-      const int hi = strchr (hex, tolower (*in++)) - hex;
-      const int lo = strchr (hex, tolower (*in++)) - hex;
-      *out++ = (uint8_t)((hi<<4) | lo);
+      const int hi = strchr (hex, tolower (*input++)) - hex;
+      const int lo = strchr (hex, tolower (*input++)) - hex;
+      *output_octets++ = (uint8_t) ((hi << 4) | lo);
     }
 }
 
@@ -857,11 +670,9 @@ tr_hex_to_sha1 (uint8_t * out, const char * in)
 ***/
 
 static bool
-isValidURLChars (const char * url, int url_len)
+isValidURLChars (const char * url, size_t url_len)
 {
-  const char * c;
-  const char * end;
-  static const char * rfc2396_valid_chars =
+  static const char rfc2396_valid_chars[] =
     "abcdefghijklmnopqrstuvwxyz" /* lowalpha */
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ" /* upalpha */
     "0123456789"                 /* digit */
@@ -873,56 +684,41 @@ isValidURLChars (const char * url, int url_len)
   if (url == NULL)
     return false;
 
-  for (c=url, end=c+url_len; c && *c && c!=end; ++c)
-    if (!strchr (rfc2396_valid_chars, *c))
+  for (const char * c = url, * end = url + url_len; c < end && *c != '\0'; ++c)
+    if (memchr (rfc2396_valid_chars, *c, sizeof (rfc2396_valid_chars) - 1) == NULL)
       return false;
 
   return true;
 }
 
-/** @brief return true if the URL is a http or https or UDP one that Transmission understands */
 bool
 tr_urlIsValidTracker (const char * url)
 {
-  bool valid;
-
   if (url == NULL)
-    {
-      valid = false;
-    }
-  else
-    {
-      const int len = strlen (url);
+    return false;
 
-      valid = isValidURLChars (url, len)
-           && !tr_urlParse (url, len, NULL, NULL, NULL, NULL)
-           && (!memcmp (url,"http://",7) || !memcmp (url,"https://",8) || !memcmp (url,"udp://",6));
-    }
+  const size_t url_len = strlen (url);
 
-  return valid;
+  return isValidURLChars (url, url_len)
+      && tr_urlParse (url, url_len, NULL, NULL, NULL, NULL)
+      && (memcmp (url, "http://", 7) == 0 || memcmp (url, "https://", 8) == 0 ||
+          memcmp (url, "udp://", 6) == 0);
 }
 
-/** @brief return true if the URL is a http or https or ftp or sftp one that Transmission understands */
 bool
-tr_urlIsValid (const char * url, int url_len)
+tr_urlIsValid (const char * url,
+               size_t       url_len)
 {
-  bool valid;
-
   if (url == NULL)
-    {
-      valid = false;
-    }
-  else
-    {
-      if (url_len < 0)
-        url_len = strlen (url);
+    return false;
 
-      valid = isValidURLChars (url, url_len)
-           && !tr_urlParse (url, url_len, NULL, NULL, NULL, NULL)
-           && (!memcmp (url,"http://",7) || !memcmp (url,"https://",8) || !memcmp (url,"ftp://",6) || !memcmp (url,"sftp://",7));
-    }
+  if (url_len == TR_BAD_SIZE)
+    url_len = strlen (url);
 
-  return valid;
+  return isValidURLChars (url, url_len)
+      && tr_urlParse (url, url_len, NULL, NULL, NULL, NULL)
+      && (memcmp (url, "http://", 7) == 0 || memcmp (url, "https://", 8) == 0 ||
+          memcmp (url, "ftp://", 6) == 0 || memcmp (url, "sftp://", 7) == 0);
 }
 
 bool
@@ -932,154 +728,114 @@ tr_addressIsIP (const char * str)
   return tr_address_from_string (&tmp, str);
 }
 
-int
-tr_urlParse (const char * url_in,
-             int          len,
-             char **      setme_protocol,
-             char **      setme_host,
-             int *        setme_port,
-             char **      setme_path)
+static int
+parse_port (const char * port,
+            size_t       port_len)
 {
-  int err;
-  int port = 0;
-  int n;
-  char * tmp;
-  char * pch;
-  size_t host_len;
-  size_t protocol_len;
-  const char * host = NULL;
-  const char * protocol = NULL;
-  const char * path = NULL;
+  char * tmp = tr_strndup (port, port_len);
+  char * end;
 
-  tmp = tr_strndup (url_in, len);
-  if ((pch = strstr (tmp, "://")))
-    {
-      *pch = '\0';
-      protocol = tmp;
-      protocol_len = pch - protocol;
-      pch += 3;
-      if ((n = strcspn (pch, ":/")))
-        {
-          const int havePort = pch[n] == ':';
-          host = pch;
-          host_len = n;
-          pch += n;
-          if (pch && *pch)
-            *pch++ = '\0';
-          if (havePort)
-            {
-              char * end;
-              port = strtol (pch, &end, 10);
-              pch = end;
-            }
-          path = pch;
-        }
-    }
+  long port_num = strtol (tmp, &end, 10);
 
-  err = !host || !path || !protocol;
-
-  if (!err && !port)
-    {
-      if (!strcmp (protocol, "udp")) port = 80;
-      else if (!strcmp (protocol, "ftp")) port = 21;
-      else if (!strcmp (protocol, "sftp")) port = 22;
-      else if (!strcmp (protocol, "http")) port = 80;
-      else if (!strcmp (protocol, "https")) port = 443;
-    }
-
-  if (!err)
-    {
-      if (setme_protocol) *setme_protocol = tr_strndup (protocol, protocol_len);
-
-      if (setme_host){ ((char*)host)[-3] = ':'; *setme_host =
-                        tr_strndup (host, host_len); }
-
-      if (setme_path){ if (!*path) *setme_path = tr_strdup ("/");
-                       else if (path[0] == '/') *setme_path = tr_strdup (path);
-                       else { ((char*)path)[-1] = '/'; *setme_path = tr_strdup (path - 1); } }
-
-      if (setme_port) *setme_port = port;
-    }
-
+  if (*end != '\0' || port_num <= 0 || port_num >= 65536)
+    port_num = -1;
 
   tr_free (tmp);
-  return err;
+
+  return (int) port_num;
 }
 
-#include <string.h>
-#include <openssl/sha.h>
-#include <openssl/hmac.h>
-#include <openssl/evp.h>
-#include <openssl/bio.h>
-#include <openssl/buffer.h>
-
-char *
-tr_base64_encode (const void * input, int length, int * setme_len)
+static int
+get_port_for_scheme (const char * scheme,
+                     size_t       scheme_len)
 {
-  int retlen = 0;
-  char * ret = NULL;
-
-  if (input != NULL)
+  struct known_scheme
     {
-      BIO * b64;
-      BIO * bmem;
-      BUF_MEM * bptr;
+      const char * name;
+      int          port;
+    };
 
-      if (length < 1)
-        length = (int)strlen (input);
+  static const struct known_scheme known_schemes[] =
+    {
+      { "udp",    80 },
+      { "ftp",    21 },
+      { "sftp",   22 },
+      { "http",   80 },
+      { "https", 443 },
+      { NULL,      0 }
+    };
 
-      bmem = BIO_new (BIO_s_mem ());
-      b64 = BIO_new (BIO_f_base64 ());
-      BIO_set_flags (b64, BIO_FLAGS_BASE64_NO_NL);
-      b64 = BIO_push (b64, bmem);
-      BIO_write (b64, input, length);
-      (void) BIO_flush (b64);
-      BIO_get_mem_ptr (b64, &bptr);
-      ret = tr_strndup (bptr->data, bptr->length);
-      retlen = bptr->length;
-      BIO_free_all (b64);
+  for (const struct known_scheme * s = known_schemes; s->name != NULL; ++s)
+    {
+      if (scheme_len == strlen (s->name) && memcmp (scheme, s->name, scheme_len) == 0)
+        return s->port;
     }
 
-  if (setme_len)
-    *setme_len = retlen;
-
-  return ret;
+  return -1;
 }
 
-char *
-tr_base64_decode (const void * input,
-                  int          length,
-                  int *        setme_len)
+bool
+tr_urlParse (const char  * url,
+             size_t        url_len,
+             char       ** setme_scheme,
+             char       ** setme_host,
+             int         * setme_port,
+             char       ** setme_path)
 {
-  char * ret;
-  BIO * b64;
-  BIO * bmem;
-  int retlen;
+  if (url_len == TR_BAD_SIZE)
+    url_len = strlen (url);
 
-  if (length < 1)
-    length = strlen (input);
+  const char * scheme = url;
+  const char * scheme_end = tr_memmem (scheme, url_len, "://", 3);
+  if (scheme_end == NULL)
+    return false;
 
-  ret = tr_new0 (char, length);
-  b64 = BIO_new (BIO_f_base64 ());
-  bmem = BIO_new_mem_buf ((unsigned char*)input, length);
-  bmem = BIO_push (b64, bmem);
-  retlen = BIO_read (bmem, ret, length);
-  if (!retlen)
+  const size_t scheme_len = scheme_end - scheme;
+  if (scheme_len == 0)
+    return false;
+
+  url += scheme_len + 3;
+  url_len -= scheme_len + 3;
+
+  const char * authority = url;
+  const char * authority_end = memchr (authority, '/', url_len);
+  if (authority_end == NULL)
+    authority_end = authority + url_len;
+
+  const size_t authority_len = authority_end - authority;
+  if (authority_len == 0)
+    return false;
+
+  url += authority_len;
+  url_len -= authority_len;
+
+  const char * host_end = memchr (authority, ':', authority_len);
+
+  const size_t host_len = host_end != NULL ? (size_t) (host_end - authority) : authority_len;
+  if (host_len == 0)
+    return false;
+
+  const size_t port_len = host_end != NULL ? authority_end - host_end - 1 : 0;
+
+  if (setme_scheme != NULL)
+    *setme_scheme = tr_strndup (scheme, scheme_len);
+
+  if (setme_host != NULL)
+    *setme_host = tr_strndup (authority, host_len);
+
+  if (setme_port != NULL)
+    *setme_port = port_len > 0 ? parse_port (host_end + 1, port_len)
+                               : get_port_for_scheme (scheme, scheme_len);
+
+  if (setme_path != NULL)
     {
-      /* try again, but with the BIO_FLAGS_BASE64_NO_NL flag */
-      BIO_free_all (bmem);
-      b64 = BIO_new (BIO_f_base64 ());
-      BIO_set_flags (b64, BIO_FLAGS_BASE64_NO_NL);
-      bmem = BIO_new_mem_buf ((unsigned char*)input, length);
-      bmem = BIO_push (b64, bmem);
-      retlen = BIO_read (bmem, ret, length);
+      if (url[0] == '\0')
+        *setme_path = tr_strdup ("/");
+      else
+        *setme_path = tr_strndup (url, url_len);
     }
 
-  if (setme_len)
-    *setme_len = retlen;
-
-  BIO_free_all (bmem);
-  return ret;
+  return true;
 }
 
 /***
@@ -1248,7 +1004,6 @@ static char*
 strip_non_utf8 (const char * in, size_t inlen)
 {
   const char * end;
-  const char zero = '\0';
   struct evbuffer * buf = evbuffer_new ();
 
   while (!tr_utf8_validate (in, inlen, &end))
@@ -1262,8 +1017,7 @@ strip_non_utf8 (const char * in, size_t inlen)
     }
 
   evbuffer_add (buf, in, inlen);
-  evbuffer_add (buf, &zero, 1);
-  return evbuffer_free_to_str (buf);
+  return evbuffer_free_to_str (buf, NULL);
 }
 
 static char*
@@ -1271,7 +1025,7 @@ to_utf8 (const char * in, size_t inlen)
 {
   char * ret = NULL;
 
-#ifdef HAVE_ICONV_OPEN
+#ifdef HAVE_ICONV
   int i;
   const char * encodings[] = { "CURRENT", "ISO-8859-15" };
   const int encoding_count = sizeof (encodings) / sizeof (encodings[1]);
@@ -1280,7 +1034,11 @@ to_utf8 (const char * in, size_t inlen)
 
   for (i=0; !ret && i<encoding_count; ++i)
     {
+#ifdef ICONV_SECOND_ARGUMENT_IS_CONST
+      const char * inbuf = in;
+#else
       char * inbuf = (char*) in;
+#endif
       char * outbuf = out;
       size_t inbytesleft = inlen;
       size_t outbytesleft = buflen;
@@ -1305,22 +1063,183 @@ to_utf8 (const char * in, size_t inlen)
 }
 
 char*
-tr_utf8clean (const char * str, int max_len)
+tr_utf8clean (const char * str, size_t max_len)
 {
   char * ret;
   const char * end;
 
-  if (max_len < 0)
-    max_len = (int) strlen (str);
+  if (max_len == TR_BAD_SIZE)
+    max_len = strlen (str);
 
   if (tr_utf8_validate (str, max_len, &end))
     ret = tr_strndup (str, max_len);
   else
     ret = to_utf8 (str, max_len);
 
-  assert (tr_utf8_validate (ret, -1, NULL));
+  assert (tr_utf8_validate (ret, TR_BAD_SIZE, NULL));
   return ret;
 }
+
+#ifdef _WIN32
+
+char *
+tr_win32_native_to_utf8 (const wchar_t * text,
+                         int             text_size)
+{
+  char * ret = NULL;
+  int size;
+
+  size = WideCharToMultiByte (CP_UTF8, 0, text, text_size, NULL, 0, NULL, NULL);
+  if (size == 0)
+    goto fail;
+
+  ret = tr_new (char, size + 1);
+  size = WideCharToMultiByte (CP_UTF8, 0, text, text_size, ret, size, NULL, NULL);
+  if (size == 0)
+    goto fail;
+
+  ret[size] = '\0';
+
+  return ret;
+
+fail:
+  tr_free (ret);
+
+  return NULL;
+}
+
+wchar_t *
+tr_win32_utf8_to_native (const char * text,
+                         int          text_size)
+{
+  return tr_win32_utf8_to_native_ex (text, text_size, 0, 0, NULL);
+}
+
+wchar_t *
+tr_win32_utf8_to_native_ex (const char * text,
+                            int          text_size,
+                            int          extra_chars_before,
+                            int          extra_chars_after,
+                            int        * real_result_size)
+{
+  wchar_t * ret = NULL;
+  int size;
+
+  if (text_size == -1)
+    text_size = strlen (text);
+
+  size = MultiByteToWideChar (CP_UTF8, 0, text, text_size, NULL, 0);
+  if (size == 0)
+    goto fail;
+
+  ret = tr_new (wchar_t, size + extra_chars_before + extra_chars_after + 1);
+  size = MultiByteToWideChar (CP_UTF8, 0, text, text_size, ret + extra_chars_before, size);
+  if (size == 0)
+    goto fail;
+
+  ret[size + extra_chars_before + extra_chars_after] = L'\0';
+
+  if (real_result_size != NULL)
+    *real_result_size = size;
+
+  return ret;
+
+fail:
+  tr_free (ret);
+
+  return NULL;
+}
+
+char *
+tr_win32_format_message (uint32_t code)
+{
+  wchar_t * wide_text = NULL;
+  DWORD wide_size;
+  char * text = NULL;
+  size_t text_size;
+
+  wide_size = FormatMessageW (FORMAT_MESSAGE_ALLOCATE_BUFFER |
+                              FORMAT_MESSAGE_FROM_SYSTEM |
+                              FORMAT_MESSAGE_IGNORE_INSERTS,
+                              NULL, code, 0, (LPWSTR)&wide_text, 0, NULL);
+  if (wide_size == 0)
+    return tr_strdup_printf ("Unknown error (0x%08x)", code);
+
+  if (wide_size != 0 && wide_text != NULL)
+    text = tr_win32_native_to_utf8 (wide_text, wide_size);
+
+  LocalFree (wide_text);
+
+  if (text != NULL)
+    {
+      /* Most (all?) messages contain "\r\n" in the end, chop it */
+      text_size = strlen (text);
+      while (text_size > 0 && isspace ((uint8_t) text[text_size - 1]))
+        text[--text_size] = '\0';
+    }
+
+  return text;
+}
+
+void
+tr_win32_make_args_utf8 (int    * argc,
+                         char *** argv)
+{
+  int my_argc, i;
+  char ** my_argv;
+  wchar_t ** my_wide_argv;
+
+  my_wide_argv = CommandLineToArgvW (GetCommandLineW (), &my_argc);
+  if (my_wide_argv == NULL)
+    return;
+
+  assert (*argc == my_argc);
+
+  my_argv = tr_new (char *, my_argc + 1);
+
+  for (i = 0; i < my_argc; ++i)
+    {
+      my_argv[i] = tr_win32_native_to_utf8 (my_wide_argv[i], -1);
+      if (my_argv[i] == NULL)
+        break;
+    }
+
+  if (i < my_argc)
+    {
+      int j;
+
+      for (j = 0; j < i; ++j)
+        {
+          tr_free (my_argv[j]);
+        }
+
+      tr_free (my_argv);
+    }
+  else
+    {
+      my_argv[my_argc] = NULL;
+
+      *argc = my_argc;
+      *argv = my_argv;
+
+      /* TODO: Add atexit handler to cleanup? */
+    }
+
+  LocalFree (my_wide_argv);
+}
+
+int
+tr_main_win32 (int     argc,
+               char ** argv,
+               int   (*real_main) (int, char **))
+{
+  tr_win32_make_args_utf8 (&argc, &argv);
+  SetConsoleCP (CP_UTF8);
+  SetConsoleOutputCP (CP_UTF8);
+  return real_main (argc, argv);
+}
+
+#endif
 
 /***
 ****
@@ -1337,7 +1256,7 @@ struct number_range
  * Anything else is an error and will return failure.
  */
 static bool
-parseNumberSection (const char * str, int len, struct number_range * setme)
+parseNumberSection (const char * str, size_t len, struct number_range * setme)
 {
   long a, b;
   bool success;
@@ -1392,7 +1311,7 @@ compareInt (const void * va, const void * vb)
  * If a fragment of the string can't be parsed, NULL is returned.
  */
 int*
-tr_parseNumberRange (const char * str_in, int len, int * setmeCount)
+tr_parseNumberRange (const char * str_in, size_t len, int * setmeCount)
 {
   int n = 0;
   int * uniq = NULL;
@@ -1408,7 +1327,7 @@ tr_parseNumberRange (const char * str_in, int len, int * setmeCount)
       const char * pch = strchr (walk, ',');
       if (pch)
         {
-          success = parseNumberSection (walk, pch-walk, &range);
+          success = parseNumberSection (walk, (size_t) (pch - walk), &range);
           walk = pch + 1;
         }
       else
@@ -1535,128 +1454,96 @@ tr_strratio (char * buf, size_t buflen, double ratio, const char * infinity)
 ****
 ***/
 
-int
-tr_moveFile (const char * oldpath, const char * newpath, bool * renamed)
+bool
+tr_moveFile (const char * oldpath, const char * newpath, tr_error ** error)
 {
-  int in;
-  int out;
-  char * buf;
-  struct stat st;
-  off_t bytesLeft;
+  tr_sys_file_t in;
+  tr_sys_file_t out;
+  char * buf = NULL;
+  tr_sys_path_info info;
+  uint64_t bytesLeft;
   const size_t buflen = 1024 * 128; /* 128 KiB buffer */
 
   /* make sure the old file exists */
-  if (stat (oldpath, &st))
+  if (!tr_sys_path_get_info (oldpath, 0, &info, error))
     {
-      const int err = errno;
-      errno = err;
-      return -1;
+      tr_error_prefix (error, "Unable to get information on old file: ");
+      return false;
     }
-  if (!S_ISREG (st.st_mode))
+  if (info.type != TR_SYS_PATH_IS_FILE)
     {
-      errno = ENOENT;
-      return -1;
+      tr_error_set_literal (error, TR_ERROR_EINVAL, "Old path does not point to a file.");
+      return false;
     }
-  bytesLeft = st.st_size;
 
   /* make sure the target directory exists */
   {
-    char * newdir = tr_dirname (newpath);
-    int i = tr_mkdirp (newdir, 0777);
+    char * newdir = tr_sys_path_dirname (newpath, NULL);
+    const bool i = tr_sys_dir_create (newdir, TR_SYS_DIR_CREATE_PARENTS, 0777, error);
     tr_free (newdir);
-    if (i)
-      return i;
+    if (!i)
+      {
+        tr_error_prefix (error, "Unable to create directory for new file: ");
+        return false;
+      }
   }
 
   /* they might be on the same filesystem... */
-  {
-    const int i = tr_rename (oldpath, newpath);
-    if (renamed != NULL)
-      *renamed = i == 0;
-    if (!i)
-      return 0;
-  }
+  if (tr_sys_path_rename (oldpath, newpath, NULL))
+    return true;
 
   /* copy the file */
-  in = tr_open_file_for_scanning (oldpath);
-  out = tr_open_file_for_writing (newpath);
+  in = tr_sys_file_open (oldpath, TR_SYS_FILE_READ | TR_SYS_FILE_SEQUENTIAL, 0, error);
+  if (in == TR_BAD_SYS_FILE)
+    {
+      tr_error_prefix (error, "Unable to open old file: ");
+      return false;
+    }
+
+  out = tr_sys_file_open (newpath, TR_SYS_FILE_WRITE | TR_SYS_FILE_CREATE | TR_SYS_FILE_TRUNCATE, 0666, error);
+  if (out == TR_BAD_SYS_FILE)
+    {
+      tr_error_prefix (error, "Unable to open new file: ");
+      tr_sys_file_close (in, NULL);
+      return false;
+    }
+
   buf = tr_valloc (buflen);
+  bytesLeft = info.size;
   while (bytesLeft > 0)
     {
-      ssize_t bytesWritten;
-      const off_t bytesThisPass = MIN (bytesLeft, (off_t)buflen);
-      const int numRead = read (in, buf, bytesThisPass);
-      if (numRead < 0)
+      const uint64_t bytesThisPass = MIN (bytesLeft, buflen);
+      uint64_t numRead, bytesWritten;
+      if (!tr_sys_file_read (in, buf, bytesThisPass, &numRead, error))
         break;
-      bytesWritten = write (out, buf, numRead);
-      if (bytesWritten < 0)
+      if (!tr_sys_file_write (out, buf, numRead, &bytesWritten, error))
         break;
+      assert (numRead == bytesWritten);
+      assert (bytesWritten <= bytesLeft);
       bytesLeft -= bytesWritten;
     }
 
   /* cleanup */
   tr_free (buf);
-  tr_close_file (out);
-  tr_close_file (in);
+  tr_sys_file_close (out, NULL);
+  tr_sys_file_close (in, NULL);
+
   if (bytesLeft != 0)
-    return -1;
+    {
+      tr_error_prefix (error, "Unable to read/write: ");
+      return false;
+    }
 
-  tr_remove (oldpath);
-  return 0;
-}
+  {
+    tr_error * my_error = NULL;
+    if (!tr_sys_path_remove (oldpath, &my_error))
+      {
+        tr_logAddError ("Unable to remove file at old path: %s", my_error->message);
+        tr_error_free (my_error);
+      }
+  }
 
-int
-tr_rename (const char * oldpath, const char * newpath)
-{
-  /* FIXME: needs win32 utf-16 support */
-
-  return rename (oldpath, newpath);
-}
-
-int
-tr_remove (const char * pathname)
-{
-  /* FIXME: needs win32 utf-16 support */
-
-  return remove (pathname);
-}
-
-bool
-tr_is_same_file (const char * filename1, const char * filename2)
-{
-#ifdef WIN32
-
-  bool res;
-  HANDLE fh1, fh2;
-  BY_HANDLE_FILE_INFORMATION fi1, fi2;
-  int n = strlen (filename1) + 1;
-  int m = strlen (filename2) + 1;
-  wchar_t f1nameUTF16[n];
-  wchar_t f2nameUTF16[m];
- 
-  MultiByteToWideChar (CP_UTF8, 0, filename1, -1, f1nameUTF16, n);
-  MultiByteToWideChar (CP_UTF8, 0, filename2, -1, f2nameUTF16, m);
-  fh1 = CreateFileW (chkFilename (f1nameUTF16), 0, 0, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
-  fh2 = CreateFileW (chkFilename (f2nameUTF16), 0, 0, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
-  res = GetFileInformationByHandle (fh1, &fi1)
-          && GetFileInformationByHandle (fh2, &fi2)
-          && (fi1.dwVolumeSerialNumber == fi2.dwVolumeSerialNumber)
-          && (fi1.nFileIndexHigh == fi2.nFileIndexHigh)
-          && (fi1.nFileIndexLow  == fi2.nFileIndexLow);
-  CloseHandle (fh1);
-  CloseHandle (fh2);
-  return res;
-
-#else
-
-  struct stat sb1, sb2;
-
-  return !stat (filename1, &sb1)
-      && !stat (filename2, &sb2)
-      && (sb1.st_dev == sb2.st_dev)
-      && (sb1.st_ino == sb2.st_ino);
-
-#endif
+  return true;
 }
 
 /***
@@ -1672,7 +1559,7 @@ tr_valloc (size_t bufLen)
 
   if (!pageSize)
     {
-#ifdef HAVE_GETPAGESIZE
+#if defined (HAVE_GETPAGESIZE) && !defined (_WIN32)
       pageSize = (size_t) getpagesize ();
 #else /* guess */
       pageSize = 4096;
@@ -1696,19 +1583,6 @@ tr_valloc (size_t bufLen)
     buf = tr_malloc (allocLen);
 
   return buf;
-}
-
-char *
-tr_realpath (const char * path, char * resolved_path)
-{
-#ifdef WIN32
-  /* From a message to the Mingw-msys list, Jun 2, 2005 by Mark Junker. */
-  if (GetFullPathNameA (path, TR_PATH_MAX, resolved_path, NULL) == 0)
-    return NULL;
-  return resolved_path;
-#else
-  return realpath (path, resolved_path);
-#endif
 }
 
 /***
@@ -1914,3 +1788,117 @@ tr_formatter_get_units (void * vdict)
     tr_variantListAddStr (l, speed_units.units[i].name);
 }
 
+/***
+****  ENVIRONMENT
+***/
+
+bool
+tr_env_key_exists (const char * key)
+{
+  assert (key != NULL);
+
+#ifdef _WIN32
+
+  return GetEnvironmentVariableA (key, NULL, 0) != 0;
+
+#else
+
+  return getenv (key) != NULL;
+
+#endif
+}
+
+int
+tr_env_get_int (const char * key,
+                int          default_value)
+{
+#ifdef _WIN32
+
+  char value[16];
+
+  assert (key != NULL);
+
+  if (GetEnvironmentVariableA (key, value, ARRAYSIZE (value)) > 1)
+    return atoi (value);
+
+#else
+
+  const char * value;
+
+  assert (key != NULL);
+
+  value = getenv (key);
+
+  if (value != NULL && *value != '\0')
+    return atoi (value);
+
+#endif
+
+  return default_value;
+}
+
+char * tr_env_get_string (const char * key,
+                          const char * default_value)
+{
+#ifdef _WIN32
+
+  wchar_t * wide_key;
+  char * value = NULL;
+
+  wide_key = tr_win32_utf8_to_native (key, -1);
+  if (wide_key != NULL)
+    {
+      const DWORD size = GetEnvironmentVariableW (wide_key, NULL, 0);
+      if (size != 0)
+        {
+          wchar_t * const wide_value = tr_new (wchar_t, size);
+          if (GetEnvironmentVariableW (wide_key, wide_value, size) == size - 1)
+            value = tr_win32_native_to_utf8 (wide_value, size);
+
+          tr_free (wide_value);
+        }
+
+      tr_free (wide_key);
+    }
+
+  if (value == NULL && default_value != NULL)
+    value = tr_strdup (default_value);
+
+  return value;
+
+#else
+
+  char * value;
+
+  assert (key != NULL);
+
+  value = getenv (key);
+  if (value == NULL)
+    value = (char *) default_value;
+
+  if (value != NULL)
+    value = tr_strdup (value);
+
+  return value;
+
+#endif
+}
+
+/***
+****
+***/
+
+void
+tr_net_init (void)
+{
+    static bool initialized = false;
+
+    if (!initialized)
+    {
+#ifdef _WIN32
+        WSADATA wsaData;
+        WSAStartup (MAKEWORD (2, 2), &wsaData);
+#endif
+        initialized = true;
+    }
+}

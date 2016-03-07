@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: CreatorWindowController.m 13492 2012-09-10 02:37:29Z livings124 $
+ * $Id: CreatorWindowController.m 14662 2016-01-06 11:05:37Z mikedld $
  *
  * Copyright (c) 2007-2012 Transmission authors and contributors
  *
@@ -140,8 +140,7 @@
 
 - (void) awakeFromNib
 {
-    if ([NSApp isOnLionOrBetter])
-        [[self window] setRestorationClass: [self class]];
+    [[self window] setRestorationClass: [self class]];
     
     NSString * name = [fPath lastPathComponent];
     
@@ -150,7 +149,7 @@
     [fNameField setStringValue: name];
     [fNameField setToolTip: [fPath path]];
     
-    const BOOL multifile = !fInfo->isSingleFile;
+    const BOOL multifile = fInfo->isFolder;
     
     NSImage * icon = [[NSWorkspace sharedWorkspace] iconForFileType: multifile
                         ? NSFileTypeForHFSTypeCode(kGenericFolderIcon) : [fPath pathExtension]];
@@ -544,9 +543,8 @@
     [fDefaults setBool: [fOpenCheck state] == NSOnState forKey: @"CreatorOpen"];
     fOpenWhenCreated = [fOpenCheck state] == NSOnState; //need this since the check box might not exist, and value in prefs might have changed from another creator window
     [fDefaults setURL: [fLocation URLByDeletingLastPathComponent] forKey: @"CreatorLocationURL"];
-    
-    if ([NSApp isOnLionOrBetter])
-        [[self window] setRestorable: NO];
+
+    [[self window] setRestorable: NO];
     
     [[NSNotificationCenter defaultCenter] postNotificationName: @"BeginCreateTorrentFile" object: fLocation userInfo: nil];
     tr_makeMetaInfo(fInfo, [[fLocation path] UTF8String], trackerInfo, [fTrackers count], [[fCommentView string] UTF8String], [fPrivateCheck state] == NSOnState);

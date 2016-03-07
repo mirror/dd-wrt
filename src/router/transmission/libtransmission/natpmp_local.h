@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: natpmp.h 12204 2011-03-22 15:19:54Z jordan $
+ * $Id: natpmp_local.h 14369 2014-12-10 18:58:12Z mikedld $
  */
 
 #ifndef __TRANSMISSION__

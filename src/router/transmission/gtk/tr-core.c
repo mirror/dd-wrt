@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: tr-core.c 14133 2013-07-20 16:37:59Z jordan $
+ * $Id: tr-core.c 14587 2015-10-23 04:09:40Z mikedld $
  *
  * Copyright (c) Transmission authors and contributors
  *
@@ -1122,7 +1122,7 @@ core_create_new_torrent (TrCore * core, tr_ctor * ctor)
           /* #1294: don't delete the .torrent file if it's our internal copy */
           const int is_internal = (strstr (source, config) == source);
           if (!is_internal)
-              gtr_file_trash_or_remove (source);
+              gtr_file_trash_or_remove (source, NULL);
         }
     }
 
@@ -1171,16 +1171,16 @@ core_add_ctor (TrCore * core, tr_ctor * ctor,
 static void
 core_apply_defaults (tr_ctor * ctor)
 {
-  if (tr_ctorGetPaused (ctor, TR_FORCE, NULL))
+  if (!tr_ctorGetPaused (ctor, TR_FORCE, NULL))
     tr_ctorSetPaused (ctor, TR_FORCE, !gtr_pref_flag_get (TR_KEY_start_added_torrents));
 
-  if (tr_ctorGetDeleteSource (ctor, NULL))
+  if (!tr_ctorGetDeleteSource (ctor, NULL))
     tr_ctorSetDeleteSource (ctor, gtr_pref_flag_get (TR_KEY_trash_original_torrent_files));
 
-  if (tr_ctorGetPeerLimit (ctor, TR_FORCE, NULL))
+  if (!tr_ctorGetPeerLimit (ctor, TR_FORCE, NULL))
     tr_ctorSetPeerLimit (ctor, TR_FORCE, gtr_pref_int_get (TR_KEY_peer_limit_per_torrent));
 
-  if (tr_ctorGetDownloadDir (ctor, TR_FORCE, NULL))
+  if (!tr_ctorGetDownloadDir (ctor, TR_FORCE, NULL))
     tr_ctorSetDownloadDir (ctor, TR_FORCE, gtr_pref_string_get (TR_KEY_download_dir));
 }
 
@@ -1726,41 +1726,41 @@ static GHashTable * pendingRequests = NULL;
 static gboolean
 core_read_rpc_response_idle (void * vresponse)
 {
-  tr_variant top;
   int64_t intVal;
-  struct evbuffer * response = vresponse;
+  tr_variant * response = vresponse;
 
-  tr_variantFromJson (&top, evbuffer_pullup (response, -1), evbuffer_get_length (response));
-
-  if (tr_variantDictFindInt (&top, TR_KEY_tag, &intVal))
+  if (tr_variantDictFindInt (response, TR_KEY_tag, &intVal))
     {
       const int tag = (int)intVal;
       struct pending_request_data * data = g_hash_table_lookup (pendingRequests, &tag);
       if (data)
         {
           if (data->response_func)
-            (*data->response_func)(data->core, &top, data->response_func_user_data);
+            (*data->response_func)(data->core, response, data->response_func_user_data);
           g_hash_table_remove (pendingRequests, &tag);
         }
     }
 
-  tr_variantFree (&top);
-  evbuffer_free (response);
+  tr_variantFree (response);
+  tr_free (response);
   return G_SOURCE_REMOVE;
 }
 
 static void
-core_read_rpc_response (tr_session       * session UNUSED,
-                        struct evbuffer  * response,
-                        void             * unused UNUSED)
+core_read_rpc_response (tr_session * session UNUSED,
+                        tr_variant * response,
+                        void       * unused UNUSED)
 {
-  struct evbuffer * buf = evbuffer_new ();
-  evbuffer_add_buffer (buf, response);
-  gdk_threads_add_idle (core_read_rpc_response_idle, buf);
+  tr_variant * response_copy = tr_new (tr_variant, 1);
+
+  *response_copy = *response;
+  tr_variantInitBool (response, false);
+
+  gdk_threads_add_idle (core_read_rpc_response_idle, response_copy);
 }
 
 static void
-core_send_rpc_request (TrCore * core, const char * json, int tag,
+core_send_rpc_request (TrCore * core, const tr_variant * request, int tag,
                        server_response_func * response_func,
                        void * response_func_user_data)
 {
@@ -1787,9 +1787,15 @@ core_send_rpc_request (TrCore * core, const char * json, int tag,
 
       /* make the request */
 #ifdef DEBUG_RPC
-      g_message ("request: [%s]", json);
+      {
+        struct evbuffer * buf = tr_variantToBuf (request, TR_VARIANT_FMT_JSON_LEAN);
+        const size_t buf_len = evbuffer_get_length (buf);
+        g_message ("request: [%*.*s]", (int) buf_len, (int) buf_len, evbuffer_pullup (buf, -1));
+        evbuffer_free (buf);
+      }
 #endif
-      tr_rpc_request_exec_json (session, json, strlen (json), core_read_rpc_response, GINT_TO_POINTER (tag));
+
+      tr_rpc_request_exec_json (session, request, core_read_rpc_response, GINT_TO_POINTER (tag));
     }
 }
 
@@ -1801,10 +1807,11 @@ static void
 on_port_test_response (TrCore * core, tr_variant * response, gpointer u UNUSED)
 {
   tr_variant * args;
-  bool is_open = FALSE;
+  bool is_open;
 
-  if (tr_variantDictFindDict (response, TR_KEY_arguments, &args))
-    tr_variantDictFindBool (args, TR_KEY_port_is_open, &is_open);
+  if (!tr_variantDictFindDict (response, TR_KEY_arguments, &args) ||
+      !tr_variantDictFindBool (args, TR_KEY_port_is_open, &is_open))
+    is_open = false;
 
   core_emit_port_tested (core, is_open);
 }
@@ -1812,10 +1819,14 @@ on_port_test_response (TrCore * core, tr_variant * response, gpointer u UNUSED)
 void
 gtr_core_port_test (TrCore * core)
 {
-  char buf[64];
   const int tag = nextTag++;
-  g_snprintf (buf, sizeof (buf), "{ \"method\": \"port-test\", \"tag\": %d }", tag);
-  core_send_rpc_request (core, buf, tag, on_port_test_response, NULL);
+  tr_variant request;
+
+  tr_variantInitDict (&request, 2);
+  tr_variantDictAddStr (&request, TR_KEY_method, "port-test");
+  tr_variantDictAddInt (&request, TR_KEY_tag, tag);
+  core_send_rpc_request (core, &request, tag, on_port_test_response, NULL);
+  tr_variantFree (&request);
 }
 
 /***
@@ -1826,10 +1837,11 @@ static void
 on_blocklist_response (TrCore * core, tr_variant * response, gpointer data UNUSED)
 {
   tr_variant * args;
-  int64_t ruleCount = -1;
+  int64_t ruleCount;
 
-  if (tr_variantDictFindDict (response, TR_KEY_arguments, &args))
-    tr_variantDictFindInt (args, TR_KEY_blocklist_size, &ruleCount);
+  if (!tr_variantDictFindDict (response, TR_KEY_arguments, &args) ||
+      !tr_variantDictFindInt (args, TR_KEY_blocklist_size, &ruleCount))
+    ruleCount = -1;
 
   if (ruleCount > 0)
     gtr_pref_int_set (TR_KEY_blocklist_date, tr_time ());
@@ -1840,10 +1852,14 @@ on_blocklist_response (TrCore * core, tr_variant * response, gpointer data UNUSE
 void
 gtr_core_blocklist_update (TrCore * core)
 {
-  char buf[64];
   const int tag = nextTag++;
-  g_snprintf (buf, sizeof (buf), "{ \"method\": \"blocklist-update\", \"tag\": %d }", tag);
-  core_send_rpc_request (core, buf, tag, on_blocklist_response, NULL);
+  tr_variant request;
+
+  tr_variantInitDict (&request, 2);
+  tr_variantDictAddStr (&request, TR_KEY_method, "blocklist-update");
+  tr_variantDictAddInt (&request, TR_KEY_tag, tag);
+  core_send_rpc_request (core, &request, tag, on_blocklist_response, NULL);
+  tr_variantFree (&request);
 }
 
 /***
@@ -1851,18 +1867,10 @@ gtr_core_blocklist_update (TrCore * core)
 ***/
 
 void
-gtr_core_exec_json (TrCore * core, const char * json)
-{
-  const int tag = nextTag++;
-  core_send_rpc_request (core, json, tag, NULL, NULL);
-}
-
-void
 gtr_core_exec (TrCore * core, const tr_variant * top)
 {
-  char * json = tr_variantToStr (top, TR_VARIANT_FMT_JSON_LEAN, NULL);
-  gtr_core_exec_json (core, json);
-  tr_free (json);
+  const int tag = nextTag++;
+  core_send_rpc_request (core, top, tag, NULL, NULL);
 }
 
 /***

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: NSStringAdditions.h 14045 2013-03-07 23:55:31Z livings124 $
+ * $Id: NSStringAdditions.h 14341 2014-10-17 05:12:00Z livings124 $
  *
  * Copyright (c) 2005-2012 Transmission authors and contributors
  *
@@ -40,8 +40,8 @@
 
 + (NSString *) percentString: (CGFloat) progress longDecimals: (BOOL) longDecimals;
 
-+ (NSString *) timeString: (uint64_t) seconds showSeconds: (BOOL) showSeconds;
-+ (NSString *) timeString: (uint64_t) seconds showSeconds: (BOOL) showSeconds maxFields: (NSUInteger) max;
++ (NSString *) timeString: (uint64_t) seconds includesTimeRemainingPhrase: (BOOL) includesTimeRemainingPhrase showSeconds: (BOOL) showSeconds;
++ (NSString *) timeString: (uint64_t) seconds includesTimeRemainingPhrase: (BOOL) includesTimeRemainingPhrase showSeconds: (BOOL) showSeconds maxFields: (NSUInteger) max;
 
 - (NSComparisonResult) compareNumeric: (NSString *) string; //simple compare method for strings with numbers (works for IP addresses)
 

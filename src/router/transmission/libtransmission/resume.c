@@ -4,13 +4,15 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: resume.c 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: resume.c 14644 2015-12-29 19:37:31Z mikedld $
  */
 
 #include <string.h>
 
 #include "transmission.h"
 #include "completion.h"
+#include "error.h"
+#include "file.h"
 #include "log.h"
 #include "metainfo.h" /* tr_metainfoGetBasename () */
 #include "peer-mgr.h" /* pex */
@@ -75,7 +77,7 @@ addPeers (tr_torrent * tor, const uint8_t * buf, int buflen)
         }
     }
 
-    return numAdded;
+  return numAdded;
 }
 
 
@@ -161,7 +163,7 @@ loadDND (tr_variant * dict, tr_torrent * tor)
     }
   else
     {
-      tr_logAddTorDbg (tor, "Couldn't load DND flags. DND list (%p) has %"TR_PRIuSIZE" children; torrent has %d files",
+      tr_logAddTorDbg (tor, "Couldn't load DND flags. DND list (%p) has %zu"" children; torrent has %d files",
                        (void*)list, tr_variantListSize (list), (int)n);
     }
 
@@ -705,14 +707,16 @@ loadFromFile (tr_torrent * tor, uint64_t fieldsToLoad)
   bool boolVal;
   uint64_t fieldsLoaded = 0;
   const bool wasDirty = tor->isDirty;
+  tr_error * error = NULL;
 
   assert (tr_isTorrent (tor));
 
   filename = getResumeFilename (tor);
 
-  if (tr_variantFromFile (&top, TR_VARIANT_FMT_BENC, filename))
+  if (!tr_variantFromFile (&top, TR_VARIANT_FMT_BENC, filename, &error))
     {
-      tr_logAddTorDbg (tor, "Couldn't read \"%s\"", filename);
+      tr_logAddTorDbg (tor, "Couldn't read \"%s\": %s", filename, error->message);
+      tr_error_free (error);
 
       tr_free (filename);
       return fieldsLoaded;
@@ -868,7 +872,7 @@ setFromCtor (tr_torrent * tor, uint64_t fields, const tr_ctor * ctor, int mode)
     {
       bool isPaused;
 
-      if (!tr_ctorGetPaused (ctor, mode, &isPaused))
+      if (tr_ctorGetPaused (ctor, mode, &isPaused))
         {
           tor->isRunning = !isPaused;
           ret |= TR_FR_RUN;
@@ -876,14 +880,14 @@ setFromCtor (tr_torrent * tor, uint64_t fields, const tr_ctor * ctor, int mode)
     }
 
   if (fields & TR_FR_MAX_PEERS)
-    if (!tr_ctorGetPeerLimit (ctor, mode, &tor->maxConnectedPeers))
+    if (tr_ctorGetPeerLimit (ctor, mode, &tor->maxConnectedPeers))
       ret |= TR_FR_MAX_PEERS;
 
   if (fields & TR_FR_DOWNLOAD_DIR)
     {
       const char * path;
 
-      if (!tr_ctorGetDownloadDir (ctor, mode, &path) && path && *path)
+      if (tr_ctorGetDownloadDir (ctor, mode, &path) && path && *path)
         {
           ret |= TR_FR_DOWNLOAD_DIR;
           tr_free (tor->downloadDir);
@@ -928,6 +932,6 @@ void
 tr_torrentRemoveResume (const tr_torrent * tor)
 {
   char * filename = getResumeFilename (tor);
-  tr_remove (filename);
+  tr_sys_path_remove (filename, NULL);
   tr_free (filename);
 }

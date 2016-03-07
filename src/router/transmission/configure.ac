@@ -3,8 +3,8 @@ dnl STATUS: "X" for prerelease beta builds,
 dnl         "Z" for unsupported trunk builds,
 dnl         "0" for stable, supported releases
 dnl these should be the only two lines you need to change
-m4_define([user_agent_prefix],[2.84])
-m4_define([peer_id_prefix],[-TR2840-])
+m4_define([user_agent_prefix],[2.92])
+m4_define([peer_id_prefix],[-TR2920-])
 
 AC_INIT([transmission],[user_agent_prefix],[http://trac.transmissionbt.com/newticket])
 AC_SUBST(USERAGENT_PREFIX,[user_agent_prefix])
@@ -18,6 +18,7 @@ dnl AM_CONFIG_HEADER(config.h)
 AC_CONFIG_SRCDIR(libtransmission/transmission.h)
 AM_INIT_AUTOMAKE([1.9 tar-pax no-dist-gzip dist-xz])
 LT_INIT
+LT_LIB_M
 
 if test m4_substr(peer_id_prefix,6,1) = "0"; then
   supported_build=yes
@@ -30,18 +31,28 @@ else
   fi
 fi
 AM_CONDITIONAL(TR_UNSTABLE, test "x$supported_build" = "xno")
+AM_CONDITIONAL(HAVE_REVISION_FILE, test -f REVISION)
 
 ##
 ##
 ##   MANDATORY for everything
 ##
 ##
+
 CURL_MINIMUM=7.15.4
 AC_SUBST(CURL_MINIMUM)
 LIBEVENT_MINIMUM=2.0.10
 AC_SUBST(LIBEVENT_MINIMUM)
-OPENSSL_MINIMUM=0.9.4
+ZLIB_MINIMUM=1.2.3
+AC_SUBST(ZLIB_MINIMUM)
+
+# crypto backends
+OPENSSL_MINIMUM=0.9.7
 AC_SUBST(OPENSSL_MINIMUM)
+CYASSL_MINIMUM=3.0
+AC_SUBST(CYASSL_MINIMUM)
+POLARSSL_MINIMUM=0x01020000 # 1.2
+AC_SUBST(POLARSSL_MINIMUM)
 
 ##
 ##
@@ -72,7 +83,7 @@ AC_PROG_CXX
 AC_C_INLINE
 if test "x$GCC" = "xyes" ; then
 
-    CFLAGS="$CFLAGS -std=gnu99 -ggdb3 -Wall -W -Wpointer-arith -Wformat-security -Wcast-align -Wundef -Wcast-align -Wstrict-prototypes -Wmissing-declarations -Wmissing-format-attribute -Wredundant-decls -Wnested-externs -Wunused-parameter -Wwrite-strings -Winline -Wfloat-equal"
+    CFLAGS="$CFLAGS -std=gnu99 -ggdb3 -Wall -W -Wpointer-arith -Wformat-security -Wundef -Wcast-align -Wstrict-prototypes -Wmissing-declarations -Wmissing-format-attribute -Wredundant-decls -Wnested-externs -Wunused-parameter -Wwrite-strings -Winline -Wfloat-equal"
 
     dnl figure out gcc version
     AC_MSG_CHECKING([gcc version])
@@ -84,7 +95,7 @@ if test "x$GCC" = "xyes" ; then
     AC_MSG_RESULT($GCC_VERSION)
     if test $GCC_VERSION_NUM -ge 304; then
         dnl these were added in 3.4
-        CFLAGS="$CFLAGS -Wextra -Wdeclaration-after-statement -Winit-self"
+        CFLAGS="$CFLAGS -Wextra -Winit-self"
     fi
     if test $GCC_VERSION_NUM -ge 403; then
         dnl these were added in 4.3
@@ -95,8 +106,8 @@ fi
 AC_HEADER_STDC
 AC_HEADER_TIME
 
-AC_CHECK_HEADERS([stdbool.h])
-AC_CHECK_FUNCS([iconv_open pread pwrite lrintf strlcpy daemon dirname basename strcasecmp localtime_r fallocate64 posix_fallocate memmem strsep strtold syslog valloc getpagesize posix_memalign statvfs htonll ntohll mkdtemp])
+AC_CHECK_HEADERS([stdbool.h xlocale.h])
+AC_CHECK_FUNCS([iconv pread pwrite lrintf strlcpy daemon dirname basename canonicalize_file_name strcasecmp localtime_r fallocate64 posix_fallocate memmem strsep strtold syslog valloc getpagesize posix_memalign statvfs htonll ntohll mkdtemp uselocale _configthreadlocale])
 AC_PROG_INSTALL
 AC_PROG_MAKE_SET
 ACX_PTHREAD
@@ -109,13 +120,72 @@ AC_SEARCH_LIBS(cos, [m])
 AC_SEARCH_LIBS([socket], [socket net])
 AC_SEARCH_LIBS([gethostbyname], [nsl bind])
 AC_SEARCH_LIBS([quotacursor_skipidtype], [quota])
-PKG_CHECK_MODULES(OPENSSL, [openssl >= $OPENSSL_MINIMUM], , [CHECK_SSL()])
 PKG_CHECK_MODULES(LIBCURL, [libcurl >= $CURL_MINIMUM])
 PKG_CHECK_MODULES(LIBEVENT, [libevent >= $LIBEVENT_MINIMUM])
-AC_PATH_ZLIB
+PKG_CHECK_MODULES(ZLIB, [zlib >= $ZLIB_MINIMUM])
+
+
+AC_ARG_WITH([crypto], AS_HELP_STRING([--with-crypto=PKG],
+            [Use specified crypto library: auto (default), openssl, cyassl, polarssl]),
+            [want_crypto=$withval], [want_crypto=auto])
+
+AS_IF([test "x$want_crypto" = "xauto" -o "x$want_crypto" = "xopenssl"], [
+    PKG_CHECK_MODULES(OPENSSL, [openssl >= $OPENSSL_MINIMUM],
+        [want_crypto="openssl"; CRYPTO_PKG="openssl"; CRYPTO_CFLAGS="$OPENSSL_CFLAGS"; CRYPTO_LIBS="$OPENSSL_LIBS"],
+        [AS_IF([test "x$want_crypto" = "xopenssl"],
+            [AC_MSG_ERROR([OpenSSL support requested, but library not found.])]
+        )]
+    )
+])
+AS_IF([test "x$want_crypto" = "xauto" -o "x$want_crypto" = "xcyassl"], [
+    PKG_CHECK_MODULES(WOLFSSL, [wolfssl >= $CYASSL_MINIMUM],
+        [want_crypto="cyassl"; CRYPTO_PKG="cyassl"; CRYPTO_CFLAGS="$WOLFSSL_CFLAGS"; CRYPTO_LIBS="$WOLFSSL_LIBS"],
+        [PKG_CHECK_MODULES(CYASSL, [cyassl >= $CYASSL_MINIMUM],
+            [want_crypto="cyassl"; CRYPTO_PKG="cyassl"; CRYPTO_CFLAGS="$CYASSL_CFLAGS"; CRYPTO_LIBS="$CYASSL_LIBS"],
+            [AS_IF([test "x$want_crypto" = "xcyassl"],
+                [AC_MSG_ERROR([CyaSSL support requested, but library not found.])]
+            )]
+        )]
+    )
+])
+AS_IF([test "x$want_crypto" = "xauto" -o "x$want_crypto" = "xpolarssl"], [
+    AC_CHECK_HEADER([polarssl/version.h],
+        [AC_EGREP_CPP([version_ok], [#include <polarssl/version.h>
+                                     #if defined (POLARSSL_VERSION_NUMBER) && POLARSSL_VERSION_NUMBER >= $POLARSSL_MINIMUM
+                                     version_ok
+                                     #endif],
+            [AC_CHECK_LIB([polarssl], [dhm_calc_secret],
+                [want_crypto="polarssl"; CRYPTO_PKG="polarssl"; CRYPTO_CFLAGS=""; CRYPTO_LIBS="-lpolarssl"],
+                [AS_IF([test "x$want_crypto" = "xpolarssl"],
+                    [AC_MSG_ERROR([PolarSSL support requested, but library not found.])]
+                )]
+            )],
+            [AS_IF([test "x$want_crypto" = "xpolarssl"],
+                [AC_MSG_ERROR([PolarSSL support requested, but version not suitable.])]
+            )]
+        )],
+        [AS_IF([test "x$want_crypto" = "xpolarssl"],
+            [AC_MSG_ERROR([PolarSSL support requested, but headers not found.])]
+        )]
+    )
+])
+# we should have found the library by now
+AS_IF([test "x$CRYPTO_PKG" = "x"], [
+    AS_IF([test "x$want_crypto" = "xauto"],
+        [AC_MSG_ERROR([Unable to find any supported crypto library.])],
+        [AC_MSG_ERROR([Requested crypto library "$want_crypto" is not supported.])],
+    )
+])
+
+AM_CONDITIONAL([CRYPTO_USE_OPENSSL],[test "x$CRYPTO_PKG" = "xopenssl"])
+AM_CONDITIONAL([CRYPTO_USE_CYASSL],[test "x$CRYPTO_PKG" = "xcyassl"])
+AM_CONDITIONAL([CRYPTO_USE_POLARSSL],[test "x$CRYPTO_PKG" = "xpolarssl"])
+AC_SUBST(CRYPTO_PKG)
+AC_SUBST(CRYPTO_CFLAGS)
+AC_SUBST(CRYPTO_LIBS)
+
 
 AC_SYS_LARGEFILE
-AC_CHECK_FUNCS([lseek64])
 
 AC_FUNC_GETMNTENT
 
@@ -134,35 +204,32 @@ dnl ----------------------------------------------------------------------------
 dnl
 dnl file monitoring for the daemon
 
-AC_CHECK_HEADER([sys/inotify.h],
-                [AC_CHECK_FUNC([inotify_init],[have_inotify="yes"],[have_inotify="no"])],
-                [have_inotify="no"])
 AC_ARG_WITH([inotify],
-            [AS_HELP_STRING([--with-inotify],[Enable inotify support (default=auto)])],
-            [want_inotify=${withval}],
-            [want_inotify=${have_inotify}])
-if test "x$want_inotify" = "xyes" ; then
-    if test "x$have_inotify" = "xyes"; then
-      AC_DEFINE([WITH_INOTIFY],[1])
-    else
-      AC_MSG_ERROR("inotify not found!")
-    fi
-fi
+            [AS_HELP_STRING([--with-inotify], [Enable inotify support (default=auto)])],
+            [WANT_INOTIFY=${withval}],
+            [WANT_INOTIFY=auto])
+HAVE_INOTIFY=0
+AS_IF([test "x$WANT_INOTIFY" != "xno"],
+      [AC_CHECK_HEADER([sys/inotify.h],
+                       [AC_CHECK_FUNC([inotify_init],
+                                      [HAVE_INOTIFY=1])],
+                       [AS_IF([test "x$WANT_INOTIFY" = "xyes"],
+                              [AC_MSG_ERROR("inotify not found!")])])])
+AM_CONDITIONAL([USE_INOTIFY], [test "x$WANT_INOTIFY" != "xno" -a $HAVE_INOTIFY -eq 1])
 
-AC_CHECK_HEADER([sys/event.h],
-                [AC_CHECK_FUNC([kqueue],[have_kqueue="yes"],[have_kqueue="no"])],
-                [have_kqueue="no"])
 AC_ARG_WITH([kqueue],
             [AS_HELP_STRING([--with-kqueue],[Enable kqueue support (default=auto)])],
-            [want_kqueue=${withval}],
-            [want_kqueue=${have_kqueue}])
-if test "x$want_kqueue" = "xyes" ; then
-    if test "x$have_kqueue" = "xyes"; then
-      AC_DEFINE([WITH_KQUEUE],[1])
-    else
-      AC_MSG_ERROR("kqueue not found!")
-    fi
-fi
+            [WANT_KQUEUE=${withval}],
+            [WANT_KQUEUE=auto])
+HAVE_KQUEUE=0
+AS_IF([test "x$WANT_KQUEUE" != "xno"],
+      [AC_CHECK_HEADER([sys/event.h],
+                       [AC_CHECK_FUNC([kqueue],
+                                      [HAVE_KQUEUE=1])],
+                       [AS_IF([test "x$WANT_KQUEUE" = "xyes"],
+                              [AC_MSG_ERROR("kqueue not found!")])])])
+AM_CONDITIONAL([USE_KQUEUE], [test "x$WANT_KQUEUE" != "xno" -a $HAVE_KQUEUE -eq 1])
+
 
 AC_CHECK_HEADERS([sys/statvfs.h \
                   xfs/xfs.h])
@@ -193,8 +260,49 @@ dnl  dht
 
 DHT_CFLAGS="-I\$(top_srcdir)/third-party/dht"
 DHT_LIBS="\$(top_builddir)/third-party/dht/libdht.a"
+DHT_LIBS_QT="\$\${TRANSMISSION_TOP}/third-party/dht/libdht.a"
+build_bundled_dht="yes"
+AC_ARG_ENABLE([external-dht],
+              AS_HELP_STRING([--enable-external-dht],[Use system external-dht]),
+              [want_external_dht=${enableval}],
+              [want_external_dht=no])
+if test "x$want_external_dht" != "xno" ; then
+       dnl Would be lovely if it had pkgconfig
+       DHT_CFLAGS=""
+       DHT_LIBS="-ldht"
+       DHT_LIBS_QT="-ldht"
+       build_bundled_dht="no"
+fi
+
+AM_CONDITIONAL([BUILD_DHT],[test "x$build_bundled_dht" = "xyes"])
 AC_SUBST(DHT_CFLAGS)
 AC_SUBST(DHT_LIBS)
+AC_SUBST(DHT_LIBS_QT)
+
+
+dnl ----------------------------------------------------------------------------
+dnl
+dnl  libb64
+
+LIBB64_CFLAGS="-I\$(top_srcdir)/third-party/libb64"
+LIBB64_LIBS="\$(top_builddir)/third-party/libb64/libb64.a"
+LIBB64_LIBS_QT="\$\${TRANSMISSION_TOP}/third-party/libb64/libb64.a"
+build_bundled_b64="yes"
+AC_ARG_ENABLE([external-b64],
+              AS_HELP_STRING([--enable-external-b64],[Use system libb64]),
+              [want_external_b64=${enableval}],
+              [want_external_b64=no])
+if test "x$want_external_b64" != "xno" ; then
+    LIBB64_CFLAGS="-DUSE_SYSTEM_B64"
+    LIBB64_LIBS="-lb64"
+    LIBB64_LIBS_QT="-lb64"
+    build_bundled_b64="no"
+fi
+
+AM_CONDITIONAL([BUILD_B64],[test "x$build_bundled_b64" = "xyes"])
+AC_SUBST(LIBB64_CFLAGS)
+AC_SUBST(LIBB64_LIBS)
+AC_SUBST(LIBB64_LIBS_QT)
 
 
 dnl ----------------------------------------------------------------------------
@@ -208,17 +316,36 @@ AC_CHECK_LIB([rt],
 
 AC_MSG_CHECKING([µTP])
 build_utp="no"
-if test "x$CXX" != "x" ; then
-    have_utp="yes"
+
+ac_save_LIBS="$LIBS"
+LIBS="-lutp"
+AC_LINK_IFELSE(
+  [AC_LANG_PROGRAM([#include <libutp/utp.h>],
+                   [struct UTPFunctionTable func;])],
+  [have_utp="yes"],
+  [have_utp="no"]
+)
+LIBS="$ac_save_LIBS"
+
+if test "x$have_utp" = "xyes" -o "x$CXX" != "x"; then
+    want_utp_default="yes"
 else
-    have_utp="no"
+    want_utp_default="no"
 fi
+
 AC_ARG_ENABLE([utp],
               AS_HELP_STRING([--enable-utp],[build µTP support]),
               [want_utp=${enableval}],
-              [want_utp=${have_utp}])
-if test "x$want_utp" = "xyes" ; then
+              [want_utp=${want_utp_default}])
+if test "x$want_utp" = "xyes"; then
     if test "x$have_utp" = "xyes"; then
+        dnl Would be lovely if it had pkgconfig
+        LIBUTP_CFLAGS=""
+        LIBUTP_LIBS="-lutp $libutp_extra_libs"
+        LIBUTP_LIBS_QT="-lutp $libutp_extra_libs"
+        AC_DEFINE([WITH_UTP],[1])
+        build_utp="system"
+    elif test "x$CXX" != "x"; then
         LIBUTP_CFLAGS="-I\$(top_srcdir)/third-party/"
         LIBUTP_LIBS="\$(top_builddir)/third-party/libutp/libutp.a"
         LIBUTP_LIBS_QT="\$\${TRANSMISSION_TOP}/third-party/libutp/libutp.a"
@@ -448,7 +575,8 @@ case $host_os in
    *mingw32*)
      have_msw="yes"
      CXXFLAGS="$CXXFLAGS -mms-bitfields -mwin32 -mwindows"
-     CPPFLAGS="$CPPFLAGS -DWIN32 -D_WIN32 -DWIN32_LEAN_AND_MEAN"
+     CPPFLAGS="$CPPFLAGS -DWINVER=0x0600 -D_WIN32_WINNT=0x0600 -DWIN32_LEAN_AND_MEAN"
+     # CPPFLAGS="$CPPFLAGS -D__USE_MINGW_ANSI_STDIO=1 -D__STDC_FORMAT_MACROS=1"
      LIBS="$LIBS -liphlpapi -lshell32 -lws2_32"
      transmissionlocaledir="locale"
      if test -z "$host_alias"; then
@@ -461,7 +589,6 @@ case $host_os in
 
   *darwin*)
     have_darwin="yes"
-    CFLAGS="-DMACOSX $CFLAGS"
     ;;
 
 esac
@@ -477,7 +604,7 @@ fi
 AC_ARG_ENABLE([cli],
               [AS_HELP_STRING([--enable-cli],[build command-line client])],
               [build_cli=${enableval}],
-              [build_cli="yes"])
+              [build_cli="no"])
 AM_CONDITIONAL([BUILD_CLI],[test "x$build_cli" = "xyes"])
 
 AC_ARG_ENABLE([mac],
@@ -509,13 +636,6 @@ EOF
       exit 1
     fi
 fi
-if test "x$have_darwin" = "xyes"; then
-    AC_DEFINE([HAVE_DARWIN], 1)
-    AC_DEFINE([SYS_DARWIN], 1)
-fi
-if test "x$have_msw" = "xyes"; then
-    AC_DEFINE([HAVE_MSW], 1)
-fi
 AM_CONDITIONAL(WIN32, test "x$have_msw" = "xyes")
 
 dnl ----------------------------------------------------------------------------
@@ -531,6 +651,7 @@ AC_CONFIG_FILES([Makefile
                  utils/Makefile
                  third-party/Makefile
                  third-party/dht/Makefile
+                 third-party/libb64/Makefile
                  third-party/libutp/Makefile
                  third-party/libnatpmp/Makefile
                  third-party/miniupnp/Makefile
@@ -562,6 +683,7 @@ Configuration:
    Build libtransmission:                             yes
       * optimized for low-resource systems:           ${enable_lightweight}
       * µTP enabled:                                  ${build_utp}
+      * crypto library:                               ${CRYPTO_PKG}
 
    Build Command-Line client:                         ${build_cli}
 

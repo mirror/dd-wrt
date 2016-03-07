@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: Torrent.h 13828 2013-01-22 00:09:48Z livings124 $
+ * $Id: Torrent.h 14587 2015-10-23 04:09:40Z mikedld $
  *
  * Copyright (c) 2006-2012 Transmission authors and contributors
  *
@@ -133,7 +133,7 @@ typedef enum {
 - (tr_priority_t) priority;
 - (void) setPriority: (tr_priority_t) priority;
 
-+ (void) trashFile: (NSString *) path;
++ (BOOL) trashFile: (NSString *) path error: (NSError **) error;
 - (void) moveTorrentDataFileTo: (NSString *) folder;
 - (void) copyTorrentFileTo: (NSString *) path;
 

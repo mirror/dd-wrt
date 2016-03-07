@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: TorrentTableView.h 13162 2012-01-14 17:12:04Z livings124 $
+ * $Id: TorrentTableView.h 14705 2016-03-03 17:57:08Z mikedld $
  *
  * Copyright (c) 2005-2012 Transmission authors and contributors
  *
@@ -43,7 +43,7 @@
     
     IBOutlet NSMenu * fContextRow, * fContextNoRow;
     
-    NSInteger fMouseRow, fMouseControlRow, fMouseRevealRow, fMouseActionRow, fActionPushedRow;
+    NSInteger fMouseRow, fMouseControlRow, fMouseRevealRow, fMouseActionRow;
     NSArray * fSelectedValues;
     
     IBOutlet NSMenu * fActionMenu, * fUploadMenu, * fDownloadMenu, * fRatioMenu, * fPriorityMenu;
@@ -90,5 +90,7 @@
 
 - (void) togglePiecesBar;
 - (CGFloat) piecesBarPercent;
+
+- (void) selectAndScrollToRow: (NSInteger) row;
 
 @end

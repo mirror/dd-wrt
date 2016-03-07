@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: upnp.c 14262 2014-04-27 19:31:10Z jordan $
+ * $Id: upnp.c 14565 2015-10-04 04:53:18Z mikedld $
  */
 
 #include <assert.h>
@@ -88,7 +88,11 @@ tr_upnpDiscover (int msec)
 
 #if (MINIUPNPC_API_VERSION >= 8) /* adds ipv6 and error args */
   int err = UPNPDISCOVER_SUCCESS;
+ #if (MINIUPNPC_API_VERSION >= 14) /* adds ttl */
+  ret = upnpDiscover (msec, NULL, NULL, 0, 0, 2, &err);
+ #else
   ret = upnpDiscover (msec, NULL, NULL, 0, 0, &err);
+ #endif
   have_err = err != UPNPDISCOVER_SUCCESS;
 #else
   ret = upnpDiscover (msec, NULL, NULL, 0);
@@ -116,14 +120,14 @@ tr_upnpGetSpecificPortMappingEntry (tr_upnp * handle, const char * proto)
 
 #if (MINIUPNPC_API_VERSION >= 10) /* adds remoteHost arg */
 
-    err = UPNP_GetSpecificPortMappingEntry (handle->urls.controlURL, 
-                                            handle->data.first.servicetype, 
+    err = UPNP_GetSpecificPortMappingEntry (handle->urls.controlURL,
+                                            handle->data.first.servicetype,
                                             portStr,
                                             proto,
-                                            NULL /*remoteHost*/, 
+                                            NULL /*remoteHost*/,
                                             intClient,
                                             intPort,
-                                            NULL /*desc*/, 
+                                            NULL /*desc*/,
                                             NULL /*enabled*/,
                                             NULL /*duration*/);
 
@@ -224,7 +228,7 @@ tr_upnpPulse (tr_upnp * handle,
             tr_logAddNamedInfo (getKey (), _(
                          "Local Address is \"%s\""), handle->lanaddr);
             handle->state = TR_UPNP_IDLE;
-            handle->hasDiscovered = 1;
+            handle->hasDiscovered = true;
         }
         else
         {
@@ -282,7 +286,7 @@ tr_upnpPulse (tr_upnp * handle,
         int  err_udp = -1;
         errno = 0;
 
-        if (!handle->urls.controlURL || !handle->data.first.servicetype)
+        if (!handle->urls.controlURL)
             handle->isMapped = 0;
         else
         {

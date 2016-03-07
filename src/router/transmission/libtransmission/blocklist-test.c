@@ -4,15 +4,16 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: blocklist-test.c 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: blocklist-test.c 14382 2014-12-13 15:22:39Z mikedld $
  */
 
 #include <assert.h>
 #include <stdio.h>
-#include <unistd.h> /* sync() */
+#include <string.h> /* strlen () */
 
 #include "transmission.h"
 #include "blocklist.h"
+#include "file.h"
 #include "net.h"
 #include "session.h" /* tr_sessionIsAddressBlocked() */
 #include "utils.h"
@@ -35,19 +36,18 @@ static const char * contents2 =
 static void
 create_text_file (const char * path, const char * contents)
 {
-  FILE * fp;
+  tr_sys_file_t fd;
   char * dir;
 
-  dir = tr_dirname (path);
-  tr_mkdirp (dir, 0700);
+  dir = tr_sys_path_dirname (path, NULL);
+  tr_sys_dir_create (dir, TR_SYS_DIR_CREATE_PARENTS, 0700, NULL);
   tr_free (dir);
 
-  tr_remove (path);
-  fp = fopen (path, "w+");
-  fprintf (fp, "%s", contents);
-  fclose (fp);
+  fd = tr_sys_file_open (path, TR_SYS_FILE_WRITE | TR_SYS_FILE_CREATE | TR_SYS_FILE_TRUNCATE, 0600, NULL);
+  tr_sys_file_write (fd, contents, strlen (contents), NULL, NULL);
+  tr_sys_file_close (fd, NULL);
 
-  sync ();
+  libttest_sync ();
 }
 
 static bool

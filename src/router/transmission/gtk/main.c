@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: main.c 14242 2014-01-21 03:15:33Z jordan $
+ * $Id: main.c 14689 2016-02-27 23:18:02Z mikedld $
  *
  * Copyright (c) Transmission authors and contributors
  *
@@ -59,12 +59,10 @@
 #define MY_CONFIG_NAME "transmission"
 #define MY_READABLE_NAME "transmission-gtk"
 
-#define TR_RESOURCE_PATH "/com/transmissionbt/transmission/"
-
 #define SHOW_LICENSE
 static const char * LICENSE =
-  "Copyright 2005-2014. All code is copyrighted by the respective authors.\n"
-  "\n"           
+  "Copyright 2005-2016. All code is copyrighted by the respective authors.\n"
+  "\n"
   "Transmission can be redistributed and/or modified under the terms of the "
   "GNU GPL versions 2 or 3 or by any future license endorsed by Mnemosyne LLC.\n"
   "\n"
@@ -468,7 +466,7 @@ on_rpc_changed (tr_session            * session G_GNUC_UNUSED,
   data->type = type;
   data->torrent_id = tr_torrentId (tor);
   gdk_threads_add_idle (on_rpc_changed_idle, data);
-  
+
   return TR_RPC_NOREMOVE;
 }
 
@@ -523,7 +521,7 @@ on_startup (GApplication * application, gpointer user_data)
     g_mkdir_with_parents (str, 0777);
 
   /* initialize the libtransmission session */
-  session = tr_sessionInit ("gtk", cbdata->config_dir, TRUE, gtr_pref_get_all ());
+  session = tr_sessionInit (cbdata->config_dir, TRUE, gtr_pref_get_all ());
 
   gtr_pref_flag_set (TR_KEY_alt_speed_enabled, tr_sessionUsesAltSpeed (session));
   gtr_pref_int_set  (TR_KEY_peer_port, tr_sessionGetPeerPort (session));
@@ -643,13 +641,12 @@ main (int argc, char ** argv)
 #if !GLIB_CHECK_VERSION(2,35,4)
   g_type_init ();
 #endif
-  gtk_init (&argc, &argv);
   g_set_application_name (_("Transmission"));
-  gtk_window_set_default_icon_name (MY_CONFIG_NAME);
 
   /* parse the command line */
   option_context = g_option_context_new (_("[torrent files or urls]"));
   g_option_context_add_main_entries (option_context, option_entries, GETTEXT_PACKAGE);
+  g_option_context_add_group (option_context, gtk_get_option_group (FALSE));
   g_option_context_set_translation_domain (option_context, GETTEXT_PACKAGE);
   if (!g_option_context_parse (option_context, &argc, &argv, &error))
     {
@@ -666,6 +663,8 @@ main (int argc, char ** argv)
       fprintf (stderr, "%s %s\n", MY_READABLE_NAME, LONG_VERSION_STRING);
       return 0;
     }
+
+  gtk_window_set_default_icon_name (MY_CONFIG_NAME);
 
   /* init the unit formatters */
   tr_formatter_mem_init (mem_K, _ (mem_K_str), _ (mem_M_str), _ (mem_G_str), _ (mem_T_str));
@@ -1414,10 +1413,7 @@ call_rpc_for_selected_torrents (struct cbdata * data, const char * method)
 
   if (tr_variantListSize (ids) != 0)
     {
-      int json_len;
-      char * json = tr_variantToStr (&top, TR_VARIANT_FMT_JSON_LEAN, &json_len);
-      tr_rpc_request_exec_json (session, json, json_len, NULL, NULL);
-      g_free (json);
+      tr_rpc_request_exec_json (session, &top, NULL, NULL);
       invoked = TRUE;
     }
 
@@ -1467,16 +1463,24 @@ static void
 start_all_torrents (struct cbdata * data)
 {
   tr_session * session = gtr_core_session (data->core);
-  const char * cmd = "{ \"method\": \"torrent-start\" }";
-  tr_rpc_request_exec_json (session, cmd, strlen (cmd), NULL, NULL);
+  tr_variant request;
+
+  tr_variantInitDict (&request, 1);
+  tr_variantDictAddStr (&request, TR_KEY_method, "torrent-start");
+  tr_rpc_request_exec_json (session, &request, NULL, NULL);
+  tr_variantFree (&request);
 }
 
 static void
 pause_all_torrents (struct cbdata * data)
 {
   tr_session * session = gtr_core_session (data->core);
-  const char * cmd = "{ \"method\": \"torrent-stop\" }";
-  tr_rpc_request_exec_json (session, cmd, strlen (cmd), NULL, NULL);
+  tr_variant request;
+
+  tr_variantInitDict (&request, 1);
+  tr_variantDictAddStr (&request, TR_KEY_method, "torrent-stop");
+  tr_rpc_request_exec_json (session, &request, NULL, NULL);
+  tr_variantFree (&request);
 }
 
 static tr_torrent*

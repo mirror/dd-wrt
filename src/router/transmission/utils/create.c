@@ -4,19 +4,21 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: create.c 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: create.c 14615 2015-12-06 22:39:14Z jordan $
  */
 
-#include <errno.h>
 #include <stdio.h> /* fprintf() */
 #include <stdlib.h> /* strtoul(), EXIT_FAILURE */
-#include <unistd.h> /* getcwd() */
 
 #include <libtransmission/transmission.h>
+#include <libtransmission/error.h>
+#include <libtransmission/file.h>
 #include <libtransmission/makemeta.h>
 #include <libtransmission/tr-getopt.h>
 #include <libtransmission/utils.h>
 #include <libtransmission/version.h>
+
+#include "units.h"
 
 #define MY_NAME "transmission-create"
 
@@ -49,7 +51,7 @@ getUsage (void)
 }
 
 static int
-parseCommandLine (int argc, const char ** argv)
+parseCommandLine (int argc, const char * const * argv)
 {
   int c;
   const char * optarg;
@@ -84,12 +86,12 @@ parseCommandLine (int argc, const char ** argv)
             break;
 
           case 's':
-            if (optarg) 
-              { 
+            if (optarg)
+              {
                 char * endptr = NULL;
                 piecesize_kib = strtoul (optarg, &endptr, 10);
                 if (endptr && *endptr=='M')
-                  piecesize_kib *= KiB; 
+                  piecesize_kib *= KiB;
               }
             break;
 
@@ -109,32 +111,33 @@ static char*
 tr_getcwd (void)
 {
   char * result;
-  char buf[2048];
+  tr_error * error = NULL;
 
-#ifdef WIN32
-  result = _getcwd (buf, sizeof (buf));
-#else
-  result = getcwd (buf, sizeof (buf));
-#endif
+  result = tr_sys_dir_get_current (&error);
 
   if (result == NULL)
     {
-      fprintf (stderr, "getcwd error: \"%s\"", tr_strerror (errno));
-      *buf = '\0';
+      fprintf (stderr, "getcwd error: \"%s\"", error->message);
+      tr_error_free (error);
+      result = tr_strdup ("");
     }
 
-  return tr_strdup (buf);
+  return result;
 }
 
 int
-main (int argc, char * argv[])
+tr_main (int    argc,
+         char * argv[])
 {
   char * out2 = NULL;
   tr_metainfo_builder * b = NULL;
 
   tr_logSetLevel (TR_LOG_ERROR);
+  tr_formatter_mem_init (MEM_K, MEM_K_STR, MEM_M_STR, MEM_G_STR, MEM_T_STR);
+  tr_formatter_size_init (DISK_K, DISK_K_STR, DISK_M_STR, DISK_G_STR, DISK_T_STR);
+  tr_formatter_speed_init (SPEED_K, SPEED_K_STR, SPEED_M_STR, SPEED_G_STR, SPEED_T_STR);
 
-  if (parseCommandLine (argc, (const char**)argv))
+  if (parseCommandLine (argc, (const char* const *)argv))
     return EXIT_FAILURE;
 
   if (showVersion)
@@ -153,7 +156,7 @@ main (int argc, char * argv[])
 
   if (outfile == NULL)
     {
-      char * base = tr_basename (infile);
+      char * base = tr_sys_path_basename (infile, NULL);
       char * end = tr_strdup_printf ("%s.torrent", base);
       char * cwd = tr_getcwd ();
       outfile = out2 = tr_buildPath (cwd, end, NULL);

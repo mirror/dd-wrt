@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: NSStringAdditions.m 14045 2013-03-07 23:55:31Z livings124 $
+ * $Id: NSStringAdditions.m 14341 2014-10-17 05:12:00Z livings124 $
  *
  * Copyright (c) 2005-2012 Transmission authors and contributors
  *
@@ -153,13 +153,17 @@
         return [NSString localizedStringWithFormat: @"%.1f%%", tr_truncd(progress * 100.0, 1)];
 }
 
-+ (NSString *) timeString: (uint64_t) seconds showSeconds: (BOOL) showSeconds
++ (NSString *) timeString: (uint64_t) seconds includesTimeRemainingPhrase: (BOOL) includesTimeRemainingPhrase showSeconds: (BOOL) showSeconds
 {
-    return [NSString timeString: seconds showSeconds: showSeconds maxFields: NSUIntegerMax];
+    return [NSString timeString: seconds
+    includesTimeRemainingPhrase: includesTimeRemainingPhrase
+                    showSeconds: showSeconds
+                      maxFields: NSUIntegerMax];
 }
 
-+ (NSString *) timeString: (uint64_t) seconds showSeconds: (BOOL) showSeconds maxFields: (NSUInteger) max
++ (NSString *) timeString: (uint64_t) seconds includesTimeRemainingPhrase: (BOOL) includesTimeRemainingPhrase showSeconds: (BOOL) showSeconds maxFields: (NSUInteger) max
 {
+    NSAssert(![NSApp isOnYosemiteOrBetter], @"you should be using NSDateComponentsFormatter on >= 10.10");
     NSParameterAssert(max > 0);
     
     NSMutableArray * timeArray = [NSMutableArray arrayWithCapacity: MIN(max, 5)];
@@ -200,7 +204,13 @@
     if (max > 0 && showSeconds)
         [timeArray addObject: [NSString stringWithFormat: NSLocalizedString(@"%u sec", "time string"), remaining]];
     
-    return [timeArray componentsJoinedByString: @" "];
+    NSString * timeString = [timeArray componentsJoinedByString: @" "];
+    
+    if (includesTimeRemainingPhrase) {
+        timeString = [NSString stringWithFormat: NSLocalizedString(@"%@ remaining", "time remaining string"), timeString];
+    }
+    
+    return timeString;
 }
 
 - (NSComparisonResult) compareNumeric: (NSString *) string

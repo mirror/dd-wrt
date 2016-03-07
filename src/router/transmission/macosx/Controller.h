@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: Controller.h 14221 2014-01-10 17:50:05Z livings124 $
+ * $Id: Controller.h 14662 2016-01-06 11:05:37Z mikedld $
  *
  * Copyright (c) 2005-2012 Transmission authors and contributors
  *
@@ -85,15 +85,6 @@ typedef enum
     IBOutlet NSMenuItem             * fNextInfoTabItem, * fPrevInfoTabItem;
     
     IBOutlet NSMenu                 * fSortMenu;
-    
-    IBOutlet NSMenu                 * fActionMenu;
-    
-    IBOutlet NSMenu                 * fUploadMenu, * fDownloadMenu;
-    IBOutlet NSMenuItem             * fUploadLimitItem, * fUploadNoLimitItem,
-                                    * fDownloadLimitItem, * fDownloadNoLimitItem;
-    
-    IBOutlet NSMenu                 * fRatioStopMenu;
-    IBOutlet NSMenuItem             * fCheckRatioItem, * fNoCheckRatioItem;
     
     IBOutlet NSMenu                 * fGroupsSetMenu, * fGroupsSetContextMenu;
     
@@ -230,12 +221,6 @@ typedef enum
 - (void) speedLimitChanged: (id) sender;
 - (void) altSpeedToggledCallbackIsLimited: (NSDictionary *) dict;
 
-- (void) setLimitGlobalEnabled: (id) sender;
-- (void) setQuickLimitGlobal: (id) sender;
-
-- (void) setRatioGlobalEnabled: (id) sender;
-- (void) setQuickRatioGlobal: (id) sender;
-
 - (void) changeAutoImport;
 - (void) checkAutoImportDirectory;
 
@@ -250,7 +235,6 @@ typedef enum
 - (void) toggleSmallView: (id) sender;
 - (void) togglePiecesBar: (id) sender;
 - (void) toggleAvailabilityBar: (id) sender;
-- (void) toggleStatusString: (id) sender;
 
 - (void) toggleStatusBar: (id) sender;
 - (void) showStatusBar: (BOOL) show animate: (BOOL) animate;

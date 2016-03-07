@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: GroupsPrefsController.m 13251 2012-03-13 02:52:11Z livings124 $
+ * $Id: GroupsPrefsController.m 14699 2016-03-02 07:55:37Z mikedld $
  *
  * Copyright (c) 2007-2012 Transmission authors and contributors
  *
@@ -120,34 +120,17 @@
     if ([[pasteboard types] containsObject: GROUP_TABLE_VIEW_DATA_TYPE])
     {
         NSIndexSet * indexes = [NSKeyedUnarchiver unarchiveObjectWithData: [pasteboard dataForType: GROUP_TABLE_VIEW_DATA_TYPE]];
-        NSInteger oldRow = [indexes firstIndex], selectedRow = [fTableView selectedRow];
+        NSInteger oldRow = [indexes firstIndex];
         
         if (oldRow < newRow)
             newRow--;
-        
-        if ([NSApp isOnLionOrBetter])
-            [fTableView beginUpdates];
+
+        [fTableView beginUpdates];
         
         [[GroupsController groups] moveGroupAtRow: oldRow toRow: newRow];
-        
-        if ([NSApp isOnLionOrBetter])
-        {
-            [fTableView moveRowAtIndex: oldRow toIndex: newRow];
-            [fTableView endUpdates];
-        }
-        else
-        {
-            if (selectedRow == oldRow)
-                selectedRow = newRow;
-            else if (selectedRow > oldRow && selectedRow <= newRow)
-                selectedRow--;
-            else if (selectedRow < oldRow && selectedRow >= newRow)
-                selectedRow++;
-            else;
-            
-            [fTableView selectRowIndexes: [NSIndexSet indexSetWithIndex: selectedRow] byExtendingSelection: NO];
-            [fTableView reloadData];
-        }
+
+        [fTableView moveRowAtIndex: oldRow toIndex: newRow];
+        [fTableView endUpdates];
     }
     
     return YES;
@@ -163,20 +146,14 @@
     switch ([[sender cell] tagForSegment: [sender selectedSegment]])
     {
         case ADD_TAG:
-            if ([NSApp isOnLionOrBetter])
-                [fTableView beginUpdates];
+            [fTableView beginUpdates];
             
             [[GroupsController groups] addNewGroup];
             
             row = [fTableView numberOfRows];
-            
-            if ([NSApp isOnLionOrBetter])
-            {
-                [fTableView insertRowsAtIndexes: [NSIndexSet indexSetWithIndex: row] withAnimation: NSTableViewAnimationSlideUp];
-                [fTableView endUpdates];
-            }
-            else
-                [fTableView reloadData];
+
+            [fTableView insertRowsAtIndexes: [NSIndexSet indexSetWithIndex: row] withAnimation: NSTableViewAnimationSlideUp];
+            [fTableView endUpdates];
             
             [fTableView selectRowIndexes: [NSIndexSet indexSetWithIndex: row] byExtendingSelection: NO];
             [fTableView scrollRowToVisible: row];
@@ -188,19 +165,13 @@
         case REMOVE_TAG:
             row = [fTableView selectedRow];
             
-            
-            if ([NSApp isOnLionOrBetter])
-                [fTableView beginUpdates];
+
+            [fTableView beginUpdates];
             
             [[GroupsController groups] removeGroupWithRowIndex: row];            
-            
-            if ([NSApp isOnLionOrBetter])
-            {
-                [fTableView removeRowsAtIndexes: [NSIndexSet indexSetWithIndex: row] withAnimation: NSTableViewAnimationSlideUp];
-                [fTableView endUpdates];
-            }
-            else
-                [fTableView reloadData];
+
+            [fTableView removeRowsAtIndexes: [NSIndexSet indexSetWithIndex: row] withAnimation: NSTableViewAnimationSlideUp];
+            [fTableView endUpdates];
             
             if ([fTableView numberOfRows] > 0)
             {
@@ -328,12 +299,16 @@
 
 - (void) ruleEditorRowsDidChange: (NSNotification *) notification
 {
-    const CGFloat heightDifference = [fRuleEditor numberOfRows] * [fRuleEditor rowHeight] - [fRuleEditor frame].size.height;
-    NSRect windowFrame = [fRuleEditor window].frame;
-    windowFrame.size.height += heightDifference;
-    windowFrame.origin.y -= heightDifference;
+    NSScrollView * ruleEditorScrollView = [fRuleEditor enclosingScrollView];
     
-    [fRuleEditor.window setFrame: windowFrame display: YES animate: YES];
+    const CGFloat rowHeight = [fRuleEditor rowHeight];
+    const CGFloat bordersHeight = [ruleEditorScrollView frame].size.height - [ruleEditorScrollView contentSize].height;
+
+    const CGFloat requiredRowCount = [fRuleEditor numberOfRows];
+    const CGFloat maxVisibleRowCount = (long)((NSHeight([[[fRuleEditor window] screen] visibleFrame]) * 2 / 3) / rowHeight);
+    
+    [fRuleEditorHeightConstraint setConstant: MIN(requiredRowCount, maxVisibleRowCount) * rowHeight + bordersHeight];
+    [ruleEditorScrollView setHasVerticalScroller: requiredRowCount > maxVisibleRowCount];
 }
 
 @end

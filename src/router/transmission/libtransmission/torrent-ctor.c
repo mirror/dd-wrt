@@ -4,11 +4,13 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: torrent-ctor.c 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: torrent-ctor.c 14634 2015-12-25 11:34:35Z mikedld $
  */
 
 #include <errno.h> /* EINVAL */
+
 #include "transmission.h"
+#include "file.h"
 #include "magnet.h"
 #include "session.h" /* tr_sessionFindTorrentFile () */
 #include "torrent.h" /* tr_ctorGetSave () */
@@ -109,7 +111,7 @@ tr_ctorSetMetainfoFromMagnetLink (tr_ctor * ctor, const char * magnet_link)
     if (magnet_info == NULL)
         err = -1;
     else {
-        int len;
+        size_t len;
         tr_variant tmp;
         char * str;
 
@@ -133,7 +135,7 @@ tr_ctorSetMetainfoFromFile (tr_ctor *    ctor,
     size_t    len;
     int       err;
 
-    metainfo = tr_loadFile (filename, &len);
+    metainfo = tr_loadFile (filename, &len, NULL);
     if (metainfo && len)
         err = tr_ctorSetMetainfo (ctor, metainfo, len);
     else
@@ -156,7 +158,7 @@ tr_ctorSetMetainfoFromFile (tr_ctor *    ctor,
                     name = NULL;
             if (!name || !*name)
             {
-                char * base = tr_basename (filename);
+                char * base = tr_sys_path_basename (filename, NULL);
                 tr_variantDictAddStr (info, TR_KEY_name, base);
                 tr_free (base);
             }
@@ -256,17 +258,17 @@ tr_ctorSetDeleteSource (tr_ctor * ctor, bool deleteSource)
     ctor->isSet_delete = true;
 }
 
-int
+bool
 tr_ctorGetDeleteSource (const tr_ctor * ctor, bool * setme)
 {
-    int err = 0;
+    bool ret = true;
 
     if (!ctor->isSet_delete)
-        err = 1;
+        ret = false;
     else if (setme)
-        *setme = ctor->doDelete ? 1 : 0;
+        *setme = ctor->doDelete;
 
-    return err;
+    return ret;
 }
 
 /***
@@ -281,7 +283,7 @@ tr_ctorSetSave (tr_ctor * ctor, bool saveInOurTorrentsDir)
     ctor->saveInOurTorrentsDir = saveInOurTorrentsDir;
 }
 
-int
+bool
 tr_ctorGetSave (const tr_ctor * ctor)
 {
     return ctor && ctor->saveInOurTorrentsDir;
@@ -347,78 +349,78 @@ tr_ctorSetIncompleteDir (tr_ctor * ctor, const char * directory)
     ctor->incompleteDir = tr_strdup (directory);
 }
 
-int
+bool
 tr_ctorGetPeerLimit (const tr_ctor * ctor,
                      tr_ctorMode     mode,
                      uint16_t *      setmeCount)
 {
-    int err = 0;
+    bool ret = true;
     const struct optional_args * args = &ctor->optionalArgs[mode];
 
     if (!args->isSet_connected)
-        err = 1;
+        ret = false;
     else if (setmeCount)
         *setmeCount = args->peerLimit;
 
-    return err;
+    return ret;
 }
 
-int
+bool
 tr_ctorGetPaused (const tr_ctor * ctor, tr_ctorMode mode, bool * setmeIsPaused)
 {
-    int err = 0;
+    bool ret = true;
     const struct optional_args * args = &ctor->optionalArgs[mode];
 
     if (!args->isSet_paused)
-        err = 1;
+        ret = false;
     else if (setmeIsPaused)
         *setmeIsPaused = args->isPaused;
 
-    return err;
+    return ret;
 }
 
-int
+bool
 tr_ctorGetDownloadDir (const tr_ctor * ctor,
                        tr_ctorMode     mode,
                        const char **   setmeDownloadDir)
 {
-    int err = 0;
+    bool ret = true;
     const struct optional_args * args = &ctor->optionalArgs[mode];
 
     if (!args->isSet_downloadDir)
-        err = 1;
+        ret = false;
     else if (setmeDownloadDir)
         *setmeDownloadDir = args->downloadDir;
 
-    return err;
+    return ret;
 }
 
-int
+bool
 tr_ctorGetIncompleteDir (const tr_ctor  * ctor,
                          const char    ** setmeIncompleteDir)
 {
-    int err = 0;
+    bool ret = true;
 
     if (ctor->incompleteDir == NULL)
-        err = 1;
+        ret = false;
     else
         *setmeIncompleteDir = ctor->incompleteDir;
 
-    return err;
+    return ret;
 }
 
-int
+bool
 tr_ctorGetMetainfo (const tr_ctor *  ctor,
                     const tr_variant ** setme)
 {
-    int err = 0;
+    bool ret = true;
 
     if (!ctor->isSet_metainfo)
-        err = 1;
+        ret = false;
     else if (setme)
         *setme = &ctor->metainfo;
 
-    return err;
+    return ret;
 }
 
 tr_session*

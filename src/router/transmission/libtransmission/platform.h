@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: platform.h 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: platform.h 14532 2015-05-31 22:13:31Z mikedld $
  */
 
 #ifndef __TRANSMISSION__
@@ -75,13 +75,7 @@ void tr_lockLock (tr_lock *);
 void tr_lockUnlock (tr_lock *);
 
 /** @brief return nonzero if the specified lock is locked */
-int tr_lockHave (const tr_lock *);
-
-#ifdef WIN32
-void * mmap (void *ptr, long  size, long  prot, long  type, long  handle, long  arg);
-
-long munmap (void *ptr, long  size);
-#endif
+bool tr_lockHave (const tr_lock *);
 
 /* @} */
 

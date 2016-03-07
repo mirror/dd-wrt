@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: AddWindowController.m 13602 2012-10-30 00:22:10Z livings124 $
+ * $Id: AddWindowController.m 14587 2015-10-23 04:09:40Z mikedld $
  *
  * Copyright (c) 2008-2012 Transmission authors and contributors
  *
@@ -340,7 +340,7 @@
     [fTorrent setGroupValue: fGroupValue  determinationType: fGroupValueDetermination];
 
     if (fTorrentFile && fCanToggleDelete && [fDeleteCheck state] == NSOnState)
-        [Torrent trashFile: fTorrentFile];
+        [Torrent trashFile: fTorrentFile error: nil];
     
     if ([fStartCheck state] == NSOnState)
         [fTorrent startTransfer];

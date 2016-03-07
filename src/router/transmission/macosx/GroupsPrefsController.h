@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: GroupsPrefsController.h 13162 2012-01-14 17:12:04Z livings124 $
+ * $Id: GroupsPrefsController.h 14699 2016-03-02 07:55:37Z mikedld $
  *
  * Copyright (c) 2007-2012 Transmission authors and contributors
  *
@@ -39,6 +39,8 @@
     
     IBOutlet NSWindow * fGroupRulesSheetWindow;
     IBOutlet NSPredicateEditor * fRuleEditor;
+
+    IBOutlet NSLayoutConstraint * fRuleEditorHeightConstraint;
 }
 
 - (void) addRemoveGroup: (id) sender;

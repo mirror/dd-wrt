@@ -27,7 +27,7 @@ THE SOFTWARE.
 #ifndef _TR_LPD_H
 #define _TR_LPD_H
 
-/* $Id: tr-lpd.h 13625 2012-12-05 17:29:46Z jordan $ */
+/* $Id: tr-lpd.h 14321 2014-07-08 00:15:12Z jordan $ */
 
 int  tr_lpdInit (tr_session*, tr_address*);
 void tr_lpdUninit (tr_session*);
@@ -44,11 +44,6 @@ bool tr_lpdSendAnnounce (const tr_torrent*);
 * is intimately related to sizeof semantics.
 * Meaningful return values are only guaranteed for true array types. */
 #define lengthof(arr)(sizeof (* (arr)) > 0 ? sizeof (arr) / sizeof (* (arr)) : 0)
-
-/**
-* @def STATIC_ASSERT
-* @brief This helper allows to perform static checks at compile time */
-#define STATIC_ASSERT(x) { const char static_check[ ((x) ? 1 : -1)] UNUSED; }
 
 /**
 * @} */

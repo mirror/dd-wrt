@@ -4,25 +4,20 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: makemeta.c 14241 2014-01-21 03:10:30Z jordan $
+ * $Id: makemeta.c 14355 2014-12-04 12:13:59Z mikedld $
  */
 
 #include <assert.h>
 #include <errno.h>
-#include <stdio.h> /* FILE, stderr */
 #include <stdlib.h> /* qsort */
 #include <string.h> /* strcmp, strlen */
-
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h> /* read () */
-#include <dirent.h>
 
 #include <event2/util.h> /* evutil_ascii_strcasecmp () */
 
 #include "transmission.h"
-#include "crypto.h" /* tr_sha1 */
-#include "fdlimit.h" /* tr_open_file_for_scanning () */
+#include "crypto-utils.h" /* tr_sha1 */
+#include "error.h"
+#include "file.h"
 #include "log.h"
 #include "session.h"
 #include "makemeta.h"
@@ -47,35 +42,34 @@ getFiles (const char      * dir,
           const char      * base,
           struct FileList * list)
 {
-  int i;
-  DIR * odir;
+  tr_sys_dir_t odir;
   char * buf;
-  struct stat sb;
-
-  sb.st_size = 0;
+  tr_sys_path_info info;
+  tr_error * error = NULL;
 
   buf = tr_buildPath (dir, base, NULL);
-  i = stat (buf, &sb);
-  if (i)
+  if (!tr_sys_path_get_info (buf, 0, &info, &error))
     {
       tr_logAddError (_("Torrent Creator is skipping file \"%s\": %s"),
-                buf, tr_strerror (errno));
+                      buf, error->message);
       tr_free (buf);
+      tr_error_free (error);
       return list;
     }
 
-  if (S_ISDIR (sb.st_mode) && ((odir = opendir (buf))))
+  if (info.type == TR_SYS_PATH_IS_DIRECTORY &&
+      (odir = tr_sys_dir_open (buf, NULL)) != TR_BAD_SYS_DIR)
     {
-      struct dirent *d;
-      for (d = readdir (odir); d != NULL; d = readdir (odir))
-        if (d->d_name && d->d_name[0] != '.') /* skip dotfiles */
-          list = getFiles (buf, d->d_name, list);
-      closedir (odir);
+      const char * name;
+      while ((name = tr_sys_dir_read_name (odir, NULL)) != NULL)
+        if (name[0] != '.') /* skip dotfiles */
+          list = getFiles (buf, name, list);
+      tr_sys_dir_close (odir, NULL);
     }
-  else if (S_ISREG (sb.st_mode) && (sb.st_size > 0))
+  else if (info.type == TR_SYS_PATH_IS_FILE && info.size > 0)
     {
       struct FileList * node = tr_new (struct FileList, 1);
-      node->size = sb.st_size;
+      node->size = info.size;
       node->filename = tr_strdup (buf);
       node->next = list;
       list = node;
@@ -116,24 +110,21 @@ tr_metaInfoBuilderCreate (const char * topFileArg)
   int i;
   struct FileList * files;
   struct FileList * walk;
-  char topFile[TR_PATH_MAX];
   tr_metainfo_builder * ret = tr_new0 (tr_metainfo_builder, 1);
 
-  tr_realpath (topFileArg, topFile);
-
-  ret->top = tr_strdup (topFile);
+  ret->top = tr_sys_path_resolve (topFileArg, NULL);
 
   {
-    struct stat sb;
-    stat (topFile, &sb);
-    ret->isSingleFile = !S_ISDIR (sb.st_mode);
+    tr_sys_path_info info;
+    ret->isFolder = tr_sys_path_get_info (ret->top, 0, &info, NULL) &&
+                    info.type == TR_SYS_PATH_IS_DIRECTORY;
   }
 
-  /* build a list of files containing topFile and,
+  /* build a list of files containing top file and,
      if it's a directory, all of its children */
   {
-    char * dir = tr_dirname (topFile);
-    char * base = tr_basename (topFile);
+    char * dir = tr_sys_path_dirname (ret->top, NULL);
+    char * base = tr_sys_path_basename (ret->top, NULL);
     files = getFiles (dir, base, NULL);
     tr_free (base);
     tr_free (dir);
@@ -165,15 +156,37 @@ tr_metaInfoBuilderCreate (const char * topFileArg)
   return ret;
 }
 
-void
+static bool
+isValidPieceSize (uint32_t n)
+{
+  const bool isPowerOfTwo = !(n == 0) && !(n & (n - 1));
+
+  return isPowerOfTwo;
+}
+
+bool
 tr_metaInfoBuilderSetPieceSize (tr_metainfo_builder * b,
                                 uint32_t              bytes)
 {
+  if (!isValidPieceSize (bytes))
+    {
+      char wanted[32];
+      char gotten[32];
+      tr_formatter_mem_B (wanted, bytes, sizeof(wanted));
+      tr_formatter_mem_B (gotten, b->pieceSize, sizeof(gotten));
+      tr_logAddError (_("Failed to set piece size to %s, leaving it at %s"),
+                      wanted,
+                      gotten);
+      return false;
+    }
+
   b->pieceSize = bytes;
 
   b->pieceCount = (int)(b->totalSize / b->pieceSize);
   if (b->totalSize % b->pieceSize)
     ++b->pieceCount;
+
+  return true;
 }
 
 
@@ -211,7 +224,8 @@ getHashInfo (tr_metainfo_builder * b)
   uint8_t *buf;
   uint64_t totalRemain;
   uint64_t off = 0;
-  int fd;
+  tr_sys_file_t fd;
+  tr_error * error = NULL;
 
   if (!b->totalSize)
     return ret;
@@ -219,16 +233,18 @@ getHashInfo (tr_metainfo_builder * b)
   buf = tr_valloc (b->pieceSize);
   b->pieceIndex = 0;
   totalRemain = b->totalSize;
-  fd = tr_open_file_for_scanning (b->files[fileIndex].filename);
-  if (fd < 0)
+  fd = tr_sys_file_open (b->files[fileIndex].filename, TR_SYS_FILE_READ |
+                         TR_SYS_FILE_SEQUENTIAL, 0, &error);
+  if (fd == TR_BAD_SYS_FILE)
     {
-      b->my_errno = errno;
+      b->my_errno = error->code;
       tr_strlcpy (b->errfile,
                   b->files[fileIndex].filename,
                   sizeof (b->errfile));
       b->result = TR_MAKEMETA_IO_READ;
       tr_free (buf);
       tr_free (ret);
+      tr_error_free (error);
       return NULL;
     }
 
@@ -236,34 +252,37 @@ getHashInfo (tr_metainfo_builder * b)
     {
       uint8_t * bufptr = buf;
       const uint32_t thisPieceSize = (uint32_t) MIN (b->pieceSize, totalRemain);
-      uint32_t leftInPiece = thisPieceSize;
+      uint64_t leftInPiece = thisPieceSize;
 
       assert (b->pieceIndex < b->pieceCount);
 
       while (leftInPiece)
         {
-          const size_t n_this_pass = (size_t) MIN ((b->files[fileIndex].size - off), leftInPiece);
-          const ssize_t n_read = read (fd, bufptr, n_this_pass);
+          const uint64_t n_this_pass = MIN (b->files[fileIndex].size - off, leftInPiece);
+          uint64_t n_read = 0;
+          tr_sys_file_read (fd, bufptr, n_this_pass, &n_read, NULL);
           bufptr += n_read;
           off += n_read;
           leftInPiece -= n_read;
           if (off == b->files[fileIndex].size)
             {
               off = 0;
-              tr_close_file (fd);
-              fd = -1;
+              tr_sys_file_close (fd, NULL);
+              fd = TR_BAD_SYS_FILE;
               if (++fileIndex < b->fileCount)
                 {
-                  fd = tr_open_file_for_scanning (b->files[fileIndex].filename);
-                  if (fd < 0)
+                  fd = tr_sys_file_open (b->files[fileIndex].filename, TR_SYS_FILE_READ |
+                                         TR_SYS_FILE_SEQUENTIAL, 0, &error);
+                  if (fd == TR_BAD_SYS_FILE)
                     {
-                      b->my_errno = errno;
+                      b->my_errno = error->code;
                       tr_strlcpy (b->errfile,
                                   b->files[fileIndex].filename,
                                   sizeof (b->errfile));
                       b->result = TR_MAKEMETA_IO_READ;
                       tr_free (buf);
                       tr_free (ret);
+                      tr_error_free (error);
                       return NULL;
                     }
                 }
@@ -289,8 +308,8 @@ getHashInfo (tr_metainfo_builder * b)
         || (walk - ret == (int)(SHA_DIGEST_LENGTH * b->pieceCount)));
   assert (b->abortFlag || !totalRemain);
 
-  if (fd >= 0)
-    tr_close_file (fd);
+  if (fd != TR_BAD_SYS_FILE)
+    tr_sys_file_close (fd, NULL);
 
   tr_free (buf);
   return ret;
@@ -320,7 +339,8 @@ getFileInfo (const char                      * topFile,
       char * walk = filename;
       const char * token;
       while ((token = tr_strsep (&walk, TR_PATH_DELIMITER_STR)))
-        tr_variantListAddStr (uninitialized_path, token);
+        if (*token)
+          tr_variantListAddStr (uninitialized_path, token);
       tr_free (filename);
     }
 }
@@ -334,11 +354,7 @@ makeInfoDict (tr_variant          * dict,
 
   tr_variantDictReserve (dict, 5);
 
-  if (builder->isSingleFile)
-    {
-      tr_variantDictAddInt (dict, TR_KEY_length, builder->files[0].size);
-    }
-  else /* root node is a directory */
+  if (builder->isFolder) /* root node is a directory */
     {
       uint32_t  i;
       tr_variant * list = tr_variantDictAddList (dict, TR_KEY_files,
@@ -351,8 +367,12 @@ makeInfoDict (tr_variant          * dict,
           getFileInfo (builder->top, &builder->files[i], length, pathVal);
         }
     }
+  else
+    {
+      tr_variantDictAddInt (dict, TR_KEY_length, builder->files[0].size);
+    }
 
-  base = tr_basename (builder->top);
+  base = tr_sys_path_basename (builder->top, NULL);
   tr_variantDictAddStr (dict, TR_KEY_name, base);
   tr_free (base);
 
