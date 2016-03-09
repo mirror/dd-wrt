@@ -909,6 +909,13 @@ ifeq ($(CONFIG_NET_SCH_FQ_CODEL),m)
 CFLAGS += -DHAVE_FQ_CODEL
 endif
 
+ifeq ($(CONFIG_NET_SCH_PIE),y)
+CFLAGS += -DHAVE_PIE
+endif
+ifeq ($(CONFIG_NET_SCH_PIE),m)
+CFLAGS += -DHAVE_PIE
+endif
+
 ifeq ($(CONFIG_WTS),y)
 CFLAGS += -DHAVE_WTS
 endif
