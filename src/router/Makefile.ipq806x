@@ -473,8 +473,11 @@ endif
 	
 	( dd if=$(ARCH)-uclibc/vmlinux-EA8500.uImage.final bs=3145728 conv=sync count=1; dd if=$(ARCH)-uclibc/root.squashfs.new bs=64k; ) > $(ARCH)-uclibc/ddwrt-EA8500.bin
 	
+	cp $(ARCH)-uclibc/ddwrt-EA8500.bin $(ARCH)-uclibc/ddwrt-EA8500-WW.bin
 	cat tools/ea8500/ea8500.tag >> $(ARCH)-uclibc/ddwrt-EA8500.bin
 	cp $(ARCH)-uclibc/ddwrt-EA8500.bin $(ARCH)-uclibc/EA8500-factory-to-ddwrt.img
+	cat tools/ea8500/ea8500WW.tag >> $(ARCH)-uclibc/ddwrt-EA8500-WW.bin
+	cp $(ARCH)-uclibc/ddwrt-EA8500-WW.bin $(ARCH)-uclibc/EA8500WW-factory-to-ddwrt.img
 	
 	#beware max image size is 24MB
 	./tools/r7500/mkdniimg -B R7500 -v 1.0.0.94 -r "" -H "29764841+0+128+256+3x3+4x4" -i $(ARCH)-uclibc/ddwrt-R7500v1.bin -o $(ARCH)-uclibc/R7500v1-factory-to-ddwrt.img
