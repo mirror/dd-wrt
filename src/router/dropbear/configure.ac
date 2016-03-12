@@ -82,9 +82,19 @@ AC_CHECK_DECL(__UCLIBC__,
 	AC_MSG_NOTICE([Using uClibc - login() and logout() probably don't work, so we won't use them.])
 	],,,)
 
-# Checks for libraries.
-AC_CHECK_LIB(crypt, crypt, CRYPTLIB="-lcrypt")
+dnl We test for crypt() specially. On Linux (and others?) it resides in libcrypt
+dnl but we don't want link all binaries to -lcrypt, just dropbear server.
+dnl OS X doesn't need -lcrypt 
+AC_CHECK_FUNC(crypt, found_crypt_func=here)
+AC_CHECK_LIB(crypt, crypt, 
+	[
+	CRYPTLIB="-lcrypt"
+	found_crypt_func=here
+	])
 AC_SUBST(CRYPTLIB)	
+if test "t$found_crypt_func" = there; then
+AC_DEFINE(HAVE_CRYPT, 1, [crypt() function])
+fi
 
 # Check if zlib is needed
 AC_ARG_WITH(zlib,
@@ -265,7 +275,7 @@ AC_CACHE_CHECK([for struct sockaddr_storage], ac_cv_have_struct_sockaddr_storage
 #include <sys/types.h>
 #include <sys/socket.h>
 		]],
-		[[ struct sockaddr_storage s; ]])],
+		[[ if (sizeof(struct sockaddr_storage)) return 0 ]])],
 		[ ac_cv_have_struct_sockaddr_storage="yes" ],
 		[ ac_cv_have_struct_sockaddr_storage="no" ]
 	)
@@ -279,7 +289,7 @@ AC_CACHE_CHECK([for struct sockaddr_in6], ac_cv_have_struct_sockaddr_in6, [
 #include <sys/types.h>
 #include <netinet/in.h>
 		]],
-		[[ struct sockaddr_in6 s; s.sin6_family = 0; ]])],
+		[[ if (sizeof(struct sockaddr_in6)) return 0 ]])],
 		[ ac_cv_have_struct_sockaddr_in6="yes" ],
 		[ ac_cv_have_struct_sockaddr_in6="no" ]
 	)
@@ -293,7 +303,7 @@ AC_CACHE_CHECK([for struct in6_addr], ac_cv_have_struct_in6_addr, [
 #include <sys/types.h>
 #include <netinet/in.h>
 		]],
-		[[ struct in6_addr s; s.s6_addr[0] = 0; ]])],
+		[[ if (sizeof(struct in6_addr)) return 0 ]])],
 		[ ac_cv_have_struct_in6_addr="yes" ],
 		[ ac_cv_have_struct_in6_addr="no" ]
 	)
@@ -308,7 +318,7 @@ AC_CACHE_CHECK([for struct addrinfo], ac_cv_have_struct_addrinfo, [
 #include <sys/socket.h>
 #include <netdb.h>
 		]],
-		[[ struct addrinfo s; s.ai_flags = AI_PASSIVE; ]])],
+		[[ if (sizeof(struct addrinfo)) return 0 ]])],
 		[ ac_cv_have_struct_addrinfo="yes" ],
 		[ ac_cv_have_struct_addrinfo="no" ]
 	)
@@ -632,7 +642,7 @@ fi
 AC_PROG_GCC_TRADITIONAL
 AC_FUNC_MEMCMP
 AC_FUNC_SELECT_ARGTYPES
-AC_CHECK_FUNCS([dup2 getspnam getusershell memset putenv select socket strdup clearenv strlcpy strlcat daemon basename _getpty getaddrinfo freeaddrinfo getnameinfo fork writev])
+AC_CHECK_FUNCS([dup2 getpass getspnam getusershell memset putenv select socket strdup clearenv strlcpy strlcat daemon basename _getpty getaddrinfo freeaddrinfo getnameinfo fork writev])
 
 AC_SEARCH_LIBS(basename, gen, AC_DEFINE(HAVE_BASENAME))
 
@@ -719,10 +729,21 @@ AC_OUTPUT
 
 AC_MSG_NOTICE()
 if test $BUNDLED_LIBTOM = 1 ; then
-AC_MSG_NOTICE(Using bundled libtomcrypt and libtommath)
+AC_MSG_NOTICE([Using bundled libtomcrypt and libtommath])
 else
-AC_MSG_NOTICE(Using system libtomcrypt and libtommath)
+AC_MSG_NOTICE([Using system libtomcrypt and libtommath])
+fi
+
+
+if test "x$ac_cv_func_getpass" != xyes; then
+AC_MSG_NOTICE()
+AC_MSG_NOTICE([getpass() not available, dbclient will only have public-key authentication])
+fi
+
+if test "t$found_crypt_func" != there; then
+AC_MSG_NOTICE()
+AC_MSG_NOTICE([crypt() not available, dropbear server will not have password authentication])
 fi
 
 AC_MSG_NOTICE()
-AC_MSG_NOTICE(Now edit options.h to choose features.)
+AC_MSG_NOTICE([Now edit options.h to choose features.])
