@@ -299,6 +299,9 @@ config AP135
 config UBNTXW
 	bool "support for UBNT XW devices"
 	depends on DIR825C1
+config XWLOCO
+	bool "loco phy support"
+	depends on UBNTXW
 config DAP3310
 	bool "support for Dlink DAP3310"
 	depends on UBNTXW
