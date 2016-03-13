@@ -1065,13 +1065,17 @@ int __init ar7240_platform_init(void)
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
 	ar71xx_add_device_eth(1);
     #elif CONFIG_UBNTXW
+	#ifdef CONFIG_XWLOCO
+	ar71xx_add_device_mdio(0, ~BIT(1);
+	ar71xx_eth0_data.phy_mask = BIT(1);	
+	#else
 	ar71xx_add_device_mdio(0, ~(BIT(0) | BIT(1) | BIT(5)));
-	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, art + DB120_MAC0_OFFSET, 0);
-
-	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
 	ar71xx_eth0_data.phy_mask = (BIT(0) | BIT(1) | BIT(5));
 	ar71xx_eth0_data.speed = SPEED_100;
 	ar71xx_eth0_data.duplex = DUPLEX_FULL;
+	#endif
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, art + DB120_MAC0_OFFSET, 0);
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
 	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio0_device.dev;
 	ar71xx_add_device_eth(0);
     #elif CONFIG_DAP2230
