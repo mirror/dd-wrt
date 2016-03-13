@@ -78,9 +78,9 @@ void start_sshd(void)
 	char *forwarding_ok = nvram_match("sshd_forwarding", "1") ? "-a" : "";
 
 #ifdef HAVE_MAKSAT
-	eval("dropbear", "-r", RSA_HOST_KEY_FILE, "-p", port, passwd_ok);
+	sysprintf("dropbear -r %s -p %s %s %s", RSA_HOST_KEY_FILE, port, passwd_ok, forwarding_ok);
 #else
-	eval("dropbear", "-b", "/tmp/loginprompt", "-r", RSA_HOST_KEY_FILE, "-p", port, passwd_ok, forwarding_ok);
+	sysprintf("dropbear -b /tmp/loginprompt -r %s -p %s %s %s", RSA_HOST_KEY_FILE, port, passwd_ok, forwarding_ok);
 #endif
 	dd_syslog(LOG_INFO, "dropbear : ssh daemon successfully started\n");
 
