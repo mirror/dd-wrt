@@ -354,6 +354,11 @@ ifeq ($(CONFIG_ALFANX),y)
 else
 	echo "# CONFIG_ALFANX is not set" >> $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_LOCOXW),y)
+	echo CONFIG_XWLOCO=y >> $(LINUXDIR)/.config
+else
+	echo "# CONFIG_XWLOCO is not set" >> $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_DIR859),y)
 	echo CONFIG_DIR859=y >> $(LINUXDIR)/.config
 else
