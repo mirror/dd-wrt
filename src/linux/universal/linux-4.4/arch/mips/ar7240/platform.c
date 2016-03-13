@@ -1066,7 +1066,7 @@ int __init ar7240_platform_init(void)
 	ar71xx_add_device_eth(1);
     #elif CONFIG_UBNTXW
 	#ifdef CONFIG_XWLOCO
-	ar71xx_add_device_mdio(0, ~BIT(1);
+	ar71xx_add_device_mdio(0, ~BIT(1));
 	ar71xx_eth0_data.phy_mask = BIT(1);	
 	#else
 	ar71xx_add_device_mdio(0, ~(BIT(0) | BIT(1) | BIT(5)));
