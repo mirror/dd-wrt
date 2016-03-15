@@ -67,14 +67,19 @@ void start_sysinit(void)
 	cprintf("sysinit() klogctl\n");
 	klogctl(8, NULL, atoi(nvram_safe_get("console_loglevel")));
 	cprintf("sysinit() get router\n");
-
 	/*
 	 * network drivers 
 	 */
 	fprintf(stderr, "load ATH Ethernet Driver\n");
 	system("insmod ag71xx || insmod ag7240_mod");
 
+#ifdef HAVE_WPE72
 	FILE *fp = fopen("/dev/mtdblock/6", "rb");
+#else
+	FILE *fp = fopen("/dev/mtdblock/5", "rb");
+#endif
+	char mac[32];
+	unsigned int copy[256];
 	if (fp) {
 		unsigned char buf2[256];
 #ifdef HAVE_WPE72
@@ -84,8 +89,6 @@ void start_sysinit(void)
 		if ((!memcmp(buf2, "\xff\xff\xff\xff\xff\xff", 6)
 		     || !memcmp(buf2, "\x00\x00\x00\x00\x00\x00", 6)))
 			goto out;
-		char mac[32];
-		unsigned int copy[256];
 		int i;
 		for (i = 0; i < 256; i++)
 			copy[i] = buf2[i] & 0xff;
@@ -96,15 +99,11 @@ void start_sysinit(void)
 		fprintf(stderr, "configure eth1 to %s\n", mac);
 		eval("ifconfig", "eth1", "hw", "ether", mac);
 #else
-		if (fseek(fp, 0x07f0000, SEEK_SET))
-			fseek(fp, 0x03f0000, SEEK_SET);
 		fread(buf2, 256, 1, fp);
 		fclose(fp);
 		if ((!memcmp(buf2, "\xff\xff\xff\xff\xff\xff", 6)
 		     || !memcmp(buf2, "\x00\x00\x00\x00\x00\x00", 6)))
 			goto out;
-		char mac[32];
-		unsigned int copy[256];
 		int i;
 		for (i = 0; i < 256; i++)
 			copy[i] = buf2[i] & 0xff;
@@ -156,10 +155,24 @@ void start_sysinit(void)
 	eval("swconfig", "dev", "eth1", "set", "apply");
 #endif
 #endif
+	int brand = getRouterBrand();
+	if (brand == ROUTER_UBNT_UAPAC) {
+		fp = fopen("/dev/mtdblock/5", "rb");
+		FILE *out = fopen("/tmp/archerc7-board.bin", "wb");
+		if (fp) {
+			fseek(fp, 0x5000, SEEK_SET);
+			int i;
+			for (i = 0; i < 2116; i++)
+				putc(getc(fp), out);
+			fclose(fp);
+			fclose(out);
+			eval("rm", "-f", "/tmp/ath10k-board.bin");
+			eval("ln", "-s", "/tmp/archerc7-board.bin", "/tmp/ath10k-board.bin");
+		}
+	}
 
 	detect_wireless_devices();
 
-	int brand = getRouterBrand();
 #ifdef HAVE_WPE72
 	if (!nvram_match("wlanled", "0"))
 		eval("/sbin/wlanled", "-l", "generic_14:-94", "-l", "generic_15:-80", "-l", "generic_16:-73", "-l", "generic_17:-65");
@@ -176,17 +189,22 @@ void start_sysinit(void)
 	if (!nvram_match("wlanled", "0"))
 		eval("/sbin/wlanled", "-L", "generic_14:-94", "-L", "generic_15:-76", "-L", "generic_16:-65");
 #elif HAVE_UBNTXW
-	writeproc("/proc/sys/dev/wifi0/softled", "0");
-	if (!nvram_match("wlanled", "0"))
-		eval("/sbin/wlanled", "-L", "generic_11:-94", "-L", "generic_16:-80", "-l", "generic_13:-73", "-L", "generic_14:-65");
+	if (brand == ROUTER_UBNT_UAPAC) {
+		setWirelessLed(0, 7);
+		setWirelessLed(1, 8);
+	} else {
+		writeproc("/proc/sys/dev/wifi0/softled", "0");
+		if (!nvram_match("wlanled", "0"))
+			eval("/sbin/wlanled", "-L", "generic_11:-94", "-L", "generic_16:-80", "-l", "generic_13:-73", "-L", "generic_14:-65");
+	}
 #else
 	switch (brand) {
 	case ROUTER_BOARD_UNIFI:
 		setWirelessLed(0, 0);
 		break;
 	case ROUTER_UBNT_UAPAC:
-//		setWirelessLed(0, 8);
-//		setWirelessLed(1, 8);
+		setWirelessLed(0, 7);
+		setWirelessLed(1, 8);
 		break;
 	case ROUTER_BOARD_AIRROUTER:
 		break;
