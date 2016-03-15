@@ -338,8 +338,11 @@ void __init ar71xx_add_device_mdio(unsigned int id, u32 phy_mask)
 		break;
 	case AR71XX_SOC_QCA9556:
 	case AR71XX_SOC_QCA9558:
-	case AR71XX_SOC_QCA9563:
 	case AR71XX_SOC_TP9343:
+		mdio_data->is_ar934x = 1;
+	case AR71XX_SOC_QCA9563:
+		if (id == 1)
+			mdio_data->builtin_switch = 1;
 		mdio_data->is_ar934x = 1;
 		break;
 
@@ -484,6 +487,17 @@ static void qca955x_set_speed_sgmii(int speed)
 	__raw_writel(val, base + QCA955X_PLL_ETH_SGMII_CONTROL_REG);
 	iounmap(base);
 }
+
+static void qca956x_set_speed_sgmii(int speed)
+{
+	void __iomem *base;
+	u32 val = ar71xx_get_eth_pll(0, speed);
+
+	base = ioremap_nocache(AR71XX_PLL_BASE, AR71XX_PLL_SIZE);
+	__raw_writel(val, base + QCA955X_PLL_ETH_SGMII_CONTROL_REG);
+	iounmap(base);
+}
+
 
 
 static void ar71xx_ddr_flush_ge0(void)
@@ -1018,7 +1032,6 @@ void __init ar71xx_add_device_eth(unsigned int id)
 	case AR71XX_SOC_AR9341:
 	case AR71XX_SOC_AR9342:
 	case AR71XX_SOC_AR9344:
-	case AR71XX_SOC_QCA9563:
 	case AR71XX_SOC_TP9343:
 		if (id == 0) {
 			pdata->reset_bit = AR934X_RESET_GE0_MAC | AR934X_RESET_GE0_MDIO;
@@ -1049,7 +1062,7 @@ void __init ar71xx_add_device_eth(unsigned int id)
 		if (!pdata->fifo_cfg3)
 			pdata->fifo_cfg3 = 0x01f00140;
 		break;
-
+		
 	case AR71XX_SOC_QCA9533:
 		if (id == 0) {
 			pdata->reset_bit = AR933X_RESET_GE0_MAC |
@@ -1116,6 +1129,47 @@ void __init ar71xx_add_device_eth(unsigned int id)
 		if (!pdata->fifo_cfg3)
 			pdata->fifo_cfg3 = 0x01f00140;
 		break;
+	case AR71XX_SOC_QCA9563:
+		if (id == 0) {
+			pdata->reset_bit = QCA955X_RESET_GE0_MAC |
+					   QCA955X_RESET_GE0_MDIO;
+
+			if (pdata->phy_if_mode == PHY_INTERFACE_MODE_SGMII)
+				pdata->set_speed = qca956x_set_speed_sgmii;
+			else
+				pdata->set_speed = ar71xx_set_speed_ge0;
+		} else {
+			pdata->reset_bit = QCA955X_RESET_GE1_MAC |
+					   QCA955X_RESET_GE1_MDIO;
+
+			pdata->set_speed = ar71xx_set_speed_dummy;
+
+			pdata->switch_data = &ar71xx_switch_data;
+
+			pdata->speed = SPEED_1000;
+			pdata->duplex = DUPLEX_FULL;
+
+			/* reset the built-in switch */
+			ar71xx_device_stop(AR934X_RESET_ETH_SWITCH);
+			ar71xx_device_start(AR934X_RESET_ETH_SWITCH);
+		}
+
+		pdata->ddr_flush = ar71xx_ddr_no_flush;
+		pdata->has_gbit = 1;
+		pdata->is_ar724x = 1;
+
+
+		pdata->max_frame_len = SZ_16K - 1;
+		pdata->desc_pktlen_mask = SZ_16K - 1;
+
+		if (!pdata->fifo_cfg1)
+			pdata->fifo_cfg1 = 0x0010ffff;
+		if (!pdata->fifo_cfg2)
+			pdata->fifo_cfg2 = 0x015500aa;
+		if (!pdata->fifo_cfg3)
+			pdata->fifo_cfg3 = 0x01f00140;
+		break;
+
 
 	default:
 		BUG();
@@ -1124,6 +1178,7 @@ void __init ar71xx_add_device_eth(unsigned int id)
 	switch (pdata->phy_if_mode) {
 	case PHY_INTERFACE_MODE_GMII:
 	case PHY_INTERFACE_MODE_RGMII:
+	case PHY_INTERFACE_MODE_SGMII:
 		if (!pdata->has_gbit) {
 			printk(KERN_ERR "ar71xx: no gbit available on eth%d\n", id);
 			return;
@@ -1158,9 +1213,12 @@ void __init ar71xx_add_device_eth(unsigned int id)
 
 		case AR71XX_SOC_QCA9556:
 		case AR71XX_SOC_QCA9558:
-		case AR71XX_SOC_QCA9563:
 		case AR71XX_SOC_TP9343:
 			/* don't assign any MDIO device by default */
+			break;
+		case AR71XX_SOC_QCA9563:
+			if (pdata->phy_if_mode != PHY_INTERFACE_MODE_SGMII)
+				pdata->mii_bus_dev = &ar71xx_mdio1_device.dev;
 			break;
 
 		default:

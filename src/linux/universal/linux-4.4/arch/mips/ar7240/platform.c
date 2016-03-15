@@ -48,6 +48,7 @@
 #include <asm/mach-ar71xx/ar933x_uart_platform.h>
 #include <linux/ar8216_platform.h>
 #include <linux/mtd/mtd.h>
+#include <linux/platform_data/phy-at803x.h>
 
 void serial_print(char *fmt, ...);
 
@@ -413,7 +414,6 @@ static struct mdio_board_info ap136_mdio0_info[] = {
 	},
 };
 
-#include <linux/platform_data/phy-at803x.h>
 static struct at803x_platform_data rb922gs_at803x_data = {
 	.disable_smarteee = 1,
 };
@@ -425,7 +425,7 @@ static struct mdio_board_info dap2330_mdio0_info[] = {
 	},
 };
 
-static void __init ap136_gmac_setup(void)
+static void __init ap136_gmac_setup(u32 mask)
 {
 	void __iomem *base;
 	u32 t;
@@ -435,7 +435,7 @@ static void __init ap136_gmac_setup(void)
 	t = __raw_readl(base + QCA955X_GMAC_REG_ETH_CFG);
 
 	t &= ~(QCA955X_ETH_CFG_RGMII_EN | QCA955X_ETH_CFG_GE0_SGMII);
-	t |= QCA955X_ETH_CFG_RGMII_EN;
+	t |= mask;
 
 	__raw_writel(t, base + QCA955X_GMAC_REG_ETH_CFG);
 
@@ -490,6 +490,19 @@ static struct ar8327_platform_data db120_ar8327_data = {
 #endif
 #endif
 };
+
+static struct at803x_platform_data  at803_data = {
+	.disable_smarteee = 1,
+};
+static struct mdio_board_info at803_mdio_info[] = {
+        {
+                .bus_id = "ag71xx-mdio.0",
+                .phy_addr = 4,
+                .platform_data = &at803_data,
+        },
+};
+
+
 
 static struct mdio_board_info db120_mdio0_info[] = {
 	{
@@ -870,6 +883,10 @@ int __init ar7240_platform_init(void)
 	mac = (u8 *)KSEG1ADDR(0x1fff0000);
 	ath79_init_mac(mac0, mac, -1);
 	ath79_init_mac(mac1, mac, 0);
+    #elif CONFIG_UAPAC
+	mac = (u8 *)KSEG1ADDR(0x1fff0000);
+	ath79_init_mac(mac0, mac, -1);
+	ath79_init_mac(mac1, mac, 0);	
     #elif CONFIG_DIR825C1
 	#ifdef CONFIG_DIR859
 	dir825b1_read_ascii_mac(mac0, DIR859_MAC_LOCATION_0);
@@ -977,6 +994,8 @@ int __init ar7240_platform_init(void)
 	/* flush write */
 	__raw_readl(base + AR934X_GMAC_REG_ETH_CFG);
 	iounmap(base);
+    #elif CONFIG_UAPAC
+    	ap136_gmac_setup(QCA955X_ETH_CFG_RGMII_EN | QCA955X_ETH_CFG_GE0_SGMII | (3 << QCA955X_ETH_CFG_RXD_DELAY_SHIFT) | (3 << QCA955X_ETH_CFG_RDV_DELAY_SHIFT));
     #elif CONFIG_UBNTXW
 	//swap phy
 	base = ioremap(AR934X_GMAC_BASE, AR934X_GMAC_SIZE);
@@ -992,7 +1011,7 @@ int __init ar7240_platform_init(void)
     #else
 	#ifdef CONFIG_AP135
 	#if !defined(CONFIG_MMS344) || defined(CONFIG_DIR862)
-	ap136_gmac_setup();
+	ap136_gmac_setup(QCA955X_ETH_CFG_RGMII_EN);
 	#endif
 	#else
 #ifndef HAVE_DIR859
@@ -1064,6 +1083,19 @@ int __init ar7240_platform_init(void)
 	/* GMAC1 is connected to the internal switch */
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
 	ar71xx_add_device_eth(1);
+    #elif CONFIG_UAPAC
+	ar71xx_add_device_mdio(0, ~BIT(4));	
+
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_SGMII;
+	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio0_device.dev;
+	ar71xx_eth0_data.phy_mask = BIT(4);
+	ar71xx_eth0_pll_data.pll_10 = 0x00001313;
+
+
+	mdiobus_register_board_info(at803_mdio_info,
+			ARRAY_SIZE(at803_mdio_info));
+
+	ar71xx_add_device_eth(0);
     #elif CONFIG_UBNTXW
 	#ifdef CONFIG_XWLOCO
 	ar71xx_add_device_mdio(0, ~BIT(1));
@@ -1255,6 +1287,7 @@ int __init ar7240_platform_init(void)
 	ath79_gpio_output_select(4,32);
 	ar71xx_add_device_mdio(1, 0x0);
 	#endif
+	
 	ar71xx_add_device_mdio(0, 0x0);
 		#ifdef CONFIG_MMS344
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, art + DB120_MAC0_OFFSET, 0);		
