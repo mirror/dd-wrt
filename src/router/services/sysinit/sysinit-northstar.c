@@ -58,6 +58,115 @@
 
 #define sys_restart() eval("event","3","1","1")
 #define sys_reboot() eval("sync"); eval("/bin/umount -a -r"); eval("event","3","1","15")
+static void set_regulation(int card, char *code, char *rev);
+
+static void setdlinkcountry(int count, int offset24)
+{
+	char buf[32];
+	char c[32];
+	char *set = NULL;
+	char *set5 = NULL;
+	FILE *fp = popen("cat /dev/mtdblock0|grep countrycode=", "r");
+	fread(buf, 1, 27, fp);
+	pclose(fp);
+	buf[27] = 0;
+	fprintf(stderr, "country = %s\n", &buf[12]);
+	strncpy(c, &buf[12], 2);
+	if (!strlen(c))
+		return;
+	if (!strcmp(c, "AU"))
+		set = "AU";
+	if (!strcmp(c, "NA"))
+		set = "NA";
+	if (!strcmp(c, "CA")) {
+		set = "NA";
+		set5 = "CA";
+	}
+	if (!strcmp(c, "LA")) {
+		set = "AU";
+		set5 = "LA";
+	}
+	if (!strcmp(c, "BR")) {
+		set = "AU";
+		set5 = "BR";
+	}
+
+	if (!strcmp(c, "EU")) {
+		set = "EU";
+		set5 = "EU";
+	}
+
+	if (!strcmp(c, "GB")) {
+		set = "EU";
+		set5 = "GB";
+	}
+
+	if (!strcmp(c, "CN")) {
+		set = "CN";
+	}
+
+	if (!strcmp(c, "SG")) {
+		set = "SG";
+	}
+
+	if (!strcmp(c, "KR")) {
+		set = "EU";
+		set5 = "KR";
+	}
+
+	if (!strcmp(c, "FR")) {
+		set = "EU";
+	}
+
+	if (!strcmp(c, "JP")) {
+		set = "JP";
+	}
+
+	if (!strcmp(c, "IL")) {
+		set = "EU";
+		set5 = "IL";
+	}
+
+	if (!strcmp(c, "RU")) {
+		set = "EU";
+		set5 = "RU";
+	}
+
+	if (!strcmp(c, "TH")) {
+		set = "TH";
+	}
+
+	if (!strcmp(c, "MY")) {
+		set = "MY";
+	}
+
+	if (!strcmp(c, "IN")) {
+		set = "AU";
+		set5 = "IN";
+	}
+
+	if (!strcmp(c, "EG")) {
+		set = "EG";
+		set5 = "EG";
+	}
+
+	if (set) {
+		if (!nvram_get("nocountrysel"))
+			nvram_set("nocountrysel", "1");
+		set_regulation(offset24, set, "0");
+		if (!set5)
+			set5 = set;
+		if (!offset24)
+			offset24 = 1;
+		else
+			offset24 = 0;
+
+		set_regulation(offset24, set5, "0");
+		if (count == 3)
+			set_regulation(offset24 + 1, set5, "0");
+
+	}
+}
 
 static void set_regulation(int card, char *code, char *rev)
 {
@@ -2878,6 +2987,7 @@ void start_sysinit(void)
 
 		break;
 	case ROUTER_DLINK_DIR890:
+		setdlinkcountry(3, 0);
 		if (!strncmp(nvram_safe_get("et0macaddr"), "00:90", 5)) {
 			char buf[64];
 			FILE *fp = popen("cat /dev/mtdblock0|grep lanmac", "r");
@@ -2911,6 +3021,8 @@ void start_sysinit(void)
 		}
 		break;
 	case ROUTER_DLINK_DIR895:
+		setdlinkcountry(3, 0);
+
 		if (!strncmp(nvram_safe_get("et0macaddr"), "00:90", 5) || !strncmp(nvram_safe_get("et0macaddr"), "00:00", 5)) {
 			char buf[64];
 			FILE *fp = popen("cat /dev/mtdblock0|grep lanmac", "r");
@@ -2944,6 +3056,7 @@ void start_sysinit(void)
 		}
 		break;
 	case ROUTER_DLINK_DIR885:
+		setdlinkcountry(2, 0);
 		if (!strncmp(nvram_safe_get("et2macaddr"), "00:90", 5) && !strncmp(nvram_safe_get("et0macaddr"), "00:00", 5)) {
 			char buf[64];
 			FILE *fp = popen("cat /dev/mtdblock0|grep lanmac", "r");
@@ -2997,6 +3110,7 @@ void start_sysinit(void)
 		}
 		break;
 	case ROUTER_DLINK_DIR880:
+		setdlinkcountry(2, 0);
 		if (nvram_get("0:venid") == NULL || nvram_match("0:maxp2ga0", "94")) {
 			char buf[64];
 			FILE *fp = popen("cat /dev/mtdblock0|grep lanmac", "r");
@@ -3214,6 +3328,7 @@ void start_sysinit(void)
 
 		break;
 	case ROUTER_DLINK_DIR860:
+		setdlinkcountry(2, 0);
 		if (nvram_get("devpath0") == NULL || nvram_match("0:maxp2ga0", "0x50")) {
 			nvram_set("devpath0", "pci/1/1/");
 			nvram_set("devpath1", "pci/2/1/");
@@ -3478,6 +3593,7 @@ void start_sysinit(void)
 
 		break;
 	case ROUTER_DLINK_DIR868C:
+		setdlinkcountry(2, 0);
 		if (nvram_match("0:macaddr", "00:90:4C:0D:C0:18")) {
 			char buf[64];
 			FILE *fp = popen("cat /dev/mtdblock0|grep lanmac", "r");
@@ -3502,6 +3618,7 @@ void start_sysinit(void)
 		break;
 	case ROUTER_DLINK_DIR868:
 	case ROUTER_DLINK_DIR865:
+		setdlinkcountry(2, 0);
 
 		if (nvram_get("pci/1/1/venid") == NULL || nvram_match("0:maxp2ga0", "0x56")) {
 
