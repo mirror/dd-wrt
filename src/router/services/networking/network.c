@@ -1627,6 +1627,7 @@ void start_lan(void)
 	switch (brand) {
 	case ROUTER_BOARD_BS2M:
 	case ROUTER_BOARD_UNIFI:
+	case ROUTER_UBNT_UAPAC:
 	case ROUTER_BOARD_BS5M:
 	case ROUTER_BOARD_R2M:
 	case ROUTER_BOARD_R5M:
