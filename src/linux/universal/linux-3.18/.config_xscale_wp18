@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 3.18.25 Kernel Configuration
+# Linux/arm 3.18.28 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_MIGHT_HAVE_PCI=y
@@ -105,7 +105,6 @@ CONFIG_CC_OPTIMIZE_FOR_SIZE=y
 CONFIG_SYSCTL=y
 CONFIG_ANON_INODES=y
 CONFIG_HAVE_UID16=y
-CONFIG_KALLSYMS_UNCOMPRESSED=y
 CONFIG_BPF=y
 CONFIG_EXPERT=y
 CONFIG_UID16=y

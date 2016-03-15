@@ -146,7 +146,7 @@ static int ag71xx_phy_connect_multi(struct ag71xx *ag)
 		return -ENODEV;
 	}
 
-#ifndef CONFIG_JWAP606
+#if !defined(CONFIG_JWAP606)
 	if (ag->mii_bus->phy_map[phyadd]->phy_id == 0x4dd072 && phyadd == 1)
 #endif
 	{
