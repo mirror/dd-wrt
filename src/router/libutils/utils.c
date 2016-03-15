@@ -2513,7 +2513,7 @@ int internal_getRouterBrand()
 			static char devicename[64];
 			sprintf(devicename, "Ubiquiti %s", dev[devcnt].devicename);
 			setRouter(devicename);
-			return dddev;
+			return dev[devcnt].dddev;
 		}
 		devcnt++;
 	}
