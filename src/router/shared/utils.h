@@ -734,6 +734,8 @@
 
 #define ROUTER_NETGEAR_R8500 0xf81a
 
+#define ROUTER_UBNT_UAPAC 0xf912
+
 #define NVROUTER "DD_BOARD"
 
 static inline int startswith(char *source, char *cmp)

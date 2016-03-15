@@ -184,6 +184,10 @@ void start_sysinit(void)
 	case ROUTER_BOARD_UNIFI:
 		setWirelessLed(0, 0);
 		break;
+	case ROUTER_UBNT_UAPAC:
+//		setWirelessLed(0, 8);
+//		setWirelessLed(1, 8);
+		break;
 	case ROUTER_BOARD_AIRROUTER:
 		break;
 	default:
