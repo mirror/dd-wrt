@@ -2543,6 +2543,8 @@ void ej_show_countrylist(webs_t wp, int argc, char_t ** argv)
 	if (argc < 1) {
 		return;
 	}
+	if (nvram_match("nocountrysel", "1"))
+		return;
 	char *list = getCountryList();
 
 	showOptionsChoose(wp, argv[0], list, nvram_safe_get(argv[0]));
