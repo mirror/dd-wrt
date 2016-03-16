@@ -44,6 +44,11 @@
 					<option value="jffs" <% nvram_selected("usb_mntpoint", "jffs"); %> >/jffs</option>
 					</select>
 				</div>
+				<div class="setting">
+					<div class="label"><% tran("usb.usb_ses_umount"); %></div>
+					<input class="spaceradio" type="radio" value="1" name="usb_ses_umount" <% nvram_checked("usb_ses_umount","1"); %> /><% tran("share.enable"); %>&nbsp;
+					<input class="spaceradio" type="radio" value="0" name="usb_ses_umount" <% nvram_checked("usb_ses_umount","0"); %> /><% tran("share.disable"); %>
+				</div>
 				<fieldset>
 				<legend><% tran("usb.usb_diskinfo"); %></legend>
 					<div class="setting">

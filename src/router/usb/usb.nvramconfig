@@ -1,4 +1,5 @@
 "usb_enable"  "USB support" "CHOICE" "2" "0" "1" "FALSE" "0"
+"usb_ses_umount"  "USB ses umount" "CHOICE" "2" "0" "1" "FALSE" "0"
 "usb_storage"  "USB Storage Support" "CHOICE" "2" "0" "1" "FALSE" "0"
 "usb_ip"  "USB Over IP" "CHOICE" "2" "0" "1" "FALSE" "0"
 "usb_printer"  "USB Printer Support" "CHOICE" "2" "0" "1" "FALSE" "0"
