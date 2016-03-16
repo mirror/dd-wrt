@@ -92,6 +92,7 @@ static void unbound_config(void)
 		}
 		free(cp);
 	}
+	system("cp -r /etc/unbound /tmp/etc");
 
 }
 
