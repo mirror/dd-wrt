@@ -55,6 +55,7 @@ int _evalpid(char *const argv[], char *path, int timeout, int *ppid);
 
 //extern int _eval(char *const argv[]);
 extern int eval_va(const char *cmd, ...);
+extern int eval_va_silence(const char *cmd, ...);
 
 #define eval(cmd, args...) eval_va(cmd, ## args, NULL)
 #define eval_silence(cmd, args...) eval_va_silence(cmd, ## args, NULL)
