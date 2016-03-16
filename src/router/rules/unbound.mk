@@ -2,7 +2,7 @@ unbound-configure:
 	cd unbound && ./configure --disable-ecdsa \
 		--disable-gost \
 		--enable-allsymbols \
-		--with-chroot-dir=/tmp
+		--with-chroot-dir=/tmp \
 		--with-ssl="$(TOP)/openssl" \
 		--without-pthreads \
 		--prefix=/usr \
