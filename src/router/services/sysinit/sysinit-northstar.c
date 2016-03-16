@@ -57,8 +57,34 @@
 #include "devices/wireless.c"
 
 #define sys_restart() eval("event","3","1","1")
-#define sys_reboot() eval("sync"); eval("/bin/umount -a -r"); eval("event","3","1","15")
+#define sys_reboot() eval("sync"); eval("/bin/umount","-a","-r"); eval("event","3","1","15")
 static void set_regulation(int card, char *code, char *rev);
+struct regiondef {
+	char *match;
+	char *region24;
+	char *region5;
+};
+static struct regiondef regions[] = {
+	{"AU", "AU", NULL},
+	{"NA", "US", NULL},
+	{"CA", "US", "CA"},
+	{"LA", "AU", "BR"},
+	{"BR", "AU", "BR"},
+	{"EU", "EU", "EU"},
+	{"GB", "EU", "GB"},
+	{"CN", "CN", NULL},
+	{"SG", "SG", NULL},
+	{"KR", "EU", "KR"},
+	{"FR", "EU", NULL},
+	{"JP", "JP", NULL},
+	{"IL", "EU", "IL"},
+	{"RU", "EU", "RU"},
+	{"TH", "TH", NULL},
+	{"MY", "MY", NULL},
+	{"IN", "AU", "IN"},
+	{"EG", "EG", "EG"},
+	{NULL, NULL, NULL}
+};
 
 static void setdlinkcountry(int count, int offset24)
 {
@@ -70,86 +96,21 @@ static void setdlinkcountry(int count, int offset24)
 	fread(buf, 1, 27, fp);
 	pclose(fp);
 	buf[27] = 0;
-	memset(c,0,sizeof(c));
+	memset(c, 0, sizeof(c));
 	strncpy(c, &buf[12], 2);
 	if (!strlen(c))
 		return;
-	if (!strcmp(c, "AU"))
-		set = "AU";
-	if (!strcmp(c, "NA"))
-		set = "NA";
-	if (!strcmp(c, "CA")) {
-		set = "NA";
-		set5 = "CA";
-	}
-	if (!strcmp(c, "LA")) {
-		set = "AU";
-		set5 = "LA";
-	}
-	if (!strcmp(c, "BR")) {
-		set = "AU";
-		set5 = "BR";
-	}
+	int cnt = 0;
+	while (regions[cnt].match) {
 
-	if (!strcmp(c, "EU")) {
-		set = "EU";
-		set5 = "EU";
+		if (!strcmp(regions[cnt].match, c)) {
+			set = regions[cnt].region24;
+			if (regions[cnt].region5)
+				set5 = regions[cnt].region5;
+			break;
+		}
+		cnt++;
 	}
-
-	if (!strcmp(c, "GB")) {
-		set = "EU";
-		set5 = "GB";
-	}
-
-	if (!strcmp(c, "CN")) {
-		set = "CN";
-	}
-
-	if (!strcmp(c, "SG")) {
-		set = "SG";
-	}
-
-	if (!strcmp(c, "KR")) {
-		set = "EU";
-		set5 = "KR";
-	}
-
-	if (!strcmp(c, "FR")) {
-		set = "EU";
-	}
-
-	if (!strcmp(c, "JP")) {
-		set = "JP";
-	}
-
-	if (!strcmp(c, "IL")) {
-		set = "EU";
-		set5 = "IL";
-	}
-
-	if (!strcmp(c, "RU")) {
-		set = "EU";
-		set5 = "RU";
-	}
-
-	if (!strcmp(c, "TH")) {
-		set = "TH";
-	}
-
-	if (!strcmp(c, "MY")) {
-		set = "MY";
-	}
-
-	if (!strcmp(c, "IN")) {
-		set = "AU";
-		set5 = "IN";
-	}
-
-	if (!strcmp(c, "EG")) {
-		set = "EG";
-		set5 = "EG";
-	}
-
 	if (set) {
 		if (!nvram_get("nocountrysel"))
 			nvram_set("nocountrysel", "1");
@@ -228,7 +189,7 @@ void start_sysinit(void)
 				fclose(fp);
 				fp = fopen("/tmp/nvramcopy", "wb");
 				fwrite(temp, 1, 65536, fp);
-				eval("mtd", "-f", "write", "/tmp/nvramcopy nvram");
+				eval("mtd", "-f", "write", "/tmp/nvramcopy", "nvram");
 				sys_reboot();
 			}
 			fclose(fp);
