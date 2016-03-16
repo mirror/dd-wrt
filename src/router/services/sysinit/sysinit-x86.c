@@ -54,7 +54,7 @@
 #include "devices/ethernet.c"
 #include "devices/wireless.c"
 
-#define sys_reboot() eval("sync"); eval("event","3","1","15")
+#define sys_reboot() eval("sync"); eval("/bin/umount","-a","-r"); eval("event","3","1","15")
 
 static char *getdisc(void)	// works only for squashfs 
 {
