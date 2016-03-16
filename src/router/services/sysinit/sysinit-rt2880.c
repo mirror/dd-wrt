@@ -53,7 +53,7 @@
 #include <utils.h>
 #include <cymac.h>
 
-#define sys_reboot() eval("sync"); eval("event","3","1","15")
+#define sys_reboot() eval("sync"); eval("/bin/umount","-a","-r"); eval("event","3","1","15")
 
 void start_sysinit(void)
 {
