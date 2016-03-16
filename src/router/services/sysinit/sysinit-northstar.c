@@ -70,9 +70,8 @@ static void setdlinkcountry(int count, int offset24)
 	fread(buf, 1, 27, fp);
 	pclose(fp);
 	buf[27] = 0;
-	fprintf(stderr, "country = %s\n", &buf[12]);
+	memset(c,0,sizeof(c));
 	strncpy(c, &buf[12], 2);
-	fprintf(stderr, "result = %s %d\n",c, strlen(c));
 	if (!strlen(c))
 		return;
 	if (!strcmp(c, "AU"))
