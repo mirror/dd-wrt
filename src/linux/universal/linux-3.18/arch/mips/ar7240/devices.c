@@ -642,6 +642,10 @@ struct ag71xx_switch_platform_data ar71xx_switch_data;
 #define AR934X_PLL_VAL_100	0x00000101
 #define AR934X_PLL_VAL_10	0x00001616
 
+#define QCA956X_PLL_VAL_1000	0x03000000
+#define QCA956X_PLL_VAL_100	0x00000101
+#define QCA956X_PLL_VAL_10	0x00001919
+
 static void __init ar71xx_init_eth_pll_data(unsigned int id)
 {
 	struct ar71xx_eth_pll_data *pll_data;
@@ -704,11 +708,15 @@ static void __init ar71xx_init_eth_pll_data(unsigned int id)
 	case AR71XX_SOC_QCA9533:
 	case AR71XX_SOC_QCA9556:
 	case AR71XX_SOC_QCA9558:
-	case AR71XX_SOC_QCA9563:
 	case AR71XX_SOC_TP9343:
 		pll_10 = AR934X_PLL_VAL_10;
 		pll_100 = AR934X_PLL_VAL_100;
 		pll_1000 = AR934X_PLL_VAL_1000;
+		break;
+	case AR71XX_SOC_QCA9563:
+		pll_10 = QCA956X_PLL_VAL_10;
+		pll_100 = QCA956X_PLL_VAL_100;
+		pll_1000 = QCA956X_PLL_VAL_1000;
 		break;
 
 	default:
@@ -761,6 +769,7 @@ static int __init ar71xx_setup_phy_if_mode(unsigned int id, struct ag71xx_platfo
 		case AR71XX_SOC_AR9330:
 		case AR71XX_SOC_AR9331:
 		case AR71XX_SOC_QCA9533:
+		case AR71XX_SOC_TP9343:
 			pdata->phy_if_mode = PHY_INTERFACE_MODE_MII;
 			break;
 
@@ -783,7 +792,6 @@ static int __init ar71xx_setup_phy_if_mode(unsigned int id, struct ag71xx_platfo
 		case AR71XX_SOC_QCA9556:
 		case AR71XX_SOC_QCA9558:
 		case AR71XX_SOC_QCA9563:
-		case AR71XX_SOC_TP9343:
 			switch (pdata->phy_if_mode) {
 			case PHY_INTERFACE_MODE_MII:
 			case PHY_INTERFACE_MODE_RGMII:
@@ -822,7 +830,8 @@ static int __init ar71xx_setup_phy_if_mode(unsigned int id, struct ag71xx_platfo
 		case AR71XX_SOC_AR7241:
 		case AR71XX_SOC_AR9330:
 		case AR71XX_SOC_AR9331:
-		case AR71XX_SOC_QCA9533:
+		case AR71XX_SOC_QCA9563:
+		case AR71XX_SOC_TP9343:
 			pdata->phy_if_mode = PHY_INTERFACE_MODE_GMII;
 			break;
 
@@ -832,6 +841,7 @@ static int __init ar71xx_setup_phy_if_mode(unsigned int id, struct ag71xx_platfo
 		case AR71XX_SOC_AR9341:
 		case AR71XX_SOC_AR9342:
 		case AR71XX_SOC_AR9344:
+		case AR71XX_SOC_QCA9533:
 			switch (pdata->phy_if_mode) {
 			case PHY_INTERFACE_MODE_MII:
 			case PHY_INTERFACE_MODE_GMII:
@@ -842,8 +852,6 @@ static int __init ar71xx_setup_phy_if_mode(unsigned int id, struct ag71xx_platfo
 			break;
 		case AR71XX_SOC_QCA9556:
 		case AR71XX_SOC_QCA9558:
-		case AR71XX_SOC_QCA9563:
-		case AR71XX_SOC_TP9343:
 			switch (pdata->phy_if_mode) {
 			case PHY_INTERFACE_MODE_MII:
 			case PHY_INTERFACE_MODE_RGMII:
@@ -946,13 +954,13 @@ void __init ar71xx_add_device_eth(unsigned int id)
 		if (id == 0) {
 			pdata->reset_bit |= RESET_MODULE_GE0_PHY;
 			pdata->ddr_flush = ar724x_ddr_flush_ge0;
-			pdata->set_speed = ar724x_set_speed_ge0;
+			pdata->set_speed = ar71xx_set_speed_dummy;
 
 			pdata->phy_mask = BIT(4);
 		} else {
 			pdata->reset_bit |= RESET_MODULE_GE1_PHY;
 			pdata->ddr_flush = ar724x_ddr_flush_ge1;
-			pdata->set_speed = ar724x_set_speed_ge1;
+			pdata->set_speed = ar71xx_set_speed_dummy;
 
 			pdata->speed = SPEED_1000;
 			pdata->duplex = DUPLEX_FULL;
@@ -1002,13 +1010,13 @@ void __init ar71xx_add_device_eth(unsigned int id)
 		if (id == 0) {
 			pdata->reset_bit = AR933X_RESET_GE0_MAC | AR933X_RESET_GE0_MDIO;
 			pdata->ddr_flush = ar933x_ddr_flush_ge0;
-			pdata->set_speed = ar933x_set_speed_ge0;
+			pdata->set_speed = ar71xx_set_speed_dummy;
 
 			pdata->phy_mask = BIT(4);
 		} else {
 			pdata->reset_bit = AR933X_RESET_GE1_MAC | AR933X_RESET_GE1_MDIO;
 			pdata->ddr_flush = ar933x_ddr_flush_ge1;
-			pdata->set_speed = ar933x_set_speed_ge1;
+			pdata->set_speed = ar71xx_set_speed_dummy;
 
 			pdata->speed = SPEED_1000;
 			pdata->duplex = DUPLEX_FULL;
@@ -1032,15 +1040,13 @@ void __init ar71xx_add_device_eth(unsigned int id)
 	case AR71XX_SOC_AR9341:
 	case AR71XX_SOC_AR9342:
 	case AR71XX_SOC_AR9344:
-	case AR71XX_SOC_TP9343:
+	case AR71XX_SOC_QCA9533:
 		if (id == 0) {
 			pdata->reset_bit = AR934X_RESET_GE0_MAC | AR934X_RESET_GE0_MDIO;
-			pdata->ddr_flush = ar934x_ddr_flush_ge0;
 			pdata->set_speed = ar934x_set_speed_ge0;
 		} else {
 			pdata->reset_bit = AR934X_RESET_GE1_MAC | AR934X_RESET_GE1_MDIO;
-			pdata->ddr_flush = ar934x_ddr_flush_ge1;
-			pdata->set_speed = ar934x_set_speed_ge1;
+			pdata->set_speed = ar71xx_set_speed_dummy;
 
 			pdata->switch_data = &ar71xx_switch_data;
 
@@ -1048,6 +1054,7 @@ void __init ar71xx_add_device_eth(unsigned int id)
 			ar71xx_device_stop(AR934X_RESET_ETH_SWITCH);
 			ar71xx_device_start(AR934X_RESET_ETH_SWITCH);
 		}
+		pdata->ddr_flush = ar71xx_ddr_no_flush;
 
 		pdata->has_gbit = 1;
 		pdata->is_ar724x = 1;
@@ -1062,18 +1069,20 @@ void __init ar71xx_add_device_eth(unsigned int id)
 		if (!pdata->fifo_cfg3)
 			pdata->fifo_cfg3 = 0x01f00140;
 		break;
+
+	case AR71XX_SOC_TP9343:
 		
-	case AR71XX_SOC_QCA9533:
 		if (id == 0) {
 			pdata->reset_bit = AR933X_RESET_GE0_MAC |
 					   AR933X_RESET_GE0_MDIO;
-			pdata->set_speed = ar933x_set_speed_ge0;
+			pdata->set_speed = ar71xx_set_speed_dummy;
 
-			pdata->phy_mask = BIT(4);
+			if (!pdata->phy_mask)
+				pdata->phy_mask = BIT(4);
 		} else {
 			pdata->reset_bit = AR933X_RESET_GE1_MAC |
 					   AR933X_RESET_GE1_MDIO;
-			pdata->set_speed = ar933x_set_speed_ge1;
+			pdata->set_speed = ar71xx_set_speed_dummy;
 
 			pdata->speed = SPEED_1000;
 			pdata->duplex = DUPLEX_FULL;
