@@ -1233,9 +1233,9 @@ static void set_rate(char *dev, char *priv)
 	// sysprintf("iwconfig %s rate 54M auto", priv);
 	// }
 	if (atol(mr) > 0)
-		eval("iwpriv", priv, "maxrate %s", mr);
+		eval("iwpriv", priv, "maxrate", mr);
 	if (atoi(r) > 0)
-		eval("iwpriv", priv, "minrate %s", r);
+		eval("iwpriv", priv, "minrate", r);
 }
 
 static void set_netmode(char *wif, char *dev, char *use)
