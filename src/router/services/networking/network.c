@@ -4284,8 +4284,8 @@ void start_wan(int status)
 		if (nvram_match("wl_gmode", "-1")) {
 			diag_led(WL, STOP_LED);
 #if 0
-			eval("wlled", "0 0 1");
-			eval("wlled", "0 1 1");
+			eval("wl","led", "0","0","1");
+			eval("wl","led", "0","1","1");
 #endif
 		}
 		diag_led(DIAG, STOP_LED);
