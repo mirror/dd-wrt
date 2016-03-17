@@ -2447,12 +2447,12 @@ int internal_getRouterBrand()
 		{"UniFi UAP-AC v2", 0xe912, 3, 3, ROUTER_BOARD_UNIFI, 0, 10},	//
 		{"UniFi UAP v2", 0xe572, 3, 3, ROUTER_BOARD_UNIFI, 0, 10},	//
 		{"UniFi UAP-LR v2", 0xe582, 3, 3, ROUTER_BOARD_UNIFI, 0, 10},	//
-		{"UniFi UAP-AC-LR", 0xe527, 3, 3, ROUTER_UBNT_UAPAC, 0, 10},	//
-		{"UniFi UAP-AC-Pro-Gen2", 0xe537, 3, 3, ROUTER_UBNT_UAPAC, 0, 10},	//
-		{"UniFi UAP-AC-Lite", 0xe517, 3, 3, ROUTER_UBNT_UAPAC, 0, 10},	//
-		{"UniFi UAP-AC-EDU", 0xe547, 3, 3, ROUTER_UBNT_UAPAC, 0, 10},	//
-		{"UniFi UAP-AC-PICO", 0xe557, 3, 3, ROUTER_UBNT_UAPAC, 0, 10},	//
-		{"UniFi UAP-AC-LR-OUTDOOR", 0xe567, 3, 3, ROUTER_UBNT_UAPAC, 0, 10},	//
+		{"UniFi UAP-AC-LR", 0xe527, 7, 7, ROUTER_UBNT_UAPAC, 0, 10},	//
+		{"UniFi UAP-AC-Pro-Gen2", 0xe537, 7, 7, ROUTER_UBNT_UAPAC, 0, 10},	//
+		{"UniFi UAP-AC-Lite", 0xe517, 7, 7, ROUTER_UBNT_UAPAC, 0, 10},	//
+		{"UniFi UAP-AC-EDU", 0xe547, 7, 7, ROUTER_UBNT_UAPAC, 0, 10},	//
+		{"UniFi UAP-AC-PICO", 0xe557, 7, 7, ROUTER_UBNT_UAPAC, 0, 10},	//
+		{"UniFi UAP-AC-LR-OUTDOOR", 0xe567, 7, 7, ROUTER_UBNT_UAPAC, 0, 10},	//
 		{NULL, 0, 0, 0, 0, 0, 0},	//
 	};
 
