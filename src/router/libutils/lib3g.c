@@ -53,7 +53,7 @@ static int scanFor(int Vendor, int Product)
 		fscanf(check, "%d", &count);
 		pclose(check);
 		if (count > 0) {
-			eval("umount /tmp/usb");
+			eval("umount","/tmp/usb");
 			return 1;
 		}
 	}
