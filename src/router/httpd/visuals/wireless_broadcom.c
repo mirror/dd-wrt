@@ -171,7 +171,9 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 		return cnt;
 	unlink(RSSI_TMP);
 	char wlmode[32];
-
+	char *displayname = iface;
+	if (!strncmp(displayname, "eth", 3))
+		displayname = visible;
 	sprintf(wlmode, "%s_mode", visible);
 	mode = nvram_safe_get(wlmode);
 	unsigned char buf[WLC_IOCTL_MAXLEN];
