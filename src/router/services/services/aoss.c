@@ -184,7 +184,7 @@ void start_aoss(void)
 	     || nvram_match("ath0_mode", "wdsap"))
 	    && !nvram_match("ath0_net_mode", "disabled")) {
 		hasaoss = 1;
-		eval("80211n_wlanconfig", "aossg create", "wlandev", "wifi0", "wlanmode", "ap");
+		eval("80211n_wlanconfig", "aossg","create", "wlandev", "wifi0", "wlanmode", "ap");
 		eval("iwconfig", "aossg", "essid", "ESSID-AOSS");
 		eval("iwpriv", "aossg", "authmode", "4");
 		eval("iwconfig", "aossg", "key", "[1]", "4D454C434F");
