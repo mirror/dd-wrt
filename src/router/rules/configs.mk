@@ -112,7 +112,7 @@ obj-$(CONFIG_ROBOCFG) += robocfg
 obj-$(CONFIG_MULTICAST) += igmp-proxy
 obj-$(CONFIG_UDPXY) += udpxy
 obj-$(CONFIG_SKYTRON) += skytron
-obj-$(CONFIG_OPENVPN) += openvpn
+obj-$(CONFIG_OPENVPN) += lzo openvpn
 obj-$(CONFIG_OLSRD) += olsrd
 obj-$(CONFIG_BATMANADV) += batman-adv
 obj-$(CONFIG_FDISK) += fdisk
@@ -129,7 +129,7 @@ endif
 obj-$(CONFIG_UTILS) += utils
 obj-$(CONFIG_MTR) += mtr
 obj-$(CONFIG_PCIUTILS) += pciutils
-obj-$(CONFIG_E2FSPROGS) += e2fsprogs
+obj-$(CONFIG_E2FSPROGS) += lzo e2fsprogs
 obj-$(CONFIG_XFSPROGS) += util-linux xfsprogs 
 obj-$(CONFIG_BTRFSPROGS) += util-linux btrfsprogs
 obj-$(CONFIG_HTTPREDIRECT) += http-redirect
