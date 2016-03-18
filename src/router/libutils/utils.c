@@ -2456,7 +2456,7 @@ int internal_getRouterBrand()
 		{"UniFi UAP-AC-EDU", 0xe547, 7, 7, 7, 7, ROUTER_UBNT_UAPAC, 0, 10},	//
 		{"UniFi UAP-AC-PICO", 0xe557, 7, 7, 3, 3, ROUTER_UBNT_UAPAC, 0, 10},	//
 		{"UniFi UAP-AC-LR-OUTDOOR", 0xe567, 7, 7, 7, 7, ROUTER_UBNT_UAPAC, 0, 10},	//
-		{"UniFi UAP-InWall", 0xe592, 3, 3, 0, 0, ROUTER_UBNT_UNIFI, 0, 10},	//
+		{"UniFi UAP-InWall", 0xe592, 3, 3, 0, 0, ROUTER_BOARD_UNIFI, 0, 10},	//
 		{NULL, 0, 0, 0, 0, 0, 0},	//
 	};
 
