@@ -1,0 +1,137 @@
+cd $1/tools
+svn update
+cd ../../
+
+cd $1/src/router
+#rm -rvf private/broadcom
+#rm -rvf kernel_headers
+#rm -rvf busybox.old
+#rm -rvf busybox.backup
+#rm -rvf madwifi-ng-merge
+svn update ../../opt
+#cp /trx_n tools
+#cd quagga && svn revert -R * && cd ..
+#rm -rf asterisk
+#rm -rf minidlna/zlib-1.2.7
+#rm -rf private/iw-*
+#rm -rf private/compat-wireless-*
+#rm -rf btrfsprogs
+#rm -f transmission/qt/config.pri
+#rm -rf libpcap_noring
+#rm -rf nmap
+#rm -f zlib/libz.a
+#rm -f uqmi/cmake_install.cmake
+#rm -f lzo/Makefile
+#rm -rf openssl
+#rm -rf openvpn
+#rm -f asterisk/makeopts
+#cp -f /sstrip sstrip/sstrip
+#rm -f compat-wireless/*
+#rm -f compat-wireless/.*
+#rm -rf glib20/libglib
+#rm -rvf private/compat-wireless*
+#rm -f openssl/Makefile.bak
+rm -f rc/revision.h
+rm -f services/revision.h
+rm -f httpd/revision.h
+rm -f libutils/revision.h
+#rm -rf proftpd
+#svn resolve bird --accept working
+#svn revert -R bird
+#rm -rf minidlna/ffmpeg-2.3
+#rm -rf pcre
+#rm -rf glib20/gettext
+#rm -rf freeradius
+#rm -rf transmission
+#rm -rf pppd
+#svn revert -R ppp
+#rm -rf libpcap_noring
+#rm -rf dropbear
+#rm -rf chan_dongle
+#cd pcre && touch * && cd ..
+svn update
+echo -n '#define SVN_REVISION "' > shared/revision.h
+svnversion -n libutils >> shared/revision.h
+echo '"' >> shared/revision.h
+#make -f $2 openssl-configure
+
+make -f $2 update
+svn log private > driver_changelogs/driver_repository.log
+svn commit -m "auto commit of driver changelogs" driver_changelogs
+#for openssl update, clean these
+#make -f $2 tcpdump-clean
+#make -f $2 proftpd-clean
+#make -f $2 freeradius-clean
+
+#make -f $2 inadyn-clean
+#make -f $2 squid-clean
+#make -f $2 aircrack-clean
+#make -f $2 php-clean
+#make -f $2 ppp-clean
+#make -f $2 transmission-clean
+#make -f $2 libevent-clean
+#make -f $2 curl-clean
+#end
+
+#make -f $2 pptp-client-clean
+#make -f $2 freeradius-clean
+#make -f $2 openser-clean
+#make -f $2 bird-clean
+#make -f $2 comgt-clean
+#make -f $2 ipheth-clean
+#make -f $2 zlib-clean
+#rm -f samba36/source3/Makefile
+#make -f $2 dropbear-clean
+#make -f $2 openssl-clean
+#make -f $2 libpcap-clean
+#make -f $2 xl2tpd-clean
+#make -f $2 libnltiny-clean
+#make -f $2 wireless-tools-clean
+#make -f $2 bird-clean
+#make -f $2 usb_modeswitch-clean
+#make -f $2 openssl-configure
+#make -f $2 mactelnet-clean
+#make -f $2 ipeth-clean
+#make -f $2 olsrd-clean
+#cd olsrd
+#make distclean
+#cd ..
+#make -f $2 olsrd-clean
+#make -f $2 openssl-clean
+#make -f $2 php5-clean
+#make -f $2 tor-clean 
+#make -f $2 libevent-clean 
+#make -f $2 proftpd-clean 
+#make -f $2 aircrack-ng-clean 
+#make -f $2 vpnc-clean 
+#make -f $2 pound-clean 
+#make -f $2 tor-clean 
+#make -f $2 iptables-clean 
+#make -f $2 zlib-clean
+
+#make -f $2 dropbear-clean
+#make -f $2 mc-clean
+#make -f $2 ipeth-clean
+#make -f $2 privoxy-clean
+#make -f $2 openssl-clean
+#make -f $2 php5-clean
+#make -f $2 lighttpd-clean
+#make -f $2 glib20-clean
+#make -f $2 zabbix-clean
+#make -f $2 libxml2-clean
+#make -f $2 privoxy-clean
+#make -f $2 asterisk-clean
+#make -f $2 dropbear-clean
+#make -f $2 dropbear-clean
+#make -f $2 ntfs-3g-clean
+#make -f $2 minidlna-clean
+#make -f $2 ipvsadm-clean
+
+#rm pound/Makefile
+#cd opt/etc/config && svn upgrade && cd ../../../
+cd opt/etc/config && svn update && cd ../../../
+cd ../include.v24
+svn update
+cd ../include.bcm
+svn update
+cd ../../../
