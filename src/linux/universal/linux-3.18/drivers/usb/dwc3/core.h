@@ -772,7 +772,6 @@ struct dwc3 {
 	unsigned		enable_usb2_host_discon_quirk:1;
 	unsigned		resize_fifos:1;
 	unsigned		setup_packet_pending:1;
-	unsigned		start_config_issued:1;
 	unsigned		three_stage_setup:1;
 	struct usb_susphy	susphy;
 
