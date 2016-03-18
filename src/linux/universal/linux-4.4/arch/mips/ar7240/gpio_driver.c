@@ -229,12 +229,20 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 	{
 	 .name = "generic_7",
 	 .gpio = 7,
+#ifdef CONFIG_UAPAC
+	 .active_low = 1,
+#else
 	 .active_low = 0,
+#endif
 	 },
 	{
 	 .name = "generic_8",
 	 .gpio = 8,
+#ifdef CONFIG_UAPAC
+	 .active_low = 1,
+#else
 	 .active_low = 0,
+#endif
 	 },
 	{
 	 .name = "generic_9",
