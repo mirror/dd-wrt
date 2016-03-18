@@ -2391,21 +2391,21 @@ int internal_getRouterBrand()
 		{"Rocket M900", 0xe1b9, 3, 3, 0, 0, ROUTER_BOARD_R2M, M900, 10},	//
 		{"Rocket M900", 0xe1d9, 3, 3, 0, 0, ROUTER_BOARD_R2M, M900, 10},	//
 		{"Airbeam 5", 0xe1e5, 3, 3, 0, 0, ROUTER_BOARD_R5M, 0, 10},	//
-		{"Bullet M2", 0xe202, 1, 1, ROUTER_BOARD_BS5M, 0, 10},	//
-		{"Bullet M5", 0xe205, 1, 1, ROUTER_BOARD_BS5M, 0, 10},	//
+		{"Bullet M2", 0xe202, 1, 1, 0, 0, ROUTER_BOARD_BS5M, 0, 10},	//
+		{"Bullet M5", 0xe205, 1, 1, 0, 0, ROUTER_BOARD_BS5M, 0, 10},	//
 		{"Bullet M2 Titanium", 0xe2d2, 3, 3, 0, 0, ROUTER_BOARD_TI, 0, 10},	// Titanium
 		{"Bullet M5 Titanium", 0xe2d5, 3, 3, 0, 0, ROUTER_BOARD_TI, 0, 10},	// Titanium
-		{"Airgrid M2", 0xe212, 1, 1, ROUTER_BOARD_BS2M, 0, 10},	//
-		{"Airgrid M2", 0xe242, 1, 1, ROUTER_BOARD_BS2M, 0, 10},	//
-		{"Airgrid M2HP", 0xe252, 1, 1, ROUTER_BOARD_BS2M, 0, 10},	//
-		{"Airgrid M5", 0xe215, 1, 1, ROUTER_BOARD_BS5M, 0, 10},	//
-		{"Airgrid M5", 0xe245, 1, 1, ROUTER_BOARD_BS5M, 0, 10},	//
-		{"Airgrid M5", 0xe255, 1, 1, ROUTER_BOARD_BS5M, 0, 10},	//
-		{"Airgrid M5 XW", 0xe835, 1, 1, ROUTER_BOARD_BS5M, 0, 10},	//
-		{"AirRouter", 0xe4a2, 1, 1, ROUTER_BOARD_AIRROUTER, 0, 10},	//
-		{"AirRouter", 0xe4b2, 1, 1, ROUTER_BOARD_AIRROUTER, 0, 10},	//
-		{"Pico M2", 0xe302, 1, 1, ROUTER_BOARD_BS2M, 0, 10},	//
-		{"Pico M5", 0xe305, 1, 1, ROUTER_BOARD_BS5M, 0, 10},	//
+		{"Airgrid M2", 0xe212, 1, 1, 0, 0, ROUTER_BOARD_BS2M, 0, 10},	//
+		{"Airgrid M2", 0xe242, 1, 1, 0, 0, ROUTER_BOARD_BS2M, 0, 10},	//
+		{"Airgrid M2HP", 0xe252, 1, 1, 0, 0, ROUTER_BOARD_BS2M, 0, 10},	//
+		{"Airgrid M5", 0xe215, 1, 1, 0, 0, ROUTER_BOARD_BS5M, 0, 10},	//
+		{"Airgrid M5", 0xe245, 1, 1, 0, 0, ROUTER_BOARD_BS5M, 0, 10},	//
+		{"Airgrid M5", 0xe255, 1, 1, 0, 0, ROUTER_BOARD_BS5M, 0, 10},	//
+		{"Airgrid M5 XW", 0xe835, 1, 1, 0, 0, ROUTER_BOARD_BS5M, 0, 10},	//
+		{"AirRouter", 0xe4a2, 1, 1, 0, 0, ROUTER_BOARD_AIRROUTER, 0, 10},	//
+		{"AirRouter", 0xe4b2, 1, 1, 0, 0, ROUTER_BOARD_AIRROUTER, 0, 10},	//
+		{"Pico M2", 0xe302, 1, 1, 0, 0, ROUTER_BOARD_BS2M, 0, 10},	//
+		{"Pico M5", 0xe305, 1, 1, 0, 0, ROUTER_BOARD_BS5M, 0, 10},	//
 		{"Airwire", 0xe405, 3, 3, 0, 0, ROUTER_BOARD_BS5M, 0, 10},	//
 		{"Airwire", 0xe4a5, 3, 3, 0, 0, ROUTER_BOARD_BS5M, 0, 10},	//
 		{"Loco M5", 0xe0a5, 3, 3, 0, 0, ROUTER_BOARD_NS5M, 0, 10},	//
@@ -2433,8 +2433,8 @@ int internal_getRouterBrand()
 		{"NanoBridge M5", 0xe2e5, 3, 3, 0, 0, ROUTER_BOARD_BS5M, 0, 10},	//
 		{"NanoBridge M2", 0xe232, 3, 3, 0, 0, ROUTER_BOARD_BS2M, 0, 10},	//
 		{"NanoBridge M2", 0xe2b2, 3, 3, 0, 0, ROUTER_BOARD_BS2M, 0, 10},	//
-		{"PicoStation M2", 0xe302, 1, 1, ROUTER_BOARD_BS2M, 0, 10},	//
-		{"PicoStation M5", 0xe305, 1, 1, ROUTER_BOARD_BS2M, 0, 10},	//
+		{"PicoStation M2", 0xe302, 1, 1, 0, 0, ROUTER_BOARD_BS2M, 0, 10},	//
+		{"PicoStation M5", 0xe305, 1, 1, 0, 0, ROUTER_BOARD_BS2M, 0, 10},	//
 		{"3G Station", 0xe6a2, 3, 3, 0, 0, ROUTER_BOARD_BS2M, 0, 10},	//
 		{"3G Station Professional", 0xe6b2, 3, 3, 0, 0, ROUTER_BOARD_BS2M, 0, 10},	//
 		{"3G Station Outdoor", 0xe6c2, 3, 3, 0, 0, ROUTER_BOARD_BS2M, 0, 10},	//
