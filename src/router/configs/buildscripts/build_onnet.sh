@@ -1,0 +1,12 @@
+#!/bin/sh
+#./build_9331_onnet.sh
+#./build_Alfa_N2_onnet_blank.sh
+#./build_Alfa_N2_onnet.sh
+#./build_Alfa_N5_onnet_blank.sh
+#./build_Alfa_N5_onnet.sh
+#./build_wpe72_onnet_blank.sh
+#./build_wpe72_onnet.sh
+./build_mms344_onnet.sh
+./build_mms344_onnet_blank.sh
+./build_wp546_onnet.sh
+./build_wp546_onnet_blank.sh
