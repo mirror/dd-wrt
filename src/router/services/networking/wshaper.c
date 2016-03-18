@@ -774,7 +774,7 @@ static int svqos_iptables(void)
 				break;
 
 			/* incomming data */
-			eval("iptables", "-t", "mangle", "-I", "VPN_IN 1", "-i", data, "-j", "MARK", "--set-mark", qos_nfmark(atol(level)));
+			eval("iptables", "-t", "mangle", "-I", "VPN_IN", "1", "-i", data, "-j", "MARK", "--set-mark", qos_nfmark(atol(level)));
 			char s_level[32];
 			sprintf(s_level, "%d", atoi(level) / 10);
 			/* outgoing data */
