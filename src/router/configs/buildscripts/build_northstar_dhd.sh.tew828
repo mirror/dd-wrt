@@ -1,0 +1,27 @@
+#!/bin/sh
+OLDPATH=$PATH
+DATE=$(date +%m-%d-%Y)
+DATE+="-r"
+DATE+=$(svnversion -n northstar/src/router/httpd)
+#export PATH=/xfs/toolchains/toolchain-laguna-new/bin:$OLDPATH
+
+export PATH=/xfs/toolchains/toolchain-arm_cortex-a9_gcc-5.3.0_musl-1.1.14_eabi/bin:$OLDPATH
+cd northstar/src/router
+[ -n "$DO_UPDATE" ] && svn update
+#cp .config_laguna-small .config
+mkdir -p ~/GruppenLW/releases/$DATE/dlink-dir890l
+mkdir -p ~/GruppenLW/releases/$DATE/trendnet-828DRU
+
+
+
+cp .config_northstar_16m .config
+echo "CONFIG_SMP=y" >> .config
+echo "CONFIG_DHDAP=y" >> .config
+sed -i 's/\CONFIG_SNORT=y/# CONFIG_SNORT is not set/g' .config
+sed -i 's/\CONFIG_PHP=y/# CONFIG_PHP is not set/g' .config
+sed -i 's/\CONFIG_ASTERISK=y/# CONFIG_ASTERISK is not set/g' .config
+sed -i 's/\CONFIG_WEBSERVER=y/# CONFIG_WEBSERVER is not set/g' .config
+sed -i 's/\CONFIG_TRANSMISSION=y/# CONFIG_TRANSMISSION is not set/g' .config
+make -f Makefile.northstar kernel clean all install
+cd ../../../
+cp northstar/src/router/arm-uclibc/tnet828.trx ~/GruppenLW/releases/$DATE/trendnet-828DRU/trendnet-828dru-webflash.bin
