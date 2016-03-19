@@ -829,7 +829,7 @@ static void nat_postrouting(void)
 			save2file("-A POSTROUTING -o %s -j SNAT --to-source %s\n", wan_ifname_tun, inet_ntoa(ifaddr));
 		}
 */
-		if (nvram_match("block_loopback", "0")) {
+		if (nvram_match("block_loopback", "0") || nvram_match("filter", "off")) {
 			save2file("-A POSTROUTING -m mark --mark %s -j MASQUERADE\n", get_NFServiceMark("FORWARD", 1));
 		}
 
@@ -857,7 +857,7 @@ static void nat_postrouting(void)
 				}
 			}
 		}
-		if (nvram_match("block_loopback", "0"))
+		if (nvram_match("block_loopback", "0") || nvram_match("filter", "off"))
 			writeproc("/proc/sys/net/ipv4/conf/br0/loop", "1");
 
 		if (!nvram_match("wan_proto", "pptp") && !nvram_match("wan_proto", "l2tp") && nvram_match("wshaper_enable", "0")) {
@@ -2006,7 +2006,7 @@ static void filter_input(void)
 	/*
 	 * ICMP request from WAN interface 
 	 */
-	if (wanactive())
+	if (nvram_invmatch("filter", "off") && wanactive())
 		save2file("-A INPUT -i %s -p icmp -j %s\n", wanface, nvram_match("block_wan", "1") ? log_drop : log_accept);
 
 	/*
@@ -2023,7 +2023,7 @@ static void filter_input(void)
 	/*
 	 * SNMP access from WAN interface 
 	 */
-	if (nvram_match("snmpd_enable", "1") && nvram_match("block_snmp", "0")) {
+	if (nvram_match("snmpd_enable", "1") && (nvram_match("block_snmp", "0") || nvram_match("filter", "off"))) {
 		save2file("-A INPUT -i %s -p udp --dport 161 -j %s\n", wanface, log_accept);
 	}
 #endif
@@ -2059,7 +2059,7 @@ static void filter_input(void)
 	/*
 	 * Ident request backs by telnet or IRC server 
 	 */
-	if (nvram_match("block_ident", "0"))
+	if (nvram_match("block_ident", "0") || nvram_match("filter", "off"))
 		save2file("-A INPUT -p tcp --dport %d -j %s\n", IDENT_PORT, log_accept);
 
 	/*
@@ -2199,7 +2199,7 @@ static void filter_forward(void)
 	// save2file ("-A FORWARD -i %s -o %s -p tcp --dport %d "
 	// "-m webstr --content %d -j %s\n",
 	// lanface, wanface, HTTP_PORT, webfilter, log_reject);
-	if (webfilter && strlen(wanface)) {
+	if (nvram_invmatch("filter", "off") && webfilter && strlen(wanface)) {
 		insmod("ipt_webstr");
 		save2file("-A FORWARD -i %s -o %s -p tcp " "-m webstr --content %d -j %s\n", lanface, wanface, webfilter, log_reject);
 	}
@@ -2401,7 +2401,7 @@ static void mangle_table(void)
 {
 	save2file("*mangle\n" ":PREROUTING ACCEPT [0:0]\n" ":OUTPUT ACCEPT [0:0]\n");
 
-	if (wanactive() && nvram_match("block_loopback", "0")) {
+	if (wanactive() && (nvram_match("block_loopback", "0") || nvram_match("filter", "off"))) {
 		insmod("ipt_mark xt_mark ipt_CONNMARK xt_CONNMARK xt_connmark");
 
 		save2file("-A PREROUTING -i ! %s -d %s -j MARK --set-mark %s\n", get_wan_face(), get_wan_ipaddr(), get_NFServiceMark("FORWARD", 1));
