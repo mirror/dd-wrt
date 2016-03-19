@@ -63,6 +63,49 @@ function to_apply(F)
 function setFirewall(val) {
 <% ifdef("MICRO", "/"); %><% ifdef("MICRO", "*"); %>if (val != "on") document.firewall.log_enable[1].click();
 setElementsActive("_block_proxy", "_limit_telnet", val == "on");<% ifdef("MICRO", "*"); %><% ifdef("MICRO", "/"); %>
+	if (val != on) {
+	if(F._block_proxy){
+		F._block_proxy.checked = false;
+	}
+	if(F._block_cookie){
+		F._block_cookie.checked = false;
+	}
+	if(F._block_java){
+		F._block_java.checked = false;
+	}
+	if(F._block_activex){
+		F._block_activex.checked = false;
+	}
+	if (F._block_wan){
+		F._block_wan.checked = false;
+	}
+	if(F._block_multicast) {
+		F._block_multicast.checked = false;
+	}
+	if(F._block_loopback){
+		F._block_loopback.checked = false;
+	}
+	if(F._block_ident){
+		F._block_ident.checked = false;
+	}
+	if(F._block_snmp){
+		F._block_snmp.checked = false;
+	}
+	if(F._limit_ssh){
+		F._limit_ssh.checked = false;
+	}
+	if(F._limit_telnet){
+		F._limit_telnet.checked = false;
+	}
+	if(F._limit_pptp){
+		F._limit_pptp.checked = false;
+	}
+	if(F._limit_ftp){
+		F._limit_ftp.checked = false;
+	}
+	}
+
+
 }
 
 var update;
