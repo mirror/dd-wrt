@@ -63,7 +63,7 @@ function to_apply(F)
 function setFirewall(val) {
 <% ifdef("MICRO", "/"); %><% ifdef("MICRO", "*"); %>if (val != "on") document.firewall.log_enable[1].click();
 setElementsActive("_block_proxy", "_limit_telnet", val == "on");<% ifdef("MICRO", "*"); %><% ifdef("MICRO", "/"); %>
-	if (val != on) {
+	if (val != "on") {
 	if(F._block_proxy){
 		F._block_proxy.checked = false;
 	}
