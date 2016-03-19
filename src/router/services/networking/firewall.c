@@ -2008,6 +2008,8 @@ static void filter_input(void)
 	 */
 	if (nvram_invmatch("filter", "off") && wanactive())
 		save2file("-A INPUT -i %s -p icmp -j %s\n", wanface, nvram_match("block_wan", "1") ? log_drop : log_accept);
+	else
+		save2file("-A INPUT -i %s -p icmp -j %s\n", wanface, log_accept);
 
 	/*
 	 * IGMP query from WAN interface 
