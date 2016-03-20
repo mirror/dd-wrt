@@ -1210,7 +1210,7 @@ int iw_mwatt2dbm(int in)
 	int res = 0;
 
 	/*
-	 * Split integral and floating part to avoid accumulating rounding errors 
+    	 * Split integral and floating part to avoid accumulating rounding errors 
 	 */
 	while (fin > 10.0) {
 		res += 10;
