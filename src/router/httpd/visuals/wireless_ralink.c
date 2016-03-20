@@ -415,17 +415,12 @@ void ej_get_currate(webs_t wp, int argc, char_t ** argv)
 	char scale;
 	int divisor;
 
-	if (rate >= GIGA) {
-		scale = 'G';
-		divisor = GIGA;
+	if (rate >= MEGA) {
+		scale = 'M';
+		divisor = MEGA;
 	} else {
-		if (rate >= MEGA) {
-			scale = 'M';
-			divisor = MEGA;
-		} else {
-			scale = 'k';
-			divisor = KILO;
-		}
+		scale = 'k';
+		divisor = KILO;
 	}
 	if (rate > 0.0) {
 		websWrite(wp, "%d %cb/s", rate / divisor, scale);
