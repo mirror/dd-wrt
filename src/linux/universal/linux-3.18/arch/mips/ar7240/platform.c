@@ -1126,12 +1126,18 @@ int __init ar7240_platform_init(void)
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, 1);
 	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac, 0);
 
+	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
+	ar71xx_eth1_data.duplex = DUPLEX_FULL;
+	ar71xx_switch_data.phy_poll_mask |= BIT(4);
 	/* LAN */
 	ar71xx_add_device_eth(1);
 
 	/* WAN */
 	ar71xx_switch_data.phy4_mii_en = 1;
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
+	ar71xx_eth0_data.duplex = DUPLEX_FULL;
+	ar71xx_eth0_data.speed = SPEED_100;
+	ar71xx_eth0_data.phy_mask = BIT(4);
 	ar71xx_add_device_eth(0);
     #elif CONFIG_WR841V8
 	ar71xx_add_device_mdio(1, 0x0);
