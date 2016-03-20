@@ -4950,9 +4950,14 @@ static int gstrcmp(char *str1, char *str2)
 	return 0;
 }
 
+int getIfList(char *buffer, const char *ifprefix)
+{
+	getIfListB(buffer, ifprefix, 0);
+}
+
 // returns a physical interfacelist filtered by ifprefix. if ifprefix is
 // NULL, all valid interfaces will be returned
-int getIfList(char *buffer, const char *ifprefix)
+int getIfListB(char *buffer, const char *ifprefix, int bridgeonly)
 {
 	FILE *in = fopen("/proc/net/dev", "rb");
 	char ifname[32];
@@ -4975,7 +4980,8 @@ int getIfList(char *buffer, const char *ifprefix)
 		if (c == ':' || ifcount == 30) {
 			ifname[ifcount++] = 0;
 			int skip = 0;
-
+			if (bridgeonly && isbridge(ifname))
+				skip = 1;
 			if (ifprefix) {
 				if (strncmp(ifname, ifprefix, strlen(ifprefix))) {
 					skip = 1;
@@ -5045,6 +5051,11 @@ int getIfList(char *buffer, const char *ifprefix)
 	if (count)
 		buffer[strlen(buffer) - 1] = 0;	// fixup last space
 	return count;
+}
+
+int getIfList(char *buffer, const char *ifprefix)
+{
+	getIfListB(buffer, ifprefix, 0);
 }
 
 /*
@@ -7256,13 +7267,13 @@ int HTTxRate80_800(unsigned int index)
 		return 0;
 	}
 	if (index == 7)
-	    return 390000;
+		return 390000;
 	if (index == 15)
-	    return 780000;
+		return 780000;
 	if (index == 23)
-	    return 1170000;
+		return 1170000;
 	if (index == 31)
-	    return 1560000;
+		return 1560000;
 	return vHTTxRate80_800[index];
 }
 
@@ -7279,14 +7290,14 @@ int HTTxRate80_400(unsigned int index)
 		return 0;
 	}
 	if (index == 7)
-	    return 433300;
+		return 433300;
 	if (index == 15)
-	    return 866700;
+		return 866700;
 	if (index == 23)
-	    return 1300000;
+		return 1300000;
 	if (index == 31)
-	    return 1733300;
-	    
+		return 1733300;
+
 	return vHTTxRate80_400[index];
 }
 
@@ -7756,4 +7767,22 @@ char *foreach_last(char *next, char *word)
 	strcpyto(word, next, ' ');
 	next = strchr(next, ' ');
 	return next;
+}
+
+int f_exists(const char *path)	// note: anything but a directory
+{
+	struct stat st;
+	memset(&st, 0, sizeof(struct stat));
+
+	return (stat(path, &st) == 0) && (!S_ISDIR(st.st_mode));
+}
+
+int isbridge(char *name)
+{
+	char path[64];
+	struct stat st;
+	memset(&st, 0, sizeof(struct stat));
+	sprintf(path, "/sys/class/net/%s/bridge", name);
+	return (stat(path, &st) == 0) && (S_ISDIR(st.st_mode));
+
 }
