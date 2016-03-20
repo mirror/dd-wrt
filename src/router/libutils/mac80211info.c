@@ -1089,6 +1089,7 @@ int mac80211_get_maxmcs(char *interface)
 			maxmcs = get_ht_mcs(nla_data(tb[NL80211_BAND_ATTR_HT_MCS_SET]));
 	}
 	nlmsg_free(msg);
+	fprintf(stderr,"maxmcs %d\n",maxmcs);
 	return maxmcs;
 out:
 	return 0;
