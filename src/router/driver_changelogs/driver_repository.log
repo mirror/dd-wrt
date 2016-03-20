@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r2842 | BrainSlayer | 2016-03-20 13:45:30 +0100 (Sun, 20 Mar 2016) | 1 line
+
+revert to previous firmware, since ct firmware crashes
+------------------------------------------------------------------------
 r2841 | brainslayer | 2016-03-20 13:29:50 +0100 (Sun, 20 Mar 2016) | 1 line
 
 try ct firmware on qca988X
