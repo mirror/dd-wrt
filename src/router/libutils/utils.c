@@ -7255,6 +7255,14 @@ int HTTxRate80_800(unsigned int index)
 		fprintf(stderr, "utils.c HTTxRate80_800() index overflow\n");
 		return 0;
 	}
+	if (index == 7)
+	    return 390000;
+	if (index == 15)
+	    return 780000;
+	if (index == 23)
+	    return 1170000;
+	if (index == 31)
+	    return 1560000;
 	return vHTTxRate80_800[index];
 }
 
@@ -7270,6 +7278,15 @@ int HTTxRate80_400(unsigned int index)
 		fprintf(stderr, "utils.c HTTxRate80_400() index overflow\n");
 		return 0;
 	}
+	if (index == 7)
+	    return 433300;
+	if (index == 15)
+	    return 866700;
+	if (index == 23)
+	    return 1300000;
+	if (index == 31)
+	    return 1733300;
+	    
 	return vHTTxRate80_400[index];
 }
 
