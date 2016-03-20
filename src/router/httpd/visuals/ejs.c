@@ -1374,7 +1374,7 @@ void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 	sprintf(eths, "%s %s", eths, eths2);
 
 	memset(bufferif, 0, 256);
-	getIfList(bufferif, "br");
+	getIfListB(bufferif, NULL, 1);
 
 #ifndef HAVE_MADWIFI
 	int cnt = get_wl_instances();
