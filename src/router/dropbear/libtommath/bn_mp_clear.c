@@ -1,5 +1,5 @@
 #include <tommath.h>
-#include "dbhelpers.h"
+#include "../dbhelpers.h"
 #ifdef BN_MP_CLEAR_C
 /* LibTomMath, multiple-precision integer library -- Tom St Denis
  *
