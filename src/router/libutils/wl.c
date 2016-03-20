@@ -230,15 +230,14 @@ int wifi_getchannel(char *ifname)
 	closesocket();
 	int i;
 
-	freq = (float)wrq.u.freq.m;
-	if (freq < 1000.0f) {
+	freq = wrq.u.freq.m;
+	if (freq < 1000) {
 		return (int)freq;
 	}
 
-	freq = (double)wrq.u.freq.m;
 	for (i = 0; i < wrq.u.freq.e; i++)
-		freq *= 10.0;
-	freq /= 1000000.0;
+		freq *= 10;
+	freq /= 1000000;
 	cprintf("wifi channel %f\n", freq);
 	channel = ieee80211_mhz2ieee(freq);
 
@@ -248,7 +247,7 @@ int wifi_getchannel(char *ifname)
 struct wifi_interface *wifi_getfreq(char *ifname)
 {
 	struct iwreq wrq;
-	double freq;
+	int freq;
 
 	(void)memset(&wrq, 0, sizeof(struct iwreq));
 	strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
@@ -257,22 +256,22 @@ struct wifi_interface *wifi_getfreq(char *ifname)
 
 	int i;
 
-	freq = (float)wrq.u.freq.m;
+	freq = wrq.u.freq.m;
 	struct wifi_interface *interface = (struct wifi_interface *)malloc(sizeof(struct wifi_interface));
-	if (freq < 1000.0f) {
-		interface->freq = ieee80211_ieee2mhz((unsigned int)freq);
+	if (freq < 1000) {
+		interface->freq = ieee80211_ieee2mhz(freq);
 		return interface;
 	}
-	freq = (double)wrq.u.freq.m;
+	freq = wrq.u.freq.m;
 	for (i = 0; i < wrq.u.freq.e; i++)
-		freq *= 10.0;
-	freq /= 1000000.0;
-	interface->freq = (int)freq;
+		freq *= 10;
+	freq /= 1000000;
+	interface->freq = freq;
 	cprintf("wifi channel %f\n", freq);
 	return interface;
 }
 
-float wifi_getrate(char *ifname)
+int wifi_getrate(char *ifname)
 {
 	struct iwreq wrq;
 
@@ -1124,51 +1123,53 @@ int do80211priv(const char *ifname, int op, void *data, size_t len)
 	return iwr.u.data.length;
 }
 
-#define MEGA	1e6
+#define MEGA	1000000
 
-float wifi_getrate(char *ifname)
+int wifi_getrate(char *ifname)
 {
 #if defined(HAVE_ATH9K) && !defined(HAVE_MVEBU)
 	if (is_ath9k(ifname)) {
 		if (nvram_nmatch("b-only", "%s_net_mode", ifname))
-			return 11.0 * MEGA;
+			return 11 * MEGA;
 		if (nvram_nmatch("g-only", "%s_net_mode", ifname))
-			return 54.0 * MEGA;
+			return 54 * MEGA;
 		if (nvram_nmatch("a-only", "%s_net_mode", ifname))
-			return 54.0 * MEGA;
+			return 54 * MEGA;
 		if (nvram_nmatch("bg-mixed", "%s_net_mode", ifname))
-			return 54.0 * MEGA;
+			return 54 * MEGA;
 		struct wifi_interface *interface = mac80211_get_interface(ifname);
 		if (!interface)
 			return -1;
-		float rate;
+		int rate;
+		fprintf(stderr,"width %d\n",interface->width);
 		switch (interface->width) {
 		case 2:
-			rate = 54.0 * MEGA;
+			rate = 54 * MEGA;
 			break;
 		case 5:
-			rate = 54.0 * MEGA / 4;
+			rate = 54 * MEGA / 4;
 			break;
 		case 10:
-			rate = 54.0 * MEGA / 2;
+			rate = 54 * MEGA / 2;
 			break;
 		case 20:
-			rate = (float)(HTTxRate20_400(mac80211_get_maxmcs(ifname))) * MEGA;
+			rate = (HTTxRate20_400(mac80211_get_maxmcs(ifname))) * MEGA / 1000;
 			break;
 		case 40:
-			rate = (float)(HTTxRate40_400(mac80211_get_maxmcs(ifname))) * MEGA;
+			rate = (HTTxRate40_400(mac80211_get_maxmcs(ifname))) * MEGA / 1000;
 			break;
 		case 80:
-			rate = (float)(HTTxRate80_400(mac80211_get_maxmcs(ifname))) * MEGA;
+			rate = (HTTxRate80_400(mac80211_get_maxmcs(ifname))) * MEGA / 1000;
 			break;
 		case 8080:
 		case 160:
-			rate = (float)(HTTxRate40_400(mac80211_get_maxmcs(ifname))) * MEGA;	// dummy, no qam256 info yet available
+			rate = (HTTxRate40_400(mac80211_get_maxmcs(ifname))) * MEGA / 1000;	// dummy, no qam256 info yet available
 			break;
 		default:
-			rate = 54.0 * MEGA;
+			rate = 54 * MEGA;
 		}
 		free(interface);
+		fprintf(stderr, "rate %d\n",rate);
 		return rate;
 	} else
 #endif
