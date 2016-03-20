@@ -4980,7 +4980,7 @@ int getIfListB(char *buffer, const char *ifprefix, int bridgeonly)
 		if (c == ':' || ifcount == 30) {
 			ifname[ifcount++] = 0;
 			int skip = 0;
-			if (bridgeonly && isbridge(ifname))
+			if (bridgeonly && !isbridge(ifname))
 				skip = 1;
 			if (ifprefix) {
 				if (strncmp(ifname, ifprefix, strlen(ifprefix))) {
