@@ -272,7 +272,7 @@ void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 	sprintf(bufferif, "%s %s", bufferif, bufferif2);
 #endif
 	memset(bufferif2, 0, 256);
-	getIfList(bufferif2, "br");
+	getIfListB(bufferif2, NULL, 1);
 	foreach(word, bufferif2, next) {
 		if (contains(word, '.'))
 			sprintf(bufferif, "%s %s", bufferif, word);
@@ -312,7 +312,7 @@ void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 	char buffer[256];
 
 	memset(buffer, 0, 256);
-	getIfList(buffer, "br");
+	getIfListB(buffer, NULL, 1);
 
 	memset(finalbuffer, 0, 256);
 	foreach(word, buffer, next) {
