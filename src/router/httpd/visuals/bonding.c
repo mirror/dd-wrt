@@ -50,7 +50,7 @@ void ej_show_bondings(webs_t wp, int argc, char_t ** argv)
 	sprintf(bufferif, "%s %s", bufferif, buffer);
 #endif
 	memset(buffer, 0, 256);
-	getIfList(buffer, "br");
+	getIfListB(buffer, NULL, 1);
 	sprintf(bufferif, "%s %s", bufferif, buffer);
 
 	memset(buffer, 0, 256);

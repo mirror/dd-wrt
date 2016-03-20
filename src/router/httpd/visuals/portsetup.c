@@ -51,7 +51,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "</select></div>\n");
 	}
 	memset(bufferif, 0, 256);
-	getIfList(bufferif, "br");
+	getIfListB(bufferif, NULL, 1);
 	foreach(var, eths, next) {
 		int isbridge = 0;
 		if (!strcmp("etherip0", var))
@@ -174,7 +174,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<select name=\"nld_%s_bridge\">\n", var);
 			websWrite(wp, "  <option value=\"\">none</option>\n");
 			memset(bufferif, 0, 256);
-			getIfList(bufferif, "br");
+			getIfListB(bufferif, NULL, 1);
 			foreach(word, bufferif, next) {
 				// if( strcmp( word, "br0" ) ) {
 				websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", word, nvram_match(nld_bridge, word) ? "selected=\"selected\"" : "", word);
@@ -202,7 +202,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<select name=\"bat_%s_bridge\">\n", var);
 			websWrite(wp, "  <option value=\"\">none</option>\n");
 			memset(bufferif, 0, 256);
-			getIfList(bufferif, "br");
+			getIfListB(bufferif, NULL, 1);
 			foreach(word, bufferif, next) {
 				// if( strcmp( word, "br0" ) ) {
 				websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", word, nvram_match(bat_bridge, word) ? "selected=\"selected\"" : "", word);
