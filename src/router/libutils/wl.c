@@ -1141,7 +1141,7 @@ int wifi_getrate(char *ifname)
 		if (!interface)
 			return -1;
 		int rate;
-		fprintf(stderr,"width %d\n",interface->width);
+		int sgi = has_shortgi(ifname);
 		switch (interface->width) {
 		case 2:
 			rate = 54 * MEGA;
@@ -1153,23 +1153,35 @@ int wifi_getrate(char *ifname)
 			rate = 54 * MEGA / 2;
 			break;
 		case 20:
-			rate = (HTTxRate20_400(mac80211_get_maxmcs(ifname))) * MEGA / 1000;
+			if (sgi)
+				rate = (HTTxRate20_400(mac80211_get_maxmcs(ifname))) * MEGA / 1000;
+			else
+				rate = (HTTxRate20_800(mac80211_get_maxmcs(ifname))) * MEGA / 1000;
 			break;
 		case 40:
-			rate = (HTTxRate40_400(mac80211_get_maxmcs(ifname))) * MEGA / 1000;
+			if (sgi)
+				rate = (HTTxRate40_400(mac80211_get_maxmcs(ifname))) * MEGA / 1000;
+			else
+				rate = (HTTxRate40_800(mac80211_get_maxmcs(ifname))) * MEGA / 1000;
+
 			break;
 		case 80:
-			rate = (HTTxRate80_400(mac80211_get_maxmcs(ifname))) * MEGA / 1000;
+			if (sgi)
+				rate = (HTTxRate80_400(mac80211_get_maxmcs(ifname))) * MEGA / 1000;
+			else
+				rate = (HTTxRate80_800(mac80211_get_maxmcs(ifname))) * MEGA / 1000;
 			break;
 		case 8080:
 		case 160:
-			rate = (HTTxRate40_400(mac80211_get_maxmcs(ifname))) * MEGA / 1000;	// dummy, no qam256 info yet available
+			if (sgi)
+				rate = (HTTxRate40_400(mac80211_get_maxmcs(ifname))) * MEGA / 1000;	// dummy, no qam256 info yet available
+			else
+				rate = (HTTxRate40_800(mac80211_get_maxmcs(ifname))) * MEGA / 1000;	// dummy, no qam256 info yet available
 			break;
 		default:
 			rate = 54 * MEGA;
 		}
 		free(interface);
-		fprintf(stderr, "rate %d\n",rate);
 		return rate;
 	} else
 #endif
