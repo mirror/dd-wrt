@@ -221,7 +221,7 @@ int getchannels(unsigned int *list, char *ifname)
 int wifi_getchannel(char *ifname)
 {
 	struct iwreq wrq;
-	double freq;
+	int freq;
 	int channel;
 
 	(void)memset(&wrq, 0, sizeof(struct iwreq));
@@ -1614,10 +1614,10 @@ int wifi_getchannel(char *ifname)
 	closesocket();
 	int i;
 
-	double freq = (double)wrq.u.freq.m;
+	int freq = (double)wrq.u.freq.m;
 	for (i = 0; i < wrq.u.freq.e; i++)
-		freq *= 10.0;
-	freq /= 1000000.0;
+		freq *= 10;
+	freq /= 10000000;
 	cprintf("wifi channel %f\n", freq);
 	channel = ieee80211_mhz2ieee(freq);
 
@@ -1640,10 +1640,10 @@ struct wifi_interface *wifi_getfreq(char *ifname)
 	closesocket();
 
 	int i;
-	double freq = (double)wrq.u.freq.m;
+	int freq = (double)wrq.u.freq.m;
 	for (i = 0; i < wrq.u.freq.e; i++)
-		freq *= 10.0;
-	freq /= 1000000.0;
+		freq *= 10;
+	freq /= 10000000;
 	struct wifi_interface *interface;
 	interface = (struct wifi_interface *)malloc(sizeof(struct wifi_interface));
 	interface->freq = (int)freq;
