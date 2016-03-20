@@ -411,7 +411,7 @@ void ej_get_currate(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "%s", live_translate("share.disabled"));
 		return;
 	}
-	float rate = wifi_getrate(getRADev(nvram_safe_get("wifi_display")));
+	int rate = wifi_getrate(getRADev(nvram_safe_get("wifi_display")));
 	char scale;
 	int divisor;
 
@@ -428,7 +428,7 @@ void ej_get_currate(webs_t wp, int argc, char_t ** argv)
 		}
 	}
 	if (rate > 0.0) {
-		websWrite(wp, "%g %cb/s", rate / divisor, scale);
+		websWrite(wp, "%d %cb/s", rate / divisor, scale);
 	} else
 		websWrite(wp, "%s", live_translate("share.auto"));
 
