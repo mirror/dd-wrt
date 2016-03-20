@@ -964,7 +964,7 @@ var _60=700;
 var _61=400;
 var tab=new Array();
 tab=mac.split(mac.substr(2,1));
-var win=window.open("http://standards.ieee.org/cgi-bin/ouisearch?"+tab[0]+"-"+tab[1]+"-"+tab[2],"DDWRT_OUI_Search","top="+top+",left="+_5f+",width="+_60+",height="+_61+",resizable=yes,scrollbars=yes,statusbar=no");
+var win=window.open("http://oidsearch.s.dd-wrt.com/search/"+tab[0]+':'+tab[1]+':'+tab[2],"DDWRT_OUI_Search","top="+top+",left="+_5f+",width="+_60+",height="+_61+",resizable=yes,scrollbars=yes,statusbar=no");
 addEvent(window,"unload",function(){
 if(!win.closed){
 win.close();
