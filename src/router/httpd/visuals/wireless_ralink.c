@@ -396,7 +396,7 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 
 }
 
-extern float wifi_getrate(char *ifname);
+extern int wifi_getrate(char *ifname);
 
 #define KILO	1e3
 #define MEGA	1e6
