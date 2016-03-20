@@ -410,17 +410,12 @@ void ej_get_currate(webs_t wp, int argc, char_t ** argv)
 	char scale;
 	int divisor;
 
-	if (rate >= GIGA) {
-		scale = 'G';
-		divisor = GIGA;
+	if (rate >= MEGA) {
+		scale = 'M';
+		divisor = MEGA;
 	} else {
-		if (rate >= MEGA) {
-			scale = 'M';
-			divisor = MEGA;
-		} else {
-			scale = 'k';
-			divisor = KILO;
-		}
+		scale = 'k';
+		divisor = KILO;
 	}
 	sprintf(mode, "%s_channelbw", ifname);
 #ifdef HAVE_ATH9K
