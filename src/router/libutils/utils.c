@@ -5053,10 +5053,6 @@ int getIfListB(char *buffer, const char *ifprefix, int bridgeonly)
 	return count;
 }
 
-int getIfList(char *buffer, const char *ifprefix)
-{
-	getIfListB(buffer, ifprefix, 0);
-}
 
 /*
  * Example: legal_hwaddr("00:11:22:33:44:aB"); return true;
@@ -7768,15 +7764,43 @@ char *foreach_last(char *next, char *word)
 	next = strchr(next, ' ');
 	return next;
 }
+#define MAX_BRIDGES	1024
 
-int f_exists(const char *path)	// note: anything but a directory
+#include <linux/if_bridge.h>
+int isbridge(char *name)
 {
-	struct stat st;
-	memset(&st, 0, sizeof(struct stat));
+	int i, ret=0, num;
+	char ifname[IFNAMSIZ];
+	int ifindices[MAX_BRIDGES];
+	int br_socket_fd = -1;
+	unsigned long args[3] = { BRCTL_GET_BRIDGES, 
+				 (unsigned long)ifindices, MAX_BRIDGES };
 
-	return (stat(path, &st) == 0) && (!S_ISDIR(st.st_mode));
+	if ((br_socket_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+		return 0;
+
+	num = ioctl(br_socket_fd, SIOCGIFBR, args);
+	if (num < 0) {
+		dprintf("Get bridge indices failed: %s\n",
+			strerror(errno));
+		return -errno;
+	}
+
+	for (i = 0; i < num; i++) {
+		if (!if_indextoname(ifindices[i], ifname)) {
+			dprintf("get find name for ifindex %d\n",
+				ifindices[i]);
+			return -errno;
+		}
+
+		if (!strcmp(ifname,name))
+		    return 1;
+	}
+        close(br_socket_fd);
+	return 0;
+
 }
-
+#if 0
 int isbridge(char *name)
 {
 	char path[64];
@@ -7786,3 +7810,4 @@ int isbridge(char *name)
 	return (stat(path, &st) == 0) && (S_ISDIR(st.st_mode));
 
 }
+#endif
