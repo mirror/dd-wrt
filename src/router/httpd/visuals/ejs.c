@@ -2280,7 +2280,7 @@ static void show_temp(webs_t wp, char *fmt)
 {
 	char sysfs[64];
 	int mon;
-	float temperature = 0.0f;
+	int temperature = 0;
 	for (mon = 0; mon < 11; mon++) {
 		snprintf(sysfs, 64, "/sys/class/hwmon/hwmon%d/temp1_input", mon);
 		FILE *tempfp = fopen(sysfs, "rb");
@@ -2288,11 +2288,11 @@ static void show_temp(webs_t wp, char *fmt)
 			int cpu;
 			fscanf(tempfp, "%d", &cpu);
 			fclose(tempfp);
-			temperature += cpu;
+			temperature += (cpu * 10);
 		}
 	}
 	temperature /= mon;
-	websWrite(wp, fmt, temperature);
+	websWrite(wp, fmt, temperature / 10, temperature % 10);
 }
 #endif
 
@@ -2311,7 +2311,7 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	return;
 #endif
 #ifdef HAVE_IPQ806X
-	show_temp(wp, "CPU %4.2f &#176;C");
+	show_temp(wp, "CPU %d.%d &#176;C");
 	return;
 #endif
 #ifdef HAVE_BCMMODERN
