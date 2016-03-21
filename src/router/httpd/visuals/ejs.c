@@ -2288,11 +2288,11 @@ static void show_temp(webs_t wp, char *fmt)
 			int cpu;
 			fscanf(tempfp, "%d", &cpu);
 			fclose(tempfp);
-			temperature += (cpu * 10);
+			temperature += (cpu * 100);
 		}
 	}
 	temperature /= mon;
-	websWrite(wp, fmt, temperature / 10, temperature % 10);
+	websWrite(wp, fmt, temperature / 100, temperature % 100);
 }
 #endif
 
