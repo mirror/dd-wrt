@@ -858,7 +858,7 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 								continue;
 							if (checkband == 5 && freq_mhz < 4000)
 								continue;
-							fprintf(stderr,"freq %d, htrange %d, startfreq%d, stopfreq %d\n",freq_mhz,htrange, startfreq, stopfreq);
+							fprintf(stderr,"regmaxbw %d freq %d, htrange %d, startfreq%d, stopfreq %d\n",regmaxbw, freq_mhz,htrange, startfreq, stopfreq);
 							list[count].channel = ieee80211_mhz2ieee(freq_mhz);
 							list[count].freq = freq_mhz;
 							
@@ -883,7 +883,7 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 								list[count].passive_scan = 1;
 							if (rd->reg_rules[rrc].flags & RRF_NO_IBSS)
 								list[count].no_ibss = 1;
-							if (regmaxbw == 40 || regmaxbw == 80) {
+							if (regmaxbw == 40 || regmaxbw == 80 || regmaxbw == 160) {
 								if ((freq_mhz - htrange) >= startfreq) {
 									list[count].ht40minus = 1;
 								}
