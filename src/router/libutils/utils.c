@@ -7781,16 +7781,14 @@ int isbridge(char *name)
 
 	num = ioctl(br_socket_fd, SIOCGIFBR, args);
 	if (num < 0) {
-		dprintf("Get bridge indices failed: %s\n",
-			strerror(errno));
-		return -errno;
+    		close(br_socket_fd);
+		return 0;
 	}
 
 	for (i = 0; i < num; i++) {
 		if (!if_indextoname(ifindices[i], ifname)) {
-			dprintf("get find name for ifindex %d\n",
-				ifindices[i]);
-			return -errno;
+    			close(br_socket_fd);
+			return 0;
 		}
 
 		if (!strcmp(ifname,name))
