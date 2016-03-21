@@ -844,7 +844,6 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 						regmaxbw = 40;
 					else
 						regmaxbw = (int)((float)(regfreq.max_bandwidth_khz) / 1000.0);
-					fprintf(stderr,"regmaxbw %d\n",regmaxbw);
 					if (!skip || ((freq_mhz - range) >= startfreq && (freq_mhz + range) <= stopfreq)) {
 						if (run == 1) {
 							regpower = rd->reg_rules[rrc].power_rule;
@@ -858,7 +857,6 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 								continue;
 							if (checkband == 5 && freq_mhz < 4000)
 								continue;
-							fprintf(stderr,"regmaxbw %d freq %d, htrange %d, startfreq%d, stopfreq %d\n",regmaxbw, freq_mhz,htrange, startfreq, stopfreq);
 							list[count].channel = ieee80211_mhz2ieee(freq_mhz);
 							list[count].freq = freq_mhz;
 							
