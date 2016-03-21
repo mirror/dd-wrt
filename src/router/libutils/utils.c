@@ -4957,7 +4957,7 @@ int getIfList(char *buffer, const char *ifprefix)
 
 // returns a physical interfacelist filtered by ifprefix. if ifprefix is
 // NULL, all valid interfaces will be returned
-int getIfListB(char *buffer, const char *ifprefix, int bridgeonly)
+int getIfListB(char *buffer, const char *ifprefix, int bridgesonly)
 {
 	FILE *in = fopen("/proc/net/dev", "rb");
 	char ifname[32];
@@ -4980,7 +4980,7 @@ int getIfListB(char *buffer, const char *ifprefix, int bridgeonly)
 		if (c == ':' || ifcount == 30) {
 			ifname[ifcount++] = 0;
 			int skip = 0;
-			if (bridgeonly && !isbridge(ifname))
+			if (bridgesonly && !isbridge(ifname))
 				skip = 1;
 			if (ifprefix) {
 				if (strncmp(ifname, ifprefix, strlen(ifprefix))) {
