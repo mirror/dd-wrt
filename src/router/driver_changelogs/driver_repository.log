@@ -1,4 +1,16 @@
 ------------------------------------------------------------------------
+r2845 | BrainSlayer | 2016-03-21 11:48:24 +0100 (Mon, 21 Mar 2016) | 1 line
+
+ath9k: reduce stack usage in ar9003_aic_cal_post_process
+------------------------------------------------------------------------
+r2844 | BrainSlayer | 2016-03-21 11:47:20 +0100 (Mon, 21 Mar 2016) | 1 line
+
+ath9k: clear bb filter calibration power threshold
+------------------------------------------------------------------------
+r2843 | BrainSlayer | 2016-03-21 11:44:32 +0100 (Mon, 21 Mar 2016) | 1 line
+
+fix buffer overrun
+------------------------------------------------------------------------
 r2842 | BrainSlayer | 2016-03-20 13:45:30 +0100 (Sun, 20 Mar 2016) | 1 line
 
 revert to previous firmware, since ct firmware crashes
