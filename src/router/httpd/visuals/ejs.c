@@ -2348,9 +2348,9 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	ret_int3 = (unsigned int *)buf3;
 	if (tempcount == -3) {
 		tempcount++;
-		tempavg_24 = *ret_int * 1000;
-		tempavg_50 = *ret_int2 * 1000;
-		tempavg_502 = *ret_int3 * 1000;
+		tempavg_24 = *ret_int * 10;
+		tempavg_50 = *ret_int2 * 10;
+		tempavg_502 = *ret_int3 * 10;
 		if (tempavg_24 < 0)
 			tempavg_24 = 0;
 		if (tempavg_50 < 0)
@@ -2358,21 +2358,21 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 		if (tempavg_502 < 0)
 			tempavg_502 = 0;
 	} else {
-		if (tempavg_24 < 10000 && *ret_int > 0)
-			tempavg_24 = *ret_int * 1000;
-		if (tempavg_50 < 10000 && *ret_int2 > 0)
-			tempavg_50 = *ret_int2 * 1000;
-		if (tempavg_502 < 10000 && *ret_int3 > 0)
-			tempavg_502 = *ret_int3 * 1000;
-		if (tempavg_24 > 200000 && *ret_int > 0)
-			tempavg_24 = *ret_int * 1000;
-		if (tempavg_50 > 200000 && *ret_int2 > 0)
-			tempavg_50 = *ret_int2 * 1000;
-		if (tempavg_502 > 200000 && *ret_int3 > 0)
-			tempavg_502 = *ret_int3 * 1000;
+		if (tempavg_24 < 100 && *ret_int > 0)
+			tempavg_24 = *ret_int * 10;
+		if (tempavg_50 < 100 && *ret_int2 > 0)
+			tempavg_50 = *ret_int2 * 10;
+		if (tempavg_502 < 100 && *ret_int3 > 0)
+			tempavg_502 = *ret_int3 * 10;
+		if (tempavg_24 > 2000 && *ret_int > 0)
+			tempavg_24 = *ret_int * 10;
+		if (tempavg_50 > 2000 && *ret_int2 > 0)
+			tempavg_50 = *ret_int2 * 10;
+		if (tempavg_502 > 2000 && *ret_int3 > 0)
+			tempavg_502 = *ret_int3 * 10;
 
-		tempavg_24 = (tempavg_24 * 4 + (*ret_int * 10000)) / 5;
-		tempavg_50 = (tempavg_50 * 4 + (*ret_int2 * 10000)) / 5;
+		tempavg_24 = (tempavg_24 * 4 + (*ret_int * 10)) / 5;
+		tempavg_50 = (tempavg_50 * 4 + (*ret_int2 * 10)) / 5;
 	}
 #else
 	ret_int = (unsigned int *)buf;
@@ -2383,11 +2383,11 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 		if (tempavg_24 < 0)
 			tempavg_24 = 0;
 	} else {
-		if (tempavg_24 < 10000 && *ret_int > 0)
-			tempavg_24 = *ret_int * 1000;
-		if (tempavg_24 > 200000 && *ret_int > 0)
-			tempavg_24 = *ret_int * 1000;
-		tempavg_24 = (tempavg_24 * 4 + (*ret_int * 1000)) / 5;
+		if (tempavg_24 < 100 && *ret_int > 0)
+			tempavg_24 = *ret_int * 10;
+		if (tempavg_24 > 2000 && *ret_int > 0)
+			tempavg_24 = *ret_int * 10;
+		tempavg_24 = (tempavg_24 * 4 + (*ret_int * 10)) / 5;
 	}
 	int t50 = rpc_get_temperature();
 	tempavg_50 = t50 / 1000;
@@ -2407,27 +2407,27 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "%s", live_translate("status_router.notavail"));	// no 
 	else if (no2) {
 #ifdef HAVE_QTN
-		websWrite(wp, "WL1 %d.%d &#176;C", tempavg_50 / 1000, tempavg_50 % 1000);
+		websWrite(wp, "WL1 %d.%d &#176;C", tempavg_50 / 10, tempavg_50 % 10);
 #else
-		tempavg_50 = tempavg_50 / 2 + 20000;
-		websWrite(wp, "WL1 %d.%d &#176;C", tempavg_50 / 1000, tempavg_50 % 1000);
+		tempavg_50 = tempavg_50 / 2 + 2000;
+		websWrite(wp, "WL1 %d.%d &#176;C", tempavg_50 / 10, tempavg_50 % 10);
 #endif
 	} else if (no5) {
-		tempavg_24 = tempavg_24 / 2 + 20000;
-		websWrite(wp, "WL0 %d.%d &#176;C", tempavg_24 / 1000, tempavg_24 % 1000);
+		tempavg_24 = tempavg_24 / 2 + 2000;
+		websWrite(wp, "WL0 %d.%d &#176;C", tempavg_24 / 10, tempavg_24 % 10);
 	} else {
 #ifdef HAVE_QTN
-		tempavg_24 = tempavg_24 / 2 + 20000;
-		websWrite(wp, "WL0 %d.%d &#176;C / WL1 %d.%d &#176;C", tempavg_24 / 1000, tempavg_24 % 1000, tempavg_50);
+		tempavg_24 = tempavg_24 / 2 + 2000;
+		websWrite(wp, "WL0 %d.%d &#176;C / WL1 %d.%d &#176;C", tempavg_24 / 10, tempavg_24 % 10, tempavg_50);
 #else
-		tempavg_24 = tempavg_24 / 2 + 20000;
-		tempavg_50 = tempavg_50 / 2 + 20000;
-		websWrite(wp, "WL0 %d.%d &#176;C / WL1 %d.%d &#176;C", tempavg_24 / 1000, tempavg_24 % 1000, tempavg_50 / 1000, tempavg_50 % 1000);
+		tempavg_24 = tempavg_24 / 2 + 2000;
+		tempavg_50 = tempavg_50 / 2 + 2000;
+		websWrite(wp, "WL0 %d.%d &#176;C / WL1 %d.%d &#176;C", tempavg_24 / 10, tempavg_24 % 10, tempavg_50 / 10, tempavg_50 % 10);
 #endif
 	}
 	if (!no52) {
-		tempavg_502 = tempavg_502 / 2 + 20000;
-		websWrite(wp, " / WL2 %d.%d &#176;C", tempavg_502 / 1000, tempavg_502 % 1000);
+		tempavg_502 = tempavg_502 / 2 + 2000;
+		websWrite(wp, " / WL2 %d.%d &#176;C", tempavg_502 / 10, tempavg_502 % 10);
 	}
 #else
 #ifdef HAVE_GATEWORX
