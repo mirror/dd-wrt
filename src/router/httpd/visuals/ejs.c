@@ -2390,7 +2390,7 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 		tempavg_24 = (tempavg_24 * 4 + (*ret_int * 10)) / 5;
 	}
 	int t50 = rpc_get_temperature();
-	tempavg_50 = t50 / 1000;
+	tempavg_50 = t50 / 100000;
 #endif
 
 	int cputemp = 1;
