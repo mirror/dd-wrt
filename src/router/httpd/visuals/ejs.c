@@ -2379,7 +2379,7 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 
 	if (tempcount == -2) {
 		tempcount++;
-		tempavg_24 = *ret_int;
+		tempavg_24 = *ret_int * 10;
 		if (tempavg_24 < 0)
 			tempavg_24 = 0;
 	} else {
@@ -2409,24 +2409,24 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_QTN
 		websWrite(wp, "WL1 %d.%d &#176;C", tempavg_50 / 10, tempavg_50 % 10);
 #else
-		tempavg_50 = tempavg_50 / 2 + 2000;
+		tempavg_50 = (tempavg_50 / 2) + 200;
 		websWrite(wp, "WL1 %d.%d &#176;C", tempavg_50 / 10, tempavg_50 % 10);
 #endif
 	} else if (no5) {
-		tempavg_24 = tempavg_24 / 2 + 2000;
+		tempavg_24 = (tempavg_24 / 2) + 200;
 		websWrite(wp, "WL0 %d.%d &#176;C", tempavg_24 / 10, tempavg_24 % 10);
 	} else {
 #ifdef HAVE_QTN
-		tempavg_24 = tempavg_24 / 2 + 2000;
+		tempavg_24 = (tempavg_24 / 2) + 200;
 		websWrite(wp, "WL0 %d.%d &#176;C / WL1 %d.%d &#176;C", tempavg_24 / 10, tempavg_24 % 10, tempavg_50);
 #else
-		tempavg_24 = tempavg_24 / 2 + 2000;
-		tempavg_50 = tempavg_50 / 2 + 2000;
+		tempavg_24 = (tempavg_24 / 2) + 200;
+		tempavg_50 = (tempavg_50 / 2) + 200;
 		websWrite(wp, "WL0 %d.%d &#176;C / WL1 %d.%d &#176;C", tempavg_24 / 10, tempavg_24 % 10, tempavg_50 / 10, tempavg_50 % 10);
 #endif
 	}
 	if (!no52) {
-		tempavg_502 = tempavg_502 / 2 + 2000;
+		tempavg_502 = (tempavg_502 / 2) + 200;
 		websWrite(wp, " / WL2 %d.%d &#176;C", tempavg_502 / 10, tempavg_502 % 10);
 	}
 #else
