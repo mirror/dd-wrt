@@ -2418,7 +2418,7 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	} else {
 #ifdef HAVE_QTN
 		tempavg_24 = (tempavg_24 / 2) + 200;
-		websWrite(wp, "WL0 %d.%d &#176;C / WL1 %d.%d &#176;C", tempavg_24 / 10, tempavg_24 % 10, tempavg_50);
+		websWrite(wp, "WL0 %d.%d &#176;C / WL1 %d.%d &#176;C", tempavg_24 / 10, tempavg_24 % 10, tempavg_50 / 10, tempavg_50 % 10);
 #else
 		tempavg_24 = (tempavg_24 / 2) + 200;
 		tempavg_50 = (tempavg_50 / 2) + 200;
