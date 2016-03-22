@@ -837,13 +837,13 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 					rrdcount = rd->n_reg_rules;
 				for (rrc = 0; rrc < rrdcount; rrc++) {
 					regfreq = rd->reg_rules[rrc].freq_range;
-					startfreq = (int)((float)(regfreq.start_freq_khz) / 1000.0);
-					stopfreq = (int)((float)(regfreq.end_freq_khz) / 1000.0);
-					regmaxbw = (int)((float)(regfreq.max_bandwidth_khz) / 1000.0);
+					startfreq = regfreq.start_freq_khz / 1000;
+					stopfreq = regfreq.end_freq_khz / 1000;
+					regmaxbw = regfreq.max_bandwidth_khz / 1000;
 					if (!skip)
 						regmaxbw = 40;
 					else
-						regmaxbw = (int)((float)(regfreq.max_bandwidth_khz) / 1000.0);
+						regmaxbw = regfreq.max_bandwidth_khz / 1000;
 					if (!skip || ((freq_mhz - range) >= startfreq && (freq_mhz + range) <= stopfreq)) {
 						if (run == 1) {
 							regpower = rd->reg_rules[rrc].power_rule;
@@ -859,10 +859,10 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 								continue;
 							list[count].channel = ieee80211_mhz2ieee(freq_mhz);
 							list[count].freq = freq_mhz;
-							
+
 							// todo: wenn wir das ueberhaupt noch verwenden
 							list[count].noise = 0;
-							list[count].max_eirp = (int)((float)(regpower.max_eirp) / 100.0);
+							list[count].max_eirp = regpower.max_eirp / 100;
 							if (rd->reg_rules[rrc].flags & RRF_NO_OFDM)
 								list[count].no_ofdm = 1;
 							if (rd->reg_rules[rrc].flags & RRF_NO_CCK)
