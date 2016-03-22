@@ -4677,15 +4677,14 @@ void start_wan_done(char *wan_ifname)
 		dd_syslog(LOG_INFO, "WAN is up. IP: %s\n", get_wan_ipaddr());
 	}
 
-	float sys_uptime;
+	unsigned sys_uptime;
+	struct sysinfo info;
+	sysinfo(&info);
+	sys_uptime = info.uptime;
 	FILE *up;
 
-	up = fopen("/proc/uptime", "r");
-	fscanf(up, "%f", &sys_uptime);
-	fclose(up);
-
 	up = fopen("/tmp/.wanuptime", "w");
-	fprintf(up, "%f", sys_uptime);
+	fprintf(up, "%u", sys_uptime);
 	fclose(up);
 
 	cprintf("done\n");
