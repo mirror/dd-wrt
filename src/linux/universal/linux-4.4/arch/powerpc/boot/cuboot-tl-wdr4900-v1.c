@@ -119,7 +119,7 @@ static void process_boot_dtb(void *boot_dtb)
 
 static void platform_fixups(void)
 {
-	void *soc;
+	void *soc, *mpic;
 
 	dt_fixup_memory(0, mem_size);
 
@@ -144,6 +144,10 @@ static void platform_fixups(void)
 				sizeof(bus_freq));
 		}
 	}
+
+	mpic = find_node_by_compatible(NULL, "fsl,mpic");
+	if (mpic)
+		setprop(mpic, "clock-frequency", &bus_freq, sizeof(bus_freq));
 }
 
 void platform_init(unsigned long r3, unsigned long r4, unsigned long r5,
