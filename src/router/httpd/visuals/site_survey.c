@@ -174,7 +174,7 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 			//0x000 = 80 mhz
 			//0x100 = 8080 mhz
 			//0x200 = 160 mhz
-			int speed = site_survey_lists[i].rate_count * 10;
+			int speed = site_survey_lists[i].rate_count;
 
 			switch (cbw) {
 			case 0:
@@ -184,6 +184,8 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 			case 0x200:
 				speed = getrate(speed, 160);
 				break;
+			default:
+				speed = speed * 10;
 			}
 			rates = strbuf;
 
