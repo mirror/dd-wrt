@@ -67,6 +67,7 @@ struct regiondef {
 static struct regiondef regions[] = {
 	{"AU", "AU", NULL},
 	{"NA", "US", NULL},
+	{"US", "US", NULL},
 	{"CA", "US", "CA"},
 	{"LA", "AU", "BR"},
 	{"BR", "AU", "BR"},
