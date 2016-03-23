@@ -39,12 +39,79 @@ int of_get_phy_mode(struct device_node *np)
 }
 EXPORT_SYMBOL_GPL(of_get_phy_mode);
 
-static const void *of_get_mac_addr(struct device_node *np, const char *name)
+static void *of_get_mac_addr(struct device_node *np, const char *name)
 {
 	struct property *pp = of_find_property(np, name, NULL);
 
 	if (pp && pp->length == ETH_ALEN && is_valid_ether_addr(pp->value))
 		return pp->value;
+	return NULL;
+}
+
+static const void *of_get_mac_address_mtd(struct device_node *np)
+{
+#ifdef CONFIG_MTD
+	struct device_node *mtd_np = NULL;
+	struct property *prop;
+	size_t retlen;
+	int size, ret;
+	struct mtd_info *mtd;
+	const char *part;
+	const __be32 *list;
+	phandle phandle;
+	u32 mac_inc = 0;
+	u8 mac[ETH_ALEN];
+	void *addr;
+
+	list = of_get_property(np, "mtd-mac-address", &size);
+	if (!list || (size != (2 * sizeof(*list))))
+		return NULL;
+
+	phandle = be32_to_cpup(list++);
+	if (phandle)
+		mtd_np = of_find_node_by_phandle(phandle);
+
+	if (!mtd_np)
+		return NULL;
+
+	part = of_get_property(mtd_np, "label", NULL);
+	if (!part)
+		part = mtd_np->name;
+
+	mtd = get_mtd_device_nm(part);
+	if (IS_ERR(mtd))
+		return NULL;
+
+	ret = mtd_read(mtd, be32_to_cpup(list), 6, &retlen, mac);
+	put_mtd_device(mtd);
+
+	if (!of_property_read_u32(np, "mtd-mac-address-increment", &mac_inc))
+		mac[5] += mac_inc;
+
+	if (!is_valid_ether_addr(mac))
+		return NULL;
+
+	addr = of_get_mac_addr(np, "mac-address");
+	if (addr) {
+		memcpy(addr, mac, ETH_ALEN);
+		return addr;
+	}
+
+	prop = kzalloc(sizeof(*prop), GFP_KERNEL);
+	if (!prop)
+		return NULL;
+
+	prop->name = "mac-address";
+	prop->length = ETH_ALEN;
+	prop->value = kmemdup(mac, ETH_ALEN, GFP_KERNEL);
+	if (!prop->value || of_add_property(np, prop))
+		goto free;
+
+	return prop->value;
+free:
+	kfree(prop->value);
+	kfree(prop);
+#endif
 	return NULL;
 }
 
@@ -65,10 +132,17 @@ static const void *of_get_mac_addr(struct device_node *np, const char *name)
  * addresses.  Some older U-Boots only initialized 'local-mac-address'.  In
  * this case, the real MAC is in 'local-mac-address', and 'mac-address' exists
  * but is all zeros.
+ *
+ * If a mtd-mac-address property exists, try to fetch the MAC address from the
+ * specified mtd device, and store it as a 'mac-address' property
 */
 const void *of_get_mac_address(struct device_node *np)
 {
 	const void *addr;
+
+	addr = of_get_mac_address_mtd(np);
+	if (addr)
+		return addr;
 
 	addr = of_get_mac_addr(np, "mac-address");
 	if (addr)
@@ -81,41 +155,3 @@ const void *of_get_mac_address(struct device_node *np)
 	return of_get_mac_addr(np, "address");
 }
 EXPORT_SYMBOL(of_get_mac_address);
-
-#ifdef CONFIG_MTD
-int of_get_mac_address_mtd(struct device_node *np, void *mac)
-{
-	struct device_node *mtd_np = NULL;
-	size_t retlen;
-	int size, ret;
-	struct mtd_info *mtd;
-	const char *part;
-	const __be32 *list;
-	phandle phandle;
-
-	list = of_get_property(np, "mtd-mac-address", &size);
-	if (!list || (size != (2 * sizeof(*list))))
-		return -ENOENT;
-
-	phandle = be32_to_cpup(list++);
-	if (phandle)
-		mtd_np = of_find_node_by_phandle(phandle);
-
-	if (!mtd_np)
-		return -ENOENT;
-
-	part = of_get_property(mtd_np, "label", NULL);
-	if (!part)
-		part = mtd_np->name;
-
-	mtd = get_mtd_device_nm(part);
-	if (IS_ERR(mtd))
-		return PTR_ERR(mtd);
-
-	ret = mtd_read(mtd, be32_to_cpup(list), 6, &retlen, (u_char *) mac);
-	put_mtd_device(mtd);
-
-	return ret;
-}
-EXPORT_SYMBOL_GPL(of_get_mac_address_mtd);
-#endif
