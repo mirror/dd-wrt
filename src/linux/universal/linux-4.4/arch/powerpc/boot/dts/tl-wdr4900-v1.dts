@@ -87,7 +87,7 @@
 			};
 		};
 
-		gpio0: gpio-controller@fc00 {
+		gpio0: gpio-controller@f000 {
 		};
 
 		usb@22000 {
