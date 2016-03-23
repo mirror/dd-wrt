@@ -16,7 +16,7 @@
 	compatible = "tp-link,TL-WDR4900v1";
 
 	chosen {
-		bootargs = "console=ttyS0,115200 cache-sram-size=0x10000 cache-sram-offset=0xffff00000";
+		bootargs = "console=ttyS0,115200";
 /*
 		linux,stdout-path = "/soc@ffe00000/serial@4500";
 */
@@ -37,7 +37,7 @@
 			flash@0 {
 				#address-cells = <1>;
 				#size-cells = <1>;
-				compatible = "spansion,s25fl129p1";
+				compatible = "jedec,spi-nor";
 				reg = <0>;
 				spi-max-frequency = <25000000>;
 
@@ -58,17 +58,17 @@
 					label = "kernel";
 				};
 
-				rootfs@300000 {
-					reg = <0x00260000 0x00d70000>;
+				rootfs@290000 {
+					reg = <0x00290000 0x00d40000>;
 					label = "rootfs";
 				};
 
-				config@fd0000 {
+				nvram@fd0000 {
 					reg = <0x00fd0000 0x00010000>;
 					label = "nvram";
 				};
 
-				config@fe0000 {
+				config: config@fe0000 {
 					reg = <0x00fe0000 0x00010000>;
 					label = "config";
 					read-only;
@@ -87,7 +87,7 @@
 			};
 		};
 
-		gpio0: gpio-controller@f000 {
+		gpio0: gpio-controller@fc00 {
 		};
 
 		usb@22000 {
@@ -108,6 +108,7 @@
 					0x00058 0xcf35cf35 /* LED_CTRL2 */
 					0x0005c 0x03ffff00 /* LED_CTRL3 */
 					0x0007c 0x0000007e /* PORT0_STATUS */
+					0x00094 0x00000200 /* PORT6_STATUS */
 				>;
 			};
 		};
@@ -123,6 +124,7 @@
 		enet0: ethernet@b0000 {
 			phy-handle = <&phy0>;
 			phy-connection-type = "rgmii-id";
+			mtd-mac-address = <&config 0x144>;
 		};
 
 		enet1: ethernet@b1000 {
@@ -147,6 +149,19 @@
 
 		can1: can@1d000 {
 			status = "disabled";
+		};
+
+		ptp_clock@b0e00 {
+			compatible = "fsl,etsec-ptp";
+			reg = <0xb0e00 0xb0>;
+			interrupts = <68 2 0 0 69 2 0 0 70 2 0 0>;
+			fsl,cksel       = <1>;
+			fsl,tclk-period	= <5>;
+			fsl,tmr-prsc	= <2>;
+			fsl,tmr-add	= <0xcccccccd>;
+			fsl,tmr-fiper1	= <0x3b9ac9fb>;
+			fsl,tmr-fiper2	= <0x00018696>;
+			fsl,max-adj	= <249999999>;
 		};
 	};
 
@@ -200,6 +215,11 @@
 		usb2 {
 			gpios = <&gpio0 4 1>; /* active low */
 			label = "tp-link:green:usb2";
+		};
+
+		usbpower {
+			gpios = <&gpio0 10 1>;
+			label = "tp-link:usb:power";
 		};
 	};
 
