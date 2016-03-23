@@ -40,7 +40,7 @@
 
 int getrate(int rate, int bw)
 {
-	int result = rate;
+	int result = rate * 10;
 	switch (rate) {
 	case 150:
 		if (bw == 20)
