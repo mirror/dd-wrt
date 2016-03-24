@@ -38,7 +38,7 @@
 #include <net/ethernet.h>
 #include <netinet/in.h>
 #if !defined(__FreeBSD__)
-#include <netinet/ether.h>
+//#include <netinet/ether.h>
 #endif
 #include <sys/time.h>
 #include <time.h>
