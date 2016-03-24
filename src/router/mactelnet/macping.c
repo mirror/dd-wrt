@@ -117,8 +117,8 @@ int main(int argc, char **argv)  {
 	int i;
 
 	setlocale(LC_ALL, "");
-	bindtextdomain("mactelnet","/usr/share/locale");
-	textdomain("mactelnet");
+//	bindtextdomain("mactelnet","/usr/share/locale");
+//	textdomain("mactelnet");
 
 	while (1) {
 		c = getopt(argc, argv, "fs:c:hv?");
