@@ -27,15 +27,25 @@
 #endif
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#if defined(__FreeBSD__)
+#include <net/ethernet.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#else
 #include <netinet/ether.h>
+#endif
 #include <time.h>
+#if defined(__FreeBSD__)
+#include <sys/endian.h>
+#else
 #include <endian.h>
+#endif
 #include "protocol.h"
 #include "config.h"
 
 #define _(String) String
 
-int32_t init_packet(struct mt_packet *packet, enum mt_ptype ptype, unsigned char *srcmac, unsigned char *dstmac, unsigned short sessionkey, uint32_t counter) {
+int init_packet(struct mt_packet *packet, enum mt_ptype ptype, unsigned char *srcmac, unsigned char *dstmac, unsigned short sessionkey, unsigned int counter) {
 	unsigned char *data = packet->data;
 
 	/* Packet version */
@@ -75,7 +85,7 @@ int32_t init_packet(struct mt_packet *packet, enum mt_ptype ptype, unsigned char
 	return 22;
 }
 
-int32_t add_control_packet(struct mt_packet *packet, enum mt_cptype cptype, void *cpdata, int32_t data_len) {
+int add_control_packet(struct mt_packet *packet, enum mt_cptype cptype, void *cpdata, int data_len) {
 	unsigned char *data = packet->data + packet->size;
 
 	/* Something is really wrong. Packets should never become over 1500 bytes */
@@ -102,7 +112,7 @@ int32_t add_control_packet(struct mt_packet *packet, enum mt_cptype cptype, void
 	/* Data length */
 #if BYTE_ORDER == LITTLE_ENDIAN
 	{
-		uint32_t templen;
+		unsigned int templen;
 		templen = htonl(data_len);
 		memcpy(data + 5, &templen, sizeof(templen));
 	}
@@ -120,7 +130,7 @@ int32_t add_control_packet(struct mt_packet *packet, enum mt_cptype cptype, void
 	return MT_CPHEADER_LEN + data_len;
 }
 
-int32_t init_pingpacket(struct mt_packet *packet, unsigned char *srcmac, unsigned char *dstmac) {
+int init_pingpacket(struct mt_packet *packet, unsigned char *srcmac, unsigned char *dstmac) {
 	init_packet(packet, MT_PTYPE_PING, srcmac, dstmac, 0, 0);
 
 	/* Zero out sessionkey & counter */
@@ -131,7 +141,7 @@ int32_t init_pingpacket(struct mt_packet *packet, unsigned char *srcmac, unsigne
 	return packet->size;
 }
 
-int32_t init_pongpacket(struct mt_packet *packet, unsigned char *srcmac, unsigned char *dstmac) {
+int init_pongpacket(struct mt_packet *packet, unsigned char *srcmac, unsigned char *dstmac) {
 	init_packet(packet, MT_PTYPE_PONG, srcmac, dstmac, 0, 0);
 
 	/* Zero out sessionkey & counter */
@@ -142,7 +152,7 @@ int32_t init_pongpacket(struct mt_packet *packet, unsigned char *srcmac, unsigne
 	return packet->size;
 }
 
-int32_t add_packetdata(struct mt_packet *packet, unsigned char *data, unsigned short length) {
+int add_packetdata(struct mt_packet *packet, unsigned char *data, unsigned short length) {
 	if (packet->size + length > MT_PACKET_LEN) {
 		fprintf(stderr, _("add_control_packet: ERROR, too large packet. Exceeds %d bytes\n"), MT_PACKET_LEN);
 		return -1;
@@ -192,10 +202,10 @@ void parse_packet(unsigned char *data, struct mt_mactelnet_hdr *pkthdr) {
 }
 
 
-int32_t parse_control_packet(unsigned char *packetdata, int32_t data_len, struct mt_mactelnet_control_hdr *cpkthdr) {
+int parse_control_packet(unsigned char *packetdata, int data_len, struct mt_mactelnet_control_hdr *cpkthdr) {
 	static unsigned char *int_data;
-	static uint32_t int_data_len;
-	static uint32_t int_pos;
+	static unsigned int int_data_len;
+	static unsigned int int_pos;
 	unsigned char *data;
 
 	/* Store info so we can call this function once with data,
@@ -228,7 +238,7 @@ int32_t parse_control_packet(unsigned char *packetdata, int32_t data_len, struct
 		/* Control packet data length */
 		memcpy(&(cpkthdr->length), data + 5, sizeof(cpkthdr->length));
 		cpkthdr->length = ntohl(cpkthdr->length);
-		
+
 		/* We want no buffer overflows */
 		if (cpkthdr->length >= MT_PACKET_LEN - 22 - int_pos) {
 			cpkthdr->length = MT_PACKET_LEN - 1 - 22 - int_pos;
@@ -257,31 +267,35 @@ int32_t parse_control_packet(unsigned char *packetdata, int32_t data_len, struct
 	}
 }
 
-int32_t mndp_init_packet(struct mt_packet *packet, unsigned char version, unsigned char ttl) {
+int mndp_init_packet(struct mt_packet *packet, unsigned char version, unsigned char ttl) {
 	struct mt_mndp_hdr *header = (struct mt_mndp_hdr *)packet->data;
+
 	header->version = version;
 	header->ttl = ttl;
 	header->cksum = 0;
-	
+
 	packet->size = sizeof(*header);
-	
+
 	return sizeof(*header);
 }
 
-int32_t mndp_add_attribute(struct mt_packet *packet, enum mt_mndp_attrtype attrtype, void *attrdata, unsigned short data_len) {
+int mndp_add_attribute(struct mt_packet *packet, enum mt_mndp_attrtype attrtype, void *attrdata, unsigned short data_len) {
 	unsigned char *data = packet->data + packet->size;
 	unsigned short type = attrtype;
 	unsigned short len = data_len;
+
 	/* Something is really wrong. Packets should never become over 1500 bytes */
 	if (packet->size + 4 + data_len > MT_PACKET_LEN) {
 		fprintf(stderr, _("mndp_add_attribute: ERROR, too large packet. Exceeds %d bytes\n"), MT_PACKET_LEN);
 		return -1;
 	}
+
 	type = htons(type);
 	memcpy(data, &type, sizeof(type));
 
 	len = htons(len);
 	memcpy(data + 2, &len, sizeof(len));
+
 	memcpy(data + 4, attrdata, data_len);
 
 	packet->size += 4 + data_len;
@@ -290,9 +304,10 @@ int32_t mndp_add_attribute(struct mt_packet *packet, enum mt_mndp_attrtype attrt
 }
 
 
-struct mt_mndp_info *parse_mndp(const unsigned char *data, const int32_t packet_len) {
+struct mt_mndp_info *parse_mndp(const unsigned char *data, const int packet_len) {
 	const unsigned char *p;
 	static struct mt_mndp_info packet;
+	struct mt_mndp_info *packetp = &packet;
 	struct mt_mndp_hdr *mndp_hdr;
 
 	/* Check for valid packet length */
@@ -300,11 +315,11 @@ struct mt_mndp_info *parse_mndp(const unsigned char *data, const int32_t packet_
 		return NULL;
 	}
 
-	bzero(&packet, sizeof(packet));
+	bzero(packetp, sizeof(*packetp));
 
 	mndp_hdr = (struct mt_mndp_hdr*)data;
 
-	memcpy(&(packet.header), mndp_hdr, sizeof(packet.header));
+	memcpy(&packetp->header, mndp_hdr, sizeof(struct mt_mndp_hdr));
 
 	p = data + sizeof(struct mt_mndp_hdr);
 
@@ -321,13 +336,16 @@ struct mt_mndp_info *parse_mndp(const unsigned char *data, const int32_t packet_
 
 		/* Check if len is invalid */
 		if (p + len > data + packet_len) {
+		        fprintf(stderr, "%s: invalid data: "
+				        "%p + %u > %p + %d\n",
+					__func__, p, len, data, packet_len);
 			break;
 		}
 
 		switch (type) {
 			case MT_MNDPTYPE_ADDRESS:
 				if (len >= ETH_ALEN) {
-					memcpy(packet.address, p, ETH_ALEN);
+					memcpy(packetp->address, p, ETH_ALEN);
 				}
 				break;
 
@@ -336,8 +354,8 @@ struct mt_mndp_info *parse_mndp(const unsigned char *data, const int32_t packet_
 					len = MT_MNDP_MAX_STRING_LENGTH;
 				}
 
-				memcpy(packet.identity, p, len);
-				packet.identity[len] = '\0';
+				memcpy(packetp->identity, p, len);
+				packetp->identity[len] = '\0';
 				break;
 
 			case MT_MNDPTYPE_PLATFORM:
@@ -345,8 +363,8 @@ struct mt_mndp_info *parse_mndp(const unsigned char *data, const int32_t packet_
 					len = MT_MNDP_MAX_STRING_LENGTH;
 				}
 
-				memcpy(packet.platform, p, len);
-				packet.platform[len] = '\0';
+				memcpy(packetp->platform, p, len);
+				packetp->platform[len] = '\0';
 				break;
 
 			case MT_MNDPTYPE_VERSION:
@@ -354,14 +372,14 @@ struct mt_mndp_info *parse_mndp(const unsigned char *data, const int32_t packet_
 					len = MT_MNDP_MAX_STRING_LENGTH;
 				}
 
-				memcpy(packet.version, p, len);
-				packet.version[len] = '\0';
+				memcpy(packetp->version, p, len);
+				packetp->version[len] = '\0';
 				break;
 
 			case MT_MNDPTYPE_TIMESTAMP:
-				memcpy(&(packet.uptime), p, 4);
+				memcpy(&packetp->uptime, p, 4);
 				/* Seems like ping uptime is transmitted as little endian? */
-				packet.uptime = le32toh(packet.uptime);
+				packetp->uptime = le32toh(packetp->uptime);
 				break;
 
 			case MT_MNDPTYPE_HARDWARE:
@@ -369,38 +387,46 @@ struct mt_mndp_info *parse_mndp(const unsigned char *data, const int32_t packet_
 					len = MT_MNDP_MAX_STRING_LENGTH;
 				}
 
-				memcpy(packet.hardware, p, len);
-				packet.hardware[len] = '\0';
+				memcpy(packetp->hardware, p, len);
+				packetp->hardware[len] = '\0';
 				break;
 
 			case MT_MNDPTYPE_SOFTID:
 				if (len > MT_MNDP_MAX_STRING_LENGTH) {
 					len = MT_MNDP_MAX_STRING_LENGTH;
 				}
-				
-				memcpy(packet.softid, p, len);
-				packet.softid[len] = '\0';
+
+				memcpy(packetp->softid, p, len);
+				packetp->softid[len] = '\0';
+				break;
+
+			case MT_MNDPTYPE_IFNAME:
+				if (len > MT_MNDP_MAX_STRING_LENGTH) {
+					len = MT_MNDP_MAX_STRING_LENGTH;
+				}
+
+				memcpy(packetp->ifname, p, len);
+				packetp->ifname[len] = '\0';
 				break;
 
 			/*default:
 				 Unhandled MNDP type
 			*/
 		}
-		
+
 		p += len;
 	}
-	
-	return &packet;
+
+	return packetp;
 }
 
-int32_t query_mndp(const char *identity, unsigned char *mac) {
+int query_mndp(const char *identity, unsigned char *mac) {
 	int fastlookup = 0;
-	int32_t length;
-	int sock;
+	int sock, length;
 	int optval = 1;
 	struct sockaddr_in si_me, si_remote;
 	unsigned char buff[MT_PACKET_LEN];
-	uint32_t message = 0;
+	unsigned int message = 0;
 	struct timeval timeout;
 	time_t start_time;
 	fd_set read_fds;
@@ -454,7 +480,7 @@ int32_t query_mndp(const char *identity, unsigned char *mac) {
 
 		timeout.tv_sec = fastlookup ? MT_MNDP_TIMEOUT : MT_MNDP_LONGTIMEOUT;
 		timeout.tv_usec = 0;
-	
+
 		select(sock + 1, &read_fds, NULL, NULL, &timeout);
 		if (!FD_ISSET(sock, &read_fds)) {
 			goto done;
@@ -486,7 +512,7 @@ done:
  * This function accepts either a full MAC address using : or - as seperators.
  * Or a router hostname. The hostname will be searched for via MNDP broadcast packets.
  */
-int32_t query_mndp_or_mac(char *address, unsigned char *dstmac, int verbose) {
+int query_mndp_or_mac(char *address, unsigned char *dstmac, int verbose) {
 	char *p = address;
 	int colons = 0;
 	int dashs = 0;

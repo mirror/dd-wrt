@@ -25,9 +25,12 @@
 struct mt_credentials {
 	char username[MT_CRED_LEN];
 	char password[MT_CRED_LEN];
+
+	struct mt_credentials *prev;
+	struct mt_credentials *next;
 };
 
-extern struct mt_credentials mt_users[MT_CRED_MAXNUM];
+extern struct mt_credentials *mt_users;
 
 extern void read_userfile();
 struct mt_credentials* find_user(char *username);
