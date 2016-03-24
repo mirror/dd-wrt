@@ -84,6 +84,7 @@ static char *speedstr(int speed, char *buf)
 		sprintf(buf, "%d.%d", speed / 10, speed % 10);
 	else
 		sprintf(buf, "%d", speed / 10);
+	return buf;
 }
 
 static struct site_survey_list site_survey_lists[SITE_SURVEY_NUM];
