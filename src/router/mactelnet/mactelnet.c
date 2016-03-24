@@ -452,8 +452,8 @@ int main (int argc, char **argv) {
 	strncpy(autologin_path, AUTOLOGIN_PATH, 254);
 
 	setlocale(LC_ALL, "");
-	bindtextdomain("mactelnet","/usr/share/locale");
-	textdomain("mactelnet");
+//	bindtextdomain("mactelnet","/usr/share/locale");
+//	textdomain("mactelnet");
 
 	while (1) {
 		c = getopt(argc, argv, "lnqt:u:p:U:vh?BAa:");

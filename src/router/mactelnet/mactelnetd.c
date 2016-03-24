@@ -922,8 +922,8 @@ int main (int argc, char **argv) {
 	int interface_count = 0;
 
 	setlocale(LC_ALL, "");
-	bindtextdomain("mactelnet","/usr/share/locale");
-	textdomain("mactelnet");
+//	bindtextdomain("mactelnet","/usr/share/locale");
+//	textdomain("mactelnet");
 
 	while ((c = getopt(argc, argv, "fnvh?")) != -1) {
 		switch (c) {
