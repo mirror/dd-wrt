@@ -31,7 +31,7 @@
 #include <net/ethernet.h>
 #else
 #include <endian.h>
-#include <netinet/ether.h>
+//#include <netinet/ether.h>
 #endif
 #include <arpa/inet.h>
 #include <netinet/in.h>
