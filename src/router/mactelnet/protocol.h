@@ -93,13 +93,13 @@ struct mt_mactelnet_hdr {
 	unsigned char srcaddr[6];
 	unsigned char dstaddr[6];
 	unsigned short seskey;
-	uint32_t counter;
+	unsigned int counter;
 	unsigned char *data;
 };
 
 struct mt_mactelnet_control_hdr {
 	enum mt_cptype cptype;
-	uint32_t length;
+	unsigned int length;
 	unsigned char *data;
 };
 
@@ -113,32 +113,32 @@ struct mt_mndp_info {
 	char hardware[MT_MNDP_MAX_STRING_LENGTH];
 	char softid[MT_MNDP_MAX_STRING_LENGTH];
 	char ifname[MT_MNDP_MAX_STRING_LENGTH];
-	uint32_t uptime;
+	unsigned int uptime;
 };
 
 struct mt_packet {
-	int32_t size;
+	int size;
 	unsigned char data[MT_PACKET_LEN];
 };
 
 /* MacTelnet/Winbox packets */
-extern int32_t init_packet(struct mt_packet *packet, enum mt_ptype ptype, unsigned char *srcmac, unsigned char *dstmac, unsigned short sessionkey, uint32_t counter);
-extern int32_t add_control_packet(struct mt_packet *packet, enum mt_cptype cptype, void *cpdata, int32_t data_len);
+extern int init_packet(struct mt_packet *packet, enum mt_ptype ptype, unsigned char *srcmac, unsigned char *dstmac, unsigned short sessionkey, unsigned int counter);
+extern int add_control_packet(struct mt_packet *packet, enum mt_cptype cptype, void *cpdata, int data_len);
 extern void parse_packet(unsigned char *data, struct mt_mactelnet_hdr *pkthdr);
-extern int32_t parse_control_packet(unsigned char *data, int32_t data_len, struct mt_mactelnet_control_hdr *cpkthdr);
+extern int parse_control_packet(unsigned char *data, int data_len, struct mt_mactelnet_control_hdr *cpkthdr);
 
 /* MAC-Ping packets */
-int32_t init_pingpacket(struct mt_packet *packet, unsigned char *srcmac, unsigned char *dstmac);
-int32_t init_pongpacket(struct mt_packet *packet, unsigned char *srcmac, unsigned char *dstmac);
-int32_t add_packetdata(struct mt_packet *packet, unsigned char *data, unsigned short length);
+int init_pingpacket(struct mt_packet *packet, unsigned char *srcmac, unsigned char *dstmac);
+int init_pongpacket(struct mt_packet *packet, unsigned char *srcmac, unsigned char *dstmac);
+int add_packetdata(struct mt_packet *packet, unsigned char *data, unsigned short length);
 
 /* MNDP packets */
-extern int32_t mndp_init_packet(struct mt_packet *packet, unsigned char version, unsigned char ttl);
-extern int32_t mndp_add_attribute(struct mt_packet *packet, enum mt_mndp_attrtype attrtype, void *attrdata, unsigned short data_len);
+extern int mndp_init_packet(struct mt_packet *packet, unsigned char version, unsigned char ttl);
+extern int mndp_add_attribute(struct mt_packet *packet, enum mt_mndp_attrtype attrtype, void *attrdata, unsigned short data_len);
 
-extern struct mt_mndp_info *parse_mndp(const unsigned char *data, const int32_t packet_len);
-int32_t query_mndp(const char *identity, unsigned char *mac);
-int32_t query_mndp_or_mac(char *address, unsigned char *dstmac, int verbose);
+extern struct mt_mndp_info *parse_mndp(const unsigned char *data, const int packet_len);
+int query_mndp(const char *identity, unsigned char *mac);
+int query_mndp_or_mac(char *address, unsigned char *dstmac, int verbose);
 
 /* Number of milliseconds between each retransmission */
 #define MAX_RETRANSMIT_INTERVALS 9
@@ -151,5 +151,28 @@ static const unsigned char mt_mactelnet_clienttype[2] = { 0x00, 0x15 };
 /* Must be initialized by application */
 extern unsigned char mt_direction_fromserver;
 
+/* Debugging stuff */
+#if defined(DEBUG_PROTO)
+#ifndef hexdump_defined
+void hexdump(const char *title, const void *buf, int len)
+{
+    int i;
+    unsigned char *data = (unsigned char *)buf;
+
+    fprintf(stderr, "%s:\n", title);
+    for (i = 0; i < len; i++) {
+        if (!(i & 0xf))
+            fprintf(stderr, "%04x:", i);
+        fprintf(stderr, " %02x", data[i]);
+        if (!(~i & 0xf) || i == len - 1)
+            fprintf(stderr, "\n");
+    }
+}
+#define HEXDUMP(title, buf, len) hexdump(title, buf, len)
+#define hexdump_defined
+#else
+#define HEXDUMP(title, buf, len)
+#endif
+#endif
 
 #endif
