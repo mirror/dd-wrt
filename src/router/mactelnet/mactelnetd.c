@@ -26,8 +26,8 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
-#if defined(__FreeBSD__)
 #include <paths.h>
+#if defined(__FreeBSD__)
 #include <sys/endian.h>
 #else
 #include <endian.h>
@@ -35,17 +35,17 @@
 #include <time.h>
 #include <arpa/inet.h>
 #include <sys/types.h>
-#include <net/ethernet.h>
+//#include <net/ethernet.h>
 #include <netinet/in.h>
 #if !defined(__FreeBSD__)
-//#include <netinet/ether.h>
+#include <netinet/ether.h>
 #endif
 #include <sys/time.h>
 #include <time.h>
 #include <sys/socket.h>
 #include <string.h>
 #ifdef __linux__
-#include <linux/if_ether.h>
+//#include <linux/if_ether.h>
 #include <sys/mman.h>
 #else
 #include <sys/time.h>
