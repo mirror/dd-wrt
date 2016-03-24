@@ -5,6 +5,7 @@
 # Translators:
 # Dušan Lago <dusan.lago@gmail.com>, 2011
 # helix84 <helix84@centrum.sk>, 2015
+# Jajo Pajo, 2016
 # Jose Riha <jose1711@gmail.com>, 2012
 # Jose Riha <jose1711@gmail.com>, 2012
 # Slava Zanko <slavazanko@gmail.com>, 2011
@@ -12,8 +13,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2015-11-06 14:43+0300\n"
-"PO-Revision-Date: 2015-06-04 08:38+0000\n"
+"POT-Creation-Date: 2016-03-12 17:34+0100\n"
+"PO-Revision-Date: 2016-03-06 21:29+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Slovak (http://www.transifex.com/mc/mc/language/sk/)\n"
 "Language: sk\n"
@@ -494,15 +495,12 @@ msgid "Directory cache expired for %s"
 msgstr "Vyrovnávacia pamäť adresárov vypršala pre %s"
 
 #, c-format
-msgid "%s: %s: %s %3d%% %<PRIuMAX> %s"
-msgstr ""
-
-msgid "bytes transferred"
-msgstr "prenesených bajtov"
+msgid "%s: %s: %s %3d%% (%lld) bytes transferred"
+msgstr "%s: %s: %s %3d%% (%lld) bajtov prenesených"
 
 #, c-format
-msgid "%s: %s: %s %<PRIuMAX> %s"
-msgstr ""
+msgid "%s: %s: %s %lld bytes transferred"
+msgstr "%s: %s: %s %lld bajtov prenesených"
 
 msgid "Starting linear transfer..."
 msgstr "Začína sa lineárny prenos..."
@@ -585,8 +583,8 @@ msgid "Error"
 msgstr "Chyba"
 
 #, c-format
-msgid "%d: %s"
-msgstr "%d: %s"
+msgid "%s (%d)"
+msgstr ""
 
 msgid "&Abort"
 msgstr "p&Rerušiť"
@@ -769,7 +767,7 @@ msgid "No arguments given to the viewer."
 msgstr "Prehliadaču neboli odovzdané žiadne argumenty."
 
 msgid "Two files are required to envoke the diffviewer."
-msgstr ""
+msgstr "Dva súbory sú potrebné pre vyvolanie prehliadača rozdielov."
 
 msgid "Background protocol error"
 msgstr "Chyba protokolu na pozadí"
@@ -1584,8 +1582,8 @@ msgstr ""
 "Používateľsky prívetivý textový editor\n"
 "napísaný pre Midnight Commander."
 
-msgid "Copyright (C) 1996-2015 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2015 the Free Software Foundation"
+msgid "Copyright (C) 1996-2016 the Free Software Foundation"
+msgstr "Copyright (C) 1996-2016 the Free Software Foundation"
 
 msgid "About"
 msgstr "O aplikácii"
@@ -1958,7 +1956,7 @@ msgid "&Full file list"
 msgstr "&Plný výpis súborov"
 
 msgid "&Brief file list:"
-msgstr ""
+msgstr "&Stručný výpis súborov "
 
 msgid "&Long file list"
 msgstr "D&lhý výpis súborov"
@@ -1967,7 +1965,7 @@ msgid "&User defined:"
 msgstr "Definovaný po&užívateľom:"
 
 msgid "columns"
-msgstr ""
+msgstr "stĺpce"
 
 msgid "User &mini status"
 msgstr "Používateľ. &mini status"
@@ -2290,6 +2288,10 @@ msgstr ""
 "nemožno prepnúť panely."
 
 #, c-format
+msgid "'%s' is not a symbolic link"
+msgstr "„%s“ nie je symbolický odkaz"
+
+#, c-format
 msgid "Symlink '%s' points to:"
 msgstr "Sym. odkaz „%s“ ukazuje na:"
 
@@ -2303,10 +2305,6 @@ msgstr "upraviť sym. odkaz, nemožno odstrániť %s: %s"
 #, c-format
 msgid "edit symlink: %s"
 msgstr "upraviť sym. odkaz: %s"
-
-#, c-format
-msgid "'%s' is not a symbolic link"
-msgstr "„%s“ nie je symbolický odkaz"
 
 msgid "FTP to machine"
 msgstr "Pripojiť pomocou FTP"
@@ -2637,11 +2635,9 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot read source file\"%s\"\n"
+"Cannot read source file \"%s\"\n"
 "%s"
 msgstr ""
-"Nemožno prečítať zdrojový súbor „%s“\n"
-"%s"
 
 #, c-format
 msgid ""
@@ -4175,9 +4171,8 @@ msgstr "sftp: Zadajte heslo pre %s "
 msgid "sftp: Password is empty."
 msgstr "sftp: Heslo je prázdne."
 
-#, c-format
-msgid "sftp: Failure establishing SSH session: (%d)"
-msgstr "sftp: Nepodarilo sa nadviazať reláciu SSH: (%d)"
+msgid "sftp: Failure establishing SSH session"
+msgstr ""
 
 msgid "sftp: No file handler data present for reading file"
 msgstr "sftp: Na čítanie súboru nie sú prítomné dáta obsluhy súboru"

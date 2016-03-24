@@ -34,10 +34,10 @@
 #define EDIT_TEXT_HORIZONTAL_OFFSET 0
 #define EDIT_TEXT_VERTICAL_OFFSET   0
 
-#define EDIT_RIGHT_EXTREME option_edit_right_extreme
-#define EDIT_LEFT_EXTREME option_edit_left_extreme
-#define EDIT_TOP_EXTREME option_edit_top_extreme
-#define EDIT_BOTTOM_EXTREME option_edit_bottom_extreme
+#define EDIT_RIGHT_EXTREME 0
+#define EDIT_LEFT_EXTREME 0
+#define EDIT_TOP_EXTREME 0
+#define EDIT_BOTTOM_EXTREME 0
 
 /* Initial size of the undo stack, in bytes */
 #define START_STACK_SIZE 32
@@ -113,9 +113,6 @@ typedef struct edit_stack_type
     vfs_path_t *filename_vpath;
 } edit_stack_type;
 
-struct Widget;
-struct WMenuBar;
-
 /*** global variables defined in .c file *********************************************************/
 
 extern const char VERTICAL_MAGIC[5];
@@ -132,11 +129,6 @@ extern int option_line_state_width;
 extern int option_max_undo;
 extern int option_auto_syntax;
 
-extern int option_edit_right_extreme;
-extern int option_edit_left_extreme;
-extern int option_edit_top_extreme;
-extern int option_edit_bottom_extreme;
-
 extern gboolean search_create_bookmark;
 
 extern char *edit_window_state_char;
@@ -151,7 +143,7 @@ gboolean edit_widget_is_editor (const Widget * w);
 gboolean edit_drop_hotkey_menu (WDialog * h, int key);
 void edit_menu_cmd (WDialog * h);
 void user_menu (WEdit * edit, const char *menu_file, int selected_entry);
-void edit_init_menu (struct WMenuBar *menubar);
+void edit_init_menu (WMenuBar * menubar);
 void edit_save_mode_cmd (void);
 off_t edit_move_forward3 (const WEdit * edit, off_t current, long cols, off_t upto);
 void edit_scroll_screen_over_cursor (WEdit * edit);
@@ -234,10 +226,10 @@ void edit_date_cmd (WEdit * edit);
 void edit_goto_cmd (WEdit * edit);
 gboolean eval_marks (WEdit * edit, off_t * start_mark, off_t * end_mark);
 void edit_status (WEdit * edit, gboolean active);
-void edit_execute_key_command (WEdit * edit, unsigned long command, int char_for_insertion);
+void edit_execute_key_command (WEdit * edit, long command, int char_for_insertion);
 void edit_update_screen (WEdit * edit);
 void edit_save_size (WEdit * edit);
-gboolean edit_handle_move_resize (WEdit * edit, unsigned long command);
+gboolean edit_handle_move_resize (WEdit * edit, long command);
 void edit_toggle_fullscreen (WEdit * edit);
 void edit_move_to_line (WEdit * e, long line);
 void edit_move_display (WEdit * e, long line);
@@ -286,7 +278,7 @@ void edit_mail_dialog (WEdit * edit);
 void format_paragraph (WEdit * edit, gboolean force);
 
 /* either command or char_for_insertion must be passed as -1 */
-void edit_execute_cmd (WEdit * edit, unsigned long command, int char_for_insertion);
+void edit_execute_cmd (WEdit * edit, long command, int char_for_insertion);
 
 /*** inline functions ****************************************************************************/
 

@@ -1,7 +1,7 @@
 /*
    Hypertext file browser.
 
-   Copyright (C) 1994-2015
+   Copyright (C) 1994-2016
    Free Software Foundation, Inc.
 
    This file is part of the Midnight Commander.
@@ -858,7 +858,7 @@ help_select_link (void)
 /* --------------------------------------------------------------------------------------------- */
 
 static cb_ret_t
-help_execute_cmd (unsigned long command)
+help_execute_cmd (long command)
 {
     cb_ret_t ret = MSG_HANDLED;
 
@@ -927,7 +927,7 @@ help_execute_cmd (unsigned long command)
 static cb_ret_t
 help_handle_key (WDialog * h, int c)
 {
-    unsigned long command;
+    long command;
 
     command = keybind_lookup_keymap_command (help_map, c);
     if ((command == CK_IgnoreKey) || (help_execute_cmd (command) == MSG_NOT_HANDLED))
@@ -966,17 +966,8 @@ help_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *da
         return help_handle_key (h, parm);
 
     case MSG_ACTION:
-        /* shortcut */
-        if (sender == NULL)
-            return help_execute_cmd (parm);
-        /* message from buttonbar */
-        if (sender == WIDGET (find_buttonbar (h)))
-        {
-            if (data != NULL)
-                return send_message (data, NULL, MSG_ACTION, parm, NULL);
-            return help_execute_cmd (parm);
-        }
-        return MSG_NOT_HANDLED;
+        /* Handle shortcuts and buttonbar. */
+        return help_execute_cmd (parm);
 
     default:
         return dlg_default_callback (w, sender, msg, parm, data);
@@ -1080,7 +1071,7 @@ help_interactive_display (const gchar * event_group_name, const gchar * event_na
     if (event_data->filename != NULL)
         g_file_get_contents (event_data->filename, &filedata, NULL, NULL);
     else
-        filedata = load_mc_home_file (mc_global.share_data_dir, MC_HELP, &hlpfile);
+        filedata = load_mc_home_file (mc_global.share_data_dir, MC_HELP, &hlpfile, NULL);
 
     if (filedata == NULL)
         message (D_ERROR, MSG_ERROR, _("Cannot open file %s\n%s"),

@@ -3,13 +3,14 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
+# Andi Chandler <andi@gowling.com>, 2016
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2015-11-06 14:43+0300\n"
-"PO-Revision-Date: 2015-06-04 08:38+0000\n"
-"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
+"POT-Creation-Date: 2016-03-12 17:34+0100\n"
+"PO-Revision-Date: 2016-03-12 12:07+0000\n"
+"Last-Translator: Andi Chandler <andi@gowling.com>\n"
 "Language-Team: English (United Kingdom) (http://www.transifex.com/mc/mc/"
 "language/en_GB/)\n"
 "Language: en_GB\n"
@@ -20,23 +21,23 @@ msgstr ""
 
 # "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 msgid "Warning: cannot load codepages list"
-msgstr ""
+msgstr "Warning: cannot load codepages list"
 
 msgid "7-bit ASCII"
-msgstr ""
+msgstr "7-bit ASCII"
 
 #, c-format
 msgid "Cannot translate from %s to %s"
-msgstr ""
+msgstr "Cannot translate from %s to %s"
 
 msgid "Event system already initialized"
-msgstr ""
+msgstr "Event system already initialised"
 
 msgid "Failed to initialize event system"
-msgstr ""
+msgstr "Failed to initialise event system"
 
 msgid "Event system not initialized"
-msgstr ""
+msgstr "Event system not initialised"
 
 msgid "Check input data! Some of parameters are NULL!"
 msgstr ""
@@ -467,14 +468,11 @@ msgid "Directory cache expired for %s"
 msgstr ""
 
 #, c-format
-msgid "%s: %s: %s %3d%% %<PRIuMAX> %s"
-msgstr ""
-
-msgid "bytes transferred"
+msgid "%s: %s: %s %3d%% (%lld) bytes transferred"
 msgstr ""
 
 #, c-format
-msgid "%s: %s: %s %<PRIuMAX> %s"
+msgid "%s: %s: %s %lld bytes transferred"
 msgstr ""
 
 msgid "Starting linear transfer..."
@@ -558,7 +556,7 @@ msgid "Error"
 msgstr ""
 
 #, c-format
-msgid "%d: %s"
+msgid "%s (%d)"
 msgstr ""
 
 msgid "&Abort"
@@ -1498,7 +1496,7 @@ msgid ""
 "written for the Midnight Commander."
 msgstr ""
 
-msgid "Copyright (C) 1996-2015 the Free Software Foundation"
+msgid "Copyright (C) 1996-2016 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -2186,6 +2184,10 @@ msgid ""
 msgstr ""
 
 #, c-format
+msgid "'%s' is not a symbolic link"
+msgstr ""
+
+#, c-format
 msgid "Symlink '%s' points to:"
 msgstr ""
 
@@ -2198,10 +2200,6 @@ msgstr ""
 
 #, c-format
 msgid "edit symlink: %s"
-msgstr ""
-
-#, c-format
-msgid "'%s' is not a symbolic link"
 msgstr ""
 
 msgid "FTP to machine"
@@ -2475,7 +2473,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot read source file\"%s\"\n"
+"Cannot read source file \"%s\"\n"
 "%s"
 msgstr ""
 
@@ -3921,8 +3919,7 @@ msgstr ""
 msgid "sftp: Password is empty."
 msgstr ""
 
-#, c-format
-msgid "sftp: Failure establishing SSH session: (%d)"
+msgid "sftp: Failure establishing SSH session"
 msgstr ""
 
 msgid "sftp: No file handler data present for reading file"
