@@ -33,7 +33,6 @@ winbuild: nmap.rc nsis/Nmap.nsi LICENSE
 	rm -rf nmap-$(NMAP_VERSION)/licenses/.svn
 	cp winpcap/winpcap-nmap-*.exe nmap-$(NMAP_VERSION)
 	cp $(NMAP_MSWIN32_AUX)/vcredist_x86.exe nmap-$(NMAP_VERSION)
-	cp $(NMAP_MSWIN32_AUX)/vcredist2008_x86.exe nmap-$(NMAP_VERSION)
 	cp ../ncat/Release/ncat.exe nmap-$(NMAP_VERSION)
 	cp ../ncat/Release/ca-bundle.crt nmap-$(NMAP_VERSION)
 	cp ../nping/Release/nping.exe nmap-$(NMAP_VERSION)
@@ -44,6 +43,8 @@ winbuild: nmap.rc nsis/Nmap.nsi LICENSE
 	zip -r nmap-$(NMAP_VERSION)-win32.zip nmap-$(NMAP_VERSION)
 # Remove ndiff.py and ndiff.bat for the installer because it has ndiff.exe.
 	rm -f nmap-$(NMAP_VERSION)/ndiff.py nmap-$(NMAP_VERSION)/ndiff.bat
+# add vcredist2008 because Python.exe needs it
+	cp $(NMAP_MSWIN32_AUX)/vcredist2008_x86.exe nmap-$(NMAP_VERSION)
 	cd ../zenmap && install_scripts/windows/copy_and_compile.bat
 	cp -R ../zenmap/dist/* nmap-$(NMAP_VERSION)/
 	cp ../zenmap/README nmap-$(NMAP_VERSION)/ZENMAP_README

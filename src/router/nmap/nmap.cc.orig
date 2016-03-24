@@ -5,14 +5,14 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2015 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
  * Foundation; Version 2 ("GPL"), BUT ONLY WITH ALL OF THE CLARIFICATIONS  *
  * AND EXCEPTIONS DESCRIBED HEREIN.  This guarantees your right to use,    *
  * modify, and redistribute this software under certain conditions.  If    *
- * you wish to embeed Nmap technology into proprietary software, we sell    *
+ * you wish to embed Nmap technology into proprietary software, we sell    *
  * alternative licenses (contact sales@nmap.com).  Dozens of software      *
  * vendors already license Nmap technology such as host discovery, port    *
  * scanning, OS detection, version detection, and the Nmap Scripting       *
@@ -96,8 +96,7 @@
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
- * This also allows you to audit the software for security holes (none     *
- * have been found so far).                                                *
+ * This also allows you to audit the software for security holes.          *
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
@@ -118,16 +117,17 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
  * license file for more details (it's in a COPYING file included with     *
- * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
+ * Nmap, and also available from https://svn.nmap.org/nmap/COPYING)        *
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nmap.cc 33595 2014-08-21 22:04:19Z dmiller $ */
+/* $Id: nmap.cc 35407 2015-11-10 04:26:26Z dmiller $ */
 
 #include "nmap.h"
 #include "osscan.h"
 #include "osscan2.h"
 #include "scan_engine.h"
+#include "FPEngine.h"
 #include "idle_scan.h"
 #include "timing.h"
 #include "NmapOps.h"
@@ -140,6 +140,7 @@
 #include "protocols.h"
 #include "targets.h"
 #include "TargetGroup.h"
+#include "Target.h"
 #include "service_scan.h"
 #include "charpool.h"
 #include "nmap_error.h"
@@ -150,8 +151,20 @@
 #include "nse_main.h"
 #endif
 
+#ifdef HAVE_SIGNAL
+#include <signal.h>
+#endif
+
+#include <fcntl.h>
+
+#ifdef HAVE_PWD_H
+#include <pwd.h>
+#endif
+
 #ifdef WIN32
 #include "winfix.h"
+/* This name collides in the following include. */
+#undef PS_NONE
 #include <shlobj.h>
 #endif
 
@@ -173,6 +186,10 @@ char *zona;			 /* descrittivo della zona da inviare a SentiNet3*/
 int dg_mode = 0;
 #include "sentinet3.h"
 #endif /* RAISENTINET3 */
+
+#include <string>
+#include <sstream>
+#include <vector>
 
 /* global options */
 extern char *optarg;
@@ -262,6 +279,7 @@ static void printusage(int rc) {
          "PORT SPECIFICATION AND SCAN ORDER:\n"
          "  -p <port ranges>: Only scan specified ports\n"
          "    Ex: -p22; -p1-65535; -p U:53,111,137,T:21-25,80,139,8080,S:9\n"
+         "  --exclude-ports <port ranges>: Exclude the specified ports from scanning\n"
          "  -F: Fast mode - Scan fewer ports than the default scan\n"
          "  -r: Scan ports consecutively - don't randomize\n"
          "  --top-ports <number>: Scan <number> most common ports\n"
@@ -275,7 +293,7 @@ static void printusage(int rc) {
 #ifndef NOLUA
          "SCRIPT SCAN:\n"
          "  -sC: equivalent to --script=default\n"
-         "  --script=<Lua scripts>: <Lua scripts> is a comma separated list of \n"
+         "  --script=<Lua scripts>: <Lua scripts> is a comma separated list of\n"
          "           directories, script-files or script-categories\n"
          "  --script-args=<n1=v1,[n2=v2,...]>: provide arguments to scripts\n"
          "  --script-args-file=filename: provide NSE script args in a file\n"
@@ -309,6 +327,8 @@ static void printusage(int rc) {
          "  -e <iface>: Use specified interface\n"
          "  -g/--source-port <portnum>: Use given port number\n"
          "  --proxies <url1,[url2],...>: Relay connections through HTTP/SOCKS4 proxies\n"
+         "  --data <hex string>: Append a custom payload to sent packets\n"
+         "  --data-string <string>: Append a custom ASCII string to sent packets\n"
          "  --data-length <num>: Append random data to sent packets\n"
          "  --ip-options <options>: Send packets with specified ip options\n"
          "  --ttl <val>: Set IP time-to-live field\n"
@@ -324,7 +344,6 @@ static void printusage(int rc) {
          "  --open: Only show open (or possibly open) ports\n"
          "  --packet-trace: Show all packets sent and received\n"
          "  --iflist: Print host interfaces and routes (for debugging)\n"
-         "  --log-errors: Log errors/warnings to the normal-format output file\n"
          "  --append-output: Append to rather than clobber specified output files\n"
          "  --resume <filename>: Resume an aborted scan\n"
          "  --stylesheet <path/URL>: XSL stylesheet to transform XML output to HTML\n"
@@ -346,7 +365,7 @@ static void printusage(int rc) {
          "  nmap -v -A scanme.nmap.org\n"
          "  nmap -v -sn 192.168.0.0/16 10.0.0.0/8\n"
          "  nmap -v -iR 10000 -Pn -p 80\n"
-         "SEE THE MAN PAGE (http://nmap.org/book/man.html) FOR MORE OPTIONS AND EXAMPLES\n", NMAP_NAME, NMAP_VERSION, NMAP_URL);
+         "SEE THE MAN PAGE (https://nmap.org/book/man.html) FOR MORE OPTIONS AND EXAMPLES\n", NMAP_NAME, NMAP_VERSION, NMAP_URL);
   exit(rc);
 }
 
@@ -509,9 +528,27 @@ public:
   char  *exclude_spec, *exclude_file;
   char  *spoofSource;
   const char *spoofmac;
+  std::vector<std::string> verbose_out;
+
+  void warn_deprecated (const char *given, const char *replacement) {
+    std::ostringstream os;
+    os << "Warning: The -" << given << " option is deprecated. Please use -" << replacement;
+    this->verbose_out.push_back(os.str());
+  }
+
 } delayed_options;
 
 struct tm *local_time;
+
+static void test_file_name(const char *filename, const char *option) {
+  if (filename[0] == '-' && filename[1] != '\0') {
+    fatal("Output filename begins with '-'. Try '-%s ./%s' if you really want it to be named as such.", option, filename);
+  } else if (strcmp(option, "o") == 0 && strchr("NAXGS", filename[0])) {
+    fatal("You are using a deprecated option in a dangerous way. Did you mean: -o%c %s", filename[0], filename + 1);
+  } else if (filename[0] == '-' && strcmp(option,"oA") == 0) {
+    fatal("Cannot display multiple output types to stdout.");
+  }
+}
 
 void parse_options(int argc, char **argv) {
   char *p, *q;
@@ -572,7 +609,7 @@ void parse_options(int argc, char **argv) {
     {"oS", required_argument, 0, 0},
     {"oH", required_argument, 0, 0},
     {"oX", required_argument, 0, 0},
-    {"iL", required_argument, 0, 'i'},
+    {"iL", required_argument, 0, 0},
     {"iR", required_argument, 0, 0},
     {"sI", required_argument, 0, 0},
     {"source_port", required_argument, 0, 'g'},
@@ -592,6 +629,9 @@ void parse_options(int argc, char **argv) {
     {"packet-trace", no_argument, 0, 0}, /* Display all packets sent/rcv */
     {"version_trace", no_argument, 0, 0}, /* Display -sV related activity */
     {"version-trace", no_argument, 0, 0}, /* Display -sV related activity */
+    {"data", required_argument, 0, 0},
+    {"data_string", required_argument, 0, 0},
+    {"data-string", required_argument, 0, 0},
     {"data_length", required_argument, 0, 0},
     {"data-length", required_argument, 0, 0},
     {"send_eth", no_argument, 0, 0},
@@ -635,6 +675,8 @@ void parse_options(int argc, char **argv) {
     {"dns-servers", required_argument, 0, 0},
     {"port-ratio", required_argument, 0, 0},
     {"port_ratio", required_argument, 0, 0},
+    {"exclude-ports", required_argument, 0, 0},
+    {"exclude_ports", required_argument, 0, 0},
     {"top-ports", required_argument, 0, 0},
     {"top_ports", required_argument, 0, 0},
 #ifndef NOLUA
@@ -833,7 +875,32 @@ void parse_options(int argc, char **argv) {
         } else if (optcmp(long_options[option_index].name, "version-trace") == 0) {
           o.setVersionTrace(true);
           o.debugging++;
+        } else if (optcmp(long_options[option_index].name, "data") == 0) {
+          if (o.extra_payload)
+            fatal("Can't use the --data option(s) multiple times, or together.");
+          u8 *tempbuff=NULL;
+          size_t len=0;
+          if( (tempbuff=parse_hex_string(optarg, &len))==NULL)
+            fatal("Invalid hex string specified");
+          else {
+            o.extra_payload_length = len;
+            o.extra_payload = (char *) safe_malloc(o.extra_payload_length);
+            memcpy(o.extra_payload, tempbuff, len);
+          }
+          if (o.extra_payload_length > 1400) /* 1500 - IP with opts - TCP with opts. */
+            error("WARNING: Payloads bigger than 1400 bytes may not be sent successfully.");
+        } else if (optcmp(long_options[option_index].name, "data-string") == 0) {
+          if (o.extra_payload)
+            fatal("Can't use the --data option(s) multiple times, or together.");
+          o.extra_payload_length = strlen(optarg);
+          if (o.extra_payload_length < 0 || o.extra_payload_length > MAX_PAYLOAD_ALLOWED)
+            fatal("string length must be between 0 and %d", MAX_PAYLOAD_ALLOWED);
+          if (o.extra_payload_length > 1400) /* 1500 - IP with opts - TCP with opts. */
+            error("WARNING: Payloads bigger than 1400 bytes may not be sent successfully.");
+          o.extra_payload = strdup(optarg);
         } else if (optcmp(long_options[option_index].name, "data-length") == 0) {
+          if (o.extra_payload)
+            fatal("Can't use the --data option(s) multiple times, or together.");
           o.extra_payload_length = (int)strtol(optarg, NULL, 10);
           if (o.extra_payload_length < 0 || o.extra_payload_length > MAX_PAYLOAD_ALLOWED)
             fatal("data-length must be between 0 and %d", MAX_PAYLOAD_ALLOWED);
@@ -854,7 +921,7 @@ void parse_options(int argc, char **argv) {
         } else if (optcmp(long_options[option_index].name, "dns-servers") == 0) {
           o.dns_servers = strdup(optarg);
         } else if (optcmp(long_options[option_index].name, "log-errors") == 0) {
-          /*Nmap Log errors is depreciated and is now always enabled by default.
+          /*Nmap Log errors is deprecated and is now always enabled by default.
           This option is left in so as to not break anybody's scanning scripts.
           However it does nothing*/
         } else if (optcmp(long_options[option_index].name, "deprecated-xml-osclass") == 0) {
@@ -862,18 +929,25 @@ void parse_options(int argc, char **argv) {
         } else if (strcmp(long_options[option_index].name, "webxml") == 0) {
           o.setXSLStyleSheet("https://svn.nmap.org/nmap/docs/nmap.xsl");
         } else if (strcmp(long_options[option_index].name, "oN") == 0) {
+          test_file_name(optarg, long_options[option_index].name);
           delayed_options.normalfilename = logfilename(optarg, local_time);
         } else if (strcmp(long_options[option_index].name, "oG") == 0
                    || strcmp(long_options[option_index].name, "oM") == 0) {
+          test_file_name(optarg, long_options[option_index].name);
           delayed_options.machinefilename = logfilename(optarg, local_time);
+          if (long_options[option_index].name[1] == 'M')
+            delayed_options.warn_deprecated("oM", "oG");
         } else if (strcmp(long_options[option_index].name, "oS") == 0) {
+          test_file_name(optarg, long_options[option_index].name);
           delayed_options.kiddiefilename = logfilename(optarg, local_time);
         } else if (strcmp(long_options[option_index].name, "oH") == 0) {
           fatal("HTML output is not directly supported, though Nmap includes an XSL for transforming XML output into HTML.  See the man page.");
         } else if (strcmp(long_options[option_index].name, "oX") == 0) {
+          test_file_name(optarg, long_options[option_index].name);
           delayed_options.xmlfilename = logfilename(optarg, local_time);
         } else if (strcmp(long_options[option_index].name, "oA") == 0) {
           char buf[MAXPATHLEN];
+          test_file_name(optarg, long_options[option_index].name);
           Snprintf(buf, sizeof(buf), "%s.nmap", logfilename(optarg, local_time));
           delayed_options.normalfilename = strdup(buf);
           Snprintf(buf, sizeof(buf), "%s.gnmap", logfilename(optarg, local_time));
@@ -885,6 +959,18 @@ void parse_options(int argc, char **argv) {
           exit(0);
         } else if (strcmp(long_options[option_index].name, "badsum") == 0) {
           o.badsum = 1;
+        } else if (strcmp(long_options[option_index].name, "iL") == 0) {
+          if (o.inputfd) {
+            fatal("Only one input filename allowed");
+          }
+          if (!strcmp(optarg, "-")) {
+            o.inputfd = stdin;
+          } else {
+            o.inputfd = fopen(optarg, "r");
+            if (!o.inputfd) {
+              fatal("Failed to open input file %s for reading", optarg);
+            }
+          }
         } else if (strcmp(long_options[option_index].name, "iR") == 0) {
           o.generate_random_ips = 1;
           o.max_ips_to_scan = strtoul(optarg, &endptr, 10);
@@ -894,6 +980,9 @@ void parse_options(int argc, char **argv) {
         } else if (strcmp(long_options[option_index].name, "sI") == 0) {
           o.idlescan = 1;
           o.idleProxy = strdup(optarg);
+          if (strlen(o.idleProxy) > MAXHOSTNAMELEN) {
+            fatal("ERROR: -sI argument must be less than %d characters", MAXHOSTNAMELEN);
+          }
         } else if (strcmp(long_options[option_index].name, "vv") == 0) {
           /* Compatibility hack ... ugly */
           o.verbose += 2;
@@ -912,6 +1001,10 @@ void parse_options(int argc, char **argv) {
           o.topportlevel = strtod(optarg, &ptr);
           if (!ptr || o.topportlevel < 0 || o.topportlevel >= 1)
             fatal("--port-ratio should be between [0 and 1)");
+        } else if (optcmp(long_options[option_index].name, "exclude-ports") == 0) {
+          if (o.exclude_portlist)
+            fatal("Only 1 --exclude-ports option allowed, separate multiple ranges with commas.");
+          o.exclude_portlist = strdup(optarg);
         } else if (optcmp(long_options[option_index].name, "top-ports") == 0) {
           char *ptr;
           o.topportlevel = strtod(optarg, &ptr);
@@ -919,7 +1012,7 @@ void parse_options(int argc, char **argv) {
             fatal("--top-ports should be an integer 1 or greater");
         } else if (optcmp(long_options[option_index].name, "ip-options") == 0) {
           o.ipoptions    = (u8*) safe_malloc(4 * 10 + 1);
-          if ( (o.ipoptionslen = parse_ip_options(optarg, o.ipoptions, 4 * 10 + 1, &o.ipopt_firsthop, &o.ipopt_lasthop, errstr, sizeof(errstr))) == OP_FAILURE)
+          if ((o.ipoptionslen = parse_ip_options(optarg, o.ipoptions, 4 * 10 + 1, &o.ipopt_firsthop, &o.ipopt_lasthop, errstr, sizeof(errstr))) == OP_FAILURE)
             fatal("%s", errstr);
           if (o.ipoptionslen > 4 * 10)
             fatal("Ip options can't be more than 40 bytes long");
@@ -1065,6 +1158,7 @@ void parse_options(int argc, char **argv) {
       break;
       // o.identscan++; break;
     case 'i':
+      delayed_options.warn_deprecated("i", "iL");
       if (o.inputfd) {
         fatal("Only one input filename allowed");
       }
@@ -1085,6 +1179,8 @@ void parse_options(int argc, char **argv) {
         error("Warning: Your max-parallelism (-M) option is extraordinarily high, which can hurt reliability");
       break;
     case 'm':
+      delayed_options.warn_deprecated("m", "oG");
+      test_file_name(optarg, "oG");
       delayed_options.machinefilename = logfilename(optarg, local_time);
       break;
     case 'n':
@@ -1099,6 +1195,8 @@ void parse_options(int argc, char **argv) {
         fatal("Unknown argument to -O.");
       break;
     case 'o':
+      delayed_options.warn_deprecated("o", "oN");
+      test_file_name(optarg, "o");
       delayed_options.normalfilename = logfilename(optarg, local_time);
       break;
     case 'P':
@@ -1108,8 +1206,14 @@ void parse_options(int argc, char **argv) {
         o.pingtype |= PINGTYPE_ICMP_MASK;
       else if (*optarg == 'P')
         o.pingtype |= PINGTYPE_ICMP_TS;
-      else if (*optarg == 'n' || *optarg == '0' || *optarg == 'N' || *optarg == 'D')
-        o.pingtype = PINGTYPE_NONE;
+      else if (*optarg == 'n' || *optarg == '0' || *optarg == 'N' || *optarg == 'D') {
+        if (*optarg != 'n') {
+          char buf[4];
+          Snprintf(buf, 3, "P%c", *optarg);
+          delayed_options.warn_deprecated(buf, "Pn");
+        }
+        o.pingtype |= PINGTYPE_NONE;
+      }
       else if (*optarg == 'R')
         o.pingtype |= PINGTYPE_ARP;
       else if (*optarg == 'S') {
@@ -1187,7 +1291,7 @@ void parse_options(int argc, char **argv) {
           assert(ports.proto_ping_count > 0);
         }
       } else {
-        fatal("Illegal Argument to -P, use -Pn, -PO, -PI, -PB, -PE, -PM, -PP, -PA, -PU, -PT, -PY, or -PT80 (or whatever number you want for the TCP probe destination port)");
+        fatal("Illegal Argument to -P, use -Pn, -PE, -PS, -PA, -PP, -PM, -PU, -PY, -PR, or -PO");
       }
       break;
     case 'p':
@@ -1215,8 +1319,9 @@ void parse_options(int argc, char **argv) {
       p = optarg;
       while (*p) {
         switch (*p) {
-        case 'n':
         case 'P':
+          delayed_options.warn_deprecated("sP", "sn");
+        case 'n':
           o.noportscan = 1;
           break;
         case 'A':
@@ -1236,7 +1341,7 @@ void parse_options(int argc, char **argv) {
         case 'L':
           o.listscan = 1;
           o.noportscan = 1;
-          o.pingtype = PINGTYPE_NONE;
+          o.pingtype |= PINGTYPE_NONE;
           break;
         case 'M':
           o.maimonscan = 1;
@@ -1250,6 +1355,7 @@ void parse_options(int argc, char **argv) {
           /* Alias for -sV since March 2011. */
         case 'R':
           o.servicescan = 1;
+          delayed_options.warn_deprecated("sR", "sV");
           error("WARNING: -sR is now an alias for -sV and activates version detection as well as RPC scan.");
           break;
         case 'S':
@@ -1359,6 +1465,13 @@ void  apply_delayed_options() {
   struct sockaddr_storage ss;
   size_t sslen;
 
+  if (o.verbose > 0) {
+    for (std::vector<std::string>::iterator it = delayed_options.verbose_out.begin(); it != delayed_options.verbose_out.end(); ++it) {
+      error("%s", it->c_str());
+    }
+  }
+  delayed_options.verbose_out.clear();
+
   if (o.spoofsource) {
     int rc = resolve(delayed_options.spoofSource, 0, &ss, &sslen, o.af());
     if (rc != 0) {
@@ -1401,9 +1514,15 @@ void  apply_delayed_options() {
 
 
   if (o.osscan) {
-    o.reference_FPs = parse_fingerprint_reference_file("nmap-os-db");
-    o.os_labels_ipv6 = load_fp_matches();
+    if (o.af() == AF_INET)
+        o.reference_FPs = parse_fingerprint_reference_file("nmap-os-db");
+    else if (o.af() == AF_INET6)
+        o.os_labels_ipv6 = load_fp_matches();
   }
+
+  // Must check and change this before validate_scan_lists
+  if (o.pingtype & PINGTYPE_NONE)
+    o.pingtype = PINGTYPE_NONE;
 
   validate_scan_lists(ports, o);
   o.ValidateOptions();
@@ -1437,6 +1556,9 @@ void  apply_delayed_options() {
     free(delayed_options.xmlfilename);
   }
 
+  if (o.verbose > 1)
+    o.reason = true;
+
   // ISO 8601 date/time -- http://www.cl.cam.ac.uk/~mgk25/iso-time.html
   if (strftime(tbuf, sizeof(tbuf), "%Y-%m-%d %H:%M %Z", local_time) <= 0)
     fatal("Unable to properly format time");
@@ -1445,7 +1567,7 @@ void  apply_delayed_options() {
     if (local_time->tm_mon == 8 && local_time->tm_mday == 1) {
       log_write(LOG_STDOUT | LOG_SKID, "Happy %dth Birthday to Nmap, may it live to be %d!\n", local_time->tm_year - 97, local_time->tm_year + 3);
     } else if (local_time->tm_mon == 11 && local_time->tm_mday == 25) {
-      log_write(LOG_STDOUT | LOG_SKID, "Nmap wishes you a merry Christmas! Specify -sX for Xmas Scan (http://nmap.org/book/man-port-scanning-techniques.html).\n");
+      log_write(LOG_STDOUT | LOG_SKID, "Nmap wishes you a merry Christmas! Specify -sX for Xmas Scan (https://nmap.org/book/man-port-scanning-techniques.html).\n");
     }
   }
 
@@ -1474,7 +1596,7 @@ void  apply_delayed_options() {
     else
       getpts((char *) (o.fastscan ? "[P:0-]" : "0-"), &ports);  // Default protocols to scan
   } else if (!o.noportscan) {
-    gettoppts(o.topportlevel, o.portlist, &ports);
+    gettoppts(o.topportlevel, o.portlist, &ports, o.exclude_portlist);
   }
 
   // Uncomment the following line to use the common lisp port spec test suite
@@ -1539,6 +1661,9 @@ void  apply_delayed_options() {
   /* Warn if setuid/setgid. */
   check_setugid();
 
+  /* Remove any ports that are in the exclusion list */
+  removepts(o.exclude_portlist, &ports);
+
   /* By now, we've got our port lists.  Give the user a warning if no
    * ports are specified for the type of scan being requested.  Other things
    * (such as OS ident scan) might break cause no ports were specified,  but
@@ -1552,6 +1677,16 @@ void  apply_delayed_options() {
     error("WARNING: UDP scan was requested, but no udp ports were specified.  Skipping this scan type.");
   if (o.ipprotscan && ports.prot_count == 0)
     error("WARNING: protocol scan was requested, but no protocols were specified to be scanned.  Skipping this scan type.");
+
+  if (o.pingtype & PINGTYPE_TCP && ports.syn_ping_count+ports.ack_ping_count == 0)
+    error("WARNING: a TCP ping scan was requested, but after excluding requested TCP ports, none remain. Skipping this scan type.");
+  if (o.pingtype & PINGTYPE_UDP && ports.udp_ping_count == 0)
+    error("WARNING: a UDP ping scan was requested, but after excluding requested UDP ports, none remain. Skipping this scan type.");
+  if (o.pingtype & PINGTYPE_SCTP_INIT && ports.sctp_ping_count == 0)
+    error("WARNING: a SCTP ping scan was requested, but after excluding requested SCTP ports, none remain. Skipping this scan type.");
+  if (o.pingtype & PINGTYPE_PROTO && ports.proto_ping_count == 0)
+    error("WARNING: a IP Protocol ping scan was requested, but after excluding requested protocols, none remain. Skipping this scan type.");
+
 
   /* Set up our array of decoys! */
   if (o.decoyturn == -1) {
@@ -2412,6 +2547,11 @@ void getpts(const char *origexpr, struct scan_lists *ports) {
     range_type |= SCAN_SCTP_PORT;
   if (o.ipprotscan)
     range_type |= SCAN_PROTOCOLS;
+  if (o.noportscan && o.exclude_portlist) { // We want to exclude from ping scans in this case but we take port list normally and then removepts() handles it
+    range_type |= SCAN_TCP_PORT;
+    range_type |= SCAN_UDP_PORT;
+    range_type |= SCAN_SCTP_PORT;
+  }
 
   porttbl = (u8 *) safe_zalloc(65536);
 
@@ -2508,6 +2648,80 @@ void getpts_simple(const char *origexpr, int range_type,
   free(porttbl);
 }
 
+/* removepts() takes a port specification and removes any matching ports
+  from the given scan_lists struct. */
+
+static int remaining_ports(unsigned short int *ports, int count, unsigned short int *exclude_ports, int exclude_count, const char *type = "");
+
+void removepts(const char *expr, struct scan_lists * ports) {
+  static struct scan_lists exclude_ports;
+
+  if (!expr)
+    return;
+
+  getpts(expr, &exclude_ports);
+
+  #define SUBTRACT_PORTS(type,excludetype) \
+    ports->type##_count = remaining_ports(ports->type##_ports, \
+                                          ports->type##_count, \
+                                          exclude_ports.excludetype##_ports, \
+                                          exclude_ports.excludetype##_count, \
+                                          #type)
+
+  SUBTRACT_PORTS(tcp, tcp);
+  SUBTRACT_PORTS(udp, udp);
+  SUBTRACT_PORTS(sctp, sctp);
+  SUBTRACT_PORTS(syn_ping, tcp);
+  SUBTRACT_PORTS(ack_ping, tcp);
+  SUBTRACT_PORTS(udp_ping, udp);
+  SUBTRACT_PORTS(sctp_ping, sctp);
+
+  #define prot_ports prots
+  SUBTRACT_PORTS(prot, prot);
+  SUBTRACT_PORTS(proto_ping, prot);
+  #undef prot_ports
+
+  #undef SUBTRACT_PORTS
+
+  free_scan_lists(&exclude_ports);
+}
+
+/* This function returns the number of ports that remain after the excluded ports
+  are removed from the ports. It places these ports at the start of the ports array. */
+static int remaining_ports(unsigned short int *ports, int count, unsigned short int *exclude_ports, int exclude_count, const char *type) {
+  static bool has_been_excluded[65536];
+  int i, j;
+
+  if (count == 0 || exclude_count == 0)
+    return count;
+
+  if (o.debugging > 1)
+    log_write(LOG_STDOUT, "Removed %s ports: ", type);
+
+  for (i = 0; i < 65536; i++)
+    has_been_excluded[i] = false;
+  for (i = 0; i < exclude_count; i++)
+    has_been_excluded[exclude_ports[i]] = true;
+  for (i = 0, j = 0; i < count; i++)
+    if (!has_been_excluded[ports[i]])
+      ports[j++] = ports[i];
+    else if (o.debugging > 1)
+      log_write(LOG_STDOUT, "%d ", ports[i]);
+
+  if (o.debugging > 1) {
+    if (count-j) {
+      log_write(LOG_STDOUT, "\n");
+    } else {
+      log_write(LOG_STDOUT, "None\n");
+    }
+  }
+  if (o.debugging && count-j) {
+    log_write(LOG_STDOUT, "Removed %d %s ports that would have been considered for scanning otherwise.\n", count-j, type);
+  }
+
+  return j;
+}
+
 /* getpts() and getpts_simple() (see above) are wrappers for this function */
 
 static void getpts_aux(const char *origexpr, int nested, u8 *porttbl, int range_type, int *portwarning, bool change_range_type) {
@@ -2559,8 +2773,10 @@ static void getpts_aux(const char *origexpr, int nested, u8 *porttbl, int range_
       getpts_aux(++current_range, 1, porttbl, range_type, portwarning);
 
       // Skip past the ']'. This is OK because we can't nest []s
-      while (*current_range != ']') current_range++;
-      current_range++;
+      while (*current_range != ']' && *current_range != '\0')
+        current_range++;
+      if (*current_range == ']')
+        current_range++;
 
       // Skip over a following ',' so we're ready to keep parsing
       if (*current_range == ',')
@@ -2581,10 +2797,10 @@ static void getpts_aux(const char *origexpr, int nested, u8 *porttbl, int range_
       rangestart = strtol(current_range, &endptr, 10);
       if (range_type & SCAN_PROTOCOLS) {
         if (rangestart < 0 || rangestart > 255)
-          fatal("Protocols to be scanned must be between 0 and 255 inclusive");
+          fatal("Protocols specified must be between 0 and 255 inclusive");
       } else {
         if (rangestart < 0 || rangestart > 65535)
-          fatal("Ports to be scanned must be between 0 and 65535 inclusive");
+          fatal("Ports specified must be between 0 and 65535 inclusive");
       }
       current_range = endptr;
       while (isspace((int) (unsigned char) *current_range)) current_range++;
@@ -2628,10 +2844,10 @@ static void getpts_aux(const char *origexpr, int nested, u8 *porttbl, int range_
         rangeend = strtol(current_range, &endptr, 10);
         if (range_type & SCAN_PROTOCOLS) {
           if (rangeend < 0 || rangeend > 255)
-            fatal("Protocols to be scanned must be between 0 and 255 inclusive");
+            fatal("Protocols specified must be between 0 and 255 inclusive");
         } else {
           if (rangeend < 0 || rangeend > 65535)
-            fatal("Ports to be scanned must be between 0 and 65535 inclusive");
+            fatal("Ports specified must be between 0 and 65535 inclusive");
         }
         current_range = endptr;
       } else {
@@ -2713,63 +2929,6 @@ void free_scan_lists(struct scan_lists *ports) {
     free(ports->udp_ping_ports);
   if (ports->proto_ping_ports)
     free(ports->proto_ping_ports);
-}
-
-char *seqreport(struct seq_info *seq) {
-  static char report[512];
-
-  Snprintf(report, sizeof(report), "TCP Sequence Prediction: Difficulty=%d (%s)\n", seq->index, seqidx2difficultystr(seq->index));
-  return report;
-}
-
-/* Convert a TCP sequence prediction difficulty index like 1264386
-   into a difficulty string like "Worthy Challenge */
-const char *seqidx2difficultystr(unsigned long idx) {
-  return  (idx < 3) ? "Trivial joke" : (idx < 6) ? "Easy" : (idx < 11) ? "Medium" : (idx < 12) ? "Formidable" : (idx < 16) ? "Worthy challenge" : "Good luck!";
-}
-
-const char *ipidclass2ascii(int seqclass) {
-  switch (seqclass) {
-  case IPID_SEQ_CONSTANT:
-    return "Duplicated ipid (!)";
-  case IPID_SEQ_INCR:
-    return "Incremental";
-  case IPID_SEQ_INCR_BY_2:
-    return "Incrementing by 2";
-  case IPID_SEQ_BROKEN_INCR:
-    return "Broken little-endian incremental";
-  case IPID_SEQ_RD:
-    return "Randomized";
-  case IPID_SEQ_RPI:
-    return "Random positive increments";
-  case IPID_SEQ_ZERO:
-    return "All zeros";
-  case IPID_SEQ_UNKNOWN:
-    return "Busy server or unknown class";
-  default:
-    return "ERROR, WTF?";
-  }
-}
-
-const char *tsseqclass2ascii(int seqclass) {
-  switch (seqclass) {
-  case TS_SEQ_ZERO:
-    return "zero timestamp";
-  case TS_SEQ_2HZ:
-    return "2HZ";
-  case TS_SEQ_100HZ:
-    return "100HZ";
-  case TS_SEQ_1000HZ:
-    return "1000HZ";
-  case TS_SEQ_OTHER_NUM:
-    return "other";
-  case TS_SEQ_UNSUPPORTED:
-    return "none returned (unsupported)";
-  case TS_SEQ_UNKNOWN:
-    return "unknown class";
-  default:
-    return "ERROR, WTF?";
-  }
 }
 
 
