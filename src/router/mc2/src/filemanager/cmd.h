@@ -73,7 +73,9 @@ void edit_mc_menu_cmd (void);
 void edit_fhl_cmd (void);
 void hotlist_cmd (void);
 void compare_dirs_cmd (void);
+#ifdef USE_DIFF_VIEW
 void diff_view_cmd (void);
+#endif
 void panel_tree_cmd (void);
 void link_cmd (link_type_t link_type);
 void edit_symlink_cmd (void);
@@ -81,7 +83,6 @@ void swap_cmd (void);
 void view_other_cmd (void);
 void quick_cd_cmd (void);
 void save_setup_cmd (void);
-char *get_random_hint (int force);
 void user_file_menu_cmd (void);
 void info_cmd (void);
 void listing_cmd (void);

@@ -12,9 +12,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2015-11-06 14:43+0300\n"
-"PO-Revision-Date: 2015-06-04 10:12+0000\n"
-"Last-Translator: Miguel Anxo Bouzada <mbouzada@gmail.com>\n"
+"POT-Creation-Date: 2016-03-12 17:34+0100\n"
+"PO-Revision-Date: 2016-03-06 21:29+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Galician (http://www.transifex.com/mc/mc/language/gl/)\n"
 "Language: gl\n"
 "MIME-Version: 1.0\n"
@@ -495,14 +495,11 @@ msgid "Directory cache expired for %s"
 msgstr "O cache para %s expirou"
 
 #, c-format
-msgid "%s: %s: %s %3d%% %<PRIuMAX> %s"
+msgid "%s: %s: %s %3d%% (%lld) bytes transferred"
 msgstr ""
 
-msgid "bytes transferred"
-msgstr "bytes transferidos"
-
 #, c-format
-msgid "%s: %s: %s %<PRIuMAX> %s"
+msgid "%s: %s: %s %lld bytes transferred"
 msgstr ""
 
 msgid "Starting linear transfer..."
@@ -586,8 +583,8 @@ msgid "Error"
 msgstr "Erro"
 
 #, c-format
-msgid "%d: %s"
-msgstr "%d: %s"
+msgid "%s (%d)"
+msgstr ""
 
 msgid "&Abort"
 msgstr "&Interromper"
@@ -1586,8 +1583,8 @@ msgstr ""
 "Un editor de texto de uso amigábel\n"
 "escrito para o Midnight Commander."
 
-msgid "Copyright (C) 1996-2015 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2015 a Free Software Foundation"
+msgid "Copyright (C) 1996-2016 the Free Software Foundation"
+msgstr ""
 
 msgid "About"
 msgstr "Sobre"
@@ -2293,6 +2290,10 @@ msgstr ""
 "os paneis non se poden agochar."
 
 #, c-format
+msgid "'%s' is not a symbolic link"
+msgstr "«%s» non é unha ligazón simbólica"
+
+#, c-format
 msgid "Symlink '%s' points to:"
 msgstr "A ligazón simbólica «%s» apunta a:"
 
@@ -2306,10 +2307,6 @@ msgstr "edite a ligazón simbólica, non é posíbel eliminar %s: %s"
 #, c-format
 msgid "edit symlink: %s"
 msgstr "editar ligazón simbólica: %s"
-
-#, c-format
-msgid "'%s' is not a symbolic link"
-msgstr "«%s» non é unha ligazón simbólica"
 
 msgid "FTP to machine"
 msgstr "Conexión por FTP"
@@ -2640,11 +2637,9 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot read source file\"%s\"\n"
+"Cannot read source file \"%s\"\n"
 "%s"
 msgstr ""
-"Non é posíbel ler o ficheiro orixe «%s»\n"
-"%s"
 
 #, c-format
 msgid ""
@@ -4173,9 +4168,8 @@ msgstr "sftp: introduza o contrasinal para %s "
 msgid "sftp: Password is empty."
 msgstr "sftp: o contrasinal está baleiro."
 
-#, c-format
-msgid "sftp: Failure establishing SSH session: (%d)"
-msgstr "sftp: produciuse un fallo ao estabelecer a sesión SSH: (%d)"
+msgid "sftp: Failure establishing SSH session"
+msgstr ""
 
 msgid "sftp: No file handler data present for reading file"
 msgstr "sftp: Sen datos del descritor do ficheiro para lelo."

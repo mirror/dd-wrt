@@ -1,7 +1,7 @@
 /*
    Virtual File System: GNU Tar file system.
 
-   Copyright (C) 1995-2015
+   Copyright (C) 1995-2016
    Free Software Foundation, Inc.
 
    Written by:
@@ -303,8 +303,9 @@ tar_open_archive_int (struct vfs_class *me, const vfs_path_t * vpath, struct vfs
 
     /* Find out the method to handle this tar file */
     type = get_compression_type (result, archive->name);
-    mc_lseek (result, 0, SEEK_SET);
-    if (type != COMPRESSION_NONE)
+    if (type == COMPRESSION_NONE)
+        mc_lseek (result, 0, SEEK_SET);
+    else
     {
         char *s;
         vfs_path_t *tmp_vpath;
@@ -354,10 +355,10 @@ tar_get_next_record (struct vfs_s_super *archive, int tard)
 
     (void) archive;
 
-    n = mc_read (tard, rec_buf.charptr, RECORDSIZE);
-    if (n != RECORDSIZE)
+    n = mc_read (tard, rec_buf.charptr, sizeof (rec_buf.charptr));
+    if (n != sizeof (rec_buf.charptr))
         return NULL;            /* An error has occurred */
-    current_tar_position += RECORDSIZE;
+    current_tar_position += sizeof (rec_buf.charptr);
     return &rec_buf;
 }
 
@@ -368,8 +369,8 @@ tar_skip_n_records (struct vfs_s_super *archive, int tard, size_t n)
 {
     (void) archive;
 
-    mc_lseek (tard, n * RECORDSIZE, SEEK_CUR);
-    current_tar_position += n * RECORDSIZE;
+    mc_lseek (tard, n * sizeof (rec_buf.charptr), SEEK_CUR);
+    current_tar_position += n * sizeof (rec_buf.charptr);
 }
 
 /* --------------------------------------------------------------------------------------------- */

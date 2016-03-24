@@ -6,12 +6,13 @@
 # Oleksandr Natalenko <oleksandr@natalenko.name>, 2011, 2012
 # Sergey Fesyura <pingvein@gmail.com>, 2012-2013
 # Slava Zanko <slavazanko@gmail.com>, 2011
+# Yury V. Zaytsev <yury@shurup.com>, 2016
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2015-11-06 14:43+0300\n"
-"PO-Revision-Date: 2015-06-04 08:38+0000\n"
+"POT-Creation-Date: 2016-03-12 17:34+0100\n"
+"PO-Revision-Date: 2016-03-06 21:29+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Ukrainian (http://www.transifex.com/mc/mc/language/uk/)\n"
 "Language: uk\n"
@@ -242,13 +243,13 @@ msgid "Right arrow"
 msgstr ""
 
 msgid "Insert"
-msgstr ""
+msgstr "Клавіша Insert"
 
 msgid "Delete"
-msgstr ""
+msgstr "Клавіша Delete"
 
 msgid "Home"
-msgstr ""
+msgstr "Клавіша Home"
 
 msgid "End key"
 msgstr "End"
@@ -489,14 +490,11 @@ msgid "Directory cache expired for %s"
 msgstr "Кеш каталога застарів для %s"
 
 #, c-format
-msgid "%s: %s: %s %3d%% %<PRIuMAX> %s"
+msgid "%s: %s: %s %3d%% (%lld) bytes transferred"
 msgstr ""
 
-msgid "bytes transferred"
-msgstr "байтів передано"
-
 #, c-format
-msgid "%s: %s: %s %<PRIuMAX> %s"
+msgid "%s: %s: %s %lld bytes transferred"
 msgstr ""
 
 msgid "Starting linear transfer..."
@@ -580,7 +578,7 @@ msgid "Error"
 msgstr "Помилка"
 
 #, c-format
-msgid "%d: %s"
+msgid "%s (%d)"
 msgstr ""
 
 msgid "&Abort"
@@ -915,17 +913,17 @@ msgstr "< Оновити поточний синтаксис >"
 
 #, c-format
 msgid "Loading: %3d%%"
-msgstr ""
+msgstr "Завантаження: %3d%%"
 
 msgid "Loading..."
-msgstr ""
+msgstr "Завантаження..."
 
 #, c-format
 msgid "Cannot open %s for reading"
 msgstr "Не вдалося відкрити %s для читання"
 
 msgid "Load file"
-msgstr ""
+msgstr "Завантажити файл"
 
 #, c-format
 msgid "Error reading %s"
@@ -955,7 +953,7 @@ msgstr "Не вдалося відкрити канал для читання: %
 
 #, c-format
 msgid "Searching %s: %3d%%"
-msgstr ""
+msgstr "Виконується пошук %s: %3d%%"
 
 #, c-format
 msgid "Searching %s"
@@ -1541,7 +1539,7 @@ msgstr ""
 "Дружній до користувача редактор тексту\n"
 "написаний для Midnight Commander."
 
-msgid "Copyright (C) 1996-2015 the Free Software Foundation"
+msgid "Copyright (C) 1996-2016 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -1695,7 +1693,7 @@ msgstr "Інтерпретатор вже виконує команду"
 
 #, c-format
 msgid "Type 'exit' to return to the Midnight Commander"
-msgstr ""
+msgstr "Введіть 'exit', щоб повернутися до Midnight Commander"
 
 msgid "Set &all"
 msgstr "Вст. &yсі"
@@ -1922,7 +1920,7 @@ msgid "&User defined:"
 msgstr "&Визначений користувачем:"
 
 msgid "columns"
-msgstr ""
+msgstr "стовпці"
 
 msgid "User &mini status"
 msgstr "Рядок &міні-статусу у форматі користувача"
@@ -2192,7 +2190,7 @@ msgid "Filter command and arguments:"
 msgstr "Введіть команду та її аргументи:"
 
 msgid "Edit file"
-msgstr ""
+msgstr "Редагувати файл"
 
 msgid "Create a new Directory"
 msgstr "Створити новий каталог"
@@ -2245,6 +2243,10 @@ msgstr ""
 "Панелі не можна перемкнути. "
 
 #, c-format
+msgid "'%s' is not a symbolic link"
+msgstr ""
+
+#, c-format
 msgid "Symlink '%s' points to:"
 msgstr ""
 
@@ -2258,10 +2260,6 @@ msgstr "редагування символьного посилання, не �
 #, c-format
 msgid "edit symlink: %s"
 msgstr "редагування символьного посилання: %s"
-
-#, c-format
-msgid "'%s' is not a symbolic link"
-msgstr ""
 
 msgid "FTP to machine"
 msgstr "FTP-з’єднання з віддаленою машиною"
@@ -2289,7 +2287,7 @@ msgid "Directory scanning"
 msgstr "Сканування каталогу"
 
 msgid "Setup"
-msgstr "Настройки"
+msgstr "Налаштування"
 
 #, c-format
 msgid "Setup saved to %s"
@@ -2591,11 +2589,9 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot read source file\"%s\"\n"
+"Cannot read source file \"%s\"\n"
 "%s"
 msgstr ""
-"Не вдалося прочитати вихідний файл «%s»\n"
-"%s"
 
 #, c-format
 msgid ""
@@ -2814,7 +2810,7 @@ msgid "Target"
 msgstr "Ціль"
 
 msgid "Deleting"
-msgstr ""
+msgstr "Видалення"
 
 msgid "&Using shell patterns"
 msgstr "Використання &шаблону оболонки"
@@ -3068,7 +3064,7 @@ msgstr "Тип пристрою: major %lu, minor %lu"
 
 #, c-format
 msgid "Size:       %s"
-msgstr ""
+msgstr "Розмір:      %s"
 
 #, c-format
 msgid " (%ld block)"
@@ -3079,7 +3075,7 @@ msgstr[2] "(блоків: %ld)"
 
 #, c-format
 msgid "Owner:      %s/%s"
-msgstr ""
+msgstr "Власник:     %s/%s"
 
 #, c-format
 msgid "Links:      %d"
@@ -3091,7 +3087,7 @@ msgstr ""
 
 #, c-format
 msgid "Location:   %Xh:%Xh"
-msgstr ""
+msgstr "Розташування:  %Xh:%Xh"
 
 msgid "&Equal split"
 msgstr "&Рівні розміри"
@@ -4126,9 +4122,8 @@ msgstr "sftp: Введіть пароль для %s "
 msgid "sftp: Password is empty."
 msgstr "sftp: Пароль порожній."
 
-#, c-format
-msgid "sftp: Failure establishing SSH session: (%d)"
-msgstr "sftp: Невдача при встановленні SSH сессії: (%d)"
+msgid "sftp: Failure establishing SSH session"
+msgstr ""
 
 msgid "sftp: No file handler data present for reading file"
 msgstr "sftp: Немає даних про  оброблювач для читання файлу"

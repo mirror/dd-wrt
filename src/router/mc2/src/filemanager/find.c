@@ -1,7 +1,7 @@
 /*
    Find file command for the Midnight Commander
 
-   Copyright (C) 1995-2015
+   Copyright (C) 1995-2016
    Free Software Foundation, Inc.
 
    Written  by:
@@ -98,7 +98,6 @@ typedef struct
     gboolean file_all_charsets;
 
     /* file content options */
-    gboolean content_use;
     gboolean content_case_sens;
     gboolean content_regexp;
     gboolean content_first_hit;
@@ -138,7 +137,6 @@ static WCheck *file_case_sens_cbox;     /* "case sensitive" checkbox */
 static WCheck *file_pattern_cbox;       /* File name is glob or regexp */
 static WCheck *recursively_cbox;
 static WCheck *skip_hidden_cbox;
-static WCheck *content_use_cbox;        /* Take into account the Content field */
 static WCheck *content_case_sens_cbox;  /* "case sensitive" checkbox */
 static WCheck *content_regexp_cbox;     /* "find regular expression" checkbox */
 static WCheck *content_first_hit_cbox;  /* "First hit" checkbox" */
@@ -207,7 +205,7 @@ static WListbox *find_list;     /* Listbox with the file list */
 
 static find_file_options_t options = {
     TRUE, TRUE, TRUE, FALSE, FALSE,
-    FALSE, TRUE, FALSE, FALSE, FALSE, FALSE,
+    TRUE, FALSE, FALSE, FALSE, FALSE,
     FALSE, NULL
 };
 
@@ -294,7 +292,6 @@ find_load_options (void)
         mc_config_get_bool (mc_main_config, "FindFile", "file_skip_hidden", FALSE);
     options.file_all_charsets =
         mc_config_get_bool (mc_main_config, "FindFile", "file_all_charsets", FALSE);
-    options.content_use = mc_config_get_bool (mc_main_config, "FindFile", "content_use", TRUE);
     options.content_case_sens =
         mc_config_get_bool (mc_main_config, "FindFile", "content_case_sens", TRUE);
     options.content_regexp =
@@ -323,7 +320,6 @@ find_save_options (void)
     mc_config_set_bool (mc_main_config, "FindFile", "file_find_recurs", options.find_recurs);
     mc_config_set_bool (mc_main_config, "FindFile", "file_skip_hidden", options.skip_hidden);
     mc_config_set_bool (mc_main_config, "FindFile", "file_all_charsets", options.file_all_charsets);
-    mc_config_set_bool (mc_main_config, "FindFile", "content_use", options.content_use);
     mc_config_set_bool (mc_main_config, "FindFile", "content_case_sens", options.content_case_sens);
     mc_config_set_bool (mc_main_config, "FindFile", "content_regexp", options.content_regexp);
     mc_config_set_bool (mc_main_config, "FindFile", "content_first_hit", options.content_first_hit);
@@ -403,7 +399,7 @@ find_check_regexp (const char *r)
     mc_search_t *search;
     gboolean regexp_ok = FALSE;
 
-    search = mc_search_new (r, -1, NULL);
+    search = mc_search_new (r, NULL);
 
     if (search != NULL)
     {
@@ -416,6 +412,36 @@ find_check_regexp (const char *r)
 }
 
 /* --------------------------------------------------------------------------------------------- */
+
+static void
+find_toggle_enable_params (void)
+{
+    gboolean disable = in_name->buffer[0] == '\0';
+
+    widget_disable (WIDGET (file_pattern_cbox), disable);
+    widget_disable (WIDGET (file_case_sens_cbox), disable);
+#ifdef HAVE_CHARSET
+    widget_disable (WIDGET (file_all_charsets_cbox), disable);
+#endif
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+static void
+find_toggle_enable_content (void)
+{
+    gboolean disable = in_with->buffer[0] == '\0';
+
+    widget_disable (WIDGET (content_regexp_cbox), disable);
+    widget_disable (WIDGET (content_case_sens_cbox), disable);
+#ifdef HAVE_CHARSET
+    widget_disable (WIDGET (content_all_charsets_cbox), disable);
+#endif
+    widget_disable (WIDGET (content_whole_words_cbox), disable);
+    widget_disable (WIDGET (content_first_hit_cbox), disable);
+}
+
+/* --------------------------------------------------------------------------------------------- */
 /**
  * Callback for the parameter dialog.
  * Validate regex, prevent closing the dialog if it's invalid.
@@ -424,27 +450,27 @@ find_check_regexp (const char *r)
 static cb_ret_t
 find_parm_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *data)
 {
+    /* FIXME: HACK: use first draw of dialog to resolve widget state dependencies.
+     * Use this time moment to check input field content. We can't do that in MSG_INIT
+     * because history is not loaded yet.
+     * Probably, we want new MSG_ACTIVATE message as complement to MSG_VALIDATE one. Or
+     * we could name it MSG_POST_INIT.
+     *
+     * In one or two other places we use MSG_IDLE instead of MSG_DRAW for a similar
+     * purpose. We should remember to fix those places too when we introduce the new
+     * message.
+     */
+    static gboolean first_draw = TRUE;
+
     WDialog *h = DIALOG (w);
 
     switch (msg)
     {
-    case MSG_ACTION:
-        if (sender == WIDGET (content_use_cbox))
-        {
-            gboolean disable = !(content_use_cbox->state & C_BOOL);
+    case MSG_INIT:
+        first_draw = TRUE;
+        return MSG_HANDLED;
 
-            widget_disable (WIDGET (in_with), disable);
-            widget_disable (WIDGET (content_first_hit_cbox), disable);
-            widget_disable (WIDGET (content_regexp_cbox), disable);
-            widget_disable (WIDGET (content_case_sens_cbox), disable);
-#ifdef HAVE_CHARSET
-            widget_disable (WIDGET (content_all_charsets_cbox), disable);
-#endif
-            widget_disable (WIDGET (content_whole_words_cbox), disable);
-
-            return MSG_HANDLED;
-        }
-
+    case MSG_NOTIFY:
         if (sender == WIDGET (ignore_dirs_cbox))
         {
             gboolean disable = !(ignore_dirs_cbox->state & C_BOOL);
@@ -455,7 +481,6 @@ find_parm_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, voi
         }
 
         return MSG_NOT_HANDLED;
-
 
     case MSG_VALIDATE:
         if (h->ret_value != B_ENTER)
@@ -472,8 +497,8 @@ find_parm_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, voi
         }
 
         /* check content regexp */
-        if ((content_use_cbox->state & C_BOOL) && (content_regexp_cbox->state & C_BOOL)
-            && (in_with->buffer[0] != '\0') && !find_check_regexp (in_with->buffer))
+        if ((content_regexp_cbox->state & C_BOOL) && (in_with->buffer[0] != '\0')
+            && !find_check_regexp (in_with->buffer))
         {
             h->state = DLG_ACTIVE;      /* Don't stop the dialog */
             message (D_ERROR, MSG_ERROR, _("Malformed regular expression"));
@@ -482,6 +507,23 @@ find_parm_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, voi
         }
 
         return MSG_HANDLED;
+
+    case MSG_POST_KEY:
+        if (h->current->data == in_name)
+            find_toggle_enable_params ();
+        else if (h->current->data == in_with)
+            find_toggle_enable_content ();
+        return MSG_HANDLED;
+
+    case MSG_DRAW:
+        if (first_draw)
+        {
+            find_toggle_enable_params ();
+            find_toggle_enable_content ();
+        }
+
+        first_draw = FALSE;
+        /* fall through to call MSG_DRAW default handler */
 
     default:
         return dlg_default_callback (w, sender, msg, parm, data);
@@ -507,9 +549,9 @@ find_parameters (char **start_dir, ssize_t * start_dir_len,
 {
     /* Size of the find parameters window */
 #ifdef HAVE_CHARSET
-    const int lines = 19;
-#else
     const int lines = 18;
+#else
+    const int lines = 17;
 #endif
     int cols = 68;
 
@@ -543,8 +585,6 @@ find_parameters (char **start_dir, ssize_t * start_dir_len,
     int y1, y2, x1, x2;
     /* column width */
     int cw;
-
-    gboolean disable;
 
 #ifdef ENABLE_NLS
     {
@@ -610,8 +650,6 @@ find_parameters (char **start_dir, ssize_t * start_dir_len,
     if (in_start_dir == NULL)
         in_start_dir = g_strdup (".");
 
-    disable = !options.content_use;
-
     find_dlg =
         dlg_create (TRUE, 0, 0, lines, cols, dialog_colors, find_parm_callback, NULL, "[Find File]",
                     _("Find File"), DLG_CENTER);
@@ -637,7 +675,6 @@ find_parameters (char **start_dir, ssize_t * start_dir_len,
         input_new (y1++, x1, input_colors, cols - 6,
                    options.ignore_dirs != NULL ? options.ignore_dirs : "", "ignoredirs",
                    INPUT_COMPLETE_CD | INPUT_COMPLETE_FILENAMES);
-    widget_disable (WIDGET (in_ignore), !options.ignore_dirs_enable);
     add_widget (find_dlg, in_ignore);
 
     add_widget (find_dlg, hline_new (y1++, -1, -1));
@@ -658,11 +695,7 @@ find_parameters (char **start_dir, ssize_t * start_dir_len,
         input_new (y2++, x2, input_colors, cw, INPUT_LAST_TEXT,
                    MC_HISTORY_SHARED_SEARCH, INPUT_COMPLETE_NONE);
     in_with->label = content_label;
-    widget_disable (WIDGET (in_with), disable);
     add_widget (find_dlg, in_with);
-
-    content_use_cbox = check_new (y2++, x2, options.content_use, content_use_label);
-    add_widget (find_dlg, content_use_cbox);
 
     /* Continue 1st column */
     recursively_cbox = check_new (y1++, x1, options.find_recurs, file_recurs_label);
@@ -684,29 +717,24 @@ find_parameters (char **start_dir, ssize_t * start_dir_len,
     add_widget (find_dlg, skip_hidden_cbox);
 
     /* Continue 2nd column */
+    content_whole_words_cbox =
+        check_new (y2++, x2, options.content_whole_words, content_whole_words_label);
+    add_widget (find_dlg, content_whole_words_cbox);
+
     content_regexp_cbox = check_new (y2++, x2, options.content_regexp, content_regexp_label);
-    widget_disable (WIDGET (content_regexp_cbox), disable);
     add_widget (find_dlg, content_regexp_cbox);
 
     content_case_sens_cbox = check_new (y2++, x2, options.content_case_sens, content_case_label);
-    widget_disable (WIDGET (content_case_sens_cbox), disable);
     add_widget (find_dlg, content_case_sens_cbox);
 
 #ifdef HAVE_CHARSET
     content_all_charsets_cbox =
         check_new (y2++, x2, options.content_all_charsets, content_all_charsets_label);
-    widget_disable (WIDGET (content_all_charsets_cbox), disable);
     add_widget (find_dlg, content_all_charsets_cbox);
 #endif
 
-    content_whole_words_cbox =
-        check_new (y2++, x2, options.content_whole_words, content_whole_words_label);
-    widget_disable (WIDGET (content_whole_words_cbox), disable);
-    add_widget (find_dlg, content_whole_words_cbox);
-
     content_first_hit_cbox =
         check_new (y2++, x2, options.content_first_hit, content_first_hit_label);
-    widget_disable (WIDGET (content_first_hit_cbox), disable);
     add_widget (find_dlg, content_first_hit_cbox);
 
     /* buttons */
@@ -757,7 +785,6 @@ find_parameters (char **start_dir, ssize_t * start_dir_len,
             options.file_all_charsets = file_all_charsets_cbox->state & C_BOOL;
             options.content_all_charsets = content_all_charsets_cbox->state & C_BOOL;
 #endif
-            options.content_use = content_use_cbox->state & C_BOOL;
             options.content_case_sens = content_case_sens_cbox->state & C_BOOL;
             options.content_regexp = content_regexp_cbox->state & C_BOOL;
             options.content_first_hit = content_first_hit_cbox->state & C_BOOL;
@@ -770,10 +797,12 @@ find_parameters (char **start_dir, ssize_t * start_dir_len,
             g_free (options.ignore_dirs);
             options.ignore_dirs = g_strdup (in_ignore->buffer);
 
-            *content = (options.content_use && in_with->buffer[0] != '\0')
-                ? g_strdup (in_with->buffer) : NULL;
+            *content = in_with->buffer[0] != '\0' ? g_strdup (in_with->buffer) : NULL;
+            if (in_name->buffer[0] != '\0')
+                *pattern = g_strdup (in_name->buffer);
+            else
+                *pattern = g_strdup (options.file_pattern ? "*" : ".*");
             *start_dir = in_start->buffer[0] != '\0' ? in_start->buffer : (char *) ".";
-            *pattern = g_strdup (in_name->buffer);
             if (in_start_dir != INPUT_LAST_TEXT)
                 g_free (in_start_dir);
             in_start_dir = g_strdup (*start_dir);
@@ -1623,7 +1652,7 @@ run_process (void)
 {
     int ret;
 
-    search_content_handle = mc_search_new (content_pattern, -1, NULL);
+    search_content_handle = mc_search_new (content_pattern, NULL);
     if (search_content_handle)
     {
         search_content_handle->search_type =
@@ -1634,7 +1663,7 @@ run_process (void)
         search_content_handle->is_all_charsets = options.content_all_charsets;
 #endif
     }
-    search_file_handle = mc_search_new (find_pattern, -1, NULL);
+    search_file_handle = mc_search_new (find_pattern, NULL);
     search_file_handle->search_type = options.file_pattern ? MC_SEARCH_T_GLOB : MC_SEARCH_T_REGEX;
     search_file_handle->is_case_sensitive = options.file_case_sens;
 #ifdef HAVE_CHARSET
@@ -1679,7 +1708,7 @@ do_find (const char *start_dir, ssize_t start_dir_len, const char *ignore_dirs,
     find_pattern = (char *) pattern;
 
     content_pattern = NULL;
-    if (options.content_use && content != NULL && str_is_valid_string (content))
+    if (content != NULL && str_is_valid_string (content))
         content_pattern = g_strdup (content);
 
     init_find_vars ();

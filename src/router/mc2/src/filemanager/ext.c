@@ -1,7 +1,7 @@
 /*
    Extension dependent execution.
 
-   Copyright (C) 1994-2015
+   Copyright (C) 1994-2016
    Free Software Foundation, Inc.
 
    Written by:
@@ -648,7 +648,7 @@ regex_check_type (const vfs_path_t * filename_vpath, const char *ptr, gboolean c
         localfile_vpath = mc_getlocalcopy (filename_vpath);
         if (localfile_vpath == NULL)
         {
-            mc_propagate_error (mcerror, -1, _("Cannot fetch a local copy of %s"),
+            mc_propagate_error (mcerror, 0, _("Cannot fetch a local copy of %s"),
                                 vfs_path_as_str (filename_vpath));
             return FALSE;
         }
@@ -715,7 +715,7 @@ regex_check_type (const vfs_path_t * filename_vpath, const char *ptr, gboolean c
 
     if (got_data == -1)
     {
-        mc_propagate_error (mcerror, -1, "%s", _("Pipe failed"));
+        mc_propagate_error (mcerror, 0, "%s", _("Pipe failed"));
         return FALSE;
     }
 
@@ -723,7 +723,7 @@ regex_check_type (const vfs_path_t * filename_vpath, const char *ptr, gboolean c
     {
         mc_search_t *search;
 
-        search = mc_search_new (ptr, -1, DEFAULT_CHARSET);
+        search = mc_search_new (ptr, DEFAULT_CHARSET);
         if (search != NULL)
         {
             search->search_type = MC_SEARCH_T_REGEX;
@@ -733,7 +733,7 @@ regex_check_type (const vfs_path_t * filename_vpath, const char *ptr, gboolean c
         }
         else
         {
-            mc_propagate_error (mcerror, -1, "%s", _("Regular expression error"));
+            mc_propagate_error (mcerror, 0, "%s", _("Regular expression error"));
         }
     }
 
@@ -770,14 +770,15 @@ regex_command_for (void *target, const vfs_path_t * filename_vpath, const char *
                    vfs_path_t ** script_vpath)
 {
     char *p, *q, *r, c;
+    const char *filename;
     size_t file_len;
     gboolean found = FALSE;
     gboolean error_flag = FALSE;
     int ret = 0;
     struct stat mystat;
-    int view_at_line_number;
-    char *include_target;
-    int include_target_len;
+    int view_at_line_number = 0;
+    char *include_target = NULL;
+    size_t include_target_len = 0;
     gboolean have_type = FALSE; /* Flag used by regex_check_type() */
 
     if (filename_vpath == NULL)
@@ -791,10 +792,6 @@ regex_command_for (void *target, const vfs_path_t * filename_vpath, const char *
     {
         view_at_line_number = atoi (action + 5);
         action = "View";
-    }
-    else
-    {
-        view_at_line_number = 0;
     }
 
     if (data == NULL)
@@ -868,9 +865,9 @@ regex_command_for (void *target, const vfs_path_t * filename_vpath, const char *
 
     mc_stat (filename_vpath, &mystat);
 
-    include_target = NULL;
-    include_target_len = 0;
-    file_len = vfs_path_len (filename_vpath);
+    filename = vfs_path_get_last_path_str (filename_vpath);
+    filename = x_basename (filename);
+    file_len = strlen (filename);
 
     for (p = data; *p != '\0'; p++)
     {
@@ -886,9 +883,8 @@ regex_command_for (void *target, const vfs_path_t * filename_vpath, const char *
         if (*p == '\0')
             break;
         if (p == q)
-        {                       /* i.e. starts in the first column, should be
-                                 * keyword/descNL
-                                 */
+        {
+            /* i.e. starts in the first column, should be keyword/descNL */
             gboolean case_insense;
 
             found = FALSE;
@@ -897,7 +893,7 @@ regex_command_for (void *target, const vfs_path_t * filename_vpath, const char *
                 q = strchr (p, '\0');
             c = *q;
             *q = '\0';
-            if (include_target)
+            if (include_target != NULL)
             {
                 if ((strncmp (p, "include/", 8) == 0)
                     && (strncmp (p + 8, include_target, include_target_len) == 0))
@@ -912,13 +908,12 @@ regex_command_for (void *target, const vfs_path_t * filename_vpath, const char *
                 if (case_insense)
                     p += 2;
 
-                search = mc_search_new (p, -1, DEFAULT_CHARSET);
+                search = mc_search_new (p, DEFAULT_CHARSET);
                 if (search != NULL)
                 {
                     search->search_type = MC_SEARCH_T_REGEX;
                     search->is_case_sensitive = !case_insense;
-                    found =
-                        mc_search_run (search, vfs_path_as_str (filename_vpath), 0, file_len, NULL);
+                    found = mc_search_run (search, filename, 0, file_len, NULL);
                     mc_search_free (search);
                 }
             }
@@ -943,14 +938,12 @@ regex_command_for (void *target, const vfs_path_t * filename_vpath, const char *
 
                 if (*p == '.' && file_len >= (size_t) (q - p))
                 {
-                    if (cmp_func
-                        (p, vfs_path_as_str (filename_vpath) + file_len - (q - p), q - p) == 0)
+                    if (cmp_func (p, filename + file_len - (q - p), q - p) == 0)
                         found = TRUE;
                 }
                 else
                 {
-                    if ((size_t) (q - p) == file_len
-                        && cmp_func (p, vfs_path_as_str (filename_vpath), q - p) == 0)
+                    if ((size_t) (q - p) == file_len && cmp_func (p, filename, file_len) == 0)
                         found = TRUE;
                 }
             }
@@ -972,9 +965,6 @@ regex_command_for (void *target, const vfs_path_t * filename_vpath, const char *
                 found = TRUE;
 
             *q = c;
-            p = q;
-            if (*p == '\0')
-                break;
         }
         else
         {                       /* List of actions */
@@ -995,11 +985,11 @@ regex_command_for (void *target, const vfs_path_t * filename_vpath, const char *
 
                         include_target = p + 8;
                         t = strchr (include_target, '\n');
+
                         if (t != NULL)
-                            *t = '\0';
-                        include_target_len = strlen (include_target);
-                        if (t != NULL)
-                            *t = '\n';
+                            include_target_len = (size_t) (t - include_target);
+                        else
+                            include_target_len = strlen (include_target);
 
                         *r = c;
                         p = q;
@@ -1039,14 +1029,14 @@ regex_command_for (void *target, const vfs_path_t * filename_vpath, const char *
                     }
                 }
             }
-            p = q;
-            if (*p == '\0')
-                break;
         }
+
+        p = q;
+        if (*p == '\0')
+            break;
     }
-    if (error_flag)
-        ret = -1;
-    return ret;
+
+    return (error_flag ? -1 : ret);
 }
 
 /* --------------------------------------------------------------------------------------------- */

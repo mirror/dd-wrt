@@ -54,6 +54,8 @@ enum compression_type
     COMPRESSION_GZIP,
     COMPRESSION_BZIP,
     COMPRESSION_BZIP2,
+    COMPRESSION_LZIP,
+    COMPRESSION_LZ4,
     COMPRESSION_LZMA,
     COMPRESSION_XZ
 };
@@ -170,7 +172,8 @@ char *diff_two_paths (const vfs_path_t * vpath1, const vfs_path_t * vpath2);
 /* Returns the basename of fname. The result is a pointer into fname. */
 const char *x_basename (const char *fname);
 
-char *load_mc_home_file (const char *from, const char *filename, char **allocated_filename);
+char *load_mc_home_file (const char *from, const char *filename, char **allocated_filename,
+                         size_t * length);
 
 /* uid/gid managing */
 void init_groups (void);

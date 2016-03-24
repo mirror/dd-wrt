@@ -3,14 +3,15 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
+# Henry Jensen <henry@madsen-jensen.dk>, 2016
 # Joe Hansen <joedalton2@yahoo.dk>, 2014
 # Slava Zanko <slavazanko@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2015-11-06 14:43+0300\n"
-"PO-Revision-Date: 2015-06-04 08:38+0000\n"
+"POT-Creation-Date: 2016-03-12 17:34+0100\n"
+"PO-Revision-Date: 2016-03-06 21:29+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Danish (http://www.transifex.com/mc/mc/language/da/)\n"
 "Language: da\n"
@@ -74,7 +75,7 @@ msgid "Cannot create %s directory"
 msgstr "Kan ikke oprette mappen %s"
 
 msgid "FATAL: not a directory:"
-msgstr ""
+msgstr "KRITISK: Ikke en folder:"
 
 #, c-format
 msgid "An error occurred while migrating user settings: %s"
@@ -344,7 +345,7 @@ msgid "Colon"
 msgstr "Kolon"
 
 msgid "Semicolon"
-msgstr ""
+msgstr "Semikolon"
 
 msgid "Exclamation mark"
 msgstr "Udråbstegn"
@@ -484,15 +485,12 @@ msgid "Directory cache expired for %s"
 msgstr "Mellemlagermappe udløbet for %s"
 
 #, c-format
-msgid "%s: %s: %s %3d%% %<PRIuMAX> %s"
-msgstr ""
-
-msgid "bytes transferred"
-msgstr "byte overført"
+msgid "%s: %s: %s %3d%% (%lld) bytes transferred"
+msgstr "%s: %s: %s %3d%% (%lld) bytes overført"
 
 #, c-format
-msgid "%s: %s: %s %<PRIuMAX> %s"
-msgstr ""
+msgid "%s: %s: %s %lld bytes transferred"
+msgstr "%s: %s: %s %lld bytes overført"
 
 msgid "Starting linear transfer..."
 msgstr "Begynder lineær overførsel..."
@@ -575,8 +573,8 @@ msgid "Error"
 msgstr "Fejl"
 
 #, c-format
-msgid "%d: %s"
-msgstr "%d: %s"
+msgid "%s (%d)"
+msgstr ""
 
 msgid "&Abort"
 msgstr "&Afbryd"
@@ -1414,7 +1412,7 @@ msgid "&Resize"
 msgstr "&Ændr størrelse"
 
 msgid "&Toggle fullscreen"
-msgstr ""
+msgstr "&Skift fuldskærm"
 
 msgid "&Next"
 msgstr "&Næste"
@@ -1538,14 +1536,14 @@ msgid ""
 "written for the Midnight Commander."
 msgstr ""
 
-msgid "Copyright (C) 1996-2015 the Free Software Foundation"
+msgid "Copyright (C) 1996-2016 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
 msgstr "Om"
 
 msgid "Open files"
-msgstr ""
+msgstr "Åbn filer"
 
 msgid "Edit: "
 msgstr "Rediger: "
@@ -1572,76 +1570,76 @@ msgid "Breton"
 msgstr ""
 
 msgid "Czech"
-msgstr ""
+msgstr "Tjekkisk"
 
 msgid "Welsh"
 msgstr ""
 
 msgid "Danish"
-msgstr ""
+msgstr "Dansk"
 
 msgid "German"
-msgstr ""
+msgstr "Tysk"
 
 msgid "Greek"
-msgstr ""
+msgstr "Græsk"
 
 msgid "English"
-msgstr ""
+msgstr "Engelsk"
 
 msgid "British English"
-msgstr ""
+msgstr "Britisk Engelsk"
 
 msgid "Canadian English"
-msgstr ""
+msgstr "Candisk Engelsk"
 
 msgid "American English"
-msgstr ""
+msgstr "Amerikansk Engelsk"
 
 msgid "Esperanto"
 msgstr ""
 
 msgid "Spanish"
-msgstr ""
+msgstr "Spansk"
 
 msgid "Faroese"
-msgstr ""
+msgstr "Færøsk"
 
 msgid "French"
-msgstr ""
+msgstr "Fransk"
 
 msgid "Italian"
-msgstr ""
+msgstr "Italiensk"
 
 msgid "Dutch"
-msgstr ""
+msgstr "Hollandsk"
 
 msgid "Norwegian"
-msgstr ""
+msgstr "Norsk"
 
 msgid "Polish"
-msgstr ""
+msgstr "Polsk"
 
 msgid "Portuguese"
-msgstr ""
+msgstr "Portugisisk"
 
 msgid "Romanian"
-msgstr ""
+msgstr "Rumænsk"
 
 msgid "Russian"
-msgstr ""
+msgstr "Russisk"
 
 msgid "Slovak"
-msgstr ""
+msgstr "Slovakisk"
 
 msgid "Swedish"
-msgstr ""
+msgstr "Svensk"
 
 msgid "Ukrainian"
-msgstr ""
+msgstr "Ukrainsk"
 
 msgid "&Add word"
-msgstr ""
+msgstr "&Tilføj ord"
 
 msgid "Language"
 msgstr "Sprog"
@@ -1693,7 +1691,7 @@ msgstr "Skallen kører allerede en kommando"
 
 #, c-format
 msgid "Type 'exit' to return to the Midnight Commander"
-msgstr ""
+msgstr "Skriv 'exit' for at vende tilbage til Midnight Commander"
 
 msgid "Set &all"
 msgstr "&Sæt alle"
@@ -1796,7 +1794,7 @@ msgid "Use internal vie&w"
 msgstr "Brug intern &visning"
 
 msgid "A&sk new file name"
-msgstr ""
+msgstr "&Spørg efter nyt fil navn"
 
 msgid "Auto m&enus"
 msgstr "Automatiske &menuer"
@@ -1921,7 +1919,7 @@ msgid "&User defined:"
 msgstr "&Brugerdefineret:"
 
 msgid "columns"
-msgstr ""
+msgstr "kolonner"
 
 msgid "User &mini status"
 msgstr "&Ministatus for bruger"
@@ -2245,6 +2243,10 @@ msgstr ""
 "panelerne kan ikke skiftes."
 
 #, c-format
+msgid "'%s' is not a symbolic link"
+msgstr ""
+
+#, c-format
 msgid "Symlink '%s' points to:"
 msgstr ""
 
@@ -2258,10 +2260,6 @@ msgstr "rediger symbolsk henvisning, kan ikke fjerne %s: %s"
 #, c-format
 msgid "edit symlink: %s"
 msgstr "rediger symbolsk henvisning: %s"
-
-#, c-format
-msgid "'%s' is not a symbolic link"
-msgstr ""
 
 msgid "FTP to machine"
 msgstr "FTP til maskine"
@@ -2582,11 +2580,9 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot read source file\"%s\"\n"
+"Cannot read source file \"%s\"\n"
 "%s"
 msgstr ""
-"Kan ikke læse kildefil »%s«\n"
-"%s"
 
 #, c-format
 msgid ""
@@ -4101,8 +4097,7 @@ msgstr ""
 msgid "sftp: Password is empty."
 msgstr ""
 
-#, c-format
-msgid "sftp: Failure establishing SSH session: (%d)"
+msgid "sftp: Failure establishing SSH session"
 msgstr ""
 
 msgid "sftp: No file handler data present for reading file"

@@ -1,7 +1,7 @@
 /*
    External panelize
 
-   Copyright (C) 1995-2015
+   Copyright (C) 1995-2016
    Free Software Foundation, Inc.
 
    Written by:
@@ -113,9 +113,7 @@ panelize_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void
     switch (msg)
     {
     case MSG_INIT:
-    case MSG_POST_KEY:
-    case MSG_FOCUS:
-        tty_setcolor (MENU_ENTRY_COLOR);
+    case MSG_NOTIFY:           /* MSG_NOTIFY is fired by the listbox to tell us the item has changed. */
         update_command ();
         return MSG_HANDLED;
 
@@ -329,7 +327,7 @@ do_external_panelize (char *command)
     while (TRUE)
     {
         clearerr (external);
-        if (fgets (line, MC_MAXPATHLEN, external) == NULL)
+        if (fgets (line, sizeof (line), external) == NULL)
         {
             if (ferror (external) && errno == EINTR)
                 continue;

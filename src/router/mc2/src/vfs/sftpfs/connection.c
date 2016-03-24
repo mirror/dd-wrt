@@ -1,7 +1,7 @@
 /* Virtual File System: SFTP file system.
    The internal functions: connections
 
-   Copyright (C) 2011-2015
+   Copyright (C) 2011-2016
    Free Software Foundation, Inc.
 
    Written by:
@@ -71,19 +71,19 @@ sftpfs_open_socket (struct vfs_s_super *super, GError ** mcerror)
     char port[BUF_TINY];
     int e;
 
-    mc_return_val_if_error (mcerror, -1);
+    mc_return_val_if_error (mcerror, LIBSSH2_INVALID_SOCKET);
 
     if (super->path_element->host == NULL || *super->path_element->host == '\0')
     {
-        mc_propagate_error (mcerror, -1, "%s", _("sftp: Invalid host name."));
-        return -1;
+        mc_propagate_error (mcerror, 0, "%s", _("sftp: Invalid host name."));
+        return LIBSSH2_INVALID_SOCKET;
     }
 
     sprintf (port, "%hu", (unsigned short) super->path_element->port);
 
     tty_enable_interrupt_key ();        /* clear the interrupt flag */
 
-    memset (&hints, 0, sizeof (struct addrinfo));
+    memset (&hints, 0, sizeof (hints));
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
 
@@ -107,13 +107,15 @@ sftpfs_open_socket (struct vfs_s_super *super, GError ** mcerror)
 
     if (e != 0)
     {
-        mc_propagate_error (mcerror, -1, _("sftp: %s"), gai_strerror (e));
-        my_socket = -1;
+        mc_propagate_error (mcerror, e, _("sftp: %s"), gai_strerror (e));
+        my_socket = LIBSSH2_INVALID_SOCKET;
         goto ret;
     }
 
     for (curr_res = res; curr_res != NULL; curr_res = curr_res->ai_next)
     {
+        int save_errno;
+
         my_socket = socket (curr_res->ai_family, curr_res->ai_socktype, curr_res->ai_protocol);
 
         if (my_socket < 0)
@@ -122,7 +124,7 @@ sftpfs_open_socket (struct vfs_s_super *super, GError ** mcerror)
                 continue;
 
             vfs_print_message (_("sftp: %s"), unix_error_string (errno));
-            my_socket = -1;
+            my_socket = LIBSSH2_INVALID_SOCKET;
             goto ret;
         }
 
@@ -131,17 +133,19 @@ sftpfs_open_socket (struct vfs_s_super *super, GError ** mcerror)
         if (connect (my_socket, curr_res->ai_addr, curr_res->ai_addrlen) >= 0)
             break;
 
+        save_errno = errno;
+
         close (my_socket);
 
-        if (errno == EINTR && tty_got_interrupt ())
-            mc_propagate_error (mcerror, -1, "%s", _("sftp: connection interrupted by user"));
+        if (save_errno == EINTR && tty_got_interrupt ())
+            mc_propagate_error (mcerror, 0, "%s", _("sftp: connection interrupted by user"));
         else if (res->ai_next == NULL)
-            mc_propagate_error (mcerror, -1, _("sftp: connection to server failed: %s"),
-                                unix_error_string (errno));
+            mc_propagate_error (mcerror, save_errno, _("sftp: connection to server failed: %s"),
+                                unix_error_string (save_errno));
         else
             continue;
 
-        my_socket = -1;
+        my_socket = LIBSSH2_INVALID_SOCKET;
         break;
     }
 
@@ -170,6 +174,7 @@ sftpfs_recognize_auth_types (struct vfs_s_super *super)
     super_data->auth_type = NONE;
 
     /* check what authentication methods are available */
+    /* userauthlist is internally managed by libssh2 and freed by libssh2_session_free() */
     userauthlist = libssh2_userauth_list (super_data->session, super->path_element->user,
                                           strlen (super->path_element->user));
 
@@ -183,8 +188,6 @@ sftpfs_recognize_auth_types (struct vfs_s_super *super)
 
     if ((super_data->config_auth_type & AGENT) != 0)
         super_data->auth_type |= AGENT;
-
-    g_free (userauthlist);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -276,7 +279,7 @@ sftpfs_open_connection_ssh_key (struct vfs_s_super *super, GError ** mcerror)
     g_free (p);
 
     if (passwd == NULL)
-        mc_propagate_error (mcerror, -1, "%s", _("sftp: Passphrase is empty."));
+        mc_propagate_error (mcerror, 0, "%s", _("sftp: Passphrase is empty."));
     else
     {
         ret_value = (libssh2_userauth_publickey_fromfile (super_data->session,
@@ -327,7 +330,7 @@ sftpfs_open_connection_ssh_password (struct vfs_s_super *super, GError ** mcerro
     g_free (p);
 
     if (passwd == NULL)
-        mc_propagate_error (mcerror, -1, "%s", _("sftp: Password is empty."));
+        mc_propagate_error (mcerror, 0, "%s", _("sftp: Password is empty."));
     else
     {
         while ((rc = libssh2_userauth_password (super_data->session, super->path_element->user,
@@ -368,26 +371,31 @@ sftpfs_open_connection (struct vfs_s_super *super, GError ** mcerror)
 
     super_data = (sftpfs_super_data_t *) super->data;
 
-    /* Create a session instance */
-    super_data->session = libssh2_session_init ();
-    if (super_data->session == NULL)
-        return (-1);
-
     /*
      * The application code is responsible for creating the socket
      * and establishing the connection
      */
     super_data->socket_handle = sftpfs_open_socket (super, mcerror);
-    if (super_data->socket_handle == -1)
+    if (super_data->socket_handle == LIBSSH2_INVALID_SOCKET)
+        return (-1);
+
+    /* Create a session instance */
+    super_data->session = libssh2_session_init ();
+    if (super_data->session == NULL)
         return (-1);
 
     /* ... start it up. This will trade welcome banners, exchange keys,
      * and setup crypto, compression, and MAC layers
      */
+#if LIBSSH2_VERSION_NUM < 0x010208
     rc = libssh2_session_startup (super_data->session, super_data->socket_handle);
+#else
+    rc = libssh2_session_handshake (super_data->session,
+                                    (libssh2_socket_t) super_data->socket_handle);
+#endif
     if (rc != 0)
     {
-        mc_propagate_error (mcerror, -1, _("sftp: Failure establishing SSH session: (%d)"), rc);
+        mc_propagate_error (mcerror, rc, "%s", _("sftp: Failure establishing SSH session"));
         return (-1);
     }
 
@@ -430,14 +438,18 @@ sftpfs_close_connection (struct vfs_s_super *super, const char *shutdown_message
 {
     sftpfs_super_data_t *super_data;
 
-    mc_return_if_error (mcerror);
+    /* no mc_return_*_if_error() here because of abort open_connection handling too */
+    (void) mcerror;
 
     super_data = (sftpfs_super_data_t *) super->data;
     if (super_data == NULL)
         return;
 
-    vfs_path_element_free (super_data->original_connection_info);
-    super_data->original_connection_info = NULL;
+    if (super_data->sftp_session != NULL)
+    {
+        libssh2_sftp_shutdown (super_data->sftp_session);
+        super_data->sftp_session = NULL;
+    }
 
     if (super_data->agent != NULL)
     {
@@ -446,24 +458,19 @@ sftpfs_close_connection (struct vfs_s_super *super, const char *shutdown_message
         super_data->agent = NULL;
     }
 
-    if (super_data->sftp_session != NULL)
-    {
-        libssh2_sftp_shutdown (super_data->sftp_session);
-        super_data->sftp_session = NULL;
-    }
+    super_data->fingerprint = NULL;
 
     if (super_data->session != NULL)
     {
         libssh2_session_disconnect (super_data->session, shutdown_message);
+        libssh2_session_free (super_data->session);
         super_data->session = NULL;
     }
 
-    super_data->fingerprint = NULL;
-
-    if (super_data->socket_handle != -1)
+    if (super_data->socket_handle != LIBSSH2_INVALID_SOCKET)
     {
         close (super_data->socket_handle);
-        super_data->socket_handle = -1;
+        super_data->socket_handle = LIBSSH2_INVALID_SOCKET;
     }
 }
 

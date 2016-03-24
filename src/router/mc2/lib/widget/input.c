@@ -1,7 +1,7 @@
 /*
    Widgets for the Midnight Commander
 
-   Copyright (C) 1994-2015
+   Copyright (C) 1994-2016
    Free Software Foundation, Inc.
 
    Authors:
@@ -10,7 +10,7 @@
    Jakub Jelinek, 1995
    Andrej Borsenkow, 1996
    Norbert Warmuth, 1997
-   Andrew Borodin <aborodin@vmail.ru>, 2009-2014
+   Andrew Borodin <aborodin@vmail.ru>, 2009-2016
 
    This file is part of the Midnight Commander.
 
@@ -55,7 +55,7 @@
 
 /*** global variables ****************************************************************************/
 
-int quote = 0;
+gboolean quote = FALSE;
 
 const global_keymap_t *input_map = NULL;
 
@@ -679,7 +679,7 @@ port_region_marked_for_delete (WInput * in)
 /* --------------------------------------------------------------------------------------------- */
 
 static cb_ret_t
-input_execute_cmd (WInput * in, unsigned long command)
+input_execute_cmd (WInput * in, long command)
 {
     cb_ret_t res = MSG_HANDLED;
 
@@ -1067,9 +1067,9 @@ input_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *d
     case MSG_KEY:
         if (parm == XCTRL ('q'))
         {
-            quote = 1;
+            quote = TRUE;
             v = input_handle_char (in, ascii_alpha_to_cntrl (tty_getch ()));
-            quote = 0;
+            quote = FALSE;
             return v;
         }
 
@@ -1081,9 +1081,9 @@ input_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *d
         /* When pasting multiline text, insert literal Enter */
         if ((parm & ~KEY_M_MASK) == '\n')
         {
-            quote = 1;
+            quote = TRUE;
             v = input_handle_char (in, '\n');
-            quote = 0;
+            quote = FALSE;
             return v;
         }
 
@@ -1133,14 +1133,14 @@ cb_ret_t
 input_handle_char (WInput * in, int key)
 {
     cb_ret_t v;
-    unsigned long command;
+    long command;
 
-    if (quote != 0)
+    if (quote)
     {
         input_free_completions (in);
         v = insert_char (in, key);
         input_update (in, TRUE);
-        quote = 0;
+        quote = FALSE;
         return v;
     }
 
@@ -1177,7 +1177,7 @@ input_handle_char (WInput * in, int key)
 int
 input_key_is_in_map (WInput * in, int key)
 {
-    unsigned long command;
+    long command;
 
     (void) in;
 
