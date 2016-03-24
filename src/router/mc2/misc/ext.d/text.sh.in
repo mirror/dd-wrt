@@ -22,6 +22,12 @@ get_unpacker() {
     man.bz2)
         unpacker="bzip2 -dc"
         ;;
+    man.lz)
+        unpacker="lzip -dc"
+        ;;
+    man.lz4)
+        unpacker="lz4 -dc"
+        ;;
     man.lzma)
         unpacker="lzma -dc"
         ;;
@@ -45,7 +51,7 @@ do_view_action() {
             cat "${MC_EXT_FILENAME}"
             ;;
         *)
-            MANROFFOPT=-c MAN_KEEP_FORMATTING=1 man -P cat -l "${MC_EXT_FILENAME}"
+            MANROFFOPT=-c MAN_KEEP_FORMATTING=1 man -P cat "${MC_EXT_FILENAME}"
             ;;
         esac
         ;;
@@ -58,7 +64,7 @@ do_view_action() {
     nroff.ms)
         nroff @MAN_FLAGS@ -ms "${MC_EXT_FILENAME}"
         ;;
-    man.gz|man.bz|man.bz2|man.lzma|man.xz)
+    man.gz|man.bz|man.bz2|man.lz|man.lz4|man.lzma|man.xz)
         case "${MC_EXT_FILENAME}" in
         */log/*|*/logs/*)
             ${unpacker} "${MC_EXT_FILENAME}"
@@ -66,7 +72,7 @@ do_view_action() {
         *)
             # "man" takes care of uncompressing.
             # This way the stdin is left intact so the correct width is used.
-            MANROFFOPT=-c MAN_KEEP_FORMATTING=1 man -P cat -l "${MC_EXT_FILENAME}"
+            MANROFFOPT=-c MAN_KEEP_FORMATTING=1 man -P cat "${MC_EXT_FILENAME}"
             ;;
         esac
         ;;
@@ -105,7 +111,7 @@ do_open_action() {
     nroff.ms)
         nroff @MAN_FLAGS@ -ms "${MC_EXT_FILENAME}" | ${pager}
         ;;
-    man.gz|man.bz|man.bz2|man.lzma|man.xz)
+    man.gz|man.bz|man.bz2|man.lz|man.lz4|man.lzma|man.xz)
         case "${MC_EXT_FILENAME}" in
         */log/*|*/logs/*)
             ${unpacker} "${MC_EXT_FILENAME}"
@@ -135,7 +141,7 @@ view)
     do_view_action "${filetype}"
     ;;
 open)
-    ("${MC_XDG_OPEN}" "${MC_EXT_FILENAME}" >/dev/null 2>&1 &) || \
+    ("${MC_XDG_OPEN}" "${MC_EXT_FILENAME}" >/dev/null 2>&1) || \
         do_open_action "${filetype}" "${pager}"
     ;;
 *)

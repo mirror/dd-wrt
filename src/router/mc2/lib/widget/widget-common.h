@@ -33,9 +33,9 @@ typedef enum
     MSG_HOTKEY_HANDLED,         /* A widget has got the hotkey */
     MSG_UNHANDLED_KEY,          /* Key that no widget handled */
     MSG_POST_KEY,               /* The key has been handled */
-    MSG_ACTION,                 /* Send to widget to handle command or
-                                 * state of check- and radiobuttons has changed
-                                 * and listbox current entry has changed */
+    MSG_ACTION,                 /* Send to widget to handle command */
+    MSG_NOTIFY,                 /* Typically sent to dialog to inform it of state-change
+                                 * of listboxes, check- and radiobuttons. */
     MSG_CURSOR,                 /* Sent to widget to position the cursor */
     MSG_IDLE,                   /* The idle state is active */
     MSG_RESIZE,                 /* Screen size has changed */
@@ -60,6 +60,7 @@ typedef enum
 /* Widget options */
 typedef enum
 {
+    W_DEFAULT = (0 << 0),
     W_WANT_HOTKEY = (1 << 1),
     W_WANT_CURSOR = (1 << 2),
     W_WANT_IDLE = (1 << 3),
@@ -104,7 +105,7 @@ struct Widget
     widget_cb_fn callback;
     mouse_h mouse;
     void (*set_options) (Widget * w, widget_options_t options, gboolean enable);
-    struct WDialog *owner;
+    WDialog *owner;
 };
 
 /* structure for label (caption) with hotkey, if original text does not contain

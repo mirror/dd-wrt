@@ -3,14 +3,14 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
-# Keith Bowes <zooplah@gmail.com>, 2011
+# Keith Bowes <zooplah@gmail.com>, 2011,2016
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2015-11-06 14:43+0300\n"
-"PO-Revision-Date: 2015-06-20 23:14+0000\n"
-"Last-Translator: Keith Bowes <zooplah@gmail.com>\n"
+"POT-Creation-Date: 2016-03-12 17:34+0100\n"
+"PO-Revision-Date: 2016-03-06 21:29+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Esperanto (http://www.transifex.com/mc/mc/language/eo/)\n"
 "Language: eo\n"
 "MIME-Version: 1.0\n"
@@ -489,15 +489,12 @@ msgid "Directory cache expired for %s"
 msgstr "Dosieruja tenejo eksvalidiĝis por %s"
 
 #, c-format
-msgid "%s: %s: %s %3d%% %<PRIuMAX> %s"
-msgstr ""
-
-msgid "bytes transferred"
-msgstr "bajtoj transigitaj"
+msgid "%s: %s: %s %3d%% (%lld) bytes transferred"
+msgstr "%s: %s: %s %3d%% (%lld) bajtoj transigitaj"
 
 #, c-format
-msgid "%s: %s: %s %<PRIuMAX> %s"
-msgstr ""
+msgid "%s: %s: %s %lld bytes transferred"
+msgstr "%s: %s: %s %lld bajtoj transigitaj"
 
 msgid "Starting linear transfer..."
 msgstr "Komencanta linian transigon..."
@@ -580,8 +577,8 @@ msgid "Error"
 msgstr "Eraro"
 
 #, c-format
-msgid "%d: %s"
-msgstr "%d: %s"
+msgid "%s (%d)"
+msgstr ""
 
 msgid "&Abort"
 msgstr "Ĉ&esigi"
@@ -1579,9 +1576,9 @@ msgstr ""
 "Afabla tekstoredaktilo\n"
 "verkita por Midnight Commander."
 
-msgid "Copyright (C) 1996-2015 the Free Software Foundation"
+msgid "Copyright (C) 1996-2016 the Free Software Foundation"
 msgstr ""
-"Kopirajto © 1996–2015 Free Software Foundation (Fondaĵo pri liberaj "
+"Kopirajto © 1996–2016 Free Software Foundation (Fondaĵo pri liberaj "
 "programoj)"
 
 msgid "About"
@@ -2287,6 +2284,10 @@ msgstr ""
 "la flankojn oni ne povis inversigi."
 
 #, c-format
+msgid "'%s' is not a symbolic link"
+msgstr "'%s' ne estas mola ligilo"
+
+#, c-format
 msgid "Symlink '%s' points to:"
 msgstr "Mola ligilo '%s' alidirektas al:"
 
@@ -2300,10 +2301,6 @@ msgstr "redakti molan ligilon, ne eblas forigi %s: %s"
 #, c-format
 msgid "edit symlink: %s"
 msgstr "redakti molan ligilon: %s"
-
-#, c-format
-msgid "'%s' is not a symbolic link"
-msgstr "'%s' ne estas mola ligilo"
 
 msgid "FTP to machine"
 msgstr "FTP al servilo"
@@ -2508,9 +2505,9 @@ msgid ""
 "are the same file"
 msgstr ""
 "\"%s\"\n"
-"and\n"
+"kaj\n"
 "\"%s\"\n"
-"are the same file"
+"estas la sama dosiero"
 
 #, c-format
 msgid "Cannot overwrite directory \"%s\""
@@ -2633,11 +2630,9 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot read source file\"%s\"\n"
+"Cannot read source file \"%s\"\n"
 "%s"
 msgstr ""
-"Ne eblas legi fontan dosieron \"%s\"\n"
-"%s"
 
 #, c-format
 msgid ""
@@ -4165,9 +4160,8 @@ msgstr "sftp: Enmetu pasvorton por %s"
 msgid "sftp: Password is empty."
 msgstr "sftp: Pasvorto estas vaka."
 
-#, c-format
-msgid "sftp: Failure establishing SSH session: (%d)"
-msgstr "sftp: Malsukcesis starigi SSH-seancon: (%d)"
+msgid "sftp: Failure establishing SSH session"
+msgstr "sftp: Malsukcesis starigi SSH-seancon"
 
 msgid "sftp: No file handler data present for reading file"
 msgstr "sftp: Neniu dosiertraktila datumo ĉeestas por legi dosieron"

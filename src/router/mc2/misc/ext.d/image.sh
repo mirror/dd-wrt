@@ -13,10 +13,8 @@ do_view_action() {
 
     case "${filetype}" in
     jpeg)
-        which exif >/dev/null 2>&1 && \
-        {
-            identify "${MC_EXT_FILENAME}"; exif "${MC_EXT_FILENAME}" 2>/dev/null
-        }
+        identify "${MC_EXT_FILENAME}"
+        which exif >/dev/null 2>&1 && exif "${MC_EXT_FILENAME}" 2>/dev/null
         ;;
     xpm)
         sxpm "${MC_EXT_FILENAME}"
@@ -57,7 +55,7 @@ view)
     do_view_action "${filetype}"
     ;;
 open)
-    ("${MC_XDG_OPEN}" "${MC_EXT_FILENAME}" >/dev/null 2>&1 &) || \
+    ("${MC_XDG_OPEN}" "${MC_EXT_FILENAME}" >/dev/null 2>&1) || \
         do_open_action "${filetype}"
     ;;
 *)

@@ -1,7 +1,7 @@
 /*
    Widgets for the Midnight Commander
 
-   Copyright (C) 1994-2015
+   Copyright (C) 1994-2016
    Free Software Foundation, Inc.
 
    Authors:
@@ -85,8 +85,8 @@ radio_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *d
         {
         case ' ':
             r->sel = r->pos;
-            send_message (w->owner, w, MSG_ACTION, 0, NULL);
             send_message (w, sender, MSG_FOCUS, ' ', data);
+            send_message (w->owner, w, MSG_NOTIFY, 0, NULL);
             return MSG_HANDLED;
 
         case KEY_UP:
@@ -110,9 +110,9 @@ radio_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *d
         }
 
     case MSG_CURSOR:
-        send_message (w->owner, w, MSG_ACTION, 0, NULL);
         send_message (w, sender, MSG_FOCUS, ' ', data);
         widget_move (r, r->pos, 1);
+        send_message (w->owner, w, MSG_NOTIFY, 0, NULL);
         return MSG_HANDLED;
 
     case MSG_UNFOCUS:

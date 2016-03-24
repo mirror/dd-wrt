@@ -1,7 +1,7 @@
 /*
    Widgets for the Midnight Commander
 
-   Copyright (C) 1994-2015
+   Copyright (C) 1994-2016
    Free Software Foundation, Inc.
 
    Authors:
@@ -76,8 +76,8 @@ check_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *d
             return MSG_NOT_HANDLED;
         c->state ^= C_BOOL;
         c->state ^= C_CHANGE;
-        send_message (WIDGET (w)->owner, w, MSG_ACTION, 0, NULL);
         send_message (w, sender, MSG_FOCUS, ' ', data);
+        send_message (WIDGET (w)->owner, w, MSG_NOTIFY, 0, NULL);
         return MSG_HANDLED;
 
     case MSG_CURSOR:

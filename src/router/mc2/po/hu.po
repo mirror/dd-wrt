@@ -11,9 +11,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2015-11-06 14:43+0300\n"
-"PO-Revision-Date: 2015-06-07 11:33+0000\n"
-"Last-Translator: Rezső Páder <rezso@rezso.net>\n"
+"POT-Creation-Date: 2016-03-12 17:34+0100\n"
+"PO-Revision-Date: 2016-03-06 21:29+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Hungarian (http://www.transifex.com/mc/mc/language/hu/)\n"
 "Language: hu\n"
 "MIME-Version: 1.0\n"
@@ -488,14 +488,11 @@ msgid "Directory cache expired for %s"
 msgstr "A könyvtár gyorstárának adatai elévültek: %s"
 
 #, c-format
-msgid "%s: %s: %s %3d%% %<PRIuMAX> %s"
+msgid "%s: %s: %s %3d%% (%lld) bytes transferred"
 msgstr ""
 
-msgid "bytes transferred"
-msgstr "bájt átvive"
-
 #, c-format
-msgid "%s: %s: %s %<PRIuMAX> %s"
+msgid "%s: %s: %s %lld bytes transferred"
 msgstr ""
 
 msgid "Starting linear transfer..."
@@ -579,8 +576,8 @@ msgid "Error"
 msgstr "Hiba"
 
 #, c-format
-msgid "%d: %s"
-msgstr "%d: %s"
+msgid "%s (%d)"
+msgstr ""
 
 msgid "&Abort"
 msgstr "&Megszakítás"
@@ -1577,8 +1574,8 @@ msgstr ""
 "Felhasználóbarát szövegszerkesztő\n"
 "a Midnight Commander-hez készítve"
 
-msgid "Copyright (C) 1996-2015 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2015 the Free Software Foundation"
+msgid "Copyright (C) 1996-2016 the Free Software Foundation"
+msgstr ""
 
 msgid "About"
 msgstr "Névjegy"
@@ -2282,6 +2279,10 @@ msgstr ""
 "a paneleket nem lehet kikapcsolni."
 
 #, c-format
+msgid "'%s' is not a symbolic link"
+msgstr "\"%s\" nem szimbolikus link"
+
+#, c-format
 msgid "Symlink '%s' points to:"
 msgstr "A \"%s\" szimbolikus link ide mutasson:"
 
@@ -2295,10 +2296,6 @@ msgstr "\"%s\" törlése nem sikerült: %s"
 #, c-format
 msgid "edit symlink: %s"
 msgstr "szimbolikus link módosítása: %s"
-
-#, c-format
-msgid "'%s' is not a symbolic link"
-msgstr "\"%s\" nem szimbolikus link"
 
 msgid "FTP to machine"
 msgstr "FTP-kapcsolat"
@@ -2629,11 +2626,9 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot read source file\"%s\"\n"
+"Cannot read source file \"%s\"\n"
 "%s"
 msgstr ""
-"Nem sikerült olvasni a(z) \"%s\" forrásfájlt. \n"
-"%s"
 
 #, c-format
 msgid ""
@@ -4164,9 +4159,8 @@ msgstr "sftp: Adja meg %s jelszavát"
 msgid "sftp: Password is empty."
 msgstr "sftp: a jelszó üres."
 
-#, c-format
-msgid "sftp: Failure establishing SSH session: (%d)"
-msgstr "stp: Hiba lépett fel az ssh kapcsolat létrehozása közben : (%d)"
+msgid "sftp: Failure establishing SSH session"
+msgstr ""
 
 msgid "sftp: No file handler data present for reading file"
 msgstr "sftp: Nincs jelenleg elérhető fájlkezelő adat a fájl olvasásához"

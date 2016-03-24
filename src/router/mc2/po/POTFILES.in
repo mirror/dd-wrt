@@ -11,9 +11,7 @@ lib/tty/key.c
 lib/tty/tty.c
 lib/tty/tty-slang.c
 lib/utilunix.c
-lib/vfs/dir/entry.c
 lib/vfs/direntry.c
-lib/vfs/dir/utils.c
 lib/vfs/interface.c
 lib/vfs/parse_ls_vga.c
 lib/vfs/utilvfs.c
@@ -66,7 +64,7 @@ src/learn.c
 src/main.c
 src/selcodepage.c
 src/setup.c
-src/subshell.c
+src/subshell/common.c
 src/textconf.c
 src/vfs/cpio/cpio.c
 src/vfs/extfs/extfs.c

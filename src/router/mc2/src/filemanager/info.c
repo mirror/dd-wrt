@@ -1,7 +1,7 @@
 /*
    Panel managing.
 
-   Copyright (C) 1994-2015
+   Copyright (C) 1994-2016
    Free Software Foundation, Inc.
 
    Written by:
@@ -31,6 +31,7 @@
 #include <config.h>
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/stat.h>
 #include <inttypes.h>           /* PRIuMAX */
 
@@ -38,7 +39,6 @@
 #include "lib/unixcompat.h"
 #include "lib/tty/tty.h"
 #include "lib/tty/key.h"        /* is_idle() */
-#include "lib/tty/mouse.h"      /* Gpm_Event */
 #include "lib/skin.h"
 #include "lib/strutil.h"
 #include "lib/timefmt.h"        /* file_date() */
@@ -65,7 +65,7 @@
 struct WInfo
 {
     Widget widget;
-    int ready;
+    gboolean ready;
 };
 
 /*** file scope variables ************************************************************************/
@@ -108,6 +108,8 @@ info_show_info (WInfo * info)
     static const char *file_label;
     GString *buff;
     struct stat st;
+    char rp_cwd[PATH_MAX];
+    const char *p_rp_cwd;
 
     if (!is_idle ())
         return;
@@ -124,7 +126,12 @@ info_show_info (WInfo * info)
     if (get_current_type () != view_listing)
         return;
 
-    my_statfs (&myfs_stats, vfs_path_as_str (current_panel->cwd_vpath));
+    /* don't rely on vpath CWD when cd_symlinks enabled */
+    p_rp_cwd = mc_realpath (vfs_path_as_str (current_panel->cwd_vpath), rp_cwd);
+    if (p_rp_cwd == NULL)
+        p_rp_cwd = vfs_path_as_str (current_panel->cwd_vpath);
+
+    my_statfs (&myfs_stats, p_rp_cwd);
 
     st = current_panel->dir.list[current_panel->selected].st;
 
@@ -149,8 +156,13 @@ info_show_info (WInfo * info)
 
     case 16:
         widget_move (w, 16, 3);
-        if (myfs_stats.nfree == 0 && myfs_stats.nodes == 0)
+        if ((myfs_stats.nfree == 0 && myfs_stats.nodes == 0) ||
+            (myfs_stats.nfree == (uintmax_t) (-1) && myfs_stats.nodes == (uintmax_t) (-1)))
             tty_print_string (_("No node information"));
+        else if (myfs_stats.nfree == (uintmax_t) (-1))
+            tty_printf ("%s -/%" PRIuMAX, _("Free nodes:"), myfs_stats.nodes);
+        else if (myfs_stats.nodes == (uintmax_t) (-1))
+            tty_printf ("%s %" PRIuMAX "/-", _("Free nodes:"), myfs_stats.nfree);
         else
             tty_printf ("%s %" PRIuMAX "/%" PRIuMAX " (%d%%)",
                         _("Free nodes:"),
@@ -269,7 +281,7 @@ info_show_info (WInfo * info)
 static void
 info_hook (void *data)
 {
-    struct WInfo *info = (struct WInfo *) data;
+    WInfo *info = (WInfo *) data;
     Widget *other_widget;
 
     other_widget = get_panel_widget (get_current_index ());
@@ -278,7 +290,7 @@ info_hook (void *data)
     if (widget_overlapped (WIDGET (info), other_widget))
         return;
 
-    info->ready = 1;
+    info->ready = TRUE;
     info_show_info (info);
 }
 
@@ -287,14 +299,14 @@ info_hook (void *data)
 static cb_ret_t
 info_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *data)
 {
-    struct WInfo *info = (struct WInfo *) w;
+    WInfo *info = (WInfo *) w;
 
     switch (msg)
     {
     case MSG_INIT:
         init_my_statfs ();
         add_hook (&select_file_hook, info_hook, info);
-        info->ready = 0;
+        info->ready = FALSE;
         return MSG_HANDLED;
 
     case MSG_DRAW:

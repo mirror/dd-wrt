@@ -7,14 +7,15 @@
 # Arthur Țițeică <arthur.titeica@gmail.com>, 2013-2014
 # Nicolae Crefelean, 2014
 # Slava Zanko <slavazanko@gmail.com>, 2011
+# Sorin Sfirlogea, 2016
 # Vitalie Ciubotaru <vitalie@ciubotaru.tk>, 2015
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2015-11-06 14:43+0300\n"
-"PO-Revision-Date: 2015-06-29 03:41+0000\n"
-"Last-Translator: Vitalie Ciubotaru <vitalie@ciubotaru.tk>\n"
+"POT-Creation-Date: 2016-03-12 17:34+0100\n"
+"PO-Revision-Date: 2016-03-06 21:29+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Romanian (http://www.transifex.com/mc/mc/language/ro/)\n"
 "Language: ro\n"
 "MIME-Version: 1.0\n"
@@ -477,27 +478,24 @@ msgid "Warning"
 msgstr "Atenție"
 
 msgid "Pipe failed"
-msgstr ""
+msgstr "Pipe a eșuat"
 
 msgid "Dup failed"
-msgstr ""
+msgstr "Dup eșuat"
 
 msgid "Error dup'ing old error pipe"
-msgstr ""
+msgstr "Eroare de dup a erorii vechi de pipe"
 
 #, c-format
 msgid "Directory cache expired for %s"
 msgstr "Cache-ul dosarelor a expirat pentru %s"
 
 #, c-format
-msgid "%s: %s: %s %3d%% %<PRIuMAX> %s"
-msgstr ""
-
-msgid "bytes transferred"
-msgstr "octeți transferați"
+msgid "%s: %s: %s %3d%% (%lld) bytes transferred"
+msgstr "%s: %s: %s %3d%% (%lld) bytes transferați"
 
 #, c-format
-msgid "%s: %s: %s %<PRIuMAX> %s"
+msgid "%s: %s: %s %lld bytes transferred"
 msgstr ""
 
 msgid "Starting linear transfer..."
@@ -581,8 +579,8 @@ msgid "Error"
 msgstr "Eroare"
 
 #, c-format
-msgid "%d: %s"
-msgstr "%d: %s"
+msgid "%s (%d)"
+msgstr ""
 
 msgid "&Abort"
 msgstr "&Anulează"
@@ -739,7 +737,7 @@ msgid "No arguments given to the viewer."
 msgstr "Nu au fost date argumente către vizualizator."
 
 msgid "Two files are required to envoke the diffviewer."
-msgstr ""
+msgstr "Sunt necesare două fișiere pentru a invoca vizualizatorul de diferențe"
 
 msgid "Background protocol error"
 msgstr "Eroare în protocolul de fundal"
@@ -934,7 +932,7 @@ msgid "Cannot open %s for reading"
 msgstr "Nu se poate deschide %s pentru citire"
 
 msgid "Load file"
-msgstr ""
+msgstr "Încărcare fișier"
 
 #, c-format
 msgid "Error reading %s"
@@ -966,7 +964,7 @@ msgstr "Nu se poate deschide pipe pentru citire: %s"
 
 #, c-format
 msgid "Searching %s: %3d%%"
-msgstr ""
+msgstr "Caut %s: %3d%%"
 
 #, c-format
 msgid "Searching %s"
@@ -991,7 +989,7 @@ msgid "Cannot open file for writing: %s"
 msgstr "Nu se poate deschide fișierul pentru scriere: %s"
 
 msgid "The file you are saving does not end with a newline."
-msgstr ""
+msgstr "Fișierul pe care îl salvezi nu se termină cu o linie nouă."
 
 msgid "C&ontinue"
 msgstr "C&ontinuă"
@@ -1553,8 +1551,8 @@ msgstr ""
 "Un editor de text ușor de utilizat\n"
 "creat pentru Midnight Commander."
 
-msgid "Copyright (C) 1996-2015 the Free Software Foundation"
-msgstr ""
+msgid "Copyright (C) 1996-2016 the Free Software Foundation"
+msgstr "Copyright (C) 1996-2016 Free Software Foundation"
 
 msgid "About"
 msgstr "Despre"
@@ -1584,16 +1582,16 @@ msgid "ButtonBar|PullDn"
 msgstr "ButtonBar|ÎnJos"
 
 msgid "Breton"
-msgstr ""
+msgstr "Bretonă"
 
 msgid "Czech"
-msgstr ""
+msgstr "Cehă"
 
 msgid "Welsh"
-msgstr ""
+msgstr "Galeză"
 
 msgid "Danish"
-msgstr ""
+msgstr "Daneză"
 
 msgid "German"
 msgstr "germană"
@@ -1605,13 +1603,13 @@ msgid "English"
 msgstr "engleză"
 
 msgid "British English"
-msgstr ""
+msgstr "Engleză britanică"
 
 msgid "Canadian English"
-msgstr ""
+msgstr "Engleză canadiană"
 
 msgid "American English"
-msgstr ""
+msgstr "Engleză americană"
 
 msgid "Esperanto"
 msgstr "esperanto"
@@ -1620,7 +1618,7 @@ msgid "Spanish"
 msgstr "spaniolă"
 
 msgid "Faroese"
-msgstr ""
+msgstr "Feroeză"
 
 msgid "French"
 msgstr "franceză"
@@ -1629,10 +1627,10 @@ msgid "Italian"
 msgstr "italiană"
 
 msgid "Dutch"
-msgstr ""
+msgstr "Olandeză"
 
 msgid "Norwegian"
-msgstr ""
+msgstr "Norvegiană"
 
 msgid "Polish"
 msgstr "poloneză"
@@ -1647,13 +1645,13 @@ msgid "Russian"
 msgstr "rusă"
 
 msgid "Slovak"
-msgstr ""
+msgstr "Slovacă"
 
 msgid "Swedish"
-msgstr ""
+msgstr "Suedeză"
 
 msgid "Ukrainian"
-msgstr ""
+msgstr "Ucraineană"
 
 msgid "&Add word"
 msgstr "&Adaugă cuvânt"
@@ -1927,7 +1925,7 @@ msgid "&Full file list"
 msgstr "Listă de &fișiere completă"
 
 msgid "&Brief file list:"
-msgstr ""
+msgstr "Listă &scurtă de fișiere:"
 
 msgid "&Long file list"
 msgstr "Listă &lungă de fișiere"
@@ -1936,7 +1934,7 @@ msgid "&User defined:"
 msgstr "Definit de &utilizator:"
 
 msgid "columns"
-msgstr ""
+msgstr "coloane"
 
 msgid "User &mini status"
 msgstr "&Mini-status utilizator"
@@ -2259,6 +2257,10 @@ msgstr ""
 "panourile nu pot fi comutate."
 
 #, c-format
+msgid "'%s' is not a symbolic link"
+msgstr "'%s' nu este o legătură simbolică"
+
+#, c-format
 msgid "Symlink '%s' points to:"
 msgstr "Legătura '%s' duce către:"
 
@@ -2272,10 +2274,6 @@ msgstr "editare legătură, nu se poate înlătura %s: %s"
 #, c-format
 msgid "edit symlink: %s"
 msgstr "editare legătură: %s"
-
-#, c-format
-msgid "'%s' is not a symbolic link"
-msgstr "'%s' nu este o legătură simbolică"
 
 msgid "FTP to machine"
 msgstr "FTP către mașina"
@@ -2605,11 +2603,9 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot read source file\"%s\"\n"
+"Cannot read source file \"%s\"\n"
 "%s"
 msgstr ""
-"Nu se poate citi fișierul sursă\"%s\"\n"
-"%s"
 
 #, c-format
 msgid ""
@@ -2722,7 +2718,7 @@ msgstr ""
 
 #, c-format
 msgid "Directories: %zd, total size: %s"
-msgstr ""
+msgstr "Dosare: %zd, dimensiune totală: %s"
 
 msgid "Cannot operate on \"..\"!"
 msgstr "Nu se poate acționa asupra \"..\"!"
@@ -2830,7 +2826,7 @@ msgid "Target"
 msgstr "Destinație"
 
 msgid "Deleting"
-msgstr ""
+msgstr "Ștergere"
 
 msgid "&Using shell patterns"
 msgstr "&Folosire șabloane shell"
@@ -3052,14 +3048,14 @@ msgstr "Spațiu liber: %s/%s (%d%%)"
 
 #, c-format
 msgid "Type:       %s"
-msgstr ""
+msgstr "Tip: %s"
 
 msgid "non-local vfs"
 msgstr "vfs non-local"
 
 #, c-format
 msgid "Device:     %s"
-msgstr ""
+msgstr "Dispozitiv: %s"
 
 #, c-format
 msgid "Filesystem: %s"
@@ -3067,16 +3063,16 @@ msgstr "Sistem fișiere: %s"
 
 #, c-format
 msgid "Accessed:   %s"
-msgstr ""
+msgstr "Accesat: %s"
 
 #, c-format
 msgid "Modified:   %s"
-msgstr ""
+msgstr "Modificat: %s"
 
 #. TRANSLATORS: Time of last status change as in stat(2) man.
 #, c-format
 msgid "Changed:    %s"
-msgstr ""
+msgstr "Schimbat: %s"
 
 #, c-format
 msgid "Dev. type: major %lu, minor %lu"
@@ -3095,19 +3091,19 @@ msgstr[2] " (%ld de blocuri)"
 
 #, c-format
 msgid "Owner:      %s/%s"
-msgstr ""
+msgstr "Proprietar: %s/%s"
 
 #, c-format
 msgid "Links:      %d"
-msgstr ""
+msgstr "Legături: %d"
 
 #, c-format
 msgid "Mode:       %s (%04o)"
-msgstr ""
+msgstr "Mod: %s (%04o)"
 
 #, c-format
 msgid "Location:   %Xh:%Xh"
-msgstr ""
+msgstr "Locație: %Xh:%Xh"
 
 msgid "&Equal split"
 msgstr "Împărțire &egală"
@@ -4144,9 +4140,8 @@ msgstr "sftp: Introdu parola pentru %s "
 msgid "sftp: Password is empty."
 msgstr "sftp: Parola este goală."
 
-#, c-format
-msgid "sftp: Failure establishing SSH session: (%d)"
-msgstr "sftp: Eroare la stabilirea unei sesiuni SSH: (%d)"
+msgid "sftp: Failure establishing SSH session"
+msgstr ""
 
 msgid "sftp: No file handler data present for reading file"
 msgstr "sftp: Nu există date de manipulare a citirii fișierului"
@@ -4298,7 +4293,7 @@ msgstr ""
 "Salvezi fișierul modificat?"
 
 msgid "&Line number"
-msgstr ""
+msgstr "Număr &linie"
 
 msgid "Pe&rcents"
 msgstr "P&rocente"

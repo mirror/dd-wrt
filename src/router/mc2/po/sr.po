@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2015-11-06 14:43+0300\n"
-"PO-Revision-Date: 2015-06-04 08:38+0000\n"
+"POT-Creation-Date: 2016-03-12 17:34+0100\n"
+"PO-Revision-Date: 2016-03-06 21:29+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Serbian (http://www.transifex.com/mc/mc/language/sr/)\n"
 "Language: sr\n"
@@ -491,14 +491,11 @@ msgid "Directory cache expired for %s"
 msgstr "Остава директоријума је истекла за %s"
 
 #, c-format
-msgid "%s: %s: %s %3d%% %<PRIuMAX> %s"
+msgid "%s: %s: %s %3d%% (%lld) bytes transferred"
 msgstr ""
 
-msgid "bytes transferred"
-msgstr "пренешених бајтова"
-
 #, c-format
-msgid "%s: %s: %s %<PRIuMAX> %s"
+msgid "%s: %s: %s %lld bytes transferred"
 msgstr ""
 
 msgid "Starting linear transfer..."
@@ -582,8 +579,8 @@ msgid "Error"
 msgstr "Грешка"
 
 #, c-format
-msgid "%d: %s"
-msgstr "%d: %s"
+msgid "%s (%d)"
+msgstr ""
 
 msgid "&Abort"
 msgstr "&Прекини"
@@ -716,6 +713,16 @@ msgid ""
 "Attributes:\n"
 "   bold, italic, underline, reverse, blink; append more with '+'\n"
 msgstr ""
+"Уобичајене боје:\n"
+"   black, gray, red, brightred, green, brightgreen, brown,\n"
+"   yellow, blue, brightblue, magenta, brightmagenta, cyan,\n"
+"   brightcyan, lightgray и white\n"
+"\n"
+"Проширене боје, када су доступне 256 боје:\n"
+"   color16 до color255, или rgb000 до rgb555 и gray0 до gray23\n"
+"\n"
+"Атрибути:\n"
+"   bold, italic, underline, reverse, blink; придодајте још помоћу +\n"
 
 msgid "Color options"
 msgstr "Опције боје"
@@ -755,7 +762,7 @@ msgid "No arguments given to the viewer."
 msgstr "Аргументи нису дати прегледачу."
 
 msgid "Two files are required to envoke the diffviewer."
-msgstr ""
+msgstr "Потребне су две датотеке за призивање прегледача разлика."
 
 msgid "Background protocol error"
 msgstr "Грешка позадинског протокола"
@@ -1568,7 +1575,7 @@ msgstr ""
 "Уређивач текста наклоњен кориснику\n"
 "написан за Поноћног наредника."
 
-msgid "Copyright (C) 1996-2015 the Free Software Foundation"
+msgid "Copyright (C) 1996-2016 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -1942,7 +1949,7 @@ msgid "&Full file list"
 msgstr "&Пун списак датотека"
 
 msgid "&Brief file list:"
-msgstr ""
+msgstr "&Кратак списак датотека:"
 
 msgid "&Long file list"
 msgstr "&Дуг списак датотека"
@@ -1951,7 +1958,7 @@ msgid "&User defined:"
 msgstr "Корисник је &задао:"
 
 msgid "columns"
-msgstr ""
+msgstr "колоне"
 
 msgid "User &mini status"
 msgstr "Корисниково &мини стање"
@@ -2274,6 +2281,10 @@ msgstr ""
 "панели не могу бити промењени."
 
 #, c-format
+msgid "'%s' is not a symbolic link"
+msgstr "„%s“ није симболичка веза"
+
+#, c-format
 msgid "Symlink '%s' points to:"
 msgstr "Симболичка веза „%s“ упућује на:"
 
@@ -2287,10 +2298,6 @@ msgstr "уређивање симболичке везе, не може да у�
 #, c-format
 msgid "edit symlink: %s"
 msgstr "уреди симболичку везу: %s"
-
-#, c-format
-msgid "'%s' is not a symbolic link"
-msgstr "„%s“ није симболичка веза"
 
 msgid "FTP to machine"
 msgstr "ФТП на рачунар"
@@ -2620,11 +2627,9 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot read source file\"%s\"\n"
+"Cannot read source file \"%s\"\n"
 "%s"
 msgstr ""
-"Не могу да прочитам изворну датотеку „%s“\n"
-"%s"
 
 #, c-format
 msgid ""
@@ -3067,14 +3072,14 @@ msgstr "Слободан простор:  %s/%s (%d%%)"
 
 #, c-format
 msgid "Type:       %s"
-msgstr ""
+msgstr "Врста:       %s"
 
 msgid "non-local vfs"
 msgstr "не-месни всд"
 
 #, c-format
 msgid "Device:     %s"
-msgstr ""
+msgstr "Уређај:     %s"
 
 #, c-format
 msgid "Filesystem: %s"
@@ -3082,24 +3087,24 @@ msgstr "Систем датотека:   %s"
 
 #, c-format
 msgid "Accessed:   %s"
-msgstr ""
+msgstr "Приступљен:   %s"
 
 #, c-format
 msgid "Modified:   %s"
-msgstr ""
+msgstr "Обрађен:   %s"
 
 #. TRANSLATORS: Time of last status change as in stat(2) man.
 #, c-format
 msgid "Changed:    %s"
-msgstr ""
+msgstr "Измењен:    %s"
 
 #, c-format
 msgid "Dev. type: major %lu, minor %lu"
-msgstr "Врста уређаја:     навећи %lu, најмањи %lu"
+msgstr "Врста уређаја:     највећи %lu, најмањи %lu"
 
 #, c-format
 msgid "Size:       %s"
-msgstr ""
+msgstr "Величина:       %s"
 
 #, c-format
 msgid " (%ld block)"
@@ -3110,19 +3115,19 @@ msgstr[2] " (%ld блокова)"
 
 #, c-format
 msgid "Owner:      %s/%s"
-msgstr ""
+msgstr "Власник:      %s/%s"
 
 #, c-format
 msgid "Links:      %d"
-msgstr ""
+msgstr "Везе:      %d"
 
 #, c-format
 msgid "Mode:       %s (%04o)"
-msgstr ""
+msgstr "Режим:       %s (%04o)"
 
 #, c-format
 msgid "Location:   %Xh:%Xh"
-msgstr ""
+msgstr "Место:   %Xh:%Xh"
 
 msgid "&Equal split"
 msgstr "&Подједнака подела"
@@ -4157,9 +4162,8 @@ msgstr "sftp: Унесите лозинку за „%s“ "
 msgid "sftp: Password is empty."
 msgstr "sftp: Лозинка је празна."
 
-#, c-format
-msgid "sftp: Failure establishing SSH session: (%d)"
-msgstr "sftp: Неуспех успостављања сесије безбедне шкољке: (%d)"
+msgid "sftp: Failure establishing SSH session"
+msgstr ""
 
 msgid "sftp: No file handler data present for reading file"
 msgstr "sftp: Нема података руковаоца датотеком за читање датотеке"
