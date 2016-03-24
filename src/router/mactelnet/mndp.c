@@ -65,8 +65,8 @@ int mndp(int timeout, int batch_mode)  {
 #endif
 
 	setlocale(LC_ALL, "");
-	bindtextdomain("mactelnet","/usr/share/locale");
-	textdomain("mactelnet");
+//	bindtextdomain("mactelnet","/usr/share/locale");
+//	textdomain("mactelnet");
 
 	/* Open a UDP socket handle */
 	sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
