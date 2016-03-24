@@ -3,18 +3,21 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
+# Atha Translate, 2016
 # Ettore Atalan <atalanttore@googlemail.com>, 2015
 # Fabian Affolter <fab@fedoraproject.org>, 2012-2013
+# Larson März <larson@protonmail.ch>, 2016
 # Ronny Hößrich, 2015
 # Slava Zanko <slavazanko@gmail.com>, 2011
 # username <my.somewhat.lengthy.loginname@gmail.com>, 2011
+# Valsu <valsu@hylia.de>, 2016
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2015-11-06 14:43+0300\n"
-"PO-Revision-Date: 2015-09-27 16:38+0000\n"
-"Last-Translator: Ronny Hößrich\n"
+"POT-Creation-Date: 2016-03-12 17:34+0100\n"
+"PO-Revision-Date: 2016-03-06 21:29+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: German (http://www.transifex.com/mc/mc/language/de/)\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
@@ -498,15 +501,12 @@ msgid "Directory cache expired for %s"
 msgstr "Verzeichniscache abgelaufen für %s"
 
 #, c-format
-msgid "%s: %s: %s %3d%% %<PRIuMAX> %s"
-msgstr ""
-
-msgid "bytes transferred"
-msgstr "Bytes übertragen"
+msgid "%s: %s: %s %3d%% (%lld) bytes transferred"
+msgstr "%s: %s: %s %3d%% (%lld) Bytes übertragen"
 
 #, c-format
-msgid "%s: %s: %s %<PRIuMAX> %s"
-msgstr ""
+msgid "%s: %s: %s %lld bytes transferred"
+msgstr "%s: %s: %s %lld Bytes übertragen"
 
 msgid "Starting linear transfer..."
 msgstr "Starte linearen Transfer..."
@@ -589,8 +589,8 @@ msgid "Error"
 msgstr "Fehler"
 
 #, c-format
-msgid "%d: %s"
-msgstr "%d: %s"
+msgid "%s (%d)"
+msgstr ""
 
 msgid "&Abort"
 msgstr "&Abbrechen"
@@ -1590,8 +1590,8 @@ msgstr ""
 "Ein benutzerfreundlicher Texteditor\n"
 "geschrieben für Midnight Commander."
 
-msgid "Copyright (C) 1996-2015 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2015 the Free Software Foundation"
+msgid "Copyright (C) 1996-2016 the Free Software Foundation"
+msgstr "Copyright (C) 1996-2016 the Free Software Foundation"
 
 msgid "About"
 msgstr "Über"
@@ -2295,6 +2295,10 @@ msgstr ""
 "die Panels können nicht ausgetauscht werden."
 
 #, c-format
+msgid "'%s' is not a symbolic link"
+msgstr "'%s' ist kein symbolischer Link"
+
+#, c-format
 msgid "Symlink '%s' points to:"
 msgstr "Symbolischer Link '%s' zeigt auf:"
 
@@ -2308,10 +2312,6 @@ msgstr "symbolischen Link bearbeiten, kann %s nicht entfernen: %s"
 #, c-format
 msgid "edit symlink: %s"
 msgstr "symbolischen Link bearbeiten: %s"
-
-#, c-format
-msgid "'%s' is not a symbolic link"
-msgstr "'%s' ist kein symbolischer Link"
 
 msgid "FTP to machine"
 msgstr "FTP zu Server"
@@ -2643,11 +2643,9 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot read source file\"%s\"\n"
+"Cannot read source file \"%s\"\n"
 "%s"
 msgstr ""
-"Kann Quelldatei \"%s\" nicht lesen\n"
-"%s"
 
 #, c-format
 msgid ""
@@ -4180,9 +4178,8 @@ msgstr "sftp: Passwort für %s eingeben"
 msgid "sftp: Password is empty."
 msgstr "sftp: Passwort ist leer."
 
-#, c-format
-msgid "sftp: Failure establishing SSH session: (%d)"
-msgstr "sftp: Fehler beim Herstellen der SSH Sitzung: (%d)"
+msgid "sftp: Failure establishing SSH session"
+msgstr ""
 
 msgid "sftp: No file handler data present for reading file"
 msgstr "sftp: Kein Dateihandler vorhanden zum Lesen der Datei"

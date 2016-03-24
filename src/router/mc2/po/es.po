@@ -13,9 +13,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2015-11-06 14:43+0300\n"
-"PO-Revision-Date: 2015-06-05 06:48+0000\n"
-"Last-Translator: David Martin <dhmartina@yahoo.es>\n"
+"POT-Creation-Date: 2016-03-12 17:34+0100\n"
+"PO-Revision-Date: 2016-03-06 21:29+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Spanish (http://www.transifex.com/mc/mc/language/es/)\n"
 "Language: es\n"
 "MIME-Version: 1.0\n"
@@ -491,18 +491,15 @@ msgstr "Error duplicando tubería de error"
 
 #, c-format
 msgid "Directory cache expired for %s"
-msgstr "El cache para %s ha expirado"
+msgstr "El caché del directorio %s ha expirado"
 
 #, c-format
-msgid "%s: %s: %s %3d%% %<PRIuMAX> %s"
-msgstr ""
-
-msgid "bytes transferred"
-msgstr "bytes transferidos"
+msgid "%s: %s: %s %3d%% (%lld) bytes transferred"
+msgstr "%s: %s: %s %3d%% (%lld) bytes transferidos"
 
 #, c-format
-msgid "%s: %s: %s %<PRIuMAX> %s"
-msgstr ""
+msgid "%s: %s: %s %lld bytes transferred"
+msgstr "%s: %s: %s %lld bytes transferidos"
 
 msgid "Starting linear transfer..."
 msgstr "Iniciando transferencia en línea..."
@@ -585,8 +582,8 @@ msgid "Error"
 msgstr "Error"
 
 #, c-format
-msgid "%d: %s"
-msgstr "%d: %s"
+msgid "%s (%d)"
+msgstr ""
 
 msgid "&Abort"
 msgstr "&Abortar"
@@ -1586,8 +1583,8 @@ msgstr ""
 "Un editor de texto amigable\n"
 "para Midnight Commander."
 
-msgid "Copyright (C) 1996-2015 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2015 the Free Software Foundation"
+msgid "Copyright (C) 1996-2016 the Free Software Foundation"
+msgstr "Copyright (C) 1996-2016 the Free Software Foundation"
 
 msgid "About"
 msgstr "Acerca de..."
@@ -2292,6 +2289,10 @@ msgstr ""
 "Los paneles no pueden ser ocultados."
 
 #, c-format
+msgid "'%s' is not a symbolic link"
+msgstr "«%s» no es un enlace simbólico"
+
+#, c-format
 msgid "Symlink '%s' points to:"
 msgstr "El enlace simbólico «%s» apunta a:"
 
@@ -2305,10 +2306,6 @@ msgstr "edite enlace simbólico, imposible borrar %s: %s"
 #, c-format
 msgid "edit symlink: %s"
 msgstr "editar enlace simbólico: %s"
-
-#, c-format
-msgid "'%s' is not a symbolic link"
-msgstr "«%s» no es un enlace simbólico"
 
 msgid "FTP to machine"
 msgstr "Conexión por FTP"
@@ -2639,11 +2636,9 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot read source file\"%s\"\n"
+"Cannot read source file \"%s\"\n"
 "%s"
 msgstr ""
-"Imposible leer el archivo origen «%s»\n"
-"%s"
 
 #, c-format
 msgid ""
@@ -4170,9 +4165,8 @@ msgstr "sftp: Introduzca la contraseña para %s"
 msgid "sftp: Password is empty."
 msgstr "sftp: Contraseña vacía."
 
-#, c-format
-msgid "sftp: Failure establishing SSH session: (%d)"
-msgstr "sftp: Error al establecer conexión SSH: (%d)"
+msgid "sftp: Failure establishing SSH session"
+msgstr "sftp: Error al establecer sesión SSH"
 
 msgid "sftp: No file handler data present for reading file"
 msgstr "sftp: Sin datos del descriptor de archivo al leer"

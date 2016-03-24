@@ -7,14 +7,15 @@
 # Daniel <danicases@gmail.com>, 2011-2012
 # Daniel <danicases@gmail.com>, 2012
 # el_libre como el chaval <el.libre@gmail.com>, 2011
+# Marc Tormo i Bochaca <mtbochaca@gmail.com>, 2015
 # Martin Steghöfer <martin@steghoefer.eu>, 2015
 # Slava Zanko <slavazanko@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2015-11-06 14:43+0300\n"
-"PO-Revision-Date: 2015-06-04 08:38+0000\n"
+"POT-Creation-Date: 2016-03-12 17:34+0100\n"
+"PO-Revision-Date: 2016-03-06 21:29+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Catalan (http://www.transifex.com/mc/mc/language/ca/)\n"
 "Language: ca\n"
@@ -25,7 +26,7 @@ msgstr ""
 
 # "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 msgid "Warning: cannot load codepages list"
-msgstr ""
+msgstr "Atenció: no es pot carregar la llista de pàgines de codis "
 
 msgid "7-bit ASCII"
 msgstr "7-bit ASCII"
@@ -35,13 +36,13 @@ msgid "Cannot translate from %s to %s"
 msgstr "No es pot traduir de %s a %s"
 
 msgid "Event system already initialized"
-msgstr "Ja s'ha inicialitzat l'event de sistema"
+msgstr "Ja s'ha inicialitzat el sistema d'esdeveniments"
 
 msgid "Failed to initialize event system"
-msgstr "No s'ha pogut inicialitzar l'event de sistema"
+msgstr "No s'ha pogut inicialitzar el sistema d'esdeveniments "
 
 msgid "Event system not initialized"
-msgstr ""
+msgstr "El sistema d'esdeveniments no s'ha inicialitzat "
 
 msgid "Check input data! Some of parameters are NULL!"
 msgstr ""
@@ -233,7 +234,7 @@ msgid "Insert"
 msgstr "Ins"
 
 msgid "Delete"
-msgstr "Supr"
+msgstr "Esborrar "
 
 msgid "Home"
 msgstr "Inici"
@@ -482,14 +483,11 @@ msgid "Directory cache expired for %s"
 msgstr "El directori de la memòria cau ha caducat per %s"
 
 #, c-format
-msgid "%s: %s: %s %3d%% %<PRIuMAX> %s"
+msgid "%s: %s: %s %3d%% (%lld) bytes transferred"
 msgstr ""
 
-msgid "bytes transferred"
-msgstr "bytes transferits"
-
 #, c-format
-msgid "%s: %s: %s %<PRIuMAX> %s"
+msgid "%s: %s: %s %lld bytes transferred"
 msgstr ""
 
 msgid "Starting linear transfer..."
@@ -573,8 +571,8 @@ msgid "Error"
 msgstr "S'ha produït un error"
 
 #, c-format
-msgid "%d: %s"
-msgstr "%d: %s"
+msgid "%s (%d)"
+msgstr ""
 
 msgid "&Abort"
 msgstr "a&Vorta"
@@ -825,7 +823,7 @@ msgid "Diff Options"
 msgstr ""
 
 msgid "Edit"
-msgstr "Edita"
+msgstr "Editar"
 
 msgid "Edit is disabled"
 msgstr ""
@@ -1077,7 +1075,7 @@ msgid "&System wide"
 msgstr "Per a tot el &sistema"
 
 msgid "Menu edit"
-msgstr "Menú edita"
+msgstr "Menú edició"
 
 msgid "Which menu file do you want to edit?"
 msgstr ""
@@ -1093,13 +1091,15 @@ msgid "%ld replacements made"
 msgstr "S'han fet %ld modificacions."
 
 msgid "[NoName]"
-msgstr ""
+msgstr "[SenseNom]"
 
 #, c-format
 msgid ""
 "File %s was modified.\n"
 "Save before close?"
 msgstr ""
+"El fitxer %s s'ha modificat.\n"
+"Desar abans de tancar?"
 
 msgid "Close file"
 msgstr "Tanca el fitxer"
@@ -1164,7 +1164,7 @@ msgid "Enter shell command(s):"
 msgstr ""
 
 msgid "External command"
-msgstr ""
+msgstr "Ordre externa "
 
 msgid "Cannot execute command"
 msgstr "No es pot executar l'ordre"
@@ -1188,7 +1188,7 @@ msgid "Insert literal"
 msgstr "Insereix literal"
 
 msgid "Press any key:"
-msgstr ""
+msgstr "Premeu una tecla: "
 
 msgid ""
 "Current text was modified without a file save.\n"
@@ -1285,7 +1285,7 @@ msgid "Mo&ve"
 msgstr "&Mou"
 
 msgid "&Delete"
-msgstr "&Suprimeix"
+msgstr "&Esborrar"
 
 msgid "Co&py to clipfile"
 msgstr "Co&pia a l'arxiu portaretalls"
@@ -1432,7 +1432,7 @@ msgid "&File"
 msgstr "&Fitxer"
 
 msgid "&Edit"
-msgstr "&Edita"
+msgstr "&Editar"
 
 msgid "&Search"
 msgstr "Ce&rca"
@@ -1520,7 +1520,7 @@ msgid ""
 "written for the Midnight Commander."
 msgstr ""
 
-msgid "Copyright (C) 1996-2015 the Free Software Foundation"
+msgid "Copyright (C) 1996-2016 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -2210,6 +2210,10 @@ msgid ""
 msgstr ""
 
 #, c-format
+msgid "'%s' is not a symbolic link"
+msgstr "'%s' no és cap enllaç simbòlic"
+
+#, c-format
 msgid "Symlink '%s' points to:"
 msgstr ""
 
@@ -2223,10 +2227,6 @@ msgstr ""
 #, c-format
 msgid "edit symlink: %s"
 msgstr ""
-
-#, c-format
-msgid "'%s' is not a symbolic link"
-msgstr "'%s' no és cap enllaç simbòlic"
 
 msgid "FTP to machine"
 msgstr ""
@@ -2501,7 +2501,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot read source file\"%s\"\n"
+"Cannot read source file \"%s\"\n"
 "%s"
 msgstr ""
 
@@ -3324,7 +3324,7 @@ msgid "[dev]"
 msgstr "[dev]"
 
 msgid "UP--DIR"
-msgstr "UP--DIR"
+msgstr "DIR--AMUNT"
 
 msgid "SYMLINK"
 msgstr "SYMLINK"
@@ -3506,14 +3506,14 @@ msgid "User menu"
 msgstr "Menú d'usuari"
 
 msgid "Help file format error\n"
-msgstr ""
+msgstr "Error de format en el fitxer d'ajuda\n"
 
 msgid "Internal bug: Double start of link area"
 msgstr ""
 
 #, c-format
 msgid "Cannot find node %s in help file"
-msgstr ""
+msgstr "No es pot trobar el node %s al fitxer d'ajuda"
 
 msgid "Help"
 msgstr "Ajuda"
@@ -3992,8 +3992,7 @@ msgstr ""
 msgid "sftp: Password is empty."
 msgstr ""
 
-#, c-format
-msgid "sftp: Failure establishing SSH session: (%d)"
+msgid "sftp: Failure establishing SSH session"
 msgstr ""
 
 msgid "sftp: No file handler data present for reading file"

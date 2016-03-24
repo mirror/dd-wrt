@@ -3,14 +3,14 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
-# Kristjan Räts <kristjanrats@gmail.com>, 2013-2015
+# Kristjan Räts <kristjanrats@gmail.com>, 2013-2016
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2015-11-06 14:43+0300\n"
-"PO-Revision-Date: 2015-07-12 11:24+0000\n"
-"Last-Translator: Kristjan Räts <kristjanrats@gmail.com>\n"
+"POT-Creation-Date: 2016-03-12 17:34+0100\n"
+"PO-Revision-Date: 2016-03-06 21:29+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Estonian (http://www.transifex.com/mc/mc/language/et/)\n"
 "Language: et\n"
 "MIME-Version: 1.0\n"
@@ -489,14 +489,11 @@ msgid "Directory cache expired for %s"
 msgstr "Kataloogi %s vahemälu sisu on aegunud"
 
 #, c-format
-msgid "%s: %s: %s %3d%% %<PRIuMAX> %s"
-msgstr ""
-
-msgid "bytes transferred"
-msgstr "baiti saadetud"
+msgid "%s: %s: %s %3d%% (%lld) bytes transferred"
+msgstr "%s: %s: %s %3d%% (%lld) baiti edastatud"
 
 #, c-format
-msgid "%s: %s: %s %<PRIuMAX> %s"
+msgid "%s: %s: %s %lld bytes transferred"
 msgstr ""
 
 msgid "Starting linear transfer..."
@@ -580,8 +577,8 @@ msgid "Error"
 msgstr "Viga"
 
 #, c-format
-msgid "%d: %s"
-msgstr "%d: %s"
+msgid "%s (%d)"
+msgstr ""
 
 msgid "&Abort"
 msgstr "&Katkesta"
@@ -1577,8 +1574,8 @@ msgstr ""
 "Kasutajasõbralik tekstitoimeti, mis\n"
 "on loodud Midnight Commanderile."
 
-msgid "Copyright (C) 1996-2015 the Free Software Foundation"
-msgstr "Autoriõigus (C) 1996-2015 the Free Software Foundation"
+msgid "Copyright (C) 1996-2016 the Free Software Foundation"
+msgstr "Autoriõigus (C) 1996-2016 Free Software Foundation"
 
 msgid "About"
 msgstr "Programmist"
@@ -2281,6 +2278,10 @@ msgstr ""
 "paneele ei saa kuvada/peita."
 
 #, c-format
+msgid "'%s' is not a symbolic link"
+msgstr "\"%s\" ei ole nimeviit"
+
+#, c-format
 msgid "Symlink '%s' points to:"
 msgstr "Nimeviit \"%s\" viitab:"
 
@@ -2294,10 +2295,6 @@ msgstr "nimeviida muutmine: %s eemaldamine ebaõnnestus: %s"
 #, c-format
 msgid "edit symlink: %s"
 msgstr "nimeviida muutmine: %s"
-
-#, c-format
-msgid "'%s' is not a symbolic link"
-msgstr "\"%s\" ei ole nimeviit"
 
 msgid "FTP to machine"
 msgstr "FTP ühendus masinaga"
@@ -2626,11 +2623,9 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot read source file\"%s\"\n"
+"Cannot read source file \"%s\"\n"
 "%s"
 msgstr ""
-"Lähtefaili \"%s\" lugemine nurjus\n"
-"%s"
 
 #, c-format
 msgid ""
@@ -4157,9 +4152,8 @@ msgstr "sftp: sisesta parool masinale %s"
 msgid "sftp: Password is empty."
 msgstr "sftp: parool on tühi."
 
-#, c-format
-msgid "sftp: Failure establishing SSH session: (%d)"
-msgstr "sftp: SSH ühenduse loomine nurjus: (%d)"
+msgid "sftp: Failure establishing SSH session"
+msgstr ""
 
 msgid "sftp: No file handler data present for reading file"
 msgstr "sftp: faili lugemiseks puuduvad faili käsitleja andmed"

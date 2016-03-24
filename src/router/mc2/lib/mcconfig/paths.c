@@ -1,7 +1,7 @@
 /*
    paths to configuration files
 
-   Copyright (C) 2010-2015
+   Copyright (C) 2010-2016
    Free Software Foundation, Inc.
 
    Written by:
@@ -84,6 +84,7 @@ static const struct
     /* data */
     { "skins",                                 &mc_data_str, MC_SKINS_SUBDIR},
     { "fish",                                  &mc_data_str, FISH_PREFIX},
+    { "ashrc",                                 &mc_data_str, "ashrc"},
     { "bashrc",                                &mc_data_str, "bashrc"},
     { "inputrc",                               &mc_data_str, "inputrc"},
     { "extfs.d",                               &mc_data_str, MC_EXTFS_DIR},

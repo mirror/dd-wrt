@@ -90,7 +90,8 @@ as an alias to the appropriate shell script.
 .I \-s, \-\-slow
 Set alternative mode drawing of frameworks.
 If the section [Lines] is not filled, the symbol for the pseudographics
-frame is a space, otherwise the frame characters are taken from follow params.
+frame is a space, otherwise the frame characters are taken from following
+parameters.
 
 .B You can redefine the following variables:
 .TP
@@ -1413,7 +1414,15 @@ directory tree
 .\"Directory Tree"
 figure.
 .PP
-Option \"Whole words\" allows select only those files containing matches that
+The "File name" input field contains a filename pattern to be searched
+for. It is interpeted as a shell pattern or as a regular expression
+depending on the state of the "Using shell patterns" checkbox. An empty
+value is valid and matches any file name.
+.PP
+The "Content" input field contains a string to search for within the
+files. Leave this field empty to disable searching file contents.
+.PP
+Option "Whole words" allows select only those files containing matches that
 form whole words. Like grep \-w.
 .PP
 You can start the search by pressing the OK button.
@@ -1426,8 +1435,8 @@ file. The Again button will ask for the parameters for a new
 search. The Quit button quits the search operation. The Panelize
 button will place the found files to the current directory panel so
 that you can do additional operations on them (view, copy, move,
-delete and so on). After panelizing you can press C\-r to return to the
-normal file listing.
+delete and so on). To return to the normal file listing, change directory
+to "..".
 .PP
 The 'Enable ignore directories' checkbox and input field below it
 allow to set up the list of directories that should be skip during the search
@@ -2122,8 +2131,8 @@ You can specify how the
 .\"LINK2"
 Quick search
 .\"Quick search"
-mode should works: case insensitively, case sensitively or be matched
-to the the panel sort order: case sensitive or not.
+mode should work: case insensitively, case sensitively or be matched
+to the panel sort order: case sensitive or not.
 .\"NODE "    Confirmation"
 .SH "    Confirmation"
 In this dialog you configure the confirmation options for file deletion,
@@ -2457,9 +2466,9 @@ is substituted.
 .\"NODE "  The subshell support"
 .SH "  The subshell support"
 The subshell support is a compile time option, that works with the
-shells: bash, tcsh and zsh.
+shells: bash, ash (BusyBox and Debian), tcsh, zsh and fish.
 .PP
-When the subshell code is activated the Midnight Commander will
+When the subshell support is active, Midnight Commander will
 spawn a concurrent copy of your shell (the one defined in the
 .B SHELL
 variable and if it is not defined, then the one in the /etc/passwd
@@ -2469,28 +2478,41 @@ subshell as if you had typed it.  This also allows you to change the
 environment variables, use shell functions and define aliases that are
 valid until you quit the Midnight Commander.
 .PP
-If you are using
 .B bash
-you can specify startup
-commands for the subshell in your ~/.local/share/mc/bashrc file and
-special keyboard maps in the ~/.local/share/mc/inputrc file.
-.B tcsh
-users may specify startup commands in the ~/.local/share/mc/tcshrc file.
+users may specify startup commands in ~/.local/share/mc/bashrc (fallback ~/.bashrc)
+and special keyboard maps in ~/.local/share/mc/inputrc (fallback ~/.inputrc).
 .PP
-When the subshell code is used, you can suspend applications at any
+.B ash/dash
+users (BusyBox or Debian) may specify startup commands in ~/.local/share/mc/ashrc (fallback ~/.profile).
+.PP
+.B tcsh, zsh, fish
+users cannot specify mc-specific startup commands at present. They have to rely on
+shell-specific startup files.
+.PP
+The following paragraphs are relevant only when the subshell support is
+active:
+.PP
+You can suspend applications at any
 time with the sequence C\-o and jump back to the Midnight Commander, if
 you interrupt an application, you will not be able to run other
 external commands until you quit the application you interrupted.
 .PP
-An extra added feature of using the subshell is that the prompt
-displayed by the Midnight Commander is the same prompt that you are
-currently using in your shell.
+The basic prompt displayed by Midnight Commander is of the form
+"user@host:current_path$ ". When using a capable shell, like Bash, the
+prompt displayed by Midnight Commander will be the same prompt that you
+are currently using in your shell.
+.PP
+(There's a known problem when using fish: the prompt is displayed only in
+full screen mode (Ctrl-o), not when the panels are visible.)
 .PP
 The
 .\"LINK2"
 OPTIONS
 .\"OPTIONS"
-section has more information on how you can control the subshell code.
+section has more information on how you can control subshell usage (-U/-u).
+Furthermore, to set a specific subshell different from your current SHELL variable or
+login shell defined in /etc/passwd, you may call MC like this:
+.B SHELL=/bin/myshell mc
 .\"NODE "Chmod"
 .SH "Chmod"
 The Chmod window is used to change the attribute bits in a group of
@@ -3986,7 +4008,7 @@ list of extensions of files. Separated by ';' sign.
 .TP
 .I extensions_case
 (make sense only with 'extensions' parameter) make 'extensions'
-rule case sentitive (true) or not (false).
+rule case sensitive (true) or not (false).
 .PP
 `type' key may have values:
 .nf

@@ -9,9 +9,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2015-11-06 14:43+0300\n"
-"PO-Revision-Date: 2015-07-31 23:55+0000\n"
-"Last-Translator: Iñigo Salvador Azurmendi <xalba@euskalnet.net>\n"
+"POT-Creation-Date: 2016-03-12 17:34+0100\n"
+"PO-Revision-Date: 2016-03-06 21:29+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Basque (http://www.transifex.com/mc/mc/language/eu/)\n"
 "Language: eu\n"
 "MIME-Version: 1.0\n"
@@ -490,14 +490,11 @@ msgid "Directory cache expired for %s"
 msgstr "%s(r)en direktorio cache-a iraungi egin da"
 
 #, c-format
-msgid "%s: %s: %s %3d%% %<PRIuMAX> %s"
+msgid "%s: %s: %s %3d%% (%lld) bytes transferred"
 msgstr ""
 
-msgid "bytes transferred"
-msgstr "byte transferitu dira"
-
 #, c-format
-msgid "%s: %s: %s %<PRIuMAX> %s"
+msgid "%s: %s: %s %lld bytes transferred"
 msgstr ""
 
 msgid "Starting linear transfer..."
@@ -581,8 +578,8 @@ msgid "Error"
 msgstr "Errorea"
 
 #, c-format
-msgid "%d: %s"
-msgstr "%d: %s"
+msgid "%s (%d)"
+msgstr ""
 
 msgid "&Abort"
 msgstr "&Abortatu"
@@ -1581,8 +1578,8 @@ msgstr ""
 "Testu editore lagunkoi bat\n"
 "Midnight Commander-rarentzako idatzia."
 
-msgid "Copyright (C) 1996-2015 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2015 the Free Software Foundation"
+msgid "Copyright (C) 1996-2016 the Free Software Foundation"
+msgstr ""
 
 msgid "About"
 msgstr "Honi buruz"
@@ -2289,6 +2286,10 @@ msgstr ""
 "panelak ezin dira ezkutatu."
 
 #, c-format
+msgid "'%s' is not a symbolic link"
+msgstr "'%s' ez da esteka sinbolikoa"
+
+#, c-format
 msgid "Symlink '%s' points to:"
 msgstr "'%s' esteka sinbolikoak erakusten du:"
 
@@ -2302,10 +2303,6 @@ msgstr "editatu esteka sinbolikoa, ezin da %s kendu: %s"
 #, c-format
 msgid "edit symlink: %s"
 msgstr "editatu esteka sinbolikoa: %s"
-
-#, c-format
-msgid "'%s' is not a symbolic link"
-msgstr "'%s' ez da esteka sinbolikoa"
 
 msgid "FTP to machine"
 msgstr "FTP makinara"
@@ -2637,11 +2634,9 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot read source file\"%s\"\n"
+"Cannot read source file \"%s\"\n"
 "%s"
 msgstr ""
-"\"%s\" iturburu fitxategia ezin irakurri\n"
-"%s"
 
 #, c-format
 msgid ""
@@ -4170,9 +4165,8 @@ msgstr "sftp: Sartu %s-rako pasahitza "
 msgid "sftp: Password is empty."
 msgstr "sftp: pasahitza hutsik dago."
 
-#, c-format
-msgid "sftp: Failure establishing SSH session: (%d)"
-msgstr "sftp: Hutsegitea SSH saioa ezartzean: (%d)"
+msgid "sftp: Failure establishing SSH session"
+msgstr ""
 
 msgid "sftp: No file handler data present for reading file"
 msgstr "sftp: Ez dago fitxategi maneiatzaile daturik fitxategia irakurtzeko"

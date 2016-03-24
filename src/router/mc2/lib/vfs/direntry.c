@@ -1,7 +1,7 @@
 /*
    Directory cache support
 
-   Copyright (C) 1998-2015
+   Copyright (C) 1998-2016
    Free Software Foundation, Inc.
 
    Written by:
@@ -91,8 +91,6 @@ struct dirhandle
 };
 
 /*** file scope variables ************************************************************************/
-
-static volatile int total_inodes = 0, total_entries = 0;
 
 /*** file scope functions ************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
@@ -696,13 +694,12 @@ static void
 vfs_s_print_stats (const char *fs_name, const char *action,
                    const char *file_name, off_t have, off_t need)
 {
-    if (need)
-        vfs_print_message (_("%s: %s: %s %3d%% %" PRIuMAX " %s"), fs_name, action,
-                           file_name, (int) ((double) have * 100 / need), (uintmax_t) have,
-                           _("bytes transferred"));
+    if (need != 0)
+        vfs_print_message (_("%s: %s: %s %3d%% (%lld) bytes transferred"), fs_name, action,
+                           file_name, (int) ((double) have * 100 / need), (long long) have);
     else
-        vfs_print_message (_("%s: %s: %s %" PRIuMAX " %s"), fs_name, action, file_name,
-                           (uintmax_t) have, _("bytes transferred"));
+        vfs_print_message (_("%s: %s: %s %lld bytes transferred"), fs_name, action, file_name,
+                           (long long) have);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -892,7 +889,6 @@ vfs_s_new_inode (struct vfs_class *me, struct vfs_s_super *super, struct stat *i
     ino->st.st_dev = MEDATA->rdev;
 
     super->ino_usage++;
-    total_inodes++;
 
     CALL (init_inode) (me, ino);
 
@@ -924,7 +920,6 @@ vfs_s_free_inode (struct vfs_class *me, struct vfs_s_inode *ino)
         unlink (ino->localname);
         g_free (ino->localname);
     }
-    total_inodes--;
     ino->super->ino_usage--;
     g_free (ino);
 }
@@ -937,7 +932,6 @@ vfs_s_new_entry (struct vfs_class *me, const char *name, struct vfs_s_inode *ino
     struct vfs_s_entry *entry;
 
     entry = g_new0 (struct vfs_s_entry, 1);
-    total_entries++;
 
     entry->name = g_strdup (name);
     entry->ino = inode;
@@ -964,7 +958,6 @@ vfs_s_free_entry (struct vfs_class *me, struct vfs_s_entry *ent)
         vfs_s_free_inode (me, ent->ino);
     }
 
-    total_entries--;
     g_free (ent);
 }
 
@@ -987,7 +980,7 @@ struct stat *
 vfs_s_default_stat (struct vfs_class *me, mode_t mode)
 {
     static struct stat st;
-    int myumask;
+    mode_t myumask;
 
     (void) me;
 

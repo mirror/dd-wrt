@@ -5,12 +5,13 @@
 # Translators:
 # Nerijus Baliūnas <nerijus@users.sourceforge.net>, 2011
 # Slava Zanko <slavazanko@gmail.com>, 2011
+# Zygimantus <zygimantus@gmail.com>, 2016
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2015-11-06 14:43+0300\n"
-"PO-Revision-Date: 2015-06-04 08:38+0000\n"
+"POT-Creation-Date: 2016-03-12 17:34+0100\n"
+"PO-Revision-Date: 2016-03-06 21:29+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Lithuanian (http://www.transifex.com/mc/mc/language/lt/)\n"
 "Language: lt\n"
@@ -106,10 +107,10 @@ msgid "Invalid token number %d"
 msgstr ""
 
 msgid "Regular expression error"
-msgstr ""
+msgstr "Reguliariosios išraiškos klaida"
 
 msgid "No&rmal"
-msgstr ""
+msgstr "No&rmalus"
 
 msgid "Re&gular expression"
 msgstr ""
@@ -224,22 +225,22 @@ msgid "Right arrow"
 msgstr ""
 
 msgid "Insert"
-msgstr ""
+msgstr "Įterpti"
 
 msgid "Delete"
-msgstr ""
+msgstr "Delete"
 
 msgid "Home"
-msgstr ""
+msgstr "Home"
 
 msgid "End key"
 msgstr "„End“"
 
 msgid "Page Up"
-msgstr ""
+msgstr "Page Up"
 
 msgid "Page Down"
-msgstr ""
+msgstr "Page Down"
 
 msgid "/ on keypad"
 msgstr ""
@@ -471,14 +472,11 @@ msgid "Directory cache expired for %s"
 msgstr "Aplanko „%s“ podėlis nebegalioja"
 
 #, c-format
-msgid "%s: %s: %s %3d%% %<PRIuMAX> %s"
-msgstr ""
-
-msgid "bytes transferred"
+msgid "%s: %s: %s %3d%% (%lld) bytes transferred"
 msgstr ""
 
 #, c-format
-msgid "%s: %s: %s %<PRIuMAX> %s"
+msgid "%s: %s: %s %lld bytes transferred"
 msgstr ""
 
 msgid "Starting linear transfer..."
@@ -534,7 +532,7 @@ msgid "Screens"
 msgstr ""
 
 msgid "History"
-msgstr ""
+msgstr "Istorija"
 
 #. TRANSLATORS: no need to translate 'DialogTitle', it's just a context prefix
 msgid "DialogTitle|History cleanup"
@@ -562,7 +560,7 @@ msgid "Error"
 msgstr "Klaida"
 
 #, c-format
-msgid "%d: %s"
+msgid "%s (%d)"
 msgstr ""
 
 msgid "&Abort"
@@ -702,10 +700,10 @@ msgid "GNU Midnight Commander %s\n"
 msgstr "GNU Midnight Commander %s\n"
 
 msgid "Main options"
-msgstr ""
+msgstr "Pagrindinės parinktys"
 
 msgid "Terminal options"
-msgstr ""
+msgstr "Terminalo parinktys"
 
 msgid "Arguments parse error!"
 msgstr ""
@@ -758,7 +756,7 @@ msgid "Search"
 msgstr "Paieška"
 
 msgid "Search is disabled"
-msgstr ""
+msgstr "Paieška yra išjungta"
 
 #, c-format
 msgid ""
@@ -810,7 +808,7 @@ msgid "Diff Options"
 msgstr ""
 
 msgid "Edit"
-msgstr ""
+msgstr "Taisyti"
 
 msgid "Edit is disabled"
 msgstr ""
@@ -889,14 +887,14 @@ msgid "Loading: %3d%%"
 msgstr ""
 
 msgid "Loading..."
-msgstr ""
+msgstr "Įkeliama..."
 
 #, c-format
 msgid "Cannot open %s for reading"
 msgstr ""
 
 msgid "Load file"
-msgstr ""
+msgstr "Įkelti failą"
 
 #, c-format
 msgid "Error reading %s"
@@ -975,7 +973,7 @@ msgid "Change line breaks to:"
 msgstr ""
 
 msgid "Save As"
-msgstr ""
+msgstr "Išsaugoti kaip"
 
 msgid "Block is large, you may not be able to undo this action"
 msgstr ""
@@ -999,7 +997,7 @@ msgid "Edit Save Mode"
 msgstr ""
 
 msgid "Save as"
-msgstr ""
+msgstr "Išsaugoti kaip"
 
 msgid "Cannot save: destination is not a regular file"
 msgstr ""
@@ -1032,20 +1030,20 @@ msgid "Repeat last commands"
 msgstr ""
 
 msgid "Repeat times:"
-msgstr ""
+msgstr "Kartojimų skaičius:"
 
 #, c-format
 msgid "Confirm save file: \"%s\""
 msgstr ""
 
 msgid "Save file"
-msgstr ""
+msgstr "Išsaugoti failą"
 
 msgid "&Save"
 msgstr "Į&rašyti"
 
 msgid "Load"
-msgstr ""
+msgstr "Įkelti"
 
 msgid "Syntax file edit"
 msgstr "Sintaksės failo keitimas"
@@ -1069,7 +1067,7 @@ msgid "&Local"
 msgstr "&Vietinį"
 
 msgid "Replace"
-msgstr ""
+msgstr "Pakeisti"
 
 #, c-format
 msgid "%ld replacements made"
@@ -1085,7 +1083,7 @@ msgid ""
 msgstr ""
 
 msgid "Close file"
-msgstr ""
+msgstr "Uždaryti failą"
 
 #, c-format
 msgid ""
@@ -1106,16 +1104,16 @@ msgid "Cut to clipboard"
 msgstr ""
 
 msgid "Goto line"
-msgstr ""
+msgstr "Eiti į eilutę"
 
 msgid "Save block"
-msgstr ""
+msgstr "Išsaugoti bloką"
 
 msgid "Insert file"
-msgstr ""
+msgstr "Įterpti failą"
 
 msgid "Cannot insert file"
-msgstr ""
+msgstr "Negalima įterpti failo"
 
 msgid "Sort block"
 msgstr ""
@@ -1130,7 +1128,7 @@ msgid "Enter sort options (see manpage) separated by whitespace:"
 msgstr ""
 
 msgid "Sort"
-msgstr ""
+msgstr "Rūšiuoti"
 
 msgid "Cannot execute sort command"
 msgstr ""
@@ -1216,10 +1214,10 @@ msgid "&Open file..."
 msgstr "At&verti failą..."
 
 msgid "&New"
-msgstr ""
+msgstr "&Naujas"
 
 msgid "&Close"
-msgstr ""
+msgstr "&Uždaryti"
 
 msgid "Save &as..."
 msgstr ""
@@ -1234,7 +1232,7 @@ msgid "&User menu..."
 msgstr ""
 
 msgid "A&bout..."
-msgstr ""
+msgstr "A&pie"
 
 msgid "&Quit"
 msgstr "&Išeiti"
@@ -1381,10 +1379,10 @@ msgid "&Toggle fullscreen"
 msgstr ""
 
 msgid "&Next"
-msgstr ""
+msgstr "&Kitas"
 
 msgid "&Previous"
-msgstr ""
+msgstr "&Ankstesnis"
 
 msgid "&List..."
 msgstr ""
@@ -1502,17 +1500,17 @@ msgid ""
 "written for the Midnight Commander."
 msgstr ""
 
-msgid "Copyright (C) 1996-2015 the Free Software Foundation"
+msgid "Copyright (C) 1996-2016 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
-msgstr ""
+msgstr "Apie"
 
 msgid "Open files"
-msgstr ""
+msgstr "Atidaryti failus"
 
 msgid "Edit: "
-msgstr ""
+msgstr "Keisti:"
 
 msgid "ButtonBar|Mark"
 msgstr ""
@@ -1780,7 +1778,7 @@ msgid "Configure options"
 msgstr "Nustatymai"
 
 msgid "Skin:"
-msgstr ""
+msgstr "Išvaizda"
 
 msgid "Appearance"
 msgstr ""
@@ -1822,7 +1820,7 @@ msgid "A&uto save panels setup"
 msgstr ""
 
 msgid "Navigation"
-msgstr ""
+msgstr "Navigacija"
 
 msgid "L&ynx-like motion"
 msgstr "„L&ynx“ elgesys"
@@ -1849,7 +1847,7 @@ msgid "Panel options"
 msgstr ""
 
 msgid "Information"
-msgstr ""
+msgstr "Informacija"
 
 msgid ""
 "Using the fast reload option may not reflect the exact\n"
@@ -1871,7 +1869,7 @@ msgid "&User defined:"
 msgstr "Kit&oks:"
 
 msgid "columns"
-msgstr ""
+msgstr "stulpeliai"
 
 msgid "User &mini status"
 msgstr ""
@@ -2035,16 +2033,16 @@ msgid "execute/searc&h by others"
 msgstr ""
 
 msgid "Name:"
-msgstr ""
+msgstr "Pavadinimas:"
 
 msgid "Permissions (octal):"
 msgstr ""
 
 msgid "Owner name:"
-msgstr ""
+msgstr "Savininko vardas:"
 
 msgid "Group name:"
-msgstr ""
+msgstr "Grupės pavadinimas:"
 
 msgid "&Marked all"
 msgstr "Pažy&mėti visi"
@@ -2071,7 +2069,7 @@ msgid "Set &users"
 msgstr "N&ustatyti naudot."
 
 msgid "Name"
-msgstr "Pavadinimas:"
+msgstr "Pavadinimas"
 
 msgid "Owner name"
 msgstr "Savininkas:"
@@ -2086,7 +2084,7 @@ msgid "Chown command"
 msgstr ""
 
 msgid "User name"
-msgstr ""
+msgstr "Vartotojo vardas"
 
 msgid "<Unknown user>"
 msgstr "<Nežinomas naud.>"
@@ -2104,7 +2102,7 @@ msgid "Cannot change directory"
 msgstr " Nepavyko pakeisti aplanko "
 
 msgid "Filter"
-msgstr ""
+msgstr "Filtras"
 
 msgid "Set expression for filtering filenames"
 msgstr ""
@@ -2114,7 +2112,7 @@ msgid "Link %s to:"
 msgstr "Sukurti nuorodą iš „%s“ į:"
 
 msgid "Link"
-msgstr ""
+msgstr "Nuoroda"
 
 #, c-format
 msgid "link: %s"
@@ -2129,10 +2127,10 @@ msgid "Cannot chdir to \"%s\""
 msgstr ""
 
 msgid "View file"
-msgstr ""
+msgstr "Žiūrėti failą"
 
 msgid "Filename:"
-msgstr ""
+msgstr "Failo pavadinimas:"
 
 msgid "Filtered view"
 msgstr ""
@@ -2141,13 +2139,13 @@ msgid "Filter command and arguments:"
 msgstr ""
 
 msgid "Edit file"
-msgstr ""
+msgstr "Keisti failą"
 
 msgid "Create a new Directory"
 msgstr "Sukurti naują aplanką"
 
 msgid "Enter directory name:"
-msgstr ""
+msgstr "Įvesti aplanko pavadinimą:"
 
 msgid "Extension file edit"
 msgstr "Plėtinių failo keitimas"
@@ -2165,7 +2163,7 @@ msgid "Which highlighting file you want to edit?"
 msgstr ""
 
 msgid "Compare directories"
-msgstr ""
+msgstr "Lyginti aplankus"
 
 msgid "Select compare method:"
 msgstr ""
@@ -2190,6 +2188,10 @@ msgid ""
 msgstr ""
 
 #, c-format
+msgid "'%s' is not a symbolic link"
+msgstr ""
+
+#, c-format
 msgid "Symlink '%s' points to:"
 msgstr ""
 
@@ -2202,10 +2204,6 @@ msgstr ""
 
 #, c-format
 msgid "edit symlink: %s"
-msgstr ""
-
-#, c-format
-msgid "'%s' is not a symbolic link"
 msgstr ""
 
 msgid "FTP to machine"
@@ -2255,7 +2253,7 @@ msgid "Cannot read directory contents"
 msgstr "Nepavyko perskaityti aplanko turinio"
 
 msgid "Parameter"
-msgstr ""
+msgstr "Parametras"
 
 #, c-format
 msgid ""
@@ -2487,7 +2485,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot read source file\"%s\"\n"
+"Cannot read source file \"%s\"\n"
 "%s"
 msgstr ""
 
@@ -2642,7 +2640,7 @@ msgid "If &size differs"
 msgstr "Jei &skiriasi dydis"
 
 msgid "File exists"
-msgstr ""
+msgstr "Failas egzistuoja"
 
 msgid "Background process: File exists"
 msgstr ""
@@ -2665,7 +2663,7 @@ msgstr ""
 
 #, c-format
 msgid "Time: %s"
-msgstr ""
+msgstr "Laikas: %s"
 
 #, c-format
 msgid "Time: %s (%s)"
@@ -2686,7 +2684,7 @@ msgid "Target"
 msgstr "Į"
 
 msgid "Deleting"
-msgstr ""
+msgstr "Ištrinama"
 
 msgid "&Using shell patterns"
 msgstr "Na&udojant aplinkos išraiškas"
@@ -2736,7 +2734,7 @@ msgid "Malformed regular expression"
 msgstr ""
 
 msgid "File name:"
-msgstr ""
+msgstr "Failo pavadinimas:"
 
 msgid "&Find recursively"
 msgstr "&Rasti rekursyviai"
@@ -2745,7 +2743,7 @@ msgid "S&kip hidden"
 msgstr ""
 
 msgid "Content:"
-msgstr ""
+msgstr "Turinys:"
 
 msgid "Sea&rch for content"
 msgstr ""
@@ -2911,7 +2909,7 @@ msgstr "nevietinė VFS"
 
 #, c-format
 msgid "Device:     %s"
-msgstr ""
+msgstr "Įrenginys: %s"
 
 #, c-format
 msgid "Filesystem: %s"
@@ -2936,7 +2934,7 @@ msgstr "Įreng. tipas: major %lu, minor %lu"
 
 #, c-format
 msgid "Size:       %s"
-msgstr ""
+msgstr "Dydis: %s"
 
 #, c-format
 msgid " (%ld block)"
@@ -2947,11 +2945,11 @@ msgstr[2] " (%ld blokų)"
 
 #, c-format
 msgid "Owner:      %s/%s"
-msgstr ""
+msgstr "Savininkas: %s/%s"
 
 #, c-format
 msgid "Links:      %d"
-msgstr ""
+msgstr "Nuorodos: %d"
 
 #, c-format
 msgid "Mode:       %s (%04o)"
@@ -3007,7 +3005,7 @@ msgid "&Quick view"
 msgstr ""
 
 msgid "&Info"
-msgstr ""
+msgstr "&Informacija"
 
 msgid "&Listing mode..."
 msgstr "Rod&ymo režimas..."
@@ -3055,7 +3053,7 @@ msgid "C&hmod"
 msgstr ""
 
 msgid "&Link"
-msgstr ""
+msgstr "&Nuoroda"
 
 msgid "&Symlink"
 msgstr ""
@@ -3188,7 +3186,7 @@ msgid "Do you really want to quit the Midnight Commander?"
 msgstr ""
 
 msgid "&Above"
-msgstr ""
+msgstr "&Viršuj"
 
 msgid "&Left"
 msgstr ""
@@ -3423,7 +3421,7 @@ msgstr ""
 
 #, c-format
 msgid "Delete %s?"
-msgstr ""
+msgstr "Ištrinti %s?"
 
 msgid "ButtonBar|Static"
 msgstr ""
@@ -3979,8 +3977,7 @@ msgstr ""
 msgid "sftp: Password is empty."
 msgstr ""
 
-#, c-format
-msgid "sftp: Failure establishing SSH session: (%d)"
+msgid "sftp: Failure establishing SSH session"
 msgstr ""
 
 msgid "sftp: No file handler data present for reading file"

@@ -1,7 +1,7 @@
 /*
    Some misc dialog boxes for the program.
 
-   Copyright (C) 1994-2015
+   Copyright (C) 1994-2016
    Free Software Foundation, Inc.
 
    Written by:
@@ -101,7 +101,6 @@ static const int panel_listing_brief_idx = 1;
 static const int panel_listing_user_idx = 3;
 
 static char **status_format;
-static int listing_user_hotkey = 'u';
 static unsigned long panel_listing_types_id, panel_user_format_id, panel_brief_cols_id;
 static unsigned long mini_user_status_id, mini_user_format_id;
 
@@ -129,7 +128,7 @@ configure_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, voi
 {
     switch (msg)
     {
-    case MSG_ACTION:
+    case MSG_NOTIFY:
         /* message from "Single press" checkbutton */
         if (sender != NULL && sender->id == configure_old_esc_mode_id)
         {
@@ -251,62 +250,7 @@ panel_listing_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm,
 
     switch (msg)
     {
-    case MSG_KEY:
-        if (parm == '\n')
-        {
-            Widget *wi;
-
-            wi = dlg_find_by_id (h, panel_listing_types_id);
-            if (widget_is_active (wi))
-            {
-                WInput *in;
-
-                in = INPUT (dlg_find_by_id (h, mini_user_format_id));
-                input_assign_text (in, status_format[RADIO (wi)->sel]);
-                dlg_stop (h);
-                return MSG_HANDLED;
-            }
-
-            wi = dlg_find_by_id (h, panel_user_format_id);
-            if (widget_is_active (wi))
-            {
-                h->ret_value = B_USER + 6;
-                dlg_stop (h);
-                return MSG_HANDLED;
-            }
-
-            wi = dlg_find_by_id (h, mini_user_format_id);
-            if (widget_is_active (wi))
-            {
-                h->ret_value = B_USER + 7;
-                dlg_stop (h);
-                return MSG_HANDLED;
-            }
-        }
-
-        if (g_ascii_tolower (parm) == listing_user_hotkey)
-        {
-            Widget *wi;
-
-            wi = dlg_find_by_id (h, panel_user_format_id);
-            if (widget_is_active (wi))
-            {
-                wi = dlg_find_by_id (h, mini_user_format_id);
-                if (widget_is_active (wi))
-                {
-                    WRadio *r;
-
-                    r = RADIO (dlg_find_by_id (h, panel_listing_types_id));
-                    r->pos = r->sel = panel_listing_user_idx;
-                    dlg_select_widget (WIDGET (r));     /* force redraw */
-                    send_message (h, r, MSG_ACTION, 0, NULL);
-                    return MSG_HANDLED;
-                }
-            }
-        }
-        return MSG_NOT_HANDLED;
-
-    case MSG_ACTION:
+    case MSG_NOTIFY:
         if (sender != NULL && sender->id == panel_listing_types_id)
         {
             WCheck *ch;
@@ -427,7 +371,7 @@ confvfs_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void 
 {
     switch (msg)
     {
-    case MSG_ACTION:
+    case MSG_NOTIFY:
         /* message from "Always use ftp proxy" checkbutton */
         if (sender != NULL && sender->id == ftpfs_always_use_proxy_id)
         {
@@ -771,7 +715,6 @@ panel_listing_box (WPanel * panel, int num, char **userp, char **minip, int *use
         char *panel_brief_cols_out = NULL;
         char *panel_user_format = NULL;
         char *mini_user_format = NULL;
-        const char *cp;
 
         /* Controls whether the array strings have been translated */
         const char *list_types[LIST_TYPES] = {
@@ -807,11 +750,6 @@ panel_listing_box (WPanel * panel, int num, char **userp, char **minip, int *use
             N_("Listing mode"), "[Listing Mode...]",
             quick_widgets, panel_listing_callback, NULL
         };
-
-        /* get hotkey of user-defined format string */
-        cp = strchr (_(list_types[panel_listing_user_idx]), '&');
-        if (cp != NULL && *++cp != '\0')
-            listing_user_hotkey = g_ascii_tolower (*cp);
 
         mini_user_status = panel->user_mini_status;
         result = panel->list_type;
@@ -868,7 +806,8 @@ const panel_field_t *
 sort_box (dir_sort_options_t * op, const panel_field_t * sort_field)
 {
     const char **sort_orders_names;
-    gsize sort_names_num, i;
+    gsize i;
+    gsize sort_names_num = 0;
     int sort_idx = 0;
     const panel_field_t *result = NULL;
 
@@ -1094,6 +1033,7 @@ tree_box (const char *current_dir)
     if (dlg_run (dlg) == B_ENTER)
     {
         const vfs_path_t *selected_name;
+
         selected_name = tree_selected_name (mytree);
         val = g_strdup (vfs_path_as_str (selected_name));
     }

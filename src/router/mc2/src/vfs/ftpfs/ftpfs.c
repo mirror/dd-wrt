@@ -1,7 +1,7 @@
 /*
    Virtual File System: FTP file system.
 
-   Copyright (C) 1995-2015
+   Copyright (C) 1995-2016
    Free Software Foundation, Inc.
 
    Written by:
@@ -694,7 +694,7 @@ static void
 ftpfs_load_no_proxy_list (void)
 {
     /* FixMe: shouldn't be hardcoded!!! */
-    static char *mc_file = NULL;
+    char *mc_file;
 
     mc_file = g_build_filename (mc_global.sysconfig_dir, "mc.no_proxy", (char *) NULL);
     if (exist_file (mc_file))
@@ -832,7 +832,7 @@ ftpfs_open_socket (struct vfs_class *me, struct vfs_s_super *super)
 
     tty_enable_interrupt_key ();        /* clear the interrupt flag */
 
-    memset (&hints, 0, sizeof (struct addrinfo));
+    memset (&hints, 0, sizeof (hints));
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
 
@@ -1258,8 +1258,8 @@ ftpfs_init_data_socket (struct vfs_class *me, struct vfs_s_super *super,
 {
     int result;
 
-    memset (data_addr, 0, sizeof (struct sockaddr_storage));
-    *data_addrlen = sizeof (struct sockaddr_storage);
+    memset (data_addr, 0, sizeof (*data_addr));
+    *data_addrlen = sizeof (*data_addr);
 
     if (SUP->use_passive_connection)
         result = getpeername (SUP->sock, (struct sockaddr *) data_addr, data_addrlen);

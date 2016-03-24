@@ -1,7 +1,7 @@
 /*
    Widgets for the Midnight Commander
 
-   Copyright (C) 1994-2015
+   Copyright (C) 1994-2016
    Free Software Foundation, Inc.
 
    Authors:
@@ -148,9 +148,12 @@ buttonbar_call (WButtonBar * bb, int i)
 {
     cb_ret_t ret = MSG_NOT_HANDLED;
     Widget *w = WIDGET (bb);
+    Widget *target;
+
+    target = (bb->labels[i].receiver != NULL) ? bb->labels[i].receiver : WIDGET (w->owner);
 
     if ((bb != NULL) && (bb->labels[i].command != CK_IgnoreKey))
-        ret = send_message (w->owner, w, MSG_ACTION, bb->labels[i].command, bb->labels[i].receiver);
+        ret = send_message (target, w, MSG_ACTION, bb->labels[i].command, NULL);
     return ret;
 }
 
@@ -262,11 +265,11 @@ buttonbar_new (gboolean visible)
 
 void
 buttonbar_set_label (WButtonBar * bb, int idx, const char *text,
-                     const struct global_keymap_t *keymap, const Widget * receiver)
+                     const global_keymap_t * keymap, const Widget * receiver)
 {
     if ((bb != NULL) && (idx >= 1) && (idx <= BUTTONBAR_LABELS_NUM))
     {
-        unsigned long command = CK_IgnoreKey;
+        long command = CK_IgnoreKey;
 
         if (keymap != NULL)
             command = keybind_lookup_keymap_command (keymap, KEY_F (idx));

@@ -1,7 +1,7 @@
 /*
    Editor initialisation and callback handler.
 
-   Copyright (C) 1996-2015
+   Copyright (C) 1996-2016
    Free Software Foundation, Inc.
 
    Written by:
@@ -144,7 +144,7 @@ edit_about (void)
         QUICK_LABEL (N_("A user friendly text editor\n"
                         "written for the Midnight Commander."), NULL),
         QUICK_SEPARATOR (FALSE),
-        QUICK_LABEL (N_("Copyright (C) 1996-2015 the Free Software Foundation"), NULL),
+        QUICK_LABEL (N_("Copyright (C) 1996-2016 the Free Software Foundation"), NULL),
         QUICK_START_BUTTONS (TRUE, TRUE),
             QUICK_BUTTON (N_("&OK"), B_ENTER, NULL, NULL),
         QUICK_END
@@ -225,7 +225,7 @@ edit_restore_size (WEdit * edit)
  */
 
 static void
-edit_window_move (WEdit * edit, unsigned long command)
+edit_window_move (WEdit * edit, long command)
 {
     Widget *w = WIDGET (edit);
     Widget *wh = WIDGET (w->owner);
@@ -265,7 +265,7 @@ edit_window_move (WEdit * edit, unsigned long command)
  */
 
 static void
-edit_window_resize (WEdit * edit, unsigned long command)
+edit_window_resize (WEdit * edit, long command)
 {
     Widget *w = WIDGET (edit);
     Widget *wh = WIDGET (w->owner);
@@ -359,7 +359,7 @@ edit_window_list (const WDialog * h)
 /* --------------------------------------------------------------------------------------------- */
 
 static char *
-edit_get_shortcut (unsigned long command)
+edit_get_shortcut (long command)
 {
     const char *ext_map;
     const char *shortcut = NULL;
@@ -708,10 +708,10 @@ edit_dialog_event (Gpm_Event * event, void *data)
 /* --------------------------------------------------------------------------------------------- */
 
 static cb_ret_t
-edit_dialog_command_execute (WDialog * h, unsigned long command)
+edit_dialog_command_execute (WDialog * h, long command)
 {
     Widget *wh = WIDGET (h);
-    gboolean ret = MSG_HANDLED;
+    cb_ret_t ret = MSG_HANDLED;
 
     switch (command)
     {
@@ -742,13 +742,14 @@ edit_dialog_command_execute (WDialog * h, unsigned long command)
         break;
     case CK_Quit:
     case CK_Cancel:
+        /* don't close editor due to SIGINT, but stop move/resize window */
         {
             Widget *w = WIDGET (h->current->data);
 
-            if (!edit_widget_is_editor (w) || ((WEdit *) w)->drag_state == MCEDIT_DRAG_NORMAL)
-                dlg_stop (h);
-            else
+            if (edit_widget_is_editor (w) && ((WEdit *) w)->drag_state != MCEDIT_DRAG_NORMAL)
                 edit_restore_size ((WEdit *) w);
+            else if (command == CK_Quit)
+                dlg_stop (h);
         }
         break;
     case CK_About:
@@ -817,7 +818,7 @@ edit_dialog_command_execute (WDialog * h, unsigned long command)
 static gboolean
 edit_translate_key (WEdit * edit, long x_key, int *cmd, int *ch)
 {
-    unsigned long command = (unsigned long) CK_InsertChar;
+    long command = CK_InsertChar;
     int char_for_insertion = -1;
 
     /* an ordinary insertable character */
@@ -854,7 +855,7 @@ edit_translate_key (WEdit * edit, long x_key, int *cmd, int *ch)
                 if (!edit->utf8)
                     char_for_insertion = c;
                 else
-                    char_for_insertion = convert_from_8bit_to_utf_c2 ((unsigned char) x_key);
+                    char_for_insertion = convert_from_8bit_to_utf_c2 ((char) x_key);
                 goto fin;
             }
         }
@@ -929,7 +930,7 @@ edit_translate_key (WEdit * edit, long x_key, int *cmd, int *ch)
     *cmd = (int) command;       /* FIXME */
     *ch = char_for_insertion;
 
-    return !(command == (unsigned long) CK_InsertChar && char_for_insertion == -1);
+    return !(command == CK_InsertChar && char_for_insertion == -1);
 }
 
 
@@ -1020,27 +1021,20 @@ edit_dialog_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, v
         return MSG_HANDLED;
 
     case MSG_ACTION:
-        /* shortcut */
-        if (sender == NULL)
-            return edit_dialog_command_execute (h, parm);
-        /* message from menu */
-        menubar = find_menubar (h);
-        if (sender == WIDGET (menubar))
         {
-            if (edit_dialog_command_execute (h, parm) == MSG_HANDLED)
-                return MSG_HANDLED;
-            /* try send command to the current window */
-            return send_message (h->current->data, NULL, MSG_ACTION, parm, NULL);
+            /* Handle shortcuts, menu, and buttonbar. */
+
+            cb_ret_t result;
+
+            result = edit_dialog_command_execute (h, parm);
+
+            /* We forward any commands coming from the menu, and which haven't been
+               handled by the dialog, to the focused WEdit window. */
+            if (result == MSG_NOT_HANDLED && sender == WIDGET (find_menubar (h)))
+                result = send_message (h->current->data, NULL, MSG_ACTION, parm, NULL);
+
+            return result;
         }
-        /* message from buttonbar */
-        buttonbar = find_buttonbar (h);
-        if (sender == WIDGET (buttonbar))
-        {
-            if (data != NULL)
-                return send_message (data, NULL, MSG_ACTION, parm, NULL);
-            return edit_dialog_command_execute (h, parm);
-        }
-        return MSG_NOT_HANDLED;
 
     case MSG_KEY:
         {
@@ -1050,7 +1044,7 @@ edit_dialog_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, v
             if (edit_widget_is_editor (we))
             {
                 WEdit *e = (WEdit *) we;
-                unsigned long command;
+                long command;
 
                 if (!e->extmod)
                     command = keybind_lookup_keymap_command (editor_map, parm);
@@ -1262,10 +1256,10 @@ edit_files (const GList * files)
 
 /* --------------------------------------------------------------------------------------------- */
 
-char *
+const char *
 edit_get_file_name (const WEdit * edit)
 {
-    return g_strdup (vfs_path_as_str (edit->filename_vpath));
+    return vfs_path_as_str (edit->filename_vpath);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1379,7 +1373,7 @@ edit_add_window (WDialog * h, int y, int x, int lines, int cols, const vfs_path_
  */
 
 gboolean
-edit_handle_move_resize (WEdit * edit, unsigned long command)
+edit_handle_move_resize (WEdit * edit, long command)
 {
     gboolean ret = FALSE;
 

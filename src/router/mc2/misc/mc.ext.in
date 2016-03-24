@@ -135,6 +135,16 @@ regex/\.t(ar\.lzma|lz)$
 	Open=%cd %p/utar://
 	View=%view{ascii} @EXTHELPERSDIR@/archive.sh view tar.lzma
 
+# .tar.lz
+shell/.tar.lz
+	Open=%cd %p/utar://
+	View=%view{ascii} @EXTHELPERSDIR@/archive.sh view tar.lz
+
+# .tar.lz4, .tlz4
+regex/\.t(ar\.lz4|lz4)$
+	Open=%cd %p/utar://
+	View=%view{ascii} @EXTHELPERSDIR@/archive.sh view tar.lz4
+
 # .tar.xz, .txz
 regex/\.t(ar\.xz|xz)$
 	Open=%cd %p/utar://
@@ -190,6 +200,14 @@ shell/.cpio.Z
 	Open=%cd %p/ucpio://
 	View=%view{ascii} @EXTHELPERSDIR@/archive.sh view cpio.z
 
+shell/.cpio.lz
+	Open=%cd %p/ucpio://
+	View=%view{ascii} @EXTHELPERSDIR@/archive.sh view cpio.lz
+
+shell/.cpio.lz4
+	Open=%cd %p/ucpio://
+	View=%view{ascii} @EXTHELPERSDIR@/archive.sh view cpio.lz4
+
 shell/.cpio.xz
 	Open=%cd %p/ucpio://
 	View=%view{ascii} @EXTHELPERSDIR@/archive.sh view cpio.xz
@@ -201,6 +219,10 @@ shell/.cpio.gz
 shell/i/.cpio
 	Open=%cd %p/ucpio://
 	View=%view{ascii} @EXTHELPERSDIR@/archive.sh view cpio
+
+# initrd
+regex/^(initramfs.*\.img|initrd\.img(-.+)?)$
+	Open=%cd %p/ucpio://
 
 # 7zip archives (they are not man pages)
 shell/i/.7z
@@ -215,6 +237,10 @@ regex/\.(diff|patch)(\.bz2)$
 regex/\.(diff|patch)(\.(gz|Z))$
 	Open=%cd %p/patchfs://
 	View=%view{ascii} @EXTHELPERSDIR@/archive.sh view gz
+
+regex/\.(diff|patch)(\.xz)$
+    Open=%cd %p/patchfs://
+    View=%view{ascii} @EXTHELPERSDIR@/archive.sh view xz
 
 # ls-lR
 regex/(^|\.)ls-?lR(\.gz|Z|bz2)$
@@ -359,6 +385,14 @@ regex/([^0-9]|^[^\.]*)\.([1-9][A-Za-z]*|[ln])\.bz$
 regex/([^0-9]|^[^\.]*)\.([1-9][A-Za-z]*|[ln])\.bz2$
 	Open=@EXTHELPERSDIR@/text.sh open man.bz2 %var{PAGER:more}
 	View=%view{ascii,nroff} @EXTHELPERSDIR@/text.sh view man.bz2 %var{PAGER:more}
+
+regex/([^0-9]|^[^\.]*)\.([1-9][A-Za-z]*|[ln])\.lz$
+	Open=@EXTHELPERSDIR@/text.sh open man.lz %var{PAGER:more}
+	View=%view{ascii,nroff} @EXTHELPERSDIR@/text.sh view man.lz %var{PAGER:more}
+
+regex/([^0-9]|^[^\.]*)\.([1-9][A-Za-z]*|[ln])\.lz4$
+	Open=@EXTHELPERSDIR@/text.sh open man.lz4 %var{PAGER:more}
+	View=%view{ascii,nroff} @EXTHELPERSDIR@/text.sh view man.lz4 %var{PAGER:more}
 
 regex/([^0-9]|^[^\.]*)\.([1-9][A-Za-z]*|[ln])\.lzma$
 	Open=@EXTHELPERSDIR@/text.sh open man.lzma %var{PAGER:more}
@@ -617,15 +651,15 @@ shell/.class
 	View=%view{ascii} @EXTHELPERSDIR@/misc.sh view javaclass
 
 # Makefile
-regex/[Mm]akefile$
+regex/^[Mm]akefile$
 	Open=make -f %f %{Enter parameters}
 
 # Imakefile
 shell/Imakefile
-	Open=@EXTHELPERSDIR@/misc.sh open imakefile
+	Open=xmkmf -a
 
 # Makefile.PL (MakeMaker)
-regex/^Makefile.(PL|pl)$
+regex/^Makefile\.(PL|pl)$
 	Open=%var{PERL:perl} %f
 
 # sqlite3.db
@@ -729,6 +763,21 @@ type/^bzip
 type/^compress
 	Open=@EXTHELPERSDIR@/archive.sh view gz %var{PAGER:more}
 	View=%view{ascii} @EXTHELPERSDIR@/archive.sh view gz
+
+# lz
+regex/\.lz$
+	Open=@EXTHELPERSDIR@/archive.sh view lz %var{PAGER:more}
+	View=%view{ascii} @EXTHELPERSDIR@/archive.sh view lz
+
+# lz
+type/^LZIP
+	Open=@EXTHELPERSDIR@/archive.sh view lz %var{PAGER:more}
+	View=%view{ascii} @EXTHELPERSDIR@/archive.sh view lz
+
+# lz4
+regex/\.lz4$
+	Open=@EXTHELPERSDIR@/archive.sh view lz4 %var{PAGER:more}
+	View=%view{ascii} @EXTHELPERSDIR@/archive.sh view lz4
 
 # lzma
 regex/\.lzma$

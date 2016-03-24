@@ -11,8 +11,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2015-11-06 14:43+0300\n"
-"PO-Revision-Date: 2015-10-26 17:16+0100\n"
+"POT-Creation-Date: 2016-03-12 17:34+0100\n"
+"PO-Revision-Date: 2016-01-08 21:48+0100\n"
 "Last-Translator: Marco Ciampa <ciampix@libero.it>\n"
 "Language-Team: Italian (http://www.transifex.com/projects/p/mc/language/"
 "it/)\n"
@@ -492,15 +492,12 @@ msgid "Directory cache expired for %s"
 msgstr "Cache dir scaduta per %s"
 
 #, c-format
-msgid "%s: %s: %s %3d%% %<PRIuMAX> %s"
-msgstr ""
-
-msgid "bytes transferred"
-msgstr "byte trasferiti"
+msgid "%s: %s: %s %3d%% (%lld) bytes transferred"
+msgstr "%s: %s: %s %3d%% (%lld) byte trasferiti"
 
 #, c-format
-msgid "%s: %s: %s %<PRIuMAX> %s"
-msgstr ""
+msgid "%s: %s: %s %lld bytes transferred"
+msgstr "%s: %s: %s %lld byte trasferiti"
 
 msgid "Starting linear transfer..."
 msgstr "Inizio trasferimento lineare..."
@@ -582,9 +579,9 @@ msgstr "Processo in background:"
 msgid "Error"
 msgstr "Errore"
 
-#, c-format
-msgid "%d: %s"
-msgstr "%d: %s"
+#, fuzzy, c-format
+msgid "%s (%d)"
+msgstr "Tempo: %s (%s)"
 
 msgid "&Abort"
 msgstr "&Annulla"
@@ -1581,8 +1578,8 @@ msgstr ""
 "Un semplice editor di testi\n"
 "scritto per il Midnight Commander."
 
-msgid "Copyright (C) 1996-2015 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2015 the Free Software Foundation"
+msgid "Copyright (C) 1996-2016 the Free Software Foundation"
+msgstr "Copyright (C) 1996-2016 the Free Software Foundation"
 
 msgid "About"
 msgstr "Informazioni"
@@ -2288,6 +2285,10 @@ msgstr ""
 "i pannelli non possono essere nascosti."
 
 #, c-format
+msgid "'%s' is not a symbolic link"
+msgstr "\"%s\" non è un coll. simbolico"
+
+#, c-format
 msgid "Symlink '%s' points to:"
 msgstr "Il coll. simb. \"%s\" punta a:"
 
@@ -2301,10 +2302,6 @@ msgstr "modifica collegamento simb., impossibile rimuovere %s: %s"
 #, c-format
 msgid "edit symlink: %s"
 msgstr "modifica del collegamento simb.: %s"
-
-#, c-format
-msgid "'%s' is not a symbolic link"
-msgstr "\"%s\" non è un coll. simbolico"
 
 msgid "FTP to machine"
 msgstr "Connessione FTP"
@@ -2632,9 +2629,9 @@ msgstr ""
 "Impossibile preallocare lo spazio per il file obiettivo \"%s\"\n"
 "%s"
 
-#, c-format
+#, fuzzy, c-format
 msgid ""
-"Cannot read source file\"%s\"\n"
+"Cannot read source file \"%s\"\n"
 "%s"
 msgstr ""
 "Impossibile leggere il file sorgente \"%s\"\n"
@@ -4165,8 +4162,8 @@ msgstr "sftp: inserire password per %s "
 msgid "sftp: Password is empty."
 msgstr "sftp: la password è vuota."
 
-#, c-format
-msgid "sftp: Failure establishing SSH session: (%d)"
+#, fuzzy
+msgid "sftp: Failure establishing SSH session"
 msgstr "sftp: fallito inizio sessione SSH: (%d)"
 
 msgid "sftp: No file handler data present for reading file"
@@ -4419,3 +4416,6 @@ msgstr "Continuare dall'inizio?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr "Impossibile ricevere copia locale di /ftp://un.host/modificami.txt"
+
+#~ msgid "%d: %s"
+#~ msgstr "%d: %s"
