@@ -232,12 +232,13 @@ int wifi_getchannel(char *ifname)
 
 	freq = wrq.u.freq.m;
 	if (freq < 1000) {
-		return (int)freq;
+		return freq;
 	}
-
+	int divisor = 1000000;
 	for (i = 0; i < wrq.u.freq.e; i++)
-		freq *= 10;
-	freq /= 1000000;
+		divisor /= 10;
+	if (divisor)
+		freq /= divisor;
 	cprintf("wifi channel %f\n", freq);
 	channel = ieee80211_mhz2ieee(freq);
 
@@ -263,9 +264,11 @@ struct wifi_interface *wifi_getfreq(char *ifname)
 		return interface;
 	}
 	freq = wrq.u.freq.m;
+	int divisor = 1000000;
 	for (i = 0; i < wrq.u.freq.e; i++)
-		freq *= 10;
-	freq /= 1000000;
+		divisor /= 10;
+	if (divisor)
+		freq /= divisor;
 	interface->freq = freq;
 	cprintf("wifi channel %f\n", freq);
 	return interface;
@@ -1210,7 +1213,7 @@ int iw_mwatt2dbm(int in)
 	int res = 0;
 
 	/*
-    	 * Split integral and floating part to avoid accumulating rounding errors 
+	 * Split integral and floating part to avoid accumulating rounding errors 
 	 */
 	while (fin > 10.0) {
 		res += 10;
@@ -1627,9 +1630,11 @@ int wifi_getchannel(char *ifname)
 	int i;
 
 	int freq = wrq.u.freq.m;
+	int divisor = 1000000;
 	for (i = 0; i < wrq.u.freq.e; i++)
-		freq *= 10;
-	freq /= 1000000;
+		divisor /= 10;
+	if (divisor)
+		freq /= divisor;
 	cprintf("wifi channel %f\n", freq);
 	channel = ieee80211_mhz2ieee(freq);
 
@@ -1653,9 +1658,11 @@ struct wifi_interface *wifi_getfreq(char *ifname)
 
 	int i;
 	int freq = wrq.u.freq.m;
+	int divisor = 1000000;
 	for (i = 0; i < wrq.u.freq.e; i++)
-		freq *= 10;
-	freq /= 1000000;
+		divisor /= 10;
+	if (divisor)
+		freq /= divisor;
 	struct wifi_interface *interface;
 	interface = (struct wifi_interface *)malloc(sizeof(struct wifi_interface));
 	interface->freq = freq;
