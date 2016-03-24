@@ -21,8 +21,15 @@
 #include <stdio.h>
 #include <signal.h>
 #include <unistd.h>
-#include <arpa/inet.h>
+#include <errno.h>
+#if defined(__FreeBSD__)
+#include <net/ethernet.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#else
 #include <netinet/ether.h>
+#endif
+#include <arpa/inet.h>
 #include <string.h>
 #include "protocol.h"
 #include "config.h"
@@ -58,6 +65,8 @@ int mndp(int timeout, int batch_mode)  {
 #endif
 
 	setlocale(LC_ALL, "");
+	bindtextdomain("mactelnet","/usr/share/locale");
+	textdomain("mactelnet");
 
 	/* Open a UDP socket handle */
 	sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
@@ -96,9 +105,9 @@ int mndp(int timeout, int batch_mode)  {
 	}
 
 	if (batch_mode) {
-		printf("%s\n", _("MAC-Address,Identity,Platform,Version,Hardware,Uptime,Softid,Ifname"));
+		printf("%s\n", _("MAC-Address,Identity,Platform,Version,Hardware,Uptime,Softid,Ifname,IP"));
 	} else {
-		printf("\n\E[1m%-17s %s\E[m\n", _("MAC-Address"), _("Identity (platform version hardware) uptime"));
+		printf("\n\E[1m%-15s %-17s %s\E[m\n", _("IP"), _("MAC-Address"), _("Identity (platform version hardware) uptime"));
 	}
 #ifdef FROM_MACTELNET
 	if (timeout > 0) {
@@ -108,8 +117,14 @@ int mndp(int timeout, int batch_mode)  {
 
 	while(1) {
 		struct mt_mndp_info *packet;
+		struct sockaddr_in addr;
+		socklen_t addrlen = sizeof(addr);
+		char ipstr[INET_ADDRSTRLEN];
+
+		memset(&addr, 0, addrlen);
+
 		/* Wait for a UDP packet */
-		result = recvfrom(sock, buff, MT_PACKET_LEN, 0, 0, 0);
+		result = recvfrom(sock, buff, MT_PACKET_LEN, 0, (struct sockaddr *)&addr, &addrlen);
 		if (result < 0) {
 			fprintf(stderr, _("An error occured. aborting\n"));
 			exit(1);
@@ -119,7 +134,9 @@ int mndp(int timeout, int batch_mode)  {
 		packet = parse_mndp(buff, result);
 
 		if (packet != NULL && !batch_mode) {
+
 			/* Print it */
+			printf("%-15s ", inet_ntop(addr.sin_family, &addr.sin_addr, ipstr, sizeof ipstr));
 			printf("%-17s %s", ether_ntoa((struct ether_addr *)packet->address), packet->identity);
 			if (packet->platform != NULL) {
 				printf(" (%s %s %s)", packet->platform, packet->version, packet->hardware);
@@ -139,6 +156,7 @@ int mndp(int timeout, int batch_mode)  {
 			printf("'%s','%s',", ether_ntoa((struct ether_addr *)packet->address), packet->identity);
 			printf("'%s','%s','%s',", packet->platform, packet->version, packet->hardware);
 			printf("'%d','%s','%s'", packet->uptime, packet->softid, packet->ifname);
+			printf(",'%s'", inet_ntop(addr.sin_family, &addr.sin_addr, ipstr, sizeof ipstr));
 			putchar('\n');
 			fflush(stdout);
 		}

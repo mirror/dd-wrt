@@ -25,18 +25,23 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
+#if defined(__FreeBSD__)
+#include <sys/endian.h>
+#include <sys/types.h>
+#include <net/ethernet.h>
+#else
 #include <endian.h>
+#include <netinet/ether.h>
+#endif
 #include <arpa/inet.h>
 #include <netinet/in.h>
-#include <netinet/ether.h>
-#include <paths.h>
 #include <sys/time.h>
 #include <time.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <string.h>
 #ifdef __linux__
-//#include <linux/if_ether.h>
+#include <linux/if_ether.h>
 #include <sys/mman.h>
 #endif
 #include "md5.h"
@@ -47,6 +52,7 @@
 #include "mactelnet.h"
 #include "mndp.h"
 #include "autologin.h"
+#include "utlist.h"
 
 #define PROGRAM_NAME "MAC-Telnet"
 
@@ -56,7 +62,7 @@ static int sockfd = 0;
 static int insockfd;
 
 static unsigned int outcounter = 0;
-static unsigned int incounter = 0;
+static long incounter = -1;
 static int sessionkey = 0;
 static int running = 1;
 
@@ -88,7 +94,7 @@ static char username[255];
 static char password[255];
 static char nonpriv_username[255];
 
-struct net_interface interfaces[MAX_INTERFACES];
+struct net_interface *interfaces=NULL;
 struct net_interface *active_interface;
 
 /* Protocol data direction */
@@ -280,7 +286,7 @@ static int handle_packet(unsigned char *data, int data_len) {
 
 		/* Accept first packet, and all packets greater than incounter, and if counter has
 		wrapped around. */
-		if (incounter == 0 || pkthdr.counter > incounter || (incounter - pkthdr.counter) > 65535) {
+		if (pkthdr.counter > incounter || (incounter - pkthdr.counter) > 65535) {
 			incounter = pkthdr.counter;
 		} else {
 			/* Ignore double or old packets */
@@ -358,33 +364,30 @@ static int find_interface() {
 	struct mt_packet data;
 	struct sockaddr_in myip;
 	unsigned char emptymac[ETH_ALEN];
-	int i, testsocket;
+	int testsocket;
 	struct timeval timeout;
 	int optval = 1;
+	struct net_interface *interface;
 
 	/* TODO: reread interfaces on HUP */
-	bzero(&interfaces, sizeof(struct net_interface) * MAX_INTERFACES);
+	//bzero(&interfaces, sizeof(struct net_interface) * MAX_INTERFACES);
 
 	bzero(emptymac, ETH_ALEN);
 
-	if (net_get_interfaces(interfaces, MAX_INTERFACES) <= 0) {
+	if (net_get_interfaces(&interfaces) <= 0) {
 		fprintf(stderr, _("Error: No suitable devices found\n"));
 		exit(1);
 	}
 
-	for (i = 0; i < MAX_INTERFACES; ++i) {
-		if (!interfaces[i].in_use) {
-			break;
-		}
-
+	DL_FOREACH(interfaces, interface) {
 		/* Skip loopback interfaces */
-		if (memcmp("lo", interfaces[i].name, 2) == 0) {
+		if (memcmp("lo", interface->name, 2) == 0) {
 			continue;
 		}
 
 		/* Initialize receiving socket on the device chosen */
 		myip.sin_family = AF_INET;
-		memcpy((void *)&myip.sin_addr, interfaces[i].ipv4_addr, IPV4_ALEN);
+		memcpy((void *)&myip.sin_addr, interface->ipv4_addr, IPV4_ALEN);
 		myip.sin_port = htons(sourceport);
 
 		/* Initialize socket and bind to udp port */
@@ -401,15 +404,15 @@ static int find_interface() {
 		}
 
 		/* Ensure that we have mac-address for this interface  */
-		if (!interfaces[i].has_mac) {
+		if (!interface->has_mac) {
 			close(testsocket);
 			continue;
 		}
 
 		/* Set the global socket handle and source mac address for send_udp() */
 		send_socket = testsocket;
-		memcpy(srcmac, interfaces[i].mac_addr, ETH_ALEN);
-		active_interface = &interfaces[i];
+		memcpy(srcmac, interface->mac_addr, ETH_ALEN);
+		active_interface = interface;
 
 		/* Send a SESSIONSTART message with the current device */
 		init_packet(&data, MT_PTYPE_SESSIONSTART, srcmac, dstmac, sessionkey, 0);
@@ -439,6 +442,7 @@ int main (int argc, char **argv) {
 	struct mt_packet data;
 	struct sockaddr_in si_me;
 	struct autologin_profile *login_profile;
+	struct net_interface *interface, *tmp;
 	unsigned char buff[1500];
 	unsigned char print_help = 0, have_username = 0, have_password = 0;
 	unsigned char drop_priv = 0;
@@ -448,6 +452,8 @@ int main (int argc, char **argv) {
 	strncpy(autologin_path, AUTOLOGIN_PATH, 254);
 
 	setlocale(LC_ALL, "");
+	bindtextdomain("mactelnet","/usr/share/locale");
+	textdomain("mactelnet");
 
 	while (1) {
 		c = getopt(argc, argv, "lnqt:u:p:U:vh?BAa:");
@@ -628,6 +634,7 @@ int main (int argc, char **argv) {
 	if (!have_username) {
 		if (!quiet_mode) {
 			printf(_("Login: "));
+			fflush(stdout);
 		}
 		scanf("%254s", username);
 	}
@@ -754,6 +761,11 @@ int main (int argc, char **argv) {
 
 	close(sockfd);
 	close(insockfd);
+
+	DL_FOREACH_SAFE(interfaces, interface, tmp) {
+		DL_DELETE(interfaces, interface);
+		free(interface);
+	}
 
 	return 0;
 }
