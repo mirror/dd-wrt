@@ -31,7 +31,7 @@
 #include <net/ethernet.h>
 #else
 #include <endian.h>
-//#include <netinet/ether.h>
+#include <netinet/ether.h>
 #endif
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -41,7 +41,7 @@
 #include <sys/socket.h>
 #include <string.h>
 #ifdef __linux__
-#include <linux/if_ether.h>
+//#include <linux/if_ether.h>
 #include <sys/mman.h>
 #endif
 #include "md5.h"
