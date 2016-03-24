@@ -53,7 +53,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nsock_core.c 34756 2015-06-27 08:21:53Z henri $ */
+/* $Id: nsock_core.c 35674 2016-03-12 23:26:26Z dmiller $ */
 
 #include "nsock_internal.h"
 #include "gh_list.h"
@@ -489,9 +489,13 @@ void handle_connect_result(struct npool *ms, struct nevent *nse, enum nse_status
                                iod->peerlen, nsock_iod_get_peerport(iod));
         nsock_engine_iod_register(ms, iod, saved_ev);
 
-        SSL_clear(iod->ssl);
-        if(!SSL_clear(iod->ssl))
-           fatal("SSL_clear failed: %s", ERR_error_string(ERR_get_error(), NULL));
+        /* Use SSL_free here because SSL_clear keeps session info, which
+         * doesn't work when changing SSL versions (as we're clearly trying to
+         * do by adding SSL_OP_NO_SSLv2). */
+        SSL_free(iod->ssl);
+        iod->ssl = SSL_new(ms->sslctx);
+        if (!iod->ssl)
+          fatal("SSL_new failed: %s", ERR_error_string(ERR_get_error(), NULL));
 
         SSL_set_options(iod->ssl, options | SSL_OP_NO_SSLv2);
         socket_count_read_inc(nse->iod);
@@ -718,7 +722,7 @@ static int do_actual_read(struct npool *ms, struct nevent *nse) {
         nse->status = NSE_STATUS_ERROR;
         nse->errnum = EIO;
         nsock_log_info("SSL_read() failed for reason %s on NSI %li",
-                       ERR_reason_error_string(err), iod->id);
+                       ERR_error_string(err, NULL), iod->id);
         return -1;
       }
     }

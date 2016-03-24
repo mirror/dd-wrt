@@ -9,7 +9,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2014 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2015 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
@@ -100,8 +100,7 @@
  *                                                                         *
  * Source is provided to this software because we believe users have a     *
  * right to know exactly what a program is going to do before they run it. *
- * This also allows you to audit the software for security holes (none     *
- * have been found so far).                                                *
+ * This also allows you to audit the software for security holes.          *
  *                                                                         *
  * Source code also allows you to port Nmap to new platforms, fix bugs,    *
  * and add new features.  You are highly encouraged to send your changes   *
@@ -122,20 +121,22 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of              *
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the Nmap      *
  * license file for more details (it's in a COPYING file included with     *
- * Nmap, and also available from https://svn.nmap.org/nmap/COPYING         *
+ * Nmap, and also available from https://svn.nmap.org/nmap/COPYING)        *
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: output.cc 33540 2014-08-16 02:45:47Z dmiller $ */
+/* $Id: output.cc 34798 2015-06-30 04:04:51Z dmiller $ */
 
 #include "nmap.h"
 #include "output.h"
 #include "osscan.h"
+#include "osscan2.h"
 #include "NmapOps.h"
 #include "NmapOutputTable.h"
 #include "MACLookup.h"
 #include "portreasons.h"
 #include "protocols.h"
+#include "FingerPrintResults.h"
 #include "Target.h"
 #include "utils.h"
 #include "xml.h"
@@ -719,8 +720,13 @@ void printportoutput(Target *currenths, PortList *plist, risultatoScan *risultat
           log_write(LOG_MACHINE, ", ");
         else
           first = 0;
-        if (o.reason)
-          Tbl->addItem(rowno, reasoncol, true, port_reason_str(current->reason));
+        if (o.reason) {
+          if (current->reason.ttl)
+            Tbl->addItemFormatted(rowno, reasoncol, false, "%s ttl %d", 
+                                port_reason_str(current->reason), current->reason.ttl);
+          else
+            Tbl->addItem(rowno, reasoncol, true, port_reason_str(current->reason));
+        }
         state = statenum2str(current->state);
         proto = nmap_getprotbynum(current->portno);
         Snprintf(portinfo, sizeof(portinfo), "%s", proto ? proto->p_name : "unknown");
@@ -779,8 +785,13 @@ void printportoutput(Target *currenths, PortList *plist, risultatoScan *risultat
         Tbl->addItem(rowno, portcol, true, portinfo);
         Tbl->addItem(rowno, statecol, false, state);
         Tbl->addItem(rowno, servicecol, true, serviceinfo);
-        if (o.reason)
-          Tbl->addItem(rowno, reasoncol, true, port_reason_str(current->reason));
+        if (o.reason) {
+          if (current->reason.ttl)
+            Tbl->addItemFormatted(rowno, reasoncol, false, "%s ttl %d", 
+                                  port_reason_str(current->reason), current->reason.ttl);
+          else
+            Tbl->addItem(rowno, reasoncol, true, port_reason_str(current->reason));
+        }
 
         sd.populateFullVersionString(fullversion, sizeof(fullversion));
         if (*fullversion && versioncol > 0)
@@ -884,7 +895,7 @@ void printportoutput(Target *currenths, PortList *plist, risultatoScan *risultat
     log_write(LOG_PLAIN, "%d service%s unrecognized despite returning data."
               " If you know the service/version, please submit the following"
               " fingerprint%s at"
-              " http://www.insecure.org/cgi-bin/servicefp-submit.cgi :\n",
+              " https://nmap.org/cgi-bin/submit.cgi?new-service :\n",
               numfps, (numfps > 1) ? "s" : "", (numfps > 1) ? "s" : "");
     for (i = 0; i < numfps; i++) {
       if (numfps > 1)
@@ -1442,14 +1453,17 @@ void write_host_header(Target *currenths) {
 #endif /* RAISENTINET3 */
   if (currenths->TargetName() != NULL
       && currenths->resolved_addrs.size() > 1) {
-    std::list<struct sockaddr_storage>::iterator it;
+    const struct sockaddr_storage *hs_ss = currenths->TargetSockAddr();
 
     log_write(LOG_PLAIN, "Other addresses for %s (not scanned):",
       currenths->TargetName());
-    it = currenths->resolved_addrs.begin();
-    it++;
-    for (; it != currenths->resolved_addrs.end(); it++)
-      log_write(LOG_PLAIN, " %s", inet_ntop_ez(&*it, sizeof(*it)));
+    for (std::list<struct sockaddr_storage>::const_iterator it = currenths->resolved_addrs.begin(), end = currenths->resolved_addrs.end();
+        it != end; it++) {
+      struct sockaddr_storage ss = *it;
+      if (!sockaddr_storage_equal(&ss, hs_ss)) {
+        log_write(LOG_PLAIN, " %s", inet_ntop_ez(&ss, sizeof(ss)));
+      }
+    }
     log_write(LOG_PLAIN, "\n");
   }
   /* Print reverse DNS if it differs. */
@@ -1505,6 +1519,8 @@ void write_host_status(Target *currenths, risultatoScan *risultatoHost) {
       log_write(LOG_PLAIN, "Host is up");
       if (o.reason)
         log_write(LOG_PLAIN, ", %s", target_reason_str(currenths));
+      if (o.reason && currenths->reason.ttl)
+        log_write(LOG_PLAIN, " ttl %d", currenths->reason.ttl);
       if (currenths->to.srtt != -1)
         log_write(LOG_PLAIN, " (%ss latency)",
                   num_to_string_sigdigits(currenths->to.srtt / 1000000.0, 2));
@@ -2003,7 +2019,7 @@ void printosscanoutput(Target *currenths, risultatoScan *risultatoHost) {
 #endif /* RAISENTINET3 */
       if (!reason) {
         log_write(LOG_NORMAL | LOG_SKID_NOXLT | LOG_STDOUT,
-                  "No exact OS matches for host (If you know what OS is running on it, see http://nmap.org/submit/ ).\n");
+                  "No exact OS matches for host (If you know what OS is running on it, see https://nmap.org/submit/ ).\n");
         write_merged_fpr(FPR, currenths, true, true);
       } else {
         log_write(LOG_NORMAL | LOG_SKID_NOXLT | LOG_STDOUT,
@@ -2016,7 +2032,7 @@ void printosscanoutput(Target *currenths, risultatoScan *risultatoHost) {
     /* No matches at all. */
     if (!reason) {
       log_write(LOG_NORMAL | LOG_SKID_NOXLT | LOG_STDOUT,
-                "No OS matches for host (If you know what OS is running on it, see http://nmap.org/submit/ ).\n");
+                "No OS matches for host (If you know what OS is running on it, see https://nmap.org/submit/ ).\n");
       write_merged_fpr(FPR, currenths, true, true);
     } else {
       log_write(LOG_NORMAL | LOG_SKID_NOXLT | LOG_STDOUT,
@@ -2087,7 +2103,7 @@ void printosscanoutput(Target *currenths, risultatoScan *risultatoHost) {
     xml_close_empty_tag();
     xml_newline();
     if (o.verbose)
-      log_write(LOG_PLAIN, "%s", seqreport(&(currenths->seq)));
+      log_write(LOG_PLAIN, "TCP Sequence Prediction: Difficulty=%d (%s)\n", currenths->seq.index, seqidx2difficultystr(currenths->seq.index));
 
     log_write(LOG_MACHINE, "\tSeq Index: %d", currenths->seq.index);
   }
@@ -2408,7 +2424,7 @@ static void printtraceroute_normal(Target *currenths) {
         /* The beginning and end of timeout consolidation. */
         int begin_ttl, end_ttl;
         begin_ttl = end_ttl = it->ttl;
-        for ( ; it != currenths->traceroute_hops.end() && it->timedout; it++)
+        for (; it != currenths->traceroute_hops.end() && it->timedout; it++)
           end_ttl = it->ttl;
         if (begin_ttl == end_ttl)
           Tbl.addItem(row, RTT_COL, false, "...");
@@ -2575,11 +2591,11 @@ void printfinaloutput() {
     log_write(LOG_STDOUT, "Note: Host seems down. If it is really up, but blocking our ping probes, try -Pn\n");
   else if (o.numhosts_up > 0) {
     if (o.osscan && o.servicescan)
-      log_write(LOG_PLAIN, "OS and Service detection performed. Please report any incorrect results at http://nmap.org/submit/ .\n");
+      log_write(LOG_PLAIN, "OS and Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .\n");
     else if (o.osscan)
-      log_write(LOG_PLAIN, "OS detection performed. Please report any incorrect results at http://nmap.org/submit/ .\n");
+      log_write(LOG_PLAIN, "OS detection performed. Please report any incorrect results at https://nmap.org/submit/ .\n");
     else if (o.servicescan)
-      log_write(LOG_PLAIN, "Service detection performed. Please report any incorrect results at http://nmap.org/submit/ .\n");
+      log_write(LOG_PLAIN, "Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .\n");
   }
 
   log_write(LOG_STDOUT | LOG_SKID,
@@ -2733,7 +2749,7 @@ static inline const char *nslog2str(nsock_loglevel_t loglevel) {
   };
 }
 
-void nmap_adjust_loglevel(nsock_pool nsp, bool trace) {
+void nmap_adjust_loglevel(bool trace) {
   nsock_loglevel_t nsock_loglevel;
 
   if (o.debugging >= 7)
@@ -2745,10 +2761,10 @@ void nmap_adjust_loglevel(nsock_pool nsp, bool trace) {
   else
     nsock_loglevel = NSOCK_LOG_ERROR;
 
-  nsock_set_loglevel(nsp, nsock_loglevel);
+  nsock_set_loglevel(nsock_loglevel);
 }
 
-void nmap_nsock_stderr_logger(nsock_pool nsp, const struct nsock_log_rec *rec) {
+void nmap_nsock_stderr_logger(const struct nsock_log_rec *rec) {
   int elapsed_time;
 
   elapsed_time = TIMEVAL_MSEC_SUBTRACT(rec->time, *(o.getStartTime()));
@@ -2756,4 +2772,3 @@ void nmap_nsock_stderr_logger(nsock_pool nsp, const struct nsock_log_rec *rec) {
   log_write(LOG_STDERR, "NSOCK %s [%.4fs] %s(): %s\n", nslog2str(rec->level),
             elapsed_time/1000.0, rec->func, rec->msg);
 }
-
