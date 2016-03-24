@@ -16,6 +16,7 @@
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
+#define _POSIX_C_SOURCE 199309L
 #define _XOPEN_SOURCE 600
 #define _BSD_SOURCE
 #include <locale.h>
@@ -25,29 +26,43 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
+#if defined(__FreeBSD__)
+#include <paths.h>
+#include <sys/endian.h>
+#else
 #include <endian.h>
+#endif
 #include <time.h>
 #include <arpa/inet.h>
+#include <sys/types.h>
 #include <net/ethernet.h>
 #include <netinet/in.h>
+#if !defined(__FreeBSD__)
 #include <netinet/ether.h>
+#endif
 #include <sys/time.h>
 #include <time.h>
-#include <sys/types.h>
 #include <sys/socket.h>
 #include <string.h>
-#include <paths.h>
 #ifdef __linux__
-//#include <linux/if_ether.h>
+#include <linux/if_ether.h>
 #include <sys/mman.h>
 #else
 #include <sys/time.h>
 #endif
 #include <sys/ioctl.h>
 #include <sys/stat.h>
+#if defined(__linux__)
 #include <sys/sysinfo.h>
+#endif
 #include <pwd.h>
+#if defined(__FreeBSD__)
+#include <sys/time.h>
+/* This is the really Posix interface the Linux code should have used !!*/
+#include <utmpx.h>
+#else
 #include <utmp.h>
+#endif
 #include <syslog.h>
 #include <sys/utsname.h>
 #include "md5.h"
@@ -56,6 +71,7 @@
 #include "interfaces.h"
 #include "users.h"
 #include "config.h"
+#include "utlist.h"
 
 #define PROGRAM_NAME "MAC-Telnet Daemon"
 
@@ -75,7 +91,7 @@ static int mndpsockfd;
 
 static int pings = 0;
 
-struct net_interface interfaces[MAX_INTERFACES];
+struct net_interface *interfaces = NULL;
 
 static int use_raw_socket = 0;
 
@@ -106,6 +122,7 @@ struct mt_connection {
 	unsigned short seskey;
 	unsigned int incounter;
 	unsigned int outcounter;
+	unsigned int lastack;
 	time_t lastdata;
 
 	int terminal_mode;
@@ -127,6 +144,7 @@ struct mt_connection {
 	unsigned short terminal_height;
 	char terminal_type[30];
 
+	struct mt_connection *prev;
 	struct mt_connection *next;
 };
 
@@ -136,21 +154,10 @@ static void uwtmp_logout(struct mt_connection *);
 static struct mt_connection *connections_head = NULL;
 
 static void list_add_connection(struct mt_connection *conn) {
-	struct mt_connection *p;
-	struct mt_connection *last;
-	if (connections_head == NULL) {
-		connections_head = conn;
-		connections_head->next = NULL;
-		return;
-	}
-	for (p = connections_head; p != NULL; p = p->next) {last = p;}
-	last->next = conn;
-	conn->next = NULL;
+	DL_APPEND(connections_head, conn);
 }
 
 static void list_remove_connection(struct mt_connection *conn) {
-	struct mt_connection *p;
-	struct mt_connection *last;
 	if (connections_head == NULL) {
 		return;
 	}
@@ -164,30 +171,14 @@ static void list_remove_connection(struct mt_connection *conn) {
 
 	uwtmp_logout(conn);
 
-	if (connections_head == conn) {
-		connections_head = conn->next;
-		free(conn);
-		return;
-	}
-
-	for (p = connections_head; p != NULL; p = p->next) {
-		if (p == conn) {
-			last->next = p->next;
-			free(p);
-			return;
-		}
-		last = p;
-	}
+	DL_DELETE(connections_head, conn);
+	free(conn);
 }
 
 static struct mt_connection *list_find_connection(unsigned short seskey, unsigned char *srcmac) {
 	struct mt_connection *p;
 
-	if (connections_head == NULL) {
-		return NULL;
-	}
-
-	for (p = connections_head; p != NULL; p = p->next) {
+	DL_FOREACH(connections_head, p) {
 		if (p->seskey == seskey && memcmp(srcmac, p->srcmac, ETH_ALEN) == 0) {
 			return p;
 		}
@@ -196,58 +187,54 @@ static struct mt_connection *list_find_connection(unsigned short seskey, unsigne
 	return NULL;
 }
 
-static int find_socket(unsigned char *mac) {
-	int i;
+static struct net_interface *find_socket(unsigned char *mac) {
+	struct net_interface *interface;
 
-	for (i = 0; i < MAX_INTERFACES; ++i) {
-		if (interfaces[i].in_use && memcmp(mac, interfaces[i].mac_addr, ETH_ALEN) == 0) {
-			return i;
-		}
-
-		if (!interfaces[i].in_use) {
-			break;
+	DL_FOREACH(interfaces, interface) {
+		if (memcmp(mac, interface->mac_addr, ETH_ALEN) == 0) {
+			return interface;
 		}
 	}
-	return -1;
+	return NULL;
 }
 
 static void setup_sockets() {
-	int i;
+	struct net_interface *interface;
 
-	for (i = 0; i < MAX_INTERFACES; ++i) {
+	DL_FOREACH(interfaces, interface) {
 		int optval = 1;
 		struct sockaddr_in si_me;
-		struct ether_addr *mac = (struct ether_addr *)&(interfaces[i].mac_addr);
+		struct ether_addr *mac = (struct ether_addr *)&(interface->mac_addr);
 
-		if (interfaces[i].in_use == 0 || !interfaces[i].has_mac) {
+		if (!interface->has_mac) {
 			continue;
 		}
 
 		if (!use_raw_socket) {
-			interfaces[i].socketfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-			if (interfaces[i].socketfd < 0) {
+			interface->socketfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+			if (interface->socketfd < 0) {
 				continue;
 			}
 
-			if (setsockopt(interfaces[i].socketfd, SOL_SOCKET, SO_BROADCAST, &optval, sizeof (optval))==-1) {
+			if (setsockopt(interface->socketfd, SOL_SOCKET, SO_BROADCAST, &optval, sizeof (optval))==-1) {
 				perror("SO_BROADCAST");
 				continue;
 			}
 
-			setsockopt(interfaces[i].socketfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
+			setsockopt(interface->socketfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
 
 			/* Initialize receiving socket on the device chosen */
 			si_me.sin_family = AF_INET;
 			si_me.sin_port = htons(MT_MACTELNET_PORT);
-			memcpy(&(si_me.sin_addr.s_addr), interfaces[i].ipv4_addr, IPV4_ALEN);
+			memcpy(&(si_me.sin_addr.s_addr), interface->ipv4_addr, IPV4_ALEN);
 
-			if (bind(interfaces[i].socketfd, (struct sockaddr *)&si_me, sizeof(si_me))==-1) {
+			if (bind(interface->socketfd, (struct sockaddr *)&si_me, sizeof(si_me))==-1) {
 				fprintf(stderr, _("Error binding to %s:%d, %s\n"), inet_ntoa(si_me.sin_addr), sourceport, strerror(errno));
 				continue;
 			}
 		}
 
-		syslog(LOG_NOTICE, _("Listening on %s for %s\n"), interfaces[i].name, ether_ntoa(mac));
+		syslog(LOG_NOTICE, _("Listening on %s for %s\n"), interface->name, ether_ntoa(mac));
 
 	}
 }
@@ -305,15 +292,19 @@ static void display_nologin() {
 			putchar(c);
 		}
 		fclose(fp);
-	}	
+	}
 }
 
 static void uwtmp_login(struct mt_connection *conn) {
+#if defined(__FreeBSD__)
+	struct utmpx utent;
+#else
 	struct utmp utent;
+#endif
 	pid_t pid;
 
 	pid = getpid();
-	
+
 	char *line = ttyname(conn->slavefd);
 	if (strncmp(line, "/dev/", 5) == 0) {
 		line += 5;
@@ -326,23 +317,45 @@ static void uwtmp_login(struct mt_connection *conn) {
 	strncpy(utent.ut_user, conn->username, sizeof(utent.ut_user));
 	strncpy(utent.ut_line, line, sizeof(utent.ut_line));
 	strncpy(utent.ut_id, utent.ut_line + 3, sizeof(utent.ut_id));
-	strncpy(utent.ut_host, ether_ntoa((const struct ether_addr *)conn->srcmac), sizeof(utent.ut_host));
+	strncpy(utent.ut_host,
+                ether_ntoa((const struct ether_addr *)conn->srcmac),
+                sizeof(utent.ut_host));
+#if defined(__FreeBSD__)
+	gettimeofday(&utent.ut_tv, NULL);
+#else
 	time((time_t *)&(utent.ut_time));
-	
+#endif
+
 	/* Update utmp and/or wtmp */
+#if defined(__FreeBSD__)
+	setutxent();
+	pututxline(&utent);
+	endutxent();
+#else
 	setutent();
 	pututline(&utent);
 	endutent();
 	updwtmp(_PATH_WTMP, &utent);
+#endif
 }
 
 static void uwtmp_logout(struct mt_connection *conn) {
 	if (conn->pid > 0) {
+#if defined(__FreeBSD__)
+		struct utmpx *utentp;
+		struct utmpx utent;
+		setutxent();
+#else
 		struct utmp *utentp;
 		struct utmp utent;
 		setutent();
+#endif
 
+#if defined(__FreeBSD__)
+		while ((utentp = getutxent()) != NULL) {
+#else
 		while ((utentp = getutent()) != NULL) {
+#endif
 			if (utentp->ut_pid == conn->pid && utentp->ut_id) {
 				break;
 			}
@@ -354,16 +367,21 @@ static void uwtmp_logout(struct mt_connection *conn) {
 			utent.ut_type = DEAD_PROCESS;
 			utent.ut_tv.tv_sec = time(NULL);
 
+#if defined(__FreeBSD__)
+			pututxline(&utent);
+			endutxent();
+#else
 			pututline(&utent);
 			endutent();
 			updwtmp(_PATH_WTMP, &utent);
+#endif
 		}
 	}
 }
 
 static void abort_connection(struct mt_connection *curconn, struct mt_mactelnet_hdr *pkthdr, char *message) {
 	struct mt_packet pdata;
-	
+
 	init_packet(&pdata, MT_PTYPE_DATA, pkthdr->dstaddr, pkthdr->srcaddr, pkthdr->seskey, curconn->outcounter);
 	add_control_packet(&pdata, MT_CPTYPE_PLAINDATA, message, strlen(message));
 	send_udp(curconn, &pdata);
@@ -444,11 +462,23 @@ static void user_login(struct mt_connection *curconn, struct mt_mactelnet_hdr *p
 	if (slavename != NULL) {
 		pid_t pid;
 		struct stat sb;
-		struct passwd *user = (struct passwd *)getpwnam(curconn->username);
-		if (user == NULL) {
+		struct passwd *user = (struct passwd *)malloc(sizeof(struct passwd));
+		struct passwd *tmpuser=user;
+		char *buffer = malloc(1024);
+
+		if (user == NULL || buffer == NULL) {
+			syslog(LOG_CRIT, _("(%d) Error allocating memory."), curconn->seskey);
+			/*_ Please include both \r and \n in translation, this is needed for the terminal emulator. */
+			abort_connection(curconn, pkthdr, _("System error, out of memory\r\n"));
+			return;
+		}
+
+		if (getpwnam_r(curconn->username, user, buffer, 1024, &tmpuser) != 0) {
 			syslog(LOG_WARNING, _("(%d) Login ok, but local user not accessible (%s)."), curconn->seskey, curconn->username);
 			/*_ Please include both \r and \n in translation, this is needed for the terminal emulator. */
 			abort_connection(curconn, pkthdr, _("Local user not accessible\r\n"));
+			free(user);
+			free(buffer);
 			return;
 		}
 
@@ -465,7 +495,7 @@ static void user_login(struct mt_connection *curconn, struct mt_mactelnet_hdr *p
 		}
 
 		if ((pid = fork()) == 0) {
-			int i;
+			struct net_interface *interface;
 
 			/* Add login information to utmp/wtmp */
 			uwtmp_login(curconn);
@@ -479,21 +509,18 @@ static void user_login(struct mt_connection *curconn, struct mt_mactelnet_hdr *p
 			setenv("TERM", curconn->terminal_type, 1);
 			close(sockfd);
 			close(insockfd);
-			for (i = 0; i < MAX_INTERFACES; ++i) {
-				if (interfaces[i].in_use && interfaces[i].socketfd > 0) {
-					close(interfaces[i].socketfd);
+
+			DL_FOREACH(interfaces, interface) {
+				if (interface->socketfd > 0) {
+					close(interface->socketfd);
 				}
-				if (!interfaces[i].in_use) {
-					break;
-				}
-				
 			}
 			setsid();
 
 			/* Don't let shell process inherit slavefd */
 			fcntl (curconn->slavefd, F_SETFD, FD_CLOEXEC);
 			close(curconn->ptsfd);
-			
+
 			/* Redirect STDIN/STDIO/STDERR */
 			close(0);
 			dup(curconn->slavefd);
@@ -534,6 +561,8 @@ static void user_login(struct mt_connection *curconn, struct mt_mactelnet_hdr *p
 			execl(user->pw_shell, user->pw_shell, "-", (char *) 0);
 			exit(0); // just to be sure.
 		}
+		free(user);
+		free(buffer);
 		close(curconn->slavefd);
 		curconn->pid = pid;
 		set_terminal_size(curconn->ptsfd, curconn->terminal_width, curconn->terminal_height);
@@ -579,7 +608,7 @@ static void handle_data_packet(struct mt_connection *curconn, struct mt_mactelne
 
 		} else if (cpkt.cptype == MT_CPTYPE_TERM_WIDTH) {
 			unsigned short width;
-			
+
 			memcpy(&width, cpkt.data, 2);
 			curconn->terminal_width = le16toh(width);
 			got_width_packet = 1;
@@ -618,11 +647,11 @@ static void handle_data_packet(struct mt_connection *curconn, struct mt_mactelne
 		/* Parse next control packet */
 		success = parse_control_packet(NULL, 0, &cpkt);
 	}
-	
+
 	if (got_user_packet && got_pass_packet) {
 		user_login(curconn, pkthdr);
 	}
-	
+
 	if (curconn->state == STATE_ACTIVE && (got_width_packet || got_height_packet)) {
 		set_terminal_size(curconn->ptsfd, curconn->terminal_width, curconn->terminal_height);
 
@@ -633,12 +662,12 @@ static void handle_packet(unsigned char *data, int data_len, const struct sockad
 	struct mt_mactelnet_hdr pkthdr;
 	struct mt_connection *curconn = NULL;
 	struct mt_packet pdata;
-	int interface_index;
+	struct net_interface *interface;
 
 	parse_packet(data, &pkthdr);
 
 	/* Drop packets not belonging to us */
-	if ((interface_index = find_socket(pkthdr.dstaddr)) < 0) {
+	if ((interface = find_socket(pkthdr.dstaddr)) < 0) {
 		return;
 	}
 
@@ -652,19 +681,24 @@ static void handle_packet(unsigned char *data, int data_len, const struct sockad
 			add_packetdata(&pdata, pkthdr.data - 4, data_len - (MT_HEADER_LEN - 4));
 			{
 				if (index >= 0) {
-					send_special_udp(&interfaces[interface_index], MT_MACTELNET_PORT, &pdata);
+					send_special_udp(interface, MT_MACTELNET_PORT, &pdata);
 				}
 			}
 			break;
 
 		case MT_PTYPE_SESSIONSTART:
+			curconn = list_find_connection(pkthdr.seskey, (unsigned char *)&(pkthdr.srcaddr));
+			if (curconn != NULL) {
+				/* Ignore multiple session starts from the same sender, this can be same mac but different interface */
+				break;
+			}
 			syslog(LOG_DEBUG, _("(%d) New connection from %s."), pkthdr.seskey, ether_ntoa((struct ether_addr*)&(pkthdr.srcaddr)));
 			curconn = calloc(1, sizeof(struct mt_connection));
 			curconn->seskey = pkthdr.seskey;
 			curconn->lastdata = time(NULL);
 			curconn->state = STATE_AUTH;
-			curconn->interface = &interfaces[interface_index];
-			strncpy(curconn->interface_name, interfaces[interface_index].name, 254);
+			curconn->interface = interface;
+			strncpy(curconn->interface_name, interface->name, 254);
 			curconn->interface_name[255] = '\0';
 			memcpy(curconn->srcmac, pkthdr.srcaddr, ETH_ALEN);
 			memcpy(curconn->srcip, &(address->sin_addr), IPV4_ALEN);
@@ -698,9 +732,10 @@ static void handle_packet(unsigned char *data, int data_len, const struct sockad
 
 			if (pkthdr.counter <= curconn->outcounter) {
 				curconn->wait_for_ack = 0;
+				curconn->lastack = pkthdr.counter;
 			}
 
-			if (time(0) - curconn->lastdata > 9) {
+			if (time(0) - curconn->lastdata > 9 || pkthdr.counter == curconn->lastack) {
 				// Answer to anti-timeout packet
 				init_packet(&pdata, MT_PTYPE_ACK, pkthdr.dstaddr, pkthdr.srcaddr, pkthdr.seskey, pkthdr.counter);
 				send_udp(curconn, &pdata);
@@ -742,31 +777,6 @@ static void handle_packet(unsigned char *data, int data_len, const struct sockad
 	}
 }
 
-static void daemonize() {
-	int pid,fd;
-
-	pid = fork();
-
-	/* Error? */
-	if (pid < 0) {
-		exit(1);
-	}
-
-	/* Parent exit */
-	if (pid > 0) {
-		exit(0);
-	}
-
-	setsid();
-	close(0);
-	close(1);
-	close(2);
-	
-	fd = open("/dev/null",O_RDWR);
-	dup(fd);
-	dup(fd);
-}
-
 static void print_version() {
 	fprintf(stderr, PROGRAM_NAME " " PROGRAM_VERSION "\n");
 }
@@ -774,7 +784,7 @@ static void print_version() {
 void mndp_broadcast() {
 	struct mt_packet pdata;
 	struct utsname s_uname;
-	int i;
+	struct net_interface *interface;
 	unsigned int uptime;
 #ifdef __linux__
 	struct sysinfo s_sysinfo;
@@ -792,19 +802,16 @@ void mndp_broadcast() {
 		uptime = htole32(((unsigned int)ts.tv_sec));
 	}
 #endif
+
 	if (uname(&s_uname) != 0) {
 		return;
 	}
 
-	for (i = 0; i < MAX_INTERFACES; ++i) {
-		struct net_interface *interface = &interfaces[i];
+	DL_FOREACH(interfaces, interface) {
 		struct mt_mndp_hdr *header = (struct mt_mndp_hdr *)&(pdata.data);
 
-		if (interfaces[i].has_mac == 0) {
+		if (interface->has_mac == 0) {
 			continue;
-		}
-		if (interfaces[i].in_use == 0) {
-			break;
 		}
 
 		mndp_init_packet(&pdata, 0, 1);
@@ -825,12 +832,13 @@ void mndp_broadcast() {
 void sigterm_handler() {
 	struct mt_connection *p;
 	struct mt_packet pdata;
+	struct net_interface *interface, *tmp;
 	/*_ Please include both \r and \n in translation, this is needed for the terminal emulator. */
 	char message[] = gettext_noop("\r\n\r\nDaemon shutting down.\r\n");
 
 	syslog(LOG_NOTICE, _("Daemon shutting down"));
 
-	for (p = connections_head; p != NULL; p = p->next) {
+	DL_FOREACH(connections_head, p) {
 		if (p->state == STATE_ACTIVE) {
 			init_packet(&pdata, MT_PTYPE_DATA, p->interface->mac_addr, p->srcmac, p->seskey, p->outcounter);
 			add_control_packet(&pdata, MT_CPTYPE_PLAINDATA, _(message), strlen(_(message)));
@@ -845,31 +853,35 @@ void sigterm_handler() {
 	close(sockfd);
 	close(insockfd);
 	if (!use_raw_socket) {
-		int i;
-		for (i = 0; i < MAX_INTERFACES; ++i) {
-			if (interfaces[i].in_use && interfaces[i].socketfd > 0)
-				close(interfaces[i].socketfd);
+		DL_FOREACH(interfaces, interface) {
+			if (interface->socketfd > 0)
+				close(interface->socketfd);
 		}
+	}
+	DL_FOREACH_SAFE(interfaces, interface, tmp) {
+		DL_DELETE(interfaces, interface);
+		free(interface);
 	}
 	closelog();
 	exit(0);
 }
 
 void sighup_handler() {
-	int i;
 	struct mt_connection *p;
 
 	syslog(LOG_NOTICE, _("SIGHUP: Reloading interfaces"));
 
 	if (!use_raw_socket) {
-		for (i = 0; i < MAX_INTERFACES; ++i) {
-			close(interfaces[i].socketfd);
+		struct net_interface *interface, *tmp;
+		DL_FOREACH_SAFE(interfaces, interface, tmp) {
+			close(interface->socketfd);
+			DL_DELETE(interfaces, interface);
+			free(interface);
 		}
+		interfaces = NULL;
 	}
 
-	bzero(interfaces, sizeof(interfaces));
-
-	if (net_get_interfaces(interfaces, MAX_INTERFACES) <= 0) {
+	if (net_get_interfaces(&interfaces) <= 0) {
 		syslog(LOG_ERR, _("No devices found! Exiting.\n"));
 		exit(1);
 	}
@@ -877,9 +889,9 @@ void sighup_handler() {
 	setup_sockets();
 
 	/* Reassign outgoing interfaces to connections again, since they may have changed */
-	for (p = connections_head; p != NULL; p = p->next) {
+	DL_FOREACH(connections_head, p) {
 		if (p->interface_name != NULL) {
-			struct net_interface *interface = net_get_interface_ptr(interfaces, MAX_INTERFACES, p->interface_name, 0);
+			struct net_interface *interface = net_get_interface_ptr(&interfaces, p->interface_name, 0);
 			if (interface != NULL) {
 				p->interface = interface;
 			} else {
@@ -897,11 +909,12 @@ void sighup_handler() {
  * TODO: Rewrite main() when all sub-functionality is tested
  */
 int main (int argc, char **argv) {
-	int result,i;
+	int result;
 	struct sockaddr_in si_me;
 	struct sockaddr_in si_me_mndp;
 	struct timeval timeout;
 	struct mt_packet pdata;
+	struct net_interface *interface;
 	fd_set read_fds;
 	int c,optval = 1;
 	int print_help = 0;
@@ -909,6 +922,8 @@ int main (int argc, char **argv) {
 	int interface_count = 0;
 
 	setlocale(LC_ALL, "");
+	bindtextdomain("mactelnet","/usr/share/locale");
+	textdomain("mactelnet");
 
 	while ((c = getopt(argc, argv, "fnvh?")) != -1) {
 		switch (c) {
@@ -1018,12 +1033,12 @@ int main (int argc, char **argv) {
 	syslog(LOG_NOTICE, _("Bound to %s:%d"), inet_ntoa(si_me.sin_addr), sourceport);
 
 	/* Enumerate available interfaces */
-	net_get_interfaces(interfaces, MAX_INTERFACES);
+	net_get_interfaces(&interfaces);
 
 	setup_sockets();
 
 	if (!foreground) {
-		daemonize();
+		daemon(0, 0);
 	}
 
 	/* Handle zombies etc */
@@ -1034,12 +1049,12 @@ int main (int argc, char **argv) {
 	signal(SIGHUP, sighup_handler);
 	signal(SIGTERM, sigterm_handler);
 
-	for (i = 0; i < MAX_INTERFACES; ++i) {
-		if (interfaces[i].in_use && interfaces[i].has_mac) {
+	DL_FOREACH(interfaces, interface) {
+		if (interface->has_mac) {
 			interface_count++;
 		}
 	}
-	
+
 	if (interface_count == 0) {
 		syslog(LOG_ERR, _("Unable to find any valid network interfaces\n"));
 		exit(1);
@@ -1058,7 +1073,7 @@ int main (int argc, char **argv) {
 		maxfd = insockfd > mndpsockfd ? insockfd : mndpsockfd;
 
 		/* Add active connections to select queue */
-		for (p = connections_head; p != NULL; p = p->next) {
+		DL_FOREACH(connections_head, p) {
 			if (p->state == STATE_ACTIVE && p->wait_for_ack == 0 && p->ptsfd > 0) {
 				FD_SET(p->ptsfd, &read_fds);
 				if (p->ptsfd > maxfd) {
@@ -1096,7 +1111,7 @@ int main (int argc, char **argv) {
 				}
 			}
 			/* Handle data from terminal sessions */
-			for (p = connections_head; p != NULL; p = p->next) {
+			DL_FOREACH(connections_head, p) {
 				/* Check if we have data ready in the pty buffer for the active session */
 				if (p->state == STATE_ACTIVE && p->ptsfd > 0 && p->wait_for_ack == 0 && FD_ISSET(p->ptsfd, &read_fds)) {
 					unsigned char keydata[1024];
@@ -1133,7 +1148,7 @@ int main (int argc, char **argv) {
 		/* Handle select() timeout */
 		}
 		time(&now);
-		
+
 		if (now - last_mndp_time > MT_MNDP_BROADCAST_INTERVAL) {
 			pings = 0;
 			mndp_broadcast();
@@ -1141,7 +1156,7 @@ int main (int argc, char **argv) {
 		}
 		if (connections_head != NULL) {
 			struct mt_connection *p,tmp;
-			for (p = connections_head; p != NULL; p = p->next) {
+			DL_FOREACH(connections_head, p) {
 				if (now - p->lastdata >= MT_CONNECTION_TIMEOUT) {
 					syslog(LOG_INFO, _("(%d) Session timed out"), p->seskey);
 					init_packet(&pdata, MT_PTYPE_DATA, p->dstmac, p->srcmac, p->seskey, p->outcounter);

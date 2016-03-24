@@ -21,7 +21,16 @@
 #include <signal.h>
 #include <stdio.h>
 #include <arpa/inet.h>
+#if defined(__FreeBSD__)
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <net/ethernet.h>
+#include <netinet/in.h>
+#define ETH_FRAME_LEN ETHER_MAX_LEN
+#define ETH_ALEN ETHER_ADDR_LEN
+#else
 #include <netinet/ether.h>
+#endif
 #include <string.h>
 #include <time.h>
 #include <sys/time.h>
@@ -31,19 +40,20 @@
 #include "protocol.h"
 #include "interfaces.h"
 #include "config.h"
+#include "utlist.h"
 
 #define MAX_DEVICES 128
 #define MT_INTERFACE_LEN 128
 
 #define PROGRAM_NAME "MAC-Ping"
 
-#define _(String) String
+#define _(String) (String)
 
 static int sockfd, insockfd;
 
 static unsigned short ping_size = 38;
 
-struct net_interface interfaces[MAX_INTERFACES];
+struct net_interface *interfaces;
 
 static struct in_addr sourceip;
 static struct in_addr destip;
@@ -107,6 +117,8 @@ int main(int argc, char **argv)  {
 	int i;
 
 	setlocale(LC_ALL, "");
+	bindtextdomain("mactelnet","/usr/share/locale");
+	textdomain("mactelnet");
 
 	while (1) {
 		c = getopt(argc, argv, "fs:c:hv?");
@@ -214,7 +226,7 @@ int main(int argc, char **argv)  {
 	srand(time(NULL));
 
 	/* Enumerate available interfaces */
-	net_get_interfaces(interfaces, MAX_INTERFACES);
+	net_get_interfaces(&interfaces);
 
 	if (ping_size < sizeof(struct timeval)) {
 		ping_size = sizeof(struct timeval);
@@ -232,6 +244,7 @@ int main(int argc, char **argv)  {
 		int waitforpacket;
 		struct timeval timestamp;
 		unsigned char pingdata[1500];
+		struct net_interface *interface;
 
 		gettimeofday(&timestamp, NULL);
 		memcpy(pingdata, &timestamp, sizeof(timestamp));
@@ -239,13 +252,7 @@ int main(int argc, char **argv)  {
 			pingdata[ii] = rand() % 256;
 		}
 
-		for (ii = 0; ii < MAX_INTERFACES; ++ii) {
-			struct net_interface *interface = &interfaces[ii];
-
-			if (!interface->in_use) {
-				break;
-			}
-
+		LL_FOREACH(interfaces, interface) {
 			if (!interface->has_mac) {
 				continue;
 			}
