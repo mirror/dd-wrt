@@ -38007,6 +38007,7 @@ rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
       conftest$ac_exeext conftest.$ac_ext
   LIBS="$saved_libs"
 
+  pr_use_pthread_for_openssl="no"
   if test x"$openssl_cmdline" != xno; then
     if `$openssl_cmdline version 2>/dev/null 1>&2`; then
       openssl_cflags=`$openssl_cmdline version -f 2>/dev/null`
@@ -38015,11 +38016,30 @@ rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
         # with threads support (see Bug#3795)
         for openssl_cflag in $openssl_cflags; do
           if test x"$openssl_cflag" = x"-pthread"; then
-            LIBS="$LIBS -pthread"
+            pr_use_pthread_for_openssl="yes"
           fi
         done
+
+        if test x"$pr_use_pthread_for_openssl" = xno ; then
+          # If we're on FreeBSD, AND if OpenSSL is being used, AND if
+          # openssl version -f shows no flags, then ASSUME that we do need
+          # the -pthread flag, to avoid regressions of Bug#3795.
+          if test `echo $ostype | grep -c FREEBSD` != "0" ; then
+            pr_use_pthread_for_openssl="yes"
+          fi
+        fi
       fi
     fi
+  else
+    # If we're on FreeBSD, AND if OpenSSL is being used, then ASSUME that we
+    # do need the -pthread flag, to avoid regressions of Bug#3795.
+    if test `echo $ostype | grep -c DFREEBSD` != "0" ; then
+      pr_use_pthread_for_openssl="yes"
+    fi
+  fi
+
+  if test x"$pr_use_pthread_for_openssl" = xyes ; then
+    LIBS="$LIBS -pthread"
   fi
 fi
 

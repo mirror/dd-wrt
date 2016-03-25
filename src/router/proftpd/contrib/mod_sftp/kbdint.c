@@ -190,7 +190,7 @@ int sftp_kbdint_unregister_driver(const char *name) {
  */
 
 int sftp_kbdint_send_challenge(const char *user, const char *instruction,
-    unsigned int count, sftp_kbdint_challenge_t *challenges) {
+    uint32_t count, sftp_kbdint_challenge_t *challenges) {
   register unsigned int i;
   unsigned char *buf, *ptr;
   uint32_t buflen, bufsz;
@@ -252,8 +252,8 @@ int sftp_kbdint_send_challenge(const char *user, const char *instruction,
   return res;
 }
 
-int sftp_kbdint_recv_response(pool *p, unsigned int expected_count,
-    unsigned int *rcvd_count, const char ***responses) {
+int sftp_kbdint_recv_response(pool *p, uint32_t expected_count,
+    uint32_t *rcvd_count, const char ***responses) {
   register unsigned int i;
   unsigned char *buf;
   cmd_rec *cmd;
@@ -330,7 +330,7 @@ int sftp_kbdint_recv_response(pool *p, unsigned int expected_count,
     *((char **) push_array(list)) = pstrdup(p, sftp_utf8_decode_str(p, resp));
   }
 
-  *rcvd_count = (unsigned int) resp_count;
+  *rcvd_count = resp_count;
   *responses = ((const char **) list->elts);
   destroy_pool(pkt->pool);
 

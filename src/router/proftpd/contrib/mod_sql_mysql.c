@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_sql_mysql -- Support for connecting to MySQL databases.
  * Copyright (c) 2001 Andrew Houghton
- * Copyright (c) 2004-2013 TJ Saunders
+ * Copyright (c) 2004-2015 TJ Saunders
  *  
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,10 +22,7 @@
  * the resulting executable, without including the source code for OpenSSL in
  * the source distribution.
  *
- * $Id: mod_sql_mysql.c,v 1.72 2013-10-07 05:51:29 castaglia Exp $
- */
-
-/*
+ * -----DO NOT EDIT-----
  * $Libraries: -lm -lmysqlclient -lz $
  */
 
@@ -538,8 +535,13 @@ MODRET cmd_open(cmd_rec *cmd) {
      */
 
      if (strcasecmp(encoding, "UTF-8") == 0) {
+#  if MYSQL_VERSION_ID >= 50503
+       /* MySQL prefers the name "utf8mb4", not "UTF-8" */
+       encoding = pstrdup(cmd->tmp_pool, "utf8mb4");
+#  else
        /* MySQL prefers the name "utf8", not "UTF-8" */
        encoding = pstrdup(cmd->tmp_pool, "utf8");
+#  endif /* MySQL before 5.5.3 */
      }
 
     if (mysql_set_character_set(conn->mysql, encoding) != 0) {

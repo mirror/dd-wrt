@@ -235,6 +235,12 @@ static size_t fxp_packet_data_allocsz = 0;
 #define FXP_PACKET_DATA_DEFAULT_SZ		(1024 * 16)
 #define FXP_RESPONSE_DATA_DEFAULT_SZ		512
 
+#define FXP_MAX_PACKET_LEN			(1024 * 512)
+#define FXP_MAX_EXTENDED_ATTRIBUTES		100
+
+/* Maximum length of SFTP extended attribute name OR value. */
+#define FXP_MAX_EXTENDED_ATTR_LEN		1024
+
 struct fxp_extpair {
   char *ext_name;
   uint32_t ext_datalen;
@@ -1240,6 +1246,14 @@ static struct fxp_extpair *fxp_msg_read_extpair(pool *p, unsigned char **buf,
     SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_BY_APPLICATION, NULL);
   }
 
+  if (namelen > FXP_MAX_EXTENDED_ATTR_LEN) {
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "received too-long extended attribute name (%lu > max %lu), ignoring",
+      (unsigned long) namelen, (unsigned long) FXP_MAX_EXTENDED_ATTR_LEN);
+    errno = EINVAL;
+    return NULL;
+  }
+
   name = palloc(p, namelen + 1);
   memcpy(name, *buf, namelen);
   (*buf) += namelen;
@@ -1248,6 +1262,15 @@ static struct fxp_extpair *fxp_msg_read_extpair(pool *p, unsigned char **buf,
 
   datalen = sftp_msg_read_int(p, buf, buflen);
   if (datalen > 0) {
+    if (datalen > FXP_MAX_EXTENDED_ATTR_LEN) {
+      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+        "received too-long extended attribute '%s' value (%lu > max %lu), "
+        "ignoring", name, (unsigned long) datalen,
+        (unsigned long) FXP_MAX_EXTENDED_ATTR_LEN);
+      errno = EINVAL;
+      return NULL;
+    }
+
     data = sftp_msg_read_data(p, buf, buflen, datalen);
 
   } else {
@@ -2210,11 +2233,13 @@ static struct stat *fxp_attrs_read(struct fxp_packet *fxp, unsigned char **buf,
         struct fxp_extpair *ext;
 
         ext = fxp_msg_read_extpair(fxp->pool, buf, buflen);
-        pr_trace_msg(trace_channel, 15,
-          "protocol version %lu: read EXTENDED attribute: "
-          "extension '%s' (%lu bytes of data)",
-          (unsigned long) fxp_session->client_version, ext->ext_name,
-          (unsigned long) ext->ext_datalen);
+        if (ext != NULL) {
+          pr_trace_msg(trace_channel, 15,
+            "protocol version %lu: read EXTENDED attribute: "
+            "extension '%s' (%lu bytes of data)",
+            (unsigned long) fxp_session->client_version, ext->ext_name,
+            (unsigned long) ext->ext_datalen);
+        }
       }
     }
 
@@ -11580,18 +11605,20 @@ int sftp_fxp_handle_packet(pool *p, void *ssh2, uint32_t channel_id,
       case SFTP_SSH2_FXP_INIT:
         /* If we already know the version, then the client has sent
          * FXP_INIT before, and should NOT be sending it again.
+         *
+         * However, per Bug#4227, there ARE clients which do send INIT
+         * multiple times; I don't know why.  And since OpenSSH handles
+         * these repeated INITs without disconnecting clients, that is the
+         * de facto expected behavior.  We will do the same, but at least
+         * log about it.
          */
-        if (fxp_session->client_version == 0) {
-          res = fxp_handle_init(fxp);
-
-        } else {
+        if (fxp_session->client_version > 0) {
           (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-            "already received SFTP INIT request from client");
-          destroy_pool(fxp->pool);
-          fxp_session = NULL;
-          return -1;
+            "already received SFTP INIT %u request from client",
+            (unsigned int) fxp_session->client_version);
         }
 
+        res = fxp_handle_init(fxp);
         break;
 
       case SFTP_SSH2_FXP_CLOSE:

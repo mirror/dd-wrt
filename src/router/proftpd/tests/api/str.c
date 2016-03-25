@@ -230,10 +230,11 @@ START_TEST (sreplace_enospc_test) {
   char *fmt = NULL, *res;
   size_t bufsz = 8192;
 
-  fmt = palloc(p, bufsz);
+  fmt = palloc(p, bufsz + 1);
   memset(fmt, ' ', bufsz);
   fmt[bufsz-2] = '%';
   fmt[bufsz-1] = 'a';
+  fmt[bufsz] = '\0';
 
   res = sreplace(p, fmt, "%a", "foo", NULL);
   fail_unless(res == NULL, "Failed to reject too-long buffer");

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp
- * Copyright (c) 2008-2014 TJ Saunders
+ * Copyright (c) 2008-2015 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,10 +21,9 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * DO NOT EDIT BELOW THIS LINE
+ * -----DO NOT EDIT BELOW THIS LINE-----
  * $Archive: mod_sftp.a $
  * $Libraries: -lcrypto -lz $
- * $Id: mod_sftp.c,v 1.86 2014-03-02 22:05:43 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -1764,7 +1763,8 @@ static int sftp_sess_init(void) {
    * we have to have at least one hostkey.
    */
   if (sftp_keys_have_dsa_hostkey() < 0 &&
-      sftp_keys_have_rsa_hostkey() < 0) {
+      sftp_keys_have_rsa_hostkey() < 0 &&
+      sftp_keys_have_ecdsa_hostkey(sftp_pool, NULL) < 0) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "no available host keys, unable to handle session");
     errno = EACCES;

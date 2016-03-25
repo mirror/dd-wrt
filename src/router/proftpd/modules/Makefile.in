@@ -69,5 +69,5 @@ clean:
 
 depend:
 	$(RM) module_glue.c
-	makedepend $(CPPFLAGS) -Y *.c 2>/dev/null
-	makedepend $(CPPFLAGS) -Y -fMakefile.in *.c 2>/dev/null
+	$(MAKEDEPEND) $(CPPFLAGS) *.c 2>/dev/null
+	$(MAKEDEPEND) $(CPPFLAGS) -fMakefile.in *.c 2>/dev/null
