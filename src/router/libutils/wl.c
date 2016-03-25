@@ -27,21 +27,6 @@
 #include <glob.h>
 #endif
 
-static int wrqfreq_to_int(struct iwreq *wrq)
-{
-	int freq;
-	freq = wrq->u.freq.m;
-	if (freq < 1000) {
-		return freq;
-	}
-	int divisor = 1000000;
-	int e = wrq->u.freq.e;
-	for (i = 0; i < e; i++)
-		divisor /= 10;
-	if (divisor)
-		freq /= divisor;
-	return freq;
-}
 
 /*
  * DD-WRT addition (loaned from radauth) 
@@ -229,6 +214,22 @@ int getchannels(unsigned int *list, char *ifname)
 #include <linux/if.h>
 #define __user
 #include "wireless.h"
+
+static int wrqfreq_to_int(struct iwreq *wrq)
+{
+	int freq,i;
+	freq = wrq->u.freq.m;
+	if (freq < 1000) {
+		return freq;
+	}
+	int divisor = 1000000;
+	int e = wrq->u.freq.e;
+	for (i = 0; i < e; i++)
+		divisor /= 10;
+	if (divisor)
+		freq /= divisor;
+	return freq;
+}
 
 struct wifi_interface *wifi_getfreq(char *ifname)
 {
@@ -1041,6 +1042,22 @@ int getUptime(char *ifname, unsigned char *mac)
 #include "../madwifi.dev/madwifi.dev/net80211/ieee80211.h"
 #include "../madwifi.dev/madwifi.dev/net80211/ieee80211_crypto.h"
 #include "../madwifi.dev/madwifi.dev/net80211/ieee80211_ioctl.h"
+
+static int wrqfreq_to_int(struct iwreq *wrq)
+{
+	int freq,i;
+	freq = wrq->u.freq.m;
+	if (freq < 1000) {
+		return freq;
+	}
+	int divisor = 1000000;
+	int e = wrq->u.freq.e;
+	for (i = 0; i < e; i++)
+		divisor /= 10;
+	if (divisor)
+		freq /= divisor;
+	return freq;
+}
 
 /*
  * Atheros 
