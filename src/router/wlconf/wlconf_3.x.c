@@ -317,8 +317,8 @@ wlconf_validate_all(char *prefix, bool restore)
 }*/
 
 /* restore specific per-interface variable */
-static void
-/*wlconf_restore_var(char *prefix, char *name)
+/*static void
+wlconf_restore_var(char *prefix, char *name)
 {
 	struct nvram_tuple *t;
 	char tmp[100];
