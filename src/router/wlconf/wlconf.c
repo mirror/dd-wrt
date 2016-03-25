@@ -246,7 +246,7 @@ wlconf_set_wep_key(char *name, char *prefix, int bsscfg_idx, int i)
 	return ret;
 }
 
-extern struct nvram_tuple router_defaults[];
+//extern struct nvram_tuple router_defaults[];
 
 /* Keep this table in order */
 static struct {
@@ -268,7 +268,7 @@ static struct {
 	};
 
 /* validate/restore all per-interface related variables */
-static void
+/*static void
 wlconf_validate_all(char *prefix, bool restore)
 {
 	struct nvram_tuple *t;
@@ -284,7 +284,7 @@ wlconf_validate_all(char *prefix, bool restore)
 		}
 	}
 }
-
+*/
 /* restore specific per-interface variable */
 static void
 wlconf_restore_var(char *prefix, char *name)
@@ -988,7 +988,7 @@ cprintf("get instance\n");
 
 	/* Restore defaults if per-interface parameters do not exist */
 	restore_defaults = !nvram_get(strcat_r(prefix, "ifname", tmp));
-	wlconf_validate_all(prefix, restore_defaults);
+//	wlconf_validate_all(prefix, restore_defaults);
 	nvram_set(strcat_r(prefix, "ifname", tmp), name);
 	nvram_set(strcat_r(prefix, "hwaddr", tmp), ether_etoa((uchar *)buf, eaddr));
 	snprintf(buf, sizeof(buf), "%d", unit);
