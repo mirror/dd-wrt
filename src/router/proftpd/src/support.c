@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2013 The ProFTPD Project team
+ * Copyright (c) 2001-2015 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,8 +26,6 @@
 
 /* Various basic support routines for ProFTPD, used by all modules
  * and not specific to one or another.
- *
- * $Id: support.c,v 1.120 2013-08-07 16:35:27 castaglia Exp $
  */
 
 #include "conf.h"
@@ -654,7 +652,7 @@ void pr_getopt_reset(void) {
     defined(FREEBSD7) || defined(FREEBSD8) || defined(FREEBSD9) || \
     defined(FREEBSD10) || \
     defined(DARWIN7) || defined(DARWIN8) || defined(DARWIN9) || \
-    defined(DARWIN10) || defined(DARWIN11)
+    defined(DARWIN10) || defined(DARWIN11) || defined(DARWIN12)
   optreset = 1;
   opterr = 1;
   optind = 1;

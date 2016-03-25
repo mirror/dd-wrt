@@ -1717,6 +1717,30 @@ int pr_fs_dircat(char *buf, int buflen, const char *dir1, const char *dir2) {
   dir1len = strlen(dir1);
   dir2len = strlen(dir2);
 
+  /* If both strings are empty, then the "concatenation" becomes trivial. */
+  if (dir1len == 0 &&
+      dir2len == 0) {
+    buf[0] = '/';
+    buf[1] = '\0';
+    return 0;
+  }
+
+  /* If dir2 is non-empty, but dir1 IS empty... */
+  if (dir1len == 0) {
+    sstrncpy(buf, dir2, buflen);
+    buflen -= dir2len;
+    sstrcat(buf, "/", buflen);
+    return 0;
+  }
+
+  /* Likewise, if dir1 is non-empty, but dir2 IS empty... */
+  if (dir2len == 0) {
+    sstrncpy(buf, dir1, buflen);
+    buflen -= dir1len;
+    sstrcat(buf, "/", buflen);
+    return 0;
+  }
+
   if ((dir1len + dir2len + 1) >= PR_TUNABLE_PATH_MAX) {
     errno = ENAMETOOLONG;
     buf[0] = '\0';  
@@ -1751,7 +1775,8 @@ int pr_fs_dircat(char *buf, int buflen, const char *dir1, const char *dir2) {
   buflen -= dir1len;
 
   if (buflen > 0 &&
-     *(_dir1 + (dir1len-1)) != '/') {
+      dir1len >= 1 &&
+      *(_dir1 + (dir1len-1)) != '/') {
     sstrcat(ptr, "/", buflen);
     ptr += 1;
     buflen -= 1;

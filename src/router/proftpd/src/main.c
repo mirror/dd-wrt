@@ -1530,14 +1530,20 @@ static void daemon_loop(void) {
     }
 
     running = 1;
+    xerrno = errno = 0;
 
     PR_DEVEL_CLOCK(i = select(maxfd + 1, &listenfds, NULL, NULL, &tv));
     if (i < 0) {
       xerrno = errno;
     }
 
-    if (i == -1 && xerrno == EINTR) {
+    if (i == -1 &&
+        xerrno == EINTR) {
+      errno = xerrno;
       pr_signals_handle();
+
+      /* We handled our signal; clear errno. */
+      xerrno = errno = 0;
       continue;
     }
 
@@ -1679,6 +1685,9 @@ void pr_signals_handle(void) {
       (unsigned long) tv.tv_usec, tv.tv_usec != 1 ? "microsecs" : "microsec");
 
     pr_timer_usleep(interval_usecs);
+
+    /* Clear the EINTR errno, now we've dealt with it. */
+    errno = 0;
   }
 
   while (recvd_signal_flags) {

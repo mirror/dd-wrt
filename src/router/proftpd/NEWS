@@ -1,4 +1,3 @@
-$Id: NEWS,v 1.1597 2014-05-15 16:24:13 castaglia Exp $
 
 -----------------------------------------------------------------------------
   More details on the bugs listed below can be found by using the bug number
@@ -8,6 +7,28 @@ $Id: NEWS,v 1.1597 2014-05-15 16:24:13 castaglia Exp $
 
   where `N' is the bug number.
 -----------------------------------------------------------------------------
+
+1.3.5b - Released 10-Mar-2016
+--------------------------------
+- Bug 4187 - mod_geoip does not load all of the GeoIPTables properly.
+- Bug 4191 - "Incorrect string value" reported by mod_sql_mysql for some UTF8
+  characters.
+- Bug 4097 - SSH rekey fails when using RSA hostkey smaller than 2048 bits.
+- Bug 4198 - MLSD/MLST fact type "cdir" is incorrectly used for the current
+  working directory.
+- Bug 4201 - HiddenStores temporary files not removed when exceeding quota
+  using SCP.
+- Bug 4202 - MLSD lines not properly terminated with CRLF.
+- Bug 4209 - Zero-length memory allocation possible, with undefined results.
+- Bug 4210 - Avoid unbounded SFTP extended attribute key/values.
+- Bug 4212 - Ensure that FTP data transfer commands fail appropriately when
+  "RootRevoke on" is in effect.
+- Bug 4217 - Handle FTP re-authentication attempts better.
+- Bug 4223 - Permissions on files uploaded via STOU do not honor configured
+  Umask.
+- Bug 4227 - Support SFTP clients that send multiple INIT requests.
+- Bug 4230 - TLSDHParamFile directive appears ignored because unexpected DH is
+  chosen.
 
 1.3.5a - Released 27-May-2015
 --------------------------------

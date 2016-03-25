@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_geoip -- a module for looking up country/city/etc for clients
  *
- * Copyright (c) 2010-2014 TJ Saunders
+ * Copyright (c) 2010-2015 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@
  * module for Apache.
  */
 
-#define MOD_GEOIP_VERSION		"mod_geoip/0.6"
+#define MOD_GEOIP_VERSION		"mod_geoip/0.7"
 
 /* Make sure the version of proftpd is as necessary. */
 #if PROFTPD_VERSION_NUMBER < 0x0001030402
@@ -388,7 +388,8 @@ static const char *get_geoip_filter_value(int filter_id) {
   return NULL;
 }
 
-static void get_geoip_tables(array_header *geoips, int filter_flags) {
+static void get_geoip_tables(array_header *geoips, int filter_flags,
+    int skip_standard) {
   config_rec *c;
 
   c = find_config(main_server->conf, CONF_PARAM, "GeoIPTable", FALSE);
@@ -406,8 +407,9 @@ static void get_geoip_tables(array_header *geoips, int filter_flags) {
     /* Make sure we open tables that are marked with the default
      * GEOIP_STANDARD flag, which has a value of zero.
      */
-    if ((flags == GEOIP_STANDARD && filter_flags != GEOIP_STANDARD) || 
-        !(flags & filter_flags)) {
+    if (flags == GEOIP_STANDARD && skip_standard == TRUE) { 
+      pr_trace_msg(trace_channel, 15,
+        "skipping loading GeoIP table '%s'", path);
       c = find_config_next(c, c->next, CONF_PARAM, "GeoIPTable", FALSE);
       continue;
     } 
@@ -638,8 +640,8 @@ static void get_geoip_data(array_header *geoips, const char *ip_addr) {
 
       case GEOIP_REGION_EDITION_REV0:
       case GEOIP_REGION_EDITION_REV1: {
-        GeoIPRegion *geoip_region;
-        const char *region_name, *tz;
+        GeoIPRegion *geoip_region = NULL;
+        const char *region_name = NULL, *tz = NULL;
 
         geoip_region = GeoIP_region_by_addr(gis[i], ip_addr);
 #ifdef PR_USE_IPV6
@@ -681,7 +683,7 @@ static void get_geoip_data(array_header *geoips, const char *ip_addr) {
 
       case GEOIP_CITY_EDITION_REV0:
       case GEOIP_CITY_EDITION_REV1: {
-        GeoIPRecord *geoip_record;
+        GeoIPRecord *geoip_record = NULL;
         char area_code_str[32], lat_str[64], lon_str[64];
 
         geoip_record = GeoIP_record_by_addr(gis[i], ip_addr);
@@ -1128,7 +1130,7 @@ MODRET set_geoiptable(cmd_rec *cmd) {
         use_utf8 = TRUE;
 
       } else {
-        CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "unknown GeoIP flag '",
+        CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "unknown GeoIPTable flag '",
           cmd->argv[i], "'", NULL));
       }
     }
@@ -1194,7 +1196,7 @@ static void geoip_postparse_ev(const void *event_data, void *user_data) {
   filter_flags = GEOIP_MEMORY_CACHE|GEOIP_MMAP_CACHE|GEOIP_INDEX_CACHE;
 
   pr_log_debug(DEBUG8, MOD_GEOIP_VERSION ": loading static GeoIP tables");
-  get_geoip_tables(static_geoips, filter_flags);
+  get_geoip_tables(static_geoips, filter_flags, TRUE);
 }
 
 static void geoip_restart_ev(const void *event_data, void *user_data) {
@@ -1283,7 +1285,7 @@ static int geoip_sess_init(void) {
   sess_geoips = make_array(tmp_pool, 0, sizeof(GeoIP *));
 
   pr_log_debug(DEBUG8, MOD_GEOIP_VERSION ": loading session GeoIP tables");
-  get_geoip_tables(sess_geoips, GEOIP_STANDARD|GEOIP_CHECK_CACHE);
+  get_geoip_tables(sess_geoips, GEOIP_CHECK_CACHE, FALSE);
 
   if (static_geoips->nelts == 0 &&
       sess_geoips->nelts == 0) {
