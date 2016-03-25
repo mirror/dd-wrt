@@ -27,9 +27,21 @@
 #include <glob.h>
 #endif
 
-struct nvram_param router_defaults[] = {
-	{0, 0}
-};
+static int wrqfreq_to_int(struct iwreq *wrq)
+{
+	int freq;
+	freq = wrq->u.freq.m;
+	if (freq < 1000) {
+		return freq;
+	}
+	int divisor = 1000000;
+	int e = wrq->u.freq.e;
+	for (i = 0; i < e; i++)
+		divisor /= 10;
+	if (divisor)
+		freq /= divisor;
+	return freq;
+}
 
 /*
  * DD-WRT addition (loaned from radauth) 
@@ -218,33 +230,6 @@ int getchannels(unsigned int *list, char *ifname)
 #define __user
 #include "wireless.h"
 
-int wifi_getchannel(char *ifname)
-{
-	struct iwreq wrq;
-	int freq;
-	int channel;
-
-	(void)memset(&wrq, 0, sizeof(struct iwreq));
-	strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
-	ioctl(getsocket(), SIOCGIWFREQ, &wrq);
-	closesocket();
-	int i;
-
-	freq = wrq.u.freq.m;
-	if (freq < 1000) {
-		return freq;
-	}
-	int divisor = 1000000;
-	for (i = 0; i < wrq.u.freq.e; i++)
-		divisor /= 10;
-	if (divisor)
-		freq /= divisor;
-	cprintf("wifi channel %f\n", freq);
-	channel = ieee80211_mhz2ieee(freq);
-
-	return channel;
-}
-
 struct wifi_interface *wifi_getfreq(char *ifname)
 {
 	struct iwreq wrq;
@@ -255,23 +240,22 @@ struct wifi_interface *wifi_getfreq(char *ifname)
 	ioctl(getsocket(), SIOCGIWFREQ, &wrq);
 	closesocket();
 
-	int i;
-
 	freq = wrq.u.freq.m;
 	struct wifi_interface *interface = (struct wifi_interface *)malloc(sizeof(struct wifi_interface));
 	if (freq < 1000) {
 		interface->freq = ieee80211_ieee2mhz(freq);
 		return interface;
 	}
-	freq = wrq.u.freq.m;
-	int divisor = 1000000;
-	for (i = 0; i < wrq.u.freq.e; i++)
-		divisor /= 10;
-	if (divisor)
-		freq /= divisor;
 	interface->freq = freq;
-	cprintf("wifi channel %f\n", freq);
 	return interface;
+}
+
+int wifi_getchannel(char *ifname)
+{
+	struct wifi_interface *interface = wifi_getfreq(ifname);
+	int channel = ieee80211_mhz2ieee(interface->freq);
+	free(interface);
+	return channel;
 }
 
 int wifi_getrate(char *ifname)
@@ -1607,40 +1591,6 @@ u_int ieee80211_mhz2ieee(u_int freq)
 	return (freq - 5000) / 5;
 }
 
-int wifi_getchannel(char *ifname)
-{
-	int channel;
-#ifdef HAVE_ATH9K
-	if (is_ath9k(ifname)) {
-		struct wifi_interface *interface = mac80211_get_interface(ifname);
-		if (!interface)
-			return -1;
-		int f = interface->freq;
-		free(interface);
-		return ieee80211_mhz2ieee(f);
-	}
-#endif
-
-	struct iwreq wrq;
-
-	(void)memset(&wrq, 0, sizeof(struct iwreq));
-	strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
-	ioctl(getsocket(), SIOCGIWFREQ, &wrq);
-	closesocket();
-	int i;
-
-	int freq = wrq.u.freq.m;
-	int divisor = 1000000;
-	for (i = 0; i < wrq.u.freq.e; i++)
-		divisor /= 10;
-	if (divisor)
-		freq /= divisor;
-	cprintf("wifi channel %f\n", freq);
-	channel = ieee80211_mhz2ieee(freq);
-
-	return channel;
-}
-
 struct wifi_interface *wifi_getfreq(char *ifname)
 {
 	struct iwreq wrq;
@@ -1655,19 +1605,18 @@ struct wifi_interface *wifi_getfreq(char *ifname)
 	strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
 	ioctl(getsocket(), SIOCGIWFREQ, &wrq);
 	closesocket();
-
-	int i;
-	int freq = wrq.u.freq.m;
-	int divisor = 1000000;
-	for (i = 0; i < wrq.u.freq.e; i++)
-		divisor /= 10;
-	if (divisor)
-		freq /= divisor;
 	struct wifi_interface *interface;
 	interface = (struct wifi_interface *)malloc(sizeof(struct wifi_interface));
-	interface->freq = freq;
-	cprintf("wifi channel %f\n", freq);
+	interface->freq = wrqfreq_to_int(&wrq);
 	return interface;
+}
+
+int wifi_getchannel(char *ifname)
+{
+	struct wifi_interface *interface = wifi_getfreq(ifname);
+	int channel = ieee80211_mhz2ieee(interface->freq);
+	free(interface);
+	return channel;
 }
 
 int get_radiostate(char *ifname)
