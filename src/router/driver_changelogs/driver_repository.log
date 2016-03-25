@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r2849 | BrainSlayer | 2016-03-25 10:19:00 +0100 (Fri, 25 Mar 2016) | 1 line
+
+upgrade ath10k to latest tree. should gain some performance. lets test
+------------------------------------------------------------------------
 r2848 | brainslayer | 2016-03-24 22:33:47 +0100 (Thu, 24 Mar 2016) | 1 line
 
 switch to another firmware for testing, since CT varisnt did not succeed longterm test
