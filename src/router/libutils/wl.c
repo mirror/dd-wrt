@@ -1126,20 +1126,20 @@ int do80211priv(const char *ifname, int op, void *data, size_t len)
 	return iwr.u.data.length;
 }
 
-#define MEGA	1000000
+#define KILO	1000
 
 int wifi_getrate(char *ifname)
 {
 #if defined(HAVE_ATH9K) && !defined(HAVE_MVEBU)
 	if (is_ath9k(ifname)) {
 		if (nvram_nmatch("b-only", "%s_net_mode", ifname))
-			return 11 * MEGA;
+			return 11000 * KILO;
 		if (nvram_nmatch("g-only", "%s_net_mode", ifname))
-			return 54 * MEGA;
+			return 54000 * KILO;
 		if (nvram_nmatch("a-only", "%s_net_mode", ifname))
-			return 54 * MEGA;
+			return 54000 * KILO;
 		if (nvram_nmatch("bg-mixed", "%s_net_mode", ifname))
-			return 54 * MEGA;
+			return 54000 * KILO;
 		struct wifi_interface *interface = mac80211_get_interface(ifname);
 		if (!interface)
 			return -1;
@@ -1147,42 +1147,42 @@ int wifi_getrate(char *ifname)
 		int sgi = has_shortgi(ifname);
 		switch (interface->width) {
 		case 2:
-			rate = 54 * MEGA;
+			rate = 54000 * KILO;
 			break;
 		case 5:
-			rate = 54 * MEGA / 4;
+			rate = 54000 * KILO / 4;
 			break;
 		case 10:
-			rate = 54 * MEGA / 2;
+			rate = 54000 * KILO / 2;
 			break;
 		case 20:
 			if (sgi)
-				rate = (HTTxRate20_400(mac80211_get_maxmcs(ifname))) * MEGA / 1000;
+				rate = (HTTxRate20_400(mac80211_get_maxmcs(ifname))) * KILO;
 			else
-				rate = (HTTxRate20_800(mac80211_get_maxmcs(ifname))) * MEGA / 1000;
+				rate = (HTTxRate20_800(mac80211_get_maxmcs(ifname))) * KILO;
 			break;
 		case 40:
 			if (sgi)
-				rate = (HTTxRate40_400(mac80211_get_maxmcs(ifname))) * MEGA / 1000;
+				rate = (HTTxRate40_400(mac80211_get_maxmcs(ifname))) * KILO;
 			else
-				rate = (HTTxRate40_800(mac80211_get_maxmcs(ifname))) * MEGA / 1000;
+				rate = (HTTxRate40_800(mac80211_get_maxmcs(ifname))) * KILO;
 
 			break;
 		case 80:
 			if (sgi)
-				rate = (HTTxRate80_400(mac80211_get_maxmcs(ifname))) * MEGA / 1000;
+				rate = (HTTxRate80_400(mac80211_get_maxmcs(ifname))) * KILO;
 			else
-				rate = (HTTxRate80_800(mac80211_get_maxmcs(ifname))) * MEGA / 1000;
+				rate = (HTTxRate80_800(mac80211_get_maxmcs(ifname))) * KILO;
 			break;
 		case 8080:
 		case 160:
 			if (sgi)
-				rate = (HTTxRate40_400(mac80211_get_maxmcs(ifname))) * MEGA / 1000;	// dummy, no qam256 info yet available
+				rate = (HTTxRate40_400(mac80211_get_maxmcs(ifname))) * KILO;	// dummy, no qam256 info yet available
 			else
-				rate = (HTTxRate40_800(mac80211_get_maxmcs(ifname))) * MEGA / 1000;	// dummy, no qam256 info yet available
+				rate = (HTTxRate40_800(mac80211_get_maxmcs(ifname))) * KILO;	// dummy, no qam256 info yet available
 			break;
 		default:
-			rate = 54 * MEGA;
+			rate = 54000 * KILO;
 		}
 		free(interface);
 		return rate;
