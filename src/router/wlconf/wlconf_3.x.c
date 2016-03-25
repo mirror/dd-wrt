@@ -299,7 +299,7 @@ extern struct nvram_tuple router_defaults[];
 /* Keep this table in order */
 
 /* validate/restore all per-interface related variables */
-static void
+/*static void
 wlconf_validate_all(char *prefix, bool restore)
 {
 	struct nvram_tuple *t;
@@ -314,7 +314,7 @@ wlconf_validate_all(char *prefix, bool restore)
 			nvram_set(tmp, v ? v : t->value);
 		}
 	}
-}
+}*/
 
 /* restore specific per-interface variable */
 static void
@@ -1698,7 +1698,7 @@ cprintf("get instance\n");
 
 	/* Restore defaults if per-interface parameters do not exist */
 	restore_defaults = !nvram_get(strcat_r(prefix, "ifname", tmp));
-	wlconf_validate_all(prefix, restore_defaults);
+//	wlconf_validate_all(prefix, restore_defaults);
 	nvram_set(strcat_r(prefix, "ifname", tmp), name);
 	nvram_set(strcat_r(prefix, "hwaddr", tmp), ether_etoa((uchar *)buf, eaddr));
 	snprintf(buf, sizeof(buf), "%d", unit);
