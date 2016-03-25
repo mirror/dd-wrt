@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r2850 | kong | 2016-03-25 11:43:21 +0100 (Fri, 25 Mar 2016) | 1 line
+
+update mwlwifi 
+------------------------------------------------------------------------
 r2849 | BrainSlayer | 2016-03-25 10:19:00 +0100 (Fri, 25 Mar 2016) | 1 line
 
 upgrade ath10k to latest tree. should gain some performance. lets test
