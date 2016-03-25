@@ -1816,6 +1816,12 @@ static int dolist(cmd_rec *cmd, const char *opt, int clearflags) {
     /* Open data connection */
     if (!opt_STAT) {
       if (pr_data_open(NULL, "file list", PR_NETIO_IO_WR, 0) < 0) {
+        int xerrno = errno;
+
+        pr_response_add_err(R_450, "%s: %s", (char *) cmd->argv[0],
+          strerror(xerrno));
+
+        errno = xerrno;
         return -1;
       }
 
@@ -2044,6 +2050,12 @@ static int dolist(cmd_rec *cmd, const char *opt, int clearflags) {
     /* Open data connection */
     if (!opt_STAT) {
       if (pr_data_open(NULL, "file list", PR_NETIO_IO_WR, 0) < 0) {
+        int xerrno = errno;
+
+        pr_response_add_err(R_450, "%s: %s", (char *) cmd->argv[0], 
+          strerror(xerrno));
+
+        errno = xerrno;
         return -1;
       }
 
@@ -2826,6 +2838,12 @@ MODRET ls_nlst(cmd_rec *cmd) {
         } else {
           if (list_flags & LS_FL_NO_ERROR_IF_ABSENT) {
             if (pr_data_open(NULL, "file list", PR_NETIO_IO_WR, 0) < 0) {
+              int xerrno = errno;
+
+              pr_response_add_err(R_450, "%s: %s", (char *) cmd->argv[0], 
+                strerror(xerrno));
+
+              errno = xerrno;
               return PR_ERROR(cmd);
             }
 
@@ -2843,6 +2861,12 @@ MODRET ls_nlst(cmd_rec *cmd) {
       } else {
         if (list_flags & LS_FL_NO_ERROR_IF_ABSENT) {
           if (pr_data_open(NULL, "file list", PR_NETIO_IO_WR, 0) < 0) {
+            int xerrno = errno;
+
+            pr_response_add_err(R_450, "%s: %s", (char *) cmd->argv[0],
+              strerror(xerrno));
+
+            errno = xerrno;
             return PR_ERROR(cmd);
           }
 
@@ -2859,6 +2883,12 @@ MODRET ls_nlst(cmd_rec *cmd) {
     }
 
     if (pr_data_open(NULL, "file list", PR_NETIO_IO_WR, 0) < 0) {
+      int xerrno = errno;
+
+      pr_response_add_err(R_450, "%s: %s", (char *) cmd->argv[0],
+        strerror(xerrno));
+
+      errno = xerrno;
       return PR_ERROR(cmd);
     }
 
@@ -2935,6 +2965,12 @@ MODRET ls_nlst(cmd_rec *cmd) {
       if (xerrno == ENOENT &&
           (list_flags & LS_FL_NO_ERROR_IF_ABSENT)) {
         if (pr_data_open(NULL, "file list", PR_NETIO_IO_WR, 0) < 0) {
+          xerrno = errno;
+
+          pr_response_add_err(R_450, "%s: %s", (char *) cmd->argv[0],
+            strerror(xerrno));
+
+          errno = xerrno;
           return PR_ERROR(cmd);
         }
         session.sf_flags |= SF_ASCII_OVERRIDE;
@@ -2964,6 +3000,12 @@ MODRET ls_nlst(cmd_rec *cmd) {
 
           if (list_flags & LS_FL_NO_ERROR_IF_ABSENT) {
             if (pr_data_open(NULL, "file list", PR_NETIO_IO_WR, 0) < 0) {
+              int xerrno = errno;
+
+              pr_response_add_err(R_450, "%s: %s", (char *) cmd->argv[0],
+                strerror(xerrno));
+
+              errno = xerrno;
               return PR_ERROR(cmd);
             }
             session.sf_flags |= SF_ASCII_OVERRIDE;
@@ -2995,6 +3037,12 @@ MODRET ls_nlst(cmd_rec *cmd) {
       if (xerrno == ENOENT &&
           (list_flags & LS_FL_NO_ERROR_IF_ABSENT)) {
         if (pr_data_open(NULL, "file list", PR_NETIO_IO_WR, 0) < 0) {
+          xerrno = errno;
+
+          pr_response_add_err(R_450, "%s: %s", (char *) cmd->argv[0],
+            strerror(xerrno));
+
+          errno = xerrno;
           return PR_ERROR(cmd);
         }
         session.sf_flags |= SF_ASCII_OVERRIDE;
@@ -3012,6 +3060,12 @@ MODRET ls_nlst(cmd_rec *cmd) {
 
     if (S_ISREG(st.st_mode)) {
       if (pr_data_open(NULL, "file list", PR_NETIO_IO_WR, 0) < 0) {
+        int xerrno = errno;
+
+        pr_response_add_err(R_450, "%s: %s", (char *) cmd->argv[0],
+          strerror(xerrno));
+
+        errno = xerrno;
         return PR_ERROR(cmd);
       }
       session.sf_flags |= SF_ASCII_OVERRIDE;

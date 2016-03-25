@@ -64,6 +64,15 @@ static char *ldap_server;
 static int ldap_port = LDAP_PORT;
 #endif
 
+/* On some systems LDAP_OPT_DIAGNOSTIC_MESSAGE isn't there (e.g. OpenLDAP-2.3.x)
+ * but LDAP_OPT_ERROR_STRING is.
+ */
+#ifndef LDAP_OPT_DIAGNOSTIC_MESSAGE
+# ifdef LDAP_OPT_ERROR_STRING
+#  define LDAP_OPT_DIAGNOSTIC_MESSAGE LDAP_OPT_ERROR_STRING
+# endif
+#endif
+
 #if LDAP_API_VERSION >= 2000
 # define LDAP_VALUE_T struct berval
 # define LDAP_GET_VALUES(ld, entry, attr) ldap_get_values_len(ld, entry, attr)

@@ -86,43 +86,37 @@ static void oom_printf(const char *fmt, ...) {
 /* Lowest level memory allocation functions
  */
 
-static void *null_alloc(size_t size) {
-  void *ret = NULL;
-
-  if (size == 0) {
-    /* Yes, this code is correct.
-     *
-     * The size argument is the originally requested amount of memory.
-     * null_alloc() is called because smalloc() returned NULL.  But why,
-     * exactly?  If the requested size is zero, then it may not have been
-     * an error -- or it may be because the system is actually out of memory.
-     * To differentiate, we do a malloc(0) call here if the requested size is
-     * zero.  If malloc(0) returns NULL, then we really do have an error.
-     */
-    ret = malloc(size);
-  }
-
-  if (ret == NULL) {
-    pr_log_pri(PR_LOG_ALERT, "Out of memory!");
+static void null_alloc(void) {
+  pr_log_pri(PR_LOG_ALERT, "Out of memory!");
 #ifdef PR_USE_DEVEL
-    if (debug_flags & PR_POOL_DEBUG_FL_OOM_DUMP_POOLS) {
-      pr_pool_debug_memory(oom_printf);
-    }
-#endif
-    exit(1);
+  if (debug_flags & PR_POOL_DEBUG_FL_OOM_DUMP_POOLS) {
+    pr_pool_debug_memory(oom_printf);
   }
+#endif
 
-  return ret;
+  exit(1);
 }
 
 static void *smalloc(size_t size) {
-  void *ret;
+  void *res;
 
-  ret = malloc(size);
-  if (ret == 0)
-    ret = null_alloc(size);
+  if (size == 0) {
+    /* Avoid zero-length malloc(); on non-POSIX systems, the behavior is
+     * not dependable.  And on POSIX systems, malloc(3) might still return
+     * a "unique pointer" for a zero-length allocation (or NULL).
+     *
+     * Either way, a zero-length allocation request here means that someone
+     * is doing something they should not be doing.
+     */
+    null_alloc();
+  }
 
-  return ret;
+  res = malloc(size);
+  if (res == NULL) {
+    null_alloc();
+  }
+
+  return res;
 }
 
 /* Grab a completely new block from the system pool.  Relies on malloc()
@@ -553,7 +547,12 @@ static void *alloc_pool(struct pool_rec *p, size_t reqsz, int exact) {
   char *new_first_avail;
 
   if (reqsz == 0) {
-    /* Don't try to allocate memory of zero length. */
+    /* Don't try to allocate memory of zero length.
+     *
+     * This should NOT happen normally; if it does, by returning NULL we
+     * almost guarantee a null pointer dereference.
+     */
+    errno = EINVAL;
     return NULL;
   }
 

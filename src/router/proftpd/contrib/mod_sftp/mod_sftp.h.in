@@ -180,9 +180,9 @@ typedef struct kbdint_st {
 
 int sftp_kbdint_register_driver(const char *name, sftp_kbdint_driver_t *driver);
 int sftp_kbdint_unregister_driver(const char *name);
-int sftp_kbdint_send_challenge(const char *, const char *, unsigned int,
+int sftp_kbdint_send_challenge(const char *, const char *, uint32_t,
   sftp_kbdint_challenge_t *);
-int sftp_kbdint_recv_response(pool *, unsigned int, unsigned int *,
+int sftp_kbdint_recv_response(pool *, uint32_t, uint32_t *,
   const char ***);
 
 /* API for modules that which to register keystores, for the

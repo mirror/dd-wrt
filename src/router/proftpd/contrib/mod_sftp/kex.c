@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp key exchange (kex)
- * Copyright (c) 2008-2013 TJ Saunders
+ * Copyright (c) 2008-2015 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,8 +20,6 @@
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
- *
- * $Id: kex.c,v 1.39 2013-10-02 06:18:53 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -38,8 +36,6 @@
 #include "disconnect.h"
 #include "interop.h"
 #include "tap.h"
-
-#define SFTP_DH_PRIV_KEY_RANDOM_BITS	2048
 
 extern module sftp_module;
 
@@ -621,8 +617,94 @@ static int have_good_dh(DH *dh, BIGNUM *pub_key) {
   return 0;
 }
 
+static int get_dh_nbits(struct sftp_kex *kex) {
+  int dh_nbits = 0, dh_size = 0;
+  const char *algo;
+  const EVP_CIPHER *cipher;
+  const EVP_MD *digest;
+
+  algo = kex->session_names->c2s_encrypt_algo;
+  cipher = sftp_crypto_get_cipher(algo, NULL, NULL);
+  if (cipher != NULL) {
+    int block_size, key_len;
+
+    key_len = EVP_CIPHER_key_length(cipher);
+    if (dh_size < key_len) {
+      dh_size = key_len;
+      pr_trace_msg(trace_channel, 19,
+        "set DH size to %d bytes, matching client-to-server '%s' cipher "
+        "key length", dh_size, algo);
+    }
+
+    block_size = EVP_CIPHER_block_size(cipher);
+    if (dh_size < block_size) {
+      dh_size = block_size;
+      pr_trace_msg(trace_channel, 19,
+        "set DH size to %d bytes, matching client-to-server '%s' cipher "
+        "block size", dh_size, algo);
+    }
+  }
+
+  algo = kex->session_names->s2c_encrypt_algo;
+  cipher = sftp_crypto_get_cipher(algo, NULL, NULL);
+  if (cipher != NULL) {
+    int block_size, key_len;
+
+    key_len = EVP_CIPHER_key_length(cipher);
+    if (dh_size < key_len) {
+      dh_size = key_len;
+      pr_trace_msg(trace_channel, 19,
+        "set DH size to %d bytes, matching server-to-client '%s' cipher "
+        "key length", dh_size, algo);
+    }
+
+    block_size = EVP_CIPHER_block_size(cipher);
+    if (dh_size < block_size) {
+      dh_size = block_size;
+      pr_trace_msg(trace_channel, 19,
+        "set DH size to %d bytes, matching server-to-client '%s' cipher "
+        "block size", dh_size, algo);
+    }
+  }
+
+  algo = kex->session_names->c2s_mac_algo;
+  digest = sftp_crypto_get_digest(algo, NULL);
+  if (digest != NULL) {
+    int mac_len;
+
+    mac_len = EVP_MD_size(digest);
+    if (dh_size < mac_len) {
+      dh_size = mac_len;
+      pr_trace_msg(trace_channel, 19,
+        "set DH size to %d bytes, matching client-to-server '%s' digest size",
+        dh_size, algo);
+    }
+  }
+
+  algo = kex->session_names->s2c_mac_algo;
+  digest = sftp_crypto_get_digest(algo, NULL);
+  if (digest != NULL) {
+    int mac_len;
+
+    mac_len = EVP_MD_size(digest);
+    if (dh_size < mac_len) {
+      dh_size = mac_len;
+      pr_trace_msg(trace_channel, 19,
+        "set DH size to %d bytes, matching server-to-client '%s' digest size",
+        dh_size, algo);
+    }
+  }
+
+  /* We want to return bits, not bytes. */
+  dh_nbits = dh_size * 8;
+
+  pr_trace_msg(trace_channel, 8, "requesting DH size of %d bits", dh_nbits);
+  return dh_nbits;
+}
+
 static int create_dh(struct sftp_kex *kex, int type) {
   unsigned int attempts = 0;
+  int dh_nbits;
   DH *dh;
 
   if (type != SFTP_DH_GROUP1_SHA1 &&
@@ -656,6 +738,8 @@ static int create_dh(struct sftp_kex *kex, int type) {
     kex->dh = NULL;
   }
 
+  dh_nbits = get_dh_nbits(kex);
+
   /* We have 10 attempts to make a DH key which passes muster. */
   while (attempts <= 10) {
     pr_signals_handle();
@@ -665,7 +749,7 @@ static int create_dh(struct sftp_kex *kex, int type) {
       attempts);
 
     dh = DH_new();
-    if (!dh) {
+    if (dh == NULL) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "error creating DH: %s", sftp_crypto_get_errors());
       return -1;
@@ -699,10 +783,11 @@ static int create_dh(struct sftp_kex *kex, int type) {
       return -1;
     }
 
-    if (!BN_rand(dh->priv_key, SFTP_DH_PRIV_KEY_RANDOM_BITS, 0, 0)) {
+    /* Generate a random private exponent of the desired size, in bits. */
+    if (!BN_rand(dh->priv_key, dh_nbits, 0, 0)) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-        "error generating DH random key (%d bytes): %s",
-        SFTP_DH_PRIV_KEY_RANDOM_BITS, sftp_crypto_get_errors());
+        "error generating DH random key (%d bits): %s", dh_nbits,
+        sftp_crypto_get_errors());
       DH_free(dh);
       return -1;
     }
@@ -787,6 +872,9 @@ static int prepare_dh(struct sftp_kex *kex, int type) {
 
 static int finish_dh(struct sftp_kex *kex) {
   unsigned int attempts = 0;
+  int dh_nbits;
+
+  dh_nbits = get_dh_nbits(kex);
 
   /* We have 10 attempts to make a DH key which passes muster. */
   while (attempts <= 10) {
@@ -797,11 +885,12 @@ static int finish_dh(struct sftp_kex *kex) {
       attempts);
 
     kex->dh->priv_key = BN_new();
-  
-    if (!BN_rand(kex->dh->priv_key, SFTP_DH_PRIV_KEY_RANDOM_BITS, 0, 0)) {
+ 
+    /* Generate a random private exponent of the desired size, in bits. */ 
+    if (!BN_rand(kex->dh->priv_key, dh_nbits, 0, 0)) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-        "error generating DH random key (%d bytes): %s",
-        SFTP_DH_PRIV_KEY_RANDOM_BITS, sftp_crypto_get_errors());
+        "error generating DH random key (%d bits): %s", dh_nbits,
+        sftp_crypto_get_errors());
       return -1;
     }
 
@@ -1514,77 +1603,71 @@ static int setup_hostkey_algo(struct sftp_kex *kex, const char *algo) {
 }
 
 static int setup_c2s_encrypt_algo(struct sftp_kex *kex, const char *algo) {
-  (void) kex;
-
-  if (sftp_cipher_set_read_algo(algo) < 0)
+  if (sftp_cipher_set_read_algo(algo) < 0) {
     return -1;
+  }
 
+  kex->session_names->c2s_encrypt_algo = algo;
   return 0;
 }
 
 static int setup_s2c_encrypt_algo(struct sftp_kex *kex, const char *algo) {
-  (void) kex;
-
-  if (sftp_cipher_set_write_algo(algo) < 0)
+  if (sftp_cipher_set_write_algo(algo) < 0) {
     return -1;
+  }
 
+  kex->session_names->s2c_encrypt_algo = algo;
   return 0;
 }
 
 static int setup_c2s_mac_algo(struct sftp_kex *kex, const char *algo) {
-  (void) kex;
-
-  if (sftp_mac_set_read_algo(algo) < 0)
+  if (sftp_mac_set_read_algo(algo) < 0) {
     return -1;
+  }
 
+  kex->session_names->c2s_mac_algo = algo;
   return 0;
 }
 
 static int setup_s2c_mac_algo(struct sftp_kex *kex, const char *algo) {
-  (void) kex;
-
-  if (sftp_mac_set_write_algo(algo) < 0)
+  if (sftp_mac_set_write_algo(algo) < 0) {
     return -1;
+  }
 
+  kex->session_names->s2c_mac_algo = algo;
   return 0;
 }
 
 static int setup_c2s_comp_algo(struct sftp_kex *kex, const char *algo) {
-  (void) kex;
-
-  if (sftp_compress_set_read_algo(algo) < 0)
+  if (sftp_compress_set_read_algo(algo) < 0) {
     return -1;
+  }
 
+  kex->session_names->c2s_comp_algo = algo;
   return 0;
 }
 
 static int setup_s2c_comp_algo(struct sftp_kex *kex, const char *algo) {
-  (void) kex;
-
-  if (sftp_compress_set_write_algo(algo) < 0)
+  if (sftp_compress_set_write_algo(algo) < 0) {
     return -1;
+  }
 
+  kex->session_names->s2c_comp_algo = algo;
   return 0;
 }
 
 static int setup_c2s_lang(struct sftp_kex *kex, const char *lang) {
-  (void) kex;
-
-  /* XXX Need to implement the functionality here. */
-
+  kex->session_names->c2s_lang = lang;
   return 0;
 }
 
 static int setup_s2c_lang(struct sftp_kex *kex, const char *lang) {
-  (void) kex;
-
-  /* XXX Need to implement the functionality here. */
-
+  kex->session_names->s2c_lang = lang;
   return 0;
 }
 
 static int get_session_names(struct sftp_kex *kex, int *correct_guess) {
-  const char *shared, *client_list, *server_list;
+  const char *kex_algo, *shared, *client_list, *server_list;
   const char *client_pref, *server_pref;
   pool *tmp_pool;
 
@@ -1624,17 +1707,16 @@ static int get_session_names(struct sftp_kex *kex, int *correct_guess) {
     }
   }
 
-  shared = get_shared_name(kex_pool, client_list, server_list);
-  if (shared) {
-    if (setup_kex_algo(kex, shared) < 0) {
-      destroy_pool(tmp_pool);
-      return -1;
-    }
-
+  kex_algo = get_shared_name(kex_pool, client_list, server_list);
+  if (kex_algo != NULL) {
+    /* Unlike the following algorithms, we wait to setup the chosen kex algo
+     * until the end.  Why?  The kex algo setup may require knowledge of the
+     * ciphers chosen for encryption, MAC, etc (Bug#4097).
+     */
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-      " + Session key exchange: %s", shared);
+      " + Session key exchange: %s", kex_algo);
     pr_trace_msg(trace_channel, 20, "session key exchange algorithm: %s",
-      shared);
+      kex_algo);
 
   } else {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
@@ -1900,6 +1982,14 @@ static int get_session_names(struct sftp_kex *kex, int *correct_guess) {
     destroy_pool(tmp_pool);
     return -1;
 #endif
+  }
+
+  /* Now that we've finished setting up the other bits, we can set up the
+   * kex algo.
+   */
+  if (setup_kex_algo(kex, kex_algo) < 0) {
+    destroy_pool(tmp_pool);
+    return -1;
   }
 
   destroy_pool(tmp_pool);
@@ -3659,12 +3749,6 @@ int sftp_kex_handle(struct ssh2_packet *pkt) {
   pkt = read_kex_packet(kex_pool, kex, SFTP_SSH2_DISCONNECT_PROTOCOL_ERROR,
     NULL, 1, SFTP_SSH2_MSG_NEWKEYS);
 
-  cmd = pr_cmd_alloc(pkt->pool, 1, pstrdup(pkt->pool, "NEWKEYS"));
-  cmd->arg = "";
-  cmd->cmd_class = CL_AUTH;
-
-  pr_cmd_dispatch_phase(cmd, LOG_CMD, 0);
-
   /* If we didn't send our NEWKEYS message earlier, do it now. */
   if (!sent_newkeys) {
     pr_trace_msg(trace_channel, 9, "sending NEWKEYS message to client");
@@ -3698,6 +3782,13 @@ int sftp_kex_handle(struct ssh2_packet *pkt) {
     destroy_kex(kex);
     SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_BY_APPLICATION, NULL);
   }
+
+  cmd = pr_cmd_alloc(pkt->pool, 1, pstrdup(pkt->pool, "NEWKEYS"));
+  cmd->arg = "";
+  cmd->cmd_class = CL_AUTH;
+
+  pr_cmd_dispatch_phase(cmd, LOG_CMD, 0);
+  destroy_pool(pkt->pool);
 
   /* Reset this flag for the next time through. */
   kex_sent_kexinit = FALSE;
