@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2006-2012 The ProFTPD Project team
+ * Copyright (c) 2006-2015 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,9 +22,7 @@
  * OpenSSL in the source distribution.
  */
 
-/* UTF8/charset encoding/decoding
- * $Id: encode.c,v 1.33 2012-04-06 16:44:40 castaglia Exp $
- */
+/* UTF8/charset encoding/decoding */
 
 #include "conf.h"
 
@@ -65,7 +63,7 @@ static int str_convert(iconv_t conv, const char *inbuf, size_t *inbuflen,
      */
 #if defined(LINUX) || defined(DARWIN6) || defined(DARWIN7) || \
     defined(DARWIN8) || defined(DARWIN9) || defined(DARWIN10) || \
-    defined(DARWIN11)
+    defined(DARWIN11) || defined(DARWIN12)
 
     nconv = iconv(conv, (char **) &inbuf, inbuflen, &outbuf, outbuflen);
 #else

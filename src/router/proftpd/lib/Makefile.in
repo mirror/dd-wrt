@@ -39,8 +39,8 @@ clean:
 	test -z $(LIB_DEPS) || (cd libltdl/ && $(MAKE) clean)
 
 depend:
-	makedepend $(CPPFLAGS) -Y *.c 2>/dev/null
-	makedepend $(CPPFLAGS) -Y -fMakefile.in *.c 2>/dev/null
+	$(MAKEDEPEND) $(CPPFLAGS) *.c 2>/dev/null
+	$(MAKEDEPEND) $(CPPFLAGS) -fMakefile.in *.c 2>/dev/null
 
 distclean:
 	test -z $(LIB_DEPS) || (cd libltdl/ && $(MAKE) distclean)

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp SCP
- * Copyright (c) 2008-2014 TJ Saunders
+ * Copyright (c) 2008-2015 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,8 +20,6 @@
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
- *
- * $Id: scp.c,v 1.87 2014-01-20 20:49:04 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -1054,8 +1052,9 @@ static int recv_data(pool *p, uint32_t channel_id, struct scp_path *sp,
           pstrcat(p, sp->filename, ": write error: ", strerror(xerrno), NULL));
         sp->wrote_errors = TRUE;
 
-        pr_fsio_close(sp->fh);
-        sp->fh = NULL;
+        /* Note that we do NOT explicitly close the filehandle here; we leave
+         * that to the calling function, so that it can do e.g. other cleanup.
+         */
 
         errno = xerrno;
         return 1;
@@ -1080,8 +1079,9 @@ static int recv_data(pool *p, uint32_t channel_id, struct scp_path *sp,
           pstrcat(p, sp->filename, ": write error: ", strerror(xerrno), NULL));
         sp->wrote_errors = TRUE;
 
-        pr_fsio_close(sp->fh);
-        sp->fh = NULL;
+        /* Note that we do NOT explicitly close the filehandle here; we leave
+         * that to the calling function, so that it can do e.g. other cleanup.
+         */
 
         errno = xerrno;
         return 1;
@@ -1217,6 +1217,7 @@ static int recv_path(pool *p, uint32_t channel_id, struct scp_path *sp,
     unsigned char *data, uint32_t datalen) {
   int res;
   cmd_rec *cmd = NULL;
+  char *curr_path = NULL;
 
   if (!sp->checked_errors) {
     res = recv_errors(p, channel_id, sp, data, datalen);
@@ -1367,53 +1368,55 @@ static int recv_path(pool *p, uint32_t channel_id, struct scp_path *sp,
     }
   }
 
-  /* The uploaded file may be smaller than an existing file; call
-   * pr_fsio_truncate() to ensure proper file size.
-   */
-  if (S_ISREG(sp->st_mode)) {
-    pr_trace_msg(trace_channel, 9, "truncating file '%s' to %" PR_LU " bytes",
-      sp->fh->fh_path, (pr_off_t) sp->filesz);
+  if (sp->wrote_errors == FALSE) {
+    /* The uploaded file may be smaller than an existing file; call
+     * pr_fsio_truncate() to ensure proper file size.
+     */
+    if (S_ISREG(sp->st_mode)) {
+      pr_trace_msg(trace_channel, 9, "truncating file '%s' to %" PR_LU " bytes",
+        sp->fh->fh_path, (pr_off_t) sp->filesz);
 
-    if (pr_fsio_ftruncate(sp->fh, sp->filesz) < 0) {
-      int xerrno = errno;
+      if (pr_fsio_ftruncate(sp->fh, sp->filesz) < 0) {
+        int xerrno = errno;
 
-      pr_trace_msg(trace_channel, 2, "error truncating '%s' to %" PR_LU
-        " bytes: %s", sp->best_path, (pr_off_t) sp->filesz, strerror(xerrno));
-      write_confirm(p, channel_id, 1,
-        pstrcat(p, sp->filename, ": error truncating file: ", strerror(xerrno),
-        NULL));
+        pr_trace_msg(trace_channel, 2, "error truncating '%s' to %" PR_LU
+          " bytes: %s", sp->best_path, (pr_off_t) sp->filesz, strerror(xerrno));
+        write_confirm(p, channel_id, 1,
+          pstrcat(p, sp->filename, ": error truncating file: ",
+          strerror(xerrno), NULL));
 
-      sp->wrote_errors = TRUE;
+        sp->wrote_errors = TRUE;
+      }
     }
   }
 
-  /* If the SFTPOption for ignoring perms for SCP uploads is set, then
-   * skip the chmod on the upload file.
-   */
-  if (!(sftp_opts & SFTP_OPT_IGNORE_SCP_UPLOAD_PERMS)) { 
-    pr_trace_msg(trace_channel, 9, "setting perms %04o on file '%s'",
-      (unsigned int) sp->perms, sp->fh->fh_path);
+  if (sp->wrote_errors == FALSE) {
+    /* If the SFTPOption for ignoring perms for SCP uploads is set, then
+     * skip the chmod on the upload file.
+     */
+    if (!(sftp_opts & SFTP_OPT_IGNORE_SCP_UPLOAD_PERMS)) { 
+      pr_trace_msg(trace_channel, 9, "setting perms %04o on file '%s'",
+        (unsigned int) sp->perms, sp->fh->fh_path);
 
-    if (pr_fsio_fchmod(sp->fh, sp->perms) < 0) {
-      int xerrno = errno;
+      if (pr_fsio_fchmod(sp->fh, sp->perms) < 0) {
+        int xerrno = errno;
 
-      pr_trace_msg(trace_channel, 2, "error setting mode %04o on '%s': %s",
-        (unsigned int) sp->perms, sp->best_path, strerror(xerrno));
-      write_confirm(p, channel_id, 1,
-        pstrcat(p, sp->filename, ": error setting mode: ", strerror(xerrno),
-        NULL));
+        pr_trace_msg(trace_channel, 2, "error setting mode %04o on '%s': %s",
+          (unsigned int) sp->perms, sp->best_path, strerror(xerrno));
+        write_confirm(p, channel_id, 1,
+          pstrcat(p, sp->filename, ": error setting mode: ", strerror(xerrno),
+          NULL));
 
-      sp->wrote_errors = TRUE;
+        sp->wrote_errors = TRUE;
+      }
+
+    } else {
+      pr_trace_msg(trace_channel, 7, "SFTPOption 'IgnoreSCPUploadPerms' "
+        "configured, ignoring perms sent by client");
     }
-
-  } else {
-    pr_trace_msg(trace_channel, 7, "SFTPOption 'IgnoreSCPUploadPerms' "
-      "configured, ignoring perms sent by client");
   }
 
   if (sp->fh) {
-    char *curr_path;
-
     curr_path = pstrdup(scp_pool, sp->fh->fh_path);
 
     /* Set session.curr_cmd, for any FSIO callbacks that might be interested. */
@@ -1432,15 +1435,33 @@ static int recv_path(pool *p, uint32_t channel_id, struct scp_path *sp,
     }
 
     sp->fh = NULL;
+  }
 
-    if (sp->hiddenstore == TRUE &&
-        res == 0) {
+  if (sp->hiddenstore == TRUE &&
+      curr_path != NULL) {
+
+    if (sp->wrote_errors == TRUE) {
+      /* There was an error writing this HiddenStores file; be sure to clean
+       * things up.
+       */
+      pr_trace_msg(trace_channel, 8, "deleting HiddenStores path '%s'",
+        curr_path); 
+
+      if (pr_fsio_unlink(curr_path) < 0) {
+        if (errno != ENOENT) {
+          pr_log_debug(DEBUG0, MOD_SFTP_VERSION
+            ": error deleting HiddenStores file '%s': %s", curr_path,
+            strerror(errno));
+        }
+      }
+
+    } else {
       /* This is a HiddenStores file, and needs to be renamed to the real
        * path (i.e. sp->best_path).
        */
 
-      pr_trace_msg(trace_channel, 8, "renaming HiddenStores path '%s' to '%s'",
-        curr_path, sp->best_path);
+      pr_trace_msg(trace_channel, 8,
+        "renaming HiddenStores path '%s' to '%s'", curr_path, sp->best_path);
 
       res = pr_fsio_rename(curr_path, sp->best_path);
       if (res < 0) {
@@ -1453,7 +1474,13 @@ static int recv_path(pool *p, uint32_t channel_id, struct scp_path *sp,
           "renaming of HiddenStore path '%s' to '%s' failed: %s",
           curr_path, sp->best_path, strerror(xerrno));
 
-        pr_fsio_unlink(curr_path);
+        if (pr_fsio_unlink(curr_path) < 0) {
+          if (errno != ENOENT) {
+            pr_trace_msg(trace_channel, 1,
+              "error deleting HiddenStores file '%s': %s", curr_path,
+              strerror(errno));
+          }
+        }
       }
     }
   }

@@ -6,6 +6,13 @@ This file contains a description of the major changes to ProFTPD for the
 releases.  More information on these changes can be found in the NEWS and
 ChangeLog files.
 
+1.3.5b
+---------
+
+  + SSH RSA hostkeys smaller than 2048 bits now work properly.
+  + MLSD response lines are now properly CRLF terminated.
+
+
 1.3.5a
 ---------
 

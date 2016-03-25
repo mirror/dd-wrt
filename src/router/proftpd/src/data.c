@@ -358,14 +358,30 @@ static int data_active_open(char *reason, off_t size) {
    */
   bind_port = session.c->local_port-1;
 
-  /* A RootRevoke value of 0 indicates 'false', 1 indicates 'true', and
-   * 2 indicates 'NonCompliantActiveTransfer'.  We change the source port for
-   * a RootRevoke value of 2.
-   */
   root_revoke = get_param_ptr(TOPLEVEL_CONF, "RootRevoke", FALSE);
-  if (root_revoke != NULL &&
-      *root_revoke == 2) {
-    bind_port = INPORT_ANY;
+  if (root_revoke != NULL) {
+    /* A RootRevoke value of 0 indicates 'false', 1 indicates 'true', and
+     * 2 indicates 'NonCompliantActiveTransfer'.  We change the source port for
+     * a RootRevoke value of 2, and for a value of 1, we make sure that
+     * that the port is not a privileged port.
+     */
+    switch (*root_revoke) {
+      case 1:
+        if (bind_port < 1024) {
+          pr_log_debug(DEBUG0, "RootRevoke in effect, unable to bind to local "
+            "port %d for active transfer", bind_port);
+          errno = EPERM;
+          return -1;
+        }
+        break;
+
+      case 2:
+        bind_port = INPORT_ANY;
+        break;
+
+      default:
+        break;
+    }
   }
 
   session.d = pr_inet_create_conn(session.pool, -1, bind_addr, bind_port, TRUE);

@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2013 The ProFTPD Project team
+ * Copyright (c) 2001-2015 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,9 +24,7 @@
  * the source code for OpenSSL in the source distribution.
  */
 
-/* Flexible logging module for proftpd
- * $Id: mod_log.c,v 1.155 2013-11-11 01:34:04 castaglia Exp $
- */
+/* Flexible logging module for proftpd */
 
 #include "conf.h"
 #include "privs.h"
@@ -38,6 +36,7 @@ module log_module;
 #define EXTENDED_LOG_BUFFER_SIZE		(PR_TUNABLE_PATH_MAX + 128)
 
 #define EXTENDED_LOG_MODE			0644
+#define EXTENDED_LOG_FORMAT_DEFAULT		"default"
 
 typedef struct logformat_struc	logformat_t;
 typedef struct logfile_struc 	logfile_t;
@@ -433,8 +432,9 @@ static void logformat(const char *directive, char *nickname, char *fmts) {
   lf->lf_format = palloc(log_pool, outs - format);
   memcpy(lf->lf_format, format, outs - format);
 
-  if (!format_set)
+  if (format_set == NULL) {
     format_set = xaset_create(log_pool, NULL);
+  }
 
   xaset_insert_end(format_set, (xasetmember_t *) lf);
   formats = (logformat_t *) format_set->xas_list;
@@ -1721,8 +1721,9 @@ MODRET log_any(cmd_rec *cmd) {
 
       if (!session.anon_config &&
           lf->lf_conf &&
-          lf->lf_conf->config_type == CONF_ANON)
+          lf->lf_conf->config_type == CONF_ANON) {
         continue;
+      }
 
       do_log(cmd, lf);
     }
@@ -1888,6 +1889,19 @@ static void find_extendedlogs(void) {
       for (logfmt = formats; logfmt; logfmt = logfmt->next) {
         if (strcmp(logfmt->lf_nickname, logfmt_s) == 0) {
           break;
+        }
+      }
+
+      if (logfmt == NULL) {
+        if (strcasecmp(logfmt_s, EXTENDED_LOG_FORMAT_DEFAULT) == 0) {
+          /* Try again, this time looking for the default LogFormat
+           * name, which is registered using a nickname of "".
+           */
+          for (logfmt = formats; logfmt; logfmt = logfmt->next) {
+            if (strcmp(logfmt->lf_nickname, "") == 0) {
+              break;
+            }
+          }
         }
       }
 

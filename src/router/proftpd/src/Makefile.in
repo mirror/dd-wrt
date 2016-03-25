@@ -25,5 +25,5 @@ clean:
 	rm -f *.o
 
 depend:
-	makedepend $(CPPFLAGS) -Y *.c 2>/dev/null
-	makedepend $(CPPFLAGS) -Y -fMakefile.in *.c 2>/dev/null
+	$(MAKEDEPEND) $(CPPFLAGS) *.c 2>/dev/null
+	$(MAKEDEPEND) $(CPPFLAGS) -fMakefile.in *.c 2>/dev/null
