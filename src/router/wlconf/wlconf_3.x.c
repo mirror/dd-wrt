@@ -318,7 +318,7 @@ wlconf_validate_all(char *prefix, bool restore)
 
 /* restore specific per-interface variable */
 static void
-wlconf_restore_var(char *prefix, char *name)
+/*wlconf_restore_var(char *prefix, char *name)
 {
 	struct nvram_tuple *t;
 	char tmp[100];
@@ -328,7 +328,7 @@ wlconf_restore_var(char *prefix, char *name)
 			break;
 		}
 	}
-}
+}*/
 static int
 wlconf_akm_options(char *prefix)
 {
@@ -944,11 +944,11 @@ wlconf_security_options(char *name, char *prefix, int bsscfg_idx, bool wet, bool
 cprintf("set security settings %s, idx %d\n",name, bsscfg_idx);
 	if (wlconf_set_wsec(name, prefix, bsscfg_idx)) {
 		/* change nvram only, code below will pass them on */
-		wlconf_restore_var(prefix, "auth_mode");
-		wlconf_restore_var(prefix, "auth");
+//		wlconf_restore_var(prefix, "auth_mode");
+//		wlconf_restore_var(prefix, "auth");
 		/* reset wep to default */
-		wlconf_restore_var(prefix, "crypto");
-		wlconf_restore_var(prefix, "wep");
+//		wlconf_restore_var(prefix, "crypto");
+//		wlconf_restore_var(prefix, "wep");
 		wlconf_set_wsec(name, prefix, bsscfg_idx);
 	}
 cprintf("akm\n");
