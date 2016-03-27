@@ -40,7 +40,7 @@ u_int ieee80211_mhz2ieee(u_int freq)
 	if (freq < 2484 && freq > 2407)
 		return (freq - 2407) / 5;
 	if (freq < 2412) {
-		int d = ((((int)freq) - 2412) / 5) + 256;
+		int d = ((freq - 2412) / 5) + 256;
 		return d;
 	}
 	if (freq < 2502)
@@ -240,14 +240,13 @@ struct wifi_interface *wifi_getfreq(char *ifname)
 	strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
 	ioctl(getsocket(), SIOCGIWFREQ, &wrq);
 	closesocket();
-
 	freq = wrq.u.freq.m;
 	struct wifi_interface *interface = (struct wifi_interface *)malloc(sizeof(struct wifi_interface));
 	if (freq < 1000) {
 		interface->freq = ieee80211_ieee2mhz(freq);
 		return interface;
 	}
-	interface->freq = freq;
+	interface->freq = wrtfreq_to_int(&wrq);
 	return interface;
 }
 
@@ -1592,7 +1591,7 @@ u_int ieee80211_mhz2ieee(u_int freq)
 	if (freq < 2484 && freq > 2407)
 		return (freq - 2407) / 5;
 	if (freq < 2412) {
-		int d = ((((int)freq) - 2407) / 5) + 256;
+		int d = ((freq - 2407) / 5) + 256;
 		return d;
 	}
 	if (freq > 2484 && freq < 4000)
@@ -1622,8 +1621,7 @@ struct wifi_interface *wifi_getfreq(char *ifname)
 	strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
 	ioctl(getsocket(), SIOCGIWFREQ, &wrq);
 	closesocket();
-	struct wifi_interface *interface;
-	interface = (struct wifi_interface *)malloc(sizeof(struct wifi_interface));
+	struct wifi_interface *interface = (struct wifi_interface *)malloc(sizeof(struct wifi_interface));
 	interface->freq = wrqfreq_to_int(&wrq);
 	return interface;
 }
