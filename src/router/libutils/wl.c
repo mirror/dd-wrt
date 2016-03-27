@@ -32,30 +32,31 @@
  * DD-WRT addition (loaned from radauth) 
  */
 
-#ifndef HAVE_MADWIFI
 u_int ieee80211_mhz2ieee(u_int freq)
 {
 	if (freq == 2484)
 		return 14;
+	if (freq == 2407)
+		return 0;
 	if (freq < 2484 && freq > 2407)
 		return (freq - 2407) / 5;
 	if (freq < 2412) {
-		int d = ((freq - 2412) / 5) + 256;
-		return d;
+		return ((freq - 2407) / 5) + 256;
 	}
-	if (freq < 2502)
-		return 14;
-	if (freq < 2512)
-		return 15;
+	if (freq > 2484 && freq < 4000)
+		return (freq - 2414) / 5;
 	if (freq < 4990 && freq > 4940)
 		return ((freq * 10) + (((freq % 5) == 2) ? 5 : 0) - 49400) / 5;
-	else if (freq >= 4800 && freq < 5005)
+	// 5000 will become  channel 200
+	if (freq > 4910 && freq < 5005)
 		return (freq - 4000) / 5;
 	if (freq < 5000)
-		return 15 + ((freq - (2512)) / 20);
+		return 15 + ((freq - 2512) / 20);
 
-	return (freq - (5000)) / 5;
+	return (freq - 5000) / 5;
 }
+
+#ifndef HAVE_MADWIFI
 
 unsigned int ieee80211_ieee2mhz(unsigned int chan)
 {
@@ -246,7 +247,7 @@ struct wifi_interface *wifi_getfreq(char *ifname)
 		interface->freq = ieee80211_ieee2mhz(freq);
 		return interface;
 	}
-	interface->freq = wrtfreq_to_int(&wrq);
+	interface->freq = wrqfreq_to_int(&wrq);
 	return interface;
 }
 
@@ -1580,31 +1581,6 @@ int get_wififreq(char *ifname, int freq)
 		break;
 	}
 	return freq;
-}
-
-u_int ieee80211_mhz2ieee(u_int freq)
-{
-	if (freq == 2484)
-		return 14;
-	if (freq == 2407)
-		return 0;
-	if (freq < 2484 && freq > 2407)
-		return (freq - 2407) / 5;
-	if (freq < 2412) {
-		int d = ((freq - 2407) / 5) + 256;
-		return d;
-	}
-	if (freq > 2484 && freq < 4000)
-		return (freq - 2414) / 5;
-	if (freq < 4990 && freq > 4940)
-		return ((freq * 10) + (((freq % 5) == 2) ? 5 : 0) - 49400) / 5;
-	// 5000 will become  channel 200
-	if (freq > 4910 && freq < 5005)
-		return (freq - 4000) / 5;
-	if (freq < 5000)
-		return 15 + ((freq - 2512) / 20);
-
-	return (freq - 5000) / 5;
 }
 
 struct wifi_interface *wifi_getfreq(char *ifname)
