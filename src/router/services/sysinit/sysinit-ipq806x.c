@@ -369,10 +369,10 @@ void start_sysinit(void)
 		calcchecksum(&smem[0x4000]);
 
 		fp = fopen("/tmp/board1.bin", "wb");
-		fwrite(smem, 0x4000, 1, fp);
+		fwrite(smem, 12064, 1, fp);
 		fclose(fp);
 		fp = fopen("/tmp/board2.bin", "wb");
-		fwrite(&smem[0x4000], 0x4000, 1, fp);
+		fwrite(&smem[0x4000], 12064, 1, fp);
 		fclose(fp);
 		free(smem);
 
