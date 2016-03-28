@@ -2979,7 +2979,7 @@ struct nvram_param srouter_defaults[] = {
 	{"openvpncl_config", ""},
 	{"openvpncl_tlsauth", ""},
 	{"openvpncl_cipher", "bf-cbc"},
-	{"openvpncl_auth", "md5"},
+	{"openvpncl_auth", "sha256"},
 	{"openvpncl_adv", "0"},
 	{"openvpncl_bridge", "0"},
 	{"openvpncl_tlscip", "0"},
@@ -3018,7 +3018,7 @@ struct nvram_param srouter_defaults[] = {
 	{"openvpn_onwan", "0"},
 	{"openvpn_switch", "0"},	//switch between old/new style config
 	{"openvpn_cipher", "bf-cbc"},
-	{"openvpn_auth", "md5"},
+	{"openvpn_auth", "sha256"},
 	{"openvpn_redirgate", "0"},
 	{"openvpn_adv", "0"},
 	{"openvpncl_upauth", "0"},
