@@ -1232,6 +1232,12 @@ int internal_getRouterBrand()
 		return ROUTER_LINKSYS_EA6350;
 	}
 
+	if (nvram_match("boardtype", "0xE646") && nvram_match("boardrev", "0x1100") && nvram_match("boardnum", "20130125")) {
+		setRouter("Linksys EA6200");
+
+		return ROUTER_LINKSYS_EA6350;
+	}
+
 	if (nvram_match("boardtype", "0xF646") && nvram_match("boardrev", "0x1100")) {
 		setRouter("Linksys EA6500 V2");
 
