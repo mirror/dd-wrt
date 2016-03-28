@@ -56,18 +56,18 @@ static void run_on_mount(void)
 /* TODO improvement: use procfs to identify pids that have openfiles on externel discs and then stop them before umount*/
 static bool usb_stop_services()
 {
-	eval("stopservice", "cron");
-	eval("stopservice", "samba3");
-	eval("stopservice", "dlna");
-	eval("stopservice", "ftpsrv");
+	eval("stopservice", "cron", "-f");
+	eval("stopservice", "samba3", "-f");
+	eval("stopservice", "dlna", "-f");
+	eval("stopservice", "ftpsrv", "-f");
 #ifdef HAVE_WEBSERVER
-	eval("stopservice", "lighttpd");
+	eval("stopservice", "lighttpd", "-f");
 #endif
 #ifdef HAVE_TRANSMISSION
-	eval("stopservice", "transmission");
+	eval("stopservice", "transmission", "-f");
 #endif
 #ifdef HAVE_FREERADIUS
-	eval("stopservice", "freeradius");
+	eval("stopservice", "freeradius", "-f");
 #endif
 	return 0;
 }
@@ -75,18 +75,18 @@ static bool usb_stop_services()
 /* when adding external media some services should be restarted, e.g. minidlna in order to scan for media files*/
 static bool usb_start_services()
 {
-	eval("startservice_f", "cron");
-	eval("startservice_f", "samba3");
-	eval("startservice_f", "dlna");
-	eval("startservice_f", "ftpsrv");
+	eval("startservice_f", "cron", "-f");
+	eval("startservice_f", "samba3", "-f");
+	eval("startservice_f", "dlna", "-f");
+	eval("startservice_f", "ftpsrv", "-f");
 #ifdef HAVE_WEBSERVER
-	eval("startservice_f", "lighttpd");
+	eval("startservice_f", "lighttpd", "-f");
 #endif
 #ifdef HAVE_TRANSMISSION
-	eval("startservice_f", "transmission");
+	eval("startservice_f", "transmission", "-f");
 #endif
 #ifdef HAVE_FREERADIUS
-	eval("startservice_f", "freeradius");
+	eval("startservice_f", "freeradius", "-f");
 #endif
 	return 0;
 }
