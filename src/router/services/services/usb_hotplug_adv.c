@@ -66,9 +66,6 @@ static bool usb_stop_services()
 #ifdef HAVE_TRANSMISSION
 	eval("stopservice", "transmission", "-f");
 #endif
-#ifdef HAVE_FREERADIUS
-	eval("stopservice", "freeradius", "-f");
-#endif
 	return 0;
 }
 
@@ -84,9 +81,6 @@ static bool usb_start_services()
 #endif
 #ifdef HAVE_TRANSMISSION
 	eval("startservice_f", "transmission", "-f");
-#endif
-#ifdef HAVE_FREERADIUS
-	eval("startservice_f", "freeradius", "-f");
 #endif
 	return 0;
 }
