@@ -300,6 +300,7 @@ static char *filter[] = {
 	"cpurev",
 	"color",
 	"PA",
+	"nocountrysel"
 	NULL
 };
 
