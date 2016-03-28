@@ -6769,7 +6769,12 @@ int getMTD(char *name)
 		return -1;
 	while (!feof(fp) && fscanf(fp, "%s %s %s %s", dev, size, esize, n) == 4) {
 		if (!strcmp(n, buf)) {
-			device = dev[3] - '0';
+			if(dev[4] == ':'){
+				device = dev[3] - '0';
+			} else {
+				device = 10 + (dev[4] - '0');
+			}
+
 			break;
 		}
 	}
@@ -7805,6 +7810,7 @@ int isbridge(char *name)
 	return 0;
 
 }
+
 #if 0
 int isbridge(char *name)
 {
