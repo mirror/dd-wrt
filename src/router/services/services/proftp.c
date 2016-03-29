@@ -142,13 +142,10 @@ void start_ftpsrv(void)
 
 		if (!strcmp(cs->access_perms, "rw")) 
 			fprintf(fp,"  <Limit WRITE>\n    AllowAll\n  </Limit>\n");
-		fprintf(fp, "<Limit LOGIN>\n");
-
 		for (csu = cs->users; csu; csu = csunext) {
 			samba3users = getsamba3users();
 			for (cu = samba3users; cu; cu = cunext) {
 				if (!strcmp(csu->username, cu->username) && (cu->sharetype & SHARETYPE_FTP)) {
-					fprintf(fp, "AllowUser \"%s\"\n", csu->username);
 					sysprintf("mkdir -p \"/tmp/proftpd/users/%s/%s\"", cu->username, cs->label);
 					sysprintf("mount --bind \"%s/%s\" \"/tmp/proftpd/users/%s/%s\"", cs->mp, cs->sd, cu->username, cs->label);
 				}
@@ -159,8 +156,6 @@ void start_ftpsrv(void)
 			free(csu);
 		}
 
-		fprintf(fp, "DenyAll\n");
-		fprintf(fp, "</Limit>\n");
 		fprintf(fp, "</Directory>\n");
 
 	      nextshare:;
