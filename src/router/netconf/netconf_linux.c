@@ -36,8 +36,8 @@
 /* Loops over each match in the ipt_entry */
 #define for_each_ipt_match(match, entry) \
 	for ((match) = (struct ipt_entry_match *) &(entry)->elems[0]; \
-	     (int) (match) < (int) (entry) + (entry)->target_offset; \
-	     (match) = (struct ipt_entry_match *) ((int) (match) + (match)->u.match_size))
+	     (long) (match) < (long) (entry) + (entry)->target_offset; \
+	     (match) = (struct ipt_entry_match *) ((long) (match) + (match)->u.match_size))
 
 /* Supported ipt table names */
 static const char *ipt_table_names[] = { "filter", "nat", NULL };
@@ -301,7 +301,7 @@ netconf_get_fw(netconf_fw_t *fw_list)
 
 				/* Set target type */
 				fw->target = num;
-				target = (struct ipt_entry_target *) ((int) entry + entry->target_offset);
+				target = (struct ipt_entry_target *) ((long) entry + entry->target_offset);
 
 				/* Get filter target information */
 				if (filter) {
@@ -568,7 +568,7 @@ netconf_fw_index(const netconf_fw_t *fw)
 				/* Compare target type */
 				if (fw->target != target_num(entry, &handle))
 					continue;
-				target = (struct ipt_entry_target *) ((int) entry + entry->target_offset);
+				target = (struct ipt_entry_target *) ((long) entry + entry->target_offset);
 
 				/* Compare NAT target information */
 				if (nat) {
@@ -658,7 +658,7 @@ netconf_append_match(struct ipt_entry **pentry, const char *name, size_t match_d
 		return NULL;
 	}
 
-	match = (struct ipt_entry_match *) ((int) entry + entry->next_offset);
+	match = (struct ipt_entry_match *) ((long) entry + entry->next_offset);
 	entry->next_offset += match_size;
 	entry->target_offset += match_size;
 	memset(match, 0, match_size);
@@ -692,7 +692,7 @@ netconf_append_target(struct ipt_entry **pentry, const char *name, size_t target
 		return NULL;
 	}
 
-	target = (struct ipt_entry_target *) ((int) entry + entry->next_offset);
+	target = (struct ipt_entry_target *) ((long) entry + entry->next_offset);
 	entry->next_offset += target_size;
 	memset(target, 0, target_size);
 
@@ -722,7 +722,7 @@ insert_entry(const char *chain, struct ipt_entry *entry, iptc_handle_t *handle)
 	const struct ipt_entry *rule;
 	struct ipt_entry_target *target;
 
-	target = (struct ipt_entry_target *) ((int) entry + entry->target_offset);
+	target = (struct ipt_entry_target *) ((long) entry + entry->target_offset);
 	memset(&blank, 0, sizeof(struct ipt_ip));
 
 	/* If this is a default policy (no match) insert at the end of the chain */
@@ -1089,8 +1089,9 @@ netconf_manip_fw(netconf_fw_t *fw_list, bool del)
 	int ret;
 
 	/* Single firewall entry */
-	if (netconf_list_empty(fw_list) || !fw_list->next)
+	if (netconf_list_empty(fw_list) || !fw_list->next) {
 		return (del ? netconf_del_fw(fw_list) : netconf_add_fw(fw_list));
+	}
 
 	/* List of firewall entries */
 	netconf_list_for_each(fw, fw_list) {
