@@ -24,6 +24,7 @@
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/sysinfo.h>
 #include <net/if.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -607,14 +608,14 @@ upnp_osl_wan_uptime()
     {
 	return -1;
     }
-    float uptime;
-    if( !feof( fp ) && fscanf( fp, "%f", &uptime ) == 1 )
+    unsigned uptime;
+    if( !feof( fp ) && fscanf( fp, "%u", &uptime ) == 1 )
     {
-	float sys_uptime;
+	unsigned sys_uptime;
 	fclose( fp );
-	FILE *fp2 = fopen( "/proc/uptime", "r" );
-	fscanf( fp2, "%f", &sys_uptime );
-	fclose( fp2 );
+	struct sysinfo info;
+	sysinfo(&info);
+	sys_uptime = info.uptime;
 	uptime = sys_uptime - uptime;
 	return (int)uptime;
     }
