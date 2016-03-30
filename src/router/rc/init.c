@@ -209,6 +209,36 @@ pid_t ddrun_shell(int timeout, int nowait)
 	}
 }
 
+static void unmount_fs(void)
+{
+	char dev[32];
+	char mpoint[128];
+	char fstype[32];
+	char flags[64];
+	int a, b;
+	FILE *fp = fopen("/proc/mounts", "rb");
+	while (!feof(fp) && fscanf(fp, "%s %s %s %s %d %d", dev, mpoint, fstype, flags, &a, &b) == 6) {
+		if (!strcmp(fstype, "proc"))
+			continue;
+		if (!strcmp(fstype, "sysfs"))
+			continue;
+		if (!strcmp(fstype, "debugfs"))
+			continue;
+		if (!strcmp(fstype, "ramfs"))
+			continue;
+		if (!strcmp(fstype, "tmpfs"))
+			continue;
+		if (!strcmp(fstype, "devpts"))
+			continue;
+		if (!strcmp(fstype, "usbfs"))
+			continue;
+		fprintf(stderr, "unmounting %s\n", mpoint);
+		eval("umount", "-r", "-f", mpoint);
+	}
+	fclose(fp);
+
+}
+
 void shutdown_system(void)
 {
 	int sig;
@@ -235,36 +265,12 @@ void shutdown_system(void)
 	kill(-1, SIGTERM);
 	sync();
 	sleep(5);
-
+	unmount_fs();		// try to unmount a first time
 	fprintf(stderr, "Sending SIGKILL to all processes\n");
 	kill(-1, SIGKILL);
 	sync();
 	sleep(1);
-	char dev[32];
-	char mpoint[128];
-	char fstype[32];
-	char flags[64];
-	int a, b;
-	FILE *fp = fopen("/proc/mounts", "rb");
-	while (!feof(fp) && fscanf(fp, "%s %s %s %s %d %d", dev, mpoint, fstype, flags, &a, &b) == 6) {
-		if (!strcmp(fstype, "proc"))
-			continue;
-		if (!strcmp(fstype, "sysfs"))
-			continue;
-		if (!strcmp(fstype, "debugfs"))
-			continue;
-		if (!strcmp(fstype, "ramfs"))
-			continue;
-		if (!strcmp(fstype, "tmpfs"))
-			continue;
-		if (!strcmp(fstype, "devpts"))
-			continue;
-		if (!strcmp(fstype, "usbfs"))
-			continue;
-		fprintf(stderr, "unmounting %s\n", mpoint);
-		eval("umount", "-r", "-f", mpoint);
-	}
-	fclose(fp);
+	unmount_fs();		// try it a second time, but consider that kill already could have reached init process
 }
 
 static int fatal_signals[] = {
