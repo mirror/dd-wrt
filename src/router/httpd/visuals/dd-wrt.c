@@ -1199,7 +1199,7 @@ void ej_show_usb_diskinfo(webs_t wp, int argc, char_t ** argv)
 	if (!nvram_match("usb_automnt", "1"))
 		return;
 	//exclude proftpd bind mount points and don't display the first 3 lines which are header and rootfs
-	sysprintf("df -h | grep -v proftpd | awk '{ print $3 \" \" $4 \" \" $5 \" \" $6}' | tail -n +4 > /tmp/df");
+	sysprintf("df -P -h | grep -v proftpd | awk '{ print $3 \" \" $4 \" \" $5 \" \" $6}' | tail -n +4 > /tmp/df");
 
 	if ((fp = fopen("/tmp/df", "r"))) {
 
