@@ -276,17 +276,11 @@ SQSH_EXTERN unsigned int squashfs_read_data(struct super_block *s, char *buffer,
 	 */
 	if (compressed) {
 		int zlib_err;
-		CLzmaDecoderState vs;
-
-		vs.Properties.lc = c_buffer[1];
-		vs.Properties.lp = c_buffer[2];
-		vs.Properties.pb = c_buffer[0];
-
-		vs.Probs = (CProb *)lzma_workspace;
-		int insize;    
 
 #ifdef SQUASHFS_LZMA
-		if ((zlib_err = LzmaDecode2(&vs, c_buffer+4, c_byte-4,&insize, buffer, msblk->read_size, &bytes)) != LZMA_RESULT_OK)
+		if ((zlib_err = LzmaDecode2(lzma_workspace, 
+			LZMA_WORKSPACE_SIZE, c_buffer[1],c_buffer[2],c_buffer[0],//LZMA_LC, LZMA_LP, LZMA_PB, 
+			c_buffer+4, c_byte-4, buffer, msblk->read_size, &bytes)) != LZMA_RESULT_OK)
 		{
 			ERROR("lzma returned unexpected result 0x%x\n", zlib_err);
 			bytes = 0;
