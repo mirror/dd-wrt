@@ -477,7 +477,7 @@ static int usb_process_path(char *path, int host, char *part, char *devpath)
 	}
 
 	// now we will get a nice ordered dump of all partitions
-	sysprintf("cat /tmp/disk/sd*[1-6] > %s", DUMPFILE);
+	sysprintf("cat /tmp/disk/sd* > %s", DUMPFILE);
 
 	/* avoid out of memory problems which could lead to broken wireless, so we limit the minimum free ram everything else can be used for fs cache */
 #ifdef HAVE_80211AC
