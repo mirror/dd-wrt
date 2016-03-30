@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r2856 | brainslayer | 2016-03-31 00:14:11 +0200 (Thu, 31 Mar 2016) | 1 line
+
+fix 2 bogus definitons in compat wireless
+------------------------------------------------------------------------
+r2855 | brainslayer | 2016-03-31 00:13:37 +0200 (Thu, 31 Mar 2016) | 1 line
+
+fix 2 bogus definitons in compat wireless
+------------------------------------------------------------------------
 r2854 | brainslayer | 2016-03-29 18:04:02 +0200 (Tue, 29 Mar 2016) | 1 line
 
 clean fix for calibration data problem
