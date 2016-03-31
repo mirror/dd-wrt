@@ -7792,21 +7792,19 @@ int isbridge(char *name)
 		return 0;
 
 	num = ioctl(br_socket_fd, SIOCGIFBR, args);
+    	close(br_socket_fd);
 	if (num < 0) {
-    		close(br_socket_fd);
 		return 0;
 	}
 
 	for (i = 0; i < num; i++) {
 		if (!if_indextoname(ifindices[i], ifname)) {
-    			close(br_socket_fd);
 			return 0;
 		}
 
 		if (!strcmp(ifname,name))
 		    return 1;
 	}
-        close(br_socket_fd);
 	return 0;
 
 }
