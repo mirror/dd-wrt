@@ -233,92 +233,23 @@ void ej_show_bridgetable(webs_t wp, int argc, char_t ** argv)
 void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 {
 	char bufferif[512];
-	char bufferif2[256];
 	char finalbuffer[512];
 	int count = 0;
 	int c = 0;
 	char word[256];
 	char *next, *wordlist;
-
 	memset(bufferif, 0, 512);
-	memset(bufferif2, 0, 256);
-	getIfList(bufferif, "eth");
-#ifdef HAVE_GATEWORX
-	getIfList(bufferif2, "ixp");
-	sprintf(bufferif, "%s %s", bufferif, bufferif2);
-#endif
-
-	memset(bufferif2, 0, 256);
-	getIfList(bufferif2, "vlan");
-	sprintf(bufferif, "%s %s", bufferif, bufferif2);
-
-	memset(bufferif2, 0, 256);
-	getIfList(bufferif2, "wl");
-	sprintf(bufferif, "%s %s", bufferif, bufferif2);
-
-	memset(bufferif2, 0, 256);
-	getIfList(bufferif2, "ofdm");
-	sprintf(bufferif, "%s %s", bufferif, bufferif2);
-
-#ifdef HAVE_RT2880
-	memset(bufferif2, 0, 256);
-	getIfList(bufferif2, "ra");
-	sprintf(bufferif, "%s %s", bufferif, bufferif2);
-#endif
-
-#ifdef HAVE_MADWIFI
-	memset(bufferif2, 0, 256);
-	getIfList(bufferif2, "ath");
-	sprintf(bufferif, "%s %s", bufferif, bufferif2);
-#endif
-	memset(bufferif2, 0, 256);
-	getIfListB(bufferif2, NULL, 1);
-	foreach(word, bufferif2, next) {
-		if (contains(word, '.'))
-			sprintf(bufferif, "%s %s", bufferif, word);
-	}
-	int i;
-
-#if 0				//def HAVE_MADWIFI
-	c = getdevicecount();
-
-	for (i = 0; i < c; i++) {
-		char ath[32];
-
-		sprintf(bufferif, "%s ath%d", bufferif, i);
-		char vifs[32];
-
-		sprintf(vifs, "ath%d_vifs", i);
-		sprintf(bufferif, "%s %s", bufferif, nvram_safe_get(vifs));
-	}
-#endif
-#ifdef HAVE_BONDING
-	c = atoi(nvram_default_get("bonding_number", "1"));
-	for (i = 0; i < c; i++) {
-		sprintf(bufferif, "%s bond%d", bufferif, i);
-	}
-#endif
-#ifdef HAVE_EOP_TUNNEL
-	for (i = 1; i < 11; i++) {
-		char EOP[32];
-
-		if (nvram_nmatch("1", "oet%d_en", i)
-		    && nvram_nmatch("1", "oet%d_bridged", i)) {
-			sprintf(EOP, "oet%d", i);
-			sprintf(bufferif, "%s %s", bufferif, EOP);
-		}
-	}
-#endif
-	char buffer[256];
-
-	memset(buffer, 0, 256);
-	getIfListB(buffer, NULL, 1);
-
-	memset(finalbuffer, 0, 256);
-	foreach(word, buffer, next) {
-		if (!contains(word, '.'))
+	memset(finalbuffer, 0, 512);
+	getIfList(bufferif, NULL);
+	foreach(word, bufferif, next) {
+		if (!isbridge(word) && strcmp(word, "lo") && !contains(word, ':'))
 			sprintf(finalbuffer, "%s %s", finalbuffer, word);
 	}
+	strcpy(bufferif, finalbuffer);
+	int i;
+
+	memset(finalbuffer, 0, 512);
+	getIfListB(finalbuffer, NULL, 1);
 	char *checkbuffer = safe_malloc(strlen(finalbuffer) + 6);
 	memset(checkbuffer, 0, strlen(finalbuffer) + 6);
 	strcpy(checkbuffer, "none ");
