@@ -2953,6 +2953,7 @@ void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 	char mac[18];
 	char landev[16];
 	int count = 0;
+	int i, len;
 	int conn_count = 0;
 
 	if ((f = fopen("/proc/net/arp", "r")) != NULL) {
@@ -3055,7 +3056,9 @@ void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 			/*
 			 * end nvram check 
 			 */
-
+			len = strlen(mac);
+			for (i = 0; i < len; i++)
+				mac[i] = toupper(mac[i]);
 			websWrite(wp, "%c'%s','%s','%s','%d'", (count ? ',' : ' '), hostname, ip, mac, conn_count);
 			++count;
 			conn_count = 0;
