@@ -4761,10 +4761,12 @@ void start_wan_done(char *wan_ifname)
 #else
 		eval("wget", nvram_safe_get("ipv6_tun_upd_url"), "-O", "/tmp/tunnelstat");
 #endif
+#ifdef HAVE_IPV6
 		if (nvram_match("wshaper_enable", "1")){
 			stop_ipv6_tunnel(wan_ifname);
 			start_ipv6_tunnel(wan_ifname);
 		}
+#endif
 	}
 }
 
