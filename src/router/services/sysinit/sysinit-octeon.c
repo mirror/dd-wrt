@@ -68,7 +68,11 @@ void start_sysinit(void)
 	cprintf("sysinit() klogctl\n");
 	klogctl(8, NULL, atoi(nvram_safe_get("console_loglevel")));
 	cprintf("sysinit() get router\n");
-	eval("modprobe", "btrfs");
+	insmod("lzo_compress");
+	insmod("lzo_decompress");
+	insmod("raid6_pq");
+	insmod("xor");
+	insmod("btrfs");
 	FILE *check = fopen("/dev/sda3", "rb");
 	char drive[64];
 	if (check) {

@@ -159,7 +159,11 @@ void start_devinit(void)
 	}
 	// sprintf (dev, "/dev/discs/disc%d/part1", index);
 	// mount (dev, "/boot", "ext2", MS_MGC_VAL, NULL);
-	eval("modprobe", "btrfs");
+	insmod("lzo_compress");
+	insmod("lzo_decompress");
+	insmod("raid6_pq");
+	insmod("xor");
+	insmod("btrfs");
 	sprintf(dev, "/dev/%s3", disc);
 	if (mount(dev, "/usr/local", "btrfs", MS_MGC_VAL, NULL)) {
 		eval("modprobe", "ext4");
