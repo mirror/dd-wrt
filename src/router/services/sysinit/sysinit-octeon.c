@@ -82,7 +82,7 @@ void start_sysinit(void)
 		sprintf(drive, "/dev/mmcblk0p3");
 	}
 	if (mount(drive, "/jffs", "btrfs", MS_MGC_VAL, NULL)) {
-		eval("/sbin/mkfs.btrfs", drive, "-f");
+		eval("mkfs.btrfs", drive, "-f");
 		mount(drive, "/jffs", "btrfs", MS_MGC_VAL, NULL);
 	}
 	eval("mount", "--bind", "/jffs", "/usr/local");
