@@ -196,7 +196,7 @@ CONFIG_LIBUTIL=y
 #
 ARCHITECTURE=lsx
 PLATFORM=mips
-LINUXDIR=$(SRCBASE)/linux/universal/linux-3.5
+LINUXDIR=$(SRCBASE)/linux/universal/linux-3.10
 LIBDIR=$(TOOLCHAIN)/lib
 USRLIBDIR=$(TOOLCHAIN)/usr/lib
 
