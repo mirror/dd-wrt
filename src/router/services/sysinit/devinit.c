@@ -168,7 +168,7 @@ void start_devinit(void)
 	if (mount(dev, "/usr/local", "btrfs", MS_MGC_VAL, NULL)) {
 		eval("modprobe", "ext4");
 		if (mount(dev, "/usr/local", "ext4", MS_MGC_VAL, NULL)) {
-			eval("/sbin/mkfs.btrfs", "-f", dev);
+			eval("mkfs.btrfs", "-f", dev);
 			mount(dev, "/usr/local", "btrfs", MS_MGC_VAL, NULL);
 		}
 	}
