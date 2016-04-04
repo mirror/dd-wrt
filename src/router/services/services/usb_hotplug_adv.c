@@ -358,7 +358,7 @@ static int usb_process_path(char *path, int host, char *part, char *devpath)
 					fs = "vfat";
 					usb_load_modules(fs);
 				} else if (strstr(line, "Ext2")) {
-					fs = "ext2";
+					fs = "ext4";
 					usb_load_modules(fs);
 				} else if (strstr(line, "XFS")) {
 					fs = "xfs";
@@ -370,7 +370,7 @@ static int usb_process_path(char *path, int host, char *part, char *devpath)
 					fs = "iso9660";
 					usb_load_modules(fs);
 				} else if (strstr(line, "Ext3")) {
-					fs = "ext3";
+					fs = "ext4";
 					usb_load_modules(fs);
 				} else if (strstr(line, "Ext4")) {
 					fs = "ext4";
