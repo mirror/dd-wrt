@@ -74,7 +74,7 @@ static void install_sdcard(void)
 	fclose(fp);
 	fprintf(stderr, "installing firmware to internal SD Card\n");
 	mkdir("/tmp/install", 0700);
-	int check = mount("/dev/sda", "/tmp/install", "ext2", MS_MGC_VAL,
+	int check = mount("/dev/sda", "/tmp/install", "ext4", MS_MGC_VAL,
 			  NULL);
 	if (check != 0) {
 		fprintf(stderr, "device isnt formated, use EXT2\n");
@@ -85,8 +85,8 @@ static void install_sdcard(void)
 		size /= 4096;
 		char newsize[32];
 		sprintf(newsize, "%d", size);
-		eval("mkfs.ext2", "-b", "4096", "-N", "65536", "-L", "dd-wrt", "/dev/sda", newsize);
-		mount("/dev/sda", "/tmp/install", "ext2", MS_MGC_VAL, NULL);
+		eval("mkfs.ext4", "-b", "4096", "-N", "65536", "-L", "dd-wrt", "/dev/sda", newsize);
+		mount("/dev/sda", "/tmp/install", "ext4", MS_MGC_VAL, NULL);
 	}
 	fprintf(stderr, "copy files to SD Card\n");
 	eval("cp", "-f", "/tmp/install/usr/local/nvram/nvram.bin", "/tmp/install/usr/local/nvram/nvram.bak");

@@ -68,10 +68,7 @@ void start_sysinit(void)
 	cprintf("sysinit() klogctl\n");
 	klogctl(8, NULL, atoi(nvram_safe_get("console_loglevel")));
 	cprintf("sysinit() get router\n");
-
-	insmod("mbcache");
-	insmod("jbd2");
-	insmod("ext4");
+	eval("modprobe", "btrfs");
 	FILE *check = fopen("/dev/sda3", "rb");
 	char drive[64];
 	if (check) {
@@ -80,9 +77,9 @@ void start_sysinit(void)
 	} else {
 		sprintf(drive, "/dev/mmcblk0p3");
 	}
-	if (mount(drive, "/jffs", "ext2", MS_MGC_VAL, NULL)) {
-		eval("/sbin/mkfs.ext2", "-F", "-b", "1024", drive);
-		mount(drive, "/jffs", "ext2", MS_MGC_VAL, NULL);
+	if (mount(drive, "/jffs", "btrfs", MS_MGC_VAL, NULL)) {
+		eval("/sbin/mkfs.btrfs", drive, "-f");
+		mount(drive, "/jffs", "btrfs", MS_MGC_VAL, NULL);
 	}
 	eval("mount", "--bind", "/jffs", "/usr/local");
 
