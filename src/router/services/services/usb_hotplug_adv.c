@@ -343,8 +343,10 @@ static int usb_process_path(char *path, int host, char *part, char *devpath)
 	/* determine fs */
 	fs = "";
 	if ((fp = fopen(part_file, "r"))) {
+		int linenr = 0;
 		while (fgets(line, sizeof(line), fp) != NULL) {
-
+			if (linenr++ == 5)
+				break;
 			if (strstr(line, "Linux swap")) {
 				fs = "swap";
 				ret = eval("/sbin/swapon", path);
