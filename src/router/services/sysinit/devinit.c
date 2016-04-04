@@ -159,11 +159,11 @@ void start_devinit(void)
 	}
 	// sprintf (dev, "/dev/discs/disc%d/part1", index);
 	// mount (dev, "/boot", "ext2", MS_MGC_VAL, NULL);
-
+	eval("modprobe","ext4");
 	sprintf(dev, "/dev/%s3", disc);
-	if (mount(dev, "/usr/local", "ext2", MS_MGC_VAL, NULL)) {
-		eval("/sbin/mkfs.ext2", "-F", "-b", "1024", dev);
-		mount(dev, "/usr/local", "ext2", MS_MGC_VAL, NULL);
+	if (mount(dev, "/usr/local", "ext4", MS_MGC_VAL, NULL)) {
+		eval("/sbin/mkfs.ext4", "-F", "-b", "1024", dev);
+		mount(dev, "/usr/local", "ext4", MS_MGC_VAL, NULL);
 //              eval("/bin/tar", "-xvvjf", "/etc/local.tar.bz2", "-C", "/");
 	}
 	mkdir("/usr/local", 0700);
