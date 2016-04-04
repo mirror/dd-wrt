@@ -443,7 +443,6 @@ static void __init ap136_gmac_setup(void)
 }
 
 
-
 static struct ar8327_pad_cfg db120_ar8327_pad0_cfg = {
 	.mode = AR8327_PAD_MAC_RGMII,
 	.txclk_delay_en = true,
