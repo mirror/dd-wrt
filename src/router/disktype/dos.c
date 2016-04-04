@@ -478,6 +478,8 @@ void detect_fat(SECTION *section, int level)
   /* since the above is also present on NTFS, make sure it's not NTFS... */
   if (memcmp(buf + 3, "NTFS    ", 8) == 0)
     return;
+  if (memcmp(buf + 3, "EXFAT   ", 8) == 0)
+    return;
 
   /* next, some soft tests, taking score */
   score = 0;
@@ -562,6 +564,25 @@ void detect_fat(SECTION *section, int level)
         print_line(level + 1, "Volume name \"%s\"", s);
     }
   }
+}
+
+/*
+ * exFAT file system
+ */
+
+void detect_exfat(SECTION *section, int level)
+{
+  unsigned char *buf;
+
+  if (get_buffer(section, 0, 512, (void **)&buf) < 512)
+    return;
+
+  /* check signatures */
+  if (memcmp(buf + 3, "EXFAT   ", 8) != 0)
+    return;
+
+  /* tell the user */
+  print_line(level, "exFAT file system");
 }
 
 /*
