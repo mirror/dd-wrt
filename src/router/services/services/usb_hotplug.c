@@ -504,7 +504,10 @@ static int usb_add_ufd(char *devpath)
 							FILE *fpp;
 							char line_part[256];
 							if ((fpp = fopen(DUMPFILE_PART, "r"))) {
+								int linenum = 0;
 								while (fgets(line_part, sizeof(line_part), fpp) != NULL) {
+									if (linenum++ == 5)
+									    break;
 									char *fs = getfs(line_part);
 									if (fs) {
 										sprintf(targetname, "%s_%s", entry->d_name, part);
