@@ -159,12 +159,14 @@ void start_devinit(void)
 	}
 	// sprintf (dev, "/dev/discs/disc%d/part1", index);
 	// mount (dev, "/boot", "ext2", MS_MGC_VAL, NULL);
-	eval("modprobe","ext4");
+	eval("modprobe", "btrfs");
 	sprintf(dev, "/dev/%s3", disc);
-	if (mount(dev, "/usr/local", "ext4", MS_MGC_VAL, NULL)) {
-		eval("/sbin/mkfs.ext4", "-F", "-b", "1024", dev);
-		mount(dev, "/usr/local", "ext4", MS_MGC_VAL, NULL);
-//              eval("/bin/tar", "-xvvjf", "/etc/local.tar.bz2", "-C", "/");
+	if (mount(dev, "/usr/local", "btrfs", MS_MGC_VAL, NULL)) {
+		eval("modprobe", "ext4");
+		if (mount(dev, "/usr/local", "ext4", MS_MGC_VAL, NULL)) {
+			eval("/sbin/mkfs.btrfs", "-f", dev);
+			mount(dev, "/usr/local", "btrfs", MS_MGC_VAL, NULL);
+		}
 	}
 	mkdir("/usr/local", 0700);
 	mkdir("/usr/local/nvram", 0700);
