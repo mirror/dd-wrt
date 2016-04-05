@@ -222,7 +222,7 @@ struct compat_xt_connmark_target_info {
 	u_int16_t	__pad2;
 };
 
-static void connmark_tg_compat_from_user_v0(void *dst, void *src)
+static void connmark_tg_compat_from_user_v0(void *dst, const void *src)
 {
 	const struct compat_xt_connmark_target_info *cm = src;
 	struct xt_connmark_target_info m = {
@@ -233,7 +233,7 @@ static void connmark_tg_compat_from_user_v0(void *dst, void *src)
 	memcpy(dst, &m, sizeof(m));
 }
 
-static int connmark_tg_compat_to_user_v0(void __user *dst, void *src)
+static int connmark_tg_compat_to_user_v0(void __user *dst, const void *src)
 {
 	const struct xt_connmark_target_info *m = src;
 	struct compat_xt_connmark_target_info cm = {
@@ -251,7 +251,7 @@ struct compat_xt_connmark_info {
 	u_int16_t	__pad2;
  };
  
-static void connmark_mt_compat_from_user_v0(void *dst, void *src)
+static void connmark_mt_compat_from_user_v0(void *dst, const void *src)
 {
 	const struct compat_xt_connmark_info *cm = src;
 	struct xt_connmark_info m = {
@@ -262,7 +262,7 @@ static void connmark_mt_compat_from_user_v0(void *dst, void *src)
 	memcpy(dst, &m, sizeof(m));
 }
 
-static int connmark_mt_compat_to_user_v0(void __user *dst, void *src)
+static int connmark_mt_compat_to_user_v0(void __user *dst, const void *src)
 {
 	const struct xt_connmark_info *m = src;
 	struct compat_xt_connmark_info cm = {
