@@ -199,7 +199,7 @@ int nvram_commit(void)
 		len = 0;
 		ret = mtd_read(nvram_mtd, offset, i, &len, buf);
 		if (ret || len != i) {
-			printk("nvram_commit: read error ret = %d, len = %d/%d\n", ret, len, i);
+			printk("nvram_commit: read error ret = %d, len = %ld/%d\n", ret, len, i);
 			ret = -EIO;
 			goto done;
 		}
@@ -467,7 +467,7 @@ static int __init dev_nvram_init(void)
 		nvram_mtd = get_mtd_device(NULL, i);
 		if (nvram_mtd) {
 			if (!strcmp(nvram_mtd->name, "nvram") && nvram_mtd->size >= NVRAM_SPACE) {
-				printk(KERN_INFO "nvram size = %d\n", nvram_mtd->size);
+				printk(KERN_INFO "nvram size = %llu\n", nvram_mtd->size);
 				break;
 			}
 			put_mtd_device(nvram_mtd);
