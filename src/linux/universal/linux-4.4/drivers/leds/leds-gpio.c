@@ -140,7 +140,7 @@ static int create_gpio_led(const struct gpio_led *template,
 		led_dat->cdev.flags |= LED_CORE_SUSPENDRESUME;
 
 	if (template->default_state != LEDS_GPIO_DEFSTATE_KEEP)  // KEEP means KEEP, this also affects output/input state
-		ret = gpiod_direction_output(led_dat->gpiod, gpiod_is_active_low(led_dat) ^ state);
+		ret = gpiod_direction_output(led_dat->gpiod, gpiod_is_active_low(led_dat->gpiod) ^ state);
 	if (ret < 0)
 		return ret;
 
