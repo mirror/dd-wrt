@@ -2089,7 +2089,7 @@ void ej_show_wanipinfo(webs_t wp, int argc, char_t ** argv)	// Eko
 #endif
 		websWrite(wp, "&nbsp;IP: %s", wan_ipaddr);
 #ifdef HAVE_IPV6
-	char *ipv6addr = NULL;
+	const char *ipv6addr = NULL;
 	if (nvram_match("ipv6_typ", "ipv6native"))
 		ipv6addr = getifaddr(get_wan_face(), AF_INET6, 0);
 	if (nvram_match("ipv6_typ", "ipv6in4"))
@@ -2314,35 +2314,31 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	show_temp(wp, "CPU %d.%d &#176;C");
 	return;
 #endif
+	int i;
 #ifdef HAVE_BCMMODERN
 
 	static int tempcount = -2;
-	int i;
 	char buf[WLC_IOCTL_SMLEN];
 	int ret;
 	unsigned int ret_int[3] = { 0, 0, 0 };
+	unsigned int present[3] = { 0, 0, 0 };
+	unsigned int result[3] = { 0, 0, 0 };
 	static int tempavg[3] = { 0, 0, 0 };
 	static unsigned int tempavg_max = 0;
-	int no2 = 0, no5 = 0, no52 = 0;
 
-	strcpy(buf, "phy_tempsense");
-	if (nvram_match("wl0_net_mode", "disabled") || (ret = wl_ioctl("eth1", WLC_GET_VAR, buf, sizeof(buf)))) {
-		no2 = 1;
-	}
-	ret_int[0] = *(unsigned int *)buf;
-#ifndef HAVE_QTN
-	strcpy(buf, "phy_tempsense");
-	if (nvram_match("wl1_net_mode", "disabled") || (ret = wl_ioctl("eth2", WLC_GET_VAR, buf, sizeof(buf)))) {
-		no5 = 1;
-	}
-	ret_int[1] = *(unsigned int *)buf;
-	strcpy(buf, "phy_tempsense");
-	if (nvram_match("wl2_net_mode", "disabled") || (ret = wl_ioctl("eth3", WLC_GET_VAR, buf, sizeof(buf)))) {
-		no52 = 1;
-	}
-	ret_int[2] = *(unsigned int *)buf;
 	int ttcount = 0;
 	for (i = 0; i < 3; i++) {
+
+		strcpy(buf, "phy_tempsense");
+		char ifname[16];
+		sprintf(ifname, "eth%d", i + 1);
+		if (nvram_nmatch("disabled", "wl%d_net_mode", i) || (ret = wl_ioctl(ifname, WLC_GET_VAR, buf, sizeof(buf)))) {
+			present[i] = 0;
+			continue;
+		}
+		ret_int[i] = *(unsigned int *)buf;
+		present[i] = 1;
+
 		ret_int[i] *= 10;
 		if (tempcount == -2) {
 			if (!ttcount)
@@ -2360,25 +2356,14 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	}
 	if (ttcount)
 		tempcount = ttcount;
-#else
-	ret_int = (unsigned int *)buf;
-
-	if (tempcount == -2) {
-		tempcount++;
-		tempavg[0] = ret_int;
-		if (tempavg[0] < 0)
-			tempavg[0] = 0;
-	} else {
-		if (tempavg[0] < 100 && ret_int[0] > 0)
-			tempavg[0] = ret_int[0];
-		if (tempavg[0] > 2000 && ret_int[0] > 0)
-			tempavg[0] = ret_int[0];
-		tempavg[0] = (tempavg[0] * 4 + ret_int) / 5;
+	for (i = 0; i < 3; i++) {
+		result[i] = (tempavg[i] / 2) + 200;
 	}
-	int t50 = rpc_get_temperature();
-	tempavg[1] = t50 / 100000;
-#endif
 
+#ifdef HAVE_QTN
+	result[1] = rpc_get_temperature() / 100000;
+	present[1] = 1;
+#endif
 	int cputemp = 1;
 #ifdef HAVE_NORTHSTAR
 	cputemp = 0;
@@ -2389,31 +2374,16 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "CPU %d.%d &#176;C / ", cputemp / 10, cputemp % 10);
 	}
 #endif
-	if (no2 && no5 && cputemp)
+	if (!present[0] && !present[1] && !present[2] && cputemp)
 		websWrite(wp, "%s", live_translate("status_router.notavail"));	// no 
-	else if (no2) {
-#ifdef HAVE_QTN
-		websWrite(wp, "WL1 %d.%d &#176;C", tempavg[1] / 10, tempavg[1] % 10);
-#else
-		unsigned int avg_50 = ((tempavg[0] / 2) + 200);
-		websWrite(wp, "WL1 %d.%d &#176;C", avg_50 / 10, avg_50 % 10);
-#endif
-	} else if (no5) {
-		unsigned int avg_24 = ((tempavg[0] / 2) + 200);
-		websWrite(wp, "WL0 %d.%d &#176;C", avg_24 / 10, avg_24 % 10);
-	} else {
-#ifdef HAVE_QTN
-		unsigned int avg_24 = (tempavg[0] / 2) + 200;
-		websWrite(wp, "WL0 %d.%d &#176;C / WL1 %d.%d &#176;C", avg_24 / 10, avg_24 % 10, tempavg[1] / 10, tempavg[1] % 10);
-#else
-		unsigned int avg_24 = (tempavg[0] / 2) + 200;
-		unsigned int avg_50 = (tempavg[1] / 2) + 200;
-		websWrite(wp, "WL0 %d.%d &#176;C / WL1 %d.%d &#176;C", avg_24 / 10, avg_24 % 10, avg_50 / 10, avg_50 % 10);
-#endif
-	}
-	if (!no52) {
-		unsigned int avg_502 = (tempavg[2] / 2) + 200;
-		websWrite(wp, " / WL2 %d.%d &#176;C", avg_502 / 10, avg_502 % 10);
+	else {
+		for (i = 0; i < 3; i++) {
+			if (present[i]) {
+				if (i && present[i - 1])
+					websWrite(wp, " / ");
+				websWrite(wp, "WL%d %d.%d &#176;C", i, result[i] / 10, result[i] % 10);
+			}
+		}
 	}
 #else
 #ifdef HAVE_GATEWORX
