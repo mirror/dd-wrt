@@ -2298,6 +2298,7 @@ static void show_temp(webs_t wp, char *fmt)
 
 void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 {
+	int i;
 #ifdef HAVE_MVEBU
 	if (getRouterBrand() == ROUTER_WRT_1900AC) {
 		show_temp(wp, 1, 1, "CPU %d.%d &#176;C");
@@ -2314,7 +2315,6 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	show_temp(wp, "CPU %d.%d &#176;C");
 	return;
 #endif
-	int i;
 #ifdef HAVE_BCMMODERN
 
 	static int tempcount = -2;
@@ -2418,7 +2418,6 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 			fscanf(fp, "%s", &temp[0]);
 			fclose(fp);
 			int l = strlen(temp);
-			int i;
 			if (l > 2) {
 				TEMP_MUL = 1;
 				for (i = 0; i < (l - 2); i++)
@@ -2449,7 +2448,7 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	FILE *fp2 = NULL;
 #ifdef HAVE_ATH10K
 	int c = getdevicecount();
-	int i, found = 0;
+	int found = 0;
 	for (i = 0; i < c; i++) {
 		char path[64];
 		sprintf(path, "/sys/class/ieee80211/phy%d/device/hwmon/hwmon0/temp1_input", i);
