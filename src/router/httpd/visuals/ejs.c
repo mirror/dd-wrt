@@ -2316,81 +2316,67 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 #endif
 #ifdef HAVE_BCMMODERN
 
-	static int tempcount = 0;
+	static int tempcount = -2;
+	int i;
 	char buf[WLC_IOCTL_SMLEN];
-	char buf2[WLC_IOCTL_SMLEN];
-	char buf3[WLC_IOCTL_SMLEN];
 	int ret;
-	unsigned int *ret_int = NULL;
-	unsigned int *ret_int2 = NULL;
-	unsigned int *ret_int3 = NULL;
-	static int tempavg_24 = 0;
-	static int tempavg_50 = 0;
-	static int tempavg_502 = 0;
-	static int tempavg_max = 0;
+	unsigned int ret_int[3] = { 0, 0, 0 };
+	static int tempavg[3] = { 0, 0, 0 };
+	static unsigned int tempavg_max = 0;
 	int no2 = 0, no5 = 0, no52 = 0;
-	strcpy(buf, "phy_tempsense");
-	strcpy(buf2, "phy_tempsense");
-	strcpy(buf3, "phy_tempsense");
 
+	strcpy(buf, "phy_tempsense");
 	if (nvram_match("wl0_net_mode", "disabled") || (ret = wl_ioctl("eth1", WLC_GET_VAR, buf, sizeof(buf)))) {
 		no2 = 1;
 	}
+	ret_int[0] = *(unsigned int *)buf;
 #ifndef HAVE_QTN
-	if (nvram_match("wl1_net_mode", "disabled") || (ret = wl_ioctl("eth2", WLC_GET_VAR, buf2, sizeof(buf2)))) {
+	strcpy(buf, "phy_tempsense");
+	if (nvram_match("wl1_net_mode", "disabled") || (ret = wl_ioctl("eth2", WLC_GET_VAR, buf, sizeof(buf)))) {
 		no5 = 1;
 	}
-	if (nvram_match("wl2_net_mode", "disabled") || (ret = wl_ioctl("eth3", WLC_GET_VAR, buf3, sizeof(buf3)))) {
+	ret_int[1] = *(unsigned int *)buf;
+	strcpy(buf, "phy_tempsense");
+	if (nvram_match("wl2_net_mode", "disabled") || (ret = wl_ioctl("eth3", WLC_GET_VAR, buf, sizeof(buf)))) {
 		no52 = 1;
 	}
-	ret_int = (unsigned int *)buf;
-	ret_int2 = (unsigned int *)buf2;
-	ret_int3 = (unsigned int *)buf3;
-	if (tempcount == -3) {
-		tempcount++;
-		tempavg_24 = *ret_int * 10;
-		tempavg_50 = *ret_int2 * 10;
-		tempavg_502 = *ret_int3 * 10;
-		if (tempavg_24 < 0)
-			tempavg_24 = 0;
-		if (tempavg_50 < 0)
-			tempavg_50 = 0;
-		if (tempavg_502 < 0)
-			tempavg_502 = 0;
-	} else {
-		if (tempavg_24 < 100 && *ret_int > 0)
-			tempavg_24 = *ret_int * 10;
-		if (tempavg_50 < 100 && *ret_int2 > 0)
-			tempavg_50 = *ret_int2 * 10;
-		if (tempavg_502 < 100 && *ret_int3 > 0)
-			tempavg_502 = *ret_int3 * 10;
-		if (tempavg_24 > 2000 && *ret_int > 0)
-			tempavg_24 = *ret_int * 10;
-		if (tempavg_50 > 2000 && *ret_int2 > 0)
-			tempavg_50 = *ret_int2 * 10;
-		if (tempavg_502 > 2000 && *ret_int3 > 0)
-			tempavg_502 = *ret_int3 * 10;
-
-		tempavg_24 = (tempavg_24 * 4 + (*ret_int * 10)) / 5;
-		tempavg_50 = (tempavg_50 * 4 + (*ret_int2 * 10)) / 5;
+	ret_int[2] = *(unsigned int *)buf;
+	int ttcount = 0;
+	for (i = 0; i < 3; i++) {
+		ret_int[i] *= 10;
+		if (tempcount == -2) {
+			if (!ttcount)
+				ttcount = tempcount + 1;
+			tempavg[i] = ret_int[i];
+			if (tempavg[i] < 0)
+				tempavg[i] = 0;
+		} else {
+			if (tempavg[i] < 100 && ret_int[i] > 0)
+				tempavg[i] = ret_int[i];
+			if (tempavg[i] > 2000 && ret_int[i] > 0)
+				tempavg[i] = ret_int[i];
+			tempavg[i] = (tempavg[i] * 4 + ret_int[i]) / 5;
+		}
 	}
+	if (ttcount)
+		tempcount = ttcount;
 #else
 	ret_int = (unsigned int *)buf;
 
 	if (tempcount == -2) {
 		tempcount++;
-		tempavg_24 = *ret_int * 10;
-		if (tempavg_24 < 0)
-			tempavg_24 = 0;
+		tempavg[0] = ret_int;
+		if (tempavg[0] < 0)
+			tempavg[0] = 0;
 	} else {
-		if (tempavg_24 < 100 && *ret_int > 0)
-			tempavg_24 = *ret_int * 10;
-		if (tempavg_24 > 2000 && *ret_int > 0)
-			tempavg_24 = *ret_int * 10;
-		tempavg_24 = (tempavg_24 * 4 + (*ret_int * 10)) / 5;
+		if (tempavg[0] < 100 && ret_int[0] > 0)
+			tempavg[0] = ret_int[0];
+		if (tempavg[0] > 2000 && ret_int[0] > 0)
+			tempavg[0] = ret_int[0];
+		tempavg[0] = (tempavg[0] * 4 + ret_int) / 5;
 	}
 	int t50 = rpc_get_temperature();
-	tempavg_50 = t50 / 100000;
+	tempavg[1] = t50 / 100000;
 #endif
 
 	int cputemp = 1;
@@ -2407,27 +2393,27 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "%s", live_translate("status_router.notavail"));	// no 
 	else if (no2) {
 #ifdef HAVE_QTN
-		websWrite(wp, "WL1 %d.%d &#176;C", tempavg_50 / 10, tempavg_50 % 10);
+		websWrite(wp, "WL1 %d.%d &#176;C", tempavg[1] / 10, tempavg[1] % 10);
 #else
-		tempavg_50 = (tempavg_50 / 2) + 200;
-		websWrite(wp, "WL1 %d.%d &#176;C", tempavg_50 / 10, tempavg_50 % 10);
+		unsigned int avg_50 = ((tempavg[0] / 2) + 200);
+		websWrite(wp, "WL1 %d.%d &#176;C", avg_50 / 10, avg_50 % 10);
 #endif
 	} else if (no5) {
-		tempavg_24 = (tempavg_24 / 2) + 200;
-		websWrite(wp, "WL0 %d.%d &#176;C", tempavg_24 / 10, tempavg_24 % 10);
+		unsigned int avg_24 = ((tempavg[0] / 2) + 200);
+		websWrite(wp, "WL0 %d.%d &#176;C", avg_24 / 10, avg_24 % 10);
 	} else {
 #ifdef HAVE_QTN
-		tempavg_24 = (tempavg_24 / 2) + 200;
-		websWrite(wp, "WL0 %d.%d &#176;C / WL1 %d.%d &#176;C", tempavg_24 / 10, tempavg_24 % 10, tempavg_50 / 10, tempavg_50 % 10);
+		unsigned int avg_24 = (tempavg[0] / 2) + 200;
+		websWrite(wp, "WL0 %d.%d &#176;C / WL1 %d.%d &#176;C", avg_24 / 10, avg_24 % 10, tempavg[1] / 10, tempavg[1] % 10);
 #else
-		tempavg_24 = (tempavg_24 / 2) + 200;
-		tempavg_50 = (tempavg_50 / 2) + 200;
-		websWrite(wp, "WL0 %d.%d &#176;C / WL1 %d.%d &#176;C", tempavg_24 / 10, tempavg_24 % 10, tempavg_50 / 10, tempavg_50 % 10);
+		unsigned int avg_24 = (tempavg[0] / 2) + 200;
+		unsigned int avg_50 = (tempavg[1] / 2) + 200;
+		websWrite(wp, "WL0 %d.%d &#176;C / WL1 %d.%d &#176;C", avg_24 / 10, avg_24 % 10, avg_50 / 10, avg_50 % 10);
 #endif
 	}
 	if (!no52) {
-		tempavg_502 = (tempavg_502 / 2) + 200;
-		websWrite(wp, " / WL2 %d.%d &#176;C", tempavg_502 / 10, tempavg_502 % 10);
+		unsigned int avg_502 = (tempavg[2] / 2) + 200;
+		websWrite(wp, " / WL2 %d.%d &#176;C", avg_502 / 10, avg_502 % 10);
 	}
 #else
 #ifdef HAVE_GATEWORX
