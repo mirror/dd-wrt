@@ -159,18 +159,13 @@ void start_devinit(void)
 	}
 	// sprintf (dev, "/dev/discs/disc%d/part1", index);
 	// mount (dev, "/boot", "ext2", MS_MGC_VAL, NULL);
-	insmod("lzo_compress");
-	insmod("lzo_decompress");
-	insmod("raid6_pq");
-	insmod("xor");
-	insmod("btrfs");
 	sprintf(dev, "/dev/%s3", disc);
-	if (mount(dev, "/usr/local", "btrfs", MS_MGC_VAL, NULL)) {
-		eval("modprobe", "ext4");
-		if (mount(dev, "/usr/local", "ext4", MS_MGC_VAL, NULL)) {
-			eval("mkfs.btrfs", "-f", dev);
-			mount(dev, "/usr/local", "btrfs", MS_MGC_VAL, NULL);
-		}
+	insmod("jbd2");
+	insmod("mbcache");
+	insmod("ext4");
+	if (mount(dev, "/usr/local", "ext4", MS_MGC_VAL, NULL)) {
+		eval("mkfs.ext4", "-F", "-b", " 1024", dev);
+		mount(dev, "/usr/local", "ext4", MS_MGC_VAL, NULL);
 	}
 	mkdir("/usr/local", 0700);
 	mkdir("/usr/local/nvram", 0700);
