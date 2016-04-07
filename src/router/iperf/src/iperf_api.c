@@ -1,5 +1,5 @@
 /*
- * iperf, Copyright (c) 2014, 2015, The Regents of the University of
+ * iperf, Copyright (c) 2014, 2015, 2016, The Regents of the University of
  * California, through Lawrence Berkeley National Laboratory (subject
  * to receipt of any required approvals from the U.S. Dept. of
  * Energy).  All rights reserved.
@@ -210,6 +210,12 @@ iperf_get_test_server_hostname(struct iperf_test *ipt)
     return ipt->server_hostname;
 }
 
+char*
+iperf_get_test_template(struct iperf_test *ipt)
+{
+    return ipt->tmp_template;
+}
+
 int
 iperf_get_test_protocol_id(struct iperf_test *ipt)
 {
@@ -370,6 +376,12 @@ void
 iperf_set_test_server_hostname(struct iperf_test *ipt, char *server_hostname)
 {
     ipt->server_hostname = strdup(server_hostname);
+}
+
+void
+iperf_set_test_template(struct iperf_test *ipt, char *tmp_template)
+{
+    ipt->tmp_template = strdup(tmp_template);
 }
 
 void
@@ -650,6 +662,7 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
     int flag;
     int blksize;
     int server_flag, client_flag, rate_flag, duration_flag;
+    char *endptr;
 #if defined(HAVE_CPU_AFFINITY)
     char* comma;
 #endif /* HAVE_CPU_AFFINITY */
@@ -813,13 +826,20 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
                 test->settings->domain = AF_INET6;
                 break;
             case 'S':
-                test->settings->tos = strtol(optarg, NULL, 0);
+                test->settings->tos = strtol(optarg, &endptr, 0);
+		if (endptr == optarg ||
+		    test->settings->tos < 0 ||
+		    test->settings->tos > 255) {
+		    i_errno = IEBADTOS;
+		    return -1;
+		}
 		client_flag = 1;
                 break;
             case 'L':
 #if defined(HAVE_FLOWLABEL)
-                test->settings->flowlabel = strtol(optarg, NULL, 0);
-		if (test->settings->flowlabel < 1 || test->settings->flowlabel > 0xfffff) {
+                test->settings->flowlabel = strtol(optarg, &endptr, 0);
+		if (endptr == optarg ||
+		    test->settings->flowlabel < 1 || test->settings->flowlabel > 0xfffff) {
                     i_errno = IESETFLOW;
                     return -1;
 		}
@@ -864,8 +884,9 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
                 break;
             case 'A':
 #if defined(HAVE_CPU_AFFINITY)
-                test->affinity = atoi(optarg);
-                if (test->affinity < 0 || test->affinity > 1024) {
+                test->affinity = strtol(optarg, &endptr, 0);
+                if (endptr == optarg || 
+		    test->affinity < 0 || test->affinity > 1024) {
                     i_errno = IEAFFINITY;
                     return -1;
                 }
@@ -1869,6 +1890,8 @@ iperf_free_test(struct iperf_test *test)
 
     if (test->server_hostname)
 	free(test->server_hostname);
+    if (test->tmp_template)
+	free(test->tmp_template);
     if (test->bind_address)
 	free(test->bind_address);
     if (!TAILQ_EMPTY(&test->xbind_addrs)) {
@@ -1883,6 +1906,7 @@ iperf_free_test(struct iperf_test *test)
             free(xbe);
         }
     }
+    if (test->settings)
     free(test->settings);
     if (test->title)
 	free(test->title);
@@ -2219,7 +2243,12 @@ iperf_print_intermediate(struct iperf_test *test)
 		    iprintf(test, report_sum_bw_udp_sender_format, start_time, end_time, ubuf, nbuf, total_packets, test->omitting?report_omitted:"");
 	    } else {
 		avg_jitter /= test->num_streams;
-		lost_percent = 100.0 * lost_packets / total_packets;
+		if (total_packets > 0) {
+		    lost_percent = 100.0 * lost_packets / total_packets;
+		}
+		else {
+		    lost_percent = 0.0;
+		}
 		if (test->json_output)
 		    cJSON_AddItemToObject(json_interval, "sum", iperf_json_printf("start: %f  end: %f  seconds: %f  bytes: %d  bits_per_second: %f  jitter_ms: %f  lost_packets: %d  packets: %d  lost_percent: %f  omitted: %b", (double) start_time, (double) end_time, (double) irp->interval_duration, (int64_t) bytes, bandwidth * 8, (double) avg_jitter * 1000.0, (int64_t) lost_packets, (int64_t) total_packets, (double) lost_percent, test->omitting));
 		else
@@ -2323,15 +2352,20 @@ iperf_print_results(struct iperf_test *test)
 	    }
 	} else {
 	    /* Summary, UDP. */
-	    lost_percent = 100.0 * sp->cnt_error / (sp->packet_count - sp->omitted_packet_count);
+	    if (sp->packet_count - sp->omitted_packet_count > 0) {
+		lost_percent = 100.0 * sp->cnt_error / (sp->packet_count - sp->omitted_packet_count);
+	    }
+	    else {
+		lost_percent = 0.0;
+	    }
 	    if (test->json_output)
-		cJSON_AddItemToObject(json_summary_stream, "udp", iperf_json_printf("socket: %d  start: %f  end: %f  seconds: %f  bytes: %d  bits_per_second: %f  jitter_ms: %f  lost_packets: %d  packets: %d  lost_percent: %f", (int64_t) sp->socket, (double) start_time, (double) end_time, (double) end_time, (int64_t) bytes_sent, bandwidth * 8, (double) sp->jitter * 1000.0, (int64_t) sp->cnt_error, (int64_t) (sp->packet_count - sp->omitted_packet_count), (double) lost_percent));
+		cJSON_AddItemToObject(json_summary_stream, "udp", iperf_json_printf("socket: %d  start: %f  end: %f  seconds: %f  bytes: %d  bits_per_second: %f  jitter_ms: %f  lost_packets: %d  packets: %d  lost_percent: %f  out_of_order: %d", (int64_t) sp->socket, (double) start_time, (double) end_time, (double) end_time, (int64_t) bytes_sent, bandwidth * 8, (double) sp->jitter * 1000.0, (int64_t) sp->cnt_error, (int64_t) (sp->packet_count - sp->omitted_packet_count), (double) lost_percent, (int64_t) sp->outoforder_packets));
 	    else {
 		iprintf(test, report_bw_udp_format, sp->socket, start_time, end_time, ubuf, nbuf, sp->jitter * 1000.0, sp->cnt_error, (sp->packet_count - sp->omitted_packet_count), lost_percent, "");
 		if (test->role == 'c')
 		    iprintf(test, report_datagrams, sp->socket, (sp->packet_count - sp->omitted_packet_count));
 		if (sp->outoforder_packets > 0)
-		    iprintf(test, report_sum_outoforder, start_time, end_time, sp->cnt_error);
+		    iprintf(test, report_sum_outoforder, start_time, end_time, sp->outoforder_packets);
 	    }
 	}
 
@@ -2398,12 +2432,12 @@ iperf_print_results(struct iperf_test *test)
         } else {
 	    /* Summary sum, UDP. */
             avg_jitter /= test->num_streams;
-	    /* If no packets were sent, arbitrarily set loss percentage to 100. */
+	    /* If no packets were sent, arbitrarily set loss percentage to 0. */
 	    if (total_packets > 0) {
 		lost_percent = 100.0 * lost_packets / total_packets;
 	    }
 	    else {
-		lost_percent = 100.0;
+		lost_percent = 0.0;
 	    }
 	    if (test->json_output)
 		cJSON_AddItemToObject(test->json_end, "sum", iperf_json_printf("start: %f  end: %f  seconds: %f  bytes: %d  bits_per_second: %f  jitter_ms: %f  lost_packets: %d  packets: %d  lost_percent: %f", (double) start_time, (double) end_time, (double) end_time, (int64_t) total_sent, bandwidth * 8, (double) avg_jitter * 1000.0, (int64_t) lost_packets, (int64_t) total_packets, (double) lost_percent));
@@ -2535,7 +2569,12 @@ print_interval_results(struct iperf_test *test, struct iperf_stream *sp, cJSON *
 	    else
 		iprintf(test, report_bw_udp_sender_format, sp->socket, st, et, ubuf, nbuf, irp->interval_packet_count, irp->omitted?report_omitted:"");
 	} else {
-	    lost_percent = 100.0 * irp->interval_cnt_error / irp->interval_packet_count;
+	    if (irp->interval_packet_count > 0) {
+		lost_percent = 100.0 * irp->interval_cnt_error / irp->interval_packet_count;
+	    }
+	    else {
+		lost_percent = 0.0;
+	    }
 	    if (test->json_output)
 		cJSON_AddItemToArray(json_interval_streams, iperf_json_printf("socket: %d  start: %f  end: %f  seconds: %f  bytes: %d  bits_per_second: %f  jitter_ms: %f  lost_packets: %d  packets: %d  lost_percent: %f  omitted: %b", (int64_t) sp->socket, (double) st, (double) et, (double) irp->interval_duration, (int64_t) irp->bytes_transferred, bandwidth * 8, (double) irp->jitter * 1000.0, (int64_t) irp->interval_cnt_error, (int64_t) irp->interval_packet_count, (double) lost_percent, irp->omitted));
 	    else
@@ -2574,7 +2613,14 @@ iperf_new_stream(struct iperf_test *test, int s)
 {
     int i;
     struct iperf_stream *sp;
-    char template[] = "/tmp/iperf3.XXXXXX";
+    
+    char template[1024];
+    if (test->tmp_template) {
+        snprintf(template, sizeof(template) / sizeof(char), "%s", test->tmp_template);
+    } else {
+        char buf[] = "/tmp/iperf3.XXXXXX";
+        snprintf(template, sizeof(template) / sizeof(char), "%s", buf);
+    }
 
     h_errno = 0;
 
@@ -2843,8 +2889,6 @@ iperf_json_start(struct iperf_test *test)
     test->json_top = cJSON_CreateObject();
     if (test->json_top == NULL)
         return -1;
-    if (test->title)
-	cJSON_AddStringToObject(test->json_top, "title", test->title);
     test->json_start = cJSON_CreateObject();
     if (test->json_start == NULL)
         return -1;
@@ -2867,6 +2911,8 @@ iperf_json_start(struct iperf_test *test)
 int
 iperf_json_finish(struct iperf_test *test)
 {
+    if (test->title)
+	cJSON_AddStringToObject(test->json_top, "title", test->title);
     /* Include server output */
     if (test->json_server_output) {
 	cJSON_AddItemToObject(test->json_top, "server_output_json", test->json_server_output);
