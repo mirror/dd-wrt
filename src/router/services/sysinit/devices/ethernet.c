@@ -27,6 +27,9 @@
 #include <bcmnvram.h>
 
 static char *pcidrivers[] = {
+	"hv_netvsc",
+	"vmxnet3",
+	"virtio_net",
 	"3c574_cs",
 	"3c589_cs",
 	"3c59x",
