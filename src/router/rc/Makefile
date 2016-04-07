@@ -60,6 +60,9 @@ endif
 ifeq ($(CONFIG_DNSMASQ),y)
 CFLAGS += -DHAVE_DNSMASQ
 endif
+ifeq ($(CONFIG_NOWIFI),y)
+CFLAGS += -DHAVE_NOWIFI
+endif
 ifeq ($(CONFIG_RSTATS),y)
 CFLAGS += -DHAVE_RSTATS
 endif
