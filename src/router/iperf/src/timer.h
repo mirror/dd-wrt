@@ -31,7 +31,6 @@
 #define __TIMER_H
 
 #include <sys/time.h>
-#include <sys/types.h>
 
 /* TimerClientData is an opaque value that tags along with a timer.  The
 ** client can use it for whatever, and it gets passed to the callback when

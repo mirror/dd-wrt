@@ -1,7 +1,46 @@
-== iperf 3.1.0 ????-??-?? ==
+== iperf 3.1.2 2016-02-01 ==
 
-The release notes for iperf 3.1.0 describe changes and new
-functionality in iperf 3.1.0, but not present in 3.0.11 or any earlier
+The release notes for iperf 3.1.2 describe changes, including bug
+fixes and new functionality, made since iperf 3.1.1.
+
+* User-visible changes
+
+  * Fixed a bug that caused nan values to be emitted (incorrectly)
+    into JSON, particularly at the end of UDP tests (issue #278).
+
+  * Fixed a bug that caused the wrong value to be printed for
+    out-of-order UDP packets (issue #329).
+
+  * Added a contrib/ directory containing a few submitted graphing
+    scripts.
+
+* Developer-visible changes
+
+== iperf 3.1.1 2015-11-19 ==
+
+The release notes for iperf 3.1.1 describe changes and new
+functionality in iperf 3.1.1, but not present in 3.1.
+
+* User-visible changes
+
+  * Some markup fixes have been made in the manpages for Debian
+    compatibility (issue #291).
+
+  * A bug where the -T title option was not being output correctly
+    in JSON output has been fixed (issue #292).
+
+  * Argument handling for some command-line options has been improved
+    (issue #316).
+
+* Developer-visible changes
+
+  * A regression with C++ compatibility in one of the iperf header
+    files has been fixed (issue #323).
+
+== iperf 3.1 2015-10-16 ==
+
+The release notes for iperf 3.1 describe changes and new
+functionality in iperf 3.1, but not present in 3.0.11 or any earlier
 3.0.x release.
 
 * Selected user-visible changes
@@ -23,8 +62,8 @@ functionality in iperf 3.1.0, but not present in 3.0.11 or any earlier
     iperf3 server in daemon mode (issue #119).
 
   * Various compatibility fixes for Android (issue #184, issue #185),
-    NetBSD (issue #248), Solaris (issue #175, issue #178, issue #180,
-    issue #211), vxWorks (issue #268).
+    iOS (issue #288), NetBSD (issue #248), Solaris (issue #175, issue
+    #178, issue #180, issue #211), vxWorks (issue #268).
 
   * A --udp-counters-64bit flag has been added to support very
     long-running UDP tests, which could cause a counter to overflow
