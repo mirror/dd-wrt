@@ -39,6 +39,7 @@ btrfsprogs-install:
 	-make -C btrfsprogs install DESTDIR=$(INSTALLDIR)/btrfsprogs prefix=/usr
 	-rm -rf $(INSTALLDIR)/btrfsprogs/usr/include
 	-rm -rf $(INSTALLDIR)/btrfsprogs/usr/lib
+	-rm -rf $(INSTALLDIR)/btrfsprogs/usr/lib64
 	-rm -rf $(INSTALLDIR)/btrfsprogs/usr/share
 	
 e2fsprogs-configure:
