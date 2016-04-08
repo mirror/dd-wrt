@@ -37,6 +37,7 @@ btrfsprogs-install:
 	rm -f $(TOP)/util-linux/.libs/libuuid.a
 	rm -f $(TOP)/util-linux/.libs/libblkid.so*
 	-make -C btrfsprogs install DESTDIR=$(INSTALLDIR)/btrfsprogs prefix=/usr
+	-rm -f $(INSTALLDIR)/btrfsprogs/usr/bin/btrfs*
 	-rm -rf $(INSTALLDIR)/btrfsprogs/usr/include
 	-rm -rf $(INSTALLDIR)/btrfsprogs/usr/lib
 	-rm -rf $(INSTALLDIR)/btrfsprogs/usr/lib64
