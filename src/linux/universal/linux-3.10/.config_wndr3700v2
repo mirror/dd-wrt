@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.10.90 Kernel Configuration
+# Linux/mips 3.10.101 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -1669,11 +1669,16 @@ CONFIG_RTC_LIB=y
 #
 # File systems
 #
-CONFIG_EXT2_FS=m
-# CONFIG_EXT2_FS_XATTR is not set
-# CONFIG_EXT2_FS_XIP is not set
+# CONFIG_EXT2_FS is not set
 # CONFIG_EXT3_FS is not set
-# CONFIG_EXT4_FS is not set
+CONFIG_EXT4_FS=m
+CONFIG_EXT4_USE_FOR_EXT23=y
+# CONFIG_EXT4_FS_POSIX_ACL is not set
+# CONFIG_EXT4_FS_SECURITY is not set
+# CONFIG_EXT4_DEBUG is not set
+CONFIG_JBD2=m
+# CONFIG_JBD2_DEBUG is not set
+CONFIG_FS_MBCACHE=m
 # CONFIG_REISERFS_FS is not set
 # CONFIG_JFS_FS is not set
 # CONFIG_XFS_FS is not set
@@ -2013,7 +2018,7 @@ CONFIG_NO_GENERIC_PCI_IOPORT_MAP=y
 CONFIG_GENERIC_PCI_IOMAP=y
 CONFIG_GENERIC_IO=y
 CONFIG_CRC_CCITT=y
-# CONFIG_CRC16 is not set
+CONFIG_CRC16=m
 # CONFIG_CRC_T10DIF is not set
 # CONFIG_CRC_ITU_T is not set
 CONFIG_CRC32=y
