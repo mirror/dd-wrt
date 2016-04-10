@@ -68,7 +68,10 @@ int main(int argc, char **argv)
 			for (name = buf; *name; name += strlen(name) + 1)
 				puts(name);
 			size = sizeof(struct nvram_header) + (long)name - (long)buf;
-			fprintf(stderr, "size: %d bytes (%d left)\n", size, NVRAMSPACE - size);
+			int space = NVRAMSPACE;
+			if (nvram_get("nvram_space"))
+				space = atoi(nvram_safe_get("nvram_space"));
+			fprintf(stderr, "size: %d bytes (%d left)\n", size, space - size);
 		} else if (!strncmp(*argv, "backup", 6)) {
 			if (*++argv) {
 				int ret = nvram_backup(*argv);
