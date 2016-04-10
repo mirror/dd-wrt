@@ -21,8 +21,8 @@
 #define start_service(a) eval("startservice",a);
 #define start_service_force(a) eval("startservice",a, "-f");
 #define stop_service(a) eval("stopservice",a);
-#define startstop(a) sysprintf("startstop %s",a);
-#define startstop_f(a) sysprintf("startstop_f %s",a);
+#define startstop(a) eval("startstop",a);
+#define startstop_f(a) eval("startstop_f",a);
 
 extern void handle_wireless(void);
 
@@ -48,16 +48,21 @@ int main(int argc, char **argv)
 		if (currtime->tm_year > 100)	// ntp time must be set
 		{
 
-			radiotime0 = (unsigned int)strtol(nvram_get("radio0_on_time"), NULL, 2);	// convert  binary  string  to  long  int
-			radiotime0 += ((radiotime0 & 1) << 24);	// duplicate 23-24h bit to the start to take care of midnight
-			radiotime0 = (radiotime0 >> (24 - currtime->tm_hour - 1)) & 3;	// get pattern only (last two bits)
-			radiotime1 = (unsigned int)strtol(nvram_get("radio1_on_time"), NULL, 2);
-			radiotime1 += ((radiotime1 & 1) << 24);
-			radiotime1 = (radiotime1 >> (24 - currtime->tm_hour - 1)) & 3;
-			radiotime2 = (unsigned int)strtol(nvram_get("radio2_on_time"), NULL, 2);
-			radiotime2 += ((radiotime2 & 1) << 24);
-			radiotime2 = (radiotime2 >> (24 - currtime->tm_hour - 1)) & 3;
-
+			if (nvram_match("radio0_timer_enable", "1")) {
+				radiotime0 = (unsigned int)strtol(nvram_safe_get("radio0_on_time"), NULL, 2);	// convert  binary  string  to  long  int
+				radiotime0 += ((radiotime0 & 1) << 24);	// duplicate 23-24h bit to the start to take care of midnight
+				radiotime0 = (radiotime0 >> (24 - currtime->tm_hour - 1)) & 3;	// get pattern only (last two bits)
+			}
+			if (nvram_match("radio1_timer_enable", "1")) {
+				radiotime1 = (unsigned int)strtol(nvram_safe_get("radio1_on_time"), NULL, 2);
+				radiotime1 += ((radiotime1 & 1) << 24);
+				radiotime1 = (radiotime1 >> (24 - currtime->tm_hour - 1)) & 3;
+			}
+			if (nvram_match("radio2_timer_enable", "1")) {
+				radiotime2 = (unsigned int)strtol(nvram_safe_get("radio2_on_time"), NULL, 2);
+				radiotime2 += ((radiotime2 & 1) << 24);
+				radiotime2 = (radiotime2 >> (24 - currtime->tm_hour - 1)) & 3;
+			}
 			if (currtime->tm_min != 0)
 				needchange = 1;	// prevet to be executed more than once when min == 0
 
@@ -113,7 +118,7 @@ int main(int argc, char **argv)
 				case 2:	// 10 - turn radio off
 					syslog(LOG_DEBUG, "Turning radio 0 off\n");
 					start_service_force("radio_off_0");
-					eval("/sbin/ifconfig", "ath0", "down");
+					eval("ifconfig", "ath0", "down");
 					//eval("/usr/sbin/iwconfig", "ath0", "txpower", "off");
 					break;
 				}
@@ -134,7 +139,7 @@ int main(int argc, char **argv)
 				case 2:	// 10 - turn radio off
 					syslog(LOG_DEBUG, "Turning radio 1 off\n");
 					start_service_force("radio_off_1");
-					eval("/sbin/ifconfig", "ath1", "down");
+					eval("ifconfig", "ath1", "down");
 					//eval("/usr/sbin/iwconfig", "ath0", "txpower", "off");
 					break;
 				}
