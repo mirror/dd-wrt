@@ -56,6 +56,7 @@
 
 void start_radio_timer(void)
 {
+#ifndef HAVE_NOWIFI
 	if (nvram_match("radio0_timer_enable", "0")
 	    && nvram_match("radio1_timer_enable", "0")
 	    && nvram_match("radio2_timer_enable", "0"))
@@ -79,15 +80,17 @@ void start_radio_timer(void)
 	dd_syslog(LOG_INFO, "radio_timer : radio timer daemon successfully started\n");
 
 	cprintf("done");
-
 	return;
+#endif
 }
 
 void stop_radio_timer(void)
 {
 
+#ifndef HAVE_NOWIFI
 	stop_process("radio_timer", "radio timer daemon");
 	cprintf("done\n");
 
 	return;
+#endif
 }
