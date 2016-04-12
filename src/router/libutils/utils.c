@@ -2246,6 +2246,11 @@ int internal_getRouterBrand()
 	nvram_default_get("ath0_rxantenna", "3");
 	nvram_default_get("ath0_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
+#elif HAVE_DIR869
+	setRouter("Dlink DIR869");
+	nvram_default_get("ath0_rxantenna", "7");
+	nvram_default_get("ath0_txantenna", "7");
+	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_DIR859
 	setRouter("Dlink DIR859");
 	nvram_default_get("ath0_rxantenna", "7");
@@ -5869,7 +5874,6 @@ int led_control(int type, int act)
 	case ROUTER_BOARD_WHRHPGN:
 		power_gpio = 0x10f;
 		connected_gpio = 0x110;
-
 		diag_gpio = 0x00f;
 		break;
 #elif HAVE_JWAP606
