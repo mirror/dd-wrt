@@ -303,6 +303,17 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 				fprintf(stderr, "found seama header, skip seal header of %d bytes\n", skip);
 				if (skip > count)
 					goto err;
+#ifdef HAVE_DIR869
+#define signature "signature=wrgac54_dlink.2015_dir869"
+#elif HAVE_DIR859
+#define signature "signature=wrgac37_dlink.2013gui_dir859"
+#else
+#define signature "signature=wrgac13_dlink.2013gui_dir860lb"
+#endif
+				if (memcmp(buf + sizeof(seamahdr_t), signature, sizeof(signature))) {
+					fprintf(stderr, "firmware signature must be %s\n", signature);
+					goto err;
+				}
 				memcpy(buf, buf + skip, count - skip);
 				count -= skip;
 				char *write_argv_buf[8];
