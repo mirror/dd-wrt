@@ -256,6 +256,7 @@ void start_sysinit(void)
 #endif
 #elif  HAVE_WZR450HP2
 	setWirelessLed(0, 18);
+#elif  HAVE_DIR869
 #elif  HAVE_DIR859
 	setWirelessLed(0, 19);
 //      setWirelessLed(1, 32);
