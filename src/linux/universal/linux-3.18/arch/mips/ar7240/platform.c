@@ -551,10 +551,11 @@ static struct mdio_board_info wdr4300_mdio0_info[] = {
 
 static struct ar8327_pad_cfg ap152_ar8337_pad0_cfg = {
 	.mode = AR8327_PAD_MAC_SGMII,
-	.txclk_delay_en = true,
-	.rxclk_delay_en = true,
-	.txclk_delay_sel = AR8327_CLK_DELAY_SEL1,
-	.rxclk_delay_sel = AR8327_CLK_DELAY_SEL2,
+	.sgmii_delay_en = true,
+//	.txclk_delay_en = true,
+//	.rxclk_delay_en = true,
+//	.txclk_delay_sel = AR8327_CLK_DELAY_SEL1,
+//	.rxclk_delay_sel = AR8327_CLK_DELAY_SEL2,
 };
 
 static struct ar8327_platform_data ap152_ar8337_data = {
@@ -1317,7 +1318,7 @@ int __init ar7240_platform_init(void)
 	ar71xx_eth0_data.duplex = DUPLEX_FULL;
 	ar71xx_eth0_data.force_link = 1;
 	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio0_device.dev;
-	ar71xx_eth0_pll_data.pll_1000 = 0x06000000;
+//	ar71xx_eth0_pll_data.pll_1000 = 0x06000000;
 	ar71xx_add_device_eth(0);
 	#else		
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
