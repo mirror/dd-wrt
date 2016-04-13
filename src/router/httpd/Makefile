@@ -247,6 +247,9 @@ ifeq ($(CONFIG_IPQ806X),y)
 CFLAGS += -DHAVE_IPQ806X
 CFLAGS += -DHAVE_CPUTEMP
 endif
+ifeq ($(CONFIG_ATH10K),y)
+CFLAGS += -DHAVE_CPUTEMP
+endif
 include $(TOP)/rules/generic.mk
 CFLAGS += $(DD_CFLAGS)
 
