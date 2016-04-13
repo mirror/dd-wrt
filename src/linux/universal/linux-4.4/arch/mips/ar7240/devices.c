@@ -186,7 +186,7 @@ static void ar71xx_set_pll(u32 cfg_reg, u32 pll_reg, u32 pll_val, u32 shift)
 	__raw_writel(t, base + cfg_reg);
 	udelay(100);
 
-	printk(KERN_DEBUG "ar71xx: pll_reg %#x: %#x\n", (unsigned int)(base + pll_reg), __raw_readl(base + pll_reg));
+	printk(KERN_INFO "ar71xx: pll_reg %#x: %#x\n", (unsigned int)(base + pll_reg), __raw_readl(base + pll_reg));
 
 	iounmap(base);
 }
