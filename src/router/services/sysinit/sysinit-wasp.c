@@ -53,6 +53,69 @@
 #include <linux/mii.h>
 #include "devices/wireless.c"
 
+#ifdef HAVE_DIR869
+struct regiondef {
+	char *match;
+	char *region;
+};
+static struct regiondef regions[] = {
+	{"AU", "AUSTRALIA"},
+	{"NA", "UNITED_STATES"},
+	{"US", "UNITED_STATES"},
+	{"CA", "CANADA"},
+	{"LA", "BRAZIL"},
+	{"BR", "BRAZIL"},
+	{"EU", "GERMANY"},
+	{"GB", "UNITED_KINGDOM"},
+	{"CN", "CHINA"},
+	{"SG", "SINGAPORE"},
+	{"KR", "KOREA_REPUBLIC"},
+	{"FR", "FRANCE"},
+	{"JP", "JAPAN"},
+	{"IL", "ISRAEL"},
+	{"RU", "RUSSIA"},
+	{"TH", "THAILAND"},
+	{"MY", "MALASIA"},
+	{"IN", "INDIA"},
+	{"EG", "EGYPT"},
+	{"TW", "TAIWAN"},
+	{NULL, NULL}
+};
+
+static void setdlinkcountry(void)
+{
+	char buf[32];
+	char c[32];
+	char *set = NULL;
+	FILE *fp = popen("cat /dev/mtdblock0|grep countrycode=", "r");
+	fread(buf, 1, 27, fp);
+	pclose(fp);
+	buf[27] = 0;
+	memset(c, 0, sizeof(c));
+	strncpy(c, &buf[12], 2);
+	if (!strlen(c))
+		return;
+	int cnt = 0;
+	while (regions[cnt].match) {
+
+		if (!strcmp(regions[cnt].match, c)) {
+			set = regions[cnt].region;
+			break;
+		}
+		cnt++;
+	}
+	if (set) {
+		if (!nvram_get("nocountrysel"))
+			nvram_set("nocountrysel", "1");
+		nvram_set("ath0_regdomain",set);
+		nvram_set("ath1_regdomain",set);
+	}
+}
+
+
+#endif
+
+
 void start_sysinit(void)
 {
 	time_t tm = 0;
@@ -257,6 +320,7 @@ void start_sysinit(void)
 #elif  HAVE_WZR450HP2
 	setWirelessLed(0, 18);
 #elif  HAVE_DIR869
+	setdlinkcountry();
 #elif  HAVE_DIR859
 	setWirelessLed(0, 19);
 //      setWirelessLed(1, 32);
