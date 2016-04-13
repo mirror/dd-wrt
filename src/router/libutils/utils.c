@@ -5872,7 +5872,7 @@ int led_control(int type, int act)
 		break;
 #elif HAVE_DIR859
 	case ROUTER_BOARD_WHRHPGN:
-		power_gpio = 0x10f;
+		disconnected_gpio = 0x10f;
 		connected_gpio = 0x110;
 		diag_gpio = 0x00f;
 		break;
