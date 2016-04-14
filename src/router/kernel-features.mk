@@ -65,10 +65,10 @@ define kernelfeatures
 		sed -i 's/\CONFIG_USB=y/# CONFIG_USB is not set/g' $(LINUXDIR)/.config; \
 	fi	
 	if [ "$(CONFIG_USB_ADVANCED)" != "y" ]; then \
-		sed -i 's/\CONFIG_JBD_FS=m/# CONFIG_JBD_FS is not set/g' $(LINUXDIR)/.config; \
-		sed -i 's/\CONFIG_JBD_FS=y/# CONFIG_JBD_FS is not set/g' $(LINUXDIR)/.config; \
-		sed -i 's/\CONFIG_JBD2_FS=m/# CONFIG_JBD2_FS is not set/g' $(LINUXDIR)/.config; \
-		sed -i 's/\CONFIG_JBD2_FS=y/# CONFIG_JBD2_FS is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/\CONFIG_JBD=m/# CONFIG_JBD is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/\CONFIG_JBD=y/# CONFIG_JBD is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/\CONFIG_JBD2=m/# CONFIG_JBD2 is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/\CONFIG_JBD2=y/# CONFIG_JBD2 is not set/g' $(LINUXDIR)/.config; \
 		sed -i 's/\CONFIG_EXT4_FS=m/# CONFIG_EXT4_FS is not set/g' $(LINUXDIR)/.config; \
 		sed -i 's/\CONFIG_EXT4_FS=y/# CONFIG_EXT4_FS is not set/g' $(LINUXDIR)/.config; \
 		sed -i 's/\CONFIG_EXT3_FS=m/# CONFIG_EXT3_FS is not set/g' $(LINUXDIR)/.config; \
@@ -77,6 +77,7 @@ define kernelfeatures
 		sed -i 's/\CONFIG_XFS_FS=y/# CONFIG_XFS_FS is not set/g' $(LINUXDIR)/.config; \
 		sed -i 's/\CONFIG_BTRFS_FS=m/# CONFIG_BTRFS_FS is not set/g' $(LINUXDIR)/.config; \
 		sed -i 's/\CONFIG_BTRFS_FS=y/# CONFIG_BTRFS_FS is not set/g' $(LINUXDIR)/.config; \
+		echo "# CONFIG_USER_NS is not set" >> $(LINUXDIR)/.config; \
 	fi	
 	if [ "$(CONFIG_BONDING)" != "y" ]; then \
 		sed -i 's/\CONFIG_BONDING=m/# CONFIG_BONDING is not set/g' $(LINUXDIR)/.config; \
