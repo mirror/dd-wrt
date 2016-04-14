@@ -78,7 +78,16 @@ define kernelfeatures
 		sed -i 's/\CONFIG_BTRFS_FS=m/# CONFIG_BTRFS_FS is not set/g' $(LINUXDIR)/.config; \
 		sed -i 's/\CONFIG_BTRFS_FS=y/# CONFIG_BTRFS_FS is not set/g' $(LINUXDIR)/.config; \
 		echo "# CONFIG_USER_NS is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_UIDGID_STRICT_TYPE_CHECKS is not set" >> $(LINUXDIR)/.config; \
 	fi	
+	if [ "$(CONFIG_USB)" != "y" ]; then \
+		sed -i 's/\CONFIG_ISO9660_FS=m/# CONFIG_ISO9660_FS is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/\CONFIG_UDF_FS=m/# CONFIG_UDF_FS is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/\CONFIG_FAT_FS=m/# CONFIG_FAT_FS is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/\CONFIG_MSDOS_FS=m/# CONFIG_MSDOS_FS is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/\CONFIG_VFAT_FS=m/# CONFIG_VFAT_FS is not set/g' $(LINUXDIR)/.config; \
+	fi	
+
 	if [ "$(CONFIG_BONDING)" != "y" ]; then \
 		sed -i 's/\CONFIG_BONDING=m/# CONFIG_BONDING is not set/g' $(LINUXDIR)/.config; \
 	fi	
