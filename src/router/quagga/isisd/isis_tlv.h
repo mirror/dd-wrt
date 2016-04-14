@@ -112,6 +112,8 @@
 
 #define AUTH_INFO_HDRLEN          3
 
+#define MAX_TLV_LEN 255
+
 #define IS_NEIGHBOURS_LEN (ISIS_SYS_ID_LEN + 5)
 #define LAN_NEIGHBOURS_LEN 6
 #define LSP_ENTRIES_LEN (10 + ISIS_SYS_ID_LEN)	/* FIXME: should be entry */
@@ -228,11 +230,13 @@ struct ipv6_reachability
 
 /* bits in control_info */
 #define CTRL_INFO_DIRECTION    0x80
-#define DIRECTION_UP           0
-#define DIRECTION_DOWN         1
+#define DIRECTION_UP           0x00
+#define DIRECTION_DOWN         0x80
+
 #define CTRL_INFO_DISTRIBUTION 0x40
-#define DISTRIBUTION_INTERNAL  0
-#define DISTRIBUTION_EXTERNAL  1
+#define DISTRIBUTION_INTERNAL  0x00
+#define DISTRIBUTION_EXTERNAL  0x40
+
 #define CTRL_INFO_SUBTLVS      0x20
 #endif /* HAVE_IPV6 */
 
@@ -311,7 +315,8 @@ int tlv_add_in_addr (struct in_addr *, struct stream *stream, u_char tag);
 int tlv_add_dynamic_hostname (struct hostname *hostname,
 			      struct stream *stream);
 int tlv_add_lsp_entries (struct list *lsps, struct stream *stream);
-int tlv_add_ipv4_reachs (struct list *ipv4_reachs, struct stream *stream);
+int tlv_add_ipv4_int_reachs (struct list *ipv4_reachs, struct stream *stream);
+int tlv_add_ipv4_ext_reachs (struct list *ipv4_reachs, struct stream *stream);
 int tlv_add_te_ipv4_reachs (struct list *te_ipv4_reachs, struct stream *stream);
 #ifdef HAVE_IPV6
 int tlv_add_ipv6_addrs (struct list *ipv6_addrs, struct stream *stream);

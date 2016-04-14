@@ -234,9 +234,9 @@ ospf6_router_lsa_originate (struct thread *thread)
 
       /* Multiple Router-LSA instance according to size limit setting */
       if ( (oa->router_lsa_size_limit != 0)
-          && ((caddr_t) lsdesc + sizeof (struct ospf6_router_lsdesc) -
-	      /* XXX warning: comparison between signed and unsigned */
-              (caddr_t) buffer > oa->router_lsa_size_limit))
+          && ((size_t)((char *)lsdesc - buffer)
+                 + sizeof (struct ospf6_router_lsdesc)
+               > oa->router_lsa_size_limit))
         {
           if ((caddr_t) lsdesc == (caddr_t) router_lsa +
                                   sizeof (struct ospf6_router_lsa))
@@ -1495,7 +1495,8 @@ ospf6_brouter_debug_print (struct ospf6_route *brouter)
 
   zlog_info ("Brouter: %s via area %s", brouter_name, area_name);
   zlog_info ("  memory: prev: %p this: %p next: %p parent rnode: %p",
-             brouter->prev, brouter, brouter->next, brouter->rnode);
+             (void *)brouter->prev, (void *)brouter, (void *)brouter->next,
+             (void *)brouter->rnode);
   zlog_info ("  type: %d prefix: %s installed: %s changed: %s",
              brouter->type, destination, installed, changed);
   zlog_info ("  lock: %d flags: %s%s%s%s", brouter->lock,
@@ -1543,7 +1544,7 @@ ospf6_intra_brouter_calculation (struct ospf6_area *oa)
           IS_OSPF6_DEBUG_ROUTE (MEMORY))
         {
           zlog_info ("%p: mark as removing: area %s brouter %s",
-                     brouter, oa->name, brouter_name);
+                     (void *)brouter, oa->name, brouter_name);
           ospf6_brouter_debug_print (brouter);
         }
     }
@@ -1575,7 +1576,7 @@ ospf6_intra_brouter_calculation (struct ospf6_area *oa)
           IS_OSPF6_DEBUG_ROUTE (MEMORY))
         {
           zlog_info ("%p: transfer: area %s brouter %s",
-                     brouter, oa->name, brouter_name);
+                     (void *)brouter, oa->name, brouter_name);
           ospf6_brouter_debug_print (brouter);
         }
     }

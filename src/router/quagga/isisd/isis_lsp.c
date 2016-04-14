@@ -5,9 +5,10 @@
  * Copyright (C) 2001,2002   Sampo Saaristo
  *                           Tampere University of Technology      
  *                           Institute of Communications Engineering
+ * Copyright (C) 2013-2015   Christian Franke <chris@opensourcerouting.org>
  *
  * This program is free software; you can redistribute it and/or modify it 
- * under the terms of the GNU General Public Licenseas published by the Free 
+ * under the terms of the GNU General Public License as published by the Free 
  * Software Foundation; either version 2 of the License, or (at your option) 
  * any later version.
  *
@@ -35,6 +36,7 @@
 #include "if.h"
 #include "checksum.h"
 #include "md5.h"
+#include "table.h"
 
 #include "isisd/dict.h"
 #include "isisd/isis_constants.h"
@@ -271,7 +273,19 @@ lsp_compare (char *areatag, struct isis_lsp *lsp, u_int32_t seq_num,
       return LSP_EQUAL;
     }
 
-  if (ntohl (seq_num) >= ntohl (lsp->lsp_header->seq_num))
+  /*
+   * LSPs with identical checksums should only be treated as newer if:
+   * a) The current LSP has a remaining lifetime != 0 and the other LSP has a
+   *    remaining lifetime == 0. In this case, we should participate in the purge
+   *    and should not treat the current LSP with remaining lifetime == 0 as older.
+   * b) The LSP has an incorrect checksum. In this case, we need to react as given
+   *    in 7.3.16.2.
+   */
+   if (ntohl (seq_num) > ntohl (lsp->lsp_header->seq_num)
+      || (ntohl(seq_num) == ntohl(lsp->lsp_header->seq_num)
+          && (  (lsp->lsp_header->rem_lifetime != 0
+                 && rem_lifetime == 0)
+              || lsp->lsp_header->checksum != checksum)))
     {
       if (isis->debugs & DEBUG_SNP_PACKETS)
 	{
@@ -379,7 +393,7 @@ lsp_auth_update (struct isis_lsp *lsp)
   /* Compute autentication value */
   hmac_md5 (STREAM_DATA (lsp->pdu), stream_get_endp(lsp->pdu),
             (unsigned char *) &passwd->passwd, passwd->len,
-            (caddr_t) &hmac_md5_hash);
+            (unsigned char *) &hmac_md5_hash);
   /* Copy the hash into the stream */
   memcpy (STREAM_DATA (lsp->pdu) + lsp->auth_tlv_offset + 3,
           hmac_md5_hash, ISIS_AUTH_MD5_SIZE);
@@ -442,7 +456,7 @@ lsp_seqnum_update (struct isis_lsp *lsp0)
 }
 
 static u_int8_t
-lsp_bits_generate (int level, int overload_bit)
+lsp_bits_generate (int level, int overload_bit, int attached_bit)
 {
   u_int8_t lsp_bits = 0;
   if (level == IS_LEVEL_1)
@@ -451,6 +465,8 @@ lsp_bits_generate (int level, int overload_bit)
     lsp_bits = IS_LEVEL_1_AND_2;
   if (overload_bit)
     lsp_bits |= overload_bit;
+  if (attached_bit)
+    lsp_bits |= attached_bit;
   return lsp_bits;
 }
 
@@ -573,20 +589,16 @@ lsp_new_from_stream_ptr (struct stream *stream,
 }
 
 struct isis_lsp *
-lsp_new (u_char * lsp_id, u_int16_t rem_lifetime, u_int32_t seq_num,
-	 u_int8_t lsp_bits, u_int16_t checksum, int level)
+lsp_new(struct isis_area *area, u_char * lsp_id,
+	u_int16_t rem_lifetime, u_int32_t seq_num,
+	u_int8_t lsp_bits, u_int16_t checksum, int level)
 {
   struct isis_lsp *lsp;
 
   lsp = XCALLOC (MTYPE_ISIS_LSP, sizeof (struct isis_lsp));
-  if (!lsp)
-    {
-      /* FIXME: set lspdbol bit */
-      zlog_warn ("lsp_new(): out of memory");
-      return NULL;
-    }
-  /* FIXME: Should be minimal mtu? */
-  lsp->pdu = stream_new (1500);
+  lsp->area = area;
+
+  lsp->pdu = stream_new(LLC_LEN + area->lsp_mtu);
   if (LSP_FRAGMENT (lsp_id) == 0)
     lsp->lspu.frags = list_new ();
   lsp->isis_header = (struct isis_fixed_hdr *) (STREAM_DATA (lsp->pdu));
@@ -950,7 +962,7 @@ lsp_print_detail (struct isis_lsp *lsp, struct vty *vty, char dynhost)
       memcpy (in6.s6_addr, ipv6_reach->prefix,
 	      PSIZE (ipv6_reach->prefix_len));
       inet_ntop (AF_INET6, &in6, (char *)buff, BUFSIZ);
-      if ((ipv6_reach->control_info &&
+      if ((ipv6_reach->control_info &
 	   CTRL_INFO_DISTRIBUTION) == DISTRIBUTION_INTERNAL)
 	vty_out (vty, "  Metric      : %-8d IPv6-Internal : %s/%d%s",
 		 ntohl (ipv6_reach->metric),
@@ -1089,6 +1101,8 @@ lsp_rem_lifetime (struct isis_area *area, int level)
                               MAX_AGE_JITTER);
 
   /* No jitter if the max refresh will be less than configure gen interval */
+  /* N.B. this calucation is acceptable since rem_lifetime is in [332,65535] at
+   * this point */
   if (area->lsp_gen_interval[level - 1] > (rem_lifetime - 300))
     rem_lifetime = area->max_lsp_lifetime[level - 1];
 
@@ -1112,7 +1126,8 @@ lsp_refresh_time (struct isis_lsp *lsp, u_int16_t rem_lifetime)
       refresh_time > (rem_lifetime - 300))
     refresh_time = rem_lifetime - 300;
 
-  assert (area->lsp_gen_interval[level - 1] < refresh_time);
+  /* In cornercases, refresh_time might be <= lsp_gen_interval, however
+   * we accept this violation to satisfy refresh_time <= rem_lifetime - 300 */
 
   return refresh_time;
 }
@@ -1134,14 +1149,128 @@ lsp_next_frag (u_char frag_num, struct isis_lsp *lsp0, struct isis_area *area,
       lsp_clear_data (lsp);
       return lsp;
     }
-  lsp = lsp_new (frag_id, ntohs(lsp0->lsp_header->rem_lifetime), 0,
-                 lsp_bits_generate (level, area->overload_bit), 0, level);
+  lsp = lsp_new (area, frag_id, ntohs(lsp0->lsp_header->rem_lifetime), 0,
+                 lsp_bits_generate (level, area->overload_bit,
+                 area->attached_bit), 0, level);
   lsp->area = area;
   lsp->own_lsp = 1;
   lsp_insert (lsp, area->lspdb[level - 1]);
   listnode_add (lsp0->lspu.frags, lsp);
   lsp->lspu.zero_lsp = lsp0;
   return lsp;
+}
+
+static void
+lsp_build_ext_reach_ipv4(struct isis_lsp *lsp, struct isis_area *area,
+                         struct tlvs *tlv_data)
+{
+  struct route_table *er_table;
+  struct route_node *rn;
+  struct prefix_ipv4 *ipv4;
+  struct isis_ext_info *info;
+  struct ipv4_reachability *ipreach;
+  struct te_ipv4_reachability *te_ipreach;
+
+  er_table = get_ext_reach(area, AF_INET, lsp->level);
+  if (!er_table)
+    return;
+
+  for (rn = route_top(er_table); rn; rn = route_next(rn))
+    {
+      if (!rn->info)
+        continue;
+
+      ipv4 = (struct prefix_ipv4*)&rn->p;
+      info = rn->info;
+      if (area->oldmetric)
+        {
+          if (tlv_data->ipv4_ext_reachs == NULL)
+            {
+              tlv_data->ipv4_ext_reachs = list_new();
+              tlv_data->ipv4_ext_reachs->del = free_tlv;
+            }
+          ipreach = XMALLOC(MTYPE_ISIS_TLV, sizeof(*ipreach));
+
+          ipreach->prefix.s_addr = ipv4->prefix.s_addr;
+          masklen2ip(ipv4->prefixlen, &ipreach->mask);
+          ipreach->prefix.s_addr &= ipreach->mask.s_addr;
+
+          if ((info->metric & 0x3f) != info->metric)
+            ipreach->metrics.metric_default = 0x3f;
+          else
+            ipreach->metrics.metric_default = info->metric;
+          ipreach->metrics.metric_expense = METRICS_UNSUPPORTED;
+          ipreach->metrics.metric_error = METRICS_UNSUPPORTED;
+          ipreach->metrics.metric_delay = METRICS_UNSUPPORTED;
+          listnode_add(tlv_data->ipv4_ext_reachs, ipreach);
+        }
+      if (area->newmetric)
+        {
+          if (tlv_data->te_ipv4_reachs == NULL)
+            {
+              tlv_data->te_ipv4_reachs = list_new();
+              tlv_data->te_ipv4_reachs->del = free_tlv;
+            }
+          te_ipreach =
+              XCALLOC(MTYPE_ISIS_TLV,
+                      sizeof(*te_ipreach) - 1 + PSIZE(ipv4->prefixlen));
+          if (info->metric > MAX_WIDE_PATH_METRIC)
+            te_ipreach->te_metric = htonl(MAX_WIDE_PATH_METRIC);
+          else
+            te_ipreach->te_metric = htonl(info->metric);
+          te_ipreach->control = ipv4->prefixlen & 0x3f;
+          memcpy(&te_ipreach->prefix_start, &ipv4->prefix.s_addr,
+                 PSIZE(ipv4->prefixlen));
+          listnode_add(tlv_data->te_ipv4_reachs, te_ipreach);
+        }
+    }
+}
+
+static void
+lsp_build_ext_reach_ipv6(struct isis_lsp *lsp, struct isis_area *area,
+                         struct tlvs *tlv_data)
+{
+  struct route_table *er_table;
+  struct route_node *rn;
+  struct prefix_ipv6 *ipv6;
+  struct isis_ext_info *info;
+  struct ipv6_reachability *ip6reach;
+
+  er_table = get_ext_reach(area, AF_INET6, lsp->level);
+  if (!er_table)
+    return;
+
+  for (rn = route_top(er_table); rn; rn = route_next(rn))
+    {
+      if (!rn->info)
+        continue;
+
+      ipv6 = (struct prefix_ipv6*)&rn->p;
+      info = rn->info;
+
+      if (tlv_data->ipv6_reachs == NULL)
+        {
+          tlv_data->ipv6_reachs = list_new();
+          tlv_data->ipv6_reachs->del = free_tlv;
+        }
+      ip6reach = XCALLOC(MTYPE_ISIS_TLV, sizeof(*ip6reach));
+      if (info->metric > MAX_WIDE_PATH_METRIC)
+        ip6reach->metric = htonl(MAX_WIDE_PATH_METRIC);
+      else
+        ip6reach->metric = htonl(info->metric);
+      ip6reach->control_info = DISTRIBUTION_EXTERNAL;
+      ip6reach->prefix_len = ipv6->prefixlen;
+      memcpy(ip6reach->prefix, ipv6->prefix.s6_addr, sizeof(ip6reach->prefix));
+      listnode_add(tlv_data->ipv6_reachs, ip6reach);
+    }
+}
+
+static void
+lsp_build_ext_reach (struct isis_lsp *lsp, struct isis_area *area,
+                     struct tlvs *tlv_data)
+{
+  lsp_build_ext_reach_ipv4(lsp, area, tlv_data);
+  lsp_build_ext_reach_ipv6(lsp, area, tlv_data);
 }
 
 /*
@@ -1161,7 +1290,7 @@ lsp_build (struct isis_lsp *lsp, struct isis_area *area)
   struct te_ipv4_reachability *te_ipreach;
   struct isis_adjacency *nei;
 #ifdef HAVE_IPV6
-  struct prefix_ipv6 *ipv6, *ip6prefix;
+  struct prefix_ipv6 *ipv6, ip6prefix;
   struct ipv6_reachability *ip6reach;
 #endif /* HAVE_IPV6 */
   struct tlvs tlv_data;
@@ -1171,6 +1300,9 @@ lsp_build (struct isis_lsp *lsp, struct isis_area *area)
   uint32_t metric;
   u_char zero_id[ISIS_SYS_ID_LEN + 1];
   int retval = ISIS_OK;
+  char buf[BUFSIZ];
+
+  lsp_debug("ISIS (%s): Constructing local system LSP for level %d", area->area_tag, level);
 
   /*
    * Building the zero lsp
@@ -1210,12 +1342,14 @@ lsp_build (struct isis_lsp *lsp, struct isis_area *area)
       lsp->tlv_data.nlpids->count = 0;
       if (area->ip_circuits > 0)
 	{
+	  lsp_debug("ISIS (%s): Found IPv4 circuit, adding IPv4 to NLPIDs", area->area_tag);
 	  lsp->tlv_data.nlpids->count++;
 	  lsp->tlv_data.nlpids->nlpids[0] = NLPID_IP;
 	}
 #ifdef HAVE_IPV6
       if (area->ipv6_circuits > 0)
 	{
+	  lsp_debug("ISIS (%s): Found IPv6 circuit, adding IPv6 to NLPIDs", area->area_tag);
 	  lsp->tlv_data.nlpids->count++;
 	  lsp->tlv_data.nlpids->nlpids[lsp->tlv_data.nlpids->count - 1] =
 	    NLPID_IPV6;
@@ -1227,13 +1361,26 @@ lsp_build (struct isis_lsp *lsp, struct isis_area *area)
   /* Dynamic Hostname */
   if (area->dynhostname)
     {
+      const char *hostname = unix_hostname();
+      size_t hostname_len = strlen(hostname);
+
       lsp->tlv_data.hostname = XMALLOC (MTYPE_ISIS_TLV,
 					sizeof (struct hostname));
 
-      memcpy (lsp->tlv_data.hostname->name, unix_hostname (),
-	      strlen (unix_hostname ()));
-      lsp->tlv_data.hostname->namelen = strlen (unix_hostname ());
+      strncpy((char *)lsp->tlv_data.hostname->name, hostname,
+              sizeof(lsp->tlv_data.hostname->name));
+      if (hostname_len <= MAX_TLV_LEN)
+        lsp->tlv_data.hostname->namelen = hostname_len;
+      else
+        lsp->tlv_data.hostname->namelen = MAX_TLV_LEN;
+
+      lsp_debug("ISIS (%s): Adding dynamic hostname '%.*s'", area->area_tag,
+                lsp->tlv_data.hostname->namelen, lsp->tlv_data.hostname->name);
       tlv_add_dynamic_hostname (lsp->tlv_data.hostname, lsp->pdu);
+    }
+  else
+    {
+      lsp_debug("ISIS (%s): Not adding dynamic hostname (disabled)", area->area_tag);
     }
 
   /* IPv4 address and TE router ID TLVs. In case of the first one we don't
@@ -1241,6 +1388,8 @@ lsp_build (struct isis_lsp *lsp, struct isis_area *area)
    * LSP and this address is same as router id. */
   if (isis->router_id != 0)
     {
+      inet_ntop(AF_INET, &isis->router_id, buf, sizeof(buf));
+      lsp_debug("ISIS (%s): Adding router ID %s as IPv4 tlv.", area->area_tag, buf);
       if (lsp->tlv_data.ipv4_addrs == NULL)
 	{
 	  lsp->tlv_data.ipv4_addrs = list_new ();
@@ -1256,12 +1405,17 @@ lsp_build (struct isis_lsp *lsp, struct isis_area *area)
        * TLV's are in use. */
       if (area->newmetric)
 	{
+          lsp_debug("ISIS (%s): Adding router ID also as TE router ID tlv.", area->area_tag);
 	  lsp->tlv_data.router_id = XMALLOC (MTYPE_ISIS_TLV,
 					     sizeof (struct in_addr));
 	  lsp->tlv_data.router_id->id.s_addr = isis->router_id;
 	  tlv_add_in_addr (&lsp->tlv_data.router_id->id, lsp->pdu,
                            TE_ROUTER_ID);
 	}
+    }
+  else
+    {
+      lsp_debug("ISIS (%s): Router ID is unset. Not adding tlv.", area->area_tag);
     }
 
   memset (&tlv_data, 0, sizeof (struct tlvs));
@@ -1289,13 +1443,25 @@ lsp_build (struct isis_lsp *lsp, struct isis_area *area)
     }
 #endif /* TOPOLOGY_GENERATE */
 
+  lsp_debug("ISIS (%s): Adding circuit specific information.", area->area_tag);
+
   /*
    * Then build lists of tlvs related to circuits
    */
   for (ALL_LIST_ELEMENTS_RO (area->circuit_list, node, circuit))
     {
+      if (!circuit->interface)
+        lsp_debug("ISIS (%s): Processing %s circuit %p with unknown interface",
+                  area->area_tag, circuit_type2string(circuit->circ_type), circuit);
+      else
+        lsp_debug("ISIS (%s): Processing %s circuit %s",
+                  area->area_tag, circuit_type2string(circuit->circ_type), circuit->interface->name);
+
       if (circuit->state != C_STATE_UP)
-	continue;
+        {
+          lsp_debug("ISIS (%s): Circuit is not up, ignoring.", area->area_tag);
+          continue;
+        }
 
       /*
        * Add IPv4 internal reachability of this circuit
@@ -1303,6 +1469,7 @@ lsp_build (struct isis_lsp *lsp, struct isis_area *area)
       if (circuit->ip_router && circuit->ip_addrs &&
 	  circuit->ip_addrs->count > 0)
 	{
+	  lsp_debug("ISIS (%s): Circuit has IPv4 active, adding respective TLVs.", area->area_tag);
 	  if (area->oldmetric)
 	    {
 	      if (tlv_data.ipv4_int_reachs == NULL)
@@ -1318,6 +1485,9 @@ lsp_build (struct isis_lsp *lsp, struct isis_area *area)
 		  masklen2ip (ipv4->prefixlen, &ipreach->mask);
 		  ipreach->prefix.s_addr = ((ipreach->mask.s_addr) &
 					    (ipv4->prefix.s_addr));
+		  inet_ntop(AF_INET, &ipreach->prefix.s_addr, buf, sizeof(buf));
+		  lsp_debug("ISIS (%s): Adding old-style IP reachability for %s/%d",
+		            area->area_tag, buf, ipv4->prefixlen);
 		  listnode_add (tlv_data.ipv4_int_reachs, ipreach);
 		}
 	    }
@@ -1343,6 +1513,9 @@ lsp_build (struct isis_lsp *lsp, struct isis_area *area)
 		  te_ipreach->control = (ipv4->prefixlen & 0x3F);
 		  memcpy (&te_ipreach->prefix_start, &ipv4->prefix.s_addr,
 			  (ipv4->prefixlen + 7)/8);
+		  inet_ntop(AF_INET, &ipv4->prefix.s_addr, buf, sizeof(buf));
+		  lsp_debug("ISIS (%s): Adding te-style IP reachability for %s/%d",
+		            area->area_tag, buf, ipv4->prefixlen);
 		  listnode_add (tlv_data.te_ipv4_reachs, te_ipreach);
 		}
 	    }
@@ -1374,9 +1547,14 @@ lsp_build (struct isis_lsp *lsp, struct isis_area *area)
 
 	      ip6reach->control_info = 0;
 	      ip6reach->prefix_len = ipv6->prefixlen;
-	      memcpy (&ip6prefix, &ipv6, sizeof(ip6prefix));
-	      apply_mask_ipv6 (ip6prefix);
-	      memcpy (ip6reach->prefix, ip6prefix->prefix.s6_addr,
+	      memcpy(&ip6prefix, ipv6, sizeof(ip6prefix));
+	      apply_mask_ipv6(&ip6prefix);
+
+	      inet_ntop(AF_INET6, &ip6prefix.prefix.s6_addr, buf, sizeof(buf));
+	      lsp_debug("ISIS (%s): Adding IPv6 reachability for %s/%d",
+	                area->area_tag, buf, ipv6->prefixlen);
+
+	      memcpy (ip6reach->prefix, ip6prefix.prefix.s6_addr,
 		      sizeof (ip6reach->prefix));
 	      listnode_add (tlv_data.ipv6_reachs, ip6reach);
 	    }
@@ -1405,9 +1583,18 @@ lsp_build (struct isis_lsp *lsp, struct isis_area *area)
 		  is_neigh->metrics = circuit->metrics[level - 1];
                   if (!memcmp (is_neigh->neigh_id, zero_id,
                                ISIS_SYS_ID_LEN + 1))
-                    XFREE (MTYPE_ISIS_TLV, is_neigh);
+                    {
+                      XFREE (MTYPE_ISIS_TLV, is_neigh);
+                      lsp_debug("ISIS (%s): No DIS for circuit, not adding old-style IS neighbor.",
+                                area->area_tag);
+                    }
                   else
-                    listnode_add (tlv_data.is_neighs, is_neigh);
+                    {
+                      listnode_add (tlv_data.is_neighs, is_neigh);
+                      lsp_debug("ISIS (%s): Adding DIS %s.%02x as old-style neighbor",
+                                area->area_tag, sysid_print(is_neigh->neigh_id),
+                                LSP_PSEUDO_ID(is_neigh->neigh_id));
+                    }
 		}
 	      if (area->newmetric)
 		{
@@ -1431,10 +1618,24 @@ lsp_build (struct isis_lsp *lsp, struct isis_area *area)
 		  SET_TE_METRIC(te_is_neigh, metric);
                   if (!memcmp (te_is_neigh->neigh_id, zero_id,
                                ISIS_SYS_ID_LEN + 1))
-                    XFREE (MTYPE_ISIS_TLV, te_is_neigh);
+                    {
+                      XFREE (MTYPE_ISIS_TLV, te_is_neigh);
+                      lsp_debug("ISIS (%s): No DIS for circuit, not adding te-style IS neighbor.",
+                                area->area_tag);
+                    }
                   else
-                    listnode_add (tlv_data.te_is_neighs, te_is_neigh);
+                    {
+                      listnode_add (tlv_data.te_is_neighs, te_is_neigh);
+                      lsp_debug("ISIS (%s): Adding DIS %s.%02x as te-style neighbor",
+                                area->area_tag, sysid_print(te_is_neigh->neigh_id),
+                                LSP_PSEUDO_ID(te_is_neigh->neigh_id));
+                    }
 		}
+	    }
+	  else
+	    {
+	      lsp_debug("ISIS (%s): Circuit is not active for current level. Not adding IS neighbors",
+	                area->area_tag);
 	    }
 	  break;
 	case CIRCUIT_T_P2P:
@@ -1452,6 +1653,8 @@ lsp_build (struct isis_lsp *lsp, struct isis_area *area)
 		  memcpy (is_neigh->neigh_id, nei->sysid, ISIS_SYS_ID_LEN);
 		  is_neigh->metrics = circuit->metrics[level - 1];
 		  listnode_add (tlv_data.is_neighs, is_neigh);
+		  lsp_debug("ISIS (%s): Adding old-style is reach for %s", area->area_tag,
+                            sysid_print(is_neigh->neigh_id));
 		}
 	      if (area->newmetric)
 		{
@@ -1468,8 +1671,15 @@ lsp_build (struct isis_lsp *lsp, struct isis_area *area)
 		  metric = circuit->te_metric[level - 1];
 		  SET_TE_METRIC(te_is_neigh, metric);
 		  listnode_add (tlv_data.te_is_neighs, te_is_neigh);
+		  lsp_debug("ISIS (%s): Adding te-style is reach for %s", area->area_tag,
+                            sysid_print(te_is_neigh->neigh_id));
 		}
 	    }
+          else
+            {
+              lsp_debug("ISIS (%s): No adjacency for given level on this circuit. Not adding IS neighbors",
+              area->area_tag);
+            }
 	  break;
 	case CIRCUIT_T_LOOPBACK:
           break;
@@ -1478,6 +1688,10 @@ lsp_build (struct isis_lsp *lsp, struct isis_area *area)
 	}
     }
 
+  lsp_build_ext_reach(lsp, area, &tlv_data);
+
+  lsp_debug("ISIS (%s): LSP construction is complete. Serializing...", area->area_tag);
+
   while (tlv_data.ipv4_int_reachs && listcount (tlv_data.ipv4_int_reachs))
     {
       if (lsp->tlv_data.ipv4_int_reachs == NULL)
@@ -1485,8 +1699,21 @@ lsp_build (struct isis_lsp *lsp, struct isis_area *area)
       lsp_tlv_fit (lsp, &tlv_data.ipv4_int_reachs,
 		   &lsp->tlv_data.ipv4_int_reachs,
 		   IPV4_REACH_LEN, area->lsp_frag_threshold,
-		   tlv_add_ipv4_reachs);
+		   tlv_add_ipv4_int_reachs);
       if (tlv_data.ipv4_int_reachs && listcount (tlv_data.ipv4_int_reachs))
+	lsp = lsp_next_frag (LSP_FRAGMENT (lsp->lsp_header->lsp_id) + 1,
+			     lsp0, area, level);
+    }
+
+  while (tlv_data.ipv4_ext_reachs && listcount (tlv_data.ipv4_ext_reachs))
+    {
+      if (lsp->tlv_data.ipv4_ext_reachs == NULL)
+	lsp->tlv_data.ipv4_ext_reachs = list_new ();
+      lsp_tlv_fit (lsp, &tlv_data.ipv4_ext_reachs,
+		   &lsp->tlv_data.ipv4_ext_reachs,
+		   IPV4_REACH_LEN, area->lsp_frag_threshold,
+		   tlv_add_ipv4_ext_reachs);
+      if (tlv_data.ipv4_ext_reachs && listcount (tlv_data.ipv4_ext_reachs))
 	lsp = lsp_next_frag (LSP_FRAGMENT (lsp->lsp_header->lsp_id) + 1,
 			     lsp0, area, level);
     }
@@ -1588,8 +1815,9 @@ lsp_generate (struct isis_area *area, int level)
                               area->lspdb[level - 1]);
     }
   rem_lifetime = lsp_rem_lifetime (area, level);
-  newlsp = lsp_new (lspid, rem_lifetime, seq_num,
-                    area->is_type | area->overload_bit, 0, level);
+  newlsp = lsp_new (area, lspid, rem_lifetime, seq_num,
+                    area->is_type | area->overload_bit | area->attached_bit,
+                    0, level);
   newlsp->area = area;
   newlsp->own_lsp = 1;
 
@@ -1598,10 +1826,13 @@ lsp_generate (struct isis_area *area, int level)
   lsp_build (newlsp, area);
   /* time to calculate our checksum */
   lsp_seqnum_update (newlsp);
+  newlsp->last_generated = time(NULL);
   lsp_set_all_srmflags (newlsp);
 
   refresh_time = lsp_refresh_time (newlsp, rem_lifetime);
+
   THREAD_TIMER_OFF (area->t_lsp_refresh[level - 1]);
+  area->lsp_regenerate_pending[level - 1] = 0;
   if (level == IS_LEVEL_1)
     THREAD_TIMER_ON (master, area->t_lsp_refresh[level - 1],
                      lsp_l1_refresh, area, refresh_time);
@@ -1621,6 +1852,8 @@ lsp_generate (struct isis_area *area, int level)
                   ntohs (newlsp->lsp_header->rem_lifetime),
                   refresh_time);
     }
+  sched_debug("ISIS (%s): Built L%d LSP. Set triggered regenerate to non-pending.",
+              area->area_tag, level);
 
   return ISIS_OK;
 }
@@ -1656,7 +1889,8 @@ lsp_regenerate (struct isis_area *area, int level)
 
   lsp_clear_data (lsp);
   lsp_build (lsp, area);
-  lsp->lsp_header->lsp_bits = lsp_bits_generate (level, area->overload_bit);
+  lsp->lsp_header->lsp_bits = lsp_bits_generate (level, area->overload_bit,
+                                                 area->attached_bit);
   rem_lifetime = lsp_rem_lifetime (area, level);
   lsp->lsp_header->rem_lifetime = htons (rem_lifetime);
   lsp_seqnum_update (lsp);
@@ -1666,7 +1900,8 @@ lsp_regenerate (struct isis_area *area, int level)
   for (ALL_LIST_ELEMENTS_RO (lsp->lspu.frags, node, frag))
     {
       frag->lsp_header->lsp_bits = lsp_bits_generate (level,
-                                                      area->overload_bit);
+                                                      area->overload_bit,
+                                                      area->attached_bit);
       /* Set the lifetime values of all the fragments to the same value,
        * so that no fragment expires before the lsp is refreshed.
        */
@@ -1681,6 +1916,7 @@ lsp_regenerate (struct isis_area *area, int level)
   else if (level == IS_LEVEL_2)
     THREAD_TIMER_ON (master, area->t_lsp_refresh[level - 1],
                      lsp_l2_refresh, area, refresh_time);
+  area->lsp_regenerate_pending[level - 1] = 0;
 
   if (isis->debugs & DEBUG_UPDATE_PACKETS)
     {
@@ -1694,6 +1930,8 @@ lsp_regenerate (struct isis_area *area, int level)
                   ntohs (lsp->lsp_header->rem_lifetime),
                   refresh_time);
     }
+  sched_debug("ISIS (%s): Rebuilt L%d LSP. Set triggered regenerate to non-pending.",
+              area->area_tag, level);
 
   return ISIS_OK;
 }
@@ -1715,6 +1953,7 @@ lsp_l1_refresh (struct thread *thread)
   if ((area->is_type & IS_LEVEL_1) == 0)
     return ISIS_ERROR;
 
+  sched_debug("ISIS (%s): LSP L1 refresh timer expired. Refreshing LSP...", area->area_tag);
   return lsp_regenerate (area, IS_LEVEL_1);
 }
 
@@ -1732,6 +1971,7 @@ lsp_l2_refresh (struct thread *thread)
   if ((area->is_type & IS_LEVEL_2) == 0)
     return ISIS_ERROR;
 
+  sched_debug("ISIS (%s): LSP L2 refresh timer expired. Refreshing LSP...", area->area_tag);
   return lsp_regenerate (area, IS_LEVEL_2);
 }
 
@@ -1741,12 +1981,16 @@ lsp_regenerate_schedule (struct isis_area *area, int level, int all_pseudo)
   struct isis_lsp *lsp;
   u_char id[ISIS_SYS_ID_LEN + 2];
   time_t now, diff;
+  long timeout;
   struct listnode *cnode;
   struct isis_circuit *circuit;
   int lvl;
 
   if (area == NULL)
     return ISIS_ERROR;
+
+  sched_debug("ISIS (%s): Scheduling regeneration of %s LSPs, %sincluding PSNs",
+            area->area_tag, circuit_t2string(level), all_pseudo ? "" : "not ");
 
   memcpy (id, isis->sysid, ISIS_SYS_ID_LEN);
   LSP_PSEUDO_ID (id) = LSP_FRAGMENT (id) = 0;
@@ -1757,33 +2001,61 @@ lsp_regenerate_schedule (struct isis_area *area, int level, int all_pseudo)
       if (!((level & lvl) && (area->is_type & lvl)))
         continue;
 
+      sched_debug("ISIS (%s): Checking whether L%d needs to be scheduled",
+                  area->area_tag, lvl);
+
       if (area->lsp_regenerate_pending[lvl - 1])
-        continue;
+        {
+          struct timeval remain = thread_timer_remain(area->t_lsp_refresh[lvl - 1]);
+          sched_debug("ISIS (%s): Regeneration is already pending, nothing todo."
+                      " (Due in %lld.%03lld seconds)", area->area_tag,
+                      (long long)remain.tv_sec, (long long)remain.tv_usec / 1000);
+          continue;
+        }
 
       lsp = lsp_search (id, area->lspdb[lvl - 1]);
       if (!lsp)
-        continue;
+        {
+          sched_debug("ISIS (%s): We do not have any LSPs to regenerate, nothing todo.",
+                      area->area_tag);
+          continue;
+        }
 
       /*
        * Throttle avoidance
        */
+      sched_debug("ISIS (%s): Will schedule regen timer. Last run was: %lld, Now is: %lld",
+                  area->area_tag, (long long)lsp->last_generated, (long long)now);
       THREAD_TIMER_OFF (area->t_lsp_refresh[lvl - 1]);
       diff = now - lsp->last_generated;
       if (diff < area->lsp_gen_interval[lvl - 1])
         {
-          area->lsp_regenerate_pending[lvl - 1] = 1;
-          if (lvl == IS_LEVEL_1)
-            THREAD_TIMER_ON (master, area->t_lsp_refresh[lvl - 1],
-                             lsp_l1_refresh, area,
-                             area->lsp_gen_interval[lvl - 1] - diff);
-          else if (lvl == IS_LEVEL_2)
-            THREAD_TIMER_ON (master, area->t_lsp_refresh[lvl - 1],
-                             lsp_l2_refresh, area,
-                             area->lsp_gen_interval[lvl - 1] - diff);
+          timeout = 1000 * (area->lsp_gen_interval[lvl - 1] - diff);
+          sched_debug("ISIS (%s): Scheduling in %ld ms to match configured lsp_gen_interval",
+                      area->area_tag, timeout);
         }
       else
         {
-          lsp_regenerate (area, lvl);
+          /*
+           * lsps are not regenerated if lsp_regenerate function is called
+           * directly. However if the lsp_regenerate call is queued for
+           * later execution it works.
+           */
+          timeout = 100;
+          sched_debug("ISIS (%s): Last generation was more than lsp_gen_interval ago."
+                      " Scheduling for execution in %ld ms.", area->area_tag, timeout);
+        }
+
+      area->lsp_regenerate_pending[lvl - 1] = 1;
+      if (lvl == IS_LEVEL_1)
+        {
+          THREAD_TIMER_MSEC_ON(master, area->t_lsp_refresh[lvl - 1],
+                               lsp_l1_refresh, area, timeout);
+        }
+      else if (lvl == IS_LEVEL_2)
+        {
+          THREAD_TIMER_MSEC_ON(master, area->t_lsp_refresh[lvl - 1],
+                               lsp_l2_refresh, area, timeout);
         }
     }
 
@@ -1813,10 +2085,16 @@ lsp_build_pseudo (struct isis_lsp *lsp, struct isis_circuit *circuit,
   struct es_neigh *es_neigh;
   struct list *adj_list;
   struct listnode *node;
+  struct isis_area *area = circuit->area;
+
+  lsp_debug("ISIS (%s): Constructing pseudo LSP %s for interface %s level %d",
+            area->area_tag, rawlspid_print(lsp->lsp_header->lsp_id),
+            circuit->interface->name, level);
 
   lsp->level = level;
   /* RFC3787  section 4 SHOULD not set overload bit in pseudo LSPs */
-  lsp->lsp_header->lsp_bits = lsp_bits_generate (level, 0);
+  lsp->lsp_header->lsp_bits = lsp_bits_generate (level, 0,
+                                                 circuit->area->attached_bit);
 
   /*
    * add self to IS neighbours 
@@ -1832,6 +2110,9 @@ lsp_build_pseudo (struct isis_lsp *lsp, struct isis_circuit *circuit,
 
       memcpy (&is_neigh->neigh_id, isis->sysid, ISIS_SYS_ID_LEN);
       listnode_add (lsp->tlv_data.is_neighs, is_neigh);
+      lsp_debug("ISIS (%s): Adding %s.%02x as old-style neighbor (self)",
+                area->area_tag, sysid_print(is_neigh->neigh_id),
+                LSP_PSEUDO_ID(is_neigh->neigh_id));
     }
   if (circuit->area->newmetric)
     {
@@ -1844,6 +2125,9 @@ lsp_build_pseudo (struct isis_lsp *lsp, struct isis_circuit *circuit,
 
       memcpy (&te_is_neigh->neigh_id, isis->sysid, ISIS_SYS_ID_LEN);
       listnode_add (lsp->tlv_data.te_is_neighs, te_is_neigh);
+      lsp_debug("ISIS (%s): Adding %s.%02x as te-style neighbor (self)",
+                area->area_tag, sysid_print(te_is_neigh->neigh_id),
+                LSP_PSEUDO_ID(te_is_neigh->neigh_id));
     }
 
   adj_list = list_new ();
@@ -1865,6 +2149,9 @@ lsp_build_pseudo (struct isis_lsp *lsp, struct isis_circuit *circuit,
 
 		  memcpy (&is_neigh->neigh_id, adj->sysid, ISIS_SYS_ID_LEN);
 		  listnode_add (lsp->tlv_data.is_neighs, is_neigh);
+		  lsp_debug("ISIS (%s): Adding %s.%02x as old-style neighbor (peer)",
+		            area->area_tag, sysid_print(is_neigh->neigh_id),
+		            LSP_PSEUDO_ID(is_neigh->neigh_id));
 		}
 	      if (circuit->area->newmetric)
 		{
@@ -1872,6 +2159,9 @@ lsp_build_pseudo (struct isis_lsp *lsp, struct isis_circuit *circuit,
 					 sizeof (struct te_is_neigh));
 		  memcpy (&te_is_neigh->neigh_id, adj->sysid, ISIS_SYS_ID_LEN);
 		  listnode_add (lsp->tlv_data.te_is_neighs, te_is_neigh);
+		  lsp_debug("ISIS (%s): Adding %s.%02x as te-style neighbor (peer)",
+		            area->area_tag, sysid_print(te_is_neigh->neigh_id),
+		            LSP_PSEUDO_ID(te_is_neigh->neigh_id));
 		}
 	    }
 	  else if (level == IS_LEVEL_1 && adj->sys_type == ISIS_SYSTYPE_ES)
@@ -1887,10 +2177,24 @@ lsp_build_pseudo (struct isis_lsp *lsp, struct isis_circuit *circuit,
 	      
 	      memcpy (&es_neigh->first_es_neigh, adj->sysid, ISIS_SYS_ID_LEN);
 	      listnode_add (lsp->tlv_data.es_neighs, es_neigh);
+	      lsp_debug("ISIS (%s): Adding %s as ES neighbor (peer)",
+	                area->area_tag, sysid_print(es_neigh->first_es_neigh));
 	    }
+	  else
+	    {
+	      lsp_debug("ISIS (%s): Ignoring neighbor %s, level does not match",
+	                area->area_tag, sysid_print(adj->sysid));
+	    }
+	}
+      else
+        {
+	  lsp_debug("ISIS (%s): Ignoring neighbor %s, level does not intersect",
+	            area->area_tag, sysid_print(adj->sysid));
 	}
     }
   list_delete (adj_list);
+
+  lsp_debug("ISIS (%s): Pseudo LSP construction is complete.", area->area_tag);
 
   /* Reset endp of stream to overwrite only TLV part of it. */
   stream_reset (lsp->pdu);
@@ -1946,7 +2250,9 @@ lsp_generate_pseudo (struct isis_circuit *circuit, int level)
 
   rem_lifetime = lsp_rem_lifetime (circuit->area, level);
   /* RFC3787  section 4 SHOULD not set overload bit in pseudo LSPs */
-  lsp = lsp_new (lsp_id, rem_lifetime, 1, circuit->area->is_type, 0, level);
+  lsp = lsp_new (circuit->area, lsp_id, rem_lifetime, 1,
+                 circuit->area->is_type | circuit->area->attached_bit,
+                 0, level);
   lsp->area = circuit->area;
 
   lsp_build_pseudo (lsp, circuit, level);
@@ -2012,7 +2318,8 @@ lsp_regenerate_pseudo (struct isis_circuit *circuit, int level)
   lsp_build_pseudo (lsp, circuit, level);
 
   /* RFC3787  section 4 SHOULD not set overload bit in pseudo LSPs */
-  lsp->lsp_header->lsp_bits = lsp_bits_generate (level, 0);
+  lsp->lsp_header->lsp_bits = lsp_bits_generate (level, 0,
+                                                 circuit->area->attached_bit);
   rem_lifetime = lsp_rem_lifetime (circuit->area, level);
   lsp->lsp_header->rem_lifetime = htons (rem_lifetime);
   lsp_inc_seqnum (lsp, 0);
@@ -2100,12 +2407,17 @@ lsp_regenerate_schedule_pseudo (struct isis_circuit *circuit, int level)
   struct isis_lsp *lsp;
   u_char lsp_id[ISIS_SYS_ID_LEN + 2];
   time_t now, diff;
+  long timeout;
   int lvl;
+  struct isis_area *area = circuit->area;
 
   if (circuit == NULL ||
       circuit->circ_type != CIRCUIT_T_BROADCAST ||
       circuit->state != C_STATE_UP)
     return ISIS_OK;
+
+  sched_debug("ISIS (%s): Scheduling regeneration of %s pseudo LSP for interface %s",
+              area->area_tag, circuit_t2string(level), circuit->interface->name);
 
   memcpy (lsp_id, isis->sysid, ISIS_SYS_ID_LEN);
   LSP_PSEUDO_ID (lsp_id) = circuit->circuit_id;
@@ -2114,39 +2426,74 @@ lsp_regenerate_schedule_pseudo (struct isis_circuit *circuit, int level)
 
   for (lvl = IS_LEVEL_1; lvl <= IS_LEVEL_2; lvl++)
     {
-      if (!((level & lvl) && (circuit->is_type & lvl)))
-        continue;
+      sched_debug("ISIS (%s): Checking whether L%d pseudo LSP needs to be scheduled",
+                  area->area_tag, lvl);
 
-      if (circuit->u.bc.is_dr[lvl - 1] == 0 ||
-          circuit->lsp_regenerate_pending[lvl - 1])
-        continue;
+      if (!((level & lvl) && (circuit->is_type & lvl)))
+        {
+          sched_debug("ISIS (%s): Level is not active on circuit",
+                      area->area_tag);
+          continue;
+        }
+
+      if (circuit->u.bc.is_dr[lvl - 1] == 0)
+        {
+          sched_debug("ISIS (%s): This IS is not DR, nothing to do.",
+                      area->area_tag);
+          continue;
+        }
+
+      if (circuit->lsp_regenerate_pending[lvl - 1])
+        {
+          struct timeval remain =
+                  thread_timer_remain(circuit->u.bc.t_refresh_pseudo_lsp[lvl - 1]);
+          sched_debug("ISIS (%s): Regenerate is already pending, nothing todo."
+                      " (Due in %lld.%03lld seconds)", area->area_tag,
+                      (long long)remain.tv_sec, (long long)remain.tv_usec/1000);
+          continue;
+        }
 
       lsp = lsp_search (lsp_id, circuit->area->lspdb[lvl - 1]);
       if (!lsp)
-        continue;
+        {
+          sched_debug("ISIS (%s): Pseudonode LSP does not exist yet, nothing to regenerate.",
+                      area->area_tag);
+          continue;
+        }
 
       /*
        * Throttle avoidance
        */
+      sched_debug("ISIS (%s): Will schedule PSN regen timer. Last run was: %lld, Now is: %lld",
+                  area->area_tag, (long long)lsp->last_generated, (long long) now);
       THREAD_TIMER_OFF (circuit->u.bc.t_refresh_pseudo_lsp[lvl - 1]);
       diff = now - lsp->last_generated;
       if (diff < circuit->area->lsp_gen_interval[lvl - 1])
         {
-          circuit->lsp_regenerate_pending[lvl - 1] = 1;
-          if (lvl == IS_LEVEL_1)
-            THREAD_TIMER_ON (master,
-                             circuit->u.bc.t_refresh_pseudo_lsp[lvl - 1],
-                             lsp_l1_refresh_pseudo, circuit,
-                             circuit->area->lsp_gen_interval[lvl - 1] - diff);
-          else if (lvl == IS_LEVEL_2)
-            THREAD_TIMER_ON (master,
-                             circuit->u.bc.t_refresh_pseudo_lsp[lvl - 1],
-                             lsp_l2_refresh_pseudo, circuit,
-                             circuit->area->lsp_gen_interval[lvl - 1] - diff);
+          timeout = 1000 * (circuit->area->lsp_gen_interval[lvl - 1] - diff);
+          sched_debug("ISIS (%s): Sechduling in %ld ms to match configured lsp_gen_interval",
+                      area->area_tag, timeout);
         }
       else
         {
-          lsp_regenerate_pseudo (circuit, lvl);
+          timeout = 100;
+          sched_debug("ISIS (%s): Last generation was more than lsp_gen_interval ago."
+                      " Scheduling for execution in %ld ms.", area->area_tag, timeout);
+        }
+
+      circuit->lsp_regenerate_pending[lvl - 1] = 1;
+
+      if (lvl == IS_LEVEL_1)
+        {
+          THREAD_TIMER_MSEC_ON(master,
+                               circuit->u.bc.t_refresh_pseudo_lsp[lvl - 1],
+                               lsp_l1_refresh_pseudo, circuit, timeout);
+        }
+      else if (lvl == IS_LEVEL_2)
+        {
+          THREAD_TIMER_MSEC_ON(master,
+                               circuit->u.bc.t_refresh_pseudo_lsp[lvl - 1],
+                               lsp_l2_refresh_pseudo, circuit, timeout);
         }
     }
 
@@ -2321,7 +2668,8 @@ lsp_purge_pseudo (u_char * id, struct isis_circuit *circuit, int level)
  * -> Do as in 7.3.16.4
  */
 void
-lsp_purge_non_exist (struct isis_link_state_hdr *lsp_hdr,
+lsp_purge_non_exist (int level,
+		     struct isis_link_state_hdr *lsp_hdr,
 		     struct isis_area *area)
 {
   struct isis_lsp *lsp;
@@ -2331,10 +2679,8 @@ lsp_purge_non_exist (struct isis_link_state_hdr *lsp_hdr,
    */
   lsp = XCALLOC (MTYPE_ISIS_LSP, sizeof (struct isis_lsp));
   lsp->area = area;
-  lsp->level = ((lsp_hdr->lsp_bits & LSPBIT_IST) == IS_LEVEL_1) ?
-    IS_LEVEL_1 : IS_LEVEL_2;
-  /* FIXME: Should be minimal mtu? */
-  lsp->pdu = stream_new (1500);
+  lsp->level = level;
+  lsp->pdu = stream_new(LLC_LEN + area->lsp_mtu);
   lsp->isis_header = (struct isis_fixed_hdr *) STREAM_DATA (lsp->pdu);
   fill_fixed_hdr (lsp->isis_header, (lsp->level == IS_LEVEL_1) ? L1_LINK_STATE
 		  : L2_LINK_STATE);
@@ -2396,7 +2742,7 @@ static int
 top_lsp_refresh (struct thread *thread)
 {
   struct isis_lsp *lsp;
-  u_int16_t rem_lifetime, refresh_time;
+  u_int16_t rem_lifetime;
 
   lsp = THREAD_ARG (thread);
   assert (lsp);
@@ -2416,11 +2762,12 @@ top_lsp_refresh (struct thread *thread)
 		     IS_LEVEL_1);
 
   lsp->lsp_header->lsp_bits = lsp_bits_generate (lsp->level,
-                                                 lsp->area->overload_bit);
+                                                 lsp->area->overload_bit,
+                                                 lsp->area->attached_bit);
   rem_lifetime = lsp_rem_lifetime (lsp->area, IS_LEVEL_1);
   lsp->lsp_header->rem_lifetime = htons (rem_lifetime);
 
-  refresh_time = lsp_refresh_time (lsp, rem_lifetime);
+  /* refresh_time = lsp_refresh_time (lsp, rem_lifetime); */
   THREAD_TIMER_ON (master, lsp->t_lsp_top_ref, top_lsp_refresh, lsp,
 		   lsp->area->lsp_refresh[0]);
 
@@ -2455,11 +2802,11 @@ generate_topology_lsps (struct isis_area *area)
       lspid[ISIS_SYS_ID_LEN - 2] = ((i >> 8) & 0xFF);
 
       rem_lifetime = lsp_rem_lifetime (area, IS_LEVEL_1);
-      lsp = lsp_new (lspid, rem_lifetime, 1, IS_LEVEL_1 | area->overload_bit,
+      lsp = lsp_new (area, lspid, rem_lifetime, 1,
+                     IS_LEVEL_1 | area->overload_bit | area->attached_bit,
                      0, 1);
       if (!lsp)
 	return;
-      lsp->area = area;
       lsp->from_topology = 1;
 
       /* Creating LSP data based on topology info. */

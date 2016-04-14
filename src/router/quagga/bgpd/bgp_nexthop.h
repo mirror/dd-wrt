@@ -26,6 +26,15 @@ Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 #define BGP_SCAN_INTERVAL_DEFAULT   60
 #define BGP_IMPORT_INTERVAL_DEFAULT 15
 
+#define NEXTHOP_FAMILY(nexthop_len) ( \
+  ((nexthop_len) ==  4 ||             \
+   (nexthop_len) == 12 ? AF_INET :    \
+  ((nexthop_len) == 16 ||             \
+   (nexthop_len) == 24 ||             \
+   (nexthop_len) == 48 ? AF_INET6 :   \
+  AF_UNSPEC))                         \
+)
+
 /* BGP nexthop cache value structure. */
 struct bgp_nexthop_cache
 {
@@ -57,5 +66,7 @@ extern int bgp_config_write_scan_time (struct vty *);
 extern int bgp_nexthop_onlink (afi_t, struct attr *);
 extern int bgp_nexthop_self (struct attr *);
 extern void bgp_address_init (void);
+extern void bgp_address_destroy (void);
+extern void bgp_scan_destroy (void);
 
 #endif /* _QUAGGA_BGP_NEXTHOP_H */

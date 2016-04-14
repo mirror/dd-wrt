@@ -1168,7 +1168,8 @@ rip_response_process (struct rip_packet *packet, int size,
   struct prefix_ipv4 ifaddr;
   struct prefix_ipv4 ifaddrclass;
   int subnetted;
-      
+
+  memset(&ifaddr, 0, sizeof(ifaddr));
   /* We don't know yet. */
   subnetted = -1;
 
@@ -1576,7 +1577,7 @@ rip_send_packet (u_char * buf, int size, struct sockaddr_in *to,
 /* Add redistributed route to RIP table. */
 void
 rip_redistribute_add (int type, int sub_type, struct prefix_ipv4 *p, 
-		      unsigned int ifindex, struct in_addr *nexthop,
+		      ifindex_t ifindex, struct in_addr *nexthop,
                       unsigned int metric, unsigned char distance)
 {
   int ret;
@@ -1650,7 +1651,7 @@ rip_redistribute_add (int type, int sub_type, struct prefix_ipv4 *p,
 /* Delete redistributed route from RIP table. */
 void
 rip_redistribute_delete (int type, int sub_type, struct prefix_ipv4 *p, 
-			   unsigned int ifindex)
+			 ifindex_t ifindex)
 {
   int ret;
   struct route_node *rp;
@@ -1792,7 +1793,7 @@ setsockopt_pktinfo (int sock)
 /* Read RIP packet by recvmsg function. */
 int
 rip_recvmsg (int sock, u_char *buf, int size, struct sockaddr_in *from,
-	     int *ifindex)
+	     ifindex_t *ifindex)
 {
   int ret;
   struct msghdr msg;
@@ -1833,7 +1834,7 @@ rip_read_new (struct thread *t)
   int sock;
   char buf[RIP_PACKET_MAXSIZ];
   struct sockaddr_in from;
-  unsigned int ifindex;
+  ifindex_t ifindex;
   
   /* Fetch socket then register myself. */
   sock = THREAD_FD (t);
@@ -2573,7 +2574,7 @@ rip_update_process (int route_type)
 
 	  if (IS_RIP_DEBUG_EVENT) 
 	    zlog_debug("SEND UPDATE to %s ifindex %d",
-		       (ifp->name ? ifp->name : "_unknown_"), ifp->ifindex);
+		       ifp->name, ifp->ifindex);
 
           /* send update on each connected network */
 	  for (ALL_LIST_ELEMENTS (ifp->connected, ifnode, ifnnode, connected))
@@ -2859,7 +2860,7 @@ rip_update_jitter (unsigned long time)
   if (jitter_input < JITTER_BOUND)
     jitter_input = JITTER_BOUND;
   
-  jitter = (((rand () % ((jitter_input * 2) + 1)) - jitter_input));  
+  jitter = (((random () % ((jitter_input * 2) + 1)) - jitter_input));  
 
   return jitter/JITTER_BOUND;
 }
@@ -4132,7 +4133,7 @@ void
 rip_init (void)
 {
   /* Randomize for triggered update random(). */
-  srand (time (NULL));
+  srandom (time (NULL));
 
   /* Install top nodes. */
   install_node (&rip_node, config_write_rip);

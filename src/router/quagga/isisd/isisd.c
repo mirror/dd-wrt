@@ -158,12 +158,10 @@ isis_area_create (const char *area_tag)
   area->oldmetric = 0;
   area->newmetric = 1;
   area->lsp_frag_threshold = 90;
+  area->lsp_mtu = DEFAULT_LSP_MTU;
 #ifdef TOPOLOGY_GENERATE
   memcpy (area->topology_baseis, DEFAULT_TOPOLOGY_BASEIS, ISIS_SYS_ID_LEN);
 #endif /* TOPOLOGY_GENERATE */
-
-  /* FIXME: Think of a better way... */
-  area->min_bcast_mtu = 1497;
 
   area->area_tag = strdup (area_tag);
   listnode_add (isis->area_list, area);
@@ -281,6 +279,8 @@ isis_area_destroy (struct vty *vty, const char *area_tag)
       area->route_table6[1] = NULL;
     }
 #endif /* HAVE_IPV6 */
+
+  isis_redist_area_finish(area);
 
   for (ALL_LIST_ELEMENTS (area->area_addrs, node, nnode, addr))
     {
@@ -774,6 +774,10 @@ print_debug (struct vty *vty, int flags, int onoff)
     vty_out (vty, "IS-IS Event debugging is %s%s", onoffs, VTY_NEWLINE);
   if (flags & DEBUG_PACKET_DUMP)
     vty_out (vty, "IS-IS Packet dump debugging is %s%s", onoffs, VTY_NEWLINE);
+  if (flags & DEBUG_LSP_GEN)
+    vty_out (vty, "IS-IS LSP generation debugging is %s%s", onoffs, VTY_NEWLINE);
+  if (flags & DEBUG_LSP_SCHED)
+    vty_out (vty, "IS-IS LSP scheduling debugging is %s%s", onoffs, VTY_NEWLINE);
 }
 
 DEFUN (show_debugging,
@@ -858,6 +862,16 @@ config_write_debug (struct vty *vty)
   if (flags & DEBUG_PACKET_DUMP)
     {
       vty_out (vty, "debug isis packet-dump%s", VTY_NEWLINE);
+      write++;
+    }
+  if (flags & DEBUG_LSP_GEN)
+    {
+      vty_out (vty, "debug isis lsp-gen%s", VTY_NEWLINE);
+      write++;
+    }
+  if (flags & DEBUG_LSP_SCHED)
+    {
+      vty_out (vty, "debug isis lsp-sched%s", VTY_NEWLINE);
       write++;
     }
 
@@ -1176,6 +1190,58 @@ DEFUN (no_debug_isis_packet_dump,
   return CMD_SUCCESS;
 }
 
+DEFUN (debug_isis_lsp_gen,
+       debug_isis_lsp_gen_cmd,
+       "debug isis lsp-gen",
+       DEBUG_STR
+       "IS-IS information\n"
+       "IS-IS generation of own LSPs\n")
+{
+  isis->debugs |= DEBUG_LSP_GEN;
+  print_debug (vty, DEBUG_LSP_GEN, 1);
+
+  return CMD_SUCCESS;
+}
+
+DEFUN (no_debug_isis_lsp_gen,
+       no_debug_isis_lsp_gen_cmd,
+       "no debug isis lsp-gen",
+       UNDEBUG_STR
+       "IS-IS information\n"
+       "IS-IS generation of own LSPs\n")
+{
+  isis->debugs &= ~DEBUG_LSP_GEN;
+  print_debug (vty, DEBUG_LSP_GEN, 0);
+
+  return CMD_SUCCESS;
+}
+
+DEFUN (debug_isis_lsp_sched,
+       debug_isis_lsp_sched_cmd,
+       "debug isis lsp-sched",
+       DEBUG_STR
+       "IS-IS information\n"
+       "IS-IS scheduling of LSP generation\n")
+{
+  isis->debugs |= DEBUG_LSP_SCHED;
+  print_debug (vty, DEBUG_LSP_SCHED, 1);
+
+  return CMD_SUCCESS;
+}
+
+DEFUN (no_debug_isis_lsp_sched,
+       no_debug_isis_lsp_sched_cmd,
+       "no debug isis lsp-gen",
+       UNDEBUG_STR
+       "IS-IS information\n"
+       "IS-IS scheduling of LSP generation\n")
+{
+  isis->debugs &= ~DEBUG_LSP_SCHED;
+  print_debug (vty, DEBUG_LSP_SCHED, 0);
+
+  return CMD_SUCCESS;
+}
+
 DEFUN (show_hostname,
        show_hostname_cmd,
        "show isis hostname",
@@ -1297,8 +1363,8 @@ DEFUN (show_isis_summary,
       vty_out_timestr(vty, spftree->last_run_timestamp);
       vty_out (vty, "%s", VTY_NEWLINE);
 
-      vty_out (vty, "      last run duration : %u msec%s",
-               spftree->last_run_duration, VTY_NEWLINE);
+      vty_out (vty, "      last run duration : %llu msec%s",
+               (unsigned long long)spftree->last_run_duration, VTY_NEWLINE);
 
       vty_out (vty, "      run count         : %d%s",
           spftree->runcount, VTY_NEWLINE);
@@ -1545,6 +1611,76 @@ DEFUN (no_net,
   return area_clear_net_title (vty, argv[0]);
 }
 
+static
+int area_set_lsp_mtu(struct vty *vty, struct isis_area *area, unsigned int lsp_mtu)
+{
+  struct isis_circuit *circuit;
+  struct listnode *node;
+
+  for (ALL_LIST_ELEMENTS_RO(area->circuit_list, node, circuit))
+    {
+      if(lsp_mtu > isis_circuit_pdu_size(circuit))
+        {
+          vty_out(vty, "ISIS area contains circuit %s, which has a maximum PDU size of %zu.%s",
+                  circuit->interface->name, isis_circuit_pdu_size(circuit),
+                  VTY_NEWLINE);
+          return CMD_ERR_AMBIGUOUS;
+        }
+    }
+
+  area->lsp_mtu = lsp_mtu;
+  lsp_regenerate_schedule(area, IS_LEVEL_1_AND_2, 1);
+
+  return CMD_SUCCESS;
+}
+
+DEFUN (area_lsp_mtu,
+       area_lsp_mtu_cmd,
+       "lsp-mtu <128-4352>",
+       "Configure the maximum size of generated LSPs\n"
+       "Maximum size of generated LSPs\n")
+{
+  struct isis_area *area;
+
+  area = vty->index;
+  if (!area)
+    {
+      vty_out (vty, "Can't find ISIS instance %s", VTY_NEWLINE);
+      return CMD_ERR_NO_MATCH;
+    }
+
+  unsigned int lsp_mtu;
+
+  VTY_GET_INTEGER_RANGE("lsp-mtu", lsp_mtu, argv[0], 128, 4352);
+
+  return area_set_lsp_mtu(vty, area, lsp_mtu);
+}
+
+DEFUN(no_area_lsp_mtu,
+      no_area_lsp_mtu_cmd,
+      "no lsp-mtu",
+      NO_STR
+      "Configure the maximum size of generated LSPs\n")
+{
+  struct isis_area *area;
+
+  area = vty->index;
+  if (!area)
+    {
+      vty_out (vty, "Can't find ISIS instance %s", VTY_NEWLINE);
+      return CMD_ERR_NO_MATCH;
+    }
+
+  return area_set_lsp_mtu(vty, area, DEFAULT_LSP_MTU);
+}
+
+ALIAS(no_area_lsp_mtu,
+      no_area_lsp_mtu_arg_cmd,
+      "no lsp-mtu <128-4352>",
+      NO_STR
+      "Configure the maximum size of generated LSPs\n"
+      "Maximum size of generated LSPs\n");
+
 DEFUN (area_passwd_md5,
        area_passwd_md5_cmd,
        "area-password md5 WORD",
@@ -1601,7 +1737,7 @@ ALIAS (area_passwd_md5,
        "Authentication\n"
        "SNP PDUs\n"
        "Send but do not check PDUs on receiving\n"
-       "Send and check PDUs on receiving\n");
+       "Send and check PDUs on receiving\n")
 
 DEFUN (area_passwd_clear,
        area_passwd_clear_cmd,
@@ -1659,7 +1795,7 @@ ALIAS (area_passwd_clear,
        "Authentication\n"
        "SNP PDUs\n"
        "Send but do not check PDUs on receiving\n"
-       "Send and check PDUs on receiving\n");
+       "Send and check PDUs on receiving\n")
 
 DEFUN (no_area_passwd,
        no_area_passwd_cmd,
@@ -1739,7 +1875,7 @@ ALIAS (domain_passwd_md5,
        "Authentication\n"
        "SNP PDUs\n"
        "Send but do not check PDUs on receiving\n"
-       "Send and check PDUs on receiving\n");
+       "Send and check PDUs on receiving\n")
 
 DEFUN (domain_passwd_clear,
        domain_passwd_clear_cmd,
@@ -1797,7 +1933,7 @@ ALIAS (domain_passwd_clear,
        "Authentication\n"
        "SNP PDUs\n"
        "Send but do not check PDUs on receiving\n"
-       "Send and check PDUs on receiving\n");
+       "Send and check PDUs on receiving\n")
 
 DEFUN (no_domain_passwd,
        no_domain_passwd_cmd,
@@ -2165,6 +2301,39 @@ DEFUN (no_set_overload_bit,
   assert (area);
 
   area->overload_bit = 0;
+  lsp_regenerate_schedule (area, IS_LEVEL_1 | IS_LEVEL_2, 1);
+
+  return CMD_SUCCESS;
+}
+
+DEFUN (set_attached_bit,
+       set_attached_bit_cmd,
+       "set-attached-bit",
+       "Set attached bit to identify as L1/L2 router for inter-area traffic\n"
+       "Set attached bit\n")
+{
+  struct isis_area *area;
+
+  area = vty->index;
+  assert (area);
+
+  area->attached_bit = LSPBIT_ATT;
+  lsp_regenerate_schedule (area, IS_LEVEL_1 | IS_LEVEL_2, 1);
+
+  return CMD_SUCCESS;
+}
+
+DEFUN (no_set_attached_bit,
+       no_set_attached_bit_cmd,
+       "no set-attached-bit",
+       "Reset attached bit\n")
+{
+  struct isis_area *area;
+
+  area = vty->index;
+  assert (area);
+
+  area->attached_bit = 0;
   lsp_regenerate_schedule (area, IS_LEVEL_1 | IS_LEVEL_2, 1);
 
   return CMD_SUCCESS;
@@ -2882,6 +3051,8 @@ isis_config_write (struct vty *vty)
 	    vty_out (vty, " is-type level-2-only%s", VTY_NEWLINE);
 	    write++;
 	  }
+	write += isis_redist_config_write(vty, area, AF_INET);
+	write += isis_redist_config_write(vty, area, AF_INET6);
 	/* ISIS - Lsp generation interval */
 	if (area->lsp_gen_interval[0] == area->lsp_gen_interval[1])
 	  {
@@ -2957,6 +3128,12 @@ isis_config_write (struct vty *vty)
 		write++;
 	      }
 	  }
+	if (area->lsp_mtu != DEFAULT_LSP_MTU)
+	  {
+	    vty_out(vty, " lsp-mtu %u%s", area->lsp_mtu, VTY_NEWLINE);
+	    write++;
+	  }
+
 	/* Minimum SPF interval. */
 	if (area->min_spf_interval[0] == area->min_spf_interval[1])
 	  {
@@ -3153,6 +3330,10 @@ isis_init ()
   install_element (ENABLE_NODE, &no_debug_isis_events_cmd);
   install_element (ENABLE_NODE, &debug_isis_packet_dump_cmd);
   install_element (ENABLE_NODE, &no_debug_isis_packet_dump_cmd);
+  install_element (ENABLE_NODE, &debug_isis_lsp_gen_cmd);
+  install_element (ENABLE_NODE, &no_debug_isis_lsp_gen_cmd);
+  install_element (ENABLE_NODE, &debug_isis_lsp_sched_cmd);
+  install_element (ENABLE_NODE, &no_debug_isis_lsp_sched_cmd);
 
   install_element (CONFIG_NODE, &debug_isis_adj_cmd);
   install_element (CONFIG_NODE, &no_debug_isis_adj_cmd);
@@ -3178,6 +3359,10 @@ isis_init ()
   install_element (CONFIG_NODE, &no_debug_isis_events_cmd);
   install_element (CONFIG_NODE, &debug_isis_packet_dump_cmd);
   install_element (CONFIG_NODE, &no_debug_isis_packet_dump_cmd);
+  install_element (CONFIG_NODE, &debug_isis_lsp_gen_cmd);
+  install_element (CONFIG_NODE, &no_debug_isis_lsp_gen_cmd);
+  install_element (CONFIG_NODE, &debug_isis_lsp_sched_cmd);
+  install_element (CONFIG_NODE, &no_debug_isis_lsp_sched_cmd);
 
   install_element (CONFIG_NODE, &router_isis_cmd);
   install_element (CONFIG_NODE, &no_router_isis_cmd);
@@ -3189,6 +3374,10 @@ isis_init ()
 
   install_element (ISIS_NODE, &is_type_cmd);
   install_element (ISIS_NODE, &no_is_type_cmd);
+
+  install_element (ISIS_NODE, &area_lsp_mtu_cmd);
+  install_element (ISIS_NODE, &no_area_lsp_mtu_cmd);
+  install_element (ISIS_NODE, &no_area_lsp_mtu_arg_cmd);
 
   install_element (ISIS_NODE, &area_passwd_md5_cmd);
   install_element (ISIS_NODE, &area_passwd_md5_snpauth_cmd);
@@ -3244,6 +3433,9 @@ isis_init ()
 
   install_element (ISIS_NODE, &set_overload_bit_cmd);
   install_element (ISIS_NODE, &no_set_overload_bit_cmd);
+
+  install_element (ISIS_NODE, &set_attached_bit_cmd);
+  install_element (ISIS_NODE, &no_set_attached_bit_cmd);
 
   install_element (ISIS_NODE, &dynamic_hostname_cmd);
   install_element (ISIS_NODE, &no_dynamic_hostname_cmd);

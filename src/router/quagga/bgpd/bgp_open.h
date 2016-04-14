@@ -82,6 +82,7 @@ struct capability_gr
 #define CAPABILITY_CODE_DYNAMIC_LEN     0
 #define CAPABILITY_CODE_RESTART_LEN     2 /* Receiving only case */
 #define CAPABILITY_CODE_AS4_LEN         4
+#define CAPABILITY_CODE_ORF_LEN         5
 
 /* Cooperative Route Filtering Capability.  */
 

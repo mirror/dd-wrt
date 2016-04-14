@@ -24,6 +24,7 @@ Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 #include "log.h"
 #include "memory.h"
 #include "buffer.h"
+#include "filter.h"
 
 #include "bgpd/bgpd.h"
 #include "bgpd/bgp_aspath.h"
@@ -65,18 +66,12 @@ struct as_filter
   char *reg_str;
 };
 
-enum as_list_type
-{
-  ACCESS_TYPE_STRING,
-  ACCESS_TYPE_NUMBER
-};
-
 /* AS path filter list. */
 struct as_list
 {
   char *name;
 
-  enum as_list_type type;
+  enum access_type type;
 
   struct as_list *next;
   struct as_list *prev;

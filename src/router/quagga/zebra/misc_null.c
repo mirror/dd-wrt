@@ -27,15 +27,26 @@
 #include "zebra/interface.h"
 #include "zebra/zebra_fpm.h"
 
-void ifstat_update_proc (void) { return; }
 #ifdef HAVE_SYS_WEAK_ALIAS_PRAGMA
-#pragma weak rtadv_config_write = ifstat_update_proc
-#pragma weak irdp_config_write = ifstat_update_proc
-#pragma weak ifstat_update_sysctl = ifstat_update_proc
+void _quagga_noop (void);
+void _quagga_noop (void) { return; }
+#pragma weak rtadv_config_write = _quagga_noop
+#pragma weak irdp_config_write = _quagga_noop
+#ifdef HAVE_NET_RT_IFLIST
+#pragma weak ifstat_update_sysctl = _quagga_noop
+#endif
+#ifdef HAVE_PROC_NET_DEV
+#pragma weak ifstat_update_proc = _quagga_noop
+#endif
 #else
 void rtadv_config_write (struct vty *vty, struct interface *ifp) { return; }
 void irdp_config_write (struct vty *vty, struct interface *ifp) { return; }
+#ifdef HAVE_PROC_NET_DEV
+void ifstat_update_proc (void) { return; }
+#endif
+#ifdef HAVE_NET_RT_IFLIST
 void ifstat_update_sysctl (void) { return; }
+#endif
 #endif
 
 void

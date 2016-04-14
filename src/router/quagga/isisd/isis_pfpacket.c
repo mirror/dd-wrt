@@ -26,6 +26,7 @@
 #include <netpacket/packet.h>
 
 #include "log.h"
+#include "network.h"
 #include "stream.h"
 #include "if.h"
 
@@ -54,8 +55,8 @@ u_char ALL_L2_ISS[6] = { 0x01, 0x80, 0xC2, 0x00, 0x00, 0x15 };
 u_char ALL_ISS[6] = { 0x09, 0x00, 0x2B, 0x00, 0x00, 0x05 };
 u_char ALL_ESS[6] = { 0x09, 0x00, 0x2B, 0x00, 0x00, 0x04 };
 
-static char discard_buff[8192];
-static char sock_buff[8192];
+static uint8_t discard_buff[8192];
+static uint8_t sock_buff[8192];
 
 /*
  * if level is 0 we are joining p2p multicast
@@ -230,12 +231,24 @@ isis_recv_pdu_bcast (struct isis_circuit *circuit, u_char * ssnpa)
 			LLC_LEN, MSG_PEEK,
 			(struct sockaddr *) &s_addr, (socklen_t *) &addr_len);
 
-  if (bytesread < 0)
+  if ((bytesread < 0) || (s_addr.sll_ifindex != (int)circuit->interface->ifindex))
     {
-      zlog_warn ("isis_recv_packet_bcast(): ifname %s, fd %d, bytesread %d, "
-                 "recvfrom(): %s",
-                 circuit->interface->name, circuit->fd, bytesread,
-                 safe_strerror (errno));
+      if (bytesread < 0)
+        {
+          zlog_warn ("isis_recv_packet_bcast(): ifname %s, fd %d, "
+                     "bytesread %d, recvfrom(): %s",
+                     circuit->interface->name, circuit->fd, bytesread,
+                     safe_strerror (errno));
+        }
+      if (s_addr.sll_ifindex != (int)circuit->interface->ifindex)
+        {
+          zlog_warn("packet is received on multiple interfaces: "
+                    "socket interface %d, circuit interface %d, "
+                    "packet type %u",
+                    s_addr.sll_ifindex, circuit->interface->ifindex,
+                    s_addr.sll_pkttype);
+        }
+
       /* get rid of the packet */
       bytesread = recvfrom (circuit->fd, discard_buff, sizeof (discard_buff),
                             MSG_DONTWAIT, (struct sockaddr *) &s_addr,
@@ -323,7 +336,6 @@ isis_send_pdu_bcast (struct isis_circuit *circuit, int level)
   /* we need to do the LLC in here because of P2P circuits, which will
    * not need it
    */
-  int written = 1;
   struct sockaddr_ll sa;
 
   stream_set_getp (circuit->snd_stream, 0);
@@ -356,16 +368,22 @@ isis_send_pdu_bcast (struct isis_circuit *circuit, int level)
   iov[1].iov_base = circuit->snd_stream->data;
   iov[1].iov_len = stream_get_endp (circuit->snd_stream);
 
-  written = sendmsg (circuit->fd, &msg, 0);
-
+  if (sendmsg(circuit->fd, &msg, 0) < 0)
+    {
+      zlog_warn("IS-IS pfpacket: could not transmit packet on %s: %s",
+                circuit->interface->name, safe_strerror(errno));
+      if (ERRNO_IO_RETRY(errno))
+        return ISIS_WARNING;
+      return ISIS_ERROR;
+    }
   return ISIS_OK;
 }
 
 int
 isis_send_pdu_p2p (struct isis_circuit *circuit, int level)
 {
-  int written = 1;
   struct sockaddr_ll sa;
+  ssize_t rv;
 
   stream_set_getp (circuit->snd_stream, 0);
   memset (&sa, 0, sizeof (struct sockaddr_ll));
@@ -381,11 +399,18 @@ isis_send_pdu_p2p (struct isis_circuit *circuit, int level)
 
   /* lets try correcting the protocol */
   sa.sll_protocol = htons (0x00FE);
-  written = sendto (circuit->fd, circuit->snd_stream->data,
-		    stream_get_endp (circuit->snd_stream), 0, 
-		    (struct sockaddr *) &sa,
-		    sizeof (struct sockaddr_ll));
-
+  rv = sendto(circuit->fd, circuit->snd_stream->data,
+	      stream_get_endp (circuit->snd_stream), 0,
+	      (struct sockaddr *) &sa,
+	      sizeof (struct sockaddr_ll));
+  if (rv < 0)
+    {
+      zlog_warn("IS-IS pfpacket: could not transmit packet on %s: %s",
+                circuit->interface->name, safe_strerror(errno));
+      if (ERRNO_IO_RETRY(errno))
+        return ISIS_WARNING;
+      return ISIS_ERROR;
+    }
   return ISIS_OK;
 }
 

@@ -138,9 +138,7 @@ ospf_process_self_originated_lsa (struct ospf *ospf,
       ospf_router_lsa_update_area (area);
       return;
     case OSPF_NETWORK_LSA:
-#ifdef HAVE_OPAQUE_LSA
     case OSPF_OPAQUE_LINK_LSA:
-#endif /* HAVE_OPAQUE_LSA */
       /* We must find the interface the LSA could belong to.
 	 If the interface is no more a broadcast type or we are no more
 	 the DR, we flush the LSA otherwise -- create the new instance and
@@ -160,13 +158,11 @@ ospf_process_self_originated_lsa (struct ospf *ospf,
                 return;
               }
             
-#ifdef HAVE_OPAQUE_LSA
             if (new->data->type == OSPF_OPAQUE_LINK_LSA)
               {
                 ospf_opaque_lsa_refresh (new);
                 return;
               }
-#endif /* HAVE_OPAQUE_LSA */
 
             if (oi->network_lsa_self)
 	      oi->network_lsa_self->data->ls_seqnum = new->data->ls_seqnum;
@@ -193,14 +189,12 @@ ospf_process_self_originated_lsa (struct ospf *ospf,
       else
         ospf_lsa_flush_as (ospf, new);
       break;
-#ifdef HAVE_OPAQUE_LSA
     case OSPF_OPAQUE_AREA_LSA:
       ospf_opaque_lsa_refresh (new);
       break;
     case OSPF_OPAQUE_AS_LSA:
       ospf_opaque_lsa_refresh (new); /* Reconsideration may needed. *//* XXX */
       break;
-#endif /* HAVE_OPAQUE_LSA */
     default:
       break;
     }
@@ -244,7 +238,7 @@ ospf_flood (struct ospf *ospf, struct ospf_neighbor *nbr,
     zlog_debug ("LSA[Flooding]: start, NBR %s (%s), cur(%p), New-LSA[%s]",
                inet_ntoa (nbr->router_id),
                LOOKUP (ospf_nsm_state_msg, nbr->state),
-               current,
+               (void *)current,
                dump_lsa_key (new));
 
   lsa_ack_flag = 0;
@@ -266,7 +260,7 @@ ospf_flood (struct ospf *ospf, struct ospf_neighbor *nbr,
           ; /* Accept this LSA for quick LSDB resynchronization. */
         }
       else if (tv_cmp (tv_sub (recent_relative_time (), current->tv_recv),
-	               int2tv (OSPF_MIN_LS_ARRIVAL)) < 0)
+	               msec2tv (ospf->min_ls_arrival)) < 0)
         {
           if (IS_DEBUG_OSPF_EVENT)
 	    zlog_debug ("LSA[Flooding]: LSA is received recently.");
@@ -281,25 +275,17 @@ ospf_flood (struct ospf *ospf, struct ospf_neighbor *nbr,
      interface. */
   lsa_ack_flag = ospf_flood_through (ospf, nbr, new);
 
-#ifdef HAVE_OPAQUE_LSA
   /* Remove the current database copy from all neighbors' Link state
      retransmission lists.  AS_EXTERNAL and AS_EXTERNAL_OPAQUE does
                                         ^^^^^^^^^^^^^^^^^^^^^^^
      not have area ID.
      All other (even NSSA's) do have area ID.  */
-#else /* HAVE_OPAQUE_LSA */
-  /* Remove the current database copy from all neighbors' Link state
-     retransmission lists.  Only AS_EXTERNAL does not have area ID.
-     All other (even NSSA's) do have area ID.  */
-#endif /* HAVE_OPAQUE_LSA */
   if (current)
     {
       switch (current->data->type)
         {
         case OSPF_AS_EXTERNAL_LSA:
-#ifdef HAVE_OPAQUE_LSA
         case OSPF_OPAQUE_AS_LSA:
-#endif /* HAVE_OPAQUE_LSA */
           ospf_ls_retransmit_delete_nbr_as (ospf, current);
           break;
         default:
@@ -421,7 +407,6 @@ ospf_flood_through_interface (struct ospf_interface *oi,
 	    }
 	}
 
-#ifdef HAVE_OPAQUE_LSA
       if (IS_OPAQUE_LSA (lsa->data->type))
         {
           if (! CHECK_FLAG (onbr->options, OSPF_OPTION_O))
@@ -430,18 +415,7 @@ ospf_flood_through_interface (struct ospf_interface *oi,
                 zlog_debug ("Skip this neighbor: Not Opaque-capable.");
               continue;
             }
-
-          if (IS_OPAQUE_LSA_ORIGINATION_BLOCKED (oi->ospf->opaque)
-          &&  IS_LSA_SELF (lsa)
-          &&  onbr->state == NSM_Full)
-            {
-              /* Small attempt to reduce unnecessary retransmission. */
-              if (IS_DEBUG_OSPF (lsa, LSA_FLOODING))
-                zlog_debug ("Skip this neighbor: Initial flushing done.");
-              continue;
-            }
         }
-#endif /* HAVE_OPAQUE_LSA */
 
       /* If the new LSA was received from this neighbor,
 	 examine the next neighbor. */
@@ -576,7 +550,6 @@ ospf_flood_through_area (struct ospf_area *area,
 	  oi->type ==  OSPF_IFTYPE_VIRTUALLINK) 
 	continue;
 
-#ifdef HAVE_OPAQUE_LSA
       if ((lsa->data->type == OSPF_OPAQUE_LINK_LSA) && (lsa->oi != oi))
         {
           /*
@@ -584,10 +557,10 @@ ospf_flood_through_area (struct ospf_area *area,
            * for the link on which the LSA has received.
            */
           if (IS_DEBUG_OSPF (lsa, LSA_FLOODING))
-            zlog_debug ("Type-9 Opaque-LSA: lsa->oi(%p) != oi(%p)", lsa->oi, oi);
+            zlog_debug ("Type-9 Opaque-LSA: lsa->oi(%p) != oi(%p)",
+                        (void *)lsa->oi, (void *)oi);
           continue;
         }
-#endif /* HAVE_OPAQUE_LSA */
 
       if (ospf_flood_through_interface (oi, inbr, lsa))
 	lsa_ack_flag = 1;
@@ -697,16 +670,12 @@ ospf_flood_through (struct ospf *ospf,
     case OSPF_NETWORK_LSA:
     case OSPF_SUMMARY_LSA:
     case OSPF_ASBR_SUMMARY_LSA:
-#ifdef HAVE_OPAQUE_LSA
     case OSPF_OPAQUE_LINK_LSA: /* ospf_flood_through_interface ? */
     case OSPF_OPAQUE_AREA_LSA:
-#endif /* HAVE_OPAQUE_LSA */
       lsa_ack_flag = ospf_flood_through_area (inbr->oi->area, inbr, lsa);
       break;
     case OSPF_AS_EXTERNAL_LSA: /* Type-5 */
-#ifdef HAVE_OPAQUE_LSA
     case OSPF_OPAQUE_AS_LSA:
-#endif /* HAVE_OPAQUE_LSA */
       lsa_ack_flag = ospf_flood_through_as (ospf, inbr, lsa);
       break;
       /* Type-7 Only received within NSSA, then flooded */
@@ -736,9 +705,7 @@ ospf_flood_through (struct ospf *ospf,
   switch (lsa->data->type)
     {
     case OSPF_AS_EXTERNAL_LSA: /* Type-5 */
-#ifdef HAVE_OPAQUE_LSA
     case OSPF_OPAQUE_AS_LSA:
-#endif /* HAVE_OPAQUE_LSA */
       lsa_ack_flag = ospf_flood_through_as (ospf, inbr, lsa);
       break;
       /* Type-7 Only received within NSSA, then flooded */
@@ -1015,16 +982,12 @@ ospf_lsa_flush (struct ospf *ospf, struct ospf_lsa *lsa)
       case OSPF_SUMMARY_LSA:
       case OSPF_ASBR_SUMMARY_LSA:
       case OSPF_AS_NSSA_LSA:
-#ifdef HAVE_OPAQUE_LSA
       case OSPF_OPAQUE_LINK_LSA:
       case OSPF_OPAQUE_AREA_LSA:
-#endif /* HAVE_OPAQUE_LSA */
         ospf_lsa_flush_area (lsa, lsa->area);
         break;
       case OSPF_AS_EXTERNAL_LSA:
-#ifdef HAVE_OPAQUE_LSA
       case OSPF_OPAQUE_AS_LSA:
-#endif /* HAVE_OPAQUE_LSA */
         ospf_lsa_flush_as (ospf, lsa);
         break;
       default:

@@ -72,7 +72,7 @@ extern int ospf_distance_set (struct vty *, struct ospf *, const char *,
 			      const char *, const char *);
 extern int ospf_distance_unset (struct vty *, struct ospf *, const char *,
 				const char *, const char *);
-extern void ospf_zebra_init (void);
+extern void ospf_zebra_init (struct thread_master *);
 
 #endif /* _ZEBRA_OSPF_ZEBRA_H */
 

@@ -129,6 +129,9 @@ union prefix46constptr
 #define INET6_BUFSIZ 51
 #endif /* INET6_BUFSIZ */
 
+/* Maximum prefix string length (IPv6) */
+#define PREFIX_STRLEN 51
+
 /* Max bit/byte length of IPv4 address. */
 #define IPV4_MAX_BYTELEN    4
 #define IPV4_MAX_BITLEN    32
@@ -156,9 +159,21 @@ union prefix46constptr
 /* Prefix's family member. */
 #define PREFIX_FAMILY(p)  ((p)->family)
 
+/* glibc defines s6_addr32 to __in6_u.__u6_addr32 if __USE_{MISC || GNU} */
+#ifndef s6_addr32
+#if defined(SUNOS_5)
+/* Some SunOS define s6_addr32 only to kernel */
+#define s6_addr32 _S6_un._S6_u32
+#else
+#define s6_addr32 __u6_addr.__u6_addr32
+#endif /* SUNOS_5 */
+#endif /*s6_addr32*/
+
 /* Prototypes. */
+extern int str2family(const char *);
 extern int afi2family (afi_t);
 extern afi_t family2afi (int);
+extern const char *safi2str(safi_t safi);
 
 /* Check bit of the prefix. */
 extern unsigned int prefix_bit (const u_char *prefix, const u_char prefixlen);
@@ -169,7 +184,7 @@ extern void prefix_free (struct prefix *);
 extern const char *prefix_family_str (const struct prefix *);
 extern int prefix_blen (const struct prefix *);
 extern int str2prefix (const char *, struct prefix *);
-extern int prefix2str (const struct prefix *, char *, int);
+extern const char *prefix2str (union prefix46constptr, char *, int);
 extern int prefix_match (const struct prefix *, const struct prefix *);
 extern int prefix_same (const struct prefix *, const struct prefix *);
 extern int prefix_cmp (const struct prefix *, const struct prefix *);
@@ -179,7 +194,7 @@ extern void apply_mask (struct prefix *);
 
 extern struct prefix *sockunion2prefix (const union sockunion *dest,
                                         const union sockunion *mask);
-extern struct prefix *sockunion2hostprefix (const union sockunion *);
+extern struct prefix *sockunion2hostprefix (const union sockunion *, struct prefix *p);
 extern void prefix2sockunion (const struct prefix *, union sockunion *);
 
 extern struct prefix_ipv4 *prefix_ipv4_new (void);

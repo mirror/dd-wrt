@@ -40,6 +40,7 @@
 #include "ospf6_neighbor.h"
 #include "ospf6_intra.h"
 #include "ospf6_spf.h"
+#include "ospf6_snmp.h"
 #include "ospf6d.h"
 
 unsigned char conf_debug_ospf6_interface = 0;
@@ -58,7 +59,7 @@ const char *ospf6_interface_state_str[] =
 };
 
 struct ospf6_interface *
-ospf6_interface_lookup_by_ifindex (int ifindex)
+ospf6_interface_lookup_by_ifindex (ifindex_t ifindex)
 {
   struct ospf6_interface *oi;
   struct interface *ifp;
@@ -913,7 +914,7 @@ ospf6_interface_show (struct vty *vty, struct interface *ifp)
 	       "disabled" : "enabled", VNL);
       inet_ntop (AF_INET, &oi->area->area_id,
                  strbuf, sizeof (strbuf));
-      vty_out (vty, "  Area ID %s, Cost %hu%s", strbuf, oi->cost,
+      vty_out (vty, "  Area ID %s, Cost %u%s", strbuf, oi->cost,
 	       VNL);
     }
   else

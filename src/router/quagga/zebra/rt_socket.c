@@ -41,6 +41,7 @@ extern int rtm_write (int message, union sockunion *dest,
                       union sockunion *mask, union sockunion *gate,
                       unsigned int index, int zebra_flags, int metric);
 
+#ifdef HAVE_STRUCT_SOCKADDR_IN_SIN_LEN
 /* Adjust netmask socket length. Return value is a adjusted sin_len
    value. */
 static int
@@ -63,10 +64,11 @@ sin_masklen (struct in_addr mask)
     len--;
   return len;
 }
+#endif /* HAVE_STRUCT_SOCKADDR_IN_SIN_LEN */
 
 /* Interface between zebra message and rtm message. */
 static int
-kernel_rtm_ipv4 (int cmd, struct prefix *p, struct rib *rib, int family)
+kernel_rtm_ipv4 (int cmd, struct prefix *p, struct rib *rib)
 
 {
   struct sockaddr_in *mask = NULL;
@@ -74,13 +76,13 @@ kernel_rtm_ipv4 (int cmd, struct prefix *p, struct rib *rib, int family)
   struct nexthop *nexthop, *tnexthop;
   int recursing;
   int nexthop_num = 0;
-  unsigned int ifindex = 0;
+  ifindex_t ifindex = 0;
   int gate = 0;
   int error;
-  char prefix_buf[INET_ADDRSTRLEN];
+  char prefix_buf[PREFIX_STRLEN];
 
   if (IS_ZEBRA_DEBUG_RIB)
-    inet_ntop (AF_INET, &p->u.prefix, prefix_buf, INET_ADDRSTRLEN);
+    prefix2str (p, prefix_buf, sizeof(prefix_buf));
   memset (&sin_dest, 0, sizeof (struct sockaddr_in));
   sin_dest.sin_family = AF_INET;
 #ifdef HAVE_STRUCT_SOCKADDR_IN_SIN_LEN
@@ -158,8 +160,8 @@ kernel_rtm_ipv4 (int cmd, struct prefix *p, struct rib *rib, int family)
            {
              if (!gate)
              {
-               zlog_debug ("%s: %s/%d: attention! gate not found for rib %p",
-                 __func__, prefix_buf, p->prefixlen, rib);
+               zlog_debug ("%s: %s: attention! gate not found for rib %p",
+                 __func__, prefix_buf, rib);
                rib_dump (p, rib);
              }
              else
@@ -172,8 +174,8 @@ kernel_rtm_ipv4 (int cmd, struct prefix *p, struct rib *rib, int family)
              case ZEBRA_ERR_NOERROR:
                nexthop_num++;
                if (IS_ZEBRA_DEBUG_RIB)
-                 zlog_debug ("%s: %s/%d: successfully did NH %s",
-                   __func__, prefix_buf, p->prefixlen, gate_buf);
+                 zlog_debug ("%s: %s: successfully did NH %s",
+                   __func__, prefix_buf, gate_buf);
                if (cmd == RTM_ADD)
                  SET_FLAG (nexthop->flags, NEXTHOP_FLAG_FIB);
                break;
@@ -195,11 +197,9 @@ kernel_rtm_ipv4 (int cmd, struct prefix *p, struct rib *rib, int family)
              case ZEBRA_ERR_RTNOEXIST:
              case ZEBRA_ERR_RTUNREACH:
              default:
-               /* This point is reachable regardless of debugging mode. */
-               if (!IS_ZEBRA_DEBUG_RIB)
-                 inet_ntop (AF_INET, &p->u.prefix, prefix_buf, INET_ADDRSTRLEN);
-               zlog_err ("%s: %s/%d: rtm_write() unexpectedly returned %d for command %s",
-                 __func__, prefix_buf, p->prefixlen, error, lookup (rtm_type_str, cmd));
+               zlog_err ("%s: %s: rtm_write() unexpectedly returned %d for command %s",
+                 __func__, prefix2str(p, prefix_buf, sizeof(prefix_buf)),
+                 error, lookup (rtm_type_str, cmd));
                break;
            }
          } /* if (cmd and flags make sense) */
@@ -216,36 +216,9 @@ kernel_rtm_ipv4 (int cmd, struct prefix *p, struct rib *rib, int family)
   return 0; /*XXX*/
 }
 
-int
-kernel_add_ipv4 (struct prefix *p, struct rib *rib)
-{
-  int route;
-
-  if (zserv_privs.change(ZPRIVS_RAISE))
-    zlog (NULL, LOG_ERR, "Can't raise privileges");
-  route = kernel_rtm_ipv4 (RTM_ADD, p, rib, AF_INET);
-  if (zserv_privs.change(ZPRIVS_LOWER))
-    zlog (NULL, LOG_ERR, "Can't lower privileges");
-
-  return route;
-}
-
-int
-kernel_delete_ipv4 (struct prefix *p, struct rib *rib)
-{
-  int route;
-
-  if (zserv_privs.change(ZPRIVS_RAISE))
-    zlog (NULL, LOG_ERR, "Can't raise privileges");
-  route = kernel_rtm_ipv4 (RTM_DELETE, p, rib, AF_INET);
-  if (zserv_privs.change(ZPRIVS_LOWER))
-    zlog (NULL, LOG_ERR, "Can't lower privileges");
-
-  return route;
-}
-
 #ifdef HAVE_IPV6
 
+#ifdef SIN6_LEN
 /* Calculate sin6_len value for netmask socket value. */
 static int
 sin6_masklen (struct in6_addr mask)
@@ -268,79 +241,18 @@ sin6_masklen (struct in6_addr mask)
 
   return len;
 }
+#endif /* SIN6_LEN */
 
 /* Interface between zebra message and rtm message. */
 static int
-kernel_rtm_ipv6 (int message, struct prefix_ipv6 *dest,
-		 struct in6_addr *gate, int index, int flags)
-{
-  struct sockaddr_in6 *mask;
-  struct sockaddr_in6 sin_dest, sin_mask, sin_gate;
-
-  memset (&sin_dest, 0, sizeof (struct sockaddr_in6));
-  sin_dest.sin6_family = AF_INET6;
-#ifdef SIN6_LEN
-  sin_dest.sin6_len = sizeof (struct sockaddr_in6);
-#endif /* SIN6_LEN */
-
-  memset (&sin_mask, 0, sizeof (struct sockaddr_in6));
-
-  memset (&sin_gate, 0, sizeof (struct sockaddr_in6));
-  sin_gate.sin6_family = AF_INET6;
-#ifdef SIN6_LEN
-  sin_gate.sin6_len = sizeof (struct sockaddr_in6);
-#endif /* SIN6_LEN */
-
-  sin_dest.sin6_addr = dest->prefix;
-
-  if (gate)
-    memcpy (&sin_gate.sin6_addr, gate, sizeof (struct in6_addr));
-
-  /* Under kame set interface index to link local address. */
-#ifdef KAME
-
-#define SET_IN6_LINKLOCAL_IFINDEX(a, i) \
-  do { \
-    (a).s6_addr[2] = ((i) >> 8) & 0xff; \
-    (a).s6_addr[3] = (i) & 0xff; \
-  } while (0)
-
-  if (gate && IN6_IS_ADDR_LINKLOCAL(gate))
-    SET_IN6_LINKLOCAL_IFINDEX (sin_gate.sin6_addr, index);
-#endif /* KAME */
-
-  if (gate && dest->prefixlen == 128)
-    mask = NULL;
-  else
-    {
-      masklen2ip6 (dest->prefixlen, &sin_mask.sin6_addr);
-      sin_mask.sin6_family = AF_INET6;
-#ifdef SIN6_LEN
-      sin_mask.sin6_len = sin6_masklen (sin_mask.sin6_addr);
-#endif /* SIN6_LEN */
-      mask = &sin_mask;
-    }
-
-  return rtm_write (message, 
-		    (union sockunion *) &sin_dest,
-		    (union sockunion *) mask,
-		    gate ? (union sockunion *)&sin_gate : NULL,
-		    index,
-		    flags,
-		    0);
-}
-
-/* Interface between zebra message and rtm message. */
-static int
-kernel_rtm_ipv6_multipath (int cmd, struct prefix *p, struct rib *rib,
-			   int family)
+kernel_rtm_ipv6 (int cmd, struct prefix *p, struct rib *rib)
 {
   struct sockaddr_in6 *mask;
   struct sockaddr_in6 sin_dest, sin_mask, sin_gate;
   struct nexthop *nexthop, *tnexthop;
   int recursing;
   int nexthop_num = 0;
-  unsigned int ifindex = 0;
+  ifindex_t ifindex = 0;
   int gate = 0;
   int error;
 
@@ -428,9 +340,11 @@ kernel_rtm_ipv6_multipath (int cmd, struct prefix *p, struct rib *rib,
 #if 0
       if (error)
 	{
-	  zlog_info ("kernel_rtm_ipv6_multipath(): nexthop %d add error=%d.",
+	  zlog_info ("kernel_rtm_ipv6(): nexthop %d add error=%d.",
 	    nexthop_num, error);
 	}
+#else
+      (void)error;
 #endif
 
       nexthop_num++;
@@ -440,38 +354,44 @@ kernel_rtm_ipv6_multipath (int cmd, struct prefix *p, struct rib *rib,
   if (nexthop_num == 0)
     {
       if (IS_ZEBRA_DEBUG_KERNEL)
-	zlog_debug ("kernel_rtm_ipv6_multipath(): No useful nexthop.");
+	zlog_debug ("kernel_rtm_ipv6(): No useful nexthop.");
       return 0;
     }
 
   return 0; /*XXX*/
 }
 
-int
-kernel_add_ipv6 (struct prefix *p, struct rib *rib)
+#endif
+
+static int
+kernel_rtm (int cmd, struct prefix *p, struct rib *rib)
 {
-  int route;
+  switch (PREFIX_FAMILY(p))
+    {
+    case AF_INET:
+      return kernel_rtm_ipv4 (cmd, p, rib);
+    case AF_INET6:
+      return kernel_rtm_ipv6 (cmd, p, rib);
+    }
+  return 0;
+}
+
+int
+kernel_route_rib (struct prefix *p, struct rib *old, struct rib *new)
+{
+  int route = 0;
 
   if (zserv_privs.change(ZPRIVS_RAISE))
     zlog (NULL, LOG_ERR, "Can't raise privileges");
-  route =  kernel_rtm_ipv6_multipath (RTM_ADD, p, rib, AF_INET6);
+
+  if (old)
+    route |= kernel_rtm (RTM_DELETE, p, old);
+
+  if (new)
+    route |= kernel_rtm (RTM_ADD, p, new);
+
   if (zserv_privs.change(ZPRIVS_LOWER))
     zlog (NULL, LOG_ERR, "Can't lower privileges");
 
   return route;
 }
-
-int
-kernel_delete_ipv6 (struct prefix *p, struct rib *rib)
-{
-  int route;
-
-  if (zserv_privs.change(ZPRIVS_RAISE))
-    zlog (NULL, LOG_ERR, "Can't raise privileges");
-  route =  kernel_rtm_ipv6_multipath (RTM_DELETE, p, rib, AF_INET6);
-  if (zserv_privs.change(ZPRIVS_LOWER))
-    zlog (NULL, LOG_ERR, "Can't lower privileges");
-
-  return route;
-}
-#endif /* HAVE_IPV6 */

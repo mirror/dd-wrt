@@ -20,9 +20,10 @@
   $QuaggaId: $Format:%an, %ai, %h$ $
 */
 
+#include <zebra.h>
+
 #include <signal.h>
 
-#include <zebra.h>
 #include "sigevent.h"
 #include "memory.h"
 #include "log.h"
@@ -36,7 +37,7 @@
 
 static void pim_sighup()
 {
-  zlog_debug ("SIGHUP received, ignoring");
+  zlog_info ("SIGHUP received, ignoring");
 }
 
 static void pim_sigint()
@@ -55,7 +56,7 @@ static void pim_sigterm()
 
 static void pim_sigusr1()
 {
-  zlog_debug ("SIGUSR1 received");
+  zlog_info ("SIGUSR1 received");
   zlog_rotate (NULL);
 }
 
