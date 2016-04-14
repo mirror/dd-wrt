@@ -262,6 +262,30 @@ service_to_port(const char *name, const char *proto)
 	return -1;
 }
 
+#ifdef NEED_PRINTF
+void
+ip4t_exit_error(enum exittype status, char *msg, ...)
+{
+	va_list args;
+
+	va_start(args, msg);
+	fprintf(stderr, "%s v%s: ", program_name, program_version);
+	vfprintf(stderr, msg, args);
+	va_end(args);
+	fprintf(stderr, "\n");
+	if (status == PARAMETER_PROBLEM)
+		exit_tryhelp(status);
+	if (status == VERSION_PROBLEM)
+		fprintf(stderr,
+			"Perhaps iptables or your kernel needs to be upgraded.\n");
+	free_opts(1);
+	exit(status);
+}
+#else
+#define ip4t_exit_error(status, msg, ...) exit(status)
+#endif
+
+
 u_int16_t
 parse_port(const char *port, const char *proto)
 {
@@ -374,43 +398,26 @@ static void free_opts(int reset_offset)
 	}
 }
 
-void
-ip4t_exit_error(enum exittype status, char *msg, ...)
-{
+
 #ifdef NEED_PRINTF
-	va_list args;
-
-	va_start(args, msg);
-	fprintf(stderr, "%s v%s: ", program_name, program_version);
-	vfprintf(stderr, msg, args);
-	va_end(args);
-	fprintf(stderr, "\n");
-	if (status == PARAMETER_PROBLEM)
-		exit_tryhelp(status);
-	if (status == VERSION_PROBLEM)
-		fprintf(stderr,
-			"Perhaps iptables or your kernel needs to be upgraded.\n");
-	free_opts(1);
-#endif
-	exit(status);
-}
-
 void
 ip4t_exit_tryhelp(int status)
 {
-#ifdef NEED_PRINTF
 	if (line != -1)
 		fprintf(stderr, "Error occurred at line: %d\n", line);
 	fprintf(stderr, "Try `%s -h' or '%s --help' for more information.\n",
 			program_name, program_name );
 	free_opts(1);
-#endif
 	exit(status);
 }
+#else
+#define ip4t_exit_tryhelp(status) exit(status)
+
+#endif
+#ifdef NEED_PRINTF
 void
 ip4t_exit_printhelp(struct iptables_rule_match *matches)
 {
-#ifdef NEED_PRINTF
 	struct iptables_rule_match *matchp = NULL;
 	struct iptables_target *t = NULL;
 
@@ -488,9 +495,13 @@ ip4t_exit_printhelp(struct iptables_rule_match *matches)
 			printf("\nNo help available!\n");
 		//matchp->match->help();
 	}
-#endif
 	exit(0);
 }
+#else
+
+
+#define ip4t_exit_printhelp(status) exit(0)
+#endif
 static void
 generic_opt_check(int command, int options)
 {
