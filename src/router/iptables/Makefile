@@ -34,11 +34,17 @@ RELEASE_DIR:=/tmp
 #endif
 COPTS += $(MIPS16_OPT) 
 COPT_FLAGS:=$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections -fPIC -D_GNU_SOURCE
-#ifneq ($(CONFIG_DIST),"micro")
-#ifneq ($(CONFIG_DIST),"micro-special")
+ifneq ($(CONFIG_DIST),"micro")
+ifneq ($(CONFIG_DIST),"micro-special")
 COPT_FLAGS += -DNEED_PRINTF
-#endif
-#endif
+endif
+endif
+ifeq ($(CONFIG_DIST),"micro")
+COPT_FLAGS += -DNEED_NOPRINTF
+endif
+ifneq ($(CONFIG_DIST),"micro-special")
+COPT_FLAGS += -DNEED_NOPRINTF
+endif
 
 COPT_FLAGS+= -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include
 
