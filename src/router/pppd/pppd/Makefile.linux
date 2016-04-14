@@ -60,6 +60,12 @@ ifneq ($(CONFIG_DIST),"micro-special")
 HAVE_MULTILINK=y
 endif
 endif
+ifeq ($(CONFIG_DIST),"micro")
+CFLAGS += -DNEED_NOPRINTF
+endif
+ifneq ($(CONFIG_DIST),"micro-special")
+CFLAGS += -DNEED_NOPRINTF
+endif
 
 #ifeq ($(CONFIG_AQOS),y)
 #CFLAGS += -DHAVE_AQOS 
