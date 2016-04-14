@@ -263,24 +263,7 @@ service_to_port(const char *name, const char *proto)
 }
 
 #ifdef NEED_PRINTF
-void
-ip4t_exit_error(enum exittype status, char *msg, ...)
-{
-	va_list args;
-
-	va_start(args, msg);
-	fprintf(stderr, "%s v%s: ", program_name, program_version);
-	vfprintf(stderr, msg, args);
-	va_end(args);
-	fprintf(stderr, "\n");
-	if (status == PARAMETER_PROBLEM)
-		exit_tryhelp(status);
-	if (status == VERSION_PROBLEM)
-		fprintf(stderr,
-			"Perhaps iptables or your kernel needs to be upgraded.\n");
-	free_opts(1);
-	exit(status);
-}
+void ip4t_exit_error(enum exittype status, char *msg, ...);
 #else
 #define ip4t_exit_error(status, msg, ...) exit(status)
 #endif
@@ -398,6 +381,26 @@ static void free_opts(int reset_offset)
 	}
 }
 
+#ifdef NEED_PRINTF
+void
+ip4t_exit_error(enum exittype status, char *msg, ...)
+{
+	va_list args;
+
+	va_start(args, msg);
+	fprintf(stderr, "%s v%s: ", program_name, program_version);
+	vfprintf(stderr, msg, args);
+	va_end(args);
+	fprintf(stderr, "\n");
+	if (status == PARAMETER_PROBLEM)
+		exit_tryhelp(status);
+	if (status == VERSION_PROBLEM)
+		fprintf(stderr,
+			"Perhaps iptables or your kernel needs to be upgraded.\n");
+	free_opts(1);
+	exit(status);
+}
+#endif
 
 #ifdef NEED_PRINTF
 void
@@ -1175,8 +1178,8 @@ static int compatible_revision(const char *name, u_int8_t revision, int opt)
 			/* Assume only revision 0 support (old kernel) */
 			return (revision == 0);
 		} else {
-			fprintf(stderr, "getsockopt failed strangely: %s (%s rev %d)\n",
-				strerror(errno),name,revision);
+			fprintf(stderr, "getsockopt failed strangely: %s %d (%s rev %d)\n",
+				strerror(errno),errno,name,revision);
 			exit(1);
 		}
 	}
