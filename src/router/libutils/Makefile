@@ -90,6 +90,13 @@ endif
 ifeq ($(CONFIG_RB600),y)
 CFLAGS += -fpic
 endif
+ifeq ($(CONFIG_DIST),"micro")
+CFLAGS += -DNEED_NOPRINTF
+endif
+ifneq ($(CONFIG_DIST),"micro-special")
+CFLAGS += -DNEED_NOPRINTF
+endif
+
 ifeq ($(CONFIG_SUPERCHANNEL),y)
 CFLAGS += -DHAVE_SUPERCHANNEL
 ATH9KCFLAGS += -DHAVE_SUPERCHANNEL
