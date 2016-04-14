@@ -51,6 +51,12 @@
 #define OLSR_LOG_INFO            1
 #define OLSR_LOG_ERR             2
 
+#ifdef NEED_NOPRINTF
+
+#define olsr_openlog(ident) do { } while(0)
+#define olsr_syslog(level, format, ...) do { } while(0)
+
+#else
 void olsr_openlog(const char *ident);
 
 #if defined SYSLOG_NUMBERING && SYSLOG_NUMBERING
@@ -61,7 +67,7 @@ extern unsigned int olsr_syslog_ctr;
 #else /* defined SYSLOG_NUMBERING && SYSLOG_NUMBERING */
 void olsr_syslog(int level, const char *format, ...) __attribute__ ((format(printf, 2, 3)));
 #endif /* defined SYSLOG_NUMBERING && SYSLOG_NUMBERING */
-
+#endif
 #endif /* _OLSR_SYSLOG_H */
 
 /*

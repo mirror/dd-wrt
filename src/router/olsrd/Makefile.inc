@@ -5,13 +5,24 @@
 #
 
 # activate debugging with 1 or deactivate with 0
-DEBUG ?= 0
+DEBUG = 0
 
 # compile OLSR_PRINTF out
 NO_DEBUG_MESSAGES ?= 1
 
+include $(TOP)/.config
+
 # the optimize option to be set for gcc
 OPTIMIZE = $(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE
+
+ifeq ($(CONFIG_DIST),"micro")
+OPTIMIZE += -DNEED_NOPRINTF
+CFLAGS += -DNEED_NOPRINTF
+endif
+ifneq ($(CONFIG_DIST),"micro-special")
+OPTIMIZE += -DNEED_NOPRINTF
+CFLAGS += -DNEED_NOPRINTF
+endif
 
 #-ffunction-sections -fdata-sections -Wl,--gc-sections
 #CFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
@@ -20,7 +31,7 @@ OPTIMIZE = $(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE
 MUDFLAP ?= 0
 
 # shows full compiler/linker calls if activated
-VERBOSE ?= 0
+VERBOSE ?= 1
 
 SANITIZE_ADDRESS ?= 0
 

@@ -1,4 +1,6 @@
 
+#ifndef NEED_NOPRINTF
+
 /*
  * The olsr.org Optimized Link-State Routing daemon(olsrd)
  * Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
@@ -118,3 +120,4 @@ olsr_syslog(int level, const char *format, ...)
  * indent-tabs-mode: nil
  * End:
  */
+#endif
