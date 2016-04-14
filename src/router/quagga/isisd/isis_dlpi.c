@@ -33,6 +33,7 @@
 #include <sys/pfmod.h>
 
 #include "log.h"
+#include "network.h"
 #include "stream.h"
 #include "if.h"
 
@@ -90,13 +91,14 @@ static u_short pf_filter[] =
  * interfaces plus the (optional; not needed) Solaris packet filter module.
  */
 
-static void
+static int
 dlpisend (int fd, const void *cbuf, size_t cbuflen,
   const void *dbuf, size_t dbuflen, int flags)
 {
   const struct strbuf *ctlptr = NULL;
   const struct strbuf *dataptr = NULL;
   struct strbuf ctlbuf, databuf;
+  int rv;
 
   if (cbuf != NULL)
     {
@@ -115,8 +117,16 @@ dlpisend (int fd, const void *cbuf, size_t cbuflen,
     }
 
   /* We assume this doesn't happen often and isn't operationally significant */
-  if (putmsg (fd, ctlptr, dataptr, flags) == -1)
-    zlog_debug ("%s: putmsg: %s", __func__, safe_strerror (errno));
+  rv = putmsg(fd, ctlptr, dataptr, flags);
+  if (rv == -1 && dbuf == NULL)
+    {
+      /*
+       * For actual PDU transmission - recognizable buf dbuf != NULL,
+       * the error is passed upwards and should not be printed here.
+       */
+      zlog_debug ("%s: putmsg: %s", __func__, safe_strerror (errno));
+    }
+  return rv;
 }
 
 static ssize_t
@@ -174,7 +184,7 @@ dlpiok (int fd, t_uscalar_t oprim)
   dl_ok_ack_t *doa = (dl_ok_ack_t *)dlpi_ctl;
 
   retv = dlpirctl (fd);
-  if (retv < DL_OK_ACK_SIZE || doa->dl_primitive != DL_OK_ACK ||
+  if (retv < (ssize_t)DL_OK_ACK_SIZE || doa->dl_primitive != DL_OK_ACK ||
     doa->dl_correct_primitive != oprim)
     {
       return -1;
@@ -196,7 +206,7 @@ dlpiinfo (int fd)
   /* Info_req uses M_PCPROTO. */
   dlpisend (fd, &dir, sizeof (dir), NULL, 0, RS_HIPRI);
   retv = dlpirctl (fd);
-  if (retv < DL_INFO_ACK_SIZE || dlpi_ctl[0] != DL_INFO_ACK)
+  if (retv < (ssize_t)DL_INFO_ACK_SIZE || dlpi_ctl[0] != DL_INFO_ACK)
     return -1;
   else
     return retv;
@@ -251,7 +261,7 @@ dlpibind (int fd)
   dlpisend (fd, &dbr, sizeof (dbr), NULL, 0, 0);
 
   retv = dlpirctl (fd);
-  if (retv < DL_BIND_ACK_SIZE || dba->dl_primitive != DL_BIND_ACK)
+  if (retv < (ssize_t)DL_BIND_ACK_SIZE || dba->dl_primitive != DL_BIND_ACK)
     return -1;
   else
     return 0;
@@ -287,12 +297,13 @@ dlpiaddr (int fd, u_char *addr)
   dlpisend (fd, &dpar, sizeof (dpar), NULL, 0, 0);
 
   retv = dlpirctl (fd);
-  if (retv < DL_PHYS_ADDR_ACK_SIZE || dpaa->dl_primitive != DL_PHYS_ADDR_ACK)
+  if (retv < (ssize_t)DL_PHYS_ADDR_ACK_SIZE
+      || dpaa->dl_primitive != DL_PHYS_ADDR_ACK)
     return -1;
 
   if (dpaa->dl_addr_offset < DL_PHYS_ADDR_ACK_SIZE ||
     dpaa->dl_addr_length != ETHERADDRL ||
-    dpaa->dl_addr_offset + dpaa->dl_addr_length > retv)
+    dpaa->dl_addr_offset + dpaa->dl_addr_length > (size_t)retv)
     return -1;
 
   bcopy((char *)dpaa + dpaa->dl_addr_offset, addr, ETHERADDRL);
@@ -302,7 +313,7 @@ dlpiaddr (int fd, u_char *addr)
 static int
 open_dlpi_dev (struct isis_circuit *circuit)
 {
-  int fd, unit, retval;
+  int fd = -1, unit, retval;
   char devpath[MAXPATHLEN];
   dl_info_ack_t *dia = (dl_info_ack_t *)dlpi_ctl;
   ssize_t acklen;
@@ -403,8 +414,8 @@ open_dlpi_dev (struct isis_circuit *circuit)
     case DL_100BT:
       break;
     default:
-      zlog_warn ("%s: unexpected mac type on %s: %d", __func__,
-	circuit->interface->name, dia->dl_mac_type);
+      zlog_warn ("%s: unexpected mac type on %s: %lld", __func__,
+	circuit->interface->name, (long long)dia->dl_mac_type);
       close (fd);
       return ISIS_WARNING;
     }
@@ -556,13 +567,13 @@ isis_recv_pdu_bcast (struct isis_circuit *circuit, u_char * ssnpa)
       return ISIS_WARNING;
     }
 
-  if (ctlbuf.len < DL_UNITDATA_IND_SIZE ||
+  if (ctlbuf.len < (ssize_t)DL_UNITDATA_IND_SIZE ||
     dui->dl_primitive != DL_UNITDATA_IND)
     return ISIS_WARNING;
 
   if (dui->dl_src_addr_length != ETHERADDRL + 2 ||
     dui->dl_src_addr_offset < DL_UNITDATA_IND_SIZE ||
-    dui->dl_src_addr_offset + dui->dl_src_addr_length > ctlbuf.len)
+    dui->dl_src_addr_offset + dui->dl_src_addr_length > (size_t)ctlbuf.len)
     return ISIS_WARNING;
 
   memcpy (ssnpa, (char *)dui + dui->dl_src_addr_offset +
@@ -586,11 +597,12 @@ isis_send_pdu_bcast (struct isis_circuit *circuit, int level)
   char *dstaddr;
   u_short *dstsap;
   int buflen;
+  int rv;
 
   buflen = stream_get_endp (circuit->snd_stream) + LLC_LEN;
-  if (buflen > sizeof (sock_buff))
+  if ((size_t)buflen > sizeof (sock_buff))
     {
-      zlog_warn ("isis_send_pdu_bcast: sock_buff size %lu is less than "
+      zlog_warn ("isis_send_pdu_bcast: sock_buff size %zu is less than "
 		 "output pdu size %d on circuit %s",
 		 sizeof (sock_buff), buflen, circuit->interface->name);
       return ISIS_WARNING;
@@ -625,8 +637,17 @@ isis_send_pdu_bcast (struct isis_circuit *circuit, int level)
   sock_buff[2] = 0x03;
   memcpy (sock_buff + LLC_LEN, circuit->snd_stream->data,
 	  stream_get_endp (circuit->snd_stream));
-  dlpisend (circuit->fd, dur, sizeof (*dur) + dur->dl_dest_addr_length,
-	    sock_buff, buflen, 0);
+  rv = dlpisend(circuit->fd, dur, sizeof (*dur) + dur->dl_dest_addr_length,
+                sock_buff, buflen, 0);
+  if (rv < 0)
+    {
+      zlog_warn("IS-IS dlpi: could not transmit packet on %s: %s",
+                circuit->interface->name, safe_strerror(errno));
+      if (ERRNO_IO_RETRY(errno))
+        return ISIS_WARNING;
+      return ISIS_ERROR;
+    }
+
   return ISIS_OK;
 }
 

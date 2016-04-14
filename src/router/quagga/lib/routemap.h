@@ -47,7 +47,8 @@ typedef enum
   RMAP_OSPF,
   RMAP_OSPF6,
   RMAP_BGP,
-  RMAP_ZEBRA
+  RMAP_ZEBRA,
+  RMAP_ISIS,
 } route_map_object_t;
 
 typedef enum

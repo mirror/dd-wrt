@@ -21,7 +21,7 @@
  * 02111-1307, USA.  
  */
 
-#include <lib/zebra.h>
+#include <zebra.h>
 #include "thread.h"
 #include "memory.h"
 #include "workqueue.h"
@@ -105,6 +105,12 @@ work_queue_free (struct work_queue *wq)
   XFREE (MTYPE_WORK_QUEUE_NAME, wq->name);
   XFREE (MTYPE_WORK_QUEUE, wq);
   return;
+}
+
+bool
+work_queue_is_scheduled (struct work_queue *wq)
+{
+  return (wq->thread != NULL);
 }
 
 static int

@@ -63,7 +63,7 @@ struct thread_master *master;
 FILE *logfile;
 
 /* SIGTSTP handler.  This function care user's ^Z input. */
-void
+static void
 sigtstp (int sig)
 {
   /* Execute "end" command. */
@@ -84,7 +84,7 @@ sigtstp (int sig)
 }
 
 /* SIGINT handler.  This function care user's ^Z input.  */
-void
+static void
 sigint (int sig)
 {
   /* Check this process is not child process. */
@@ -98,10 +98,9 @@ sigint (int sig)
 
 /* Signale wrapper for vtysh. We don't use sigevent because
  * vtysh doesn't use threads. TODO */
-RETSIGTYPE *
+static void
 vtysh_signal_set (int signo, void (*func)(int))
 {
-  int ret;
   struct sigaction sig;
   struct sigaction osig;
 
@@ -112,16 +111,11 @@ vtysh_signal_set (int signo, void (*func)(int))
   sig.sa_flags |= SA_RESTART;
 #endif /* SA_RESTART */
 
-  ret = sigaction (signo, &sig, &osig);
-
-  if (ret < 0) 
-    return (SIG_ERR);
-  else
-    return (osig.sa_handler);
+  sigaction (signo, &sig, &osig);
 }
 
 /* Initialization of signal handles. */
-void
+static void
 vtysh_signal_init ()
 {
   vtysh_signal_set (SIGINT, sigint);
@@ -168,7 +162,7 @@ struct option longopts[] =
 };
 
 /* Read a string, and return a pointer to it.  Returns NULL on EOF. */
-char *
+static char *
 vtysh_rl_gets ()
 {
   HIST_ENTRY *last;
@@ -202,8 +196,11 @@ static void log_it(const char *line)
 {
   time_t t = time(NULL);
   struct tm *tmp = localtime(&t);
-  char *user = getenv("USER") ? : "boot";
+  const char *user = getenv("USER");
   char tod[64];
+
+  if (!user)
+    user = "boot";
 
   strftime(tod, sizeof tod, "%Y%m%d-%H:%M.%S", tmp);
   
@@ -226,6 +223,7 @@ main (int argc, char **argv, char **env)
   struct cmd_rec *tail = NULL;
   int echo_command = 0;
   int no_error = 0;
+  char *homedir = NULL;
 
   /* Preserve name of myself. */
   progname = ((p = strrchr (argv[0], '/')) ? ++p : argv[0]);
@@ -320,6 +318,27 @@ main (int argc, char **argv, char **env)
       exit(1);
     }
 
+  /*
+   * Setup history file for use by both -c and regular input
+   * If we can't find the home directory, then don't store
+   * the history information
+   */
+  homedir = vtysh_get_home ();
+  if (homedir)
+    {
+      snprintf(history_file, sizeof(history_file), "%s/.history_quagga", homedir);
+      if (read_history (history_file) != 0)
+	{
+	  int fp;
+
+	  fp = open (history_file, O_CREAT | O_EXCL, S_IRUSR | S_IWUSR);
+	  if (fp)
+	    close (fp);
+
+	  read_history (history_file);
+	}
+    }
+
   /* If eval mode. */
   if (cmd)
     {
@@ -334,6 +353,9 @@ main (int argc, char **argv, char **env)
 	  while ((eol = strchr(cmd->line, '\n')) != NULL)
 	    {
 	      *eol = '\0';
+
+	      add_history (cmd->line);
+	      append_history (1, history_file);
 
 	      if (echo_command)
 		printf("%s%s\n", vtysh_prompt(), cmd->line);
@@ -350,6 +372,9 @@ main (int argc, char **argv, char **env)
 
 	      cmd->line = eol+1;
 	    }
+
+	  add_history (cmd->line);
+	  append_history (1, history_file);
 
 	  if (echo_command)
 	    printf("%s%s\n", vtysh_prompt(), cmd->line);
@@ -371,6 +396,8 @@ main (int argc, char **argv, char **env)
 	    XFREE(0, cr);
 	  }
         }
+
+      history_truncate_file(history_file,1000);
       exit (0);
     }
   
@@ -400,8 +427,6 @@ main (int argc, char **argv, char **env)
   sigsetjmp (jmpbuf, 1);
   jmpflag = 1;
 
-  snprintf(history_file, sizeof(history_file), "%s/.history_quagga", getenv("HOME"));
-  read_history(history_file);
   /* Main command loop. */
   while (vtysh_rl_gets ())
     vtysh_execute (line_read);

@@ -41,7 +41,7 @@ extern unsigned char conf_debug_ospf6_route;
 struct ospf6_nexthop
 {
   /* Interface index */
-  unsigned int ifindex;
+  ifindex_t ifindex;
 
   /* IP address, if any */
   struct in6_addr address;
@@ -239,16 +239,15 @@ extern const char *ospf6_path_type_substr[OSPF6_PATH_TYPE_MAX];
            sizeof (struct ospf6_nexthop) * OSPF6_MULTI_PATH_LIMIT) == 0)
 #define ospf6_route_is_best(r) (CHECK_FLAG ((r)->flag, OSPF6_ROUTE_BEST))
 
-/* XXX: This gives GCC heartburn aboutbreaking aliasing rules. */
 #define ospf6_linkstate_prefix_adv_router(x) \
-  (*(u_int32_t *)(&(x)->u.prefix6.s6_addr[0]))
+  ((x)->u.lp.id.s_addr)
 #define ospf6_linkstate_prefix_id(x) \
-  (*(u_int32_t *)(&(x)->u.prefix6.s6_addr[4]))
+  ((x)->u.lp.adv_router.s_addr)
 
 #define ADV_ROUTER_IN_PREFIX(x) \
-  (*(u_int32_t *)(&(x)->u.prefix6.s6_addr[0]))
+  ((x)->u.lp.id.s_addr)
 #define ID_IN_PREFIX(x) \
-  (*(u_int32_t *)(&(x)->u.prefix6.s6_addr[4]))
+  ((x)->u.lp.adv_router.s_addr)
 
 /* Function prototype */
 extern void ospf6_linkstate_prefix (u_int32_t adv_router, u_int32_t id,

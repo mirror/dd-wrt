@@ -23,10 +23,9 @@
 #include <zebra.h>
 
 #include "zebra/zserv.h"
+#include "rt_netlink.h"
 
-extern void netlink_route_read (void);
-
-void route_read (void)
+void route_read (struct zebra_vrf *zvrf)
 {
-  netlink_route_read ();
+  netlink_route_read (zvrf);
 }

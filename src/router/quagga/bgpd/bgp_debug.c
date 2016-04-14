@@ -28,6 +28,7 @@ Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 #include "str.h"
 #include "log.h"
 #include "sockunion.h"
+#include "filter.h"
 
 #include "bgpd/bgpd.h"
 #include "bgpd/bgp_aspath.h"
@@ -174,7 +175,6 @@ bgp_dump_attr (struct peer *peer, struct attr *attr, char *buf, size_t size)
     snprintf (buf + strlen (buf), size - strlen (buf), ", origin %s",
 	      bgp_origin_str[attr->origin]);
 
-#ifdef HAVE_IPV6
   if (attr->extra)
     {
       char addrbuf[BUFSIZ];
@@ -191,7 +191,6 @@ bgp_dump_attr (struct peer *peer, struct attr *attr, char *buf, size_t size)
                   inet_ntop (AF_INET6, &attr->extra->mp_nexthop_local, 
                              addrbuf, BUFSIZ));
     }
-#endif /* HAVE_IPV6 */
 
   if (CHECK_FLAG (attr->flag, ATTR_FLAG_BIT (BGP_ATTR_LOCAL_PREF)))
     snprintf (buf + strlen (buf), size - strlen (buf), ", localpref %u",

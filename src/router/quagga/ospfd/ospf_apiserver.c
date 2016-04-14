@@ -23,9 +23,6 @@
 #include <zebra.h>
 
 #ifdef SUPPORT_OSPF_API
-#ifndef HAVE_OPAQUE_LSA
-#error "Core Opaque-LSA module must be configured."
-#endif /* HAVE_OPAQUE_LSA */
 
 #include "linklist.h"
 #include "prefix.h"
@@ -244,7 +241,8 @@ static int
 ospf_apiserver_new_lsa_hook (struct ospf_lsa *lsa)
 {
   if (IS_DEBUG_OSPF_EVENT)
-    zlog_debug ("API: Put LSA(%p)[%s] into reserve, total=%ld", lsa, dump_lsa_key (lsa), lsa->lsdb->total);
+    zlog_debug ("API: Put LSA(%p)[%s] into reserve, total=%ld", (void *)lsa,
+                dump_lsa_key (lsa), lsa->lsdb->total);
   return 0;
 }
 
@@ -252,7 +250,8 @@ static int
 ospf_apiserver_del_lsa_hook (struct ospf_lsa *lsa)
 {
   if (IS_DEBUG_OSPF_EVENT)
-    zlog_debug ("API: Get LSA(%p)[%s] from reserve, total=%ld", lsa, dump_lsa_key (lsa), lsa->lsdb->total);
+    zlog_debug ("API: Get LSA(%p)[%s] from reserve, total=%ld", (void *)lsa,
+                dump_lsa_key (lsa), lsa->lsdb->total);
   return 0;
 }
 
@@ -395,7 +394,8 @@ ospf_apiserver_free (struct ospf_apiserver *apiserv)
   listnode_delete (apiserver_list, apiserv);
 
   if (IS_DEBUG_OSPF_EVENT)
-    zlog_debug ("API: Delete apiserv(%p), total#(%d)", apiserv, apiserver_list->count);
+    zlog_debug ("API: Delete apiserv(%p), total#(%d)",
+                (void *)apiserv, apiserver_list->count);
 
   /* And free instance. */
   XFREE (MTYPE_OSPF_APISERVER, apiserv);
@@ -755,7 +755,8 @@ ospf_apiserver_accept (struct thread *thread)
 #endif /* USE_ASYNC_READ */
 
   if (IS_DEBUG_OSPF_EVENT)
-    zlog_debug ("API: New apiserv(%p), total#(%d)", apiserv, apiserver_list->count);
+    zlog_debug ("API: New apiserv(%p), total#(%d)",
+                (void *)apiserv, apiserver_list->count);
 
   return 0;
 }
@@ -944,7 +945,7 @@ ospf_apiserver_register_opaque_type (struct ospf_apiserver *apiserv,
   if (IS_DEBUG_OSPF_EVENT)
     zlog_debug ("API: Add LSA-type(%d)/Opaque-type(%d) into"
                " apiserv(%p), total#(%d)", 
-               lsa_type, opaque_type, apiserv, 
+               lsa_type, opaque_type, (void *)apiserv, 
                listcount (apiserv->opaque_types));
 
   return 0;
@@ -976,7 +977,7 @@ ospf_apiserver_unregister_opaque_type (struct ospf_apiserver *apiserv,
           if (IS_DEBUG_OSPF_EVENT)
             zlog_debug ("API: Del LSA-type(%d)/Opaque-type(%d)"
                        " from apiserv(%p), total#(%d)", 
-                       lsa_type, opaque_type, apiserv, 
+                       lsa_type, opaque_type, (void *)apiserv,
                        listcount (apiserv->opaque_types));
 
 	  return 0;

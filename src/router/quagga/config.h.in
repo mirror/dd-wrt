@@ -3,9 +3,6 @@
 /* Define if building universal (internal helper macro) */
 #undef AC_APPLE_UNIVERSAL_BUILD
 
-/* babeld vty socket */
-#undef BABEL_VTYSH_PATH
-
 /* bgpd vty socket */
 #undef BGP_VTYSH_PATH
 
@@ -97,6 +94,9 @@
 /* Define to 1 if you have the `getcwd' function. */
 #undef HAVE_GETCWD
 
+/* Define to 1 if you have the `getgrouplist' function. */
+#undef HAVE_GETGROUPLIST
+
 /* Define to 1 if you have the `gethostbyname' function. */
 #undef HAVE_GETHOSTBYNAME
 
@@ -187,6 +187,9 @@
 /* Define to 1 if you have the <limits.h> header file. */
 #undef HAVE_LIMITS_H
 
+/* Define to 1 if you have the <linux/mroute.h> header file. */
+#undef HAVE_LINUX_MROUTE_H
+
 /* Define to 1 if you have the <linux/version.h> header file. */
 #undef HAVE_LINUX_VERSION_H
 
@@ -238,6 +241,9 @@
 /* netlink */
 #undef HAVE_NETLINK
 
+/* Have netns */
+#undef HAVE_NETNS
+
 /* Define to 1 if you have the <net/if_dl.h> header file. */
 #undef HAVE_NET_IF_DL_H
 
@@ -256,14 +262,8 @@
 /* NET_RT_IFLIST */
 #undef HAVE_NET_RT_IFLIST
 
-/* OSPF Opaque LSA */
-#undef HAVE_OPAQUE_LSA
-
 /* Have openpam.h */
 #undef HAVE_OPENPAM_H
-
-/* OSPF TE */
-#undef HAVE_OSPF_TE
 
 /* Have pam_misc.h */
 #undef HAVE_PAM_MISC_H
@@ -292,6 +292,9 @@
 /* Define to 1 if you have the `select' function. */
 #undef HAVE_SELECT
 
+/* Define to 1 if you have the `setns' function. */
+#undef HAVE_SETNS
+
 /* Have setproctitle */
 #undef HAVE_SETPROCTITLE
 
@@ -319,6 +322,9 @@
 /* Define to 1 if `stat' has the bug that it succeeds when given the
    zero-length file name argument. */
 #undef HAVE_STAT_EMPTY_STRING_BUG
+
+/* Define to 1 if stdbool.h conforms to C99. */
+#undef HAVE_STDBOOL_H
 
 /* Define to 1 if you have the <stddef.h> header file. */
 #undef HAVE_STDDEF_H
@@ -598,6 +604,9 @@
 /* Define to 1 if `vfork' works. */
 #undef HAVE_WORKING_VFORK
 
+/* Define to 1 if the system has the type `_Bool'. */
+#undef HAVE__BOOL
+
 /* selected method for isis, == one of the constants */
 #undef ISIS_METHOD
 
@@ -626,8 +635,15 @@
    slash. */
 #undef LSTAT_FOLLOWS_SLASHED_SYMLINK
 
-/* Define to the sub-directory where libtool stores uninstalled libraries. */
+/* Define to the sub-directory in which libtool stores uninstalled libraries.
+   */
 #undef LT_OBJDIR
+
+/* Maximum number of paths for a route */
+#undef MULTIPATH_NUM
+
+/* Define to 1 if your C compiler doesn't accept -c and -o together. */
+#undef NO_MINUS_C_MINUS_O
 
 /* OpenBSD */
 #undef OPEN_BSD
@@ -661,9 +677,6 @@
 
 /* Have openpam_ttyconv */
 #undef PAM_CONV_FUNC
-
-/* babeld PID */
-#undef PATH_BABELD_PID
 
 /* bgpd PID */
 #undef PATH_BGPD_PID
@@ -703,9 +716,6 @@
 
 /* Quagga User */
 #undef QUAGGA_USER
-
-/* Define as the return type of signal handlers (`int' or `void'). */
-#undef RETSIGTYPE
 
 /* ripng vty socket */
 #undef RIPNG_VTYSH_PATH

@@ -25,6 +25,7 @@
 #include "rib.h"
 #include "if.h"
 #include "workqueue.h"
+#include "vrf.h"
 
 /* Default port information. */
 #define ZEBRA_VTY_PORT                2601
@@ -56,16 +57,16 @@ struct zserv
   int rtm_table;
 
   /* This client's redistribute flag. */
-  u_char redist[ZEBRA_ROUTE_MAX];
+  vrf_bitmap_t redist[ZEBRA_ROUTE_MAX];
 
   /* Redistribute default route flag. */
-  u_char redist_default;
+  vrf_bitmap_t redist_default;
 
   /* Interface information. */
-  u_char ifinfo;
+  vrf_bitmap_t ifinfo;
 
   /* Router-id information. */
-  u_char ridinfo;
+  vrf_bitmap_t ridinfo;
 };
 
 /* Zebra instance */
@@ -92,9 +93,10 @@ extern void zebra_if_init (void);
 extern void zebra_zserv_socket_init (char *path);
 extern void hostinfo_get (void);
 extern void rib_init (void);
-extern void interface_list (void);
-extern void kernel_init (void);
-extern void route_read (void);
+extern void interface_list (struct zebra_vrf *);
+extern void route_read (struct zebra_vrf *);
+extern void kernel_init (struct zebra_vrf *);
+extern void kernel_terminate (struct zebra_vrf *);
 extern void zebra_route_map_init (void);
 extern void zebra_snmp_init (void);
 extern void zebra_vty_init (void);
@@ -106,7 +108,8 @@ extern int zsend_interface_address (int, struct zserv *, struct interface *,
 extern int zsend_interface_update (int, struct zserv *, struct interface *);
 extern int zsend_route_multipath (int, struct zserv *, struct prefix *, 
                                   struct rib *);
-extern int zsend_router_id_update(struct zserv *, struct prefix *);
+extern int zsend_router_id_update (struct zserv *, struct prefix *,
+                                   vrf_id_t);
 
 extern pid_t pid;
 

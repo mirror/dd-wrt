@@ -5,9 +5,9 @@
 ##  Copyright (c) 1996, 97, 98, 99, 2000 Kunihiro Ishiguro <kunihiro@zebra.org>
 ##  Portions Copyright (c) 2003 Paul Jakma <paul@dishone.st>
 ##
-AC_PREREQ(2.53)
+AC_PREREQ(2.60)
 
-AC_INIT(Quagga, 0.99.24.1, [https://bugzilla.quagga.net])
+AC_INIT(Quagga, 1.0.20160315, [https://bugzilla.quagga.net])
 CONFIG_ARGS="$*"
 AC_SUBST(CONFIG_ARGS)
 AC_CONFIG_SRCDIR(lib/zebra.h)
@@ -70,6 +70,7 @@ AC_LANG([C])
 AC_PROG_CC
 AC_PROG_CPP
 AM_PROG_CC_C_O
+AC_PROG_RANLIB
 AC_PROG_EGREP
 
 dnl autoconf 2.59 appears not to support AC_PROG_SED
@@ -86,20 +87,7 @@ else
 fi
 AM_CONDITIONAL([HAVE_LATEX], [test "x$HAVE_LATEX" = "xtrue"])
 
-dnl ------------------------------------------------------------------
-dnl Intel compiler check. Although Intel tries really hard to make icc
-dnl look like gcc, there are some differences. It's very verbose with
-dnl -Wall and it doesn't support the individual -W options.
-dnl ------------------------------------------------------------------
-if test "x${GCC}" = "xyes" ; then
-  COMPILER="GCC"
-  AC_MSG_CHECKING([whether we are using the Intel compiler])
-  AC_EGREP_CPP([^__INTEL_COMPILER], [__INTEL_COMPILER],
-      [AC_MSG_RESULT([no])],
-      [COMPILER="ICC"
-       AC_MSG_RESULT([yes])]
-  )
-else
+if test "x${GCC}" != "xyes" ; then
   AC_MSG_CHECKING([whether we are using SunPro compiler])
   AC_EGREP_CPP([^__SUNPRO_C.*0x5(7|8|9)], ["__SUNPRO_C" __SUNPRO_C],
       [AC_MSG_RESULT([no])],
@@ -115,46 +103,84 @@ dnl already, eg "-O2 -g" for gcc, "-g" for others
 dnl (Wall is gcc specific... have to make sure
 dnl  gcc is being used before setting it)
 dnl
-dnl Intel icc 8.0 also sets __GNUC__, 
-dnl but doesn't support all these fancy -W options.
-dnl Intel compiler warnings we ignore:
-dnl 279: controlling expression is constant.
-dnl 869: parameter "xxx" was never referenced - to avoid massive warnings
-dnl      about "self", "vty", "argc" and "argv" never referenced in DEFUN
-dnl      macro.
-dnl 981: operands are evaluated in unspecified order.
-dnl
 dnl Sun Studio 10 / SunPro 5.7 is also supported,
 dnl so lets set some sane CFLAGS for it.
 dnl ---------------------------------------------
 
+AC_USE_SYSTEM_EXTENSIONS()
+AC_DEFUN([AC_C_FLAG], [{
+	AC_LANG_PUSH(C)
+	ac_c_flag_save="$CFLAGS"
+	CFLAGS="$CFLAGS $1"
+	AC_MSG_CHECKING([[whether $CC supports $1]])
+	AC_COMPILE_IFELSE(
+		[AC_LANG_PROGRAM([[]])],
+		[
+			AC_MSG_RESULT([yes])
+			m4_if([$3], [], [], [
+				CFLAGS="$ac_c_flag_save"
+				$3
+			])
+		], [
+			CFLAGS="$ac_c_flag_save"
+			AC_MSG_RESULT([no])
+			$2
+		])
+	AC_LANG_POP(C)
+	}])
+
 AC_MSG_CHECKING([whether to set a default CFLAGS])
 if test "x${cflags_specified}" = "x" ; then
   case ${COMPILER} in
-    "ICC")
-        CFLAGS="-Os -g -Wall"
-        AC_MSG_RESULT([Intel default])
-        ;;
-    "GCC")
-  	CFLAGS="-Os -fno-omit-frame-pointer -g -std=gnu99 -Wall"
-  	CFLAGS="${CFLAGS} -Wsign-compare -Wpointer-arith"
-  	CFLAGS="${CFLAGS} -Wbad-function-cast -Wwrite-strings"
-  	CFLAGS="${CFLAGS} -Wmissing-prototypes -Wmissing-declarations"
-  	CFLAGS="${CFLAGS} -Wchar-subscripts -Wcast-qual"
-  	# TODO: conditionally addd -Wpacked if handled
-  	AC_MSG_RESULT([gcc default])
-  	;;
     "SUNPRO")
-  	CFLAGS="-xO4 -v -g -xspace -xcode=pic32 -xstrconst -xc99"
-  	AC_MSG_RESULT([SunPro default])
-  	;;
+        CFLAGS="-xO4 -v -g -xspace -xcode=pic32 -xstrconst -xc99"
+        AC_MSG_RESULT([SunPro default])
+        ;;
     *)
-        AC_MSG_RESULT([unknown compiler])
+        AC_MSG_RESULT([autodetecting])
+
+        AC_C_FLAG([-diag-error 10006])
+        AC_C_FLAG([-std=gnu99])
+        AC_C_FLAG([-g])
+        AC_C_FLAG([-Os], [
+          AC_C_FLAG([-O2])
+        ])
+        AC_C_FLAG([-fpie])
+        AC_C_FLAG([-fno-omit-frame-pointer])
+        AC_C_FLAG([-Wall])
+        AC_C_FLAG([-Wextra])
+        AC_C_FLAG([-Wmissing-prototypes])
+        AC_C_FLAG([-Wmissing-declarations])
+        AC_C_FLAG([-Wpointer-arith])
+        AC_C_FLAG([-Wbad-function-cast])
+        AC_C_FLAG([-Wwrite-strings])
+        if test x"${enable_gcc_ultra_verbose}" = x"yes" ; then
+          AC_C_FLAG([-Wcast-qual])
+          AC_C_FLAG([-Wstrict-prototypes])
+          AC_C_FLAG([-Wmissing-noreturn])
+          AC_C_FLAG([-Wmissing-format-attribute])
+          AC_C_FLAG([-Wunreachable-code])
+          AC_C_FLAG([-Wpacked])
+          AC_C_FLAG([-Wpadded])
+        else
+          AC_C_FLAG([-Wno-unused-result])
+        fi
+        AC_C_FLAG([-Wno-unused-parameter])
+        AC_C_FLAG([-Wno-missing-field-initializers])
+        # ICC emits a broken warning for const char *x = a ? "b" : "c";
+        # for some reason the string consts get 'promoted' to char *,
+        # triggering a const to non-const conversion warning.
+        AC_C_FLAG([-diag-disable 3179])
         ;;
   esac
 else
   AC_MSG_RESULT([CFLAGS supplied by user])
 fi
+
+if test x"${enable_werror}" = x"yes" ; then
+  WERROR="-Werror"
+fi
+AC_SUBST(WERROR)
 
 dnl --------------
 dnl Check programs
@@ -188,7 +214,7 @@ AC_GNU_SOURCE
 dnl -------
 dnl libtool
 dnl -------
-AC_PROG_LIBTOOL
+LT_INIT
 
 dnl ----------------------
 dnl Packages configuration
@@ -200,7 +226,7 @@ AC_ARG_WITH(pkg-git-version,
 	AS_HELP_STRING([--with-pkg-git-version], [add git information to MOTD and build version string]),
 	[ test "x$withval" != "xno" && with_pkg_git_version="yes" ])
 AC_ARG_ENABLE(vtysh,
-  AS_HELP_STRING([--enable-vtysh], [include integrated vty shell for Quagga]))
+  AS_HELP_STRING([--disable-vtysh], [do not build integrated vty shell for Quagga]))
 AC_ARG_ENABLE(doc,
   AS_HELP_STRING([--disable-doc], [do not build docs]))
 AC_ARG_ENABLE(zebra,
@@ -215,14 +241,12 @@ AC_ARG_ENABLE(ospfd,
   AS_HELP_STRING([--disable-ospfd], [do not build ospfd]))
 AC_ARG_ENABLE(ospf6d,
   AS_HELP_STRING([--disable-ospf6d], [do not build ospf6d]))
-AC_ARG_ENABLE(babeld,
-  AS_HELP_STRING([--disable-babeld], [do not build babeld]))
 AC_ARG_ENABLE(watchquagga,
   AS_HELP_STRING([--disable-watchquagga], [do not build watchquagga]))
 AC_ARG_ENABLE(isisd,
   AS_HELP_STRING([--disable-isisd], [do not build isisd]))
 AC_ARG_ENABLE(pimd,
-  AS_HELP_STRING([--enable-pimd], [build pimd]))
+  AS_HELP_STRING([--disable-pimd], [do not build pimd]))
 AC_ARG_ENABLE(bgp-announce,
   AS_HELP_STRING([--disable-bgp-announce,], [turn off BGP route announcement]))
 AC_ARG_ENABLE(snmp,
@@ -231,15 +255,11 @@ AC_ARG_WITH(libpam,
   AS_HELP_STRING([--with-libpam], [use libpam for PAM support in vtysh]))
 AC_ARG_ENABLE(tcp-zebra,
   AS_HELP_STRING([--enable-tcp-zebra], [enable TCP/IP socket connection between zebra and protocol daemon]))
-AC_ARG_ENABLE(opaque-lsa,
-  AS_HELP_STRING([--disable-opaque-lsa],[do not build OSPF Opaque-LSA with OSPFAPI support (RFC2370)]))
 AC_ARG_ENABLE(ospfapi,
   AS_HELP_STRING([--disable-ospfapi], [do not build OSPFAPI to access the OSPF LSA Database]))
 AC_ARG_ENABLE(ospfclient,
   AS_HELP_STRING([--disable-ospfclient], [do not build OSPFAPI client for OSPFAPI,
                           (this is the default if --disable-ospfapi is set)]))
-AC_ARG_ENABLE(ospf-te,
-  AS_HELP_STRING([--disable-ospf-te],[disable Traffic Engineering Extension to OSPF]))
 AC_ARG_ENABLE(multipath,
   AS_HELP_STRING([--enable-multipath=ARG], [enable multipath function, ARG must be digit]))
 AC_ARG_ENABLE(user,
@@ -277,13 +297,8 @@ AC_ARG_ENABLE(pcreposix,
   AS_HELP_STRING([--enable-pcreposix], [enable using PCRE Posix libs for regex functions]))
 AC_ARG_ENABLE(fpm,
   AS_HELP_STRING([--enable-fpm], [enable Forwarding Plane Manager support]))
-
-if test x"${enable_gcc_ultra_verbose}" = x"yes" ; then
-  CFLAGS="${CFLAGS} -W -Wcast-qual -Wstrict-prototypes"
-  CFLAGS="${CFLAGS} -Wmissing-declarations -Wmissing-noreturn"
-  CFLAGS="${CFLAGS} -Wmissing-format-attribute -Wunreachable-code"
-  CFLAGS="${CFLAGS} -Wpacked -Wpadded"
-fi
+AC_ARG_ENABLE(werror,
+  AS_HELP_STRING([--enable-werror], [enable -Werror (recommended for developers only)]))
 
 if test x"${enable_gcc_rdynamic}" != x"no" ; then
   if test x"${enable_gcc_rdynamic}" = x"yes" -o x"$COMPILER" = x"GCC"; then
@@ -305,15 +320,6 @@ fi
 
 if test "${enable_tcp_zebra}" = "yes"; then
   AC_DEFINE(HAVE_TCP_ZEBRA,,Use TCP for zebra communication)
-fi
-
-if test "${enable_opaque_lsa}" != "no"; then
-  AC_DEFINE(HAVE_OPAQUE_LSA,,OSPF Opaque LSA)
-fi
-
-if test "${enable_ospf_te}" != "no"; then
-  AC_DEFINE(HAVE_OPAQUE_LSA,,OSPF Opaque LSA)
-  AC_DEFINE(HAVE_OSPF_TE,,OSPF TE)
 fi
 
 if test "${enable_linux24_tcp_md5}" = "yes"; then
@@ -374,11 +380,14 @@ AC_DEFINE_UNQUOTED(CONFIGFILE_MASK, ${enable_configfile_mask}, Mask for config f
 enable_logfile_mask=${enable_logfile_mask:-0600}
 AC_DEFINE_UNQUOTED(LOGFILE_MASK, ${enable_logfile_mask}, Mask for log files)
 
-MULTIPATH_NUM=1
+MPATH_NUM=1
 
 case "${enable_multipath}" in
-  [[0-9]|[1-9][0-9]])
-    MULTIPATH_NUM="${enable_multipath}"
+  0)
+    MPATH_NUM=64
+    ;;
+  [[1-9]|[1-9][0-9]|[1-9][0-9][0-9]])
+    MPATH_NUM="${enable_multipath}"
     ;;
   "")
     ;;
@@ -387,7 +396,7 @@ case "${enable_multipath}" in
     ;;
 esac
 
-AC_SUBST(MULTIPATH_NUM)
+AC_DEFINE_UNQUOTED(MULTIPATH_NUM, $MPATH_NUM, Maximum number of paths for a route)
 
 dnl -----------------------------------
 dnl Add extra version string to package
@@ -418,11 +427,11 @@ AC_C_VOLATILE
 AC_HEADER_STDC
 AC_HEADER_TIME
 AC_HEADER_SYS_WAIT
+AC_HEADER_STDBOOL
 dnl AC_TYPE_PID_T
 AC_TYPE_UID_T
 AC_TYPE_MODE_T
 AC_TYPE_SIZE_T
-AC_TYPE_SIGNAL
 AC_STRUCT_TM
 
 dnl -------------------------
@@ -619,7 +628,8 @@ dnl ---------------------
 dnl Integrated VTY option
 dnl ---------------------
 case "${enable_vtysh}" in
-  "yes") VTYSH="vtysh";
+  "no") VTYSH="";;
+  *)    VTYSH="vtysh";
          AC_DEFINE(VTYSH,,VTY shell)
 dnl	 Vtysh uses libreadline, which looks for termcap functions at
 dnl	 configure time.  We follow readlines search order.
@@ -649,7 +659,6 @@ dnl	 [TODO] on Linux, and in [TODO] on Solaris.
 	 fi
 	 ;;
   "no" ) VTYSH="";;
-  *    ) ;;
 esac
 AC_SUBST(LIBREADLINE)
 AM_CONDITIONAL(VTYSH, test "x$VTYSH" = "xvtysh")
@@ -774,7 +783,7 @@ AC_CHECK_FUNCS([dup2 ftruncate getcwd gethostbyname getpagesize gettimeofday \
 	strtol strtoul strlcat strlcpy \
 	daemon snprintf vsnprintf \
 	if_nametoindex if_indextoname getifaddrs \
-	uname fcntl])
+	uname fcntl getgrouplist])
 
 AC_CHECK_FUNCS(setproctitle, ,
   [AC_CHECK_LIB(util, setproctitle, 
@@ -784,6 +793,14 @@ AC_CHECK_FUNCS(setproctitle, ,
    )
   ]
 )
+
+AC_CHECK_HEADER([asm-generic/unistd.h],
+                [AC_CHECK_DECL(__NR_setns,
+                               AC_DEFINE(HAVE_NETNS,, Have netns),,
+                               QUAGGA_INCLUDES [#include <asm-generic/unistd.h>
+                               ])
+                 AC_CHECK_FUNCS(setns, AC_DEFINE(HAVE_SETNS,, Have setns))]
+               )
 
 dnl ------------------------------------
 dnl Determine routing get and set method
@@ -926,6 +943,11 @@ dnl figure out how to specify an interface in multicast sockets API
 dnl ---------------------------------------------------------------
 AC_CHECK_MEMBERS([struct ip_mreqn.imr_ifindex], [], [], QUAGGA_INCLUDES)
 
+AC_CHECK_HEADERS([linux/mroute.h], [], [],
+[
+#if HAVE_NETINET_IN_H
+#include<netinet/in.h>
+#endif])
 AC_MSG_CHECKING([for BSD struct ip_mreq hack])
 AC_TRY_COMPILE([#ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
@@ -1116,13 +1138,6 @@ else
 fi
 AM_CONDITIONAL(OSPFD, test "x$OSPFD" = "xospfd")
 
-if test "${enable_babeld}" = "no";then
-  BABELD=""
-else
-  BABELD="babeld"
-fi
-AM_CONDITIONAL(BABELD, test "x$BABELD" = "xbabeld")
-
 if test "${enable_watchquagga}" = "no";then
   WATCHQUAGGA=""
 else
@@ -1131,16 +1146,14 @@ fi
 AM_CONDITIONAL(WATCHQUAGGA, test "x$WATCHQUAGGA" = "xwatchquagga")
 
 OSPFCLIENT=""
-if test "${enable_opaque_lsa}" != "no"; then
-  if test "${enable_ospfapi}" != "no";then
+if test "${enable_ospfapi}" != "no";then
     AC_DEFINE(SUPPORT_OSPF_API,,OSPFAPI)
 
-    if test "${enable_ospfclient}" != "no";then
+  if test "${enable_ospfclient}" != "no";then
       OSPFCLIENT="ospfclient"
-    fi
   fi
-
 fi
+
 AM_CONDITIONAL(OSPFCLIENT, test "x$OSPFCLIENT" = "xospfclient")
 
 case "${enable_ripngd}" in
@@ -1162,9 +1175,8 @@ esac
 AM_CONDITIONAL(ISISD, test "x$ISISD" = "xisisd")
 
 case "${enable_pimd}" in
-  "yes") PIMD="pimd";;
   "no" ) PIMD="";;
-  *    ) ;;
+  *    ) PIMD="pimd";;
 esac
 AM_CONDITIONAL(PIMD, test "x$PIMD" = "xpimd")
 
@@ -1181,7 +1193,6 @@ AC_SUBST(RIPD)
 AC_SUBST(RIPNGD)
 AC_SUBST(OSPFD)
 AC_SUBST(OSPF6D)
-AC_SUBST(BABELD)
 AC_SUBST(WATCHQUAGGA)
 AC_SUBST(ISISD)
 AC_SUBST(PIMD)
@@ -1444,29 +1455,6 @@ dnl ----------
 CONFDATE=`date '+%Y%m%d'`
 AC_SUBST(CONFDATE)
 
-dnl Conditionally enable PIE support for GNU toolchains.
-AC_ARG_ENABLE(pie, AS_HELP_STRING([--disable-pie], [Do not build tools as a Position Independent Executables]))
-if test "$enable_pie" != "no"; then
-  AC_CACHE_CHECK([whether $CC accepts PIE flags], [ap_cv_cc_pie], [
-    save_CFLAGS=$CFLAGS
-    save_LDFLAGS=$LDFLAGS
-    CFLAGS="$CFLAGS -fPIE"
-    LDFLAGS="$LDFLAGS -pie"
-    AC_LINK_IFELSE([AC_LANG_SOURCE([[static int foo[30000]; int main () { return 0; }]])],
-      [ap_cv_cc_pie=yes], [ap_cv_cc_pie=no]
-    )
-    CFLAGS=$save_CFLAGS
-    LDFLAGS=$save_LDFLAGS
-  ])
-  if test "$ap_cv_cc_pie" = "yes"; then
-    PICFLAGS="-fPIE"
-    PILDFLAGS="-pie"
-  fi
-fi
-
-AC_SUBST(PICFLAGS)
-AC_SUBST(PILDFLAGS)
-
 dnl -------
 dnl DejaGNU
 dnl -------
@@ -1515,7 +1503,6 @@ AC_DEFINE_UNQUOTED(PATH_RIPNGD_PID, "$quagga_statedir/ripngd.pid",ripngd PID)
 AC_DEFINE_UNQUOTED(PATH_BGPD_PID, "$quagga_statedir/bgpd.pid",bgpd PID)
 AC_DEFINE_UNQUOTED(PATH_OSPFD_PID, "$quagga_statedir/ospfd.pid",ospfd PID)
 AC_DEFINE_UNQUOTED(PATH_OSPF6D_PID, "$quagga_statedir/ospf6d.pid",ospf6d PID)
-AC_DEFINE_UNQUOTED(PATH_BABELD_PID, "$quagga_statedir/babeld.pid",babeld PID)
 AC_DEFINE_UNQUOTED(PATH_ISISD_PID, "$quagga_statedir/isisd.pid",isisd PID)
 AC_DEFINE_UNQUOTED(PATH_PIMD_PID, "$quagga_statedir/pimd.pid",pimd PID)
 AC_DEFINE_UNQUOTED(PATH_WATCHQUAGGA_PID, "$quagga_statedir/watchquagga.pid",watchquagga PID)
@@ -1526,7 +1513,6 @@ AC_DEFINE_UNQUOTED(RIPNG_VTYSH_PATH, "$quagga_statedir/ripngd.vty",ripng vty soc
 AC_DEFINE_UNQUOTED(BGP_VTYSH_PATH, "$quagga_statedir/bgpd.vty",bgpd vty socket)
 AC_DEFINE_UNQUOTED(OSPF_VTYSH_PATH, "$quagga_statedir/ospfd.vty",ospfd vty socket)
 AC_DEFINE_UNQUOTED(OSPF6_VTYSH_PATH, "$quagga_statedir/ospf6d.vty",ospf6d vty socket)
-AC_DEFINE_UNQUOTED(BABEL_VTYSH_PATH, "$quagga_statedir/babeld.vty",babeld vty socket)
 AC_DEFINE_UNQUOTED(ISIS_VTYSH_PATH, "$quagga_statedir/isisd.vty",isisd vty socket)
 AC_DEFINE_UNQUOTED(PIM_VTYSH_PATH, "$quagga_statedir/pimd.vty",pimd vty socket)
 AC_DEFINE_UNQUOTED(DAEMON_VTY_DIR, "$quagga_statedir",daemon vty directory)
@@ -1552,7 +1538,7 @@ AC_MSG_RESULT($ac_cv_htonl_works)
 
 AC_CONFIG_FILES([Makefile lib/Makefile zebra/Makefile ripd/Makefile 
 	  ripngd/Makefile bgpd/Makefile ospfd/Makefile watchquagga/Makefile
-	  ospf6d/Makefile isisd/Makefile babeld/Makefile vtysh/Makefile
+	  ospf6d/Makefile isisd/Makefile vtysh/Makefile
 	  doc/Makefile ospfclient/Makefile tests/Makefile m4/Makefile
 	  pimd/Makefile
 	  tests/bgpd.tests/Makefile

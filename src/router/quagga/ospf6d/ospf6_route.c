@@ -374,7 +374,7 @@ ospf6_route_add (struct ospf6_route *route,
 
   if (IS_OSPF6_DEBUG_ROUTE (MEMORY))
     zlog_debug ("%s %p: route add %p: %s", ospf6_route_table_name (table),
-                table, route, buf);
+                (void *)table, (void *)route, buf);
   else if (IS_OSPF6_DEBUG_ROUTE (TABLE))
     zlog_debug ("%s: route add: %s", ospf6_route_table_name (table), buf);
 
@@ -408,7 +408,8 @@ ospf6_route_add (struct ospf6_route *route,
         {
           if (IS_OSPF6_DEBUG_ROUTE (MEMORY))
             zlog_debug ("%s %p: route add %p: needless update of %p",
-                        ospf6_route_table_name (table), table, route, old);
+                        ospf6_route_table_name (table),
+                        (void *)table, (void *)route, (void *)old);
           else if (IS_OSPF6_DEBUG_ROUTE (TABLE))
             zlog_debug ("%s: route add: needless update",
                         ospf6_route_table_name (table));
@@ -422,7 +423,8 @@ ospf6_route_add (struct ospf6_route *route,
 
       if (IS_OSPF6_DEBUG_ROUTE (MEMORY))
         zlog_debug ("%s %p: route add %p: update of %p",
-                    ospf6_route_table_name (table), table, route, old);
+                    ospf6_route_table_name (table),
+                    (void *)table, (void *)route, (void *)old);
       else if (IS_OSPF6_DEBUG_ROUTE (TABLE))
         zlog_debug ("%s: route add: update",
                     ospf6_route_table_name (table));
@@ -463,7 +465,8 @@ ospf6_route_add (struct ospf6_route *route,
     {
       if (IS_OSPF6_DEBUG_ROUTE (MEMORY))
         zlog_debug ("%s %p: route add %p: another path: prev %p, next %p",
-                   ospf6_route_table_name (table), table, route, prev, next);
+                    ospf6_route_table_name (table),
+                    (void *)table, (void *)route, (void *)prev, (void *)next);
       else if (IS_OSPF6_DEBUG_ROUTE (TABLE))
         zlog_debug ("%s: route add: another path found",
                     ospf6_route_table_name (table));
@@ -488,7 +491,8 @@ ospf6_route_add (struct ospf6_route *route,
           SET_FLAG (route->flag, OSPF6_ROUTE_BEST);
           if (IS_OSPF6_DEBUG_ROUTE (MEMORY))
             zlog_info ("%s %p: route add %p: replacing previous best: %p",
-                       ospf6_route_table_name (table), table, route, next);
+                       ospf6_route_table_name (table),
+                       (void *)table, (void *)route, (void *)next);
         }
 
       route->installed = now;
@@ -510,7 +514,7 @@ ospf6_route_add (struct ospf6_route *route,
   /* Else, this is the brand new route regarding to the prefix */
   if (IS_OSPF6_DEBUG_ROUTE (MEMORY))
     zlog_debug ("%s %p: route add %p: brand new route",
-                ospf6_route_table_name (table), table, route);
+                ospf6_route_table_name (table), (void *)table, (void *)route);
   else if (IS_OSPF6_DEBUG_ROUTE (TABLE))
     zlog_debug ("%s: route add: brand new route",
                 ospf6_route_table_name (table));
@@ -589,7 +593,8 @@ ospf6_route_remove (struct ospf6_route *route,
 
   if (IS_OSPF6_DEBUG_ROUTE (MEMORY))
     zlog_debug ("%s %p: route remove %p: %s",
-                ospf6_route_table_name (table), table, route, buf);
+                ospf6_route_table_name (table),
+                (void *)table, (void *)route, buf);
   else if (IS_OSPF6_DEBUG_ROUTE (TABLE))
     zlog_debug ("%s: route remove: %s", ospf6_route_table_name (table), buf);
 
@@ -661,8 +666,8 @@ ospf6_route_head (struct ospf6_route_table *table)
 
   if (IS_OSPF6_DEBUG_ROUTE (MEMORY))
     zlog_info ("%s %p: route head: %p<-[%p]->%p",
-               ospf6_route_table_name (table), table,
-               route->prev, route, route->next);
+               ospf6_route_table_name (table), (void *)table,
+               (void *)route->prev, (void *)route, (void *)route->next);
 
   return route;
 }
@@ -674,8 +679,8 @@ ospf6_route_next (struct ospf6_route *route)
 
   if (IS_OSPF6_DEBUG_ROUTE (MEMORY))
     zlog_info ("%s %p: route next: %p<-[%p]->%p",
-               ospf6_route_table_name (route->table), route->table,
-               route->prev, route, route->next);
+               ospf6_route_table_name (route->table), (void *)route->table,
+               (void *)route->prev, (void *)route, (void *)route->next);
 
   ospf6_route_unlock (route);
   if (next)
@@ -787,7 +792,8 @@ ospf6_route_show (struct vty *vty, struct ospf6_route *route)
 {
   int i;
   char destination[64], nexthop[64];
-  char duration[16], ifname[IFNAMSIZ];
+  char duration[16];
+  const char *ifname;
   struct timeval now, res;
 
   quagga_gettime (QUAGGA_CLK_MONOTONIC, &now);
@@ -807,8 +813,7 @@ ospf6_route_show (struct vty *vty, struct ospf6_route *route)
   /* nexthop */
   inet_ntop (AF_INET6, &route->nexthop[0].address, nexthop,
              sizeof (nexthop));
-  if (! if_indextoname (route->nexthop[0].ifindex, ifname))
-    snprintf (ifname, sizeof (ifname), "%d", route->nexthop[0].ifindex);
+  ifname = ifindex2ifname (route->nexthop[0].ifindex);
 
   vty_out (vty, "%c%1s %2s %-30s %-25s %6.*s %s%s",
            (ospf6_route_is_best (route) ? '*' : ' '),
@@ -822,8 +827,7 @@ ospf6_route_show (struct vty *vty, struct ospf6_route *route)
       /* nexthop */
       inet_ntop (AF_INET6, &route->nexthop[i].address, nexthop,
                  sizeof (nexthop));
-      if (! if_indextoname (route->nexthop[i].ifindex, ifname))
-        snprintf (ifname, sizeof (ifname), "%d", route->nexthop[i].ifindex);
+      ifname = ifindex2ifname (route->nexthop[i].ifindex);
 
       vty_out (vty, "%c%1s %2s %-30s %-25s %6.*s %s%s",
                ' ', "", "", "", nexthop, IFNAMSIZ, ifname, "", VNL);
@@ -833,7 +837,8 @@ ospf6_route_show (struct vty *vty, struct ospf6_route *route)
 void
 ospf6_route_show_detail (struct vty *vty, struct ospf6_route *route)
 {
-  char destination[64], nexthop[64], ifname[IFNAMSIZ];
+  const char *ifname;
+  char destination[64], nexthop[64];
   char area_id[16], id[16], adv_router[16], capa[16], options[16];
   struct timeval now, res;
   char duration[16];
@@ -874,7 +879,7 @@ ospf6_route_show_detail (struct vty *vty, struct ospf6_route *route)
            (CHECK_FLAG (route->flag, OSPF6_ROUTE_CHANGE) ? "C" : "-"),
            VNL);
   vty_out (vty, "Memory: prev: %p this: %p next: %p%s",
-           route->prev, route, route->next, VNL);
+           (void *)route->prev, (void *)route, (void *)route->next, VNL);
 
   /* Path section */
 
@@ -919,8 +924,7 @@ ospf6_route_show_detail (struct vty *vty, struct ospf6_route *route)
       /* nexthop */
       inet_ntop (AF_INET6, &route->nexthop[i].address, nexthop,
                  sizeof (nexthop));
-      if (! if_indextoname (route->nexthop[i].ifindex, ifname))
-        snprintf (ifname, sizeof (ifname), "%d", route->nexthop[i].ifindex);
+      ifname = ifindex2ifname (route->nexthop[i].ifindex);
       vty_out (vty, "  %s %.*s%s", nexthop, IFNAMSIZ, ifname, VNL);
     }
   vty_out (vty, "%s", VNL);

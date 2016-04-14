@@ -20,6 +20,7 @@
  */
 
 #include <zebra.h>
+#include <net/if_types.h>
 
 #include "if.h"
 #include "prefix.h"
@@ -32,11 +33,13 @@
 #include "table.h"
 #include "rib.h"
 #include "privs.h"
+#include "vrf.h"
 
 #include "zebra/interface.h"
 #include "zebra/zserv.h"
 #include "zebra/debug.h"
 #include "zebra/kernel_socket.h"
+#include "zebra/rib.h"
 
 extern struct zebra_privs_t zserv_privs;
 extern struct zebra_t zebrad;
@@ -58,9 +61,21 @@ extern struct zebra_t zebrad;
  * Because of these varying conventions, the only sane approach is for
  * the <net/route.h> header to define some flavor of ROUNDUP macro.
  */
+
+#if defined(SA_SIZE)
+/* SAROUNDUP is the only thing we need, and SA_SIZE provides that */
+#define SAROUNDUP(a)	SA_SIZE(a)
+#else /* !SA_SIZE */
+
 #if defined(RT_ROUNDUP)
 #define ROUNDUP(a)	RT_ROUNDUP(a)
 #endif /* defined(RT_ROUNDUP) */
+
+#if defined(SUNOS_5)
+/* Solaris has struct sockaddr_in[6] definitions at 16 / 32 bytes size,
+ * so the whole concept doesn't really apply. */
+#define ROUNDUP(a)      (a)
+#endif
 
 /*
  * If ROUNDUP has not yet been defined in terms of platform-provided
@@ -78,9 +93,9 @@ extern struct zebra_t zebrad;
 
 /* OS X (Xcode as of 2014-12) is known not to define RT_ROUNDUP */
 #ifdef __APPLE__
-#define ROUNDUP_TYPE	long
-#else
 #define ROUNDUP_TYPE	int
+#else
+#define ROUNDUP_TYPE	long
 #endif
 
 #define ROUNDUP(a) \
@@ -114,6 +129,8 @@ extern struct zebra_t zebrad;
            ROUNDUP(sizeof(struct sockaddr_dl)) : sizeof(struct sockaddr)))
 #endif /* HAVE_STRUCT_SOCKADDR_SA_LEN */
 
+#endif /* !SA_SIZE */
+
 /*
  * We use a call to an inline function to copy (PNT) to (DEST)
  * 1. Calculating the length of the copy requires an #ifdef to determine
@@ -121,9 +138,11 @@ extern struct zebra_t zebrad;
  * 2. So the compiler doesn't complain when DEST is NULL, which is only true
  *    when we are skipping the copy and incrementing to the next SA
  */
-static void inline
+static inline void
 rta_copy (union sockunion *dest, caddr_t src) {
   int len;
+  if (!dest)
+    return;
 #ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
   len = (((struct sockaddr *)src)->sa_len > sizeof (*dest)) ?
             sizeof (*dest) : ((struct sockaddr *)src)->sa_len ;
@@ -138,8 +157,7 @@ rta_copy (union sockunion *dest, caddr_t src) {
   if ((RTMADDRS) & (RTA)) \
     { \
       int len = SAROUNDUP ((PNT)); \
-      if ( ((DEST) != NULL) && \
-           af_check (((struct sockaddr *)(PNT))->sa_family)) \
+      if (af_check (((struct sockaddr *)(PNT))->sa_family)) \
         rta_copy((DEST), (PNT)); \
       (PNT) += len; \
     }
@@ -147,8 +165,7 @@ rta_copy (union sockunion *dest, caddr_t src) {
   if ((RTMADDRS) & (RTA)) \
     { \
       int len = SAROUNDUP ((PNT)); \
-      if ((DEST) != NULL) \
-        rta_copy((DEST), (PNT)); \
+      rta_copy((DEST), (PNT)); \
       (PNT) += len; \
     }
 
@@ -226,7 +243,9 @@ static const struct message rtm_flag_str[] =
   {RTF_CLONING,   "CLONING"},
 #endif /* RTF_CLONING */
   {RTF_XRESOLVE,  "XRESOLVE"},
+#ifdef RTF_LLINFO
   {RTF_LLINFO,    "LLINFO"},
+#endif /* RTF_LLINFO */
   {RTF_STATIC,    "STATIC"},
   {RTF_BLACKHOLE, "BLACKHOLE"},
 #ifdef RTF_PRIVATE
@@ -271,7 +290,7 @@ int routing_sock = -1;
 /* #define DEBUG */
 
 /* Supported address family check. */
-static int inline
+static inline int
 af_check (int family)
 {
   if (family == AF_INET)
@@ -359,6 +378,29 @@ bsd_linkdetect_translate (struct if_msghdr *ifm)
     UNSET_FLAG(ifm->ifm_flags, IFF_RUNNING);
 }
 #endif /* HAVE_BSD_IFI_LINK_STATE */
+
+static enum zebra_link_type
+sdl_to_zebra_link_type (unsigned int sdlt)
+{
+  switch (sdlt)
+  {
+    case IFT_ETHER: return ZEBRA_LLT_ETHER;
+    case IFT_X25: return ZEBRA_LLT_X25;
+    case IFT_FDDI: return ZEBRA_LLT_FDDI;
+    case IFT_PPP: return ZEBRA_LLT_PPP;
+    case IFT_LOOP: return ZEBRA_LLT_LOOPBACK;
+    case IFT_SLIP: return ZEBRA_LLT_SLIP;
+    case IFT_ARCNET: return ZEBRA_LLT_ARCNET;
+    case IFT_ATM: return ZEBRA_LLT_ATM;
+    case IFT_LOCALTALK: return ZEBRA_LLT_LOCALTLK;
+    case IFT_HIPPI: return ZEBRA_LLT_HIPPI;
+#ifdef IFT_IEEE1394
+    case IFT_IEEE1394: return ZEBRA_LLT_IEEE1394;
+#endif
+
+    default: return ZEBRA_LLT_UNKNOWN;
+  }
+}
 
 /*
  * Handle struct if_msghdr obtained from reading routing socket or
@@ -516,14 +558,23 @@ ifm_read (struct if_msghdr *ifm)
        *    is fine here.
        * a nonzero ifnlen from RTA_NAME_GET() means sdl is valid
        */
+      ifp->ll_type = ZEBRA_LLT_UNKNOWN;
+      ifp->hw_addr_len = 0;
       if (ifnlen)
-      {
+        {
 #ifdef HAVE_STRUCT_SOCKADDR_DL_SDL_LEN
-	memcpy (&ifp->sdl, sdl, sdl->sdl_len);
+          memcpy (&((struct zebra_if *)ifp->info)->sdl, sdl, sdl->sdl_len);
 #else
-	memcpy (&ifp->sdl, sdl, sizeof (struct sockaddr_dl));
+          memcpy (&((struct zebra_if *)ifp->info)->sdl, sdl, sizeof (struct sockaddr_dl));
 #endif /* HAVE_STRUCT_SOCKADDR_DL_SDL_LEN */
-      }
+
+          ifp->ll_type = sdl_to_zebra_link_type (sdl->sdl_type);
+          if (sdl->sdl_alen <= sizeof(ifp->hw_addr))
+            {
+              memcpy (ifp->hw_addr, LLADDR(sdl), sdl->sdl_alen);
+              ifp->hw_addr_len = sdl->sdl_alen;
+            }
+        }
 
       if_add_update (ifp);
     }
@@ -623,50 +674,32 @@ ifam_read_mesg (struct ifa_msghdr *ifm,
 
   if (IS_ZEBRA_DEBUG_KERNEL)
     {
-      switch (sockunion_family(addr))
+      int family = sockunion_family(addr);
+      switch (family)
         {
 	case AF_INET:
+#ifdef HAVE_IPV6
+	case AF_INET6:
+#endif
 	  {
-	    char buf[4][INET_ADDRSTRLEN];
+	    char buf[4][INET6_ADDRSTRLEN];
 	    zlog_debug ("%s: ifindex %d, ifname %s, ifam_addrs 0x%x, "
 			"ifam_flags 0x%x, addr %s/%d broad %s dst %s "
 			"gateway %s",
 			__func__, ifm->ifam_index,
 			(ifnlen ? ifname : "(nil)"), ifm->ifam_addrs,
 			ifm->ifam_flags,
-			inet_ntop(AF_INET,&addr->sin.sin_addr,
+			inet_ntop(family,&addr->sin.sin_addr,
 			          buf[0],sizeof(buf[0])),
 			ip_masklen(mask->sin.sin_addr),
-			inet_ntop(AF_INET,&brd->sin.sin_addr,
+			inet_ntop(family,&brd->sin.sin_addr,
 			          buf[1],sizeof(buf[1])),
-			inet_ntop(AF_INET,&dst.sin.sin_addr,
+			inet_ntop(family,&dst.sin.sin_addr,
 			          buf[2],sizeof(buf[2])),
-			inet_ntop(AF_INET,&gateway.sin.sin_addr,
+			inet_ntop(family,&gateway.sin.sin_addr,
 			          buf[3],sizeof(buf[3])));
 	  }
 	  break;
-#ifdef HAVE_IPV6
-	case AF_INET6:
-	  {
-	    char buf[4][INET6_ADDRSTRLEN];
-	    zlog_debug ("%s: ifindex %d, ifname %s, ifam_addrs 0x%x, "
-			"ifam_flags 0x%x, addr %s/%d broad %s dst %s "
-			"gateway %s",
-			__func__, ifm->ifam_index, 
-			(ifnlen ? ifname : "(nil)"), ifm->ifam_addrs,
-			ifm->ifam_flags,
-			inet_ntop(AF_INET6,&addr->sin6.sin6_addr,
-			          buf[0],sizeof(buf[0])),
-			ip6_masklen(mask->sin6.sin6_addr),
-			inet_ntop(AF_INET6,&brd->sin6.sin6_addr,
-			          buf[1],sizeof(buf[1])),
-			inet_ntop(AF_INET6,&dst.sin6.sin6_addr,
-			          buf[2],sizeof(buf[2])),
-			inet_ntop(AF_INET6,&gateway.sin6.sin6_addr,
-			          buf[3],sizeof(buf[3])));
-	  }
-	  break;
-#endif /* HAVE_IPV6 */
         default:
 	  zlog_debug ("%s: ifindex %d, ifname %s, ifam_addrs 0x%x",
 		      __func__, ifm->ifam_index, 
@@ -740,7 +773,9 @@ ifam_read (struct ifa_msghdr *ifam)
       /* Unset interface index from link-local address when IPv6 stack
 	 is KAME. */
       if (IN6_IS_ADDR_LINKLOCAL (&addr.sin6.sin6_addr))
-	SET_IN6_LINKLOCAL_IFINDEX (addr.sin6.sin6_addr, 0);
+        {
+          SET_IN6_LINKLOCAL_IFINDEX (addr.sin6.sin6_addr, 0);
+        }
 
       if (ifam->ifam_type == RTM_NEWADDR)
 	connected_add_ipv6 (ifp, flags, &addr.sin6.sin6_addr, 
@@ -859,7 +894,7 @@ rtm_read (struct rt_msghdr *rtm)
     return;
 #endif
 
-  if ((rtm->rtm_type == RTM_ADD) && ! (flags & RTF_UP))
+  if ((rtm->rtm_type == RTM_ADD || rtm->rtm_type == RTM_CHANGE) && ! (flags & RTF_UP))
     return;
 
   /* This is connected route. */
@@ -896,12 +931,12 @@ rtm_read (struct rt_msghdr *rtm)
        */
       if (rtm->rtm_type != RTM_GET && rtm->rtm_pid == pid)
       {
-        char buf[INET_ADDRSTRLEN], gate_buf[INET_ADDRSTRLEN];
+        char buf[PREFIX_STRLEN], gate_buf[INET_ADDRSTRLEN];
         int ret;
         if (! IS_ZEBRA_DEBUG_RIB)
           return;
-        ret = rib_lookup_ipv4_route (&p, &gate); 
-        inet_ntop (AF_INET, &p.prefix, buf, INET_ADDRSTRLEN);
+        ret = rib_lookup_ipv4_route (&p, &gate, VRF_DEFAULT);
+        prefix2str (&p, buf, sizeof(buf));
         switch (rtm->rtm_type)
         {
           case RTM_ADD:
@@ -912,18 +947,18 @@ rtm_read (struct rt_msghdr *rtm)
             switch (ret)
             {
               case ZEBRA_RIB_NOTFOUND:
-                zlog_debug ("%s: %s %s/%d: desync: RR isn't yet in RIB, while already in FIB",
-                  __func__, lookup (rtm_type_str, rtm->rtm_type), buf, p.prefixlen);
+                zlog_debug ("%s: %s %s: desync: RR isn't yet in RIB, while already in FIB",
+                  __func__, lookup (rtm_type_str, rtm->rtm_type), buf);
                 break;
               case ZEBRA_RIB_FOUND_CONNECTED:
               case ZEBRA_RIB_FOUND_NOGATE:
                 inet_ntop (AF_INET, &gate.sin.sin_addr, gate_buf, INET_ADDRSTRLEN);
-                zlog_debug ("%s: %s %s/%d: desync: RR is in RIB, but gate differs (ours is %s)",
-                  __func__, lookup (rtm_type_str, rtm->rtm_type), buf, p.prefixlen, gate_buf);
+                zlog_debug ("%s: %s %s: desync: RR is in RIB, but gate differs (ours is %s)",
+                  __func__, lookup (rtm_type_str, rtm->rtm_type), buf, gate_buf);
                 break;
               case ZEBRA_RIB_FOUND_EXACT: /* RIB RR == FIB RR */
-                zlog_debug ("%s: %s %s/%d: done Ok",
-                  __func__, lookup (rtm_type_str, rtm->rtm_type), buf, p.prefixlen);
+                zlog_debug ("%s: %s %s: done Ok",
+                  __func__, lookup (rtm_type_str, rtm->rtm_type), buf);
                 rib_lookup_and_dump (&p);
                 return;
                 break;
@@ -935,27 +970,27 @@ rtm_read (struct rt_msghdr *rtm)
             switch (ret)
             {
               case ZEBRA_RIB_FOUND_EXACT:
-                zlog_debug ("%s: %s %s/%d: desync: RR is still in RIB, while already not in FIB",
-                  __func__, lookup (rtm_type_str, rtm->rtm_type), buf, p.prefixlen);
+                zlog_debug ("%s: %s %s: desync: RR is still in RIB, while already not in FIB",
+                  __func__, lookup (rtm_type_str, rtm->rtm_type), buf);
                 rib_lookup_and_dump (&p);
                 break;
               case ZEBRA_RIB_FOUND_CONNECTED:
               case ZEBRA_RIB_FOUND_NOGATE:
-                zlog_debug ("%s: %s %s/%d: desync: RR is still in RIB, plus gate differs",
-                  __func__, lookup (rtm_type_str, rtm->rtm_type), buf, p.prefixlen);
+                zlog_debug ("%s: %s %s: desync: RR is still in RIB, plus gate differs",
+                  __func__, lookup (rtm_type_str, rtm->rtm_type), buf);
                 rib_lookup_and_dump (&p);
                 break;
               case ZEBRA_RIB_NOTFOUND: /* RIB RR == FIB RR */
-                zlog_debug ("%s: %s %s/%d: done Ok",
-                  __func__, lookup (rtm_type_str, rtm->rtm_type), buf, p.prefixlen);
+                zlog_debug ("%s: %s %s: done Ok",
+                  __func__, lookup (rtm_type_str, rtm->rtm_type), buf);
                 rib_lookup_and_dump (&p);
                 return;
                 break;
             }
             break;
           default:
-            zlog_debug ("%s: %s/%d: warning: loopback RTM of type %s received",
-              __func__, buf, p.prefixlen, lookup (rtm_type_str, rtm->rtm_type));
+            zlog_debug ("%s: %s: warning: loopback RTM of type %s received",
+              __func__, buf, lookup (rtm_type_str, rtm->rtm_type));
         }
         return;
       }
@@ -965,16 +1000,16 @@ rtm_read (struct rt_msghdr *rtm)
        */
       if (rtm->rtm_type == RTM_CHANGE)
         rib_delete_ipv4 (ZEBRA_ROUTE_KERNEL, zebra_flags, &p,
-                         NULL, 0, 0, SAFI_UNICAST);
+                         NULL, 0, VRF_DEFAULT, SAFI_UNICAST);
       
       if (rtm->rtm_type == RTM_GET 
           || rtm->rtm_type == RTM_ADD
           || rtm->rtm_type == RTM_CHANGE)
-	rib_add_ipv4 (ZEBRA_ROUTE_KERNEL, zebra_flags, 
-		      &p, &gate.sin.sin_addr, NULL, 0, 0, 0, 0, SAFI_UNICAST);
+        rib_add_ipv4 (ZEBRA_ROUTE_KERNEL, zebra_flags, &p, &gate.sin.sin_addr,
+                      NULL, 0, VRF_DEFAULT, 0, 0, 0, 0, SAFI_UNICAST);
       else
-	rib_delete_ipv4 (ZEBRA_ROUTE_KERNEL, zebra_flags, 
-		      &p, &gate.sin.sin_addr, 0, 0, SAFI_UNICAST);
+        rib_delete_ipv4 (ZEBRA_ROUTE_KERNEL, zebra_flags, &p,
+                         &gate.sin.sin_addr, 0, VRF_DEFAULT, SAFI_UNICAST);
     }
 #ifdef HAVE_IPV6
   if (dest.sa.sa_family == AF_INET6)
@@ -985,7 +1020,7 @@ rtm_read (struct rt_msghdr *rtm)
       if (rtm->rtm_type != RTM_GET && rtm->rtm_pid == pid)
         return;
       struct prefix_ipv6 p;
-      unsigned int ifindex = 0;
+      ifindex_t ifindex = 0;
 
       p.family = AF_INET6;
       p.prefix = dest.sin6.sin6_addr;
@@ -1007,16 +1042,17 @@ rtm_read (struct rt_msghdr *rtm)
        */
       if (rtm->rtm_type == RTM_CHANGE)
         rib_delete_ipv6 (ZEBRA_ROUTE_KERNEL, zebra_flags, &p,
-                         NULL, 0, 0, SAFI_UNICAST);
+                         NULL, 0, VRF_DEFAULT, SAFI_UNICAST);
       
       if (rtm->rtm_type == RTM_GET 
           || rtm->rtm_type == RTM_ADD
           || rtm->rtm_type == RTM_CHANGE)
-	rib_add_ipv6 (ZEBRA_ROUTE_KERNEL, zebra_flags,
-		      &p, &gate.sin6.sin6_addr, ifindex, 0, 0, 0, SAFI_UNICAST);
+        rib_add_ipv6 (ZEBRA_ROUTE_KERNEL, zebra_flags, &p, &gate.sin6.sin6_addr,
+                      ifindex, VRF_DEFAULT, RT_TABLE_MAIN, 0, 0, 0, SAFI_UNICAST);
       else
-	rib_delete_ipv6 (ZEBRA_ROUTE_KERNEL, zebra_flags,
-			 &p, &gate.sin6.sin6_addr, ifindex, 0, SAFI_UNICAST);
+        rib_delete_ipv6 (ZEBRA_ROUTE_KERNEL, zebra_flags, &p,
+                         &gate.sin6.sin6_addr, ifindex,
+                         VRF_DEFAULT, SAFI_UNICAST);
     }
 #endif /* HAVE_IPV6 */
 }
@@ -1069,14 +1105,14 @@ rtm_write (int message,
 
   ifp = if_lookup_by_index (index);
 
-  if (gate && message == RTM_ADD)
+  if (gate && (message == RTM_ADD || message == RTM_CHANGE))
     msg.rtm.rtm_flags |= RTF_GATEWAY;
 
   /* When RTF_CLONING is unavailable on BSD, should we set some
    * other flag instead?
    */
 #ifdef RTF_CLONING
-  if (! gate && message == RTM_ADD && ifp &&
+  if (! gate && (message == RTM_ADD || message == RTM_CHANGE) && ifp &&
       (ifp->flags & IFF_POINTOPOINT) == 0)
     msg.rtm.rtm_flags |= RTF_CLONING;
 #endif /* RTF_CLONING */
@@ -1096,12 +1132,12 @@ rtm_write (int message,
             __func__, dest_buf, mask_buf, index);
           return -1;
         }
-      gate = (union sockunion *) & ifp->sdl;
+      gate = (union sockunion *) &((struct zebra_if *)ifp->info)->sdl;
     }
 
   if (mask)
     msg.rtm.rtm_addrs |= RTA_NETMASK;
-  else if (message == RTM_ADD) 
+  else if (message == RTM_ADD || message == RTM_CHANGE)
     msg.rtm.rtm_flags |= RTF_HOST;
 
   /* Tagging route with flags */
@@ -1114,15 +1150,6 @@ rtm_write (int message,
     msg.rtm.rtm_flags |= RTF_REJECT;
 
 
-#ifdef HAVE_STRUCT_SOCKADDR_IN_SIN_LEN
-#define SOCKADDRSET(X,R) \
-  if (msg.rtm.rtm_addrs & (R)) \
-    { \
-      int len = ROUNDUP ((X)->sa.sa_len); \
-      memcpy (pnt, (caddr_t)(X), len); \
-      pnt += len; \
-    }
-#else 
 #define SOCKADDRSET(X,R) \
   if (msg.rtm.rtm_addrs & (R)) \
     { \
@@ -1130,7 +1157,6 @@ rtm_write (int message,
       memcpy (pnt, (caddr_t)(X), len); \
       pnt += len; \
     }
-#endif /* HAVE_STRUCT_SOCKADDR_IN_SIN_LEN */
 
   pnt = (caddr_t) msg.buf;
 
@@ -1169,7 +1195,8 @@ rtmsg_debug (struct rt_msghdr *rtm)
   zlog_debug ("Kernel: Len: %d Type: %s", rtm->rtm_msglen, lookup (rtm_type_str, rtm->rtm_type));
   rtm_flag_dump (rtm->rtm_flags);
   zlog_debug ("Kernel: message seq %d", rtm->rtm_seq);
-  zlog_debug ("Kernel: pid %d, rtm_addrs 0x%x", rtm->rtm_pid, rtm->rtm_addrs);
+  zlog_debug ("Kernel: pid %lld, rtm_addrs 0x%x",
+              (long long)rtm->rtm_pid, rtm->rtm_addrs);
 }
 
 /* This is pretty gross, better suggestions welcome -- mhandler */
@@ -1291,8 +1318,11 @@ kernel_read (struct thread *thread)
 
 /* Make routing socket. */
 static void
-routing_socket (void)
+routing_socket (struct zebra_vrf *zvrf)
 {
+  if (zvrf->vrf_id != VRF_DEFAULT)
+    return;
+
   if ( zserv_privs.change (ZPRIVS_RAISE) )
     zlog_err ("routing_socket: Can't raise privileges");
 
@@ -1323,7 +1353,13 @@ routing_socket (void)
 /* Exported interface function.  This function simply calls
    routing_socket (). */
 void
-kernel_init (void)
+kernel_init (struct zebra_vrf *zvrf)
 {
-  routing_socket ();
+  routing_socket (zvrf);
+}
+
+void
+kernel_terminate (struct zebra_vrf *zvrf)
+{
+  return;
 }

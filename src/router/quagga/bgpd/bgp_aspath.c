@@ -29,6 +29,7 @@ Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 #include "log.h"
 #include "stream.h"
 #include "jhash.h"
+#include "filter.h"
 
 #include "bgpd/bgpd.h"
 #include "bgpd/bgp_aspath.h"
@@ -98,6 +99,12 @@ assegment_data_new (int num)
   return (XMALLOC (MTYPE_AS_SEG_DATA, ASSEGMENT_DATA_SIZE (num, 1)));
 }
 
+static void
+assegment_data_free (as_t *asdata)
+{
+  XFREE (MTYPE_AS_SEG_DATA, asdata);
+}
+
 /* Get a new segment. Note that 0 is an allowed length,
  * and will result in a segment with no allocated data segment.
  * the caller should immediately assign data to the segment, as the segment
@@ -126,7 +133,7 @@ assegment_free (struct assegment *seg)
     return;
   
   if (seg->as)
-    XFREE (MTYPE_AS_SEG_DATA, seg->as);
+    assegment_data_free (seg->as);
   memset (seg, 0xfe, sizeof(struct assegment));
   XFREE (MTYPE_AS_SEG, seg);
   
@@ -194,13 +201,14 @@ assegment_prepend_asns (struct assegment *seg, as_t asnum, int num)
   if (num >= AS_SEGMENT_MAX)
     return seg; /* we don't do huge prepends */
   
-  newas = assegment_data_new (seg->length + num);
-
+  if ((newas = assegment_data_new (seg->length + num)) == NULL)
+    return seg;
+  
   for (i = 0; i < num; i++)
     newas[i] = asnum;
 
   memcpy (newas + num, seg->as, ASSEGMENT_DATA_SIZE (seg->length, 1));
-  XFREE (MTYPE_AS_SEG_DATA, seg->as);
+  assegment_data_free (seg->as);
   seg->as = newas;
   seg->length += num;
 
@@ -1378,7 +1386,7 @@ static struct aspath *
 aspath_add_asns (struct aspath *aspath, as_t asno, u_char type, unsigned num)
 {
   struct assegment *assegment = aspath->segments;
-  int i;
+  unsigned i;
 
   if (assegment && assegment->type == type)
     {
@@ -1879,6 +1887,7 @@ aspath_init (void)
 void
 aspath_finish (void)
 {
+  hash_clean (ashash, (void (*)(void *))aspath_free);
   hash_free (ashash);
   ashash = NULL;
   
@@ -1913,7 +1922,7 @@ aspath_show_all_iterator (struct hash_backet *backet, struct vty *vty)
 
   as = (struct aspath *) backet->data;
 
-  vty_out (vty, "[%p:%u] (%ld) ", backet, backet->key, as->refcnt);
+  vty_out (vty, "[%p:%u] (%ld) ", (void *)backet, backet->key, as->refcnt);
   vty_out (vty, "%s%s", as->str, VTY_NEWLINE);
 }
 

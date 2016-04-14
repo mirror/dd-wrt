@@ -37,7 +37,7 @@ const char *prog_name = 0;
 static int iface_solve_index(const char *ifname)
 {
   struct if_nameindex *ini;
-  int ifindex = -1;
+  ifindex_t ifindex = -1;
   int i;
 
   if (!ifname)
@@ -77,7 +77,7 @@ int main(int argc, const char *argv[])
   const char *ifname;
   const char *group;
   const char *source;
-  int ifindex;
+  ifindex_t ifindex;
   int result;
   int fd;
 

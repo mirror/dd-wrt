@@ -96,7 +96,7 @@ static int ssmpingd_socket(struct in_addr addr, int port, int mttl)
   sockaddr.sin_addr   = addr;
   sockaddr.sin_port   = htons(port);
 
-  if (bind(fd, &sockaddr, sizeof(sockaddr))) {
+  if (bind(fd, (struct sockaddr *)&sockaddr, sizeof(sockaddr))) {
     char addr_str[100];
     pim_inet4_dump("<addr?>", addr, addr_str, sizeof(addr_str));
     zlog_warn("%s: bind(fd=%d,addr=%s,port=%d,len=%zu) failure: errno=%d: %s",
@@ -110,9 +110,9 @@ static int ssmpingd_socket(struct in_addr addr, int port, int mttl)
   /* Needed to obtain destination address from recvmsg() */
   {
 #if defined(HAVE_IP_PKTINFO)
-    /* Linux IP_PKTINFO */
+    /* Linux and Solaris IP_PKTINFO */
     int opt = 1;
-    if (setsockopt(fd, SOL_IP, IP_PKTINFO, &opt, sizeof(opt))) {
+    if (setsockopt(fd, IPPROTO_IP, IP_PKTINFO, &opt, sizeof(opt))) {
       zlog_warn("%s: could not set IP_PKTINFO on socket fd=%d: errno=%d: %s",
 		__PRETTY_FUNCTION__, fd, errno, safe_strerror(errno));
     }
@@ -222,7 +222,8 @@ static void ssmpingd_sendto(struct ssmpingd_sock *ss,
   socklen_t tolen = sizeof(to);
   int sent;
 
-  sent = sendto(ss->sock_fd, buf, len, MSG_DONTWAIT, &to, tolen);
+  sent = sendto(ss->sock_fd, buf, len, MSG_DONTWAIT,
+                (struct sockaddr *)&to, tolen);
   if (sent != len) {
     int e = errno;
     char to_str[100];
@@ -249,7 +250,7 @@ static int ssmpingd_read_msg(struct ssmpingd_sock *ss)
   struct sockaddr_in to;
   socklen_t fromlen = sizeof(from);
   socklen_t tolen = sizeof(to);
-  int ifindex = -1;
+  ifindex_t ifindex = -1;
   uint8_t buf[1000];
   int len;
 

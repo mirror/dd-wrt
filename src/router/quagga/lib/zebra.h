@@ -27,7 +27,6 @@ Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 
 #ifdef SUNOS_5
 #define _XPG4_2
-#define __EXTENSIONS__
 typedef unsigned int    u_int32_t;
 typedef unsigned short  u_int16_t;
 typedef unsigned char   u_int8_t;
@@ -92,6 +91,9 @@ typedef int socklen_t;
 #ifdef HAVE_INTTYPES_H
 #include <inttypes.h>
 #endif /* HAVE_INTTYPES_H */
+#ifdef HAVE_STDBOOL_H
+#include <stdbool.h>
+#endif
 
 /* machine dependent includes */
 #ifdef SUNOS_5
@@ -412,7 +414,8 @@ struct in_pktinfo
 #define ZEBRA_ROUTER_ID_UPDATE            22
 #define ZEBRA_HELLO                       23
 #define ZEBRA_IPV4_NEXTHOP_LOOKUP_MRIB    24
-#define ZEBRA_MESSAGE_MAX                 25
+#define ZEBRA_VRF_UNREGISTER              25
+#define ZEBRA_MESSAGE_MAX                 26
 
 /* Marker value used in new Zserv, in the byte location corresponding
  * the command value in the old zserv header. To allow old and new
@@ -442,11 +445,6 @@ extern int proto_redistnum(int afi, const char *s);
 
 extern const char *zserv_command_string (unsigned int command);
 
-/* Zebra's family types. */
-#define ZEBRA_FAMILY_IPV4                1
-#define ZEBRA_FAMILY_IPV6                2
-#define ZEBRA_FAMILY_MAX                 3
-
 /* Error codes of zebra. */
 #define ZEBRA_ERR_NOERROR                0
 #define ZEBRA_ERR_RTEXIST               -1
@@ -461,7 +459,7 @@ extern const char *zserv_command_string (unsigned int command);
 #define ZEBRA_FLAG_BLACKHOLE          0x04
 #define ZEBRA_FLAG_IBGP               0x08
 #define ZEBRA_FLAG_SELECTED           0x10
-#define ZEBRA_FLAG_CHANGED            0x20
+#define ZEBRA_FLAG_FIB_OVERRIDE       0x20
 #define ZEBRA_FLAG_STATIC             0x40
 #define ZEBRA_FLAG_REJECT             0x80
 
@@ -481,21 +479,19 @@ extern const char *zserv_command_string (unsigned int command);
 #endif
 
 /* Address family numbers from RFC1700. */
-#define AFI_IP                    1
-#define AFI_IP6                   2
-#define AFI_MAX                   3
+typedef enum {
+  AFI_IP  = 1,
+  AFI_IP6 = 2,
+#define AFI_MAX 3
+} afi_t;
 
 /* Subsequent Address Family Identifier. */
 #define SAFI_UNICAST              1
 #define SAFI_MULTICAST            2
 #define SAFI_RESERVED_3           3
 #define SAFI_MPLS_VPN             4
-#define SAFI_MAX                  5
-
-/* Filter direction.  */
-#define FILTER_IN                 0
-#define FILTER_OUT                1
-#define FILTER_MAX                2
+#define SAFI_ENCAP		  7 /* per IANA */
+#define SAFI_MAX                  8
 
 /* Default Administrative Distance of each protocol. */
 #define ZEBRA_KERNEL_DISTANCE_DEFAULT      0
@@ -514,51 +510,13 @@ extern const char *zserv_command_string (unsigned int command);
 #define SET_FLAG(V,F)        (V) |= (F)
 #define UNSET_FLAG(V,F)      (V) &= ~(F)
 
-/* AFI and SAFI type. */
-typedef u_int16_t afi_t;
 typedef u_int8_t safi_t;
 
 /* Zebra types. Used in Zserv message header. */
 typedef u_int16_t zebra_size_t;
 typedef u_int16_t zebra_command_t;
 
-/* FIFO -- first in first out structure and macros.  */
-struct fifo
-{
-  struct fifo *next;
-  struct fifo *prev;
-};
-
-#define FIFO_INIT(F)                                  \
-  do {                                                \
-    struct fifo *Xfifo = (struct fifo *)(F);          \
-    Xfifo->next = Xfifo->prev = Xfifo;                \
-  } while (0)
-
-#define FIFO_ADD(F,N)                                 \
-  do {                                                \
-    struct fifo *Xfifo = (struct fifo *)(F);          \
-    struct fifo *Xnode = (struct fifo *)(N);          \
-    Xnode->next = Xfifo;                              \
-    Xnode->prev = Xfifo->prev;                        \
-    Xfifo->prev = Xfifo->prev->next = Xnode;          \
-  } while (0)
-
-#define FIFO_DEL(N)                                   \
-  do {                                                \
-    struct fifo *Xnode = (struct fifo *)(N);          \
-    Xnode->prev->next = Xnode->next;                  \
-    Xnode->next->prev = Xnode->prev;                  \
-  } while (0)
-
-#define FIFO_HEAD(F)                                  \
-  ((((struct fifo *)(F))->next == (struct fifo *)(F)) \
-  ? NULL : (F)->next)
-
-#define FIFO_EMPTY(F)                                 \
-  (((struct fifo *)(F))->next == (struct fifo *)(F))
-
-#define FIFO_TOP(F)                                   \
-  (FIFO_EMPTY(F) ? NULL : ((struct fifo *)(F))->next)
+/* VRF ID type. */
+typedef u_int16_t vrf_id_t;
 
 #endif /* _ZEBRA_H */

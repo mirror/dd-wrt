@@ -23,6 +23,7 @@ Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 #include "command.h"
 #include "prefix.h"
 #include "memory.h"
+#include "filter.h"
 
 #include "bgpd/bgpd.h"
 #include "bgpd/bgp_community.h"
@@ -330,6 +331,94 @@ community_list_entry_lookup (struct community_list *list, const void *arg,
   return NULL;
 }
 
+static char *
+community_str_get (struct community *com, int i)
+{
+  int len;
+  u_int32_t comval;
+  u_int16_t as;
+  u_int16_t val;
+  char *str;
+  char *pnt;
+
+  memcpy (&comval, com_nthval (com, i), sizeof (u_int32_t));
+  comval = ntohl (comval);
+
+  switch (comval)
+    {
+      case COMMUNITY_INTERNET:
+        len = strlen (" internet");
+        break;
+      case COMMUNITY_NO_EXPORT:
+        len = strlen (" no-export");
+        break;
+      case COMMUNITY_NO_ADVERTISE:
+        len = strlen (" no-advertise");
+        break;
+      case COMMUNITY_LOCAL_AS:
+        len = strlen (" local-AS");
+        break;
+      default:
+        len = strlen (" 65536:65535");
+        break;
+    }
+
+  /* Allocate memory.  */
+  str = pnt = XMALLOC (MTYPE_COMMUNITY_STR, len);
+
+  switch (comval)
+    {
+      case COMMUNITY_INTERNET:
+        strcpy (pnt, "internet");
+        pnt += strlen ("internet");
+        break;
+      case COMMUNITY_NO_EXPORT:
+        strcpy (pnt, "no-export");
+        pnt += strlen ("no-export");
+        break;
+      case COMMUNITY_NO_ADVERTISE:
+        strcpy (pnt, "no-advertise");
+        pnt += strlen ("no-advertise");
+        break;
+      case COMMUNITY_LOCAL_AS:
+        strcpy (pnt, "local-AS");
+        pnt += strlen ("local-AS");
+        break;
+      default:
+        as = (comval >> 16) & 0xFFFF;
+        val = comval & 0xFFFF;
+        sprintf (pnt, "%u:%d", as, val);
+        pnt += strlen (pnt);
+        break;
+    }
+
+  *pnt = '\0';
+
+  return str;
+}
+
+/* Internal function to perform regular expression match for
+ *  * a single community. */
+static int
+community_regexp_include (regex_t * reg, struct community *com, int i)
+{
+  const char *str;
+
+  /* When there is no communities attribute it is treated as empty
+ *      string.  */
+  if (com == NULL || com->size == 0)
+    str = "";
+  else
+    str = community_str_get (com, i);
+
+  /* Regular expression match.  */
+  if (regexec (reg, str, 0, NULL, 0) == 0)
+    return 1;
+
+  /* No match.  */
+  return 0;
+}
+
 /* Internal function to perform regular expression match for community
    attribute.  */
 static int
@@ -370,54 +459,6 @@ ecommunity_regexp_match (struct ecommunity *ecom, regex_t * reg)
 
   /* No match.  */
   return 0;
-}
-
-/* Delete community attribute using regular expression match.  Return
-   modified communites attribute.  */
-static struct community *
-community_regexp_delete (struct community *com, regex_t * reg)
-{
-  int i;
-  u_int32_t comval;
-  /* Maximum is "65535:65535" + '\0'. */
-  char c[12];
-  const char *str;
-
-  if (!com)
-    return NULL;
-
-  i = 0;
-  while (i < com->size)
-    {
-      memcpy (&comval, com_nthval (com, i), sizeof (u_int32_t));
-      comval = ntohl (comval);
-
-      switch (comval)
-        {
-        case COMMUNITY_INTERNET:
-          str = "internet";
-          break;
-        case COMMUNITY_NO_EXPORT:
-          str = "no-export";
-          break;
-        case COMMUNITY_NO_ADVERTISE:
-          str = "no-advertise";
-          break;
-        case COMMUNITY_LOCAL_AS:
-          str = "local-AS";
-          break;
-        default:
-          sprintf (c, "%d:%d", (comval >> 16) & 0xFFFF, comval & 0xFFFF);
-          str = c;
-          break;
-        }
-
-      if (regexec (reg, str, 0, NULL, 0) == 0)
-        community_del_val (com, com_nthval (com, i));
-      else
-        i++;
-    }
-  return com;
 }
 
 /* When given community attribute matches to the community-list return
@@ -509,41 +550,63 @@ community_list_match_delete (struct community *com,
                              struct community_list *list)
 {
   struct community_entry *entry;
+  u_int32_t val;
+  u_int32_t com_index_to_delete[com->size];
+  int delete_index = 0;
+  int i;
 
-  for (entry = list->head; entry; entry = entry->next)
+  /* Loop over each community value and evaluate each against the
+   * community-list.  If we need to delete a community value add its index to
+   * com_index_to_delete.
+   */
+  for (i = 0; i < com->size; i++)
     {
-      if (entry->any)
-        {
-          if (entry->direct == COMMUNITY_PERMIT) 
-            {
-              /* This is a tricky part.  Currently only
-               * route_set_community_delete() uses this function.  In the
-               * function com->size is zero, it free the community
-               * structure.  
-               */
-              com->size = 0;
-            }
-          return com;
-        }
+      val = community_val_get (com, i);
 
-      if ((entry->style == COMMUNITY_LIST_STANDARD) 
-          && (community_include (entry->u.com, COMMUNITY_INTERNET)
-              || community_match (com, entry->u.com) ))
+      for (entry = list->head; entry; entry = entry->next)
         {
+          if (entry->any)
+            {
               if (entry->direct == COMMUNITY_PERMIT)
-                community_delete (com, entry->u.com);
-              else
-                break;
-        }
-      else if ((entry->style == COMMUNITY_LIST_EXPANDED)
-               && community_regexp_match (com, entry->reg))
-        {
-          if (entry->direct == COMMUNITY_PERMIT)
-            community_regexp_delete (com, entry->reg);
-          else
-            break;
-        }
+                {
+                  com_index_to_delete[delete_index] = i;
+                  delete_index++;
+                }
+              break;
+            }
+
+          else if ((entry->style == COMMUNITY_LIST_STANDARD)
+                   && (community_include (entry->u.com, COMMUNITY_INTERNET)
+                       || community_include (entry->u.com, val) ))
+            {
+              if (entry->direct == COMMUNITY_PERMIT)
+                {
+                  com_index_to_delete[delete_index] = i;
+                  delete_index++;
+                }
+              break;
+            }
+
+          else if ((entry->style == COMMUNITY_LIST_EXPANDED)
+                   && community_regexp_include (entry->reg, com, i))
+            {
+              if (entry->direct == COMMUNITY_PERMIT)
+                {
+                  com_index_to_delete[delete_index] = i;
+                  delete_index++;
+                }
+              break;
+            }
+         }
+     }
+
+  /* Delete all of the communities we flagged for deletion */
+  for (i = delete_index-1; i >= 0; i--)
+    {
+      val = community_val_get (com, com_index_to_delete[i]);
+      community_del_val (com, &val);
     }
+
   return com;
 }
 

@@ -113,7 +113,7 @@ ospf6_serv_sock (void)
 
 /* ospf6 set socket option */
 void
-ospf6_sso (u_int ifindex, struct in6_addr *group, int option)
+ospf6_sso (ifindex_t ifindex, struct in6_addr *group, int option)
 {
   struct ipv6_mreq mreq6;
   int ret;
@@ -150,7 +150,7 @@ iov_totallen (struct iovec *iov)
 
 int
 ospf6_sendmsg (struct in6_addr *src, struct in6_addr *dst,
-               unsigned int *ifindex, struct iovec *message)
+               ifindex_t *ifindex, struct iovec *message)
 {
   int retval;
   struct msghdr smsghdr;
@@ -208,7 +208,7 @@ ospf6_sendmsg (struct in6_addr *src, struct in6_addr *dst,
 
 int
 ospf6_recvmsg (struct in6_addr *src, struct in6_addr *dst,
-               unsigned int *ifindex, struct iovec *message)
+               ifindex_t *ifindex, struct iovec *message)
 {
   int retval;
   struct msghdr rmsghdr;

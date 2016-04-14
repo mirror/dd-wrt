@@ -122,13 +122,13 @@ isis_circuit_configure (struct isis_circuit *circuit, struct isis_area *area)
   circuit->area = area;
 
   /*
-   * The level for the circuit is same as for the area, unless configured
-   * otherwise.
+   * Whenever the is-type of an area is changed, the is-type of each circuit
+   * in that area is updated to a non-empty subset of the area is-type.
+   * Inversely, when configuring a new circuit, this property should be
+   * ensured as well.
    */
-  if (area->is_type != IS_LEVEL_1_AND_2 && area->is_type != circuit->is_type)
-    zlog_warn ("circut %s is_type %d mismatch with area %s is_type %d",
-               circuit->interface->name, circuit->is_type,
-               circuit->area->area_tag, area->is_type);
+  if (area->is_type != IS_LEVEL_1_AND_2)
+    circuit->is_type = area->is_type;
 
   /*
    * Add the circuit into area
@@ -326,6 +326,13 @@ isis_circuit_del_addr (struct isis_circuit *circuit,
 	  prefix2str (connected->address, (char *)buf, BUFSIZ);
 	  zlog_warn ("Nonexitant ip address %s removal attempt from \
                       circuit %d", buf, circuit->circuit_id);
+	  zlog_warn ("Current ip addresses on %s:", circuit->interface->name);
+	  for (ALL_LIST_ELEMENTS_RO(circuit->ip_addrs, node, ip))
+	    {
+	      prefix2str((struct prefix*)ip, (char *)buf, BUFSIZ);
+	      zlog_warn("  %s", buf);
+	    }
+	  zlog_warn("End of addresses");
 	}
 
       prefix_ipv4_free (ipv4);
@@ -369,6 +376,19 @@ isis_circuit_del_addr (struct isis_circuit *circuit,
 	  prefix2str (connected->address, (char *)buf, BUFSIZ);
 	  zlog_warn ("Nonexitant ip address %s removal attempt from \
 		      circuit %d", buf, circuit->circuit_id);
+	  zlog_warn ("Current ip addresses on %s:", circuit->interface->name);
+	  for (ALL_LIST_ELEMENTS_RO(circuit->ipv6_link, node, ip6))
+	    {
+	      prefix2str((struct prefix*)ip6, (char *)buf, BUFSIZ);
+	      zlog_warn("  %s", buf);
+	    }
+	  zlog_warn(" -----");
+	  for (ALL_LIST_ELEMENTS_RO(circuit->ipv6_non_link, node, ip6))
+	    {
+	      prefix2str((struct prefix*)ip6, (char *)buf, BUFSIZ);
+	      zlog_warn("  %s", buf);
+	    }
+	  zlog_warn("End of addresses");
 	}
       else if (circuit->area)
 	  lsp_regenerate_schedule (circuit->area, circuit->is_type, 0);
@@ -397,7 +417,7 @@ isis_circuit_id_gen (struct interface *ifp)
    */
   for (i = 0; i < strlen (ifp->name); i++)
     {
-      if (isdigit(ifp->name[i]))
+      if (isdigit((unsigned char)ifp->name[i]))
         {
           if (start < 0)
             {
@@ -578,6 +598,29 @@ isis_circuit_update_all_srmflags (struct isis_circuit *circuit, int is_set)
     }
 }
 
+size_t
+isis_circuit_pdu_size(struct isis_circuit *circuit)
+{
+  return ISO_MTU(circuit);
+}
+
+void
+isis_circuit_stream(struct isis_circuit *circuit, struct stream **stream)
+{
+  size_t stream_size = isis_circuit_pdu_size(circuit);
+
+  if (!*stream)
+    {
+      *stream = stream_new(stream_size);
+    }
+  else
+    {
+      if (STREAM_SIZE(*stream) != stream_size)
+        stream_resize(*stream, stream_size);
+      stream_reset(*stream);
+    }
+}
+
 int
 isis_circuit_up (struct isis_circuit *circuit)
 {
@@ -592,20 +635,20 @@ isis_circuit_up (struct isis_circuit *circuit)
   if (circuit->is_passive)
     return ISIS_OK;
 
+  if (circuit->area->lsp_mtu > isis_circuit_pdu_size(circuit))
+    {
+      zlog_err("Interface MTU %zu on %s is too low to support area lsp mtu %u!",
+               isis_circuit_pdu_size(circuit), circuit->interface->name,
+               circuit->area->lsp_mtu);
+      isis_circuit_down(circuit);
+      return ISIS_ERROR;
+    }
+
   if (circuit->circ_type == CIRCUIT_T_BROADCAST)
     {
       /*
        * Get the Hardware Address
        */
-#ifdef HAVE_STRUCT_SOCKADDR_DL
-#ifndef SUNOS_5
-      if (circuit->interface->sdl.sdl_alen != ETHER_ADDR_LEN)
-        zlog_warn ("unsupported link layer");
-      else
-        memcpy (circuit->u.bc.snpa, LLADDR (&circuit->interface->sdl),
-                ETH_ALEN);
-#endif
-#else
       if (circuit->interface->hw_addr_len != ETH_ALEN)
         {
           zlog_warn ("unsupported link layer");
@@ -619,14 +662,10 @@ isis_circuit_up (struct isis_circuit *circuit)
                   circuit->interface->ifindex, ISO_MTU (circuit),
                   snpa_print (circuit->u.bc.snpa));
 #endif /* EXTREME_DEBUG */
-#endif /* HAVE_STRUCT_SOCKADDR_DL */
 
       circuit->u.bc.adjdb[0] = list_new ();
       circuit->u.bc.adjdb[1] = list_new ();
 
-      if (circuit->area->min_bcast_mtu == 0 ||
-          ISO_MTU (circuit) < circuit->area->min_bcast_mtu)
-        circuit->area->min_bcast_mtu = ISO_MTU (circuit);
       /*
        * ISO 10589 - 8.4.1 Enabling of broadcast circuits
        */
@@ -688,11 +727,8 @@ isis_circuit_up (struct isis_circuit *circuit)
     }
 
   /* initialize the circuit streams after opening connection */
-  if (circuit->rcv_stream == NULL)
-    circuit->rcv_stream = stream_new (ISO_MTU (circuit));
-
-  if (circuit->snd_stream == NULL)
-    circuit->snd_stream = stream_new (ISO_MTU (circuit));
+  isis_circuit_stream(circuit, &circuit->rcv_stream);
+  isis_circuit_stream(circuit, &circuit->snd_stream);
 
 #ifdef GNU_LINUX
   THREAD_READ_ON (master, circuit->t_read, isis_receive, circuit,
@@ -763,6 +799,8 @@ isis_circuit_down (struct isis_circuit *circuit)
       THREAD_TIMER_OFF (circuit->u.bc.t_run_dr[1]);
       THREAD_TIMER_OFF (circuit->u.bc.t_refresh_pseudo_lsp[0]);
       THREAD_TIMER_OFF (circuit->u.bc.t_refresh_pseudo_lsp[1]);
+      circuit->lsp_regenerate_pending[0] = 0;
+      circuit->lsp_regenerate_pending[1] = 0;
     }
   else if (circuit->circ_type == CIRCUIT_T_P2P)
     {
@@ -854,6 +892,10 @@ isis_circuit_print_vty (struct isis_circuit *circuit, struct vty *vty,
 
   if (detail == ISIS_UI_LEVEL_DETAIL)
     {
+      struct listnode *node;
+      struct prefix *ip_addr;
+      u_char buf[BUFSIZ];
+
       vty_out (vty, "  Interface: %s", circuit->interface->name);
       vty_out (vty, ", State: %s", circuit_state2string (circuit->state));
       if (circuit->is_passive)
@@ -935,9 +977,6 @@ isis_circuit_print_vty (struct isis_circuit *circuit, struct vty *vty,
         }
       if (circuit->ip_addrs && listcount (circuit->ip_addrs) > 0)
         {
-          struct listnode *node;
-          struct prefix *ip_addr;
-          u_char buf[BUFSIZ];
           vty_out (vty, "    IP Prefix(es):%s", VTY_NEWLINE);
           for (ALL_LIST_ELEMENTS_RO (circuit->ip_addrs, node, ip_addr))
             {
@@ -945,6 +984,25 @@ isis_circuit_print_vty (struct isis_circuit *circuit, struct vty *vty,
               vty_out (vty, "      %s%s", buf, VTY_NEWLINE);
             }
         }
+      if (circuit->ipv6_link && listcount(circuit->ipv6_link) > 0)
+        {
+          vty_out(vty, "    IPv6 Link-Locals:%s", VTY_NEWLINE);
+          for (ALL_LIST_ELEMENTS_RO(circuit->ipv6_link, node, ip_addr))
+            {
+              prefix2str(ip_addr, (char*)buf, BUFSIZ),
+              vty_out(vty, "      %s%s", buf, VTY_NEWLINE);
+            }
+        }
+      if (circuit->ipv6_link && listcount(circuit->ipv6_non_link) > 0)
+        {
+          vty_out(vty, "    IPv6 Prefixes:%s", VTY_NEWLINE);
+          for (ALL_LIST_ELEMENTS_RO(circuit->ipv6_non_link, node, ip_addr))
+            {
+              prefix2str(ip_addr, (char*)buf, BUFSIZ),
+              vty_out(vty, "      %s%s", buf, VTY_NEWLINE);
+            }
+        }
+
       vty_out (vty, "%s", VTY_NEWLINE);
     }
   return;
@@ -1193,6 +1251,7 @@ DEFUN (ip_router_isis,
   struct isis_circuit *circuit;
   struct interface *ifp;
   struct isis_area *area;
+  int rv;
 
   ifp = (struct interface *) vty->index;
   assert (ifp);
@@ -1221,16 +1280,25 @@ DEFUN (ip_router_isis,
   area = vty->index;
 
   circuit = isis_csm_state_change (ISIS_ENABLE, circuit, area);
-  isis_circuit_if_bind (circuit, ifp);
+  if (circuit->state != C_STATE_CONF && circuit->state != C_STATE_UP)
+    {
+      vty_out(vty, "Couldn't bring up interface, please check log.%s", VTY_NEWLINE);
+      rv = CMD_WARNING;
+    }
+  else
+    {
+      isis_circuit_if_bind (circuit, ifp);
 
-  circuit->ip_router = 1;
-  area->ip_circuits++;
-  circuit_update_nlpids (circuit);
+      circuit->ip_router = 1;
+      area->ip_circuits++;
+      circuit_update_nlpids (circuit);
+      rv = CMD_SUCCESS;
+    }
 
   vty->node = INTERFACE_NODE;
   vty->index = ifp;
 
-  return CMD_SUCCESS;
+  return rv;
 }
 
 DEFUN (no_ip_router_isis,
@@ -1291,6 +1359,7 @@ DEFUN (ipv6_router_isis,
   struct isis_circuit *circuit;
   struct interface *ifp;
   struct isis_area *area;
+  int rv;
 
   ifp = (struct interface *) vty->index;
   assert (ifp);
@@ -1319,16 +1388,25 @@ DEFUN (ipv6_router_isis,
   area = vty->index;
 
   circuit = isis_csm_state_change (ISIS_ENABLE, circuit, area);
-  isis_circuit_if_bind (circuit, ifp);
+  if (circuit->state != C_STATE_CONF && circuit->state != C_STATE_UP)
+    {
+      vty_out(vty, "Couldn't bring up interface, please check log.%s", VTY_NEWLINE);
+      rv = CMD_WARNING;
+    }
+  else
+    {
+      isis_circuit_if_bind (circuit, ifp);
 
-  circuit->ipv6_router = 1;
-  area->ipv6_circuits++;
-  circuit_update_nlpids (circuit);
+      circuit->ipv6_router = 1;
+      area->ipv6_circuits++;
+      circuit_update_nlpids (circuit);
+      rv = CMD_SUCCESS;
+    }
 
   vty->node = INTERFACE_NODE;
   vty->index = ifp;
 
-  return CMD_SUCCESS;
+  return rv;
 }
 
 DEFUN (no_ipv6_router_isis,
@@ -1342,7 +1420,6 @@ DEFUN (no_ipv6_router_isis,
 {
   struct interface *ifp;
   struct isis_area *area;
-  struct listnode *node;
   struct isis_circuit *circuit;
 
   ifp = (struct interface *) vty->index;
@@ -2740,7 +2817,6 @@ void
 isis_circuit_init ()
 {
   /* Initialize Zebra interface data structure */
-  if_init ();
   if_add_hook (IF_NEW_HOOK, isis_if_new_hook);
   if_add_hook (IF_DELETE_HOOK, isis_if_delete_hook);
 
