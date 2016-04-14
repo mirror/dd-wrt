@@ -20,8 +20,8 @@
  * 02111-1307, USA.  
  */
 
-#include <stddef.h>
 #include <zebra.h>
+#include <stddef.h>
 
 #include "stream.h"
 #include "memory.h"
@@ -53,14 +53,14 @@
  */
 #define STREAM_WARN_OFFSETS(S) \
   zlog_warn ("&(struct stream): %p, size: %lu, getp: %lu, endp: %lu\n", \
-             (S), \
+             (void *)(S), \
              (unsigned long) (S)->size, \
              (unsigned long) (S)->getp, \
              (unsigned long) (S)->endp)\
 
 #define STREAM_VERIFY_SANE(S) \
   do { \
-    if ( !(GETP_VALID(S, (S)->getp)) && ENDP_VALID(S, (S)->endp) ) \
+    if ( !(GETP_VALID(S, (S)->getp) && ENDP_VALID(S, (S)->endp)) ) \
       STREAM_WARN_OFFSETS(S); \
     assert ( GETP_VALID(S, (S)->getp) ); \
     assert ( ENDP_VALID(S, (S)->endp) ); \

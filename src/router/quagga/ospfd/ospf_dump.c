@@ -299,13 +299,13 @@ ospf_timeval_dump (struct timeval *t, char *buf, size_t size)
   else if (d)
     snprintf (buf, size, "%1ldd%02ldh%02ldm", d, h, m);
   else if (h)
-    snprintf (buf, size, "%ldh%02ldm%02lds", h, m, t->tv_sec);
+    snprintf (buf, size, "%ldh%02ldm%02lds", h, m, (long)t->tv_sec);
   else if (m)
-    snprintf (buf, size, "%ldm%02lds", m, t->tv_sec);
+    snprintf (buf, size, "%ldm%02lds", m, (long)t->tv_sec);
   else if (ms)
-    snprintf (buf, size, "%ld.%03lds", t->tv_sec, ms);
+    snprintf (buf, size, "%ld.%03lds", (long)t->tv_sec, ms);
   else
-    snprintf (buf, size, "%ld usecs", t->tv_usec);
+    snprintf (buf, size, "%ld usecs", (long)t->tv_usec);
 
   return buf;
 }
@@ -619,13 +619,11 @@ ospf_packet_ls_upd_dump (struct stream *s, u_int16_t length)
 	case OSPF_AS_NSSA_LSA:
 	  ospf_as_external_lsa_dump (s, length);
 	  break;
-#ifdef HAVE_OPAQUE_LSA
 	case OSPF_OPAQUE_LINK_LSA:
 	case OSPF_OPAQUE_AREA_LSA:
 	case OSPF_OPAQUE_AS_LSA:
 	  ospf_opaque_lsa_dump (s, length);
 	  break;
-#endif /* HAVE_OPAQUE_LSA */
 	default:
 	  break;
 	}
@@ -902,7 +900,7 @@ DEFUN (no_debug_ospf_packet,
       else if (strncmp (argv[1], "r", 1) == 0)
 	flag = OSPF_DEBUG_RECV | OSPF_DEBUG_DETAIL;
       else if (strncmp (argv[1], "d", 1) == 0)
-	flag = OSPF_DEBUG_DETAIL;
+	flag = OSPF_DEBUG_SEND | OSPF_DEBUG_RECV | OSPF_DEBUG_DETAIL;
     }
 
   /* detail. */

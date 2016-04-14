@@ -36,6 +36,8 @@ Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 #include "filter.h"
 #include "plist.h"
 #include "stream.h"
+#include "vrf.h"
+#include "workqueue.h"
 
 #include "bgpd/bgpd.h"
 #include "bgpd/bgp_attr.h"
@@ -103,9 +105,6 @@ char config_default[] = SYSCONFDIR BGP_DEFAULT_CONFIG;
 
 /* Route retain mode flag. */
 static int retain_mode = 0;
-
-/* Master of threads. */
-struct thread_master *master;
 
 /* Manually specified configuration file name.  */
 char *config_file = NULL;
@@ -198,10 +197,12 @@ sigint (void)
 {
   zlog_notice ("Terminating on signal");
 
-  if (! retain_mode)
-    bgp_terminate ();
+  if (! retain_mode) 
+    {
+      bgp_terminate ();
+      zprivs_terminate (&bgpd_privs);
+    }
 
-  zprivs_terminate (&bgpd_privs);
   bgp_exit (0);
 }
 
@@ -226,7 +227,6 @@ bgp_exit (int status)
   struct listnode *node, *nnode;
   int *socket;
   struct interface *ifp;
-  extern struct zclient *zclient;
   extern struct zclient *zlookup;
 
   /* it only makes sense for this to be called on a clean exit */
@@ -236,7 +236,27 @@ bgp_exit (int status)
   for (ALL_LIST_ELEMENTS (bm->bgp, node, nnode, bgp))
     bgp_delete (bgp);
   list_free (bm->bgp);
-
+  bm->bgp = NULL;
+  
+  /*
+   * bgp_delete can re-allocate the process queues after they were
+   * deleted in bgp_terminate. delete them again.
+   *
+   * It might be better to ensure the RIBs (including static routes)
+   * are cleared by bgp_terminate() during its call to bgp_cleanup_routes(),
+   * which currently only deletes the kernel routes.
+   */
+  if (bm->process_main_queue)
+    {
+     work_queue_free (bm->process_main_queue);
+     bm->process_main_queue = NULL;
+    }
+  if (bm->process_rsclient_queue)
+    {
+      work_queue_free (bm->process_rsclient_queue);
+      bm->process_rsclient_queue = NULL;
+    }
+  
   /* reverse bgp_master_init */
   for (ALL_LIST_ELEMENTS_RO(bm->listen_sockets, node, socket))
     {
@@ -248,17 +268,14 @@ bgp_exit (int status)
   /* reverse bgp_zebra_init/if_init */
   if (retain_mode)
     if_add_hook (IF_DELETE_HOOK, NULL);
-  for (ALL_LIST_ELEMENTS (iflist, node, nnode, ifp))
+  for (ALL_LIST_ELEMENTS_RO (iflist, node, ifp))
     {
       struct listnode *c_node, *c_nnode;
       struct connected *c;
 
       for (ALL_LIST_ELEMENTS (ifp->connected, c_node, c_nnode, c))
         bgp_connected_delete (c);
-
-      if_delete (ifp);
     }
-  list_free (iflist);
 
   /* reverse bgp_attr_init */
   bgp_attr_finish ();
@@ -293,18 +310,20 @@ bgp_exit (int status)
   /* reverse community_list_init */
   community_list_terminate (bgp_clist);
 
+  vrf_terminate ();
   cmd_terminate ();
   vty_terminate ();
-  if (zclient)
-    zclient_free (zclient);
+  bgp_address_destroy();
+  bgp_scan_destroy();
+  bgp_zebra_destroy();
   if (zlookup)
     zclient_free (zlookup);
   if (bgp_nexthop_buf)
     stream_free (bgp_nexthop_buf);
 
   /* reverse bgp_master_init */
-  if (master)
-    thread_master_free (master);
+  if (bm->master)
+    thread_master_free (bm->master);
 
   if (zlog_default)
     closezlog (zlog_default);
@@ -417,16 +436,14 @@ main (int argc, char **argv)
 	}
     }
 
-  /* Make thread master. */
-  master = bm->master;
-
   /* Initializations. */
-  srand (time (NULL));
-  signal_init (master, array_size(bgp_signals), bgp_signals);
+  srandom (time (NULL));
+  signal_init (bm->master, array_size(bgp_signals), bgp_signals);
   zprivs_init (&bgpd_privs);
   cmd_init (1);
-  vty_init (master);
+  vty_init (bm->master);
   memory_init ();
+  vrf_init ();
 
   /* BGP related initialization.  */
   bgp_init ();
@@ -453,13 +470,14 @@ main (int argc, char **argv)
   vty_serv_sock (vty_addr, vty_port, BGP_VTYSH_PATH);
 
   /* Print banner. */
-  zlog_notice ("BGPd %s starting: vty@%d, bgp@%s:%d", QUAGGA_VERSION,
+  zlog_notice ("BGPd %s starting: vty@%d, bgp@%s:%d pid %d", QUAGGA_VERSION,
 	       vty_port, 
 	       (bm->address ? bm->address : "<all>"),
-	       bm->port);
+	       bm->port,
+	       getpid ());
 
   /* Start finite state machine, here we go! */
-  while (thread_fetch (master, &thread))
+  while (thread_fetch (bm->master, &thread))
     thread_call (&thread);
 
   /* Not reached. */

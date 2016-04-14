@@ -30,6 +30,8 @@ Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 #include "stream.h"
 #include "memory.h"
 #include "plist.h"
+#include "workqueue.h"
+#include "filter.h"
 
 #include "bgpd/bgpd.h"
 #include "bgpd/bgp_attr.h"
@@ -65,7 +67,7 @@ static int bgp_start (struct peer *);
 static int
 bgp_start_jitter (int time)
 {
-  return ((rand () % (time + 1)) - (time / 2));
+  return ((random () % (time + 1)) - (time / 2));
 }
 
 /* Check if suppress start/restart of sessions to peer. */
@@ -100,7 +102,6 @@ bgp_timer_set (struct peer *peer)
       BGP_TIMER_OFF (peer->t_connect);
       BGP_TIMER_OFF (peer->t_holdtime);
       BGP_TIMER_OFF (peer->t_keepalive);
-      BGP_TIMER_OFF (peer->t_asorig);
       BGP_TIMER_OFF (peer->t_routeadv);
       break;
 
@@ -112,7 +113,6 @@ bgp_timer_set (struct peer *peer)
       BGP_TIMER_ON (peer->t_connect, bgp_connect_timer, peer->v_connect);
       BGP_TIMER_OFF (peer->t_holdtime);
       BGP_TIMER_OFF (peer->t_keepalive);
-      BGP_TIMER_OFF (peer->t_asorig);
       BGP_TIMER_OFF (peer->t_routeadv);
       break;
 
@@ -132,7 +132,6 @@ bgp_timer_set (struct peer *peer)
 	}
       BGP_TIMER_OFF (peer->t_holdtime);
       BGP_TIMER_OFF (peer->t_keepalive);
-      BGP_TIMER_OFF (peer->t_asorig);
       BGP_TIMER_OFF (peer->t_routeadv);
       break;
 
@@ -150,7 +149,6 @@ bgp_timer_set (struct peer *peer)
 	  BGP_TIMER_OFF (peer->t_holdtime);
 	}
       BGP_TIMER_OFF (peer->t_keepalive);
-      BGP_TIMER_OFF (peer->t_asorig);
       BGP_TIMER_OFF (peer->t_routeadv);
       break;
 
@@ -173,7 +171,6 @@ bgp_timer_set (struct peer *peer)
 	  BGP_TIMER_ON (peer->t_keepalive, bgp_keepalive_timer, 
 			peer->v_keepalive);
 	}
-      BGP_TIMER_OFF (peer->t_asorig);
       BGP_TIMER_OFF (peer->t_routeadv);
       break;
 
@@ -197,7 +194,6 @@ bgp_timer_set (struct peer *peer)
 	  BGP_TIMER_ON (peer->t_keepalive, bgp_keepalive_timer,
 			peer->v_keepalive);
 	}
-      BGP_TIMER_OFF (peer->t_asorig);
       break;
     case Deleted:
       BGP_TIMER_OFF (peer->t_gr_restart);
@@ -208,7 +204,6 @@ bgp_timer_set (struct peer *peer)
       BGP_TIMER_OFF (peer->t_connect);
       BGP_TIMER_OFF (peer->t_holdtime);
       BGP_TIMER_OFF (peer->t_keepalive);
-      BGP_TIMER_OFF (peer->t_asorig);
       BGP_TIMER_OFF (peer->t_routeadv);
     }
 }
@@ -406,7 +401,23 @@ bgp_fsm_change_status (struct peer *peer, int status)
    * (and must do so before actually changing into Deleted..
    */
   if (status >= Clearing)
-    bgp_clear_route_all (peer);
+    {
+      bgp_clear_route_all (peer);
+
+      /* If no route was queued for the clear-node processing, generate the
+       * completion event here. This is needed because if there are no routes
+       * to trigger the background clear-node thread, the event won't get
+       * generated and the peer would be stuck in Clearing. Note that this
+       * event is for the peer and helps the peer transition out of Clearing
+       * state; it should not be generated per (AFI,SAFI). The event is
+       * directly posted here without calling clear_node_complete() as we
+       * shouldn't do an extra unlock. This event will get processed after
+       * the state change that happens below, so peer will be in Clearing
+       * (or Deleted).
+       */
+      if (!work_queue_is_scheduled (peer->clear_node_queue))
+        BGP_EVENT_ADD (peer, Clearing_Completed);
+    }
   
   /* Preserve old status and change into new status. */
   peer->ostatus = peer->status;
@@ -505,7 +516,6 @@ bgp_stop (struct peer *peer)
   BGP_TIMER_OFF (peer->t_connect);
   BGP_TIMER_OFF (peer->t_holdtime);
   BGP_TIMER_OFF (peer->t_keepalive);
-  BGP_TIMER_OFF (peer->t_asorig);
   BGP_TIMER_OFF (peer->t_routeadv);
 
   /* Stream reset. */
@@ -545,7 +555,7 @@ bgp_stop (struct peer *peer)
 
         /* ORF received prefix-filter pnt */
         sprintf (orf_name, "%s.%d.%d", peer->host, afi, safi);
-        prefix_bgp_orf_remove_all (orf_name);
+        prefix_bgp_orf_remove_all (afi, orf_name);
       }
 
   /* Reset keepalive and holdtime */

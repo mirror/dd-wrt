@@ -47,7 +47,8 @@ static void group_timer_off(struct igmp_group *group);
 static struct igmp_group *find_group_by_addr(struct igmp_sock *igmp,
 					     struct in_addr group_addr);
 
-static int igmp_sock_open(struct in_addr ifaddr, int ifindex, uint32_t pim_options)
+static int igmp_sock_open(struct in_addr ifaddr, ifindex_t ifindex, 
+                          uint32_t pim_options)
 {
   int fd;
   int join = 0;
@@ -952,7 +953,7 @@ static int pim_igmp_read(struct thread *t)
   socklen_t tolen = sizeof(to);
   uint8_t buf[PIM_IGMP_BUFSIZE_READ];
   int len;
-  int ifindex = -1;
+  ifindex_t ifindex = -1;
   int result = -1; /* defaults to bad */
 
   zassert(t);

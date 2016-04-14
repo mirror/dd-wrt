@@ -863,7 +863,7 @@ ospf6_receive_lsa (struct ospf6_neighbor *from,
           struct timeval now, res;
           quagga_gettime (QUAGGA_CLK_MONOTONIC, &now);
           timersub (&now, &old->installed, &res);
-          if (res.tv_sec < OSPF_MIN_LS_ARRIVAL)
+          if (res.tv_sec < (OSPF_MIN_LS_ARRIVAL / 1000))
             {
               if (is_debug)
                 zlog_debug ("LSA can't be updated within MinLSArrival, discard");

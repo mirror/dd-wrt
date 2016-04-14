@@ -151,6 +151,7 @@ time_print(FILE *fp, struct timestamp_control *ctl)
 static void
 vzlog (struct zlog *zl, int priority, const char *format, va_list args)
 {
+  int original_errno = errno;
   struct timestamp_control tsctl;
   tsctl.already_rendered = 0;
 
@@ -169,6 +170,7 @@ vzlog (struct zlog *zl, int priority, const char *format, va_list args)
       fflush (stderr);
 
       /* In this case we return at here. */
+      errno = original_errno;
       return;
     }
   tsctl.precision = zl->timestamp_precision;
@@ -216,6 +218,8 @@ vzlog (struct zlog *zl, int priority, const char *format, va_list args)
   if (priority <= zl->maxlvl[ZLOG_DEST_MONITOR])
     vty_log ((zl->record_priority ? zlog_priority[priority] : NULL),
 	     zlog_proto_names[zl->protocol], format, &tsctl, args);
+
+  errno = original_errno;
 }
 
 static char *
@@ -1012,4 +1016,46 @@ proto_redistnum(int afi, const char *s)
 	return ZEBRA_ROUTE_BABEL;
     }
   return -1;
+}
+
+void
+zlog_hexdump (void *mem, unsigned int len) {
+  unsigned long i = 0;
+  unsigned int j = 0;
+  unsigned int columns = 8;
+  char buf[(len * 4) + ((len/4) * 20) + 30];
+  char *s = buf;
+
+  for (i = 0; i < len + ((len % columns) ? (columns - len % columns) : 0); i++)
+    {
+      /* print offset */
+      if (i % columns == 0)
+        s += sprintf(s, "0x%016lx: ", (unsigned long)mem + i);
+
+      /* print hex data */
+      if (i < len)
+        s += sprintf(s, "%02x ", 0xFF & ((char*)mem)[i]);
+
+      /* end of block, just aligning for ASCII dump */
+      else
+        s += sprintf(s, "   ");
+
+      /* print ASCII dump */
+      if (i % columns == (columns - 1))
+        {
+          for (j = i - (columns - 1); j <= i; j++)
+            {
+              if (j >= len) /* end of block, not really printing */
+                s += sprintf(s, " ");
+
+              else if(isprint((int)((char*)mem)[j])) /* printable char */
+                s += sprintf(s, "%c", 0xFF & ((char*)mem)[j]);
+
+              else /* other char */
+                s += sprintf(s, ".");
+            }
+          s += sprintf(s, "\n");
+        }
+    }
+    zlog_debug("\n%s", buf);
 }

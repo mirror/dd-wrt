@@ -25,6 +25,7 @@
 #ifdef HAVE_NETLINK
 
 #define NL_PKT_BUF_SIZE 8192
+#define NL_DEFAULT_ROUTE_METRIC 20
 
 extern int
 addattr32 (struct nlmsghdr *n, size_t maxlen, int type, int data);
@@ -40,6 +41,9 @@ nl_msg_type_to_str (uint16_t msg_type);
 extern const char *
 nl_rtproto_to_str (u_char rtproto);
 
+
+extern int interface_lookup_netlink (struct zebra_vrf *zvrf);
+extern int netlink_route_read (struct zebra_vrf *zvrf);
 
 #endif /* HAVE_NETLINK */
 

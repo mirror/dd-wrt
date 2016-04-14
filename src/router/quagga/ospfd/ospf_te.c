@@ -26,11 +26,6 @@
 
 #include <zebra.h>
 
-#ifdef HAVE_OSPF_TE
-#ifndef HAVE_OPAQUE_LSA
-#error "Wrong configure option"
-#endif /* HAVE_OPAQUE_LSA */
-
 #include "linklist.h"
 #include "prefix.h"
 #include "if.h"
@@ -556,7 +551,7 @@ ospf_mpls_te_new_if (struct interface *ifp)
 
   if (lookup_linkparams_by_ifp (ifp) != NULL)
     {
-      zlog_warn ("ospf_mpls_te_new_if: ifp(%p) already in use?", ifp);
+      zlog_warn ("ospf_mpls_te_new_if: ifp(%p) already in use?", (void *)ifp);
       rc = 0; /* Do nothing here. */
       goto out;
     }
@@ -1907,5 +1902,3 @@ ospf_mpls_te_register_vty (void)
 
   return;
 }
-
-#endif /* HAVE_OSPF_TE */

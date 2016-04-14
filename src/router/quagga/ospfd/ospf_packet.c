@@ -644,8 +644,8 @@ ospf_write (struct thread *thread)
   struct listnode *node;
 #ifdef WANT_OSPF_WRITE_FRAGMENT
   static u_int16_t ipid = 0;
-#endif /* WANT_OSPF_WRITE_FRAGMENT */
   u_int16_t maxdatasize;
+#endif /* WANT_OSPF_WRITE_FRAGMENT */
 #define OSPF_WRITE_IPHL_SHIFT 2
   
   ospf->t_write = NULL;
@@ -659,7 +659,6 @@ ospf_write (struct thread *thread)
   /* seed ipid static with low order bits of time */
   if (ipid == 0)
     ipid = (time(NULL) & 0xffff);
-#endif /* WANT_OSPF_WRITE_FRAGMENT */
 
   /* convenience - max OSPF data per packet,
    * and reliability - not more data, than our
@@ -667,6 +666,7 @@ ospf_write (struct thread *thread)
    */
   maxdatasize = MIN (oi->ifp->mtu, ospf->maxsndbuflen) -
     sizeof (struct ip);
+#endif /* WANT_OSPF_WRITE_FRAGMENT */
   
   /* Get one packet from queue. */
   op = ospf_fifo_head (oi->obuf);
@@ -894,7 +894,6 @@ ospf_hello (struct ip *iph, struct ospf_header *ospfh,
     }
 #endif /* REJECT_IF_TBIT_ON */
 
-#ifdef HAVE_OPAQUE_LSA
   if (CHECK_FLAG (oi->ospf->config, OSPF_OPAQUE_CAPABLE)
       && CHECK_FLAG (hello->options, OSPF_OPTION_O))
     {
@@ -910,7 +909,6 @@ ospf_hello (struct ip *iph, struct ospf_header *ospfh,
       UNSET_FLAG (hello->options, OSPF_OPTION_O); /* Ignore O-bit. */
 #endif /* STRICT_OBIT_USAGE_CHECK */
     }
-#endif /* HAVE_OPAQUE_LSA */
 
   /* new for NSSA is to ensure that NP is on and E is off */
 
@@ -1062,7 +1060,6 @@ ospf_db_desc_proc (struct stream *s, struct ospf_interface *oi,
 	  return;
 	}
 
-#ifdef HAVE_OPAQUE_LSA
       if (IS_OPAQUE_LSA (lsah->type)
       &&  ! CHECK_FLAG (nbr->options, OSPF_OPTION_O))
         {
@@ -1070,14 +1067,11 @@ ospf_db_desc_proc (struct stream *s, struct ospf_interface *oi,
           OSPF_NSM_EVENT_SCHEDULE (nbr, NSM_SeqNumberMismatch);
           return;
         }
-#endif /* HAVE_OPAQUE_LSA */
 
       switch (lsah->type)
         {
         case OSPF_AS_EXTERNAL_LSA:
-#ifdef HAVE_OPAQUE_LSA
 	case OSPF_OPAQUE_AS_LSA:
-#endif /* HAVE_OPAQUE_LSA */
           /* Check for stub area.  Reject if AS-External from stub but
              allow if from NSSA. */
           if (oi->area->external_routing == OSPF_AREA_STUB)
@@ -1248,7 +1242,6 @@ ospf_db_desc (struct ip *iph, struct ospf_header *ospfh,
     }
 #endif /* REJECT_IF_TBIT_ON */
 
-#ifdef HAVE_OPAQUE_LSA
   if (CHECK_FLAG (dd->options, OSPF_OPTION_O)
       && !CHECK_FLAG (oi->ospf->config, OSPF_OPAQUE_CAPABLE))
     {
@@ -1258,7 +1251,6 @@ ospf_db_desc (struct ip *iph, struct ospf_header *ospfh,
        */
       UNSET_FLAG (dd->options, OSPF_OPTION_O);
     }
-#endif /* HAVE_OPAQUE_LSA */
 
   /* Add event to thread. */
   OSPF_NSM_EVENT_SCHEDULE (nbr, NSM_PacketReceived);
@@ -1323,7 +1315,6 @@ ospf_db_desc (struct ip *iph, struct ospf_header *ospfh,
       /* This is where the real Options are saved */
       nbr->options = dd->options;
 
-#ifdef HAVE_OPAQUE_LSA
       if (CHECK_FLAG (oi->ospf->config, OSPF_OPAQUE_CAPABLE))
         {
           if (IS_DEBUG_OSPF_EVENT)
@@ -1341,7 +1332,6 @@ ospf_db_desc (struct ip *iph, struct ospf_header *ospfh,
               /* This situation is undesirable, but not a real error. */
             }
         }
-#endif /* HAVE_OPAQUE_LSA */
 
       OSPF_NSM_EVENT_EXECUTE (nbr, NSM_NegotiationDone);
 
@@ -1619,7 +1609,6 @@ ospf_ls_upd_list_lsa (struct ospf_neighbor *nbr, struct stream *s,
       if (ntohs (lsah->ls_age) > OSPF_LSA_MAXAGE)
         lsah->ls_age = htons (OSPF_LSA_MAXAGE);
 
-#ifdef HAVE_OPAQUE_LSA
       if (CHECK_FLAG (nbr->options, OSPF_OPTION_O))
         {
 #ifdef STRICT_OBIT_USAGE_CHECK
@@ -1651,7 +1640,6 @@ ospf_ls_upd_list_lsa (struct ospf_neighbor *nbr, struct stream *s,
           zlog_warn ("LSA[Type%d:%s]: Opaque capability mismatch?", lsah->type, inet_ntoa (lsah->id));
           continue;
         }
-#endif /* HAVE_OPAQUE_LSA */
 
       /* Create OSPF LSA instance. */
       lsa = ospf_lsa_new ();
@@ -1661,16 +1649,12 @@ ospf_ls_upd_list_lsa (struct ospf_neighbor *nbr, struct stream *s,
       switch (lsah->type)
         {
         case OSPF_AS_EXTERNAL_LSA:
-#ifdef HAVE_OPAQUE_LSA
         case OSPF_OPAQUE_AS_LSA:
-#endif /* HAVE_OPAQUE_LSA */
           lsa->area = NULL;
           break;
-#ifdef HAVE_OPAQUE_LSA
         case OSPF_OPAQUE_LINK_LSA:
           lsa->oi = oi; /* Remember incoming interface for flooding control. */
           /* Fallthrough */
-#endif /* HAVE_OPAQUE_LSA */
         default:
           lsa->area = oi->area;
           break;
@@ -1681,7 +1665,7 @@ ospf_ls_upd_list_lsa (struct ospf_neighbor *nbr, struct stream *s,
 
       if (IS_DEBUG_OSPF_EVENT)
 	zlog_debug("LSA[Type%d:%s]: %p new LSA created with Link State Update",
-		  lsa->data->type, inet_ntoa (lsa->data->id), lsa);
+		  lsa->data->type, inet_ntoa (lsa->data->id), (void *)lsa);
       listnode_add (lsas, lsa);
     }
 
@@ -1703,7 +1687,7 @@ ospf_upd_list_clean (struct list *lsas)
 
 /* OSPF Link State Update message read -- RFC2328 Section 13. */
 static void
-ospf_ls_upd (struct ip *iph, struct ospf_header *ospfh,
+ospf_ls_upd (struct ospf *ospf, struct ip *iph, struct ospf_header *ospfh,
 	     struct stream *s, struct ospf_interface *oi, u_int16_t size)
 {
   struct ospf_neighbor *nbr;
@@ -1745,24 +1729,10 @@ ospf_ls_upd (struct ip *iph, struct ospf_header *ospfh,
    */
   lsas = ospf_ls_upd_list_lsa (nbr, s, oi, size);
 
-#ifdef HAVE_OPAQUE_LSA
-  /*
-   * If self-originated Opaque-LSAs that have flooded before restart
-   * are contained in the received LSUpd message, corresponding LSReq
-   * messages to be sent may have to be modified.
-   * To eliminate possible race conditions such that flushing and normal
-   * updating for the same LSA would take place alternately, this trick
-   * must be done before entering to the loop below.
-   */
-   /* XXX: Why is this Opaque specific? Either our core code is deficient
-    * and this should be fixed generally, or Opaque is inventing strawman
-    * problems */
-   ospf_opaque_adjust_lsreq (nbr, lsas);
-#endif /* HAVE_OPAQUE_LSA */
-
 #define DISCARD_LSA(L,N) {\
         if (IS_DEBUG_OSPF_EVENT) \
-          zlog_debug ("ospf_lsa_discard() in ospf_ls_upd() point %d: lsa %p Type-%d", N, lsa, (int) lsa->data->type); \
+          zlog_debug ("ospf_lsa_discard() in ospf_ls_upd() point %d: lsa %p" \
+                      " Type-%d", N, (void *)lsa, (int) lsa->data->type); \
         ospf_lsa_discard (L); \
 	continue; }
 
@@ -1871,7 +1841,6 @@ ospf_ls_upd (struct ip *iph, struct ospf_header *ospfh,
           DISCARD_LSA (lsa, 3);
 	}
 
-#ifdef HAVE_OPAQUE_LSA
       if (IS_OPAQUE_LSA (lsa->data->type)
       &&  IPV4_ADDR_SAME (&lsa->data->adv_router, &oi->ospf->router_id))
         {
@@ -1919,7 +1888,6 @@ ospf_ls_upd (struct ip *iph, struct ospf_header *ospfh,
               continue;
             }
         }
-#endif /* HAVE_OPAQUE_LSA */
 
       /* It might be happen that received LSA is self-originated network LSA, but
        * router ID is changed. So, we should check if LSA is a network-LSA whose
@@ -1947,7 +1915,7 @@ ospf_ls_upd (struct ip *iph, struct ospf_header *ospfh,
               ospf_lsa_flush_area(lsa,out_if->area);
               if(IS_DEBUG_OSPF_EVENT)
                 zlog_debug ("ospf_lsa_discard() in ospf_ls_upd() point 9: lsa %p Type-%d",
-                            lsa, (int) lsa->data->type);
+                            (void *)lsa, (int) lsa->data->type);
               ospf_lsa_discard (lsa);
               Flag = 1;
             }
@@ -2060,7 +2028,7 @@ ospf_ls_upd (struct ip *iph, struct ospf_header *ospfh,
 	      quagga_gettime (QUAGGA_CLK_MONOTONIC, &now);
 	      
 	      if (tv_cmp (tv_sub (now, current->tv_orig), 
-			  int2tv (OSPF_MIN_LS_ARRIVAL)) >= 0)
+			  msec2tv (ospf->min_ls_arrival)) >= 0)
 		/* Trap NSSA type later.*/
 		ospf_ls_upd_send_lsa (nbr, current, OSPF_SEND_PACKET_DIRECT);
 	      DISCARD_LSA (lsa, 8);
@@ -2124,14 +2092,7 @@ ospf_ls_ack (struct ip *iph, struct ospf_header *ospfh,
       lsr = ospf_ls_retransmit_lookup (nbr, lsa);
 
       if (lsr != NULL && ospf_lsa_more_recent (lsr, lsa) == 0)
-        {
-#ifdef HAVE_OPAQUE_LSA
-          if (IS_OPAQUE_LSA (lsr->data->type))
-            ospf_opaque_ls_ack_received (nbr, lsr);
-#endif /* HAVE_OPAQUE_LSA */
-
-          ospf_ls_retransmit_delete (nbr, lsr);
-        }
+        ospf_ls_retransmit_delete (nbr, lsr);
 
       lsa->data = NULL;
       ospf_lsa_discard (lsa);
@@ -2146,7 +2107,7 @@ ospf_recv_packet (int fd, struct interface **ifp, struct stream *ibuf)
   int ret;
   struct ip *iph;
   u_int16_t ip_len;
-  unsigned int ifindex = 0;
+  ifindex_t ifindex = 0;
   struct iovec iov;
   /* Header and data both require alignment. */
   char buff [CMSG_SPACE(SOPT_SIZE_CMSG_IFINDEX_IPV4())];
@@ -2502,7 +2463,6 @@ ospf_lsa_examin (struct lsa_header * lsah, const u_int16_t lsalen, const u_char 
   case OSPF_SUMMARY_LSA:
   case OSPF_ASBR_SUMMARY_LSA:
     /* RFC2328 A.4.4, LSA header + 4 bytes followed by N>=1 4-bytes TOS blocks */
-#ifdef HAVE_OPAQUE_LSA
   case OSPF_OPAQUE_LINK_LSA:
   case OSPF_OPAQUE_AREA_LSA:
   case OSPF_OPAQUE_AS_LSA:
@@ -2510,7 +2470,6 @@ ospf_lsa_examin (struct lsa_header * lsah, const u_int16_t lsalen, const u_char 
      * data) padded to 32-bit alignment." This is considered equivalent
      * to 4-byte alignment of all other LSA types, see OSPF-ALIGNMENT.txt
      * file for the detailed analysis of this passage. */
-#endif
     ret = lsalen % 4 ? MSG_NG : MSG_OK;
     break;
   default:
@@ -2953,7 +2912,7 @@ ospf_read (struct thread *thread)
       ospf_ls_req (iph, ospfh, ibuf, oi, length);
       break;
     case OSPF_MSG_LS_UPD:
-      ospf_ls_upd (iph, ospfh, ibuf, oi, length);
+      ospf_ls_upd (ospf, iph, ospfh, ibuf, oi, length);
       break;
     case OSPF_MSG_LS_ACK:
       ospf_ls_ack (iph, ospfh, ibuf, oi, length);
@@ -3141,10 +3100,8 @@ ospf_make_db_desc (struct ospf_interface *oi, struct ospf_neighbor *nbr,
 
   /* Set Options. */
   options = OPTIONS (oi);
-#ifdef HAVE_OPAQUE_LSA
   if (CHECK_FLAG (oi->ospf->config, OSPF_OPAQUE_CAPABLE))
     SET_FLAG (options, OSPF_OPTION_O);
-#endif /* HAVE_OPAQUE_LSA */
   stream_putc (s, options);
 
   /* DD flags */
@@ -3169,7 +3126,6 @@ ospf_make_db_desc (struct ospf_interface *oi, struct ospf_neighbor *nbr,
       for (rn = route_top (table); rn; rn = route_next (rn))
 	if ((lsa = rn->info) != NULL)
 	  {
-#ifdef HAVE_OPAQUE_LSA
             if (IS_OPAQUE_LSA (lsa->data->type)
             && (! CHECK_FLAG (options, OSPF_OPTION_O)))
               {
@@ -3178,7 +3134,6 @@ ospf_make_db_desc (struct ospf_interface *oi, struct ospf_neighbor *nbr,
                 ospf_lsdb_delete (lsdb, lsa);
                 continue;
               }
-#endif /* HAVE_OPAQUE_LSA */
 
 	    if (!CHECK_FLAG (lsa->flags, OSPF_LSA_DISCARD))
 	      {
@@ -3843,6 +3798,8 @@ ospf_ls_upd_send (struct ospf_neighbor *nbr, struct list *update, int flag)
 
   if (rn->info == NULL)
     rn->info = list_new ();
+  else
+    route_unlock_node (rn);
 
   for (ALL_LIST_ELEMENTS_RO (update, node, lsa))
     listnode_add (rn->info, ospf_lsa_lock (lsa)); /* oi->ls_upd_queue */

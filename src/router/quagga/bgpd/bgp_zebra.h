@@ -25,7 +25,8 @@ Boston, MA 02111-1307, USA.  */
 
 extern struct stream *bgp_nexthop_buf;
 
-extern void bgp_zebra_init (void);
+extern void bgp_zebra_init (struct thread_master *master);
+extern void bgp_zebra_destroy (void);
 extern int bgp_if_update_all (void);
 extern int bgp_config_write_maxpaths (struct vty *, struct bgp *, afi_t,
 				      safi_t, int *);
@@ -43,9 +44,7 @@ extern int bgp_redistribute_metric_unset (struct bgp *, afi_t, int);
 
 extern struct interface *if_lookup_by_ipv4 (struct in_addr *);
 extern struct interface *if_lookup_by_ipv4_exact (struct in_addr *);
-#ifdef HAVE_IPV6
 extern struct interface *if_lookup_by_ipv6 (struct in6_addr *);
 extern struct interface *if_lookup_by_ipv6_exact (struct in6_addr *);
-#endif /* HAVE_IPV6 */
 
 #endif /* _QUAGGA_BGP_ZEBRA_H */

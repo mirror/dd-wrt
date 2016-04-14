@@ -494,7 +494,7 @@ ospf6_lsa_show_internal (struct vty *vty, struct ospf6_lsa *lsa)
   vty_out (vty, "Lock: %d %s", lsa->lock, VNL);
   vty_out (vty, "ReTx Count: %d%s", lsa->retrans_count, VNL);
   vty_out (vty, "Threads: Expire: 0x%p, Refresh: 0x%p %s",
-	   lsa->expire, lsa->refresh, VNL);
+           (void *)lsa->expire, (void *)lsa->refresh, VNL);
   vty_out (vty, "%s", VNL);
   return;
 }
@@ -807,8 +807,8 @@ ospf6_lsa_handler_name (struct ospf6_lsa_handler *h)
 
   for (i = 0; i < MIN (size, sizeof (buf)); i++)
     {
-      if (! islower (h->name[i]))
-        buf[i] = tolower (h->name[i]);
+      if (! islower ((unsigned char)h->name[i]))
+        buf[i] = tolower ((unsigned char)h->name[i]);
       else
         buf[i] = h->name[i];
     }

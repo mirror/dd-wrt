@@ -24,6 +24,7 @@
 #include "stream.h"
 #include "privs.h"
 #include "memory.h"
+#include "filter.h"
 
 #include "bgpd/bgpd.h"
 #include "bgpd/bgp_ecommunity.h"
@@ -132,7 +133,7 @@ parse_test (struct test_segment *t)
   
   printf ("%s: %s\n", t->name, t->desc);
 
-  ecom = ecommunity_parse (t->data, t->len);
+  ecom = ecommunity_parse ((u_int8_t *)t->data, t->len);
 
   printf ("ecom: %s\nvalidating...:\n", ecommunity_str (ecom));
 

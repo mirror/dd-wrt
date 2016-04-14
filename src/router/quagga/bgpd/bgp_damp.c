@@ -26,6 +26,7 @@ Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 #include "command.h"
 #include "log.h"
 #include "thread.h"
+#include "filter.h"
 
 #include "bgpd/bgpd.h"
 #include "bgpd/bgp_damp.h"
@@ -115,7 +116,7 @@ bgp_reuse_timer (struct thread *t)
     
   damp->t_reuse = NULL;
   damp->t_reuse =
-    thread_add_timer (master, bgp_reuse_timer, NULL, DELTA_REUSE);
+    thread_add_timer (bm->master, bgp_reuse_timer, NULL, DELTA_REUSE);
 
   t_now = bgp_clock ();
 
@@ -447,7 +448,7 @@ bgp_damp_enable (struct bgp *bgp, afi_t afi, safi_t safi, time_t half,
   /* Register reuse timer.  */
   if (! damp->t_reuse)
     damp->t_reuse = 
-      thread_add_timer (master, bgp_reuse_timer, NULL, DELTA_REUSE);
+      thread_add_timer (bm->master, bgp_reuse_timer, NULL, DELTA_REUSE);
 
   return 0;
 }
@@ -529,15 +530,15 @@ bgp_config_write_damp (struct vty *vty)
 	   && bgp_damp_cfg.reuse_limit == DEFAULT_REUSE
 	   && bgp_damp_cfg.suppress_value == DEFAULT_SUPPRESS
 	   && bgp_damp_cfg.max_suppress_time == bgp_damp_cfg.half_life*4)
-    vty_out (vty, " bgp dampening %ld%s",
-	     bgp_damp_cfg.half_life/60,
+    vty_out (vty, " bgp dampening %lld%s",
+	     bgp_damp_cfg.half_life/60LL,
 	     VTY_NEWLINE);
   else
-    vty_out (vty, " bgp dampening %ld %d %d %ld%s",
-	     bgp_damp_cfg.half_life/60,
+    vty_out (vty, " bgp dampening %lld %d %d %lld%s",
+	     bgp_damp_cfg.half_life/60LL,
 	     bgp_damp_cfg.reuse_limit,
 	     bgp_damp_cfg.suppress_value,
-	     bgp_damp_cfg.max_suppress_time/60,
+	     bgp_damp_cfg.max_suppress_time/60LL,
 	     VTY_NEWLINE);
 }
 
@@ -638,4 +639,37 @@ bgp_damp_reuse_time_vty (struct vty *vty, struct bgp_info *binfo,
   penalty = bgp_damp_decay (t_diff, bdi->penalty);
 
   return  bgp_get_reuse_time (penalty, timebuf, len);
+}
+
+int
+bgp_show_dampening_parameters (struct vty *vty, afi_t afi, safi_t safi)
+{
+  struct bgp *bgp;
+  bgp = bgp_get_default();
+
+  if (bgp == NULL)
+    {
+      vty_out (vty, "No BGP process is configured%s", VTY_NEWLINE);
+      return CMD_WARNING;
+    }
+
+  if (CHECK_FLAG (bgp->af_flags[afi][safi], BGP_CONFIG_DAMPENING))
+    {
+      vty_out (vty, "Half-life time: %ld min%s",
+                    damp->half_life / 60, VTY_NEWLINE);
+      vty_out (vty, "Reuse penalty: %d%s",
+                    damp->reuse_limit, VTY_NEWLINE);
+      vty_out (vty, "Suppress penalty: %d%s",
+                    damp->suppress_value, VTY_NEWLINE);
+      vty_out (vty, "Max suppress time: %ld min%s",
+                    damp->max_suppress_time / 60, VTY_NEWLINE);
+      vty_out (vty, "Max supress penalty: %u%s",
+                    damp->ceiling, VTY_NEWLINE);
+      vty_out (vty, "%s", VTY_NEWLINE);
+    }
+  else
+    vty_out (vty, "dampening not enabled for %s%s",
+                  afi == AFI_IP ? "IPv4" : "IPv6", VTY_NEWLINE);
+
+  return CMD_SUCCESS;
 }

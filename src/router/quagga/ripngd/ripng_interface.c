@@ -35,6 +35,7 @@
 #include "table.h"
 #include "thread.h"
 #include "privs.h"
+#include "vrf.h"
 
 #include "ripngd/ripngd.h"
 #include "ripngd/ripng_debug.h"
@@ -163,38 +164,15 @@ ripng_if_down (struct interface *ifp)
   struct route_node *rp;
   struct ripng_info *rinfo;
   struct ripng_interface *ri;
+  struct list *list = NULL;
+  struct listnode *listnode = NULL, *nextnode = NULL;
 
   if (ripng)
-    {
-      for (rp = route_top (ripng->table); rp; rp = route_next (rp))
-	if ((rinfo = rp->info) != NULL)
-	  {
-	    /* Routes got through this interface. */
-	    if (rinfo->ifindex == ifp->ifindex
-		&& rinfo->type == ZEBRA_ROUTE_RIPNG
-		&& rinfo->sub_type == RIPNG_ROUTE_RTE)
-	      {
-		ripng_zebra_ipv6_delete ((struct prefix_ipv6 *) &rp->p,
-					 &rinfo->nexthop,
-					 rinfo->ifindex);
-
-		ripng_redistribute_delete (rinfo->type, rinfo->sub_type,
-					   (struct prefix_ipv6 *)&rp->p,
-					   rinfo->ifindex);
-	      }
-	    else
-	      {
-		/* All redistributed routes got through this interface,
-		 * but the static and system ones are kept. */
-		if ((rinfo->ifindex == ifp->ifindex) &&
-		    (rinfo->type != ZEBRA_ROUTE_STATIC) &&
-		    (rinfo->type != ZEBRA_ROUTE_SYSTEM))
-		  ripng_redistribute_delete (rinfo->type, rinfo->sub_type,
-					     (struct prefix_ipv6 *) &rp->p,
-					     rinfo->ifindex);
-	      }
-	  }
-    }
+    for (rp = route_top (ripng->table); rp; rp = route_next (rp))
+      if ((list = rp->info) != NULL)
+        for (ALL_LIST_ELEMENTS (list, listnode, nextnode, rinfo))
+          if (rinfo->ifindex == ifp->ifindex)
+            ripng_ecmp_delete (rinfo);
 
   ri = ifp->info;
   
@@ -214,14 +192,15 @@ ripng_if_down (struct interface *ifp)
 
 /* Inteface link up message processing. */
 int
-ripng_interface_up (int command, struct zclient *zclient, zebra_size_t length)
+ripng_interface_up (int command, struct zclient *zclient, zebra_size_t length,
+    vrf_id_t vrf_id)
 {
   struct stream *s;
   struct interface *ifp;
 
   /* zebra_interface_state_read() updates interface structure in iflist. */
   s = zclient->ibuf;
-  ifp = zebra_interface_state_read (s);
+  ifp = zebra_interface_state_read (s, vrf_id);
 
   if (ifp == NULL)
     return 0;
@@ -246,14 +225,14 @@ ripng_interface_up (int command, struct zclient *zclient, zebra_size_t length)
 /* Inteface link down message processing. */
 int
 ripng_interface_down (int command, struct zclient *zclient,
-		      zebra_size_t length)
+		      zebra_size_t length, vrf_id_t vrf_id)
 {
   struct stream *s;
   struct interface *ifp;
 
   /* zebra_interface_state_read() updates interface structure in iflist. */
   s = zclient->ibuf;
-  ifp = zebra_interface_state_read (s);
+  ifp = zebra_interface_state_read (s, vrf_id);
 
   if (ifp == NULL)
     return 0;
@@ -270,11 +249,12 @@ ripng_interface_down (int command, struct zclient *zclient,
 
 /* Inteface addition message from zebra. */
 int
-ripng_interface_add (int command, struct zclient *zclient, zebra_size_t length)
+ripng_interface_add (int command, struct zclient *zclient, zebra_size_t length,
+    vrf_id_t vrf_id)
 {
   struct interface *ifp;
 
-  ifp = zebra_interface_add_read (zclient->ibuf);
+  ifp = zebra_interface_add_read (zclient->ibuf, vrf_id);
 
   if (IS_RIPNG_DEBUG_ZEBRA)
     zlog_debug ("RIPng interface add %s index %d flags %#llx metric %d mtu %d",
@@ -295,14 +275,14 @@ ripng_interface_add (int command, struct zclient *zclient, zebra_size_t length)
 
 int
 ripng_interface_delete (int command, struct zclient *zclient,
-			zebra_size_t length)
+			zebra_size_t length, vrf_id_t vrf_id)
 {
   struct interface *ifp;
   struct stream *s;
 
   s = zclient->ibuf;
   /*  zebra_interface_state_read() updates interface structure in iflist */
-  ifp = zebra_interface_state_read(s);
+  ifp = zebra_interface_state_read (s, vrf_id);
 
   if (ifp == NULL)
     return 0;
@@ -409,13 +389,13 @@ ripng_apply_address_add (struct connected *ifc) {
 
 int
 ripng_interface_address_add (int command, struct zclient *zclient,
-			     zebra_size_t length)
+			     zebra_size_t length, vrf_id_t vrf_id)
 {
   struct connected *c;
   struct prefix *p;
 
   c = zebra_interface_address_read (ZEBRA_INTERFACE_ADDRESS_ADD, 
-                                    zclient->ibuf);
+                                    zclient->ibuf, vrf_id);
 
   if (c == NULL)
     return 0;
@@ -476,14 +456,14 @@ ripng_apply_address_del (struct connected *ifc) {
 
 int
 ripng_interface_address_delete (int command, struct zclient *zclient,
-				zebra_size_t length)
+				zebra_size_t length, vrf_id_t vrf_id)
 {
   struct connected *ifc;
   struct prefix *p;
   char buf[INET6_ADDRSTRLEN];
 
   ifc = zebra_interface_address_read (ZEBRA_INTERFACE_ADDRESS_DELETE, 
-                                      zclient->ibuf);
+                                      zclient->ibuf, vrf_id);
   
   if (ifc)
     {
@@ -1200,7 +1180,6 @@ void
 ripng_if_init ()
 {
   /* Interface initialize. */
-  iflist = list_new ();
   if_add_hook (IF_NEW_HOOK, ripng_if_new_hook);
   if_add_hook (IF_DELETE_HOOK, ripng_if_delete_hook);
 

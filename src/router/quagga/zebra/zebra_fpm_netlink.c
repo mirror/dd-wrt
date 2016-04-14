@@ -136,10 +136,9 @@ typedef struct netlink_route_info_t_
   int num_nhs;
 
   /*
-   * Nexthop structures. We keep things simple for now by enforcing a
-   * maximum of 64 in case MULTIPATH_NUM is 0;
+   * Nexthop structures
    */
-  netlink_nh_info_t nhs[MAX (MULTIPATH_NUM, 64)];
+  netlink_nh_info_t nhs[MULTIPATH_NUM];
   union g_addr *pref_src;
 } netlink_route_info_t;
 
@@ -245,7 +244,7 @@ netlink_route_info_fill (netlink_route_info_t *ri, int cmd,
   ri->af = rib_dest_af (dest);
 
   ri->nlmsg_type = cmd;
-  ri->rtm_table = rib_dest_vrf (dest)->id;
+  ri->rtm_table = rib_dest_vrf (dest)->vrf_id;
   ri->rtm_protocol = RTPROT_UNSPEC;
 
   /*
@@ -287,7 +286,7 @@ netlink_route_info_fill (netlink_route_info_t *ri, int cmd,
 
   for (ALL_NEXTHOPS_RO(rib->nexthop, nexthop, tnexthop, recursing))
     {
-      if (MULTIPATH_NUM != 0 && ri->num_nhs >= MULTIPATH_NUM)
+      if (ri->num_nhs >= MULTIPATH_NUM)
         break;
 
       if (CHECK_FLAG(nexthop->flags, NEXTHOP_FLAG_RECURSIVE))

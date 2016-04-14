@@ -20,6 +20,7 @@
   $QuaggaId: $Format:%an, %ai, %h$ $
 */
 
+#include <zebra.h>
 #include "pim_mroute.h"
 
 #include <sys/types.h>
@@ -31,7 +32,6 @@
 #include <netdb.h>
 #include <errno.h>
 
-#include <zebra.h>
 #include "log.h"
 #include "privs.h"
 
@@ -80,9 +80,9 @@ int pim_socket_mcast(int protocol, struct in_addr ifaddr, int loop)
   /* Needed to obtain destination address from recvmsg() */
   {
 #if defined(HAVE_IP_PKTINFO)
-    /* Linux IP_PKTINFO */
+    /* Linux and Solaris IP_PKTINFO */
     int opt = 1;
-    if (setsockopt(fd, SOL_IP, IP_PKTINFO, &opt, sizeof(opt))) {
+    if (setsockopt(fd, IPPROTO_IP, IP_PKTINFO, &opt, sizeof(opt))) {
       zlog_warn("Could not set IP_PKTINFO on socket fd=%d: errno=%d: %s",
 		fd, errno, safe_strerror(errno));
     }
@@ -180,7 +180,7 @@ int pim_socket_mcast(int protocol, struct in_addr ifaddr, int loop)
 }
 
 int pim_socket_join(int fd, struct in_addr group,
-		    struct in_addr ifaddr, int ifindex)
+		    struct in_addr ifaddr, ifindex_t ifindex)
 {
   int ret;
 
@@ -228,7 +228,7 @@ int pim_socket_join(int fd, struct in_addr group,
   return ret;
 }
 
-int pim_socket_join_source(int fd, int ifindex,
+int pim_socket_join_source(int fd, ifindex_t ifindex,
 			   struct in_addr group_addr,
 			   struct in_addr source_addr,
 			   const char *ifname)
@@ -252,7 +252,7 @@ int pim_socket_join_source(int fd, int ifindex,
 int pim_socket_recvfromto(int fd, uint8_t *buf, size_t len,
 			  struct sockaddr_in *from, socklen_t *fromlen,
 			  struct sockaddr_in *to, socklen_t *tolen,
-			  int *ifindex)
+			  ifindex_t *ifindex)
 {
   struct msghdr msgh;
   struct cmsghdr *cmsg;
@@ -306,7 +306,7 @@ int pim_socket_recvfromto(int fd, uint8_t *buf, size_t len,
        cmsg = CMSG_NXTHDR(&msgh,cmsg)) {
 
 #ifdef HAVE_IP_PKTINFO
-    if ((cmsg->cmsg_level == SOL_IP) && (cmsg->cmsg_type == IP_PKTINFO)) {
+    if ((cmsg->cmsg_level == IPPROTO_IP) && (cmsg->cmsg_type == IP_PKTINFO)) {
       struct in_pktinfo *i = (struct in_pktinfo *) CMSG_DATA(cmsg);
       if (to)
 	((struct sockaddr_in *) to)->sin_addr = i->ipi_addr;

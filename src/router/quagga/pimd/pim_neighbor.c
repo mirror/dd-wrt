@@ -106,7 +106,7 @@ static void dr_election_by_pri(struct interface *ifp)
   PIM Hello message is received, when a neighbor times out, or when a
   router's own DR Priority changes.
  */
-void pim_if_dr_election(struct interface *ifp)
+int pim_if_dr_election(struct interface *ifp)
 {
   struct pim_interface *pim_ifp = ifp->info;
   struct in_addr old_dr_addr;
@@ -125,7 +125,7 @@ void pim_if_dr_election(struct interface *ifp)
   /* DR changed ? */
   if (old_dr_addr.s_addr != pim_ifp->pim_dr_addr.s_addr) {
 
-    /* if (PIM_DEBUG_PIM_EVENTS) */ {
+    if (PIM_DEBUG_PIM_EVENTS) {
       char dr_old_str[100];
       char dr_new_str[100];
       pim_inet4_dump("<old_dr?>", old_dr_addr, dr_old_str, sizeof(dr_old_str));
@@ -140,7 +140,10 @@ void pim_if_dr_election(struct interface *ifp)
     pim_if_update_join_desired(pim_ifp);
     pim_if_update_could_assert(ifp);
     pim_if_update_assert_tracking_desired(ifp);
+    return 1;
   }
+
+  return 0;
 }
 
 static void update_dr_priority(struct pim_neighbor *neigh,
@@ -344,26 +347,6 @@ static struct pim_neighbor *pim_neighbor_new(struct interface *ifp,
     ++pim_ifp->pim_dr_num_nondrpri_neighbors; 
   }
 
-  /*
-    RFC 4601: 4.3.2.  DR Election
-    
-    A router's idea of the current DR on an interface can change when a
-    PIM Hello message is received, when a neighbor times out, or when a
-    router's own DR Priority changes.
-  */
-  pim_if_dr_election(neigh->interface); // new neighbor -- should not trigger dr election...
-
-  /*
-    RFC 4601: 4.3.1.  Sending Hello Messages
-
-    To allow new or rebooting routers to learn of PIM neighbors quickly,
-    when a Hello message is received from a new neighbor, or a Hello
-    message with a new GenID is received from an existing neighbor, a
-    new Hello message should be sent on this interface after a
-    randomized delay between 0 and Triggered_Hello_Delay.
-  */
-  pim_hello_restart_triggered(neigh->interface);
-  
   return neigh;
 }
 
@@ -449,6 +432,26 @@ struct pim_neighbor *pim_neighbor_add(struct interface *ifp,
   zassert(pim_ifp);
 
   listnode_add(pim_ifp->pim_neighbor_list, neigh);
+
+  /*
+    RFC 4601: 4.3.2.  DR Election
+
+    A router's idea of the current DR on an interface can change when a
+    PIM Hello message is received, when a neighbor times out, or when a
+    router's own DR Priority changes.
+  */
+  pim_if_dr_election(neigh->interface); // new neighbor -- should not trigger dr election...
+
+  /*
+    RFC 4601: 4.3.1.  Sending Hello Messages
+
+    To allow new or rebooting routers to learn of PIM neighbors quickly,
+    when a Hello message is received from a new neighbor, or a Hello
+    message with a new GenID is received from an existing neighbor, a
+    new Hello message should be sent on this interface after a
+    randomized delay between 0 and Triggered_Hello_Delay.
+  */
+  pim_hello_restart_triggered(neigh->interface);
 
   return neigh;
 }

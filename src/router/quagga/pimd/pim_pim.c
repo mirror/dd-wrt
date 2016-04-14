@@ -39,7 +39,6 @@
 #include "pim_join.h"
 #include "pim_assert.h"
 #include "pim_msg.h"
-#include "pim_rand.h"
 
 static int on_pim_hello_send(struct thread *t);
 static int pim_hello_send(struct interface *ifp,
@@ -207,14 +206,25 @@ int pim_pim_packet(struct interface *ifp, uint8_t *buf, size_t len)
 	       pim_version, pim_type, pim_msg_len, checksum);
   }
 
+  if (pim_type == PIM_MSG_TYPE_REGISTER  ||
+      pim_type == PIM_MSG_TYPE_REG_STOP  ||
+      pim_type == PIM_MSG_TYPE_BOOTSTRAP ||
+      pim_type == PIM_MSG_TYPE_GRAFT     ||
+      pim_type == PIM_MSG_TYPE_GRAFT_ACK ||
+      pim_type == PIM_MSG_TYPE_CANDIDATE)
+    {
+      if (PIM_DEBUG_PIM_PACKETS) {
+	zlog_debug("Recv PIM packet type %d which is not currently understood",
+		   pim_type);
+      }
+      return -1;
+    }
+
   if (pim_type == PIM_MSG_TYPE_HELLO) {
     int result = pim_hello_recv(ifp,
                  ip_hdr->ip_src,
                  pim_msg + PIM_MSG_HEADER_LEN,
                  pim_msg_len - PIM_MSG_HEADER_LEN);
-    if (!result) {
-      pim_if_dr_election(ifp); /* PIM Hello message is received */
-    }
     return result;
   }
 
@@ -259,7 +269,7 @@ static int pim_sock_read(struct thread *t)
   socklen_t tolen = sizeof(to);
   uint8_t buf[PIM_PIM_BUFSIZE_READ];
   int len;
-  int ifindex = -1;
+  ifindex_t ifindex = -1;
   int result = -1; /* defaults to bad */
 
   zassert(t);
@@ -366,7 +376,7 @@ static void pim_sock_read_on(struct interface *ifp)
 		 pim_ifp->pim_sock_fd);
 }
 
-static int pim_sock_open(struct in_addr ifaddr, int ifindex)
+static int pim_sock_open(struct in_addr ifaddr, ifindex_t ifindex)
 {
   int fd;
 
@@ -375,6 +385,7 @@ static int pim_sock_open(struct in_addr ifaddr, int ifindex)
     return -1;
 
   if (pim_socket_join(fd, qpim_all_pim_routers_addr, ifaddr, ifindex)) {
+    close(fd);
     return -2;
   }
 
@@ -476,7 +487,8 @@ int pim_msg_send(int fd,
     pim_pkt_dump(__PRETTY_FUNCTION__, pim_msg, pim_msg_size);
   }
 
-  sent = sendto(fd, pim_msg, pim_msg_size, MSG_DONTWAIT, &to, tolen);
+  sent = sendto(fd, pim_msg, pim_msg_size, MSG_DONTWAIT,
+                (struct sockaddr *)&to, tolen);
   if (sent != (ssize_t) pim_msg_size) {
     int e = errno;
     char dst_str[100];
@@ -509,7 +521,7 @@ static int hello_send(struct interface *ifp,
 
   pim_ifp = ifp->info;
 
-  if (PIM_DEBUG_PIM_PACKETS || PIM_DEBUG_PIM_HELLO) {
+  if (PIM_DEBUG_PIM_HELLO) {
     char dst_str[100];
     pim_inet4_dump("<dst?>", qpim_all_pim_routers_addr, dst_str, sizeof(dst_str));
     zlog_debug("%s: to %s on %s: holdt=%u prop_d=%u overr_i=%u dis_join_supp=%d dr_prio=%u gen_id=%08x addrs=%d",
@@ -549,8 +561,10 @@ static int hello_send(struct interface *ifp,
 		   pim_msg,
 		   pim_msg_size,
 		   ifp->name)) {
-    zlog_warn("%s: could not send PIM message on interface %s",
-	      __PRETTY_FUNCTION__, ifp->name);
+    if (PIM_DEBUG_PIM_HELLO) {
+      zlog_debug("%s: could not send PIM message on interface %s",
+		 __PRETTY_FUNCTION__, ifp->name);
+    }
     return -2;
   }
 
@@ -569,8 +583,10 @@ static int pim_hello_send(struct interface *ifp,
   if (hello_send(ifp, holdtime)) {
     ++pim_ifp->pim_ifstat_hello_sendfail;
 
-    zlog_warn("Could not send PIM hello on interface %s",
-	      ifp->name);
+    if (PIM_DEBUG_PIM_HELLO) {
+      zlog_warn("Could not send PIM hello on interface %s",
+		ifp->name);
+    }
     return -1;
   }
 
@@ -587,7 +603,7 @@ static void hello_resched(struct interface *ifp)
   pim_ifp = ifp->info;
   zassert(pim_ifp);
 
-  if (PIM_DEBUG_PIM_TRACE) {
+  if (PIM_DEBUG_PIM_HELLO) {
     zlog_debug("Rescheduling %d sec hello on interface %s",
 	       pim_ifp->pim_hello_period, ifp->name);
   }
@@ -685,9 +701,9 @@ void pim_hello_restart_triggered(struct interface *ifp)
   }
   zassert(!pim_ifp->t_pim_hello_timer);
 
-  random_msec = pim_rand_next(0, triggered_hello_delay_msec);
+  random_msec = random() % (triggered_hello_delay_msec + 1);
 
-  if (PIM_DEBUG_PIM_EVENTS) {
+  if (PIM_DEBUG_PIM_HELLO) {
     zlog_debug("Scheduling %d msec triggered hello on interface %s",
 	       random_msec, ifp->name);
   }
@@ -701,6 +717,7 @@ int pim_sock_add(struct interface *ifp)
 {
   struct pim_interface *pim_ifp;
   struct in_addr ifaddr;
+  uint32_t old_genid;
 
   pim_ifp = ifp->info;
   zassert(pim_ifp);
@@ -723,7 +740,18 @@ int pim_sock_add(struct interface *ifp)
   pim_ifp->t_pim_sock_read   = 0;
   pim_ifp->pim_sock_creation = pim_time_monotonic_sec();
 
-  pim_ifp->pim_generation_id = pim_rand() & (int64_t) 0xFFFFFFFF;
+  /*
+   * Just ensure that the new generation id
+   * actually chooses something different.
+   * Actually ran across a case where this
+   * happened, pre-switch to random().
+   * While this is unlikely to happen now
+   * let's make sure it doesn't.
+   */
+  old_genid = pim_ifp->pim_generation_id;
+
+  while (old_genid == pim_ifp->pim_generation_id)
+    pim_ifp->pim_generation_id = random();
 
   zlog_info("PIM INTERFACE UP: on interface %s ifindex=%d",
 	    ifp->name, ifp->ifindex);

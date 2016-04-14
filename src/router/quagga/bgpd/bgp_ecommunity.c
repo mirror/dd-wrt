@@ -24,6 +24,7 @@ Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 #include "memory.h"
 #include "prefix.h"
 #include "command.h"
+#include "filter.h"
 
 #include "bgpd/bgpd.h"
 #include "bgpd/bgp_ecommunity.h"
@@ -281,10 +282,10 @@ ecommunity_finish (void)
 /* Extended Communities token enum. */
 enum ecommunity_token
 {
+  ecommunity_token_unknown = 0,
   ecommunity_token_rt,
   ecommunity_token_soo,
   ecommunity_token_val,
-  ecommunity_token_unknown
 };
 
 /* Get next Extended Communities token from the string. */
@@ -511,7 +512,7 @@ struct ecommunity *
 ecommunity_str2com (const char *str, int type, int keyword_included)
 {
   struct ecommunity *ecom = NULL;
-  enum ecommunity_token token;
+  enum ecommunity_token token = ecommunity_token_unknown;
   struct ecommunity_val eval;
   int keyword = 0;
 
@@ -642,15 +643,34 @@ ecommunity_ecom2str (struct ecommunity *ecom, int format)
 
       /* High-order octet of type. */
       encode = *pnt++;
-      if (encode != ECOMMUNITY_ENCODE_AS && encode != ECOMMUNITY_ENCODE_IP
-		      && encode != ECOMMUNITY_ENCODE_AS4)
-	{
-	  len = sprintf (str_buf + str_pnt, "?");
-	  str_pnt += len;
-	  first = 0;
-	  continue;
-	}
-      
+
+      switch (encode)
+        {
+        case ECOMMUNITY_ENCODE_AS:
+        case ECOMMUNITY_ENCODE_IP:
+        case ECOMMUNITY_ENCODE_AS4:
+          break;
+
+        case ECOMMUNITY_ENCODE_OPAQUE:
+          if (*pnt == ECOMMUNITY_OPAQUE_SUBTYPE_ENCAP)
+            {
+              uint16_t tunneltype;
+              memcpy (&tunneltype, pnt + 5, 2);
+              tunneltype = ntohs(tunneltype);
+              len = sprintf (str_buf + str_pnt, "ET:%d", tunneltype);
+              str_pnt += len;
+              first = 0;
+              continue;
+            }
+            /* fall through */
+
+        default:
+          len = sprintf (str_buf + str_pnt, "?");
+          str_pnt += len;
+          first = 0;
+          continue;
+        }
+
       /* Low-order octet of type. */
       type = *pnt++;
       if (type !=  ECOMMUNITY_ROUTE_TARGET && type != ECOMMUNITY_SITE_ORIGIN)

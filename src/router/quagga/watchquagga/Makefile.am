@@ -3,8 +3,7 @@
 AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/lib -I$(top_builddir)/lib
 DEFS = @DEFS@ -DSTATEDIR=\"$(localstatedir)/\"
 
-AM_CFLAGS = $(PICFLAGS)
-AM_LDFLAGS = $(PILDFLAGS)
+AM_CFLAGS = $(WERROR)
 
 sbin_PROGRAMS = watchquagga
 

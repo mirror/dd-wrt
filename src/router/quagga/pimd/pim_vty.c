@@ -31,6 +31,7 @@
 #include "pim_cmd.h"
 #include "pim_str.h"
 #include "pim_ssmpingd.h"
+#include "pim_pim.h"
 
 int pim_debug_config_write(struct vty *vty)
 {
@@ -134,6 +135,21 @@ int pim_interface_config_write(struct vty *vty)
 	++writes;
       }
 
+      /* IF ip pim drpriority */
+      if (pim_ifp->pim_dr_priority != PIM_DEFAULT_DR_PRIORITY) {
+	vty_out(vty, " ip pim drpriority %d%s", pim_ifp->pim_dr_priority,
+		VTY_NEWLINE);
+	++writes;
+      }
+
+      /* IF ip pim hello */
+      if (pim_ifp->pim_hello_period != PIM_DEFAULT_HELLO_PERIOD) {
+	vty_out(vty, " ip pim hello %d", pim_ifp->pim_hello_period);
+	if (pim_ifp->pim_default_holdtime != -1)
+	  vty_out(vty, " %d", pim_ifp->pim_default_holdtime);
+	vty_out(vty, "%s", VTY_NEWLINE);
+      }
+
       /* IF ip igmp */
       if (PIM_IF_TEST_IGMP(pim_ifp->options)) {
 	vty_out(vty, " ip igmp%s", VTY_NEWLINE);
@@ -141,18 +157,24 @@ int pim_interface_config_write(struct vty *vty)
       }
 
       /* IF ip igmp query-interval */
-      vty_out(vty, " %s %d%s",
-	      PIM_CMD_IP_IGMP_QUERY_INTERVAL,
-	      pim_ifp->igmp_default_query_interval,
-	      VTY_NEWLINE);
-      ++writes;
+      if (pim_ifp->igmp_default_query_interval != IGMP_GENERAL_QUERY_INTERVAL)
+	{
+	  vty_out(vty, " %s %d%s",
+		  PIM_CMD_IP_IGMP_QUERY_INTERVAL,
+		  pim_ifp->igmp_default_query_interval,
+		  VTY_NEWLINE);
+	  ++writes;
+	}
 
       /* IF ip igmp query-max-response-time */
-      vty_out(vty, " %s %d%s",
-	      PIM_CMD_IP_IGMP_QUERY_MAX_RESPONSE_TIME_DSEC,
-	      pim_ifp->igmp_query_max_response_time_dsec,
-	      VTY_NEWLINE);
-      ++writes;
+      if (pim_ifp->igmp_query_max_response_time_dsec != IGMP_QUERY_MAX_RESPONSE_TIME_DSEC)
+	{
+	  vty_out(vty, " %s %d%s",
+		  PIM_CMD_IP_IGMP_QUERY_MAX_RESPONSE_TIME_DSEC,
+		  pim_ifp->igmp_query_max_response_time_dsec,
+		  VTY_NEWLINE);
+	  ++writes;
+	}
 
       /* IF ip igmp join */
       if (pim_ifp->igmp_join_list) {

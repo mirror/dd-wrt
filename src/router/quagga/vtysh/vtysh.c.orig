@@ -59,6 +59,7 @@ struct vtysh_client
   { .fd = -1, .name = "bgpd", .flag = VTYSH_BGPD, .path = BGP_VTYSH_PATH},
   { .fd = -1, .name = "isisd", .flag = VTYSH_ISISD, .path = ISIS_VTYSH_PATH},
   { .fd = -1, .name = "babeld", .flag = VTYSH_BABELD, .path = BABEL_VTYSH_PATH},
+  { .fd = -1, .name = "pimd", .flag = VTYSH_PIMD, .path = PIM_VTYSH_PATH},
 };
 
 
@@ -554,7 +555,7 @@ vtysh_rl_describe (void)
   vector vline;
   vector describe;
   int width;
-  struct desc *desc;
+  struct cmd_token *token;
 
   vline = cmd_make_strvec (rl_line_buffer);
 
@@ -592,15 +593,15 @@ vtysh_rl_describe (void)
   /* Get width of command string. */
   width = 0;
   for (i = 0; i < vector_active (describe); i++)
-    if ((desc = vector_slot (describe, i)) != NULL)
+    if ((token = vector_slot (describe, i)) != NULL)
       {
 	int len;
 
-	if (desc->cmd[0] == '\0')
+	if (token->cmd[0] == '\0')
 	  continue;
 
-	len = strlen (desc->cmd);
-	if (desc->cmd[0] == '.')
+	len = strlen (token->cmd);
+	if (token->cmd[0] == '.')
 	  len--;
 
 	if (width < len)
@@ -608,19 +609,19 @@ vtysh_rl_describe (void)
       }
 
   for (i = 0; i < vector_active (describe); i++)
-    if ((desc = vector_slot (describe, i)) != NULL)
+    if ((token = vector_slot (describe, i)) != NULL)
       {
-	if (desc->cmd[0] == '\0')
+	if (token->cmd[0] == '\0')
 	  continue;
 
-	if (! desc->str)
+	if (! token->desc)
 	  fprintf (stdout,"  %-s\n",
-		   desc->cmd[0] == '.' ? desc->cmd + 1 : desc->cmd);
+		   token->cmd[0] == '.' ? token->cmd + 1 : token->cmd);
 	else
 	  fprintf (stdout,"  %-*s  %s\n",
 		   width,
-		   desc->cmd[0] == '.' ? desc->cmd + 1 : desc->cmd,
-		   desc->str);
+		   token->cmd[0] == '.' ? token->cmd + 1 : token->cmd,
+		   token->desc);
       }
 
   cmd_free_strvec (vline);
@@ -677,8 +678,9 @@ new_completion (char *text, int start, int end)
   if (matches)
     {
       rl_point = rl_end;
-      if (complete_status == CMD_COMPLETE_FULL_MATCH)
-	rl_pending_input = ' ';
+      if (complete_status != CMD_COMPLETE_FULL_MATCH)
+        /* only append a space on full match */
+        rl_completion_append_character = '\0';
     }
 
   return matches;
@@ -2212,12 +2214,9 @@ void
 vtysh_readline_init (void)
 {
   /* readline related settings. */
-  rl_bind_key ('?', (Function *) vtysh_rl_describe);
+  rl_bind_key ('?', (rl_command_func_t *) vtysh_rl_describe);
   rl_completion_entry_function = vtysh_completion_entry_function;
-  rl_attempted_completion_function = (CPPFunction *)new_completion;
-  /* do not append space after completion. It will be appended
-   * in new_completion() function explicitly. */
-  rl_completion_append_character = '\0';
+  rl_attempted_completion_function = (rl_completion_func_t *)new_completion;
 }
 
 char *

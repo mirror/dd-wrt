@@ -38,6 +38,7 @@
 #include "ospf6_neighbor.h"
 #include "ospf6_intra.h"
 #include "ospf6_flood.h"
+#include "ospf6_snmp.h"
 #include "ospf6d.h"
 
 unsigned char conf_debug_ospf6_neighbor = 0;

@@ -31,6 +31,7 @@
 #include "linklist.h"
 #include "command.h"
 #include "privs.h"
+#include "vrf.h"
 
 #include "zebra/interface.h"
 #include "zebra/rtadv.h"
@@ -40,7 +41,7 @@
 
 extern struct zebra_privs_t zserv_privs;
 
-#if defined (HAVE_IPV6) && defined (RTADV)
+#if defined (HAVE_IPV6) && defined (HAVE_RTADV)
 
 #ifdef OPEN_BSD
 #include <netinet/icmp6.h>
@@ -62,34 +63,14 @@ extern struct zebra_t zebrad;
 enum rtadv_event {RTADV_START, RTADV_STOP, RTADV_TIMER, 
 		  RTADV_TIMER_MSEC, RTADV_READ};
 
-static void rtadv_event (enum rtadv_event, int);
+static void rtadv_event (struct zebra_vrf *, enum rtadv_event, int);
 
 static int if_join_all_router (int, struct interface *);
 static int if_leave_all_router (int, struct interface *);
 
-/* Structure which hold status of router advertisement. */
-struct rtadv
-{
-  int sock;
-
-  int adv_if_count;
-  int adv_msec_if_count;
-
-  struct thread *ra_read;
-  struct thread *ra_timer;
-};
-
-struct rtadv *rtadv = NULL;
-
-static struct rtadv *
-rtadv_new (void)
-{
-  return XCALLOC (MTYPE_TMP, sizeof (struct rtadv));
-}
-
 static int
 rtadv_recv_packet (int sock, u_char *buf, int buflen,
-		   struct sockaddr_in6 *from, unsigned int *ifindex,
+		   struct sockaddr_in6 *from, ifindex_t *ifindex,
 		   int *hoplimit)
 {
   int ret;
@@ -313,24 +294,6 @@ rtadv_send_packet (int sock, struct interface *ifp)
     }
 
   /* Hardware address. */
-#ifdef HAVE_STRUCT_SOCKADDR_DL
-  sdl = &ifp->sdl;
-  if (sdl != NULL && sdl->sdl_alen != 0)
-    {
-      buf[len++] = ND_OPT_SOURCE_LINKADDR;
-
-      /* Option length should be rounded up to next octet if
-         the link address does not end on an octet boundary. */
-      buf[len++] = (sdl->sdl_alen + 9) >> 3;
-
-      memcpy (buf + len, LLADDR (sdl), sdl->sdl_alen);
-      len += sdl->sdl_alen;
-
-      /* Pad option to end on an octet boundary. */
-      memset (buf + len, 0, -(sdl->sdl_alen + 2) & 0x7);
-      len += -(sdl->sdl_alen + 2) & 0x7;
-    }
-#else
   if (ifp->hw_addr_len != 0)
     {
       buf[len++] = ND_OPT_SOURCE_LINKADDR;
@@ -346,7 +309,6 @@ rtadv_send_packet (int sock, struct interface *ifp)
       memset (buf + len, 0, -(ifp->hw_addr_len + 2) & 0x7);
       len += -(ifp->hw_addr_len + 2) & 0x7;
     }
-#endif /* HAVE_STRUCT_SOCKADDR_DL */
 
   /* MTU */
   if (zif->rtadv.AdvLinkMTU)
@@ -389,24 +351,25 @@ rtadv_send_packet (int sock, struct interface *ifp)
 static int
 rtadv_timer (struct thread *thread)
 {
+  struct zebra_vrf *zvrf = THREAD_ARG (thread);
   struct listnode *node, *nnode;
   struct interface *ifp;
   struct zebra_if *zif;
   int period;
 
-  rtadv->ra_timer = NULL;
-  if (rtadv->adv_msec_if_count == 0)
+  zvrf->rtadv.ra_timer = NULL;
+  if (zvrf->rtadv.adv_msec_if_count == 0)
     {
       period = 1000; /* 1 s */
-      rtadv_event (RTADV_TIMER, 1 /* 1 s */);
+      rtadv_event (zvrf, RTADV_TIMER, 1 /* 1 s */);
     } 
   else
     {
       period = 10; /* 10 ms */
-      rtadv_event (RTADV_TIMER_MSEC, 10 /* 10 ms */);
+      rtadv_event (zvrf, RTADV_TIMER_MSEC, 10 /* 10 ms */);
     }
 
-  for (ALL_LIST_ELEMENTS (iflist, node, nnode, ifp))
+  for (ALL_LIST_ELEMENTS (vrf_iflist (zvrf->vrf_id), node, nnode, ifp))
     {
       if (if_is_loopback (ifp) || ! if_is_operative (ifp))
 	continue;
@@ -421,7 +384,7 @@ rtadv_timer (struct thread *thread)
 	      /* FIXME: using MaxRtrAdvInterval each time isn't what section
 	         6.2.4 of RFC4861 tells to do. */
 	      zif->rtadv.AdvIntervalTimer = zif->rtadv.MaxRtrAdvInterval;
-	      rtadv_send_packet (rtadv->sock, ifp);
+	      rtadv_send_packet (zvrf->rtadv.sock, ifp);
 	    }
 	}
     }
@@ -431,9 +394,11 @@ rtadv_timer (struct thread *thread)
 static void
 rtadv_process_solicit (struct interface *ifp)
 {
-  zlog_info ("Router solicitation received on %s", ifp->name);
+  struct zebra_vrf *zvrf = vrf_info_lookup (ifp->vrf_id);
 
-  rtadv_send_packet (rtadv->sock, ifp);
+  zlog_info ("Router solicitation received on %s vrf %u", ifp->name, zvrf->vrf_id);
+
+  rtadv_send_packet (zvrf->rtadv.sock, ifp);
 }
 
 static void
@@ -443,17 +408,18 @@ rtadv_process_advert (void)
 }
 
 static void
-rtadv_process_packet (u_char *buf, unsigned int len, unsigned int ifindex, int hoplimit)
+rtadv_process_packet (u_char *buf, unsigned int len, ifindex_t ifindex,
+    int hoplimit, vrf_id_t vrf_id)
 {
   struct icmp6_hdr *icmph;
   struct interface *ifp;
   struct zebra_if *zif;
 
   /* Interface search. */
-  ifp = if_lookup_by_index (ifindex);
+  ifp = if_lookup_by_index_vrf (ifindex, vrf_id);
   if (ifp == NULL)
     {
-      zlog_warn ("Unknown interface index: %d", ifindex);
+      zlog_warn ("Unknown interface index: %d, vrf %u", ifindex, vrf_id);
       return;
     }
 
@@ -506,14 +472,15 @@ rtadv_read (struct thread *thread)
   int len;
   u_char buf[RTADV_MSG_SIZE];
   struct sockaddr_in6 from;
-  unsigned int ifindex = 0;
+  ifindex_t ifindex = 0;
   int hoplimit = -1;
+  struct zebra_vrf *zvrf = THREAD_ARG (thread);
 
   sock = THREAD_FD (thread);
-  rtadv->ra_read = NULL;
+  zvrf->rtadv.ra_read = NULL;
 
   /* Register myself. */
-  rtadv_event (RTADV_READ, sock);
+  rtadv_event (zvrf, RTADV_READ, sock);
 
   len = rtadv_recv_packet (sock, buf, BUFSIZ, &from, &ifindex, &hoplimit);
 
@@ -523,13 +490,13 @@ rtadv_read (struct thread *thread)
       return len;
     }
 
-  rtadv_process_packet (buf, (unsigned)len, ifindex, hoplimit);
+  rtadv_process_packet (buf, (unsigned)len, ifindex, hoplimit, zvrf->vrf_id);
 
   return 0;
 }
 
 static int
-rtadv_make_socket (void)
+rtadv_make_socket (vrf_id_t vrf_id)
 {
   int sock;
   int ret;
@@ -539,7 +506,7 @@ rtadv_make_socket (void)
        zlog_err ("rtadv_make_socket: could not raise privs, %s",
                   safe_strerror (errno) );
                   
-  sock = socket (AF_INET6, SOCK_RAW, IPPROTO_ICMPV6);
+  sock = vrf_socket (AF_INET6, SOCK_RAW, IPPROTO_ICMPV6, vrf_id);
 
   if ( zserv_privs.change (ZPRIVS_LOWER) )
        zlog_err ("rtadv_make_socket: could not lower privs, %s",
@@ -548,23 +515,41 @@ rtadv_make_socket (void)
   /* When we can't make ICMPV6 socket simply back.  Router
      advertisement feature will not be supported. */
   if (sock < 0)
-    return -1;
+    {
+      close (sock);
+      return -1;
+    }
 
   ret = setsockopt_ipv6_pktinfo (sock, 1);
   if (ret < 0)
-    return ret;
+    {
+      close (sock);
+      return ret;
+    }
   ret = setsockopt_ipv6_multicast_loop (sock, 0);
   if (ret < 0)
-    return ret;
+    {
+      close (sock);
+      return ret;
+    }
   ret = setsockopt_ipv6_unicast_hops (sock, 255);
   if (ret < 0)
-    return ret;
+    {
+      close (sock);
+      return ret;
+    }
   ret = setsockopt_ipv6_multicast_hops (sock, 255);
   if (ret < 0)
-    return ret;
+    {
+      close (sock);
+      return ret;
+    }
   ret = setsockopt_ipv6_hoplimit (sock, 1);
   if (ret < 0)
-    return ret;
+    {
+      close (sock);
+      return ret;
+    }
 
   ICMP6_FILTER_SETBLOCKALL(&filter);
   ICMP6_FILTER_SETPASS (ND_ROUTER_SOLICIT, &filter);
@@ -661,9 +646,11 @@ DEFUN (ipv6_nd_suppress_ra,
 {
   struct interface *ifp;
   struct zebra_if *zif;
+  struct zebra_vrf *zvrf;
 
   ifp = vty->index;
   zif = ifp->info;
+  zvrf = vrf_info_lookup (ifp->vrf_id);
 
   if (if_is_loopback (ifp))
     {
@@ -675,12 +662,12 @@ DEFUN (ipv6_nd_suppress_ra,
     {
       zif->rtadv.AdvSendAdvertisements = 0;
       zif->rtadv.AdvIntervalTimer = 0;
-      rtadv->adv_if_count--;
+      zvrf->rtadv.adv_if_count--;
 
-      if_leave_all_router (rtadv->sock, ifp);
+      if_leave_all_router (zvrf->rtadv.sock, ifp);
 
-      if (rtadv->adv_if_count == 0)
-	rtadv_event (RTADV_STOP, 0);
+      if (zvrf->rtadv.adv_if_count == 0)
+        rtadv_event (zvrf, RTADV_STOP, 0);
     }
 
   return CMD_SUCCESS;
@@ -696,9 +683,11 @@ DEFUN (no_ipv6_nd_suppress_ra,
 {
   struct interface *ifp;
   struct zebra_if *zif;
+  struct zebra_vrf *zvrf;
 
   ifp = vty->index;
   zif = ifp->info;
+  zvrf = vrf_info_lookup (ifp->vrf_id);
 
   if (if_is_loopback (ifp))
     {
@@ -710,12 +699,12 @@ DEFUN (no_ipv6_nd_suppress_ra,
     {
       zif->rtadv.AdvSendAdvertisements = 1;
       zif->rtadv.AdvIntervalTimer = 0;
-      rtadv->adv_if_count++;
+      zvrf->rtadv.adv_if_count++;
 
-      if_join_all_router (rtadv->sock, ifp);
+      if_join_all_router (zvrf->rtadv.sock, ifp);
 
-      if (rtadv->adv_if_count == 1)
-	rtadv_event (RTADV_START, rtadv->sock);
+      if (zvrf->rtadv.adv_if_count == 1)
+        rtadv_event (zvrf, RTADV_START, zvrf->rtadv.sock);
     }
 
   return CMD_SUCCESS;
@@ -732,6 +721,7 @@ DEFUN (ipv6_nd_ra_interval_msec,
   unsigned interval;
   struct interface *ifp = (struct interface *) vty->index;
   struct zebra_if *zif = ifp->info;
+  struct zebra_vrf *zvrf = vrf_info_lookup (ifp->vrf_id);
 
   VTY_GET_INTEGER_RANGE ("router advertisement interval", interval, argv[0], 70, 1800000);
   if ((zif->rtadv.AdvDefaultLifetime != -1 && interval > (unsigned)zif->rtadv.AdvDefaultLifetime * 1000))
@@ -741,10 +731,10 @@ DEFUN (ipv6_nd_ra_interval_msec,
   }
 
   if (zif->rtadv.MaxRtrAdvInterval % 1000)
-    rtadv->adv_msec_if_count--;
+    zvrf->rtadv.adv_msec_if_count--;
 
   if (interval % 1000)
-    rtadv->adv_msec_if_count++;
+    zvrf->rtadv.adv_msec_if_count++;
   
   zif->rtadv.MaxRtrAdvInterval = interval;
   zif->rtadv.MinRtrAdvInterval = 0.33 * interval;
@@ -764,6 +754,7 @@ DEFUN (ipv6_nd_ra_interval,
   unsigned interval;
   struct interface *ifp = (struct interface *) vty->index;
   struct zebra_if *zif = ifp->info;
+  struct zebra_vrf *zvrf = vrf_info_lookup (ifp->vrf_id);
 
   VTY_GET_INTEGER_RANGE ("router advertisement interval", interval, argv[0], 1, 1800);
   if ((zif->rtadv.AdvDefaultLifetime != -1 && interval > (unsigned)zif->rtadv.AdvDefaultLifetime))
@@ -773,7 +764,7 @@ DEFUN (ipv6_nd_ra_interval,
   }
 
   if (zif->rtadv.MaxRtrAdvInterval % 1000)
-    rtadv->adv_msec_if_count--;
+    zvrf->rtadv.adv_msec_if_count--;
 	
   /* convert to milliseconds */
   interval = interval * 1000; 
@@ -795,12 +786,14 @@ DEFUN (no_ipv6_nd_ra_interval,
 {
   struct interface *ifp;
   struct zebra_if *zif;
+  struct zebra_vrf *zvrf;
 
   ifp = (struct interface *) vty->index;
   zif = ifp->info;
+  zvrf = vrf_info_lookup (ifp->vrf_id);
 
   if (zif->rtadv.MaxRtrAdvInterval % 1000)
-    rtadv->adv_msec_if_count--;
+    zvrf->rtadv.adv_msec_if_count--;
   
   zif->rtadv.MaxRtrAdvInterval = RTADV_MAX_RTR_ADV_INTERVAL;
   zif->rtadv.MinRtrAdvInterval = RTADV_MIN_RTR_ADV_INTERVAL;
@@ -1201,7 +1194,8 @@ DEFUN (ipv6_nd_prefix,
 
   if (argc > 1)
     {
-      if ((isdigit(argv[1][0])) || strncmp (argv[1], "i", 1) == 0)
+      if ((isdigit((unsigned char)argv[1][0]))
+	  || strncmp (argv[1], "i", 1) == 0)
 	{
 	  if ( strncmp (argv[1], "i", 1) == 0)
 	    rp.AdvValidLifetime = UINT32_MAX;
@@ -1536,11 +1530,8 @@ rtadv_config_write (struct vty *vty, struct interface *ifp)
   struct zebra_if *zif;
   struct listnode *node;
   struct rtadv_prefix *rprefix;
-  u_char buf[INET6_ADDRSTRLEN];
+  char buf[PREFIX_STRLEN];
   int interval;
-
-  if (! rtadv)
-    return;
 
   zif = ifp->info;
 
@@ -1600,10 +1591,8 @@ rtadv_config_write (struct vty *vty, struct interface *ifp)
 
   for (ALL_LIST_ELEMENTS_RO (zif->rtadv.AdvPrefixList, node, rprefix))
     {
-      vty_out (vty, " ipv6 nd prefix %s/%d",
-	       inet_ntop (AF_INET6, &rprefix->prefix.prefix,
-			  (char *) buf, INET6_ADDRSTRLEN),
-	       rprefix->prefix.prefixlen);
+      vty_out (vty, " ipv6 nd prefix %s",
+               prefix2str (&rprefix->prefix, buf, sizeof(buf)));
       if ((rprefix->AdvValidLifetime != RTADV_VALID_LIFETIME) || 
 	  (rprefix->AdvPreferredLifetime != RTADV_PREFERRED_LIFETIME))
 	{
@@ -1628,16 +1617,18 @@ rtadv_config_write (struct vty *vty, struct interface *ifp)
 
 
 static void
-rtadv_event (enum rtadv_event event, int val)
+rtadv_event (struct zebra_vrf *zvrf, enum rtadv_event event, int val)
 {
+  struct rtadv *rtadv = &zvrf->rtadv;
+
   switch (event)
     {
     case RTADV_START:
       if (! rtadv->ra_read)
-	rtadv->ra_read = thread_add_read (zebrad.master, rtadv_read, NULL, val);
+	rtadv->ra_read = thread_add_read (zebrad.master, rtadv_read, zvrf, val);
       if (! rtadv->ra_timer)
 	rtadv->ra_timer = thread_add_event (zebrad.master, rtadv_timer,
-	                                    NULL, 0);
+	                                    zvrf, 0);
       break;
     case RTADV_STOP:
       if (rtadv->ra_timer)
@@ -1653,17 +1644,17 @@ rtadv_event (enum rtadv_event event, int val)
       break;
     case RTADV_TIMER:
       if (! rtadv->ra_timer)
-	rtadv->ra_timer = thread_add_timer (zebrad.master, rtadv_timer, NULL,
+	rtadv->ra_timer = thread_add_timer (zebrad.master, rtadv_timer, zvrf,
 	                                    val);
       break;
     case RTADV_TIMER_MSEC:
       if (! rtadv->ra_timer)
 	rtadv->ra_timer = thread_add_timer_msec (zebrad.master, rtadv_timer, 
-					    NULL, val);
+					    zvrf, val);
       break;
     case RTADV_READ:
       if (! rtadv->ra_read)
-	rtadv->ra_read = thread_add_read (zebrad.master, rtadv_read, NULL, val);
+	rtadv->ra_read = thread_add_read (zebrad.master, rtadv_read, zvrf, val);
       break;
     default:
       break;
@@ -1672,17 +1663,29 @@ rtadv_event (enum rtadv_event event, int val)
 }
 
 void
-rtadv_init (void)
+rtadv_init (struct zebra_vrf *zvrf)
 {
-  int sock;
+  zvrf->rtadv.sock = rtadv_make_socket (zvrf->vrf_id);
+}
 
-  sock = rtadv_make_socket ();
-  if (sock < 0)
-    return;
+void
+rtadv_terminate (struct zebra_vrf *zvrf)
+{
+  rtadv_event (zvrf, RTADV_STOP, 0);
 
-  rtadv = rtadv_new ();
-  rtadv->sock = sock;
+  if (zvrf->rtadv.sock >= 0)
+    {
+      close (zvrf->rtadv.sock);
+      zvrf->rtadv.sock = -1;
+    }
 
+  zvrf->rtadv.adv_if_count = 0;
+  zvrf->rtadv.adv_msec_if_count = 0;
+}
+
+void
+rtadv_cmd_init (void)
+{
   install_element (INTERFACE_NODE, &ipv6_nd_suppress_ra_cmd);
   install_element (INTERFACE_NODE, &no_ipv6_nd_suppress_ra_cmd);
   install_element (INTERFACE_NODE, &ipv6_nd_ra_interval_cmd);
@@ -1777,8 +1780,18 @@ if_leave_all_router (int sock, struct interface *ifp)
 
 #else
 void
-rtadv_init (void)
+rtadv_init (struct zebra_vrf *zvrf)
 {
   /* Empty.*/;
 }
-#endif /* RTADV && HAVE_IPV6 */
+void
+rtadv_terminate (struct zebra_vrf *zvrf)
+{
+  /* Empty.*/;
+}
+void
+rtadv_cmd_init (void)
+{
+  /* Empty.*/;
+}
+#endif /* HAVE_RTADV && HAVE_IPV6 */

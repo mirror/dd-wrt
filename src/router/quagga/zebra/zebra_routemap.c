@@ -28,6 +28,7 @@
 #include "command.h"
 #include "filter.h"
 #include "plist.h"
+#include "vrf.h"
 
 #include "zebra/zserv.h"
 
@@ -130,18 +131,22 @@ static route_map_result_t
 route_match_interface (void *rule, struct prefix *prefix,
 		       route_map_object_t type, void *object)
 {
+  struct nexthop_vrfid *nh_vrf;
   struct nexthop *nexthop;
   char *ifname = rule;
-  unsigned int ifindex;
+  ifindex_t ifindex;
 
   if (type == RMAP_ZEBRA)
     {
       if (strcasecmp(ifname, "any") == 0)
 	return RMAP_MATCH;
-      ifindex = ifname2ifindex(ifname);
+      nh_vrf = object;
+      if (!nh_vrf)
+	return RMAP_NOMATCH;
+      ifindex = ifname2ifindex_vrf (ifname, nh_vrf->vrf_id);
       if (ifindex == 0)
 	return RMAP_NOMATCH;
-      nexthop = object;
+      nexthop = nh_vrf->nexthop;
       if (!nexthop)
 	return RMAP_NOMATCH;
       if (nexthop->ifindex == ifindex)
@@ -365,7 +370,8 @@ DEFUN (set_src,
        "src address\n")
 {
   struct in_addr src;
-  struct interface *pif;
+  struct interface *pif = NULL;
+  vrf_iter_t iter;
 
   if (inet_pton(AF_INET, argv[0], &src) <= 0)
     {
@@ -373,12 +379,16 @@ DEFUN (set_src,
       return CMD_WARNING;
     }
 
-    pif = if_lookup_exact_address (src);
-    if (!pif)
-      {
-        vty_out (vty, "%% not a local address%s", VTY_NEWLINE);
-        return CMD_WARNING;
-      }
+  for (iter = vrf_first (); iter != VRF_ITER_INVALID; iter = vrf_next (iter))
+    if ((pif = if_lookup_exact_address_vrf (src, vrf_iter2id (iter))) != NULL)
+      break;
+
+  if (!pif)
+    {
+      vty_out (vty, "%% not a local address%s", VTY_NEWLINE);
+      return CMD_WARNING;
+    }
+
   return zebra_route_set_add (vty, vty->index, "src", argv[0]);
 }
 

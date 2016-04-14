@@ -330,7 +330,7 @@ zfpm_is_table_for_fpm (struct route_table *table)
    * We only send the unicast tables in the main instance to the FPM
    * at this point.
    */
-  if (info->vrf->id != 0)
+  if (info->zvrf->vrf_id != 0)
     return 0;
 
   if (info->safi != SAFI_UNICAST)
@@ -889,7 +889,7 @@ zfpm_route_for_update (rib_dest_t *dest)
 
   RIB_DEST_FOREACH_ROUTE (dest, rib)
     {
-      if (!CHECK_FLAG (rib->flags, ZEBRA_FLAG_SELECTED))
+      if (!CHECK_FLAG (rib->status, RIB_ENTRY_SELECTED_FIB))
 	continue;
 
       return rib;
@@ -1301,7 +1301,7 @@ void
 zfpm_trigger_update (struct route_node *rn, const char *reason)
 {
   rib_dest_t *dest;
-  char buf[INET6_ADDRSTRLEN];
+  char buf[PREFIX_STRLEN];
 
   /*
    * Ignore if the connection is down. We will update the FPM about
@@ -1329,9 +1329,8 @@ zfpm_trigger_update (struct route_node *rn, const char *reason)
 
   if (reason)
     {
-      zfpm_debug ("%s/%d triggering update to FPM - Reason: %s",
-		  inet_ntop (rn->p.family, &rn->p.u.prefix, buf, sizeof (buf)),
-		  rn->p.prefixlen, reason);
+      zfpm_debug ("%s triggering update to FPM - Reason: %s",
+		  prefix2str (&rn->p, buf, sizeof(buf)), reason);
     }
 
   SET_FLAG (dest->flags, RIB_DEST_UPDATE_FPM);

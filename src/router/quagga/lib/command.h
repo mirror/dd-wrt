@@ -68,6 +68,7 @@ enum node_type
   AUTH_ENABLE_NODE,		/* Authentication mode for change enable. */
   ENABLE_NODE,			/* Enable node. */
   CONFIG_NODE,			/* Config node. Default mode of config file. */
+  VRF_NODE,			/* VRF node. */
   SERVICE_NODE, 		/* Service node. */
   DEBUG_NODE,			/* Debug node. */
   AAA_NODE,			/* AAA node. */
@@ -81,10 +82,13 @@ enum node_type
   BABEL_NODE,			/* Babel protocol mode node. */
   BGP_NODE,			/* BGP protocol mode which includes BGP4+ */
   BGP_VPNV4_NODE,		/* BGP MPLS-VPN PE exchange. */
+  BGP_VPNV6_NODE,		/* BGP MPLS-VPN PE exchange. */
   BGP_IPV4_NODE,		/* BGP IPv4 unicast address family.  */
   BGP_IPV4M_NODE,		/* BGP IPv4 multicast address family.  */
   BGP_IPV6_NODE,		/* BGP IPv6 address family */
   BGP_IPV6M_NODE,		/* BGP IPv6 multicast address family. */
+  BGP_ENCAP_NODE,		/* BGP ENCAP SAFI */
+  BGP_ENCAPV6_NODE,		/* BGP ENCAP SAFI */
   OSPF_NODE,			/* OSPF protocol mode */
   OSPF6_NODE,			/* OSPF protocol for IPv6 mode */
   ISIS_NODE,			/* ISIS protocol mode */
@@ -151,10 +155,28 @@ enum cmd_token_type
   TOKEN_KEYWORD,
 };
 
+enum cmd_terminal_type
+{
+  _TERMINAL_BUG = 0,
+  TERMINAL_LITERAL,
+  TERMINAL_OPTION,
+  TERMINAL_VARIABLE,
+  TERMINAL_VARARG,
+  TERMINAL_RANGE,
+  TERMINAL_IPV4,
+  TERMINAL_IPV4_PREFIX,
+  TERMINAL_IPV6,
+  TERMINAL_IPV6_PREFIX,
+};
+
+/* argument to be recorded on argv[] if it's not a literal */
+#define TERMINAL_RECORD(t) ((t) >= TERMINAL_OPTION)
+
 /* Command description structure. */
 struct cmd_token
 {
   enum cmd_token_type type;
+  enum cmd_terminal_type terminal;
 
   /* Used for type == MULTIPLE */
   vector multiple; /* vector of cmd_token, type == FINAL */
@@ -437,16 +459,16 @@ struct cmd_token
 
 #endif /* VTYSH_EXTRACT_PL */
 
-/* Some macroes */
-#define CMD_OPTION(S)   ((S[0]) == '[')
-#define CMD_VARIABLE(S) (((S[0]) >= 'A' && (S[0]) <= 'Z') || ((S[0]) == '<'))
-#define CMD_VARARG(S)   ((S[0]) == '.')
-#define CMD_RANGE(S)	((S[0] == '<'))
+/*
+ * Sometimes #defines create maximum values that
+ * need to have strings created from them that
+ * allow the parser to match against them.
+ * These macros allow that.
+ */
+#define CMD_CREATE_STR(s)  CMD_CREATE_STR_HELPER(s)
+#define CMD_CREATE_STR_HELPER(s) #s
+#define CMD_RANGE_STR(a,s) "<" CMD_CREATE_STR(a) "-" CMD_CREATE_STR(s) ">"
 
-#define CMD_IPV4(S)	   ((strcmp ((S), "A.B.C.D") == 0))
-#define CMD_IPV4_PREFIX(S) ((strcmp ((S), "A.B.C.D/M") == 0))
-#define CMD_IPV6(S)        ((strcmp ((S), "X:X::X:X") == 0))
-#define CMD_IPV6_PREFIX(S) ((strcmp ((S), "X:X::X:X/M") == 0))
 
 /* Common descriptions. */
 #define SHOW_STR "Show running system information\n"
@@ -518,7 +540,9 @@ extern vector cmd_make_strvec (const char *);
 extern void cmd_free_strvec (vector);
 extern vector cmd_describe_command (vector, struct vty *, int *status);
 extern char **cmd_complete_command (vector, struct vty *, int *status);
+extern char **cmd_complete_command_lib (vector, struct vty *, int *status, int islib);
 extern const char *cmd_prompt (enum node_type);
+extern int command_config_read_one_line (struct vty *vty, struct cmd_element **, int use_config_node);
 extern int config_from_file (struct vty *, FILE *, unsigned int *line_num);
 extern enum node_type node_parent (enum node_type);
 extern int cmd_execute_command (vector, struct vty *, struct cmd_element **, int);

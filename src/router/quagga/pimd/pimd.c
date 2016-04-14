@@ -24,6 +24,7 @@
 
 #include "log.h"
 #include "memory.h"
+#include "vrf.h"
 
 #include "pimd.h"
 #include "pim_cmd.h"
@@ -33,9 +34,9 @@
 #include "pim_oil.h"
 #include "pim_pim.h"
 #include "pim_upstream.h"
-#include "pim_rand.h"
 #include "pim_rpf.h"
 #include "pim_ssmpingd.h"
+#include "pim_static.h"
 
 const char *const PIM_ALL_SYSTEMS      = MCAST_ALL_SYSTEMS;
 const char *const PIM_ALL_ROUTERS      = MCAST_ALL_ROUTERS;
@@ -68,6 +69,7 @@ int64_t                   qpim_mroute_add_events = 0;
 int64_t                   qpim_mroute_add_last = 0;
 int64_t                   qpim_mroute_del_events = 0;
 int64_t                   qpim_mroute_del_last = 0;
+struct list              *qpim_static_route_list = 0;
 
 static void pim_free()
 {
@@ -78,11 +80,14 @@ static void pim_free()
 
   if (qpim_upstream_list)
     list_free(qpim_upstream_list);
+
+  if (qpim_static_route_list)
+     list_free(qpim_static_route_list);
 }
 
 void pim_init()
 {
-  pim_rand_init();
+  srandom(time(NULL));
 
   if (!inet_aton(PIM_ALL_PIM_ROUTERS, &qpim_all_pim_routers_addr)) {
     zlog_err("%s %s: could not solve %s to group address: errno=%d: %s",
@@ -109,6 +114,14 @@ void pim_init()
   }
   qpim_upstream_list->del = (void (*)(void *)) pim_upstream_free;
 
+  qpim_static_route_list = list_new();
+  if (!qpim_static_route_list) {
+    zlog_err("%s %s: failure: static_route_list=list_new()",
+        __FILE__, __PRETTY_FUNCTION__);
+    return;
+  }
+  qpim_static_route_list->del = (void (*)(void *)) pim_static_route_free;
+
   qpim_mroute_socket_fd = -1; /* mark mroute as disabled */
   qpim_mroute_oif_highest_vif_index = -1;
 
@@ -130,12 +143,12 @@ void pim_init()
   qpim_infinite_assert_metric.route_metric      = PIM_ASSERT_ROUTE_METRIC_MAX;
   qpim_infinite_assert_metric.ip_address        = qpim_inaddr_any;
 
-  pim_if_init();
   pim_cmd_init();
   pim_ssmpingd_init();
 }
 
 void pim_terminate()
 {
+  vrf_terminate();
   pim_free();
 }
