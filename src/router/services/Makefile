@@ -58,6 +58,13 @@ BCFLAGS	 += $(COPTS) -I. -I$(TOP)/shared  -I$(SRCBASE)/include.bcm -Wall -I$(SRC
 BCFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/rc -I$(TOP)/iptables/include/libipq -I$(TOP)/libnet/include -DL_ENDIAN -DLIBNET_LIL_ENDIAN -DLIB1X_LIL_ENDIAN -I$(LINUXDIR)/brcm/shared/bcmwifi/include -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
 BCFLAGS  += -fpic -I$(TOP)/services/include
 
+ifeq ($(CONFIG_DIST),"micro")
+BCFLAGS += -DNEED_NOPRINTF
+endif
+ifneq ($(CONFIG_DIST),"micro-special")
+BCFLAGS += -DNEED_NOPRINTF
+endif
+
 CFLAGS += $(BCFLAGS)
 
 HCFLAGS	 += -I. -I$(TOP)/shared -I$(SRCBASE)/include.bcm -Wall -I$(SRCBASE)/ 
