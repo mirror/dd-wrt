@@ -1,10 +1,10 @@
+#include <zebra.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "random.c"
-
-#include <zebra.h>
 
 #include "thread.h"
 #include "vty.h"
@@ -50,8 +50,8 @@ long   X,   /* horizontal size of grid */
 
 long   x,
        y,
-       y1, y2, yp,
-       dl, dx, xn, yn, count,
+       yy1, yy2, yyp,
+       dl, dx, xn, yyn, count,
        *mess;
 
 double n;
@@ -670,12 +670,12 @@ gen_spgrid_topology (struct vty *vty, struct list *topology)
 
     for ( k = ax; k > 0; k -- )
        {
-         y1 = nrand ( Y );
+         yy1 = nrand ( Y );
          do
-            y2 = nrand ( Y );
-         while ( y2 == y1 );
-         i  = NODE ( x, y1 );
-         j  = NODE ( x, y2 );
+            yy2 = nrand ( Y );
+         while ( yy2 == yy1 );
+         i  = NODE ( x, yy1 );
+         j  = NODE ( x, yy2 );
          l = am + nrand ( al );
          print_arc (vty, topology,  i, j, l );
        }
@@ -711,13 +711,13 @@ gen_spgrid_topology (struct vty *vty, struct list *topology)
   	  dx = xn - x;
   	  if ( ip_f )
   	    {
-  	      yp = nrand(Y-y);
-  	      yn = mess[ yp ];
-                mess[ yp ] = mess[ Y - y - 1 ];
+  	      yyp = nrand(Y-y);
+  	      yyn = mess[ yyp ];
+                mess[ yyp ] = mess[ Y - y - 1 ];
   	    }
   	  else
-               yn =  y;
-  	  j = NODE ( xn, yn );
+               yyn =  y;
+  	  j = NODE ( xn, yyn );
   	  l = im + nrand ( il );
   	  if ( in != 0 )
               l *= (long) ( in * dx );

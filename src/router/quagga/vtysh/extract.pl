@@ -31,13 +31,13 @@ print <<EOF;
 EOF
 
 $ignore{'"interface IFNAME"'} = "ignore";
+$ignore{'"interface IFNAME " "vrf <0-65535>"'} = "ignore";
 $ignore{'"ip vrf NAME"'} = "ignore";
 $ignore{'"router rip"'} = "ignore";
 $ignore{'"router ripng"'} = "ignore";
 $ignore{'"router ospf"'} = "ignore";
 $ignore{'"router ospf <0-65535>"'} = "ignore";
 $ignore{'"router ospf6"'} = "ignore";
-$ignore{'"router babel"'} = "ignore";
 $ignore{'"router bgp " "<1-4294967295>"'} = "ignore";
 $ignore{'"router bgp " "<1-4294967295>" " view WORD"'} = "ignore";
 $ignore{'"router isis WORD"'} = "ignore";
@@ -49,6 +49,9 @@ $ignore{'"address-family ipv6 unicast"'} = "ignore";
 $ignore{'"address-family vpnv4"'} = "ignore";
 $ignore{'"address-family vpnv4 unicast"'} = "ignore";
 $ignore{'"address-family ipv4 vrf NAME"'} = "ignore";
+$ignore{'"address-family encap"'} = "ignore";
+$ignore{'"address-family encapv4"'} = "ignore";
+$ignore{'"address-family encapv6"'} = "ignore";
 $ignore{'"exit-address-family"'} = "ignore";
 $ignore{'"key chain WORD"'} = "ignore";
 $ignore{'"key <0-2147483647>"'} = "ignore";
@@ -59,6 +62,8 @@ $ignore{'"who"'} = "ignore";
 $ignore{'"terminal monitor"'} = "ignore";
 $ignore{'"terminal no monitor"'} = "ignore";
 $ignore{'"show history"'} = "ignore";
+
+my $cli_stomp = 0;
 
 foreach (@ARGV) {
     $file = $_;
@@ -99,6 +104,9 @@ foreach (@ARGV) {
         elsif ($file =~ /lib\/filter\.c$/) {
             $protocol = "VTYSH_ALL";
         }
+        elsif ($file =~ /lib\/vrf\.c$/) {
+            $protocol = "VTYSH_ZEBRA";
+        }
         elsif ($file =~ /lib\/plist\.c$/) {
             if ($defun_array[1] =~ m/ipv6/) {
                 $protocol = "VTYSH_RIPNGD|VTYSH_OSPF6D|VTYSH_BGPD|VTYSH_ZEBRA";
@@ -133,6 +141,12 @@ foreach (@ARGV) {
 	$defun_body = join (", ", @defun_array);
 
 	# $cmd -> $str hash for lookup
+       if (exists($cmd2str{$cmd})) {
+           warn "Duplicate CLI Function: $cmd\n";
+           warn "\tFrom cli: $cmd2str{$cmd} to New cli: $str\n";
+           warn "\tOriginal Protocol: $cmd2proto{$cmd} to New Protocol: $protocol\n";
+	   $cli_stomp++;
+       }
 	$cmd2str{$cmd} = $str;
 	$cmd2defun{$cmd} = $defun_body;
 	$cmd2proto{$cmd} = $protocol;
@@ -164,6 +178,27 @@ foreach (@ARGV) {
 	    push (@{$oproto{$key}}, $cmd2proto{$ecmd});
 	}
     }
+}
+
+my $bad_cli_stomps = 89;
+# Currently we have $bad_cli_stomps.  This was determined by
+# running this script and counting up the collisions from what
+# was returned.
+#
+# When we have cli commands that map to the same function name, we
+# can introduce subtle bugs due to code not being called when
+# we think it is.
+#
+# If extract.pl fails with a error message and you've been
+# modifying the cli, then go back and fix your code to
+# not have cli command function collisions.
+#
+# If you've removed a cli overwrite, you can safely subtract
+# one from $bad_cli_stomps.  If you've added to the problem
+# please fix your code before submittal
+if ($cli_stomp != $bad_cli_stomps) {
+    warn "Expected $bad_cli_stomps command line stomps, but got $cli_stomp instead\n";
+    exit $cli_stomp;
 }
 
 # Check finaly alive $cmd;

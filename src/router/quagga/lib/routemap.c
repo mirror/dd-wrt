@@ -897,6 +897,9 @@ route_map_finish (void)
   route_match_vec = NULL;
   vector_free (route_set_vec);
   route_set_vec = NULL;
+  /* cleanup route_map */                                                    
+  while (route_map_master.head)                                              
+    route_map_delete (route_map_master.head); 
 }
 
 /* VTY related functions. */

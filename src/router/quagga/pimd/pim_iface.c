@@ -36,17 +36,11 @@
 #include "pim_pim.h"
 #include "pim_neighbor.h"
 #include "pim_ifchannel.h"
-#include "pim_rand.h"
 #include "pim_sock.h"
 #include "pim_time.h"
 #include "pim_ssmpingd.h"
 
 static void pim_if_igmp_join_del_all(struct interface *ifp);
-
-void pim_if_init()
-{
-  if_init();
-}
 
 static void *if_list_clean(struct pim_interface *pim_ifp)
 {
@@ -255,35 +249,6 @@ static void pim_addr_change(struct interface *ifp)
   pim_hello_restart_now(ifp);         /* send hello and restart timer */
 }
 
-static void on_primary_address_change(struct interface *ifp,
-				      const char *caller,
-				      struct in_addr old_addr,
-				      struct in_addr new_addr)
-{
-  struct pim_interface *pim_ifp;
-
-  {
-    char old_str[100];
-    char new_str[100];
-    pim_inet4_dump("<old?>", old_addr, old_str, sizeof(old_str));
-    pim_inet4_dump("<new?>", new_addr, new_str, sizeof(new_str));
-    zlog_info("%s: %s: primary address changed from %s to %s on interface %s",
-	      __PRETTY_FUNCTION__, caller,
-	      old_str, new_str, ifp->name);
-  }
-
-  pim_ifp = ifp->info;
-  if (!pim_ifp) {
-    return;
-  }
-
-  if (!PIM_IF_TEST_PIM(pim_ifp->options)) {
-    return;
-  }
-
-  pim_addr_change(ifp);
-}
-
 static int detect_primary_address_change(struct interface *ifp,
 					 int force_prim_as_any,
 					 const char *caller)
@@ -315,10 +280,13 @@ static int detect_primary_address_change(struct interface *ifp,
   }
 
   if (changed) {
-    struct in_addr old_addr = pim_ifp->primary_address;
     pim_ifp->primary_address = new_prim_addr;
 
-    on_primary_address_change(ifp, caller, old_addr, new_prim_addr);
+    if (!PIM_IF_TEST_PIM(pim_ifp->options)) {
+      return changed;
+    }
+
+    pim_addr_change(ifp);
   }
 
   return changed;
@@ -335,14 +303,9 @@ static void detect_secondary_address_change(struct interface *ifp,
     return;
 
   changed = 1; /* true */
-  zlog_debug("FIXME T31 C15 %s: on interface %s: acting on any addr change",
-	     __PRETTY_FUNCTION__, ifp->name);
-
-  if (PIM_DEBUG_ZEBRA) {
-    zlog_debug("%s: on interface %s: %s",
-	       __PRETTY_FUNCTION__, 
-	       ifp->name, changed ? "changed" : "unchanged");
-  }
+  if (PIM_DEBUG_ZEBRA)
+    zlog_debug("FIXME T31 C15 %s: on interface %s: acting on any addr change",
+	      __PRETTY_FUNCTION__, ifp->name);
 
   if (!changed) {
     return;
@@ -388,7 +351,7 @@ void pim_if_addr_add(struct connected *ifc)
   if (!if_is_operative(ifp))
     return;
 
-  /* if (PIM_DEBUG_ZEBRA) */ {
+  if (PIM_DEBUG_ZEBRA) {
     char buf[BUFSIZ];
     prefix2str(ifc->address, buf, BUFSIZ);
     zlog_debug("%s: %s ifindex=%d connected IP address %s %s",
@@ -507,7 +470,7 @@ void pim_if_addr_del(struct connected *ifc, int force_prim_as_any)
   ifp = ifc->ifp;
   zassert(ifp);
 
-  /* if (PIM_DEBUG_ZEBRA) */ {
+  if (PIM_DEBUG_ZEBRA) {
     char buf[BUFSIZ];
     prefix2str(ifc->address, buf, BUFSIZ);
     zlog_debug("%s: %s ifindex=%d disconnected IP address %s %s",
@@ -796,7 +759,7 @@ struct interface *pim_if_find_by_vif_index(int vif_index)
 /*
   pim_if_add_vif() uses ifindex as vif_index
  */
-int pim_if_find_vifindex_by_ifindex(int ifindex)
+int pim_if_find_vifindex_by_ifindex(ifindex_t ifindex)
 {
   return ifindex;
 }
@@ -844,7 +807,7 @@ int pim_if_t_override_msec(struct interface *ifp)
   effective_override_interval_msec =
     pim_if_effective_override_interval_msec(ifp);
 
-  t_override_msec = pim_rand_next(0, effective_override_interval_msec);
+  t_override_msec = random() % (effective_override_interval_msec + 1);
 
   return t_override_msec;
 }
@@ -907,6 +870,7 @@ long pim_if_t_suppressed_msec(struct interface *ifp)
 {
   struct pim_interface *pim_ifp;
   long t_suppressed_msec;
+  uint32_t ramount = 0;
 
   pim_ifp = ifp->info;
   zassert(pim_ifp);
@@ -916,8 +880,8 @@ long pim_if_t_suppressed_msec(struct interface *ifp)
     return 0;
 
   /* t_suppressed = t_periodic * rand(1.1, 1.4) */
-
-  t_suppressed_msec = qpim_t_periodic * pim_rand_next(1100, 1400);
+  ramount = 1100 + (random() % (1400 - 1100 + 1));
+  t_suppressed_msec = qpim_t_periodic * ramount;
 
   return t_suppressed_msec;
 }
@@ -946,7 +910,7 @@ static struct igmp_join *igmp_join_find(struct list *join_list,
 }
 
 static int igmp_join_sock(const char *ifname,
-			  int ifindex,
+			  ifindex_t ifindex,
 			  struct in_addr group_addr,
 			  struct in_addr source_addr)
 {
@@ -1060,14 +1024,14 @@ int pim_if_igmp_join_add(struct interface *ifp,
     return -4;
   }
 
-  {
+  if (PIM_DEBUG_IGMP_EVENTS) {
     char group_str[100];
     char source_str[100];
     pim_inet4_dump("<grp?>", group_addr, group_str, sizeof(group_str));
     pim_inet4_dump("<src?>", source_addr, source_str, sizeof(source_str));
     zlog_debug("%s: issued static igmp join for channel (S,G)=(%s,%s) on interface %s",
-	       __PRETTY_FUNCTION__,
-	       source_str, group_str, ifp->name);
+	      __PRETTY_FUNCTION__,
+	      source_str, group_str, ifp->name);
   }
 
   return 0;

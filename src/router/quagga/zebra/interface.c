@@ -32,6 +32,7 @@
 #include "connected.h"
 #include "log.h"
 #include "zclient.h"
+#include "vrf.h"
 
 #include "zebra/interface.h"
 #include "zebra/rtadv.h"
@@ -41,11 +42,11 @@
 #include "zebra/debug.h"
 #include "zebra/irdp.h"
 
-#ifdef RTADV
+#if defined (HAVE_RTADV)
 /* Order is intentional.  Matches RFC4191.  This array is also used for
    command matching, so only modify with care. */
 const char *rtadv_pref_strs[] = { "medium", "high", "INVALID", "low", 0 };
-#endif /* RTADV */
+#endif /* HAVE_RTADV */
 
 /* Called when new interface is added. */
 static int
@@ -58,7 +59,7 @@ if_zebra_new_hook (struct interface *ifp)
   zebra_if->multicast = IF_ZEBRA_MULTICAST_UNSPEC;
   zebra_if->shutdown = IF_ZEBRA_SHUTDOWN_OFF;
 
-#ifdef RTADV
+#if defined (HAVE_RTADV)
   {
     /* Set default router advertise values. */
     struct rtadvconf *rtadv;
@@ -84,7 +85,7 @@ if_zebra_new_hook (struct interface *ifp)
 
     rtadv->AdvPrefixList = list_new ();
   }    
-#endif /* RTADV */
+#endif /* HAVE_RTADV */
 
   /* Initialize installed address chains tree. */
   zebra_if->ipv4_subnets = route_table_init ();
@@ -367,6 +368,8 @@ if_add_update (struct interface *ifp)
   struct zebra_if *if_data;
 
   if_data = ifp->info;
+  assert(if_data);
+
   if (if_data->multicast == IF_ZEBRA_MULTICAST_ON)
     if_set_flags (ifp, IFF_MULTICAST);
   else if (if_data->multicast == IF_ZEBRA_MULTICAST_OFF)
@@ -381,21 +384,23 @@ if_add_update (struct interface *ifp)
       if (if_data && if_data->shutdown == IF_ZEBRA_SHUTDOWN_ON)
 	{
 	  if (IS_ZEBRA_DEBUG_KERNEL)
-	    zlog_debug ("interface %s index %d is shutdown. Won't wake it up.",
-			ifp->name, ifp->ifindex);
+	    zlog_debug ("interface %s vrf %u index %d is shutdown. "
+			"Won't wake it up.",
+			ifp->name, ifp->vrf_id, ifp->ifindex);
 	  return;
 	}
 
       if_addr_wakeup (ifp);
 
       if (IS_ZEBRA_DEBUG_KERNEL)
-	zlog_debug ("interface %s index %d becomes active.", 
-		    ifp->name, ifp->ifindex);
+	zlog_debug ("interface %s vrf %u index %d becomes active.",
+		    ifp->name, ifp->vrf_id, ifp->ifindex);
     }
   else
     {
       if (IS_ZEBRA_DEBUG_KERNEL)
-	zlog_debug ("interface %s index %d is added.", ifp->name, ifp->ifindex);
+	zlog_debug ("interface %s vrf %u index %d is added.",
+		    ifp->name, ifp->vrf_id, ifp->ifindex);
     }
 }
 
@@ -412,8 +417,8 @@ if_delete_update (struct interface *ifp)
 
   if (if_is_up(ifp))
     {
-      zlog_err ("interface %s index %d is still up while being deleted.",
-	    ifp->name, ifp->ifindex);
+      zlog_err ("interface %s vrf %u index %d is still up while being deleted.",
+                ifp->name, ifp->vrf_id, ifp->ifindex);
       return;
     }
 
@@ -421,8 +426,8 @@ if_delete_update (struct interface *ifp)
   UNSET_FLAG (ifp->status, ZEBRA_INTERFACE_ACTIVE);
   
   if (IS_ZEBRA_DEBUG_KERNEL)
-    zlog_debug ("interface %s index %d is now inactive.",
-	       ifp->name, ifp->ifindex);
+    zlog_debug ("interface %s vrf %u index %d is now inactive.",
+                ifp->name, ifp->vrf_id, ifp->ifindex);
 
   /* Delete connected routes from the kernel. */
   if (ifp->connected)
@@ -552,7 +557,7 @@ if_up (struct interface *ifp)
     }
 
   /* Examine all static routes. */
-  rib_update ();
+  rib_update (ifp->vrf_id);
 }
 
 /* Interface goes down.  We have to manage different behavior of based
@@ -585,7 +590,7 @@ if_down (struct interface *ifp)
     }
 
   /* Examine all static routes which direct to the interface. */
-  rib_update ();
+  rib_update (ifp->vrf_id);
 }
 
 void
@@ -633,7 +638,7 @@ connected_dump_vty (struct vty *vty, struct connected *connected)
   vty_out (vty, "%s", VTY_NEWLINE);
 }
 
-#ifdef RTADV
+#if defined (HAVE_RTADV)
 /* Dump interface ND information to vty. */
 static void
 nd_dump_vty (struct vty *vty, struct interface *ifp)
@@ -694,15 +699,12 @@ nd_dump_vty (struct vty *vty, struct interface *ifp)
 		 VTY_NEWLINE);
     }
 }
-#endif /* RTADV */
+#endif /* HAVE_RTADV */
 
 /* Interface's information print out to vty interface. */
 static void
 if_dump_vty (struct vty *vty, struct interface *ifp)
 {
-#ifdef HAVE_STRUCT_SOCKADDR_DL
-  struct sockaddr_dl *sdl;
-#endif /* HAVE_STRUCT_SOCKADDR_DL */
   struct connected *connected;
   struct listnode *node;
   struct route_node *rn;
@@ -725,6 +727,8 @@ if_dump_vty (struct vty *vty, struct interface *ifp)
   } else {
     vty_out (vty, "down%s", VTY_NEWLINE);
   }
+
+  vty_out (vty, "  vrf: %u%s", ifp->vrf_id, VTY_NEWLINE);
 
   if (ifp->desc)
     vty_out (vty, "  Description: %s%s", ifp->desc,
@@ -752,19 +756,7 @@ if_dump_vty (struct vty *vty, struct interface *ifp)
            if_flag_dump (ifp->flags), VTY_NEWLINE);
   
   /* Hardware address. */
-#ifdef HAVE_STRUCT_SOCKADDR_DL
-  sdl = &ifp->sdl;
-  if (sdl != NULL && sdl->sdl_alen != 0)
-    {
-      int i;
-      u_char *ptr;
-
-      vty_out (vty, "  HWaddr: ");
-      for (i = 0, ptr = (u_char *)LLADDR (sdl); i < sdl->sdl_alen; i++, ptr++)
-        vty_out (vty, "%s%02x", i == 0 ? "" : ":", *ptr);
-      vty_out (vty, "%s", VTY_NEWLINE);
-    }
-#else
+  vty_out (vty, "  Type: %s%s", if_link_type_str (ifp->ll_type), VTY_NEWLINE);
   if (ifp->hw_addr_len != 0)
     {
       int i;
@@ -774,7 +766,6 @@ if_dump_vty (struct vty *vty, struct interface *ifp)
 	vty_out (vty, "%s%02x", i == 0 ? "" : ":", ifp->hw_addr[i]);
       vty_out (vty, "%s", VTY_NEWLINE);
     }
-#endif /* HAVE_STRUCT_SOCKADDR_DL */
   
   /* Bandwidth in kbps */
   if (ifp->bandwidth != 0)
@@ -799,9 +790,9 @@ if_dump_vty (struct vty *vty, struct interface *ifp)
 	connected_dump_vty (vty, connected);
     }
 
-#ifdef RTADV
+#if defined (HAVE_RTADV)
   nd_dump_vty (vty, ifp);
-#endif /* RTADV */
+#endif /* HAVE_RTADV */
 
 #ifdef HAVE_PROC_NET_DEV
   /* Statistics print out using proc file system. */
@@ -836,24 +827,29 @@ if_dump_vty (struct vty *vty, struct interface *ifp)
 #ifdef HAVE_NET_RT_IFLIST
 #if defined (__bsdi__) || defined (__NetBSD__)
   /* Statistics print out using sysctl (). */
-  vty_out (vty, "    input packets %qu, bytes %qu, dropped %qu,"
-	   " multicast packets %qu%s",
-	   ifp->stats.ifi_ipackets, ifp->stats.ifi_ibytes,
-	   ifp->stats.ifi_iqdrops, ifp->stats.ifi_imcasts,
-	   VTY_NEWLINE);
+  vty_out (vty, "    input packets %llu, bytes %llu, dropped %llu,"
+           " multicast packets %llu%s",
+           (unsigned long long)ifp->stats.ifi_ipackets,
+           (unsigned long long)ifp->stats.ifi_ibytes,
+           (unsigned long long)ifp->stats.ifi_iqdrops,
+           (unsigned long long)ifp->stats.ifi_imcasts,
+           VTY_NEWLINE);
 
-  vty_out (vty, "    input errors %qu%s",
-	   ifp->stats.ifi_ierrors, VTY_NEWLINE);
+  vty_out (vty, "    input errors %llu%s",
+           (unsigned long long)ifp->stats.ifi_ierrors, VTY_NEWLINE);
 
-  vty_out (vty, "    output packets %qu, bytes %qu, multicast packets %qu%s",
-	   ifp->stats.ifi_opackets, ifp->stats.ifi_obytes,
-	   ifp->stats.ifi_omcasts, VTY_NEWLINE);
+  vty_out (vty, "    output packets %llu, bytes %llu,"
+           " multicast packets %llu%s",
+           (unsigned long long)ifp->stats.ifi_opackets,
+           (unsigned long long)ifp->stats.ifi_obytes,
+           (unsigned long long)ifp->stats.ifi_omcasts,
+           VTY_NEWLINE);
 
-  vty_out (vty, "    output errors %qu%s",
-	   ifp->stats.ifi_oerrors, VTY_NEWLINE);
+  vty_out (vty, "    output errors %llu%s",
+           (unsigned long long)ifp->stats.ifi_oerrors, VTY_NEWLINE);
 
-  vty_out (vty, "    collisions %qu%s",
-	   ifp->stats.ifi_collisions, VTY_NEWLINE);
+  vty_out (vty, "    collisions %llu%s",
+           (unsigned long long)ifp->stats.ifi_collisions, VTY_NEWLINE);
 #else
   /* Statistics print out using sysctl (). */
   vty_out (vty, "    input packets %lu, bytes %lu, dropped %lu,"
@@ -905,6 +901,13 @@ DEFUN_NOSH (zebra_interface,
   return ret;
 }
 
+ALIAS (zebra_interface,
+       zebra_interface_vrf_cmd,
+       "interface IFNAME " VRF_CMD_STR,
+       "Select an interface to configure\n"
+       "Interface's name\n"
+       VRF_CMD_HELP_STR)
+
 struct cmd_node interface_node =
 {
   INTERFACE_NODE,
@@ -912,16 +915,16 @@ struct cmd_node interface_node =
   1
 };
 
-/* Show all or specified interface to vty. */
+/* Show all interfaces to vty. */
 DEFUN (show_interface, show_interface_cmd,
-       "show interface [IFNAME]",  
+       "show interface",
        SHOW_STR
-       "Interface status and configuration\n"
-       "Inteface name\n")
+       "Interface status and configuration\n")
 {
   struct listnode *node;
   struct interface *ifp;
-  
+  vrf_id_t vrf_id = VRF_DEFAULT;
+
 #ifdef HAVE_PROC_NET_DEV
   /* If system has interface statistics via proc file system, update
      statistics. */
@@ -931,39 +934,144 @@ DEFUN (show_interface, show_interface_cmd,
   ifstat_update_sysctl ();
 #endif /* HAVE_NET_RT_IFLIST */
 
-  /* Specified interface print. */
-  if (argc != 0)
-    {
-      ifp = if_lookup_by_name (argv[0]);
-      if (ifp == NULL) 
-	{
-	  vty_out (vty, "%% Can't find interface %s%s", argv[0],
-		   VTY_NEWLINE);
-	  return CMD_WARNING;
-	}
-      if_dump_vty (vty, ifp);
-      return CMD_SUCCESS;
-    }
+  if (argc > 0)
+    VTY_GET_INTEGER ("VRF ID", vrf_id, argv[0]);
 
   /* All interface print. */
-  for (ALL_LIST_ELEMENTS_RO (iflist, node, ifp))
+  for (ALL_LIST_ELEMENTS_RO (vrf_iflist (vrf_id), node, ifp))
     if_dump_vty (vty, ifp);
 
   return CMD_SUCCESS;
 }
 
-DEFUN (show_interface_desc,
-       show_interface_desc_cmd,
-       "show interface description",
+ALIAS (show_interface,
+       show_interface_vrf_cmd,
+       "show interface " VRF_CMD_STR,
        SHOW_STR
        "Interface status and configuration\n"
-       "Interface description\n")
+       VRF_CMD_HELP_STR)
+
+/* Show all interfaces to vty. */
+DEFUN (show_interface_vrf_all, show_interface_vrf_all_cmd,
+       "show interface " VRF_ALL_CMD_STR,
+       SHOW_STR
+       "Interface status and configuration\n"
+       VRF_ALL_CMD_HELP_STR)
+{
+  struct listnode *node;
+  struct interface *ifp;
+  vrf_iter_t iter;
+
+#ifdef HAVE_PROC_NET_DEV
+  /* If system has interface statistics via proc file system, update
+     statistics. */
+  ifstat_update_proc ();
+#endif /* HAVE_PROC_NET_DEV */
+#ifdef HAVE_NET_RT_IFLIST
+  ifstat_update_sysctl ();
+#endif /* HAVE_NET_RT_IFLIST */
+
+  /* All interface print. */
+  for (iter = vrf_first (); iter != VRF_ITER_INVALID; iter = vrf_next (iter))
+    for (ALL_LIST_ELEMENTS_RO (vrf_iter2iflist (iter), node, ifp))
+      if_dump_vty (vty, ifp);
+
+  return CMD_SUCCESS;
+}
+
+/* Show specified interface to vty. */
+DEFUN (show_interface_name, show_interface_name_cmd,
+       "show interface IFNAME",
+       SHOW_STR
+       "Interface status and configuration\n"
+       "Inteface name\n")
+{
+  struct interface *ifp;
+  vrf_id_t vrf_id = VRF_DEFAULT;
+
+#ifdef HAVE_PROC_NET_DEV
+  /* If system has interface statistics via proc file system, update
+     statistics. */
+  ifstat_update_proc ();
+#endif /* HAVE_PROC_NET_DEV */
+#ifdef HAVE_NET_RT_IFLIST
+  ifstat_update_sysctl ();
+#endif /* HAVE_NET_RT_IFLIST */
+
+  if (argc > 1)
+    VTY_GET_INTEGER ("VRF ID", vrf_id, argv[1]);
+
+  /* Specified interface print. */
+  ifp = if_lookup_by_name_vrf (argv[0], vrf_id);
+  if (ifp == NULL)
+    {
+      vty_out (vty, "%% Can't find interface %s%s", argv[0],
+               VTY_NEWLINE);
+      return CMD_WARNING;
+    }
+  if_dump_vty (vty, ifp);
+
+  return CMD_SUCCESS;
+}
+
+ALIAS (show_interface_name,
+       show_interface_name_vrf_cmd,
+       "show interface IFNAME " VRF_CMD_STR,
+       SHOW_STR
+       "Interface status and configuration\n"
+       "Inteface name\n"
+       VRF_CMD_HELP_STR)
+
+/* Show specified interface to vty. */
+DEFUN (show_interface_name_vrf_all, show_interface_name_vrf_all_cmd,
+       "show interface IFNAME " VRF_ALL_CMD_STR,
+       SHOW_STR
+       "Interface status and configuration\n"
+       "Inteface name\n"
+       VRF_ALL_CMD_HELP_STR)
+{
+  struct interface *ifp;
+  vrf_iter_t iter;
+  int found = 0;
+
+#ifdef HAVE_PROC_NET_DEV
+  /* If system has interface statistics via proc file system, update
+     statistics. */
+  ifstat_update_proc ();
+#endif /* HAVE_PROC_NET_DEV */
+#ifdef HAVE_NET_RT_IFLIST
+  ifstat_update_sysctl ();
+#endif /* HAVE_NET_RT_IFLIST */
+
+  /* All interface print. */
+  for (iter = vrf_first (); iter != VRF_ITER_INVALID; iter = vrf_next (iter))
+    {
+      /* Specified interface print. */
+      ifp = if_lookup_by_name_vrf (argv[0], vrf_iter2id (iter));
+      if (ifp)
+        {
+          if_dump_vty (vty, ifp);
+          found++;
+        }
+    }
+
+  if (!found)
+    {
+      vty_out (vty, "%% Can't find interface %s%s", argv[0], VTY_NEWLINE);
+      return CMD_WARNING;
+    }
+
+  return CMD_SUCCESS;
+}
+
+static void
+if_show_description (struct vty *vty, vrf_id_t vrf_id)
 {
   struct listnode *node;
   struct interface *ifp;
 
   vty_out (vty, "Interface       Status  Protocol  Description%s", VTY_NEWLINE);
-  for (ALL_LIST_ELEMENTS_RO (iflist, node, ifp))
+  for (ALL_LIST_ELEMENTS_RO (vrf_iflist (vrf_id), node, ifp))
     {
       int len;
 
@@ -994,6 +1102,52 @@ DEFUN (show_interface_desc,
 	vty_out (vty, "%s", ifp->desc);
       vty_out (vty, "%s", VTY_NEWLINE);
     }
+}
+
+DEFUN (show_interface_desc,
+       show_interface_desc_cmd,
+       "show interface description",
+       SHOW_STR
+       "Interface status and configuration\n"
+       "Interface description\n")
+{
+  vrf_id_t vrf_id = VRF_DEFAULT;
+
+  if (argc > 0)
+    VTY_GET_INTEGER ("VRF ID", vrf_id, argv[0]);
+
+  if_show_description (vty, vrf_id);
+
+  return CMD_SUCCESS;
+}
+
+ALIAS (show_interface_desc,
+       show_interface_desc_vrf_cmd,
+       "show interface description " VRF_CMD_STR,
+       SHOW_STR
+       "Interface status and configuration\n"
+       "Interface description\n"
+       VRF_CMD_HELP_STR)
+
+DEFUN (show_interface_desc_vrf_all,
+       show_interface_desc_vrf_all_cmd,
+       "show interface description " VRF_ALL_CMD_STR,
+       SHOW_STR
+       "Interface status and configuration\n"
+       "Interface description\n"
+       VRF_ALL_CMD_HELP_STR)
+{
+  vrf_iter_t iter;
+
+  for (iter = vrf_first (); iter != VRF_ITER_INVALID; iter = vrf_next (iter))
+    if (!list_isempty (vrf_iter2iflist (iter)))
+      {
+        vty_out (vty, "%s\tVRF %u%s%s", VTY_NEWLINE,
+                 vrf_iter2id (iter),
+                 VTY_NEWLINE, VTY_NEWLINE);
+        if_show_description (vty, vrf_iter2id (iter));
+      }
+
   return CMD_SUCCESS;
 }
 
@@ -1549,8 +1703,10 @@ if_config_write (struct vty *vty)
 {
   struct listnode *node;
   struct interface *ifp;
+  vrf_iter_t iter;
 
-  for (ALL_LIST_ELEMENTS_RO (iflist, node, ifp))
+  for (iter = vrf_first (); iter != VRF_ITER_INVALID; iter = vrf_next (iter))
+  for (ALL_LIST_ELEMENTS_RO (vrf_iter2iflist (iter), node, ifp))
     {
       struct zebra_if *if_data;
       struct listnode *addrnode;
@@ -1558,9 +1714,12 @@ if_config_write (struct vty *vty)
       struct prefix *p;
 
       if_data = ifp->info;
-      
-      vty_out (vty, "interface %s%s", ifp->name,
-	       VTY_NEWLINE);
+
+      if (ifp->vrf_id == VRF_DEFAULT)
+        vty_out (vty, "interface %s%s", ifp->name, VTY_NEWLINE);
+      else
+        vty_out (vty, "interface %s vrf %u%s", ifp->name, ifp->vrf_id,
+                 VTY_NEWLINE);
 
       if (if_data)
 	{
@@ -1588,10 +1747,9 @@ if_config_write (struct vty *vty)
 	      {
 		char buf[INET6_ADDRSTRLEN];
 		p = ifc->address;
-		vty_out (vty, " ip%s address %s/%d",
+		vty_out (vty, " ip%s address %s",
 			 p->family == AF_INET ? "" : "v6",
-			 inet_ntop (p->family, &p->u.prefix, buf, sizeof(buf)),
-			 p->prefixlen);
+			 prefix2str (p, buf, sizeof(buf)));
 
 		if (ifc->label)
 		  vty_out (vty, " label %s", ifc->label);
@@ -1608,9 +1766,9 @@ if_config_write (struct vty *vty)
 		     VTY_NEWLINE);
 	}
 
-#ifdef RTADV
+#if defined (HAVE_RTADV)
       rtadv_config_write (vty, ifp);
-#endif /* RTADV */
+#endif /* HAVE_RTADV */
 
 #ifdef HAVE_IRDP
       irdp_config_write (vty, ifp);
@@ -1626,7 +1784,6 @@ void
 zebra_if_init (void)
 {
   /* Initialize interface and new hook. */
-  if_init ();
   if_add_hook (IF_NEW_HOOK, if_zebra_new_hook);
   if_add_hook (IF_DELETE_HOOK, if_zebra_delete_hook);
   
@@ -1634,10 +1791,24 @@ zebra_if_init (void)
   install_node (&interface_node, if_config_write);
 
   install_element (VIEW_NODE, &show_interface_cmd);
+  install_element (VIEW_NODE, &show_interface_vrf_cmd);
+  install_element (VIEW_NODE, &show_interface_vrf_all_cmd);
+  install_element (VIEW_NODE, &show_interface_name_cmd);
+  install_element (VIEW_NODE, &show_interface_name_vrf_cmd);
+  install_element (VIEW_NODE, &show_interface_name_vrf_all_cmd);
   install_element (ENABLE_NODE, &show_interface_cmd);
+  install_element (ENABLE_NODE, &show_interface_vrf_cmd);
+  install_element (ENABLE_NODE, &show_interface_vrf_all_cmd);
+  install_element (ENABLE_NODE, &show_interface_name_cmd);
+  install_element (ENABLE_NODE, &show_interface_name_vrf_cmd);
+  install_element (ENABLE_NODE, &show_interface_name_vrf_all_cmd);
   install_element (ENABLE_NODE, &show_interface_desc_cmd);
+  install_element (ENABLE_NODE, &show_interface_desc_vrf_cmd);
+  install_element (ENABLE_NODE, &show_interface_desc_vrf_all_cmd);
   install_element (CONFIG_NODE, &zebra_interface_cmd);
+  install_element (CONFIG_NODE, &zebra_interface_vrf_cmd);
   install_element (CONFIG_NODE, &no_interface_cmd);
+  install_element (CONFIG_NODE, &no_interface_vrf_cmd);
   install_default (INTERFACE_NODE);
   install_element (INTERFACE_NODE, &interface_desc_cmd);
   install_element (INTERFACE_NODE, &no_interface_desc_cmd);

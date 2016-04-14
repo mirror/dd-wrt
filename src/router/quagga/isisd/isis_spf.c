@@ -189,11 +189,6 @@ isis_vertex_new (void *id, enum vertextype vtype)
   struct isis_vertex *vertex;
 
   vertex = XCALLOC (MTYPE_ISIS_VERTEX, sizeof (struct isis_vertex));
-  if (vertex == NULL)
-    {
-      zlog_err ("isis_vertex_new Out of memory!");
-      return NULL;
-    }
 
   vertex->type = vtype;
   switch (vtype)
@@ -1072,8 +1067,8 @@ isis_spf_preload_tent (struct isis_spftree *spftree, int level,
 	    {
 	      zlog_warn ("ISIS-Spf: No lsp (%p) found from root "
                   "to L%d DR %s on %s (ID %d)",
-		  lsp, level, rawlspid_print (lsp_id), 
-		  circuit->interface->name, circuit->circuit_id);
+                  (void *)lsp, level, rawlspid_print (lsp_id),
+                  circuit->interface->name, circuit->circuit_id);
               continue;
 	    }
 	  isis_spf_process_pseudo_lsp (spftree, lsp,
@@ -1456,8 +1451,8 @@ isis_spf_schedule6 (struct isis_area *area, int level)
   assert (area->is_type & level);
 
   if (isis->debugs & DEBUG_SPF_EVENTS)
-    zlog_debug ("ISIS-Spf (%s) L%d SPF schedule called, lastrun %d sec ago",
-                area->area_tag, level, diff);
+    zlog_debug ("ISIS-Spf (%s) L%d SPF schedule called, lastrun %lld sec ago",
+                area->area_tag, level, (long long)diff);
 
   if (spftree->pending)
     return ISIS_OK;
@@ -1476,8 +1471,9 @@ isis_spf_schedule6 (struct isis_area *area, int level)
                      area->min_spf_interval[1] - diff);
 
   if (isis->debugs & DEBUG_SPF_EVENTS)
-    zlog_debug ("ISIS-Spf (%s) L%d SPF scheduled %d sec from now",
-                area->area_tag, level, area->min_spf_interval[level-1] - diff);
+    zlog_debug ("ISIS-Spf (%s) L%d SPF scheduled %lld sec from now",
+                area->area_tag, level,
+                (long long)(area->min_spf_interval[level-1] - diff));
 
   spftree->pending = 1;
 

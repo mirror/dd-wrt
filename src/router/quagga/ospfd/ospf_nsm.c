@@ -208,7 +208,6 @@ ospf_db_summary_isempty (struct ospf_neighbor *nbr)
 static int
 ospf_db_summary_add (struct ospf_neighbor *nbr, struct ospf_lsa *lsa)
 {
-#ifdef HAVE_OPAQUE_LSA
   switch (lsa->data->type)
     {
     case OSPF_OPAQUE_LINK_LSA:
@@ -226,7 +225,6 @@ ospf_db_summary_add (struct ospf_neighbor *nbr, struct ospf_lsa *lsa)
     default:
       break;
     }
-#endif /* HAVE_OPAQUE_LSA */
 
   /* Stay away from any Local Translated Type-7 LSAs */
   if (CHECK_FLAG (lsa->flags, OSPF_LSA_LOCAL_XLT))
@@ -282,7 +280,6 @@ nsm_negotiation_done (struct ospf_neighbor *nbr)
   LSDB_LOOP (ASBR_SUMMARY_LSDB (area), rn, lsa)
     ospf_db_summary_add (nbr, lsa);
 
-#ifdef HAVE_OPAQUE_LSA
   /* Process only if the neighbor is opaque capable. */
   if (CHECK_FLAG (nbr->options, OSPF_OPTION_O))
     {
@@ -291,7 +288,6 @@ nsm_negotiation_done (struct ospf_neighbor *nbr)
       LSDB_LOOP (OPAQUE_AREA_LSDB (area), rn, lsa)
 	ospf_db_summary_add (nbr, lsa);
     }
-#endif /* HAVE_OPAQUE_LSA */
 
   if (CHECK_FLAG (nbr->options, OSPF_OPTION_NP))
     {
@@ -304,13 +300,11 @@ nsm_negotiation_done (struct ospf_neighbor *nbr)
     LSDB_LOOP (EXTERNAL_LSDB (nbr->oi->ospf), rn, lsa)
       ospf_db_summary_add (nbr, lsa);
 
-#ifdef HAVE_OPAQUE_LSA
   if (CHECK_FLAG (nbr->options, OSPF_OPTION_O)
       && (nbr->oi->type != OSPF_IFTYPE_VIRTUALLINK
 	  && area->external_routing == OSPF_AREA_DEFAULT))
     LSDB_LOOP (OPAQUE_AS_LSDB (nbr->oi->ospf), rn, lsa)
       ospf_db_summary_add (nbr, lsa);
-#endif /* HAVE_OPAQUE_LSA */
 
   return 0;
 }
@@ -360,10 +354,8 @@ nsm_clear_adj (struct ospf_neighbor *nbr)
   if (!ospf_ls_retransmit_isempty (nbr))
     ospf_ls_retransmit_clear (nbr);
 
-#ifdef HAVE_OPAQUE_LSA
   if (CHECK_FLAG (nbr->options, OSPF_OPTION_O))
     UNSET_FLAG (nbr->options, OSPF_OPTION_O);
-#endif /* HAVE_OPAQUE_LSA */
 }
 
 static int
@@ -621,23 +613,6 @@ nsm_notice_state_change (struct ospf_neighbor *nbr, int next_state, int event)
       nbr->last_regress_str = ospf_nsm_event_str [event];
     }
 
-#ifdef HAVE_SNMP
-  /* Terminal state or regression */ 
-  if ((next_state == NSM_Full) 
-      || (next_state == NSM_TwoWay)
-      || (next_state < nbr->state))
-    {
-      /* ospfVirtNbrStateChange */
-      if (nbr->oi->type == OSPF_IFTYPE_VIRTUALLINK)
-        ospfTrapVirtNbrStateChange(nbr);
-      /* ospfNbrStateChange trap  */
-      else	
-        /* To/From FULL, only managed by DR */
-        if (((next_state != NSM_Full) && (nbr->state != NSM_Full)) 
-            || (nbr->oi->state == ISM_DR))
-          ospfTrapNbrStateChange(nbr);
-    }
-#endif
 }
 
 static void
@@ -752,9 +727,7 @@ nsm_change_state (struct ospf_neighbor *nbr, int state)
 	}
     }
 
-#ifdef HAVE_OPAQUE_LSA
   ospf_opaque_nsm_change (nbr, old_state);
-#endif /* HAVE_OPAQUE_LSA */
 
   /* State changes from > ExStart to <= ExStart should clear any Exchange
    * or Full/LSA Update related lists and state.
@@ -830,7 +803,34 @@ ospf_nsm_event (struct thread *thread)
   if (next_state != nbr->state)
     {
       nsm_notice_state_change (nbr, next_state, event);
+#ifdef HAVE_SNMP
+      int send_trap_virt = 0;
+      int send_trap = 0;
+      /* Terminal state or regression */ 
+      if ((next_state == NSM_Full) 
+	      || (next_state == NSM_TwoWay)
+	      || (next_state < nbr->state))
+      {
+	  /* ospfVirtNbrStateChange */
+	  if (nbr->oi->type == OSPF_IFTYPE_VIRTUALLINK)
+	      send_trap_virt = 1;
+	  /* ospfNbrStateChange trap  */
+	  else	
+	      /* To/From FULL, only managed by DR */
+	      if (((next_state != NSM_Full) && (nbr->state != NSM_Full)) 
+		      || (nbr->oi->state == ISM_DR))
+		  send_trap = 1;
+      }
+#endif
       nsm_change_state (nbr, next_state);
+
+#ifdef HAVE_SNMP
+      if (send_trap_virt) {
+	  ospfTrapVirtNbrStateChange(nbr);
+      } else if (send_trap) {
+	  ospfTrapNbrStateChange(nbr);
+      }
+#endif
     }
 
   /* Make sure timer is set. */

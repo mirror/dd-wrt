@@ -20,8 +20,11 @@
   $QuaggaId: $Format:%an, %ai, %h$ $
 */
 
+#include <zebra.h>
+
 #include <string.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 
 #include "pim_int.h"
 

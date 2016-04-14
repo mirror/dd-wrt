@@ -144,4 +144,6 @@ extern void bgp_damp_info_vty (struct vty *, struct bgp_info *);
 extern const char * bgp_damp_reuse_time_vty (struct vty *, struct bgp_info *,
                                              char *, size_t);
 
+extern int bgp_show_dampening_parameters (struct vty *vty, afi_t, safi_t);
+
 #endif /* _QUAGGA_BGP_DAMP_H */

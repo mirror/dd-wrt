@@ -45,8 +45,8 @@
 
 /* Fill in the the 'key' as appropriate to retrieve the entry for nbr
  * from the ospf_interface's nbrs table. Indexed by interface address
- * for all cases except Virtual-link interfaces, where neighbours are
- * indexed by router-ID instead.
+ * for all cases except Virtual-link and PointToPoint interfaces, where
+ * neighbours are indexed by router-ID instead.
  */
 static void
 ospf_nbr_key (struct ospf_interface *oi, struct ospf_neighbor *nbr,
@@ -56,7 +56,8 @@ ospf_nbr_key (struct ospf_interface *oi, struct ospf_neighbor *nbr,
   key->prefixlen = IPV4_MAX_BITLEN;
 
   /* vlinks are indexed by router-id */
-  if (oi->type == OSPF_IFTYPE_VIRTUALLINK)
+  if (oi->type == OSPF_IFTYPE_VIRTUALLINK ||
+      oi->type == OSPF_IFTYPE_POINTOPOINT)
     key->u.prefix4 = nbr->router_id;
   else
     key->u.prefix4 = nbr->src;
@@ -202,6 +203,15 @@ ospf_nbr_bidirectional (struct in_addr *router_id,
   return 0;
 }
 
+/* reset nbr_self */
+void
+ospf_nbr_self_reset (struct ospf_interface *oi)
+{
+  ospf_nbr_delete (oi->nbr_self);
+  oi->nbr_self = ospf_nbr_new (oi);
+  ospf_nbr_add_self (oi);
+}
+
 /* Add self to nbr list. */
 void
 ospf_nbr_add_self (struct ospf_interface *oi)
@@ -262,7 +272,6 @@ ospf_nbr_count (struct ospf_interface *oi, int state)
   return count;
 }
 
-#ifdef HAVE_OPAQUE_LSA
 int
 ospf_nbr_count_opaque_capable (struct ospf_interface *oi)
 {
@@ -279,11 +288,10 @@ ospf_nbr_count_opaque_capable (struct ospf_interface *oi)
 
   return count;
 }
-#endif /* HAVE_OPAQUE_LSA */
 
 /* lookup nbr by address - use this only if you know you must
- * otherwise use the ospf_nbr_lookup() wrapper, which deals 
- * with virtual link neighbours
+ * otherwise use the ospf_nbr_lookup() wrapper, which deals
+ * with virtual link and PointToPoint neighbours
  */
 struct ospf_neighbor *
 ospf_nbr_lookup_by_addr (struct route_table *nbrs,
@@ -375,7 +383,8 @@ struct ospf_neighbor *
 ospf_nbr_lookup (struct ospf_interface *oi, struct ip *iph,
                  struct ospf_header *ospfh)
 {
-  if (oi->type == OSPF_IFTYPE_VIRTUALLINK)
+  if (oi->type == OSPF_IFTYPE_VIRTUALLINK ||
+      oi->type == OSPF_IFTYPE_POINTOPOINT)
     return (ospf_nbr_lookup_by_routerid (oi->nbrs, &ospfh->router_id));
   else
     return (ospf_nbr_lookup_by_addr (oi->nbrs, &iph->ip_src));
@@ -435,8 +444,9 @@ ospf_nbr_get (struct ospf_interface *oi, struct ospf_header *ospfh,
   key.family = AF_INET;
   key.prefixlen = IPV4_MAX_BITLEN;
 
-  if (oi->type == OSPF_IFTYPE_VIRTUALLINK)
-    key.u.prefix4 = ospfh->router_id;   /* index vlink nbrs by router-id */
+  if (oi->type == OSPF_IFTYPE_VIRTUALLINK ||
+      oi->type == OSPF_IFTYPE_POINTOPOINT)
+    key.u.prefix4 = ospfh->router_id;/* index vlink and ptp nbrs by router-id */
   else
     key.u.prefix4 = iph->ip_src;
 

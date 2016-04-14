@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in.
 
 AM_CPPFLAGS = -I.. -I$(top_srcdir) -I$(top_srcdir)/lib -I$(top_builddir)/lib
-DEFS = @DEFS@ -DSYSCONFDIR=\"$(sysconfdir)/\" -DMULTIPATH_NUM=@MULTIPATH_NUM@
+DEFS = @DEFS@ -DSYSCONFDIR=\"$(sysconfdir)/\"
 INSTALL_SDATA=@INSTALL@ -m 600
 
 LIBCAP = @LIBCAP@
@@ -20,8 +20,7 @@ if HAVE_NETLINK
 othersrc = zebra_fpm_netlink.c
 endif
 
-AM_CFLAGS = $(PICFLAGS)
-AM_LDFLAGS = $(PILDFLAGS)
+AM_CFLAGS = $(WERROR)
 
 sbin_PROGRAMS = zebra
 
@@ -40,7 +39,8 @@ testzebra_SOURCES = test_main.c zebra_rib.c interface.c connected.c debug.c \
 noinst_HEADERS = \
 	connected.h ioctl.h rib.h rt.h zserv.h redistribute.h debug.h rtadv.h \
 	interface.h ipforward.h irdp.h router-id.h kernel_socket.h \
-	rt_netlink.h zebra_fpm.h zebra_fpm_private.h
+	rt_netlink.h zebra_fpm.h zebra_fpm_private.h \
+	ioctl_solaris.h
 
 zebra_LDADD = $(otherobj) ../lib/libzebra.la $(LIBCAP)
 

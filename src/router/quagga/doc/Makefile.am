@@ -46,11 +46,11 @@ info_TEXINFOS = quagga.texi
 quagga.pdf: $(info_TEXINFOS) $(figures_pdf) $(quagga_TEXINFOS)
 	$(TEXI2PDF) -o "$@" $< || true
 
-quagga_TEXINFOS = appendix.texi babeld.texi basic.texi bgpd.texi filter.texi \
+quagga_TEXINFOS = appendix.texi basic.texi bgpd.texi filter.texi \
 	install.texi ipv6.texi kernel.texi main.texi ospf6d.texi ospfd.texi \
 	overview.texi protocol.texi ripd.texi ripngd.texi routemap.texi \
 	snmp.texi vtysh.texi routeserver.texi defines.texi $(figures_png) \
-	snmptrap.texi $(figures_txt)
+	snmptrap.texi ospf_fundamentals.texi $(figures_txt)
 
 .png.eps:
 	$(PNGTOEPS) $< "$@"
@@ -112,7 +112,8 @@ EXTRA_DIST = BGP-TypeCode draft-zebra-00.ms draft-zebra-00.txt \
 	ripngd.8 pimd.8 vtysh.1 watchquagga.8 zebra.8 \
 	mpls/ChangeLog.opaque.txt mpls/cli_summary.txt \
 	mpls/opaque_lsa.txt mpls/ospfd.conf \
-	$(figures_sources) $(figures_png) $(figures_txt)
+	$(figures_sources) $(figures_png) $(figures_txt) \
+	texinfo.tex
 
 draft-zebra-00.txt: draft-zebra-00.ms
 	groff -T ascii -ms $< > $@

@@ -31,6 +31,7 @@
 #include <signal.h>
 
 #include "memory.h"
+#include "vrf.h"
 #include "filter.h"
 #include "vty.h"
 #include "sigevent.h"
@@ -186,12 +187,6 @@ int main(int argc, char** argv, char** envp) {
 
   master = thread_master_create();
 
-  /*
-   * Temporarily send zlog to stdout
-   */
-  zlog_default->maxlvl[ZLOG_DEST_STDOUT] = zlog_default->default_lvl;
-  zlog_notice("Boot logging temporarily directed to stdout - begin");
-
   zlog_notice("Quagga %s " PIMD_PROGNAME " %s starting",
 	      QUAGGA_VERSION, PIMD_VERSION);
 
@@ -203,23 +198,14 @@ int main(int argc, char** argv, char** envp) {
   cmd_init(1);
   vty_init(master);
   memory_init();
+  vrf_init();
   access_list_init();
   pim_init();
 
   /*
-   * reset zlog default, then will obey configuration file
+   * Initialize zclient "update" and "lookup" sockets
    */
-  zlog_notice("Boot logging temporarily directed to stdout - end");
-#if 0
-  /* this would disable logging to stdout, but config has not been
-     loaded yet to reconfig the logging output */
-  zlog_default->maxlvl[ZLOG_DEST_STDOUT] = ZLOG_DISABLED;
-#endif
-
-  /*
-    Initialize zclient "update" and "lookup" sockets
-   */
-  pim_zebra_init(zebra_sock_path);
+  pim_zebra_init (master, zebra_sock_path);
 
   zlog_notice("Loading configuration - begin");
 

@@ -204,7 +204,7 @@ authentication_check (struct isis_passwd *remote, struct isis_passwd *local,
       /* Compute the digest */
       hmac_md5 (STREAM_DATA (stream), stream_get_endp (stream),
                 (unsigned char *) &(local->passwd), local->len,
-                (caddr_t) &digest);
+                (unsigned char *) &digest);
       /* Copy back the authentication value after the check */
       memcpy (STREAM_DATA (stream) + auth_tlv_offset + 3,
               remote->passwd, ISIS_AUTH_MD5_SIZE);
@@ -562,6 +562,17 @@ process_p2p_hello (struct isis_circuit *circuit)
     }
 
   /*
+   * it's own p2p IIH PDU - discard
+   */
+  if (!memcmp (hdr->source_id, isis->sysid, ISIS_SYS_ID_LEN))
+    {
+      zlog_warn ("ISIS-Adj (%s): it's own IIH PDU - discarded",
+                  circuit->area->area_tag);
+      free_tlvs (&tlvs);
+      return ISIS_WARNING;
+    }
+
+  /*
    * My interpertation of the ISO, if no adj exists we will create one for
    * the circuit
    */
@@ -590,6 +601,13 @@ process_p2p_hello (struct isis_circuit *circuit)
           adj->level = hdr->circuit_t;
         }
       circuit->u.p2p.neighbor = adj;
+      /* Build lsp with the new neighbor entry when a new
+       * adjacency is formed. Set adjacency circuit type to
+       * IIH PDU header circuit type before lsp is regenerated
+       * when an adjacency is up. This will result in the new
+       * adjacency entry getting added to the lsp tlv neighbor list.
+       */
+      adj->circuit_t = hdr->circuit_t;
       isis_adj_state_change (adj, ISIS_ADJ_INITIALIZING, NULL);
       adj->sys_type = ISIS_SYSTYPE_UNKNOWN;
     }
@@ -875,7 +893,6 @@ process_p2p_hello (struct isis_circuit *circuit)
       break;
     }
 
-  adj->circuit_t = hdr->circuit_t;
 
   if (isis->debugs & DEBUG_ADJ_PACKETS)
     {
@@ -895,7 +912,7 @@ process_p2p_hello (struct isis_circuit *circuit)
  * Process IS-IS LAN Level 1/2 Hello PDU
  */
 static int
-process_lan_hello (int level, struct isis_circuit *circuit, u_char * ssnpa)
+process_lan_hello (int level, struct isis_circuit *circuit, const u_char *ssnpa)
 {
   int retval = ISIS_OK;
   struct isis_lan_hello_hdr hdr;
@@ -1264,7 +1281,7 @@ out:
   if (isis->debugs & DEBUG_ADJ_PACKETS)
     {
       zlog_debug ("ISIS-Adj (%s): Rcvd L%d LAN IIH from %s on %s, cirType %s, "
-		  "cirID %u, length %ld",
+		  "cirID %u, length %zd",
 		  circuit->area->area_tag,
 		  level, snpa_print (ssnpa), circuit->interface->name,
 		  circuit_t2string (circuit->is_type),
@@ -1283,7 +1300,7 @@ out:
  * Section 7.3.15.1 - Action on receipt of a link state PDU
  */
 static int
-process_lsp (int level, struct isis_circuit *circuit, u_char * ssnpa)
+process_lsp (int level, struct isis_circuit *circuit, const u_char *ssnpa)
 {
   struct isis_link_state_hdr *hdr;
   struct isis_adjacency *adj = NULL;
@@ -1292,6 +1309,7 @@ process_lsp (int level, struct isis_circuit *circuit, u_char * ssnpa)
   u_char lspid[ISIS_SYS_ID_LEN + 2];
   struct isis_passwd *passwd;
   uint16_t pdu_len;
+  int lsp_confusion;
 
   if (isis->debugs & DEBUG_UPDATE_PACKETS)
     {
@@ -1466,6 +1484,21 @@ dontcheckadj:
 
   /* 7.3.15.1 a) 9 - OriginatingLSPBufferSize - not implemented  FIXME: do it */
 
+  /* 7.3.16.2 - If this is an LSP from another IS with identical seq_num but
+   *            wrong checksum, initiate a purge. */
+  if (lsp
+      && (lsp->lsp_header->seq_num == hdr->seq_num)
+      && (lsp->lsp_header->checksum != hdr->checksum))
+    {
+      zlog_warn("ISIS-Upd (%s): LSP %s seq 0x%08x with confused checksum received.",
+                circuit->area->area_tag, rawlspid_print(hdr->lsp_id),
+                ntohl(hdr->seq_num));
+      hdr->rem_lifetime = 0;
+      lsp_confusion = 1;
+    }
+  else
+    lsp_confusion = 0;
+
   /* 7.3.15.1 b) - If the remaining life time is 0, we perform 7.3.16.4 */
   if (hdr->rem_lifetime == 0)
     {
@@ -1488,14 +1521,20 @@ dontcheckadj:
                   lsp_update (lsp, circuit->rcv_stream, circuit->area, level);
 		  /* ii */
                   lsp_set_all_srmflags (lsp);
-		  /* iii */
-		  ISIS_CLEAR_FLAG (lsp->SRMflags, circuit);
 		  /* v */
 		  ISIS_FLAGS_CLEAR_ALL (lsp->SSNflags);	/* FIXME: OTHER than c */
-		  /* iv */
-		  if (circuit->circ_type != CIRCUIT_T_BROADCAST)
-		    ISIS_SET_FLAG (lsp->SSNflags, circuit);
 
+		  /* For the case of lsp confusion, flood the purge back to its
+		   * originator so that it can react. Otherwise, don't reflood
+		   * through incoming circuit as usual */
+		  if (!lsp_confusion)
+		    {
+		      /* iii */
+		      ISIS_CLEAR_FLAG (lsp->SRMflags, circuit);
+		      /* iv */
+		      if (circuit->circ_type != CIRCUIT_T_BROADCAST)
+		        ISIS_SET_FLAG (lsp->SSNflags, circuit);
+		    }
 		}		/* 7.3.16.4 b) 2) */
 	      else if (comp == LSP_EQUAL)
 		{
@@ -1540,7 +1579,7 @@ dontcheckadj:
       if (!lsp)
 	{
 	  /* 7.3.16.4: initiate a purge */
-	  lsp_purge_non_exist (hdr, circuit->area);
+	  lsp_purge_non_exist(level, hdr, circuit->area);
 	  return ISIS_OK;
 	}
       /* 7.3.15.1 d) - If this is our own lsp and we have it */
@@ -1632,7 +1671,7 @@ dontcheckadj:
 
 static int
 process_snp (int snp_type, int level, struct isis_circuit *circuit,
-	     u_char * ssnpa)
+	     const u_char *ssnpa)
 {
   int retval = ISIS_OK;
   int cmp, own_lsp;
@@ -1677,7 +1716,7 @@ process_snp (int snp_type, int level, struct isis_circuit *circuit,
           pdu_len > ISO_MTU(circuit) ||
           pdu_len > stream_get_endp (circuit->rcv_stream))
 	{
-	  zlog_warn ("Received a CSNP with bogus length %d", pdu_len);
+	  zlog_warn ("Received a PSNP with bogus length %d", pdu_len);
 	  return ISIS_WARNING;
 	}
     }
@@ -1878,9 +1917,9 @@ process_snp (int snp_type, int level, struct isis_circuit *circuit,
 	    if (entry->rem_lifetime && entry->checksum && entry->seq_num &&
 		memcmp (entry->lsp_id, isis->sysid, ISIS_SYS_ID_LEN))
 	      {
-		lsp = lsp_new (entry->lsp_id, ntohs (entry->rem_lifetime),
-			       0, 0, entry->checksum, level);
-		lsp->area = circuit->area;
+		lsp = lsp_new(circuit->area, entry->lsp_id,
+			      ntohs(entry->rem_lifetime),
+			      0, 0, entry->checksum, level);
 		lsp_insert (lsp, circuit->area->lspdb[level - 1]);
 		ISIS_FLAGS_CLEAR_ALL (lsp->SRMflags);
 		ISIS_SET_FLAG (lsp->SSNflags, circuit);
@@ -1928,7 +1967,7 @@ process_snp (int snp_type, int level, struct isis_circuit *circuit,
 }
 
 static int
-process_csnp (int level, struct isis_circuit *circuit, u_char * ssnpa)
+process_csnp (int level, struct isis_circuit *circuit, const u_char *ssnpa)
 {
   if (isis->debugs & DEBUG_SNP_PACKETS)
     {
@@ -1952,7 +1991,7 @@ process_csnp (int level, struct isis_circuit *circuit, u_char * ssnpa)
 }
 
 static int
-process_psnp (int level, struct isis_circuit *circuit, u_char * ssnpa)
+process_psnp (int level, struct isis_circuit *circuit, const u_char *ssnpa)
 {
   if (isis->debugs & DEBUG_SNP_PACKETS)
     {
@@ -1972,89 +2011,6 @@ process_psnp (int level, struct isis_circuit *circuit, u_char * ssnpa)
     }
 
   return process_snp (ISIS_SNP_PSNP_FLAG, level, circuit, ssnpa);
-}
-
-/*
- * Process ISH
- * ISO - 10589
- * Section 8.2.2 - Receiving ISH PDUs by an intermediate system
- * FIXME: sample packet dump, need to figure 0x81 - looks like NLPid
- *           0x82	0x15	0x01	0x00	0x04	0x01	0x2c	0x59
- *           0x38	0x08	0x47	0x00	0x01	0x00	0x02	0x00
- *           0x03	0x00	0x81	0x01	0xcc
- */
-static int
-process_is_hello (struct isis_circuit *circuit)
-{
-  struct isis_adjacency *adj;
-  int retval = ISIS_OK;
-  u_char neigh_len;
-  u_char *sysid;
-
-  if (isis->debugs & DEBUG_ADJ_PACKETS)
-    {
-      zlog_debug ("ISIS-Adj (%s): Rcvd ISH on %s, cirType %s, cirID %u",
-                  circuit->area->area_tag, circuit->interface->name,
-                  circuit_t2string (circuit->is_type), circuit->circuit_id);
-      if (isis->debugs & DEBUG_PACKET_DUMP)
-        zlog_dump_data (STREAM_DATA (circuit->rcv_stream),
-                        stream_get_endp (circuit->rcv_stream));
-    }
-
-  /* In this point in time we are not yet able to handle is_hellos
-   * on lan - Sorry juniper...
-   */
-  if (circuit->circ_type == CIRCUIT_T_BROADCAST)
-    return retval;
-
-  neigh_len = stream_getc (circuit->rcv_stream);
-  sysid = STREAM_PNT (circuit->rcv_stream) + neigh_len - 1 - ISIS_SYS_ID_LEN;
-  adj = circuit->u.p2p.neighbor;
-  if (!adj)
-    {
-      /* 8.2.2 */
-      adj = isis_new_adj (sysid, NULL, 0, circuit);
-      if (adj == NULL)
-	return ISIS_ERROR;
-
-      isis_adj_state_change (adj, ISIS_ADJ_INITIALIZING, NULL);
-      adj->sys_type = ISIS_SYSTYPE_UNKNOWN;
-      circuit->u.p2p.neighbor = adj;
-    }
-  /* 8.2.2 a) */
-  if ((adj->adj_state == ISIS_ADJ_UP) && memcmp (adj->sysid, sysid,
-						 ISIS_SYS_ID_LEN))
-    {
-      /* 8.2.2 a) 1) FIXME: adjStateChange(down) event */
-      /* 8.2.2 a) 2) delete the adj */
-      XFREE (MTYPE_ISIS_ADJACENCY, adj);
-      /* 8.2.2 a) 3) create a new adj */
-      adj = isis_new_adj (sysid, NULL, 0, circuit);
-      if (adj == NULL)
-	return ISIS_ERROR;
-
-      /* 8.2.2 a) 3) i */
-      isis_adj_state_change (adj, ISIS_ADJ_INITIALIZING, NULL);
-      /* 8.2.2 a) 3) ii */
-      adj->sys_type = ISIS_SYSTYPE_UNKNOWN;
-      /* 8.2.2 a) 4) quite meaningless */
-    }
-  /* 8.2.2 b) ignore on condition */
-  if ((adj->adj_state == ISIS_ADJ_INITIALIZING) &&
-      (adj->sys_type == ISIS_SYSTYPE_IS))
-    {
-      /* do nothing */
-    }
-  else
-    {
-      /* 8.2.2 c) respond with a p2p IIH */
-      send_hello (circuit, 1);
-    }
-  /* 8.2.2 d) type is IS */
-  adj->sys_type = ISIS_SYSTYPE_IS;
-  /* 8.2.2 e) FIXME: Circuit type of? */
-
-  return retval;
 }
 
 /*
@@ -2187,10 +2143,7 @@ isis_receive (struct thread *thread)
   circuit = THREAD_ARG (thread);
   assert (circuit);
 
-  if (circuit->rcv_stream == NULL)
-    circuit->rcv_stream = stream_new (ISO_MTU (circuit));
-  else
-    stream_reset (circuit->rcv_stream);
+  isis_circuit_stream(circuit, &circuit->rcv_stream);
 
   retval = circuit->rx (circuit, ssnpa);
   circuit->t_read = NULL;
@@ -2226,10 +2179,7 @@ isis_receive (struct thread *thread)
 
   circuit->t_read = NULL;
 
-  if (circuit->rcv_stream == NULL)
-    circuit->rcv_stream = stream_new (ISO_MTU (circuit));
-  else
-    stream_reset (circuit->rcv_stream);
+  isis_circuit_stream(circuit, &circuit->rcv_stream);
 
   retval = circuit->rx (circuit, ssnpa);
 
@@ -2321,7 +2271,7 @@ send_hello (struct isis_circuit *circuit, int level)
   struct isis_lan_hello_hdr hello_hdr;
   struct isis_p2p_hello_hdr p2p_hello_hdr;
   unsigned char hmac_md5_hash[ISIS_AUTH_MD5_SIZE];
-  unsigned long len_pointer, length, auth_tlv_offset = 0;
+  size_t len_pointer, length, auth_tlv_offset = 0;
   u_int32_t interval;
   int retval;
 
@@ -2334,10 +2284,7 @@ send_hello (struct isis_circuit *circuit, int level)
       return ISIS_WARNING;
     }
 
-  if (!circuit->snd_stream)
-    circuit->snd_stream = stream_new (ISO_MTU (circuit));
-  else
-    stream_reset (circuit->snd_stream);
+  isis_circuit_stream(circuit, &circuit->snd_stream);
 
   if (circuit->circ_type == CIRCUIT_T_BROADCAST)
     if (level == IS_LEVEL_1)
@@ -2469,7 +2416,7 @@ send_hello (struct isis_circuit *circuit, int level)
       hmac_md5 (STREAM_DATA (circuit->snd_stream),
                 stream_get_endp (circuit->snd_stream),
                 (unsigned char *) &circuit->passwd.passwd, circuit->passwd.len,
-                (caddr_t) &hmac_md5_hash);
+                (unsigned char *) &hmac_md5_hash);
       /* Copy the hash into the stream */
       memcpy (STREAM_DATA (circuit->snd_stream) + auth_tlv_offset + 3,
               hmac_md5_hash, ISIS_AUTH_MD5_SIZE);
@@ -2479,16 +2426,14 @@ send_hello (struct isis_circuit *circuit, int level)
     {
       if (circuit->circ_type == CIRCUIT_T_BROADCAST)
 	{
-	  zlog_debug ("ISIS-Adj (%s): Sent L%d LAN IIH on %s, length %ld",
+	  zlog_debug ("ISIS-Adj (%s): Sending L%d LAN IIH on %s, length %zd",
 		      circuit->area->area_tag, level, circuit->interface->name,
-		      /* FIXME: use %z when we stop supporting old compilers. */
 		      length);
 	}
       else
 	{
-	  zlog_debug ("ISIS-Adj (%s): Sent P2P IIH on %s, length %ld",
+	  zlog_debug ("ISIS-Adj (%s): Sending P2P IIH on %s, length %zd",
 		      circuit->area->area_tag, circuit->interface->name,
-		      /* FIXME: use %z when we stop supporting old compilers. */
 		      length);
 	}
       if (isis->debugs & DEBUG_PACKET_DUMP)
@@ -2514,6 +2459,13 @@ send_lan_l1_hello (struct thread *thread)
   assert (circuit);
   circuit->u.bc.t_send_lan_hello[0] = NULL;
 
+  if (!(circuit->area->is_type & IS_LEVEL_1))
+    {
+      zlog_warn ("ISIS-Hello (%s): Trying to send L1 IIH in L2-only area",
+		 circuit->area->area_tag);
+      return 1;
+    }
+
   if (circuit->u.bc.run_dr_elect[0])
     retval = isis_dr_elect (circuit, 1);
 
@@ -2536,6 +2488,13 @@ send_lan_l2_hello (struct thread *thread)
   circuit = THREAD_ARG (thread);
   assert (circuit);
   circuit->u.bc.t_send_lan_hello[1] = NULL;
+
+  if (!(circuit->area->is_type & IS_LEVEL_2))
+    {
+      zlog_warn ("ISIS-Hello (%s): Trying to send L2 IIH in L1 area",
+		 circuit->area->area_tag);
+      return 1;
+    }
 
   if (circuit->u.bc.run_dr_elect[1])
     retval = isis_dr_elect (circuit, 2);
@@ -2581,10 +2540,7 @@ build_csnp (int level, u_char * start, u_char * stop, struct list *lsps,
   unsigned long auth_tlv_offset = 0;
   int retval = ISIS_OK;
 
-  if (circuit->snd_stream == NULL)
-    circuit->snd_stream = stream_new (ISO_MTU (circuit));
-  else
-    stream_reset (circuit->snd_stream);
+  isis_circuit_stream(circuit, &circuit->snd_stream);
 
   if (level == IS_LEVEL_1)
     fill_fixed_hdr_andstream (&fixed_hdr, L1_COMPLETE_SEQ_NUM,
@@ -2656,7 +2612,7 @@ build_csnp (int level, u_char * start, u_char * stop, struct list *lsps,
       hmac_md5 (STREAM_DATA (circuit->snd_stream),
                 stream_get_endp(circuit->snd_stream),
                 (unsigned char *) &passwd->passwd, passwd->len,
-                (caddr_t) &hmac_md5_hash);
+                (unsigned char *) &hmac_md5_hash);
       /* Copy the hash into the stream */
       memcpy (STREAM_DATA (circuit->snd_stream) + auth_tlv_offset + 3,
               hmac_md5_hash, ISIS_AUTH_MD5_SIZE);
@@ -2801,7 +2757,7 @@ send_csnp (struct isis_circuit *circuit, int level)
 
       if (isis->debugs & DEBUG_SNP_PACKETS)
         {
-          zlog_debug ("ISIS-Snp (%s): Sent L%d CSNP on %s, length %ld",
+          zlog_debug ("ISIS-Snp (%s): Sending L%d CSNP on %s, length %zd",
                       circuit->area->area_tag, level, circuit->interface->name,
                       stream_get_endp (circuit->snd_stream));
           for (ALL_LIST_ELEMENTS_RO (list, node, lsp))
@@ -2908,10 +2864,7 @@ build_psnp (int level, struct isis_circuit *circuit, struct list *lsps)
   unsigned long auth_tlv_offset = 0;
   int retval = ISIS_OK;
 
-  if (circuit->snd_stream == NULL)
-    circuit->snd_stream = stream_new (ISO_MTU (circuit));
-  else
-    stream_reset (circuit->snd_stream);
+  isis_circuit_stream(circuit, &circuit->snd_stream);
 
   if (level == IS_LEVEL_1)
     fill_fixed_hdr_andstream (&fixed_hdr, L1_PARTIAL_SEQ_NUM,
@@ -2992,7 +2945,7 @@ build_psnp (int level, struct isis_circuit *circuit, struct list *lsps)
       hmac_md5 (STREAM_DATA (circuit->snd_stream),
                 stream_get_endp(circuit->snd_stream),
                 (unsigned char *) &passwd->passwd, passwd->len,
-                (caddr_t) &hmac_md5_hash);
+                (unsigned char *) &hmac_md5_hash);
       /* Copy the hash into the stream */
       memcpy (STREAM_DATA (circuit->snd_stream) + auth_tlv_offset + 3,
               hmac_md5_hash, ISIS_AUTH_MD5_SIZE);
@@ -3050,7 +3003,7 @@ send_psnp (int level, struct isis_circuit *circuit)
 
       if (isis->debugs & DEBUG_SNP_PACKETS)
         {
-          zlog_debug ("ISIS-Snp (%s): Sent L%d PSNP on %s, length %ld",
+          zlog_debug ("ISIS-Snp (%s): Sending L%d PSNP on %s, length %zd",
                       circuit->area->area_tag, level,
                       circuit->interface->name,
                       stream_get_endp (circuit->snd_stream));
@@ -3134,15 +3087,14 @@ send_lsp (struct thread *thread)
   struct isis_circuit *circuit;
   struct isis_lsp *lsp;
   struct listnode *node;
+  int clear_srm = 1;
   int retval = ISIS_OK;
 
   circuit = THREAD_ARG (thread);
   assert (circuit);
 
-  if (circuit->state != C_STATE_UP || circuit->is_passive == 1)
-  {
-    return retval;
-  }
+  if (!circuit->lsp_queue)
+    return ISIS_OK;
 
   node = listhead (circuit->lsp_queue);
 
@@ -3152,28 +3104,56 @@ send_lsp (struct thread *thread)
    * thread gets a chance to run.
    */
   if (!node)
-    {
-      return retval;
-    }
+    return ISIS_OK;
 
+  /*
+   * Delete LSP from lsp_queue. If it's still in queue, it is assumed
+   * as 'transmit pending', but send_lsp may never be called again.
+   * Retry will happen because SRM flag will not be cleared.
+   */
   lsp = listgetdata(node);
+  list_delete_node (circuit->lsp_queue, node);
+
+  /* Set the last-cleared time if the queue is empty. */
+  /* TODO: Is is possible that new lsps keep being added to the queue
+   * that the queue is never empty? */
+  if (list_isempty (circuit->lsp_queue))
+    circuit->lsp_queue_last_cleared = time (NULL);
+
+  if (circuit->state != C_STATE_UP || circuit->is_passive == 1)
+    goto out;
 
   /*
    * Do not send if levels do not match
    */
   if (!(lsp->level & circuit->is_type))
-    {
-      list_delete_node (circuit->lsp_queue, node);
-      return retval;
-    }
+    goto out;
 
   /*
    * Do not send if we do not have adjacencies in state up on the circuit
    */
   if (circuit->upadjcount[lsp->level - 1] == 0)
+    goto out;
+
+  /* stream_copy will assert and stop program execution if LSP is larger than
+   * the circuit's MTU. So handle and log this case here. */
+  if (stream_get_endp(lsp->pdu) > stream_get_size(circuit->snd_stream))
     {
-      list_delete_node (circuit->lsp_queue, node);
-      return retval;
+      zlog_err("ISIS-Upd (%s): Can't send L%d LSP %s, seq 0x%08x,"
+               " cksum 0x%04x, lifetime %us on %s. LSP Size is %zu"
+               " while interface stream size is %zu.",
+               circuit->area->area_tag, lsp->level,
+               rawlspid_print(lsp->lsp_header->lsp_id),
+               ntohl(lsp->lsp_header->seq_num),
+               ntohs(lsp->lsp_header->checksum),
+               ntohs(lsp->lsp_header->rem_lifetime),
+               circuit->interface->name,
+               stream_get_endp(lsp->pdu),
+               stream_get_size(circuit->snd_stream));
+      if (isis->debugs & DEBUG_PACKET_DUMP)
+        zlog_dump_data(STREAM_DATA(lsp->pdu), stream_get_endp(lsp->pdu));
+      retval = ISIS_ERROR;
+      goto out;
     }
 
   /* copy our lsp to the send buffer */
@@ -3182,7 +3162,7 @@ send_lsp (struct thread *thread)
   if (isis->debugs & DEBUG_UPDATE_PACKETS)
     {
       zlog_debug
-        ("ISIS-Upd (%s): Sent L%d LSP %s, seq 0x%08x, cksum 0x%04x,"
+        ("ISIS-Upd (%s): Sending L%d LSP %s, seq 0x%08x, cksum 0x%04x,"
          " lifetime %us on %s", circuit->area->area_tag, lsp->level,
          rawlspid_print (lsp->lsp_header->lsp_id),
          ntohl (lsp->lsp_header->seq_num),
@@ -3194,32 +3174,29 @@ send_lsp (struct thread *thread)
                         stream_get_endp (circuit->snd_stream));
     }
 
+  clear_srm = 0;
   retval = circuit->tx (circuit, lsp->level);
   if (retval != ISIS_OK)
     {
-      zlog_err ("ISIS-Upd (%s): Send L%d LSP on %s failed",
+      zlog_err ("ISIS-Upd (%s): Send L%d LSP on %s failed %s",
                 circuit->area->area_tag, lsp->level,
-                circuit->interface->name);
-      return retval;
+                circuit->interface->name,
+                (retval == ISIS_WARNING) ? "temporarily" : "permanently");
     }
 
-  /*
-   * If the sending succeeded, we can del the lsp from circuits
-   * lsp_queue
-   */
-  list_delete_node (circuit->lsp_queue, node);
-
-  /* Set the last-cleared time if the queue is empty. */
-  /* TODO: Is is possible that new lsps keep being added to the queue
-   * that the queue is never empty? */
-  if (list_isempty (circuit->lsp_queue))
-    circuit->lsp_queue_last_cleared = time (NULL);
-
-  /*
-   * On broadcast circuits also the SRMflag can be cleared
-   */
-  if (circuit->circ_type == CIRCUIT_T_BROADCAST)
-    ISIS_CLEAR_FLAG (lsp->SRMflags, circuit);
+out:
+  if (clear_srm
+      || (retval == ISIS_OK && circuit->circ_type == CIRCUIT_T_BROADCAST)
+      || (retval != ISIS_OK && retval != ISIS_WARNING))
+    {
+      /* SRM flag will trigger retransmission. We will not retransmit if we
+       * encountered a fatal error.
+       * On success, they should only be cleared if it's a broadcast circuit.
+       * On a P2P circuit, we will wait for the ack from the neighbor to clear
+       * the fag.
+       */
+      ISIS_CLEAR_FLAG (lsp->SRMflags, circuit);
+    }
 
   return retval;
 }
@@ -3233,10 +3210,7 @@ ack_lsp (struct isis_link_state_hdr *hdr, struct isis_circuit *circuit,
   u_int16_t length;
   struct isis_fixed_hdr fixed_hdr;
 
-  if (!circuit->snd_stream)
-    circuit->snd_stream = stream_new (ISO_MTU (circuit));
-  else
-    stream_reset (circuit->snd_stream);
+  isis_circuit_stream(circuit, &circuit->snd_stream);
 
   //  fill_llc_hdr (stream);
   if (level == IS_LEVEL_1)

@@ -187,6 +187,17 @@ prefix6_bit (const struct in6_addr *prefix, const u_char prefixlen)
   return prefix_bit((const u_char *) &prefix->s6_addr, prefixlen);
 }
 
+int
+str2family(const char *string)
+{
+  if (!strcmp("ipv4", string))
+    return AF_INET;
+  else if (!strcmp("ipv6", string))
+    return AF_INET6;
+  else
+    return -1;
+}
+
 /* Address Famiy Identifier to Address Family converter. */
 int
 afi2family (afi_t afi)
@@ -210,6 +221,22 @@ family2afi (int family)
     return AFI_IP6;
 #endif /* HAVE_IPV6 */
   return 0;
+}
+
+const char *
+safi2str(safi_t safi)
+{
+  switch (safi) {
+    case SAFI_UNICAST:
+	return "unicast";
+    case SAFI_MULTICAST:
+	return "multicast";
+    case SAFI_ENCAP:
+	return "encap";
+    case SAFI_MPLS_VPN:
+	return "vpn";
+  }
+  return NULL;
 }
 
 /* If n includes p prefix then return 1 else return 0. */
@@ -681,13 +708,13 @@ sockunion2prefix (const union sockunion *dest,
 
 /* Utility function of convert between struct prefix <=> union sockunion. */
 struct prefix *
-sockunion2hostprefix (const union sockunion *su)
+sockunion2hostprefix (const union sockunion *su, struct prefix *prefix)
 {
   if (su->sa.sa_family == AF_INET)
     {
       struct prefix_ipv4 *p;
 
-      p = prefix_ipv4_new ();
+      p = prefix ? (struct prefix_ipv4 *) prefix : prefix_ipv4_new ();
       p->family = AF_INET;
       p->prefix = su->sin.sin_addr;
       p->prefixlen = IPV4_MAX_BITLEN;
@@ -698,7 +725,7 @@ sockunion2hostprefix (const union sockunion *su)
     {
       struct prefix_ipv6 *p;
 
-      p = prefix_ipv6_new ();
+      p = prefix ? (struct prefix_ipv6 *) prefix : prefix_ipv6_new ();
       p->family = AF_INET6;
       p->prefixlen = IPV6_MAX_BITLEN;
       memcpy (&p->prefix, &su->sin6.sin6_addr, sizeof (struct in6_addr));
@@ -760,14 +787,15 @@ str2prefix (const char *str, struct prefix *p)
   return 0;
 }
 
-int
-prefix2str (const struct prefix *p, char *str, int size)
+const char *
+prefix2str (union prefix46constptr pu, char *str, int size)
 {
+  const struct prefix *p = pu.p;
   char buf[BUFSIZ];
 
   inet_ntop (p->family, &p->u.prefix, buf, BUFSIZ);
   snprintf (str, size, "%s/%d", buf, p->prefixlen);
-  return 0;
+  return str;
 }
 
 struct prefix *

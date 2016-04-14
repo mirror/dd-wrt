@@ -120,6 +120,9 @@ struct bgp_static
     struct route_map *map;
   } rmap;
 
+  /* Route Distinguisher */
+  struct prefix_rd     prd;
+
   /* MPLS label.  */
   u_char tag[3];
 };
@@ -193,8 +196,7 @@ extern struct bgp_info_extra *bgp_info_extra_get (struct bgp_info *);
 extern void bgp_info_set_flag (struct bgp_node *, struct bgp_info *, u_int32_t);
 extern void bgp_info_unset_flag (struct bgp_node *, struct bgp_info *, u_int32_t);
 
-extern int bgp_nlri_sanity_check (struct peer *, int, u_char *, bgp_size_t);
-extern int bgp_nlri_parse (struct peer *, struct attr *, struct bgp_nlri *);
+extern int bgp_nlri_parse_ip (struct peer *, struct attr *, struct bgp_nlri *);
 
 extern int bgp_maximum_prefix_overflow (struct peer *, afi_t, safi_t, int);
 
@@ -209,10 +211,10 @@ extern void bgp_static_update (struct bgp *, struct prefix *, struct bgp_static 
 			afi_t, safi_t);
 extern void bgp_static_withdraw (struct bgp *, struct prefix *, afi_t, safi_t);
                      
-extern int bgp_static_set_vpnv4 (struct vty *vty, const char *, 
-                          const char *, const char *);
+extern int bgp_static_set_safi (safi_t safi, struct vty *vty, const char *,
+                          const char *, const char *, const char *);
 
-extern int bgp_static_unset_vpnv4 (struct vty *, const char *, 
+extern int bgp_static_unset_safi (safi_t safi, struct vty *, const char *,
                             const char *, const char *);
 
 /* this is primarily for MPLS-VPN */
@@ -240,5 +242,8 @@ extern safi_t bgp_node_safi (struct vty *);
 extern void route_vty_out (struct vty *, struct prefix *, struct bgp_info *, int, safi_t);
 extern void route_vty_out_tag (struct vty *, struct prefix *, struct bgp_info *, int, safi_t);
 extern void route_vty_out_tmp (struct vty *, struct prefix *, struct attr *, safi_t);
+
+extern void bgp_peer_clear_node_queue_drain_immediate (struct peer *peer);
+extern void bgp_process_queues_drain_immediate (void);
 
 #endif /* _QUAGGA_BGP_ROUTE_H */

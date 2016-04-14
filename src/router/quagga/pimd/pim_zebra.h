@@ -26,7 +26,7 @@
 #include "pim_igmp.h"
 #include "pim_ifchannel.h"
 
-void pim_zebra_init(char *zebra_sock_path);
+void pim_zebra_init (struct thread_master *master, char *zebra_sock_path);
 
 void pim_scan_oil(void);
 

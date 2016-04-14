@@ -662,6 +662,14 @@ thread_timer_remain_second (struct thread *thread)
     return 0;
 }
 
+struct timeval
+thread_timer_remain(struct thread *thread)
+{
+  quagga_get_relative(NULL);
+
+  return timeval_subtract(thread->u.sands, relative_time);
+}
+
 #define debugargdef  const char *funcname, const char *schedfrom, int fromln
 #define debugargpass funcname, schedfrom, fromln
 

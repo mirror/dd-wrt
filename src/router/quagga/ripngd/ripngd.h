@@ -129,6 +129,9 @@ struct ripng
   struct thread *t_triggered_update;
   struct thread *t_triggered_interval;
 
+  /* RIPng ECMP flag */
+  unsigned int ecmp;
+
   /* For redistribute route map. */
   struct
   {
@@ -173,7 +176,7 @@ struct ripng_info
   struct in6_addr from;
 
   /* Which interface does this route come from. */
-  unsigned int ifindex;		
+  ifindex_t ifindex;		
 
   /* Metric of this route.  */
   u_char metric;		
@@ -355,7 +358,7 @@ extern void ripng_route_map_init (void);
 extern void ripng_route_map_reset (void);
 extern void ripng_terminate (void);
  /* zclient_init() is done by ripng_zebra.c:zebra_init() */
-extern void zebra_init (void);
+extern void zebra_init (struct thread_master *);
 extern void ripng_zclient_start (void);
 extern void ripng_zclient_reset (void);
 extern void ripng_offset_init (void);
@@ -381,20 +384,16 @@ extern void ripng_info_free (struct ripng_info *rinfo);
 extern void ripng_event (enum ripng_event, int);
 extern int ripng_request (struct interface *ifp);
 extern void ripng_redistribute_add (int, int, struct prefix_ipv6 *,
-                                    unsigned int, struct in6_addr *);
+                                    ifindex_t, struct in6_addr *);
 extern void ripng_redistribute_delete (int, int, struct prefix_ipv6 *,
-                                       unsigned int);
+                                       ifindex_t);
 extern void ripng_redistribute_withdraw (int type);
 
 extern void ripng_distribute_update_interface (struct interface *);
 extern void ripng_if_rmap_update_interface (struct interface *);
 
-extern void ripng_zebra_ipv6_add (struct prefix_ipv6 *p,
-                                  struct in6_addr *nexthop,
-                                  unsigned int ifindex, u_char metric);
-extern void ripng_zebra_ipv6_delete (struct prefix_ipv6 *p,
-                                     struct in6_addr *nexthop,
-                                     unsigned int ifindex);
+extern void ripng_zebra_ipv6_add (struct route_node *);
+extern void ripng_zebra_ipv6_delete (struct route_node *);
 
 extern void ripng_redistribute_clean (void);
 extern int ripng_redistribute_check (int);
@@ -409,13 +408,23 @@ extern int ripng_send_packet (caddr_t buf, int bufsize,
 extern void ripng_packet_dump (struct ripng_packet *packet, int size,
                                const char *sndrcv);
 
-extern int ripng_interface_up (int command, struct zclient *, zebra_size_t);
-extern int ripng_interface_down (int command, struct zclient *, zebra_size_t);
-extern int ripng_interface_add (int command, struct zclient *, zebra_size_t);
-extern int ripng_interface_delete (int command, struct zclient *, zebra_size_t);
-extern int ripng_interface_address_add (int command, struct zclient *, zebra_size_t);
-extern int ripng_interface_address_delete (int command, struct zclient *, zebra_size_t);
+extern int ripng_interface_up (int command, struct zclient *, zebra_size_t,
+    vrf_id_t);
+extern int ripng_interface_down (int command, struct zclient *, zebra_size_t,
+    vrf_id_t);
+extern int ripng_interface_add (int command, struct zclient *, zebra_size_t,
+    vrf_id_t);
+extern int ripng_interface_delete (int command, struct zclient *, zebra_size_t,
+    vrf_id_t);
+extern int ripng_interface_address_add (int command, struct zclient *, zebra_size_t,
+    vrf_id_t);
+extern int ripng_interface_address_delete (int command, struct zclient *, zebra_size_t,
+    vrf_id_t);
 
 extern int ripng_network_write (struct vty *, int);
+
+extern struct ripng_info *ripng_ecmp_add (struct ripng_info *);
+extern struct ripng_info *ripng_ecmp_replace (struct ripng_info *);
+extern struct ripng_info *ripng_ecmp_delete (struct ripng_info *);
 
 #endif /* _ZEBRA_RIPNG_RIPNGD_H */

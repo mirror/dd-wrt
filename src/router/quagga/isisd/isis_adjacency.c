@@ -52,7 +52,7 @@
 extern struct isis *isis;
 
 static struct isis_adjacency *
-adj_alloc (u_char * id)
+adj_alloc (const u_char *id)
 {
   struct isis_adjacency *adj;
 
@@ -63,7 +63,7 @@ adj_alloc (u_char * id)
 }
 
 struct isis_adjacency *
-isis_new_adj (u_char * id, u_char * snpa, int level,
+isis_new_adj (const u_char * id, const u_char * snpa, int level,
 	      struct isis_circuit *circuit)
 {
   struct isis_adjacency *adj;
@@ -104,7 +104,7 @@ isis_new_adj (u_char * id, u_char * snpa, int level,
 }
 
 struct isis_adjacency *
-isis_adj_lookup (u_char * sysid, struct list *adjdb)
+isis_adj_lookup (const u_char * sysid, struct list *adjdb)
 {
   struct isis_adjacency *adj;
   struct listnode *node;
@@ -117,7 +117,7 @@ isis_adj_lookup (u_char * sysid, struct list *adjdb)
 }
 
 struct isis_adjacency *
-isis_adj_lookup_snpa (u_char * ssnpa, struct list *adjdb)
+isis_adj_lookup_snpa (const u_char * ssnpa, struct list *adjdb)
 {
   struct listnode *node;
   struct isis_adjacency *adj;
@@ -203,7 +203,7 @@ isis_adj_state_change (struct isis_adjacency *adj, enum isis_adj_state new_state
       if (dyn)
 	adj_name = (const char *)dyn->name.name;
       else
-	adj_name = adj->sysid ? sysid_print (adj->sysid) : "unknown";
+	adj_name = sysid_print (adj->sysid);
 
       zlog_info ("%%ADJCHANGE: Adjacency to %s (%s) changed from %s to %s, %s",
 		 adj_name,
@@ -314,8 +314,8 @@ isis_adj_print (struct isis_adjacency *adj)
     zlog_debug ("%s", dyn->name.name);
 
   zlog_debug ("SystemId %20s SNPA %s, level %d\nHolding Time %d",
-	      adj->sysid ? sysid_print (adj->sysid) : "unknown",
-	      snpa_print (adj->snpa), adj->level, adj->hold_time);
+              sysid_print (adj->sysid), snpa_print (adj->snpa),
+              adj->level, adj->hold_time);
   if (adj->ipv4_addrs && listcount (adj->ipv4_addrs) > 0)
     {
       zlog_debug ("IPv4 Address(es):");
@@ -377,14 +377,8 @@ isis_adj_print_vty (struct isis_adjacency *adj, struct vty *vty, char detail)
   dyn = dynhn_find_by_id (adj->sysid);
   if (dyn)
     vty_out (vty, "  %-20s", dyn->name.name);
-  else if (adj->sysid)
-    {
-      vty_out (vty, "  %-20s", sysid_print (adj->sysid));
-    }
   else
-    {
-      vty_out (vty, "  unknown ");
-    }
+    vty_out (vty, "  %-20s", sysid_print (adj->sysid));
 
   if (detail == ISIS_UI_LEVEL_BRIEF)
     {
@@ -396,7 +390,8 @@ isis_adj_print_vty (struct isis_adjacency *adj, struct vty *vty, char detail)
       vty_out (vty, "%-13s", adj_state2string (adj->adj_state));
       now = time (NULL);
       if (adj->last_upd)
-	vty_out (vty, "%-9lu", adj->last_upd + adj->hold_time - now);
+        vty_out (vty, "%-9llu",
+                 (unsigned long long)adj->last_upd + adj->hold_time - now);
       else
 	vty_out (vty, "-        ");
       vty_out (vty, "%-10s", snpa_print (adj->snpa));

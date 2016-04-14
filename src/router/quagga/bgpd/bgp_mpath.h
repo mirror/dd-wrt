@@ -51,6 +51,8 @@ struct bgp_info_mpath
 /* Functions to support maximum-paths configuration */
 extern int bgp_maximum_paths_set (struct bgp *, afi_t, safi_t, int, u_int16_t);
 extern int bgp_maximum_paths_unset (struct bgp *, afi_t, safi_t, int);
+bool bgp_mpath_is_configured_sort (struct bgp *, bgp_peer_sort_t, afi_t, safi_t);
+bool bgp_mpath_is_configured (struct bgp *, afi_t, safi_t);
 
 /* Functions used by bgp_best_selection to record current
  * multipath selections
@@ -61,7 +63,7 @@ extern void bgp_mp_list_add (struct list *, struct bgp_info *);
 extern void bgp_mp_dmed_deselect (struct bgp_info *);
 extern void bgp_info_mpath_update (struct bgp_node *, struct bgp_info *,
                                    struct bgp_info *, struct list *,
-                                   struct bgp_maxpaths_cfg *);
+                                   afi_t, safi_t);
 extern void bgp_info_mpath_aggregate_update (struct bgp_info *,
                                              struct bgp_info *);
 
