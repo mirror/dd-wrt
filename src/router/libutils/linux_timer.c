@@ -241,7 +241,6 @@ int dd_timer_connect(timer_t timerid,	/* timer ID */
 {
 	struct event *event = (struct event *)timerid;
 
-	assert(routine != NULL);
 	event->func = routine;
 	event->arg = arg;
 
