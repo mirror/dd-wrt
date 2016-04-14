@@ -475,6 +475,7 @@ int main(int argc, char **argv)
 	start_service("devinit");	//init /dev /proc etc.
 	start_service("sysinit");
 	start_service("post_sysinit");
+	int brand = getRouterBrand();
 #ifndef HAVE_MICRO
 	if (console_init())
 		noconsole = 1;
@@ -507,7 +508,6 @@ int main(int argc, char **argv)
 	/* 
 	 * Restore defaults if necessary 
 	 */
-	int brand = getRouterBrand();
 
 #ifdef HAVE_SKYTEL
 	nvram_set("vlan0ports", "0 1 2 3 4 5*");
