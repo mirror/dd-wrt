@@ -104,7 +104,8 @@ DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(srcdir)/ntfsprogs.8.in $(srcdir)/ntfsresize.8.in \
 	$(srcdir)/ntfsundelete.8.in $(srcdir)/ntfsdecrypt.8.in \
 	$(srcdir)/ntfswipe.8.in $(srcdir)/ntfstruncate.8.in \
-	$(srcdir)/ntfsfallocate.8.in $(top_srcdir)/depcomp
+	$(srcdir)/ntfsfallocate.8.in $(srcdir)/ntfsrecover.8.in \
+	$(top_srcdir)/depcomp
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
 	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
@@ -117,11 +118,12 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES = mkntfs.8 ntfscat.8 ntfsclone.8 ntfscluster.8 \
 	ntfscmp.8 ntfscp.8 ntfsfix.8 ntfsinfo.8 ntfslabel.8 ntfsls.8 \
 	ntfsprogs.8 ntfsresize.8 ntfsundelete.8 ntfsdecrypt.8 \
-	ntfswipe.8 ntfstruncate.8 ntfsfallocate.8
+	ntfswipe.8 ntfstruncate.8 ntfsfallocate.8 ntfsrecover.8
 CONFIG_CLEAN_VPATH_FILES =
 @ENABLE_CRYPTO_TRUE@@ENABLE_NTFSPROGS_TRUE@am__EXEEXT_1 = ntfsdecrypt$(EXEEXT)
 @ENABLE_NTFSPROGS_TRUE@am__EXEEXT_2 = ntfswipe$(EXEEXT) \
-@ENABLE_NTFSPROGS_TRUE@	ntfstruncate$(EXEEXT) $(am__EXEEXT_1)
+@ENABLE_NTFSPROGS_TRUE@	ntfstruncate$(EXEEXT) \
+@ENABLE_NTFSPROGS_TRUE@	ntfsrecover$(EXEEXT) $(am__EXEEXT_1)
 @ENABLE_EXTRAS_TRUE@@ENABLE_NTFSPROGS_TRUE@am__EXEEXT_3 =  \
 @ENABLE_EXTRAS_TRUE@@ENABLE_NTFSPROGS_TRUE@	$(am__EXEEXT_2)
 @ENABLE_NTFSPROGS_TRUE@am__EXEEXT_4 = ntfsdump_logfile$(EXEEXT) \
@@ -281,6 +283,16 @@ ntfsmove_OBJECTS = $(am_ntfsmove_OBJECTS)
 ntfsmove_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(ntfsmove_LDFLAGS) $(LDFLAGS) -o $@
+am__ntfsrecover_SOURCES_DIST = playlog.c ntfsrecover.c utils.c utils.h \
+	ntfsrecover.h
+@ENABLE_NTFSPROGS_TRUE@am_ntfsrecover_OBJECTS = playlog.$(OBJEXT) \
+@ENABLE_NTFSPROGS_TRUE@	ntfsrecover.$(OBJEXT) utils.$(OBJEXT)
+ntfsrecover_OBJECTS = $(am_ntfsrecover_OBJECTS)
+@ENABLE_NTFSPROGS_TRUE@ntfsrecover_DEPENDENCIES =  \
+@ENABLE_NTFSPROGS_TRUE@	$(am__DEPENDENCIES_2)
+ntfsrecover_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(ntfsrecover_LDFLAGS) $(LDFLAGS) -o $@
 am__ntfsresize_SOURCES_DIST = ntfsresize.c utils.c utils.h
 @ENABLE_NTFSPROGS_TRUE@am_ntfsresize_OBJECTS = ntfsresize.$(OBJEXT) \
 @ENABLE_NTFSPROGS_TRUE@	utils.$(OBJEXT)
@@ -355,8 +367,9 @@ SOURCES = $(mkntfs_SOURCES) $(ntfscat_SOURCES) $(ntfsck_SOURCES) \
 	$(ntfsdump_logfile_SOURCES) $(ntfsfallocate_SOURCES) \
 	$(ntfsfix_SOURCES) $(ntfsinfo_SOURCES) $(ntfslabel_SOURCES) \
 	$(ntfsls_SOURCES) $(ntfsmftalloc_SOURCES) $(ntfsmove_SOURCES) \
-	$(ntfsresize_SOURCES) $(ntfstruncate_SOURCES) \
-	$(ntfsundelete_SOURCES) $(ntfswipe_SOURCES)
+	$(ntfsrecover_SOURCES) $(ntfsresize_SOURCES) \
+	$(ntfstruncate_SOURCES) $(ntfsundelete_SOURCES) \
+	$(ntfswipe_SOURCES)
 DIST_SOURCES = $(am__mkntfs_SOURCES_DIST) $(am__ntfscat_SOURCES_DIST) \
 	$(am__ntfsck_SOURCES_DIST) $(am__ntfsclone_SOURCES_DIST) \
 	$(am__ntfscluster_SOURCES_DIST) $(am__ntfscmp_SOURCES_DIST) \
@@ -365,7 +378,8 @@ DIST_SOURCES = $(am__mkntfs_SOURCES_DIST) $(am__ntfscat_SOURCES_DIST) \
 	$(am__ntfsfallocate_SOURCES_DIST) $(am__ntfsfix_SOURCES_DIST) \
 	$(am__ntfsinfo_SOURCES_DIST) $(am__ntfslabel_SOURCES_DIST) \
 	$(am__ntfsls_SOURCES_DIST) $(am__ntfsmftalloc_SOURCES_DIST) \
-	$(am__ntfsmove_SOURCES_DIST) $(am__ntfsresize_SOURCES_DIST) \
+	$(am__ntfsmove_SOURCES_DIST) $(am__ntfsrecover_SOURCES_DIST) \
+	$(am__ntfsresize_SOURCES_DIST) \
 	$(am__ntfstruncate_SOURCES_DIST) \
 	$(am__ntfsundelete_SOURCES_DIST) $(am__ntfswipe_SOURCES_DIST)
 am__can_run_installinfo = \
@@ -582,7 +596,7 @@ top_srcdir = @top_srcdir@
 # Workaround to make REALLYSTATIC work with automake 1.5.
 LINK = $(STATIC_LINK) $(LIBTOOL_LINK)
 @ENABLE_NTFSPROGS_TRUE@EXTRA_PROGRAM_NAMES = ntfswipe ntfstruncate \
-@ENABLE_NTFSPROGS_TRUE@	$(am__append_1)
+@ENABLE_NTFSPROGS_TRUE@	ntfsrecover $(am__append_1)
 @ENABLE_NTFSPROGS_TRUE@QUARANTINED_PROGRAM_NAMES = ntfsdump_logfile ntfsmftalloc ntfsmove ntfsck \
 @ENABLE_NTFSPROGS_TRUE@			   ntfsfallocate
 
@@ -590,7 +604,7 @@ LINK = $(STATIC_LINK) $(LIBTOOL_LINK)
 @ENABLE_NTFSPROGS_TRUE@			  ntfsundelete.8 ntfsresize.8 ntfsprogs.8 ntfsls.8 \
 @ENABLE_NTFSPROGS_TRUE@			  ntfsclone.8 ntfscluster.8 ntfscat.8 ntfscp.8 \
 @ENABLE_NTFSPROGS_TRUE@			  ntfscmp.8 ntfswipe.8 ntfstruncate.8 \
-@ENABLE_NTFSPROGS_TRUE@			  ntfsdecrypt.8 ntfsfallocate.8
+@ENABLE_NTFSPROGS_TRUE@			  ntfsdecrypt.8 ntfsfallocate.8 ntfsrecover.8
 
 @ENABLE_NTFSPROGS_TRUE@EXTRA_MANS = 
 @ENABLE_NTFSPROGS_TRUE@CLEANFILES = $(EXTRA_PROGRAMS)
@@ -638,6 +652,9 @@ LINK = $(STATIC_LINK) $(LIBTOOL_LINK)
 @ENABLE_NTFSPROGS_TRUE@ntfscmp_SOURCES = ntfscmp.c utils.c utils.h
 @ENABLE_NTFSPROGS_TRUE@ntfscmp_LDADD = $(AM_LIBS)
 @ENABLE_NTFSPROGS_TRUE@ntfscmp_LDFLAGS = $(AM_LFLAGS)
+@ENABLE_NTFSPROGS_TRUE@ntfsrecover_SOURCES = playlog.c ntfsrecover.c utils.c utils.h ntfsrecover.h
+@ENABLE_NTFSPROGS_TRUE@ntfsrecover_LDADD = $(AM_LIBS) $(NTFSRECOVER_LIBS)
+@ENABLE_NTFSPROGS_TRUE@ntfsrecover_LDFLAGS = $(AM_LFLAGS)
 
 # We don't distribute these
 @ENABLE_NTFSPROGS_TRUE@ntfstruncate_SOURCES = attrdef.c ntfstruncate.c utils.c utils.h
@@ -729,6 +746,8 @@ ntfswipe.8: $(top_builddir)/config.status $(srcdir)/ntfswipe.8.in
 ntfstruncate.8: $(top_builddir)/config.status $(srcdir)/ntfstruncate.8.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 ntfsfallocate.8: $(top_builddir)/config.status $(srcdir)/ntfsfallocate.8.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+ntfsrecover.8: $(top_builddir)/config.status $(srcdir)/ntfsrecover.8.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 install-binPROGRAMS: $(bin_PROGRAMS)
 	@$(NORMAL_INSTALL)
@@ -893,6 +912,10 @@ ntfsmove$(EXEEXT): $(ntfsmove_OBJECTS) $(ntfsmove_DEPENDENCIES) $(EXTRA_ntfsmove
 	@rm -f ntfsmove$(EXEEXT)
 	$(AM_V_CCLD)$(ntfsmove_LINK) $(ntfsmove_OBJECTS) $(ntfsmove_LDADD) $(LIBS)
 
+ntfsrecover$(EXEEXT): $(ntfsrecover_OBJECTS) $(ntfsrecover_DEPENDENCIES) $(EXTRA_ntfsrecover_DEPENDENCIES) 
+	@rm -f ntfsrecover$(EXEEXT)
+	$(AM_V_CCLD)$(ntfsrecover_LINK) $(ntfsrecover_OBJECTS) $(ntfsrecover_LDADD) $(LIBS)
+
 ntfsresize$(EXEEXT): $(ntfsresize_OBJECTS) $(ntfsresize_DEPENDENCIES) $(EXTRA_ntfsresize_DEPENDENCIES) 
 	@rm -f ntfsresize$(EXEEXT)
 	$(AM_V_CCLD)$(ntfsresize_LINK) $(ntfsresize_OBJECTS) $(ntfsresize_LDADD) $(LIBS)
@@ -938,10 +961,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ntfsls.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ntfsmftalloc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ntfsmove.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ntfsrecover.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ntfsresize.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ntfstruncate.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ntfsundelete.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ntfswipe.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/playlog.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/utils.Po@am__quote@
 
 .c.o:
@@ -1233,8 +1258,11 @@ maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
 	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
+@ENABLE_MOUNT_HELPER_FALSE@uninstall-local:
 @ENABLE_NTFSPROGS_FALSE@uninstall-local:
+@ENABLE_MOUNT_HELPER_FALSE@install-exec-hook:
 @ENABLE_NTFSPROGS_FALSE@install-exec-hook:
+@ENABLE_MOUNT_HELPER_FALSE@install-data-hook:
 @ENABLE_NTFSPROGS_FALSE@install-data-hook:
 clean: clean-am
 
@@ -1347,17 +1375,17 @@ uninstall-man: uninstall-man8
 
 # mkfs.ntfs[.8] hard link
 
-@ENABLE_NTFSPROGS_TRUE@install-exec-hook:
-@ENABLE_NTFSPROGS_TRUE@	$(INSTALL) -d $(DESTDIR)/sbin
-@ENABLE_NTFSPROGS_TRUE@	$(LN_S) -f $(sbindir)/mkntfs $(DESTDIR)/sbin/mkfs.ntfs
+@ENABLE_MOUNT_HELPER_TRUE@@ENABLE_NTFSPROGS_TRUE@install-exec-hook:
+@ENABLE_MOUNT_HELPER_TRUE@@ENABLE_NTFSPROGS_TRUE@	$(INSTALL) -d $(DESTDIR)/sbin
+@ENABLE_MOUNT_HELPER_TRUE@@ENABLE_NTFSPROGS_TRUE@	$(LN_S) -f $(sbindir)/mkntfs $(DESTDIR)/sbin/mkfs.ntfs
 
-@ENABLE_NTFSPROGS_TRUE@install-data-hook:
-@ENABLE_NTFSPROGS_TRUE@	$(INSTALL) -d $(DESTDIR)$(man8dir)
-@ENABLE_NTFSPROGS_TRUE@	$(LN_S) -f mkntfs.8 $(DESTDIR)$(man8dir)/mkfs.ntfs.8
+@ENABLE_MOUNT_HELPER_TRUE@@ENABLE_NTFSPROGS_TRUE@install-data-hook:
+@ENABLE_MOUNT_HELPER_TRUE@@ENABLE_NTFSPROGS_TRUE@	$(INSTALL) -d $(DESTDIR)$(man8dir)
+@ENABLE_MOUNT_HELPER_TRUE@@ENABLE_NTFSPROGS_TRUE@	$(LN_S) -f mkntfs.8 $(DESTDIR)$(man8dir)/mkfs.ntfs.8
 
-@ENABLE_NTFSPROGS_TRUE@uninstall-local:
-@ENABLE_NTFSPROGS_TRUE@	$(RM) -f $(DESTDIR)/sbin/mkfs.ntfs
-@ENABLE_NTFSPROGS_TRUE@	$(RM) -f $(DESTDIR)$(man8dir)/mkfs.ntfs.8
+@ENABLE_MOUNT_HELPER_TRUE@@ENABLE_NTFSPROGS_TRUE@uninstall-local:
+@ENABLE_MOUNT_HELPER_TRUE@@ENABLE_NTFSPROGS_TRUE@	$(RM) -f $(DESTDIR)/sbin/mkfs.ntfs
+@ENABLE_MOUNT_HELPER_TRUE@@ENABLE_NTFSPROGS_TRUE@	$(RM) -f $(DESTDIR)$(man8dir)/mkfs.ntfs.8
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
