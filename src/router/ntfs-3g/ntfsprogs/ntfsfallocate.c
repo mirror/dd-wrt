@@ -704,14 +704,14 @@ static int ntfs_full_allocation(ntfs_attr *na, ntfs_attr_search_ctx *ctx,
 		} else {
 				/* Feed the sizes into the attribute */
 			attr = ctx->attr;
-			attr->data_size = cpu_to_le64(na->data_size);
+			attr->data_size = cpu_to_sle64(na->data_size);
 			attr->initialized_size
-				= cpu_to_le64(na->initialized_size);
+				= cpu_to_sle64(na->initialized_size);
 			attr->allocated_size
-				= cpu_to_le64(na->allocated_size);
+				= cpu_to_sle64(na->allocated_size);
 			if (na->data_flags & ATTR_IS_SPARSE)
 				attr->compressed_size
-					= cpu_to_le64(na->compressed_size);
+					= cpu_to_sle64(na->compressed_size);
 			/* Copy the unnamed data attribute sizes to inode */
 			if ((attr_type == AT_DATA) && !attr_name_len) {
 				ni = na->ni;
@@ -859,15 +859,8 @@ int main(int argc, char **argv)
 
 	/* Open the specified inode. */
 #ifdef HAVE_WINDOWS_H
-	unix_name = (char*)malloc(strlen(file_name) + 1);
+	unix_name = ntfs_utils_unix_path(file_name);
 	if (unix_name) {
-		int i;
-		for (i=0; file_name[i]; i++)
-			if (file_name[i] == '\\')
-				unix_name[i] = '/';
-			else
-				unix_name[i] = file_name[i];
-		unix_name[i] = 0;
 		ni = ntfs_pathname_to_inode(vol, NULL, unix_name);
 		free(unix_name);
 	} else

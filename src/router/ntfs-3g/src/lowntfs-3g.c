@@ -124,20 +124,24 @@
 #error "Incompatible options KERNELACLS and KERNELPERMS"
 #endif
 
-#if CACHEING & (KERNELACLS | !KERNELPERMS)
-#warning "Fuse cacheing is only usable with basic permissions checked by kernel"
-#endif
-
 #if !CACHEING
 #define ATTR_TIMEOUT 0.0
 #define ENTRY_TIMEOUT 0.0
 #else
+#if defined(__sun) && defined (__SVR4)
+#define ATTR_TIMEOUT 10.0
+#define ENTRY_TIMEOUT 10.0
+#else /* defined(__sun) && defined (__SVR4) */
 	/*
 	 * FUSE cacheing is only usable with basic permissions
 	 * checked by the kernel with external fuse >= 2.8
 	 */
+#if KERNELACLS | !KERNELPERMS
+#warning "Fuse cacheing is only usable with basic permissions checked by kernel"
+#endif
 #define ATTR_TIMEOUT (ctx->vol->secure_flags & (1 << SECURITY_DEFAULT) ? 1.0 : 0.0)
 #define ENTRY_TIMEOUT (ctx->vol->secure_flags & (1 << SECURITY_DEFAULT) ? 1.0 : 0.0)
+#endif /* defined(__sun) && defined (__SVR4) */
 #endif
 #define GHOSTLTH 40 /* max length of a ghost file name - see ghostformat */
 
@@ -170,6 +174,7 @@ typedef struct fill_item {
 typedef struct fill_context {
 	struct fill_item *first;
 	struct fill_item *last;
+	off_t off;
 	fuse_req_t req;
 	fuse_ino_t ino;
 	BOOL filled;
@@ -222,7 +227,7 @@ static const char *usage_msg =
 "\n"
 "Copyright (C) 2005-2007 Yura Pakhuchiy\n"
 "Copyright (C) 2006-2009 Szabolcs Szakacsits\n"
-"Copyright (C) 2007-2015 Jean-Pierre Andre\n"
+"Copyright (C) 2007-2016 Jean-Pierre Andre\n"
 "Copyright (C) 2009 Erik Larsson\n"
 "\n"
 "Usage:    %s [-o option[,...]] <device|image_file> <mount_point>\n"
@@ -270,10 +275,10 @@ static void ntfs_fuse_update_times(ntfs_inode *ni, ntfs_time_update_flags mask)
 	if (ctx->atime == ATIME_DISABLED)
 		mask &= ~NTFS_UPDATE_ATIME;
 	else if (ctx->atime == ATIME_RELATIVE && mask == NTFS_UPDATE_ATIME &&
-			(le64_to_cpu(ni->last_access_time)
-				>= le64_to_cpu(ni->last_data_change_time)) &&
-			(le64_to_cpu(ni->last_access_time)
-				>= le64_to_cpu(ni->last_mft_change_time)))
+			(sle64_to_cpu(ni->last_access_time)
+				>= sle64_to_cpu(ni->last_data_change_time)) &&
+			(sle64_to_cpu(ni->last_access_time)
+				>= sle64_to_cpu(ni->last_mft_change_time)))
 		return;
 	ntfs_inode_update_times(ni, mask);
 }
@@ -1052,7 +1057,7 @@ static int ntfs_fuse_filler(ntfs_fuse_fill_context_t *fill_ctx,
 		sz = fuse_add_direntry(fill_ctx->req,
 				&current->buf[current->off],
 				current->bufsize - current->off,
-				filename, &st, current->off);
+				filename, &st, current->off + fill_ctx->off);
 		if (!sz || ((current->off + sz) > current->bufsize)) {
 			newone = (ntfs_fuse_fill_item_t*)ntfs_malloc
 				(sizeof(ntfs_fuse_fill_item_t)
@@ -1063,11 +1068,12 @@ static int ntfs_fuse_filler(ntfs_fuse_fill_context_t *fill_ctx,
 				newone->next = (ntfs_fuse_fill_item_t*)NULL;
 				current->next = newone;
 				fill_ctx->last = newone;
+				fill_ctx->off += current->off;
 				current = newone;
 				sz = fuse_add_direntry(fill_ctx->req,
 					current->buf,
 					current->bufsize - current->off,
-					filename, &st, current->off);
+					filename, &st, fill_ctx->off);
 				if (!sz) {
 					errno = EIO;
 					ntfs_log_error("Could not add a"
@@ -1124,6 +1130,7 @@ static void ntfs_fuse_opendir(fuse_req_t req, fuse_ino_t ino,
 					= (ntfs_fuse_fill_item_t*)NULL;
 				fill->filled = FALSE;
 				fill->ino = ino;
+				fill->off = 0;
 			}
 			fi->fh = (long)fill;
 		}
@@ -1171,8 +1178,19 @@ static void ntfs_fuse_readdir(fuse_req_t req, fuse_ino_t ino, size_t size,
 
 	fill = (ntfs_fuse_fill_context_t*)(long)fi->fh;
 	if (fill && (fill->ino == ino)) {
+		if (fill->filled && !off) {
+			/* Rewinding : make sure to clear existing results */   
+			current = fill->first;
+			while (current) {
+				current = current->next;
+				free(fill->first);
+				fill->first = current;
+			}
+			fill->filled = FALSE;
+		}
 		if (!fill->filled) {
 				/* initial call : build the full list */
+			current = (ntfs_fuse_fill_item_t*)NULL;
 			first = (ntfs_fuse_fill_item_t*)ntfs_malloc
 				(sizeof(ntfs_fuse_fill_item_t) + size);
 			if (first) {
@@ -1182,6 +1200,7 @@ static void ntfs_fuse_readdir(fuse_req_t req, fuse_ino_t ino, size_t size,
 				fill->req = req;
 				fill->first = first;
 				fill->last = first;
+				fill->off = 0;
 				ni = ntfs_inode_open(ctx->vol,INODE(ino));
 				if (!ni)
 					err = -errno;
@@ -1196,12 +1215,23 @@ static void ntfs_fuse_readdir(fuse_req_t req, fuse_ino_t ino, size_t size,
 					if (ntfs_inode_close(ni))
 						set_fuse_error(&err);
 				}
-				if (!err)
-					fuse_reply_buf(req, first->buf,
-							first->off);
-				/* reply sent, now must exit with no error */
-				fill->first = first->next;
-				free(first);
+				if (!err) {
+					off_t loc = 0;
+				/*
+				 * In some circumstances, the queue gets
+				 * reinitialized by releasedir() + opendir(),
+				 * apparently always on end of partial buffer.
+				 * Files may be missing or duplicated.
+				 */
+					while (first
+					    && ((loc < off) || !first->off)) {
+						loc += first->off;
+						fill->first = first->next;
+						free(first);
+						first = fill->first;
+					}
+					current = first;
+				}
 			} else
 				err = -errno;
 		} else {
@@ -1212,6 +1242,8 @@ static void ntfs_fuse_readdir(fuse_req_t req, fuse_ino_t ino, size_t size,
 				free(fill->first);
 				fill->first = current;
 			}
+		}
+		if (!err) {
 			if (current) {
 				fuse_reply_buf(req, current->buf, current->off);
 				fill->first = current->next;
@@ -1416,8 +1448,8 @@ static void ntfs_fuse_write(fuse_req_t req, fuse_ino_t ino, const char *buf,
 	res = total;
 	if ((res > 0)
 	    && (!ctx->dmtime
-		|| (le64_to_cpu(ntfs_current_time())
-		     - le64_to_cpu(ni->last_data_change_time)) > ctx->dmtime))
+		|| (sle64_to_cpu(ntfs_current_time())
+		     - sle64_to_cpu(ni->last_data_change_time)) > ctx->dmtime))
 		ntfs_fuse_update_times(na->ni, NTFS_UPDATE_MCTIME);
 exit:
 	if (na)

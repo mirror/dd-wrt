@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2003-2006 Szabolcs Szakacsits
  * Copyright (c) 2004-2006 Anton Altaparmakov
- * Copyright (c) 2010-2014 Jean-Pierre Andre
+ * Copyright (c) 2010-2015 Jean-Pierre Andre
  * Special image format support copyright (c) 2004 Per Olofsson
  *
  * Clone NTFS data and/or metadata to a sparse file, image, device or stdout.
@@ -391,7 +391,7 @@ static void version(void)
 		   "Efficiently clone, image, restore or rescue an NTFS Volume.\n\n"
 		   "Copyright (c) 2003-2006 Szabolcs Szakacsits\n"
 		   "Copyright (c) 2004-2006 Anton Altaparmakov\n"
-		   "Copyright (c) 2010-2014 Jean-Pierre Andre\n\n");
+		   "Copyright (c) 2010-2015 Jean-Pierre Andre\n\n");
 	fprintf(stderr, "%s\n%s%s", ntfs_gpl, ntfs_bugs, ntfs_home);
 	exit(0);
 }
@@ -902,7 +902,7 @@ static void gap_to_cluster(s64 gap)
 static void image_skip_clusters(s64 count)
 {
 	if (opt.save_image && count > 0) {
-		s64 count_buf;
+		sle64 count_buf;
 		char buff[1 + sizeof(count)];
 
 		buff[0] = CMD_GAP;
@@ -1015,8 +1015,8 @@ static void restore_image(void)
 	Printf("Restoring NTFS from image ...\n");
 
 	progress_init(&progress, p_counter, opt.std_out ?
-		      sle64_to_cpu(image_hdr.nr_clusters) + 1 :
-		      sle64_to_cpu(image_hdr.inuse) + 1,
+		      (u64)sle64_to_cpu(image_hdr.nr_clusters) + 1 :
+		      le64_to_cpu(image_hdr.inuse) + 1,
 		      100);
 
 	if (opt.new_serial)
@@ -1036,7 +1036,7 @@ static void restore_image(void)
 
 		if (cmd == CMD_GAP) {
 			if (!image_is_host_endian) {
-				le64 lecount;
+				sle64 lecount;
 
 				/* little endian image, on any computer */
 				if (read_all(&fd_in, &lecount,
@@ -1087,7 +1087,7 @@ static void restore_image(void)
 static void wipe_index_entry_timestams(INDEX_ENTRY *e)
 {
 	static const struct timespec zero_time = { .tv_sec = 0, .tv_nsec = 0 };
-	le64 timestamp = timespec2ntfs(zero_time);
+	sle64 timestamp = timespec2ntfs(zero_time);
 
 	/* FIXME: can fall into infinite loop if corrupted */
 	while (!(e->ie_flags & INDEX_ENTRY_END)) {
@@ -1197,7 +1197,7 @@ out_indexr:
 	free(indexr);
 }
 
-static void wipe_index_root_timestamps(ATTR_RECORD *attr, le64 timestamp)
+static void wipe_index_root_timestamps(ATTR_RECORD *attr, sle64 timestamp)
 {
 	INDEX_ENTRY *entry;
 	INDEX_ROOT *iroot;
@@ -1260,7 +1260,7 @@ static void wipe_timestamps(ntfs_walk_clusters_ctx *image)
 {
 	static const struct timespec zero_time = { .tv_sec = 0, .tv_nsec = 0 };
 	ATTR_RECORD *a = image->ctx->attr;
-	le64 timestamp = timespec2ntfs(zero_time);
+	sle64 timestamp = timespec2ntfs(zero_time);
 
 	if (a->type == AT_FILE_NAME)
 		WIPE_TIMESTAMPS(FILE_NAME_ATTR, a, timestamp);
@@ -2101,10 +2101,10 @@ static void print_image_info(void)
 			sle64_to_cpu(image_hdr.nr_clusters) *
 			le32_to_cpu(image_hdr.cluster_size));
 	Printf("Image device size      : %lld bytes\n",
-			(long long)sle64_to_cpu(image_hdr.device_size));
+			(long long)le64_to_cpu(image_hdr.device_size));
 	print_disk_usage("    ", le32_to_cpu(image_hdr.cluster_size),
 			sle64_to_cpu(image_hdr.nr_clusters),
-			sle64_to_cpu(image_hdr.inuse));
+			le64_to_cpu(image_hdr.inuse));
 	Printf("Offset to image data   : %u (0x%x) bytes\n",
 			(unsigned)le32_to_cpu(image_hdr.offset_to_image_data),
 			(unsigned)le32_to_cpu(image_hdr.offset_to_image_data));
@@ -2406,7 +2406,7 @@ static s64 open_image(void)
 			free(dummy_buf);
 		}
 	}
-	return sle64_to_cpu(image_hdr.device_size);
+	return le64_to_cpu(image_hdr.device_size);
 }
 
 static s64 open_volume(void)
@@ -2436,9 +2436,9 @@ static void initialise_image_hdr(s64 device_size, s64 inuse)
 	image_hdr.major_ver = NTFSCLONE_IMG_VER_MAJOR;
 	image_hdr.minor_ver = NTFSCLONE_IMG_VER_MINOR;
 	image_hdr.cluster_size = cpu_to_le32(vol->cluster_size);
-	image_hdr.device_size = cpu_to_sle64(device_size);
+	image_hdr.device_size = cpu_to_le64(device_size);
 	image_hdr.nr_clusters = cpu_to_sle64(vol->nr_clusters);
-	image_hdr.inuse = cpu_to_sle64(inuse);
+	image_hdr.inuse = cpu_to_le64(inuse);
 	image_hdr.offset_to_image_data = cpu_to_le32((sizeof(image_hdr)
 			 + IMAGE_HDR_ALIGN - 1) & -IMAGE_HDR_ALIGN);
 }
@@ -2462,64 +2462,27 @@ static void check_output_device(s64 input_size)
 		set_filesize(input_size);
 }
 
-static ntfs_attr_search_ctx *attr_get_search_ctx(ntfs_inode *ni)
-{
-	ntfs_attr_search_ctx *ret;
-
-	if ((ret = ntfs_attr_get_search_ctx(ni, NULL)) == NULL)
-		perr_printf("ntfs_attr_get_search_ctx");
-
-	return ret;
-}
-
-/**
- * lookup_data_attr
- *
- * Find the $DATA attribute (with or without a name) for the given ntfs inode.
- */
-static ntfs_attr_search_ctx *lookup_data_attr(ntfs_inode *ni, const char *aname)
-{
-	ntfs_attr_search_ctx *ctx;
-	ntfschar *ustr;
-	int len = 0;
-
-	if ((ctx = attr_get_search_ctx(ni)) == NULL)
-		return NULL;
-
-	if ((ustr = ntfs_str2ucs(aname, &len)) == NULL) {
-		perr_printf("Couldn't convert '%s' to Unicode", aname);
-		goto error_out;
-	}
-
-	if (ntfs_attr_lookup(AT_DATA, ustr, len, CASE_SENSITIVE,
-				0, NULL, 0, ctx)) {
-		perr_printf("ntfs_attr_lookup");
-		goto error_out;
-	}
-	ntfs_ucsfree(ustr);
-	return ctx;
-error_out:
-	ntfs_attr_put_search_ctx(ctx);
-	return NULL;
-}
-
 static void ignore_bad_clusters(ntfs_walk_clusters_ctx *image)
 {
 	ntfs_inode *ni;
-	ntfs_attr_search_ctx *ctx = NULL;
-	runlist *rl, *rl_bad;
+	ntfs_attr *na;
+	runlist *rl;
 	s64 nr_bad_clusters = 0;
+	static le16 Bad[4] = {
+		const_cpu_to_le16('$'), const_cpu_to_le16('B'),
+		const_cpu_to_le16('a'), const_cpu_to_le16('d')
+	} ;
 
 	if (!(ni = ntfs_inode_open(vol, FILE_BadClus)))
 		perr_exit("ntfs_open_inode");
 
-	if ((ctx = lookup_data_attr(ni, "$Bad")) == NULL)
-		exit(1);
+	na = ntfs_attr_open(ni, AT_DATA, Bad, 4);
+	if (!na)
+		perr_exit("ntfs_attr_open");
+	if (ntfs_attr_map_whole_runlist(na))
+		perr_exit("ntfs_attr_map_whole_runlist");
 
-	if (!(rl_bad = ntfs_mapping_pairs_decompress(vol, ctx->attr, NULL)))
-		perr_exit("ntfs_mapping_pairs_decompress");
-
-	for (rl = rl_bad; rl->length; rl++) {
+	for (rl = na->rl; rl->length; rl++) {
 		s64 lcn = rl->lcn;
 
 		if (lcn == LCN_HOLE || lcn < 0)
@@ -2533,9 +2496,7 @@ static void ignore_bad_clusters(ntfs_walk_clusters_ctx *image)
 	if (nr_bad_clusters)
 		Printf("WARNING: The disk has %lld or more bad sectors"
 		       " (hardware faults).\n", (long long)nr_bad_clusters);
-	free(rl_bad);
-
-	ntfs_attr_put_search_ctx(ctx);
+	ntfs_attr_close(na);
 	if (ntfs_inode_close(ni))
 		perr_exit("ntfs_inode_close failed for $BadClus");
 }

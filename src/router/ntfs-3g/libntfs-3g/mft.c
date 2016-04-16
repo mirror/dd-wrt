@@ -5,7 +5,7 @@
  * Copyright (c) 2004-2005 Richard Russon
  * Copyright (c) 2004-2008 Szabolcs Szakacsits
  * Copyright (c)      2005 Yura Pakhuchiy
- * Copyright (c)      2014 Jean-Pierre Andre
+ * Copyright (c) 2014-2015 Jean-Pierre Andre
  *
  * This program/include file is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published
@@ -355,7 +355,7 @@ int ntfs_mft_record_layout(const ntfs_volume *vol, const MFT_REF mref,
 		 * Set the NTFS 3.1+ specific fields while we know that the
 		 * volume version is 3.1+.
 		 */
-		mrec->reserved = cpu_to_le16(0);
+		mrec->reserved = const_cpu_to_le16(0);
 		mrec->mft_record_number = cpu_to_le32(MREF(mref));
 	}
 	mrec->magic = magic_FILE;
@@ -363,7 +363,7 @@ int ntfs_mft_record_layout(const ntfs_volume *vol, const MFT_REF mref,
 		mrec->usa_count = cpu_to_le16(vol->mft_record_size /
 				NTFS_BLOCK_SIZE + 1);
 	else {
-		mrec->usa_count = cpu_to_le16(1);
+		mrec->usa_count = const_cpu_to_le16(1);
 		ntfs_log_error("Sector size is bigger than MFT record size.  "
 				"Setting usa_count to 1.  If Windows chkdsk "
 				"reports this as corruption, please email %s "
@@ -372,14 +372,14 @@ int ntfs_mft_record_layout(const ntfs_volume *vol, const MFT_REF mref,
 				"Thank you.\n", NTFS_DEV_LIST);
 	}
 	/* Set the update sequence number to 1. */
-	*(u16*)((u8*)mrec + le16_to_cpu(mrec->usa_ofs)) = cpu_to_le16(1);
-	mrec->lsn = cpu_to_le64(0ull);
-	mrec->sequence_number = cpu_to_le16(1);
-	mrec->link_count = cpu_to_le16(0);
+	*(le16*)((u8*)mrec + le16_to_cpu(mrec->usa_ofs)) = const_cpu_to_le16(1);
+	mrec->lsn = const_cpu_to_sle64(0ll);
+	mrec->sequence_number = const_cpu_to_le16(1);
+	mrec->link_count = const_cpu_to_le16(0);
 	/* Aligned to 8-byte boundary. */
 	mrec->attrs_offset = cpu_to_le16((le16_to_cpu(mrec->usa_ofs) +
 			(le16_to_cpu(mrec->usa_count) << 1) + 7) & ~7);
-	mrec->flags = cpu_to_le16(0);
+	mrec->flags = const_cpu_to_le16(0);
 	/*
 	 * Using attrs_offset plus eight bytes (for the termination attribute),
 	 * aligned to 8-byte boundary.
@@ -387,11 +387,11 @@ int ntfs_mft_record_layout(const ntfs_volume *vol, const MFT_REF mref,
 	mrec->bytes_in_use = cpu_to_le32((le16_to_cpu(mrec->attrs_offset) + 8 +
 			7) & ~7);
 	mrec->bytes_allocated = cpu_to_le32(vol->mft_record_size);
-	mrec->base_mft_record = cpu_to_le64((MFT_REF)0);
-	mrec->next_attr_instance = cpu_to_le16(0);
+	mrec->base_mft_record = const_cpu_to_le64((MFT_REF)0);
+	mrec->next_attr_instance = const_cpu_to_le16(0);
 	a = (ATTR_RECORD*)((u8*)mrec + le16_to_cpu(mrec->attrs_offset));
 	a->type = AT_END;
-	a->length = cpu_to_le32(0);
+	a->length = const_cpu_to_le32(0);
 	/* Finally, clear the unused part of the mft record. */
 	memset((u8*)a + 8, 0, vol->mft_record_size - ((u8*)a + 8 - (u8*)mrec));
 	return 0;
@@ -554,7 +554,7 @@ static int ntfs_mft_bitmap_find_free_rec(ntfs_volume *vol, ntfs_inode *base_ni)
 					"data_pos 0x%llx, bit 0x%llx, "
 					"*byte 0x%hhx, b %u.\n", size,
 					(long long)data_pos, (long long)bit,
-					byte ? *byte : -1, b);
+					(u8) (byte ? *byte : -1), b);
 			for (; bit < size && data_pos + bit < pass_end;
 					bit &= ~7ull, bit += 8) {
 				/* 
@@ -581,7 +581,7 @@ static int ntfs_mft_bitmap_find_free_rec(ntfs_volume *vol, ntfs_inode *base_ni)
 					"data_pos 0x%llx, bit 0x%llx, "
 					"*byte 0x%hhx, b %u.\n", size,
 					(long long)data_pos, (long long)bit,
-					byte ? *byte : -1, b);
+					(u8) (byte ? *byte : -1), b);
 			data_pos += size;
 			/*
 			 * If the end of the pass has not been reached yet,
@@ -1510,7 +1510,7 @@ found_free_rec:
 	ntfs_inode_mark_dirty(ni);
 	/* Initialize time, allocated and data size in ntfs_inode struct. */
 	ni->data_size = ni->allocated_size = 0;
-	ni->flags = 0;
+	ni->flags = const_cpu_to_le32(0);
 	ni->creation_time = ni->last_data_change_time =
 			ni->last_mft_change_time =
 			ni->last_access_time = ntfs_current_time();
@@ -1620,7 +1620,6 @@ err_out:
  * when reading the bitmap but if we are careful, we should be able to avoid
  * all problems.
  */
-//ntfs_inode *ntfs_mft_record_alloc(ntfs_volume *vol, ntfs_inode *base_ni)
 ntfs_inode *ntfs_mft_record_alloc(ntfs_volume *vol, ntfs_inode *base_ni)
 {
 	s64 ll, bit;
@@ -1628,6 +1627,7 @@ ntfs_inode *ntfs_mft_record_alloc(ntfs_volume *vol, ntfs_inode *base_ni)
 	MFT_RECORD *m;
 	ntfs_inode *ni = NULL;
 	int err;
+	u32 usa_ofs;
 	le16 seq_no, usn;
 
 	if (base_ni)
@@ -1754,7 +1754,16 @@ found_free_rec:
 		goto retry;
 	}
 	seq_no = m->sequence_number;
-	usn = *(le16*)((u8*)m + le16_to_cpu(m->usa_ofs));
+		/*
+		 * As ntfs_mft_record_read() returns what has been read
+		 * even when the fixups have been found bad, we have to
+		 * check where we fetch the initial usn from.
+		 */
+	usa_ofs = le16_to_cpu(m->usa_ofs);
+	if (!(usa_ofs & 1) && (usa_ofs < NTFS_BLOCK_SIZE)) {
+		usn = *(le16*)((u8*)m + usa_ofs);
+	} else
+		usn = const_cpu_to_le16(1);
 	if (ntfs_mft_record_layout(vol, bit, m)) {
 		ntfs_log_error("Failed to re-format mft record.\n");
 		free(m);
@@ -1814,7 +1823,7 @@ found_free_rec:
 	ntfs_inode_mark_dirty(ni);
 	/* Initialize time, allocated and data size in ntfs_inode struct. */
 	ni->data_size = ni->allocated_size = 0;
-	ni->flags = 0;
+	ni->flags = const_cpu_to_le32(0);
 	ni->creation_time = ni->last_data_change_time =
 			ni->last_mft_change_time =
 			ni->last_access_time = ntfs_current_time();

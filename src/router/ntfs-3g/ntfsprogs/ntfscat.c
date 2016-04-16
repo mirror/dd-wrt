@@ -183,7 +183,7 @@ static int parse_options(int argc, char **argv)
 	opterr = 0; /* We'll handle the errors, thank you. */
 
 	opts.inode = -1;
-	opts.attr = cpu_to_le32(-1);
+	opts.attr = const_cpu_to_le32(-1);
 	opts.attr_name = NULL;
 	opts.attr_name_len = 0;
 
@@ -201,7 +201,7 @@ static int parse_options(int argc, char **argv)
 			}
 			break;
 		case 'a':
-			if (opts.attr != cpu_to_le32(-1)) {
+			if (opts.attr != const_cpu_to_le32(-1)) {
 				ntfs_log_error("You must specify exactly one "
 						"attribute.\n");
 			} else if (parse_attribute(optarg, &attr) > 0) {
@@ -424,8 +424,21 @@ int main(int argc, char *argv[])
 
 	if (opts.inode != -1)
 		inode = ntfs_inode_open(vol, opts.inode);
-	else
+	else {
+#ifdef HAVE_WINDOWS_H
+		char *unix_name;
+
+		unix_name = ntfs_utils_unix_path(opts.file);
+		if (unix_name) {
+			inode = ntfs_pathname_to_inode(vol, NULL,
+					unix_name);
+			free(unix_name);
+		} else
+			inode = (ntfs_inode*)NULL;
+#else
 		inode = ntfs_pathname_to_inode(vol, NULL, opts.file);
+#endif
+	}
 
 	if (!inode) {
 		ntfs_log_perror("ERROR: Couldn't open inode");
@@ -433,7 +446,7 @@ int main(int argc, char *argv[])
 	}
 
 	attr = AT_DATA;
-	if (opts.attr != cpu_to_le32(-1))
+	if (opts.attr != const_cpu_to_le32(-1))
 		attr = opts.attr;
 
 	result = cat(vol, inode, attr, opts.attr_name, opts.attr_name_len);
