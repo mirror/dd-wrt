@@ -24,8 +24,8 @@
 
 # Autoconf
 AC_PREREQ(2.59)
-AC_INIT([ntfs-3g],[2015.3.14],[ntfs-3g-devel@lists.sf.net])
-LIBNTFS_3G_VERSION="86"
+AC_INIT([ntfs-3g],[2016.2.22],[ntfs-3g-devel@lists.sf.net])
+LIBNTFS_3G_VERSION="87"
 AC_CONFIG_SRCDIR([src/ntfs-3g.c])
 
 # Environment
@@ -657,6 +657,7 @@ AC_CONFIG_FILES([
 	ntfsprogs/ntfswipe.8
 	ntfsprogs/ntfstruncate.8
 	ntfsprogs/ntfsfallocate.8
+	ntfsprogs/ntfsrecover.8
 	src/Makefile
 	src/ntfs-3g.8
 	src/ntfs-3g.probe.8
