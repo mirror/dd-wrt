@@ -932,7 +932,9 @@ maintainer-clean-generic:
 	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
 @ENABLE_MOUNT_HELPER_FALSE@install-exec-local:
 @ENABLE_NTFS_3G_FALSE@install-exec-local:
+@ENABLE_MOUNT_HELPER_FALSE@install-data-local:
 @ENABLE_NTFS_3G_FALSE@install-data-local:
+@ENABLE_MOUNT_HELPER_FALSE@uninstall-local:
 @ENABLE_NTFS_3G_FALSE@uninstall-local:
 @ENABLE_NTFS_3G_FALSE@install-exec-hook:
 @RUN_LDCONFIG_FALSE@install-exec-hook:
@@ -1044,12 +1046,12 @@ uninstall-man: uninstall-man8
 @ENABLE_MOUNT_HELPER_TRUE@@ENABLE_NTFS_3G_TRUE@	$(LN_S) -f "$(rootbindir)/ntfs-3g" "$(DESTDIR)/sbin/mount.ntfs-3g"
 @ENABLE_MOUNT_HELPER_TRUE@@ENABLE_NTFS_3G_TRUE@	$(LN_S) -f "$(rootbindir)/lowntfs-3g" "$(DESTDIR)/sbin/mount.lowntfs-3g"
 
-@ENABLE_NTFS_3G_TRUE@install-data-local:	install-man8
-@ENABLE_NTFS_3G_TRUE@	$(LN_S) -f ntfs-3g.8 "$(DESTDIR)$(man8dir)/mount.ntfs-3g.8"
-@ENABLE_NTFS_3G_TRUE@	$(LN_S) -f ntfs-3g.8 "$(DESTDIR)$(man8dir)/mount.lowntfs-3g.8"
+@ENABLE_MOUNT_HELPER_TRUE@@ENABLE_NTFS_3G_TRUE@install-data-local:	install-man8
+@ENABLE_MOUNT_HELPER_TRUE@@ENABLE_NTFS_3G_TRUE@	$(LN_S) -f ntfs-3g.8 "$(DESTDIR)$(man8dir)/mount.ntfs-3g.8"
+@ENABLE_MOUNT_HELPER_TRUE@@ENABLE_NTFS_3G_TRUE@	$(LN_S) -f ntfs-3g.8 "$(DESTDIR)$(man8dir)/mount.lowntfs-3g.8"
 
-@ENABLE_NTFS_3G_TRUE@uninstall-local:
-@ENABLE_NTFS_3G_TRUE@	$(RM) -f "$(DESTDIR)$(man8dir)/mount.ntfs-3g.8"
+@ENABLE_MOUNT_HELPER_TRUE@@ENABLE_NTFS_3G_TRUE@uninstall-local:
+@ENABLE_MOUNT_HELPER_TRUE@@ENABLE_NTFS_3G_TRUE@	$(RM) -f "$(DESTDIR)$(man8dir)/mount.ntfs-3g.8"
 @ENABLE_MOUNT_HELPER_TRUE@@ENABLE_NTFS_3G_TRUE@	$(RM) -f "$(DESTDIR)/sbin/mount.ntfs-3g" "$(DESTDIR)/sbin/mount.lowntfs-3g"
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

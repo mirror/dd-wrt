@@ -609,11 +609,11 @@ static int set_sizes(struct ALLOC_CONTEXT *alctx, ntfs_attr_search_ctx *ctx)
 		/* Feed the sizes into the attribute */
 	attr = ctx->attr;
 	attr->non_resident = 1;
-	attr->data_size = cpu_to_le64(na->data_size);
-	attr->initialized_size = cpu_to_le64(na->initialized_size);
-	attr->allocated_size = cpu_to_le64(na->allocated_size);
+	attr->data_size = cpu_to_sle64(na->data_size);
+	attr->initialized_size = cpu_to_sle64(na->initialized_size);
+	attr->allocated_size = cpu_to_sle64(na->allocated_size);
 	if (na->data_flags & ATTR_IS_SPARSE)
-		attr->compressed_size = cpu_to_le64(na->compressed_size);
+		attr->compressed_size = cpu_to_sle64(na->compressed_size);
 		/* Copy the unnamed data attribute sizes to inode */
 	if ((opts.attribute == AT_DATA) && !na->name_len) {
 		ni = na->ni;
@@ -806,7 +806,7 @@ static ntfs_inode *ntfs_new_file(ntfs_inode *dir_ni,
 					filename);
 		return NULL;
 	}
-	ni = ntfs_create(dir_ni, 0, ufilename, ufilename_len, S_IFREG);
+	ni = ntfs_create(dir_ni, const_cpu_to_le32(0), ufilename, ufilename_len, S_IFREG);
 	free(ufilename);
 	return ni;
 }
@@ -834,6 +834,9 @@ int main(int argc, char *argv[])
 	s64 br, bw;
 	ntfschar *attr_name;
 	int attr_name_len = 0;
+#ifdef HAVE_WINDOWS_H
+	char *unix_name;
+#endif
 
 #ifdef DEBUG
 	ntfs_log_set_handler(ntfs_log_handler_stderr);
@@ -901,8 +904,17 @@ int main(int argc, char *argv[])
 			goto close_src;
 		}
 		out = ntfs_inode_open(vol, inode_num);
-	} else
+	} else {
+#ifdef HAVE_WINDOWS_H
+		unix_name = ntfs_utils_unix_path(opts.dest_file);
+		if (unix_name) {
+			out = ntfs_pathname_to_inode(vol, NULL, unix_name);
+  		} else
+			out = (ntfs_inode*)NULL;
+#else
 		out = ntfs_pathname_to_inode(vol, NULL, opts.dest_file);
+#endif
+	}
 	if (!out) {
 		/* Copy the file if the dest_file's parent dir can be opened. */
 		char *parent_dirname;
@@ -911,8 +923,13 @@ int main(int argc, char *argv[])
 		ntfs_inode *ni;
 		char *dirname_last_whack;
 
+#ifdef HAVE_WINDOWS_H
+		filename = basename(unix_name);
+		parent_dirname = strdup(unix_name);
+#else
 		filename = basename(opts.dest_file);
 		parent_dirname = strdup(opts.dest_file);
+#endif
 		if (!parent_dirname) {
 			ntfs_log_perror("strdup() failed");
 			goto close_src;
@@ -984,8 +1001,12 @@ int main(int argc, char *argv[])
 			ntfs_inode_close(out);
 			goto close_src;
 		}
+#ifdef HAVE_WINDOWS_H
+		strcpy(overwrite_filename, unix_name);
+#else
 		strcpy(overwrite_filename, opts.dest_file);
-		if (opts.dest_file[dest_dirname_len - 1] != '/') {
+#endif
+		if (overwrite_filename[dest_dirname_len - 1] != '/') {
 			strcat(overwrite_filename, "/");
 		}
 		strcat(overwrite_filename, filename);

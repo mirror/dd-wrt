@@ -4,7 +4,7 @@
  * Copyright (c) 2000-2006 Anton Altaparmakov
  * Copyright (c) 2002-2006 Szabolcs Szakacsits
  * Copyright (c) 2007      Yura Pakhuchiy
- * Copyright (c) 2011-2014 Jean-Pierre Andre
+ * Copyright (c) 2011-2015 Jean-Pierre Andre
  *
  * This utility fixes some common NTFS problems, resets the NTFS journal file
  * and schedules an NTFS consistency check for the first boot into Windows.
@@ -154,7 +154,7 @@ static void version(void)
 		   "Copyright (c) 2000-2006 Anton Altaparmakov\n"
 		   "Copyright (c) 2002-2006 Szabolcs Szakacsits\n"
 		   "Copyright (c) 2007      Yura Pakhuchiy\n"
-		   "Copyright (c) 2011-2014 Jean-Pierre Andre\n\n",
+		   "Copyright (c) 2011-2015 Jean-Pierre Andre\n\n",
 		   EXEC_NAME, VERSION);
 	ntfs_log_info("%s\n%s%s", ntfs_gpl, ntfs_bugs, ntfs_home);
 	exit(0);
@@ -739,13 +739,14 @@ static ATTR_RECORD *find_unnamed_attr(MFT_RECORD *mrec, ATTR_TYPES type)
 			/* fetch the requested attribute */
 	offset = le16_to_cpu(mrec->attrs_offset);
 	a = (ATTR_RECORD*)((char*)mrec + offset);
-	while ((a->type != AT_END)
-	    && ((a->type != type) || a->name_length)
-	    && (offset < le32_to_cpu(mrec->bytes_in_use))) {
+	while ((offset < le32_to_cpu(mrec->bytes_in_use))
+	    && (a->type != AT_END)
+	    && ((a->type != type) || a->name_length)) {
 		offset += le32_to_cpu(a->length);
 		a = (ATTR_RECORD*)((char*)mrec + offset);
 	}
-	if ((a->type != type)
+	if ((offset >= le32_to_cpu(mrec->bytes_in_use))
+	    || (a->type != type)
 	    || a->name_length)
 		a = (ATTR_RECORD*)NULL;
 	return (a);
@@ -781,7 +782,7 @@ static BOOL short_mft_selfloc_condition(struct MFT_SELF_LOCATED *selfloc)
 		a = find_unnamed_attr(mft0,AT_DATA);
 		if (a
 		    && a->non_resident
-		    && (((le64_to_cpu(a->highest_vcn) + 1)
+		    && (((sle64_to_cpu(a->highest_vcn) + 1)
 					<< vol->cluster_size_bits)
 				== (SELFLOC_LIMIT*vol->mft_record_size))) {
 			rl = ntfs_mapping_pairs_decompress(vol, a, NULL);
@@ -841,13 +842,13 @@ static BOOL attrlist_selfloc_condition(struct MFT_SELF_LOCATED *selfloc)
 			rl = ntfs_mapping_pairs_decompress(vol, a, NULL);
 			if (rl
 			    && (rl->lcn >= 0)
-			    && (le64_to_cpu(a->data_size) < vol->cluster_size)
+			    && (sle64_to_cpu(a->data_size) < vol->cluster_size)
 			    && (ntfs_pread(vol->dev,
 					rl->lcn << vol->cluster_size_bits,
 					vol->cluster_size, attrlist) == vol->cluster_size)) {
 				selfloc->attrlist_lcn = rl->lcn;
 				al = attrlist;
-				length = le64_to_cpu(a->data_size);
+				length = sle64_to_cpu(a->data_size);
 			}
 		} else {
 			al = (ATTR_LIST_ENTRY*)
@@ -858,7 +859,7 @@ static BOOL attrlist_selfloc_condition(struct MFT_SELF_LOCATED *selfloc)
 			/* search for a data attribute defining entry 16 */
 			vcn = (SELFLOC_LIMIT*vol->mft_record_size)
 					>> vol->cluster_size_bits;
-			levcn = cpu_to_le64(vcn);
+			levcn = cpu_to_sle64(vcn);
 			while ((length > 0)
 			    && al->length
 			    && ((al->type != AT_DATA)
@@ -921,7 +922,7 @@ static BOOL self_mapped_selfloc_condition(struct MFT_SELF_LOCATED *selfloc)
 		a = find_unnamed_attr(mft1,AT_DATA);
 		if (a
 		    && (mft1->flags & MFT_RECORD_IN_USE)
-		    && ((VCN)le64_to_cpu(a->lowest_vcn) == lowest_vcn)
+		    && ((VCN)sle64_to_cpu(a->lowest_vcn) == lowest_vcn)
 		    && (le64_to_cpu(mft1->base_mft_record)
 				== selfloc->mft_ref0)
 		    && ((u16)MSEQNO(selfloc->mft_ref1)
@@ -1020,9 +1021,9 @@ static int fix_selfloc_conditions(struct MFT_SELF_LOCATED *selfloc)
 	mft1->sequence_number = const_cpu_to_le16(SELFLOC_LIMIT - 1);
 	a = find_unnamed_attr(mft1,AT_DATA);
 	if (a) {
-		a->allocated_size = const_cpu_to_le64(0);
-		a->data_size = const_cpu_to_le64(0);
-		a->initialized_size = const_cpu_to_le64(0);
+		a->allocated_size = const_cpu_to_sle64(0);
+		a->data_size = const_cpu_to_sle64(0);
+		a->initialized_size = const_cpu_to_sle64(0);
 	} else
 		res = -1; /* bug : it has been found earlier */
 
@@ -1117,9 +1118,10 @@ static int fix_selfloc_conditions(struct MFT_SELF_LOCATED *selfloc)
  *
  *	Only low-level library functions can be used.
  *
- *	Returns 0 if the conditions for the error were not met or
- *			the error could be fixed,
- *		-1 if some error was encountered
+ *	Returns 0 if the conditions for the error was met and
+ *			this error could be fixed,
+ *		-1 if the condition was not met or some error
+ *			which could not be fixed was encountered.
  */
 
 static int fix_self_located_mft(ntfs_volume *vol)
@@ -1146,7 +1148,7 @@ static int fix_self_located_mft(ntfs_volume *vol)
 			ntfs_log_info(res ? FAILED : OK);
 		} else {
 			ntfs_log_info(OK);
-			res = 0;
+			res = -1;
 		}
 		free(selfloc.mft0);
 		free(selfloc.mft1);
@@ -1189,8 +1191,8 @@ static int try_fix_boot(ntfs_volume *vol, char *full_bs,
 			ntfs_log_perror("Error reading alternate bootsector");
 	} else {
 		bs = (NTFS_BOOT_SECTOR*)full_bs;
-		got_sectors = le64_to_cpu(bs->number_of_sectors);
-		bs->number_of_sectors = cpu_to_le64(fix_sectors);
+		got_sectors = sle64_to_cpu(bs->number_of_sectors);
+		bs->number_of_sectors = cpu_to_sle64(fix_sectors);
 		/* alignment problem on Sparc, even doing memcpy() */
 		sector_size_le = cpu_to_le16(sector_size);
 		if (!memcmp(&sector_size_le, &bs->bpb.bytes_per_sector,2)
@@ -1325,7 +1327,7 @@ static int check_alternate_boot(ntfs_volume *vol)
 	br = ntfs_pread(vol->dev, 0, vol->sector_size, full_bs);
 	if (br == vol->sector_size) {
 		bs = (NTFS_BOOT_SECTOR*)full_bs;
-		got_sectors = le64_to_cpu(bs->number_of_sectors);
+		got_sectors = sle64_to_cpu(bs->number_of_sectors);
 		actual_sectors = ntfs_device_size_get(vol->dev,
 						vol->sector_size);
 		if (actual_sectors > got_sectors) {
@@ -1377,6 +1379,8 @@ error_exit :
  *
  *	This is a replay of the normal start up sequence with fixes when
  *	some problem arise.
+ *
+ *	Returns 0 if there was an error and a fix is available
  */
 
 static int fix_startup(struct ntfs_device *dev, unsigned long flags)
@@ -1453,7 +1457,7 @@ static int fix_startup(struct ntfs_device *dev, unsigned long flags)
 	if (!ntfs_boot_sector_is_ntfs(bs)
 		/* get the bootsector data, only fails when inconsistent */
 	    || (ntfs_boot_sector_parse(vol, bs) < 0)) {
-		shown_sectors = le64_to_cpu(bs->number_of_sectors);
+		shown_sectors = sle64_to_cpu(bs->number_of_sectors);
 		/* boot sector is wrong, try the alternate boot sector */
 		if (try_alternate_boot(vol, full_bs, sector_size,
 						shown_sectors)) {
@@ -1647,8 +1651,10 @@ int main(int argc, char **argv)
 	/* Set return code to 0. */
 	ret = 0;
 error_exit:
-	if (ntfs_umount(vol, 0))
-		ntfs_umount(vol, 1);
+	if (ntfs_umount(vol, 1)) {
+		ntfs_log_info("Failed to unmount partition\n");
+		ret = 1;
+	}
 	if (ret)
 		exit(ret);
 	return ret;
