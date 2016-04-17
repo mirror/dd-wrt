@@ -1022,10 +1022,10 @@ void start_lan(void)
 		break;
 	default:
 		if (getSTA() || getWET() || CANBRIDGE()) {
-			nvram_setz(lan_ifnames, "eth0 eth1 ath0");
+			nvram_setz(lan_ifnames, "eth0 eth1 ath0 ath1");
 			PORTSETUPWAN("");
 		} else {
-			nvram_setz(lan_ifnames, "eth0 eth1 ath0");
+			nvram_setz(lan_ifnames, "eth0 eth1 ath0 ath1");
 			PORTSETUPWAN("eth0");
 		}
 		strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
@@ -1762,7 +1762,11 @@ void start_lan(void)
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #endif
 #ifdef HAVE_NORTHSTAR
+#ifdef HAVE_DHDAP
 	nvram_setz(lan_ifnames, "vlan1 vlan2 eth1 eth2 eth3");
+#else
+	nvram_setz(lan_ifnames, "vlan1 vlan2 eth1 eth2");
+#endif
 	if (getSTA() || getWET() || CANBRIDGE()) {
 		PORTSETUPWAN("");
 	} else {
