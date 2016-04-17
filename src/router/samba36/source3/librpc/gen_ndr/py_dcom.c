@@ -44,9 +44,9 @@ staticforward PyTypeObject ICoffeeMachine_InterfaceType;
 
 staticforward PyTypeObject IStream_InterfaceType;
 
-void initdcom(void);static PyTypeObject *ClientConnection_Type;
+void initdcom(void);static PyTypeObject *Object_Type;
+static PyTypeObject *ClientConnection_Type;
 static PyTypeObject *GUID_Type;
-static PyTypeObject *Object_Type;
 
 static bool pack_py_UseProtSeq_args_in(PyObject *args, PyObject *kwargs, struct UseProtSeq *r)
 {
@@ -1987,25 +1987,29 @@ static PyMethodDef dcom_methods[] = {
 void initdcom(void)
 {
 	PyObject *m;
-	PyObject *dep_talloc;
-	PyObject *dep_samba_dcerpc_misc;
 	PyObject *dep_samba_dcerpc_orpc;
+	PyObject *dep_samba_dcerpc_misc;
 	PyObject *dep_samba_dcerpc_base;
+	PyObject *dep_talloc;
 
-	dep_talloc = PyImport_ImportModule("talloc");
-	if (dep_talloc == NULL)
+	dep_samba_dcerpc_orpc = PyImport_ImportModule("samba.dcerpc.orpc");
+	if (dep_samba_dcerpc_orpc == NULL)
 		return;
 
 	dep_samba_dcerpc_misc = PyImport_ImportModule("samba.dcerpc.misc");
 	if (dep_samba_dcerpc_misc == NULL)
 		return;
 
-	dep_samba_dcerpc_orpc = PyImport_ImportModule("samba.dcerpc.orpc");
-	if (dep_samba_dcerpc_orpc == NULL)
-		return;
-
 	dep_samba_dcerpc_base = PyImport_ImportModule("samba.dcerpc.base");
 	if (dep_samba_dcerpc_base == NULL)
+		return;
+
+	dep_talloc = PyImport_ImportModule("talloc");
+	if (dep_talloc == NULL)
+		return;
+
+	Object_Type = (PyTypeObject *)PyObject_GetAttrString(dep_talloc, "Object");
+	if (Object_Type == NULL)
 		return;
 
 	ClientConnection_Type = (PyTypeObject *)PyObject_GetAttrString(dep_samba_dcerpc_base, "ClientConnection");
@@ -2014,10 +2018,6 @@ void initdcom(void)
 
 	GUID_Type = (PyTypeObject *)PyObject_GetAttrString(dep_samba_dcerpc_misc, "GUID");
 	if (GUID_Type == NULL)
-		return;
-
-	Object_Type = (PyTypeObject *)PyObject_GetAttrString(dep_talloc, "Object");
-	if (Object_Type == NULL)
 		return;
 
 	dcom_Unknown_InterfaceType.tp_base = ClientConnection_Type;

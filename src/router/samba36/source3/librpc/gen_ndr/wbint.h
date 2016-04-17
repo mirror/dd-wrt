@@ -29,7 +29,7 @@ struct wbint_TransIDArray {
 
 struct wbint_userinfo {
 	const char *acct_name;/* [unique,charset(UTF8)] */
-	const char *full_name;/* [charset(UTF8),unique] */
+	const char *full_name;/* [unique,charset(UTF8)] */
 	const char *homedir;/* [unique,charset(UTF8)] */
 	const char *shell;/* [charset(UTF8),unique] */
 	uint64_t primary_gid;
@@ -108,7 +108,7 @@ struct wbint_LookupSids {
 struct wbint_LookupName {
 	struct {
 		const char *domain;/* [charset(UTF8),ref] */
-		const char *name;/* [ref,charset(UTF8)] */
+		const char *name;/* [charset(UTF8),ref] */
 		uint32_t flags;
 	} in;
 
@@ -137,7 +137,7 @@ struct wbint_Sid2Uid {
 
 struct wbint_Sid2Gid {
 	struct {
-		const char *dom_name;/* [charset(UTF8),unique] */
+		const char *dom_name;/* [unique,charset(UTF8)] */
 		struct dom_sid *sid;/* [ref] */
 	} in;
 
@@ -291,9 +291,9 @@ struct wbint_QueryGroupList {
 
 struct wbint_DsGetDcName {
 	struct {
-		const char *domain_name;/* [ref,charset(UTF8)] */
+		const char *domain_name;/* [charset(UTF8),ref] */
 		struct GUID *domain_guid;/* [unique] */
-		const char *site_name;/* [unique,charset(UTF8)] */
+		const char *site_name;/* [charset(UTF8),unique] */
 		uint32_t flags;
 	} in;
 

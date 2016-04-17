@@ -15,11 +15,11 @@
 
 #define NAMED_PIPE_AUTH_MAGIC	( "NPAM" )
 struct named_pipe_auth_req_info4 {
-	const char *client_name;/* [unique,charset(UTF8)] */
-	const char *client_addr;/* [charset(DOS),unique] */
+	const char *client_name;/* [charset(UTF8),unique] */
+	const char *client_addr;/* [unique,charset(DOS)] */
 	uint16_t client_port;
-	const char *server_name;/* [unique,charset(UTF8)] */
-	const char *server_addr;/* [unique,charset(DOS)] */
+	const char *server_name;/* [charset(UTF8),unique] */
+	const char *server_addr;/* [charset(DOS),unique] */
 	uint16_t server_port;
 	struct auth_session_info_transport *session_info;/* [unique] */
 };
@@ -46,7 +46,7 @@ union named_pipe_auth_rep_info {
 }/* [switch_type(uint32)] */;
 
 struct named_pipe_auth_rep {
-	uint32_t length;/* [flag(LIBNDR_FLAG_BIGENDIAN),value(ndr_size_named_pipe_auth_rep(r,ndr->flags)-4)] */
+	uint32_t length;/* [value(ndr_size_named_pipe_auth_rep(r,ndr->flags)-4),flag(LIBNDR_FLAG_BIGENDIAN)] */
 	const char *magic;/* [value(NAMED_PIPE_AUTH_MAGIC),charset(DOS)] */
 	uint32_t level;
 	union named_pipe_auth_rep_info info;/* [switch_is(level)] */

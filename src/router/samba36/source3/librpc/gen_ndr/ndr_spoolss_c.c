@@ -102,12 +102,12 @@ struct tevent_req *dcerpc_spoolss_EnumPrinters_send(TALLOC_CTX *mem_ctx,
 						    struct tevent_context *ev,
 						    struct dcerpc_binding_handle *h,
 						    uint32_t _flags /* [in]  */,
-						    const char *_server /* [in] [unique,charset(UTF16)] */,
+						    const char *_server /* [in] [charset(UTF16),unique] */,
 						    uint32_t _level /* [in]  */,
 						    DATA_BLOB *_buffer /* [in] [unique] */,
 						    uint32_t _offered /* [in]  */,
 						    uint32_t *_count /* [out] [ref] */,
-						    union spoolss_PrinterInfo **_info /* [out] [switch_is(level),size_is(,*count),ref] */,
+						    union spoolss_PrinterInfo **_info /* [out] [size_is(,*count),switch_is(level),ref] */,
 						    uint32_t *_needed /* [out] [ref] */)
 {
 	struct tevent_req *req;
@@ -215,12 +215,12 @@ NTSTATUS dcerpc_spoolss_EnumPrinters_recv(struct tevent_req *req,
 NTSTATUS dcerpc_spoolss_EnumPrinters(struct dcerpc_binding_handle *h,
 				     TALLOC_CTX *mem_ctx,
 				     uint32_t _flags /* [in]  */,
-				     const char *_server /* [in] [unique,charset(UTF16)] */,
+				     const char *_server /* [in] [charset(UTF16),unique] */,
 				     uint32_t _level /* [in]  */,
 				     DATA_BLOB *_buffer /* [in] [unique] */,
 				     uint32_t _offered /* [in]  */,
 				     uint32_t *_count /* [out] [ref] */,
-				     union spoolss_PrinterInfo **_info /* [out] [switch_is(level),size_is(,*count),ref] */,
+				     union spoolss_PrinterInfo **_info /* [out] [size_is(,*count),switch_is(level),ref] */,
 				     uint32_t *_needed /* [out] [ref] */,
 				     WERROR *result)
 {
@@ -344,7 +344,7 @@ struct tevent_req *dcerpc_spoolss_OpenPrinter_send(TALLOC_CTX *mem_ctx,
 						   struct tevent_context *ev,
 						   struct dcerpc_binding_handle *h,
 						   const char *_printername /* [in] [charset(UTF16),unique] */,
-						   const char *_datatype /* [in] [unique,charset(UTF16)] */,
+						   const char *_datatype /* [in] [charset(UTF16),unique] */,
 						   struct spoolss_DevmodeContainer _devmode_ctr /* [in]  */,
 						   uint32_t _access_mask /* [in]  */,
 						   struct policy_handle *_handle /* [out] [ref] */)
@@ -449,7 +449,7 @@ NTSTATUS dcerpc_spoolss_OpenPrinter_recv(struct tevent_req *req,
 NTSTATUS dcerpc_spoolss_OpenPrinter(struct dcerpc_binding_handle *h,
 				    TALLOC_CTX *mem_ctx,
 				    const char *_printername /* [in] [charset(UTF16),unique] */,
-				    const char *_datatype /* [in] [unique,charset(UTF16)] */,
+				    const char *_datatype /* [in] [charset(UTF16),unique] */,
 				    struct spoolss_DevmodeContainer _devmode_ctr /* [in]  */,
 				    uint32_t _access_mask /* [in]  */,
 				    struct policy_handle *_handle /* [out] [ref] */,
@@ -790,7 +790,7 @@ struct tevent_req *dcerpc_spoolss_GetJob_send(TALLOC_CTX *mem_ctx,
 					      uint32_t _level /* [in]  */,
 					      DATA_BLOB *_buffer /* [in] [unique] */,
 					      uint32_t _offered /* [in]  */,
-					      union spoolss_JobInfo *_info /* [out] [subcontext_size(offered),switch_is(level),subcontext(4),unique] */,
+					      union spoolss_JobInfo *_info /* [out] [unique,switch_is(level),subcontext_size(offered),subcontext(4)] */,
 					      uint32_t *_needed /* [out] [ref] */)
 {
 	struct tevent_req *req;
@@ -902,7 +902,7 @@ NTSTATUS dcerpc_spoolss_GetJob(struct dcerpc_binding_handle *h,
 			       uint32_t _level /* [in]  */,
 			       DATA_BLOB *_buffer /* [in] [unique] */,
 			       uint32_t _offered /* [in]  */,
-			       union spoolss_JobInfo *_info /* [out] [subcontext_size(offered),switch_is(level),subcontext(4),unique] */,
+			       union spoolss_JobInfo *_info /* [out] [unique,switch_is(level),subcontext_size(offered),subcontext(4)] */,
 			       uint32_t *_needed /* [out] [ref] */,
 			       WERROR *result)
 {
@@ -1272,7 +1272,7 @@ static void dcerpc_spoolss_AddPrinter_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_spoolss_AddPrinter_send(TALLOC_CTX *mem_ctx,
 						  struct tevent_context *ev,
 						  struct dcerpc_binding_handle *h,
-						  const char *_server /* [in] [unique,charset(UTF16)] */,
+						  const char *_server /* [in] [charset(UTF16),unique] */,
 						  struct spoolss_SetPrinterInfoCtr *_info_ctr /* [in] [ref] */,
 						  struct spoolss_DevmodeContainer *_devmode_ctr /* [in] [ref] */,
 						  struct sec_desc_buf *_secdesc_ctr /* [in] [ref] */,
@@ -1377,7 +1377,7 @@ NTSTATUS dcerpc_spoolss_AddPrinter_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_spoolss_AddPrinter(struct dcerpc_binding_handle *h,
 				   TALLOC_CTX *mem_ctx,
-				   const char *_server /* [in] [unique,charset(UTF16)] */,
+				   const char *_server /* [in] [charset(UTF16),unique] */,
 				   struct spoolss_SetPrinterInfoCtr *_info_ctr /* [in] [ref] */,
 				   struct spoolss_DevmodeContainer *_devmode_ctr /* [in] [ref] */,
 				   struct sec_desc_buf *_secdesc_ctr /* [in] [ref] */,
@@ -1924,7 +1924,7 @@ struct tevent_req *dcerpc_spoolss_GetPrinter_send(TALLOC_CTX *mem_ctx,
 						  uint32_t _level /* [in]  */,
 						  DATA_BLOB *_buffer /* [in] [unique] */,
 						  uint32_t _offered /* [in]  */,
-						  union spoolss_PrinterInfo *_info /* [out] [unique,subcontext_size(offered),switch_is(level),subcontext(4)] */,
+						  union spoolss_PrinterInfo *_info /* [out] [unique,switch_is(level),subcontext_size(offered),subcontext(4)] */,
 						  uint32_t *_needed /* [out] [ref] */)
 {
 	struct tevent_req *req;
@@ -2034,7 +2034,7 @@ NTSTATUS dcerpc_spoolss_GetPrinter(struct dcerpc_binding_handle *h,
 				   uint32_t _level /* [in]  */,
 				   DATA_BLOB *_buffer /* [in] [unique] */,
 				   uint32_t _offered /* [in]  */,
-				   union spoolss_PrinterInfo *_info /* [out] [unique,subcontext_size(offered),switch_is(level),subcontext(4)] */,
+				   union spoolss_PrinterInfo *_info /* [out] [unique,switch_is(level),subcontext_size(offered),subcontext(4)] */,
 				   uint32_t *_needed /* [out] [ref] */,
 				   WERROR *result)
 {
@@ -2369,7 +2369,7 @@ struct tevent_req *dcerpc_spoolss_EnumPrinterDrivers_send(TALLOC_CTX *mem_ctx,
 							  DATA_BLOB *_buffer /* [in] [unique] */,
 							  uint32_t _offered /* [in]  */,
 							  uint32_t *_count /* [out] [ref] */,
-							  union spoolss_DriverInfo **_info /* [out] [switch_is(level),ref,size_is(,*count)] */,
+							  union spoolss_DriverInfo **_info /* [out] [ref,switch_is(level),size_is(,*count)] */,
 							  uint32_t *_needed /* [out] [ref] */)
 {
 	struct tevent_req *req;
@@ -2482,7 +2482,7 @@ NTSTATUS dcerpc_spoolss_EnumPrinterDrivers(struct dcerpc_binding_handle *h,
 					   DATA_BLOB *_buffer /* [in] [unique] */,
 					   uint32_t _offered /* [in]  */,
 					   uint32_t *_count /* [out] [ref] */,
-					   union spoolss_DriverInfo **_info /* [out] [switch_is(level),ref,size_is(,*count)] */,
+					   union spoolss_DriverInfo **_info /* [out] [ref,switch_is(level),size_is(,*count)] */,
 					   uint32_t *_needed /* [out] [ref] */,
 					   WERROR *result)
 {
@@ -2606,11 +2606,11 @@ struct tevent_req *dcerpc_spoolss_GetPrinterDriver_send(TALLOC_CTX *mem_ctx,
 							struct tevent_context *ev,
 							struct dcerpc_binding_handle *h,
 							struct policy_handle *_handle /* [in] [ref] */,
-							const char *_architecture /* [in] [unique,charset(UTF16)] */,
+							const char *_architecture /* [in] [charset(UTF16),unique] */,
 							uint32_t _level /* [in]  */,
 							DATA_BLOB *_buffer /* [in] [unique] */,
 							uint32_t _offered /* [in]  */,
-							union spoolss_DriverInfo *_info /* [out] [subcontext_size(offered),switch_is(level),subcontext(4),unique] */,
+							union spoolss_DriverInfo *_info /* [out] [subcontext(4),subcontext_size(offered),switch_is(level),unique] */,
 							uint32_t *_needed /* [out] [ref] */)
 {
 	struct tevent_req *req;
@@ -2718,11 +2718,11 @@ NTSTATUS dcerpc_spoolss_GetPrinterDriver_recv(struct tevent_req *req,
 NTSTATUS dcerpc_spoolss_GetPrinterDriver(struct dcerpc_binding_handle *h,
 					 TALLOC_CTX *mem_ctx,
 					 struct policy_handle *_handle /* [in] [ref] */,
-					 const char *_architecture /* [in] [unique,charset(UTF16)] */,
+					 const char *_architecture /* [in] [charset(UTF16),unique] */,
 					 uint32_t _level /* [in]  */,
 					 DATA_BLOB *_buffer /* [in] [unique] */,
 					 uint32_t _offered /* [in]  */,
-					 union spoolss_DriverInfo *_info /* [out] [subcontext_size(offered),switch_is(level),subcontext(4),unique] */,
+					 union spoolss_DriverInfo *_info /* [out] [subcontext(4),subcontext_size(offered),switch_is(level),unique] */,
 					 uint32_t *_needed /* [out] [ref] */,
 					 WERROR *result)
 {
@@ -2847,11 +2847,11 @@ struct tevent_req *dcerpc_spoolss_GetPrinterDriverDirectory_send(TALLOC_CTX *mem
 								 struct tevent_context *ev,
 								 struct dcerpc_binding_handle *h,
 								 const char *_server /* [in] [charset(UTF16),unique] */,
-								 const char *_environment /* [in] [charset(UTF16),unique] */,
+								 const char *_environment /* [in] [unique,charset(UTF16)] */,
 								 uint32_t _level /* [in]  */,
 								 DATA_BLOB *_buffer /* [in] [unique] */,
 								 uint32_t _offered /* [in]  */,
-								 union spoolss_DriverDirectoryInfo *_info /* [out] [unique,subcontext(4),switch_is(level),subcontext_size(offered)] */,
+								 union spoolss_DriverDirectoryInfo *_info /* [out] [subcontext(4),subcontext_size(offered),unique,switch_is(level)] */,
 								 uint32_t *_needed /* [out] [ref] */)
 {
 	struct tevent_req *req;
@@ -2959,11 +2959,11 @@ NTSTATUS dcerpc_spoolss_GetPrinterDriverDirectory_recv(struct tevent_req *req,
 NTSTATUS dcerpc_spoolss_GetPrinterDriverDirectory(struct dcerpc_binding_handle *h,
 						  TALLOC_CTX *mem_ctx,
 						  const char *_server /* [in] [charset(UTF16),unique] */,
-						  const char *_environment /* [in] [charset(UTF16),unique] */,
+						  const char *_environment /* [in] [unique,charset(UTF16)] */,
 						  uint32_t _level /* [in]  */,
 						  DATA_BLOB *_buffer /* [in] [unique] */,
 						  uint32_t _offered /* [in]  */,
-						  union spoolss_DriverDirectoryInfo *_info /* [out] [unique,subcontext(4),switch_is(level),subcontext_size(offered)] */,
+						  union spoolss_DriverDirectoryInfo *_info /* [out] [subcontext(4),subcontext_size(offered),unique,switch_is(level)] */,
 						  uint32_t *_needed /* [out] [ref] */,
 						  WERROR *result)
 {
@@ -3294,7 +3294,7 @@ static void dcerpc_spoolss_AddPrintProcessor_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_spoolss_AddPrintProcessor_send(TALLOC_CTX *mem_ctx,
 							 struct tevent_context *ev,
 							 struct dcerpc_binding_handle *h,
-							 const char *_server /* [in] [charset(UTF16),unique] */,
+							 const char *_server /* [in] [unique,charset(UTF16)] */,
 							 const char *_architecture /* [in] [charset(UTF16)] */,
 							 const char *_path_name /* [in] [charset(UTF16)] */,
 							 const char *_print_processor_name /* [in] [charset(UTF16)] */)
@@ -3390,7 +3390,7 @@ NTSTATUS dcerpc_spoolss_AddPrintProcessor_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_spoolss_AddPrintProcessor(struct dcerpc_binding_handle *h,
 					  TALLOC_CTX *mem_ctx,
-					  const char *_server /* [in] [charset(UTF16),unique] */,
+					  const char *_server /* [in] [unique,charset(UTF16)] */,
 					  const char *_architecture /* [in] [charset(UTF16)] */,
 					  const char *_path_name /* [in] [charset(UTF16)] */,
 					  const char *_print_processor_name /* [in] [charset(UTF16)] */,
@@ -3511,13 +3511,13 @@ static void dcerpc_spoolss_EnumPrintProcessors_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_spoolss_EnumPrintProcessors_send(TALLOC_CTX *mem_ctx,
 							   struct tevent_context *ev,
 							   struct dcerpc_binding_handle *h,
-							   const char *_servername /* [in] [unique,charset(UTF16)] */,
+							   const char *_servername /* [in] [charset(UTF16),unique] */,
 							   const char *_environment /* [in] [unique,charset(UTF16)] */,
 							   uint32_t _level /* [in]  */,
 							   DATA_BLOB *_buffer /* [in] [unique] */,
 							   uint32_t _offered /* [in]  */,
 							   uint32_t *_count /* [out] [ref] */,
-							   union spoolss_PrintProcessorInfo **_info /* [out] [switch_is(level),size_is(,*count),ref] */,
+							   union spoolss_PrintProcessorInfo **_info /* [out] [size_is(,*count),switch_is(level),ref] */,
 							   uint32_t *_needed /* [out] [ref] */)
 {
 	struct tevent_req *req;
@@ -3624,13 +3624,13 @@ NTSTATUS dcerpc_spoolss_EnumPrintProcessors_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_spoolss_EnumPrintProcessors(struct dcerpc_binding_handle *h,
 					    TALLOC_CTX *mem_ctx,
-					    const char *_servername /* [in] [unique,charset(UTF16)] */,
+					    const char *_servername /* [in] [charset(UTF16),unique] */,
 					    const char *_environment /* [in] [unique,charset(UTF16)] */,
 					    uint32_t _level /* [in]  */,
 					    DATA_BLOB *_buffer /* [in] [unique] */,
 					    uint32_t _offered /* [in]  */,
 					    uint32_t *_count /* [out] [ref] */,
-					    union spoolss_PrintProcessorInfo **_info /* [out] [switch_is(level),size_is(,*count),ref] */,
+					    union spoolss_PrintProcessorInfo **_info /* [out] [size_is(,*count),switch_is(level),ref] */,
 					    uint32_t *_needed /* [out] [ref] */,
 					    WERROR *result)
 {
@@ -3758,7 +3758,7 @@ struct tevent_req *dcerpc_spoolss_GetPrintProcessorDirectory_send(TALLOC_CTX *me
 								  uint32_t _level /* [in]  */,
 								  DATA_BLOB *_buffer /* [in] [unique] */,
 								  uint32_t _offered /* [in]  */,
-								  union spoolss_PrintProcessorDirectoryInfo *_info /* [out] [subcontext(4),switch_is(level),subcontext_size(offered),unique] */,
+								  union spoolss_PrintProcessorDirectoryInfo *_info /* [out] [switch_is(level),unique,subcontext_size(offered),subcontext(4)] */,
 								  uint32_t *_needed /* [out] [ref] */)
 {
 	struct tevent_req *req;
@@ -3870,7 +3870,7 @@ NTSTATUS dcerpc_spoolss_GetPrintProcessorDirectory(struct dcerpc_binding_handle 
 						   uint32_t _level /* [in]  */,
 						   DATA_BLOB *_buffer /* [in] [unique] */,
 						   uint32_t _offered /* [in]  */,
-						   union spoolss_PrintProcessorDirectoryInfo *_info /* [out] [subcontext(4),switch_is(level),subcontext_size(offered),unique] */,
+						   union spoolss_PrintProcessorDirectoryInfo *_info /* [out] [switch_is(level),unique,subcontext_size(offered),subcontext(4)] */,
 						   uint32_t *_needed /* [out] [ref] */,
 						   WERROR *result)
 {
@@ -6174,7 +6174,7 @@ struct tevent_req *dcerpc_spoolss_SetPrinterData_send(TALLOC_CTX *mem_ctx,
 						      struct policy_handle *_handle /* [in] [ref] */,
 						      const char *_value_name /* [in] [charset(UTF16)] */,
 						      enum winreg_Type _type /* [in]  */,
-						      uint8_t *_data /* [in] [size_is(offered),ref] */,
+						      uint8_t *_data /* [in] [ref,size_is(offered)] */,
 						      uint32_t _offered /* [in]  */)
 {
 	struct tevent_req *req;
@@ -6272,7 +6272,7 @@ NTSTATUS dcerpc_spoolss_SetPrinterData(struct dcerpc_binding_handle *h,
 				       struct policy_handle *_handle /* [in] [ref] */,
 				       const char *_value_name /* [in] [charset(UTF16)] */,
 				       enum winreg_Type _type /* [in]  */,
-				       uint8_t *_data /* [in] [size_is(offered),ref] */,
+				       uint8_t *_data /* [in] [ref,size_is(offered)] */,
 				       uint32_t _offered /* [in]  */,
 				       WERROR *result)
 {
@@ -7027,7 +7027,7 @@ struct tevent_req *dcerpc_spoolss_GetForm_send(TALLOC_CTX *mem_ctx,
 					       uint32_t _level /* [in]  */,
 					       DATA_BLOB *_buffer /* [in] [unique] */,
 					       uint32_t _offered /* [in]  */,
-					       union spoolss_FormInfo *_info /* [out] [unique,subcontext_size(offered),subcontext(4),switch_is(level)] */,
+					       union spoolss_FormInfo *_info /* [out] [subcontext_size(offered),subcontext(4),switch_is(level),unique] */,
 					       uint32_t *_needed /* [out] [ref] */)
 {
 	struct tevent_req *req;
@@ -7139,7 +7139,7 @@ NTSTATUS dcerpc_spoolss_GetForm(struct dcerpc_binding_handle *h,
 				uint32_t _level /* [in]  */,
 				DATA_BLOB *_buffer /* [in] [unique] */,
 				uint32_t _offered /* [in]  */,
-				union spoolss_FormInfo *_info /* [out] [unique,subcontext_size(offered),subcontext(4),switch_is(level)] */,
+				union spoolss_FormInfo *_info /* [out] [subcontext_size(offered),subcontext(4),switch_is(level),unique] */,
 				uint32_t *_needed /* [out] [ref] */,
 				WERROR *result)
 {
@@ -7482,7 +7482,7 @@ struct tevent_req *dcerpc_spoolss_EnumForms_send(TALLOC_CTX *mem_ctx,
 						 DATA_BLOB *_buffer /* [in] [unique] */,
 						 uint32_t _offered /* [in]  */,
 						 uint32_t *_count /* [out] [ref] */,
-						 union spoolss_FormInfo **_info /* [out] [ref,size_is(,*count),switch_is(level)] */,
+						 union spoolss_FormInfo **_info /* [out] [switch_is(level),size_is(,*count),ref] */,
 						 uint32_t *_needed /* [out] [ref] */)
 {
 	struct tevent_req *req;
@@ -7593,7 +7593,7 @@ NTSTATUS dcerpc_spoolss_EnumForms(struct dcerpc_binding_handle *h,
 				  DATA_BLOB *_buffer /* [in] [unique] */,
 				  uint32_t _offered /* [in]  */,
 				  uint32_t *_count /* [out] [ref] */,
-				  union spoolss_FormInfo **_info /* [out] [ref,size_is(,*count),switch_is(level)] */,
+				  union spoolss_FormInfo **_info /* [out] [switch_is(level),size_is(,*count),ref] */,
 				  uint32_t *_needed /* [out] [ref] */,
 				  WERROR *result)
 {
@@ -7720,7 +7720,7 @@ struct tevent_req *dcerpc_spoolss_EnumPorts_send(TALLOC_CTX *mem_ctx,
 						 DATA_BLOB *_buffer /* [in] [unique] */,
 						 uint32_t _offered /* [in]  */,
 						 uint32_t *_count /* [out] [ref] */,
-						 union spoolss_PortInfo **_info /* [out] [size_is(,*count),ref,switch_is(level)] */,
+						 union spoolss_PortInfo **_info /* [out] [size_is(,*count),switch_is(level),ref] */,
 						 uint32_t *_needed /* [out] [ref] */)
 {
 	struct tevent_req *req;
@@ -7831,7 +7831,7 @@ NTSTATUS dcerpc_spoolss_EnumPorts(struct dcerpc_binding_handle *h,
 				  DATA_BLOB *_buffer /* [in] [unique] */,
 				  uint32_t _offered /* [in]  */,
 				  uint32_t *_count /* [out] [ref] */,
-				  union spoolss_PortInfo **_info /* [out] [size_is(,*count),ref,switch_is(level)] */,
+				  union spoolss_PortInfo **_info /* [out] [size_is(,*count),switch_is(level),ref] */,
 				  uint32_t *_needed /* [out] [ref] */,
 				  WERROR *result)
 {
@@ -7958,7 +7958,7 @@ struct tevent_req *dcerpc_spoolss_EnumMonitors_send(TALLOC_CTX *mem_ctx,
 						    DATA_BLOB *_buffer /* [in] [unique] */,
 						    uint32_t _offered /* [in]  */,
 						    uint32_t *_count /* [out] [ref] */,
-						    union spoolss_MonitorInfo **_info /* [out] [size_is(,*count),ref,switch_is(level)] */,
+						    union spoolss_MonitorInfo **_info /* [out] [switch_is(level),size_is(,*count),ref] */,
 						    uint32_t *_needed /* [out] [ref] */)
 {
 	struct tevent_req *req;
@@ -8069,7 +8069,7 @@ NTSTATUS dcerpc_spoolss_EnumMonitors(struct dcerpc_binding_handle *h,
 				     DATA_BLOB *_buffer /* [in] [unique] */,
 				     uint32_t _offered /* [in]  */,
 				     uint32_t *_count /* [out] [ref] */,
-				     union spoolss_MonitorInfo **_info /* [out] [size_is(,*count),ref,switch_is(level)] */,
+				     union spoolss_MonitorInfo **_info /* [out] [switch_is(level),size_is(,*count),ref] */,
 				     uint32_t *_needed /* [out] [ref] */,
 				     WERROR *result)
 {
@@ -8188,7 +8188,7 @@ static void dcerpc_spoolss_AddPort_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_spoolss_AddPort_send(TALLOC_CTX *mem_ctx,
 					       struct tevent_context *ev,
 					       struct dcerpc_binding_handle *h,
-					       const char *_server_name /* [in] [unique,charset(UTF16)] */,
+					       const char *_server_name /* [in] [charset(UTF16),unique] */,
 					       uint32_t _unknown /* [in]  */,
 					       const char *_monitor_name /* [in] [charset(UTF16)] */)
 {
@@ -8282,7 +8282,7 @@ NTSTATUS dcerpc_spoolss_AddPort_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_spoolss_AddPort(struct dcerpc_binding_handle *h,
 				TALLOC_CTX *mem_ctx,
-				const char *_server_name /* [in] [unique,charset(UTF16)] */,
+				const char *_server_name /* [in] [charset(UTF16),unique] */,
 				uint32_t _unknown /* [in]  */,
 				const char *_monitor_name /* [in] [charset(UTF16)] */,
 				WERROR *result)
@@ -8398,7 +8398,7 @@ static void dcerpc_spoolss_DeletePort_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_spoolss_DeletePort_send(TALLOC_CTX *mem_ctx,
 						  struct tevent_context *ev,
 						  struct dcerpc_binding_handle *h,
-						  const char *_server_name /* [in] [unique,charset(UTF16)] */,
+						  const char *_server_name /* [in] [charset(UTF16),unique] */,
 						  uint32_t _ptr /* [in]  */,
 						  const char *_port_name /* [in] [charset(UTF16),ref] */)
 {
@@ -8492,7 +8492,7 @@ NTSTATUS dcerpc_spoolss_DeletePort_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_spoolss_DeletePort(struct dcerpc_binding_handle *h,
 				   TALLOC_CTX *mem_ctx,
-				   const char *_server_name /* [in] [unique,charset(UTF16)] */,
+				   const char *_server_name /* [in] [charset(UTF16),unique] */,
 				   uint32_t _ptr /* [in]  */,
 				   const char *_port_name /* [in] [charset(UTF16),ref] */,
 				   WERROR *result)
@@ -9045,13 +9045,13 @@ static void dcerpc_spoolss_EnumPrintProcDataTypes_done(struct tevent_req *subreq
 struct tevent_req *dcerpc_spoolss_EnumPrintProcDataTypes_send(TALLOC_CTX *mem_ctx,
 							      struct tevent_context *ev,
 							      struct dcerpc_binding_handle *h,
-							      const char *_servername /* [in] [unique,charset(UTF16)] */,
+							      const char *_servername /* [in] [charset(UTF16),unique] */,
 							      const char *_print_processor_name /* [in] [charset(UTF16),unique] */,
 							      uint32_t _level /* [in]  */,
 							      DATA_BLOB *_buffer /* [in] [unique] */,
 							      uint32_t _offered /* [in]  */,
 							      uint32_t *_count /* [out] [ref] */,
-							      union spoolss_PrintProcDataTypesInfo **_info /* [out] [switch_is(level),ref,size_is(,*count)] */,
+							      union spoolss_PrintProcDataTypesInfo **_info /* [out] [size_is(,*count),switch_is(level),ref] */,
 							      uint32_t *_needed /* [out] [ref] */)
 {
 	struct tevent_req *req;
@@ -9158,13 +9158,13 @@ NTSTATUS dcerpc_spoolss_EnumPrintProcDataTypes_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_spoolss_EnumPrintProcDataTypes(struct dcerpc_binding_handle *h,
 					       TALLOC_CTX *mem_ctx,
-					       const char *_servername /* [in] [unique,charset(UTF16)] */,
+					       const char *_servername /* [in] [charset(UTF16),unique] */,
 					       const char *_print_processor_name /* [in] [charset(UTF16),unique] */,
 					       uint32_t _level /* [in]  */,
 					       DATA_BLOB *_buffer /* [in] [unique] */,
 					       uint32_t _offered /* [in]  */,
 					       uint32_t *_count /* [out] [ref] */,
-					       union spoolss_PrintProcDataTypesInfo **_info /* [out] [switch_is(level),ref,size_is(,*count)] */,
+					       union spoolss_PrintProcDataTypesInfo **_info /* [out] [size_is(,*count),switch_is(level),ref] */,
 					       uint32_t *_needed /* [out] [ref] */,
 					       WERROR *result)
 {
@@ -9498,13 +9498,13 @@ struct tevent_req *dcerpc_spoolss_GetPrinterDriver2_send(TALLOC_CTX *mem_ctx,
 							 struct tevent_context *ev,
 							 struct dcerpc_binding_handle *h,
 							 struct policy_handle *_handle /* [in] [ref] */,
-							 const char *_architecture /* [in] [charset(UTF16),unique] */,
+							 const char *_architecture /* [in] [unique,charset(UTF16)] */,
 							 uint32_t _level /* [in]  */,
 							 DATA_BLOB *_buffer /* [in] [unique] */,
 							 uint32_t _offered /* [in]  */,
 							 uint32_t _client_major_version /* [in]  */,
 							 uint32_t _client_minor_version /* [in]  */,
-							 union spoolss_DriverInfo *_info /* [out] [switch_is(level),subcontext(4),subcontext_size(offered),unique] */,
+							 union spoolss_DriverInfo *_info /* [out] [subcontext(4),subcontext_size(offered),switch_is(level),unique] */,
 							 uint32_t *_needed /* [out] [ref] */,
 							 uint32_t *_server_major_version /* [out] [ref] */,
 							 uint32_t *_server_minor_version /* [out] [ref] */)
@@ -9620,13 +9620,13 @@ NTSTATUS dcerpc_spoolss_GetPrinterDriver2_recv(struct tevent_req *req,
 NTSTATUS dcerpc_spoolss_GetPrinterDriver2(struct dcerpc_binding_handle *h,
 					  TALLOC_CTX *mem_ctx,
 					  struct policy_handle *_handle /* [in] [ref] */,
-					  const char *_architecture /* [in] [charset(UTF16),unique] */,
+					  const char *_architecture /* [in] [unique,charset(UTF16)] */,
 					  uint32_t _level /* [in]  */,
 					  DATA_BLOB *_buffer /* [in] [unique] */,
 					  uint32_t _offered /* [in]  */,
 					  uint32_t _client_major_version /* [in]  */,
 					  uint32_t _client_minor_version /* [in]  */,
-					  union spoolss_DriverInfo *_info /* [out] [switch_is(level),subcontext(4),subcontext_size(offered),unique] */,
+					  union spoolss_DriverInfo *_info /* [out] [subcontext(4),subcontext_size(offered),switch_is(level),unique] */,
 					  uint32_t *_needed /* [out] [ref] */,
 					  uint32_t *_server_major_version /* [out] [ref] */,
 					  uint32_t *_server_minor_version /* [out] [ref] */,
@@ -9962,7 +9962,7 @@ struct tevent_req *dcerpc_spoolss_ReplyOpenPrinter_send(TALLOC_CTX *mem_ctx,
 							uint32_t _printer_local /* [in]  */,
 							enum winreg_Type _type /* [in]  */,
 							uint32_t _bufsize /* [in] [range(0,512)] */,
-							uint8_t *_buffer /* [in] [unique,size_is(bufsize)] */,
+							uint8_t *_buffer /* [in] [size_is(bufsize),unique] */,
 							struct policy_handle *_handle /* [out] [ref] */)
 {
 	struct tevent_req *req;
@@ -10069,7 +10069,7 @@ NTSTATUS dcerpc_spoolss_ReplyOpenPrinter(struct dcerpc_binding_handle *h,
 					 uint32_t _printer_local /* [in]  */,
 					 enum winreg_Type _type /* [in]  */,
 					 uint32_t _bufsize /* [in] [range(0,512)] */,
-					 uint8_t *_buffer /* [in] [unique,size_is(bufsize)] */,
+					 uint8_t *_buffer /* [in] [size_is(bufsize),unique] */,
 					 struct policy_handle *_handle /* [out] [ref] */,
 					 WERROR *result)
 {
@@ -10190,7 +10190,7 @@ struct tevent_req *dcerpc_spoolss_RouterReplyPrinter_send(TALLOC_CTX *mem_ctx,
 							  struct policy_handle *_handle /* [in] [ref] */,
 							  uint32_t _flags /* [in]  */,
 							  uint32_t _bufsize /* [in] [range(0,512)] */,
-							  uint8_t *_buffer /* [in] [unique,size_is(bufsize)] */)
+							  uint8_t *_buffer /* [in] [size_is(bufsize),unique] */)
 {
 	struct tevent_req *req;
 	struct dcerpc_spoolss_RouterReplyPrinter_state *state;
@@ -10286,7 +10286,7 @@ NTSTATUS dcerpc_spoolss_RouterReplyPrinter(struct dcerpc_binding_handle *h,
 					   struct policy_handle *_handle /* [in] [ref] */,
 					   uint32_t _flags /* [in]  */,
 					   uint32_t _bufsize /* [in] [range(0,512)] */,
-					   uint8_t *_buffer /* [in] [unique,size_is(bufsize)] */,
+					   uint8_t *_buffer /* [in] [size_is(bufsize),unique] */,
 					   WERROR *result)
 {
 	struct spoolss_RouterReplyPrinter r;
@@ -10615,10 +10615,10 @@ static void dcerpc_spoolss_AddPortEx_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_spoolss_AddPortEx_send(TALLOC_CTX *mem_ctx,
 						 struct tevent_context *ev,
 						 struct dcerpc_binding_handle *h,
-						 const char *_servername /* [in] [charset(UTF16),unique] */,
+						 const char *_servername /* [in] [unique,charset(UTF16)] */,
 						 struct spoolss_SetPortInfoContainer *_port_ctr /* [in] [ref] */,
 						 struct spoolss_PortVarContainer *_port_var_ctr /* [in] [ref] */,
-						 const char *_monitor_name /* [in] [charset(UTF16),unique] */)
+						 const char *_monitor_name /* [in] [unique,charset(UTF16)] */)
 {
 	struct tevent_req *req;
 	struct dcerpc_spoolss_AddPortEx_state *state;
@@ -10711,10 +10711,10 @@ NTSTATUS dcerpc_spoolss_AddPortEx_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_spoolss_AddPortEx(struct dcerpc_binding_handle *h,
 				  TALLOC_CTX *mem_ctx,
-				  const char *_servername /* [in] [charset(UTF16),unique] */,
+				  const char *_servername /* [in] [unique,charset(UTF16)] */,
 				  struct spoolss_SetPortInfoContainer *_port_ctr /* [in] [ref] */,
 				  struct spoolss_PortVarContainer *_port_var_ctr /* [in] [ref] */,
-				  const char *_monitor_name /* [in] [charset(UTF16),unique] */,
+				  const char *_monitor_name /* [in] [unique,charset(UTF16)] */,
 				  WERROR *result)
 {
 	struct spoolss_AddPortEx r;
@@ -10832,7 +10832,7 @@ struct tevent_req *dcerpc_spoolss_RemoteFindFirstPrinterChangeNotifyEx_send(TALL
 									    struct policy_handle *_handle /* [in] [ref] */,
 									    uint32_t _flags /* [in]  */,
 									    uint32_t _options /* [in]  */,
-									    const char *_local_machine /* [in] [charset(UTF16),unique] */,
+									    const char *_local_machine /* [in] [unique,charset(UTF16)] */,
 									    uint32_t _printer_local /* [in]  */,
 									    struct spoolss_NotifyOption *_notify_options /* [in] [unique] */)
 {
@@ -10932,7 +10932,7 @@ NTSTATUS dcerpc_spoolss_RemoteFindFirstPrinterChangeNotifyEx(struct dcerpc_bindi
 							     struct policy_handle *_handle /* [in] [ref] */,
 							     uint32_t _flags /* [in]  */,
 							     uint32_t _options /* [in]  */,
-							     const char *_local_machine /* [in] [charset(UTF16),unique] */,
+							     const char *_local_machine /* [in] [unique,charset(UTF16)] */,
 							     uint32_t _printer_local /* [in]  */,
 							     struct spoolss_NotifyOption *_notify_options /* [in] [unique] */,
 							     WERROR *result)
@@ -11511,7 +11511,7 @@ struct tevent_req *dcerpc_spoolss_OpenPrinterEx_send(TALLOC_CTX *mem_ctx,
 						     struct tevent_context *ev,
 						     struct dcerpc_binding_handle *h,
 						     const char *_printername /* [in] [charset(UTF16),unique] */,
-						     const char *_datatype /* [in] [charset(UTF16),unique] */,
+						     const char *_datatype /* [in] [unique,charset(UTF16)] */,
 						     struct spoolss_DevmodeContainer _devmode_ctr /* [in]  */,
 						     uint32_t _access_mask /* [in]  */,
 						     uint32_t _level /* [in]  */,
@@ -11620,7 +11620,7 @@ NTSTATUS dcerpc_spoolss_OpenPrinterEx_recv(struct tevent_req *req,
 NTSTATUS dcerpc_spoolss_OpenPrinterEx(struct dcerpc_binding_handle *h,
 				      TALLOC_CTX *mem_ctx,
 				      const char *_printername /* [in] [charset(UTF16),unique] */,
-				      const char *_datatype /* [in] [charset(UTF16),unique] */,
+				      const char *_datatype /* [in] [unique,charset(UTF16)] */,
 				      struct spoolss_DevmodeContainer _devmode_ctr /* [in]  */,
 				      uint32_t _access_mask /* [in]  */,
 				      uint32_t _level /* [in]  */,
@@ -11976,7 +11976,7 @@ struct tevent_req *dcerpc_spoolss_SetPort_send(TALLOC_CTX *mem_ctx,
 					       struct tevent_context *ev,
 					       struct dcerpc_binding_handle *h,
 					       const char *_servername /* [in] [charset(UTF16),unique] */,
-					       const char *_port_name /* [in] [unique,charset(UTF16)] */,
+					       const char *_port_name /* [in] [charset(UTF16),unique] */,
 					       struct spoolss_SetPortInfoContainer *_port_ctr /* [in] [ref] */)
 {
 	struct tevent_req *req;
@@ -12070,7 +12070,7 @@ NTSTATUS dcerpc_spoolss_SetPort_recv(struct tevent_req *req,
 NTSTATUS dcerpc_spoolss_SetPort(struct dcerpc_binding_handle *h,
 				TALLOC_CTX *mem_ctx,
 				const char *_servername /* [in] [charset(UTF16),unique] */,
-				const char *_port_name /* [in] [unique,charset(UTF16)] */,
+				const char *_port_name /* [in] [charset(UTF16),unique] */,
 				struct spoolss_SetPortInfoContainer *_port_ctr /* [in] [ref] */,
 				WERROR *result)
 {
@@ -12194,7 +12194,7 @@ struct tevent_req *dcerpc_spoolss_EnumPrinterData_send(TALLOC_CTX *mem_ctx,
 						       uint32_t _value_offered /* [in]  */,
 						       uint32_t *_value_needed /* [out] [ref] */,
 						       enum winreg_Type *_type /* [out] [ref] */,
-						       uint8_t *_data /* [out] [ref,flag(LIBNDR_PRINT_ARRAY_HEX),size_is(data_offered)] */,
+						       uint8_t *_data /* [out] [ref,size_is(data_offered),flag(LIBNDR_PRINT_ARRAY_HEX)] */,
 						       uint32_t _data_offered /* [in]  */,
 						       uint32_t *_data_needed /* [out] [ref] */)
 {
@@ -12323,7 +12323,7 @@ NTSTATUS dcerpc_spoolss_EnumPrinterData(struct dcerpc_binding_handle *h,
 					uint32_t _value_offered /* [in]  */,
 					uint32_t *_value_needed /* [out] [ref] */,
 					enum winreg_Type *_type /* [out] [ref] */,
-					uint8_t *_data /* [out] [ref,flag(LIBNDR_PRINT_ARRAY_HEX),size_is(data_offered)] */,
+					uint8_t *_data /* [out] [ref,size_is(data_offered),flag(LIBNDR_PRINT_ARRAY_HEX)] */,
 					uint32_t _data_offered /* [in]  */,
 					uint32_t *_data_needed /* [out] [ref] */,
 					WERROR *result)
@@ -12666,7 +12666,7 @@ struct tevent_req *dcerpc_spoolss_SetPrinterDataEx_send(TALLOC_CTX *mem_ctx,
 							const char *_key_name /* [in] [charset(UTF16)] */,
 							const char *_value_name /* [in] [charset(UTF16)] */,
 							enum winreg_Type _type /* [in]  */,
-							uint8_t *_data /* [in] [size_is(offered),ref] */,
+							uint8_t *_data /* [in] [ref,size_is(offered)] */,
 							uint32_t _offered /* [in]  */)
 {
 	struct tevent_req *req;
@@ -12766,7 +12766,7 @@ NTSTATUS dcerpc_spoolss_SetPrinterDataEx(struct dcerpc_binding_handle *h,
 					 const char *_key_name /* [in] [charset(UTF16)] */,
 					 const char *_value_name /* [in] [charset(UTF16)] */,
 					 enum winreg_Type _type /* [in]  */,
-					 uint8_t *_data /* [in] [size_is(offered),ref] */,
+					 uint8_t *_data /* [in] [ref,size_is(offered)] */,
 					 uint32_t _offered /* [in]  */,
 					 WERROR *result)
 {
@@ -12891,7 +12891,7 @@ struct tevent_req *dcerpc_spoolss_GetPrinterDataEx_send(TALLOC_CTX *mem_ctx,
 							const char *_key_name /* [in] [charset(UTF16)] */,
 							const char *_value_name /* [in] [charset(UTF16)] */,
 							enum winreg_Type *_type /* [out] [ref] */,
-							uint8_t *_data /* [out] [size_is(offered),ref] */,
+							uint8_t *_data /* [out] [ref,size_is(offered)] */,
 							uint32_t _offered /* [in]  */,
 							uint32_t *_needed /* [out] [ref] */)
 {
@@ -13006,7 +13006,7 @@ NTSTATUS dcerpc_spoolss_GetPrinterDataEx(struct dcerpc_binding_handle *h,
 					 const char *_key_name /* [in] [charset(UTF16)] */,
 					 const char *_value_name /* [in] [charset(UTF16)] */,
 					 enum winreg_Type *_type /* [out] [ref] */,
-					 uint8_t *_data /* [out] [size_is(offered),ref] */,
+					 uint8_t *_data /* [out] [ref,size_is(offered)] */,
 					 uint32_t _offered /* [in]  */,
 					 uint32_t *_needed /* [out] [ref] */,
 					 WERROR *result)
@@ -13370,7 +13370,7 @@ struct tevent_req *dcerpc_spoolss_EnumPrinterKey_send(TALLOC_CTX *mem_ctx,
 						      struct policy_handle *_handle /* [in] [ref] */,
 						      const char *_key_name /* [in] [charset(UTF16)] */,
 						      uint32_t *__ndr_size /* [out] [ref] */,
-						      union spoolss_KeyNames *_key_buffer /* [out] [ref,subcontext_size(*_ndr_size*2),switch_is(*_ndr_size),subcontext(0)] */,
+						      union spoolss_KeyNames *_key_buffer /* [out] [switch_is(*_ndr_size),ref,subcontext_size(*_ndr_size*2),subcontext(0)] */,
 						      uint32_t _offered /* [in]  */,
 						      uint32_t *_needed /* [out] [ref] */)
 {
@@ -13479,7 +13479,7 @@ NTSTATUS dcerpc_spoolss_EnumPrinterKey(struct dcerpc_binding_handle *h,
 				       struct policy_handle *_handle /* [in] [ref] */,
 				       const char *_key_name /* [in] [charset(UTF16)] */,
 				       uint32_t *__ndr_size /* [out] [ref] */,
-				       union spoolss_KeyNames *_key_buffer /* [out] [ref,subcontext_size(*_ndr_size*2),switch_is(*_ndr_size),subcontext(0)] */,
+				       union spoolss_KeyNames *_key_buffer /* [out] [switch_is(*_ndr_size),ref,subcontext_size(*_ndr_size*2),subcontext(0)] */,
 				       uint32_t _offered /* [in]  */,
 				       uint32_t *_needed /* [out] [ref] */,
 				       WERROR *result)
@@ -14233,7 +14233,7 @@ struct tevent_req *dcerpc_spoolss_AddPerMachineConnection_send(TALLOC_CTX *mem_c
 							       struct tevent_context *ev,
 							       struct dcerpc_binding_handle *h,
 							       const char *_server /* [in] [unique,charset(UTF16)] */,
-							       const char *_printername /* [in] [charset(UTF16),ref] */,
+							       const char *_printername /* [in] [ref,charset(UTF16)] */,
 							       const char *_printserver /* [in] [charset(UTF16),ref] */,
 							       const char *_provider /* [in] [charset(UTF16),ref] */)
 {
@@ -14329,7 +14329,7 @@ NTSTATUS dcerpc_spoolss_AddPerMachineConnection_recv(struct tevent_req *req,
 NTSTATUS dcerpc_spoolss_AddPerMachineConnection(struct dcerpc_binding_handle *h,
 						TALLOC_CTX *mem_ctx,
 						const char *_server /* [in] [unique,charset(UTF16)] */,
-						const char *_printername /* [in] [charset(UTF16),ref] */,
+						const char *_printername /* [in] [ref,charset(UTF16)] */,
 						const char *_printserver /* [in] [charset(UTF16),ref] */,
 						const char *_provider /* [in] [charset(UTF16),ref] */,
 						WERROR *result)
@@ -14447,7 +14447,7 @@ struct tevent_req *dcerpc_spoolss_DeletePerMachineConnection_send(TALLOC_CTX *me
 								  struct tevent_context *ev,
 								  struct dcerpc_binding_handle *h,
 								  const char *_server /* [in] [unique,charset(UTF16)] */,
-								  const char *_printername /* [in] [charset(UTF16),ref] */)
+								  const char *_printername /* [in] [ref,charset(UTF16)] */)
 {
 	struct tevent_req *req;
 	struct dcerpc_spoolss_DeletePerMachineConnection_state *state;
@@ -14539,7 +14539,7 @@ NTSTATUS dcerpc_spoolss_DeletePerMachineConnection_recv(struct tevent_req *req,
 NTSTATUS dcerpc_spoolss_DeletePerMachineConnection(struct dcerpc_binding_handle *h,
 						   TALLOC_CTX *mem_ctx,
 						   const char *_server /* [in] [unique,charset(UTF16)] */,
-						   const char *_printername /* [in] [charset(UTF16),ref] */,
+						   const char *_printername /* [in] [ref,charset(UTF16)] */,
 						   WERROR *result)
 {
 	struct spoolss_DeletePerMachineConnection r;
@@ -14659,7 +14659,7 @@ struct tevent_req *dcerpc_spoolss_XcvData_send(TALLOC_CTX *mem_ctx,
 					       const char *_function_name /* [in] [charset(UTF16)] */,
 					       DATA_BLOB _in_data /* [in]  */,
 					       uint32_t __in_data_length /* [in] [value(r->in.in_data.length)] */,
-					       uint8_t *_out_data /* [out] [ref,size_is(out_data_size)] */,
+					       uint8_t *_out_data /* [out] [size_is(out_data_size),ref] */,
 					       uint32_t _out_data_size /* [in]  */,
 					       uint32_t *_needed /* [out] [ref] */,
 					       uint32_t *_status_code /* [in,out] [ref] */)
@@ -14777,7 +14777,7 @@ NTSTATUS dcerpc_spoolss_XcvData(struct dcerpc_binding_handle *h,
 				const char *_function_name /* [in] [charset(UTF16)] */,
 				DATA_BLOB _in_data /* [in]  */,
 				uint32_t __in_data_length /* [in] [value(r->in.in_data.length)] */,
-				uint8_t *_out_data /* [out] [ref,size_is(out_data_size)] */,
+				uint8_t *_out_data /* [out] [size_is(out_data_size),ref] */,
 				uint32_t _out_data_size /* [in]  */,
 				uint32_t *_needed /* [out] [ref] */,
 				uint32_t *_status_code /* [in,out] [ref] */,
@@ -14904,7 +14904,7 @@ static void dcerpc_spoolss_AddPrinterDriverEx_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_spoolss_AddPrinterDriverEx_send(TALLOC_CTX *mem_ctx,
 							  struct tevent_context *ev,
 							  struct dcerpc_binding_handle *h,
-							  const char *_servername /* [in] [charset(UTF16),unique] */,
+							  const char *_servername /* [in] [unique,charset(UTF16)] */,
 							  struct spoolss_AddDriverInfoCtr *_info_ctr /* [in] [ref] */,
 							  uint32_t _flags /* [in]  */)
 {
@@ -14998,7 +14998,7 @@ NTSTATUS dcerpc_spoolss_AddPrinterDriverEx_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_spoolss_AddPrinterDriverEx(struct dcerpc_binding_handle *h,
 					   TALLOC_CTX *mem_ctx,
-					   const char *_servername /* [in] [charset(UTF16),unique] */,
+					   const char *_servername /* [in] [unique,charset(UTF16)] */,
 					   struct spoolss_AddDriverInfoCtr *_info_ctr /* [in] [ref] */,
 					   uint32_t _flags /* [in]  */,
 					   WERROR *result)
@@ -15120,7 +15120,7 @@ struct tevent_req *dcerpc_spoolss_GetCorePrinterDrivers_send(TALLOC_CTX *mem_ctx
 							     const char *_servername /* [in] [unique,charset(UTF16)] */,
 							     const char *_architecture /* [in] [ref,charset(UTF16)] */,
 							     uint32_t _core_driver_size /* [in]  */,
-							     const char *_core_driver_dependencies /* [in] [charset(UTF16),ref,size_is(core_driver_size)] */,
+							     const char *_core_driver_dependencies /* [in] [size_is(core_driver_size),charset(UTF16),ref] */,
 							     uint32_t _core_printer_driver_count /* [in]  */,
 							     struct spoolss_CorePrinterDriver *_core_printer_drivers /* [out] [ref,size_is(core_printer_driver_count)] */)
 {
@@ -15231,7 +15231,7 @@ NTSTATUS dcerpc_spoolss_GetCorePrinterDrivers(struct dcerpc_binding_handle *h,
 					      const char *_servername /* [in] [unique,charset(UTF16)] */,
 					      const char *_architecture /* [in] [ref,charset(UTF16)] */,
 					      uint32_t _core_driver_size /* [in]  */,
-					      const char *_core_driver_dependencies /* [in] [charset(UTF16),ref,size_is(core_driver_size)] */,
+					      const char *_core_driver_dependencies /* [in] [size_is(core_driver_size),charset(UTF16),ref] */,
 					      uint32_t _core_printer_driver_count /* [in]  */,
 					      struct spoolss_CorePrinterDriver *_core_printer_drivers /* [out] [ref,size_is(core_printer_driver_count)] */,
 					      WERROR *result)
@@ -15358,10 +15358,10 @@ struct tevent_req *dcerpc_spoolss_GetPrinterDriverPackagePath_send(TALLOC_CTX *m
 								   struct tevent_context *ev,
 								   struct dcerpc_binding_handle *h,
 								   const char *_servername /* [in] [charset(UTF16),unique] */,
-								   const char *_architecture /* [in] [ref,charset(UTF16)] */,
-								   const char *_language /* [in] [unique,charset(UTF16)] */,
-								   const char *_package_id /* [in] [ref,charset(UTF16)] */,
-								   const char *_driver_package_cab /* [in,out] [unique,size_is(driver_package_cab_size),charset(UTF16)] */,
+								   const char *_architecture /* [in] [charset(UTF16),ref] */,
+								   const char *_language /* [in] [charset(UTF16),unique] */,
+								   const char *_package_id /* [in] [charset(UTF16),ref] */,
+								   const char *_driver_package_cab /* [in,out] [charset(UTF16),size_is(driver_package_cab_size),unique] */,
 								   uint32_t _driver_package_cab_size /* [in]  */,
 								   uint32_t *_required /* [out] [ref] */)
 {
@@ -15479,10 +15479,10 @@ NTSTATUS dcerpc_spoolss_GetPrinterDriverPackagePath_recv(struct tevent_req *req,
 NTSTATUS dcerpc_spoolss_GetPrinterDriverPackagePath(struct dcerpc_binding_handle *h,
 						    TALLOC_CTX *mem_ctx,
 						    const char *_servername /* [in] [charset(UTF16),unique] */,
-						    const char *_architecture /* [in] [ref,charset(UTF16)] */,
-						    const char *_language /* [in] [unique,charset(UTF16)] */,
-						    const char *_package_id /* [in] [ref,charset(UTF16)] */,
-						    const char *_driver_package_cab /* [in,out] [unique,size_is(driver_package_cab_size),charset(UTF16)] */,
+						    const char *_architecture /* [in] [charset(UTF16),ref] */,
+						    const char *_language /* [in] [charset(UTF16),unique] */,
+						    const char *_package_id /* [in] [charset(UTF16),ref] */,
+						    const char *_driver_package_cab /* [in,out] [charset(UTF16),size_is(driver_package_cab_size),unique] */,
 						    uint32_t _driver_package_cab_size /* [in]  */,
 						    uint32_t *_required /* [out] [ref] */,
 						    WERROR *result)

@@ -13,11 +13,11 @@
 staticforward PyTypeObject COMINFO_Type;
 staticforward PyTypeObject IOXIDResolver_InterfaceType;
 
-void initoxidresolver(void);static PyTypeObject *COMVERSION_Type;
-static PyTypeObject *DUALSTRINGARRAY_Type;
-static PyTypeObject *GUID_Type;
-static PyTypeObject *ClientConnection_Type;
+void initoxidresolver(void);static PyTypeObject *DUALSTRINGARRAY_Type;
 static PyTypeObject *Object_Type;
+static PyTypeObject *COMVERSION_Type;
+static PyTypeObject *ClientConnection_Type;
+static PyTypeObject *GUID_Type;
 
 static PyObject *py_COMINFO_get_version(PyObject *obj, void *closure)
 {
@@ -427,18 +427,10 @@ static PyMethodDef oxidresolver_methods[] = {
 void initoxidresolver(void)
 {
 	PyObject *m;
-	PyObject *dep_talloc;
-	PyObject *dep_samba_dcerpc_base;
 	PyObject *dep_samba_dcerpc_misc;
 	PyObject *dep_samba_dcerpc_orpc;
-
-	dep_talloc = PyImport_ImportModule("talloc");
-	if (dep_talloc == NULL)
-		return;
-
-	dep_samba_dcerpc_base = PyImport_ImportModule("samba.dcerpc.base");
-	if (dep_samba_dcerpc_base == NULL)
-		return;
+	PyObject *dep_talloc;
+	PyObject *dep_samba_dcerpc_base;
 
 	dep_samba_dcerpc_misc = PyImport_ImportModule("samba.dcerpc.misc");
 	if (dep_samba_dcerpc_misc == NULL)
@@ -448,24 +440,32 @@ void initoxidresolver(void)
 	if (dep_samba_dcerpc_orpc == NULL)
 		return;
 
-	COMVERSION_Type = (PyTypeObject *)PyObject_GetAttrString(dep_samba_dcerpc_orpc, "COMVERSION");
-	if (COMVERSION_Type == NULL)
+	dep_talloc = PyImport_ImportModule("talloc");
+	if (dep_talloc == NULL)
+		return;
+
+	dep_samba_dcerpc_base = PyImport_ImportModule("samba.dcerpc.base");
+	if (dep_samba_dcerpc_base == NULL)
 		return;
 
 	DUALSTRINGARRAY_Type = (PyTypeObject *)PyObject_GetAttrString(dep_samba_dcerpc_orpc, "DUALSTRINGARRAY");
 	if (DUALSTRINGARRAY_Type == NULL)
 		return;
 
-	GUID_Type = (PyTypeObject *)PyObject_GetAttrString(dep_samba_dcerpc_misc, "GUID");
-	if (GUID_Type == NULL)
+	Object_Type = (PyTypeObject *)PyObject_GetAttrString(dep_talloc, "Object");
+	if (Object_Type == NULL)
+		return;
+
+	COMVERSION_Type = (PyTypeObject *)PyObject_GetAttrString(dep_samba_dcerpc_orpc, "COMVERSION");
+	if (COMVERSION_Type == NULL)
 		return;
 
 	ClientConnection_Type = (PyTypeObject *)PyObject_GetAttrString(dep_samba_dcerpc_base, "ClientConnection");
 	if (ClientConnection_Type == NULL)
 		return;
 
-	Object_Type = (PyTypeObject *)PyObject_GetAttrString(dep_talloc, "Object");
-	if (Object_Type == NULL)
+	GUID_Type = (PyTypeObject *)PyObject_GetAttrString(dep_samba_dcerpc_misc, "GUID");
+	if (GUID_Type == NULL)
 		return;
 
 	COMINFO_Type.tp_base = Object_Type;

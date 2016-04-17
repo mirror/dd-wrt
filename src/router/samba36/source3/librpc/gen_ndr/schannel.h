@@ -24,7 +24,7 @@ struct netlogon_creds_CredentialState {
 	const char *computer_name;/* [charset(UTF8)] */
 	const char *account_name;/* [charset(UTF8)] */
 	struct dom_sid *sid;/* [unique] */
-}/* [public,flag(LIBNDR_PRINT_ARRAY_HEX)] */;
+}/* [flag(LIBNDR_PRINT_ARRAY_HEX),public] */;
 
 enum NL_AUTH_MESSAGE_TYPE
 #ifndef USE_UINT_ENUMS
@@ -49,7 +49,7 @@ enum NL_AUTH_MESSAGE_TYPE
 union NL_AUTH_MESSAGE_BUFFER {
 	const char * a;/* [case(NL_FLAG_OEM_NETBIOS_DOMAIN_NAME),flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
 	const char * u;/* [case(NL_FLAG_UTF8_DNS_DOMAIN_NAME)] */
-}/* [public,noprint,nodiscriminant] */;
+}/* [noprint,nodiscriminant,public] */;
 
 union NL_AUTH_MESSAGE_BUFFER_REPLY {
 	uint32_t dummy;/* [case(NL_NEGOTIATE_RESPONSE)] */

@@ -11,8 +11,8 @@
 #include "librpc/gen_ndr/orpc.h"
 staticforward PyTypeObject rot_InterfaceType;
 
-void initrot(void);static PyTypeObject *ClientConnection_Type;
-static PyTypeObject *MInterfacePointer_Type;
+void initrot(void);static PyTypeObject *MInterfacePointer_Type;
+static PyTypeObject *ClientConnection_Type;
 
 static bool pack_py_rot_add_args_in(PyObject *args, PyObject *kwargs, struct rot_add *r)
 {
@@ -307,12 +307,12 @@ void initrot(void)
 	if (dep_samba_dcerpc_orpc == NULL)
 		return;
 
-	ClientConnection_Type = (PyTypeObject *)PyObject_GetAttrString(dep_samba_dcerpc_base, "ClientConnection");
-	if (ClientConnection_Type == NULL)
-		return;
-
 	MInterfacePointer_Type = (PyTypeObject *)PyObject_GetAttrString(dep_samba_dcerpc_orpc, "MInterfacePointer");
 	if (MInterfacePointer_Type == NULL)
+		return;
+
+	ClientConnection_Type = (PyTypeObject *)PyObject_GetAttrString(dep_samba_dcerpc_base, "ClientConnection");
+	if (ClientConnection_Type == NULL)
 		return;
 
 	rot_InterfaceType.tp_base = ClientConnection_Type;

@@ -82,7 +82,7 @@ struct xattr_DOSATTRIB {
 	const char * attrib_hex;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
 	uint16_t version;
 	union xattr_DosInfo info;/* [switch_is(version)] */
-}/* [public,nopull,nopush,noprint] */;
+}/* [public,nopush,noprint,nopull] */;
 
 struct xattr_EA {
 	const char * name;/* [flag(LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM)] */
@@ -108,7 +108,7 @@ struct xattr_DosStream {
 
 struct xattr_DosStreams {
 	uint32_t num_streams;
-	struct xattr_DosStream *streams;/* [unique,size_is(num_streams)] */
+	struct xattr_DosStream *streams;/* [size_is(num_streams),unique] */
 }/* [public] */;
 
 struct security_descriptor_hash_v2 {
@@ -125,7 +125,7 @@ struct security_descriptor_hash_v3 {
 union xattr_NTACL_Info {
 	struct security_descriptor *sd;/* [unique,case] */
 	struct security_descriptor_hash_v2 *sd_hs2;/* [unique,case(2)] */
-	struct security_descriptor_hash_v3 *sd_hs3;/* [unique,case(3)] */
+	struct security_descriptor_hash_v3 *sd_hs3;/* [case(3),unique] */
 }/* [switch_type(uint16)] */;
 
 struct xattr_NTACL {

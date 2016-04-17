@@ -300,7 +300,7 @@ struct frstrans_RequestUpdates {
 	} in;
 
 	struct {
-		struct frstrans_Update *frs_update;/* [size_is(credits_available),length_is(*update_count),ref] */
+		struct frstrans_Update *frs_update;/* [ref,size_is(credits_available),length_is(*update_count)] */
 		uint32_t *update_count;/* [ref] */
 		enum frstrans_UpdateStatus *update_status;/* [ref] */
 		struct GUID *gvsn_db_guid;/* [ref] */
@@ -388,7 +388,7 @@ struct frstrans_InitializeFileTransferAsync {
 	struct {
 		struct policy_handle *server_context;/* [ref] */
 		struct frstrans_RdcFileInfo **rdc_file_info;/* [ref] */
-		uint8_t *data_buffer;/* [ref,length_is(*size_read),size_is(buffer_size)] */
+		uint8_t *data_buffer;/* [size_is(buffer_size),length_is(*size_read),ref] */
 		uint32_t *size_read;/* [ref] */
 		uint32_t *is_end_of_file;/* [ref] */
 		struct frstrans_Update *frs_update;/* [ref] */
