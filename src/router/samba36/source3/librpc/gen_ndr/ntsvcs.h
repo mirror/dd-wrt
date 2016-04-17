@@ -83,7 +83,7 @@ struct PNP_ReportLogOn {
 
 struct PNP_ValidateDeviceInstance {
 	struct {
-		const char *devicepath;/* [charset(UTF16),ref] */
+		const char *devicepath;/* [ref,charset(UTF16)] */
 		uint32_t flags;
 	} in;
 
@@ -120,7 +120,7 @@ struct PNP_EnumerateSubKeys {
 
 struct PNP_GetDeviceList {
 	struct {
-		const char *filter;/* [charset(UTF16),unique] */
+		const char *filter;/* [unique,charset(UTF16)] */
 		uint32_t flags;
 		uint32_t *length;/* [ref] */
 	} in;
@@ -136,7 +136,7 @@ struct PNP_GetDeviceList {
 
 struct PNP_GetDeviceListSize {
 	struct {
-		const char *devicename;/* [charset(UTF16),unique] */
+		const char *devicename;/* [unique,charset(UTF16)] */
 		uint32_t flags;
 	} in;
 
@@ -158,7 +158,7 @@ struct PNP_GetDepth {
 
 struct PNP_GetDeviceRegProp {
 	struct {
-		const char *devicepath;/* [charset(UTF16),ref] */
+		const char *devicepath;/* [ref,charset(UTF16)] */
 		uint32_t property;
 		uint32_t flags;
 		enum winreg_Type *reg_data_type;/* [ref] */
@@ -388,9 +388,9 @@ struct PNP_RequestEjectPC {
 struct PNP_HwProfFlags {
 	struct {
 		uint32_t action;
-		const char *devicepath;/* [ref,charset(UTF16)] */
+		const char *devicepath;/* [charset(UTF16),ref] */
 		uint32_t config;
-		const char *unknown5;/* [unique,charset(UTF16)] */
+		const char *unknown5;/* [charset(UTF16),unique] */
 		uint32_t name_length;
 		uint32_t flags;
 		uint32_t *profile_flags;/* [ref] */

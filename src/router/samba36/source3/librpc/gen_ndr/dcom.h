@@ -175,7 +175,7 @@ struct RemAddRef {
 
 	struct {
 		struct ORPCTHAT *ORPCthat;/* [ref] */
-		WERROR *pResults;/* [size_is(cInterfaceRefs),unique] */
+		WERROR *pResults;/* [unique,size_is(cInterfaceRefs)] */
 		WERROR result;
 	} out;
 
@@ -290,13 +290,13 @@ struct RemQueryInterface2 {
 		struct ORPCTHIS ORPCthis;
 		struct GUID *ripid;/* [unique] */
 		uint16_t cIids;
-		struct GUID *iids;/* [size_is(cIids),unique] */
+		struct GUID *iids;/* [unique,size_is(cIids)] */
 	} in;
 
 	struct {
 		struct ORPCTHAT *ORPCthat;/* [ref] */
 		WERROR *phr;/* [size_is(cIids),unique] */
-		struct MInterfacePointer *ppMIF;/* [size_is(cIids),unique] */
+		struct MInterfacePointer *ppMIF;/* [unique,size_is(cIids)] */
 		WERROR result;
 	} out;
 
@@ -364,7 +364,7 @@ struct GetIDsOfNames {
 
 	struct {
 		struct ORPCTHAT *ORPCthat;/* [ref] */
-		uint32_t *rgDispId;/* [unique,size_is(cNames)] */
+		uint32_t *rgDispId;/* [size_is(cNames),unique] */
 		WERROR result;
 	} out;
 
@@ -465,7 +465,7 @@ struct Read {
 struct Write {
 	struct {
 		struct ORPCTHIS ORPCthis;
-		uint8_t *data;/* [size_is(num_requested),unique] */
+		uint8_t *data;/* [unique,size_is(num_requested)] */
 		uint32_t num_requested;
 	} in;
 

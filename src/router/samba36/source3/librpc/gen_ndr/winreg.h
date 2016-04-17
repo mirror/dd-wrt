@@ -31,11 +31,11 @@
 struct winreg_String {
 	uint16_t name_len;/* [value(strlen_m_term(name)*2)] */
 	uint16_t name_size;/* [value(strlen_m_term(name)*2)] */
-	const char *name;/* [unique,charset(UTF16)] */
+	const char *name;/* [charset(UTF16),unique] */
 }/* [public] */;
 
 struct KeySecurityData {
-	uint8_t *data;/* [unique,size_is(size),length_is(len)] */
+	uint8_t *data;/* [length_is(len),unique,size_is(size)] */
 	uint32_t size;
 	uint32_t len;
 };
@@ -70,13 +70,13 @@ enum winreg_CreateAction
 struct winreg_StringBuf {
 	uint16_t length;/* [value(strlen_m_term_null(name)*2)] */
 	uint16_t size;
-	const char *name;/* [charset(UTF16),unique,length_is(length/2),size_is(size/2)] */
+	const char *name;/* [unique,length_is(length/2),size_is(size/2),charset(UTF16)] */
 };
 
 struct winreg_ValNameBuf {
 	uint16_t length;/* [value(strlen_m_term(name)*2)] */
 	uint16_t size;
-	const char *name;/* [charset(UTF16),size_is(size/2),unique,length_is(length/2)] */
+	const char *name;/* [unique,length_is(length/2),size_is(size/2),charset(UTF16)] */
 };
 
 /* bitmap winreg_NotifyChangeType */
@@ -259,7 +259,7 @@ struct winreg_EnumValue {
 		uint32_t enum_index;
 		struct winreg_ValNameBuf *name;/* [ref] */
 		enum winreg_Type *type;/* [unique] */
-		uint8_t *value;/* [range(0,0x4000000),size_is(size?*size:0),length_is(length?*length:0),unique] */
+		uint8_t *value;/* [length_is(length?*length:0),unique,size_is(size?*size:0),range(0,0x4000000)] */
 		uint32_t *size;/* [unique] */
 		uint32_t *length;/* [unique] */
 	} in;
@@ -267,7 +267,7 @@ struct winreg_EnumValue {
 	struct {
 		struct winreg_ValNameBuf *name;/* [ref] */
 		enum winreg_Type *type;/* [unique] */
-		uint8_t *value;/* [range(0,0x4000000),size_is(size?*size:0),length_is(length?*length:0),unique] */
+		uint8_t *value;/* [length_is(length?*length:0),unique,size_is(size?*size:0),range(0,0x4000000)] */
 		uint32_t *size;/* [unique] */
 		uint32_t *length;/* [unique] */
 		WERROR result;
@@ -378,14 +378,14 @@ struct winreg_QueryValue {
 		struct policy_handle *handle;/* [ref] */
 		struct winreg_String *value_name;/* [ref] */
 		enum winreg_Type *type;/* [unique] */
-		uint8_t *data;/* [length_is(data_length?*data_length:0),unique,size_is(data_size?*data_size:0),range(0,0x4000000)] */
+		uint8_t *data;/* [unique,length_is(data_length?*data_length:0),size_is(data_size?*data_size:0),range(0,0x4000000)] */
 		uint32_t *data_size;/* [unique] */
 		uint32_t *data_length;/* [unique] */
 	} in;
 
 	struct {
 		enum winreg_Type *type;/* [unique] */
-		uint8_t *data;/* [length_is(data_length?*data_length:0),unique,size_is(data_size?*data_size:0),range(0,0x4000000)] */
+		uint8_t *data;/* [unique,length_is(data_length?*data_length:0),size_is(data_size?*data_size:0),range(0,0x4000000)] */
 		uint32_t *data_size;/* [unique] */
 		uint32_t *data_length;/* [unique] */
 		WERROR result;
@@ -552,7 +552,7 @@ struct winreg_OpenHKDD {
 struct winreg_QueryMultipleValues {
 	struct {
 		struct policy_handle *key_handle;/* [ref] */
-		struct QueryMultipleValue *values_in;/* [size_is(num_values),length_is(num_values),ref] */
+		struct QueryMultipleValue *values_in;/* [length_is(num_values),size_is(num_values),ref] */
 		uint32_t num_values;
 		uint8_t *buffer;/* [size_is(*buffer_size),unique,length_is(*buffer_size)] */
 		uint32_t *buffer_size;/* [ref] */
@@ -638,7 +638,7 @@ struct winreg_QueryMultipleValues2 {
 	} in;
 
 	struct {
-		struct QueryMultipleValue *values_out;/* [size_is(num_values),length_is(num_values),ref] */
+		struct QueryMultipleValue *values_out;/* [ref,length_is(num_values),size_is(num_values)] */
 		uint32_t *needed;/* [ref] */
 		uint8_t *buffer;/* [size_is(*offered),unique,length_is(*offered)] */
 		WERROR result;

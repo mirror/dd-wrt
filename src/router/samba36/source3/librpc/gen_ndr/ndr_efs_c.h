@@ -91,14 +91,14 @@ struct tevent_req *dcerpc_EfsRpcQueryUsersOnFile_send(TALLOC_CTX *mem_ctx,
 						      struct tevent_context *ev,
 						      struct dcerpc_binding_handle *h,
 						      const char *_FileName /* [in] [charset(UTF16)] */,
-						      struct ENCRYPTION_CERTIFICATE_HASH_LIST **_pUsers /* [out] [unique,ref] */);
+						      struct ENCRYPTION_CERTIFICATE_HASH_LIST **_pUsers /* [out] [ref,unique] */);
 NTSTATUS dcerpc_EfsRpcQueryUsersOnFile_recv(struct tevent_req *req,
 					    TALLOC_CTX *mem_ctx,
 					    WERROR *result);
 NTSTATUS dcerpc_EfsRpcQueryUsersOnFile(struct dcerpc_binding_handle *h,
 				       TALLOC_CTX *mem_ctx,
 				       const char *_FileName /* [in] [charset(UTF16)] */,
-				       struct ENCRYPTION_CERTIFICATE_HASH_LIST **_pUsers /* [out] [unique,ref] */,
+				       struct ENCRYPTION_CERTIFICATE_HASH_LIST **_pUsers /* [out] [ref,unique] */,
 				       WERROR *result);
 
 struct tevent_req *dcerpc_EfsRpcQueryRecoveryAgents_r_send(TALLOC_CTX *mem_ctx,
@@ -111,14 +111,14 @@ struct tevent_req *dcerpc_EfsRpcQueryRecoveryAgents_send(TALLOC_CTX *mem_ctx,
 							 struct tevent_context *ev,
 							 struct dcerpc_binding_handle *h,
 							 const char *_FileName /* [in] [charset(UTF16)] */,
-							 struct ENCRYPTION_CERTIFICATE_HASH_LIST **_pRecoveryAgents /* [out] [ref,unique] */);
+							 struct ENCRYPTION_CERTIFICATE_HASH_LIST **_pRecoveryAgents /* [out] [unique,ref] */);
 NTSTATUS dcerpc_EfsRpcQueryRecoveryAgents_recv(struct tevent_req *req,
 					       TALLOC_CTX *mem_ctx,
 					       WERROR *result);
 NTSTATUS dcerpc_EfsRpcQueryRecoveryAgents(struct dcerpc_binding_handle *h,
 					  TALLOC_CTX *mem_ctx,
 					  const char *_FileName /* [in] [charset(UTF16)] */,
-					  struct ENCRYPTION_CERTIFICATE_HASH_LIST **_pRecoveryAgents /* [out] [ref,unique] */,
+					  struct ENCRYPTION_CERTIFICATE_HASH_LIST **_pRecoveryAgents /* [out] [unique,ref] */,
 					  WERROR *result);
 
 struct tevent_req *dcerpc_EfsRpcSetFileEncryptionKey_r_send(TALLOC_CTX *mem_ctx,

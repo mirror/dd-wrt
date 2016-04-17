@@ -206,7 +206,7 @@ struct dom_sid {
 	int8_t num_auths;/* [range(0,15)] */
 	uint8_t id_auth[6];
 	uint32_t sub_auths[15];
-}/* [nopush,nopull,public,noprint,nosize,gensize] */;
+}/* [public,nopush,nosize,gensize,noprint,nopull] */;
 
 enum sec_privilege
 #ifndef USE_UINT_ENUMS
@@ -377,7 +377,7 @@ struct security_ace {
 	uint32_t access_mask;
 	union security_ace_object_ctr object;/* [switch_is(type)] */
 	struct dom_sid trustee;
-}/* [nopull,public,gensize,nosize] */;
+}/* [public,nopull,gensize,nosize] */;
 
 enum security_acl_revision
 #ifndef USE_UINT_ENUMS
@@ -397,7 +397,7 @@ struct security_acl {
 	uint16_t size;/* [value(ndr_size_security_acl(r,ndr->flags))] */
 	uint32_t num_aces;/* [range(0,1000)] */
 	struct security_ace *aces;
-}/* [gensize,nosize,public] */;
+}/* [public,nosize,gensize] */;
 
 enum security_descriptor_revision
 #ifndef USE_UINT_ENUMS
@@ -435,11 +435,11 @@ struct security_descriptor {
 	struct dom_sid *group_sid;/* [relative] */
 	struct security_acl *sacl;/* [relative] */
 	struct security_acl *dacl;/* [relative] */
-}/* [public,flag(LIBNDR_FLAG_LITTLE_ENDIAN),gensize,nosize] */;
+}/* [public,gensize,flag(LIBNDR_FLAG_LITTLE_ENDIAN),nosize] */;
 
 struct sec_desc_buf {
 	uint32_t sd_size;/* [value(ndr_size_security_descriptor(sd,ndr->flags)),range(0,0x40000)] */
-	struct security_descriptor *sd;/* [unique,subcontext(4)] */
+	struct security_descriptor *sd;/* [subcontext(4),unique] */
 }/* [public] */;
 
 struct security_token {
@@ -454,7 +454,7 @@ struct security_unix_token {
 	uid_t gid;
 	uint32_t ngroups;
 	gid_t *groups;/* [size_is(ngroups)] */
-}/* [public,gensize] */;
+}/* [gensize,public] */;
 
 /* bitmap security_secinfo */
 #define SECINFO_OWNER ( 0x00000001 )
