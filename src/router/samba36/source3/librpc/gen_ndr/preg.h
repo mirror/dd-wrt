@@ -12,21 +12,21 @@
 #define _HEADER_preg
 
 struct preg_entry {
-	const char *_opening_bracket;/* [noprint,charset(DOS),value("[")] */
+	const char *_opening_bracket;/* [value("["),charset(DOS),noprint] */
 	const char * keyname;/* [flag(LIBNDR_FLAG_STR_NULLTERM|LIBNDR_FLAG_ALIGN2)] */
-	const char *_sep1;/* [value(";"),noprint,charset(DOS)] */
+	const char *_sep1;/* [value(";"),charset(DOS),noprint] */
 	const char * valuename;/* [flag(LIBNDR_FLAG_STR_NULLTERM|LIBNDR_FLAG_ALIGN2)] */
-	const char *_sep2;/* [charset(DOS),noprint,value(";")] */
+	const char *_sep2;/* [noprint,charset(DOS),value(";")] */
 	enum winreg_Type type;
-	const char *_sep3;/* [value(";"),charset(DOS),noprint] */
+	const char *_sep3;/* [noprint,charset(DOS),value(";")] */
 	uint32_t size;
-	const char *_sep4;/* [value(";"),noprint,charset(DOS)] */
+	const char *_sep4;/* [charset(DOS),value(";"),noprint] */
 	uint8_t *data;
-	const char *_closing_bracket;/* [value("]"),noprint,charset(DOS)] */
+	const char *_closing_bracket;/* [charset(DOS),value("]"),noprint] */
 }/* [public] */;
 
 struct preg_header {
-	const char *signature;/* [charset(DOS),value("PReg")] */
+	const char *signature;/* [value("PReg"),charset(DOS)] */
 	uint32_t version;/* [value] */
 }/* [public] */;
 
@@ -34,7 +34,7 @@ struct preg_file {
 	struct preg_header header;
 	uint32_t num_entries;
 	struct preg_entry *entries;
-}/* [public,nopush,flag(LIBNDR_FLAG_NOALIGN),nopull] */;
+}/* [flag(LIBNDR_FLAG_NOALIGN),nopull,public,nopush] */;
 
 
 struct decode_preg_file {

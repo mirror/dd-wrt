@@ -658,19 +658,19 @@ union dcerpc_sec_vt_union {
 
 struct dcerpc_sec_vt {
 	uint16_t command;
-	union dcerpc_sec_vt_union u;/* [switch_is(command&DCERPC_SEC_VT_COMMAND_ENUM),subcontext(2),flag(LIBNDR_FLAG_SUBCONTEXT_NO_UNREAD_BYTES)] */
+	union dcerpc_sec_vt_union u;/* [subcontext(2),flag(LIBNDR_FLAG_SUBCONTEXT_NO_UNREAD_BYTES),switch_is(command&DCERPC_SEC_VT_COMMAND_ENUM)] */
 };
 
 struct dcerpc_sec_vt_count {
 	uint16_t count;
-}/* [nopull,public,nopush] */;
+}/* [nopull,nopush,public] */;
 
 struct dcerpc_sec_verification_trailer {
 	DATA_BLOB _pad;/* [flag(LIBNDR_FLAG_ALIGN4)] */
 	uint8_t magic[8];/* [value(DCERPC_SEC_VT_MAGIC)] */
 	struct dcerpc_sec_vt_count count;
 	struct dcerpc_sec_vt *commands;
-}/* [flag(LIBNDR_PRINT_ARRAY_HEX),public] */;
+}/* [public,flag(LIBNDR_PRINT_ARRAY_HEX)] */;
 
 #endif /* _HEADER_dcerpc */
 #endif /* _PIDL_HEADER_dcerpc */

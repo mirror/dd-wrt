@@ -141,11 +141,11 @@ struct echo_SourceData {
 
 struct echo_TestCall {
 	struct {
-		const char *s1;/* [charset(UTF16),ref] */
+		const char *s1;/* [ref,charset(UTF16)] */
 	} in;
 
 	struct {
-		const char **s2;/* [charset(UTF16),ref] */
+		const char **s2;/* [ref,charset(UTF16)] */
 	} out;
 
 };
@@ -157,7 +157,7 @@ struct echo_TestCall2 {
 	} in;
 
 	struct {
-		union echo_Info *info;/* [ref,switch_is(level)] */
+		union echo_Info *info;/* [switch_is(level),ref] */
 		NTSTATUS result;
 	} out;
 

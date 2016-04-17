@@ -260,7 +260,7 @@ struct tevent_req *dcerpc_RemAddRef_send(TALLOC_CTX *mem_ctx,
 					 struct ORPCTHIS _ORPCthis /* [in]  */,
 					 uint16_t _cInterfaceRefs /* [in]  */,
 					 struct REMINTERFACEREF *_InterfaceRefs /* [in] [size_is(cInterfaceRefs)] */,
-					 WERROR *_pResults /* [out] [size_is(cInterfaceRefs),unique] */);
+					 WERROR *_pResults /* [out] [unique,size_is(cInterfaceRefs)] */);
 NTSTATUS dcerpc_RemAddRef_recv(struct tevent_req *req,
 			       TALLOC_CTX *mem_ctx,
 			       WERROR *result);
@@ -270,7 +270,7 @@ NTSTATUS dcerpc_RemAddRef(struct dcerpc_binding_handle *h,
 			  struct ORPCTHIS _ORPCthis /* [in]  */,
 			  uint16_t _cInterfaceRefs /* [in]  */,
 			  struct REMINTERFACEREF *_InterfaceRefs /* [in] [size_is(cInterfaceRefs)] */,
-			  WERROR *_pResults /* [out] [size_is(cInterfaceRefs),unique] */,
+			  WERROR *_pResults /* [out] [unique,size_is(cInterfaceRefs)] */,
 			  WERROR *result);
 
 struct tevent_req *dcerpc_RemRelease_r_send(TALLOC_CTX *mem_ctx,
@@ -456,9 +456,9 @@ struct tevent_req *dcerpc_RemQueryInterface2_send(TALLOC_CTX *mem_ctx,
 						  struct ORPCTHIS _ORPCthis /* [in]  */,
 						  struct GUID *_ripid /* [in] [unique] */,
 						  uint16_t _cIids /* [in]  */,
-						  struct GUID *_iids /* [in] [size_is(cIids),unique] */,
+						  struct GUID *_iids /* [in] [unique,size_is(cIids)] */,
 						  WERROR *_phr /* [out] [size_is(cIids),unique] */,
-						  struct MInterfacePointer *_ppMIF /* [out] [size_is(cIids),unique] */);
+						  struct MInterfacePointer *_ppMIF /* [out] [unique,size_is(cIids)] */);
 NTSTATUS dcerpc_RemQueryInterface2_recv(struct tevent_req *req,
 					TALLOC_CTX *mem_ctx,
 					WERROR *result);
@@ -468,9 +468,9 @@ NTSTATUS dcerpc_RemQueryInterface2(struct dcerpc_binding_handle *h,
 				   struct ORPCTHIS _ORPCthis /* [in]  */,
 				   struct GUID *_ripid /* [in] [unique] */,
 				   uint16_t _cIids /* [in]  */,
-				   struct GUID *_iids /* [in] [size_is(cIids),unique] */,
+				   struct GUID *_iids /* [in] [unique,size_is(cIids)] */,
 				   WERROR *_phr /* [out] [size_is(cIids),unique] */,
-				   struct MInterfacePointer *_ppMIF /* [out] [size_is(cIids),unique] */,
+				   struct MInterfacePointer *_ppMIF /* [out] [unique,size_is(cIids)] */,
 				   WERROR *result);
 
 #endif /* _HEADER_RPC_IRemUnknown2 */
@@ -541,7 +541,7 @@ struct tevent_req *dcerpc_GetIDsOfNames_send(TALLOC_CTX *mem_ctx,
 					     struct GUID *_riid /* [in] [unique] */,
 					     uint16_t _cNames /* [in]  */,
 					     uint32_t _lcid /* [in]  */,
-					     uint32_t *_rgDispId /* [out] [unique,size_is(cNames)] */);
+					     uint32_t *_rgDispId /* [out] [size_is(cNames),unique] */);
 NTSTATUS dcerpc_GetIDsOfNames_recv(struct tevent_req *req,
 				   TALLOC_CTX *mem_ctx,
 				   WERROR *result);
@@ -552,7 +552,7 @@ NTSTATUS dcerpc_GetIDsOfNames(struct dcerpc_binding_handle *h,
 			      struct GUID *_riid /* [in] [unique] */,
 			      uint16_t _cNames /* [in]  */,
 			      uint32_t _lcid /* [in]  */,
-			      uint32_t *_rgDispId /* [out] [unique,size_is(cNames)] */,
+			      uint32_t *_rgDispId /* [out] [size_is(cNames),unique] */,
 			      WERROR *result);
 
 struct tevent_req *dcerpc_Invoke_r_send(TALLOC_CTX *mem_ctx,
@@ -710,7 +710,7 @@ struct tevent_req *dcerpc_Write_send(TALLOC_CTX *mem_ctx,
 				     struct dcerpc_binding_handle *h,
 				     struct ORPCTHAT *_ORPCthat /* [out] [ref] */,
 				     struct ORPCTHIS _ORPCthis /* [in]  */,
-				     uint8_t *_data /* [in] [size_is(num_requested),unique] */,
+				     uint8_t *_data /* [in] [unique,size_is(num_requested)] */,
 				     uint32_t _num_requested /* [in]  */,
 				     uint32_t *_num_written /* [out] [ref] */);
 NTSTATUS dcerpc_Write_recv(struct tevent_req *req,
@@ -720,7 +720,7 @@ NTSTATUS dcerpc_Write(struct dcerpc_binding_handle *h,
 		      TALLOC_CTX *mem_ctx,
 		      struct ORPCTHAT *_ORPCthat /* [out] [ref] */,
 		      struct ORPCTHIS _ORPCthis /* [in]  */,
-		      uint8_t *_data /* [in] [size_is(num_requested),unique] */,
+		      uint8_t *_data /* [in] [unique,size_is(num_requested)] */,
 		      uint32_t _num_requested /* [in]  */,
 		      uint32_t *_num_written /* [out] [ref] */,
 		      WERROR *result);

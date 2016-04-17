@@ -26,8 +26,8 @@ staticforward PyTypeObject u_null_Type;
 staticforward PyTypeObject OBJREF_Type;
 staticforward PyTypeObject MInterfacePointer_Type;
 
-void initorpc(void);static PyTypeObject *GUID_Type;
-static PyTypeObject *Object_Type;
+void initorpc(void);static PyTypeObject *Object_Type;
+static PyTypeObject *GUID_Type;
 
 static PyObject *py_COMVERSION_get_MajorVersion(PyObject *obj, void *closure)
 {
@@ -1993,23 +1993,23 @@ static PyMethodDef orpc_methods[] = {
 void initorpc(void)
 {
 	PyObject *m;
-	PyObject *dep_talloc;
 	PyObject *dep_samba_dcerpc_misc;
-
-	dep_talloc = PyImport_ImportModule("talloc");
-	if (dep_talloc == NULL)
-		return;
+	PyObject *dep_talloc;
 
 	dep_samba_dcerpc_misc = PyImport_ImportModule("samba.dcerpc.misc");
 	if (dep_samba_dcerpc_misc == NULL)
 		return;
 
-	GUID_Type = (PyTypeObject *)PyObject_GetAttrString(dep_samba_dcerpc_misc, "GUID");
-	if (GUID_Type == NULL)
+	dep_talloc = PyImport_ImportModule("talloc");
+	if (dep_talloc == NULL)
 		return;
 
 	Object_Type = (PyTypeObject *)PyObject_GetAttrString(dep_talloc, "Object");
 	if (Object_Type == NULL)
+		return;
+
+	GUID_Type = (PyTypeObject *)PyObject_GetAttrString(dep_samba_dcerpc_misc, "GUID");
+	if (GUID_Type == NULL)
 		return;
 
 	COMVERSION_Type.tp_base = Object_Type;
@@ -2129,42 +2129,42 @@ void initorpc(void)
 	if (m == NULL)
 		return;
 
-	PyModule_AddObject(m, "SORF_OXRES7", PyInt_FromLong(SORF_OXRES7));
-	PyModule_AddObject(m, "ORPCF_RESERVED2", PyInt_FromLong(ORPCF_RESERVED2));
-	PyModule_AddObject(m, "SORF_OXRES1", PyInt_FromLong(SORF_OXRES1));
-	PyModule_AddObject(m, "dcom_ext_debugging", PyString_FromString("f1f19680-4d2a-11ce-a66a-0020af6e72f4"));
-	PyModule_AddObject(m, "COM_OUTOFMEMORY", PyInt_FromLong(COM_OUTOFMEMORY));
-	PyModule_AddObject(m, "COM_MAJOR_VERSION", PyInt_FromLong(5));
-	PyModule_AddObject(m, "COM_INVALID_OXID", PyInt_FromLong(COM_INVALID_OXID));
-	PyModule_AddObject(m, "dcom_ext_extended_error", PyString_FromString("f1f19681-4d2a-11ce-a66a-0020af6e72f4"));
-	PyModule_AddObject(m, "OBJREF_STANDARD", PyInt_FromLong(OBJREF_STANDARD));
-	PyModule_AddObject(m, "SORF_OXRES8", PyInt_FromLong(SORF_OXRES8));
-	PyModule_AddObject(m, "ORPCF_RESERVED4", PyInt_FromLong(ORPCF_RESERVED4));
-	PyModule_AddObject(m, "ORPCF_RESERVED3", PyInt_FromLong(ORPCF_RESERVED3));
-	PyModule_AddObject(m, "SORF_OXRES5", PyInt_FromLong(SORF_OXRES5));
-	PyModule_AddObject(m, "SORF_NOPING", PyInt_FromLong(SORF_NOPING));
-	PyModule_AddObject(m, "COM_C_AUTHZ_NONE", PyInt_FromLong(0xffff));
-	PyModule_AddObject(m, "ORPCF_LOCAL", PyInt_FromLong(ORPCF_LOCAL));
-	PyModule_AddObject(m, "SORF_OXRES3", PyInt_FromLong(SORF_OXRES3));
-	PyModule_AddObject(m, "COM_NOINTERFACE", PyInt_FromLong(COM_NOINTERFACE));
-	PyModule_AddObject(m, "COM_INVALIDARG", PyInt_FromLong(COM_INVALIDARG));
-	PyModule_AddObject(m, "COM_OK", PyInt_FromLong(COM_OK));
-	PyModule_AddObject(m, "SORF_OXRES2", PyInt_FromLong(SORF_OXRES2));
-	PyModule_AddObject(m, "SORF_NULL", PyInt_FromLong(SORF_NULL));
-	PyModule_AddObject(m, "COM_INVALID_SET", PyInt_FromLong(COM_INVALID_SET));
 	PyModule_AddObject(m, "OBJREF_SIGNATURE", PyInt_FromLong(0x574f454d));
-	PyModule_AddObject(m, "ORPCF_RESERVED1", PyInt_FromLong(ORPCF_RESERVED1));
-	PyModule_AddObject(m, "ORPCF_NULL", PyInt_FromLong(ORPCF_NULL));
+	PyModule_AddObject(m, "COM_UNEXPECTED", PyInt_FromLong(COM_UNEXPECTED));
+	PyModule_AddObject(m, "dcom_ext_debugging", PyString_FromString("f1f19680-4d2a-11ce-a66a-0020af6e72f4"));
 	PyModule_AddObject(m, "COM_INVALID_OID", PyInt_FromLong(COM_INVALID_OID));
-	PyModule_AddObject(m, "SORF_OXRES4", PyInt_FromLong(SORF_OXRES4));
+	PyModule_AddObject(m, "COM_INVALID_SET", PyInt_FromLong(COM_INVALID_SET));
+	PyModule_AddObject(m, "COM_C_AUTHZ_NONE", PyInt_FromLong(0xffff));
+	PyModule_AddObject(m, "SORF_NULL", PyInt_FromLong(SORF_NULL));
+	PyModule_AddObject(m, "SORF_OXRES3", PyInt_FromLong(SORF_OXRES3));
+	PyModule_AddObject(m, "ORPCF_RESERVED1", PyInt_FromLong(ORPCF_RESERVED1));
+	PyModule_AddObject(m, "dcom_ext_extended_error", PyString_FromString("f1f19681-4d2a-11ce-a66a-0020af6e72f4"));
+	PyModule_AddObject(m, "COM_INVALID_OXID", PyInt_FromLong(COM_INVALID_OXID));
+	PyModule_AddObject(m, "SORF_OXRES7", PyInt_FromLong(SORF_OXRES7));
+	PyModule_AddObject(m, "SORF_OXRES1", PyInt_FromLong(SORF_OXRES1));
+	PyModule_AddObject(m, "COM_MAJOR_VERSION", PyInt_FromLong(5));
 	PyModule_AddObject(m, "OBJREF_CUSTOM", PyInt_FromLong(OBJREF_CUSTOM));
+	PyModule_AddObject(m, "SORF_OXRES8", PyInt_FromLong(SORF_OXRES8));
+	PyModule_AddObject(m, "COM_INVALIDARG", PyInt_FromLong(COM_INVALIDARG));
+	PyModule_AddObject(m, "COM_OUTOFMEMORY", PyInt_FromLong(COM_OUTOFMEMORY));
+	PyModule_AddObject(m, "ORPCF_RESERVED2", PyInt_FromLong(ORPCF_RESERVED2));
+	PyModule_AddObject(m, "OBJREF_NULL", PyInt_FromLong(OBJREF_NULL));
+	PyModule_AddObject(m, "OBJREF_HANDLER", PyInt_FromLong(OBJREF_HANDLER));
+	PyModule_AddObject(m, "COM_OK", PyInt_FromLong(COM_OK));
+	PyModule_AddObject(m, "SORF_OXRES5", PyInt_FromLong(SORF_OXRES5));
+	PyModule_AddObject(m, "COM_MINOR_VERSION", PyInt_FromLong(1));
+	PyModule_AddObject(m, "SORF_OXRES4", PyInt_FromLong(SORF_OXRES4));
+	PyModule_AddObject(m, "ORPCF_RESERVED3", PyInt_FromLong(ORPCF_RESERVED3));
+	PyModule_AddObject(m, "SORF_OXRES2", PyInt_FromLong(SORF_OXRES2));
+	PyModule_AddObject(m, "SORF_NOPING", PyInt_FromLong(SORF_NOPING));
+	PyModule_AddObject(m, "ORPCF_NULL", PyInt_FromLong(ORPCF_NULL));
+	PyModule_AddObject(m, "COM_NOINTERFACE", PyInt_FromLong(COM_NOINTERFACE));
+	PyModule_AddObject(m, "ORPCF_RESERVED4", PyInt_FromLong(ORPCF_RESERVED4));
+	PyModule_AddObject(m, "OBJREF_STANDARD", PyInt_FromLong(OBJREF_STANDARD));
+	PyModule_AddObject(m, "ORPCF_LOCAL", PyInt_FromLong(ORPCF_LOCAL));
+	PyModule_AddObject(m, "COM_CLSNOTFOUND", PyInt_FromLong(COM_CLSNOTFOUND));
 	PyModule_AddObject(m, "COM_ACCESSDENIED", PyInt_FromLong(COM_ACCESSDENIED));
 	PyModule_AddObject(m, "SORF_OXRES6", PyInt_FromLong(SORF_OXRES6));
-	PyModule_AddObject(m, "COM_UNEXPECTED", PyInt_FromLong(COM_UNEXPECTED));
-	PyModule_AddObject(m, "COM_MINOR_VERSION", PyInt_FromLong(1));
-	PyModule_AddObject(m, "COM_CLSNOTFOUND", PyInt_FromLong(COM_CLSNOTFOUND));
-	PyModule_AddObject(m, "OBJREF_HANDLER", PyInt_FromLong(OBJREF_HANDLER));
-	PyModule_AddObject(m, "OBJREF_NULL", PyInt_FromLong(OBJREF_NULL));
 	Py_INCREF((PyObject *)(void *)&COMVERSION_Type);
 	PyModule_AddObject(m, "COMVERSION", (PyObject *)(void *)&COMVERSION_Type);
 	Py_INCREF((PyObject *)(void *)&ORPC_EXTENT_Type);

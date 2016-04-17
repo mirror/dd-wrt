@@ -14,9 +14,9 @@ staticforward PyTypeObject BrowserrSrvInfo101Ctr_Type;
 staticforward PyTypeObject BrowserrSrvInfo_Type;
 staticforward PyTypeObject browser_InterfaceType;
 
-void initbrowser(void);static PyTypeObject *ClientConnection_Type;
+void initbrowser(void);static PyTypeObject *Object_Type;
+static PyTypeObject *ClientConnection_Type;
 static PyTypeObject *srvsvc_NetSrvInfo100_Type;
-static PyTypeObject *Object_Type;
 static PyTypeObject *srvsvc_NetSrvInfo101_Type;
 
 static PyObject *py_BrowserrSrvInfo100Ctr_get_entries_read(PyObject *obj, void *closure)
@@ -420,13 +420,9 @@ static PyMethodDef browser_methods[] = {
 void initbrowser(void)
 {
 	PyObject *m;
-	PyObject *dep_samba_dcerpc_srvsvc;
 	PyObject *dep_samba_dcerpc_base;
 	PyObject *dep_talloc;
-
-	dep_samba_dcerpc_srvsvc = PyImport_ImportModule("samba.dcerpc.srvsvc");
-	if (dep_samba_dcerpc_srvsvc == NULL)
-		return;
+	PyObject *dep_samba_dcerpc_srvsvc;
 
 	dep_samba_dcerpc_base = PyImport_ImportModule("samba.dcerpc.base");
 	if (dep_samba_dcerpc_base == NULL)
@@ -436,16 +432,20 @@ void initbrowser(void)
 	if (dep_talloc == NULL)
 		return;
 
+	dep_samba_dcerpc_srvsvc = PyImport_ImportModule("samba.dcerpc.srvsvc");
+	if (dep_samba_dcerpc_srvsvc == NULL)
+		return;
+
+	Object_Type = (PyTypeObject *)PyObject_GetAttrString(dep_talloc, "Object");
+	if (Object_Type == NULL)
+		return;
+
 	ClientConnection_Type = (PyTypeObject *)PyObject_GetAttrString(dep_samba_dcerpc_base, "ClientConnection");
 	if (ClientConnection_Type == NULL)
 		return;
 
 	srvsvc_NetSrvInfo100_Type = (PyTypeObject *)PyObject_GetAttrString(dep_samba_dcerpc_srvsvc, "NetSrvInfo100");
 	if (srvsvc_NetSrvInfo100_Type == NULL)
-		return;
-
-	Object_Type = (PyTypeObject *)PyObject_GetAttrString(dep_talloc, "Object");
-	if (Object_Type == NULL)
 		return;
 
 	srvsvc_NetSrvInfo101_Type = (PyTypeObject *)PyObject_GetAttrString(dep_samba_dcerpc_srvsvc, "NetSrvInfo101");

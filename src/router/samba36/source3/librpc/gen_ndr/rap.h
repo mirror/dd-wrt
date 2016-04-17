@@ -364,10 +364,10 @@ struct rap_user_info_1 {
 	uint8_t passwrd[16];
 	uint32_t pwage;
 	uint16_t priv;
-	const char * home_dir;/* [unique,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
+	const char * home_dir;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM),unique] */
 	const char * comment;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM),unique] */
 	uint16_t userflags;
-	const char * logon_script;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM),unique] */
+	const char * logon_script;/* [unique,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
 };
 
 struct rap_service_info_2 {
@@ -375,7 +375,7 @@ struct rap_service_info_2 {
 	uint16_t status;
 	uint32_t installcode;
 	uint16_t process_num;
-	const char * comment;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM),unique] */
+	const char * comment;/* [unique,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
 };
 
 struct rap_share_info_0 {
@@ -417,7 +417,7 @@ struct rap_server_info_1 {
 	uint8_t version_major;
 	uint8_t version_minor;
 	uint32_t servertype;
-	const char * comment;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM),unique] */
+	const char * comment;/* [unique,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
 };
 
 union rap_server_info {
@@ -484,35 +484,35 @@ struct rap_PrintJobInfo2 {
 struct rap_PrintJobInfo3 {
 	uint16_t JobID;
 	uint16_t Priority;
-	const char * UserName;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM),relative_short] */
+	const char * UserName;/* [relative_short,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
 	uint16_t UserNameHigh;
 	uint16_t JobPosition;
 	enum rap_PrintJStatusCode JobStatus;
 	time_t TimeSubmitted;
 	uint32_t JobSize;
-	const char * JobCommentString;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM),relative_short] */
+	const char * JobCommentString;/* [relative_short,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
 	uint16_t JobCommentStringHigh;
 	const char * DocumentName;/* [relative_short,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
 	uint16_t DocumentNameHigh;
-	const char * NotifyName;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM),relative_short] */
+	const char * NotifyName;/* [relative_short,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
 	uint16_t NotifyNameHigh;
 	const char * DataType;/* [relative_short,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
 	uint16_t DataTypeHigh;
-	const char * PrintParameterString;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM),relative_short] */
+	const char * PrintParameterString;/* [relative_short,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
 	uint16_t PrintParameterStringHigh;
-	const char * StatusString;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM),relative_short] */
+	const char * StatusString;/* [relative_short,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
 	uint16_t StatusStringHigh;
-	const char * QueueName;/* [relative_short,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
+	const char * QueueName;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM),relative_short] */
 	uint16_t QueueNameHigh;
 	const char * PrintProcessorName;/* [relative_short,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
 	uint16_t PrintProcessorNameHigh;
 	const char * PrintProcessorParams;/* [relative_short,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
 	uint16_t PrintProcessorParamsHigh;
-	const char * DriverName;/* [relative_short,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
+	const char * DriverName;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM),relative_short] */
 	uint16_t DriverNameHigh;
-	const char * DriverDataOffset;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM),relative_short] */
+	const char * DriverDataOffset;/* [relative_short,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
 	uint16_t DriverDataOffsetHigh;
-	const char * PrinterNameOffset;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM),relative_short] */
+	const char * PrinterNameOffset;/* [relative_short,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
 	uint16_t PrinterNameOffsetHigh;
 };
 
@@ -521,7 +521,7 @@ union rap_printj_info {
 	struct rap_PrintJobInfo1 info1;/* [case] */
 	struct rap_PrintJobInfo2 info2;/* [case(2)] */
 	struct rap_PrintJobInfo3 info3;/* [case(3)] */
-}/* [public,nodiscriminant] */;
+}/* [nodiscriminant,public] */;
 
 enum rap_PrintQStatusCode
 #ifndef USE_UINT_ENUMS
@@ -550,11 +550,11 @@ struct rap_PrintQueue1 {
 	uint16_t Priority;
 	uint16_t StartTime;
 	uint16_t UntilTime;
-	const char * SeparatorPageFilename;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM),relative_short] */
+	const char * SeparatorPageFilename;/* [relative_short,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
 	uint16_t SeparatorPageFilenameHigh;
 	const char * PrintProcessorDllName;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM),relative_short] */
 	uint16_t PrintProcessorDllNameHigh;
-	const char * PrintDestinationsName;/* [relative_short,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
+	const char * PrintDestinationsName;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM),relative_short] */
 	uint16_t PrintDestinationsNameHigh;
 	const char * PrintParameterString;/* [relative_short,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
 	uint16_t PrintParameterStringHigh;
@@ -576,11 +576,11 @@ struct rap_PrintQueue3 {
 	uint16_t StartTime;
 	uint16_t UntilTime;
 	uint16_t Pad;
-	const char * SeparatorPageFilename;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM),relative_short] */
+	const char * SeparatorPageFilename;/* [relative_short,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
 	uint16_t SeparatorPageFilenameHigh;
 	const char * PrintProcessorDllName;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM),relative_short] */
 	uint16_t PrintProcessorDllNameHigh;
-	const char * PrintParameterString;/* [relative_short,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
+	const char * PrintParameterString;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM),relative_short] */
 	uint16_t PrintParameterStringHigh;
 	const char * CommentString;/* [relative_short,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
 	uint16_t CommentStringHigh;
@@ -588,7 +588,7 @@ struct rap_PrintQueue3 {
 	uint16_t PrintJobCount;
 	const char * Printers;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM),relative_short] */
 	uint16_t PrintersHigh;
-	const char * DriverName;/* [relative_short,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
+	const char * DriverName;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM),relative_short] */
 	uint16_t DriverNameHigh;
 	const char * PrintDriverData;/* [relative_short,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
 	uint16_t PrintDriverDataHigh;
@@ -600,7 +600,7 @@ struct rap_PrintQueue4 {
 };
 
 struct rap_PrintQueue5 {
-	const char * PrintQueueName;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM),relative_short] */
+	const char * PrintQueueName;/* [relative_short,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
 	uint16_t PrintQueueNameHigh;
 };
 
@@ -665,7 +665,7 @@ struct rap_PrintDest1 {
 };
 
 struct rap_PrintDest2 {
-	const char * PrinterName;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM),relative_short] */
+	const char * PrinterName;/* [relative_short,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
 	uint16_t PrinterNameHigh;
 };
 
@@ -674,15 +674,15 @@ struct rap_PrintDest3 {
 	uint16_t PrinterNameHigh;
 	const char * UserName;/* [relative_short,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
 	uint16_t UserNameHigh;
-	const char * LogAddr;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM),relative_short] */
+	const char * LogAddr;/* [relative_short,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
 	uint16_t LogAddrHigh;
 	uint16_t JobId;
 	uint16_t Status;
 	const char * StatusStringName;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM),relative_short] */
 	uint16_t PrintQueueNameHigh;
-	const char * Comment;/* [relative_short,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
+	const char * Comment;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM),relative_short] */
 	uint16_t CommentHigh;
-	const char * Drivers;/* [relative_short,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
+	const char * Drivers;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM),relative_short] */
 	uint16_t DriversHigh;
 	uint16_t Time;
 	uint16_t Pad1;
@@ -725,7 +725,7 @@ struct rap_NetUserInfo1 {
 	const char * Comment;/* [relative_short,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
 	uint16_t CommentHigh;
 	uint16_t Flags;
-	const char * ScriptPath;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM),relative_short] */
+	const char * ScriptPath;/* [relative_short,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
 	uint16_t ScriptPathHigh;
 };
 
@@ -756,21 +756,21 @@ struct rap_NetUserInfo2 {
 	uint8_t Password[16];
 	time_t PasswordAge;
 	enum rap_UserPriv Priv;
-	const char * HomeDir;/* [relative_short,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
+	const char * HomeDir;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM),relative_short] */
 	uint16_t HomeDirHigh;
-	const char * Comment;/* [relative_short,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
+	const char * Comment;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM),relative_short] */
 	uint16_t CommentHigh;
 	uint16_t Flags;
-	const char * ScriptPath;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM),relative_short] */
+	const char * ScriptPath;/* [relative_short,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
 	uint16_t ScriptPathHigh;
 	enum rap_AuthFlags AuthFlags;
-	const char * FullName;/* [relative_short,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
+	const char * FullName;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM),relative_short] */
 	uint16_t FullNameHigh;
-	const char * UsrComment;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM),relative_short] */
+	const char * UsrComment;/* [relative_short,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
 	uint16_t UsrCommentHigh;
-	const char * pParms;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM),relative_short] */
+	const char * pParms;/* [relative_short,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
 	uint16_t pParmsHigh;
-	const char * WorkStations;/* [relative_short,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
+	const char * WorkStations;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM),relative_short] */
 	uint16_t WorkStationsHigh;
 	time_t LastLogon;
 	time_t LastLogOff;
@@ -805,23 +805,23 @@ struct rap_NetUserInfo11 {
 	uint16_t CommentHigh;
 	const char * UsrComment;/* [relative_short,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
 	uint16_t UsrCommentHigh;
-	const char * FullName;/* [relative_short,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
+	const char * FullName;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM),relative_short] */
 	uint16_t FullNameHigh;
 	enum rap_UserPriv Priv;
 	enum rap_AuthFlags AuthFlags;
 	time_t PasswordAge;
-	const char * HomeDir;/* [relative_short,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
+	const char * HomeDir;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM),relative_short] */
 	uint16_t HomeDirHigh;
-	const char * Parms;/* [relative_short,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
+	const char * Parms;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM),relative_short] */
 	uint16_t ParmsHigh;
 	time_t LastLogon;
 	time_t LastLogOff;
 	uint16_t BadPWCount;
 	uint16_t NumLogons;
-	const char * LogonServer;/* [relative_short,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
+	const char * LogonServer;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM),relative_short] */
 	uint16_t LogonServerHigh;
 	uint16_t CountryCode;
-	const char * WorkStations;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM),relative_short] */
+	const char * WorkStations;/* [relative_short,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
 	uint16_t WorkStationsHigh;
 	uint32_t MaxStorage;
 	uint16_t UnitsPerWeek;
@@ -836,10 +836,10 @@ union rap_netuser_info {
 	struct rap_NetUserInfo2 info2;/* [case(2)] */
 	struct rap_NetUserInfo10 info10;/* [case(10)] */
 	struct rap_NetUserInfo11 info11;/* [case(11)] */
-}/* [nodiscriminant,public] */;
+}/* [public,nodiscriminant] */;
 
 struct rap_session_info_2 {
-	const char * ComputerName;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM),relative_short] */
+	const char * ComputerName;/* [relative_short,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
 	uint16_t ComputerNameHigh;
 	const char * UserName;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM),relative_short] */
 	uint16_t UserNameHigh;
@@ -855,7 +855,7 @@ struct rap_session_info_2 {
 
 union rap_session_info {
 	struct rap_session_info_2 info2;/* [case(2)] */
-}/* [nodiscriminant,public] */;
+}/* [public,nodiscriminant] */;
 
 struct rap_TimeOfDayInfo {
 	uint32_t TimeSinceJan11970;
@@ -910,7 +910,7 @@ struct rap_NetServerEnum2 {
 		uint16_t level;
 		uint16_t bufsize;
 		uint32_t servertype;
-		const char * domain;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM),ref] */
+		const char * domain;/* [ref,flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
 	} in;
 
 	struct {

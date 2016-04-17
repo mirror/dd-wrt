@@ -108,7 +108,7 @@ struct nbt_name {
 	const char * name;
 	const char * scope;
 	enum nbt_name_type type;
-}/* [nopull,nopush,public] */;
+}/* [nopull,public,nopush] */;
 
 enum nbt_qclass
 #ifndef USE_UINT_ENUMS
@@ -234,7 +234,7 @@ struct nbt_res_rec {
 	enum nbt_qclass rr_class;
 	uint32_t ttl;
 	union nbt_rdata rdata;/* [switch_is(rr_type)] */
-}/* [flag(LIBNDR_PRINT_ARRAY_HEX),nopush] */;
+}/* [nopush,flag(LIBNDR_PRINT_ARRAY_HEX)] */;
 
 struct nbt_name_packet {
 	uint16_t name_trn_id;
@@ -307,7 +307,7 @@ enum smb_command
 ;
 
 struct smb_trans_body {
-	uint8_t wct;/* [value(17),range(17,17)] */
+	uint8_t wct;/* [range(17,17),value(17)] */
 	uint16_t total_param_count;
 	uint16_t total_data_count;
 	uint16_t max_param_count;
@@ -321,7 +321,7 @@ struct smb_trans_body {
 	uint16_t param_offset;
 	uint16_t data_count;
 	uint16_t data_offset;
-	uint8_t setup_count;/* [value(3),range(3,3)] */
+	uint8_t setup_count;/* [range(3,3),value(3)] */
 	uint8_t pad2;
 	uint16_t opcode;
 	uint16_t priority;
@@ -350,7 +350,7 @@ struct dgram_smb_packet {
 	uint16_t vuid;
 	uint16_t mid;
 	union smb_body body;/* [switch_is(smb_command)] */
-}/* [public,flag(LIBNDR_FLAG_NOALIGN|LIBNDR_FLAG_LITTLE_ENDIAN|LIBNDR_PRINT_ARRAY_HEX)] */;
+}/* [flag(LIBNDR_FLAG_NOALIGN|LIBNDR_FLAG_LITTLE_ENDIAN|LIBNDR_PRINT_ARRAY_HEX),public] */;
 
 union dgram_message_body {
 	struct dgram_smb_packet smb;/* [case(DGRAM_SMB)] */
@@ -393,7 +393,7 @@ struct nbt_dgram_packet {
 	const char * src_addr;
 	uint16_t src_port;
 	union dgram_data data;/* [switch_is(msg_type)] */
-}/* [flag(LIBNDR_FLAG_NOALIGN|LIBNDR_FLAG_BIGENDIAN|LIBNDR_PRINT_ARRAY_HEX),public] */;
+}/* [public,flag(LIBNDR_FLAG_NOALIGN|LIBNDR_FLAG_BIGENDIAN|LIBNDR_PRINT_ARRAY_HEX)] */;
 
 struct nbt_sockaddr {
 	uint32_t sockaddr_family;
@@ -495,7 +495,7 @@ struct NETLOGON_SAM_LOGON_RESPONSE_NT40 {
 	uint32_t nt_version;
 	uint16_t lmnt_token;
 	uint16_t lm20_token;
-}/* [flag(LIBNDR_FLAG_NOALIGN),public] */;
+}/* [public,flag(LIBNDR_FLAG_NOALIGN)] */;
 
 struct NETLOGON_SAM_LOGON_RESPONSE {
 	enum netlogon_command command;
@@ -512,7 +512,7 @@ struct NETLOGON_SAM_LOGON_RESPONSE {
 	uint32_t nt_version;
 	uint16_t lmnt_token;
 	uint16_t lm20_token;
-}/* [public,flag(LIBNDR_FLAG_NOALIGN)] */;
+}/* [flag(LIBNDR_FLAG_NOALIGN),public] */;
 
 struct NETLOGON_SAM_LOGON_RESPONSE_EX {
 	enum netlogon_command command;
@@ -596,7 +596,7 @@ union nbt_netlogon_request {
 struct nbt_netlogon_packet {
 	enum netlogon_command command;
 	union nbt_netlogon_request req;/* [switch_is(command)] */
-}/* [public,flag(LIBNDR_FLAG_NOALIGN)] */;
+}/* [flag(LIBNDR_FLAG_NOALIGN),public] */;
 
 enum nbt_browse_opcode
 #ifndef USE_UINT_ENUMS
