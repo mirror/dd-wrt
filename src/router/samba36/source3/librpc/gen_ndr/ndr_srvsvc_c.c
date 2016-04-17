@@ -101,7 +101,7 @@ static void dcerpc_srvsvc_NetCharDevEnum_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_srvsvc_NetCharDevEnum_send(TALLOC_CTX *mem_ctx,
 						     struct tevent_context *ev,
 						     struct dcerpc_binding_handle *h,
-						     const char *_server_unc /* [in] [unique,charset(UTF16)] */,
+						     const char *_server_unc /* [in] [charset(UTF16),unique] */,
 						     struct srvsvc_NetCharDevInfoCtr *_info_ctr /* [in,out] [ref] */,
 						     uint32_t _max_buffer /* [in]  */,
 						     uint32_t *_totalentries /* [out] [ref] */,
@@ -212,7 +212,7 @@ NTSTATUS dcerpc_srvsvc_NetCharDevEnum_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_srvsvc_NetCharDevEnum(struct dcerpc_binding_handle *h,
 				      TALLOC_CTX *mem_ctx,
-				      const char *_server_unc /* [in] [unique,charset(UTF16)] */,
+				      const char *_server_unc /* [in] [charset(UTF16),unique] */,
 				      struct srvsvc_NetCharDevInfoCtr *_info_ctr /* [in,out] [ref] */,
 				      uint32_t _max_buffer /* [in]  */,
 				      uint32_t *_totalentries /* [out] [ref] */,
@@ -339,7 +339,7 @@ static void dcerpc_srvsvc_NetCharDevGetInfo_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_srvsvc_NetCharDevGetInfo_send(TALLOC_CTX *mem_ctx,
 							struct tevent_context *ev,
 							struct dcerpc_binding_handle *h,
-							const char *_server_unc /* [in] [charset(UTF16),unique] */,
+							const char *_server_unc /* [in] [unique,charset(UTF16)] */,
 							const char *_device_name /* [in] [charset(UTF16)] */,
 							uint32_t _level /* [in]  */,
 							union srvsvc_NetCharDevInfo *_info /* [out] [ref,switch_is(level)] */)
@@ -442,7 +442,7 @@ NTSTATUS dcerpc_srvsvc_NetCharDevGetInfo_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_srvsvc_NetCharDevGetInfo(struct dcerpc_binding_handle *h,
 					 TALLOC_CTX *mem_ctx,
-					 const char *_server_unc /* [in] [charset(UTF16),unique] */,
+					 const char *_server_unc /* [in] [unique,charset(UTF16)] */,
 					 const char *_device_name /* [in] [charset(UTF16)] */,
 					 uint32_t _level /* [in]  */,
 					 union srvsvc_NetCharDevInfo *_info /* [out] [ref,switch_is(level)] */,
@@ -560,7 +560,7 @@ static void dcerpc_srvsvc_NetCharDevControl_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_srvsvc_NetCharDevControl_send(TALLOC_CTX *mem_ctx,
 							struct tevent_context *ev,
 							struct dcerpc_binding_handle *h,
-							const char *_server_unc /* [in] [charset(UTF16),unique] */,
+							const char *_server_unc /* [in] [unique,charset(UTF16)] */,
 							const char *_device_name /* [in] [charset(UTF16)] */,
 							uint32_t _opcode /* [in]  */)
 {
@@ -654,7 +654,7 @@ NTSTATUS dcerpc_srvsvc_NetCharDevControl_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_srvsvc_NetCharDevControl(struct dcerpc_binding_handle *h,
 					 TALLOC_CTX *mem_ctx,
-					 const char *_server_unc /* [in] [charset(UTF16),unique] */,
+					 const char *_server_unc /* [in] [unique,charset(UTF16)] */,
 					 const char *_device_name /* [in] [charset(UTF16)] */,
 					 uint32_t _opcode /* [in]  */,
 					 WERROR *result)
@@ -1015,11 +1015,11 @@ static void dcerpc_srvsvc_NetCharDevQGetInfo_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_srvsvc_NetCharDevQGetInfo_send(TALLOC_CTX *mem_ctx,
 							 struct tevent_context *ev,
 							 struct dcerpc_binding_handle *h,
-							 const char *_server_unc /* [in] [charset(UTF16),unique] */,
+							 const char *_server_unc /* [in] [unique,charset(UTF16)] */,
 							 const char *_queue_name /* [in] [charset(UTF16)] */,
 							 const char *_user /* [in] [charset(UTF16)] */,
 							 uint32_t _level /* [in]  */,
-							 union srvsvc_NetCharDevQInfo *_info /* [out] [switch_is(level),ref] */)
+							 union srvsvc_NetCharDevQInfo *_info /* [out] [ref,switch_is(level)] */)
 {
 	struct tevent_req *req;
 	struct dcerpc_srvsvc_NetCharDevQGetInfo_state *state;
@@ -1120,11 +1120,11 @@ NTSTATUS dcerpc_srvsvc_NetCharDevQGetInfo_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_srvsvc_NetCharDevQGetInfo(struct dcerpc_binding_handle *h,
 					  TALLOC_CTX *mem_ctx,
-					  const char *_server_unc /* [in] [charset(UTF16),unique] */,
+					  const char *_server_unc /* [in] [unique,charset(UTF16)] */,
 					  const char *_queue_name /* [in] [charset(UTF16)] */,
 					  const char *_user /* [in] [charset(UTF16)] */,
 					  uint32_t _level /* [in]  */,
-					  union srvsvc_NetCharDevQInfo *_info /* [out] [switch_is(level),ref] */,
+					  union srvsvc_NetCharDevQInfo *_info /* [out] [ref,switch_is(level)] */,
 					  WERROR *result)
 {
 	struct srvsvc_NetCharDevQGetInfo r;
@@ -1474,7 +1474,7 @@ static void dcerpc_srvsvc_NetCharDevQPurge_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_srvsvc_NetCharDevQPurge_send(TALLOC_CTX *mem_ctx,
 						       struct tevent_context *ev,
 						       struct dcerpc_binding_handle *h,
-						       const char *_server_unc /* [in] [unique,charset(UTF16)] */,
+						       const char *_server_unc /* [in] [charset(UTF16),unique] */,
 						       const char *_queue_name /* [in] [charset(UTF16)] */)
 {
 	struct tevent_req *req;
@@ -1566,7 +1566,7 @@ NTSTATUS dcerpc_srvsvc_NetCharDevQPurge_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_srvsvc_NetCharDevQPurge(struct dcerpc_binding_handle *h,
 					TALLOC_CTX *mem_ctx,
-					const char *_server_unc /* [in] [unique,charset(UTF16)] */,
+					const char *_server_unc /* [in] [charset(UTF16),unique] */,
 					const char *_queue_name /* [in] [charset(UTF16)] */,
 					WERROR *result)
 {
@@ -1680,7 +1680,7 @@ static void dcerpc_srvsvc_NetCharDevQPurgeSelf_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_srvsvc_NetCharDevQPurgeSelf_send(TALLOC_CTX *mem_ctx,
 							   struct tevent_context *ev,
 							   struct dcerpc_binding_handle *h,
-							   const char *_server_unc /* [in] [unique,charset(UTF16)] */,
+							   const char *_server_unc /* [in] [charset(UTF16),unique] */,
 							   const char *_queue_name /* [in] [charset(UTF16)] */,
 							   const char *_computer_name /* [in] [charset(UTF16)] */)
 {
@@ -1774,7 +1774,7 @@ NTSTATUS dcerpc_srvsvc_NetCharDevQPurgeSelf_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_srvsvc_NetCharDevQPurgeSelf(struct dcerpc_binding_handle *h,
 					    TALLOC_CTX *mem_ctx,
-					    const char *_server_unc /* [in] [unique,charset(UTF16)] */,
+					    const char *_server_unc /* [in] [charset(UTF16),unique] */,
 					    const char *_queue_name /* [in] [charset(UTF16)] */,
 					    const char *_computer_name /* [in] [charset(UTF16)] */,
 					    WERROR *result)
@@ -1893,7 +1893,7 @@ static void dcerpc_srvsvc_NetConnEnum_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_srvsvc_NetConnEnum_send(TALLOC_CTX *mem_ctx,
 						  struct tevent_context *ev,
 						  struct dcerpc_binding_handle *h,
-						  const char *_server_unc /* [in] [charset(UTF16),unique] */,
+						  const char *_server_unc /* [in] [unique,charset(UTF16)] */,
 						  const char *_path /* [in] [unique,charset(UTF16)] */,
 						  struct srvsvc_NetConnInfoCtr *_info_ctr /* [in,out] [ref] */,
 						  uint32_t _max_buffer /* [in]  */,
@@ -2006,7 +2006,7 @@ NTSTATUS dcerpc_srvsvc_NetConnEnum_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_srvsvc_NetConnEnum(struct dcerpc_binding_handle *h,
 				   TALLOC_CTX *mem_ctx,
-				   const char *_server_unc /* [in] [charset(UTF16),unique] */,
+				   const char *_server_unc /* [in] [unique,charset(UTF16)] */,
 				   const char *_path /* [in] [unique,charset(UTF16)] */,
 				   struct srvsvc_NetConnInfoCtr *_info_ctr /* [in,out] [ref] */,
 				   uint32_t _max_buffer /* [in]  */,
@@ -2135,8 +2135,8 @@ static void dcerpc_srvsvc_NetFileEnum_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_srvsvc_NetFileEnum_send(TALLOC_CTX *mem_ctx,
 						  struct tevent_context *ev,
 						  struct dcerpc_binding_handle *h,
-						  const char *_server_unc /* [in] [charset(UTF16),unique] */,
-						  const char *_path /* [in] [charset(UTF16),unique] */,
+						  const char *_server_unc /* [in] [unique,charset(UTF16)] */,
+						  const char *_path /* [in] [unique,charset(UTF16)] */,
 						  const char *_user /* [in] [unique,charset(UTF16)] */,
 						  struct srvsvc_NetFileInfoCtr *_info_ctr /* [in,out] [ref] */,
 						  uint32_t _max_buffer /* [in]  */,
@@ -2250,8 +2250,8 @@ NTSTATUS dcerpc_srvsvc_NetFileEnum_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_srvsvc_NetFileEnum(struct dcerpc_binding_handle *h,
 				   TALLOC_CTX *mem_ctx,
-				   const char *_server_unc /* [in] [charset(UTF16),unique] */,
-				   const char *_path /* [in] [charset(UTF16),unique] */,
+				   const char *_server_unc /* [in] [unique,charset(UTF16)] */,
+				   const char *_path /* [in] [unique,charset(UTF16)] */,
 				   const char *_user /* [in] [unique,charset(UTF16)] */,
 				   struct srvsvc_NetFileInfoCtr *_info_ctr /* [in,out] [ref] */,
 				   uint32_t _max_buffer /* [in]  */,
@@ -2381,10 +2381,10 @@ static void dcerpc_srvsvc_NetFileGetInfo_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_srvsvc_NetFileGetInfo_send(TALLOC_CTX *mem_ctx,
 						     struct tevent_context *ev,
 						     struct dcerpc_binding_handle *h,
-						     const char *_server_unc /* [in] [unique,charset(UTF16)] */,
+						     const char *_server_unc /* [in] [charset(UTF16),unique] */,
 						     uint32_t _fid /* [in]  */,
 						     uint32_t _level /* [in]  */,
-						     union srvsvc_NetFileInfo *_info /* [out] [ref,switch_is(level)] */)
+						     union srvsvc_NetFileInfo *_info /* [out] [switch_is(level),ref] */)
 {
 	struct tevent_req *req;
 	struct dcerpc_srvsvc_NetFileGetInfo_state *state;
@@ -2484,10 +2484,10 @@ NTSTATUS dcerpc_srvsvc_NetFileGetInfo_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_srvsvc_NetFileGetInfo(struct dcerpc_binding_handle *h,
 				      TALLOC_CTX *mem_ctx,
-				      const char *_server_unc /* [in] [unique,charset(UTF16)] */,
+				      const char *_server_unc /* [in] [charset(UTF16),unique] */,
 				      uint32_t _fid /* [in]  */,
 				      uint32_t _level /* [in]  */,
-				      union srvsvc_NetFileInfo *_info /* [out] [ref,switch_is(level)] */,
+				      union srvsvc_NetFileInfo *_info /* [out] [switch_is(level),ref] */,
 				      WERROR *result)
 {
 	struct srvsvc_NetFileGetInfo r;
@@ -2602,7 +2602,7 @@ static void dcerpc_srvsvc_NetFileClose_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_srvsvc_NetFileClose_send(TALLOC_CTX *mem_ctx,
 						   struct tevent_context *ev,
 						   struct dcerpc_binding_handle *h,
-						   const char *_server_unc /* [in] [unique,charset(UTF16)] */,
+						   const char *_server_unc /* [in] [charset(UTF16),unique] */,
 						   uint32_t _fid /* [in]  */)
 {
 	struct tevent_req *req;
@@ -2694,7 +2694,7 @@ NTSTATUS dcerpc_srvsvc_NetFileClose_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_srvsvc_NetFileClose(struct dcerpc_binding_handle *h,
 				    TALLOC_CTX *mem_ctx,
-				    const char *_server_unc /* [in] [unique,charset(UTF16)] */,
+				    const char *_server_unc /* [in] [charset(UTF16),unique] */,
 				    uint32_t _fid /* [in]  */,
 				    WERROR *result)
 {
@@ -2811,9 +2811,9 @@ static void dcerpc_srvsvc_NetSessEnum_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_srvsvc_NetSessEnum_send(TALLOC_CTX *mem_ctx,
 						  struct tevent_context *ev,
 						  struct dcerpc_binding_handle *h,
-						  const char *_server_unc /* [in] [charset(UTF16),unique] */,
+						  const char *_server_unc /* [in] [unique,charset(UTF16)] */,
 						  const char *_client /* [in] [unique,charset(UTF16)] */,
-						  const char *_user /* [in] [charset(UTF16),unique] */,
+						  const char *_user /* [in] [unique,charset(UTF16)] */,
 						  struct srvsvc_NetSessInfoCtr *_info_ctr /* [in,out] [ref] */,
 						  uint32_t _max_buffer /* [in]  */,
 						  uint32_t *_totalentries /* [out] [ref] */,
@@ -2926,9 +2926,9 @@ NTSTATUS dcerpc_srvsvc_NetSessEnum_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_srvsvc_NetSessEnum(struct dcerpc_binding_handle *h,
 				   TALLOC_CTX *mem_ctx,
-				   const char *_server_unc /* [in] [charset(UTF16),unique] */,
+				   const char *_server_unc /* [in] [unique,charset(UTF16)] */,
 				   const char *_client /* [in] [unique,charset(UTF16)] */,
-				   const char *_user /* [in] [charset(UTF16),unique] */,
+				   const char *_user /* [in] [unique,charset(UTF16)] */,
 				   struct srvsvc_NetSessInfoCtr *_info_ctr /* [in,out] [ref] */,
 				   uint32_t _max_buffer /* [in]  */,
 				   uint32_t *_totalentries /* [out] [ref] */,
@@ -3054,7 +3054,7 @@ static void dcerpc_srvsvc_NetSessDel_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_srvsvc_NetSessDel_send(TALLOC_CTX *mem_ctx,
 						 struct tevent_context *ev,
 						 struct dcerpc_binding_handle *h,
-						 const char *_server_unc /* [in] [unique,charset(UTF16)] */,
+						 const char *_server_unc /* [in] [charset(UTF16),unique] */,
 						 const char *_client /* [in] [unique,charset(UTF16)] */,
 						 const char *_user /* [in] [charset(UTF16),unique] */)
 {
@@ -3148,7 +3148,7 @@ NTSTATUS dcerpc_srvsvc_NetSessDel_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_srvsvc_NetSessDel(struct dcerpc_binding_handle *h,
 				  TALLOC_CTX *mem_ctx,
-				  const char *_server_unc /* [in] [unique,charset(UTF16)] */,
+				  const char *_server_unc /* [in] [charset(UTF16),unique] */,
 				  const char *_client /* [in] [unique,charset(UTF16)] */,
 				  const char *_user /* [in] [charset(UTF16),unique] */,
 				  WERROR *result)
@@ -3269,7 +3269,7 @@ struct tevent_req *dcerpc_srvsvc_NetShareAdd_send(TALLOC_CTX *mem_ctx,
 						  struct dcerpc_binding_handle *h,
 						  const char *_server_unc /* [in] [unique,charset(UTF16)] */,
 						  uint32_t _level /* [in]  */,
-						  union srvsvc_NetShareInfo *_info /* [in] [switch_is(level),ref] */,
+						  union srvsvc_NetShareInfo *_info /* [in] [ref,switch_is(level)] */,
 						  uint32_t *_parm_error /* [in,out] [unique] */)
 {
 	struct tevent_req *req;
@@ -3375,7 +3375,7 @@ NTSTATUS dcerpc_srvsvc_NetShareAdd(struct dcerpc_binding_handle *h,
 				   TALLOC_CTX *mem_ctx,
 				   const char *_server_unc /* [in] [unique,charset(UTF16)] */,
 				   uint32_t _level /* [in]  */,
-				   union srvsvc_NetShareInfo *_info /* [in] [switch_is(level),ref] */,
+				   union srvsvc_NetShareInfo *_info /* [in] [ref,switch_is(level)] */,
 				   uint32_t *_parm_error /* [in,out] [unique] */,
 				   WERROR *result)
 {
@@ -3497,7 +3497,7 @@ static void dcerpc_srvsvc_NetShareEnumAll_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_srvsvc_NetShareEnumAll_send(TALLOC_CTX *mem_ctx,
 						      struct tevent_context *ev,
 						      struct dcerpc_binding_handle *h,
-						      const char *_server_unc /* [in] [unique,charset(UTF16)] */,
+						      const char *_server_unc /* [in] [charset(UTF16),unique] */,
 						      struct srvsvc_NetShareInfoCtr *_info_ctr /* [in,out] [ref] */,
 						      uint32_t _max_buffer /* [in]  */,
 						      uint32_t *_totalentries /* [out] [ref] */,
@@ -3608,7 +3608,7 @@ NTSTATUS dcerpc_srvsvc_NetShareEnumAll_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_srvsvc_NetShareEnumAll(struct dcerpc_binding_handle *h,
 				       TALLOC_CTX *mem_ctx,
-				       const char *_server_unc /* [in] [unique,charset(UTF16)] */,
+				       const char *_server_unc /* [in] [charset(UTF16),unique] */,
 				       struct srvsvc_NetShareInfoCtr *_info_ctr /* [in,out] [ref] */,
 				       uint32_t _max_buffer /* [in]  */,
 				       uint32_t *_totalentries /* [out] [ref] */,
@@ -3735,10 +3735,10 @@ static void dcerpc_srvsvc_NetShareGetInfo_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_srvsvc_NetShareGetInfo_send(TALLOC_CTX *mem_ctx,
 						      struct tevent_context *ev,
 						      struct dcerpc_binding_handle *h,
-						      const char *_server_unc /* [in] [unique,charset(UTF16)] */,
+						      const char *_server_unc /* [in] [charset(UTF16),unique] */,
 						      const char *_share_name /* [in] [charset(UTF16)] */,
 						      uint32_t _level /* [in]  */,
-						      union srvsvc_NetShareInfo *_info /* [out] [ref,switch_is(level)] */)
+						      union srvsvc_NetShareInfo *_info /* [out] [switch_is(level),ref] */)
 {
 	struct tevent_req *req;
 	struct dcerpc_srvsvc_NetShareGetInfo_state *state;
@@ -3838,10 +3838,10 @@ NTSTATUS dcerpc_srvsvc_NetShareGetInfo_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_srvsvc_NetShareGetInfo(struct dcerpc_binding_handle *h,
 				       TALLOC_CTX *mem_ctx,
-				       const char *_server_unc /* [in] [unique,charset(UTF16)] */,
+				       const char *_server_unc /* [in] [charset(UTF16),unique] */,
 				       const char *_share_name /* [in] [charset(UTF16)] */,
 				       uint32_t _level /* [in]  */,
-				       union srvsvc_NetShareInfo *_info /* [out] [ref,switch_is(level)] */,
+				       union srvsvc_NetShareInfo *_info /* [out] [switch_is(level),ref] */,
 				       WERROR *result)
 {
 	struct srvsvc_NetShareGetInfo r;
@@ -3959,7 +3959,7 @@ static void dcerpc_srvsvc_NetShareSetInfo_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_srvsvc_NetShareSetInfo_send(TALLOC_CTX *mem_ctx,
 						      struct tevent_context *ev,
 						      struct dcerpc_binding_handle *h,
-						      const char *_server_unc /* [in] [unique,charset(UTF16)] */,
+						      const char *_server_unc /* [in] [charset(UTF16),unique] */,
 						      const char *_share_name /* [in] [charset(UTF16)] */,
 						      uint32_t _level /* [in]  */,
 						      union srvsvc_NetShareInfo *_info /* [in] [ref,switch_is(level)] */,
@@ -4067,7 +4067,7 @@ NTSTATUS dcerpc_srvsvc_NetShareSetInfo_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_srvsvc_NetShareSetInfo(struct dcerpc_binding_handle *h,
 				       TALLOC_CTX *mem_ctx,
-				       const char *_server_unc /* [in] [unique,charset(UTF16)] */,
+				       const char *_server_unc /* [in] [charset(UTF16),unique] */,
 				       const char *_share_name /* [in] [charset(UTF16)] */,
 				       uint32_t _level /* [in]  */,
 				       union srvsvc_NetShareInfo *_info /* [in] [ref,switch_is(level)] */,
@@ -4400,7 +4400,7 @@ static void dcerpc_srvsvc_NetShareDelSticky_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_srvsvc_NetShareDelSticky_send(TALLOC_CTX *mem_ctx,
 							struct tevent_context *ev,
 							struct dcerpc_binding_handle *h,
-							const char *_server_unc /* [in] [unique,charset(UTF16)] */,
+							const char *_server_unc /* [in] [charset(UTF16),unique] */,
 							const char *_share_name /* [in] [charset(UTF16)] */,
 							uint32_t _reserved /* [in]  */)
 {
@@ -4494,7 +4494,7 @@ NTSTATUS dcerpc_srvsvc_NetShareDelSticky_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_srvsvc_NetShareDelSticky(struct dcerpc_binding_handle *h,
 					 TALLOC_CTX *mem_ctx,
-					 const char *_server_unc /* [in] [unique,charset(UTF16)] */,
+					 const char *_server_unc /* [in] [charset(UTF16),unique] */,
 					 const char *_share_name /* [in] [charset(UTF16)] */,
 					 uint32_t _reserved /* [in]  */,
 					 WERROR *result)
@@ -5283,7 +5283,7 @@ static void dcerpc_srvsvc_NetDiskEnum_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_srvsvc_NetDiskEnum_send(TALLOC_CTX *mem_ctx,
 						  struct tevent_context *ev,
 						  struct dcerpc_binding_handle *h,
-						  const char *_server_unc /* [in] [charset(UTF16),unique] */,
+						  const char *_server_unc /* [in] [unique,charset(UTF16)] */,
 						  uint32_t _level /* [in]  */,
 						  struct srvsvc_NetDiskInfo *_info /* [in,out] [ref] */,
 						  uint32_t _maxlen /* [in]  */,
@@ -5396,7 +5396,7 @@ NTSTATUS dcerpc_srvsvc_NetDiskEnum_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_srvsvc_NetDiskEnum(struct dcerpc_binding_handle *h,
 				   TALLOC_CTX *mem_ctx,
-				   const char *_server_unc /* [in] [charset(UTF16),unique] */,
+				   const char *_server_unc /* [in] [unique,charset(UTF16)] */,
 				   uint32_t _level /* [in]  */,
 				   struct srvsvc_NetDiskInfo *_info /* [in,out] [ref] */,
 				   uint32_t _maxlen /* [in]  */,
@@ -5525,7 +5525,7 @@ static void dcerpc_srvsvc_NetServerStatisticsGet_done(struct tevent_req *subreq)
 struct tevent_req *dcerpc_srvsvc_NetServerStatisticsGet_send(TALLOC_CTX *mem_ctx,
 							     struct tevent_context *ev,
 							     struct dcerpc_binding_handle *h,
-							     const char *_server_unc /* [in] [charset(UTF16),unique] */,
+							     const char *_server_unc /* [in] [unique,charset(UTF16)] */,
 							     const char *_service /* [in] [charset(UTF16),unique] */,
 							     uint32_t _level /* [in]  */,
 							     uint32_t _options /* [in]  */,
@@ -5630,7 +5630,7 @@ NTSTATUS dcerpc_srvsvc_NetServerStatisticsGet_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_srvsvc_NetServerStatisticsGet(struct dcerpc_binding_handle *h,
 					      TALLOC_CTX *mem_ctx,
-					      const char *_server_unc /* [in] [charset(UTF16),unique] */,
+					      const char *_server_unc /* [in] [unique,charset(UTF16)] */,
 					      const char *_service /* [in] [charset(UTF16),unique] */,
 					      uint32_t _level /* [in]  */,
 					      uint32_t _options /* [in]  */,
@@ -5963,7 +5963,7 @@ static void dcerpc_srvsvc_NetTransportEnum_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_srvsvc_NetTransportEnum_send(TALLOC_CTX *mem_ctx,
 						       struct tevent_context *ev,
 						       struct dcerpc_binding_handle *h,
-						       const char *_server_unc /* [in] [unique,charset(UTF16)] */,
+						       const char *_server_unc /* [in] [charset(UTF16),unique] */,
 						       struct srvsvc_NetTransportInfoCtr *_transports /* [in,out] [ref] */,
 						       uint32_t _max_buffer /* [in]  */,
 						       uint32_t *_totalentries /* [out] [ref] */,
@@ -6074,7 +6074,7 @@ NTSTATUS dcerpc_srvsvc_NetTransportEnum_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_srvsvc_NetTransportEnum(struct dcerpc_binding_handle *h,
 					TALLOC_CTX *mem_ctx,
-					const char *_server_unc /* [in] [unique,charset(UTF16)] */,
+					const char *_server_unc /* [in] [charset(UTF16),unique] */,
 					struct srvsvc_NetTransportInfoCtr *_transports /* [in,out] [ref] */,
 					uint32_t _max_buffer /* [in]  */,
 					uint32_t *_totalentries /* [out] [ref] */,
@@ -6198,7 +6198,7 @@ static void dcerpc_srvsvc_NetTransportDel_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_srvsvc_NetTransportDel_send(TALLOC_CTX *mem_ctx,
 						      struct tevent_context *ev,
 						      struct dcerpc_binding_handle *h,
-						      const char *_server_unc /* [in] [charset(UTF16),unique] */,
+						      const char *_server_unc /* [in] [unique,charset(UTF16)] */,
 						      uint32_t _level /* [in]  */,
 						      struct srvsvc_NetTransportInfo0 *_info0 /* [in] [ref] */)
 {
@@ -6292,7 +6292,7 @@ NTSTATUS dcerpc_srvsvc_NetTransportDel_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_srvsvc_NetTransportDel(struct dcerpc_binding_handle *h,
 				       TALLOC_CTX *mem_ctx,
-				       const char *_server_unc /* [in] [charset(UTF16),unique] */,
+				       const char *_server_unc /* [in] [unique,charset(UTF16)] */,
 				       uint32_t _level /* [in]  */,
 				       struct srvsvc_NetTransportInfo0 *_info0 /* [in] [ref] */,
 				       WERROR *result)
@@ -6411,7 +6411,7 @@ static void dcerpc_srvsvc_NetRemoteTOD_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_srvsvc_NetRemoteTOD_send(TALLOC_CTX *mem_ctx,
 						   struct tevent_context *ev,
 						   struct dcerpc_binding_handle *h,
-						   const char *_server_unc /* [in] [charset(UTF16),unique] */,
+						   const char *_server_unc /* [in] [unique,charset(UTF16)] */,
 						   struct srvsvc_NetRemoteTODInfo **_info /* [out] [ref] */)
 {
 	struct tevent_req *req;
@@ -6510,7 +6510,7 @@ NTSTATUS dcerpc_srvsvc_NetRemoteTOD_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_srvsvc_NetRemoteTOD(struct dcerpc_binding_handle *h,
 				    TALLOC_CTX *mem_ctx,
-				    const char *_server_unc /* [in] [charset(UTF16),unique] */,
+				    const char *_server_unc /* [in] [unique,charset(UTF16)] */,
 				    struct srvsvc_NetRemoteTODInfo **_info /* [out] [ref] */,
 				    WERROR *result)
 {
@@ -6841,7 +6841,7 @@ static void dcerpc_srvsvc_NetPathType_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_srvsvc_NetPathType_send(TALLOC_CTX *mem_ctx,
 						  struct tevent_context *ev,
 						  struct dcerpc_binding_handle *h,
-						  const char *_server_unc /* [in] [charset(UTF16),unique] */,
+						  const char *_server_unc /* [in] [unique,charset(UTF16)] */,
 						  const char *_path /* [in] [charset(UTF16)] */,
 						  uint32_t _pathflags /* [in]  */,
 						  uint32_t *_pathtype /* [out] [ref] */)
@@ -6944,7 +6944,7 @@ NTSTATUS dcerpc_srvsvc_NetPathType_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_srvsvc_NetPathType(struct dcerpc_binding_handle *h,
 				   TALLOC_CTX *mem_ctx,
-				   const char *_server_unc /* [in] [charset(UTF16),unique] */,
+				   const char *_server_unc /* [in] [unique,charset(UTF16)] */,
 				   const char *_path /* [in] [charset(UTF16)] */,
 				   uint32_t _pathflags /* [in]  */,
 				   uint32_t *_pathtype /* [out] [ref] */,
@@ -7309,7 +7309,7 @@ static void dcerpc_srvsvc_NetPathCompare_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_srvsvc_NetPathCompare_send(TALLOC_CTX *mem_ctx,
 						     struct tevent_context *ev,
 						     struct dcerpc_binding_handle *h,
-						     const char *_server_unc /* [in] [unique,charset(UTF16)] */,
+						     const char *_server_unc /* [in] [charset(UTF16),unique] */,
 						     const char *_path1 /* [in] [charset(UTF16)] */,
 						     const char *_path2 /* [in] [charset(UTF16)] */,
 						     uint32_t _pathtype /* [in]  */,
@@ -7407,7 +7407,7 @@ NTSTATUS dcerpc_srvsvc_NetPathCompare_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_srvsvc_NetPathCompare(struct dcerpc_binding_handle *h,
 				      TALLOC_CTX *mem_ctx,
-				      const char *_server_unc /* [in] [unique,charset(UTF16)] */,
+				      const char *_server_unc /* [in] [charset(UTF16),unique] */,
 				      const char *_path1 /* [in] [charset(UTF16)] */,
 				      const char *_path2 /* [in] [charset(UTF16)] */,
 				      uint32_t _pathtype /* [in]  */,
@@ -7741,7 +7741,7 @@ static void dcerpc_srvsvc_NetPRNameCompare_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_srvsvc_NetPRNameCompare_send(TALLOC_CTX *mem_ctx,
 						       struct tevent_context *ev,
 						       struct dcerpc_binding_handle *h,
-						       const char *_server_unc /* [in] [unique,charset(UTF16)] */,
+						       const char *_server_unc /* [in] [charset(UTF16),unique] */,
 						       const char *_name1 /* [in] [charset(UTF16)] */,
 						       const char *_name2 /* [in] [charset(UTF16)] */,
 						       uint32_t _name_type /* [in]  */,
@@ -7839,7 +7839,7 @@ NTSTATUS dcerpc_srvsvc_NetPRNameCompare_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_srvsvc_NetPRNameCompare(struct dcerpc_binding_handle *h,
 					TALLOC_CTX *mem_ctx,
-					const char *_server_unc /* [in] [unique,charset(UTF16)] */,
+					const char *_server_unc /* [in] [charset(UTF16),unique] */,
 					const char *_name1 /* [in] [charset(UTF16)] */,
 					const char *_name2 /* [in] [charset(UTF16)] */,
 					uint32_t _name_type /* [in]  */,
@@ -8647,7 +8647,7 @@ struct tevent_req *dcerpc_srvsvc_NetGetFileSecurity_send(TALLOC_CTX *mem_ctx,
 							 struct tevent_context *ev,
 							 struct dcerpc_binding_handle *h,
 							 const char *_server_unc /* [in] [unique,charset(UTF16)] */,
-							 const char *_share /* [in] [charset(UTF16),unique] */,
+							 const char *_share /* [in] [unique,charset(UTF16)] */,
 							 const char *_file /* [in] [charset(UTF16)] */,
 							 uint32_t _securityinformation /* [in]  */,
 							 struct sec_desc_buf **_sd_buf /* [out] [ref] */)
@@ -8752,7 +8752,7 @@ NTSTATUS dcerpc_srvsvc_NetGetFileSecurity_recv(struct tevent_req *req,
 NTSTATUS dcerpc_srvsvc_NetGetFileSecurity(struct dcerpc_binding_handle *h,
 					  TALLOC_CTX *mem_ctx,
 					  const char *_server_unc /* [in] [unique,charset(UTF16)] */,
-					  const char *_share /* [in] [charset(UTF16),unique] */,
+					  const char *_share /* [in] [unique,charset(UTF16)] */,
 					  const char *_file /* [in] [charset(UTF16)] */,
 					  uint32_t _securityinformation /* [in]  */,
 					  struct sec_desc_buf **_sd_buf /* [out] [ref] */,
@@ -8871,8 +8871,8 @@ static void dcerpc_srvsvc_NetSetFileSecurity_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_srvsvc_NetSetFileSecurity_send(TALLOC_CTX *mem_ctx,
 							 struct tevent_context *ev,
 							 struct dcerpc_binding_handle *h,
-							 const char *_server_unc /* [in] [charset(UTF16),unique] */,
-							 const char *_share /* [in] [charset(UTF16),unique] */,
+							 const char *_server_unc /* [in] [unique,charset(UTF16)] */,
+							 const char *_share /* [in] [unique,charset(UTF16)] */,
 							 const char *_file /* [in] [charset(UTF16)] */,
 							 uint32_t _securityinformation /* [in]  */,
 							 struct sec_desc_buf *_sd_buf /* [in] [ref] */)
@@ -8969,8 +8969,8 @@ NTSTATUS dcerpc_srvsvc_NetSetFileSecurity_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_srvsvc_NetSetFileSecurity(struct dcerpc_binding_handle *h,
 					  TALLOC_CTX *mem_ctx,
-					  const char *_server_unc /* [in] [charset(UTF16),unique] */,
-					  const char *_share /* [in] [charset(UTF16),unique] */,
+					  const char *_server_unc /* [in] [unique,charset(UTF16)] */,
+					  const char *_share /* [in] [unique,charset(UTF16)] */,
 					  const char *_file /* [in] [charset(UTF16)] */,
 					  uint32_t _securityinformation /* [in]  */,
 					  struct sec_desc_buf *_sd_buf /* [in] [ref] */,
@@ -9299,7 +9299,7 @@ static void dcerpc_srvsvc_NetServerSetServiceBitsEx_done(struct tevent_req *subr
 struct tevent_req *dcerpc_srvsvc_NetServerSetServiceBitsEx_send(TALLOC_CTX *mem_ctx,
 								struct tevent_context *ev,
 								struct dcerpc_binding_handle *h,
-								const char *_server_unc /* [in] [charset(UTF16),unique] */,
+								const char *_server_unc /* [in] [unique,charset(UTF16)] */,
 								const char *_emulated_server_unc /* [in] [unique,charset(UTF16)] */,
 								const char *_transport /* [in] [charset(UTF16),unique] */,
 								uint32_t _servicebitsofinterest /* [in]  */,
@@ -9399,7 +9399,7 @@ NTSTATUS dcerpc_srvsvc_NetServerSetServiceBitsEx_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_srvsvc_NetServerSetServiceBitsEx(struct dcerpc_binding_handle *h,
 						 TALLOC_CTX *mem_ctx,
-						 const char *_server_unc /* [in] [charset(UTF16),unique] */,
+						 const char *_server_unc /* [in] [unique,charset(UTF16)] */,
 						 const char *_emulated_server_unc /* [in] [unique,charset(UTF16)] */,
 						 const char *_transport /* [in] [charset(UTF16),unique] */,
 						 uint32_t _servicebitsofinterest /* [in]  */,

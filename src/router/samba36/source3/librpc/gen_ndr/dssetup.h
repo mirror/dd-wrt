@@ -127,7 +127,7 @@ struct dssetup_DsRoleGetPrimaryDomainInformation {
 	} in;
 
 	struct {
-		union dssetup_DsRoleInfo *info;/* [unique,switch_is(level)] */
+		union dssetup_DsRoleInfo *info;/* [switch_is(level),unique] */
 		WERROR result;
 	} out;
 

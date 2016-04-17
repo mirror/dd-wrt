@@ -39,7 +39,7 @@ struct ORPC_EXTENT {
 struct ORPC_EXTENT_ARRAY {
 	uint32_t size;
 	uint32_t reserved;
-	struct ORPC_EXTENT **extent;/* [size_is(((size+1)&~1)),unique] */
+	struct ORPC_EXTENT **extent;/* [unique,size_is(((size+1)&~1))] */
 };
 
 struct ORPCTHIS {
@@ -58,22 +58,22 @@ struct ORPCTHAT {
 struct STRINGBINDING {
 	uint16_t wTowerId;
 	const char * NetworkAddr;/* [flag(LIBNDR_FLAG_STR_NULLTERM|LIBNDR_FLAG_ALIGN2)] */
-}/* [public,flag(LIBNDR_FLAG_NOALIGN)] */;
+}/* [flag(LIBNDR_FLAG_NOALIGN),public] */;
 
 struct STRINGARRAY {
 	struct STRINGBINDING **stringbindings;/* [unique] */
-}/* [noprint,public,nopush,nopull] */;
+}/* [public,nopush,noprint,nopull] */;
 
 struct DUALSTRINGARRAY {
 	struct STRINGBINDING **stringbindings;/* [unique] */
 	struct SECURITYBINDING **securitybindings;/* [unique] */
-}/* [noprint,nopush,nopull,public] */;
+}/* [nopull,noprint,nopush,public] */;
 
 struct SECURITYBINDING {
 	uint16_t wAuthnSvc;
 	uint16_t wAuthzSvc;
 	const char * PrincName;/* [flag(LIBNDR_FLAG_STR_NULLTERM|LIBNDR_FLAG_ALIGN2)] */
-}/* [flag(LIBNDR_FLAG_NOALIGN),public] */;
+}/* [public,flag(LIBNDR_FLAG_NOALIGN)] */;
 
 enum OBJREF_FLAGS
 #ifndef USE_UINT_ENUMS
@@ -145,7 +145,7 @@ struct OBJREF {
 	uint32_t signature;
 	uint32_t flags;
 	struct GUID iid;
-	union OBJREF_Types u_objref;/* [switch_type(uint32),switch_is(flags)] */
+	union OBJREF_Types u_objref;/* [switch_is(flags),switch_type(uint32)] */
 }/* [flag(LIBNDR_FLAG_LITTLE_ENDIAN),public] */;
 
 struct MInterfacePointer {

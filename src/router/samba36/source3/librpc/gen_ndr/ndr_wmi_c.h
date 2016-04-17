@@ -728,7 +728,7 @@ struct tevent_req *dcerpc_IEnumWbemClassObject_Next_send(TALLOC_CTX *mem_ctx,
 							 struct ORPCTHIS _ORPCthis /* [in]  */,
 							 int32_t _lTimeout /* [in]  */,
 							 uint32_t _uCount /* [in]  */,
-							 struct MInterfacePointer **_apObjects /* [out] [ref,length_is(*puReturned),size_is(uCount)] */,
+							 struct MInterfacePointer **_apObjects /* [out] [ref,size_is(uCount),length_is(*puReturned)] */,
 							 uint32_t *_puReturned /* [out] [ref] */);
 NTSTATUS dcerpc_IEnumWbemClassObject_Next_recv(struct tevent_req *req,
 					       TALLOC_CTX *mem_ctx,
@@ -739,7 +739,7 @@ NTSTATUS dcerpc_IEnumWbemClassObject_Next(struct dcerpc_binding_handle *h,
 					  struct ORPCTHIS _ORPCthis /* [in]  */,
 					  int32_t _lTimeout /* [in]  */,
 					  uint32_t _uCount /* [in]  */,
-					  struct MInterfacePointer **_apObjects /* [out] [ref,length_is(*puReturned),size_is(uCount)] */,
+					  struct MInterfacePointer **_apObjects /* [out] [ref,size_is(uCount),length_is(*puReturned)] */,
 					  uint32_t *_puReturned /* [out] [ref] */,
 					  WERROR *result);
 
@@ -1046,9 +1046,9 @@ struct tevent_req *dcerpc_RequestChallenge_send(TALLOC_CTX *mem_ctx,
 						struct dcerpc_binding_handle *h,
 						struct ORPCTHAT *_ORPCthat /* [out] [ref] */,
 						struct ORPCTHIS _ORPCthis /* [in]  */,
-						const char *_wszNetworkResource /* [in] [charset(UTF16),unique] */,
+						const char *_wszNetworkResource /* [in] [unique,charset(UTF16)] */,
 						const char *_wszUser /* [in] [unique,charset(UTF16)] */,
-						uint8_t *_Nonce /* [out] [size_is(16),length_is(16),ref] */);
+						uint8_t *_Nonce /* [out] [length_is(16),size_is(16),ref] */);
 NTSTATUS dcerpc_RequestChallenge_recv(struct tevent_req *req,
 				      TALLOC_CTX *mem_ctx,
 				      WERROR *result);
@@ -1056,9 +1056,9 @@ NTSTATUS dcerpc_RequestChallenge(struct dcerpc_binding_handle *h,
 				 TALLOC_CTX *mem_ctx,
 				 struct ORPCTHAT *_ORPCthat /* [out] [ref] */,
 				 struct ORPCTHIS _ORPCthis /* [in]  */,
-				 const char *_wszNetworkResource /* [in] [charset(UTF16),unique] */,
+				 const char *_wszNetworkResource /* [in] [unique,charset(UTF16)] */,
 				 const char *_wszUser /* [in] [unique,charset(UTF16)] */,
-				 uint8_t *_Nonce /* [out] [size_is(16),length_is(16),ref] */,
+				 uint8_t *_Nonce /* [out] [length_is(16),size_is(16),ref] */,
 				 WERROR *result);
 
 struct tevent_req *dcerpc_WBEMLogin_r_send(TALLOC_CTX *mem_ctx,
@@ -1072,8 +1072,8 @@ struct tevent_req *dcerpc_WBEMLogin_send(TALLOC_CTX *mem_ctx,
 					 struct dcerpc_binding_handle *h,
 					 struct ORPCTHAT *_ORPCthat /* [out] [ref] */,
 					 struct ORPCTHIS _ORPCthis /* [in]  */,
-					 const char *_wszPreferredLocale /* [in] [unique,charset(UTF16)] */,
-					 uint8_t *_AccessToken /* [in] [length_is(16),size_is(16),unique] */,
+					 const char *_wszPreferredLocale /* [in] [charset(UTF16),unique] */,
+					 uint8_t *_AccessToken /* [in] [size_is(16),unique,length_is(16)] */,
 					 int32_t _lFlags /* [in]  */,
 					 struct MInterfacePointer *_pCtx /* [in] [ref] */,
 					 struct MInterfacePointer **_ppNamespace /* [out] [ref] */);
@@ -1084,8 +1084,8 @@ NTSTATUS dcerpc_WBEMLogin(struct dcerpc_binding_handle *h,
 			  TALLOC_CTX *mem_ctx,
 			  struct ORPCTHAT *_ORPCthat /* [out] [ref] */,
 			  struct ORPCTHIS _ORPCthis /* [in]  */,
-			  const char *_wszPreferredLocale /* [in] [unique,charset(UTF16)] */,
-			  uint8_t *_AccessToken /* [in] [length_is(16),size_is(16),unique] */,
+			  const char *_wszPreferredLocale /* [in] [charset(UTF16),unique] */,
+			  uint8_t *_AccessToken /* [in] [size_is(16),unique,length_is(16)] */,
 			  int32_t _lFlags /* [in]  */,
 			  struct MInterfacePointer *_pCtx /* [in] [ref] */,
 			  struct MInterfacePointer **_ppNamespace /* [out] [ref] */,
@@ -1145,7 +1145,7 @@ struct tevent_req *dcerpc_IWbemWCOSmartEnum_Next_send(TALLOC_CTX *mem_ctx,
 						      struct GUID *_gWCO /* [in] [ref] */,
 						      uint32_t *_puReturned /* [out] [ref] */,
 						      uint32_t *_pSize /* [out] [ref] */,
-						      uint8_t **_pData /* [out] [ref,size_is(,*pSize)] */);
+						      uint8_t **_pData /* [out] [size_is(,*pSize),ref] */);
 NTSTATUS dcerpc_IWbemWCOSmartEnum_Next_recv(struct tevent_req *req,
 					    TALLOC_CTX *mem_ctx,
 					    WERROR *result);
@@ -1160,7 +1160,7 @@ NTSTATUS dcerpc_IWbemWCOSmartEnum_Next(struct dcerpc_binding_handle *h,
 				       struct GUID *_gWCO /* [in] [ref] */,
 				       uint32_t *_puReturned /* [out] [ref] */,
 				       uint32_t *_pSize /* [out] [ref] */,
-				       uint8_t **_pData /* [out] [ref,size_is(,*pSize)] */,
+				       uint8_t **_pData /* [out] [size_is(,*pSize),ref] */,
 				       WERROR *result);
 
 #endif /* _HEADER_RPC_IWbemWCOSmartEnum */
@@ -1361,7 +1361,7 @@ struct tevent_req *dcerpc_Indicate_send(TALLOC_CTX *mem_ctx,
 					struct ORPCTHAT *_ORPCthat /* [out] [ref] */,
 					struct ORPCTHIS _ORPCthis /* [in]  */,
 					int32_t _lObjectCount /* [in]  */,
-					struct MInterfacePointer **_apObjArray /* [in] [ref,size_is(lObjectCount)] */);
+					struct MInterfacePointer **_apObjArray /* [in] [size_is(lObjectCount),ref] */);
 NTSTATUS dcerpc_Indicate_recv(struct tevent_req *req,
 			      TALLOC_CTX *mem_ctx,
 			      WERROR *result);
@@ -1370,7 +1370,7 @@ NTSTATUS dcerpc_Indicate(struct dcerpc_binding_handle *h,
 			 struct ORPCTHAT *_ORPCthat /* [out] [ref] */,
 			 struct ORPCTHIS _ORPCthis /* [in]  */,
 			 int32_t _lObjectCount /* [in]  */,
-			 struct MInterfacePointer **_apObjArray /* [in] [ref,size_is(lObjectCount)] */,
+			 struct MInterfacePointer **_apObjArray /* [in] [size_is(lObjectCount),ref] */,
 			 WERROR *result);
 
 #endif /* _HEADER_RPC_IWbemObjectSink */

@@ -24,15 +24,15 @@ struct bkrp_exported_RSA_key_pair {
 	uint32_t magic2;/* [value(0x0000A400)] */
 	uint32_t magic3;/* [value(0x32415352)] */
 	uint32_t magic4;/* [value(0x00000800)] */
-	DATA_BLOB public_exponent;/* [flag(LIBNDR_FLAG_REMAINING),subcontext(0),subcontext_size(4)] */
+	DATA_BLOB public_exponent;/* [subcontext_size(4),subcontext(0),flag(LIBNDR_FLAG_REMAINING)] */
 	DATA_BLOB modulus;/* [subcontext_size(256),subcontext(0),flag(LIBNDR_FLAG_REMAINING)] */
-	DATA_BLOB prime1;/* [flag(LIBNDR_FLAG_REMAINING),subcontext(0),subcontext_size(128)] */
-	DATA_BLOB prime2;/* [flag(LIBNDR_FLAG_REMAINING),subcontext(0),subcontext_size(128)] */
-	DATA_BLOB exponent1;/* [subcontext(0),subcontext_size(128),flag(LIBNDR_FLAG_REMAINING)] */
-	DATA_BLOB exponent2;/* [flag(LIBNDR_FLAG_REMAINING),subcontext(0),subcontext_size(128)] */
+	DATA_BLOB prime1;/* [subcontext_size(128),subcontext(0),flag(LIBNDR_FLAG_REMAINING)] */
+	DATA_BLOB prime2;/* [flag(LIBNDR_FLAG_REMAINING),subcontext_size(128),subcontext(0)] */
+	DATA_BLOB exponent1;/* [subcontext_size(128),subcontext(0),flag(LIBNDR_FLAG_REMAINING)] */
+	DATA_BLOB exponent2;/* [subcontext(0),subcontext_size(128),flag(LIBNDR_FLAG_REMAINING)] */
 	DATA_BLOB coefficient;/* [subcontext_size(128),subcontext(0),flag(LIBNDR_FLAG_REMAINING)] */
-	DATA_BLOB private_exponent;/* [subcontext_size(256),subcontext(0),flag(LIBNDR_FLAG_REMAINING)] */
-	DATA_BLOB cert;/* [flag(LIBNDR_FLAG_REMAINING),subcontext_size(certificate_len),subcontext(0)] */
+	DATA_BLOB private_exponent;/* [flag(LIBNDR_FLAG_REMAINING),subcontext(0),subcontext_size(256)] */
+	DATA_BLOB cert;/* [flag(LIBNDR_FLAG_REMAINING),subcontext(0),subcontext_size(certificate_len)] */
 };
 
 struct bkrp_dc_serverwrap_key {
@@ -116,7 +116,7 @@ struct bkrp_BackupKey {
 	} in;
 
 	struct {
-		uint8_t **data_out;/* [ref,size_is(,*data_out_len)] */
+		uint8_t **data_out;/* [size_is(,*data_out_len),ref] */
 		uint32_t *data_out_len;/* [ref] */
 		WERROR result;
 	} out;

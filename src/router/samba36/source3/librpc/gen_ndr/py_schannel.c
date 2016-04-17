@@ -16,8 +16,8 @@ staticforward PyTypeObject NL_AUTH_SIGNATURE_Type;
 staticforward PyTypeObject NL_AUTH_SHA2_SIGNATURE_Type;
 
 void initschannel(void);static PyTypeObject *netr_Credential_Type;
-static PyTypeObject *Object_Type;
 static PyTypeObject *dom_sid_Type;
+static PyTypeObject *Object_Type;
 
 static PyObject *py_netlogon_creds_CredentialState_get_negotiate_flags(PyObject *obj, void *closure)
 {
@@ -1239,20 +1239,20 @@ void initschannel(void)
 {
 	PyObject *m;
 	PyObject *dep_samba_dcerpc_security;
-	PyObject *dep_talloc;
 	PyObject *dep_samba_dcerpc_nbt;
+	PyObject *dep_talloc;
 	PyObject *dep_samba_dcerpc_netlogon;
 
 	dep_samba_dcerpc_security = PyImport_ImportModule("samba.dcerpc.security");
 	if (dep_samba_dcerpc_security == NULL)
 		return;
 
-	dep_talloc = PyImport_ImportModule("talloc");
-	if (dep_talloc == NULL)
-		return;
-
 	dep_samba_dcerpc_nbt = PyImport_ImportModule("samba.dcerpc.nbt");
 	if (dep_samba_dcerpc_nbt == NULL)
+		return;
+
+	dep_talloc = PyImport_ImportModule("talloc");
+	if (dep_talloc == NULL)
 		return;
 
 	dep_samba_dcerpc_netlogon = PyImport_ImportModule("samba.dcerpc.netlogon");
@@ -1263,12 +1263,12 @@ void initschannel(void)
 	if (netr_Credential_Type == NULL)
 		return;
 
-	Object_Type = (PyTypeObject *)PyObject_GetAttrString(dep_talloc, "Object");
-	if (Object_Type == NULL)
-		return;
-
 	dom_sid_Type = (PyTypeObject *)PyObject_GetAttrString(dep_samba_dcerpc_security, "dom_sid");
 	if (dom_sid_Type == NULL)
+		return;
+
+	Object_Type = (PyTypeObject *)PyObject_GetAttrString(dep_talloc, "Object");
+	if (Object_Type == NULL)
 		return;
 
 	netlogon_creds_CredentialState_Type.tp_base = Object_Type;
@@ -1304,19 +1304,19 @@ void initschannel(void)
 	if (m == NULL)
 		return;
 
-	PyModule_AddObject(m, "NL_FLAG_UTF8_NETBIOS_COMPUTER_NAME", PyInt_FromLong(NL_FLAG_UTF8_NETBIOS_COMPUTER_NAME));
+	PyModule_AddObject(m, "NL_FLAG_UTF8_DNS_DOMAIN_NAME", PyInt_FromLong(NL_FLAG_UTF8_DNS_DOMAIN_NAME));
 	PyModule_AddObject(m, "NL_FLAG_OEM_NETBIOS_COMPUTER_NAME", PyInt_FromLong(NL_FLAG_OEM_NETBIOS_COMPUTER_NAME));
-	PyModule_AddObject(m, "NL_NEGOTIATE_REQUEST", PyInt_FromLong(NL_NEGOTIATE_REQUEST));
-	PyModule_AddObject(m, "NL_AUTH_SIGNATURE_SIZE", PyInt_FromLong(0x20));
-	PyModule_AddObject(m, "NL_SEAL_RC4", PyInt_FromLong(NL_SEAL_RC4));
 	PyModule_AddObject(m, "NL_SEAL_AES128", PyInt_FromLong(NL_SEAL_AES128));
 	PyModule_AddObject(m, "NL_SEAL_NONE", PyInt_FromLong(NL_SEAL_NONE));
+	PyModule_AddObject(m, "NL_NEGOTIATE_REQUEST", PyInt_FromLong(NL_NEGOTIATE_REQUEST));
+	PyModule_AddObject(m, "NL_FLAG_UTF8_NETBIOS_COMPUTER_NAME", PyInt_FromLong(NL_FLAG_UTF8_NETBIOS_COMPUTER_NAME));
 	PyModule_AddObject(m, "NL_NEGOTIATE_RESPONSE", PyInt_FromLong(NL_NEGOTIATE_RESPONSE));
-	PyModule_AddObject(m, "NL_FLAG_UTF8_DNS_HOST_NAME", PyInt_FromLong(NL_FLAG_UTF8_DNS_HOST_NAME));
-	PyModule_AddObject(m, "NL_SIGN_HMAC_SHA256", PyInt_FromLong(NL_SIGN_HMAC_SHA256));
 	PyModule_AddObject(m, "NL_FLAG_OEM_NETBIOS_DOMAIN_NAME", PyInt_FromLong(NL_FLAG_OEM_NETBIOS_DOMAIN_NAME));
+	PyModule_AddObject(m, "NL_SEAL_RC4", PyInt_FromLong(NL_SEAL_RC4));
+	PyModule_AddObject(m, "NL_FLAG_UTF8_DNS_HOST_NAME", PyInt_FromLong(NL_FLAG_UTF8_DNS_HOST_NAME));
+	PyModule_AddObject(m, "NL_AUTH_SIGNATURE_SIZE", PyInt_FromLong(0x20));
+	PyModule_AddObject(m, "NL_SIGN_HMAC_SHA256", PyInt_FromLong(NL_SIGN_HMAC_SHA256));
 	PyModule_AddObject(m, "NL_SIGN_HMAC_MD5", PyInt_FromLong(NL_SIGN_HMAC_MD5));
-	PyModule_AddObject(m, "NL_FLAG_UTF8_DNS_DOMAIN_NAME", PyInt_FromLong(NL_FLAG_UTF8_DNS_DOMAIN_NAME));
 	Py_INCREF((PyObject *)(void *)&netlogon_creds_CredentialState_Type);
 	PyModule_AddObject(m, "netlogon_creds_CredentialState", (PyObject *)(void *)&netlogon_creds_CredentialState_Type);
 	Py_INCREF((PyObject *)(void *)&NL_AUTH_MESSAGE_Type);

@@ -469,7 +469,7 @@ enum CIMTYPE_ENUMERATION
 
 struct CIMSTRINGS {
 	uint32_t count;
-	const char **item;/* [ref,charset(UTF16)] */
+	const char **item;/* [charset(UTF16),ref] */
 };
 
 /* bitmap DEFAULT_FLAGS */
@@ -910,7 +910,7 @@ struct IEnumWbemClassObject_Next {
 
 	struct {
 		struct ORPCTHAT *ORPCthat;/* [ref] */
-		struct MInterfacePointer **apObjects;/* [ref,length_is(*puReturned),size_is(uCount)] */
+		struct MInterfacePointer **apObjects;/* [ref,size_is(uCount),length_is(*puReturned)] */
 		uint32_t *puReturned;/* [ref] */
 		WERROR result;
 	} out;
@@ -1108,13 +1108,13 @@ struct EstablishPosition {
 struct RequestChallenge {
 	struct {
 		struct ORPCTHIS ORPCthis;
-		const char *wszNetworkResource;/* [charset(UTF16),unique] */
+		const char *wszNetworkResource;/* [unique,charset(UTF16)] */
 		const char *wszUser;/* [unique,charset(UTF16)] */
 	} in;
 
 	struct {
 		struct ORPCTHAT *ORPCthat;/* [ref] */
-		uint8_t *Nonce;/* [size_is(16),length_is(16),ref] */
+		uint8_t *Nonce;/* [length_is(16),size_is(16),ref] */
 		WERROR result;
 	} out;
 
@@ -1124,8 +1124,8 @@ struct RequestChallenge {
 struct WBEMLogin {
 	struct {
 		struct ORPCTHIS ORPCthis;
-		const char *wszPreferredLocale;/* [unique,charset(UTF16)] */
-		uint8_t *AccessToken;/* [length_is(16),size_is(16),unique] */
+		const char *wszPreferredLocale;/* [charset(UTF16),unique] */
+		uint8_t *AccessToken;/* [size_is(16),unique,length_is(16)] */
 		int32_t lFlags;
 		struct MInterfacePointer *pCtx;/* [ref] */
 	} in;
@@ -1227,7 +1227,7 @@ struct IWbemWCOSmartEnum_Next {
 		struct ORPCTHAT *ORPCthat;/* [ref] */
 		uint32_t *puReturned;/* [ref] */
 		uint32_t *pSize;/* [ref] */
-		uint8_t **pData;/* [ref,size_is(,*pSize)] */
+		uint8_t **pData;/* [size_is(,*pSize),ref] */
 		WERROR result;
 	} out;
 
@@ -1355,7 +1355,7 @@ struct Indicate {
 	struct {
 		struct ORPCTHIS ORPCthis;
 		int32_t lObjectCount;
-		struct MInterfacePointer **apObjArray;/* [ref,size_is(lObjectCount)] */
+		struct MInterfacePointer **apObjArray;/* [size_is(lObjectCount),ref] */
 	} in;
 
 	struct {

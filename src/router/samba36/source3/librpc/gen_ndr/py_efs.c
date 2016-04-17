@@ -16,10 +16,10 @@ staticforward PyTypeObject EFS_CERTIFICATE_BLOB_Type;
 staticforward PyTypeObject ENCRYPTION_CERTIFICATE_Type;
 staticforward PyTypeObject efs_InterfaceType;
 
-void initefs(void);static PyTypeObject *policy_handle_Type;
-static PyTypeObject *ClientConnection_Type;
+void initefs(void);static PyTypeObject *ClientConnection_Type;
 static PyTypeObject *dom_sid_Type;
 static PyTypeObject *Object_Type;
+static PyTypeObject *policy_handle_Type;
 
 static PyObject *py_EFS_HASH_BLOB_get_cbData(PyObject *obj, void *closure)
 {
@@ -839,29 +839,25 @@ static PyMethodDef efs_methods[] = {
 void initefs(void)
 {
 	PyObject *m;
-	PyObject *dep_talloc;
-	PyObject *dep_samba_dcerpc_security;
 	PyObject *dep_samba_dcerpc_misc;
+	PyObject *dep_samba_dcerpc_security;
+	PyObject *dep_talloc;
 	PyObject *dep_samba_dcerpc_base;
 
-	dep_talloc = PyImport_ImportModule("talloc");
-	if (dep_talloc == NULL)
+	dep_samba_dcerpc_misc = PyImport_ImportModule("samba.dcerpc.misc");
+	if (dep_samba_dcerpc_misc == NULL)
 		return;
 
 	dep_samba_dcerpc_security = PyImport_ImportModule("samba.dcerpc.security");
 	if (dep_samba_dcerpc_security == NULL)
 		return;
 
-	dep_samba_dcerpc_misc = PyImport_ImportModule("samba.dcerpc.misc");
-	if (dep_samba_dcerpc_misc == NULL)
+	dep_talloc = PyImport_ImportModule("talloc");
+	if (dep_talloc == NULL)
 		return;
 
 	dep_samba_dcerpc_base = PyImport_ImportModule("samba.dcerpc.base");
 	if (dep_samba_dcerpc_base == NULL)
-		return;
-
-	policy_handle_Type = (PyTypeObject *)PyObject_GetAttrString(dep_samba_dcerpc_misc, "policy_handle");
-	if (policy_handle_Type == NULL)
 		return;
 
 	ClientConnection_Type = (PyTypeObject *)PyObject_GetAttrString(dep_samba_dcerpc_base, "ClientConnection");
@@ -874,6 +870,10 @@ void initefs(void)
 
 	Object_Type = (PyTypeObject *)PyObject_GetAttrString(dep_talloc, "Object");
 	if (Object_Type == NULL)
+		return;
+
+	policy_handle_Type = (PyTypeObject *)PyObject_GetAttrString(dep_samba_dcerpc_misc, "policy_handle");
+	if (policy_handle_Type == NULL)
 		return;
 
 	EFS_HASH_BLOB_Type.tp_base = Object_Type;
