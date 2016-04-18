@@ -1605,6 +1605,8 @@ struct wifi_interface *wifi_getfreq(char *ifname)
 int wifi_getchannel(char *ifname)
 {
 	struct wifi_interface *interface = wifi_getfreq(ifname);
+	if (!interface)
+		return 0;
 	int channel = ieee80211_mhz2ieee(interface->freq);
 	free(interface);
 	return channel;
