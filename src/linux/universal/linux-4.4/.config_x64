@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/x86_64 4.4.7-rc1 Kernel Configuration
+# Linux/x86_64 4.4.7 Kernel Configuration
 #
 CONFIG_64BIT=y
 CONFIG_X86_64=y
@@ -1179,7 +1179,8 @@ CONFIG_DMA_SHARED_BUFFER=y
 #
 # Bus devices
 #
-# CONFIG_CONNECTOR is not set
+CONFIG_CONNECTOR=y
+CONFIG_PROC_EVENTS=y
 # CONFIG_MTD is not set
 # CONFIG_OF is not set
 CONFIG_ARCH_MIGHT_HAVE_PC_PARPORT=y
@@ -2754,6 +2755,7 @@ CONFIG_FB_TILEBLITTING=y
 # CONFIG_FB_ASILIANT is not set
 # CONFIG_FB_IMSTT is not set
 CONFIG_FB_VGA16=y
+# CONFIG_FB_UVESA is not set
 CONFIG_FB_VESA=y
 # CONFIG_FB_EFI is not set
 # CONFIG_FB_N411 is not set
@@ -3256,6 +3258,7 @@ CONFIG_VIRTIO_MMIO_CMDLINE_DEVICES=y
 # Microsoft Hyper-V guest support
 #
 CONFIG_HYPERV=y
+CONFIG_HYPERV_UTILS=y
 CONFIG_HYPERV_BALLOON=y
 
 #
