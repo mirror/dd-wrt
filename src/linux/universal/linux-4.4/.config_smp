@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/i386 4.4.7-rc1 Kernel Configuration
+# Linux/i386 4.4.7 Kernel Configuration
 #
 # CONFIG_64BIT is not set
 CONFIG_X86_32=y
@@ -1159,7 +1159,8 @@ CONFIG_DMA_SHARED_BUFFER=y
 #
 # Bus devices
 #
-# CONFIG_CONNECTOR is not set
+CONFIG_CONNECTOR=y
+CONFIG_PROC_EVENTS=y
 # CONFIG_MTD is not set
 CONFIG_OF=y
 # CONFIG_OF_UNITTEST is not set
@@ -2768,6 +2769,7 @@ CONFIG_FB_TILEBLITTING=y
 # CONFIG_FB_ASILIANT is not set
 # CONFIG_FB_IMSTT is not set
 CONFIG_FB_VGA16=y
+# CONFIG_FB_UVESA is not set
 CONFIG_FB_VESA=y
 # CONFIG_FB_N411 is not set
 # CONFIG_FB_HGA is not set
@@ -3271,6 +3273,7 @@ CONFIG_VIRTIO_MMIO_CMDLINE_DEVICES=y
 # Microsoft Hyper-V guest support
 #
 CONFIG_HYPERV=y
+CONFIG_HYPERV_UTILS=y
 CONFIG_HYPERV_BALLOON=y
 CONFIG_STAGING=y
 # CONFIG_SLICOSS is not set
