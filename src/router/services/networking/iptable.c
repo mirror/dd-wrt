@@ -183,7 +183,7 @@ count_bits (unsigned char *sin, unsigned char *ein)
 
 
 void
-subrange (unsigned char *sin, unsigned char *ein)
+subrange (unsigned char *sin, unsigned char *ein,  char *range_buf)
 // recursive function to divide ip range
 {
   unsigned char nets[4], nete[4];
@@ -294,7 +294,7 @@ range (char *start, char *end, char *range_buf)
       endipc[i] = (unsigned char) endip[i];
     }
 
-  subrange (startipc, endipc);
+  subrange (startipc, endipc, range_buf);
 
   cprintf ("range_buf=[%s]\n", range_buf);
 
