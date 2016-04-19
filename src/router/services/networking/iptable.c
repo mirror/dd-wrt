@@ -32,7 +32,6 @@
 #include <rc.h>
 #include <iptables.h>
 
-static char range_buf[500] = "";
 
 //iptc_handle_t handle = NULL;
 /*
@@ -260,7 +259,7 @@ subrange (unsigned char *sin, unsigned char *ein)
 }
 
 char *
-range (char *start, char *end)
+range (char *start, char *end, char *range_buf)
 {
 
   unsigned char startipc[4], endipc[4];
