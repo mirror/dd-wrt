@@ -236,7 +236,7 @@ subrange (unsigned char *sin, unsigned char *ein,  char *range_buf)
 	       nextlen);
     }
   else				// continue check
-    subrange (sin, nete);
+    subrange (sin, nete, range_buf);
 
   getse (ein, nets, nete, nextlen);
 
@@ -254,7 +254,7 @@ subrange (unsigned char *sin, unsigned char *ein,  char *range_buf)
 	       nextlen);
     }
   else				// continue check
-    subrange (nets, ein);
+    subrange (nets, ein, range_buf);
 
 }
 
