@@ -109,7 +109,7 @@ struct frag_hdr {
 	__u8	reserved;
 	__be16	frag_off;
 	__be32	identification;
-} __attribute__((packed, aligned(2)));
+} MIPS_ENABLED(__attribute__((packed, aligned(2))));
 
 #define	IP6_MF		0x0001
 #define	IP6_OFFSET	0xFFF8
