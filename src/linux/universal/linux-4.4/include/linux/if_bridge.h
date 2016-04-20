@@ -48,10 +48,6 @@ struct br_ip_list {
 #define BR_ISOLATE_MODE		BIT(11)
 #define BR_MULTICAST_TO_UCAST	BIT(12)
 
-/* values as per ieee8021QBridgeFdbAgingTime */
-#define BR_MIN_AGEING_TIME	(10 * HZ)
-#define BR_MAX_AGEING_TIME	(1000000 * HZ)
-
 #define BR_DEFAULT_AGEING_TIME	(300 * HZ)
 
 extern void brioctl_set(int (*ioctl_hook)(struct net *, unsigned int, void __user *));
