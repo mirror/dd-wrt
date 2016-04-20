@@ -1581,13 +1581,11 @@ client6_recvadvert(ifp, dh6, len, optinfo)
 
 		switch (evd->type) {
 		case DHCP6_EVDATA_IAPD:
-			stcode = DH6OPT_STCODE_NOPREFIXAVAIL;
-			stcodestr = "NoPrefixAvail";
-			break;
+			dprintf(LOG_INFO, FNAME, "NoPrefixAvail");
+			return (-1);
 		case DHCP6_EVDATA_IANA:
-			stcode = DH6OPT_STCODE_NOADDRSAVAIL;
-			stcodestr = "NoAddrsAvail";
-			break;
+			dprintf(LOG_INFO, FNAME, "NoAddrsAvail");
+			return (-1);
 		default:
 			continue;
 		}
