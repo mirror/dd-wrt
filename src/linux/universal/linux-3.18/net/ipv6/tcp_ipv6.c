@@ -39,6 +39,7 @@
 #include <linux/ipsec.h>
 #include <linux/times.h>
 #include <linux/slab.h>
+#include <asm/unaligned.h>
 #include <linux/uaccess.h>
 #include <linux/ipv6.h>
 #include <linux/icmpv6.h>
