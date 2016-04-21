@@ -261,8 +261,8 @@ int usbip_net_set_v6only(int sockfd)
 int usbip_net_tcp_connect(char *hostname, char *service)
 {
 	struct addrinfo hints, *res, *rp;
-	int sockfd;
 	int ret;
+	int sockfd = -1;
 
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_UNSPEC;
