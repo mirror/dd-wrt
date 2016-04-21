@@ -1575,17 +1575,22 @@ client6_recvadvert(ifp, dh6, len, optinfo)
 	 * a prefix.
 	 */
 	for (evd = TAILQ_FIRST(&ev->data_list); evd;
-	    evd = TAILQ_NEXT(evd, link)) {
+		evd = TAILQ_NEXT(evd, link)) {
 		u_int16_t stcode;
 		char *stcodestr;
+		struct dhcp6_listval *lv;
 
 		switch (evd->type) {
 		case DHCP6_EVDATA_IAPD:
-			dprintf(LOG_INFO, FNAME, "NoPrefixAvail");
-			return (-1);
+			stcode = DH6OPT_STCODE_NOPREFIXAVAIL;
+			stcodestr = "NoPrefixAvail";
+			lv = TAILQ_FIRST(&optinfo->iapd_list); 
+			break;
 		case DHCP6_EVDATA_IANA:
-			dprintf(LOG_INFO, FNAME, "NoAddrsAvail");
-			return (-1);
+			stcode = DH6OPT_STCODE_NOADDRSAVAIL;
+			stcodestr = "NoAddrsAvail";
+			lv = TAILQ_FIRST(&optinfo->iana_list); 
+			break;
 		default:
 			continue;
 		}
@@ -1595,6 +1600,14 @@ client6_recvadvert(ifp, dh6, len, optinfo)
 			    "advertise contains %s status", stcodestr);
 			return (-1);
 		}
+		for (; lv;lv = TAILQ_NEXT(lv, link)) {
+			if (dhcp6_find_listval(&lv->sublist,
+			    DHCP6_LISTVAL_STCODE, &stcode, 0)) {
+				dprintf(LOG_INFO, FNAME,
+				    "advertise contains %s status", stcodestr);
+				return (-1);
+			}
+		}	
 	}
 
 	if (ev->state != DHCP6S_SOLICIT ||
