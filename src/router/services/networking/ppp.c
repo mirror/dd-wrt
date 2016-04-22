@@ -332,6 +332,10 @@ int disconnected_pppoe_main(int argc, char **argv)
 
 		stop_dnsmasq();
 		start_dnsmasq();
+#ifdef HAVE_UNBOUND
+		stop_unbound();
+		start_unbound();
+#endif
 
 		return 0;
 	}
