@@ -296,8 +296,10 @@ static int bound(void)
 		 * save dns to resolv.conf 
 		 */
 		dns_to_resolv();
+#ifdef HAVE_UDHCPD
 		stop_udhcpd();
 		start_udhcpd();
+#endif
 #ifdef HAVE_UNBOUND
 		stop_unbound();
 		start_unbound();
