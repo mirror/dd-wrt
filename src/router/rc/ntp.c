@@ -44,8 +44,10 @@ void check_udhcpd(timer_t t, int arg)
 				// killps("udhcpd","-9");
 				killall("dnsmasq", SIGKILL);
 				killall("udhcpd", SIGKILL);
+#ifdef HAVE_UDHCPD
 				sleep(1);
 				eval("startservice", "udhcpd");
+#endif
 				sleep(1);
 				eval("startservice", "dnsmasq");
 			}
@@ -53,8 +55,10 @@ void check_udhcpd(timer_t t, int arg)
 			if (!isRunning("udhcpd")) {
 				killall("dnsmasq", SIGKILL);
 				killall("udhcpd", SIGKILL);
+#ifdef HAVE_UDHCPD
 				sleep(1);
 				eval("startservice", "udhcpd");
+#endif
 				sleep(1);
 				eval("startservice", "dnsmasq");
 			}
