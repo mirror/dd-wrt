@@ -2467,7 +2467,7 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "ath%d %d &#176;C", i, temp / 1000);
 		}
 	}
-	if (!found)
+	if (!found && !fp)
 		websWrite(wp, "%s", live_translate("status_router.notavail"));
 #endif
 	if (fp == NULL && fp2 == NULL)
