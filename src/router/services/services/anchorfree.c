@@ -166,6 +166,10 @@ void start_anchorfree(void)
 			start_lan();
 			stop_dnsmasq();
 			start_dnsmasq();
+#ifdef HAVE_UNBOUND
+			stop_unbound();
+			start_unbound();
+#endif
 			start_firewall();
 			stop_firewall();
 			start_firewall();
