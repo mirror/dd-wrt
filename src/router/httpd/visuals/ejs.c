@@ -2450,6 +2450,9 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	int c = getdevicecount();
 	int found = 0;
 	for (i = 0; i < c; i++) {
+		if (nvram_nmatch("disabled", "ath0%d_net_mode", i)) {
+		    continue;
+		}
 		char path[64];
 		sprintf(path, "/sys/class/ieee80211/phy%d/device/hwmon/hwmon0/temp1_input", i);
 		fp2 = fopen(path, "rb");
@@ -2464,6 +2467,8 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "ath%d %d &#176;C", i, temp / 1000);
 		}
 	}
+	if (!found)
+		websWrite(wp, "%s", live_translate("status_router.notavail"));
 #endif
 	if (fp == NULL && fp2 == NULL)
 		websWrite(wp, "%s", live_translate("status_router.notavail"));	// no 
