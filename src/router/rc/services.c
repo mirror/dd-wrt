@@ -126,7 +126,9 @@ static int start_services_main(int argc, char **argv)
 	start_service_f("tftpd");
 #endif
 	startstop_fdelay("httpd", 2);
+#ifdef HAVE_UDHCPD
 	start_service_f("udhcpd");
+#endif
 #ifdef HAVE_DNSMASQ
 	start_service_f("dnsmasq");
 #endif
@@ -263,7 +265,9 @@ static int stop_services_main(int argc, char **argv)
 #ifdef HAVE_DNSMASQ
 	stop_service_f("dnsmasq");
 #endif
+#ifdef HAVE_UDHCPD
 	stop_service_f("udhcpd");
+#endif
 	startstop_f("dns_clear_resolv");
 	stop_service_f("cron");
 
@@ -373,7 +377,10 @@ static int stop_services_main(int argc, char **argv)
 
 static void handle_dhcpd(void)
 {
+#ifdef HAVE_UDHCPD
 	startstop_f("udhcpd");
+#endif
+	startstop_f("dnsmasq");
 }
 
 static void handle_index(void)
@@ -430,7 +437,9 @@ static void handle_index(void)
 #ifdef HAVE_MADWIFI
 	start_service_f("stabridge");
 #endif
+#ifdef HAVE_UDHCPD
 	startstop_f("udhcpd");
+#endif
 #ifdef HAVE_DNSMASQ
 	startstop_f("dnsmasq");
 #endif
@@ -568,7 +577,9 @@ static void handle_hotspot(void)
 #endif
 	start_service_f("radio_timer");
 	//restart dhcp as well, to fix repeater bridge save issue (dhcp disables itself here)
+#ifdef HAVE_UDHCPD
 	startstop_f("udhcpd");
+#endif
 #ifdef HAVE_DNSMASQ
 	startstop_f("dnsmasq");
 #endif
@@ -602,7 +613,9 @@ static void handle_services(void)
 #ifdef HAVE_PPPOERELAY
 	startstop_f("pppoerelay");
 #endif
+#ifdef HAVE_UDHCPD
 	startstop_f("udhcpd");
+#endif
 #ifdef HAVE_SYSLOG
 	startstop_f("syslog");
 #endif
@@ -623,7 +636,9 @@ static void handle_services(void)
 #ifdef HAVE_UNBOUND
 	startstop_f("unbound");
 #endif
+#ifdef HAVE_UDHCPD
 	startstop_f("udhcpd");
+#endif
 #ifdef HAVE_CPUTEMP
 	startstop_f("hwmon");
 #endif
@@ -727,14 +742,18 @@ static void handle_management(void)
 	stop_service_f("zebra");
 #endif
 	stop_service_f("cron");
+#ifdef HAVE_UDHCPD
 	stop_service_f("udhcpd");
+#endif
 #ifdef HAVE_IPV6
 	stop_service_f("ipv6");
 #endif
 
 	stop_running_main(0, NULL);
 
+#ifdef HAVE_UDHCPD
 	start_service_f("udhcpd");
+#endif
 	start_service_f("cron");
 #ifdef HAVE_IPV6
 	start_service_f("ipv6");
@@ -1102,7 +1121,9 @@ static void handle_wireless(void)
 #endif
 	start_service_f("radio_timer");
 	//restart dhcp as well, to fix repeater bridge save issue (dhcp disables itself here)
+#ifdef HAVE_UDHCPD
 	startstop_f("udhcpd");
+#endif
 #ifdef HAVE_DNSMASQ
 	startstop_f("dnsmasq");
 #endif

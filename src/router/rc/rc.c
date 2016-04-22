@@ -562,8 +562,10 @@ int main(int argc, char **argv)
 
 	if (strstr(base, "restart_dns")) {
 		stop_service("dnsmasq");
+#ifdef HAVE_UDHCPD
 		stop_service("udhcpd");
 		start_service("udhcpd");
+#endif
 		start_service("dnsmasq");
 		return 0;
 	}
