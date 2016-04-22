@@ -150,6 +150,10 @@ static int update_value(void)
 		stop_udhcpd();
 		start_udhcpd();
 #endif
+#ifdef HAVE_UNBOUND
+		stop_unbound();
+		start_unbound();
+#endif
 	}
 	return 0;
 }
@@ -294,6 +298,10 @@ static int bound(void)
 		dns_to_resolv();
 		stop_udhcpd();
 		start_udhcpd();
+#ifdef HAVE_UNBOUND
+		stop_unbound();
+		start_unbound();
+#endif
 		start_firewall();
 		stop_wland();
 		start_wshaper();
