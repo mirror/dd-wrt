@@ -729,6 +729,7 @@ static void handle_nassrv(void)
 #ifdef HAVE_TRANSMISSION
 	start_service_f("transmission");
 #endif
+	startstop_f("firewall");
 
 }
 
