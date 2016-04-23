@@ -2450,7 +2450,7 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	int c = getdevicecount();
 	int found = 0;
 	for (i = 0; i < c; i++) {
-		if (nvram_nmatch("disabled", "ath0%d_net_mode", i)) {
+		if (nvram_nmatch("disabled", "ath%d_net_mode", i)) {
 		    continue;
 		}
 		char path[64];
