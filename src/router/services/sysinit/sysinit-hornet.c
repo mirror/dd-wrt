@@ -75,7 +75,7 @@ void start_sysinit(void)
 	fprintf(stderr, "load ATH Ethernet Driver\n");
 	system("insmod ag71xx || insmod ag7240_mod");
 	insmod("ledtrig-netdev");
-#ifdef HAVE_WR741V4
+#if defined(HAVE_WR741V4) && !defined(HAVE_GL150)
 	FILE *fp = fopen("/dev/mtdblock/0", "rb");
 	char mac[32];
 	if (fp) {
@@ -113,7 +113,7 @@ void start_sysinit(void)
 		for (i = 0; i < 256; i++)
 			copy[i] = buf2[i] & 0xff;
 		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
-		if (!memcmp(&copy[0], &copy[6], 3)) {
+		if (copy[0] == copy[6] && copy[1] == copy[7] && copy[2] == copy[8]) {
 			sprintf(mac2, "%02x:%02x:%02x:%02x:%02x:%02x", copy[6], copy[7], copy[8], copy[9], copy[10], copy[11]);
 			if (copy[5] < copy[11]) {
 				fprintf(stderr, "Using first mac for eth0 (%s)\n", mac);
@@ -190,6 +190,9 @@ void start_sysinit(void)
 	set_gpio(15, 1);
 	set_gpio(16, 1);
 	setEthLED(17, "eth0");
+#elif HAVE_GL150
+	setEthLED(13, "eth0");
+	setEthLED(15, "eth1");
 #elif HAVE_CARAMBOLA
 	eval("swconfig", "dev", "switch0", "set", "reset", "1");
 	eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
@@ -200,7 +203,10 @@ void start_sysinit(void)
 	eval("vconfig", "add", "eth1", "1");
 	eval("vconfig", "add", "eth1", "2");
 #endif
+
+
 #ifndef HAVE_ERC
+#ifndef HAVE_GL150
 #ifdef HAVE_HORNET
 #ifdef HAVE_ONNET
 	setEthLED(13, "eth0");
@@ -208,6 +214,7 @@ void start_sysinit(void)
 #else
 	setEthLED(17, "eth0");
 	setEthLED(13, "eth1");
+#endif
 #endif
 #endif
 #endif
