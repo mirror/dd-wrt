@@ -76,6 +76,7 @@ do
 	    echo CONFIG_UAPAC=y >> .config
 	    echo CONFIG_XWLOCO=y >> .config
 	    echo CONFIG_WR710=y >> .config
+	    echo CONFIG_GL150=y >> .config
 	    make oldconfig ARCH=mips
 	    sed -i 's/\CONFIG_WR841V8=y/ /g' .config	    
 	    sed -i 's/\CONFIG_WR710=y/ /g' .config	    
@@ -103,6 +104,7 @@ do
 	    sed -i 's/\CONFIG_DAP2330=y/ /g' .config	    
 	    sed -i 's/\CONFIG_UAPAC=y/ /g' .config	    
 	    sed -i 's/\CONFIG_XWLOCO=y/ /g' .config	    
+	    sed -i 's/\CONFIG_GL150=y/ /g' .config	    
 	    cp .config $i
     fi
 done
