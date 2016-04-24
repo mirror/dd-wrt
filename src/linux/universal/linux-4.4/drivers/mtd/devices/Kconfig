@@ -311,6 +311,9 @@ config DAP3310
 config WR710
 	bool "support for TPLink WR710"
 	depends on MACH_HORNET && WR741
+config GL150
+	bool "support for AR-GL-150"
+	depends on MACH_HORNET && WR710
 config ERC
 	bool "support for ERC Device"
 	depends on MACH_HORNET && !WR741
