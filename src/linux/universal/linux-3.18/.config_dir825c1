@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.18.30 Kernel Configuration
+# Linux/mips 3.18.31 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -1828,16 +1828,10 @@ CONFIG_FS_MBCACHE=m
 # CONFIG_REISERFS_FS is not set
 # CONFIG_JFS_FS is not set
 # CONFIG_XFS_FS is not set
-# CONFIG_XFS_QUOTA is not set
-CONFIG_XFS_POSIX_ACL=y
-# CONFIG_XFS_RT is not set
-# CONFIG_XFS_WARN is not set
-# CONFIG_XFS_DEBUG is not set
 # CONFIG_GFS2_FS is not set
 # CONFIG_BTRFS_FS is not set
 # CONFIG_NILFS2_FS is not set
-CONFIG_FS_POSIX_ACL=y
-CONFIG_EXPORTFS=m
+# CONFIG_FS_POSIX_ACL is not set
 CONFIG_FILE_LOCKING=y
 # CONFIG_DIRECT_IO is not set
 CONFIG_FSNOTIFY=y
