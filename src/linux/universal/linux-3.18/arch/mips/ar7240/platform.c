@@ -865,6 +865,9 @@ int __init ar7240_platform_init(void)
        ath79_setup_ar933x_phy4_switch(true, true);
 #endif
 #endif
+#ifdef CONFIG_GL150
+	mac = (u8 *)KSEG1ADDR(0x1fff0000);
+#endif
 
 #ifdef CONFIG_WASP_SUPPORT
 #define DB120_MAC0_OFFSET	0
@@ -885,11 +888,6 @@ int __init ar7240_platform_init(void)
 	ath79_init_mac(mac0, mac, -1);
 	ath79_init_mac(mac1, mac, 0);
     #elif CONFIG_UAPAC
-	mac = (u8 *)KSEG1ADDR(0x1fff0000);
-	ath79_init_mac(mac0, mac, -1);
-	ath79_init_mac(mac1, mac, 0);	
-    #elif CONFIG_GL150
-	#error "check"
 	mac = (u8 *)KSEG1ADDR(0x1fff0000);
 	ath79_init_mac(mac0, mac, -1);
 	ath79_init_mac(mac1, mac, 0);	
