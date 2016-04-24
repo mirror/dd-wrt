@@ -840,7 +840,7 @@ int __init ar7240_platform_init(void)
 {
 	int ret;
 	void *ee;
-#if defined(CONFIG_WR741) || defined(CONFIG_WDR4300) || defined(CONFIG_WDR2543) || defined(CONFIG_WR841V8)
+#if defined(CONFIG_WR741) || defined(CONFIG_WDR4300) || defined(CONFIG_WDR2543) || defined(CONFIG_WR841V8) && !defined(CONFIG_GL150)
 	u8 *mac = (u8 *)KSEG1ADDR(0x1f01fc00);
 #else
 	u8 *mac = NULL;		//(u8 *) KSEG1ADDR(0x1fff0000);
@@ -859,7 +859,7 @@ int __init ar7240_platform_init(void)
 #endif
 	enable_uart();
 #ifdef CONFIG_MACH_HORNET
-#if defined(CONFIG_WR710) || defined(CONFIG_ERC)
+#if defined(CONFIG_WR710) || defined(CONFIG_ERC) || defined(CONFIG_GL150)
        ath79_setup_ar933x_phy4_switch(false, false);
 #else
        ath79_setup_ar933x_phy4_switch(true, true);
@@ -885,6 +885,11 @@ int __init ar7240_platform_init(void)
 	ath79_init_mac(mac0, mac, -1);
 	ath79_init_mac(mac1, mac, 0);
     #elif CONFIG_UAPAC
+	mac = (u8 *)KSEG1ADDR(0x1fff0000);
+	ath79_init_mac(mac0, mac, -1);
+	ath79_init_mac(mac1, mac, 0);	
+    #elif CONFIG_GL150
+	#error "check"
 	mac = (u8 *)KSEG1ADDR(0x1fff0000);
 	ath79_init_mac(mac0, mac, -1);
 	ath79_init_mac(mac1, mac, 0);	
