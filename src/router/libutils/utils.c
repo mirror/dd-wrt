@@ -2860,6 +2860,11 @@ int internal_getRouterBrand()
 	nvram_default_get("ath0_txantenna", "1");
 	setRouter("TP-Link TL-MR3020");
 	return ROUTER_BOARD_PB42;
+#elif HAVE_GL150
+	nvram_default_get("ath0_rxantenna", "1");
+	nvram_default_get("ath0_txantenna", "1");
+	setRouter("GL.iNet-AR150");
+	return ROUTER_BOARD_PB42;
 #elif HAVE_WR71021
 	nvram_default_get("ath0_rxantenna", "1");
 	nvram_default_get("ath0_txantenna", "1");
@@ -5355,6 +5360,10 @@ int led_control(int type, int act)
 		connected_gpio = 0x11b;
 		diag_gpio = 0x11a;
 		usb_power = 0x008;
+#elif HAVE_GL150
+//		power_gpio = 0x11b;
+//		diag_gpio = 0x01b;
+//		usb_power = 0x008;
 #elif HAVE_WR710
 		power_gpio = 0x11b;
 		diag_gpio = 0x01b;
