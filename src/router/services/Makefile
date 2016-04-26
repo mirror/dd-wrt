@@ -60,10 +60,10 @@ BCFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/rc -I$(TOP)/iptables/include/libi
 BCFLAGS  += -fpic -I$(TOP)/services/include
 
 ifeq ($(CONFIG_DIST),"micro")
-BCFLAGS += -DNEED_NOPRINTF
+#BCFLAGS += -DNEED_NOPRINTF
 endif
 ifneq ($(CONFIG_DIST),"micro-special")
-BCFLAGS += -DNEED_NOPRINTF
+#BCFLAGS += -DNEED_NOPRINTF
 endif
 
 CFLAGS += $(BCFLAGS)
