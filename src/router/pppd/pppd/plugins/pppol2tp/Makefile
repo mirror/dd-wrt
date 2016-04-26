@@ -1,6 +1,7 @@
 #CC	= gcc
 #COPTS	= $(COPTS)
-CFLAGS	= $(COPTS) -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(LINUXDIR)/include -I. -I../.. -I../../../include -fPIC
+CFLAGS	= $(COPTS) $(MIPS16_OPT) -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(LINUXDIR)/include -I. -I../.. -I../../../include -fPIC
+
 LDFLAGS	= -shared
 INSTALL	= install
 
