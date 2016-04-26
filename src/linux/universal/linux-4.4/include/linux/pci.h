@@ -757,7 +757,7 @@ enum pcie_bus_config_types {
 	PCIE_BUS_DEFAULT,	/* ensure MPS matches upstream bridge */
 	PCIE_BUS_SAFE,		/* use largest MPS boot-time devices support */
 	PCIE_BUS_PERFORMANCE,	/* use MPS and MRRS for best performance */
-	PCIE_BUS_PEER2PEER,	/* set MPS = 128 for all devices */
+	PCIE_BUS_PEER2PEER,	/* set MPS and MRSS to 128 for all devices */
 };
 
 extern enum pcie_bus_config_types pcie_bus_config;
