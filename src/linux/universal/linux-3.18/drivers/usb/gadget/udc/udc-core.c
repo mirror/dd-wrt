@@ -441,6 +441,7 @@ out:
 }
 EXPORT_SYMBOL_GPL(udc_attach_driver);
 
+#ifndef CONFIG_USB_DWC_OTG
 int usb_gadget_probe_driver(struct usb_gadget_driver *driver)
 {
 	struct usb_udc		*udc = NULL;
@@ -466,6 +467,7 @@ found:
 }
 EXPORT_SYMBOL_GPL(usb_gadget_probe_driver);
 
+
 int usb_gadget_unregister_driver(struct usb_gadget_driver *driver)
 {
 	struct usb_udc		*udc = NULL;
@@ -488,6 +490,7 @@ int usb_gadget_unregister_driver(struct usb_gadget_driver *driver)
 	return ret;
 }
 EXPORT_SYMBOL_GPL(usb_gadget_unregister_driver);
+#endif
 
 /* ------------------------------------------------------------------------- */
 
