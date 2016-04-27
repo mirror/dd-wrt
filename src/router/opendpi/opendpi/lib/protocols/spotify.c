@@ -50,7 +50,7 @@ static void ndpi_check_spotify(struct ndpi_detection_module_struct *ndpi_struct,
 		}
 	} else if (packet->tcp != NULL) {
 
-		if (packet->payload[0] == 0x00 && packet->payload[1] == 0x04 &&
+		if (payload_len >= 8 && packet->payload[0] == 0x00 && packet->payload[1] == 0x04 &&
 		    packet->payload[2] == 0x00 && packet->payload[3] == 0x00 && packet->payload[6] == 0x52 && packet->payload[7] == 0x0e && packet->payload[8] == 0x50) {
 			NDPI_LOG(NDPI_PROTOCOL_SPOTIFY, ndpi_struct, NDPI_LOG_DEBUG, "Found spotify tcp dissector.\n");
 			ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_SPOTIFY, NDPI_PROTOCOL_UNKNOWN);

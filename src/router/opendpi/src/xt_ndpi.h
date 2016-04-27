@@ -77,14 +77,14 @@ struct xt_ndpi_tginfo {
 "spotify",         "webm",                 "h323",             "openvpn",       "noe",\
 "ciscovpn",        "teamspeak",            "tor",              "skinny",        "rtcp",\
 "rsync",           "oracle",               "corba",            "ubuntuone",     "whois_das",\
-"collectd",        "socks5",               "socks4",           "rtmp",          "ftp_data",\
+"collectd",        "socks",               "ms_lync",           "rtmp",          "ftp_data",\
 "wikipedia",       "zmq",                  "amazon",           "ebay",          "cnn",\
 "megaco",          "redis",                "pando",            "vhua",          "telegram", \
 "vevo",            "pandora",              "quic",    "popo",           "manolito", "feidian", \
 "gadugadu", "i23v5", "secondlife", "whatsapp_voice", "eaq", "timmeu", "torcedor", "kakaotalk", \
 "kakaotalk_voice" , "twitch", "quickplay", "tim", "mpegts", "snapchat", "simet","opensignal", \
 "99taxi","easytaxi","globotv","timsomdechamada","timmenu","timportasabertas","timrecarga",\
-"timbeta","deezer","instagram","microsoft","battlenet","starcraft", "teredo", "hotspot-shield", "hep", "ubntac2", "ms_lync"
+"timbeta","deezer","instagram","microsoft","battlenet","starcraft", "teredo", "hotspot-shield", "hep", "ubntac2", "ocs", "office_365", "cloudflare", "ms_one_drive", "mqtt", "rx", "http_download", "coap"
 
 
 #define NDPI_PROTOCOL_MAXNUM 225

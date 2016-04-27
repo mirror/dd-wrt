@@ -304,7 +304,7 @@ static void debug_printf(u32 protocol, void *id_struct,
         }
 }
 
-static void *malloc_wrapper(unsigned long size)
+static void *malloc_wrapper(size_t size)
 {
 	return kmalloc(size, GFP_KERNEL);
 }

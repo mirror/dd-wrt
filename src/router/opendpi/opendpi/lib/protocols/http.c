@@ -36,18 +36,14 @@ static void ndpi_int_http_add_connection(struct ndpi_detection_module_struct *nd
 
 		/* If no custom protocol has been detected */
 		if (flow->detected_protocol_stack[0] == NDPI_PROTOCOL_UNKNOWN) {
-			if (protocol != NDPI_PROTOCOL_HTTP) {
-				ndpi_search_tcp_or_udp(ndpi_struct, flow);
-				ndpi_set_detected_protocol(ndpi_struct, flow, protocol, NDPI_PROTOCOL_UNKNOWN);
-			} else {
+			if (protocol == NDPI_PROTOCOL_HTTP)
 				ndpi_int_reset_protocol(flow);
-				ndpi_set_detected_protocol(ndpi_struct, flow, protocol, NDPI_PROTOCOL_UNKNOWN);
-			}
+
+			ndpi_set_detected_protocol(ndpi_struct, flow, protocol, NDPI_PROTOCOL_UNKNOWN);
 		}
 
 		flow->http_detected = 1;
 	}
-
 }
 
 #ifdef NDPI_CONTENT_FLASH
@@ -200,11 +196,7 @@ static void parseHttpSubprotocol(struct ndpi_detection_module_struct *ndpi_struc
 		/* Try matching subprotocols */
 		// ndpi_match_host_subprotocol(ndpi_struct, flow, (char*)packet->host_line.ptr, packet->host_line.len);
 
-		if (!ndpi_struct->http_dont_dissect_response) {
-			if (flow->http.url && flow->http_detected)
-				ndpi_match_host_subprotocol(ndpi_struct, flow, (char *)&flow->http.url[7], strlen((const char *)&flow->http.url[7]), NDPI_PROTOCOL_HTTP);
-		} else
-			ndpi_match_host_subprotocol(ndpi_struct, flow, (char *)flow->host_server_name, strlen((const char *)flow->host_server_name), NDPI_PROTOCOL_HTTP);
+		ndpi_match_host_subprotocol(ndpi_struct, flow, (char *)flow->host_server_name, strlen((const char *)flow->host_server_name), NDPI_PROTOCOL_HTTP);
 	}
 }
 

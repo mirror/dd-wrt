@@ -120,14 +120,14 @@ static void ndpi_search_msn_tcp(struct ndpi_detection_module_struct *ndpi_struct
 		if (packet->payload_packet_len > 10 && packet->payload_packet_len < 100) {
 			if (get_u_int8_t(packet->payload, packet->payload_packet_len - 2) == 0x0d && get_u_int8_t(packet->payload, packet->payload_packet_len - 1) == 0x0a) {
 				/* The MSNP string is used in XBOX clients. */
-				if (memcmp(packet->payload, "VER ", 4) == 0) {
+				if (ndpi_match_strprefix(packet->payload, packet->payload_packet_len, "VER ")) {
 
 					if (memcmp(&packet->payload[packet->payload_packet_len - 6], "CVR", 3) == 0 || memcmp(&packet->payload[packet->payload_packet_len - 8], "MSNP", 4) == 0) {
 						NDPI_LOG(NDPI_PROTOCOL_MSN, ndpi_struct, NDPI_LOG_TRACE, "found MSN by pattern VER...CVR/MSNP ODOA.\n");
 						ndpi_int_msn_add_connection(ndpi_struct, flow);
 						return;
 					}
-					if (memcmp(&packet->payload[4], "MSNFT", 5) == 0) {
+					if (ndpi_match_strprefix(&packet->payload[4], packet->payload_packet_len - 4, "MSNFT")) {
 						NDPI_LOG(NDPI_PROTOCOL_MSN, ndpi_struct, NDPI_LOG_TRACE, "found MSN FT by pattern VER MSNFT...0d0a.\n");
 						ndpi_int_msn_add_connection(ndpi_struct, flow);
 						return;
@@ -140,7 +140,7 @@ static void ndpi_search_msn_tcp(struct ndpi_detection_module_struct *ndpi_struct
 #ifdef NDPI_PROTOCOL_HTTP
 			   packet->detected_protocol_stack[0] == NDPI_PROTOCOL_HTTP ||
 #endif
-			   memcmp(packet->payload, "GET ", NDPI_STATICSTRING_LEN("GET ")) == 0 || memcmp(packet->payload, "POST ", NDPI_STATICSTRING_LEN("POST ")) == 0) {
+			   ndpi_match_strprefix(packet->payload, packet->payload_packet_len, "GET ") || ndpi_match_strprefix(packet->payload, packet->payload_packet_len, "POST ")) {
 			ndpi_parse_packet_line_info(ndpi_struct, flow);
 			if (packet->user_agent_line.offs != 0xffff &&
 			    packet->user_agent_line.len > NDPI_STATICSTRING_LEN("Messenger/") && memcmp(packet_hdr(user_agent_line), "Messenger/", NDPI_STATICSTRING_LEN("Messenger/")) == 0) {
@@ -240,7 +240,7 @@ static void ndpi_search_msn_tcp(struct ndpi_detection_module_struct *ndpi_struct
 #ifdef NDPI_PROTOCOL_HTTP
 				   packet->detected_protocol_stack[0] == NDPI_PROTOCOL_HTTP ||
 #endif
-				   (memcmp(packet->payload, "HTTP/1.0 200 OK", 15) == 0) || (memcmp(packet->payload, "HTTP/1.1 200 OK", 15) == 0)
+				   ndpi_match_strprefix(packet->payload, packet->payload_packet_len, "HTTP/1.0 200 OK") || ndpi_match_strprefix(packet->payload, packet->payload_packet_len, "HTTP/1.1 200 OK")
 			    ) {
 
 				ndpi_parse_packet_line_info(ndpi_struct, flow);
