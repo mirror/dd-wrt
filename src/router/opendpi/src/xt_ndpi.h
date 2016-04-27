@@ -87,7 +87,7 @@ struct xt_ndpi_tginfo {
 "timbeta","deezer","instagram","microsoft","battlenet","starcraft", "teredo", "hotspot-shield", "hep", "ubntac2", "ocs", "office_365", "cloudflare", "ms_one_drive", "mqtt", "rx", "http_download", "coap"
 
 
-#define NDPI_PROTOCOL_MAXNUM 225
+#define NDPI_PROTOCOL_MAXNUM 232
 #endif
 
 #endif /* _LINUX_NETFILTER_XT_NDPI_H */
