@@ -29,7 +29,7 @@
 /* Flap channels */
 #define SIGNON              0x01
 #define DATA                0x02
-#define ERROR               0x03
+#define O_ERROR               0x03
 #define SIGNOFF             0x04
 #define KEEP_ALIVE          0x05
 
@@ -99,7 +99,7 @@ static void ndpi_search_oscar_tcp_connect(struct ndpi_detection_module_struct
 {
 
 	int excluded = 0;
-	u_int8_t channel;
+//  u_int8_t channel;
 	u_int16_t family;
 	u_int16_t type;
 	u_int16_t flag;
@@ -226,9 +226,10 @@ static void ndpi_search_oscar_tcp_connect(struct ndpi_detection_module_struct
 		 */
 		if (channel == DATA) {
 			family = get_u_int16_t(packet->payload, 6);
-			type = get_u_int16_t(packet->payload, 8);
-			flag = get_u_int16_t(packet->payload, 10);
-			req_ID = get_u_int32_t(packet->payload, 12);
+			if (packet->payload_packet_len >= 10)
+				type = get_u_int16_t(packet->payload, 8);
+			else
+				type = 0;
 
 			/* Family 0x0001 */
 			if (family == htons(GE_SE_CTL)) {
@@ -703,12 +704,18 @@ static void ndpi_search_oscar_tcp_connect(struct ndpi_detection_module_struct
 			}
 
 			/* flag */
-			if (flag == htons(0x0000) || flag == htons(0x8000) || flag == htons(0x0001)) {
-				/* request ID */
-				if ((req_ID <= 4294967295)) {
-					NDPI_LOG(NDPI_PROTOCOL_OSCAR, ndpi_struct, NDPI_LOG_DEBUG, "OSCAR Detected \n");
-					ndpi_int_oscar_add_connection(ndpi_struct, flow);
-					return;
+			if (packet->payload_packet_len >= 12) {
+				flag = get_u_int16_t(packet->payload, 10);
+				if (flag == htons(0x0000) || flag == htons(0x8000) || flag == htons(0x0001)) {
+					if (packet->payload_packet_len >= 16) {
+						/* request ID */
+						req_ID = get_u_int32_t(packet->payload, 12);
+						if ((req_ID <= 4294967295)) {
+							NDPI_LOG(NDPI_PROTOCOL_OSCAR, ndpi_struct, NDPI_LOG_DEBUG, "OSCAR Detected \n");
+							ndpi_int_oscar_add_connection(ndpi_struct, flow);
+							return;
+						}
+					}
 				}
 			}
 		}
@@ -716,7 +723,7 @@ static void ndpi_search_oscar_tcp_connect(struct ndpi_detection_module_struct
 		   ERROR -> FLAP__ERROR_CHANNEL_0x03
 		   A FLAP error - rare
 		 */
-		if (channel == ERROR) {
+		if (channel == O_ERROR) {
 			NDPI_LOG(NDPI_PROTOCOL_OSCAR, ndpi_struct, NDPI_LOG_DEBUG, "OSCAR Detected - Error frame \n");
 			ndpi_int_oscar_add_connection(ndpi_struct, flow);
 			return;

@@ -55,7 +55,7 @@ struct ndpi_chdlc {
 	u_int8_t addr;		/* 0x0F (Unicast) - 0x8F (Broadcast) */
 	u_int8_t ctrl;		/* always 0x00                       */
 	u_int16_t proto_code;	/* protocol type (e.g. 0x0800 IP)    */
-};
+} __attribute__((packed));
 
 /* SLARP - Serial Line ARP http://tinyurl.com/qa54e95 */
 struct ndpi_slarp {
@@ -66,7 +66,7 @@ struct ndpi_slarp {
 	u_int32_t slarp_type;
 	u_int32_t addr_1;
 	u_int32_t addr_2;
-};
+} __attribute__((packed));
 
 /* Cisco Discovery Protocol http://tinyurl.com/qa6yw9l */
 struct ndpi_cdp {
@@ -75,7 +75,7 @@ struct ndpi_cdp {
 	u_int16_t checksum;
 	u_int16_t type;
 	u_int16_t length;
-};
+} __attribute__((packed));
 
 /* ++++++++++++++++++++++++++++++++++++++++++++++++++ */
 /* +++++++++++ Ethernet data structures +++++++++++++ */
@@ -85,7 +85,7 @@ struct ndpi_ethhdr {
 	u_char h_dest[6];	/* destination eth addr */
 	u_char h_source[6];	/* source ether addr    */
 	u_int16_t h_proto;	/* packet type ID field */
-};
+} __attribute__((packed));
 
 /* ++++++++++++++++++++++++++++++++++++++++++++++++++ */
 /* +++++++++++ ieee802.11 data structures +++++++++++ */
@@ -164,7 +164,7 @@ struct ndpi_iphdr {
 	u_int16_t check;
 	u_int32_t saddr;
 	u_int32_t daddr;
-};
+} __attribute__((packed));
 
 #ifdef WIN32
 
@@ -214,7 +214,7 @@ struct ndpi_in6_addr {
 		u_int16_t u6_addr16[8];
 		u_int32_t u6_addr32[4];
 	} u6_addr;		/* 128-bit IP6 address */
-};
+} __attribute__((packed));
 
 struct ndpi_ip6_hdr {
 	union {
@@ -228,7 +228,7 @@ struct ndpi_ip6_hdr {
 	} ip6_ctlun;
 	struct ndpi_in6_addr ip6_src;
 	struct ndpi_in6_addr ip6_dst;
-};
+} __attribute__((packed));
 
 /* ++++++++++++++++++++++++++++++++++++++++++++++++++ */
 /* ++++++++ Transport Layer data structures +++++++++ */
@@ -249,13 +249,22 @@ struct ndpi_tcphdr {
 	u_int16_t window;
 	u_int16_t check;
 	u_int16_t urg_ptr;
-};
+} __attribute__((packed));
 
 struct ndpi_udphdr {
 	u_int16_t source;
 	u_int16_t dest;
 	u_int16_t len;
 	u_int16_t check;
-};
+} __attribute__((packed));
+
+struct ndpi_dns_packet_header {
+	u_int16_t tr_id;
+	u_int16_t flags;
+	u_int16_t num_queries;
+	u_int16_t num_answers;
+	u_int16_t authority_rrs;
+	u_int16_t additional_rrs;
+} __attribute__((packed));
 
 #endif

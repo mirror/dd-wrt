@@ -54,8 +54,7 @@
 #define NDPI_PROTOCOL_HTTP_APPLICATION_ACTIVESYNC		110
 #define NDPI_PROTOCOL_HTTP_CONNECT				130
 #define NDPI_PROTOCOL_HTTP_PROXY				131
-#define NDPI_PROTOCOL_SOCKS5					172	/* Tomasz Bujlow <tomasz@skatnet.dk> */
-#define NDPI_PROTOCOL_SOCKS4					173	/* Tomasz Bujlow <tomasz@skatnet.dk> */
+#define NDPI_PROTOCOL_SOCKS					172	/* Tomasz Bujlow <tomasz@skatnet.dk> */
 
 #define NDPI_PROTOCOL_FTP_CONTROL				1	/* Tomasz Bujlow <tomasz@skatnet.dk> */
 #define NDPI_PROTOCOL_MAIL_POP				        2
@@ -271,10 +270,18 @@
 #define NDPI_SERVICE_HOTSPOT_SHIELD                     222
 #define NDPI_PROTOCOL_HEP 			        223	/* Sipcapture.org QXIP BV */
 #define NDPI_PROTOCOL_UBNTAC2				224	/* Ubiquity UBNT AirControl 2 - Thomas Fjellstrom <thomas+ndpi@fjellstrom.ca> */
-#define NDPI_PROTOCOL_MS_LYNC 			        225
+#define NDPI_PROTOCOL_MS_LYNC 			        173
+#define NDPI_SERVICE_OCS                                225
+#define NDPI_SERVICE_OFFICE_365                         226
+#define NDPI_SERVICE_CLOUDFLARE                         227
+#define NDPI_SERVICE_MS_ONE_DRIVE                       228
+#define NDPI_PROTOCOL_MQTT								229
+#define NDPI_PROTOCOL_RX 			                230	/* RX: RPC protocol used by AFS */
+#define NDPI_PROTOCOL_HTTP_DOWNLOAD 			                231	/* RX: RPC protocol used by AFS */
+#define NDPI_PROTOCOL_COAP 			                232	/* RX: RPC protocol used by AFS */
 
 /* UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE (NDPI_SERVICE_PANDORA) */
-#define NDPI_LAST_IMPLEMENTED_PROTOCOL			225
+#define NDPI_LAST_IMPLEMENTED_PROTOCOL			232
 
 #define NDPI_MAX_SUPPORTED_PROTOCOLS (NDPI_LAST_IMPLEMENTED_PROTOCOL + 1)
 #define NDPI_MAX_NUM_CUSTOM_PROTOCOLS                   (NDPI_NUM_BITS-NDPI_LAST_IMPLEMENTED_PROTOCOL)

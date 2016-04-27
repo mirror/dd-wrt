@@ -34,14 +34,15 @@ static void ndpi_int_bgp_add_connection(struct ndpi_detection_module_struct *ndp
 static void ndpi_search_bgp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
 	struct ndpi_packet_struct *packet = &flow->packet;
+	u_int16_t bgp_port = htons(179);
 
-//      struct ndpi_id_struct         *src=ndpi_struct->src;
-//      struct ndpi_id_struct         *dst=ndpi_struct->dst;
-
-	if (packet->payload_packet_len > 18 &&
-	    get_u_int64_t(packet->payload, 0) == 0xffffffffffffffffULL &&
-	    get_u_int64_t(packet->payload, 8) == 0xffffffffffffffffULL && ntohs(get_u_int16_t(packet->payload, 16)) <= packet->payload_packet_len && (packet->tcp->dest == htons(179) || packet->tcp->source == htons(179))
-	    && packet->payload[18] < 5) {
+	if (packet->tcp && (packet->payload[18] < 5)
+	    && ((packet->tcp->dest == bgp_port) || (packet->tcp->source == bgp_port))
+	    && (packet->payload_packet_len > 18)
+	    && (get_u_int64_t(packet->payload, 0) == 0xffffffffffffffffULL)
+	    && (get_u_int64_t(packet->payload, 8) == 0xffffffffffffffffULL)
+	    && (ntohs(get_u_int16_t(packet->payload, 16)) <= packet->payload_packet_len)
+	    ) {
 		NDPI_LOG(NDPI_PROTOCOL_BGP, ndpi_struct, NDPI_LOG_DEBUG, "BGP detected.\n");
 		ndpi_int_bgp_add_connection(ndpi_struct, flow);
 		return;

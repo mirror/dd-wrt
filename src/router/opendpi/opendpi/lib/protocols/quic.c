@@ -153,7 +153,8 @@ static void ndpi_search_quic(struct ndpi_detection_module_struct *ndpi_struct, s
 					    ((vers[2] == '2' && (vers[3] == '5' || vers[3] == '4' || vers[3] == '3' || vers[3] == '2' ||
 								 vers[3] == '1' || vers[3] == '0')) ||
 					     (vers[2] == '1' && (vers[3] == '9' || vers[3] == '8' || vers[3] == '7' || vers[3] == '6' ||
-								 vers[3] == '5' || vers[3] == '4' || vers[3] == '3' || vers[3] == '2' || vers[3] == '1' || vers[3] == '0')) || (vers[2] == '0' && vers[3] == '9'))) {
+								 vers[3] == '5' || vers[3] == '4' || vers[3] == '3' || vers[3] == '2' || vers[3] == '1' || vers[3] == '0')) || (vers[2] == '0' && vers[3] == '9')))
+					{
 						NDPI_LOG(NDPI_PROTOCOL_QUIC, ndpi_struct, NDPI_LOG_DEBUG, "found quic.\n");
 						ndpi_int_quic_add_connection(ndpi_struct, flow);
 					}
