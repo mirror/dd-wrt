@@ -44,8 +44,8 @@ extern "C" {
 	static u_int32_t ndpi_detection_get_sizeof_ndpi_id_struct(void);
 
 	/* Public malloc/free */
-	static void *ndpi_malloc(unsigned long size);
-	static void *ndpi_calloc(unsigned long count, unsigned long size);
+	static void *ndpi_malloc(size_t size);
+	static void *ndpi_calloc(unsigned long count, size_t size);
 	static void ndpi_free(void *ptr);
 	static void *ndpi_realloc(void *ptr, size_t old_size, size_t new_size);
 	static char *ndpi_strdup(const char *s);
@@ -73,7 +73,7 @@ extern "C" {
    * @return the initialized detection module
    */
 	static struct ndpi_detection_module_struct *ndpi_init_detection_module(u_int32_t ticks_per_second,
-									       void *(*__ndpi_malloc) (unsigned long size), void (*__ndpi_free) (void *ptr), ndpi_debug_function_ptr ndpi_debug_printf);
+									       void *(*__ndpi_malloc) (size_t size), void (*__ndpi_free) (void *ptr), ndpi_debug_function_ptr ndpi_debug_printf);
 
   /**
    * This function frees the memory allocated in the specified flow
@@ -155,7 +155,7 @@ extern "C" {
    * @return 1 if protocol has been found, 0 otherwise
    */
 	static u_int8_t ndpi_detection_flow_protocol_history_contains_protocol(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow, u_int16_t protocol_id);
-	static ndpi_protocol ndpi_find_port_based_protocol(struct ndpi_detection_module_struct *ndpi_struct, u_int8_t proto, u_int32_t shost, u_int16_t sport, u_int32_t dhost, u_int16_t dport);
+	static ndpi_protocol ndpi_find_port_based_protocol(struct ndpi_detection_module_struct *ndpi_struct, /*u_int8_t proto,*/ u_int32_t shost, u_int16_t sport, u_int32_t dhost, u_int16_t dport);
 	static ndpi_protocol ndpi_guess_undetected_protocol(struct ndpi_detection_module_struct *ndpi_struct, u_int8_t proto, u_int32_t shost, u_int16_t sport, u_int32_t dhost, u_int16_t dport);
 	static int ndpi_match_host_subprotocol(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow, char *string_to_match, u_int string_to_match_len, u_int16_t master_protocol_id);
 	static int ndpi_match_content_subprotocol(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow, char *string_to_match, u_int string_to_match_len, u_int16_t master_protocol_id);

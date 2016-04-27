@@ -26,7 +26,7 @@ static void ndpi_search_h323(struct ndpi_detection_module_struct *ndpi_struct, s
 		NDPI_LOG(NDPI_PROTOCOL_H323, ndpi_struct, NDPI_LOG_DEBUG, "calculated dport over tcp.\n");
 
 		/* H323  */
-		if ((packet->payload[0] == 0x03)
+		if (packet->payload_packet_len >= 3 && (packet->payload[0] == 0x03)
 		    && (packet->payload[1] == 0x00)
 		    && (packet->payload[2] == 0x00)) {
 			struct tpkt *t = (struct tpkt *)packet->payload;
@@ -62,7 +62,8 @@ static void ndpi_search_h323(struct ndpi_detection_module_struct *ndpi_struct, s
 		sport = ntohs(packet->udp->source), dport = ntohs(packet->udp->dest);
 		NDPI_LOG(NDPI_PROTOCOL_H323, ndpi_struct, NDPI_LOG_DEBUG, "calculated dport over udp.\n");
 
-		if (packet->payload[0] == 0x80 && packet->payload[1] == 0x08 && (packet->payload[2] == 0xe7 || packet->payload[2] == 0x26) && packet->payload[4] == 0x00 && packet->payload[5] == 0x00) {
+		if (packet->payload_packet_len >= 5 && packet->payload[0] == 0x80 && packet->payload[1] == 0x08 &&
+		    (packet->payload[2] == 0xe7 || packet->payload[2] == 0x26) && packet->payload[4] == 0x00 && packet->payload[5] == 0x00) {
 			NDPI_LOG(NDPI_PROTOCOL_H323, ndpi_struct, NDPI_LOG_DEBUG, "found H323 broadcast.\n");
 			ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_H323, NDPI_PROTOCOL_UNKNOWN);
 			return;

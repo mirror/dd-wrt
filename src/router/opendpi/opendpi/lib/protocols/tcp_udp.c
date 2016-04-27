@@ -27,6 +27,7 @@ static u_int ndpi_search_tcp_or_udp_raw(struct ndpi_detection_module_struct *ndp
 					u_int16_t sport, u_int16_t dport)
 {				/* host endianess */
 	u_int16_t rc;
+	struct in_addr host;
 
 	if (protocol == IPPROTO_UDP) {
 		if ((sport == dport) && (sport == 17500)) {
@@ -34,10 +35,12 @@ static u_int ndpi_search_tcp_or_udp_raw(struct ndpi_detection_module_struct *ndp
 		}
 	}
 
-	if ((rc = ndpi_host_ptree_match(ndpi_struct, htonl(saddr))) != NDPI_PROTOCOL_UNKNOWN)
+	host.s_addr = htonl(saddr);
+	if ((rc = ndpi_network_ptree_match(ndpi_struct, &host)) != NDPI_PROTOCOL_UNKNOWN)
 		return (rc);
 
-	return (ndpi_host_ptree_match(ndpi_struct, htonl(daddr)));
+	host.s_addr = htonl(daddr);
+	return (ndpi_network_ptree_match(ndpi_struct, &host));
 }
 
 static void ndpi_search_tcp_or_udp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
