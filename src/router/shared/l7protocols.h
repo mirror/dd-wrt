@@ -70,9 +70,15 @@ l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{"citrix_online", NDPI_ONLY},
 #endif
+#ifdef HAVE_OPENDPI
+	{"cloudflare", NDPI_ONLY},
+#endif
 	{"clubbox", L7_ONLY},
 #ifdef HAVE_OPENDPI
 	{"cnn", NDPI_ONLY},
+#endif
+#ifdef HAVE_OPENDPI
+	{"coap", NDPI_ONLY},
 #endif
 	{"code_red", L7_ONLY},
 #ifdef HAVE_OPENDPI
@@ -189,6 +195,7 @@ l7filters filters_list[] = {
 	{"http_app_activesync", NDPI_ONLY},
 	{"http_app_veohtv", NDPI_ONLY},
 	{"http_connect", NDPI_ONLY},
+	{"http_download", NDPI_ONLY},
 	{"http_proxy", NDPI_ONLY},
 	{"httpactivesync", NDPI_ONLY},
 #endif
@@ -276,12 +283,14 @@ l7filters filters_list[] = {
 	{"mp3", L7_ONLY},
 #ifdef HAVE_OPENDPI
 	{"mpeg", NDPI_ONLY},
+	{"mqtt", NDPI_ONLY},
 	{"ms_lync", NDPI_ONLY},
 	{"msn", NDPI_ONLY},
 #endif
 	{"msn-filetransfer", L7_ONLY},
 	{"msnmessenger", L7_ONLY},
 #ifdef HAVE_OPENDPI
+	{"ms_one_drive", NDPI_ONLY},
 	{"mssql", NDPI_ONLY},
 #endif
 	{"mute", PDPI_ONLY},
@@ -303,8 +312,10 @@ l7filters filters_list[] = {
 	{"noe", NDPI_ONLY},
 #endif
 	{"ntp", DPI},
-#ifdef HAVE_OPENDPI
+#ifdef HAVE_OPENDPI	
+	{"ocs", NDPI_ONLY},
 	{"off", NDPI_ONLY},
+	{"office_365", NDPI_ONLY},
 #endif
 	{"ogg", DPI},
 	{"openft", DPI},
@@ -389,6 +400,7 @@ l7filters filters_list[] = {
 	{"rtsp", DPI},
 	{"runesofmagic", L7_ONLY},
 #ifdef HAVE_OPENDPI
+	{"rx", NDPI_ONLY},
 	{"sap", NDPI_ONLY},
 	{"sctp", NDPI_ONLY},
 	{"secondlife", NDPI_ONLY},
@@ -420,10 +432,9 @@ l7filters filters_list[] = {
 	{"snmp", DPI},
 	{"snmp-mon", L7_ONLY},
 	{"snmp-trap", L7_ONLY},
-	{"socks", L7_ONLY},
+	{"socks", DPI},
 #ifdef HAVE_OPENDPI
-	{"socks4", NDPI_ONLY},
-	{"socks5", NDPI_ONLY},
+	{"socks", NDPI_ONLY},
 	{"socrates", NDPI_ONLY},
 	{"sopcast", NDPI_ONLY},
 #endif

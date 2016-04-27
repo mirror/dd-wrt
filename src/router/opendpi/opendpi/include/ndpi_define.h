@@ -294,4 +294,6 @@
 /* define memory callback function */
 #define match_first_bytes(payload,st) (memcmp((payload),(st),(sizeof(st)-1))==0)
 
+#define NDPI_MAX_DNS_REQUESTS                   16
+
 #endif				/* __NDPI_DEFINE_INCLUDE_FILE__ */

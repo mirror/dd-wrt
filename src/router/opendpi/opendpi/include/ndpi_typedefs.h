@@ -481,6 +481,10 @@ struct ndpi_flow_udp_struct {
 	u_int8_t eaq_pkt_id;
 	u_int32_t eaq_sequence;
 #endif
+#ifdef NDPI_PROTOCOL_RX
+	u_int32_t rx_conn_epoch;
+	u_int32_t rx_conn_id;
+#endif
 }
 #if !defined(WIN32)
 __attribute__((__packed__))
@@ -711,7 +715,7 @@ typedef struct ndpi_detection_module_struct {
 
 	ndpi_proto_defaults_t proto_defaults[NDPI_MAX_SUPPORTED_PROTOCOLS + NDPI_MAX_NUM_CUSTOM_PROTOCOLS];
 
-	u_int8_t match_dns_host_names:1, http_dont_dissect_response:1;
+	u_int8_t http_dont_dissect_response:1;
 	u_int8_t direction_detect_disable:1;	/* disable internal detection of packet direction */
 } ndpi_detection_module_struct_t;
 
@@ -723,7 +727,7 @@ typedef struct ndpi_flow_struct {
 	u_int16_t protocol_stack_info;
 
 	/* init parameter, internal used to set up timestamp,... */
-	u_int16_t guessed_protocol_id, guessed_host_proto_id;
+	u_int16_t guessed_protocol_id, guessed_host_protocol_id;
 
 	u_int8_t protocol_id_already_guessed:1, host_already_guessed:1, init_finished:1, setup_packet_direction:1, packet_direction:1;
 	/* if ndpi_struct->direction_detect_disable == 1 */
@@ -743,13 +747,11 @@ typedef struct ndpi_flow_struct {
 						   that identifies the 
 						   server of this connection
 						 */
-#ifndef __KERNEL__
-	u_char host_server_name[256];	/* HTTP host or DNS query   */
-#else
-	u_char host_server_name[160];
-#endif
+	u_char host_server_name[192];
 	u_char detected_os[32];	/* Via HTTP User-Agent      */
 	u_char nat_ip[24];	/* Via HTTP X-Forwarded-For */
+	/* Bittorrent hash */
+	u_char bittorent_hash[20];
 
 	/* 
 	   This structure below will not not stay inside the protos
@@ -765,9 +767,8 @@ typedef struct ndpi_flow_struct {
 
 	union {
 		struct {
-			u_int8_t num_queries, num_answers, ret_code;
-			u_int8_t bad_packet /* the received packet looks bad */ ;
-			u_int16_t query_type, query_class, rsp_type;
+			u_int8_t num_answers, ret_code;
+			u_int16_t query_type;
 		} dns;
 
 		struct {
@@ -833,10 +834,8 @@ typedef struct ndpi_flow_struct {
 #ifdef NDPI_PROTOCOL_FLORENSIA
 	u_int32_t florensia_stage:1;
 #endif
-#ifdef NDPI_PROTOCOL_SOCKS5
+#ifdef NDPI_PROTOCOL_SOCKS
 	u_int32_t socks5_stage:2;	// 0 - 3
-#endif
-#ifdef NDPI_PROTOCOL_SOCKS4
 	u_int32_t socks4_stage:2;	// 0 - 3
 #endif
 #ifdef NDPI_PROTOCOL_EDONKEY
@@ -875,5 +874,19 @@ typedef struct ndpi_flow_struct {
 	/* result only, not used for flow identification */
 	u_int32_t detected_protocol;
 } ndpi_flow_struct_t;
+
+
+
+typedef struct {
+	char *string_to_match, *proto_name;
+	int protocol_id;
+	ndpi_protocol_breed_t protocol_breed;
+} ndpi_protocol_match;
+
+typedef struct {
+	u_int32_t network;
+	u_int8_t cidr;
+	u_int8_t value;
+} ndpi_network;
 
 #endif				/* __NDPI_TYPEDEFS_FILE__ */

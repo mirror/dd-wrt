@@ -16,14 +16,14 @@ static void ndpi_int_tor_add_connection(struct ndpi_detection_module_struct
 	ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_TOR, NDPI_PROTOCOL_UNKNOWN);
 }
 
-int ndpi_is_ssl_tor(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow, char *certificate)
+static int ndpi_is_ssl_tor(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow, char *certificate)
 {
-	int prev_num = 0, numbers_found = 0, num_found = 0, i;
+	int prev_num = 0, numbers_found = 0, num_found = 0, i, len;
 	char dummy[48], *dot, *name;
 
 	if ((certificate == NULL)
 	    || (strlen(certificate) < 6)
-	    || strncmp(certificate, "www.", 4))
+	    || !(strncmp(certificate, "www.", 4)))
 		return (0);
 
 	// printf("***** [SSL] %s(): %s\n", __FUNCTION__, certificate);
@@ -38,43 +38,45 @@ int ndpi_is_ssl_tor(struct ndpi_detection_module_struct *ndpi_struct, struct ndp
 		return (0);
 	name = &dot[1];
 
-	for (i = 0; name[i + 1] != '\0'; i++) {
-		if ((name[i] >= '0') && (name[i] <= '9')) {
+	len = strlen(name);
 
-			if (prev_num != 1) {
-				numbers_found++;
+	if (len > 6) {
+		for (i = 0; name[i + 1] != '\0'; i++) {
+			if ((name[i] >= '0') && (name[i] <= '9')) {
 
-				if (numbers_found == 2) {
-					ndpi_int_tor_add_connection(ndpi_struct, flow);
-					return (1);
+				if (prev_num != 1) {
+					numbers_found++;
+
+					if (numbers_found == 2) {
+						ndpi_int_tor_add_connection(ndpi_struct, flow);
+						return (1);
+					}
+					prev_num = 1;
 				}
-				prev_num = 1;
+			} else
+				prev_num = 0;
+
+			if (ndpi_match_bigram(ndpi_struct, &ndpi_struct->impossible_bigrams_automa, &name[i])) {
+				ndpi_int_tor_add_connection(ndpi_struct, flow);
+				return (1);
 			}
-		} else
-			prev_num = 0;
 
-		if (ndpi_match_bigram(ndpi_struct, &ndpi_struct->impossible_bigrams_automa, &name[i])) {
+			if (ndpi_match_bigram(ndpi_struct, &ndpi_struct->bigrams_automa, &name[i])) {
+				num_found++;
+			}
+		}
+
+		if (num_found == 0) {
 			ndpi_int_tor_add_connection(ndpi_struct, flow);
 			return (1);
-		}
-
-		if (ndpi_match_bigram(ndpi_struct, &ndpi_struct->bigrams_automa, &name[i])) {
-			num_found++;
-		}
-	}
-
-	if (num_found == 0) {
-		ndpi_int_tor_add_connection(ndpi_struct, flow);
-		return (1);
-	} else {
-#ifndef __KERNEL__
+		} else {
 #ifdef PENDANTIC_TOR_CHECK
-		if (gethostbyname(certificate) == NULL) {
-			ndpi_int_tor_add_connection(ndpi_struct, flow);
-			return (1);
+			if (gethostbyname(certificate) == NULL) {
+				ndpi_int_tor_add_connection(ndpi_struct, flow);
+				return (1);
+			}
+#endif
 		}
-#endif
-#endif
 	}
 
 	return (0);
