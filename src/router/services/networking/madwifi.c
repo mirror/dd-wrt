@@ -804,7 +804,7 @@ void addWPS(FILE * fp, char *prefix, int configured)
 	    || !strcmp(prefix, "ath1")) {
 		fprintf(fp, "eap_server=1\n");
 		if (nvram_match("wps_enabled", "1")) {
-			config_methods = (char *)realloc(config_methods, strlen(config_methods) + sizeof(" push_button") + 1);
+			config_methods = (char *)realloc(config_methods, strlen(config_methods) + strlen(" push_button") + 1);
 			strcat(config_methods, " push_button");
 		}
 //# WPS configuration (AP configured, do not allow external WPS Registrars)
@@ -858,7 +858,7 @@ void addWPS(FILE * fp, char *prefix, int configured)
 		fprintf(fp, "device_type=6-0050F204-1\n");
 		fprintf(fp, "os_version=01020300\n");
 #ifdef HAVE_BUFFALO
-		fprintf(fp, "friendly_name=BUFFALO %s\n", nvram_get("DD_BOARD"));
+		fprintf(fp, "friendly_name=BUFFALO %s\n", nvram_safe_get("DD_BOARD"));
 #else
 		fprintf(fp, "friendly_name=DD-WRT WPS Access Point\n");
 #endif
