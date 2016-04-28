@@ -115,18 +115,11 @@ static struct map_desc cns3xxx_io_desc[] __initdata = {
 	},
 };
 
-static DEFINE_TWD_LOCAL_TIMER(twd_local_timer,
-			      CNS3XXX_TC11MP_TWD_BASE,
-			      IRQ_LOCALTIMER);
-
 
 
 void __init cns3xxx_common_init(void)
 {
 	iotable_init(cns3xxx_io_desc, ARRAY_SIZE(cns3xxx_io_desc));
-#ifdef CONFIG_CACHE_L2CC
-	l2cc_init((void __iomem *) CNS3XXX_L2C_BASE_VIRT);
-#endif
 }
 /* used by entry-macro.S */
 void __init cns3xxx_init_irq(void)
@@ -154,6 +147,11 @@ void cns3xxx_power_off(void)
  */
 static void __iomem *cns3xxx_tmr1;
 
+/*
+ * Timer
+ */
+static void __iomem *cns3xxx_tmr1;
+
 static int cns3xxx_shutdown(struct clock_event_device *clk)
 {
 	writel(0, cns3xxx_tmr1 + TIMER1_2_CONTROL_OFFSET);
@@ -166,6 +164,7 @@ static int cns3xxx_set_oneshot(struct clock_event_device *clk)
 
 	/* period set, and timer enabled in 'next_event' hook */
 	ctrl |= (1 << 2) | (1 << 9);
+	writel(0, cns3xxx_tmr1 + TIMER1_AUTO_RELOAD_OFFSET);
 	writel(ctrl, cns3xxx_tmr1 + TIMER1_2_CONTROL_OFFSET);
 	return 0;
 }
@@ -176,7 +175,7 @@ static int cns3xxx_set_periodic(struct clock_event_device *clk)
 	int pclk = cns3xxx_cpu_clock() / 8;
 	int reload;
 
-	reload = pclk * 20 / (3 * HZ) * 0x25000;
+	reload = pclk * 1000000 / HZ;
 	writel(reload, cns3xxx_tmr1 + TIMER1_AUTO_RELOAD_OFFSET);
 	ctrl |= (1 << 0) | (1 << 2) | (1 << 9);
 	writel(ctrl, cns3xxx_tmr1 + TIMER1_2_CONTROL_OFFSET);
@@ -203,7 +202,7 @@ static struct clock_event_device cns3xxx_tmr1_clockevent = {
 	.set_state_oneshot	= cns3xxx_set_oneshot,
 	.tick_resume		= cns3xxx_shutdown,
 	.set_next_event		= cns3xxx_timer_set_next_event,
-	.rating			= 350,
+	.rating			= 300,
 	.cpumask		= cpu_all_mask,
 };
 
@@ -239,6 +238,15 @@ static struct irqaction cns3xxx_timer_irq = {
 	.handler	= cns3xxx_timer_interrupt,
 };
 
+static void __init cns3xxx_init_twd(void)
+{
+	static DEFINE_TWD_LOCAL_TIMER(cns3xx_twd_local_timer,
+		CNS3XXX_TC11MP_TWD_BASE,
+		IRQ_LOCALTIMER);
+
+	twd_local_timer_register(&cns3xx_twd_local_timer);
+}
+
 static cycle_t cns3xxx_get_cycles(struct clocksource *cs)
 {
   u64 val;
@@ -264,6 +272,7 @@ static void __init cns3xxx_clocksource_init(void)
 
 	clocksource_register_khz(&clocksource_cns3xxx, 100);
 }
+
 /*
  * Set up the clock source and clock events devices
  */
@@ -298,24 +307,11 @@ static void __init __cns3xxx_timer_init(unsigned int timer_irq)
 	val |= (1 << 9);
 	writel(val, cns3xxx_tmr1 + TIMER1_2_CONTROL_OFFSET);
 
-	/* timer2 */
-	writel(0, cns3xxx_tmr1 + TIMER2_MATCH_V1_OFFSET);
-	writel(0, cns3xxx_tmr1 + TIMER2_MATCH_V2_OFFSET);
-
-	/* mask irq */
-	irq_mask = readl(cns3xxx_tmr1 + TIMER1_2_INTERRUPT_MASK_OFFSET);
-	irq_mask |= ((1 << 3) | (1 << 4) | (1 << 5));
-	writel(irq_mask, cns3xxx_tmr1 + TIMER1_2_INTERRUPT_MASK_OFFSET);
-
-	/* down counter */
-	val = readl(cns3xxx_tmr1 + TIMER1_2_CONTROL_OFFSET);
-	val |= (1 << 10);
-	writel(val, cns3xxx_tmr1 + TIMER1_2_CONTROL_OFFSET);
-
-	/* Make irqs happen for the system timer */
 	setup_irq(timer_irq, &cns3xxx_timer_irq);
 
+	cns3xxx_clocksource_init();
 	cns3xxx_clockevents_init(timer_irq);
+	cns3xxx_init_twd();
 }
 
 void __init cns3xxx_timer_init(void)
@@ -343,7 +339,7 @@ static int __init cns3xxx_l2x0_init(void)
 
 	if (!cns3xxx_l2x0_enable)
 		return 0;
-
+	printk(KERN_INFO "init l2x0\n");
 	base = ioremap(CNS3XXX_L2C_BASE, SZ_4K);
 	if (WARN_ON(!base))
 		return 0;
