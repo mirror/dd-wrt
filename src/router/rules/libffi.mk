@@ -9,3 +9,5 @@ libffi-install:
 	-rm -rf $(INSTALLDIR)/libffi/usr/share
 	-rm -rf $(INSTALLDIR)/libffi/usr/lib/libffi-3.2.1
 	-rm -rf $(INSTALLDIR)/libffi/usr/lib/pkgconfig
+	-rm -f $(INSTALLDIR)/libffi/usr/lib/*.a
+	-rm -f $(INSTALLDIR)/libffi/usr/lib/*.la
