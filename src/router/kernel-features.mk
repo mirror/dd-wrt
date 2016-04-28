@@ -91,6 +91,14 @@ define kernelfeatures
 	if [ "$(CONFIG_BONDING)" != "y" ]; then \
 		sed -i 's/\CONFIG_BONDING=m/# CONFIG_BONDING is not set/g' $(LINUXDIR)/.config; \
 	fi	
+	if [ "$(CONFIG_SWAP)" != "y" ]; then \
+		sed -i 's/\CONFIG_SWAP=y/# CONFIG_SWAP is not set/g' $(LINUXDIR)/.config; \
+	else \
+		sed -i 's/\# CONFIG_SWAP is not set/CONFIG_SWAP=y/g' $(LINUXDIR)/.config; \
+		echo "# CONFIG_MTD_SWAP is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_FRONTSWAP is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_HIBERNATION is not set" >> $(LINUXDIR)/.config; \
+	fi	
 	if [ "$(CONFIG_USBIP)" = "y" ]; then \
 		sed -i 's/\# CONFIG_USBIP_CORE is not set/CONFIG_USBIP_CORE=m/g' $(LINUXDIR)/.config; \
 		echo "CONFIG_USBIP_VHCI_HCD=m" >> $(LINUXDIR)/.config; \
