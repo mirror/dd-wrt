@@ -6,3 +6,4 @@ libffi:
 
 libffi-install:
 	make -C libffi install DESTDIR=$(INSTALLDIR)/libffi
+	-rm -rf $(INSTALLDIR)/libffi/usr/share
