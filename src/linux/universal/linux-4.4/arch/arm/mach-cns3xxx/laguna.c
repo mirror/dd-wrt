@@ -950,7 +950,7 @@ static int __init laguna_pcie_init_irq(void)
 		IRQ_CNS3XXX_EXTERNAL_PIN2,
 		154,
 	};
-
+	printk(KERN_INFO "pcie_init irq\n");
 	if (!machine_is_gw2388())
 		return 0;
 
@@ -959,12 +959,12 @@ static int __init laguna_pcie_init_irq(void)
 		cns3xxx_pciextirq = 0;
 
 	if (cns3xxx_pciextirq) {
-		printk("laguna: using isolated PCI interrupts:"
+		printk(KERN_INFO "laguna: using isolated PCI interrupts:"
 		       " irq%d/irq%d/irq%d/irq%d\n",
 		       irqs[0], irqs[1], irqs[2], irqs[3]);
 		cns3xxx_pcie_set_irqs(0, irqs);
 	} else {
-		printk("laguna: using shared PCI interrupts: irq%d\n",
+		printk(KERN_INFO "laguna: using shared PCI interrupts: irq%d\n",
 		       IRQ_CNS3XXX_PCIE0_DEVICE);
 	}
 
