@@ -224,7 +224,7 @@ void __init cns3xxx_gpio_init(int gpio_base, int ngpio,
 	struct irq_chip_generic *gc;
 	struct irq_chip_type *ct;
 	char gc_label[16];
-
+	printk(KERN_INFO "init gpio base %d at 0x%08X\n", gpio_base, base);
 	if (cns3xxx_gpio_chip_count == ARRAY_SIZE(cns3xxx_gpio_chips))
 		return;
 
