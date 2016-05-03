@@ -1259,6 +1259,11 @@ int internal_getRouterBrand()
 		return ROUTER_ASUS_AC67U;
 	}
 
+	if (nvram_match("model", "RT-AC1200G+")) {
+		setRouter("Asus RT-AC1200G+");
+		return ROUTER_ASUS_AC1200;
+	}
+
 	if (nvram_match("productid", "RT-AC68U") && nvram_match("boardrev", "0x1100")) {
 		setRouter("Asus RT-AC68U");
 		return ROUTER_ASUS_AC67U;
