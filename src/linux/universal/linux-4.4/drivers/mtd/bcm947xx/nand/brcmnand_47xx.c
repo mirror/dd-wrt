@@ -47,6 +47,7 @@
 #include <nflash.h>
 
 #include "brcmnand_priv.h"
+int nospare;
 
 spinlock_t *partitions_lock_init(void);
 #define NFLASH_LOCK(lock)       if (lock) spin_lock(lock)
