@@ -420,10 +420,11 @@ __fwder_wofa_del(fwder_wofa_t * fwder_wofa, uint16 * symbol, wofa_t wofa)
 						FWDER_WARN((
 						   "%s sym->wofa<0x%08x> != wofa<0x%08x>\n",
 						   __FUNCTION__, (uint)sym->wofa, (uint)wofa));
-					}
+					} else {
 					sym->wofa = FWDER_WOFA_INVALID;
 					sym->hash16 = 0; /* 0 is a valid value */
 					fwder_wofa->syms--;
+					}
 				}
 			}
 			sym++; /* next bin in bkt collision list */
@@ -1097,6 +1098,8 @@ fwder_attach(fwder_dir_t dir, int unit, fwder_mode_t mode,
 	             __FUNCTION__, __fwder_dir(dir), unit, __fwder_mode(mode),
 	             bypass_fn, bypass_fn, dev, __SSTR(dev, name)));
 
+	fwder_init(); /* Initialize once, if not done so. */
+
 	ASSERT((int)dir < (int)FWDER_MAX_DIR);
 	ASSERT((int)mode < (int)FWDER_MAX_MODE);
 	ASSERT(bypass_fn != FWDER_BYPASS_FN_NULL);
@@ -1115,11 +1118,9 @@ fwder_attach(fwder_dir_t dir, int unit, fwder_mode_t mode,
 	/* Configure self */
 	self->mode = mode; /* in dnstream dir, mode will be used by fwd#0, fwd#1 */
 	self->bypass_fn = bypass_fn;
-	if (dir == FWDER_UPSTREAM) {
+	self->dev_def = dev;
+	if (dev != FWDER_NET_DEVICE_NULL)
 		self->devs_cnt = 1;
-		self->dev_def = dev;
-		FWDER_ASSERT(dev != FWDER_NET_DEVICE_NULL);
-	}
 	self->osh = osh;
 
 	/* Return the mate's fwder */
@@ -1185,45 +1186,9 @@ fwder_dettach(fwder_t * mate, fwder_dir_t dir, int unit)
 		self->mode = FWDER_NIC_MODE;
 	}
 
-	if (dir == FWDER_UPSTREAM) {
-		self->dev_def = FWDER_NET_DEVICE_NULL;
-	}
-
 	_FWDER_UNLOCK(self);                                   /* --LOCK */
 
 	return FWDER_NULL;
-}
-
-/** Given an upstream fwder handle, register a default interface
- * to mate downstream fwder. Deregister bu using a NULL net_device.
- */
-int
-fwder_register(fwder_t * fwder, struct net_device * dev)
-{
-	FWDER_TRACE(("%s fwder<%p> dev<%p:%s>\n", __FUNCTION__,
-	             fwder, dev, __SSTR(dev, name)));
-
-	if (fwder == FWDER_NULL)
-		return FWDER_FAILURE;
-
-	ASSERT(fwder == __fwder_self(FWDER_UPSTREAM, fwder->unit));
-
-	/* register with downstream fwder */
-	fwder->mate->dev_def = dev;
-
-	return FWDER_SUCCESS;
-}
-
-/** Given a downstream fwder handle, fetch the default registered device. */
-struct net_device *
-fwder_default(fwder_t * fwder)
-{
-	if (fwder == FWDER_NULL)
-		return FWDER_NET_DEVICE_NULL;
-
-	ASSERT(fwder == __fwder_self(FWDER_DNSTREAM, fwder->unit));
-
-	return fwder->dev_def;
 }
 
 /** Bind/Unbind HW switching to a primary/virtual interface.
@@ -1282,6 +1247,8 @@ fwder_bind(fwder_t * mate, int unit, int subunit, struct net_device * dev,
 			            fwder_if->dev, __SSTR(fwder_if->dev, name)));
 			ASSERT(dev == fwder_if->dev);
 			fwder_if->dev = dev;
+			if (self->devs_cnt == 1)
+				self->dev_def = fwder_if->dev;
 			goto unlock_ret;
 		}
 
@@ -1290,6 +1257,12 @@ fwder_bind(fwder_t * mate, int unit, int subunit, struct net_device * dev,
 		dll_append(&self->devs_dll, &fwder_if->node);
 
 		self->devs_cnt++;
+
+		if (self->devs_cnt == 1) {
+			self->dev_def = fwder_if->dev;
+		} else {
+			self->dev_def = FWDER_NET_DEVICE_NULL; /* find dev using WOFA */
+		}
 
 	} else { /* attach == FALSE */
 
@@ -1301,6 +1274,20 @@ fwder_bind(fwder_t * mate, int unit, int subunit, struct net_device * dev,
 			/* Is attached, so dettach */
 			self->devs_cnt--;
 			FWDER_ASSERT(self->devs_cnt >= 0);
+
+			/* If only a single wl interface is attached to the forwarder, then
+			 * cache the interfaces device as the default device and avoid a
+			 * WOFA lookup.
+			 */
+			if (self->devs_cnt == 0) {
+				self->dev_def = FWDER_NET_DEVICE_NULL;
+			} else if (self->devs_cnt == 1) {
+				fwder_if_t * active_fwder_if;
+				FWDER_ASSERT(!dll_empty(&self->devs_dll));
+				active_fwder_if = (fwder_if_t *)dll_head_p(&self->devs_dll);
+				FWDER_ASSERT(active_fwder_if->dev != FWDER_NET_DEVICE_NULL);
+				self->dev_def = active_fwder_if->dev;
+			}
 
 		} else { /* already dettached, do nothing. */
 			FWDER_WARN(("%s unbind NULL dev at<%d,%d>\n",
@@ -1385,8 +1372,7 @@ fwder_lookup(fwder_t * fwder, uint16 * symbol, const int port)
 
 /** Flood a packet to all interfaces. Free original if clone is FALSE. */
 int
-fwder_flood(fwder_t * fwder, struct sk_buff * skb, void * osh, bool clone,
-            fwder_flood_fn_t dev_start_xmit)
+fwder_flood(fwder_t * fwder, struct sk_buff * skb, void * osh, bool clone)
 {
 	int ret = FWDER_SUCCESS;
 	struct sk_buff * nskb;
@@ -1413,11 +1399,11 @@ fwder_flood(fwder_t * fwder, struct sk_buff * skb, void * osh, bool clone,
 			}
 
 			FWDER_PTRACE(("%s skb<0x%p> %pS\n", __FUNCTION__,
-			              nskb, dev_start_xmit));
+			              nskb, dev->netdev_ops->ndo_start_xmit));
 
 			/* dispatch to either NIC or DHD start xmit */
 			nskb->dev = dev;
-			dev_start_xmit(nskb, dev, TRUE);
+			dev->netdev_ops->ndo_start_xmit(nskb, dev);
 
 			FWDER_STATS_ADD(fwder->flooded, 1);
 		}

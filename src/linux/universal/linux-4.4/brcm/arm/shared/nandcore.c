@@ -29,6 +29,7 @@
 #include <nand_core.h>
 #include <hndnand.h>
 #include <hndpmu.h>
+#include <sbgci.h>
 
 #ifdef BCMDBG
 #define	NANDFL_MSG(args)	printf args
@@ -40,6 +41,8 @@
 
 #define NANDF_SMALL_BADBLOCK_POS	5
 #define NANDF_LARGE_BADBLOCK_POS	0
+
+extern int nospare;
 
 struct nandpart_timing_info {
 	const char	*name;
@@ -79,23 +82,26 @@ static hndnand_t nandcore;
 
 static uint32 num_cache_per_page;
 static uint32 spare_per_cache;
+static int bootdev = -1;
 
 /* Prototype */
 static int nandcore_poll(si_t *sih, nandregs_t *nc);
 
+void nandcore_enable(si_t *sih, int enable);
 hndnand_t *nandcore_init(si_t *sih);
 static int nandcore_read(hndnand_t *nfl, uint64 offset, uint len, uchar *buf);
 static int nandcore_write(hndnand_t *nfl, uint64 offset, uint len, const uchar *buf);
 static int nandcore_erase(hndnand_t *nfl, uint64 offset);
 static int nandcore_checkbadb(hndnand_t *nfl, uint64 offset);
+static int nandcore_checkbadb_nospare(hndnand_t *nfl, uint64 offset);
 static int nandcore_mark_badb(hndnand_t *nfl, uint64 offset);
+static int nandcore_read_oob(hndnand_t *nfl, uint64 addr, uint8 *oob);
 
 #ifndef _CFE_
 static int nandcore_dev_ready(hndnand_t *nfl);
 static int nandcore_select_chip(hndnand_t *nfl, int chip);
 static int nandcore_cmdfunc(hndnand_t *nfl, uint64 addr, int cmd);
 static int nandcore_waitfunc(hndnand_t *nfl, int *status);
-static int nandcore_read_oob(hndnand_t *nfl, uint64 addr, uint8 *oob);
 static int nandcore_write_oob(hndnand_t *nfl, uint64 addr, uint8 *oob);
 static int nandcore_read_page(hndnand_t *nfl, uint64 addr, uint8 *buf, uint8 *oob, bool ecc,
 	uint32 *herr, uint32 *serr);
@@ -399,11 +405,15 @@ nandcore_check_id(uint8 *id)
 	case NFL_VENDOR_MXIC:
 		name = "Mxic";
 		break;
-	case NFL_VENDOR_ZENTEL:
-		name = "Zentel";
+	case NFL_VENDOR_ZENTEL_ESMT:
+		name = "Zentel/Esmt";
+		break;
+	case NFL_VENDOR_WINBOND:
+		name = "Winbond";
 		break;
 	default:
-		printf("No NAND flash type found\n");
+//		printf("No NAND flash type found\n");
+		name = " ";
 		break;
 	}
 
@@ -519,6 +529,62 @@ nandcore_optimize_timing(hndnand_t *nfl)
 	return;
 }
 
+/* Get nand present flag */
+static bool
+nandcore_nand_present(si_t *sih)
+{
+	uint origidx, intr_val = 0;
+	gciregs_t *gci = NULL;
+	uint32 nand_present = 0;
+
+	/* 53573/47189 series */
+	if (sih->ccrev == 54) {
+		gci = (gciregs_t *)si_switch_core(sih, GCI_CORE_ID, &origidx, &intr_val);
+		if (gci) {
+			W_REG(NULL, &gci->gci_indirect_addr, 7);
+			nand_present = R_REG(NULL, &gci->gci_chipsts);
+			nand_present &= SI_BCM53573_NAND_PRE_MASK;
+		}
+
+		/* Return to original core */
+		si_restore_core(sih, origidx, intr_val);
+
+		if (nand_present)
+			return TRUE;
+	}
+	return FALSE;
+}
+
+void
+nandcore_enable(si_t *sih, int enable)
+{
+	ASSERT(sih);
+	/* 53573/47189 series */
+	if (sih->ccrev == 54) {
+		if (bootdev == -1)
+			bootdev = soc_boot_dev((void *)sih);
+
+		if (bootdev != SOC_BOOTDEV_NANDFLASH) {
+			osl_t *osh;
+			uint origidx, intr_val = 0;
+			pmuregs_t *pmu;
+
+			osh = si_osh(sih);
+			/* Block ints and save current core */
+			pmu = (pmuregs_t *)si_switch_core(sih, PMU_CORE_ID, &origidx, &intr_val);
+
+			W_REG(osh, &pmu->chipcontrol_addr, PMU_CHIPCTL7);
+			if (enable)
+				OR_REG(osh, &pmu->chipcontrol_data, 0x003);
+			else
+				AND_REG(osh, &pmu->chipcontrol_data, ~0x003);
+
+			/* Return to original core */
+			si_restore_core(sih, origidx, intr_val);
+		}
+	}
+}
+
 /* Initialize nand flash access */
 hndnand_t *
 nandcore_init(si_t *sih)
@@ -534,12 +600,24 @@ nandcore_init(si_t *sih)
 
 	ASSERT(sih);
 
-	/* Only support chipcommon revision == 42 for now */
-	if (sih->ccrev != 42)
+	/* Only support chipcommon revision == 42 or 54 for now */
+	if (sih->ccrev != 42 && sih->ccrev != 54)
 		return NULL;
 
 	if ((nc = (nandregs_t *)si_setcore(sih, NS_NAND_CORE_ID, 0)) == NULL)
 		return NULL;
+
+	/* 53573/47189 series */
+	if (sih->ccrev == 54) {
+		if (!nandcore_nand_present(sih))
+			return NULL;
+		if (bootdev == -1)
+			bootdev = soc_boot_dev((void *)sih);
+		if (bootdev != SOC_BOOTDEV_NANDFLASH) {
+			si_core_reset(sih, 0, 0);
+			OSL_DELAY(5);
+		}
+	}
 
 	if (R_REG(NULL, &nc->flash_device_id) == 0)
 		return NULL;
@@ -558,13 +636,13 @@ nandcore_init(si_t *sih)
 	nandcore.erase = nandcore_erase;
 	nandcore.checkbadb = nandcore_checkbadb;
 	nandcore.markbadb = nandcore_mark_badb;
+	nandcore.read_oob = nandcore_read_oob;
 
 #ifndef _CFE_
 	nandcore.dev_ready = nandcore_dev_ready;
 	nandcore.select_chip = nandcore_select_chip;
 	nandcore.cmdfunc = nandcore_cmdfunc;
 	nandcore.waitfunc = nandcore_waitfunc;
-	nandcore.read_oob = nandcore_read_oob;
 	nandcore.write_oob = nandcore_write_oob;
 	nandcore.read_page = nandcore_read_page;
 	nandcore.write_page = nandcore_write_page;
@@ -716,8 +794,14 @@ nandcore_init(si_t *sih)
 	firsttime = FALSE;
 
 	/* Memory mapping */
-	nandcore.phybase = SI_NS_NANDFLASH;
-	nandcore.base = (uint32)REG_MAP(SI_NS_NANDFLASH, SI_FLASH_WINDOW);
+	if (sih->ccrev == 42) {
+		nandcore.phybase = SI_NS_NANDFLASH;
+		nandcore.base = (uint32)REG_MAP(nandcore.phybase, SI_FLASH_WINDOW);
+	}
+	else {
+		nandcore.phybase = SI_BCM53573_NANDFLASH;
+		nandcore.base = (uint32)REG_MAP(nandcore.phybase, (nandcore.size << 20));
+	}
 
 	/* For 1KB sector size setting */
 	if (R_REG(osh, &nc->acc_control_cs0) & NANDAC_CS0_SECTOR_SIZE_1K) {
@@ -874,6 +958,70 @@ exit:
 }
 
 static int
+nandcore_checkbadb_nospare(hndnand_t *nfl, uint64 offset)
+{
+        si_t *sih = nfl->sih;
+        nandregs_t *nc = (nandregs_t *)nfl->core;
+        aidmp_t *ai = (aidmp_t *)nfl->wrap;
+        osl_t *osh;
+        int i;
+        uint off;
+        uint32 nand_intfc_status;
+        int ret = 0;
+        uint32 reg;
+
+        ASSERT(sih);
+
+        osh = si_osh(sih);
+        if ((offset >> 20) >= nfl->size)
+                return -1;
+        if ((offset & (nfl->blocksize - 1)) != 0) {
+                return -1;
+        }
+
+        /* Set the block address for the following commands */
+        reg = (R_REG(osh, &nc->cmd_ext_address) & ~NANDCMD_EXT_ADDR_MASK);
+        W_REG(osh, &nc->cmd_ext_address, (reg | (offset >> 32)));
+
+        for (i = 0; i < 2; i++) {
+                off = offset + (nfl->pagesize * i);
+                W_REG(osh, &nc->cmd_address, off);
+                nandcore_cmd(osh, nc, NANDCMD_SPARE_RD);
+                if (nandcore_poll(sih, nc) < 0) {
+                        ret = -1;
+                        goto exit;
+                }
+                nand_intfc_status = R_REG(osh, &nc->intfc_status) & NANDIST_SPARE_VALID;
+                if (nand_intfc_status != NANDIST_SPARE_VALID) {
+                        ret = -1;
+#ifdef BCMDBG
+                        printf("%s: Spare is not valid\n", __FUNCTION__);
+#endif
+                        goto exit;
+                }
+
+                /* Toggle as little endian */
+                OR_REG(osh, &ai->ioctrl, NAND_APB_LITTLE_ENDIAN);
+
+                if ((R_REG(osh, &nc->spare_area_read_ofs[0]) & 0xff) != 0xff) {
+                        ret = -1;
+#ifdef BCMDBG
+                        printf("%s: Bad Block (0x%llx)\n", __FUNCTION__, offset);
+#endif
+                }
+
+                /* Toggle as big endian */
+                AND_REG(osh, &ai->ioctrl, ~NAND_APB_LITTLE_ENDIAN);
+
+                if (ret == -1)
+                        break;
+        }
+
+exit:
+        return ret;
+}
+
+static int
 nandcore_checkbadb(hndnand_t *nfl, uint64 offset)
 {
 	si_t *sih = nfl->sih;
@@ -886,6 +1034,9 @@ nandcore_checkbadb(hndnand_t *nfl, uint64 offset)
 	uint32 reg, oob_bi;
 	unsigned cache, col = 0;
 	uint32 rd_oob_byte, left_oob_byte;
+
+	if(nospare)
+		return nandcore_checkbadb_nospare(nfl, offset);
 
 	ASSERT(sih);
 
@@ -1185,6 +1336,7 @@ nandcore_waitfunc(hndnand_t *nfl, int *status)
 
 	return ret;
 }
+#endif
 
 static int
 nandcore_read_oob(hndnand_t *nfl, uint64 addr, uint8 *oob)
@@ -1249,6 +1401,8 @@ nandcore_read_oob(hndnand_t *nfl, uint64 addr, uint8 *oob)
 
 	return 0;
 }
+
+#ifndef _CFE_
 
 static int
 nandcore_write_oob(hndnand_t *nfl, uint64 addr, uint8 *oob)
