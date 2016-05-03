@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: bcmotp.h 461508 2014-03-12 09:37:07Z $
+ * $Id: bcmotp.h 473704 2014-04-29 15:49:57Z $
  */
 
 #ifndef	_bcmotp_h_
@@ -29,7 +29,7 @@
 #define OTP_ALL_RGN	0xf	/* From h/w region to end of OTP including checksum */
 
 /* OTP Size */
-#define OTP_SZ_MAX		(6144/8)	/* maximum bytes in one CIS */
+#define OTP_SZ_MAX		(12288/8)	/* maximum bytes in one CIS */
 
 /* Fixed size subregions sizes in words */
 #define OTPGU_CI_SZ		2
@@ -45,6 +45,8 @@
 /* Exported functions */
 extern int	otp_status(void *oh);
 extern int	otp_size(void *oh);
+extern bool	otp_isunified(void *oh);
+extern uint16	otp_avsbitslen(void *oh);
 extern uint16	otp_read_bit(void *oh, uint offset);
 extern void*	otp_init(si_t *sih);
 extern int	otp_newcis(void *oh);

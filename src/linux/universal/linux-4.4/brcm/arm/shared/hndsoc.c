@@ -24,6 +24,7 @@
 #include <siutils.h>
 #include <hndsoc.h>
 #include <sbchipc.h>
+#include <sbgci.h>
 #include <bcmdevs.h>
 #include <bcmnvram.h>
 #include <nand_core.h>
@@ -62,6 +63,7 @@ soc_boot_dev(void *socp)
 	}
 	else {
 		chipcregs_t *cc;
+		gciregs_t *gci;
 
 		/* Check 5357 */
 		if (sih->ccrev == 38) {
@@ -75,6 +77,32 @@ soc_boot_dev(void *socp)
 			}
 		}
 
+		/* Check 53573 */
+		if (sih->ccrev == 54 && (gci = (gciregs_t *)si_setcore(sih, GCI_CORE_ID, 0))) {
+			uint32 bootdev = 0;
+
+			/* 53573 bootdev[1:0].  0: boot from sflash, 1: boot from nand */
+			W_REG(NULL, &gci->gci_indirect_addr, 7);
+			bootdev = R_REG(NULL, &gci->gci_chipsts);
+			bootdev &= SI_BCM53573_BOOTDEV_MASK;
+
+			if (bootdev == SI_BCM53573_BOOTDEV_NOR)
+				bootfrom = SOC_BOOTDEV_SFLASH;
+			else
+				bootfrom = SOC_BOOTDEV_NANDFLASH;
+
+			/* 47189A0 RGMII voltage setting */
+			if (sih->chippkg == BCM47189_PKG_ID && sih->chiprev == 0) {
+				uint32 vdd = 0;
+				W_REG(NULL, &gci->gci_indirect_addr, 7);
+				vdd = R_REG(NULL, &gci->gci_chipctrl);
+				vdd &= ~(SI_BCM47189_RGMII_VDD_MASK << SI_BCM47189_RGMII_VDD_SHIFT);
+				vdd |= (SI_BCM47189_RGMII_VDD_2_5V << SI_BCM47189_RGMII_VDD_SHIFT);
+				W_REG(NULL, &gci->gci_chipctrl, vdd);
+			}
+
+			goto found;
+		}
 		/* Handle old soc, 4704, 4718 */
 		if ((cc = (chipcregs_t *)si_setcoreidx(sih, SI_CC_IDX))) {
 			option = R_REG(NULL, &cc->capabilities) & CC_CAP_FLASH_MASK;
@@ -111,7 +139,7 @@ soc_knl_dev(void *socp)
 		(sih->cccaps & CC_CAP_NFLASH)) {
 		goto check_nv;
 	}
-	else if (sih->ccrev == 42) {
+	else if (sih->ccrev == 42 || sih->ccrev == 54) {
 		uint32 origidx;
 		nandregs_t *nc;
 		uint32 id = 0;
