@@ -1092,11 +1092,13 @@ static int m25p_probe(struct spi_device *spi)
 	flash->mtd._erase = m25p80_erase;
 	flash->mtd._read = m25p80_read;
 
+#ifdef CONFIG_OF
 	if (np && !of_property_read_u32(np, "m25p,chunked-io", &val)) {
 		dev_warn(&spi->dev, "using chunked io\n");
 		flash->mtd._read = m25p80_read_chunked;
 		flash->chunk_size = val;
 	}
+#endif
 
 	/* flash protection support for STmicro chips */
 	if (JEDEC_MFR(info->jedec_id) == CFI_MFR_ST) {
