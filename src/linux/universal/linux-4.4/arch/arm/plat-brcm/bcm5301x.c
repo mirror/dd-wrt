@@ -3,6 +3,7 @@
  *
  */
 
+#include <asm/cacheflush.h>
 #include <linux/types.h>
 #include <linux/init.h>
 #include <linux/kernel.h>
@@ -26,8 +27,18 @@
 #ifdef	CONFIG_SMP
 #include <asm/spinlock.h>
 #endif
+#include <bcmutils.h>
+#include <siutils.h>
+#include <bcmdefs.h>
+#include <bcmdevs.h>
 
 #define ACP_WAR_ENAB() 0
+
+/* Global SB handle */
+extern si_t *bcm947xx_sih;
+#define sih bcm947xx_sih
+
+extern int _chipid;
 
 static struct clk * _soc_refclk = NULL;
 
@@ -78,7 +89,11 @@ void __init soc_map_io( struct clk * refclk )
 
 	desc[0].virtual = IO_BASE_VA;
 	desc[0].pfn = __phys_to_pfn( IO_BASE_PA );
-	desc[0].length = SZ_16M ;	/* CCA+CCB: 0x18000000-0x18ffffff */
+	if (BCM53573_CHIP(_chipid)) {
+		desc[0].length = SZ_2M;
+	} else {
+		desc[0].length = SZ_16M;	/* CCA+CCB: 0x18000000-0x18ffffff */
+	}
 	desc[0].type = MT_DEVICE ;
 
 	iotable_init( desc, 1);
@@ -135,6 +150,49 @@ void __init soc_init_irq( void )
 }
 
 /*
+ * Do timer clock (using ILP clock) calibration for BCM53573
+ */
+static u32 __init soc_timerclk_calibration(void)
+{
+	void * __iomem reg_base = (void *)SOC_PMU_BASE_VA;
+	u32 val1, val2, val_sum = 0, val_num = 0, loop_num = 0;
+	u32 timer_clk;
+
+	/* Enable XtalCntrEanble bit, bit[31] of PMU_XtalFreqRatio register */
+	writel(0x80000000, reg_base + PMU_XTALFREQ_RATIO_OFF);
+	val1 = readl(reg_base + PMU_XTALFREQ_RATIO_OFF) & 0x1fff;
+
+	/*
+	 * Get some valid values of the field AlpPer4Ilp of the above register, and
+	 * average it as timer clock.
+	 */
+	while (val_num < 20) {
+		/* Check next valid value */
+		val2 = readl(reg_base + PMU_XTALFREQ_RATIO_OFF) & 0x1fff;
+		if (val1 == val2) {
+			if (++loop_num > 5000) {
+				val_sum += val2;
+				val_num++;
+				break;
+			}
+			continue;
+		}
+		val1 = val2;
+		val_sum += val1;
+		val_num++;
+		loop_num = 0;
+	}
+
+	/* Disable XtalCntrEanble bit, bit[31] of PMU_XtalFreqRatio register */
+	writel(0x0, reg_base + PMU_XTALFREQ_RATIO_OFF);
+
+	val_sum /= val_num;
+	timer_clk = (si_alp_clock(sih) * 4) / val_sum;
+
+	return timer_clk;
+}
+
+/*
  * Initialize SoC timers
  */
 void __init soc_init_timer( void )
@@ -142,14 +200,20 @@ void __init soc_init_timer( void )
 	unsigned long periphclk_freq;
 	struct clk * clk ;
 
-	/* Clocks need to be setup early */
-	soc_dmu_init( _soc_refclk );
-	soc_cru_init( _soc_refclk );
+	if (BCM53573_CHIP(sih->chip)) {
+		soc_pmu_clk_init(_soc_refclk);
+		periphclk_freq = (unsigned long)soc_timerclk_calibration();
+	} else {
+		/* Clocks need to be setup early */
+		soc_dmu_init(_soc_refclk);
+		soc_cru_init(_soc_refclk);
 
-	/* get mpcore PERIPHCLK from clock modules */
-	clk = clk_get_sys( NULL, "periph_clk");
-	BUG_ON( IS_ERR_OR_NULL (clk) );
-	periphclk_freq = clk_get_rate( clk );
+		/* get mpcore PERIPHCLK from clock modules */
+		clk = clk_get_sys(NULL, "periph_clk");
+		BUG_ON(IS_ERR_OR_NULL(clk));
+		periphclk_freq = clk_get_rate(clk);
+	}
+
 	BUG_ON( !periphclk_freq );
 
 	/* Fire up the global MPCORE timer */
@@ -252,6 +316,8 @@ void plat_wake_secondary_cpu( unsigned cpu, void (* _sec_entry_va)(void) )
 }
 
 #ifdef CONFIG_CACHE_L310
+extern struct outer_cache_fns outer_cache;
+
 /*
  * SoC initialization that need to be done early,
  * e.g. L2 cache, clock, I/O pin mux, power management
@@ -260,6 +326,16 @@ static int  __init bcm5301_pl310_init( void )
 {
 	void __iomem *l2cache_base;
 	u32 auxctl_val, auxctl_msk ;
+
+	if (BCM53573_CHIP(sih->chip)) {
+		outer_cache.inv_range = NULL;
+		outer_cache.clean_range = NULL;
+		outer_cache.flush_range = NULL;
+#ifdef CONFIG_OUTER_CACHE_SYNC
+		outer_cache.sync = NULL;
+#endif
+		return 0;
+	}
 	/* Default AUXCTL modifiers */
 	auxctl_val = 0UL;
 	auxctl_msk = ~0UL ;
@@ -296,6 +372,7 @@ static ssize_t chipinfo_read_proc(struct file *file, char __user *buf,
 	u32 reg, val;
 	void __iomem *reg_map;
 	char buffer[256];
+
 	len = 0;
 	pos = begin = 0;
 

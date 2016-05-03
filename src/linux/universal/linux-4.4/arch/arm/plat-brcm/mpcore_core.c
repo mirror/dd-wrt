@@ -22,14 +22,27 @@
 #include <plat/mpcore.h>
 #include <mach/io_map.h>
 
+#include <bcmutils.h>
+#include <siutils.h>
+#include <bcmdefs.h>
+#include <bcmdevs.h>
+
 /* Globals */
 static void __iomem * periphbase ;
 extern void __iomem * twd_base;	/* declared in arch/arm/kernel/smp_twd.c */
 
+extern si_t *bcm947xx_sih;
+#define sih bcm947xx_sih
+
+extern int _chipid;
+
 extern int __init twd_local_timer_common_register(void);
 void __iomem * scu_base_addr(void)
 {
-	return (periphbase + MPCORE_SCU_OFF);
+	if (BCM53573_CHIP(_chipid))
+		return NULL;
+	else
+		return (periphbase + MPCORE_SCU_OFF);
 }
 
 /*
@@ -72,13 +85,12 @@ void __init mpcore_map_io( void )
 	/* Fix-map the entire PERIPHBASE 2*4K register block */
 	desc.virtual = MPCORE_BASE_VA;
 	desc.pfn = __phys_to_pfn( base_addr );
-	desc.length = SZ_8K;
+	desc.length = (BCM53573_CHIP(_chipid)) ? SZ_32K : SZ_8K;
 	desc.type = MT_DEVICE ;
 
 	iotable_init( &desc, 1);
 
 	periphbase = (void *) MPCORE_BASE_VA;
-
 
 
 	/* Local timer code needs just the register base address */
@@ -107,9 +119,17 @@ void __init mpcore_init_timer( unsigned long perphclk_freq )
 {
 
 	/* Init Global Timer */
-	mpcore_gtimer_init( periphbase + MPCORE_GTIMER_OFF, 
-			perphclk_freq, MPCORE_IRQ_GLOBALTIMER );
+	if (BCM53573_CHIP(sih->chip)) {
+		mpcore_gtimer_init(NULL, perphclk_freq, MPCORE_IRQ_PPI1TIMER);
+	} else {
+		mpcore_gtimer_init(periphbase + MPCORE_GTIMER_OFF,
+			perphclk_freq, MPCORE_IRQ_GLOBALTIMER);
+	}
 
+	if (BCM53573_CHIP(_chipid)) {
+		/* Not needed for BCM53573 */
+		return;
+	}
 #ifdef CONFIG_HAVE_ARM_TWD
 	printk(KERN_INFO "register local timer\n");
 	int err = twd_local_timer_register(&twd_local_timer);

@@ -11,6 +11,9 @@
 #define	MPCORE_IRQ_GLOBALTIMER	27
 #define	MPCORE_IRQ_LOCALTIMER	29
 
+/* Generic Timer IRQ for ARM-CA7 */
+#define	MPCORE_IRQ_PPI1TIMER	29
+
 /* 
  NOTE: MPCORE physical based ontained at run-time,
  while its virtual base address is set at compile-time in memory.h
@@ -22,6 +25,9 @@
 #define	MPCORE_GTIMER_OFF	0x0200	/* Global timer */
 #define	MPCORE_LTIMER_OFF	0x0600	/* Local (private) timers */
 #define	MPCORE_GIC_DIST_OFF	0x1000	/* Interrupt distributor registers */
+
+/* MPCORE GIC CPU interface register offsets for ARM-CA7 */
+#define MPCORE_GIC_CPUIF_OFF_CA7	0x2000
 
 #ifndef __ASSEMBLY__
 
