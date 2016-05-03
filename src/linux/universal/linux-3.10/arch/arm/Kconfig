@@ -367,6 +367,7 @@ config ARCH_CNS3XXX
 	select CPU_V6K
 #	select HAVE_CLK
 	select NEED_MACH_GPIO_H	
+	select GENERIC_IRQ_CHIP
 	select COMMON_CLKDEV
 	select HAVE_ARM_SCU if SMP
 	select HAVE_ARM_TWD
