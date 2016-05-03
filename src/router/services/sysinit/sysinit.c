@@ -2401,6 +2401,15 @@ void start_restore_defaults(void)
 			nvram_set("vlan2ports", "0 8u");
 		}
 		break;
+
+	case ROUTER_ASUS_AC1200:
+		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")
+		    || !nvram_get("vlan2ports")
+		    || nvram_match("vlan2ports", "")) {
+			nvram_set("vlan1ports", "1 2 3 4 8*");
+			nvram_set("vlan2ports", "0 5u");
+		}
+		break;
 	case ROUTER_BUFFALO_WZR600DHP2:
 	case ROUTER_BUFFALO_WZR900DHP:
 	case ROUTER_BUFFALO_WZR1750:
