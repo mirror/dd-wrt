@@ -80,5 +80,12 @@
  * assembly code using the above macros.
  */
 #define	MPCORE_GIC_CPUIF_VA	(MPCORE_BASE_VA+MPCORE_GIC_CPUIF_OFF)
+#define	MPCORE_GIC_CPUIF_VA_CA7	(MPCORE_BASE_VA+MPCORE_GIC_CPUIF_OFF_CA7)
+
+/* PMU base address (VA) for BCM53573 */
+#define	SOC_PMU_BASE_VA		(SOC_PMU_BASE_PA - IO_BASE_PA + IO_BASE_VA)
+#define PMU_CONTROL_ADDR_OFF	0x660
+#define PMU_CONTROL_DATA_OFF	0x664
+#define PMU_XTALFREQ_RATIO_OFF	0x66c
 
 #endif /*__MACH_IO_MAP_H */
