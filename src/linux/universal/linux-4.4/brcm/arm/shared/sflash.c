@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: sflash.c 345826 2012-07-19 06:34:55Z $
+ * $Id: sflash.c 477504 2014-05-13 20:26:46Z $
  */
 
 #include <bcm_cfg.h>
@@ -263,9 +263,9 @@ sflash_read(si_t *sih, chipcregs_t *cc, uint offset, uint len, uchar *buf)
 		cnt = len;
 
 	if (sih->ccrev == 12)
-		from = (uint8 *)OSL_UNCACHED((void *)SI_FLASH2 + offset);
+		from = (uint8 *)OSL_UNCACHED(((uint8 *)SI_FLASH2 + offset));
 	else
-		from = (uint8 *)OSL_CACHED((void *)SI_FLASH2 + offset);
+		from = (uint8 *)OSL_CACHED(((uint8 *)SI_FLASH2 + offset));
 	to = (uint8 *)buf;
 
 	if (cnt < 4) {

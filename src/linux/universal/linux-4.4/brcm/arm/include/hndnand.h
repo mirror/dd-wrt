@@ -29,13 +29,25 @@
 #define NFL_VENDOR_SAMSUNG		0xEC
 #define NFL_VENDOR_ESMT			0x92
 #define NFL_VENDOR_MXIC			0xC2
-#define NFL_VENDOR_ZENTEL		0xC8
+#define NFL_VENDOR_ZENTEL_ESMT		0xC8
+#define NFL_VENDOR_WINBOND              0xF1
 
 #define NFL_SECTOR_SIZE			512
 #define NFL_TABLE_END			0xffffffff
 
 #define NFL_BOOT_SIZE			0x200000
+/* ASUS LINUX MTD SIZE */
+#if CONFIG_LINUX_MTD == 32
 #define NFL_BOOT_OS_SIZE		0x2000000
+#elif CONFIG_LINUX_MTD == 48
+#define NFL_BOOT_OS_SIZE                0x3000000
+#elif CONFIG_LINUX_MTD == 64
+#define NFL_BOOT_OS_SIZE		0x4000000
+#elif CONFIG_LINUX_MTD == 128
+#define NFL_BOOT_OS_SIZE		0x8000000
+#else
+#define NFL_BOOT_OS_SIZE		0x2000000
+#endif
 #define NFL_BBT_SIZE			0x100000
 
 #ifdef __ARM_ARCH_7A__
@@ -95,13 +107,13 @@ struct hndnand {
 	int (*erase)(hndnand_t *nfl, uint64 offset);
 	int (*checkbadb)(hndnand_t *nfl, uint64 offset);
 	int (*markbadb)(hndnand_t *nfl, uint64 offset);
+	int (*read_oob)(hndnand_t *nfl, uint64 addr, uint8 *oob);
 
 #ifndef _CFE_
 	int (*dev_ready)(hndnand_t *nfl);
 	int (*select_chip)(hndnand_t *nfl, int chip);
 	int (*cmdfunc)(hndnand_t *nfl, uint64 addr, int cmd);
 	int (*waitfunc)(hndnand_t *nfl, int *status);
-	int (*read_oob)(hndnand_t *nfl, uint64 addr, uint8 *oob);
 	int (*write_oob)(hndnand_t *nfl, uint64 addr, uint8 *oob);
 	int (*read_page)(hndnand_t *nfl, uint64 addr, uint8 *buf, uint8 *oob, bool ecc,
 		uint32 *herr, uint32 *serr);
@@ -117,6 +129,7 @@ int hndnand_write(hndnand_t *nfl, uint64 offset, uint len, const uchar *buf);
 int hndnand_erase(hndnand_t *nfl, uint64 offset);
 int hndnand_checkbadb(hndnand_t *nfl, uint64 offset);
 int hndnand_mark_badb(hndnand_t *nfl, uint64 offset);
+int hndnand_read_oob(hndnand_t *nfl, uint64 addr, uint8 *oob);
 
 #ifndef _CFE_
 int hndnand_dev_ready(hndnand_t *nfl);
@@ -124,7 +137,6 @@ int hndnand_select_chip(hndnand_t *nfl, int chip);
 int hndnand_devcie_width(hndnand_t *nfl, int chip);
 int hndnand_cmdfunc(hndnand_t *nfl, uint64 addr, int cmd);
 int hndnand_waitfunc(hndnand_t *nfl, int *status);
-int hndnand_read_oob(hndnand_t *nfl, uint64 addr, uint8 *oob);
 int hndnand_write_oob(hndnand_t *nfl, uint64 addr, uint8 *oob);
 int hndnand_read_page(hndnand_t *nfl, uint64 addr, uint8 *buf, uint8 *oob, bool ecc,
 	uint32 *herr, uint32 *serr);

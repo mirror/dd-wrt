@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: sbpcmcia.h 521644 2014-12-18 09:14:16Z $
+ * $Id: sbpcmcia.h 521456 2014-12-17 21:28:27Z $
  */
 
 #ifndef	_SBPCMCIA_H
@@ -101,6 +101,7 @@
 
 /* The CIS stops where the FCRs start */
 #define	CIS_SIZE		PCMCIA_FCR
+#define CIS_SIZE_12K    1154    /* Maximum h/w + s/w sub region size for 12k OTP */
 
 /* CIS tuple length field max */
 #define CIS_TUPLE_LEN_MAX	0xff
@@ -328,11 +329,12 @@
 #define HNBU_USBSSPHY_SLEEP1    0x71    /* 2 byte USB SSPHY sleep */
 #define HNBU_USBSSPHY_SLEEP2    0x72    /* 2 byte USB SSPHY sleep */
 #define HNBU_USBSSPHY_SLEEP3    0x73    /* 2 byte USB SSPHY sleep */
-#define HNBU_USBSSPHY_MDIO		0x74	/* USB SSPHY INIT regs setting */
-#define HNBU_USB30PHY_NOSS		0x75	/* USB30 NO Super Speed */
-#define HNBU_USB30PHY_U1U2		0x76	/* USB30 PHY U1U2 Enable */
-#define HNBU_USB30PHY_REGS		0x77	/* USB30 PHY REGs update */
+#define HNBU_USBSSPHY_MDIO      0x74    /* USB SSPHY INIT regs setting */
+#define HNBU_USB30PHY_NOSS      0x75    /* USB30 NO Super Speed */
+#define HNBU_USB30PHY_U1U2      0x76    /* USB30 PHY U1U2 Enable */
+#define HNBU_USB30PHY_REGS      0x77    /* USB30 PHY REGs update */
 #define HNBU_GPIO_PULL_DOWN     0x78    /* 4 byte GPIO pull down mask */
+
 #define HNBU_SROM3SWRGN		0x80	/* 78 bytes; srom rev 3 s/w region without crc8
 					 * plus extra info appended.
 					 */
@@ -346,10 +348,12 @@
 #define HNBU_ACPA_4080		0x89	/* ACPHY PA trimming parameters: 40/80 */
 #define HNBU_SUBBAND5GVER	0x8a	/* subband5gver */
 #define HNBU_PAPARAMBWVER	0x8b	/* paparambwver */
-#define HNBU_USB30U1U2          0x8c    /* usb30u1u2 */
-#define HNBU_USB30REGS0         0x8d    /* usb30regs0 */
-#define HNBU_USB30REGS1         0x8e    /* usb30regs1 */
-#define HNBU_TXBFRPCALS			0x8f	/* phy txbf rpcalvars */
+
+#define HNBU_MCS5Gx1PO		0x8c
+#define HNBU_ACPPR_SB8080_PO		0x8d
+
+#define HNBU_ACPA_160				0x8e	/* ACPHY PA parameters for 160 */
+#define HNBU_ACPA_80P80				0x8f	/* ACPHY PA parameters for 80p80 */
 
 
 #endif /* !defined(LINUX_POSTMOGRIFY_REMOVAL) */
