@@ -27,6 +27,7 @@
 #include <asm/mach/irq.h>
 
 #include <plat/mpcore.h>
+#include <mach/io_map.h>
 
 /*
  * The ARM9 MPCORE Global Timer is a continously-running 64-bit timer,
@@ -57,25 +58,124 @@
 
 #define	GTIMER_MIN_RANGE	30	/* Minimum wrap-around time in sec */
 
+/*
+ * The following macro-defines are for ARM-CA7
+ */
+#define	GTIMER_CTRL_TIMER_EN	(1<<0)	/* timer enable */
+#define	GTIMER_CTRL_MASK_EN	(1<<1)	/* mask enable */
+#define	GTIMER_CTRL_ISTATUS	(1<<2)	/* timer assert status */
+
 /* Gobal variables */
 static void __iomem *gtimer_base;
 static u32 ticks_per_jiffy;
 
 extern void soc_watchdog(void);
 
-cycle_t gptimer_count_read(struct clocksource *cs)
+/* The following inline functions are for BCM53573 generic timer */
+/* Get counter frequency register */
+static inline u32 gtimer_get_cntfrq(void)
 {
-	u32 count_hi, count_ho, count_lo;
+	u32 val;
+	asm volatile("mrc p15, 0, %0, c14, c0, 0" : "=r" (val));
+	return val;
+}
+
+/* Set counter frequency register */
+static inline void gtimer_set_cntfrq(u32 cntfrq)
+{
+	asm volatile("mcr p15, 0, %0, c14, c0, 0" : : "r" (cntfrq));
+}
+
+/* Set time PL1 control register */
+static inline void gtimer_set_cntkctl(u32 cntkctl)
+{
+	asm volatile("mcr p15, 0, %0, c14, c1, 0" : : "r" (cntkctl));
+}
+
+/* Get PL1 physical timer controller register */
+static inline u32 gtimer_get_cntpctl(void)
+{
+	u32 val;
+	asm volatile("mrc p15, 0, %0, c14, c2, 1" : "=r" (val));
+	return val;
+}
+
+/* Set PL1 physical timer controller register */
+static inline void gtimer_set_cntpctl(u32 cntpctl)
+{
+	asm volatile("mcr p15, 0, %0, c14, c2, 1" : : "r" (cntpctl));
+	isb();
+}
+
+/* Get physical counter register */
+static inline u64 gtimer_get_cntpct(void)
+{
+	u64 val;
+
+	isb();
+	asm volatile("mrrc p15, 0, %Q0, %R0, c14" : "=r" (val));
+	return val;
+}
+
+/* Get PL1 physical timer compare value register */
+static inline u64 gtimer_get_cntp_cval(void)
+{
+	u64 val;
+
+	isb();
+	asm volatile("mrrc p15, 2, %Q0, %R0, c14" : "=r" (val));
+	return val;
+}
+
+/* Set PL1 physical timer compare value register */
+static inline void gtimer_set_cntp_cval(u64 val)
+{
+	asm volatile("mcrr p15, 2, %Q0, %R0, c14" : : "r" (val));
+	isb();
+}
+
+static void gtimer_enable(unsigned long freq)
+{
+	if (gtimer_base != NULL) {
+		u32 ctrl;
+		/* Prescaler = 0; let the Global Timer run at native PERIPHCLK rate */
+		ctrl = GTIMER_CTRL_EN;
+
+		/* Enable the free-running global counter */
+		writel(ctrl, gtimer_base + GTIMER_CTRL);
+	} else {
+		/* For BCM53573 */
+		u32 cntkctl = 0;
+		u32 cntpctl = GTIMER_CTRL_MASK_EN | GTIMER_CTRL_TIMER_EN;
+
+		gtimer_set_cntfrq((u32)freq);
+		gtimer_set_cntkctl(cntkctl);
+		/* Set mask bit and set enable bit */
+		gtimer_set_cntpctl(cntpctl);
+	}
+}
+
+
+static cycle_t gptimer_count_read(struct clocksource *cs)
+{
 	u64 count;
 
-	/* Avoid unexpected rollover with double-read of upper half */
-	do {
-		count_hi = readl( gtimer_base + GTIMER_COUNT_HI );
-		count_lo = readl( gtimer_base + GTIMER_COUNT_LO );
-		count_ho = readl( gtimer_base + GTIMER_COUNT_HI );
-	} while( count_hi != count_ho );
+	if (gtimer_base != NULL) {
+		u32 count_hi, count_ho, count_lo;
 
-	count = (u64) count_hi << 32 | count_lo ;
+		/* Avoid unexpected rollover with double-read of upper half */
+		do {
+			count_hi = readl( gtimer_base + GTIMER_COUNT_HI );
+			count_lo = readl( gtimer_base + GTIMER_COUNT_LO );
+			count_ho = readl( gtimer_base + GTIMER_COUNT_HI );
+		} while( count_hi != count_ho );
+
+		count = (u64) count_hi << 32 | count_lo;
+	} else {
+		/* For BCM53573 */
+		count = gtimer_get_cntpct();
+	}
+
 	return count;
 }
 
@@ -103,25 +203,46 @@ static int gtimer_set_periodic(struct clock_event_device *evt)
 	u32 ctrl, period;
 	u64 count;
 
-	/* Get current register with global enable and prescaler */
-	ctrl = readl( gtimer_base + GTIMER_CTRL );
+	if (gtimer_base != NULL) {
+		/* Get current register with global enable and prescaler */
+		ctrl = readl( gtimer_base + GTIMER_CTRL );
 
-	/* Clear the mode-related bits */
-	ctrl &= ~( 	GTIMER_CTRL_CMP_EN | 
-			GTIMER_CTRL_IRQ_EN | 
-			GTIMER_CTRL_AUTO_EN);
+		/* Clear the mode-related bits */
+		ctrl &= ~(	GTIMER_CTRL_CMP_EN |
+				GTIMER_CTRL_IRQ_EN |
+				GTIMER_CTRL_AUTO_EN);
+	} else {
+		ctrl = gtimer_get_cntpctl();
+		/* Set mask bit, i.e., disable interrupt */
+		ctrl |= GTIMER_CTRL_MASK_EN;
+	}
+
 		period = ticks_per_jiffy;
 		count = gptimer_count_read( NULL );
-		count += period ;
-		writel(ctrl, gtimer_base + GTIMER_CTRL);
-		writel(count & 0xffffffffUL, 	gtimer_base + GTIMER_COMP_LO);
-		writel(count >> 32, 		gtimer_base + GTIMER_COMP_HI);
-		writel(period, gtimer_base + GTIMER_RELOAD);
-		ctrl |= GTIMER_CTRL_CMP_EN |
-			GTIMER_CTRL_IRQ_EN |
-			GTIMER_CTRL_AUTO_EN ;
+		count += period;
+
+		if (gtimer_base != NULL) {
+			writel(ctrl, gtimer_base + GTIMER_CTRL);
+			writel(count & 0xffffffffUL, gtimer_base + GTIMER_COMP_LO);
+			writel(count >> 32, gtimer_base + GTIMER_COMP_HI);
+			writel(period, gtimer_base + GTIMER_RELOAD);
+			ctrl |= GTIMER_CTRL_CMP_EN |
+				GTIMER_CTRL_IRQ_EN |
+				GTIMER_CTRL_AUTO_EN;
+		} else {
+			/* For BCM53573 */
+			gtimer_set_cntpctl(ctrl);
+			/* Set PL1 Physical Comp Value */
+			gtimer_set_cntp_cval(count);
+			/* Clear mask bit, i.e., enable interrupt */
+			ctrl &= ~GTIMER_CTRL_MASK_EN;
+		}
+
 	/* Apply the new mode */
-	writel(ctrl, gtimer_base + GTIMER_CTRL);
+	if (gtimer_base != NULL)
+		writel(ctrl, gtimer_base + GTIMER_CTRL);
+	else
+		gtimer_set_cntpctl(ctrl);
 	return 0;
 }
 
@@ -130,15 +251,25 @@ static int gtimer_set_oneshot(struct clock_event_device *evt)
 	u32 ctrl, period;
 	u64 count;
 
-	/* Get current register with global enable and prescaler */
-	ctrl = readl( gtimer_base + GTIMER_CTRL );
 
-	/* Clear the mode-related bits */
-	ctrl &= ~( 	GTIMER_CTRL_CMP_EN | 
-			GTIMER_CTRL_IRQ_EN | 
-			GTIMER_CTRL_AUTO_EN);
-	/* Apply the new mode */
-	writel(ctrl, gtimer_base + GTIMER_CTRL);
+	if (gtimer_base != NULL) {
+		/* Get current register with global enable and prescaler */
+		ctrl = readl( gtimer_base + GTIMER_CTRL );
+
+		/* Clear the mode-related bits */
+		ctrl &= ~(	GTIMER_CTRL_CMP_EN |
+				GTIMER_CTRL_IRQ_EN |
+				GTIMER_CTRL_AUTO_EN);
+	} else {
+		ctrl = gtimer_get_cntpctl();
+		/* Set mask bit, i.e., disable interrupt */
+		ctrl |= GTIMER_CTRL_MASK_EN;
+	}
+
+	if (gtimer_base != NULL)
+		writel(ctrl, gtimer_base + GTIMER_CTRL);
+	else
+		gtimer_set_cntpctl(ctrl);
 	return 0;
 }
 
@@ -161,6 +292,7 @@ static int gtimer_shutdown(struct clock_event_device *evt)
 
 static int gtimer_resume(struct clock_event_device *evt)
 {
+
 	u32 ctrl, period;
 	u64 count;
 
@@ -173,6 +305,7 @@ static int gtimer_resume(struct clock_event_device *evt)
 			GTIMER_CTRL_AUTO_EN);
 	/* Apply the new mode */
 	writel(ctrl, gtimer_base + GTIMER_CTRL);
+
 	return 0;
 }
 
@@ -184,20 +317,31 @@ static int gtimer_set_next_event(
 {
 	u32 ctrl = readl(gtimer_base + GTIMER_CTRL);
 	u64 count = gptimer_count_read( NULL );
-
-	ctrl &= ~GTIMER_CTRL_CMP_EN ;
-	writel(ctrl, gtimer_base + GTIMER_CTRL);
-
 	count += next ;
 
-	writel(count & 0xffffffffUL, 	gtimer_base + GTIMER_COMP_LO);
-	writel(count >> 32, 		gtimer_base + GTIMER_COMP_HI);
+	if (gtimer_base != NULL) {
+		ctrl = readl(gtimer_base + GTIMER_CTRL);
+		ctrl &= ~GTIMER_CTRL_CMP_EN;
+		writel(ctrl, gtimer_base + GTIMER_CTRL);
 
-	/* enable IRQ for the same cpu that loaded comparator */
-	ctrl |= GTIMER_CTRL_CMP_EN ;
-	ctrl |= GTIMER_CTRL_IRQ_EN ;
+		writel(count & 0xffffffffUL, gtimer_base + GTIMER_COMP_LO);
+		writel(count >> 32, gtimer_base + GTIMER_COMP_HI);
 
-	writel(ctrl, gtimer_base + GTIMER_CTRL);
+		/* enable IRQ for the same cpu that loaded comparator */
+		ctrl |= GTIMER_CTRL_CMP_EN;
+		ctrl |= GTIMER_CTRL_IRQ_EN;
+
+		writel(ctrl, gtimer_base + GTIMER_CTRL);
+	} else {
+		/* Set PL1 Physical Comp Value for BCM53573 */
+		gtimer_set_cntp_cval(count);
+
+		/* Clear mask bit, i.e., enable interrupt */
+		ctrl = gtimer_get_cntpctl();
+		ctrl &= ~GTIMER_CTRL_MASK_EN;
+		gtimer_set_cntpctl(ctrl);
+	}
+
 
 	return 0;
 }
@@ -224,10 +368,22 @@ irqreturn_t gtimer_interrupt(int irq, void *dev_id)
 {
 	struct clock_event_device *evt = &gtimer_clockevent;
 	
-	/* clear the interrupt */
-	writel(1, gtimer_base + GTIMER_INT_STAT);
-	if (!evt->event_handler)
-	    printk(KERN_EMERG "error\n");
+	if (gtimer_base != NULL) {
+		/* clear the interrupt */
+		writel(1, gtimer_base + GTIMER_INT_STAT);
+
+#if defined(BUZZZ_KEVT_LVL) && (BUZZZ_KEVT_LVL >= 2)
+		buzzz_kevt_log1(BUZZZ_KEVT_ID_GTIMER_EVENT, (u32)evt->event_handler);
+#endif	/* BUZZZ_KEVT_LVL */
+	} else {
+		u64 count;
+
+		count = gptimer_count_read(NULL);
+		count += ticks_per_jiffy;
+		/* Set PL1 Physical Comp Value */
+		gtimer_set_cntp_cval(count);
+	}
+
 	evt->event_handler(evt);
 
 	soc_watchdog();
@@ -259,6 +415,7 @@ static void __init gtimer_clockevents_init(u32 freq, unsigned timer_irq)
 	evt->cpumask = cpumask_of(cpu);
 	/* Register the device to install handler before enabing IRQ */
 	clockevents_register_device(evt);
+
 }
 
 static u64 notrace read_sched_clock(void)
@@ -284,13 +441,19 @@ void __init mpcore_gtimer_init(
 	printk(KERN_INFO "MPCORE Global Timer Clock %luHz on IRQ %d\n", 
 		(unsigned long) freq,timer_irq);
 
-	/* Prescaler = 0; let the Global Timer run at native PERIPHCLK rate */
+	/* Init PMU ALP/ILP period for BCM53573 */
+	if (gtimer_base == NULL) {
+		void * __iomem reg_base = (void *)SOC_PMU_BASE_VA;
 
-	ctrl = GTIMER_CTRL_EN;
+		/* Configure ALP period, 0x199 = 16384/40 for using 40KHz crystal */
+		writel(0x10199, reg_base + 0x6dc);
 
+		writel(0x10000, reg_base + 0x674);
+	}
 
-	writel(ctrl, gtimer_base + GTIMER_CTRL);
-
+	/* Enable the timer */
+	gtimer_enable(freq);
+	
 	/* Self-test the timer is running */
 	count = gptimer_count_read(NULL);
 
@@ -304,14 +467,13 @@ void __init mpcore_gtimer_init(
 	/* Register as time source */
 	gptimer_clocksource_init(freq);
 	
-
 	/* Register as system timer */
 	gtimer_clockevents_init(freq, timer_irq);
 
 	enable_percpu_irq(timer_irq, 0);
-	u64 diff = gptimer_count_read(NULL);
-	count = diff - count ;
+
+
+	count = gptimer_count_read(NULL) - count ;
 	if( count == 0 )
 		printk(KERN_CRIT "MPCORE Global Timer Dead!!\n");
-	ctrl = readl( gtimer_base + GTIMER_CTRL );
 }

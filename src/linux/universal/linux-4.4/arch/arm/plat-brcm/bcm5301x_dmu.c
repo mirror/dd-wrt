@@ -44,6 +44,13 @@ static struct resource dmu_regs = {
         .flags = IORESOURCE_MEM,
 };
 
+static struct resource pmu_regs = {
+	.name = "pmu_regs",
+	.start = SOC_PMU_BASE_PA,
+	.end = SOC_PMU_BASE_PA + SZ_4K - 1,
+	.flags = IORESOURCE_MEM,
+};
+
 /*
  * Clock management scheme is a provisional implementation
  * only intended to retreive the pre-set frequencies for each
@@ -297,9 +304,72 @@ static int genpll_chan_status(struct clk * clk)
 	return 0;
 }
 
+/*
+ * Get PMU CPUPLL running status and update PLL VCO output frequency
+ * Fvco = ([ndiv_int + (ndiv_frac / 2^20)] * Freq * 2^pll_ctrl) / pdiv
+ */
+static int cpupll_status(struct clk * clk)
+{
+	u32 reg;
+	u64 x;
+	unsigned pdiv, ndiv_int, ndiv_frac;
+
+	if (clk->type != CLK_PLL) {
+		return -EINVAL;
+	}
+
+	reg = readl(IO_BASE_VA + 0x2c);
+
+	/* bit 0 is cpupll "lock" signal, it has to be "1" for proper PLL operation */
+	if ((reg & 0x1) == 0) {
+		early_printk(KERN_ERR "CPUPLL is unlocked!\n");
+		clk->rate = 0;
+		return -EIO;
+	}
+
+	/* Get pdiv from PLL control register 13 */
+	writel(13, clk->regs_base + PMU_CONTROL_ADDR_OFF);
+	isb();
+	reg = readl(clk->regs_base + PMU_CONTROL_DATA_OFF);
+
+	pdiv = (reg >> 24) & 0x7;
+
+	/* Get ndiv and ndiv_frac from PLL control register 14 */
+	writel(14, clk->regs_base + PMU_CONTROL_ADDR_OFF);
+	isb();
+	reg = readl(clk->regs_base + PMU_CONTROL_DATA_OFF);
+
+	ndiv_int = (reg >> 20) & 0x3ff;
+	ndiv_frac = reg & ((1 << 20) - 1);
+
+	if (pdiv == 0) {
+		return -EIO;
+	}
+
+	x = clk->parent->rate / pdiv;
+
+	x = x * ((u64) ndiv_int << 20 | ndiv_frac);
+
+	/* Get pll_ctrl from bit[20] of PLL control register 15 */
+	writel(15, clk->regs_base + PMU_CONTROL_ADDR_OFF);
+	isb();
+	reg = readl(clk->regs_base + PMU_CONTROL_DATA_OFF);
+	reg = (reg >> 20) & 0x1;
+	x = x << reg;
+
+	clk->rate = x >> 20;
+
+	return 0;
+}
+
 
 static const struct clk_ops genpll_chan_ops = {
 	.status = genpll_chan_status,
+};
+
+
+static const struct clk_ops cpupll_ops = {
+	.status = cpupll_status,
 };
 
 
@@ -311,6 +381,14 @@ static struct clk clk_genpll = {
 	.name 	= "GENPLL",
 	.type	= CLK_PLL,
 	.chan	=	6,
+};
+
+/* PMU CPUPLL for BCM53573 */
+static struct clk clk_cpupll = {
+	.ops	= &cpupll_ops,
+	.name	= "CPUPLL",
+	.type	= CLK_PLL,
+	.chan	= 3,
 };
 
 /*
@@ -375,6 +453,74 @@ static struct clk_lookup soc_clk_lookups[] = {
 	.con_id         = "iproc_slow_clk",	/* "c_clk125" */
 	.clk            = &clk_genpll_ch[5],
 	}
+};
+
+static int cpupll_chan_status(struct clk * clk)
+{
+	void * __iomem base;
+	u32 reg;
+	unsigned enable;
+	unsigned mdiv;
+
+	if (clk->parent == NULL || clk->type != CLK_DIV) {
+		return -EINVAL;
+	}
+
+	/* Register address is only stored in PLL structure */
+	base = clk->parent->regs_base;
+	BUG_ON(base == NULL);
+
+	/* Get enable bit in enableb_ch[] inversed */
+	writel(12, base + PMU_CONTROL_ADDR_OFF);
+	isb();
+	reg = readl(base + PMU_CONTROL_DATA_OFF);
+
+	enable = ((reg >> 16) & 7) ^ 7;
+
+	if ((enable & (1 << clk->chan)) == 0) {
+		early_printk(KERN_ERR "CPUPLL channel %d is disabled!\n", clk->chan);
+		clk->rate = 0;
+		return -EIO;
+	}
+
+	/* Get mdiv from PLL control register 13 */
+	writel(13, base + PMU_CONTROL_ADDR_OFF);
+	isb();
+	reg = readl(base + PMU_CONTROL_DATA_OFF);
+
+	mdiv = 0xff & (reg >> ((0x3 & clk->chan) << 3));
+
+	if (mdiv == 0) {
+		mdiv = 1 << 8;
+	}
+
+	clk->rate = (clk->parent->rate / mdiv);
+
+	return 0;
+}
+
+
+static const struct clk_ops cpupll_chan_ops = {
+	.status = cpupll_chan_status,
+};
+
+/*
+ * PMU CPUPLL for BCM53573
+ * Channel 0: CPU clock, Channel 1: CCI-400 clock, Channel 2: NIC-400 clock
+ */
+static struct clk clk_cpupll_ch[3] = {
+	{.ops = &cpupll_chan_ops, .parent = &clk_cpupll, .type = CLK_DIV,
+	.name = "cpupll_ch0", .chan = 0},
+	{.ops = &cpupll_chan_ops, .parent = &clk_cpupll, .type = CLK_DIV,
+	.name = "cpupll_ch1", .chan = 1},
+	{.ops = &cpupll_chan_ops, .parent = &clk_cpupll, .type = CLK_DIV,
+	.name = "cpupll_ch2", .chan = 2},
+};
+
+static struct clk_lookup pmu_clk_lookups[] = {
+	{.con_id = "cpu_clk", .clk = &clk_cpupll_ch[0]},
+	{.con_id = "cci400_clk", .clk = &clk_cpupll_ch[1]},
+	{.con_id = "nic400_clk", .clk = &clk_cpupll_ch[2]},
 };
 
 /* 
@@ -484,24 +630,54 @@ void __init soc_dmu_init( struct clk *	clk_ref )
 
 
 
+/* For BCM53573 PMU PLL clocks */
+void __init soc_pmu_clk_init(struct clk *clk_ref)
+{
+	void * __iomem reg_base;
+
+	if (IS_ERR_OR_NULL(clk_ref)) {
+		printk(KERN_ERR "PMU no clock source - skip init\n");
+		return;
+	}
+
+	BUG_ON(request_resource(&iomem_resource, &pmu_regs));
+
+	/* PMU regs are mapped as part of the fixed mapping with ChipCommon */
+	reg_base = (void *)SOC_PMU_BASE_VA;
+
+	BUG_ON(IS_ERR_OR_NULL(reg_base));
+
+	/* For PMU CPUPLL */
+	clk_cpupll.regs_base = reg_base;
+	clk_cpupll.parent = clk_ref;
+
+	/* Install clock sources into the lookup table */
+	clkdev_add_table(pmu_clk_lookups, ARRAY_SIZE(pmu_clk_lookups));
+}
+
 
 
 
 void soc_clocks_show( void )
 {
 	unsigned i;
+	struct clk_lookup *clk_lookup = soc_clk_lookups;
+	unsigned clk_lookup_sz = ARRAY_SIZE(soc_clk_lookups);
 
-	printk( "DMU Clocks:\n" );
-	for(i = 0; i < ARRAY_SIZE( soc_clk_lookups); i++ )
-		{
-		printk( "%s, %s: (%s) %lu\n",
-			soc_clk_lookups[i].con_id,
-			soc_clk_lookups[i].dev_id,
-			soc_clk_lookups[i].clk->name,
-			clk_get_rate( soc_clk_lookups[i].clk )
-			);
-		}
-	printk( "DMU Clocks# %u\n", i );
+	if (BCM53573_CHIP(sih->chip)) {
+		clk_lookup = pmu_clk_lookups;
+		clk_lookup_sz = ARRAY_SIZE(pmu_clk_lookups);
+	}
+
+	printk( "SOC Clocks:\n" );
+	for (i = 0; i < clk_lookup_sz; i++) {
+		printk("%s, %s: (%s) %lu\n",
+			clk_lookup[i].con_id,
+			clk_lookup[i].dev_id,
+			clk_lookup[i].clk->name,
+			clk_get_rate(clk_lookup[i].clk));
+	}
+	printk( "SOC Clocks# %u\n", i );
 }
 
 #ifdef CONFIG_PROC_FS
@@ -545,6 +721,10 @@ static const struct file_operations dmu_fops = {
 static int __init dmu_proc_init(void)
 {
 	struct proc_dir_entry *dmu, *dmu_temp;
+
+	if (BCM53573_CHIP(sih->chip)) {
+		return;
+	}
 
 	dmu = proc_mkdir(DMU_PROC_NAME, NULL);
 
