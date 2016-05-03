@@ -883,13 +883,6 @@ static struct map_desc laguna_io_desc[] __initdata = {
 	},
 };
 
-static void __init laguna_map_io(void)
-{
-	cns3xxx_common_init();
-	iotable_init(laguna_io_desc, ARRAY_SIZE(laguna_io_desc));
-
-	laguna_early_serial_setup();
-}
 
 static int laguna_register_gpio(struct gpio *array, size_t num)
 {
@@ -942,8 +935,6 @@ __setup("noextirq", cns3xxx_pciextirq_disable);
 
 static int __init laguna_pcie_init_irq(void)
 {
-	u32 __iomem *mem = (void __iomem *)(CNS3XXX_GPIOB_BASE_VIRT + 0x0004);
-	u32 reg = (__raw_readl(mem) >> 26) & 0xf;
 	int irqs[] = {
 		IRQ_CNS3XXX_EXTERNAL_PIN0,
 		IRQ_CNS3XXX_EXTERNAL_PIN1,
@@ -955,20 +946,37 @@ static int __init laguna_pcie_init_irq(void)
 		return 0;
 
 	/* Verify GPIOB[26:29] == 0001b indicating support for ext irqs */
-	if (cns3xxx_pciextirq && reg != 1)
-		cns3xxx_pciextirq = 0;
-
 	if (cns3xxx_pciextirq) {
-		printk("laguna: using isolated PCI interrupts:"
+	u32 __iomem *mem = (void __iomem *)(CNS3XXX_GPIOB_BASE_VIRT + 0x0004);
+	u32 reg = __raw_readl(mem);
+	reg >>=16;
+	switch (reg & 0x3c00) {
+	case 0x0400: /* GW2388-4-G (mod) */
+		printk(KERN_INFO "laguna: using isolated PCI interrupts:"
 		       " irq%d/irq%d/irq%d/irq%d\n",
 		       irqs[0], irqs[1], irqs[2], irqs[3]);
 		cns3xxx_pcie_set_irqs(0, irqs);
-	} else {
-		printk("laguna: using shared PCI interrupts: irq%d\n",
-		       IRQ_CNS3XXX_PCIE0_DEVICE);
+		break;
+	case 0x0408: /* GW2388-4-H */
+	case 0x3c00: /* GW2388-4-G */
+	default:
+		printk(KERN_INFO "laguna: using shared PCI interrupts:"
+		       " irq%d/irq%d/irq%d/irq%d\n",
+		       IRQ_CNS3XXX_PCIE0_DEVICE, IRQ_CNS3XXX_PCIE0_DEVICE, IRQ_CNS3XXX_PCIE0_DEVICE, IRQ_CNS3XXX_PCIE0_DEVICE);
+                break;	
 	}
-
+	
+	}
 	return 0;
+}
+subsys_initcall(laguna_pcie_init_irq);
+
+
+static void __init laguna_map_io(void)
+{
+	cns3xxx_common_init();
+	iotable_init(laguna_io_desc, ARRAY_SIZE(laguna_io_desc));
+	laguna_early_serial_setup();
 }
 
 extern void __init cns3xxx_gpio_init(int gpio_base, int ngpio,
@@ -1031,10 +1039,6 @@ static int __init laguna_model_setup(void)
 		if (laguna_info.config_bitmap & (SATA0_LOAD | SATA1_LOAD))
 			cns3xxx_ahci_init();
 
-
-		printk(KERN_INFO "enable USB Power\n");
-		gpio_line_config(3, CNS3XXX_GPIO_OUT);
-		gpio_line_set(3, 1);
 
 		if (strncmp(laguna_info.model, "GW2380", 6) == 0)
 		{
@@ -1170,7 +1174,7 @@ static int __init laguna_model_setup(void)
 			buf+=0x1000;
 			offset+=0x1000;
 			}
-
+			iounmap(buf);
 			platform_device_register(&laguna_norflash_device);
 		}
 
@@ -1231,6 +1235,7 @@ static int __init laguna_model_setup(void)
 			buf+=0x1000;
 			offset+=0x1000;
 			}
+			iounmap(buf);
 			HAL_MISC_DISABLE_SPI_SERIAL_FLASH_BANK_ACCESS();
 
 		if (strncmp(laguna_info.model, "GW2380", 6) == 0)
