@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: osl.h 456077 2014-02-17 20:17:52Z $
+ * $Id: osl.h 552901 2015-04-28 09:13:27Z $
  */
 
 #ifndef _osl_h_
@@ -23,11 +23,7 @@
 
 #include <osl_decl.h>
 
-#ifdef MACOSX
-#define OSL_PKTTAG_SZ	56
-#else
 #define OSL_PKTTAG_SZ	32 /* Size of PktTag */
-#endif
 
 /* Drivers use PKTFREESETCB to register a callback function when a packet is freed by OSL */
 typedef void (*pktfree_cb_fn_t)(void *ctx, void *pkt, unsigned int status);
@@ -36,10 +32,10 @@ typedef void (*pktfree_cb_fn_t)(void *ctx, void *pkt, unsigned int status);
 typedef unsigned int (*osl_rreg_fn_t)(void *ctx, volatile void *reg, unsigned int size);
 typedef void  (*osl_wreg_fn_t)(void *ctx, volatile void *reg, unsigned int val, unsigned int size);
 
-#ifdef MACOSX
+#if defined(BCM_BACKPLANE_TIMEOUT) && defined(BCMDBG)
 extern void setCurMap(osl_t *osh, void *curmap);
 extern unsigned int read_bpt_reg(osl_t *osh, volatile void *r, unsigned int size);
-#endif
+#endif /* #if defined(BCM_BACKPLANE_TIMEOUT) && defined(BCMDBG) */
 
 #ifdef __mips__
 #define PREF_LOAD		0
@@ -86,9 +82,7 @@ MAKE_PREFETCH_FN(PREF_STORE_RETAINED)
 MAKE_PREFETCH_RANGE_FN(PREF_STORE_RETAINED)
 #endif /* __mips__ */
 
-#if defined(__ECOS)
-#include <ecos_osl.h>
-#elif  defined(DOS)
+#if  defined(DOS)
 #include <dos_osl.h>
 #elif defined(PCBIOS)
 #include <pcbios_osl.h>
@@ -98,6 +92,8 @@ MAKE_PREFETCH_RANGE_FN(PREF_STORE_RETAINED)
 #include <ndis_osl.h>
 #elif defined(_CFE_)
 #include <cfe_osl.h>
+#elif defined(_RTE_)
+#include <rte_osl.h>
 #elif defined(_MINOSL_)
 #include <min_osl.h>
 #elif defined(MACOSX)
@@ -114,7 +110,7 @@ MAKE_PREFETCH_RANGE_FN(PREF_STORE_RETAINED)
 #include <symbian_osl.h>
 #else
 #error "Unsupported OSL requested"
-#endif 
+#endif /* defined(DOS) */
 
 #ifndef PKTDBG_TRACE
 #define PKTDBG_TRACE(osh, pkt, bit)	BCM_REFERENCE(osh)
@@ -144,6 +140,10 @@ MAKE_PREFETCH_RANGE_FN(PREF_STORE_RETAINED)
 #else
 #define OSL_SYSUPTIME_SUPPORT TRUE
 #endif /* OSL_SYSUPTIME */
+
+#ifndef OSL_SYS_HALT
+#define OSL_SYS_HALT()	do {} while (0)
+#endif
 
 #if !(defined(linux) && defined(PKTC)) && !defined(PKTC_DONGLE) && \
 	!(defined(__NetBSD__) && defined(PKTC))
@@ -183,6 +183,7 @@ do { \
 #define PKTISCHAINED(skb)		FALSE
 #endif
 
+#ifndef _RTE_
 /* Lbuf with fraglist */
 #define PKTFRAGPKTID(osh, lb)		(0)
 #define PKTSETFRAGPKTID(osh, lb, id)	BCM_REFERENCE(osh)
@@ -192,6 +193,7 @@ do { \
 #define PKTSETFRAGTOTLEN(osh, lb, len)	BCM_REFERENCE(osh)
 #define PKTIFINDEX(osh, lb)		(0)
 #define PKTSETIFINDEX(osh, lb, idx)	BCM_REFERENCE(osh)
+#define	PKTGETLF(osh, len, send, lbuf_type)	(0)
 
 /* in rx path, reuse totlen as used len */
 #define PKTFRAGUSEDLEN(osh, lb)			(0)
@@ -210,7 +212,7 @@ do { \
 #define PKTRESETRXFRAG(osh, lb)		BCM_REFERENCE(osh)
 
 /* TX FRAG */
-#define PKTISTXFRAG(osh, lb)       	(0)
+#define PKTISTXFRAG(osh, lb)		(0)
 #define PKTSETTXFRAG(osh, lb)		BCM_REFERENCE(osh)
 
 /* Need Rx completion used for AMPDU reordering */
@@ -222,5 +224,18 @@ do { \
 #define PKTFRAGISCHAINED(osh, i)	(0)
 /* TRIM Tail bytes from lfrag */
 #define PKTFRAG_TRIM_TAILBYTES(osh, p, len)	PKTSETLEN(osh, p, PKTLEN(osh, p) - len)
+#endif	/* _RTE_ */
+
+#ifndef MALLOC_PERSIST
+	#define MALLOC_PERSIST MALLOC
+	#define MALLOC_PERSIST_ATTACH MALLOC
+	#define MALLOCZ_PERSIST MALLOCZ
+	#define MALLOCZ_PERSIST_ATTACH MALLOCZ
+	#define MFREE_PERSIST MFREE
+#endif /* MALLOC_PERSIST */
+
+#ifndef ROMMABLE_ASSERT
+#define ROMMABLE_ASSERT(exp) ASSERT(exp)
+#endif /* ROMMABLE_ASSERT */
 
 #endif	/* _osl_h_ */

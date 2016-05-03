@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: bcmdevs.h 544468 2015-03-27 09:51:33Z $
+ * $Id: bcmdevs.h 582027 2015-08-26 08:11:24Z $
  */
 
 #ifndef	_BCMDEVS_H
@@ -66,7 +66,7 @@
 #define BCM_DNGL_BL_PID_4345    0xbd24
 #define BCM_DNGL_BL_PID_4349	0xbd25
 #define BCM_DNGL_BL_PID_4354	0xbd26
-#define BCM_DNGL_BL_PID_43569	0xbd27
+#define BCM_DNGL_BL_PID_43569   0xbd27
 #define BCM_DNGL_BL_PID_43909	0xbd28
 
 #define BCM_DNGL_BDC_PID	0x0bdc
@@ -178,6 +178,15 @@
 #define BCM43602_D11AC_ID	0x43ba		/* ac dualband PCI devid SPROM programmed */
 #define BCM43602_D11AC2G_ID	0x43bb		/* 43602 802.11ac 2.4G device */
 #define BCM43602_D11AC5G_ID	0x43bc		/* 43602 802.11ac 5G device */
+#define BCM4349_D11AC_ID	0x4349		/* 4349 802.11ac dualband device */
+#define BCM4349_D11AC2G_ID	0x43dd		/* 4349 802.11ac 2.4G device */
+#define BCM4349_D11AC5G_ID	0x43de		/* 4349 802.11ac 5G device */
+#define BCM4355_D11AC_ID	0x43dc		/* 4355 802.11ac dualband device */
+#define BCM4355_D11AC2G_ID	0x43fc		/* 4355 802.11ac 2.4G device */
+#define BCM4355_D11AC5G_ID	0x43fd		/* 4355 802.11ac 5G device */
+#define BCM4359_D11AC_ID	0x43ef		/* 4359 802.11ac dualband device */
+#define BCM4359_D11AC2G_ID	0x43fe		/* 4359 802.11ac 2.4G device */
+#define BCM4359_D11AC5G_ID	0x43ff		/* 4359 802.11ac 5G device */
 #define BCM53573_D11AC_ID	0x43b4		/* 53573 802.11ac dualband device */
 #define BCM53573_D11AC2G_ID	0x43b5		/* 53573 802.11ac 2.4G device */
 #define BCM53573_D11AC5G_ID	0x43b6		/* 53573 802.11ac 5G device */
@@ -221,18 +230,23 @@
 #define BCM43569_D11AC2G_ID	0x43da
 #define BCM43569_D11AC5G_ID	0x43db
 
+#define BCM43570_D11AC_ID	0x43d9
+#define BCM43570_D11AC2G_ID	0x43da
+#define BCM43570_D11AC5G_ID	0x43db
+
 #define BCM4354_D11AC_ID	0x43df		/* 4354 802.11ac dualband device */
 #define BCM4354_D11AC2G_ID	0x43e0		/* 4354 802.11ac 2.4G device */
 #define BCM4354_D11AC5G_ID	0x43e1		/* 4354 802.11ac 5G device */
+#define BCM43430_D11N2G_ID	0x43e2		/* 43430 802.11n 2.4G device */
 
 
-#define BCM4365_D11AC_ID	0x43ca
-#define BCM4365_D11AC2G_ID	0x43cb
-#define BCM4365_D11AC5G_ID	0x43cc
+#define BCM43349_D11N_ID	0x43e6		/* 43349 802.11n dualband id */
+#define BCM43349_D11N2G_ID	0x43e7		/* 43349 802.11n 2.4Ghz band id */
+#define BCM43349_D11N5G_ID	0x43e8		/* 43349 802.11n 5Ghz band id */
 
-#define BCM4366_D11AC_ID	0x43c3
-#define BCM4366_D11AC2G_ID	0x43c4
-#define BCM4366_D11AC5G_ID	0x43c5
+#define BCM4358_D11AC_ID        0x43e9          /* 4358 802.11ac dualband device */
+#define BCM4358_D11AC2G_ID      0x43ea          /* 4358 802.11ac 2.4G device */
+#define BCM4358_D11AC5G_ID      0x43eb          /* 4358 802.11ac 5G device */
 
 #define BCM4356_D11AC_ID	0x43ec		/* 4356 802.11ac dualband device */
 #define BCM4356_D11AC2G_ID	0x43ed		/* 4356 802.11ac 2.4G device */
@@ -321,6 +335,7 @@
 #define	BCM43428_CHIP_ID	43428		/* 43228 chipcommon chipid (OTP, RBBU) */
 #define	BCM43431_CHIP_ID	43431		/* 4331  chipcommon chipid (OTP, RBBU) */
 #define	BCM43460_CHIP_ID	43460		/* 4360  chipcommon chipid (OTP, RBBU) */
+#define	BCM47452_CHIP_ID	47452		/* 53573 chipcommon chipid (OTP, RBBU) */
 #define	BCM4325_CHIP_ID		0x4325		/* 4325 chip id */
 #define	BCM4328_CHIP_ID		0x4328		/* 4328 chip id */
 #define	BCM4329_CHIP_ID		0x4329		/* 4329 chipcommon chipid */
@@ -338,6 +353,7 @@
 #define BCM4334_CHIP_ID		0x4334		/* 4334 chipcommon chipid */
 #define BCM4335_CHIP_ID		0x4335		/* 4335 chipcommon chipid */
 #define BCM4339_CHIP_ID		0x4339		/* 4339 chipcommon chipid */
+#define BCM43349_CHIP_ID	43349			/* 43349(0xA955) chipcommon chipid */
 #define BCM4360_CHIP_ID		0x4360          /* 4360 chipcommon chipid */
 #define BCM4352_CHIP_ID		0x4352          /* 4352 chipcommon chipid */
 #define BCM43526_CHIP_ID	0xAA06
@@ -350,9 +366,11 @@
 #define BCM43556_CHIP_ID	0xAA24          /* 43556 chipcommon chipid */
 #define BCM43558_CHIP_ID	0xAA26          /* 43558 chipcommon chipid */
 #define BCM43566_CHIP_ID	0xAA2E          /* 43566 chipcommon chipid */
+#define BCM43567_CHIP_ID	0xAA2F          /* 43567 chipcommon chipid */
 #define BCM43568_CHIP_ID	0xAA30          /* 43568 chipcommon chipid */
 #define BCM43569_CHIP_ID	0xAA31          /* 43569 chipcommon chipid */
 #define BCM43570_CHIP_ID	0xAA32          /* 43570 chipcommon chipid */
+#define BCM4358_CHIP_ID     0x4358          /* 4358 chipcommon chipid */
 #define BCM4350_CHIP(chipid)	((CHIPID(chipid) == BCM4350_CHIP_ID) || \
 				(CHIPID(chipid) == BCM4354_CHIP_ID) || \
 				(CHIPID(chipid) == BCM4356_CHIP_ID) || \
@@ -361,15 +379,28 @@
 				(CHIPID(chipid) == BCM43566_CHIP_ID) || \
 				(CHIPID(chipid) == BCM43568_CHIP_ID) || \
 				(CHIPID(chipid) == BCM43569_CHIP_ID) || \
-				(CHIPID(chipid) == BCM43570_CHIP_ID)) /* 4350 variations */
+				(CHIPID(chipid) == BCM43570_CHIP_ID) || \
+				(CHIPID(chipid) == BCM4358_CHIP_ID)) /* 4350 variations */
 #define BCM4345_CHIP_ID		0x4345		/* 4345 chipcommon chipid */
-#define BCM43602_CHIP_ID	0xaa52		/* 43602 chipcommon chipid */
-#define BCM43462_CHIP_ID	0xa9c6		/* 43462 chipcommon chipid */
+#define BCM43430_CHIP_ID	43430		/* 43430 chipcommon chipid */
+#define BCM4349_CHIP_ID		0x4349		/* 4349 chipcommon chipid */
+#define BCM4355_CHIP_ID		0x4355		/* 4355 chipcommon chipid */
+#define BCM4359_CHIP_ID		0x4359		/* 4359 chipcommon chipid */
+#define BCM4349_CHIP(chipid)	((CHIPID(chipid) == BCM4349_CHIP_ID) || \
+				(CHIPID(chipid) == BCM4355_CHIP_ID) || \
+				(CHIPID(chipid) == BCM4359_CHIP_ID))
+#define BCM4349_CHIP_GRPID		BCM4349_CHIP_ID: \
+					case BCM4355_CHIP_ID: \
+					case BCM4359_CHIP_ID
 
+#define BCM4364_CHIP_ID 	0x4364		/* 4364 chipcommon chipid */
 #define BCM4365_CHIP_ID		0x4365		/* 4365 chipcommon chipid */
 #define BCM4366_CHIP_ID		0x4366		/* 4366 chipcommon chipid */
 #define BCM4365_CHIP(chipid)	((CHIPID(chipid) == BCM4365_CHIP_ID) || \
 				(CHIPID(chipid) == BCM4366_CHIP_ID))
+#define BCM43602_CHIP_ID	0xaa52		/* 43602 chipcommon chipid */
+#define BCM43462_CHIP_ID	0xa9c6		/* 43462 chipcommon chipid */
+
 #define	BCM4342_CHIP_ID		4342		/* 4342 chipcommon chipid (OTP, RBBU) */
 #define	BCM4402_CHIP_ID		0x4402		/* 4402 chipid */
 #define	BCM4704_CHIP_ID		0x4704		/* 4704 chipcommon chipid */
@@ -395,8 +426,17 @@
 #define	BCM5357_CHIP_ID		0x5357		/* 5357 chipcommon chipid */
 #define	BCM53572_CHIP_ID	53572		/* 53572 chipcommon chipid */
 #define	BCM53573_CHIP_ID	53573		/* 53573 chipcommon chipid */
-#define BCM53573_CHIP(chipid)	(CHIPID(chipid) == BCM53573_CHIP_ID)
-#define BCM53573_CHIP_GRPID	BCM53573_CHIP_ID
+#define	BCM53574_CHIP_ID	53574		/* 53574 chipcommon chipid */
+#define BCM53573_CHIP(chipid)	((CHIPID(chipid) == BCM53573_CHIP_ID) || \
+				(CHIPID(chipid) == BCM53574_CHIP_ID))
+#define BCM53573_CHIP_GRPID	BCM53573_CHIP_ID : \
+				case BCM53574_CHIP_ID
+#define BCM53573_DEVICE(devid)	(((devid) == BCM53573_D11AC_ID) || \
+				((devid) == BCM53573_D11AC2G_ID) || \
+				((devid) == BCM53573_D11AC5G_ID) || \
+				((devid) == BCM47189_D11AC_ID) || \
+				((devid) == BCM47189_D11AC2G_ID) || \
+				((devid) == BCM47189_D11AC5G_ID))
 
 /* Package IDs */
 #define	BCM4303_PKG_ID		2		/* 4303 package id */
@@ -428,6 +468,8 @@
 #define BCM4331TT_PKG_ID        8		/* 4331 12x12 package id */
 #define BCM4331TN_PKG_ID        9		/* 4331 12x9 package id */
 #define BCM4331TNA0_PKG_ID     0xb		/* 4331 12x9 package id */
+#define BCM47189_PKG_ID		1		/* 47189 package id */
+#define BCM53573_PKG_ID		0		/* 53573 package id */
 #define	BCM4706L_PKG_ID		1		/* 4706L package id */
 
 #define HDLSIM5350_PKG_ID	1		/* HDL simulator package id for a 5350 */
@@ -461,10 +503,11 @@
 #define	BFL_BTC2WIRE		0x00000001  /* old 2wire Bluetooth coexistence, OBSOLETE */
 #define BFL_BTCOEX      0x00000001      /* Board supports BTCOEX */
 #define	BFL_PACTRL		0x00000002  /* Board has gpio 9 controlling the PA */
-#define BFL_AIRLINEMODE	0x00000004  /* Board implements gpio 13 radio disable indication, UNUSED */
+#define BFL_AIRLINEMODE	0x00000004  /* Board implements gpio radio disable indication */
 #define	BFL_ADCDIV		0x00000008  /* Board has the rssi ADC divider */
 #define BFL_DIS_256QAM		0x00000008
 #define	BFL_ENETROBO		0x00000010  /* Board has robo switch or core */
+#define	BFL_TSSIAVG   		0x00000010  /* TSSI averaging for ACPHY chips */
 #define	BFL_NOPLLDOWN		0x00000020  /* Not ok to power down the chip pll and oscillator */
 #define	BFL_CCKHIPWR		0x00000040  /* Can do high-power CCK transmission */
 #define	BFL_ENETADM		0x00000080  /* Board has ADMtek switch */
@@ -588,6 +631,8 @@
 /* acphy, to use backed off gaintbl for lte-coex */
 #define BFL3_LTECOEX_GAINTBL_EN_SHIFT 17
 #define BFL3_5G_SPUR_WAR          0x00080000  /* acphy, enable spur WAR in 5G band */
+#define BFL3_1X1_RSDB_ANT	  0x01000000  /* to find if 2-ant RSDB board or 1-ant RSDB board */
+#define BFL3_1X1_RSDB_ANT_SHIFT           24
 
 /* acphy: lpmode2g and lpmode_5g related boardflags */
 #define BFL3_ACPHY_LPMODE_2G	  0x00300000  /* bits 20:21 for lpmode_2g choice */
@@ -596,7 +641,6 @@
 #define BFL3_ACPHY_LPMODE_5G	  0x00C00000  /* bits 22:23 for lpmode_5g choice */
 #define BFL3_ACPHY_LPMODE_5G_SHIFT	  22
 
-/* acphy, gain control configuration2 (dec c1gainsettlectr and inc c2thresh) */
 #define BFL3_AGC_CFG2_2G          0x01000000  /* acphy, gain control configuration2 for 2G */
 #define BFL3_EXT_LPO_ISCLOCK      0x02000000  /* External LPO is clock, not x-tal */
 #define BFL3_FORCE_INT_LPO_SEL    0x04000000  /* Force internal lpo */
@@ -604,12 +648,19 @@
 
 #define BFL3_EN_BRCM_IMPBF        0x10000000  /* acphy, Allow BRCM Implicit TxBF */
 #define BFL3_AGC_CFG2_5G          0x20000000  /* acphy, gain control configuration2 for 5G */
+#define BFL3_HIGHPWR_ENABLE_ULB_2G   0x20000000  /* High power settings for 2G in ULB */
+#define BFL3_HIGHPWR_ENABLE_ULB_2G_SHIFT 29
+
 #define BFL3_AVVMID_FROM_NVRAM    0x40000000  /* Read Av Vmid from NVRAM  */
 #define BFL3_VLIN_EN_FROM_NVRAM    0x80000000  /* Read Vlin En from NVRAM  */
 
 #define BFL3_AVVMID_FROM_NVRAM_SHIFT   30   /* Read Av Vmid from NVRAM  */
 #define BFL3_VLIN_EN_FROM_NVRAM_SHIFT   31   /* Enable Vlin  from NVRAM  */
 
+/* boardflags4 for SROM12 */
+#define BFL4_SROM12_4dBPAD      0x0001   /* To distinguigh between normal and 4dB pad board */
+#define BFL4_SROM12_2G_DETTYPE      0x0002   /* Determine power detector type for 2G */
+#define BFL4_SROM12_5G_DETTYPE      0x0004   /* Determine power detector type for 5G */
 
 /* board specific GPIO assignment, gpio 0-3 are also customer-configurable led */
 #define	BOARD_GPIO_BTC3W_IN	0x850	/* bit 4 is RF_ACTIVE, bit 6 is STATUS, bit 11 is PRI */
@@ -629,6 +680,7 @@
 #define	BOARD_GPIO_2_WLAN_PWR	0x04	/* throttle WLAN power on X29C board */
 #define	BOARD_GPIO_3_WLAN_PWR	0x08	/* throttle WLAN power on X28 board */
 #define	BOARD_GPIO_4_WLAN_PWR	0x10	/* throttle WLAN power on X19 board */
+#define	BOARD_GPIO_13_WLAN_PWR	0x2000	/* throttle WLAN power on X14 board */
 
 #define GPIO_BTC4W_OUT_4312  0x010  /* bit 4 is BT_IODISABLE */
 #define GPIO_BTC4W_OUT_43224  0x020  /* bit 5 is BT_IODISABLE */
@@ -993,14 +1045,17 @@
 #define BCM94360X52D            0X0137
 #define BCM94360X29C            0X0112
 #define BCM94360X29CP2          0X0134
+#define BCM94360X29CP3          0X013B
 #define BCM94360X51             0x0111
 #define BCM94360X51P2           0x0129
+#define BCM94360X51P3           0x0142
 #define BCM94360X51A            0x0135
 #define BCM94360X51B            0x0136
 #define BCM94360CS              0x061B
 #define BCM94360J28_D11AC2G     0x0c00
 #define BCM94360J28_D11AC5G     0x0c01
 #define BCM94360USBH5_D11AC5G   0x06aa
+#define BCM94360MCM5            0x06d8
 
 /* 4350 Boards */
 #define BCM94350X52B            0X0116
@@ -1025,7 +1080,9 @@
 #define BCM943602RSVD1_SSID	0x06a5
 #define BCM943602RSVD2_SSID	0x06a6
 #define BCM943602X87            0X0133
+#define BCM943602X87P2          0X0152
 #define BCM943602X238           0X0132
+#define BCM943602X238D          0X014A
 
 /* 4354 board types */
 #define BCM94354WLSAGBI_SSID 0x06db

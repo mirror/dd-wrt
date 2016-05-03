@@ -16,7 +16,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: load.c 410377 2013-07-01 01:34:53Z $
+ * $Id: load.c 566663 2015-06-25 11:21:26Z $
  */
 
 #include <typedefs.h>
@@ -28,7 +28,7 @@
 #include <siutils.h>
 #include <sbchipc.h>
 #include <bcmnvram.h>
-#ifdef NFLASH_SUPPORT
+#ifdef CCNFLASH_SUPPORT
 #include <nflash.h>
 #endif
 
@@ -320,13 +320,20 @@ set_sflash_div(si_t *sih)
 	cc = si_setcoreidx(sih, SI_CC_IDX);
 	ASSERT(cc);
 
-#ifdef NFLASH_SUPPORT
+#ifdef CCNFLASH_SUPPORT
 	if ((sih->ccrev == 38) && ((sih->chipst & (1 << 4)) != 0))
 		goto out;
 #endif /* NFLASH_SUPPORT */
 	fltype = sih->cccaps & CC_CAP_FLASH_MASK;
 	if ((fltype != SFLASH_ST) && (fltype != SFLASH_AT))
 		goto out;
+
+	if (BCM53573_CHIP(sih->chip)) {
+		clkdiv = R_REG(osh, &cc->clkdiv);
+		clkdiv = (clkdiv & ~CLKD_SFLASH) | (6 << CLKD_SFLASH_SHIFT);
+		W_REG(osh, &cc->clkdiv, clkdiv);
+		goto out;
+	}
 
 	flbase = (uintptr)OSL_UNCACHED((void *)SI_FLASH2);
 	off = FLASH_MIN;
@@ -396,14 +403,27 @@ c_main(unsigned long ra)
 
 	BCMDBG_TRACE(0x4c4402);
 
+	/* Put I2S core out of reset for 53573A0 GPIO/FEMCTRL */
+	if (BCM53573_CHIP(sih->chip) && CHIPREV(sih->chiprev) == 0) {
+		uint origidx = si_coreidx(sih);
+
+		if (si_setcore(sih, I2S_CORE_ID, 0) != NULL) {
+			if (!si_iscoreup(sih)) {
+				si_core_reset(sih, 0, 0);
+			}
+		}
+		si_setcoreidx(sih, origidx);
+	}
+
 	/* Only do this for 4716, we need to reuse the
 	 * space in the nvram header for TREF on 5357.
 	 */
 	if ((CHIPID(sih->chip) == BCM4716_CHIP_ID) ||
 	    (CHIPID(sih->chip) == BCM4748_CHIP_ID) ||
-	    (CHIPID(sih->chip) == BCM47162_CHIP_ID))
+	    (CHIPID(sih->chip) == BCM47162_CHIP_ID) ||
+	    (BCM53573_CHIP(sih->chip))) {
 		set_sflash_div(sih);
-
+	}
 	BCMDBG_TRACE(0x4c4403);
 
 	/* Load binary */
