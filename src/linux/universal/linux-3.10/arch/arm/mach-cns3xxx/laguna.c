@@ -1049,11 +1049,6 @@ static int __init laguna_model_setup(void)
 		if (laguna_info.config_bitmap & (SATA0_LOAD | SATA1_LOAD))
 			cns3xxx_ahci_init();
 
-
-		printk(KERN_INFO "enable USB Power\n");
-		gpio_line_config(3, CNS3XXX_GPIO_OUT);
-		gpio_line_set(3, 1);
-
 		if (strncmp(laguna_info.model, "GW2380", 6) == 0)
 		{
 		printk(KERN_INFO "check USB0\n");
