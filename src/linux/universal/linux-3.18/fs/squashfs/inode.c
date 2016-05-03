@@ -215,7 +215,6 @@ SQSH_EXTERN unsigned int squashfs_read_data(struct super_block *s, char *buffer,
 		{
 		goto read_failure;
 		}
-
 	if (c_byte) {
 		bytes = msblk->devblksize - offset;
 		compressed = SQUASHFS_COMPRESSED_BLOCK(c_byte);
