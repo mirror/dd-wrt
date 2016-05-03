@@ -5328,7 +5328,7 @@ int led_control(int type, int act)
 		diag_gpio = 0x000;
 		usb_gpio = 0x001;
 		usb_gpio1 = 0x002;
-		usb_power = 0x003;
+		usb_power = 0x103;
 		break;
 #endif
 #ifdef HAVE_WRT1900AC
