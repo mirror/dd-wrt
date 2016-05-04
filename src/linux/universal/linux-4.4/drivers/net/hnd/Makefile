@@ -101,6 +101,11 @@ $(src)/$(SHARED)/sbutils.o: $(src)/$(SHARED)/linux/sbutils.o
 	cp $< $@
 endif
 
+ifeq ($(wildcard $(src)/$(SHARED)/hnd_pktq.c),)
+$(src)/$(SHARED)/hnd_pktq.o: $(src)/$(SHARED)/linux/hnd_pktq.o
+	cp $< $@
+endif
+
 ifeq ($(wildcard $(src)/$(SHARED)/hndpmu.c),)
 $(src)/$(SHARED)/hndpmu.o: $(src)/$(SHARED)/linux/hndpmu.o
 	cp $< $@
