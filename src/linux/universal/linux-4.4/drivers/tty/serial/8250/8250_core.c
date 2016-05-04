@@ -744,6 +744,9 @@ int __init early_serial_setup(struct uart_port *port)
 	p->private_data = port->private_data;
 	p->type		= port->type;
 	p->line		= port->line;
+#ifdef CONFIG_BCM47XX
+	p->custom_divisor	= port->custom_divisor;
+#endif
 
 	serial8250_set_defaults(up_to_u8250p(p));
 
@@ -853,6 +856,9 @@ static int serial8250_probe(struct platform_device *dev)
 		uart.port.irqflags		|= irqflag;
 #if defined(CONFIG_MACH_KS8695_VSOPENRISC)
 		uart.port.epld_capabilities	= p->epld_capabilities;
+#endif
+#ifdef CONFIG_BCM47XX
+		uart.port.custom_divisor	= p->custom_divisor;
 #endif
 		ret = serial8250_register_8250_port(&uart);
 		if (ret < 0) {
