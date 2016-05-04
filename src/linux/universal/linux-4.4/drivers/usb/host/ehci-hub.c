@@ -868,6 +868,9 @@ cleanup:
 }
 #endif /* CONFIG_USB_HCD_TEST_MODE */
 /*-------------------------------------------------------------------------*/
+#define PORT_USB20(x) (((x) & (3 << 10)) == (1 << 11))	/* USB 2.0 device */
+#define SET_PORT_USB20(x) ((((x) & (0xf3ff))) | (1 << 11))	/* Set USB 2.0 device */
+static u32 port_connected = 0;
 
 int ehci_hub_control(
 	struct usb_hcd	*hcd,
