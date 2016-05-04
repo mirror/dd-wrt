@@ -183,7 +183,7 @@ gpio_init(void)
 
 	/* Add the device gpio0 */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36)
-	device_create(gpiodev_class, NULL, MKDEV(gpio_major, 0), NULL, "gpio", 0);
+	device_create(gpiodev_class, NULL, MKDEV(gpio_major, 0), NULL, "gpio%d", 0);
 #else
 	class_device_create(gpiodev_class, NULL, MKDEV(gpio_major, 0), NULL, "gpio");
 #endif /* linux-2.6.36 */
