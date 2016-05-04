@@ -381,7 +381,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 				goto write_data;
 			}
 #endif
-#ifdef HAVE_BUFFALO
+#if defined(HAVE_BUFFALO) || defined(HAVE_IDEXX)
 			ralink_firmware_header fh;
 			memcpy(&fh, buf, sizeof(fh));
 			char *str;
@@ -399,11 +399,20 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 				str[idx] ^= ch;
 			if (!strncmp(buf, "bgn", 3) || !strncmp(buf, "WZR", 3)
 			    || !strncmp(buf, "WHR", 3)
-			    || !strncmp(buf, "WLA", 3)) {
+			    || !strncmp(buf, "WLA", 3)
+#ifdef HAVE_IDEXX
+			    || !strncmp(buf, "HDR0", 4)
+#endif
+				) {
 				char *write_argv_buf[4];
 				write_argv_buf[0] = "buffalo_flash";
 				write_argv_buf[1] = upload_fifo;
+#if defined(HAVE_IDEXX) || defined(HAVE_IDEXX_SIGNATUR)
+				write_argv_buf[2] = "verify";
+				write_argv_buf[3] = NULL;
+#else
 				write_argv_buf[2] = NULL;
+#endif
 				if (!mktemp(upload_fifo) || mkfifo(upload_fifo, S_IRWXU) < 0 || (ret = _evalpid(write_argv_buf, NULL, 0, &pid))
 				    || !(fifo = fopen(upload_fifo, "w"))) {
 					if (!ret)
