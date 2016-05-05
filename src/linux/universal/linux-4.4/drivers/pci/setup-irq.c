@@ -16,6 +16,17 @@
 #include <linux/ioport.h>
 #include <linux/cache.h>
 
+#ifdef CONFIG_PLAT_BCM5301X
+
+#include <bcmutils.h>
+#include <siutils.h>
+#include <bcmdefs.h>
+#include <bcmdevs.h>
+
+extern si_t *bcm947xx_sih;
+#define sih bcm947xx_sih
+#endif
+
 void __weak pcibios_update_irq(struct pci_dev *dev, int irq)
 {
 	dev_dbg(&dev->dev, "assigning IRQ %02d\n", irq);
@@ -30,8 +41,17 @@ static void pdev_fixup_irq(struct pci_dev *dev,
 	int irq = 0;
 
 #ifdef CONFIG_BCM47XX
-	if (pci_domain_nr(dev->bus) == 0)
-		return;
+#ifdef CONFIG_PLAT_BCM5301X
+
+	if (BCM53573_CHIP(CHIPID(sih->chip))) {
+		if (pci_domain_nr(dev->bus) == 1)
+			return;
+	}else
+#endif
+	{
+		if (pci_domain_nr(dev->bus) == 0)
+			return;	
+	}
 #endif
 	/* If this device is not on the primary bus, we need to figure out
 	   which interrupt pin it will come in on.   We know which slot it
