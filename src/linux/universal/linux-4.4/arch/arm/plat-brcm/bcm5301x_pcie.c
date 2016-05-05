@@ -442,7 +442,7 @@ int soc_pcie_map_irq(const struct pci_dev *pdev, u8 slot, u8 pin)
 
 	irq = port->irqs[4];	/* All INTx share INTR4 */
 
-	printfk(KERN_INFO "PCIe map irq: %04d:%02x:%02x.%02x slot %d, pin %d, irq: %d\n", pci_domain_nr(pdev->bus), pdev->bus->number, PCI_SLOT(pdev->devfn), PCI_FUNC(pdev->devfn), slot, pin, irq);
+	printk(KERN_INFO "PCIe map irq: %04d:%02x:%02x.%02x slot %d, pin %d, irq: %d\n", pci_domain_nr(pdev->bus), pdev->bus->number, PCI_SLOT(pdev->devfn), PCI_FUNC(pdev->devfn), slot, pin, irq);
 
 	return irq;
 }
@@ -1345,7 +1345,7 @@ static void bcm5301x_usb30_phy_init(void)
 
 		/* RXPMD block */
 		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
-		writel(0x587e8020, ccb_mii_mng_cmd_data_addr);
+		writel(0x587e8060, ccb_mii_mng_cmd_data_addr);
 
 		/* CDR int loop locking BW to 1 */
 		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
@@ -1357,7 +1357,7 @@ static void bcm5301x_usb30_phy_init(void)
 
 		/* CDR prop loop BW to 1 */
 		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
-		writel(0x580a005c, ccb_mii_mng_cmd_data_addr);
+		writel(0x587e8040, ccb_mii_mng_cmd_data_addr);
 
 		/* Enabling SSC */
 		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
@@ -1933,6 +1933,7 @@ static int __init soc_pcie_init(void)
 				mdelay(100);
 				/* read back */
 				clk_control = readl(pcie_regbase + 0x0);
+				printk(KERN_INFO "reset mode %d\n",clk_control & 1);
 			}
 
 			REG_UNMAP((void *)pcie_regbase);
