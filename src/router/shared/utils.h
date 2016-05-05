@@ -736,7 +736,7 @@
 
 #define ROUTER_UBNT_UAPAC 0xf912
 
-#define ROUTER_ASUS_AC1200 0xfa0f
+#define ROUTER_ASUS_AC1200 0xfa15
 
 #define NVROUTER "DD_BOARD"
 
