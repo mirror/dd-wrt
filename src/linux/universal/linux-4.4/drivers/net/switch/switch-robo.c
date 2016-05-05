@@ -1162,6 +1162,8 @@ static int handle_reset(void *driver, char *buf, int nr)
 		printk(KERN_INFO "Netgear R8000 workaround\n");
 	} else if (boardnum && boardtype && boardrev && !strcmp(boardnum,"1234") && !strcmp(boardtype,"0x072F") && !strcmp(boardrev, "0x1202")) {
 		printk(KERN_INFO "Handle TEW828 workaround\n");
+	} else if (s_nvram_match("model", "RT-AC1200G+")) {
+		printk(KERN_INFO "Handle Asus RT-AC1200G+\n");
 	} else if ((s_nvram_match("boardnum", "24") || s_nvram_match("boardnum", "N/A")) && s_nvram_match("boardtype", "0x072F") && s_nvram_match("1:devid", "0x43c5")
 	    && s_nvram_match("boardrev", "0x1101")
 	    && s_nvram_match("gpio7", "wps_button")) {
