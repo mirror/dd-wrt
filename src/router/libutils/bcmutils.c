@@ -104,7 +104,21 @@ int getcpurev(void)
 int cpu_plltype(void)
 {
 #ifdef HAVE_NORTHSTAR
-	return 9;
+	FILE *fp = fopen("/proc/bcm_chipinfo", "rb");
+	if (!fp) {
+		return 9;
+	}
+	int chipid;
+	int chiprevision;
+	int packageoption;
+	fscanf(fp, "%*s %X\n", &chipid);
+	fscanf(fp, "%*s %X\n", &chiprevision);
+	fscanf(fp, "%*s %X\n", &packageoption);
+	fclose(fp);
+	if (chipid == 53573)
+		return 11;
+	else
+		return 9;
 #endif
 #if defined(HAVE_BUFFALO) || defined(BUFFALO_JP)
 	if (nvram_match("DD_BOARD", "Buffalo WHR-G54S") ||	//

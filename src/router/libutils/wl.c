@@ -27,7 +27,6 @@
 #include <glob.h>
 #endif
 
-
 /*
  * DD-WRT addition (loaned from radauth) 
  */
@@ -218,7 +217,7 @@ int getchannels(unsigned int *list, char *ifname)
 
 static int wrqfreq_to_int(struct iwreq *wrq)
 {
-	int freq,i;
+	int freq, i;
 	freq = wrq->u.freq.m;
 	if (freq < 1000) {
 		return freq;
@@ -1045,7 +1044,7 @@ int getUptime(char *ifname, unsigned char *mac)
 
 static int wrqfreq_to_int(struct iwreq *wrq)
 {
-	int freq,i;
+	int freq, i;
 	freq = wrq->u.freq.m;
 	if (freq < 1000) {
 		return freq;

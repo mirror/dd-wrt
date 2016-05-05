@@ -1138,6 +1138,9 @@ endif
 	$(CC) $(CFLAGS) -o process_monitor process_monitor.c ntp.c $(LDFLAGS)
 	$(CC) $(CFLAGS) -o resetbutton resetbutton.c $(LDFLAGS) -lwireless
 	$(CC) $(CFLAGS) -o gpiowatcher gpiowatcher.c $(LDFLAGS)
+ifeq ($(CONFIG_NORTHSTAR),y)
+	$(CC) $(CFLAGS) -I$(LINUXDIR)/brcm/arm/include  -o et et.c   $(LDFLAGS)
+endif
 #ifeq ($(CONFIG_LSX),y)
 #	$(CC) $(CFLAGS) $(INITCFLAGS) -L$(TOP)/libutils -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -o init init.c $(TOP)/nvram/libnvram.a $(TOP)/libutils/libutils.a
 #else

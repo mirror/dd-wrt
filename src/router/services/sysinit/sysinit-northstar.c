@@ -4545,9 +4545,9 @@ void start_sysinit(void)
 			if (out)
 				fclose(out);
 		}
-		case ROUTER_ASUS_AC1200:
-		nvram_set("vlan1hwname","et0");
-		nvram_set("vlan2hwname","et0");
+	case ROUTER_ASUS_AC1200:
+		nvram_set("vlan1hwname", "et0");
+		nvram_set("vlan2hwname", "et0");
 		break;
 
 	default:
@@ -4624,7 +4624,7 @@ void start_overclocking(void)
 
 	int rev = cpu_plltype();
 
-	if (rev == 0)
+	if (rev != 9 && type != 11)
 		return;		// unsupported
 
 	char *ov = nvram_get("overclocking");
@@ -4653,19 +4653,30 @@ void start_overclocking(void)
 	}
 	int set = 1;
 	char clkfr[16];
-	switch (clk) {
-	case 600:
-	case 800:
-	case 1000:
-	case 1200:
-	case 1400:
-	case 1600:
-		break;
-	default:
-		set = 0;
-		break;
+	if (rev == 9) {
+		switch (clk) {
+		case 600:
+		case 800:
+		case 1000:
+		case 1200:
+		case 1400:
+		case 1600:
+			break;
+		default:
+			set = 0;
+			break;
+		}
+	} else {
+		switch (clk) {
+		case 600:
+		case 800:
+		case 900:
+			break;
+		default:
+			set = 0;
+			break;
+		}
 	}
-
 	if (set) {
 		cprintf("clock frequency adjusted from %d to %d, reboot needed\n", cclk, clk);
 		sprintf(clkfr, "%d", clk);
