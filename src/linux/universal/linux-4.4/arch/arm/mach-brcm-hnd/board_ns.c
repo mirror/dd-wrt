@@ -269,16 +269,23 @@ void __init board_fixup(struct tag *t, char **cmdline)
 //      if (desc->nr == MACH_TYPE_BRCM_NS_QT )
 //              clk_ref.rate = 17594;   /* Emulator ref clock rate */
 
+	if (BCM53573_CHIP(_chipid)) {
+		u32 size;
+		/* 53573's DDR limitation size is 512MB for shadow region. */
+		/* 256MB for first region */
+		size = (PHYS_OFFSET == PADDR_ACE1_BCM53573) ? SZ_512M : SZ_256M;
+		if (_memsize > size)
+			_memsize = size;
+	}
+
 	mem_size = _memsize;
 
 	early_printk("board_fixup: mem=%uMiB\n", mem_size >> 20);
 
 	/* for NS-B0-ACP */
-#if 0
-	if (ACP_WAR_ENAB()) {
-		mi->bank[0].start = PHYS_OFFSET;
-		mi->bank[0].size = mem_size;
-		mi->nr_banks++;
+#if 1
+	if (ACP_WAR_ENAB() || (BCM53573_CHIP(_chipid))) {
+		memblock_add(PHYS_OFFSET, mem_size);
 		return;
 	}
 #endif

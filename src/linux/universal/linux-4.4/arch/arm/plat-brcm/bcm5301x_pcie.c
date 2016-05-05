@@ -1313,7 +1313,10 @@ static void bcm5301x_usb30_phy_init(void)
 
 	/* NS-Bx and NS47094
 	 * Chiprev 4 for NS-B0 and chiprev 6 for NS-B1 */
-	if ((CHIPID(sih->chip) == BCM4707_CHIP_ID && (CHIPREV(sih->chiprev) == 4 || CHIPREV(sih->chiprev) == 6)) || (CHIPID(sih->chip) == BCM47094_CHIP_ID)) {
+	if ((CHIPID(sih->chip) == BCM53018_CHIP_ID) ||
+	    (CHIPID(sih->chip) == BCM4707_CHIP_ID &&
+	    (CHIPREV(sih->chiprev) == 4 || CHIPREV(sih->chiprev) == 6)) ||
+	    (CHIPID(sih->chip) == BCM47094_CHIP_ID)) {
 
 		/* USB3 PLL Block */
 		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
@@ -1335,6 +1338,9 @@ static void bcm5301x_usb30_phy_init(void)
 		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
 		writel(0x582e8000, ccb_mii_mng_cmd_data_addr);
 
+		/* Waiting MII Mgt interface idle */
+		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+
 		/* Deasserting USB3 system reset */
 		writel(0x00000000, usb3_idm_idm_reset_ctrl_addr);
 
@@ -1348,15 +1354,19 @@ static void bcm5301x_usb30_phy_init(void)
 
 		/* CDR int loop locking BW to 1 */
 		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
-		writel(0x58120049, ccb_mii_mng_cmd_data_addr);
+		writel(0x580af30d, ccb_mii_mng_cmd_data_addr);
 
 		/* CDR int loop acquisition BW to 1 */
 		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
-		writel(0x580e0049, ccb_mii_mng_cmd_data_addr);
+		writel(0x580e6302, ccb_mii_mng_cmd_data_addr);
 
 		/* CDR prop loop BW to 1 */
 		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
 		writel(0x580a005c, ccb_mii_mng_cmd_data_addr);
+
+		/* Enabling SSC */
+		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+		writel(0x58061003, ccb_mii_mng_cmd_data_addr);
 
 		/* Waiting MII Mgt interface idle */
 		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
@@ -1391,60 +1401,7 @@ static void bcm5301x_usb30_phy_init(void)
 
 		/* Deasserting USB3 system reset */
 		writel(0x00000000, usb3_idm_idm_reset_ctrl_addr);
-	} else if (CHIPID(sih->chip) == BCM53018_CHIP_ID) {
-		/* USB3 PLL Block */
-		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
-		writel(0x587e8000, ccb_mii_mng_cmd_data_addr);
-
-		/* Assert Ana_Pllseq start */
-		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
-		writel(0x58061000, ccb_mii_mng_cmd_data_addr);
-
-		/* Assert CML Divider ratio to 26 */
-		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
-		writel(0x582a6400, ccb_mii_mng_cmd_data_addr);
-
-		/* Asserting PLL Reset */
-		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
-		writel(0x582ec000, ccb_mii_mng_cmd_data_addr);
-
-		/* Deaaserting PLL Reset */
-		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
-		writel(0x582e8000, ccb_mii_mng_cmd_data_addr);
-
-		/* Waiting MII Mgt interface idle */
-		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
-
-		/* Deasserting USB3 system reset */
-		writel(0x00000000, usb3_idm_idm_reset_ctrl_addr);
-
-		/* PLL frequency monitor enable */
-		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
-		writel(0x58069000, ccb_mii_mng_cmd_data_addr);
-
-		/* PIPE Block */
-		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
-		writel(0x587e8060, ccb_mii_mng_cmd_data_addr);
-
-		/* CMPMAX & CMPMINTH setting */
-		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
-		writel(0x580af30d, ccb_mii_mng_cmd_data_addr);
-
-		/* DEGLITCH MIN & MAX setting */
-		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
-		writel(0x580e6302, ccb_mii_mng_cmd_data_addr);
-
-		/* TXPMD block */
-		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
-		writel(0x587e8040, ccb_mii_mng_cmd_data_addr);
-
-		/* Enabling SSC */
-		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
-		writel(0x58061003, ccb_mii_mng_cmd_data_addr);
-
-		/* Waiting MII Mgt interface idle */
-		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
-	}
+	} 
 
 	/* Reg unmap */
 	REG_UNMAP((void *)ccb_mii_base);
@@ -1966,9 +1923,8 @@ static int __init soc_pcie_init(void)
 			si_gpioout(sih, pcie_reset_mask, pcie_reset_mask, GPIO_DRV_PRIORITY);
 			mdelay(100);
 		}
-
-		/* 53573 B0 WAR to reset pcie dev after WDT reboot */
-		if (CHIPREV(sih->chiprev) == 2) {
+		/* 53573 B0/B1 WAR to reset pcie dev after WDT reboot */
+		if (CHIPREV(sih->chiprev) >= 2) {
 			uint32 *pcie_regbase = (uint32 *) REG_MAP(0x18002000, 4096);
 			uint32 clk_control = readl(pcie_regbase + 0x0);
 
@@ -2006,6 +1962,10 @@ static int __init soc_pcie_init(void)
 	}
 
 	/* Scan the SB bus */
+	char *asus = nvram_get("model");
+	int scanlater = 1;
+	if (!asus || strcmp(asus,"RT-AC1200G+")) {
+	scanlater = 0;
 	printk(KERN_INFO "PCI: scanning bus %x\n", 0);
 	struct hw_pci *hw = &soc_pcie_ports[0].hw_pci;
 	static struct pci_sys_data sys;
@@ -2013,11 +1973,6 @@ static int __init soc_pcie_init(void)
 	sys.swizzle = hw->swizzle;
 	sys.map_irq = hw->map_irq;
 	sys.private_data = &soc_pcie_ports[0];
-
-//              .domain         = 0,
-//              .swizzle        = NULL,
-//              .nr_controllers = 1,
-//              .map_irq        = NULL,
 
 	struct pci_bus *root_bus;
 	root_bus = pci_scan_bus(0, &pcibios_ops, &sys);
@@ -2027,9 +1982,7 @@ static int __init soc_pcie_init(void)
 #endif
 		pci_bus_add_devices(root_bus);
 	}
-
-//      pci_scan_bus(0, &pcibios_ops, &sys);
-//        pci_common_init( & soc_pcie_ports[0].hw_pci );
+	}
 
 	bcm5301x_3rd_pcie_init();
 
@@ -2082,6 +2035,24 @@ static int __init soc_pcie_init(void)
 
 		/* Enable memory and bus master */
 		__raw_writel(0x6, port->reg_base + SOC_PCIE_HDR_OFF + 4);
+	}
+	if (scanlater) {
+	printk(KERN_INFO "PCI: scanning bus ASUS FIXUP %x\n", 0);
+	struct hw_pci *hw = &soc_pcie_ports[0].hw_pci;
+	static struct pci_sys_data sys;
+	sys.busnr = 0;
+	sys.swizzle = hw->swizzle;
+	sys.map_irq = hw->map_irq;
+	sys.private_data = &soc_pcie_ports[0];
+
+	struct pci_bus *root_bus;
+	root_bus = pci_scan_bus(0, &pcibios_ops, &sys);
+	if (root_bus) {
+#ifdef CONFIG_PCI_DOMAINS
+    		root_bus->domain_nr = soc_pcie_ports[0].domain;
+#endif
+		pci_bus_add_devices(root_bus);
+	}
 	}
 
 	return 0;
