@@ -56,11 +56,11 @@ static unsigned int type3_clocks[3] = { 150, 200, 0 };
 static unsigned int type4_clocks[10] = { 192, 200, 216, 228, 240, 252, 264, 280, 300, 0 };
 static unsigned int type7_clocks[10] = { 183, 187, 198, 200, 216, 225, 233, 237, 250, 0 };
 static unsigned int type8_clocks[9] = { 200, 300, 400, 500, 600, 632, 650, 662, 0 };
-
 static unsigned int type9_clocks[7] =	// 1200 seem to be the last value which works stable
 { 600, 800, 1000, 1200, 1400, 1600, 0 };
-
 static unsigned int type10_clocks[7] = { 300, 333, 400, 480, 500, 533, 0 };
+static unsigned int type11_clocks[7] =
+{ 600, 800, 900, 0 };
 
 #endif
 
@@ -115,6 +115,8 @@ void ej_show_clocks(webs_t wp, int argc, char_t ** argv)
 		c = type9_clocks;
 	else if (rev == 10)
 		c = type10_clocks;
+	else if (rev == 11)
+		c = type11_clocks;
 	else {
 		websWrite(wp, "<script type=\"text/javascript\">Capture(management.clock_support)</script>\n</div>\n");
 		return;
