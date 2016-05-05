@@ -100,26 +100,20 @@ void __init mpcore_map_io( void )
 
 void __init mpcore_init_gic( void )
 {
-	void __iomem *omap_irq_base;
-	void __iomem *gic_dist_base_addr;
-	printk(KERN_INFO "MPCORE GIC init\n");
-
-	gic_init(0, 1, periphbase + MPCORE_GIC_DIST_OFF, periphbase + MPCORE_GIC_CPUIF_OFF);
-
-#if 0
-	/* Init GIC interrupt distributor */
-	gic_dist_init( 0, periphbase + MPCORE_GIC_DIST_OFF, 1 );
-
-	/* Initialize the GIC CPU interface for the boot processor */
-	gic_cpu_init( 0, periphbase + MPCORE_GIC_CPUIF_OFF );
-#endif
+	if (BCM53573_CHIP(_chipid)) {
+		printk(KERN_INFO "MPCORE GIC init CA7\n");
+		gic_init(0, 1, periphbase + MPCORE_GIC_DIST_OFF, periphbase + MPCORE_GIC_CPUIF_OFF_CA7);
+	} else {
+		printk(KERN_INFO "MPCORE GIC init\n");
+		gic_init(0, 1, periphbase + MPCORE_GIC_DIST_OFF, periphbase + MPCORE_GIC_CPUIF_OFF);
+	}	
 }
 
 void __init mpcore_init_timer( unsigned long perphclk_freq )
 {
 
 	/* Init Global Timer */
-	if (BCM53573_CHIP(sih->chip)) {
+	if (BCM53573_CHIP(_chipid)) {
 		mpcore_gtimer_init(NULL, perphclk_freq, MPCORE_IRQ_PPI1TIMER);
 	} else {
 		mpcore_gtimer_init(periphbase + MPCORE_GTIMER_OFF,
