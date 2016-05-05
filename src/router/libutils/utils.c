@@ -6456,6 +6456,12 @@ int led_control(int type, int act)
 		diag_gpio = 0x003;
 		// wps gpio = 14
 		break;
+	case ROUTER_ASUS_AC1200:
+		usb_power = 0x10a;
+		diag_gpio = 0x00a;
+		diag_gpio_disabled = 0x10a;
+		usb_gpio = 0x10f;
+		break;
 	case ROUTER_ASUS_AC88U:
 	case ROUTER_ASUS_AC5300:
 		usb_power = 0x009;

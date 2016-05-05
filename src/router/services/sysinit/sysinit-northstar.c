@@ -4545,6 +4545,9 @@ void start_sysinit(void)
 			if (out)
 				fclose(out);
 		}
+		case ROUTER_ASUS_AC1200:
+		nvram_set("vlan1hwname","et0");
+		nvram_set("vlan2hwname","et0");
 		break;
 
 	default:
@@ -4560,7 +4563,8 @@ void start_sysinit(void)
 	eval("vconfig", "add", "eth0", "1");
 	eval("vconfig", "add", "eth0", "2");
 	insmod("switch-core");
-	insmod("switch-robo");
+	if (getRouterBrand() != ROUTER_ASUS_AC1200)
+		insmod("switch-robo");
 	/*
 	 * network drivers 
 	 */

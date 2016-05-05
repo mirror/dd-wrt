@@ -2983,6 +2983,10 @@ void start_sysinit(void)
 				nvram_set("portprio_support", "0");
 				modules = "";
 				break;
+			case ROUTER_ASUS_AC1200:
+				nvram_set("portprio_support", "0");
+				modules = "";
+				break;
 			default:
 				modules = "switch-core switch-robo";
 				break;
@@ -3056,6 +3060,10 @@ void start_sysinit(void)
 			case ROUTER_LINKSYS_E1500:
 			case ROUTER_LINKSYS_E1550:
 			case ROUTER_LINKSYS_E2500:
+				nvram_set("portprio_support", "0");
+				modules = "";
+				break;
+			case ROUTER_ASUS_AC1200:
 				nvram_set("portprio_support", "0");
 				modules = "";
 				break;
