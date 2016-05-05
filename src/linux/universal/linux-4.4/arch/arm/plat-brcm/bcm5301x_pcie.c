@@ -382,10 +382,12 @@ int si_bus_map_irq(struct pci_dev *pdev)
 	int irq_map_size;
 
 	if (pcie_coreid == NS_PCIEG2_CORE_ID && pcie_corerev == BCM53573_PCIE_COREREV) {
+		printk(KERN_INFO "busmap bcm53573 using coreid %d and corerev %d\n",pcie_coreid, pcie_corerev);
 		/* for BCM53573 */
 		irq_map = si_bus_irq_map_bcm53573;
 		irq_map_size = SI_BUS_IRQ_MAP_BCM53573_SIZE;
 	} else {
+		printk(KERN_INFO "busmap northstar using coreid %d and corerev %d\n",pcie_coreid, pcie_corerev);
 		/* for NS */
 		irq_map = si_bus_irq_map;
 		irq_map_size = SI_BUS_IRQ_MAP_SIZE;
@@ -394,6 +396,7 @@ int si_bus_map_irq(struct pci_dev *pdev)
 	for (i = 0; i < irq_map_size; i++) {
 		if (pdev->device == irq_map[i].device && irq_map[i].unit < irq_map[i].max_unit) {
 			irq = irq_map[i].irq + irq_map[i].unit;
+//			printk(KERN_INFO "map irq %d\n",i);
 			irq_map[i].unit++;
 			break;
 		}
@@ -442,7 +445,7 @@ int soc_pcie_map_irq(const struct pci_dev *pdev, u8 slot, u8 pin)
 
 	irq = port->irqs[4];	/* All INTx share INTR4 */
 
-	printk(KERN_INFO "PCIe map irq: %04d:%02x:%02x.%02x slot %d, pin %d, irq: %d\n", pci_domain_nr(pdev->bus), pdev->bus->number, PCI_SLOT(pdev->devfn), PCI_FUNC(pdev->devfn), slot, pin, irq);
+//	printk(KERN_INFO "PCIe map irq: %04d:%02x:%02x.%02x slot %d, pin %d, irq: %d\n", pci_domain_nr(pdev->bus), pdev->bus->number, PCI_SLOT(pdev->devfn), PCI_FUNC(pdev->devfn), slot, pin, irq);
 
 	return irq;
 }
@@ -1683,14 +1686,13 @@ bool __devinit plat_fixup_bus(struct pci_bus * b)
 	struct pci_dev *d;
 	u8 irq;
 
-	printk("PCI: Fixing up bus %d\n", b->number);
-
-	/* Fix up SB */
-	if (b->domain_nr == 0) {
+	printk("PCI: Fixing up bus %d domain %d\n", b->number, b->domain_nr);
+	if ((BCM53573_CHIP(CHIPID(sih->chip)) && b->domain_nr == 1) || (!BCM53573_CHIP(CHIPID(sih->chip)) && b->domain_nr == 0)) {
 		list_for_each_entry(d, &b->devices, bus_list) {
 			/* Fix up interrupt lines */
 			pci_read_config_byte(d, PCI_INTERRUPT_LINE, &irq);
 			d->irq = si_bus_map_irq(d);
+//			printk(KERN_INFO "Mapped IRQ %d\n",d->irq);
 			pci_write_config_byte(d, PCI_INTERRUPT_LINE, d->irq);
 		}
 		return TRUE;
