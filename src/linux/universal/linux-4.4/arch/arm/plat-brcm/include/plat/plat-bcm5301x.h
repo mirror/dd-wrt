@@ -22,20 +22,6 @@
 #define	PLAT_UART1_PA	(SOC_CHIPCOMON_A_BASE_PA+0x300)
 #define	PLAT_UART2_PA	(SOC_CHIPCOMON_A_BASE_PA+0x400)
 #define	IRQ_CCA		117
-#ifdef CONFIG_PLAT_CCA_GPIO_IRQ
-# define IRQ_CCA_FIRST		200
-# define IRQ_CCA_UART		IRQ_CCA_FIRST
-# define IRQ_CCA_GPIO(n)	(IRQ_CCA_UART + 1 + (n))
-# define IRQ_CCA_GPIO_N		24
-# define IRQ_CCA_LAST		IRQ_CCA_GPIO(IRQ_CCA_GPIO_N - 1)
-#else
-# define IRQ_CCA_UART		IRQ_CCA
-#endif
-
-#define IRQ_SMBUS	121
-
-/* For BCM53573 Chipcommon UART */
-#define IRQ_CC_UART	32
 
 
 /* PL310 L2 Cache Controller base address */
