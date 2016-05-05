@@ -4624,7 +4624,7 @@ void start_overclocking(void)
 
 	int rev = cpu_plltype();
 
-	if (rev != 9 && type != 11)
+	if (rev != 9 && rev != 11)
 		return;		// unsupported
 
 	char *ov = nvram_get("overclocking");
