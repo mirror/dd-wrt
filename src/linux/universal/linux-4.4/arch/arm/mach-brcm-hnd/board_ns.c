@@ -573,6 +573,10 @@ struct mtd_partition *init_mtd_partitions(hndsflash_t * sfl_info, struct mtd_inf
 	if (nvram_match("boardnum", "1234") && nvram_match("boardtype", "0x072F")) {
 		nobackup = 1;
 	}
+
+	if (nvram_match("model", "RT-AC12000+")) {
+		nobackup = 1;
+	}
 	if (nvram_space == 0x20000)
 		nobackup = 1;
 
