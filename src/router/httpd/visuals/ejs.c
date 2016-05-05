@@ -2327,7 +2327,8 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	static unsigned int tempavg_max = 0;
 
 	int ttcount = 0;
-	for (i = 0; i < 3; i++) {
+	int cc = get_wl_instances();
+	for (i = 0; i < cc; i++) {
 
 		strcpy(buf, "phy_tempsense");
 		char ifname[16];
