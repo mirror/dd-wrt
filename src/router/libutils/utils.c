@@ -5074,7 +5074,6 @@ int getIfListB(char *buffer, const char *ifprefix, int bridgesonly)
 	return count;
 }
 
-
 /*
  * Example: legal_hwaddr("00:11:22:33:44:aB"); return true;
  * legal_hwaddr("00:11:22:33:44:5"); return false;
@@ -5165,6 +5164,8 @@ char *cpustring(void)
 			strcpy(buf, "Broadcom BCM4707");
 		if (packageoption == 2)
 			strcpy(buf, "Broadcom BCM4708");
+	} else if (chipid == 53573) {
+		strcpy(buf, "Broadcom BCM47189");
 	} else
 		strcpy(buf, "Broadcom BCM470X");
 
@@ -5366,9 +5367,9 @@ int led_control(int type, int act)
 		diag_gpio = 0x11a;
 		usb_power = 0x008;
 #elif HAVE_GL150
-//		power_gpio = 0x11b;
-//		diag_gpio = 0x01b;
-//		usb_power = 0x008;
+//              power_gpio = 0x11b;
+//              diag_gpio = 0x01b;
+//              usb_power = 0x008;
 #elif HAVE_WR710
 		power_gpio = 0x11b;
 		diag_gpio = 0x01b;
@@ -6799,7 +6800,7 @@ int getMTD(char *name)
 		return -1;
 	while (!feof(fp) && fscanf(fp, "%s %s %s %s", dev, size, esize, n) == 4) {
 		if (!strcmp(n, buf)) {
-			if(dev[4] == ':'){
+			if (dev[4] == ':') {
 				device = dev[3] - '0';
 			} else {
 				device = 10 + (dev[4] - '0');
@@ -7806,23 +7807,25 @@ char *foreach_last(char *next, char *word)
 	next = strchr(next, ' ');
 	return next;
 }
+
 #define MAX_BRIDGES	1024
 
 #include <linux/if_bridge.h>
 int isbridge(char *name)
 {
-	int i, ret=0, num;
+	int i, ret = 0, num;
 	char ifname[IFNAMSIZ];
 	int ifindices[MAX_BRIDGES];
 	int br_socket_fd = -1;
-	unsigned long args[3] = { BRCTL_GET_BRIDGES, 
-				 (unsigned long)ifindices, MAX_BRIDGES };
+	unsigned long args[3] = { BRCTL_GET_BRIDGES,
+		(unsigned long)ifindices, MAX_BRIDGES
+	};
 
 	if ((br_socket_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
 		return 0;
 
 	num = ioctl(br_socket_fd, SIOCGIFBR, args);
-    	close(br_socket_fd);
+	close(br_socket_fd);
 	if (num < 0) {
 		return 0;
 	}
@@ -7832,8 +7835,8 @@ int isbridge(char *name)
 			return 0;
 		}
 
-		if (!strcmp(ifname,name))
-		    return 1;
+		if (!strcmp(ifname, name))
+			return 1;
 	}
 	return 0;
 
