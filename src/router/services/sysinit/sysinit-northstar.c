@@ -4548,6 +4548,8 @@ void start_sysinit(void)
 	case ROUTER_ASUS_AC1200:
 		nvram_set("vlan1hwname", "et0");
 		nvram_set("vlan2hwname", "et0");
+		nvram_set("vlan1ports", "1 2 3 4 8*");
+		nvram_set("vlan2ports", "0 8*");
 		break;
 
 	default:
