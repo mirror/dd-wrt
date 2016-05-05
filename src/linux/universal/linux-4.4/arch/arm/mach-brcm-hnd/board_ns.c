@@ -134,30 +134,6 @@ void __init board_map_io(void)
 	soc_map_io(&clk_ref);
 }
 
-#if defined(CONFIG_SPI_SPIDEV) && defined(CONFIG_SPI_BCM5301X)
-
-#include <linux/spi/spi.h>
-
-static struct spi_board_info spidev_board_info[] __initdata = {
-	{
-		.modalias	= "spidev",
-		.mode		= SPI_MODE_0,
-		.max_speed_hz	= (1 << 20 ), /* 1Mhz */
-		.bus_num	= 1,
-	},
-};
-
-static void __init board_init_spi(void)
-{
-	spi_register_board_info(spidev_board_info, ARRAY_SIZE(spidev_board_info));
-}
-#else
-inline void board_init_spi(void)
-{
-}
-#endif
-
-
 void __init board_init_irq(void)
 {
 	early_printk("board_init_irq\n");
@@ -279,8 +255,6 @@ void __init board_init(void)
 	 */
 	soc_add_devices();
 
-	board_init_spi();
-
 	return;
 }
 
@@ -291,25 +265,23 @@ void __init board_fixup(struct tag *t, char **cmdline)
 	u32 mem_size, lo_size;
 	early_printk("board_fixup\n");
 
-	if (BCM53573_CHIP(_chipid)) {
-		u32 size;
-		/* 53573's DDR limitation size is 512MB for shadow region. */
-		/* 256MB for first region */
-		size = (PHYS_OFFSET == PADDR_ACE1_BCM53573) ? SZ_512M : SZ_256M;
-		if (_memsize > size)
-			_memsize = size;
-	}
+	/* Fuxup reference clock rate */
+//      if (desc->nr == MACH_TYPE_BRCM_NS_QT )
+//              clk_ref.rate = 17594;   /* Emulator ref clock rate */
 
 	mem_size = _memsize;
 
 	early_printk("board_fixup: mem=%uMiB\n", mem_size >> 20);
 
 	/* for NS-B0-ACP */
-	if (ACP_WAR_ENAB() || (BCM53573_CHIP(_chipid))) {
-
-		memblock_add(PHYS_OFFSET, mem_size);
+#if 0
+	if (ACP_WAR_ENAB()) {
+		mi->bank[0].start = PHYS_OFFSET;
+		mi->bank[0].size = mem_size;
+		mi->nr_banks++;
 		return;
 	}
+#endif
 
 	lo_size = min(mem_size, DRAM_MEMORY_REGION_SIZE);
 
