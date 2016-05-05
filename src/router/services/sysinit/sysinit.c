@@ -2407,7 +2407,7 @@ void start_restore_defaults(void)
 		    || !nvram_get("vlan2ports")
 		    || nvram_match("vlan2ports", "")) {
 			nvram_set("vlan1ports", "1 2 3 4 8*");
-			nvram_set("vlan2ports", "0 5u");
+			nvram_set("vlan2ports", "0 8*");
 		}
 		break;
 	case ROUTER_BUFFALO_WZR600DHP2:
