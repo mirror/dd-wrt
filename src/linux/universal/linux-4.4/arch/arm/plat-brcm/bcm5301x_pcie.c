@@ -1967,18 +1967,18 @@ static int __init soc_pcie_init(void)
 	if (!asus || strcmp(asus,"RT-AC1200G+")) {
 	scanlater = 0;
 	printk(KERN_INFO "PCI: scanning bus %x\n", 0);
-	struct hw_pci *hw = &soc_pcie_ports[0].hw_pci;
+	struct hw_pci *hw = &pcie_port->hw_pci;
 	static struct pci_sys_data sys;
 	sys.busnr = 0;
 	sys.swizzle = hw->swizzle;
 	sys.map_irq = hw->map_irq;
-	sys.private_data = &soc_pcie_ports[0];
+	sys.private_data = pcie_port;
 
 	struct pci_bus *root_bus;
 	root_bus = pci_scan_bus(0, &pcibios_ops, &sys);
 	if (root_bus) {
 #ifdef CONFIG_PCI_DOMAINS
-    		root_bus->domain_nr = soc_pcie_ports[0].domain;
+    		root_bus->domain_nr = pcie_port->domain;
 #endif
 		pci_bus_add_devices(root_bus);
 	}
@@ -1996,11 +1996,8 @@ static int __init soc_pcie_init(void)
 			continue;
 		
 		/* Setup PCIe controller registers */
-//              pci_ioremap_io(SZ_64K * (i-1), port->regs_res->start);
-//              port->reg_base = PCI_IO_VIRT_BASE + SZ_64K * (i-1);
 		int err = request_resource(&iomem_resource, port->regs_res);
 		port->reg_base = ioremap(port->regs_res->start, resource_size(port->regs_res));
-//              BUG_ON( IS_ERR_OR_NULL(port->reg_base ));
 
 		for (allow_gen2 = 0; allow_gen2 <= 1; allow_gen2++) {
 			soc_pcie_hw_init(port);
@@ -2038,18 +2035,19 @@ static int __init soc_pcie_init(void)
 	}
 	if (scanlater) {
 	printk(KERN_INFO "PCI: scanning bus ASUS FIXUP %x\n", 0);
-	struct hw_pci *hw = &soc_pcie_ports[0].hw_pci;
+
+	struct hw_pci *hw = &pcie_port->hw_pci;
 	static struct pci_sys_data sys;
 	sys.busnr = 0;
 	sys.swizzle = hw->swizzle;
 	sys.map_irq = hw->map_irq;
-	sys.private_data = &soc_pcie_ports[0];
+	sys.private_data = pcie_port;
 
 	struct pci_bus *root_bus;
 	root_bus = pci_scan_bus(0, &pcibios_ops, &sys);
 	if (root_bus) {
 #ifdef CONFIG_PCI_DOMAINS
-    		root_bus->domain_nr = soc_pcie_ports[0].domain;
+    		root_bus->domain_nr = pcie_port->domain;
 #endif
 		pci_bus_add_devices(root_bus);
 	}
