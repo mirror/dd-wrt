@@ -42,7 +42,7 @@ extern spinlock_t bcm947xx_sih_lock;
 #undef ACP_WAR_ENAB
 
 #define ACP_WAR_ENAB() 0
- 
+
 /* Convenience */
 #define sih bcm947xx_sih
 #define sih_lock bcm947xx_sih_lock
@@ -225,7 +225,7 @@ typedef struct soc_pcie_port {
 static soc_pcie_port_t soc_pcie_ports[4] = {
 	{
 	 .irqs = {0, 0, 0, 0, 0, 0},
-	.domain = 0,
+	 .domain = 0,
 	 .hw_pci = {
 		    .swizzle = NULL,
 		    .nr_controllers = 1,
@@ -240,7 +240,7 @@ static soc_pcie_port_t soc_pcie_ports[4] = {
 	 .regs_res = &soc_pcie_regs[0],
 	 .owin_res = &soc_pcie_owin[0],
 	 .irqs = {159, 160, 161, 162, 163, 164},
-		    .domain = 1,
+	 .domain = 1,
 	 .hw_pci = {
 		    .swizzle = pci_std_swizzle,
 		    .nr_controllers = 1,
@@ -257,7 +257,7 @@ static soc_pcie_port_t soc_pcie_ports[4] = {
 	 .regs_res = &soc_pcie_regs[1],
 	 .owin_res = &soc_pcie_owin[1],
 	 .irqs = {165, 166, 167, 168, 169, 170},
-	.domain = 2,
+	 .domain = 2,
 	 .hw_pci = {
 		    .swizzle = pci_std_swizzle,
 		    .nr_controllers = 1,
@@ -274,7 +274,7 @@ static soc_pcie_port_t soc_pcie_ports[4] = {
 	 .regs_res = &soc_pcie_regs[2],
 	 .owin_res = &soc_pcie_owin[2],
 	 .irqs = {171, 172, 173, 174, 175, 176},
-		    .domain = 3,
+	 .domain = 3,
 	 .hw_pci = {
 		    .swizzle = pci_std_swizzle,
 		    .nr_controllers = 1,
@@ -293,7 +293,7 @@ static soc_pcie_port_t soc_pcie_ports[4] = {
 static soc_pcie_port_t bcm53573_pcie_ports[2] = {
 	{
 	 .irqs = {0, 0, 0, 0, 0, 0},
-		    .domain = 0,
+	 .domain = 0,
 	 .hw_pci = {
 		    .swizzle = NULL,
 		    .nr_controllers = 1,
@@ -308,7 +308,7 @@ static soc_pcie_port_t bcm53573_pcie_ports[2] = {
 	 .regs_res = &soc_pcie_regs[0],
 	 .owin_res = &soc_pcie_owin[0],
 	 .irqs = {34, 34, 34, 34, 34, 34},
-		    .domain = 1,
+	 .domain = 1,
 	 .hw_pci = {
 		    .swizzle = pci_std_swizzle,
 		    .nr_controllers = 1,
@@ -442,7 +442,7 @@ int soc_pcie_map_irq(const struct pci_dev *pdev, u8 slot, u8 pin)
 
 	irq = port->irqs[4];	/* All INTx share INTR4 */
 
-	pr_debug("PCIe map irq: %04d:%02x:%02x.%02x slot %d, pin %d, irq: %d\n", pci_domain_nr(pdev->bus), pdev->bus->number, PCI_SLOT(pdev->devfn), PCI_FUNC(pdev->devfn), slot, pin, irq);
+	printfk(KERN_INFO "PCIe map irq: %04d:%02x:%02x.%02x slot %d, pin %d, irq: %d\n", pci_domain_nr(pdev->bus), pdev->bus->number, PCI_SLOT(pdev->devfn), PCI_FUNC(pdev->devfn), slot, pin, irq);
 
 	return irq;
 }
@@ -590,8 +590,7 @@ static void plx_pcie_switch_init(struct pci_bus *bus, unsigned int devfn)
 			BUG_ON(((port->owin_res->start + SZ_48M + SZ_32M) >> 16) & 0xf);
 			soc_pci_write_config(bus, devfn, PCI_MEMORY_LIMIT, 2, ((port->owin_res->start + SZ_48M + SZ_32M - 1) >> 16) & 0xfff0);
 
-			printk("PCIE %04x:%02x:%04x: PLX DownPort mem_base 0x%08x, mem_limit 0x%08x\n",
-			       port->domain, bus->number, devfn, port->owin_res->start + SZ_48M, port->owin_res->start + SZ_48M + SZ_32M - 1);
+			printk("PCIE %04x:%02x:%04x: PLX DownPort mem_base 0x%08x, mem_limit 0x%08x\n", port->domain, bus->number, devfn, port->owin_res->start + SZ_48M, port->owin_res->start + SZ_48M + SZ_32M - 1);
 
 			/* Retrain Link */
 			pcie_switch_retrain_link(bus, devfn);
@@ -686,8 +685,7 @@ static void asmedia_pcie_switch_init(struct pci_bus *bus, unsigned int devfn)
 			BUG_ON(((port->owin_res->start + SZ_48M + SZ_32M) >> 16) & 0xf);
 			soc_pci_write_config(bus, devfn, PCI_MEMORY_LIMIT, 2, ((port->owin_res->start + SZ_48M + SZ_32M - 1) >> 16) & 0xfff0);
 
-			printk("PCIE %04x:%02x:%04x: ASMedia DownPort mem_base 0x%08x, mem_limit 0x%08x\n",
-			       port->domain, bus->number, devfn, port->owin_res->start + SZ_48M, port->owin_res->start + SZ_48M + SZ_32M - 1);
+			printk("PCIE %04x:%02x:%04x: ASMedia DownPort mem_base 0x%08x, mem_limit 0x%08x\n", port->domain, bus->number, devfn, port->owin_res->start + SZ_48M, port->owin_res->start + SZ_48M + SZ_32M - 1);
 
 			/* Set link speed via Link Control2 reg */
 			soc_pci_read_config(bus, devfn, pos + PCI_EXP_LNKCTL2, 2, &tmp16);
@@ -1068,14 +1066,14 @@ static void __init soc_pcie_map_init(struct soc_pcie_port *port)
 	 * otherwise DMA bouncing mechanism may be required.
 	 * Also consider DMA mask to limit DMA physical address
 	 */
-//	if (arch_is_coherent() && (pcie_coreid == NS_PCIEG2_CORE_ID && pcie_corerev == NS_BX_PCIE_COREREV)) {
-//		/* Using IARR_2/IMAP_2 is enough since it supports up to 2GB for NS-B0 */
-//		addr = PHYS_OFFSET;
-//		__raw_writel(addr | 0x1, port->reg_base + SOC_PCIE_SYS_IMAP2(0));
-//		__raw_writel(addr | 0x1,	/* 1GB size */
-//			     port->reg_base + SOC_PCIE_SYS_IARR(2));
-//		return;
-//	}
+//      if (arch_is_coherent() && (pcie_coreid == NS_PCIEG2_CORE_ID && pcie_corerev == NS_BX_PCIE_COREREV)) {
+//              /* Using IARR_2/IMAP_2 is enough since it supports up to 2GB for NS-B0 */
+//              addr = PHYS_OFFSET;
+//              __raw_writel(addr | 0x1, port->reg_base + SOC_PCIE_SYS_IMAP2(0));
+//              __raw_writel(addr | 0x1,        /* 1GB size */
+//                           port->reg_base + SOC_PCIE_SYS_IARR(2));
+//              return;
+//      }
 
 	size = min(_memsize, SZ_128M);
 	addr = PHYS_OFFSET;
@@ -1313,10 +1311,7 @@ static void bcm5301x_usb30_phy_init(void)
 
 	/* NS-Bx and NS47094
 	 * Chiprev 4 for NS-B0 and chiprev 6 for NS-B1 */
-	if ((CHIPID(sih->chip) == BCM53018_CHIP_ID) ||
-	    (CHIPID(sih->chip) == BCM4707_CHIP_ID &&
-	    (CHIPREV(sih->chiprev) == 4 || CHIPREV(sih->chiprev) == 6)) ||
-	    (CHIPID(sih->chip) == BCM47094_CHIP_ID)) {
+	if ((CHIPID(sih->chip) == BCM53018_CHIP_ID) || (CHIPID(sih->chip) == BCM4707_CHIP_ID && (CHIPREV(sih->chiprev) == 4 || CHIPREV(sih->chiprev) == 6)) || (CHIPID(sih->chip) == BCM47094_CHIP_ID)) {
 
 		/* USB3 PLL Block */
 		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
@@ -1401,7 +1396,7 @@ static void bcm5301x_usb30_phy_init(void)
 
 		/* Deasserting USB3 system reset */
 		writel(0x00000000, usb3_idm_idm_reset_ctrl_addr);
-	} 
+	}
 
 	/* Reg unmap */
 	REG_UNMAP((void *)ccb_mii_base);
@@ -1427,9 +1422,9 @@ static void bcm5301x_usb_idm_ioctrl(int coreid)
 	uint32 ioctrl_val;
 	uint32 arcache = 0xb, awcache = 0x7, aruser = 0x1, awuser = 0x1;
 
-//	if (!arch_is_coherent()) {
-		return;
-//	}
+//      if (!arch_is_coherent()) {
+	return;
+//      }
 
 	if (coreid == USB20H_CORE_ID) {
 		return;
@@ -1964,24 +1959,24 @@ static int __init soc_pcie_init(void)
 	/* Scan the SB bus */
 	char *asus = nvram_get("model");
 	int scanlater = 1;
-	if (!asus || strcmp(asus,"RT-AC1200G+")) {
-	scanlater = 0;
-	printk(KERN_INFO "PCI: scanning bus %x\n", 0);
-	struct hw_pci *hw = &pcie_port->hw_pci;
-	static struct pci_sys_data sys;
-	sys.busnr = 0;
-	sys.swizzle = hw->swizzle;
-	sys.map_irq = hw->map_irq;
-	sys.private_data = pcie_port;
+	if (!asus || strcmp(asus, "RT-AC1200G+")) {
+		scanlater = 0;
+		printk(KERN_INFO "PCI: scanning bus %x\n", 0);
+		struct hw_pci *hw = &pcie_port->hw_pci;
+		static struct pci_sys_data sys;
+		sys.busnr = 0;
+		sys.swizzle = hw->swizzle;
+		sys.map_irq = hw->map_irq;
+		sys.private_data = pcie_port;
 
-	struct pci_bus *root_bus;
-	root_bus = pci_scan_bus(0, &pcibios_ops, &sys);
-	if (root_bus) {
+		struct pci_bus *root_bus;
+		root_bus = pci_scan_bus(0, &pcibios_ops, &sys);
+		if (root_bus) {
 #ifdef CONFIG_PCI_DOMAINS
-    		root_bus->domain_nr = pcie_port->domain;
+			root_bus->domain_nr = pcie_port->domain;
 #endif
-		pci_bus_add_devices(root_bus);
-	}
+			pci_bus_add_devices(root_bus);
+		}
 	}
 
 	bcm5301x_3rd_pcie_init();
@@ -1994,7 +1989,7 @@ static int __init soc_pcie_init(void)
 		/* Check if this port needs to be enabled */
 		if (!port->enable)
 			continue;
-		
+
 		/* Setup PCIe controller registers */
 		int err = request_resource(&iomem_resource, port->regs_res);
 		port->reg_base = ioremap(port->regs_res->start, resource_size(port->regs_res));
@@ -2022,7 +2017,7 @@ static int __init soc_pcie_init(void)
 
 		if (linkfail)
 			continue;
-		port->hw_pci.private_data = kzalloc(sizeof(port->hw_pci.private_data) *  port->hw_pci.nr_controllers,GFP_KERNEL);
+		port->hw_pci.private_data = kzalloc(sizeof(port->hw_pci.private_data) * port->hw_pci.nr_controllers, GFP_KERNEL);
 		port->hw_pci.private_data[0] = port;
 		/* Announce this port to ARM/PCI common code */
 		pci_common_init(&port->hw_pci);
@@ -2034,23 +2029,23 @@ static int __init soc_pcie_init(void)
 		__raw_writel(0x6, port->reg_base + SOC_PCIE_HDR_OFF + 4);
 	}
 	if (scanlater) {
-	printk(KERN_INFO "PCI: scanning bus ASUS FIXUP %x\n", 0);
+		printk(KERN_INFO "PCI: scanning bus ASUS FIXUP %x\n", 0);
 
-	struct hw_pci *hw = &pcie_port->hw_pci;
-	static struct pci_sys_data sys;
-	sys.busnr = 0;
-	sys.swizzle = hw->swizzle;
-	sys.map_irq = hw->map_irq;
-	sys.private_data = pcie_port;
+		struct hw_pci *hw = &pcie_port->hw_pci;
+		static struct pci_sys_data sys;
+		sys.busnr = 0;
+		sys.swizzle = hw->swizzle;
+		sys.map_irq = hw->map_irq;
+		sys.private_data = pcie_port;
 
-	struct pci_bus *root_bus;
-	root_bus = pci_scan_bus(0, &pcibios_ops, &sys);
-	if (root_bus) {
+		struct pci_bus *root_bus;
+		root_bus = pci_scan_bus(0, &pcibios_ops, &sys);
+		if (root_bus) {
 #ifdef CONFIG_PCI_DOMAINS
-    		root_bus->domain_nr = pcie_port->domain;
+			root_bus->domain_nr = pcie_port->domain;
 #endif
-		pci_bus_add_devices(root_bus);
-	}
+			pci_bus_add_devices(root_bus);
+		}
 	}
 
 	return 0;
