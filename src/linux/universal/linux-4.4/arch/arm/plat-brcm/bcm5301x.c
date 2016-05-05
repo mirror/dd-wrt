@@ -150,7 +150,7 @@ static struct plat_serial8250_port uart_ports[] = {
 	{ .flags = 0, },	/* List terminatoir */
 };
 
-static struct platform_device platform_serial_devices = {
+static struct platform_device platform_serial_device = {
 	.name = "serial8250",
 	.id = PLAT8250_DEV_PLATFORM,	/* <linux/serial_8250.h> */
 	.dev = {
@@ -194,7 +194,6 @@ void __init soc_map_io(struct clk * refclk)
 	iotable_init(desc, 1);
 
 	mpcore_map_io();
-	printk(KERN_INFO "set refclk to %p\n", refclk);
 	/* Save refclk for later use */
 	_soc_refclk = refclk;
 }
@@ -206,10 +205,10 @@ static int soc_abort_handler(unsigned long addr, unsigned int fsr,
 	 * These happen for no good reason
 	 * possibly left over from CFE
 	 */
-	printk(KERN_WARNING
+	printk( KERN_WARNING 
 		"External imprecise Data abort at "
-		"addr=%#lx, fsr=%#x, pc=%#lx lr=%#lx ignored.\n",
-		addr, fsr, regs->ARM_pc, regs->ARM_lr);
+		"addr=%#lx, fsr=%#x ignored.\n", 
+		addr, fsr );
 
 	/* Returning non-zero causes fault display and panic */
         return 0;
@@ -512,70 +511,148 @@ void __init soc_init_timer(void)
 
 }
 
+static void __init soc_config_cca_uart_clock(void)
+{
+	if (BCM53573_CHIP(sih->chip)) {
+		return;
+	}
+
+#if defined(CONFIG_PLAT_CCA_UART_CLK_DEFAULT)
+	/* Do nothing. Use what already set. */
+#elif defined(CONFIG_PLAT_CCA_UART_CLK_INTERNAL_OVERRIDE)
+	writel(PLAT_SM_SET(readl(SOC_CHIPCOMON_A_CORECTRL), SOC_CHIPCOMON_A_CORECTRL_UARTCLKOVR, 1),
+		SOC_CHIPCOMON_A_CORECTRL);
+#elif defined(CONFIG_PLAT_CCA_UART_CLK_INTERNAL_DIVIDER)
+	writel(PLAT_SM_ASSIGN(readl(SOC_CHIPCOMON_A_CLKDIV), SOC_CHIPCOMON_A_CLKDIV_UARTCLKDIV, CONFIG_PLAT_CCA_UART_CLK_INTERNAL_DIVIDER_VAL),
+		SOC_CHIPCOMON_A_CLKDIV);
+	writel(PLAT_SM_CLR(readl(SOC_CHIPCOMON_A_CORECTRL), SOC_CHIPCOMON_A_CORECTRL_UARTCLKOVR),
+		SOC_CHIPCOMON_A_CORECTRL);
+	writel(PLAT_SM_SET(readl(SOC_APBX_IDM_IDM_IO_CONTROL_DIRECT), SOC_APBX_IDM_IDM_IO_CONTROL_DIRECT_UARTCLKSEL, 1),
+		SOC_APBX_IDM_IDM_IO_CONTROL_DIRECT);
+#elif defined(CONFIG_PLAT_CCA_UART_CLK_EXTERNAL)
+	writel(PLAT_SM_CLR(readl(SOC_CHIPCOMON_A_CORECTRL), SOC_CHIPCOMON_A_CORECTRL_UARTCLKOVR),
+		SOC_CHIPCOMON_A_CORECTRL);
+	writel(PLAT_SM_CLR(readl(SOC_APBX_IDM_IDM_IO_CONTROL_DIRECT), SOC_APBX_IDM_IDM_IO_CONTROL_DIRECT_UARTCLKSEL),
+		SOC_APBX_IDM_IDM_IO_CONTROL_DIRECT);
+#endif
+}
+
+static void __init soc_get_uart_clk_rate(u32 *clk_rate_cca, u32 *clk_rate_ccb)
+{
+	struct clk *clk_ext = _soc_refclk;
+	struct clk *clk_int = NULL;
+	u32 clk_rate_int;
+	u32 UARTClkSel = PLAT_SM_GET(readl(SOC_CHIPCOMON_A_CORECAP), SOC_CHIPCOMON_A_CORECAP_UARTCLKSEL);
+	u32 UARTClkOvr = PLAT_SM_GET(readl(SOC_CHIPCOMON_A_CORECTRL), SOC_CHIPCOMON_A_CORECTRL_UARTCLKOVR);
+	u32 UARTClkDiv = PLAT_SM_GET(readl(SOC_CHIPCOMON_A_CLKDIV), SOC_CHIPCOMON_A_CLKDIV_UARTCLKDIV);
+
+	BUG_ON(!clk_ext);
+	BUG_ON(UARTClkSel > 1);
+	if (BCM53573_CHIP(sih->chip)) {
+		clk_rate_int = si_alp_clock(sih);
+	} else {
+		clk_int = clk_get_sys(NULL, "iproc_slow_clk");
+		BUG_ON(!clk_int);
+		clk_rate_int = clk_get_rate(clk_int);
+	}
+
+	if (UARTClkDiv == 0) {
+		UARTClkDiv = 0x100;
+	}
+
+	if (UARTClkOvr) {
+		/* internal reference clock source */
+		*clk_rate_cca = clk_rate_int;
+	} else if (UARTClkSel) {
+		/* internal reference clock source with applied divider */
+		*clk_rate_cca = clk_rate_int / UARTClkDiv;
+	} else {
+		/* external reference clock source */
+		*clk_rate_cca = clk_get_rate(clk_ext);
+	}
+
+	printk(KERN_INFO "CCA UART Clock Config: Sel=%d Ovr=%d Div=%d\n",
+		UARTClkSel, UARTClkOvr, UARTClkDiv);
+
+	if (BCM53573_CHIP(sih->chip)) {
+		/* Don't care about CCB for BCM53573 */
+		*clk_rate_ccb = 0;
+
+		printk(KERN_INFO "CCA UART Clock rate %uHz\n", *clk_rate_cca);
+	} else {
+		*clk_rate_ccb = clk_rate_int;
+
+		printk(KERN_INFO "CCA UART Clock rate %uHz CCB UART Clock rate %uHz\n",
+		*clk_rate_cca, *clk_rate_ccb);
+	}
+}
+
+
+static void __init soc_fixup_uart_ports(void)
+{
+	u32 clk_rate_cca, clk_rate_ccb;
+	unsigned i;
+
+	soc_config_cca_uart_clock();
+
+	soc_get_uart_clk_rate(&clk_rate_cca, &clk_rate_ccb);
+
+	for (i = 0; i < ARRAY_SIZE(uart_ports); i++) {
+		/* Last empty entry */
+		if (uart_ports[i].flags == 0)
+			break;
+
+		if (uart_ports[i].irq == 0)
+			uart_ports[i].flags |= UPF_AUTO_IRQ;
+
+		/* UART clock rate */
+		uart_ports[i].uartclk =
+		(uart_ports[i].irq == IRQ_CCA_UART || uart_ports[i].irq == IRQ_CC_UART) ?
+		clk_rate_cca : clk_rate_ccb;
+	}
+}
+
 /*
  * Install all other SoC device drivers
  * that are not automatically discoverable.
  */
 void __init soc_add_devices( void )
 {
-	u32 i, clk_rate = 0;
-	u8 UARTClkSel, UARTClkOvr;
-	u16 UARTClkDiv ;
-	struct clk * clk = NULL ;
+	u32 i;
 
-	i = readl( SOC_CHIPCOMON_A_BASE_VA + 0x04 );	
-	/* UARTClkSel ChipcommonA_CoreCapabilities bit 4..3 */
-	UARTClkSel = ( i >> 3 ) & 0x3 ;
-	printk(KERN_INFO "corecaps 0x%08X UARTClkSel %d\n",i, UARTClkSel);
-	/* UARTClkOvr ChipcommonA_CoreCtrl bit 0 */
-	UARTClkOvr = 1 &  readl( SOC_CHIPCOMON_A_BASE_VA + 0x08 );
-	/* UARTClkDiv: ChipcommonA_ClkDiv bits 0..7 */
-	UARTClkDiv =  0xff & readl( SOC_CHIPCOMON_A_BASE_VA + 0xa4 );
-	if( UARTClkDiv == 0 ) UARTClkDiv = 0x100 ;
-	
-
-	if ( UARTClkSel == 0 || BCM53573_CHIP(sih->chip))
-		{
-		printk(KERN_INFO "use refclk\n");
-		/* UARTClkSel = 0 -> external reference clock source */
-		clk = _soc_refclk ;
-		BUG_ON( !clk );
-		clk_rate = clk_get_rate(clk);
-		} 
-		else if( UARTClkSel == 1 )
-		{
-		printk(KERN_INFO "use slow clk\n");
-		/* UARTClkSel = 1 -> Internal clock optionally divided */
-		clk = clk_get_sys( NULL, "iproc_slow_clk");
-		BUG_ON( !clk );
-		clk_rate = clk_get_rate(clk) ;
-		if( ! UARTClkOvr )
-			clk_rate /= UARTClkDiv;
+	if (BCM53573_CHIP(sih->chip)) {
+		/* BCM53573 only has one uart port */
+		for (i = 1; i < ARRAY_SIZE(uart_ports); i++) {
+			memset(&uart_ports[i], 0x0, sizeof(uart_ports[i]));
 		}
-	printk( KERN_INFO "CCA UART Clock Config: Sel=%d Ovr=%d Div=%d\n",
-		UARTClkSel, UARTClkOvr, UARTClkDiv );
-	printk( KERN_INFO "CCA UART Clock rate %uHz\n", clk_rate );
+		/* BCM53573 uses different interrupt ID number */
+		uart_ports[0].irq = IRQ_CC_UART;
+	}
 
-
-	/* fixup UART port structure */
-	for(i = 0; i < ARRAY_SIZE(uart_ports); i++ )
-		{
-		if( uart_ports[i].flags == 0 )
-			break;
-		if( uart_ports[i].irq == 0 )
-			uart_ports[i].flags |= UPF_AUTO_IRQ;
-
-		/* UART input clock source and rate */
-		uart_ports[i].uartclk = clk_rate ;
-		}
+	/* Fixup UART port structure */
+	soc_fixup_uart_ports();
 
 	/* Install SoC devices in the system: uarts */
-	platform_device_register( & platform_serial_devices );
+	if (platform_device_register(&platform_serial_device) != 0) {
+		printk(KERN_WARNING "Fail to register serial device\n");
+	}
+
+	/* Install SoC devices in the system: SPI master */
+	if (platform_device_register(&platform_spi_master_device) != 0) {
+		printk(KERN_WARNING "Fail to register SPI master device\n");
+	}
 
 	/* Enable UART interrupt in ChipcommonA */
-	i = readl( SOC_CHIPCOMON_A_BASE_VA + 0x24 );
-	i |= 1 << 6;
-	writel( i, SOC_CHIPCOMON_A_BASE_VA + 0x24 );
+	i = readl(SOC_CHIPCOMON_A_BASE_VA + 0x24);
+	i |= SOC_CHIPCOMON_A_INTMASK_UART;
+	writel(i, SOC_CHIPCOMON_A_BASE_VA + 0x24);
+
+#ifdef CONFIG_PLAT_CCA_GPIO_IRQ
+	/* Enable GPIO interrupts in ChipcommonA */
+	i = readl(SOC_CHIPCOMON_A_INTMASK_VA);
+	i |= SOC_CHIPCOMON_A_INTMASK_GPIO;
+	writel(i, SOC_CHIPCOMON_A_INTMASK_VA);
+#endif /* CONFIG_PLAT_CCA_GPIO_IRQ */
 
 }
 
@@ -614,12 +691,11 @@ void plat_wake_secondary_cpu( unsigned cpu, void (* _sec_entry_va)(void) )
  * SoC initialization that need to be done early,
  * e.g. L2 cache, clock, I/O pin mux, power management
  */
-static int  __init bcm5301_pl310_init(void)
+static int  __init bcm5301_pl310_init( void )
 {
 	void __iomem *l2cache_base;
-	u32 auxctl_val, auxctl_msk;
-	extern void __init l310_init(void __iomem *, u32, u32, int);
-	/* Return immediately since no L2 cache for BCM53573 */
+	u32 auxctl_val, auxctl_msk ;
+
 	if (BCM53573_CHIP(sih->chip)) {
 		outer_cache.inv_range = NULL;
 		outer_cache.clean_range = NULL;
@@ -631,7 +707,7 @@ static int  __init bcm5301_pl310_init(void)
 	}
 	/* Default AUXCTL modifiers */
 	auxctl_val = 0UL;
-	auxctl_msk = ~0UL;
+	auxctl_msk = ~0UL ;
 
 	/* Customize AUXCTL */
 	auxctl_val |= 0 << 0 ;	/* Full line of zero Enable - requires A9 cfg */
@@ -639,15 +715,16 @@ static int  __init bcm5301_pl310_init(void)
 	auxctl_val |= 1 << 29;	/* Instruction prefetch enable */
 	auxctl_val |= 1 << 28;	/* Data prefetch enable */
 	auxctl_val |= 1 << 30;	/* Early BRESP enable */
-
-	if (ACP_WAR_ENAB() || arch_is_coherent())
+	auxctl_val |= 1 << 22;	/* for dma coherency */
+	
+	if (ACP_WAR_ENAB())
 		auxctl_val |= 1 << 11; /* Store buffer device limitation enable */
 
-	l2cache_base = ioremap(L2CC_BASE_PA, SZ_4K);
+	l2cache_base = ioremap( L2CC_BASE_PA, SZ_4K );
 
 	/* Configure using default aux control value */
-	if (l2cache_base != NULL)
-		l310_init(l2cache_base, auxctl_val, auxctl_msk, 32);
+	if( l2cache_base != NULL )
+		l2x0_init( l2cache_base, auxctl_val, auxctl_msk);
 
 	return 0;
 }
