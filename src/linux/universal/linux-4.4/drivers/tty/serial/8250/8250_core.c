@@ -43,6 +43,12 @@
 
 #include <asm/irq.h>
 
+#ifdef CONFIG_PLAT_BCM5301X
+#include <typedefs.h>
+#include <bcmdevs.h>
+extern int _chipid;
+#endif
+
 /* enable EPLD for VS OpenRISC devices */
 #if defined(CONFIG_MACH_KS8695_VSOPENRISC)
 #define CONFIG_SERIAL_NETCOM_EPLD
@@ -690,6 +696,11 @@ static struct console univ8250_console = {
 
 static int __init univ8250_console_init(void)
 {
+#ifdef CONFIG_PLAT_BCM5301X
+	if (BCM53573_CHIP(_chipid)) {
+		nr_uarts = 1;
+	}
+#endif
 	if (nr_uarts == 0)
 		return -ENODEV;
 
@@ -1177,6 +1188,12 @@ EXPORT_SYMBOL(serial8250_unregister_port);
 static int __init serial8250_init(void)
 {
 	int ret;
+	printk(KERN_INFO "%s\n",__func__);
+#ifdef CONFIG_PLAT_BCM5301X
+	if (BCM53573_CHIP(_chipid)) {
+		nr_uarts = 1;
+	}
+#endif
 
 	if (nr_uarts == 0)
 		return -ENODEV;
