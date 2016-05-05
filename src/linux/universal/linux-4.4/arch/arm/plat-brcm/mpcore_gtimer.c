@@ -278,15 +278,24 @@ static int gtimer_shutdown(struct clock_event_device *evt)
 	u32 ctrl, period;
 	u64 count;
 
-	/* Get current register with global enable and prescaler */
-	ctrl = readl( gtimer_base + GTIMER_CTRL );
+	if (gtimer_base != NULL) {
+		/* Get current register with global enable and prescaler */
+		ctrl = readl( gtimer_base + GTIMER_CTRL );
 
-	/* Clear the mode-related bits */
-	ctrl &= ~( 	GTIMER_CTRL_CMP_EN | 
-			GTIMER_CTRL_IRQ_EN | 
-			GTIMER_CTRL_AUTO_EN);
-	/* Apply the new mode */
-	writel(ctrl, gtimer_base + GTIMER_CTRL);
+		/* Clear the mode-related bits */
+		ctrl &= ~(	GTIMER_CTRL_CMP_EN |
+				GTIMER_CTRL_IRQ_EN |
+				GTIMER_CTRL_AUTO_EN);
+	} else {
+		ctrl = gtimer_get_cntpctl();
+		/* Set mask bit, i.e., disable interrupt */
+		ctrl |= GTIMER_CTRL_MASK_EN;
+	}
+
+	if (gtimer_base != NULL)
+		writel(ctrl, gtimer_base + GTIMER_CTRL);
+	else
+		gtimer_set_cntpctl(ctrl);
 	return 0;
 }
 
@@ -296,15 +305,24 @@ static int gtimer_resume(struct clock_event_device *evt)
 	u32 ctrl, period;
 	u64 count;
 
-	/* Get current register with global enable and prescaler */
-	ctrl = readl( gtimer_base + GTIMER_CTRL );
+	if (gtimer_base != NULL) {
+		/* Get current register with global enable and prescaler */
+		ctrl = readl( gtimer_base + GTIMER_CTRL );
 
-	/* Clear the mode-related bits */
-	ctrl &= ~( 	GTIMER_CTRL_CMP_EN | 
-			GTIMER_CTRL_IRQ_EN | 
-			GTIMER_CTRL_AUTO_EN);
-	/* Apply the new mode */
-	writel(ctrl, gtimer_base + GTIMER_CTRL);
+		/* Clear the mode-related bits */
+		ctrl &= ~(	GTIMER_CTRL_CMP_EN |
+				GTIMER_CTRL_IRQ_EN |
+				GTIMER_CTRL_AUTO_EN);
+	} else {
+		ctrl = gtimer_get_cntpctl();
+		/* Set mask bit, i.e., disable interrupt */
+		ctrl |= GTIMER_CTRL_MASK_EN;
+	}
+
+	if (gtimer_base != NULL)
+		writel(ctrl, gtimer_base + GTIMER_CTRL);
+	else
+		gtimer_set_cntpctl(ctrl);
 
 	return 0;
 }
