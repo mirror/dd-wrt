@@ -382,12 +382,12 @@ int si_bus_map_irq(struct pci_dev *pdev)
 	int irq_map_size;
 
 	if (pcie_coreid == NS_PCIEG2_CORE_ID && pcie_corerev == BCM53573_PCIE_COREREV) {
-		printk(KERN_INFO "busmap bcm53573 using coreid %d and corerev %d\n",pcie_coreid, pcie_corerev);
+		//printk(KERN_INFO "busmap bcm53573 using coreid %d and corerev %d\n",pcie_coreid, pcie_corerev);
 		/* for BCM53573 */
 		irq_map = si_bus_irq_map_bcm53573;
 		irq_map_size = SI_BUS_IRQ_MAP_BCM53573_SIZE;
 	} else {
-		printk(KERN_INFO "busmap northstar using coreid %d and corerev %d\n",pcie_coreid, pcie_corerev);
+		//printk(KERN_INFO "busmap northstar using coreid %d and corerev %d\n",pcie_coreid, pcie_corerev);
 		/* for NS */
 		irq_map = si_bus_irq_map;
 		irq_map_size = SI_BUS_IRQ_MAP_SIZE;
