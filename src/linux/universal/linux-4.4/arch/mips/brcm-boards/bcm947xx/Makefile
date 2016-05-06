@@ -22,7 +22,7 @@ SHARED := ../../../../brcm/mipsel/shared
 EXTRA_CFLAGS+=-I$(srctree)/brcm/mipsel/include -I$(srctree)/brcm/mipsel/shared/bcmwifi/include -DBCMDRIVER -Dlinux
 
 ifeq ($(CONFIG_MTD_NFLASH),y)
-EXTRA_CFLAGS += -DNFLASH_SUPPORT
+EXTRA_CFLAGS += -DNFLASH_SUPPORT -DCCNFLASH_SUPPORT
 endif
 
 BCM947XX_OBJS := $(addprefix $(SHARED)/, hndmips.o hndchipc.o )
@@ -38,6 +38,8 @@ endif
 ifeq ($(CONFIG_MTD_NFLASH),y)
 BCM947XX_OBJS += $(addprefix $(SHARED)/, hndnand.o)
 BCM947XX_OBJS += $(addprefix $(SHARED)/, nflash_mips.o)
+BCM947XX_OBJS += $(addprefix $(SHARED)/, nandcore.o)
+BCM947XX_OBJS += $(addprefix $(SHARED)/, hndsoc.o)
 endif
 
 ifeq ($(CONFIG_MTD_BCMCONF_PARTS),y)
