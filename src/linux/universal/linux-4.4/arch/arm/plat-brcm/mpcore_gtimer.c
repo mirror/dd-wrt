@@ -76,34 +76,34 @@ extern void soc_watchdog(void);
 static inline u32 gtimer_get_cntfrq(void)
 {
 	u32 val;
-	asm volatile("mrc p15, 0, %0, c14, c0, 0" : "=r" (val));
+	asm volatile ("mrc p15, 0, %0, c14, c0, 0":"=r" (val));
 	return val;
 }
 
 /* Set counter frequency register */
 static inline void gtimer_set_cntfrq(u32 cntfrq)
 {
-	asm volatile("mcr p15, 0, %0, c14, c0, 0" : : "r" (cntfrq));
+	asm volatile ("mcr p15, 0, %0, c14, c0, 0"::"r" (cntfrq));
 }
 
 /* Set time PL1 control register */
 static inline void gtimer_set_cntkctl(u32 cntkctl)
 {
-	asm volatile("mcr p15, 0, %0, c14, c1, 0" : : "r" (cntkctl));
+	asm volatile ("mcr p15, 0, %0, c14, c1, 0"::"r" (cntkctl));
 }
 
 /* Get PL1 physical timer controller register */
 static inline u32 gtimer_get_cntpctl(void)
 {
 	u32 val;
-	asm volatile("mrc p15, 0, %0, c14, c2, 1" : "=r" (val));
+	asm volatile ("mrc p15, 0, %0, c14, c2, 1":"=r" (val));
 	return val;
 }
 
 /* Set PL1 physical timer controller register */
 static inline void gtimer_set_cntpctl(u32 cntpctl)
 {
-	asm volatile("mcr p15, 0, %0, c14, c2, 1" : : "r" (cntpctl));
+	asm volatile ("mcr p15, 0, %0, c14, c2, 1"::"r" (cntpctl));
 	isb();
 }
 
@@ -113,7 +113,7 @@ static inline u64 gtimer_get_cntpct(void)
 	u64 val;
 
 	isb();
-	asm volatile("mrrc p15, 0, %Q0, %R0, c14" : "=r" (val));
+	asm volatile ("mrrc p15, 0, %Q0, %R0, c14":"=r" (val));
 	return val;
 }
 
@@ -123,14 +123,14 @@ static inline u64 gtimer_get_cntp_cval(void)
 	u64 val;
 
 	isb();
-	asm volatile("mrrc p15, 2, %Q0, %R0, c14" : "=r" (val));
+	asm volatile ("mrrc p15, 2, %Q0, %R0, c14":"=r" (val));
 	return val;
 }
 
 /* Set PL1 physical timer compare value register */
 static inline void gtimer_set_cntp_cval(u64 val)
 {
-	asm volatile("mcrr p15, 2, %Q0, %R0, c14" : : "r" (val));
+	asm volatile ("mcrr p15, 2, %Q0, %R0, c14"::"r" (val));
 	isb();
 }
 
@@ -155,7 +155,6 @@ static void gtimer_enable(unsigned long freq)
 	}
 }
 
-
 static cycle_t gptimer_count_read(struct clocksource *cs)
 {
 	u64 count;
@@ -165,12 +164,12 @@ static cycle_t gptimer_count_read(struct clocksource *cs)
 
 		/* Avoid unexpected rollover with double-read of upper half */
 		do {
-			count_hi = readl( gtimer_base + GTIMER_COUNT_HI );
-			count_lo = readl( gtimer_base + GTIMER_COUNT_LO );
-			count_ho = readl( gtimer_base + GTIMER_COUNT_HI );
-		} while( count_hi != count_ho );
+			count_hi = readl(gtimer_base + GTIMER_COUNT_HI);
+			count_lo = readl(gtimer_base + GTIMER_COUNT_LO);
+			count_ho = readl(gtimer_base + GTIMER_COUNT_HI);
+		} while (count_hi != count_ho);
 
-		count = (u64) count_hi << 32 | count_lo;
+		count = (u64)count_hi << 32 | count_lo;
 	} else {
 		/* For BCM53573 */
 		count = gtimer_get_cntpct();
@@ -180,12 +179,12 @@ static cycle_t gptimer_count_read(struct clocksource *cs)
 }
 
 static struct clocksource clocksource_gptimer = {
-	.name		= "mpcore_gtimer",
-	.rating		= 300,
-	.read		= gptimer_count_read,
-	.mask		= CLOCKSOURCE_MASK(64),
-	.shift		= 20,
-	.flags		= CLOCK_SOURCE_IS_CONTINUOUS,
+	.name = "mpcore_gtimer",
+	.rating = 300,
+	.read = gptimer_count_read,
+	.mask = CLOCKSOURCE_MASK(64),
+	.shift = 20,
+	.flags = CLOCK_SOURCE_IS_CONTINUOUS,
 };
 
 void __init gptimer_clocksource_init(u32 freq)
@@ -195,7 +194,7 @@ void __init gptimer_clocksource_init(u32 freq)
 	/* <freq> is timer clock in Hz */
 //        clocksource_calc_mult_shift(cs, freq, GTIMER_MIN_RANGE);
 
-	clocksource_register_hz(cs,freq);
+	clocksource_register_hz(cs, freq);
 }
 
 static int gtimer_set_periodic(struct clock_event_device *evt)
@@ -203,139 +202,82 @@ static int gtimer_set_periodic(struct clock_event_device *evt)
 	u32 ctrl, period;
 	u64 count;
 
+	period = ticks_per_jiffy;
+	count = gptimer_count_read(NULL);
+	count += period;
 	if (gtimer_base != NULL) {
 		/* Get current register with global enable and prescaler */
-		ctrl = readl( gtimer_base + GTIMER_CTRL );
+		ctrl = readl(gtimer_base + GTIMER_CTRL);
 
 		/* Clear the mode-related bits */
-		ctrl &= ~(	GTIMER_CTRL_CMP_EN |
-				GTIMER_CTRL_IRQ_EN |
-				GTIMER_CTRL_AUTO_EN);
+		ctrl &= ~(GTIMER_CTRL_CMP_EN | GTIMER_CTRL_IRQ_EN | GTIMER_CTRL_AUTO_EN);
+		writel(ctrl, gtimer_base + GTIMER_CTRL);
+		writel(count & 0xffffffffUL, gtimer_base + GTIMER_COMP_LO);
+		writel(count >> 32, gtimer_base + GTIMER_COMP_HI);
+		writel(period, gtimer_base + GTIMER_RELOAD);
+		ctrl |= GTIMER_CTRL_CMP_EN | GTIMER_CTRL_IRQ_EN | GTIMER_CTRL_AUTO_EN;
+		writel(ctrl, gtimer_base + GTIMER_CTRL);
 	} else {
 		ctrl = gtimer_get_cntpctl();
 		/* Set mask bit, i.e., disable interrupt */
 		ctrl |= GTIMER_CTRL_MASK_EN;
+		/* For BCM53573 */
+		gtimer_set_cntpctl(ctrl);
+		/* Set PL1 Physical Comp Value */
+		gtimer_set_cntp_cval(count);
+		/* Clear mask bit, i.e., enable interrupt */
+		ctrl &= ~GTIMER_CTRL_MASK_EN;
+		gtimer_set_cntpctl(ctrl);
 	}
 
-		period = ticks_per_jiffy;
-		count = gptimer_count_read( NULL );
-		count += period;
-
-		if (gtimer_base != NULL) {
-			writel(ctrl, gtimer_base + GTIMER_CTRL);
-			writel(count & 0xffffffffUL, gtimer_base + GTIMER_COMP_LO);
-			writel(count >> 32, gtimer_base + GTIMER_COMP_HI);
-			writel(period, gtimer_base + GTIMER_RELOAD);
-			ctrl |= GTIMER_CTRL_CMP_EN |
-				GTIMER_CTRL_IRQ_EN |
-				GTIMER_CTRL_AUTO_EN;
-		} else {
-			/* For BCM53573 */
-			gtimer_set_cntpctl(ctrl);
-			/* Set PL1 Physical Comp Value */
-			gtimer_set_cntp_cval(count);
-			/* Clear mask bit, i.e., enable interrupt */
-			ctrl &= ~GTIMER_CTRL_MASK_EN;
-		}
-
-	/* Apply the new mode */
-	if (gtimer_base != NULL)
-		writel(ctrl, gtimer_base + GTIMER_CTRL);
-	else
-		gtimer_set_cntpctl(ctrl);
 	return 0;
+}
+
+static void cleartimer(void)
+{
+
+	u32 ctrl, period;
+	u64 count;
+
+	if (gtimer_base != NULL) {
+		/* Get current register with global enable and prescaler */
+		ctrl = readl(gtimer_base + GTIMER_CTRL);
+
+		/* Clear the mode-related bits */
+		ctrl &= ~(GTIMER_CTRL_CMP_EN | GTIMER_CTRL_IRQ_EN | GTIMER_CTRL_AUTO_EN);
+		writel(ctrl, gtimer_base + GTIMER_CTRL);
+	} else {
+		ctrl = gtimer_get_cntpctl();
+		/* Set mask bit, i.e., disable interrupt */
+		ctrl |= GTIMER_CTRL_MASK_EN;
+		gtimer_set_cntpctl(ctrl);
+	}
+
 }
 
 static int gtimer_set_oneshot(struct clock_event_device *evt)
 {
-	u32 ctrl, period;
-	u64 count;
-
-
-	if (gtimer_base != NULL) {
-		/* Get current register with global enable and prescaler */
-		ctrl = readl( gtimer_base + GTIMER_CTRL );
-
-		/* Clear the mode-related bits */
-		ctrl &= ~(	GTIMER_CTRL_CMP_EN |
-				GTIMER_CTRL_IRQ_EN |
-				GTIMER_CTRL_AUTO_EN);
-	} else {
-		ctrl = gtimer_get_cntpctl();
-		/* Set mask bit, i.e., disable interrupt */
-		ctrl |= GTIMER_CTRL_MASK_EN;
-	}
-
-	if (gtimer_base != NULL)
-		writel(ctrl, gtimer_base + GTIMER_CTRL);
-	else
-		gtimer_set_cntpctl(ctrl);
+	cleartimer();
 	return 0;
 }
 
 static int gtimer_shutdown(struct clock_event_device *evt)
 {
-	u32 ctrl, period;
-	u64 count;
-
-	if (gtimer_base != NULL) {
-		/* Get current register with global enable and prescaler */
-		ctrl = readl( gtimer_base + GTIMER_CTRL );
-
-		/* Clear the mode-related bits */
-		ctrl &= ~(	GTIMER_CTRL_CMP_EN |
-				GTIMER_CTRL_IRQ_EN |
-				GTIMER_CTRL_AUTO_EN);
-	} else {
-		ctrl = gtimer_get_cntpctl();
-		/* Set mask bit, i.e., disable interrupt */
-		ctrl |= GTIMER_CTRL_MASK_EN;
-	}
-
-	if (gtimer_base != NULL)
-		writel(ctrl, gtimer_base + GTIMER_CTRL);
-	else
-		gtimer_set_cntpctl(ctrl);
+	cleartimer();
 	return 0;
 }
 
 static int gtimer_resume(struct clock_event_device *evt)
 {
 
-	u32 ctrl, period;
-	u64 count;
-
-	if (gtimer_base != NULL) {
-		/* Get current register with global enable and prescaler */
-		ctrl = readl( gtimer_base + GTIMER_CTRL );
-
-		/* Clear the mode-related bits */
-		ctrl &= ~(	GTIMER_CTRL_CMP_EN |
-				GTIMER_CTRL_IRQ_EN |
-				GTIMER_CTRL_AUTO_EN);
-	} else {
-		ctrl = gtimer_get_cntpctl();
-		/* Set mask bit, i.e., disable interrupt */
-		ctrl |= GTIMER_CTRL_MASK_EN;
-	}
-
-	if (gtimer_base != NULL)
-		writel(ctrl, gtimer_base + GTIMER_CTRL);
-	else
-		gtimer_set_cntpctl(ctrl);
-
+	cleartimer();
 	return 0;
 }
 
-
-static int gtimer_set_next_event(
-	unsigned long next,
-	struct clock_event_device *evt
-	)
+static int gtimer_set_next_event(unsigned long next, struct clock_event_device *evt)
 {
-	u32 ctrl = readl(gtimer_base + GTIMER_CTRL);
-	u64 count = gptimer_count_read( NULL );
-	count += next ;
+	u64 count = gptimer_count_read(NULL);
+	count += next;
 
 	if (gtimer_base != NULL) {
 		ctrl = readl(gtimer_base + GTIMER_CTRL);
@@ -360,23 +302,21 @@ static int gtimer_set_next_event(
 		gtimer_set_cntpctl(ctrl);
 	}
 
-
 	return 0;
 }
 
 static struct clock_event_device gtimer_clockevent = {
-	.name		= "mpcore_gtimer",
-	.shift		= 20,
-	.features       = CLOCK_EVT_FEAT_PERIODIC,
-	.set_next_event	= gtimer_set_next_event,
-	.set_state_shutdown	= gtimer_shutdown,
-	.set_state_periodic	= gtimer_set_periodic,
-	.tick_resume		= gtimer_resume,
-	.set_state_oneshot	= gtimer_set_oneshot,
-	.rating		= 300,
-	.cpumask	= cpu_all_mask,
+	.name = "mpcore_gtimer",
+	.shift = 20,
+	.features = CLOCK_EVT_FEAT_PERIODIC,
+	.set_next_event = gtimer_set_next_event,
+	.set_state_shutdown = gtimer_shutdown,
+	.set_state_periodic = gtimer_set_periodic,
+	.tick_resume = gtimer_resume,
+	.set_state_oneshot = gtimer_set_oneshot,
+	.rating = 300,
+	.cpumask = cpu_all_mask,
 };
-
 
 /*
  * IRQ handler for the global timer
@@ -385,14 +325,14 @@ static struct clock_event_device gtimer_clockevent = {
 irqreturn_t gtimer_interrupt(int irq, void *dev_id)
 {
 	struct clock_event_device *evt = &gtimer_clockevent;
-	
+
 	if (gtimer_base != NULL) {
 		/* clear the interrupt */
 		writel(1, gtimer_base + GTIMER_INT_STAT);
 
 #if defined(BUZZZ_KEVT_LVL) && (BUZZZ_KEVT_LVL >= 2)
 		buzzz_kevt_log1(BUZZZ_KEVT_ID_GTIMER_EVENT, (u32)evt->event_handler);
-#endif	/* BUZZZ_KEVT_LVL */
+#endif				/* BUZZZ_KEVT_LVL */
 	} else {
 		u64 count;
 
@@ -409,14 +349,11 @@ irqreturn_t gtimer_interrupt(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-
 static struct irqaction gtimer_irq = {
-	.name		= "mpcore_gtimer",
-	.flags		= IRQF_TIMER | IRQF_PERCPU,
-	.handler	= gtimer_interrupt,
+	.name = "mpcore_gtimer",
+	.flags = IRQF_TIMER | IRQF_PERCPU,
+	.handler = gtimer_interrupt,
 };
-
-
 
 static void __init gtimer_clockevents_init(u32 freq, unsigned timer_irq)
 {
@@ -424,9 +361,9 @@ static void __init gtimer_clockevents_init(u32 freq, unsigned timer_irq)
 	unsigned int cpu = smp_processor_id();
 
 	evt->irq = timer_irq;
-        ticks_per_jiffy = DIV_ROUND_CLOSEST(freq, HZ);
+	ticks_per_jiffy = DIV_ROUND_CLOSEST(freq, HZ);
 
-        clockevents_calc_mult_shift(evt, freq, GTIMER_MIN_RANGE);
+	clockevents_calc_mult_shift(evt, freq, GTIMER_MIN_RANGE);
 
 	evt->max_delta_ns = clockevent_delta2ns(0xffffffff, evt);
 	evt->min_delta_ns = clockevent_delta2ns(0xf, evt);
@@ -438,30 +375,25 @@ static void __init gtimer_clockevents_init(u32 freq, unsigned timer_irq)
 
 static u64 notrace read_sched_clock(void)
 {
-	return  gptimer_count_read(NULL);
+	return gptimer_count_read(NULL);
 }
 
 /*
  * MPCORE Global Timer initialization function
  */
-void __init mpcore_gtimer_init( 
-	void __iomem *base, 
-	unsigned long freq,
-	unsigned int timer_irq)
+void __init mpcore_gtimer_init(void __iomem * base, unsigned long freq, unsigned int timer_irq)
 {
-	u32 ctrl ;
+	u32 ctrl;
 	u64 count;
 	unsigned int cpu = smp_processor_id();
 
-
 	gtimer_base = base;
 
-	printk(KERN_INFO "MPCORE Global Timer Clock %luHz on IRQ %d\n", 
-		(unsigned long) freq,timer_irq);
+	printk(KERN_INFO "MPCORE Global Timer Clock %luHz on IRQ %d\n", (unsigned long)freq, timer_irq);
 
 	/* Init PMU ALP/ILP period for BCM53573 */
 	if (gtimer_base == NULL) {
-		void * __iomem reg_base = (void *)SOC_PMU_BASE_VA;
+		void *__iomem reg_base = (void *)SOC_PMU_BASE_VA;
 
 		/* Configure ALP period, 0x199 = 16384/40 for using 40KHz crystal */
 		writel(0x10199, reg_base + 0x6dc);
@@ -471,10 +403,9 @@ void __init mpcore_gtimer_init(
 
 	/* Enable the timer */
 	gtimer_enable(freq);
-	
+
 	/* Self-test the timer is running */
 	count = gptimer_count_read(NULL);
-
 
 	sched_clock_register(read_sched_clock, 32, freq);
 
@@ -484,14 +415,13 @@ void __init mpcore_gtimer_init(
 
 	/* Register as time source */
 	gptimer_clocksource_init(freq);
-	
+
 	/* Register as system timer */
 	gtimer_clockevents_init(freq, timer_irq);
 
 	enable_percpu_irq(timer_irq, 0);
 
-
-	count = gptimer_count_read(NULL) - count ;
-	if( count == 0 )
+	count = gptimer_count_read(NULL) - count;
+	if (count == 0)
 		printk(KERN_CRIT "MPCORE Global Timer Dead!!\n");
 }
