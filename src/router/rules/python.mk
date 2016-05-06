@@ -30,6 +30,7 @@ python-install:
 	rm -rf $(INSTALLDIR)/python/usr/include
 	rm -rf $(INSTALLDIR)/python/usr/share
 	rm -f $(INSTALLDIR)/python/usr/lib/python3.4/config-3.4m/*.a
+	-rm -rf $(INSTALLDIR)/libffi/usr/lib/libffi-3.2.1
 #18M...
 	rm -rf $(INSTALLDIR)/python/usr/lib/python3.4/test
 
