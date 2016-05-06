@@ -5,7 +5,6 @@
 #include <asm/byteorder.h>
 
 #if defined(__LITTLE_ENDIAN)
-
 #define BITOP_LE_SWIZZLE	0
 
 static inline unsigned long find_next_zero_bit_le(const void *addr,
