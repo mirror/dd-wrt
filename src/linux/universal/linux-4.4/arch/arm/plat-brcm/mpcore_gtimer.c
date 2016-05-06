@@ -276,6 +276,7 @@ static int gtimer_resume(struct clock_event_device *evt)
 
 static int gtimer_set_next_event(unsigned long next, struct clock_event_device *evt)
 {
+	u32 ctrl;
 	u64 count = gptimer_count_read(NULL);
 	count += next;
 
