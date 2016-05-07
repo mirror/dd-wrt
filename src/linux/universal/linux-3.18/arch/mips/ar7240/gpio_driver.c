@@ -640,6 +640,72 @@ static void ar934x_set_ext_lna_gpio(unsigned chain, int gpio)
 	ath79_gpio_output_select(gpio, sel);
 }
 
+#define	XWDT_AUTOFEED_DURATION		(HZ / 3)
+static int gpio_external_wdt = -1;
+static int wdt_timeout = -1, wdt_autofeed_count = 0;
+
+static void watchdog_fire(unsigned long);
+static struct timer_list watchdog_ticktock = TIMER_INITIALIZER(watchdog_fire, 0, 0);
+static void external_wdt_toggle(void);
+
+static void enable_external_wdt(int gpio)
+{
+	gpio_external_wdt = gpio;
+	
+	external_wdt_toggle();
+	
+	wdt_timeout = -1;
+	mod_timer(&watchdog_ticktock, jiffies + XWDT_AUTOFEED_DURATION);
+}
+
+static void external_wdt_toggle(void)
+{
+	static u32 data;
+	data ++;
+	gpio_set_value(gpio_external_wdt, data & 0x01);
+}
+
+void ath79_external_wdt_disable(void)
+{
+	if(gpio_external_wdt >= 0) {
+		wdt_timeout = -1;
+		mod_timer(&watchdog_ticktock, jiffies + XWDT_AUTOFEED_DURATION);
+	}
+}
+EXPORT_SYMBOL(ath79_external_wdt_disable);
+
+void ath79_external_wdt_trigger(void)
+{
+	if(gpio_external_wdt >= 0) {
+		//printk(KERN_ERR "XWDT TRIGGER\n");
+		wdt_autofeed_count = 0;
+		mod_timer(&watchdog_ticktock, jiffies + XWDT_AUTOFEED_DURATION);
+	}
+}
+EXPORT_SYMBOL(ath79_external_wdt_trigger);
+
+void ath79_external_wdt_set_timeout(int timeout)
+{
+	if(gpio_external_wdt >= 0) {
+		wdt_timeout = timeout;
+		external_wdt_toggle();
+		//printk(KERN_ERR "XWDT SET TIMEOUT: %d\n", timeout);
+	}
+}
+EXPORT_SYMBOL(ath79_external_wdt_set_timeout);
+
+static void watchdog_fire(unsigned long data)
+{
+	if(wdt_timeout > 0) 
+		wdt_autofeed_count++;
+	
+	if((wdt_timeout < 0) || (wdt_autofeed_count < wdt_timeout)) {
+		//printk(KERN_ERR "XWDT AUTOFEED: %d\n", wdt_autofeed_count);
+		external_wdt_toggle();
+		mod_timer(&watchdog_ticktock, jiffies + XWDT_AUTOFEED_DURATION);
+	}
+}
+
 
 void serial_print(char *fmt, ...);
 
@@ -744,5 +810,15 @@ void __init ar71xx_gpio_init(void)
 	    ar934x_set_ext_lna_gpio(1,19);
 	}
 #endif
+//WR650AC
+#ifdef CONFIG_WR650AC
+
+#define	CF_WR650AC_GPIO_XWDT_TRIGGER	17
+	printk(KERN_INFO "setup watchdog WR650AC\n");
+	ath79_gpio_output_select(CF_WR650AC_GPIO_XWDT_TRIGGER, 0);	
+	enable_external_wdt(CF_WR650AC_GPIO_XWDT_TRIGGER);
+#endif
+
+
 
 }
