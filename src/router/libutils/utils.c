@@ -2251,6 +2251,11 @@ int internal_getRouterBrand()
 	nvram_default_get("ath0_rxantenna", "3");
 	nvram_default_get("ath0_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
+#elif HAVE_WR650AC
+	setRouter("Comfast WR650AC");
+	nvram_default_get("ath0_rxantenna", "7");
+	nvram_default_get("ath0_txantenna", "7");
+	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_DIR869
 	setRouter("Dlink DIR869");
 	nvram_default_get("ath0_rxantenna", "7");
@@ -5884,6 +5889,13 @@ int led_control(int type, int act)
 		power_gpio = 0x116;
 		usb_gpio = 0x10b;
 		ses_gpio = 0x10f;
+		break;
+#elif HAVE_WR650AC
+	case ROUTER_BOARD_WHRHPGN:
+		ses_gpio = 0x114;
+		sec0_gpio = 0x114;
+		connected_gpio = 0x104;
+		diag_gpio = 0x004;
 		break;
 #elif HAVE_DIR869
 	case ROUTER_BOARD_WHRHPGN:
