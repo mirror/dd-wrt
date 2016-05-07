@@ -228,6 +228,11 @@ int getbuttonstate()
 {
 	return !get_gpio(17);
 }
+#elif defined(HAVE_WR650AC)
+int getbuttonstate()
+{
+	return !get_gpio(19);
+}
 #elif defined(HAVE_DIR869)
 int getbuttonstate()
 {
