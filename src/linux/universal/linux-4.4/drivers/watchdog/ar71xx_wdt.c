@@ -47,6 +47,13 @@
 #define DRV_DESC	"Atheros AR71xx hardware watchdog driver"
 #define DRV_VERSION	"0.1.0"
 
+#ifdef CONFIG_WR650AC
+void ath79_external_wdt_trigger(void);
+void ath79_external_wdt_set_timeout(int timeout);
+void ath79_external_wdt_disable(void);
+#endif
+
+
 #define WDT_TIMEOUT	15	/* seconds */
 
 static int nowayout = WATCHDOG_NOWAYOUT;
@@ -72,6 +79,9 @@ static inline void ar71xx_wdt_keepalive(void)
 	ar71xx_reset_wr(AR71XX_RESET_REG_WDOG, wdt_clk_freq * wdt_timeout);
 	/* flush write */
 	ar71xx_reset_rr(AR71XX_RESET_REG_WDOG);
+#ifdef CONFIG_WR650AC
+	ath79_external_wdt_trigger();
+#endif
 }
 
 static inline void ar71xx_wdt_enable(void)
@@ -90,6 +100,9 @@ static inline void ar71xx_wdt_disable(void)
 	ar71xx_reset_wr(AR71XX_RESET_REG_WDOG_CTRL, WDOG_CTRL_ACTION_NONE);
 	/* flush write */
 	ar71xx_reset_rr(AR71XX_RESET_REG_WDOG);
+#ifdef CONFIG_WR650AC
+	ath79_external_wdt_disable();
+#endif
 }
 
 static int ar71xx_wdt_set_timeout(int val)
@@ -102,6 +115,9 @@ static int ar71xx_wdt_set_timeout(int val)
 	else
 		wdt_timeout = val;
 	ar71xx_wdt_keepalive();
+#ifdef CONFIG_WR650AC
+	ath79_external_wdt_set_timeout(wdt_timeout);
+#endif
 
 	printk(KERN_DEBUG DRV_NAME ": timeout=%d secs\n", wdt_timeout);
 
