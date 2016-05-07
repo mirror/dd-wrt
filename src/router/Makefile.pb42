@@ -346,8 +346,10 @@ endif
 	echo "# CONFIG_AR7242_RGMII_PHY is not set" >> $(LINUXDIR)/.config
 	echo "CONFIG_AR7242_S16_PHY=y" >> $(LINUXDIR)/.config
 	echo "CONFIG_WR710=y" >> $(LINUXDIR)/.config
+	echo "CONFIG_GL150=y" >> $(LINUXDIR)/.config
 else
 	echo "# CONFIG_WR710 is not set" >> $(LINUXDIR)/.config
+	echo "# CONFIG_GL150 is not set" >> $(LINUXDIR)/.config
 endif
 ifeq ($(CONFIG_ALFANX),y)
 	echo CONFIG_ALFANX=y >> $(LINUXDIR)/.config
@@ -359,10 +361,20 @@ ifeq ($(CONFIG_LOCOXW),y)
 else
 	echo "# CONFIG_XWLOCO is not set" >> $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_UAPAC),y)
+	echo CONFIG_UAPAC=y >> $(LINUXDIR)/.config
+else
+	echo "# CONFIG_UAPAC is not set" >> $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_DIR859),y)
 	echo CONFIG_DIR859=y >> $(LINUXDIR)/.config
 else
 	echo "# CONFIG_DIR859 is not set" >> $(LINUXDIR)/.config
+endif
+ifeq ($(CONFIG_WR650AC),y)
+	echo CONFIG_WR650AC=y >> $(LINUXDIR)/.config
+else
+	echo "# CONFIG_WR650AC is not set" >> $(LINUXDIR)/.config
 endif
 ifeq ($(CONFIG_WZR450HP2),y)
 	echo CONFIG_WZR450HP2=y >> $(LINUXDIR)/.config
@@ -1036,6 +1048,11 @@ ifeq ($(CONFIG_AP83),y)
 	dd if=$(ARCH)-uclibc/root.uimage of=$(ARCH)-uclibc/aligned.uimage bs=4096 conv=sync
 	cat $(ARCH)-uclibc/root.fs  >> $(ARCH)-uclibc/aligned.uimage
 	./tools/trx_n  -m 40000000 -o $(ARCH)-uclibc/ap83-firmware.bin $(ARCH)-uclibc/aligned.uimage
+endif
+ifeq ($(CONFIG_GL150),y)
+	dd if=$(ARCH)-uclibc/root.uimage of=$(ARCH)-uclibc/aligned.uimage bs=4096 conv=sync
+	cat $(ARCH)-uclibc/root.fs  >> $(ARCH)-uclibc/aligned.uimage
+	./tools/trx_n  -m 40000000 -o $(ARCH)-uclibc/ap96-firmware.bin $(ARCH)-uclibc/aligned.uimage
 endif
 ifeq ($(CONFIG_AP96),y)
 ifeq ($(CONFIG_DIR825C1),y)
@@ -1902,6 +1919,18 @@ endif
 	./tools/seama/seama -d $(ARCH)-uclibc/web-dir859.img
 	dd if=$(ARCH)-uclibc/web-dir859.img of=$(ARCH)-uclibc/webflash-dir859.img skip=52 iflag=skip_bytes 
 	./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/webflash-dir859.trx $(ARCH)-uclibc/webflash-dir859.img
+
+
+	./tools/seama/packimgs -b 64 -o $(ARCH)-uclibc/raw-dir869.img -i $(ARCH)-uclibc/vmlinux.seama -i $(ARCH)-uclibc/root.fs  
+	./tools/seama/seama -i $(ARCH)-uclibc/raw-dir869.img -m dev=/dev/mtdblock/1 -m type=firmware 
+	./tools/seama/seama -s $(ARCH)-uclibc/web-dir869.img -i $(ARCH)-uclibc/raw-dir869.img.seama -m signature=wrgac54_dlink.2015_dir869
+	./tools/seama/seama -d $(ARCH)-uclibc/web-dir869.img
+	dd if=$(ARCH)-uclibc/web-dir869.img of=$(ARCH)-uclibc/webflash-dir869.img skip=48 iflag=skip_bytes 
+	./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/webflash-dir869.trx $(ARCH)-uclibc/webflash-dir869.img
+
+
+
+
 ifeq ($(CONFIG_DAP3662),y)
 	cd tools/alpha_pack && ./packimgs -v -o $(TOP)/$(ARCH)-uclibc/raw.img -i $(TOP)/$(ARCH)-uclibc/vmlinux.lzma -i $(TOP)/$(ARCH)-uclibc/root.fs
 	cd tools/alpha_pack && ./v2image -v -i $(TOP)/$(ARCH)-uclibc/raw.img -o $(TOP)/$(ARCH)-uclibc/web-dap3662.img -d /dev/mtdblock/1 -s wapac11_dkbs_dap3662 -c -b
