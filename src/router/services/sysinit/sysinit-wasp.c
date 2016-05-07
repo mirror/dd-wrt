@@ -150,6 +150,11 @@ void start_sysinit(void)
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2 3 4 5");
 	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 1");
+#elif defined (HAVE_WR650AC)
+	eval("swconfig", "dev", "eth0", "set", "reset", "1");
+	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
+	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 2 3 4 5");
+	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "1 6");
 #elif defined (HAVE_JWAP606)
 	// nothing
 #elif defined (HAVE_DAP3662)
@@ -223,6 +228,7 @@ void start_sysinit(void)
 	}
 #endif
 
+#ifndef HAVE_WR650AC
 #ifndef HAVE_JWAP606
 	eval("ifconfig", "eth0", "up");
 #if defined(HAVE_MMS344) && !defined(HAVE_DIR862)
@@ -237,6 +243,7 @@ void start_sysinit(void)
 	eval("vconfig", "add", "eth0", "2");
 #endif
 #endif
+#endif
 	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
 		char eabuf[32];
 
@@ -246,7 +253,20 @@ void start_sysinit(void)
 		nvram_set("et0macaddr_safe", ether_etoa((char *)ifr.ifr_hwaddr.sa_data, eabuf));
 		close(s);
 	}
-#if defined(HAVE_ARCHERC7) || defined(HAVE_DIR859) || defined(HAVE_DAP3662)
+#if defined(HAVE_WR650AC)
+	FILE *fp = fopen("/dev/mtdblock/0", "rb");
+	FILE *out = fopen("/tmp/archerc7-board.bin", "wb");
+	if (fp) {
+		fseek(fp, 0x20000 + 0x5000, SEEK_SET);
+		int i;
+		for (i = 0; i < 2116; i++)
+			putc(getc(fp), out);
+		fclose(fp);
+		fclose(out);
+		eval("rm", "-f", "/tmp/ath10k-board.bin");
+		eval("ln", "-s", "/tmp/archerc7-board.bin", "/tmp/ath10k-board.bin");
+	}
+#elif defined(HAVE_ARCHERC7) || defined(HAVE_DIR859) || defined(HAVE_DAP3662)
 	FILE *fp = fopen("/dev/mtdblock/5", "rb");
 	FILE *out = fopen("/tmp/archerc7-board.bin", "wb");
 	if (fp) {
@@ -319,6 +339,9 @@ void start_sysinit(void)
 #endif
 #elif  HAVE_WZR450HP2
 	setWirelessLed(0, 18);
+#elif  HAVE_WR650AC
+	setWirelessLed(0, 13);
+	setWirelessLed(1, 2);
 #elif  HAVE_DIR869
 	setdlinkcountry();
 #elif  HAVE_DIR859
