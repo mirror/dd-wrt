@@ -639,7 +639,7 @@ static void ar934x_set_ext_lna_gpio(unsigned chain, int gpio)
 
 	ath79_gpio_output_select(gpio, sel);
 }
-
+#ifdef CONFIG_COMFAST_WATCHDOG
 #define	XWDT_AUTOFEED_DURATION		(HZ / 3)
 static int gpio_external_wdt = -1;
 static int wdt_timeout = -1, wdt_autofeed_count = 0;
@@ -706,7 +706,7 @@ static void watchdog_fire(unsigned long data)
 	}
 }
 
-
+#endif
 void serial_print(char *fmt, ...);
 
 void __init ar71xx_gpio_init(void)
@@ -811,12 +811,18 @@ void __init ar71xx_gpio_init(void)
 	}
 #endif
 //WR650AC
-#ifdef CONFIG_WR650AC
+#ifdef CONFIG_COMFAST_WATCHDOG
 
-#define	CF_WR650AC_GPIO_XWDT_TRIGGER	17
+#ifdef CONFIG_WR650AC
+#define	XWDT_TRIGGER	17
 	printk(KERN_INFO "setup watchdog WR650AC\n");
-	ath79_gpio_output_select(CF_WR650AC_GPIO_XWDT_TRIGGER, 0);	
-	enable_external_wdt(CF_WR650AC_GPIO_XWDT_TRIGGER);
+#endif
+#ifdef CONFIG_E355AC
+#define	XWDT_TRIGGER	13
+	printk(KERN_INFO "setup watchdog E355AC\n");
+#endif
+	ath79_gpio_output_select(XWDT_TRIGGER, 0);	
+	enable_external_wdt(XWDT_TRIGGER);
 #endif
 
 

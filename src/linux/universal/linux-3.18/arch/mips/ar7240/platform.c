@@ -235,13 +235,39 @@ static void qca956x_usb_setup(void)
 			   &ath79_ehci_pdata_v2, sizeof(ath79_ehci_pdata_v2));
 }
 
+static void __init qca953x_usb_setup(void)
+{
+	u32 bootstrap;
+
+	bootstrap = ar71xx_reset_rr(QCA953X_RESET_REG_BOOTSTRAP);
+
+	ar71xx_device_stop(QCA953X_RESET_USBSUS_OVERRIDE);
+	udelay(1000);
+
+	ar71xx_device_start(QCA953X_RESET_USB_PHY);
+	udelay(1000);
+
+	ar71xx_device_start(QCA953X_RESET_USB_PHY_ANALOG);
+	udelay(1000);
+
+	ar71xx_device_start(QCA953X_RESET_USB_HOST);
+	udelay(1000);
+
+	ath79_usb_register("ehci-platform", -1,
+			   QCA953X_EHCI_BASE, QCA953X_EHCI_SIZE,
+			   AR934X_IP3_IRQ(0),
+			   &ath79_ehci_pdata_v2, sizeof(ath79_ehci_pdata_v2));
+}
+
 
 
 
 static void qca_usbregister(void) {
 
 
-	if (is_qca956x()) {
+	if (is_qca953x())
+		qca953x_usb_setup();
+	else if (is_qca956x()) {
 		qca956x_usb_setup();
 	} else {
 	    
@@ -915,6 +941,10 @@ int __init ar7240_platform_init(void)
 	mac = (u8 *)KSEG1ADDR(0x1f020000);
 	ee = (u8 *)KSEG1ADDR(0x1f021000);
 #endif
+#ifdef CONFIG_E355AC
+	mac = (u8 *)KSEG1ADDR(0x1f010000);
+	ee = (u8 *)KSEG1ADDR(0x1f011000);
+#endif
 
 #ifdef CONFIG_WASP_SUPPORT
 #define DB120_MAC0_OFFSET	0
@@ -936,6 +966,10 @@ int __init ar7240_platform_init(void)
 	ath79_init_mac(mac1, mac, 0);
     #elif CONFIG_WR650AC
 	mac = (u8 *)KSEG1ADDR(0x1f020000);
+	ath79_init_mac(mac0, mac, -1);
+	ath79_init_mac(mac1, mac, 0);	
+    #elif CONFIG_E355AC
+	mac = (u8 *)KSEG1ADDR(0x1f010000);
 	ath79_init_mac(mac0, mac, -1);
 	ath79_init_mac(mac1, mac, 0);	
     #elif CONFIG_UAPAC
@@ -1049,6 +1083,7 @@ int __init ar7240_platform_init(void)
 	/* flush write */
 	__raw_readl(base + AR934X_GMAC_REG_ETH_CFG);
 	iounmap(base);
+    #elif CONFIG_E355AC
     #elif CONFIG_WR650AC	
     	ap136_gmac_setup(QCA955X_ETH_CFG_RGMII_EN);
     #elif CONFIG_UAPAC
@@ -1140,6 +1175,21 @@ int __init ar7240_platform_init(void)
 	/* GMAC1 is connected to the internal switch */
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
 	ar71xx_add_device_eth(1);
+    #elif CONFIG_E355AC
+	ath79_setup_ar933x_phy4_switch(false, false);
+
+	ar71xx_add_device_mdio(0, 0x0);	
+	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
+	ar71xx_eth1_data.duplex = DUPLEX_FULL;
+	// wan
+	ar71xx_add_device_eth(1);
+
+	// lan
+	ar71xx_switch_data.phy4_mii_en = 1;
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
+	ar71xx_eth0_data.duplex = DUPLEX_FULL;
+	ar71xx_eth0_data.speed = SPEED_100;
+	ar71xx_add_device_eth(0);	
     #elif CONFIG_WR650AC
 #define CF_WR650AC_LAN_PHYMASK              BIT(0)
 #define CF_WR650AC_WAN_PHYMASK              BIT(5)
@@ -1438,7 +1488,7 @@ int __init ar7240_platform_init(void)
 	if (is_ar933x()) {
 		ar933x_usb_setup();
 	}
-	if (is_qca955x() || is_qca956x()) {
+	if (is_qca955x() || is_qca956x() || is_qca953x()) {
 		qca_usbregister();
 	}
 
