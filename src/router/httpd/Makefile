@@ -1078,6 +1078,12 @@ endif
 ifeq ($(CONFIG_WASP),y)
 CFLAGS += -DHAVE_WASP
 endif
+ifeq ($(CONFIG_WR650AC),y)
+CFLAGS += -DHAVE_WR650AC
+endif
+ifeq ($(CONFIG_E355AC),y)
+CFLAGS += -DHAVE_E355AC
+endif
 ifeq ($(CONFIG_DANUBE),y)
 CFLAGS += -DHAVE_DANUBE
 endif
