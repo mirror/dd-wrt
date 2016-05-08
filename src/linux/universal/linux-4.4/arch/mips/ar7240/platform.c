@@ -964,12 +964,12 @@ int __init ar7240_platform_init(void)
 	mac = (u8 *)KSEG1ADDR(0x1fff0000);
 	ath79_init_mac(mac0, mac, -1);
 	ath79_init_mac(mac1, mac, 0);
-    #elif CONFIG_WR650AC
-	mac = (u8 *)KSEG1ADDR(0x1f020000);
-	ath79_init_mac(mac0, mac, -1);
-	ath79_init_mac(mac1, mac, 0);	
     #elif CONFIG_E355AC
 	mac = (u8 *)KSEG1ADDR(0x1f010000);
+	ath79_init_mac(mac0, mac, -1);
+	ath79_init_mac(mac1, mac, 0);	
+    #elif CONFIG_WR650AC
+	mac = (u8 *)KSEG1ADDR(0x1f020000);
 	ath79_init_mac(mac0, mac, -1);
 	ath79_init_mac(mac1, mac, 0);	
     #elif CONFIG_UAPAC
@@ -1178,6 +1178,8 @@ int __init ar7240_platform_init(void)
     #elif CONFIG_E355AC
 	ath79_setup_ar933x_phy4_switch(false, false);
 
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac0, 1);
+	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac1, 0);
 	ar71xx_add_device_mdio(0, 0x0);	
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
 	ar71xx_eth1_data.duplex = DUPLEX_FULL;
