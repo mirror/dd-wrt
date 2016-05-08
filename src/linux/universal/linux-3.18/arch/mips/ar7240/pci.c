@@ -54,6 +54,15 @@ static const struct ar71xx_pci_irq ar724x_pci_irq_map[] __initconst = {
 	}
 };
 
+static const struct ar71xx_pci_irq qca953x_pci_irq_map[] __initconst = {
+	{
+		.bus	= 0,
+		.slot	= 0,
+		.pin	= 1,
+		.irq	= AR71XX_PCI_IRQ(0),	
+	},
+};
+
 static const struct ar71xx_pci_irq qca955x_pci_irq_map[] __initconst = {
 	{
 		.bus	= 0,
@@ -82,6 +91,9 @@ int __init pcibios_map_irq(const struct pci_dev *dev, uint8_t slot, uint8_t pin)
 			   soc_is_ar9344()) {
 			ar71xx_pci_irq_map = ar724x_pci_irq_map;
 			ar71xx_pci_nr_irqs = ARRAY_SIZE(ar724x_pci_irq_map);
+		} else if (soc_is_qca953x()) {
+			ar71xx_pci_irq_map = qca953x_pci_irq_map;
+			ar71xx_pci_nr_irqs = ARRAY_SIZE(qca953x_pci_irq_map);
 		} else if (soc_is_qca955x()) {
 			ar71xx_pci_irq_map = qca955x_pci_irq_map;
 			ar71xx_pci_nr_irqs = ARRAY_SIZE(qca955x_pci_irq_map);
@@ -204,6 +216,16 @@ int __init ar71xx_pci_init(void)
 		} else
 			printk("no pci device found\n");
 		return 0;
+		break;
+	case AR71XX_SOC_QCA9533:
+		pdev = ar71xx_register_pci_ar724x(0,
+						 QCA953X_PCI_CFG_BASE0,
+						 QCA953X_PCI_CTRL_BASE0,
+						 QCA953X_PCI_CRP_BASE0,
+						 QCA953X_PCI_MEM_BASE0,
+						 QCA953X_PCI_MEM_SIZE,
+						 0,
+						 AR934X_IP2_IRQ(0));
 		break;
 	case AR71XX_SOC_QCA9556:
 	case AR71XX_SOC_QCA9558:
