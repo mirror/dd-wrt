@@ -52,6 +52,7 @@
 #include <linux/sockios.h>
 #include <linux/mii.h>
 #include "devices/wireless.c"
+#include "devices/ethtools.c"
 
 #ifdef HAVE_DIR869
 struct regiondef {
@@ -150,6 +151,7 @@ void start_sysinit(void)
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2 3 4 5");
 	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 1");
+#elif defined (HAVE_E355AC)
 #elif defined (HAVE_WR650AC)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
@@ -228,7 +230,7 @@ void start_sysinit(void)
 	}
 #endif
 
-#ifndef HAVE_WR650AC
+#if !defined(HAVE_WR650AC) && !defined(HAVE_E355AC)
 #ifndef HAVE_JWAP606
 	eval("ifconfig", "eth0", "up");
 #if defined(HAVE_MMS344) && !defined(HAVE_DIR862)
@@ -253,7 +255,20 @@ void start_sysinit(void)
 		nvram_set("et0macaddr_safe", ether_etoa((char *)ifr.ifr_hwaddr.sa_data, eabuf));
 		close(s);
 	}
-#if defined(HAVE_WR650AC)
+#if defined(HAVE_E355AC)
+	FILE *fp = fopen("/dev/mtdblock/0", "rb");
+	FILE *out = fopen("/tmp/archerc7-board.bin", "wb");
+	if (fp) {
+		fseek(fp, 0x10000 + 0x5000, SEEK_SET);
+		int i;
+		for (i = 0; i < 2116; i++)
+			putc(getc(fp), out);
+		fclose(fp);
+		fclose(out);
+		eval("rm", "-f", "/tmp/ath10k-board.bin");
+		eval("ln", "-s", "/tmp/archerc7-board.bin", "/tmp/ath10k-board.bin");
+	}
+#elif defined(HAVE_WR650AC)
 	FILE *fp = fopen("/dev/mtdblock/0", "rb");
 	FILE *out = fopen("/tmp/archerc7-board.bin", "wb");
 	if (fp) {
@@ -339,6 +354,9 @@ void start_sysinit(void)
 #endif
 #elif  HAVE_WZR450HP2
 	setWirelessLed(0, 18);
+#elif  HAVE_E355AC
+	setWirelessLed(0, 0);
+	setWirelessLed(1, 3);
 #elif  HAVE_WR650AC
 	setWirelessLed(0, 13);
 	setWirelessLed(1, 2);
