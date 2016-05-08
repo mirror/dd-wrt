@@ -231,7 +231,7 @@ static void __init ar71xx_misc_irq_init(void)
 	setup_irq(AR71XX_CPU_IRQ_MISC, &ar71xx_misc_irqaction);
 }
 
-static void ar934x_ip2_irq_dispatch(unsigned int irq, struct irq_desc *desc)
+static void ar934x_ip2_irq_dispatch(struct irq_desc *desc)
 {
 	u32 status;
 
@@ -253,7 +253,7 @@ static void ar934x_ip2_irq_dispatch(unsigned int irq, struct irq_desc *desc)
 }
 
 
-static void qca955x_ip2_irq_dispatch(unsigned int irq, struct irq_desc *desc)
+static void qca955x_ip2_irq_dispatch(struct irq_desc *desc)
 {
 	u32 status;
 
@@ -281,7 +281,7 @@ enable:
 	enable_irq(irq);
 }
 
-static void qca955x_ip3_irq_dispatch(unsigned int irq, struct irq_desc *desc)
+static void qca955x_ip3_irq_dispatch(struct irq_desc *desc)
 {
 	u32 status;
 
@@ -365,7 +365,7 @@ static void qca955x_irq_init(void)
 }
 
 
-static void qca956x_ip2_irq_dispatch(unsigned int irq, struct irq_desc *desc)
+static void qca956x_ip2_irq_dispatch(struct irq_desc *desc)
 {
 	u32 status;
 
@@ -393,7 +393,7 @@ enable:
 	enable_irq(irq);
 }
 
-static void qca956x_ip3_irq_dispatch(unsigned int irq, struct irq_desc *desc)
+static void qca956x_ip3_irq_dispatch(struct irq_desc *desc)
 {
 	u32 status;
 
@@ -456,6 +456,34 @@ static void qca956x_irq_init(void)
 	/* QCA956x timer init workaround has to be applied right before setting
 	 * up the clock. Else, there will be no jiffies */
 	late_time_init = &qca956x_enable_timer_cb;
+}
+
+static void qca953x_ip2_irq_dispatch(struct irq_desc *desc)
+{
+	u32 status;
+
+	status = ar71xx_reset_rr(QCA953X_RESET_REG_PCIE_WMAC_INT_STATUS);
+
+	if (status & QCA953X_PCIE_WMAC_INT_PCIE_ALL) {
+		ar71xx_ddr_flush(QCA953X_DDR_REG_FLUSH_PCIE);
+		generic_handle_irq(AR934X_IP2_IRQ(0));
+	} else if (status & QCA953X_PCIE_WMAC_INT_WMAC_ALL) {
+		ar71xx_ddr_flush(QCA953X_DDR_REG_FLUSH_WMAC);
+		generic_handle_irq(AR934X_IP2_IRQ(1));
+	} else {
+		spurious_interrupt();
+	}
+}
+
+static void qca953x_irq_init(void)
+{
+	int i;
+
+	for (i = AR934X_IP2_IRQ_BASE;
+	     i < AR934X_IP2_IRQ_BASE + AR934X_IP2_IRQ_COUNT; i++)
+		irq_set_chip_and_handler(i, &dummy_irq_chip, handle_level_irq);
+
+	irq_set_chained_handler(AR71XX_CPU_IRQ_IP2, qca953x_ip2_irq_dispatch);
 }
 
 
@@ -651,6 +679,8 @@ void __init arch_init_irq(void)
 
 	if (ar71xx_soc == AR71XX_SOC_AR9341 || ar71xx_soc == AR71XX_SOC_AR9342 || ar71xx_soc == AR71XX_SOC_AR9344)
 		ar934x_ip2_irq_init();
+	else if (ar71xx_soc == AR71XX_SOC_QCA9533)
+		qca953x_irq_init();
 	else if (ar71xx_soc == AR71XX_SOC_QCA9556 || ar71xx_soc == AR71XX_SOC_QCA9558)
 		qca955x_irq_init();
 	else if (ar71xx_soc == AR71XX_SOC_QCA9563 || ar71xx_soc == AR71XX_SOC_TP9343)

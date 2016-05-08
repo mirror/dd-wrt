@@ -233,6 +233,9 @@ config BCH_CONST_T
 	default 4
 endif
 
+config COMFAST_WATCHDOG
+	bool
+
 config MTD_SPIFLASH
 	tristate "Atheros AR2315/6/7 SPI Flash support"
 	depends on MTD && ATHEROS
@@ -290,6 +293,11 @@ config DIR859
 config WR650AC
 	bool "support for WR650AC"
 	depends on DIR859
+	select COMFAST_WATCHDOG
+config E355AC
+	bool "support for E355AC"
+	depends on DIR859
+	select COMFAST_WATCHDOG
 config WDR4300
 	bool "support for WDR4300"
 	depends on DIR825C1
