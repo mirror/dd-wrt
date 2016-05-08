@@ -2251,6 +2251,11 @@ int internal_getRouterBrand()
 	nvram_default_get("ath0_rxantenna", "3");
 	nvram_default_get("ath0_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
+#elif HAVE_E355AC
+	setRouter("Comfast E355AC");
+	nvram_default_get("ath0_rxantenna", "3");
+	nvram_default_get("ath0_txantenna", "3");
+	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WR650AC
 	setRouter("Comfast WR650AC");
 	nvram_default_get("ath0_rxantenna", "7");
@@ -5889,6 +5894,10 @@ int led_control(int type, int act)
 		power_gpio = 0x116;
 		usb_gpio = 0x10b;
 		ses_gpio = 0x10f;
+		break;
+#elif HAVE_E355AC
+	case ROUTER_BOARD_WHRHPGN:
+		diag_gpio = 0x002;
 		break;
 #elif HAVE_WR650AC
 	case ROUTER_BOARD_WHRHPGN:
