@@ -376,6 +376,11 @@ ifeq ($(CONFIG_WR650AC),y)
 else
 	echo "# CONFIG_WR650AC is not set" >> $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_E355AC),y)
+	echo CONFIG_E355AC=y >> $(LINUXDIR)/.config
+else
+	echo "# CONFIG_E355AC is not set" >> $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_WZR450HP2),y)
 	echo CONFIG_WZR450HP2=y >> $(LINUXDIR)/.config
 else
@@ -1830,6 +1835,11 @@ ifeq ($(CONFIG_WR841V9),y)
 
 	-./tools/tplink/mktplinkfw -B TL-WR841NDv11 -u -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR841NDv11-firmwareUS.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR841NDv11-firmwareUS.bin mips-uclibc/tplink-WR841NDv11-firmwareUS.bin
+
+endif
+ifeq ($(CONFIG_WR941V6),y)
+	-./tools/tplink/mktplinkfw -B TL-WR941NDv6 -u -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR941NDv6-firmwareUS.bin
+	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR941NDv6-firmwareUS.bin mips-uclibc/tplink-WR941NDv6-firmwareUS.bin
 endif
 ifeq ($(CONFIG_WR842V2),y)
 	-./tools/tplink/mktplinkfw -B TL-WR842NDv2 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR842NDv2-firmware.bin
