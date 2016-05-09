@@ -32,69 +32,49 @@
 #include <rc.h>
 #include <iptables.h>
 
-//iptc_handle_t handle = NULL;
+// iptc_handle_t handle = NULL;
 /*
  * Modify from iptables-standalone.c
  */
 /*
-int
-iptables_main (int argc, char *argv[])
-{
-  int ret = 0;
-         char *table = "filter";
-        iptc_handle_t handle = NULL;
-
-        program_name = "iptables";
-        program_version = NETFILTER_VERSION;
-	
-        ret = do_command(argc, argv, &table, &handle);
-
-        if (ret)
-                ret = iptc_commit(&handle);
-
-        if (!ret)
-                fprintf(stderr, "iptables: %s\n", iptc_strerror(errno));
-
-  return !ret;
-}
-*/
+ * int iptables_main (int argc, char *argv[]) { int ret = 0; char *table =
+ * "filter"; iptc_handle_t handle = NULL;
+ * 
+ * program_name = "iptables"; program_version = NETFILTER_VERSION;
+ * 
+ * ret = do_command(argc, argv, &table, &handle);
+ * 
+ * if (ret) ret = iptc_commit(&handle);
+ * 
+ * if (!ret) fprintf(stderr, "iptables: %s\n", iptc_strerror(errno));
+ * 
+ * return !ret; } 
+ */
 int set_rule(char *_argv[], int flag)
 {
 	int ret = 0;
-/*	int _argc = 0;
-        char *table = "filter";
-        iptc_handle_t handle = NULL;
-#ifdef DEBUG
-	char buf[120];
-	strcpy(buf,"");
-#endif
 
-        program_name = "iptables";
-        program_version = NETFILTER_VERSION;
-
-        do{
-#ifdef DEBUG
-		sprintf(buf+strlen(buf),"%s ",_argv[_argc]);
-#endif
-		_argc++;
-	 }while(_argv[_argc] != NULL);
-
-#ifdef DEBUG
-	printf("rule[%d]=[ %s]%s\n",rule_count,buf,(flag == 0 ? "(no)" : ""));
-	rule_count ++;
-#endif
-
-	if(!flag) return ret;
-
-        ret = do_command(_argc, _argv, &table, &handle);
-
-        if (ret)
-                ret = iptc_commit(&handle);
-
-        if (!ret)
-                fprintf(stderr, "iptables: %s\n", iptc_strerror(errno));
-
-*/ return !ret;
+	/*
+	 * int _argc = 0; char *table = "filter"; iptc_handle_t handle = NULL;
+	 * #ifdef DEBUG char buf[120]; strcpy(buf,""); #endif
+	 * 
+	 * program_name = "iptables"; program_version = NETFILTER_VERSION;
+	 * 
+	 * do{ #ifdef DEBUG sprintf(buf+strlen(buf),"%s ",_argv[_argc]); #endif
+	 * _argc++; }while(_argv[_argc] != NULL);
+	 * 
+	 * #ifdef DEBUG printf("rule[%d]=[ %s]%s\n",rule_count,buf,(flag == 0 ?
+	 * "(no)" : "")); rule_count ++; #endif
+	 * 
+	 * if(!flag) return ret;
+	 * 
+	 * ret = do_command(_argc, _argv, &table, &handle);
+	 * 
+	 * if (ret) ret = iptc_commit(&handle);
+	 * 
+	 * if (!ret) fprintf(stderr, "iptables: %s\n", iptc_strerror(errno));
+	 * 
+	 */ return !ret;
 }
 
 int sameaddr(unsigned char *sin, unsigned char *ein)
@@ -167,7 +147,7 @@ int count_bits(unsigned char *sin, unsigned char *ein)
 	return len;
 }
 
-void subrange(unsigned char *sin, unsigned char *ein, char *range_buf)
+static void subrange(unsigned char *sin, unsigned char *ein, char *range_buf)
 // recursive function to divide ip range
 {
 	unsigned char nets[4], nete[4];
@@ -230,7 +210,7 @@ char *range(char *start, char *end, char *range_buf)
 
 	cprintf("start=[%s] end=[%s]\n", start, end);
 
-	strcpy(range_buf, "");
+	memset(range_buf, 0, 1024);
 
 	retcount = sscanf(start, "%u.%u.%u.%u", &startip[0], &startip[1], &startip[2], &startip[3]);
 
@@ -241,7 +221,8 @@ char *range(char *start, char *end, char *range_buf)
 	}
 
 	for (i = 0; i < 4; i++) {
-		if ((startip[i] > 255) || (endip[i] > 255) || (startip[i] > endip[i])) {
+		if ((startip[i] > 255) || (endip[i] > 255)
+		    || (startip[i] > endip[i])) {
 			printf("Out of range!\n");
 		}
 		startipc[i] = (unsigned char)startip[i];
@@ -252,45 +233,40 @@ char *range(char *start, char *end, char *range_buf)
 
 	cprintf("range_buf=[%s]\n", range_buf);
 
-	return (char *)&range_buf;
+	return (char *)range_buf;
 
 }
 
 #ifdef DEBUG_IPTABLE
 int range_main(int argc, char *argv[])
 {
-/*	char *sub;
-	char var[500], *next;
-
-	sub = range("192.168.1.1","192.168.1.100");
-	dprintf("range_buf=[%s]\n",sub);
-
-		foreach(var, sub, next){
-			dprintf("[%s]\n",var);
-			char *_argv[]={"iptables","-I","FORWARD","-o","eth1","-p","tcp","-m","tcp","--dport","500","-s",var,"-j","DROP",NULL};
-			set_rule(_argv,1);
-
-		}
-
-*/ return 0;
+	/*
+	 * char *sub; char var[500], *next;
+	 * 
+	 * sub = range("192.168.1.1","192.168.1.100");
+	 * dprintf("range_buf=[%s]\n",sub);
+	 * 
+	 * foreach(var, sub, next){ dprintf("[%s]\n",var); char
+	 * *_argv[]={"iptables","-I","FORWARD","-o","eth1","-p","tcp","-m","tcp","--dport","500","-s",var,"-j","DROP",NULL};
+	 * set_rule(_argv,1);
+	 * 
+	 * }
+	 * 
+	 */ return 0;
 }
 
 int rule_main(int argc, char *argv[])
 {
 
-/*	int i;
-	long start,end;
-
-	start=time(0);
-	for(i=0;i<atoi(argv[1]);i++){
-		char *_argv[]={"iptables","-A","FORWARD","-o","eth1","-p","tcp","-m","tcp","--dport","500","-s","192.168.1.100","-j","DROP",NULL};
-		set_rule(_argv,1);
-	}
-        //iptc_commit(&handle);
-	end=time(0);
-
-	printf("start=[%ld] end=[%ld]\n",start,end);
-
-*/ return 0;
+	/*
+	 * int i; long start,end;
+	 * 
+	 * start=time(0); for(i=0;i<atoi(argv[1]);i++){ char
+	 * *_argv[]={"iptables","-A","FORWARD","-o","eth1","-p","tcp","-m","tcp","--dport","500","-s","192.168.1.100","-j","DROP",NULL};
+	 * set_rule(_argv,1); } //iptc_commit(&handle); end=time(0);
+	 * 
+	 * printf("start=[%ld] end=[%ld]\n",start,end);
+	 * 
+	 */ return 0;
 }
 #endif
