@@ -1848,8 +1848,8 @@ ifeq ($(CONFIG_WR841V9),y)
 
 endif
 ifeq ($(CONFIG_WR941V6),y)
-	-./tools/tplink/mktplinkfw -B TL-WR941NDv6 -u -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR941NDv6-firmwareUS.bin
-	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR941NDv6-firmwareUS.bin mips-uclibc/tplink-WR941NDv6-firmwareUS.bin
+	-./tools/tplink/mktplinkfw -B TL-WR941NDv6 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR941NDv6-firmware.bin
+	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR941NDv6-firmware.bin mips-uclibc/tplink-WR941NDv6-firmware.bin
 endif
 ifeq ($(CONFIG_WR842V2),y)
 	-./tools/tplink/mktplinkfw -B TL-WR842NDv2 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR842NDv2-firmware.bin
