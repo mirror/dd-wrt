@@ -1061,6 +1061,7 @@ int __init ar7240_platform_init(void)
 	iounmap(base);
     #elif CONFIG_DAP2230
        ath79_setup_ar933x_phy4_switch(false, false);
+    #elif CONFIG_WR941V6
     #elif CONFIG_WR841V9
        ath79_setup_ar933x_phy4_switch(false, false);
 
@@ -1284,6 +1285,14 @@ int __init ar7240_platform_init(void)
 	/* WAN */
 	ar71xx_switch_data.phy4_mii_en = 1;
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
+	ar71xx_add_device_eth(0);
+    #elif CONFIG_WR941V6
+	ar71xx_add_device_mdio(0, 0x0);
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, 1);
+	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac, -1);
+	ar71xx_add_device_eth(1);
+	/* WAN */
+	ar71xx_switch_data.phy4_mii_en = 1;
 	ar71xx_add_device_eth(0);
     #elif CONFIG_WR841V9
 	ar71xx_add_device_mdio(0, 0x0);
