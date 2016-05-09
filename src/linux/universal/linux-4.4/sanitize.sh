@@ -58,6 +58,7 @@ do
 	    echo CONFIG_WDR2543=y >> .config
 	    echo CONFIG_WR841V8=y >> .config
 	    echo CONFIG_WR841V9=y >> .config
+	    echo CONFIG_WR941V6=y >> .config
 	    echo CONFIG_NVRAM_64K=y >> .config
 	    echo CONFIG_NVRAM_60K=y >> .config
 	    echo CONFIG_ALFANX=y >> .config
@@ -111,6 +112,7 @@ do
 	    sed -i 's/\CONFIG_WR650AC=y/ /g' .config	    
 	    sed -i 's/\CONFIG_E355AC=y/ /g' .config	    
 	    sed -i 's/\CONFIG_E325N=y/ /g' .config	    
+	    sed -i 's/\CONFIG_WR941V6=y/ /g' .config	    
 	    cp .config $i
     fi
 done
