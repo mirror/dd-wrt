@@ -31,15 +31,7 @@
 #define cprintf(fmt,...);
 #endif
 
-int sameaddr(unsigned char *sin, unsigned char *ein)
-{
-	int i;
-
-	for (i = 0; i < 4; i++)
-		if (sin[i] != ein[i])
-			return 0;
-	return 1;
-}
+#define sameaddr(sin, ein) *((unsigned int *)sin)==*((unsigned int*)ein)
 
 void getse(unsigned char *ip, unsigned char *nets, unsigned char *nete, int bitlen)
 {
@@ -194,11 +186,12 @@ char *range(char *start, char *end, char *range_buf)
 #ifdef DEBUG_IPTABLE
 int main(int argc, char *argv[])
 {
-	  char tmp[1024];	
-	  char *sub; char var[500], *next;
-	  
-	  sub = range("192.168.1.1","192.169.2.100", tmp);
-	  printf("%s\n",sub);
-	  
+	char tmp[1024];
+	char *sub;
+	char var[500], *next;
+
+	sub = range("192.168.1.1", "192.169.2.100", tmp);
+	printf("%s\n", sub);
+
 }
 #endif
