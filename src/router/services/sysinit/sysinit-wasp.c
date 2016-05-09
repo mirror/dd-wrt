@@ -151,6 +151,10 @@ void start_sysinit(void)
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2 3 4 5");
 	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 1");
+#elif defined (HAVE_E3325N)
+	eval("swconfig", "dev", "eth0", "set", "reset", "1");
+	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
+	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 2 3 4");
 #elif defined (HAVE_E355AC)
 #elif defined (HAVE_WR650AC)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
@@ -230,7 +234,7 @@ void start_sysinit(void)
 	}
 #endif
 
-#if !defined(HAVE_WR650AC) && !defined(HAVE_E355AC)
+#if !defined(HAVE_WR650AC) && !defined(HAVE_E355AC) && !defined(HAVE_E325N)
 #ifndef HAVE_JWAP606
 	eval("ifconfig", "eth0", "up");
 #if defined(HAVE_MMS344) && !defined(HAVE_DIR862)
@@ -354,6 +358,8 @@ void start_sysinit(void)
 #endif
 #elif  HAVE_WZR450HP2
 	setWirelessLed(0, 18);
+#elif  HAVE_E325N
+	setWirelessLed(0, 0);
 #elif  HAVE_E355AC
 	setWirelessLed(0, 0);
 	setWirelessLed(1, 3);
