@@ -2767,6 +2767,11 @@ int internal_getRouterBrand()
 	nvram_default_get("ath0_txantenna", "3");
 	setRouter("Dlink DAP-2230");
 	return ROUTER_BOARD_PB42;
+#elif HAVE_WR941V6
+	nvram_default_get("ath0_rxantenna", "3");
+	nvram_default_get("ath0_txantenna", "3");
+	setRouter("TP-Link TL-WR941ND v6");
+	return ROUTER_BOARD_PB42;
 #elif HAVE_WR841V11
 	nvram_default_get("ath0_rxantenna", "3");
 	nvram_default_get("ath0_txantenna", "3");
@@ -5505,6 +5510,10 @@ int led_control(int type, int act)
 #ifdef HAVE_DAP2230
 		diag_gpio = 0x00b;
 		power_gpio = 0x10b;
+#elif HAVE_WR841V6
+		disconnected_gpio = 0x00f
+		power_gpio = 0x112;
+		diag_gpio = 0x012;
 #elif HAVE_WR841V9
 		diag_gpio = 0x103;
 #elif HAVE_WR842V2
