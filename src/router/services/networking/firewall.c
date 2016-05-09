@@ -690,7 +690,7 @@ static void nat_prerouting(void)
 			wordlist = range(from, get_complete_ip(from, to), tmp);
 
 			foreach(var, wordlist, next) {
-				save2file("-A PREROUTING -p tcp -s %s -d %s --dport %s " "-j DNAT --to-destination %s:%d\n", var, wanaddr, nvram_safe_get("http_wanport"), lan_ip, web_lanport);
+				save2file("-A PREROUTING -p tcp -s %s -d %s --dport %s -j DNAT --to-destination %s:%d\n", var, wanaddr, nvram_safe_get("http_wanport"), lan_ip, web_lanport);
 			}
 		}
 	}
@@ -707,7 +707,7 @@ static void nat_prerouting(void)
 			wordlist = range(from, get_complete_ip(from, to), tmp);
 
 			foreach(var, wordlist, next) {
-				save2file("-A PREROUTING -p tcp -s %s -d %s --dport %s " "-j DNAT --to-destination %s:%s\n", var, wanaddr, nvram_safe_get("sshd_wanport"), lan_ip, nvram_safe_get("sshd_port"));
+				save2file("-A PREROUTING -p tcp -s %s -d %s --dport %s -j DNAT --to-destination %s:%s\n", var, wanaddr, nvram_safe_get("sshd_wanport"), lan_ip, nvram_safe_get("sshd_port"));
 			}
 		}
 	}
@@ -726,7 +726,7 @@ static void nat_prerouting(void)
 			wordlist = range(from, get_complete_ip(from, to), tmp);
 
 			foreach(var, wordlist, next) {
-				save2file("-A PREROUTING -p tcp -s %s -d %s --dport %s " "-j DNAT --to-destination %s:23\n", var, wanaddr, nvram_safe_get("telnet_wanport"), lan_ip);
+				save2file("-A PREROUTING -p tcp -s %s -d %s --dport %s -j DNAT --to-destination %s:23\n", var, wanaddr, nvram_safe_get("telnet_wanport"), lan_ip);
 			}
 		}
 	}
@@ -742,7 +742,7 @@ static void nat_prerouting(void)
 	 * Enable remote upgrade 
 	 */
 	if (nvram_match("remote_upgrade", "1"))
-		save2file("-A PREROUTING -p udp -d %s --dport %d " "-j DNAT --to-destination %s\n", wanaddr, TFTP_PORT, lan_ip);
+		save2file("-A PREROUTING -p udp -d %s --dport %d -j DNAT --to-destination %s\n", wanaddr, TFTP_PORT, lan_ip);
 #endif
 
 	/*
@@ -1776,12 +1776,12 @@ static void parse_trigger_out(char *wordlist)
 
 		if (!strcmp(proto, "tcp") || !strcmp(proto, "udp")) {
 			save2file("-A trigger_out -p %s -m %s --dport %s:%s "
-				  "-j TRIGGER --trigger-type out --trigger-proto %s " "--trigger-match %s-%s --trigger-relate %s-%s\n", proto, proto, wport0, wport1, proto, wport0, wport1, lport0, lport1);
+				  "-j TRIGGER --trigger-type out --trigger-proto %s --trigger-match %s-%s --trigger-relate %s-%s\n", proto, proto, wport0, wport1, proto, wport0, wport1, lport0, lport1);
 		} else if (!strcmp(proto, "both")) {
 			save2file("-A trigger_out -p tcp --dport %s:%s "
-				  "-j TRIGGER --trigger-type out --trigger-proto all " "--trigger-match %s-%s --trigger-relate %s-%s\n", wport0, wport1, wport0, wport1, lport0, lport1);
+				  "-j TRIGGER --trigger-type out --trigger-proto all --trigger-match %s-%s --trigger-relate %s-%s\n", wport0, wport1, wport0, wport1, lport0, lport1);
 			save2file("-A trigger_out -p udp --dport %s:%s "
-				  "-j TRIGGER --trigger-type out --trigger-proto all " "--trigger-match %s-%s --trigger-relate %s-%s\n", wport0, wport1, wport0, wport1, lport0, lport1);
+				  "-j TRIGGER --trigger-type out --trigger-proto all --trigger-match %s-%s --trigger-relate %s-%s\n", wport0, wport1, wport0, wport1, lport0, lport1);
 		}
 	}
 }
@@ -2208,7 +2208,7 @@ static void filter_forward(void)
 	// lanface, wanface, HTTP_PORT, webfilter, log_reject);
 	if (nvram_invmatch("filter", "off") && webfilter && strlen(wanface)) {
 		insmod("ipt_webstr");
-		save2file("-A FORWARD -i %s -o %s -p tcp " "-m webstr --content %d -j %s\n", lanface, wanface, webfilter, log_reject);
+		save2file("-A FORWARD -i %s -o %s -p tcp -m webstr --content %d -j %s\n", lanface, wanface, webfilter, log_reject);
 	}
 
 	/*
@@ -2406,7 +2406,7 @@ static void filter_forward(void)
  */
 static void mangle_table(void)
 {
-	save2file("*mangle\n" ":PREROUTING ACCEPT [0:0]\n" ":OUTPUT ACCEPT [0:0]\n");
+	save2file("*mangle\n:PREROUTING ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]\n");
 
 	if (wanactive() && (nvram_match("block_loopback", "0") || nvram_match("filter", "off"))) {
 		insmod("ipt_mark xt_mark ipt_CONNMARK xt_CONNMARK xt_connmark");
@@ -2439,7 +2439,7 @@ static void mangle_table(void)
  */
 static void nat_table(void)
 {
-	save2file("*nat\n" ":PREROUTING ACCEPT [0:0]\n" ":POSTROUTING ACCEPT [0:0]\n" ":OUTPUT ACCEPT [0:0]\n");
+	save2file("*nat\n:PREROUTING ACCEPT [0:0]\n:POSTROUTING ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]\n");
 	if (wanactive()) {
 		nat_prerouting();
 		nat_postrouting();
@@ -2452,11 +2452,11 @@ static void nat_table(void)
  */
 static void filter_table(void)
 {
-	save2file("*filter\n" ":INPUT ACCEPT [0:0]\n" ":FORWARD ACCEPT [0:0]\n" ":OUTPUT ACCEPT [0:0]\n" ":logaccept - [0:0]\n" ":logdrop - [0:0]\n" ":logreject - [0:0]\n"
+	save2file("*filter\n:INPUT ACCEPT [0:0]\n:FORWARD ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]\n:logaccept - [0:0]\n:logdrop - [0:0]\n:logreject - [0:0]\n"
 #ifdef FLOOD_PROTECT
 		  ":limaccept - [0:0]\n"
 #endif
-		  ":trigger_out - [0:0]\n" ":lan2wan - [0:0]\n");
+		  ":trigger_out - [0:0]\n:lan2wan - [0:0]\n");
 
 	int seq;
 
@@ -2546,12 +2546,12 @@ static void filter_table(void)
 #ifdef FLOOD_PROTECT
 	if ((nvram_match("log_enable", "1"))
 	    && (nvram_match("log_accepted", "1")))
-		save2file("-A logaccept -i %s -m state --state NEW -m limit --limit %d -j LOG " "--log-prefix \"FLOOD \" --log-tcp-sequence --log-tcp-options --log-ip-options\n", wanface, FLOOD_RATE);
+		save2file("-A logaccept -i %s -m state --state NEW -m limit --limit %d -j LOG --log-prefix \"FLOOD \" --log-tcp-sequence --log-tcp-options --log-ip-options\n", wanface, FLOOD_RATE);
 	save2file("-A logaccept -i %s -m state --state NEW -m limit --limit %d -j %s\n", wanface, FLOOD_RATE, log_drop);
 #endif
 	if ((nvram_match("log_enable", "1"))
 	    && (nvram_match("log_accepted", "1")))
-		save2file("-A logaccept -m state --state NEW -j LOG --log-prefix \"ACCEPT \" " "--log-tcp-sequence --log-tcp-options --log-ip-options\n");
+		save2file("-A logaccept -m state --state NEW -j LOG --log-prefix \"ACCEPT \" --log-tcp-sequence --log-tcp-options --log-ip-options\n");
 	save2file("-A logaccept -j ACCEPT\n");
 
 	/*
@@ -2562,11 +2562,11 @@ static void filter_table(void)
 		    && (nvram_match("log_dropped", "1")))
 			save2file
 			    ("-A logdrop -m state --state NEW -j LOG --log-prefix \"DROP \" "
-			     "--log-tcp-sequence --log-tcp-options --log-ip-options\n" "-A logdrop -m state --state INVALID -j LOG --log-prefix \"DROP \" " "--log-tcp-sequence --log-tcp-options --log-ip-options\n");
+			     "--log-tcp-sequence --log-tcp-options --log-ip-options\n-A logdrop -m state --state INVALID -j LOG --log-prefix \"DROP \" --log-tcp-sequence --log-tcp-options --log-ip-options\n");
 	} else {
 		if ((nvram_match("log_enable", "1"))
 		    && (nvram_match("log_dropped", "1")))
-			save2file("-A logdrop -m state --state NEW -j LOG --log-prefix \"DROP \" " "--log-tcp-sequence --log-tcp-options --log-ip-options\n");
+			save2file("-A logdrop -m state --state NEW -j LOG --log-prefix \"DROP \" --log-tcp-sequence --log-tcp-options --log-ip-options\n");
 	}
 	save2file("-A logdrop -j DROP\n");
 
@@ -2575,7 +2575,7 @@ static void filter_table(void)
 	 */
 	if ((nvram_match("log_enable", "1"))
 	    && (nvram_match("log_rejected", "1")))
-		save2file("-A logreject -j LOG --log-prefix \"WEBDROP \" " "--log-tcp-sequence --log-tcp-options --log-ip-options\n");
+		save2file("-A logreject -j LOG --log-prefix \"WEBDROP \" --log-tcp-sequence --log-tcp-options --log-ip-options\n");
 	save2file("-A logreject -p tcp -j REJECT --reject-with tcp-reset\n");
 
 #ifdef FLOOD_PROTECT
@@ -2584,8 +2584,8 @@ static void filter_table(void)
 	 */
 	if ((nvram_match("log_enable", "1"))
 	    && (nvram_match("log_accepted", "1")))
-		save2file("-A limaccept -i %s -m state --state NEW -m limit --limit %d -j LOG " "--log-prefix \"FLOOD \" --log-tcp-sequence --log-tcp-options --log-ip-options\n");
-	save2file("-A limaccept -i %s -m state --state NEW -m limit --limit %d -j %s\n" "-A limaccept -j ACCEPT\n", wanface, FLOOD_RATE, wanface, FLOOD_RATE, log_drop);
+		save2file("-A limaccept -i %s -m state --state NEW -m limit --limit %d -j LOG --log-prefix \"FLOOD \" --log-tcp-sequence --log-tcp-options --log-ip-options\n");
+	save2file("-A limaccept -i %s -m state --state NEW -m limit --limit %d -j %s\n-A limaccept -j ACCEPT\n", wanface, FLOOD_RATE, wanface, FLOOD_RATE, log_drop);
 #endif
 
 	save2file("COMMIT\n");
@@ -2698,7 +2698,11 @@ void start_loadfwmodules(void)
 	       " xt_connbytes xt_connlimit"
 	       " xt_CLASSIFY xt_recent"
 	       " xt_conntrack xt_state"
-	       " xt_string" " xt_LOG xt_iprange xt_tcpmss" " xt_NETMAP compat_xtables" " ipt_MASQUERADE iptable_filter nf_reject_ipv4" " ipt_REJECT nf_nat_h323" " ipt_TRIGGER nf_nat_masquerade_ipv4 ipt_ah");
+	       " xt_string xt_LOG xt_iprange xt_tcpmss" 
+	       " xt_NETMAP compat_xtables" 
+	       " ipt_MASQUERADE iptable_filter nf_reject_ipv4" 
+	       " ipt_REJECT nf_nat_h323" 
+	       " ipt_TRIGGER nf_nat_masquerade_ipv4 ipt_ah");
 
 }
 
