@@ -945,6 +945,10 @@ int __init ar7240_platform_init(void)
 	mac = (u8 *)KSEG1ADDR(0x1f010000);
 	ee = (u8 *)KSEG1ADDR(0x1f011000);
 #endif
+#ifdef CONFIG_E325N
+	mac = (u8 *)KSEG1ADDR(0x1f010000);
+	ee = (u8 *)KSEG1ADDR(0x1f011000);
+#endif
 
 #ifdef CONFIG_WASP_SUPPORT
 #define DB120_MAC0_OFFSET	0
@@ -965,6 +969,10 @@ int __init ar7240_platform_init(void)
 	ath79_init_mac(mac0, mac, -1);
 	ath79_init_mac(mac1, mac, 0);
     #elif CONFIG_E355AC
+	mac = (u8 *)KSEG1ADDR(0x1f010000);
+	ath79_init_mac(mac0, mac, -1);
+	ath79_init_mac(mac1, mac, 0);	
+    #elif CONFIG_E315N
 	mac = (u8 *)KSEG1ADDR(0x1f010000);
 	ath79_init_mac(mac0, mac, -1);
 	ath79_init_mac(mac1, mac, 0);	
@@ -1083,6 +1091,7 @@ int __init ar7240_platform_init(void)
 	/* flush write */
 	__raw_readl(base + AR934X_GMAC_REG_ETH_CFG);
 	iounmap(base);
+    #elif CONFIG_E315N
     #elif CONFIG_E355AC
     #elif CONFIG_WR650AC	
     	ap136_gmac_setup(QCA955X_ETH_CFG_RGMII_EN);
@@ -1175,10 +1184,33 @@ int __init ar7240_platform_init(void)
 	/* GMAC1 is connected to the internal switch */
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
 	ar71xx_add_device_eth(1);
+    #elif CONFIG_E315N
+	ath79_setup_ar934x_eth_cfg(AR934X_ETH_CFG_SW_PHY_SWAP);
+
+	ar71xx_add_device_mdio(1, 0x0);
+
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, 0);
+	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac, 2);
+
+	/* GMAC0 is connected to the PHY0 of the internal switch */
+	ar71xx_switch_data.phy4_mii_en = 1;
+	ar71xx_switch_data.phy_poll_mask = BIT(0);
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
+	ar71xx_eth0_data.phy_mask = BIT(0);
+	ar71xx_eth0_data.speed = SPEED_100;
+	ar71xx_eth0_data.mii_bus_dev = &ath79_mdio1_device.dev;
+	ar71xx_add_device_eth(0);
+
+	/* GMAC1 is connected to the internal switch */
+	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;	
+	ar71xx_eth1_data.duplex = DUPLEX_FULL;
+	ar71xx_eth1_data.speed = SPEED_100;
+	
+	ar71xx_add_device_eth(1);
     #elif CONFIG_E355AC
 	ath79_setup_ar933x_phy4_switch(false, false);
 
-	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac0, 1);
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac0, 2);
 	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac1, 0);
 	ar71xx_add_device_mdio(0, 0x0);	
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
@@ -1201,7 +1233,7 @@ int __init ar7240_platform_init(void)
 				    ARRAY_SIZE(cf_wr650ac_mdio0_info));
 
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac0, 1);
-	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac1, 0);
+	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac1, 3);
 	/* GMAC0 is connected to the RMGII interface */
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ar71xx_eth0_data.phy_mask = CF_WR650AC_LAN_PHYMASK;
