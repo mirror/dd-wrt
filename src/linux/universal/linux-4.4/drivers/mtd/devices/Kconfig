@@ -335,6 +335,9 @@ config ERC
 config WR841V9
 	bool "support for TPLink WR841V9"
 	depends on WR841V8
+config WR941V6
+	bool "support for TPLink WR941V6"
+	depends on WR841V9
 config WR1043V2
 	bool "support for WR1043 V2"
 	depends on AP135
