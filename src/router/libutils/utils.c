@@ -5912,6 +5912,7 @@ int led_control(int type, int act)
 #elif HAVE_E325N
 	case ROUTER_BOARD_WHRHPGN:
 		diag_gpio = 0x002;
+		connected_gpio = 003;
 		break;
 #elif HAVE_E355AC
 	case ROUTER_BOARD_WHRHPGN:
