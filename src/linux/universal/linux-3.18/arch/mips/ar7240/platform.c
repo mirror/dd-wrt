@@ -937,15 +937,15 @@ int __init ar7240_platform_init(void)
 #ifdef CONFIG_GL150
 	mac = (u8 *)KSEG1ADDR(0x1fff0000);
 #endif
+#ifdef CONFIG_E325N
+	mac = (u8 *)KSEG1ADDR(0x1f010000);
+	ee = (u8 *)KSEG1ADDR(0x1f011000);
+#endif
 #ifdef CONFIG_WR650AC
 	mac = (u8 *)KSEG1ADDR(0x1f020000);
 	ee = (u8 *)KSEG1ADDR(0x1f021000);
 #endif
 #ifdef CONFIG_E355AC
-	mac = (u8 *)KSEG1ADDR(0x1f010000);
-	ee = (u8 *)KSEG1ADDR(0x1f011000);
-#endif
-#ifdef CONFIG_E325N
 	mac = (u8 *)KSEG1ADDR(0x1f010000);
 	ee = (u8 *)KSEG1ADDR(0x1f011000);
 #endif
@@ -972,7 +972,7 @@ int __init ar7240_platform_init(void)
 	mac = (u8 *)KSEG1ADDR(0x1f010000);
 	ath79_init_mac(mac0, mac, -1);
 	ath79_init_mac(mac1, mac, 0);	
-    #elif CONFIG_E315N
+    #elif CONFIG_E325N
 	mac = (u8 *)KSEG1ADDR(0x1f010000);
 	ath79_init_mac(mac0, mac, -1);
 	ath79_init_mac(mac1, mac, 0);	
@@ -1092,7 +1092,7 @@ int __init ar7240_platform_init(void)
 	/* flush write */
 	__raw_readl(base + AR934X_GMAC_REG_ETH_CFG);
 	iounmap(base);
-    #elif CONFIG_E315N
+    #elif CONFIG_E325N
     #elif CONFIG_E355AC
     #elif CONFIG_WR650AC	
     	ap136_gmac_setup(QCA955X_ETH_CFG_RGMII_EN);
@@ -1185,7 +1185,7 @@ int __init ar7240_platform_init(void)
 	/* GMAC1 is connected to the internal switch */
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
 	ar71xx_add_device_eth(1);
-    #elif CONFIG_E315N
+    #elif CONFIG_E325N
 	ath79_setup_ar934x_eth_cfg(AR934X_ETH_CFG_SW_PHY_SWAP);
 
 	ar71xx_add_device_mdio(1, 0x0);
@@ -1199,7 +1199,7 @@ int __init ar7240_platform_init(void)
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
 	ar71xx_eth0_data.phy_mask = BIT(0);
 	ar71xx_eth0_data.speed = SPEED_100;
-	ar71xx_eth0_data.mii_bus_dev = &ath79_mdio1_device.dev;
+	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio1_device.dev;
 	ar71xx_add_device_eth(0);
 
 	/* GMAC1 is connected to the internal switch */
