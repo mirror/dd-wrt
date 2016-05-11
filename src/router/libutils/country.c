@@ -257,6 +257,8 @@ enum CountryCode {
 	CTRY_CANADA = 124,	/* Canada */
 	CTRY_CHILE = 152,	/* Chile */
 	CTRY_CHINA = 156,	/* People's Republic of China */
+	CTRY_CHRISTMAS_ISLAND = 157,	/* People's Republic of China */
+	CTRY_CUBA = 158,	/* People's Republic of China */
 	CTRY_COLOMBIA = 170,	/* Colombia */
 	CTRY_COSTA_RICA = 188,	/* Costa Rica */
 	CTRY_CROATIA = 191,	/* Croatia */
@@ -502,6 +504,10 @@ static COUNTRY_CODE_TO_ENUM_RD allCountries[] = {
 //#else
 	{CTRY_CHINA, APL1_WORLD, "CN", "CHINA", YES, YES, YES, 7000},
 //#endif
+#ifdef HAVE_ATH9K
+	{CTRY_CUBA, APL1_WORLD, "CU", "CUBA", YES, YES, YES, 7000},
+	{CTRY_CHRISTMAS_ISLAND, APL1_WORLD, "CX", "CHRISTMAS_ISLAND", YES, YES, YES, 7000},
+#endif
 	{CTRY_COLOMBIA, FCC1_FCCA, "CO", "COLOMBIA", YES, NO, YES, 7000},
 	{CTRY_COSTA_RICA, NULL1_WORLD, "CR", "COSTA_RICA", YES, NO, YES, 7000},
 	{CTRY_CROATIA, ETSI3_WORLD, "HR", "CROATIA", YES, NO, YES, 7000},
