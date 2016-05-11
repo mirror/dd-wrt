@@ -156,6 +156,7 @@ void start_sysinit(void)
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 2 3 4");
 #elif defined (HAVE_E355AC)
+#elif defined (HAVE_E380AC)
 #elif defined (HAVE_WR650AC)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
@@ -234,7 +235,7 @@ void start_sysinit(void)
 	}
 #endif
 
-#if !defined(HAVE_WR650AC) && !defined(HAVE_E355AC) && !defined(HAVE_E325N)
+#if !defined(HAVE_WR650AC) && !defined(HAVE_E355AC) && !defined(HAVE_E325N) && !defined(HAVE_E380AC)
 #ifndef HAVE_JWAP606
 	eval("ifconfig", "eth0", "up");
 #if defined(HAVE_MMS344) && !defined(HAVE_DIR862)
@@ -264,6 +265,19 @@ void start_sysinit(void)
 	FILE *out = fopen("/tmp/archerc7-board.bin", "wb");
 	if (fp) {
 		fseek(fp, 0x10000 + 0x5000, SEEK_SET);
+		int i;
+		for (i = 0; i < 2116; i++)
+			putc(getc(fp), out);
+		fclose(fp);
+		fclose(out);
+		eval("rm", "-f", "/tmp/ath10k-board.bin");
+		eval("ln", "-s", "/tmp/archerc7-board.bin", "/tmp/ath10k-board.bin");
+	}
+#elif defined(HAVE_E380AC)
+	FILE *fp = fopen("/dev/mtdblock/0", "rb");
+	FILE *out = fopen("/tmp/archerc7-board.bin", "wb");
+	if (fp) {
+		fseek(fp, 0x20000 + 0x5000, SEEK_SET);
 		int i;
 		for (i = 0; i < 2116; i++)
 			putc(getc(fp), out);
@@ -360,6 +374,9 @@ void start_sysinit(void)
 	setWirelessLed(0, 18);
 #elif  HAVE_E325N
 	setWirelessLed(0, 0);
+#elif  HAVE_E380AC
+	setWirelessLed(0, 0);
+	setWirelessLed(1, 2);
 #elif  HAVE_E355AC
 	setWirelessLed(0, 0);
 	setWirelessLed(1, 3);

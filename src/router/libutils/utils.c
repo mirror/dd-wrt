@@ -2261,10 +2261,19 @@ int internal_getRouterBrand()
 	nvram_default_get("ath0_rxantenna", "3");
 	nvram_default_get("ath0_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
+#elif HAVE_E380AC
+	setRouter("Comfast E380AC");
+	nvram_default_get("ath0_rxantenna", "7");
+	nvram_default_get("ath0_txantenna", "7");
+	nvram_default_get("ath1_rxantenna", "7");
+	nvram_default_get("ath1_txantenna", "7");
+	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WR650AC
 	setRouter("Comfast WR650AC");
 	nvram_default_get("ath0_rxantenna", "7");
 	nvram_default_get("ath0_txantenna", "7");
+	nvram_default_get("ath1_rxantenna", "7");
+	nvram_default_get("ath1_txantenna", "7");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_DIR869
 	setRouter("Dlink DIR869");
@@ -5913,6 +5922,10 @@ int led_control(int type, int act)
 	case ROUTER_BOARD_WHRHPGN:
 		connected_gpio = 0x003;
 		disconnected_gpio = 0x002;
+		break;
+#elif HAVE_E380AC
+	case ROUTER_BOARD_WHRHPGN:
+		diag_gpio = 0x003;
 		break;
 #elif HAVE_E355AC
 	case ROUTER_BOARD_WHRHPGN:
