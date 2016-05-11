@@ -431,6 +431,13 @@ void set_gpio(int gpio, int value)
 #define GPIOMAX 32
 #endif
 	if (gpio < GPIOMAX) {
+#ifdef HAVE_E385AC
+		if (gpio == 3) {
+			sprintf(buf, "/proc/gpio/%d_dir", gpio);
+			writeint(buf, value);
+			return;
+		}
+#endif
 		sprintf(buf, "/proc/gpio/%d_dir", gpio);
 		if (writestr(buf, "1"))
 			return;
