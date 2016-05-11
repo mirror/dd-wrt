@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2015 Zabbix SIA
+** Copyright (C) 2001-2016 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 #define DO_MAX	2
 #define DO_MIN	3
 
-#if defined(KERNEL_2_4)
+#ifdef KERNEL_2_4
 #define DEVICE_DIR	"/proc/sys/dev/sensors"
 #else
 #define DEVICE_DIR	"/sys/class/hwmon"
@@ -51,7 +51,7 @@ static void	count_sensor(int do_task, const char *filename, double *aggr, int *c
 
 	zbx_fclose(f);
 
-#if defined(KERNEL_2_4)
+#ifdef KERNEL_2_4
 	if (1 == sscanf(line, "%*f\t%*f\t%lf\n", &value))
 	{
 #else
@@ -81,6 +81,7 @@ static void	count_sensor(int do_task, const char *filename, double *aggr, int *c
 	}
 }
 
+#ifndef KERNEL_2_4
 /*********************************************************************************
  *                                                                               *
  * Function: sysfs_read_attr                                                     *
@@ -257,11 +258,12 @@ out:
 
 	return ret;
 }
+#endif
 
 static void	get_device_sensors(int do_task, const char *device, const char *name, double *aggr, int *cnt)
 {
 	char	sensorname[MAX_STRING_LEN];
-#if defined(KERNEL_2_4)
+#ifdef KERNEL_2_4
 
 	if (DO_ONE == do_task)
 	{
@@ -363,7 +365,7 @@ static void	get_device_sensors(int do_task, const char *device, const char *name
 				zbx_snprintf(regex, sizeof(regex), "%s[0-9]*_input", name);
 
 				if (NULL == (sensordir = opendir(devicepath)))
-					return;
+					goto out;
 
 				while (NULL != (sensorent = readdir(sensordir)))
 				{
@@ -382,6 +384,7 @@ static void	get_device_sensors(int do_task, const char *device, const char *name
 			}
 		}
 	}
+out:
 	closedir(devicedir);
 #endif
 }
