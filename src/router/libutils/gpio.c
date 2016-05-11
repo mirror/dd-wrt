@@ -432,7 +432,7 @@ void set_gpio(int gpio, int value)
 #endif
 	if (gpio < GPIOMAX) {
 #ifdef HAVE_E380AC
-		if (gpio == 3) {
+		if (gpio == 3) { // the red led on gpio 3 cannot be controlled by output register. it will switch on if direction is set to output and will go off if direction is input
 			sprintf(buf, "/proc/gpio/%d_dir", gpio);
 			writeint(buf, value);
 			return;
