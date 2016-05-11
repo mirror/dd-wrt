@@ -243,6 +243,11 @@ int getbuttonstate()
 {
 	return !get_gpio(19);
 }
+#elif defined(HAVE_E380AC)
+int getbuttonstate()
+{
+	return !get_gpio(19);
+}
 #elif defined(HAVE_DIR869)
 int getbuttonstate()
 {
@@ -1025,6 +1030,7 @@ void period_check(int sig)
 	val |= get_gpio(21) << 21;	//aoss pushbutton
 #elif defined(HAVE_WR650AC)
 #elif defined(HAVE_E355AC)
+#elif defined(HAVE_E380AC)
 #elif defined(HAVE_E325N)
 #elif defined(HAVE_DIR869)
 	sesgpio = 0x102;
