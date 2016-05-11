@@ -451,6 +451,21 @@ static struct mdio_board_info dap2330_mdio0_info[] = {
 	},
 };
 
+
+static struct at803x_platform_data cf_e380ac_at803x_data = {
+	.disable_smarteee = 1,
+//	.enable_rgmii_rx_delay = 1,
+//	.enable_rgmii_tx_delay = 1,
+};
+
+static struct mdio_board_info cf_e380ac_mdio0_info[] = {
+	{
+		.bus_id = "ag71xx-mdio.0",
+		.phy_addr = 0,
+		.platform_data = &cf_e380ac_at803x_data,
+	},
+};
+
 static void __init ap136_gmac_setup(u32 mask)
 {
 	void __iomem *base;
@@ -949,6 +964,10 @@ int __init ar7240_platform_init(void)
 	mac = (u8 *)KSEG1ADDR(0x1f010000);
 	ee = (u8 *)KSEG1ADDR(0x1f011000);
 #endif
+#ifdef CONFIG_E380AC
+	mac = (u8 *)KSEG1ADDR(0x1f020000);
+	ee = (u8 *)KSEG1ADDR(0x1f021000);
+#endif
 
 #ifdef CONFIG_WASP_SUPPORT
 #define DB120_MAC0_OFFSET	0
@@ -968,6 +987,10 @@ int __init ar7240_platform_init(void)
 	mac = (u8 *)KSEG1ADDR(0x1fff0000);
 	ath79_init_mac(mac0, mac, -1);
 	ath79_init_mac(mac1, mac, 0);
+    #elif CONFIG_E380AC
+	mac = (u8 *)KSEG1ADDR(0x1f020000);
+	ath79_init_mac(mac0, mac, -1);
+	ath79_init_mac(mac1, mac, 0);	
     #elif CONFIG_E355AC
 	mac = (u8 *)KSEG1ADDR(0x1f010000);
 	ath79_init_mac(mac0, mac, -1);
@@ -1092,6 +1115,8 @@ int __init ar7240_platform_init(void)
 	/* flush write */
 	__raw_readl(base + AR934X_GMAC_REG_ETH_CFG);
 	iounmap(base);
+    #elif CONFIG_E380AC
+    	ap136_gmac_setup(QCA955X_ETH_CFG_RGMII_EN);
     #elif CONFIG_E325N
     #elif CONFIG_E355AC
     #elif CONFIG_WR650AC	
@@ -1225,6 +1250,24 @@ int __init ar7240_platform_init(void)
 	ar71xx_eth0_data.duplex = DUPLEX_FULL;
 	ar71xx_eth0_data.speed = SPEED_100;
 	ar71xx_add_device_eth(0);	
+    #elif CONFIG_E680AC
+#define CF_WR680AC_LAN_PHYMASK              BIT(0)
+#define CF_WR680AC_WAN_PHYMASK              BIT(5)
+	ar71xx_add_device_mdio(0, 0x0);
+
+	mdiobus_register_board_info(cf_e380ac_mdio0_info,
+				    ARRAY_SIZE(cf_e380ac_mdio0_info));
+
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac0, 1);
+	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac1, 3);
+	/* GMAC0 is connected to the RMGII interface */
+	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio0_device.dev;
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
+	ar71xx_eth0_data.phy_mask = BIT(0);
+	ar71xx_eth0_pll_data.pll_10 = 0xB0001313;
+	ar71xx_eth0_pll_data.pll_100 = 0xB0000101;
+	ar71xx_eth0_pll_data.pll_1000 = 0xBE000000;	
+	ar71xx_add_device_eth(0);
     #elif CONFIG_WR650AC
 #define CF_WR650AC_LAN_PHYMASK              BIT(0)
 #define CF_WR650AC_WAN_PHYMASK              BIT(5)
