@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2015 Zabbix SIA
+** Copyright (C) 2001-2016 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -595,14 +595,11 @@ if (isset($_REQUEST['expression']) && $_REQUEST['dstfld1'] == 'expr_temp') {
 }
 
 $exprType = get_request('expr_type', 'last[=]');
+$exprType = array_key_exists($exprType, $functions) ? $exprType : 'last[=]';
 
 if (preg_match('/^([a-z]+)\[(['.implode('', array_keys($operators)).'])\]$/i', $exprType, $exprRes)) {
 	$function = $exprRes[1];
 	$operator = $exprRes[2];
-
-	if (!isset($functions[$exprType])) {
-		unset($function);
-	}
 }
 
 $dstfrm = get_request('dstfrm', 0);
@@ -611,11 +608,6 @@ $itemId = get_request('itemid', 0);
 $value = get_request('value', 0);
 $param = get_request('param', 0);
 $paramType = get_request('paramtype');
-
-if (!isset($function)) {
-	$function = 'last[=]';
-	$exprType = $function;
-}
 
 if ($itemId) {
 	$items = API::Item()->get(array(
