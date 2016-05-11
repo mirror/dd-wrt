@@ -7,7 +7,7 @@ DNSMASQ_COPTS += $(MIPS16_OPT) -DNO_AUTH
 
 dnsmasq-clean:
 	$(MAKE) -j 4 -C dnsmasq CFLAGS="$(COPTS)" clean
-	$(MAKE) -j 4 -C dnsmasq/contrib/wrt CFLAGS="$(COPTS)" clean
+	$(MAKE) -j 4 -C dnsmasq/contrib/lease-tools CFLAGS="$(COPTS)" clean
 
 
 
@@ -26,7 +26,7 @@ else
 endif
 endif
 endif
-	$(MAKE) -j 4 -C dnsmasq/contrib/wrt CFLAGS="$(COPTS) $(DNSMASQ_COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) $(DNSMASQ_COPTS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections"
+	$(MAKE) -j 4 -C dnsmasq/contrib/lease-tools CFLAGS="$(COPTS) $(DNSMASQ_COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) $(DNSMASQ_COPTS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections"
 
 dnsmasq-install:
 	install -D dnsmasq/contrib/wrt/lease_update.sh $(INSTALLDIR)/dnsmasq/etc/lease_update.sh
