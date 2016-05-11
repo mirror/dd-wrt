@@ -71,6 +71,7 @@ do
 	    echo CONFIG_WR650AC=y >> .config
 	    echo CONFIG_E355AC=y >> .config
 	    echo CONFIG_E325N=y >> .config
+	    echo CONFIG_E380AC=y >> .config
 	    make oldconfig ARCH=mips
 	    sed -i 's/\CONFIG_WR841V8=y/ /g' .config	    
 	    sed -i 's/\CONFIG_WR710=y/ /g' .config	    
@@ -103,6 +104,7 @@ do
 	    sed -i 's/\CONFIG_E355AC=y/ /g' .config	    
 	    sed -i 's/\CONFIG_E325N=y/ /g' .config	    
 	    sed -i 's/\CONFIG_WR941V6=y/ /g' .config	    
+	    sed -i 's/\CONFIG_E380AC=y/ /g' .config	    
 	    cp .config $i
     fi
 done
