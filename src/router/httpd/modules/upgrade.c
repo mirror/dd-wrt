@@ -400,9 +400,6 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 			if (!strncmp(buf, "bgn", 3) || !strncmp(buf, "WZR", 3)
 			    || !strncmp(buf, "WHR", 3)
 			    || !strncmp(buf, "WLA", 3)
-#if defined(HAVE_IDEXX) || defined(HAVE_IDEXX_SIGNATUR)
-			    || !strncmp(buf, "HDR0", 4)
-#endif
 				) {
 				char *write_argv_buf[4];
 				write_argv_buf[0] = "buffalo_flash";
