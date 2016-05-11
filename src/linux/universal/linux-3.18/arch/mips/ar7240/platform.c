@@ -1163,7 +1163,6 @@ int __init ar7240_platform_init(void)
 #endif
 	#endif
     #endif
-
     #ifdef CONFIG_DIR615I
 
 
@@ -1250,11 +1249,10 @@ int __init ar7240_platform_init(void)
 	ar71xx_eth0_data.duplex = DUPLEX_FULL;
 	ar71xx_eth0_data.speed = SPEED_100;
 	ar71xx_add_device_eth(0);	
-    #elif CONFIG_E680AC
+    #elif CONFIG_E380AC
 #define CF_WR680AC_LAN_PHYMASK              BIT(0)
 #define CF_WR680AC_WAN_PHYMASK              BIT(5)
 	ar71xx_add_device_mdio(0, 0x0);
-
 	mdiobus_register_board_info(cf_e380ac_mdio0_info,
 				    ARRAY_SIZE(cf_e380ac_mdio0_info));
 
@@ -1267,6 +1265,7 @@ int __init ar7240_platform_init(void)
 	ar71xx_eth0_pll_data.pll_10 = 0xB0001313;
 	ar71xx_eth0_pll_data.pll_100 = 0xB0000101;
 	ar71xx_eth0_pll_data.pll_1000 = 0xBE000000;	
+	
 	ar71xx_add_device_eth(0);
     #elif CONFIG_WR650AC
 #define CF_WR650AC_LAN_PHYMASK              BIT(0)
@@ -1504,12 +1503,14 @@ int __init ar7240_platform_init(void)
 		    #endif
 		#endif
 	#ifndef CONFIG_WR650AC
+	#ifndef CONFIG_E355AC
+	#ifndef CONFIG_E380AC
+	#ifndef CONFIG_E325N
 	#ifdef CONFIG_DIR859
 	printk(KERN_INFO "gpio mdio for AP152\n");
 	ath79_gpio_output_select(3,33);
 	ath79_gpio_output_select(4,32);
 	ar71xx_add_device_mdio(1, 0x0);
-	#endif
 	#endif
 	
 	ar71xx_add_device_mdio(0, 0x0);
@@ -1543,6 +1544,10 @@ int __init ar7240_platform_init(void)
 	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio0_device.dev;
 	ar71xx_eth0_pll_data.pll_1000 = 0x06000000;
 	ar71xx_add_device_eth(0);
+	#endif
+	#endif
+	#endif
+	#endif
 	#endif
 		#ifndef CONFIG_WDR4300
 		    #ifndef CONFIG_DIR825C1
