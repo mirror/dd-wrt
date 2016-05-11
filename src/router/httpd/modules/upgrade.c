@@ -422,7 +422,12 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 				write_argv_buf[0] = "buffalo_flash";
 				write_argv_buf[1] = upload_fifo;
 				write_argv_buf[2] = "ralink";
+#if defined(HAVE_IDEXX) || defined(HAVE_IDEXX_SIGNATUR)
+				write_argv_buf[3] = "verify";
+				write_argv_buf[4] = NULL;
+#else
 				write_argv_buf[3] = NULL;
+#endif
 				if (!mktemp(upload_fifo) || mkfifo(upload_fifo, S_IRWXU) < 0 || (ret = _evalpid(write_argv_buf, NULL, 0, &pid))
 				    || !(fifo = fopen(upload_fifo, "w"))) {
 					if (!ret)
