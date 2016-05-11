@@ -821,6 +821,10 @@ void __init ar71xx_gpio_init(void)
 //WR650AC
 #ifdef CONFIG_COMFAST_WATCHDOG
 
+#ifdef CONFIG_E380AC
+#define	XWDT_TRIGGER	17
+	printk(KERN_INFO "setup watchdog E380AC\n");
+#endif
 #ifdef CONFIG_E325N
 #define	XWDT_TRIGGER	16
 	printk(KERN_INFO "setup watchdog E325N and LNA\n");
