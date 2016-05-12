@@ -5519,7 +5519,7 @@ int led_control(int type, int act)
 #ifdef HAVE_DAP2230
 		diag_gpio = 0x00b;
 		power_gpio = 0x10b;
-#elif HAVE_WR841V6
+#elif HAVE_WR941V6
 		disconnected_gpio = 0x00f
 		power_gpio = 0x112;
 		diag_gpio = 0x012;
