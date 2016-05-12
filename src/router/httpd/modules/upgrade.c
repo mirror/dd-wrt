@@ -436,6 +436,9 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 				}
 				goto write_data;
 			} else {
+#ifdef HAVE_IDEXX_SIGNATUR
+				goto err;
+#endif
 				if (!mktemp(upload_fifo) || mkfifo(upload_fifo, S_IRWXU) < 0 || (ret = _evalpid(write_argv, NULL, 0, &pid))
 				    || !(fifo = fopen(upload_fifo, "w"))) {
 					if (!ret)
