@@ -11,7 +11,7 @@ else
 ifeq ($(CONFIG_DIST),"micro-special")
 	make -C igmp-proxy
 else
-	make -C igmp-proxy CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -ffunction-sections -fdata-sections -Wl,--gc-sections -std=gnu99"
+	make -C igmp-proxy CFLAGS="$(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -ffunction-sections -fdata-sections -Wl,--gc-sections -std=gnu99"
 endif
 endif
 
