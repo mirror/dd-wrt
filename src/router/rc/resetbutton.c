@@ -166,6 +166,8 @@ int getbuttonstate()
 	int ret = 0;
 	if (getRouterBrand() == ROUTER_NETGEAR_R7500)
 		ret = get_gpio(54);
+	else if (getRouterBrand() == ROUTER_NETGEAR_R7800)
+		ret = get_gpio(54);
 	else if (getRouterBrand() == ROUTER_TRENDNET_TEW827)
 		ret = get_gpio(54);
 	else if (getRouterBrand() == ROUTER_LINKSYS_EA8500)
@@ -1368,6 +1370,7 @@ void period_check(int sig)
 		wifigpio = 0x105;
 		break;
 	case ROUTER_NETGEAR_R7500:
+	case ROUTER_NETGEAR_R7800:
 		wifigpio = 0x106;
 		break;
 	case ROUTER_NETGEAR_R8000:
