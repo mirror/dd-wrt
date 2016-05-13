@@ -1,13 +1,13 @@
-#include "qcom-ipq8064-v1.0.dtsi"
+#include "qcom-ipq8065-v1.0.dtsi"
 
 #include <dt-bindings/input/input.h>
 
 / {
-	model = "Netgear R7500 Nighthawk X4";
-	compatible = "netgear,r7500", "qcom,ipq8064";
+	model = "Netgear R7800 Nighthawk X4S";
+	compatible = "netgear,r7800", "qcom,ipq8065";
 
 	memory@0 {
-		reg = <0x42000000 0xe000000>;
+		reg = <0x42000000 0x1e000000>;
 		device_type = "memory";
 	};
 
@@ -27,7 +27,7 @@
 	};
 
 	chosen {
-		bootargs = "console=ttyMSM0,115200n8 rootfstype=squashfs noinitrd root=/dev/mtdblock5";
+		bootargs = "console=ttyMSM0,115200n8 rootfstype=squashfs noinitrd root=/dev/mtdblock6";
 		linux,stdout-path = "serial0:115200n8";
 	};
 
@@ -37,6 +37,24 @@
 				pins = "gpio12", "gpio13";
 				function = "gsbi4";
 				bias-disable;
+			};
+			
+			pcie0_pins: pcie0_pinmux { 
+				mux { 
+					pins = "gpio3"; 
+					function = "pcie1_rst"; 
+					drive-strength = <12>; 
+					bias-disable; 
+				}; 
+			 }; 
+			
+			pcie1_pins: pcie1_pinmux { 
+				mux { 
+					pins = "gpio48"; 
+					function = "pcie2_rst"; 
+					drive-strength = <12>; 
+					bias-disable; 
+				}; 
 			};
 
 			nand_pins: nand_pins {
@@ -128,14 +146,20 @@
 			status = "ok";
 		};
 
-		pcie0: pci@1b500000 {
-			status = "ok";
-		};
+		pcie0: pci@1b500000 { 
+			status = "ok"; 
+			reset-gpio = <&qcom_pinmux 3 0>; 
+			pinctrl-0 = <&pcie0_pins>; 
+			pinctrl-names = "default"; 
+		}; 
 
-		pcie1: pci@1b700000 {
-			status = "ok";
-		};
-
+		pcie1: pci@1b700000 { 
+			status = "ok"; 
+			reset-gpio = <&qcom_pinmux 48 0>; 
+			pinctrl-0 = <&pcie1_pins>; 
+			pinctrl-names = "default"; 
+		}; 
+			
 		nand@1ac00000 {
 			status = "ok";
 
@@ -171,38 +195,40 @@
 				reg = <0x1200000 0x0140000>;
 				read-only;
 			};
-
-			linux@1340000 {
-				label = "linux";
-				reg = <0x1340000 0x1800000>;
+			
+			artbak@1340000 {
+				label = "artbak";
+				reg = <0x1340000 0x0140000>;
+				read-only;
 			};
 
-			rootfs@1540000 {
+			linux@1480000 {
+				label = "linux";
+				reg = <0x1480000 0x1E00000>;
+			};
+
+			rootfs@16a0000 {
 				label = "rootfs";
-				reg = <0x1540000 0x1600000>;
+				reg = <0x16a0000 0x1be0000>;
 			};
 			
-			nvram@2B40000 {
+			nvram@3280000 {
 				label = "nvram";
-				reg = <0x2B40000 0x0200000>;
+				reg = <0x3280000 0x0200000>;
 			};
 
-			netgear@2d40000 {
+			netgear@3480000 {
 				label = "netgear";
-				reg = <0x2d40000 0x0c00000>;
+				reg = <0x3480000 0x4480000>;
 				read-only;
 			};
 
-			reserve@3940000 {
-				label = "reserve";
-				reg = <0x3940000 0x46c0000>;
+			reserved@7900000 {
+				label = "reserved";
+				reg = <0x7900000 0x640000>;
 				read-only;
 			};
 
-			firmware@1340000 {
-				label = "firmware";
-				reg = <0x1340000 0x1a00000>;
-			};
 
 		};
 
@@ -284,62 +310,66 @@
 			gpios = <&qcom_pinmux 65 1>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
+		
+		
 	};
-
-	gpio-leds {
+	
+		gpio-leds {
 		compatible = "gpio-leds";
 
 		usb1 {
-			label = "r7500:amber:usb1";
+			label = "r7X00:amber:usb1";
 			gpios = <&qcom_pinmux 7 0>;
 		};
 
 		usb3 {
-			label = "r7500:amber:usb3";
+			label = "r7X00:amber:usb3";
 			gpios = <&qcom_pinmux 8 0>;
 		};
 
 		status {
-			label = "r7500:amber:status";
+			label = "r7X00:amber:status";
 			gpios = <&qcom_pinmux 9 0>;
 		};
 
 		internet {
-			label = "r7500:white:internet";
+			label = "r7X00:white:internet";
 			gpios = <&qcom_pinmux 22 0>;
 		};
 
 		wan {
-			label = "r7500:white:wan";
+			label = "r7X00:white:wan";
 			gpios = <&qcom_pinmux 23 0>;
 		};
 
 		wps {
-			label = "r7500:white:wps";
+			label = "r7X00:white:wps";
 			gpios = <&qcom_pinmux 24 0>;
 		};
 
 		esata {
-			label = "r7500:white:esata";
+			label = "r7X00:white:esata";
 			gpios = <&qcom_pinmux 26 0>;
 		};
 
 		power {
-			label = "r7500:white:power";
+			label = "r7X00:white:power";
 			gpios = <&qcom_pinmux 53 0>;
 			default-state = "on";
 		};
 
 		rfkill {
-			label = "r7500:white:rfkill";
+			label = "r7X00:white:rfkill";
 			gpios = <&qcom_pinmux 64 0>;
 		};
 
-		wifi5g {
-			label = "r7500:white:wifi5g";
-			gpios = <&qcom_pinmux 67 0>;
-		};
+//		wifi {
+//			label = "r7X00:white:wifi";
+//			gpios = <&qcom_pinmux 67 0>;
+//		};
 	};
+
+
 };
 
 &adm_dma {
