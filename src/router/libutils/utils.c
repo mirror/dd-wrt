@@ -2051,8 +2051,12 @@ int internal_getRouterBrand()
 	char modelstr[32];
 	fscanf(fp, "%s %s", &vendorstr[0], &modelstr[0]);
 	fclose(fp);
+	if (!strcmp(modelstr, "R7800")) {
+		setRouter("Netgear R7800");
+		return ROUTER_NETGEAR_R7800;
+	}
 
-	if (!strcmp(modelstr, "Nighthawk")) {
+	if (!strcmp(modelstr, "R7500")) {
 		setRouter("Netgear R7500");
 		return ROUTER_NETGEAR_R7500;
 	}
@@ -5159,7 +5163,7 @@ char *cpustring(void)
 	}
 	return buf;
 #elif HAVE_IPQ806X
-	strcpy(buf, "QCA IPQ8064");
+	strcpy(buf, "QCA IPQ806X");
 	return buf;
 #elif HAVE_UNIWIP
 	strcpy(buf, "FreeScale MPC8314");
@@ -6607,6 +6611,18 @@ int led_control(int type, int act)
 		wlan_gpio = 0x008;	// wifi button led
 		usb_gpio = 0x004;	//usb1 
 		usb_gpio1 = 0x005;	//usb2 
+		break;
+	case ROUTER_NETGEAR_R7800:
+		power_gpio = 0x000;	// power led 
+		diag_gpio = 0x010;	// power led orange     
+		connected_gpio = 0x007;	// wan led
+		//usb_power = 0x015;    // usb enable
+		wlan0_gpio = 0x009;	// radio 5G 
+		wlan1_gpio = 0x008;	// radio 2G
+		//ses_gpio = 0x109;	// wps button led used for 2G
+		//wlan_gpio = 0x008;	// wifi button led used for 5G
+		usb_gpio = 0x004;	//usb1 
+		usb_gpio1 = 0x005;	//usb2
 		break;
 	case ROUTER_TRENDNET_TEW827:
 		power_gpio = 0x135;	// power led 
