@@ -359,40 +359,39 @@ void set_gpio(int gpio, int value)
 		value = 255;
 	//fprintf(stderr, "GPIO %d value %d\n", gpio, value);
 	int brand = getRouterBrand();
-	if (brand == ROUTER_NETGEAR_R7500) {
+	  
+	if (brand == ROUTER_NETGEAR_R7500 || brand == ROUTER_NETGEAR_R7800) {
 		switch (gpio) {
 		case 0:	// power
-			sysprintf("echo %d > /sys/class/leds/r7500\\:white\\:power/brightness", value);
+			sysprintf("echo %d > /sys/class/leds/r7X00\\:white\\:power/brightness", value);
 			break;
 		case 1:	// 2G
-			//
 			break;
 		case 2:	// 5G
-			sysprintf("echo %d > /sys/class/leds/r7500\\:white\\:wifi5g/brightness", value);
 			break;
 		case 3:
-			sysprintf("echo %d > /sys/class/leds/r7500\\:white\\:esata/brightness", value);
+			sysprintf("echo %d > /sys/class/leds/r7X00\\:white\\:esata/brightness", value);
 			break;
 		case 4:
-			sysprintf("echo %d > /sys/class/leds/r7500\\:amber\\:usb1/brightness", value);
+			sysprintf("echo %d > /sys/class/leds/r7X00\\:amber\\:usb1/brightness", value);
 			break;
 		case 5:
-			sysprintf("echo %d > /sys/class/leds/r7500\\:amber\\:usb3/brightness", value);
+			sysprintf("echo %d > /sys/class/leds/r7X00\\:amber\\:usb3/brightness", value);
 			break;
 		case 6:
-			sysprintf("echo %d > /sys/class/leds/r7500\\:white\\:wan/brightness", value);
+			sysprintf("echo %d > /sys/class/leds/r7X00\\:white\\:wan/brightness", value);
 			break;
 		case 7:
-			sysprintf("echo %d > /sys/class/leds/r7500\\:white\\:internet/brightness", value);
+			sysprintf("echo %d > /sys/class/leds/r7X00\\:white\\:internet/brightness", value);
 			break;
 		case 8:
-			sysprintf("echo %d > /sys/class/leds/r7500\\:white\\:rfkill/brightness", value);
+			sysprintf("echo %d > /sys/class/leds/r7X00\\:white\\:rfkill/brightness", value);
 			break;
 		case 9:
-			sysprintf("echo %d > /sys/class/leds/r7500\\:white\\:wps/brightness", value);
+			sysprintf("echo %d > /sys/class/leds/r7X00\\:white\\:wps/brightness", value);
 			break;
 		case 10:
-			sysprintf("echo %d > /sys/class/leds/r7500\\:amber\\:status/brightness", value);
+			sysprintf("echo %d > /sys/class/leds/r7X00\\:amber\\:status/brightness", value);
 			break;
 		default:
 			set_linux_gpio(gpio, value);
