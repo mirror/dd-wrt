@@ -30,6 +30,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "upnpdescstrings.h"
+
 #include "config.h"
 #include "getifaddr.h"
 #include "upnpdescgen.h"
