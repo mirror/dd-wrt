@@ -25,6 +25,7 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <libgen.h>
+#include <signal.h>
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -349,9 +350,8 @@ inotify_insert_file(char * name, const char * path)
 			if( !is_image(path) )
 				return -1;
 			break;
-                default:
+		default:
 			return -1;
-			break;
 	}
 	
 	/* If it's already in the database and hasn't been modified, skip it. */
@@ -641,7 +641,7 @@ inotify_remove_directory(int fd, const char * path)
 }
 
 void *
-start_inotify()
+start_inotify(void)
 {
 	struct pollfd pollfds[1];
 	int timeout = 1000;
@@ -650,6 +650,10 @@ start_inotify()
 	int length, i = 0;
 	char * esc_name = NULL;
 	struct stat st;
+	sigset_t set;
+
+	sigfillset(&set);
+	pthread_sigmask(SIG_BLOCK, &set, NULL);
         
 	pollfds[0].fd = inotify_init();
 	pollfds[0].events = POLLIN;
