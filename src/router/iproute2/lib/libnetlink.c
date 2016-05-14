@@ -121,11 +121,16 @@ int rtnl_dump_request(struct rtnl_handle *rth, int type, void *req, int len)
 	struct sockaddr_nl nladdr;
 	struct iovec iov[2] = { { &nlh, sizeof(nlh) }, { req, len } };
 	struct msghdr msg = {
-		(void*)&nladdr, sizeof(nladdr),
-		iov,	2,
-		NULL,	0,
-		0
+			.msg_name = (void*)&nladdr,
+			.msg_namelen = sizeof(nladdr),
+			.msg_iov = &iov,
+			.msg_iovlen = 2,
+			.msg_control = NULL,
+			.msg_controllen = 0,
+			.msg_flags = 0
 	};
+
+
 
 	memset(&nladdr, 0, sizeof(nladdr));
 	nladdr.nl_family = AF_NETLINK;
@@ -154,10 +159,13 @@ int rtnl_dump_filter(struct rtnl_handle *rth,
 		struct nlmsghdr *h;
 
 		struct msghdr msg = {
-			(void*)&nladdr, sizeof(nladdr),
-			&iov,	1,
-			NULL,	0,
-			0
+			.msg_name = (void*)&nladdr,
+			.msg_namelen = sizeof(nladdr),
+			.msg_iov = &iov,
+			.msg_iovlen = 1,
+			.msg_control = NULL,
+			.msg_controllen = 0,
+			.msg_flags = 0
 		};
 
 		status = recvmsg(rth->fd, &msg, 0);
@@ -234,10 +242,13 @@ int rtnl_talk(struct rtnl_handle *rtnl, struct nlmsghdr *n, pid_t peer,
 	struct iovec iov = { (void*)n, n->nlmsg_len };
 	char   buf[16384];
 	struct msghdr msg = {
-		(void*)&nladdr, sizeof(nladdr),
-		&iov,	1,
-		NULL,	0,
-		0
+			.msg_name = (void*)&nladdr,
+			.msg_namelen = sizeof(nladdr),
+			.msg_iov = &iov,
+			.msg_iovlen = 1,
+			.msg_control = NULL,
+			.msg_controllen = 0,
+			.msg_flags = 0
 	};
 
 	memset(&nladdr, 0, sizeof(nladdr));
@@ -350,10 +361,13 @@ int rtnl_listen(struct rtnl_handle *rtnl,
 	struct iovec iov;
 	char   buf[8192];
 	struct msghdr msg = {
-		(void*)&nladdr, sizeof(nladdr),
-		&iov,	1,
-		NULL,	0,
-		0
+			.msg_name = (void*)&nladdr,
+			.msg_namelen = sizeof(nladdr),
+			.msg_iov = &iov,
+			.msg_iovlen = 1,
+			.msg_control = NULL,
+			.msg_controllen = 0,
+			.msg_flags = 0
 	};
 
 	memset(&nladdr, 0, sizeof(nladdr));
