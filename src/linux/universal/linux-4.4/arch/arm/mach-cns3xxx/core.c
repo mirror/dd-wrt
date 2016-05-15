@@ -147,11 +147,6 @@ void cns3xxx_power_off(void)
  */
 static void __iomem *cns3xxx_tmr1;
 
-/*
- * Timer
- */
-static void __iomem *cns3xxx_tmr1;
-
 static int cns3xxx_shutdown(struct clock_event_device *clk)
 {
 	writel(0, cns3xxx_tmr1 + TIMER1_2_CONTROL_OFFSET);
