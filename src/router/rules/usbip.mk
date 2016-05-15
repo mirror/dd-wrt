@@ -17,3 +17,4 @@ usbip-install:
 	install -D usbip/libsrc/.libs/libusbip.so.0 $(INSTALLDIR)/usbip/usr/lib/libusbip.so.0
 	install -D usbip/libsysfs/lib/.libs/libsysfs.so.2 $(INSTALLDIR)/usbip/usr/lib/libsysfs.so.2
 	install -D usbip/usb.ids $(INSTALLDIR)/usbip/usr/share/hwdata/usb.ids
+	rm -rf $(INSTALLDIR)/libffi/usr/lib/libffi-3.2.1
