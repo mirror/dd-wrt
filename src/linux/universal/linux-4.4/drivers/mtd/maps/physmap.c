@@ -145,6 +145,7 @@ static int physmap_flash_probe(struct platform_device *dev)
 
 		info->map[i].virt = devm_ioremap(&dev->dev, info->map[i].phys,
 						 info->map[i].size);
+		printk(KERN_INFO "virtual memory %p\n",info->map[i].virt);
 		if (info->map[i].virt == NULL) {
 			dev_err(&dev->dev, "Failed to ioremap flash region\n");
 			err = -EIO;
