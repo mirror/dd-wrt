@@ -321,7 +321,7 @@ void start_sysinit(void)
 	char buf[PATH_MAX];
 	struct stat tmp_stat;
 	time_t tm = 0;
-	FILE *fp;
+	FILE *fp = NULL;
 	if (!nvram_match("disable_watchdog", "1"))
 		eval("watchdog");
 
@@ -342,7 +342,7 @@ void start_sysinit(void)
 
 	if (board != ROUTER_NETGEAR_R7500)
 		fp = fopen(mtdpath, "rb");
-	if (fp) {
+	if (fp != NULL) {
 		int newmac[6];
 		if (board == ROUTER_TRENDNET_TEW827)
 			maddr = getUEnv("lan_mac");
