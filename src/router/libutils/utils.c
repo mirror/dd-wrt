@@ -5274,7 +5274,7 @@ int isap8x(void)
 int led_control(int type, int act)
 /*
  * type: LED_POWER, LED_DIAG, LED_DMZ, LED_CONNECTED, LED_BRIDGE, LED_VPN,
- * LED_SES, LED_SES2, LED_WLAN0, LED_WLAN1, LED_WLAN2, LED_SEC0, LED_SEC1, USB_POWER
+ * LED_SES, LED_SES2, LED_WLAN0, LED_WLAN1, LED_WLAN2, LED_SEC0, LED_SEC1, USB_POWER, USB_POWER1
  * act: LED_ON, LED_OFF, LED_FLASH 
  * 1st hex number: 1 = inverted, 0 = normal
  */
@@ -6616,7 +6616,8 @@ int led_control(int type, int act)
 		power_gpio = 0x000;	// power led 
 		diag_gpio = 0x010;	// power led orange     
 		connected_gpio = 0x007;	// wan led
-		//usb_power = 0x015;    // usb enable
+		usb_power = 0x010;    // usb enable
+		usb_power1 = 0x00f;
 		wlan0_gpio = 0x009;	// radio 5G 
 		wlan1_gpio = 0x008;	// radio 2G
 		//ses_gpio = 0x109;	// wps button led used for 2G
