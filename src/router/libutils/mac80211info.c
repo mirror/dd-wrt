@@ -788,7 +788,7 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 	int skip = 1;
 	int rrdcount = 0;
 	if (max_bandwidth_khz == 80)
-		htrange = 60;
+		htrange = 90;
 	phy = mac80211_get_phyidx_by_vifname(interface);
 	if (phy == -1)
 		return NULL;
@@ -882,11 +882,12 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 								list[count].passive_scan = 1;
 							if (rd->reg_rules[rrc].flags & RRF_NO_IBSS)
 								list[count].no_ibss = 1;
+			//				fprintf(stderr,"freq %d, htrange %d, startfreq %d, stopfreq %d\n", freq_mhz, htrange, startfreq, stopfreq);
 							if (regmaxbw == 40 || regmaxbw == 80 || regmaxbw == 160) {
-								if ((freq_mhz - (htrange * 2)) >= startfreq) {
+								if ((freq_mhz - htrange) >= startfreq) {
 									list[count].ht40minus = 1;
 								}
-								if ((freq_mhz + (htrange * 2)) <= stopfreq) {
+								if ((freq_mhz + htrange) <= stopfreq) {
 									list[count].ht40plus = 1;
 								}
 							}
