@@ -883,10 +883,10 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 							if (rd->reg_rules[rrc].flags & RRF_NO_IBSS)
 								list[count].no_ibss = 1;
 							if (regmaxbw == 40 || regmaxbw == 80 || regmaxbw == 160) {
-								if ((freq_mhz - htrange) >= startfreq) {
+								if ((freq_mhz - (htrange * 2)) >= startfreq) {
 									list[count].ht40minus = 1;
 								}
-								if ((freq_mhz + htrange) <= stopfreq) {
+								if ((freq_mhz + (htrange * 2)) <= stopfreq) {
 									list[count].ht40plus = 1;
 								}
 							}
