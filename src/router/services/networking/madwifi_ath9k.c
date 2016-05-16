@@ -376,7 +376,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		} else if (nvram_match(bw, "80") || nvram_match(bw, "40") || nvram_match(bw, "2040")) {
 			char sb[32];
 			sprintf(sb, "%s_nctrlsb", prefix);
-			if (nvram_default_match(sb, "upper", "lower") || nvram_match(bw, "80")) {
+			if (nvram_default_match(sb, "upper", "lower")) {
 				sprintf(ht, "HT40+");
 				iht = 1;
 			} else {
@@ -535,20 +535,6 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 			} else if (nvram_match(bw, "80")) {
 				fprintf(fp, "vht_oper_chwidth=1\n");
 				int idx = channel + (6 * iht);
-/*                                switch ((channel / 4) % 4) {
-                                case 0:
-					idx = channel + 6;
-					break;
-				case 1:
-					idx = channel - 6;
-					break;
-				case 2:
-					idx = channel - 2;
-					break;
-				case 3:
-					idx = channel + 2;
-					break;
-				}*/
 				fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", idx);
 			} else if (nvram_match(bw, "160")) {
 				fprintf(fp, "vht_oper_chwidth=2\n");
