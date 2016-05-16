@@ -452,14 +452,14 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 						break;
 					i++;
 				}
-				if (iht != 0) {
-					if (chan[i].ht40minus) {
-						sprintf(ht, "HT40-");
-					} else if (chan[i].ht40plus) {
-						sprintf(ht, "HT40+");
-					} else {
-						sprintf(ht, "HT20");
-					}
+				if (chan[i].ht40minus) {
+					sprintf(ht, "HT40-");
+					iht = -1;
+				} else if (chan[i].ht40plus) {
+					sprintf(ht, "HT40+");
+					iht = 1;
+				} else {
+					sprintf(ht, "HT20");
 				}
 				free_mac80211_ac(acs);
 			} else {
