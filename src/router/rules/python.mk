@@ -27,6 +27,7 @@ python: libffi
 	make -C python sharedmods
 
 python-install:
+	make -C libffi install DESTDIR=$(INSTALLDIR)/libffi
 	make -C python install DESTDIR=$(INSTALLDIR)/python
 	rm -rf $(INSTALLDIR)/python/usr/include
 	rm -rf $(INSTALLDIR)/python/usr/share
