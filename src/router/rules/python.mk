@@ -21,7 +21,8 @@ python-configure: libffi-configure libffi libffi-install
 python-clean:
 	make -C python clean
 
-python: libffi libffi-install
+python: libffi
+	make -C libffi install DESTDIR=$(INSTALLDIR)/libffi
 	make -C python python Parser/pgen
 	make -C python sharedmods
 
