@@ -85,6 +85,7 @@ extern int br_del_interface(const char *br, const char *dev);
 extern int br_set_stp_state(const char *br, int stp_state);
 void start_set_routes(void);
 void config_macs(char *wlifname);
+static void stop_ipv6_tunnel(char *wan_ifname);
 
 #define PTABLE_MAGIC 0xbadc0ded
 #define PTABLE_SLT1 1
@@ -1010,6 +1011,7 @@ void start_lan(void)
 		}
 		strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
 		break;
+//	case ROUTER_NETGEAR_R7800:
 	case ROUTER_LINKSYS_EA8500:
 		if (getSTA() || getWET() || CANBRIDGE()) {
 			nvram_setz(lan_ifnames, "vlan1 vlan2 ath0 ath1");
@@ -4446,6 +4448,7 @@ static const char *ipv6_router_address(struct in6_addr *in6addr, char *addr6)
 
 static void start_ipv6_tunnel(char *wan_ifname)
 {
+	 
 	char *remote_endpoint = nvram_safe_get("ipv6_tun_end_ipv4");
 	char *tun_client_ipv6 = nvram_safe_get("ipv6_tun_client_addr");
 	char *tun_client_pref = nvram_safe_get("ipv6_tun_client_addr_pref");
@@ -4453,6 +4456,8 @@ static void start_ipv6_tunnel(char *wan_ifname)
 	char *ipv6_pf_len = nvram_safe_get("ipv6_pf_len");
 
 	int mtu = atoi(nvram_default_get("wan_mtu", "1500")) - 20;
+	
+	stop_ipv6_tunnel(wan_ifname);
 
 	if (nvram_invmatch("ipv6_mtu", ""))
 		mtu = atoi(nvram_safe_get("ipv6_mtu"));
@@ -4490,6 +4495,8 @@ static void start_wan6_done(char *wan_ifname)
 {
 	if (nvram_match("ipv6_enable", "0"))
 		return;
+	
+	eval("ip", "-6", "addr", "flush", "scope", "global");
 
 	if (nvram_match("ipv6_typ", "ipv6native")) {
 		if (nvram_match("wan_proto", "disabled")) {
