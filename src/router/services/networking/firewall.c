@@ -121,6 +121,7 @@
 #define DEBUG(format, args...)
 #endif
 
+
 static char *suspense;
 static unsigned int count = 0;
 static char log_accept[15];
@@ -2640,7 +2641,7 @@ void start_firewall6(void)
 		return;
 
 	fprintf(stderr, "start firewall6\n");
-
+	
 	insmod("nf_defrag_ipv6 nf_log_ipv6 ip6_tables nf_conntrack_ipv6 ip6table_filter");
 
 	eval("ip6tables", "-F", "INPUT");
@@ -2989,7 +2990,7 @@ void stop_firewall6(void)
 	if (nvram_match("ipv6_enable", "0"))
 		return;
 
-	eval("ip", "-6", "addr", "flush", "scope", "global");
+	//eval("ip", "-6", "addr", "flush", "scope", "global");
 }
 #endif
 
