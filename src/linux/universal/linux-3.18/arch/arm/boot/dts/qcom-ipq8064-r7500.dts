@@ -290,53 +290,53 @@
 		compatible = "gpio-leds";
 
 		usb1 {
-			label = "r7500:amber:usb1";
+			label = "r7X00:amber:usb1";
 			gpios = <&qcom_pinmux 7 0>;
 		};
 
 		usb3 {
-			label = "r7500:amber:usb3";
+			label = "r7X00:amber:usb3";
 			gpios = <&qcom_pinmux 8 0>;
 		};
 
 		status {
-			label = "r7500:amber:status";
+			label = "r7X00:amber:status";
 			gpios = <&qcom_pinmux 9 0>;
 		};
 
 		internet {
-			label = "r7500:white:internet";
+			label = "r7X00:white:internet";
 			gpios = <&qcom_pinmux 22 0>;
 		};
 
 		wan {
-			label = "r7500:white:wan";
+			label = "r7X00:white:wan";
 			gpios = <&qcom_pinmux 23 0>;
 		};
 
 		wps {
-			label = "r7500:white:wps";
+			label = "r7X00:white:wps";
 			gpios = <&qcom_pinmux 24 0>;
 		};
 
 		esata {
-			label = "r7500:white:esata";
+			label = "r7X00:white:esata";
 			gpios = <&qcom_pinmux 26 0>;
 		};
 
 		power {
-			label = "r7500:white:power";
+			label = "r7X00:white:power";
 			gpios = <&qcom_pinmux 53 0>;
 			default-state = "on";
 		};
 
 		rfkill {
-			label = "r7500:white:rfkill";
+			label = "r7X00:white:rfkill";
 			gpios = <&qcom_pinmux 64 0>;
 		};
 
 		wifi5g {
-			label = "r7500:white:wifi5g";
+			label = "r7X00:white:wifi5g";
 			gpios = <&qcom_pinmux 67 0>;
 		};
 	};
