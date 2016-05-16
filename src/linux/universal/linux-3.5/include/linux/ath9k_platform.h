@@ -30,6 +30,10 @@ struct ath9k_platform_data {
 	u32 gpio_mask;
 	u32 gpio_val;
 
+	u32 bt_active_pin;
+	u32 bt_priority_pin;
+	u32 wlan_active_pin;
+
 	bool endian_check;
 	bool is_clk_25mhz;
 	bool tx_gain_buffalo;
@@ -44,6 +48,10 @@ struct ath9k_platform_data {
 	int num_leds;
 	const struct gpio_led *leds;
 	const char *led_name;
+
+	unsigned num_btns;
+	const struct gpio_keys_button *btns;
+	unsigned btn_poll_interval;
 };
 
 #endif /* _LINUX_ATH9K_PLATFORM_H */
