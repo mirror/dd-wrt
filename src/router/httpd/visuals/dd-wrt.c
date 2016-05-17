@@ -2969,8 +2969,13 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n", nvram_match(wl_width, "40") ? "selected=\\\"selected\\\"" : "");
 #endif
 #if defined(HAVE_ATH10K)
-		if (has_ac(prefix) && nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("acn-mixed", "%s_net_mode", prefix))
-			websWrite(wp, "document.write(\"<option value=\\\"80\\\" %s >\" + share.ht80 + \"</option>\");\n", nvram_match(wl_width, "80") ? "selected=\\\"selected\\\"" : "");
+		if (has_ac(prefix) && nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("acn-mixed", "%s_net_mode", prefix)) {
+			websWrite(wp, "document.write(\"<option value=\\\"80\\\" %s >\" + share.vht80 + \"</option>\");\n", nvram_match(wl_width, "80") ? "selected=\\\"selected\\\"" : "");
+			if (has_vht160(prefix))
+			    websWrite(wp, "document.write(\"<option value=\\\"160\\\" %s >\" + share.vht160 + \"</option>\");\n", nvram_match(wl_width, "160") ? "selected=\\\"selected\\\"" : "");
+			if (has_vht80plus80(prefix))
+			    websWrite(wp, "document.write(\"<option value=\\\"80+80\\\" %s >\" + share.vht80plus8ß + \"</option>\");\n", nvram_match(wl_width, "80+80") ? "selected=\\\"selected\\\"" : "");
+		}
 #endif
 	}
 	websWrite(wp, "document.write(\"<option value=\\\"20\\\" %s >\" + share.full + \"</option>\");\n", nvram_match(wl_width, "20") ? "selected=\\\"selected\\\"" : "");
@@ -3242,7 +3247,7 @@ if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
 		show_channel(wp, prefix, prefix, 0);
 #if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
 		if (is_ath11n(prefix)
-		    && (nvram_match(wl_width, "40") || nvram_match(wl_width, "80")
+		    && (nvram_match(wl_width, "40") || nvram_match(wl_width, "80") || nvram_match(wl_width, "160") || nvram_match(wl_width, "80+80")
 			|| nvram_match(wl_width, "2040"))) {
 			fprintf(stderr, "[CHANNEL WIDTH] 20/40 (2)\n");
 			websWrite(wp, "<div class=\"setting\">\n");
@@ -3552,6 +3557,10 @@ if (!strcmp(prefix, "wl2"))
 #if defined(HAVE_ATH10K)
 		if (has_ac(prefix) && nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("acn-mixed", "%s_net_mode", prefix))
 			websWrite(wp, "document.write(\"<option value=\\\"80\\\" %s >\" + share.ht80 + \"</option>\");\n", nvram_match(wl_width, "80") ? "selected=\\\"selected\\\"" : "");
+			if (has_vht160(prefix))
+			    websWrite(wp, "document.write(\"<option value=\\\"160\\\" %s >\" + share.vht160 + \"</option>\");\n", nvram_match(wl_width, "160") ? "selected=\\\"selected\\\"" : "");
+			if (has_vht80plus80(prefix))
+			    websWrite(wp, "document.write(\"<option value=\\\"80+80\\\" %s >\" + share.vht80plus8ß + \"</option>\");\n", nvram_match(wl_width, "80+80") ? "selected=\\\"selected\\\"" : "");
 #endif
 	}
 	websWrite(wp, "document.write(\"<option value=\\\"20\\\" %s >\" + share.full + \"</option>\");\n", nvram_match(wl_width, "20") ? "selected=\\\"selected\\\"" : "");
@@ -3644,7 +3653,7 @@ if (!strcmp(prefix, "wl2"))
 			show_channel(wp, prefix, prefix, 0);
 #if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
 			if (is_ath11n(prefix)
-			    && (nvram_match(wl_width, "40") || nvram_match(wl_width, "80")
+			    && (nvram_match(wl_width, "40") || nvram_match(wl_width, "80") || nvram_match(wl_width, "160") || nvram_match(wl_width, "80+80")
 				|| nvram_match(wl_width, "2040"))) {
 				websWrite(wp, "<div class=\"setting\">\n");
 				websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_wide)</script></div>\n");
