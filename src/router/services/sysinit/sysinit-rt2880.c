@@ -129,7 +129,13 @@ void start_sysinit(void)
 	} else if (brand == ROUTER_BOARD_E1700 || brand == ROUTER_DIR810L) {
 
 	} else {
-#ifndef HAVE_WHR1166D
+#ifdef HAVE_WHR1166D
+		eval("swconfig", "dev", "eth0", "set", "reset", "1");
+		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
+		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 2 3 6t");
+		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "5 6t");
+		eval("swconfig", "dev", "eth0", "set", "apply");
+#if 0
 		eval("switch", "reg", "w", "2004", "ff0003");
 		eval("switch", "reg", "w", "2104", "ff0003");
 		eval("switch", "reg", "w", "2204", "ff0003");
@@ -160,11 +166,12 @@ void start_sysinit(void)
 		eval("switch", "vlan", "set", "0", "1", "11110111");
 		eval("switch", "vlan", "set", "1", "2", "00001011");
 		eval("switch", "clear");
+#endif
 #else
 		eval("swconfig", "dev", "eth0", "set", "reset", "1");
 		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 2 3 6t");
-		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "5 6t");
+		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "4 6t");
 		eval("swconfig", "dev", "eth0", "set", "apply");
 #endif
 	}
