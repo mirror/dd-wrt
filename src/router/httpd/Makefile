@@ -1304,6 +1304,7 @@ clean:
 install:
 #	lzma e www www.lz
 	install -D www $(INSTALLDIR)/etc/www
+ifneq ($(CONFIG_LITE),y)
 	install -D httpd $(INSTALLDIR)/usr/sbin/httpd
 	mkdir -p $(INSTALLDIR)/usr/lib
 	install -D validate.so $(INSTALLDIR)/usr/lib
@@ -1311,6 +1312,7 @@ install:
 ifneq ($(CONFIG_NOSSL),y)
 	install -d $(INSTALLDIR)/etc
 	install *.pem $(INSTALLDIR)/etc
+endif
 endif
 #	cd $(INSTALLDIR)/usr/sbin && ln -sf httpd httpsclient
 
