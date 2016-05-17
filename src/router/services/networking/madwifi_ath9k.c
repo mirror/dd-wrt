@@ -523,14 +523,6 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 			if (nvram_match(bw, "40")) {
 				fprintf(fp, "vht_oper_chwidth=0\n");
 				int idx = channel + (2 * iht);
-/*				switch ((channel / 4) % 2) {
-				case 0:
-					idx = channel + 2;
-					break;
-				case 1:
-					idx = channel - 2;
-					break;
-				}*/
 				fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", idx);
 			} else if (nvram_match(bw, "80")) {
 				fprintf(fp, "vht_oper_chwidth=1\n");
@@ -538,9 +530,17 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 				fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", idx);
 			} else if (nvram_match(bw, "160")) {
 				fprintf(fp, "vht_oper_chwidth=2\n");
+				int idx = 114;
+				if (channel < 100)
+					idx = 50;
+				fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", idx);
 			} else {
 				if (nvram_match(bw, "80+80")) {
 					fprintf(fp, "vht_oper_chwidth=3\n");
+					int idx = 114;
+					if (channel < 100)
+						idx = 50;
+					fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", idx);
 				} else {
 					fprintf(fp, "vht_oper_chwidth=0\n");
 				}
