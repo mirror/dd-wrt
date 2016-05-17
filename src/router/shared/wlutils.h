@@ -156,6 +156,8 @@ extern struct mac80211_info *mac80211_assoclist(char *interface);
 extern char *mac80211_get_caps(char *interface, int shortgi);
 extern int has_shortgi(char *interface);
 #ifdef HAVE_ATH10K
+extern int has_vht160(char *interface);
+extern int has_vht80plus80(char *interface);
 extern char *mac80211_get_vhtcaps(char *interface, int shortgi);
 extern unsigned int get_ath10kreg(char *ifname, unsigned int reg);
 extern void set_ath10kreg(char *ifname, unsigned int reg, unsigned int value);
