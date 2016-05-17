@@ -515,6 +515,9 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 			if (rinfo[NL80211_RATE_INFO_160_MHZ_WIDTH]) {
 				mac80211_info->wci->is_160mhz = 1;
 			}
+			if (rinfo[NL80211_RATE_INFO_80P80_MHZ_WIDTH]) {
+				mac80211_info->wci->is_80p80mhz = 1;
+			}
 			if (rinfo[NL80211_RATE_INFO_VHT_MCS]) {
 				mac80211_info->wci->is_vht = 1;
 			}
@@ -552,6 +555,9 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 			}
 			if (rinfo[NL80211_RATE_INFO_160_MHZ_WIDTH]) {
 				mac80211_info->wci->rx_is_160mhz = 1;
+			}
+			if (rinfo[NL80211_RATE_INFO_80P80_MHZ_WIDTH]) {
+				mac80211_info->wci->rx_is_80p80mhz = 1;
 			}
 			if (rinfo[NL80211_RATE_INFO_VHT_MCS]) {
 				mac80211_info->wci->rx_is_vht = 1;
