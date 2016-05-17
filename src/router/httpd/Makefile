@@ -1303,8 +1303,8 @@ clean:
 
 install:
 #	lzma e www www.lz
-	install -D www $(INSTALLDIR)/etc/www
 ifneq ($(CONFIG_LITE),y)
+	install -D www $(INSTALLDIR)/etc/www
 	install -D httpd $(INSTALLDIR)/usr/sbin/httpd
 	mkdir -p $(INSTALLDIR)/usr/lib
 	install -D validate.so $(INSTALLDIR)/usr/lib
