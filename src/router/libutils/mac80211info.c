@@ -700,6 +700,32 @@ nla_put_failure:
 }
 #endif
 
+int has_vht160(char *interface)
+{
+#if defined(HAVE_ATH10K) || defined(HAVE_MVEBU)
+	char *vhtcaps = mac80211_get_vhtcaps(interface, 1);
+	if (strstr(vhtcaps, "VHT160")) {
+		free(vhtcaps);
+		return 1;
+	}
+	free(vhtcaps);
+#endif
+	return 0;
+}
+
+int has_vht80plus80(char *interface)
+{
+#if defined(HAVE_ATH10K) || defined(HAVE_MVEBU)
+	char *vhtcaps = mac80211_get_vhtcaps(interface, 1);
+	if (strstr(vhtcaps, "VHT160-80PLUS80")) {
+		free(vhtcaps);
+		return 1;
+	}
+	free(vhtcaps);
+#endif
+	return 0;
+}
+
 int has_shortgi(char *interface)
 {
 	char *htcaps = mac80211_get_caps(interface, 1);
@@ -882,7 +908,7 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 								list[count].passive_scan = 1;
 							if (rd->reg_rules[rrc].flags & RRF_NO_IBSS)
 								list[count].no_ibss = 1;
-			//				fprintf(stderr,"freq %d, htrange %d, startfreq %d, stopfreq %d\n", freq_mhz, htrange, startfreq, stopfreq);
+							//                              fprintf(stderr,"freq %d, htrange %d, startfreq %d, stopfreq %d\n", freq_mhz, htrange, startfreq, stopfreq);
 							if (regmaxbw == 40 || regmaxbw == 80 || regmaxbw == 160) {
 								if ((freq_mhz - htrange) >= startfreq) {
 									list[count].ht40minus = 1;
