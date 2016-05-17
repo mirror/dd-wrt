@@ -90,6 +90,8 @@ int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifnam
 			ht = 2;
 		if (wc->rx_is_160mhz || wc->is_160mhz)
 			ht = 3;
+		if (wc->rx_is_80p80mhz || wc->is_80p80mhz)
+			ht = 4;
 		if (wc->rx_is_vht || wc->is_vht)
 			vht = 1;
 		if (wc->rx_is_short_gi || wc->is_short_gi)
@@ -110,6 +112,8 @@ int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifnam
 			sprintf(info, "%s80", info);
 		if (ht == 3)
 			sprintf(info, "%s160", info);
+		if (ht == 4)
+			sprintf(info, "%s80+80", info);
 		if (wc->ht40intol)
 			sprintf(info, "%sintol", info);	//ht40 intolerant
 
