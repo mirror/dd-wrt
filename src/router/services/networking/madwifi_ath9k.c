@@ -373,7 +373,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 
 		if (nvram_default_match(bw, "20", "20")) {
 			sprintf(ht, "HT20");
-		} else if (nvram_match(bw, "80") || nvram_match(bw, "40") || nvram_match(bw, "2040")) {
+		} else if (nvram_match(bw, "80") || nvram_match(bw, "40") || nvram_match(bw, "2040") || nvram_match(bw, "160") || nvram_match(bw, "80+80")) {
 			char sb[32];
 			sprintf(sb, "%s_nctrlsb", prefix);
 			if (nvram_default_match(sb, "upper", "lower")) {
