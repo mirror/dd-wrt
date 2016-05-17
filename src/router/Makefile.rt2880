@@ -227,6 +227,13 @@ endif
 ifeq ($(CONFIG_DIR810L),y)
 	cp $(LINUXDIR)/.config_dir810l $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_LOCK_US),y)
+	echo CONFIG_LOCK_US_AP=y >> $(LINUXDIR)/.config
+	echo CONFIG_LOCK_US_STA=y >> $(LINUXDIR)/.config
+else
+	echo "# CONFIG_LOCK_US_AP is not set" >> $(LINUXDIR)/.config
+	echo "# CONFIG_LOCK_US_STA is not set" >> $(LINUXDIR)/.config
+endif
 	$(kernelfeatures)
 
 	$(MAKE) -C $(LINUXDIR) oldconfig	
