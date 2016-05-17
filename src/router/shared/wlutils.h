@@ -222,12 +222,14 @@ struct wifi_client_info {
 	char is_40mhz;
 	char is_80mhz;
 	char is_160mhz;
+	char is_80p80mhz;
 	char is_ht;
 	char is_vht;
 	char is_short_gi;
 	char rx_is_40mhz;
 	char rx_is_80mhz;
 	char rx_is_160mhz;
+	char rx_is_80p80mhz;
 	char rx_is_ht;
 	char rx_is_vht;
 	char rx_is_short_gi;
