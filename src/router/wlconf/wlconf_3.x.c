@@ -1827,7 +1827,7 @@ cprintf("disable bss %s\n",name);
 				continue;
 
 			snprintf(tmp, sizeof(tmp), "wl%d.%d_hwaddr", unit, bsscfg->idx);
-			ether_atoe(nvram_safe_get(tmp), (unsigned char *)eaddr);
+			ether_atoe(nvram_safe_get(tmp), eaddr);
 			WL_BSSIOVAR_SET(name, "cur_etheraddr", bsscfg->idx, eaddr, ETHER_ADDR_LEN);
 		}
 	} else { /* One of URE or Proxy STA Repeater is enabled */
