@@ -2974,7 +2974,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 			if (has_vht160(prefix))
 			    websWrite(wp, "document.write(\"<option value=\\\"160\\\" %s >\" + share.vht160 + \"</option>\");\n", nvram_match(wl_width, "160") ? "selected=\\\"selected\\\"" : "");
 			if (has_vht80plus80(prefix))
-			    websWrite(wp, "document.write(\"<option value=\\\"80+80\\\" %s >\" + share.vht80plus8ß + \"</option>\");\n", nvram_match(wl_width, "80+80") ? "selected=\\\"selected\\\"" : "");
+			    websWrite(wp, "document.write(\"<option value=\\\"80+80\\\" %s >\" + share.vht80plus + \"</option>\");\n", nvram_match(wl_width, "80+80") ? "selected=\\\"selected\\\"" : "");
 		}
 #endif
 	}
@@ -3560,7 +3560,7 @@ if (!strcmp(prefix, "wl2"))
 			if (has_vht160(prefix))
 			    websWrite(wp, "document.write(\"<option value=\\\"160\\\" %s >\" + share.vht160 + \"</option>\");\n", nvram_match(wl_width, "160") ? "selected=\\\"selected\\\"" : "");
 			if (has_vht80plus80(prefix))
-			    websWrite(wp, "document.write(\"<option value=\\\"80+80\\\" %s >\" + share.vht80plus8ß + \"</option>\");\n", nvram_match(wl_width, "80+80") ? "selected=\\\"selected\\\"" : "");
+			    websWrite(wp, "document.write(\"<option value=\\\"80+80\\\" %s >\" + share.vht80plus + \"</option>\");\n", nvram_match(wl_width, "80+80") ? "selected=\\\"selected\\\"" : "");
 #endif
 	}
 	websWrite(wp, "document.write(\"<option value=\\\"20\\\" %s >\" + share.full + \"</option>\");\n", nvram_match(wl_width, "20") ? "selected=\\\"selected\\\"" : "");
