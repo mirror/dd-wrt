@@ -99,6 +99,8 @@ struct gpio_chip {
 	void			(*free)(struct gpio_chip *chip,
 						unsigned offset);
 
+	int			(*get_direction)(struct gpio_chip *chip,
+						unsigned offset);
 	int			(*direction_input)(struct gpio_chip *chip,
 						unsigned offset);
 	int			(*get)(struct gpio_chip *chip,
