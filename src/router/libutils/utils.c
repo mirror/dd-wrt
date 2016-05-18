@@ -5938,9 +5938,9 @@ int led_control(int type, int act)
 		break;
 #elif HAVE_WR615N
 	case ROUTER_BOARD_WHRHPGN:
-		diag_gpio = 0x001;
-		connected_gpio = 0x002;
-		disconnected_gpio = 0x003;
+		diag_gpio = 0x101;
+		connected_gpio = 0x102;
+		disconnected_gpio = 0x103;
 		ses_gpio = 0x10c;
 		sec0_gpio = 0x10c;
 		break;
