@@ -89,7 +89,7 @@ export BASEOPT:=-Os
 #export ARCH:= mipsel
 
 ifeq ($(ARCH),mipsel)
-export COPTS:=$(BASEOPT) -pipe -mips32r2 -mtune=24kec -fno-caller-saves -mno-branch-likely -fno-plt
+export COPTS:=$(BASEOPT) -pipe -mips32r2 -mtune=24kec -fno-caller-saves -mno-branch-likely
 endif
 ifeq ($(ARCH),arm)
 export COPTS:=$(BASEOPT) -march=armv4 -pipe -funit-at-a-time -msoft-float
@@ -227,12 +227,24 @@ endif
 ifeq ($(CONFIG_DIR810L),y)
 	cp $(LINUXDIR)/.config_dir810l $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_DIR860),y)
+	cp $(LINUXDIR)/.config_mt7621 $(LINUXDIR)/.config
+endif
+ifeq ($(CONFIG_USBIP),y)
+	sed -i 's/\# CONFIG_USBIP_CORE is not set/CONFIG_USBIP_CORE=m/g' $(LINUXDIR)/.config
+	echo "CONFIG_USBIP_VHCI_HCD=m" >> $(LINUXDIR)/.config
+	echo "CONFIG_USBIP_HOST=m" >> $(LINUXDIR)/.config
+	echo "# CONFIG_USBIP_DEBUG is not set" >> $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_LOCK_US),y)
 	echo CONFIG_LOCK_US_AP=y >> $(LINUXDIR)/.config
 	echo CONFIG_LOCK_US_STA=y >> $(LINUXDIR)/.config
 else
 	echo "# CONFIG_LOCK_US_AP is not set" >> $(LINUXDIR)/.config
 	echo "# CONFIG_LOCK_US_STA is not set" >> $(LINUXDIR)/.config
+endif
+ifeq ($(CONFIG_BUFFALO),y)
+	sed -i 's/\# CONFIG_JFFS2_ZLIB is not set/CONFIG_JFFS2_ZLIB=y/g' $(LINUXDIR)/.config
 endif
 	$(kernelfeatures)
 
@@ -285,6 +297,7 @@ ifeq ($(CONFIG_E1700),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wireless/rt7612
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wireless/rt7610
 endif
+ifneq ($(CONFIG_DIR860),y)
 ifneq ($(CONFIG_WHR1166D),y)
 ifneq ($(CONFIG_DIR810L),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wireless/rt7612
@@ -296,6 +309,7 @@ endif
 else
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wireless/rt5592
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wireless/rt7610
+endif
 endif
 ifneq ($(CONFIG_USBIP),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/staging/usbip
@@ -355,6 +369,9 @@ endif
 	fi
 ifeq ($(CONFIG_MT7620),y)
 	cp $(LINUXDIR)/vmlinux $(LINUXDIR)/vmlinux-mt7620
+ifeq ($(CONFIG_DIR860),y)
+	$(LINUXDIR)/scripts/dtc/dtc -O dtb -o $(LINUXDIR)/dts/MT7620a.dtb $(LINUXDIR)/dts/DIR-860.dts
+else
 ifeq ($(CONFIG_DIR810L),y)
 	$(LINUXDIR)/scripts/dtc/dtc -O dtb -o $(LINUXDIR)/dts/MT7620a.dtb $(LINUXDIR)/dts/DIR-810L.dts
 else
@@ -366,7 +383,7 @@ ifeq ($(CONFIG_WHR1166D),y)
 else
 	$(LINUXDIR)/scripts/dtc/dtc -O dtb -o $(LINUXDIR)/dts/MT7620a.dtb $(LINUXDIR)/dts/MT7620a.dts
 endif
-
+endif
 endif
 endif
 	patch-dtb $(LINUXDIR)/vmlinux-mt7620 $(LINUXDIR)/dts/MT7620a.dtb
@@ -568,6 +585,7 @@ ifeq ($(CONFIG_E1700),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wireless/rt7612
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wireless/rt7610
 endif
+ifneq ($(CONFIG_DIR860),y)
 ifneq ($(CONFIG_WHR1166D),y)
 ifneq ($(CONFIG_DIR810L),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wireless/rt7612
@@ -579,6 +597,7 @@ endif
 else
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wireless/rt5592
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wireless/rt7610
+endif
 endif
 ifeq ($(CONFIG_3G_ONLY),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs
@@ -598,6 +617,18 @@ endif
 ifeq ($(CONFIG_MT7620),y)
 	dd if=mipsel-uclibc/root-mt7620.uimage of=mipsel-uclibc/aligned-mt7620.uimage bs=4096 conv=sync
 	cat mipsel-uclibc/root.fs  >> mipsel-uclibc/aligned-mt7620.uimage
+
+
+ifeq ($(CONFIG_DIR860),y)
+	lzma e $(TOP)/$(ARCH)-uclibc/vmlinus-mt7620 $(TOP)/$(ARCH)-uclibc/vmlinus-mt7620.lzma
+	dd if=mipsel-uclibc/vmlinus-mt7620.lzma of=mipsel-uclibc/vmlinus-mt7620.aligned bs=4096 conv=sync	
+	cat mipsel-uclibc/root.fs  >> mipsel-uclibc/vmlinus-mt7620.aligned
+	tools/buildimg4/packimgs -v -o mipsel-uclibc/raw-dir860.img -i mipsel-uclibc/vmlinus-mt7620.aligned
+	tools/buildimg4/seama -i mipsel-uclibc/raw-dir860.img -m dev=/dev/mtdblock/2 -m type=firmware 
+	tools/buildimg4/seama -s mipsel-uclibc/web-dir860.img -i mipsel-uclibc/raw-dir860.img.seama -m signature=wrgac13_dlink.2013gui_dir860lb
+	./tools/trx_n -m 30000000 -o mipsel-uclibc/dir860l-webflash.bin mipsel-uclibc/raw-dir860.img.seama
+endif
+
 	cp mipsel-uclibc/aligned-mt7620.uimage mipsel-uclibc/aligned-mt7620.dir810la1
 	cp mipsel-uclibc/aligned-mt7620.uimage mipsel-uclibc/aligned-mt7620.dir810lb1
 	cp mipsel-uclibc/aligned-mt7620.uimage mipsel-uclibc/aligned-mt7620.dir810lc1
