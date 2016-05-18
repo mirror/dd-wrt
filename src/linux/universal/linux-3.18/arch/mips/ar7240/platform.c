@@ -960,6 +960,10 @@ int __init ar7240_platform_init(void)
 	mac = (u8 *)KSEG1ADDR(0x1f020000);
 	ee = (u8 *)KSEG1ADDR(0x1f021000);
 #endif
+#ifdef CONFIG_WR615N
+	mac = (u8 *)KSEG1ADDR(0x1f010000);
+	ee = (u8 *)KSEG1ADDR(0x1f011000);
+#endif
 #ifdef CONFIG_E355AC
 	mac = (u8 *)KSEG1ADDR(0x1f010000);
 	ee = (u8 *)KSEG1ADDR(0x1f011000);
@@ -989,6 +993,10 @@ int __init ar7240_platform_init(void)
 	ath79_init_mac(mac1, mac, 0);
     #elif CONFIG_E380AC
 	mac = (u8 *)KSEG1ADDR(0x1f020000);
+	ath79_init_mac(mac0, mac, -1);
+	ath79_init_mac(mac1, mac, 0);	
+    #elif CONFIG_WR615N
+	mac = (u8 *)KSEG1ADDR(0x1f010000);
 	ath79_init_mac(mac0, mac, -1);
 	ath79_init_mac(mac1, mac, 0);	
     #elif CONFIG_E355AC
@@ -1117,6 +1125,7 @@ int __init ar7240_platform_init(void)
 	iounmap(base);
     #elif CONFIG_E380AC
     	ap136_gmac_setup(QCA955X_ETH_CFG_RGMII_EN);
+    #elif CONFIG_WR615N
     #elif CONFIG_E325N
     #elif CONFIG_E355AC
     #elif CONFIG_WR650AC	
@@ -1232,6 +1241,23 @@ int __init ar7240_platform_init(void)
 	ar71xx_eth1_data.speed = SPEED_100;
 	
 	ar71xx_add_device_eth(1);
+    #elif CONFIG_WR615N
+	ath79_setup_ar933x_phy4_switch(false, false);
+
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac0, 2);
+	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac1, 0);
+	ar71xx_add_device_mdio(0, 0x0);	
+	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
+	ar71xx_eth1_data.duplex = DUPLEX_FULL;
+	// wan
+	ar71xx_add_device_eth(1);
+
+	// lan
+	ar71xx_switch_data.phy4_mii_en = 1;
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
+	ar71xx_eth0_data.duplex = DUPLEX_FULL;
+	ar71xx_eth0_data.speed = SPEED_100;
+	ar71xx_add_device_eth(0);	
     #elif CONFIG_E355AC
 	ath79_setup_ar933x_phy4_switch(false, false);
 
@@ -1504,6 +1530,7 @@ int __init ar7240_platform_init(void)
 		#endif
 	#ifndef CONFIG_WR650AC
 	#ifndef CONFIG_E355AC
+	#ifndef CONFIG_WR615N
 	#ifndef CONFIG_E380AC
 	#ifndef CONFIG_E325N
 	#ifdef CONFIG_DIR859
@@ -1544,6 +1571,7 @@ int __init ar7240_platform_init(void)
 	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio0_device.dev;
 	ar71xx_eth0_pll_data.pll_1000 = 0x06000000;
 	ar71xx_add_device_eth(0);
+	#endif
 	#endif
 	#endif
 	#endif
