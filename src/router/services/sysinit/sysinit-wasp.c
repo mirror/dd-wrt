@@ -374,7 +374,7 @@ void start_sysinit(void)
 #elif  HAVE_WZR450HP2
 	setWirelessLed(0, 18);
 #elif  HAVE_WR615N
-	setWirelessLed(0, 0);
+	setWirelessLed(0, 12);
 #elif  HAVE_E325N
 	setWirelessLed(0, 0);
 #elif  HAVE_E380AC
