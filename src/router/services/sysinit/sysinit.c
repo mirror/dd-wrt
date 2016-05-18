@@ -523,7 +523,7 @@ static void buffalo_defaults(int force)
 		insmod("lzma_decompress");
 		insmod("jffs2");
 		eval("mkdir", mountmount);
-		evsl("mount", "-t", "jffs2", partition, mountpoint);
+		eval("mount", "-t", "jffs2", partition, mountpoint);
 		sysprintf("cat %s/%s > %s", mountpoint, conffile, config);
 
 		fp = fopen(config, "r");
