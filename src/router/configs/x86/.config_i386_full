@@ -1,6 +1,7 @@
 #
 # Automatically generated make config: don't edit
 #
+CONFIG_QCA99X0=y
 CONFIG_BTRFSPROGS=y
 CONFIG_XFSPROGS=y
 
@@ -8,6 +9,7 @@ CONFIG_XFSPROGS=y
 # Base Features
 #
 #CONFIG_SNOOP=y
+CONFIG_HYPERV=y
 CONFIG_IPVS=y
 CONFIG_UNBOUND=y
 CONFIG_NMAP=y
