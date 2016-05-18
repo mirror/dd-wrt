@@ -519,20 +519,12 @@ static void buffalo_defaults(int force)
 		char mountpoint[20] = "/tmp/sysdefaults";
 		char conffile[16] = "mac.dat";
 
-		fp = fopen(script, "w");
-		if (fp) {
-			fprintf(fp, "#!/bin/sh\n");
-			fprintf(fp, "insmod lzma_compress\n");
-			fprintf(fp, "insmod lzma_decompress\n");
-			fprintf(fp, "insmod jffs2\n");
-			fprintf(fp, "mkdir %s\n", mountpoint);
-			fprintf(fp, "mount -t jffs2 %s %s\n", partition, mountpoint);
-			fprintf(fp, "cat %s/%s > %s\n", mountpoint, conffile, config);
-			fclose(fp);
-		}
-
-		chmod(script, 0755);
-		eval(script);
+		insmod("lzma_compress");
+		insmod("lzma_decompress");
+		insmod("jffs2");
+		eval("mkdir", mountmount);
+		evsl("mount", "-t", "jffs2", partition, mountpoint);
+		sysprintf("cat %s/%s > %s", mountpoint, conffile, config);
 
 		fp = fopen(config, "r");
 		if (fp) {
