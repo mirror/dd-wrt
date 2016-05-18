@@ -70,7 +70,7 @@ static void pxe_misc(struct dhcp_packet *mess, unsigned char *end, unsigned char
 static int prune_vendor_opts(struct dhcp_netid *netid);
 static struct dhcp_opt *pxe_opts(int pxe_arch, struct dhcp_netid *netid, struct in_addr local, time_t now);
 struct dhcp_boot *find_boot(struct dhcp_netid *netid);
-static int pxe_uefi_workaround(int pxe_arch, struct dhcp_netid *netid, struct dhcp_packet *mess, struct in_addr local, time_t now);
+static int pxe_uefi_workaround(int pxe_arch, struct dhcp_netid *netid, struct dhcp_packet *mess, struct in_addr local, time_t now, int pxe);
   
 size_t dhcp_reply(struct dhcp_context *context, char *iface_name, int int_index,
 		  size_t sz, time_t now, int unicast_dest, int *is_inform, int pxe, struct in_addr fallback)
@@ -831,7 +831,10 @@ size_t dhcp_reply(struct dhcp_context *context, char *iface_name, int int_index,
 	  else
 	    mess->siaddr = context->local; 
 	  
-	  snprintf((char *)mess->file, sizeof(mess->file), "%s.%d", service->basename, layer);
+	  snprintf((char *)mess->file, sizeof(mess->file), 
+		   strchr(service->basename, '.') ? "%s" :"%s.%d", 
+		   service->basename, layer);
+	  
 	  option_put(mess, end, OPTION_MESSAGE_TYPE, 1, DHCPACK);
 	  option_put(mess, end, OPTION_SERVER_IDENTIFIER, INADDRSZ, htonl(context->local.s_addr));
 	  pxe_misc(mess, end, uuid);
@@ -886,11 +889,11 @@ size_t dhcp_reply(struct dhcp_context *context, char *iface_name, int int_index,
 		  
 		  clear_packet(mess, end);
 		  
-		  /* Only do workaround for replies to 4011 */
-		  if (!pxe)
-		    mess->siaddr = tmp->local;
-		  else 
-		    workaround = pxe_uefi_workaround(pxearch, tagif_netid, mess, tmp->local, now);
+		  /* Redirect the client to port 4011 */
+		  mess->siaddr = tmp->local;
+		  /* Returns true if only one matching service is available. On port 4011, 
+		     it also inserts the boot file and server name. */
+		  workaround = pxe_uefi_workaround(pxearch, tagif_netid, mess, tmp->local, now, pxe);
 		  
 		  if (!workaround && boot)
 		    {
@@ -910,7 +913,7 @@ size_t dhcp_reply(struct dhcp_context *context, char *iface_name, int int_index,
 		  option_put(mess, end, OPTION_SERVER_IDENTIFIER, INADDRSZ, htonl(tmp->local.s_addr));
 		  pxe_misc(mess, end, uuid);
 		  prune_vendor_opts(tagif_netid);
-		  if (!workaround)
+		  if (pxe && !workaround)
 		    do_encap_opts(pxe_opts(pxearch, tagif_netid, tmp->local, now), OPTION_VENDOR_CLASS_OPT, DHOPT_VENDOR_MATCH, mess, end, 0);
 	    
 		  log_packet("PXE", NULL, emac, emac_len, iface_name, ignore ? "proxy-ignored" : "proxy", NULL, mess->xid);
@@ -1998,16 +2001,16 @@ static int prune_vendor_opts(struct dhcp_netid *netid)
    and jamb the data direct into the DHCP file, siaddr and sname fields.
    Note that in this case, we have to assume that layer zero would be requested
    by the client PXE stack. */
-static int pxe_uefi_workaround(int pxe_arch, struct dhcp_netid *netid, struct dhcp_packet *mess, struct in_addr local, time_t now)
+static int pxe_uefi_workaround(int pxe_arch, struct dhcp_netid *netid, struct dhcp_packet *mess, struct in_addr local, time_t now, int pxe)
 {
   struct pxe_service *service, *found;
 
   /* Only workaround UEFI archs. */
-  if (pxe_arch != 6 && pxe_arch != 7 && pxe_arch != 8 && pxe_arch != 9)
+  if (pxe_arch < 6)
     return 0;
   
   for (found = NULL, service = daemon->pxe_services; service; service = service->next)
-    if (pxe_arch == service->CSA && match_netid(service->netid, netid, 1))
+    if (pxe_arch == service->CSA && service->basename && match_netid(service->netid, netid, 1))
       {
 	if (found)
 	  return 0; /* More than one relevant menu item */
@@ -2017,6 +2020,9 @@ static int pxe_uefi_workaround(int pxe_arch, struct dhcp_netid *netid, struct dh
 
   if (!found)
     return 0; /* No relevant menu items. */
+  
+  if (!pxe)
+     return 1;
   
   if (found->sname)
     {
@@ -2033,8 +2039,9 @@ static int pxe_uefi_workaround(int pxe_arch, struct dhcp_netid *netid, struct dh
       inet_ntop(AF_INET, &mess->siaddr, (char *)mess->sname, INET_ADDRSTRLEN);
     }
   
-  snprintf((char *)mess->file, sizeof(mess->file), "%s.0", found->basename);
-
+  snprintf((char *)mess->file, sizeof(mess->file), 
+	   strchr(found->basename, '.') ? "%s" : "%s.0", found->basename);
+  
   return 1;
 }
 
@@ -2572,7 +2579,7 @@ static void do_options(struct dhcp_context *context,
   if (context && pxe_arch != -1)
     {
       pxe_misc(mess, end, uuid);
-      if (!pxe_uefi_workaround(pxe_arch, tagif, mess, context->local, now))
+      if (!pxe_uefi_workaround(pxe_arch, tagif, mess, context->local, now, 0))
 	config_opts = pxe_opts(pxe_arch, tagif, context->local, now);
     }
 
