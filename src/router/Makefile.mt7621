@@ -248,19 +248,19 @@ endif
 	$(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR)
 #	-$(MAKE) -f Makefile.rt2880 ath9k
 #	-$(MAKE) -f Makefile.rt2880 ath9k-install
-	-$(MAKE) -f Makefile.rt2880 libutils
+	-$(MAKE) -f Makefile.mt7621 libutils
 #	-$(MAKE) -f Makefile.rt2880 madwifi
 #	-$(MAKE) -f Makefile.rt2880 madwifi-install
 ifeq ($(CONFIG_BATMANADV),y)
-	-$(MAKE) -f Makefile.rt2880 batman-adv
-	-$(MAKE) -f Makefile.rt2880 batman-adv-install
+	-$(MAKE) -f Makefile.mt7621 batman-adv
+	-$(MAKE) -f Makefile.mt7621 batman-adv-install
 endif
 ifeq ($(CONFIG_OPENDPI),y)
-	-$(MAKE) -f Makefile.rt2880 opendpi
-	-$(MAKE) -f Makefile.rt2880 opendpi-install
+	-$(MAKE) -f Makefile.mt7621 opendpi
+	-$(MAKE) -f Makefile.mt7621 opendpi-install
 endif
-	-$(MAKE) -f Makefile.rt2880 uniwip-gpio
-	-$(MAKE) -f Makefile.rt2880 uniwip-gpio-install
+	-$(MAKE) -f Makefile.mt7621 uniwip-gpio
+	-$(MAKE) -f Makefile.mt7621 uniwip-gpio-install
 
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source
@@ -518,7 +518,7 @@ install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $
 	# Install (and possibly optimize) C library
 #	$(MAKE) -f Makefile.rt2880 lib.$(ARCH)-install
 	# optimize the others library by removing unneeded symbols
-	$(MAKE) -f Makefile.rt2880 optimize-lib
+	$(MAKE) -f Makefile.mt7621 optimize-lib
 	#-cp lib.mipsel/libcrypt.so.0 $(TARGETDIR)/lib
 	# Install modules into filesystem
 	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
@@ -528,7 +528,7 @@ ifeq ($(CONFIG_MADWIFI),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wl
 endif
 ifeq ($(CONFIG_WAVESAT),y)
-	make -f Makefile.rt2880 wavesat-install
+	make -f Makefile.mt7621 wavesat-install
 endif
 #	cp lib.$(ARCH)/libgcc_s.so.1 $(TARGETDIR)/lib
 	find $(TARGETDIR) -name "wl_*.o"  | xargs rm -rf
