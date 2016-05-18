@@ -1197,13 +1197,16 @@ void print_vht_info(__u32 capa, const __u8 *mcs)
 	case 0:
 		printf("neither 160 nor 80+80\n");
 		site_survey_lists[sscount].channel |= 0x1000;
+		fillENC("VHT80", " ");
 		break;
 	case 1:
 		printf("160 MHz\n");
+		fillENC("VHT160", " ");
 		site_survey_lists[sscount].channel |= 0x1100;
 		break;
 	case 2:
 		printf("160 MHz, 80+80 MHz\n");
+		fillENC("VHT80+80", " ");
 		site_survey_lists[sscount].channel |= 0x1200;
 		break;
 	case 3:
@@ -1214,13 +1217,13 @@ void print_vht_info(__u32 capa, const __u8 *mcs)
 
 	if (capa & BIT(5)) {
 		site_survey_lists[sscount].channel |= 0x1000;
-		fillENC("VHT80", " ");
+		fillENC("SGI", " ");
 	}
 
 	PRINT_VHT_CAPA(6, "short GI (160/80+80 MHz)");
 	if (capa & BIT(6)) {
 		site_survey_lists[sscount].channel |= 0x1200;
-		fillENC("VHT160", " ");
+		fillENC("SGI", " ");
 	}
 	PRINT_VHT_CAPA(7, "TX STBC");
 	/* RX STBC */
