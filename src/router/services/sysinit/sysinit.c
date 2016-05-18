@@ -522,7 +522,7 @@ static void buffalo_defaults(int force)
 		insmod("lzma_compress");
 		insmod("lzma_decompress");
 		insmod("jffs2");
-		eval("mkdir", mountmount);
+		eval("mkdir", mountpoint);
 		eval("mount", "-t", "jffs2", partition, mountpoint);
 		sysprintf("cat %s/%s > %s", mountpoint, conffile, config);
 
@@ -997,8 +997,7 @@ void start_restore_defaults(void)
 	struct nvram_param generic[] = {
 		{"lan_ifname", "br0"},
 		{"lan_ifnames",
-		 "eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3 ath4 ath5",
-		 0},
+		 "eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3 ath4 ath5"},
 		{"wan_ifname", "eth0"},
 		{"wan_ifnames", "eth0"},
 		{0, 0}
@@ -1030,8 +1029,7 @@ void start_restore_defaults(void)
 #elif HAVE_EAP9550
 	struct nvram_param generic[] = {
 		{"lan_ifname", "br0"},
-		{"lan_ifnames", "eth2 ra0",
-		 0},
+		{"lan_ifnames", "eth2 ra0"},
 		{"wan_ifname2", "eth2"},
 		{"wan_ifname", "eth2"},
 		{"wan_default", "eth2"},
@@ -1041,8 +1039,7 @@ void start_restore_defaults(void)
 #elif HAVE_HAMEA15
 	struct nvram_param generic[] = {
 		{"lan_ifname", "br0"},
-		{"lan_ifnames", "vlan1 ra0",
-		 0},
+		{"lan_ifnames", "vlan1 ra0"},
 		{"wan_ifname2", "vlan1"},
 		{"wan_ifname", "vlan1"},
 		{"wan_default", "vlan1"},
@@ -1052,8 +1049,7 @@ void start_restore_defaults(void)
 #elif HAVE_RT2880
 	struct nvram_param generic[] = {
 		{"lan_ifname", "br0"},
-		{"lan_ifnames", "vlan1 vlan2 ra0 ba0",
-		 0},
+		{"lan_ifnames", "vlan1 vlan2 ra0 ba0"},
 		{"wan_ifname2", "vlan2"},
 		{"wan_ifname", "vlan2"},
 		{"wan_default", "vlan2"},
@@ -1064,8 +1060,7 @@ void start_restore_defaults(void)
 #if defined(HAVE_XIOCOM) || defined(HAVE_MI424WR)
 	struct nvram_param generic[] = {
 		{"lan_ifname", "br0"},
-		{"lan_ifnames", "ixp1 ath0 ath1 ath2 ath3",
-		 0},
+		{"lan_ifnames", "ixp1 ath0 ath1 ath2 ath3"},
 		{"wan_ifname2", "ixp0"},
 		{"wan_ifname", "ixp0"},
 		{"wan_default", "ixp0"},
@@ -1075,8 +1070,7 @@ void start_restore_defaults(void)
 #else
 	struct nvram_param generic[] = {
 		{"lan_ifname", "br0"},
-		{"lan_ifnames", "ixp0 ath0 ath1 ath2 ath3",
-		 0},
+		{"lan_ifnames", "ixp0 ath0 ath1 ath2 ath3"},
 		{"wan_ifname2", "ixp1"},
 		{"wan_ifname", "ixp1"},
 		{"wan_default", "ixp1"},
