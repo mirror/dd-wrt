@@ -1037,6 +1037,7 @@ void period_check(int sig)
 	val |= get_gpio(21) << 21;	//aoss pushbutton
 #elif defined(HAVE_WR650AC)
 #elif defined(HAVE_E355AC)
+#elif defined(HAVE_WR615N)
 #elif defined(HAVE_E380AC)
 #elif defined(HAVE_E325N)
 #elif defined(HAVE_DIR869)
