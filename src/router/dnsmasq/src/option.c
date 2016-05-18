@@ -3298,7 +3298,8 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
        {
 	 struct pxe_service *new = opt_malloc(sizeof(struct pxe_service));
 	 char *CSA[] = { "x86PC", "PC98", "IA64_EFI", "Alpha", "Arc_x86", "Intel_Lean_Client",
-			 "IA32_EFI", "BC_EFI", "Xscale_EFI", "x86-64_EFI", NULL };  
+			 "IA32_EFI", "x86-64_EFI", "Xscale_EFI", "BC_EFI",
+			 "ARM32_EFI", "ARM64_EFI", NULL };  
 	 static int boottype = 32768;
 	 
 	 new->netid = NULL;
