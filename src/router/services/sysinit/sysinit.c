@@ -523,6 +523,7 @@ static void buffalo_defaults(int force)
 		if (fp) {
 			fprintf(fp, "#!/bin/sh\n");
 			fprintf(fp, "insmod lzma_compress\n");
+			fprintf(fp, "insmod lzma_decompress\n");
 			fprintf(fp, "insmod jffs2\n");
 			fprintf(fp, "mkdir %s\n", mountpoint);
 			fprintf(fp, "mount -t jffs2 %s %s\n", partition, mountpoint);
