@@ -2255,6 +2255,11 @@ int internal_getRouterBrand()
 	nvram_default_get("ath0_rxantenna", "3");
 	nvram_default_get("ath0_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
+#elif HAVE_WR615N
+	setRouter("Comfast WR615N");
+	nvram_default_get("ath0_rxantenna", "3");
+	nvram_default_get("ath0_txantenna", "3");
+	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_E325N
 	setRouter("Comfast E325N");
 	nvram_default_get("ath0_rxantenna", "3");
@@ -5930,6 +5935,14 @@ int led_control(int type, int act)
 #elif HAVE_E380AC
 	case ROUTER_BOARD_WHRHPGN:
 		diag_gpio = 0x003;
+		break;
+#elif HAVE_WR615N
+	case ROUTER_BOARD_WHRHPGN:
+		diag_gpio = 0x001;
+		connected_gpio = 0x002;
+		disconnected_gpio = 0x003;
+		ses_gpio = 0x10c;
+		sec0_gpio = 0x10c;
 		break;
 #elif HAVE_E355AC
 	case ROUTER_BOARD_WHRHPGN:
