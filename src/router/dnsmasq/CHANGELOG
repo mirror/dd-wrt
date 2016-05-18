@@ -74,7 +74,15 @@ version 2.76
 	    To avoid filling logs in configurations which define
 	    many upstream nameservers, don't log more that 30 servers.
 	    The number to be logged can be changed as SERVERS_LOGGED
-	    in src/config.h. 
+	    in src/config.h.
+
+	    Swap the values if BC_EFI and x86-64_EFI in --pxe-service. 
+	    These were previously wrong due to an error in RFC 4578.
+	    If you're using BC_EFI to boot 64-bit EFI machines, you
+	    will need to update your config.
+
+	    Add ARM32_EFI and ARM64_EFI as valid architectures in
+	    --pxe-service.
 
 
 version 2.75
