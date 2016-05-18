@@ -294,6 +294,10 @@ config WR650AC
 	bool "support for WR650AC"
 	depends on DIR859
 	select COMFAST_WATCHDOG
+config WR615N
+	bool "support for WR615N"
+	depends on DIR859
+	select COMFAST_WATCHDOG
 config E355AC
 	bool "support for E355AC"
 	depends on DIR859
