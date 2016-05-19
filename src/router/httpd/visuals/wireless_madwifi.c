@@ -460,6 +460,31 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 		free(interface);
 		websWrite(wp, " (%d MHz)", freq);
 
+#ifdef HAVE_ATH9K
+		if (is_ath9k(prefix)) {
+			switch (interface->width) {
+			case 2:
+				websWrite(sp, " NOHT");
+				break;
+			case 20:
+				websWrite(sp, " HT20");
+				break;
+			case 40:
+				websWrite(sp, " HT40");
+				break;
+			case 80:
+				websWrite(sp, " VHT80");
+				break;
+			case 8080:
+				websWrite(sp, " VHT80+80");
+				break;
+			case 160:
+				websWrite(sp, " VHT160");
+				break;
+			}
+		}
+#endif
+
 	} else
 		websWrite(wp, "%s", live_translate("share.unknown"));
 	return;
