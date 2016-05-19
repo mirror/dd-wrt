@@ -464,22 +464,22 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 		if (is_ath9k(prefix)) {
 			switch (interface->width) {
 			case 2:
-				websWrite(sp, " NOHT");
+				websWrite(wp, " NOHT");
 				break;
 			case 20:
-				websWrite(sp, " HT20");
+				websWrite(wp, " HT20");
 				break;
 			case 40:
-				websWrite(sp, " HT40");
+				websWrite(wp, " HT40");
 				break;
 			case 80:
-				websWrite(sp, " VHT80");
+				websWrite(wp, " VHT80");
 				break;
 			case 8080:
-				websWrite(sp, " VHT80+80");
+				websWrite(wp, " VHT80+80");
 				break;
 			case 160:
-				websWrite(sp, " VHT160");
+				websWrite(wp, " VHT160");
 				break;
 			}
 		}
