@@ -1248,7 +1248,7 @@ int __init ar7240_platform_init(void)
 	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac1, 0);
 	ar71xx_add_device_mdio(0, 0x0);	
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
-	ar71xx_eth1_data.duplex = DUPLEX_FULL;
+//	ar71xx_eth1_data.duplex = DUPLEX_FULL;
 	// wan
 	ar71xx_add_device_eth(1);
 
@@ -1265,7 +1265,7 @@ int __init ar7240_platform_init(void)
 	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac1, 0);
 	ar71xx_add_device_mdio(0, 0x0);	
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
-	ar71xx_eth1_data.duplex = DUPLEX_FULL;
+//	ar71xx_eth1_data.duplex = DUPLEX_FULL;
 	// wan
 	ar71xx_add_device_eth(1);
 
