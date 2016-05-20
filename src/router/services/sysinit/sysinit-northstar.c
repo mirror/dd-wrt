@@ -4549,6 +4549,7 @@ void start_sysinit(void)
 		nvram_set("bootpartition", "0");
 		break;
 	case ROUTER_ASUS_AC1200:
+		nvram_unset("et1macaddr");
 		nvram_set("vlan1hwname", "et0");
 		nvram_set("vlan2hwname", "et0");
 		nvram_set("vlan1ports", "1 2 3 4 8*");
