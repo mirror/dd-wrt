@@ -116,10 +116,10 @@ include kernel-features.mk
 kernel:
 	cp $(LINUXDIR)/.config_ipq806x $(LINUXDIR)/.config
 ifeq ($(CONFIG_R7500),y)
-	cp $(LINUXDIR)/.config_r7500 $(LINUXDIR)/.config
+	sed -i 's/\CONFIG_ARM_ATAG_DTB_COMPAT=y/# CONFIG_ARM_ATAG_DTB_COMPAT is not set/g' $(LINUXDIR)/.config
 endif
 ifeq ($(CONFIG_R7800),y)
-	cp $(LINUXDIR)/.config_r7500 $(LINUXDIR)/.config
+	sed -i 's/\CONFIG_ARM_ATAG_DTB_COMPAT=y/# CONFIG_ARM_ATAG_DTB_COMPAT is not set/g' $(LINUXDIR)/.config
 endif
 
 	$(kernelfeatures)
