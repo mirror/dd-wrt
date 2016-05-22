@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r2944 | BrainSlayer | 2016-05-22 15:07:16 +0200 (Sun, 22 May 2016) | 1 line
+
+this is for sdk9, but we cannot use this new broadcom driver yet since its unstable
+------------------------------------------------------------------------
+r2943 | BrainSlayer | 2016-05-22 13:41:01 +0200 (Sun, 22 May 2016) | 1 line
+
+update mwlwifi
+------------------------------------------------------------------------
 r2942 | BrainSlayer | 2016-05-20 19:08:20 +0200 (Fri, 20 May 2016) | 1 line
 
 add missing files
