@@ -4650,8 +4650,8 @@ void start_wan_done(char *wan_ifname)
 	 * Restart DNS proxy 
 	 */
 
-	stop_dnsmasq (); 
-	start_dnsmasq (); 
+	//stop_dnsmasq (); 
+	//start_dnsmasq (); 
 	
 	cprintf("start firewall\n");
 	/*
