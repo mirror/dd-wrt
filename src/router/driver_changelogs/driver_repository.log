@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r2946 | BrainSlayer | 2016-05-23 10:28:13 +0200 (Mon, 23 May 2016) | 1 line
+
+add lite detection
+------------------------------------------------------------------------
+r2945 | BrainSlayer | 2016-05-23 10:26:12 +0200 (Mon, 23 May 2016) | 1 line
+
+skb fix from older river
+------------------------------------------------------------------------
 r2944 | BrainSlayer | 2016-05-22 15:07:16 +0200 (Sun, 22 May 2016) | 1 line
 
 this is for sdk9, but we cannot use this new broadcom driver yet since its unstable
