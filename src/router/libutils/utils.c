@@ -1033,7 +1033,13 @@ void setRouter(char *name)
 #elif HAVE_POWERNOC_WOAP54G
 	nvram_set(NVROUTER, "WOAP54G");
 #elif HAVE_ERC
-	nvram_set(NVROUTER, "ServiceGate v1.0");
+	char *pic=NULL;
+	pic = nvram_safe_get("ree_pic");
+
+	if (!strncmp(pic, "1", 1))
+		nvram_set(NVROUTER, "ServiceGate v1.0");
+	else
+		nvram_set(NVROUTER, "ServiceGate Lite v2.0");
 #elif HAVE_OMNI
 	nvram_set(NVROUTER, "Omni Wifi Router");
 #elif HAVE_ALFA_BRANDING
