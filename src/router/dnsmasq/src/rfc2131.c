@@ -871,7 +871,8 @@ size_t dhcp_reply(struct dhcp_context *context, char *iface_name, int int_index,
 	      if (tmp)
 		{
 		  struct dhcp_boot *boot;
-		  
+		  int redirect4011 = 0;
+
 		  if (tmp->netid.net)
 		    {
 		      tmp->netid.next = netid;
@@ -889,8 +890,13 @@ size_t dhcp_reply(struct dhcp_context *context, char *iface_name, int int_index,
 		  
 		  clear_packet(mess, end);
 		  
-		  /* Redirect the client to port 4011 */
-		  mess->siaddr = tmp->local;
+		  /* Redirect EFI clients to port 4011 */
+		  if (pxearch >= 6)
+		    {
+		      redirect4011 = 1;
+		      mess->siaddr = tmp->local;
+		    }
+		  
 		  /* Returns true if only one matching service is available. On port 4011, 
 		     it also inserts the boot file and server name. */
 		  workaround = pxe_uefi_workaround(pxearch, tagif_netid, mess, tmp->local, now, pxe);
@@ -913,7 +919,7 @@ size_t dhcp_reply(struct dhcp_context *context, char *iface_name, int int_index,
 		  option_put(mess, end, OPTION_SERVER_IDENTIFIER, INADDRSZ, htonl(tmp->local.s_addr));
 		  pxe_misc(mess, end, uuid);
 		  prune_vendor_opts(tagif_netid);
-		  if (pxe && !workaround)
+		  if ((pxe && !workaround) || !redirect4011)
 		    do_encap_opts(pxe_opts(pxearch, tagif_netid, tmp->local, now), OPTION_VENDOR_CLASS_OPT, DHOPT_VENDOR_MATCH, mess, end, 0);
 	    
 		  log_packet("PXE", NULL, emac, emac_len, iface_name, ignore ? "proxy-ignored" : "proxy", NULL, mess->xid);

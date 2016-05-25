@@ -84,6 +84,39 @@ version 2.76
 	    Add ARM32_EFI and ARM64_EFI as valid architectures in
 	    --pxe-service.
 
+            Fix PXE booting for UEFI architectures. Modify PXE boot
+	    sequence in this case to force the client to talk to dnsmasq
+	    over port 4011. This makes PXE and especially proxy-DHCP PXE
+	    work with these archictectures.
+
+	    Workaround problems with UEFI PXE clients. There exist
+	    in the wild PXE clients which have problems with PXE
+	    boot menus. To work around this, when there's a single
+	    --pxe-service which applies to client, then that target
+	    will be booted directly, rather then sending a
+	    single-item boot menu.
+
+            Many thanks to Jarek Polok, Michael Kuron and Dreamcat4 
+	    for their work on the long-standing UEFI PXE problem.
+
+	    Subtle change in the semantics of "basename" in
+	    --pxe-service. The historical behaviour has always been
+	    that the actual filename downloaded from the TFTP server
+	    is <basename>.<layer> where <layer> is an integer which
+	    corresponds to the layer parameter supplied by the client.
+	    It's not clear what the function of the "layer" 
+	    actually is in the PXE protocol, and in practise layer 
+	    is always zero, so the filename is <basename>.0
+	    The new behaviour is the same as the old, except when
+	    <basename> includes a file suffix, in which case
+	    the layer suffix is no longer added. This allows
+	    sensible suffices to be used, rather then the
+	    meaningless ".0". Only in the unlikely event that you
+	    have a config with a basename which already has a
+	    suffix, is this an incompatible change, since the file
+	    downloaded will change from name.suffix.0 to just 
+	    name.suffix
+
 
 version 2.75
             Fix reversion on 2.74 which caused 100% CPU use when a 
