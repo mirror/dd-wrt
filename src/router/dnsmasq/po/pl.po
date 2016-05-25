@@ -10,7 +10,7 @@ msgstr ""
 "Project-Id-Version: pl\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2009-06-10 20:57+0100\n"
-"PO-Revision-Date: 2015-07-15 02:08+0100\n"
+"PO-Revision-Date: 2016-05-18 02:06+0200\n"
 "Last-Translator: Jan Psota <jasiupsota@gmail.com>\n"
 "Language-Team: polski <>\n"
 "Language: pl\n"
@@ -18,7 +18,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n!=1);\n"
-"X-Generator: Poedit 1.5.5\n"
+"X-Generator: Poedit 1.8.7\n"
 "X-Language: pl_PL\n"
 
 #: cache.c:513
@@ -381,9 +381,8 @@ msgid "Specify a SRV record."
 msgstr "Określenie rekordu SRV."
 
 #: option.c:405
-#, fuzzy
 msgid "Display this message. Use --help dhcp or --help dhcp6 for known DHCP options."
-msgstr "Wyświetla ten komunikat. Użyj '--help dhcp' chcąc przejrzeć listę opcji DHCP (dhcp-option=xxx,...)."
+msgstr "Wyświetla ten komunikat. Chcąc przejrzeć listę dostępnych opcji DHCP użyj '--help dhcp' lub '--help dhcp6' ."
 
 #: option.c:406
 #, c-format
@@ -458,7 +457,7 @@ msgstr "Wskazanie użytkownika z którego uprawnieniami będą uruchamiane skryp
 
 #: option.c:423
 msgid "Call dhcp-script with changes to local ARP table."
-msgstr ""
+msgstr "Wywoływanie dhcp-script w reakcji na zmiany w tablicy ARP."
 
 #: option.c:424
 msgid "Read configuration from all the files in this directory."
@@ -516,9 +515,8 @@ msgid "Maximum number of conncurrent TFTP transfers (defaults to %s)."
 msgstr "Maksymalna liczba jednocześnie obsługiwanych połączeń TFTP (domyślnie %s)."
 
 #: option.c:437
-#, fuzzy
 msgid "Maximum MTU to use for TFTP transfers."
-msgstr "Maksymalna liczba jednocześnie obsługiwanych połączeń TFTP (domyślnie %s)."
+msgstr "Ograniczenie MTU w komunikacji TFTP."
 
 #: option.c:438
 msgid "Disable the TFTP blocksize extension."
@@ -573,9 +571,8 @@ msgid "Specify lowest port available for DNS query transmission."
 msgstr "Ustawienie dolnej granicy numerów portów do przesyłania zapytań DNS."
 
 #: option.c:451
-#, fuzzy
 msgid "Specify highest port available for DNS query transmission."
-msgstr "Ustawienie dolnej granicy numerów portów do przesyłania zapytań DNS."
+msgstr "Ograniczenie najwyższego numeru portu dla transmisji zapytań DNS."
 
 #: option.c:452
 msgid "Use only fully qualified domain names for DHCP clients."
@@ -614,14 +611,12 @@ msgid "Add requestor's MAC address to forwarded DNS queries."
 msgstr "Przekazywanie MAC-adresu komputera pytającego w ruchu wychodzącym DNS."
 
 #: option.c:461
-#, fuzzy
 msgid "Add specified IP subnet to forwarded DNS queries."
-msgstr "Zamieszczanie adresu IP pytającego w przekazywanych zapytaniach DNS."
+msgstr "Zamieszczanie wskazanego adresu podsieci w przekazywanych zapytaniach DNS."
 
 #: option.c:462
-#, fuzzy
 msgid "Add client identification to forwarded DNS queries."
-msgstr "Zamieszczanie adresu IP pytającego w przekazywanych zapytaniach DNS."
+msgstr "Zamieszczanie identyfikacji pytającego w przekazywanych zapytaniach DNS."
 
 #: option.c:463
 msgid "Proxy DNSSEC validation results from upstream nameservers."
@@ -736,12 +731,10 @@ msgid "Do not log RA."
 msgstr "Wyłączenie logowania RA."
 
 #: option.c:493
-#, fuzzy
 msgid "Accept queries only from directly-connected networks."
 msgstr "Akceptowanie zapytań wyłącznie z sieci podpiętych bezpośrednio."
 
 #: option.c:494
-#, fuzzy
 msgid "Detect and remove DNS forwarding loops."
 msgstr "Wykrywanie i usuwanie pętli zapytań DNS."
 
@@ -751,7 +744,7 @@ msgstr "Ignorowanie odpowiedzi DNS zawierających ipaddr."
 
 #: option.c:496
 msgid "Set TTL in DNS responses with DHCP-derived addresses."
-msgstr ""
+msgstr "Ustawienie TTL w odpowiedziach DNS dla adresów przydzielonych przez DHCP."
 
 #: option.c:698
 #, c-format
@@ -805,9 +798,8 @@ msgid "bad IPv6 address"
 msgstr "zły adres IPv6"
 
 #: option.c:1203
-#, fuzzy
 msgid "bad IPv4 address"
-msgstr "zły adres IPv6"
+msgstr "nieprawidłowy adres IPv4"
 
 #: option.c:1276 option.c:1370
 msgid "bad domain in dhcp-option"
@@ -966,7 +958,7 @@ msgstr "nieprawidłowy zakres adresów w --alias"
 
 #: option.c:3721
 msgid "bad TTL"
-msgstr ""
+msgstr "zły TTL"
 
 #: option.c:3727
 msgid "bad CNAME"
@@ -1198,7 +1190,7 @@ msgstr "interfejs %s nie pozwolił się przyłączyć do grupy rozgłoszeniowej 
 
 #: network.c:1106
 msgid "try increasing /proc/sys/net/core/optmem_max"
-msgstr ""
+msgstr "spróbuj podwyższyć /proc/sys/net/core/optmem_max"
 
 #: network.c:1302
 #, c-format
@@ -1217,7 +1209,7 @@ msgstr "ignorowanie serwera nazw %s - nie można utworzyć/dowiązać gniazda: %
 
 #: network.c:1520
 msgid "(no DNSSEC)"
-msgstr ""
+msgstr "(brak obsługi DNSSEC)"
 
 #: network.c:1523
 msgid "unqualified"
@@ -1246,9 +1238,9 @@ msgid "using standard nameservers for %s %s"
 msgstr "używam standardowych serwerów nazw dla %s %s"
 
 #: network.c:1534
-#, fuzzy, c-format
+#, c-format
 msgid "using nameserver %s#%d for %s %s %s"
-msgstr "używam serwera nazw %s#%d dla %s %s"
+msgstr "używam serwera nazw %s#%d dla %s %s %s"
 
 #: network.c:1538
 #, c-format
@@ -1266,16 +1258,15 @@ msgid "using nameserver %s#%d"
 msgstr "używam serwera nazw %s#%d"
 
 #: network.c:1548
-#, fuzzy, c-format
+#, c-format
 msgid "using %d more nameservers"
-msgstr "używam serwera nazw %s#%d"
+msgstr "używam o %d serwerów nazw więcej"
 
 #: dnsmasq.c:166
 msgid "dhcp-hostsdir, dhcp-optsdir and hostsdir are not supported on this platform"
 msgstr "dhcp-hostsdir, dhcp-optsdir i hostsdir nie znajdują zastosowania na tej platformie"
 
 #: dnsmasq.c:181
-#, fuzzy
 msgid "no root trust anchor provided for DNSSEC"
 msgstr "nie wskazano punktów zaufania dla DNSSEC"
 
@@ -1317,7 +1308,7 @@ msgstr "wykrywanie pętli zapytań nie zostało wkompilowane - ustaw HAVE_LOOP w
 
 #: dnsmasq.c:227
 msgid "max_port cannot be smaller than min_port"
-msgstr ""
+msgstr "max_port nie może być niższy niż min_port"
 
 #: dnsmasq.c:234
 msgid "zone serial must be configured in --auth-soa"
@@ -1607,7 +1598,7 @@ msgstr "uzupełnienie pamięci podręcznej ARP nie powiodło się: %s"
 #: dhcp.c:460
 #, c-format
 msgid "Error sending DHCP packet to %s: %s"
-msgstr ""
+msgstr "Błąd wysyłania pakietu DHCP do %s: %s"
 
 #: dhcp.c:521
 #, c-format
