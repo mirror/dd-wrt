@@ -1,11 +1,56 @@
 ifeq ($(CONFIG_MIPS),y)
-EXTRA_CFLAGS+=-I$(srctree)/brcm/mipsel/include -I$(srctree)/brcm/mipsel/shared/bcmwifi/include -DBCMDRIVER -Dlinux -DCONFIG_NOPRINTK=1
-EXTRA_AFLAGS+=-I$(srctree)/brcm/mipsel/include -I$(srctree)/brcm/mipsel/shared/bcmwifi/include -DBCMDRIVER -Dlinux
+EXTRA_CFLAGS+=-I$(srctree)/brcm/mipsel/include -I$(srctree)/brcm/mipsel/shared -I$(srctree)/brcm/mipsel/shared/bcmwifi/include -I$(srctree)/brcm/mipsel/wl/dump/include -I$(srctree)/brcm/mipsel/wl/iocv/include -DBCMDRIVER -Dlinux -DCONFIG_NOPRINTK=1
+EXTRA_AFLAGS+=-I$(srctree)/brcm/mipsel/include -I$(srctree)/brcm/mipsel/shared -I$(srctree)/brcm/mipsel/shared/bcmwifi/include -I$(srctree)/brcm/mipsel/wl/dump/include -I$(srctree)/brcm/mipsel/wl/iocv/include -DBCMDRIVER -Dlinux
 SRCBASE := $(srctree)/drivers/net/wl/../../../brcm/mipsel
 SRCBASE_OFFSET := ../../../brcm/mipsel
 else
-EXTRA_CFLAGS+=-I$(srctree)/brcm/arm/include -I$(srctree)/brcm/arm/shared/bcmwifi/include -DBCMDRIVER -Dlinux -DCONFIG_NOPRINTK=1
-EXTRA_AFLAGS+=-I$(srctree)/brcm/arm/include -I$(srctree)/brcm/arm/shared/bcmwifi/include -DBCMDRIVER -Dlinux
+DDFLAGS =-I$(srctree)/brcm/arm/include -I$(srctree)/brcm/arm/shared -I$(srctree)/brcm/arm/shared/bcmwifi/include -I$(srctree)/brcm/arm/wl/dump/include -I$(srctree)/brcm/arm/wl/iocv/include
+DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/cmn/hal 
+DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/cmn/include 
+DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/cmn/core 
+DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/cmn/temp
+DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/cmn/ana
+DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/cmn/antdiv
+DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/cmn/btcx
+DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/cmn/cache
+DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/cmn/calmgr
+DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/cmn/noise
+DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/cmn/chanmgr
+DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/cmn/init
+DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/cmn/fcbs
+DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/cmn/utils
+DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/cmn/tbl
+DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/cmn/rssi
+DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/cmn/radar
+DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/cmn/radio
+DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/cmn/rxiqcal
+DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/cmn/txiqlocal
+DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/cmn/papdcal
+DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/cmn/vcocal
+DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/cmn/lpc
+DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/cmn/tssical
+DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/cmn/rxspur
+DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/cmn/rxgcrs
+DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/cmn/samp
+DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/cmn/mu
+DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/cmn/misc
+DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/cmn/tpc
+DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/ac/include
+DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/ac/core
+DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/lcn/include
+DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/lcn/core
+DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/lcn40/include
+DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/lcn40/core
+DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/lcn20/include
+DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/lcn20/core
+DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/n/include
+DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/n/core
+DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/ht/include
+DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/ht/core
+
+DDFLAGS+=-I$(srctree)/brcm/arm/wl/keymgmt/include
+EXTRA_CFLAGS+=$(DDFLAGS) -DBCMDRIVER -Dlinux
+EXTRA_AFLAGS+=$(DDFLAGS) -DBCMDRIVER -Dlinux
 SRCBASE := $(srctree)/drivers/net/wl/../../../brcm/arm
 SRCBASE_OFFSET := ../../../brcm/arm
 endif
