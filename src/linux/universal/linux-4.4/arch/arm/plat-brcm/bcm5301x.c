@@ -205,10 +205,10 @@ static int soc_abort_handler(unsigned long addr, unsigned int fsr,
 	 * These happen for no good reason
 	 * possibly left over from CFE
 	 */
-	printk( KERN_WARNING 
+	printk(KERN_WARNING
 		"External imprecise Data abort at "
-		"addr=%#lx, fsr=%#x ignored.\n", 
-		addr, fsr );
+		"addr=%#lx, fsr=%#x, pc=%#lx lr=%#lx ignored.\n",
+		addr, fsr, regs->ARM_pc, regs->ARM_lr);
 
 	/* Returning non-zero causes fault display and panic */
         return 0;
@@ -555,7 +555,7 @@ static void __init soc_get_uart_clk_rate(u32 *clk_rate_cca, u32 *clk_rate_ccb)
 		BUG_ON(!clk_int);
 		clk_rate_int = clk_get_rate(clk_int);
 	}
-
+    
 	if (UARTClkDiv == 0) {
 		UARTClkDiv = 0x100;
 	}
@@ -627,6 +627,8 @@ void __init soc_add_devices( void )
 		}
 		/* BCM53573 uses different interrupt ID number */
 		uart_ports[0].irq = IRQ_CC_UART;
+		/* Select 16550A to enable UART FIFO mode */
+		uart_ports[0].type = PORT_16550A;
 	}
 
 	/* Fixup UART port structure */
