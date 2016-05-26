@@ -76,6 +76,8 @@ static LIST_HEAD(link_list);
 #define POLICY_DEFAULT 0	/* BIOS default setting */
 #define POLICY_PERFORMANCE 1	/* high performance */
 #define POLICY_POWERSAVE 2	/* high power saving */
+#define POLICY_L0SPOWERSAVE 3	/* Only do L0S */
+#define POLICY_L1POWERSAVE 4	/* Typically same savings as L1+L0s */
 
 #ifdef CONFIG_PCIEASPM_PERFORMANCE
 static int aspm_policy = POLICY_PERFORMANCE;
@@ -89,6 +91,9 @@ static const char *policy_str[] = {
 	[POLICY_DEFAULT] = "default",
 	[POLICY_PERFORMANCE] = "performance",
 	[POLICY_POWERSAVE] = "powersave"
+	,
+	[POLICY_L0SPOWERSAVE] = "l0s_powersave",
+	[POLICY_L1POWERSAVE] = "l1_powersave",
 };
 
 #define LINK_RETRAIN_TIMEOUT HZ
@@ -102,6 +107,12 @@ static int policy_to_aspm_state(struct pcie_link_state *link)
 	case POLICY_POWERSAVE:
 		/* Enable ASPM L0s/L1 */
 		return ASPM_STATE_ALL;
+	case POLICY_L0SPOWERSAVE:
+		/* Enable ASPM L0s */
+		return ASPM_STATE_L0S;
+	case POLICY_L1POWERSAVE:
+		/* Enable ASPM L1 */
+		return ASPM_STATE_L1;
 	case POLICY_DEFAULT:
 		return link->aspm_default;
 	}
@@ -112,9 +123,11 @@ static int policy_to_clkpm_state(struct pcie_link_state *link)
 {
 	switch (aspm_policy) {
 	case POLICY_PERFORMANCE:
+	case POLICY_L0SPOWERSAVE:
 		/* Disable ASPM and Clock PM */
 		return 0;
 	case POLICY_POWERSAVE:
+	case POLICY_L1POWERSAVE:
 		/* Disable Clock PM */
 		return 1;
 	case POLICY_DEFAULT:

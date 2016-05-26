@@ -60,6 +60,9 @@ endif
     EXTRA_CFLAGS    += -DWL_ALL_PASSIVE
     endif
     endif
+    ifeq ($(CONFIG_CACHE_L310),y)
+    EXTRA_CFLAGS    += -DWL_PL310_WAR
+    endif
 
 ifeq ($(CONFIG_MIPS),y)
     EXTRA_CFLAGS += -DDMA $(WLFLAGS) -I$(src) -I$(src)/.. -I$(SRCBASE)/wl/linux \
