@@ -288,7 +288,7 @@ all:
 configs-checkout:
 	rm -rf $(TOP)/private
 	svn co svn://svn.dd-wrt.com/private $(TOP)/private
-	$(TOP)/private/symlinks.sh $(TOP)
+	$(TOP)/private/symlinks.sh $(TOP) $(ARCHITECTURE)
 		
 
 configs-update:
