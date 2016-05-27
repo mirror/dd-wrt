@@ -288,7 +288,7 @@ all:
 configs-checkout:
 	rm -rf $(TOP)/private
 	svn co svn://svn.dd-wrt.com/private $(TOP)/private
-	$(TOP)/private/symlinks.sh $(TOP) $(ARCHITECTURE)
+	$(TOP)/private/symlinks.sh $(TOP) $(LINUXDIR) $(ARCHITECTURE)
 		
 
 configs-update:
@@ -303,7 +303,7 @@ configs-update:
 	svn update $(LINUXDIR)/../linux-4.0
 	svn update $(LINUXDIR)/../linux-4.1
 	svn update $(TOP)/private
-	$(TOP)/private/symlinks.sh $(TOP) $(LINUXDIR)
+	$(TOP)/private/symlinks.sh $(TOP) $(LINUXDIR) $(ARCHITECTURE)
 
 configs-clean:
 	@true
