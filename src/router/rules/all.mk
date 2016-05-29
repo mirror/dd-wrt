@@ -277,6 +277,7 @@ include rules/unbound.mk
 include rules/ubi-utils.mk
 include rules/libffi.mk
 include rules/lzo.mk
+include rules/java.mk
 
 #
 # Generic rules
