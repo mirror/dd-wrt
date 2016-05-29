@@ -1,0 +1,7 @@
+Thanks to everybody who have downloaded and tested JamVM.
+
+In particular, I'd like to thank Mark Wielaard who has
+extensively tested JamVM against Mauve and other applications,
+and has provided numerous bug reports, Michael Koch, who
+packages JamVM for Debian, and Robert Schuster who does the
+same for Gentoo.

@@ -1,0 +1,1377 @@
+JamVM 2.0.0 released on 30th July 2014
+======================================
+
+JamVM 2.0.0 is the first release of JamVM with support for OpenJDK.  Although
+IcedTea already includes JamVM with OpenJDK support, this has been based on
+periodic snapshots of the development tree.
+
+This release supports OpenJDK 6, 7 and 8 (the latest).  With OpenJDK 7 and 8
+this includes full support for JSR 292 (invokedynamic).  JamVM 2.0.0
+with OpenJDK 8 also includes full support for Lambda expressions (JSR 335),
+type annotations (JSR 308) and method parameter reflection.
+
+In addition to OpenJDK support, JamVM 2.0.0 also includes many bug-fixes,
+performance improvements and improved compatibility (from running the OpenJDK
+jtreg tests).  The following is an edited list of the top ~100 commits (out
+of 300+) in date order (most recent first).  The list has been categorised
+into those affecting OpenJDK only, GNU Classpath only, and both OpenJDK and
+GNU Classpath (All).
+
+- OpenJDK: JSR 292: show full anonymous/lamdba class name in stack trace
+- OpenJDK: JSR 292: resolvePolyMethod race-conditions
+- OpenJDK: JSR 292: Free callsite linked-list on class GC
+- OpenJDK: JSR 292: Fix for invokedynamic resolution (must be per callsite)
+- OpenJDK: JSR 292: constant method handle can be signature polymorphic
+- All: More command-line compatibility options
+- OpenJDK: Use correct thread group function when thread dies
+- GNU Classpath: update JamVM's version of VMAccessController
+- All: Check ClassBlock padding at VM initialisation
+- GNU Classpath: Update GNU Classpath ClassBlock padding
+- OpenJDK: Make ClassBlock padding dependent on OpenJDK version
+- OpenJDK: JSR 292: Fix RepetitiveLambdaSerialization jtreg test
+- OpenJDK: Fix compatibility issues on different Unixes
+- All: Explicitly initialise java.lang.Class
+- All: Optimise ClassBlock structure
+- OpenJDK: JSR 292: anonymous class resolution to itself
+- OpenJDK: JSR 292: anonymous classes should use host_class permissions
+- OpenJDK: JSR 292: findInvokeDynamicInvoker fix exception handling
+- OpenJDK: JSR 292: Fix CallStaticInitOrder jtreg test
+- OpenJDK: JVM_NewMultiArray: element class may be an array
+- OpenJDK: jtreg test java/lang/reflect/Array/ExceedMaxDim
+- OpenJDK: Fix Local/Anonymous class checks
+- All: Fix race-condition in constant-pool resolution code
+- OpenJDK: JSR 292: MethodHandle constant-pool refs may be resolved
+- OpenJDK: JSR 292: bootstrap method args error handling
+- GNU Classpath: race-condition in thread detach
+- GNU Classpath: fix threading issue in lookupLoadedDlls0
+- All: Race condition in setting up imethod table
+- All: GC: Several minor performance improvements
+- OpenJDK: Add support for CallerSensitive
+- OpenJDK: JSR 335: handle interfaces when resolving a method
+- OpenJDK: sun.misc.Unsafe: additional methods get/putAddress
+- OpenJDK: JSR 292: enable for OpenJDK 7/IcedTea 2
+- OpenJDK: JSR 335: invokeinterface check in method resolution
+- OpenJDK: JSR 335: implement "bridge" methods for Mirandas
+- OpenJDK: JSR 335: interface methods - handle multiple defaults and conflicts
+- All: Fix invokesuper check in invokespecial opcode
+- OpenJDK: JSR 901: VM support for method parameter reflection
+- OpenJDK: JSR 335: VM support for lambda expressions
+- OpenJDK: Implement JSR 308: Type Annotations
+- All: Re-work internal storage of annotation data
+- OpenJDK: JSR 292: update intrinsic cache after GC compaction
+- OpenJDK: JSR 292: initMemberName: handle constructor
+- OpenJDK: JSR 292: implement MethodHandleNatives::expand
+- OpenJDK: JSR 292: resolveMemberName: throw LinkageError
+- OpenJDK: JSR 292: intercept LinkageError when linking callsite
+- OpenJDK: JSR 292: handle fields in findMethodHandleConstant
+- OpenJDK: JSR 292: enable only when configuring for OpenJDK8
+- OpenJDK: Implement fence methods in sun.misc.Unsafe
+- OpenJDK: JSR 292: implement intrinsic cache
+- OpenJDK: JSR 292: use internal opcodes for intrinsics
+- OpenJDK: Very simple field injection framework
+- OpenJDK: JSR 292 Lambda access control jtreg tests
+- OpenJDK: Garbage collector changes for JSR 292
+- OpenJDK: Yet more JSR 292 jtreg tests
+- OpenJDK: Set anonymous class protection domain
+- OpenJDK: JSR 292: all jtreg tests now pass
+- OpenJDK: First commit of OpenJDK8 JSR292 support (invokedynamic)
+- OpenJDK: Do not put version number in libjvm.so SONAME
+- All: Changes for Raspbian (Raspberry Pi)
+- All: Add extra compatibility options
+- All: When suspending, ignore detached threads that have died
+- All: Update stubs generator to handle ref returns
+- All: Ref return values from JNI methods need to handled specially
+- OpenJDK: Implement classlibCheckIfOnLoad() on OpenJDK
+- OpenJDK: OpenJDK 7: make thread states JVMTI compatible
+- All: Add OpenBSD/sparc to list of recognised hosts
+- All: Make command line compatibility options table-driven
+- OpenJDK: Skip Java-reflection-related DelegatingClassLoaders
+- All: Generic JNI stubs for common JNI method signatures
+- All: Add support for armhf
+- OpenJDK: Fix OpenJDK enclosingMethodInfo()
+- All: "Fix" handling of CLI bootclasspath options
+- All: Correct thrown exception by bootstrap loader
+- All: Fix threading of references list during compaction
+- All: Fix class GC with classes containing Miranda methods
+- All: Propogate initialisation errors to top-level
+- OpenJDK: Extra sun.misc.Unsafe functions
+- GNU Classpath: Fix VMThread.join
+- OpenJDK: Initial implementation of JVM_FindClassFromBootLoader
+- All: Fix callJNIMethod on i386 with -fomit-frame-pointer
+- All: Fix backwards cache conflict resolution code
+- All: Unify command line options parsing
+- OpenJDK: Implement remaining OpenJDK Array reflection interface
+- All: Base default min and max heap size on physical memory
+- OpenJDK: Fix reflective array access
+- All: Rewrite integer divide overflow check
+- OpenJDK: First set of changes to support JamVM/OpenJDK on MacOS X
+- All: Handle integer overflow on i386/amd64
+- All: On ARM, force interpreter to be built in ARM mode
+- All: MIPS: 64-bit and interpreter inlining by default
+- OpenJDK: Fix bug in JVM_NewMultiArray
+- All: JNI compatibility options and error printing
+- OpenJDK: Nasty compaction bug with OpenJDK classloader tables
+- All: Native return types smaller than an int must be handled specially
+- All: Add MIPS support for inlining
+- All: Update arm.h for ARMv7-A
+- All: Linux implementation of nativeJVMPath()
+- OpenJDK: Changes to VM to support different class-libraries
+- All: Fix for LNEG with stack-caching enabled on 32 bit machines (seen on ARM)
+- All: Fix for I2L on MIPS
+- All: Fix getMethodParameterAnnotations when there are no annotations
+- All: Fix constructorParameterAnnotations
+- All: Initial version of JNI stubs generator
+- All: Support for JNI stubs (signature specific fast invoke)
+- OpenJDK: Implement JNI RegisterNatives (first change for OpenJDK)
+- All: Add JNI 1.6 to supported versions returned by JNI onload
+
+
+JamVM 1.5.4 released on 1st January 2010
+========================================
+
+A summary of changes since 1.5.3:
+
+- GC changes:
+
+  - Mark phase rewritten to use an explicit fixed-size mark stack,
+    with a moving heap scan pointer.  The previous recursive marking
+    could lead to stack overflow when marking complex, deeply-linked
+    structures.  If the explicit mark stack overflows, a slower,
+    fallback mechanism is used of scanning the heap.  The new mark
+    phase is upto 50% faster than the old recursive marking.
+
+  - bug fix for unallocated blocks within the heap of >= 1 GB.
+
+- JNI changes:
+
+  - Updated to JNI version 1.6.  This adds the function
+    GetObjectRefType().
+
+  - Fully implemented JNI weak global references (NewWeakGlobalRef
+    and DeleteWeakGloablRef).  Note, these are different to Java
+    Soft/Weak/Phantom References which have been supported since
+    JamVM 1.4.0.
+
+  - verbose:jni now shows details of the opening of native libraries.
+    If a library fails to open a diagnostic message is shown (if
+    available).  This is intended to help debug common library
+    problems.
+
+  - bug fix for ToReflected[Method|Field] and GetSuperClass.  A
+    local reference must be created for the return value.
+
+- Platform changes:
+
+  - Interpreter inlining (aka code-copying JIT) now enabled by
+    default on ARM systems.  Testing on Cortex-A8 indicates
+    82% speed improvement on integer benchmarks, and 55% on
+    floating-point.
+
+  - If cross-compiling, and interpreter inlining is enabled, runtime
+    relocation checks will be enabled (relocation information is
+    normally generated at compile time; as this can't be done
+    when cross-compiling it must be done at runtime, but it
+    increases the size of the executable by ~30%).
+
+  - Initial port to Sparc/FreeBSD.  My thanks to Per Ola Ingvarsson
+    for architecture dependent definitions.  Interpreter inlining
+    (aka code-copying JIT) is currently not supported due to missing
+    code for flushing the instruction/data caches, and branch
+    generation. It also requires libffi, which is enabled by default.
+
+  - Changes to x86 and x86_64 across all platforms to zero/sign
+    extend return values from native methods whose size is less
+    than an int (i.e. boolean, byte, char and short).  This is
+    necessary due to changes in code produced by gcc >= 4.3.
+
+  - Rare race-condition in thin-locking code on x86 and x86_64
+    architectures, leading to deadlock.  On modern x86 CPUs, an
+    extra memory barrier is required.  Seen intermittently while
+    running a thread intensive benchmark using at least 4 cores.
+
+  - Extensive changes to support 64-bit Big Endian systems.  These
+    were previously supported, but support was completely broken
+    with the introduction of the new object layout in JamVM 1.5.2.
+
+- Miscellaneous fixes:
+
+  - Interpreter inlining bug fix: reference to memory after it
+    had been freed
+
+  - java.lang.reflect.VMField getAnnotation() implemented.  This
+    has been missing since the reflection rework in JamVM 1.5.2.
+
+  - ThreadMXBean: fixes for getThreadInfoForId (VMThreadMXBeanImpl).
+    
+    - Did not correctly report lock or lock owner, when the thread was
+      blocked on an object which was thin-locked by another thread
+
+    - It was using a constructor which has since been removed
+
+  - Fixes for NULL handling in findClassFromSignature() and
+    utf8CharLen()
+
+  - Fixed memory leak in bytecode rewriting.  Due to missing
+    parantheses, old bytecode stream was not being freed (for
+    example, this leaks 47K when running "Hello, World")
+
+  - Bug-fix for theoretical race-condition in thread deletion when
+    notifying joining threads after thread ID has been reused.
+
+
+JamVM 1.5.3 released on 14th April 2009
+=======================================
+
+JamVM 1.5.3 is primarily a bug-fix release.  It fixes issues seen
+while running Eclipse 3.4.2 and JRuby 1.2.0RC2, and adds some minor
+features.  A summary of the changes:
+
+- Zip/Jar support in the boot classloader has been rewritten to
+  no longer require the Zip/Jar files to be mmap-ed read/write.
+  This increases shareability between multiple VM instances, and
+  improves memory-usage on embedded systems.
+
+- JNI invocation API:
+  - set thread-self to NULL when thread detaches (if the thread tries
+    to re-attach, it appears to still be attached)
+
+  - init args_count in dummy stack frame (fix problem if the thread
+    detaches and then re-attaches)
+ 
+- Do not create a library unloader for libraries loaded by the bootstrap
+  loader if they have an JNI_OnUnload method (the bootstrap loader is
+  never unloaded, and so they will never be called).  Fixes a SEGV with
+  JRuby.
+
+- Fix to annotation handling.  When the annotation value is an array,
+  the native annotation parser constructs an Object array.  However,
+  the method return value is the specific type.  This leads to an
+  AnnotationTypeMismatchException.  The fix coerces the Object
+  array to the correct type.
+
+- Simple implementation of java.lang.management.VMManagementFactory
+  (returns no memory pool, memory manager or GC names).  Sufficient
+  to run JRuby.
+
+- Implemented package support in the bootstrap class loader.  Package
+  information is obtained from the manifest file if it exists.  However,
+  GNU Classpath's glibj.zip's manifest has no package information.
+  The class library is therefore recognised by the presence of
+  java/lang/Object.class, and appropriate package information is
+  constructed.
+
+- Fix broken implementation of VMClass.getSimpleName() (use the
+  implementation from gcj)
+
+- Default Java stack size increased to 256K from 64K
+
+- Fix to bootstrap loader getResources() when the bootclasspath
+  entry is relative (prepend the current working directory)
+
+- Fix minor memory leak in bootstrap loader getResources()
+
+- Add --enable-tls option to configure, enabling thread-local-storage
+  (__thread) to be disabled
+
+
+JamVM 1.5.2 released on 1st February 2009
+=========================================
+
+A summary of changes since 1.5.1:
+
+- Interpreter inlining changes
+
+  - Basic-blocks are now inlined across block boundaries removing
+    the need for dispatching between blocks in the case of
+    fall-through control flow
+
+  - Control-flow within inlined sequences now patched with real jumps,
+    removing the need for computed jumps
+
+  - Control flow between non-shared sequences now patched, replacing
+    dispatch with real jumps
+
+  - Simple basic-block profiling is now implemented.  This considerably
+    reduces the size of the code-cache, without reducing performance
+
+- Reworked Object layout
+
+  - Previously, on 64-bit machines the object layout was wasteful, with
+    padding on fields less than 64-bits (to preserve 64-bit alignment).
+    The new object layout on average reduces heap usage by approx
+    10 - 15%
+
+  - On 32-bit machines, 64-bit fields are now 64-bit aligned (without
+    introducing extra padding if possible)
+
+- Various alignment fixes
+
+  - 64-bit alignment of operand stack
+  - 64-bit alignment of static variable data
+
+- Reflection support
+
+  - Reworking required for new object layout
+
+  - Reworked to use VMConstructor, VMMethod, etc.
+
+  - Reworked to improve field access and method invocation performance
+    (this offsets the extra costs of the VM interface, and improves
+    performance over 1.5.1).
+
+  - Access permission checks take precedence over other errors
+
+  - Class/method signatures : do not convert slash to dots
+
+- JNI fixes/improvements
+
+  - Class references returned by JNI now use local references
+
+  - Throw InstantiationException not InstantiationError when allocating
+    objects and the class is an interface or abstract
+
+  - Reworked JNI global references
+
+    - Fix memory leak when expanding list
+
+    - Improve performance (optimise case where references are
+      created/deleted in a stack-like manner)
+
+- OpenSolaris/Solaris/x86 port
+
+- GC fixes
+
+  - Fix race-condition in registering references with the GC
+
+  - Separate "Async GC" thread is now disabled by default.  It didn't
+    improve performance, and could increase power-consumption on
+    embedded systems
+
+- Exception handling
+
+  - Fix method-skipping when filling in stack trace (methods could
+    be incorrectly excluded from the trace when a class subclassed
+    Throwable)
+
+  - Uncaught exceptions in the "main" thread will now use the thread's
+    uncaughtExceptionHandler
+
+- Various compatibility command line options recognised (and
+  ignored).  These include -XX:PermSize and XX:MaxPermSize
+  required to build OpenJDK.
+
+- sun.misc.Unsafe
+
+  - Object methods (compareAndSwapObject, etc.) fixed on 64-bit
+    machines
+
+  - Implemented support for thread park and unpark (removing previous
+    highly inefficient "empty" implementation)
+
+- Use thread-local storage (__thread), if available, instead of
+  pthread keys
+
+- Various minor race-conditions seen while running Dacapo benchmarks
+
+- Strict-aliasing fixes when compiled with GCC 4.3, interpreter
+  stack-caching is enabled, and interpreter inlining is on
+
+- A large amount of code-tidying throughout the VM
+
+- Minimum heap size increased to 16MB
+
+- Various compiler warnings.
+
+
+JamVM 1.5.1 released on 10th March 2008
+=======================================
+
+A summary of changes since 1.5.0:
+
+- Implemented a new internal VM symbol framework.  This ensures that
+  all class, method, field names, etc. are unique thus removing the
+  need to use strcmp for comparison.
+
+- Implemented a new internal VM exception mechanism for frequent
+  exceptions thrown within the VM.
+
+- Hand-coded support for AMD64 ABI.  Previously AMD64 required libffi
+  but this is not individually packaged on some Linux distributions.
+  On a random set of signatures the hand-coded assembler is 4.6 times
+  faster (and jBYTEmark FP Index is 30% faster).
+
+- Ported to Darwin/ARM (i.e. the iPhone).  Built using unofficial
+  toolchain and tested on jailbroken iPhone (1.1.3 firmware)
+
+- Class initialisation/first active use fixes
+  
+  - initialise if first active use is object allocation via reflection
+    (newInstance)
+
+  - initialise if first active use is object allocation via JNI
+    (AllocObject/NewObject)
+
+  - The wait in step 2 of the initialisation sequence must be
+    non-interruptible (not specified in the JVM or Java spec).
+
+  - If allocation of the ExceptionInInitializerError fails,
+    OutOfMemoryError should be thrown not the original exception
+
+  - Don't resolve if initialiser throws ExceptionInInitializerError
+    (subsequent resolution will not see the class is erroneous)
+
+- JNI_OnLoad fixes
+
+  - initialise JNI local refs before calling
+
+  - if JNI_FindClass is called from JNI_OnLoad, ensure correct class
+    loader context is used.
+
+- JNI_OnUnload fixes
+
+  - initialise JNI local refs before calling
+
+  - If a library defines JNI_OnUnload, and the class loader which
+    loaded it is GCed JNI_OnUnload is called and the library is
+    unloaded.  Previously this was done within the GC.  If OnUnload
+    allocated objects it could corrupt the heap.  Dummy unloader
+    objects are now created, and JNI_OnUnload is called from the
+    finalize method by the finalizer thread.
+
+- Fix variable argument passing of floats When calling Java methods from
+  native code
+
+- Rework VM initialisation/start-up sequence
+
+- Fix for JNI_ThrowNew and exceptions loaded by non-bootstrap classloader
+
+- Fix for JNI_GetMethodID and object/class initialiser methods
+  (do not search class hierarchy)
+
+- During resolution throw IllegalAccessError and not IllegalAccessException
+
+- handle loadClass returning null without throwing exception
+
+- Fix for running Jar files where the main class is package-protected
+
+- Interpeter inlining changes
+
+  - Do not inline class initialisers (<clinit>).  No performance
+    improvement as they are only ran once.  Reduces memory usage 
+
+  - Fix for class unloading when inlining disabled (-Xnoinlining)
+
+- Bump java.specification.version to 1.5
+
+- Improve error messages if VM aborts during initialisation
+
+- During configure, do not disable zip/jar file support if zlib library
+  or header can't be found (now aborts).  Users never saw the warning
+  and they ended up with a build which "didn't work".
+
+- Various compiler warnings.
+
+
+JamVM 1.5.0 released on 28th October 2007
+=========================================
+
+A summary of changes since 1.4.5:
+
+- Substantially modified the interpreter to implement inline-threading
+  (also known as super-instructions or code-copying).  This copies
+  code sequences together to produce native code that executes without
+  the normal interpreter dispatch overhead (similar to a simple JIT).
+
+  - Supported on i386, AMD64, PowerPC and ARM, with or without stack-
+    caching.  It is enabled by default on i386, AMD64 and PowerPC.
+
+  - Performance improvement upto 300% on Pentium 4 (NetBurst), and upto
+    200% on Athlon 64.  Less on Core 2 Duo (upto 70% faster as it has
+    indirect branch prediction), and PowerPC which was already very
+    optimised (upto 30% faster).
+
+  - Tested on gcc 3.4 (i386, AMD64, PowerPC), 4.0 (i386), 4.1
+    (i386, AMD64, PowerPC, ARM), 4.2 (i386, AMD64)
+
+  - Several new command line options to control inlining:
+
+      -Xreplication : determines whether duplicate code sequences
+       are replicated or shared.  Can be set to 'none' (no replication),
+       'always' (all sequences are copies) or a threshold value (e.g.
+       10, when sharing of a sequence reaches the threshold the sequence
+       is replicated).
+
+      -Xcodemem : the maximum amount of memory for super-instructions.
+       Once the maximum is reached no new super-instructions are generated
+       but existing super-instructions are reused (class unloading will
+       also free unused sequences).  Can be set to a value or 'unlimited'.
+       This option can be used to limit code memory on systems with little
+       RAM (i.e. embedded).
+
+      -Xshowreloc : debugging option, which shows which opcodes were
+       determined to be relocatable, and for opcodes which aren't why
+       they aren't relocatable.  When using stack-caching there are
+       three versions of each opcode (for 3 stack-cache levels).
+
+      -Xnoinlining : turns off inlining (equivalent to setting codemem
+       to zero).
+
+  - Opcode relocatability is determined by default at build time, but
+    this doesn't work when cross-compiling (so inlining is disabled).
+    Relocatability can be determined at runtime using configure option
+    --enable-runtime-reloc-checks, but this increases executable size
+    by approx 30%.
+
+- Command line options -version and -showversion now shows build
+  information.  This includes the execution engine (e.g. inline-
+  threaded interpreter with stack-caching), the gcc version which
+  was used to compile JamVM (useful for debugging) and the "built in"
+  boot library path and classpath.
+
+- Ported to ARM systems using EABI.  This is a full port, with hand-
+  coded assembler to handle the construction of a call-frame for calling
+  JNI native methods.
+
+- Refactored GC to remove all possible calls which may deadlock
+  with threads suspended in "unsafe" operations.  This includes
+  use of malloc/realloc/free and pthreads operations.
+
+- In allocClass() check if gcMalloc() returns NULL (i.e. OOM).
+
+- Copy Sun's behaviour when dealing with an empty property key or no
+  equals after key.
+
+- Add java.util.concurrent.atomic.AtomicLong.VMSupportsCS8.
+
+- In method and field access checks, put back in access check for
+  class (removed previously because it caused regressions, since
+  fixed in Classpath).
+
+- Enable suspend on thread creation (parent thread created thread with
+  suspension disabled).  Effects threads which immediately call a long
+  running native method.
+
+- Fixed race condition in thread creation and compaction (start function
+  obtains class reference when it is not suspendable, if compaction
+  occurs, the reference may be threaded, or moved).
+
+- Fix potential deadlock in threadInterrupt under Linuxthreads.
+
+- Protect lock operation in resetPeakThreadsCount().
+
+- In createJavaThread(), re-enable suspension if pthread_create fails.
+
+- Fix race-condition in thread deletion.
+
+- Fix bug in hash table "scavenge".  This could lead to entries not being
+  freed, and exhaustion of Monitors on embedded systems.
+
+- Removed use of malloc/free in thread dump.  Removes potential deadlock
+  with threads suspended in malloc/realloc/free.
+
+- Added symbolic link from lib/rt.jar to Classpath's glibj.zip (fixes
+  programs such as ecj which locates rt.jar via java.home).
+
+- Bumped Java compatible version to 1.5.0 as Classpath is now the generics
+  branch (since Classpath 0.95).
+
+
+JamVM 1.4.5 released on 4th February 2007
+=========================================
+
+A summary of changes since 1.4.4:
+
+- Support for Java 1.5 Annotations.  This includes the following
+  methods for reflection access to Annotations:
+
+    - VMClass.getDeclaredAnnotations
+    - java.lang.reflect.Field.getDeclaredAnnotations
+    - java.lang.reflect.Constructor
+        - getAnnotation, getDeclaredAnnotations, getParameterAnnotations
+    - java.lang.reflect.Method
+        - getDefaultValue, getAnnotation, getDeclaredAnnotations,
+          getParameterAnnotations
+
+- Class sun.misc.Unsafe implemented, providing VM support for
+  JSR-166 (Concurrency Utilities).
+
+- Ported to the mipsel architecture.  This is a full port, with hand-
+  coded assembler to handle the construction of a call-frame for calling
+  JNI native methods.  This supports the O32 ABI (for other ABIs libffi
+  can be used).
+
+- Bug fix in registering references external to the heap with the GC.
+  The table should be locked for references registered after VM
+  initialisation.
+
+- Bug fix when expanding the heap and the free-list is empty.
+
+- Fixed race-condition when rewriting OPC_NEW in the indirect-threaded
+  interpreter (by default the direct-threaded interpreter is used).
+
+- Bug fix in the GC compaction phase.  The class-loader references
+  within the loaded DLL hashtable must be updated when the class-loader
+  is moved during compaction.  This is a regression introduced in
+  JamVM 1.4.3 (DLL unloading), seen while running Eclipse.
+
+- Bug fix in JNI_GetStringUTFLength.  The reported length should not
+  include space for a NULL terminator.
+
+- Various compile fixes for uClibc.  Support for the JNI invocation
+  API requires glibc features not implemented in uClibc.
+
+- Command line option -fullversion implemented.
+
+
+JamVM 1.4.4 released on 2nd November 2006
+=========================================
+
+A summary of changes since 1.4.3:
+
+- Full JNI Invocation API implemented, enabling JamVM to be linked into
+  another program.
+
+    - JNI_CreateJavaVM, DestroyJavaVM, AttachCurrentThread,
+    - AttachCurrentThreadAsDaemon, DetachCurrentThread
+    - JNI_GetDefaultJavaVMInitArgs
+
+- JamVM is now also built as a shared library (lib/libjvm.so).
+    - The executable (bin/jamvm) is statically linked with this library
+      instead of being a wrapper.  This is because the shared library
+      runs slower than static linking on some architectures.  As JamVM
+      is small this is not a problem.
+
+- Improved class-loader and shared library support
+
+    - When a class-loader (and all its classes) is unloaded all shared
+      libraries loaded by the class-loader are unloaded and JNI_OnUnload
+      called (if defined)
+
+    - A shared library can no longer be opened by two class-loaders
+      at once
+
+    - A class can only resolve native methods defined in shared libraries
+      opened by its defining class-loader
+
+- Major re-working of thread/locking code to support additional Java 1.5
+  functionality
+
+    - Thread.getState() implemented
+        - correct thread states and their transistions (e.g. BLOCKING,
+          WAITING, TIMED_WAITING, etc.)
+
+    - native support for the ThreadMXBean thread system management API
+        - thread creation statistics (count of live, started and
+          peak threads)
+
+        - Information about a thread (ThreadInfo)
+            - execution information (thread state, stack backtrace to
+              a particular depth, object upon which the thread is blocked
+              or waiting to be notified)
+
+            - synchronization statistics (counts of the times the thread
+              has been blocked or waited for notification)
+
+    - Thread.interrupt() re-implemented fixing several bugs
+        - if a thread was waiting on a monitor, previous implementation
+          required the monitor lock to be obtained.  If a 3rd thread
+          was holding this, the  interrupt could not occur to avoid
+          deadlock.  New thread-code does not require lock to be obtained.
+
+        - in rare circumstances another thread waiting on the monitor
+          could be notified (when there was pending notifications,
+          and then an interrupt, and subsequent threads waiting on the
+          monitor).
+
+        - a thread waiting on a thin-lock (waiting for inflation)
+          could erroneously report an InterruptedException
+
+- GC bug fix for class-unloading when only using the compactor
+  (-Xcompactalways).  The compactor in some circumstances could move
+  objects ontop of the object holding the native class-loader VM data
+  before it was freed leading to a SEGV.
+
+- Bug fix for abstract methods which fell through previous
+  AbstractMethodError checks (using a stub method) 
+    - AbstractMethodError now also gives the method name
+
+- Bug fix to not allow abstract classes to be instantiated
+
+- Bug fix for NULL in identityHashCode (a regression in JamVM 1.4.3)
+
+- Bug fix for NULL in JNI method GetStringUTFLength|Chars
+
+- Bug fix for $ in native method names
+
+- FirstNonNullClassLoader implemented
+
+- Access-checking bug fix.  In reflection method/field access, also
+  check class access in addition to method/field.
+
+- Ensure created threads have a native stack size of at least 2MB.  This
+  fixes SEGVs due to stack overflow seen on OpenBSD/Darwin
+  (default 512KB).
+
+- Property sun.boot.class.path is now also defined in addition to
+  java.boot.classpath.  Certain applications look for the Sun property
+  (e.g. Dacapo bloat benchmark).
+
+- Extra bootclasspath command line options
+    - bootclasspath/v overrides the default VM classes path
+    - bootclasspath/c overrides the default GNU Classpath classes path
+
+- java.endorsed.dirs support added
+    - directories are scanned and any jar/zip files are added to the
+      boot classpath.
+
+- Improved thread dump (produced via ctrl-\).  Now shows thread state.
+
+- JamVM by default now installs in its own directory (/usr/local/jamvm)
+
+
+JamVM 1.4.3 released on 21st May 2006
+=====================================
+
+A summary of changes since 1.4.2:
+
+- Heap compaction implemented.  Previously on some programs the object
+  allocation pattern could lead to a highly fragmented heap (lots of
+  small holes).  This caused early heap expansion, and in some cases
+  an OutOfMemory exception (a result of repeated heap expansion until
+  heap fully expanded).
+
+  JamVM now includes a mark/compact collector in addition to the
+  mark/sweep GC.  This is normally ran after forced finalisation, and
+  before heap expansion.  It removes fragmentation by sliding the objects
+  to the bottom of the heap, closing the holes.
+
+  Two new command line options can be used to control compaction :
+
+    -Xnocompact : don't do compaction and just use the mark/sweep
+                  collector.  This is equivalent to JamVM 1.4.2 behaviour.
+
+    -Xcompactalways : do compaction on every garbage-collection.   In
+                      some cases this may lead to less collections, but
+                      the compactor is slower than the sweeper.
+
+- The interned String table is now garbage-collected (JamVM uses its
+  own interned String hashtable).
+
+- Additional Java 1.5 support
+    - New methods within VMClass implemented
+        - isMemberClass, isLocalClass, isAnonymousClass,
+          getEnclosingClass, getEnclosingMethod,
+          getEnclosingConstructor, getClassSignature.
+
+    - Generic signature support in reflection classes (Constructor, Method
+      Field).
+        - getTypeParameters, getSignature, getGenericExceptionTypes,
+          getGenericParameterTypes, toGenericString, getGenericType,
+          getGenericReturnType
+
+    - Uncaught exceptions will now use the thread's uncaughtExceptionHandler
+      (if available).
+
+- Fix for Non-ASCII characters in class name parameter
+    - affected methods Class.ForName, ClassLoader.defineClass
+
+- Use getcwd() instead of PWD enviroment variable for user.dir
+  property.  This fixes problems seen on some applications.
+
+- Fix in VMClass.defineClass on 64-bit machines (protection domain
+  parameter assumed to be 4 bytes).
+
+- Minor interpreter optimisation in direct-mode with handler
+  prefetch (reload of handler address in aload_0/getfield pair).
+
+- Command line options -version and -showversion now prints a "Java
+  compatible" version number.  This is to work with shell scripts which
+  parse the output to get the Java version.
+
+- Set the java.home property to the JAVA_HOME environment variable if set.
+
+- Ported to Mac OS X on Intel.
+
+- Runtime.availableProcessors implemented (Linux, Mac OS X and BSD
+  systems).
+
+- Updated to be compatible with Classpath 0.91.
+    - Merged in changes to GNU Classpath's VM reference classes and
+      JamVM's classes.
+
+- Various compiler warnings.
+
+
+JamVM 1.4.2 released on 22nd January 2006
+=========================================
+
+A summary of changes since 1.4.1:
+
+- JamVM now supports class garbage-collection and unloading.  It is
+  implemented according to the clarifications to the JLS.  This states
+  that a class may be unloaded if and only if its class loader is
+  unreachable.  As the loader is reachable while any classes defined
+  by it are reachable, the class loader and all its classes will be
+  collected together.
+
+- Bug-fix for field name/type lookup and obfuscated code.  Previously
+  a minor optimisation halted the search if a name was found with the
+  wrong type (as a class cannot have two fields with the same name).
+  However, this breaks obfuscated code which renames variables.  With 
+  field resolution the optimisation is redundant, as fields are only
+  looked up once.
+
+- Added stub for VMClassLoader.defineClassWithTransformers.  This is
+  a change in the VM interface in the generics branch of Classpath
+  0.20.
+
+- Various build changes :
+    - fix errors/warnings on Open/Free BSD.  Part of this is a move
+      to using config.h.
+
+    - find Java compiler via path (try ecj, then jikes, gcj, javac).
+
+- Fixed a minor garbage-collector bug.  Scan phase could SEGV if a GC
+  occurred when a reference class was partially created.
+
+
+JamVM 1.4.1 released on 28th November 2005
+==========================================
+
+A summary of changes since 1.4.0:
+
+- As part of the GC optimisations in 1.4.0 some redundant checks were
+  removed.  One of these was hiding a garbage-collector bug.  Classes
+  that have not been linked should not be scanned, as their static
+  fields have not been initialised.  The bug only manifested itself
+  in certain applications, as the window between loading and linking
+  is normally small.  Found with Tomcat, but also seen with Ant.
+  
+- Fix for an array overrun in VMAccessController.getStack (native
+  method) on 64-bit machines.
+
+- Support for FreeBSD.
+
+- Support for OpenBSD (added in 1.3.3 but not previously mentioned).
+
+- A couple of Mauve fixes relating to changing daemon status on threads
+  that have died.
+
+
+JamVM 1.4.0 released on 20th November 2005
+==========================================
+
+A summary of changes since 1.3.3:
+
+- Support for Soft/Weak/Phantom References
+    - As specified in the specification, Weak and Phantom References are
+      cleared as soon as they become weakly or phantom reachable.  It is
+      left up to the VM when Soft References (which are softly reachable)
+      are cleared; only they must be cleared before throwing OutOfMemoryError.
+      JamVM clears them as a last resort, when the heap is fully expanded,
+      and insufficient memory can be reclaimed.
+
+    - To support Soft/Weak/Phantom references a Reference Handler thread
+      is now created on VM start-up.  This is additional to the Finaliser
+      thread.
+
+- Garbage Collector optimisations
+    - Re-implementation of object reference scanning via reference offset
+      lists.  Previously, references were scanned by finding references
+      by following the class hierarchy.
+
+    - As part of this the object layout has changed.
+
+- Added Java language-level access checks (e.g. access to private/protected
+  and package-private methods and fields).  This includes access via
+  reflection.
+
+- Fix for inheritance of inaccessible methods.
+
+- Linux PowerPC build fix (this was quickly fixed in CVS).
+
+- FFI fix.  The size of ffi-type-uint on 64-bit platforms has changed between
+  libffi 2.00-beta and later versions.  This only affected AMD64, as this
+  is the only platform that uses libffi.
+
+- Fix for initiating loaders and array classes.
+
+- Mauve tests.  Many extra VM-level Mauve tests now pass (35+).  These
+  are mostly concerned with testing boundary-conditions in class-loading,
+  Class.forName() and Thread.sleep().  Extra tests pass due to the
+  implementation of Soft/Weak/PhantomReferences and access checks.
+
+- Classpath-0.19 merge.
+    - Merged in changes to GNU Classpath's VM reference classes and
+      JamVM's classes.
+
+- Support for kfreebsd and Linux-powerpc64.
+
+- Many other code tidy-ups.
+
+
+JamVM 1.3.3 released on 12th September 2005
+===========================================
+
+A summary of changes since 1.3.2:
+
+- JamVM is now 64-bit "clean".
+
+- As part of the changes above, JamVM has been ported to:
+
+    - AMD64 under Linux:
+        - JamVM should also work on Pentium 4 with EM64T technology.
+
+    - PowerPC64 under Mac OS X:
+        - to build a 64-bit executable CFLAGS must include the flag -arch
+          ppc64.  If no option is given a 32-bit executable is built by
+          default.
+
+    - JamVM should also work on PowerPC64 under Linux, if the --enable-ffi
+      flag is given to configure, but I have been unable to test.
+
+- LibFFI is now supported.  Upto now, all ports required the native
+  calling convention to be written "by hand" for each new architecture/
+  platform.  Generic calling-convention code is now supported via libffi.
+  Currently this is only used for AMD64/Linux, but can be enabled for
+  all platforms using --enable-ffi.  The "hand-written" routines should
+  be faster, and are used by default, but this will make porting to new
+  architectures/platforms easier.
+
+- Bug-fix enabling heaps larger than 2Gb to be specified on 32-bit
+  architectures.  On 64-bit machines, heap sizes > 4Gb are now
+  supported.
+
+- Bug-fix for JNI return values smaller than 4 bytes (e.g.  byte, short,
+  etc.) on big-endian machines.
+
+- Under Mac OS X multiple DLL extensions will now be tried.  Classpath
+  libraries end in .dylib, but native JNI libraries end in .jnilib.
+  Both are now supported.
+
+- Backwards compatibility workarounds for Classpath-0.17 removed.  JamVM
+  will now only work with Classpath-0.18 and CVS (as of 12th September).
+
+
+JamVM 1.3.2 released on 29th July 2005
+======================================
+
+JamVM 1.3.2 is a minor feature/bug-fix release.  A summary of changes since
+1.3.1:
+
+- Updated to be compatible with Classpath-0.17 and Classpath from
+  CVS (as of 28th July).
+
+- Shutdown hooks are now ran on VM termination, either normally, or via user
+  interruption (i.e ctrl-C).
+
+- Revised GC allocation failure policy
+    - Using a simple heuristic the GC attempts to maintain at least 25% heap
+      free.  If it fails the heap is expanded, regardless of whether the
+      allocation request could be satisfied.  This reduces frequent garbage
+      collection cycles when GC returns only a limited amount of memory.
+
+- Revised Object finalization
+    - during GC a thread could deadlock waiting for finalization.  This
+      occurred when a finalizer (running in the finalizer thread) attempted
+      to grab a lock the thread is holding.
+
+    - a minor bug fix where finalized objects waiting for the finalizer to 
+      be ran could keep alive other finalized objects (if it had the only
+      reference to it).
+
+    - a minor bug fix where objects waiting for finalization could be lost
+      (i.e. finalize() method not called).  This only happened when >1000
+      objects were outstanding.
+
+    - VMRuntime.runFinalization() implemented.  This enables a thread to force
+      finalization.
+
+- In certain circumstances a class loader would be unmarked during GC,
+  enabling it to be collected.  This resulted in a SEGV.
+
+- JNI FindClass now uses the current class loader, not the first non-null on
+  the stack.
+
+- VMClass.getModifiers() now handles inner class attributes.
+
+- Fix to enable build directory to be different to source directory (this was
+  broken in 1.3.0).
+
+
+JamVM 1.3.1 released on 12th June 2005
+======================================
+
+A summary of changes since 1.3.0:
+
+- Re-worked thread suspension enable/disable code
+    - implemented a fast enable/disable suspend mechanism for critical code
+      sections, which is now used in hash table access and heap allocation :
+        - much faster object allocation
+        - much faster primitive array allocation
+        - faster string interning
+
+    - removed some minor potential (as yet unseen) race conditions
+
+- Integrated all outstanding patches
+    - generics branch patch, implementing VMClass.isEnum(), isAnnotation()
+       and isSynthetic()
+
+    - Boot library path patch (support for system property
+      gnu.classpath.boot.library.path)
+
+- Enabled different min/max heap values for each architecture
+    - ARM values are back to the defaults for JamVM 1.2.5.  Default max heap
+      of 128Mb is too large for typical embedded ARM systems.
+
+- Fixed the new compiler warnings from gcc-4.0 (under Mac OS X) related
+  to char/signed char usage.
+
+- Fixed compiler error on gcc-4.0 under Mac OS X 10.4 (duplicate definitions
+  of wait).
+
+- Fixed rare, potential dead-lock in direct.c when preparing methods
+
+- Fixed a bug in VMClassLoader.defineClass(), where offset or length is wrong.
+
+- Fixed bug in DCONST_1 on mixed-endian ARM architectures (this bug was
+  fixed in JamVM 1.2.2 but it crept back in, due to the new interpreter
+   in JamVM 1.2.5).
+
+- Improved thread dump (produced via SIGQUIT, or ctrl-\).
+
+- Several other minor bug-fixes, and code tidy-ups.
+
+
+JamVM 1.3.0 released on 31st March 2005
+=======================================
+
+A summary of changes since 1.2.5:
+
+- Ported to Mac OS X/Darwin.  JamVM has been built and tested on Mac OS X
+  10.3 (Panther), where it works "out-of-the-box".  It should also work
+  on 10.2 (Jaguar) but you will need to install Fink (for dlopen
+  compatibility).  Note only G3 and G4 machines have been tested.
+
+    - As part of this, the source layout/build has been changed to more
+      easily support different os/shared architectures
+
+- The os.arch property now reports the machine architecture as follows:
+    - arm  : ARM architecture (e.g. it previously reported armv5tel)
+    - i386 : IA32 (i586, i686, etc.)
+    - ppc  : PowerPC
+
+- The ldc bytecode now handles "constant class" as specified in JSR 202
+  (and introduced in Java 1.5)
+
+- Command line options have been changed to be compatible with Sun Java.
+  This particularly affects bootclasspath, which must now be given using
+  the new syntax.  Two new options are implemented :
+    - verbose:jni
+    - showversion
+
+- Default heap sizes have been increased (again) to better reflect desktop
+  application heap usage :
+    - minimum heap is now 2Mb
+    - maximum heap is now 128Mb
+
+- A race condition in class-loading has been fixed.  This fixes a SEGV
+  with the latest postgreSQL JDBC driver.  It also fixes a SEGV when
+  starting Eclipse on a P4 with hyper-threading enabled
+
+- A race condition on VM initialisation has been fixed (helper threads
+  starting when a GC cycle has already started in the main thread).
+
+
+JamVM 1.2.5 released on 1st March 2005
+======================================
+
+- Substantially modified the interpreter to implement direct-dispatching.
+  This considerably speeds-up dispatch, improving performance by 60% to
+  100% across all platforms.  However, the rewritten method code takes
+  up on average 4 times the memory.  Direct-dispatching is enabled
+  by default on all platforms.
+
+    - The direct-dispatched interpreter also supports stack-caching.
+      This is enabled by default on PowerPC and ARM.
+
+    - A further optimisation is prefetching.  This is enabled by
+      default only on PowerPC.
+
+    - In all 7 interpreter variants are possible, controlled by the
+      configure options --enable-int-threading, --enable-int-direct,
+      --enable-int-caching and --enable-int-prefetch.  For example,
+      
+      ./configure --disable-int-direct
+
+      will revert to the indirect-dispatched interpreter as in JamVM
+      1.2.4.
+
+- Backwards compatibility with Classpath 0.13 removed (for example,
+  VMSecurityManager).
+
+- Fixed a SEGV that occurs when an abstract class does not implement
+  all methods specified in the interfaces it implements, also implements
+  a finalize method which is inherited by a concrete class.  When the
+  VM creates the dummy "miranda" methods, the finalizer method pointer
+  is left pointing to rubbish.  This occurs with the latest postgreSQL
+  JDBC driver.
+
+
+JamVM 1.2.4 released on 23rd January 2005
+=========================================
+
+A summary of changes since 1.2.3:
+
+- Updated to be compatible with Classpath-0.13 and Classpath from
+  CVS (as of 22nd January).
+
+- JNI enhancements introduced in JNI 1.4 implemented (NOT using
+  minimal implementation of simply returning NULL)
+
+- Fix for setting locale when LANG is invalid (i.e. not locale-gen'ed)
+
+- Fix for void method invocation using JNI (perform virtual method
+  lookup).  This only affected methods with void return type.
+
+- Fix for JNIEnv.  JNIEnv pointer is now constant across calls from
+  the same thread.
+
+- Implemented new VMStackWalker class, with optimised native methods.
+  This class is needed for the CVS version of Classpath.
+
+- Default system properties can now be overridden via the command
+  line (using -D)
+
+- BOOTCLASSPATH environment variable can now be used to specify
+  the classpath used by the bootstrap class loader.  This overrides
+  the default path.  BOOTCLASSPATH has lower priority than the command
+  line and is ignored if -bootclasspath, -bootclasspath/a or
+  -bootclasspath/p is used.
+
+- NoClassDefFoundErrors thrown by the VM are now chained, and
+  show the exception that caused the error.
+
+
+JamVM 1.2.3 released on 23rd December 2004
+==========================================
+
+- Fix the mistake in JamVM 1.2.2 that broke Swing/AWT :)
+
+- Sets the locale specified in the environment and defines
+  System properties user.language and user.region appropriately
+
+- PowerPC platforms : bug fix for JNI methods with very large
+  numbers of arguments (e.g. 14 integer/reference arguments).
+
+- Consistency checks for zip/jar files loaded by bootstrap class
+  loader.  A bad zip shouldn't crash the VM.
+
+- Endian check for platforms without endian.h (e.g. cygwin)
+
+- JamVM's VM classes are now installed and loaded from a zip file
+  (unless zip support is disabled in the bootstrap loader).  This
+  stops old classes being left around from a previous version.
+
+
+JamVM 1.2.2 released on 14th December 2004
+==========================================
+
+This release is primarily intended to align JamVM with recent changes
+made to GNU Classpath's VM interface.  As of now, JamVM 1.2.2 again
+works with Classpath from CVS, and Classpath-0.12.  A couple of
+minor bug-fixes have also been made.
+
+- Native methods for new VM integration class VMSystemProperties
+  implemented, and changes to VMRuntime.
+
+- Bug fix for DCONST_1 on ARM machines using mixed-endian doubles
+  (bug was introduced in new interpreter).
+
+- Added check for VFP soft-floating point on ARM (in addition to FPA).
+
+- Bug fix for arraycopy and boolean arrays.
+
+- Bug fix for JNI function GetStringUTFLength.
+
+
+JamVM 1.2.1 released on 2nd December 2004
+=========================================
+
+- Standalone jar files can now be executed via the -jar command line option
+
+- Updated to use Classpath-0.12 
+	- Merged changes to reference VMClassLoader, reflect/Method
+	- Now uses Classpath's system class loader
+	- VMAccessController implemented
+
+- 5-10% interpreter speed improvement
+
+- Improved ARM platform support
+	- Big Endian systems
+	- Soft floating point
+
+- SMP memory barriers on Intel and PowerPC
+
+- Fix for certain Unicode chars in JNI method names
+
+- Intel FP bug fix (Debian bug no. 260410).  Use double (64-bit) rather
+  than extended (80-bit) precision
+
+- Memory leak when two threads compete to load a class (rare race
+  condition)
+
+- Handle SIGPIPE, stopping the VM aborting.
+
+
+JamVM 1.2.0 released on 9th September 2004
+==========================================
+
+- Substantially rewritten the interpreter to use "stack-caching".  This is
+  an optimisation to eliminate most of the intermediate loads and stores to
+  the operand stack.  On desktop PowerPC (e.g. PPC750fx, MPC7447 with large,
+  on-chip L2 cache at full processor speed) it achieves a speed increase of
+  between 15 and 30%.  On ARM (XScale PXA250) it achieves a speed-up of 
+  50%.  Unfortunately, due to the addressing modes of the IA32 (Pentium, etc.)
+  and the code produced by gcc, it is actually slower than the old interpreter!
+  Because of this, stack-caching is disabled by default on IA32.
+
+- Zip/Jar support is implemented in the bootstrap class loader.  This means
+  glibj.zip no longer needs to be unzipped.  This includes resources.
+
+- Fix for edge-conditions in floating-point to integer conversion (floating-
+  point value greater than int/long range).
+
+- Fix for very large array allocation, where the required memory overflows a
+  32 bit int (fixes the SEGV with Mauve).
+
+- Several other minor bug-fixes (e.g. ExceptionCheck was missed out of the JNI
+  i/f table).
+
+
+JamVM 1.1.4 released on 21st May 2004
+=====================================
+
+- JNI enhancements introduced in Java 1.2 implemented.
+
+- Updated to use GNU Classpath 0.09.
+
+- Pre-compiled VM classes will now be rebuilt automatically if Java sources
+  change.  Fix to enable build directory to be different to source directory.
+
+- Deprecated compiler warnings in gcc >= 3.3.3 fixed (use of cast expressions
+  as lvalues).  JamVM now also builds with gcc 3.5.0.
+
+- Minor bug-fixes and speed optimisations.
+
+- Eclipse now starts up.
+
+
+JamVM 1.1.3 released on 12th April 2004
+=======================================
+
+JamVM 1.1.3 is primarily another bug-fix release.  New functionality will
+be included in JamVM 1.1.4.
+
+- Resolution fixes to make JamVM 100% compatible with code produced
+  by javac in JDK >= 1.4 and Jikes 1.19.
+
+- New command line options -bootclasspath/a and -bootclasspath/p to prepend
+  or append entries to the default bootstrap class loader.
+
+- Default initial heap size increased to 1Mb from 256K.  "Hello World" will
+  work with a heap of 75K, but this better reflects desktop application heap
+  usage.  In an embedded environment -ms can be used to specify a smaller
+  initial heap (e.g. -ms256k).
+
+- Bug fix for private method invocation via JNI and reflection.
+
+- Several other minor bug-fixes.
+
+
+JamVM 1.1.2 released on 29th March 2004
+=======================================
+
+JamVM 1.1.2 is primarily a bug-fix release.  No new major functionality is
+included, but many, many bugs have been fixed.  If JamVM didn't work for you
+before, give this release a go!  Off the top of my head and in no
+particular order:
+
+ - Arraycopy and instanceof fixed for arrays involving different dimensions
+   and Object element type
+
+ - Array/inner class/primitive class access flags correctly set (important
+   for serialization)
+
+ - Reflection API : method invoke on interface methods now works
+
+ - JNI : method invoke on interface methods now works
+
+ - getResource/getResources implemented for bootstrap class loader
+
+ - ClassLoader.findLoadedClass now handles classes initiated by a
+   class loader
+
+ - The thread contextClassLoader is now set
+
+ - The protection domain is now set for a class
+
+ - Many other minor bugs 
+
+JamVM now uses VMRuntime and will now only work with Classpath 0.08.
+
+
+JamVM 1.1.1 released on 25th January 2004
+=========================================
+
+- Now supports classes compiled for target >= 1.2.  In the past, javac inserted
+  synthetic methods for interface methods not implemented by abstract classes.
+  These are not produced if javac is used with -target 1.2, which is now the
+  default with JDK 1.4.  JamVM now inserts these methods if they are not
+  supplied by the compiler.
+  
+- Class loader changes.  JamVM now records initiating loaders so user-defined
+  class loaders should be referred to less.
+
+- Updated to use classpath 0.07.
+
+- Java 2 style application class loader/bootstrap class loader split
+	 - new command line options -bootclasspath and -classpath (or -cp)
+	 - Jar and Zip archives can now be specified in the classpath.
+
+- bug fixes (integration of Classpath 0.06 in JamVM 1.1.0 broke instanceOf)
+
+- Re-worked stack overflow handling.  Previously, the first thread overflow
+  would be trapped, but further overflows would not.  A thread may now catch
+  StackOverflowException and repeatedly overflow.
+
+
+JamVM 1.1.0 released on 17th November 2003
+==========================================
+
+There's been quite a few changes, including performance improvements and
+more of the specification is now implemented (should be everything now but
+Runtime.exec), as well as the usual bug-fixes.
+
+- Interface method tables are now implemented.  This means an interface method
+  invocation should now be almost as fast as a normal virtual method.
+
+- The full Reflection API is implemented (Constructor, Field, Method, etc.)
+  with primitive widening and wrapping and inner class support.
+
+- Updated to use Classpath-0.06 rather than 0.04 (note JamVM won't work with
+  0.04 anymore).
+
+- Ported to the ARM architecture.
+
+- Re-worked exception printing - now supports 1.4 style StackTraceElements.
+
+- Interpreter optimisations (more "fast" bytecodes).
+
+- Command line system properties can now be specified (-Dname=value).
+
+
+JamVM 1.0.0 released on 12th March 2003
+=======================================
+
+- INITIAL RELEASE
