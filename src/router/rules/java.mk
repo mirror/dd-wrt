@@ -1,8 +1,8 @@
 java-configure:
 	cd $(TOP)/java/classpath && ./configure \
 	--host=$(ARCH)-linux CC="$(ARCH)-linux-uclibc-gcc" \
-	CFLAGS="$(COPTS) $(MIPS16_OPT)" \
-	CCASFLAGS="$(COPTS)" \
+	CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF" \
+	CCASFLAGS="$(COPTS) -DNEED_PRINTF" \
 	--with-gmp="$(TOP)/gmp" \
 	--prefix=/usr \
 	--without-x \
@@ -17,8 +17,8 @@ java-configure:
 
 	cd $(TOP)/java/jamvm && ./configure \
 	--host=$(ARCH)-linux CC="$(ARCH)-linux-uclibc-gcc" \
-	CFLAGS="$(COPTS) -I$(TOP)/zlib -L$(TOP)/zlib" \
-	CCASFLAGS="$(COPTS)" \
+	CFLAGS="$(COPTS) -I$(TOP)/zlib -L$(TOP)/zlib -DNEED_PRINTF" \
+	CCASFLAGS="$(COPTS) -DNEED_PRINTF" \
 	--with-java-runtime-library=gnuclasspath \
 	--with-classpath-install-dir=/usr \
 	--prefix=/usr \
