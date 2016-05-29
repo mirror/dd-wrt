@@ -104,6 +104,12 @@
 #define LOCKWORD_COMPARE_AND_SWAP(addr, old_val, new_val) \
         COMPARE_AND_SWAP(addr, old_val, new_val)
 
+#if defined(__OCTEON__)
+/* On Octeon cores, 'syncws' looks enough, and it's
+   expected to be much faster than 'sync'. */
+#define MBARRIER() \
+    __asm__ __volatile__ ("syncws\n" : : : "memory")
+#else
 #define MBARRIER()              \
     __asm__ __volatile__ (      \
         ".set push\n"           \
@@ -112,14 +118,23 @@
         ".set  pop\n"           \
     ::: "memory")
 
+#endif /* __OCTEON__ */
+
+
 #define JMM_LOCK_MBARRIER()   MBARRIER()
 #define JMM_UNLOCK_MBARRIER() MBARRIER()
 
 /* Macros needed for inlining interpreter */
 
+#if defined(__OCTEON__)
+/* On Octeon cores, 'synci' flushes the entire icache. */
+#define FLUSH_CACHE(addr, length) \
+    __asm__ ("synci 0(%0)\n" : : "r"(addr))
+
+#else /* not OCTEON */
 #define FLUSH_CACHE(addr, length)                                \
     cacheflush(addr, length, BCACHE)
-
+#endif
 /* Generate a relative jump via the b instruction, which has a range
    of +-128K.  We also insert a nop in the branch delay slot  */
 

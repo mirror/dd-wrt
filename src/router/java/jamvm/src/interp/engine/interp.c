@@ -2434,7 +2434,7 @@ invokeMethod:
     Object *sync_ob = NULL;
 
     frame->last_pc = pc;
-    ostack = ALIGN_OSTACK(new_frame + 1);
+    ostack = ALIGN(new_frame + 1);
 
     if((char*)(ostack + new_mb->max_stack) > ee->stack_end) {
         if(ee->overflow++) {
