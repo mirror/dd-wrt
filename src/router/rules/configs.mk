@@ -261,6 +261,7 @@ obj-$(CONFIG_MACTELNET) += mactelnet
 obj-$(CONFIG_FIRMWARES) += firmwares
 obj-$(CONFIG_SERVICEGATE) += servicegate
 obj-$(CONFIG_UNBOUND) += unbound
+obj-$(CONFIG_JAVA) += gmp java
 
 obj-$(CONFIG_MTDUTILS) += mtd-utils
 #obj-$(CONFIG_OPROFILE) += oprofile
