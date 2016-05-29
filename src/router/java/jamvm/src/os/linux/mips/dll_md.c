@@ -22,6 +22,9 @@
 #include "../../../jam.h"
 
 #ifndef USE_FFI
+
+#if defined(_ABIO32)
+
 int nativeExtraArg(MethodBlock *mb) {
     char *sig = mb->type;
     int args = 8;
@@ -45,4 +48,25 @@ int nativeExtraArg(MethodBlock *mb) {
 
     return (args + 7) & ~7;
 }
-#endif
+
+#elif defined(_ABIN32) || defined(_ABI64)
+
+int nativeExtraArg(MethodBlock *mb) {
+    char *sig = mb->type;
+    int nbytes = -48;
+
+    while(*++sig != ')') {
+        nbytes += 8;
+
+        if(*sig == '[')
+            while(*++sig == '[');
+        if(*sig == 'L')
+            while(*++sig != ';');
+    }
+    return nbytes < 0 ? 0 : nbytes;
+}
+
+#else
+#error "Unknown MIPS ABI"
+#endif /* ABI */
+#endif /* USE_FFI */

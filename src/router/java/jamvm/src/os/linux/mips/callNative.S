@@ -22,6 +22,7 @@
 #include  "config.h"
 
 #ifndef USE_FFI
+#if defined(_ABIO32)
         .text
         .align 2
         .globl callJNIMethod
@@ -183,4 +184,5 @@ return:
 
 	j $31
 	.end callJNIMethod
-#endif
+#endif /* _ABIO32 */
+#endif /* USE_FFI */
