@@ -27,7 +27,8 @@ java-configure:
 	--without-pic
 
 java:
-	make -C $(TOP)/java/classpath
+	-make -C $(TOP)/java/classpath
+	-make -C $(TOP)/java/classpath
 	make -C $(TOP)/java/jamvm GLIBJ_ZIP=$(TOP)/java/classpath/lib/glibj.zip
 
 
