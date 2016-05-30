@@ -24,6 +24,9 @@
 #define _FPU_DOUBLE   0x200
 #define _FPU_GETCW(cw) __asm__ __volatile__ ("fnstcw %0" : "=m" (*&cw))
 #define _FPU_SETCW(cw) __asm__ __volatile__ ("fldcw %0" : : "m" (*&cw))
+typedef unsigned int fpu_control_t __attribute__ ((__mode__ (__HI__)));
+
+
 #endif
 
 /* Change the x87 FPU precision to double (64-bit) from the extended
