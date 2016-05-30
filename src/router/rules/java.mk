@@ -9,6 +9,7 @@ java-configure:
 	--disable-gtk-peer \
 	--disable-qt-peer \
 	--disable-dssi \
+	--libdir=/usr/lib \
 	--disable-plugin \
 	--disable-gconf-peer \
 	--disable-gjdoc \
@@ -23,6 +24,7 @@ java-configure:
 	--with-java-runtime-library=gnuclasspath \
 	--with-classpath-install-dir=/usr \
 	--prefix=/usr \
+	--libdir=/usr/lib \
 	--disable-int-inlining \
 	--disable-shared \
 	--without-pic
