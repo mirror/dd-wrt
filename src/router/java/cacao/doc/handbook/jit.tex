@@ -1,0 +1,805 @@
+\chapter{The Just-In-Time Compiler}
+
+
+\section{Introduction}
+
+A Java Virtual Machine can implement four different approaches of
+executing Java byte code:
+
+\begin{itemize}
+\item Interpreter
+\item Ahead-Of-Time Compiler
+\item Just-In-Time Compiler
+\item Mixed Mode
+\end{itemize}
+
+An \textit{Interpreter} interprets every single virtual machine
+instruction in the language the Java Virtual Machine is written in,
+mainly C. Due to this fact an interpreter based Java Virtual Machine
+is easily portable, but the execution speed is very slow, up to ten
+times slower than a current Just-In-Time Compilers or similar code
+written in C.
+
+An \textit{Ahead-Of-Time Compiler} compiles every Java method of a
+class when the class is loaded. This reduces the compiler overhead
+since the compilation of the class methods is done in one step and at
+runtime the method called can be executed immediately. The drawback of
+this approach is the fact that every single method is compiled, even
+if it's not needed. This can use a serious amount of memory and time
+since the java libraries contain a lot of methods.
+
+A \textit{Just-In-Time Compiler} is the solution to the memory and
+compilation time problem. This compiler only compiles a method when it
+is called the first time. The only drawback of this approach is the
+deferred execution of the called method since it must be compiled
+before, but a Just-In-Time Compiler can save much of compilation time.
+
+The \textit{Mixed Mode} is mostly a mixture of an Interpreter and a
+Just-In-Time Compiler. Normally the code is interpreted, but code
+parts which are frequently executed are compiled to native machine
+code with an Just-In-Time Compiler. This technique is used by Sun's
+and IBM's JVM.
+
+CACAO only implements a \textit{Just-In-Time Compiler} and has no
+Interpreter. The main target of CACAO was to build a fast executing
+Java Virtual Machine with short compilation times. Thus the CACAO
+development team decided to only implement a fast compiling
+Just-In-Time Compiler. So every single Java method executed is
+compiled to native machine code.
+
+The following sections decribe some basics of byte code to machine
+code compilation and how the CACAO Just-In-Time Compiler works in
+detail.
+
+
+\section{The Java Virtual Machine}
+
+The JavaVM is a typed stack architecture \cite{javavm96}. There are
+different instructions for integer, long integer, floating point and
+address types. Byte and character types have only special memory access
+instructions and are treated as integers for arithmetic operations. The
+main instruction set consists of arithmetic/logical and load/store/constant
+instructions. There are special instructions for array access and for
+accessing the fields of objects (memory access), for method invocation,
+and  for type checking. A JavaVM has to check the program for type
+correctness and executes only correct programs. The following examples show
+some important JavaVM instructions and how a Java program is represented by
+these instructions.
+
+\begin{verbatim}
+        iload  n    ; load contents of local variable n
+        istore n    ; store stack top in local variable n
+        imul        ; product of 2 topmost stack elements
+        isub        ; difference of 2 topmost stack elements
+\end{verbatim} 
+
+The Java assignment statement {\tt a = b - c * d} is translated into
+
+\begin{verbatim}
+        iload b     ; load contents of variable b
+        iload c     ; load contents of variable c
+        iload d     ; load contents of variable d
+        imul        ; compute c * d
+        isub        ; compute b - (c * d)
+        istore a    ; store stack top in variable a
+\end{verbatim} 
+
+Accessing the fields of objects is handled by the instructions {\tt
+getfield} and {\tt putfield}. The instruction {\tt getfield} expects an
+object reference on the stack and has an index into the constant pool as an
+operand. The index into the constant pool must be a reference to a pair
+containing the class name and a field name. The types of the classes
+referenced by the constant pool index and by the object reference must be
+compatible, a fact which is usually checked statically at load time. The
+object reference has to be different from the {\tt null} pointer, a fact
+which must usually be checked at run time.
+
+Array access is handled by the {\tt aload} and {\tt astore} instructions.
+Separate versions of these instructions exist for each of the basic types
+({\tt byte}, {\tt int}, {\tt float}, {\tt ref}, etc.). The {\tt aload}
+instruction expects a reference to an array and an index (of type {\tt
+int}) on the stack. The array reference must not be the {\tt null} pointer.
+The index must be greater than or equal to zero and less than the array
+length.
+
+There are special commands for method invocation. Each method has its own
+virtual stack and an area for local variables. After the method invocation,
+the stack of the caller is empty and the arguments are copied into the
+first local variables of the called method. After execution of a {\tt
+return} instruction, the called method returns to its caller. If the called
+method is a function, it pops the return value from its own stack and
+pushes it onto the stack of the caller.
+
+The {\tt instanceof} and {\tt checkcast} instructions are used for subtype
+testing. Both expect a reference to an object on the stack and have an
+index into the constant pool as operand. The index must reference a class,
+array or interface type. The two instructions differ in their result and in
+their behavior if the object reference is {\tt null}.
+
+
+\section{Translation of stack code to register code}
+
+The architecture of a RISC---\textit{Reduced Instruction Set Computer}
+or CISC---\textit{Complex Instruction Set Computer}---processor is
+completely different from the stack architecture of the Java Virtual
+Machine.
+
+RISC processors have large sets of registers. The Alpha architecture
+has 32 integer registers and 32 floating point registers which are
+both 64-bits wide. They execute arithmetic and logic operations only
+on values which are held in registers. RISC machines are a load-store
+architecture, this means load and store instructions are provided to
+move data between memory and registers. Local variables of methods
+usually reside in registers and are saved in memory only during a
+method call or if there are too few registers. The use of registers
+for parameter passing is defined by calling conventions.
+
+CISC processors have a relatively small set of registers, like the
+IA32 architecture with 8 integer general purpose registers or the
+AMD64 architecture with 16 integer general purpose registers. But, as
+the name implies, CISC processors have a large and complex machine
+instruction set. Unlike the load-store architecture of RISC machines,
+CISC instructions can operate on operands residing in registers and in
+memory locations. Local variables of methods should reside in
+registers, but due to the limited number of registers this very rare
+and most local variables are stored on the stack. Detailed information
+of the IA32 and AMD64 architecture can be found in section
+\ref{sectionia32codegenerator} and section
+\ref{sectionamd64codegenerator} respectively.
+
+
+\subsection{Machine code translation examples}
+
+The previous example expression {\tt a = b - c * d} would be translated
+by an optimizing C compiler to the following two Alpha instructions (the
+variables {\tt a}, {\tt b}, {\tt c} and {\tt d} reside in registers):
+
+\begin{verbatim}
+        MULL c,d,tmp0    ; tmp0 = c * d
+        SUBL b,tmp0,a    ; a = b - tmp0
+\end{verbatim}
+
+If JavaVM code is translated to machine code, the stack is eliminated and
+the stack slots are represented by temporary variables usually residing in
+registers. A naive translation of the previous example would result in the
+following Alpha instructions:
+
+\begin{verbatim}
+        MOVE b,t0        ; iload b
+        MOVE c,t1        ; iload c
+        MOVE d,t2        ; iload d
+        MULL t1,t2,t1    ; imul
+        SUBL t0,t1,t0    ; isub
+        MOVE t0,a        ; istore a
+\end{verbatim}
+
+The problems of translating JavaVM code to machine code are primarily the
+elimination of the unnecessary copy instructions and finding an efficient
+register allocation algorithm. A common but expensive technique is to do
+the naive translation and use an additional pass for copy elimination and
+coalescing.
+
+
+\section{The translation algorithm}
+
+The new translation algorithm can get by with three passes. The first pass
+determines basic blocks and builds a representation of the JavaVM 
+instructions which is faster to decode. The second pass analyses the stack
+and generates a static stack structure. During stack analysis variable
+dependencies are tracked and register requirements are computed. In the
+final pass register allocation of temporary registers is combined with
+machine code generation.
+
+The new compiler computes the exact number of objects needed or computes an
+upper bound and allocates the memory for the necessary temporary data
+structures in three big blocks: the basic block array, the instruction
+array and the stack array. Eliminating all the double linked lists also
+reduced the memory requirements by a factor of five.
+
+
+\subsection{Basic block determination}
+
+The first pass scans the JavaVM instructions, determines the basic blocks
+and generates an array of instructions which has fixed size and is easier
+to decode in the following passes. Each instruction contains the opcode,
+two operands and a pointer to the static stack structure after the
+instruction (see next sections). The different opcodes of JavaVM
+instructions which fold operands into the opcode are represented by just
+one opcode in the instruction array.
+
+
+\subsection{Basic block interfacing convention}
+
+The handling of control flow joins was quite complicated in the old
+compiler. We therefore introduced a fixed interface at basic block
+boundaries. Every stack slot at a basic block boundary is assigned a fixed
+interface register. The stack analysis pass determines the type of the
+register and if it has to be saved across method invocations. To enlarge
+the size of basic blocks method invocations do not end basic blocks. To
+guide our compiler design we did some static analysis on a large
+application written in Java: the javac compiler and the libraries it uses.
+Table \ref{tab-1} shows that in more than 93\% of the cases the stack is
+empty at basic block boundaries and that the maximal stack depth is 6.
+Using this data it becomes clear that the old join handling did not improve
+the quality of the machine code.
+
+\begin{table*}
+\begin{center}
+\begin{tabular}[b]{|l|c|c|c|c|c|c|c|c|}
+\hline 
+stack depth &   0  &  1  &  2  &  3  &  4  &  5  &  6 & $>$6 \\ \hline           
+occurrences & 7930 & 258 & 136 & 112 &  36 &  8  &  3 &  0   \\ \hline           
+\end{tabular}
+\caption{distribution of stack depth at block boundary}
+\label{tab-1}
+\end{center}
+\end{table*}
+
+
+\subsection{Copy elimination}
+
+To eliminate unnecessary copies, the loading of values is delayed until the
+instruction is reached which consumes the value. To compute the information
+the run time stack is simulated at compile time. Instead of values the
+compile time stack contains the type of the value, if a local variable was
+loaded to a stack location and similar information. Adl-Tabatabai
+\cite{Taba+98} used a dynamic stack which is changed at every instruction.
+A dynamic stack only gives the possibility to move information from earlier
+instructions to later instructions. We use a static stack structure which
+enables information flow in both directions.
+
+Figure~\ref{Trans1} shows our instruction and stack representation. An
+instruction has a reference to the stack before the instruction and the
+stack after the instruction. The stack is represented as a linked list. The
+two stacks can be seen as the source and destination operands of an
+instruction. In the implementation only the destination stack is stored,
+the source stack is the destination of stack of the previous instruction.
+
+\begin{figure}[htb]
+\begin{center}
+\setlength{\unitlength}{1mm}
+\begin{picture}(25,32)
+\put( 0, 0  ){\makebox(10,5){\tt b}}
+\put( 5, 2.5){\oval(10,5)}
+\put( 5, 9  ){\vector(0,-1){4}}
+\put( 0, 9  ){\makebox(10,5){\tt c}}
+\put( 5,11.5){\oval(10,5)}
+\put( 5,18  ){\vector(0,-1){4}}
+\put( 0,18  ){\makebox(10,5){\tt d}}
+\put( 5,20.5){\oval(10,5)}
+%\put( 5,27  ){\vector(0,-1){4}}
+\put(15, 9  ){\makebox(10,5){\tt c*d}}
+\put(20,11.5){\oval(10,5)}
+\put(20, 9  ){\line(0,-1){2}}
+\put( 5, 7  ){\line(1,0){15}}
+\put(10,27  ){\framebox(15,5){\tt imul}}
+\put(20,27  ){\vector(0,-1){13}}
+\put(15,27  ){\line(0,-1){6.5}}
+\put(15,20.5){\vector(-1,0){5}}
+\end{picture}
+\caption{instruction and stack representation}
+\label{Trans1}
+\end{center}
+\end{figure}
+
+This representation can easily be used for copy elimination. Each stack
+element not only contains the type of the stack slot but also the local
+variable number of which it is a copy, the argument number if it is an
+argument, the interface register number if it is an interface. Load (push
+the content of a variable onto the stack) and store instructions do
+no generate a copy machine instruction if the stack slot contains the same
+local variable. Generated machine instructions for arithmetic operations
+directly use the local variables as their operands.
+
+There are some pitfalls with this scheme. Take the example of
+figure~\ref{Trans2}. The stack bottom contains the local variable {\tt a}.
+The instruction {\tt istore a} will write a new value for {\tt a} and will
+make a later use of this variable invalid. To avoid this we have to copy 
+the local variable to a stack variable. An important decision is at which
+position the copy instruction should be inserted. Since there is a high
+number of {\tt dup} instructions in Java programs (around 4\%) and it is
+possible that a local variable resides in memory, the copy should be done
+with the {\tt load} instruction. Since the stack is represented as a linked
+list only the destination stack has to be checked for occurrences of the
+offending variable and these occurrences are replaced by a stack variable.
+
+
+\begin{figure}[htb]
+\begin{center}
+\setlength{\unitlength}{1mm}
+\begin{picture}(79,32)
+\put( 0,27  ){\framebox(15,5){\tt iload a}}
+\put(16,27  ){\framebox(13,5){\tt dup}}
+\put(30,27  ){\framebox(17,5){\tt iconst 1}}
+\put(48,27  ){\framebox(13,5){\tt iadd}}
+\put(62,27  ){\framebox(17,5){\tt istore a}}
+\put(10,27  ){\vector(0,-1){22}}
+\put( 5,27  ){\vector(0,-1){4}}
+\put( 5, 0  ){\makebox(10,5){\tt a}}
+\put(10, 2.5){\oval(10,5)}
+\put(20,27  ){\line(0,-1){2}}
+\put(20,25  ){\line(-1,0){10}}
+\put(25,27  ){\vector(0,-1){13}}
+\put(20, 9  ){\makebox(10,5){\tt a}}
+\put(25,11.5){\oval(10,5)}
+\put(25, 9  ){\line(0,-1){2}}
+\put(10, 7  ){\line(1,0){63}}
+\put(36,27  ){\line(0,-1){2}}
+\put(36,25  ){\line(-1,0){11}}
+\put(41,27  ){\vector(0,-1){4}}
+\put(36,18  ){\makebox(10,5){\tt 1}}
+\put(41,20.5){\oval(10,5)}
+\put(41,18  ){\line(0,-1){2}}
+\put(41,16  ){\line(-1,0){16}}
+\put(52,27  ){\line(0,-1){2}}
+\put(52,25  ){\line(-1,0){11}}
+\put(73,27  ){\line(0,-1){20}}
+\put(57,27  ){\vector(0,-1){13}}
+\put(52, 9  ){\makebox(10,5){\tt +}}
+\put(57,11.5){\oval(10,5)}
+\put(57,9   ){\line(0,-1){2}}
+\put(68,27  ){\line(0,-1){2}}
+\put(68,25  ){\line(-1,0){11}}
+\end{picture}
+\caption{anti dependence}
+\label{Trans2}
+\end{center}
+\end{figure}
+
+To answer the question of how often this could happen and how expensive
+the stack search is, we analysed again the {\tt javac} compiler. In more
+than 98\% of the cases the stack is empty (see table \ref{tab-2}). In only
+0.2\% of the cases the stack depth is higher than 1 and the biggest stack
+depth is 3.
+
+\begin{table}[htb]
+\begin{center}
+\begin{tabular}[b]{|l|c|c|c|c|c|}
+\hline 
+stack depth &   0  &  1  &  2  &  3  & $>$3 \\ \hline           
+occurrences & 2167 & 31  &  1  &  3  &  0   \\ \hline           
+\end{tabular}
+\caption{distribution of {\tt store} stack depth}
+\label{tab-2}
+\end{center}
+\end{table}
+
+\begin{table*}
+\begin{center}
+\begin{tabular}[b]{|l|c|c|c|c|c|c|c|c|c|c|}
+\hline 
+chain length &  1  &  2 &  3 &  4 &  5 &  6 &  7 & 8 & 9 & $>$9 \\ \hline           
+occurrences  & 1892& 62 & 23 & 62 & 30 & 11 & 41 & 9 & 7 &  65  \\ \hline           
+\end{tabular}
+\caption{distribution of creator-store distances}
+\label{tab-3}
+\end{center}
+\end{table*}
+
+To avoid copy instructions when executing a {\tt store} it is necessary to
+connect the  creation of a value with the store which consumes it. In that
+case a {\tt store} not only can conflict with copies of a local variable
+which result from {\tt load} instructions before the creator of the value,
+but also with {\tt load} and {\tt store} instructions which exist between
+the creation of value and the {\tt store}. In figure~\ref{Trans3} the {\tt
+iload a} instruction conflicts with the {\tt istore a} instruction.
+
+\begin{figure}[htb]
+\begin{center}
+\setlength{\unitlength}{1mm}
+\begin{picture}(67,27)
+\put( 0,22  ){\framebox(15,5){\tt iadd}}
+\put(16,22  ){\framebox(15,5){\tt iload a}}
+\put(32,22  ){\framebox(17,5){\tt istore b}}
+\put(50,22  ){\framebox(17,5){\tt istore a}}
+\put(10,22  ){\vector(0,-1){13}}
+\put( 5,22  ){\line(0,-1){2}}
+\put( 5,20 ){\line(-1,0){3}}
+\put( 2,20  ){\vector(0,-1){20}}
+\put(10, 4  ){\line(0,-1){2}}
+\put( 5, 4  ){\makebox(10,5){\tt +}}
+\put(10, 6.5){\oval(10,5)}
+\put(21,22  ){\line(0,-1){2}}
+\put(21,20  ){\line(-1,0){11}}
+\put(26,22  ){\vector(0,-1){4}}
+\put(21,13  ){\makebox(10,5){\tt a}}
+\put(26,15.5){\oval(10,5)}
+\put(26,13  ){\line(0,-1){2}}
+\put(10,11  ){\line(1,0){46}}
+\put(38,22  ){\line(0,-1){2}}
+\put(38,20  ){\line(-1,0){12}}
+\put(43,22  ){\line(0,-1){11}}
+\put(56,22  ){\line(0,-1){11}}
+\put(61,22  ){\line(0,-1){20}}
+\put( 2, 2  ){\line(1,0){59}}
+\end{picture}
+\caption{anti dependence}
+\label{Trans3}
+\end{center}
+\end{figure}
+
+The anti dependences are detected by checking the stack locations of the
+previous instructions for conflicts. Since the stack locations are
+allocated as one big array just the stack elements which have a higher
+index than the current stack element have to be checked. Table \ref{tab-3}
+gives the distribution of the distance between the creation of the value
+and the corresponding store. In 86\% of the cases the distance is one.
+
+The output dependences are checked by storing the instruction number of the
+last store in each local variable. If a store conflicts due to dependences
+the creator places the value in a stack register. Additional dependences
+arise because of exceptions. The exception mechanism in Java is precise.
+Therefore {\tt store} instructions are not allowed to be executed before
+an exception raising instruction. This is checked easily be remembering
+the last instruction which could raise an exception. In methods which contain
+no exception handler this conflict can be safely ignored because no
+exception handler can have access to these variables.
+
+
+\subsection{Register allocator}
+
+he current register allocator of CACAO is a very simple,
+straightforward allocator. It simply assigns free registers with a
+\textit{first-come-first-serve} based algorithm. This is mostly
+suitable for RISC architectures with large register sets like Alpha or
+MIPS with 32 integer registers and 32 floating-point registers. For
+these architectures the current register allocator was designed for.
+
+Basically the allocation passes of the register allocator are:
+
+\begin{itemize}
+ \item interface register allocation
+ \item scratch register allocation
+ \item local register allocation
+\end{itemize}
+
+The \texttt{javac} compiler also supports this simple
+\textit{first-come-first-serve} approach CACAO uses and does a
+coloring of the local variables and assigns the same number to
+variables which are not active at the same time. The stack variables
+have implicitly encoded their live ranges. When a value is pushed, the
+live range start. When a value is popped, the live range ends.
+
+Complications arise only with stack manipulation instructions like {\tt dup}
+and {\tt swap}. We flag therefore the first creation of a stack variable and
+mark a duplicated one as a copy. The register used for this variable can
+be reused only after the last copy is popped.
+
+During stack analysis stack variables are marked which have to survive a
+method invocation. These stack variables and local variables are assigned
+to callee saved registers. If there are not enough registers available,
+these variables are allocated in memory.
+
+Efficient implementation of method invocation is crucial to the performance
+of Java. Therefore, we preallocate the argument registers and the return
+value in a similar way as we handle store instructions. Input arguments (in
+Java input arguments are the first variables) for leaf procedures (and
+input arguments for processors with register windows) are preassigned, too.
+
+Since CACAO has now also been ported to CISC architectures like IA32
+and AMD64, the \textit{first-come-first-serve} register allocator has
+hit it's limits. The results produced for an architecture with 8
+integer general purpose registers like IA32 or 16 integer general
+purpose registers like AMD64, is far from perfect. Further details to
+register allocation of these architectures can be found in section
+\ref{sectionia32registerallocation} and section
+\ref{sectionamd64registerallocation} respectively.
+
+The CACAO development team is currently working on a new register
+allocator based on a \textit{linear scan} algorithm. This allocator
+should produce much better results on CISC machines than the current
+register allocator.
+
+
+\subsection{Instruction combining}
+
+Together with stack analysis we combine constant loading instructions
+with selected instructions which are following immediately. In the
+class of combinable instructions are add, subtract, multiply and
+divide instructions, logical and shift instructions, compare/branch
+and array store instructions.
+
+These combined immediate instructions are:
+
+\begin{itemize}
+ \item \texttt{ICMD\_IADDCONST}, \texttt{ICMD\_ISUBCONST},
+ \texttt{ICMD\_IMULCONST}, \texttt{ICMD\_IDIVPOW2},
+ \texttt{ICMD\_IREMPOW2}
+
+ \item \texttt{ICMD\_LADDCONST}, \texttt{ICMD\_LSUBCONST},
+ \texttt{ICMD\_LMULCONST}, \texttt{ICMD\_LDIVPOW2},
+ \texttt{ICMD\_LREMPOW2}
+
+ \item \texttt{ICMD\_IANDCONST}, \texttt{ICMD\_IORCONST},
+ \texttt{ICMD\_IXORCONST}
+
+ \item \texttt{ICMD\_LANDCONST}, \texttt{ICMD\_LORCONST},
+ \texttt{ICMD\_LXORCONST}
+
+ \item \texttt{ICMD\_ISHLCONST}, \texttt{ICMD\_ISHRCONST},
+ \texttt{ICMD\_IUSHRCONST}
+
+ \item \texttt{ICMD\_LSHLCONST}, \texttt{ICMD\_LSHRCONST},
+ \texttt{ICMD\_LUSHRCONST}
+
+ \item \texttt{ICMD\_IFxx}
+
+ \item \texttt{ICMD\_IF\_Lxx}
+
+ \item \texttt{ICMD\_xASTORECONST}
+\end{itemize}
+
+During code generation the constant is checked if it lies in the range
+for immediate operands of the target architecture and appropriate code
+is generated.
+
+Arithmetic and logical instructions are processed straightforward. The
+intermediate command opcode of the current instruction is changed and
+the immediate value from the previous instruction is stored in the
+current instruction. The register pressure is always reduced by one
+register by this optimization.
+
+\texttt{ICMD\_IDIV} and \texttt{ICMD\_IREM} divisions by a constant
+which is a power of two are handled in a special way. They are
+converted into \texttt{ICMD\_IDIVPOW2} and \texttt{ICMD\_IREMPOW2}
+respectively. For \texttt{ICMD\_IDIVPOW2} an immediate value is
+assigned which represents the left shift amount of \texttt{0x1} to get
+the divisor value. In the code generation pass a very fast shift-based
+machine code can be generated for this instruction. For
+\texttt{ICMD\_IREMPOW2} the intermediate value gets one
+subtracted. The generated machine code consists of logical
+\texttt{and}'s, \texttt{neg}'s and a conditional jump. For both
+instructions the generated machine code is much fast than an integer
+division. \texttt{ICMD\_LDIV} and \texttt{ICMD\_LREM} intermediate
+commands are handled respectively.
+
+\texttt{ICMD\_IxSHx} instructions by a constant value are converted
+to \texttt{ICMD\_IxSHxCONST} instructions. Nearly every architecture
+has machine shift instructions by a constant value. This optimization
+always reduces the register pressure by one
+register. \texttt{ICMD\_LxSHx} intermediate commands are converted to
+\texttt{ICMD\_LxSHxCONST} commands respectively.
+
+\texttt{ICMD\_IF\_ICMPxx} intermediate commands are converted to
+\texttt{ICMD\_IFxx} commands. This commands compare the source
+operand directly with an immediate value if possible. The generated
+machine code depends on the architecture. On the IA32 or AMD64
+architecture the immediate value can always be inlined. On RISC
+architectures the immediate value range is limited, like the Alpha
+architecture where the immediate value may be between 0 and 255. On
+architectures which support conditional branches on a source register,
+like Alpha or MIPS, the compare with 0 is optimized to a single
+instruction. This optimization can reduce the register pressure by one
+register. \texttt{ICMD\_IF\_Lxx} intermediate commands are handled
+respectively.
+
+The \texttt{ICMD\_xASTORE} optimization was actually implemented for
+the IA32 and AMD64 architecture. These architectures can handle inline
+immediate values up to their address pointer size, this means 32-bit
+for IA32 and 64-bit for AMD64 respectively. For RISC architectures
+which have a \texttt{REG\_ZERO}---a register which always contains the
+values zero---this array store optimization can be used only for zero
+values. Address array stores---\texttt{ICMD\_AASTORE}---can only be
+optimized in the \texttt{null} pointer case because of the dynamic
+type check. In this case the optimization not only reduces the
+register pressure by one register, but the dynamic type check
+subroutine call can be eliminated.
+
+
+\subsection{Complexity of the algorithm}
+
+The complexity of the algorithm is mostly linear with respect to the number
+of instructions and the number of local variables plus the number of stack
+slots. There are only a small number of spots where it is not linear. 
+
+\begin{itemize}
+\item At the begin of a basic block the stack has to be copied to separate
+      the stacks of different basic blocks. Table \ref{tab-1} shows that
+      the stack at the boundary of a basic block is in most cases zero.
+      Therefore, this copying does not influence the linear performance of
+      the algorithm.
+\item A store has to check for a later use of the same variable. Table
+      \ref{tab-2} shows that this is not a problem, too.
+\item A store additionally has to check for the previous use of the same
+      variable between creation of the value and the store. The distances
+      between the creation and the use are small (in most case only 1) as
+      shown by table \ref{tab-3}.
+\end{itemize}
+
+Compiling {\tt javac} 29\% of the compile time are spent in parsing and
+basic block determination, 18\% are spent in stack analysis, 16\% are spent
+in register allocation and 37\% are spent in machine code generation.
+
+
+\subsection{Example}
+
+Figure \ref{IntermediateStack} shows the intermediate representation and
+stack information as produced by the compiler for debugging purposes. The
+{\tt Local Table} gives the types and register assignment for the local
+variables. The Java compiler reuses the same local variable slot for
+different local variables if there life ranges do not overlap. In this
+example the variable slot 3 is even used for local variables of different
+types (integer and address). The JIT-compiler assigned the saved register
+12 to this variable.
+
+One interface register is used in this example entering the basic block
+with label {\tt L004}. At the entry of the basic block the interface
+register has to be copied to the argument register {\tt A00}. This is one
+of the rare cases where a more sophisticated coalescing algorithm could
+have allocated an argument register for the interface.
+
+At instruction 2 and 3 you can see the combining of a constant with an
+arithmetic instruction. Since the instructions are allocated in an array
+the empty slot has to be filled with a {\tt NOP} instruction. The {\tt
+ADDCONSTANT} instruction already has the local variable {\tt L02} as
+destination, an information which comes from the later {\tt ISTORE} at
+number 4. Similarly the {\tt INVOKESTATIC} at number 31 has marked all its
+operands as arguments. In this example all copy (beside the one to the
+interface register) have been eliminated.
+
+\begin{figure*}[htb]
+\begin{center}
+\begin{verbatim}
+  java.io.ByteArrayOutputStream.write (int)void
+
+  Local Table:
+       0:                (adr) S15
+       1:    (int) S14
+       2:    (int) S13
+       3:    (int) S12   (adr) S12
+
+  Interface Table:
+       0:    (int) T24
+
+  [                 L00]        0  ALOAD         0
+  [                 T23]        1  GETFIELD      16
+  [                 L02]        2  IADDCONST     1
+  [                 L02]        3  NOP         
+  [                    ]        4  ISTORE        2
+  [                 L02]        5  ILOAD         2
+  [             L00 L02]        6  ALOAD         0
+  [             T23 L02]        7  GETFIELD      8
+  [             T23 L02]        8  ARRAYLENGTH  
+  [                    ]        9  IF_ICMPLE     L005
+                                ...............
+
+  [                    ]       18  IF_ICMPLT     L003
+  [                    ] L002:
+  [                 I00]       19  ILOAD         3
+  [                 I00]       20  GOTO          L004
+  [                    ] L003:
+  [                 I00]       21  ILOAD         2
+  [                 A00] L004:
+  [                 L03]       22  BUILTIN1      newarray_byte
+  [                    ]       23  ASTORE        3
+  [                 L00]       24  ALOAD         0
+  [                 A00]       25  GETFIELD      8
+  [             A01 A00]       26  ICONST        0
+  [         A02 A01 A00]       27  ALOAD         3
+  [     A03 A02 A01 A00]       28  ICONST        0
+  [ L00 A03 A02 A01 A00]       29  ALOAD         0
+  [ A04 A03 A02 A01 A00]       30  GETFIELD      16
+  [                    ]       31  INVOKESTATIC  java/lang/System.arraycopy
+  [                 L00]       32  ALOAD         0
+  [             L03 L00]       33  ALOAD         3
+  [                    ]       34  PUTFIELD      8
+  [                    ] L005:
+                               ...............
+
+  [                    ]       45  RETURN       
+\end{verbatim}
+\caption{Example: intermediate instructions and stack contents}
+\label{IntermediateStack}
+\end{center}
+\end{figure*}
+
+
+\section{Compiling a Java method}
+
+The CACAO JIT compiler is invoked via the
+
+\begin{verbatim}
+        methodptr jit_compile(methodinfo *m);
+\end{verbatim}
+
+function call. This function is just a wrapper function to the
+internal compiler function
+
+\begin{verbatim}
+        static methodptr jit_compile_intern(methodinfo *m);
+\end{verbatim}
+
+The argument of the compiler function is a pointer to a
+\texttt{methodinfo} structure (see figure \ref{methodinfostructure})
+allocated by the system class loader. This function should not be
+called directly and thus is declared \texttt{static} because the
+wrapper function has to ensure some conditions:
+
+\begin{itemize}
+ \item enter a monitor on the \texttt{methodinfo} structure to make
+ sure that only one thread can compile the same Java method at the
+ same time
+
+ \item check if the method already has a \texttt{entrypoint}, if so
+ the monitor is left and the entrypoint is returned
+
+ \item measure the compiling time if requested
+
+ \item call the internal compiler function
+
+ \item leave the monitor and return the functions' \texttt{entrypoint}
+\end{itemize}
+
+The internal compiler function \texttt{jit\_compile\_intern} does the
+actual compilation of the Java method. It calls the different passes
+of the JIT compiler.
+
+If the passed Java method does not have a \textit{Code Attribute} (see
+\ref{sectionmethodloading}) a \texttt{methodptr} to a
+\texttt{do\_nothing\_function} is returned.
+
+If the method has the \texttt{ACC\_STATIC} flag bit set and the
+methods' class is not yet initialized, \texttt{class\_init} is called
+with the methods' class as argument
+
+Then the compiler passes are called:
+
+\begin{enumerate}
+
+ \item \texttt{reg\_init}: initializes the register allocator
+
+  \begin{itemize}
+
+   \item allocates the \texttt{registerdata} structure
+
+   \item calculate the number of callee saved, temporary and argument
+   registers
+
+  \end{itemize}
+
+ \item \texttt{reg\_setup}: sets up the register allocator data which
+ is changed in every compiler run
+
+ \item \texttt{codegen\_setup}: initializes the code generator
+
+  \begin{itemize}
+
+   \item allocates the \texttt{codegendata} structure
+
+   \item allocate code and data memory
+
+  \end{itemize}
+
+ \item \texttt{parse}: parse pass
+
+  \begin{itemize}
+
+   \item parse the Java Virtual Machine instructions and convert them
+   into CACAO intermediate commands
+
+   \item determine basic blocks
+
+  \end{itemize}
+
+ \item \texttt{analyse\_stack}: analyse stack pass
+
+ \item \texttt{regalloc}: register allocation pass
+
+ \item \texttt{codegen}: code generation pass
+
+ \item \texttt{reg\_close}: release all allocated register allocator
+ memory
+
+ \item \texttt{codegen\_close}: release all allocated code generator
+ memory
+
+\end{enumerate}
+
+After all compiler passes were run and no exception or error occured,
+the \texttt{entrypoint} of the compiled method is returned.
+
+The CACAO JIT compiler is designed to be reentrant. This design
+decision was taken to easily support exception throwing during one of
+the compiler passes and to support concurrent compilation in different
+threads running. Concurrent compilation can speed up startup and run
+time especially on multi processor machines.

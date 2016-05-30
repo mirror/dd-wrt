@@ -1,0 +1,156 @@
+---------------------- test a normal class ----------------------
+is local:              false
+is anonymous:          false
+is member:             false
+name:                  MinimalClassReflection
+simple name:           MinimalClassReflection
+canonical name:        MinimalClassReflection
+super class:           java.lang.Object
+declaring class:       null
+enclosing class:       null
+enclosing constructor: null
+enclosing method:      null
+
+---------------------- test a local class (local to a method) ----------------------
+is local:              true
+is anonymous:          false
+is member:             false
+name:                  MinimalClassReflection$1ALocalClass
+simple name:           ALocalClass
+canonical name:        null
+super class:           java.lang.Object
+declaring class:       null
+enclosing class:       MinimalClassReflection
+enclosing constructor: null
+enclosing method:      MinimalClassReflection.main
+
+---------------------- test a anonymous class ----------------------
+is local:              false
+is anonymous:          true
+is member:             false
+name:                  MinimalClassReflection$1
+simple name:           
+canonical name:        null
+super class:           java.lang.Object
+declaring class:       null
+enclosing class:       MinimalClassReflection
+enclosing constructor: null
+enclosing method:      MinimalClassReflection.main
+
+---------------------- test a member class ----------------------
+is local:              false
+is anonymous:          false
+is member:             true
+name:                  MinimalClassReflection$1ALocalClass$AMemberClass
+simple name:           AMemberClass
+canonical name:        null
+super class:           java.lang.Object
+declaring class:       MinimalClassReflection$1ALocalClass
+enclosing class:       MinimalClassReflection$1ALocalClass
+enclosing constructor: null
+enclosing method:      null
+
+---------------------- test a anonymous class derived from a member class ----------------------
+is local:              false
+is anonymous:          true
+is member:             false
+name:                  MinimalClassReflection$1ALocalClass$1
+simple name:           
+canonical name:        null
+super class:           MinimalClassReflection$1ALocalClass$AMemberClass
+declaring class:       null
+enclosing class:       MinimalClassReflection$1ALocalClass
+enclosing constructor: MinimalClassReflection$1ALocalClass.MinimalClassReflection$1ALocalClass
+enclosing method:      null
+
+---------------------- test a local class (local to a constructor) ----------------------
+is local:              true
+is anonymous:          false
+is member:             false
+name:                  MinimalClassReflection$1ALocalClass$1AnotherLocalClass
+simple name:           AnotherLocalClass
+canonical name:        null
+super class:           java.lang.Object
+declaring class:       null
+enclosing class:       MinimalClassReflection$1ALocalClass
+enclosing constructor: MinimalClassReflection$1ALocalClass.MinimalClassReflection$1ALocalClass
+enclosing method:      null
+
+---------------------- test a anonymous class derived from a local class (local to a constructor) ----------------------
+is local:              false
+is anonymous:          true
+is member:             false
+name:                  MinimalClassReflection$1ALocalClass$2
+simple name:           
+canonical name:        null
+super class:           MinimalClassReflection$1ALocalClass$1AnotherLocalClass
+declaring class:       null
+enclosing class:       MinimalClassReflection$1ALocalClass
+enclosing constructor: MinimalClassReflection$1ALocalClass.MinimalClassReflection$1ALocalClass
+enclosing method:      null
+
+---------------------- test a anonymous class derived from a local class (local to a method) ----------------------
+is local:              false
+is anonymous:          true
+is member:             false
+name:                  MinimalClassReflection$2
+simple name:           
+canonical name:        null
+super class:           MinimalClassReflection$1ALocalClass
+declaring class:       null
+enclosing class:       MinimalClassReflection
+enclosing constructor: null
+enclosing method:      MinimalClassReflection.main
+
+---------------------- test a member class ----------------------
+is local:              false
+is anonymous:          false
+is member:             true
+name:                  MinimalClassReflection$1ALocalClass$AMemberClass
+simple name:           AMemberClass
+canonical name:        null
+super class:           java.lang.Object
+declaring class:       MinimalClassReflection$1ALocalClass
+enclosing class:       MinimalClassReflection$1ALocalClass
+enclosing constructor: null
+enclosing method:      null
+
+---------------------- test a anonymous class derived from a member class ----------------------
+is local:              false
+is anonymous:          true
+is member:             false
+name:                  MinimalClassReflection$1ALocalClass$1
+simple name:           
+canonical name:        null
+super class:           MinimalClassReflection$1ALocalClass$AMemberClass
+declaring class:       null
+enclosing class:       MinimalClassReflection$1ALocalClass
+enclosing constructor: MinimalClassReflection$1ALocalClass.MinimalClassReflection$1ALocalClass
+enclosing method:      null
+
+---------------------- test a local class (local to a constructor) ----------------------
+is local:              true
+is anonymous:          false
+is member:             false
+name:                  MinimalClassReflection$1ALocalClass$1AnotherLocalClass
+simple name:           AnotherLocalClass
+canonical name:        null
+super class:           java.lang.Object
+declaring class:       null
+enclosing class:       MinimalClassReflection$1ALocalClass
+enclosing constructor: MinimalClassReflection$1ALocalClass.MinimalClassReflection$1ALocalClass
+enclosing method:      null
+
+---------------------- test a anonymous class derived from a local class (local to a constructor) ----------------------
+is local:              false
+is anonymous:          true
+is member:             false
+name:                  MinimalClassReflection$1ALocalClass$2
+simple name:           
+canonical name:        null
+super class:           MinimalClassReflection$1ALocalClass$1AnotherLocalClass
+declaring class:       null
+enclosing class:       MinimalClassReflection$1ALocalClass
+enclosing constructor: MinimalClassReflection$1ALocalClass.MinimalClassReflection$1ALocalClass
+enclosing method:      null
+

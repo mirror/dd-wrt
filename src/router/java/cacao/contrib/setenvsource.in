@@ -1,0 +1,17 @@
+# Sets the environment variables properly when GNU Classpath and CACAO
+# are not installed.
+
+export PATH=@abs_top_builddir@/src/cacao:$PATH
+
+export LD_LIBRARY_PATH=\
+@abs_top_builddir@/src/cacao/.libs:\
+@JAVA_RUNTIME_LIBRARY_PREFIX@/native/jawt/.libs:\
+@JAVA_RUNTIME_LIBRARY_PREFIX@/native/jni/gtk-peer/.libs:\
+@JAVA_RUNTIME_LIBRARY_PREFIX@/native/jni/java-io/.libs:\
+@JAVA_RUNTIME_LIBRARY_PREFIX@/native/jni/java-lang/.libs:\
+@JAVA_RUNTIME_LIBRARY_PREFIX@/native/jni/java-net/.libs:\
+@JAVA_RUNTIME_LIBRARY_PREFIX@/native/jni/java-nio/.libs:\
+@JAVA_RUNTIME_LIBRARY_PREFIX@/native/jni/java-util/.libs:\
+$LD_LIBRARY_PATH
+
+export BOOTCLASSPATH=@abs_top_builddir@/src/classes/vm.zip:@JAVA_RUNTIME_LIBRARY_CLASSES@

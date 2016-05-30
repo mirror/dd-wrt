@@ -1,0 +1,54 @@
+Quick start instructions
+========================
+
+For building CACAO from source, you need to choose between an OpenJDK
+build and a GNU Classpath build.
+
+OpenJDK:
+--------
+
+Grab the latest release of IcedTea6 and configure with --enable-cacao.
+This will build a predetermined version of CACAO from the official
+repository. For building a specific version from a local checkout,
+also add --with-cacao-src-dir.
+
+$ ./configure --enable-cacao [--with-cacao-src-dir=<checkout>]
+$ make
+$ ./openjdk.build/j2sdk-image/bin/java
+
+The icedtea build is set up to get the CACAO sources directly from the
+Mercurial repository, so some minor patching is required for building against
+the release tarball (generally not recommended).
+
+GNU Classpath:
+--------------
+
+This option requires an installed build of GNU Classpath 0.99. For an
+out-of-the-box experience that does not require fiddling with environment
+variables, choose as CACAO's installation prefix the one that was previously
+used for GNU Classpath installation. Specify it using --prefix as well as
+--with-java-runtime-library-prefix.
+
+$ ./configure --with-java-runtime-library-prefix=<install_prefix> \
+> --enable-jre-layout --prefix=<install_prefix>
+$ make
+
+$ make install
+$ <install_prefix>/bin/java
+
+Or, for running without installation:
+
+$ (source contrib/setenvinstalled && cacao)
+
+Dependencies:
+-------------
+
+On Ubuntu, this command should install all dependencies required for a
+GNU Classpath build:
+
+$ apt-get install build-essential openjdk-6-jdk antlr texinfo zlib1g-dev
+
+For an OpenJDK build, use:
+
+> apt-get build-dep openjdk-6-jdk
+> apt-get install libXp-dev

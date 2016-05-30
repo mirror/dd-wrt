@@ -1,0 +1,79 @@
+STACK REPRESENTATION INTERNALS
+==============================
+
+Author : Edwin Steiner
+Changes: -
+
+The array structure of the stack representation
+===============================================
+
+Within certain limits the CACAO stack representation can be treated as an 
+array of `stackelements`. This is possible because certain groups of 
+stackelements are guaranteed to be allocated consecutively.
+
+The following invariants hold at all time for the stack representation:
+
+    1) The stack representations of different basic blocks are disjoint.
+
+    2) The instack (if non-NULL) of a block is allocated consecutively:
+
+            in->prev == (in - 1) or NULL
+
+    3) The output stack slots of an instruction (if any) are allocated consecutively:
+
+            dst->prev == (dst - 1) or (stackslot present before instruction) or NULL
+
+    4) The stack slots produced by instructions within a basic block are allocated
+       consecutively:
+
+            [slots produced by instruction 0]  <--- bptr->stack
+            [slots produced by instruction 1]
+                          ...
+            [slots produced by instruction N]
+
+        CAUTION: In this context `produced` means that a stackelement has been
+                 allocated to represent the output of the instruction. For example
+                 the SWAP instruction produces two stackelements although it does
+                 not change the stack depth.
+
+    5) The instack of a block (if non-NULL) is allocated at a lower address than
+       the stack slots produced within the block (if any).
+
+    6) References can only go to lower memory addresses. That is, for each stack slot sp:
+
+            (sp->prev == NULL) or (sp->prev < sp)
+ 
+    7) If an instruction produces any stackslots, iptr->dst points to the highest-address 
+       stackslot produced
+       Corollary: if iptr->dst points to curstack or below, the instruction does
+                   not produce any stackslots
+
+
+    ATTENTION: The instack of a block and the slots produced within the block
+               are *not* guaranteed to be adjacent (see figure below)!
+
+    ATTENTION: not every stack slot that is allocated may be reachable
+               by following the pointers in basicblock or the instructions!
+
+               NOTE: This is a problem. As far as I know it is only the case
+                     for IINC, which produces a dummy stack slot. We should
+                     change that.
+
+
+Figure 1: Stack representation of a basic block:
+               
+=============>>> rising memory address >>>================>>>========================>>>
+
+               (references may only go in this <--- direction)
+               
++-----------------------+                      +-------------------------------+
+| I0 <- I1 <- ... <- In | -------------------- | slots produced in basic block |
++-----------------------+                      +-------------------------------+
+                      ^                          ^
+                      |                          |
+                 bptr->instack              bptr->stack
+
+NOTE: The bptr->stack field will be added for inlining. It is not in CACAO SVN, yet.
+
+# vim: et sts=4 sw=4 ts=4
+

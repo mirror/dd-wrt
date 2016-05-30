@@ -1,0 +1,140 @@
+STACK FRAME FORMAT
+=====================
+Author: Edwin Steiner
+
+
+Overview
+--------
+
+For the sake of efficiency CACAO uses its own stack frame layout that does
+not comply with the usual frame layout on the native ABI. This document
+tries to collect the stack frame layouts used on the various architectures.
+
+
+i386 stack frames
+-----------------
+
+,--memory address rising
+|
+V   >>>> sp in method (after initial sub) <<<<
+|          
+|   u4[]  v  arguments for calling methods              \__ rd->memuse slots
+V   u4[]  v  local variable slots allocated on stack    /
+|
+|   u4[1..2] synchronized object / saved return value       (only for synched methods)
+V
+|   u8[]  ^  callee-saved float registers
+|   u4[]  ^  callee-saved integer registers
+V          
+|   >>>> sp on method entry, stack base for replacement <<<<
+|
+V   u4       return address
+|   u4[]     arguments on stack
+|
+V
+
+
+x86_64 stack frames
+-----------------
+
+,--memory address rising
+|
+V   >>>> sp in method (after initial sub) (16-byte aligned in non-leaf methods) <<<<
+|          
+|   u8[]  v  arguments for calling methods              \__ rd->memuse slots
+V   u8[]  v  local variable slots allocated on stack    /
+|
+|   u8    v  synchronized object / saved return value       (only for synched methods)
+V   u8[0..1] alignment dummy slot                           (in non-leaf methods to ensure
+|                                                            16-byte alignment of stack)
+|   u8[]  ^  callee-saved float registers
+V   u8[]  ^  callee-saved integer registers
+|          
+|   >>>> sp on method entry, stack base for replacement  (8-byte odd) <<<<
+V
+|   u8       return address
+|
+V                                                 >>>>> (16-byte aligned) <<<<
+|
+|   u8[]     arguments on stack
+V
+
+
+
+alpha stack frames
+------------------
+
+,--memory address rising
+|
+V   >>>> sp in method (after initial sub) <<<<
+|          
+|   u8[]  v  arguments for calling methods              \__ rd->memuse slots
+V   u8[]  v  local variable slots allocated on stack    /
+|
+|   u8       synchronized object / saved return value       (only for synched methods)
+|   u8[0..1] alignment dummy slot
+V
+|   u8[]  ^  callee-saved float registers
+|   u8[]  ^  callee-saved integer registers
+V
+|     >>>> !!!replacement code regards this point as stack base!!! <<<<
+|		  
+V   u8    ^  saved return address                           (only for non-leaf methods)
+|
+|   >>>> sp on method entry <<<<
+V
+|   u8[]     arguments on stack
+|
+V
+
+
+mips stack frames
+-----------------
+
+,--memory address rising
+|
+V   >>>> sp in method (after initial sub) (16-byte aligned) <<<<
+|          
+|   u8[]  v  arguments for calling methods              \__ rd->memuse slots
+V   u8[]  v  local variable slots allocated on stack    /
+|
+|   u8       synchronized object / saved return value       (only for synched methods)
+|   u8[0..1] alignment dummy slot                           (to ensure 16-byte alignment of sp)
+V
+|   u8[]  ^  callee-saved float registers
+|   u8[]  ^  callee-saved integer registers
+V
+|     >>>> !!!replacement code regards this point as stack base!!!  <<<<
+|		  
+V   u8    ^  saved return address                           (only for non-leaf methods)
+|
+|   >>>> sp on method entry (16-byte aligned) <<<<
+V
+|   u8[]     arguments on stack
+|
+V
+
+
+powerpc stack frames
+--------------------
+
+,--memory address rising
+|
+V   >>>> sp in method (after initial sub) (16-byte aligned) <<<<
+|          
+|   u4[]  v  arguments for calling methods (incl. LA)   \__ rd->memuse slots
+V   u4[]  v  local variable slots allocated on stack    /
+|
+|   u4[2..3] synchronized object / saved return value       (only for synched methods)
+|   u4[0..3] alignment slots
+V
+|   u8[]  ^  callee-saved float registers
+|   u4[]  ^  callee-saved integer registers
+V          
+|   >>>> sp on method entry, stack base for replacement (16-byte aligned) <<<<
+|
+|   u4[]     arguments on stack (inludes LA == linkage area)
+|
+V
+
+

@@ -1,0 +1,418 @@
+\documentclass{article}%
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{listings}
+\lstloadlanguages{Java,C}
+\lstset{basicstyle=\scriptsize, numbers=left, tabsize=4, frame=none, breaklines=true}
+%-------------------------------------------
+\newtheorem{theorem}{Theorem}
+\newtheorem{acknowledgement}[theorem]{Acknowledgement}
+\newtheorem{algorithm}[theorem]{Algorithm}
+\newtheorem{axiom}[theorem]{Axiom}
+\newtheorem{case}[theorem]{Case}
+\newtheorem{claim}[theorem]{Claim}
+\newtheorem{conclusion}[theorem]{Conclusion}
+\newtheorem{condition}[theorem]{Condition}
+\newtheorem{conjecture}[theorem]{Conjecture}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{criterion}[theorem]{Criterion}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+\newtheorem{exercise}[theorem]{Exercise}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{notation}[theorem]{Notation}
+\newtheorem{problem}[theorem]{Problem}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{solution}[theorem]{Solution}
+\newtheorem{summary}[theorem]{Summary}
+\newenvironment{proof}[1][Proof]{\textbf{#1.} }{\ \rule{0.5em}{0.5em}}
+
+\begin{document}
+
+\title{Assertion support \\for the CACAO Virtual Machine}
+\author{{Gregor Kaufmann}
+\\0247381 033 534
+\\gregor@complang.tuwien.ac.at}
+\date{January 1, 2008}
+\maketitle
+\pagebreak
+
+\tableofcontents
+\pagebreak
+
+
+\section{Introduction to assertions in Java}
+\subsection{General Introduction}
+The assertion keyword in Java allows to assert the correctness of assumptions made in a program. It was first introdcuded in JDK 1.2 (see JSR41\footnote{http://jcp.org/aboutJava/communityprocess/review/jsr041/publicDraft.html}). An assertion works on an expression, evaluating to a boolean type, that must be true during the execution of a program (or else the execution halts and an exception gets thrown). Short example: a function that calculates from celsius to kelvin. This function might use an assertion to assure that the calculated value is not below 0.
+
+An assertion statement comes in two forms:
+\begin{itemize}
+\item \verb'assert BooleanExpression ;'
+\item \verb'assert BooleanExpression : ValueExpression ;'
+\end{itemize}
+The "BooleanExpression" can be any java expression resulting in a boolean value. If this "BoolenExpression" evalutes to false an (unnamed) AssertionError gets thrown. The second form of the assertion statement is used to generate detailed error messages: the value of "ValueExpression" gets passed to the constructor of the thrown AssertionError exception, building a more detailed error message. An assertion statement is equal to: if (BooleanExpression == false) throw new AssertionError(ValueExpression); (without the possibility to easily turn on/off this code at runtime).
+Examples:
+\begin{itemize}
+\item \verb'assert val < 10;'
+\item \verb'assert val > 99: val;'
+\item \verb'assert isValid(val): val;'
+\item \verb'assert val.isEnabled(): val.getStatus();'
+\end{itemize}
+
+\pagebreak
+\subsection{Interpreter options}
+Assertions can be turned on or off at runtime (turned off by default). The following options for the interpreter are available (\verb'>'JDK1.2 and \verb'>'CACAO-0.98):
+\begin{itemize}
+\item \verb'-ea[:<packagename>...|:<classname>]'
+\item \verb'-enableassertions[:<packagename>...|:<classname>]'
+\item \verb'-da[:<packagename>...|:<classname>]'
+\item \verb'-disableassertions[:<packagename>...|:<classname>]'
+\item \verb'-esa | -enablesystemassertions'
+\item \verb'-dsa | -disablesystemassertions}' 
+\end{itemize}
+Detailed explanation of the available options:
+\begin{itemize}
+\item{\verb'-enableassertions/-ea' -- \tiny{Turns on assertions for all non-system/user classes}}
+\item{\verb'-disableassertions/-da' -- \tiny{Turns off assertions for all non-system/user classes}}
+\item{\verb'-enablesystemassertions/-esa' -- \tiny{Turns on assertions for all system/non-user classes}}
+\item{\verb'-disablesystemassertions/-dsa' -- \tiny{Turns off assertions for all system/non-user classes}}
+\item{\verb'-enableassertions/-ea:my.package...' -- \tiny{Turns on assertions for all classes in the "my.package" package (and all subpackages)}}
+\item{\verb'-disableassertions/-da:my.package...' -- \tiny{Turns off assertions for all classes in the "my.package" package (and all subpackages)}}
+\item{\verb'-enableassertions/-ea:Myclass' -- \tiny{Turns on assertions a class named "Myclass"}}
+\item{\verb'-disableassertions/-da:Myclass' -- \tiny{Turns off assertions a class named "Myclass"}}
+\end{itemize}
+Note 1: Specifing multiple class/package names is possible.
+\\
+\\
+Note 2: The assertion switches -ea/-da/-esa/-dsa are currently not implemented correctly in cacao+classpath (use cacao+openjdk or a patched classpath [see section \ref{see1}]).
+\pagebreak
+\subsection{Bytecode of an assertion statement} \label{bytecode}
+The following example shows how an assertion statement is translated into bytecode.
+\\
+\\
+I've compiled the following class with JDK-6.0 (other compilers produce slightly different bytecode).
+\begin{lstlisting}[language=Java]
+public class Test {
+    public static void main(String[] args) {
+        int x = 1;
+        assert x == 2 : x;
+    }
+}
+\end{lstlisting}
+The following bytecode gets produced:
+\\
+\begin{lstlisting}[language=Java]
+static {};
+  Code:
+   0:   ldc\_w   #5; //class Test
+   3:   invokevirtual   #6; //Method java/lang/Class.desiredAssertionStatus:()Z
+   6:   ifne    13
+   9:   iconst\_1
+   10:  goto    14
+   13:  iconst\_0
+   14:  putstatic       #2; //Field \$assertionsDisabled:Z
+   17:  return
+\end{lstlisting}
+A static block is used to iniatilizes the boolean variable describing the assertion status of the class "Test".
+The assertion status, as set by the user/vm for, gets loaded (lines 3,4), and saved into constant\_pool[2] (line 9).
+\\
+\begin{lstlisting}[language=Java]
+public static void main(java.lang.String[]);
+  Code:
+   0:   iconst\_1
+   1:   istore\_1
+   2:   getstatic       #2; //Field \$assertionsDisabled:Z
+   5:   ifne    22
+   8:   iload\_1
+   9:   iconst\_2
+   10:  if\_icmpeq       22
+   13:  new     #3; //class java/lang/AssertionError
+   16:  dup
+   17:  iload\_1
+   18:  invokespecial   #4; //Method java/lang/AssertionError."<init>":(I)V
+   21:  athrow
+   22:  return
+\end{lstlisting}
+The assertion status gets loaded from constant\_pool[2] (line 5), if assertions are disabled the function returns immediatly (lines 6,15). Otherwise, the assertion statement gets evaluated and an AssertionError exception gets thrown (lines 6-15).
+
+\pagebreak
+\section{Implementation of java assertions in CACAO}
+
+When I started working on the assertion support for cacao, a basic functionality to toggle assertions on and off was already implemented. It was possible to toggle assertions on and off at a systemwide level, but this only worked when cacao was used together with the GNU classpath classes. Because at least something was already implemented, I decided to start my work on cacao+classpath.
+\\
+\\
+Each class implements a method called desiredAssertionStatus that returns the desired assertion status of a class, see section \ref{bytecode} on how this is used by an assertion statement.
+\\
+\\
+The desiredAssertionStatus method in java.lang.Class of classpath looks like this:
+\begin{lstlisting}[language=Java,firstnumber=1216]
+  public boolean desiredAssertionStatus()
+  {
+    ClassLoader c = getClassLoader();
+    Object status;
+    if (c == null)
+      return VMClassLoader.defaultAssertionStatus();
+    if (c.classAssertionStatus != null)
+      synchronized (c)
+        {
+          status = c.classAssertionStatus.get(getName());
+          if (status != null)
+            return status.equals(Boolean.TRUE);
+        }
+    else
+      {
+        status = ClassLoader.StaticData.
+                    systemClassAssertionStatus.get(getName());
+        if (status != null)
+          return status.equals(Boolean.TRUE);
+      }
+    if (c.packageAssertionStatus != null)
+      synchronized (c)
+        {
+          String name = getPackagePortion(getName());
+          if ("".equals(name))
+            status = c.packageAssertionStatus.get(null);
+          else
+            do
+              {
+                status = c.packageAssertionStatus.get(name);
+                name = getPackagePortion(name);
+              }
+            while (! "".equals(name) && status == null);
+          if (status != null)
+            return status.equals(Boolean.TRUE);
+        }
+    else
+      {
+        String name = getPackagePortion(getName());
+        if ("".equals(name))
+          status = ClassLoader.StaticData.
+                    systemPackageAssertionStatus.get(null);
+        else
+          do
+            {
+              status = ClassLoader.StaticData.
+                        systemPackageAssertionStatus.get(name);
+              name = getPackagePortion(name);
+            }
+          while (! "".equals(name) && status == null);
+        if (status != null)
+          return status.equals(Boolean.TRUE);
+      }
+    return c.defaultAssertionStatus;
+  }
+\end{lstlisting}
+The ClassLoader class stores the global assertion status for user classes and the individual status for classes and packages:
+\begin{itemize}
+\item{\verb'boolean defaultAssertionStatus'}
+\item{\verb'Map<String, Boolean> systemPackageAssertionStatus'}
+\item{\verb'Map<String, Boolean> systemClassAssertionStatus'}
+\end{itemize}
+
+\noindent The VMClassLoader class is a special class that needs to implemented by virtual machines that use the classpath classes.
+The following methods are used by the ClassLoader to initialize the variables above (in the same order):
+\begin{itemize}
+\item{\verb'boolean defaultUserAssertionStatus()'}
+\item{\verb'Map<String, Boolean> packageAssertionStatus()'}
+\item{\verb'Map<String, Boolean> classAssertionStatus()'}
+\end{itemize}
+See: java.lang.Class\footnote{http://cvs.savannah.gnu.org/viewvc/classpath/java/lang/Class.java?revision=1.54\&root=classpath\&view=markup}, java.lang.ClassLoader\footnote{http://cvs.savannah.gnu.org/viewvc/classpath/java/lang/ClassLoader.java?revision=1.62\&root=classpath\&view=markup}, java.lang.VMClassLoader\footnote{http://cvs.savannah.gnu.org/viewvc/classpath/vm/reference/java/lang/VMClassLoader.java?revision=1.16.2.18\&root=classpath\&view=markup}
+\\
+\\
+What had to be done:
+\begin{itemize}
+\item{Implement the methods: defaultUserAssertionStatus, packageAssertionStatus, classAssertionStatus}
+\item{Write a function to parse the commandline options}
+\end{itemize}
+See: src/lib/gnu/java/lang/VMClassLoader.java (section \ref{see1}), src/native/vm/gnu/java\_lang\_VMClassLoader.c (section \ref{see2}), src/vm/assertion.c (section \ref{see3}) and src/vm/assertion.c (section \ref{see4})
+\\\\
+For cacao+openjdk I could reuse most of the code I wrote for cacao+classpath:
+\\\\
+The desiredAssertionStatus method in java.lang.Class of openjdk looks like this:
+\begin{lstlisting}[language=Java, firstnumber=2849]
+public boolean desiredAssertionStatus() {
+    ClassLoader loader = getClassLoader();
+    // If the loader is null this is a system class, so ask the VM
+    if (loader == null)
+        return desiredAssertionStatus0(this);
+
+    synchronized(loader) {
+        // If the classloader has been initialized with
+        // the assertion directives, ask it. Otherwise,
+        // ask the VM.
+        return (loader.classAssertionStatus == null ?
+                desiredAssertionStatus0(this) :
+                loader.desiredAssertionStatus(getName()));
+    }
+}
+
+\end{lstlisting}
+The native function called by desiredAssertionStatus0 is JVM\_DesiredAssertionStatus, and that's the only function that had to be implemented by me to make assertions work with cacao+openjdk. I've also corrected the implementation of the JVM\_AssertionStatusDirectives function, which is used by java.lang.ClassLoader.
+\\
+\\
+See: src/native/vm/sun/jvm.c (section \ref{see5})
+
+\pagebreak
+\section{Patch overview}
+\subsection{Changed/New files}
+\begin{itemize}
+\item{\verb'configure.ac'}
+\item{\verb'm4/assertion.m4'}
+\item{\verb'src/lib/gnu/java/lang/VMClassLoader.java'}
+\item{\verb'src/native/include/Makefile.am'}
+\item{\verb'src/native/jni.h'}
+\item{\verb'src/native/vm/gnu/java_lang_VMClassLoader.c'}
+\item{\verb'src/native/vm/sun/jvm.c'}
+\item{\verb'src/vm/Makefile.am'}
+\item{\verb'src/vm/assertion.c'}
+\item{\verb'src/vm/assertion.h'}
+\item{\verb'src/vm/vm.c'}
+\item{\verb'src/vmcore/class.c'}
+\item{\verb'src/vmcore/class.h'}
+\item{\verb'src/vmcore/linker.c'}
+\item{\verb'src/vmcore/loader.c'}
+\item{\verb'configure.ac'}
+\end{itemize}
+
+\subsection{configure.ac}
+Added configure option "--enable-assertion" (turned on by default).
+\\
+Most of the assertion code will be turned off if this switch is disabled.
+\\\\
+Actual configure logic is in m4/assertion.m4.
+
+\subsection{m4/assertion.m4}
+Added autoconf logic to enable/disable building of assertion support.
+
+\subsection{src/lib/gnu/java/lang/VMClassLoader.java}
+\label{see1}
+Replaced the dummy implementations of:
+\begin{itemize}
+\item{\verb'defaultAssertionStatus'}
+\item{\verb'packageAssertionStatus'}
+\item{\verb'classAssertionStatus'}
+\end{itemize}
+
+Added:
+\begin{itemize}
+\item{\verb'defaultUserAssertionStatus'}
+\end{itemize}
+
+\noindent This function returns the user assertion status. Due to incorrect handling of user/system assertion status in GNU classpath\footnote{http://www.gnu.org/software/classpath/}, enabling (default) system assertions will also enable assertions in all user classes (a patch\footnote{http://www.mail-archive.com/classpath-patches@gnu.org/msg10400/assertion\_cp.patch} to fix this behaviour was submitted in August 07).
+\\\\
+Actual implementations now call into native code to get status.
+
+\subsection{src/native/include/Makefile.am}
+Added:
+\begin{itemize}
+\item{\verb'java_util_HashMap.h'}
+\item{\verb'java_util_Map.h'}
+\end{itemize}
+\noindent Headers needed to allow construction of Map/HashMap in native code.
+
+\subsection{src/native/jni.h}
+Removed:
+\begin{itemize}
+\item{\verb'_Jv_JavaVM->Java_java_lang_VMClassLoader_defaultAssertionStatus'}
+\end{itemize}
+\noindent This variable was used to hold the system's assertion status and was replaced by assertion\_user\_enabled and assertion\_system\_enabled.
+
+\subsection{src/native/vm/gnu/java\_lang\_VMClassLoader.c}
+\label{see2}
+This file holds native implementations of the VMClassLoader for GNU classpath.
+\\\\
+The following functions were added/replaced:
+\begin{itemize}
+\item{\verb'Java_java_lang_VMClassLoader_defaultUserAssertionStatus'}
+\end{itemize}
+\noindent Native implementation of VMClassLoader.defaultUserAssertionStatus. This function returns the default user assertion status of the system (user\_assertion\_status). Returns false if ENABLE\_ASSERTION is not defined (--enable-assertions=no).
+\begin{itemize}
+\item{\verb'Java_java_lang_VMClassLoader_defaultAssertionStatus'}
+\end{itemize}
+\noindent Previous implemention was replaced. Native implementation of VMClassLoader.defaultAssertionStatus. This function returns the default assertion status of the system (system\_assertion\_status). Returns false if ENABLE\_ASSERTION is not defined (--enable-assertions=no).
+\begin{itemize}
+\item{\verb'Java_java_lang_VMClassLoader_packageAssertionStatus0'}
+\end{itemize}
+\noindent Native implementation of VMClassLoader.packageAssertionStatus. Builds and returns a HashMap containing key and value pairs of packagenames and their assertion status (as expected by the ClassLoader). Returns an empty HashMap if ENABLE\_ASSERTION is not defined (--enable-assertions=no).
+\begin{itemize}
+\item{\verb'Java_java_lang_VMClassLoader_classAssertionStatus0'}
+\end{itemize}
+\noindent Native implementation of VMClassLoader.classAssertionStatus. Builds and returns a HashMap containing key and value pairs of classnames and their assertion status (as expected by the ClassLoader). Returns an empty HashMap if ENABLE\_ASSERTION is not defined (--enable-assertions=no).
+
+\subsection{src/native/jni.h}
+Removed:
+\begin{itemize}
+\item{\verb'_Jv_JavaVM->Java_java_lang_VMClassLoader_defaultAssertionStatus'}
+\end{itemize}
+\noindent This variable was used to hold the system's assertion status and was replaced by assertion\_user\_enabled and assertion\_system\_enabled.
+
+\subsection{src/native/vm/sun/jvm.c}
+\label{see5}
+This file holds various native implementations needed by OpenJDK\footnote{http://openjdk.java.net/}.
+\\\\
+The following functions were added/replaced:
+\begin{itemize}
+\item{\verb'JVM_DesiredAssertionStatus'}
+\end{itemize}
+\noindent Dummy implementation was replaced. Returns the desired assertion status for a given class. Returns false if ENABLE\_ASSERTION is not defined (--enable-assertions=no).
+\begin{itemize}
+\item{\verb'JVM_AssertionStatusDirectives'}
+\end{itemize}
+\noindent Previous implementation was incomplete. Builds and returns an AssertionStatusDirectives object. This object contains the names of all packages and classes and their assertion status.
+
+\subsection{src/vm/Makefile.am}
+Added (optional) building of the assertion module (assertion.c/assertion.h). Will only be built if ENABLE\_ASSERTION is defined (--enable-assertions=yes).
+
+\subsection{src/vm/assertion.c}
+\label{see3}
+This file handles the various assertion commandline options (-ea/-da/-esa/-dsa).
+
+\subsection{src/vm/assertion.h}
+\label{see4}
+Defines the following global variables:
+\begin{lstlisting}[language=C,firstnumber=46]
+extern list\_t  *list\_assertion\_names;
+\end{lstlisting}
+This variable stores class/package names and their assertion status.
+\begin{lstlisting}[language=C,firstnumber=47]
+extern int32\_t  assertion\_class\_count;
+\end{lstlisting}
+This variable stores the amount of classnames specified on the commandline.
+\begin{lstlisting}[language=C,firstnumber=48]
+extern int32\_t  assertion\_package\_count;
+\end{lstlisting}
+This variable stores the amount of packagenames specified on the commandline.
+\begin{lstlisting}[language=C,firstnumber=49]
+extern bool     assertion\_user\_enabled;
+\end{lstlisting}
+This variable stores the systemwide user default assertion status.
+\begin{lstlisting}[language=C,firstnumber=50]
+extern bool     assertion_system_enabled;
+\end{lstlisting}
+This variable stores the systemwide default assertion status.
+\\\\
+Defines the following functions:
+\begin{lstlisting}[language=C,firstnumber=54]
+void assertion\_ea\_da(const char *name, bool enabled);
+\end{lstlisting}
+This function is used to initialize the variables described aboved.
+
+\subsection{src/vm/vm.c}
+Handling of assertion commandline options was added/changed. Package and classname parsing is handled by src/vm/assertion.c (assertion\_ea\_da function).
+
+\subsection{src/vmcore/class.c}
+Added class\_java\_util\_HashMap
+
+\subsection{src/vmcore/class.h}
+Added class\_java\_util\_HashMap.
+
+\subsection{src/vmcore/linker.c}
+Added linking of class\_java\_util\_HashMap.
+
+\subsection{src/vmcore/loader.c}
+Added loading of class\_java\_util\_HashMap.
+
+\end{document}

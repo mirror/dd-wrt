@@ -1,0 +1,2021 @@
+\
+\ JVM instruction specs
+\
+\ This file contains primitive specifications in the following format:
+\ 
+\ name ( stack effect ) [ number ]
+\ [""glossary entry""]
+\ C code
+\ [:
+\ Forth code]
+\ 
+\ Note: Fields in brackets are optional.  Word specifications have to
+\ be separated by at least one empty line
+\
+\ Both name and stack items (in the stack effect) must
+\ conform to the C identifier syntax or the C compiler will complain.
+\ The branch field can be one of "branch", "cond", "indirect", or empty.
+\ 
+\ These specifications are automatically translated into C-code for the
+\ interpreter and into some other files. I hope that your C compiler has
+\ decent optimization, otherwise the automatically generated code will
+\ be somewhat slow. The Forth version of the code is included for manual
+\ compilers, so they will need to compile only the important words.
+\ 
+\ Note that stack pointer adjustment is performed according to stack
+\ effect by automatically generated code and NEXT is automatically
+\ appended to the C code. Also, you can use the names in the stack
+\ effect in the C code. Stack access is automatic. One exception: if
+\ your code does not fall through, the results are not stored into the
+\ stack. Use different names on both sides of the '--', if you change a
+\ value (some stores to the stack are optimized away).
+\ 
+
+\E stack data-stack sp Cell
+\E
+\E s" u4"                  single data-stack type-prefix ui
+\E s" Cell"                single data-stack type-prefix v
+\E s" s4"                  single data-stack type-prefix b \ byte
+\E s" s4"                  single data-stack type-prefix s \ short
+\E s" s4"                  single data-stack type-prefix i
+\E s" s8"                  double data-stack type-prefix l
+\E s" float"               single data-stack type-prefix f
+\E s" double"              double data-stack type-prefix d
+
+\ we use a lot of types for the former "a" (address) type; this gives
+\ better typechecking in the C code, and allows better output from the
+\ disassembler and the tracer.
+
+\E s" java_objectheader *" single data-stack type-prefix aRef
+\E s" java_arrayheader *"  single data-stack type-prefix aArray
+\E s" Inst **"             single data-stack type-prefix aaTarget
+\E s" classinfo *"         single data-stack type-prefix aClass
+\E s" constant_classref *" single data-stack type-prefix acr
+\E s" u1 *"                single data-stack type-prefix addr
+\E s" functionptr"         single data-stack type-prefix af
+\E s" methodinfo *"        single data-stack type-prefix am
+\E s" fieldinfo *"         single data-stack type-prefix afi
+\E s" Cell *"              single data-stack type-prefix acell
+\E s" Inst *"              single data-stack type-prefix ainst
+\E s" unresolved_field *"  single data-stack type-prefix auf
+\E s" unresolved_method *" single data-stack type-prefix aum
+\E s" vftbl_t *"           single data-stack type-prefix avftbl
+\E inst-stream  stack-prefix #
+
+\ The stack variables have the following types:
+\ 
+\ name matches  type
+\ i.*           jint
+\ l.*           jlong
+\ s.*           Jshort
+\ b.*           Jbyte
+\ c.*           Jchar
+\ f.*           jfloat
+\ d.*           jdouble
+\ a.*           jref
+\ r.*           Jretaddr
+\
+\ 
+\ Starting a name with # indicates an inline argument instead of a stack
+\ argument; the rest of the name matches as usual.
+\ 
+\
+\ Questions:
+\      How does prims2x know the length of each instruction,
+\      where the instruction has immediate operands. We need
+\      some way to communicate this or compute it.
+\
+\      Some instructions don't care about the type of the
+\      values that they work with. For example, POP doesn't
+\      care what type the value on the top of the stack is.
+\      We need to communicate this.
+\      I'll add a type v (for void, or variable, whichever you
+\      prefer) which just means there's one element of the normal
+\      size on the stack, and we don't care what its type is.
+\
+\
+\ /*
+\ Define the following macros before including this file.
+\
+\ # define instr(name,opcode,label,len,syntax,body) 
+\ # define undef(name,opcode,label,len,syntax,body) 
+\ # define custm(name,opcode,label,len,syntax,body) 
+\
+\
+\ To avoid race conditions, rewriting proceeds as follows: 
+\  1) the needed operands are fetched from the orignal byte code 
+\  2) the new operands are written
+\  3) the new operator is written
+\  4) the quick-version of the instruction is executed.
+\
+\ Note: the byte code remains unchanged.
+\ 
+\ */
+
+\ stack cache setup
+
+\E register IPTOS Cell
+\E register spTOS Cell
+
+\E create IPregs IPTOS ,
+\E create regs spTOS ,
+
+\E IPregs 1 0 stack-state IPss1
+\E regs 1 0 stack-state ss0
+
+\ the first of these is the default state
+\E state S0
+
+\E ss0 data-stack S0 set-ss
+
+\E IPss1 inst-stream S0 set-ss
+
+\E data-stack to cache-stack
+\E here 1 cache-states 2! s0 ,
+
+\ !! the following should be automatic
+\E S0 to state-default
+\E state-default to state-in
+\E state-default to state-out
+
+\E s" codegendata *" threaded-code-pointer-type 2!
+
+\ This is stub code for methods that we have not yet translated.
+\ Initially, the code for each method is set to this stub. The
+\ first time the method is called, the code in the stub runs, which
+\ translates the bytecode, and replaces the stub with the threaded code.
+
+\ instr(NOP, 0, nop, 1, op, {})
+
+ICONST ( #vConst -- vConst ) opt
+
+LCONST ( #l -- l ) opt
+
+ACONST ( #aRef -- aRef ) opt
+
+ACONST1 ( #aRef #acrUnused -- aRef ) opt
+
+PATCHER_ACONST ( #aRef #acr ... -- )
+stackframeinfo sfi;
+bool result;
+global_sp = sp;
+stacktrace_create_stackframeinfo(&sfi, NULL, (u1 *) fp, (u1 *) IP);
+result = intrp_patcher_aconst((u1 *) (IP - 3));
+stacktrace_remove_stackframeinfo(&sfi);
+CLEAR_global_sp;
+if (!result)
+  THROW0;
+STORE_ORDER_BARRIER();
+IP[-3] = INST_ADDR(ACONST1);
+SET_IP(IP - 3);
+patchersuper_rewrite(IP);
+
+ILOAD ( #vLocal -- vResult ) 0x15
+{
+  vResult = access_local_int(vLocal);
+}
+
+LLOAD ( #vLocal -- lResult ) 0x16
+{
+  vm_twoCell2l(access_local_cell(vLocal), access_local_cell(vLocal-SIZEOF_VOID_P), lResult);
+}
+
+ALOAD ( #vLocal -- aRef ) 0x19
+{
+  aRef = (java_objectheader *)access_local_cell(vLocal);
+}
+
+IALOAD ( aArray iIndex -- vResult ) 0x2e
+{
+  CHECK_NULL_PTR(aArray);
+  CHECK_OUT_OF_BOUNDS(aArray, iIndex);
+  ;
+  vResult = access_array_int(aArray, iIndex);
+}
+
+FALOAD ( aArray iIndex -- fResult ) 0x2e
+{
+  CHECK_NULL_PTR(aArray);
+  CHECK_OUT_OF_BOUNDS(aArray, iIndex);
+  ;
+  fResult = access_array_float(aArray, iIndex);
+}
+
+LALOAD ( aArray iIndex -- lResult ) 0x2f
+{
+  CHECK_NULL_PTR(aArray);
+  CHECK_OUT_OF_BOUNDS(aArray, iIndex);
+  ;
+  lResult = access_array_long(aArray, iIndex);
+}
+
+AALOAD ( aArray iIndex -- aRef ) 0x32
+{
+  CHECK_NULL_PTR(aArray);
+  CHECK_OUT_OF_BOUNDS(aArray, iIndex);
+  ;
+  aRef = access_array_addr(aArray, iIndex);
+}
+
+BALOAD ( aArray iIndex -- vResult ) 0x33
+{
+  CHECK_NULL_PTR(aArray);
+  CHECK_OUT_OF_BOUNDS(aArray, iIndex);
+  ;
+  vResult = access_array_byte(aArray, iIndex);
+}
+
+CALOAD ( aArray iIndex -- vResult ) 0x34
+{
+  CHECK_NULL_PTR(aArray);
+  CHECK_OUT_OF_BOUNDS(aArray, iIndex);
+  ;
+  vResult = access_array_char(aArray, iIndex);
+}
+
+SALOAD ( aArray iIndex -- vResult ) 0x35
+{
+  CHECK_NULL_PTR(aArray);
+  CHECK_OUT_OF_BOUNDS(aArray, iIndex);
+  ;
+  vResult = access_array_short(aArray, iIndex);
+}
+
+ISTORE ( #vLocal vValue -- ) 0x36
+{
+  access_local_int(vLocal) = vValue;
+}
+
+LSTORE ( #vLocal lValue -- ) 0x37
+{
+  vm_l2twoCell(lValue, access_local_cell(vLocal), access_local_cell(vLocal-SIZEOF_VOID_P));
+}
+
+ASTORE ( #vLocal aRef -- ) 0x3a
+{
+  access_local_cell(vLocal) = (Cell)aRef;
+}
+
+IASTORE ( aArray iIndex iValue -- ) 0x4f
+{
+  CHECK_NULL_PTR(aArray);
+  CHECK_OUT_OF_BOUNDS(aArray, iIndex);
+  ;
+  access_array_int(aArray, iIndex) = iValue;
+}
+
+FASTORE ( aArray iIndex fValue -- ) 0x4f
+{
+  CHECK_NULL_PTR(aArray);
+  CHECK_OUT_OF_BOUNDS(aArray, iIndex);
+  ;
+  access_array_float(aArray, iIndex) = fValue;
+}
+
+LASTORE ( aArray iIndex lValue -- ) 0x50
+{
+  CHECK_NULL_PTR(aArray);
+  CHECK_OUT_OF_BOUNDS(aArray, iIndex);
+  ;
+  access_array_long(aArray, iIndex) = lValue;
+}
+
+AASTORE ( aArray iIndex aRef -- ) 0x53
+{
+  CHECK_NULL_PTR(aArray);
+  CHECK_OUT_OF_BOUNDS(aArray, iIndex);
+  if (!builtin_canstore((java_objectarray *)aArray, aRef))
+      THROW(arraystoreexception);
+  access_array_addr(aArray, iIndex) = aRef;
+}
+
+BASTORE ( aArray iIndex iValue -- ) 0x54
+{
+  CHECK_NULL_PTR(aArray);
+  CHECK_OUT_OF_BOUNDS(aArray, iIndex);
+  ;
+  access_array_byte(aArray, iIndex) = iValue;
+}
+
+CASTORE ( aArray iIndex iValue -- ) 0x55
+{
+  CHECK_NULL_PTR(aArray);
+  CHECK_OUT_OF_BOUNDS(aArray, iIndex);
+  ;
+  access_array_char(aArray, iIndex) = iValue;
+}
+
+POP ( vValue -- ) 0x57
+
+POP2 ( vValue vValue -- ) 0x58
+
+DUP ( vValue -- vValue vValue ) 0x59
+
+DUP_X1 ( vValue2 vValue1 -- vValue1 vValue2 vValue1 ) 0x5a
+
+DUP_X2 ( vValue3 vValue2 vValue1 -- vValue1 vValue3 vValue2 vValue1 ) 0x5b
+
+DUP2 ( vValue2 vValue1 -- vValue2 vValue1 vValue2 vValue1 ) 0x5c
+
+DUP2_X1 (vValue3 vValue2 vValue1 -- vValue2 vValue1 vValue3 vValue2 vValue1 ) 0x5d
+
+DUP2_X2 ( vValue4 vValue3 vValue2 vValue1 -- vValue2 vValue1 vValue4 vValue3 vValue2 vValue1 ) 0x5e
+
+SWAP ( vValue2 vValue1 -- vValue1 vValue2 ) 0x5f
+
+IADD ( vValue1 vValue2 -- vResult ) 0x60
+{
+  vResult = vValue2 + vValue1;
+}
+
+LADD ( lValue1 lValue2 -- lResult ) 0x61
+{
+  lResult = lValue2 + lValue1;
+}
+
+FADD ( fValue1 fValue2 -- fResult ) 0x62
+{
+  fResult = fValue1 + fValue2;
+}
+
+DADD ( dValue1 dValue2 -- dResult ) 0x63
+{
+  dResult = dValue1 + dValue2;
+}
+
+ISUB ( vValue1 vValue2 -- vResult ) 0x64
+{
+  vResult = vValue1 - vValue2;
+}
+
+LSUB ( lValue1 lValue2 -- lResult ) 0x65
+{
+  lResult = lValue1 - lValue2;
+}
+
+FSUB ( fValue1 fValue2 -- fResult ) 0x66
+{
+  fResult = fValue1 - fValue2;
+}
+
+DSUB ( dValue1 dValue2 -- dResult ) 0x67
+{
+  dResult = dValue1 - dValue2;
+}
+
+IMUL ( vValue1 vValue2 -- vResult ) 0x68
+{
+  vResult = vValue1 * vValue2;
+}
+
+LMUL ( lValue1 lValue2 -- lResult ) 0x69
+{
+  lResult = lValue1 * lValue2;
+}
+
+FMUL ( fValue1 fValue2 -- fResult ) 0x6a
+{
+  fResult = fValue1 * fValue2;
+}
+
+DMUL ( dValue1 dValue2 -- dResult ) 0x6b
+{
+  dResult = dValue1 * dValue2;
+}
+
+IDIV ( iValue1 iValue2 -- iResult ) 0x6c
+{
+  CHECK_ZERO_DIVISOR(iValue2);
+  ;
+  if (iValue1 == 0x80000000 && iValue2 == -1)
+    iResult=iValue1;
+  else
+    iResult = iValue1 / iValue2;
+}
+
+IDIVPOW2 ( i1 #ishift -- i2 ) opt
+{
+  u4 sign = i1>>31;
+  s4 offset = sign >> (32-ishift);
+  i2=(i1+offset)>>ishift;
+}
+
+LDIV ( lValue1 lValue2 -- lResult ) 0x6d
+{
+  CHECK_ZERO_DIVISOR(lValue2);
+  if (lValue1 == 0x8000000000000000LL && lValue2 == -1)
+    lResult=lValue1;
+  else
+    lResult = lValue1 / lValue2;
+}
+
+LDIVPOW2 ( l1 #ishift -- l2 )
+{
+  u8 sign = l1>>63;
+  s8 offset = sign >> (64-ishift);
+  l2=(l1+offset)>>ishift;
+}
+
+FDIV ( fValue1 fValue2 -- fResult ) 0x6e
+{
+  fResult = fValue1 / fValue2;
+}
+
+DDIV ( dValue1 dValue2 -- dResult ) 0x6f
+{
+  dResult = dValue1 / dValue2;
+}
+
+
+IREM ( iValue1 iValue2 -- iResult ) 0x70
+{
+  CHECK_ZERO_DIVISOR(iValue2);
+  if (iValue1 == 0x80000000 && iValue2 == -1)
+    iResult=0;
+  else
+    iResult = iValue1 % iValue2;
+}
+
+IREMPOW2 ( i1 #imask -- i2 )
+s4 x = i1;
+if (i1<0)
+  x += imask;
+x &= ~imask;
+i2 = i1-x;
+
+LREM ( lValue1 lValue2 -- lResult ) 0x71
+{
+  CHECK_ZERO_DIVISOR(lValue2);
+  if (lValue1 == 0x8000000000000000LL && lValue2 == -1)
+    lResult=0;
+  else
+    lResult = lValue1 % lValue2;
+}
+
+LREMPOW2 ( l1 #lmask -- l2 )
+s8 x = l1;
+if (l1<0)
+  x += lmask;
+x &= ~lmask;
+l2 = l1-x;
+
+FREM ( fValue1 fValue2 -- fResult ) 0x72
+{
+  fResult = builtin_frem(fValue1, fValue2);
+}
+
+DREM ( dValue1 dValue2 -- dResult ) 0x73
+{
+  dResult = builtin_drem(dValue1, dValue2);
+}
+
+INEG ( vValue -- vResult ) 0x74
+{
+  vResult = -vValue;
+}
+
+LNEG ( lValue -- lResult ) 0x75
+{
+  lResult = -lValue;
+}
+
+FNEG ( fValue -- fResult ) 0x76
+{
+  fResult = -fValue;
+}
+
+DNEG ( dValue -- dResult ) 0x77
+{
+  dResult = -dValue;
+}
+
+ISHL ( vValue1 vValue2 -- vResult ) 0x78
+{
+  vResult = vValue1 << (vValue2 & 31);
+}
+
+LSHL ( lValue1 vValue2 -- lResult ) 0x79
+{
+  lResult = lValue1 << (vValue2 & 63);
+}
+
+ISHR ( iValue1 iValue2 -- iResult ) 0x7a
+{
+  iResult = iValue1 >> (iValue2 & 31);
+}
+
+LSHR ( lValue1 iValue2 -- lResult ) 0x7b
+{
+  lResult = lValue1 >> (iValue2 & 63);
+}
+
+IUSHR ( iValue1 vValue2 -- iResult ) 0x7c
+{
+  iResult = ((unsigned) iValue1) >> (vValue2 & 31);
+}
+
+LUSHR ( lValue1 vValue2 -- lResult ) 0x7d
+{
+  lResult = (unsigned long long) lValue1 >> (vValue2 & 63);
+}
+
+IAND ( vValue1 vValue2 -- vResult ) 0x7e
+{
+  vResult = vValue1 & vValue2;
+}
+
+LAND ( lValue1 lValue2 -- lResult ) 0x7f
+{
+  lResult = lValue1 & lValue2;
+}
+
+IOR ( vValue1 vValue2 -- vResult ) 0x80
+{
+  vResult = vValue1 | vValue2;
+}
+
+LOR ( lValue1 lValue2 -- lResult ) 0x81
+{
+  lResult = lValue1 | lValue2;
+}
+
+IXOR ( vValue1 vValue2 -- vResult ) 0x82
+{
+  vResult = vValue1 ^ vValue2;
+}
+
+LXOR ( lValue1 lValue2 -- lResult ) 0x83
+{
+  lResult = lValue1 ^ lValue2;
+}
+
+IINC ( #vOffset #iConst  -- ) 0x84
+{
+  access_local_int(vOffset) += iConst;
+}
+
+I2L ( iValue -- lValue ) 0x85
+{
+  lValue = iValue;
+}
+
+I2F ( iValue -- fValue ) 0x86
+{
+  fValue = (float) iValue;
+}
+
+I2D ( iValue -- dValue ) 0x87
+{
+  dValue = (double) iValue;
+}
+
+L2I ( lValue -- iValue ) 0x88
+{
+  iValue = lValue;
+}
+
+L2F ( lValue -- fValue ) 0x89
+{
+  fValue = (float) lValue;
+}
+
+L2D ( lValue -- dValue ) 0x8a
+{
+  dValue = (double) lValue;
+}
+
+F2I ( fValue -- iValue ) 0x8b
+{
+    iValue = builtin_f2i(fValue);
+}
+
+F2L ( fValue -- lValue ) 0x8c
+{
+    lValue = builtin_f2l(fValue);
+}
+
+F2D ( fValue -- dValue ) 0x8d
+{
+  dValue = fValue;
+}
+
+D2I ( dValue -- iValue ) 0x8e
+{
+  iValue = builtin_d2i(dValue);
+}
+
+D2L ( dValue -- lValue ) 0x8f
+{
+  lValue = builtin_d2l(dValue);
+}
+
+D2F ( dValue -- fValue ) 0x90
+{
+  fValue = dValue;
+}
+
+INT2BYTE ( iValue -- iResult ) 0x91
+{
+  iResult = (iValue << 24) >> 24; /* XXX: try "(s1)iValue" */
+}
+
+
+INT2CHAR ( iValue -- iResult ) 0x92
+{
+  iResult = iValue & 0xFFFF;
+}
+
+INT2SHORT ( iValue -- iResult ) 0x93
+{
+  iResult = (iValue << 16) >> 16; /* XXX: try "(s2)iValue" */
+}
+
+LCMP ( lValue1 lValue2 -- vResult ) 0x94
+{
+  vResult = lValue1 < lValue2 ? -1 : lValue1 > lValue2 ? 1 : 0;
+}
+
+FCMPL ( fValue1 fValue2 -- vResult ) 0x95
+{
+  vResult = builtin_fcmpl(fValue1, fValue2);
+}
+
+FCMPG ( fValue1 fValue2 -- vResult ) 0x96
+{
+  vResult = builtin_fcmpg(fValue1, fValue2);
+}
+
+DCMPL ( dValue1 dValue2 -- iResult ) 0x97
+{
+  iResult = builtin_dcmpl(dValue1, dValue2);
+}
+
+DCMPG ( dValue1 dValue2 -- iResult ) 0x98
+{
+  iResult = builtin_dcmpg(dValue1, dValue2);
+}
+
+IFEQ ( #ainstTarget iValue -- ) 0x99
+{
+  if ( iValue == 0 ) {
+    SET_IP(ainstTarget);
+  }
+}
+
+IFNE ( #ainstTarget iValue -- ) 0x9a
+{
+  if ( iValue != 0 ) {
+    SET_IP(ainstTarget);
+  }
+}
+
+IFLT ( #ainstTarget iValue -- ) 0x9b
+{
+  if ( iValue < 0 )
+    SET_IP(ainstTarget);
+}
+
+IFGE ( #ainstTarget iValue -- ) 0x9c
+{
+  if ( iValue >= 0 )
+    SET_IP(ainstTarget);
+}
+
+IFGT ( #ainstTarget iValue -- ) 0x9d
+{
+  if ( iValue > 0 )
+    SET_IP(ainstTarget);
+}
+
+IFLE ( #ainstTarget iValue -- ) 0x9e
+{
+  if ( iValue <= 0 )
+    SET_IP(ainstTarget);
+}
+
+IF_ICMPEQ ( #ainstTarget iValue1 iValue2 -- ) 0x9f
+{
+  if ( iValue1 == iValue2 )
+    SET_IP(ainstTarget);
+}
+
+IF_ICMPNE  ( #ainstTarget iValue1 iValue2 -- ) 0xa0
+{
+  if ( iValue1 != iValue2 )
+    SET_IP(ainstTarget);
+}
+
+IF_ICMPLT  ( #ainstTarget iValue1 iValue2 -- ) 0xa1
+{
+  if ( iValue1 < iValue2 )
+    SET_IP(ainstTarget);
+}
+
+IF_ICMPGE  ( #ainstTarget iValue1 iValue2 -- ) 0xa2
+{
+  if ( iValue1 >= iValue2 )
+    SET_IP(ainstTarget);
+}
+
+IF_ICMPGT  ( #ainstTarget iValue1 iValue2 -- ) 0xa3
+{
+  if ( iValue1 > iValue2 )
+    SET_IP(ainstTarget);
+}
+
+IF_ICMPLE  ( #ainstTarget iValue1 iValue2 -- ) 0xa4
+{
+  if ( iValue1 <= iValue2 )
+    SET_IP(ainstTarget);
+}
+
+IF_LCMPEQ ( #ainstTarget lValue1 lValue2 -- ) opt
+{
+  if ( lValue1 == lValue2 )
+    SET_IP(ainstTarget);
+}
+
+IF_LCMPNE  ( #ainstTarget lValue1 lValue2 -- ) opt
+{
+  if ( lValue1 != lValue2 )
+    SET_IP(ainstTarget);
+}
+
+IF_LCMPLT  ( #ainstTarget lValue1 lValue2 -- ) opt
+{
+  if ( lValue1 < lValue2 )
+    SET_IP(ainstTarget);
+}
+
+IF_LCMPGE  ( #ainstTarget lValue1 lValue2 -- ) opt
+{
+  if ( lValue1 >= lValue2 )
+    SET_IP(ainstTarget);
+}
+
+IF_LCMPGT  ( #ainstTarget lValue1 lValue2 -- ) opt
+{
+  if ( lValue1 > lValue2 )
+    SET_IP(ainstTarget);
+}
+
+IF_LCMPLE  ( #ainstTarget lValue1 lValue2 -- ) opt
+{
+  if ( lValue1 <= lValue2 )
+    SET_IP(ainstTarget);
+}
+
+IF_ACMPEQ  ( #ainstTarget aRef1 aRef2 -- ) 0xa5
+{
+  if ( aRef1 == aRef2 )
+    SET_IP(ainstTarget);
+}
+
+IF_ACMPNE  ( #ainstTarget aRef1 aRef2 -- ) 0xa6
+{
+  if ( aRef1 != aRef2 )
+    SET_IP(ainstTarget);
+}
+
+GOTO (  #ainstTarget -- ) 0xa7
+{
+  SET_IP(ainstTarget);
+}
+
+JSR (  #ainstTarget -- ainstRA ) 0xa8
+{
+    /* Warning: The generator already adds 1 to the IP
+       because there is an inline parameter. Thus, instead
+       of writing IP + 1, we write...*/
+  ainstRA = IP;
+  SET_IP(ainstTarget);
+}
+
+RET ( #vOffset -- ) 0xa9
+{
+  Inst * saved_ip;
+  saved_ip = access_local_ref(vOffset);
+  SET_IP(saved_ip);
+}
+
+TABLESWITCH ( #iLow #iRange #addrSegment #iOffset #ainstDefault iIndex -- ) 0xaa
+{
+  s4 idx = iIndex - iLow;
+  if ( ((u4) idx) >= iRange ) {
+    SET_IP(ainstDefault);
+  }
+  else {
+    SET_IP(((Inst **)(addrSegment+iOffset))[idx]);
+  }
+}
+
+LOOKUPSWITCH ( #iNpairs #addrSegment #iOffset #ainstDefault iKey -- ) 0xab
+{
+  /* Note: This code should use a binary search, as
+     the table is sorted. Note also, we reversed the order
+     of the parms */
+  int i;
+
+  i = iNpairs;
+
+  while (--i >= 0) {
+    Cell *table = (Cell *) (addrSegment+iOffset);
+    if (iKey == (s4) (table[2 * i])) {
+      SET_IP((Inst *)(table[2 * i + 1])); INST_TAIL;
+    }
+  }
+  /* falls through if no match */
+  SET_IP(ainstDefault);
+}
+
+
+\ Our stack works like this:
+\ The stack holds locals, the operand stack and the return address stack.
+\ When we invoke a method, the paramaters are the top N elements
+\ on the stack. These become the first N local variables.
+\ Next we have space for the rest of the local variables.
+\ Next comes a single position on the stack which holds
+\ the value of the frame pointer for the calling function.
+\ Another position holds the instruction pointer of the caller.
+\ Finally, we have space for the elements of the operand stack.
+
+\ fp points to the bottom local; since the stack grows downwards, the
+\ upper end of the frame is fp+1, not fp.  That's why the sp updates
+\ in the returns look like they are off by one.
+
+\ fp -> local0
+\       local1
+\       ...
+\       oldfp
+\ sp -> oldip ; at the start, empty stack
+\       stack0 ;once there is something on the stack
+\       ...
+
+IRETURN ( #vOffsetFP ... vValue -- vResult ) 0xac
+{
+  Inst *new_ip;
+  MAYBE_UNUSED Cell *currentsp = sp;
+  new_ip = (Inst *) access_local_cell(vOffsetFP - SIZEOF_VOID_P);
+  sp = fp + 1;
+  fp = (Cell *) access_local_cell(vOffsetFP);
+  CLEARSTACK(currentsp - 6, sp - 1);
+  vResult = vValue;
+  SET_IP(new_ip);
+}
+
+LRETURN ( #vOffsetFP ... lValue -- lResult ) 0xad
+{
+  Inst *new_ip;
+  MAYBE_UNUSED Cell *currentsp = sp;
+  new_ip = (Inst *) access_local_cell(vOffsetFP - SIZEOF_VOID_P);
+  sp = fp + 1;
+  fp = (Cell *) access_local_cell(vOffsetFP);
+  CLEARSTACK(currentsp - 7, sp - 2);
+  lResult = lValue;
+  SET_IP(new_ip);
+}
+
+RETURN ( #vOffsetFP ... -- ) 0xb1
+{
+  Inst *new_ip;
+  MAYBE_UNUSED Cell *currentsp = sp;
+  new_ip = (Inst *) access_local_cell(vOffsetFP - SIZEOF_VOID_P);
+  sp = fp + 1;
+  fp = (Cell *) access_local_cell(vOffsetFP);
+  CLEARSTACK(currentsp - 5, sp - 1);
+  SET_IP(new_ip);
+}
+
+GETSTATIC_CELL ( #addr #afi -- vResult ) opt
+{
+  vResult = *(Cell *)addr;
+}
+
+GETSTATIC_INT ( #addr #afi -- iResult ) opt
+{
+  iResult = *(s4 *)addr;
+}
+
+GETSTATIC_FLOAT ( #addr #afi -- fResult ) opt
+{
+  fResult = *(float *)addr;
+}
+
+GETSTATIC_LONG ( #addr #afi -- lResult ) opt
+{
+  lResult = *((s8 *) addr);
+}
+
+PUTSTATIC_CELL ( #addr #afi vValue -- ) opt
+{
+  *((Cell *) addr) = vValue;
+}
+
+PUTSTATIC_INT ( #addr #afi iValue -- ) opt
+{
+  *((s4 *) addr) = iValue;
+}
+
+PUTSTATIC_FLOAT ( #addr #afi fValue -- ) opt
+{
+  *((float *) addr) = fValue;
+}
+
+PUTSTATIC_LONG ( #addr #afi lValue -- ) opt
+{
+  *((s8 *) addr) = lValue;
+}
+
+GETFIELD_CELL ( #vOffset #afi aRef -- vResult ) opt
+{
+  CHECK_NULL_PTR(aRef);
+  vResult = *((Cell *) (((u1 *)aRef) + vOffset));
+}
+
+GETFIELD_INT ( #vOffset #afi aRef -- iResult ) opt
+{
+  CHECK_NULL_PTR(aRef);
+  iResult = *((s4 *) (((u1 *)aRef) + vOffset));
+}
+
+GETFIELD_FLOAT ( #vOffset #afi aRef -- fResult ) opt
+{
+  CHECK_NULL_PTR(aRef);
+  fResult = *((float *) (((u1 *) aRef) + vOffset));
+}
+
+GETFIELD_LONG ( #vOffset #afi aRef -- lResult ) opt
+{
+  CHECK_NULL_PTR(aRef);
+  lResult = *((s8 *) (((u1 *)aRef) + vOffset));
+}
+
+
+PUTFIELD_CELL ( #vOffset #afi aRef vValue -- ) opt
+{
+  CHECK_NULL_PTR(aRef);
+  *((Cell *) (((u1 *)aRef) + vOffset)) = vValue;
+}
+
+PUTFIELD_INT ( #vOffset #afi aRef iValue -- ) opt
+{
+  CHECK_NULL_PTR(aRef);
+  *((s4 *) (((u1 *)aRef) + vOffset)) = iValue;
+}
+
+PUTFIELD_FLOAT ( #vOffset #afi aRef fValue -- ) opt
+{
+  CHECK_NULL_PTR(aRef);
+  *((float *) (((u1 *)aRef) + vOffset)) = fValue;
+}
+
+PUTFIELD_LONG ( #vOffset #afi aRef lValue -- ) opt
+{
+  CHECK_NULL_PTR(aRef);
+  *((s8 *) (((u1 *)aRef) + vOffset)) = lValue;
+}
+
+\ !! called methods have the number of locals at offset -1.
+\ methods are always called indirectly through the codeptr in the stub 
+\   (see createcompilerstub and TRANSLATE).
+
+INVOKEVIRTUAL ( #vOffset #iNargs #am ... -- ... acelloldfp ainstoldip ) 0xd8
+{
+  java_objectheader *aRef = (java_objectheader *)(sp[iNargs - 1]);
+  char *v;
+  Inst **stub;
+  Inst *target;
+  CHECK_NULL_PTR(aRef);
+  v = (char *)(aRef->vftbl);
+  stub = *(Inst ***)(v+vOffset);
+  target = *stub;
+  acelloldfp = fp;
+  ainstoldip = IP;
+  fp = sp - 1 + iNargs;
+  sp = fp - FRAMESIZE(stub) + 1;
+  SET_IP(target);
+}
+
+INVOKESTATIC ( #aaTarget #iNargs #am ... -- ... acelloldfp ainstoldip ) 0xb8
+/* an indirect pointer to target is passed to avoid references to uncompiled code */
+{
+  Inst *target = *aaTarget;
+  acelloldfp = fp;
+  ainstoldip = IP;
+  fp = sp - 1 + iNargs; /* !! scale nargs at translation time */
+  sp = fp - FRAMESIZE(aaTarget) + 1;
+  SET_IP(target);
+}
+
+INVOKESPECIAL ( #aaTarget #iNargs #am ... -- ... acelloldfp ainstoldip ) 0xb7
+/* an indirect pointer to target is passed to avoid references to uncompiled code */
+{
+  java_objectheader *aRef = (java_objectheader *)(sp[iNargs - 1]);
+  Inst *target = *aaTarget;
+  CHECK_NULL_PTR(aRef);
+  acelloldfp = fp;
+  ainstoldip = IP;
+  fp = sp - 1 + iNargs; /* !! scale nargs at translation time */
+  sp = fp - FRAMESIZE(aaTarget) + 1;
+  SET_IP(target);
+}
+
+INVOKEINTERFACE ( #iInterfaceOffset #vOffset #iNargs #am ... -- ... acelloldfp ainstoldip ) 0xd8
+{
+  java_objectheader *aRef;
+  char   *v, *t;
+  Inst **stub;
+  Inst *target;
+  ;
+  aRef = (java_objectheader *)sp[iNargs - 1];
+  CHECK_NULL_PTR(aRef);
+  v = (char *)(aRef->vftbl);
+  t = *(char **)(v + iInterfaceOffset);
+  stub = *(Inst ***)(t+vOffset);
+  target = *stub;
+  acelloldfp = fp;
+  ainstoldip = IP;
+  fp = sp - 1 + iNargs;
+  sp = fp - FRAMESIZE(stub) + 1;
+  SET_IP(target);
+}
+
+\ the BUILTIN functions like NEW get their parameters on the stack
+\ instead of through immediate arguments.
+
+\ !! do we need to synchronize the stack here?
+\ !! if so, is global_sp right?
+
+NEW ( ... aClass -- ... aRef ) 0xbb
+{
+  global_sp = sp;
+  aRef = builtin_new((classinfo *) aClass);
+  if (aRef == NULL) {
+    global_sp = sp;
+    *exceptionptr = stacktrace_inline_fillInStackTrace(NULL, (u1 *) fp, (u1 *) IP, (u1 *) IP);
+    CLEAR_global_sp;
+    THROW0;
+  }
+  CLEAR_global_sp;
+}
+
+\ !! use a macro
+
+NEWARRAY_BOOLEAN ( ... iSize -- ... aArray )
+{
+  global_sp = sp;
+  aArray = (java_arrayheader *) builtin_newarray_boolean(iSize);
+  if (aArray == NULL) {
+    global_sp = sp;
+    *exceptionptr = stacktrace_inline_fillInStackTrace(NULL, (u1 *) fp, (u1 *) IP, (u1 *) IP);
+    CLEAR_global_sp;
+    THROW0;
+  }
+  CLEAR_global_sp;
+}
+
+NEWARRAY_BYTE ( ... iSize -- ... aArray )
+{
+  global_sp = sp;
+  aArray = (java_arrayheader *) builtin_newarray_byte(iSize);
+  if (aArray == NULL) {
+    global_sp = sp;
+    *exceptionptr = stacktrace_inline_fillInStackTrace(NULL, (u1 *) fp, (u1 *) IP, (u1 *) IP);
+    CLEAR_global_sp;
+    THROW0;
+  }
+  CLEAR_global_sp;
+}
+
+NEWARRAY_CHAR ( ... iSize -- ... aArray )
+{
+  global_sp = sp;
+  aArray = (java_arrayheader *) builtin_newarray_char(iSize);
+  if (aArray == NULL) {
+    global_sp = sp;
+    *exceptionptr = stacktrace_inline_fillInStackTrace(NULL, (u1 *) fp, (u1 *) IP, (u1 *) IP);
+    CLEAR_global_sp;
+    THROW0;
+  }
+  CLEAR_global_sp;
+}
+
+NEWARRAY_SHORT ( ... iSize -- ... aArray )
+{
+  global_sp = sp;
+  aArray = (java_arrayheader *) builtin_newarray_short(iSize);
+  if (aArray == NULL) {
+    global_sp = sp;
+    *exceptionptr = stacktrace_inline_fillInStackTrace(NULL, (u1 *) fp, (u1 *) IP, (u1 *) IP);
+    CLEAR_global_sp;
+    THROW0;
+  }
+  CLEAR_global_sp;
+}
+
+NEWARRAY_INT ( ... iSize -- ... aArray )
+{
+  global_sp = sp;
+  aArray = (java_arrayheader *) builtin_newarray_int(iSize);
+  if (aArray == NULL) {
+    global_sp = sp;
+    *exceptionptr = stacktrace_inline_fillInStackTrace(NULL, (u1 *) fp, (u1 *) IP, (u1 *) IP);
+    CLEAR_global_sp;
+    THROW0;
+  }
+  CLEAR_global_sp;
+}
+
+NEWARRAY_LONG ( ... iSize -- ... aArray )
+{
+  global_sp = sp;
+  aArray = (java_arrayheader *) builtin_newarray_long(iSize);
+  if (aArray == NULL) {
+    global_sp = sp;
+    *exceptionptr = stacktrace_inline_fillInStackTrace(NULL, (u1 *) fp, (u1 *) IP, (u1 *) IP);
+    CLEAR_global_sp;
+    THROW0;
+  }
+  CLEAR_global_sp;
+}
+
+NEWARRAY_FLOAT ( ... iSize -- ... aArray )
+{
+  global_sp = sp;
+  aArray = (java_arrayheader *) builtin_newarray_float(iSize);
+  if (aArray == NULL) {
+    global_sp = sp;
+    *exceptionptr = stacktrace_inline_fillInStackTrace(NULL, (u1 *) fp, (u1 *) IP, (u1 *) IP);
+    CLEAR_global_sp;
+    THROW0;
+  }
+  CLEAR_global_sp;
+}
+
+NEWARRAY_DOUBLE ( ... iSize -- ... aArray )
+{
+  global_sp = sp;
+  aArray = (java_arrayheader *) builtin_newarray_double(iSize);
+  if (aArray == NULL) {
+    global_sp = sp;
+    *exceptionptr = stacktrace_inline_fillInStackTrace(NULL, (u1 *) fp, (u1 *) IP, (u1 *) IP);
+    CLEAR_global_sp;
+    THROW0;
+  }
+  CLEAR_global_sp;
+}
+
+NEWARRAY ( ... iSize aClass -- ... aArray )
+{
+  global_sp = sp;
+  aArray = (java_arrayheader *) builtin_newarray(iSize, aClass);
+  if (aArray == NULL) {
+    global_sp = sp;
+    *exceptionptr = stacktrace_inline_fillInStackTrace(NULL, (u1 *) fp, (u1 *) IP, (u1 *) IP);
+    CLEAR_global_sp;
+    THROW0;
+  }
+  CLEAR_global_sp;
+}
+
+ARRAYLENGTH ( aArray -- iResult )
+{
+  CHECK_NULL_PTR(aArray);
+  iResult = length_array(aArray);
+}
+
+ATHROW ( ... aRef -- ... aRef1 )
+{
+  Cell *new_sp, *new_fp;
+  Inst *new_ip;
+  CHECK_NULL_PTR(aRef);
+  goto athrow;
+throw:
+  CLEAR_global_sp;
+  aRef = *exceptionptr;
+  *exceptionptr = NULL;
+athrow:
+  new_ip = intrp_asm_handle_exception(IP, aRef, fp, &new_sp, &new_fp);
+  if (new_ip == NULL) {
+    /* !! sp = new_sp; ? */
+    global_sp = sp - 1;
+    SUPER_END; /* ATHROW may end a basic block */
+    return aRef;
+  }
+  SET_IP(new_ip);
+  aRef1 = aRef;
+  sp = new_sp;
+  fp = new_fp;
+}
+
+CHECKCAST ( #aClass #acr aRef -- aRef ) 0xc0
+{
+  if (!builtin_checkcast(aRef, (classinfo *) aClass))
+    THROW_CLASSCASTEXCEPTION(aRef);
+}
+
+ARRAYCHECKCAST ( #aClass #acr aRef -- aRef ) 0xc0
+{
+  if (!builtin_arraycheckcast(aRef, aClass))
+    THROW_CLASSCASTEXCEPTION(aRef);
+}
+
+PATCHER_ARRAYCHECKCAST ( #avftbl #acr ... -- ) 0xc0
+stackframeinfo sfi;
+bool result;
+global_sp = sp;
+stacktrace_create_stackframeinfo(&sfi, NULL, (u1 *) fp, (u1 *) IP);
+result = intrp_patcher_builtin_arraycheckcast((u1 *) (IP - 3));
+stacktrace_remove_stackframeinfo(&sfi);
+CLEAR_global_sp;
+if (!result)
+  THROW0;
+STORE_ORDER_BARRIER();
+IP[-3] = INST_ADDR(ARRAYCHECKCAST);
+SET_IP(IP - 3);
+patchersuper_rewrite(IP);
+
+INSTANCEOF ( #aClass #acr aRef  -- iResult )
+{
+  iResult = builtin_instanceof(aRef, aClass);
+}
+
+ARRAYINSTANCEOF ( aRef aClass  -- iResult )
+{
+  iResult = builtin_arrayinstanceof(aRef, aClass);
+}
+
+MONITORENTER ( aRef -- )
+{
+#if defined(ENABLE_THREADS)
+  /* CHECK_NULL_PTR(aRef); is now done explicitly inside lock_monitor_enter */
+  global_sp = sp;
+  if (!lock_monitor_enter(aRef))
+	THROW0;
+  CLEAR_global_sp;
+#endif
+}
+
+MONITOREXIT ( aRef -- )
+{
+#if defined(ENABLE_THREADS)
+  global_sp = sp;
+  if (!lock_monitor_exit(aRef))
+	THROW0;
+  CLEAR_global_sp;
+#endif
+}
+
+CHECKNULL ( aRef -- aRef )
+{
+  CHECK_NULL_PTR(aRef);
+}
+
+MULTIANEWARRAY ( #aClass #iSize #acr ... -- aRef )
+{
+  long *dims;
+  int i;
+
+  dims = MNEW(long, iSize);
+
+  for (i = 0; i < iSize; i++) {
+    dims[i] = sp[iSize - i - 1];
+  }
+  global_sp = sp;
+  aRef = (java_objectheader *) builtin_multianewarray(iSize, aClass, dims);
+
+  MFREE(dims, long, iSize);
+
+  if (aRef == NULL) {
+    global_sp = sp;
+    *exceptionptr = stacktrace_inline_fillInStackTrace(NULL, (u1 *) fp, (u1 *) IP, (u1 *) IP);
+    CLEAR_global_sp;
+    THROW0;
+  }
+  CLEAR_global_sp;
+  sp += iSize;
+}
+
+IFNULL ( #ainstTarget aRef -- )  0xc6
+{
+  if ( aRef == NULL ) {
+    SET_IP(ainstTarget);
+  }
+}
+
+IFNONNULL ( #ainstTarget aRef -- ) 0xc7
+{
+  if ( aRef != NULL ) {
+    SET_IP(ainstTarget);
+  }
+}
+
+\ patchers for resolving fields
+
+PATCHER_GETSTATIC_INT ( #aRef #auf ... -- )
+stackframeinfo sfi;
+bool result;
+global_sp = sp;
+stacktrace_create_stackframeinfo(&sfi, NULL, (u1 *) fp, (u1 *) IP);
+result = intrp_patcher_get_putstatic((u1 *) (IP - 3));
+stacktrace_remove_stackframeinfo(&sfi);
+CLEAR_global_sp;
+if (!result)
+  THROW0;
+STORE_ORDER_BARRIER();
+IP[-3] = INST_ADDR(GETSTATIC_INT);
+SET_IP(IP-3);
+patchersuper_rewrite(IP);
+
+PATCHER_GETSTATIC_FLOAT ( #aRef #auf ... -- )
+stackframeinfo sfi;
+bool result;
+global_sp = sp;
+stacktrace_create_stackframeinfo(&sfi, NULL, (u1 *) fp, (u1 *) IP);
+result = intrp_patcher_get_putstatic((u1 *)(IP-3));
+stacktrace_remove_stackframeinfo(&sfi);
+CLEAR_global_sp;
+if (!result)
+  THROW0;
+STORE_ORDER_BARRIER();
+IP[-3] = INST_ADDR(GETSTATIC_FLOAT);
+SET_IP(IP-3);
+patchersuper_rewrite(IP);
+
+PATCHER_GETSTATIC_LONG ( #aRef #auf ... -- )
+stackframeinfo sfi;
+bool result;
+global_sp = sp;
+stacktrace_create_stackframeinfo(&sfi, NULL, (u1 *) fp, (u1 *) IP);
+result = intrp_patcher_get_putstatic((u1 *) (IP - 3));
+stacktrace_remove_stackframeinfo(&sfi);
+CLEAR_global_sp;
+if (!result)
+  THROW0;
+STORE_ORDER_BARRIER();
+IP[-3] = INST_ADDR(GETSTATIC_LONG);
+SET_IP(IP-3);
+patchersuper_rewrite(IP);
+
+PATCHER_GETSTATIC_CELL ( #aRef #auf ... -- )
+stackframeinfo sfi;
+bool result;
+global_sp = sp;
+stacktrace_create_stackframeinfo(&sfi, NULL, (u1 *) fp, (u1 *) IP);
+result = intrp_patcher_get_putstatic((u1 *) (IP - 3));
+stacktrace_remove_stackframeinfo(&sfi);
+CLEAR_global_sp;
+if (!result)
+  THROW0;
+STORE_ORDER_BARRIER();
+IP[-3] = INST_ADDR(GETSTATIC_CELL);
+SET_IP(IP-3);
+patchersuper_rewrite(IP);
+
+\ patchers for statically initializing classes
+
+PATCHER_GETSTATIC_CLINIT_INT ( #aRef #afi ... -- )
+stackframeinfo sfi;
+bool result;
+global_sp = sp;
+stacktrace_create_stackframeinfo(&sfi, NULL, (u1 *) fp, (u1 *) IP);
+result = intrp_patcher_get_putstatic_clinit((u1 *) (IP - 3));
+stacktrace_remove_stackframeinfo(&sfi);
+CLEAR_global_sp;
+if (!result)
+  THROW0;
+STORE_ORDER_BARRIER();
+IP[-3] = INST_ADDR(GETSTATIC_INT);
+SET_IP(IP-3);
+patchersuper_rewrite(IP);
+
+PATCHER_GETSTATIC_CLINIT_FLOAT ( #aRef #afi ... -- )
+stackframeinfo sfi;
+bool result;
+global_sp = sp;
+stacktrace_create_stackframeinfo(&sfi, NULL, (u1 *) fp, (u1 *) IP);
+result = intrp_patcher_get_putstatic_clinit((u1 *)(IP-3));
+stacktrace_remove_stackframeinfo(&sfi);
+CLEAR_global_sp;
+if (!result)
+  THROW0;
+STORE_ORDER_BARRIER();
+IP[-3] = INST_ADDR(GETSTATIC_FLOAT);
+SET_IP(IP-3);
+patchersuper_rewrite(IP);
+
+PATCHER_GETSTATIC_CLINIT_LONG ( #aRef #afi ... -- )
+stackframeinfo sfi;
+bool result;
+global_sp = sp;
+stacktrace_create_stackframeinfo(&sfi, NULL, (u1 *) fp, (u1 *) IP);
+result = intrp_patcher_get_putstatic_clinit((u1 *) (IP - 3));
+stacktrace_remove_stackframeinfo(&sfi);
+CLEAR_global_sp;
+if (!result)
+  THROW0;
+STORE_ORDER_BARRIER();
+IP[-3] = INST_ADDR(GETSTATIC_LONG);
+SET_IP(IP-3);
+patchersuper_rewrite(IP);
+
+PATCHER_GETSTATIC_CLINIT_CELL ( #aRef #afi ... -- )
+stackframeinfo sfi;
+bool result;
+global_sp = sp;
+stacktrace_create_stackframeinfo(&sfi, NULL, (u1 *) fp, (u1 *) IP);
+result = intrp_patcher_get_putstatic_clinit((u1 *) (IP - 3));
+stacktrace_remove_stackframeinfo(&sfi);
+CLEAR_global_sp;
+if (!result)
+  THROW0;
+STORE_ORDER_BARRIER();
+IP[-3] = INST_ADDR(GETSTATIC_CELL);
+SET_IP(IP-3);
+patchersuper_rewrite(IP);
+
+\ patchers for resolving fields
+
+PATCHER_PUTSTATIC_INT ( #aRef #auf ... -- )
+stackframeinfo sfi;
+bool result;
+global_sp = sp;
+stacktrace_create_stackframeinfo(&sfi, NULL, (u1 *) fp, (u1 *) IP);
+result = intrp_patcher_get_putstatic((u1 *) (IP - 3));
+stacktrace_remove_stackframeinfo(&sfi);
+CLEAR_global_sp;
+if (!result)
+  THROW0;
+STORE_ORDER_BARRIER();
+IP[-3] = INST_ADDR(PUTSTATIC_INT);
+SET_IP(IP-3);
+patchersuper_rewrite(IP);
+
+PATCHER_PUTSTATIC_FLOAT ( #aRef #auf ... -- )
+stackframeinfo sfi;
+bool result;
+global_sp = sp;
+stacktrace_create_stackframeinfo(&sfi, NULL, (u1 *) fp, (u1 *) IP);
+result = intrp_patcher_get_putstatic((u1 *)(IP-3));
+stacktrace_remove_stackframeinfo(&sfi);
+CLEAR_global_sp;
+if (!result)
+  THROW0;
+STORE_ORDER_BARRIER();
+IP[-3] = INST_ADDR(PUTSTATIC_FLOAT);
+SET_IP(IP-3);
+patchersuper_rewrite(IP);
+
+PATCHER_PUTSTATIC_LONG ( #aRef #auf ... -- )
+stackframeinfo sfi;
+bool result;
+global_sp = sp;
+stacktrace_create_stackframeinfo(&sfi, NULL, (u1 *) fp, (u1 *) IP);
+result = intrp_patcher_get_putstatic((u1 *) (IP - 3));
+stacktrace_remove_stackframeinfo(&sfi);
+CLEAR_global_sp;
+if (!result)
+  THROW0;
+STORE_ORDER_BARRIER();
+IP[-3] = INST_ADDR(PUTSTATIC_LONG);
+SET_IP(IP-3);
+patchersuper_rewrite(IP);
+
+PATCHER_PUTSTATIC_CELL ( #aRef #auf ... -- )
+stackframeinfo sfi;
+bool result;
+global_sp = sp;
+stacktrace_create_stackframeinfo(&sfi, NULL, (u1 *) fp, (u1 *) IP);
+result = intrp_patcher_get_putstatic((u1 *) (IP - 3));
+stacktrace_remove_stackframeinfo(&sfi);
+CLEAR_global_sp;
+if (!result)
+  THROW0;
+STORE_ORDER_BARRIER();
+IP[-3] = INST_ADDR(PUTSTATIC_CELL);
+SET_IP(IP-3);
+patchersuper_rewrite(IP);
+
+\ patchers for statically initializing classes
+
+PATCHER_PUTSTATIC_CLINIT_INT ( #aRef #afi ... -- )
+stackframeinfo sfi;
+bool result;
+global_sp = sp;
+stacktrace_create_stackframeinfo(&sfi, NULL, (u1 *) fp, (u1 *) IP);
+result = intrp_patcher_get_putstatic_clinit((u1 *) (IP - 3));
+stacktrace_remove_stackframeinfo(&sfi);
+CLEAR_global_sp;
+if (!result)
+  THROW0;
+STORE_ORDER_BARRIER();
+IP[-3] = INST_ADDR(PUTSTATIC_INT);
+SET_IP(IP-3);
+patchersuper_rewrite(IP);
+
+PATCHER_PUTSTATIC_CLINIT_FLOAT ( #aRef #afi ... -- )
+stackframeinfo sfi;
+bool result;
+global_sp = sp;
+stacktrace_create_stackframeinfo(&sfi, NULL, (u1 *) fp, (u1 *) IP);
+result = intrp_patcher_get_putstatic_clinit((u1 *)(IP-3));
+stacktrace_remove_stackframeinfo(&sfi);
+CLEAR_global_sp;
+if (!result)
+  THROW0;
+STORE_ORDER_BARRIER();
+IP[-3] = INST_ADDR(PUTSTATIC_FLOAT);
+SET_IP(IP-3);
+patchersuper_rewrite(IP);
+
+PATCHER_PUTSTATIC_CLINIT_LONG ( #aRef #afi ... -- )
+stackframeinfo sfi;
+bool result;
+global_sp = sp;
+stacktrace_create_stackframeinfo(&sfi, NULL, (u1 *) fp, (u1 *) IP);
+result = intrp_patcher_get_putstatic_clinit((u1 *) (IP - 3));
+stacktrace_remove_stackframeinfo(&sfi);
+CLEAR_global_sp;
+if (!result)
+  THROW0;
+STORE_ORDER_BARRIER();
+IP[-3] = INST_ADDR(PUTSTATIC_LONG);
+SET_IP(IP-3);
+patchersuper_rewrite(IP);
+
+PATCHER_PUTSTATIC_CLINIT_CELL ( #aRef #afi ... -- )
+stackframeinfo sfi;
+bool result;
+global_sp = sp;
+stacktrace_create_stackframeinfo(&sfi, NULL, (u1 *) fp, (u1 *) IP);
+result = intrp_patcher_get_putstatic_clinit((u1 *) (IP - 3));
+stacktrace_remove_stackframeinfo(&sfi);
+CLEAR_global_sp;
+if (!result)
+  THROW0;
+STORE_ORDER_BARRIER();
+IP[-3] = INST_ADDR(PUTSTATIC_CELL);
+SET_IP(IP-3);
+patchersuper_rewrite(IP);
+
+\ patchers for resolving fields
+
+PATCHER_GETFIELD_INT ( #vOffset #auf ... -- )
+stackframeinfo sfi;
+bool result;
+global_sp = sp;
+stacktrace_create_stackframeinfo(&sfi, NULL, (u1 *) fp, (u1 *) IP);
+result = intrp_patcher_get_putfield((u1 *) (IP - 3));
+stacktrace_remove_stackframeinfo(&sfi);
+CLEAR_global_sp;
+if (!result)
+  THROW0;
+STORE_ORDER_BARRIER();
+IP[-3] = INST_ADDR(GETFIELD_INT);
+SET_IP(IP-3);
+patchersuper_rewrite(IP);
+
+PATCHER_GETFIELD_FLOAT ( #vOffset #auf ... -- )
+stackframeinfo sfi;
+bool result;
+global_sp = sp;
+stacktrace_create_stackframeinfo(&sfi, NULL, (u1 *) fp, (u1 *) IP);
+result = intrp_patcher_get_putfield((u1 *)(IP-3));
+stacktrace_remove_stackframeinfo(&sfi);
+CLEAR_global_sp;
+if (!result)
+  THROW0;
+STORE_ORDER_BARRIER();
+IP[-3] = INST_ADDR(GETFIELD_FLOAT);
+SET_IP(IP-3);
+patchersuper_rewrite(IP);
+
+PATCHER_GETFIELD_LONG ( #vOffset #auf ... -- )
+stackframeinfo sfi;
+bool result;
+global_sp = sp;
+stacktrace_create_stackframeinfo(&sfi, NULL, (u1 *) fp, (u1 *) IP);
+result = intrp_patcher_get_putfield((u1 *) (IP - 3));
+stacktrace_remove_stackframeinfo(&sfi);
+CLEAR_global_sp;
+if (!result)
+  THROW0;
+STORE_ORDER_BARRIER();
+IP[-3] = INST_ADDR(GETFIELD_LONG);
+SET_IP(IP-3);
+patchersuper_rewrite(IP);
+
+PATCHER_GETFIELD_CELL ( #vOffset #auf ... -- )
+stackframeinfo sfi;
+bool result;
+global_sp = sp;
+stacktrace_create_stackframeinfo(&sfi, NULL, (u1 *) fp, (u1 *) IP);
+result = intrp_patcher_get_putfield((u1 *) (IP - 3));
+stacktrace_remove_stackframeinfo(&sfi);
+CLEAR_global_sp;
+if (!result)
+  THROW0;
+STORE_ORDER_BARRIER();
+IP[-3] = INST_ADDR(GETFIELD_CELL);
+SET_IP(IP-3);
+patchersuper_rewrite(IP);
+
+PATCHER_PUTFIELD_INT ( #vOffset #auf ... -- )
+stackframeinfo sfi;
+bool result;
+global_sp = sp;
+stacktrace_create_stackframeinfo(&sfi, NULL, (u1 *) fp, (u1 *) IP);
+result = intrp_patcher_get_putfield((u1 *) (IP - 3));
+stacktrace_remove_stackframeinfo(&sfi);
+CLEAR_global_sp;
+if (!result)
+  THROW0;
+STORE_ORDER_BARRIER();
+IP[-3] = INST_ADDR(PUTFIELD_INT);
+SET_IP(IP-3);
+patchersuper_rewrite(IP);
+
+PATCHER_PUTFIELD_FLOAT ( #vOffset #auf ... -- )
+stackframeinfo sfi;
+bool result;
+global_sp = sp;
+stacktrace_create_stackframeinfo(&sfi, NULL, (u1 *) fp, (u1 *) IP);
+result = intrp_patcher_get_putfield((u1 *)(IP-3));
+stacktrace_remove_stackframeinfo(&sfi);
+CLEAR_global_sp;
+if (!result)
+  THROW0;
+STORE_ORDER_BARRIER();
+IP[-3] = INST_ADDR(PUTFIELD_FLOAT);
+SET_IP(IP-3);
+patchersuper_rewrite(IP);
+
+PATCHER_PUTFIELD_LONG ( #vOffset #auf ... -- )
+stackframeinfo sfi;
+bool result;
+global_sp = sp;
+stacktrace_create_stackframeinfo(&sfi, NULL, (u1 *) fp, (u1 *) IP);
+result = intrp_patcher_get_putfield((u1 *) (IP - 3));
+stacktrace_remove_stackframeinfo(&sfi);
+CLEAR_global_sp;
+if (!result)
+  THROW0;
+STORE_ORDER_BARRIER();
+IP[-3] = INST_ADDR(PUTFIELD_LONG);
+SET_IP(IP-3);
+patchersuper_rewrite(IP);
+
+PATCHER_PUTFIELD_CELL ( #vOffset #auf ... -- )
+stackframeinfo sfi;
+bool result;
+global_sp = sp;
+stacktrace_create_stackframeinfo(&sfi, NULL, (u1 *) fp, (u1 *) IP);
+result = intrp_patcher_get_putfield((u1 *) (IP - 3));
+stacktrace_remove_stackframeinfo(&sfi);
+CLEAR_global_sp;
+if (!result)
+  THROW0;
+STORE_ORDER_BARRIER();
+IP[-3] = INST_ADDR(PUTFIELD_CELL);
+SET_IP(IP-3);
+patchersuper_rewrite(IP);
+
+\ other patchers for lazy resolving
+
+PATCHER_MULTIANEWARRAY ( #aClass #iSize #acr ... -- )
+stackframeinfo sfi;
+bool result;
+global_sp = sp;
+stacktrace_create_stackframeinfo(&sfi, NULL, (u1 *) fp, (u1 *) IP);
+result = intrp_patcher_builtin_multianewarray((u1 *) (IP - 4));
+stacktrace_remove_stackframeinfo(&sfi);
+CLEAR_global_sp;
+if (!result)
+  THROW0;
+STORE_ORDER_BARRIER();
+IP[-4] = INST_ADDR(MULTIANEWARRAY);
+SET_IP(IP - 4);
+patchersuper_rewrite(IP);
+
+PATCHER_INVOKESTATIC ( #aaTarget #iNargs #aum ... -- ) 0xd8
+stackframeinfo sfi;
+bool result;
+global_sp = sp;
+stacktrace_create_stackframeinfo(&sfi, NULL, (u1 *) fp, (u1 *) IP);
+result = intrp_patcher_invokestatic_special((u1 *) (IP - 4));
+stacktrace_remove_stackframeinfo(&sfi);
+CLEAR_global_sp;
+if (!result)
+  THROW0;
+STORE_ORDER_BARRIER();
+IP[-4] = INST_ADDR(INVOKESTATIC);
+SET_IP(IP-4);
+patchersuper_rewrite(IP);
+
+PATCHER_INVOKESPECIAL ( #aaTarget #iNargs #aum ... -- ) 0xd8
+stackframeinfo sfi;
+bool result;
+global_sp = sp;
+stacktrace_create_stackframeinfo(&sfi, NULL, (u1 *) fp, (u1 *) IP);
+result = intrp_patcher_invokestatic_special((u1 *) (IP - 4));
+stacktrace_remove_stackframeinfo(&sfi);
+CLEAR_global_sp;
+if (!result)
+  THROW0;
+STORE_ORDER_BARRIER();
+IP[-4] = INST_ADDR(INVOKESPECIAL);
+SET_IP(IP-4);
+patchersuper_rewrite(IP);
+
+PATCHER_INVOKEVIRTUAL ( #vOffset #iNargs #aum ... -- ) 0xd8
+stackframeinfo sfi;
+bool result;
+global_sp = sp;
+stacktrace_create_stackframeinfo(&sfi, NULL, (u1 *) fp, (u1 *) IP);
+result = intrp_patcher_invokevirtual((u1 *) (IP - 4));
+stacktrace_remove_stackframeinfo(&sfi);
+CLEAR_global_sp;
+if (!result)
+  THROW0;
+STORE_ORDER_BARRIER();
+IP[-4] = INST_ADDR(INVOKEVIRTUAL);
+SET_IP(IP-4);
+patchersuper_rewrite(IP);
+
+PATCHER_INVOKEINTERFACE ( #iInterfaceoffset #vOffset #iNargs #aum ... -- ) 0xd8
+stackframeinfo sfi;
+bool result;
+global_sp = sp;
+stacktrace_create_stackframeinfo(&sfi, NULL, (u1 *) fp, (u1 *) IP);
+result = intrp_patcher_invokeinterface((u1 *) (IP - 5));
+stacktrace_remove_stackframeinfo(&sfi);
+CLEAR_global_sp;
+if (!result)
+  THROW0;
+STORE_ORDER_BARRIER();
+IP[-5] = INST_ADDR(INVOKEINTERFACE);
+SET_IP(IP-5);
+patchersuper_rewrite(IP);
+
+PATCHER_CHECKCAST ( #aClass #acr ... -- ) 0xc
+stackframeinfo sfi;
+bool result;
+global_sp = sp;
+stacktrace_create_stackframeinfo(&sfi, NULL, (u1 *) fp, (u1 *) IP);
+result = intrp_patcher_checkcast_instanceof((u1 *) (IP - 3));
+stacktrace_remove_stackframeinfo(&sfi);
+CLEAR_global_sp;
+if (!result)
+  THROW0;
+STORE_ORDER_BARRIER();
+IP[-3] = INST_ADDR(CHECKCAST);
+SET_IP(IP-3);
+patchersuper_rewrite(IP);
+
+PATCHER_INSTANCEOF ( #aClass #acr ... -- ) 0xc1
+stackframeinfo sfi;
+bool result;
+global_sp = sp;
+stacktrace_create_stackframeinfo(&sfi, NULL, (u1 *) fp, (u1 *) IP);
+result = intrp_patcher_checkcast_instanceof((u1 *) (IP - 3));
+stacktrace_remove_stackframeinfo(&sfi);
+CLEAR_global_sp;
+if (!result)
+  THROW0;
+STORE_ORDER_BARRIER();
+IP[-3] = INST_ADDR(INSTANCEOF);
+SET_IP(IP-3);
+patchersuper_rewrite(IP);
+
+\ This is stub code for methods that we have not yet translated.
+\ Initially, the code for each method is set to this stub. The
+\ first time the method is called, the code in the stub runs, which
+\ translates the bytecode, and replaces the stub with the threaded code.
+
+TRANSLATE ( #am ... --  )
+{
+  Inst *codeptr;
+  stackframeinfo sfi;
+  Cell *acelloldfp;
+  Inst *ainstoldip;
+  ;
+  vm_Cell2acell(sp[1],acelloldfp);
+  vm_Cell2ainst(sp[0],ainstoldip);
+  global_sp = sp;
+  stacktrace_create_extern_stackframeinfo(&sfi, NULL, (u1 *) acelloldfp, (u1 *) ainstoldip, (u1 *) ainstoldip);
+  codeptr = (Inst *) jit_compile(am);
+  stacktrace_remove_stackframeinfo(&sfi);
+  if (codeptr == NULL) {
+    fp = acelloldfp;
+    SET_IP(ainstoldip); /* set up ip and fp for throw */
+    THROW0;
+  }
+  CLEAR_global_sp;
+  IP[-4] = codeptr;
+  SET_IP(codeptr);
+}
+
+NATIVECALL ( #am #af #addrcif ... acelloldfp ainstoldip -- )
+sp = nativecall(af, am, sp, ainstoldip, acelloldfp, addrcif);
+fp = acelloldfp;
+SET_IP(ainstoldip);
+if (*exceptionptr)
+  THROW0;
+
+
+TRACENATIVECALL ( #am #af #addrcif ... acelloldfp ainstoldip -- )
+sp = nativecall(af, am, sp, ainstoldip, acelloldfp, addrcif);
+fp = acelloldfp;
+SET_IP(ainstoldip);
+{
+Cell v = sp[0];
+float f;
+vm_Cell2f(v,f);
+#if !defined(NDEBUG)
+builtin_verbosecall_exit((s8) v, f, f, am);
+#endif
+}
+if (*exceptionptr)
+  THROW0;
+
+PATCHER_NATIVECALL ( #am #af #addrcif ... -- )
+stackframeinfo sfi;
+bool result;
+global_sp = sp;
+stacktrace_create_stackframeinfo(&sfi, NULL, (u1 *) fp, (u1 *) IP);
+result = intrp_patcher_resolve_native((u1 *) (IP - 4));
+stacktrace_remove_stackframeinfo(&sfi);
+CLEAR_global_sp;
+if (!result)
+  THROW0;
+STORE_ORDER_BARRIER();
+IP[-4] = opt_verbosecall ? INST_ADDR(TRACENATIVECALL) : INST_ADDR(NATIVECALL);
+SET_IP(IP - 4);
+patchersuper_rewrite(IP);
+
+TRACECALL ( #am -- )
+#if !defined(NDEBUG)
+#if SIZEOF_VOID_P == 4
+{
+    s8 args[TRACE_ARGS_NUM];
+    int i;
+    int ofs = 0;
+    typedesc *params = am->parseddesc->paramtypes;
+    for (i=0; i < TRACE_ARGS_NUM; ++i, ++params) {
+        if (IS_2_WORD_TYPE(params->type)) {
+            vm_twoCell2l(access_local_cell(ofs), access_local_cell(ofs - SIZEOF_VOID_P), args[i]);
+            ofs -= 2*SIZEOF_VOID_P;
+        }
+        else {
+            args[i] = access_local_cell(ofs);
+            ofs -= SIZEOF_VOID_P;
+        }
+    }
+    builtin_verbosecall_enter(args[0], args[1], args[2], args[3],  
+#if TRACE_ARGS_NUM > 4
+                              args[4], args[5],
+#endif
+#if TRACE_ARGS_NUM == 8
+                              args[6], args[7],
+#endif
+                              am);
+}
+#else /* SIZEOF_VOID_P */
+    builtin_verbosecall_enter(
+        access_local_cell(0 * -SIZEOF_VOID_P),
+        access_local_cell(1 * -SIZEOF_VOID_P),
+        access_local_cell(2 * -SIZEOF_VOID_P),
+        access_local_cell(3 * -SIZEOF_VOID_P),
+#if TRACE_ARGS_NUM > 4
+        access_local_cell(4 * -SIZEOF_VOID_P),
+        access_local_cell(5 * -SIZEOF_VOID_P),
+#endif
+#if TRACE_ARGS_NUM == 8
+        access_local_cell(6 * -SIZEOF_VOID_P),
+        access_local_cell(7 * -SIZEOF_VOID_P),
+#endif
+        am);
+#endif /* SIZEOF_VOID_P */
+#endif /* !defined(NDEBUG) */
+
+TRACERETURN ( #am v -- v )
+float f;
+vm_Cell2f(v,f);
+#if !defined(NDEBUG)
+builtin_verbosecall_exit((s8) v, f, f, am);
+#endif
+
+TRACELRETURN ( #am l -- l )
+Double_Store ds;
+ds.l = l;
+#if !defined(NDEBUG)
+builtin_verbosecall_exit(l, ds.d, ds.d, am);
+#endif
+
+END ( ... -- )
+global_sp = sp;
+SUPER_END;
+vm_uncount_block(IP); /* undo the count part of SUPER_END,
+			 because there is no fallthrough */
+return NULL;
+
+_ALOAD_GETFIELD_CELL_ =  ALOAD GETFIELD_CELL 
+_DUP_ICONST_ =  DUP ICONST 
+_ALOAD_ALOAD_ =  ALOAD ALOAD 
+_ICONST_ICONST_ =  ICONST ICONST 
+_DUP_ICONST_ICONST_ =  DUP ICONST ICONST 
+_ICONST_CASTORE_ =  ICONST CASTORE 
+_ICONST_ICONST_CASTORE_ =  ICONST ICONST CASTORE 
+_DUP_ICONST_ICONST_CASTORE_ =  DUP ICONST ICONST CASTORE 
+_CASTORE_DUP_ =  CASTORE DUP 
+_CASTORE_DUP_ICONST_ =  CASTORE DUP ICONST 
+_DUP_ICONST_ICONST_CASTORE_DUP_ =  DUP ICONST ICONST CASTORE DUP 
+_ICONST_CASTORE_DUP_ =  ICONST CASTORE DUP 
+_ICONST_CASTORE_DUP_ICONST_ =  ICONST CASTORE DUP ICONST 
+_ICONST_ICONST_CASTORE_DUP_ =  ICONST ICONST CASTORE DUP 
+_ICONST_ICONST_CASTORE_DUP_ICONST_ =  ICONST ICONST CASTORE DUP ICONST 
+_CASTORE_DUP_ICONST_ICONST_ =  CASTORE DUP ICONST ICONST 
+_CASTORE_DUP_ICONST_ICONST_CASTORE_ =  CASTORE DUP ICONST ICONST CASTORE 
+_ICONST_CASTORE_DUP_ICONST_ICONST_ =  ICONST CASTORE DUP ICONST ICONST 
+_ASTORE_ALOAD_ =  ASTORE ALOAD 
+_ALOAD_GETFIELD_INT_ =  ALOAD GETFIELD_INT 
+_ALOAD_ILOAD_ =  ALOAD ILOAD 
+_ALOAD_ACONST_ =  ALOAD ACONST 
+_ICONST_ACONST_ =  ICONST ACONST 
+_AASTORE_DUP_ =  AASTORE DUP 
+_AASTORE_DUP_ICONST_ =  AASTORE DUP ICONST 
+_ALOAD_ICONST_ =  ALOAD ICONST 
+_ILOAD_ICONST_ =  ILOAD ICONST 
+_ILOAD_ILOAD_ =  ILOAD ILOAD 
+_DUP_ICONST_ACONST_ =  DUP ICONST ACONST 
+_GETFIELD_CELL_ALOAD_ =  GETFIELD_CELL ALOAD 
+_AASTORE_DUP_ICONST_ACONST_ =  AASTORE DUP ICONST ACONST 
+_ACONST_AASTORE_ =  ACONST AASTORE 
+_ICONST_ACONST_AASTORE_ =  ICONST ACONST AASTORE 
+_DUP_ICONST_ACONST_AASTORE_ =  DUP ICONST ACONST AASTORE 
+_ALOAD_GETFIELD_CELL_ALOAD_ =  ALOAD GETFIELD_CELL ALOAD 
+_ACONST_AASTORE_DUP_ =  ACONST AASTORE DUP 
+_ACONST_AASTORE_DUP_ICONST_ =  ACONST AASTORE DUP ICONST 
+_DUP_ICONST_ACONST_AASTORE_DUP_ =  DUP ICONST ACONST AASTORE DUP 
+_ICONST_ACONST_AASTORE_DUP_ =  ICONST ACONST AASTORE DUP 
+_ICONST_ACONST_AASTORE_DUP_ICONST_ =  ICONST ACONST AASTORE DUP ICONST 
+_AASTORE_DUP_ICONST_ACONST_AASTORE_ =  AASTORE DUP ICONST ACONST AASTORE 
+_DUP_ACONST_ =  DUP ACONST 
+_ACONST_AASTORE_DUP_ICONST_ACONST_ =  ACONST AASTORE DUP ICONST ACONST 
+_PUTFIELD_CELL_ALOAD_ =  PUTFIELD_CELL ALOAD 
+_ILOAD_ALOAD_ =  ILOAD ALOAD 
+_ICONST_ALOAD_ =  ICONST ALOAD 
+_DUP_ALOAD_ =  DUP ALOAD 
+_ICONST_ISTORE_ =  ICONST ISTORE 
+_ASTORE_ALOAD_ALOAD_ =  ASTORE ALOAD ALOAD 
+_ALOAD_PUTFIELD_CELL_ =  ALOAD PUTFIELD_CELL 
+_PUTFIELD_INT_ALOAD_ =  PUTFIELD_INT ALOAD 
+_ALOAD_ALOAD_PUTFIELD_CELL_ =  ALOAD ALOAD PUTFIELD_CELL 
+_ICONST_IADD_ =  ICONST IADD 
+_ISTORE_GOTO_ =  ISTORE GOTO 
+_ACONST_ACONST_ =  ACONST ACONST 
+_POP_ALOAD_ =  POP ALOAD 
+_ACONST_ICONST_ =  ACONST ICONST 
+_ALOAD_ALOAD_ALOAD_ =  ALOAD ALOAD ALOAD 
+_ALOAD_ALOAD_GETFIELD_CELL_ =  ALOAD ALOAD GETFIELD_CELL 
+_ISTORE_ALOAD_ =  ISTORE ALOAD 
+_GETFIELD_CELL_ILOAD_ =  GETFIELD_CELL ILOAD 
+_IINC_ILOAD_ =  IINC ILOAD 
+_ISTORE_ILOAD_ =  ISTORE ILOAD 
+_ALOAD_GETFIELD_CELL_ILOAD_ =  ALOAD GETFIELD_CELL ILOAD 
+_ILOAD_ICONST_IADD_ =  ILOAD ICONST IADD 
+_CHECKCAST_ASTORE_ =  CHECKCAST ASTORE 
+_ASTORE_ACONST_ =  ASTORE ACONST 
+_GETFIELD_INT_ALOAD_ =  GETFIELD_INT ALOAD 
+_ACONST_ALOAD_ =  ACONST ALOAD 
+_ICONST_ISTORE_GOTO_ =  ICONST ISTORE GOTO 
+_CHECKCAST_ASTORE_ALOAD_ =  CHECKCAST ASTORE ALOAD 
+_ASTORE_GOTO_ =  ASTORE GOTO 
+_ALOAD_PUTFIELD_CELL_ALOAD_ =  ALOAD PUTFIELD_CELL ALOAD 
+_ALOAD_ALOAD_PUTFIELD_CELL_ALOAD_ =  ALOAD ALOAD PUTFIELD_CELL ALOAD 
+_ICONST_PUTFIELD_INT_ =  ICONST PUTFIELD_INT 
+_ALOAD_IFNULL_ =  ALOAD IFNULL 
+_ALOAD_IFNONNULL_ =  ALOAD IFNONNULL 
+_ALOAD_ICONST_PUTFIELD_INT_ =  ALOAD ICONST PUTFIELD_INT 
+_ALOAD_GETFIELD_INT_ALOAD_ =  ALOAD GETFIELD_INT ALOAD 
+_ALOAD_ILOAD_ILOAD_ =  ALOAD ILOAD ILOAD 
+_DUP_ICONST_ALOAD_ =  DUP ICONST ALOAD 
+_IADD_ILOAD_ =  IADD ILOAD 
+_GETFIELD_CELL_ICONST_ =  GETFIELD_CELL ICONST 
+_ILOAD_PUTFIELD_INT_ =  ILOAD PUTFIELD_INT 
+_GETFIELD_INT_ALOAD_GETFIELD_INT_ =  GETFIELD_INT ALOAD GETFIELD_INT 
+_GETFIELD_CELL_GETFIELD_CELL_ =  GETFIELD_CELL GETFIELD_CELL 
+_ALOAD_ACONST_ACONST_ =  ALOAD ACONST ACONST 
+_ALOAD_ARRAYLENGTH_ =  ALOAD ARRAYLENGTH 
+_GETFIELD_CELL_IFNULL_ =  GETFIELD_CELL IFNULL 
+_ICONST_ISUB_ =  ICONST ISUB 
+_ALOAD_ILOAD_PUTFIELD_INT_ =  ALOAD ILOAD PUTFIELD_INT 
+_ALOAD_GETFIELD_CELL_GETFIELD_CELL_ =  ALOAD GETFIELD_CELL GETFIELD_CELL 
+_PUTFIELD_CELL_ALOAD_ALOAD_ =  PUTFIELD_CELL ALOAD ALOAD 
+_ILOAD_AALOAD_ =  ILOAD AALOAD 
+_ALOAD_MONITOREXIT_ =  ALOAD MONITOREXIT 
+_ALOAD_CHECKCAST_ =  ALOAD CHECKCAST 
+_ALOAD_GETFIELD_CELL_ICONST_ =  ALOAD GETFIELD_CELL ICONST 
+_ICONST_ILOAD_ =  ICONST ILOAD 
+_ACONST_ICONST_ICONST_ =  ACONST ICONST ICONST 
+_ALOAD_GETFIELD_CELL_IFNULL_ =  ALOAD GETFIELD_CELL IFNULL 

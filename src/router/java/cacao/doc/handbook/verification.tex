@@ -1,0 +1,344 @@
+\section{Verification}
+
+\newcommand{\cmdline}[1]{\texttt{#1}}
+\newcommand{\srcfile}[1]{\texttt{#1}}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\asgn}{\sqsubseteq}
+\newcommand{\qed}{$\Box$}
+\newcommand{\norm}[1]{\textrm{norm}\left(#1\right)}
+\newcommand{\reft}[2]{\langle #1, #2\rangle}
+\newtheorem{definition}{Definition}
+\newtheorem{lemma}{Lemma}
+\newtheorem{theorem}{Theorem}
+\newenvironment{proof}{\noindent\emph{Proof.} }{}
+
+Cacao verifies class files according to the JVM
+Specification \cite{javavm99} with some exceptions. We will first give
+an overview of the verifier implementation and then discuss specific
+points where the implementation deviates from the official JVM
+Specification.
+
+You can turn off class file verification using the \cmdline{-noverify}
+option\footnote{The \cmdline{-noverify} option disables verifier
+checks which are especially time-consuming. Checks which can be
+performed without significant overhead are always enabled.} when
+invoking
+\cmdline{cacao}.
+
+\subsection{Implementation Overview}
+
+The verification checks which are concerned with the overall structure
+of the class file and the contents of the constant pool (logical
+passes 1 and 2 in the specification \cite{javavm99}) reside in
+\srcfile{loader.c} (with UTF-8 validation in
+\srcfile{tables.c}). These passes of the verifier are executed when a
+class file is loaded and linked, before the JIT starts to compile any
+method within the loaded class.
+
+The checks concerning the bytecode array of a method (logical passes 3
+and 4 in the specification \cite{javavm99}) are performed when the JIT
+compiles the method\footnote{Usually when the method is called for the
+first time.}. These checks are implemented in
+\srcfile{jit/parse.c}, \srcfile{jit/stack.c} and
+\srcfile{jit/typecheck.c}. The files \srcfile{typeinfo.[ch]}
+implement the type system used by \srcfile{jit/typecheck.c}.
+
+\srcfile{jit/parse.c} contains the following checks which are performed
+while translating the Java Bytecode to the intermediate
+representation:
+
+\begin{itemize}
+\item Detect invalid opcodes,
+\item detect unexpected end of bytecode,
+\item check if branch targets are within bounds,
+\item check if branch targets are valid instruction starts,
+\item check constant pool indices and types,
+\item check local variable indices (no type check),
+\item check exception handler ranges.
+\end{itemize}
+
+The code in \srcfile{jit/stack.c} builds a model of the operand stack
+and checks the intermediate instructions for type safety regarding the
+five basic stack slot types: integer\footnote{The basic \emph{integer}
+type is the union of the Java types \code{int}, \code{short},
+\code{byte}, \code{char} and \code{boolean}.}, float, long, double and
+address. (The basic type \emph{address} encompasses all reference and
+\code{returnAddress} types.) Checks performed while building the stack
+model include:
+
+\begin{itemize}
+\item Detect operand stack underflow,
+\item detect operand stack overflow,
+\item detect undefined stack depth at merging points,
+\item detect undefined basic stack slot types at merging points,
+\item check type-safe use of stack slots regarding the five basic
+      types.
+\end{itemize}
+
+The stack model and the intermediate instructions then enter the type
+checker implemented in \srcfile{jit/typecheck.c}. The type checker
+uses a special type system to perform the following checks:
+
+\begin{itemize}
+\item Check type-safe use of reference types,
+\item check type-safe use of local variables,
+\item detect invalid use of uninitialized objects,
+\item check type-safe method invocations and field access,
+\item check local subroutines and use of \code{returnAddress}es,
+\item check type-safe use of \code{return} instructions,
+\item check access rights.
+\end{itemize}
+
+\subsection{Identifiers}
+
+Cacao currently does not check if the names of classes, methods and
+fields are valid Java identifiers since this would require including a
+Unicode database in Cacao. Instead the following checks are performed:
+
+\begin{itemize}
+\item Names must be valid non-empty Java `Utf8' strings.
+\item Names must not contain ASCII control characters or the
+      \code{NUL}-character.
+\item A method name starting with the ASCII character `\code{<}' must be
+      either \code{<init>} or \code{<clinit>}.
+\item A \code{NameAndType} entry in the constant pool may not
+      refer to a method named \code{<clinit>}.
+\item Field names may not start with `\code{<}'.
+
+\end{itemize}
+
+\subsection{Reference Types}
+
+The approach for checking reference types described in the JVM
+Specification \cite{javavm99} does only work well for single
+inheritance since the rule for merging reference types is taking the
+least common ancestor of the types. When multiple inheritance via
+interfaces is used this can lead to type-safe programs being rejected
+by the verifier.
+
+Cacao's rule for merging reference types is equivalent to using set
+union instead of the least common ancestor. To optimize for the common
+case of trivial merges\footnote{Merges of a class $C$ with itself or
+one of its superclasses or subclasses.}, however, the Cacao
+implementation uses a slightly more complex scheme which is detailed
+below.
+
+\subsubsection{Array Classes}
+
+For the purpose of verification Cacao assumes that array classes have
+subclass relationships induced by their component types. For example
+\code{Integer[]} is considered a subclass of \code{Number[]}. The
+class \code{Object[]} and all primitive arrays are considered to be
+subclasses of a (pseudo) class \code{Arraystub} with the following
+declaration:
+
+\begin{verbatim}
+class Arraystub extends Object implements Cloneable, java.io.Serializable
+{
+}
+\end{verbatim}
+
+\subsubsection{Formal Treatment}
+
+\begin{definition} 
+A reference type in Cacao is an ordered pair $\reft{C}{M}$ where $C$
+is a class\footnote{In this section the term `class' includes Java
+classes, Java interfaces and Java array classes.} and M is a (possibly
+empty) set\footnote{Implemented as a sorted list.} of proper
+subclasses of $C$. The Cacao type corresponding to a simple Java
+class, interface, or array class $C$ is $\reft{C}{\emptyset}$.  
+\end{definition}
+
+The following rule is used to check if $\reft{C}{M}$ is assignable
+(denoted $\sqsubseteq$) to the class $K$:
+
+\begin{eqnarray*}
+\reft{C}{M}\asgn K 
+& \Longleftrightarrow &
+(C\asgn K) \vee ((M \neq \emptyset) \wedge
+(\forall c \in M: c\asgn K)) \\
+& \Longleftrightarrow &
+\forall c \in \textrm{cls}(\reft{C}{M}): c\asgn K
+\end{eqnarray*}
+
+where
+
+\[\textrm{cls}(\reft{C}{M}) = 
+\left\{ \begin{array}{ll} \{C\} & \mbox{if $M = \emptyset$} \\
+                         M     & \mbox{if $M \neq \emptyset$}
+       \end{array}
+\right.\]
+
+The rule for merging two reference types is:
+
+\[\reft{C_1}{M_1} \sqcup \reft{C_2}{M_2} = 
+\norm{\textrm{lca}(C_1,C_2),\textrm{cls}(\reft{C_1}{M_1}) \cup \textrm{cls}(\reft{C_2}{M_2})}\]
+
+where $\textrm{lca}(C_1,C_2)$ denotes the least common ancestor of
+$C_1$ and $C_2$ and
+
+\[\norm{C,M} = 
+\left\{ \begin{array}{ll} \reft{C}{\emptyset} & \mbox{if $C \in M$} \\
+                          \reft{C}{M}         & \mbox{if $C \notin M$}
+       \end{array}
+\right.\]
+
+We will now prove that the merging rule is sound in the sense that it
+does not lead to the verification of unsafe programs or to the
+rejection of type-safe programs.
+
+\begin{lemma}
+\label{lemma:sub}
+For any class $C$ and any reference type $\reft{C_2}{M_2}$ where $C_2$
+is $C$ or a subclass of $C$
+
+\[\reft{C}{\emptyset}\asgn K \Longrightarrow \reft{C_2}{M_2}\asgn K\]
+
+for all classes $K$.
+\end{lemma}
+\begin{proof}
+All classes in $\textrm{cls}(\reft{C_2}{M_2})$ are $C$ or subclasses
+of $C$ and thus assignable to $C$. The lemma follows by transitivity.\hfill\qed
+\end{proof}
+
+\begin{theorem}
+For any two reference types $T_1=\reft{C_1}{M_1}$ and $T_2=\reft{C_2}{M_2}$ the merging rule satisfies
+
+\[((T_1\asgn K) \wedge (T_2\asgn K))
+\Longleftrightarrow (T_1 \sqcup T_2) \asgn K\]
+
+for all classes $K$.
+\end{theorem}
+
+\begin{proof}
+Let $T = T_1 \sqcup T_2 = \reft{C}{M}$ and 
+$M_V = \textrm{cls}(T_1) \cup \textrm{cls}(T_2)$.
+
+\noindent\textit{Case 1: $C \notin M_V$.} Because of $M = M_V \neq
+\emptyset$ we have $\textrm{cls}(T) = M_V$ and the
+theorem becomes
+
+\[\forall K:
+((\forall c \in \textrm{cls}(T_1): c\asgn K)
+\wedge
+(\forall c \in \textrm{cls}(T_2): c\asgn K))
+\Longleftrightarrow
+\forall c \in \textrm{cls}(T_1) \cup \textrm{cls}(T_2): c\asgn K\]
+
+which is true by definition of $\cup$.
+
+\noindent\textit{Case 2: $C \in M_V$.} We have $C =
+\textrm{lca}(C_1,C_2)$ and $M = \emptyset$. Because all elements of
+$M_1$ and $M_2$ are proper subclasses of $C_1$ and $C_2$ respectively
+we know that $C \notin M_1 \cup M_2$. From this and $C \in M_V$
+follows that $C \in \{C_1\}\cup\{C_2\}$ and so at least one of $M_1$,
+$M_2$ must be $\emptyset$. Without reduction of generality let $M_1 =
+\emptyset$. If $C = C_1$ we get
+
+\[
+((\reft{C}{\emptyset}\asgn K) \wedge (\reft{C_2}{M_2}\asgn K))
+\Longleftrightarrow
+\reft{C}{\emptyset}\asgn K
+\]
+
+\noindent From left to right this is trivial and from right to left it
+follows from Lemma~\ref{lemma:sub}.
+
+\noindent If $C \neq C_1$ then $C = C_2$ and $M_2 = \emptyset$
+(because of $C \in M_V = \{C_1\}\cup\textrm{cls}(T_2)$) and we get:
+
+\[
+((\reft{C_1}{\emptyset}\asgn K) \wedge (\reft{C}{\emptyset}\asgn K))
+\Longleftrightarrow
+\reft{C}{\emptyset}\asgn K
+\]
+
+\noindent which is proven in the same way.\hfill\qed
+
+\end{proof}
+
+
+\subsection{Local Subroutines}
+
+Cacao uses a very different scheme for type checking local subroutines
+than that implied by the JVM Specification. We will now discuss the
+reasons for this deviation and explain why the official specification
+should be considered flawed with respect to local subroutines (see
+also \cite{Coglio01}).
+
+Type checking local subroutines tends to be the most complex part of
+bytecode verification. This arises from the requirement \cite{javavm99}
+that subroutines be polymorphic over the types of local variables that
+they do not use\footnote{Intuitively this means that if a subroutine
+does not use a certain local variable this variable will maintain its
+type across any \code{jsr} `call' of that subroutine.}. This
+requirement cannot be met by a simple data flow analysis which would
+merge the types of all local variables entering a subroutine via
+different \code{jsr} instructions.
+
+The JVM Specification suggests an implementation of the verifier which
+tries to model a kind of call stack for local subroutines. The problem
+with this approach -- apart from the severe restrictions it inflicts
+on subroutines -- is that the behavior of exceptions is undefined with
+respect to this (fictitious) call stack. When an exception can be
+thrown at a certain point in a subroutine it is impossible for the
+verifier to determine whether the responsible handler should be
+considered to be `inside' or `outside' the subroutine. Thus the
+fundamental flaw of this approach is the implicit assumption that
+subroutines have well-defined boundaries, which is not the
+case\footnote{At least it is not guaranteed by the documented
+constraints on the bytecode and the semantics of \code{jsr} and
+\code{ret}.}.
+
+Cacao has therefore adopted an alternative algorithm for type checking
+local subroutines. The algorithm is formally described and proven to
+be sound in \cite{Coglio02}. We will now give an informal explanation
+of the algorithm's idea and discuss a certain restriction which the
+Cacao implementation introduces in addition to those in
+\cite{Coglio02}.
+
+The basic idea is to treat the \code{jsr} instruction like any other
+control flow instruction while avoiding the `lossy' merging of types.
+We denote as $(s,v)$ a \emph{pair}, where $s$ is a list of types
+corresponding to the stack slots and $v$ is a vector of types
+corresponding to the local variables at a certain bytecode
+instruction. A simple data flow analysis would map every position in
+the bytecode to a single pair. The enhanced algorithm maps every
+position in the bytecode to a non-empty set of pairs representing the
+alternative possible `assignments' of types to the stack slots and
+local variables at this position. When control flow is merged at a
+certain point we just compute the union of the sets of pairs which
+are propagated from the predecessors of the merging point. This way
+when we are type checking a subroutine we can maintain all possible
+types that a (possibly unused) variable can have `inside' the
+subroutine.
+
+The second important measure is typing \code{returnAddress}es by the
+bytecode address they return to. This means if we encounter a
+\code{jsr} instruction we assign the stack top a type $\code{ret}_p$
+where $p$ is the address of the instruction following the \code{jsr}.
+Thus when we reach a $\code{ret}\ i$ instruction we just have to look
+at the types assigned to the variable $i$ in each pair for the current
+instruction\footnote{The type of variable $i$ must be a type of the
+form $\code{ret}_x$ in each pair, otherwise the bytecode is invalid.} 
+and we know the target addresses that the \code{ret} can reach and
+which pairs propagate to which target address.
+
+The Cacao implementation differs from the algorithm in \cite{Coglio02}
+in one point: Cacao always merges stack slot types (with the exception
+of \code{returnAddress}es) when merging control flow. In other words:
+Cacao does not keep a set of pairs $(s,v)$, instead it keeps a single
+list of types\footnote{Stored directly in the stack model.} $s$ for the
+stack and a set of vectors\footnote{See the
+\code{typevector\_} and \code{typevectorset\_} functions in
+\srcfile{typeinfo.c}.} $\{v_1, v_2, \dots\}$ for the local variables.
+\code{returnAddress}es on the stack contain a special list which keeps a
+$\code{ret}_{x_i}$ type for every vector $v_i$ in the set of local
+variable vectors. This design was chosen in order to keep the impact
+of subroutine verification on the stack model and the code dealing
+with stack operations minimal. The consequence of this is that
+subroutines may not be polymorphic with respect to stack slot
+types. This is a restriction when compared to the original algorithm
+in \cite{Coglio02} but it is in agreement with the JVM Specification,
+which requires that at any instruction in the bytecode the stack depth
+and the types of the stack slots must be well-defined.

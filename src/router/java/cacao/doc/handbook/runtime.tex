@@ -1,0 +1,457 @@
+\chapter{Run Time System}
+
+\section{Introduction}
+
+\section{Object layout}
+
+\section{Method invocation}
+
+Java and the programming language Theta do not implement multiple
+inheritance, but single inheritance with multiple subtyping. This important
+difference makes object layout and method dispatch more efficient. Although
+the bidirectional layout was designed for a language with multiple
+subtyping, it has the problem that more than one {\em vtbl} pointer has to
+be included in objects. The CACAO JIT compiler \cite{KrGr97b} moves the
+dispatch header of the bidirectional layout into the class information with
+negative offsets from the {\em vtbl}. For each implemented interface there
+is a distinct interface {\em vtbl}. Unimplemented interfaces are
+represented by null pointers.
+%
+\begin{figure*}[htb]
+\begin{center}
+\setlength{\unitlength}{1mm}
+\begin{picture}(114,72)
+\put( 0,42){\vector(1,0){12}}
+\put( 0,42){\makebox(8,6){\it objptr}}
+\put(12,60){\makebox(24,6){\it object}}
+\put(48,63){\makebox(30,6){\it class}}
+\put(90,66){\makebox(24,6){\it code}}
+\put(12,42){\makebox(24,18){\it instance data}}
+\put(12,36){\makebox(24,6){\it class pointer}}
+\put(12,42){\line(1,0){24}}
+\put(36,39){\vector(1,0){12}}
+\put(48,57){\makebox(30,6){\it method pointer}}
+\put(48,57){\line(1,0){30}}
+\put(48,51){\makebox(30,6){\it method pointer}}
+\put(48,51){\line(1,0){30}}
+\put(48,45){\makebox(30,6){\it method pointer}}
+\put(48,45){\line(1,0){30}}
+\put(48,39){\makebox(30,6){\it class info}}
+\put(48,27){\makebox(30,6){\it interface pointer}}
+\put(48,33){\line(1,0){30}}
+\put(48,33){\makebox(30,6){\it interface pointer}}
+\put(48, 0){\makebox(30,6){\it method pointer}}
+\put(48, 6){\makebox(30,6){\it method pointer}}
+\put(48, 6){\line(1,0){30}}
+\put(48,21){\makebox(30,6){\it interfaces}}
+\put(90,36){\framebox(24,6){\it method code}}
+\put(44,15){\vector(1,0){4}}
+\put(44,15){\line(0,1){15}}
+\put(44,30){\line(1,0){4}}
+\put(40, 0){\vector(1,0){8}}
+\put(40, 0){\line(0,1){36}}
+\put(40,36){\line(1,0){8}}
+\put(78, 3){\line(1,0){8}}
+\put(86, 3){\line(0,1){51}}
+\put(78, 9){\line(1,0){4}}
+\put(82, 9){\line(0,1){39}}
+\put(78,18){\line(1,0){4}}
+\put(78,54){\line(1,0){8}}
+\put(86,36){\vector(1,0){4}}
+\put(90,48){\framebox(24,6){\it method code}}
+\put(78,48){\vector(1,0){12}}
+\put(90,60){\framebox(24,6){\it method code}}
+\put(78,60){\vector(1,0){12}}
+\thicklines
+\put(48, 0){\framebox(30,12){}}
+\put(48,15){\framebox(30,6){\it method pointer}}
+\put(12,36){\framebox(24,24){}}
+\put(48,27){\framebox(30,36){}}
+\put(48,39){\line(1,0){30}}
+\end{picture}
+\caption{CACAO object and compact class descriptor layout}
+\label{objectcompactlayout}
+\end{center}
+\end{figure*}
+
+To call a virtual method, two memory access instructions are necessary
+(load the class pointer, load the method pointer) followed by the call
+instruction. Calling an interface method needs an additional indirection.
+%
+\begin{figure*}[htb]
+\begin{center}
+\setlength{\unitlength}{1mm}
+\begin{picture}(114,42)
+\put(0,15){\vector(1,0){12}}
+\put(0,15){\makebox(12,6){\it objptr}}
+\put(12,33){\makebox(24,6){\it object}}
+\put(48,36){\makebox(30,6){\it class}}
+\put(90,39){\makebox(24,6){\it code}}
+\put(12,15){\makebox(24,18){\it instance data}}
+\put(12,9){\makebox(24,6){\it class pointer}}
+\put(12,15){\line(1,0){24}}
+\put(36,12){\vector(1,0){12}}
+\put(48,30){\makebox(30,6){\it method pointer}}
+\put(48,30){\line(1,0){30}}
+\put(48,24){\makebox(30,6){\it method pointer}}
+\put(48,24){\line(1,0){30}}
+\put(48,18){\makebox(30,6){\it method pointer}}
+\put(48,18){\line(1,0){30}}
+\put(48,12){\makebox(30,6){\it class info}}
+\put(48,0){\makebox(30,6){\it ifmethod pointer}}
+\put(48,6){\line(1,0){30}}
+\put(48,6){\makebox(30,6){\it ifmethod pointer}}
+\put(90,3){\framebox(24,6){\it method code}}
+\put(78,3){\vector(1,0){12}}
+\put(82,3){\line(0,1){18}}
+\put(78,21){\line(1,0){4}}
+\put(78,27){\line(1,0){8}}
+\put(78,9){\line(1,0){8}}
+\put(86,9){\line(0,1){18}}
+\put(86,18){\vector(1,0){4}}
+\put(90,18){\framebox(24,6){\it method code}}
+\put(78,33){\vector(1,0){12}}
+\put(90,33){\framebox(24,6){\it method code}}
+\thicklines
+\put(12,9){\framebox(24,24){}}
+\put(48,0){\framebox(30,36){}}
+\put(48,12){\line(1,0){30}}
+\end{picture}
+\caption{CACAO object and fast class descriptor layout}
+\label{objectfastlayout}
+\end{center}
+\end{figure*}
+
+In the faster scheme, we store interface methods in an additional table at
+negative offsets from the {\em vtbl} (see figure~\ref{objectfastlayout}).
+Segregating the interface virtual function table keeps the standard virtual
+function table small and allows interface methods to be called with just
+two memory accesses. The memory consumption of virtual function tables
+containing interface and class methods would be {\em number of (classes +
+interfaces) $\times$ number of distinct methods}. The memory consumption of
+the interface tables is only {\em number of classes which implement
+interfaces $\times$ number of interface methods}. Colouring can be used to
+reduce the number of distinct offsets for interface methods further, but
+complicates dynamic class loading, leading to renumbering and code
+patching.
+
+The Jalapeno virtual machine implements an interface method invocation
+similar to the fast class descriptor layout of CACAO, but instead of
+colouring hashing of the method indices is used \cite{Alpern+01}. The table
+for the interface method pointers is allocated with a fixed size much
+smaller than the number of interface methods. When two method indices hash
+to the same offset, a conflict resolving stub is called instead of the
+interface methods directly. For conflict resolution the stub is passed the
+method index in a scratch register as additional argument. An interface
+method invocation can be executed with the following four machine
+instructions:
+%
+\begin{verbatim}
+LD  vtblptr,(obj)                  ; load vtbl pointer
+LD  mptr,hash(method_ptr)(vtblptr) ; load method pointer
+MV  mindex,idreg                   ; load method index
+JSR (mptr)                         ; call method (or conflict stub)
+\end{verbatim}
+%
+The number of machine instructions is the same as in the compact class
+descriptor layout of CACAO, but the indirection is eliminated, which
+reduces the number of cycles needed for the execution of this instruction
+sequence on a pipelined architecture. Compared to the old interface method
+invocation in the Jalapeno VM, which searched the superclass hierarchy for
+a matching method signature, the new method resulted in changes in the
+run-time from one percent slowdowns to speedups up to 51 percent.
+
+
+\section{Run time type checking}
+\label{sectionruntimetypechecking}
+
+Since type tests for trees are more (space) efficient than type tests for
+DAGs, a possible solution is to split a DAG into a tree part and the
+remaining graph. For languages with single inheritance and multiple
+subtyping this partitioning of the class hierarchy is already done in the
+language itself.
+
+\begin{figure}[htb]
+\begin{center}
+\setlength{\unitlength}{1mm}
+\begin{picture}(86,26)
+\thicklines
+\put(23, 3){\circle{6}}
+\put(43, 3){\circle{6}}
+\put(63, 3){\circle{6}}
+\put(33,13){\circle{6}}
+\put(53,13){\circle{6}}
+\put(43,23){\circle{6}}
+\put(20, 0){\makebox(6,6){D}}
+\put(40, 0){\makebox(6,6){E}}
+\put(60, 0){\makebox(6,6){F}}
+\put(30,10){\makebox(6,6){B}}
+\put(50,10){\makebox(6,6){C}}
+\put(40,20){\makebox(6,6){A}}
+\put(19, 0){\makebox(0,6)[r]{\{3,0\}}}
+\put(47, 0){\makebox(6,6)[l]{\{4,0\}}}
+\put(67, 0){\makebox(0,6)[l]{\{6,0\}}}
+\put(29,10){\makebox(0,6)[r]{\{2,2\}}}
+\put(57,10){\makebox(0,6)[l]{\{5,1\}}}
+\put(47,20){\makebox(0,6)[l]{\{1,5\}}}
+\put(25, 5){\line( 1,1){6}}
+\put(35,15){\line( 1,1){6}}
+\put(41, 5){\line(-1,1){6}}
+\put(51,15){\line(-1,1){6}}
+\put(61, 5){\line(-1,1){6}}
+\end{picture}
+\caption{Relative numbering with \{{\tt baseval}, {\tt diffval}\} pairs}
+\label{relnumbering}
+\end{center}
+\end{figure}
+
+CACAO uses a subtype test based on relative numbering for classes and a
+kind of matrix implementation for interfaces. Two numbers {\em low} and
+{\em high} are stored for each class in the class hierarchy. A depth first
+traversal of the hierarchy increments a counter for each class and assigns
+the counter to the {\em low} field when the class is first encountered and
+assigns the counter to the {\em high} field when the traversal leaves the
+class. In languages with dynamic class loading a renumbering of the
+hierarchy is needed whenever a class is added. A class {\em sub} is a
+subtype of another class {\em super}, if {\em super.low $\le$ sub.low $\le$
+super.high}. Since a range check is implemented more efficiently by an
+unsigned comparison, CACAO stores the difference between the {\em low} and
+{\em high} values and compares it against the difference of the {\em low}
+values of both classes. The code for {\tt instanceof} looks similar to:
+
+\begin{verbatim}
+return (unsigned) (sub->vftbl->baseval - super->vftbl->baseval) <=
+       (unsigned) (super->vftbl->diffval);
+\end{verbatim}
+
+For leaf nodes in the class hierarchy the {\tt diffval} is 0 which results
+in a faster test (a simple comparison of the {\tt baseval} fields of the
+sub- and superclass). In general a JIT compiler can generate the faster
+test only for final classes. An AOT compiler or a JIT compiler which does
+patching of the already generated machine code may additionally replace
+both the {\tt baseval} and the {\tt diffval} of the superclass by a
+constant. Currently CACAO uses constants only when dynamic class loading is
+not used.
+
+CACAO stores an interface table at negative offsets from the virtual method
+table (see figure~\ref{objectcompactlayout}). This table is needed for the
+invocation of interface methods. The same table is additionally used by the
+subtype test for interfaces. If the table is empty for the index of the
+superclass, the subtype test fails. The code for {\tt instanceof} looks
+similar to:
+
+\begin{verbatim}
+return (sub->vftbl->interfacetable[-super->index] != NULL);
+\end{verbatim}
+
+Both subtype tests can be implemented by very few machine code instructions
+without using branches which are expensive on modern processors.
+
+
+\section{Exception handling}
+
+\subsection{Introduction}
+
+Exceptions in Java occur either implicitly or explicitly. Typical
+implicit exceptions are references to the {\tt null} pointer, array
+index out of bounds and division by zero. Exceptions also can be
+raised explicitly with the {\tt throw} instruction. To handle
+exceptions occurring during execution, code which can raise an
+exception is included in a {\tt try} block. An efficient
+implementation of exception handling has to take care of managing {\tt
+try} blocks and to check for implicit exceptions efficiently .
+
+
+\subsection{Known implementation techniques}
+
+Three standard methods exist for implementing exception handling:
+
+\begin{itemize}
+
+\item dynamically create a linked list of {\tt try} block data
+      structures,
+
+\item use static {\tt try} block tables and search these tables at run
+      time (suggested for JavaVM interpreters),
+
+\item use functions with two return values.
+
+\end{itemize}
+
+The first method has been used in portable implementations of
+exception handling for C++ \cite{Cameron+92} or Ada \cite{Giering+94}
+using {\tt setjmp} and {\tt longjmp}. A linked exception handling data
+structure is created when entering a {\tt try} block and the structure
+is discarded when leaving the protected block. Java requires precise
+exceptions. It means that all expressions evaluated before the
+exception raising instruction must have finished and all expressions
+after the raising instruction must not have been started. Therefore,
+in practice, some instructions may not be moved freely. In the case of
+subroutine calls, the callee-saved registers must be restored to their
+original value. The data structure can be used to store such
+information. The disadvantage of this method is that creating and
+discarding of the data structure takes some time even if an exception
+is never raised.
+
+The second method has been suggested for an efficient exception
+handling implementation of C++ \cite{KoenigStroustrup90} and is used
+in Java implementations. For every method, the JavaVM maintains an
+exception table. This exception table contains the program counter of
+the start and the end of the {\tt try} block, the program counter of
+the exception handler and the type of the exception. A JavaVM
+interpreter can easily interpret this structure and dispatch to the
+corresponding handler code. If the byte code is translated to native
+code, the equivalent technique is more complicated.
+
+To simplify restoration of the registers, the old CACAO implementation
+used a different scheme \cite{KrGr97b}. A method has two return
+values: the real return value and an exception value stored in a
+register. After each method call, the exception register is checked
+and, if it is non-zero, the exception handling code is executed. Since
+an exception is rarely raised, the branch is easy to predict and
+cheap. Entering and leaving a {\tt try} block have no associated
+costs. At compile time, the dispatch information contained in the
+exception table is translated into method dispatching native code. 
+
+Run time checks for null pointers and array bounds are quite frequent,
+but can be eliminated in many cases. It is often possible to move a
+loop invariant null pointer check before the loop or to eliminate a
+bound check. Some more sophisticated compilers use these code motion
+techniques.
+
+
+\subsection{Motivation for a change}
+
+\begin{table*}
+\begin{center}
+\begin{tabular}[b]{|l|c|c|c|c|c|}
+\hline 
+                    & JavaLex & javac & espresso & Toba & java\_cup \\
+\hline
+null pointer checks &  6859   &  8197 &  11114   & 5825 &   7406    \\
+\hline
+method calls        &  3226   &  7498 &   7515   & 4401 &   5310    \\
+\hline
+try blocks          &    20   &   113 &     44   &   28 &     27    \\
+\hline
+\end{tabular}
+\caption{Number of pointer checks, method invocations and try blocks}
+\label{MethodTry}
+\end{center}
+\end{table*}
+
+The old CACAO implementation was simple, but it only makes sense if
+the number of try blocks is high. We made an empirical study to count
+the numbers of static occurrences of method invocations and of {\tt
+try} blocks in some applications (see table \ref{MethodTry}). The
+number of method invocations is two magnitudes bigger than the number
+of {\tt try} blocks. Furthermore, an exception is rarely raised during
+program execution. This led us to a new implementation of exception
+handling.
+
+
+\subsection{The new exception handling scheme}
+
+The new exception handling scheme is similar to that in a JavaVM
+interpreter. If an exception occurs, information in the exception
+table is interpreted. However native code complicates the matter.
+
+The pointers to Java byte code must be replaced by pointers to native
+code. It requires that, during native code generation, the order of
+basic blocks not be allowed to change. If basic blocks are eliminated
+because of dead code, the information about a block can not be
+discarded if there is a pointer to it in the exception table.
+
+A CACAO stack frame only contains copies of saved or spilled
+registers. There is no saved frame pointer. The size of a stack frame
+is only contained in the instructions which allocate and deallocate
+the stack. Therefore, to support exception handling, additional
+information has to be stored elsewhere.
+
+The code for a method needs access to constants (mostly address
+constants). Since a global constant table would be too large for short
+address ranges and, because methods are compiled on demand, every
+method has its own constant area which is allocated directly before
+the start of the method code (see fig.\ \ref{methodlayout}). A
+register is reserved which contains the method pointer. Constants are
+addressed relative to the method pointer.
+
+\begin{figure}[htb]
+\begin{center}
+\setlength{\unitlength}{1mm}
+\begin{picture}(50,18)
+\put(24,6){\vector(-1,0){6}}
+\put(24,3){\makebox(25,6){\it method pointer}}
+\put(0,0){\makebox(18, 6){\it constants}}
+\put(0,6){\makebox(18,12){\it code}}
+\thicklines
+\put(0,6){\line(1,0){18}}
+\put(0,0){\framebox(18,18){}}
+\end{picture}
+\caption{CACAO method layout}
+\label{methodlayout}
+\end{center}
+\end{figure}
+
+During a method call, the method pointer of the calling method is
+destroyed. However the return address is stored in a register which is
+preserved during execution of the called method and has to be used for
+returning from the method. After a method return, the method pointer
+of the calling method is recomputed using the return address. The
+following code for a method call demonstrates the method calling
+convention:
+
+\begin{verbatim}
+LDQ cp,(obj)     ; load class pointer
+LDQ mp,met(cp)   ; load method pointer
+JSR ra,(mp)      ; call method
+LDA mp=ra+offset ; recompute method pointer
+\end{verbatim}
+
+At the beginning of the constant area, there are fields which contain
+the necessary information for register restoration:
+
+\begin{mylist}{{\tt framesize}}
+\item[{\tt framesize}] the size of the stack frame
+\item[{\tt isleaf}]    a flag which is true if the method is a leaf
+method
+\item[{\tt intsave}]   number of saved integer registers
+\item[{\tt floatsave}] number of saved floating point registers
+\item[{\tt extable}]   the exception table -- similar to the JavaVM
+table
+\end{mylist}
+
+The exception handler first checks if the current executing method has
+an associated handler and may dispatch to this handler. If there is no
+handler, it unwinds the stack and searches the parent methods for a
+handler. The information in the constant area is used to restore the
+registers and update the stack pointer. The return address and the
+offset in the immediately following {\tt LDA} instruction is used to
+recompute the method pointer.
+
+\begin{table*}
+\begin{center}
+\begin{tabular}[b]{|l|c|c|c|c|c|}
+\hline 
+          & JavaLex & javac  & espresso & Toba  & java\_cup \\ \hline
+CACAO old &  61629  & 156907 &  122951  & 67602 &   87489   \\ \hline
+CACAO new &  37523  &  86346 &   69212  & 41315 &   52386   \\ \hline
+\end{tabular}
+\caption{Number of generated native instructions}
+\label{CodeSize}
+\end{center}
+\end{table*}
+
+The change to the new scheme allowed us to implement the null pointer
+check for free. We protect the first 64 Kbyte of memory against read
+and write access. If an bus error is raised, we catch the signal and
+check if the faulting address is within the first 64K. If this is the
+case, we dispatch to our exception handler, otherwise we propagate the
+signal. This gives faster programs and reduces the work of the
+compiler in generating pointer checking code. As shown in table
+\ref{MethodTry}, the numbers of null pointer checks are quite high.
+
+
+\section{Garbage collector}
+
+
