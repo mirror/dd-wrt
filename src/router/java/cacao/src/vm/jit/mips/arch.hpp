@@ -30,6 +30,9 @@
 
 #include "config.h"
 
+# if defined(ENABLE_SOFTFLOAT)
+    #define ENABLE_SOFT_FLOAT
+#endif
 
 /* define architecture features ***********************************************/
 
