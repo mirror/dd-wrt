@@ -956,7 +956,7 @@ void emit_verbosecall_exit(jitdata *jd)
 	/* keep stack 16-byte aligned */
 
 #if SIZEOF_VOID_P == 8
-	assert(0); // XXX: Revisit this code for MIPS64!
+//	assert(0); // XXX: Revisit this code for MIPS64!
 #endif
 	M_ASUB_IMM(REG_SP, PA_SIZE + 2 * 8, REG_SP);
 	M_AST(REG_RA, REG_SP, PA_SIZE + 1 * 8);

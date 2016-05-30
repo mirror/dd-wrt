@@ -3843,6 +3843,12 @@ mips )
     JAVA_ARCH="mips"
     ;;
 
+mips64 )
+    ARCH_DIR="mips"
+    AM_CPPFLAGS="$AM_CPPFLAGS -D__MIPS__"
+    JAVA_ARCH="mips64"
+    ;;
+
 mipsel )
     ARCH_DIR="mips"
     AM_CPPFLAGS="$AM_CPPFLAGS -D__MIPS__"
