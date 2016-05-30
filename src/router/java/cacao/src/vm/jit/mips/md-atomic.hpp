@@ -84,7 +84,6 @@ inline uint64_t compare_and_swap(volatile uint64_t *p, uint64_t oldval, uint64_t
 
 	__asm__ __volatile__ (
 		"    .set  push      \n"
-		"    .set  mips2     \n"
 		"1:                  \n"
 		"    lld   %0,%5     \n"
 		"    bne   %0,%3,2f  \n"

@@ -107,6 +107,12 @@ mipsel )
     JAVA_ARCH="mipsel"
     ;;
 
+mips64 )
+    ARCH_DIR="mips"
+    AM_CPPFLAGS="$AM_CPPFLAGS -D__MIPS__"
+    JAVA_ARCH="mips64"
+    ;;
+
 powerpc )
     ARCH_DIR="powerpc"
     AM_CFLAGS="$AM_CFLAGS -m32"
