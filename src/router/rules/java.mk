@@ -14,7 +14,8 @@ java-configure:
 	--disable-gjdoc \
 	--disable-examples \
 	--with-antlr-jar=$(TOP)/java/antlr/antlr-3.4-complete.jar
-
+	
+	cd $(TOP)/java/jamvm && ./autgen.sh 
 	cd $(TOP)/java/jamvm && ./configure \
 	--host=$(ARCH)-linux CC="$(ARCH)-linux-uclibc-gcc" \
 	CFLAGS="$(COPTS) -I$(TOP)/zlib -L$(TOP)/zlib -DNEED_PRINTF" \
