@@ -1,0 +1,73 @@
+\documentclass[10pt,a4paper,twoside]{book}
+\usepackage{latexsym}
+\usepackage{graphicx}
+\usepackage{url}
+
+%\pagestyle{myheadings} \footheight 12pt \footskip 72pt
+
+%\pagestyle{empty}
+
+\pagestyle{headings} 
+\setlength{\textwidth}{16cm}
+\setlength{\textheight}{23cm}
+\setlength{\topmargin}{0mm} 
+\setlength{\oddsidemargin}{0cm} 
+\setlength{\evensidemargin}{0cm}
+
+
+\parskip\medskipamount
+
+\newenvironment{mylist}[1]{
+	\begin{list}{}
+		{\settowidth{\labelwidth}{#1}
+		\leftmargin\labelwidth \addtolength{\leftmargin}{\labelsep}
+		\itemsep0ex \parsep0ex
+		\renewcommand{\makelabel}[1]{##1\hfill}
+		}
+	}{\end{list}}
+
+\title{The CACAO Java Virtual Machine}
+\author{Andreas Krall et al.}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+%\listoffigures
+%\listoftables
+
+\include{intro}
+
+\include{overview}
+
+\include{loader}
+
+\include{runtime}
+    \include{threads}
+    \include{native}
+    \include{reflection}
+
+\include{jit}
+    \include{verification}
+    \include{loopopt}
+    \include{inlining}
+    \include{alpha}
+    \include{arm}
+    \include{mips}
+    \include{powerpc}
+    \include{s390}
+    \include{x86}
+    \include{x86_64}
+
+\include{library}
+
+\include{jvmti}
+
+%\include{}
+\bibliographystyle{alpha}
+\bibliography{java}
+
+\end{document} 

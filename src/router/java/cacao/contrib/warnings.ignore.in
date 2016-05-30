@@ -1,0 +1,16 @@
+# Buildbot warning suppression file
+#
+# This file must contain one line per pattern of warnings to ignore.
+# Empty lines and lines beginning with # are ignored. Other lines must consist
+# of a regexp matching the file name, followed by a colon (:), followed by a
+# regexp matching the text of the warning. Optionally this may be followed by another
+# colon and a line number range.
+#
+# see http://docs.buildbot.net/latest/manual/cfg-buildsteps.html#compile
+
+
+# ignore libtool warnings
+.* : ^libtool.*
+
+# ignore clang unused argument warnings
+.* : ^clang.*argument unused during compilation/*

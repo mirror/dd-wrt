@@ -1,0 +1,74 @@
+#! /bin/sh
+# vmgenx.  Variation of Gforth's vmgen
+#Copyright (C) 2001,2002,2003 Free Software Foundation, Inc.
+
+#This file is part of Gforth.
+
+#Gforth is free software; you can redistribute it and/or
+#modify it under the terms of the GNU General Public License
+#as published by the Free Software Foundation; either version 2
+#of the License, or (at your option) any later version.
+
+#This program is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.#See the
+#GNU General Public License for more details.
+
+#You should have received a copy of the GNU General Public License
+#along with this program; if not, write to the Free Software
+#Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111, USA.
+
+prefix=/usr
+#test "x$GFORTHDIR" != x || GFORTHDIR=${prefix}/bin
+#test "x$GFORTHDATADIR" != x || GFORTHDATADIR=$prefix/share/gforth/0.6.2
+#GFORTH=$GFORTHDIR/gforth-fast
+
+# We must get the absolute path of the srcdir, since gforth does not
+# seem to understand relative paths.
+
+relsrcdir=`dirname $0`
+srcdir=`/bin/sh -c "cd $relsrcdir ; pwd"`
+
+PRIMS2X="$srcdir"/prims2x.fs
+
+GFORTH=gforth
+FFLAGS="-m 1000000"
+
+if test $# = 0 || test $1 = --help || test $1 = -h; then
+  echo "usage: `basename $0` <file>.vmg"
+  exit 0
+elif test $1 = --version || test $1 = -v; then
+  echo "vmgen (gforth) 0.6.2"
+  $GFORTH --version
+  echo 'Copyright (C) 2001,2002,2003 Free Software Foundation, Inc.'
+  echo 'This program is part of Gforth'
+  $GFORTH -e "license bye"
+  exit 0
+else
+    true #old shells require this
+fi
+
+# basename of source file
+base=`basename $1 .vmg`
+
+# absolute source file name
+af="$srcdir"/`basename $1`
+
+$GFORTH $FFLAGS -e "create vmgen" "$PRIMS2X" \
+				-e "c-flag on s\" $base-vm.i\" out-filename 2! s\" $af\" ' output-c ' output-c-combined process-file bye" > $base-vm.i &&
+$GFORTH $FFLAGS -e "create vmgen" "$PRIMS2X" \
+				-e "c-flag on s\" $af\" ' output-disasm dup process-file bye" > $base-disasm.i &&
+$GFORTH $FFLAGS -e "create vmgen" "$PRIMS2X" \
+				-e "c-flag on s\" $af\" ' output-gen ' noop process-file bye" > $base-gen.i &&
+$GFORTH $FFLAGS -e "create vmgen" "$PRIMS2X" \
+				-e "c-flag on s\" $af\" ' output-label dup process-file bye" > $base-labels.i &&
+$GFORTH $FFLAGS -e "create vmgen" "$PRIMS2X" \
+				-e "c-flag on s\" $af\" ' output-profile dup process-file bye" > $base-profile.i &&
+$GFORTH $FFLAGS -e "create vmgen" "$PRIMS2X" \
+				-e "c-flag on s\" $af\" ' noop ' output-peephole process-file bye" > $base-peephole.i &&
+$GFORTH $FFLAGS -e "create vmgen" "$PRIMS2X" \
+				-e "c-flag on s\" $af\" ' output-superend dup process-file bye" > $base-superend.i &&
+$GFORTH $FFLAGS -e "create vmgen" "$PRIMS2X" \
+				-e "c-flag on s\" $af\" ' output-forthname dup process-file bye" > $base-names.i &&
+true
+

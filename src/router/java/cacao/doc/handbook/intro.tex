@@ -1,0 +1,46 @@
+\chapter{Introduction}
+
+Reinhard Grafl and I do not like coffee. Therefore, our Java virtual machine
+could not be named after coffee. We prefer hot chocolate and have chosen to
+name our Java virtual machine CACAO [kaukau].
+
+\section{Introduction}
+
+CACAO is a research Java virtual machine. From the beginning it was designed
+for 64 bit architectures and was based on a just-in-time compiler. To avoid
+two different stack frame formats no interpreter is included. The compiler is
+so fast that it does not matter to compile code which is just executed once.
+One of the aims of CACAO is to keep the system small and simple which makes
+CACAO also well suited for embedded systems. It has been used to explore new
+just-in-time compilation techniques, fast program analyses and improvements
+for run time systems. Many of our developments turned out to be useful and
+had been included in the version of CACAO which we now distribute under the
+GNU general public license.
+
+\section{History}
+
+CACAO started as a master thesis by Rainhard Grafl in the year 1996 under
+my supervision. It included a JIT compiler
+for the Alpha archtecture. It used Sun's library 1.0
+and contained the native functions for {\tt lang}, {\tt io}, {\tt util} and
+{\tt math}. The first version was running in January 1997. This was the first
+Java virtual machine for 64 bit architectures. The binary version 0.1 was made
+available for the public on February 14th 1997. Afterwards I started the
+developement of the new faster JIT compiler. Multithreading was added by
+Mark Probst. Binary version 0.2 was released on September 23rd 1998. On
+October 12th 1998 immediately before the PACT conference in Paris we put the
+binary release 0.3 on our web server. Within ten days around Christmas 1998
+I ported CACAO to the MIPS architecture. In the next four years there was
+very little development on CACAO. Christopher Kr\"ugel added array bound check
+removal, Phil Tomsich wrote a new garbage collector and Roman Obermaisser
+made the change to the Java 1.2 library. In 2003 development became more
+intensive. Dieter Th\"urnbeck added inlining, Christian Thalinger did the
+port to the x86 and AMD64 architecture and rewrote the loader, Stefan Ring
+improved the MIPS port and did the port to the PowerPC architecture and
+implemented native threads with thin locks, Josef Wenninger replaced the
+SUN library by the GNU classpath, Edwin Steiner added verification,
+Carolyn Oates works class hierarchy analysis and inlining, Christian
+Ullrich implemented the linear scan register allocator and Martin Platter
+maintained the AWT library. On December 7th 2004 we released version 0.90
+the first time as source.
+

@@ -1,0 +1,274 @@
+.TH CACAO 1 2012-09-03
+.UC
+.SH NAME
+cacao \- a Java just-in-time compiler
+.SH SYNOPSIS
+.B cacao 
+[
+.I options
+]
+.I classname
+[
+.I argument ... 
+]
+.br
+.B cacao
+[
+.I options
+]
+.B -jar
+.I file.jar
+[
+.I argument ...
+]
+.br
+.SH DESCRIPTION
+The method \fBmain\fP of the class \fIclassname\fP is executed.
+Method \fBmain\fP must have the signature \fBpublic static void
+main(String[] argv)\fP. The program arguments are passed to method
+\fBmain\fP in the string array \fBargv\fP. The environment variable
+\fICLASSPATH\fP must contain the directory of the Java class files.
+.SH OPTIONS
+Currently recognized options are:
+
+.TP
+.B -classpath \fIpath\fP
+Set the search path for user-defined class files. Usually the environment variable CLASSPATH
+specifies the search path, but this option overrides the value of the environment variable.
+\fIpath\fP may be a colon-separated list of directories and .jar files.
+
+.TP
+.B -cp \fIpath\fP
+Equivalent to \fB-classpath \fIpath\fP.
+
+.TP
+.B -D\fIproperty\fB=\fIvalue\fP
+Assign a value to an entry of the system property list.
+
+.TP
+.BR -verbose [ :class | gc | jni ]
+Enable specific verbose output.
+
+.TP
+.B -version
+Print product version and exit.
+
+.TP
+.B -fullversion
+Print jpackage-compatible product version and exit.
+
+.TP
+.B -showversion
+Print product version and continue.
+
+.TP
+.B -help\fP, \fB-?
+Print this help message and exit.
+
+.TP
+.B -X
+Print help on non-standard Java options.
+
+.SH NON-STANDARD OPTIONS
+Currently recognized options are:
+
+.TP
+.B -Xbootclasspath/a:\fIpath\fP
+Append \fIpath\fP to the search path of the bootstrap loader.
+
+.TP
+.B -Xbootclasspath/p:\fIpath\fP
+Prepend \fIpath\fP to the search path of the bootstrap loader.
+
+.TP
+.B -Xbootclasspath:\fIpath\fP
+Set the search path of the bootstrap loader to \fIpath\fP.
+\fIpath\fP is a list of .zip files, .jar files, or directories, separated by \fB:\fP.
+
+.TP
+.B -Xint
+Interpreter mode execution.
+
+.TP
+.B -Xjit
+JIT mode execution (default).
+
+.TP
+.B -Xms\fIsize\fP
+Set the initial size of the heap (default: 2MB).
+
+.TP
+.B -Xmx\fIsize\fP
+Set the maximum size of the heap (default: 64MB).
+
+.TP
+.B -Xss\fIsize\fP
+Set the thread stack size (default: 128kB).
+
+.TP
+.B -all
+Compile all methods, no execution.
+
+.TP
+.B -cb
+Disable array bounds checks.
+
+.TP
+.B -cs
+Disable synchronization.
+
+.TP
+.B -l
+Don't start the class after loading.
+
+.TP
+.B -liberalutf
+Don't warn about overlong UTF-8 sequences.
+
+.TP	
+.B -log \fIlogfile\fP
+Specifies the logfile. Default is \fIstdout\fP.
+
+.TP
+.B -lsra
+Use linear scan register allocation.
+
+.TP
+.B -m \fImethod\fP
+Compile only a specific method.
+
+.TP
+.B -noverify
+Turn off bytecode verification and other verifier checks.
+
+.TP
+.B -sig \fIsignature\fP
+Specify signature for the method given by the \fB-m\fP option.
+
+.TP
+.B -softnull
+Use software nullpointer check.
+
+.TP
+.B -stat
+Print detailed compiler statistics.
+
+.TP	
+.B -time
+Gives statistics about run time after the program has completed.
+
+.TP
+.B -v
+Print state information.
+
+.SH DEBUGGING OPTIONS
+
+The following options are useful for debugging \fBcacao\fP:
+
+.TP
+.B -sa
+Show a disassembled listing of the generated code.
+
+.TP
+.B -sc
+Show the constant pool.
+
+.TP
+.B -sd 
+Show data segment listing.
+
+.TP
+.B -se
+Show disassembled exception stubs (only with \fB-sa\fP).
+
+.TP
+.B -si
+Show intermediate representation.
+
+.TP
+.B -sm
+Show class fields and methods.
+
+.TP
+.B -sn
+Show disassembled native stubs.
+
+.TP
+.B -su
+Show the internal utf hash.
+
+.TP
+.B -verbose
+Print more information.
+
+.TP
+.B -verbosecall
+Trace method calls.
+
+.TP
+.B -verboseexception
+Trace exceptions and stack unwinding.
+
+.TP
+.B -verbosegc
+Print a message for each garbage collection.
+
+.SH EXPERIMENTAL OPTIONS
+
+.TP
+.B -eager
+Perform eager class loading and linking.
+
+.TP
+.B -ie
+Inline methods with exceptions.
+
+.TP
+.B -in
+Activate inlining of methods.
+
+.TP
+.B -io
+Inline methods of foreign classes.
+
+.TP
+.B -ip
+Optimize argument renaming when inlining.
+
+.TP
+.B -iv
+Inline virtual methods (uses/turns \fB-rt\fP option on).
+
+.TP
+.B -oloop
+Optimize array accesses in loops.
+
+.TP
+.B -rt
+Use rapid type analysis.
+
+.TP
+.B -vta
+Use variable type analysis.
+
+.TP
+.B -xta
+Use X type analysis.
+
+.SH ENVIRONMENT VARIABLES
+
+.TP
+.B CLASSPATH
+A colon-separated list of directories and .jar files to search for
+user-defined classes.
+
+.TP
+.B BOOTCLASSPATH
+A colon-separated list of directories and .jar files searched
+by the bootstrap loader.
+
+.SH AUTHOR
+
+CACAOVM - Verein zur Foerderung der freien virtuellen Maschine CACAO
+
+Send mail to cacao@cacaojvm.org

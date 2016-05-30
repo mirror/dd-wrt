@@ -1,0 +1,1518 @@
+== Testing EnumA ==
+-- EnumA: Testing getDeclaredAnnotations() --
+[  OK  ] EnumA: test declared annotations count
+[  OK  ] EnumA: test unique occurrence of the annotation type AnnotationB
+[  OK  ] EnumA: test if annotation AnnotationB should be there
+ * Testing AnnotationB
+[  OK  ] AnnotationB: test annotationType
+[  OK  ] AnnotationB: test annotation methods count
+[  OK  ] AnnotationB: test invocation of the annotation method clazz()
+[  OK  ] AnnotationB: test return value of clazz() != null
+[  OK  ] AnnotationB: test return value of clazz()
+[  OK  ] AnnotationB: test invocation of the annotation method string()
+[  OK  ] AnnotationB: test return value of string() != null
+[  OK  ] AnnotationB: test return value of string()
+-- EnumA: Testing getAnnotations() --
+[  OK  ] EnumA: test annotations count
+[  OK  ] EnumA: test unique occurrence of the annotation type AnnotationB
+[  OK  ] EnumA: test if annotation AnnotationB should be there
+ * Testing AnnotationB
+[  OK  ] AnnotationB: test annotationType
+[  OK  ] AnnotationB: test annotation methods count
+[  OK  ] AnnotationB: test invocation of the annotation method clazz()
+[  OK  ] AnnotationB: test return value of clazz() != null
+[  OK  ] AnnotationB: test return value of clazz()
+[  OK  ] AnnotationB: test invocation of the annotation method string()
+[  OK  ] AnnotationB: test return value of string() != null
+[  OK  ] AnnotationB: test return value of string()
+-- EnumA: Testing getAnnotation(Class<? extends Annotation>) --
+[  OK  ] EnumA: try to get required annotation AnnotationB using getAnnotation(Class<? extends Annotation>)
+ * Testing AnnotationB
+[  OK  ] AnnotationB: test annotationType
+[  OK  ] AnnotationB: test annotation methods count
+[  OK  ] AnnotationB: test invocation of the annotation method clazz()
+[  OK  ] AnnotationB: test return value of clazz() != null
+[  OK  ] AnnotationB: test return value of clazz()
+[  OK  ] AnnotationB: test invocation of the annotation method string()
+[  OK  ] AnnotationB: test return value of string() != null
+[  OK  ] AnnotationB: test return value of string()
+-- EnumA: Testing isAnnotationPresent(Class<? extends Annotation>) --
+[  OK  ] EnumA: test if annotation AnnotationB is present using isAnnotationPresent()
+-- EnumA: Testing isAnnotation() --
+[  OK  ] EnumA: test if the isAnnotation attribute is set properly
+-- EnumA: Testing Constructors --
+-- EnumA: Testing Methods --
+-- EnumA: Testing Fields --
+-- Testing EnumA.VALUE1 --
+-- EnumA.VALUE1: Testing getDeclaredAnnotations() --
+[  OK  ] EnumA.VALUE1: test declared annotations count
+[  OK  ] EnumA.VALUE1: test unique occurrence of the annotation type AnnotationB
+[  OK  ] EnumA.VALUE1: test if annotation AnnotationB should be there
+ * Testing AnnotationB
+[  OK  ] AnnotationB: test annotationType
+[  OK  ] AnnotationB: test annotation methods count
+[  OK  ] AnnotationB: test invocation of the annotation method clazz()
+[  OK  ] AnnotationB: test return value of clazz() != null
+[  OK  ] AnnotationB: test return value of clazz()
+[  OK  ] AnnotationB: test invocation of the annotation method string()
+[  OK  ] AnnotationB: test return value of string() != null
+[  OK  ] AnnotationB: test return value of string()
+-- EnumA.VALUE1: Testing getAnnotations() --
+[  OK  ] EnumA.VALUE1: test annotations count
+[  OK  ] EnumA.VALUE1: test unique occurrence of the annotation type AnnotationB
+[  OK  ] EnumA.VALUE1: test if annotation AnnotationB should be there
+ * Testing AnnotationB
+[  OK  ] AnnotationB: test annotationType
+[  OK  ] AnnotationB: test annotation methods count
+[  OK  ] AnnotationB: test invocation of the annotation method clazz()
+[  OK  ] AnnotationB: test return value of clazz() != null
+[  OK  ] AnnotationB: test return value of clazz()
+[  OK  ] AnnotationB: test invocation of the annotation method string()
+[  OK  ] AnnotationB: test return value of string() != null
+[  OK  ] AnnotationB: test return value of string()
+-- EnumA.VALUE1: Testing getAnnotation(Class<? extends Annotation>) --
+[  OK  ] EnumA.VALUE1: try to get required annotation AnnotationB using getAnnotation(Class<? extends Annotation>)
+ * Testing AnnotationB
+[  OK  ] AnnotationB: test annotationType
+[  OK  ] AnnotationB: test annotation methods count
+[  OK  ] AnnotationB: test invocation of the annotation method clazz()
+[  OK  ] AnnotationB: test return value of clazz() != null
+[  OK  ] AnnotationB: test return value of clazz()
+[  OK  ] AnnotationB: test invocation of the annotation method string()
+[  OK  ] AnnotationB: test return value of string() != null
+[  OK  ] AnnotationB: test return value of string()
+-- EnumA.VALUE1: Testing isAnnotationPresent(Class<? extends Annotation>) --
+[  OK  ] EnumA.VALUE1: test if annotation AnnotationB is present using isAnnotationPresent()
+
+== Testing AnnotationA ==
+-- AnnotationA: Testing getDeclaredAnnotations() --
+[  OK  ] AnnotationA: test declared annotations count
+[  OK  ] AnnotationA: test unique occurrence of the annotation type AnnotationA
+[  OK  ] AnnotationA: test if annotation AnnotationA should be there
+ * Testing AnnotationA
+[  OK  ] AnnotationA: test annotationType
+[  OK  ] AnnotationA: test annotation methods count
+[  OK  ] AnnotationA: test invocation of the annotation method classes()
+[  OK  ] AnnotationA: test return value of classes() != null
+[  OK  ] AnnotationA: test return value of classes()
+[  OK  ] AnnotationA: test invocation of the annotation method enumeration()
+[  OK  ] AnnotationA: test return value of enumeration() != null
+[  OK  ] AnnotationA: test return value of enumeration()
+[  OK  ] AnnotationA: test invocation of the annotation method integer()
+[  OK  ] AnnotationA: test return value of integer() != null
+[  OK  ] AnnotationA: test return value of integer()
+[  OK  ] AnnotationA: test invocation of the annotation method string()
+[  OK  ] AnnotationA: test return value of string() != null
+[  OK  ] AnnotationA: test return value of string()
+[  OK  ] AnnotationA: test unique occurrence of the annotation type java.lang.annotation.Retention
+[  OK  ] AnnotationA: test if annotation java.lang.annotation.Retention should be there
+ * Testing java.lang.annotation.Retention
+[  OK  ] java.lang.annotation.Retention: test annotationType
+[  OK  ] java.lang.annotation.Retention: test annotation methods count
+[  OK  ] java.lang.annotation.Retention: test invocation of the annotation method value()
+[  OK  ] java.lang.annotation.Retention: test return value of value() != null
+[  OK  ] java.lang.annotation.Retention: test return value of value()
+-- AnnotationA: Testing getAnnotations() --
+[  OK  ] AnnotationA: test annotations count
+[  OK  ] AnnotationA: test unique occurrence of the annotation type AnnotationA
+[  OK  ] AnnotationA: test if annotation AnnotationA should be there
+ * Testing AnnotationA
+[  OK  ] AnnotationA: test annotationType
+[  OK  ] AnnotationA: test annotation methods count
+[  OK  ] AnnotationA: test invocation of the annotation method classes()
+[  OK  ] AnnotationA: test return value of classes() != null
+[  OK  ] AnnotationA: test return value of classes()
+[  OK  ] AnnotationA: test invocation of the annotation method enumeration()
+[  OK  ] AnnotationA: test return value of enumeration() != null
+[  OK  ] AnnotationA: test return value of enumeration()
+[  OK  ] AnnotationA: test invocation of the annotation method integer()
+[  OK  ] AnnotationA: test return value of integer() != null
+[  OK  ] AnnotationA: test return value of integer()
+[  OK  ] AnnotationA: test invocation of the annotation method string()
+[  OK  ] AnnotationA: test return value of string() != null
+[  OK  ] AnnotationA: test return value of string()
+[  OK  ] AnnotationA: test unique occurrence of the annotation type java.lang.annotation.Retention
+[  OK  ] AnnotationA: test if annotation java.lang.annotation.Retention should be there
+ * Testing java.lang.annotation.Retention
+[  OK  ] java.lang.annotation.Retention: test annotationType
+[  OK  ] java.lang.annotation.Retention: test annotation methods count
+[  OK  ] java.lang.annotation.Retention: test invocation of the annotation method value()
+[  OK  ] java.lang.annotation.Retention: test return value of value() != null
+[  OK  ] java.lang.annotation.Retention: test return value of value()
+-- AnnotationA: Testing getAnnotation(Class<? extends Annotation>) --
+[  OK  ] AnnotationA: try to get required annotation AnnotationA using getAnnotation(Class<? extends Annotation>)
+ * Testing AnnotationA
+[  OK  ] AnnotationA: test annotationType
+[  OK  ] AnnotationA: test annotation methods count
+[  OK  ] AnnotationA: test invocation of the annotation method classes()
+[  OK  ] AnnotationA: test return value of classes() != null
+[  OK  ] AnnotationA: test return value of classes()
+[  OK  ] AnnotationA: test invocation of the annotation method enumeration()
+[  OK  ] AnnotationA: test return value of enumeration() != null
+[  OK  ] AnnotationA: test return value of enumeration()
+[  OK  ] AnnotationA: test invocation of the annotation method integer()
+[  OK  ] AnnotationA: test return value of integer() != null
+[  OK  ] AnnotationA: test return value of integer()
+[  OK  ] AnnotationA: test invocation of the annotation method string()
+[  OK  ] AnnotationA: test return value of string() != null
+[  OK  ] AnnotationA: test return value of string()
+[  OK  ] AnnotationA: try to get required annotation java.lang.annotation.Retention using getAnnotation(Class<? extends Annotation>)
+ * Testing java.lang.annotation.Retention
+[  OK  ] java.lang.annotation.Retention: test annotationType
+[  OK  ] java.lang.annotation.Retention: test annotation methods count
+[  OK  ] java.lang.annotation.Retention: test invocation of the annotation method value()
+[  OK  ] java.lang.annotation.Retention: test return value of value() != null
+[  OK  ] java.lang.annotation.Retention: test return value of value()
+-- AnnotationA: Testing isAnnotationPresent(Class<? extends Annotation>) --
+[  OK  ] AnnotationA: test if annotation AnnotationA is present using isAnnotationPresent()
+[  OK  ] AnnotationA: test if annotation java.lang.annotation.Retention is present using isAnnotationPresent()
+-- AnnotationA: Testing isAnnotation() --
+[  OK  ] AnnotationA: test if the isAnnotation attribute is set properly
+-- AnnotationA: Testing Constructors --
+-- AnnotationA: Testing Methods --
+-- AnnotationA.classes(): Testing getDefaultValue() --
+[  OK  ] AnnotationA.classes(): test for annotation default value
+[  OK  ] AnnotationA.classes(): test default value
+-- Testing AnnotationA.classes() --
+-- AnnotationA.classes(): Testing getDeclaredAnnotations() --
+[  OK  ] AnnotationA.classes(): test declared annotations count
+-- AnnotationA.classes(): Testing getAnnotations() --
+[  OK  ] AnnotationA.classes(): test annotations count
+-- AnnotationA.classes(): Testing getAnnotation(Class<? extends Annotation>) --
+-- AnnotationA.classes(): Testing isAnnotationPresent(Class<? extends Annotation>) --
+-- AnnotationA.classes(): Testing getParameterAnnotations() --
+[  OK  ] AnnotationA.classes(): test parameter count
+-- AnnotationA.enumeration(): Testing getDefaultValue() --
+[  OK  ] AnnotationA.enumeration(): test for annotation default value
+[  OK  ] AnnotationA.enumeration(): test default value
+-- Testing AnnotationA.enumeration() --
+-- AnnotationA.enumeration(): Testing getDeclaredAnnotations() --
+[  OK  ] AnnotationA.enumeration(): test declared annotations count
+-- AnnotationA.enumeration(): Testing getAnnotations() --
+[  OK  ] AnnotationA.enumeration(): test annotations count
+-- AnnotationA.enumeration(): Testing getAnnotation(Class<? extends Annotation>) --
+-- AnnotationA.enumeration(): Testing isAnnotationPresent(Class<? extends Annotation>) --
+-- AnnotationA.enumeration(): Testing getParameterAnnotations() --
+[  OK  ] AnnotationA.enumeration(): test parameter count
+-- AnnotationA.integer(): Testing getDefaultValue() --
+[  OK  ] AnnotationA.integer(): test for annotation default value
+-- Testing AnnotationA.integer() --
+-- AnnotationA.integer(): Testing getDeclaredAnnotations() --
+[  OK  ] AnnotationA.integer(): test declared annotations count
+[  OK  ] AnnotationA.integer(): test unique occurrence of the annotation type AnnotationA
+[  OK  ] AnnotationA.integer(): test if annotation AnnotationA should be there
+ * Testing AnnotationA
+[  OK  ] AnnotationA: test annotationType
+[  OK  ] AnnotationA: test annotation methods count
+[  OK  ] AnnotationA: test invocation of the annotation method classes()
+[  OK  ] AnnotationA: test return value of classes() != null
+[  OK  ] AnnotationA: test return value of classes()
+[  OK  ] AnnotationA: test invocation of the annotation method enumeration()
+[  OK  ] AnnotationA: test return value of enumeration() != null
+[  OK  ] AnnotationA: test return value of enumeration()
+[  OK  ] AnnotationA: test invocation of the annotation method integer()
+[  OK  ] AnnotationA: test return value of integer() != null
+[  OK  ] AnnotationA: test return value of integer()
+[  OK  ] AnnotationA: test invocation of the annotation method string()
+[  OK  ] AnnotationA: test return value of string() != null
+[  OK  ] AnnotationA: test return value of string()
+-- AnnotationA.integer(): Testing getAnnotations() --
+[  OK  ] AnnotationA.integer(): test annotations count
+[  OK  ] AnnotationA.integer(): test unique occurrence of the annotation type AnnotationA
+[  OK  ] AnnotationA.integer(): test if annotation AnnotationA should be there
+ * Testing AnnotationA
+[  OK  ] AnnotationA: test annotationType
+[  OK  ] AnnotationA: test annotation methods count
+[  OK  ] AnnotationA: test invocation of the annotation method classes()
+[  OK  ] AnnotationA: test return value of classes() != null
+[  OK  ] AnnotationA: test return value of classes()
+[  OK  ] AnnotationA: test invocation of the annotation method enumeration()
+[  OK  ] AnnotationA: test return value of enumeration() != null
+[  OK  ] AnnotationA: test return value of enumeration()
+[  OK  ] AnnotationA: test invocation of the annotation method integer()
+[  OK  ] AnnotationA: test return value of integer() != null
+[  OK  ] AnnotationA: test return value of integer()
+[  OK  ] AnnotationA: test invocation of the annotation method string()
+[  OK  ] AnnotationA: test return value of string() != null
+[  OK  ] AnnotationA: test return value of string()
+-- AnnotationA.integer(): Testing getAnnotation(Class<? extends Annotation>) --
+[  OK  ] AnnotationA.integer(): try to get required annotation AnnotationA using getAnnotation(Class<? extends Annotation>)
+ * Testing AnnotationA
+[  OK  ] AnnotationA: test annotationType
+[  OK  ] AnnotationA: test annotation methods count
+[  OK  ] AnnotationA: test invocation of the annotation method classes()
+[  OK  ] AnnotationA: test return value of classes() != null
+[  OK  ] AnnotationA: test return value of classes()
+[  OK  ] AnnotationA: test invocation of the annotation method enumeration()
+[  OK  ] AnnotationA: test return value of enumeration() != null
+[  OK  ] AnnotationA: test return value of enumeration()
+[  OK  ] AnnotationA: test invocation of the annotation method integer()
+[  OK  ] AnnotationA: test return value of integer() != null
+[  OK  ] AnnotationA: test return value of integer()
+[  OK  ] AnnotationA: test invocation of the annotation method string()
+[  OK  ] AnnotationA: test return value of string() != null
+[  OK  ] AnnotationA: test return value of string()
+-- AnnotationA.integer(): Testing isAnnotationPresent(Class<? extends Annotation>) --
+[  OK  ] AnnotationA.integer(): test if annotation AnnotationA is present using isAnnotationPresent()
+-- AnnotationA.integer(): Testing getParameterAnnotations() --
+[  OK  ] AnnotationA.integer(): test parameter count
+-- AnnotationA: Testing Fields --
+
+== Testing AnnotationB ==
+-- AnnotationB: Testing getDeclaredAnnotations() --
+[  OK  ] AnnotationB: test declared annotations count
+[  OK  ] AnnotationB: test unique occurrence of the annotation type java.lang.annotation.Inherited
+[  OK  ] AnnotationB: test if annotation java.lang.annotation.Inherited should be there
+ * Testing java.lang.annotation.Inherited
+[  OK  ] java.lang.annotation.Inherited: test annotationType
+[  OK  ] java.lang.annotation.Inherited: test annotation methods count
+[  OK  ] AnnotationB: test unique occurrence of the annotation type java.lang.annotation.Retention
+[  OK  ] AnnotationB: test if annotation java.lang.annotation.Retention should be there
+ * Testing java.lang.annotation.Retention
+[  OK  ] java.lang.annotation.Retention: test annotationType
+[  OK  ] java.lang.annotation.Retention: test annotation methods count
+[  OK  ] java.lang.annotation.Retention: test invocation of the annotation method value()
+[  OK  ] java.lang.annotation.Retention: test return value of value() != null
+[  OK  ] java.lang.annotation.Retention: test return value of value()
+-- AnnotationB: Testing getAnnotations() --
+[  OK  ] AnnotationB: test annotations count
+[  OK  ] AnnotationB: test unique occurrence of the annotation type java.lang.annotation.Inherited
+[  OK  ] AnnotationB: test if annotation java.lang.annotation.Inherited should be there
+ * Testing java.lang.annotation.Inherited
+[  OK  ] java.lang.annotation.Inherited: test annotationType
+[  OK  ] java.lang.annotation.Inherited: test annotation methods count
+[  OK  ] AnnotationB: test unique occurrence of the annotation type java.lang.annotation.Retention
+[  OK  ] AnnotationB: test if annotation java.lang.annotation.Retention should be there
+ * Testing java.lang.annotation.Retention
+[  OK  ] java.lang.annotation.Retention: test annotationType
+[  OK  ] java.lang.annotation.Retention: test annotation methods count
+[  OK  ] java.lang.annotation.Retention: test invocation of the annotation method value()
+[  OK  ] java.lang.annotation.Retention: test return value of value() != null
+[  OK  ] java.lang.annotation.Retention: test return value of value()
+-- AnnotationB: Testing getAnnotation(Class<? extends Annotation>) --
+[  OK  ] AnnotationB: try to get required annotation java.lang.annotation.Inherited using getAnnotation(Class<? extends Annotation>)
+ * Testing java.lang.annotation.Inherited
+[  OK  ] java.lang.annotation.Inherited: test annotationType
+[  OK  ] java.lang.annotation.Inherited: test annotation methods count
+[  OK  ] AnnotationB: try to get required annotation java.lang.annotation.Retention using getAnnotation(Class<? extends Annotation>)
+ * Testing java.lang.annotation.Retention
+[  OK  ] java.lang.annotation.Retention: test annotationType
+[  OK  ] java.lang.annotation.Retention: test annotation methods count
+[  OK  ] java.lang.annotation.Retention: test invocation of the annotation method value()
+[  OK  ] java.lang.annotation.Retention: test return value of value() != null
+[  OK  ] java.lang.annotation.Retention: test return value of value()
+-- AnnotationB: Testing isAnnotationPresent(Class<? extends Annotation>) --
+[  OK  ] AnnotationB: test if annotation java.lang.annotation.Inherited is present using isAnnotationPresent()
+[  OK  ] AnnotationB: test if annotation java.lang.annotation.Retention is present using isAnnotationPresent()
+-- AnnotationB: Testing isAnnotation() --
+[  OK  ] AnnotationB: test if the isAnnotation attribute is set properly
+-- AnnotationB: Testing Constructors --
+-- AnnotationB: Testing Methods --
+-- AnnotationB.clazz(): Testing getDefaultValue() --
+[  OK  ] AnnotationB.clazz(): test for annotation default value
+[  OK  ] AnnotationB.clazz(): test default value
+-- Testing AnnotationB.clazz() --
+-- AnnotationB.clazz(): Testing getDeclaredAnnotations() --
+[  OK  ] AnnotationB.clazz(): test declared annotations count
+-- AnnotationB.clazz(): Testing getAnnotations() --
+[  OK  ] AnnotationB.clazz(): test annotations count
+-- AnnotationB.clazz(): Testing getAnnotation(Class<? extends Annotation>) --
+-- AnnotationB.clazz(): Testing isAnnotationPresent(Class<? extends Annotation>) --
+-- AnnotationB.clazz(): Testing getParameterAnnotations() --
+[  OK  ] AnnotationB.clazz(): test parameter count
+-- AnnotationB: Testing Fields --
+
+== Testing AnnotationC ==
+-- AnnotationC: Testing getDeclaredAnnotations() --
+[  OK  ] AnnotationC: test declared annotations count
+[  OK  ] AnnotationC: test unique occurrence of the annotation type java.lang.annotation.Retention
+[  OK  ] AnnotationC: test if annotation java.lang.annotation.Retention should be there
+ * Testing java.lang.annotation.Retention
+[  OK  ] java.lang.annotation.Retention: test annotationType
+[  OK  ] java.lang.annotation.Retention: test annotation methods count
+[  OK  ] java.lang.annotation.Retention: test invocation of the annotation method value()
+[  OK  ] java.lang.annotation.Retention: test return value of value() != null
+[  OK  ] java.lang.annotation.Retention: test return value of value()
+-- AnnotationC: Testing getAnnotations() --
+[  OK  ] AnnotationC: test annotations count
+[  OK  ] AnnotationC: test unique occurrence of the annotation type java.lang.annotation.Retention
+[  OK  ] AnnotationC: test if annotation java.lang.annotation.Retention should be there
+ * Testing java.lang.annotation.Retention
+[  OK  ] java.lang.annotation.Retention: test annotationType
+[  OK  ] java.lang.annotation.Retention: test annotation methods count
+[  OK  ] java.lang.annotation.Retention: test invocation of the annotation method value()
+[  OK  ] java.lang.annotation.Retention: test return value of value() != null
+[  OK  ] java.lang.annotation.Retention: test return value of value()
+-- AnnotationC: Testing getAnnotation(Class<? extends Annotation>) --
+[  OK  ] AnnotationC: try to get required annotation java.lang.annotation.Retention using getAnnotation(Class<? extends Annotation>)
+ * Testing java.lang.annotation.Retention
+[  OK  ] java.lang.annotation.Retention: test annotationType
+[  OK  ] java.lang.annotation.Retention: test annotation methods count
+[  OK  ] java.lang.annotation.Retention: test invocation of the annotation method value()
+[  OK  ] java.lang.annotation.Retention: test return value of value() != null
+[  OK  ] java.lang.annotation.Retention: test return value of value()
+-- AnnotationC: Testing isAnnotationPresent(Class<? extends Annotation>) --
+[  OK  ] AnnotationC: test if annotation java.lang.annotation.Retention is present using isAnnotationPresent()
+-- AnnotationC: Testing isAnnotation() --
+[  OK  ] AnnotationC: test if the isAnnotation attribute is set properly
+-- AnnotationC: Testing Constructors --
+-- AnnotationC: Testing Methods --
+-- AnnotationC: Testing Fields --
+
+== Testing AnnotationD ==
+-- AnnotationD: Testing getDeclaredAnnotations() --
+[  OK  ] AnnotationD: test declared annotations count
+-- AnnotationD: Testing getAnnotations() --
+[  OK  ] AnnotationD: test annotations count
+-- AnnotationD: Testing getAnnotation(Class<? extends Annotation>) --
+-- AnnotationD: Testing isAnnotationPresent(Class<? extends Annotation>) --
+-- AnnotationD: Testing isAnnotation() --
+[  OK  ] AnnotationD: test if the isAnnotation attribute is set properly
+-- AnnotationD: Testing Constructors --
+-- AnnotationD: Testing Methods --
+-- AnnotationD: Testing Fields --
+
+== Testing Foo ==
+-- Foo: Testing getDeclaredAnnotations() --
+[  OK  ] Foo: test declared annotations count
+[  OK  ] Foo: test unique occurrence of the annotation type AnnotationA
+[  OK  ] Foo: test if annotation AnnotationA should be there
+ * Testing AnnotationA
+[  OK  ] AnnotationA: test annotationType
+[  OK  ] AnnotationA: test annotation methods count
+[  OK  ] AnnotationA: test invocation of the annotation method classes()
+[  OK  ] AnnotationA: test return value of classes() != null
+[  OK  ] AnnotationA: test return value of classes()
+[  OK  ] AnnotationA: test invocation of the annotation method enumeration()
+[  OK  ] AnnotationA: test return value of enumeration() != null
+[  OK  ] AnnotationA: test return value of enumeration()
+[  OK  ] AnnotationA: test invocation of the annotation method integer()
+[  OK  ] AnnotationA: test return value of integer() != null
+[  OK  ] AnnotationA: test return value of integer()
+[  OK  ] AnnotationA: test invocation of the annotation method string()
+[  OK  ] AnnotationA: test return value of string() != null
+[  OK  ] AnnotationA: test return value of string()
+[  OK  ] Foo: test unique occurrence of the annotation type AnnotationB
+[  OK  ] Foo: test if annotation AnnotationB should be there
+ * Testing AnnotationB
+[  OK  ] AnnotationB: test annotationType
+[  OK  ] AnnotationB: test annotation methods count
+[  OK  ] AnnotationB: test invocation of the annotation method clazz()
+[  OK  ] AnnotationB: test return value of clazz() != null
+[  OK  ] AnnotationB: test return value of clazz()
+[  OK  ] AnnotationB: test invocation of the annotation method string()
+[  OK  ] AnnotationB: test return value of string() != null
+[  OK  ] AnnotationB: test return value of string()
+-- Foo: Testing getAnnotations() --
+[  OK  ] Foo: test annotations count
+[  OK  ] Foo: test unique occurrence of the annotation type AnnotationA
+[  OK  ] Foo: test if annotation AnnotationA should be there
+ * Testing AnnotationA
+[  OK  ] AnnotationA: test annotationType
+[  OK  ] AnnotationA: test annotation methods count
+[  OK  ] AnnotationA: test invocation of the annotation method classes()
+[  OK  ] AnnotationA: test return value of classes() != null
+[  OK  ] AnnotationA: test return value of classes()
+[  OK  ] AnnotationA: test invocation of the annotation method enumeration()
+[  OK  ] AnnotationA: test return value of enumeration() != null
+[  OK  ] AnnotationA: test return value of enumeration()
+[  OK  ] AnnotationA: test invocation of the annotation method integer()
+[  OK  ] AnnotationA: test return value of integer() != null
+[  OK  ] AnnotationA: test return value of integer()
+[  OK  ] AnnotationA: test invocation of the annotation method string()
+[  OK  ] AnnotationA: test return value of string() != null
+[  OK  ] AnnotationA: test return value of string()
+[  OK  ] Foo: test unique occurrence of the annotation type AnnotationB
+[  OK  ] Foo: test if annotation AnnotationB should be there
+ * Testing AnnotationB
+[  OK  ] AnnotationB: test annotationType
+[  OK  ] AnnotationB: test annotation methods count
+[  OK  ] AnnotationB: test invocation of the annotation method clazz()
+[  OK  ] AnnotationB: test return value of clazz() != null
+[  OK  ] AnnotationB: test return value of clazz()
+[  OK  ] AnnotationB: test invocation of the annotation method string()
+[  OK  ] AnnotationB: test return value of string() != null
+[  OK  ] AnnotationB: test return value of string()
+-- Foo: Testing getAnnotation(Class<? extends Annotation>) --
+[  OK  ] Foo: try to get required annotation AnnotationA using getAnnotation(Class<? extends Annotation>)
+ * Testing AnnotationA
+[  OK  ] AnnotationA: test annotationType
+[  OK  ] AnnotationA: test annotation methods count
+[  OK  ] AnnotationA: test invocation of the annotation method classes()
+[  OK  ] AnnotationA: test return value of classes() != null
+[  OK  ] AnnotationA: test return value of classes()
+[  OK  ] AnnotationA: test invocation of the annotation method enumeration()
+[  OK  ] AnnotationA: test return value of enumeration() != null
+[  OK  ] AnnotationA: test return value of enumeration()
+[  OK  ] AnnotationA: test invocation of the annotation method integer()
+[  OK  ] AnnotationA: test return value of integer() != null
+[  OK  ] AnnotationA: test return value of integer()
+[  OK  ] AnnotationA: test invocation of the annotation method string()
+[  OK  ] AnnotationA: test return value of string() != null
+[  OK  ] AnnotationA: test return value of string()
+[  OK  ] Foo: try to get required annotation AnnotationB using getAnnotation(Class<? extends Annotation>)
+ * Testing AnnotationB
+[  OK  ] AnnotationB: test annotationType
+[  OK  ] AnnotationB: test annotation methods count
+[  OK  ] AnnotationB: test invocation of the annotation method clazz()
+[  OK  ] AnnotationB: test return value of clazz() != null
+[  OK  ] AnnotationB: test return value of clazz()
+[  OK  ] AnnotationB: test invocation of the annotation method string()
+[  OK  ] AnnotationB: test return value of string() != null
+[  OK  ] AnnotationB: test return value of string()
+-- Foo: Testing isAnnotationPresent(Class<? extends Annotation>) --
+[  OK  ] Foo: test if annotation AnnotationA is present using isAnnotationPresent()
+[  OK  ] Foo: test if annotation AnnotationB is present using isAnnotationPresent()
+-- Foo: Testing isAnnotation() --
+[  OK  ] Foo: test if the isAnnotation attribute is set properly
+-- Foo: Testing Constructors --
+-- Testing Foo.Foo() --
+-- Foo.Foo(): Testing getDeclaredAnnotations() --
+[  OK  ] Foo.Foo(): test declared annotations count
+[  OK  ] Foo.Foo(): test unique occurrence of the annotation type AnnotationA
+[  OK  ] Foo.Foo(): test if annotation AnnotationA should be there
+ * Testing AnnotationA
+[  OK  ] AnnotationA: test annotationType
+[  OK  ] AnnotationA: test annotation methods count
+[  OK  ] AnnotationA: test invocation of the annotation method classes()
+[  OK  ] AnnotationA: test return value of classes() != null
+[  OK  ] AnnotationA: test return value of classes()
+[  OK  ] AnnotationA: test invocation of the annotation method enumeration()
+[  OK  ] AnnotationA: test return value of enumeration() != null
+[  OK  ] AnnotationA: test return value of enumeration()
+[  OK  ] AnnotationA: test invocation of the annotation method integer()
+[  OK  ] AnnotationA: test return value of integer() != null
+[  OK  ] AnnotationA: test return value of integer()
+[  OK  ] AnnotationA: test invocation of the annotation method string()
+[  OK  ] AnnotationA: test return value of string() != null
+[  OK  ] AnnotationA: test return value of string()
+-- Foo.Foo(): Testing getAnnotations() --
+[  OK  ] Foo.Foo(): test annotations count
+[  OK  ] Foo.Foo(): test unique occurrence of the annotation type AnnotationA
+[  OK  ] Foo.Foo(): test if annotation AnnotationA should be there
+ * Testing AnnotationA
+[  OK  ] AnnotationA: test annotationType
+[  OK  ] AnnotationA: test annotation methods count
+[  OK  ] AnnotationA: test invocation of the annotation method classes()
+[  OK  ] AnnotationA: test return value of classes() != null
+[  OK  ] AnnotationA: test return value of classes()
+[  OK  ] AnnotationA: test invocation of the annotation method enumeration()
+[  OK  ] AnnotationA: test return value of enumeration() != null
+[  OK  ] AnnotationA: test return value of enumeration()
+[  OK  ] AnnotationA: test invocation of the annotation method integer()
+[  OK  ] AnnotationA: test return value of integer() != null
+[  OK  ] AnnotationA: test return value of integer()
+[  OK  ] AnnotationA: test invocation of the annotation method string()
+[  OK  ] AnnotationA: test return value of string() != null
+[  OK  ] AnnotationA: test return value of string()
+-- Foo.Foo(): Testing getAnnotation(Class<? extends Annotation>) --
+[  OK  ] Foo.Foo(): try to get required annotation AnnotationA using getAnnotation(Class<? extends Annotation>)
+ * Testing AnnotationA
+[  OK  ] AnnotationA: test annotationType
+[  OK  ] AnnotationA: test annotation methods count
+[  OK  ] AnnotationA: test invocation of the annotation method classes()
+[  OK  ] AnnotationA: test return value of classes() != null
+[  OK  ] AnnotationA: test return value of classes()
+[  OK  ] AnnotationA: test invocation of the annotation method enumeration()
+[  OK  ] AnnotationA: test return value of enumeration() != null
+[  OK  ] AnnotationA: test return value of enumeration()
+[  OK  ] AnnotationA: test invocation of the annotation method integer()
+[  OK  ] AnnotationA: test return value of integer() != null
+[  OK  ] AnnotationA: test return value of integer()
+[  OK  ] AnnotationA: test invocation of the annotation method string()
+[  OK  ] AnnotationA: test return value of string() != null
+[  OK  ] AnnotationA: test return value of string()
+-- Foo.Foo(): Testing isAnnotationPresent(Class<? extends Annotation>) --
+[  OK  ] Foo.Foo(): test if annotation AnnotationA is present using isAnnotationPresent()
+-- Foo.Foo(): Testing getParameterAnnotations() --
+[  OK  ] Foo.Foo(): test parameter count
+-- Foo: Testing Methods --
+-- Foo.method(int): Testing getDefaultValue() --
+[  OK  ] Foo.method(int): test for annotation default value
+-- Testing Foo.method(int) --
+-- Foo.method(int): Testing getDeclaredAnnotations() --
+[  OK  ] Foo.method(int): test declared annotations count
+[  OK  ] Foo.method(int): test unique occurrence of the annotation type AnnotationA
+[  OK  ] Foo.method(int): test if annotation AnnotationA should be there
+ * Testing AnnotationA
+[  OK  ] AnnotationA: test annotationType
+[  OK  ] AnnotationA: test annotation methods count
+[  OK  ] AnnotationA: test invocation of the annotation method classes()
+[  OK  ] AnnotationA: test return value of classes() != null
+[  OK  ] AnnotationA: test return value of classes()
+[  OK  ] AnnotationA: test invocation of the annotation method enumeration()
+[  OK  ] AnnotationA: test return value of enumeration() != null
+[  OK  ] AnnotationA: test return value of enumeration()
+[  OK  ] AnnotationA: test invocation of the annotation method integer()
+[  OK  ] AnnotationA: test return value of integer() != null
+[  OK  ] AnnotationA: test return value of integer()
+[  OK  ] AnnotationA: test invocation of the annotation method string()
+[  OK  ] AnnotationA: test return value of string() != null
+[  OK  ] AnnotationA: test return value of string()
+-- Foo.method(int): Testing getAnnotations() --
+[  OK  ] Foo.method(int): test annotations count
+[  OK  ] Foo.method(int): test unique occurrence of the annotation type AnnotationA
+[  OK  ] Foo.method(int): test if annotation AnnotationA should be there
+ * Testing AnnotationA
+[  OK  ] AnnotationA: test annotationType
+[  OK  ] AnnotationA: test annotation methods count
+[  OK  ] AnnotationA: test invocation of the annotation method classes()
+[  OK  ] AnnotationA: test return value of classes() != null
+[  OK  ] AnnotationA: test return value of classes()
+[  OK  ] AnnotationA: test invocation of the annotation method enumeration()
+[  OK  ] AnnotationA: test return value of enumeration() != null
+[  OK  ] AnnotationA: test return value of enumeration()
+[  OK  ] AnnotationA: test invocation of the annotation method integer()
+[  OK  ] AnnotationA: test return value of integer() != null
+[  OK  ] AnnotationA: test return value of integer()
+[  OK  ] AnnotationA: test invocation of the annotation method string()
+[  OK  ] AnnotationA: test return value of string() != null
+[  OK  ] AnnotationA: test return value of string()
+-- Foo.method(int): Testing getAnnotation(Class<? extends Annotation>) --
+[  OK  ] Foo.method(int): try to get required annotation AnnotationA using getAnnotation(Class<? extends Annotation>)
+ * Testing AnnotationA
+[  OK  ] AnnotationA: test annotationType
+[  OK  ] AnnotationA: test annotation methods count
+[  OK  ] AnnotationA: test invocation of the annotation method classes()
+[  OK  ] AnnotationA: test return value of classes() != null
+[  OK  ] AnnotationA: test return value of classes()
+[  OK  ] AnnotationA: test invocation of the annotation method enumeration()
+[  OK  ] AnnotationA: test return value of enumeration() != null
+[  OK  ] AnnotationA: test return value of enumeration()
+[  OK  ] AnnotationA: test invocation of the annotation method integer()
+[  OK  ] AnnotationA: test return value of integer() != null
+[  OK  ] AnnotationA: test return value of integer()
+[  OK  ] AnnotationA: test invocation of the annotation method string()
+[  OK  ] AnnotationA: test return value of string() != null
+[  OK  ] AnnotationA: test return value of string()
+-- Foo.method(int): Testing isAnnotationPresent(Class<? extends Annotation>) --
+[  OK  ] Foo.method(int): test if annotation AnnotationA is present using isAnnotationPresent()
+-- Foo.method(int): Testing getParameterAnnotations() --
+[  OK  ] Foo.method(int): test parameter count
+[  OK  ] Foo.method(int): test parameter annotations count for parameter 0
+[  OK  ] Foo.method(int): test unique occurrence of the annotation type AnnotationA
+[  OK  ] Foo.method(int): test if annotation of type AnnotationA should be defined for parameter 0
+ * Testing AnnotationA
+[  OK  ] AnnotationA: test annotationType
+[  OK  ] AnnotationA: test annotation methods count
+[  OK  ] AnnotationA: test invocation of the annotation method classes()
+[  OK  ] AnnotationA: test return value of classes() != null
+[  OK  ] AnnotationA: test return value of classes()
+[  OK  ] AnnotationA: test invocation of the annotation method enumeration()
+[  OK  ] AnnotationA: test return value of enumeration() != null
+[  OK  ] AnnotationA: test return value of enumeration()
+[  OK  ] AnnotationA: test invocation of the annotation method integer()
+[  OK  ] AnnotationA: test return value of integer() != null
+[  OK  ] AnnotationA: test return value of integer()
+[  OK  ] AnnotationA: test invocation of the annotation method string()
+[  OK  ] AnnotationA: test return value of string() != null
+[  OK  ] AnnotationA: test return value of string()
+-- Foo.staticMethod(int): Testing getDefaultValue() --
+[  OK  ] Foo.staticMethod(int): test for annotation default value
+-- Testing Foo.staticMethod(int) --
+-- Foo.staticMethod(int): Testing getDeclaredAnnotations() --
+[  OK  ] Foo.staticMethod(int): test declared annotations count
+[  OK  ] Foo.staticMethod(int): test unique occurrence of the annotation type AnnotationA
+[  OK  ] Foo.staticMethod(int): test if annotation AnnotationA should be there
+ * Testing AnnotationA
+[  OK  ] AnnotationA: test annotationType
+[  OK  ] AnnotationA: test annotation methods count
+[  OK  ] AnnotationA: test invocation of the annotation method classes()
+[  OK  ] AnnotationA: test return value of classes() != null
+[  OK  ] AnnotationA: test return value of classes()
+[  OK  ] AnnotationA: test invocation of the annotation method enumeration()
+[  OK  ] AnnotationA: test return value of enumeration() != null
+[  OK  ] AnnotationA: test return value of enumeration()
+[  OK  ] AnnotationA: test invocation of the annotation method integer()
+[  OK  ] AnnotationA: test return value of integer() != null
+[  OK  ] AnnotationA: test return value of integer()
+[  OK  ] AnnotationA: test invocation of the annotation method string()
+[  OK  ] AnnotationA: test return value of string() != null
+[  OK  ] AnnotationA: test return value of string()
+-- Foo.staticMethod(int): Testing getAnnotations() --
+[  OK  ] Foo.staticMethod(int): test annotations count
+[  OK  ] Foo.staticMethod(int): test unique occurrence of the annotation type AnnotationA
+[  OK  ] Foo.staticMethod(int): test if annotation AnnotationA should be there
+ * Testing AnnotationA
+[  OK  ] AnnotationA: test annotationType
+[  OK  ] AnnotationA: test annotation methods count
+[  OK  ] AnnotationA: test invocation of the annotation method classes()
+[  OK  ] AnnotationA: test return value of classes() != null
+[  OK  ] AnnotationA: test return value of classes()
+[  OK  ] AnnotationA: test invocation of the annotation method enumeration()
+[  OK  ] AnnotationA: test return value of enumeration() != null
+[  OK  ] AnnotationA: test return value of enumeration()
+[  OK  ] AnnotationA: test invocation of the annotation method integer()
+[  OK  ] AnnotationA: test return value of integer() != null
+[  OK  ] AnnotationA: test return value of integer()
+[  OK  ] AnnotationA: test invocation of the annotation method string()
+[  OK  ] AnnotationA: test return value of string() != null
+[  OK  ] AnnotationA: test return value of string()
+-- Foo.staticMethod(int): Testing getAnnotation(Class<? extends Annotation>) --
+[  OK  ] Foo.staticMethod(int): try to get required annotation AnnotationA using getAnnotation(Class<? extends Annotation>)
+ * Testing AnnotationA
+[  OK  ] AnnotationA: test annotationType
+[  OK  ] AnnotationA: test annotation methods count
+[  OK  ] AnnotationA: test invocation of the annotation method classes()
+[  OK  ] AnnotationA: test return value of classes() != null
+[  OK  ] AnnotationA: test return value of classes()
+[  OK  ] AnnotationA: test invocation of the annotation method enumeration()
+[  OK  ] AnnotationA: test return value of enumeration() != null
+[  OK  ] AnnotationA: test return value of enumeration()
+[  OK  ] AnnotationA: test invocation of the annotation method integer()
+[  OK  ] AnnotationA: test return value of integer() != null
+[  OK  ] AnnotationA: test return value of integer()
+[  OK  ] AnnotationA: test invocation of the annotation method string()
+[  OK  ] AnnotationA: test return value of string() != null
+[  OK  ] AnnotationA: test return value of string()
+-- Foo.staticMethod(int): Testing isAnnotationPresent(Class<? extends Annotation>) --
+[  OK  ] Foo.staticMethod(int): test if annotation AnnotationA is present using isAnnotationPresent()
+-- Foo.staticMethod(int): Testing getParameterAnnotations() --
+[  OK  ] Foo.staticMethod(int): test parameter count
+[  OK  ] Foo.staticMethod(int): test parameter annotations count for parameter 0
+[  OK  ] Foo.staticMethod(int): test unique occurrence of the annotation type AnnotationA
+[  OK  ] Foo.staticMethod(int): test if annotation of type AnnotationA should be defined for parameter 0
+ * Testing AnnotationA
+[  OK  ] AnnotationA: test annotationType
+[  OK  ] AnnotationA: test annotation methods count
+[  OK  ] AnnotationA: test invocation of the annotation method classes()
+[  OK  ] AnnotationA: test return value of classes() != null
+[  OK  ] AnnotationA: test return value of classes()
+[  OK  ] AnnotationA: test invocation of the annotation method enumeration()
+[  OK  ] AnnotationA: test return value of enumeration() != null
+[  OK  ] AnnotationA: test return value of enumeration()
+[  OK  ] AnnotationA: test invocation of the annotation method integer()
+[  OK  ] AnnotationA: test return value of integer() != null
+[  OK  ] AnnotationA: test return value of integer()
+[  OK  ] AnnotationA: test invocation of the annotation method string()
+[  OK  ] AnnotationA: test return value of string() != null
+[  OK  ] AnnotationA: test return value of string()
+-- Foo: Testing Fields --
+-- Testing Foo.afield --
+-- Foo.afield: Testing getDeclaredAnnotations() --
+[  OK  ] Foo.afield: test declared annotations count
+[  OK  ] Foo.afield: test unique occurrence of the annotation type AnnotationA
+[  OK  ] Foo.afield: test if annotation AnnotationA should be there
+ * Testing AnnotationA
+[  OK  ] AnnotationA: test annotationType
+[  OK  ] AnnotationA: test annotation methods count
+[  OK  ] AnnotationA: test invocation of the annotation method classes()
+[  OK  ] AnnotationA: test return value of classes() != null
+[  OK  ] AnnotationA: test return value of classes()
+[  OK  ] AnnotationA: test invocation of the annotation method enumeration()
+[  OK  ] AnnotationA: test return value of enumeration() != null
+[  OK  ] AnnotationA: test return value of enumeration()
+[  OK  ] AnnotationA: test invocation of the annotation method integer()
+[  OK  ] AnnotationA: test return value of integer() != null
+[  OK  ] AnnotationA: test return value of integer()
+[  OK  ] AnnotationA: test invocation of the annotation method string()
+[  OK  ] AnnotationA: test return value of string() != null
+[  OK  ] AnnotationA: test return value of string()
+-- Foo.afield: Testing getAnnotations() --
+[  OK  ] Foo.afield: test annotations count
+[  OK  ] Foo.afield: test unique occurrence of the annotation type AnnotationA
+[  OK  ] Foo.afield: test if annotation AnnotationA should be there
+ * Testing AnnotationA
+[  OK  ] AnnotationA: test annotationType
+[  OK  ] AnnotationA: test annotation methods count
+[  OK  ] AnnotationA: test invocation of the annotation method classes()
+[  OK  ] AnnotationA: test return value of classes() != null
+[  OK  ] AnnotationA: test return value of classes()
+[  OK  ] AnnotationA: test invocation of the annotation method enumeration()
+[  OK  ] AnnotationA: test return value of enumeration() != null
+[  OK  ] AnnotationA: test return value of enumeration()
+[  OK  ] AnnotationA: test invocation of the annotation method integer()
+[  OK  ] AnnotationA: test return value of integer() != null
+[  OK  ] AnnotationA: test return value of integer()
+[  OK  ] AnnotationA: test invocation of the annotation method string()
+[  OK  ] AnnotationA: test return value of string() != null
+[  OK  ] AnnotationA: test return value of string()
+-- Foo.afield: Testing getAnnotation(Class<? extends Annotation>) --
+[  OK  ] Foo.afield: try to get required annotation AnnotationA using getAnnotation(Class<? extends Annotation>)
+ * Testing AnnotationA
+[  OK  ] AnnotationA: test annotationType
+[  OK  ] AnnotationA: test annotation methods count
+[  OK  ] AnnotationA: test invocation of the annotation method classes()
+[  OK  ] AnnotationA: test return value of classes() != null
+[  OK  ] AnnotationA: test return value of classes()
+[  OK  ] AnnotationA: test invocation of the annotation method enumeration()
+[  OK  ] AnnotationA: test return value of enumeration() != null
+[  OK  ] AnnotationA: test return value of enumeration()
+[  OK  ] AnnotationA: test invocation of the annotation method integer()
+[  OK  ] AnnotationA: test return value of integer() != null
+[  OK  ] AnnotationA: test return value of integer()
+[  OK  ] AnnotationA: test invocation of the annotation method string()
+[  OK  ] AnnotationA: test return value of string() != null
+[  OK  ] AnnotationA: test return value of string()
+-- Foo.afield: Testing isAnnotationPresent(Class<? extends Annotation>) --
+[  OK  ] Foo.afield: test if annotation AnnotationA is present using isAnnotationPresent()
+
+== Testing Bar ==
+-- Bar: Testing getDeclaredAnnotations() --
+[  OK  ] Bar: test declared annotations count
+[  OK  ] Bar: test unique occurrence of the annotation type AnnotationC
+[  OK  ] Bar: test if annotation AnnotationC should be there
+ * Testing AnnotationC
+[  OK  ] AnnotationC: test annotationType
+[  OK  ] AnnotationC: test annotation methods count
+[  OK  ] AnnotationC: test invocation of the annotation method aAnnotation()
+[  OK  ] AnnotationC: test return value of aAnnotation() != null
+[  OK  ] AnnotationC: test return value of aAnnotation()
+[  OK  ] AnnotationC: test invocation of the annotation method aAnnotationArray()
+[  OK  ] AnnotationC: test return value of aAnnotationArray() != null
+[  OK  ] AnnotationC: test return value of aAnnotationArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aByte()
+[  OK  ] AnnotationC: test return value of aByte() != null
+[  OK  ] AnnotationC: test return value of aByte()
+[  OK  ] AnnotationC: test invocation of the annotation method aByteArray()
+[  OK  ] AnnotationC: test return value of aByteArray() != null
+[  OK  ] AnnotationC: test return value of aByteArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aChar()
+[  OK  ] AnnotationC: test return value of aChar() != null
+[  OK  ] AnnotationC: test return value of aChar()
+[  OK  ] AnnotationC: test invocation of the annotation method aCharArray()
+[  OK  ] AnnotationC: test return value of aCharArray() != null
+[  OK  ] AnnotationC: test return value of aCharArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aClass()
+[  OK  ] AnnotationC: test return value of aClass() != null
+[  OK  ] AnnotationC: test return value of aClass()
+[  OK  ] AnnotationC: test invocation of the annotation method aClassArray()
+[  OK  ] AnnotationC: test return value of aClassArray() != null
+[  OK  ] AnnotationC: test return value of aClassArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aDouble()
+[  OK  ] AnnotationC: test return value of aDouble() != null
+[  OK  ] AnnotationC: test return value of aDouble()
+[  OK  ] AnnotationC: test invocation of the annotation method aDoubleArray()
+[  OK  ] AnnotationC: test return value of aDoubleArray() != null
+[  OK  ] AnnotationC: test return value of aDoubleArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aEnum()
+[  OK  ] AnnotationC: test return value of aEnum() != null
+[  OK  ] AnnotationC: test return value of aEnum()
+[  OK  ] AnnotationC: test invocation of the annotation method aEnumArray()
+[  OK  ] AnnotationC: test return value of aEnumArray() != null
+[  OK  ] AnnotationC: test return value of aEnumArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aFloat()
+[  OK  ] AnnotationC: test return value of aFloat() != null
+[  OK  ] AnnotationC: test return value of aFloat()
+[  OK  ] AnnotationC: test invocation of the annotation method aFloatArray()
+[  OK  ] AnnotationC: test return value of aFloatArray() != null
+[  OK  ] AnnotationC: test return value of aFloatArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aInt()
+[  OK  ] AnnotationC: test return value of aInt() != null
+[  OK  ] AnnotationC: test return value of aInt()
+[  OK  ] AnnotationC: test invocation of the annotation method aIntArray()
+[  OK  ] AnnotationC: test return value of aIntArray() != null
+[  OK  ] AnnotationC: test return value of aIntArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aLong()
+[  OK  ] AnnotationC: test return value of aLong() != null
+[  OK  ] AnnotationC: test return value of aLong()
+[  OK  ] AnnotationC: test invocation of the annotation method aLongArray()
+[  OK  ] AnnotationC: test return value of aLongArray() != null
+[  OK  ] AnnotationC: test return value of aLongArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aShort()
+[  OK  ] AnnotationC: test return value of aShort() != null
+[  OK  ] AnnotationC: test return value of aShort()
+[  OK  ] AnnotationC: test invocation of the annotation method aShortArray()
+[  OK  ] AnnotationC: test return value of aShortArray() != null
+[  OK  ] AnnotationC: test return value of aShortArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aString()
+[  OK  ] AnnotationC: test return value of aString() != null
+[  OK  ] AnnotationC: test return value of aString()
+[  OK  ] AnnotationC: test invocation of the annotation method aStringArray()
+[  OK  ] AnnotationC: test return value of aStringArray() != null
+[  OK  ] AnnotationC: test return value of aStringArray()
+-- Bar: Testing getAnnotations() --
+[  OK  ] Bar: test annotations count
+[  OK  ] Bar: test unique occurrence of the annotation type AnnotationB
+[  OK  ] Bar: test if annotation AnnotationB should be there
+ * Testing AnnotationB
+[  OK  ] AnnotationB: test annotationType
+[  OK  ] AnnotationB: test annotation methods count
+[  OK  ] AnnotationB: test invocation of the annotation method clazz()
+[  OK  ] AnnotationB: test return value of clazz() != null
+[  OK  ] AnnotationB: test return value of clazz()
+[  OK  ] AnnotationB: test invocation of the annotation method string()
+[  OK  ] AnnotationB: test return value of string() != null
+[  OK  ] AnnotationB: test return value of string()
+[  OK  ] Bar: test unique occurrence of the annotation type AnnotationC
+[  OK  ] Bar: test if annotation AnnotationC should be there
+ * Testing AnnotationC
+[  OK  ] AnnotationC: test annotationType
+[  OK  ] AnnotationC: test annotation methods count
+[  OK  ] AnnotationC: test invocation of the annotation method aAnnotation()
+[  OK  ] AnnotationC: test return value of aAnnotation() != null
+[  OK  ] AnnotationC: test return value of aAnnotation()
+[  OK  ] AnnotationC: test invocation of the annotation method aAnnotationArray()
+[  OK  ] AnnotationC: test return value of aAnnotationArray() != null
+[  OK  ] AnnotationC: test return value of aAnnotationArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aByte()
+[  OK  ] AnnotationC: test return value of aByte() != null
+[  OK  ] AnnotationC: test return value of aByte()
+[  OK  ] AnnotationC: test invocation of the annotation method aByteArray()
+[  OK  ] AnnotationC: test return value of aByteArray() != null
+[  OK  ] AnnotationC: test return value of aByteArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aChar()
+[  OK  ] AnnotationC: test return value of aChar() != null
+[  OK  ] AnnotationC: test return value of aChar()
+[  OK  ] AnnotationC: test invocation of the annotation method aCharArray()
+[  OK  ] AnnotationC: test return value of aCharArray() != null
+[  OK  ] AnnotationC: test return value of aCharArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aClass()
+[  OK  ] AnnotationC: test return value of aClass() != null
+[  OK  ] AnnotationC: test return value of aClass()
+[  OK  ] AnnotationC: test invocation of the annotation method aClassArray()
+[  OK  ] AnnotationC: test return value of aClassArray() != null
+[  OK  ] AnnotationC: test return value of aClassArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aDouble()
+[  OK  ] AnnotationC: test return value of aDouble() != null
+[  OK  ] AnnotationC: test return value of aDouble()
+[  OK  ] AnnotationC: test invocation of the annotation method aDoubleArray()
+[  OK  ] AnnotationC: test return value of aDoubleArray() != null
+[  OK  ] AnnotationC: test return value of aDoubleArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aEnum()
+[  OK  ] AnnotationC: test return value of aEnum() != null
+[  OK  ] AnnotationC: test return value of aEnum()
+[  OK  ] AnnotationC: test invocation of the annotation method aEnumArray()
+[  OK  ] AnnotationC: test return value of aEnumArray() != null
+[  OK  ] AnnotationC: test return value of aEnumArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aFloat()
+[  OK  ] AnnotationC: test return value of aFloat() != null
+[  OK  ] AnnotationC: test return value of aFloat()
+[  OK  ] AnnotationC: test invocation of the annotation method aFloatArray()
+[  OK  ] AnnotationC: test return value of aFloatArray() != null
+[  OK  ] AnnotationC: test return value of aFloatArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aInt()
+[  OK  ] AnnotationC: test return value of aInt() != null
+[  OK  ] AnnotationC: test return value of aInt()
+[  OK  ] AnnotationC: test invocation of the annotation method aIntArray()
+[  OK  ] AnnotationC: test return value of aIntArray() != null
+[  OK  ] AnnotationC: test return value of aIntArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aLong()
+[  OK  ] AnnotationC: test return value of aLong() != null
+[  OK  ] AnnotationC: test return value of aLong()
+[  OK  ] AnnotationC: test invocation of the annotation method aLongArray()
+[  OK  ] AnnotationC: test return value of aLongArray() != null
+[  OK  ] AnnotationC: test return value of aLongArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aShort()
+[  OK  ] AnnotationC: test return value of aShort() != null
+[  OK  ] AnnotationC: test return value of aShort()
+[  OK  ] AnnotationC: test invocation of the annotation method aShortArray()
+[  OK  ] AnnotationC: test return value of aShortArray() != null
+[  OK  ] AnnotationC: test return value of aShortArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aString()
+[  OK  ] AnnotationC: test return value of aString() != null
+[  OK  ] AnnotationC: test return value of aString()
+[  OK  ] AnnotationC: test invocation of the annotation method aStringArray()
+[  OK  ] AnnotationC: test return value of aStringArray() != null
+[  OK  ] AnnotationC: test return value of aStringArray()
+-- Bar: Testing getAnnotation(Class<? extends Annotation>) --
+[  OK  ] Bar: try to get required annotation AnnotationB using getAnnotation(Class<? extends Annotation>)
+ * Testing AnnotationB
+[  OK  ] AnnotationB: test annotationType
+[  OK  ] AnnotationB: test annotation methods count
+[  OK  ] AnnotationB: test invocation of the annotation method clazz()
+[  OK  ] AnnotationB: test return value of clazz() != null
+[  OK  ] AnnotationB: test return value of clazz()
+[  OK  ] AnnotationB: test invocation of the annotation method string()
+[  OK  ] AnnotationB: test return value of string() != null
+[  OK  ] AnnotationB: test return value of string()
+[  OK  ] Bar: try to get required annotation AnnotationC using getAnnotation(Class<? extends Annotation>)
+ * Testing AnnotationC
+[  OK  ] AnnotationC: test annotationType
+[  OK  ] AnnotationC: test annotation methods count
+[  OK  ] AnnotationC: test invocation of the annotation method aAnnotation()
+[  OK  ] AnnotationC: test return value of aAnnotation() != null
+[  OK  ] AnnotationC: test return value of aAnnotation()
+[  OK  ] AnnotationC: test invocation of the annotation method aAnnotationArray()
+[  OK  ] AnnotationC: test return value of aAnnotationArray() != null
+[  OK  ] AnnotationC: test return value of aAnnotationArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aByte()
+[  OK  ] AnnotationC: test return value of aByte() != null
+[  OK  ] AnnotationC: test return value of aByte()
+[  OK  ] AnnotationC: test invocation of the annotation method aByteArray()
+[  OK  ] AnnotationC: test return value of aByteArray() != null
+[  OK  ] AnnotationC: test return value of aByteArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aChar()
+[  OK  ] AnnotationC: test return value of aChar() != null
+[  OK  ] AnnotationC: test return value of aChar()
+[  OK  ] AnnotationC: test invocation of the annotation method aCharArray()
+[  OK  ] AnnotationC: test return value of aCharArray() != null
+[  OK  ] AnnotationC: test return value of aCharArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aClass()
+[  OK  ] AnnotationC: test return value of aClass() != null
+[  OK  ] AnnotationC: test return value of aClass()
+[  OK  ] AnnotationC: test invocation of the annotation method aClassArray()
+[  OK  ] AnnotationC: test return value of aClassArray() != null
+[  OK  ] AnnotationC: test return value of aClassArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aDouble()
+[  OK  ] AnnotationC: test return value of aDouble() != null
+[  OK  ] AnnotationC: test return value of aDouble()
+[  OK  ] AnnotationC: test invocation of the annotation method aDoubleArray()
+[  OK  ] AnnotationC: test return value of aDoubleArray() != null
+[  OK  ] AnnotationC: test return value of aDoubleArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aEnum()
+[  OK  ] AnnotationC: test return value of aEnum() != null
+[  OK  ] AnnotationC: test return value of aEnum()
+[  OK  ] AnnotationC: test invocation of the annotation method aEnumArray()
+[  OK  ] AnnotationC: test return value of aEnumArray() != null
+[  OK  ] AnnotationC: test return value of aEnumArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aFloat()
+[  OK  ] AnnotationC: test return value of aFloat() != null
+[  OK  ] AnnotationC: test return value of aFloat()
+[  OK  ] AnnotationC: test invocation of the annotation method aFloatArray()
+[  OK  ] AnnotationC: test return value of aFloatArray() != null
+[  OK  ] AnnotationC: test return value of aFloatArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aInt()
+[  OK  ] AnnotationC: test return value of aInt() != null
+[  OK  ] AnnotationC: test return value of aInt()
+[  OK  ] AnnotationC: test invocation of the annotation method aIntArray()
+[  OK  ] AnnotationC: test return value of aIntArray() != null
+[  OK  ] AnnotationC: test return value of aIntArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aLong()
+[  OK  ] AnnotationC: test return value of aLong() != null
+[  OK  ] AnnotationC: test return value of aLong()
+[  OK  ] AnnotationC: test invocation of the annotation method aLongArray()
+[  OK  ] AnnotationC: test return value of aLongArray() != null
+[  OK  ] AnnotationC: test return value of aLongArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aShort()
+[  OK  ] AnnotationC: test return value of aShort() != null
+[  OK  ] AnnotationC: test return value of aShort()
+[  OK  ] AnnotationC: test invocation of the annotation method aShortArray()
+[  OK  ] AnnotationC: test return value of aShortArray() != null
+[  OK  ] AnnotationC: test return value of aShortArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aString()
+[  OK  ] AnnotationC: test return value of aString() != null
+[  OK  ] AnnotationC: test return value of aString()
+[  OK  ] AnnotationC: test invocation of the annotation method aStringArray()
+[  OK  ] AnnotationC: test return value of aStringArray() != null
+[  OK  ] AnnotationC: test return value of aStringArray()
+-- Bar: Testing isAnnotationPresent(Class<? extends Annotation>) --
+[  OK  ] Bar: test if annotation AnnotationB is present using isAnnotationPresent()
+[  OK  ] Bar: test if annotation AnnotationC is present using isAnnotationPresent()
+-- Bar: Testing isAnnotation() --
+[  OK  ] Bar: test if the isAnnotation attribute is set properly
+-- Bar: Testing Constructors --
+-- Testing Bar.Bar() --
+-- Bar.Bar(): Testing getDeclaredAnnotations() --
+[  OK  ] Bar.Bar(): test declared annotations count
+-- Bar.Bar(): Testing getAnnotations() --
+[  OK  ] Bar.Bar(): test annotations count
+-- Bar.Bar(): Testing getAnnotation(Class<? extends Annotation>) --
+-- Bar.Bar(): Testing isAnnotationPresent(Class<? extends Annotation>) --
+-- Bar.Bar(): Testing getParameterAnnotations() --
+[  OK  ] Bar.Bar(): test parameter count
+-- Bar: Testing Methods --
+-- Bar.method(int): Testing getDefaultValue() --
+[  OK  ] Bar.method(int): test for annotation default value
+-- Testing Bar.method(int) --
+-- Bar.method(int): Testing getDeclaredAnnotations() --
+[  OK  ] Bar.method(int): test declared annotations count
+-- Bar.method(int): Testing getAnnotations() --
+[  OK  ] Bar.method(int): test annotations count
+-- Bar.method(int): Testing getAnnotation(Class<? extends Annotation>) --
+-- Bar.method(int): Testing isAnnotationPresent(Class<? extends Annotation>) --
+-- Bar.method(int): Testing getParameterAnnotations() --
+[  OK  ] Bar.method(int): test parameter count
+[  OK  ] Bar.method(int): test parameter annotations count for parameter 0
+-- Bar.staticMethod(int): Testing getDefaultValue() --
+[  OK  ] Bar.staticMethod(int): test for annotation default value
+-- Testing Bar.staticMethod(int) --
+-- Bar.staticMethod(int): Testing getDeclaredAnnotations() --
+[  OK  ] Bar.staticMethod(int): test declared annotations count
+-- Bar.staticMethod(int): Testing getAnnotations() --
+[  OK  ] Bar.staticMethod(int): test annotations count
+-- Bar.staticMethod(int): Testing getAnnotation(Class<? extends Annotation>) --
+-- Bar.staticMethod(int): Testing isAnnotationPresent(Class<? extends Annotation>) --
+-- Bar.staticMethod(int): Testing getParameterAnnotations() --
+[  OK  ] Bar.staticMethod(int): test parameter count
+[  OK  ] Bar.staticMethod(int): test parameter annotations count for parameter 0
+-- Bar: Testing Fields --
+-- Testing Bar.afield --
+-- Bar.afield: Testing getDeclaredAnnotations() --
+[  OK  ] Bar.afield: test declared annotations count
+-- Bar.afield: Testing getAnnotations() --
+[  OK  ] Bar.afield: test annotations count
+-- Bar.afield: Testing getAnnotation(Class<? extends Annotation>) --
+-- Bar.afield: Testing isAnnotationPresent(Class<? extends Annotation>) --
+
+== Testing Baz ==
+-- Baz: Testing getDeclaredAnnotations() --
+[  OK  ] Baz: test declared annotations count
+[  OK  ] Baz: test unique occurrence of the annotation type AnnotationB
+[  OK  ] Baz: test if annotation AnnotationB should be there
+ * Testing AnnotationB
+[  OK  ] AnnotationB: test annotationType
+[  OK  ] AnnotationB: test annotation methods count
+[  OK  ] AnnotationB: test invocation of the annotation method clazz()
+[  OK  ] AnnotationB: test return value of clazz() != null
+[  OK  ] AnnotationB: test return value of clazz()
+[  OK  ] AnnotationB: test invocation of the annotation method string()
+[  OK  ] AnnotationB: test return value of string() != null
+[  OK  ] AnnotationB: test return value of string()
+[  OK  ] Baz: test unique occurrence of the annotation type AnnotationC
+[  OK  ] Baz: test if annotation AnnotationC should be there
+ * Testing AnnotationC
+[  OK  ] AnnotationC: test annotationType
+[  OK  ] AnnotationC: test annotation methods count
+[  OK  ] AnnotationC: test invocation of the annotation method aAnnotation()
+[  OK  ] AnnotationC: test return value of aAnnotation() != null
+[  OK  ] AnnotationC: test return value of aAnnotation()
+[  OK  ] AnnotationC: test invocation of the annotation method aAnnotationArray()
+[  OK  ] AnnotationC: test return value of aAnnotationArray() != null
+[  OK  ] AnnotationC: test return value of aAnnotationArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aByte()
+[  OK  ] AnnotationC: test return value of aByte() != null
+[  OK  ] AnnotationC: test return value of aByte()
+[  OK  ] AnnotationC: test invocation of the annotation method aByteArray()
+[  OK  ] AnnotationC: test return value of aByteArray() != null
+[  OK  ] AnnotationC: test return value of aByteArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aChar()
+[  OK  ] AnnotationC: test return value of aChar() != null
+[  OK  ] AnnotationC: test return value of aChar()
+[  OK  ] AnnotationC: test invocation of the annotation method aCharArray()
+[  OK  ] AnnotationC: test return value of aCharArray() != null
+[  OK  ] AnnotationC: test return value of aCharArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aClass()
+[  OK  ] AnnotationC: test return value of aClass() != null
+[  OK  ] AnnotationC: test return value of aClass()
+[  OK  ] AnnotationC: test invocation of the annotation method aClassArray()
+[  OK  ] AnnotationC: test return value of aClassArray() != null
+[  OK  ] AnnotationC: test return value of aClassArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aDouble()
+[  OK  ] AnnotationC: test return value of aDouble() != null
+[  OK  ] AnnotationC: test return value of aDouble()
+[  OK  ] AnnotationC: test invocation of the annotation method aDoubleArray()
+[  OK  ] AnnotationC: test return value of aDoubleArray() != null
+[  OK  ] AnnotationC: test return value of aDoubleArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aEnum()
+[  OK  ] AnnotationC: test return value of aEnum() != null
+[  OK  ] AnnotationC: test return value of aEnum()
+[  OK  ] AnnotationC: test invocation of the annotation method aEnumArray()
+[  OK  ] AnnotationC: test return value of aEnumArray() != null
+[  OK  ] AnnotationC: test return value of aEnumArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aFloat()
+[  OK  ] AnnotationC: test return value of aFloat() != null
+[  OK  ] AnnotationC: test return value of aFloat()
+[  OK  ] AnnotationC: test invocation of the annotation method aFloatArray()
+[  OK  ] AnnotationC: test return value of aFloatArray() != null
+[  OK  ] AnnotationC: test return value of aFloatArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aInt()
+[  OK  ] AnnotationC: test return value of aInt() != null
+[  OK  ] AnnotationC: test return value of aInt()
+[  OK  ] AnnotationC: test invocation of the annotation method aIntArray()
+[  OK  ] AnnotationC: test return value of aIntArray() != null
+[  OK  ] AnnotationC: test return value of aIntArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aLong()
+[  OK  ] AnnotationC: test return value of aLong() != null
+[  OK  ] AnnotationC: test return value of aLong()
+[  OK  ] AnnotationC: test invocation of the annotation method aLongArray()
+[  OK  ] AnnotationC: test return value of aLongArray() != null
+[  OK  ] AnnotationC: test return value of aLongArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aShort()
+[  OK  ] AnnotationC: test return value of aShort() != null
+[  OK  ] AnnotationC: test return value of aShort()
+[  OK  ] AnnotationC: test invocation of the annotation method aShortArray()
+[  OK  ] AnnotationC: test return value of aShortArray() != null
+[  OK  ] AnnotationC: test return value of aShortArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aString()
+[  OK  ] AnnotationC: test return value of aString() != null
+[  OK  ] AnnotationC: test return value of aString()
+[  OK  ] AnnotationC: test invocation of the annotation method aStringArray()
+[  OK  ] AnnotationC: test return value of aStringArray() != null
+[  OK  ] AnnotationC: test return value of aStringArray()
+-- Baz: Testing getAnnotations() --
+[  OK  ] Baz: test annotations count
+[  OK  ] Baz: test unique occurrence of the annotation type AnnotationB
+[  OK  ] Baz: test if annotation AnnotationB should be there
+ * Testing AnnotationB
+[  OK  ] AnnotationB: test annotationType
+[  OK  ] AnnotationB: test annotation methods count
+[  OK  ] AnnotationB: test invocation of the annotation method clazz()
+[  OK  ] AnnotationB: test return value of clazz() != null
+[  OK  ] AnnotationB: test return value of clazz()
+[  OK  ] AnnotationB: test invocation of the annotation method string()
+[  OK  ] AnnotationB: test return value of string() != null
+[  OK  ] AnnotationB: test return value of string()
+[  OK  ] Baz: test unique occurrence of the annotation type AnnotationC
+[  OK  ] Baz: test if annotation AnnotationC should be there
+ * Testing AnnotationC
+[  OK  ] AnnotationC: test annotationType
+[  OK  ] AnnotationC: test annotation methods count
+[  OK  ] AnnotationC: test invocation of the annotation method aAnnotation()
+[  OK  ] AnnotationC: test return value of aAnnotation() != null
+[  OK  ] AnnotationC: test return value of aAnnotation()
+[  OK  ] AnnotationC: test invocation of the annotation method aAnnotationArray()
+[  OK  ] AnnotationC: test return value of aAnnotationArray() != null
+[  OK  ] AnnotationC: test return value of aAnnotationArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aByte()
+[  OK  ] AnnotationC: test return value of aByte() != null
+[  OK  ] AnnotationC: test return value of aByte()
+[  OK  ] AnnotationC: test invocation of the annotation method aByteArray()
+[  OK  ] AnnotationC: test return value of aByteArray() != null
+[  OK  ] AnnotationC: test return value of aByteArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aChar()
+[  OK  ] AnnotationC: test return value of aChar() != null
+[  OK  ] AnnotationC: test return value of aChar()
+[  OK  ] AnnotationC: test invocation of the annotation method aCharArray()
+[  OK  ] AnnotationC: test return value of aCharArray() != null
+[  OK  ] AnnotationC: test return value of aCharArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aClass()
+[  OK  ] AnnotationC: test return value of aClass() != null
+[  OK  ] AnnotationC: test return value of aClass()
+[  OK  ] AnnotationC: test invocation of the annotation method aClassArray()
+[  OK  ] AnnotationC: test return value of aClassArray() != null
+[  OK  ] AnnotationC: test return value of aClassArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aDouble()
+[  OK  ] AnnotationC: test return value of aDouble() != null
+[  OK  ] AnnotationC: test return value of aDouble()
+[  OK  ] AnnotationC: test invocation of the annotation method aDoubleArray()
+[  OK  ] AnnotationC: test return value of aDoubleArray() != null
+[  OK  ] AnnotationC: test return value of aDoubleArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aEnum()
+[  OK  ] AnnotationC: test return value of aEnum() != null
+[  OK  ] AnnotationC: test return value of aEnum()
+[  OK  ] AnnotationC: test invocation of the annotation method aEnumArray()
+[  OK  ] AnnotationC: test return value of aEnumArray() != null
+[  OK  ] AnnotationC: test return value of aEnumArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aFloat()
+[  OK  ] AnnotationC: test return value of aFloat() != null
+[  OK  ] AnnotationC: test return value of aFloat()
+[  OK  ] AnnotationC: test invocation of the annotation method aFloatArray()
+[  OK  ] AnnotationC: test return value of aFloatArray() != null
+[  OK  ] AnnotationC: test return value of aFloatArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aInt()
+[  OK  ] AnnotationC: test return value of aInt() != null
+[  OK  ] AnnotationC: test return value of aInt()
+[  OK  ] AnnotationC: test invocation of the annotation method aIntArray()
+[  OK  ] AnnotationC: test return value of aIntArray() != null
+[  OK  ] AnnotationC: test return value of aIntArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aLong()
+[  OK  ] AnnotationC: test return value of aLong() != null
+[  OK  ] AnnotationC: test return value of aLong()
+[  OK  ] AnnotationC: test invocation of the annotation method aLongArray()
+[  OK  ] AnnotationC: test return value of aLongArray() != null
+[  OK  ] AnnotationC: test return value of aLongArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aShort()
+[  OK  ] AnnotationC: test return value of aShort() != null
+[  OK  ] AnnotationC: test return value of aShort()
+[  OK  ] AnnotationC: test invocation of the annotation method aShortArray()
+[  OK  ] AnnotationC: test return value of aShortArray() != null
+[  OK  ] AnnotationC: test return value of aShortArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aString()
+[  OK  ] AnnotationC: test return value of aString() != null
+[  OK  ] AnnotationC: test return value of aString()
+[  OK  ] AnnotationC: test invocation of the annotation method aStringArray()
+[  OK  ] AnnotationC: test return value of aStringArray() != null
+[  OK  ] AnnotationC: test return value of aStringArray()
+-- Baz: Testing getAnnotation(Class<? extends Annotation>) --
+[  OK  ] Baz: try to get required annotation AnnotationB using getAnnotation(Class<? extends Annotation>)
+ * Testing AnnotationB
+[  OK  ] AnnotationB: test annotationType
+[  OK  ] AnnotationB: test annotation methods count
+[  OK  ] AnnotationB: test invocation of the annotation method clazz()
+[  OK  ] AnnotationB: test return value of clazz() != null
+[  OK  ] AnnotationB: test return value of clazz()
+[  OK  ] AnnotationB: test invocation of the annotation method string()
+[  OK  ] AnnotationB: test return value of string() != null
+[  OK  ] AnnotationB: test return value of string()
+[  OK  ] Baz: try to get required annotation AnnotationC using getAnnotation(Class<? extends Annotation>)
+ * Testing AnnotationC
+[  OK  ] AnnotationC: test annotationType
+[  OK  ] AnnotationC: test annotation methods count
+[  OK  ] AnnotationC: test invocation of the annotation method aAnnotation()
+[  OK  ] AnnotationC: test return value of aAnnotation() != null
+[  OK  ] AnnotationC: test return value of aAnnotation()
+[  OK  ] AnnotationC: test invocation of the annotation method aAnnotationArray()
+[  OK  ] AnnotationC: test return value of aAnnotationArray() != null
+[  OK  ] AnnotationC: test return value of aAnnotationArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aByte()
+[  OK  ] AnnotationC: test return value of aByte() != null
+[  OK  ] AnnotationC: test return value of aByte()
+[  OK  ] AnnotationC: test invocation of the annotation method aByteArray()
+[  OK  ] AnnotationC: test return value of aByteArray() != null
+[  OK  ] AnnotationC: test return value of aByteArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aChar()
+[  OK  ] AnnotationC: test return value of aChar() != null
+[  OK  ] AnnotationC: test return value of aChar()
+[  OK  ] AnnotationC: test invocation of the annotation method aCharArray()
+[  OK  ] AnnotationC: test return value of aCharArray() != null
+[  OK  ] AnnotationC: test return value of aCharArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aClass()
+[  OK  ] AnnotationC: test return value of aClass() != null
+[  OK  ] AnnotationC: test return value of aClass()
+[  OK  ] AnnotationC: test invocation of the annotation method aClassArray()
+[  OK  ] AnnotationC: test return value of aClassArray() != null
+[  OK  ] AnnotationC: test return value of aClassArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aDouble()
+[  OK  ] AnnotationC: test return value of aDouble() != null
+[  OK  ] AnnotationC: test return value of aDouble()
+[  OK  ] AnnotationC: test invocation of the annotation method aDoubleArray()
+[  OK  ] AnnotationC: test return value of aDoubleArray() != null
+[  OK  ] AnnotationC: test return value of aDoubleArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aEnum()
+[  OK  ] AnnotationC: test return value of aEnum() != null
+[  OK  ] AnnotationC: test return value of aEnum()
+[  OK  ] AnnotationC: test invocation of the annotation method aEnumArray()
+[  OK  ] AnnotationC: test return value of aEnumArray() != null
+[  OK  ] AnnotationC: test return value of aEnumArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aFloat()
+[  OK  ] AnnotationC: test return value of aFloat() != null
+[  OK  ] AnnotationC: test return value of aFloat()
+[  OK  ] AnnotationC: test invocation of the annotation method aFloatArray()
+[  OK  ] AnnotationC: test return value of aFloatArray() != null
+[  OK  ] AnnotationC: test return value of aFloatArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aInt()
+[  OK  ] AnnotationC: test return value of aInt() != null
+[  OK  ] AnnotationC: test return value of aInt()
+[  OK  ] AnnotationC: test invocation of the annotation method aIntArray()
+[  OK  ] AnnotationC: test return value of aIntArray() != null
+[  OK  ] AnnotationC: test return value of aIntArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aLong()
+[  OK  ] AnnotationC: test return value of aLong() != null
+[  OK  ] AnnotationC: test return value of aLong()
+[  OK  ] AnnotationC: test invocation of the annotation method aLongArray()
+[  OK  ] AnnotationC: test return value of aLongArray() != null
+[  OK  ] AnnotationC: test return value of aLongArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aShort()
+[  OK  ] AnnotationC: test return value of aShort() != null
+[  OK  ] AnnotationC: test return value of aShort()
+[  OK  ] AnnotationC: test invocation of the annotation method aShortArray()
+[  OK  ] AnnotationC: test return value of aShortArray() != null
+[  OK  ] AnnotationC: test return value of aShortArray()
+[  OK  ] AnnotationC: test invocation of the annotation method aString()
+[  OK  ] AnnotationC: test return value of aString() != null
+[  OK  ] AnnotationC: test return value of aString()
+[  OK  ] AnnotationC: test invocation of the annotation method aStringArray()
+[  OK  ] AnnotationC: test return value of aStringArray() != null
+[  OK  ] AnnotationC: test return value of aStringArray()
+-- Baz: Testing isAnnotationPresent(Class<? extends Annotation>) --
+[  OK  ] Baz: test if annotation AnnotationB is present using isAnnotationPresent()
+[  OK  ] Baz: test if annotation AnnotationC is present using isAnnotationPresent()
+-- Baz: Testing isAnnotation() --
+[  OK  ] Baz: test if the isAnnotation attribute is set properly
+-- Baz: Testing Constructors --
+-- Baz: Testing Methods --
+-- Baz.method(int): Testing getDefaultValue() --
+[  OK  ] Baz.method(int): test for annotation default value
+-- Testing Baz.method(int) --
+-- Baz.method(int): Testing getDeclaredAnnotations() --
+[  OK  ] Baz.method(int): test declared annotations count
+[  OK  ] Baz.method(int): test unique occurrence of the annotation type AnnotationA
+[  OK  ] Baz.method(int): test if annotation AnnotationA should be there
+ * Testing AnnotationA
+[  OK  ] AnnotationA: test annotationType
+[  OK  ] AnnotationA: test annotation methods count
+[  OK  ] AnnotationA: test invocation of the annotation method classes()
+[  OK  ] AnnotationA: test return value of classes() != null
+[  OK  ] AnnotationA: test return value of classes()
+[  OK  ] AnnotationA: test invocation of the annotation method enumeration()
+[  OK  ] AnnotationA: test return value of enumeration() != null
+[  OK  ] AnnotationA: test return value of enumeration()
+[  OK  ] AnnotationA: test invocation of the annotation method integer()
+[  OK  ] AnnotationA: test return value of integer() != null
+[  OK  ] AnnotationA: test return value of integer()
+[  OK  ] AnnotationA: test invocation of the annotation method string()
+[  OK  ] AnnotationA: test return value of string() != null
+[  OK  ] AnnotationA: test return value of string()
+-- Baz.method(int): Testing getAnnotations() --
+[  OK  ] Baz.method(int): test annotations count
+[  OK  ] Baz.method(int): test unique occurrence of the annotation type AnnotationA
+[  OK  ] Baz.method(int): test if annotation AnnotationA should be there
+ * Testing AnnotationA
+[  OK  ] AnnotationA: test annotationType
+[  OK  ] AnnotationA: test annotation methods count
+[  OK  ] AnnotationA: test invocation of the annotation method classes()
+[  OK  ] AnnotationA: test return value of classes() != null
+[  OK  ] AnnotationA: test return value of classes()
+[  OK  ] AnnotationA: test invocation of the annotation method enumeration()
+[  OK  ] AnnotationA: test return value of enumeration() != null
+[  OK  ] AnnotationA: test return value of enumeration()
+[  OK  ] AnnotationA: test invocation of the annotation method integer()
+[  OK  ] AnnotationA: test return value of integer() != null
+[  OK  ] AnnotationA: test return value of integer()
+[  OK  ] AnnotationA: test invocation of the annotation method string()
+[  OK  ] AnnotationA: test return value of string() != null
+[  OK  ] AnnotationA: test return value of string()
+-- Baz.method(int): Testing getAnnotation(Class<? extends Annotation>) --
+[  OK  ] Baz.method(int): try to get required annotation AnnotationA using getAnnotation(Class<? extends Annotation>)
+ * Testing AnnotationA
+[  OK  ] AnnotationA: test annotationType
+[  OK  ] AnnotationA: test annotation methods count
+[  OK  ] AnnotationA: test invocation of the annotation method classes()
+[  OK  ] AnnotationA: test return value of classes() != null
+[  OK  ] AnnotationA: test return value of classes()
+[  OK  ] AnnotationA: test invocation of the annotation method enumeration()
+[  OK  ] AnnotationA: test return value of enumeration() != null
+[  OK  ] AnnotationA: test return value of enumeration()
+[  OK  ] AnnotationA: test invocation of the annotation method integer()
+[  OK  ] AnnotationA: test return value of integer() != null
+[  OK  ] AnnotationA: test return value of integer()
+[  OK  ] AnnotationA: test invocation of the annotation method string()
+[  OK  ] AnnotationA: test return value of string() != null
+[  OK  ] AnnotationA: test return value of string()
+-- Baz.method(int): Testing isAnnotationPresent(Class<? extends Annotation>) --
+[  OK  ] Baz.method(int): test if annotation AnnotationA is present using isAnnotationPresent()
+-- Baz.method(int): Testing getParameterAnnotations() --
+[  OK  ] Baz.method(int): test parameter count
+[  OK  ] Baz.method(int): test parameter annotations count for parameter 0
+[  OK  ] Baz.method(int): test unique occurrence of the annotation type AnnotationA
+[  OK  ] Baz.method(int): test if annotation of type AnnotationA should be defined for parameter 0
+ * Testing AnnotationA
+[  OK  ] AnnotationA: test annotationType
+[  OK  ] AnnotationA: test annotation methods count
+[  OK  ] AnnotationA: test invocation of the annotation method classes()
+[  OK  ] AnnotationA: test return value of classes() != null
+[  OK  ] AnnotationA: test return value of classes()
+[  OK  ] AnnotationA: test invocation of the annotation method enumeration()
+[  OK  ] AnnotationA: test return value of enumeration() != null
+[  OK  ] AnnotationA: test return value of enumeration()
+[  OK  ] AnnotationA: test invocation of the annotation method integer()
+[  OK  ] AnnotationA: test return value of integer() != null
+[  OK  ] AnnotationA: test return value of integer()
+[  OK  ] AnnotationA: test invocation of the annotation method string()
+[  OK  ] AnnotationA: test return value of string() != null
+[  OK  ] AnnotationA: test return value of string()
+-- Baz.staticMethod(int): Testing getDefaultValue() --
+[  OK  ] Baz.staticMethod(int): test for annotation default value
+-- Testing Baz.staticMethod(int) --
+-- Baz.staticMethod(int): Testing getDeclaredAnnotations() --
+[  OK  ] Baz.staticMethod(int): test declared annotations count
+[  OK  ] Baz.staticMethod(int): test unique occurrence of the annotation type AnnotationA
+[  OK  ] Baz.staticMethod(int): test if annotation AnnotationA should be there
+ * Testing AnnotationA
+[  OK  ] AnnotationA: test annotationType
+[  OK  ] AnnotationA: test annotation methods count
+[  OK  ] AnnotationA: test invocation of the annotation method classes()
+[  OK  ] AnnotationA: test return value of classes() != null
+[  OK  ] AnnotationA: test return value of classes()
+[  OK  ] AnnotationA: test invocation of the annotation method enumeration()
+[  OK  ] AnnotationA: test return value of enumeration() != null
+[  OK  ] AnnotationA: test return value of enumeration()
+[  OK  ] AnnotationA: test invocation of the annotation method integer()
+[  OK  ] AnnotationA: test return value of integer() != null
+[  OK  ] AnnotationA: test return value of integer()
+[  OK  ] AnnotationA: test invocation of the annotation method string()
+[  OK  ] AnnotationA: test return value of string() != null
+[  OK  ] AnnotationA: test return value of string()
+-- Baz.staticMethod(int): Testing getAnnotations() --
+[  OK  ] Baz.staticMethod(int): test annotations count
+[  OK  ] Baz.staticMethod(int): test unique occurrence of the annotation type AnnotationA
+[  OK  ] Baz.staticMethod(int): test if annotation AnnotationA should be there
+ * Testing AnnotationA
+[  OK  ] AnnotationA: test annotationType
+[  OK  ] AnnotationA: test annotation methods count
+[  OK  ] AnnotationA: test invocation of the annotation method classes()
+[  OK  ] AnnotationA: test return value of classes() != null
+[  OK  ] AnnotationA: test return value of classes()
+[  OK  ] AnnotationA: test invocation of the annotation method enumeration()
+[  OK  ] AnnotationA: test return value of enumeration() != null
+[  OK  ] AnnotationA: test return value of enumeration()
+[  OK  ] AnnotationA: test invocation of the annotation method integer()
+[  OK  ] AnnotationA: test return value of integer() != null
+[  OK  ] AnnotationA: test return value of integer()
+[  OK  ] AnnotationA: test invocation of the annotation method string()
+[  OK  ] AnnotationA: test return value of string() != null
+[  OK  ] AnnotationA: test return value of string()
+-- Baz.staticMethod(int): Testing getAnnotation(Class<? extends Annotation>) --
+[  OK  ] Baz.staticMethod(int): try to get required annotation AnnotationA using getAnnotation(Class<? extends Annotation>)
+ * Testing AnnotationA
+[  OK  ] AnnotationA: test annotationType
+[  OK  ] AnnotationA: test annotation methods count
+[  OK  ] AnnotationA: test invocation of the annotation method classes()
+[  OK  ] AnnotationA: test return value of classes() != null
+[  OK  ] AnnotationA: test return value of classes()
+[  OK  ] AnnotationA: test invocation of the annotation method enumeration()
+[  OK  ] AnnotationA: test return value of enumeration() != null
+[  OK  ] AnnotationA: test return value of enumeration()
+[  OK  ] AnnotationA: test invocation of the annotation method integer()
+[  OK  ] AnnotationA: test return value of integer() != null
+[  OK  ] AnnotationA: test return value of integer()
+[  OK  ] AnnotationA: test invocation of the annotation method string()
+[  OK  ] AnnotationA: test return value of string() != null
+[  OK  ] AnnotationA: test return value of string()
+-- Baz.staticMethod(int): Testing isAnnotationPresent(Class<? extends Annotation>) --
+[  OK  ] Baz.staticMethod(int): test if annotation AnnotationA is present using isAnnotationPresent()
+-- Baz.staticMethod(int): Testing getParameterAnnotations() --
+[  OK  ] Baz.staticMethod(int): test parameter count
+[  OK  ] Baz.staticMethod(int): test parameter annotations count for parameter 0
+[  OK  ] Baz.staticMethod(int): test unique occurrence of the annotation type AnnotationA
+[  OK  ] Baz.staticMethod(int): test if annotation of type AnnotationA should be defined for parameter 0
+ * Testing AnnotationA
+[  OK  ] AnnotationA: test annotationType
+[  OK  ] AnnotationA: test annotation methods count
+[  OK  ] AnnotationA: test invocation of the annotation method classes()
+[  OK  ] AnnotationA: test return value of classes() != null
+[  OK  ] AnnotationA: test return value of classes()
+[  OK  ] AnnotationA: test invocation of the annotation method enumeration()
+[  OK  ] AnnotationA: test return value of enumeration() != null
+[  OK  ] AnnotationA: test return value of enumeration()
+[  OK  ] AnnotationA: test invocation of the annotation method integer()
+[  OK  ] AnnotationA: test return value of integer() != null
+[  OK  ] AnnotationA: test return value of integer()
+[  OK  ] AnnotationA: test invocation of the annotation method string()
+[  OK  ] AnnotationA: test return value of string() != null
+[  OK  ] AnnotationA: test return value of string()
+-- Baz: Testing Fields --
+-- Testing Foo.afield --
+-- Foo.afield: Testing getDeclaredAnnotations() --
+[  OK  ] Foo.afield: test declared annotations count
+[  OK  ] Foo.afield: test unique occurrence of the annotation type AnnotationA
+[  OK  ] Foo.afield: test if annotation AnnotationA should be there
+ * Testing AnnotationA
+[  OK  ] AnnotationA: test annotationType
+[  OK  ] AnnotationA: test annotation methods count
+[  OK  ] AnnotationA: test invocation of the annotation method classes()
+[  OK  ] AnnotationA: test return value of classes() != null
+[  OK  ] AnnotationA: test return value of classes()
+[  OK  ] AnnotationA: test invocation of the annotation method enumeration()
+[  OK  ] AnnotationA: test return value of enumeration() != null
+[  OK  ] AnnotationA: test return value of enumeration()
+[  OK  ] AnnotationA: test invocation of the annotation method integer()
+[  OK  ] AnnotationA: test return value of integer() != null
+[  OK  ] AnnotationA: test return value of integer()
+[  OK  ] AnnotationA: test invocation of the annotation method string()
+[  OK  ] AnnotationA: test return value of string() != null
+[  OK  ] AnnotationA: test return value of string()
+-- Foo.afield: Testing getAnnotations() --
+[  OK  ] Foo.afield: test annotations count
+[  OK  ] Foo.afield: test unique occurrence of the annotation type AnnotationA
+[  OK  ] Foo.afield: test if annotation AnnotationA should be there
+ * Testing AnnotationA
+[  OK  ] AnnotationA: test annotationType
+[  OK  ] AnnotationA: test annotation methods count
+[  OK  ] AnnotationA: test invocation of the annotation method classes()
+[  OK  ] AnnotationA: test return value of classes() != null
+[  OK  ] AnnotationA: test return value of classes()
+[  OK  ] AnnotationA: test invocation of the annotation method enumeration()
+[  OK  ] AnnotationA: test return value of enumeration() != null
+[  OK  ] AnnotationA: test return value of enumeration()
+[  OK  ] AnnotationA: test invocation of the annotation method integer()
+[  OK  ] AnnotationA: test return value of integer() != null
+[  OK  ] AnnotationA: test return value of integer()
+[  OK  ] AnnotationA: test invocation of the annotation method string()
+[  OK  ] AnnotationA: test return value of string() != null
+[  OK  ] AnnotationA: test return value of string()
+-- Foo.afield: Testing getAnnotation(Class<? extends Annotation>) --
+[  OK  ] Foo.afield: try to get required annotation AnnotationA using getAnnotation(Class<? extends Annotation>)
+ * Testing AnnotationA
+[  OK  ] AnnotationA: test annotationType
+[  OK  ] AnnotationA: test annotation methods count
+[  OK  ] AnnotationA: test invocation of the annotation method classes()
+[  OK  ] AnnotationA: test return value of classes() != null
+[  OK  ] AnnotationA: test return value of classes()
+[  OK  ] AnnotationA: test invocation of the annotation method enumeration()
+[  OK  ] AnnotationA: test return value of enumeration() != null
+[  OK  ] AnnotationA: test return value of enumeration()
+[  OK  ] AnnotationA: test invocation of the annotation method integer()
+[  OK  ] AnnotationA: test return value of integer() != null
+[  OK  ] AnnotationA: test return value of integer()
+[  OK  ] AnnotationA: test invocation of the annotation method string()
+[  OK  ] AnnotationA: test return value of string() != null
+[  OK  ] AnnotationA: test return value of string()
+-- Foo.afield: Testing isAnnotationPresent(Class<? extends Annotation>) --
+[  OK  ] Foo.afield: test if annotation AnnotationA is present using isAnnotationPresent()
+
+         passed:     1266
+         failed:        0
+         ----------------
+         sum:        1266
