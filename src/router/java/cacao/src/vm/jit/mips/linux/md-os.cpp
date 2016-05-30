@@ -26,7 +26,7 @@
 #include "config.h"
 
 #include <cassert>
-#include <sgidefs.h> /* required for _MIPS_SIM_ABI* defines (before signal.h) */
+#include "sgidefs.h" /* required for _MIPS_SIM_ABI* defines (before signal.h) */
 #include <signal.h>
 #include <stdint.h>
 #include <ucontext.h>

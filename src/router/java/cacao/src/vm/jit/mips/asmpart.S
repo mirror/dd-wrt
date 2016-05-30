@@ -112,12 +112,14 @@ L_asm_vm_call_method_compute_pv:
 	ast     a0,4*8(sp)                /* save method PV                       */
 
 #if SIZEOF_VOID_P == 8
+# if !defined(ENABLE_SOFTFLOAT)
 	s.d     fss0,5*8(sp)              /* save non JavaABI saved flt registers */
 	s.d     fss1,6*8(sp)
 	s.d     fss2,7*8(sp)
 	s.d     fss3,8*8(sp)
 	s.d     fss4,9*8(sp)
 	s.d     fss5,10*8(sp)
+#endif
 #endif
 
 	move    t0,a1                     /* address of data structure            */
@@ -135,6 +137,7 @@ L_asm_vm_call_method_compute_pv:
 	ld      a6,6*8(t0)
 	ld      a7,7*8(t0)
 
+# if !defined(ENABLE_SOFTFLOAT)
 	l.d     fa0,8*8(t0)
 	l.d     fa1,9*8(t0)
 	l.d     fa2,10*8(t0)
@@ -143,7 +146,7 @@ L_asm_vm_call_method_compute_pv:
 	l.d     fa5,13*8(t0)
 	l.d     fa6,14*8(t0)
 	l.d     fa7,15*8(t0)
-
+#endif
 #else /* SIZEOF_VOID_P == 8 */
 
 # if WORDS_BIGENDIAN == 1
@@ -158,7 +161,7 @@ L_asm_vm_call_method_compute_pv:
 	lw      a3,3*8(t0)
 # endif
 
-# if !defined(ENABLE_SOFT_FLOAT)
+# if !defined(ENABLE_SOFTFLOAT)
 	l.d     fa0,4*8(t0)
 	l.d     fa1,5*8(t0)
 # endif
@@ -177,7 +180,7 @@ L_asm_vm_call_method_stack_copy_loop:
 	ld      t3,16*8(t0)               /* load argument                        */
 	sd      t3,0(t2)                  /* store argument on stack              */
 #else
-# if !defined(ENABLE_SOFT_FLOAT)
+# if !defined(ENABLE_SOFTFLOAT)
 	lw      t3,6*8+0(t0)              /* load argument                        */
 	lw      t4,6*8+4(t0)
 	sw      t3,0(t2)                  /* store argument on stack              */
@@ -216,12 +219,14 @@ calljava_return2:
 	ald     s0,3*8(sp)
 
 #if SIZEOF_VOID_P == 8
+# if !defined(ENABLE_SOFTFLOAT)
 	l.d     fss0,5*8(sp)              /* restore non JavaABI saved flt regs   */
 	l.d     fss1,6*8(sp)
 	l.d     fss2,7*8(sp)
 	l.d     fss3,8*8(sp)
 	l.d     fss4,9*8(sp)
 	l.d     fss5,10*8(sp)
+#endif
 #endif
 
 	aaddiu  sp,sp,12*8                /* free stack space                     */
@@ -417,12 +422,14 @@ ex_int2:
 	jr      t3                          /* jump to save position              */
 
 #if SIZEOF_VOID_P == 8
+# if !defined(ENABLE_SOFTFLOAT)
 	l.d     fs0,-4*8(t1)
 	l.d     fs1,-3*8(t1)
 	l.d     fs2,-2*8(t1)
 	l.d     fs3,-1*8(t1)
+#endif
 #else
-# if !defined(ENABLE_SOFT_FLOAT)
+# if !defined(ENABLE_SOFTFLOAT)
 	l.d     fs0,-6*8(t1)
 	l.d     fs1,-5*8(t1)
 	l.d     fs2,-4*8(t1)

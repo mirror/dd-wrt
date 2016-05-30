@@ -224,6 +224,7 @@
 /* save and restore macros ****************************************************/
 
 #if SIZEOF_VOID_P == 8
+# if !defined(ENABLE_SOFTFLOAT)
 
 #define SAVE_ARGUMENT_REGISTERS(off) \
 	sd      a0,(0+(off))*8(sp)	; \
@@ -243,7 +244,22 @@
 	s.d     fa5,(13+(off))*8(sp); \
 	s.d     fa6,(14+(off))*8(sp); \
 	s.d     fa7,(15+(off))*8(sp); 
+#else
 
+#define SAVE_ARGUMENT_REGISTERS(off) \
+	sd      a0,(0+(off))*8(sp)	; \
+	sd      a1,(1+(off))*8(sp)	; \
+	sd      a2,(2+(off))*8(sp)	; \
+	sd      a3,(3+(off))*8(sp)	; \
+	sd      a4,(4+(off))*8(sp)	; \
+	sd      a5,(5+(off))*8(sp)	; \
+	sd      a6,(6+(off))*8(sp)	; \
+	sd      a7,(7+(off))*8(sp)	; 
+
+
+#endif
+
+# if !defined(ENABLE_SOFTFLOAT)
 #define RESTORE_ARGUMENT_REGISTERS(off) \
 	ld      a0,(0+(off))*8(sp)	; \
 	ld      a1,(1+(off))*8(sp)	; \
@@ -262,8 +278,22 @@
 	l.d     fa5,(13+(off))*8(sp); \
 	l.d     fa6,(14+(off))*8(sp); \
 	l.d     fa7,(15+(off))*8(sp); 
+#else
+
+#define RESTORE_ARGUMENT_REGISTERS(off) \
+	ld      a0,(0+(off))*8(sp)	; \
+	ld      a1,(1+(off))*8(sp)	; \
+	ld      a2,(2+(off))*8(sp)	; \
+	ld      a3,(3+(off))*8(sp)	; \
+	ld      a4,(4+(off))*8(sp)	; \
+	ld      a5,(5+(off))*8(sp)	; \
+	ld      a6,(6+(off))*8(sp)	; \
+	ld      a7,(7+(off))*8(sp)	;
 
 
+#endif
+
+# if !defined(ENABLE_SOFTFLOAT)
 #define SAVE_TEMPORARY_REGISTERS(off) \
 	sd      t0,(0+(off))*8(sp)	; \
 	sd      t1,(1+(off))*8(sp)	; \
@@ -311,8 +341,25 @@
 	l.d     ft16,(18+(off))*8(sp)	; \
 	l.d     ft17,(19+(off))*8(sp)	; \
 	l.d     ft18,(20+(off))*8(sp)	;
+#else
+#define SAVE_TEMPORARY_REGISTERS(off) \
+	sd      t0,(0+(off))*8(sp)	; \
+	sd      t1,(1+(off))*8(sp)	; \
+	sd      t2,(2+(off))*8(sp)	; \
+	sd      t3,(3+(off))*8(sp)	; \
+	sd      t4,(4+(off))*8(sp)	;
 
+#define RESTORE_TEMPORARY_REGISTERS(off) \
+	ld      t0,(0+(off))*8(sp)	; \
+	ld      t1,(1+(off))*8(sp)	; \
+	ld      t2,(2+(off))*8(sp)	; \
+	ld      t3,(3+(off))*8(sp)	; \
+	ld      t4,(4+(off))*8(sp)	; 
+
+#endif
 #else /* SIZEOF_VOID_P == 8 */
+
+# if !defined(ENABLE_SOFTFLOAT)
 
 #define SAVE_ARGUMENT_REGISTERS(off) \
 	sw      a0,(0+(off))*4(sp)	; \
@@ -358,7 +405,43 @@
 	l.d     ft1,(10+(off))*4(sp) ; \
 	l.d     ft2,(12+(off))*4(sp) ; \
 	l.d     ft3,(14+(off))*4(sp) ;
+#else
 
+#define SAVE_ARGUMENT_REGISTERS(off) \
+	sw      a0,(0+(off))*4(sp)	; \
+	sw      a1,(1+(off))*4(sp)	; \
+	sw      a2,(2+(off))*4(sp)	; \
+	sw      a3,(3+(off))*4(sp)	;
+
+#define RESTORE_ARGUMENT_REGISTERS(off) \
+	lw      a0,(0+(off))*4(sp)	; \
+	lw      a1,(1+(off))*4(sp)	; \
+	lw      a2,(2+(off))*4(sp)	; \
+	lw      a3,(3+(off))*4(sp)	;
+
+
+#define SAVE_TEMPORARY_REGISTERS(off) \
+	sw      t0,(0+(off))*4(sp)	; \
+	sw      t1,(1+(off))*4(sp)	; \
+	sw      t2,(2+(off))*4(sp)	; \
+	sw      t3,(3+(off))*4(sp)	; \
+	sw      t4,(4+(off))*4(sp)	; \
+	sw      t5,(5+(off))*4(sp)	; \
+	sw      t6,(6+(off))*4(sp)	; \
+	sw      t7,(7+(off))*4(sp)	;
+
+#define RESTORE_TEMPORARY_REGISTERS(off) \
+	lw      t0,(0+(off))*4(sp)	; \
+	lw      t1,(1+(off))*4(sp)	; \
+	lw      t2,(2+(off))*4(sp)	; \
+	lw      t3,(3+(off))*4(sp)	; \
+	lw      t4,(4+(off))*4(sp)	; \
+	lw      t5,(5+(off))*4(sp)	; \
+	lw      t6,(6+(off))*4(sp)	; \
+	lw      t7,(7+(off))*4(sp)	;
+
+
+#endif
 #endif /* SIZEOF_VOID_P == 8 */
 
 #endif // MD_ASM_HPP_
