@@ -86,11 +86,3 @@ automake --add-missing --gnu ||
 
 echo "Running autoconf ..."
 autoconf || { echo "**Error**: autoconf failed."; exit 1; }
-
-if test x$NOCONFIGURE = x; then
-  echo Running $srcdir/configure --enable-maintainer-mode "$@" ...
-  $srcdir/configure --enable-maintainer-mode "$@" \
-  && echo Now type \`make\' to compile JamVM || exit 1
-else
-  echo Skipping configure process.
-fi
