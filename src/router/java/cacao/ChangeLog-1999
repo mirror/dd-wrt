@@ -1,0 +1,187 @@
+1999-11-18 19:30  schani
+
+	* src/threads/green/: locks.c, threads.c: Changed some blockInts
+	  assertions to > 0.
+
+1999-11-18 19:29  schani
+
+	* main.c, src/cacao/cacao.c: Exceptions in class loading are
+	  catched.  Cacao exits if topclass is not loaded.
+
+1999-11-16 17:13  andi
+
+	* src/threads/green/threadio.h: include files and headers fixed for
+	  portability
+
+1999-11-15 11:57  andi
+
+	* builtin.c, src/vm/builtin.c: gc Bug prov. fixed, final fix
+	  waiting
+
+1999-11-11 20:21  andi
+
+	* Makefile.in, builtin.c, global.h, src/vm/builtin.c,
+	  src/vm/global.h, jit.c, loader.c, main.c, native.c,
+	  src/cacao/cacao.c, src/native/native.c, src/vm/loader.c,
+	  src/vm/jit/parse.c, src/threads/green/threadio.c,
+	  tests/Makefile.in, tests/jctest.java: exception handling and
+	  parser bug fixed
+
+1999-11-09 13:42  andi
+
+	* loader.c, src/vm/loader.c: comments and cleanup
+
+1999-11-09 13:32  andi
+
+	* native.c, src/native/native.c:
+	  heap_addreference(&SystemClassLoader)
+
+1999-11-09 12:33  schani
+
+	* Makefile.am, Makefile.in, aclocal.m4, builtin.c, config.h.in,
+	  configure, src/vm/builtin.c, headers.c, jni.c,
+	  src/cacaoh/headers.c, src/native/jni.c, loader.c, main.c,
+	  native.c, src/cacao/cacao.c, src/native/native.c,
+	  src/vm/loader.c, src/vm/jit/parse.c, src/native/vm/Field.c,
+	  src/native/vm/VMThread.c, src/threads/green/threads.c,
+	  src/threads/green/threadio.c, src/threads/green/threadio.h,
+	  src/threads/green/threads.h, tests/Makefile.in, tests/sleep.java,
+	  tests/network/DemoClient.java, tests/network/DemoServer.java,
+	  tests/network/FILE.HTM, tests/network/GenericServer.java,
+	  tests/network/classloader.java, tests/network/socktest.java,
+	  tests/network/urltest.java, tests/network/whatip2.java,
+	  tests/network/httpd/httpd.java,
+	  tests/network/udp/QuoteClient.java,
+	  tests/network/udp/QuoteServer.java,
+	  tests/network/udp/QuoteServerThread.java,
+	  tests/network/udp/one-liners.txt: java.net implemented.  Dynamic
+	  classloader implemented (buggy).  Thread.sleep implemented.
+
+1999-10-04 12:34  roman
+
+	* Makefile.am, Makefile.in, asmpart.h, builtin.c, src/vm/builtin.c,
+	  src/vm/jit/asmpart.h, builtin.h, compiler.c, global.h, headers.c,
+	  src/cacaoh/headers.c, src/vm/builtin.h, src/vm/global.h, jit.c,
+	  jni.c, src/native/jni.c, jni.h, loader.c, src/native/jni.h,
+	  src/vm/loader.c, loader.h, main.c, native.c, src/cacao/cacao.c,
+	  src/native/native.c, src/vm/loader.h, native.h, tables.c,
+	  tables.h, src/native/native.h, src/vm/tables.c, src/vm/tables.h,
+	  src/vm/jit/parse.c, src/vm/jit/stack.c,
+	  src/native/vm/Constructor.c, src/native/vm/Field.c,
+	  src/native/vm/Makefile.am, src/native/vm/Method.c,
+	  src/native/vm/VMRuntime.c, src/native/vm/VMThread.c,
+	  src/threads/green/locks.c, src/threads/green/threadio.c,
+	  src/threads/green/threads.c: jdk1.2 and loader optimisation
+
+1999-09-27 17:52  chris
+
+	* Makefile, Makefile.in, aclocal.m4, config.h.in, configure,
+	  global.h, jit.c, jit.h, src/vm/global.h, main.c,
+	  src/cacao/cacao.c, src/vm/jit/parse.c, src/vm/jit/stack.c,
+	  tests/Makefile.in, tests/jctest.java, doc/array.tex: narray first
+	  check in
+
+1999-09-27 17:32  chris
+
+	* configure.in, Makefile.am, doc/Makefile.am: [no log message]
+
+1999-03-03 16:54  phil
+
+	* Makefile.am, Makefile.in: [no log message]
+
+1999-01-29 10:54  phil
+
+	* tests/: Makefile.am, Makefile.in, x.output:  regression
+	  testing... sort of
+
+1999-01-28 20:51  phil
+
+	* Makefile.in: now it really works
+
+1999-01-28 20:50  phil
+
+	* Makefile.am, Makefile.in: fixing my fix to teh fix
+
+1999-01-28 20:49  phil
+
+	* Makefile.am: fixing my fix
+
+1999-01-28 20:48  phil
+
+	* Makefile.am, Makefile.in, configure, configure.in, main.c,
+	  src/cacao/cacao.c: a couple more prerelease fixes
+
+1999-01-28 12:55  phil
+
+	* Makefile.am, Makefile.in, aclocal.m4, config.h.in, configure,
+	  configure.in: added a simple test target
+
+1999-01-26 01:38  phil
+
+	* INSTALL, NEWS, README: documentation changes
+
+1999-01-20 16:41  andi
+
+	* Makefile.am, Makefile.in, configure, configure.in:
+	  automake/autoconf fixes
+
+1999-01-20 16:01  andi
+
+	* configure, configure.in: [no log message]
+
+1999-01-20 15:58  andi
+
+	* Makefile.am, Makefile.in, acconfig.h, aclocal.m4, config.h.in,
+	  configure, configure.in, global.h, src/vm/global.h: fixed
+	  old_copiler/new_compiler issue and other merged the IRIX makefile
+	  in
+
+1999-01-20 03:13  phil
+
+	* Makefile.am, Makefile.in, configure: fixed a makefile problem
+	  from hell (actually just an include path)
+
+1999-01-20 02:56  phil
+
+	* Makefile.in, configure, mkinstalldirs: [no log message]
+
+1999-01-20 02:49  phil
+
+	* AUTHORS, ChangeLog, INSTALL, Makefile, Makefile.am, Makefile.in,
+	  Makefile.maintainer, Makefile.pre-automake, NEWS, acconfig.h,
+	  aclocal.m4, builtin.c, src/vm/builtin.c, compiler.c,
+	  config.guess, config.h.in, config.sub, configure, configure.in,
+	  global.h, headers.c, src/cacaoh/headers.c, src/vm/global.h,
+	  install-sh, jit.c, jit.h, missing, native.c, stamp-h.in,
+	  src/native/native.c, tables.h, src/vm/tables.h, doc/cacao.1,
+	  src/vm/jit/Makefile.am, src/vm/jit/parse.c, src/mm/Makefile.am,
+	  src/native/vm/Makefile.am, src/threads/green/Makefile.am,
+	  src/threads/green/locks.c, src/threads/green/locks.h,
+	  src/threads/green/threads.c, src/threads/green/threadio.c,
+	  src/threads/green/threads.h, src/toolbox/Makefile.am,
+	  src/mm/memory.c: Changed the makefile system to
+	  autoconf/automake.  added a man page modified almost every file
+	  to get it working with autoconf/automake.  rewrote every line
+	  that generated a warning.  cleaned up some of the gc code.
+
+1999-01-20 02:47  phil
+
+	* tests/.gdbinit: [no log message]
+
+1999-01-20 01:13  phil
+
+	* COPYRIGHT: renamed to COPYING
+
+1999-01-20 01:12  phil
+
+	* COPYING: COPYRIGHT was renamed into COPYING, to conform to the
+	  GNU coding standard
+
+1999-01-12 02:42  phil
+
+	* man/cacao.1: a man page
+
+1999-01-05 20:26  phil
+
+	* Makefile: [no log message]
+

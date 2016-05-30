@@ -1,0 +1,1293 @@
+\documentclass[a4paper, 10pt, titlepage]{scrartcl} %{article}
+
+\usepackage[english]{babel}
+\usepackage[utf-8]{inputenc}
+\usepackage{graphics}
+\usepackage{url}
+\usepackage[colorlinks=true,linkcolor=black,bookmarks=true,bookmarksopen=true]{hyperref}
+\usepackage{listings}
+\lstloadlanguages{Java,C}
+\lstset{basicstyle=\scriptsize, numbers=left, tabsize=4, frame=single, breaklines=true}
+
+\makeindex
+%\pagestyle{plain}
+\pagestyle{headings}
+\setlength{\textwidth}{16cm}
+\setlength{\textheight}{23cm}
+\setlength{\topmargin}{0mm} 
+\setlength{\oddsidemargin}{0cm} 
+\setlength{\evensidemargin}{0cm}
+
+
+\parskip\medskipamount
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+\bibliographystyle{plain}
+
+\title{Annotation Support\\
+for the CACAO Java Virtual Machine}
+
+\author{Mathias Stephan Panzenbök\\
+0427417 033 534\\
+\href{mailto:panzi@complang.tuwien.ac.at}{panzi@complang.tuwien.ac.at}}
+\date{\today{}, Kottingbrunn/Wien}
+
+\maketitle
+\tableofcontents
+\pagebreak
+
+%% CONTENT BEGIN %%
+
+\section{A short Introduction to Annotations in Java}
+\label{sec:annotations-java-intro}
+Since JDK 5.0 there is the possibility to annotate certain elements. This can
+be used to supply some kind of documentation to the annotated elements
+(=metadata), to influence compiler behaviour (e.g. the all known
+\begin{scriptsize}\verb||\hspace{0.0pt}\verb|@|\hspace{0.0pt}\verb|SuppressWarnings|\hspace{0.0pt}\verb|(|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|"|\hspace{0.0pt}\verb|unchecked|\hspace{0.0pt}\verb|"|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|)|\hspace{0.0pt}\verb||\end{scriptsize}), or to do nifty tricks like some frameworks do (e.g. like
+\href{http://www.hibernate.org/hib_docs/v3/reference/en/html/mapping.html#mapping-annotations}{Hibernate}\footnote{\url{http://www.hibernate.org/hib\_docs/v3/reference/en/html/mapping.html\#mapping-annotations}}
+uses annotations for object relational mapping; or for really easy
+\href{http://twoday.tuwien.ac.at/pub/stories/305002/}{command line option parsing}\footnote{\url{http://twoday.tuwien.ac.at/pub/stories/305002/}}).
+
+Annotations can be defined for classes and all that can be represented by an
+instance of \begin{scriptsize}\verb|java|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|lang|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|Class|\end{scriptsize} (=\begin{scriptsize}\verb|class|\end{scriptsize}, \begin{scriptsize}\verb|interface|\end{scriptsize},
+\begin{scriptsize}\verb||\hspace{0.0pt}\verb|@|\hspace{0.0pt}\verb|interface|\end{scriptsize} (annotation type), \begin{scriptsize}\verb|enum|\end{scriptsize}, \begin{scriptsize}\verb|package|\end{scriptsize}), for fields, for
+methods, for constructors and for parameters. Local variables can also be
+annotated, but the annotations cannot be accessed at runtime and are simply
+discarded by the compiler.
+
+Annotations are stored as attributes in the classfile. There are several
+annotation attributes defined:
+\begin{itemize}
+ \item \begin{scriptsize}\verb|RuntimeVisibleAnnotations|\end{scriptsize} for classes, methods and fields
+ \item \begin{scriptsize}\verb|RuntimeInvisibleAnnotations|\end{scriptsize} for classes, methods and fields
+ \item \begin{scriptsize}\verb|RuntimeVisibleParameterAnnotations|\end{scriptsize} for parameters
+ \item \begin{scriptsize}\verb|RuntimeInvisibleParameterAnnotations|\end{scriptsize} for parameters
+ \item \begin{scriptsize}\verb|AnnotationDefault|\end{scriptsize} for methods
+\end{itemize}
+
+These attributes are loaded when the classfile is read, but will only be parsed
+when the corresponding annotation is accessed.
+
+Depending on its usage an annotation might not be needed at runtime. E.g. the
+\begin{scriptsize}\verb|SuppressWarnings|\end{scriptsize} annotation is only needed by the compiler. To tell the
+compiler that an annotation should be visible at runtime, the annotation itself
+has to have the annotation \begin{scriptsize}\verb||\hspace{0.0pt}\verb|@|\hspace{0.0pt}\verb|Retention|\hspace{0.0pt}\verb|(|\hspace{0.0pt}\verb|RetentionPolicy|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|RUNTIME|\hspace{0.0pt}\verb|)|\hspace{0.0pt}\verb||\end{scriptsize} declared.
+
+Runtime invisible annotations usually aren't even included in the classfile,
+but that depends on the compiler (or on compiler flags). If they are included
+in the classfile, the virtual machine should not load them, unless an
+implementation specific flag is set, which tells the JVM to do so. CACAO
+doesn't have such a flag right now and therefore runtime invisible annotations
+are simply discarded.
+
+You declare annotations like this:
+\begin{lstlisting}[language=Java]
+public @interface MyAnnotation {
+		int              intValue();
+		String           stringValue()     default "foo bar";
+		Class<?>[]       classArray()      default {Foo.class, Class.class};
+		SuppressWarnings annotationValue() default @SuppressWarnings("unused");
+}
+\end{lstlisting}
+
+All methods defined in annotations have zero parameters and their return type
+must be one of the following:
+\begin{itemize}
+ \item a primitive type: \begin{scriptsize}\verb|boolean|\end{scriptsize}, \begin{scriptsize}\verb|byte|\end{scriptsize}, \begin{scriptsize}\verb|short|\end{scriptsize}, \begin{scriptsize}\verb|char|\end{scriptsize}, \begin{scriptsize}\verb|int|\end{scriptsize}, \begin{scriptsize}\verb|long|\end{scriptsize}, \begin{scriptsize}\verb|float|\end{scriptsize} or \begin{scriptsize}\verb|double|\end{scriptsize}
+ \item \begin{scriptsize}\verb|java|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|lang|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|String|\end{scriptsize}
+ \item \begin{scriptsize}\verb|java|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|lang|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|Class|\hspace{0.0pt}\verb|<|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|?|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|>|\hspace{0.0pt}\verb||\end{scriptsize}
+ \item an \begin{scriptsize}\verb|enum|\end{scriptsize} type
+ \item an annotation type (e.g. \begin{scriptsize}\verb|SuppressWarnings|\end{scriptsize})
+ \item or an one-dimensional array thereof
+\end{itemize}
+
+You use annotations like this:
+\begin{lstlisting}[language=Java]
+import java.util.Map;
+
+@MyAnnotation(intValue=42)
+class MyClass {
+		@MyAnnotation(intValue=23, stringValue="hello world")
+		public int aField;
+
+		@Deprecated
+		public void aDeprecatedMethod(
+			@MyAnnotation(intValue=5, classArray=void.class)
+			int a) {
+		}
+
+		@SuppressWarnings({"unchecked", "unused"})
+		public MyClass() {
+			Map<String,String>[] map = new Map[16];
+		}
+}
+\end{lstlisting}
+
+The annotations \begin{scriptsize}\verb||\hspace{0.0pt}\verb|@|\hspace{0.0pt}\verb|SuppressWarnings|\end{scriptsize} and \begin{scriptsize}\verb||\hspace{0.0pt}\verb|@|\hspace{0.0pt}\verb|Deprecated|\end{scriptsize} are defined by the
+Java library (amongst many others).
+
+You can then access the annotations of an annotated element by the reflection
+API. There are several methods to do so. Each annotated element can have an
+arbitrary number of annotations, but only one per annotation type.
+
+The annotated element interface looks like this:
+\begin{lstlisting}[language=Java]
+package java.lang.reflect;
+
+import java.lang.annotation.Annotation;
+
+public interface AnnotatedElement
+{
+  <T extends Annotation> T getAnnotation(Class<T> annotationClass);
+
+  Annotation[] getAnnotations();
+
+  Annotation[] getDeclaredAnnotations();
+
+  boolean isAnnotationPresent(Class<? extends Annotation> annotationClass);
+}
+\end{lstlisting}
+
+Some classes offer more than this basic set of methods.
+
+\begin{scriptsize}\verb|java|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|lang|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|Class|\end{scriptsize} has the method \begin{scriptsize}\verb|public|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|boolean|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|isAnnotation|\hspace{0.0pt}\verb|(|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|)|\hspace{0.0pt}\verb||\end{scriptsize} which
+tells you if the referred class is an annotation.
+
+\begin{scriptsize}\verb|java|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|lang|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|Constructor|\end{scriptsize} and \begin{scriptsize}\verb|java|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|lang|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|Method|\end{scriptsize} have the
+method \begin{scriptsize}\verb|public|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|Annotation|\hspace{0.0pt}\verb|[|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|]|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|[|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|]|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|getParameterAnnotations|\hspace{0.0pt}\verb|(|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|)|\hspace{0.0pt}\verb||\end{scriptsize} which returns the
+annotations for each parameter as a two-dimensional array.
+
+\begin{scriptsize}\verb|java|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|lang|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|Method|\end{scriptsize} has the method \begin{scriptsize}\verb|public|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|Object|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|getDefaultValue|\hspace{0.0pt}\verb|(|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|)|\hspace{0.0pt}\verb||\end{scriptsize}
+which returns the default value of a method of an annotation.
+
+Annotations in Java are interfaces. Therefore there has to be an implementing
+class for each annotation type. But the Java compiler does not generate such an
+implementation, this actually happens at runtime. The Java runtime has to
+create an implementation for an annotation type the first time an annotation of
+a specific annotation type is requested. It then remembers this on the fly
+generated class and uses it for each further instance of the same annotation
+type.
+
+\section{Overview of Annotation Support in CACAO}
+\label{sec:annotations-cacao-overview}
+Even though annotations in Java exist since JDK 5.0 I used the classfile
+specification of JDK 6.0~\cite{JSR202}
+to implement the annotations support. However, there where no changes between
+this versions.
+
+Because OpenJDK does a lot concerning annotation support in it's J2SE library
+I started with annotations support for CACAO + OpenJDK. I thought this would be
+easier and I would be able to gather some experience for working on the
+annotation support for CACAO + GNU Classpath. OpenJDK does the annotation
+parsing in Java code.
+
+What had to be done:
+\begin{itemize}
+ \item Loading of annotations from the classfile to the \begin{scriptsize}\verb|classinfo|\end{scriptsize} struct
+ \item Implementing the \begin{scriptsize}\verb|JVM_|\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb||\end{scriptsize} functions for getting the unparsed annotations for each annotated element as a byte array.
+ \item Implementing the \begin{scriptsize}\verb|sun|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|ConstantPool|\end{scriptsize} class which is used by OpenJDKs annotation parser to get access to constants that have to be loaded.
+\end{itemize}
+
+The code for the annotation loading is placed in the files
+\begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|vmcore|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|annotation|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|h|\end{scriptsize} (see section \ref{sec:src/vmcore/annotation.h}) and
+\begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|vmcore|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|annotation|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|c|\end{scriptsize} (see section \ref{sec:src/vmcore/annotation.c}).
+
+This code is called by the loader functions:
+\begin{itemize}
+ \item \begin{scriptsize}\verb|bool|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|class_load_attributes|\hspace{0.0pt}\verb|(|\hspace{0.0pt}\verb|classbuffer|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb|cb|\hspace{0.0pt}\verb|)|\hspace{0.0pt}\verb||\end{scriptsize}
+ \item \begin{scriptsize}\verb|bool|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|method_load|\hspace{0.0pt}\verb|(|\hspace{0.0pt}\verb|classbuffer|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb|cb|\hspace{0.0pt}\verb|,|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|methodinfo|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb|m|\hspace{0.0pt}\verb|,|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|descriptor_pool|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb|descpool|\hspace{0.0pt}\verb|)|\hspace{0.0pt}\verb||\end{scriptsize}
+ \item \begin{scriptsize}\verb|bool|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|field_load|\hspace{0.0pt}\verb|(|\hspace{0.0pt}\verb|classbuffer|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb|cb|\hspace{0.0pt}\verb|,|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|fieldinfo|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb|f|\hspace{0.0pt}\verb|,|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|descriptor_pool|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb|descpool|\hspace{0.0pt}\verb|)|\hspace{0.0pt}\verb||\end{scriptsize}
+\end{itemize}
+See: \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|vmcore|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|class|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|c|\end{scriptsize} (see section \ref{sec:src/vmcore/class.c}),
+\begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|vmcore|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|method|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|c|\end{scriptsize} (see section \ref{sec:src/vmcore/method.c}),
+\begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|vmcore|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|field|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|c|\end{scriptsize} (see section \ref{sec:src/vmcore/field.c})
+
+All annotations and also the annotation default values are stored in the
+\begin{scriptsize}\verb|classinfo|\end{scriptsize} struct as unparsed byte arrays:
+\begin{lstlisting}[language=C,firstnumber=147]
+#if defined(ENABLE_ANNOTATIONS)
+	java_object_t *annotations;
+	
+	java_object_t *method_annotations;
+	java_object_t *method_parameterannotations;
+	java_object_t *method_annotationdefaults;
+
+	java_object_t *field_annotations;
+#endif
+\end{lstlisting}
+See: \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|vmcore|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|class|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|h|\end{scriptsize} (see section \ref{sec:src/vmcore/class.h})
+
+I decided to use Java objects (\begin{scriptsize}\verb|java_bytearray_t|\end{scriptsize} and \begin{scriptsize}\verb|java_objectarray_t|\end{scriptsize})
+rather than implementing my own array structs, because the annotation
+parser, that is written in Java, needs Java bytearrays anyway. I would have had
+to copy the whole unparsed annotation when they are parsed, which would had
+reduced speed and increased memory usage.
+
+For this to be possible twisti had to adapt CACAOs bootstrap process, so that
+the primitive table already exists when classes will be loaded (because I use
+\begin{scriptsize}\verb|builtin_newarray_byte|\end{scriptsize}, \begin{scriptsize}\verb|bultin_anewarray|\end{scriptsize} and
+\begin{scriptsize}\verb|primitive_arrayclass_get_by_type|\end{scriptsize} during loading of the annotation
+attributes).
+
+Futher I added functions to access the unparsed annotations as Java byte arrays:
+\begin{itemize}
+ \item \begin{scriptsize}\verb|class_get_annotations|\end{scriptsize}
+ \item \begin{scriptsize}\verb|method_get_annotations|\end{scriptsize}
+ \item \begin{scriptsize}\verb|method_get_parameterannotations|\end{scriptsize}
+ \item \begin{scriptsize}\verb|method_get_annotationdefault|\end{scriptsize}
+ \item \begin{scriptsize}\verb|field_get_annotations|\end{scriptsize}
+\end{itemize}
+See: \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|vmcore|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|class|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|h|\end{scriptsize} (see section \ref{sec:src/vmcore/class.h}),
+\begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|vmcore|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|field|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|h|\end{scriptsize} (see section \ref{sec:src/vmcore/field.h}),
+\begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|vmcore|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|method|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|h|\end{scriptsize} (see section \ref{sec:src/vmcore/method.h})
+
+And used them in \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|native|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|vm|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|sun|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|jvm|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|c|\end{scriptsize} (see section \ref{sec:src/native/vm/sun/jvm.c}) to
+implement these functions:
+\begin{itemize}
+ \item \begin{scriptsize}\verb|JVM_GetClassAnnotations|\end{scriptsize}
+ \item \begin{scriptsize}\verb|JVM_GetFieldAnnotations|\end{scriptsize}
+ \item \begin{scriptsize}\verb|JVM_GetMethodAnnotations|\end{scriptsize}
+ \item \begin{scriptsize}\verb|JVM_GetMethodDefaultAnnotationValue|\end{scriptsize}
+ \item \begin{scriptsize}\verb|JVM_GetMethodParameterAnnotations|\end{scriptsize}
+\end{itemize}
+
+Then I had to add an implementation for OpenJDKs \begin{scriptsize}\verb|ConstantPool|\end{scriptsize} class by
+filling in these functions (not all of them are used in the annotations support):
+\begin{itemize}
+ \item \begin{scriptsize}\verb|JVM_GetClassConstantPool|\end{scriptsize}
+ \item \begin{scriptsize}\verb|JVM_ConstantPoolGetSize|\end{scriptsize}
+ \item \begin{scriptsize}\verb|JVM_ConstantPoolGetClassAt|\end{scriptsize}
+ \item \begin{scriptsize}\verb|JVM_ConstantPoolGetClassAtIfLoaded|\end{scriptsize}
+ \item \begin{scriptsize}\verb|JVM_ConstantPoolGetMethodAt|\end{scriptsize}
+ \item \begin{scriptsize}\verb|JVM_ConstantPoolGetMethodAtIfLoaded|\end{scriptsize}
+ \item \begin{scriptsize}\verb|JVM_ConstantPoolGetFieldAt|\end{scriptsize}
+ \item \begin{scriptsize}\verb|JVM_ConstantPoolGetFieldAtIfLoaded|\end{scriptsize}
+ \item \begin{scriptsize}\verb|JVM_ConstantPoolGetMemberRefInfoAt|\end{scriptsize}
+ \item \begin{scriptsize}\verb|JVM_ConstantPoolGetIntAt|\end{scriptsize}
+ \item \begin{scriptsize}\verb|JVM_ConstantPoolGetLongAt|\end{scriptsize}
+ \item \begin{scriptsize}\verb|JVM_ConstantPoolGetFloatAt|\end{scriptsize}
+ \item \begin{scriptsize}\verb|JVM_ConstantPoolGetDoubleAt|\end{scriptsize}
+ \item \begin{scriptsize}\verb|JVM_ConstantPoolGetStringAt|\end{scriptsize}
+ \item \begin{scriptsize}\verb|JVM_ConstantPoolGetUTF8At|\end{scriptsize}
+\end{itemize}
+
+In the annotation attributes in the classfile are no values stored, but indices
+of members of the constant pool of the annotated class. The values at these
+indices represent the values of the annotations' field. Therefore the
+\begin{scriptsize}\verb|ConstantPool|\end{scriptsize} class is needed by the annotation parser to access those
+constants.
+
+This was roughly all that what was needed for annotation support for CACAO +
+OpenJDK. For GNU Classpath much more had to be done. First there is no
+annotations parser in GNU Classpath, but because of the GPL I just imported the
+one from OpenJDK. So far so good, but GNU Classpath did not do anything about
+annotations except in \begin{scriptsize}\verb|java|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|lang|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|Class|\end{scriptsize}. I had to implement the "high
+level" annotations interface:
+\begin{itemize}
+ \item \begin{scriptsize}\verb|Annotation|\hspace{0.0pt}\verb|[|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|]|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|java|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|lang|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|VMClass|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|getDeclaredAnnotations|\hspace{0.0pt}\verb|(|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|)|\hspace{0.0pt}\verb||\end{scriptsize}
+ \item \begin{scriptsize}\verb|Annotation|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|java|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|lang|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|Constructor|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|getAnnotation|\hspace{0.0pt}\verb|(|\hspace{0.0pt}\verb|Class|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|annotationClass|\hspace{0.0pt}\verb|)|\hspace{0.0pt}\verb||\end{scriptsize}
+ \item \begin{scriptsize}\verb|Annotation|\hspace{0.0pt}\verb|[|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|]|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|java|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|lang|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|Constructor|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|getDeclaredAnnotations|\hspace{0.0pt}\verb|(|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|)|\hspace{0.0pt}\verb||\end{scriptsize}
+ \item \begin{scriptsize}\verb|Annotation|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|java|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|lang|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|Field|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|getAnnotation|\hspace{0.0pt}\verb|(|\hspace{0.0pt}\verb|Class|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|annotationClass|\hspace{0.0pt}\verb|)|\hspace{0.0pt}\verb||\end{scriptsize}
+ \item \begin{scriptsize}\verb|Annotation|\hspace{0.0pt}\verb|[|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|]|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|java|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|lang|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|Field|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|getDeclaredAnnotations|\hspace{0.0pt}\verb|(|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|)|\hspace{0.0pt}\verb||\end{scriptsize}
+ \item \begin{scriptsize}\verb|Annotation|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|java|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|lang|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|Method|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|getAnnotation|\hspace{0.0pt}\verb|(|\hspace{0.0pt}\verb|Class|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|annotationClass|\hspace{0.0pt}\verb|)|\hspace{0.0pt}\verb||\end{scriptsize}
+ \item \begin{scriptsize}\verb|Annotation|\hspace{0.0pt}\verb|[|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|]|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|java|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|lang|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|Method|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|getDeclaredAnnotations|\hspace{0.0pt}\verb|(|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|)|\hspace{0.0pt}\verb||\end{scriptsize}
+\end{itemize}
+See: \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|native|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|vm|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|java_lang_VMClass|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|c|\end{scriptsize} (see section \ref{sec:src/native/vm/gnu/java_lang_VMClass.c}),
+\begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lib|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|java|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lang|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|Constructor|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize} (see section \ref{sec:src/lib/gnu/java/lang/reflect/Constructor.java}),
+\begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|native|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|vm|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|java_lang_reflect_Constructor|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|c|\end{scriptsize} (see section \ref{sec:src/native/vm/gnu/java_lang_reflect_Constructor.c}),
+\begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lib|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|java|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lang|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|Field|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize} (see section \ref{sec:src/lib/gnu/java/lang/reflect/Field.java}),
+\begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|native|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|vm|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|java_lang_reflect_Field|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|c|\end{scriptsize} (see section \ref{sec:src/native/vm/gnu/java_lang_reflect_Field.c}),
+\begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lib|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|java|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lang|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|Method|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize} (see section \ref{sec:src/lib/gnu/java/lang/reflect/Method.java}),
+\begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|native|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|vm|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|java_lang_reflect_Method|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|c|\end{scriptsize} (see section \ref{sec:src/native/vm/gnu/java_lang_reflect_Method.c})
+
+I implementined caching of the parsed annotations almost identical to OpenJDK,
+except for \begin{scriptsize}\verb|java|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|lang|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|Class|\end{scriptsize}, because that class already had the annotation
+interface implemented (without caching). So I would have had to import this class
+from GNU Classpath, change it and keep it up to date. Twisti said that's not
+worth the effort and that OpenJDK is the future.
+
+Because I used the annotation parser from OpenJDK I had to implement the
+\begin{scriptsize}\verb|sun|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|ConstantPool|\end{scriptsize} class for GNU Classpath, too.
+
+See: \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lib|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|sun|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|ConstantPool|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize} (see section \ref{sec:src/lib/gnu/sun/reflect/ConstantPool.java}),
+\begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|native|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|vm|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|sun_reflect_ConstantPool|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|c|\end{scriptsize} (see section \ref{sec:src/native/vm/gnu/sun_reflect_ConstantPool.c})
+
+The ugly bit there is the redundant implementation of this class. It is still
+under discussion what we do in such a case. We agreed that until a better
+solution is found, we will just keep the redundant implementations.
+
+\section{Imported Files}
+\label{sec:imported-files}
+
+Following files where imported from GNU Classpath or OpenJDK and have to be
+kept up to date. Files marked with * where changed or extended a bit to be
+useable with CACAO. All this imported files are used with GNU Classpath only.
+
+\begin{bfseries}Importet from GNU Classpath:\end{bfseries}
+\begin{itemize}
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lib|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|java|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lang|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|Constructor|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize} (see section \ref{sec:src/lib/gnu/java/lang/reflect/Constructor.java})*
+\end{itemize}
+
+\begin{bfseries}Imported from OpenJDK:\end{bfseries}
+\begin{itemize}
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lib|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|sun|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|ConstantPool|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize} (see section \ref{sec:src/lib/gnu/sun/reflect/ConstantPool.java})*
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lib|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|sun|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|annotation|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|AnnotationParser|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize} (see section \ref{sec:src/lib/gnu/sun/reflect/annotation/AnnotationParser.java})*
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lib|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|sun|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|annotation|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|AnnotationType|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize} (see section \ref{sec:src/lib/gnu/sun/reflect/annotation/AnnotationType.java})*
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lib|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|sun|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|annotation|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|AnnotationTypeMismatchExceptionProxy|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize} (see section \ref{sec:src/lib/gnu/sun/reflect/annotation/AnnotationTypeMismatchExceptionProxy.java})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lib|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|sun|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|annotation|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|EnumConstantNotPresentExceptionProxy|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize} (see section \ref{sec:src/lib/gnu/sun/reflect/annotation/EnumConstantNotPresentExceptionProxy.java})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lib|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|sun|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|annotation|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|ExceptionProxy|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize} (see section \ref{sec:src/lib/gnu/sun/reflect/annotation/ExceptionProxy.java})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lib|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|sun|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|annotation|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|TypeNotPresentExceptionProxy|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize} (see section \ref{sec:src/lib/gnu/sun/reflect/annotation/TypeNotPresentExceptionProxy.java})
+\end{itemize}
+
+\paragraph{TODO:}
+\label{par:TODO/keep-imported-files-up-to-date}Keep these imported files up to date with OpenJDK/GNU Classpath.
+
+\section{Files I touched and what I did to them}
+\label{sec:touched-files}
+
+\begin{bfseries}List of touched files:\end{bfseries}
+\begin{itemize}
+ \item \begin{scriptsize}\verb|THIRDPARTY|\end{scriptsize} (see section \ref{sec:THIRDPARTY})
+ \item \begin{scriptsize}\verb|configure|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|ac|\end{scriptsize} (see section \ref{sec:configure.ac})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|cacaoh|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|dummy|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|c|\end{scriptsize} (see section \ref{sec:src/cacaoh/dummy.c})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lib|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|Makefile|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|am|\end{scriptsize} (see section \ref{sec:src/lib/Makefile.am})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lib|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|java|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lang|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|Constructor|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize} (see section \ref{sec:src/lib/gnu/java/lang/reflect/Constructor.java})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lib|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|java|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lang|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|Field|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize} (see section \ref{sec:src/lib/gnu/java/lang/reflect/Field.java})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lib|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|java|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lang|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|Method|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize} (see section \ref{sec:src/lib/gnu/java/lang/reflect/Method.java})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lib|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|sun|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|ConstantPool|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize} (see section \ref{sec:src/lib/gnu/sun/reflect/ConstantPool.java})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lib|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|sun|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|annotation|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|AnnotationParser|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize} (see section \ref{sec:src/lib/gnu/sun/reflect/annotation/AnnotationParser.java})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lib|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|sun|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|annotation|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|AnnotationType|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize} (see section \ref{sec:src/lib/gnu/sun/reflect/annotation/AnnotationType.java})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lib|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|sun|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|annotation|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|AnnotationTypeMismatchExceptionProxy|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize} (see section \ref{sec:src/lib/gnu/sun/reflect/annotation/AnnotationTypeMismatchExceptionProxy.java})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lib|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|sun|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|annotation|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|EnumConstantNotPresentExceptionProxy|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize} (see section \ref{sec:src/lib/gnu/sun/reflect/annotation/EnumConstantNotPresentExceptionProxy.java})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lib|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|sun|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|annotation|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|ExceptionProxy|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize} (see section \ref{sec:src/lib/gnu/sun/reflect/annotation/ExceptionProxy.java})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lib|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|sun|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|annotation|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|TypeNotPresentExceptionProxy|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize} (see section \ref{sec:src/lib/gnu/sun/reflect/annotation/TypeNotPresentExceptionProxy.java})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|native|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|include|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|Makefile|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|am|\end{scriptsize} (see section \ref{sec:src/native/include/Makefile.am})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|native|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|llni|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|h|\end{scriptsize} (see section \ref{sec:src/native/llni.h})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|native|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|vm|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|Makefile|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|am|\end{scriptsize} (see section \ref{sec:src/native/vm/gnu/Makefile.am})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|native|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|vm|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|java_lang_VMClass|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|c|\end{scriptsize} (see section \ref{sec:src/native/vm/gnu/java_lang_VMClass.c})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|native|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|vm|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|java_lang_reflect_Constructor|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|c|\end{scriptsize} (see section \ref{sec:src/native/vm/gnu/java_lang_reflect_Constructor.c})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|native|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|vm|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|java_lang_reflect_Field|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|c|\end{scriptsize} (see section \ref{sec:src/native/vm/gnu/java_lang_reflect_Field.c})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|native|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|vm|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|java_lang_reflect_Method|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|c|\end{scriptsize} (see section \ref{sec:src/native/vm/gnu/java_lang_reflect_Method.c})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|native|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|vm|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|sun_reflect_ConstantPool|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|c|\end{scriptsize} (see section \ref{sec:src/native/vm/gnu/sun_reflect_ConstantPool.c})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|native|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|vm|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|java_lang_Class|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|c|\end{scriptsize} (see section \ref{sec:src/native/vm/java_lang_Class.c})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|native|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|vm|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|java_lang_Class|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|h|\end{scriptsize} (see section \ref{sec:src/native/vm/java_lang_Class.h})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|native|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|vm|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|nativevm|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|c|\end{scriptsize} (see section \ref{sec:src/native/vm/nativevm.c})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|native|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|vm|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|nativevm|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|h|\end{scriptsize} (see section \ref{sec:src/native/vm/nativevm.h})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|native|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|vm|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|c|\end{scriptsize} (see section \ref{sec:src/native/vm/reflect.c})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|native|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|vm|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|h|\end{scriptsize} (see section \ref{sec:src/native/vm/reflect.h})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|native|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|vm|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|sun|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|jvm|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|c|\end{scriptsize} (see section \ref{sec:src/native/vm/sun/jvm.c})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|vmcore|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|Makefile|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|am|\end{scriptsize} (see section \ref{sec:src/vmcore/Makefile.am})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|vmcore|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|annotation|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|c|\end{scriptsize} (see section \ref{sec:src/vmcore/annotation.c})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|vmcore|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|annotation|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|h|\end{scriptsize} (see section \ref{sec:src/vmcore/annotation.h})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|vmcore|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|class|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|c|\end{scriptsize} (see section \ref{sec:src/vmcore/class.c})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|vmcore|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|class|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|h|\end{scriptsize} (see section \ref{sec:src/vmcore/class.h})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|vmcore|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|field|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|c|\end{scriptsize} (see section \ref{sec:src/vmcore/field.c})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|vmcore|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|field|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|h|\end{scriptsize} (see section \ref{sec:src/vmcore/field.h})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|vmcore|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|linker|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|h|\end{scriptsize} (see section \ref{sec:src/vmcore/linker.h})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|vmcore|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|loader|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|c|\end{scriptsize} (see section \ref{sec:src/vmcore/loader.c})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|vmcore|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|method|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|c|\end{scriptsize} (see section \ref{sec:src/vmcore/method.c})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|vmcore|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|method|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|h|\end{scriptsize} (see section \ref{sec:src/vmcore/method.h})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|vmcore|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|utf8|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|c|\end{scriptsize} (see section \ref{sec:src/vmcore/utf8.c})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|vmcore|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|utf8|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|h|\end{scriptsize} (see section \ref{sec:src/vmcore/utf8.h})
+ \item \begin{scriptsize}\verb|tests|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|regression|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|Makefile|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|am|\end{scriptsize} (see section \ref{sec:tests/regression/Makefile.am})
+ \item \begin{scriptsize}\verb|tests|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|regression|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|MinimalClassReflection|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize} (see section \ref{sec:tests/regression/MinimalClassReflection.java})
+ \item \begin{scriptsize}\verb|tests|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|regression|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|MinimalClassReflection|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|output|\end{scriptsize} (see section \ref{sec:tests/regression/MinimalClassReflection.output})
+ \item \begin{scriptsize}\verb|tests|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|regression|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|TestAnnotations|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize} (see section \ref{sec:tests/regression/TestAnnotations.java})
+ \item \begin{scriptsize}\verb|tests|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|regression|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|TestAnnotations|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|output|\end{scriptsize} (see section \ref{sec:tests/regression/TestAnnotations.output})
+\end{itemize}
+
+\subsection{THIRDPARTY}
+\label{sec:THIRDPARTY}
+
+Added copyright notice for this imported OpenJDK files:
+\begin{itemize}
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lib|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|sun|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|ConstantPool|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize} (see section \ref{sec:src/lib/gnu/sun/reflect/ConstantPool.java})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lib|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|sun|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|annotation|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|AnnotationParser|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize} (see section \ref{sec:src/lib/gnu/sun/reflect/annotation/AnnotationParser.java})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lib|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|sun|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|annotation|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|AnnotationType|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize} (see section \ref{sec:src/lib/gnu/sun/reflect/annotation/AnnotationType.java})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lib|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|sun|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|annotation|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|AnnotationTypeMismatchExceptionProxy|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize} (see section \ref{sec:src/lib/gnu/sun/reflect/annotation/AnnotationTypeMismatchExceptionProxy.java})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lib|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|sun|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|annotation|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|EnumConstantNotPresentExceptionProxy|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize} (see section \ref{sec:src/lib/gnu/sun/reflect/annotation/EnumConstantNotPresentExceptionProxy.java})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lib|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|sun|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|annotation|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|ExceptionProxy|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize} (see section \ref{sec:src/lib/gnu/sun/reflect/annotation/ExceptionProxy.java})
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lib|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|sun|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|annotation|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|TypeNotPresentExceptionProxy|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize} (see section \ref{sec:src/lib/gnu/sun/reflect/annotation/TypeNotPresentExceptionProxy.java})
+\end{itemize}
+
+\subsection{configure.ac}
+\label{sec:configure.ac}
+
+Annotations Support will be built if the configure option \begin{scriptsize}\verb||\hspace{0.0pt}\verb|-|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|-|\hspace{0.0pt}\verb|enable|\hspace{0.0pt}\verb|-|\hspace{0.0pt}\verb|annotations|\end{scriptsize}
+is supplied. As of the next release after the summer of 2007 this option will be
+enabled by default.
+
+Twisti later moved this option to the file
+\href{http://mips.complang.tuwien.ac.at/hg/cacao/file/tip/m4/annotations.m4}{m4/annotations.m4}\footnote{\url{http://mips.complang.tuwien.ac.at/hg/cacao/file/tip/m4/annotations.m4}}.
+
+If possible, all annotations support code is \begin{scriptsize}\verb||\hspace{0.0pt}\verb|#|\hspace{0.0pt}\verb|ifdef|\end{scriptsize}-ed with the
+\begin{scriptsize}\verb|ENABLE_ANNOTATIONS|\end{scriptsize} macro.
+
+\subsection{src/cacaoh/dummy.c}
+\label{sec:src/cacaoh/dummy.c}
+
+Simple/dummy implementations of following functions where added:
+\begin{itemize}
+ \item \begin{scriptsize}\verb|builtin_newarray_byte|\end{scriptsize}
+ \item \begin{scriptsize}\verb|array_objectarray_element_get|\end{scriptsize}
+ \item \begin{scriptsize}\verb|array_objectarray_element_set|\end{scriptsize}
+ \item \begin{scriptsize}\verb|array_length_get|\end{scriptsize}
+ \item \begin{scriptsize}\verb|builtin_anewarray|\end{scriptsize}
+ \item \begin{scriptsize}\verb|primitive_arrayclass_get_by_type|\end{scriptsize}
+\end{itemize}
+
+\subsection{src/lib/Makefile.am}
+\label{sec:src/lib/Makefile.am}
+
+I added \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lib|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|java|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lang|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|Constructor|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize} to
+\begin{scriptsize}\verb|VM_JAVA_FILES|\end{scriptsize} in this file.
+
+Following files are only added to \begin{scriptsize}\verb|VM_JAVA_FILES|\end{scriptsize} if
+\begin{scriptsize}\verb|ENABLE_ANNOTATIONS|\end{scriptsize} is defined:
+\begin{itemize}
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lib|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|sun|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|ConstantPool|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize}
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lib|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|sun|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|annotation|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|AnnotationParser|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize}
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lib|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|sun|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|annotation|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|AnnotationType|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize}
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lib|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|sun|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|annotation|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|AnnotationTypeMismatchExceptionProxy|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize}
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lib|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|sun|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|annotation|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|EnumConstantNotPresentExceptionProxy|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize}
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lib|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|sun|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|annotation|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|ExceptionProxy|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize}
+ \item \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lib|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|sun|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|annotation|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|TypeNotPresentExceptionProxy|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize}
+\end{itemize}
+
+\subsection{src/lib/gnu/java/lang/reflect/Constructor.java}
+\label{sec:src/lib/gnu/java/lang/reflect/Constructor.java}
+
+This file was imported from GNU Classpath because I needed to add some methods.
+
+The additions to this class are inspired by OpenJDK (the private interface
+looks and works the same but is implemented differently).
+
+Following fields where added:
+\begin{lstlisting}[language=Java,firstnumber=92]
+  private byte[] annotations = null;
+\end{lstlisting}
+This field holds the unparsed annotations.
+
+\begin{lstlisting}[language=Java,firstnumber=97]
+  private byte[] parameterAnnotations = null;
+\end{lstlisting}
+This field holds the unparsed parameter annotations.
+
+\begin{lstlisting}[language=Java,firstnumber=103]
+  private transient Map<Class<? extends Annotation>, Annotation> declaredAnnotations = null;
+\end{lstlisting}
+This field holds the parsed annotations.
+
+\begin{lstlisting}[language=Java,firstnumber=111]
+  private static final Annotation[] EMPTY_ANNOTATIONS_ARRAY =
+    new Annotation[0];
+\end{lstlisting}
+Used in \begin{scriptsize}\verb|getDeclaredAnnotations|\hspace{0.0pt}\verb|(|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|)|\hspace{0.0pt}\verb||\end{scriptsize}. Look there for a description.
+
+Following methods where added/implemented:
+\begin{lstlisting}[language=Java,firstnumber=443]
+  private synchronized native Map<Class<? extends Annotation>, Annotation> declaredAnnotations();
+\end{lstlisting}
+When called the first time, this method will parse the declared annotations,
+which are stored unparsed in the field \begin{scriptsize}\verb|annotations|\end{scriptsize} and then stores the
+result in the field \begin{scriptsize}\verb|declaredAnnotations|\end{scriptsize} as a \begin{scriptsize}\verb|HashMap|\end{scriptsize}. Each successive
+call will just return this field.
+
+\begin{lstlisting}[language=Java,firstnumber=425]
+  public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
+    if (annotationClass == null)
+      throw new NullPointerException();
+
+    return (T)declaredAnnotations().get(annotationClass);
+  }
+\end{lstlisting}
+This method gets the annotation of the constructor of the type specified by
+\begin{scriptsize}\verb|annotationClass|\end{scriptsize}, or \begin{scriptsize}\verb|null|\end{scriptsize}, if there is no such annotation present.
+
+\begin{lstlisting}[language=Java,firstnumber=435]
+  public Annotation[] getDeclaredAnnotations() {
+    return declaredAnnotations().values().toArray(EMPTY_ANNOTATIONS_ARRAY);
+  }
+\end{lstlisting}
+This method gets all the declared annotations in an array. Because the generic
+type \begin{scriptsize}\verb|java|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|util|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|Collection|\hspace{0.0pt}\verb|<|\hspace{0.0pt}\verb|Annotation|\hspace{0.0pt}\verb|>|\hspace{0.0pt}\verb||\end{scriptsize} cannot create an array of type
+\begin{scriptsize}\verb|Annotation|\hspace{0.0pt}\verb|[|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|]|\hspace{0.0pt}\verb||\end{scriptsize} (because of type erasure) the \begin{scriptsize}\verb|toArray|\hspace{0.0pt}\verb|(|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|)|\hspace{0.0pt}\verb||\end{scriptsize} method must get a
+zero length \begin{itshape}template\end{itshape} array passed, with which an annotation array can be
+created.
+
+\begin{lstlisting}[language=Java,firstnumber=461]
+  public native Annotation[][] getParameterAnnotations();
+\end{lstlisting}
+This method parses and returns all the parameter annotations in a
+two-dimensional Annotation array.
+
+\paragraph{TODO:}
+\label{par:TODO/cache-parameter-annotations}Maybe also cache parsed parameter annotations? However, the
+API specification does not specify an annotation lookup method like
+\begin{scriptsize}\verb|getAnnotation|\hspace{0.0pt}\verb|(|\hspace{0.0pt}\verb|Class|\hspace{0.0pt}\verb|<|\hspace{0.0pt}\verb|T|\hspace{0.0pt}\verb|>|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|annotationClass|\hspace{0.0pt}\verb|)|\hspace{0.0pt}\verb||\end{scriptsize} for parameter annotations,
+and so no Map has to be stored for this. The question is: Is caching the
+parsed parameter annotation worth it? (OpenJDk does not do it.)
+
+\subsection{src/lib/gnu/java/lang/reflect/Field.java}
+\label{sec:src/lib/gnu/java/lang/reflect/Field.java}
+
+Following fields where added:
+\begin{lstlisting}[language=Java]
+  private byte[] annotations = null;
+  private transient Map<Class<? extends Annotation>, Annotation> declaredAnnotations = null;
+  private static final Annotation[] EMPTY_ANNOTATIONS_ARRAY =
+    new Annotation[0];
+\end{lstlisting}
+See: \begin{scriptsize}\verb|Constructor|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize} (see section \ref{sec:src/lib/gnu/java/lang/reflect/Constructor.java})
+
+Following methods where added/implemented:
+\begin{lstlisting}[language=Java]
+  public <T extends Annotation> T getAnnotation(Class<T> annotationClass)
+  public Annotation[] getDeclaredAnnotations()
+  private synchronized native Map<Class<? extends Annotation>, Annotation> declaredAnnotations();
+\end{lstlisting}
+See: \begin{scriptsize}\verb|Constructor|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize} (see section \ref{sec:src/lib/gnu/java/lang/reflect/Constructor.java})
+
+\subsection{src/lib/gnu/java/lang/reflect/Method.java}
+\label{sec:src/lib/gnu/java/lang/reflect/Method.java}
+
+Following fields where added:
+\begin{lstlisting}[language=Java]
+  private byte[] annotations          = null;
+  private byte[] parameterAnnotations = null;
+  private transient Map<Class<? extends Annotation>, Annotation> declaredAnnotations = null;
+  private static final Annotation[] EMPTY_ANNOTATIONS_ARRAY =
+    new Annotation[0];
+\end{lstlisting}
+See: \begin{scriptsize}\verb|Constructor|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize} (see section \ref{sec:src/lib/gnu/java/lang/reflect/Constructor.java})
+
+\begin{lstlisting}[language=Java]
+  private byte[] annotationDefault    = null;
+\end{lstlisting}
+This field stores the unparsed annotation default value, if this method belongs
+to an annotation interface. Otherwise, or if there is no default value, it
+points to \begin{scriptsize}\verb|null|\end{scriptsize}.
+
+Following methods where added/implemented:
+\begin{lstlisting}[language=Java]
+  public <T extends Annotation> T getAnnotation(Class<T> annotationClass)
+  public Annotation[] getDeclaredAnnotations()
+  private synchronized native Map<Class<? extends Annotation>, Annotation> declaredAnnotations();
+  public native Annotation[][] getParameterAnnotations();
+\end{lstlisting}
+See: \begin{scriptsize}\verb|Constructor|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize} (see section \ref{sec:src/lib/gnu/java/lang/reflect/Constructor.java})
+
+\begin{lstlisting}[language=Java]
+  public native Object getDefaultValue();
+\end{lstlisting}
+This method returns the parsed annotation default value of this method, if this
+method belongs to an annotation interface. Otherwise, or if there is no default
+value, it returns \begin{scriptsize}\verb|null|\end{scriptsize}.
+
+\subsection{src/lib/gnu/sun/reflect/ConstantPool.java}
+\label{sec:src/lib/gnu/sun/reflect/ConstantPool.java}
+
+I imported this class from OpenJDk, where it is used to access the constant
+pool entries of a class. This is needed when parsing annotations (and at the
+moment only then).
+
+I guess because it could be a security risk to grant normal Java code access to
+this class, certain measures where taken to prevent that. First of all, there
+is no obvious way to get a \begin{scriptsize}\verb|ConstantPool|\end{scriptsize} object in normal Java code.
+Further the field \begin{scriptsize}\verb|constantPoolOop|\end{scriptsize} of the class \begin{scriptsize}\verb|ConstantPool|\end{scriptsize} is
+hidden from the reflection API by this code:
+\begin{lstlisting}[language=Java,firstnumber=61]
+  static {
+      Reflection.registerFieldsToFilter(ConstantPool.class, new String[] { "constantPoolOop" });
+  }
+\end{lstlisting}
+However, this is OpenJDK specific and I imported this class for usage with
+GNU Classpath. I just out commented this static block, because I could not find
+a similar mechanism in GNU Classpath. I'm not sure if this is even necessary
+because there is no way to get a \begin{scriptsize}\verb|ConstantPool|\end{scriptsize} object in normal java code.
+
+However, the field \begin{scriptsize}\verb|constantPoolOop|\end{scriptsize} is just the class object for which the
+constant pool was requested. I figured this is the easiest way, because in
+CACAO the access to the constant pool entries takes place by the function
+\begin{scriptsize}\verb|voidptr|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|class_getconstant|\hspace{0.0pt}\verb|(|\hspace{0.0pt}\verb|classinfo|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb|class|\hspace{0.0pt}\verb|,|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|u4|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|pos|\hspace{0.0pt}\verb|,|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|u4|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|ctype|\hspace{0.0pt}\verb|)|\hspace{0.0pt}\verb||\end{scriptsize}.
+
+\subsection{src/lib/gnu/sun/reflect/annotation/AnnotationParser.java}
+\label{sec:src/lib/gnu/sun/reflect/annotation/AnnotationParser.java}
+
+Like all classes in \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|lib|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|sun|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|annotation|\end{scriptsize} this class was
+imported from OpenJDK.
+
+\begin{lstlisting}[language=Java,firstnumber=59]
+    public static Annotation[] parseAnnotationsIntoArray(
+                byte[] rawAnnotations,
+                ConstantPool constPool,
+                Class container)
+\end{lstlisting}
+This method is only used by \begin{scriptsize}\verb|java|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|lang|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|Class|\end{scriptsize}.
+
+\begin{lstlisting}[language=Java,firstnumber=79]
+    public static Annotation[][] parseParameterAnnotations(
+                    byte[] parameterAnnotations,
+                    ConstantPool constPool,
+                    Class container,
+                    int numParameters)
+\end{lstlisting}
+This method is a wrapper around
+\begin{scriptsize}\verb|public|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|static|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|Annotation|\hspace{0.0pt}\verb|[|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|]|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|[|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|]|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|parseParameterAnnotations|\hspace{0.0pt}\verb|(|\hspace{0.0pt}\verb|byte|\hspace{0.0pt}\verb|[|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|]|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|rawAnnotations|\hspace{0.0pt}\verb|,|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|ConstantPool|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|constPool|\hspace{0.0pt}\verb|,|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|Class|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|container|\hspace{0.0pt}\verb|)|\hspace{0.0pt}\verb||\end{scriptsize}
+which basically adds a check if \begin{scriptsize}\verb|parameterAnnotations|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|=|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|=|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|null|\end{scriptsize} (= no parameter
+annotations at all) and a check for the parameter count and throws appropriate
+exceptions.
+
+\begin{lstlisting}[language=Java,firstnumber=111]
+    public static Object parseAnnotationDefault(Method method,
+                                                byte[] annotationDefault,
+                                                ConstantPool constPool)
+\end{lstlisting}
+This is basically a copy from OpenJDKs
+\begin{scriptsize}\verb|java|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|lang|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|Method|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|getAnnotationDefault|\hspace{0.0pt}\verb|(|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|)|\hspace{0.0pt}\verb||\end{scriptsize} method because I wanted
+to change as less as possible in the Classpath code and there this method is
+declared as \begin{scriptsize}\verb|native|\end{scriptsize}. However, I would have to write a method to get a
+\begin{scriptsize}\verb|ConstantPool|\end{scriptsize} object in java code from which I rather stay away. My policy
+is: You can't get a \begin{scriptsize}\verb|ConstantPool|\end{scriptsize}, but the VM can give one to "you" (to the
+right method).
+
+\begin{lstlisting}[language=Java,firstnumber=465]
+    private static Class<?> parseSig(String sig, Class container) {
+        if (sig.equals("V")) {
+            return void.class;
+        }
+        else {
+            return toClass(new FieldSignatureParser(container, sig).getFieldType());
+        }
+    }
+\end{lstlisting}
+I had to rewrite this method. It was much more complex and used a lot of
+classes from OpenJDK I would have had to import. But GNU Classpath has it's own
+signature parser (\begin{scriptsize}\verb|gnu|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|lang|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|FieldSignatureParser|\end{scriptsize}) which I
+rather used instead. The \begin{scriptsize}\verb|sig|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|equals|\hspace{0.0pt}\verb|(|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|"|\hspace{0.0pt}\verb|V|\hspace{0.0pt}\verb|"|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|)|\hspace{0.0pt}\verb||\end{scriptsize} comparison was already in
+OpenJDKs version. It seems that neither GNU Classpath nor OpenJDK has a return
+type signature parser, but looking at the specs one can see that a field type
+signature parser plus this check for void does the same.
+
+\subsection{src/lib/gnu/sun/reflect/annotation/AnnotationType.java}
+\label{sec:src/lib/gnu/sun/reflect/annotation/AnnotationType.java}
+
+Imported from OpenJDK. Needed by \begin{scriptsize}\verb|AnnotationParser|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize} (see section \ref{sec:src/lib/gnu/sun/reflect/annotation/AnnotationParser.java}).
+
+This class used OpenJDks \begin{scriptsize}\verb|sun|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|misc|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|SharedSecrets|\end{scriptsize} feature to keep an
+annotation \begin{scriptsize}\verb|Class|\end{scriptsize} to \begin{scriptsize}\verb|AnnotationType|\end{scriptsize} mapping at a shared but secrete
+place. In particular the methods
+\begin{scriptsize}\verb|void|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|sun|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|misc|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|SharedSecrets|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|getJavaLangAccess|\hspace{0.0pt}\verb|(|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|)|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|setAnnotationType|\hspace{0.0pt}\verb|(|\hspace{0.0pt}\verb|Class|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|annotationClass|\hspace{0.0pt}\verb|,|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|AnnotationType|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|annotationType|\hspace{0.0pt}\verb|)|\hspace{0.0pt}\verb||\end{scriptsize}
+and \begin{scriptsize}\verb|AnnotationType|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|sun|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|misc|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|SharedSecrets|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|getJavaLangAccess|\hspace{0.0pt}\verb|(|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|)|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|getAnnotationType|\hspace{0.0pt}\verb|(|\hspace{0.0pt}\verb|Class|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|annotationClass|\hspace{0.0pt}\verb|)|\hspace{0.0pt}\verb||\end{scriptsize}
+where used.
+
+GNU Classpath does not have such a feature and therefore I simply added a
+\begin{scriptsize}\verb|Map|\end{scriptsize} to maintain the mapping:
+\begin{lstlisting}[language=Java,firstnumber=50]
+    private static Map<Class, AnnotationType> annotationTypes =
+        new HashMap<Class, AnnotationType>();
+\end{lstlisting}
+
+This map is accessed in the methods
+\begin{scriptsize}\verb|public|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|static|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|synchronized|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|AnnotationType|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|getInstance|\hspace{0.0pt}\verb|(|\hspace{0.0pt}\verb|Class|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|annotationClass|\hspace{0.0pt}\verb|)|\hspace{0.0pt}\verb||\end{scriptsize}
+and \begin{scriptsize}\verb|private|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|AnnotationType|\hspace{0.0pt}\verb|(|\hspace{0.0pt}\verb|final|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|Class|\hspace{0.0pt}\verb|<|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|?|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|>|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|annotationClass|\hspace{0.0pt}\verb|)|\hspace{0.0pt}\verb||\end{scriptsize}.
+
+\subsection{src/lib/gnu/sun/reflect/annotation/AnnotationTypeMismatchExceptionProxy.java}
+\label{sec:src/lib/gnu/sun/reflect/annotation/AnnotationTypeMismatchExceptionProxy.java}
+
+Imported from OpenJDK. Needed by \begin{scriptsize}\verb|AnnotationParser|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize} (see section \ref{sec:src/lib/gnu/sun/reflect/annotation/AnnotationParser.java}).
+
+\subsection{src/lib/gnu/sun/reflect/annotation/EnumConstantNotPresentExceptionProxy.java}
+\label{sec:src/lib/gnu/sun/reflect/annotation/EnumConstantNotPresentExceptionProxy.java}
+
+Imported from OpenJDK. Needed by \begin{scriptsize}\verb|AnnotationParser|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize} (see section \ref{sec:src/lib/gnu/sun/reflect/annotation/AnnotationParser.java}).
+
+\subsection{src/lib/gnu/sun/reflect/annotation/ExceptionProxy.java}
+\label{sec:src/lib/gnu/sun/reflect/annotation/ExceptionProxy.java}
+
+Imported from OpenJDK. Needed by \begin{scriptsize}\verb|AnnotationParser|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize} (see section \ref{sec:src/lib/gnu/sun/reflect/annotation/AnnotationParser.java}).
+
+\subsection{src/lib/gnu/sun/reflect/annotation/TypeNotPresentExceptionProxy.java}
+\label{sec:src/lib/gnu/sun/reflect/annotation/TypeNotPresentExceptionProxy.java}
+
+Imported from OpenJDK. Needed by \begin{scriptsize}\verb|AnnotationParser|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize} (see section \ref{sec:src/lib/gnu/sun/reflect/annotation/AnnotationParser.java}).
+
+\subsection{src/native/include/Makefile.am}
+\label{sec:src/native/include/Makefile.am}
+
+Added \begin{scriptsize}\verb|sun_reflect_ConstantPool|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|h|\end{scriptsize} to \begin{scriptsize}\verb|JAVASE_HEADER_FILES|\end{scriptsize}.
+
+\subsection{src/native/llni.h}
+\label{sec:src/native/llni.h}
+
+Added two macros for accessing fields of the \begin{scriptsize}\verb|classinfo|\end{scriptsize} struct which are Java
+objects:
+\begin{lstlisting}[language=C,firstnumber=88]
+/* LLNI_classinfo_field_get ***************************************************
+ 
+   Get a field from classinfo that is a java object.
+
+******************************************************************************/
+
+#define LLNI_classinfo_field_get(cls, field, variable) \
+	LLNI_CRITICAL_START; \
+	(variable) = LLNI_WRAP((cls)->field); \
+	LLNI_CRITICAL_END
+
+
+/* LLNI_classinfo_field_set ***************************************************
+ 
+   Set a field from classinfo that is a java object.
+
+******************************************************************************/
+
+#define LLNI_classinfo_field_set(cls, field, variable) \
+	LLNI_CRITICAL_START; \
+	(cls)->field = LLNI_UNWRAP(variable); \
+	LLNI_CRITICAL_END
+\end{lstlisting}
+
+For implementing class unloading the \begin{scriptsize}\verb|classinfo|\end{scriptsize} struct has to be placed onto the
+Java heap. When this will happen and handles are enabled, accessing members of
+\begin{scriptsize}\verb|classinfo|\end{scriptsize} will become more difficult (basically like accessing members of other
+Java objects). To wrap this access I added these macros. It is still not clear
+how exactly the access will work, but when using these macros one has only to
+change them instead all code that access Java object fields of \begin{scriptsize}\verb|classinfo|\end{scriptsize}.
+
+\subsection{src/native/vm/gnu/Makefile.am}
+\label{sec:src/native/vm/gnu/Makefile.am}
+
+Added \begin{scriptsize}\verb|sun_reflect_ConstantPool|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|c|\end{scriptsize} to \begin{scriptsize}\verb|SUN_REFLECT_SOURCES|\end{scriptsize}.
+Added \begin{scriptsize}\verb|java_lang_reflect_Constructor|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|c|\end{scriptsize} to \begin{scriptsize}\verb|libnativevmcore_la_SOURCES|\end{scriptsize}.
+
+\subsection{src/native/vm/gnu/java\_lang\_VMClass.c}
+\label{sec:src/native/vm/gnu/java_lang_VMClass.c}
+
+If \begin{scriptsize}\verb|ENABLE_ANNOTATIONS|\end{scriptsize} is defined, the method
+\begin{scriptsize}\verb|getDeclaredAnnotations|\end{scriptsize} will be defined.
+
+\subsection{src/native/vm/gnu/java\_lang\_reflect\_Constructor.c}
+\label{sec:src/native/vm/gnu/java_lang_reflect_Constructor.c}
+
+If \begin{scriptsize}\verb|ENABLE_ANNOTATIONS|\end{scriptsize} is defined, the methods
+\begin{scriptsize}\verb|declaredAnnotations|\end{scriptsize} and \begin{scriptsize}\verb|getParameterAnnotations|\end{scriptsize} will be
+defined.
+
+Following functions where added:
+\begin{itemize}
+ \item \begin{scriptsize}\verb|Java_java_lang_reflect_Constructor_declaredAnnotations|\end{scriptsize}
+\end{itemize}
+This function implements
+\begin{scriptsize}\verb|java|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|lang|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|Constructor|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|declaredAnnotations|\end{scriptsize}. It uses the
+function \begin{scriptsize}\verb|struct|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|java_util_Map|\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|reflect_get_declaredannotatios|\hspace{0.0pt}\verb|(|\hspace{0.0pt}\verb|java_handle_bytearray_t|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb|annotations|\hspace{0.0pt}\verb|,|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|java_lang_Class|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb|declaringClass|\hspace{0.0pt}\verb|,|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|classinfo|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb|referrer|\hspace{0.0pt}\verb|)|\hspace{0.0pt}\verb||\end{scriptsize} to do so.
+
+\begin{itemize}
+ \item \begin{scriptsize}\verb|Java_java_lang_reflect_Constructor_getParameterAnnotations|\end{scriptsize}
+\end{itemize}
+This function implements
+\begin{scriptsize}\verb|java|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|lang|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|Constructor|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|getParameterAnnotations|\end{scriptsize}. It uses the
+function \begin{scriptsize}\verb|java_handle_objectarray_t|\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|reflect_get_parameterannotations|\hspace{0.0pt}\verb|(|\hspace{0.0pt}\verb|java_handle_t|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb|parameterAnnotations|\hspace{0.0pt}\verb|,|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|int32_t|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|slot|\hspace{0.0pt}\verb|,|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|java_lang_Class|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb|declaringClass|\hspace{0.0pt}\verb|,|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|classinfo|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb|referrer|\hspace{0.0pt}\verb|)|\hspace{0.0pt}\verb||\end{scriptsize} to do so.
+
+\subsection{src/native/vm/gnu/java\_lang\_reflect\_Field.c}
+\label{sec:src/native/vm/gnu/java_lang_reflect_Field.c}
+
+If \begin{scriptsize}\verb|ENABLE_ANNOTATIONS|\end{scriptsize} is defined, the method
+\begin{scriptsize}\verb|declaredAnnotations|\end{scriptsize} will be defined.
+
+Following function was added:
+\begin{itemize}
+ \item \begin{scriptsize}\verb|Java_java_lang_reflect_Field_declaredAnnotations|\end{scriptsize}
+\end{itemize}
+This function implements
+\begin{scriptsize}\verb|java|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|lang|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|Field|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|declaredAnnotations|\end{scriptsize}. It uses the
+function \begin{scriptsize}\verb|struct|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|java_util_Map|\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|reflect_get_declaredannotatios|\hspace{0.0pt}\verb|(|\hspace{0.0pt}\verb|java_handle_bytearray_t|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb|annotations|\hspace{0.0pt}\verb|,|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|java_lang_Class|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb|declaringClass|\hspace{0.0pt}\verb|,|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|classinfo|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb|referrer|\hspace{0.0pt}\verb|)|\hspace{0.0pt}\verb||\end{scriptsize} to do so.
+
+\subsection{src/native/vm/gnu/java\_lang\_reflect\_Method.c}
+\label{sec:src/native/vm/gnu/java_lang_reflect_Method.c}
+
+If \begin{scriptsize}\verb|ENABLE_ANNOTATIONS|\end{scriptsize} is defined, the methods \begin{scriptsize}\verb|getDefaultValue|\end{scriptsize},
+\begin{scriptsize}\verb|declaredAnnotations|\end{scriptsize} and \begin{scriptsize}\verb|getParameterAnnotations|\end{scriptsize} will be
+defined.
+
+Following functions where added:
+\begin{itemize}
+ \item \begin{scriptsize}\verb|Java_java_lang_reflect_Method_getDefaultValue|\end{scriptsize}
+\end{itemize}
+This function implements \begin{scriptsize}\verb|java|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|lang|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|Method|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|getDefaultValue|\end{scriptsize}. It
+uses the static method \begin{scriptsize}\verb|sun|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|annotation|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|AnnotationParser|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|parseAnnotationDefault|\hspace{0.0pt}\verb|(|\hspace{0.0pt}\verb|Method|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|m|\hspace{0.0pt}\verb|,|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|ConstantPoop|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|cpool|\hspace{0.0pt}\verb|)|\hspace{0.0pt}\verb||\end{scriptsize} to do so.
+Because this static method is only used here, I thought it makes sense to cache
+it's \begin{scriptsize}\verb|methodinfo|\end{scriptsize} here, so I don't have to resolve this method every time
+\begin{scriptsize}\verb|getDefaultValue|\end{scriptsize} is called. For this purpose I made the
+\begin{scriptsize}\verb|m_parseAnnotationDefault|\end{scriptsize} pointer \begin{scriptsize}\verb|static|\end{scriptsize}.
+
+\begin{itemize}
+ \item \begin{scriptsize}\verb|Java_java_lang_reflect_Constructor_declaredAnnotations|\end{scriptsize}
+\end{itemize}
+This function implements
+\begin{scriptsize}\verb|java|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|lang|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|Method|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|declaredAnnotations|\end{scriptsize}. It uses the
+function \begin{scriptsize}\verb|struct|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|java_util_Map|\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|reflect_get_declaredannotatios|\hspace{0.0pt}\verb|(|\hspace{0.0pt}\verb|java_handle_bytearray_t|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb|annotations|\hspace{0.0pt}\verb|,|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|java_lang_Class|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb|declaringClass|\hspace{0.0pt}\verb|,|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|classinfo|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb|referrer|\hspace{0.0pt}\verb|)|\hspace{0.0pt}\verb||\end{scriptsize} to do so.
+
+\begin{itemize}
+ \item \begin{scriptsize}\verb|Java_java_lang_reflect_Constructor_getParameterAnnotations|\end{scriptsize}
+\end{itemize}
+This function implements
+\begin{scriptsize}\verb|java|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|lang|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|Method|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|getParameterAnnotations|\end{scriptsize}. It uses the
+function \begin{scriptsize}\verb|java_handle_objectarray_t|\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|reflect_get_parameterannotations|\hspace{0.0pt}\verb|(|\hspace{0.0pt}\verb|java_handle_t|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb|parameterAnnotations|\hspace{0.0pt}\verb|,|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|int32_t|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|slot|\hspace{0.0pt}\verb|,|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|java_lang_Class|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb|declaringClass|\hspace{0.0pt}\verb|,|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|classinfo|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb|referrer|\hspace{0.0pt}\verb|)|\hspace{0.0pt}\verb||\end{scriptsize} to do so.
+
+\subsection{src/native/vm/gnu/sun\_reflect\_ConstantPool.c}
+\label{sec:src/native/vm/gnu/sun_reflect_ConstantPool.c}
+
+This file is one of two almost 100% identical implementations of the class
+\begin{scriptsize}\verb|sun|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|ConstantPool|\end{scriptsize}. The other one can be found in
+\begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|native|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|vm|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|sun|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|jvm|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|c|\end{scriptsize} (see section \ref{sec:src/native/vm/sun/jvm.c}). The thing is, this class is
+needed for OpenJDK and GNU Classpath (because I also use OpenJDKs
+\begin{scriptsize}\verb|AnnotationParser|\end{scriptsize} with GNU Classpath) and even though it does the same
+thing in both cases, it has to be implemented in different files with different
+method names. This is a common problem which is discussed on the mailing list.
+Until we find a proper solution, twisti said I just should implement it twice,
+no matter the redundancy.
+
+Actually not all methods of this class are used in the annotations support
+(and therefore in whole OpenJDK, because annotations support still is the only
+thing which uses this class).
+
+The used methods are:
+\begin{itemize}
+ \item \begin{scriptsize}\verb|getIntAt0|\end{scriptsize}
+ \item \begin{scriptsize}\verb|getLongAt0|\end{scriptsize}
+ \item \begin{scriptsize}\verb|getFloatAt0|\end{scriptsize}
+ \item \begin{scriptsize}\verb|getDoubleAt0|\end{scriptsize}
+ \item \begin{scriptsize}\verb|getUTF8At0|\end{scriptsize}
+\end{itemize}
+
+Not used methods, which I implemented anyway because of their triviality are:
+\begin{itemize}
+ \item \begin{scriptsize}\verb|getSize0|\end{scriptsize}
+ \item \begin{scriptsize}\verb|getClassAt0|\end{scriptsize}
+ \item \begin{scriptsize}\verb|getClassAtIfLoaded0|\end{scriptsize}
+ \item \begin{scriptsize}\verb|getMethodAt0|\end{scriptsize}
+ \item \begin{scriptsize}\verb|getMethodAtIfLoaded0|\end{scriptsize}
+ \item \begin{scriptsize}\verb|getFieldAt0|\end{scriptsize}
+ \item \begin{scriptsize}\verb|getFieldAtIfLoaded0|\end{scriptsize}
+ \item \begin{scriptsize}\verb|getStringAt0|\end{scriptsize}
+\end{itemize}
+
+Methods, which I didn't implement because what they do wasn't clear to me:
+\begin{itemize}
+ \item \begin{scriptsize}\verb|getMemberRefInfoAt0|\end{scriptsize}
+\end{itemize}
+
+Almost all the implemented functions basically are implemented by calling
+\begin{scriptsize}\verb|voidptr|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|class_getconstant|\hspace{0.0pt}\verb|(|\hspace{0.0pt}\verb|classinfo|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb|class|\hspace{0.0pt}\verb|,|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|u4|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|pos|\hspace{0.0pt}\verb|,|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|u4|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|ctype|\hspace{0.0pt}\verb|)|\hspace{0.0pt}\verb||\end{scriptsize}.
+
+\paragraph{TODO:}
+\label{par:TODO/ConstantPool.getStringAt0}In the implementations for \begin{scriptsize}\verb|getStringAt0|\end{scriptsize} and \begin{scriptsize}\verb|getUTF8At0|\end{scriptsize}
+I'm not sure if I used the right \begin{scriptsize}\verb|string_new|\end{scriptsize}-function. I used
+\begin{scriptsize}\verb|java_object_t|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb|literalstring_new|\hspace{0.0pt}\verb|(|\hspace{0.0pt}\verb|utf|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb|u|\hspace{0.0pt}\verb|)|\hspace{0.0pt}\verb||\end{scriptsize} where maybe
+\begin{scriptsize}\verb|java_handle_t|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb|javastring_new|\hspace{0.0pt}\verb|(|\hspace{0.0pt}\verb|utf|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb|text|\hspace{0.0pt}\verb|)|\hspace{0.0pt}\verb||\end{scriptsize} would have been the correct
+function. Maybe this has to be changed.
+
+I'm not sure if the implementation of \begin{scriptsize}\verb|getMethodAt0|\end{scriptsize} is 100% right. (See
+comment in the source.) But this method is not used anyway.
+
+\paragraph{TODO:}
+\label{par:TODO/join-constantpool-implementations}Join the two redundant \begin{scriptsize}\verb|sun|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|ConstantPool|\end{scriptsize}
+implementations. It has to be discussed how that has to be done and where this
+implementation has to be placed.
+
+\subsection{src/native/vm/java\_lang\_Class.c}
+\label{sec:src/native/vm/java_lang_Class.c}
+
+Here I had to implement the \begin{scriptsize}\verb|getDeclaredAnnotations|\end{scriptsize} method, but only for
+GNU Classpath. OpenJDK does that in the J2SE implementation. The method is
+implemented in the function \begin{scriptsize}\verb|java_handle_objectarray_t|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb|_Jv_java_lang_Class_getDeclaredAnnotations|\hspace{0.0pt}\verb|(|\hspace{0.0pt}\verb|java_lang_Class|\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|klass|\hspace{0.0pt}\verb|)|\hspace{0.0pt}\verb||\end{scriptsize}.
+This function has to call the static method \begin{scriptsize}\verb|Annotation|\hspace{0.0pt}\verb|[|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|]|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|sun|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|annotation|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|AnnotationParser|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|parseAnnotationsIntoArray|\hspace{0.0pt}\verb|(|\hspace{0.0pt}\verb|ConstantPool|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|cpool|\hspace{0.0pt}\verb|,|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|Class|\hspace{0.0pt}\verb|<|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|?|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|>|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|cls|\hspace{0.0pt}\verb|)|\hspace{0.0pt}\verb||\end{scriptsize}.
+The \begin{scriptsize}\verb|methodinfo|\end{scriptsize} for this method is cached like it's done in \begin{scriptsize}\verb|Java_java_lang_reflect_Method_getDefaultValue|\end{scriptsize}.
+
+\subsection{src/native/vm/java\_lang\_Class.h}
+\label{sec:src/native/vm/java_lang_Class.h}
+
+Added declaration: \begin{scriptsize}\verb|java_handle_objectarray_t|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb|_Jv_java_lang_Class_getDeclaredAnnotations|\hspace{0.0pt}\verb|(|\hspace{0.0pt}\verb|java_lang_Class|\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|klass|\hspace{0.0pt}\verb|)|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|;|\hspace{0.0pt}\verb||\end{scriptsize}
+
+\subsection{src/native/vm/nativevm.c}
+\label{sec:src/native/vm/nativevm.c}
+
+Added to GNU Classpath section:
+\begin{lstlisting}[language=C,firstnumber=90]
+#if defined(ENABLE_ANNOTATIONS)
+	_Jv_sun_reflect_ConstantPool_init();
+#endif
+\end{lstlisting}
+
+\subsection{src/native/vm/nativevm.h}
+\label{sec:src/native/vm/nativevm.h}
+
+Added to GNU Classpath section:
+\begin{lstlisting}[language=C,firstnumber=69]
+#if defined(ENABLE_ANNOTATIONS)
+void _Jv_sun_reflect_ConstantPool_init();
+#endif
+\end{lstlisting}
+
+\subsection{src/native/vm/reflect.c}
+\label{sec:src/native/vm/reflect.c}
+
+In the \begin{scriptsize}\verb|reflect_|\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb|_new|\end{scriptsize}-functions for the reflective types, I added the
+calls to the \begin{scriptsize}\verb||\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb|_get_annotations|\end{scriptsize} functions.
+
+Following functions were added:
+\begin{itemize}
+ \item \begin{scriptsize}\verb|reflect_get_declaredannotatios|\end{scriptsize}
+\end{itemize}
+This function creates a \begin{scriptsize}\verb|ConstantPool|\end{scriptsize} instance for the given
+\begin{scriptsize}\verb|declaringClass|\end{scriptsize} and calls the static method
+\begin{scriptsize}\verb|Map|\hspace{0.0pt}\verb|<|\hspace{0.0pt}\verb|Class|\hspace{0.0pt}\verb|,|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|Annotation|\hspace{0.0pt}\verb|>|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|sun|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|annotation|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|AnnotationParser|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|parseAnnotation|\hspace{0.0pt}\verb|(|\hspace{0.0pt}\verb|ConstantPool|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|cpool|\hspace{0.0pt}\verb|,|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|Class|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|cls|\hspace{0.0pt}\verb|)|\hspace{0.0pt}\verb||\end{scriptsize}
+in order to parse the annotations. The \begin{scriptsize}\verb|methodinfo|\end{scriptsize} for this static method is
+cached as a \begin{scriptsize}\verb|static|\end{scriptsize} variable.
+
+\begin{itemize}
+ \item \begin{scriptsize}\verb|reflect_get_parameterannotations|\end{scriptsize}
+\end{itemize}
+This function creates a \begin{scriptsize}\verb|ConstantPool|\end{scriptsize} instance for the given
+\begin{scriptsize}\verb|declaringClass|\end{scriptsize} and calls the static method
+\begin{scriptsize}\verb|Annotation|\hspace{0.0pt}\verb|[|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|]|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|[|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|]|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|sun|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|annotation|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|AnnotationParser|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|parseAnnotation|\hspace{0.0pt}\verb|(|\hspace{0.0pt}\verb|ConstantPool|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|cpool|\hspace{0.0pt}\verb|,|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|Class|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|cls|\hspace{0.0pt}\verb|,|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|int|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb|paramcount|\hspace{0.0pt}\verb|)|\hspace{0.0pt}\verb||\end{scriptsize}
+in order to parse the parameter annotations. The \begin{scriptsize}\verb|methodinfo|\end{scriptsize} for this static
+method is cached as a \begin{scriptsize}\verb|static|\end{scriptsize} variable.
+
+\subsection{src/native/vm/reflect.h}
+\label{sec:src/native/vm/reflect.h}
+
+Following declarations were added:
+\begin{lstlisting}[language=C,firstnumber=65]
+#if defined(WITH_CLASSPATH_GNU) && defined(ENABLE_ANNOTATIONS)
+struct java_util_Map* reflect_get_declaredannotatios(
+	java_handle_bytearray_t *annotations,
+	java_lang_Class         *declaringClass,
+	classinfo               *referrer);
+
+java_handle_objectarray_t* reflect_get_parameterannotations(
+	java_handle_t   *parameterAnnotations,
+	int32_t          slot,
+	java_lang_Class *declaringClass,
+	classinfo       *referrer);
+#endif
+\end{lstlisting}
+
+\subsection{src/native/vm/sun/jvm.c}
+\label{sec:src/native/vm/sun/jvm.c}
+
+Following functions where implemented:
+\begin{itemize}
+ \item \begin{scriptsize}\verb|JVM_GetClassAnnotations|\end{scriptsize}
+ \item \begin{scriptsize}\verb|JVM_GetFieldAnnotations|\end{scriptsize}
+ \item \begin{scriptsize}\verb|JVM_GetMethodAnnotations|\end{scriptsize}
+ \item \begin{scriptsize}\verb|JVM_GetMethodDefaultAnnotationValue|\end{scriptsize}
+ \item \begin{scriptsize}\verb|JVM_GetMethodParameterAnnotations|\end{scriptsize}
+ \item \begin{scriptsize}\verb|JVM_GetClassConstantPool|\end{scriptsize}
+ \item \begin{scriptsize}\verb|JVM_ConstantPoolGetSize|\end{scriptsize}
+ \item \begin{scriptsize}\verb|JVM_ConstantPoolGetClassAt|\end{scriptsize}
+ \item \begin{scriptsize}\verb|JVM_ConstantPoolGetClassAtIfLoaded|\end{scriptsize}
+ \item \begin{scriptsize}\verb|JVM_ConstantPoolGetMethodAt|\end{scriptsize}
+ \item \begin{scriptsize}\verb|JVM_ConstantPoolGetMethodAtIfLoaded|\end{scriptsize}
+ \item \begin{scriptsize}\verb|JVM_ConstantPoolGetFieldAt|\end{scriptsize}
+ \item \begin{scriptsize}\verb|JVM_ConstantPoolGetFieldAtIfLoaded|\end{scriptsize}
+ \item \begin{scriptsize}\verb|JVM_ConstantPoolGetMemberRefInfoAt|\end{scriptsize}
+ \item \begin{scriptsize}\verb|JVM_ConstantPoolGetIntAt|\end{scriptsize}
+ \item \begin{scriptsize}\verb|JVM_ConstantPoolGetLongAt|\end{scriptsize}
+ \item \begin{scriptsize}\verb|JVM_ConstantPoolGetFloatAt|\end{scriptsize}
+ \item \begin{scriptsize}\verb|JVM_ConstantPoolGetDoubleAt|\end{scriptsize}
+ \item \begin{scriptsize}\verb|JVM_ConstantPoolGetStringAt|\end{scriptsize}
+ \item \begin{scriptsize}\verb|JVM_ConstantPoolGetUTF8At|\end{scriptsize}
+\end{itemize}
+
+The \begin{scriptsize}\verb|JVM_Get|\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb|Annotations|\end{scriptsize} functions just call the corresponding \begin{scriptsize}\verb||\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb|_get_annotations|\end{scriptsize}
+functions.
+
+The \begin{scriptsize}\verb|JVM_ConstantPool|\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb||\end{scriptsize} functions are implementing the methods of the
+\begin{scriptsize}\verb|sun|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|ConstantPool|\end{scriptsize} class.
+
+See: \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|native|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|vm|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|gnu|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|sun_reflect_ConstantPool|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|c|\end{scriptsize} (see section \ref{sec:src/native/vm/gnu/sun_reflect_ConstantPool.c})
+
+The function \begin{scriptsize}\verb|JVM_GetClassConstantPool|\end{scriptsize} returns a \begin{scriptsize}\verb|sun|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|reflect|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|ConstantPool|\end{scriptsize}
+instance for the given \begin{scriptsize}\verb|java|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|lang|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|Class|\end{scriptsize} object.
+
+\subsection{src/vmcore/Makefile.am}
+\label{sec:src/vmcore/Makefile.am}
+
+\begin{scriptsize}\verb|ANNOTATION_SOURCES|\end{scriptsize} is only defined if \begin{scriptsize}\verb|ENABLE_ANNOTATIONS|\end{scriptsize} is.
+
+\subsection{src/vmcore/annotation.c}
+\label{sec:src/vmcore/annotation.c}
+
+This file implements the annotation attribute loading.
+
+The \begin{scriptsize}\verb|annotation_load_|\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb||\end{scriptsize} functions are used to load the corresponding
+annotations and store them into the corresponding \begin{scriptsize}\verb|classinfo|\end{scriptsize} struct.
+
+The unparsed annotations, parameter annotations and annotation default values
+for methods and fields are also stored in the \begin{scriptsize}\verb|classinfo|\end{scriptsize}, in order to reduce
+the overhead to the \begin{scriptsize}\verb|methodinfo|\end{scriptsize} and \begin{scriptsize}\verb|fieldinfo|\end{scriptsize} structs. This data is
+stored in arrays, where you can access the data at the members slot. These arrays
+are only as big as they need to be, meaning if there are e.g. 10 methods, but only
+the first one is annotated, the \begin{scriptsize}\verb|method_annotations|\end{scriptsize} array is only one
+element in size. If there aren't any method annotations at all,
+\begin{scriptsize}\verb|method_annotations|\end{scriptsize} is \begin{scriptsize}\verb|NULL|\end{scriptsize}.
+
+During the classloading process I can't know which one's the highest slot with
+annotations, so I first allocate an array that is just big enough for the first
+annotated slot I parse. If during further loading higher annotated slots occur,
+a bigger array is allocated and the old elements are copied to it.
+
+Maybe this could be made more efficient by first allocating an array that is as
+big as the method-/field-count and after loading all methods/fields, the array
+will be packed (the elements get copied into a smaller but big enough array).
+
+I used \begin{scriptsize}\verb|java_bytearray_t|\end{scriptsize} to store the unparsed annotations and
+\begin{scriptsize}\verb|java_objectarray_t|\end{scriptsize} when I needed an array of byte-arrays.
+
+See: \begin{scriptsize}\verb|src|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|vmcore|\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|class|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|h|\end{scriptsize} (see section \ref{sec:src/vmcore/class.h})
+
+\subsection{src/vmcore/annotation.h}
+\label{sec:src/vmcore/annotation.h}
+
+Following declarations where added:
+\begin{lstlisting}[language=C,firstnumber=43]
+/* function prototypes ********************************************************/
+
+bool annotation_load_class_attribute_runtimevisibleannotations(
+	classbuffer *cb);
+
+bool annotation_load_class_attribute_runtimeinvisibleannotations(
+	classbuffer *cb);
+
+bool annotation_load_method_attribute_runtimevisibleannotations(
+	classbuffer *cb, methodinfo *m);
+
+bool annotation_load_method_attribute_runtimeinvisibleannotations(
+	classbuffer *cb, methodinfo *m);
+
+bool annotation_load_field_attribute_runtimevisibleannotations(
+	classbuffer *cb, fieldinfo *f);
+
+bool annotation_load_field_attribute_runtimeinvisibleannotations(
+	classbuffer *cb, fieldinfo *f);
+
+bool annotation_load_method_attribute_annotationdefault(
+	classbuffer *cb, methodinfo *m);
+
+bool annotation_load_method_attribute_runtimevisibleparameterannotations(
+	classbuffer *cb, methodinfo *m);
+
+bool annotation_load_method_attribute_runtimeinvisibleparameterannotations(
+	classbuffer *cb, methodinfo *m);
+\end{lstlisting}
+
+These functions load the respective attributes from a \begin{scriptsize}\verb|classbuffer|\end{scriptsize}.
+They return \begin{scriptsize}\verb|true|\end{scriptsize} on success or \begin{scriptsize}\verb|false|\end{scriptsize} if an error has occured.
+
+\subsection{src/vmcore/class.c}
+\label{sec:src/vmcore/class.c}
+
+\begin{itemize}
+ \item \begin{scriptsize}\verb|classinfo|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb|class_sun_reflect_ConstantPool|\hspace{0.0pt}\verb|;|\hspace{0.0pt}\verb||\end{scriptsize}
+ \item \begin{scriptsize}\verb|classinfo|\hspace{0.0pt}\verb| |\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb|class_sun_reflect_annotation_AnnotationParser|\hspace{0.0pt}\verb|;|\hspace{0.0pt}\verb||\end{scriptsize}
+\end{itemize}
+Declared \begin{scriptsize}\verb|classinfo|\end{scriptsize}s for preloading for these two classes if
+\begin{scriptsize}\verb|ENABLE_ANNOTATIONS|\end{scriptsize} is defined.
+
+\begin{scriptsize}\verb|class_sun_reflect_annotation_AnnotationParser|\end{scriptsize} is only defined if
+\begin{scriptsize}\verb|WITH_CLASSPATH_GNU|\end{scriptsize} is defined.
+
+\begin{itemize}
+ \item \begin{scriptsize}\verb|class_load_attributes|\end{scriptsize}
+\end{itemize}
+Added loading of annotations if \begin{scriptsize}\verb|ENABLE_ANNOTATIONS|\end{scriptsize} is defined.
+
+\begin{itemize}
+ \item \begin{scriptsize}\verb|class_get_annotations|\end{scriptsize}
+\end{itemize}
+This function returns the unparsed annotations as a Java byte array.
+
+\subsection{src/vmcore/class.h}
+\label{sec:src/vmcore/class.h}
+
+Following fields where added to the \begin{scriptsize}\verb|classinfo|\end{scriptsize} struct:
+\begin{lstlisting}[language=C,firstnumber=147]
+#if defined(ENABLE_ANNOTATIONS)
+	/* All the annotation attributes are NULL (and not a zero length array)   */
+	/* if there is nothing.                                                   */
+	java_object_t *annotations;   /* annotations of this class                */
+	
+	java_object_t *method_annotations; /* array of annotations of the methods */
+	java_object_t *method_parameterannotations; /* array of parameter         */
+	                              /* annotations of the methods               */
+	java_object_t *method_annotationdefaults; /* array of annotation default  */
+	                              /* values of the methods                    */
+
+	java_object_t *field_annotations; /* array of annotations of the fields   */
+#endif
+\end{lstlisting}
+
+Following declarations where added:
+\begin{lstlisting}[language=C,firstnumber=246]
+#if defined(ENABLE_ANNOTATIONS)
+extern classinfo *class_sun_reflect_ConstantPool;
+#if defined(WITH_CLASSPATH_GNU)
+extern classinfo *class_sun_reflect_annotation_AnnotationParser;
+#endif
+#endif
+\end{lstlisting}
+\begin{lstlisting}[language=C,firstnumber=385]
+java_handle_bytearray_t   *class_get_annotations(classinfo *c);
+\end{lstlisting}
+
+\subsection{src/vmcore/field.c}
+\label{sec:src/vmcore/field.c}
+
+Added implementation of newly defined functions in \begin{scriptsize}\verb|field|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|h|\end{scriptsize} (see section \ref{sec:src/vmcore/field.h}).
+
+\subsection{src/vmcore/field.h}
+\label{sec:src/vmcore/field.h}
+
+\begin{itemize}
+ \item \begin{scriptsize}\verb|field_get_annotations|\end{scriptsize}
+\end{itemize}
+Returns the unparsed annotations as a Java byte array.
+
+\subsection{src/vmcore/linker.h}
+\label{sec:src/vmcore/linker.h}
+
+Fixed formatting of a comment.
+
+\subsection{src/vmcore/loader.c}
+\label{sec:src/vmcore/loader.c}
+
+\begin{itemize}
+ \item \begin{scriptsize}\verb|loader_init|\end{scriptsize}
+\end{itemize}
+Added loading of the \begin{scriptsize}\verb|class_sun_reflect_ConstantPool|\end{scriptsize} and the
+\begin{scriptsize}\verb|class_sun_reflect_annotation_AnnotationParser|\end{scriptsize} \begin{scriptsize}\verb|classinfo|\end{scriptsize} structs.
+
+\paragraph{TODO:}
+\label{par:TODO/dont-load-extra-classinfos}This is maybe a tiny bit of a memory waste. Not much but still, if no
+annotation support is used, this \begin{scriptsize}\verb|classinfo|\end{scriptsize}s are needlessly loaded.
+
+\subsection{src/vmcore/method.c}
+\label{sec:src/vmcore/method.c}
+
+Added implementation of newly defined functions in \begin{scriptsize}\verb|method|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|h|\end{scriptsize} (see section \ref{sec:src/vmcore/method.h}).
+
+\subsection{src/vmcore/method.h}
+\label{sec:src/vmcore/method.h}
+
+\begin{itemize}
+ \item \begin{scriptsize}\verb|method_get_annotations|\end{scriptsize}
+\end{itemize}
+Returns the unparsed annotations as a Java byte array.
+
+\begin{itemize}
+ \item \begin{scriptsize}\verb|method_get_parameterannotations|\end{scriptsize}
+\end{itemize}
+Returns the unparsed parameter annotations as a Java byte array.
+
+\begin{itemize}
+ \item \begin{scriptsize}\verb|method_get_annotationdefault|\end{scriptsize}
+\end{itemize}
+Returns the unparsed annotation default value as a Java byte array.
+
+\begin{itemize}
+ \item \begin{scriptsize}\verb|method_get_parametercount|\end{scriptsize}
+\end{itemize}
+Returns the number of parameters of the referred method. The \begin{scriptsize}\verb|this|\end{scriptsize} pointer
+of non-static methods is \begin{bfseries}not\end{bfseries} counted.
+
+\subsection{src/vmcore/utf8.c}
+\label{sec:src/vmcore/utf8.c}
+
+Implemented loading of annotation attribute names into the according \begin{scriptsize}\verb|utf|\end{scriptsize}
+constants:
+\begin{itemize}
+ \item \begin{scriptsize}\verb|utf_RuntimeVisibleAnnotations|\end{scriptsize}
+ \item \begin{scriptsize}\verb|utf_RuntimeInvisibleAnnotations|\end{scriptsize}
+ \item \begin{scriptsize}\verb|utf_RuntimeVisibleParameterAnnotations|\end{scriptsize}
+ \item \begin{scriptsize}\verb|utf_RuntimeInvisibleParameterAnnotations|\end{scriptsize}
+ \item \begin{scriptsize}\verb|utf_AnnotationDefault|\end{scriptsize}
+\end{itemize}
+
+\subsection{src/vmcore/utf8.h}
+\label{sec:src/vmcore/utf8.h}
+
+Following declarations where added:
+\begin{lstlisting}[language=C,firstnumber=151]
+#if defined(ENABLE_ANNOTATIONS)
+extern utf *utf_RuntimeVisibleAnnotations;
+extern utf *utf_RuntimeInvisibleAnnotations;
+extern utf *utf_RuntimeVisibleParameterAnnotations;
+extern utf *utf_RuntimeInvisibleParameterAnnotations;
+extern utf *utf_AnnotationDefault;
+#endif
+\end{lstlisting}
+
+\subsection{tests/regression/Makefile.am}
+\label{sec:tests/regression/Makefile.am}
+
+Added \begin{scriptsize}\verb||\hspace{0.0pt}\verb|$|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|(|\hspace{0.0pt}\verb|srcdir|\hspace{0.0pt}\verb|)|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|MinimalClassReflection|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize} and
+\begin{scriptsize}\verb||\hspace{0.0pt}\verb|$|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|(|\hspace{0.0pt}\verb|srcdir|\hspace{0.0pt}\verb|)|\hspace{0.0pt}\verb||\hspace{0.0pt}\verb|/|\hspace{0.0pt}\verb|TestAnnotations|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|java|\end{scriptsize} to \begin{scriptsize}\verb|SOURCE_FILES|\end{scriptsize}.
+
+Added \begin{scriptsize}\verb|MinimalClassReflection|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|output|\end{scriptsize} and \begin{scriptsize}\verb|TestAnnotations|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|output|\end{scriptsize} to
+\begin{scriptsize}\verb|EXTRA_DIST|\end{scriptsize}.
+
+Added \begin{scriptsize}\verb|MinimalClassReflection|\end{scriptsize} and \begin{scriptsize}\verb|TestAnnotations|\end{scriptsize} to
+\begin{scriptsize}\verb|OUTPUT_JAVA_TESTS|\end{scriptsize}.
+
+\subsection{tests/regression/MinimalClassReflection.java}
+\label{sec:tests/regression/MinimalClassReflection.java}
+
+Testcases for a few methods of \begin{scriptsize}\verb|java|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|lang|\hspace{0.0pt}\verb|.|\hspace{0.0pt}\verb|Class|\end{scriptsize}. This is already obsolete
+because I ported this test to the \href{http://www.sourceware.org/mauve/}{Mauve}\footnote{\url{http://www.sourceware.org/mauve/}}
+test framework and continued working on that test.
+
+I wrote this testcase because I mentioned some odd/wrong behaviours of this
+methods while testing the annotations support.
+
+Download Mauve testcase: \href{http://twoday.tuwien.ac.at/pub/files/MinimalClassReflection}{MinimalClassReflection.zip}\footnote{\url{http://twoday.tuwien.ac.at/pub/files/MinimalClassReflection}} (ZIP, 2 KB)
+
+\subsection{tests/regression/MinimalClassReflection.output}
+\label{sec:tests/regression/MinimalClassReflection.output}
+
+Correct output for the minimal class reflection test.
+
+\subsection{tests/regression/TestAnnotations.java}
+\label{sec:tests/regression/TestAnnotations.java}
+
+Testcases for the annotations support. This is already obsolete because I
+ported this test to the \href{http://www.sourceware.org/mauve/}{Mauve} test framework
+and continued working on that test.
+
+Download Mauve testcase: \href{http://twoday.tuwien.ac.at/pub/files/TestAnnotations}{TestAnnotations.zip}\footnote{\url{http://twoday.tuwien.ac.at/pub/files/TestAnnotations}} (ZIP, 9 KB)
+
+\subsection{tests/regression/TestAnnotations.output}
+\label{sec:tests/regression/TestAnnotations.output}
+
+Correct output for the annotations test.
+
+\section{TODOs}
+\label{sec:todos}
+\begin{itemize}
+ \item Keep imported files up to date. (see section \ref{par:TODO/keep-imported-files-up-to-date})
+ \item Maybe cache parsed parameter annotations. (see section \ref{par:TODO/cache-parameter-annotations})
+ \item Check methods \begin{scriptsize}\verb|getStringAt0|\end{scriptsize} and \begin{scriptsize}\verb|getUTF8At0|\end{scriptsize} of \begin{scriptsize}\verb|sun.reflect.ConstantPool|\end{scriptsize}. (see section \ref{par:TODO/ConstantPool.getStringAt0})
+ \item Join \begin{scriptsize}\verb|sun.reflect.ConstantPool|\end{scriptsize} implementations. (see section \ref{par:TODO/join-constantpool-implementations})
+ \item Maybe don't load \begin{scriptsize}\verb|class_sun_reflect_ConstantPool|\end{scriptsize} and \begin{scriptsize}\verb|class_sun_reflect_annotation_AnnotationParser|\end{scriptsize} \begin{scriptsize}\verb|classinfo|\end{scriptsize} structs in \begin{scriptsize}\verb|loader_init()|\end{scriptsize}. (see section \ref{par:TODO/dont-load-extra-classinfos})
+ \item Do something with \begin{scriptsize}\verb|RuntimeInvisible|\hspace{0.0pt}\verb|*|\hspace{0.0pt}\verb|Annotations|\end{scriptsize}?
+\end{itemize}
+
+%% CONTENT END %%
+
+\bibliography{jsr}
+
+\end{document}

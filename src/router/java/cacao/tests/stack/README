@@ -1,0 +1,21 @@
+for additional exception test, remove the _clinit2,3,.. or _1,_2... class files. One at a time, after compilation.
+
+
+Lazy loading/binding problem ?
+If you delete nestedconstructorexception2_1.class and run the nestedconstructorexception2 class
+
+The cacao stack results in:
+java.lang.NoClassDefFoundError: nestedconstructorexception2_1
+   at nestedconstructorexception2.main (nestedconstructorexception2.java:34)
+
+
+The same testcase with java:
+
+Something caught in constructor
+Something caught in constructor
+Something caught in constructor
+java.lang.NoClassDefFoundError: nestedconstructorexception2_1
+	at nestedconstructorexception2.<init>(nestedconstructorexception2.java:20)
+	at nestedconstructorexception2.<init>(nestedconstructorexception2.java:17)
+	at nestedconstructorexception2.<init>(nestedconstructorexception2.java:14)
+	at nestedconstructorexception2.main(nestedconstructorexception2.java:34)

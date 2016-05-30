@@ -1,0 +1,329 @@
+1998-12-13 23:46  cacao
+
+	* src/vm/jit/stack.c: DUP2 bug fixed
+
+1998-11-30 23:54  cacao
+
+	* src/vm/jit/stack.c, jit.c: arg reg bug fixed, array optimizations
+
+1998-11-30 15:54  phil
+
+	* builtin.c, src/vm/builtin.c: [no log message]
+
+1998-11-25 12:48  phil
+
+	* Makefile: Added various flags
+
+1998-11-25 12:47  phil
+
+	* global.h, src/vm/global.h: Re-enabled SIZE_FROM_CLASSINFO
+
+1998-11-25 12:46  phil
+
+	* builtin.c, src/vm/builtin.c: Fixed a typo (#if --> #ifdef)
+
+1998-11-25 12:45  phil
+
+	* main.c, src/cacao/cacao.c: [no log message]
+
+1998-11-24 15:07  cacao
+
+	* src/vm/jit/stack.c: array commands without check added
+
+1998-11-19 22:16  cacao
+
+	* headers.c, src/cacaoh/headers.c: renaming of thread functions
+
+1998-11-19 14:39  schani
+
+	* src/threads/green/: threads.c, threads.h: Threads are now garbage
+	  collected correctly (hopefully).
+
+1998-11-19 14:25  schani
+
+	* src/threads/green/threads.c: Fixed a threads/gc bug.
+
+1998-11-18 23:06  cacao
+
+	* global.h, src/vm/global.h, src/mm/memory.h: mips compatibility
+
+1998-11-18 23:05  cacao
+
+	* main.c, src/cacao/cacao.c: missing USE_THREAD added
+
+1998-11-18 15:58  cacao
+
+	* src/vm/jit/stack.c: disassembler improved
+
+1998-11-16 21:56  cacao
+
+	* main.c, src/cacao/cacao.c: changes in usage message
+
+1998-11-16 19:54  phil
+
+	* main.c, src/cacao/cacao.c: [no log message]
+
+1998-11-16 17:49  schani
+
+	* Makefile, main.c, src/cacao/cacao.c, src/threads/green/threads.c:
+	  Threads now close down even if main thread exits prematurely.
+
+1998-11-13 00:14  phil
+
+	* main.c, src/cacao/cacao.c: Added an exit_handler function which
+	  is called upon program termination
+
+1998-11-11 22:11  phil
+
+	* main.c, src/cacao/cacao.c, global.h, src/vm/global.h: Added an
+	  option to enable/disable the new gc
+
+1998-11-10 19:19  schani
+
+	* doc/threads.tex: Added doc/threads.tex.
+
+1998-11-10 18:33  phil
+
+	* global.h, src/vm/global.h, builtin.c, src/vm/builtin.c: Added an
+	  "aligned" size field to various objectheaders, to allow for
+	  faster garbage collection. This will eventually reduce the memory
+	  footprint of the gc/allocator (remove one bitmap).
+
+1998-11-10 13:12  phil
+
+	* Makefile: Added the mm subdirectory to the distribution
+
+1998-11-10 11:52  cacao
+
+	* jit.c, src/vm/jit/parse.c: small corrections for verbosecall
+
+1998-11-10 00:01  phil
+
+	* Makefile: Fixed the makefile distribution targets to include the
+	  jit directory; Restructured the distribution targets
+
+1998-11-09 21:35  cacao
+
+	* newcomp.c: newcomp moved to jit
+
+1998-11-09 21:31  cacao
+
+	* src/vm/jit/parse.c, src/vm/jit/stack.c, compiler.c, compiler.h,
+	  global.h, headers.c, src/cacaoh/headers.c, src/vm/global.h,
+	  jit.c, jit.h, loader.c, src/vm/loader.c, main.c,
+	  src/cacao/cacao.c, Makefile: newcomp moved to jit
+
+1998-11-09 14:43  phil
+
+	* Makefile: Makefile
+
+1998-11-06 01:11  cacao
+
+	* Makefile: documentation added
+
+1998-11-05 21:46  schani
+
+	* Makefile, main.c, src/cacao/cacao.c: Finalizing really works now
+	  (finalizing occured after compiler and loader were
+	  deinitialized).
+
+1998-11-05 14:05  schani
+
+	* main.c, src/cacao/cacao.c: Cacao does now compile again with
+	  threads disabled.
+
+1998-11-03 16:53  chris
+
+	* Makefile:  added
+
+1998-11-02 18:01  cacao
+
+	* Makefile, builtin.c, builtin.h, src/vm/builtin.c,
+	  src/vm/builtin.h, global.h, headers.c, loader.c,
+	  src/cacaoh/headers.c, src/vm/global.h, src/vm/loader.c:
+	  bidirectional layout of vftbl/interfaces added
+
+1998-10-30 20:23  cacao
+
+	* Makefile: mm make clean addded
+
+1998-10-30 15:49  cacao
+
+	* builtin.c, src/vm/builtin.c, builtin.h, global.h, headers.c,
+	  src/cacaoh/headers.c, src/vm/builtin.h, src/vm/global.h,
+	  loader.c, loader.h, main.c, src/cacao/cacao.c, src/vm/loader.c,
+	  src/vm/loader.h, src/threads/green/threadio.c, tests/jctest.dec,
+	  tests/jctest.java: Run time type check with relative numbering
+	  added. Checkcast and Instanceof inlined.
+
+1998-10-29 17:07  phil
+
+	* global.h, src/vm/global.h: Minor modification to
+	  JIT_MARKER_SUPPORT macro in global.h Changed the modification
+	  date and corrected a typo.  Fixed the formatting according to the
+	  specifications.
+
+1998-10-29 01:33  phil
+
+	* Makefile, asmpart.h, src/vm/jit/asmpart.h, global.h,
+	  src/vm/global.h, tables.c, src/vm/tables.c: Moved garbage
+	  collector from tables.c into mm/ subdirectory.
+
+1998-10-27 22:51  cacao
+
+	* main.c, src/cacao/cacao.c, src/threads/green/threads.h,
+	  src/threads/green/threadio.c: Clearing of thread flags added
+
+1998-10-12 17:49  cacao
+
+	* COPYRIGHT, Makefile, README, asmpart.h, builtin.c, builtin.h,
+	  src/vm/builtin.c, src/vm/builtin.h, src/vm/jit/asmpart.h,
+	  callargs.h, compiler.c, compiler.h, global.h, src/vm/global.h,
+	  headers.c, loader.c, loader.h, main.c, src/cacao/cacao.c,
+	  src/cacaoh/headers.c, src/vm/loader.c, src/vm/loader.h, native.c,
+	  native.h, newcomp.c, tables.c, tables.h, src/native/native.c,
+	  src/native/native.h, src/vm/tables.c, src/vm/tables.h,
+	  doc/collect.doc, doc/gen.doc, src/threads/green/locks.c,
+	  src/threads/green/locks.h, src/threads/green/threadio.c,
+	  src/threads/green/threads.c, src/threads/green/threads.h,
+	  src/threads/green/threadio.h, src/toolbox/chain.c,
+	  src/toolbox/chain.h, src/toolbox/list.c, src/toolbox/list.h,
+	  src/mm/memory.c, src/mm/memory.h, src/toolbox/tree.c,
+	  src/toolbox/tree.h, tests/JavaPerformance.java, tests/a.java,
+	  tests/array.java, tests/b.java, tests/counter.java,
+	  tests/extest.java, tests/filter.java, tests/fintest.java,
+	  tests/fp.java, tests/fptest.java, tests/ftest.java,
+	  tests/hello.java, tests/helper.java, tests/hi.java,
+	  tests/intsieve.java, tests/jctest.dec, tests/jctest.java,
+	  tests/leaf.java, tests/longtest.java, tests/main.java,
+	  tests/mem.java, tests/memtest.java, tests/n.java, tests/nan.java,
+	  tests/prop.java, tests/remtest.java, tests/scribble.java,
+	  tests/sieve.java, tests/sum.java, tests/sum2.java,
+	  tests/suml.java, tests/sumlempty.java, tests/t.java,
+	  tests/tst.java, tests/x.java: release 0.3
+
+1998-10-12 17:43  cacao
+
+	* src/threads/green/threads.c: error in heap_addref corrected
+
+1998-10-12 17:42  cacao
+
+	* tests/: jctest.java, jctest.dec: rem/div constant and conditional
+	  load constant added
+
+1998-10-08 00:07  cacao
+
+	* tests/remtest.java: rem0x10001 test file added
+
+1998-10-08 00:05  cacao
+
+	* main.c, src/cacao/cacao.c: warning eliminated
+
+1998-10-07 21:49  schani
+
+	* main.c, src/cacao/cacao.c, tables.c, src/vm/tables.c,
+	  src/threads/green/threads.c: GC now works without threads being
+	  initialized, which caused a dependency problem in the
+	  initialization routines.
+
+	  Added a missing heap_addreference in main.c.
+
+1998-10-06 22:37  cacao
+
+	* tests/: jctest.java, jctest.dec: remainder tests added
+
+1998-10-06 22:32  cacao
+
+	* compiler.h, newcomp.c, main.c, src/cacao/cacao.c: new
+	  disassembler options added
+
+1998-10-04 21:21  cacao
+
+	* headers.c, src/cacaoh/headers.c, tables.c, src/vm/tables.c,
+	  src/threads/green/threads.c, src/threads/green/threads.h: gc
+	  stack moved to unlimited main stack
+
+1998-10-03 21:22  cacao
+
+	* COPYRIGHT, Makefile, README, asmpart.h, builtin.c,
+	  src/vm/builtin.c, src/vm/jit/asmpart.h, builtin.h, callargs.h,
+	  compiler.c, src/vm/builtin.h, compiler.h, global.h, headers.c,
+	  src/cacaoh/headers.c, src/vm/global.h, loader.c, loader.h,
+	  main.c, src/cacao/cacao.c, src/vm/loader.c, src/vm/loader.h,
+	  native.c, native.h, newcomp.c, src/native/native.c,
+	  src/native/native.h, tables.c, tables.h, src/vm/tables.c,
+	  src/vm/tables.h, doc/collect.doc, doc/gen.doc,
+	  src/threads/green/locks.c, src/threads/green/locks.h,
+	  src/threads/green/threadio.c, src/threads/green/threads.c,
+	  src/threads/green/threads.h, src/threads/green/threadio.h,
+	  src/toolbox/chain.c, src/toolbox/chain.h, src/toolbox/list.c,
+	  src/toolbox/list.h, src/mm/memory.c, src/mm/memory.h,
+	  src/toolbox/tree.c, src/toolbox/tree.h,
+	  tests/JavaPerformance.java, tests/a.java, tests/array.java,
+	  tests/b.java, tests/counter.java, tests/extest.java,
+	  tests/filter.java, tests/fintest.java, tests/fp.java,
+	  tests/fptest.java, tests/ftest.java, tests/hello.java,
+	  tests/helper.java, tests/hi.java, tests/intsieve.java,
+	  tests/jctest.java, tests/leaf.java, tests/longtest.java,
+	  tests/main.java, tests/mem.java, tests/memtest.java,
+	  tests/n.java, tests/nan.java, tests/prop.java,
+	  tests/scribble.java, tests/sieve.java, tests/sum.java,
+	  tests/sum2.java, tests/suml.java, tests/sumlempty.java,
+	  tests/t.java, tests/tst.java, tests/x.java: release 0.2
+
+1998-10-03 21:18  cacao
+
+	* COPYRIGHT, Makefile, README, asmpart.h, builtin.c, builtin.h,
+	  callargs.h, compiler.c, compiler.h, global.h, headers.c,
+	  loader.c, loader.h, main.c, native.c, native.h,
+	  src/cacao/cacao.c, src/cacaoh/headers.c, src/native/native.c,
+	  src/native/native.h, src/vm/builtin.c, src/vm/builtin.h,
+	  src/vm/global.h, src/vm/loader.c, src/vm/loader.h,
+	  src/vm/jit/asmpart.h, newcomp.c, tables.c, tables.h,
+	  src/threads/green/locks.c, src/threads/green/locks.h,
+	  src/threads/green/threadio.c, src/threads/green/threadio.h,
+	  src/threads/green/threads.c, src/threads/green/threads.h,
+	  src/vm/tables.c, src/vm/tables.h, src/mm/memory.c,
+	  src/mm/memory.h, src/toolbox/chain.c, src/toolbox/chain.h,
+	  src/toolbox/list.c, src/toolbox/list.h, src/toolbox/tree.c,
+	  src/toolbox/tree.h, tests/JavaPerformance.java, tests/a.java,
+	  tests/array.java, tests/b.java, tests/counter.java,
+	  tests/extest.java, tests/filter.java, tests/fintest.java,
+	  tests/fp.java, tests/fptest.java, tests/ftest.java,
+	  tests/hello.java, tests/helper.java, tests/hi.java,
+	  tests/intsieve.java, tests/jctest.java, tests/leaf.java,
+	  tests/longtest.java, tests/main.java, tests/mem.java,
+	  tests/memtest.java, tests/n.java, tests/nan.java,
+	  tests/prop.java, tests/scribble.java, tests/sieve.java,
+	  tests/sum.java, tests/sum2.java, tests/suml.java,
+	  doc/collect.doc, doc/gen.doc, tests/sumlempty.java, tests/t.java,
+	  tests/tst.java, tests/x.java: Initial revision
+
+1998-10-03 21:18  cacao
+
+	* COPYRIGHT, Makefile, README, asmpart.h, builtin.c, builtin.h,
+	  callargs.h, compiler.c, compiler.h, global.h, headers.c,
+	  loader.c, loader.h, main.c, native.c, native.h,
+	  src/cacao/cacao.c, src/cacaoh/headers.c, src/native/native.c,
+	  src/native/native.h, src/vm/builtin.c, src/vm/builtin.h,
+	  src/vm/global.h, src/vm/loader.c, src/vm/loader.h,
+	  src/vm/jit/asmpart.h, newcomp.c, tables.c, tables.h,
+	  src/threads/green/locks.c, src/threads/green/locks.h,
+	  src/threads/green/threadio.c, src/threads/green/threadio.h,
+	  src/threads/green/threads.c, src/threads/green/threads.h,
+	  src/vm/tables.c, src/vm/tables.h, src/mm/memory.c,
+	  src/mm/memory.h, src/toolbox/chain.c, src/toolbox/chain.h,
+	  src/toolbox/list.c, src/toolbox/list.h, src/toolbox/tree.c,
+	  src/toolbox/tree.h, tests/JavaPerformance.java, tests/a.java,
+	  tests/array.java, tests/b.java, tests/counter.java,
+	  tests/extest.java, tests/filter.java, tests/fintest.java,
+	  tests/fp.java, tests/fptest.java, tests/ftest.java,
+	  tests/hello.java, tests/helper.java, tests/hi.java,
+	  tests/intsieve.java, tests/jctest.java, tests/leaf.java,
+	  tests/longtest.java, tests/main.java, tests/mem.java,
+	  tests/memtest.java, tests/n.java, tests/nan.java,
+	  tests/prop.java, tests/scribble.java, tests/sieve.java,
+	  tests/sum.java, tests/sum2.java, tests/suml.java,
+	  doc/collect.doc, doc/gen.doc, tests/sumlempty.java, tests/t.java,
+	  tests/tst.java, tests/x.java: initial version
+

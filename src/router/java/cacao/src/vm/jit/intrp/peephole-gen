@@ -1,0 +1,12 @@
+#usage: ./peephole-gen profiles/* |head -500 >peeprules.vmg
+#selection criteria:
+#- 2<= length <= 5 (NF>2 && NF<9)
+#- at least in 1 profile ($1>0)
+#- sorted by static count (sort -snrk2)
+#- tie-breaker: prefer shorter sequence (sort -k4)
+awk -f stat.awk $* >peephole-statistics
+fgrep -v -f peephole-blacklist peephole-statistics |
+awk 'NF>4 && NF<9 && $1>0'|
+sort -k4|sort -snrk 2|
+awk -f seq2rule.awk
+#fgrep -v -f peephole-blacklist peephole-statistics |awk 'NF<9 && $1>1'|sort -sr -n -k 2 |head -100|sort -k 4|awk -f seq2rule.awk

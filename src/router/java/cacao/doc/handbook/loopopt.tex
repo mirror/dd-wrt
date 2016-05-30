@@ -1,0 +1,347 @@
+\section{Loop optimizations}
+
+\subsection{Introduction}
+
+In safe programming languages like Java, all array accesses are 
+checked. It is assured that the used index is greater or equal to 
+zero and less than the array length, otherwise an 
+ArrayIndexOutOfBoundsException is thrown. It is obvious that this 
+gain in saftey causes a run-time overhead that is especially 
+unpleasant in loops where these checks have to be performed many 
+times. Often it is possible to remove these checks in loops by 
+inserting additional tests at the beginning of the loop and 
+examinig the code structure and loop condition thereby saving run-
+time speed at each loop execuion. The following algorithm performs 
+this task for a special set of array accesses in loops. It should 
+be obvious that it is not always possible to predict the value of 
+an array index by inserting tests at the beginning of the loop. An 
+example would be a global variable that is used as an array index. 
+This variable could be changed by a different thread virtually any 
+time, so removing a bound check for this array access is not a 
+good idea. The following algorithm only performs bound check 
+removal, when the induction variable (the variable used as array 
+index) is local and is only modified by adding/subtracting a 
+constant inside the loop body or remains unchanged (is constant). 
+If a constant is used as index, optimzation can take place as 
+well. When other variables are used to modify the induction 
+variable or when different arithmetic operations are used, no 
+optimization can take place. Nevertheless, the most common use for 
+index variables in loops is their increment or decrement by a 
+constant, so most of the array access should be considered for 
+optimization. 
+
+\subsection{Initialization}
+
+Before array bound checks in loops can be eliminated, the loops 
+have to be detected. The algorithm performs its analysis on 
+intermediate code level, so we cannot rely on just looking at 
+while/for statments. A basic block analysis has been completed, so 
+the algorithm can work on this data structure already. It uses the 
+Lengauer-Tarjan algorithm to find existing loops, which bases on 
+determining the dominator tree (a reference with extensive 
+documentation for this algorithm can be found in \cite{appel98}). It uses a 
+depth first search on the control flow graph to build a spanning 
+tree. Then the semidominator and dominator theorem are utilized to 
+extract the dominator tree and by looking at back edges (a back 
+edge is an edge where the target node dominates the source node) 
+all loops can be detected. Before starting to look at each loop, 
+the case of different loops that share the same header node has to 
+be considered. The algorithm works on each loop not looking on any 
+other loop and performs its optimzation. The procedures that 
+analyze the control flow of the program, build a flow graph and 
+extract the loops can be found in the files graph.c (for control 
+flow graph) and loop.c (for the loop extractig algorithm). The 
+control flow graph is simple built by looking at the last 
+instruction of each basic block and then deciding, which other 
+blocks can be reached by that instruction. One problem can occur, 
+when lookup/table-switch instructions cause multiple jumps to the 
+same node. It must be prevented that the target node´s predecessor 
+list contains that node more than once. So an additionally array 
+is needed to prevent double entries in the predecessor array. When 
+the necessary flow data structure and the list of all loops has 
+been built, the main algorithm can start.
+
+
+\subsection{Algorithm}
+
+The procedures for the main algorithm can be found in analyze.c. 
+Before each loops is processed on its own, two global 
+preprocessing steps are necessary.
+
+The first step deals with loops, that share the same header node. 
+This special case can happen when a loop body ends with an if-
+then/else statment. The loop finding algorithm then reports two 
+different loops, which share the same header node. When additional 
+tests are inserted at the header node and another loop sharing the 
+same header is later evaluated, inserting different tests, 
+problems could arise. To prevent this from happening, loops 
+sharing the same header node are simply merged into a bigger one 
+by unioning their nodes. Because the nodes of the loop are already 
+sorted by increasing basic block numbers, a simple merge of the 
+nodes can be done (analyze\_double\_headers).
+
+The second step before the loop by loop analysis commences is the 
+building of a loop hierarchie. Nested loops cause problems when 
+variables that are used as array indexes elsewhere get modified. 
+Because these modifications (eg. an increment by a constant) can 
+happen an unknown number of times, their results are 
+unpredictable. These modifications in nested loops have to be 
+recognized and reacted upon accordingly. The algorithm builds a 
+tree where each node represents a loop with its parent being the 
+directly surrounding loop. A dummy root node, representing the 
+whole function has to be inserted as well. When loops have to be 
+duplicated because of optimzed array accesses, it is important to 
+extend or duplicate exception entries as well. Because of that, 
+exceptions are inserted into the tree as follows. Every exception 
+is inserted at the node in the hierarchie that represents the 
+loop, that directly contains this exception. When an exception is 
+part of a nested loop, it is inserted only at the node, 
+representing this nested loop, because by following this nodes 
+parent pointers, we find all other loops, that contain the 
+exception (analyze\_nested). Finally, the sequentiel order of the 
+loops is determined by a topological sort of the loops, satisfying 
+the condition, that all nested loops have to be optimzed before 
+their parent loop is processed. This can be archieved by a post-
+order traversal of the hierarchie tree with skipping the root 
+node.  
+
+After these global steps have been completed, each loop is 
+processed. Then the loops are checked for array accesses 
+(analyze\_for\_array\_access) and the process exits if none 
+are found. Finally, two special cases must be considered.
+
+\begin{enumerate}
+
+\item The algorithm uses the loop condition to guarantee certain 
+bounds for variables. If the loop condition consists of an or-
+statement, these guarantees can not be held up. If the loop 
+statement reads 
+
+\begin{verbatim}
+while ((var > 0) or true) 
+\end{verbatim}
+
+vars value is not  bound to be greater than zero. When an or-statement
+is found, loop optimization is stopped.
+
+\item Variables that are used as indexes in array accesses might be 
+modified in exception handling code of try-catch statements inside 
+the loop. Because code in catch blocks is not considered in the 
+control flow graph and because these modifications happen 
+unpredictable (and should occur rarely) loops containing these 
+catch blocks with index variable modifications are not optimized.
+During the scan for array accesses within the loop, all 
+interesting variables are recorded. A variable is considered 
+interesting, when it is used as index in an array access or when 
+its value is changes (due to a store instruction) 
+(analyze\_or\_exceptions and scan\_global\_list).
+
+\end{enumerate}
+
+The next step is responsible for the analyzation of the loop 
+condition itself. The loop condition can create a so called 
+dynamic constraint on a variable. If one side of the loop 
+condition is constant during the execution of the loop the other 
+side can be safely assumed to be less than, greater or equal 
+than or equal to this side (depending on the operator) at the 
+start of each loop pass. It is important to notice the difference 
+to so called static constraints on variables. That means that 
+these variables can be safely assumed to stay below or above a 
+certain constant during the loop execution by simple testing them 
+prior to loop entry. This is obviously true for constants but does 
+also hold for variables that are only decremented or incremented. 
+For these, a static lower or upper bound can be guaranteed for the 
+whole loop execution by simply inserting a single test prior to 
+loop entry. Dynamic constraints, on the contrary, can vary in 
+different parts of the loop. After the variable is tested in the 
+loop condition, it might be changed to different values in 
+different paths of execution. All variables, that are never 
+changed or that get only decremented/incremented have static and 
+dynamic constraints, all others can only have dynamic ones 
+(init\_constraint). 
+
+Now the core bound check removal procedure is started. Beginning 
+directly after the loop condition all changes of variables that 
+are used as index variables somewhere in the loop are recorded. 
+This is an iterative process since different paths of execution 
+may yield different changes to these variables. Especially changes 
+in nested loops cause these changes to become unpredictable and 
+therefore no upper/lower bound can be held up any further. After 
+this iterative process caused all changes to become stable, each 
+array access is examined (e.g. a statement like
+\begin{verbatim}
+if (x == true) 
+    i++; 
+else 
+    i+=2; 
+\end{verbatim}
+must result in an increase of 2 for i when control 
+flow joins after the if-statement). If it is possible, by 
+inserting additional static/dynamic tests as needed, to assure 
+that the index variable is greater or equal to zero and less than 
+the array length, the bound checks are removed 
+(remove\_bound\_checks). It is possible that more than one static 
+tests gets inserted for a single variable, when it is used in 
+different array access (possibly with different constants added or 
+subtracted). Because all tests have to hold for this variable to 
+allow optimzed code to be executed, only the strictest tests have 
+to be done (e.g. if an integer array x[] is accessed by i in the 
+statements x[i+1] and x[i-1], it has to be guaranteed that i $>$ 1 
+(for second statement) and that i $<$ arraylength-1 (for the first 
+statement)). Parallel to the insertion of new tests, the number of 
+needed instructions for the new loop header node is accordingly 
+increased. When optimzing the loop, it is important to 
+differentiate between the loop head and the rest of the basic 
+blocks, forming the body. The dynamic constraints can only be used 
+for array accesses in the loop body, as the loop comparison is 
+done at the end of the header node. Nevertheless, all static 
+constraints can still be used to optimze array access in the 
+header block. Because it is possible that an array reference is 
+null prior to entering the loop, all array references that are 
+loaded to compute an arraylength have to be checked against null.
+
+After all new tests have been determined, it is necessary to 
+reorder the code and insert the new tests (insert\_static\_checks). 
+The first step is the creation of a new header node. Because all 
+jumps to the beginning of the old loop now have to get to the new 
+header first, it is more efficient to just replace the code in the 
+old header block by the new tests. So only jumps within the loops 
+need to be patched and the rest of the code can remain untouched. 
+For each constraint that has been found in the previous step of 
+the algorithm, two values have to be loaded and are then compared. 
+Because it is possible during runtime that these tests fail (and 
+no guarantee can be made) a copy of the loop with the original, 
+checked array accesses must exist. Depending on the outcome of the 
+test cascade, a jump to the optimized or original loop is made. To 
+copy the loop, all basic blocks that are part of the loop are 
+copied and appended to the end of the global basic block list. 
+After that, both the original and the copy of the loop need post- 
+processing to redirect certain jump targets. All jumps to the old 
+loop head (which now contains the static checks) in the original 
+loop have to be redirected to the newly inserted block, that holds 
+the code for the original loop head. In the copied loop, all jumps 
+inside the loop have to be redirected to jumps to the copied 
+blocks. When loops are duplicated, these changes must be reflected 
+in the node list of all parent loops as well. So the hierarchie 
+tree is climbed and the new nodes are added to all enclosing 
+loops. Because these node lists are sorted, it is necessary to 
+deal with the new loop head in a different way. The loop head has 
+to be inserted into the correct place of the parent loops while 
+all other copied nodes can simply be appended to the basic block 
+list. 
+
+Now all exceptions have to be examined. There are three different 
+cases, that must be considered. An exception can be part of the 
+loop body (ie. is inside the loop), an exception can contain the 
+loop or an exception is in a different part of the code (and does 
+not have to be further considered). To be able to find all 
+exceptions that are part of the loop, the algorithm uses the 
+hierarchie tree and gets all exceptions of all children nodes. The 
+exception handlers of these loops have to be copied and jumps to 
+the original loop have to be redirected to the copied loop. The 
+start and end code pointers of the protected area have to be moved 
+to the copied blocks. The exception handler code is identified by 
+looking at the successor nodes starting from the handler block. As 
+long as control flow does not reach a loop node again, all blocks 
+are considered as part of the handler code. Exceptions that 
+surround the loop have to be handled different. It is not 
+necessary to copy the exception handler, as it is not part of the 
+loop. Nevertheless it is important to extend the protected area to 
+the copied blocks. So the first and last block (including copied 
+exception handler blocks of nested loops) that got copied are 
+stored. The exceptions are then extended to contain all these new 
+blocks and jump to the original handler. As no code is duplicated, 
+nothing needs to be patched. When climbing up the hierarchie tree 
+by following the parent pointer, not all exceptions of parent 
+nodes really enclose the loop. It is possible that a parent loop 
+contains an exception and the loop, that is optimized, right after 
+each other. Those exceptions must not be handled and are ignored. 
+Because of the layout of the exception table, where appropriate 
+exceptions (that could be nested) are found by a linear search 
+from the start, it is necessary to insert newly created exceptions 
+right after their original ones. 
+
+One performance problem still remains after these modifications. 
+The new loop header that replaces the original one is located 
+exactly where the old one was. A fall through from the previous 
+block (that could be part of the loop) to the loop header must be 
+patched by inserting an additional goto-instruction to the 
+original head of the loop. Because this would insert an additional 
+jump into the loop body, performance may deteriorate. To solve 
+this shortcoming, the new loop head has to be moved before the 
+first node of the loop. This might cause the problem of moving the 
+loop head to the beginning of the global basic block list. This 
+pointer points to the initial basic block array and can not be 
+easily reassigned. A new pointer is needed that temporary holds 
+the begin of the basic block list and is assigned to the original 
+pointer after all optimization step have been finished. Any fall 
+through from the predecessor of the loop head now reaches the old 
+loop head, that has been inserted right after the new loop head. 
+After all loops have been processed, register allocation and code 
+genration proceed as usual and optimized code is generated.
+
+\subsection{Helper functions}
+
+An important helper function is stored in tracing.c. This 
+functions is needed to determine the variables/constants that 
+participate in array accesses or comparisons. As all work is done 
+on java bytecode, it is necessary to find the arguments of an 
+interesting operation by examining the stack. Unfortunately these 
+values can just be temporary and origin in variables loaded 
+earlier and getting modified by arithmetic operations. To find the 
+variables that participate in an array access, one has to walk 
+back instructions and looking at the stack, until an appropriate 
+load is found. The function tracing preforms this task by steping 
+back instruction for instruction and record the stack changes 
+these instructions cause until the correct load or push constant 
+operating has been found or until it becomes clear, that it is 
+impossible to determine the origin (e.g. when a function return 
+value is used). The value is then delivered in a special structure 
+and used by the main algorithm. 
+
+\subsection{Performance - impact and gain}
+
+It is obvious that the optimization process causes additionally 
+compile time overhead but can give performance gains during 
+runtime, when 3 less instructions are executed per array access 
+many times in a loop. The additional overhaed is mainly caused by 
+the needed control flow analysis, which has to be done for every 
+method and is linear to the number of basic blocks. Then the loop 
+scaning algorithm trys to find loops in the control flow graph. 
+This algorithm has to be started every time a method is compiled 
+and runs in O(n*ld(n)) where n is the number of basic blocks. 
+After the loops have been scanned for array access, the runtime of 
+the final bound check removal and loop copying process mainly 
+depends on the nesting depth of the hierarchie tree. For every 
+additional nesting depth, the number of basic blocks, that must be 
+copied and patch is doubled, resulting in exponential overhead 
+according to the nesting depth. Additionally, the search for 
+modifications of index variables, which is an iterative process, 
+becomes slowed down by deeply nested loops. Things get worse when 
+many exceptions are involved, because not only exceptions in 
+children nodes have to be considered, but all enclosing exceptions 
+as well. Nevertheless those cases should rarely occur and in real 
+environments, the net gain can be significant. Especially in tight 
+loops, when arrays are initialized or their elements summed up, 
+three less instructions can gain up to 30 percent speedup, when loops run 
+many times.
+
+
+\vspace{4mm}
+
+\begin{tabular}{|l|c|c|c|}
+
+\hline
+
+& Compile time (in ms) & \multicolumn{2}{c|}{Run time (in ms) } \\
+
+\multicolumn{1}{|c|}{\raisebox{1ex}{Cacao Options}} & javac & perf & sieve 1000 1000\\ \hline 
+
+\rule{0mm}{5mm}with optimization (-oloop) & 176 & 1510 & 98 \\
+
+without optimization & 118 & 1720 & 131 \\ 
+
+\hline
+
+\end{tabular}
+ 

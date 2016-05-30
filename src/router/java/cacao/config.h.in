@@ -1,0 +1,757 @@
+/* config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* Define if building universal (internal helper macro) */
+#undef AC_APPLE_UNIVERSAL_BUILD
+
+/* architecture directory */
+#undef ARCH_DIR
+
+/* Old ARM architecture without good Thumb interworking */
+#undef ARM_NO_THUMB_IW
+
+/* Java core library classes at compile time */
+#undef BUILD_JAVA_RUNTIME_LIBRARY_CLASSES
+
+/* CACAO's Mercurial revision */
+#undef CACAO_HGREV
+
+/* library installation prefix */
+#undef CACAO_LIBDIR
+
+/* installation prefix */
+#undef CACAO_PREFIX
+
+/* CACAO's vm.zip */
+#undef CACAO_VM_ZIP
+
+/* disable dump memory */
+#undef DISABLE_DUMP
+
+/* disable garbage collector */
+#undef DISABLE_GC
+
+/* enable annotations */
+#undef ENABLE_ANNOTATIONS
+
+/* enable assertion */
+#undef ENABLE_ASSERTION
+
+/* enable cycle count statistics */
+#undef ENABLE_CYCLES_STATS
+
+/* debug filter */
+#undef ENABLE_DEBUG_FILTER
+
+/* enable disassembler */
+#undef ENABLE_DISASSEMBLER
+
+/* Enable dynamic library loading. */
+#undef ENABLE_DL
+
+/* enable escape analysis with ssa */
+#undef ENABLE_ESCAPE
+
+/* enable generating code to validate escape analysis results */
+#undef ENABLE_ESCAPE_CHECK
+
+/* enable expensive assertions */
+#undef ENABLE_EXPENSIVE_ASSERT
+
+/* enable conservative boehm-gc */
+#undef ENABLE_GC_BOEHM
+
+/* enable exact cacao-gc */
+#undef ENABLE_GC_CACAO
+
+/* enable handles (indirection cells) */
+#undef ENABLE_HANDLES
+
+/* enable if-conversion */
+#undef ENABLE_IFCONV
+
+/* use method inlining */
+#undef ENABLE_INLINING
+
+/* enable method inlining debug options */
+#undef ENABLE_INLINING_DEBUG
+
+/* enable interpreter */
+#undef ENABLE_INTRP
+
+/* compile for Java ME CLDC1.1 */
+#undef ENABLE_JAVAME_CLDC1_1
+
+/* compile for Java SE */
+#undef ENABLE_JAVASE
+
+/* enable JIT compiler */
+#undef ENABLE_JIT
+
+/* enable JNI */
+#undef ENABLE_JNI
+
+/* enable JRE layout */
+#undef ENABLE_JRE_LAYOUT
+
+/* use JVMTI */
+#undef ENABLE_JVMTI
+
+/* enable libjvm.so */
+#undef ENABLE_LIBJVM
+
+/* enable logging */
+#undef ENABLE_LOGGING
+
+/* use loop optimization */
+#undef ENABLE_LOOP
+
+/* enable lsra */
+#undef ENABLE_LSRA
+
+/* perform debugging memory checks */
+#undef ENABLE_MEMCHECK
+
+/* use opagent */
+#undef ENABLE_OPAGENT
+
+/* enable profiling */
+#undef ENABLE_PROFILING
+
+/* use on-stack replacement */
+#undef ENABLE_REPLACEMENT
+
+/* enable real-time timing */
+#undef ENABLE_RT_TIMING
+
+/* enable softfloat */
+#undef ENABLE_SOFTFLOAT
+
+/* enable soft double cmp */
+#undef ENABLE_SOFT_DOUBLE_CMP
+
+/* enable soft float cmp */
+#undef ENABLE_SOFT_FLOAT_CMP
+
+/* enable lsra with ssa */
+#undef ENABLE_SSA
+
+/* link CACAO statically */
+#undef ENABLE_STATICVM
+
+/* enable statistics */
+#undef ENABLE_STATISTICS
+
+/* enable threads */
+#undef ENABLE_THREADS
+
+/* enable thread local heap */
+#undef ENABLE_TLH
+
+/* enable classfile verification */
+#undef ENABLE_VERIFIER
+
+/* use zlib */
+#undef ENABLE_ZLIB
+
+/* Define to 1 if you have the `abort' function. */
+#undef HAVE_ABORT
+
+/* Define to 1 if you have the `accept' function. */
+#undef HAVE_ACCEPT
+
+/* Define to 1 if you have the `access' function. */
+#undef HAVE_ACCESS
+
+/* Define to 1 if you have the <assert.h> header file. */
+#undef HAVE_ASSERT_H
+
+/* Define to 1 if you have the `atoi' function. */
+#undef HAVE_ATOI
+
+/* Define to 1 if you have the `atol' function. */
+#undef HAVE_ATOL
+
+/* Define to 1 if you have the <avcall.h> header file. */
+#undef HAVE_AVCALL_H
+
+/* Define to 1 if you have the `backtrace' function. */
+#undef HAVE_BACKTRACE
+
+/* Define to 1 if you have the `backtrace_symbols' function. */
+#undef HAVE_BACKTRACE_SYMBOLS
+
+/* boost::algorithm::all_of/any_of/none_of is available */
+#undef HAVE_BOOST_ALL_ANY_NONE_OF
+
+/* boost::shared_ptr is available */
+#undef HAVE_BOOST_SHARED_PTR
+
+/* boost::unordered_map is available */
+#undef HAVE_BOOST_UNORDERED_MAP
+
+/* boost::unordered_set is available */
+#undef HAVE_BOOST_UNORDERED_SET
+
+/* C++11 static_assert is available */
+#undef HAVE_BUILTIN_STATIC_ASSERT
+
+/* Define to 1 if you have the `calloc' function. */
+#undef HAVE_CALLOC
+
+/* Define to 1 if you have the `close' function. */
+#undef HAVE_CLOSE
+
+/* Define to 1 if you have the `confstr' function. */
+#undef HAVE_CONFSTR
+
+/* Define to 1 if you have the `connect' function. */
+#undef HAVE_CONNECT
+
+/* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
+   */
+#undef HAVE_DIRENT_H
+
+/* Define to 1 if you have the `dirname' function. */
+#undef HAVE_DIRNAME
+
+/* Define to 1 if you have the `dlclose' function. */
+#undef HAVE_DLCLOSE
+
+/* Define to 1 if you have the `dlerror' function. */
+#undef HAVE_DLERROR
+
+/* Define to 1 if you have the <dlfcn.h> header file. */
+#undef HAVE_DLFCN_H
+
+/* Define to 1 if you have the `dlopen' function. */
+#undef HAVE_DLOPEN
+
+/* Define to 1 if you have the `dlsym' function. */
+#undef HAVE_DLSYM
+
+/* Define to 1 if you have the <errno.h> header file. */
+#undef HAVE_ERRNO_H
+
+/* Define to 1 if you have the <execinfo.h> header file. */
+#undef HAVE_EXECINFO_H
+
+/* Define to 1 if you have the `fclose' function. */
+#undef HAVE_FCLOSE
+
+/* Define to 1 if you have the <fcntl.h> header file. */
+#undef HAVE_FCNTL_H
+
+/* Define to 1 if you have the <ffi.h> header file. */
+#undef HAVE_FFI_H
+
+/* Define to 1 if you have the `fflush' function. */
+#undef HAVE_FFLUSH
+
+/* Define to 1 if you have the `fopen' function. */
+#undef HAVE_FOPEN
+
+/* Define to 1 if you have the `fprintf' function. */
+#undef HAVE_FPRINTF
+
+/* Define to 1 if you have the `fread' function. */
+#undef HAVE_FREAD
+
+/* Define to 1 if you have the `free' function. */
+#undef HAVE_FREE
+
+/* Define to 1 if you have the `fstat' function. */
+#undef HAVE_FSTAT
+
+/* Define to 1 if you have the `fsync' function. */
+#undef HAVE_FSYNC
+
+/* Define to 1 if you have the `ftruncate' function. */
+#undef HAVE_FTRUNCATE
+
+/* Define to 1 if you have the `getcwd' function. */
+#undef HAVE_GETCWD
+
+/* Define to 1 if you have the `getenv' function. */
+#undef HAVE_GETENV
+
+/* Define to 1 if you have the `gethostbyname' function. */
+#undef HAVE_GETHOSTBYNAME
+
+/* Define to 1 if you have the `gethostname' function. */
+#undef HAVE_GETHOSTNAME
+
+/* Define to 1 if you have the `getloadavg' function. */
+#undef HAVE_GETLOADAVG
+
+/* Define to 1 if you have the `getpagesize' function. */
+#undef HAVE_GETPAGESIZE
+
+/* Define to 1 if you have the `getpid' function. */
+#undef HAVE_GETPID
+
+/* Define to 1 if you have the `getrusage' function. */
+#undef HAVE_GETRUSAGE
+
+/* Define to 1 if you have the `getsockname' function. */
+#undef HAVE_GETSOCKNAME
+
+/* Define to 1 if you have the `getsockopt' function. */
+#undef HAVE_GETSOCKOPT
+
+/* Define to 1 if you have the `gettimeofday' function. */
+#undef HAVE_GETTIMEOFDAY
+
+/* Defined when Google Test is available. */
+#undef HAVE_GTEST
+
+/* Define to 1 if you have the `htons' function. */
+#undef HAVE_HTONS
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
+
+/* Define to 1 if you have the `ioctl' function. */
+#undef HAVE_IOCTL
+
+/* Define to 1 if you have the `isnan' function. */
+#undef HAVE_ISNAN
+
+/* Define if your <locale.h> file defines LC_MESSAGES. */
+#undef HAVE_LC_MESSAGES
+
+/* Define to 1 if you have the `avcall' library (-lavcall). */
+#undef HAVE_LIBAVCALL
+
+/* Define to 1 if you have the `bfd' library (-lbfd). */
+#undef HAVE_LIBBFD
+
+/* Define to 1 if you have the `dl' library (-ldl). */
+#undef HAVE_LIBDL
+
+/* Define to 1 if you have the `ffi' library (-lffi). */
+#undef HAVE_LIBFFI
+
+/* Define to 1 if you have the <libgen.h> header file. */
+#undef HAVE_LIBGEN_H
+
+/* Define to 1 if you have the `iberty' library (-liberty). */
+#undef HAVE_LIBIBERTY
+
+/* Define to 1 if you have the `intl' library (-lintl). */
+#undef HAVE_LIBINTL
+
+/* Define to 1 if you have the `opagent' library (-lopagent). */
+#undef HAVE_LIBOPAGENT
+
+/* Define to 1 if you have the `opcodes' library (-lopcodes). */
+#undef HAVE_LIBOPCODES
+
+/* Define to 1 if you have the `pthread' library (-lpthread). */
+#undef HAVE_LIBPTHREAD
+
+/* Define to 1 if you have the `rt' library (-lrt). */
+#undef HAVE_LIBRT
+
+/* Define to 1 if you have the `socket' library (-lsocket). */
+#undef HAVE_LIBSOCKET
+
+/* Define to 1 if you have the `z' library (-lz). */
+#undef HAVE_LIBZ
+
+/* Define to 1 if you have the `listen' function. */
+#undef HAVE_LISTEN
+
+/* Define to 1 if you have the <locale.h> header file. */
+#undef HAVE_LOCALE_H
+
+/* Define to 1 if you have the `localtime' function. */
+#undef HAVE_LOCALTIME
+
+/* Define to 1 if you have the `localtime_r' function. */
+#undef HAVE_LOCALTIME_R
+
+/* Define to 1 if you have the `lseek' function. */
+#undef HAVE_LSEEK
+
+/* Define to 1 if you have the <mach/mach.h> header file. */
+#undef HAVE_MACH_MACH_H
+
+/* Define to 1 if you have the `malloc' function. */
+#undef HAVE_MALLOC
+
+/* Define to 1 if you have the `memcpy' function. */
+#undef HAVE_MEMCPY
+
+/* Define to 1 if you have the <memory.h> header file. */
+#undef HAVE_MEMORY_H
+
+/* Define to 1 if you have the `memset' function. */
+#undef HAVE_MEMSET
+
+/* Define to 1 if you have the `mmap' function. */
+#undef HAVE_MMAP
+
+/* Define to 1 if you have the `mprotect' function. */
+#undef HAVE_MPROTECT
+
+/* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
+#undef HAVE_NDIR_H
+
+/* Define to 1 if you have the <netdb.h> header file. */
+#undef HAVE_NETDB_H
+
+/* Define to 1 if you have the <opagent.h> header file. */
+#undef HAVE_OPAGENT_H
+
+/* Define to 1 if you have the `open' function. */
+#undef HAVE_OPEN
+
+/* Define to 1 if you have the `printf' function. */
+#undef HAVE_PRINTF
+
+/* Define to 1 if you have the `read' function. */
+#undef HAVE_READ
+
+/* Define to 1 if you have the `readlink' function. */
+#undef HAVE_READLINK
+
+/* Define to 1 if you have the `realloc' function. */
+#undef HAVE_REALLOC
+
+/* Define to 1 if you have the `recv' function. */
+#undef HAVE_RECV
+
+/* Define to 1 if you have the <regex.h> header file. */
+#undef HAVE_REGEX_H
+
+/* Define to 1 if you have the `scandir' function. */
+#undef HAVE_SCANDIR
+
+/* Define to 1 if you have the `select' function. */
+#undef HAVE_SELECT
+
+/* Define to 1 if you have the `send' function. */
+#undef HAVE_SEND
+
+/* Define to 1 if you have the `setlocale' function. */
+#undef HAVE_SETLOCALE
+
+/* Define to 1 if you have the `setsockopt' function. */
+#undef HAVE_SETSOCKOPT
+
+/* Define to 1 if you have the `shutdown' function. */
+#undef HAVE_SHUTDOWN
+
+/* Define to 1 if you have the <signal.h> header file. */
+#undef HAVE_SIGNAL_H
+
+/* Define to 1 if you have the `socket' function. */
+#undef HAVE_SOCKET
+
+/* Define to 1 if you have the `stat' function. */
+#undef HAVE_STAT
+
+/* Define to 1 if you have the <stdarg.h> header file. */
+#undef HAVE_STDARG_H
+
+/* Define to 1 if you have the <stdbool.h> header file. */
+#undef HAVE_STDBOOL_H
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdio.h> header file. */
+#undef HAVE_STDIO_H
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#undef HAVE_STDLIB_H
+
+/* std::all_of/any_of/none_of is disabled */
+#undef HAVE_STD_ALL_ANY_NONE_OF
+
+/* std::tr1::shared_ptr is disabled */
+#undef HAVE_STD_TR1_SHARED_PTR
+
+/* std::tr1::unordered_map is disabled */
+#undef HAVE_STD_TR1_UNORDERED_MAP
+
+/* std::tr1::unordered_set is disabled */
+#undef HAVE_STD_TR1_UNORDERED_SET
+
+/* Define to 1 if you have the `str2sig' function. */
+#undef HAVE_STR2SIG
+
+/* Define to 1 if you have the `strcat' function. */
+#undef HAVE_STRCAT
+
+/* Define to 1 if you have the `strchr' function. */
+#undef HAVE_STRCHR
+
+/* Define to 1 if you have the `strcmp' function. */
+#undef HAVE_STRCMP
+
+/* Define to 1 if you have the `strcpy' function. */
+#undef HAVE_STRCPY
+
+/* Define to 1 if you have the `strdup' function. */
+#undef HAVE_STRDUP
+
+/* Define to 1 if you have the `strerror' function. */
+#undef HAVE_STRERROR
+
+/* Define to 1 if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
+
+/* Define to 1 if you have the <string.h> header file. */
+#undef HAVE_STRING_H
+
+/* Define to 1 if you have the `strlen' function. */
+#undef HAVE_STRLEN
+
+/* Define to 1 if you have the `strncmp' function. */
+#undef HAVE_STRNCMP
+
+/* Define to 1 if you have the `strstr' function. */
+#undef HAVE_STRSTR
+
+/* Define to 1 if you have the <sys/dir.h> header file, and it defines `DIR'.
+   */
+#undef HAVE_SYS_DIR_H
+
+/* Define to 1 if you have the <sys/ioctl.h> header file. */
+#undef HAVE_SYS_IOCTL_H
+
+/* Define to 1 if you have the <sys/loadavg.h> header file. */
+#undef HAVE_SYS_LOADAVG_H
+
+/* Define to 1 if you have the <sys/mman.h> header file. */
+#undef HAVE_SYS_MMAN_H
+
+/* Define to 1 if you have the <sys/ndir.h> header file, and it defines `DIR'.
+   */
+#undef HAVE_SYS_NDIR_H
+
+/* Define to 1 if you have the <sys/param.h> header file. */
+#undef HAVE_SYS_PARAM_H
+
+/* Define to 1 if you have the <sys/resource.h> header file. */
+#undef HAVE_SYS_RESOURCE_H
+
+/* Define to 1 if you have the <sys/select.h> header file. */
+#undef HAVE_SYS_SELECT_H
+
+/* Define to 1 if you have the <sys/socket.h> header file. */
+#undef HAVE_SYS_SOCKET_H
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/time.h> header file. */
+#undef HAVE_SYS_TIME_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have the <sys/utsname.h> header file. */
+#undef HAVE_SYS_UTSNAME_H
+
+/* Define to 1 if you have the `time' function. */
+#undef HAVE_TIME
+
+/* Define to 1 if you have the <time.h> header file. */
+#undef HAVE_TIME_H
+
+/* Define to 1 if you have the <ucontext.h> header file. */
+#undef HAVE_UCONTEXT_H
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
+
+/* Define to 1 if you have the `vfprintf' function. */
+#undef HAVE_VFPRINTF
+
+/* Define to 1 if you have the `write' function. */
+#undef HAVE_WRITE
+
+/* Define to 1 if you have the <zconf.h> header file. */
+#undef HAVE_ZCONF_H
+
+/* Define to 1 if you have the <zlib.h> header file. */
+#undef HAVE_ZLIB_H
+
+/* have __thread */
+#undef HAVE___THREAD
+
+/* Java core library hpi.h header */
+#undef INCLUDE_HPI_H
+
+/* Java core library hpi_md.h header */
+#undef INCLUDE_HPI_MD_H
+
+/* Java runtime library jmm.h header */
+#undef INCLUDE_JMM_H
+
+/* Java runtime library jni.h header */
+#undef INCLUDE_JNI_H
+
+/* Java runtime library jni_md.h header */
+#undef INCLUDE_JNI_MD_H
+
+/* Java runtime library jvmti.h header */
+#undef INCLUDE_JVMTI_H
+
+/* Java runtime library jvm.h header */
+#undef INCLUDE_JVM_H
+
+/* Java runtime library jvm_md.h header */
+#undef INCLUDE_JVM_MD_H
+
+/* Java architecture name */
+#undef JAVA_ARCH
+
+/* Java runtime library classes */
+#undef JAVA_RUNTIME_LIBRARY_CLASSES
+
+/* Java runtime library native libraries installation directory */
+#undef JAVA_RUNTIME_LIBRARY_LIBDIR
+
+/* Java runtime library installation directory */
+#undef JAVA_RUNTIME_LIBRARY_PREFIX
+
+/* Define to the sub-directory in which libtool stores uninstalled libraries.
+   */
+#undef LT_OBJDIR
+
+/* disable debug code */
+#undef NDEBUG
+
+/* Name of package */
+#undef PACKAGE
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
+
+/* Define as the return type of signal handlers (`int' or `void'). */
+#undef RETSIGTYPE
+
+/* The size of `void *', as computed by sizeof. */
+#undef SIZEOF_VOID_P
+
+/* statement for skipping 16 bytes */
+#undef SKIP16
+
+/* Define to 1 if you have the ANSI C header files. */
+#undef STDC_HEADERS
+
+/* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
+#undef TIME_WITH_SYS_TIME
+
+/* Define to 1 if your <sys/time.h> declares `struct tm'. */
+#undef TM_IN_SYS_TIME
+
+/* use scheduler */
+#undef USE_SCHEDULER
+
+/* Version number of package */
+#undef VERSION
+
+/* CC used */
+#undef VERSION_CC
+
+/* CFLAGS used */
+#undef VERSION_CFLAGS
+
+/* configure arguments */
+#undef VERSION_CONFIGURE_ARGS
+
+/* CPPFLAGS used */
+#undef VERSION_CPPFLAGS
+
+/* CXX used */
+#undef VERSION_CXX
+
+/* CXXFLAGS used */
+#undef VERSION_CXXFLAGS
+
+/* extra version info */
+#undef VERSION_EXTRA
+
+/* full version info */
+#undef VERSION_FULL
+
+/* major version number */
+#undef VERSION_MAJOR
+
+/* micro version number */
+#undef VERSION_MICRO
+
+/* minor version number */
+#undef VERSION_MINOR
+
+/* use binutils disassembler */
+#undef WITH_BINUTILS_DISASSEMBLER
+
+/* use libffcall */
+#undef WITH_FFCALL
+
+/* use libffi */
+#undef WITH_FFI
+
+/* use Sun's CLDC1.1 classes */
+#undef WITH_JAVA_RUNTIME_LIBRARY_CLDC1_1
+
+/* use GNU Classpath */
+#undef WITH_JAVA_RUNTIME_LIBRARY_GNU_CLASSPATH
+
+/* use OpenJDK's Java SE classes */
+#undef WITH_JAVA_RUNTIME_LIBRARY_OPENJDK
+
+/* use OpenJDK's version 7 */
+#undef WITH_JAVA_RUNTIME_LIBRARY_OPENJDK_7
+
+/* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
+   significant byte first (like Motorola and SPARC, unlike Intel). */
+#if defined AC_APPLE_UNIVERSAL_BUILD
+# if defined __BIG_ENDIAN__
+#  define WORDS_BIGENDIAN 1
+# endif
+#else
+# ifndef WORDS_BIGENDIAN
+#  undef WORDS_BIGENDIAN
+# endif
+#endif
+
+/* Define to `__attribute__' to nothing if it's not supported.  */
+#ifndef __cplusplus
+#undef __attribute__
+#endif
+
+/* Define to empty if `const' does not conform to ANSI C. */
+#undef const
+
+/* Define to `__inline__' or `__inline' if that's what the C compiler
+   calls it, or to nothing if 'inline' is not supported under any name.  */
+#ifndef __cplusplus
+#undef inline
+#endif
+
+/* Define to `long int' if <sys/types.h> does not define. */
+#undef off_t
+
+/* Define to `unsigned int' if <sys/types.h> does not define. */
+#undef size_t

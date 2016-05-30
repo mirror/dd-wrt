@@ -1,0 +1,29 @@
+--- a/src/threads/lock.cpp	Thu Sep 11 14:52:50 2008 +0200
++++ b/src/threads/lock.cpp	Thu Sep 11 15:13:24 2008 +0200
+@@ -717,6 +717,7 @@
+ 		for (;;)
+ 		{
+ 			threadobject *current;
++			int i = 0;
+ 
+ 			// Wait until another thread sees the flc bit and notifies
+ 			// us of unlocking.
+@@ -726,8 +727,17 @@
+ 				break;
+ 			/* Traverse FLC list looking if we're still there */
+ 			current = t_other->flc_list;
+-			while (current && current != t)
++			while (current && current != t) {
++				i++;
+ 				current = current->flc_next;
++			}
++			{
++				static int umax = 0;
++				if (i>umax) {
++					printf("sable len %d\n", i);
++					umax = i;
++				}
++			}
+ 			if (!current)
+ 				/* not in list anymore, can stop waiting */
+ 				break;

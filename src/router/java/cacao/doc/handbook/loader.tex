@@ -1,0 +1,1550 @@
+\chapter{Class Loader}
+
+
+\section{Introduction}
+
+A \textit{Java Virtual Machine} (JVM) dynamically loads, links and
+initializes classes and interfaces when they are needed. Loading a
+class or interface means locating the binary representation---the
+class files---and creating a class of interface structure from that
+binary representation. Linking takes a loaded class or interface and
+transfers it into the runtime state of the \textit{Java Virtual
+Machine} so that it can be executed. Initialization of a class or
+interface means executing the static class of interface initializer
+\texttt{<clinit>}.
+
+The following sections describe the process of loading, linking and
+initalizing a class or interface in the CACAO \textit{Java Virtual
+Machine} in greater detail. Further the used data structures and
+techniques used in CACAO and the interaction with the GNU classpath
+are described.
+
+
+\section{System class loader}
+\label{sectionsystemclassloader}
+
+The class loader of a \textit{Java Virtual Machine} (JVM) is
+responsible for loading all type of classes and interfaces into the
+runtime system of the JVM. Every JVM has a \textit{system class
+loader} which is implemented in \texttt{java.lang.ClassLoader} and
+this class interacts via native function calls with the JVM itself.
+
+\begingroup
+\tolerance 10000
+The \textit{GNU classpath} implements the system class loader in
+\texttt{gnu.java.lang.SystemClassLoader} which extends
+\texttt{java.lang.ClassLoader} and interacts with the JVM. The
+\textit{bootstrap class loader} is implemented in
+\texttt{java.lang.ClassLoader} plus the JVM depended class
+\texttt{java.lang.VMClassLoader}. \texttt{java.lang.VMClassLoader} is
+the main class how the bootstrap class loader of the GNU classpath
+interacts with the JVM. The main functions of this class is
+
+\endgroup
+
+\begin{verbatim}
+        static final native Class loadClass(String name, boolean resolve)
+          throws ClassNotFoundException;
+\end{verbatim}
+
+\begingroup
+\tolerance 10000
+This is a native function implemented in the CACAO JVM, which is
+located in \texttt{nat/VMClassLoader.c} and calls the internal loader
+functions of CACAO. If the \texttt{name} argument is \texttt{NULL}, a
+new \texttt{java.lang.NullPointerException} is created and the
+function returns \texttt{NULL}.
+
+\endgroup
+
+If the \texttt{name} is non-NULL a new UTF8 string of the class' name
+is created in the internal \textit{symbol table} via
+
+\begin{verbatim}
+        utf *javastring_toutf(java_lang_String *string, bool isclassname);
+\end{verbatim}
+
+This function converts a \texttt{java.lang.String} string into the
+internal used UTF8 string representation. \texttt{isclassname} tells
+the function to convert any \texttt{.} (periods) found in the class
+name into \texttt{/} (slashes), so the class loader can find the
+specified class.
+
+Then a new \texttt{classinfo} structure is created via the
+
+\begin{verbatim}
+        classinfo *class_new(utf *classname);
+\end{verbatim}
+
+function call. This function creates a unique representation of this
+class, identified by its name, in the JVM's internal \textit{class
+hashtable}. The newly created \texttt{classinfo} structure (see
+figure~\ref{classinfostructure}) is initialized with correct values,
+like \texttt{loaded = false;}, \texttt{linked = false;} and
+\texttt{initialized = false;}. This guarantees a definite state of a
+new class.
+
+\begin{figure}
+\begin{verbatim}
+    struct classinfo {                /* class structure                          */
+        ...
+        s4          flags;            /* ACC flags                                */
+        utf        *name;             /* class name                               */
+
+        s4          cpcount;          /* number of entries in constant pool       */
+        u1         *cptags;           /* constant pool tags                       */
+        voidptr    *cpinfos;          /* pointer to constant pool info structures */
+
+        classinfo  *super;            /* super class pointer                      */
+        classinfo  *sub;              /* sub class pointer                        */
+        classinfo  *nextsub;          /* pointer to next class in sub class list  */
+
+        s4          interfacescount;  /* number of interfaces                     */
+        classinfo **interfaces;       /* pointer to interfaces                    */
+
+        s4          fieldscount;      /* number of fields                         */
+        fieldinfo  *fields;           /* field table                              */
+
+        s4          methodscount;     /* number of methods                        */
+        methodinfo *methods;          /* method table                             */
+        ...
+        bool        initialized;      /* true, if class already initialized       */
+        bool        initializing;     /* flag for the compiler                    */
+        bool        loaded;           /* true, if class already loaded            */
+        bool        linked;           /* true, if class already linked            */
+        s4          index;            /* hierarchy depth (classes) or index       */
+                                      /* (interfaces)                             */
+        s4          instancesize;     /* size of an instance of this class        */
+    #ifdef SIZE_FROM_CLASSINFO
+        s4          alignedsize;      /* size of an instance, aligned to the      */
+                                      /* allocation size on the heap              */
+    #endif
+
+        vftbl_t    *vftbl;            /* pointer to virtual function table        */
+
+        methodinfo *finalizer;        /* finalizer method                         */
+
+        u2          innerclasscount;  /* number of inner classes                  */
+        innerclassinfo *innerclass;
+        ...
+        utf        *packagename;      /* full name of the package                 */
+        utf        *sourcefile;       /* classfile name containing this class     */
+        java_objectheader *classloader; /* NULL for bootstrap classloader         */
+    };
+\end{verbatim}
+\caption{\texttt{classinfo} structure}
+\label{classinfostructure}
+\end{figure}
+
+The next step is to actually load the class requested. Thus the main
+loader function
+
+\begin{verbatim}
+        classinfo *class_load(classinfo *c);
+\end{verbatim}
+
+is called, which is a wrapper function to the real loader function
+
+\begin{verbatim}
+        classinfo *class_load_intern(classbuffer *cb);
+\end{verbatim}
+
+This wrapper function is required to ensure some requirements:
+
+\begin{itemize}
+ \item enter a monitor on the \texttt{classinfo} structure to make
+ sure that only one thread can load the same class or interface at the
+ same time
+
+ \item check if the class or interface is \texttt{loaded}, if it is
+ \texttt{true}, leave the monitor and return immediately
+
+ \item measure the loading time if requested
+
+ \item initialize the \texttt{classbuffer} structure with the actual
+ class file data
+
+ \item reset the \texttt{loaded} field of the \texttt{classinfo}
+ structure to \texttt{false} amd remove the \texttt{classinfo}
+ structure from the internal class hashtable if we got an error or
+ exception during loading
+
+ \item free any allocated memory
+
+ \item leave the monitor
+\end{itemize}
+
+The \texttt{class\_load} function is implemented to be
+\textit{reentrant}. This must be the case for the \textit{eager class
+loading} algorithm implemented in CACAO (described in more detail in
+section \ref{sectioneagerclassloading}). Furthermore this means that
+serveral threads can load different classes or interfaces at the same
+time on multiprocessor machines.
+
+The \texttt{class\_load\_intern} functions preforms the actual loading
+of the binary representation of the class or interface. During loading
+some verifier checks are performed which can throw an error. This
+error can be a \texttt{java.lang.ClassFormatError} or a
+\texttt{java.lang.NoClassDefFoundError}. Some of these
+\texttt{java.lang.ClassFormatError} checks are
+
+\begin{itemize}
+ \item \textit{Truncated class file} --- unexpected end of class file
+ data
+
+ \item \textit{Bad magic number} --- class file does not start with
+ the magic bytes (\texttt{0xCAFEBABE})
+
+ \item \textit{Unsupported major.minor version} --- the bytecode
+ version of the given class file is not supported by the JVM
+\end{itemize}
+
+The actual loading of the bytes from the binary representation is done
+via the \texttt{suck\_*} functions. These functions are
+
+\begin{itemize}
+ \item \texttt{suck\_u1}: load one \texttt{unsigned byte} (8 bit)
+
+ \item \texttt{suck\_u2}: load two \texttt{unsigned byte}s (16 bit)
+
+ \item \texttt{suck\_u4}: load four \texttt{unsigned byte}s (32 bit)
+
+ \item \texttt{suck\_u8}: load eight \texttt{unsigned byte}s (64 bit)
+
+ \item \texttt{suck\_float}: load four \texttt{byte}s (32 bit)
+ converted into a \texttt{float} value
+
+ \item \texttt{suck\_double}: load eight \texttt{byte}s (64 bit)
+ converted into a \texttt{double} value
+
+ \item \texttt{suck\_nbytes}: load \textit{n} bytes
+\end{itemize}
+
+Loading \texttt{signed} values is done via the
+\texttt{suck\_s[1,2,4,8]} macros which cast the loaded bytes to
+\texttt{signed} values. All these functions take a
+\texttt{classbuffer} (see figure~\ref{classbufferstructure})
+structure pointer as argument.
+
+\begin{figure}[h]
+\begin{verbatim}
+        typedef struct classbuffer {
+            classinfo *class;               /* pointer to classinfo structure     */
+            u1        *data;                /* pointer to byte code               */
+            s4         size;                /* size of the byte code              */
+            u1        *pos;                 /* current read position              */
+        } classbuffer;
+\end{verbatim}
+\caption{\texttt{classbuffer} structure}
+\label{classbufferstructure}
+\end{figure}
+
+This \texttt{classbuffer} structure is filled with data via the
+
+\begin{verbatim}
+        classbuffer *suck_start(classinfo *c);
+\end{verbatim}
+
+function. This function tries to locate the class, specifed with the
+\texttt{classinfo} structure, in the \texttt{CLASSPATH}. This can be
+a plain class file in the filesystem or a file in a
+\texttt{zip}/\texttt{jar} file. If the class file is found, the
+\texttt{classbuffer} is filled with data collected from the class
+file, including the class file size and the binary representation of
+the class.
+
+Before reading any byte of the binary representation with a
+\texttt{suck\_*} function, the remaining bytes in the
+\texttt{classbuffer} data array must be checked with the
+
+\begin{verbatim}
+        static inline bool check_classbuffer_size(classbuffer *cb, s4 len);
+\end{verbatim}
+
+function. If the remaining bytes number is less than the amount of the
+bytes to be read, specified by the \texttt{len} argument, a
+\texttt{java.lang.ClassFormatError} with the detail message
+\textit{Truncated class file}---as mentioned before---is thrown.
+
+The following subsections describe chronologically in greater detail
+the individual loading steps of a class or interface from it's binary
+representation.
+
+
+\subsection{Constant pool loading}
+\label{sectionconstantpoolloading}
+
+The class' constant pool is loaded via
+
+\begin{verbatim}
+        static bool class_loadcpool(classbuffer *cb, classinfo *c);
+\end{verbatim}
+
+from the \texttt{constant\_pool} table in the binary representation of
+the class of interface. The \texttt{classinfo} structure has two
+pointers to arrays which contain the class' constant pool infos,
+namely: \texttt{cptags} and \texttt{cpinfos}. \texttt{cptags} contains
+the type of the constant pool entry. \texttt{cpinfos} contains a
+pointer to the constant pool entry itself.
+
+The constant pool needs to be parsed in two passes. In the first pass
+the information loaded is saved in temporary structures, which are
+further processed in the second pass, when the complete constant pool
+has been traversed. Only when all constant pool entries have been
+processed, every constant pool entry can be completely resolved, but
+this resolving can only be done in a specific order:
+
+\begin{enumerate}
+ \item \texttt{CONSTANT\_Class}
+
+ \item \texttt{CONSTANT\_String}
+
+ \item \texttt{CONSTANT\_NameAndType}
+
+ \item \texttt{CONSTANT\_Fieldref} \\ \texttt{CONSTANT\_Methodref} \\
+ \texttt{CONSTANT\_InterfaceMethodref} --- these entries are combined
+ into one structure
+\end{enumerate}
+
+The temporary structures which are used to \textit{forward} the data
+from the first pass into the second, are shown in
+figure~\ref{constantpoolstructures}.
+
+\begin{figure}[h]
+\begin{verbatim}
+        /* CONSTANT_Class entries */
+        typedef struct forward_class {
+            struct forward_class *next;
+            u2 thisindex;
+            u2 name_index;
+        } forward_class;
+
+        /* CONSTANT_String */
+        typedef struct forward_string {
+            struct forward_string *next;
+            u2 thisindex;
+            u2 string_index;
+        } forward_string;
+
+        /* CONSTANT_NameAndType */
+        typedef struct forward_nameandtype {
+            struct forward_nameandtype *next;
+            u2 thisindex;
+            u2 name_index;
+            u2 sig_index;
+        } forward_nameandtype;
+
+        /* CONSTANT_Fieldref, CONSTANT_Methodref or CONSTANT_InterfaceMethodref */
+        typedef struct forward_fieldmethint {
+            struct forward_fieldmethint *next;
+            u2 thisindex;
+            u1 tag;
+            u2 class_index;
+            u2 nameandtype_index;
+        } forward_fieldmethint;
+\end{verbatim}
+\caption{temporary constant pool structures}
+\label{constantpoolstructures}
+\end{figure}
+
+The following list describes how the constant pool entries, which need
+two passes, are processed in the first pass.
+
+\begin{itemize}
+
+ \item \texttt{CONSTANT\_Class}
+
+ \begin{itemize}
+  \item create a new \texttt{forward\_class} structure
+
+  \item add the \texttt{forward\_class} structure to the
+  \texttt{forward\_classes} list
+
+  \item store the current constant pool index into the
+  \texttt{thisindex} field
+
+  \item read the index of the class' name via \texttt{suck\_u2} and
+  store it into the \texttt{name\_index} field
+
+  \item increase the constant pool index by one
+ \end{itemize}
+
+ \item \texttt{CONSTANT\_String}
+
+ \begin{itemize}
+  \item create a new \texttt{forward\_string} structure
+
+  \item add the \texttt{forward\_string} structure to the \texttt{forward\_strings} list
+
+  \item store the current constant pool index into the \texttt{thisindex} field
+
+  \item read the index of the UTF8 string via \texttt{suck\_u2} and store it into the \texttt{name\_index} field
+
+  \item increase the constant pool index by one
+ \end{itemize}
+
+ \item \texttt{CONSTANT\_NameAndType}
+
+ \begin{itemize}
+  \item create a new \texttt{forward\_nameandtype} structure
+
+  \item add the \texttt{forward\_nameandtype} structure to the
+  \texttt{forward\_nameandtypes} list
+
+  \item store the current constant pool index into the
+  \texttt{thisindex} field
+
+  \item read the index of the UTF8 string containing the name via
+  \texttt{suck\_u2} and store it into the \texttt{name\_index} field
+
+  \item read the index of the UTF8 string containing the field or
+  method descriptor via \texttt{suck\_u2} and store it into the
+  \texttt{sig\_index} field
+
+  \item increase the constant pool index by one
+ \end{itemize}
+
+ \item \texttt{CONSTANT\_Fieldref} \\ \texttt{CONSTANT\_Methodref} \\
+ \texttt{CONSTANT\_InterfaceMethodref}
+
+ \begin{itemize}
+  \item create a new \texttt{forward\_fieldmethint} structure
+
+  \item add the \texttt{forward\_fieldmethint} structure to the
+  \texttt{forward\_fieldmethints} list
+
+  \item store the current constant pool index into the
+  \texttt{thisindex} field
+
+  \item store the current constant pool type into the \texttt{tag}
+  field
+
+  \item read the constant pool index of the \texttt{CONSTANT\_Class}
+  entry that contains the declaration of the field or method via
+  \texttt{suck\_u2} and store it into the \texttt{class\_index} field
+
+  \item read the constant pool index of the
+  \texttt{CONSTANT\_NameAndType} entry that contains the name and
+  descriptor of the field or method and store it into the
+  \texttt{nameandtype\_index} field
+
+  \item increase the constant pool index by one
+
+ \end{itemize}
+
+\end{itemize}
+
+The remaining constant pool types can be completely resolved in the
+first pass and need no further processing. These types, including the
+actions taken in the first pass, are as follows:
+
+\begin{itemize}
+
+ \item \texttt{CONSTANT\_Integer}
+
+ \begin{itemize}
+
+  \item create a new \texttt{constant\_integer} structure (see
+  figure~\ref{constantintegerstructure})
+
+  \item read a 4 byte \texttt{signed integer} value via
+  \texttt{suck\_s4} from the binary representation
+
+  \item store the value into the \texttt{value} field of the
+  \texttt{constant\_integer} structure
+
+  \item store the type \texttt{CONSTANT\_Integer} into \texttt{cptags}
+  and the pointer to the \texttt{constant\_integer} structure into
+  \texttt{cpinfos} at the appropriate index
+
+  \item increase the constant pool index by one
+
+ \end{itemize}
+
+\begin{figure}[h]
+\begin{verbatim}
+        typedef struct {            /* Integer                                    */
+            s4 value;
+        } constant_integer;
+\end{verbatim}
+\caption{\texttt{constant\_integer} structure}
+\label{constantintegerstructure}
+\end{figure}
+
+ \item \texttt{CONSTANT\_Float}
+
+ \begin{itemize}
+
+  \item create a new \texttt{constant\_float} structure (see
+  figure~\ref{constantfloatstructure})
+
+  \item read a 4 byte \texttt{float} value via \texttt{suck\_float}
+  from the binary representation
+
+  \item store the value into the \texttt{value} field of the
+  \texttt{constant\_float} structure
+
+  \item store the type \texttt{CONSTANT\_Float} into \texttt{cptags}
+  and the pointer to the \texttt{constant\_float} structure into
+  \texttt{cpinfos} at the appropriate index
+
+  \item increase the constant pool index by one
+
+ \end{itemize}
+
+\begin{figure}[h]
+\begin{verbatim}
+        typedef struct {            /* Float                                      */
+            float value;
+        } constant_float;
+\end{verbatim}
+\caption{\texttt{constant\_float} structure}
+\label{constantfloatstructure}
+\end{figure}
+
+ \item \texttt{CONSTANT\_Long}
+
+ \begin{itemize}
+
+  \item create a new \texttt{constant\_long} structure (see
+  figure~\ref{constantlongstructure})
+
+  \item read a 8 byte \texttt{signed long} value via \texttt{suck\_s8}
+  from the binary representation
+
+  \item store the value into the \texttt{value} field of the
+  \texttt{constant\_long} structure
+
+  \item store the type \texttt{CONSTANT\_Long} into \texttt{cptags}
+  and the pointer to the \texttt{constant\_long} structure into
+  \texttt{cpinfos} at the appropriate index
+
+  \item increase the constant pool index by two
+
+ \end{itemize}
+
+\begin{figure}[h]
+\begin{verbatim}
+        typedef struct {            /* Long                                       */
+            s8 value;
+        } constant_long;
+\end{verbatim}
+\caption{\texttt{constant\_long} structure}
+\label{constantlongstructure}
+\end{figure}
+
+ \item \texttt{CONSTANT\_Double}
+
+ \begin{itemize}
+
+  \item create a new \texttt{constant\_double} structure (see
+  figure~\ref{constantdoublestructure})
+
+  \item read a 8 byte \texttt{double} value via \texttt{suck\_double}
+  from the binary representation
+
+  \item store the value into the \texttt{value} field of the
+  \texttt{constant\_double} structure
+
+  \item store the type \texttt{CONSTANT\_Double} into \texttt{cptags}
+  and the pointer to the \texttt{constant\_double} structure into
+  \texttt{cpinfos} at the appropriate index
+
+  \item increase the constant pool index by two
+
+ \end{itemize}
+
+\begin{figure}[h]
+\begin{verbatim}
+        typedef struct {            /* Double                                     */
+            double value;
+        } constant_double;
+\end{verbatim}
+\caption{\texttt{constant\_double} structure}
+\label{constantdoublestructure}
+\end{figure}
+
+ \item \texttt{CONSTANT\_Utf8}
+
+ \begin{itemize}
+
+  \item read the length of the UTF8 string via \texttt{suck\_u2}
+
+  \item store the type \texttt{CONSTANT\_Utf8} into \texttt{cptags} at
+  the appropriate index
+
+  \item create a new UTF8 string in the runtime environment of the
+  Java Virtual Machine via \texttt{utf\_new\_intern}
+
+  \item store the pointer of the newly created UTF8 string into
+  \texttt{cpinfos} at the appropriate index
+
+  \item skip \texttt{length} bytes in the binary representation of the
+  class or interface via \texttt{skip\_nbytes}
+
+  \item increase the constant pool index by one
+
+ \end{itemize}
+
+\end{itemize}
+
+In the second pass, the references are resolved and the runtime
+structures are created. In further detail this includes for
+
+\begin{itemize}
+
+ \item \texttt{CONSTANT\_Class}
+
+  \begin{itemize}
+
+   \item resolve the UTF8 name string from the class' constant pool
+
+   \item store the type \texttt{CONSTANT\_Class} in \texttt{cptags} at
+   the appropriate index
+
+   \item create a class in the class hashtable with the UTF8 name
+
+   \item store the pointer to the new class in \texttt{cpinfos} at the
+   appropriate index
+
+  \end{itemize}
+
+ \item \texttt{CONSTANT\_String}
+
+  \begin{itemize}
+
+   \item resolve the UTF8 string of the referenced string from the
+   class' constant pool
+
+   \item store type \texttt{CONSTANT\_String} in \texttt{cptags} and
+   store the UTF8 string pointer into \texttt{cpinfos} at the
+   appropriate index
+
+  \end{itemize}
+
+ \item \texttt{CONSTANT\_NameAndType}
+
+  \begin{itemize}
+
+   \item create a new \texttt{constant\_nameandtype} structure (see
+   figure~\ref{constantnameandtype})
+
+   \item resolve the UTF8 name and description string of the field or
+   method and store them into the \texttt{constant\_nameandtype}
+   structure
+
+   \item store type \texttt{CONSTANT\_NameAndType} into
+  \texttt{cptags} and store a pointer to the
+  \texttt{constant\_nameandtype} structure into \texttt{cpinfos}
+
+  \end{itemize}
+
+\begin{figure}[h]
+\begin{verbatim}
+        typedef struct {            /* NameAndType (Field or Method)       */
+            utf *name;              /* field/method name                   */
+            utf *descriptor;        /* field/method type descriptor string */
+        } constant_nameandtype;
+\end{verbatim}
+\caption{\texttt{constant\_nameandtype} structure}
+\label{constantnameandtype}
+\end{figure}
+
+ \item \texttt{CONSTANT\_Fieldref} \\
+       \texttt{CONSTANT\_Methodref} \\
+       \texttt{CONSTANT\_InterfaceMethodref}
+
+  \begin{itemize}
+
+   \item create a new \texttt{constant\_FMIref} structure (see
+   figure~\ref{constantFMIref})
+
+   \item resolve the referenced \texttt{constant\_nameandtype}
+   structure which contains the name and descriptor resolved in a
+   previous step and store the name and descriptor into the
+   \texttt{constant\_FMIref} structure
+
+   \item resolve the pointer of the referenced class which was created
+   in a previous step and store the pointer of the class into the
+   \texttt{constant\_FMIref} structure
+
+   \item store the type of the current constant pool entry in
+   \texttt{cptags} and store the pointer to \texttt{constant\_FMIref}
+   in \texttt{cpinfos} at the appropriate index
+
+  \end{itemize}
+
+\begin{figure}[h]
+\begin{verbatim}
+        typedef struct {           /* Fieldref, Methodref and InterfaceMethodref    */
+            classinfo *class;      /* class containing this field/method/interface  */
+            utf       *name;       /* field/method/interface name                   */
+            utf       *descriptor; /* field/method/interface type descriptor string */
+        } constant_FMIref;
+\end{verbatim}
+\caption{\texttt{constant\_FMIref} structure}
+\label{constantFMIref}
+\end{figure}
+
+\end{itemize}
+
+Any UTF8 strings, \texttt{constant\_nameandtype} structures or
+referenced classes are resolved with the
+
+\begin{verbatim}
+        voidptr class_getconstant(classinfo *c, u4 pos, u4 ctype);
+\end{verbatim}
+
+function. This functions checks for type equality and then returns the
+requested \texttt{cpinfos} slot of the specified class.
+
+
+\subsection{Interface loading}
+
+Interface loading is very simple and straightforward. After reading
+the number of interfaces, for every interface referenced, a
+\texttt{u2} constant pool index is read from the currently loading
+class or interface. This index is used to resolve the interface class
+via the \texttt{class\_getconstant} function from the class' constant
+pool. This means, interface \textit{loading} is more interface
+\textit{resolving} than loading. The resolved interfaces are stored
+in an \texttt{classinfo *} array allocated by the class loader. The
+memory pointer of the array is assigned to the \texttt{interfaces}
+field of the \texttt{clasinfo} structure.
+
+
+\subsection{Field loading}
+
+The number of fields of the class or interface is read as \texttt{u2}
+value. For each field the function
+
+\begin{verbatim}
+        static bool field_load(classbuffer *cb, classinfo *c, fieldinfo *f);
+\end{verbatim}
+
+is called. The \texttt{fieldinfo *} argument is a pointer to a
+\texttt{fieldinfo} structure (see figure~\ref{fieldinfostructure})
+allocated by the class loader. The fields' \texttt{name} and
+\texttt{descriptor} are resolved from the class constant pool via
+\texttt{class\_getconstant}. If the verifier option is turned on, the
+fields' \texttt{flags}, \texttt{name} and \texttt{descriptor} are
+checked for validity and can result in a
+\texttt{java.lang.ClassFormatError}.
+
+\begin{figure}[h]
+\begin{verbatim}
+    struct fieldinfo {        /* field of a class                                 */
+        s4   flags;           /* ACC flags                                        */
+        s4   type;            /* basic data type                                  */
+        utf *name;            /* name of field                                    */
+        utf *descriptor;      /* JavaVM descriptor string of field                */
+	
+        s4   offset;          /* offset from start of object (instance variables) */
+
+        imm_union  value;     /* storage for static values (class variables)      */
+
+        classinfo *class;     /* needed by typechecker. Could be optimized        */
+                              /* away by using constant_FMIref instead of         */
+                              /* fieldinfo throughout the compiler.               */
+        ...
+    };
+\end{verbatim}
+\caption{\texttt{fieldinfo} structure}
+\label{fieldinfostructure}
+\end{figure}
+
+Each field can have some attributes. The number of attributes is read
+as \texttt{u2} value from the binary representation. If the field has
+the \texttt{ACC\_FINAL} bit set in the flags, the
+\texttt{ConstantValue} attribute is available. This is the only
+attribute processed by \texttt{field\_load} and can occur only once,
+otherwise a \texttt{java.lang.ClassFormatError} is thrown. The
+\texttt{ConstantValue} entry in the constant pool contains the value
+for the \texttt{final} field. Depending on the fields' type, the
+proper constant pool entry is resolved and assigned.
+
+
+\subsection{Method loading}
+\label{sectionmethodloading}
+
+As for the fields, the number of the class or interface methods is read from
+the binary representation as \texttt{u2} value. For each method the function
+
+\begin{verbatim}
+        static bool method_load(classbuffer *cb, classinfo *c, methodinfo *m);
+\end{verbatim}
+
+is called. The beginning of the method loading code is nearly the same
+as the field loading code. The \texttt{methodinfo *} argument is a
+pointer to a \texttt{methodinfo} structure allocated by the class
+loader. The method's \texttt{name} and \texttt{descriptor} are
+resolved from the class constant pool via
+\texttt{class\_getconstant}. With the verifier turned on, some method
+checks are carried out. These include \texttt{flags}, \texttt{name}
+and \texttt{descriptor} checks and argument count check.
+
+\begin{figure}[h]
+\begin{verbatim}
+    struct methodinfo {                 /* method structure                       */
+        java_objectheader header;       /* we need this in jit's monitorenter     */
+        s4          flags;              /* ACC flags                              */
+        utf        *name;               /* name of method                         */
+        utf        *descriptor;         /* JavaVM descriptor string of method     */
+        ...
+        bool        isleafmethod;       /* does method call subroutines           */
+
+        classinfo  *class;              /* class, the method belongs to           */
+        s4          vftblindex;         /* index of method in virtual function    */
+                                        /* table (if it is a virtual method)      */
+        s4          maxstack;           /* maximum stack depth of method          */
+        s4          maxlocals;          /* maximum number of local variables      */
+        s4          jcodelength;        /* length of JavaVM code                  */
+        u1         *jcode;              /* pointer to JavaVM code                 */
+        ...
+        s4          exceptiontablelength;/* exceptiontable length                 */
+        exceptiontable *exceptiontable; /* the exceptiontable                     */
+
+        u2          thrownexceptionscount;/* number of exceptions attribute       */
+        classinfo **thrownexceptions;   /* checked exceptions a method may throw  */
+
+        u2          linenumbercount;    /* number of linenumber attributes        */
+        lineinfo   *linenumbers;        /* array of lineinfo items                */
+        ...
+        u1         *stubroutine;        /* stub for compiling or calling natives  */
+        ...
+    };
+\end{verbatim}
+\caption{\texttt{methodinfo} structure}
+\label{methodinfostructure}
+\end{figure}
+
+The method loading function has to distinguish between a
+\texttt{native} and a ''normal'' JAVA method. Depending on the
+\texttt{ACC\_NATIVE} flags, a different stub is created.
+
+For a JAVA method, a \textit{compiler stub} is created. The purpose of
+this stub is to call the CACAO jit compiler with a pointer to the byte
+code of the JAVA method as argument to compile the method into machine
+code. During code generation a pointer to this compiler stub routine
+is used as a temporary method call, if the method is not compiled
+yet. After the target method is compiled, the new entry point of the
+method is patched into the generated code and the compiler stub is
+needless, thus it is freed.
+
+If the method is a \texttt{native} method, the loader tries to find
+the native function. If the function was found, a \textit{native stub}
+is generated. This stub is responsible to manipulate the method's
+arguments to be suitable for the \texttt{native} method called. This
+includes inserting the \textit{JNI environment} pointer as first
+argument and, if the \texttt{native} method has the
+\texttt{ACC\_STATIC} flag set, inserting a pointer to the methods
+class as second argument. If the \texttt{native} method is
+\texttt{static}, the native stub also checks if the method's class is
+already initialized. If the method's class is not initialized as the
+native stub is generated, a \texttt{asm\_check\_clinit} calling code
+is emitted.
+
+Each method can have some attributes. The method loading function
+processes two of them: \texttt{Code} and \texttt{Exceptions}.
+
+The \texttt{Code} attribute is a \textit{variable-length} attribute
+which contains the Java Virtual Machine instructions---the byte
+code---of the JAVA method. If the method is either \texttt{native} or
+\texttt{abstract}, it must not have a \texttt{Code} attribute,
+otherwise it must have exactly one \texttt{Code}
+attribute. Additionally to the byte code, the \texttt{Code} attribute
+contains the exception table and attributes to \texttt{Code} attribute
+itself. One exception table entry contains the \texttt{start\_pc},
+\texttt{end\_pc} and
+\texttt{handler\_pc} of the \texttt{try-catch} block, each read as
+\texttt{u2} value, plus a reference to the class of the
+\texttt{catch\_type}. Currently there are two attributes of the
+\texttt{Code} attribute defined in the JVM specification:
+\texttt{LineNumberTable} and \texttt{LocalVariableTable}. CACAO only
+processes the \texttt{LineNumberTable} attribute. A
+\texttt{LineNumberTable} entry consist of the \texttt{start\_pc} and
+the \texttt{line\_number}, which are stored in a \texttt{lineinfo}
+structure (see figure~\ref{lineinfostructure}).
+
+\begin{figure}[h]
+\begin{verbatim}
+    struct lineinfo {
+        u2 start_pc;
+        u2 line_number;
+    };
+\end{verbatim}
+\caption{\texttt{lineinfo} structure}
+\label{lineinfostructure}
+\end{figure}
+
+The linenumber count and the memory pointer of the \texttt{lineinfo}
+structure array are assigned to the \texttt{classinfo} fields
+\texttt{linenumbercount} and \texttt{linenumbers} respectively.
+
+The \texttt{Exceptions} attribute is a \textit{variable-length}
+attribute and contains the checked exceptions the JAVA method may
+throw. The \texttt{Exceptions} attribute consist of the count of
+exceptions, which is stored in the \texttt{classinfo} field
+\texttt{thrownexceptionscount}, and the adequate amount of \texttt{u2}
+constant pool index values. The exception classes are resolved from
+the constant pool and stored in an allocated \texttt{classinfo *}
+array, whose memory pointer is assigned to the
+\texttt{thrownexceptions} field of the \texttt{classinfo} structure.
+
+Any attributes which are not processed by the CACAO class loading
+system, are skipped via
+
+\begin{verbatim}
+        static bool skipattributebody(classbuffer *cb);
+\end{verbatim}
+
+which skips one attribute or
+
+\begin{verbatim}
+        static bool skipattributes(classbuffer *cb, u4 num);
+\end{verbatim}
+
+which skips a specified number \texttt{num} of attributes. If any
+problem occurs in the method loading function, a
+\texttt{java.lang.ClassFormatError} with a specific detail message is
+thrown.
+
+
+\subsection{Attribute loading}
+
+Attribute loading is done via the
+
+\begin{verbatim}
+        static bool attribute_load(classbuffer *cb, classinfo *c, u4 num);
+\end{verbatim}
+
+function. The currently loading class or interface can contain some
+additional attributes which have not already been loaded. The CACAO
+system class loader processes two of them: \texttt{InnerClasses} and
+\texttt{SourceFile}.
+
+The \texttt{InnerClass} attribute is a \textit{variable-length}
+attribute in the \texttt{attributes} table of the binary
+representation of the class or interface. A \texttt{InnerClass} entry
+contains the \texttt{inner\_class} constant pool index itself, the
+\texttt{outer\_class} index, the \texttt{name} index of the inner
+class' name and the inner class' \texttt{flags} bitmask. All these
+values are read in \texttt{u2} chunks.
+
+The constant pool indexes are used with the
+
+\begin{verbatim}
+        voidptr innerclass_getconstant(classinfo *c, u4 pos, u4 ctype);
+\end{verbatim}
+
+function call to resolve the classes or UTF8 strings. After resolving
+is done, all values are stored in the \texttt{innerclassinfo}
+structure (see figure~\ref{innerclassinfostructure}).
+
+\begin{figure}[h]
+\begin{verbatim}
+    struct innerclassinfo {
+        classinfo *inner_class;       /* inner class pointer                      */
+        classinfo *outer_class;       /* outer class pointer                      */
+        utf       *name;              /* innerclass name                          */
+        s4         flags;             /* ACC flags                                */
+    };
+\end{verbatim}
+\caption{\texttt{innerclassinfo} structure}
+\label{innerclassinfostructure}
+\end{figure}
+
+The other attribute, \texttt{SourceFile}, is just one \texttt{u2}
+constant pool index value to get the UTF8 string reference of the
+class' \texttt{SourceFile} name. The string pointer is assigned to the
+\texttt{sourcefile} field of the \texttt{classinfo} structure.
+
+Both attributes must occur only once. Other attributes than these two
+are skipped with the earlier mentioned \texttt{skipattributebody}
+function.
+
+After the attribute loading is done and no error occured, the
+\texttt{class\_load\_intern} function returns the \texttt{classinfo}
+pointer to signal that there was no problem. If \texttt{NULL} is
+returned, there was an exception.
+
+
+%\section{Dynamic class loader}
+
+
+\section{Eager - lazy class loading}
+
+A Java Virtual Machine can implement two different algorithms for the
+system class loader to load classes or interfaces: \textit{eager class
+loading} and \textit{lazy class loading}.
+
+
+\subsection{Eager class loading}
+\label{sectioneagerclassloading}
+
+The Java Virtual Machine initially creates, loads and links the class
+of the main program with the system class loader. The creation of the
+class is done via the \texttt{class\_new} function call (see section
+\ref{sectionsystemclassloader}). In this function, with \textit{eager
+loading} enabled, firstly the currently created class or interface is
+loaded with \texttt{class\_load}. CACAO uses the \textit{eager class
+loading} algorithm with the command line switch \texttt{-eager}. As
+described in the ''Constant pool loading'' section (see
+\ref{sectionconstantpoolloading}), the binary representation of a
+class or interface contains references to other classes or
+interfaces. With \textit{eager loading} enabled, referenced classes or
+interfaces are loaded immediately.
+
+If a class reference is found in the second pass of the constant pool
+loading process, the class is created in the class hashtable with
+\texttt{class\_new\_intern}. CACAO uses the intern function here
+because the normal \texttt{class\_new} function, which is a wrapper
+function, instantly tries to \textit{link} all referenced
+classes. This must not happen until all classes or interfaces
+referenced are loaded, otherwise the Java Virtual Machine gets into an
+indefinite state.
+
+After the \texttt{classinfo} of the class referenced is created, the
+class or interface is \textit{loaded} via the \texttt{class\_load}
+function (described in more detail in section
+\ref{sectionsystemclassloader}). When the class loading function
+returns, the current referenced class or interface is added to a list
+called \texttt{unlinkedclasses}, which contains all loaded but
+unlinked classes referenced by the currently loaded class or
+interface. This list is processed in the \texttt{class\_new} function
+of the currently created class or interface after \texttt{class\_load}
+returns. For each entry in the \texttt{unlinkedclasses} list,
+\texttt{class\_link} is called which finally \textit{links} the class
+(described in more detail in section \ref{sectionlinking}) and then
+the class entry is removed from the list. When all referenced classes
+or interfaces are linked, the currently created class or interface is
+linked and the \texttt{class\_new} functions returns.
+
+
+\subsection{Lazy class loading}
+\label{sectionlazyclassloading}
+
+Usually it takes much more time for a Java Virtual Machine to start a
+program with \textit{eager class loading} as with \textit{lazy class
+loading}. With \textit{eager class loading}, a typical
+\texttt{HelloWorld} program needs 513 class loads with the current GNU
+classpath CACAO is using. When using \textit{lazy class loading},
+CACAO only needs 121 class loads for the same \texttt{HelloWorld}
+program. This means with \textit{lazy class loading} CACAO needs to
+load more than four times less class files. Furthermore CACAO does
+also \textit{lazy class linking}, which saves much more run-time here.
+
+CACAO's \textit{lazy class loading} implementation does not completely
+follow the JVM specification. A Java Virtual Machine which implements
+\textit{lazy class loading} should load and link requested classes or
+interfaces at runtime. But CACAO does class loading and linking at
+parse time, because of some problems not resolved yet. That means, if
+a Java Virtual Machine instruction is parsed which uses any class or
+interface references, like \texttt{JAVA\_PUTSTATIC},
+\texttt{JAVA\_GETFIELD} or any \texttt{JAVA\_INVOKE*} instructions,
+the referenced class or interface is loaded and linked immediately
+during the parse pass of currently compiled method. This introduces
+some incompatibilities with other Java Virtual Machines like Sun's
+JVM, IBM's JVM or Kaffe.
+
+Given a code snippet like this
+
+\begin{verbatim}
+        void sub(boolean b) {
+            if (b) {
+                new A();
+            }
+            System.out.println("foobar");
+        }
+\end{verbatim}
+
+If the function is called with \texttt{b} equal \texttt{false} and the
+class file \texttt{A.class} does not exist, a Java Virtual Machine
+should execute the code without any problems, print \texttt{foobar}
+and exit the Java Virtual Machine with exit code 0. Due to the fact
+that CACAO does class loading and linking at parse time, the CACAO
+Virtual Machine throws an \texttt{java.lang.NoClassDefFoundError:~A}
+exception which is not caught and thus discontinues the execution
+without printing \texttt{foobar} and exits.
+
+The CACAO development team has not yet a solution for this
+problem. It's not trivial to move the loading and linking process from
+the compilation phase into runtime, especially CACAO was initially
+designed for \textit{eager class loading} and \textit{lazy class
+loading} was implemented at a later time to optimize class loading and
+to get a little closer to the JVM specification. \textit{Lazy class
+loading} at runtime is one of the most important features to be
+implemented in the future. It is essential to make CACAO a standard
+compliant Java Virtual Machine.
+
+
+\section{Linking}
+\label{sectionlinking}
+
+Linking is the process of preparing a previously loaded class or
+interface to be used in the Java Virtual Machine's runtime
+environment. The function which performs the linking in CACAO is
+
+\begin{verbatim}
+        classinfo *class_link(classinfo *c);
+\end{verbatim}
+
+This function, as for class loading, is just a wrapper function to the
+main linking function
+
+\begin{verbatim}
+        static classinfo *class_link_intern(classinfo *c);
+\end{verbatim}
+
+This function should not be called directly and is thus declared as
+\texttt{static}. The purposes of the wrapper function are
+
+\begin{itemize}
+ \item enter a monitor on the \texttt{classinfo} structure, so that
+ only one thread can link the same class or interface at the same time
+
+ \item check if the class or interface is \texttt{linked}, if it is
+ \texttt{true}, leave the monitor and return immediately
+
+ \item measure linking time if requested
+
+ \item check if the intern linking function has thrown an error or an
+ exception and reset the \texttt{linked} field of the
+ \texttt{classinfo} structure
+
+ \item leave the monitor
+\end{itemize}
+
+The \texttt{class\_link} function, like the \texttt{class\_load}
+function, is implemented to be \textit{reentrant}. This must be the
+case for the linking algorithm implemented in CACAO. Furthermore this
+means that serveral threads can link different classes or interfaces
+at the same time on multiprocessor machines.
+
+The first step in the \texttt{class\_link\_intern} function is to set
+the \texttt{linked} field of the currently linked \texttt{classinfo}
+structure to \texttt{true}. This is essential, that the linker does
+not try to link a class or interface again, while it's already in the
+linking process. Such a case can occur because the linker also
+processes the class' direct superclass and direct superinterfaces.
+
+In CACAO's linker the direct superinterfaces are processed first. For
+each interface in the \texttt{interfaces} field of the
+\texttt{classinfo} structure is checked if there occured an
+\texttt{java.lang.ClassCircularityError}, which happens when the
+currently linked class or interface is equal the interface which
+should be processed. Otherwise the interface is loaded and linked if
+not already done. After the interface is loaded successfully, the
+interface flags are checked for the \texttt{ACC\_INTERFACE} bit. If
+this is not the case, a
+\texttt{java.lang.IncompatibleClassChangeError} is thrown and
+\texttt{class\_link\_intern} returns.
+
+Then the direct superclass is handled. If the direct superclass is
+equal \texttt{NULL}, we have the special case of linking
+\texttt{java.lang.Object}. There are only set some \texttt{classinfo}
+fields to special values for \texttt{java.lang.Object} like
+
+\begin{verbatim}
+        c->index = 0;
+        c->instancesize = sizeof(java_objectheader);
+        vftbllength = 0;
+        c->finalizer = NULL;
+\end{verbatim}
+
+If the direct superclass is non-\texttt{NULL}, CACAO firstly detects
+class circularity as for interfaces. If no
+\texttt{java.lang.ClassCircularityError} was thrown, the superclass is
+loaded and linked if not already done before. Then some flag bits of
+the superclass are checked: \texttt{ACC\_INTERFACE} and
+\texttt{ACC\_FINAL}. If one of these bits is set an error is thrown.
+
+If the currently linked class is an array, CACAO calls a special array
+linking function
+
+\begin{verbatim}
+        static arraydescriptor *class_link_array(classinfo *c);
+\end{verbatim}
+
+This function firstly checks if the passed \texttt{classinfo} is an
+\textit{array of arrays} or an \textit{array of objects}. In both
+cases the component type is created in the class hashtable via
+\texttt{class\_new} and then loaded and linked if not already
+done. If none is the case, the passed array is a \textit{primitive
+type array}. No matter of which type the array is, an
+\texttt{arraydescriptor} structure (see
+figure~\ref{arraydescriptorstructure}) is allocated and filled with
+the appropriate values of the given array type.
+
+\begin{figure}[h]
+\begin{verbatim}
+    struct arraydescriptor {
+        vftbl_t *componentvftbl; /* vftbl of the component type, NULL for primit. */
+        vftbl_t *elementvftbl;   /* vftbl of the element type, NULL for primitive */
+        s2       arraytype;      /* ARRAYTYPE_* constant                          */
+        s2       dimension;      /* dimension of the array (always >= 1)          */
+        s4       dataoffset;     /* offset of the array data from object pointer  */
+        s4       componentsize;  /* size of a component in bytes                  */
+        s2       elementtype;    /* ARRAYTYPE_* constant                          */
+    };
+\end{verbatim}
+\caption{\texttt{arraydescriptor} structure}
+\label{arraydescriptorstructure}
+\end{figure}
+
+After the \texttt{class\_link\_array} function call, the class
+\texttt{index} is calculated. For interfaces---classes with
+\texttt{ACC\_INTERFACE} flag bit set---the class' \texttt{index} is
+the global \texttt{interfaceindex} plus one. Any other classes get the
+\texttt{index} of the superclass plus one.
+
+Other \texttt{classinfo} fields are also set from the superclass like,
+\texttt{instancesize}, \texttt{vftbllength} and the \texttt{finalizer}
+function. All these values are temporary ones and can be overwritten
+at a later time.
+
+The next step in \texttt{class\_load\_intern} is to compute the
+\textit{virtual function table length}. For each method in
+\texttt{classinfo}'s \texttt{methods} field which has not the
+\texttt{ACC\_STATIC} flag bit set, thus is an instance method, the
+direct superclasses up to \texttt{java.lang.Object} are checked with
+
+\begin{verbatim}
+        static bool method_canoverwrite(methodinfo *m, methodinfo *old);
+\end{verbatim}
+
+if the current method can overwrite the superclass method, if there
+exists one. If the found superclass method has the
+\texttt{ACC\_PRIVATE} flag bit set, the current method's
+\textit{virtual function table index} is the current \textit{virtual
+function table length} plus one:
+
+\begin{verbatim}
+        m->vftblindex = (vftbllength++);
+\end{verbatim}
+
+If the current method has the \texttt{ACC\_FINAL} flag bit set, the
+CACAO class linker throws a \texttt{java.lang.VerifyError}. Otherwise
+the current method's \textit{virtual function table index} is the same
+as the index from the superclass method:
+
+\begin{verbatim}
+        m->vftblindex = tc->methods[j].vftblindex;
+\end{verbatim}
+
+After processing the \textit{virtual function table length}, the CACAO
+linker computes the \textit{interface table length}. For the current
+class' and every superclass' interfaces, the function
+
+\begin{verbatim}
+        static s4 class_highestinterface(classinfo *c);
+\end{verbatim}
+
+is called. This function computes the highest interface \texttt{index}
+of the passed interface and returns the value. This is done by
+recursively calling \texttt{class\_highestinterface} with each
+interface from the \texttt{interfaces} array of the passed interface
+as argument. The highest \texttt{index} value found is the
+\textit{interface table length} of the currently linking class or
+interface.
+
+Now that the linker has completely computed the size of the
+\textit{virtual function table}, the memory can be allocated, casted
+to an \texttt{vftbl} structure (see figure~\ref{vftblstructure}) and
+filled with the previously calculated values.
+
+\begin{figure}
+\begin{verbatim}
+    struct vftbl {
+        methodptr   *interfacetable[1];    /* interface table (access via macro)  */
+
+        classinfo   *class;                /* class, the vtbl belongs to          */
+
+        arraydescriptor *arraydesc;        /* for array classes, otherwise NULL   */
+
+        s4           vftbllength;          /* virtual function table length       */
+        s4           interfacetablelength; /* interface table length              */
+
+        s4           baseval;              /* base for runtime type check         */
+                                           /* (-index for interfaces)             */
+        s4           diffval;              /* high - base for runtime type check  */
+
+        s4          *interfacevftbllength; /* length of interface vftbls          */
+	
+        methodptr    table[1];             /* class vftbl                         */
+    };
+\end{verbatim}
+\caption{\texttt{vftbl} structure}
+\label{vftblstructure}
+\end{figure}
+
+Some important values are
+
+\begin{verbatim}
+        c->header.vftbl = c->vftbl = v;
+        v->class = c;
+        v->vftbllength = vftbllength;
+        v->interfacetablelength = interfacetablelength;
+        v->arraydesc = arraydesc;
+\end{verbatim}
+
+If the currently linked class is an interface, the \texttt{baseval} of
+the interface's \textit{virtual function table} is set to
+\texttt{-(c->index)}. Then the \textit{virtual function table} of the
+direct superclass is copied into the \texttt{table} field of the
+current \textit{virtual function table} and for each
+non-\texttt{static} method in the current's class or interface
+\texttt{methods} field, the pointer to the \textit{stubroutine} of the
+method in stored in the \textit{virtual function table}.
+
+Now the fields of the currently linked class or interface are
+processed. The CACAO linker computes the instance size of the class or
+interface and the offset of each field inside. For each field in the
+\texttt{classinfo} field \texttt{fields} which is non-\texttt{static},
+the type-size is resolved via the \texttt{desc\_typesize} function
+call. Then a new \texttt{instancesize} is calculated with
+
+\begin{verbatim}
+        c->instancesize = ALIGN(c->instancesize, dsize);
+\end{verbatim}
+
+which does memory alignment suitable for the next field. This newly
+computed \texttt{instancesize} is the \texttt{offset} of the currently
+processed field. The type-size is then added to get the real
+\texttt{instancesize}.
+
+The next step of the CACAO linker is to initialize two \textit{virtual
+function table} fields, namely \texttt{interfacevftbllength} and
+\texttt{interfacetable}. For \texttt{interfacevftbllength} an
+\texttt{s4} array of \texttt{interfacetablelength} elements is
+allocated. Each \texttt{interfacevftbllength} element is initialized
+with \texttt{0} and the elements in \texttt{interfacetable} with
+\texttt{NULL}. After the initialization is done, the interfaces of the
+currently linked class and all it's superclasses, up to
+\texttt{java.lang.Object}, are processed via the
+
+\begin{verbatim}
+        static void class_addinterface(classinfo *c, classinfo *ic);
+\end{verbatim}
+
+function call. This function adds the methods of the passed interface
+to the \textit{virtual function table} of the passed class or
+interface. If the method count of the passed interface is zero, the
+function adds a method fake entry, which is needed for subtype
+tests:
+
+\begin{verbatim}
+        v->interfacevftbllength[i] = 1;
+        v->interfacetable[-i] = MNEW(methodptr, 1);
+        v->interfacetable[-i][0] = NULL;
+\end{verbatim}
+
+\texttt{i} represents the \texttt{index} of the passed interface
+\texttt{ic}, \texttt{v} the \textit{virtual function table} of the
+passed class or interface \texttt{c}.
+
+If the method count is non-zero, an \texttt{methodptr} array of
+\texttt{ic->methodscount} elements is allocated and the method count
+value is stored in the particular position of the
+\texttt{interfacevftbllength} array:
+
+\begin{verbatim}
+        v->interfacevftbllength[i] = ic->methodscount;
+        v->interfacetable[-i] = MNEW(methodptr, ic->methodscount);
+\end{verbatim}
+
+For each method of the passed interface, the methods of the passed
+target class or interface and all superclass methods, up to
+\texttt{java.lang.Object}, are checked if they can overwrite the
+interface method via \texttt{method\_canoverwrite}. If the function
+returns \texttt{true}, the corresponding function is resolved from the
+\texttt{table} field of the \textit{virtual function table} and stored
+it the particular position of the \texttt{interfacetable}:
+
+\begin{verbatim}
+        v->interfacetable[-i][j] = v->table[mi->vftblindex];
+\end{verbatim}
+
+The \texttt{class\_addinterface} function is also called recursively
+for all interfaces the interface passed implements.
+
+After the interfaces were added and the currently linked class or
+interface is not \texttt{java.lang.Object}, the CACAO linker tries to
+find a function which name and descriptor matches
+\texttt{finalize()V}. If an appropriate function was found and the
+function is non-\texttt{static}, it is assigned to the
+\texttt{finalizer} field of the \texttt{classinfo} structure. CACAO
+does not assign the \texttt{finalize()V} function to
+\texttt{java.lang.Object}, because this function is inherited to all
+subclasses which do not explicitly implement a \texttt{finalize()V}
+method. This would mean, for each instantiated object, which is marked
+for collection in the Java Virtual Machine, an empty function would be
+called from the garbage collector when a garbage collection takes
+place.
+
+The final task of the linker is to compute the \texttt{baseval} and
+\texttt{diffval} values from the subclasses of the currently linked
+class or interface. These values are used for \textit{runtime type
+checking} (described in more detail in
+section~\ref{sectionruntimetypechecking}). The calculation is done via
+the
+
+\begin{verbatim}
+        void loader_compute_subclasses(classinfo *c);
+\end{verbatim}
+
+function call. This function sets the \texttt{nextsub} and
+\texttt{sub} fields of the \texttt{classinfo} structure, resets the
+global \texttt{classvalue} variable to zero and calls the
+
+\begin{verbatim}
+        static void loader_compute_class_values(classinfo *c);
+\end{verbatim}
+
+function with \texttt{java.lang.Object} as parameter. First of the
+all, the \texttt{baseval} is set of the currently passed class or
+interface. The \texttt{baseval} is the global \texttt{classvalue}
+variable plus one:
+
+\begin{verbatim}
+        c->vftbl->baseval = ++classvalue;
+\end{verbatim}
+
+Then all subclasses of the currently passed class or interface are
+processed. For each subclass found,
+\texttt{loader\_compute\_class\_values} is recursively called. After
+all subclasses have been processed, the \texttt{diffval} of the
+currently passed class or interface is calculated. It is the
+difference of the current global \texttt{classvalue} variable value
+and the previously \texttt{baseval} set:
+
+\begin{verbatim}
+        c->vftbl->diffval = classvalue - c->vftbl->baseval;
+\end{verbatim}
+
+After the \texttt{baseval} and \texttt{diffval} values are newly
+calculated for all classes and interfaces in the Java Virtual Machine,
+the internal linker function \texttt{class\_link\_intern} returns the
+currently linking \texttt{classinfo} structure pointer, to indicate
+that the linker function did not raise an error or exception.
+
+
+\section{Initialization}
+\label{sectioninitialization}
+
+A class or interface can have a \texttt{static} initialization
+function called \textit{static class initializer}. The function has
+the name \texttt{<clinit>()V}. This function must be invoked before a
+\texttt{static} function of the class is called or a \texttt{static}
+field is accessed via \texttt{ICMD\_PUTSTATIC} or
+\texttt{ICMD\_GETSTATIC}. In CACAO
+
+\begin{verbatim}
+        classinfo *class_init(classinfo *c);
+\end{verbatim}
+
+is responsible for the invocation of the \textit{static class
+initializer}. It is, like for class loading and class linking, just a
+wrapper function to the main initializing function
+
+\begin{verbatim}
+        static classinfo *class_init_intern(classinfo *c);
+\end{verbatim}
+
+The wrapper function has the following purposes:
+
+\begin{itemize}
+ \item enter a monitor on the \texttt{classinfo} structure, so that
+ only one thread can initialize the same class or interface at the
+ same time
+
+ \item check if the class or interface is \texttt{initialized} or
+ \texttt{initializing}, if one is \texttt{true}, leave the monitor and
+ return
+
+ \item tag the class or interface as \texttt{initializing}
+
+ \item call the internal initialization function
+ \texttt{class\_init\_intern}
+
+ \item if the internal initialization function returns
+ non-\texttt{NULL}, the class or interface is tagged as
+ \texttt{initialized}
+
+ \item reset the \texttt{initializing} flag
+
+ \item leave the monitor
+\end{itemize}
+
+The intern initializing function should not be called directly,
+because of race conditions of concurrent threads. Two or more
+different threads could access a \texttt{static} field or call a
+\texttt{static} function of an uninitialized class at almost the same
+time. This means that each single thread would invoke the
+\textit{static class initializer} and this would lead into some
+problems.
+
+The CACAO initializer needs to tag the class or interface as currently
+initializing. This is done by setting the \texttt{initializing} field
+of the \texttt{classinfo} structure to \texttt{true}. CACAO needs this
+field in addition to the \texttt{initialized} field for two reasons:
+
+\begin{itemize}
+ \item Another concurrently running thread can access a
+ \texttt{static} field of the currently initializing class or
+ interface. If the class or interface of the \texttt{static} field was
+ not initialized during code generation, some special code was
+ generated for the \texttt{ICMD\_PUTSTATIC} and
+ \texttt{ICMD\_GETSTATIC} intermediate commands. This special code is
+ a call to an architecture dependent assembler function named
+ \texttt{asm\_check\_clinit}. Since this function is speed optimized
+ for the case that the target class is already initialized, it only
+ checks for the \texttt{initialized} field and does not take care of
+ any monitor that may have been entered. If the \texttt{initialized}
+ flag is \texttt{false}, the assembler function calls the
+ \texttt{class\_init} function where it probably stops at the monitor
+ enter. Due to this fact, the thread which does the initialization can
+ not set the \texttt{initialized} flag to \texttt{true} when the
+ initialization starts, otherwise potential concurrently running
+ threads would continue their execution although the \textit{static
+ class initializer} has not finished yet.
+
+ \item The thread which is currently \texttt{initializing} the class
+ or interface can pass the monitor which has been entered and thus
+ needs to know if this class or interface is currently initialized.
+\end{itemize}
+
+Firstly \texttt{class\_init\_intern} checks if the passed class or
+interface is loaded and linked. If not, the particular action is
+taken. This is just a safety measure, because---CACAO
+internally---each class or interface should have been already loaded
+and linked before \texttt{class\_init} is called.
+
+Then the superclass, if any specified, is checked if it is already
+initialized. If not, the initialization is done immediately. The same
+check is performed for each interface in the \texttt{interfaces} array
+of the \texttt{classinfo} structure of the current class or interface.
+
+After the superclass and all interfaces are initialized, CACAO tries
+to find the \textit{static class initializer} function, where the
+method name matches \texttt{<clinit>} and the method descriptor
+\texttt{()V}. If no \textit{static class initializer} method is found in the
+current class or interface, the \texttt{class\_link\_intern} functions
+returns immediately without an error. If a \textit{static class
+initializer} method is found, it's called with the architecture
+dependent assembler function \texttt{asm\_calljavafunction}.
+
+Exception handling of an exception thrown in an \textit{static class
+initializer} is a bit different than usual. It depends on the type of
+exception. If the exception thrown is an instance of
+\texttt{java.lang.Error}, the \texttt{class\_init\_intern} function
+just returns \texttt{NULL}. If the exception thrown is an instance of
+\texttt{java.lang.Exception}, the exception is wrapped into a
+\texttt{java.lang.ExceptionInInitializerError}. This is done via the
+\texttt{new\_exception\_throwable} function call. The newly generated
+error is set as exception thrown and the \texttt{class\_init\_intern}
+returns \texttt{NULL}.
+
+If no exception occurred in the \textit{static class initializer}, the
+internal initializing function returns the current \texttt{classinfo}
+structure pointer to indicate, that the initialization was successful.

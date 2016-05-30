@@ -1,0 +1,603 @@
+\section{Multi threading}
+
+\subsection{Introduction}
+
+Threads are an integral part of the Java programming language. A Java
+Runtime Environment (JRE) has to implement threads to be compliant. A
+thread implementation includes the creation, execution, switching,
+killing and synchronization of threads. In Java the latter is provided
+by monitors. Monitors ensure that, for a given object, only one thread
+at a time can execute certain methods, known as synchronized methods,
+and blocks which are marked by the keyword \texttt{synchronized}.
+
+Monitors are usually implemented using mutex (mutual exclusion). A
+mutex is a data structure which contains the necessary information to
+guarantee that only one unit of execution can perform a critical
+section at the same time \cite{Stallings95}.
+
+As we show in section \ref{MonitorTest} a fast implementation of the
+synchronization mechanism is crucial for the efficiency of Java. One
+implementation produced more than 800\% overhead in one of our tests.
+
+
+\subsection{Related work}
+
+Java threads can be implemented using threads provided by the
+operating system kernel, as user-level libraries, or as a combination
+of the two. There exist a number of articles describing different
+thread implementation aspects but none captures the problem of
+efficient monitor operations for objects.
+
+Sun's first implementation of the JavaVM on Solaris was based on
+user-level threads. The current implementation uses a combination of
+kernel and user-level threads. Some of the advantages of this approach
+are outlined in \cite{SunThreads97}.
+
+The freely available JavaVM implementation {\tt kaffe} by Tim
+Wilkinson uses user-level threads \cite{Wilkinson:97}. Until version
+0.9, each object contained the complete mutex data structure. This
+enabled a fast monitor implementation but used a lot more memory than
+necessary.
+
+Apart from thread implementations used in JavaVM's there are many
+other thread standards and implementations, the most notable being the
+IEEE POSIX extension \cite{PosixThreads96}.
+
+In \cite{Mueller93}, Mueller describes a library implementation of
+POSIX threads on a standard UNIX system. This library is a user-level
+implementation which need no support from the operating system. A very
+popular library of user-level primitives for implementing threads is
+{\em QuickThreads} by David Keppel, described in \cite{Keppel93}.
+
+Bershad et al. present a fast mechanism for mutual exclusion on
+uniprocessor systems \cite{Bershad+92}. They have a software solution
+for the implementation of an atomic test-and-set operation which is
+faster than the corresponding hardware instruction. However, their
+implementation relies on assistance from the operating system.
+
+
+\subsection{Implementation basics}
+
+A complete thread implementation for Java has to provide:
+
+\begin{itemize}
+
+\item thread creation and destruction,
+
+\item low level thread switching (usually implemented in assembly
+      language),
+
+\item thread scheduling,
+
+\item synchronization primitives,
+
+\item a thread safe non-blocking input/output library.
+
+\end{itemize}
+
+Cacao's current implementation of threads is based mainly on the
+threading code of {\tt kaffe} version 0.7, which has been released
+under a BSD-style license and can thus be used freely
+\cite{Wilkinson:97}. As mentioned above, {\tt kaffe}'s threads are
+completely user-level, which means, for example, that they cannot take
+advantage of a multiprocessor system.
+
+\begin{table*}
+\begin{center}
+\begin{tabular}{|l|l|c|c|c|c|c|c|} \hline
+                  &                     & \multicolumn{3}{|c|}{mutex test}
+                                        & \multicolumn{3}{|c|}{tree test}\\ \hline
+                  &                     & \multicolumn{2}{|c|}{run time in secs}&call cost
+                                        & \multicolumn{2}{|c|}{run time in secs}&call cost\\
+Machine           & JavaVM              & no sync & sync  & in $\mu$s & no sync & sync   & in $\mu$s \\ \hline\hline
+DEC 21064A 289MHz & OSF JDK port (1.0.2)&  1.20   & 4.14  &   9.8     &  8.37   & 34.69  & 9.8    \\ \hline
+DEC 21064A 289MHz & DEC JDK interpreter &  1.71   & 12.80 &   36.97   &  12.25  & 143.10 & 39.93  \\ \hline
+DEC 21064A 289MHz & DEC JDK JIT         &  1.06   & 11.05 &   33.30   &  7.80   & 130.50 & 37.45  \\ \hline
+Pentium-S 166MHz  & Linux JDK 1.1.3     &  0.96   & 1.69  &   2.43    &  7.93   & 16.12  & 2.50   \\ \hline
+AMD K6 200MHz     & Sun JPP JIT (WinNT) &  0.57   & 0.94  &   1.23    &  2.8    & 9.8    & 2.13   \\ \hline
+AMD K6 200MHz     & Navigator 4.04 (WinNT) & 0.03 & 0.77  &   2.46    &  2.3    & 9.2    & 2.11   \\ \hline
+%PowerPC 604e 200MHz & Linux JDK Beta    &  1.16   & 2.05  &   2.96    &         &        &        \\ \hline
+%Sun Ultra-1       & JDK 1.1.2           &  0.90   & 1.25  &   1.16    &         &        &        \\ \hline
+%DEC 21064A 300MHz & Cacao unoptimized   &  0.24   & 0.48  &   0.80    &  0.24   & 0.48   & 0.80   \\ \hline
+DEC 21064A 289MHz & Cacao               &  0.28   & 0.40  &  0.40     &  1.46   & 4.71   & 0.99   \\ \hline
+\end{tabular}
+\caption{Overhead for calling synchronized methods (one object)}
+\label{SyncronizedOverhead}
+\end{center}
+\end{table*}
+
+There are several reasons why we chose this approach:
+
+\begin{itemize}
+
+\item Thread support differs from operating system to operating
+system. Not only do some operating systems provide different APIs to
+other systems, but even if they do provide the same interface (most
+often in the form of POSIX threads), the costs of various operations
+are often very different across platforms.
+
+\item It was a complete implementation, tailored for the use in a
+JavaVM and thus made it possible for us to get thread support up and
+running quickly.
+
+\item Parts of Cacao are not yet thread-safe (most notably the
+compiler and the garbage collector), thus making it difficult to use a
+kernel-supported solution.
+
+\end{itemize}
+
+Each thread in a Java program corresponds to an instance of the
+\texttt{java.lang.Thread} class. In order for the Java run time
+environment (JRE) to associate platform specific information with such
+an instance, it has a private member called \texttt{PrivateInfo} of
+type \texttt{int}, which can be used by the JRE. Kaffe version 0.7
+used this member as a pointer to a context structure. Since pointers
+are 64-bit values on the Alpha, we use an array of context structures.
+\texttt{PrivateInfo} is then used as an index into this array.
+
+A fixed-size stack is allocated for each thread. The stack size for
+ordinary threads can be specified as a command-line parameter. Special
+threads (such as the garbage collector) have their own stack sizes. In
+order to catch stack overflows without the burden of checking the
+stack top at each method entry, we simply guard the stack top with one
+or more memory pages. The memory protection bits of these pages are
+modified to cause a memory protection violation when accessed. The
+number of guard pages can be specified on the command-line.
+
+Thread switching is implemented straightforwardly, namely by saving
+callee-save registers to the stack, switching to the new stack,
+restoring callee-save registers and performing a subroutine return.
+
+Scheduling is very simple in Cacao: higher priority threads always get
+precedence over lower priority threads, and threads of the same
+priority are scheduled with a round-robin algorithm.
+
+I/O in user-level threads is a problem since UNIX I/O calls are, by
+default, blocking. They would block not just the current thread but
+the whole process. This is undesirable. It is thus common practice for
+thread libraries to use non-blocking I/O and, in the case of an
+operation which would block, suspend the corresponding thread and
+perform a multiplexed I/O operation (\texttt{select(2)} in UNIX) on
+all such blocked files regularly, especially if there are no runnable
+threads available.
+
+
+\subsection{Motivation}
+
+\label{MonitorTest}
+
+To optimize an implementation it is necessary to find the parts which
+are critical to performance. Therefore, we analysed the cost of
+monitors with two small test programs.  The {\em mutex test} program
+simply invoked a method 300000 times, once with the method being
+declared \texttt{synchronized} and once without. The other test, {\em
+tree test}, allocated a balanced binary tree with 65535 elements and
+recursively traversed it 50 times using a method, again once being
+synchronized and once being not.
+
+Table \ref{SyncronizedOverhead} shows the differences in run-time for
+the two versions of the programs for several JavaVM's. The table
+includes the run times for both versions of the programs in seconds.
+The column `call cost' gives the overhead of a call of a synchronized
+method compared to a call of a non-synchronized one. From these
+numbers it is obvious that calls to synchronized methods, or monitors
+in general, are much slower than ordinary method calls.
+
+\begin{table*}
+\begin{center}
+\begin{tabular}{|l|r|r|r|r|} \hline
+Application & Objects allocated & Objects with mutex & Monitor
+operations & Parallel Mutexes \\ \hline\hline
+javac       & 111504            & 13695              &
+840292             & 5        \\ \hline
+Biss        & 84939             & 13357              &
+1058901            & 12       \\ \hline
+Jigsaw      & 215411            & 23804              &
+855691             & 25       \\ \hline
+\end{tabular}
+\caption{Mutual exclusion statistics}
+\label{MutexStatistics}
+\end{center}
+\end{table*}
+
+The question that arises is now whether this has any influence on
+common Java programs. To answer this question, we have used a modified
+version of \texttt{kaffe} to gather statistics about monitor usage.
+The results are summarized in table \ref{MutexStatistics}.
+
+Javac is an invocation of Sun's \texttt{javac} on the Toba source
+files \cite{Proebsting+97} and is thus single-threaded. Execution of
+this program takes only a few seconds using Cacao with threads
+disabled. Biss is a more or less typical working session with the Java
+development environment of the Biss-AWT \cite{BissAWT97}. It is
+slightly multithreaded. Jigsaw invokes the HTTP server Jigsaw
+\cite{Jigsaw97} of the World Wide Web Consortium and lets it serve
+identical parallel requests from seven hosts, amounting to about one
+megabyte split across 200 files for each request. This application is
+highly multithreaded.
+
+The table contains the number of objects allocated during execution
+and the number of objects for which a monitor has been entered. The
+`Monitor operations' column gives the total number of operations
+performed on monitors, while the numbers in the `Parallel Mutexes'
+column show the greatest number of mutexes that were locked
+simultaneously.
+
+These numbers demonstrate that the performance of monitor operations
+is of paramount importance for a fast JavaVM implementation. We did
+not include the number of blocking monitor operations because there
+were just two of them, namely in the Biss application. It was only
+after we modified \texttt{kaffe} to switch to another thread before
+each \texttt{monitorenter} operation that the Biss and Jigsaw
+applications performed a few thousand blocking \texttt{monitorenter}s.
+
+
+\subsection{Mutex implementation}
+
+Our mutex data structure includes a pointer to the thread that has
+currently locked the mutex (\texttt{holder}). If the mutex is not
+locked at all, this is a null pointer. Because one thread can lock the
+same mutex multiple times, we need a count of how many lock operations
+without corresponding unlocks have been performed on the mutex
+(\texttt{count}). When it goes down to zero, the mutex is not locked
+by any thread. Furthermore, we need to keep track of the threads which
+have tried to lock the mutex but were blocked and are now waiting for
+it to become unlocked (\texttt{waiters}). 
+
+The data structure is defined as follows:
+
+\begin{verbatim}
+struct mutex {
+  int count;
+  thread *holder;
+  thread *waiters;
+}
+\end{verbatim}
+
+The locking of a mutex can now be specified as in
+figure~\ref{lockMutex}.
+
+\begin{figure}
+\begin{verbatim}
+void lockMutex (struct mutex *mux) {
+  disablePreemption();
+
+  if (mux->holder == NULL) {
+    mux->holder = currentThread;
+    mux->count = 1;
+  } else if (mux->holder == currentThread) {
+    mux->count++;
+  } else {
+    blockUntilMutexIsNotLocked(mux);
+    mux->holder = currentThread;
+    mux->count = 1;
+  }
+
+  enablePreemption();
+}
+\end{verbatim}
+\caption{Code for \texttt{lockMutex()}}
+\label{lockMutex}
+\end{figure}
+
+The macro \texttt{disablePreemption()} simply sets a global flag
+indicating that a critical section is currently being executed and
+that preemption must not take place. \texttt{enablePreemption()}
+unsets the flag and checks whether a thread switch is necessary (see
+below). On a multiprocessor system this would need to be implemented
+using a test-and-set instruction, or some equivalent.
+
+The inverse operation, namely the unlocking of the mutex, can be
+expressed as in figure~\ref{unlockMutex}.
+
+\begin{figure}
+\begin{verbatim}
+void unlockMutex (struct mutex *mux) {
+  disablePreemption();
+
+  --mux->count;
+  if (mux->count == 0) {
+    mux->holder = NULL;
+    if (mux->waiters != NULL) {
+      thread *next = mux->waiters;
+      mux->waiters = next->next;
+      resumeThread(next);
+    }
+  }
+
+  enablePreemption();
+}
+\end{verbatim}
+\caption{Code for \texttt{unlockMutex()}}
+\label{unlockMutex}
+\end{figure}
+
+The function \texttt{resumeThread()} sets a flag which results in a
+thread switch to the given thread after preemption has been
+re-enabled.
+
+These algorithms are simple, straightforward and reasonably efficient.
+
+
+\subsection{Object-Mutex relation}
+\label{objectmutex}
+
+Since the JavaVM specification states that each object has a mutex
+associated with it, the obvious solution seems to be to include the
+mutex structure in each object. The mutex structure could be reduced
+to a length of eight bytes if we used thread numbers instead of
+pointers. But, using such a solution, the javac application would
+allocate nearly one megabyte of mutex data, just for a few seconds of
+execution. This is unacceptable.
+
+On the other hand, the figures show that it is very seldom that more
+than 20 mutexes are locked at the same time. This suggests that using
+a hash table, indexed by the address of the object for which a monitor
+operation is to be performed could be very efficient. This is exactly
+what Cacao does.
+
+We use a hash function which uses the $2 n$ least significant bits of
+the address where $2^n$ is the size of the hash table. This function
+can be implemented in four RISC instructions. Since we ran into
+performance problems with overflow handling by internal chaining, we
+now use external chaining with a preallocated pool of overflow entries
+managed by a free list.
+
+An entry in the hash table has the following structure:
+
+\begin{verbatim}
+struct entry {
+  object *obj;
+  struct mutex mux;
+  struct entry *next;
+}
+\end{verbatim}
+
+In order to minimize the overhead of the locking/unlocking operations,
+we should strive for code sequences small enough to be inlined, yet
+powerful enough to handle the common case.  We have chosen to handle
+the first entry in the collision chain slightly differently from the
+rest by not destroying the associated mutex when the count goes down
+to zero. Instead the decision is deferred until when a mutex with the
+same hash code gets locked and would thus use this location.  The
+major benefit of this approach is that the code to lock the mutex need
+not (in the common case) check for the location to be free, since each
+hash table location will, during the course of execution, only be free
+at the beginning of the program and will then never be freed again.
+The unlocking code is simplified by the fact that the code need not
+check whether the hash table location should be freed.  Based on the
+experience that a recently locked mutex is likely to be locked again
+in the near future, this technique also improves overall performance.
+
+\begin{figure}
+\begin{verbatim}
+ 1 void monitorenter (object *o)
+ 2 {
+ 3   entry *e;
+ 4   disablePreemption();
+ 5 
+ 6   e = firstChainEntry(o);
+ 7   if (e->obj == o
+ 8       && e->mux.holder
+ 9          == currentThread)
+10     e->mux.count++;
+11   else
+12     lockMutexForObject(e,o);
+13 
+14   enablePreemption();
+15 }
+\end{verbatim}
+\caption{Code of \texttt{monitorenter()}}
+\label{monitorenter}
+\end{figure}
+
+\begin{figure}
+\begin{verbatim}
+ 1 void monitorexit (object *o)
+ 2 {
+ 3   entry *e;
+ 4   disablePreemption();
+ 5 
+ 6   e = firstChainEntry(o);
+ 7   if (e->obj == o)
+ 8     e->mux.count--;
+ 9   else
+10     unlockMutexForObject(e,o);
+11 
+12   enablePreemption();
+13 }
+\end{verbatim}
+\caption{Code of \texttt{monitorexit()}}
+\label{monitorexit}
+\end{figure}
+
+
+\begin{table*}
+\begin{center}
+\begin{tabular}{|l|r|r|r|r|r|}    % monitorEnter
+\hline
+Program     & Line 6 & Line 10 & count 0 & Line 12 & Ratio $12/6$ \\ \hline\hline
+javac       & 420147 & 405978  & 381019  & 14169   & 3.372 \%     \\ \hline
+Biss        & 384350 & 370171  & 425038  & 14179   & 3.689 \%     \\ \hline
+Jigsaw      & 426695 & 391680  & 294957  & 35015   & 8.206 \%     \\ \hline
+\end{tabular}
+\caption{Execution statistics for \texttt{monitorenter()}}
+\label{monitorEnter}
+\end{center}
+\end{table*}
+
+
+\begin{figure}
+\begin{verbatim}
+ 1 void lockMutexForObject (entry *e,
+ 2                          object *o) {
+ 3   disablePreemption();
+ 4 
+ 5   if (e->obj != NULL)
+ 6     if (e->mux.count == NULL)
+ 7       claimEntry(e,o);
+ 8     else
+ 9       while (e->obj != o) {
+10         if (e->next == NULL) {
+11           e = e->next = allocEntry(o);
+12           break;
+13         }
+14         e = e->next;
+15       }
+16   else
+17     e->obj = o;
+18 
+19   lockMutex(&e->mux);
+20 
+21   enablePreemption();
+22 }
+\end{verbatim}
+\caption{Code for \texttt{lockMutexForObject()}}
+\label{lockMutexForObject}
+\end{figure}
+
+\begin{figure}
+\begin{verbatim}
+ 1 void unlockMutexForObject (entry *e,
+ 2                            object *o) {
+ 3   disablePreemption();
+ 4 
+ 5   if (e->obj == o)
+ 6     unlockMutex(&e->mux);
+ 7   else {
+ 8     /* Assuming entry is there */
+ 9     while (e->next->obj != o)
+10       e = e->next;
+11     unlockMutex(&e->next->mux);
+12     if (e->next->mux.count == 0)
+13       e->next = freeEntry(e->next);
+14   }
+15 
+16   enablePreemption();
+17 }
+\end{verbatim}
+\caption{Code for \texttt{unlockMutexForObject()}}
+\label{unlockMutexForObject}
+\end{figure}
+
+See figures~\ref{monitorenter} and~\ref{monitorexit} for the code of
+the corresponding JavaVM instructions. These functions handle (as we
+show below) the most common case and depend on the two functions for
+the general case presented in figures~\ref{lockMutexForObject}
+and~\ref{unlockMutexForObject} (we now assume that
+\texttt{enablePreemption()}/\texttt{disablePreemption()} pairs can be
+nested).
+
+Even if they are not short enough to be inlined in every synchronized
+method, these functions are certainly small enough to make the effort
+of coding them as specially tailored, assembly language functions
+worthwhile. This bypasses the standard subroutine linkage conventions,
+gaining a little extra speed.
+
+\subsection{Results}
+
+\begin{table}
+\begin{center}
+\begin{tabular}{|l|r|r|r|r|}      % monitorExit
+\hline
+Program & Line 6 & Line 8 & Line 10 & Ratio $10/6$ \\ \hline\hline
+javac       & 420146 & 419815 & 331     & 0.078 \% \\ \hline
+Biss        & 384368 & 383281 & 1087    & 0.282 \% \\ \hline
+Jigsaw      & 428997 & 416890 & 12107   & 2.822 \% \\ \hline
+\end{tabular}
+\caption{Execution statistics for \texttt{monitorexit()}}
+\label{monitorExit}
+\end{center}
+\end{table}
+
+To demonstrate that nearly all cases are indeed handled by these small
+routines, we have written a small application which simulates the
+locking and unlocking operations of the three applications we used
+above (tables~\ref{monitorEnter} and \ref{monitorExit}). As can be
+seen, only a small percentage of cases need to be handled in the
+general routines \texttt{lockMutexForObject()} and
+\texttt{unlockMutexForObject()}.
+
+The column `count 0' gives the number of mutex locks where the {\tt count}
+of the mutex before locking is zero. We present this number to evaluate an
+implementation where {\tt monitorenter()} checks the {\tt count} instead of
+the {\tt holder} to determine if the mutex can be locked immediately. The
+numbers seem to be in favour of checking {\tt holder} but at least indicate
+that the difference is neglectable. Furthermore, locking the mutex after
+only having checked {\tt count} needs an additional assignment (setting
+{\tt holder}).
+
+\begin{table*}
+\begin{center}
+\begin{tabular}{|l|r|r|r|r|} \hline
+            & \multicolumn{4}{|c|}{miss rates by size of cache} \\
+Application & 1 Element & 2 Elements & 4 Elements & 8 Elements \\
+\hline\hline
+javac       & 15.076 \% &  9.757 \% &  4.931 \% & 3.193 \% \\ \hline
+Biss        & 13.488 \% &  8.349 \% &  4.765 \% & 3.141 \% \\ \hline
+Jigsaw      & 43.694 \% & 37.700 \% & 22.680 \% & 5.182 \% \\ \hline
+\end{tabular}
+\caption{Results of cache simulation}
+\label{CacheResults}
+\end{center}
+\end{table*}
+
+We have also considered the possibility of using a cache of recently
+used mutexes to improve performance, similar to a
+translation-lookaside buffer in microprocessors which cache the
+mapping between virtual and physical memory pages. To evaluate whether
+this would be worthwhile, we have simulated caches with one, two, four
+and eight elements using the three applications as test candidates. We
+have used least-recently-used as the cache replacement strategy.
+Though this is not easily implemented in software, it provides a good
+estimate of the best hit rate that can be achieved with an efficient
+implementation.  Table~\ref{CacheResults} summarizes the results.
+
+\begin{table*}
+\begin{center}
+\begin{tabular}[b]{|l|c|c|c|c|c|}
+\hline 
+                             & JavaLex &  javac & espresso &  Toba   &
+java\_cup \\ \hline
+run time without threads     &   2.82  &   4.91 &    3.23  &   4.32 
+&    1.35   \\ \hline
+run time with threads        &   3.89  &   5.40 &    3.23  &   5.53 
+&    1.56   \\ \hline
+overhead (optimized impl.)   &   37 \% &  10 \% &    0 \%  &   28 \%
+&    15 \%  \\ \hline
+number of lock/unlock pairs  & 1818889 & 420146 &   2837   & 1558370 & 
+124956   \\ \hline
+\end{tabular}
+\caption{Overhead of monitor operations}
+\label{CACAOMutexCost}
+\end{center}
+\end{table*}
+
+Using an implementation supporting the monitor routines, as discussed
+in section~\ref{objectmutex}, and one implementation without thread
+support, we have run several applications on a 300MHz DEC 21064A (see
+table~\ref{CACAOMutexCost}). For these single threaded applications,
+the overhead introduced by monitor operations ranges from 0\% to 37\%,
+depending on the number of monitor operations in the applications. 
+Note, however, that this cannot be compared to the overhead figures
+given in table \ref{SyncronizedOverhead}, since these applications do
+more than just entering and exiting a monitor.
+
+Using the implementation described, the {\em mutex test} application
+for table \ref{SyncronizedOverhead} took 0.40 seconds with a
+synchronized and 0.28 seconds with an ordinary method to complete. In
+this program the time spent on locking/unlocking a mutex is 0.40
+microseconds. The reason for the higher cost of mutex operations in
+the {\em tree test} is that this test violates the locality of monitor
+operations. Overall, these numbers compare very favorably with the
+other implementations.
+
+For most single-threaded applications, the monitor overhead can be
+eliminated completely. If it is possible to determine statically that
+the dynamic class-loader and the \texttt{java.lang.Thread} class are
+not used, synchronization code need not be generated.
+
+
+\subsection{Thin locks}
+
+

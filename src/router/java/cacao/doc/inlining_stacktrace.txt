@@ -1,0 +1,73 @@
+Stacktraces with Inlined Methods
+================================
+
+Author:  Edwin Steiner
+Changes: -
+
+
+The layout of the line number table looks like this:
+
+    +----------+----------------------+
+    | ln 1     | first PC of line 1   |
+    +----------+----------------------+
+    | ln 2     | first PC of line 2   |
+    +----------+----------------------+
+    		       ...
+    +----------+----------------------+
+    | ln N     | first PC of line N   |
+    +----------+----------------------+
+
+Note: "ln 1" means the line number of the first line of the method body,
+      and so on. The PC is always the start of the first instruction
+      belonging to the given line.
+
+
+For inlined methods special entries are inserted into the table. The special
+entries have negative line numbers.  If there is an inlined method call at line
+X, the table looks like this:
+
+    +----------+----------------------+
+    | ln 1     | first PC of line 1   |
+    +----------+----------------------+
+    | ln 2     | first PC of line 2   |
+    +----------+----------------------+
+    		      ...
+    +----------+----------------------+
+    | -2       | first PC of line X   |  <-- "-2" marks start of inlined method
+    +----------+----------------------+
+    | ln 1'    | first PC of line 1'  |  \
+    +----------+----------------------+  |
+    | ln 2'    | first PC of line 2'  |  |
+    +----------+----------------------+  |--- these refer to lines within the body of
+    		      ...                    |    the inlined callee
+    +----------+----------------------+  |
+    | ln N'    | first PC of line N'  |  /
+    +----------+----------------------+
+    | -3-ln X  | methodinfo* to callee|  <-- methodinfo* instead of PC, -3 minus line number
+    +----------+----------------------+
+    | -1       | first PC of inlined  |  <-- NOTE THE PC! It's the first, not the last PC.
+    |          | method body          |
+    +----------+----------------------+
+    | ln X     | first PC of line X   |  for the rest of line X, after the inlined call
+    |          | after the call       |
+    +----------+----------------------+
+    | ln X+1   | first PC of line X+1 |
+    +----------+----------------------+
+    		      ...
+    +----------+----------------------+
+    | ln N     | first PC of line N   |
+    +----------+----------------------+
+
+CAUTION: line numbers are stored as unsigned ptrint! You need
+         to cast them (to s4) in order to test <0, etc.
+         (The ptrint values are created by casting a s4 to ptrint.)
+
+Nesting
+-------
+
+For nested inline bodies, the entries of the inner inline body are inserted
+between the entries of the outer inline body just the same as at the top level.
+
+
+# vim: et sw=4 sts=4 ts=4
+
