@@ -1,0 +1,67 @@
+2001-07-12 14:17  anton
+
+	* Makefile, Makefile.in, cacaorules, jit.c, profile.c, runspec:
+	  minor changes
+
+2001-03-16 15:03  anton
+
+	* gen-and-test, peephole-blacklist: ...
+
+2001-03-16 14:31  anton
+
+	* peephole.c: ...
+
+2001-03-16 14:29  anton
+
+	* vmgen: added vmgen
+
+2001-03-16 14:16  anton
+
+	* Makefile, Makefile.am, Makefile.in, engine.c, jit.c, jit.h,
+	  profile.c, runspec, src/vm/jit/stack.c: ...
+
+2001-03-02 19:58  anton
+
+	* Makefile, Makefile.am, Makefile.in, cacaorules, main.c,
+	  profile.c, seq2rule.awk, stat.awk, src/cacao/cacao.c,
+	  src/vm/jit/stack.c: finished profiling some rules for processing
+	  sequence information
+
+2001-03-02 11:15  anton
+
+	* Makefile, Makefile.am, Makefile.in, configure, configure.in,
+	  engine.c, profile.c, runspec, src/vm/jit/stack.c: preparations
+	  for profiling removed most junk comments from java.vmg more
+	  efficient longs and doubles on 64-bit machines
+
+2001-02-15 17:52  anton
+
+	* engine.c, headers.c, src/cacaoh/headers.c: fixed gc
+
+2001-02-13 19:26  anton
+
+	* Makefile, Makefile.in, configure, configure.in, engine.c, jit.c,
+	  jit.h, loader.c, src/vm/loader.c, runspec, src/vm/jit/stack.c:
+	  bugfixes
+
+2001-02-05 16:02  anton
+
+	* Makefile, Makefile.in, configure, configure.in, engine.c,
+	  global.h, jit.c, loader.c, main.c, prelude.vmg,
+	  src/cacao/cacao.c, src/vm/global.h, src/vm/loader.c,
+	  src/vm/jit/parse.c, src/vm/jit/stack.c: bugfixes
+
+2001-02-01 11:48  anton
+
+	* Makefile, Makefile.am, Makefile.in, acconfig.h, builtin.c,
+	  config.h.in, configure, configure.in, src/vm/builtin.c, engine.c,
+	  global.h, headers.c, jit.c, jit.h, loader.c,
+	  src/cacaoh/headers.c, src/vm/global.h, src/vm/loader.c, native.c,
+	  native.h, prelude.vmg, runspec, src/native/native.c,
+	  src/native/native.h, src/vm/jit/parse.c, src/vm/jit/stack.c:
+	  threaded code added
+
+2001-02-01 11:46  anton
+
+	* tests/: Makefile.am, Makefile.in: threaded code changes
+

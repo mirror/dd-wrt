@@ -1,0 +1,86 @@
+CACAO Native Threads Implementation
+===================================
+
+Author:  Edwin Steiner
+Changes:
+
+
+Lock Records
+------------
+
+XXX to write
+
+Lock Records Pools
+------------------
+
+Each threadobject has zero or more `lockRecordPool`s. The first pool contains
+INITIALLOCKRECORDS records. Each successive pool contains twice as many 
+records as the thread owned before, except it is a pool recycled from the global
+free list (see below).
+
+    threadobject      +---------+     +---------+
+        ee.lrpool --> | next    | --> | next    | --> (nil)
+                      | size=16 |     | size=8  |
+        ee.numlr=24   +---------+     +---------+
+                      |         |     |         |         
+                      |         |     |         |         
+                      |         |     |         |         
+                      |         |     |         |         
+                      |         |     +---------+
+                      |         |
+                      |         |
+                      |         |
+                      |         |
+                      |         |
+                      +---------+
+
+All the records owned by a threadobject t have ownerThread == t.
+
+The global pool
+---------------
+              
+The pools themselves are recycled in a global free list, the `global_pool`.
+There is a lock protecting it, the `pool_lock`.
+
+When a thread is discarded, its lock record pools are inserted into the
+global_pool to be reused.
+
+Recycling lock records
+----------------------
+
+The individual lock records are recycled using a per-thread free list
+dangling from ee.firstLR.
+
+The list is chained using the `nextfree` field in the lock records.
+
+When a pool is allocated, the `nextfree` fields of the records in the
+pool are chained together, with the last record having nextfree == NULL.
+This linked list becomes the new free list (except for the first record)
+when a new pool has been allocated.    
+
+Lock records are never destroyed, because there may always be references
+to them somewhere.
+
+The dummyLR
+-----------
+
+There is one special lock record that does not have an ownerThread: the
+`dummyLR`. It is always unlocked and is used instead of a NULL pointer
+to signal that an object has no lock record.
+
+Freeing a lock record
+---------------------
+
+Freeing a lock record means releasing the lock it represents. This is
+done by setting the object reference `o` of the record to NULL and then
+doing `sem_post` on the semaphore of the record (once for each queuer
+on the record).
+
+Recursive locks
+---------------
+
+Recursive locks are enabled by the `lockCounter` in the lock record.
+When a thread enters a monitor it already owns, the lock counter is
+simply incremented.
+
+# vim: et sts=4 ts=4 sw=4

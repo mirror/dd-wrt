@@ -1,0 +1,575 @@
+%\newcommand{\code}{\texttt}
+
+%\chapter{The Just-In-Time Compiler}
+
+\section{ESA/390 code generator}
+
+\subsection{About s390 Architecture}
+
+IBM's mainframe architecture s390 is the living architecture with the longest heritage, defined in a time where assembler programming was predominant and compilers where in their childhood. This fact made already porting of the GNU Compiler Collection a difficult task, as reported by the developers in \cite{s390:bib:gcc}. However the existence of a paper describing the experiences and difficulties encountered while porting an existing C compiler to the s390 architecture made the task of porting CACAO a little easier.
+
+s390 being a CISC architecture provides an extensive instruction set defined in \cite{s390:bib:principles}. There is a wide range of I/O related instructions and control instructions used by the operating system. For the CACAO port, only a small subset of instructions is from interest. \cite{s390:bib:principles} categorises them into into three sections: general instructions, floating point instructions and binary floating point instructions. 
+
+The architecture defines 16 general purpose registers and 16 floating point registers. Instructions have variable length, which always is a multiple of 2 bytes. There are 2, 4 and 6 bytes long instructions and more than 30 \cite{s390:bib:gcc} instruction formats defined. Most instructions take 2 operands: the first operand being also the destination one of the operation. Most arithmetic instructions exist in two flavours: in the RR format they take two register operands, while in the RX format they take one register and one memory operand. There is also the RI format taking one register and one signed 16 bit immediate operand.
+
+For conditional execution, there exists a 2 bit condition code. A lot of instructions set this condition code depending on their result to a value defined for each instruction individually. The \emph{branch on condition} and \emph{branch relative on condition} instructions take a 4 bit bitmask, containing one bit for each possible condition code value. The branch is taken if the bit corresponding the the current condition code value is set. To branch unconditionnaly, one sets all bits in the bitmask. A \emph{branch on condition} instruction with all bits cleared in the bitmask is a nop instruction.
+
+\subsection{The ELF ABI}
+
+The \emph{application binary interface} (ABI) for GNU/Linux, the target operating system of the s390 CACAO port is defined in \cite{s390:bib:abi} and referred to as \emph{ELF ABI}.
+
+The \emph{ELF ABI} defines a system interface for compiled application programs with the purpose of establishing a standard binary interface for application programs on Linux for s390~\cite{s390:bib:abi}. The part of interest for this work is the function calling sequence, that defines register usage, stack layout and the way function parameters are passed. These are summarised in the following tables: table~\ref{s390:tbl:elf:intreg} for the general purpose register usage, table~\ref{s390:tbl:elf:fpreg} for the floating point register usage and table~\ref{s390:tbl:elf:stack} for the layout of a stack frame. To illustrate the typical function prologue, epilogue and calling conventions, figure~\ref{s390:fig:elf:hello} lists the assembly code of a simple function printing the string ``Hello world''.
+
+\begin{table}
+\centering
+\begin{tabular}{|l|l|l|}
+\hline
+Register      & Usage                                                  & Call effect \\
+\hline
+\%r0, \%r1    & General purpose                                        & Volatile \\
+\%r2, \%r3    & Parameter passing and return values                    & Volatile \\
+\%r4, \%r5    & Parameter passing                                      & Volatile \\
+\%r6          & Parameter passing                                      & Saved \\
+\%r7 - \%r11  & Local variables                                        & Saved \\
+\%r12         & Local variable, commonly used as GOT pointer           & Saved \\
+\%r13         & Local variable, commonly used as Literal Pool pointer  & Saved \\
+\%r14         & Return address                                         & Volatile \\
+\%r15         & Stack pointer                                          & Saved \\
+\hline
+\end{tabular}
+\caption{General purpose register usage in the \emph{ELF ABI}}
+\label{s390:tbl:elf:intreg}
+\end{table}
+
+\begin{table}
+\centering
+\begin{tabular}{|l|l|l|}
+\hline
+Register                       & Usage                                  & Call effect \\
+\hline
+\%f0, \%f2                     & Parameter passing and return values    & Volatile \\
+\%f4, \%f6                     & General purpose                        & Saved \\
+\%f1, \%f3, \%f5, \%f7 – \%f15 & General purpose                        & Volatile \\
+\hline
+\end{tabular}
+\caption{Floating point register usage in the \emph{ELF ABI}}
+\label{s390:tbl:elf:fpreg}
+\end{table}
+
+\begin{table}
+\centering
+\begin{tabular}{|l|l|l|}
+\hline
+Use & Size & Offset \\
+\hline
+Local and spill variable area of calling function & Varies & Varies \\
+On stack parameters passed to called function & Varies & 96 \\
+Register save area for called function use & 88 & 8 \\
+Reserved for compiler use & 4 & 4 \\
+Back chain (optional pointer to previous frame) & 4 & 0, 8 byte aligned \\
+\hline
+\end{tabular}
+\caption{Stackframe layout in the \emph{ELF ABI}}
+\label{s390:tbl:elf:stack}
+\end{table}
+
+\begin{figure}
+\begin{verbatim}
+.data
+L_data_hello:
+    .asciz "Hello world\n"
+.text
+
+.globl hello
+
+hello:
+    ; Store callee saved registers in register save area.
+    ; The ELF ABI requires the registers to be stored at particular offsets.
+    ; %r14 is not callee saved, but contains the return address.
+    stm     %r11, %r15, 44(%r15)
+    ; Setup literal pool pointer in %r13 and jump over literal pool.
+    bras    %r13, L_literal_pool_end
+
+	; Literal pool.
+L_literal_pool:
+L_hello:
+    .long  L_data_hello
+L_printf:
+    .long  printf
+L_literal_pool_end:
+
+    ; Allocate mandatory register save area for callee.
+    ahi    %r15, -96
+    ; Load pointer to string as argument from literal pool.
+    l      %r2, L_hello - L_literal_pool(%r13)
+    ; Load address of printf function from literal pool.
+    l      %r1, L_printf - L_literal_pool(%r13)
+    ; Save program counter of next instruction in %r14 and jump to address in %r1
+    basr   %r14, %r1
+
+    ; Restore callee saved registers from stack.
+    ; Restore return address as well
+    lm     %r11, %r15, 96 + 44(%r15)
+    ; Branch to return address
+    br     %r14
+\end{verbatim}
+\caption{Function that prints the string ``Hello world'' using the \emph{ELF ABI}}
+\label{s390:fig:elf:hello}
+\end{figure}
+
+\subsection{The JIT ABI}
+\label{s390:sec:jitabi}
+
+In just-in-time compiled Java code we try to stay as close as possible to the requirements of the \emph{ELF ABI}. However, some conventions of the \emph{ELF ABI} are violated for various reasons and an alternate ABI, the \emph{JIT ABI} was defined.
+
+Tables~\ref{s390:tbl:jit:intreg} and~\ref{s390:tbl:jit:fpreg} show the general purpose register and floating point register usage in the \emph{JIT ABI} respectively. The stack frame layout in the \emph{JIT ABI} is shown in table~\ref{s390:tbl:jit:stack}.
+
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|c|c|c|}
+	\hline
+	Register & Use & CACAO mnemonic \\
+	\hline
+	\%r0 & Scratch register & ITMP3, ITMP3\_XPTR \\
+	\%r1 & Scratch register & ITMP1, ITMP1\_XPC, METHODPTR \\
+	\%r2 & Parameter passing, return value & RESULT \\
+	\%r3 & Parameter passing, return value & RESULT2 \\
+	\%r4 - \%r6 & Parameter passing & - \\
+	\%r7 - \%r12 & Callee saved & - \\
+	\%r13 & Procedure vector & PV \\
+	\%r14 & Return address, scratch register & RA, ITMP2 \\
+	\%r15 & Stack pointer & SP \\
+	\hline
+	\end{tabular}
+	\caption{General purpose register usage in the \emph{JIT ABI}}
+	\label{s390:tbl:jit:intreg}
+\end{table}
+
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|c|c|c|}
+	\hline
+	Register & Use & CACAO mnemonic \\
+	\hline
+	\%f0 & Parameter passing, return value & FRESULT \\
+	\%f2 & Parameter passing & - \\
+	\%f4 & Scratch register & FTMP1 \\
+	\%f6 & Scratch register & FTMP2 \\
+	\%f3, \%f5, \%f7 - \%f15 & Caller saved & - \\
+	\hline
+	\end{tabular}
+	\caption{Floating point register usage in the \emph{JIT ABI}}
+	\label{s390:tbl:jit:fpreg}
+\end{table}
+
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|c|c|c|}
+	\hline
+	Use & Size & Offset \\
+	\hline
+	Return address & 1 slot & Stackframesize - 8 \\
+	Callee saved integer registers & 0 - 5 slots & \\
+	Callee saved floating point registers & Currently there are none & \\
+	Temporary slot & 1 slot & \\
+	\code{monitorenter} argument & 1 slot & \\
+	Local variables & 0 to n slots & 0 \\
+	\hline
+	\end{tabular}
+	\caption{Stackframe layout in the \emph{JIT ABI}}
+	\label{s390:tbl:jit:stack}
+\end{table}
+
+Register \code{\%r0} is treated by some instructions in a special way. The \emph{branch and save operation} for example takes two registers as operands. The second operand is used as branch address. If however register \code{\%r0} is passed as second operand, the operation is performed without branching. But the most notable special treatment is that \code{\%r0} can't be used as base or index register for storage operands. 
+
+To make the \emph{JIT} and \emph{ELF ABI}s compatible, there were two options for the use of the limited \code{\%r0} register: use it as scratch register or as caller saved temporary register. It was first used as caller saved register, what turned out to be a mistake. The final version of the \emph{JIT ABI} uses it as scratch register for the following reasons:
+
+\begin{itemize}
+	\item For some instructions it is handy to have a consecutive \emph{even-odd pair} of scratch registers.
+	\item Using \code{\%r0} as general purpose register leads to a lot of corner cases in the code generation algorithm.
+	\item Among all scratch registers, \code{REG\_ITMP3} is by convention the one used the least likely. So the best allocation for a register with limited usability is \code{REG\_ITMP3}.
+\end{itemize}
+
+To illustrate the typical prologue, epilogue and calling conventions in just-in-time code, consider the typical \emph{Hello world} program as shown in figure~\ref{s390:fig:jit:helloj}. The assembly code it is translated into is listed in figure~\ref{s390:fig:jit:hellojdis}.
+
+\begin{figure}
+\begin{verbatim}
+class Hello {
+    public static void main(String[] args) {
+        System.out.println("Hello world");
+    }
+}    
+\end{verbatim}
+
+\caption{Source code of Java program printing the string ``Hello world''}
+\label{s390:fig:jit:helloj}
+\end{figure}
+
+\begin{figure}
+\begin{verbatim}
+ahi    %r13,-4092       ; Offset procedure vector
+ahi    %r15,-16         ; Allocate stack frame
+st     %r14,12(%r15)    ; Store return address
+l      %r1,4052(%r13)   ; Get java.lang.System.out into argument register #1
+l      %r2,0(%r1)
+l      %r3,4048(%r13)   ; Load "Hello world" from data segment into argument register #2
+l      %r12,0(%r2)      ; Load virtual function table pointer of java.lang.System.out
+l      %r13,192(%r12)   ; Load method address from virtual function table
+basr   %r14,%r13        ; Call method
+basr   %r13,%r0         ; Restore procedure vector
+ahi    %r13,-4128
+l      %r14,12(%r15)    ; Load return address
+ahi    %r15,16          ; Remove stack frame
+br     %r14             ; Return
+bc     0,0              ; NOP
+\end{verbatim}
+\caption{Disassembly of translated java program printing the string ``Hello world''}
+\label{s390:fig:jit:hellojdis}
+\end{figure}
+
+\subsection{Register allocation}
+
+For s390 the \emph{simplereg} register allocator was not changed at all and worked out of the box. But as described in section~\ref{s390:sec:long}, there is still potential for optimising long arithmetics by tuning the register allocator for s390.
+
+\subsection{Address constants}
+
+On s390, while registers are 32 bit wide, the width of addresses is 31 bit. If the CPU uses addresses given as 32 bit values, it always ignores the most significant bit of the value. This showed to be a problem in the machine independent part of the code base that uses addresses as lookup keys, like the AVL tree of all methods, because each memory location can be address using two different 32 bit pointers. This code had to be extended to always clear the most significant bit of the passed pointers, if compiled for s390.
+
+A statistical analysis of the static instruction frequency shows that 8\% of all generated intermediate instructions are \code{ACONST}. An \code{ACONST} loads an address literal into the destination operated. As 8\% is fairly a lot, two approaches were considered to implement this instruction:
+ 
+\begin{itemize}
+	\item Put the address constant on the data segment and implement \code{ACONST} as a load from the data segment.
+	\item Load the address using two immediate 16 bit loads and one 16 bit left shift.
+\end{itemize}
+
+When running the benchmarks, no considerable difference could be observed. Because of the jitter in the benchmark run times, none of the two approaches took the lead. So we decided to always load address constants from the data segment, with the exception of the \code{null} pointer, that can be satisfied with a single immediate load. The GNU C Compiler loads address constants from the literal pool too.
+
+\subsection{Integer arithmetics}
+
+s390 provides native instructions for 32 bit arithmetics. These include addition, substraction, multiplication, division, reminder, bitwise logical operations, arithmetic and logical shift. Most of the instructions can handle either two register operands, or one register and one memory operand. So all 32 bit arithmetics could be implemented inline. 
+
+Java's 8 bit signed integer type \code{byte} and 16 bit unsigned integer type \code{char} are both handled through 32 bit arithmetics. Internally they are always represented as 32 bit values in both storage and registers. The only exception are arrays of those types. Here the array loads must sign extend the loaded values, and the array stores must store only the respective number of bytes into memory.
+
+\subsection{Long arithmetics}
+\label{s390:sec:long}
+
+Java's 64 bit integer type \code{long} is stored either as 64 bit value in storage or in two 32 bit registers. Almost all long instructions are inline except \code{LMUL}, \code{LDIV} and \code{LREM} that are delegated to builtins. Addition is performed as one 32 bit addition followed by a second 32 bit addition with carry, substraction works in a similar way. s390 provides 64 bit shift instructions that are used to implement the \code{I2L} intermediate instruction and long shift operations. Those shift instructions always operate on an \emph{even-odd pair of registers}. If not already in such a register pair, the value has to be copied into \code{REG\_ITMP31\_PACKED}. This is actually always the case with the current register allocator, because it allocates the least significant half of the 64 bit value to the lower register of the pair. This could however be simply improved by making the register allocator always prefer an \emph{even-odd pair of registers} for the allocation of 64 bit variables.
+
+\subsection{Floating point arithmetics}
+
+s390 defines 16 64 bit wide floating point registers, that can hold single or double precision IEEE floating point values. Two of those registers can be combined to hold an extended precision IEEE floating value, but this feature is not needed for CACAO. Note that not all 16 registers must be available: registers \code{\%f0}, \code{\%f2}, \code{\%f4}, \code{\%f6} are available on all ESA/390 models. The remaining registers are referred to as additional \emph{floating-point registers} (AFR) and they are present only if the \emph{basic-floating-point-extensions facility} is installed. The current code base blindly assumes that all 16 registers are available. We took care to allocate the AFRs only as temporary registers, thus in future releases we can easily support models without AFRs by simply marking the respective registers as reserved in the register descriptor arrays (\code{nregdescfloat}) and by not storing and restoring them at \emph{ELF ABI} - \emph{CACAO ABI} boundaries.
+
+Java floating point semantics require a IEEE 754 \emph{round to nearest mode}. The rounding mode is controlled via the floating point control register \code{fpc}. On Linux/s390 the \code{fpc} register of newly started processes is always initialised to 0, meaning \emph{round to nearest} \cite{s390:bib:abi}, so no extra effort needs to be made here.
+
+\subsection{Machine code generation}
+
+The usual way to generate machine code in CACAO is to use code generation macros defined in the architecture dependent header file \code{codegen.h}. For example on alpha, to generate machine code equivalent to the following assembly code:
+
+\begin{verbatim}
+ild  16(%r9), %r10
+\end{verbatim}
+
+one would place the following macro into the code generation algorithm:
+
+\begin{verbatim}
+M_ILD(R9, 16, R10)
+\end{verbatim}
+
+On s390, the equivalent instruction in assembly language would be:
+
+\begin{verbatim}
+l    %r10, 16(%r9)
+\end{verbatim}
+
+and would lead to definition of the following macro:
+
+\begin{verbatim}
+M_L(R10, 16, 0, R9)
+\end{verbatim}
+
+For ease of maintenance there is an effort to keep all code generators as similar as possible. The proffered signature of the code generation macros is the one used in the alpha code generator. To honour this requirement but keep the possibility of using special s390 instructions not available in the alpha instruction set, the code generation macros were defined in two layers:
+
+The instructions prefixed with the prefix \code{N\_} follow exactly to the s390 naming and conventions as defined in~\cite{s390:bib:principles}.
+
+\begin{verbatim}
+N_L(dest, disp, index, base)
+\end{verbatim}
+
+The widely used code generation macros prefixed with an \code{M\_} are an alpha compatibility layer. They define alpha-like code generation macros in terms of \code{N\_} prefixed code generation macros.
+
+\begin{verbatim}
+#define M_ALD(base, disp, dest) N_L(dest, disp, 0, base)
+\end{verbatim}
+
+To prevent subtle errors, if CACAO is compiled in debug mode, all code generation macros validate the passed parameters. In release mode, no run-time checks are performed. 
+
+As already mentioned in section~\ref{s390:sec:jitabi}, some instructions don't accept register \code{\%r0} as operand, but rather treat it as \emph{optional operand not given}. Again, to prevent subtle errors, if CACAO is compiled in debug mode, the corresponding code generation macros don't accept \code{\%r0} as operand. Instead a special value, \code{RN}, meaning \emph{register none} must be given. In release mode, \code{RN} just expands to \code{\%r0} and no run-time checks are performed.
+
+\subsection{Exception handling}
+
+In contrast to other ports, in the s390 one we try to perform most of exception handling in C code. A port is required to implement an \code{asm\_handle\_exception} function in assembly language that is called only from JIT code with special conventions: register \code{xptr} contains the exception object and register \code{xpc} contains the program counter of the failing instruction, which can be mapped to a java byte code index. All other registers are required to be left unchanged. The s390 version is a thin wrapper around a C function \code{md\_handle\_exception} and does the following:
+
+\begin{itemize}
+	\item Allocates 3 arrays on the stack: \code{regs[16]}, \code{fregs[16]}, \code{out[3]}.
+	\item Stores special, temporary and argument integer registers into \code{regs}.
+	\item Stores temporary and argument floating point registers into \code{fregs}.
+	\item Calls \code{md\_handle\_exception} with the 3 arrays as arguments.
+	\item \code{md\_handle\_exception} while handling the exception computes new values for registers and puts them into the respective arrays. This eventually includes a new stack pointer, a new procedure vector, new values for callee saved registers and a new program counter.
+	\item Restores registers from the respective arrays.
+	\item Jumps to the address contained in register \code{xpc}.
+\end{itemize}
+
+\subsection{Exception raising}
+
+Currently there are two approaches to raise an exception in JIT code:
+
+\begin{itemize}
+	\item A call to \code{asm\_handle\_exception}.
+	\item Make the JIT code produce a hardware exception, and call \code{asm\_handle\_exception} from a signal handler.
+\end{itemize}
+
+The first approach requires special stub code to be generated for the call while the second requires generation of very little code: a single instruction or even none at all. Handling of hardware exceptions on the other side involves the kernel and a context switch and can therefore be a costy operation. But because of the fundamental property of exceptions being rare, we prefer to reduce the code size at the price of occasional performance penalty. 
+
+Consider for example the assembly code corresponding to the load an object's field in figure~\ref{s390:fig:exceptionrise}. If the value in \code{\%r10} points to a valid java object, the field value is loaded. If however the value in \code{\%r10} is a \code{null} pointer, the process receives a \code{SIGSEGV} signal and the operating system passes control to a function \code{md\_handle\_sigsegv}, the registered handler for this signal. This signal handler has access to all registers and the faulting program counter as well. It examines the opcode of the faulting instruction to see whether it corresponds to the use of a \code{null} pointer. If so, an exception object is allocated and put into the \code{xpc} register, \code{xptr} is set to the faulting address and program flow is resumed at \code{asm\_handle\_exception}. 
+
+\begin{figure}[H]
+\begin{verbatim}
+l %r9, 36(%r10)
+\end{verbatim}
+\caption{Load of an object's field with the potential of rising a \code{NullPointerException}.}
+\label{s390:fig:exceptionrise}
+\end{figure}
+
+For explicit exception raising, we have defined the \code{ill} pseudo instruction in RR format. Its mnemonic is defined if figure~\ref{s390:fig:ill} and its machine code format in table~\ref{s390:tbl:ill}.
+
+\begin{figure}
+\centering
+\begin{verbatim}
+ill register, exception_number
+\end{verbatim}
+\caption{Mnemonic of the \code{ill} pseudo instruction}
+\label{s390:fig:ill}
+\end{figure}
+
+\begin{table}
+\centering
+\begin{tabular}{|c|c|c|c|}
+	\hline
+	Bits & 0 - 7 & 8 - 11 & 12 - 15 \\
+	\hline
+	Contents & 0x02 & register & exception number \\
+	\hline
+\end{tabular}
+\caption{Machine code for the \code{ill} pseudo instruction}
+\label{s390:tbl:ill}
+\end{table}
+
+As the opcode \code{0x02} is no valid opcode according to~\cite{s390:bib:principles} , once that instruction is reached, it will lead to an illegal instruction exception. The operating system delivers a \code{SIGILL} signal to the process and control is passed to the registered signal handler. This signal handler then examines the opcode of the instruction at the faulting address. In case it corresponds to the \code{ill} pseudo-instruction, the second register field is interpreted as exception number. The corresponding exception object is then instantiated and control passed to \code{asm\_handle\_exception}.
+
+Signal handling can be used to support corner cases of arithmetics that can't be handled by the architecture natively. Consider for example the special case of the division of \code{0x80000000} (\code{Integer.MIN}) by \code{0xFFFFFFFF} (-1) that raises a fixed-point divide exception which is signalled to the process by a \code{SIGFPE} signal. If the signal handler determines that the faulting operation was an integer division with those special values as operands, the destination operand is set to the expected result (-1) and normal program flow is resumed.
+
+Table~\ref{s390:tbl:signals} contains an overview of signals used in CACAO JIT code.
+
+\begin{table}
+\centering
+\begin{tabular}{|c|c|c|}
+\hline
+Signal & Faulting instruction & Thrown runtime exception \\
+\hline
+\code{SIGSEGV} & \code{L} & \code{EXCEPTION\_HARDWARE\_NULLPOINTER} \\
+\code{SIGSEGV} & \code{ST} & \code{EXCEPTION\_HARDWARE\_NULLPOINTER} \\
+\code{SIGSEGV} & \code{CL} & \code{EXCEPTION\_HARDWARE\_NULLPOINTER} \\
+\code{SIGILL} & \code{ILL} & \code{EXCEPTION\_HARDWARE\_ARITHMETIC} \\
+\code{SIGILL} & \code{ILL} & \code{EXCEPTION\_HARDWARE\_ARRAYINDEXOUTOFBOUNDS} \\
+\code{SIGILL} & \code{ILL} & \code{EXCEPTION\_HARDWARE\_CLASSCAST} \\
+\code{SIGILL} & \code{ILL} & \code{EXCEPTION\_HARDWARE\_PATCHER} \\
+\code{SIGFPE} & \code{DR} & \code{EXCEPTION\_HARDWARE\_ARITHMETIC} \\
+\code{SIGFPE} & \code{DR} & \code{EXCEPTION\_HARDWARE\_ARITHMETIC} \\
+\hline
+\end{tabular}
+\caption{Overview of signals used by JIT code in Cacao}
+\label{s390:tbl:signals}
+\end{table}
+
+\subsection{Code patching}
+
+Not all the information needed for program execution is available at compile time. Therefore some parts of the JIT-code need to be \emph{patched} at runtime. A trap instruction is placed at the beginning of the code in question. Further, a \emph{patcher reference} is created. This is a tiny data structure associated with the patched position encapsulating metadata about the information to be patched. The trap instruction used is the \code{ill} pseudo-instruction with a exception number of \code{EXCEPTION\_HADRWARE\_PATCHER}.
+
+Once the patched position is reached and the trap instruction executed the operating system passes control the the \code{md\_signal\_handler\_sigill} function. This function inspects the faulting instruction and then passes control to the machine independent \code{signal\_handle} function, which in turn invokes the machine independent entry into the patching subsystem: \code{patcher\_handler}. Here the faulting program counter is used to look up the associated \emph{patcher reference}. The address of the machine dependent patcher function is extracted from the \emph{patcher reference} and the patcher is invoked with the \emph{patcher reference} as argument. After the patcher function has finished, and the signal handler exits, program flow is resumed at the now reconstructed patched position. The anatomy of a patcher function is the following:
+
+\begin{itemize}
+	\item Examine the patcher reference to determine what information needs to be retrieved.
+	\item Retrieve required information.
+	\item Overwrite the trap instruction at the patched position with the original machine code.
+	\item Patch required information. This is usually done in one of the following ways:
+	\begin{itemize}
+		\item Modify a value on the data segment. The offset of the value is extracted from the \emph{patcher reference}.
+		\item Modify machine code near the patched position.
+	\end{itemize}
+\end{itemize}
+
+Consider the example of calling an object's virtual method in figure~\ref{s390:fig:patch1}. At the time the code for the call is assembled, the called method's class may not have been loaded and thus the offset in the virtual function table may not yet be known. The code generator simply generates the second load with a displacement of 0. It then replaces the machine code at the current location with a trap instruction and creates a \emph{patcher reference} (figure~\ref{s390:fig:patch2}). In the case of a virtual function call it contains an \code{unresolved\_method *}, a data structure encapsulating information needed to resolve the method. Once the trap instruction is reached, the responsible patcher, \code{patcher\_invokevirtual} will be invoked by the patcher subsystem. It resolves the method, then removes the trap instruction and finally, modifies the displacement of the second load, to reflect the offset in the virtual function table (figure~\ref{s390:fig:patch3}).
+
+\begin{figure}
+\begin{verbatim}
+l mptr, offset_vftbl_ptr(a0) ; Load the object's VFTBL pointer
+l pv, offset_method(mptr)    ; Load pointer to method from VFTBL
+\end{verbatim}
+\caption{Machine code for normal virtual function call}
+\label{s390:fig:patch1}
+\end{figure}
+
+\begin{figure}
+\begin{verbatim}
+; Machine code replaced with trap instruction
+; Patcher reference created for this program counter
+ill EXCEPTION_HARDWARE_PATCHER
+l pv, 0(mptr)
+\end{verbatim}
+\caption{Machine code for virtual function call before being patched}
+\label{s390:fig:patch2}
+\end{figure}
+
+\begin{figure}
+\begin{verbatim}
+; Trap instruction removed and original machine code restored
+l mptr, offset_vftbl_pointer(a0)
+; Load instruction patched
+l pv, 16(mptr)
+\end{verbatim}
+\caption{Machine code for virtual function call after being patched}
+\label{s390:fig:patch3}
+\end{figure}
+
+The above example shows, that patchers that modify machine code are tightly coupled with the code used for its generation. Here, given the program counter of the patched position, the patcher is expected to exactly determine the load instruction to patch. On one hand, its easy, because it's simply the next instruction after the trap. On the other hand, care must be taken when modifying the code generation portion to not forget keep the patchers up to date.
+
+\subsection{Data segment access}
+
+One speciality of s390 compared with other architectures is the format of memory addresses in instructions. This can be given as \code{displacement(base)} or \code{displacement(index, base)} where \code{displacement} is an unsigned 12 bit value while \code{base} and \code{index} designate registers. The resulting memory address is calculated as the sum of the displacement and the values in the registers. The conventional way to address a value on the data segment is to use a negative displacement with the procedure vector register. As this obviously can't be done on s390 a workaround was needed. \\
+
+We decided to add a negative constant \code{N\_PV\_OFFSET} to the procedure vector in each java methods prologue. This way, a load of the form as in figure~\ref{s390:fig:dsegload1} turns into a load of the form as in figure~\ref{s390:fig:dsegload2} with a non-negative displacement for the first 4 kB of the data segment. For data segment access beyond that barrier, special code has to be generated. Most of those accesses can be fullfitted by first loading the negative displacement as 16 bit signed immediate value into the destination register and then using that register as an index register for the actual load as in figure~\ref{s390:fig:dsegload3}. Note however, that the code does not work if the destination register is \code{\%r0}, because \code{\%r0} can't be used as index register.
+
+\begin{figure}[H]
+\begin{verbatim}
+    l      reg, negative_displacement(pv)
+\end{verbatim}
+\caption{Usual way to load a value from the data segment}
+\label{s390:fig:dsegload1}
+\end{figure}
+
+\begin{figure}[H]
+\begin{verbatim}
+    l      reg, negative_displacement - N_PV_OFFSET(pv)
+\end{verbatim}
+\caption{Load from data segment with non-negative displacement}
+\label{s390:fig:dsegload2}
+\end{figure}
+
+\begin{figure}[H]
+\begin{verbatim}
+    lhi reg, negative_displacement
+    l   reg, 0(reg, pv)
+\end{verbatim}
+\caption{Load from data segment for large displacements}
+\label{s390:fig:dsegload3}
+\end{figure}
+
+In very rare cases, where the data can't be addressed using a signed 16 bit offset, we place the negative displacement into the instruction flow and load it in a PC relative fashion, as seen in figure~\ref{s390:fig:dsegload4}.
+
+\begin{figure}[H]
+\begin{verbatim}
+    bras reg, L_bras     ; Branch over constant dseg offset in instruction stream 
+                         ; and store current PC of next instruction in reg	
+    .long negative_displacement
+L_bras:
+    l    reg, 0(reg)     ; Load constant dseg offset into reg
+    l    reg, 0(reg, pv) ; Address dseg using two registers
+\end{verbatim}
+\caption{Load from data segment for very large displacements}
+\label{s390:fig:dsegload4}
+\end{figure}
+
+The fact, that in JIT code the procedure vector is always set off must be kept in mind when passing its value to architecture independent code, for example the patcher subsystem, that expects it to point to the methods entry point. \code{N\_PV\_OFFSET} must first be substracted from the procedure vector value.
+
+\subsection{Recalculation of the procedure vector}
+
+Because the procedure vector is a caller saved register in the \emph{JIT ABI}, but a callee saved register in the \emph{ELF ABI}, the procedure vector has to be recalculated after each Java-to-Java call. This is done by the snippet of assembly code seen in figure~\ref{s390:fig:pvrestore1}
+
+\begin{figure}[H]
+\begin{verbatim}
+    ; get program counter into pv
+    basr     pv, 0 
+L_basr:
+    ; substract offset to start of method
+    ahi      pv, -(L_basr - L_mcodebase) + N_PV_OFFSET
+\end{verbatim}
+\caption{Assembly code for the recalculation of the procedure vector}
+\label{s390:fig:pvrestore1}
+\end{figure}
+
+Although rare, it happens for large methods that the that the immediate operand to \code{ahi} does not fit into the range of valid immediates. Care has to be taken to still generate correct code as seen in the assembly code in figure~\ref{s390:fig:pvrestore2}.
+
+\begin{figure}[H]
+\begin{verbatim}
+    ; Jump over (big) constant in instruction flow and
+    ; get program counter of next instruction into PV.
+    bras    pv, L_bras
+    ; offset to start of method is placed in instruction flow
+    .long   -(L_bras - L_mcodebase) + N_PV_OFFSET
+L_bras:
+    ; Add offset to program counter retrieved above.
+    a       pv, 0(pv)
+\end{verbatim}
+\caption{Assembly code for the recalculation of the procedure vector for large methods}
+\label{s390:fig:pvrestore2}
+\end{figure}
+
+\subsection{Long branches}
+
+For program counter relative branches, that are used for inter-method branching, the offset is specified as signed 17 bit integer. The size of most methods does not exceed 64kB. But occasionally, there are large methods that require a branch with a offset not fitting into this range. We call this kind of branches \emph{long branches}. If a backward \emph{long branch} is generated, this does not cause further troubles. The problem are forward branches: branches to not yet generated code. In such cases, instead of generating a branch, we reserve exactly the size of a branch instruction. This space will be filled with a (short) branch as soon as the referenced code gets generated. This is obviously a problem if the branch generated later shows to be a \emph{long branch}, because the code generated for a \emph{long branch} does not fit into the reserved space.
+
+This condition is detected in \code{emit\_branch} by checking the passed displacement to fit into the 17 bit signed range. If this condition does not hold and the flag \code{CODEGENDATA\_FLAG\_LONGBRANCHES} is not set, then both flags \code{CODEGENDATA\_FLAG\_ERROR} and \code{CODEGENDATA\_FLAG\_LONGBRANCHES} are set and no branch is generated. After \code{codegen\_emit} returns, \code{codegen\_generate} checks for those two flags. If they are both set, the method is recompiled, with only the \code{CODEGENDATA\_FLAG\_LONGBRANCHES} flags set. 
+
+This causes that more space is reserved for forward branches: enough to patch either a (short) branch or a \emph{long branch}.
+
+A long branch is implemented by storing the long displacement in the data segment. The generated code loads the displacement from the data segment, combines it with the procedure vector and then jumps to the resulting address.
+
+\subsection{The development environment}
+
+Most of the development has been done on a Debian GNU/Linux system running on the Hercules emulator. Installing the system on the emulator can be tricky and needs several hours to complete. It is not recommended to setup such a system from scratch, but rather use the disk image floating around at the complang group.
+
+As the emulator showed to be slow for native compiling, a cross compiler was used instead. To eliminate the need of cross compiling all dependencies of CACAO on the development system, the following approach was chosen instead:
+
+\begin{itemize}
+	\item The root of the target system was mounted via NFS on the development system.
+	\item The cross compiler was set up to use the mounted NFS root as sysroot.
+\end{itemize}
+
+The procedure of building the cross compiler in practice is shown in figure~\ref{s390:fig:crosgcc}.
+
+\begin{figure}
+\begin{verbatim}
+$ mount s390-system:/ /foo
+$ cd binutils-2.17
+$ ./configure \
+    --target=s390-ibm-linux-gnu \
+    --with-build-sysroot=/foo \
+    --with-sysroot=/foo
+$ make install
+$ cd gcc-4.1.1
+$ ./configure \
+    --target=s390-ibm-linux-gnu \
+    --prefix=/usr/local \
+    --with-sysroot=/foo \
+    --enable-languages=c
+$ make install
+\end{verbatim}
+\caption{Building an s390 cross compiler with the sysroot feature}
+\label{s390:fig:crosgcc}
+\end{figure}
+
+In the final phase of development, we got a free account at the \emph{IBM community development system} for three months. This account provided us with root access to a ESA/390 virtual machine with 256MB of RAM preinstalled with a GNU/Linux system. Development on that system worked perfectly and it had a more reasonable performance than the emulated system.
+
+
+
+

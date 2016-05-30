@@ -1,0 +1,65 @@
+\section{PowerPC code generator}
+
+The PowerPC code generator was the first to target a 32~bit RISC processor.
+Being RISC, most of the code generation was easily done, working from the Alpha
+code generator as a starting point. Furthermore, the i386 port was well
+underway at that time, so everything was 32~bit clean already.
+
+Unless mentioned otherwise, everything was eventually translated to PowerPC
+machine language almost literally. Especially, exception handling, the data
+segment layout, most of the arithmetic operations, glue functions for calling C
+from generated code and the other way round and functions for thread switching
+are essentially the same as on the earlier RISC ports.
+
+The part of the JVM causing most troubles for the PowerPC port was of course
+the long data type. These 64~bit values had to be split into two 32~bit
+registers in a manner not to disrupt the working of the simple register
+allocator already in place. A very simplistic approach was chosen that permits
+only consecutive registers to be combined into one long value. Every integer
+register is allowed to pair with its successor. To ensure that an argument
+register is not paired with, say, a saved register, the registers available for
+pairing were divided into three separate groups of saved registers, temporary
+registers and argument registers respectively.
+
+\subsection{Calling conventions}
+
+The PowerPC calling conventions required some additional work. Some argument
+register allocation suitable for the Alpha and MIPS calling conventions is
+already done in the stack analysis stage. While the PowerPC scheme could have
+been fitted into the stack analyser as well, it was decided against doing so
+because the stack analysis is already quite complicated and verbose. Adding
+lots of conditionals to support the variety of specific code generators would
+not help making the code any clearer. Therefore, an extra pass was added just
+after the stack analysis that renumbers all the argument registers for use by
+the register allocator.
+
+\subsection{Register allocator}
+
+The register allocator also underwent some adaptions. Allocating register pairs
+for 64~bit values was not much of a problem. Argument register allocation for
+the PowerPC ABI was more difficult because different from Alpha and MIPS and
+was finally overcome with the introduction of the afforementioned additional
+renumbering pass.
+
+Things would have been simpler by using the same calling conventions as on
+Alpha -- after all, the code generator can dictate its own conventions.
+However, generated code can also call C~functions via the BUILTIN instruction,
+so the PowerPC~ABI conventions had to be implemented anyway. The PowerPC~ABI
+also requires a somewhat different stack layout than the one used on Alpha.
+Each calling function must reserve a linkage area for use by the callee where
+all used argument registers can be saved. This linkage area is not used by
+generated code, so a distinction could have been made between calls to C~code
+and calls to Java~code in order to save some stack space. Although the register
+allocator is simple, it is spread out all over the JIT modules and very easy to
+mess up. Thus it was decided against that distinction at the expense of some
+wasted stack space.
+
+\subsection{Long arithmetic}
+
+All bitwise 64~bit operations require the same operation to be carried out
+twice, on each half of the long data. Arithmetic operations like add, sub, neg
+are similar in this regard in that they don't consist of exactly the same
+operation executed twice but nevertheless two separate instructions. Presumably
+some of these operations could be saved by some kind of dependency analysis.
+However, no such analysis is in place in CACAO, so the simple approach was
+taken to always process both halves, even if one of them is just thrown away.

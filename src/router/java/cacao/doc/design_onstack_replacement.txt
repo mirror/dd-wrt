@@ -1,0 +1,232 @@
+ONSTACK REPLACEMENT IN CACAO
+============================
+Author: Edwin Steiner
+
+** This is a design sketch! **
+
+
+Overview
+--------
+
+On the whole, method replacement works like this:
+
+  * a method foo is compiled into a replaceable version fooV1.  fooV1
+  has a set of "replacement points" and for each replacement point it
+  has a description (either a data structure or generated code) how to
+  map the "execution state" at this point to the "source state".
+
+  when the compiler decides to replace fooV2, it does the
+  following:
+
+  * a new version fooV2 of the method is compiled. Together with fooV2
+  the compiler creates a "replacement mapping" that maps each
+  replacement point of fooV1 to a point in fooV2 and specifies how the
+  source state has to be mapped to the execution state at this point.
+
+  * fooV2 replaces fooV1 in the vftbl. From now on all threads that
+  enter foo will got to fooV2.
+
+  IF (per-replacement-point replacement-out code is needed)
+      * If not already done, the compiler creates a chunk of
+      "replacement-out code" for each replacement point of fooV1. If
+      there is pre-generated replacement-out code it may have fields
+      that are set now.
+  ENDIF
+
+  * each replacement point in fooV1 is patched with a jump (or bsr)
+    to the replacement-out code.
+
+  * eventually threads will reach replacement points in fooV1 and be
+  "beamed" to fooV2.
+
+  * fooV1 has to be kept around undefinitely because it is not possible
+  (not feasible?) to determine if there is a thread that may reach fooV1
+  code in the future.
+
+    
+Replacement Points
+------------------
+
+Replacement points must be placed in a way such that there is a _static_
+upper bound to the number of instructions that a thread must execute
+_inside the method body_ until it reaches a replacement point.
+
+NOTE that this does _not_ place an upper bound on the _time_ it takes to
+reach a replacement point, because execution can enter a blocking
+instruction or a method call at any point and take a possibly unlimited
+amount of time to complete that.
+
+CACAO will place a replacement point at method entry and at each target
+of a backward branch.
+
+XXX Is the replacement point at the method entry necessary?
+Replacement-at-entry is performed by the vftbl anyway.
+
+
+Execution State
+---------------
+
+The execution state that has to be transformed during
+onstack replacement consists of:
+
+   1) the program counter
+   
+   2) live CPU registers
+      XXX caution: BSR return values!!
+
+   3a) live local variables and spill slots
+      on the stack
+      XXX caution: BSR return values!!
+
+   3b) the locked object of the method if it is synchronized
+
+   3c) the return address to the caller and the
+      link to the previous activation record
+
+   3d) saved callee-save registers
+
+   
+ad 1) The program counter is in 1-to-1 correspondance to the replacement
+point reached.
+
+ad 2) the register allocator knows which registers are live at the
+replacement point. This information can be encoded either in a special
+data structure or be transformed into generated replacement-out code
+that is created at the same time the method is compiled.
+
+ad 3*) These data are similarily organized for all replacement points in
+a method so we probably want to treat these with common code in order to
+save space.
+
+
+Source State
+------------
+
+The source state is a virtual state comprising:
+
+   1) the Java Bytecode program counter
+
+   2) the values on the Java stack
+
+   3) the values in Java local variables
+
+   4) synchronization state and locked object of the method
+
+   5) the frames (activation records) of Java methods
+      on the VM stack
+
+The source state is "virtual" in the sense that there does not exists a
+real data structure containing these data. However, the source state
+must be reconstructable from the execution state at each replacement
+point.
+
+It does not matter if the source state values are actually constructed
+or if there is a direct translation (execution state V1) -> (execution
+state V2) that uses the source state as a conceptual link
+between these states.
+
+
+One-Step vs. Multi-Step Replacement
+-----------------------------------
+
+Conceptually the actions from reaching the replacement point in fooV1
+to continuing execution in fooV2 are the following:
+
+   1) read the execution state of the fooV1 activation
+
+   2) remove the activation record corresponding to this invocation
+      of fooV1
+
+   3) build an activation record for the (faked)
+      invocation of fooV2.
+
+   4) write the execution state of the fooV2 activation
+
+   5) jump to the fooV2 code
+
+   
+It would be possible to perform all these actions with a single
+big chunk of generated code for each replacement point. I think,
+however, that a clean separation of the phases has many
+advantages.
+
+Phases:
+
+	1) done by generated replacement-out code (possibly
+	   a replacement-point specific part and a method
+	   specific part) or by a general replacement-out
+	   function written in assembler.
+
+	2-3) implemented in C. Some parts are architecture
+	   specific, however, as they depend on the structure
+	   of the stack frames.
+
+	4-5) done by generated replacement-in code or a
+	   general replacement-in function written in assembler.
+
+This separation minimizes platform specific assembler code
+and opens possibilities for debugging/logging that will
+probably be invaluable when implementing this stuff.
+
+
+Replacement-Out Code
+--------------------
+
+OPTION ROC-1: per-replacement-point code
+
+Replacement-out code could look like this:
+
+  replacement_point_jumps_here:
+  	sub   %esp,SIZE_OF_STRUCT
+	mov   REPLACEMENT_POINT_INDEX,ofsindex(%esp)
+	mov   %regX,ofsX(%esp)
+        mov   %regY,ofsX(%esp)
+        jmp   method_specific_code
+
+   /* code for other replacement points */
+
+   method_specific_code:
+        mov   %esp,%eax
+	add   %eax,OFFSET_OF_STACKFRAME_FROM_CURRENT_ESP
+   	mov   %eax,ofsframe(%esp)
+        /* other method specific copying ... */
+        push  %esp /* arg0 */
+	call  method_replace(execution_state *es)
+        
+Note that the current method can be found in the
+stack frame, so we do not have to explicitely pass that
+info. Information on the new code (fooV2) will be
+in the methodinfo.
+
+OPTION ROC-2: general replacement-out function
+
+This option uses a single platform-specific function for
+all replacement points. This requires that the replacement
+points are patched with a _bsr_ instead of a jump, so the
+PC of the replacement point can be found without special
+per-replacement-point code.
+
+per-replacement-point data is stored in a hash indexed
+by the PC of the replacement point.
+
+   PC --indexto--> rplpointinfo
+                      \--ptrto-> codeinfo
+                                    \--ptrto-> methodinfo
+
+The replacement point PC is a safe index because old code
+will never be freed anyway.
+				    
+Splitting methodinfo and codeinfo
+---------------------------------
+
+Recompilation will require that cacao deal with
+a method (repr. by a `methodinfo`) that has several
+realizations in JIT code (`codeinfo` or something
+like that). There will always be a current codeinfo
+and zero or more old codeinfos that have to be
+kept around. (For example we may have to do stack
+traces from pcs in old code.)
+
+
+vim: tw=72
+

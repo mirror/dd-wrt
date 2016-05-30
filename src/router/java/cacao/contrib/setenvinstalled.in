@@ -1,0 +1,6 @@
+# Sets the environment variables properly when GNU Classpath is
+# installed, but CACAO is not.
+
+export PATH=@abs_top_builddir@/src/cacao:$PATH
+export LD_LIBRARY_PATH=@abs_top_builddir@/src/cacao/.libs
+export BOOTCLASSPATH=@abs_top_builddir@/src/classes/vm.zip:@JAVA_RUNTIME_LIBRARY_CLASSES@

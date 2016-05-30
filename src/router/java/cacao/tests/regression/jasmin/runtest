@@ -1,0 +1,125 @@
+#!/bin/bash
+
+VERBOSE=0
+EXITCODE=0
+COLOR=0
+PASSCOLOR=''
+FAILCOLOR=''
+NOCOLOR=''
+ECHOFLAGS=''
+
+if [ -z "$JAVACMD" ] ; then
+	JAVACMD=../../../src/cacao/cacao
+fi
+
+if [ -z "$TIMEOUT" ] ; then
+	TIMEOUT=20
+fi
+
+if [ -n "$TIMEOUTPROG" ] ; then
+	if [ -x "$TIMEOUTPROG" ] ; then
+		echo "$0: using timeout program: $TIMEOUTPROG"
+		echo "$0: timeout value [s]    : $TIMEOUT"
+		TIMEOUTRUN="$TIMEOUTPROG $TIMEOUT"
+	else
+		echo >&2 "$0: warning: timeout program not executable: $TIMEOUTPROG"
+	fi
+fi
+
+if [ -z "$TIMEOUTRUN" ] ; then
+	echo >&2 "$0: info: running without timeout"
+fi
+
+if [ "$1" = "--verbose" ] ; then
+	shift
+	VERBOSE=1
+fi
+
+if [ "$1" = "--color" ] ; then
+	shift
+	COLOR=1
+	PASSCOLOR='\033[1;32m'
+	FAILCOLOR='\033[1;31m'
+	NOCOLOR='\033[0m'
+	ECHOFLAGS='-e'
+fi
+
+echo "java command: $JAVACMD $JAVAFLAGS"
+
+while [ -n "$1" ]
+do
+    TEST="$1"
+    TESTBASENAME=$(basename "$TEST" .j)
+
+    TESTOUT="TESTOUT"
+    TESTEXPECT="TESTEXPECT"
+    TESTLOG="TESTLOG"
+    TESTERR="TESTERR"
+	TESTSIA="TESTSIA"
+
+	EXPECTSTATUS=0
+	CHECKICMD=0
+
+	if grep 'ERROR:' "$TEST" >/dev/null ; then
+		EXPECTSTATUS=1
+		EXPECTERROR=$(grep 'ERROR:.*' "$TEST" | sed "s,.*ERROR:[ `printf \\\t`]*,,")
+	fi
+
+	if grep 'ICMD:' "$TEST" >/dev/null ; then
+		CHECKICMD=1
+		EXPECTICMD=$(grep 'ICMD:.*' "$TEST" | sed "s,.*ICMD:[ `printf \\\t`]*,,")
+	fi
+
+	# run the test
+
+	if [ -z "$TIMEOUTRUN" ] ; then
+		eval $JAVACMD $JAVAFLAGS "$TESTBASENAME" >"$TESTOUT" 2>"$TESTERR"
+	else
+		$TIMEOUTRUN $JAVACMD $JAVAFLAGS "$TESTBASENAME" >"$TESTOUT" 2>"$TESTERR"
+	fi
+	TESTSTATUS=$?
+
+	if [ $TESTSTATUS -ne $EXPECTSTATUS ] ; then
+		echo $ECHOFLAGS "${FAILCOLOR}FAIL: $TESTBASENAME - expected status $EXPECTSTATUS, but got $TESTSTATUS${NOCOLOR}"
+		EXITCODE=1
+	fi
+
+	if [ $EXPECTSTATUS -eq 0 ] ; then
+		grep 'OUTPUT:' "$TEST" | sed "s,.*OUTPUT:[ `printf \\\t`]*,," >"$TESTEXPECT"
+
+		if diff -u "$TESTEXPECT" "$TESTOUT" ; then
+			if [ $TESTSTATUS -eq 0 ] ; then
+				echo $ECHOFLAGS "${PASSCOLOR}PASS: $TESTBASENAME${NOCOLOR}"
+			fi
+		else
+			echo $ECHOFLAGS "${FAILCOLOR}FAIL: $TESTBASENAME - wrong output${NOCOLOR}"
+			EXITCODE=1
+		fi
+
+		if [ "$VERBOSE" -eq "1" ] ; then
+			eval $JAVACMD $JAVAFLAGS -sia "$TESTBASENAME" >"$TESTLOG" || exit 2
+			./show "$TESTLOG"
+		fi
+	else
+		if grep "$EXPECTERROR" "$TESTERR" >/dev/null ; then
+			echo $ECHOFLAGS "${PASSCOLOR}PASS: $TESTBASENAME - got expected error: $EXPECTERROR${NOCOLOR}"
+		else
+			echo $ECHOFLAGS "${FAILCOLOR}FAIL: $TESTBASENAME - did not get expected error: $EXPECTERROR${NOCOLOR}"
+			EXITCODE=1
+		fi
+	fi
+
+	if [ "$CHECKICMD" -ne 0 ] ; then
+		rm -f "$TESTSIA"
+		touch "$TESTSIA"
+		eval $JAVACMD $JAVAFLAGS -sia "$TESTBASENAME" >"$TESTSIA" 2>/dev/null
+		cat "$TESTSIA" | sed -n '/^'"$TESTBASENAME"'\.main/,$p' | sed '/^=====.*flags: -1/,$d' | grep "$EXPECTICMD"
+	fi
+
+    shift
+done
+
+rm -f "$TESTOUT" "$TESTEXPECT" "$TESTLOG" "$TESTERR"
+
+exit $EXITCODE
+

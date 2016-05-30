@@ -1,0 +1,102 @@
+./runtest: warning: running without timeout
+java command: /home/tutors/pm/cacao-dev/inst-cacao-s390/bin/cacao 
+jasmin command: /home/tutors/pm/cacao-dev/inst-cacao-s390/bin/cacao  -cp /home/tutors/tbfg/jasmin-sable.jar jasmin.Main
+PASS: test
+PASS: test_coalesce_simple_store
+PASS: test_dup
+PASS: test_dup2
+PASS: test_dup2_x1
+PASS: test_dup2_x2
+PASS: test_dup_x1
+PASS: test_dup_x1_interface_slots
+PASS: test_dup_x2
+PASS: test_dup_x2_interface_slots
+PASS: test_dup_x2_to_dup_x1
+PASS: test_iinc
+PASS: test_load_store_conflict
+PASS: test_load_store_conflict_by_exception
+PASS: test_load_store_conflict_by_exception_not_thrown
+PASS: test_load_store_conflict_via_dup
+PASS: test_load_store_conflict_via_swap
+PASS: test_many_dup
+PASS: test_many_dup2
+PASS: test_many_dup2_x1
+PASS: test_many_dup2_x2
+PASS: test_many_dup_x1
+PASS: test_many_dup_x2
+PASS: test_many_monitors
+PASS: test_many_swap
+PASS: test_no_store_load_conflict
+PASS: test_no_store_store_conflict
+PASS: test_nullpointerexception_monitorexit
+PASS: test_simple_load_store
+PASS: test_store_load_conflict
+PASS: test_store_store_conflict
+PASS: test_store_store_conflict_2
+PASS: test_swap
+PASS: test_swap_interface_slots
+PASS: test_swap_locals
+PASS: test_verify_fail_aload_retaddress - got expected error: VerifyError
+PASS: test_verify_fail_areturn_wrong_reftype - got expected error: VerifyError\|LinkageError
+PASS: test_verify_fail_athrow_wrong_reftype - got expected error: VerifyError\|LinkageError
+PASS: test_verify_fail_athrow_wrong_reftype_unresolved - got expected error: VerifyError\|LinkageError
+PASS: test_verify_fail_backward_with_new_on_stack - got expected error: VerifyError
+PASS: test_verify_fail_double_local_index - got expected error: VerifyError
+PASS: test_verify_fail_double_overwritten - got expected error: VerifyError
+PASS: test_verify_fail_getfield_basic_type_instance - got expected error: VerifyError
+PASS: test_verify_fail_getfield_basic_type_lookup - got expected error: NoSuchFieldError
+PASS: test_verify_fail_getfield_basic_type_value - got expected error: VerifyError
+PASS: test_verify_fail_handler_bad_local - got expected error: VerifyError
+PASS: test_verify_fail_init_nullpointer - got expected error: VerifyError
+PASS: test_verify_fail_invoke_basic_type - got expected error: VerifyError
+PASS: test_verify_fail_invoke_return_basic_type - got expected error: VerifyError
+PASS: test_verify_fail_ireturn_wrong_type - got expected error: VerifyError
+PASS: test_verify_fail_jsr_called_with_different_stackdepths - got expected error: VerifyError
+PASS: test_verify_fail_jsr_exceptions - got expected error: VerifyError
+PASS: test_verify_fail_jsr_handler_in_sub - got expected error: VerifyError
+PASS: test_verify_fail_jsr_merge_subroutines - got expected error: VerifyError
+PASS: test_verify_fail_jsr_merge_subroutines_via_stack - got expected error: VerifyError
+FAIL: test_verify_fail_jsr_multiple_returns - expected status 1, but got 0
+	* fails on i386 too
+FAIL: test_verify_fail_jsr_multiple_returns - did not get expected error: VerifyError
+	* fails on i386 too
+PASS: test_verify_fail_jsr_polymorphic_pop - got expected error: VerifyError
+PASS: test_verify_fail_load_wrong_type - got expected error: VerifyError
+PASS: test_verify_fail_load_wrong_type_within_block - got expected error: VerifyError
+PASS: test_verify_fail_local_index - got expected error: VerifyError
+PASS: test_verify_fail_long_local - got expected error: VerifyError
+PASS: test_verify_fail_long_local_index - got expected error: VerifyError
+PASS: test_verify_fail_long_overwritten - got expected error: VerifyError
+PASS: test_verify_fail_merge_different_new_objects - got expected error: VerifyError
+PASS: test_verify_fail_merge_init_nullpointer - got expected error: VerifyError
+PASS: test_verify_fail_putfield_basic_type_instance - got expected error: VerifyError
+PASS: test_verify_fail_putfield_basic_type_lookup - got expected error: NoSuchFieldError
+PASS: test_verify_fail_putfield_basic_type_value - got expected error: VerifyError
+PASS: test_verify_fail_putfieldconst_basic_type_instance - got expected error: VerifyError
+PASS: test_verify_fail_putfieldconst_basic_type_value - got expected error: VerifyError
+PASS: test_verify_fail_putstatic_basic_type_value - got expected error: VerifyError
+PASS: test_verify_fail_putstaticconst_basic_type_value - got expected error: VerifyError
+PASS: test_verify_fail_ret_bad_type - got expected error: VerifyError
+PASS: test_verify_fail_ret_uninit_var - got expected error: VerifyError
+PASS: test_verify_fail_retaddr_as_object - got expected error: VerifyError
+PASS: test_verify_fail_split_local - got expected error: VerifyError
+PASS: test_verify_ok_jsr
+PASS: test_verify_ok_jsr_handler_in_sub2
+PASS: test_verify_ok_jsr_improper_nesting
+PASS: test_verify_ok_jsr_multiple_blocks
+PASS: test_verify_ok_jsr_pop
+PASS: test_verify_ok_jsr_push
+PASS: test_verify_ok_jsr_subroutine_loops_to_start
+PASS: test_verify_ok_jsr_swap
+PASS: test_verify_ok_jsr_through_variable
+PASS: test_verify_ok_local_as_retaddr_and_reference
+PASS: test_verify_ok_overwrite_local_type
+PASS: test_verify_ok_untyped_local
+PASS: test_verify_unspecced_ok_backward_with_new_in_local
+PASS: test_verify_unspecced_ok_backward_with_new_on_stack
+PASS: test_verify_unspecced_ok_new_in_local_within_try
+
+Not run, because they run for too long. On i386 they run for too long too.
+
+test_verify_fail_jsr_recursion.j
+test_verify_fail_jsr_recursion_terminates.j

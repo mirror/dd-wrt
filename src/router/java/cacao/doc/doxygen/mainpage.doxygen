@@ -1,0 +1,59 @@
+/* doc/doxygen/mainpage.doxygen - Doxygen mainpage
+
+   Copyright (C) 1996-2013
+   CACAOVM - Verein zur Foerderung der freien virtuellen Maschine CACAO
+
+   This file is part of CACAO.
+
+   This program is free software; you can redistribute it and/or
+   modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation; either version 2, or (at
+   your option) any later version.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+   02110-1301, USA.
+
+*/
+
+/**
+ * @mainpage CACAO %VM Doxygen Manual
+ *
+ * This is the Doxygen documentation of the
+ * <a href="https://www.cacaojvm.org/">CACAO %VM project</a>.
+ *
+ * <p>
+ * CACAO is a Java Virtual Machine (JVM) which uses Just-In-Time (JIT)
+ * compilation to execute Java methods natively. CACAO uses
+ * <a href="http://www.gnu.org/software/classpath/">GNU Classpath</a> or
+ * <a href="http://openjdk.java.net/">OpenJDK</a> or
+ * <a href="https://java.net/projects/phoneme">phoneME</a> as Java runtime library.
+ * </p>
+ *
+ * This documentation is still in its early stages but we are working on it. Honestly.
+ *
+ * See the Modules @htmlonly(<a href="modules.html">here</a>)@endhtmlonly
+ * or Related Pages @htmlonly(<a href="pages.html">here</a>)@endhtmlonly
+ * for an overview of currently documented pieces.
+ */
+
+
+/*
+ * These are local overrides for various environment variables in Emacs.
+ * Please do not remove this and leave it at the end of the file, where
+ * Emacs will automagically detect them.
+ * ---------------------------------------------------------------------
+ * Local variables:
+ * mode: c++
+ * indent-tabs-mode: t
+ * c-basic-offset: 4
+ * tab-width: 4
+ * End:
+ * vim:noexpandtab:sw=4:ts=4:ft=cpp
+ */
