@@ -247,9 +247,9 @@ Properties::Properties()
 
 		boot_class_path = MNEW(char, len);
 
-		strcpy(boot_class_path, CACAO_VM_ZIP);
+		strcpy(boot_class_path, "/usr/share/cacao/vm.zip");
 		strcat(boot_class_path, ":");
-		strcat(boot_class_path, JAVA_RUNTIME_LIBRARY_CLASSES);
+		strcat(boot_class_path, "/usr/share/classpath/glibj.zip");
 
 # elif defined(WITH_JAVA_RUNTIME_LIBRARY_OPENJDK)
 
