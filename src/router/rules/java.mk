@@ -50,8 +50,8 @@ java-configure:
 java:
 	-make -C $(TOP)/java/classpath
 	-make -C $(TOP)/java/classpath
-	#make -C $(TOP)/java/jamvm GLIBJ_ZIP=$(TOP)/java/classpath/lib/glibj.zip
-	make -C $(TOP)/java/cacao
+	make -C $(TOP)/java/jamvm GLIBJ_ZIP=$(TOP)/java/classpath/lib/glibj.zip
+	#make -C $(TOP)/java/cacao
 
 
 java-clean:
