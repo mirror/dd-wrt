@@ -1276,8 +1276,6 @@ int __init ar7240_platform_init(void)
 	ar71xx_eth0_data.speed = SPEED_100;
 	ar71xx_add_device_eth(0);	
     #elif CONFIG_E380AC
-#define CF_WR680AC_LAN_PHYMASK              BIT(0)
-#define CF_WR680AC_WAN_PHYMASK              BIT(5)
 	ar71xx_add_device_mdio(0, 0x0);
 	mdiobus_register_board_info(cf_e380ac_mdio0_info,
 				    ARRAY_SIZE(cf_e380ac_mdio0_info));
