@@ -486,18 +486,18 @@ static void parse_upnp_forward()
 		}
 
 		if (!strcmp(proto, "tcp") || !strcmp(proto, "both")) {
-			save2file("-A PREROUTING -i %s -p tcp -d %s --dport %s " "-j DNAT --to-destination %s%d:%s\n", wan, wanaddr, wan_port0, lan_cclass, get_single_ip(lan_ipaddr, 3), lan_port0);
+			save2file("-A PREROUTING -i %s -p tcp -d %s --dport %s -j DNAT --to-destination %s%d:%s\n", wan, wanaddr, wan_port0, lan_cclass, get_single_ip(lan_ipaddr, 3), lan_port0);
 
-			snprintf(buff, sizeof(buff), "-A FORWARD -p tcp " "-m tcp -d %s%d --dport %s -j %s\n", lan_cclass, get_single_ip(lan_ipaddr, 3), lan_port0, log_accept);
+			snprintf(buff, sizeof(buff), "-A FORWARD -p tcp -m tcp -d %s%d --dport %s -j %s\n", lan_cclass, get_single_ip(lan_ipaddr, 3), lan_port0, log_accept);
 
 			count += strlen(buff) + 1;
 			suspense = realloc(suspense, count);
 			strcat(suspense, buff);
 		}
 		if (!strcmp(proto, "udp") || !strcmp(proto, "both")) {
-			save2file("-A PREROUTING -i %s -p udp -d %s --dport %s " "-j DNAT --to-destination %s%d:%s\n", wan, wanaddr, wan_port0, lan_cclass, get_single_ip(lan_ipaddr, 3), lan_port0);
+			save2file("-A PREROUTING -i %s -p udp -d %s --dport %s -j DNAT --to-destination %s%d:%s\n", wan, wanaddr, wan_port0, lan_cclass, get_single_ip(lan_ipaddr, 3), lan_port0);
 
-			snprintf(buff, sizeof(buff), "-A FORWARD -p udp " "-m udp -d %s%d --dport %s -j %s\n", lan_cclass, get_single_ip(lan_ipaddr, 3), lan_port0, log_accept);
+			snprintf(buff, sizeof(buff), "-A FORWARD -p udp -m udp -d %s%d --dport %s -j %s\n", lan_cclass, get_single_ip(lan_ipaddr, 3), lan_port0, log_accept);
 
 			count += strlen(buff) + 1;
 			suspense = realloc(suspense, count);
@@ -685,7 +685,7 @@ static void nat_prerouting(void)
 	char tmp[1024];
 	if (remotemanage) {
 		if (remote_any) {
-			save2file("-A PREROUTING -p tcp -d %s --dport %s " "-j DNAT --to-destination %s:%d\n", wanaddr, nvram_safe_get("http_wanport"), lan_ip, web_lanport);
+			save2file("-A PREROUTING -p tcp -d %s --dport %s -j DNAT --to-destination %s:%d\n", wanaddr, nvram_safe_get("http_wanport"), lan_ip, web_lanport);
 		} else {
 			sscanf(remote_ip, "%s %s", from, to);
 			wordlist = range(from, get_complete_ip(from, to), tmp);
@@ -701,7 +701,7 @@ static void nat_prerouting(void)
 	 */
 	if (remotessh) {
 		if (remote_any) {
-			save2file("-A PREROUTING -p tcp -d %s --dport %s " "-j DNAT --to-destination %s:%s\n", wanaddr, nvram_safe_get("sshd_wanport"), lan_ip, nvram_safe_get("sshd_port"));
+			save2file("-A PREROUTING -p tcp -d %s --dport %s -j DNAT --to-destination %s:%s\n", wanaddr, nvram_safe_get("sshd_wanport"), lan_ip, nvram_safe_get("sshd_port"));
 		} else {
 			sscanf(remote_ip, "%s %s", from, to);
 
@@ -720,7 +720,7 @@ static void nat_prerouting(void)
 	 */
 	if (remotetelnet) {
 		if (remote_any) {
-			save2file("-A PREROUTING -p tcp -d %s --dport %s " "-j DNAT --to-destination %s:23\n", wanaddr, nvram_safe_get("telnet_wanport"), lan_ip);
+			save2file("-A PREROUTING -p tcp -d %s --dport %s -j DNAT --to-destination %s:23\n", wanaddr, nvram_safe_get("telnet_wanport"), lan_ip);
 		} else {
 			sscanf(remote_ip, "%s %s", from, to);
 
@@ -2561,9 +2561,7 @@ static void filter_table(void)
 	if (has_gateway()) {
 		if ((nvram_match("log_enable", "1"))
 		    && (nvram_match("log_dropped", "1")))
-			save2file
-			    ("-A logdrop -m state --state NEW -j LOG --log-prefix \"DROP \" "
-			     "--log-tcp-sequence --log-tcp-options --log-ip-options\n-A logdrop -m state --state INVALID -j LOG --log-prefix \"DROP \" --log-tcp-sequence --log-tcp-options --log-ip-options\n");
+			save2file("-A logdrop -m state --state NEW -j LOG --log-prefix \"DROP \" --log-tcp-sequence --log-tcp-options --log-ip-options\n-A logdrop -m state --state INVALID -j LOG --log-prefix \"DROP \" --log-tcp-sequence --log-tcp-options --log-ip-options\n");
 	} else {
 		if ((nvram_match("log_enable", "1"))
 		    && (nvram_match("log_dropped", "1")))
