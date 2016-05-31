@@ -5538,6 +5538,12 @@ int led_control(int type, int act)
 		disconnected_gpio = 0x00f;
 		power_gpio = 0x112;
 		diag_gpio = 0x012;
+#elif HAVE_WR841V11
+		power_gpio = 0x101;
+		diag_gpio = 0x001;
+		ses_gpio = 0x103;
+		sec0_gpio = 0x103;
+		connected_gpio = 0x102;
 #elif HAVE_WR841V9
 		diag_gpio = 0x103;
 #elif HAVE_WR842V2
