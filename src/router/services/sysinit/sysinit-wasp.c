@@ -155,6 +155,11 @@ void start_sysinit(void)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 2 3 4");
+#elif defined (HAVE_XD3200)
+	eval("swconfig", "dev", "eth0", "set", "reset", "1");
+	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
+	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2");
+	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 3");
 #elif defined (HAVE_E355AC)
 #elif defined (HAVE_WR615N)
 #elif defined (HAVE_E380AC)
@@ -239,7 +244,7 @@ void start_sysinit(void)
 #if !defined(HAVE_WR650AC) && !defined(HAVE_E355AC) && !defined(HAVE_E325N) && !defined(HAVE_E380AC) && !defined(HAVE_WR615N)
 #ifndef HAVE_JWAP606
 	eval("ifconfig", "eth0", "up");
-#if defined(HAVE_MMS344) && !defined(HAVE_DIR862)
+#if (defined(HAVE_MMS344) || defined(HAVE_XD3200)) && !defined(HAVE_DIR862)
 	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 	eval("vconfig", "add", "eth0", "1");
 	eval("vconfig", "add", "eth0", "2");
@@ -266,6 +271,19 @@ void start_sysinit(void)
 	FILE *out = fopen("/tmp/archerc7-board.bin", "wb");
 	if (fp) {
 		fseek(fp, 0x10000 + 0x5000, SEEK_SET);
+		int i;
+		for (i = 0; i < 2116; i++)
+			putc(getc(fp), out);
+		fclose(fp);
+		fclose(out);
+		eval("rm", "-f", "/tmp/ath10k-board.bin");
+		eval("ln", "-s", "/tmp/archerc7-board.bin", "/tmp/ath10k-board.bin");
+	}
+#elif defined(HAVE_XD3200)
+	FILE *fp = fopen("/dev/mtdblock/5", "rb");
+	FILE *out = fopen("/tmp/archerc7-board.bin", "wb");
+	if (fp) {
+		fseek(fp, 0x5000, SEEK_SET);
 		int i;
 		for (i = 0; i < 2116; i++)
 			putc(getc(fp), out);
@@ -377,6 +395,7 @@ void start_sysinit(void)
 	setWirelessLed(0, 12);
 #elif  HAVE_E325N
 	setWirelessLed(0, 0);
+#elif  HAVE_XD3200
 #elif  HAVE_E380AC
 	setWirelessLed(0, 0);
 	setWirelessLed(1, 2);
