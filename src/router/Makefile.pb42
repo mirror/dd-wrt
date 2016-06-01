@@ -397,6 +397,11 @@ ifeq ($(CONFIG_E380AC),y)
 else
 	echo "# CONFIG_E380AC is not set" >> $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_XD3200),y)
+	echo CONFIG_XD3200=y >> $(LINUXDIR)/.config
+else
+	echo "# CONFIG_XD3200 is not set" >> $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_WZR450HP2),y)
 	echo CONFIG_WZR450HP2=y >> $(LINUXDIR)/.config
 else
