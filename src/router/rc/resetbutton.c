@@ -836,6 +836,12 @@ static void handle_ses(void)
 			sysprintf("startstop radio_on");
 #endif
 #endif
+#ifdef HAVE_ERC
+#ifdef HAVE_HORNET
+	dd_syslog(LOG_DEBUG, "XXXXXXXX: TURN LED ON\n");
+	set_gpio(1, 1);
+#endif
+#endif
 
 			ses_mode = 0;
 			break;
@@ -852,7 +858,12 @@ static void handle_ses(void)
 			sysprintf("startstop radio_off");
 #endif
 #endif
-
+#ifdef HAVE_ERC
+#ifdef HAVE_HORNET
+	dd_syslog(LOG_DEBUG, "XXXXXXXX: TURN LED OFF\n");
+	set_gpio(1, 0);
+#endif
+#endif
 			ses_mode = 1;
 			break;
 		}
@@ -1012,8 +1023,8 @@ void period_check(int sig)
 	val |= get_gpio(5) << 5;	//aoss pushbutton
 #elif defined(HAVE_CARAMBOLA)
 #if defined(HAVE_ERC)
-	wifigpio = 0x117;
-	val |= get_gpio(23) << 23;
+//	wifigpio = 0x117;
+//	val |= get_gpio(23) << 23;
 #endif
 #elif defined(HAVE_HORNET)
 	sesgpio = 0x00b;
