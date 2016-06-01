@@ -915,6 +915,8 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 								list[count].passive_scan = 1;
 							if (rd->reg_rules[rrc].flags & RRF_NO_IBSS)
 								list[count].no_ibss = 1;
+							list[count].ht40minus = 0;
+							list[count].ht40plus = 0;
 							//                              fprintf(stderr,"freq %d, htrange %d, startfreq %d, stopfreq %d\n", freq_mhz, htrange, startfreq, stopfreq);
 							if (regmaxbw == 40 || regmaxbw == 80 || regmaxbw == 160) {
 								if ((freq_mhz - htrange) >= startfreq) {
