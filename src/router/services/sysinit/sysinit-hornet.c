@@ -173,6 +173,9 @@ void start_sysinit(void)
 #ifdef HAVE_MR3020
 	setEthLED(17, "eth1");
 #endif
+#ifdef HAVE_WR701V2
+	setEthLED(17, "eth1");
+#endif
 #endif
 #ifdef HAVE_ERC
 	eval("swconfig", "dev", "eth1", "set", "reset", "1");
