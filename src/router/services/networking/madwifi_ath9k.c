@@ -452,14 +452,18 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 						break;
 					i++;
 				}
-				if (chan[i].ht40minus) {
-					sprintf(ht, "HT40-");
-					iht = -1;
-				} else if (chan[i].ht40plus) {
-					sprintf(ht, "HT40+");
-					iht = 1;
-				} else {
+				if (nvram_default_match(bw, "20", "20")) {
 					sprintf(ht, "HT20");
+				} else if (nvram_match(bw, "80") || nvram_match(bw, "40") || nvram_match(bw, "2040") || nvram_match(bw, "160") || nvram_match(bw, "80+80")) {
+					if (chan[i].ht40minus) {
+						sprintf(ht, "HT40-");
+						iht = -1;
+					} else if (chan[i].ht40plus) {
+						sprintf(ht, "HT40+");
+						iht = 1;
+					} else {
+						sprintf(ht, "HT20");
+					}
 				}
 				free_mac80211_ac(acs);
 			} else {
