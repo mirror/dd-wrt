@@ -48,6 +48,8 @@
 #define HWID_TL_WR740ND_V3WW	0x07400300
 #define HWID_TL_WR740ND_V4	0x07400004
 #define HWID_TL_WR740ND_V5	0x07400005
+#define HWID_TL_WA701N_V1	0x07010001
+#define HWID_TL_WA701N_V2	0x07010002
 #define HWID_TL_WR703N_V1	0x07030101
 #define HWID_TL_MR3020		0x30200001
 #define HWID_TL_MR3220		0x32200001
@@ -264,6 +266,22 @@ static struct board_info boards[] = {
 	},	{
 		.id		= "TL-WR703Nv1",
 		.hw_id		= HWID_TL_WR703N_V1,
+		.hw_rev		= 1,
+		.fw_max_len	= 0x3c0000,
+		.kernel_la	= 0x80060000,
+		.kernel_ep	= 0x80060000,
+		.rootfs_ofs	= 0xf0000,
+	},	{
+		.id		= "TL-WA701Nv1",
+		.hw_id		= HWID_TL_WA701N_V1,
+		.hw_rev		= 1,
+		.fw_max_len	= 0x3c0000,
+		.kernel_la	= 0x80060000,
+		.kernel_ep	= 0x80060000,
+		.rootfs_ofs	= 0xf0000,
+	},	{
+		.id		= "TL-WA701Nv2",
+		.hw_id		= HWID_TL_WA701N_V2,
 		.hw_rev		= 1,
 		.fw_max_len	= 0x3c0000,
 		.kernel_la	= 0x80060000,
