@@ -814,7 +814,7 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 	struct wifi_channels *list = NULL;
 	int rem, rem2, freq_mhz, phy, rrc, startfreq, stopfreq, range, regmaxbw, run;
 	int regfound = 0;
-	int htrange = 50;
+	int htrange = 60;
 	int chancount = 0;
 	int count = 0;
 	char sc[32];
