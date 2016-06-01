@@ -2929,6 +2929,11 @@ int internal_getRouterBrand()
 	nvram_default_get("ath0_txantenna", "1");
 	setRouter("TP-Link TL-WR710N v2");
 	return ROUTER_BOARD_PB42;
+#elif HAVE_WA701V2
+	nvram_default_get("ath0_rxantenna", "1");
+	nvram_default_get("ath0_txantenna", "1");
+	setRouter("TP-Link TL-WA701ND v2");
+	return ROUTER_BOARD_PB42;
 #elif HAVE_WR703
 	nvram_default_get("ath0_rxantenna", "1");
 	nvram_default_get("ath0_txantenna", "1");
@@ -5417,7 +5422,10 @@ int led_control(int type, int act)
 #elif HAVE_WR710
 		power_gpio = 0x11b;
 		diag_gpio = 0x01b;
-		usb_power = 0x008;
+#elif HAVE_WA701V2
+		diag_gpio = 0x11b;
+		ses_gpio = 0x001;
+		sec0_gpio = 0x001;
 #elif HAVE_WR703
 		diag_gpio = 0x11b;
 		ses_gpio = 0x001;
