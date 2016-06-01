@@ -814,7 +814,7 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 	struct wifi_channels *list = NULL;
 	int rem, rem2, freq_mhz, phy, rrc, startfreq, stopfreq, range, regmaxbw, run;
 	int regfound = 0;
-	int htrange = 30;
+	int htrange = 50;
 	int chancount = 0;
 	int count = 0;
 	char sc[32];
@@ -919,6 +919,7 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 							list[count].ht40plus = 0;
 							//                              fprintf(stderr,"freq %d, htrange %d, startfreq %d, stopfreq %d\n", freq_mhz, htrange, startfreq, stopfreq);
 							if (regmaxbw == 40 || regmaxbw == 80 || regmaxbw == 160) {
+								fprintf(stderr,"freq %d, htrange %d, startfreq %d\n",freq_mhz,htrange,startfreq);
 								if ((freq_mhz - htrange) >= startfreq) {
 									list[count].ht40minus = 1;
 								}
