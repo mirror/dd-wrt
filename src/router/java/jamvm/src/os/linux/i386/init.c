@@ -19,7 +19,12 @@
  * Foundation, 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
-#include <fpu_control.h>
+#define _FPU_EXTENDED 0x300	/* libm requires double extended precision.  */
+#define _FPU_DOUBLE   0x200
+#define _FPU_GETCW(cw) __asm__ __volatile__ ("fnstcw %0" : "=m" (*&cw))
+#define _FPU_SETCW(cw) __asm__ __volatile__ ("fldcw %0" : : "m" (*&cw))
+typedef unsigned int fpu_control_t __attribute__ ((__mode__ (__HI__)));
+
 
 /* Change floating point precision to double (64-bit) from
  * the extended (80-bit) Linux default. */
