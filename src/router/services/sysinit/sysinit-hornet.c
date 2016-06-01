@@ -173,7 +173,7 @@ void start_sysinit(void)
 #ifdef HAVE_MR3020
 	setEthLED(17, "eth1");
 #endif
-#ifdef HAVE_WR701V2
+#ifdef HAVE_WA701V2
 	setEthLED(17, "eth1");
 #endif
 #endif
