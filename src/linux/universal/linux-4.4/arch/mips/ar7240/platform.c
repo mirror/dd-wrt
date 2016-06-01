@@ -973,6 +973,11 @@ int __init ar7240_platform_init(void)
 	ee = (u8 *)KSEG1ADDR(0x1f021000);
 #endif
 
+#ifdef CONFIG_XD3200
+	mac = (u8 *)KSEG1ADDR(0x1fff0000);
+	ee = (u8 *)KSEG1ADDR(0x1fff1000);
+#endif
+
 #ifdef CONFIG_WASP_SUPPORT
 #define DB120_MAC0_OFFSET	0
 #define DB120_MAC1_OFFSET	6
@@ -991,6 +996,10 @@ int __init ar7240_platform_init(void)
 	mac = (u8 *)KSEG1ADDR(0x1fff0000);
 	ath79_init_mac(mac0, mac, -1);
 	ath79_init_mac(mac1, mac, 0);
+    #elif CONFIG_XD3200
+	mac = (u8 *)KSEG1ADDR(0x1fff0000);
+	ath79_init_mac(mac0, mac, -1);
+	ath79_init_mac(mac1, mac, 0);	
     #elif CONFIG_E380AC
 	mac = (u8 *)KSEG1ADDR(0x1f020000);
 	ath79_init_mac(mac0, mac, -1);
@@ -1123,6 +1132,8 @@ int __init ar7240_platform_init(void)
 	/* flush write */
 	__raw_readl(base + AR934X_GMAC_REG_ETH_CFG);
 	iounmap(base);
+    #elif CONFIG_XD3200
+//    	ap136_gmac_setup(QCA955X_ETH_CFG_RGMII_EN);
     #elif CONFIG_E380AC
     	ap136_gmac_setup(QCA955X_ETH_CFG_RGMII_EN);
     #elif CONFIG_WR615N
@@ -1275,6 +1286,22 @@ int __init ar7240_platform_init(void)
 	ar71xx_eth0_data.duplex = DUPLEX_FULL;
 	ar71xx_eth0_data.speed = SPEED_100;
 	ar71xx_add_device_eth(0);	
+    #elif CONFIG_XD3200
+#define CF_WR680AC_LAN_PHYMASK              BIT(0)
+#define CF_WR680AC_WAN_PHYMASK              BIT(5)
+	ar71xx_add_device_mdio(0, 0x0);
+	mdiobus_register_board_info(ap152_mdio0_info,
+				    ARRAY_SIZE(ap152_mdio0_info));
+
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac0, 1);
+	/* GMAC0 is connected to the RMGII interface */
+	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio0_device.dev;
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_SGMII;
+	ar71xx_eth0_data.speed = SPEED_1000;
+	ar71xx_eth0_data.duplex = DUPLEX_FULL;
+	ar71xx_eth0_data.phy_mask = BIT(0);
+	
+	ar71xx_add_device_eth(0);
     #elif CONFIG_E380AC
 #define CF_WR680AC_LAN_PHYMASK              BIT(0)
 #define CF_WR680AC_WAN_PHYMASK              BIT(5)
@@ -1534,6 +1561,7 @@ int __init ar7240_platform_init(void)
 	#ifndef CONFIG_E355AC
 	#ifndef CONFIG_WR615N
 	#ifndef CONFIG_E380AC
+	#ifndef CONFIG_XD3200
 	#ifndef CONFIG_E325N
 	#ifdef CONFIG_DIR859
 	printk(KERN_INFO "gpio mdio for AP152\n");
@@ -1573,6 +1601,7 @@ int __init ar7240_platform_init(void)
 	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio0_device.dev;
 	ar71xx_eth0_pll_data.pll_1000 = 0x06000000;
 	ar71xx_add_device_eth(0);
+	#endif
 	#endif
 	#endif
 	#endif

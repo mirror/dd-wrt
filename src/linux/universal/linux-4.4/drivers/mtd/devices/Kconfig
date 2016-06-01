@@ -306,6 +306,9 @@ config E380AC
 	bool "support for E380AC"
 	depends on DIR859
 	select COMFAST_WATCHDOG
+config XD3200
+	bool "support for XD3200"
+	depends on DIR859
 config E325N
 	bool "support for E325N"
 	depends on DIR859
