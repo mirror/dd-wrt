@@ -1429,7 +1429,9 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 					continue;
 				}
 #endif
-
+				if (channelbw > 20 && !chan[i].ht40minus && !chan[i].ht40plus) {
+					continue; // do not show channels where bandwidth is not available
+				}
 				cprintf("%d\n", chan[i].channel);
 				cprintf("%d\n", chan[i].freq);
 
