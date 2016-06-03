@@ -814,14 +814,16 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 	struct wifi_channels *list = NULL;
 	int rem, rem2, freq_mhz, phy, rrc, startfreq, stopfreq, range, regmaxbw, run;
 	int regfound = 0;
-	int htrange = 60;
+	int htrange = 40;
 	int chancount = 0;
 	int count = 0;
 	char sc[32];
 	int skip = 1;
 	int rrdcount = 0;
 	if (max_bandwidth_khz == 80)
-		htrange = 90;
+		htrange = 80;
+	if (max_bandwidth_khz == 160)
+		htrange = 160;
 	phy = mac80211_get_phyidx_by_vifname(interface);
 	if (phy == -1)
 		return NULL;
@@ -858,7 +860,7 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 				if (skip && tb[NL80211_FREQUENCY_ATTR_DISABLED])
 					continue;
 				regfound = 0;
-				if (max_bandwidth_khz == 40 || max_bandwidth_khz == 80)
+				if (max_bandwidth_khz == 40 || max_bandwidth_khz == 80 || max_bandwidth_khz == 160)
 					range = 10;
 				else
 					// for 10/5mhz this should be fine 
@@ -868,15 +870,61 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 					rrdcount = 1;
 				else
 					rrdcount = rd->n_reg_rules;
-				for (rrc = 0; rrc < rrdcount; rrc++) {
-					regfreq = rd->reg_rules[rrc].freq_range;
-					startfreq = regfreq.start_freq_khz / 1000;
-					stopfreq = regfreq.end_freq_khz / 1000;
-					regmaxbw = regfreq.max_bandwidth_khz / 1000;
+				//for (rrc = 0; rrc < rrdcount; rrc++)
+				{
+					int cc;
+					int isband = 0;
+					if (freq_mhz >= 4900)
+						isband = 1;
+					if (freq_mhz >= 5500)
+						isband = 2;
+					startfreq = 0;
+					stopfreq = 0;
+					switch (isband) {
+					case 0:
+						for (cc = 0; cc < rrdcount; cc++) {
+							regfreq = rd->reg_rules[cc].freq_range;
+							if (!startfreq && regfreq.start_freq_khz > 2200000 && regfreq.start_freq_khz < 4900000) {
+								startfreq = regfreq.start_freq_khz / 1000;
+							}
+							if (regfreq.end_freq_khz <= 2700000) {
+								regmaxbw = regfreq.max_bandwidth_khz / 1000;
+								stopfreq = regfreq.end_freq_khz / 1000;
+							}
+						}
+						break;
+					case 1:
+						for (cc = 0; cc < rrdcount; cc++) {
+							regfreq = rd->reg_rules[cc].freq_range;
+							if (!startfreq && regfreq.start_freq_khz > 4900000 && regfreq.start_freq_khz <= 5350000) {
+								startfreq = regfreq.start_freq_khz / 1000;
+							}
+							if (regfreq.end_freq_khz <= 5350000 && regfreq.end_freq_khz > 2700000) {
+								regmaxbw = regfreq.max_bandwidth_khz / 1000;
+								stopfreq = regfreq.end_freq_khz / 1000;
+							}
+						}
+						break;
+					case 2:
+						for (cc = 0; cc < rrdcount; cc++) {
+							regfreq = rd->reg_rules[cc].freq_range;
+							if (!startfreq && regfreq.start_freq_khz > 5350000 && regfreq.start_freq_khz <= 5500000) {
+								startfreq = regfreq.start_freq_khz / 1000;
+							}
+							if (regfreq.end_freq_khz <= 6200000 && regfreq.end_freq_khz > 5500000) {
+								regmaxbw = regfreq.max_bandwidth_khz / 1000;
+								stopfreq = regfreq.end_freq_khz / 1000;
+							}
+						}
+						break;
+					}
+//					fprintf(stderr, "pre: freq %d, htrange %d, startfreq %d stopfreq %d, regmaxbw %d\n", freq_mhz, htrange, startfreq, stopfreq, regmaxbw);
+
+//                                      regfreq = rd->reg_rules[rrc].freq_range;                                        
+//                                      startfreq = regfreq.start_freq_khz / 1000;
+//                                      stopfreq = regfreq.end_freq_khz / 1000;
 					if (!skip)
 						regmaxbw = 40;
-					else
-						regmaxbw = regfreq.max_bandwidth_khz / 1000;
 					if (!skip || ((freq_mhz - range) >= startfreq && (freq_mhz + range) <= stopfreq)) {
 						if (run == 1) {
 							regpower = rd->reg_rules[rrc].power_rule;
@@ -919,11 +967,11 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 							list[count].ht40plus = 0;
 							//                              fprintf(stderr,"freq %d, htrange %d, startfreq %d, stopfreq %d\n", freq_mhz, htrange, startfreq, stopfreq);
 							if (regmaxbw == 40 || regmaxbw == 80 || regmaxbw == 160) {
-								//fprintf(stderr,"freq %d, htrange %d, startfreq %d\n",freq_mhz,htrange,startfreq);
-								if ((freq_mhz - htrange) >= startfreq) {
+//								fprintf(stderr, "freq %d, htrange %d, startfreq %d stopfreq %d, regmaxbw %d\n", freq_mhz, htrange, startfreq, stopfreq, regmaxbw);
+								if (((freq_mhz - range) - htrange) >= startfreq) {
 									list[count].ht40minus = 1;
 								}
-								if ((freq_mhz + htrange) <= stopfreq) {
+								if (((freq_mhz + range) + htrange) <= stopfreq) {
 									list[count].ht40plus = 1;
 								}
 							}
