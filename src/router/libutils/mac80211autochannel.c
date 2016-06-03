@@ -312,19 +312,36 @@ static int freq_quality(struct frequency *f, struct sort_data *s)
 	return c;
 }
 
+static int _htflags;
+static struct wifi_channels *wifi_channels;
 static int sort_cmp(void *priv, struct list_head *a, struct list_head *b)
 {
 	struct frequency *f1 = container_of(a, struct frequency, list);
 	struct frequency *f2 = container_of(b, struct frequency, list);
+	int i;
+	int hasht40 = 0;
+	int channelisgood = 1;
+	while (wifi_channels[i].freq != -1) {
+		if (wifi_channels[i].freq == f1->freq)
+			break;
+		i++;
+	}
+	if (wifi_channels[i].freq)
+		return f1->quality < f2->quality;
 
-	if (f1->quality > f2->quality)
+	if (wifi_channels[i].ht40minus || wifi_channels[i].ht40plus)
+		hasht40 = 1;
+	if ((_htflags & AUTO_FORCEHT40 || _htflags & AUTO_FORCEVHT80) && !hasht40)
+		channelisgood = 0;
+
+	if (f1->quality > f2->quality && channelisgood)
 		return -1;
 	else
 		return (f1->quality < f2->quality);
 }
 
 // leave space for enhencements with more cards and already chosen channels...
-struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int scans, int ammount, int enable_passive)
+struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int scans, int ammount, int enable_passive, int htflags)
 {
 	struct mac80211_ac *acs = NULL;
 	struct frequency *f, *ftmp;
@@ -334,7 +351,18 @@ struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int s
 	int wdev, phy;
 
 	unsigned int count = ammount;
+	_htflags = htflags;
+	int bw = 20;
+	if (htflags & AUTO_FORCEVHT80)
+		bw = 80;
+	else if (htflags & AUTO_FORCEHT40)
+		bw = 40;
 
+	char *country = getIsoName(nvram_default_get("ath0_regdomain", "GERMANY"));
+	if (!country)
+		country = "DE";
+
+	wifi_channels = mac80211_get_channels(interface, country, bw, 0xff);
 	if (scans == 0)
 		scans = 2;
 
@@ -396,6 +424,7 @@ struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int s
 	}
 
 out:
+	free(wifi_channels);
 	return acs;
 }
 

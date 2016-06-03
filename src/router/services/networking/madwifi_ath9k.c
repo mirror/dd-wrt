@@ -348,6 +348,13 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	char bw[32];
 	sprintf(bw, "%s_channelbw", prefix);
 	ht[0] = 0;
+	int usebw = 20;
+	if (nvram_match(bw, "40"))
+		usebw = 40;
+	if (nvram_match(bw, "80"))
+		usebw = 80;
+	if (nvram_match(bw, "160"))
+		usebw = 160;
 	if ((!strcmp(netmode, "ng-only") ||	//
 	     !strcmp(netmode, "na-only") ||	//
 	     !strcmp(netmode, "n2-only") ||	//
@@ -390,14 +397,8 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	}
 	char regdomain[16];
 	sprintf(regdomain, "%s_regdomain", prefix);
-	country = nvram_default_get(regdomain, "GERMANY");
-	// jumps to world if set here?!?
-	// fprintf(fp, "country_code=%s\n", getIsoName(country));
-	char *iso = getIsoName(country);
-	if (!iso)
-		iso = "DE";
 
-	chan = mac80211_get_channels(prefix, iso, 40, 0xff);
+	chan = mac80211_get_channels(prefix, country, usebw, 0xff);
 	if (isrepeater) {
 		// for ht40- take second channel otherwise hostapd is unhappy (and does not start)
 		if (has_2ghz(prefix)) {
@@ -441,7 +442,12 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 			struct mac80211_ac *acs;
 			fprintf(stderr, "call mac80211autochannel for interface: %s\n", prefix);
 			eval("ifconfig", prefix, "up");
-			acs = mac80211autochannel(prefix, NULL, 2, 1, 0);
+			if (usebw == 40)
+				acs = mac80211autochannel(prefix, NULL, 2, 1, 0, AUTO_FORCEHT40);
+			else if (usebw == 80)
+				acs = mac80211autochannel(prefix, NULL, 2, 1, 0, AUTO_FORCEVHT80);
+			else
+				acs = mac80211autochannel(prefix, NULL, 2, 1, 0, AUTO_ALL);
 			if (acs != NULL) {
 				freq = acs->freq;
 				channel = ieee80211_mhz2ieee(freq);
