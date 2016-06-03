@@ -167,7 +167,11 @@ extern unsigned int get_ath10kdistance(char *ifname);
 #endif
 extern int mac80211_check_band(char *interface, int checkband);
 struct wifi_channels *mac80211_get_channels(char *interface, char *country, int max_bandwidth_khz, unsigned char checkband);
-extern struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int scans, int ammount, int enable_passive);
+#define AUTO_FORCEHT40 1
+#define AUTO_FORCEVHT80 2
+#define AUTO_ALL 0 
+
+extern struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int scans, int ammount, int enable_passive, int htflags);
 extern void mac80211_set_antennas(int phy, uint32_t tx_ant, uint32_t rx_ant);
 extern int mac80211_get_avail_tx_antenna(int phy);
 extern int mac80211_get_avail_rx_antenna(int phy);
