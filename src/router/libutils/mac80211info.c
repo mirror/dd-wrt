@@ -827,17 +827,19 @@ static void check_validchannels(struct wifi_channels *list, int bw)
 		break;
 	case 80:
 		distance = 20;
-		count = 2;	// must check 20 mhz and 40 mhz space, since vht80 supports ht40 as well
+		count = 2;	// must check 40 mhz space, since vht80 supports ht40 as well
 		break;
 	case 160:
+		distance = 20;
+		count = 3;	// must check 40 mhz and 80 mhz space, since vht80 supports ht40 and vht80 as well
 		return;		// very tricky, add to todo list
 	}
 
 	int i = 0;
 	while (list[i].freq != -1) {
 		int a;
-		for (a = 1; a < count + 1; a++) {
-			int check = distance * a;
+		for (a = 0; a < count + 1; a++) {
+			int check = distance << a; //20, 40, 80 etc.
 			if (!isinlist(list, list[i].freq + check))
 				list[i].ht40plus = 0;
 
@@ -860,12 +862,14 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 	struct wifi_channels *list = NULL;
 	int rem, rem2, freq_mhz, phy, rrc, startfreq, stopfreq, range, regmaxbw, run;
 	int regfound = 0;
-	int htrange = 40;
+	int htrange = 20;
 	int chancount = 0;
 	int count = 0;
 	char sc[32];
 	int skip = 1;
 	int rrdcount = 0;
+	if (max_bandwidth_khz == 40)
+		htrange = 40;
 	if (max_bandwidth_khz == 80)
 		htrange = 80;
 	if (max_bandwidth_khz == 160)
@@ -906,7 +910,7 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 				if (skip && tb[NL80211_FREQUENCY_ATTR_DISABLED])
 					continue;
 				regfound = 0;
-				if (max_bandwidth_khz == 40 || max_bandwidth_khz == 80 || max_bandwidth_khz == 160)
+				if (max_bandwidth_khz == 40 || max_bandwidth_khz == 80 || max_bandwidth_khz == 160 || max_bandwidth_khz == 20)
 					range = 10;
 				else
 					// for 10/5mhz this should be fine 
