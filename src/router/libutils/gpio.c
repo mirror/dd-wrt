@@ -359,7 +359,7 @@ void set_gpio(int gpio, int value)
 		value = 255;
 	//fprintf(stderr, "GPIO %d value %d\n", gpio, value);
 	int brand = getRouterBrand();
-	  
+
 	if (brand == ROUTER_NETGEAR_R7500 || brand == ROUTER_NETGEAR_R7800) {
 		switch (gpio) {
 		case 0:	// power
@@ -431,7 +431,7 @@ void set_gpio(int gpio, int value)
 #endif
 	if (gpio < GPIOMAX) {
 #ifdef HAVE_E380AC
-		if (gpio == 3) { // the red led on gpio 3 cannot be controlled by output register. it will switch on if direction is set to output and will go off if direction is input
+		if (gpio == 3) {	// the red led on gpio 3 cannot be controlled by output register. it will switch on if direction is set to output and will go off if direction is input
 			sprintf(buf, "/proc/gpio/%d_dir", gpio);
 			writeint(buf, value);
 			return;
