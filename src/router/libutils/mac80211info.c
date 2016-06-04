@@ -930,44 +930,42 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 						isband = 2;
 					startfreq = 0;
 					stopfreq = 0;
+					int startlowbound = 0;
+					int starthighbound = 0;
+					int stoplowbound = 0;
+					int stophigbound = 0;
 					switch (isband) {
 					case 0:
-						for (cc = 0; cc < rrdcount; cc++) {
-							regfreq = rd->reg_rules[cc].freq_range;
-							if (!startfreq && regfreq.start_freq_khz > 2200000 && regfreq.start_freq_khz < 4900000) {
-								startfreq = regfreq.start_freq_khz / 1000;
-							}
-							if (regfreq.end_freq_khz <= 2700000) {
-								regmaxbw = regfreq.max_bandwidth_khz / 1000;
-								stopfreq = regfreq.end_freq_khz / 1000;
-							}
-						}
+						startlowbound = 2200000;
+						starthighbound = 4900000;
+						stophighbound = 2700000;
+						stoplowbound = 0;
 						break;
 					case 1:
-						for (cc = 0; cc < rrdcount; cc++) {
-							regfreq = rd->reg_rules[cc].freq_range;
-							if (!startfreq && regfreq.start_freq_khz > 4900000 && regfreq.start_freq_khz <= 5350000) {
-								startfreq = regfreq.start_freq_khz / 1000;
-							}
-							if (regfreq.end_freq_khz <= 5350000 && regfreq.end_freq_khz > 2700000) {
-								regmaxbw = regfreq.max_bandwidth_khz / 1000;
-								stopfreq = regfreq.end_freq_khz / 1000;
-							}
-						}
+						startlowbound = 4900000;
+						starthighbound = 5350000;
+						stophighbound = 5350000;
+						stoplowbound = 2700000;
+
 						break;
 					case 2:
-						for (cc = 0; cc < rrdcount; cc++) {
-							regfreq = rd->reg_rules[cc].freq_range;
-							if (!startfreq && regfreq.start_freq_khz > 5350000 && regfreq.start_freq_khz <= 5500000) {
-								startfreq = regfreq.start_freq_khz / 1000;
-							}
-							if (regfreq.end_freq_khz <= 6200000 && regfreq.end_freq_khz > 5500000) {
-								regmaxbw = regfreq.max_bandwidth_khz / 1000;
-								stopfreq = regfreq.end_freq_khz / 1000;
-							}
-						}
+						startlowbound = 5350000;
+						starthighbound = 5500000;
+						stophighbound = 6200000;
+						stoplowbound = 5500000;
 						break;
 					}
+					for (cc = 0; cc < rrdcount; cc++) {
+						regfreq = rd->reg_rules[cc].freq_range;
+						if (!startfreq && regfreq.start_freq_khz > startlowbound && regfreq.start_freq_khz < starthighbound) {
+							startfreq = regfreq.start_freq_khz / 1000;
+						}
+						if (regfreq.end_freq_khz <= stophighbound && regfreq.end_freq_khz > stoplowbound) {
+							regmaxbw = regfreq.max_bandwidth_khz / 1000;
+							stopfreq = regfreq.end_freq_khz / 1000;
+						}
+					}
+
 //                                      fprintf(stderr, "pre: freq %d, htrange %d, startfreq %d stopfreq %d, regmaxbw %d\n", freq_mhz, htrange, startfreq, stopfreq, regmaxbw);
 
 //                                      regfreq = rd->reg_rules[rrc].freq_range;                                        
