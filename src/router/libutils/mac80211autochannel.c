@@ -331,7 +331,7 @@ static int sort_cmp(void *priv, struct list_head *a, struct list_head *b)
 
 	if (wifi_channels[i].ht40minus || wifi_channels[i].ht40plus)
 		hasht40 = 1;
-	if ((_htflags & AUTO_FORCEHT40 || _htflags & AUTO_FORCEVHT80) && !hasht40)
+	if ((_htflags & AUTO_FORCEHT40 || _htflags & AUTO_FORCEVHT80 || _htflags & AUTO_FORCEVHT160 ) && !hasht40)
 		channelisgood = 0;
 
 	if (!channelisgood)
@@ -358,6 +358,8 @@ struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int s
 	int bw = 20;
 	if (htflags & AUTO_FORCEVHT80)
 		bw = 80;
+	else if (htflags & AUTO_FORCEVHT160)
+		bw = 160;
 	else if (htflags & AUTO_FORCEHT40)
 		bw = 40;
 
