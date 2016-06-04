@@ -473,26 +473,26 @@ struct dns_lists *get_dns_list(void)
 
 	dns_list->num_servers = 0;
 	list = malloc(256);
-	memset(list,0,256);
+	memset(list, 0, 256);
 	char *sv_localdns = nvram_safe_get("sv_localdns");
 	char *wan_dns = nvram_safe_get("wan_dns");
 	char *wan_get_dns = nvram_safe_get("wan_get_dns");
 	if (strlen(sv_localdns))
-	    snprintf(list, 256, "%s", sv_localdns);
+		snprintf(list, 256, "%s", sv_localdns);
 	if (strlen(wan_dns)) {
 		if (strlen(list))
-		    snprintf(list, 256, "%s %s", list, wan_dns);
-		else    
-		    snprintf(list, 256, "%s", wan_dns);	
+			snprintf(list, 256, "%s %s", list, wan_dns);
+		else
+			snprintf(list, 256, "%s", wan_dns);
 	}
 
 	if (strlen(wan_get_dns)) {
 		if (strlen(list))
-		    snprintf(list, 256, "%s %s", list, wan_get_dns);
-		else    
-		    snprintf(list, 256, "%s", wan_get_dns);	
+			snprintf(list, 256, "%s %s", list, wan_get_dns);
+		else
+			snprintf(list, 256, "%s", wan_get_dns);
 	}
-	    
+
 	word = malloc(32);
 	foreach(word, list, next) {
 		if (strcmp(word, "0.0.0.0") && strcmp(word, "")) {

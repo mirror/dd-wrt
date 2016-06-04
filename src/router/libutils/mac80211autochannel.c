@@ -328,7 +328,7 @@ static int sort_cmp(void *priv, struct list_head *a, struct list_head *b)
 	}
 	if (wifi_channels[i].freq == -1)
 		return 1;
-	
+
 	if (wifi_channels[i].ht40minus || wifi_channels[i].ht40plus)
 		hasht40 = 1;
 	if ((_htflags & AUTO_FORCEHT40 || _htflags & AUTO_FORCEVHT80) && !hasht40)
@@ -336,7 +336,7 @@ static int sort_cmp(void *priv, struct list_head *a, struct list_head *b)
 
 	if (!channelisgood)
 		return 1;
-		
+
 	if (f1->quality > f2->quality)
 		return -1;
 	else
