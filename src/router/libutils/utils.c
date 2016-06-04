@@ -1033,7 +1033,7 @@ void setRouter(char *name)
 #elif HAVE_POWERNOC_WOAP54G
 	nvram_set(NVROUTER, "WOAP54G");
 #elif HAVE_ERC
-	char *pic=NULL;
+	char *pic = NULL;
 	pic = nvram_safe_get("ree_pic");
 
 	if (!strncmp(pic, "1", 1))
@@ -6659,12 +6659,12 @@ int led_control(int type, int act)
 		power_gpio = 0x000;	// power led 
 		diag_gpio = 0x010;	// power led orange     
 		connected_gpio = 0x007;	// wan led
-		usb_power = 0x010;    // usb enable
+		usb_power = 0x010;	// usb enable
 		usb_power1 = 0x00f;
 		wlan0_gpio = 0x009;	// radio 5G 
 		wlan1_gpio = 0x008;	// radio 2G
-		//ses_gpio = 0x109;	// wps button led used for 2G
-		//wlan_gpio = 0x008;	// wifi button led used for 5G
+		//ses_gpio = 0x109;     // wps button led used for 2G
+		//wlan_gpio = 0x008;    // wifi button led used for 5G
 		usb_gpio = 0x004;	//usb1 
 		usb_gpio1 = 0x005;	//usb2
 		break;
