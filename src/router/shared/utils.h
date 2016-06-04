@@ -895,7 +895,7 @@ enum { SYSLOG_LOG = 1, SYSLOG_DEBUG, CONSOLE_ONLY, LOG_CONSOLE, DEBUG_CONSOLE };
 
 struct dns_lists {
 	int num_servers;
-	char dns_server[4][16];
+	char dns_server[4][20];
 };
 
 #define NOT_USING	0
