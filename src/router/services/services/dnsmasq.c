@@ -165,8 +165,9 @@ void start_dnsmasq(void)
 			fprintf(fp, "interface=");
 	}
 	int mdhcpcount = 0;
-	char word[256];
 	if (nvram_get("mdhcpd_count") != NULL) {
+		char *word = malloc(128);
+		memset(word, 0, 128);
 		mdhcpcount = atoi(nvram_safe_get("mdhcpd_count"));
 		for (i = 0; i < mdhcpcount; i++) {
 			if (strlen(nvram_nget("%s_ipaddr", getmdhcp(0, i, word))) == 0 || strlen(nvram_nget("%s_netmask", getmdhcp(0, i, word)))
@@ -185,9 +186,9 @@ void start_dnsmasq(void)
 
 			}
 		}
+		free(word);
 	}
 	fprintf(fp, "\n");
-
 	fprintf(fp, "resolv-file=/tmp/resolv.dnsmasq\n" "all-servers\n");
 	if (nvram_match("dnsmasq_strict", "1"))
 		fprintf(fp, "strict-order\n");
@@ -231,6 +232,9 @@ void start_dnsmasq(void)
 
 		int dhcp_max = 0;
 
+		char *word = malloc(128);
+		memset(word, 0, 128);
+
 		if (landhcp())
 			dhcp_max += atoi(nvram_safe_get("dhcp_num")) + atoi(nvram_safe_get("static_leasenum"));
 		for (i = 0; i < mdhcpcount; i++) {
@@ -252,7 +256,7 @@ void start_dnsmasq(void)
 		if (nvram_invmatch("wan_wins", "")
 		    && nvram_invmatch("wan_wins", "0.0.0.0"))
 			fprintf(fp, "dhcp-option=44,%s\n", nvram_safe_get("wan_wins"));
-
+		free(word);
 		if (nvram_match("dns_dnsmasq", "0")) {
 			dns_list = get_dns_list();
 
@@ -277,6 +281,8 @@ void start_dnsmasq(void)
 		} else {
 #ifdef HAVE_UNBOUND
 			if (nvram_match("recursive_dns", "1")) {
+				char *word = malloc(128);
+				memset(word, 0, 128);
 				fprintf(fp, "dhcp-option=%s,6,%s\n", nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ipaddr"));
 				for (i = 0; i < mdhcpcount; i++) {
 					if (strlen(nvram_nget("%s_ipaddr", getmdhcp(0, i, word))) == 0 || strlen(nvram_nget("%s_netmask", getmdhcp(0, i, word)))
@@ -285,6 +291,7 @@ void start_dnsmasq(void)
 					fprintf(fp, "dhcp-option=%s,6,", getmdhcp(0, i, word));
 					fprintf(fp, "%s\n", nvram_nget("%s_ipaddr", getmdhcp(0, i, word)));
 				}
+				free(word);
 			}
 #endif
 		}
@@ -315,6 +322,8 @@ void start_dnsmasq(void)
 		}
 
 		for (i = 0; i < mdhcpcount; i++) {
+			char *word = malloc(128);
+			memset(word, 0, 128);
 			if (strcmp(getmdhcp(1, i, word), "On"))
 				continue;
 			if (strlen(nvram_nget("%s_ipaddr", getmdhcp(0, i, word))) == 0 || strlen(nvram_nget("%s_netmask", getmdhcp(0, i, word)))
@@ -340,6 +349,7 @@ void start_dnsmasq(void)
 			fprintf(fp, "%d.%d.%d.%d,", (eip >> 24) & 0xff, (eip >> 16) & 0xff, (eip >> 8) & 0xff, eip & 0xff);
 			fprintf(fp, "%s,", nvram_nget("%s_netmask", ifname));
 			fprintf(fp, "%sm\n", getmdhcp(4, i, word));
+			free(word);
 		}
 
 		int leasenum = atoi(nvram_safe_get("static_leasenum"));
