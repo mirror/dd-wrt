@@ -326,15 +326,18 @@ static int sort_cmp(void *priv, struct list_head *a, struct list_head *b)
 			break;
 		i++;
 	}
-	if (wifi_channels[i].freq)
-		return f1->quality < f2->quality;
-
+	if (wifi_channels[i].freq == -1)
+		return 1;
+	
 	if (wifi_channels[i].ht40minus || wifi_channels[i].ht40plus)
 		hasht40 = 1;
 	if ((_htflags & AUTO_FORCEHT40 || _htflags & AUTO_FORCEVHT80) && !hasht40)
 		channelisgood = 0;
 
-	if (f1->quality > f2->quality && channelisgood)
+	if (!channelisgood)
+		return 1;
+		
+	if (f1->quality > f2->quality)
 		return -1;
 	else
 		return (f1->quality < f2->quality);
@@ -401,10 +404,13 @@ struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int s
 
 	list_for_each_entry(f, &frequencies, list) {
 		f->quality = freq_quality(f, &sdata);
-		fprintf(stderr, "freq:%d qual:%d noise:%d\n", f->freq, f->quality, f->noise);
 	}
 
 	list_sort(&sdata, &frequencies, sort_cmp);
+
+	list_for_each_entry(f, &frequencies, list) {
+		fprintf(stderr, "freq:%d qual:%d noise:%d\n", f->freq, f->quality, f->noise);
+	}
 
 	list_for_each_entry(f, &frequencies, list) {
 		if (f->passive && !enable_passive)
