@@ -463,8 +463,8 @@ char *get_mac_from_ip(char *ip)
 
 struct dns_lists *get_dns_list(void)
 {
-	char list[254];
-	char *next, word[254];
+	char *list;
+	char *next, *word;
 	struct dns_lists *dns_list = NULL;
 	int i, match = 0, altdns_index = 1;
 
@@ -472,12 +472,9 @@ struct dns_lists *get_dns_list(void)
 	memset(dns_list, 0, sizeof(struct dns_lists));
 
 	dns_list->num_servers = 0;
-
-	// nvram_safe_get("wan_dns") ==> Set by user
-	// nvram_safe_get("wan_get_dns") ==> Get from DHCP, PPPoE or PPTP
-	// The nvram_safe_get("wan_dns") priority is higher than
-	// nvram_safe_get("wan_get_dns")
+	list = malloc(256);
 	snprintf(list, sizeof(list), "%s %s %s", nvram_safe_get("sv_localdns"), nvram_safe_get("wan_dns"), nvram_safe_get("wan_get_dns"));
+	word = malloc(16);
 	foreach(word, list, next) {
 		if (strcmp(word, "0.0.0.0") && strcmp(word, "")) {
 			match = 0;
@@ -493,7 +490,8 @@ struct dns_lists *get_dns_list(void)
 		if (dns_list->num_servers == 3)
 			break;	// We only need 3 DNS entries
 	}
-
+	free(word);
+	free(list);
 	/*
 	 * if < 3 DNS servers found, try to insert alternates 
 	 */
