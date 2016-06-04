@@ -1355,7 +1355,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 		char cn[128];
 		char fr[32];
 		int gotchannels = 0;
-		int channelbw = 40;
+		int channelbw = 20;
 #if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
 		if (is_ath11n(prefix)) {
 #ifdef HAVE_MADWIFI_MIMO
@@ -1393,6 +1393,10 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 				}
 				if (nvram_nmatch("80", "%s_channelbw", prefix))
 					channelbw = 80;
+				if (nvram_nmatch("160", "%s_channelbw", prefix))
+					channelbw = 160;
+				if (nvram_nmatch("40", "%s_channelbw", prefix))
+					channelbw = 40;
 				chan = mac80211_get_channels(prefix, getIsoName(country), channelbw, checkband);
 				/* if (chan == NULL)
 				   chan =

@@ -414,22 +414,28 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 					i = 1;
 			}
 		}
-		if (chan != NULL && chan[i].freq != -1) {
-			channel = chan[i].channel;
-			freq = chan[i].freq;
+		if (nvram_match(bw, "160")) {
+			channel = 100;
+			freq = 5500;
 		} else {
-			// that should never be called
-			if (has_2ghz(prefix)) {
-				channel = 6;
-				freq = 2437;
-			}
-			if (has_5ghz(prefix)) {
-				if (nvram_match(bw, "80")) {
-					channel = 44;
-					freq = 5220;
-				} else {
-					channel = 40;
-					freq = 5200;
+
+			if (chan != NULL && chan[i].freq != -1) {
+				channel = chan[i].channel;
+				freq = chan[i].freq;
+			} else {
+				// that should never be called
+				if (has_2ghz(prefix)) {
+					channel = 6;
+					freq = 2437;
+				}
+				if (has_5ghz(prefix)) {
+					if (nvram_match(bw, "80")) {
+						channel = 44;
+						freq = 5220;
+					} else {
+						channel = 40;
+						freq = 5200;
+					}
 				}
 			}
 		}
@@ -446,6 +452,8 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 				acs = mac80211autochannel(prefix, NULL, 2, 1, 0, AUTO_FORCEHT40);
 			else if (usebw == 80)
 				acs = mac80211autochannel(prefix, NULL, 2, 1, 0, AUTO_FORCEVHT80);
+			else if (usebw == 160)
+				acs = mac80211autochannel(prefix, NULL, 2, 1, 0, AUTO_FORCEVHT160);
 			else
 				acs = mac80211autochannel(prefix, NULL, 2, 1, 0, AUTO_ALL);
 			if (acs != NULL) {
