@@ -832,7 +832,7 @@ static void check_validchannels(struct wifi_channels *list, int bw)
 	case 160:
 		distance = 20;
 		count = 3;	// must check 40 mhz and 80 mhz space, since vht80 supports ht40 and vht80 as well
-		return;		// very tricky, add to todo list
+		break;
 	}
 
 	int i = 0;
