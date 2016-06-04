@@ -803,6 +803,52 @@ nla_put_failure:
 	return 0;
 }
 
+static int isinlist(struct wifi_channels *list, int freq)
+{
+	int i = 0;
+	while (list[i].freq != -1) {
+		if (list[i].freq == freq)
+			return 1;
+		i++;
+	}
+	return 0;
+}
+
+static void check_validchannels(struct wifi_channels *list, int bw)
+{
+	int distance = 0;
+	int count = 0;
+	switch (bw) {
+	case 20:
+		return;		// all valid
+	case 40:
+		distance = 20;
+		count = 1;
+		break;
+	case 80:
+		distance = 20;
+		count = 2;	// must check 20 mhz and 40 mhz space, since vht80 supports ht40 as well
+		break;
+	case 160:
+		return;		// very tricky, add to todo list
+	}
+
+	int i = 0;
+	while (list[i].freq != -1) {
+		int a;
+		for (a = 1; a < count + 1; a++) {
+			int check = distance * a;
+			if (!isinlist(list, list[i].freq + check))
+				list[i].ht40plus = 0;
+
+			if (!isinlist(list, list[i].freq - check))
+				list[i].ht40minus = 0;
+		}
+		fprintf(stderr, "freq %d htplus %d htminus %d\n", list[i].freq, list[i].ht40plus, list[i].ht40minus);
+		i++;
+	}
+}
+
 struct wifi_channels *mac80211_get_channels(char *interface, char *country, int max_bandwidth_khz, unsigned char checkband)
 {
 	struct nlattr *tb[NL80211_FREQUENCY_ATTR_MAX + 1];
@@ -918,7 +964,7 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 						}
 						break;
 					}
-//					fprintf(stderr, "pre: freq %d, htrange %d, startfreq %d stopfreq %d, regmaxbw %d\n", freq_mhz, htrange, startfreq, stopfreq, regmaxbw);
+//                                      fprintf(stderr, "pre: freq %d, htrange %d, startfreq %d stopfreq %d, regmaxbw %d\n", freq_mhz, htrange, startfreq, stopfreq, regmaxbw);
 
 //                                      regfreq = rd->reg_rules[rrc].freq_range;                                        
 //                                      startfreq = regfreq.start_freq_khz / 1000;
@@ -967,7 +1013,7 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 							list[count].ht40plus = 0;
 							//                              fprintf(stderr,"freq %d, htrange %d, startfreq %d, stopfreq %d\n", freq_mhz, htrange, startfreq, stopfreq);
 							if (regmaxbw == 40 || regmaxbw == 80 || regmaxbw == 160) {
-//								fprintf(stderr, "freq %d, htrange %d, startfreq %d stopfreq %d, regmaxbw %d\n", freq_mhz, htrange, startfreq, stopfreq, regmaxbw);
+//                                                              fprintf(stderr, "freq %d, htrange %d, startfreq %d stopfreq %d, regmaxbw %d\n", freq_mhz, htrange, startfreq, stopfreq, regmaxbw);
 								if (((freq_mhz - range) - htrange) >= startfreq) {
 									list[count].ht40minus = 1;
 								}
@@ -988,6 +1034,7 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 	if (rd)
 		free(rd);
 	nlmsg_free(msg);
+	check_validchannels(list, max_bandwidth_khz);
 	return list;
 out:
 nla_put_failure:
