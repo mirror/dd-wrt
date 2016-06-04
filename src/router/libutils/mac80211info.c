@@ -933,7 +933,7 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 					int startlowbound = 0;
 					int starthighbound = 0;
 					int stoplowbound = 0;
-					int stophigbound = 0;
+					int stophighbound = 0;
 					switch (isband) {
 					case 0:
 						startlowbound = 2200000;
