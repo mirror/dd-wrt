@@ -844,7 +844,7 @@ static void check_validchannels(struct wifi_channels *list, int bw)
 			if (!isinlist(list, list[i].freq - check))
 				list[i].ht40minus = 0;
 		}
-		fprintf(stderr, "freq %d htplus %d htminus %d\n", list[i].freq, list[i].ht40plus, list[i].ht40minus);
+	//	fprintf(stderr, "freq %d htplus %d htminus %d\n", list[i].freq, list[i].ht40plus, list[i].ht40minus);
 		i++;
 	}
 }
