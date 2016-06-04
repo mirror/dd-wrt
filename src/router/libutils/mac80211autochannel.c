@@ -17,6 +17,8 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include <stdbool.h>
+#include <bcmnvram.h>
+#include <utils.h>
 
 #include "unl.h"
 #include <nl80211.h>
