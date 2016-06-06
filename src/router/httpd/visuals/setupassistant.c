@@ -936,6 +936,7 @@ void sas_show_channel(webs_t wp, char *dev, char *prefix, int type)
 		char cn[32];
 		char fr[32];
 		int gotchannels = 0;
+		int channelbw = 20;
 
 #if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
 		if (is_ath11n(prefix)) {
@@ -955,7 +956,13 @@ void sas_show_channel(webs_t wp, char *dev, char *prefix, int type)
 				sprintf(regdomain, "%s_regdomain", prefix);
 				country = nvram_default_get(regdomain, "UNITED_STATES");
 				// temp end
-				chan = mac80211_get_channels(prefix, getIsoName(country), 40, 0xff);
+				if (nvram_nmatch("80", "%s_channelbw", prefix))
+					channelbw = 80;
+				if (nvram_nmatch("160", "%s_channelbw", prefix))
+					channelbw = 160;
+				if (nvram_nmatch("40", "%s_channelbw", prefix))
+					channelbw = 40;
+				chan = mac80211_get_channels(prefix, getIsoName(country), channelbw, 0xff);
 				/* if (chan == NULL)
 				   chan =
 				   list_channels_ath9k(dev, "DE", 40,
@@ -981,6 +988,10 @@ void sas_show_channel(webs_t wp, char *dev, char *prefix, int type)
 
 				sprintf(cn, "%d", chan[i].channel);
 				sprintf(fr, "%d", chan[i].freq);
+				if (channelbw > 20 && !chan[i].ht40minus && !chan[i].ht40plus) {
+					i++;
+					continue; // do not show channels where bandwidth is not available
+				}
 				int freq = get_wififreq(prefix, chan[i].freq);
 				if (freq != -1) {
 					websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s>%s - %d MHz</option>\");\n", fr, nvram_selmatch(wp, wl_channel, fr) ? "selected=\\\"selected\\\"" : "", cn, (freq));
