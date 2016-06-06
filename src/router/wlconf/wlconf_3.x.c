@@ -71,6 +71,7 @@
 #define BCM4330_CHIP_ID		0x4330		/* 4330 chipcommon chipid */
 #define BCM6362_CHIP_ID		0x6362		/* 6362 chipcommon chipid */
 #define	BCM43431_CHIP_ID	43431		/* 4331  chipcommon chipid (OTP, RBBU) */
+#define	BCM43217_CHIP_ID	43217		/* 43217 chip id (OTP chipid) */
 
 #define	BCM4342_CHIP_ID		4342		/* 4342 chipcommon chipid (OTP, RBBU) */
 #define	BCM4402_CHIP_ID		0x4402		/* 4402 chipid */
@@ -93,6 +94,11 @@
 #define BCM4366_CHIP_ID		0x4366		/* 4366 chipcommon chipid */
 #define BCM4365_CHIP(chipid)	((CHIPID(chipid) == BCM4365_CHIP_ID) || \
 				(CHIPID(chipid) == BCM4366_CHIP_ID))
+
+#define	BCM53573_CHIP_ID	53573		/* 53573 chipcommon chipid */
+#define	BCM53574_CHIP_ID	53574		/* 53574 chipcommon chipid */
+#define BCM53573_CHIP(chipid)	((CHIPID(chipid) == BCM53573_CHIP_ID) || \
+				(CHIPID(chipid) == BCM53574_CHIP_ID))
 
 #define BCM43602_CHIP_ID	0xaa52		/* 43602 chipcommon chipid */
 
@@ -1134,9 +1140,9 @@ wlconf_aburn_ampdu_amsdu_set(char *name, char prefix[PREFIX_LEN], int nmode, int
 	if (nmode != OFF) { /* N-mode is ON/AUTO */
 		if (ampdu_valid_option) {
 			if (ampdu_option_val != OFF) {
-				if (phytype != PHY_TYPE_AC) {
+//				if (phytype != PHY_TYPE_AC) {
 					WL_IOVAR_SETINT(name, "amsdu", OFF);
-				}
+//				}
 				WL_IOVAR_SETINT(name, "ampdu", ampdu_option_val);
 			} else {
 				WL_IOVAR_SETINT(name, "ampdu", OFF);
@@ -1154,17 +1160,21 @@ wlconf_aburn_ampdu_amsdu_set(char *name, char prefix[PREFIX_LEN], int nmode, int
 
 		if (amsdu_valid_option) {
 			if (amsdu_option_val != OFF) { /* AMPDU (above) has priority over AMSDU */
-				if (phytype == PHY_TYPE_AC) {
+				if (rev.corerev >= 40) {
 					WL_IOVAR_SETINT(name, "amsdu", amsdu_option_val);
 #ifdef __CONFIG_DHDAP__
 					/* For dhdap, ampdu_mpdu=32 gives good tput in
 					 * multiple radio with amsdu.
 					 */
- 					WL_IOVAR_SETINT(name, "ampdu_mpdu", 32);
+					if (is_dhd)
+ 					    WL_IOVAR_SETINT(name, "ampdu_mpdu", 32);
 #endif
 				} else if (ampdu_option_val == OFF) {
 					WL_IOVAR_SETINT(name, "ampdu", OFF);
 					WL_IOVAR_SETINT(name, "amsdu", amsdu_option_val);
+				} else if (rev.chipnum == BCM43217_CHIP_ID) {
+					/* In 43217, ampdu_mpdu=32 gives good tput with amsdu */
+					WL_IOVAR_SETINT(name, "ampdu_mpdu", 32);
 				}
 			} else {
 				WL_IOVAR_SETINT(name, "amsdu", OFF);
@@ -1183,7 +1193,7 @@ wlconf_aburn_ampdu_amsdu_set(char *name, char prefix[PREFIX_LEN], int nmode, int
 #endif
 		}
 
-		WL_IOVAR_SETINT(name, "rx_amsdu_in_ampdu", OFF);
+//		WL_IOVAR_SETINT(name, "rx_amsdu_in_ampdu", OFF);
 		/* allow ab in N mode. Do this last: may defeat ampdu et al */
 		if (aburn_valid_option) {
 			WL_IOVAR_SETINT(name, "afterburner_override", aburn_option_val);
@@ -1244,6 +1254,24 @@ wlconf_bw_cap(char *prefix, int bandtype)
 	}
 
 	return bw_cap;
+}
+
+/* Unset TXBF. Called when i/f is down. */
+static void wlconf_unset_txbf(char *name, char *prefix)
+{
+	char tmp[100];
+	int ret = 0;
+
+	/* unset nvram TxBF off */
+	nvram_set(strcat_r(prefix, "txbf_bfr_cap", tmp), "0");
+	nvram_set(strcat_r(prefix, "txbf_bfe_cap", tmp), "0");
+	nvram_set(strcat_r(prefix, "txbf_imp", tmp), "0");
+
+	/* turning TXBF off */
+	WL_IOVAR_SETINT(name, "txbf", 0);
+	WL_IOVAR_SETINT(name, "txbf_bfr_cap", 0);
+	WL_IOVAR_SETINT(name, "txbf_bfe_cap", 0);
+	WL_IOVAR_SETINT(name, "txbf_imp", 0);
 }
 
 /* Set up TxBF. Called when i/f is down. */
@@ -2324,6 +2352,26 @@ cprintf("get core rev %s\n",name);
 			pam_mode = -1;
 		WL_IOVAR_SETINT(name, "mimo_preamble", pam_mode);
 	}
+#define AMPDU_DENSITY_8USEC 6
+
+	/* Making default ampdu_density to 8usec in order to improve throughput
+	 * of very small packet sizes (64, 88, 128,..).
+	 */
+	if (rev.chipnum == BCM43217_CHIP_ID)
+		WL_IOVAR_SETINT(name, "ampdu_rx_density", AMPDU_DENSITY_8USEC);
+
+
+	if ((rev.chipnum == BCM5357_CHIP_ID) || (rev.chipnum == BCM53572_CHIP_ID)) {
+		val = atoi(nvram_safe_get("coma_sleep"));
+		if (val > 0) {
+			struct {int sleep; int delay;} setbuf;
+			nvram_unset("coma_sleep");
+			nvram_commit();
+			setbuf.sleep = val;
+			setbuf.delay = 1;
+			WL_IOVAR_SET(name, "coma", &setbuf, sizeof(setbuf));
+		}
+	}
 
 	if (WLCONF_PHYTYPE_11N(phytype)) {
 		struct {
@@ -2967,8 +3015,13 @@ cprintf("%d\n",__LINE__);
 	}
 cprintf("%d\n",__LINE__);
 
-	/* Set up TxBF */
-	wlconf_set_txbf(name, prefix);
+	if ((BCM53573_CHIP(rev.chipnum)) && (rev.chiprev == 0x0)) {
+		/* Temporary : Unset TXBF cap */
+		wlconf_unset_txbf(name, prefix);
+	} else {
+		/* Set up TxBF */
+		wlconf_set_txbf(name, prefix);
+	}
 
 cprintf("%d\n",__LINE__);
 
