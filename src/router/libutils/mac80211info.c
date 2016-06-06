@@ -803,51 +803,53 @@ nla_put_failure:
 	return 0;
 }
 
-static int isinlist(struct wifi_channels *list, int freq)
+static int isinlist(struct wifi_channels *list, int freq, int distance)
 {
 	int i = 0;
-	while (list[i].freq != -1) {
-		if (list[i].freq == freq)
+	while (1) {
+		struct wifi_channels *chan = &list[i++];
+		if (chan->freq == -1)
+			break;
+		if (chain->freq + distance == freq)
 			return 1;
-		i++;
+		if (chain->freq - distance == freq)
+			return -1;
 	}
 	return 0;
 }
 
 static void check_validchannels(struct wifi_channels *list, int bw)
 {
-	int distance = 0;
+	int distance = 20;
 	int count = 0;
 	switch (bw) {
 	case 20:
 		return;		// all valid
 	case 40:
-		distance = 20;
-		count = 1;
+		count = 2;
 		break;
 	case 80:
-		distance = 20;
-		count = 2;	// must check 40 mhz space, since vht80 supports ht40 as well
+		count = 3;	// must check 40 mhz space, since vht80 supports ht40 as well
 		break;
 	case 160:
-		distance = 20;
-		count = 3;	// must check 40 mhz and 80 mhz space, since vht80 supports ht40 and vht80 as well
+		count = 4;	// must check 40 mhz and 80 mhz space, since vht80 supports ht40 and vht80 as well
 		break;
 	}
 
-	int i = 0;
-	while (list[i].freq != -1) {
-		int a;
-		for (a = 0; a < count + 1; a++) {
-			int check = distance << a; //20, 40, 80 etc.
-			if (!isinlist(list, list[i].freq + check))
-				list[i].ht40plus = 0;
-
-			if (!isinlist(list, list[i].freq - check))
-				list[i].ht40minus = 0;
+	int a;
+	for (a = 0; a < count; a++) {
+		int i = 0;
+		while (1) {
+			struct wifi_channels *chan = &list[i++];
+			if (chan->freq == -1)
+				break;
+			int check = distance << a;	//20, 40, 80 etc.
+			int res = isinlist(list, chan->freq, check);
+			if (res > 0)
+				chan->ht40plus = 0;
+			if (res < 0)
+				chan->ht40minus = 0;
 		}
-		//      fprintf(stderr, "freq %d htplus %d htminus %d\n", list[i].freq, list[i].ht40plus, list[i].ht40minus);
-		i++;
 	}
 }
 

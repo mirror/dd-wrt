@@ -323,15 +323,18 @@ static int sort_cmp(void *priv, struct list_head *a, struct list_head *b)
 	int i;
 	int hasht40 = 0;
 	int channelisgood = 1;
-	while (wifi_channels[i].freq != -1) {
-		if (wifi_channels[i].freq == f1->freq)
-			break;
-		i++;
+	struct wifi_channels *chan = NULL;
+	while (1) {
+		chan = &wifi_channels[i++];
+		if (chan->freq == -1)
+		    break;
+		if (chan->freq == f1->freq)
+		    break;
 	}
-	if (wifi_channels[i].freq == -1)
+	if (chan->freq == -1)
 		return 1;
 
-	if (wifi_channels[i].ht40minus || wifi_channels[i].ht40plus)
+	if (chan->ht40minus || chan->ht40plus)
 		hasht40 = 1;
 	if ((_htflags & AUTO_FORCEHT40 || _htflags & AUTO_FORCEVHT80 || _htflags & AUTO_FORCEVHT160 ) && !hasht40)
 		channelisgood = 0;
