@@ -810,9 +810,9 @@ static int isinlist(struct wifi_channels *list, int freq, int distance)
 		struct wifi_channels *chan = &list[i++];
 		if (chan->freq == -1)
 			break;
-		if (chain->freq + distance == freq)
+		if (chan->freq + distance == freq)
 			return 1;
-		if (chain->freq - distance == freq)
+		if (chan->freq - distance == freq)
 			return -1;
 	}
 	return 0;
