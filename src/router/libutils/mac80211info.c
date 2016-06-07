@@ -843,8 +843,7 @@ static void check_validchannels(struct wifi_channels *list, int bw)
 			struct wifi_channels *chan = &list[i++];
 			if (chan->freq == -1)
 				break;
-			int check = distance << a;	//20, 40, 80 etc.
-			int res = isinlist(list, chan->freq, check);
+			int res = isinlist(list, chan->freq, distance << a);
 			if (res > 0)
 				chan->ht40plus = 0;
 			if (res < 0)
@@ -864,18 +863,11 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 	struct wifi_channels *list = NULL;
 	int rem, rem2, freq_mhz, phy, rrc, startfreq, stopfreq, range, regmaxbw, run;
 	int regfound = 0;
-	int htrange = 20;
 	int chancount = 0;
 	int count = 0;
 	char sc[32];
 	int skip = 1;
 	int rrdcount = 0;
-	if (max_bandwidth_khz == 40)
-		htrange = 40;
-	if (max_bandwidth_khz == 80)
-		htrange = 80;
-	if (max_bandwidth_khz == 160)
-		htrange = 160;
 	phy = mac80211_get_phyidx_by_vifname(interface);
 	if (phy == -1)
 		return NULL;
@@ -1018,10 +1010,10 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 							//                              fprintf(stderr,"freq %d, htrange %d, startfreq %d, stopfreq %d\n", freq_mhz, htrange, startfreq, stopfreq);
 							if (regmaxbw > 20 && regmaxbw >= max_bandwidth_khz) {
 //                                                              fprintf(stderr, "freq %d, htrange %d, startfreq %d stopfreq %d, regmaxbw %d\n", freq_mhz, htrange, startfreq, stopfreq, regmaxbw);
-								if (((freq_mhz - range) - htrange) >= startfreq) {
+								if (((freq_mhz - range) - max_bandwidth_khz) >= startfreq) {
 									list[count].ht40minus = 1;
 								}
-								if (((freq_mhz + range) + htrange) <= stopfreq) {
+								if (((freq_mhz + range) + max_bandwidth_khz) <= stopfreq) {
 									list[count].ht40plus = 1;
 								}
 							}
