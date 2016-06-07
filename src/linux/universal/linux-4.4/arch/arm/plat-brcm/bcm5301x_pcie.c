@@ -396,7 +396,7 @@ int si_bus_map_irq(struct pci_dev *pdev)
 	for (i = 0; i < irq_map_size; i++) {
 		if (pdev->device == irq_map[i].device && irq_map[i].unit < irq_map[i].max_unit) {
 			irq = irq_map[i].irq + irq_map[i].unit;
-//			printk(KERN_INFO "map irq %d\n",i);
+//                      printk(KERN_INFO "map irq %d\n",i);
 			irq_map[i].unit++;
 			break;
 		}
@@ -445,7 +445,7 @@ int soc_pcie_map_irq(const struct pci_dev *pdev, u8 slot, u8 pin)
 
 	irq = port->irqs[4];	/* All INTx share INTR4 */
 
-//	printk(KERN_INFO "PCIe map irq: %04d:%02x:%02x.%02x slot %d, pin %d, irq: %d\n", pci_domain_nr(pdev->bus), pdev->bus->number, PCI_SLOT(pdev->devfn), PCI_FUNC(pdev->devfn), slot, pin, irq);
+//      printk(KERN_INFO "PCIe map irq: %04d:%02x:%02x.%02x slot %d, pin %d, irq: %d\n", pci_domain_nr(pdev->bus), pdev->bus->number, PCI_SLOT(pdev->devfn), PCI_FUNC(pdev->devfn), slot, pin, irq);
 
 	return irq;
 }
@@ -577,6 +577,12 @@ static void plx_pcie_switch_init(struct pci_bus *bus, unsigned int devfn)
 
 		BUG_ON(((port->owin_res->start + SZ_32M) >> 16) & 0xf);
 		soc_pci_write_config(bus, devfn, PCI_MEMORY_LIMIT, 2, ((port->owin_res->start + SZ_32M - 1) >> 16) & 0xfff0);
+
+		/* Set 0dB de-emphasis on PEX8603 UpPort to improve TX signal */
+		printk("PCIE: Setting PEX8603 UpPort to 0dB de-emphasis.\n");
+		soc_pci_read_config(bus, devfn, 0xb80, 4, &dRead);
+		dRead |= (1 << 20);
+		soc_pci_write_config(bus, devfn, 0xb80, 4, dRead);
 
 		printk("PCIE %04x:%02x:%04x: PLX UpPort mem_base 0x%08x, mem_limit 0x%08x\n", port->domain, bus->number, devfn, port->owin_res->start, port->owin_res->start + SZ_32M - 1);
 	} else if (bus->number == (bus_inc + 2)) {
@@ -1692,7 +1698,7 @@ bool __devinit plat_fixup_bus(struct pci_bus * b)
 			/* Fix up interrupt lines */
 			pci_read_config_byte(d, PCI_INTERRUPT_LINE, &irq);
 			d->irq = si_bus_map_irq(d);
-//			printk(KERN_INFO "Mapped IRQ %d\n",d->irq);
+//                      printk(KERN_INFO "Mapped IRQ %d\n",d->irq);
 			pci_write_config_byte(d, PCI_INTERRUPT_LINE, d->irq);
 		}
 		return TRUE;
@@ -1833,6 +1839,8 @@ static void __init bcm5301x_pcie_phy_init(void)
 				break;
 		}
 
+		/* Change blkaddr to 0x863 */
+		blkaddr = 0x863;
 		/* Change blkaddr */
 		SPINWAIT(((readl(ccb_mii_mng_ctrl_addr) >> 8 & 1) == 1), 1000);
 		val = (sb << 30) | (op_w << 28) | (pa[i] << 23) | (blkra << 18) | (ta << 16) | (blkaddr << 4);
@@ -1848,6 +1856,47 @@ static void __init bcm5301x_pcie_phy_init(void)
 		SPINWAIT(((readl(ccb_mii_mng_ctrl_addr) >> 8 & 1) == 1), 1000);
 		regaddr = 0x19;
 		val = (sb << 30) | (op_w << 28) | (pa[i] << 23) | (regaddr << 18) | (ta << 16) | 0x0191;
+		writel(val, ccb_mii_mng_cmd_data_addr);
+
+		/* Set 0dB pre-emphasis in TxBlock 0x820 to improve TX signal */
+		uint32 op_r = 2, tmp_val;
+		blkaddr = 0x820;
+
+		/* Change blkaddr to 0x820 */
+		SPINWAIT(((readl(ccb_mii_mng_ctrl_addr) >> 8 & 1) == 1), 1000);
+		val = (sb << 30) | (op_w << 28) | (pa[i] << 23) | (blkra << 18) | (ta << 16) | (blkaddr << 4);
+		writel(val, ccb_mii_mng_cmd_data_addr);
+
+		/* Read 0x18 regaddr for GEN1 */
+		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+		regaddr = 0x18;
+		val = (sb << 30) | (op_r << 28) | (pa[i] << 23) | (regaddr << 18) | (ta << 16) | 0x0;
+		writel(val, ccb_mii_mng_cmd_data_addr);
+
+		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+		tmp_val = readl(ccb_mii_mng_cmd_data_addr);
+
+		/* Set GEN1 0dB pre-emphasis */
+		SPINWAIT(((readl(ccb_mii_mng_ctrl_addr) >> 8 & 1) == 1), 1000);
+		regaddr = 0x18;
+		tmp_val &= ~(0xf << 4);
+		val = (sb << 30) | (op_w << 28) | (pa[i] << 23) | (regaddr << 18) | (ta << 16) | tmp_val;
+		writel(val, ccb_mii_mng_cmd_data_addr);
+
+		/* Read 0x17 regaddr for GEN2 */
+		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+		regaddr = 0x17;
+		val = (sb << 30) | (op_r << 28) | (pa[i] << 23) | (regaddr << 18) | (ta << 16) | 0x0;
+		writel(val, ccb_mii_mng_cmd_data_addr);
+
+		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+		tmp_val = readl(ccb_mii_mng_cmd_data_addr);
+
+		/* Set GEN2 0dB pre-emphasis */
+		SPINWAIT(((readl(ccb_mii_mng_ctrl_addr) >> 8 & 1) == 1), 1000);
+		regaddr = 0x17;
+		tmp_val &= ~(0xf << 8);
+		val = (sb << 30) | (op_w << 28) | (pa[i] << 23) | (regaddr << 18) | (ta << 16) | tmp_val;
 		writel(val, ccb_mii_mng_cmd_data_addr);
 	}
 
@@ -1935,7 +1984,7 @@ static int __init soc_pcie_init(void)
 				mdelay(100);
 				/* read back */
 				clk_control = readl(pcie_regbase + 0x0);
-				printk(KERN_INFO "reset mode %d\n",clk_control & 1);
+				printk(KERN_INFO "reset mode %d\n", clk_control & 1);
 			}
 
 			REG_UNMAP((void *)pcie_regbase);
