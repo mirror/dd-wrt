@@ -14,14 +14,12 @@
 #include <linux/sched.h>
 #include <linux/syscalls.h>
 #include <linux/mm.h>
-#include <linux/highmem.h>
 
 #include <asm/cacheflush.h>
 #include <asm/highmem.h>
 #include <asm/processor.h>
 #include <asm/cpu.h>
 #include <asm/cpu-features.h>
-#include <linux/highmem.h>
 
 /* Cache operations. */
 void (*flush_cache_all)(void);
@@ -42,7 +40,6 @@ void (*__flush_cache_vunmap)(void);
 void (*__flush_kernel_vmap_range)(unsigned long vaddr, int size);
 EXPORT_SYMBOL_GPL(__flush_kernel_vmap_range);
 void (*__invalidate_kernel_vmap_range)(unsigned long vaddr, int size);
-EXPORT_SYMBOL(__flush_cache_all);
 
 /* MIPS specific cache operations */
 void (*flush_cache_sigtramp)(unsigned long addr);
@@ -62,8 +59,6 @@ void (*_dma_cache_wback)(unsigned long start, unsigned long size);
 void (*_dma_cache_inv)(unsigned long start, unsigned long size);
 
 EXPORT_SYMBOL(_dma_cache_wback_inv);
-EXPORT_SYMBOL(_dma_cache_wback);
-EXPORT_SYMBOL(_dma_cache_inv);
 
 #endif /* CONFIG_DMA_NONCOHERENT || CONFIG_DMA_MAYBE_COHERENT */
 
@@ -83,7 +78,6 @@ SYSCALL_DEFINE3(cacheflush, unsigned long, addr, unsigned long, bytes,
 
 	return 0;
 }
-
 
 void __flush_dcache_page(struct page *page)
 {
@@ -156,7 +150,6 @@ void __update_cache(unsigned long address, pte_t pte)
 		ClearPageDcacheDirty(page);
 	}
 }
-
 
 unsigned long _page_cachable_default;
 EXPORT_SYMBOL(_page_cachable_default);
