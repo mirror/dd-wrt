@@ -2073,7 +2073,7 @@ static void choose_devnum(struct usb_device *udev)
 	struct usb_bus	*bus = udev->bus;
 
 	/* be safe when more hub events are proceed in parallel */
-	mutex_lock(&bus->usb_address0_mutex);
+	mutex_lock(&bus->devnum_next_mutex);
 	if (udev->wusb) {
 		devnum = udev->portnum + 1;
 		BUG_ON(test_bit(devnum, bus->devmap.devicemap));
@@ -2091,7 +2091,7 @@ static void choose_devnum(struct usb_device *udev)
 		set_bit(devnum, bus->devmap.devicemap);
 		udev->devnum = devnum;
 	}
-	mutex_unlock(&bus->usb_address0_mutex);
+	mutex_unlock(&bus->devnum_next_mutex);
 }
 
 static void release_devnum(struct usb_device *udev)
@@ -4275,7 +4275,7 @@ hub_port_init (struct usb_hub *hub, struct usb_device *udev, int port1,
 	if (oldspeed == USB_SPEED_LOW)
 		delay = HUB_LONG_RESET_TIME;
 
-	mutex_lock(&hdev->bus->usb_address0_mutex);
+	mutex_lock(hcd->address0_mutex);
 
 	/* Reset the device; full speed may morph to high speed */
 	/* FIXME a USB 2.0 device may morph into SuperSpeed on reset. */
@@ -4561,7 +4561,7 @@ fail:
 		hub_port_disable(hub, port1, 0);
 		update_devnum(udev, devnum);	/* for disconnect processing */
 	}
-	mutex_unlock(&hdev->bus->usb_address0_mutex);
+	mutex_unlock(hcd->address0_mutex);
 	return retval;
 }
 
@@ -5386,6 +5386,7 @@ static int usb_reset_and_verify_device(struct usb_device *udev)
 	}
 
 	bos = udev->bos;
+	udev->bos = NULL;
 
 	for (i = 0; i < SET_CONFIG_TRIES; ++i) {
 
@@ -5478,11 +5479,8 @@ done:
 	usb_set_usb2_hardware_lpm(udev, 1);
 	usb_unlocked_enable_lpm(udev);
 	usb_enable_ltm(udev);
-	/* release the new BOS descriptor allocated  by hub_port_init() */
-	if (udev->bos != bos) {
-		usb_release_bos_descriptor(udev);
-		udev->bos = bos;
-	}
+	usb_release_bos_descriptor(udev);
+	udev->bos = bos;
 	return 0;
 
 re_enumerate:
