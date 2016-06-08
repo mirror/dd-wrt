@@ -17,6 +17,7 @@
 #include <linux/highmem.h>
 
 #include <asm/cacheflush.h>
+#include <asm/highmem.h>
 #include <asm/processor.h>
 #include <asm/cpu.h>
 #include <asm/cpu-features.h>
@@ -83,20 +84,13 @@ SYSCALL_DEFINE3(cacheflush, unsigned long, addr, unsigned long, bytes,
 	return 0;
 }
 
-static void
-flush_highmem_page(struct page *page)
-{
-	void *addr = kmap_atomic(page);
-	flush_data_cache_page((unsigned long)addr);
-	kunmap_atomic(addr);
-}
-
 
 void __flush_dcache_page(struct page *page)
 {
-	void *addr;
+	struct address_space *mapping = page_mapping(page);
+	unsigned long addr;
 
-	if (page_mapping(page) && !page_mapped(page)) {
+	if (mapping && !mapping_mapped(mapping)) {
 		SetPageDcacheDirty(page);
 		return;
 	}
@@ -106,100 +100,63 @@ void __flush_dcache_page(struct page *page)
 	 * case is for exec env/arg pages and those are %99 certainly going to
 	 * get faulted into the tlb (and thus flushed) anyways.
 	 */
-	if (PageHighMem(page)) {
-		flush_highmem_page(page);
-	} else {
-		addr = (void *) page_address(page);
-		flush_data_cache_page((unsigned long)addr);
-	}
-	ClearPageDcacheDirty(page);
+	if (PageHighMem(page))
+		addr = (unsigned long)kmap_atomic(page);
+	else
+		addr = (unsigned long)page_address(page);
+
+	flush_data_cache_page(addr);
+
+	if (PageHighMem(page))
+		__kunmap_atomic((void *)addr);
 }
 
 EXPORT_SYMBOL(__flush_dcache_page);
 
 void __flush_anon_page(struct page *page, unsigned long vmaddr)
 {
-	if (!PageHighMem(page)) {
-		unsigned long addr = (unsigned long) page_address(page);
+	unsigned long addr = (unsigned long) page_address(page);
 
-		if (pages_do_alias(addr, vmaddr & PAGE_MASK)) {
-			if (page_mapped(page) && !Page_dcache_dirty(page)) {
-				void *kaddr;
+	if (pages_do_alias(addr, vmaddr)) {
+		if (page_mapped(page) && !Page_dcache_dirty(page)) {
+			void *kaddr;
 
-				kaddr = kmap_coherent(page, vmaddr);
-				flush_data_cache_page((unsigned long)kaddr);
-				kunmap_coherent();
-			} else {
-				flush_data_cache_page(addr);
-				ClearPageDcacheDirty(page);
-			}
-		}
-	} else {
-		void *laddr = lowmem_page_address(page);
-
-		if (pages_do_alias((unsigned long)laddr, vmaddr & PAGE_MASK)) {
-			if (page_mapped(page) && !Page_dcache_dirty(page)) {
-				void *kaddr;
-
-				kaddr = kmap_coherent(page, vmaddr);
-				flush_data_cache_page((unsigned long)kaddr);
-				kunmap_coherent();
-			} else {
-				void *kaddr;
-
-				kaddr = kmap_atomic(page);
-				flush_data_cache_page((unsigned long)kaddr);
-				kunmap_atomic(kaddr);
-				ClearPageDcacheDirty(page);
-			}
-		}
+			kaddr = kmap_coherent(page, vmaddr);
+			flush_data_cache_page((unsigned long)kaddr);
+			kunmap_coherent();
+		} else
+			flush_data_cache_page(addr);
 	}
 }
 
 EXPORT_SYMBOL(__flush_anon_page);
 
-void __flush_icache_page(struct vm_area_struct *vma, struct page *page)
-{
-	unsigned long addr;
-
-	if (PageHighMem(page)) {
-		flush_highmem_page(page);
-		return;
-	}
-
-	addr = (unsigned long) page_address(page);
-	flush_data_cache_page(addr);
-}
-EXPORT_SYMBOL_GPL(__flush_icache_page);
-
-void __update_cache(struct vm_area_struct *vma, unsigned long address,
-	pte_t pte)
+void __update_cache(unsigned long address, pte_t pte)
 {
 	struct page *page;
 	unsigned long pfn, addr;
-	int exec = (vma->vm_flags & VM_EXEC) && !cpu_has_ic_fills_f_dc;
+	int exec = !pte_no_exec(pte) && !cpu_has_ic_fills_f_dc;
 
 	pfn = pte_pfn(pte);
-	if (unlikely(!pfn_valid(pfn))) {
-		wmb();
+	if (unlikely(!pfn_valid(pfn)))
 		return;
-	}
 	page = pfn_to_page(pfn);
-	if (page_mapped(page) && Page_dcache_dirty(page)) {
-		void *kaddr = NULL;
-		if (PageHighMem(page)) {
+	if (Page_dcache_dirty(page)) {
+		if (PageHighMem(page))
 			addr = (unsigned long)kmap_atomic(page);
-			kaddr = (void *)addr;
-		} else
-			addr = (unsigned long) page_address(page);
+		else
+			addr = (unsigned long)page_address(page);
+
 		if (exec || pages_do_alias(addr, address & PAGE_MASK))
 			flush_data_cache_page(addr);
+
+		if (PageHighMem(page))
+			__kunmap_atomic((void *)addr);
+
 		ClearPageDcacheDirty(page);
-		if (kaddr)
-			kunmap_atomic((void *)kaddr);
 	}
-	wmb();
 }
+
 
 unsigned long _page_cachable_default;
 EXPORT_SYMBOL(_page_cachable_default);
