@@ -605,24 +605,6 @@ nla_put_failure:
 	return (mac80211_info);
 }
 
-#define IEEE80211_HT_CAP_LDPC_CODING		0x0001
-#define IEEE80211_HT_CAP_SUP_WIDTH_20_40	0x0002
-#define IEEE80211_HT_CAP_SM_PS			0x000C
-#define		IEEE80211_HT_CAP_SM_PS_SHIFT	2
-#define IEEE80211_HT_CAP_GRN_FLD		0x0010
-#define IEEE80211_HT_CAP_SGI_20			0x0020
-#define IEEE80211_HT_CAP_SGI_40			0x0040
-#define IEEE80211_HT_CAP_TX_STBC		0x0080
-#define IEEE80211_HT_CAP_RX_STBC		0x0300
-#define		IEEE80211_HT_CAP_RX_STBC_SHIFT	8
-#define IEEE80211_HT_CAP_DELAY_BA		0x0400
-#define IEEE80211_HT_CAP_MAX_AMSDU		0x0800
-#define IEEE80211_HT_CAP_DSSSCCK40		0x1000
-#define IEEE80211_HT_CAP_RESERVED		0x2000
-#define IEEE80211_HT_CAP_40MHZ_INTOLERANT	0x4000
-#define IEEE80211_HT_CAP_LSIG_TXOP_PROT		0x8000
-
-
 char *mac80211_get_caps(char *interface, int shortgi, int greenfield)
 {
 	struct nl_msg *msg;
@@ -647,7 +629,7 @@ char *mac80211_get_caps(char *interface, int shortgi, int greenfield)
 		if (!caps)
 			continue;
 		cap = nla_get_u16(caps);
-		asprintf(&capstring, "%s%s%s%s%s%s%s%s%s%s", (cap & HT_CAP_INFO_LDPC_CODING_CAP ? "[LDPC]" : "")
+		asprintf(&capstring, "%s%s%s%s%s%s%s%s%s%s%s%s%s", (cap & HT_CAP_INFO_LDPC_CODING_CAP ? "[LDPC]" : "")
 			 , (((cap & HT_CAP_INFO_SHORT_GI20MHZ) && shortgi) ? "[SHORT-GI-20]" : "")
 			 , (((cap & HT_CAP_INFO_SHORT_GI40MHZ) && shortgi) ? "[SHORT-GI-40]" : "")
 			 , (cap & HT_CAP_INFO_TX_STBC ? "[TX-STBC]" : "")
@@ -657,6 +639,9 @@ char *mac80211_get_caps(char *interface, int shortgi, int greenfield)
 			 , (cap & HT_CAP_INFO_DSSS_CCK40MHZ ? "[DSSS_CCK-40]" : "")
 			 , ((cap & HT_CAP_INFO_GREEN_FIELD && greenfield) ? "[GF]" : "")
 			 , (cap & HT_CAP_INFO_DELAYED_BA ? "[DELAYED-BA]" : "")
+			 , (((cap >> 2) &0x3) == 0 ? "[SMPS-STATIC]":"")
+			 , (((cap >> 2) &0x3) == 1 ? "[SMPS-DYNAMIC]":"")
+			 , (cap & HT_CAP_INFO_MAX_AMSDU_SIZE ? "[MAX-AMSDU-7935]" : "")
 		    );
 	}
 out:
@@ -744,10 +729,10 @@ int has_vht160(char *interface)
 	return 0;
 }
 
-int has_greenfield(char *iface)
+int has_greenfield(char *interface)
 {
 
-	char *htcaps = mac80211_get_caps(interface, 1);
+	char *htcaps = mac80211_get_caps(interface, 1, 1);
 	if (strstr(htcaps, "[GF]")) {
 		free(htcaps);
 		return 1;
@@ -771,7 +756,7 @@ int has_vht80plus80(char *interface)
 
 int has_shortgi(char *interface)
 {
-	char *htcaps = mac80211_get_caps(interface, 1);
+	char *htcaps = mac80211_get_caps(interface, 1, 1);
 	if (strstr(htcaps, "SHORT-GI")) {
 		free(htcaps);
 		return 1;
