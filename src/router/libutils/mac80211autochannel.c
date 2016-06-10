@@ -300,11 +300,9 @@ static int get_max_eirp(void)
 		chan = &wifi_channels[i++];
 		if (chan->freq == -1)
 			break;
-		if (chan->max_eirp > eirp) {
-			if (chan->max_eirp < chan->hw_eirp)
-				eirp = chan->max_eirp;
-			else
-				eirp = chan->hw_eirp;
+		int max_eirp = chan->hw_eirp;
+		if (max_eirp > eirp) {
+			eirp = max_eirp;
 		}
 	}
 	return eirp;
@@ -319,10 +317,7 @@ static int get_eirp(int freq)
 		if (chan->freq == -1)
 			break;
 		if (chan->freq == freq) {
-			if (chan->max_eirp < chan->hw_eirp)
-				return chan->max_eirp;
-			else
-				return chan->hw_eirp;
+			return chan->hw_eirp;
 		}
 	}
 	return 0;
