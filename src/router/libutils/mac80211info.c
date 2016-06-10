@@ -773,8 +773,9 @@ int has_shortgi(char *interface)
 }
 
 static struct nla_policy freq_policy[NL80211_FREQUENCY_ATTR_MAX + 1] = {
-	[NL80211_FREQUENCY_ATTR_FREQ] = {
-					 .type = NLA_U32},
+	[NL80211_FREQUENCY_ATTR_FREQ] = {.type = NLA_U32},
+	[NL80211_FREQUENCY_ATTR_DISABLED] = {.type = NLA_FLAG},
+	[NL80211_FREQUENCY_ATTR_MAX_TX_POWER] = {.type = NLA_U32},
 };
 
 int mac80211_check_band(char *interface, int checkband)
