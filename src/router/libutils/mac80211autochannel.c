@@ -404,12 +404,14 @@ struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int s
 		if (f->noise_count) {
 			f->noise /= f->noise_count;
 			f->noise_count = 1;
-			if (f->noise < sdata.lowest_noise)
+			if (f->noise && f->noise < sdata.lowest_noise)
 				sdata.lowest_noise = f->noise;
 		}
 	}
 
 	list_for_each_entry(f, &frequencies, list) {
+		if (!f->noise)
+		    f->noise = -95;
 		f->quality = freq_quality(f, &sdata);
 	}
 
