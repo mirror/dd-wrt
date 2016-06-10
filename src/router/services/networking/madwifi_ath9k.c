@@ -502,7 +502,9 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	if (!isath5k) {
 		char shortgi[32];
 		sprintf(shortgi, "%s_shortgi", prefix);
-		caps = mac80211_get_caps(prefix, nvram_default_match(shortgi, "1", "1") ? 1 : 0);
+		char greenfield[32];
+		sprintf(shortgi, "%s_gf", prefix);
+		caps = mac80211_get_caps(prefix, nvram_default_match(shortgi, "1", "1") ? 1 : 0, nvram_default_match(greenfield, "1", "0") ? 1 : 0);
 		if (strlen(ht) > 0) {
 			fprintf(fp, "ht_capab=[%s]%s\n", ht, caps);
 		} else {
