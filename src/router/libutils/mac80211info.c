@@ -639,8 +639,8 @@ char *mac80211_get_caps(char *interface, int shortgi, int greenfield)
 			 , (cap & HT_CAP_INFO_DSSS_CCK40MHZ ? "[DSSS_CCK-40]" : "")
 			 , ((cap & HT_CAP_INFO_GREEN_FIELD && greenfield) ? "[GF]" : "")
 			 , (cap & HT_CAP_INFO_DELAYED_BA ? "[DELAYED-BA]" : "")
-			 , (((cap >> 2) &0x3) == 0 ? "[SMPS-STATIC]":"")
-			 , (((cap >> 2) &0x3) == 1 ? "[SMPS-DYNAMIC]":"")
+			 , (((cap >> 2) & 0x3) == 0 ? "[SMPS-STATIC]" : "")
+			 , (((cap >> 2) & 0x3) == 1 ? "[SMPS-DYNAMIC]" : "")
 			 , (cap & HT_CAP_INFO_MAX_AMSDU_SIZE ? "[MAX-AMSDU-7935]" : "")
 		    );
 	}
@@ -651,7 +651,6 @@ nla_put_failure:
 		return strdup("");
 	return capstring;
 }
-
 
 #ifdef HAVE_ATH10K
 
