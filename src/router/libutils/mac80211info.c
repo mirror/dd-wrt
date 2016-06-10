@@ -930,6 +930,11 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 					// for 10/5mhz this should be fine 
 					range = max_bandwidth_khz / 2;
 				freq_mhz = (int)nla_get_u32(tb[NL80211_FREQUENCY_ATTR_FREQ]);
+				int eirp = 0;
+
+				if (tb[NL80211_FREQUENCY_ATTR_MAX_TX_POWER] && !tb[NL80211_FREQUENCY_ATTR_DISABLED])
+					eirp = nla_get_u32(tb[NL80211_FREQUENCY_ATTR_MAX_TX_POWER]);
+
 				if (skip == 0)
 					rrdcount = 1;
 				else
@@ -1007,6 +1012,7 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 							// todo: wenn wir das ueberhaupt noch verwenden
 							list[count].noise = 0;
 							list[count].max_eirp = regpower.max_eirp / 100;
+							list[count].hw_eirp = eirp / 100;
 							if (rd->reg_rules[rrc].flags & RRF_NO_OFDM)
 								list[count].no_ofdm = 1;
 							if (rd->reg_rules[rrc].flags & RRF_NO_CCK)
