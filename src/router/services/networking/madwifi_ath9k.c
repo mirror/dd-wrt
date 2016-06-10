@@ -517,50 +517,52 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 			char shortgi[32];
 			sprintf(shortgi, "%s_shortgi", prefix);
 			caps = mac80211_get_vhtcaps(prefix, nvram_default_match(shortgi, "1", "1") ? 1 : 0);
-			fprintf(fp, "vht_capab=%s\n", caps);
-			free(caps);
-			fprintf(fp, "ieee80211ac=1\n");
-			if (!strcmp(netmode, "ac-only")) {
-				fprintf(fp, "require_vht=1\n");
-				fprintf(fp, "ieee80211d=1\n");
-				fprintf(fp, "ieee80211h=1\n");
-				//might be needed for dfs
-				//fprintf(fp, "spectrum_mgmt_required=1\n");
-				//fprintf(fp, "local_pwr_constraint=3\n");
-			}
+			if (strlen(caps)) {
+				fprintf(fp, "vht_capab=%s\n", caps);
+				free(caps);
+				fprintf(fp, "ieee80211ac=1\n");
+				if (!strcmp(netmode, "ac-only")) {
+					fprintf(fp, "require_vht=1\n");
+					fprintf(fp, "ieee80211d=1\n");
+					fprintf(fp, "ieee80211h=1\n");
+					//might be needed for dfs
+					//fprintf(fp, "spectrum_mgmt_required=1\n");
+					//fprintf(fp, "local_pwr_constraint=3\n");
+				}
 
-			if (!strcmp(netmode, "acn-mixed")) {
-				fprintf(fp, "require_ht=1\n");
-				fprintf(fp, "ieee80211d=1\n");
-				fprintf(fp, "ieee80211h=1\n");
-				//might be needed for dfs
-				//fprintf(fp, "spectrum_mgmt_required=1\n");
-				//fprintf(fp, "local_pwr_constraint=3\n");
-			}
+				if (!strcmp(netmode, "acn-mixed")) {
+					fprintf(fp, "require_ht=1\n");
+					fprintf(fp, "ieee80211d=1\n");
+					fprintf(fp, "ieee80211h=1\n");
+					//might be needed for dfs
+					//fprintf(fp, "spectrum_mgmt_required=1\n");
+					//fprintf(fp, "local_pwr_constraint=3\n");
+				}
 
-			if (nvram_match(bw, "40")) {
-				fprintf(fp, "vht_oper_chwidth=0\n");
-				int idx = channel + (2 * iht);
-				fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", idx);
-			} else if (nvram_match(bw, "80")) {
-				fprintf(fp, "vht_oper_chwidth=1\n");
-				int idx = channel + (6 * iht);
-				fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", idx);
-			} else if (nvram_match(bw, "160")) {
-				fprintf(fp, "vht_oper_chwidth=2\n");
-				int idx = 114;
-				if (channel < 100)
-					idx = 50;
-				fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", idx);
-			} else {
-				if (nvram_match(bw, "80+80")) {
-					fprintf(fp, "vht_oper_chwidth=3\n");
+				if (nvram_match(bw, "40")) {
+					fprintf(fp, "vht_oper_chwidth=0\n");
+					int idx = channel + (2 * iht);
+					fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", idx);
+				} else if (nvram_match(bw, "80")) {
+					fprintf(fp, "vht_oper_chwidth=1\n");
+					int idx = channel + (6 * iht);
+					fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", idx);
+				} else if (nvram_match(bw, "160")) {
+					fprintf(fp, "vht_oper_chwidth=2\n");
 					int idx = 114;
 					if (channel < 100)
 						idx = 50;
 					fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", idx);
 				} else {
-					fprintf(fp, "vht_oper_chwidth=0\n");
+					if (nvram_match(bw, "80+80")) {
+						fprintf(fp, "vht_oper_chwidth=3\n");
+						int idx = 114;
+						if (channel < 100)
+							idx = 50;
+						fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", idx);
+					} else {
+						fprintf(fp, "vht_oper_chwidth=0\n");
+					}
 				}
 			}
 
