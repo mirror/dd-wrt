@@ -56,6 +56,7 @@ struct frequency {
 	int clear_count;
 	int noise;
 	int noise_count;
+	int eirp;
 };
 
 static LIST_HEAD(frequencies);
@@ -287,6 +288,45 @@ nla_put_failure:
 struct sort_data {
 	int lowest_noise;
 };
+static int _htflags;
+static struct wifi_channels *wifi_channels;
+static int _max_eirp;
+static int get_max_eirp(void)
+{
+	int eirp = 0;
+	int i = 0;
+	struct wifi_channels *chan = NULL;
+	while (1) {
+		chan = &wifi_channels[i++];
+		if (chan->freq == -1)
+			break;
+		if (chan->max_eirp > eirp) {
+			if (chan->max_eirp < chan->hw_eirp)
+				eirp = chan->max_eirp;
+			else
+				eirp = chan->hw_eirp;
+		}
+	}
+	return eirp;
+}
+
+static int get_eirp(int freq)
+{
+	int i = 0;
+	struct wifi_channels *chan = NULL;
+	while (1) {
+		chan = &wifi_channels[i++];
+		if (chan->freq == -1)
+			break;
+		if (chan->freq == freq) {
+			if (chan->max_eirp < chan->hw_eirp)
+				return chan->max_eirp;
+			else
+				return chan->hw_eirp;
+		}
+	}
+	return 0;
+}
 
 static int freq_quality(struct frequency *f, struct sort_data *s)
 {
@@ -306,16 +346,16 @@ static int freq_quality(struct frequency *f, struct sort_data *s)
 
 	/* subtract 2 * the number of db that the noise value is over the
 	 * lowest that was found to discourage noisy channels */
-	c -= 2 * (f->noise - s->lowest_noise);
-
+	int eirp = get_eirp(f->freq);
+	c -= (f->noise - s->lowest_noise);
+	c -= (_max_eirp - eirp);
+	f->eirp = eirp;
 	if (c < 0)
 		c = 0;
 
 	return c;
 }
 
-static int _htflags;
-static struct wifi_channels *wifi_channels;
 static int sort_cmp(void *priv, struct list_head *a, struct list_head *b)
 {
 	struct frequency *f1 = container_of(a, struct frequency, list);
@@ -327,16 +367,16 @@ static int sort_cmp(void *priv, struct list_head *a, struct list_head *b)
 	while (1) {
 		chan = &wifi_channels[i++];
 		if (chan->freq == -1)
-		    break;
+			break;
 		if (chan->freq == f1->freq)
-		    break;
+			break;
 	}
 	if (chan->freq == -1)
 		return 1;
 
 	if (chan->ht40minus || chan->ht40plus)
 		hasht40 = 1;
-	if ((_htflags & AUTO_FORCEHT40 || _htflags & AUTO_FORCEVHT80 || _htflags & AUTO_FORCEVHT160 ) && !hasht40)
+	if ((_htflags & AUTO_FORCEHT40 || _htflags & AUTO_FORCEVHT80 || _htflags & AUTO_FORCEVHT160) && !hasht40)
 		channelisgood = 0;
 
 	if (!channelisgood)
@@ -375,7 +415,7 @@ struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int s
 	wifi_channels = mac80211_get_channels(interface, country, bw, 0xff);
 	if (scans == 0)
 		scans = 2;
-
+	_max_eirp = get_max_eirp();
 	wdev = if_nametoindex(interface);
 	if (wdev < 0) {
 		fprintf(stderr, "mac80211autochannel Interface not found\n");
@@ -411,14 +451,14 @@ struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int s
 
 	list_for_each_entry(f, &frequencies, list) {
 		if (!f->noise)
-		    f->noise = -95;
+			f->noise = -95;
 		f->quality = freq_quality(f, &sdata);
 	}
 
 	list_sort(&sdata, &frequencies, sort_cmp);
 
 	list_for_each_entry(f, &frequencies, list) {
-		fprintf(stderr, "freq:%d qual:%d noise:%d\n", f->freq, f->quality, f->noise);
+		fprintf(stderr, "freq:%d qual:%d noise:%d eirp: %d\n", f->freq, f->quality, f->noise, f->eirp);
 	}
 
 	list_for_each_entry(f, &frequencies, list) {

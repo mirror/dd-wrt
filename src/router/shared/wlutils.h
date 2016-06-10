@@ -192,6 +192,7 @@ struct wifi_channels {
 	unsigned char ht40plus;
 	unsigned char dfs;
 	int max_eirp;
+	int hw_eirp;
 	unsigned char no_outdoor;
 	unsigned char no_indoor;
 	unsigned char no_ofdm;
