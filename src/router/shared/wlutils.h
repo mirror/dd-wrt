@@ -153,8 +153,9 @@ extern int getdevicecount(void);
 
 extern int mac80211_get_coverageclass(char *interface);
 extern struct mac80211_info *mac80211_assoclist(char *interface);
-extern char *mac80211_get_caps(char *interface, int shortgi);
+extern char *mac80211_get_caps(char *interface, int shortgi, int greenfield);
 extern int has_shortgi(char *interface);
+extern int has_greenfield(char *interface);
 #ifdef HAVE_ATH10K
 extern int has_vht160(char *interface);
 extern int has_vht80plus80(char *interface);
