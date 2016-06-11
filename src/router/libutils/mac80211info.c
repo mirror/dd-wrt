@@ -321,7 +321,6 @@ void set_ath10kdistance(char *dev, unsigned int distance)
 		oldack = get_ath10kreg(dev, 0xf424) & 0xffff;
 	else
 		oldack = get_ath10kreg(dev, 0x8014) & 0x3fff;
-
 	if (oldack != ack) {
 		if (isb) {
 			set_ath10kreg(dev, 0x0040, baseslot);
@@ -940,118 +939,119 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 					rrdcount = 1;
 				else
 					rrdcount = rd->n_reg_rules;
-				int cc;
-				int isband = 0;
-				if (freq_mhz >= 4900)
-					isband = 1;
-				if (freq_mhz >= 5500)
-					isband = 2;
-				startfreq = 0;
-				stopfreq = 0;
-				int startlowbound = 0;
-				int starthighbound = 0;
-				int stoplowbound = 0;
-				int stophighbound = 0;
-				int maxeirp = 0;
-				switch (isband) {
-				case 0:
-					startlowbound = 2200000;
-					starthighbound = 4900000;
-					stophighbound = 2700000;
-					stoplowbound = 0;
-					break;
-				case 1:
-					startlowbound = 4900000;
-					starthighbound = 5350000;
-					stophighbound = 5350000;
-					stoplowbound = 2700000;
+				//for (rrc = 0; rrc < rrdcount; rrc++)
+				{
+					int cc;
+					int isband = 0;
+					if (freq_mhz >= 4900)
+						isband = 1;
+					if (freq_mhz >= 5500)
+						isband = 2;
+					startfreq = 0;
+					stopfreq = 0;
+					int startlowbound = 0;
+					int starthighbound = 0;
+					int stoplowbound = 0;
+					int stophighbound = 0;
+					switch (isband) {
+					case 0:
+						startlowbound = 2200000;
+						starthighbound = 4900000;
+						stophighbound = 2700000;
+						stoplowbound = 0;
+						break;
+					case 1:
+						startlowbound = 4900000;
+						starthighbound = 5350000;
+						stophighbound = 5350000;
+						stoplowbound = 2700000;
 
-					break;
-				case 2:
-					startlowbound = 5350000;
-					starthighbound = 5500000;
-					stophighbound = 6200000;
-					stoplowbound = 5500000;
-					break;
-				}
-				int flags = 0;
-				for (cc = 0; cc < rrdcount; cc++) {
-					regfreq = rd->reg_rules[cc].freq_range;
-					if (!startfreq && regfreq.start_freq_khz > startlowbound && regfreq.start_freq_khz < starthighbound) {
-						startfreq = regfreq.start_freq_khz / 1000;
+						break;
+					case 2:
+						startlowbound = 5350000;
+						starthighbound = 5500000;
+						stophighbound = 6200000;
+						stoplowbound = 5500000;
+						break;
 					}
-					if (regfreq.end_freq_khz <= stophighbound && regfreq.end_freq_khz > stoplowbound) {
-						regmaxbw = regfreq.max_bandwidth_khz / 1000;
-						stopfreq = regfreq.end_freq_khz / 1000;
-						regpower = rd->reg_rules[cc].power_rule;
-						flags = rd->reg_rules[cc].flags;
+					int flags = 0;
+					for (cc = 0; cc < rrdcount; cc++) {
+						regfreq = rd->reg_rules[cc].freq_range;
+						if (!startfreq && regfreq.start_freq_khz > startlowbound && regfreq.start_freq_khz < starthighbound) {
+							startfreq = regfreq.start_freq_khz / 1000;
+						}
+						if (regfreq.end_freq_khz <= stophighbound && regfreq.end_freq_khz > stoplowbound) {
+							regmaxbw = regfreq.max_bandwidth_khz / 1000;
+							stopfreq = regfreq.end_freq_khz / 1000;
+							regpower = rd->reg_rules[cc].power_rule;
+							flags = rd->reg_rules[cc].flags;
+						}
 					}
-				}
 
 //                                      fprintf(stderr, "pre: freq %d, htrange %d, startfreq %d stopfreq %d, regmaxbw %d\n", freq_mhz, htrange, startfreq, stopfreq, regmaxbw);
 
 //                                      regfreq = rd->reg_rules[rrc].freq_range;                                        
 //                                      startfreq = regfreq.start_freq_khz / 1000;
 //                                      stopfreq = regfreq.end_freq_khz / 1000;
-				if (!skip)
-					regmaxbw = 40;
-				if (!skip || ((freq_mhz - range) >= startfreq && (freq_mhz + range) <= stopfreq)) {
-					if (run == 1) {
+					if (!skip)
+						regmaxbw = 40;
+					if (!skip || ((freq_mhz - range) >= startfreq && (freq_mhz + range) <= stopfreq)) {
+						if (run == 1) {
 
 #if defined(HAVE_BUFFALO_SA) && defined(HAVE_ATH9K)
-						char *sa_region = getUEnv(region);
-						if (sa_region != NULL && (!strcmp(sa_region, "AP")
-									  || !strcmp(sa_region, "US"))
-						    && ieee80211_mhz2ieee(freq_mhz) > 11 && ieee80211_mhz2ieee(freq_mhz) < 14 && nvram_default_match("region", "SA", ""))
-							continue;
+							char *sa_region = getUEnv(region);
+							if (sa_region != NULL && (!strcmp(sa_region, "AP")
+										  || !strcmp(sa_region, "US"))
+							    && ieee80211_mhz2ieee(freq_mhz) > 11 && ieee80211_mhz2ieee(freq_mhz) < 14 && nvram_default_match("region", "SA", ""))
+								continue;
 #endif
-						if (checkband == 2 && freq_mhz > 4000)
-							continue;
-						if (checkband == 5 && freq_mhz < 4000)
-							continue;
-						list[count].channel = ieee80211_mhz2ieee(freq_mhz);
-						list[count].freq = freq_mhz;
+							if (checkband == 2 && freq_mhz > 4000)
+								continue;
+							if (checkband == 5 && freq_mhz < 4000)
+								continue;
+							list[count].channel = ieee80211_mhz2ieee(freq_mhz);
+							list[count].freq = freq_mhz;
 
-						// todo: wenn wir das ueberhaupt noch verwenden
-						list[count].noise = 0;
-						list[count].max_eirp = regpower.max_eirp / 100;
-						list[count].hw_eirp = eirp / 100;
-						if (flags & RRF_NO_OFDM)
-							list[count].no_ofdm = 1;
-						if (flags & RRF_NO_CCK)
-							list[count].no_cck = 1;
-						if (flags & RRF_NO_INDOOR)
-							list[count].no_indoor = 1;
-						if (flags & RRF_NO_OUTDOOR)
-							list[count].no_outdoor = 1;
-						if (flags & RRF_DFS)
-							list[count].dfs = 1;
-						if (flags & RRF_PTP_ONLY)
-							list[count].ptp_only = 1;
-						if (flags & RRF_PTMP_ONLY)
-							list[count].ptmp_only = 1;
-						if (flags & RRF_PASSIVE_SCAN)
-							list[count].passive_scan = 1;
-						if (flags & RRF_NO_IBSS)
-							list[count].no_ibss = 1;
-						list[count].ht40minus = 0;
-						list[count].ht40plus = 0;
-						//                              fprintf(stderr,"freq %d, htrange %d, startfreq %d, stopfreq %d\n", freq_mhz, htrange, startfreq, stopfreq);
-						if (regmaxbw > 20 && regmaxbw >= max_bandwidth_khz) {
-							fprintf(stderr, "freq %d, htrange %d, startfreq %d stopfreq %d, regmaxbw %d hw_eirp %d max_eirp %d\n", freq_mhz, max_bandwidth_khz, startfreq, stopfreq, regmaxbw,
-								eirp, regpower.max_eirp);
-							if (((freq_mhz - range) - max_bandwidth_khz) >= startfreq) {
-								list[count].ht40minus = 1;
+							// todo: wenn wir das ueberhaupt noch verwenden
+							list[count].noise = 0;
+							list[count].max_eirp = regpower.max_eirp / 100;
+							list[count].hw_eirp = eirp / 100;
+							if (flags & RRF_NO_OFDM)
+								list[count].no_ofdm = 1;
+							if (flags & RRF_NO_CCK)
+								list[count].no_cck = 1;
+							if (flags & RRF_NO_INDOOR)
+								list[count].no_indoor = 1;
+							if (flags & RRF_NO_OUTDOOR)
+								list[count].no_outdoor = 1;
+							if (flags & RRF_DFS)
+								list[count].dfs = 1;
+							if (flags & RRF_PTP_ONLY)
+								list[count].ptp_only = 1;
+							if (flags & RRF_PTMP_ONLY)
+								list[count].ptmp_only = 1;
+							if (flags & RRF_PASSIVE_SCAN)
+								list[count].passive_scan = 1;
+							if (flags & RRF_NO_IBSS)
+								list[count].no_ibss = 1;
+							list[count].ht40minus = 0;
+							list[count].ht40plus = 0;
+							//                              fprintf(stderr,"freq %d, htrange %d, startfreq %d, stopfreq %d\n", freq_mhz, htrange, startfreq, stopfreq);
+							if (regmaxbw > 20 && regmaxbw >= max_bandwidth_khz) {
+								fprintf(stderr, "freq %d, htrange %d, startfreq %d stopfreq %d, regmaxbw %d hw_eirp %d max_eirp %d\n", freq_mhz, max_bandwidth_khz, startfreq, stopfreq,
+									regmaxbw, eirp, regpower.max_eirp);
+								if (((freq_mhz - range) - max_bandwidth_khz) >= startfreq) {
+									list[count].ht40minus = 1;
+								}
+								if (((freq_mhz + range) + max_bandwidth_khz) <= stopfreq) {
+									list[count].ht40plus = 1;
+								}
 							}
-							if (((freq_mhz + range) + max_bandwidth_khz) <= stopfreq) {
-								list[count].ht40plus = 1;
-							}
+							count++;
 						}
-						count++;
+						if (run == 0)
+							chancount++;
 					}
-					if (run == 0)
-						chancount++;
-
 				}
 			}
 		}
