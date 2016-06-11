@@ -590,6 +590,12 @@ struct mtd_partition *init_mtd_partitions(hndsflash_t * sfl_info, struct mtd_inf
 		size = maxsize;
 	}
 
+	if (nvram_match("boardnum", "32") && nvram_match("boardtype", "0x0646")
+	    && nvram_match("boardrev", "0x1601")) {
+		maxsize = 0x200000;
+		size = maxsize;
+	}
+
 	if (nvram_match("boardnum", "32") && nvram_match("boardtype", "0x0665")
 	    && nvram_match("boardrev", "0x1301")) {
 		maxsize = 0x200000;
