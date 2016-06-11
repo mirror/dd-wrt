@@ -823,17 +823,15 @@ nla_put_failure:
 	return 0;
 }
 
-static int isinlist(struct wifi_channels *list, int freq, int distance)
+static int isinlist(struct wifi_channels *list, int freq)
 {
 	int i = 0;
 	while (1) {
 		struct wifi_channels *chan = &list[i++];
 		if (chan->freq == -1)
 			break;
-		if (chan->freq + distance == freq)
-			return 1;
-		if (chan->freq - distance == freq)
-			return -1;
+		if (chan->freq == freq)
+		    return 1;
 	}
 	return 0;
 }
@@ -842,6 +840,7 @@ static void check_validchannels(struct wifi_channels *list, int bw)
 {
 	int distance = 20;
 	int count = 0;
+	char *debugstr[] = {"20MHz","40MHz","80MHz","160MHz"};
 	switch (bw) {
 	case 20:
 		return;		// all valid
@@ -857,17 +856,20 @@ static void check_validchannels(struct wifi_channels *list, int bw)
 	}
 
 	int a;
-	for (a = 0; a < count; a++) {
+	for (a = 1; a < count; a++) {
 		int i = 0;
 		while (1) {
 			struct wifi_channels *chan = &list[i++];
 			if (chan->freq == -1)
 				break;
-			int res = isinlist(list, chan->freq, distance << a);
-			if (res > 0)
+			if (!isinlist(list, chan->freq + (distance << a))) {
+				fprintf(stderr, "freq %d has no %s parent at %d, disable ht40plus\n", chan->freq, debugstr[a], chan->freq + distance << a);
 				chan->ht40plus = 0;
-			if (res < 0)
+			}
+			if (!isinlist(list, chan->freq - (distance << a))) {
+				fprintf(stderr, "freq %d has no %s parent at %d, disable ht40mius\n", chan->freq, debugstr[a], chan->freq - distance << a);
 				chan->ht40minus = 0;
+			}
 		}
 	}
 }
@@ -1037,15 +1039,15 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 							list[count].ht40minus = 0;
 							list[count].ht40plus = 0;
 							//                              fprintf(stderr,"freq %d, htrange %d, startfreq %d, stopfreq %d\n", freq_mhz, htrange, startfreq, stopfreq);
-							if (regmaxbw > 20 && regmaxbw >= max_bandwidth_khz) {
-								fprintf(stderr, "freq %d, htrange %d, startfreq %d stopfreq %d, regmaxbw %d hw_eirp %d max_eirp %d\n", freq_mhz, max_bandwidth_khz, startfreq, stopfreq,
-									regmaxbw, eirp, regpower.max_eirp);
 								if (((freq_mhz - range) - max_bandwidth_khz) >= startfreq) {
 									list[count].ht40minus = 1;
 								}
 								if (((freq_mhz + range) + max_bandwidth_khz) <= stopfreq) {
 									list[count].ht40plus = 1;
 								}
+							if (regmaxbw > 20 && regmaxbw >= max_bandwidth_khz) {
+								fprintf(stderr, "freq %d, htrange %d, startfreq %d stopfreq %d, regmaxbw %d hw_eirp %d max_eirp %d ht40plus %d ht40minus %d\n", freq_mhz, max_bandwidth_khz, startfreq, stopfreq,
+									regmaxbw, eirp, regpower.max_eirp,list[count].ht40plus, list[count].ht40minus );
 							}
 							count++;
 						}
