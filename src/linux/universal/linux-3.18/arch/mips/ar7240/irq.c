@@ -524,6 +524,11 @@ static void ar934x_ip2_handler(void)
 	do_IRQ(AR71XX_CPU_IRQ_IP2);
 }
 
+static void qca9533_ip2_handler(void)
+{
+	do_IRQ(AR71XX_CPU_IRQ_IP2);
+}
+
 static void ar71xx_ip3_handler(void)
 {
 	ar71xx_ddr_flush(AR71XX_DDR_REG_FLUSH_USB);
@@ -553,6 +558,13 @@ static void ar934x_ip3_handler(void)
 	ar71xx_ddr_flush(AR934X_DDR_REG_FLUSH_USB);
 	do_IRQ(AR71XX_CPU_IRQ_USB);
 }
+
+static void qca9533_ip3_handler(void)
+{
+	ar71xx_ddr_flush(QCA953X_DDR_REG_FLUSH_USB);
+	do_IRQ(AR71XX_CPU_IRQ_USB);
+}
+
 
 static void ar71xx_default_ip2_handler(void)
 {
@@ -654,9 +666,12 @@ void __init arch_init_irq(void)
 	case AR71XX_SOC_AR9341:
 	case AR71XX_SOC_AR9342:
 	case AR71XX_SOC_AR9344:
-	case AR71XX_SOC_QCA9533:
 		ip2_handler = ar934x_ip2_handler;
 		ip3_handler = ar934x_ip3_handler;
+		break;
+	case AR71XX_SOC_QCA9533:
+		ip2_handler = qca9533_ip2_handler;
+		ip3_handler = qca9533_ip3_handler;
 		break;
 	case AR71XX_SOC_QCA9556:
 	case AR71XX_SOC_QCA9558:
