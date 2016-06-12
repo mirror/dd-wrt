@@ -573,11 +573,6 @@ asmlinkage void plat_irq_dispatch(void)
 
 	pending = read_c0_status() & read_c0_cause() & ST0_IM;
 
-	if (!pending) {
-		spurious_interrupt();
-		return;
-	}
-
 	if (pending & STATUSF_IP7)
 		do_IRQ(AR71XX_CPU_IRQ_TIMER);
 
