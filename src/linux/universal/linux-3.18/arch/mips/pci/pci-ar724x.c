@@ -232,7 +232,7 @@ static void ar724x_pci_irq_handler(unsigned int irq, struct irq_desc *desc)
 	void __iomem *base;
 	u32 pending;
 
-	apc = irq_desc_get_handler_data(desc);
+	apc = irq_get_handler_data(irq);
 	base = apc->ctrl_base;
 
 	pending = __raw_readl(base + AR724X_PCI_REG_INT_STATUS) &
