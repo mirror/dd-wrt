@@ -244,6 +244,11 @@ static int __init gpio_init(void)
 		printk(KERN_EMERG "Netgear AC1450/R6250/R6300v2/EX6200 init\n");
 		gpios = 1<<0 | 1<<1 | 1<<2 | 1<<3 | 1<<4 | 1<<5 | 1<<6 | 1<<7 | 1<<8 | 1<<9 | 1<<10 | 1<<11 | 1<<15;
 	}
+	
+	if ((boardnum == 32) && nvram_match("boardtype", "0x0646") && (nvram_match("boardrev", "0x1601"))) {
+		printk(KERN_EMERG "Netgear R6400 init\n");
+		gpios = 1<<0 | 1<<1 | 1<<2 | 1<<3 | 1<<4 | 1<<5 | 1<<6 | 1<<7 | 1<<8 | 1<<9 | 1<<10 | 1<<11 | 1<<15;
+	}
 
 	if ((boardnum == 32) && nvram_match("boardtype", "0x0665") && (nvram_match("boardrev", "0x1301"))) {
 		printk(KERN_EMERG "Netgear R7000 init\n");
