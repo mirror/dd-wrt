@@ -137,13 +137,15 @@ int system2(char *command)
 
 int sysprintf(const char *fmt, ...)
 {
-	char varbuf[256];
+	char *varbuf;
 	va_list args;
 
 	va_start(args, (char *)fmt);
-	vsnprintf(varbuf, sizeof(varbuf), fmt, args);
+	vasprintf(&varbuf, fmt, args);
 	va_end(args);
-	return system2(varbuf);
+	int ret = system2(varbuf);
+	free(varbuf);
+	return ret;
 }
 
 int eval_va(const char *cmd, ...)
