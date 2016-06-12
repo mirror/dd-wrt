@@ -863,11 +863,11 @@ static void check_validchannels(struct wifi_channels *list, int bw)
 			if (chan->freq == -1)
 				break;
 			if (!isinlist(list, chan->freq + (distance << a))) {
-				fprintf(stderr, "freq %d has no %s parent at %d, disable ht40plus\n", chan->freq, debugstr[a], chan->freq + distance << a);
+				fprintf(stderr, "freq %d has no %s parent at %d, disable ht40plus\n", chan->freq, debugstr[a], chan->freq + (distance << a));
 				chan->ht40plus = 0;
 			}
 			if (!isinlist(list, chan->freq - (distance << a))) {
-				fprintf(stderr, "freq %d has no %s parent at %d, disable ht40mius\n", chan->freq, debugstr[a], chan->freq - distance << a);
+				fprintf(stderr, "freq %d has no %s parent at %d, disable ht40minus\n", chan->freq, debugstr[a], chan->freq - (distance << a));
 				chan->ht40minus = 0;
 			}
 		}
