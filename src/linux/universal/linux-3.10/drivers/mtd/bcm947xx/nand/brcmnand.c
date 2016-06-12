@@ -1078,6 +1078,10 @@ init_brcmnand_mtd_partitions(struct mtd_info *mtd, size_t size)
 		size -= 0x100000;
 	}
 	
+	if (boardnum == 32 && nvram_match("boardtype", "0x0646") && nvram_match("boardrev", "0x1601")) {
+		size   -= 0x1000000;
+	}
+	
 	if (boardnum == 32 && nvram_match("boardtype", "0x072F") && nvram_match("boardrev", "0x1101")) {
 		size   -= 0x1000000;
 	}
@@ -1160,6 +1164,7 @@ brcmnand_mtd_init(void)
 	chip->ecc.write_page = brcmnand_write_page_ecc;
 	chip->ecc.read_oob = brcmnand_read_oob;
 	chip->ecc.write_oob = brcmnand_write_oob;
+	chip->ecc.strength = 1;
 	chip->select_chip = brcmnand_select_chip;
 #ifdef CONFIG_MIPS_BRCM
 	chip->cmdfunc = brcmnand_command;
