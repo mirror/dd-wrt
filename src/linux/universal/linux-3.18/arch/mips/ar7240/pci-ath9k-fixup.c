@@ -88,6 +88,9 @@ static void ath9k_pci_fixup(struct pci_dev *dev)
 	case AR71XX_SOC_AR7242:
 		pci_write_config_dword(dev, PCI_BASE_ADDRESS_0, 0x1000ffff);
 		break;
+	case AR71XX_SOC_AR9344:
+		pci_write_config_dword(dev, PCI_BASE_ADDRESS_0, 0x1000ffff);
+		break;
 
 	default:
 		iounmap(mem);
