@@ -270,7 +270,7 @@ void stop_pptpd(void)
 #ifdef HAVE_PPTP_ACCEL
 	rmmod("pptp");
 #endif
-	dd_syslog(LOG_INFO, "pptpd : pptp daemon successfully stoped\n");
+	dd_syslog(LOG_INFO, "pptpd : pptp daemon successfully stopped\n");
 	return;
 }
 #endif
