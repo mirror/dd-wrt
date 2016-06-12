@@ -1039,6 +1039,14 @@ init_brcmnand_mtd_partitions(struct mtd_info *mtd, size_t size)
 		
 	}
 
+	if (((boardnum == 1) || (nvram_get("boardnum") == NULL)) && nvram_match("boardtype", "0x0646") && nvram_match("boardrev", "0x1100") && !strncmp(nvram_safe_get("modelNumber"),"EA6400",6)) {
+		offset = 0x4000000;
+	}
+
+	if (((boardnum == 1) || (nvram_get("boardnum") == NULL)) && nvram_match("boardtype", "0x0646") && nvram_match("boardrev", "0x1100") && !strncmp(nvram_safe_get("modelNumber"),"EA6300",6)) {
+		offset = 0x4000000;
+	}
+
 	if (nvram_match("model","RT-AC87U")) {
 		printk(KERN_EMERG "Asus AC87U\n");
 		offset = 0x4000000;
@@ -1070,6 +1078,10 @@ init_brcmnand_mtd_partitions(struct mtd_info *mtd, size_t size)
 		isbufdual = 1;
 		offset = 0x6000000;
 		size -= 0x100000;
+	}
+	
+	if (boardnum == 32 && nvram_match("boardtype", "0x0646") && nvram_match("boardrev", "0x1601")) {
+		size   -= 0x1000000;
 	}
 	
 	if (boardnum == 32 && nvram_match("boardtype", "0x072F") && nvram_match("boardrev", "0x1101")) {
