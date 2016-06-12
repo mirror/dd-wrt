@@ -249,7 +249,6 @@ static void ar934x_ip2_irq_dispatch(struct irq_desc *desc)
 		spurious_interrupt();
 	}
 
-	enable_irq(irq);
 }
 
 
@@ -264,7 +263,7 @@ static void qca955x_ip2_irq_dispatch(struct irq_desc *desc)
 
 	if (status == 0) {
 		spurious_interrupt();
-		goto enable;
+		return;
 	}
 
 	if (status & QCA955X_EXT_INT_PCIE_RC1_ALL) {
@@ -276,9 +275,6 @@ static void qca955x_ip2_irq_dispatch(struct irq_desc *desc)
 		/* TODO: flush DDR? */
 		generic_handle_irq(AR934X_IP2_IRQ(1));
 	}
-
-enable:
-	enable_irq(irq);
 }
 
 static void qca955x_ip3_irq_dispatch(struct irq_desc *desc)
@@ -294,7 +290,7 @@ static void qca955x_ip3_irq_dispatch(struct irq_desc *desc)
 
 	if (status == 0) {
 		spurious_interrupt();
-		goto enable;
+		return;
 	}
 
 	if (status & QCA955X_EXT_INT_USB1) {
@@ -312,8 +308,6 @@ static void qca955x_ip3_irq_dispatch(struct irq_desc *desc)
 		generic_handle_irq(AR934X_IP3_IRQ(2));
 	}
 
-enable:
-	enable_irq(irq);
 }
 
 static struct irq_chip ip2_chip;
@@ -376,7 +370,7 @@ static void qca956x_ip2_irq_dispatch(struct irq_desc *desc)
 
 	if (status == 0) {
 		spurious_interrupt();
-		goto enable;
+		return;
 	}
 
 	if (status & QCA956X_EXT_INT_PCIE_RC1_ALL) {
@@ -388,9 +382,6 @@ static void qca956x_ip2_irq_dispatch(struct irq_desc *desc)
 		/* TODO: flsuh DDR? */
 		generic_handle_irq(AR934X_IP2_IRQ(1));
 	}
-
-enable:
-	enable_irq(irq);
 }
 
 static void qca956x_ip3_irq_dispatch(struct irq_desc *desc)
@@ -405,7 +396,7 @@ static void qca956x_ip3_irq_dispatch(struct irq_desc *desc)
 
 	if (status == 0) {
 		spurious_interrupt();
-		goto enable;
+		return;
 	}
 
 	if (status & QCA956X_EXT_INT_USB1) {
@@ -422,9 +413,6 @@ static void qca956x_ip3_irq_dispatch(struct irq_desc *desc)
 		/* TODO: flush DDR? */
 		generic_handle_irq(AR934X_IP3_IRQ(2));
 	}
-
-enable:
-	enable_irq(irq);
 }
 
 static void qca956x_enable_timer_cb(void) {
@@ -573,6 +561,11 @@ asmlinkage void plat_irq_dispatch(void)
 
 	pending = read_c0_status() & read_c0_cause() & ST0_IM;
 
+	if (!pending) {
+		spurious_interrupt();
+		return;
+	}
+
 	if (pending & STATUSF_IP7)
 		do_IRQ(AR71XX_CPU_IRQ_TIMER);
 
@@ -654,10 +647,10 @@ void __init arch_init_irq(void)
 	case AR71XX_SOC_AR9341:
 	case AR71XX_SOC_AR9342:
 	case AR71XX_SOC_AR9344:
+	case AR71XX_SOC_QCA9533:
 		ip2_handler = ar934x_ip2_handler;
 		ip3_handler = ar934x_ip3_handler;
 		break;
-	case AR71XX_SOC_QCA9533:
 	case AR71XX_SOC_QCA9556:
 	case AR71XX_SOC_QCA9558:
 		ip2_handler = ar71xx_default_ip2_handler;
