@@ -902,6 +902,210 @@ void start_sysinit(void)
 		set_gpio(4, 1);	//ses
 		set_gpio(5, 1);	//wifi
 		break;
+	case ROUTER_NETGEAR_R6400:
+
+		if (nvram_get("pci/1/1/ddwrt") == NULL) {
+			if (!sv_valid_hwaddr(nvram_safe_get("pci/1/1/macaddr"))
+			    || startswith(nvram_safe_get("pci/1/1/macaddr"), "00:90:4C")
+			    || !sv_valid_hwaddr(nvram_safe_get("pci/2/1/macaddr"))
+			    || startswith(nvram_safe_get("pci/2/1/macaddr"), "00:90:4C")) {
+				char mac[20];
+				strcpy(mac, nvram_safe_get("et0macaddr"));
+				MAC_ADD(mac);
+				MAC_ADD(mac);
+				nvram_set("pci/1/1/macaddr", mac);
+				MAC_ADD(mac);
+				nvram_set("pci/2/1/macaddr", mac);
+			}
+			struct nvram_param r6400_pci_1_1_params[] = {
+				{"pa2gw1a0", "0x1950"},
+				{"pa2gw1a1", "0x18f7"},
+				{"pa2gw1a2", "0x192c"},
+				{"ledbh12", "11"},
+				{"rxgainerr2ga0", "12"},
+				{"rxgainerr2ga1", "-1"},
+				{"rxgainerr2ga2", "-1"},
+				{"legofdmbw202gpo", "0x64200000"},
+				{"ag0", "0"},
+				{"ag1", "0"},
+				{"ag2", "0"},
+				{"legofdmbw20ul2gpo", "0x64200000"},
+				{"rxchain", "7"},
+				{"cckbw202gpo", "0"},
+				{"mcsbw20ul2gpo", "0x86522222"},
+				{"pa2gw0a0", "0xfe8c"},
+				{"pa2gw0a1", "0xfea3"},
+				{"pa2gw0a2", "0xfe94"},
+				{"boardflags", "0x80003200"},
+				{"tempoffset", "0"},
+				{"boardvendor", "0x14e4"},
+				{"triso2g", "3"},
+				{"sromrev", "9"},
+				{"extpagain2g", "1"},
+				{"venid", "0x14e4"},
+				{"rpcal2g", "0x0"},
+				{"maxp2ga0", "0x60"},
+				{"watchdog", "3000"},
+				{"maxp2ga1", "0x60"},
+				{"maxp2ga2", "0x60"},
+				{"boardflags2", "0x4100000"},
+				{"tssipos2g", "1"},
+				{"ledbh0", "11"},
+				{"ledbh1", "11"},
+				{"ledbh2", "11"},
+				{"ledbh3", "11"},
+				{"mcs32po", "0x8"},
+				{"legofdm40duppo", "0x0"},
+				{"antswctl2g", "0"},
+				{"txchain", "7"},
+				{"elna2g", "2"},
+				{"aa2g", "7"},
+				{"antswitch", "0"},
+				{"cckbw20ul2gpo", "0"},
+				{"leddc", "0xFFFF"},
+				{"pa2gw2a0", "0xf9f1"},
+				{"pa2gw2a1", "0xfa2c"},
+				{"pa2gw2a2", "0xfa17"},
+				{"xtalfreq", "20000"},
+				{"ccode", "Q2"},
+				{"pdetrange2g", "3"},
+				{"regrev", "996"},
+				{"devid", "0x4332"},
+				{"tempthresh", "120"},
+				{"mcsbw402gpo", "0xEEEEEEEE"},
+				{"mcsbw202gpo", "0x86522222"},
+				{"eu_edthresh1g", "-62"},
+				{0, 0}
+			};
+			/*
+			 * set router's extra parameters 
+			 */
+			extra_params = r6400_pci_1_1_params;
+			while (extra_params->name) {
+				nvram_nset(extra_params->value, "pci/1/1/%s", extra_params->name);
+				extra_params++;
+			}
+
+			struct nvram_param r6400_pci_2_1_params[] = {
+				{"rxgains5ghtrisoa0", "5"},
+				{"rxgains5ghtrisoa1", "4"},
+				{"rxgains5ghtrisoa2", "4"},
+				{"txchain", "7"},
+				{"mcslr5gmpo", "0"},
+				{"phycal_tempdelta", "255"},
+				{"pdgain5g", "4"},
+				{"subband5gver", "0x4"},
+				{"ccode", "Q2"},
+				{"boardflags", "0x30000000"},
+				{"tworangetssi5g", "0"},
+				{"rxgains5gtrisoa0", "7"},
+				{"rxgains5gtrisoa1", "6"},
+				{"rxgains5gtrisoa2", "5"},
+				{"mcsbw205gmpo", "0xECA86400"},
+				{"xtalfreq", "65535"},
+				{"devid", "0x43a2"},
+				{"femctrl", "3"},
+				{"aa5g", "7"},
+				{"pdoffset80ma0", "0"},
+				{"pdoffset80ma1", "0"},
+				{"papdcap5g", "0"},
+				{"pdoffset80ma2", "0"},
+				{"tssiposslope5g", "1"},
+				{"mcslr5glpo", "0"},
+				{"sar5g", "15"},
+				{"pa5ga0", "0xff46,0x19de,0xfcdf,0xff48,0x19e9,0xfcdf,0xff4a,0x19be,0xfce6,0xff44,0x1991,0xfcea"},
+				{"rxgains5gmelnagaina0", "2"},
+				{"pa5ga1", "0xff44,0x19c5,0xfce4,0xff44,0x1991,0xfce9,0xff42,0x19e2,0xfcdf,0xff42,0x19f2,0xfcdb"},
+				{"rxgains5gmelnagaina1", "2"},
+				{"pa5ga2", "0xff48,0x19ca,0xfce9,0xff48,0x19a5,0xfceb,0xff44,0x19ea,0xfcdf,0xff46,0x19db,0xfce4"},
+				{"rxgains5gmelnagaina2", "3"},
+				{"mcslr5ghpo", "0"},
+				{"rxgainerr5ga0", "-1,0,4,3"},
+				{"rxgainerr5ga1", "-4,-5,-6,-4"},
+				{"rxgainerr5ga2", "-2,1,-5,-7"},
+				{"pdoffset40ma0", "4369"},
+				{"pcieingress_war", "15"},
+				{"pdoffset40ma1", "4369"},
+				{"pdoffset40ma2", "4369"},
+				{"rxgains5gelnagaina0", "1"},
+				{"rxgains5gelnagaina1", "1"},
+				{"rxgains5gelnagaina2", "1"},
+				{"mcsbw205glpo", "0x44448888"},
+				{"measpower1", "0x7f"},
+				{"measpower2", "0x7f"},
+				{"mcsbw805gmpo", "0xFEA86400"},
+				{"dot11agduplrpo", "0"},
+				{"mcsbw205ghpo", "0x66558655"},
+				{"measpower", "0x7f"},
+				{"rxgains5ghelnagaina0", "2"},
+				{"rxgains5ghelnagaina1", "2"},
+				{"rxgains5ghelnagaina2", "3"},
+				{"gainctrlsph", "0"},
+				{"mcsbw1605gmpo", "0"},
+				{"epagain5g", "0"},
+				{"mcsbw405gmpo", "0xECA86400"},
+				{"rxchain", "7"},
+				{"maxp5ga0", "88,106,106,106"},
+				{"maxp5ga1", "88,106,106,106"},
+				{"maxp5ga2", "88,106,106,106"},
+				{"venid", "0x14e4"},
+				{"mcsbw805glpo", "0x5555AAAA"},
+				{"boardvendor", "0x14e4"},
+				{"antswitch", "0"},
+				{"mcsbw805ghpo", "0x87669777"},
+				{"aga0", "71"},
+				{"aga1", "133"},
+				{"aga2", "133"},
+				{"dot11agduphrpo", "0"},
+				{"sromrev", "11"},
+				{"mcsbw1605glpo", "0"},
+				{"mcsbw405glpo", "0x11112222"},
+				{"mcsbw1605ghpo", "0"},
+				{"rxgains5gmtrisoa0", "5"},
+				{"rxgains5gmtrisoa1", "4"},
+				{"rxgains5gmtrisoa2", "4"},
+				{"rxgains5gmtrelnabypa0", "1"},
+				{"rxgains5gmtrelnabypa1", "1"},
+				{"mcsbw405ghpo", "0x76558600"},
+				{"rxgains5gmtrelnabypa2", "1"},
+				{"watchdog", "3000"},
+				{"boardflags2", "0x300002"},
+				{"boardflags3", "0x0"},
+				{"rxgains5ghtrelnabypa0", "1"},
+				{"rxgains5ghtrelnabypa1", "1"},
+				{"rpcal5gb0", "0x65c8"},
+				{"regrev", "996"},
+				{"rxgains5ghtrelnabypa2", "1"},
+				{"rpcal5gb0", "0x65c8"},
+				{"rpcal5gb1", "0"},
+				{"rpcal5gb2", "0"},
+				{"rpcal5gb3", "0x76f3"},
+				{"rxgains5gtrelnabypa0", "1"},
+				{"rxgains5gtrelnabypa1", "1"},
+				{"rxgains5gtrelnabypa2", "1"},
+				{"pwr_scale_1db", "1"},
+				{"eu_edthresh5g", "-70"},
+				{0, 0}
+			};
+
+			/*
+			 * set router's extra parameters 
+			 */
+			extra_params = r6400_pci_2_1_params;
+			while (extra_params->name) {
+				nvram_nset(extra_params->value, "pci/2/1/%s", extra_params->name);
+				extra_params++;
+			}
+			nvram_set("wl_pcie_mrrs", "128");
+			nvram_set("wl0_pcie_mrrs", "128");
+			nvram_set("wl1_pcie_mrrs", "128");
+			nvram_set("pci/1/1/ddwrt", "1");
+			nvram_commit();
+		}
+		nvram_unset("et1macaddr");
+		set_gpio(11, 1);
+		set_gpio(6, 1);
+		break;
 	case ROUTER_NETGEAR_R7000:
 
 		if (nvram_get("pci/1/1/ddwrt") == NULL) {
