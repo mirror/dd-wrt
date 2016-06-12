@@ -229,14 +229,15 @@ nla_put_failure:
 #ifdef HAVE_ATH10K
 int is_beeliner(const char *prefix)
 {
-	char globstring[1024];
+	char *globstring;
 	int devnum;
 	devnum = get_ath9k_phy_ifname(prefix);
 	if (devnum == -1)
 		return 0;
 
-	sprintf(globstring, "/sys/class/ieee80211/phy%d/device/device", devnum);
+	asprintf(&globstring, "/sys/class/ieee80211/phy%d/device/device", devnum);
 	FILE *fp = fopen(globstring, "rb");
+	free(globstring);
 	if (!fp)
 		return 0;
 	char buf[32];
@@ -250,8 +251,8 @@ int is_beeliner(const char *prefix)
 unsigned int get_ath10kreg(char *ifname, unsigned int reg)
 {
 	unsigned int baseaddress = is_beeliner(ifname) ? 0x30000 : 0x20000;
-	char file[64];
 	int phy = get_ath9k_phy_ifname(ifname);
+	char file[64];
 	sprintf(file, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_addr", phy);
 	FILE *fp = fopen(file, "wb");
 	if (fp == NULL)
@@ -575,14 +576,15 @@ struct mac80211_info *mac80211_assoclist(char *interface)
 {
 	struct nl_msg *msg;
 	glob_t globbuf;
-	char globstring[1024];
+	char *globstring;
 	int globresult;
 	struct mac80211_info *mac80211_info = calloc(1, sizeof(struct mac80211_info));
 	if (interface)
-		sprintf(globstring, "/sys/class/ieee80211/phy*/device/net/%s*", interface);
+		asprintf(&globstring, "/sys/class/ieee80211/phy*/device/net/%s*", interface);
 	else
-		sprintf(globstring, "/sys/class/ieee80211/phy*/device/net/*");
+		asprintf(&globstring, "/sys/class/ieee80211/phy*/device/net/*");
 	globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
+	free(globstring);
 	int i;
 	for (i = 0; i < globbuf.gl_pathc; i++) {
 		char *ifname;
@@ -831,7 +833,7 @@ static int isinlist(struct wifi_channels *list, int freq)
 		if (chan->freq == -1)
 			break;
 		if (chan->freq == freq)
-		    return 1;
+			return 1;
 	}
 	return 0;
 }
@@ -840,7 +842,7 @@ static void check_validchannels(struct wifi_channels *list, int bw)
 {
 	int distance = 10;
 	int count = 0;
-	char *debugstr[] = {"20MHz","40MHz","80MHz","160MHz"};
+	char *debugstr[] = { "20MHz", "40MHz", "80MHz", "160MHz" };
 	switch (bw) {
 	case 20:
 		return;		// all valid
@@ -1039,15 +1041,15 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 							list[count].ht40minus = 0;
 							list[count].ht40plus = 0;
 							//                              fprintf(stderr,"freq %d, htrange %d, startfreq %d, stopfreq %d\n", freq_mhz, htrange, startfreq, stopfreq);
-								if (((freq_mhz - range) - (max_bandwidth_khz / 2)) >= startfreq) {
-									list[count].ht40minus = 1;
-								}
-								if (((freq_mhz + range) + (max_bandwidth_khz / 2)) <= stopfreq) {
-									list[count].ht40plus = 1;
-								}
+							if (((freq_mhz - range) - (max_bandwidth_khz / 2)) >= startfreq) {
+								list[count].ht40minus = 1;
+							}
+							if (((freq_mhz + range) + (max_bandwidth_khz / 2)) <= stopfreq) {
+								list[count].ht40plus = 1;
+							}
 							if (regmaxbw > 20 && regmaxbw >= max_bandwidth_khz) {
-								fprintf(stderr, "freq %d, htrange %d, startfreq %d stopfreq %d, regmaxbw %d hw_eirp %d max_eirp %d ht40plus %d ht40minus %d\n", freq_mhz, max_bandwidth_khz, startfreq, stopfreq,
-									regmaxbw, eirp, regpower.max_eirp,list[count].ht40plus, list[count].ht40minus );
+								fprintf(stderr, "freq %d, htrange %d, startfreq %d stopfreq %d, regmaxbw %d hw_eirp %d max_eirp %d ht40plus %d ht40minus %d\n", freq_mhz, max_bandwidth_khz,
+									startfreq, stopfreq, regmaxbw, eirp, regpower.max_eirp, list[count].ht40plus, list[count].ht40minus);
 							}
 							count++;
 						}
