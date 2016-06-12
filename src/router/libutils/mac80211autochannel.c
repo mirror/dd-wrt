@@ -70,9 +70,9 @@ static struct nla_policy survey_policy[NL80211_SURVEY_INFO_MAX + 1] = {
 };
 
 #ifdef HAVE_BUFFALO
-static const int bias_2g[] = { 80, 50, 70, 70, 50, 100, 50, 70, 70, 50, 80, 50, 70 };
+static const int bias_2g[] = { 80, 50, 70, 50, 100, 50, 70, 50, 80, 50, 70, 50, 100 };
 #else
-static const int bias_2g[] = { 100, 50, 75, 75, 50, 100, 50, 75, 75, 50, 100, 50, 75 };
+static const int bias_2g[] = { 100, 50, 75, 50, 100, 50, 75, 50, 100, 50, 75, 50, 100 };
 #endif
 
 static bool in_range(unsigned long freq)
