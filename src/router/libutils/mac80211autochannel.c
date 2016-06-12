@@ -70,9 +70,11 @@ static struct nla_policy survey_policy[NL80211_SURVEY_INFO_MAX + 1] = {
 };
 
 #ifdef HAVE_BUFFALO
-static const int bias_2g[] = { 80, 50, 70, 50, 100, 50, 70, 50, 80, 50, 70, 50, 100 };
+static int bias_2g[] = { 80, 50, 70, 50, 100, 50, 70, 50, 80, 50, 70, 50, 100 };
+static int bias_2g_ht40[] = { 50, 50, 100, 50, 50, 50, 50, 50, 50, 50, 100, 50, 50 };
 #else
-static const int bias_2g[] = { 100, 50, 75, 50, 100, 50, 75, 50, 100, 50, 75, 50, 100 };
+static int bias_2g[] = { 100, 50, 75, 50, 100, 50, 75, 50, 100, 50, 75, 50, 100 };
+static int bias_2g_ht40[] = { 50, 50, 100, 50, 50, 50, 50, 50, 50, 50, 100, 50, 50 };
 #endif
 
 static bool in_range(unsigned long freq)
@@ -335,10 +337,13 @@ static int freq_quality(struct frequency *f, struct sort_data *s)
 	c = f->clear;
 
 	idx = (f->freq - 2412) / 5;
-
+	int *bias = bias_2g;
+	if (_htflags % AUTO_FORCEHT40)
+	    bias = bias_2g_ht40;
+	    
 	/* strongly discourage the use of channels other than 1,6,11 */
 	if (f->freq >= 2412 && f->freq <= 2484 && idx < ARRAY_SIZE(bias_2g))
-		c = (c * bias_2g[idx]) / 100;
+		c = (c * bias[idx]) / 100;
 
 	int eirp = get_eirp(f->freq);
 	/* subtract noise delta to lowest noise.*/
