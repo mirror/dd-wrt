@@ -483,6 +483,9 @@ int mtd_write(const char *path, const char *mtd)
 	stop_service("upnp");
 	stop_service("freeradius");
 	killall("process_monitor", SIGTERM);
+	killall("wdswatchdog.sh", SIGTERM);
+	killall("schedulerb.sh", SIGTERM);
+	killall("proxywatchdog.sh", SIGTERM);
 #endif
 	trx.magic = STORE32_LE(trx.magic);
 	trx.len = STORE32_LE(trx.len);
