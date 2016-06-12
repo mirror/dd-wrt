@@ -1,5 +1,6 @@
 /*
- * Copyright (C) 2010 Felix Fietkau <nbd@openwrt.org>
+ * Copyright (C) 2010 Felix Fietkau <nbd@nbd.name>
+ * Copyright (C) 2016 Sebastian Gottschall <s.gottschall@dd-wrt.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License version 2.1
@@ -339,10 +340,10 @@ static int freq_quality(struct frequency *f, struct sort_data *s)
 	if (f->freq >= 2412 && f->freq <= 2484 && idx < ARRAY_SIZE(bias_2g))
 		c = (c * bias_2g[idx]) / 100;
 
-	/* subtract 2 * the number of db that the noise value is over the
-	 * lowest that was found to discourage noisy channels */
 	int eirp = get_eirp(f->freq);
+	/* subtract noise delta to lowest noise.*/
 	c -= (f->noise - s->lowest_noise);
+	/* subtract max capable output power (regulatory limited by hw caps) delta from maximum eirp possible */
 	c -= (_max_eirp - eirp);
 	f->eirp = eirp;
 	if (c < 0)
@@ -356,8 +357,6 @@ static int sort_cmp(void *priv, struct list_head *a, struct list_head *b)
 	struct frequency *f1 = container_of(a, struct frequency, list);
 	struct frequency *f2 = container_of(b, struct frequency, list);
 	int i;
-	int hasht40 = 0;
-	int channelisgood = 1;
 	struct wifi_channels *chan = NULL;
 	while (1) {
 		chan = &wifi_channels[i++];
@@ -369,13 +368,10 @@ static int sort_cmp(void *priv, struct list_head *a, struct list_head *b)
 	if (chan->freq == -1)
 		return 1;
 
-	if (chan->ht40minus || chan->ht40plus)
-		hasht40 = 1;
-	if ((_htflags & AUTO_FORCEHT40 || _htflags & AUTO_FORCEVHT80 || _htflags & AUTO_FORCEVHT160) && !hasht40)
-		channelisgood = 0;
-
-	if (!channelisgood)
+	/* if HT40, VHT80 or VHT160 auto channel is requested, check if desired channel is capabile of that operation mode, if not, move it to the bottom of the list */
+	if ((_htflags & AUTO_FORCEHT40 || _htflags & AUTO_FORCEVHT80 || _htflags & AUTO_FORCEVHT160) && !chan->ht40minus && !chan->ht40plus) 
 		return 1;
+
 
 	if (f1->quality > f2->quality)
 		return -1;
@@ -410,6 +406,7 @@ struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int s
 	wifi_channels = mac80211_get_channels(interface, country, bw, 0xff);
 	if (scans == 0)
 		scans = 2;
+	/* get maximum eirp possible in channel list */
 	_max_eirp = get_max_eirp();
 	wdev = if_nametoindex(interface);
 	if (wdev < 0) {
@@ -445,6 +442,7 @@ struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int s
 	}
 
 	list_for_each_entry(f, &frequencies, list) {
+		/* in case noise calibration fails, we assume -95 as default here */
 		if (!f->noise)
 			f->noise = -95;
 		f->quality = freq_quality(f, &sdata);
