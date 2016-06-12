@@ -1466,6 +1466,12 @@ int internal_getRouterBrand()
 			}
 		}
 	}
+	
+	if (boardnum == 32 && nvram_match("boardtype", "0x0646")
+	    && nvram_match("boardrev", "0x1601")) {
+			setRouter("Netgear R6400");
+			return ROUTER_NETGEAR_R6400;
+	}
 
 	if (boardnum == 32 && nvram_match("boardtype", "0x0665")
 	    && nvram_match("boardrev", "0x1301")) {
@@ -6630,6 +6636,18 @@ int led_control(int type, int act)
 		wlan0_gpio = 0x10b;	// radio led blue
 		usb_gpio = 0x108;	// usb led 
 		//usb_power = 0x000;    // usb enable
+		break;
+	case ROUTER_NETGEAR_R6400:
+		power_gpio = 0x101;	// 
+		connected_gpio = 0x107;	//
+		usb_power = 0x000;	//
+		diag_gpio = 0x102;	// 
+		wlan0_gpio = 0x109;	// radio 0 
+		wlan1_gpio = 0x108;	// radio 1 
+		ses_gpio = 0x10a;	// wps led
+		wlan_gpio = 0x10b;	// wifi button led
+		usb_gpio = 0x10c;	// usb1 
+		usb_gpio1 = 0x10d;	// usb2
 		break;
 	case ROUTER_NETGEAR_R7000:
 		power_gpio = 0x102;	// power led 
