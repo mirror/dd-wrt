@@ -222,8 +222,9 @@ rx_handler_result_t br_handle_frame(struct sk_buff **pskb)
 		}
 
 		/* Deliver packet to local host only */
-		NF_HOOK(NFPROTO_BRIDGE, NF_BR_LOCAL_IN, dev_net(skb->dev),
-			NULL, skb, skb->dev, NULL, br_handle_local_finish);
+
+		BR_HOOK(NFPROTO_BRIDGE, NF_BR_LOCAL_IN, skb,
+			skb->dev, NULL, br_handle_local_finish);
 		return RX_HANDLER_CONSUMED;
 	}
 
