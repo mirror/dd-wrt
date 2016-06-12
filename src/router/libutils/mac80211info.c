@@ -838,7 +838,7 @@ static int isinlist(struct wifi_channels *list, int freq)
 
 static void check_validchannels(struct wifi_channels *list, int bw)
 {
-	int distance = 20;
+	int distance = 10;
 	int count = 0;
 	char *debugstr[] = {"20MHz","40MHz","80MHz","160MHz"};
 	switch (bw) {
