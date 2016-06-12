@@ -1390,6 +1390,10 @@ void period_check(int sig)
 		sesgpio = 0x104;
 		wifigpio = 0x105;
 		break;
+	case ROUTER_NETGEAR_R6400:
+		sesgpio = 0x103;
+		wifigpio = 0x104;
+		break;
 	case ROUTER_NETGEAR_R7000:
 		sesgpio = 0x104;
 		wifigpio = 0x105;
