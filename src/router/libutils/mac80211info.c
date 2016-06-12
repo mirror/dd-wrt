@@ -1039,10 +1039,10 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 							list[count].ht40minus = 0;
 							list[count].ht40plus = 0;
 							//                              fprintf(stderr,"freq %d, htrange %d, startfreq %d, stopfreq %d\n", freq_mhz, htrange, startfreq, stopfreq);
-								if (((freq_mhz - range) - max_bandwidth_khz) >= startfreq) {
+								if (((freq_mhz - range) - (max_bandwidth_khz / 2)) >= startfreq) {
 									list[count].ht40minus = 1;
 								}
-								if (((freq_mhz + range) + max_bandwidth_khz) <= stopfreq) {
+								if (((freq_mhz + range) + (max_bandwidth_khz / 2)) <= stopfreq) {
 									list[count].ht40plus = 1;
 								}
 							if (regmaxbw > 20 && regmaxbw >= max_bandwidth_khz) {
