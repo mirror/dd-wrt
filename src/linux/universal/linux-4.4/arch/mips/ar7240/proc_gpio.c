@@ -286,7 +286,7 @@ int get_wl0_gpio(int gpio)
 	u32 gpio_shift;
 	gpio_shift = 2 * gpio;
 	if (!allowaccess)
-	    return;
+	    return 0;
 
 	unsigned int output = GPIOOUT_WL0_ADDR;
 	if (is_ar9300)
@@ -307,7 +307,7 @@ int get_wmac_gpio(int gpio)
 	u32 gpio_shift;
 	gpio_shift = 2 * gpio;
 	if (!allowaccess)
-	    return;
+	    return 0;
 	ar7240_reg_rmw(GPIOOUT_WMAC_ADDR, (AR9287_GPIO_OE_OUT_DRV_NO << gpio_shift), (AR9287_GPIO_OE_OUT_DRV << gpio_shift));
 
 	return (MS(ar7240_reg_rd(GPIOIN_WMAC_ADDR), AR9300_GPIO_IN_VAL) & (1 << gpio)) != 0;
