@@ -228,10 +228,7 @@ static int br_handle_local_finish(struct net *net, struct sock *sk, struct sk_bu
 		if (p->flags & BR_LEARNING && br_should_learn(p, skb, &vid))
 			br_fdb_update(p->br, p, eth_hdr(skb)->h_source, vid, false);
 	}
-	
-	BR_INPUT_SKB_CB(skb)->brdev = p->br->dev;
-	br_pass_frame_up(skb);
-	return 0;
+	return 0;	 /* process further */
 }
 
 /*
@@ -293,9 +290,14 @@ rx_handler_result_t br_handle_frame(struct sk_buff **pskb)
 		}
 
 		/* Deliver packet to local host only */
-		NF_HOOK(NFPROTO_BRIDGE, NF_BR_LOCAL_IN, dev_net(skb->dev),
-			NULL, skb, skb->dev, NULL, br_handle_local_finish);
-		return RX_HANDLER_CONSUMED;
+		if (BR_HOOK(NFPROTO_BRIDGE, NF_BR_LOCAL_IN,
+			    dev_net(skb->dev), NULL, skb, skb->dev, NULL,
+			    br_handle_local_finish)) {
+			return RX_HANDLER_CONSUMED; /* consumed by filter */
+		} else {
+			*pskb = skb;
+			return RX_HANDLER_PASS;	/* continue processing */
+		}
 	}
 
 forward:
