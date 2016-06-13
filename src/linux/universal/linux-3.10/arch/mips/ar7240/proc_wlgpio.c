@@ -117,7 +117,7 @@ static __init int register_proc(void)
 #endif
 #ifndef CONFIG_MACH_HORNET
 	if (ath_nopcie)
-		return;
+		return 0;
 #endif
 	/* create directory gpio */
 	gpio_dir = proc_mkdir("wl0gpio", NULL);
