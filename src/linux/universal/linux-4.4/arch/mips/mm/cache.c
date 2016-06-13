@@ -33,7 +33,7 @@ void (*flush_icache_range)(unsigned long start, unsigned long end);
 EXPORT_SYMBOL_GPL(flush_icache_range);
 void (*local_flush_icache_range)(unsigned long start, unsigned long end);
 EXPORT_SYMBOL_GPL(local_flush_icache_range);
-+EXPORT_SYMBOL(__flush_cache_all);
+EXPORT_SYMBOL(__flush_cache_all);
 
 void (*__flush_cache_vmap)(void);
 void (*__flush_cache_vunmap)(void);
