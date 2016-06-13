@@ -292,7 +292,7 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 		tf_webWriteJS(wp, tssid);
 		char dtim[32];
 		websWrite(wp,
-			  "\",\"%s\",\"%s\",\"%d (%d MHz)\",\"%d\",\"%d\",\"%d\",\"%s\",\"%s\",\"%s\",\"%s\"\n",
+			  "\",\"%s\",\"%s\",\"%d\",\"%d\",\"%d\",\"%d\",\"%d\",\"%s\",\"%s\",\"%s\",\"%s\"\n",
 			  net, site_survey_lists[i].BSSID,
 			  site_survey_lists[i].channel & 0xff,
 			  site_survey_lists[i].frequency,
