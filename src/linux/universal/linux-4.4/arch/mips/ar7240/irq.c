@@ -235,8 +235,6 @@ static void ar934x_ip2_irq_dispatch(struct irq_desc *desc)
 {
 	u32 status;
 
-	disable_irq_nosync(irq);
-
 	status = ar71xx_reset_rr(AR934X_RESET_REG_PCIE_WMAC_INT_STATUS);
 
 	if (status & AR934X_PCIE_WMAC_INT_PCIE_ALL) {
@@ -255,8 +253,6 @@ static void ar934x_ip2_irq_dispatch(struct irq_desc *desc)
 static void qca955x_ip2_irq_dispatch(struct irq_desc *desc)
 {
 	u32 status;
-
-	disable_irq_nosync(irq);
 
 	status = ar71xx_reset_rr(QCA955X_RESET_REG_EXT_INT_STATUS);
 	status &= QCA955X_EXT_INT_PCIE_RC1_ALL | QCA955X_EXT_INT_WMAC_ALL;
@@ -280,8 +276,6 @@ static void qca955x_ip2_irq_dispatch(struct irq_desc *desc)
 static void qca955x_ip3_irq_dispatch(struct irq_desc *desc)
 {
 	u32 status;
-
-	disable_irq_nosync(irq);
 
 	status = ar71xx_reset_rr(QCA955X_RESET_REG_EXT_INT_STATUS);
 	status &= QCA955X_EXT_INT_PCIE_RC2_ALL |
@@ -363,8 +357,6 @@ static void qca956x_ip2_irq_dispatch(struct irq_desc *desc)
 {
 	u32 status;
 
-	disable_irq_nosync(irq);
-
 	status = ar71xx_reset_rr(QCA956X_RESET_REG_EXT_INT_STATUS);
 	status &= QCA956X_EXT_INT_PCIE_RC1_ALL | QCA956X_EXT_INT_WMAC_ALL;
 
@@ -387,8 +379,6 @@ static void qca956x_ip2_irq_dispatch(struct irq_desc *desc)
 static void qca956x_ip3_irq_dispatch(struct irq_desc *desc)
 {
 	u32 status;
-
-	disable_irq_nosync(irq);
 
 	status = ar71xx_reset_rr(QCA956X_RESET_REG_EXT_INT_STATUS);
 	status &= QCA956X_EXT_INT_PCIE_RC2_ALL |
