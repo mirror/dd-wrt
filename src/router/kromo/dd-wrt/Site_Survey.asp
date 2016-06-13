@@ -32,7 +32,8 @@ function do_join (F,SSID) {
 				   <th width="25%"><% tran("share.ssid"); %></th>
 				   <th width="7%">Mode</th>
 				   <th width="19%"><% tran("share.mac"); %></th>
-				   <th width="6%"><% tran("share.channel"); %>(<% tran("share.frequency"); %>)</th>
+				   <th width="6%"><% tran("share.channel"); %></th>
+				   <th width="6%"><% tran("share.frequency"); %></th>
 				   <th width="6%"><% tran("share.rssi"); %></th>
 				   <th width="6%"><% tran("share.noise"); %></th>
 				   <th width="6%"><% tran("share.beacon"); %></th>
@@ -49,10 +50,10 @@ function do_join (F,SSID) {
 					);
 					
 					if (table.length == 0) {
-						document.write("<tr><td colspan=\"11\" align=\"center\">" + share.none + "</td></tr>");
+						document.write("<tr><td colspan=\"12\" align=\"center\">" + share.none + "</td></tr>");
 					}
 					else {
-						for (var i = 0; i < table.length; i = i + 11) {
+						for (var i = 0; i < table.length; i = i + 12) {
 							document.write("<tr>");
 							document.write("<td>"+table[i]+"</td>");
 							document.write("<td align=\"left\">"+table[i+1]+"</td>");
@@ -61,9 +62,10 @@ function do_join (F,SSID) {
 							document.write("<td align=\"right\">"+table[i+4]+"</td>");
 							document.write("<td align=\"right\">"+table[i+5]+"</td>");
 							document.write("<td align=\"right\">"+table[i+6]+"</td>");
-							document.write("<td align=\"right\" style=\"cursor:pointer; text-decoration:underline;\" onmouseover='DisplayDiv(this, event, 15, 15,\"" + table[i+8] + "\")' onmouseout=\"unDisplayDiv()\">"+table[i+7]+"</td>");
-							document.write("<td align=\"right\">"+table[i+9]+"</td>");
+							document.write("<td align=\"right\">"+table[i+7]+"</td>");
+							document.write("<td align=\"right\" style=\"cursor:pointer; text-decoration:underline;\" onmouseover='DisplayDiv(this, event, 15, 15,\"" + table[i+9] + "\")' onmouseout=\"unDisplayDiv()\">"+table[i+8]+"</td>");
 							document.write("<td align=\"right\">"+table[i+10]+"</td>");
+							document.write("<td align=\"right\">"+table[i+11]+"</td>");
 							document.write("<td align=\"right\"><input class=\"button\" type=\"button\" value=\"" + sbutton.join + "\" onclick='do_join(this.form,\"" + table[i] + "\")' /></td>");
 							document.write("<\/tr>");
 						}
