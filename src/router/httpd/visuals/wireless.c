@@ -835,3 +835,10 @@ void ej_show_wireless_advanced(webs_t wp, int argc, char_t ** argv)
 	}
 #endif
 }
+
+void ej_spectral_scan(webs_t wp, int argc, char_t ** argv)
+{
+	if (has_spectralscanning(nvram_safe_get("wifi_display"))) {
+		websWrite(wp, "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"spectral_survey\\\" value=\\\"\" + sbutton.spectral_survey + \"\\\" onclick=\\\"OpenSpectral()\\\" />");
+	}
+}
