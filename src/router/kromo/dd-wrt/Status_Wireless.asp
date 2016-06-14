@@ -101,6 +101,16 @@ function OpenSiteSurvey () {
 	};
 }
 
+function OpenSpectral () {
+	if( "<% radio_on(); %>" == "1" ) {
+		openWindow('spectral_scan.html', 760, 700);
+	}
+	else {
+		openWindow('Site_Survey.asp', 760, 700);
+		alert(errmsg.err59);
+	};
+}
+
 function OpenWiwizSurvey () {
 	if( "<% radio_on(); %>" == "1" ) {
 		openWindow('Wiviz_Survey.asp', 760, 700);
@@ -268,6 +278,7 @@ addEvent(window, "unload", function() {
 							<div class="center">
 								<script type="text/javascript">
 								//<![CDATA[
+								<% spectral_scan(); %>
 								document.write("<input class=\"button\" type=\"button\" name=\"site_survey\" value=\"" + sbutton.survey + "\" onclick=\"OpenSiteSurvey()\" />");
 								<% ifndef("WIVIZ","/"); %><% ifndef("WIVIZ","*"); %>document.write("<input class=\"button\" type=\"button\" name=\"wiviz_survey\" value=\"Wiviz survey\" onclick=\"OpenWiwizSurvey()\" />");
 								<% ifndef("WIVIZ","*"); %><% ifndef("WIVIZ","/"); %>

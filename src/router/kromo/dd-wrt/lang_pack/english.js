@@ -270,6 +270,7 @@ sbutton.routingtab="Show Routing Table";
 sbutton.wanmac="Get Current PC MAC Address";
 sbutton.dhcprel="DHCP Release";
 sbutton.dhcpren="DHCP Renew";
+sbutton.spectral_survey="Spectrum";
 sbutton.survey="Site Survey";
 sbutton.upgrading="Upgrading";
 sbutton.upgrade="Upgrade";
