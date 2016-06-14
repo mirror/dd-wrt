@@ -14,5 +14,5 @@ clean:
 	rm -rf $(BIN) $(OBJ)
 	
 install: 
-	install -D $(BIN) $(INSTALLDIR)/usr/sbin
+	install -D $(BIN) $(INSTALLDIR)/usr/sbin/fft_eval
 
