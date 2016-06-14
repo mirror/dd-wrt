@@ -823,7 +823,10 @@ endif
 ifneq ($(HEARTBEAT_SUPPORT),1)
 	rm -f $(INSTALLDIR)/www/index_heartbeat.asp
 endif
-
+ifneq ($(CONFIG_ATH9K),y)
+	rm -f $(INSTALLDIR)/www/spectral_scan*
+	rm -f $(INSTALLDIR)/www/jquery.flot.js
+endif
 ifneq ($(MPPPOE_SUPPORT),1)
 	rm -f $(INSTALLDIR)/www/index_mpppoe.asp
 	rm -f $(INSTALLDIR)/www/Status_mpppoe.asp
