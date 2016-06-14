@@ -3,7 +3,7 @@
  <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>Live spectral scan</title>
-    <script language="javascript" type="text/javascript" src="jquery-1.4.js"></script>
+    <script language="javascript" type="text/javascript" src="jquery.js"></script>
     <script language="javascript" type="text/javascript" src="jquery.flot.js"></script>
  </head>
     <body>
@@ -22,8 +22,8 @@ window.setTimeout(
         series: { shadowSize: 0 },
         xaxis: { tickSize: 5, tickDecimals: 0, autoscaleMargin: 0.05 },
         yaxis: { min: -150, max: 0 },
-        colors: [ "rgba(0,0,0,0.9)", "rgba(50,50,50,0.4)", "rgba(100,100,100,0.4)",
-                  "rgba(150,150,150,0.4)", "rgba(200,200,200,0.4)", "rgba(225,225,225,0.4)" ]
+        colors: [ "rgba(255,0,0,0.9)","rgba(0,0,255,0.9)", "rgba(50,50,255,0.4)", "rgba(100,100,255,0.4)",
+                  "rgba(150,150,255,0.4)", "rgba(200,200,255,0.4)", "rgba(255,255,255,0.4)" ]
 
     };
     var data = [];
