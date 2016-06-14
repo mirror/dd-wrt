@@ -413,7 +413,7 @@ static int read_scandata(char *fname)
 		pos += sample_len;
 
 		if (sample_len > sizeof(*result)) {
-			fprintf(stderr, "sample length %zu too long\n", sample_len);
+		//	fprintf(stderr, "sample length %zu too long\n", sample_len);
 			continue;
 		}
 
@@ -428,7 +428,7 @@ static int read_scandata(char *fname)
 		switch (tlv->type) {
 		case ATH_FFT_SAMPLE_HT20:
 			if (sample_len != sizeof(result->sample.ht20)) {
-				fprintf(stderr, "wrong sample length (have %zd, expected %zd)\n", sample_len, sizeof(result->sample));
+			//	fprintf(stderr, "wrong sample length (have %zd, expected %zd)\n", sample_len, sizeof(result->sample));
 				break;
 			}
 
@@ -440,7 +440,7 @@ static int read_scandata(char *fname)
 			break;
 		case ATH_FFT_SAMPLE_HT20_40:
 			if (sample_len != sizeof(result->sample.ht40)) {
-				fprintf(stderr, "wrong sample length (have %zd, expected %zd)\n", sample_len, sizeof(result->sample));
+			//	fprintf(stderr, "wrong sample length (have %zd, expected %zd)\n", sample_len, sizeof(result->sample));
 				break;
 			}
 
@@ -455,7 +455,7 @@ static int read_scandata(char *fname)
 			bins = sample_len - sizeof(result->sample.ath10k.header);
 
 			if (bins != 64 && bins != 128 && bins != 256) {
-				fprintf(stderr, "invalid bin length %d\n", bins);
+			//	fprintf(stderr, "invalid bin length %d\n", bins);
 				break;
 			}
 
@@ -470,7 +470,7 @@ static int read_scandata(char *fname)
 			handled = 1;
 			break;
 		default:
-			fprintf(stderr, "unknown sample type (%d)\n", tlv->type);
+		//	fprintf(stderr, "unknown sample type (%d)\n", tlv->type);
 			break;
 		}
 
@@ -489,7 +489,7 @@ static int read_scandata(char *fname)
 		scanresults_n++;
 	}
 
-	fprintf(stderr, "read %d scan results\n", scanresults_n);
+//	fprintf(stderr, "read %d scan results\n", scanresults_n);
 	free(scandata);
 
 	return 0;
@@ -522,8 +522,8 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	fprintf(stderr, "WARNING: Experimental Software! Don't trust anything you see. :)\n");
-	fprintf(stderr, "\n");
+//	fprintf(stderr, "WARNING: Experimental Software! Don't trust anything you see. :)\n");
+//	fprintf(stderr, "\n");
 	if (read_scandata(argv[1]) < 0) {
 		fprintf(stderr, "Couldn't read scanfile ...\n");
 		usage(argc, argv);
