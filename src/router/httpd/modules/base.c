@@ -679,13 +679,23 @@ void do_spectral_scan(struct mime_handler *handler, char *p, webs_t stream, char
 		return;
 	fseek(fp, 0, SEEK_END);
 	size_t len = ftell(fp);
-	char *buffer = malloc(len);
 	rewind(fp);
-	fread(buffer, 1, len, fp);
+	char *buffer = malloc(65536 + 1);
+
+	int i;
+	websWrite(stream, "{ \"epoch\": %d, \"samples\":\n", time(NULL));
+	int result = 0;
+	for (i = 0; i < len / 65536; i++) {
+		result = fread(buffer, 1, len, fp);
+		buffer[result] = 0;
+		websWrite(stream, "%s", buffer);
+	}
+	result = fread(buffer, 1, len % 65536, fp);
+	buffer[result] = 0;
+	websWrite(stream, "%s", buffer);
+
 	fclose(fp);
 
-	websWrite(stream, "{ \"epoch\": %d, \"samples\":\n", time(NULL));
-	websWrite(stream, "%s", buffer);
 	websWrite(stream, "}");
 
 }
