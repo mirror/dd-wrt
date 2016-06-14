@@ -664,23 +664,21 @@ void do_spectral_scan(struct mime_handler *handler, char *p, webs_t stream, char
 	sysprintf("cat %s/spectral_scan0 > /dev/null", path);
 #ifdef HAVE_ATH10K
 	if (is_ath10k(ifname)) {
-		sysprintf("echo manual > %s/spectral_scan_ctl", path);
+		sysprintf("echo background > %s/spectral_scan_ctl", path);
 		sysprintf("echo trigger > %s/spectral_scan_ctl", path);
 	} else
 #endif
 		sysprintf("echo chanscan > %s/spectral_scan_ctl", path);
 	sysprintf("iw %s scan 2> /dev/null", ifname);
-	sleep(1);
 	char *exec;
-	sysprintf("fft_eval %s/spectral_scan0 2> /dev/null > %s", path,json_cache);
-//	asprintf(&exec, "fft_eval %s/spectral_scan0 2> /dev/null", path);
-	sysprintf("echo disable > %s/spectral_scan_ctl", path);
+//	sysprintf("fft_eval %s/spectral_scan0 2> /dev/null > %s", path,json_cache);
+	asprintf(&exec, "fft_eval %s/spectral_scan0 2> /dev/null", path);
 
 	free(path);
 	
-//	FILE *fp = popen(exec, "rb");
-	FILE *fp = fopen(json_cache, "rb");
-//	free(exec);
+	FILE *fp = popen(exec, "rb");
+//	FILE *fp = fopen(json_cache, "rb");
+	free(exec);
 	if (!fp)
 		return;
 	char *buffer = malloc(65536 + 1);
@@ -694,6 +692,7 @@ void do_spectral_scan(struct mime_handler *handler, char *p, webs_t stream, char
 		websWrite(stream, "%s", buffer);
 	}
 	fclose(fp);
+	sysprintf("echo disable > %s/spectral_scan_ctl", path);
 
 	websWrite(stream, "}");
 	
