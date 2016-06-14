@@ -203,11 +203,11 @@
             for(i in data.samples){
                 sample_vector = data.samples[i].data;
                     for (k in sample_vector){
-                        specgram.add_sample(specloko.sample(sample_vector[k][0], 0, sample_vector[k][1]))
+                        specgram.add_sample(specloko.sample(sample_vector[k][0], 0, sample_vector[k][1]));
                     }
             }
 
-            specgram.rebuild_image()
+            specgram.rebuild_image();
             out_ctx.drawImage(specgram.canvas, 0, 0, out_canvas.width, out_canvas.height);
             last_sample_time = curr_time;
       });
@@ -236,7 +236,7 @@
         for (i in samples2){
             specgram.add_sample(specloko.sample(samples[i][0], 500, samples[i][1]));
         }
-        specgram.rebuild_image()
+        specgram.rebuild_image();
         out_ctx.drawImage(specgram.canvas, 0, 0, out_canvas.width, out_canvas.height);
     };
 
