@@ -690,7 +690,6 @@ void do_spectral_scan(struct mime_handler *handler, char *p, webs_t stream, char
 	int result = 0;
 	while (!feof(fp)) {
 		result = fread(buffer, 1, 65536, fp);
-fprintf(stderr,"%d %d\n",__LINE__,result);
 		buffer[result] = 0;
 		websWrite(stream, "%s", buffer);
 	}
