@@ -3,7 +3,7 @@
  <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>Live spectral scan</title>
-    <script language="javascript" type="text/javascript" src="/luci-static/resources/jquery/jquery-1.4.js"></script>
+    <script language="javascript" type="text/javascript" src="jquery-1.4.js"></script>
     <script language="javascript" type="text/javascript" src="jquery.flot.js"></script>
  </head>
     <body>
@@ -19,7 +19,7 @@ window.setTimeout(
     var options = {
         lines: { show: true },
         points: { show: false },
-        series: { shadowSize: 0 }, // drawing is faster without shadows
+        series: { shadowSize: 0 },
         xaxis: { tickSize: 5, tickDecimals: 0, autoscaleMargin: 0.05 },
         yaxis: { min: -150, max: 0 },
         colors: [ "rgba(0,0,0,0.9)", "rgba(50,50,50,0.4)", "rgba(100,100,100,0.4)",
@@ -33,7 +33,6 @@ window.setTimeout(
 
     function fetchData() {
       function onDataReceived(series) {
-//        console.log(series);
         var i;
         for (i=0;i<data.length;i++) {
           if ( data[i].color < 5 ) {
@@ -61,7 +60,6 @@ window.setTimeout(
       setTimeout(fetchData, updateInterval);
     }
 
-    // setup control widget
     var updateInterval = 2000;
     $("#updateInterval").val(updateInterval).change(function () {
         var v = $(this).val();
