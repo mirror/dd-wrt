@@ -1715,11 +1715,11 @@ int wfprintf(webs_t wp, char *fmt, ...)
 {
 	FILE *fp = wp->fp;
 	va_list args;
-	char buf[1024];
+	char *buf;
 	int ret;
 
 	va_start(args, fmt);
-	vsnprintf(buf, sizeof(buf), fmt, args);
+	vasprintf(&buf, fmt, args);
 #ifdef HAVE_HTTPS
 	if (do_ssl)
 #ifdef HAVE_OPENSSL
@@ -1737,6 +1737,7 @@ int wfprintf(webs_t wp, char *fmt, ...)
 	else
 #endif
 		ret = fprintf(fp, "%s", buf);
+	free(buf);
 	va_end(args);
 	return ret;
 }
@@ -1744,14 +1745,14 @@ int wfprintf(webs_t wp, char *fmt, ...)
 int websWrite(webs_t wp, char *fmt, ...)
 {
 	va_list args;
-	char buf[2048];
+	char *buf;
 	int ret;
 	if (!wp || !fmt)
 		return -1;
 	FILE *fp = wp->fp;
 
 	va_start(args, fmt);
-	vsnprintf(buf, sizeof(buf), fmt, args);
+	vasprintf(&buf, fmt, args);
 #ifdef HAVE_HTTPS
 	if (do_ssl)
 #ifdef HAVE_OPENSSL
@@ -1769,6 +1770,7 @@ int websWrite(webs_t wp, char *fmt, ...)
 	else
 #endif
 		ret = fprintf(fp, "%s", buf);
+	free(buf);
 	va_end(args);
 	return ret;
 }

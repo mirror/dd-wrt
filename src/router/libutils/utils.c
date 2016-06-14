@@ -7321,10 +7321,10 @@ int has_spectralscanning(const char *prefix)
 		return 0;
 #ifdef HAVE_ATH10K
 	if (is_ath10k(prefix))
-		asprintf(&globstring, "/sys/class/ieee80211/phy%d/ath10k/spectral_count", devnum);
+		asprintf(&globstring, "/sys/kernel/debug/ieee80211/phy%d/ath10k/spectral_count", devnum);
 	else
 #endif
-		asprintf(&globstring, "/sys/class/ieee80211/phy%d/ath9k/spectral_count", devnum);
+		asprintf(&globstring, "/sys/kernel/debug/ieee80211/phy%d/ath9k/spectral_count", devnum);
 	globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
 	free(globstring);
 	if (globresult == 0)

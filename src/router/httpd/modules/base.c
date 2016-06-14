@@ -660,7 +660,7 @@ void do_spectral_scan(struct mime_handler *handler, char *p, webs_t stream, char
 #endif
 		asprintf(&path, "/sys/kernel/debug/ieee80211/phy%d/ath9k", phy);
 
-	sysprintf("echo 1 > %s/spectral_count", path);
+	sysprintf("echo 8 > %s/spectral_count", path);
 	sysprintf("cat %s/spectral_scan0 > /dev/null", path);
 #ifdef HAVE_ATH10K
 	if (is_ath10k(ifname)) {
