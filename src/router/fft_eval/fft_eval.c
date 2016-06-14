@@ -32,6 +32,15 @@
 #include <math.h>
 #include <inttypes.h>
 
+#define _BSD_SOURCE
+#ifdef	__FreeBSD__
+#include <sys/endian.h>
+#else
+#include <endian.h>
+#endif				/* __FreeBSD__ */
+#define CONVERT_BE16(val)	val = be16toh(val)
+#define CONVERT_BE64(val)	val = be64toh(val)
+
 typedef int8_t s8;
 typedef uint8_t u8;
 typedef uint16_t u16;
@@ -39,38 +48,108 @@ typedef uint64_t u64;
 
 /* taken from ath9k.h */
 #define SPECTRAL_HT20_NUM_BINS          56
+#define SPECTRAL_HT20_40_NUM_BINS		128
 
 enum ath_fft_sample_type {
-        ATH_FFT_SAMPLE_HT20 = 1
+	ATH_FFT_SAMPLE_HT20 = 1,
+	ATH_FFT_SAMPLE_HT20_40 = 2,
+	ATH_FFT_SAMPLE_ATH10K = 3,
+};
+
+enum nl80211_channel_type {
+	NL80211_CHAN_NO_HT,
+	NL80211_CHAN_HT20,
+	NL80211_CHAN_HT40MINUS,
+	NL80211_CHAN_HT40PLUS
 };
 
 struct fft_sample_tlv {
-        u8 type;        /* see ath_fft_sample */
-        u16 length;
-        /* type dependent data follows */
+	u8 type;		/* see ath_fft_sample */
+	u16 length;
+	/* type dependent data follows */
 } __attribute__((packed));
 
 struct fft_sample_ht20 {
-        struct fft_sample_tlv tlv;
+	struct fft_sample_tlv tlv;
 
-        u8 max_exp;
+	u8 max_exp;
 
-        u16 freq;
-        s8 rssi;
-        s8 noise;
+	u16 freq;
+	s8 rssi;
+	s8 noise;
 
-        u16 max_magnitude;
-        u8 max_index;
-        u8 bitmap_weight;
+	u16 max_magnitude;
+	u8 max_index;
+	u8 bitmap_weight;
 
-        u64 tsf;
+	u64 tsf;
 
-        u8 data[SPECTRAL_HT20_NUM_BINS];
+	u8 data[SPECTRAL_HT20_NUM_BINS];
 } __attribute__((packed));
 
+struct fft_sample_ht20_40 {
+	struct fft_sample_tlv tlv;
+
+	u8 channel_type;
+	u16 freq;
+
+	s8 lower_rssi;
+	s8 upper_rssi;
+
+	u64 tsf;
+
+	s8 lower_noise;
+	s8 upper_noise;
+
+	u16 lower_max_magnitude;
+	u16 upper_max_magnitude;
+
+	u8 lower_max_index;
+	u8 upper_max_index;
+
+	u8 lower_bitmap_weight;
+	u8 upper_bitmap_weight;
+
+	u8 max_exp;
+
+	u8 data[SPECTRAL_HT20_40_NUM_BINS];
+} __attribute__((packed));
+
+/*
+ * ath10k spectral sample definition
+ */
+
+#define SPECTRAL_ATH10K_MAX_NUM_BINS            256
+
+struct fft_sample_ath10k {
+	struct fft_sample_tlv tlv;
+	u8 chan_width_mhz;
+	uint16_t freq1;
+	uint16_t freq2;
+	int16_t noise;
+	uint16_t max_magnitude;
+	uint16_t total_gain_db;
+	uint16_t base_pwr_db;
+	uint64_t tsf;
+	s8 max_index;
+	u8 rssi;
+	u8 relpwr_db;
+	u8 avgpwr_db;
+	u8 max_exp;
+
+	u8 data[0];
+} __attribute__((packed));
 
 struct scanresult {
-	struct fft_sample_ht20 sample;
+	union {
+		struct fft_sample_tlv tlv;
+		struct fft_sample_ht20 ht20;
+		struct fft_sample_ht20_40 ht40;
+		struct {
+			struct fft_sample_ath10k header;
+			u8 data[SPECTRAL_ATH10K_MAX_NUM_BINS];
+		} ath10k;
+	} sample;
 	struct scanresult *next;
 };
 
@@ -80,52 +159,182 @@ int scanresults_n = 0;
 /*
  * print_values - spit out the analyzed values in text form, JSON-like.
  */
-void print_values()
+static int print_values()
 {
 	int i, rnum;
 	struct scanresult *result;
 
 	printf("[");
 	rnum = 0;
-	for (result = result_list; result ; result = result->next) {
-		int datamax = 0, datamin = 65536;
-		int datasquaresum = 0;
+	for (result = result_list; result; result = result->next) {
 
-		for (i = 0; i < SPECTRAL_HT20_NUM_BINS; i++) {
-			int data;
+		switch (result->sample.tlv.type) {
 
-			data = (result->sample.data[i] << result->sample.max_exp);
-			data *= data;
-			datasquaresum += data;
-			if (data > datamax) datamax = data;
-			if (data < datamin) datamin = data;
+		case ATH_FFT_SAMPLE_HT20:
+			{
+				int datamax = 0, datamin = 65536;
+				int datasquaresum = 0;
+
+				/* prints some statistical data about the
+				 * data sample and auxiliary data. */
+				printf("\n{ \"tsf\": %" PRIu64 ", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ ", result->sample.ht20.tsf, result->sample.ht20.freq, result->sample.ht20.rssi,
+				       result->sample.ht20.noise);
+				for (i = 0; i < SPECTRAL_HT20_NUM_BINS; i++) {
+					int data;
+					data = (result->sample.ht20.data[i] << result->sample.ht20.max_exp);
+					data *= data;
+					datasquaresum += data;
+					if (data > datamax)
+						datamax = data;
+					if (data < datamin)
+						datamin = data;
+				}
+				for (i = 0; i < SPECTRAL_HT20_NUM_BINS; i++) {
+					float freq;
+					float signal;
+					int data;
+					freq = result->sample.ht20.freq - 10.0 + ((20.0 * i) / SPECTRAL_HT20_NUM_BINS);
+
+					/* This is where the "magic" happens: interpret the signal
+					 * to output some kind of data which looks useful.  */
+
+					data = result->sample.ht20.data[i] << result->sample.ht20.max_exp;
+					if (data == 0)
+						data = 1;
+					signal = result->sample.ht20.noise + result->sample.ht20.rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
+
+					printf("[ %f, %f ]", freq, signal);
+					if (i < SPECTRAL_HT20_NUM_BINS - 1)
+						printf(", ");
+				}
+			}
+			break;
+		case ATH_FFT_SAMPLE_HT20_40:
+			{
+				int datamax = 0, datamin = 65536;
+				int datasquaresum_lower = 0;
+				int datasquaresum_upper = 0;
+				int datasquaresum;
+				int i;
+				int centerfreq;
+				s8 noise;
+				s8 rssi;
+				//todo build average
+
+				printf("\n{ \"tsf\": %" PRIu64 ", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ ", result->sample.ht40.tsf, result->sample.ht40.freq, result->sample.ht40.lower_rssi,
+				       result->sample.ht40.lower_noise);
+				for (i = 0; i < SPECTRAL_HT20_40_NUM_BINS / 2; i++) {
+					int data;
+
+					data = result->sample.ht40.data[i];
+					data <<= result->sample.ht40.max_exp;
+					data *= data;
+					datasquaresum_lower += data;
+
+					if (data > datamax)
+						datamax = data;
+					if (data < datamin)
+						datamin = data;
+				}
+
+				for (i = SPECTRAL_HT20_40_NUM_BINS / 2; i < SPECTRAL_HT20_40_NUM_BINS; i++) {
+					int data;
+
+					data = result->sample.ht40.data[i];
+					data <<= result->sample.ht40.max_exp;
+					datasquaresum_upper += data;
+
+					if (data > datamax)
+						datamax = data;
+					if (data < datamin)
+						datamin = data;
+				}
+
+				switch (result->sample.ht40.channel_type) {
+				case NL80211_CHAN_HT40PLUS:
+					centerfreq = result->sample.ht40.freq + 10;
+					break;
+				case NL80211_CHAN_HT40MINUS:
+					centerfreq = result->sample.ht40.freq - 10;
+					break;
+				default:
+					return -1;
+				}
+
+				for (i = 0; i < SPECTRAL_HT20_40_NUM_BINS; i++) {
+					float freq;
+					int data;
+
+					freq = centerfreq - (40.0 * SPECTRAL_HT20_40_NUM_BINS / 128.0) / 2 + (40.0 * (i + 0.5) / 128.0);
+
+					if (i < SPECTRAL_HT20_40_NUM_BINS / 2) {
+						noise = result->sample.ht40.lower_noise;
+						datasquaresum = datasquaresum_lower;
+						rssi = result->sample.ht40.lower_rssi;
+					} else {
+						noise = result->sample.ht40.upper_noise;
+						datasquaresum = datasquaresum_upper;
+						rssi = result->sample.ht40.upper_rssi;
+					}
+
+					data = result->sample.ht40.data[i];
+					data <<= result->sample.ht40.max_exp;
+					if (data == 0)
+						data = 1;
+
+					float signal = noise + rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
+
+					printf("[ %f, %f ]", freq, signal);
+					if (i < SPECTRAL_HT20_40_NUM_BINS - 1)
+						printf(", ");
+				}
+			}
+			break;
+		case ATH_FFT_SAMPLE_ATH10K:
+			{
+				int datamax = 0, datamin = 65536;
+				int datasquaresum = 0;
+				int i, bins;
+				printf("\n{ \"tsf\": %" PRIu64 ", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ ", result->sample.ath10k.header.tsf, result->sample.ath10k.header.freq1,
+				       result->sample.ath10k.header.rssi, result->sample.ath10k.header.noise);
+
+				bins = result->sample.tlv.length - (sizeof(result->sample.ath10k.header) - sizeof(result->sample.ath10k.header.tlv));
+
+				for (i = 0; i < bins; i++) {
+					int data;
+
+					data = (result->sample.ath10k.data[i] << result->sample.ath10k.header.max_exp);
+					data *= data;
+					datasquaresum += data;
+					if (data > datamax)
+						datamax = data;
+					if (data < datamin)
+						datamin = data;
+				}
+
+				for (i = 0; i < bins; i++) {
+					float freq;
+					int data;
+					float signal;
+					freq = result->sample.ath10k.header.freq1 - (result->sample.ath10k.header.chan_width_mhz) / 2 + (result->sample.ath10k.header.chan_width_mhz * (i + 0.5) / bins);
+
+					data = result->sample.ath10k.data[i] << result->sample.ath10k.header.max_exp;
+					if (data == 0)
+						data = 1;
+					signal = result->sample.ath10k.header.noise + result->sample.ath10k.header.rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
+					printf("[ %f, %f ]", freq, signal);
+					if (i < bins - 1)
+						printf(", ");
+
+				}
+
+			}
+			break;
+
 		}
 
-		/* prints some statistical data about the
-		 * data sample and auxiliary data. */
-		printf("\n{ \"tsf\": %"PRIu64", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ ",
-			result->sample.tsf, result->sample.freq, result->sample.rssi, result->sample.noise);
-
-		for (i = 0; i < SPECTRAL_HT20_NUM_BINS; i++) {
-			float freq;
-			float signal;
-			int data;
-			freq = result->sample.freq - 10.0 + ((20.0 * i) / SPECTRAL_HT20_NUM_BINS);
-			
-			/* This is where the "magic" happens: interpret the signal
-			 * to output some kind of data which looks useful.  */
-
-			data = result->sample.data[i] << result->sample.max_exp;
-			if (data == 0)
-				data = 1;
-			signal = result->sample.noise + result->sample.rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
-
-			printf("[ %f, %f ]", freq, signal);
-			if ( i < SPECTRAL_HT20_NUM_BINS - 1 )
-				printf(", ");
-		}
 		printf(" ] }");
-		if ( result->next )
+		if (result->next)
 			printf(",");
 		rnum++;
 	}
@@ -175,13 +384,14 @@ char *read_file(char *fname, size_t *size)
  *
  * returns 0 on success, -1 on error.
  */
-int read_scandata(char *fname)
+static int read_scandata(char *fname)
 {
 	char *pos, *scandata;
 	size_t len, sample_len;
 	struct scanresult *result;
 	struct fft_sample_tlv *tlv;
 	struct scanresult *tail = result_list;
+	int handled, bins;
 
 	scandata = read_file(fname, &len);
 	if (!scandata)
@@ -189,17 +399,14 @@ int read_scandata(char *fname)
 
 	pos = scandata;
 
-	while (pos - scandata < len) {
-		tlv = (struct fft_sample_tlv *) pos;
-		sample_len = sizeof(*tlv) + be16toh(tlv->length);
+	while ((uintptr_t) (pos - scandata) < len) {
+		tlv = (struct fft_sample_tlv *)pos;
+		CONVERT_BE16(tlv->length);
+		sample_len = sizeof(*tlv) + tlv->length;
 		pos += sample_len;
-		if (tlv->type != ATH_FFT_SAMPLE_HT20) {
-			fprintf(stderr, "unknown sample type (%d)\n", tlv->type);
-			continue;
-		}
 
-		if (sample_len != sizeof(result->sample)) {
-			fprintf(stderr, "wrong sample length (have %zd, expected %zd)\n", sample_len, sizeof(result->sample));
+		if (sample_len > sizeof(*result)) {
+			fprintf(stderr, "sample length %zu too long\n", sample_len);
 			continue;
 		}
 
@@ -208,13 +415,63 @@ int read_scandata(char *fname)
 			continue;
 
 		memset(result, 0, sizeof(*result));
-		memcpy(&result->sample, tlv, sizeof(result->sample));
-		fprintf(stderr, "copy %zd bytes\n", sizeof(result->sample));
+		memcpy(&result->sample, tlv, sample_len);
 
-		result->sample.freq = be16toh(result->sample.freq);
-		result->sample.max_magnitude = be16toh(result->sample.max_magnitude);
-		result->sample.tsf = be64toh(result->sample.tsf);
-		
+		handled = 0;
+		switch (tlv->type) {
+		case ATH_FFT_SAMPLE_HT20:
+			if (sample_len != sizeof(result->sample.ht20)) {
+				fprintf(stderr, "wrong sample length (have %zd, expected %zd)\n", sample_len, sizeof(result->sample));
+				break;
+			}
+
+			CONVERT_BE16(result->sample.ht20.freq);
+			CONVERT_BE16(result->sample.ht20.max_magnitude);
+			CONVERT_BE64(result->sample.ht20.tsf);
+
+			handled = 1;
+			break;
+		case ATH_FFT_SAMPLE_HT20_40:
+			if (sample_len != sizeof(result->sample.ht40)) {
+				fprintf(stderr, "wrong sample length (have %zd, expected %zd)\n", sample_len, sizeof(result->sample));
+				break;
+			}
+
+			CONVERT_BE16(result->sample.ht40.freq);
+			CONVERT_BE64(result->sample.ht40.tsf);
+			CONVERT_BE16(result->sample.ht40.lower_max_magnitude);
+			CONVERT_BE16(result->sample.ht40.upper_max_magnitude);
+
+			handled = 1;
+			break;
+		case ATH_FFT_SAMPLE_ATH10K:
+			bins = sample_len - sizeof(result->sample.ath10k.header);
+
+			if (bins != 64 && bins != 128 && bins != 256) {
+				fprintf(stderr, "invalid bin length %d\n", bins);
+				break;
+			}
+
+			CONVERT_BE16(result->sample.ath10k.header.freq1);
+			CONVERT_BE16(result->sample.ath10k.header.freq2);
+			CONVERT_BE16(result->sample.ath10k.header.noise);
+			CONVERT_BE16(result->sample.ath10k.header.max_magnitude);
+			CONVERT_BE16(result->sample.ath10k.header.total_gain_db);
+			CONVERT_BE16(result->sample.ath10k.header.base_pwr_db);
+			CONVERT_BE64(result->sample.ath10k.header.tsf);
+
+			handled = 1;
+			break;
+		default:
+			fprintf(stderr, "unknown sample type (%d)\n", tlv->type);
+			break;
+		}
+
+		if (!handled) {
+			free(result);
+			continue;
+		}
+
 		if (tail)
 			tail->next = result;
 		else
@@ -226,6 +483,8 @@ int read_scandata(char *fname)
 	}
 
 	fprintf(stderr, "read %d scan results\n", scanresults_n);
+	free(scandata);
+
 	return 0;
 }
 
