@@ -674,7 +674,6 @@ void do_spectral_scan(struct mime_handler *handler, char *p, webs_t stream, char
 //	sysprintf("fft_eval %s/spectral_scan0 2> /dev/null > %s", path,json_cache);
 	asprintf(&exec, "fft_eval \"%s/spectral_scan0\"", path);
 
-	free(path);
 	
 	FILE *fp = popen(exec, "rb");
 //	FILE *fp = fopen(json_cache, "rb");
@@ -693,6 +692,7 @@ void do_spectral_scan(struct mime_handler *handler, char *p, webs_t stream, char
 	}
 	fclose(fp);
 	sysprintf("echo disable > %s/spectral_scan_ctl", path);
+	free(path);
 
 	websWrite(stream, "}");
 	
