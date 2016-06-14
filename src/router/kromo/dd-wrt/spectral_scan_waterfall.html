@@ -100,9 +100,9 @@
                     return out;
                 }
             };
-            specgram.num_h_bins = specgram.horizontal_bins.length
-            specgram.num_v_bins = specgram.vertical_bins.length
-            specgram.image_data = specloko.empty_image_data(specgram.num_h_bins, specgram.num_v_bins, default_value)
+            specgram.num_h_bins = specgram.horizontal_bins.length;
+            specgram.num_v_bins = specgram.vertical_bins.length;
+            specgram.image_data = specloko.empty_image_data(specgram.num_h_bins, specgram.num_v_bins, default_value);
             specgram.canvas = canvas;
             specgram.ctx = ctx;
             specgram.width = canvas.width;
@@ -114,7 +114,7 @@
 
         specloko.sample = function (horizontal, vertical, value){
             return {horizontal:horizontal, vertical:vertical, value:value};
-        }
+        };
 
         specloko.empty_image_data = function(width, height, default_value){
           var out = new Array(height);
@@ -126,7 +126,7 @@
             out[i] = row;
           }
           return out;
-        }
+        };
 
         specloko.set_pixel = function(imageData, x, y, r, g, b, a) {
             index = (x + y * imageData.width) * 4;
@@ -134,7 +134,7 @@
             imageData.data[index+1] = g;
             imageData.data[index+2] = b;
             imageData.data[index+3] = a;
-        }
+        };
 
         specloko.hsv2rgb = function(h, s, v) {
             var rgb, i, data = [];
@@ -165,7 +165,7 @@
         function initializeSpectrogram(specgram) {
             specgram.ctx.fillStyle = "rgb(0,0,0)";
             specgram.ctx.fillRect(0, 0, specgram.width, specgram.height);
-        }
+        };
     }( window.specloko = window.specloko || {} ));
 
 
@@ -211,7 +211,7 @@
             out_ctx.drawImage(specgram.canvas, 0, 0, out_canvas.width, out_canvas.height);
             last_sample_time = curr_time;
       });
-    }
+    };
 
     setInterval(consume_data, 100);
     consume_data();
@@ -238,7 +238,7 @@
         }
         specgram.rebuild_image()
         out_ctx.drawImage(specgram.canvas, 0, 0, out_canvas.width, out_canvas.height);
-    }
+    };
 
     </script>
 
