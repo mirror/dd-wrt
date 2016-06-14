@@ -644,6 +644,53 @@ void do_radiuscert(struct mime_handler *handler, char *path, webs_t stream, char
 
 #endif
 
+#ifdef HAVE_ATH9K
+void do_spectral_scan(struct mime_handler *handler, char *p, webs_t stream, char *query)
+{
+#define json_cache "/tmp/spectral_scan.json"
+#define json_cache_timeout 2
+	char *ifname = nvram_safe_get("wifi_display");
+	int phy = mac80211_get_phyidx_by_vifname(ifname);
+	char *path;
+
+#ifdef HAVE_ATH10K
+	if (is_ath10k(ifname))
+		asprintf(&path, "/sys/kernel/debug/ieee80211/phy%d/ath10k", phy);
+	else
+#endif
+		asprintf(&path, "/sys/kernel/debug/ieee80211/phy%d/ath9k", phy);
+
+	sysprintf("echo 1 > %s/spectral_count", path);
+	sysprintf("cat %s/spectral_scan0 > /dev/null", path);
+#ifdef HAVE_ATH10K
+	if (is_ath10k(ifname)) {
+		sysprintf("echo background > %s/spectral_scan_ctl", path);
+		sysprintf("echo trigger > %s/spectral_scan_ctl", path);
+	} else
+#endif
+		sysprintf("echo chanscan > %s/spectral_scan_ctl", path);
+	sysprintf("iw %s scan", ifname);
+	sysprintf("echo disable > %s/spectral_scan_ctl", path);
+	sysprintf("fft_eval %s/spectral_scan0 2> /dev/null > %s", path, json_cache);
+
+	free(path);
+	FILE *fp = fopen("/tmp/spectral_scan.json", "rb");
+	if (!fp)
+		return;
+	fseek(fp, 0, SEEK_END);
+	size_t len = ftell(fp);
+	char *buffer = malloc(len);
+	rewind(fp);
+	fread(buffer, 1, len, fp);
+	fclose(fp);
+
+	websWrite(stream, "{ \"epoch\": %d, \"samples\":\n", time(NULL));
+	websWrite(stream, "%s", buffer);
+	websWrite(stream, "}");
+
+}
+#endif
+
 void do_activetable(struct mime_handler *handler, char *path, webs_t stream, char *query)
 {
 	int idx = indexof(path, '-');
@@ -1011,7 +1058,7 @@ static struct gozila_action gozila_actions[] = {
 	{"NAS", "save", "nassrv", 1, REFRESH, "dlna_save"},
 #endif
 #if defined(HAVE_WPS) || defined(HAVE_AOSS)
- 	{"AOSS", "save", "aoss", 1, REFRESH, "aoss_save"},
+	{"AOSS", "save", "aoss", 1, REFRESH, "aoss_save"},
 	{"AOSS", "start", "aoss", 1, REFRESH, "aoss_start"},
 #ifdef HAVE_WPS
 	{"AOSS", "wps_register", "aoss", 1, REFRESH, "wps_register"},
@@ -2440,6 +2487,9 @@ struct mime_handler mime_handlers[] = {
 	{"**.wma", "audio/x-ms-wma", NULL, NULL, do_file, NULL, 0},
 	{"**.wmv", "video/x-ms-wmv", NULL, NULL, do_file, NULL, 0},
 	{"**.flv", "video/x-flv", NULL, NULL, do_file, NULL, 0},
+#ifdef HAVE_ATH9K
+	{"spectral_scan.json", "application/json", no_cache, NULL, do_spectral_scan, do_auth, 1},
+#endif
 #ifdef HAVE_SKYTRON
 	{"applyuser.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi,
 	 do_auth2, 1},
