@@ -60,7 +60,7 @@ window.setTimeout(
       setTimeout(fetchData, updateInterval);
     };
 
-    var updateInterval = 2000;
+    var updateInterval = 6000;
     $("#updateInterval").val(updateInterval).change(function () {
         var v = $(this).val();
         if (v && !isNaN(+v)) {
