@@ -671,29 +671,24 @@ void do_spectral_scan(struct mime_handler *handler, char *p, webs_t stream, char
 		sysprintf("echo chanscan > %s/spectral_scan_ctl", path);
 	sysprintf("iw %s scan", ifname);
 	sysprintf("echo disable > %s/spectral_scan_ctl", path);
-	sysprintf("fft_eval %s/spectral_scan0 2> /dev/null > %s", path, json_cache);
+	char exec[64];
+
+	sprintf("fft_eval %s/spectral_scan0 2> /dev/null > %s", path, json_cache);
 
 	free(path);
-	FILE *fp = fopen("/tmp/spectral_scan.json", "rb");
+	FILE *fp = popen(exec, "rb");
 	if (!fp)
 		return;
-	fseek(fp, 0, SEEK_END);
-	size_t len = ftell(fp);
-	rewind(fp);
 	char *buffer = malloc(65536 + 1);
 
 	int i;
 	websWrite(stream, "{ \"epoch\": %d, \"samples\":\n", time(NULL));
 	int result = 0;
-	for (i = 0; i < len / 65536; i++) {
-		result = fread(buffer, 1, len, fp);
+	while (!feof(fp)) {
+		result = fread(buffer, 1, 65536, fp);
 		buffer[result] = 0;
 		websWrite(stream, "%s", buffer);
 	}
-	result = fread(buffer, 1, len % 65536, fp);
-	buffer[result] = 0;
-	websWrite(stream, "%s", buffer);
-
 	fclose(fp);
 
 	websWrite(stream, "}");
