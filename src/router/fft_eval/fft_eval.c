@@ -221,8 +221,6 @@ static int print_values()
 				s8 rssi;
 				//todo build average
 
-				printf("\n{ \"tsf\": %" PRIu64 ", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ ", result->sample.ht40.tsf, result->sample.ht40.freq, result->sample.ht40.lower_rssi,
-				       result->sample.ht40.lower_noise);
 				for (i = 0; i < SPECTRAL_HT20_40_NUM_BINS / 2; i++) {
 					int data;
 
@@ -260,6 +258,8 @@ static int print_values()
 				default:
 					return -1;
 				}
+
+				printf("\n{ \"tsf\": %" PRIu64 ", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ ", result->sample.ht40.tsf, centerfreq, result->sample.ht40.lower_rssi,result->sample.ht40.lower_noise);
 
 				for (i = 0; i < SPECTRAL_HT20_40_NUM_BINS; i++) {
 					float freq;
