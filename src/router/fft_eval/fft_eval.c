@@ -177,8 +177,6 @@ static int print_values()
 
 				/* prints some statistical data about the
 				 * data sample and auxiliary data. */
-				printf("\n{ \"tsf\": %" PRIu64 ", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ ", result->sample.ht20.tsf, result->sample.ht20.freq, result->sample.ht20.rssi,
-				       result->sample.ht20.noise);
 				for (i = 0; i < SPECTRAL_HT20_NUM_BINS; i++) {
 					int data;
 					data = (result->sample.ht20.data[i] << result->sample.ht20.max_exp);
@@ -189,6 +187,9 @@ static int print_values()
 					if (data < datamin)
 						datamin = data;
 				}
+				if (!rnum)
+				printf("\n{ \"tsf\": %" PRIu64 ", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ \n", result->sample.ht20.tsf, result->sample.ht20.freq,
+				       result->sample.ht20.rssi, result->sample.ht20.noise);
 				for (i = 0; i < SPECTRAL_HT20_NUM_BINS; i++) {
 					float freq;
 					float signal;
@@ -204,8 +205,10 @@ static int print_values()
 					signal = result->sample.ht20.noise + result->sample.ht20.rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
 
 					printf("[ %f, %f ]", freq, signal);
-					if (i < SPECTRAL_HT20_NUM_BINS - 1)
+					if (i < (SPECTRAL_HT20_NUM_BINS - 1)  || result->next)
 						printf(", ");
+					if (i == (SPECTRAL_HT20_NUM_BINS - 1))
+						printf("\n");
 				}
 			}
 			break;
@@ -259,7 +262,8 @@ static int print_values()
 					return -1;
 				}
 
-				printf("\n{ \"tsf\": %" PRIu64 ", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ ", result->sample.ht40.tsf, centerfreq, result->sample.ht40.lower_rssi,result->sample.ht40.lower_noise);
+				if (!rnum)
+				printf("\n{ \"tsf\": %" PRIu64 ", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ \n", result->sample.ht40.tsf, centerfreq, result->sample.ht40.lower_rssi,result->sample.ht40.lower_noise);
 
 				for (i = 0; i < SPECTRAL_HT20_40_NUM_BINS; i++) {
 					float freq;
@@ -285,8 +289,10 @@ static int print_values()
 					float signal = noise + rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
 
 					printf("[ %f, %f ]", freq, signal);
-					if (i < SPECTRAL_HT20_40_NUM_BINS - 1)
+					if (i < (SPECTRAL_HT20_40_NUM_BINS -1) || result->next)
 						printf(", ");
+					if (i == (SPECTRAL_HT20_40_NUM_BINS -1))
+						printf("\n");
 				}
 			}
 			break;
@@ -295,7 +301,8 @@ static int print_values()
 				int datamax = 0, datamin = 65536;
 				int datasquaresum = 0;
 				int i, bins;
-				printf("\n{ \"tsf\": %" PRIu64 ", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ ", result->sample.ath10k.header.tsf, result->sample.ath10k.header.freq1,
+				if (!rnum)
+				printf("\n{ \"tsf\": %" PRIu64 ", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ \n", result->sample.ath10k.header.tsf, result->sample.ath10k.header.freq1,
 				       result->sample.ath10k.header.rssi, result->sample.ath10k.header.noise);
 
 				bins = result->sample.tlv.length - (sizeof(result->sample.ath10k.header) - sizeof(result->sample.ath10k.header.tlv));
@@ -323,8 +330,10 @@ static int print_values()
 						data = 1;
 					signal = result->sample.ath10k.header.noise + result->sample.ath10k.header.rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
 					printf("[ %f, %f ]", freq, signal);
-					if (i < bins - 1)
+					if (i < (bins - 1) || result->next)
 						printf(", ");
+					if (i == (bins - 1))
+						printf("\n");
 
 				}
 
@@ -333,11 +342,9 @@ static int print_values()
 
 		}
 
-		printf(" ] }");
-		if (result->next)
-			printf(",");
 		rnum++;
 	}
+	printf(" ] }");
 	printf("\n]\n");
 
 	return 0;
