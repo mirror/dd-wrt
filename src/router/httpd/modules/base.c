@@ -672,7 +672,7 @@ void do_spectral_scan(struct mime_handler *handler, char *p, webs_t stream, char
 	sysprintf("iw %s scan 2> /dev/null", ifname);
 	char *exec;
 //	sysprintf("fft_eval %s/spectral_scan0 2> /dev/null > %s", path,json_cache);
-	asprintf(&exec, "fft_eval %s/spectral_scan0 2> /dev/null", path);
+	asprintf(&exec, "fft_eval \"%s/spectral_scan0\"", path);
 
 	free(path);
 	
