@@ -10,6 +10,9 @@ define kernelfeatures
 	if [ "$(CONFIG_IPETH)" = "y" ]; then \
 		sed -i 's/\# CONFIG_USB_IPHETH is not set/CONFIG_USB_IPHETH=m/g' $(LINUXDIR)/.config; \
 	fi
+	if [ "$(CONFIG_ATH9K)" = "y" ]; then \
+		sed -i 's/\# CONFIG_RELAY is not set/CONFIG_RELAY=y/g' $(LINUXDIR)/.config; \
+	fi
 	if [ "$(CONFIG_IPV6)" != "y" ]; then \
 		sed -i 's/\CONFIG_IPV6=m/# CONFIG_IPV6 is not set/g' $(LINUXDIR)/.config; \
 	else \
