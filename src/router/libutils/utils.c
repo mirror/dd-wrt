@@ -1466,11 +1466,11 @@ int internal_getRouterBrand()
 			}
 		}
 	}
-	
+
 	if (boardnum == 32 && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1601")) {
-			setRouter("Netgear R6400");
-			return ROUTER_NETGEAR_R6400;
+		setRouter("Netgear R6400");
+		return ROUTER_NETGEAR_R6400;
 	}
 
 	if (boardnum == 32 && nvram_match("boardtype", "0x0665")
@@ -7299,6 +7299,40 @@ int is_ath9k(const char *prefix)
 	globfree(&globbuf);
 	return (count);
 }
+
+int has_spectralscanning(const char *prefix)
+{
+#ifdef HAVE_MVEBU
+	return 1;
+#endif
+	glob_t globbuf;
+	int count = 0;
+	char *globstring;
+	int globresult;
+	int devnum;
+	// get legacy interface count
+#ifdef HAVE_MADWIFI_MIMO
+	if (!nvram_match("mimo_driver", "ath9k"))
+		return (0);
+#endif
+	// correct index if there are legacy cards arround
+	devnum = get_ath9k_phy_ifname(prefix);
+	if (devnum == -1)
+		return 0;
+#ifdef HAVE_ATH10K
+	if (is_ath10k(prefix))
+		asprintf(&globstring, "/sys/class/ieee80211/phy%d/ath10k/spectral_count", devnum);
+	else
+#endif
+		asprintf(&globstring, "/sys/class/ieee80211/phy%d/ath9k/spectral_count", devnum);
+	globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
+	free(globstring);
+	if (globresult == 0)
+		count = (int)globbuf.gl_pathc;
+	globfree(&globbuf);
+	return (count);
+}
+
 #endif
 #ifdef HAVE_ATH5K
 int is_ath5k(const char *prefix)
