@@ -826,7 +826,8 @@ endif
 ifneq ($(CONFIG_ATH9K),y)
 	rm -f $(INSTALLDIR)/www/spectral_scan*
 	rm -f $(INSTALLDIR)/www/jquery.flot.js
-	rm -f $(INSTALLDIR)/www/jquery-1.4.js
+	rm -f $(INSTALLDIR)/www/jquery.flot.navigate.js
+	rm -f $(INSTALLDIR)/www/jquery.js
 endif
 ifneq ($(MPPPOE_SUPPORT),1)
 	rm -f $(INSTALLDIR)/www/index_mpppoe.asp
