@@ -7303,7 +7303,7 @@ int is_ath9k(const char *prefix)
 int has_spectralscanning(const char *prefix)
 {
 #ifdef HAVE_MVEBU
-	return 1;
+	return 0;
 #endif
 	glob_t globbuf;
 	int count = 0;
@@ -7333,7 +7333,13 @@ int has_spectralscanning(const char *prefix)
 	return (count);
 }
 
+#else
+int has_spectralscanning(const char *prefix)
+{
+	return 0;
+}
 #endif
+
 #ifdef HAVE_ATH5K
 int is_ath5k(const char *prefix)
 {
