@@ -1508,6 +1508,7 @@ err_proto:
 
 static int nf_conntrack_init_net(struct net *net)
 {
+	static atomic64_t unique_id;
 	int ret;
 
 	atomic_set(&net->ct.count, 0);
@@ -1519,7 +1520,8 @@ static int nf_conntrack_init_net(struct net *net)
 		goto err_stat;
 	}
 
-	net->ct.slabname = kasprintf(GFP_KERNEL, "nf_conntrack_%p", net);
+	net->ct.slabname = kasprintf(GFP_KERNEL, "nf_conntrack_%llu",
+				(u64)atomic64_inc_return(&unique_id));
 	if (!net->ct.slabname) {
 		ret = -ENOMEM;
 		goto err_slabname;
