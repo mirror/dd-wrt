@@ -12,6 +12,11 @@ define kernelfeatures
 	fi
 	if [ "$(CONFIG_ATH9K)" = "y" ]; then \
 		sed -i 's/\# CONFIG_RELAY is not set/CONFIG_RELAY=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_DEBUG_FS is not set/CONFIG_DEBUG_FS=y/g' $(LINUXDIR)/.config; \
+		echo "# CONFIG_GCOV_KERNEL is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DYNAMIC_DEBUG is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_L2TP_DEBUGFS is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_LKDTM is not set" >> $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_IPV6)" != "y" ]; then \
 		sed -i 's/\CONFIG_IPV6=m/# CONFIG_IPV6 is not set/g' $(LINUXDIR)/.config; \
