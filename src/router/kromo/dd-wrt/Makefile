@@ -1006,6 +1006,7 @@ endif
 stripfiles:
 	../../../../tools/strip $(INSTALLDIR)/www/*.asp
 	../../../../tools/strip $(INSTALLDIR)/www/*.htm
+	../../../../tools/strip $(INSTALLDIR)/www/*.html
 	../../../../tools/strip $(INSTALLDIR)/www/help/*.asp
 
 
@@ -1015,6 +1016,7 @@ processlangfiles:
 optimizefiles:
 	../../../../tools/write4 $(INSTALLDIR)/www/*.asp
 	../../../../tools/write4 $(INSTALLDIR)/www/*.htm
+	../../../../tools/write4 $(INSTALLDIR)/www/*.html
 	../../../../tools/write4 $(INSTALLDIR)/www/help/*.asp
 	-repugly $(INSTALLDIR)/www
 ifeq ($(CONFIG_IAS),y)
