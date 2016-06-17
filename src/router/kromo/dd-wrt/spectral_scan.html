@@ -5,7 +5,6 @@
     <title>Live spectral scan</title>
     <script language="javascript" type="text/javascript" src="/jquery.js"></script>
     <script language="javascript" type="text/javascript" src="/jquery.flot.js"></script>
-    <script language="javascript" type="text/javascript" src="/jquery.flot.navigate.js"></script>
  </head>
     <body>
     <h1>Spectral Scan</h1>
@@ -28,7 +27,8 @@ window.setTimeout(
         points: { show: true, fill: false, radius: 1.5 },
         series: { shadowSize: 0 },
         xaxis: { tickSize: 5,
-    		tickDecimals: 0, 
+    		tickDecimals: 0,
+    		color: "#ffffff",
     		autoscaleMargin: 0.05,
     		axisLabel: "Frequency",
     		axisLabelUseCanvas: true,
@@ -38,6 +38,7 @@ window.setTimeout(
     		},
         yaxis: { min: -150, 
     		max: 0,
+    		color: "#ffffff",
     		axisLabel: "Rssi",
     		axisLabelUseCanvas: true,
     		axisLabelFontSizePixels: 12,
