@@ -7332,12 +7332,6 @@ int has_spectralscanning(const char *prefix)
 	globfree(&globbuf);
 	return (count);
 }
-
-#else
-int has_spectralscanning(const char *prefix)
-{
-	return 0;
-}
 #endif
 
 #ifdef HAVE_ATH5K
