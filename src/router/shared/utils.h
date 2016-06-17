@@ -1057,6 +1057,8 @@ extern int is_ath5k(const char *prefix);
 extern int is_ath9k(const char *prefix);
 extern int has_spectralscanning(const char *prefix);
 extern int getath9kdevicecount(void);
+#else
+#define has_spectralscanning(prefix) 0
 #endif
 #ifdef HAVE_ATH10K
 extern int is_ath10k(const char *prefix);
