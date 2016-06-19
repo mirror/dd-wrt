@@ -872,6 +872,16 @@ static void check_validchannels(struct wifi_channels *list, int bw)
 				fprintf(stderr, "freq %d has no %s parent at %d, disable ht40minus\n", chan->freq, debugstr[a], chan->freq - (distance << a));
 				chan->ht40minus = 0;
 			}
+			if (a == 2) {
+				if (!isinlist(list, chan->freq - ((distance << a) + (distance << (a - 1))))) {
+					fprintf(stderr, "freq %d has no %s parent at %d, disable ht40minus\n", chan->freq, debugstr[a-1], chan->freq - ((distance << a) + (distance << (a - 1))));
+					chan->ht40minus = 0;
+				}
+				if (!isinlist(list, chan->freq + ((distance << a) + (distance << (a - 1))))) {
+					fprintf(stderr, "freq %d has no %s parent at %d, disable ht40minus\n", chan->freq, debugstr[a-1], chan->freq + ((distance << a) + (distance << (a - 1))));
+					chan->ht40plus = 0;
+				}
+			}
 		}
 	}
 }
@@ -1041,7 +1051,7 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 							list[count].ht40minus = 0;
 							list[count].ht40plus = 0;
 							//                              fprintf(stderr,"freq %d, htrange %d, startfreq %d, stopfreq %d\n", freq_mhz, htrange, startfreq, stopfreq);
-							if (((freq_mhz - range) - (max_bandwidth_khz / 2)) >= startfreq) {
+							if (((freq_mhz - range) - (max_bandwidth_khz / 2)) >= startfreq) {	// 5510 -         5470  
 								list[count].ht40minus = 1;
 							}
 							if (((freq_mhz + range) + (max_bandwidth_khz / 2)) <= stopfreq) {
