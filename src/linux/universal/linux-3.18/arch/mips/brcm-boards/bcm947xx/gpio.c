@@ -157,7 +157,6 @@ int isac68=0;
 int isdefault=1;
 EXPORT_SYMBOL(isd1800h);
 EXPORT_SYMBOL(isac66);
-static struct class *gpio_class = NULL;
 
 static int __init
 gpio_init(void)
@@ -174,14 +173,6 @@ gpio_init(void)
 		return gpio_major;
 	}
 
-//	devfs_mk_cdev(MKDEV(gpio_major, 0), S_IFCHR | S_IRUGO | S_IWUGO, "gpio");
-
-//	devfs_mk_dir("gpio");
-	gpio_class = class_create(THIS_MODULE, "gpio");
-
-	for (i = 0; i < ARRAYSIZE(gpio_file); i++) {
-		device_create(gpio_class, NULL, MKDEV(127, i), NULL, gpio_file[i].name);		
-	}
 gpio_init_flag=1;
 int gpios = 0;
 
