@@ -2282,7 +2282,7 @@ static void do_ttgraph(struct mime_handler *handler, char *url, webs_t stream, c
 	websWrite(stream,
 		  "  margin: 1.1em 0 3.5em; padding: 0;\n"
 		  "  border: 1px solid gray; list-style: none;\n"
-		  "  font: 9px Tahoma, Arial, sans-serif; color: #666;}\n" "#t-graph ul {margin: 0; padding: 0; list-style: none;}\n" "#t-graph li {position: absolute; bottom: 0; width: %dpx; z-index: 2;\n", COL_WIDTH);
+		  "  font: 9px Tahoma, Arial, sans-serif; color: #666;}\n" "#t-graph ul {margin: 0; padding: 20; list-style: none;}\n" "#t-graph li {position: absolute; bottom: 0; width: %dpx; z-index: 2;\n", COL_WIDTH);
 	websWrite(stream,
 		  "  margin: 0; padding: 0;\n"
 		  "  text-align: center; list-style: none;}\n"
