@@ -215,6 +215,7 @@ static void ctl_rcv_handler(uint32_t events, struct epoll_event_handler *p)
     msg.msg_iovlen = 3;
     msg.msg_control = NULL;
     msg.msg_controllen = 0;
+    msg.msg_flags = 0;
     iov[0].iov_base = &mhdr;
     iov[0].iov_len = sizeof(mhdr);
     iov[1].iov_base = msg_inbuf;
