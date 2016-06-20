@@ -135,7 +135,7 @@ int rtnl_dump_request(struct rtnl_handle *rth, int type, void *req, int len)
 	struct msghdr msg = {
 		.msg_name = &nladdr,
 		.msg_namelen = sizeof(nladdr),
-		.msg_iov = iov,
+		.msg_iov = &iov,
 		.msg_iovlen = 2,
 	};
 
