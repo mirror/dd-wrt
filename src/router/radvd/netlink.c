@@ -43,7 +43,15 @@ void process_netlink_msg(int sock, struct Interface * ifaces)
 	char buf[4096];
 	struct iovec iov = { buf, sizeof(buf) };
 	struct sockaddr_nl sa;
-	struct msghdr msg = { (void *)&sa, sizeof(sa), &iov, 1, NULL, 0, 0 };
+	struct msghdr msg = {
+			.msg_name = (void*)&sa,
+			.msg_namelen = sizeof(sa),
+			.msg_iov = &iov,
+			.msg_iovlen = 1,
+			.msg_control = NULL,
+			.msg_controllen = 0,
+			.msg_flags = 0
+	};
 	int len = recvmsg(sock, &msg, 0);
 	if (len == -1) {
 		flog(LOG_ERR, "netlink: recvmsg failed: %s", strerror(errno));
