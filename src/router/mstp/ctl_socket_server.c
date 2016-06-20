@@ -211,7 +211,7 @@ static void ctl_rcv_handler(uint32_t events, struct epoll_event_handler *p)
 
     msg.msg_name = &sa;
     msg.msg_namelen = sizeof(sa);
-    msg.msg_iov = iov;
+    msg.msg_iov = &iov;
     msg.msg_iovlen = 3;
     msg.msg_control = NULL;
     msg.msg_controllen = 0;

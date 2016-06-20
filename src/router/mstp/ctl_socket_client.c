@@ -93,10 +93,11 @@ int send_ctl_message(int cmd, void *inbuf, int lin, void *outbuf, int lout,
 
     msg.msg_name = NULL;
     msg.msg_namelen = 0;
-    msg.msg_iov = iov;
+    msg.msg_iov = &iov;
     msg.msg_iovlen = 3;
     msg.msg_control = NULL;
     msg.msg_controllen = 0;
+    msg.msg_flags = 0;
 
     mhdr.cmd = cmd;
     mhdr.lin = lin;
