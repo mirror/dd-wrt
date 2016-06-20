@@ -2357,7 +2357,7 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	}
 	if (ttcount)
 		tempcount = ttcount;
-	for (i = 0; i < 3; i++) {
+	for (i = 0; i < cc; i++) {
 		result[i] = (tempavg[i] / 2) + 200;
 	}
 
@@ -2378,7 +2378,7 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	if (!present[0] && !present[1] && !present[2] && cputemp)
 		websWrite(wp, "%s", live_translate("status_router.notavail"));	// no 
 	else {
-		for (i = 0; i < 3; i++) {
+		for (i = 0; i < cc; i++) {
 			if (present[i]) {
 				if (i && present[i - 1])
 					websWrite(wp, " / ");
