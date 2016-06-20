@@ -157,7 +157,6 @@ int isac68 = 0;
 int isbuffalo = 0;
 int isbuffalowxr = 0;
 int isdefault = 0;
-static struct class *gpio_class = NULL;
 
 static int __init gpio_init(void)
 {
@@ -171,12 +170,6 @@ static int __init gpio_init(void)
 	set_hc595_core(gpio_sih);
 	if ((gpio_major = register_chrdev(127, "gpio", &gpio_fops)) < 0) {
 		return gpio_major;
-	}
-
-	gpio_class = class_create(THIS_MODULE, "gpio");
-
-	for (i = 0; i < ARRAYSIZE(gpio_file); i++) {
-		device_create(gpio_class, NULL, MKDEV(127, i), NULL, gpio_file[i].name);
 	}
 
 	uint boardnum = bcm_strtoul(nvram_safe_get("boardnum"), NULL, 0);
