@@ -217,10 +217,9 @@
 				reg = <0x3280000 0x0200000>;
 			};
 
-			netgear@3480000 {
-				label = "netgear";
-				reg = <0x3480000 0x4480000>;
-				read-only;
+			ddwrt@3480000 {
+				label = "ddwrt";
+				reg = <0x4000000 0x3000000>;
 			};
 
 			reserved@7900000 {
