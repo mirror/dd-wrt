@@ -129,7 +129,7 @@ static void update_iface_times(struct Interface * iface)
 {
 	struct timespec last_time = iface->times.last_ra_time;
 	clock_gettime(CLOCK_MONOTONIC, &iface->times.last_ra_time);
-	time_t secs_since_last_ra = timespecdiff(&iface->times.last_ra_time, &last_time);
+	time_t secs_since_last_ra = timespecdiff(&iface->times.last_ra_time, &last_time) / 1000;
 
 	if (secs_since_last_ra < 0) {
 		secs_since_last_ra = 0;
@@ -210,7 +210,11 @@ static void add_prefix(struct safe_buffer * sb, struct AdvPrefix const *prefix, 
 
 			if (cease_adv && prefix->DeprecatePrefixFlag) {
 				/* RFC4862, 5.5.3, step e) */
-				pinfo.nd_opt_pi_valid_time = htonl(MIN_AdvValidLifetime);
+				if (prefix->curr_validlft < MIN_AdvValidLifetime) {
+					pinfo.nd_opt_pi_valid_time = htonl(prefix->curr_validlft);
+				} else {
+					pinfo.nd_opt_pi_valid_time = htonl(MIN_AdvValidLifetime);
+				}
 				pinfo.nd_opt_pi_preferred_time = 0;
 			} else {
 				pinfo.nd_opt_pi_valid_time = htonl(prefix->curr_validlft);

@@ -87,16 +87,29 @@ int get_v4addr(const char *ifn, unsigned int *dst)
 	return 0;
 }
 
+
+static int cmp_iface_addrs(void const *a, void const *b)
+{
+	return memcmp(a, b, sizeof(struct in6_addr));
+}
+
 /*
- * Saves the first link local address seen on the specified interface to iface->if_addr
- *
+ * Return first IPv6 link local addr in if_addr.
+ * Return all the IPv6 addresses in if_addrs in ascending
+ * order.
+ * Return value is -1 if there was no link local addr.
+ * otherwise return value is count of addres in if_addrs
+ * not including the all zero (unspecified) addr at the
+ * end of the list.
  */
-int setup_linklocal_addr(struct Interface *iface)
+int get_iface_addrs(char const *name, struct in6_addr *if_addr, struct in6_addr **if_addrs)
 {
 	struct ifaddrs *addresses = 0;
+	int link_local_set = 0;
+	int i = 0;
 
 	if (getifaddrs(&addresses) != 0) {
-		flog(LOG_ERR, "getifaddrs failed on %s: %s", iface->props.name, strerror(errno));
+		flog(LOG_ERR, "getifaddrs failed on %s: %s", name, strerror(errno));
 	} else {
 		for (struct ifaddrs * ifa = addresses; ifa != NULL; ifa = ifa->ifa_next) {
 
@@ -108,36 +121,67 @@ int setup_linklocal_addr(struct Interface *iface)
 
 			struct sockaddr_in6 *a6 = (struct sockaddr_in6 *)ifa->ifa_addr;
 
-			/* Skip if it is not a linklocal address */
-			uint8_t const ll_prefix[] = { 0xfe, 0x80, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
-			if (memcmp(&(a6->sin6_addr), ll_prefix, sizeof(ll_prefix)) != 0)
-				continue;
-
 			/* Skip if it is not the interface we're looking for. */
-			if (strcmp(ifa->ifa_name, iface->props.name) != 0)
+			if (strcmp(ifa->ifa_name, name) != 0)
 				continue;
 
-			memcpy(&iface->props.if_addr, &(a6->sin6_addr), sizeof(struct in6_addr));
+			*if_addrs = realloc(*if_addrs, (i+1) * sizeof(struct in6_addr));
+			(*if_addrs)[i++] = a6->sin6_addr;
 
-			freeifaddrs(addresses);
+			/* Skip if it is not a linklocal address or link locak address already found*/
+			uint8_t const ll_prefix[] = { 0xfe, 0x80, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
+			if (link_local_set || 0 != memcmp(&(a6->sin6_addr), ll_prefix, sizeof(ll_prefix)))
+				continue;
 
-			char addr_str[INET6_ADDRSTRLEN];
-			addrtostr(&iface->props.if_addr, addr_str, sizeof(addr_str));
-			dlog(LOG_DEBUG, 4, "%s linklocal address: %s", iface->props.name, addr_str);
+			if (if_addr)
+				memcpy(if_addr, &(a6->sin6_addr), sizeof(struct in6_addr));
 
-			return 0;
+			link_local_set = 1;
 		}
 	}
 
 	if (addresses)
 		freeifaddrs(addresses);
 
-	if (iface->IgnoreIfMissing)
-		dlog(LOG_DEBUG, 4, "no linklocal address configured on %s", iface->props.name);
-	else
-		flog(LOG_ERR, "no linklocal address configured on %s", iface->props.name);
+	/* last item in the list is all zero (unspecified) address */
+	*if_addrs = realloc(*if_addrs, (i+1) * sizeof(struct in6_addr));
+	memset(&(*if_addrs)[i], 0, sizeof(struct in6_addr));
 
-	return -1;
+	/* Sort the addresses so the output is predictable. */
+	qsort(*if_addrs, i, sizeof(struct in6_addr), cmp_iface_addrs);
+
+	if (!link_local_set)
+		return -1;
+
+	return i;
+}
+
+
+/*
+ * Saves the first link local address seen on the specified interface to iface->if_addr
+ * and builds a list of all the other addrs.
+ */
+int setup_iface_addrs(struct Interface *iface)
+{
+	int rc = get_iface_addrs(iface->props.name, &iface->props.if_addr, &iface->props.if_addrs);
+
+	if (-1 != rc) {
+		iface->props.addrs_count = rc;
+		char addr_str[INET6_ADDRSTRLEN];
+		addrtostr(&iface->props.if_addr, addr_str, sizeof(addr_str));
+		dlog(LOG_DEBUG, 4, "%s linklocal address: %s", iface->props.name, addr_str);
+		for (int i = 0; i < rc; ++i) {
+			addrtostr(&iface->props.if_addrs[i], addr_str, sizeof(addr_str));
+			dlog(LOG_DEBUG, 4, "%s address: %s", iface->props.name, addr_str);
+		}
+	} else {
+		if (iface->IgnoreIfMissing)
+			dlog(LOG_DEBUG, 4, "no linklocal address configured on %s", iface->props.name);
+		else
+			flog(LOG_ERR, "no linklocal address configured on %s", iface->props.name);
+	}
+
+	return rc;
 }
 
 int update_device_index(struct Interface *iface)

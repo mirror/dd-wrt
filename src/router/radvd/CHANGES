@@ -1,5 +1,28 @@
+2016/04/02	Fix netlink bug where RADVD reacts to RTM_NEWADDR
+		messages when there weren't actually any new addresses
+		to be found.  Those RTM_NEWADDR messages were only
+		sent when NetworkManager was running (which is just
+		about always).
+		Release v2.13
+
+2016/02/01	process.c: fixup ugly overflow check
+		radvd.conf.5.man: minor fixup to 'client' option
+		radvd.conf.5.man: update abro usage
+		gram.y: deprecate abro prefix length
+		device-linux.c: IEEE 802.15.4 musl libc fix
+		send.c: seconds/miliseconds comparison fix
+		send.c: preferred lifetime RFC 4862, 5.5.3 fix
+		defaults.h: remaining lifetime RFC 4862 fix
+		radvdump: show routes with prefixlen > 64
+
+
+2015/04/09	added --without-check option to configure <James Guthrie>
+		Release v2.11
+
 2015/01/22	Reverted random delay work because it broke detecting new
 			interfaces in a timely manor. <Lonnie>
+		Release v2.10
+		Drop md5sum and bz2 packages
 
 2014/12/31	Fix new interface coming up such that it is setup immediately.
 		This fixes a regression in the 2.x branch from 1.x <volker>
