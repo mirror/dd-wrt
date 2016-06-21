@@ -13,7 +13,7 @@ dnl
 dnl
 
 dnl If adding rcX to version, be sure to separate with a '-' 
-AC_INIT(radvd, [2.10])
+AC_INIT(radvd, [2.13])
 AC_CONFIG_SRCDIR(radvd.c)
 AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE
@@ -50,9 +50,12 @@ dnl Determine CC and preset CFLAGS
 AC_PROG_CC_C99
 AC_PROG_RANLIB
 
-if test "$arch" = "linux" ; then
-PKG_CHECK_MODULES([CHECK], [check >= 0.9.4])
-fi
+AC_ARG_WITH([check], AS_HELP_STRING([--without-check], [Build without check unit testing framework]),[],[with_check=no])
+AS_IF([test "x$with_check" = "xyes"], [
+    AS_IF([test "x$arch" = "xlinux"], [
+        PKG_CHECK_MODULES([CHECK], [check >= 0.9.4])
+    ])
+])
 
 dnl Determine of netlink is available
 AC_MSG_CHECKING(netlink)
@@ -153,6 +156,7 @@ AC_HEADER_STDC
 AC_CHECK_HEADERS( \
 	getopt.h \
 	ifaddrs.h \
+	linux/if_arp.h \
 	machine/limits.h \
 	machine/param.h \
 	net/if_arp.h \

@@ -102,7 +102,7 @@ configuration.  See examples section for a use case of this.
 The definitions are of the form:
 
 .nf
-.BR "clients " {
+.BR clients " " {
         list of IPv6 addresses
 .B };
 .fi
@@ -110,12 +110,10 @@ The definitions are of the form:
 ABRO (Authoritative Border Router Option) definitions are of the form:
 
 .nf
-.BR "abro " prefix / "length " {
+.BR "abro " "IPv6-address " {
         list of abro specific options
 .B };
 .fi
-
-Prefix can be network prefix or the address of the interface.
 
 .SH INTERFACE SPECIFIC OPTIONS
 

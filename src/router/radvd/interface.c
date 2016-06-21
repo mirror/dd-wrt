@@ -84,8 +84,9 @@ int setup_iface(int sock, struct Interface *iface)
 		return -1;
 	}
 
-	/* Save the first link local address seen on the specified interface to iface->if_addr */
-	if (setup_linklocal_addr(iface) < 0) {
+	/* Save the first link local address seen on the specified interface to
+	 * iface->props.if_addr and keep a list off all addrs in iface->props.if_addrs */
+	if (setup_iface_addrs(iface) < 0) {
 		return -1;
 	}
 
@@ -392,6 +393,8 @@ static void free_iface_list(struct Interface *iface)
 			free(clients);
 			clients = next_client;
 		}
+
+		free(iface->props.if_addrs);
 
 		free(iface);
 		iface = next_iface;

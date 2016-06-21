@@ -966,14 +966,30 @@ abrodef		: abrohead  '{' optional_abroplist '}' ';'
 		}
 		;
 
-abrohead	: T_ABRO IPV6ADDR '/' NUMBER
+abrohead	: abrohead_new | abrohead_dep
+
+abrohead_new	: T_ABRO IPV6ADDR
 		{
-			if ($4 > MAX_PrefixLen)
-			{
-				flog(LOG_ERR, "invalid abro prefix length in %s, line %d", filename, num_lines);
+			abro = malloc(sizeof(struct AdvAbro));
+
+			if (abro == NULL) {
+				flog(LOG_CRIT, "malloc failed: %s", strerror(errno));
 				ABORT;
 			}
 
+			memset(abro, 0, sizeof(struct AdvAbro));
+			memcpy(&abro->LBRaddress, $2, sizeof(struct in6_addr));
+		}
+		;
+
+abrohead_dep	: T_ABRO IPV6ADDR '/' NUMBER
+		{
+			flog(LOG_WARNING
+				, "%s:%d abro prefix length deprecated, remove trailing '/%d'"
+				, filename
+				, num_lines
+				, $4
+			);
 			abro = malloc(sizeof(struct AdvAbro));
 
 			if (abro == NULL) {

@@ -352,7 +352,8 @@ static void print_ff(unsigned char *msg, int len, struct sockaddr_in6 *addr, int
 				} else {
 					struct in6_addr addr;
 					memset(&addr, 0, sizeof(addr));
-					memcpy(&addr, &rinfo->nd_opt_ri_prefix, 8);
+					if (rinfo->nd_opt_ri_len > 1)
+						memcpy(&addr, &rinfo->nd_opt_ri_prefix, (rinfo->nd_opt_ri_len - 1) * 8);
 					addrtostr(&addr, prefix_str, sizeof(prefix_str));
 					printf("\n\troute %s/%d\n\t{\n", prefix_str, rinfo->nd_opt_ri_prefix_len);
 				}

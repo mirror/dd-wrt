@@ -18,6 +18,9 @@
 /* Define to 1 if you have the `c' library (-lc). */
 #undef HAVE_LIBC
 
+/* Define to 1 if you have the <linux/if_arp.h> header file. */
+#undef HAVE_LINUX_IF_ARP_H
+
 /* Define to 1 if you have the <machine/limits.h> header file. */
 #undef HAVE_MACHINE_LIMITS_H
 
