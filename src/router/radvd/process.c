@@ -108,7 +108,11 @@ void process(int sock, struct Interface *interfaces, unsigned char *msg, int len
 		dlog(LOG_DEBUG, 3, "%s received RS from: %s", if_name, addr_str);
 		process_rs(sock, iface, msg, len, addr);
 	} else if (icmph->icmp6_type == ND_ROUTER_ADVERT) {
-		dlog(LOG_DEBUG, 3, "%s received RA from: %s", if_name, addr_str);
+		if (0 == memcmp(&addr->sin6_addr, &iface->props.if_addr, sizeof(iface->props.if_addr))) {
+			dlog(LOG_DEBUG, 3, "%s received RA from: %s (myself)", if_name, addr_str);
+		} else {
+			dlog(LOG_DEBUG, 3, "%s received RA from: %s", if_name, addr_str);
+		}
 		process_ra(iface, msg, len, addr);
 	}
 }
@@ -370,7 +374,7 @@ static void process_ra(struct Interface *iface, unsigned char *msg, int len, str
 					 * 2) last byte of dnssli_suffix must not overflow opt_str + len
 					 */
 					if ((sizeof(suffix) - strlen(suffix)) < (label_len + 2) ||
-					    label_len > label_len + 2
+					    label_len >= (INT_MAX-1)
 					    || &dnsslinfo->nd_opt_dnssli_suffixes[offset + label_len] - opt_str >= len
 					    || offset + label_len < offset) {
 						flog(LOG_ERR, "oversized suffix in DNSSL option on %s from %s", iface->props.name,

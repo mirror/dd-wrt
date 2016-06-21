@@ -163,7 +163,7 @@ EXTRA_DIST = \
 	test/util.c
 
 EXTENSIONS = gz bz2 lz lzma xz tarZ shar zip
-HASHES = md5 sha1 sha256
+HASHES = sha1 sha256 sha512
 
 sign:
 	$(AM_V_GEN)for e in $(EXTENSIONS); do \
@@ -205,9 +205,8 @@ packages:
 	$(MAKE) dist-gzip
 	rm -rf radvd-$(VERSION)
 	tar zfx radvd-$(VERSION).tar.gz
-	cd radvd-$(VERSION) && ./configure && $(MAKE) check
+	cd radvd-$(VERSION) && ./configure --with-check && $(MAKE) check
 	rm -rf radvd-$(VERSION)
-	$(MAKE) dist-bzip2
 	$(MAKE) dist-xz
 	$(MAKE) sign
 	$(MAKE) verify
