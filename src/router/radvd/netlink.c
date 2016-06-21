@@ -84,7 +84,6 @@ void process_netlink_msg(int sock, struct Interface * ifaces)
 						dlog(LOG_DEBUG, 3, "netlink: %s, ifindex %d, flags is *NOT* running", ifname,
 						     ifinfo->ifi_index);
 					}
-					++rc;
 #ifdef IFLA_LINKINFO
 				}
 			}
