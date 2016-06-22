@@ -4879,6 +4879,12 @@ void start_wan_done(char *wan_ifname)
 	if (nvram_match("ipv6_enable", "1") && nvram_match("ipv6_typ", "ipv6in4")) {
 #ifdef HAVE_CURL
 		eval("/usr/bin/curl", "-s", "-k", nvram_safe_get("ipv6_tun_upd_url"), "-o", "/tmp/tunnelstat");
+		FILE *fp = fopen("/tmp/tunnelstat", "r");
+		if (fp) {
+			fclose(fp);
+		} else {
+			eval("/usr/bin/curl", "-s", "-k", nvram_safe_get("ipv6_tun_upd_url"), "-o", "/tmp/tunnelstat");
+		}
 #else
 		eval("wget", nvram_safe_get("ipv6_tun_upd_url"), "-O", "/tmp/tunnelstat");
 #endif
