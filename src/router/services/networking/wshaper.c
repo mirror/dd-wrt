@@ -1061,6 +1061,10 @@ void start_wshaper(void)
 	if (!strcmp(aqd, "fq_codel"))
 		insmod("sch_fq_codel");
 #endif
+#ifdef HAVE_PIE
+	if (!strcmp(aqd, "pie"))
+		insmod("sch_pie");
+#endif
 
 	//under K3 interface defaults are way to high, set some sane values
 	eval("ifconfig", "imq0", "down");
