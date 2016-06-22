@@ -192,11 +192,11 @@ addEvent(window, "unload", function() {
 											<span id="ttraff_out"><% get_totaltraff("out"); %></span>&nbsp;
 										</div>
 								</fieldset><br />
-								<fieldset>
+								<fieldset style="text-align:center;">
 								<legend><% tran("status_inet.traff_mon"); %></legend>
 									<script type="text/javascript">
 									//<![CDATA[
-									document.write("<iframe id=\"graph\" src=\"" + load_file(count) + "\" width=\"555\" height=\"350\" frameborder=\"0\" type=\"text/html\"></iframe>");
+									document.write("<iframe id=\"graph\" src=\"" + load_file(count) + "\" width=\"600\" height=\"370\" frameborder=\"0\" type=\"text/html\"></iframe>");
 									//]]>
 									</script>
 									<div class="center">
