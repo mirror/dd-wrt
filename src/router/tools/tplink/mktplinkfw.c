@@ -53,6 +53,7 @@
 #define HWID_TL_WR703N_V1	0x07030101
 #define HWID_TL_MR3020		0x30200001
 #define HWID_TL_MR3220		0x32200001
+#define HWID_TL_MR3220_V2		0x32200002
 #define HWID_TL_MR3420		0x34200001
 #define HWID_TL_WR743ND_V1	0x07430001
 #define HWID_TL_WR743ND_V2	0x07430002
@@ -250,6 +251,14 @@ static struct board_info boards[] = {
 	},	{
 		.id		= "TL-WR741NDv4",
 		.hw_id		= HWID_TL_WR741ND_V4,
+		.hw_rev		= 1,
+		.fw_max_len	= 0x3c0000,
+		.kernel_la	= 0x80060000,
+		.kernel_ep	= 0x80060000,
+		.rootfs_ofs	= 0xf0000,
+	},	{
+		.id		= "TL-MR3220v2",
+		.hw_id		= HWID_TL_MR3220_V2,
 		.hw_rev		= 1,
 		.fw_max_len	= 0x3c0000,
 		.kernel_la	= 0x80060000,
