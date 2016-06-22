@@ -65,6 +65,8 @@ void start_cron(void)
 
 	if (nvram_match("cron_enable", "0"))
 		return;
+	
+	sysprintf("grep -q crontabs /etc/passwd || echo \"crontabs:*:0:0:Contab User,,,:/var:/bin/false\" >> /etc/passwd");
 
 	stop_cron();
 
