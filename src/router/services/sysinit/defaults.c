@@ -352,6 +352,12 @@ struct nvram_param srouter_defaults[] = {
 #endif
 #elif HAVE_JWAP606
 	{"wan_proto", "disabled"},	/* [static|dhcp|pppoe|disabled] */
+#elif HAVE_WA901v1
+	{"wan_proto", "disabled"},	/* [static|dhcp|pppoe|disabled] */
+#elif HAVE_WA901
+	{"wan_proto", "disabled"},	/* [static|dhcp|pppoe|disabled] */
+#elif HAVE_WA901V3
+	{"wan_proto", "disabled"},	/* [static|dhcp|pppoe|disabled] */
 #elif HAVE_WZRG450
 	{"wan_proto", "dhcp"},	/* [static|dhcp|pppoe|disabled] */
 #elif HAVE_WR710
