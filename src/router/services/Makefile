@@ -1494,7 +1494,9 @@ endif
 ifeq ($(CONFIG_NET_SCH_FQ_CODEL),m)
 CFLAGS_EXTRA += -DHAVE_FQ_CODEL
 endif
-
+ifeq ($(CONFIG_NET_SCH_PIE),m)
+CFLAGS_EXTRA += -DHAVE_PIE
+endif
 ifeq ($(CONFIG_SNMP),y)
 CFLAGS_EXTRA += -DHAVE_SNMP
 OBJS += snmp.o
