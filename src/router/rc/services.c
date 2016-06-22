@@ -129,11 +129,11 @@ static int start_services_main(int argc, char **argv)
 #ifdef HAVE_UDHCPD
 	start_service_f("udhcpd");
 #endif
-#ifdef HAVE_DNSMASQ
-	start_service_f("dnsmasq");
-#endif
 #ifdef HAVE_UNBOUND
 	start_service_f("unbound");
+#endif
+#ifdef HAVE_DNSMASQ
+	start_service_f("dnsmasq");
 #endif
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
 	start_service_f("zebra");
@@ -440,11 +440,11 @@ static void handle_index(void)
 #ifdef HAVE_UDHCPD
 	startstop_f("udhcpd");
 #endif
-#ifdef HAVE_DNSMASQ
-	startstop_f("dnsmasq");
-#endif
 #ifdef HAVE_UNBOUND
 	startstop_f("unbound");
+#endif
+#ifdef HAVE_DNSMASQ
+	startstop_f("dnsmasq");
 #endif
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
 	startstop_f("zebra");
@@ -580,11 +580,11 @@ static void handle_hotspot(void)
 #ifdef HAVE_UDHCPD
 	startstop_f("udhcpd");
 #endif
-#ifdef HAVE_DNSMASQ
-	startstop_f("dnsmasq");
-#endif
 #ifdef HAVE_UNBOUND
 	startstop_f("unbound");
+#endif	
+#ifdef HAVE_DNSMASQ
+	startstop_f("dnsmasq");
 #endif
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
 	start_service("zebra");
@@ -630,11 +630,11 @@ static void handle_services(void)
 	startstop("firewall");
 	startstop_f("pppoeserver");
 #endif
-#ifdef HAVE_DNSMASQ
-	startstop_f("dnsmasq");
-#endif
 #ifdef HAVE_UNBOUND
 	startstop_f("unbound");
+#endif
+#ifdef HAVE_DNSMASQ
+	startstop_f("dnsmasq");
 #endif
 #ifdef HAVE_UDHCPD
 	startstop_f("udhcpd");
@@ -1125,12 +1125,13 @@ static void handle_wireless(void)
 #ifdef HAVE_UDHCPD
 	startstop_f("udhcpd");
 #endif
-#ifdef HAVE_DNSMASQ
-	startstop_f("dnsmasq");
-#endif
 #ifdef HAVE_UNBOUND
 	startstop_f("unbound");
 #endif
+#ifdef HAVE_DNSMASQ
+	startstop_f("dnsmasq");
+#endif
+
 	if (getSTA() || getWET() || wanchanged
 #ifdef HAVE_MADWIFI
 	    || getWDSSTA()
