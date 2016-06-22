@@ -84,6 +84,8 @@ openssl-install:
 #endif
 ifeq ($(CONFIG_FREERADIUS),y)
 	-install -D openssl/apps/openssl $(INSTALLDIR)/openssl/usr/sbin/openssl
+	-mkdir -p $(INSTALLDIR)/openssl/etc/ssl
+	-touch $(INSTALLDIR)/openssl/etc/ssl/openssl.cnf
 endif
 	@true
 
