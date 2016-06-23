@@ -331,8 +331,7 @@ static int freq_quality(struct frequency *f, struct sort_data *s)
 	int c;
 	int idx;
 
-	if (!f->clear_count)
-		return 0;
+	if (f->clear_count) {
 
 	c = f->clear;
 
@@ -344,7 +343,9 @@ static int freq_quality(struct frequency *f, struct sort_data *s)
 	/* strongly discourage the use of channels other than 1,6,11 */
 	if (f->freq >= 2412 && f->freq <= 2484 && idx < ARRAY_SIZE(bias_2g))
 		c = (c * bias[idx]) / 100;
-
+	}else {
+	    c = 100;
+	}
 	int eirp = get_eirp(f->freq);
 	/* subtract noise delta to lowest noise.*/
 	c -= (f->noise - s->lowest_noise);
@@ -404,7 +405,7 @@ struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int s
 	else if (htflags & AUTO_FORCEHT40)
 		bw = 40;
 
-	char *country = getIsoName(nvram_default_get("ath0_regdomain", "GERMANY"));
+	char *country = getIsoName(nvram_default_get("ath0_regdomain", "UNITED_STATES"));
 	if (!country)
 		country = "DE";
 
