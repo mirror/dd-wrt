@@ -1802,30 +1802,6 @@ int has_athmask(int devnum, int mask)
 		return 0;
 }
 
-int has_5ghz(char *prefix)
-{
-	int devnum;
-	sscanf(prefix, "ath%d", &devnum);
-#ifdef HAVE_ATH9K
-	if (is_ath9k(prefix))
-		return mac80211_check_band(prefix, 5);
-#endif
-
-	return has_athmask(devnum, 0x1);
-}
-
-int has_2ghz(char *prefix)
-{
-	int devnum;
-	sscanf(prefix, "ath%d", &devnum);
-#ifdef HAVE_ATH9K
-	if (is_ath9k(prefix))
-		return mac80211_check_band(prefix, 2);
-#endif
-
-	return has_athmask(devnum, 0x8);
-}
-
 static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 {
 	struct ieee80211req_chaninfo chans;
