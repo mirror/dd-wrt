@@ -653,6 +653,30 @@ nla_put_failure:
 	return capstring;
 }
 
+int has_5ghz(char *prefix)
+{
+	int devnum;
+	sscanf(prefix, "ath%d", &devnum);
+#ifdef HAVE_ATH9K
+	if (is_ath9k(prefix))
+		return mac80211_check_band(prefix, 5);
+#endif
+
+	return has_athmask(devnum, 0x1);
+}
+
+int has_2ghz(char *prefix)
+{
+	int devnum;
+	sscanf(prefix, "ath%d", &devnum);
+#ifdef HAVE_ATH9K
+	if (is_ath9k(prefix))
+		return mac80211_check_band(prefix, 2);
+#endif
+
+	return has_athmask(devnum, 0x8);
+}
+
 #ifdef HAVE_ATH10K
 
 char *mac80211_get_vhtcaps(char *interface, int shortgi)
