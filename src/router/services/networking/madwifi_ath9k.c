@@ -513,7 +513,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		free(caps);
 	}
 #ifdef HAVE_ATH10K
-	if (is_ath10k(prefix) || is_mvebu(prefix)) {
+	if ((is_ath10k(prefix) || is_mvebu(prefix)) && has_5ghz(prefix)) {
 		if ((!strcmp(netmode, "mixed") ||	//
 		     !strcmp(netmode, "ac-only") || !strcmp(netmode, "acn-mixed"))) {
 			char shortgi[32];
