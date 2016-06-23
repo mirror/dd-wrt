@@ -1041,7 +1041,7 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 							list[count].max_eirp = regpower.max_eirp / 100;
 							list[count].hw_eirp = eirp / 100;
 							if (!list[count].hw_eirp)
-							    list[count].hw_eirp = list[count].max_eirp;
+							    list[count].hw_eirp = list[count].max_eirp; // mwlwifi driver quirk
 							if (flags & RRF_NO_OFDM)
 								list[count].no_ofdm = 1;
 							if (flags & RRF_NO_CCK)
