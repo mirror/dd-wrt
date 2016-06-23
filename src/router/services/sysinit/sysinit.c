@@ -3319,8 +3319,13 @@ void start_nvram(void)
 	if (!strcmp(aqd, "fq_codel"))
 		nvram_set("svqos_aqd", "sfq");
 #endif
+#ifndef HAVE_PIE
+        if (!strcmp(aqd, "pie"))
+                nvram_set("svqos_aqd", "sfq");
+#endif
 	if (strcmp(aqd, "codel")
-	    && strcmp(aqd, "fq_codel"))
+	    && strcmp(aqd, "fq_codel")
+	    && strcmp(aqd, "pie"))
 		nvram_set("svqos_aqd", "sfq");
 #endif
 
