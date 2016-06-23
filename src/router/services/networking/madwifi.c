@@ -2344,7 +2344,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 		char regdomain[16];
 		char *country;
 		sprintf(regdomain, "ath0_regdomain");
-		country = nvram_default_get(regdomain, "GERMANY");
+		country = nvram_default_get(regdomain, "UNITED_STATES");
 		eval("iw", "reg", "set", "00");
 		char *iso = getIsoName(country);
 
