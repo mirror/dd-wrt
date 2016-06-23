@@ -328,7 +328,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	fprintf(fp, "tx_queue_data0_cwmin=3\n");
 	fprintf(fp, "tx_queue_data0_cwmax=7\n");
 	fprintf(fp, "tx_queue_data0_burst=1.5\n");
-	char *country = getIsoName(nvram_default_get("ath0_regdomain", "GERMANY"));
+	char *country = getIsoName(nvram_default_get("ath0_regdomain", "UNITED_STATES"));
 	if (!country)
 		country = "DE";
 	fprintf(fp, "country_code=%s\n", country);
