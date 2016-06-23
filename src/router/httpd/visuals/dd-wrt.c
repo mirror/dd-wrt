@@ -2976,7 +2976,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n", nvram_match(wl_width, "40") ? "selected=\\\"selected\\\"" : "");
 #endif
 #if defined(HAVE_ATH10K)
-		if (has_ac(prefix) && nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("acn-mixed", "%s_net_mode", prefix)) {
+		if (has_ac(prefix) && has_5ghz(prefix) &&nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("acn-mixed", "%s_net_mode", prefix)) {
 			websWrite(wp, "document.write(\"<option value=\\\"80\\\" %s >\" + share.vht80 + \"</option>\");\n", nvram_match(wl_width, "80") ? "selected=\\\"selected\\\"" : "");
 			if (has_vht160(prefix))
 			    websWrite(wp, "document.write(\"<option value=\\\"160\\\" %s >\" + share.vht160 + \"</option>\");\n", nvram_match(wl_width, "160") ? "selected=\\\"selected\\\"" : "");
@@ -3562,7 +3562,7 @@ if (!strcmp(prefix, "wl2"))
 #endif
 
 #if defined(HAVE_ATH10K)
-		if (has_ac(prefix) && nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("acn-mixed", "%s_net_mode", prefix))
+		if (has_ac(prefix)  && has_5ghz(prefix) && nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("acn-mixed", "%s_net_mode", prefix))
 			websWrite(wp, "document.write(\"<option value=\\\"80\\\" %s >\" + share.vht80 + \"</option>\");\n", nvram_match(wl_width, "80") ? "selected=\\\"selected\\\"" : "");
 			if (has_vht160(prefix))
 			    websWrite(wp, "document.write(\"<option value=\\\"160\\\" %s >\" + share.vht160 + \"</option>\");\n", nvram_match(wl_width, "160") ? "selected=\\\"selected\\\"" : "");
