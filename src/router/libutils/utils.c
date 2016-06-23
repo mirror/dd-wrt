@@ -828,7 +828,8 @@ void add_client_classes(unsigned int base, unsigned int level)
 	}
 #if defined(HAVE_CODEL) || defined(HAVE_FQ_CODEL)
 	if (!strcmp(aqd, "codel")
-	    || !strcmp(aqd, "fq_codel")) {
+	    || !strcmp(aqd, "fq_codel")
+	    || !strcmp(aqd, "pie")) {
 		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s", wan_dev, base + 1, base + 1, aqd);
 		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s", wan_dev, base + 2, base + 2, aqd);
 		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s", wan_dev, base + 3, base + 3, aqd);
