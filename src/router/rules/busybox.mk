@@ -419,6 +419,18 @@ ifeq ($(CONFIG_TFTP),y)
 	sed -i 's/\# CONFIG_FEATURE_TFTP_PROGRESS_BAR is not set/CONFIG_FEATURE_TFTP_PROGRESS_BAR=y/g' busybox/.config
 	sed -i 's/\# CONFIG_FEATURE_TFTP_BLOCKSIZE is not set/CONFIG_FEATURE_TFTP_BLOCKSIZE=y/g' busybox/.config
 endif
+	echo "# CONFIG_BUSYBOX is not set" >> busybox/.config
+	echo "# CONFIG_DEBUG_SANITIZE is not set" >> busybox/.config
+	echo "CONFIG_FEATURE_USE_BSS_TAIL=y" >> busybox/.config
+	echo "# CONFIG_FEATURE_GUNZIP_LONG_OPTIONS is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_CALL_TELINIT is not set" >> busybox/.config
+	echo "# CONFIG_LINUXRC is not set" >> busybox/.config
+	echo "# CONFIG_MKPASSWD is not set" >> busybox/.config
+	echo "# CONFIG_BLKDISCARD is not set" >> busybox/.config
+	echo "# CONFIG_NSENTER is not set" >> busybox/.config
+	echo "# CONFIG_UNSHARE is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_VOLUMEID_BCACHE is not set" >> busybox/.config
+	echo "# CONFIG_UBIRENAME is not set" >> busybox/.config
 	cd busybox && make oldconfig
 	
 	$(MAKE) -j 4 -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox
