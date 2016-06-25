@@ -170,6 +170,7 @@
 #include <sys/un.h>
 
 #include "libbb.h"
+#include "common_bufsiz.h"
 
 #if ENABLE_FEATURE_INETD_RPC
 # if defined(__UCLIBC__) && ! defined(__UCLIBC_HAS_RPC__)
@@ -327,11 +328,8 @@ struct globals {
 	/* Used in next_line(), and as scratch read buffer */
 	char line[256];          /* _at least_ 256, see LINE_SIZE */
 } FIX_ALIASING;
-#define G (*(struct globals*)&bb_common_bufsiz1)
+#define G (*(struct globals*)bb_common_bufsiz1)
 enum { LINE_SIZE = COMMON_BUFSIZE - offsetof(struct globals, line) };
-struct BUG_G_too_big {
-	char BUG_G_too_big[sizeof(G) <= COMMON_BUFSIZE ? 1 : -1];
-};
 #define rlim_ofile_cur  (G.rlim_ofile_cur )
 #define rlim_ofile      (G.rlim_ofile     )
 #define serv_list       (G.serv_list      )
@@ -352,6 +350,8 @@ struct BUG_G_too_big {
 #define allsock         (G.allsock        )
 #define line            (G.line           )
 #define INIT_G() do { \
+	setup_common_bufsiz(); \
+	BUILD_BUG_ON(sizeof(G) > COMMON_BUFSIZE); \
 	rlim_ofile_cur = OPEN_MAX; \
 	global_queuelen = 128; \
 	config_filename = "/etc/inetd.conf"; \
@@ -836,10 +836,10 @@ static NOINLINE servtab_t *parse_one_line(void)
 			goto parse_err;
 	}
 
-//	bb_info_msg(
-//		"ENTRY[%s][%s][%s][%d][%d][%d][%d][%d][%s][%s][%s]",
-//		sep->se_local_hostname, sep->se_service, sep->se_proto, sep->se_wait, sep->se_proto_no,
-//		sep->se_max, sep->se_count, sep->se_time, sep->se_user, sep->se_group, sep->se_program);
+	//bb_error_msg(
+	//	"ENTRY[%s][%s][%s][%d][%d][%d][%d][%d][%s][%s][%s]",
+	//	sep->se_local_hostname, sep->se_service, sep->se_proto, sep->se_wait, sep->se_proto_no,
+	//	sep->se_max, sep->se_count, sep->se_time, sep->se_user, sep->se_group, sep->se_program);
 
 	/* check if the hostname specifier is a comma separated list
 	 * of hostnames. we'll make new entries for each address. */
