@@ -726,8 +726,8 @@ static int eth_poll(struct napi_struct *napi, int budget)
 		enable_irq(sw->rx_irq);
 		budget = 0;
 
-		/* if  1 or more frames came  in during IRQ enable, re-schedule*/
-		if (rx_ring->desc[i].cown)
+		/* if rx descriptors are full schedule another poll */
+		if (rx_ring->desc[(i-1) & (RX_DESCS-1)].cown)
 			eth_schedule_poll(sw);
 	}
 
