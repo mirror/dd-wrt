@@ -71,6 +71,7 @@
 //usage:     "\n	-F	Don't store or verify checksum"
 
 #include "libbb.h"
+#include "common_bufsiz.h"
 #include "bb_archive.h"
 #include "liblzo_interface.h"
 
@@ -443,8 +444,8 @@ struct globals {
 	chksum_t chksum_in;
 	chksum_t chksum_out;
 } FIX_ALIASING;
-#define G (*(struct globals*)&bb_common_bufsiz1)
-#define INIT_G() do { } while (0)
+#define G (*(struct globals*)bb_common_bufsiz1)
+#define INIT_G() do { setup_common_bufsiz(); } while (0)
 //#define G (*ptr_to_globals)
 //#define INIT_G() do {
 //	SET_PTR_TO_GLOBALS(xzalloc(sizeof(G)));
@@ -640,7 +641,7 @@ static int lzo_get_method(header_t *h)
 /**********************************************************************/
 // compress a file
 /**********************************************************************/
-static NOINLINE smallint lzo_compress(const header_t *h)
+static NOINLINE int lzo_compress(const header_t *h)
 {
 	unsigned block_size = LZO_BLOCK_SIZE;
 	int r = 0; /* LZO_E_OK */
@@ -650,7 +651,6 @@ static NOINLINE smallint lzo_compress(const header_t *h)
 	uint32_t d_adler32 = ADLER32_INIT_VALUE;
 	uint32_t d_crc32 = CRC32_INIT_VALUE;
 	int l;
-	smallint ok = 1;
 	uint8_t *wrk_mem = NULL;
 
 	if (h->method == M_LZO1X_1)
@@ -732,7 +732,7 @@ static NOINLINE smallint lzo_compress(const header_t *h)
 	free(wrk_mem);
 	free(b1);
 	free(b2);
-	return ok;
+	return 1;
 }
 
 static FAST_FUNC void lzo_check(
@@ -753,7 +753,7 @@ static FAST_FUNC void lzo_check(
 /**********************************************************************/
 // decompress a file
 /**********************************************************************/
-static NOINLINE smallint lzo_decompress(const header_t *h)
+static NOINLINE int lzo_decompress(const header_t *h)
 {
 	unsigned block_size = LZO_BLOCK_SIZE;
 	int r;
@@ -761,7 +761,6 @@ static NOINLINE smallint lzo_decompress(const header_t *h)
 	uint32_t c_adler32 = ADLER32_INIT_VALUE;
 	uint32_t d_adler32 = ADLER32_INIT_VALUE;
 	uint32_t c_crc32 = CRC32_INIT_VALUE, d_crc32 = CRC32_INIT_VALUE;
-	smallint ok = 1;
 	uint8_t *b1;
 	uint32_t mcs_block_size = MAX_COMPRESSED_SIZE(block_size);
 	uint8_t *b2 = NULL;
@@ -865,7 +864,7 @@ static NOINLINE smallint lzo_decompress(const header_t *h)
 	}
 
 	free(b2);
-	return ok;
+	return 1;
 }
 
 /**********************************************************************/
@@ -897,7 +896,7 @@ static NOINLINE smallint lzo_decompress(const header_t *h)
  *                  chksum_out
  * The rest is identical.
 */
-static const unsigned char lzop_magic[9] = {
+static const unsigned char lzop_magic[9] ALIGN1 = {
 	0x89, 0x4c, 0x5a, 0x4f, 0x00, 0x0d, 0x0a, 0x1a, 0x0a
 };
 
@@ -1050,7 +1049,7 @@ static void lzo_set_method(header_t *h)
 	h->level = level;
 }
 
-static smallint do_lzo_compress(void)
+static int do_lzo_compress(void)
 {
 	header_t header;
 
@@ -1078,7 +1077,7 @@ static smallint do_lzo_compress(void)
 /**********************************************************************/
 // decompress
 /**********************************************************************/
-static smallint do_lzo_decompress(void)
+static int do_lzo_decompress(void)
 {
 	header_t header;
 

@@ -58,6 +58,7 @@
 //config:	  Print the specified number of context lines (-C).
 
 #include "libbb.h"
+#include "common_bufsiz.h"
 #include "xregex.h"
 
 
@@ -201,11 +202,10 @@ struct globals {
 	llist_t *pattern_head;   /* growable list of patterns to match */
 	const char *cur_file;    /* the current file we are reading */
 } FIX_ALIASING;
-#define G (*(struct globals*)&bb_common_bufsiz1)
+#define G (*(struct globals*)bb_common_bufsiz1)
 #define INIT_G() do { \
-	struct G_sizecheck { \
-		char G_sizecheck[sizeof(G) > COMMON_BUFSIZE ? -1 : 1]; \
-	}; \
+	setup_common_bufsiz(); \
+	BUILD_BUG_ON(sizeof(G) > COMMON_BUFSIZE); \
 } while (0)
 #define max_matches       (G.max_matches         )
 #if !ENABLE_EXTRA_COMPAT
@@ -683,11 +683,16 @@ int grep_main(int argc UNUSED_PARAM, char **argv)
 	FILE *file;
 	int matched;
 	llist_t *fopt = NULL;
+#if ENABLE_FEATURE_GREP_CONTEXT
+	int Copt, opts;
+#endif
+	INIT_G();
+
+	/* For grep, exitcode of 1 is "not found". Other errors are 2: */
+	xfunc_error_retval = 2;
 
 	/* do normal option parsing */
 #if ENABLE_FEATURE_GREP_CONTEXT
-	int Copt, opts;
-
 	/* -H unsets -h; -C unsets -A,-B; -e,-f are lists;
 	 * -m,-A,-B,-C have numeric param */
 	opt_complementary = "H-h:C-AB:e::f::m+:A+:B+:C+";

@@ -66,6 +66,7 @@
 //kbuild:lib-$(CONFIG_XARGS) += xargs.o
 
 #include "libbb.h"
+#include "common_bufsiz.h"
 
 /* This is a NOEXEC applet. Be very careful! */
 
@@ -100,8 +101,9 @@ struct globals {
 	const char *eof_str;
 	int idx;
 } FIX_ALIASING;
-#define G (*(struct globals*)&bb_common_bufsiz1)
+#define G (*(struct globals*)bb_common_bufsiz1)
 #define INIT_G() do { \
+	setup_common_bufsiz(); \
 	G.eof_str = NULL; /* need to clear by hand because we are NOEXEC applet */ \
 	IF_FEATURE_XARGS_SUPPORT_REPL_STR(G.repl_str = "{}";) \
 	IF_FEATURE_XARGS_SUPPORT_REPL_STR(G.eol_ch = '\n';) \
@@ -577,6 +579,9 @@ int xargs_main(int argc, char **argv)
 		G.argv = argv;
 		argc = 0;
 		read_args = process_stdin_with_replace;
+		/* Make -I imply -r. GNU findutils seems to do the same: */
+		/* (otherwise "echo -n | xargs -I% echo %" would SEGV) */
+		opt |= OPT_NO_EMPTY;
 	} else
 #endif
 	{

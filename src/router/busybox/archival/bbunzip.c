@@ -121,7 +121,7 @@ int FAST_FUNC bbunpack(char **argv,
 
 		if (!(option_mask32 & SEAMLESS_MAGIC)) {
 			init_transformer_state(&xstate);
-			xstate.check_signature = 1;
+			xstate.signature_skipped = 0;
 			/*xstate.src_fd = STDIN_FILENO; - already is */
 			xstate.dst_fd = STDOUT_FILENO;
 			status = unpacker(&xstate);
@@ -220,7 +220,7 @@ char* FAST_FUNC make_new_name_generic(char *filename, const char *expected_ext)
 
 //config:config UNCOMPRESS
 //config:	bool "uncompress"
-//config:	default n
+//config:	default n  # ancient
 //config:	help
 //config:	  uncompress is used to decompress archives created by compress.
 //config:	  Not much used anymore, replaced by gzip/gunzip.
@@ -290,6 +290,13 @@ int uncompress_main(int argc UNUSED_PARAM, char **argv)
 //config:	  gunzip is used to decompress archives created by gzip.
 //config:	  You can use the `-t' option to test the integrity of
 //config:	  an archive, without decompressing it.
+//config:
+//config:config FEATURE_GUNZIP_LONG_OPTIONS
+//config:	bool "Enable long options"
+//config:	default y
+//config:	depends on GUNZIP && LONG_OPTS
+//config:	help
+//config:	  Enable use of long options.
 
 //applet:IF_GUNZIP(APPLET(gunzip, BB_DIR_BIN, BB_SUID_DROP))
 //applet:IF_GUNZIP(APPLET_ODDNAME(zcat, gunzip, BB_DIR_BIN, BB_SUID_DROP, zcat))
@@ -321,6 +328,17 @@ char* FAST_FUNC make_new_name_gunzip(char *filename, const char *expected_ext UN
 	}
 	return filename;
 }
+
+#if ENABLE_FEATURE_GUNZIP_LONG_OPTIONS
+static const char gunzip_longopts[] ALIGN1 =
+	"stdout\0"              No_argument       "c"
+	"to-stdout\0"           No_argument       "c"
+	"force\0"               No_argument       "f"
+	"test\0"                No_argument       "t"
+	"no-name\0"             No_argument       "n"
+	;
+#endif
+
 /*
  * Linux kernel build uses gzip -d -n. We accept and ignore it.
  * Man page says:
@@ -337,6 +355,9 @@ char* FAST_FUNC make_new_name_gunzip(char *filename, const char *expected_ext UN
 int gunzip_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 int gunzip_main(int argc UNUSED_PARAM, char **argv)
 {
+#if ENABLE_FEATURE_GUNZIP_LONG_OPTIONS
+	applet_long_options = gunzip_longopts;
+#endif
 	getopt32(argv, "cfvqdtn");
 	argv += optind;
 
