@@ -825,7 +825,12 @@ ifneq ($(HEARTBEAT_SUPPORT),1)
 endif
 ifneq ($(CONFIG_ATH9K),y)
 	rm -f $(INSTALLDIR)/www/spectral_scan*
+	rm -f $(INSTALLDIR)/www/spectral.css
+	rm -f $(INSTALLDIR)/www/background.png
 	rm -f $(INSTALLDIR)/www/jquery.flot.js
+	rm -f $(INSTALLDIR)/www/jquery.ui.js
+	rm -f $(INSTALLDIR)/www/jquery.ui.css
+	rm -f $(INSTALLDIR)/www/jquery.flot.resize.js
 #	rm -f $(INSTALLDIR)/www/jquery.flot.navigate.js
 	rm -f $(INSTALLDIR)/www/jquery.js
 endif

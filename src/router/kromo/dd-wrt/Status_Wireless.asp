@@ -103,10 +103,10 @@ function OpenSiteSurvey () {
 
 function OpenSpectral () {
 	if( "<% radio_on(); %>" == "1" ) {
-		openWindow('spectral_scan.html', 760, 700);
+		openWindow('spectral_scan.html', 1024, 700);
 	}
 	else {
-		openWindow('Site_Survey.asp', 760, 700);
+		openWindow('spectral_scan.html', 1024, 700);
 		alert(errmsg.err59);
 	};
 }
