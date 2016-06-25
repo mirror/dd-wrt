@@ -23,6 +23,7 @@
 //usage:     "\n	-s	Report via syslog instead of stderr"
 
 #include "libbb.h"
+#include "common_bufsiz.h"
 #include <sys/utsname.h>
 #include <fnmatch.h>
 
@@ -304,7 +305,7 @@ static int FAST_FUNC include_conf_file_act(const char *filename,
 
 	// alias parsing is not 100% correct (no correct handling of continuation lines within an alias)!
 
-	while (fgets(line_buffer, sizeof(line_buffer), f)) {
+	while (fgets(line_buffer, COMMON_BUFSIZE, f)) {
 		int l;
 
 		*strchrnul(line_buffer, '#') = '\0';
@@ -443,7 +444,7 @@ static struct dep_t *build_dep(void)
 		}
 	}
 
-	while (fgets(line_buffer, sizeof(line_buffer), f)) {
+	while (fgets(line_buffer, COMMON_BUFSIZE, f)) {
 		int l = strlen(line_buffer);
 		char *p = NULL;
 
@@ -615,7 +616,7 @@ static int already_loaded(const char *name)
 		return -1;
 
 	ret = 0;
-	while (fgets(line_buffer, sizeof(line_buffer), f)) {
+	while (fgets(line_buffer, COMMON_BUFSIZE, f)) {
 		char *p = line_buffer;
 		const char *n = name;
 
@@ -937,6 +938,8 @@ int modprobe_main(int argc UNUSED_PARAM, char **argv)
 		return EXIT_SUCCESS;
 	if (opt & (RESTRICT_DIR | CONFIG_FILE))
 		bb_error_msg_and_die("-t and -C not supported");
+
+	setup_common_bufsiz();
 
 	depend = build_dep();
 
