@@ -624,7 +624,7 @@ quiet_cmd_sysmap = SYSMAP
 # First command is ':' to allow us to use + in front of the rule
 define rule_busybox__
 	:
-	$(call cmd,busybox__)
+	-$(call cmd,busybox__)
 	$(Q)echo 'cmd_$@ := $(cmd_busybox__)' > $(@D)/.$(@F).cmd
 endef
 
