@@ -47,6 +47,10 @@
 
 #include "rt_netlink.h"
 
+#ifndef ARPHRD_IEEE802154
+#define ARPHRD_IEEE802154	  804
+#endif
+
 static const struct message nlmsg_str[] = {
   {RTM_NEWROUTE, "RTM_NEWROUTE"},
   {RTM_DELROUTE, "RTM_DELROUTE"},
