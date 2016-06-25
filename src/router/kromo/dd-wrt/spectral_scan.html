@@ -9,17 +9,20 @@
     <script language="javascript" type="text/javascript" src="/jquery-ui.js"></script>
     <script language="javascript" type="text/javascript" src="/jquery.flot.js"></script>
     <script language="javascript" type="text/javascript" src="/jquery.flot.resize.js"></script>
-    <script language="javascript" type="text/javascript" src="/jquery.flot.selection.js"></script>
 
 <script type="text/javascript">
 window.setTimeout(
   function () {
     var options = {
-	legend: { show: false }, 
+	borderWidth: 1,
+	minBorderMargin: 20,
+	labelMargin: 10,
+	legend: { show: true }, 
+	margin: {top: 8, bottom:20, left: 0}, 
+	grid: { color: "#ffffff" , backgroundColor: { colors: ["#000", "#000"] } },
         lines: { show: false },
         points: { show: true, fill: false, radius: 0.5 },
         series: { shadowSize: 0 },
-	selection: { mode: "xy" }, 
         xaxis: { tickSize: 5,
     		tickDecimals: 0,
     		color: "#000000",
