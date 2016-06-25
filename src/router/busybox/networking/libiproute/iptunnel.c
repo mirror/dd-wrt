@@ -300,7 +300,7 @@ static void parse_args(char **argv, int cmd, struct ip_tunnel_parm *p)
 			if (key != ARG_inherit) {
 				uval = get_unsigned(*argv, "TTL");
 				if (uval > 255)
-					invarg(*argv, "TTL must be <=255");
+					invarg_1_to_2(*argv, "TTL");
 				p->iph.ttl = uval;
 			}
 		} else if (key == ARG_tos ||
@@ -311,7 +311,7 @@ static void parse_args(char **argv, int cmd, struct ip_tunnel_parm *p)
 			key = index_in_strings(keywords, *argv);
 			if (key != ARG_inherit) {
 				if (rtnl_dsfield_a2n(&uval, *argv))
-					invarg(*argv, "TOS");
+					invarg_1_to_2(*argv, "TOS");
 				p->iph.tos = uval;
 			} else
 				p->iph.tos = 1;
@@ -416,17 +416,18 @@ static int do_del(char **argv)
 
 static void print_tunnel(struct ip_tunnel_parm *p)
 {
-	char s1[256];
-	char s2[256];
-	char s3[64];
-	char s4[64];
-
-	format_host(AF_INET, 4, &p->iph.daddr, s1, sizeof(s1));
-	format_host(AF_INET, 4, &p->iph.saddr, s2, sizeof(s2));
-	inet_ntop(AF_INET, &p->i_key, s3, sizeof(s3));
-	inet_ntop(AF_INET, &p->o_key, s4, sizeof(s4));
+	char s3[INET_ADDRSTRLEN];
+	char s4[INET_ADDRSTRLEN];
 
 	printf("%s: %s/ip  remote %s  local %s ",
+		p->name,
+		p->iph.protocol == IPPROTO_IPIP ? "ip" :
+			p->iph.protocol == IPPROTO_GRE ? "gre" :
+			p->iph.protocol == IPPROTO_IPV6 ? "ipv6" :
+			p->iph.protocol == IPPROTO_ETHERIP ? "etherip" : "unknown",
+		p->iph.daddr ? format_host(AF_INET, 4, &p->iph.daddr) : "any",
+		p->iph.saddr ? format_host(AF_INET, 4, &p->iph.saddr) : "any"
+	);
 	       p->name,
 	       p->iph.protocol == IPPROTO_IPIP ? "ip" :
 	       (p->iph.protocol == IPPROTO_GRE ? "gre" :
@@ -455,9 +456,11 @@ static void print_tunnel(struct ip_tunnel_parm *p)
 	if (!(p->iph.frag_off & htons(IP_DF)))
 		printf(" nopmtudisc");
 
+	inet_ntop(AF_INET, &p->i_key, s3, sizeof(s3));
+	inet_ntop(AF_INET, &p->o_key, s4, sizeof(s4));
 	if ((p->i_flags & GRE_KEY) && (p->o_flags & GRE_KEY) && p->o_key == p->i_key)
 		printf(" key %s", s3);
-	else if ((p->i_flags | p->o_flags) & GRE_KEY) {
+	else {
 		if (p->i_flags & GRE_KEY)
 			printf(" ikey %s ", s3);
 		if (p->o_flags & GRE_KEY)
@@ -578,7 +581,7 @@ int FAST_FUNC do_iptunnel(char **argv)
 	if (*argv) {
 		int key = index_in_substrings(keywords, *argv);
 		if (key < 0)
-			invarg(*argv, applet_name);
+			invarg_1_to_2(*argv, applet_name);
 		argv++;
 		if (key == ARG_add)
 			return do_add(SIOCADDTUNNEL, argv);

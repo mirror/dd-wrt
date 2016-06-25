@@ -283,7 +283,6 @@ int FAST_FUNC procps_read_smaps(pid_t pid, struct smaprec *total,
 }
 #endif
 
-void BUG_comm_size(void);
 procps_status_t* FAST_FUNC procps_scan(procps_status_t* sp, int flags)
 {
 	if (!sp)
@@ -385,8 +384,7 @@ procps_status_t* FAST_FUNC procps_scan(procps_status_t* sp, int flags)
 			/*if (!cp || cp[1] != ' ')
 				continue;*/
 			cp[0] = '\0';
-			if (sizeof(sp->comm) < 16)
-				BUG_comm_size();
+			BUILD_BUG_ON(sizeof(sp->comm) < 16);
 			comm1 = strchr(buf, '(');
 			/*if (comm1)*/
 				safe_strncpy(sp->comm, comm1 + 1, sizeof(sp->comm));
@@ -590,12 +588,14 @@ void FAST_FUNC read_cmdline(char *buf, int col, unsigned pid, const char *comm)
 				buf[sz] = ' ';
 			sz--;
 		}
+		if (base[0] == '-') /* "-sh" (login shell)? */
+			base++;
 
 		/* If comm differs from argv0, prepend "{comm} ".
 		 * It allows to see thread names set by prctl(PR_SET_NAME).
 		 */
-		if (base[0] == '-') /* "-sh" (login shell)? */
-			base++;
+		if (!comm)
+			return;
 		comm_len = strlen(comm);
 		/* Why compare up to comm_len, not COMM_LEN-1?
 		 * Well, some processes rewrite argv, and use _spaces_ there
@@ -614,7 +614,7 @@ void FAST_FUNC read_cmdline(char *buf, int col, unsigned pid, const char *comm)
 			buf[col - 1] = '\0';
 		}
 	} else {
-		snprintf(buf, col, "[%s]", comm);
+		snprintf(buf, col, "[%s]", comm ? comm : "?");
 	}
 }
 

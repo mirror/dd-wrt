@@ -270,6 +270,12 @@ int FAST_FUNC get_terminal_width_height(int fd, unsigned *width, unsigned *heigh
 		*width = wh_helper(win.ws_col, 80, "COLUMNS", &err);
 	return err;
 }
+int FAST_FUNC get_terminal_width(int fd)
+{
+	unsigned width;
+	get_terminal_width_height(fd, &width, NULL);
+	return width;
+}
 
 int FAST_FUNC tcsetattr_stdin_TCSANOW(const struct termios *tp)
 {
@@ -308,4 +314,16 @@ int FAST_FUNC wait4pid(pid_t pid)
 	if (WIFSIGNALED(status))
 		return WTERMSIG(status) + 0x180;
 	return 0;
+}
+
+// Useful when we do know that pid is valid, and we just want to wait
+// for it to exit. Not existing pid is fatal. waitpid() status is not returned.
+int FAST_FUNC wait_for_exitstatus(pid_t pid)
+{
+	int exit_status, n;
+
+	n = safe_waitpid(pid, &exit_status, 0);
+	if (n < 0)
+		bb_perror_msg_and_die("waitpid");
+	return exit_status;
 }
