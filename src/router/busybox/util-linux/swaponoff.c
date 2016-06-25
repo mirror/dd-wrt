@@ -22,13 +22,13 @@
 //usage:	)
 //usage:
 //usage:#define swapoff_trivial_usage
-//usage:       "[-a] [-e] [DEVICE]"
+//usage:       "[-a] [DEVICE]"
 //usage:#define swapoff_full_usage "\n\n"
 //usage:       "Stop swapping on DEVICE\n"
 //usage:     "\n	-a	Stop swapping on all swap devices"
-//usage:     "\n	-e	Silently skip devices that do not exist"
 
 #include "libbb.h"
+#include "common_bufsiz.h"
 #include <mntent.h>
 #ifndef __BIONIC__
 # include <sys/swap.h>
@@ -63,7 +63,7 @@
 struct globals {
 	int flags;
 } FIX_ALIASING;
-#define G (*(struct globals*)&bb_common_bufsiz1)
+#define G (*(struct globals*)bb_common_bufsiz1)
 #define g_flags (G.flags)
 #define save_g_flags()    int save_g_flags = g_flags
 #define restore_g_flags() g_flags = save_g_flags
@@ -72,7 +72,7 @@ struct globals {
 #define save_g_flags()    ((void)0)
 #define restore_g_flags() ((void)0)
 #endif
-#define INIT_G() do { } while (0)
+#define INIT_G() do { setup_common_bufsiz(); } while (0)
 
 #define do_swapoff   (applet_name[5] == 'f')
 
@@ -97,11 +97,8 @@ static int swap_enable_disable(char *device)
 {
 	int err = 0;
 	int quiet = 0;
-	struct stat st;
 
 	resolve_mount_spec(&device);
-	if (!OPT_IFEXISTS)
-		xstat(device, &st);
 
 	if (do_swapoff) {
 		err = swapoff(device);
@@ -109,6 +106,7 @@ static int swap_enable_disable(char *device)
 		quiet = (OPT_ALL && (errno == EINVAL || errno == ENOENT));
 	} else {
 		/* swapon */
+		struct stat st;
 		err = stat(device, &st);
 		if (!err) {
 			if (ENABLE_DESKTOP && S_ISREG(st.st_mode)) {
@@ -119,9 +117,11 @@ static int swap_enable_disable(char *device)
 			}
 			err = swapon(device, g_flags);
 			/* Don't complain on swapon -a if device is already in use */
-			/* Don't complain if file does not exist with -e option */
-			quiet = (OPT_ALL && errno == EBUSY) || (OPT_IFEXISTS && errno == ENOENT);
+			quiet = (OPT_ALL && errno == EBUSY);
 		}
+		/* Don't complain if file does not exist with -e option */
+		if (err && OPT_IFEXISTS && errno == ENOENT)
+			err = 0;
 	}
 
 	if (err && !quiet) {

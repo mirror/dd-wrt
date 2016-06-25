@@ -102,7 +102,8 @@
 //usage:       "[-c|--continue] [-s|--spider] [-q|--quiet] [-O|--output-document FILE]\n"
 //usage:       "	[--header 'header: value'] [-Y|--proxy on/off] [-P DIR]\n"
 /* Since we ignore these opts, we don't show them in --help */
-/* //usage:    "	[--no-check-certificate] [--no-cache]" */
+/* //usage:    "	[--no-check-certificate] [--no-cache] [--passive-ftp] [-t TRIES]" */
+/* //usage:    "	[-nv] [-nc] [-nH] [-np]" */
 //usage:       "	[-U|--user-agent AGENT]" IF_FEATURE_WGET_TIMEOUT(" [-T SEC]") " URL..."
 //usage:	)
 //usage:	IF_NOT_FEATURE_WGET_LONG_OPTIONS(
@@ -145,9 +146,11 @@ struct host_info {
 	char       *host;
 	int         port;
 };
-static const char P_FTP[] = "ftp";
-static const char P_HTTP[] = "http";
-static const char P_HTTPS[] = "https";
+static const char P_FTP[] ALIGN1 = "ftp";
+static const char P_HTTP[] ALIGN1 = "http";
+#if ENABLE_FEATURE_WGET_OPENSSL || ENABLE_FEATURE_WGET_SSL_HELPER
+static const char P_HTTPS[] ALIGN1 = "https";
+#endif
 
 #if ENABLE_FEATURE_WGET_LONG_OPTIONS
 /* User-specified headers prevent using our corresponding built-in headers.  */
@@ -200,7 +203,7 @@ struct globals {
 	const char *user_agent; /* "User-Agent" header field */
 #if ENABLE_FEATURE_WGET_TIMEOUT
 	unsigned timeout_seconds;
-	bool connecting;
+	bool die_if_timed_out;
 #endif
 	int output_fd;
 	int o_flags;
@@ -330,9 +333,20 @@ static char* sanitize_string(char *s)
 static void alarm_handler(int sig UNUSED_PARAM)
 {
 	/* This is theoretically unsafe (uses stdio and malloc in signal handler) */
-	if (G.connecting)
+	if (G.die_if_timed_out)
 		bb_error_msg_and_die("download timed out");
 }
+static void set_alarm(void)
+{
+	if (G.timeout_seconds) {
+		alarm(G.timeout_seconds);
+		G.die_if_timed_out = 1;
+	}
+}
+# define clear_alarm() ((void)(G.die_if_timed_out = 0))
+#else
+# define set_alarm()   ((void)0)
+# define clear_alarm() ((void)0)
 #endif
 
 static FILE *open_socket(len_and_sockaddr *lsa)
@@ -340,9 +354,9 @@ static FILE *open_socket(len_and_sockaddr *lsa)
 	int fd;
 	FILE *fp;
 
-	IF_FEATURE_WGET_TIMEOUT(alarm(G.timeout_seconds); G.connecting = 1;)
+	set_alarm();
 	fd = xconnect_stream(lsa);
-	IF_FEATURE_WGET_TIMEOUT(G.connecting = 0;)
+	clear_alarm();
 
 	/* glibc 2.4 seems to try seeking on it - ??! */
 	/* hopefully it understands what ESPIPE means... */
@@ -354,14 +368,15 @@ static FILE *open_socket(len_and_sockaddr *lsa)
 }
 
 /* Returns '\n' if it was seen, else '\0'. Trims at first '\r' or '\n' */
-/* FIXME: does not respect FEATURE_WGET_TIMEOUT and -T N: */
 static char fgets_and_trim(FILE *fp)
 {
 	char c;
 	char *buf_ptr;
 
+	set_alarm();
 	if (fgets(G.wget_buf, sizeof(G.wget_buf) - 1, fp) == NULL)
 		bb_perror_msg_and_die("error getting response");
+	clear_alarm();
 
 	buf_ptr = strchrnul(G.wget_buf, '\n');
 	c = *buf_ptr;
@@ -410,10 +425,12 @@ static void parse_url(const char *src_url, struct host_info *h)
 		if (strcmp(url, P_FTP) == 0) {
 			h->port = bb_lookup_port(P_FTP, "tcp", 21);
 		} else
+#if ENABLE_FEATURE_WGET_OPENSSL || ENABLE_FEATURE_WGET_SSL_HELPER
 		if (strcmp(url, P_HTTPS) == 0) {
 			h->port = bb_lookup_port(P_HTTPS, "tcp", 443);
 			h->protocol = P_HTTPS;
 		} else
+#endif
 		if (strcmp(url, P_HTTP) == 0) {
  http:
 			h->port = bb_lookup_port(P_HTTP, "tcp", 80);
@@ -1213,19 +1230,22 @@ int wget_main(int argc UNUSED_PARAM, char **argv)
 		"directory-prefix\0" Required_argument "P"
 		"proxy\0"            Required_argument "Y"
 		"user-agent\0"       Required_argument "U"
-#if ENABLE_FEATURE_WGET_TIMEOUT
-		"timeout\0"          Required_argument "T"
-#endif
+IF_FEATURE_WGET_TIMEOUT(
+		"timeout\0"          Required_argument "T")
 		/* Ignored: */
-		// "tries\0"            Required_argument "t"
+IF_DESKTOP(	"tries\0"            Required_argument "t")
+		"header\0"           Required_argument "\xff"
+		"post-data\0"        Required_argument "\xfe"
 		/* Ignored (we always use PASV): */
-		"passive-ftp\0"      No_argument       "\xff"
-		"header\0"           Required_argument "\xfe"
-		"post-data\0"        Required_argument "\xfd"
+IF_DESKTOP(	"passive-ftp\0"      No_argument       "\xf0")
 		/* Ignored (we don't do ssl) */
-		"no-check-certificate\0" No_argument   "\xfc"
+IF_DESKTOP(	"no-check-certificate\0" No_argument   "\xf0")
 		/* Ignored (we don't support caching) */
-		"no-cache\0"         No_argument       "\xfb"
+IF_DESKTOP(	"no-cache\0"         No_argument       "\xf0")
+IF_DESKTOP(	"no-verbose\0"       No_argument       "\xf0")
+IF_DESKTOP(	"no-clobber\0"       No_argument       "\xf0")
+IF_DESKTOP(	"no-host-directories\0" No_argument    "\xf0")
+IF_DESKTOP(	"no-parent\0"        No_argument       "\xf0")
 		;
 #endif
 
@@ -1245,14 +1265,25 @@ int wget_main(int argc UNUSED_PARAM, char **argv)
 #if ENABLE_FEATURE_WGET_LONG_OPTIONS
 	applet_long_options = wget_longopts;
 #endif
-	opt_complementary = "-1"
-			IF_FEATURE_WGET_TIMEOUT(":T+")
-			IF_FEATURE_WGET_LONG_OPTIONS(":\xfe::");
-	getopt32(argv, "csqO:P:Y:U:T:" /*ignored:*/ "t:",
-		&G.fname_out, &G.dir_prefix,
+	opt_complementary = "-1" /* at least one URL */
+		IF_FEATURE_WGET_TIMEOUT(":T+") /* -T NUM */
+		IF_FEATURE_WGET_LONG_OPTIONS(":\xff::"); /* --header is a list */
+	getopt32(argv, "csqO:P:Y:U:T:"
+		/*ignored:*/ "t:"
+		/*ignored:*/ "n::"
+		/* wget has exactly four -n<letter> opts, all of which we can ignore:
+		 * -nv --no-verbose: be moderately quiet (-q is full quiet)
+		 * -nc --no-clobber: abort if exists, neither download to FILE.n nor overwrite FILE
+		 * -nH --no-host-directories: wget -r http://host/ won't create host/
+		 * -np --no-parent
+		 * "n::" above says that we accept -n[ARG].
+		 * Specifying "n:" would be a bug: "-n ARG" would eat ARG!
+		 */
+		, &G.fname_out, &G.dir_prefix,
 		&G.proxy_flag, &G.user_agent,
 		IF_FEATURE_WGET_TIMEOUT(&G.timeout_seconds) IF_NOT_FEATURE_WGET_TIMEOUT(NULL),
-		NULL /* -t RETRIES */
+		NULL, /* -t RETRIES */
+		NULL  /* -n[ARG] */
 		IF_FEATURE_WGET_LONG_OPTIONS(, &headers_llist)
 		IF_FEATURE_WGET_LONG_OPTIONS(, &G.post_data)
 	);

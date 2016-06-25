@@ -77,6 +77,9 @@ typedef struct archive_handle_t {
 	off_t offset;
 
 	/* Archiver specific. Can make it a union if it ever gets big */
+#if ENABLE_FEATURE_TAR_LONG_OPTIONS
+	unsigned tar__strip_components;
+#endif
 #define PAX_NEXT_FILE 0
 #define PAX_GLOBAL    1
 #if ENABLE_TAR || ENABLE_DPKG || ENABLE_DPKG_DEB
@@ -95,6 +98,7 @@ typedef struct archive_handle_t {
 #endif
 #if ENABLE_CPIO || ENABLE_RPM2CPIO || ENABLE_RPM
 	uoff_t cpio__blocks;
+	struct bb_uidgid_t cpio__owner;
 	struct hardlinks_t *cpio__hardlinks_to_create;
 	struct hardlinks_t *cpio__created_hardlinks;
 #endif
@@ -159,6 +163,8 @@ struct BUG_tar_header {
 };
 
 
+extern const char cpio_TRAILER[];
+
 
 archive_handle_t *init_handle(void) FAST_FUNC;
 
@@ -205,7 +211,7 @@ void dealloc_bunzip(bunzip_data *bd) FAST_FUNC;
 
 /* Meaning and direction (input/output) of the fields are transformer-specific */
 typedef struct transformer_state_t {
-	smallint check_signature; /* most often referenced member */
+	smallint signature_skipped; /* most often referenced member */
 
 	IF_DESKTOP(long long) int FAST_FUNC (*xformer)(struct transformer_state_t *xstate);
 	USE_FOR_NOMMU(const char *xformer_prog;)
@@ -246,11 +252,11 @@ int bbunpack(char **argv,
 void check_errors_in_children(int signo);
 #if BB_MMU
 void fork_transformer(int fd,
-	int check_signature,
+	int signature_skipped,
 	IF_DESKTOP(long long) int FAST_FUNC (*transformer)(transformer_state_t *xstate)
 ) FAST_FUNC;
-#define fork_transformer_with_sig(fd, transformer, transform_prog) fork_transformer((fd), 1, (transformer))
-#define fork_transformer_with_no_sig(fd, transformer)              fork_transformer((fd), 0, (transformer))
+#define fork_transformer_with_sig(fd, transformer, transform_prog) fork_transformer((fd), 0, (transformer))
+#define fork_transformer_with_no_sig(fd, transformer)              fork_transformer((fd), 1, (transformer))
 #else
 void fork_transformer(int fd, const char *transform_prog) FAST_FUNC;
 #define fork_transformer_with_sig(fd, transformer, transform_prog) fork_transformer((fd), (transform_prog))
