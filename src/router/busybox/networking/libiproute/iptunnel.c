@@ -428,12 +428,6 @@ static void print_tunnel(struct ip_tunnel_parm *p)
 		p->iph.daddr ? format_host(AF_INET, 4, &p->iph.daddr) : "any",
 		p->iph.saddr ? format_host(AF_INET, 4, &p->iph.saddr) : "any"
 	);
-	       p->name,
-	       p->iph.protocol == IPPROTO_IPIP ? "ip" :
-	       (p->iph.protocol == IPPROTO_GRE ? "gre" :
-		(p->iph.protocol == IPPROTO_IPV6 ? "ipv6" : 
-		(p->iph.protocol == IPPROTO_ETHERIP ? "etherip" : "unknown"))),
-	       p->iph.daddr ? s1 : "any", p->iph.saddr ? s2 : "any");
 	if (p->link) {
 		char *n = do_ioctl_get_ifname(p->link);
 		if (n) {
