@@ -3,15 +3,12 @@
  <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>Live spectral scan</title>
+    <link href="spectral.css" rel="stylesheet" type="text/css">
+    <link href="jquery-ui.css" rel="stylesheet" type="text/css">
     <script language="javascript" type="text/javascript" src="/jquery.js"></script>
+    <script language="javascript" type="text/javascript" src="/jquery-ui.js"></script>
     <script language="javascript" type="text/javascript" src="/jquery.flot.js"></script>
- </head>
-    <body>
-    <h1>Spectral Scan</h1>
-
-    <div id="placeholder" style="width:760px;height:300px;"></div>
-
-    <p>Time between updates: <input id="updateInterval" type="text" value="" style="text-align: right; width:5em"> milliseconds</p>
+    <script language="javascript" type="text/javascript" src="/jquery.flot.resize.js"></script>
 
 <script type="text/javascript">
 window.setTimeout(
@@ -21,7 +18,7 @@ window.setTimeout(
 	minBorderMargin: 20,
 	labelMargin: 10,
 	legend: { show: true }, 
-	margin: {top: 8, bottom:20, left: 20}, 
+	margin: {top: 8, bottom:20, left: 0}, 
 	grid: { color: "#ffffff" , backgroundColor: { colors: ["#000", "#000"] } },
         lines: { show: false },
         points: { show: true, fill: false, radius: 0.5 },
@@ -52,7 +49,14 @@ window.setTimeout(
     var placeholder = $("#placeholder");
 
     graph = $.plot(placeholder, data, options);
-
+    placeholder.resize();
+   $(".demo-container").resizable({
+			maxWidth:  2048,
+			maxHeight: 2048,
+			minWidth:  600,
+			minHeight: 300
+		}); 
+		
     function fetchData() {
       function onDataReceived(series) {
         var i;
@@ -99,6 +103,16 @@ window.setTimeout(
   }, 1000
 );
 </script>
-
+ </head>
+<body>
+	<div id="header">
+	    <h2>Spectral Scan</h2>
+	</div>
+	<div id="content">
+	    <div class="demo-container">
+		<div id="placeholder" class="demo-placeholder"></div>
+	    </div>
+	<p>Time between updates: <input id="updateInterval" type="text" value="" style="text-align: right; width:5em"> milliseconds</p>
+	</div>
  </body>
 </html>
