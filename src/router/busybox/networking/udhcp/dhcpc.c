@@ -26,8 +26,18 @@
 #include "dhcpc.h"
 
 #include <netinet/if_ether.h>
-#include <linux/filter.h>
 #include <linux/if_packet.h>
+#ifndef __u16
+#define __u16 unsigned short
+#endif
+#ifndef __u8
+#define __u8 unsigned char
+#endif
+#ifndef __u32
+#define __u32 unsigned int
+#endif
+
+#include <linux/filter.h>
 
 #ifndef PACKET_AUXDATA
 # define PACKET_AUXDATA 8
