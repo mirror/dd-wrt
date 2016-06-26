@@ -30,11 +30,7 @@
 
 #include <mntent.h>
 #include <sys/mount.h>
-#ifndef MNT_DETACH
-# define MNT_DETACH 0x00000002
-#endif
 #include "libbb.h"
-#include "common_bufsiz.h"
 
 #if defined(__dietlibc__)
 // TODO: This does not belong here.
@@ -89,7 +85,11 @@ int umount_main(int argc UNUSED_PARAM, char **argv)
 
 	// MNT_FORCE and MNT_DETACH (from linux/fs.h) must match
 	// OPT_FORCE and OPT_LAZY.
-	BUILD_BUG_ON(OPT_FORCE != MNT_FORCE || OPT_LAZY != MNT_DETACH);
+	{
+		typedef char bug[
+			(OPT_FORCE != MNT_FORCE || OPT_LAZY != MNT_DETACH) ? -1 : 1
+		];
+	}
 	doForce = opt & (OPT_FORCE|OPT_LAZY);
 
 	/* Get a list of mount points from mtab.  We read them all in now mostly
@@ -106,8 +106,7 @@ int umount_main(int argc UNUSED_PARAM, char **argv)
 		if (opt & OPT_ALL)
 			bb_error_msg_and_die("can't open '%s'", bb_path_mtab_file);
 	} else {
-		setup_common_bufsiz();
-		while (getmntent_r(fp, &me, bb_common_bufsiz1, COMMON_BUFSIZE)) {
+		while (getmntent_r(fp, &me, bb_common_bufsiz1, sizeof(bb_common_bufsiz1))) {
 			/* Match fstype if passed */
 			if (!match_fstype(&me, fstype))
 				continue;

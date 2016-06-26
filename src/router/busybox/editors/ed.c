@@ -23,7 +23,6 @@
 //usage:#define ed_full_usage ""
 
 #include "libbb.h"
-#include "common_bufsiz.h"
 
 typedef struct LINE {
 	struct LINE *next;
@@ -36,8 +35,8 @@ typedef struct LINE {
 #define searchString bb_common_bufsiz1
 
 enum {
-	USERSIZE = COMMON_BUFSIZE > 1024 ? 1024
-	         : COMMON_BUFSIZE - 1, /* max line length typed in by user */
+	USERSIZE = sizeof(searchString) > 1024 ? 1024
+	         : sizeof(searchString) - 1, /* max line length typed in by user */
 	INITBUF_SIZE = 1024, /* initial buffer size */
 };
 
@@ -67,7 +66,6 @@ struct globals {
 #define lines              (G.lines             )
 #define marks              (G.marks             )
 #define INIT_G() do { \
-	setup_common_bufsiz(); \
 	SET_PTR_TO_GLOBALS(xzalloc(sizeof(G))); \
 } while (0)
 

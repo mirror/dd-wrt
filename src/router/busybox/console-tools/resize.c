@@ -14,12 +14,10 @@
 //usage:       "Resize the screen"
 
 #include "libbb.h"
-#include "common_bufsiz.h"
 
 #define ESC "\033"
 
-#define old_termios_p ((struct termios*)bb_common_bufsiz1)
-#define INIT_G() do { setup_common_bufsiz(); } while (0)
+#define old_termios_p ((struct termios*)&bb_common_bufsiz1)
 
 static void
 onintr(int sig UNUSED_PARAM)
@@ -34,8 +32,6 @@ int resize_main(int argc UNUSED_PARAM, char **argv UNUSED_PARAM)
 	struct termios new;
 	struct winsize w = { 0, 0, 0, 0 };
 	int ret;
-
-	INIT_G();
 
 	/* We use _stderr_ in order to make resize usable
 	 * in shell backticks (those redirect stdout away from tty).

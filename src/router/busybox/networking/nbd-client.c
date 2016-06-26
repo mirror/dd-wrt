@@ -57,8 +57,9 @@ int nbdclient_main(int argc, char **argv)
 		uint32_t flags;
 		char data[124];
 	} nbd_header;
-
-	BUILD_BUG_ON(offsetof(struct nbd_header_t, data) != 8+8+8+4);
+	struct bug_check {
+		char c[offsetof(struct nbd_header_t, data) == 8+8+8+4 ? 1 : -1];
+	};
 
 	// Parse command line stuff (just a stub now)
 	if (argc != 4)
