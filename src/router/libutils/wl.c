@@ -1303,6 +1303,8 @@ int isFXXN_PRO(char *ifname)	//checks if its usualla a DBII Networks FxxN-PRO ca
 	return 0;
 }
 
+
+
 int isSR71E(char *ifname)
 {
 
@@ -1327,6 +1329,15 @@ int isSR71E(char *ifname)
 	}
 
 	if (!strcmp(cvendor, "0x0777") && !strcmp(cproduct, "0x4e05")) {	// SR71-E
+		return 1;
+	}
+	if (!strcmp(cvendor, "0x0777") && !strcmp(cproduct, "0x4082")) {	// SR71
+		return 1;
+	}
+	if (!strcmp(cvendor, "0x168c") && !strcmp(cproduct, "0x2082")) {	// SR71-A
+		return 1;
+	}
+	if (!strcmp(cvendor, "0x0777") && !strcmp(cproduct, "0x4005")) {	// SR71-15
 		return 1;
 	}
 	return 0;
@@ -1464,7 +1475,7 @@ int wifi_gettxpoweroffset(char *ifname)
 	if (isFXXN_PRO(ifname))
 		return 5;
 	else if (isSR71E(ifname))
-		return 6;
+		return 7;
 #endif
 	int vendor;
 	int devcount;
