@@ -3,8 +3,8 @@
  <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>Live spectral scan</title>
-    <link href="spectral.css" rel="stylesheet" type="text/css">
-    <link href="jquery-ui.css" rel="stylesheet" type="text/css">
+    <link href="/spectral.css" rel="stylesheet" type="text/css">
+    <link href="/jquery-ui.css" rel="stylesheet" type="text/css">
     <script language="javascript" type="text/javascript" src="/jquery.js"></script>
     <script language="javascript" type="text/javascript" src="/jquery-ui.js"></script>
     <script language="javascript" type="text/javascript" src="/jquery.flot.js"></script>
@@ -71,7 +71,6 @@ window.setTimeout(
         }
         for (i=0;i<series.samples.length;i++) {
           var label ;
-          if (i==0) { console.log(+series.samples[i].tsf / 1000000 ) ; }
           data.push({ 'label': label, 'color': 0, 'data': series.samples[i].data });
         }
         data = data.slice(-60);
