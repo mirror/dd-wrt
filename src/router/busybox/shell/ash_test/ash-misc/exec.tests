@@ -1,3 +1,0 @@
-rm -f test1.sh
-(exec ./test1.sh)
-echo $?
