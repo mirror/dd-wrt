@@ -1,9 +1,0 @@
-echo hello >greeting
-cat <<EOF &&
-$(cat greeting)
-EOF
-{
-	echo $?
-	cat greeting
-} >/dev/null
-rm greeting
