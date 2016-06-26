@@ -29,7 +29,7 @@
 # include <sys/timex.h>
 #endif
 
-static const uint16_t statlist_bit[] ALIGN2 = {
+static const uint16_t statlist_bit[] = {
 	STA_PLL,
 	STA_PPSFREQ,
 	STA_PPSTIME,
@@ -45,7 +45,7 @@ static const uint16_t statlist_bit[] ALIGN2 = {
 	STA_CLOCKERR,
 	0
 };
-static const char statlist_name[] ALIGN1 =
+static const char statlist_name[] =
 	"PLL"       "\0"
 	"PPSFREQ"   "\0"
 	"PPSTIME"   "\0"
@@ -61,7 +61,7 @@ static const char statlist_name[] ALIGN1 =
 	"CLOCKERR"
 ;
 
-static const char ret_code_descript[] ALIGN1 =
+static const char ret_code_descript[] =
 	"clock synchronized" "\0"
 	"insert leap second" "\0"
 	"delete leap second" "\0"

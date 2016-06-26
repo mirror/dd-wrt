@@ -47,8 +47,7 @@
  * It stems from simplistic "cmdedit_y = cmdedit_prmt_len / cmdedit_termw"
  * calculation of how many lines the prompt takes.
  */
-#include "busybox.h"
-#include "NUM_APPLETS.h"
+#include "libbb.h"
 #include "unicode.h"
 #ifndef _POSIX_VDISABLE
 # define _POSIX_VDISABLE '\0'
@@ -774,19 +773,6 @@ static NOINLINE unsigned complete_cmd_dir_file(const char *command, int type)
 		path1[0] = dirbuf;
 	}
 	pf_len = strlen(pfind);
-
-#if ENABLE_FEATURE_SH_STANDALONE && NUM_APPLETS != 1
-	if (type == FIND_EXE_ONLY) {
-		const char *p = applet_names;
-
-		while (*p) {
-			if (strncmp(pfind, p, pf_len) == 0)
-				add_match(xstrdup(p));
-			while (*p++ != '\0')
-				continue;
-		}
-	}
-#endif
 
 	for (i = 0; i < npaths; i++) {
 		DIR *dir;

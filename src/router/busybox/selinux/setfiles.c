@@ -17,7 +17,6 @@
 //usage:	)
 //usage:     "\n	-d	Show which specification matched each file"
 //usage:     "\n	-l	Log changes in file labels to syslog"
-//TODO: log to syslog is not yet implemented, it goes to stdout only now
 //usage:     "\n	-n	Don't change any file labels"
 //usage:     "\n	-q	Suppress warnings"
 //usage:     "\n	-r DIR	Use an alternate root path"
@@ -77,10 +76,9 @@ struct globals {
 	int nerr;
 	struct edir excludeArray[MAX_EXCLUDES];
 } FIX_ALIASING;
-#define G (*(struct globals*)bb_common_bufsiz1)
+#define G (*(struct globals*)&bb_common_bufsiz1)
 void BUG_setfiles_globals_too_big(void);
 #define INIT_G() do { \
-	setup_common_bufsiz(); \
 	if (sizeof(G) > COMMON_BUFSIZE) \
 		BUG_setfiles_globals_too_big(); \
 	/* memset(&G, 0, sizeof(G)); - already is */ \
@@ -385,16 +383,16 @@ static int restore(const char *file)
 		 * the user has changed but the role and type are the
 		 * same.  For "-vv", emit everything. */
 		if (verbose > 1 || !user_only_changed) {
-			printf("%s: reset %s context %s->%s\n",
+			bb_info_msg("%s: reset %s context %s->%s",
 				applet_name, my_file, context ? context : "", newcon);
 		}
 	}
 
 	if (FLAG_l_take_log && !user_only_changed) {
 		if (context)
-			printf("relabeling %s from %s to %s\n", my_file, context, newcon);
+			bb_info_msg("relabeling %s from %s to %s", my_file, context, newcon);
 		else
-			printf("labeling %s to %s\n", my_file, newcon);
+			bb_info_msg("labeling %s to %s", my_file, newcon);
 	}
 
 	if (outfile && !user_only_changed)

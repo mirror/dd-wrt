@@ -84,7 +84,7 @@ ETH_P_IP
 
 /* Keep declarations above and below in sync! */
 
-static const char llproto_names[] ALIGN1 =
+static const char llproto_names[] =
 #define __PF(f,n) #n "\0"
 __PF(LOOP,loop)
 __PF(PUP,pup)

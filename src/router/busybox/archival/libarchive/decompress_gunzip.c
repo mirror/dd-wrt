@@ -1130,8 +1130,9 @@ static int check_header_gzip(STATE_PARAM transformer_state_t *xstate)
 			uint8_t os_flags_UNUSED;
 		} PACKED formatted;
 	} header;
-
-	BUILD_BUG_ON(sizeof(header) != 8);
+	struct BUG_header {
+		char BUG_header[sizeof(header) == 8 ? 1 : -1];
+	};
 
 	/*
 	 * Rewind bytebuffer. We use the beginning because the header has 8
@@ -1201,7 +1202,7 @@ unpack_gz_stream(transformer_state_t *xstate)
 	if (check_signature16(xstate, GZIP_MAGIC))
 		return -1;
 #else
-	if (!xstate->signature_skipped) {
+	if (xstate->check_signature) {
 		uint16_t magic2;
 
 		if (full_read(xstate->src_fd, &magic2, 2) != 2) {
@@ -1210,7 +1211,7 @@ unpack_gz_stream(transformer_state_t *xstate)
 			return -1;
 		}
 		if (magic2 == COMPRESS_MAGIC) {
-			xstate->signature_skipped = 2;
+			xstate->check_signature = 0;
 			return unpack_Z_stream(xstate);
 		}
 		if (magic2 != GZIP_MAGIC)

@@ -20,7 +20,6 @@
 #include <netdb.h>
 #include <setjmp.h>
 #include <signal.h>
-#include <paths.h>
 #if defined __UCLIBC__ /* TODO: and glibc? */
 /* use inlined versions of these: */
 # define sigfillset(s)    __sigfillset(s)
@@ -107,11 +106,7 @@
 #  define updwtmpx updwtmp
 #  define _PATH_UTMPX _PATH_UTMP
 # else
-#  include <utmp.h>
 #  include <utmpx.h>
-#  if defined _PATH_UTMP && !defined _PATH_UTMPX
-#   define _PATH_UTMPX _PATH_UTMP
-#  endif
 # endif
 #endif
 #if ENABLE_LOCALE_SUPPORT
@@ -142,18 +137,14 @@
 # include <netinet/in.h>
 #else
 # include <arpa/inet.h>
-//This breaks on bionic:
-//# if !defined(__socklen_t_defined) && !defined(_SOCKLEN_T_DECLARED)
-///* We #define socklen_t *after* includes, otherwise we get
-// * typedef redefinition errors from system headers
-// * (in case "is it defined already" detection above failed)
-// */
-//#  define socklen_t bb_socklen_t
-//   typedef unsigned socklen_t;
-//# endif
-//if this is still needed, add a fix along the lines of
-//  ifdef SPECIFIC_BROKEN_LIBC_CHECK / typedef socklen_t / endif
-//in platform.h instead!
+# if !defined(__socklen_t_defined) && !defined(_SOCKLEN_T_DECLARED)
+/* We #define socklen_t *after* includes, otherwise we get
+ * typedef redefinition errors from system headers
+ * (in case "is it defined already" detection above failed)
+ */
+#  define socklen_t bb_socklen_t
+   typedef unsigned socklen_t;
+# endif
 #endif
 #ifndef HAVE_CLEARENV
 # define clearenv() do { if (environ) environ[0] = NULL; } while (0)
@@ -355,7 +346,7 @@ extern char *strrstr(const char *haystack, const char *needle) FAST_FUNC;
 //TODO: supply a pointer to char[11] buffer (avoid statics)?
 extern const char *bb_mode_string(mode_t mode) FAST_FUNC;
 extern int is_directory(const char *name, int followLinks) FAST_FUNC;
-enum {	/* cp.c, mv.c, install.c depend on these values. CAREFUL when changing them! */
+enum {	/* DO NOT CHANGE THESE VALUES!  cp.c, mv.c, install.c depend on them. */
 	FILEUTILS_PRESERVE_STATUS = 1 << 0, /* -p */
 	FILEUTILS_DEREFERENCE     = 1 << 1, /* !-d */
 	FILEUTILS_RECUR           = 1 << 2, /* -R */
@@ -365,25 +356,15 @@ enum {	/* cp.c, mv.c, install.c depend on these values. CAREFUL when changing th
 	FILEUTILS_MAKE_SOFTLINK   = 1 << 6, /* -s */
 	FILEUTILS_DEREF_SOFTLINK  = 1 << 7, /* -L */
 	FILEUTILS_DEREFERENCE_L0  = 1 << 8, /* -H */
-	/* -a = -pdR (mapped in cp.c) */
-	/* -r = -dR  (mapped in cp.c) */
-	/* -P = -d   (mapped in cp.c) */
-	FILEUTILS_VERBOSE         = (1 << 12) * ENABLE_FEATURE_VERBOSE,	/* -v */
-	FILEUTILS_UPDATE          = 1 << 13, /* -u */
 #if ENABLE_SELINUX
-	FILEUTILS_PRESERVE_SECURITY_CONTEXT = 1 << 14, /* -c */
+	FILEUTILS_PRESERVE_SECURITY_CONTEXT = 1 << 9, /* -c */
+	FILEUTILS_SET_SECURITY_CONTEXT = 1 << 10,
 #endif
-	FILEUTILS_RMDEST          = 1 << (15 - !ENABLE_SELINUX), /* --remove-destination */
-	/*
-	 * Hole. cp may have some bits set here,
-	 * they should not affect remove_file()/copy_file()
-	 */
-#if ENABLE_SELINUX
-	FILEUTILS_SET_SECURITY_CONTEXT = 1 << 30,
-#endif
-	FILEUTILS_IGNORE_CHMOD_ERR = 1 << 31,
+	FILEUTILS_IGNORE_CHMOD_ERR = 1 << 11,
+	/* -v */
+	FILEUTILS_VERBOSE         = (1 << 12) * ENABLE_FEATURE_VERBOSE,
 };
-#define FILEUTILS_CP_OPTSTR "pdRfilsLHarPvu" IF_SELINUX("c")
+#define FILEUTILS_CP_OPTSTR "pdRfilsLH" IF_SELINUX("c")
 extern int remove_file(const char *path, int flags) FAST_FUNC;
 /* NB: without FILEUTILS_RECUR in flags, it will basically "cat"
  * the source, not copy (unless "source" is a directory).
@@ -514,7 +495,6 @@ void xsetuid(uid_t uid) FAST_FUNC;
 void xsetegid(gid_t egid) FAST_FUNC;
 void xseteuid(uid_t euid) FAST_FUNC;
 void xchdir(const char *path) FAST_FUNC;
-void xfchdir(int fd) FAST_FUNC;
 void xchroot(const char *path) FAST_FUNC;
 void xsetenv(const char *key, const char *value) FAST_FUNC;
 void bb_unsetenv(const char *key) FAST_FUNC;
@@ -944,13 +924,14 @@ long xuname2uid(const char *name) FAST_FUNC;
 long xgroup2gid(const char *name) FAST_FUNC;
 /* wrapper: allows string to contain numeric uid or gid */
 unsigned long get_ug_id(const char *s, long FAST_FUNC (*xname2id)(const char *)) FAST_FUNC;
+/* from chpst. Does not die, returns 0 on failure */
 struct bb_uidgid_t {
 	uid_t uid;
 	gid_t gid;
 };
-/* always sets uid and gid; returns 0 on failure */
-int get_uidgid(struct bb_uidgid_t*, const char*) FAST_FUNC;
-/* always sets uid and gid; exits on failure */
+/* always sets uid and gid */
+int get_uidgid(struct bb_uidgid_t*, const char*, int numeric_ok) FAST_FUNC;
+/* always sets uid and gid, allows numeric; exits on failure */
 void xget_uidgid(struct bb_uidgid_t*, const char*) FAST_FUNC;
 /* chown-like handling of "user[:[group]" */
 void parse_chown_usergroup_or_die(struct bb_uidgid_t *u, char *user_group) FAST_FUNC;
@@ -1006,10 +987,9 @@ int BB_EXECVP(const char *file, char *const argv[]) FAST_FUNC;
 #define BB_EXECVP(prog,cmd)     execvp(prog,cmd)
 #define BB_EXECLP(prog,cmd,...) execlp(prog,cmd,__VA_ARGS__)
 #endif
-void BB_EXECVP_or_die(char **argv) NORETURN FAST_FUNC;
-void exec_prog_or_SHELL(char **argv) NORETURN FAST_FUNC;
+int BB_EXECVP_or_die(char **argv) NORETURN FAST_FUNC;
 
-/* xvfork() can't be a _function_, return after vfork in child mangles stack
+/* xvfork() can't be a _function_, return after vfork mangles stack
  * in the parent. It must be a macro. */
 #define xvfork() \
 ({ \
@@ -1021,7 +1001,6 @@ void exec_prog_or_SHELL(char **argv) NORETURN FAST_FUNC;
 #if BB_MMU
 pid_t xfork(void) FAST_FUNC;
 #endif
-void xvfork_parent_waits_and_exits(void) FAST_FUNC;
 
 /* NOMMU friendy fork+exec: */
 pid_t spawn(char **argv) FAST_FUNC;
@@ -1038,7 +1017,6 @@ pid_t wait_any_nohang(int *wstat) FAST_FUNC;
  *      if (rc > 0) bb_error_msg("exit code: %d", rc & 0xff);
  */
 int wait4pid(pid_t pid) FAST_FUNC;
-int wait_for_exitstatus(pid_t pid) FAST_FUNC;
 /* Same as wait4pid(spawn(argv)), but with NOFORK/NOEXEC if configured: */
 int spawn_and_wait(char **argv) FAST_FUNC;
 /* Does NOT check that applet is NOFORK, just blindly runs it */
@@ -1169,6 +1147,7 @@ extern void xfunc_die(void) NORETURN FAST_FUNC;
 #define bb_herror_msg_and_die(fmt, arg...) exit(-1)
 #define bb_perror_nomsg_and_die() exit(-1)
 #define bb_perror_nomsg()
+#define bb_info_msg(fmt, arg...)
 //#define bb_verror_msg(a1, a2, a3) 
 #else
 extern void bb_show_usage(void) NORETURN FAST_FUNC;
@@ -1182,6 +1161,7 @@ extern void bb_herror_msg(const char *s, ...) __attribute__ ((format (printf, 1,
 extern void bb_herror_msg_and_die(const char *s, ...) __attribute__ ((noreturn, format (printf, 1, 2))) FAST_FUNC;
 extern void bb_perror_nomsg_and_die(void) NORETURN FAST_FUNC;
 extern void bb_perror_nomsg(void) FAST_FUNC;
+extern void bb_info_msg(const char *s, ...) __attribute__ ((format (printf, 1, 2))) FAST_FUNC;
 #endif
 extern void bb_verror_msg(const char *s, va_list p, const char *strerr) FAST_FUNC;
 extern void bb_logenv_override(void) FAST_FUNC;
@@ -1258,6 +1238,8 @@ const struct hwtype *get_hwntype(int type) FAST_FUNC;
 
 #ifndef BUILD_INDIVIDUAL
 extern int find_applet_by_name(const char *name) FAST_FUNC;
+/* Returns only if applet is not found. */
+extern void run_applet_and_exit(const char *name, char **argv) FAST_FUNC;
 extern void run_applet_no_and_exit(int a, char **argv) NORETURN FAST_FUNC;
 #endif
 
@@ -1372,6 +1354,11 @@ extern void selinux_preserve_fcontext(int fdesc) FAST_FUNC;
 extern void selinux_or_die(void) FAST_FUNC;
 
 
+/* systemd support */
+#define SD_LISTEN_FDS_START 3
+int sd_listen_fds(void);
+
+
 /* setup_environment:
  * if chdir pw->pw_dir: ok: else if to_tmp == 1: goto /tmp else: goto / or die
  * if clear_env = 1: cd(pw->pw_dir), clear environment, then set
@@ -1438,7 +1425,6 @@ extern void print_login_prompt(void) FAST_FUNC;
 char *xmalloc_ttyname(int fd) FAST_FUNC RETURNS_MALLOC;
 /* NB: typically you want to pass fd 0, not 1. Think 'applet | grep something' */
 int get_terminal_width_height(int fd, unsigned *width, unsigned *height) FAST_FUNC;
-int get_terminal_width(int fd) FAST_FUNC;
 
 int tcsetattr_stdin_TCSANOW(const struct termios *tp) FAST_FUNC;
 
@@ -1797,9 +1783,6 @@ void bb_progress_update(bb_progress_t *p,
 			uoff_t transferred,
 			uoff_t totalsize) FAST_FUNC;
 
-unsigned ubi_devnum_from_devname(const char *str) FAST_FUNC;
-int ubi_get_volid_by_name(unsigned ubi_devnum, const char *vol_name) FAST_FUNC;
-
 
 extern const char *applet_name;
 
@@ -1823,7 +1806,7 @@ extern const char bb_msg_can_not_create_raw_socket[] ALIGN1;
 extern const char bb_msg_perm_denied_are_you_root[] ALIGN1;
 extern const char bb_msg_you_must_be_root[] ALIGN1;
 extern const char bb_msg_requires_arg[] ALIGN1;
-extern const char bb_msg_invalid_arg_to[] ALIGN1;
+extern const char bb_msg_invalid_arg[] ALIGN1;
 extern const char bb_msg_standard_input[] ALIGN1;
 extern const char bb_msg_standard_output[] ALIGN1;
 
@@ -1854,6 +1837,10 @@ extern const char bb_PATH_root_path[] ALIGN1; /* "PATH=/sbin:/usr/sbin:/bin:/usr
 extern const int const_int_0;
 //extern const int const_int_1;
 
+
+/* Providing hard guarantee on minimum size (think of BUFSIZ == 128) */
+enum { COMMON_BUFSIZE = (BUFSIZ >= 256*sizeof(void*) ? BUFSIZ+1 : 256*sizeof(void*)) };
+extern char bb_common_bufsiz1[COMMON_BUFSIZE];
 /* This struct is deliberately not defined. */
 /* See docs/keep_data_small.txt */
 struct globals;
@@ -1934,7 +1921,6 @@ extern const char bb_default_login_shell[] ALIGN1;
 
 
 #define ARRAY_SIZE(x) ((unsigned)(sizeof(x) / sizeof((x)[0])))
-#define BUILD_BUG_ON(condition) ((void)sizeof(char[1 - 2*!!(condition)]))
 
 
 /* We redefine ctype macros. Unicode-correct handling of char types

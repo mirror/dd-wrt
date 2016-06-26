@@ -8,7 +8,6 @@
  */
 
 #include "libbb.h"
-#include "common_bufsiz.h"
 
 //config:config NC
 //config:	bool "nc"
@@ -239,8 +238,6 @@ int nc_main(int argc, char **argv)
 	FD_SET(cfd, &readfds);
 	FD_SET(STDIN_FILENO, &readfds);
 
-#define iobuf bb_common_bufsiz1
-	setup_common_bufsiz();
 	for (;;) {
 		int fd;
 		int ofd;
@@ -251,10 +248,11 @@ int nc_main(int argc, char **argv)
 		if (select(cfd + 1, &testfds, NULL, NULL, NULL) < 0)
 			bb_perror_msg_and_die("select");
 
+#define iobuf bb_common_bufsiz1
 		fd = STDIN_FILENO;
 		while (1) {
 			if (FD_ISSET(fd, &testfds)) {
-				nread = safe_read(fd, iobuf, COMMON_BUFSIZE);
+				nread = safe_read(fd, iobuf, sizeof(iobuf));
 				if (fd == cfd) {
 					if (nread < 1)
 						exit(EXIT_SUCCESS);

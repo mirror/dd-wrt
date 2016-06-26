@@ -37,6 +37,7 @@
 
 #define JOBS ENABLE_ASH_JOB_CONTROL
 
+#include <paths.h>
 #include <setjmp.h>
 #include <fnmatch.h>
 #include <sys/times.h>
@@ -2555,7 +2556,7 @@ updatepwd(const char *dir)
 			new = stack_putstr(p, new);
 			USTPUTC('/', new);
 		}
-		p = strtok(NULL, "/");
+		p = strtok(0, "/");
 	}
 	if (new > lim)
 		STUNPUTC(new);
@@ -2750,7 +2751,7 @@ pwdcmd(int argc UNUSED_PARAM, char **argv UNUSED_PARAM)
 #else
 # define SIT_ITEM(a,b,c,d) (a | (b << 4) | (c << 8))
 #endif
-static const uint16_t S_I_T[] ALIGN2 = {
+static const uint16_t S_I_T[] = {
 #if ENABLE_ASH_ALIAS
 	SIT_ITEM(CSPCL   , CIGN     , CIGN , CIGN   ),    /* 0, PEOA */
 #endif
@@ -2852,7 +2853,7 @@ SIT(int c, int syntax)
 
 #else   /* !USE_SIT_FUNCTION */
 
-static const uint8_t syntax_index_table[] ALIGN1 = {
+static const uint8_t syntax_index_table[] = {
 	/* BASESYNTAX_DQSYNTAX_SQSYNTAX_ARISYNTAX */
 	/*   0      */ CWORD_CWORD_CWORD_CWORD,
 	/*   1      */ CWORD_CWORD_CWORD_CWORD,
@@ -5408,7 +5409,7 @@ popredir(int drop, int restore)
 	struct redirtab *rp;
 	int i;
 
-	if (--g_nullredirs >= 0 || redirlist == NULL)
+	if (--g_nullredirs >= 0)
 		return;
 	INT_OFF;
 	rp = redirlist;
@@ -6692,8 +6693,6 @@ varvalue(char *name, int varflags, int flags, struct strlist *var_str_list)
 		if (subtype == VSLENGTH && len > 0) {
 			reinit_unicode_for_ash();
 			if (unicode_status == UNICODE_ON) {
-				STADJUST(-len, expdest);
-				discard = 0;
 				len = unicode_strlen(p);
 			}
 		}
@@ -7727,40 +7726,36 @@ changepath(const char *new)
 	clearcmdentry(firstchange);
 	builtinloc = idx_bltin;
 }
-enum {
-	TEOF,
-	TNL,
-	TREDIR,
-	TWORD,
-	TSEMI,
-	TBACKGND,
-	TAND,
-	TOR,
-	TPIPE,
-	TLP,
-	TRP,
-	TENDCASE,
-	TENDBQUOTE,
-	TNOT,
-	TCASE,
-	TDO,
-	TDONE,
-	TELIF,
-	TELSE,
-	TESAC,
-	TFI,
-	TFOR,
-#if ENABLE_ASH_BASH_COMPAT
-	TFUNCTION,
-#endif
-	TIF,
-	TIN,
-	TTHEN,
-	TUNTIL,
-	TWHILE,
-	TBEGIN,
-	TEND
-};
+
+#define TEOF 0
+#define TNL 1
+#define TREDIR 2
+#define TWORD 3
+#define TSEMI 4
+#define TBACKGND 5
+#define TAND 6
+#define TOR 7
+#define TPIPE 8
+#define TLP 9
+#define TRP 10
+#define TENDCASE 11
+#define TENDBQUOTE 12
+#define TNOT 13
+#define TCASE 14
+#define TDO 15
+#define TDONE 16
+#define TELIF 17
+#define TELSE 18
+#define TESAC 19
+#define TFI 20
+#define TFOR 21
+#define TIF 22
+#define TIN 23
+#define TTHEN 24
+#define TUNTIL 25
+#define TWHILE 26
+#define TBEGIN 27
+#define TEND 28
 typedef smallint token_id_t;
 
 /* first char is indicating which tokens mark the end of a list */
@@ -7789,9 +7784,6 @@ static const char *const tokname_array[] = {
 	"\1esac",
 	"\1fi",
 	"\0for",
-#if ENABLE_ASH_BASH_COMPAT
-	"\0function",
-#endif
 	"\0if",
 	"\0in",
 	"\1then",
@@ -7820,15 +7812,14 @@ findkwd(const char *s)
  * Locate and print what a word is...
  */
 static int
-describe_command(char *command, const char *path, int describe_command_verbose)
+describe_command(char *command, int describe_command_verbose)
 {
 	struct cmdentry entry;
 	struct tblentry *cmdp;
 #if ENABLE_ASH_ALIAS
 	const struct alias *ap;
 #endif
-
-	path = path ? path : pathval();
+	const char *path = pathval();
 
 	if (describe_command_verbose) {
 		out1str(command);
@@ -7928,7 +7919,7 @@ typecmd(int argc UNUSED_PARAM, char **argv)
 		verbose = 0;
 	}
 	while (argv[i]) {
-		err |= describe_command(argv[i++], NULL, verbose);
+		err |= describe_command(argv[i++], verbose);
 	}
 	return err;
 }
@@ -7942,7 +7933,6 @@ commandcmd(int argc UNUSED_PARAM, char **argv UNUSED_PARAM)
 		VERIFY_BRIEF = 1,
 		VERIFY_VERBOSE = 2,
 	} verify = 0;
-	const char *path = NULL;
 
 	while ((c = nextopt("pvV")) != '\0')
 		if (c == 'V')
@@ -7953,11 +7943,9 @@ commandcmd(int argc UNUSED_PARAM, char **argv UNUSED_PARAM)
 		else if (c != 'p')
 			abort();
 #endif
-		else
-			path = bb_default_path;
 	/* Mimic bash: just "command -v" doesn't complain, it's a nop */
 	if (verify && (*argptr != NULL)) {
-		return describe_command(*argptr, path, verify - VERIFY_BRIEF);
+		return describe_command(*argptr, verify - VERIFY_BRIEF);
 	}
 
 	return 0;
@@ -7977,7 +7965,7 @@ static char *funcstring;        /* block to allocate strings from */
 #define EV_TESTED  02           /* exit status is checked; ignore -e flag */
 #define EV_BACKCMD 04           /* command executing within back quotes */
 
-static const uint8_t nodesize[N_NUMBER] ALIGN1 = {
+static const uint8_t nodesize[N_NUMBER] = {
 	[NCMD     ] = SHELL_ALIGN(sizeof(struct ncmd)),
 	[NPIPE    ] = SHELL_ALIGN(sizeof(struct npipe)),
 	[NREDIR   ] = SHELL_ALIGN(sizeof(struct nredir)),
@@ -8430,7 +8418,7 @@ evaltree(union node *n, int flags)
 			n->nbinary.ch1,
 			(flags | ((is_or >> 1) - 1)) & EV_TESTED
 		);
-		if ((!exitstatus) == is_or)
+		if (!exitstatus == is_or)
 			break;
 		if (!evalskip) {
 			n = n->nbinary.ch2;
@@ -8890,15 +8878,14 @@ parse_command_args(char **argv, const char **path)
 	for (;;) {
 		cp = *++argv;
 		if (!cp)
-			return NULL;
+			return 0;
 		if (*cp++ != '-')
 			break;
 		c = *cp++;
 		if (!c)
 			break;
 		if (c == '-' && !*cp) {
-			if (!*++argv)
-				return NULL;
+			argv++;
 			break;
 		}
 		do {
@@ -8908,7 +8895,7 @@ parse_command_args(char **argv, const char **path)
 				break;
 			default:
 				/* run 'typecmd' for other options */
-				return NULL;
+				return 0;
 			}
 			c = *cp++;
 		} while (c);
@@ -8994,9 +8981,6 @@ static int FAST_FUNC
 localcmd(int argc UNUSED_PARAM, char **argv)
 {
 	char *name;
-
-	if (!funcnest)
-		ash_msg_and_raise_error("not in a function");
 
 	argv = argptr;
 	while ((name = *argv++) != NULL) {
@@ -9440,7 +9424,7 @@ evalcommand(union node *cmd, int flags)
 		if (evalbltin(cmdentry.u.cmd, argc, argv)) {
 			int exit_status;
 			int i = exception_type;
-			if (i == EXEXIT || i == EXEXEC)
+			if (i == EXEXIT)
 				goto raise;
 			exit_status = 2;
 			if (i == EXINT)
@@ -10532,7 +10516,7 @@ static union node *andor(void);
 static union node *pipeline(void);
 static union node *parse_command(void);
 static void parseheredoc(void);
-static int peektoken(void);
+static char nexttoken_ends_list(void);
 static int readtoken(void);
 
 static union node *
@@ -10541,27 +10525,11 @@ list(int nlflag)
 	union node *n1, *n2, *n3;
 	int tok;
 
+	checkkwd = CHKNL | CHKKWD | CHKALIAS;
+	if (nlflag == 2 && nexttoken_ends_list())
+		return NULL;
 	n1 = NULL;
 	for (;;) {
-		switch (peektoken()) {
-		case TNL:
-			if (!(nlflag & 1))
-				break;
-			parseheredoc();
-			return n1;
-
-		case TEOF:
-			if (!n1 && (nlflag & 1))
-				n1 = NODE_EOF;
-			parseheredoc();
-			return n1;
-		}
-
-		checkkwd = CHKNL | CHKKWD | CHKALIAS;
-		if (nlflag == 2 && tokname_array[peektoken()][0])
-			return n1;
-		nlflag |= 2;
-
 		n2 = andor();
 		tok = readtoken();
 		if (tok == TBACKGND) {
@@ -10587,15 +10555,37 @@ list(int nlflag)
 			n1 = n3;
 		}
 		switch (tok) {
-		case TNL:
-		case TEOF:
-			tokpushback = 1;
-			/* fall through */
 		case TBACKGND:
 		case TSEMI:
+			tok = readtoken();
+			/* fall through */
+		case TNL:
+			if (tok == TNL) {
+				parseheredoc();
+				if (nlflag == 1)
+					return n1;
+			} else {
+				tokpushback = 1;
+			}
+			checkkwd = CHKNL | CHKKWD | CHKALIAS;
+			if (nexttoken_ends_list()) {
+				/* Testcase: "<<EOF; then <W".
+				 * It used to segfault w/o this check:
+				 */
+				if (heredoclist) {
+					raise_error_unexpected_syntax(-1);
+				}
+				return n1;
+			}
 			break;
+		case TEOF:
+			if (heredoclist)
+				parseheredoc();
+			else
+				pungetc();              /* push back EOF on input */
+			return n1;
 		default:
-			if ((nlflag & 1))
+			if (nlflag == 1)
 				raise_error_unexpected_syntax(-1);
 			tokpushback = 1;
 			return n1;
@@ -10770,7 +10760,6 @@ simplecmd(void)
 	int savecheckkwd;
 #if ENABLE_ASH_BASH_COMPAT
 	smallint double_brackets_flag = 0;
-	smallint function_flag = 0;
 #endif
 
 	args = NULL;
@@ -10787,11 +10776,6 @@ simplecmd(void)
 		t = readtoken();
 		switch (t) {
 #if ENABLE_ASH_BASH_COMPAT
-		case TFUNCTION:
-			if (peektoken() != TWORD)
-				raise_error_unexpected_syntax(TWORD);
-			function_flag = 1;
-			break;
 		case TAND: /* "&&" */
 		case TOR: /* "||" */
 			if (!double_brackets_flag) {
@@ -10820,29 +10804,6 @@ simplecmd(void)
 				app = &n->narg.next;
 				savecheckkwd = 0;
 			}
-#if ENABLE_ASH_BASH_COMPAT
-			if (function_flag) {
-				checkkwd = CHKNL | CHKKWD;
-				switch (peektoken()) {
-				case TBEGIN:
-				case TIF:
-				case TCASE:
-				case TUNTIL:
-				case TWHILE:
-				case TFOR:
-					goto do_func;
-				case TLP:
-					function_flag = 0;
-					break;
-				case TWORD:
-					if (strcmp("[[", wordtext) == 0)
-						goto do_func;
-					/* fall through */
-				default:
-					raise_error_unexpected_syntax(-1);
-				}
-			}
-#endif
 			break;
 		case TREDIR:
 			*rpp = n = redirnode;
@@ -10850,7 +10811,6 @@ simplecmd(void)
 			parsefname();   /* read name of redirection file */
 			break;
 		case TLP:
- IF_ASH_BASH_COMPAT(do_func:)
 			if (args && app == &args->narg.next
 			 && !vars && !redir
 			) {
@@ -10858,7 +10818,7 @@ simplecmd(void)
 				const char *name;
 
 				/* We have a function */
-				if (IF_ASH_BASH_COMPAT(!function_flag &&) readtoken() != TRP)
+				if (readtoken() != TRP)
 					raise_error_unexpected_syntax(TRP);
 				name = n->narg.text;
 				if (!goodname(name)
@@ -10871,7 +10831,6 @@ simplecmd(void)
 				n->narg.next = parse_command();
 				return n;
 			}
-			IF_ASH_BASH_COMPAT(function_flag = 0;)
 			/* fall through */
 		default:
 			tokpushback = 1;
@@ -10954,7 +10913,7 @@ parse_command(void)
 		n1 = stzalloc(sizeof(struct nfor));
 		n1->type = NFOR;
 		n1->nfor.var = wordtext;
-		checkkwd = CHKNL | CHKKWD | CHKALIAS;
+		checkkwd = CHKKWD | CHKALIAS;
 		if (readtoken() == TIN) {
 			app = &ap;
 			while (readtoken() == TWORD) {
@@ -10981,7 +10940,7 @@ parse_command(void)
 			 * Newline or semicolon here is optional (but note
 			 * that the original Bourne shell only allowed NL).
 			 */
-			if (lasttoken != TSEMI)
+			if (lasttoken != TNL && lasttoken != TSEMI)
 				tokpushback = 1;
 		}
 		checkkwd = CHKNL | CHKKWD | CHKALIAS;
@@ -11000,8 +10959,10 @@ parse_command(void)
 		/*n2->narg.next = NULL; - stzalloc did it */
 		n2->narg.text = wordtext;
 		n2->narg.backquote = backquotelist;
-		checkkwd = CHKNL | CHKKWD | CHKALIAS;
-		if (readtoken() != TIN)
+		do {
+			checkkwd = CHKKWD | CHKALIAS;
+		} while (readtoken() == TNL);
+		if (lasttoken != TIN)
 			raise_error_unexpected_syntax(TIN);
 		cpp = &n1->ncase.cases;
  next_case:
@@ -11052,7 +11013,6 @@ parse_command(void)
 		n1 = list(0);
 		t = TEND;
 		break;
-	IF_ASH_BASH_COMPAT(case TFUNCTION:)
 	case TWORD:
 	case TREDIR:
 		tokpushback = 1;
@@ -11500,7 +11460,7 @@ parsesub: {
 	 || (c != '(' && c != '{' && !is_name(c) && !is_special(c))
 	) {
 #if ENABLE_ASH_BASH_COMPAT
-		if (syntax != DQSYNTAX && c == '\'')
+		if (c == '\'')
 			bash_dollar_squote = 1;
 		else
 #endif
@@ -11933,7 +11893,6 @@ static int
 readtoken(void)
 {
 	int t;
-	int kwd = checkkwd;
 #if DEBUG
 	smallint alreadyseen = tokpushback;
 #endif
@@ -11947,7 +11906,7 @@ readtoken(void)
 	/*
 	 * eat newlines
 	 */
-	if (kwd & CHKNL) {
+	if (checkkwd & CHKNL) {
 		while (t == TNL) {
 			parseheredoc();
 			t = xxreadtoken();
@@ -11961,7 +11920,7 @@ readtoken(void)
 	/*
 	 * check for keywords
 	 */
-	if (kwd & CHKKWD) {
+	if (checkkwd & CHKKWD) {
 		const char *const *pp;
 
 		pp = findkwd(wordtext);
@@ -11995,14 +11954,14 @@ readtoken(void)
 	return t;
 }
 
-static int
-peektoken(void)
+static char
+nexttoken_ends_list(void)
 {
 	int t;
 
 	t = readtoken();
 	tokpushback = 1;
-	return t;
+	return tokname_array[t][0];
 }
 
 /*
@@ -12012,12 +11971,18 @@ peektoken(void)
 static union node *
 parsecmd(int interact)
 {
+	int t;
+
 	tokpushback = 0;
-	checkkwd = 0;
-	heredoclist = 0;
 	doprompt = interact;
 	setprompt_if(doprompt, doprompt);
 	needprompt = 0;
+	t = readtoken();
+	if (t == TEOF)
+		return NODE_EOF;
+	if (t == TNL)
+		return NULL;
+	tokpushback = 1;
 	return list(1);
 }
 
@@ -12597,8 +12562,7 @@ helpcmd(int argc UNUSED_PARAM, char **argv UNUSED_PARAM)
 				out1fmt("\n");
 				col = 0;
 			}
-			while (*a++ != '\0')
-				continue;
+			a += strlen(a) + 1;
 		}
 	}
 # endif

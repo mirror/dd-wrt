@@ -342,7 +342,6 @@
 
 #include <fnmatch.h>
 #include "libbb.h"
-#include "common_bufsiz.h"
 #if ENABLE_FEATURE_FIND_REGEX
 # include "xregex.h"
 #endif
@@ -422,10 +421,11 @@ struct globals {
 	recurse_flags_t recurse_flags;
 	IF_FEATURE_FIND_EXEC_PLUS(unsigned max_argv_len;)
 } FIX_ALIASING;
-#define G (*(struct globals*)bb_common_bufsiz1)
+#define G (*(struct globals*)&bb_common_bufsiz1)
 #define INIT_G() do { \
-	setup_common_bufsiz(); \
-	BUILD_BUG_ON(sizeof(G) > COMMON_BUFSIZE); \
+	struct G_sizecheck { \
+		char G_sizecheck[sizeof(G) > COMMON_BUFSIZE ? -1 : 1]; \
+	}; \
 	/* we have to zero it out because of NOEXEC */ \
 	memset(&G, 0, sizeof(G)); \
 	IF_FEATURE_FIND_MAXDEPTH(G.minmaxdepth[1] = INT_MAX;) \
@@ -884,7 +884,7 @@ static int find_type(const char *type)
 		mask = S_IFSOCK;
 
 	if (mask == 0 || type[1] != '\0')
-		bb_error_msg_and_die(bb_msg_invalid_arg_to, type, "-type");
+		bb_error_msg_and_die(bb_msg_invalid_arg, type, "-type");
 
 	return mask;
 }

@@ -27,6 +27,7 @@
 
 #include <netinet/if_ether.h>
 #include <linux/if_packet.h>
+
 #ifndef __u16
 #define __u16 unsigned short
 #endif
@@ -119,11 +120,11 @@ enum {
 /*** Script execution code ***/
 
 /* get a rough idea of how long an option will be (rounding up...) */
-static const uint8_t len_of_option_as_string[] ALIGN1 = {
+static const uint8_t len_of_option_as_string[] = {
 	[OPTION_IP              ] = sizeof("255.255.255.255 "),
 	[OPTION_IP_PAIR         ] = sizeof("255.255.255.255 ") * 2,
 	[OPTION_STATIC_ROUTES   ] = sizeof("255.255.255.255/32 255.255.255.255 "),
-	[OPTION_6RD             ] = sizeof("132 128 ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff 255.255.255.255 "),
+	[OPTION_6RD             ] = sizeof("32 128 ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff 255.255.255.255 "),
 	[OPTION_STRING          ] = 1,
 	[OPTION_STRING_HOST     ] = 1,
 #if ENABLE_FEATURE_UDHCP_RFC3397
@@ -211,8 +212,6 @@ static int good_hostname(const char *name)
 			//Do we want this?
 			//return ((name - start) < 1025); /* NS_MAXDNAME */
 		name++;
-		if (*name == '\0')
-			return 1; // We allow trailing dot too
 	}
 }
 #else
@@ -232,7 +231,7 @@ static NOINLINE char *xmalloc_optname_optval(uint8_t *option, const struct dhcp_
 	type = optflag->flags & OPTION_TYPE_MASK;
 	optlen = dhcp_option_lengths[type];
 	upper_length = len_of_option_as_string[type]
-		* ((unsigned)(len + optlen) / (unsigned)optlen);
+		* ((unsigned)(len + optlen - 1) / (unsigned)optlen);
 
 	dest = ret = xmalloc(upper_length + strlen(opt_name) + 2);
 	dest += sprintf(ret, "%s=", opt_name);
@@ -571,7 +570,7 @@ static void udhcp_run_script(struct dhcp_packet *packet, const char *name)
 	envp = fill_envp(packet);
 
 	/* call script */
-	log1("executing %s %s", client_config.script, name);
+	log1("Executing %s %s", client_config.script, name);
 	argv[0] = (char*) client_config.script;
 	argv[1] = (char*) name;
 	argv[2] = NULL;
@@ -685,10 +684,10 @@ static void add_client_options(struct dhcp_packet *packet)
  * client reverts to using the IP broadcast address.
  */
 
-static int raw_bcast_from_client_config_ifindex(struct dhcp_packet *packet, uint32_t src_nip)
+static int raw_bcast_from_client_config_ifindex(struct dhcp_packet *packet)
 {
 	return udhcp_send_raw_packet(packet,
-		/*src*/ src_nip, CLIENT_PORT,
+		/*src*/ INADDR_ANY, CLIENT_PORT,
 		/*dst*/ INADDR_BROADCAST, SERVER_PORT, MAC_BCAST_ADDR,
 		client_config.ifindex);
 }
@@ -699,7 +698,7 @@ static int bcast_or_ucast(struct dhcp_packet *packet, uint32_t ciaddr, uint32_t 
 		return udhcp_send_kernel_packet(packet,
 			ciaddr, CLIENT_PORT,
 			server, SERVER_PORT);
-	return raw_bcast_from_client_config_ifindex(packet, ciaddr);
+	return raw_bcast_from_client_config_ifindex(packet);
 }
 
 /* Broadcast a DHCP discover packet to the network, with an optionally requested IP */
@@ -707,7 +706,6 @@ static int bcast_or_ucast(struct dhcp_packet *packet, uint32_t ciaddr, uint32_t 
 static NOINLINE int send_discover(uint32_t xid, uint32_t requested)
 {
 	struct dhcp_packet packet;
-	static int msgs = 0;
 
 	/* Fill in: op, htype, hlen, cookie, chaddr fields,
 	 * random xid field (we override it below),
@@ -725,9 +723,8 @@ static NOINLINE int send_discover(uint32_t xid, uint32_t requested)
 	 */
 	add_client_options(&packet);
 
-	if (msgs++ < 3)
-	    bb_error_msg("sending %s", "discover");
-	return raw_bcast_from_client_config_ifindex(&packet, INADDR_ANY);
+	bb_info_msg("Sending discover...");
+	return raw_bcast_from_client_config_ifindex(&packet);
 }
 
 /* Broadcast a DHCP request message */
@@ -770,8 +767,8 @@ static NOINLINE int send_select(uint32_t xid, uint32_t server, uint32_t requeste
 	add_client_options(&packet);
 
 	addr.s_addr = requested;
-	bb_error_msg("sending select for %s", inet_ntoa(addr));
-	return raw_bcast_from_client_config_ifindex(&packet, INADDR_ANY);
+	bb_info_msg("Sending select for %s...", inet_ntoa(addr));
+	return raw_bcast_from_client_config_ifindex(&packet);
 }
 
 /* Unicast or broadcast a DHCP renew message */
@@ -809,7 +806,7 @@ static NOINLINE int send_renew(uint32_t xid, uint32_t server, uint32_t ciaddr)
 	 */
 	add_client_options(&packet);
 
-	bb_error_msg("sending %s", "renew");
+	bb_info_msg("Sending renew...");
 	return bcast_or_ucast(&packet, ciaddr, server);
 }
 
@@ -838,8 +835,8 @@ static NOINLINE int send_decline(/*uint32_t xid,*/ uint32_t server, uint32_t req
 
 	udhcp_add_simple_option(&packet, DHCP_SERVER_ID, server);
 
-	bb_error_msg("sending %s", "decline");
-	return raw_bcast_from_client_config_ifindex(&packet, INADDR_ANY);
+	bb_info_msg("Sending decline...");
+	return raw_bcast_from_client_config_ifindex(&packet);
 }
 #endif
 
@@ -858,13 +855,25 @@ static int send_release(uint32_t server, uint32_t ciaddr)
 
 	udhcp_add_simple_option(&packet, DHCP_SERVER_ID, server);
 
-	bb_error_msg("sending %s", "release");
+	bb_info_msg("Sending release...");
 	/* Note: normally we unicast here since "server" is not zero.
 	 * However, there _are_ people who run "address-less" DHCP servers,
 	 * and reportedly ISC dhcp client and Windows allow that.
 	 */
 	return bcast_or_ucast(&packet, ciaddr, server);
 }
+
+#ifndef PACKET_AUXDATA
+struct tpacket_auxdata {
+	unsigned int		tp_status;
+	unsigned int		tp_len;
+	unsigned int		tp_snaplen;
+	unsigned short		tp_mac;
+	unsigned short		tp_net;
+	unsigned short		tp_vlan_tci;
+};
+
+#endif
 
 /* Returns -1 on errors that are fatal for the socket, -2 for those that aren't */
 /* NOINLINE: limit stack usage in caller */
@@ -893,7 +902,7 @@ static NOINLINE int udhcp_recv_raw_packet(struct dhcp_packet *dhcp_pkt, int fd)
 		if (bytes < 0) {
 			if (errno == EINTR)
 				continue;
-			log1("packet read error, ignoring");
+			log1("Packet read error, ignoring");
 			/* NB: possible down interface, etc. Caller should pause. */
 			return bytes; /* returns -1 */
 		}
@@ -901,13 +910,13 @@ static NOINLINE int udhcp_recv_raw_packet(struct dhcp_packet *dhcp_pkt, int fd)
 	}
 
 	if (bytes < (int) (sizeof(packet.ip) + sizeof(packet.udp))) {
-		log1("packet is too short, ignoring");
+		log1("Packet is too short, ignoring");
 		return -2;
 	}
 
 	if (bytes < ntohs(packet.ip.tot_len)) {
 		/* packet is bigger than sizeof(packet), we did partial read */
-		log1("oversized packet, ignoring");
+		log1("Oversized packet, ignoring");
 		return -2;
 	}
 
@@ -922,7 +931,7 @@ static NOINLINE int udhcp_recv_raw_packet(struct dhcp_packet *dhcp_pkt, int fd)
 	/* || bytes > (int) sizeof(packet) - can't happen */
 	 || ntohs(packet.udp.len) != (uint16_t)(bytes - sizeof(packet.ip))
 	) {
-		log1("unrelated/bogus packet, ignoring");
+		log1("Unrelated/bogus packet, ignoring");
 		return -2;
 	}
 
@@ -930,10 +939,11 @@ static NOINLINE int udhcp_recv_raw_packet(struct dhcp_packet *dhcp_pkt, int fd)
 	check = packet.ip.check;
 	packet.ip.check = 0;
 	if (check != inet_cksum((uint16_t *)&packet.ip, sizeof(packet.ip))) {
-		log1("bad IP header checksum, ignoring");
+		log1("Bad IP header checksum, ignoring");
 		return -2;
 	}
 
+#ifdef PACKET_AUXDATA
 	for (cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
 		if (cmsg->cmsg_level == SOL_PACKET
 		 && cmsg->cmsg_type == PACKET_AUXDATA
@@ -947,6 +957,7 @@ static NOINLINE int udhcp_recv_raw_packet(struct dhcp_packet *dhcp_pkt, int fd)
 				goto skip_udp_sum_check;
 		}
 	}
+#endif
 
 	/* verify UDP checksum. IP header has to be modified for this */
 	memset(&packet.ip, 0, offsetof(struct iphdr, protocol));
@@ -955,17 +966,17 @@ static NOINLINE int udhcp_recv_raw_packet(struct dhcp_packet *dhcp_pkt, int fd)
 	check = packet.udp.check;
 	packet.udp.check = 0;
 	if (check && check != inet_cksum((uint16_t *)&packet, bytes)) {
-		log1("packet with bad UDP checksum received, ignoring");
+		log1("Packet with bad UDP checksum received, ignoring");
 		return -2;
 	}
  skip_udp_sum_check:
 
 	if (packet.data.cookie != htonl(DHCP_MAGIC)) {
-		bb_error_msg("packet with bad magic, ignoring");
+		bb_info_msg("Packet with bad magic, ignoring");
 		return -2;
 	}
 
-	log1("received %s", "a packet");
+	log1("Received a packet");
 	udhcp_dump_packet(&packet.data);
 
 	bytes -= sizeof(packet.ip) + sizeof(packet.udp);
@@ -1004,14 +1015,14 @@ static int udhcp_raw_socket(int ifindex)
 	int fd;
 	struct sockaddr_ll sock;
 
-	log1("opening raw socket on ifindex %d", ifindex); //log2?
+	log1("Opening raw socket on ifindex %d", ifindex); //log2?
 
 	fd = xsocket(PF_PACKET, SOCK_DGRAM, htons(ETH_P_IP));
 	/* ^^^^^
 	 * SOCK_DGRAM: remove link-layer headers on input (SOCK_RAW keeps them)
 	 * ETH_P_IP: want to receive only packets with IPv4 eth type
 	 */
-	log1("got raw socket fd"); //log2?
+	log1("Got raw socket fd"); //log2?
 
 	sock.sll_family = AF_PACKET;
 	sock.sll_protocol = htons(ETH_P_IP);
@@ -1067,23 +1078,25 @@ static int udhcp_raw_socket(int ifindex)
 		/* Ignoring error (kernel may lack support for this) */
 		if (setsockopt(fd, SOL_SOCKET, SO_ATTACH_FILTER, &filter_prog,
 				sizeof(filter_prog)) >= 0)
-			log1("attached filter to raw socket fd"); // log?
+			log1("Attached filter to raw socket fd"); // log?
 	}
 #endif
 
+#ifdef PACKET_AUXDATA
 	if (setsockopt_1(fd, SOL_PACKET, PACKET_AUXDATA) != 0) {
 		if (errno != ENOPROTOOPT)
-			log1("can't set PACKET_AUXDATA on raw socket");
+			log1("Can't set PACKET_AUXDATA on raw socket");
 	}
+#endif
 
-	log1("created raw socket");
+	log1("Created raw socket");
 
 	return fd;
 }
 
 static void change_listen_mode(int new_mode)
 {
-	log1("entering listen mode: %s",
+	log1("Entering listen mode: %s",
 		new_mode != LISTEN_NONE
 			? (new_mode == LISTEN_KERNEL ? "kernel" : "raw")
 			: "none"
@@ -1104,7 +1117,7 @@ static void change_listen_mode(int new_mode)
 /* Called only on SIGUSR1 */
 static void perform_renew(void)
 {
-	bb_error_msg("performing DHCP renew");
+	bb_info_msg("Performing a DHCP renew");
 	switch (state) {
 	case BOUND:
 		change_listen_mode(LISTEN_KERNEL);
@@ -1113,6 +1126,7 @@ static void perform_renew(void)
 		state = RENEW_REQUESTED;
 		break;
 	case RENEW_REQUESTED: /* impatient are we? fine, square 1 */
+		udhcp_run_script(NULL, "deconfig");
 	case REQUESTING:
 	case RELEASED:
 		change_listen_mode(LISTEN_RAW);
@@ -1133,12 +1147,12 @@ static void perform_release(uint32_t server_addr, uint32_t requested_ip)
 		temp_addr.s_addr = server_addr;
 		strcpy(buffer, inet_ntoa(temp_addr));
 		temp_addr.s_addr = requested_ip;
-		bb_error_msg("unicasting a release of %s to %s",
+		bb_info_msg("Unicasting a release of %s to %s",
 				inet_ntoa(temp_addr), buffer);
 		send_release(server_addr, requested_ip); /* unicast */
 		udhcp_run_script(NULL, "deconfig");
 	}
-	bb_error_msg("entering released state");
+	bb_info_msg("Entering released state");
 
 	change_listen_mode(LISTEN_NONE);
 	state = RELEASED;
@@ -1279,8 +1293,6 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 	int retval;
 	fd_set rfds;
 
-	setup_common_bufsiz();
-
 	/* Default options */
 	IF_FEATURE_UDHCP_PORT(SERVER_PORT = 67;)
 	IF_FEATURE_UDHCP_PORT(CLIENT_PORT = 68;)
@@ -1408,7 +1420,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 	/* Create pidfile */
 	write_pidfile(client_config.pidfile);
 	/* Goes to stdout (unless NOMMU) and possibly syslog */
-	bb_error_msg("started, v"BB_VER);
+	bb_info_msg("%s (v"BB_VER") started", applet_name);
 	/* Set up the signal pipe */
 	udhcp_sp_setup();
 	/* We want random_xid to be random... */
@@ -1431,12 +1443,6 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 		/* silence "uninitialized!" warning */
 		unsigned timestamp_before_wait = timestamp_before_wait;
 
-		/* When running on a bridge, the ifindex may have changed (e.g. if
-		 * member interfaces were added/removed or if the status of the
-		 * bridge changed).
-		 * Workaround: refresh it here before processing the next packet */
-		udhcp_read_interface(client_config.interface, &client_config.ifindex, NULL, client_config.client_mac);
-
 		//bb_error_msg("sockfd:%d, listen_mode:%d", sockfd, listen_mode);
 
 		/* Was opening raw or udp socket here
@@ -1453,7 +1459,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 		retval = 0;
 		/* If we already timed out, fall through with retval = 0, else... */
 		if ((int)tv.tv_sec > 0) {
-			log1("waiting on select %u seconds", (int)tv.tv_sec);
+			log1("Waiting on select %u seconds", (int)tv.tv_sec);
 			timestamp_before_wait = (unsigned)monotonic_sec();
 			retval = select(max_fd + 1, &rfds, NULL, NULL, &tv);
 			if (retval < 0) {
@@ -1504,14 +1510,14 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 				udhcp_run_script(NULL, "leasefail");
 #if BB_MMU /* -b is not supported on NOMMU */
 				if (opt & OPT_b) { /* background if no lease */
-					bb_error_msg("no lease, forking to background");
+					bb_info_msg("No lease, forking to background");
 					client_background();
 					/* do not background again! */
 					opt = ((opt & ~OPT_b) | OPT_f);
 				} else
 #endif
 				if (opt & OPT_n) { /* abort if no lease */
-					bb_error_msg("no lease, failing");
+					bb_info_msg("No lease, failing");
 					retval = 1;
 					goto ret;
 				}
@@ -1520,7 +1526,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 				packet_num = 0;
 				continue;
 			case REQUESTING:
-				if (packet_num < 3) {
+				if (!discover_retries || packet_num < discover_retries) {
 					/* send broadcast select packet */
 					send_select(xid, server_addr, requested_ip);
 					timeout = discover_timeout;
@@ -1539,7 +1545,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 				state = RENEWING;
 				client_config.first_secs = 0; /* make secs field count from 0 */
 				change_listen_mode(LISTEN_KERNEL);
-				log1("entering renew state");
+				log1("Entering renew state");
 				/* fall right through */
 			case RENEW_REQUESTED: /* manual (SIGUSR1) renew */
 			case_RENEW_REQUESTED:
@@ -1559,7 +1565,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 					continue;
 				}
 				/* Timed out, enter rebinding state */
-				log1("entering rebinding state");
+				log1("Entering rebinding state");
 				state = REBINDING;
 				/* fall right through */
 			case REBINDING:
@@ -1574,7 +1580,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 					continue;
 				}
 				/* Timed out, enter init state */
-				bb_error_msg("lease lost, entering init state");
+				bb_info_msg("Lease lost, entering init state");
 				udhcp_run_script(NULL, "deconfig");
 				state = INIT_SELECTING;
 				client_config.first_secs = 0; /* make secs field count from 0 */
@@ -1622,7 +1628,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 			timeout = INT_MAX;
 			continue;
 		case SIGTERM:
-			bb_error_msg("received %s", "SIGTERM");
+			bb_info_msg("Received SIGTERM");
 			goto ret0;
 		}
 
@@ -1640,7 +1646,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 				len = udhcp_recv_raw_packet(&packet, sockfd);
 			if (len == -1) {
 				/* Error is severe, reopen socket */
-				bb_error_msg("read error: %s, reopening socket", strerror(errno));
+				bb_info_msg("Read error: %s, reopening socket", strerror(errno));
 				sleep(discover_timeout); /* 3 seconds by default */
 				change_listen_mode(listen_mode); /* just close and reopen */
 			}
@@ -1763,7 +1769,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 							client_config.interface,
 							arpping_ms)
 					) {
-						bb_error_msg("offered address is in use "
+						bb_info_msg("Offered address is in use "
 							"(got ARP reply), declining");
 						send_decline(/*xid,*/ server_addr, packet.yiaddr);
 
@@ -1782,7 +1788,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 #endif
 				/* enter bound state */
 				temp_addr.s_addr = packet.yiaddr;
-				bb_error_msg("lease of %s obtained, lease time %u",
+				bb_info_msg("Lease of %s obtained, lease time %u",
 					inet_ntoa(temp_addr), (unsigned)lease_seconds);
 				requested_ip = packet.yiaddr;
 
@@ -1836,7 +1842,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 						goto non_matching_svid;
 				}
 				/* return to init state */
-				bb_error_msg("received %s", "DHCP NAK");
+				bb_info_msg("Received DHCP NAK");
 				udhcp_run_script(&packet, "nak");
 				if (state != REQUESTING)
 					udhcp_run_script(NULL, "deconfig");
