@@ -14,23 +14,23 @@
 
 //usage:#define sort_trivial_usage
 //usage:       "[-nru"
-//usage:	IF_FEATURE_SORT_BIG("gMcszbdfiokt] [-o FILE] [-k start[.offset][opts][,end[.offset][opts]] [-t CHAR")
+//usage:	IF_FEATURE_SORT_BIG("gMcszbdfimSTokt] [-o FILE] [-k start[.offset][opts][,end[.offset][opts]] [-t CHAR")
 //usage:       "] [FILE]..."
 //usage:#define sort_full_usage "\n\n"
 //usage:       "Sort lines of text\n"
 //usage:	IF_FEATURE_SORT_BIG(
-//usage:     "\n	-o FILE	Output to FILE"
-//usage:     "\n	-c	Check whether input is sorted"
 //usage:     "\n	-b	Ignore leading blanks"
-//usage:     "\n	-f	Ignore case"
-//usage:     "\n	-i	Ignore unprintable characters"
+//usage:     "\n	-c	Check whether input is sorted"
 //usage:     "\n	-d	Dictionary order (blank or alphanumeric only)"
+//usage:     "\n	-f	Ignore case"
 //usage:     "\n	-g	General numerical sort"
+//usage:     "\n	-i	Ignore unprintable characters"
 //usage:     "\n	-M	Sort month"
 //usage:	)
 //-h, --human-numeric-sort: compare human readable numbers (e.g., 2K 1G)
 //usage:     "\n	-n	Sort numbers"
 //usage:	IF_FEATURE_SORT_BIG(
+//usage:     "\n	-o	Output to file"
 //usage:     "\n	-t CHAR	Field separator"
 //usage:     "\n	-k N[,M] Sort by Nth field"
 //usage:	)
@@ -41,10 +41,7 @@
 //usage:     "\n	-u	Suppress duplicate lines"
 //usage:	IF_FEATURE_SORT_BIG(
 //usage:     "\n	-z	Lines are terminated by NUL, not newline"
-////usage:     "\n	-m	Ignored for GNU compatibility"
-////usage:     "\n	-S BUFSZ Ignored for GNU compatibility"
-////usage:     "\n	-T TMPDIR Ignored for GNU compatibility"
-//usage:	)
+//usage:     "\n	-mST	Ignored for GNU compatibility")
 //usage:
 //usage:#define sort_example_usage
 //usage:       "$ echo -e \"e\\nf\\nb\\nd\\nc\\na\" | sort\n"
@@ -163,18 +160,17 @@ static char *get_key(char *str, struct sort_key *key, int flags)
 		if (!j) start = end;
 	}
 	/* Strip leading whitespace if necessary */
+//XXX: skip_whitespace()
 	if (flags & FLAG_b)
-		/* not using skip_whitespace() for speed */
 		while (isspace(str[start])) start++;
 	/* Strip trailing whitespace if necessary */
 	if (flags & FLAG_bb)
 		while (end > start && isspace(str[end-1])) end--;
-	/* -kSTART,N.ENDCHAR: honor ENDCHAR (1-based) */
+	/* Handle offsets on start and end */
 	if (key->range[3]) {
-		end = key->range[3];
+		end += key->range[3] - 1;
 		if (end > len) end = len;
 	}
-	/* -kN.STARTCHAR[,...]: honor STARTCHAR (1-based) */
 	if (key->range[1]) {
 		start += key->range[1] - 1;
 		if (start > len) start = len;
@@ -295,7 +291,7 @@ static int compare_keys(const void *xarg, const void *yarg)
 			else if (!yy)
 				retval = 1;
 			else
-				retval = dx - thyme.tm_mon;
+				retval = (dx == thyme.tm_mon) ? 0 : dx - thyme.tm_mon;
 			break;
 		}
 		/* Full floating point version of -n */
@@ -321,8 +317,8 @@ static int compare_keys(const void *xarg, const void *yarg)
 
 	/* Perform fallback sort if necessary */
 	if (!retval && !(option_mask32 & FLAG_s)) {
-		flags = option_mask32;
 		retval = strcmp(*(char **)xarg, *(char **)yarg);
+		flags = option_mask32;
 	}
 
 	if (flags & FLAG_r)
@@ -350,7 +346,7 @@ int sort_main(int argc UNUSED_PARAM, char **argv)
 	char *line, **lines;
 	char *str_ignored, *str_o, *str_t;
 	llist_t *lst_k = NULL;
-	int i;
+	int i, flag;
 	int linecount;
 	unsigned opts;
 
@@ -373,7 +369,7 @@ int sort_main(int argc UNUSED_PARAM, char **argv)
 	/* note: below this point we use option_mask32, not opts,
 	 * since that reduces register pressure and makes code smaller */
 
-	/* Parse sort key */
+	/* parse sort key */
 	while (lst_k) {
 		enum {
 			FLAG_allowed_for_k =
@@ -400,18 +396,17 @@ int sort_main(int argc UNUSED_PARAM, char **argv)
 				key->range[2*i+1] = str2u(&str_k);
 			}
 			while (*str_k) {
-				int flag;
-				const char *idx;
+				const char *temp2;
 
 				if (*str_k == ',' && !i++) {
 					str_k++;
 					break;
 				} /* no else needed: fall through to syntax error
 					because comma isn't in OPT_STR */
-				idx = strchr(OPT_STR, *str_k);
-				if (!idx)
+				temp2 = strchr(OPT_STR, *str_k);
+				if (!temp2)
 					bb_error_msg_and_die("unknown key option");
-				flag = 1 << (idx - OPT_STR);
+				flag = 1 << (temp2 - OPT_STR);
 				if (flag & ~FLAG_allowed_for_k)
 					bb_error_msg_and_die("unknown sort type");
 				/* b after ',' means strip _trailing_ space */
@@ -445,10 +440,10 @@ int sort_main(int argc UNUSED_PARAM, char **argv)
 	} while (*++argv);
 
 #if ENABLE_FEATURE_SORT_BIG
-	/* If no key, perform alphabetic sort */
+	/* if no key, perform alphabetic sort */
 	if (!key_list)
 		add_key()->range[0] = 1;
-	/* Handle -c */
+	/* handle -c */
 	if (option_mask32 & FLAG_c) {
 		int j = (option_mask32 & FLAG_u) ? -1 : 0;
 		for (i = 1; i < linecount; i++) {
@@ -462,21 +457,20 @@ int sort_main(int argc UNUSED_PARAM, char **argv)
 #endif
 	/* Perform the actual sort */
 	qsort(lines, linecount, sizeof(lines[0]), compare_keys);
-
-	/* Handle -u */
+	/* handle -u */
 	if (option_mask32 & FLAG_u) {
-		int j = 0;
+		flag = 0;
 		/* coreutils 6.3 drop lines for which only key is the same */
 		/* -- disabling last-resort compare... */
 		option_mask32 |= FLAG_s;
 		for (i = 1; i < linecount; i++) {
-			if (compare_keys(&lines[j], &lines[i]) == 0)
+			if (compare_keys(&lines[flag], &lines[i]) == 0)
 				free(lines[i]);
 			else
-				lines[++j] = lines[i];
+				lines[++flag] = lines[i];
 		}
 		if (linecount)
-			linecount = j+1;
+			linecount = flag+1;
 	}
 
 	/* Print it */
@@ -485,11 +479,9 @@ int sort_main(int argc UNUSED_PARAM, char **argv)
 	if (option_mask32 & FLAG_o)
 		xmove_fd(xopen(str_o, O_WRONLY|O_CREAT|O_TRUNC), STDOUT_FILENO);
 #endif
-	{
-		int ch = (option_mask32 & FLAG_z) ? '\0' : '\n';
-		for (i = 0; i < linecount; i++)
-			printf("%s%c", lines[i], ch);
-	}
+	flag = (option_mask32 & FLAG_z) ? '\0' : '\n';
+	for (i = 0; i < linecount; i++)
+		printf("%s%c", lines[i], flag);
 
 	fflush_stdout_and_exit(EXIT_SUCCESS);
 }

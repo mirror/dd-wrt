@@ -11,7 +11,6 @@
  */
 
 #include "ip_common.h"  /* #include "libbb.h" is inside */
-#include "common_bufsiz.h"
 #include "rt_names.h"
 #include "utils.h"
 
@@ -44,8 +43,7 @@ struct filter_t {
 } FIX_ALIASING;
 typedef struct filter_t filter_t;
 
-#define G_filter (*(filter_t*)bb_common_bufsiz1)
-#define INIT_G() do { setup_common_bufsiz(); } while (0)
+#define G_filter (*(filter_t*)&bb_common_bufsiz1)
 
 static int flush_update(void)
 {
@@ -57,12 +55,35 @@ static int flush_update(void)
 	return 0;
 }
 
+static unsigned get_hz(void)
+{
+	static unsigned hz_internal;
+	FILE *fp;
+
+	if (hz_internal)
+		return hz_internal;
+
+	fp = fopen_for_read("/proc/net/psched");
+	if (fp) {
+		unsigned nom, denom;
+
+		if (fscanf(fp, "%*08x%*08x%08x%08x", &nom, &denom) == 2)
+			if (nom == 1000000)
+				hz_internal = denom;
+		fclose(fp);
+	}
+	if (!hz_internal)
+		hz_internal = bb_clk_tck();
+	return hz_internal;
+}
+
 static int FAST_FUNC print_route(const struct sockaddr_nl *who UNUSED_PARAM,
 		struct nlmsghdr *n, void *arg UNUSED_PARAM)
 {
 	struct rtmsg *r = NLMSG_DATA(n);
 	int len = n->nlmsg_len;
 	struct rtattr *tb[RTA_MAX+1];
+	char abuf[256];
 	inet_prefix dst;
 	inet_prefix src;
 	int host_len = -1;
@@ -196,7 +217,7 @@ static int FAST_FUNC print_route(const struct sockaddr_nl *who UNUSED_PARAM,
 
 		if (NLMSG_ALIGN(G_filter.flushp) + n->nlmsg_len > G_filter.flushe) {
 			if (flush_update())
-				xfunc_die();
+				bb_error_msg_and_die("flush");
 		}
 		fn = (void*)(G_filter.flushb + NLMSG_ALIGN(G_filter.flushp));
 		memcpy(fn, n, n->nlmsg_len);
@@ -219,15 +240,17 @@ static int FAST_FUNC print_route(const struct sockaddr_nl *who UNUSED_PARAM,
 
 	if (tb[RTA_DST]) {
 		if (r->rtm_dst_len != host_len) {
-			printf("%s/%u ",
-				rt_addr_n2a(r->rtm_family, RTA_DATA(tb[RTA_DST])),
-				r->rtm_dst_len
-			);
+			printf("%s/%u ", rt_addr_n2a(r->rtm_family,
+						RTA_DATA(tb[RTA_DST]),
+						abuf, sizeof(abuf)),
+					r->rtm_dst_len
+					);
 		} else {
 			printf("%s ", format_host(r->rtm_family,
 						RTA_PAYLOAD(tb[RTA_DST]),
-						RTA_DATA(tb[RTA_DST]))
-			);
+						RTA_DATA(tb[RTA_DST]),
+						abuf, sizeof(abuf))
+					);
 		}
 	} else if (r->rtm_dst_len) {
 		printf("0/%d ", r->rtm_dst_len);
@@ -236,15 +259,17 @@ static int FAST_FUNC print_route(const struct sockaddr_nl *who UNUSED_PARAM,
 	}
 	if (tb[RTA_SRC]) {
 		if (r->rtm_src_len != host_len) {
-			printf("from %s/%u ",
-				rt_addr_n2a(r->rtm_family, RTA_DATA(tb[RTA_SRC])),
-				r->rtm_src_len
-			);
+			printf("from %s/%u ", rt_addr_n2a(r->rtm_family,
+						RTA_DATA(tb[RTA_SRC]),
+						abuf, sizeof(abuf)),
+					r->rtm_src_len
+					);
 		} else {
 			printf("from %s ", format_host(r->rtm_family,
 						RTA_PAYLOAD(tb[RTA_SRC]),
-						RTA_DATA(tb[RTA_SRC]))
-			);
+						RTA_DATA(tb[RTA_SRC]),
+						abuf, sizeof(abuf))
+					);
 		}
 	} else if (r->rtm_src_len) {
 		printf("from 0/%u ", r->rtm_src_len);
@@ -252,8 +277,8 @@ static int FAST_FUNC print_route(const struct sockaddr_nl *who UNUSED_PARAM,
 	if (tb[RTA_GATEWAY] && G_filter.rvia.bitlen != host_len) {
 		printf("via %s ", format_host(r->rtm_family,
 					RTA_PAYLOAD(tb[RTA_GATEWAY]),
-					RTA_DATA(tb[RTA_GATEWAY]))
-		);
+					RTA_DATA(tb[RTA_GATEWAY]),
+					abuf, sizeof(abuf)));
 	}
 	if (tb[RTA_OIF]) {
 		printf("dev %s ", ll_index_to_name(*(int*)RTA_DATA(tb[RTA_OIF])));
@@ -266,7 +291,8 @@ static int FAST_FUNC print_route(const struct sockaddr_nl *who UNUSED_PARAM,
 		   and symbolic name will not be useful.
 		 */
 		printf(" src %s ", rt_addr_n2a(r->rtm_family,
-					RTA_DATA(tb[RTA_PREFSRC])));
+					RTA_DATA(tb[RTA_PREFSRC]),
+					abuf, sizeof(abuf)));
 	}
 	if (tb[RTA_PRIORITY]) {
 		printf(" metric %d ", *(uint32_t*)RTA_DATA(tb[RTA_PRIORITY]));
@@ -315,13 +341,12 @@ static int FAST_FUNC print_route(const struct sockaddr_nl *who UNUSED_PARAM,
 static int iproute_modify(int cmd, unsigned flags, char **argv)
 {
 	static const char keywords[] ALIGN1 =
-		"src\0""via\0""mtu\0""lock\0""scope\0""protocol\0"IF_FEATURE_IP_RULE("table\0")
+		"src\0""via\0""mtu\0""lock\0""protocol\0"IF_FEATURE_IP_RULE("table\0")
 		"dev\0""oif\0""to\0""metric\0""onlink\0";
 	enum {
 		ARG_src,
 		ARG_via,
 		ARG_mtu, PARM_lock,
-		ARG_scope,
 		ARG_protocol,
 IF_FEATURE_IP_RULE(ARG_table,)
 		ARG_dev,
@@ -347,7 +372,6 @@ IF_FEATURE_IP_RULE(ARG_table,)
 	unsigned mxlock = 0;
 	char *d = NULL;
 	smalluint ok = 0;
-	smalluint scope_ok = 0;
 	int arg;
 
 	memset(&req, 0, sizeof(req));
@@ -356,18 +380,15 @@ IF_FEATURE_IP_RULE(ARG_table,)
 	req.n.nlmsg_flags = NLM_F_REQUEST | flags;
 	req.n.nlmsg_type = cmd;
 	req.r.rtm_family = preferred_family;
-	if (RT_TABLE_MAIN != 0) /* if it is zero, memset already did it */
+	if (RT_TABLE_MAIN) /* if it is zero, memset already did it */
 		req.r.rtm_table = RT_TABLE_MAIN;
-	if (RT_SCOPE_NOWHERE != 0)
+	if (RT_SCOPE_NOWHERE)
 		req.r.rtm_scope = RT_SCOPE_NOWHERE;
 
 	if (cmd != RTM_DELROUTE) {
-		if (RTPROT_BOOT != 0)
-			req.r.rtm_protocol = RTPROT_BOOT;
-		if (RT_SCOPE_UNIVERSE != 0)
-			req.r.rtm_scope = RT_SCOPE_UNIVERSE;
-		if (RTN_UNICAST != 0)
-			req.r.rtm_type = RTN_UNICAST;
+		req.r.rtm_protocol = RTPROT_BOOT;
+		req.r.rtm_scope = RT_SCOPE_UNIVERSE;
+		req.r.rtm_type = RTN_UNICAST;
 	}
 
 	mxrta->rta_type = RTA_METRICS;
@@ -400,18 +421,11 @@ IF_FEATURE_IP_RULE(ARG_table,)
 			}
 			mtu = get_unsigned(*argv, "mtu");
 			rta_addattr32(mxrta, sizeof(mxbuf), RTAX_MTU, mtu);
-		} else if (arg == ARG_scope) {
-			uint32_t scope;
-			NEXT_ARG();
-			if (rtnl_rtscope_a2n(&scope, *argv))
-				invarg_1_to_2(*argv, "scope");
-			req.r.rtm_scope = scope;
-			scope_ok = 1;
 		} else if (arg == ARG_protocol) {
 			uint32_t prot;
 			NEXT_ARG();
 			if (rtnl_rtprot_a2n(&prot, *argv))
-				invarg_1_to_2(*argv, "protocol");
+				invarg(*argv, "protocol");
 			req.r.rtm_protocol = prot;
 			ok |= proto_ok;
 #if ENABLE_FEATURE_IP_RULE
@@ -419,7 +433,7 @@ IF_FEATURE_IP_RULE(ARG_table,)
 			uint32_t tid;
 			NEXT_ARG();
 			if (rtnl_rttable_a2n(&tid, *argv))
-				invarg_1_to_2(*argv, "table");
+				invarg(*argv, "table");
 			req.r.rtm_table = tid;
 #endif
 		} else if (arg == ARG_dev || arg == ARG_oif) {
@@ -483,22 +497,20 @@ IF_FEATURE_IP_RULE(ARG_table,)
 		addattr_l(&req.n, sizeof(req), RTA_METRICS, RTA_DATA(mxrta), RTA_PAYLOAD(mxrta));
 	}
 
-	if (!scope_ok) {
-		if (req.r.rtm_type == RTN_LOCAL || req.r.rtm_type == RTN_NAT)
-			req.r.rtm_scope = RT_SCOPE_HOST;
-		else
-		if (req.r.rtm_type == RTN_BROADCAST
-		 || req.r.rtm_type == RTN_MULTICAST
-		 || req.r.rtm_type == RTN_ANYCAST
-		) {
+	if (req.r.rtm_type == RTN_LOCAL || req.r.rtm_type == RTN_NAT)
+		req.r.rtm_scope = RT_SCOPE_HOST;
+	else
+	if (req.r.rtm_type == RTN_BROADCAST
+	 || req.r.rtm_type == RTN_MULTICAST
+	 || req.r.rtm_type == RTN_ANYCAST
+	) {
+		req.r.rtm_scope = RT_SCOPE_LINK;
+	}
+	else if (req.r.rtm_type == RTN_UNICAST || req.r.rtm_type == RTN_UNSPEC) {
+		if (cmd == RTM_DELROUTE)
+			req.r.rtm_scope = RT_SCOPE_NOWHERE;
+		else if (!(ok & gw_ok))
 			req.r.rtm_scope = RT_SCOPE_LINK;
-		}
-		else if (req.r.rtm_type == RTN_UNICAST || req.r.rtm_type == RTN_UNSPEC) {
-			if (cmd == RTM_DELROUTE)
-				req.r.rtm_scope = RT_SCOPE_NOWHERE;
-			else if (!(ok & gw_ok))
-				req.r.rtm_scope = RT_SCOPE_LINK;
-		}
 	}
 
 	if (req.r.rtm_family == AF_UNSPEC) {
@@ -607,7 +619,7 @@ static int iproute_list_or_flush(char **argv, int flush)
 			//G_filter.protocolmask = -1;
 			if (rtnl_rtprot_a2n(&prot, *argv)) {
 				if (index_in_strings(keywords, *argv) != KW_all)
-					invarg_1_to_2(*argv, "protocol");
+					invarg(*argv, "protocol");
 				prot = 0;
 				//G_filter.protocolmask = 0;
 			}
@@ -632,10 +644,10 @@ static int iproute_list_or_flush(char **argv, int flush)
 #if ENABLE_FEATURE_IP_RULE
 				uint32_t tid;
 				if (rtnl_rttable_a2n(&tid, *argv))
-					invarg_1_to_2(*argv, "table");
+					invarg(*argv, "table");
 				G_filter.tb = tid;
 #else
-				invarg_1_to_2(*argv, "table");
+				invarg(*argv, "table");
 #endif
 			}
 		} else if (arg == KW_cache) {
@@ -904,8 +916,6 @@ int FAST_FUNC do_iproute(char **argv)
 	unsigned flags = 0;
 	int cmd = RTM_NEWROUTE;
 
-	INIT_G();
-
 	if (!*argv)
 		return iproute_list_or_flush(argv, 0);
 
@@ -944,7 +954,7 @@ int FAST_FUNC do_iproute(char **argv)
 		case 11: /* flush */
 			return iproute_list_or_flush(argv+1, 1);
 		default:
-			invarg_1_to_2(*argv, applet_name);
+			bb_error_msg_and_die("unknown command %s", *argv);
 	}
 
 	return iproute_modify(cmd, flags, argv+1);

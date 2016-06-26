@@ -63,7 +63,6 @@
 //usage:     "\n	-z	Reread partition table"
 
 #include "libbb.h"
-#include "common_bufsiz.h"
 /* must be _after_ libbb.h: */
 #include <linux/hdreg.h>
 #include <sys/mount.h>
@@ -368,7 +367,10 @@ struct globals {
 	unsigned char flushcache[4] = { WIN_FLUSHCACHE, 0, 0, 0 };
 #endif
 } FIX_ALIASING;
-#define G (*(struct globals*)bb_common_bufsiz1)
+#define G (*(struct globals*)&bb_common_bufsiz1)
+struct BUG_G_too_big {
+	char BUG_G_too_big[sizeof(G) <= COMMON_BUFSIZE ? 1 : -1];
+};
 #define get_identity       (G.get_identity           )
 #define get_geom           (G.get_geom               )
 #define do_flush           (G.do_flush               )
@@ -431,10 +433,7 @@ struct globals {
 #define hwif_data          (G.hwif_data              )
 #define hwif_ctrl          (G.hwif_ctrl              )
 #define hwif_irq           (G.hwif_irq               )
-#define INIT_G() do { \
-	setup_common_bufsiz(); \
-	BUILD_BUG_ON(sizeof(G) > COMMON_BUFSIZE); \
-} while (0)
+#define INIT_G() do { } while (0)
 
 
 /* Busybox messages and functions */

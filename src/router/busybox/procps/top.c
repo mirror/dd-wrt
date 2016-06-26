@@ -105,7 +105,6 @@
 //config:	  Enable 's' in top (gives lots of memory info).
 
 #include "libbb.h"
-#include "common_bufsiz.h"
 
 
 typedef struct top_status_t {
@@ -184,7 +183,11 @@ struct globals {
 	char line_buf[80];
 }; //FIX_ALIASING; - large code growth
 enum { LINE_BUF_SIZE = COMMON_BUFSIZE - offsetof(struct globals, line_buf) };
-#define G (*(struct globals*)bb_common_bufsiz1)
+#define G (*(struct globals*)&bb_common_bufsiz1)
+struct BUG_bad_size {
+	char BUG_G_too_big[sizeof(G) <= COMMON_BUFSIZE ? 1 : -1];
+	char BUG_line_buf_too_small[LINE_BUF_SIZE > 80 ? 1 : -1];
+};
 #define top              (G.top               )
 #define ntop             (G.ntop              )
 #define sort_field       (G.sort_field        )
@@ -201,11 +204,7 @@ enum { LINE_BUF_SIZE = COMMON_BUFSIZE - offsetof(struct globals, line_buf) };
 #define num_cpus         (G.num_cpus          )
 #define total_pcpu       (G.total_pcpu        )
 #define line_buf         (G.line_buf          )
-#define INIT_G() do { \
-	setup_common_bufsiz(); \
-	BUILD_BUG_ON(sizeof(G) > COMMON_BUFSIZE); \
-	BUILD_BUG_ON(LINE_BUF_SIZE <= 80); \
-} while (0)
+#define INIT_G() do { } while (0)
 
 enum {
 	OPT_d = (1 << 0),
@@ -265,9 +264,9 @@ static int mult_lvl_cmp(void* a, void* b)
 static NOINLINE int read_cpu_jiffy(FILE *fp, jiffy_counts_t *p_jif)
 {
 #if !ENABLE_FEATURE_TOP_SMP_CPU
-	static const char fmt[] ALIGN1 = "cpu %llu %llu %llu %llu %llu %llu %llu %llu";
+	static const char fmt[] = "cpu %llu %llu %llu %llu %llu %llu %llu %llu";
 #else
-	static const char fmt[] ALIGN1 = "cp%*s %llu %llu %llu %llu %llu %llu %llu %llu";
+	static const char fmt[] = "cp%*s %llu %llu %llu %llu %llu %llu %llu %llu";
 #endif
 	int ret;
 
@@ -519,7 +518,7 @@ enum {
 
 static void parse_meminfo(unsigned long meminfo[MI_MAX])
 {
-	static const char fields[] ALIGN1 =
+	static const char fields[] =
 		"MemTotal\0"
 		"MemFree\0"
 		"MemShared\0"
@@ -831,17 +830,10 @@ static NOINLINE void display_topmem_process_list(int lines_rem, int scr_width)
 #define HDR_STR "  PID   VSZ VSZRW   RSS (SHR) DIRTY (SHR) STACK"
 #define MIN_WIDTH sizeof(HDR_STR)
 	const topmem_status_t *s = topmem + G_scroll_ofs;
-	char *cp, ch;
 
 	display_topmem_header(scr_width, &lines_rem);
-
 	strcpy(line_buf, HDR_STR " COMMAND");
-	/* Mark the ^FIELD^ we sort by */
-	cp = &line_buf[5 + sort_field * 6];
-	ch = "^_"[inverted];
-	cp[6] = ch;
-	do *cp++ = ch; while (*cp == ' ');
-
+	line_buf[11 + sort_field * 6] = "^_"[inverted];
 	printf(OPT_BATCH_MODE ? "%.*s" : "\e[7m%.*s\e[0m", scr_width, line_buf);
 	lines_rem--;
 
@@ -1181,8 +1173,10 @@ int top_main(int argc UNUSED_PARAM, char **argv)
 		ntop = 0;
 		while ((p = procps_scan(p, scan_mask)) != NULL) {
 			int n;
-
-			IF_FEATURE_TOPMEM(if (scan_mask != TOPMEM_MASK)) {
+#if ENABLE_FEATURE_TOPMEM
+			if (scan_mask != TOPMEM_MASK)
+#endif
+			{
 				n = ntop;
 				top = xrealloc_vector(top, 6, ntop++);
 				top[n].pid = p->pid;
@@ -1222,7 +1216,7 @@ int top_main(int argc UNUSED_PARAM, char **argv)
 			break;
 		}
 
-		IF_FEATURE_TOPMEM(if (scan_mask != TOPMEM_MASK)) {
+		if (scan_mask != TOPMEM_MASK) {
 #if ENABLE_FEATURE_TOP_CPU_USAGE_PERCENTAGE
 			if (!prev_hist_count) {
 				do_stats();
@@ -1236,13 +1230,17 @@ int top_main(int argc UNUSED_PARAM, char **argv)
 #else
 			qsort(top, ntop, sizeof(top_status_t), (void*)(sort_function[0]));
 #endif
-			display_process_list(G.lines, col);
 		}
 #if ENABLE_FEATURE_TOPMEM
 		else { /* TOPMEM */
 			qsort(topmem, ntop, sizeof(topmem_status_t), (void*)topmem_sort);
-			display_topmem_process_list(G.lines, col);
 		}
+#endif
+		if (scan_mask != TOPMEM_MASK)
+			display_process_list(G.lines, col);
+#if ENABLE_FEATURE_TOPMEM
+		else
+			display_topmem_process_list(G.lines, col);
 #endif
 		clearmems();
 		if (iterations >= 0 && !--iterations)
@@ -1251,7 +1249,7 @@ int top_main(int argc UNUSED_PARAM, char **argv)
 		sleep(interval);
 #else
 		scan_mask = handle_input(scan_mask, interval);
-#endif
+#endif /* FEATURE_USE_TERMIOS */
 	} /* end of "while (not Q)" */
 
 	bb_putchar('\n');

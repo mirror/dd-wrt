@@ -15,22 +15,19 @@
  */
 
 //usage:#define setsid_trivial_usage
-//usage:       "[-c] PROG ARGS"
+//usage:       "PROG ARGS"
 //usage:#define setsid_full_usage "\n\n"
 //usage:       "Run PROG in a new session. PROG will have no controlling terminal\n"
-//usage:       "and will not be affected by keyboard signals (^C etc).\n"
-//usage:     "\n	-c	Set controlling terminal to stdin"
+//usage:       "and will not be affected by keyboard signals (Ctrl-C etc).\n"
+//usage:       "See setsid(2) for details."
 
 #include "libbb.h"
 
 int setsid_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 int setsid_main(int argc UNUSED_PARAM, char **argv)
 {
-	unsigned opt;
-
-	opt_complementary = "-1"; /* at least one arg */
-	opt = getopt32(argv, "+c"); /* +: stop on first non-opt */
-	argv += optind;
+	if (!argv[1])
+		bb_show_usage();
 
 	/* setsid() is allowed only when we are not a process group leader.
 	 * Otherwise our PID serves as PGID of some existing process group
@@ -64,10 +61,6 @@ int setsid_main(int argc UNUSED_PARAM, char **argv)
 		setsid();
 	}
 
-	if (opt) {
-		/* -c: set (with stealing) controlling tty */
-		ioctl(0, TIOCSCTTY, 1);
-	}
-
+	argv++;
 	BB_EXECVP_or_die(argv);
 }

@@ -22,7 +22,6 @@
 //usage:#endif
 
 #include "libbb.h"
-#include "common_bufsiz.h"
 
 #ifdef __UCLIBC__
 extern int delete_module(const char *module, unsigned int flags);
@@ -86,10 +85,9 @@ int rmmod_main(int argc, char **argv)
 				exit(0);
 			}
 			pnmod = nmod;
-			setup_common_bufsiz();
 			// the 1 here is QM_MODULES.
 			if (ENABLE_FEATURE_QUERY_MODULE_INTERFACE && query_module(NULL,
-					1, misc_buf, COMMON_BUFSIZE,
+					1, misc_buf, sizeof(misc_buf),
 					&nmod))
 			{
 				bb_perror_msg_and_die("QM_MODULES");
