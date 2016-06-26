@@ -28,7 +28,6 @@
 #include <net/if.h>
 #include <netinet/ip_icmp.h>
 #include "libbb.h"
-#include "common_bufsiz.h"
 
 #ifdef __BIONIC__
 /* should be in netinet/ip_icmp.h */
@@ -187,8 +186,8 @@ struct globals {
 	char *hostname;
 	char packet[DEFDATALEN + MAXIPLEN + MAXICMPLEN];
 } FIX_ALIASING;
-#define G (*(struct globals*)bb_common_bufsiz1)
-#define INIT_G() do { setup_common_bufsiz(); } while (0)
+#define G (*(struct globals*)&bb_common_bufsiz1)
+#define INIT_G() do { } while (0)
 
 static void noresp(int ign UNUSED_PARAM)
 {
@@ -379,7 +378,7 @@ struct globals {
 	} pingaddr;
 	unsigned char rcvd_tbl[MAX_DUP_CHK / 8];
 } FIX_ALIASING;
-#define G (*(struct globals*)bb_common_bufsiz1)
+#define G (*(struct globals*)&bb_common_bufsiz1)
 #define if_index     (G.if_index    )
 #define source_lsa   (G.source_lsa  )
 #define str_I        (G.str_I       )
@@ -397,9 +396,10 @@ struct globals {
 #define dotted       (G.dotted      )
 #define pingaddr     (G.pingaddr    )
 #define rcvd_tbl     (G.rcvd_tbl    )
+void BUG_ping_globals_too_big(void);
 #define INIT_G() do { \
-	setup_common_bufsiz(); \
-	BUILD_BUG_ON(sizeof(G) > COMMON_BUFSIZE); \
+	if (sizeof(G) > COMMON_BUFSIZE) \
+		BUG_ping_globals_too_big(); \
 	datalen = DEFDATALEN; \
 	timeout = MAXWAIT; \
 	tmin = UINT_MAX; \
@@ -732,6 +732,7 @@ static void ping4(len_and_sockaddr *lsa)
 	}
 }
 #if ENABLE_PING6
+extern int BUG_bad_offsetof_icmp6_cksum(void);
 static void ping6(len_and_sockaddr *lsa)
 {
 	int sockopt;
@@ -768,7 +769,8 @@ static void ping6(len_and_sockaddr *lsa)
 	setsockopt_SOL_SOCKET_int(pingsock, SO_RCVBUF, sockopt);
 
 	sockopt = offsetof(struct icmp6_hdr, icmp6_cksum);
-	BUILD_BUG_ON(offsetof(struct icmp6_hdr, icmp6_cksum) != 2);
+	if (offsetof(struct icmp6_hdr, icmp6_cksum) != 2)
+		BUG_bad_offsetof_icmp6_cksum();
 	setsockopt_int(pingsock, SOL_RAW, IPV6_CHECKSUM, sockopt);
 
 	/* request ttl info to be returned in ancillary data */

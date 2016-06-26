@@ -55,7 +55,7 @@ unpack_xz_stream(transformer_state_t *xstate)
 	iobuf.out = membuf + BUFSIZ;
 	iobuf.out_size = BUFSIZ;
 
-	if (!xstate || xstate->signature_skipped) {
+	if (!xstate || xstate->check_signature == 0) {
 		/* Preload XZ file signature */
 		strcpy((char*)membuf, HEADER_MAGIC);
 		iobuf.in_size = HEADER_MAGIC_SIZE;

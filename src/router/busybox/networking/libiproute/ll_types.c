@@ -16,7 +16,7 @@
 
 const char* FAST_FUNC ll_type_n2a(int type, char *buf)
 {
-	static const char arphrd_name[] ALIGN1 =
+	static const char arphrd_name[] =
 	/* 0,                  */ "generic" "\0"
 	/* ARPHRD_LOOPBACK,    */ "loopback" "\0"
 	/* ARPHRD_ETHER,       */ "ether" "\0"
@@ -105,7 +105,7 @@ const char* FAST_FUNC ll_type_n2a(int type, char *buf)
 
 	/* Keep these arrays in sync! */
 
-	static const uint16_t arphrd_type[] ALIGN2 = {
+	static const uint16_t arphrd_type[] = {
 	0,                  /* "generic" "\0" */
 	ARPHRD_LOOPBACK,    /* "loopback" "\0" */
 	ARPHRD_ETHER,       /* "ether" "\0" */

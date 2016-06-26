@@ -19,7 +19,6 @@
 //usage:     "\n	-X	Disable special meaning of NUL and Ctrl-X from stdin"
 
 #include "libbb.h"
-#include "common_bufsiz.h"
 
 // set raw tty mode
 static void xget1(int fd, struct termios *t, struct termios *oldt)
@@ -156,11 +155,10 @@ int microcom_main(int argc UNUSED_PARAM, char **argv)
 skip_write: ;
 		}
 		if (pfd[0].revents) {
-			ssize_t len;
 #define iobuf bb_common_bufsiz1
-			setup_common_bufsiz();
+			ssize_t len;
 			// read from device -> write to stdout
-			len = safe_read(sfd, iobuf, COMMON_BUFSIZE);
+			len = safe_read(sfd, iobuf, sizeof(iobuf));
 			if (len > 0)
 				full_write(STDOUT_FILENO, iobuf, len);
 			else {

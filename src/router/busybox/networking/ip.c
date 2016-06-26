@@ -16,7 +16,6 @@
 //usage:	IF_FEATURE_IP_ROUTE("route | ")
 //usage:	IF_FEATURE_IP_LINK("link | ")
 //usage:	IF_FEATURE_IP_TUNNEL("tunnel | ")
-//usage:	IF_FEATURE_IP_NEIGH("neigh | ")
 //usage:	IF_FEATURE_IP_RULE("rule")
 //usage:       "} {COMMAND}"
 //usage:#define ip_full_usage "\n\n"
@@ -26,7 +25,6 @@
 //usage:	IF_FEATURE_IP_ROUTE("route | ")
 //usage:	IF_FEATURE_IP_LINK("link | ")
 //usage:	IF_FEATURE_IP_TUNNEL("tunnel | ")
-//usage:	IF_FEATURE_IP_NEIGH("neigh | ")
 //usage:	IF_FEATURE_IP_RULE("rule")
 //usage:       "}\n"
 //usage:       "OPTIONS := { -f[amily] { inet | inet6 | link } | -o[neline] }"
@@ -82,11 +80,6 @@
 //usage:       "	[mode { ipip | gre | sit }] [remote ADDR] [local ADDR]\n"
 //usage:       "	[[i|o]seq] [[i|o]key KEY] [[i|o]csum]\n"
 //usage:       "	[ttl TTL] [tos TOS] [[no]pmtudisc] [dev PHYS_DEV]"
-//usage:
-//usage:#define ipneigh_trivial_usage
-//usage:       "{ show | flush} [ to PREFIX ] [ dev DEV ] [ nud STATE ]"
-//usage:#define ipneigh_full_usage "\n\n"
-//usage:       "ipneigh { show | flush} [ to PREFIX ] [ dev DEV ] [ nud STATE ]"
 
 #include "libbb.h"
 
@@ -97,8 +90,7 @@
  || ENABLE_FEATURE_IP_ROUTE \
  || ENABLE_FEATURE_IP_LINK \
  || ENABLE_FEATURE_IP_TUNNEL \
- || ENABLE_FEATURE_IP_RULE \
- || ENABLE_FEATURE_IP_NEIGH
+ || ENABLE_FEATURE_IP_RULE
 
 static int FAST_FUNC ip_print_help(char **argv UNUSED_PARAM)
 {
@@ -148,13 +140,6 @@ int iptunnel_main(int argc UNUSED_PARAM, char **argv)
 	return ip_do(do_iptunnel, argv);
 }
 #endif
-#if ENABLE_FEATURE_IP_NEIGH
-int ipneigh_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int ipneigh_main(int argc UNUSED_PARAM, char **argv)
-{
-	return ip_do(do_ipneigh, argv);
-}
-#endif
 
 
 int ip_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
@@ -168,7 +153,6 @@ int ip_main(int argc UNUSED_PARAM, char **argv)
 		IF_FEATURE_IP_TUNNEL("tunnel\0")
 		IF_FEATURE_IP_TUNNEL("tunl\0")
 		IF_FEATURE_IP_RULE("rule\0")
-		IF_FEATURE_IP_NEIGH("neigh\0")
 		;
 	static const ip_func_ptr_t ip_func_ptrs[] = {
 		ip_print_help,
@@ -179,7 +163,6 @@ int ip_main(int argc UNUSED_PARAM, char **argv)
 		IF_FEATURE_IP_TUNNEL(do_iptunnel,)
 		IF_FEATURE_IP_TUNNEL(do_iptunnel,)
 		IF_FEATURE_IP_RULE(do_iprule,)
-		IF_FEATURE_IP_NEIGH(do_ipneigh,)
 	};
 	ip_func_ptr_t ip_func;
 	int key;

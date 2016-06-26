@@ -8,7 +8,6 @@
  */
 
 #include "libbb.h"
-#include "common_bufsiz.h"
 #define SYSLOG_NAMES
 #define SYSLOG_NAMES_CONST
 #include <syslog.h>

@@ -223,7 +223,6 @@
 #define BB_MS_INVERTED_VALUE (1u << 31)
 
 #include "libbb.h"
-#include "common_bufsiz.h"
 #if ENABLE_FEATURE_MOUNT_LABEL
 # include "volume_id.h"
 #else
@@ -260,11 +259,9 @@ static struct mntent *getmntent_r(FILE* stream, struct mntent* result,
 
 // Not real flags, but we want to be able to check for this.
 enum {
-	MOUNT_USERS  = (1 << 27) * ENABLE_DESKTOP,
-	MOUNT_NOFAIL = (1 << 28) * ENABLE_DESKTOP,
+	MOUNT_USERS  = (1 << 28) * ENABLE_DESKTOP,
 	MOUNT_NOAUTO = (1 << 29),
 	MOUNT_SWAP   = (1 << 30),
-	MOUNT_FAKEFLAGS = MOUNT_USERS | MOUNT_NOFAIL | MOUNT_NOAUTO | MOUNT_SWAP
 };
 
 
@@ -329,7 +326,6 @@ static const int32_t mount_options[] = {
 		/* "swap"   */ MOUNT_SWAP,
 		IF_DESKTOP(/* "user"  */ MOUNT_USERS,)
 		IF_DESKTOP(/* "users" */ MOUNT_USERS,)
-		IF_DESKTOP(/* "nofail" */ MOUNT_NOFAIL,)
 		/* "_netdev" */ 0,
 		IF_DESKTOP(/* "comment=" */ 0,) /* systemd uses this in fstab */
 	)
@@ -377,7 +373,7 @@ static const int32_t mount_options[] = {
 	/* "remount" */ MS_REMOUNT  // action flag
 };
 
-static const char mount_option_str[] ALIGN1 =
+static const char mount_option_str[] =
 	IF_FEATURE_MOUNT_LOOP(
 		"loop\0"
 	)
@@ -389,7 +385,6 @@ static const char mount_option_str[] ALIGN1 =
 		"swap\0"
 		IF_DESKTOP("user\0")
 		IF_DESKTOP("users\0")
-		IF_DESKTOP("nofail\0")
 		"_netdev\0"
 		IF_DESKTOP("comment=\0") /* systemd uses this in fstab */
 	)
@@ -449,7 +444,7 @@ struct globals {
 	char getmntent_buf[1];
 } FIX_ALIASING;
 enum { GETMNTENT_BUFSIZE = COMMON_BUFSIZE - offsetof(struct globals, getmntent_buf) };
-#define G (*(struct globals*)bb_common_bufsiz1)
+#define G (*(struct globals*)&bb_common_bufsiz1)
 #define nfs_mount_version (G.nfs_mount_version)
 #if ENABLE_FEATURE_MOUNT_VERBOSE
 #define verbose           (G.verbose          )
@@ -458,7 +453,7 @@ enum { GETMNTENT_BUFSIZE = COMMON_BUFSIZE - offsetof(struct globals, getmntent_b
 #endif
 #define fslist            (G.fslist           )
 #define getmntent_buf     (G.getmntent_buf    )
-#define INIT_G() do { setup_common_bufsiz(); } while (0)
+#define INIT_G() do { } while (0)
 
 #if ENABLE_FEATURE_MTAB_SUPPORT
 /*
@@ -677,8 +672,6 @@ void delete_block_backed_filesystems(void);
 static int mount_it_now(struct mntent *mp, unsigned long vfsflags, char *filteropts)
 {
 	int rc = 0;
-
-	vfsflags &= ~(unsigned long)MOUNT_FAKEFLAGS;
 
 	if (FAKE_IT) {
 		if (verbose >= 2)
@@ -1004,7 +997,7 @@ enum {
 # define EDQUOT ENOSPC
 #endif
 /* Convert each NFSERR_BLAH into EBLAH */
-static const uint8_t nfs_err_stat[] ALIGN1 = {
+static const uint8_t nfs_err_stat[] = {
 	 1,  2,  5,  6, 13, 17,
 	19, 20, 21, 22, 27, 28,
 	30, 63, 66, 69, 70, 71
@@ -1017,7 +1010,7 @@ typedef uint8_t nfs_err_type;
 #else
 typedef uint16_t nfs_err_type;
 #endif
-static const nfs_err_type nfs_err_errnum[] ALIGN2 = {
+static const nfs_err_type nfs_err_errnum[] = {
 	EPERM , ENOENT      , EIO      , ENXIO , EACCES, EEXIST,
 	ENODEV, ENOTDIR     , EISDIR   , EINVAL, EFBIG , ENOSPC,
 	EROFS , ENAMETOOLONG, ENOTEMPTY, EDQUOT, ESTALE, EREMOTE
@@ -2059,7 +2052,7 @@ static int singlemount(struct mntent *mp, int ignore_busy)
 		del_loop(mp->mnt_fsname);
 		if (ENABLE_FEATURE_CLEAN_UP) {
 			free(loopFile);
-			/* No, "rc != 0" needs it: free(mp->mnt_fsname); */
+			free(mp->mnt_fsname);
 		}
 	}
 
@@ -2068,8 +2061,6 @@ static int singlemount(struct mntent *mp, int ignore_busy)
 		free(filteropts);
 
 	if (errno == EBUSY && ignore_busy)
-		return 0;
-	if (errno == ENOENT && (vfsflags & MOUNT_NOFAIL))
 		return 0;
 	if (rc != 0)
 		bb_perror_msg("mounting %s on %s failed", mp->mnt_fsname, mp->mnt_dir);

@@ -93,7 +93,6 @@
 //usage:	)
 
 #include "libbb.h"
-#include "common_bufsiz.h"
 #include "unicode.h"
 
 
@@ -366,9 +365,8 @@ struct globals {
 	time_t current_time_t;
 #endif
 } FIX_ALIASING;
-#define G (*(struct globals*)bb_common_bufsiz1)
+#define G (*(struct globals*)&bb_common_bufsiz1)
 #define INIT_G() do { \
-	setup_common_bufsiz(); \
 	/* we have to zero it out because of NOEXEC */ \
 	memset(&G, 0, sizeof(G)); \
 	IF_FEATURE_AUTOWIDTH(G_terminal_width = TERMINAL_WIDTH;) \
@@ -670,7 +668,7 @@ static void display_files(struct dnode **dn, unsigned nfiles)
 			if (column_width < len)
 				column_width = len;
 		}
-		column_width += 2 +
+		column_width += 1 +
 			IF_SELINUX( ((G.all_fmt & LIST_CONTEXT) ? 33 : 0) + )
 				((G.all_fmt & LIST_INO) ? 8 : 0) +
 				((G.all_fmt & LIST_BLOCKS) ? 5 : 0);
@@ -698,8 +696,8 @@ static void display_files(struct dnode **dn, unsigned nfiles)
 			if (i < nfiles) {
 				if (column > 0) {
 					nexttab -= column;
-					printf("%*s", nexttab, "");
-					column += nexttab;
+					printf("%*s ", nexttab, "");
+					column += nexttab + 1;
 				}
 				nexttab = column + column_width;
 				column += display_single(dn[i]);
@@ -1107,7 +1105,7 @@ int ls_main(int argc UNUSED_PARAM, char **argv)
 
 #if ENABLE_FEATURE_AUTOWIDTH
 	/* obtain the terminal width */
-	G_terminal_width = get_terminal_width(STDIN_FILENO);
+	get_terminal_width_height(STDIN_FILENO, &G_terminal_width, NULL);
 	/* go one less... */
 	G_terminal_width--;
 #endif

@@ -4,7 +4,6 @@
  */
 
 #include "libbb.h"
-#include "common_bufsiz.h"
 #include <math.h>
 
 //usage:#define dc_trivial_usage
@@ -48,12 +47,11 @@ struct globals {
 	double stack[1];
 } FIX_ALIASING;
 enum { STACK_SIZE = (COMMON_BUFSIZE - offsetof(struct globals, stack)) / sizeof(double) };
-#define G (*(struct globals*)bb_common_bufsiz1)
+#define G (*(struct globals*)&bb_common_bufsiz1)
 #define pointer   (G.pointer   )
 #define base      (G.base      )
 #define stack     (G.stack     )
 #define INIT_G() do { \
-	setup_common_bufsiz(); \
 	base = 10; \
 } while (0)
 

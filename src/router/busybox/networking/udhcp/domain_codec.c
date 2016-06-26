@@ -7,7 +7,6 @@
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 #ifdef DNS_COMPR_TESTING
-# define _GNU_SOURCE
 # define FAST_FUNC /* nothing */
 # define xmalloc malloc
 # include <stdlib.h>
@@ -43,7 +42,7 @@ char* FAST_FUNC dname_dec(const uint8_t *cstr, int clen, const char *pre)
 	 */
 	while (1) {
 		/* note: "return NULL" below are leak-safe since
-		 * dst isn't allocated yet */
+		 * dst isn't yet allocated */
 		const uint8_t *c;
 		unsigned crtpos, retpos, depth, len;
 
@@ -64,10 +63,11 @@ char* FAST_FUNC dname_dec(const uint8_t *cstr, int clen, const char *pre)
 				if (crtpos + *c + 1 > clen) /* label too long? abort */
 					return NULL;
 				if (dst)
-					/* \3com ---> "com." */
-					((char*)mempcpy(dst + len, c + 1, *c))[0] = '.';
+					memcpy(dst + len, c + 1, *c);
 				len += *c + 1;
 				crtpos += *c + 1;
+				if (dst)
+					dst[len - 1] = '.';
 			} else {
 				/* NUL: end of current domain name */
 				if (retpos == 0) {
@@ -78,10 +78,7 @@ char* FAST_FUNC dname_dec(const uint8_t *cstr, int clen, const char *pre)
 					crtpos = retpos;
 					retpos = depth = 0;
 				}
-				if (dst && len != 0)
-					/* \4host\3com\0\4host and we are at \0:
-					 * \3com was converted to "com.", change dot to space.
-					 */
+				if (dst)
 					dst[len - 1] = ' ';
 			}
 
@@ -98,8 +95,9 @@ char* FAST_FUNC dname_dec(const uint8_t *cstr, int clen, const char *pre)
 		if (!dst) { /* first pass? */
 			/* allocate dst buffer and copy pre */
 			unsigned plen = strlen(pre);
-			ret = xmalloc(plen + len);
-			dst = stpcpy(ret, pre);
+			ret = dst = xmalloc(plen + len);
+			memcpy(dst, pre, plen);
+			dst += plen;
 		} else {
 			dst[len - 1] = '\0';
 			break;
@@ -229,9 +227,6 @@ int main(int argc, char **argv)
 {
 	int len;
 	uint8_t *encoded;
-
-        uint8_t str[6] = { 0x00, 0x00, 0x02, 0x65, 0x65, 0x00 };
-        printf("NUL:'%s'\n",   dname_dec(str, 6, ""));
 
 #define DNAME_DEC(encoded,pre) dname_dec((uint8_t*)(encoded), sizeof(encoded), (pre))
 	printf("'%s'\n",       DNAME_DEC("\4host\3com\0", "test1:"));

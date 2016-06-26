@@ -22,7 +22,6 @@
 //usage:       "$ cat TODO | split -a 2 -l 2 TODO_\n"
 
 #include "libbb.h"
-#include "common_bufsiz.h"
 
 #if ENABLE_FEATURE_SPLIT_FANCY
 static const struct suffix_mult split_suffixes[] = {
@@ -78,8 +77,6 @@ int split_main(int argc UNUSED_PARAM, char **argv)
 	unsigned opt;
 	ssize_t bytes_read, to_write;
 	char *src;
-
-	setup_common_bufsiz();
 
 	opt_complementary = "?2:a+"; /* max 2 args; -a N */
 	opt = getopt32(argv, "l:b:a:", &count_p, &count_p, &suffix_len);

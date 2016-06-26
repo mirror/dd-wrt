@@ -349,7 +349,7 @@ static void vlan_parse_opt(char **argv, struct nlmsghdr *n, unsigned int size)
 	while (*argv) {
 		arg = index_in_substrings(keywords, *argv);
 		if (arg < 0)
-			invarg_1_to_2(*argv, "type vlan");
+			invarg(*argv, "type vlan");
 
 		NEXT_ARG();
 		if (arg == ARG_id) {
@@ -512,7 +512,7 @@ static int do_add_or_delete(char **argv, const unsigned rtm)
 	if (name_str) {
 		const size_t name_len = strlen(name_str) + 1;
 		if (name_len < 2 || name_len > IFNAMSIZ)
-			invarg_1_to_2(name_str, "name");
+			invarg(name_str, "name");
 		addattr_l(&req.n, sizeof(req), IFLA_IFNAME, name_str, name_len);
 	}
 	if (rtnl_talk(&rth, &req.n, 0, 0, NULL, NULL, NULL) < 0)
@@ -536,14 +536,14 @@ static int do_add_or_delete(char **argv, const unsigned rtm)
 			if (qlen != -1)
 				duparg("txqueuelen", *argv);
 			if (get_integer(&qlen,  *argv, 0))
-				invarg_1_to_2(*argv, "txqueuelen");
+				invarg("Invalid \"txqueuelen\" value\n", *argv);
 			addattr_l(&req->n, sizeof(*req), IFLA_TXQLEN, &qlen, 4);
 		} else if (strcmp(*argv, "mtu") == 0) {
 			NEXT_ARG();
 			if (mtu != -1)
 				duparg("mtu", *argv);
 			if (get_integer(&mtu, *argv, 0))
-				invarg_1_to_2(*argv, "mtu");
+				invarg("Invalid \"mtu\" value\n", *argv);
 			addattr_l(&req->n, sizeof(*req), IFLA_MTU, &mtu, 4);
                 } else if (strcmp(*argv, "netns") == 0) {
                         NEXT_ARG();
@@ -554,7 +554,7 @@ static int do_add_or_delete(char **argv, const unsigned rtm)
 			else if (get_integer(&netns, *argv, 0) == 0)
 				addattr_l(&req->n, sizeof(*req), IFLA_NET_NS_PID, &netns, 4);
 			else
-                                invarg_1_to_2(*argv, "netns");
+                                invarg("Invalid \"netns\" value\n", *argv);
 		} else if (strcmp(*argv, "multicast") == 0) {
 			NEXT_ARG();
 			req->i.ifi_change |= IFF_MULTICAST;
@@ -604,7 +604,7 @@ static int do_add_or_delete(char **argv, const unsigned rtm)
 			struct rtattr *vflist;
 			NEXT_ARG();
 			if (get_integer(&vf,  *argv, 0)) {
-				invarg_1_to_2(*argv, "vf");
+				invarg("Invalid \"vf\" value\n", *argv);
 			}
 			vflist = addattr_nest(&req->n, sizeof(*req),
 					      IFLA_VFINFO_LIST);
@@ -617,7 +617,7 @@ static int do_add_or_delete(char **argv, const unsigned rtm)
 			NEXT_ARG();
 			ifindex = ll_name_to_index(*argv);
 			if (!ifindex)
-				invarg_1_to_2(*argv, "master");
+				invarg("Device does not exist\n", *argv);
 			addattr_l(&req->n, sizeof(*req), IFLA_MASTER,
 				  &ifindex, 4);
 		} else if (matches(*argv, "nomaster") == 0) {
@@ -644,27 +644,28 @@ static int do_add_or_delete(char **argv, const unsigned rtm)
 			if (*group != -1)
 				duparg("group", *argv);
 			if (rtnl_group_a2n(group, *argv))
-				invarg_1_to_2(*argv, "group");
+				invarg("Invalid \"group\" value\n", *argv);
 		} else if (strcmp(*argv, "mode") == 0) {
 			int mode;
 			NEXT_ARG();
 			mode = get_link_mode(*argv);
 			if (mode < 0)
-				invarg_1_to_2(*argv, "mode");
+				invarg("Invalid link mode\n", *argv);
 			addattr8(&req->n, sizeof(*req), IFLA_LINKMODE, mode);
 		} else if (strcmp(*argv, "state") == 0) {
 			int state;
 			NEXT_ARG();
 			state = get_operstate(*argv);
 			if (state < 0)
-				invarg_1_to_2(*argv, "state");
+				invarg("Invalid operstate\n", *argv);
+
 			addattr8(&req->n, sizeof(*req), IFLA_OPERSTATE, state);
 		} else if (matches(*argv, "numtxqueues") == 0) {
 			NEXT_ARG();
 			if (numtxqueues != -1)
 				duparg("numtxqueues", *argv);
 			if (get_integer(&numtxqueues, *argv, 0))
-				invarg_1_to_2(*argv, "numtxqueues");
+				invarg("Invalid \"numtxqueues\" value\n", *argv);
 			addattr_l(&req->n, sizeof(*req), IFLA_NUM_TX_QUEUES,
 				  &numtxqueues, 4);
 		} else if (matches(*argv, "numrxqueues") == 0) {
@@ -672,7 +673,7 @@ static int do_add_or_delete(char **argv, const unsigned rtm)
 			if (numrxqueues != -1)
 				duparg("numrxqueues", *argv);
 			if (get_integer(&numrxqueues, *argv, 0))
-				invarg_1_to_2(*argv, "numrxqueues");
+				invarg("Invalid \"numrxqueues\" value\n", *argv);
 			addattr_l(&req->n, sizeof(*req), IFLA_NUM_RX_QUEUES,
 				  &numrxqueues, 4);
 		}
@@ -686,7 +687,7 @@ int FAST_FUNC do_iplink(char **argv)
 	if (*argv) {
 		int key = index_in_substrings(keywords, *argv);
 		if (key < 0) /* invalid argument */
-			invarg_1_to_2(*argv, applet_name);
+			invarg(*argv, applet_name);
 		argv++;
 		if (key <= 1) /* add/delete */
 			return do_add_or_delete(argv, key ? RTM_DELLINK : RTM_NEWLINK);
