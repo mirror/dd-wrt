@@ -1,5 +1,4 @@
-/*
- *   This program is free software; you can redistribute it and/or modify
+/*   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation; version 2 of the License
  *
@@ -8,25 +7,14 @@
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU General Public License for more details.
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program; if not, write to the Free Software
- *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
- *
- *   Copyright (C) 2009-2013 John Crispin <blogic@openwrt.org>
+ *   Copyright (C) 2009-2015 John Crispin <blogic@openwrt.org>
+ *   Copyright (C) 2009-2015 Felix Fietkau <nbd@nbd.name>
+ *   Copyright (C) 2013-2015 Michael Lee <igvtee@gmail.com>
  */
 
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/types.h>
-#include <linux/dma-mapping.h>
-#include <linux/init.h>
-#include <linux/skbuff.h>
-#include <linux/etherdevice.h>
-#include <linux/ethtool.h>
-#include <linux/platform_device.h>
-#include <linux/phy.h>
-#include <linux/of_device.h>
-#include <linux/clk.h>
 #include <linux/of_net.h>
 #include <linux/of_mdio.h>
 
@@ -88,7 +76,7 @@ void rt2880_mdio_link_adjust(struct fe_priv *priv, int port)
 	fe_w32(mdio_cfg, FE_MDIO_CFG);
 
 	netif_carrier_on(priv->netdev);
-	netdev_info(priv->netdev, "link up (%sMbps/%s duplex)\n", rt2880_speed_str(priv), (DUPLEX_FULL == priv->phy->duplex[0]) ? "Full" : "Half");
+	netdev_info(priv->netdev, "link up (%sMbps/%s duplex)\n", rt2880_speed_str(priv), (priv->phy->duplex[0] == DUPLEX_FULL) ? "Full" : "Half");
 }
 
 static int rt2880_mdio_wait_ready(struct fe_priv *priv)
@@ -100,7 +88,7 @@ static int rt2880_mdio_wait_ready(struct fe_priv *priv)
 		u32 t;
 
 		t = fe_r32(FE_MDIO_ACCESS);
-		if ((t & (0x1 << 31)) == 0)
+		if ((t & BIT(31)) == 0)
 			return 0;
 
 		if (retries-- == 0)
@@ -125,7 +113,7 @@ int rt2880_mdio_read(struct mii_bus *bus, int phy_addr, int phy_reg)
 
 	t = (phy_addr << 24) | (phy_reg << 16);
 	fe_w32(t, FE_MDIO_ACCESS);
-	t |= (1 << 31);
+	t |= BIT(31);
 	fe_w32(t, FE_MDIO_ACCESS);
 
 	err = rt2880_mdio_wait_ready(priv);
@@ -151,7 +139,7 @@ int rt2880_mdio_write(struct mii_bus *bus, int phy_addr, int phy_reg, u16 val)
 
 	t = (1 << 30) | (phy_addr << 24) | (phy_reg << 16) | val;
 	fe_w32(t, FE_MDIO_ACCESS);
-	t |= (1 << 31);
+	t |= BIT(31);
 	fe_w32(t, FE_MDIO_ACCESS);
 
 	return rt2880_mdio_wait_ready(priv);
@@ -218,9 +206,7 @@ void rt2880_port_init(struct fe_priv *priv, struct device_node *np)
 		rt2880_mdio_link_adjust(priv, 0);
 		return;
 	}
-	if (priv->phy->phy_node[0] && priv->mii_bus->phy_map[0]) {
-		fe_connect_phy_node(priv, priv->phy->phy_node[0]);
-	}
 
-	return;
+	if (priv->phy->phy_node[0] && priv->mii_bus->phy_map[0])
+		fe_connect_phy_node(priv, priv->phy->phy_node[0]);
 }
