@@ -1,5 +1,4 @@
-/*
- *   This program is free software; you can redistribute it and/or modify
+/*   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation; version 2 of the License
  *
@@ -8,11 +7,9 @@
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU General Public License for more details.
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program; if not, write to the Free Software
- *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
- *
- *   Copyright (C) 2009-2013 Michael Lee <igvtee@gmail.com>
+ *   Copyright (C) 2009-2015 John Crispin <blogic@openwrt.org>
+ *   Copyright (C) 2009-2015 Felix Fietkau <nbd@nbd.name>
+ *   Copyright (C) 2013-2015 Michael Lee <igvtee@gmail.com>
  */
 
 #include "ralink_soc_eth.h"
@@ -57,8 +54,9 @@ static int fe_set_settings(struct net_device *dev, struct ethtool_cmd *cmd)
 		} else if (priv->mii_bus && priv->mii_bus->phy_map[cmd->phy_address]) {
 			priv->phy_dev = priv->mii_bus->phy_map[cmd->phy_address];
 			priv->phy_flags = FE_PHY_FLAG_ATTACH;
-		} else
+		} else {
 			goto out_sset;
+		}
 	}
 
 	return phy_ethtool_sset(priv->phy_dev, cmd);
@@ -73,7 +71,7 @@ static void fe_get_drvinfo(struct net_device *dev, struct ethtool_drvinfo *info)
 	struct fe_soc_data *soc = priv->soc;
 
 	strlcpy(info->driver, priv->device->driver->name, sizeof(info->driver));
-	strlcpy(info->version, FE_DRV_VERSION, sizeof(info->version));
+	strlcpy(info->version, MTK_FE_DRV_VERSION, sizeof(info->version));
 	strlcpy(info->bus_info, dev_name(priv->device), sizeof(info->bus_info));
 
 	if (soc->reg_table[FE_REG_FE_COUNTER_BASE])
@@ -127,12 +125,31 @@ out_get_link:
 	return ethtool_op_get_link(dev);
 }
 
+static int fe_set_ringparam(struct net_device *dev, struct ethtool_ringparam *ring)
+{
+	struct fe_priv *priv = netdev_priv(dev);
+
+	if ((ring->tx_pending < 2) || (ring->rx_pending < 2) || (ring->rx_pending > MAX_DMA_DESC) || (ring->tx_pending > MAX_DMA_DESC))
+		return -EINVAL;
+
+	dev->netdev_ops->ndo_stop(dev);
+
+	priv->tx_ring.tx_ring_size = BIT(fls(ring->tx_pending) - 1);
+	priv->rx_ring.rx_ring_size = BIT(fls(ring->rx_pending) - 1);
+
+	dev->netdev_ops->ndo_open(dev);
+
+	return 0;
+}
+
 static void fe_get_ringparam(struct net_device *dev, struct ethtool_ringparam *ring)
 {
+	struct fe_priv *priv = netdev_priv(dev);
+
 	ring->rx_max_pending = MAX_DMA_DESC;
 	ring->tx_max_pending = MAX_DMA_DESC;
-	ring->rx_pending = NUM_DMA_DESC;
-	ring->tx_pending = NUM_DMA_DESC;
+	ring->rx_pending = priv->rx_ring.rx_ring_size;
+	ring->tx_pending = priv->tx_ring.tx_ring_size;
 }
 
 static void fe_get_strings(struct net_device *dev, u32 stringset, u8 *data)
@@ -188,6 +205,7 @@ static struct ethtool_ops fe_ethtool_ops = {
 	.set_msglevel = fe_set_msglevel,
 	.nway_reset = fe_nway_reset,
 	.get_link = fe_get_link,
+	.set_ringparam = fe_set_ringparam,
 	.get_ringparam = fe_get_ringparam,
 };
 

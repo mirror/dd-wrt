@@ -1,32 +1,15 @@
-/*
- *   This program is free software; you can redistribute it and/or modify
+/*   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation; version 2 of the License
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program; if not, write to the Free Software
- *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
- *
- *   Copyright (C) 2009-2013 John Crispin <blogic@openwrt.org>
+ *   Copyright (C) 2009-2015 John Crispin <blogic@openwrt.org>
+ *   Copyright (C) 2009-2015 Felix Fietkau <nbd@nbd.name>
+ *   Copyright (C) 2013-2015 Michael Lee <igvtee@gmail.com>
  */
 
 #include <linux/module.h>
 #include <linux/kernel.h>
-#include <linux/types.h>
-#include <linux/dma-mapping.h>
-#include <linux/init.h>
-#include <linux/skbuff.h>
-#include <linux/etherdevice.h>
-#include <linux/ethtool.h>
-#include <linux/platform_device.h>
 #include <linux/phy.h>
-#include <linux/of_device.h>
-#include <linux/clk.h>
 #include <linux/of_net.h>
 #include <linux/of_mdio.h>
 
@@ -232,7 +215,7 @@ int fe_mdio_init(struct fe_priv *priv)
 	}
 
 	priv->mii_bus = mdiobus_alloc();
-	if (priv->mii_bus == NULL) {
+	if (!priv->mii_bus) {
 		err = -ENOMEM;
 		goto err_put_node;
 	}
