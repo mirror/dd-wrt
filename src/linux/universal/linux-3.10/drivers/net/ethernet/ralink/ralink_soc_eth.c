@@ -88,7 +88,7 @@ static const u32 *fe_reg_table = fe_reg_table_default;
 
 struct fe_work_t {
 	int bitnr;
-	void (*action)(struct fe_priv *);
+	void (*action) (struct fe_priv *);
 };
 
 static void __iomem *fe_base = 0;
@@ -119,7 +119,7 @@ void fe_reset(u32 reset_bits)
 
 	t = rt_sysc_r32(SYSC_REG_RSTCTRL);
 	t |= reset_bits;
-	rt_sysc_w32(t , SYSC_REG_RSTCTRL);
+	rt_sysc_w32(t, SYSC_REG_RSTCTRL);
 	udelay(10);
 
 	t &= ~reset_bits;
@@ -129,16 +129,14 @@ void fe_reset(u32 reset_bits)
 
 static inline void fe_int_disable(u32 mask)
 {
-	fe_reg_w32(fe_reg_r32(FE_REG_FE_INT_ENABLE) & ~mask,
-		     FE_REG_FE_INT_ENABLE);
+	fe_reg_w32(fe_reg_r32(FE_REG_FE_INT_ENABLE) & ~mask, FE_REG_FE_INT_ENABLE);
 	/* flush write */
 	fe_reg_r32(FE_REG_FE_INT_ENABLE);
 }
 
 static inline void fe_int_enable(u32 mask)
 {
-	fe_reg_w32(fe_reg_r32(FE_REG_FE_INT_ENABLE) | mask,
-		     FE_REG_FE_INT_ENABLE);
+	fe_reg_w32(fe_reg_r32(FE_REG_FE_INT_ENABLE) | mask, FE_REG_FE_INT_ENABLE);
 	/* flush write */
 	fe_reg_r32(FE_REG_FE_INT_ENABLE);
 }
@@ -149,8 +147,7 @@ static inline void fe_hw_set_macaddr(struct fe_priv *priv, unsigned char *mac)
 
 	spin_lock_irqsave(&priv->page_lock, flags);
 	fe_w32((mac[0] << 8) | mac[1], FE_GDMA1_MAC_ADRH);
-	fe_w32((mac[2] << 24) | (mac[3] << 16) | (mac[4] << 8) | mac[5],
-		     FE_GDMA1_MAC_ADRL);
+	fe_w32((mac[2] << 24) | (mac[3] << 16) | (mac[4] << 8) | mac[5], FE_GDMA1_MAC_ADRL);
 	spin_unlock_irqrestore(&priv->page_lock, flags);
 }
 
@@ -172,14 +169,12 @@ static int fe_set_mac_address(struct net_device *dev, void *p)
 
 static inline int fe_max_frag_size(int mtu)
 {
-	return SKB_DATA_ALIGN(FE_RX_HLEN + mtu) +
-		SKB_DATA_ALIGN(sizeof(struct skb_shared_info));
+	return SKB_DATA_ALIGN(FE_RX_HLEN + mtu) + SKB_DATA_ALIGN(sizeof(struct skb_shared_info));
 }
 
 static inline int fe_max_buf_size(int frag_size)
 {
-	return frag_size - NET_SKB_PAD - NET_IP_ALIGN -
-		SKB_DATA_ALIGN(sizeof(struct skb_shared_info));
+	return frag_size - NET_SKB_PAD - NET_IP_ALIGN - SKB_DATA_ALIGN(sizeof(struct skb_shared_info));
 }
 
 static inline void fe_get_rxd(struct fe_rx_dma *rxd, struct fe_rx_dma *dma_rxd)
@@ -207,10 +202,7 @@ static void fe_clean_rx(struct fe_priv *priv)
 		for (i = 0; i < NUM_DMA_DESC; i++)
 			if (priv->rx_data[i]) {
 				if (priv->rx_dma && priv->rx_dma[i].rxd1)
-					dma_unmap_single(&priv->netdev->dev,
-							priv->rx_dma[i].rxd1,
-							priv->rx_buf_size,
-							DMA_FROM_DEVICE);
+					dma_unmap_single(&priv->netdev->dev, priv->rx_dma[i].rxd1, priv->rx_buf_size, DMA_FROM_DEVICE);
 				put_page(virt_to_head_page(priv->rx_data[i]));
 			}
 
@@ -219,10 +211,7 @@ static void fe_clean_rx(struct fe_priv *priv)
 	}
 
 	if (priv->rx_dma) {
-		dma_free_coherent(&priv->netdev->dev,
-				NUM_DMA_DESC * sizeof(*priv->rx_dma),
-				priv->rx_dma,
-				priv->rx_phys);
+		dma_free_coherent(&priv->netdev->dev, NUM_DMA_DESC * sizeof(*priv->rx_dma), priv->rx_dma, priv->rx_phys);
 		priv->rx_dma = NULL;
 	}
 }
@@ -232,8 +221,7 @@ static int fe_alloc_rx(struct fe_priv *priv)
 	struct net_device *netdev = priv->netdev;
 	int i, pad;
 
-	priv->rx_data = kcalloc(NUM_DMA_DESC, sizeof(*priv->rx_data),
-			GFP_KERNEL);
+	priv->rx_data = kcalloc(NUM_DMA_DESC, sizeof(*priv->rx_data), GFP_KERNEL);
 	if (!priv->rx_data)
 		goto no_rx_mem;
 
@@ -243,10 +231,7 @@ static int fe_alloc_rx(struct fe_priv *priv)
 			goto no_rx_mem;
 	}
 
-	priv->rx_dma = dma_alloc_coherent(&netdev->dev,
-			NUM_DMA_DESC * sizeof(*priv->rx_dma),
-			&priv->rx_phys,
-			GFP_ATOMIC | __GFP_ZERO);
+	priv->rx_dma = dma_alloc_coherent(&netdev->dev, NUM_DMA_DESC * sizeof(*priv->rx_dma), &priv->rx_phys, GFP_ATOMIC | __GFP_ZERO);
 	if (!priv->rx_dma)
 		goto no_rx_mem;
 
@@ -256,12 +241,12 @@ static int fe_alloc_rx(struct fe_priv *priv)
 		pad = NET_IP_ALIGN;
 	for (i = 0; i < NUM_DMA_DESC; i++) {
 		dma_addr_t dma_addr = dma_map_single(&netdev->dev,
-				priv->rx_data[i] + NET_SKB_PAD + pad,
-				priv->rx_buf_size,
-				DMA_FROM_DEVICE);
+						     priv->rx_data[i] + NET_SKB_PAD + pad,
+						     priv->rx_buf_size,
+						     DMA_FROM_DEVICE);
 		if (unlikely(dma_mapping_error(&netdev->dev, dma_addr)))
 			goto no_rx_mem;
-		priv->rx_dma[i].rxd1 = (unsigned int) dma_addr;
+		priv->rx_dma[i].rxd1 = (unsigned int)dma_addr;
 
 		if (priv->flags & FE_FLAG_RX_SG_DMA)
 			priv->rx_dma[i].rxd2 = RX_DMA_PLEN0(priv->rx_buf_size);
@@ -284,24 +269,15 @@ no_rx_mem:
 static void fe_txd_unmap(struct device *dev, struct fe_tx_buf *tx_buf)
 {
 	if (tx_buf->flags & FE_TX_FLAGS_SINGLE0) {
-		dma_unmap_single(dev,
-				dma_unmap_addr(tx_buf, dma_addr0),
-				dma_unmap_len(tx_buf, dma_len0),
-				DMA_TO_DEVICE);
+		dma_unmap_single(dev, dma_unmap_addr(tx_buf, dma_addr0), dma_unmap_len(tx_buf, dma_len0), DMA_TO_DEVICE);
 	} else if (tx_buf->flags & FE_TX_FLAGS_PAGE0) {
-		dma_unmap_page(dev,
-				dma_unmap_addr(tx_buf, dma_addr0),
-				dma_unmap_len(tx_buf, dma_len0),
-				DMA_TO_DEVICE);
+		dma_unmap_page(dev, dma_unmap_addr(tx_buf, dma_addr0), dma_unmap_len(tx_buf, dma_len0), DMA_TO_DEVICE);
 	}
 	if (tx_buf->flags & FE_TX_FLAGS_PAGE1)
-		dma_unmap_page(dev,
-				dma_unmap_addr(tx_buf, dma_addr1),
-				dma_unmap_len(tx_buf, dma_len1),
-				DMA_TO_DEVICE);
+		dma_unmap_page(dev, dma_unmap_addr(tx_buf, dma_addr1), dma_unmap_len(tx_buf, dma_len1), DMA_TO_DEVICE);
 
 	tx_buf->flags = 0;
-	if (tx_buf->skb && (tx_buf->skb != (struct sk_buff *) DMA_DUMMY_DESC)) {
+	if (tx_buf->skb && (tx_buf->skb != (struct sk_buff *)DMA_DUMMY_DESC)) {
 		dev_kfree_skb_any(tx_buf->skb);
 	}
 	tx_buf->skb = NULL;
@@ -319,10 +295,7 @@ static void fe_clean_tx(struct fe_priv *priv)
 	}
 
 	if (priv->tx_dma) {
-		dma_free_coherent(&priv->netdev->dev,
-				NUM_DMA_DESC * sizeof(*priv->tx_dma),
-				priv->tx_dma,
-				priv->tx_phys);
+		dma_free_coherent(&priv->netdev->dev, NUM_DMA_DESC * sizeof(*priv->tx_dma), priv->tx_dma, priv->tx_phys);
 		priv->tx_dma = NULL;
 	}
 }
@@ -333,15 +306,11 @@ static int fe_alloc_tx(struct fe_priv *priv)
 
 	priv->tx_free_idx = 0;
 
-	priv->tx_buf = kcalloc(NUM_DMA_DESC, sizeof(*priv->tx_buf),
-			GFP_KERNEL);
+	priv->tx_buf = kcalloc(NUM_DMA_DESC, sizeof(*priv->tx_buf), GFP_KERNEL);
 	if (!priv->tx_buf)
 		goto no_tx_mem;
 
-	priv->tx_dma = dma_alloc_coherent(&priv->netdev->dev,
-			NUM_DMA_DESC * sizeof(*priv->tx_dma),
-			&priv->tx_phys,
-			GFP_ATOMIC | __GFP_ZERO);
+	priv->tx_dma = dma_alloc_coherent(&priv->netdev->dev, NUM_DMA_DESC * sizeof(*priv->tx_dma), &priv->tx_phys, GFP_ATOMIC | __GFP_ZERO);
 	if (!priv->tx_dma)
 		goto no_tx_mem;
 
@@ -396,44 +365,43 @@ void fe_stats_update(struct fe_priv *priv)
 	u64_stats_update_begin(&hwstats->syncp);
 
 	if (IS_ENABLED(CONFIG_SOC_MT7621_OPENWRT)) {
-		hwstats->rx_bytes			+= fe_r32(base);
-		stats					=  fe_r32(base + 0x04);
+		hwstats->rx_bytes += fe_r32(base);
+		stats = fe_r32(base + 0x04);
 		if (stats)
-			hwstats->rx_bytes		+= (stats << 32);
-		hwstats->rx_packets			+= fe_r32(base + 0x08);
-		hwstats->rx_overflow			+= fe_r32(base + 0x10);
-		hwstats->rx_fcs_errors			+= fe_r32(base + 0x14);
-		hwstats->rx_short_errors		+= fe_r32(base + 0x18);
-		hwstats->rx_long_errors			+= fe_r32(base + 0x1c);
-		hwstats->rx_checksum_errors		+= fe_r32(base + 0x20);
-		hwstats->rx_flow_control_packets	+= fe_r32(base + 0x24);
-		hwstats->tx_skip			+= fe_r32(base + 0x28);
-		hwstats->tx_collisions			+= fe_r32(base + 0x2c);
-		hwstats->tx_bytes			+= fe_r32(base + 0x30);
-		stats					=  fe_r32(base + 0x34);
+			hwstats->rx_bytes += (stats << 32);
+		hwstats->rx_packets += fe_r32(base + 0x08);
+		hwstats->rx_overflow += fe_r32(base + 0x10);
+		hwstats->rx_fcs_errors += fe_r32(base + 0x14);
+		hwstats->rx_short_errors += fe_r32(base + 0x18);
+		hwstats->rx_long_errors += fe_r32(base + 0x1c);
+		hwstats->rx_checksum_errors += fe_r32(base + 0x20);
+		hwstats->rx_flow_control_packets += fe_r32(base + 0x24);
+		hwstats->tx_skip += fe_r32(base + 0x28);
+		hwstats->tx_collisions += fe_r32(base + 0x2c);
+		hwstats->tx_bytes += fe_r32(base + 0x30);
+		stats = fe_r32(base + 0x34);
 		if (stats)
-			hwstats->tx_bytes		+= (stats << 32);
-		hwstats->tx_packets			+= fe_r32(base + 0x38);
+			hwstats->tx_bytes += (stats << 32);
+		hwstats->tx_packets += fe_r32(base + 0x38);
 	} else {
-		hwstats->tx_bytes			+= fe_r32(base);
-		hwstats->tx_packets			+= fe_r32(base + 0x04);
-		hwstats->tx_skip			+= fe_r32(base + 0x08);
-		hwstats->tx_collisions			+= fe_r32(base + 0x0c);
-		hwstats->rx_bytes			+= fe_r32(base + 0x20);
-		hwstats->rx_packets			+= fe_r32(base + 0x24);
-		hwstats->rx_overflow			+= fe_r32(base + 0x28);
-		hwstats->rx_fcs_errors			+= fe_r32(base + 0x2c);
-		hwstats->rx_short_errors		+= fe_r32(base + 0x30);
-		hwstats->rx_long_errors			+= fe_r32(base + 0x34);
-		hwstats->rx_checksum_errors		+= fe_r32(base + 0x38);
-		hwstats->rx_flow_control_packets	+= fe_r32(base + 0x3c);
+		hwstats->tx_bytes += fe_r32(base);
+		hwstats->tx_packets += fe_r32(base + 0x04);
+		hwstats->tx_skip += fe_r32(base + 0x08);
+		hwstats->tx_collisions += fe_r32(base + 0x0c);
+		hwstats->rx_bytes += fe_r32(base + 0x20);
+		hwstats->rx_packets += fe_r32(base + 0x24);
+		hwstats->rx_overflow += fe_r32(base + 0x28);
+		hwstats->rx_fcs_errors += fe_r32(base + 0x2c);
+		hwstats->rx_short_errors += fe_r32(base + 0x30);
+		hwstats->rx_long_errors += fe_r32(base + 0x34);
+		hwstats->rx_checksum_errors += fe_r32(base + 0x38);
+		hwstats->rx_flow_control_packets += fe_r32(base + 0x3c);
 	}
 
 	u64_stats_update_end(&hwstats->syncp);
 }
 
-static struct rtnl_link_stats64 *fe_get_stats64(struct net_device *dev,
-		struct rtnl_link_stats64 *storage)
+static struct rtnl_link_stats64 *fe_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *storage)
 {
 	struct fe_priv *priv = netdev_priv(dev);
 	struct fe_hw_stats *hwstats = priv->hw_stats;
@@ -459,8 +427,7 @@ static struct rtnl_link_stats64 *fe_get_stats64(struct net_device *dev,
 		storage->rx_bytes = hwstats->rx_bytes;
 		storage->tx_bytes = hwstats->tx_bytes;
 		storage->collisions = hwstats->tx_collisions;
-		storage->rx_length_errors = hwstats->rx_short_errors +
-			hwstats->rx_long_errors;
+		storage->rx_length_errors = hwstats->rx_short_errors + hwstats->rx_long_errors;
 		storage->rx_over_errors = hwstats->rx_overflow;
 		storage->rx_crc_errors = hwstats->rx_fcs_errors;
 		storage->rx_errors = hwstats->rx_checksum_errors;
@@ -474,15 +441,13 @@ static struct rtnl_link_stats64 *fe_get_stats64(struct net_device *dev,
 	return storage;
 }
 
-static int fe_vlan_rx_add_vid(struct net_device *dev,
-		__be16 proto, u16 vid)
+static int fe_vlan_rx_add_vid(struct net_device *dev, __be16 proto, u16 vid)
 {
 	struct fe_priv *priv = netdev_priv(dev);
 	u32 idx = (vid & 0xf);
 	u32 vlan_cfg;
 
-	if (!((fe_reg_table[FE_REG_FE_DMA_VID_BASE]) &&
-			(dev->features & NETIF_F_HW_VLAN_CTAG_TX)))
+	if (!((fe_reg_table[FE_REG_FE_DMA_VID_BASE]) && (dev->features & NETIF_F_HW_VLAN_CTAG_TX)))
 		return 0;
 
 	if (test_bit(idx, &priv->vlan_map)) {
@@ -490,8 +455,7 @@ static int fe_vlan_rx_add_vid(struct net_device *dev,
 		dev->wanted_features &= ~NETIF_F_HW_VLAN_CTAG_TX;
 		netdev_update_features(dev);
 	} else {
-		vlan_cfg = fe_r32(fe_reg_table[FE_REG_FE_DMA_VID_BASE] +
-				((idx >> 1) << 2));
+		vlan_cfg = fe_r32(fe_reg_table[FE_REG_FE_DMA_VID_BASE] + ((idx >> 1) << 2));
 		if (idx & 0x1) {
 			vlan_cfg &= 0xffff;
 			vlan_cfg |= (vid << 16);
@@ -499,22 +463,19 @@ static int fe_vlan_rx_add_vid(struct net_device *dev,
 			vlan_cfg &= 0xffff0000;
 			vlan_cfg |= vid;
 		}
-		fe_w32(vlan_cfg, fe_reg_table[FE_REG_FE_DMA_VID_BASE] +
-				((idx >> 1) << 2));
+		fe_w32(vlan_cfg, fe_reg_table[FE_REG_FE_DMA_VID_BASE] + ((idx >> 1) << 2));
 		set_bit(idx, &priv->vlan_map);
 	}
 
 	return 0;
 }
 
-static int fe_vlan_rx_kill_vid(struct net_device *dev,
-		__be16 proto, u16 vid)
+static int fe_vlan_rx_kill_vid(struct net_device *dev, __be16 proto, u16 vid)
 {
 	struct fe_priv *priv = netdev_priv(dev);
 	u32 idx = (vid & 0xf);
 
-	if (!((fe_reg_table[FE_REG_FE_DMA_VID_BASE]) &&
-				(dev->features | NETIF_F_HW_VLAN_CTAG_TX)))
+	if (!((fe_reg_table[FE_REG_FE_DMA_VID_BASE]) && (dev->features | NETIF_F_HW_VLAN_CTAG_TX)))
 		return 0;
 
 	clear_bit(idx, &priv->vlan_map);
@@ -522,8 +483,7 @@ static int fe_vlan_rx_kill_vid(struct net_device *dev,
 	return 0;
 }
 
-static int fe_tx_map_dma(struct sk_buff *skb, struct net_device *dev,
-		int idx, int tx_num)
+static int fe_tx_map_dma(struct sk_buff *skb, struct net_device *dev, int idx, int tx_num)
 {
 	struct fe_priv *priv = netdev_priv(dev);
 	struct skb_frag_struct *frag;
@@ -555,27 +515,22 @@ static int fe_tx_map_dma(struct sk_buff *skb, struct net_device *dev,
 		if (IS_ENABLED(CONFIG_SOC_MT7621_OPENWRT))
 			txd.txd4 |= TX_DMA_INS_VLAN_MT7621 | vlan_tx_tag_get(skb);
 		else
-			txd.txd4 |= TX_DMA_INS_VLAN |
-				((vlan_tx_tag_get(skb) >> VLAN_PRIO_SHIFT) << 4) |
-				(vlan_tx_tag_get(skb) & 0xF);
+			txd.txd4 |= TX_DMA_INS_VLAN | ((vlan_tx_tag_get(skb) >> VLAN_PRIO_SHIFT) << 4) | (vlan_tx_tag_get(skb) & 0xF);
 	}
 
 	/* TSO: fill MSS info in tcp checksum field */
 	if (skb_is_gso(skb)) {
 		if (skb_cow_head(skb, 0)) {
-			netif_warn(priv, tx_err, dev,
-					"GSO expand head fail.\n");
+			netif_warn(priv, tx_err, dev, "GSO expand head fail.\n");
 			goto err_out;
 		}
-		if (skb_shinfo(skb)->gso_type &
-				(SKB_GSO_TCPV4 | SKB_GSO_TCPV6)) {
+		if (skb_shinfo(skb)->gso_type & (SKB_GSO_TCPV4 | SKB_GSO_TCPV6)) {
 			txd.txd4 |= TX_DMA_TSO;
 			tcp_hdr(skb)->check = htons(skb_shinfo(skb)->gso_size);
 		}
 	}
 
-	mapped_addr = dma_map_single(&dev->dev, skb->data,
-			skb_headlen(skb), DMA_TO_DEVICE);
+	mapped_addr = dma_map_single(&dev->dev, skb->data, skb_headlen(skb), DMA_TO_DEVICE);
 	if (unlikely(dma_mapping_error(&dev->dev, mapped_addr)))
 		goto err_out;
 	txd.txd1 = mapped_addr;
@@ -595,8 +550,7 @@ static int fe_tx_map_dma(struct sk_buff *skb, struct net_device *dev,
 
 		while (frag_size > 0) {
 			frag_map_size = min(frag_size, TX_DMA_BUF_LEN);
-			mapped_addr = skb_frag_dma_map(&dev->dev, frag, offset,
-					frag_map_size, DMA_TO_DEVICE);
+			mapped_addr = skb_frag_dma_map(&dev->dev, frag, offset, frag_map_size, DMA_TO_DEVICE);
 			if (unlikely(dma_mapping_error(&dev->dev, mapped_addr)))
 				goto err_dma;
 
@@ -616,13 +570,12 @@ static int fe_tx_map_dma(struct sk_buff *skb, struct net_device *dev,
 				txd.txd3 = mapped_addr;
 				txd.txd2 |= TX_DMA_PLEN1(frag_map_size);
 
-				tx_buf->skb = (struct sk_buff *) DMA_DUMMY_DESC;
+				tx_buf->skb = (struct sk_buff *)DMA_DUMMY_DESC;
 				tx_buf->flags |= FE_TX_FLAGS_PAGE1;
 				dma_unmap_addr_set(tx_buf, dma_addr1, mapped_addr);
 				dma_unmap_len_set(tx_buf, dma_len1, frag_map_size);
 
-				if (!((i == (nr_frags -1)) &&
-							(frag_map_size == frag_size))) {
+				if (!((i == (nr_frags - 1)) && (frag_map_size == frag_size))) {
 					fe_set_txd(&txd, &priv->tx_dma[j]);
 					memset(&txd, 0, sizeof(txd));
 				}
@@ -670,21 +623,21 @@ err_out:
 	return -1;
 }
 
-static inline int fe_skb_padto(struct sk_buff *skb, struct fe_priv *priv) {
+static inline int fe_skb_padto(struct sk_buff *skb, struct fe_priv *priv)
+{
 	unsigned int len;
 	int ret;
 
 	ret = 0;
 	if (unlikely(skb->len < VLAN_ETH_ZLEN)) {
-		if ((priv->flags & FE_FLAG_PADDING_64B) &&
-				!(priv->flags & FE_FLAG_PADDING_BUG))
+		if ((priv->flags & FE_FLAG_PADDING_64B) && !(priv->flags & FE_FLAG_PADDING_BUG))
 			return ret;
 
 		if (vlan_tx_tag_present(skb))
 			len = ETH_ZLEN;
 		else if (skb->protocol == cpu_to_be16(ETH_P_8021Q))
 			len = VLAN_ETH_ZLEN;
-		else if(!(priv->flags & FE_FLAG_PADDING_64B))
+		else if (!(priv->flags & FE_FLAG_PADDING_64B))
 			len = ETH_ZLEN;
 		else
 			return ret;
@@ -702,8 +655,7 @@ static inline int fe_skb_padto(struct sk_buff *skb, struct fe_priv *priv) {
 
 static inline u32 fe_empty_txd(struct fe_priv *priv, u32 tx_fill_idx)
 {
-	return (u32)(NUM_DMA_DESC - ((tx_fill_idx - priv->tx_free_idx) &
-				(NUM_DMA_DESC - 1)));
+	return (u32)(NUM_DMA_DESC - ((tx_fill_idx - priv->tx_free_idx) & (NUM_DMA_DESC - 1)));
 }
 
 static inline int fe_cal_txd_req(struct sk_buff *skb)
@@ -739,11 +691,9 @@ static int fe_start_xmit(struct sk_buff *skb, struct net_device *dev)
 
 	tx_num = fe_cal_txd_req(skb);
 	tx = fe_reg_r32(FE_REG_TX_CTX_IDX0);
-	if (unlikely(fe_empty_txd(priv, tx) <= tx_num))
-	{
+	if (unlikely(fe_empty_txd(priv, tx) <= tx_num)) {
 		netif_stop_queue(dev);
-		netif_err(priv, tx_queued,dev,
-				"Tx Ring full when queue awake!\n");
+		netif_err(priv, tx_queued, dev, "Tx Ring full when queue awake!\n");
 		return NETDEV_TX_BUSY;
 	}
 
@@ -771,8 +721,7 @@ static inline void fe_rx_vlan(struct sk_buff *skb)
 	}
 }
 
-static int fe_poll_rx(struct napi_struct *napi, int budget,
-		struct fe_priv *priv, u32 rx_intr)
+static int fe_poll_rx(struct napi_struct *napi, int budget, struct fe_priv *priv, u32 rx_intr)
 {
 	struct net_device *netdev = priv->netdev;
 	struct net_device_stats *stats = &netdev->stats;
@@ -812,10 +761,7 @@ static int fe_poll_rx(struct napi_struct *napi, int budget,
 			stats->rx_dropped++;
 			goto release_desc;
 		}
-		dma_addr = dma_map_single(&netdev->dev,
-				new_data + NET_SKB_PAD + pad,
-				priv->rx_buf_size,
-				DMA_FROM_DEVICE);
+		dma_addr = dma_map_single(&netdev->dev, new_data + NET_SKB_PAD + pad, priv->rx_buf_size, DMA_FROM_DEVICE);
 		if (unlikely(dma_mapping_error(&netdev->dev, dma_addr))) {
 			put_page(virt_to_head_page(new_data));
 			goto release_desc;
@@ -829,8 +775,7 @@ static int fe_poll_rx(struct napi_struct *napi, int budget,
 		}
 		skb_reserve(skb, NET_SKB_PAD + NET_IP_ALIGN);
 
-		dma_unmap_single(&netdev->dev, trxd.rxd1,
-				priv->rx_buf_size, DMA_FROM_DEVICE);
+		dma_unmap_single(&netdev->dev, trxd.rxd1, priv->rx_buf_size, DMA_FROM_DEVICE);
 		pktlen = RX_DMA_PLEN0(trxd.rxd2);
 		skb->dev = netdev;
 		skb_put(skb, pktlen);
@@ -849,9 +794,9 @@ static int fe_poll_rx(struct napi_struct *napi, int budget,
 		napi_gro_receive(napi, skb);
 
 		priv->rx_data[idx] = new_data;
-		rxd->rxd1 = (unsigned int) dma_addr;
+		rxd->rxd1 = (unsigned int)dma_addr;
 
-release_desc:
+	      release_desc:
 		if (priv->flags & FE_FLAG_RX_SG_DMA)
 			rxd->rxd2 = RX_DMA_PLEN0(priv->rx_buf_size);
 		else
@@ -889,7 +834,7 @@ txpoll_again:
 		if (!skb)
 			break;
 
-		if (skb != (struct sk_buff *) DMA_DUMMY_DESC) {
+		if (skb != (struct sk_buff *)DMA_DUMMY_DESC) {
 			bytes_compl += skb->len;
 			done++;
 			budget--;
@@ -910,8 +855,7 @@ txpoll_again:
 	}
 
 	netdev_completed_queue(netdev, done, bytes_compl);
-	if (unlikely(netif_queue_stopped(netdev) &&
-				netif_carrier_ok(netdev))) {
+	if (unlikely(netif_queue_stopped(netdev) && netif_carrier_ok(netdev))) {
 		netif_wake_queue(netdev);
 	}
 
@@ -947,14 +891,12 @@ static int fe_poll(struct napi_struct *napi, int budget)
 
 	if (unlikely(netif_msg_intr(priv))) {
 		mask = fe_reg_r32(FE_REG_FE_INT_ENABLE);
-		netdev_info(priv->netdev,
-				"done tx %d, rx %d, intr 0x%08x/0x%x\n",
-				tx_done, rx_done, status, mask);
+		netdev_info(priv->netdev, "done tx %d, rx %d, intr 0x%08x/0x%x\n", tx_done, rx_done, status, mask);
 	}
 
 	if ((tx_done < budget) && (rx_done < budget)) {
 		status = fe_reg_r32(FE_REG_FE_INT_STATUS);
-		if (status & (tx_intr | rx_intr ))
+		if (status & (tx_intr | rx_intr))
 			goto poll_again;
 
 		napi_complete(napi);
@@ -970,25 +912,13 @@ static void fe_tx_timeout(struct net_device *dev)
 	struct fe_priv *priv = netdev_priv(dev);
 
 	priv->netdev->stats.tx_errors++;
-	netif_err(priv, tx_err, dev,
-			"transmit timed out\n");
-	netif_info(priv, drv, dev, "dma_cfg:%08x\n",
-			fe_reg_r32(FE_REG_PDMA_GLO_CFG));
-	netif_info(priv, drv, dev, "tx_ring=%d, " \
-			"base=%08x, max=%u, ctx=%u, dtx=%u, fdx=%d\n", 0,
-			fe_reg_r32(FE_REG_TX_BASE_PTR0),
-			fe_reg_r32(FE_REG_TX_MAX_CNT0),
-			fe_reg_r32(FE_REG_TX_CTX_IDX0),
-			fe_reg_r32(FE_REG_TX_DTX_IDX0),
-			priv->tx_free_idx
-		  );
-	netif_info(priv, drv, dev, "rx_ring=%d, " \
-			"base=%08x, max=%u, calc=%u, drx=%u\n", 0,
-			fe_reg_r32(FE_REG_RX_BASE_PTR0),
-			fe_reg_r32(FE_REG_RX_MAX_CNT0),
-			fe_reg_r32(FE_REG_RX_CALC_IDX0),
-			fe_reg_r32(FE_REG_RX_DRX_IDX0)
-		  );
+	netif_err(priv, tx_err, dev, "transmit timed out\n");
+	netif_info(priv, drv, dev, "dma_cfg:%08x\n", fe_reg_r32(FE_REG_PDMA_GLO_CFG));
+	netif_info(priv, drv, dev, "tx_ring=%d, "
+		   "base=%08x, max=%u, ctx=%u, dtx=%u, fdx=%d\n", 0, fe_reg_r32(FE_REG_TX_BASE_PTR0), fe_reg_r32(FE_REG_TX_MAX_CNT0), fe_reg_r32(FE_REG_TX_CTX_IDX0), fe_reg_r32(FE_REG_TX_DTX_IDX0), priv->tx_free_idx);
+	netif_info(priv, drv, dev, "rx_ring=%d, "
+		   "base=%08x, max=%u, calc=%u, drx=%u\n", 0, fe_reg_r32(FE_REG_RX_BASE_PTR0), fe_reg_r32(FE_REG_RX_MAX_CNT0), fe_reg_r32(FE_REG_RX_CALC_IDX0), fe_reg_r32(FE_REG_RX_DRX_IDX0)
+	    );
 
 	if (!test_and_set_bit(FE_FLAG_RESET_PENDING, priv->pending_flags))
 		schedule_work(&priv->pending_work);
@@ -1040,10 +970,7 @@ int fe_set_clock_cycle(struct fe_priv *priv)
 	sysclk /= FE_US_CYC_CNT_DIVISOR;
 	sysclk <<= FE_US_CYC_CNT_SHIFT;
 
-	fe_w32((fe_r32(FE_FE_GLO_CFG) &
-				~(FE_US_CYC_CNT_MASK << FE_US_CYC_CNT_SHIFT)) |
-			sysclk,
-			FE_FE_GLO_CFG);
+	fe_w32((fe_r32(FE_FE_GLO_CFG) & ~(FE_US_CYC_CNT_MASK << FE_US_CYC_CNT_SHIFT)) | sysclk, FE_FE_GLO_CFG);
 	return 0;
 }
 
@@ -1066,25 +993,17 @@ void fe_fwd_config(struct fe_priv *priv)
 static void fe_rxcsum_config(bool enable)
 {
 	if (enable)
-		fe_w32(fe_r32(FE_GDMA1_FWD_CFG) | (FE_GDM1_ICS_EN |
-					FE_GDM1_TCS_EN | FE_GDM1_UCS_EN),
-				FE_GDMA1_FWD_CFG);
+		fe_w32(fe_r32(FE_GDMA1_FWD_CFG) | (FE_GDM1_ICS_EN | FE_GDM1_TCS_EN | FE_GDM1_UCS_EN), FE_GDMA1_FWD_CFG);
 	else
-		fe_w32(fe_r32(FE_GDMA1_FWD_CFG) & ~(FE_GDM1_ICS_EN |
-					FE_GDM1_TCS_EN | FE_GDM1_UCS_EN),
-				FE_GDMA1_FWD_CFG);
+		fe_w32(fe_r32(FE_GDMA1_FWD_CFG) & ~(FE_GDM1_ICS_EN | FE_GDM1_TCS_EN | FE_GDM1_UCS_EN), FE_GDMA1_FWD_CFG);
 }
 
 static void fe_txcsum_config(bool enable)
 {
 	if (enable)
-		fe_w32(fe_r32(FE_CDMA_CSG_CFG) | (FE_ICS_GEN_EN |
-					FE_TCS_GEN_EN | FE_UCS_GEN_EN),
-				FE_CDMA_CSG_CFG);
+		fe_w32(fe_r32(FE_CDMA_CSG_CFG) | (FE_ICS_GEN_EN | FE_TCS_GEN_EN | FE_UCS_GEN_EN), FE_CDMA_CSG_CFG);
 	else
-		fe_w32(fe_r32(FE_CDMA_CSG_CFG) & ~(FE_ICS_GEN_EN |
-					FE_TCS_GEN_EN | FE_UCS_GEN_EN),
-				FE_CDMA_CSG_CFG);
+		fe_w32(fe_r32(FE_CDMA_CSG_CFG) & ~(FE_ICS_GEN_EN | FE_TCS_GEN_EN | FE_UCS_GEN_EN), FE_CDMA_CSG_CFG);
 }
 
 void fe_csum_config(struct fe_priv *priv)
@@ -1100,8 +1019,7 @@ static int fe_hw_init(struct net_device *dev)
 	struct fe_priv *priv = netdev_priv(dev);
 	int i, err;
 
-	err = devm_request_irq(priv->device, dev->irq, fe_handle_irq, 0,
-				dev_name(priv->device), dev);
+	err = devm_request_irq(priv->device, dev->irq, fe_handle_irq, 0, dev_name(priv->device), dev);
 	if (err)
 		return err;
 
@@ -1115,12 +1033,10 @@ static int fe_hw_init(struct net_device *dev)
 
 	fe_int_disable(priv->soc->tx_int | priv->soc->rx_int);
 
-        /* frame engine will push VLAN tag regarding to VIDX feild in Tx desc. */
+	/* frame engine will push VLAN tag regarding to VIDX feild in Tx desc. */
 	if (fe_reg_table[FE_REG_FE_DMA_VID_BASE])
 		for (i = 0; i < 16; i += 2)
-			fe_w32(((i + 1) << 16) + i,
-					fe_reg_table[FE_REG_FE_DMA_VID_BASE] +
-					(i * 2));
+			fe_w32(((i + 1) << 16) + i, fe_reg_table[FE_REG_FE_DMA_VID_BASE] + (i * 2));
 
 	BUG_ON(!priv->soc->fwd_config);
 	if (priv->soc->fwd_config(priv))
@@ -1188,15 +1104,12 @@ static int fe_stop(struct net_device *dev)
 	spin_lock_irqsave(&priv->page_lock, flags);
 	napi_disable(&priv->rx_napi);
 
-	fe_reg_w32(fe_reg_r32(FE_REG_PDMA_GLO_CFG) &
-		     ~(FE_TX_WB_DDONE | FE_RX_DMA_EN | FE_TX_DMA_EN),
-		     FE_REG_PDMA_GLO_CFG);
+	fe_reg_w32(fe_reg_r32(FE_REG_PDMA_GLO_CFG) & ~(FE_TX_WB_DDONE | FE_RX_DMA_EN | FE_TX_DMA_EN), FE_REG_PDMA_GLO_CFG);
 	spin_unlock_irqrestore(&priv->page_lock, flags);
 
 	/* wait dma stop */
 	for (i = 0; i < 10; i++) {
-		if (fe_reg_r32(FE_REG_PDMA_GLO_CFG) &
-				(FE_TX_DMA_BUSY | FE_RX_DMA_BUSY)) {
+		if (fe_reg_r32(FE_REG_PDMA_GLO_CFG) & (FE_TX_DMA_BUSY | FE_RX_DMA_BUSY)) {
 			msleep(10);
 			continue;
 		}
@@ -1229,8 +1142,8 @@ static int __init fe_init(struct net_device *dev)
 
 	if (priv->soc->port_init)
 		for_each_child_of_node(priv->device->of_node, port)
-			if (of_device_is_compatible(port, "ralink,eth-port") && of_device_is_available(port))
-				priv->soc->port_init(priv, port);
+		    if (of_device_is_compatible(port, "ralink,eth-port") && of_device_is_available(port))
+			priv->soc->port_init(priv, port);
 
 	if (priv->phy) {
 		err = priv->phy->connect(priv);
@@ -1277,14 +1190,13 @@ static int fe_do_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 	struct fe_priv *priv = netdev_priv(dev);
 	esw_reg reg;
 
-#if defined(CONFIG_SOC_RT305X_OPENWRT) 
+#if defined(CONFIG_SOC_RT305X_OPENWRT)
 #define REG_ESW_MAX			0x16C
 #elif defined (CONFIG_SOC_MT7620_OPENWRT)
 #define REG_ESW_MAX			0x7FFFF
-#else //RT305x, RT3350
+#else				//RT305x, RT3350
 #define REG_ESW_MAX			0xFC
 #endif
-
 
 #define RAETH_ESW_REG_READ		0x89F1
 #define RAETH_ESW_REG_WRITE		0x89F2
@@ -1301,25 +1213,24 @@ static int fe_do_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 
 	switch (cmd) {
 	case SIOCETHTOOL:
-		return phy_ethtool_ioctl(priv->phy_dev,
-				(void *) ifr->ifr_data);
+		return phy_ethtool_ioctl(priv->phy_dev, (void *)ifr->ifr_data);
 	case SIOCGMIIPHY:
 	case SIOCGMIIREG:
 	case SIOCSMIIREG:
 		return phy_mii_ioctl(priv->phy_dev, ifr, cmd);
 	case RAETH_ESW_REG_READ:
-			copy_from_user(&reg, ifr->ifr_data, sizeof(reg));
-			if (reg.off > REG_ESW_MAX)
-				return -EINVAL;
-			reg.val = _ESW_REG(reg.off);
-			copy_to_user(ifr->ifr_data, &reg, sizeof(reg));
-			break;
+		copy_from_user(&reg, ifr->ifr_data, sizeof(reg));
+		if (reg.off > REG_ESW_MAX)
+			return -EINVAL;
+		reg.val = _ESW_REG(reg.off);
+		copy_to_user(ifr->ifr_data, &reg, sizeof(reg));
+		break;
 	case RAETH_ESW_REG_WRITE:
-			copy_from_user(&reg, ifr->ifr_data, sizeof(reg));
-			if (reg.off > REG_ESW_MAX)
-				return -EINVAL;
-			_ESW_REG(reg.off) = reg.val;
-			break;
+		copy_from_user(&reg, ifr->ifr_data, sizeof(reg));
+		if (reg.off > REG_ESW_MAX)
+			return -EINVAL;
+		_ESW_REG(reg.off) = reg.val;
+		break;
 	default:
 		break;
 	}
@@ -1364,8 +1275,7 @@ static int fe_change_mtu(struct net_device *dev, int new_mtu)
 		fwd_cfg &= ~FE_GDM1_JMB_EN;
 	else {
 		fwd_cfg &= ~(FE_GDM1_JMB_LEN_MASK << FE_GDM1_JMB_LEN_SHIFT);
-		fwd_cfg |= (DIV_ROUND_UP(frag_size, 1024) <<
-				FE_GDM1_JMB_LEN_SHIFT) | FE_GDM1_JMB_EN;
+		fwd_cfg |= (DIV_ROUND_UP(frag_size, 1024) << FE_GDM1_JMB_LEN_SHIFT) | FE_GDM1_JMB_EN;
 	}
 	fe_w32(fwd_cfg, FE_GDMA1_FWD_CFG);
 
@@ -1373,21 +1283,21 @@ static int fe_change_mtu(struct net_device *dev, int new_mtu)
 }
 
 static const struct net_device_ops fe_netdev_ops = {
-	.ndo_init		= fe_init,
-	.ndo_uninit		= fe_uninit,
-	.ndo_open		= fe_open,
-	.ndo_stop		= fe_stop,
-	.ndo_start_xmit		= fe_start_xmit,
-	.ndo_set_mac_address	= fe_set_mac_address,
-	.ndo_validate_addr	= eth_validate_addr,
-	.ndo_do_ioctl		= fe_do_ioctl,
-	.ndo_change_mtu		= fe_change_mtu,
-	.ndo_tx_timeout		= fe_tx_timeout,
-	.ndo_get_stats64        = fe_get_stats64,
-	.ndo_vlan_rx_add_vid	= fe_vlan_rx_add_vid,
-	.ndo_vlan_rx_kill_vid	= fe_vlan_rx_kill_vid,
+	.ndo_init = fe_init,
+	.ndo_uninit = fe_uninit,
+	.ndo_open = fe_open,
+	.ndo_stop = fe_stop,
+	.ndo_start_xmit = fe_start_xmit,
+	.ndo_set_mac_address = fe_set_mac_address,
+	.ndo_validate_addr = eth_validate_addr,
+	.ndo_do_ioctl = fe_do_ioctl,
+	.ndo_change_mtu = fe_change_mtu,
+	.ndo_tx_timeout = fe_tx_timeout,
+	.ndo_get_stats64 = fe_get_stats64,
+	.ndo_vlan_rx_add_vid = fe_vlan_rx_add_vid,
+	.ndo_vlan_rx_kill_vid = fe_vlan_rx_kill_vid,
 #ifdef CONFIG_NET_POLL_CONTROLLER
-	.ndo_poll_controller	= fe_poll_controller,
+	.ndo_poll_controller = fe_poll_controller,
 #endif
 };
 
@@ -1406,8 +1316,7 @@ static void fe_reset_pending(struct fe_priv *priv)
 
 	return;
 error:
-	netif_alert(priv, ifup, dev,
-			"Driver up/down cycle failed, closing device.\n");
+	netif_alert(priv, ifup, dev, "Driver up/down cycle failed, closing device.\n");
 	dev_close(dev);
 	rtnl_unlock();
 }
@@ -1423,8 +1332,7 @@ static void fe_pending_work(struct work_struct *work)
 	bool pending;
 
 	for (i = 0; i < ARRAY_SIZE(fe_work); i++) {
-		pending = test_and_clear_bit(fe_work[i].bitnr,
-				priv->pending_flags);
+		pending = test_and_clear_bit(fe_work[i].bitnr, priv->pending_flags);
 		if (pending)
 			fe_work[i].action(priv);
 	}
@@ -1443,7 +1351,7 @@ static int fe_probe(struct platform_device *pdev)
 	device_reset(&pdev->dev);
 
 	match = of_match_device(of_fe_match, &pdev->dev);
-	soc = (struct fe_soc_data *) match->data;
+	soc = (struct fe_soc_data *)match->data;
 
 	if (soc->reg_table)
 		fe_reg_table = soc->reg_table;
@@ -1465,7 +1373,7 @@ static int fe_probe(struct platform_device *pdev)
 
 	SET_NETDEV_DEV(netdev, &pdev->dev);
 	netdev->netdev_ops = &fe_netdev_ops;
-	netdev->base_addr = (unsigned long) fe_base;
+	netdev->base_addr = (unsigned long)fe_base;
 
 	netdev->irq = platform_get_irq(pdev, 0);
 	if (netdev->irq < 0) {
@@ -1478,8 +1386,7 @@ static int fe_probe(struct platform_device *pdev)
 		soc->init_data(soc, netdev);
 	/* fake NETIF_F_HW_VLAN_CTAG_RX for good GRO performance */
 	netdev->hw_features |= NETIF_F_HW_VLAN_CTAG_RX;
-	netdev->vlan_features = netdev->hw_features &
-		~(NETIF_F_HW_VLAN_CTAG_TX | NETIF_F_HW_VLAN_CTAG_RX);
+	netdev->vlan_features = netdev->hw_features & ~(NETIF_F_HW_VLAN_CTAG_TX | NETIF_F_HW_VLAN_CTAG_RX);
 	netdev->features |= netdev->hw_features;
 
 	/* fake rx vlan filter func. to support tx vlan offload func */
@@ -1528,8 +1435,7 @@ static int fe_probe(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, netdev);
 
-	netif_info(priv, probe, netdev, "ralink at 0x%08lx, irq %d\n",
-			netdev->base_addr, netdev->irq);
+	netif_info(priv, probe, netdev, "ralink at 0x%08lx, irq %d\n", netdev->base_addr, netdev->irq);
 
 	return 0;
 
@@ -1543,7 +1449,7 @@ err_out:
 
 static int fe_remove(struct platform_device *pdev)
 {
-        struct net_device *dev = platform_get_drvdata(pdev);
+	struct net_device *dev = platform_get_drvdata(pdev);
 	struct fe_priv *priv = netdev_priv(dev);
 
 	netif_napi_del(&priv->rx_napi);
@@ -1563,10 +1469,10 @@ static struct platform_driver fe_driver = {
 	.probe = fe_probe,
 	.remove = fe_remove,
 	.driver = {
-		.name = "ralink_soc_eth",
-		.owner = THIS_MODULE,
-		.of_match_table = of_fe_match,
-	},
+		   .name = "ralink_soc_eth",
+		   .owner = THIS_MODULE,
+		   .of_match_table = of_fe_match,
+		   },
 };
 
 static int __init init_rtfe(void)

@@ -19,12 +19,11 @@
 
 static const char fe_gdma_str[][ETH_GSTRING_LEN] = {
 #define _FE(x...)	# x,
-FE_STAT_REG_DECLARE
+	FE_STAT_REG_DECLARE
 #undef _FE
 };
 
-static int fe_get_settings(struct net_device *dev,
-		struct ethtool_cmd *cmd)
+static int fe_get_settings(struct net_device *dev, struct ethtool_cmd *cmd)
 {
 	struct fe_priv *priv = netdev_priv(dev);
 	int err;
@@ -44,8 +43,7 @@ out_gset:
 	return -ENODEV;
 }
 
-static int fe_set_settings(struct net_device *dev,
-		struct ethtool_cmd *cmd)
+static int fe_set_settings(struct net_device *dev, struct ethtool_cmd *cmd)
 {
 	struct fe_priv *priv = netdev_priv(dev);
 
@@ -56,8 +54,7 @@ static int fe_set_settings(struct net_device *dev,
 		if (priv->phy->phy_node[cmd->phy_address]) {
 			priv->phy_dev = priv->phy->phy[cmd->phy_address];
 			priv->phy_flags = FE_PHY_FLAG_PORT;
-		} else if (priv->mii_bus &&
-				priv->mii_bus->phy_map[cmd->phy_address]) {
+		} else if (priv->mii_bus && priv->mii_bus->phy_map[cmd->phy_address]) {
 			priv->phy_dev = priv->mii_bus->phy_map[cmd->phy_address];
 			priv->phy_flags = FE_PHY_FLAG_ATTACH;
 		} else
@@ -70,8 +67,7 @@ out_sset:
 	return -ENODEV;
 }
 
-static void fe_get_drvinfo (struct net_device *dev,
-		struct ethtool_drvinfo *info)
+static void fe_get_drvinfo(struct net_device *dev, struct ethtool_drvinfo *info)
 {
 	struct fe_priv *priv = netdev_priv(dev);
 	struct fe_soc_data *soc = priv->soc;
@@ -131,8 +127,7 @@ out_get_link:
 	return ethtool_op_get_link(dev);
 }
 
-static void fe_get_ringparam(struct net_device *dev,
-		struct ethtool_ringparam *ring)
+static void fe_get_ringparam(struct net_device *dev, struct ethtool_ringparam *ring)
 {
 	ring->rx_max_pending = MAX_DMA_DESC;
 	ring->tx_max_pending = MAX_DMA_DESC;
@@ -159,8 +154,7 @@ static int fe_get_sset_count(struct net_device *dev, int sset)
 	}
 }
 
-static void fe_get_ethtool_stats(struct net_device *dev,
-		struct ethtool_stats *stats, u64 *data)
+static void fe_get_ethtool_stats(struct net_device *dev, struct ethtool_stats *stats, u64 *data)
 {
 	struct fe_priv *priv = netdev_priv(dev);
 	struct fe_hw_stats *hwstats = priv->hw_stats;
@@ -187,14 +181,14 @@ static void fe_get_ethtool_stats(struct net_device *dev,
 }
 
 static struct ethtool_ops fe_ethtool_ops = {
-	.get_settings		= fe_get_settings,
-	.set_settings		= fe_set_settings,
-	.get_drvinfo		= fe_get_drvinfo,
-	.get_msglevel		= fe_get_msglevel,
-	.set_msglevel		= fe_set_msglevel,
-	.nway_reset		= fe_nway_reset,
-	.get_link		= fe_get_link,
-	.get_ringparam		= fe_get_ringparam,
+	.get_settings = fe_get_settings,
+	.set_settings = fe_set_settings,
+	.get_drvinfo = fe_get_drvinfo,
+	.get_msglevel = fe_get_msglevel,
+	.set_msglevel = fe_set_msglevel,
+	.nway_reset = fe_nway_reset,
+	.get_link = fe_get_link,
+	.get_ringparam = fe_get_ringparam,
 };
 
 void fe_set_ethtool_ops(struct net_device *netdev)

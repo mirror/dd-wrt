@@ -86,7 +86,6 @@
 
 #define PORT_IRQ_ST_CHG		0x7f
 
-
 #ifdef CONFIG_SOC_MT7621_OPENWRT
 #define ESW_PHY_POLLING		0x0000
 #else
@@ -123,11 +122,11 @@ enum {
 };
 
 struct mt7620_gsw {
-	struct device		*dev;
-	void __iomem		*base;
-	int			irq;
-	int			port4;
-	long unsigned int	autopoll;
+	struct device *dev;
+	void __iomem *base;
+	int irq;
+	int port4;
+	long unsigned int autopoll;
 };
 
 static inline void gsw_w32(struct mt7620_gsw *gsw, u32 val, unsigned reg)
@@ -156,18 +155,14 @@ static int mt7620_mii_busy_wait(struct mt7620_gsw *gsw)
 	return -1;
 }
 
-static u32 _mt7620_mii_write(struct mt7620_gsw *gsw, u32 phy_addr, u32 phy_register,
-				u32 write_data)
+static u32 _mt7620_mii_write(struct mt7620_gsw *gsw, u32 phy_addr, u32 phy_register, u32 write_data)
 {
 	if (mt7620_mii_busy_wait(gsw))
 		return -1;
 
 	write_data &= 0xffff;
 
-	gsw_w32(gsw, GSW_MDIO_ACCESS | GSW_MDIO_START | GSW_MDIO_WRITE |
-		(phy_register << GSW_MDIO_REG_SHIFT) |
-		(phy_addr << GSW_MDIO_ADDR_SHIFT) | write_data,
-		MT7620A_GSW_REG_PIAC);
+	gsw_w32(gsw, GSW_MDIO_ACCESS | GSW_MDIO_START | GSW_MDIO_WRITE | (phy_register << GSW_MDIO_REG_SHIFT) | (phy_addr << GSW_MDIO_ADDR_SHIFT) | write_data, MT7620A_GSW_REG_PIAC);
 
 	if (mt7620_mii_busy_wait(gsw))
 		return -1;
@@ -182,10 +177,7 @@ static u32 _mt7620_mii_read(struct mt7620_gsw *gsw, int phy_addr, int phy_reg)
 	if (mt7620_mii_busy_wait(gsw))
 		return 0xffff;
 
-	gsw_w32(gsw, GSW_MDIO_ACCESS | GSW_MDIO_START | GSW_MDIO_READ |
-		(phy_reg << GSW_MDIO_REG_SHIFT) |
-		(phy_addr << GSW_MDIO_ADDR_SHIFT),
-		MT7620A_GSW_REG_PIAC);
+	gsw_w32(gsw, GSW_MDIO_ACCESS | GSW_MDIO_START | GSW_MDIO_READ | (phy_reg << GSW_MDIO_REG_SHIFT) | (phy_addr << GSW_MDIO_ADDR_SHIFT), MT7620A_GSW_REG_PIAC);
 
 	if (mt7620_mii_busy_wait(gsw))
 		return 0xffff;
@@ -198,7 +190,7 @@ static u32 _mt7620_mii_read(struct mt7620_gsw *gsw, int phy_addr, int phy_reg)
 int mt7620_mdio_write(struct mii_bus *bus, int phy_addr, int phy_reg, u16 val)
 {
 	struct fe_priv *priv = bus->priv;
-	struct mt7620_gsw *gsw = (struct mt7620_gsw *) priv->soc->swpriv;
+	struct mt7620_gsw *gsw = (struct mt7620_gsw *)priv->soc->swpriv;
 
 	return _mt7620_mii_write(gsw, phy_addr, phy_reg, val);
 }
@@ -206,21 +198,19 @@ int mt7620_mdio_write(struct mii_bus *bus, int phy_addr, int phy_reg, u16 val)
 int mt7620_mdio_read(struct mii_bus *bus, int phy_addr, int phy_reg)
 {
 	struct fe_priv *priv = bus->priv;
-	struct mt7620_gsw *gsw = (struct mt7620_gsw *) priv->soc->swpriv;
+	struct mt7620_gsw *gsw = (struct mt7620_gsw *)priv->soc->swpriv;
 
 	return _mt7620_mii_read(gsw, phy_addr, phy_reg);
 }
 
-static void
-mt7530_mdio_w32(struct mt7620_gsw *gsw, u32 reg, u32 val)
+static void mt7530_mdio_w32(struct mt7620_gsw *gsw, u32 reg, u32 val)
 {
 	_mt7620_mii_write(gsw, 0x1f, 0x1f, (reg >> 6) & 0x3ff);
-	_mt7620_mii_write(gsw, 0x1f, (reg >> 2) & 0xf,  val & 0xffff);
+	_mt7620_mii_write(gsw, 0x1f, (reg >> 2) & 0xf, val & 0xffff);
 	_mt7620_mii_write(gsw, 0x1f, 0x10, val >> 16);
 }
 
-static u32
-mt7530_mdio_r32(struct mt7620_gsw *gsw, u32 reg)
+static u32 mt7530_mdio_r32(struct mt7620_gsw *gsw, u32 reg)
 {
 	u16 high, low;
 
@@ -250,7 +240,7 @@ static unsigned char *fe_speed_str(int speed)
 
 int mt7620a_has_carrier(struct fe_priv *priv)
 {
-        struct mt7620_gsw *gsw = (struct mt7620_gsw *) priv->soc->swpriv;
+	struct mt7620_gsw *gsw = (struct mt7620_gsw *)priv->soc->swpriv;
 	int i;
 
 	for (i = 0; i < GSW_PORT6; i++)
@@ -273,9 +263,7 @@ static void mt7620a_handle_carrier(struct fe_priv *priv)
 void mt7620_mdio_link_adjust(struct fe_priv *priv, int port)
 {
 	if (priv->link[port])
-		netdev_info(priv->netdev, "port %d link up (%sMbps/%s duplex)\n",
-			port, fe_speed_str(priv->phy->speed[port]),
-			(DUPLEX_FULL == priv->phy->duplex[port]) ? "Full" : "Half");
+		netdev_info(priv->netdev, "port %d link up (%sMbps/%s duplex)\n", port, fe_speed_str(priv->phy->speed[port]), (DUPLEX_FULL == priv->phy->duplex[port]) ? "Full" : "Half");
 	else
 		netdev_info(priv->netdev, "port %d link down\n", port);
 	mt7620a_handle_carrier(priv);
@@ -283,8 +271,8 @@ void mt7620_mdio_link_adjust(struct fe_priv *priv, int port)
 
 static irqreturn_t gsw_interrupt_mt7620(int irq, void *_priv)
 {
-	struct fe_priv *priv = (struct fe_priv *) _priv;
-	struct mt7620_gsw *gsw = (struct mt7620_gsw *) priv->soc->swpriv;
+	struct fe_priv *priv = (struct fe_priv *)_priv;
+	struct mt7620_gsw *gsw = (struct mt7620_gsw *)priv->soc->swpriv;
 	u32 status;
 	int i, max = (gsw->port4 == PORT4_EPHY) ? (4) : (3);
 
@@ -296,9 +284,7 @@ static irqreturn_t gsw_interrupt_mt7620(int irq, void *_priv)
 
 			if (link != priv->link[i]) {
 				if (link)
-					netdev_info(priv->netdev, "port %d link up (%sMbps/%s duplex)\n",
-							i, fe_speed_str((status >> 2) & 3),
-							(status & 0x2) ? "Full" : "Half");
+					netdev_info(priv->netdev, "port %d link up (%sMbps/%s duplex)\n", i, fe_speed_str((status >> 2) & 3), (status & 0x2) ? "Full" : "Half");
 				else
 					netdev_info(priv->netdev, "port %d link down\n", i);
 			}
@@ -314,8 +300,8 @@ static irqreturn_t gsw_interrupt_mt7620(int irq, void *_priv)
 
 static irqreturn_t gsw_interrupt_mt7621(int irq, void *_priv)
 {
-	struct fe_priv *priv = (struct fe_priv *) _priv;
-	struct mt7620_gsw *gsw = (struct mt7620_gsw *) priv->soc->swpriv;
+	struct fe_priv *priv = (struct fe_priv *)_priv;
+	struct mt7620_gsw *gsw = (struct mt7620_gsw *)priv->soc->swpriv;
 	u32 reg, i;
 
 	reg = mt7530_mdio_r32(gsw, 0x700c);
@@ -365,7 +351,7 @@ static void gsw_auto_poll(struct mt7620_gsw *gsw)
 
 void mt7620_port_init(struct fe_priv *priv, struct device_node *np)
 {
-	struct mt7620_gsw *gsw = (struct mt7620_gsw *) priv->soc->swpriv;
+	struct mt7620_gsw *gsw = (struct mt7620_gsw *)priv->soc->swpriv;
 	const __be32 *_id = of_get_property(np, "reg", NULL);
 	int phy_mode, size, id;
 	int shift = 12;
@@ -444,8 +430,7 @@ void mt7620_port_init(struct fe_priv *priv, struct device_node *np)
 			return;
 		}
 		val = PMCR_SPEED(val);
-		val |= PMCR_LINK | PMCR_BACKPRES | PMCR_BACKOFF | PMCR_RX_EN |
-			PMCR_TX_EN | PMCR_FORCE | PMCR_MAC_MODE | PMCR_IPG;
+		val |= PMCR_LINK | PMCR_BACKPRES | PMCR_BACKOFF | PMCR_RX_EN | PMCR_TX_EN | PMCR_FORCE | PMCR_MAC_MODE | PMCR_IPG;
 		if (tx_fc)
 			val |= PMCR_TX_FC;
 		if (rx_fc)
@@ -458,8 +443,7 @@ void mt7620_port_init(struct fe_priv *priv, struct device_node *np)
 	}
 
 	if (priv->phy->phy_node[id] && priv->mii_bus->phy_map[id]) {
-		u32 val = PMCR_BACKPRES | PMCR_BACKOFF | PMCR_RX_EN |
-			PMCR_TX_EN |  PMCR_MAC_MODE | PMCR_IPG;
+		u32 val = PMCR_BACKPRES | PMCR_BACKOFF | PMCR_RX_EN | PMCR_TX_EN | PMCR_MAC_MODE | PMCR_IPG;
 
 		gsw_w32(gsw, val, GSW_REG_PORT_PMCR(id));
 		fe_connect_phy_node(priv, priv->phy->phy_node[id]);
@@ -485,19 +469,19 @@ static void gsw_hw_init_mt7620(struct mt7620_gsw *gsw, struct device_node *np)
 		/* set MT7530 central align */
 		val = mt7530_mdio_r32(gsw, 0x7830);
 		val &= ~1;
-		val |= 1<<1;
+		val |= 1 << 1;
 		mt7530_mdio_w32(gsw, 0x7830, val);
 
 		val = mt7530_mdio_r32(gsw, 0x7a40);
-		val &= ~(1<<30);
+		val &= ~(1 << 30);
 		mt7530_mdio_w32(gsw, 0x7a40, val);
 
 		mt7530_mdio_w32(gsw, 0x7a78, 0x855);
 	} else {
 		/* EPHY1 fixup - only run if the ephy is enabled */
 
-		/*correct  PHY  setting L3.0 BGA*/
-		_mt7620_mii_write(gsw, 1, 31, 0x4000); //global, page 4
+		/*correct  PHY  setting L3.0 BGA */
+		_mt7620_mii_write(gsw, 1, 31, 0x4000);	//global, page 4
 
 		_mt7620_mii_write(gsw, 1, 17, 0x7444);
 		if (is_BGA)
@@ -512,10 +496,10 @@ static void gsw_hw_init_mt7620(struct mt7620_gsw *gsw, struct device_node *np)
 		_mt7620_mii_write(gsw, 1, 28, 0xc077);
 		_mt7620_mii_write(gsw, 1, 24, 0x0000);
 
-		_mt7620_mii_write(gsw, 1, 31, 0x3000); //global, page 3
+		_mt7620_mii_write(gsw, 1, 31, 0x3000);	//global, page 3
 		_mt7620_mii_write(gsw, 1, 17, 0x4838);
 
-		_mt7620_mii_write(gsw, 1, 31, 0x2000); //global, page 2
+		_mt7620_mii_write(gsw, 1, 31, 0x2000);	//global, page 2
 		if (is_BGA) {
 			_mt7620_mii_write(gsw, 1, 21, 0x0515);
 			_mt7620_mii_write(gsw, 1, 22, 0x0053);
@@ -531,11 +515,11 @@ static void gsw_hw_init_mt7620(struct mt7620_gsw *gsw, struct device_node *np)
 			_mt7620_mii_write(gsw, 1, 25, 0x00ae);
 			_mt7620_mii_write(gsw, 1, 26, 0x0fff);
 		}
-		_mt7620_mii_write(gsw, 1, 31, 0x1000); //global, page 1
+		_mt7620_mii_write(gsw, 1, 31, 0x1000);	//global, page 1
 		_mt7620_mii_write(gsw, 1, 17, 0xe7f8);
 	}
 
-	_mt7620_mii_write(gsw, 1, 31, 0x8000); //local, page 0
+	_mt7620_mii_write(gsw, 1, 31, 0x8000);	//local, page 0
 	_mt7620_mii_write(gsw, 0, 30, 0xa000);
 	_mt7620_mii_write(gsw, 1, 30, 0xa000);
 	_mt7620_mii_write(gsw, 2, 30, 0xa000);
@@ -546,7 +530,7 @@ static void gsw_hw_init_mt7620(struct mt7620_gsw *gsw, struct device_node *np)
 	_mt7620_mii_write(gsw, 2, 4, 0x05e1);
 	_mt7620_mii_write(gsw, 3, 4, 0x05e1);
 
-	_mt7620_mii_write(gsw, 1, 31, 0xa000); //local, page 2
+	_mt7620_mii_write(gsw, 1, 31, 0xa000);	//local, page 2
 	_mt7620_mii_write(gsw, 0, 16, 0x1111);
 	_mt7620_mii_write(gsw, 1, 16, 0x1010);
 	_mt7620_mii_write(gsw, 2, 16, 0x1515);
@@ -571,12 +555,12 @@ static void gsw_hw_init_mt7620(struct mt7620_gsw *gsw, struct device_node *np)
 
 static void gsw_hw_init_mt7621(struct mt7620_gsw *gsw, struct device_node *np)
 {
-	u32	i;
-	u32	val;
+	u32 i;
+	u32 val;
 
 	/* Hardware reset Switch */
 	fe_reset(RST_CTRL_MCM);
-        udelay(10000);
+	udelay(10000);
 
 	/* reduce RGMII2 PAD driving strength */
 	rt_sysc_m32(3 << 4, 0, SYSC_PAD_RGMII2_MDIO);
@@ -616,11 +600,11 @@ static void gsw_hw_init_mt7621(struct mt7620_gsw *gsw, struct device_node *np)
 
 	//val = 0x117ccf; //Enable Port 6, P5 as GMAC5, P5 disable
 	val = mt7530_mdio_r32(gsw, 0x7804);
-	val &= ~(1<<8); //Enable Port 6
-	val |= (1<<6); //Disable Port 5
-	val |= (1<<13); //Port 5 as GMAC, no Internal PHY
+	val &= ~(1 << 8);	//Enable Port 6
+	val |= (1 << 6);	//Disable Port 5
+	val |= (1 << 13);	//Port 5 as GMAC, no Internal PHY
 
-	val |= (1<<16);//change HW-TRAP
+	val |= (1 << 16);	//change HW-TRAP
 	printk("change HW-TRAP to 0x%x\n", val);
 	mt7530_mdio_w32(gsw, 0x7804, val);
 
@@ -628,7 +612,7 @@ static void gsw_hw_init_mt7621(struct mt7620_gsw *gsw, struct device_node *np)
 	val = (val >> 6) & 0x7;
 	if (val >= 6) {
 		/* 25Mhz Xtal - do nothing */
-	} else if(val >=3) {
+	} else if (val >= 3) {
 		/* 40Mhz */
 
 		/* disable MT7530 core clock */
@@ -669,26 +653,26 @@ static void gsw_hw_init_mt7621(struct mt7620_gsw *gsw, struct device_node *np)
 	_mt7620_mii_write(gsw, 0, 14, 0x1);
 
 	/* set MT7530 central align */
-        val = mt7530_mdio_r32(gsw, 0x7830);
-        val &= ~1;
-        val |= 1<<1;
-        mt7530_mdio_w32(gsw, 0x7830, val);
+	val = mt7530_mdio_r32(gsw, 0x7830);
+	val &= ~1;
+	val |= 1 << 1;
+	mt7530_mdio_w32(gsw, 0x7830, val);
 
-        val = mt7530_mdio_r32(gsw, 0x7a40);
-        val &= ~(1<<30);
-        mt7530_mdio_w32(gsw, 0x7a40, val);
+	val = mt7530_mdio_r32(gsw, 0x7a40);
+	val &= ~(1 << 30);
+	mt7530_mdio_w32(gsw, 0x7a40, val);
 
 	mt7530_mdio_w32(gsw, 0x7a78, 0x855);
-	mt7530_mdio_w32(gsw, 0x7b00, 0x102);  //delay setting for 10/1000M
-	mt7530_mdio_w32(gsw, 0x7b04, 0x14);  //delay setting for 10/1000M
+	mt7530_mdio_w32(gsw, 0x7b00, 0x102);	//delay setting for 10/1000M
+	mt7530_mdio_w32(gsw, 0x7b04, 0x14);	//delay setting for 10/1000M
 
-	/*Tx Driving*/
-	mt7530_mdio_w32(gsw, 0x7a54, 0x44);  //lower driving
-	mt7530_mdio_w32(gsw, 0x7a5c, 0x44);  //lower driving
-	mt7530_mdio_w32(gsw, 0x7a64, 0x44);  //lower driving
-	mt7530_mdio_w32(gsw, 0x7a6c, 0x44);  //lower driving
-	mt7530_mdio_w32(gsw, 0x7a74, 0x44);  //lower driving
-	mt7530_mdio_w32(gsw, 0x7a7c, 0x44);  //lower driving
+	/*Tx Driving */
+	mt7530_mdio_w32(gsw, 0x7a54, 0x44);	//lower driving
+	mt7530_mdio_w32(gsw, 0x7a5c, 0x44);	//lower driving
+	mt7530_mdio_w32(gsw, 0x7a64, 0x44);	//lower driving
+	mt7530_mdio_w32(gsw, 0x7a6c, 0x44);	//lower driving
+	mt7530_mdio_w32(gsw, 0x7a74, 0x44);	//lower driving
+	mt7530_mdio_w32(gsw, 0x7a7c, 0x44);	//lower driving
 
 	//LANWANPartition();
 
@@ -707,24 +691,23 @@ static void gsw_hw_init_mt7621(struct mt7620_gsw *gsw, struct device_node *np)
 
 void mt7620_set_mac(struct fe_priv *priv, unsigned char *mac)
 {
-	struct mt7620_gsw *gsw = (struct mt7620_gsw *) priv->soc->swpriv;
+	struct mt7620_gsw *gsw = (struct mt7620_gsw *)priv->soc->swpriv;
 	unsigned long flags;
 
 	spin_lock_irqsave(&priv->page_lock, flags);
 	gsw_w32(gsw, (mac[0] << 8) | mac[1], GSW_REG_SMACCR1);
-	gsw_w32(gsw, (mac[2] << 24) | (mac[3] << 16) | (mac[4] << 8) | mac[5],
-		GSW_REG_SMACCR0);
+	gsw_w32(gsw, (mac[2] << 24) | (mac[3] << 16) | (mac[4] << 8) | mac[5], GSW_REG_SMACCR0);
 	spin_unlock_irqrestore(&priv->page_lock, flags);
 }
 
 static struct of_device_id gsw_match[] = {
-	{ .compatible = "ralink,mt7620a-gsw" },
+	{.compatible = "ralink,mt7620a-gsw"},
 	{}
 };
 
 int mt7620_gsw_config(struct fe_priv *priv)
 {
-	struct mt7620_gsw *gsw = (struct mt7620_gsw *) priv->soc->swpriv;
+	struct mt7620_gsw *gsw = (struct mt7620_gsw *)priv->soc->swpriv;
 
 	/* is the mt7530 internal or external */
 	if (priv->mii_bus && priv->mii_bus->phy_map[0x1f]) {
