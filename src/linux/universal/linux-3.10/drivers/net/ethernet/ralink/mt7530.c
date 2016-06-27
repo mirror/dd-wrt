@@ -51,10 +51,10 @@
 
 /* vlan egress mode */
 enum {
-	ETAG_CTRL_UNTAG	= 0,
-	ETAG_CTRL_TAG	= 2,
-	ETAG_CTRL_SWAP	= 1,
-	ETAG_CTRL_STACK	= 3,
+	ETAG_CTRL_UNTAG = 0,
+	ETAG_CTRL_TAG = 2,
+	ETAG_CTRL_SWAP = 1,
+	ETAG_CTRL_STACK = 3,
 };
 
 #define REG_ESW_PORT_PCR(x)	(0x2004 | ((x) << 8))
@@ -69,49 +69,45 @@ enum {
 };
 
 struct mt7530_port_entry {
-	u16	pvid;
+	u16 pvid;
 };
 
 struct mt7530_vlan_entry {
-	u16	vid;
-	u8	member;
-	u8	etags;
+	u16 vid;
+	u8 member;
+	u8 etags;
 };
 
 struct mt7530_priv {
-	void __iomem		*base;
-	struct mii_bus		*bus;
-	struct switch_dev	swdev;
+	void __iomem *base;
+	struct mii_bus *bus;
+	struct switch_dev swdev;
 
-	bool			global_vlan_enable;
-	struct mt7530_vlan_entry	vlan_entries[MT7530_NUM_VLANS];
-	struct mt7530_port_entry	port_entries[MT7530_NUM_PORTS];
+	bool global_vlan_enable;
+	struct mt7530_vlan_entry vlan_entries[MT7530_NUM_VLANS];
+	struct mt7530_port_entry port_entries[MT7530_NUM_PORTS];
 };
 
 struct mt7530_mapping {
-	char	*name;
-	u16	pvids[MT7530_NUM_PORTS];
-	u8	members[MT7530_NUM_VLANS];
-	u8	etags[MT7530_NUM_VLANS];
-	u16	vids[MT7530_NUM_VLANS];
+	char *name;
+	u16 pvids[MT7530_NUM_PORTS];
+	u8 members[MT7530_NUM_VLANS];
+	u8 etags[MT7530_NUM_VLANS];
+	u16 vids[MT7530_NUM_VLANS];
 } mt7530_defaults[] = {
 	{
-		.name = "llllw",
-		.pvids = { 1, 1, 1, 1, 2, 1, 1 },
-		.members = { 0, 0x6f, 0x50 },
-		.etags = { 0, 0x40, 0x40 },
-		.vids = { 0, 1, 2 },
-	}, {
-		.name = "wllll",
-		.pvids = { 2, 1, 1, 1, 1, 1, 1 },
-		.members = { 0, 0x7e, 0x41 },
-		.etags = { 0, 0x40, 0x40 },
-		.vids = { 0, 1, 2 },
-	},
-};
+		.name = "llllw",.pvids = {
+		1, 1, 1, 1, 2, 1, 1},.members = {
+		0, 0x6f, 0x50},.etags = {
+		0, 0x40, 0x40},.vids = {
+	0, 1, 2},}, {
+		.name = "wllll",.pvids = {
+		2, 1, 1, 1, 1, 1, 1},.members = {
+		0, 0x7e, 0x41},.etags = {
+		0, 0x40, 0x40},.vids = {
+0, 1, 2},},};
 
-struct mt7530_mapping*
-mt7530_find_mapping(struct device_node *np)
+struct mt7530_mapping *mt7530_find_mapping(struct device_node *np)
 {
 	const char *map;
 	int i;
@@ -126,8 +122,7 @@ mt7530_find_mapping(struct device_node *np)
 	return NULL;
 }
 
-static void
-mt7530_apply_mapping(struct mt7530_priv *mt7530, struct mt7530_mapping *map)
+static void mt7530_apply_mapping(struct mt7530_priv *mt7530, struct mt7530_mapping *map)
 {
 	int i = 0;
 
@@ -141,8 +136,7 @@ mt7530_apply_mapping(struct mt7530_priv *mt7530, struct mt7530_mapping *map)
 	}
 }
 
-static int
-mt7530_reset_switch(struct switch_dev *dev)
+static int mt7530_reset_switch(struct switch_dev *dev)
 {
 	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
 	int i;
@@ -160,10 +154,7 @@ mt7530_reset_switch(struct switch_dev *dev)
 	return 0;
 }
 
-static int
-mt7530_get_vlan_enable(struct switch_dev *dev,
-			   const struct switch_attr *attr,
-			   struct switch_val *val)
+static int mt7530_get_vlan_enable(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
 	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
 
@@ -172,10 +163,7 @@ mt7530_get_vlan_enable(struct switch_dev *dev,
 	return 0;
 }
 
-static int
-mt7530_set_vlan_enable(struct switch_dev *dev,
-			   const struct switch_attr *attr,
-			   struct switch_val *val)
+static int mt7530_set_vlan_enable(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
 	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
 
@@ -184,8 +172,7 @@ mt7530_set_vlan_enable(struct switch_dev *dev,
 	return 0;
 }
 
-static u32
-mt7530_r32(struct mt7530_priv *priv, u32 reg)
+static u32 mt7530_r32(struct mt7530_priv *priv, u32 reg)
 {
 	u32 val;
 	if (priv->bus) {
@@ -204,12 +191,11 @@ mt7530_r32(struct mt7530_priv *priv, u32 reg)
 	return val;
 }
 
-static void
-mt7530_w32(struct mt7530_priv *priv, u32 reg, u32 val)
+static void mt7530_w32(struct mt7530_priv *priv, u32 reg, u32 val)
 {
 	if (priv->bus) {
 		mdiobus_write(priv->bus, 0x1f, 0x1f, (reg >> 6) & 0x3ff);
-		mdiobus_write(priv->bus, 0x1f, (reg >> 2) & 0xf,  val & 0xffff);
+		mdiobus_write(priv->bus, 0x1f, (reg >> 2) & 0xf, val & 0xffff);
 		mdiobus_write(priv->bus, 0x1f, 0x10, val >> 16);
 		return;
 	}
@@ -218,8 +204,7 @@ mt7530_w32(struct mt7530_priv *priv, u32 reg, u32 val)
 	iowrite32(val, priv->base + reg);
 }
 
-static void
-mt7530_vtcr(struct mt7530_priv *priv, u32 cmd, u32 val)
+static void mt7530_vtcr(struct mt7530_priv *priv, u32 cmd, u32 val)
 {
 	int i;
 
@@ -237,8 +222,7 @@ mt7530_vtcr(struct mt7530_priv *priv, u32 cmd, u32 val)
 		printk("mt7530: vtcr timeout\n");
 }
 
-static int
-mt7530_get_port_pvid(struct switch_dev *dev, int port, int *val)
+static int mt7530_get_port_pvid(struct switch_dev *dev, int port, int *val)
 {
 	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
 
@@ -251,8 +235,7 @@ mt7530_get_port_pvid(struct switch_dev *dev, int port, int *val)
 	return 0;
 }
 
-static int
-mt7530_set_port_pvid(struct switch_dev *dev, int port, int pvid)
+static int mt7530_set_port_pvid(struct switch_dev *dev, int port, int pvid)
 {
 	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
 
@@ -267,8 +250,7 @@ mt7530_set_port_pvid(struct switch_dev *dev, int port, int pvid)
 	return 0;
 }
 
-static int
-mt7530_get_vlan_ports(struct switch_dev *dev, struct switch_val *val)
+static int mt7530_get_vlan_ports(struct switch_dev *dev, struct switch_val *val)
 {
 	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
 	u32 member;
@@ -309,16 +291,14 @@ mt7530_get_vlan_ports(struct switch_dev *dev, struct switch_val *val)
 	return 0;
 }
 
-static int
-mt7530_set_vlan_ports(struct switch_dev *dev, struct switch_val *val)
+static int mt7530_set_vlan_ports(struct switch_dev *dev, struct switch_val *val)
 {
 	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
 	u8 member = 0;
 	u8 etags = 0;
 	int i;
 
-	if (val->port_vlan < 0 || val->port_vlan >= MT7530_NUM_VLANS ||
-			val->len > MT7530_NUM_PORTS)
+	if (val->port_vlan < 0 || val->port_vlan >= MT7530_NUM_VLANS || val->len > MT7530_NUM_PORTS)
 		return -EINVAL;
 
 	for (i = 0; i < val->len; i++) {
@@ -338,9 +318,7 @@ mt7530_set_vlan_ports(struct switch_dev *dev, struct switch_val *val)
 	return 0;
 }
 
-static int
-mt7530_set_vid(struct switch_dev *dev, const struct switch_attr *attr,
-		struct switch_val *val)
+static int mt7530_set_vid(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
 	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
 	int vlan;
@@ -359,9 +337,7 @@ mt7530_set_vid(struct switch_dev *dev, const struct switch_attr *attr,
 	return 0;
 }
 
-static int
-mt7530_get_vid(struct switch_dev *dev, const struct switch_attr *attr,
-		struct switch_val *val)
+static int mt7530_get_vid(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
 	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
 	u32 vid;
@@ -378,8 +354,7 @@ mt7530_get_vid(struct switch_dev *dev, const struct switch_attr *attr,
 	return 0;
 }
 
-static int
-mt7530_apply_config(struct switch_dev *dev)
+static int mt7530_apply_config(struct switch_dev *dev)
 {
 	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
 	int i, j;
@@ -421,9 +396,7 @@ mt7530_apply_config(struct switch_dev *dev)
 
 		/* vlan port membership */
 		if (member)
-			mt7530_w32(priv, REG_ESW_VLAN_VAWD1, REG_ESW_VLAN_VAWD1_IVL_MAC |
-				REG_ESW_VLAN_VAWD1_VTAG_EN | (member << 16) |
-				REG_ESW_VLAN_VAWD1_VALID);
+			mt7530_w32(priv, REG_ESW_VLAN_VAWD1, REG_ESW_VLAN_VAWD1_IVL_MAC | REG_ESW_VLAN_VAWD1_VTAG_EN | (member << 16) | REG_ESW_VLAN_VAWD1_VALID);
 		else
 			mt7530_w32(priv, REG_ESW_VLAN_VAWD1, 0);
 
@@ -453,9 +426,7 @@ mt7530_apply_config(struct switch_dev *dev)
 	return 0;
 }
 
-static int
-mt7530_get_port_link(struct switch_dev *dev,  int port,
-			struct switch_port_link *link)
+static int mt7530_get_port_link(struct switch_dev *dev, int port, struct switch_port_link *link)
 {
 	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
 	u32 speed, pmsr;
@@ -477,7 +448,7 @@ mt7530_get_port_link(struct switch_dev *dev,  int port,
 		link->speed = SWITCH_PORT_SPEED_100;
 		break;
 	case 2:
-	case 3: /* forced gige speed can be 2 or 3 */
+	case 3:		/* forced gige speed can be 2 or 3 */
 		link->speed = SWITCH_PORT_SPEED_1000;
 		break;
 	default:
@@ -490,14 +461,14 @@ mt7530_get_port_link(struct switch_dev *dev,  int port,
 
 static const struct switch_attr mt7530_global[] = {
 	{
-		.type = SWITCH_TYPE_INT,
-		.name = "enable_vlan",
-		.description = "VLAN mode (1:enabled)",
-		.max = 1,
-		.id = MT7530_ATTR_ENABLE_VLAN,
-		.get = mt7530_get_vlan_enable,
-		.set = mt7530_set_vlan_enable,
-	},
+	 .type = SWITCH_TYPE_INT,
+	 .name = "enable_vlan",
+	 .description = "VLAN mode (1:enabled)",
+	 .max = 1,
+	 .id = MT7530_ATTR_ENABLE_VLAN,
+	 .get = mt7530_get_vlan_enable,
+	 .set = mt7530_set_vlan_enable,
+	 },
 };
 
 static const struct switch_attr mt7530_port[] = {
@@ -505,28 +476,28 @@ static const struct switch_attr mt7530_port[] = {
 
 static const struct switch_attr mt7530_vlan[] = {
 	{
-		.type = SWITCH_TYPE_INT,
-		.name = "vid",
-		.description = "VLAN ID (0-4094)",
-		.set = mt7530_set_vid,
-		.get = mt7530_get_vid,
-		.max = 4094,
-	},
+	 .type = SWITCH_TYPE_INT,
+	 .name = "vid",
+	 .description = "VLAN ID (0-4094)",
+	 .set = mt7530_set_vid,
+	 .get = mt7530_get_vid,
+	 .max = 4094,
+	 },
 };
 
 static const struct switch_dev_ops mt7530_ops = {
 	.attr_global = {
-		.attr = mt7530_global,
-		.n_attr = ARRAY_SIZE(mt7530_global),
-	},
+			.attr = mt7530_global,
+			.n_attr = ARRAY_SIZE(mt7530_global),
+			},
 	.attr_port = {
-		.attr = mt7530_port,
-		.n_attr = ARRAY_SIZE(mt7530_port),
-	},
+		      .attr = mt7530_port,
+		      .n_attr = ARRAY_SIZE(mt7530_port),
+		      },
 	.attr_vlan = {
-		.attr = mt7530_vlan,
-		.n_attr = ARRAY_SIZE(mt7530_vlan),
-	},
+		      .attr = mt7530_vlan,
+		      .n_attr = ARRAY_SIZE(mt7530_vlan),
+		      },
 	.get_vlan_ports = mt7530_get_vlan_ports,
 	.set_vlan_ports = mt7530_set_vlan_ports,
 	.get_port_pvid = mt7530_get_port_pvid,
@@ -536,8 +507,7 @@ static const struct switch_dev_ops mt7530_ops = {
 	.reset_switch = mt7530_reset_switch,
 };
 
-int
-mt7530_probe(struct device *dev, void __iomem *base, struct mii_bus *bus, int vlan)
+int mt7530_probe(struct device *dev, void __iomem * base, struct mii_bus *bus, int vlan)
 {
 	struct switch_dev *swdev;
 	struct mt7530_priv *mt7530;
@@ -571,15 +541,14 @@ mt7530_probe(struct device *dev, void __iomem *base, struct mii_bus *bus, int vl
 		return ret;
 	}
 
-
 	map = mt7530_find_mapping(dev->of_node);
 	if (map)
 		mt7530_apply_mapping(mt7530, map);
 	mt7530_apply_config(swdev);
 
 	/* magic vodoo */
-	if (!IS_ENABLED(CONFIG_SOC_MT7621_OPENWRT) && bus && mt7530_r32(mt7530, REG_HWTRAP) !=  0x1117edf) {
-	        dev_info(dev, "fixing up MHWTRAP register - bootloader probably played with it\n");
+	if (!IS_ENABLED(CONFIG_SOC_MT7621_OPENWRT) && bus && mt7530_r32(mt7530, REG_HWTRAP) != 0x1117edf) {
+		dev_info(dev, "fixing up MHWTRAP register - bootloader probably played with it\n");
 		mt7530_w32(mt7530, REG_HWTRAP, 0x1117edf);
 	}
 	dev_info(dev, "loaded %s driver\n", swdev->name);

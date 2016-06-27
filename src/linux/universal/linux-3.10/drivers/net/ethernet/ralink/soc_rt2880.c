@@ -24,13 +24,11 @@
 
 #define RT2880_RESET_FE			BIT(18)
 
-static void rt2880_init_data(struct fe_soc_data *data,
-		struct net_device *netdev)
+static void rt2880_init_data(struct fe_soc_data *data, struct net_device *netdev)
 {
 	struct fe_priv *priv = netdev_priv(netdev);
 
-	priv->flags = FE_FLAG_PADDING_64B | FE_FLAG_PADDING_BUG |
-		FE_FLAG_JUMBO_FRAME;
+	priv->flags = FE_FLAG_PADDING_64B | FE_FLAG_PADDING_BUG | FE_FLAG_JUMBO_FRAME;
 	netdev->hw_features = NETIF_F_SG | NETIF_F_HW_VLAN_CTAG_TX;
 	/* maybe have hardware bug. */
 	//netdev->hw_features |= NETIF_F_IP_CSUM | NETIF_F_RXCSUM;
@@ -57,7 +55,7 @@ static int rt2880_fwd_config(struct fe_priv *priv)
 }
 
 struct fe_soc_data rt2880_data = {
-	.mac = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55 },
+	.mac = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55},
 	.init_data = rt2880_init_data,
 	.reset_fe = rt2880_fe_reset,
 	.fwd_config = rt2880_fwd_config,
@@ -72,7 +70,7 @@ struct fe_soc_data rt2880_data = {
 };
 
 const struct of_device_id of_fe_match[] = {
-	{ .compatible = "ralink,rt2880-eth", .data = &rt2880_data },
+	{.compatible = "ralink,rt2880-eth",.data = &rt2880_data},
 	{},
 };
 

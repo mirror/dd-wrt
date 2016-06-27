@@ -52,8 +52,7 @@ static void fe_phy_link_adjust(struct net_device *dev)
 			int status_change = 0;
 
 			if (phydev->link)
-				if (priv->phy->duplex[i] != phydev->duplex ||
-						priv->phy->speed[i] != phydev->speed)
+				if (priv->phy->duplex[i] != phydev->duplex || priv->phy->speed[i] != phydev->speed)
 					status_change = 1;
 
 			if (phydev->link != priv->link[i])
@@ -95,8 +94,7 @@ int fe_connect_phy_node(struct fe_priv *priv, struct device_node *phy_node)
 		return -EINVAL;
 	}
 
-	phydev = of_phy_connect(priv->netdev, phy_node, fe_phy_link_adjust,
-				0, phy_mode);
+	phydev = of_phy_connect(priv->netdev, phy_node, fe_phy_link_adjust, 0, phy_mode);
 	if (IS_ERR(phydev)) {
 		dev_err(priv->device, "could not connect to PHY\n");
 		priv->phy->phy_node[port] = NULL;
@@ -107,10 +105,7 @@ int fe_connect_phy_node(struct fe_priv *priv, struct device_node *phy_node)
 	phydev->advertising = phydev->supported;
 	phydev->no_auto_carrier_off = 1;
 
-	dev_info(priv->device,
-		 "connected port %d to PHY at %s [uid=%08x, driver=%s]\n",
-		 port, dev_name(&phydev->dev), phydev->phy_id,
-		 phydev->drv->name);
+	dev_info(priv->device, "connected port %d to PHY at %s [uid=%08x, driver=%s]\n", port, dev_name(&phydev->dev), phydev->phy_id, phydev->drv->name);
 
 	priv->phy->phy[port] = phydev;
 	priv->link[port] = 0;
