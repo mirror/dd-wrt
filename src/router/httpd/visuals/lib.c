@@ -139,6 +139,8 @@ void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, " OTAi 724S (%s)", date);
 		} else if (nvram_match("DD_BOARD", "Compex MMS344")) {
 			websWrite(wp, " OTAi DBDC344 (%s)", date);
+		} else if (nvram_match("DD_BOARD", "Yuncore XD3200")) {
+			websWrite(wp, " OTAi 9563-AC (%s)", date);
 		} else {
 			websWrite(wp, " OTAi %s (%s)", nvram_get("DD_BOARD"), date);
 		}
