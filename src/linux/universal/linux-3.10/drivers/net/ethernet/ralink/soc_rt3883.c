@@ -44,19 +44,16 @@ static int rt3883_fwd_config(struct fe_priv *priv)
 	return ret;
 }
 
-static void rt3883_init_data(struct fe_soc_data *data,
-		struct net_device *netdev)
+static void rt3883_init_data(struct fe_soc_data *data, struct net_device *netdev)
 {
 	struct fe_priv *priv = netdev_priv(netdev);
 
-	priv->flags = FE_FLAG_PADDING_64B | FE_FLAG_PADDING_BUG |
-		FE_FLAG_JUMBO_FRAME;
-	netdev->hw_features = NETIF_F_SG | NETIF_F_IP_CSUM |
-		NETIF_F_RXCSUM | NETIF_F_HW_VLAN_CTAG_TX;
+	priv->flags = FE_FLAG_PADDING_64B | FE_FLAG_PADDING_BUG | FE_FLAG_JUMBO_FRAME;
+	netdev->hw_features = NETIF_F_SG | NETIF_F_IP_CSUM | NETIF_F_RXCSUM | NETIF_F_HW_VLAN_CTAG_TX;
 }
 
 static struct fe_soc_data rt3883_data = {
-	.mac = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55 },
+	.mac = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55},
 	.init_data = rt3883_init_data,
 	.reset_fe = rt3883_fe_reset,
 	.fwd_config = rt3883_fwd_config,
@@ -71,9 +68,8 @@ static struct fe_soc_data rt3883_data = {
 };
 
 const struct of_device_id of_fe_match[] = {
-	{ .compatible = "ralink,rt3883-eth", .data = &rt3883_data },
+	{.compatible = "ralink,rt3883-eth",.data = &rt3883_data},
 	{},
 };
 
 MODULE_DEVICE_TABLE(of, of_fe_match);
-

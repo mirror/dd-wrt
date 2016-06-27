@@ -60,9 +60,7 @@ void rt2880_mdio_link_adjust(struct fe_priv *priv, int port)
 		return;
 	}
 
-	mdio_cfg = FE_MDIO_CFG_TX_CLK_SKEW_200 |
-		   FE_MDIO_CFG_RX_CLK_SKEW_200 |
-		   FE_MDIO_CFG_GP1_FRC_EN;
+	mdio_cfg = FE_MDIO_CFG_TX_CLK_SKEW_200 | FE_MDIO_CFG_RX_CLK_SKEW_200 | FE_MDIO_CFG_GP1_FRC_EN;
 
 	if (priv->phy->duplex[0] == DUPLEX_FULL)
 		mdio_cfg |= FE_MDIO_CFG_GP1_DUPLEX;
@@ -90,9 +88,7 @@ void rt2880_mdio_link_adjust(struct fe_priv *priv, int port)
 	fe_w32(mdio_cfg, FE_MDIO_CFG);
 
 	netif_carrier_on(priv->netdev);
-	netdev_info(priv->netdev, "link up (%sMbps/%s duplex)\n",
-		    rt2880_speed_str(priv),
-		    (DUPLEX_FULL == priv->phy->duplex[0]) ? "Full" : "Half");
+	netdev_info(priv->netdev, "link up (%sMbps/%s duplex)\n", rt2880_speed_str(priv), (DUPLEX_FULL == priv->phy->duplex[0]) ? "Full" : "Half");
 }
 
 static int rt2880_mdio_wait_ready(struct fe_priv *priv)
@@ -136,8 +132,7 @@ int rt2880_mdio_read(struct mii_bus *bus, int phy_addr, int phy_reg)
 	if (err)
 		return 0xffff;
 
-	pr_debug("%s: addr=%04x, reg=%04x, value=%04x\n", __func__,
-		phy_addr, phy_reg, fe_r32(FE_MDIO_ACCESS) & 0xffff);
+	pr_debug("%s: addr=%04x, reg=%04x, value=%04x\n", __func__, phy_addr, phy_reg, fe_r32(FE_MDIO_ACCESS) & 0xffff);
 
 	return fe_r32(FE_MDIO_ACCESS) & 0xffff;
 }
@@ -148,8 +143,7 @@ int rt2880_mdio_write(struct mii_bus *bus, int phy_addr, int phy_reg, u16 val)
 	int err;
 	u32 t;
 
-	pr_debug("%s: addr=%04x, reg=%04x, value=%04x\n", __func__,
-		phy_addr, phy_reg, fe_r32(FE_MDIO_ACCESS) & 0xffff);
+	pr_debug("%s: addr=%04x, reg=%04x, value=%04x\n", __func__, phy_addr, phy_reg, fe_r32(FE_MDIO_ACCESS) & 0xffff);
 
 	err = rt2880_mdio_wait_ready(priv);
 	if (err)
