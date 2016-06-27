@@ -4,11 +4,8 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>Live spectral scan</title>
     <link href="/spectral.css" rel="stylesheet" type="text/css">
-    <link href="/jquery-ui.css" rel="stylesheet" type="text/css">
     <script language="javascript" type="text/javascript" src="/jquery.js"></script>
-    <script language="javascript" type="text/javascript" src="/jquery-ui.js"></script>
     <script language="javascript" type="text/javascript" src="/jquery.flot.js"></script>
-    <script language="javascript" type="text/javascript" src="/jquery.flot.resize.js"></script>
     <script language="javascript" type="text/javascript" src="/jquery.flot.navigate.js"></script>
 
 <script type="text/javascript">
@@ -53,13 +50,6 @@ window.setTimeout(
     var placeholder = $("#placeholder");
 
     graph = $.plot(placeholder, data, options);
-    placeholder.resize();
-   $(".demo-container").resizable({
-			maxWidth:  2048,
-			maxHeight: 2048,
-			minWidth:  600,
-			minHeight: 300
-		}); 
 		
     function fetchData() {
       function onDataReceived(series) {
