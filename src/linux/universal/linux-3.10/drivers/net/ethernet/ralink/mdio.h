@@ -23,7 +23,13 @@ extern int fe_mdio_init(struct fe_priv *priv);
 extern void fe_mdio_cleanup(struct fe_priv *priv);
 extern int fe_connect_phy_node(struct fe_priv *priv, struct device_node *phy_node);
 #else
-static inline int fe_mdio_init(struct fe_priv *priv) { return 0; }
-static inline void fe_mdio_cleanup(struct fe_priv *priv) {}
+static inline int fe_mdio_init(struct fe_priv *priv)
+{
+	return 0;
+}
+
+static inline void fe_mdio_cleanup(struct fe_priv *priv)
+{
+}
 #endif
 #endif

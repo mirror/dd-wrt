@@ -25,8 +25,14 @@ void rtesw_exit(void);
 
 #else
 
-static inline int __init rtesw_init(void) { return 0; }
-static inline void rtesw_exit(void) { }
+static inline int __init rtesw_init(void)
+{
+	return 0;
+}
+
+static inline void rtesw_exit(void)
+{
+}
 
 #endif
 #endif

@@ -114,25 +114,17 @@ static void mt7621_fe_reset(void)
 static void mt7620_rxcsum_config(bool enable)
 {
 	if (enable)
-		fe_w32(fe_r32(MT7620A_GDMA1_FWD_CFG) | (GDMA_ICS_EN |
-					GDMA_TCS_EN | GDMA_UCS_EN),
-				MT7620A_GDMA1_FWD_CFG);
+		fe_w32(fe_r32(MT7620A_GDMA1_FWD_CFG) | (GDMA_ICS_EN | GDMA_TCS_EN | GDMA_UCS_EN), MT7620A_GDMA1_FWD_CFG);
 	else
-		fe_w32(fe_r32(MT7620A_GDMA1_FWD_CFG) & ~(GDMA_ICS_EN |
-					GDMA_TCS_EN | GDMA_UCS_EN),
-				MT7620A_GDMA1_FWD_CFG);
+		fe_w32(fe_r32(MT7620A_GDMA1_FWD_CFG) & ~(GDMA_ICS_EN | GDMA_TCS_EN | GDMA_UCS_EN), MT7620A_GDMA1_FWD_CFG);
 }
 
 static void mt7620_txcsum_config(bool enable)
 {
 	if (enable)
-		fe_w32(fe_r32(MT7620A_CDMA_CSG_CFG) | (CDMA_ICS_EN |
-					CDMA_UCS_EN | CDMA_TCS_EN),
-				MT7620A_CDMA_CSG_CFG);
+		fe_w32(fe_r32(MT7620A_CDMA_CSG_CFG) | (CDMA_ICS_EN | CDMA_UCS_EN | CDMA_TCS_EN), MT7620A_CDMA_CSG_CFG);
 	else
-		fe_w32(fe_r32(MT7620A_CDMA_CSG_CFG) & ~(CDMA_ICS_EN |
-					CDMA_UCS_EN | CDMA_TCS_EN),
-				MT7620A_CDMA_CSG_CFG);
+		fe_w32(fe_r32(MT7620A_CDMA_CSG_CFG) & ~(CDMA_ICS_EN | CDMA_UCS_EN | CDMA_TCS_EN), MT7620A_CDMA_CSG_CFG);
 }
 
 static void mt7621_rxvlan_config(bool enable)
@@ -163,8 +155,7 @@ static int mt7621_fwd_config(struct fe_priv *priv)
 
 	/* mt7621 don't have txcsum config */
 	mt7620_rxcsum_config((dev->features & NETIF_F_RXCSUM));
-	mt7621_rxvlan_config((dev->features & NETIF_F_HW_VLAN_CTAG_RX) &&
-			(priv->flags & FE_FLAG_RX_VLAN_CTAG));
+	mt7621_rxvlan_config((dev->features & NETIF_F_HW_VLAN_CTAG_RX) && (priv->flags & FE_FLAG_RX_VLAN_CTAG));
 
 	return 0;
 }
@@ -178,32 +169,24 @@ static void mt7621_tx_dma(struct fe_tx_dma *txd)
 	txd->txd4 = BIT(25);
 }
 
-static void mt7620_init_data(struct fe_soc_data *data,
-		struct net_device *netdev)
+static void mt7620_init_data(struct fe_soc_data *data, struct net_device *netdev)
 {
 	struct fe_priv *priv = netdev_priv(netdev);
 
-	priv->flags = FE_FLAG_PADDING_64B | FE_FLAG_RX_2B_OFFSET |
-		FE_FLAG_RX_SG_DMA;
-	netdev->hw_features = NETIF_F_IP_CSUM | NETIF_F_RXCSUM |
-		NETIF_F_HW_VLAN_CTAG_TX;
+	priv->flags = FE_FLAG_PADDING_64B | FE_FLAG_RX_2B_OFFSET | FE_FLAG_RX_SG_DMA;
+	netdev->hw_features = NETIF_F_IP_CSUM | NETIF_F_RXCSUM | NETIF_F_HW_VLAN_CTAG_TX;
 
 	if (mt7620_get_eco() >= 5)
-		netdev->hw_features |= NETIF_F_SG | NETIF_F_TSO | NETIF_F_TSO6 |
-			NETIF_F_IPV6_CSUM;
+		netdev->hw_features |= NETIF_F_SG | NETIF_F_TSO | NETIF_F_TSO6 | NETIF_F_IPV6_CSUM;
 }
 
-static void mt7621_init_data(struct fe_soc_data *data,
-		struct net_device *netdev)
+static void mt7621_init_data(struct fe_soc_data *data, struct net_device *netdev)
 {
 	struct fe_priv *priv = netdev_priv(netdev);
 
-	priv->flags = FE_FLAG_PADDING_64B | FE_FLAG_RX_2B_OFFSET |
-		FE_FLAG_RX_SG_DMA | FE_FLAG_NAPI_WEIGHT;
+	priv->flags = FE_FLAG_PADDING_64B | FE_FLAG_RX_2B_OFFSET | FE_FLAG_RX_SG_DMA | FE_FLAG_NAPI_WEIGHT;
 
-	netdev->hw_features = NETIF_F_IP_CSUM | NETIF_F_RXCSUM |
-		NETIF_F_HW_VLAN_CTAG_TX | NETIF_F_SG | NETIF_F_TSO |
-		NETIF_F_TSO6 | NETIF_F_IPV6_CSUM;
+	netdev->hw_features = NETIF_F_IP_CSUM | NETIF_F_RXCSUM | NETIF_F_HW_VLAN_CTAG_TX | NETIF_F_SG | NETIF_F_TSO | NETIF_F_TSO6 | NETIF_F_IPV6_CSUM;
 }
 
 static void mt7621_set_mac(struct fe_priv *priv, unsigned char *mac)
@@ -212,13 +195,12 @@ static void mt7621_set_mac(struct fe_priv *priv, unsigned char *mac)
 
 	spin_lock_irqsave(&priv->page_lock, flags);
 	fe_w32((mac[0] << 8) | mac[1], GSW_REG_GDMA1_MAC_ADRH);
-	fe_w32((mac[2] << 24) | (mac[3] << 16) | (mac[4] << 8) | mac[5],
-		GSW_REG_GDMA1_MAC_ADRL);
+	fe_w32((mac[2] << 24) | (mac[3] << 16) | (mac[4] << 8) | mac[5], GSW_REG_GDMA1_MAC_ADRL);
 	spin_unlock_irqrestore(&priv->page_lock, flags);
 }
 
 static struct fe_soc_data mt7620_data = {
-	.mac = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55 },
+	.mac = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55},
 	.init_data = mt7620_init_data,
 	.reset_fe = mt7620_fe_reset,
 	.set_mac = mt7620_set_mac,
@@ -239,7 +221,7 @@ static struct fe_soc_data mt7620_data = {
 };
 
 static struct fe_soc_data mt7621_data = {
-	.mac = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55 },
+	.mac = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55},
 	.init_data = mt7621_init_data,
 	.reset_fe = mt7621_fe_reset,
 	.set_mac = mt7621_set_mac,
@@ -259,8 +241,8 @@ static struct fe_soc_data mt7621_data = {
 };
 
 const struct of_device_id of_fe_match[] = {
-	{ .compatible = "ralink,mt7620a-eth", .data = &mt7620_data },
-	{ .compatible = "ralink,mt7621-eth", .data = &mt7621_data },
+	{.compatible = "ralink,mt7620a-eth",.data = &mt7620_data},
+	{.compatible = "ralink,mt7621-eth",.data = &mt7621_data},
 	{},
 };
 

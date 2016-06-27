@@ -22,4 +22,4 @@
 
 void fe_set_ethtool_ops(struct net_device *netdev);
 
-#endif /* FE_ETHTOOL_H */
+#endif				/* FE_ETHTOOL_H */
