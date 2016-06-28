@@ -576,10 +576,13 @@ int nfnl_listen(struct nfnl_handle *nfnlh,
 	int quit=0;
 
 	struct msghdr msg = {
-		(void *)&nladdr, sizeof(nladdr),
-		&iov, 1,
-		NULL, 0,
-		0
+		.msg_name = (void *) nladdr,
+		.msg_namelen = sizeof(nladdr),
+		.msg_iov = &iov,
+		.msg_iovlen = 1,
+		.msg_control = NULL,
+		.msg_controllen = 0,
+		.msg_flags = 0,
 	};
 
 	memset(&nladdr, 0, sizeof(nladdr));
@@ -685,12 +688,17 @@ int nfnl_talk(struct nfnl_handle *nfnlh, struct nlmsghdr *n, pid_t peer,
 	struct iovec iov = {
 		(void *)n, n->nlmsg_len
 	};
+
 	struct msghdr msg = {
-		(void *)&nladdr, sizeof(nladdr),
-		&iov, 1,
-		NULL, 0,
-		0
+		.msg_name = (void *) nladdr,
+		.msg_namelen = sizeof(nladdr),
+		.msg_iov = &iov,
+		.msg_iovlen = 1,
+		.msg_control = NULL,
+		.msg_controllen = 0,
+		.msg_flags = 0,
 	};
+
 
 	memset(&nladdr, 0, sizeof(nladdr));
 	nladdr.nl_family = AF_NETLINK;
