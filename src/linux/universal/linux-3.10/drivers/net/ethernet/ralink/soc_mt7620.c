@@ -27,8 +27,7 @@
 
 #define MT7620A_CDMA_CSG_CFG	0x400
 #define MT7620_DMA_VID		(MT7620A_CDMA_CSG_CFG | 0x30)
-#define MT7621_CDMP_IG_CTRL	(MT7620A_CDMA_CSG_CFG + 0x00)
-#define MT7621_CDMP_EG_CTRL	(MT7620A_CDMA_CSG_CFG + 0x04)
+#define MT7621_DMA_VID		0xa8
 #define MT7620A_RESET_FE	BIT(21)
 #define MT7621_RESET_FE		BIT(6)
 #define MT7620A_RESET_ESW	BIT(23)
@@ -96,7 +95,7 @@ static const u32 mt7621_reg_table[FE_REG_COUNT] = {
 	[FE_REG_RX_DRX_IDX0] = RT5350_RX_DRX_IDX0,
 	[FE_REG_FE_INT_ENABLE] = RT5350_FE_INT_ENABLE,
 	[FE_REG_FE_INT_STATUS] = RT5350_FE_INT_STATUS,
-	[FE_REG_FE_DMA_VID_BASE] = 0,
+	[FE_REG_FE_DMA_VID_BASE] = MT7621_DMA_VID,
 	[FE_REG_FE_COUNTER_BASE] = MT7621_GDM1_TX_GBCNT,
 	[FE_REG_FE_RST_GL] = MT7621_FE_RST_GL,
 };
@@ -135,14 +134,6 @@ static void mt7620_txcsum_config(bool enable)
 				MT7620A_CDMA_CSG_CFG);
 }
 
-static void mt7621_rxvlan_config(bool enable)
-{
-	if (enable)
-		fe_w32(1, MT7621_CDMP_EG_CTRL);
-	else
-		fe_w32(0, MT7621_CDMP_EG_CTRL);
-}
-
 static int mt7620_fwd_config(struct fe_priv *priv)
 {
 	struct net_device *dev = priv_netdev(priv);
@@ -161,16 +152,15 @@ static int mt7621_fwd_config(struct fe_priv *priv)
 
 	fe_w32(fe_r32(MT7620A_GDMA1_FWD_CFG) & ~0xffff, MT7620A_GDMA1_FWD_CFG);
 
-	/* mt7621 don't have txcsum config */
+	mt7620_txcsum_config((dev->features & NETIF_F_IP_CSUM));
 	mt7620_rxcsum_config((dev->features & NETIF_F_RXCSUM));
-	mt7621_rxvlan_config((dev->features & NETIF_F_HW_VLAN_CTAG_RX) &&
-			(priv->flags & FE_FLAG_RX_VLAN_CTAG));
 
 	return 0;
 }
 
 static void mt7620_tx_dma(struct fe_tx_dma *txd)
 {
+	txd->txd4 = 0;
 }
 
 static void mt7621_tx_dma(struct fe_tx_dma *txd)
@@ -188,7 +178,7 @@ static void mt7620_init_data(struct fe_soc_data *data,
 	netdev->hw_features = NETIF_F_IP_CSUM | NETIF_F_RXCSUM |
 		NETIF_F_HW_VLAN_CTAG_TX;
 
-	if (mt7620_get_eco() >= 5)
+	if (mt7620_get_eco() >= 5 || IS_ENABLED(CONFIG_SOC_MT7621_OPENWRT))
 		netdev->hw_features |= NETIF_F_SG | NETIF_F_TSO | NETIF_F_TSO6 |
 			NETIF_F_IPV6_CSUM;
 }
@@ -199,11 +189,8 @@ static void mt7621_init_data(struct fe_soc_data *data,
 	struct fe_priv *priv = netdev_priv(netdev);
 
 	priv->flags = FE_FLAG_PADDING_64B | FE_FLAG_RX_2B_OFFSET |
-		FE_FLAG_RX_SG_DMA | FE_FLAG_NAPI_WEIGHT;
-
-	netdev->hw_features = NETIF_F_IP_CSUM | NETIF_F_RXCSUM |
-		NETIF_F_HW_VLAN_CTAG_TX | NETIF_F_SG | NETIF_F_TSO |
-		NETIF_F_TSO6 | NETIF_F_IPV6_CSUM;
+		FE_FLAG_RX_SG_DMA;
+	netdev->hw_features = NETIF_F_HW_VLAN_CTAG_TX;
 }
 
 static void mt7621_set_mac(struct fe_priv *priv, unsigned char *mac)
@@ -232,6 +219,7 @@ static struct fe_soc_data mt7620_data = {
 	.rx_int = RT5350_RX_DONE_INT,
 	.tx_int = RT5350_TX_DONE_INT,
 	.checksum_bit = MT7620_L4_VALID,
+	.tx_udf_bit = MT7620_TX_DMA_UDF,
 	.has_carrier = mt7620a_has_carrier,
 	.mdio_read = mt7620_mdio_read,
 	.mdio_write = mt7620_mdio_write,
@@ -252,6 +240,7 @@ static struct fe_soc_data mt7621_data = {
 	.rx_int = RT5350_RX_DONE_INT,
 	.tx_int = RT5350_TX_DONE_INT,
 	.checksum_bit = MT7621_L4_VALID,
+	.tx_udf_bit = MT7621_TX_DMA_UDF,
 	.has_carrier = mt7620a_has_carrier,
 	.mdio_read = mt7620_mdio_read,
 	.mdio_write = mt7620_mdio_write,
