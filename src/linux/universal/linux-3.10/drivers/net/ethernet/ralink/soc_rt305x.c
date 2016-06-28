@@ -43,12 +43,14 @@ static const u32 rt5350_reg_table[FE_REG_COUNT] = {
 	[FE_REG_FE_DMA_VID_BASE] = 0,
 };
 
-static void rt305x_init_data(struct fe_soc_data *data, struct net_device *netdev)
+static void rt305x_init_data(struct fe_soc_data *data,
+		struct net_device *netdev)
 {
 	struct fe_priv *priv = netdev_priv(netdev);
 
 	priv->flags = FE_FLAG_PADDING_64B | FE_FLAG_PADDING_BUG;
-	netdev->hw_features = NETIF_F_SG | NETIF_F_IP_CSUM | NETIF_F_RXCSUM | NETIF_F_HW_VLAN_CTAG_TX;
+	netdev->hw_features = NETIF_F_SG | NETIF_F_IP_CSUM |
+		NETIF_F_RXCSUM | NETIF_F_HW_VLAN_CTAG_TX;
 }
 
 static int rt3050_fwd_config(struct fe_priv *priv)
@@ -74,7 +76,8 @@ static void rt305x_fe_reset(void)
 	fe_reset(RT305X_RESET_FE);
 }
 
-static void rt5350_init_data(struct fe_soc_data *data, struct net_device *netdev)
+static void rt5350_init_data(struct fe_soc_data *data,
+		struct net_device *netdev)
 {
 	netdev->hw_features = NETIF_F_SG | NETIF_F_RXCSUM;
 }
@@ -85,16 +88,21 @@ static void rt5350_set_mac(struct fe_priv *priv, unsigned char *mac)
 
 	spin_lock_irqsave(&priv->page_lock, flags);
 	fe_w32((mac[0] << 8) | mac[1], RT5350_SDM_MAC_ADRH);
-	fe_w32((mac[2] << 24) | (mac[3] << 16) | (mac[4] << 8) | mac[5], RT5350_SDM_MAC_ADRL);
+	fe_w32((mac[2] << 24) | (mac[3] << 16) | (mac[4] << 8) | mac[5],
+		RT5350_SDM_MAC_ADRL);
 	spin_unlock_irqrestore(&priv->page_lock, flags);
 }
 
 static void rt5350_rxcsum_config(bool enable)
 {
 	if (enable)
-		fe_w32(fe_r32(RT5350_SDM_CFG) | (RT5350_SDM_ICS_EN | RT5350_SDM_TCS_EN | RT5350_SDM_UCS_EN), RT5350_SDM_CFG);
+		fe_w32(fe_r32(RT5350_SDM_CFG) | (RT5350_SDM_ICS_EN |
+				RT5350_SDM_TCS_EN | RT5350_SDM_UCS_EN),
+				RT5350_SDM_CFG);
 	else
-		fe_w32(fe_r32(RT5350_SDM_CFG) & ~(RT5350_SDM_ICS_EN | RT5350_SDM_TCS_EN | RT5350_SDM_UCS_EN), RT5350_SDM_CFG);
+		fe_w32(fe_r32(RT5350_SDM_CFG) & ~(RT5350_SDM_ICS_EN |
+				RT5350_SDM_TCS_EN | RT5350_SDM_UCS_EN),
+				RT5350_SDM_CFG);
 }
 
 static int rt5350_fwd_config(struct fe_priv *priv)
@@ -117,7 +125,7 @@ static void rt5350_fe_reset(void)
 }
 
 static struct fe_soc_data rt3050_data = {
-	.mac = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55},
+	.mac = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55 },
 	.init_data = rt305x_init_data,
 	.reset_fe = rt305x_fe_reset,
 	.fwd_config = rt3050_fwd_config,
@@ -129,7 +137,7 @@ static struct fe_soc_data rt3050_data = {
 };
 
 static struct fe_soc_data rt5350_data = {
-	.mac = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55},
+	.mac = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55 },
 	.init_data = rt5350_init_data,
 	.reg_table = rt5350_reg_table,
 	.reset_fe = rt5350_fe_reset,
@@ -144,8 +152,8 @@ static struct fe_soc_data rt5350_data = {
 };
 
 const struct of_device_id of_fe_match[] = {
-	{.compatible = "ralink,rt3050-eth",.data = &rt3050_data},
-	{.compatible = "ralink,rt5350-eth",.data = &rt5350_data},
+	{ .compatible = "ralink,rt3050-eth", .data = &rt3050_data },
+	{ .compatible = "ralink,rt5350-eth", .data = &rt5350_data },
 	{},
 };
 
