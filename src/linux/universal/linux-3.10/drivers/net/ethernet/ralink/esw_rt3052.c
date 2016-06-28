@@ -212,36 +212,37 @@ enum {
 };
 
 struct esw_port {
-	bool disable;
-	bool doubletag;
-	bool untag;
-	u8 led;
-	u16 pvid;
+	bool	disable;
+	bool	doubletag;
+	bool	untag;
+	u8	led;
+	u16	pvid;
 };
 
 struct esw_vlan {
-	u8 ports;
-	u16 vid;
+	u8	ports;
+	u16	vid;
 };
 
 struct rt305x_esw {
-	struct device *dev;
-	void __iomem *base;
-	int irq;
+	struct device		*dev;
+	void __iomem		*base;
+	int			irq;
 	const struct rt305x_esw_platform_data *pdata;
 	/* Protects against concurrent register rmw operations. */
-	spinlock_t reg_rw_lock;
+	spinlock_t		reg_rw_lock;
 
-	unsigned char port_map;
-	unsigned int reg_initval_fct2;
-	unsigned int reg_initval_fpa2;
-	unsigned int reg_led_polarity;
+	unsigned char		port_map;
+	unsigned int		reg_initval_fct2;
+	unsigned int		reg_initval_fpa2;
+	unsigned int		reg_led_polarity;
 
-	struct switch_dev swdev;
-	bool global_vlan_enable;
-	bool alt_vlan_disable;
-	int bc_storm_protect;
-	int led_frequency;
+
+	struct switch_dev	swdev;
+	bool			global_vlan_enable;
+	bool			alt_vlan_disable;
+	int			bc_storm_protect;
+	int			led_frequency;
 	struct esw_vlan vlans[RT305X_ESW_NUM_VLANS];
 	struct esw_port ports[RT305X_ESW_NUM_PORTS];
 
@@ -257,7 +258,8 @@ static inline u32 esw_r32(struct rt305x_esw *esw, unsigned reg)
 	return __raw_readl(esw->base + reg);
 }
 
-static inline void esw_rmw_raw(struct rt305x_esw *esw, unsigned reg, unsigned long mask, unsigned long val)
+static inline void esw_rmw_raw(struct rt305x_esw *esw, unsigned reg, unsigned long mask,
+		   unsigned long val)
 {
 	unsigned long t;
 
@@ -265,7 +267,8 @@ static inline void esw_rmw_raw(struct rt305x_esw *esw, unsigned reg, unsigned lo
 	__raw_writel(t | val, esw->base + reg);
 }
 
-static void esw_rmw(struct rt305x_esw *esw, unsigned reg, unsigned long mask, unsigned long val)
+static void esw_rmw(struct rt305x_esw *esw, unsigned reg, unsigned long mask,
+	       unsigned long val)
 {
 	unsigned long flags;
 
@@ -274,13 +277,15 @@ static void esw_rmw(struct rt305x_esw *esw, unsigned reg, unsigned long mask, un
 	spin_unlock_irqrestore(&esw->reg_rw_lock, flags);
 }
 
-static u32 rt305x_mii_write(struct rt305x_esw *esw, u32 phy_addr, u32 phy_register, u32 write_data)
+static u32 rt305x_mii_write(struct rt305x_esw *esw, u32 phy_addr, u32 phy_register,
+		 u32 write_data)
 {
 	unsigned long t_start = jiffies;
 	int ret = 0;
 
 	while (1) {
-		if (!(esw_r32(esw, RT305X_ESW_REG_PCR1) & RT305X_ESW_PCR1_WT_DONE))
+		if (!(esw_r32(esw, RT305X_ESW_REG_PCR1) &
+		      RT305X_ESW_PCR1_WT_DONE))
 			break;
 		if (time_after(jiffies, t_start + RT305X_ESW_PHY_TIMEOUT)) {
 			ret = 1;
@@ -289,11 +294,16 @@ static u32 rt305x_mii_write(struct rt305x_esw *esw, u32 phy_addr, u32 phy_regist
 	}
 
 	write_data &= 0xffff;
-	esw_w32(esw, (write_data << RT305X_ESW_PCR0_WT_NWAY_DATA_S) | (phy_register << RT305X_ESW_PCR0_CPU_PHY_REG_S) | (phy_addr) | RT305X_ESW_PCR0_WT_PHY_CMD, RT305X_ESW_REG_PCR0);
+	esw_w32(esw,
+		      (write_data << RT305X_ESW_PCR0_WT_NWAY_DATA_S) |
+		      (phy_register << RT305X_ESW_PCR0_CPU_PHY_REG_S) |
+		      (phy_addr) | RT305X_ESW_PCR0_WT_PHY_CMD,
+		      RT305X_ESW_REG_PCR0);
 
 	t_start = jiffies;
 	while (1) {
-		if (esw_r32(esw, RT305X_ESW_REG_PCR1) & RT305X_ESW_PCR1_WT_DONE)
+		if (esw_r32(esw, RT305X_ESW_REG_PCR1) &
+		    RT305X_ESW_PCR1_WT_DONE)
 			break;
 
 		if (time_after(jiffies, t_start + RT305X_ESW_PHY_TIMEOUT)) {
@@ -324,7 +334,10 @@ static void esw_set_vlan_id(struct rt305x_esw *esw, unsigned vlan, unsigned vid)
 	unsigned s;
 
 	s = RT305X_ESW_VLANI_VID_S * (vlan % 2);
-	esw_rmw(esw, RT305X_ESW_REG_VLANI(vlan / 2), RT305X_ESW_VLANI_VID_M << s, (vid & RT305X_ESW_VLANI_VID_M) << s);
+	esw_rmw(esw,
+		       RT305X_ESW_REG_VLANI(vlan / 2),
+		       RT305X_ESW_VLANI_VID_M << s,
+		       (vid & RT305X_ESW_VLANI_VID_M) << s);
 }
 
 static unsigned esw_get_pvid(struct rt305x_esw *esw, unsigned port)
@@ -341,7 +354,10 @@ static void esw_set_pvid(struct rt305x_esw *esw, unsigned port, unsigned pvid)
 	unsigned s;
 
 	s = RT305X_ESW_PVIDC_PVID_S * (port % 2);
-	esw_rmw(esw, RT305X_ESW_REG_PVIDC(port / 2), RT305X_ESW_PVIDC_PVID_M << s, (pvid & RT305X_ESW_PVIDC_PVID_M) << s);
+	esw_rmw(esw,
+		       RT305X_ESW_REG_PVIDC(port / 2),
+		       RT305X_ESW_PVIDC_PVID_M << s,
+		       (pvid & RT305X_ESW_PVIDC_PVID_M) << s);
 }
 
 static unsigned esw_get_vmsc(struct rt305x_esw *esw, unsigned vlan)
@@ -360,14 +376,18 @@ static void esw_set_vmsc(struct rt305x_esw *esw, unsigned vlan, unsigned msc)
 	unsigned s;
 
 	s = RT305X_ESW_VMSC_MSC_S * (vlan % 4);
-	esw_rmw(esw, RT305X_ESW_REG_VMSC(vlan / 4), RT305X_ESW_VMSC_MSC_M << s, (msc & RT305X_ESW_VMSC_MSC_M) << s);
+	esw_rmw(esw,
+		       RT305X_ESW_REG_VMSC(vlan / 4),
+		       RT305X_ESW_VMSC_MSC_M << s,
+		       (msc & RT305X_ESW_VMSC_MSC_M) << s);
 }
 
 static unsigned esw_get_port_disable(struct rt305x_esw *esw)
 {
 	unsigned reg;
 	reg = esw_r32(esw, RT305X_ESW_REG_POC0);
-	return (reg >> RT305X_ESW_POC0_DIS_PORT_S) & RT305X_ESW_POC0_DIS_PORT_M;
+	return (reg >> RT305X_ESW_POC0_DIS_PORT_S) &
+	       RT305X_ESW_POC0_DIS_PORT_M;
 }
 
 static void esw_set_port_disable(struct rt305x_esw *esw, unsigned disable_mask)
@@ -382,28 +402,43 @@ static void esw_set_port_disable(struct rt305x_esw *esw, unsigned disable_mask)
 	enable_mask = old_mask & disable_mask;
 
 	/* enable before writing to MII */
-	esw_rmw(esw, RT305X_ESW_REG_POC0, (RT305X_ESW_POC0_DIS_PORT_M << RT305X_ESW_POC0_DIS_PORT_S), enable_mask << RT305X_ESW_POC0_DIS_PORT_S);
+	esw_rmw(esw, RT305X_ESW_REG_POC0,
+		       (RT305X_ESW_POC0_DIS_PORT_M <<
+			RT305X_ESW_POC0_DIS_PORT_S),
+		       enable_mask << RT305X_ESW_POC0_DIS_PORT_S);
 
 	for (i = 0; i < RT305X_ESW_NUM_LEDS; i++) {
 		if (!(changed & (1 << i)))
 			continue;
 		if (disable_mask & (1 << i)) {
 			/* disable */
-			rt305x_mii_write(esw, i, MII_BMCR, BMCR_PDOWN);
+			rt305x_mii_write(esw, i, MII_BMCR,
+					 BMCR_PDOWN);
 		} else {
 			/* enable */
-			rt305x_mii_write(esw, i, MII_BMCR, BMCR_FULLDPLX | BMCR_ANENABLE | BMCR_ANRESTART | BMCR_SPEED100);
+			rt305x_mii_write(esw, i, MII_BMCR,
+					 BMCR_FULLDPLX |
+					 BMCR_ANENABLE |
+					 BMCR_ANRESTART |
+					 BMCR_SPEED100);
 		}
 	}
 
 	/* disable after writing to MII */
-	esw_rmw(esw, RT305X_ESW_REG_POC0, (RT305X_ESW_POC0_DIS_PORT_M << RT305X_ESW_POC0_DIS_PORT_S), disable_mask << RT305X_ESW_POC0_DIS_PORT_S);
+	esw_rmw(esw, RT305X_ESW_REG_POC0,
+		       (RT305X_ESW_POC0_DIS_PORT_M <<
+			RT305X_ESW_POC0_DIS_PORT_S),
+		       disable_mask << RT305X_ESW_POC0_DIS_PORT_S);
 }
 
 static void esw_set_gsc(struct rt305x_esw *esw)
 {
-	esw_rmw(esw, RT305X_ESW_REG_SGC, RT305X_ESW_GSC_BC_STROM_MASK << RT305X_ESW_GSC_BC_STROM_SHIFT, esw->bc_storm_protect << RT305X_ESW_GSC_BC_STROM_SHIFT);
-	esw_rmw(esw, RT305X_ESW_REG_SGC, RT305X_ESW_GSC_LED_FREQ_MASK << RT305X_ESW_GSC_LED_FREQ_SHIFT, esw->led_frequency << RT305X_ESW_GSC_LED_FREQ_SHIFT);
+	esw_rmw(esw, RT305X_ESW_REG_SGC,
+		RT305X_ESW_GSC_BC_STROM_MASK << RT305X_ESW_GSC_BC_STROM_SHIFT,
+		esw->bc_storm_protect << RT305X_ESW_GSC_BC_STROM_SHIFT);
+	esw_rmw(esw, RT305X_ESW_REG_SGC,
+		RT305X_ESW_GSC_LED_FREQ_MASK << RT305X_ESW_GSC_LED_FREQ_SHIFT,
+		esw->led_frequency << RT305X_ESW_GSC_LED_FREQ_SHIFT);
 }
 
 static int esw_apply_config(struct switch_dev *dev);
@@ -418,13 +453,21 @@ static void esw_hw_init(struct rt305x_esw *esw)
 	esw_w32(esw, 0xC8A07850, RT305X_ESW_REG_FCT0);
 	esw_w32(esw, 0x00000000, RT305X_ESW_REG_SGC2);
 	/* Port priority 1 for all ports, vlan enabled. */
-	esw_w32(esw, 0x00005555 | (RT305X_ESW_PORTS_ALL << RT305X_ESW_PFC1_EN_VLAN_S), RT305X_ESW_REG_PFC1);
+	esw_w32(esw, 0x00005555 |
+		      (RT305X_ESW_PORTS_ALL << RT305X_ESW_PFC1_EN_VLAN_S),
+		      RT305X_ESW_REG_PFC1);
 
 	/* Enable Back Pressure, and Flow Control */
-	esw_w32(esw, ((RT305X_ESW_PORTS_ALL << RT305X_ESW_POC0_EN_BP_S) | (RT305X_ESW_PORTS_ALL << RT305X_ESW_POC0_EN_FC_S)), RT305X_ESW_REG_POC0);
+	esw_w32(esw,
+		      ((RT305X_ESW_PORTS_ALL << RT305X_ESW_POC0_EN_BP_S) |
+		       (RT305X_ESW_PORTS_ALL << RT305X_ESW_POC0_EN_FC_S)),
+		      RT305X_ESW_REG_POC0);
 
 	/* Enable Aging, and VLAN TAG removal */
-	esw_w32(esw, ((RT305X_ESW_PORTS_ALL << RT305X_ESW_POC2_ENAGING_S) | (RT305X_ESW_PORTS_NOCPU << RT305X_ESW_POC2_UNTAG_EN_S)), RT305X_ESW_REG_POC2);
+	esw_w32(esw,
+		      ((RT305X_ESW_PORTS_ALL << RT305X_ESW_POC2_ENAGING_S) |
+		       (RT305X_ESW_PORTS_NOCPU << RT305X_ESW_POC2_UNTAG_EN_S)),
+		      RT305X_ESW_REG_POC2);
 
 	if (esw->reg_initval_fct2)
 		esw_w32(esw, esw->reg_initval_fct2, RT305X_ESW_REG_FCT2);
@@ -442,8 +485,11 @@ static void esw_hw_init(struct rt305x_esw *esw)
 
 	/* Setup SoC Port control register */
 	esw_w32(esw,
-		(RT305X_ESW_SOCPC_CRC_PADDING |
-		 (RT305X_ESW_PORTS_CPU << RT305X_ESW_SOCPC_DISUN2CPU_S) | (RT305X_ESW_PORTS_CPU << RT305X_ESW_SOCPC_DISMC2CPU_S) | (RT305X_ESW_PORTS_CPU << RT305X_ESW_SOCPC_DISBC2CPU_S)), RT305X_ESW_REG_SOCPC);
+		      (RT305X_ESW_SOCPC_CRC_PADDING |
+		       (RT305X_ESW_PORTS_CPU << RT305X_ESW_SOCPC_DISUN2CPU_S) |
+		       (RT305X_ESW_PORTS_CPU << RT305X_ESW_SOCPC_DISMC2CPU_S) |
+		       (RT305X_ESW_PORTS_CPU << RT305X_ESW_SOCPC_DISBC2CPU_S)),
+		      RT305X_ESW_REG_SOCPC);
 
 	if (esw->reg_initval_fpa2)
 		esw_w32(esw, esw->reg_initval_fpa2, RT305X_ESW_REG_FPA2);
@@ -472,7 +518,10 @@ static void esw_hw_init(struct rt305x_esw *esw)
 			if (esw->ports[i].disable) {
 				rt305x_mii_write(esw, i, MII_BMCR, BMCR_PDOWN);
 			} else {
-				rt305x_mii_write(esw, i, MII_BMCR, BMCR_FULLDPLX | BMCR_ANENABLE | BMCR_SPEED100);
+				rt305x_mii_write(esw, i, MII_BMCR,
+					 BMCR_FULLDPLX |
+					 BMCR_ANENABLE |
+					 BMCR_SPEED100);
 			}
 			/* TX10 waveform coefficient LSB=0 disable PHY */
 			rt305x_mii_write(esw, i, 26, 0x1601);
@@ -490,7 +539,7 @@ static void esw_hw_init(struct rt305x_esw *esw)
 		rt305x_mii_write(esw, 0, 2, 0x6254);
 		/* enlarge agcsel threshold  */
 		rt305x_mii_write(esw, 0, 3, 0xa17f);
-		rt305x_mii_write(esw, 0, 12, 0x7eaa);
+		rt305x_mii_write(esw, 0,12, 0x7eaa);
 		/* longer TP_IDL tail length */
 		rt305x_mii_write(esw, 0, 14, 0x65);
 		/* increased squelch pulse count threshold. */
@@ -522,7 +571,10 @@ static void esw_hw_init(struct rt305x_esw *esw)
 			if (esw->ports[i].disable) {
 				rt305x_mii_write(esw, i, MII_BMCR, BMCR_PDOWN);
 			} else {
-				rt305x_mii_write(esw, i, MII_BMCR, BMCR_FULLDPLX | BMCR_ANENABLE | BMCR_SPEED100);
+				rt305x_mii_write(esw, i, MII_BMCR,
+					 BMCR_FULLDPLX |
+					 BMCR_ANENABLE |
+					 BMCR_SPEED100);
 			}
 			/* TX10 waveform coefficient LSB=0 disable PHY */
 			rt305x_mii_write(esw, i, 26, 0x1601);
@@ -561,37 +613,37 @@ static void esw_hw_init(struct rt305x_esw *esw)
 		rt305x_mii_write(esw, 0, 31, 0x8000);
 	} else if (ralink_soc == MT762X_SOC_MT7628AN) {
 		int i;
-//              u32 phy_val;
+//		u32 phy_val;
 		u32 val;
 
 		/* reset EPHY */
 		fe_reset(RT5350_RESET_EPHY);
 
-		rt305x_mii_write(esw, 0, 31, 0x2000);	/* change G2 page */
+		rt305x_mii_write(esw, 0, 31, 0x2000); /* change G2 page */
 		rt305x_mii_write(esw, 0, 26, 0x0020);
 
 		for (i = 0; i < 5; i++) {
-			rt305x_mii_write(esw, i, 31, 0x8000);	//change L0 page
-			rt305x_mii_write(esw, i, 0, 0x3100);
-//                      mii_mgr_read(i, 26, &phy_val);// EEE setting
-//                      phy_val |= (1 << 5);
-//                      rt305x_mii_write(esw, i, 26, phy_val);
+			rt305x_mii_write(esw, i, 31, 0x8000); //change L0 page
+			rt305x_mii_write(esw, i,  0, 0x3100);
+//			mii_mgr_read(i, 26, &phy_val);// EEE setting
+//			phy_val |= (1 << 5);
+//			rt305x_mii_write(esw, i, 26, phy_val);
 			rt305x_mii_write(esw, i, 30, 0xa000);
-			rt305x_mii_write(esw, i, 31, 0xa000);	// change L2 page
+			rt305x_mii_write(esw, i, 31, 0xa000); // change L2 page
 			rt305x_mii_write(esw, i, 16, 0x0606);
 			rt305x_mii_write(esw, i, 23, 0x0f0e);
 			rt305x_mii_write(esw, i, 24, 0x1610);
 			rt305x_mii_write(esw, i, 30, 0x1f15);
 			rt305x_mii_write(esw, i, 28, 0x6111);
-//                      mii_mgr_read(i, 4, &phy_val);
-//                      phy_val |= (1 << 10);
-//                      rt305x_mii_write(esw, i, 4, phy_val);
-			rt305x_mii_write(esw, i, 31, 0x2000);	// change G2 page
+//			mii_mgr_read(i, 4, &phy_val);
+//			phy_val |= (1 << 10);
+//			rt305x_mii_write(esw, i, 4, phy_val);
+			rt305x_mii_write(esw, i, 31, 0x2000); // change G2 page
 			rt305x_mii_write(esw, i, 26, 0x0000);
 		}
 
 		//100Base AOI setting
-		rt305x_mii_write(esw, 0, 31, 0x5000);	//change G5 page
+		rt305x_mii_write(esw, 0, 31, 0x5000);  //change G5 page
 		rt305x_mii_write(esw, 0, 19, 0x004a);
 		rt305x_mii_write(esw, 0, 20, 0x015a);
 		rt305x_mii_write(esw, 0, 21, 0x00ee);
@@ -610,7 +662,10 @@ static void esw_hw_init(struct rt305x_esw *esw)
 			if (esw->ports[i].disable) {
 				rt305x_mii_write(esw, i, MII_BMCR, BMCR_PDOWN);
 			} else {
-				rt305x_mii_write(esw, i, MII_BMCR, BMCR_FULLDPLX | BMCR_ANENABLE | BMCR_SPEED100);
+				rt305x_mii_write(esw, i, MII_BMCR,
+					 BMCR_FULLDPLX |
+					 BMCR_ANENABLE |
+					 BMCR_SPEED100);
 			}
 			/* TX10 waveform coefficient */
 			rt305x_mii_write(esw, i, 26, 0x1601);
@@ -646,7 +701,9 @@ static void esw_hw_init(struct rt305x_esw *esw)
 	 * conveniently usable to decide which ports go into the wan vlan by
 	 * default.
 	 */
-	esw_rmw(esw, RT305X_ESW_REG_SGC2, RT305X_ESW_SGC2_LAN_PMAP_M << RT305X_ESW_SGC2_LAN_PMAP_S, port_map << RT305X_ESW_SGC2_LAN_PMAP_S);
+	esw_rmw(esw, RT305X_ESW_REG_SGC2,
+		       RT305X_ESW_SGC2_LAN_PMAP_M << RT305X_ESW_SGC2_LAN_PMAP_S,
+		       port_map << RT305X_ESW_SGC2_LAN_PMAP_S);
 
 	/* make the switch leds blink */
 	for (i = 0; i < RT305X_ESW_NUM_LEDS; i++)
@@ -661,7 +718,7 @@ static void esw_hw_init(struct rt305x_esw *esw)
 
 static irqreturn_t esw_interrupt(int irq, void *_esw)
 {
-	struct rt305x_esw *esw = (struct rt305x_esw *)_esw;
+	struct rt305x_esw *esw = (struct rt305x_esw *) _esw;
 	u32 status;
 
 	status = esw_r32(esw, RT305X_ESW_REG_ISR);
@@ -703,26 +760,34 @@ static int esw_apply_config(struct switch_dev *dev)
 		disable |= esw->ports[i].disable << i;
 		if (esw->global_vlan_enable) {
 			doubletag |= esw->ports[i].doubletag << i;
-			en_vlan |= 1 << i;
-			untag |= esw->ports[i].untag << i;
-			pvid = esw->ports[i].pvid;
+			en_vlan   |= 1                       << i;
+			untag     |= esw->ports[i].untag     << i;
+			pvid       = esw->ports[i].pvid;
 		} else {
 			int x = esw->alt_vlan_disable ? 0 : 1;
 			doubletag |= x << i;
-			en_vlan |= x << i;
-			untag |= x << i;
-			pvid = 0;
+			en_vlan   |= x << i;
+			untag     |= x << i;
+			pvid       = 0;
 		}
 		esw_set_pvid(esw, i, pvid);
 		if (i < RT305X_ESW_NUM_LEDS)
-			esw_w32(esw, esw->ports[i].led, RT305X_ESW_REG_P0LED + 4 * i);
+			esw_w32(esw, esw->ports[i].led,
+				      RT305X_ESW_REG_P0LED + 4*i);
 	}
 
 	esw_set_gsc(esw);
 	esw_set_port_disable(esw, disable);
-	esw_rmw(esw, RT305X_ESW_REG_SGC2, (RT305X_ESW_SGC2_DOUBLE_TAG_M << RT305X_ESW_SGC2_DOUBLE_TAG_S), doubletag << RT305X_ESW_SGC2_DOUBLE_TAG_S);
-	esw_rmw(esw, RT305X_ESW_REG_PFC1, RT305X_ESW_PFC1_EN_VLAN_M << RT305X_ESW_PFC1_EN_VLAN_S, en_vlan << RT305X_ESW_PFC1_EN_VLAN_S);
-	esw_rmw(esw, RT305X_ESW_REG_POC2, RT305X_ESW_POC2_UNTAG_EN_M << RT305X_ESW_POC2_UNTAG_EN_S, untag << RT305X_ESW_POC2_UNTAG_EN_S);
+	esw_rmw(esw, RT305X_ESW_REG_SGC2,
+		       (RT305X_ESW_SGC2_DOUBLE_TAG_M <<
+			RT305X_ESW_SGC2_DOUBLE_TAG_S),
+		       doubletag << RT305X_ESW_SGC2_DOUBLE_TAG_S);
+	esw_rmw(esw, RT305X_ESW_REG_PFC1,
+		       RT305X_ESW_PFC1_EN_VLAN_M << RT305X_ESW_PFC1_EN_VLAN_S,
+		       en_vlan << RT305X_ESW_PFC1_EN_VLAN_S);
+	esw_rmw(esw, RT305X_ESW_REG_POC2,
+		       RT305X_ESW_POC2_UNTAG_EN_M << RT305X_ESW_POC2_UNTAG_EN_S,
+		       untag << RT305X_ESW_POC2_UNTAG_EN_S);
 
 	if (!esw->global_vlan_enable) {
 		/*
@@ -749,7 +814,9 @@ static int esw_reset_switch(struct switch_dev *dev)
 	return 0;
 }
 
-static int esw_get_vlan_enable(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+static int esw_get_vlan_enable(struct switch_dev *dev,
+			   const struct switch_attr *attr,
+			   struct switch_val *val)
 {
 	struct rt305x_esw *esw = container_of(dev, struct rt305x_esw, swdev);
 
@@ -758,7 +825,9 @@ static int esw_get_vlan_enable(struct switch_dev *dev, const struct switch_attr 
 	return 0;
 }
 
-static int esw_set_vlan_enable(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+static int esw_set_vlan_enable(struct switch_dev *dev,
+			   const struct switch_attr *attr,
+			   struct switch_val *val)
 {
 	struct rt305x_esw *esw = container_of(dev, struct rt305x_esw, swdev);
 
@@ -767,7 +836,9 @@ static int esw_set_vlan_enable(struct switch_dev *dev, const struct switch_attr 
 	return 0;
 }
 
-static int esw_get_alt_vlan_disable(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+static int esw_get_alt_vlan_disable(struct switch_dev *dev,
+				const struct switch_attr *attr,
+				struct switch_val *val)
 {
 	struct rt305x_esw *esw = container_of(dev, struct rt305x_esw, swdev);
 
@@ -776,7 +847,9 @@ static int esw_get_alt_vlan_disable(struct switch_dev *dev, const struct switch_
 	return 0;
 }
 
-static int esw_set_alt_vlan_disable(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+static int esw_set_alt_vlan_disable(struct switch_dev *dev,
+				const struct switch_attr *attr,
+				struct switch_val *val)
 {
 	struct rt305x_esw *esw = container_of(dev, struct rt305x_esw, swdev);
 
@@ -785,7 +858,10 @@ static int esw_set_alt_vlan_disable(struct switch_dev *dev, const struct switch_
 	return 0;
 }
 
-static int rt305x_esw_set_bc_status(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+static int
+rt305x_esw_set_bc_status(struct switch_dev *dev,
+			const struct switch_attr *attr,
+			struct switch_val *val)
 {
 	struct rt305x_esw *esw = container_of(dev, struct rt305x_esw, swdev);
 
@@ -794,7 +870,10 @@ static int rt305x_esw_set_bc_status(struct switch_dev *dev, const struct switch_
 	return 0;
 }
 
-static int rt305x_esw_get_bc_status(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+static int
+rt305x_esw_get_bc_status(struct switch_dev *dev,
+			const struct switch_attr *attr,
+			struct switch_val *val)
 {
 	struct rt305x_esw *esw = container_of(dev, struct rt305x_esw, swdev);
 
@@ -803,7 +882,10 @@ static int rt305x_esw_get_bc_status(struct switch_dev *dev, const struct switch_
 	return 0;
 }
 
-static int rt305x_esw_set_led_freq(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+static int
+rt305x_esw_set_led_freq(struct switch_dev *dev,
+			const struct switch_attr *attr,
+			struct switch_val *val)
 {
 	struct rt305x_esw *esw = container_of(dev, struct rt305x_esw, swdev);
 
@@ -812,7 +894,10 @@ static int rt305x_esw_set_led_freq(struct switch_dev *dev, const struct switch_a
 	return 0;
 }
 
-static int rt305x_esw_get_led_freq(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+static int
+rt305x_esw_get_led_freq(struct switch_dev *dev,
+			const struct switch_attr *attr,
+			struct switch_val *val)
 {
 	struct rt305x_esw *esw = container_of(dev, struct rt305x_esw, swdev);
 
@@ -821,7 +906,9 @@ static int rt305x_esw_get_led_freq(struct switch_dev *dev, const struct switch_a
 	return 0;
 }
 
-static int esw_get_port_link(struct switch_dev *dev, int port, struct switch_port_link *link)
+static int esw_get_port_link(struct switch_dev *dev,
+			 int port,
+			 struct switch_port_link *link)
 {
 	struct rt305x_esw *esw = container_of(dev, struct rt305x_esw, swdev);
 	u32 speed, poa;
@@ -848,7 +935,7 @@ static int esw_get_port_link(struct switch_dev *dev, int port, struct switch_por
 		link->speed = SWITCH_PORT_SPEED_100;
 		break;
 	case 2:
-	case 3:		/* forced gige speed can be 2 or 3 */
+	case 3: /* forced gige speed can be 2 or 3 */
 		link->speed = SWITCH_PORT_SPEED_1000;
 		break;
 	default:
@@ -859,7 +946,9 @@ static int esw_get_port_link(struct switch_dev *dev, int port, struct switch_por
 	return 0;
 }
 
-static int esw_get_port_bool(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+static int esw_get_port_bool(struct switch_dev *dev,
+			 const struct switch_attr *attr,
+			 struct switch_val *val)
 {
 	struct rt305x_esw *esw = container_of(dev, struct rt305x_esw, swdev);
 	int idx = val->port_vlan;
@@ -897,12 +986,15 @@ static int esw_get_port_bool(struct switch_dev *dev, const struct switch_attr *a
 	return 0;
 }
 
-static int esw_set_port_bool(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+static int esw_set_port_bool(struct switch_dev *dev,
+			 const struct switch_attr *attr,
+			 struct switch_val *val)
 {
 	struct rt305x_esw *esw = container_of(dev, struct rt305x_esw, swdev);
 	int idx = val->port_vlan;
 
-	if (idx < 0 || idx >= RT305X_ESW_NUM_PORTS || val->value.i < 0 || val->value.i > 1)
+	if (idx < 0 || idx >= RT305X_ESW_NUM_PORTS ||
+	    val->value.i < 0 || val->value.i > 1)
 		return -EINVAL;
 
 	switch (attr->id) {
@@ -922,7 +1014,9 @@ static int esw_set_port_bool(struct switch_dev *dev, const struct switch_attr *a
 	return 0;
 }
 
-static int esw_get_port_recv_badgood(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+static int esw_get_port_recv_badgood(struct switch_dev *dev,
+				 const struct switch_attr *attr,
+				 struct switch_val *val)
 {
 	struct rt305x_esw *esw = container_of(dev, struct rt305x_esw, swdev);
 	int idx = val->port_vlan;
@@ -937,7 +1031,10 @@ static int esw_get_port_recv_badgood(struct switch_dev *dev, const struct switch
 	return 0;
 }
 
-static int esw_get_port_tr_badgood(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+static int
+esw_get_port_tr_badgood(struct switch_dev *dev,
+				 const struct switch_attr *attr,
+				 struct switch_val *val)
 {
 	struct rt305x_esw *esw = container_of(dev, struct rt305x_esw, swdev);
 
@@ -957,20 +1054,25 @@ static int esw_get_port_tr_badgood(struct switch_dev *dev, const struct switch_a
 	return 0;
 }
 
-static int esw_get_port_led(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+static int esw_get_port_led(struct switch_dev *dev,
+			const struct switch_attr *attr,
+			struct switch_val *val)
 {
 	struct rt305x_esw *esw = container_of(dev, struct rt305x_esw, swdev);
 	int idx = val->port_vlan;
 
-	if (idx < 0 || idx >= RT305X_ESW_NUM_PORTS || idx >= RT305X_ESW_NUM_LEDS)
+	if (idx < 0 || idx >= RT305X_ESW_NUM_PORTS ||
+	    idx >= RT305X_ESW_NUM_LEDS)
 		return -EINVAL;
 
-	val->value.i = esw_r32(esw, RT305X_ESW_REG_P0LED + 4 * idx);
+	val->value.i = esw_r32(esw, RT305X_ESW_REG_P0LED + 4*idx);
 
 	return 0;
 }
 
-static int esw_set_port_led(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+static int esw_set_port_led(struct switch_dev *dev,
+			const struct switch_attr *attr,
+			struct switch_val *val)
 {
 	struct rt305x_esw *esw = container_of(dev, struct rt305x_esw, swdev);
 	int idx = val->port_vlan;
@@ -1021,7 +1123,8 @@ static int esw_get_vlan_ports(struct switch_dev *dev, struct switch_val *val)
 
 	/* valid vlan? */
 	for (i = 0; i < RT305X_ESW_NUM_VLANS; i++) {
-		if (esw_get_vlan_id(esw, i) == val->port_vlan && esw_get_vmsc(esw, i) != RT305X_ESW_PORTS_NONE) {
+		if (esw_get_vlan_id(esw, i) == val->port_vlan &&
+		    esw_get_vmsc(esw, i) != RT305X_ESW_PORTS_NONE) {
 			vlan_idx = i;
 			break;
 		}
@@ -1058,12 +1161,14 @@ static int esw_set_vlan_ports(struct switch_dev *dev, struct switch_val *val)
 	int vlan_idx = -1;
 	int i;
 
-	if (val->port_vlan < 0 || val->port_vlan >= RT305X_ESW_NUM_VIDS || val->len > RT305X_ESW_NUM_PORTS)
+	if (val->port_vlan < 0 || val->port_vlan >= RT305X_ESW_NUM_VIDS ||
+	    val->len > RT305X_ESW_NUM_PORTS)
 		return -EINVAL;
 
 	/* one of the already defined vlans? */
 	for (i = 0; i < RT305X_ESW_NUM_VLANS; i++) {
-		if (esw->vlans[i].vid == val->port_vlan && esw->vlans[i].ports != RT305X_ESW_PORTS_NONE) {
+		if (esw->vlans[i].vid == val->port_vlan &&
+		    esw->vlans[i].ports != RT305X_ESW_PORTS_NONE) {
 			vlan_idx = i;
 			break;
 		}
@@ -1102,118 +1207,122 @@ static int esw_set_vlan_ports(struct switch_dev *dev, struct switch_val *val)
 
 static const struct switch_attr esw_global[] = {
 	{
-	 .type = SWITCH_TYPE_INT,
-	 .name = "enable_vlan",
-	 .description = "VLAN mode (1:enabled)",
-	 .max = 1,
-	 .id = RT305X_ESW_ATTR_ENABLE_VLAN,
-	 .get = esw_get_vlan_enable,
-	 .set = esw_set_vlan_enable,
-	 },
+		.type = SWITCH_TYPE_INT,
+		.name = "enable_vlan",
+		.description = "VLAN mode (1:enabled)",
+		.max = 1,
+		.id = RT305X_ESW_ATTR_ENABLE_VLAN,
+		.get = esw_get_vlan_enable,
+		.set = esw_set_vlan_enable,
+	},
 	{
-	 .type = SWITCH_TYPE_INT,
-	 .name = "alternate_vlan_disable",
-	 .description = "Use en_vlan instead of doubletag to disable" " VLAN mode",
-	 .max = 1,
-	 .id = RT305X_ESW_ATTR_ALT_VLAN_DISABLE,
-	 .get = esw_get_alt_vlan_disable,
-	 .set = esw_set_alt_vlan_disable,
-	 },
+		.type = SWITCH_TYPE_INT,
+		.name = "alternate_vlan_disable",
+		.description = "Use en_vlan instead of doubletag to disable"
+				" VLAN mode",
+		.max = 1,
+		.id = RT305X_ESW_ATTR_ALT_VLAN_DISABLE,
+		.get = esw_get_alt_vlan_disable,
+		.set = esw_set_alt_vlan_disable,
+	},
 	{
-	 .type = SWITCH_TYPE_INT,
-	 .name = "bc_storm_protect",
-	 .description = "Global broadcast storm protection (0:Disable, 1:64 blocks, 2:96 blocks, 3:128 blocks)",
-	 .max = 3,
-	 .id = RT305X_ESW_ATTR_BC_STATUS,
-	 .get = rt305x_esw_get_bc_status,
-	 .set = rt305x_esw_set_bc_status,
-	 },
+		.type = SWITCH_TYPE_INT,
+		.name = "bc_storm_protect",
+		.description = "Global broadcast storm protection (0:Disable, 1:64 blocks, 2:96 blocks, 3:128 blocks)",
+		.max = 3,
+		.id = RT305X_ESW_ATTR_BC_STATUS,
+		.get = rt305x_esw_get_bc_status,
+		.set = rt305x_esw_set_bc_status,
+	},
 	{
-	 .type = SWITCH_TYPE_INT,
-	 .name = "led_frequency",
-	 .description = "LED Flash frequency (0:30mS, 1:60mS, 2:240mS, 3:480mS)",
-	 .max = 3,
-	 .id = RT305X_ESW_ATTR_LED_FREQ,
-	 .get = rt305x_esw_get_led_freq,
-	 .set = rt305x_esw_set_led_freq,
-	 }
+		.type = SWITCH_TYPE_INT,
+		.name = "led_frequency",
+		.description = "LED Flash frequency (0:30mS, 1:60mS, 2:240mS, 3:480mS)",
+		.max = 3,
+		.id = RT305X_ESW_ATTR_LED_FREQ,
+		.get = rt305x_esw_get_led_freq,
+		.set = rt305x_esw_set_led_freq,
+	}
 };
 
 static const struct switch_attr esw_port[] = {
 	{
-	 .type = SWITCH_TYPE_INT,
-	 .name = "disable",
-	 .description = "Port state (1:disabled)",
-	 .max = 1,
-	 .id = RT305X_ESW_ATTR_PORT_DISABLE,
-	 .get = esw_get_port_bool,
-	 .set = esw_set_port_bool,
-	 },
+		.type = SWITCH_TYPE_INT,
+		.name = "disable",
+		.description = "Port state (1:disabled)",
+		.max = 1,
+		.id = RT305X_ESW_ATTR_PORT_DISABLE,
+		.get = esw_get_port_bool,
+		.set = esw_set_port_bool,
+	},
 	{
-	 .type = SWITCH_TYPE_INT,
-	 .name = "doubletag",
-	 .description = "Double tagging for incoming vlan packets " "(1:enabled)",
-	 .max = 1,
-	 .id = RT305X_ESW_ATTR_PORT_DOUBLETAG,
-	 .get = esw_get_port_bool,
-	 .set = esw_set_port_bool,
-	 },
+		.type = SWITCH_TYPE_INT,
+		.name = "doubletag",
+		.description = "Double tagging for incoming vlan packets "
+				"(1:enabled)",
+		.max = 1,
+		.id = RT305X_ESW_ATTR_PORT_DOUBLETAG,
+		.get = esw_get_port_bool,
+		.set = esw_set_port_bool,
+	},
 	{
-	 .type = SWITCH_TYPE_INT,
-	 .name = "untag",
-	 .description = "Untag (1:strip outgoing vlan tag)",
-	 .max = 1,
-	 .id = RT305X_ESW_ATTR_PORT_UNTAG,
-	 .get = esw_get_port_bool,
-	 .set = esw_set_port_bool,
-	 },
+		.type = SWITCH_TYPE_INT,
+		.name = "untag",
+		.description = "Untag (1:strip outgoing vlan tag)",
+		.max = 1,
+		.id = RT305X_ESW_ATTR_PORT_UNTAG,
+		.get = esw_get_port_bool,
+		.set = esw_set_port_bool,
+	},
 	{
-	 .type = SWITCH_TYPE_INT,
-	 .name = "led",
-	 .description = "LED mode (0:link, 1:100m, 2:duplex, 3:activity," " 4:collision, 5:linkact, 6:duplcoll, 7:10mact," " 8:100mact, 10:blink, 11:off, 12:on)",
-	 .max = 15,
-	 .id = RT305X_ESW_ATTR_PORT_LED,
-	 .get = esw_get_port_led,
-	 .set = esw_set_port_led,
-	 },
+		.type = SWITCH_TYPE_INT,
+		.name = "led",
+		.description = "LED mode (0:link, 1:100m, 2:duplex, 3:activity,"
+				" 4:collision, 5:linkact, 6:duplcoll, 7:10mact,"
+				" 8:100mact, 10:blink, 11:off, 12:on)",
+		.max = 15,
+		.id = RT305X_ESW_ATTR_PORT_LED,
+		.get = esw_get_port_led,
+		.set = esw_set_port_led,
+	},
 	{
-	 .type = SWITCH_TYPE_INT,
-	 .name = "lan",
-	 .description = "HW port group (0:wan, 1:lan)",
-	 .max = 1,
-	 .id = RT305X_ESW_ATTR_PORT_LAN,
-	 .get = esw_get_port_bool,
-	 },
+		.type = SWITCH_TYPE_INT,
+		.name = "lan",
+		.description = "HW port group (0:wan, 1:lan)",
+		.max = 1,
+		.id = RT305X_ESW_ATTR_PORT_LAN,
+		.get = esw_get_port_bool,
+	},
 	{
-	 .type = SWITCH_TYPE_INT,
-	 .name = "recv_bad",
-	 .description = "Receive bad packet counter",
-	 .id = RT305X_ESW_ATTR_PORT_RECV_BAD,
-	 .get = esw_get_port_recv_badgood,
-	 },
+		.type = SWITCH_TYPE_INT,
+		.name = "recv_bad",
+		.description = "Receive bad packet counter",
+		.id = RT305X_ESW_ATTR_PORT_RECV_BAD,
+		.get = esw_get_port_recv_badgood,
+	},
 	{
-	 .type = SWITCH_TYPE_INT,
-	 .name = "recv_good",
-	 .description = "Receive good packet counter",
-	 .id = RT305X_ESW_ATTR_PORT_RECV_GOOD,
-	 .get = esw_get_port_recv_badgood,
-	 },
+		.type = SWITCH_TYPE_INT,
+		.name = "recv_good",
+		.description = "Receive good packet counter",
+		.id = RT305X_ESW_ATTR_PORT_RECV_GOOD,
+		.get = esw_get_port_recv_badgood,
+	},
 	{
-	 .type = SWITCH_TYPE_INT,
-	 .name = "tr_bad",
+		.type = SWITCH_TYPE_INT,
+		.name = "tr_bad",
 
-	 .description = "Transmit bad packet counter. rt5350 only",
-	 .id = RT5350_ESW_ATTR_PORT_TR_BAD,
-	 .get = esw_get_port_tr_badgood,
-	 },
+		.description = "Transmit bad packet counter. rt5350 only",
+		.id = RT5350_ESW_ATTR_PORT_TR_BAD,
+		.get = esw_get_port_tr_badgood,
+	},
 	{
-	 .type = SWITCH_TYPE_INT,
-	 .name = "tr_good",
+		.type = SWITCH_TYPE_INT,
+		.name = "tr_good",
 
-	 .description = "Transmit good packet counter. rt5350 only",
-	 .id = RT5350_ESW_ATTR_PORT_TR_GOOD,
-	 .get = esw_get_port_tr_badgood,
-	 },
+		.description = "Transmit good packet counter. rt5350 only",
+		.id = RT5350_ESW_ATTR_PORT_TR_GOOD,
+		.get = esw_get_port_tr_badgood,
+	},
 };
 
 static const struct switch_attr esw_vlan[] = {
@@ -1221,17 +1330,17 @@ static const struct switch_attr esw_vlan[] = {
 
 static const struct switch_dev_ops esw_ops = {
 	.attr_global = {
-			.attr = esw_global,
-			.n_attr = ARRAY_SIZE(esw_global),
-			},
+		.attr = esw_global,
+		.n_attr = ARRAY_SIZE(esw_global),
+	},
 	.attr_port = {
-		      .attr = esw_port,
-		      .n_attr = ARRAY_SIZE(esw_port),
-		      },
+		.attr = esw_port,
+		.n_attr = ARRAY_SIZE(esw_port),
+	},
 	.attr_vlan = {
-		      .attr = esw_vlan,
-		      .n_attr = ARRAY_SIZE(esw_vlan),
-		      },
+		.attr = esw_vlan,
+		.n_attr = ARRAY_SIZE(esw_vlan),
+	},
 	.get_vlan_ports = esw_get_vlan_ports,
 	.set_vlan_ports = esw_set_vlan_ports,
 	.get_port_pvid = esw_get_port_pvid,
@@ -1243,22 +1352,21 @@ static const struct switch_dev_ops esw_ops = {
 
 static struct rt305x_esw_platform_data rt3050_esw_data = {
 	/* All ports are LAN ports. */
-	.vlan_config = RT305X_ESW_VLAN_CONFIG_NONE,
-	.reg_initval_fct2 = 0x00d6500c,
+	.vlan_config            = RT305X_ESW_VLAN_CONFIG_NONE,
+	.reg_initval_fct2       = 0x00d6500c,
 	/*
 	 * ext phy base addr 31, enable port 5 polling, rx/tx clock skew 1,
 	 * turbo mii off, rgmi 3.3v off
 	 * port5: disabled
 	 * port6: enabled, gige, full-duplex, rx/tx-flow-control
 	 */
-	.reg_initval_fpa2 = 0x3f502b28,
+	.reg_initval_fpa2       = 0x3f502b28,
 };
 
 static const struct of_device_id ralink_esw_match[] = {
-	{.compatible = "ralink,rt3050-esw",.data = &rt3050_esw_data},
+	{ .compatible = "ralink,rt3050-esw", .data = &rt3050_esw_data },
 	{},
 };
-
 MODULE_DEVICE_TABLE(of, ralink_esw_match);
 
 static int esw_probe(struct platform_device *pdev)
@@ -1276,7 +1384,7 @@ static int esw_probe(struct platform_device *pdev)
 		const struct of_device_id *match;
 		match = of_match_device(ralink_esw_match, &pdev->dev);
 		if (match)
-			pdata = (struct rt305x_esw_platform_data *)match->data;
+			pdata = (struct rt305x_esw_platform_data *) match->data;
 	}
 	if (!pdata)
 		return -EINVAL;
@@ -1309,19 +1417,19 @@ static int esw_probe(struct platform_device *pdev)
 	}
 
 	port_map = of_get_property(np, "ralink,portmap", NULL);
-	if (port_map)
+        if (port_map)
 		esw->port_map = be32_to_cpu(*port_map);
 
 	reg_init = of_get_property(np, "ralink,fct2", NULL);
-	if (reg_init)
+        if (reg_init)
 		esw->reg_initval_fct2 = be32_to_cpu(*reg_init);
 
 	reg_init = of_get_property(np, "ralink,fpa2", NULL);
-	if (reg_init)
+        if (reg_init)
 		esw->reg_initval_fpa2 = be32_to_cpu(*reg_init);
 
 	reg_init = of_get_property(np, "ralink,led_polarity", NULL);
-	if (reg_init)
+        if (reg_init)
 		esw->reg_led_polarity = be32_to_cpu(*reg_init);
 
 	swdev = &esw->swdev;
@@ -1378,10 +1486,10 @@ static struct platform_driver esw_driver = {
 	.probe = esw_probe,
 	.remove = esw_remove,
 	.driver = {
-		   .name = "rt305x-esw",
-		   .owner = THIS_MODULE,
-		   .of_match_table = ralink_esw_match,
-		   },
+		.name = "rt305x-esw",
+		.owner = THIS_MODULE,
+		.of_match_table = ralink_esw_match,
+	},
 };
 
 int __init rtesw_init(void)

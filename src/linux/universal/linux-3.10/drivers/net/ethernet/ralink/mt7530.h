@@ -15,6 +15,6 @@
 #ifndef _MT7530_H__
 #define _MT7530_H__
 
-int mt7530_probe(struct device *dev, void __iomem * base, struct mii_bus *bus, int vlan);
+int mt7530_probe(struct device *dev, void __iomem *base, struct mii_bus *bus, int vlan);
 
 #endif
