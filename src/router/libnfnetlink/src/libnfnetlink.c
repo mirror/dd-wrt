@@ -576,7 +576,7 @@ int nfnl_listen(struct nfnl_handle *nfnlh,
 	int quit=0;
 
 	struct msghdr msg = {
-		.msg_name = (void *) nladdr,
+		.msg_name = (void *) &nladdr,
 		.msg_namelen = sizeof(nladdr),
 		.msg_iov = &iov,
 		.msg_iovlen = 1,
@@ -690,7 +690,7 @@ int nfnl_talk(struct nfnl_handle *nfnlh, struct nlmsghdr *n, pid_t peer,
 	};
 
 	struct msghdr msg = {
-		.msg_name = (void *) nladdr,
+		.msg_name = (void *) &nladdr,
 		.msg_namelen = sizeof(nladdr),
 		.msg_iov = &iov,
 		.msg_iovlen = 1,
