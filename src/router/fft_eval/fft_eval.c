@@ -189,12 +189,24 @@ static int print_values()
 						datamin = data;
 				}
 				if (!rnum)
-				printf("\n{ \"tsf\": %" PRIu64 ", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ \n", result->sample.ht20.tsf, result->sample.ht20.freq,
-				       result->sample.ht20.rssi, result->sample.ht20.noise);
+					printf("\n{ \"tsf\": %" PRIu64 ", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ \n", result->sample.ht20.tsf, result->sample.ht20.freq,
+					       result->sample.ht20.rssi, result->sample.ht20.noise);
 				for (i = 0; i < SPECTRAL_HT20_NUM_BINS; i++) {
 					float freq;
 					float signal;
 					int data;
+					/*
+					 * According to Dave Aragon from University of Washington,
+					 * formerly Trapeze/Juniper Networks, in 2.4 GHz it should
+					 * divide 22 MHz channel width into 64 subcarriers but
+					 * only report the middle 56 subcarriers.
+					 *
+					 * For 5 GHz we do not know (Atheros claims it does not support
+					 * this frequency band, but it works).
+					 *
+					 * Since all these calculations map pretty much to -10/+10 MHz,
+					 * and we don't know better, use this assumption as well in 5 GHz.
+					 */
 					freq = result->sample.ht20.freq - (22.0 * SPECTRAL_HT20_NUM_BINS / 64.0) / 2 + (22.0 * (i + 0.5) / 64.0);
 
 					/* This is where the "magic" happens: interpret the signal
@@ -206,7 +218,7 @@ static int print_values()
 					signal = result->sample.ht20.noise + result->sample.ht20.rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
 
 					printf("[ %f, %f ]", freq, signal);
-					if (i < (SPECTRAL_HT20_NUM_BINS - 1)  || result->next)
+					if (i < (SPECTRAL_HT20_NUM_BINS - 1) || result->next)
 						printf(", ");
 					if (i == (SPECTRAL_HT20_NUM_BINS - 1))
 						printf("\n");
@@ -264,14 +276,14 @@ static int print_values()
 				}
 
 				if (!rnum)
-				printf("\n{ \"tsf\": %" PRIu64 ", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ \n", result->sample.ht40.tsf, centerfreq, result->sample.ht40.lower_rssi,result->sample.ht40.lower_noise);
+					printf("\n{ \"tsf\": %" PRIu64 ", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ \n", result->sample.ht40.tsf, centerfreq, result->sample.ht40.lower_rssi,
+					       result->sample.ht40.lower_noise);
 
 				for (i = 0; i < SPECTRAL_HT20_40_NUM_BINS; i++) {
 					float freq;
 					int data;
 
 					freq = centerfreq - (40.0 * SPECTRAL_HT20_40_NUM_BINS / 128.0) / 2 + (40.0 * (i + 0.5) / 128.0);
-
 
 					if (i < SPECTRAL_HT20_40_NUM_BINS / 2) {
 						noise = result->sample.ht40.lower_noise;
@@ -291,9 +303,9 @@ static int print_values()
 					float signal = noise + rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
 
 					printf("[ %f, %f ]", freq, signal);
-					if (i < (SPECTRAL_HT20_40_NUM_BINS -1) || result->next)
+					if (i < (SPECTRAL_HT20_40_NUM_BINS - 1) || result->next)
 						printf(", ");
-					if (i == (SPECTRAL_HT20_40_NUM_BINS -1))
+					if (i == (SPECTRAL_HT20_40_NUM_BINS - 1))
 						printf("\n");
 				}
 			}
@@ -304,8 +316,8 @@ static int print_values()
 				int datasquaresum = 0;
 				int i, bins;
 				if (!rnum)
-				printf("\n{ \"tsf\": %" PRIu64 ", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ \n", result->sample.ath10k.header.tsf, result->sample.ath10k.header.freq1,
-				       result->sample.ath10k.header.rssi, result->sample.ath10k.header.noise);
+					printf("\n{ \"tsf\": %" PRIu64 ", \"central_freq\": %d, \"rssi\": %d, \"noise\": %d, \"data\": [ \n", result->sample.ath10k.header.tsf, result->sample.ath10k.header.freq1,
+					       result->sample.ath10k.header.rssi, result->sample.ath10k.header.noise);
 
 				bins = result->sample.tlv.length - (sizeof(result->sample.ath10k.header) - sizeof(result->sample.ath10k.header.tlv));
 
@@ -415,7 +427,7 @@ static int read_scandata(char *fname)
 		pos += sample_len;
 
 		if (sample_len > sizeof(*result)) {
-		//	fprintf(stderr, "sample length %zu too long\n", sample_len);
+			//      fprintf(stderr, "sample length %zu too long\n", sample_len);
 			continue;
 		}
 
@@ -430,7 +442,7 @@ static int read_scandata(char *fname)
 		switch (tlv->type) {
 		case ATH_FFT_SAMPLE_HT20:
 			if (sample_len != sizeof(result->sample.ht20)) {
-			//	fprintf(stderr, "wrong sample length (have %zd, expected %zd)\n", sample_len, sizeof(result->sample));
+				//      fprintf(stderr, "wrong sample length (have %zd, expected %zd)\n", sample_len, sizeof(result->sample));
 				break;
 			}
 
@@ -442,7 +454,7 @@ static int read_scandata(char *fname)
 			break;
 		case ATH_FFT_SAMPLE_HT20_40:
 			if (sample_len != sizeof(result->sample.ht40)) {
-			//	fprintf(stderr, "wrong sample length (have %zd, expected %zd)\n", sample_len, sizeof(result->sample));
+				//      fprintf(stderr, "wrong sample length (have %zd, expected %zd)\n", sample_len, sizeof(result->sample));
 				break;
 			}
 
@@ -457,7 +469,7 @@ static int read_scandata(char *fname)
 			bins = sample_len - sizeof(result->sample.ath10k.header);
 
 			if (bins != 64 && bins != 128 && bins != 256) {
-			//	fprintf(stderr, "invalid bin length %d\n", bins);
+				//      fprintf(stderr, "invalid bin length %d\n", bins);
 				break;
 			}
 
@@ -472,7 +484,7 @@ static int read_scandata(char *fname)
 			handled = 1;
 			break;
 		default:
-		//	fprintf(stderr, "unknown sample type (%d)\n", tlv->type);
+			//      fprintf(stderr, "unknown sample type (%d)\n", tlv->type);
 			break;
 		}
 
@@ -491,7 +503,7 @@ static int read_scandata(char *fname)
 		scanresults_n++;
 	}
 
-//	fprintf(stderr, "read %d scan results\n", scanresults_n);
+//      fprintf(stderr, "read %d scan results\n", scanresults_n);
 	free(scandata);
 
 	return 0;
@@ -523,9 +535,8 @@ int main(int argc, char *argv[])
 		usage(argc, argv);
 		return -1;
 	}
-
-//	fprintf(stderr, "WARNING: Experimental Software! Don't trust anything you see. :)\n");
-//	fprintf(stderr, "\n");
+//      fprintf(stderr, "WARNING: Experimental Software! Don't trust anything you see. :)\n");
+//      fprintf(stderr, "\n");
 	if (read_scandata(argv[1]) < 0) {
 		fprintf(stderr, "Couldn't read scanfile ...\n");
 		usage(argc, argv);
