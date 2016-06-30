@@ -590,12 +590,6 @@ int mtd_write(const char *path, const char *mtd)
 		// count +=
 		// http_get (path, &buf[off], len - off, erase_info.start + off);
 
-#if defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_VENTANA)	// erase all blocks first
-		if (!first) {
-			mtd_erase(mtd);
-			first = 1;
-		}
-#endif
 
 		/* 
 		 * for debug 
@@ -645,6 +639,12 @@ int mtd_write(const char *path, const char *mtd)
 				fprintf(stderr, "Writing image to flash, waiting a moment...\n");
 			}
 		}
+#if defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_VENTANA)	// erase all blocks first
+		if (!first) {
+			mtd_erase(mtd);
+			first = 1;
+		}
+#endif
 		erase_info.length = mtd_info.erasesize;
 
 		int length = ROUNDUP(count, mtd_info.erasesize);
@@ -663,7 +663,7 @@ int mtd_write(const char *path, const char *mtd)
 				badblocks += mtd_info.erasesize;
 				continue;
 			}
-#if !defined(HAVE_MVEBU) && !defined(HAVE_IPQ806X)	// we do not need to erase again. it has been done before
+#if !defined(HAVE_MVEBU) && !defined(HAVE_IPQ806X) && !defined(HAVE_VENTANA)	// we do not need to erase again. it has been done before
 
 			if (ioctl(mtd_fd, MEMERASE, &erase_info) != 0) {
 				fprintf(stderr, "\nerase/write failed\n");
