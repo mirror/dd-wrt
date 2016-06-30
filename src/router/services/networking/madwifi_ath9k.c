@@ -351,6 +351,8 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	int usebw = 20;
 	if (nvram_match(bw, "40"))
 		usebw = 40;
+	if (nvram_match(bw, "2040"))
+		usebw = 40;
 	if (nvram_match(bw, "80"))
 		usebw = 80;
 	if (nvram_match(bw, "160"))
