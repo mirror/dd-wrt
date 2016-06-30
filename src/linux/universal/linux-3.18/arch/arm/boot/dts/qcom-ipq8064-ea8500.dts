@@ -252,7 +252,7 @@
 				reg = <0x5F40000 0x0040000>;
 			};
 			
-			syscfg@5f80000 {
+			ddwrt@5f80000 {
 				label = "ddwrt";
 				reg = <0x5f80000 0x2080000>;
 			};
