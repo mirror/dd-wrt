@@ -12,7 +12,7 @@
 #define unlikely(cond) __builtin_expect(0, !!(cond))
 #endif
 
-#define MAX_LIST_LENGTH_BITS 20
+#define MAX_LIST_LENGTH_BITS 256
 
 /*
  * Returns a list organized in an intermediate format suited
@@ -130,9 +130,9 @@ void list_sort(void *priv, struct list_head *head, int (*cmp) (void *priv, struc
 		part[lev] = cur;
 	}
 
-	for (lev = 0; lev < max_lev; lev++)
+	for (lev = 0; lev < max_lev + 1; lev++)
 		if (part[lev])
 			list = merge(priv, cmp, part[lev], list);
 
-	merge_and_restore_back_links(priv, cmp, head, part[max_lev], list);
+	merge_and_restore_back_links(priv, cmp, head, part[max_lev + 1], list);
 }
