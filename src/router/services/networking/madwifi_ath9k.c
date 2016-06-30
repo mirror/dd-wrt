@@ -333,7 +333,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		country = "DE";
 	fprintf(fp, "country_code=%s\n", country);
 	char *netmode = nvram_nget("%s_net_mode", prefix);
-	if (isath5k || !(nvram_match(netmode, "n2-only") || nvram_match(netmode, "n5-only"))) {
+	if (isath5k || !(!strcmp(netmode, "n2-only") || !strcmp(netmode, "n5-only"))) {
 		fprintf(fp, "tx_queue_data2_burst=2.0\n");
 		fprintf(fp, "wmm_ac_be_txop_limit=64\n");
 	} else {
@@ -357,6 +357,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		usebw = 80;
 	if (nvram_match(bw, "160"))
 		usebw = 160;
+
 	if ((!strcmp(netmode, "ng-only") ||	//
 	     !strcmp(netmode, "na-only") ||	//
 	     !strcmp(netmode, "n2-only") ||	//
@@ -379,10 +380,10 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		} else {
 			fprintf(fp, "dynamic_ht40=0\n");
 		}
-
-		if (nvram_default_match(bw, "20", "20")) {
+		char *nbw = nvram_default_get(bw, "20");
+		if (!strcmp(nbw, "20")) {
 			sprintf(ht, "HT20");
-		} else if (nvram_match(bw, "80") || nvram_match(bw, "40") || nvram_match(bw, "2040") || nvram_match(bw, "160") || nvram_match(bw, "80+80")) {
+		} else if (!strcmp(nbw, "80") || !strcmp(nbw, "40") || !strcmp(nbw, "2040") || !strcmp(nbw, "160") || !strcmp(nbw, "80+80")) {
 			char sb[32];
 			sprintf(sb, "%s_nctrlsb", prefix);
 			if (nvram_default_match(sb, "upper", "lower")) {
@@ -468,9 +469,10 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 						break;
 					i++;
 				}
-				if (nvram_default_match(bw, "20", "20")) {
+				char *nbw = nvram_default_get(bw, "20");
+				if (!strcmp(nbw, "20")) {
 					sprintf(ht, "HT20");
-				} else if (nvram_match(bw, "80") || nvram_match(bw, "40") || nvram_match(bw, "2040") || nvram_match(bw, "160") || nvram_match(bw, "80+80")) {
+				} else if (!strcmp(nbw, "80") || !strcmp(nbw, "40") || !strcmp(nbw, "2040") || !strcmp(nbw, "160") || !strcmp(nbw, "80+80")) {
 					if (chan[i].ht40minus) {
 						sprintf(ht, "HT40-");
 						iht = -1;
