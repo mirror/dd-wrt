@@ -1303,8 +1303,6 @@ int isFXXN_PRO(char *ifname)	//checks if its usualla a DBII Networks FxxN-PRO ca
 	return 0;
 }
 
-
-
 int isSR71E(char *ifname)
 {
 
