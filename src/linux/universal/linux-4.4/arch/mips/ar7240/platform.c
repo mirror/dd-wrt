@@ -876,27 +876,8 @@ static void enable_uart(void)
 #endif
 
 }
-static char *dap_scanmac(char *dest, char *base)
-{
-int i;
-printk(KERN_INFO "scan mac from %p\n",base);
-for (i=0;i<0x100;i++) {
-    if (!memcmp(&base[i],"lanmac=",7)) {
-	    printk(KERN_INFO "found @%p\n",&base[i+7]);
-	    char *src = &base[i+7];
-	    int ret = sscanf(src, "%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx", &dest[0], &dest[1], &dest[2], &dest[3], &dest[4], &dest[5]);
-	    if (ret!=6) {
-		printk(KERN_INFO "parse fail\n");
-		return NULL;
-	    }
-	    return dest;
-    }
-}
-printk(KERN_INFO "found nothing\n");
-return NULL;
-}
 
-static char *tew_scanmac(char *dest, char *base,char *str)
+static char *scanmac(char *dest, char *base,char *str)
 {
 int i;
 printk(KERN_INFO "scan mac from %p\n",base);
@@ -1026,8 +1007,19 @@ int __init ar7240_platform_init(void)
 	ath79_init_mac(mac1, mac, 0);	
     #elif CONFIG_DIR825C1
 	#ifdef CONFIG_DIR859
-	dir825b1_read_ascii_mac(mac0, DIR859_MAC_LOCATION_0);
-	dir825b1_read_ascii_mac(mac1, DIR859_MAC_LOCATION_1);
+	char tempmac[6];
+	if (!scanmac(tempmac, (u8 *)KSEG1ADDR(0x1f050000),"wlan24mac=")) {
+		printk(KERN_INFO "mac is dead, use fake mac\n");
+		ath79_init_mac(mac0, "\x0\x1\x2\x3\x4\x5", 0);
+	}else{
+		ath79_init_mac(mac0, tempmac, 0);	
+	}
+	if (!scanmac(tempmac, (u8 *)KSEG1ADDR(0x1f050000),"wlan5mac=")) {
+		printk(KERN_INFO "mac is dead, use fake mac\n");
+		ath79_init_mac(mac1, "\x0\x1\x2\x3\x4\x5", 0);
+	}else{
+		ath79_init_mac(mac1, tempmac, 0);	
+	}
 	#else
 	dir825b1_read_ascii_mac(mac0, DIR825C1_MAC_LOCATION_0);
 	dir825b1_read_ascii_mac(mac1, DIR825C1_MAC_LOCATION_1);
@@ -1042,7 +1034,7 @@ int __init ar7240_platform_init(void)
     
     #ifdef CONFIG_DAP2230
 	char tempmac[6];
-	if (!dap_scanmac(tempmac, (u8 *)KSEG1ADDR(0x1f042000))) {
+	if (!scanmac(tempmac, (u8 *)KSEG1ADDR(0x1f042000),"lanmac=")) {
 	printk(KERN_INFO "mac is dead, use fake mac\n");
 	ath79_init_mac(mac0, "\x0\x1\x2\x3\x4\x5", -1);
 	ath79_init_mac(mac1, "\x0\x1\x2\x3\x4\x5", 0);
@@ -1054,7 +1046,7 @@ int __init ar7240_platform_init(void)
 	printk(KERN_INFO "mac1 mac %02X:%02X:%02X:%02X:%02X:%02X\n",mac1[0]&0xff,mac1[1]&0xff,mac1[2]&0xff,mac1[3]&0xff,mac1[4]&0xff,mac1[5]&0xff);
     #elif CONFIG_DAP3662
 	char tempmac[6];
-	if (!dap_scanmac(tempmac, (u8 *)KSEG1ADDR(0x1f042000))) {
+	if (!scanmac(tempmac, (u8 *)KSEG1ADDR(0x1f042000),"lanmac=")) {
 	printk(KERN_INFO "mac is dead, use fake mac\n");
 	ath79_init_mac(mac0, "\x0\x1\x2\x3\x4\x5", -1);
 	ath79_init_mac(mac1, "\x0\x1\x2\x3\x4\x5", 0);
@@ -1066,8 +1058,8 @@ int __init ar7240_platform_init(void)
 	dir825b1_read_ascii_mac(mac0, DIR862_MAC_LOCATION_0);
 	dir825b1_read_ascii_mac(mac1, DIR862_MAC_LOCATION_1);
 	if (!memcmp(mac0,"\x0\x0\x0\x0\x0\x0",6)) {
-		tew_scanmac(mac0,(u8 *)KSEG1ADDR(0x1f040000),"lan_mac=");
-		tew_scanmac(mac1,(u8 *)KSEG1ADDR(0x1f040000),"wan_mac=");
+		scanmac(mac0,(u8 *)KSEG1ADDR(0x1f040000),"lan_mac=");
+		scanmac(mac1,(u8 *)KSEG1ADDR(0x1f040000),"wan_mac=");
 	}
     #elif CONFIG_WR1043V2
 	mac = (u8 *)KSEG1ADDR(0x1f01fc00);
@@ -1259,7 +1251,7 @@ int __init ar7240_platform_init(void)
 	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac1, 0);
 	ar71xx_add_device_mdio(0, 0x0);	
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
-	ar71xx_eth1_data.duplex = DUPLEX_FULL;
+//	ar71xx_eth1_data.duplex = DUPLEX_FULL;
 	// wan
 	ar71xx_add_device_eth(1);
 
@@ -1276,7 +1268,7 @@ int __init ar7240_platform_init(void)
 	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac1, 0);
 	ar71xx_add_device_mdio(0, 0x0);	
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
-	ar71xx_eth1_data.duplex = DUPLEX_FULL;
+//	ar71xx_eth1_data.duplex = DUPLEX_FULL;
 	// wan
 	ar71xx_add_device_eth(1);
 
