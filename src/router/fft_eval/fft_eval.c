@@ -256,6 +256,7 @@ static int print_values()
 
 					data = result->sample.ht40.data[i];
 					data <<= result->sample.ht40.max_exp;
+					data *= data;
 					datasquaresum_upper += data;
 
 					if (data > datamax)
