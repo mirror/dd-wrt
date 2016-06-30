@@ -333,21 +333,21 @@ static int freq_quality(struct frequency *f, struct sort_data *s)
 
 	if (f->clear_count) {
 
-	c = f->clear;
+		c = f->clear;
 
-	idx = (f->freq - 2412) / 5;
-	int *bias = bias_2g;
-	if (_htflags % AUTO_FORCEHT40)
-	    bias = bias_2g_ht40;
-	    
-	/* strongly discourage the use of channels other than 1,6,11 */
-	if (f->freq >= 2412 && f->freq <= 2484 && idx < ARRAY_SIZE(bias_2g))
-		c = (c * bias[idx]) / 100;
-	}else {
-	    c = 100;
+		idx = (f->freq - 2412) / 5;
+		int *bias = bias_2g;
+		if (_htflags % AUTO_FORCEHT40)
+			bias = bias_2g_ht40;
+
+		/* strongly discourage the use of channels other than 1,6,11 */
+		if (f->freq >= 2412 && f->freq <= 2484 && idx < ARRAY_SIZE(bias_2g))
+			c = (c * bias[idx]) / 100;
+	} else {
+		c = 100;
 	}
 	int eirp = get_eirp(f->freq);
-	/* subtract noise delta to lowest noise.*/
+	/* subtract noise delta to lowest noise. */
 	c -= (f->noise - s->lowest_noise);
 	/* subtract max capable output power (regulatory limited by hw caps) delta from maximum eirp possible */
 	c -= (_max_eirp - eirp);
@@ -362,8 +362,8 @@ static int sort_cmp(void *priv, struct list_head *a, struct list_head *b)
 {
 	struct frequency *f1 = container_of(a, struct frequency, list);
 	struct frequency *f2 = container_of(b, struct frequency, list);
-	int i;
 	struct wifi_channels *chan = NULL;
+	int i = 0;
 	while (1) {
 		chan = &wifi_channels[i++];
 		if (chan->freq == -1)
@@ -371,13 +371,15 @@ static int sort_cmp(void *priv, struct list_head *a, struct list_head *b)
 		if (chan->freq == f1->freq)
 			break;
 	}
-	if (chan->freq == -1)
+	if (chan->freq == -1) {
 		return 1;
+	}
 
 	/* if HT40, VHT80 or VHT160 auto channel is requested, check if desired channel is capabile of that operation mode, if not, move it to the bottom of the list */
-	if ((_htflags & AUTO_FORCEHT40 || _htflags & AUTO_FORCEVHT80 || _htflags & AUTO_FORCEVHT160) && !chan->ht40minus && !chan->ht40plus) 
+	if ((_htflags & AUTO_FORCEHT40 || _htflags & AUTO_FORCEVHT80 || _htflags & AUTO_FORCEVHT160) && !chan->ht40minus && !chan->ht40plus) {
+		fprintf(stderr, "channel %d is not ht capable, move it to bottom\n", chan->freq);
 		return 1;
-
+	}
 
 	if (f1->quality > f2->quality)
 		return -1;
