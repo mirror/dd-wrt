@@ -326,15 +326,20 @@ void start_sysinit(void)
 		int i;
 		for (i = 0; i < 6; i++)
 			putc(getc(fp), out);
-		char *mac = "\x00\x01\x02\x03\x04\x05";
+		char mac[6];
+		char eabuf[32];
+		char macaddr[32];
 		if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
-			char eabuf[32];
-
 			strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 			ioctl(s, SIOCGIFHWADDR, &ifr);
-			mac = (char *)ifr.ifr_hwaddr.sa_data;
+			memcpy(mac,ifr.ifr_hwaddr.sa_data,6);
 			close(s);
 		}
+		strcpy(macaddr, ether_etoa(mac, eabuf));
+		MAC_ADD(macaddr);
+		MAC_ADD(macaddr);
+		ether_atoe(macaddr, mac);
+
 		for (i = 0; i < 6; i++)
 			putc(mac[i], out);
 		fseek(fp, 20492, SEEK_SET);
