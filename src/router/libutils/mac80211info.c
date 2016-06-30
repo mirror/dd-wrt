@@ -243,7 +243,7 @@ int is_beeliner(const char *prefix)
 	char buf[32];
 	fscanf(fp, "%s", buf);
 	fclose(fp);
-	if (!strcmp(buf, "0x0040"))
+	if (!strcmp(buf, "0x0040") || !strcmp(buf, "0x0046"))
 		return 1;
 	return 0;
 }
