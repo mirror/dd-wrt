@@ -195,14 +195,12 @@ static int print_values()
 					float freq;
 					float signal;
 					int data;
-					freq = result->sample.ht20.freq - 10.0 + ((20.0 * i) / SPECTRAL_HT20_NUM_BINS);
+					freq = result->sample.ht20.freq - (22.0 * SPECTRAL_HT20_NUM_BINS / 64.0) / 2 + (22.0 * (i + 0.5) / 64.0);
 
 					/* This is where the "magic" happens: interpret the signal
 					 * to output some kind of data which looks useful.  */
 
 					data = result->sample.ht20.data[i] << result->sample.ht20.max_exp;
-					if (data == 0)
-						data = 1;
 					signal = result->sample.ht20.noise + result->sample.ht20.rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
 
 					printf("[ %f, %f ]", freq, signal);
@@ -272,6 +270,7 @@ static int print_values()
 
 					freq = centerfreq - (40.0 * SPECTRAL_HT20_40_NUM_BINS / 128.0) / 2 + (40.0 * (i + 0.5) / 128.0);
 
+
 					if (i < SPECTRAL_HT20_40_NUM_BINS / 2) {
 						noise = result->sample.ht40.lower_noise;
 						datasquaresum = datasquaresum_lower;
@@ -284,8 +283,6 @@ static int print_values()
 
 					data = result->sample.ht40.data[i];
 					data <<= result->sample.ht40.max_exp;
-					if (data == 0)
-						data = 1;
 
 					float signal = noise + rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
 
@@ -327,8 +324,6 @@ static int print_values()
 					freq = result->sample.ath10k.header.freq1 - (result->sample.ath10k.header.chan_width_mhz) / 2 + (result->sample.ath10k.header.chan_width_mhz * (i + 0.5) / bins);
 
 					data = result->sample.ath10k.data[i] << result->sample.ath10k.header.max_exp;
-					if (data == 0)
-						data = 1;
 					signal = result->sample.ath10k.header.noise + result->sample.ath10k.header.rssi + 20 * log10f(data) - log10f(datasquaresum) * 10;
 					printf("[ %f, %f ]", freq, signal);
 					if (i < (bins - 1) || result->next)
