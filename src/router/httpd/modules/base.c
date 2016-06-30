@@ -664,7 +664,7 @@ void do_spectral_scan(struct mime_handler *handler, char *p, webs_t stream, char
 	sysprintf("cat %s/spectral_scan0 > /dev/null", path);
 #ifdef HAVE_ATH10K
 	if (is_ath10k(ifname)) {
-		sysprintf("echo 256 > %s/spectral_bins", path);
+		sysprintf("echo 64 > %s/spectral_bins", path);
 		sysprintf("echo manual > %s/spectral_scan_ctl", path);
 		sysprintf("echo trigger > %s/spectral_scan_ctl", path);
 	} else
