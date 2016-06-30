@@ -16,7 +16,7 @@
   +----------------------------------------------------------------------+
 */
 
-/* $Id: 99c293c6d7426a83c60d234956aa10f0b56218fb $ */
+/* $Id: 57d060f4ff33b65935fb35c9950c3b3979486d58 $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -1012,6 +1012,14 @@ static int php_zip_has_property(zval *object, zval *member, int type, const zend
 		zval_dtor(member);
 	}
 	return retval;
+}
+/* }}} */
+
+static HashTable *php_zip_get_gc(zval *object, zval ***gc_data, int *gc_data_count TSRMLS_DC) /* {{{ */
+{
+	*gc_data = NULL;
+	*gc_data_count = 0;
+	return zend_std_get_properties(object TSRMLS_CC);
 }
 /* }}} */
 
@@ -2777,6 +2785,7 @@ static PHP_MINIT_FUNCTION(zip)
 	zip_object_handlers.clone_obj		= NULL;
 	zip_object_handlers.get_property_ptr_ptr = php_zip_get_property_ptr_ptr;
 
+	zip_object_handlers.get_gc          = php_zip_get_gc;
 	zip_object_handlers.get_properties = php_zip_get_properties;
 	zip_object_handlers.read_property	= php_zip_read_property;
 	zip_object_handlers.has_property	= php_zip_has_property;
@@ -2874,7 +2883,7 @@ static PHP_MINFO_FUNCTION(zip)
 	php_info_print_table_start();
 
 	php_info_print_table_row(2, "Zip", "enabled");
-	php_info_print_table_row(2, "Extension Version","$Id: 99c293c6d7426a83c60d234956aa10f0b56218fb $");
+	php_info_print_table_row(2, "Extension Version","$Id: 57d060f4ff33b65935fb35c9950c3b3979486d58 $");
 	php_info_print_table_row(2, "Zip version", PHP_ZIP_VERSION_STRING);
 	php_info_print_table_row(2, "Libzip version", LIBZIP_VERSION);
 
