@@ -888,13 +888,13 @@ static void check_validchannels(struct wifi_channels *list, int bw)
 			struct wifi_channels *chan = &list[i++];
 			if (chan->freq == -1)
 				break;
-			if (chan->ht40plus && !isinlist(list, chan->freq + (distance << a))) {
-				fprintf(stderr, "freq %d has no %s parent at %d, disable ht40plus\n", chan->freq, debugstr[a], chan->freq + (distance << a));
-				chan->ht40plus = 0;
-			}
 			if (chan->ht40minus && !isinlist(list, chan->freq - (distance << a))) {
 				fprintf(stderr, "freq %d has no %s parent at %d, disable ht40minus\n", chan->freq, debugstr[a], chan->freq - (distance << a));
 				chan->ht40minus = 0;
+			}
+			if (chan->ht40plus && !isinlist(list, chan->freq + (distance << a))) {
+				fprintf(stderr, "freq %d has no %s parent at %d, disable ht40plus\n", chan->freq, debugstr[a], chan->freq + (distance << a));
+				chan->ht40plus = 0;
 			}
 			if (a == 2) {
 				if (chan->ht40minus && !isinlist(list, chan->freq - ((distance << a) + (distance << (a - 1))))) {
@@ -902,7 +902,7 @@ static void check_validchannels(struct wifi_channels *list, int bw)
 					chan->ht40minus = 0;
 				}
 				if (chan->ht40plus && !isinlist(list, chan->freq + ((distance << a) + (distance << (a - 1))))) {
-					fprintf(stderr, "freq %d has no %s parent at %d, disable ht40minus\n", chan->freq, debugstr[a - 1], chan->freq + ((distance << a) + (distance << (a - 1))));
+					fprintf(stderr, "freq %d has no %s parent at %d, disable ht40plus\n", chan->freq, debugstr[a - 1], chan->freq + ((distance << a) + (distance << (a - 1))));
 					chan->ht40plus = 0;
 				}
 			}
@@ -912,7 +912,7 @@ static void check_validchannels(struct wifi_channels *list, int bw)
 					chan->ht40minus = 0;
 				}
 				if (chan->ht40plus && !isinlist(list, chan->freq + ((distance << a) + (distance << (a - 1)) + (distance << (a - 2))))) {
-					fprintf(stderr, "freq %d has no %s parent at %d, disable ht40minus\n", chan->freq, debugstr[a - 1], chan->freq + ((distance << a) + (distance << (a - 1)) + (distance << (a - 2))));
+					fprintf(stderr, "freq %d has no %s parent at %d, disable ht40plus\n", chan->freq, debugstr[a - 1], chan->freq + ((distance << a) + (distance << (a - 1)) + (distance << (a - 2))));
 					chan->ht40plus = 0;
 				}
 			}
