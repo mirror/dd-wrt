@@ -2643,6 +2643,14 @@ void start_sysinit(void)
 		break;
 	case ROUTER_ASUS_AC3100:
 	case ROUTER_ASUS_AC88U:
+		/* ldo patch */
+		char *terr = nvram_safe_get("territory_code");
+		if (strstr(terr, "01") || nvram_match("0:boardflags4", "0xe")) {
+			nvram_set("0:boardflags4", "0x8e");
+			nvram_set("1:boardflags4", "0x8e");
+			nvram_set("2:boardflags4", "0x8e");
+
+		}
 		nvram_set("wait_time", "1");	//otherwise boot time takes very long
 		eval("mknod", "/dev/rtkswitch", "c", "233", "0");
 		if (nvram_match("model", "RT-AC88U")) {
@@ -2668,6 +2676,71 @@ void start_sysinit(void)
 		set_gpio(20, 1);	// fixup ses button
 		break;
 	case ROUTER_ASUS_AC5300:
+		/* update board limits */
+		if (nvram_match("0:maxp2ga0", "0x60") || nvram_match("bl_version", "1.0.3.4")) {
+			nvram_set("0:maxp2ga0", "0x6a");
+			nvram_set("0:maxp2ga1", "0x6a");
+			nvram_set("0:maxp2ga2", "0x6a");
+			nvram_set("0:maxp2ga3", "0x6a");
+			nvram_set("0:dot11agofdmhrbw202gpo", "0x4210");
+			nvram_set("0:mcsbw202gpo", "0xb9872100");
+			nvram_set("0:mcsbw402gpo", "0xb9872100");
+			nvram_set("0:mcs1024qam2gpo", "0xedededed");
+
+			nvram_set("1:maxp5gb0a0", "0x66");
+			nvram_set("1:maxp5gb1a0", "0x66");
+			nvram_set("1:maxp5gb2a0", "0x66");
+			nvram_set("1:maxp5gb3a0", "0x66");
+			nvram_set("1:maxp5gb4a0", "0x66");
+
+			nvram_set("1:maxp5gb0a1", "0x66");
+			nvram_set("1:maxp5gb1a1", "0x66");
+			nvram_set("1:maxp5gb2a1", "0x66");
+			nvram_set("1:maxp5gb3a1", "0x66");
+			nvram_set("1:maxp5gb4a1", "0x66");
+
+			nvram_set("1:maxp5gb0a2", "0x66");
+			nvram_set("1:maxp5gb1a2", "0x66");
+			nvram_set("1:maxp5gb2a2", "0x66");
+			nvram_set("1:maxp5gb3a2", "0x66");
+			nvram_set("1:maxp5gb4a2", "0x66");
+
+			nvram_set("1:maxp5gb0a3", "0x66");
+			nvram_set("1:maxp5gb1a3", "0x66");
+			nvram_set("1:maxp5gb2a3", "0x66");
+			nvram_set("1:maxp5gb3a3", "0x66");
+			nvram_set("1:maxp5gb4a3", "0x66");
+
+			nvram_set("2:maxp5gb0a0", "0x66");
+			nvram_set("2:maxp5gb1a0", "0x66");
+			nvram_set("2:maxp5gb2a0", "0x66");
+			nvram_set("2:maxp5gb3a0", "0x66");
+			nvram_set("2:maxp5gb4a0", "0x6A");
+
+			nvram_set("2:maxp5gb0a1", "0x66");
+			nvram_set("2:maxp5gb1a1", "0x66");
+			nvram_set("2:maxp5gb2a1", "0x66");
+			nvram_set("2:maxp5gb3a1", "0x66");
+			nvram_set("2:maxp5gb4a1", "0x6A");
+
+			nvram_set("2:maxp5gb0a2", "0x66");
+			nvram_set("2:maxp5gb1a2", "0x66");
+			nvram_set("2:maxp5gb2a2", "0x66");
+			nvram_set("2:maxp5gb3a2", "0x66");
+			nvram_set("2:maxp5gb4a2", "0x6A");
+
+			nvram_set("2:maxp5gb0a3", "0x66");
+			nvram_set("2:maxp5gb1a3", "0x66");
+			nvram_set("2:maxp5gb2a3", "0x66");
+			nvram_set("2:maxp5gb3a3", "0x66");
+			nvram_set("2:maxp5gb4a3", "0x6A");
+
+			nvram_set("2:mcsbw205gx2po", "0xba875430");
+			nvram_set("2:mcsbw405gx2po", "0xba875430");
+			nvram_set("2:mcsbw805gx2po", "0xba875430");
+			nvram_set("2:mcs1024qam5gx2po", "0xdcdcdcdc");
+		}
+
 		nvram_set("2:ledbh9", "0x7");
 		nvram_set("1:ledbh9", "0x7");
 		nvram_set("0:ledbh9", "0x7");
