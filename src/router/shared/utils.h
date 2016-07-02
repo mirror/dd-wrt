@@ -742,6 +742,8 @@
 
 #define ROUTER_NETGEAR_R6400 0xfc15
 
+#define ROUTER_ASUS_AC3100 0xfd15
+
 #define NVROUTER "DD_BOARD"
 
 static inline int startswith(char *source, char *cmp)

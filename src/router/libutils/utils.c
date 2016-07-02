@@ -1316,7 +1316,7 @@ int internal_getRouterBrand()
 
 	if (nvram_match("model", "RT-AC3100")) {
 		setRouter("Asus RT-AC3100");
-		return ROUTER_ASUS_AC88U;
+		return ROUTER_ASUS_AC3100;
 	}
 
 	if (nvram_match("model", "RT-AC5300")) {
@@ -6579,6 +6579,7 @@ int led_control(int type, int act)
 		usb_gpio = 0x10f;
 		break;
 	case ROUTER_ASUS_AC88U:
+	case ROUTER_ASUS_AC3100:
 	case ROUTER_ASUS_AC5300:
 		usb_power = 0x009;
 		usb_gpio = 0x110;
