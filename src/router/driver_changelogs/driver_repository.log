@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r3011 | BrainSlayer | 2016-07-02 17:53:12 +0200 (Sat, 02 Jul 2016) | 1 line
+
+move code from platform data to ath9k since it belongs here
+------------------------------------------------------------------------
+r3010 | BrainSlayer | 2016-07-02 17:26:44 +0200 (Sat, 02 Jul 2016) | 1 line
+
+scorpion needs external reset too
+------------------------------------------------------------------------
 r3009 | brainslayer | 2016-07-02 13:13:49 +0200 (Sat, 02 Jul 2016) | 1 line
 
 update qca988x firmware
