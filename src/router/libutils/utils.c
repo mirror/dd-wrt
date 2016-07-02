@@ -1314,6 +1314,11 @@ int internal_getRouterBrand()
 		return ROUTER_ASUS_AC88U;
 	}
 
+	if (nvram_match("model", "RT-AC3100")) {
+		setRouter("Asus RT-AC3100");
+		return ROUTER_ASUS_AC88U;
+	}
+
 	if (nvram_match("model", "RT-AC5300")) {
 		setRouter("Asus RT-AC5300");
 		return ROUTER_ASUS_AC5300;
