@@ -2644,7 +2644,7 @@ void start_sysinit(void)
 	case ROUTER_ASUS_AC88U:
 		nvram_set("wait_time", "1");	//otherwise boot time takes very long
 		eval("mknod", "/dev/rtkswitch", "c", "233", "0");
-		if (nvram_match("mode", "RT-AC88U")) {
+		if (nvram_match("model", "RT-AC88U")) {
 			insmod("rtl8365mb");
 			fprintf(stderr, "Reset RTL8365MB Switch\n");
 			usleep(400 * 1000);

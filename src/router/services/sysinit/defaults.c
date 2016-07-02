@@ -882,9 +882,11 @@ struct nvram_param srouter_defaults[] = {
 	{"wl_stbc_rx", "1"},	/* Default STBC RX setting */
 	{"wl_ampdu", "auto"},	/* Default AMPDU setting */
 	/* Default AMPDU retry limit per-tid setting */
-	{"wl_ampdu_rtylimit_tid", "5 5 5 5 5 5 5 5"},
+	{"wl_ampdu_rtylimit_tid", "7 7 7 7 7 7 7 7"},
 	/* Default AMPDU regular rate retry limit per-tid setting */
-	{"wl_ampdu_rr_rtylimit_tid", "2 2 2 2 2 2 2 2"},
+	{"wl_ampdu_rr_rtylimit_tid", "3 3 3 3 3 3 3 3"},
+	{"wl_ampdu_mpdu", "0"},
+	{"wl_ampdu_rts", "1"},
 	{"wl_amsdu", "auto"},	/* Disable AMSDU Tx by default */
 	{"wl_rx_amsdu_in_ampdu", "auto"},	/* Disable AMSDU Rx by default */
 	{"wl_cal_period", "0"},	/* Disable periodic cal */
@@ -894,9 +896,11 @@ struct nvram_param srouter_defaults[] = {
 	{"wl0_stbc_rx", "1"},	/* Default STBC RX setting */
 	{"wl0_ampdu", "auto"},	/* Default AMPDU setting */
 	/* Default AMPDU retry limit per-tid setting */
-	{"wl0_ampdu_rtylimit_tid", "5 5 5 5 5 5 5 5"},
+	{"wl0_ampdu_rtylimit_tid", "7 7 7 7 7 7 7 7"},
 	/* Default AMPDU regular rate retry limit per-tid setting */
-	{"wl0_ampdu_rr_rtylimit_tid", "2 2 2 2 2 2 2 2"},
+	{"wl0_ampdu_rr_rtylimit_tid", "3 3 3 3 3 3 3 3"},
+	{"wl0_ampdu_rts", "1"},
+	{"wl0_ampdu_mpdu", "0"},
 	{"wl0_amsdu", "auto"},	/* Default AMSDU setting */
 	{"wl0_rx_amsdu_in_ampdu", "auto"},	/* Disable AMSDU Rx by default */
 	{"wl0_cal_period", "0"},	/* Disable periodic cal */
@@ -906,9 +910,11 @@ struct nvram_param srouter_defaults[] = {
 	{"wl1_stbc_rx", "1"},	/* Default STBC RX setting */
 	{"wl1_ampdu", "auto"},	/* Default AMPDU setting */
 	/* Default AMPDU retry limit per-tid setting */
-	{"wl1_ampdu_rtylimit_tid", "5 5 5 5 5 5 5 5"},
+	{"wl1_ampdu_rtylimit_tid", "7 7 7 7 7 7 7 7"},
 	/* Default AMPDU regular rate retry limit per-tid setting */
-	{"wl1_ampdu_rr_rtylimit_tid", "2 2 2 2 2 2 2 2"},
+	{"wl1_ampdu_rr_rtylimit_tid", "3 3 3 3 3 3 3 3"},
+	{"wl1_ampdu_rts", "1"},
+	{"wl1_ampdu_mpdu", "0"},
 	{"wl1_amsdu", "auto"},	/* Default AMSDU setting */
 	{"wl1_rx_amsdu_in_ampdu", "auto"},	/* Disable AMSDU Rx by default */
 	{"wl1_cal_period", "0"},	/* Disable periodic cal */
@@ -918,9 +924,11 @@ struct nvram_param srouter_defaults[] = {
 	{"wl2_stbc_rx", "1"},	/* Default STBC RX setting */
 	{"wl2_ampdu", "auto"},	/* Default AMPDU setting */
 	/* Default AMPDU retry limit per-tid setting */
-	{"wl2_ampdu_rtylimit_tid", "5 5 5 5 5 5 5 5"},
+	{"wl2_ampdu_rtylimit_tid", "7 7 7 7 7 7 7 7"},
 	/* Default AMPDU regular rate retry limit per-tid setting */
-	{"wl2_ampdu_rr_rtylimit_tid", "2 2 2 2 2 2 2 2"},
+	{"wl2_ampdu_rr_rtylimit_tid", "3 3 3 3 3 3 3 3"},
+	{"wl2_ampdu_rts", "1"},
+	{"wl2_ampdu_mpdu", "0"},
 	{"wl2_amsdu", "auto"},	/* Default AMSDU setting */
 	{"wl2_rx_amsdu_in_ampdu", "auto"},	/* Disable AMSDU Rx by default */
 	{"wl2_cal_period", "0"},	/* Disable periodic cal */
