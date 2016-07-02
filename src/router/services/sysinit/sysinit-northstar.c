@@ -2650,7 +2650,7 @@ void start_sysinit(void)
 				nvram_set("0:boardflags4", "0x8e");
 				nvram_set("1:boardflags4", "0x8e");
 				nvram_set("2:boardflags4", "0x8e");
-
+				nvram_commit();
 			}
 		}
 		nvram_set("wait_time", "1");	//otherwise boot time takes very long
@@ -2741,6 +2741,7 @@ void start_sysinit(void)
 			nvram_set("2:mcsbw405gx2po", "0xba875430");
 			nvram_set("2:mcsbw805gx2po", "0xba875430");
 			nvram_set("2:mcs1024qam5gx2po", "0xdcdcdcdc");
+			nvram_commit();
 		}
 
 		nvram_set("2:ledbh9", "0x7");
