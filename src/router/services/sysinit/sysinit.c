@@ -2518,6 +2518,7 @@ void start_restore_defaults(void)
 		}
 		break;
 
+	case ROUTER_ASUS_AC3100:
 	case ROUTER_ASUS_AC88U:
 		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")
 		    || !nvram_get("vlan2ports")

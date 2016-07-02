@@ -2494,30 +2494,29 @@ int wl_get_int(char *name, char *var, int *val)
 	return wl_get_val(name, var, val, sizeof(*val));
 }
 
-// #else
-int wl_iovar_getbuf(char *ifname, char *iovar, void *param, int paramlen, void *bufptr, int buflen)
+int
+wl_iovar_getbuf(char *ifname, char *iovar, void *param, int paramlen, void *bufptr, int buflen)
 {
 	int err;
 	uint namelen;
 	uint iolen;
 
-	namelen = strlen(iovar) + 1;	/* length of iovar name plus null */
+	namelen = strlen(iovar) + 1;	 /* length of iovar name plus null */
 	iolen = namelen + paramlen;
 
-	/*
-	 * check for overflow 
-	 */
+	/* check for overflow */
 	if (iolen > buflen)
 		return (BCME_BUFTOOSHORT);
 
 	memcpy(bufptr, iovar, namelen);	/* copy iovar name including null */
-	memcpy((int8 *) bufptr + namelen, param, paramlen);
+	memcpy((int8*)bufptr + namelen, param, paramlen);
 
 	err = wl_ioctl(ifname, WLC_GET_VAR, bufptr, buflen);
 
 	return (err);
 }
 
+// #else
 int wl_iovar_setbuf(char *ifname, char *iovar, void *param, int paramlen, void *bufptr, int buflen)
 {
 	uint namelen;
@@ -2526,9 +2525,7 @@ int wl_iovar_setbuf(char *ifname, char *iovar, void *param, int paramlen, void *
 	namelen = strlen(iovar) + 1;	/* length of iovar name plus null */
 	iolen = namelen + paramlen;
 
-	/*
-	 * check for overflow 
-	 */
+	/* check for overflow */
 	if (iolen > buflen)
 		return (BCME_BUFTOOSHORT);
 
@@ -2550,9 +2547,7 @@ int wl_iovar_get(char *ifname, char *iovar, void *bufptr, int buflen)
 	char smbuf[WLC_IOCTL_SMLEN];
 	int ret;
 
-	/*
-	 * use the return buffer if it is bigger than what we have on the stack 
-	 */
+	/* use the return buffer if it is bigger than what we have on the stack */
 	if (buflen > sizeof(smbuf)) {
 		ret = wl_iovar_getbuf(ifname, iovar, NULL, 0, bufptr, buflen);
 	} else {

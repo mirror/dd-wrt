@@ -2641,6 +2641,7 @@ void start_sysinit(void)
 		set_gpio(15, 1);	// fixup wifi button
 		set_gpio(2, 1);	// fixup ses button
 		break;
+	case ROUTER_ASUS_AC3100:
 	case ROUTER_ASUS_AC88U:
 		nvram_set("wait_time", "1");	//otherwise boot time takes very long
 		eval("mknod", "/dev/rtkswitch", "c", "233", "0");
