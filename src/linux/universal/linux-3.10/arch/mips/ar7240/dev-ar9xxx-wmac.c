@@ -105,6 +105,78 @@ static int ar933x_wmac_reset(void)
 	return -ETIMEDOUT;
 }
 
+static u32 ddr_reg_read(u32 reg)
+{
+	void __iomem *ddr_reg = ar71xx_ddr_base + reg;
+	return __raw_readl(ddr_reg);
+}
+
+
+static int scorpion_wmac_reset(void)
+{
+
+#define DDR_CTL_CONFIG_ADDRESS                                       0xb8000000
+#define DDR_CTL_CONFIG_OFFSET                                        0x0108
+#define DDR_CTL_CONFIG_CLIENT_ACTIVITY_RESERVED_MSB                  29
+#define DDR_CTL_CONFIG_CLIENT_ACTIVITY_RESERVED_LSB                  29
+#define DDR_CTL_CONFIG_CLIENT_ACTIVITY_RESERVED_MASK                 0x20000000
+#define DDR_CTL_CONFIG_CLIENT_ACTIVITY_CPU_MSB                       28
+#define DDR_CTL_CONFIG_CLIENT_ACTIVITY_CPU_LSB                       28
+#define DDR_CTL_CONFIG_CLIENT_ACTIVITY_CPU_MASK                      0x10000000
+#define DDR_CTL_CONFIG_CLIENT_ACTIVITY_GMAC0_MSB                     27
+#define DDR_CTL_CONFIG_CLIENT_ACTIVITY_GMAC0_LSB                     27
+#define DDR_CTL_CONFIG_CLIENT_ACTIVITY_GMAC0_MASK                    0x08000000
+#define DDR_CTL_CONFIG_CLIENT_ACTIVITY_GMAC1_MSB                     26
+#define DDR_CTL_CONFIG_CLIENT_ACTIVITY_GMAC1_LSB                     26
+#define DDR_CTL_CONFIG_CLIENT_ACTIVITY_GMAC1_MASK                    0x04000000
+#define DDR_CTL_CONFIG_CLIENT_ACTIVITY_USB1_I2S_NAND_MSB             25
+#define DDR_CTL_CONFIG_CLIENT_ACTIVITY_USB1_I2S_NAND_LSB             25
+#define DDR_CTL_CONFIG_CLIENT_ACTIVITY_USB1_I2S_NAND_MASK            0x02000000
+#define DDR_CTL_CONFIG_CLIENT_ACTIVITY_PCIE1_MSB                     24
+#define DDR_CTL_CONFIG_CLIENT_ACTIVITY_PCIE1_LSB                     24
+#define DDR_CTL_CONFIG_CLIENT_ACTIVITY_PCIE1_MASK                    0x01000000
+#define DDR_CTL_CONFIG_CLIENT_ACTIVITY_WMAC_MSB                      23
+#define DDR_CTL_CONFIG_CLIENT_ACTIVITY_WMAC_LSB                      23
+#define DDR_CTL_CONFIG_CLIENT_ACTIVITY_WMAC_MASK                     0x00800000
+#define DDR_CTL_CONFIG_CLIENT_ACTIVITY_PCIE2_MSB                     22
+#define DDR_CTL_CONFIG_CLIENT_ACTIVITY_PCIE2_LSB                     22
+#define DDR_CTL_CONFIG_CLIENT_ACTIVITY_PCIE2_MASK                    0x00400000
+#define DDR_CTL_CONFIG_CLIENT_ACTIVITY_USB2_CSUM_MSB                 21
+#define DDR_CTL_CONFIG_CLIENT_ACTIVITY_USB2_CSUM_LSB                 21
+#define DDR_CTL_CONFIG_CLIENT_ACTIVITY_USB2_CSUM_MASK                0x00200000
+#define DDR_CTL_CONFIG_CLIENT_ACTIVITY_MSB                           29
+#define DDR_CTL_CONFIG_CLIENT_ACTIVITY_LSB                           21
+#define DDR_CTL_CONFIG_CLIENT_ACTIVITY_MASK                          0x3fe00000
+#define DDR_CTL_CONFIG_CLIENT_ACTIVITY_GET(x)                        (((x) & DDR_CTL_CONFIG_CLIENT_ACTIVITY_MASK) >> DDR_CTL_CONFIG_CLIENT_ACTIVITY_LSB)
+#define DDR_CTL_CONFIG_CLIENT_ACTIVITY_SET(x)                        (((x) << DDR_CTL_CONFIG_CLIENT_ACTIVITY_LSB) & DDR_CTL_CONFIG_CLIENT_ACTIVITY_MASK)
+
+
+		    u32 data = ddr_reg_read(DDR_CTL_CONFIG_OFFSET);
+		
+		    int count = 0;
+                    u32 usb_mask = DDR_CTL_CONFIG_CLIENT_ACTIVITY_USB1_I2S_NAND_MASK | 
+                                DDR_CTL_CONFIG_CLIENT_ACTIVITY_USB2_CSUM_MASK;
+                    data &= ~usb_mask;
+		    while (DDR_CTL_CONFIG_CLIENT_ACTIVITY_GET(data)) {
+			    //      AVE_DEBUG(0,"DDR Activity - HIGH\n");
+			    printk(KERN_ERR "DDR Activity - HIGH\n");
+			    count++;
+			    udelay(10);
+			    data = ddr_reg_read(DDR_CTL_CONFIG_OFFSET);
+                            data &= ~usb_mask;
+			    if (count > 10) {
+				    printk(KERN_ERR "DDR Activity timeout\n");
+				    break;
+			    }
+		    }
+
+		ar71xx_device_stop(1<<27); // rtc reset
+		udelay(10);
+		ar71xx_device_start(1<<27);
+		udelay(10);
+	    return 0;
+}
+
 static void ar933x_wmac_init(void)
 {
 	ar9xxx_wmac_device.name = "ar933x_wmac";
@@ -170,6 +242,7 @@ static void qca955x_wmac_init(void)
 		ar9xxx_wmac_data.is_clk_25mhz = false;
 	else
 		ar9xxx_wmac_data.is_clk_25mhz = true;
+	ar9xxx_wmac_data.external_reset = scorpion_wmac_reset;
 
 }
 
