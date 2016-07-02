@@ -2644,12 +2644,14 @@ void start_sysinit(void)
 	case ROUTER_ASUS_AC3100:
 	case ROUTER_ASUS_AC88U:
 		/* ldo patch */
-		char *terr = nvram_safe_get("territory_code");
-		if (strstr(terr, "01") || nvram_match("0:boardflags4", "0xe")) {
-			nvram_set("0:boardflags4", "0x8e");
-			nvram_set("1:boardflags4", "0x8e");
-			nvram_set("2:boardflags4", "0x8e");
+		{
+			char *terr = nvram_safe_get("territory_code");
+			if (strstr(terr, "01") || nvram_match("0:boardflags4", "0xe")) {
+				nvram_set("0:boardflags4", "0x8e");
+				nvram_set("1:boardflags4", "0x8e");
+				nvram_set("2:boardflags4", "0x8e");
 
+			}
 		}
 		nvram_set("wait_time", "1");	//otherwise boot time takes very long
 		eval("mknod", "/dev/rtkswitch", "c", "233", "0");
