@@ -2644,21 +2644,22 @@ void start_sysinit(void)
 	case ROUTER_ASUS_AC88U:
 		nvram_set("wait_time", "1");	//otherwise boot time takes very long
 		eval("mknod", "/dev/rtkswitch", "c", "233", "0");
-		insmod("rtl8365mb");
-		fprintf(stderr, "Reset RTL8365MB Switch\n");
-		usleep(400 * 1000);
-		int i, r;
-		for (i = 0; i < 10; ++i) {
-			set_gpio(10, 1);
-			if ((r = get_gpio(10)) != 1) {
-				fprintf(stderr, "\n! reset LED_RESET_SWITCH failed:%d, reset again !\n", r);
-				usleep(10 * 1000);
-			} else {
-				fprintf(stderr, "\nchk LED_RESET_SWITCH:%d\n", r);
-				break;
+		if (nvram_match("mode", "RT-AC88U")) {
+			insmod("rtl8365mb");
+			fprintf(stderr, "Reset RTL8365MB Switch\n");
+			usleep(400 * 1000);
+			int i, r;
+			for (i = 0; i < 10; ++i) {
+				set_gpio(10, 1);
+				if ((r = get_gpio(10)) != 1) {
+					fprintf(stderr, "\n! reset LED_RESET_SWITCH failed:%d, reset again !\n", r);
+					usleep(10 * 1000);
+				} else {
+					fprintf(stderr, "\nchk LED_RESET_SWITCH:%d\n", r);
+					break;
+				}
 			}
 		}
-
 		nvram_set("1:ledbh9", "0x7");
 		nvram_set("0:ledbh9", "0x7");
 		set_gpio(11, 1);	// fixup reset button
