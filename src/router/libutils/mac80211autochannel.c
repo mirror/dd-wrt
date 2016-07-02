@@ -346,6 +346,27 @@ static int freq_quality(struct frequency *f, struct sort_data *s)
 	} else {
 		c = 100;
 	}
+
+	struct wifi_channels *chan = NULL;
+	int i = 0;
+	while (1) {
+		chan = &wifi_channels[i++];
+		if (chan->freq == -1)
+			break;
+		if (chan->freq == f->freq)
+			break;
+	}
+	if (chan->freq == -1) {
+		return 0;
+	}
+
+	/* if HT40, VHT80 or VHT160 auto channel is requested, check if desired channel is capabile of that operation mode, if not, move it to the bottom of the list */
+	if ((_htflags & AUTO_FORCEHT40 || _htflags & AUTO_FORCEVHT80 || _htflags & AUTO_FORCEVHT160) && !chan->ht40minus && !chan->ht40plus) {
+		fprintf(stderr, "channel %d is not ht capable, set set quality to zero\n", chan->freq);
+		return 0;
+	}
+
+
 	int eirp = get_eirp(f->freq);
 	/* subtract noise delta to lowest noise. */
 	c -= (f->noise - s->lowest_noise);
@@ -362,25 +383,6 @@ static int sort_cmp(void *priv, struct list_head *a, struct list_head *b)
 {
 	struct frequency *f1 = container_of(a, struct frequency, list);
 	struct frequency *f2 = container_of(b, struct frequency, list);
-	struct wifi_channels *chan = NULL;
-	int i = 0;
-	while (1) {
-		chan = &wifi_channels[i++];
-		if (chan->freq == -1)
-			break;
-		if (chan->freq == f1->freq)
-			break;
-	}
-	if (chan->freq == -1) {
-		return 1;
-	}
-
-	/* if HT40, VHT80 or VHT160 auto channel is requested, check if desired channel is capabile of that operation mode, if not, move it to the bottom of the list */
-	if ((_htflags & AUTO_FORCEHT40 || _htflags & AUTO_FORCEVHT80 || _htflags & AUTO_FORCEVHT160) && !chan->ht40minus && !chan->ht40plus) {
-		fprintf(stderr, "channel %d is not ht capable, move it to bottom\n", chan->freq);
-		return 1;
-	}
-
 	if (f1->quality > f2->quality)
 		return -1;
 	else
