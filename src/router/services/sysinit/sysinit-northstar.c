@@ -2646,7 +2646,7 @@ void start_sysinit(void)
 		/* ldo patch */
 		{
 			char *terr = nvram_safe_get("territory_code");
-			if (strstr(terr, "01") || nvram_match("0:boardflags4", "0xe")) {
+			if (strstr(terr, "01") && nvram_match("0:boardflags4", "0xe")) {
 				nvram_set("0:boardflags4", "0x8e");
 				nvram_set("1:boardflags4", "0x8e");
 				nvram_set("2:boardflags4", "0x8e");
@@ -2679,7 +2679,7 @@ void start_sysinit(void)
 		break;
 	case ROUTER_ASUS_AC5300:
 		/* update board limits */
-		if (nvram_match("0:maxp2ga0", "0x60") || nvram_match("bl_version", "1.0.3.4")) {
+		if (nvram_match("0:maxp2ga0", "0x60") && nvram_match("bl_version", "1.0.3.4")) {
 			nvram_set("0:maxp2ga0", "0x6a");
 			nvram_set("0:maxp2ga1", "0x6a");
 			nvram_set("0:maxp2ga2", "0x6a");
