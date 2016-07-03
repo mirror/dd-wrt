@@ -14,13 +14,14 @@
  * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- * $Id: linux_gpio.c 345817 2012-07-19 05:49:36Z $
+ * $Id: linux_gpio.c 467150 2014-04-02 17:30:43Z $
  *
  */
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/fs.h>
 #include <linux/miscdevice.h>
+#include <linux/spinlock.h>
 #include <asm/uaccess.h>
 
 #include <typedefs.h>
@@ -28,6 +29,9 @@
 #include <siutils.h>
 #include <bcmdevs.h>
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36)
+#include <linux/gpio.h>
+#endif
 #include <linux_gpio.h>
 
 /* handle to the sb */
@@ -39,6 +43,13 @@ static int gpio_major;
 static struct class *gpiodev_class = NULL;
 #else
 devfs_handle_t gpiodev_handle;
+#endif
+
+#ifndef GPIO_COMMON_SPINLOCK_NAME
+#define GPIO_COMMON_SPINLOCK_NAME lock
+static DEFINE_SPINLOCK(GPIO_COMMON_SPINLOCK_NAME);
+#else
+extern spinlock_t GPIO_COMMON_SPINLOCK_NAME;
 #endif
 
 static int
@@ -101,10 +112,12 @@ gpio_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned lo
 {
 #endif /* linux-2.6.22 */
 	struct gpio_ioctl gpioioc;
+	unsigned long flags;
 
 	if (copy_from_user(&gpioioc, (struct gpio_ioctl *)arg, sizeof(struct gpio_ioctl)))
 		return -EFAULT;
 
+	spin_lock_irqsave(&GPIO_COMMON_SPINLOCK_NAME, flags);
 	switch (cmd) {
 		case GPIO_IOC_RESERVE:
 			gpioioc.val = si_gpioreserve(gpio_sih, gpioioc.mask, GPIO_APP_PRIORITY);
@@ -131,6 +144,7 @@ gpio_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned lo
 		default:
 			break;
 	}
+	spin_unlock_irqrestore(&GPIO_COMMON_SPINLOCK_NAME, flags);
 	if (copy_to_user((struct gpio_ioctl *)arg, &gpioioc, sizeof(struct gpio_ioctl)))
 		return -EFAULT;
 
@@ -169,7 +183,7 @@ gpio_init(void)
 
 	/* Add the device gpio0 */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36)
-	device_create(gpiodev_class, NULL, MKDEV(gpio_major, 0), NULL, "gpio", 0);
+	device_create(gpiodev_class, NULL, MKDEV(gpio_major, 0), NULL, "gpio%d", 0);
 #else
 	class_device_create(gpiodev_class, NULL, MKDEV(gpio_major, 0), NULL, "gpio");
 #endif /* linux-2.6.36 */
@@ -204,7 +218,6 @@ gpio_exit(void)
 	gpiodev_handle = NULL;
 	devfs_unregister_chrdev(gpio_major, "gpio");
 #endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) */
-	si_detach(gpio_sih);
 }
 
 module_init(gpio_init);

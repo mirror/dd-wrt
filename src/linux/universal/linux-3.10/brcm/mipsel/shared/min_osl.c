@@ -16,7 +16,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: min_osl.c 367505 2012-11-08 08:33:26Z $
+ * $Id: min_osl.c 581442 2015-08-24 07:39:22Z $
  */
 
 #include <typedefs.h>
@@ -367,7 +367,16 @@ caches_on(void)
 {
 	int i;
 	uint32 val, *ptb, ptbaddr;
+	uint32 cid;
 
+#define CPUCFG_PART_CA7		0xc07
+#define CPUCFG_PART_CA9		0xc09
+
+	/* retrieve cid */
+	asm("mrc p15, 0, %0, c0, c0, 0	@ get CR" : "=r" (cid) : : "cc");
+	cid = (cid & 0xfff0) >> 4;
+
+	/* Inv cache all */
 	cpu_inv_cache_all();
 
 	/* Enable I$ */
@@ -384,25 +393,71 @@ caches_on(void)
 	ptbaddr &= ~(0x10000 - 1);
 	ptb = (uint32 *)ptbaddr;
 
-	/* Set up an identity-mapping for all 4GB, rw for everyone */
-	for (i = 0; i < 128; i++) {
-		/* DRAM area: TEX = 0x4, Ap = 3, Domain = 0, C =1, B = 0 */
-		ptb[i] = i << 20 | 0x4c0e;
-	}
+	/* 53573 series */
+	if (cid == CPUCFG_PART_CA7) {
+		for (i = 0; i < 256; i++) {
+			/* DRAM area: 0x0 - 0x0fff_ffff */
+			/* TEX = 0x0, Ap = 3, Domain = 0, C = 1, B = 1 */
+			ptb[i] = i << 20 | 0x0c0e; //WB
+		}
+		for (i = 256; i < 448; i++) {
+			/* register base: 0x1000_0000 - 0x1bff_ffff */
+			/* TEX = 0x2(device memory), Ap = 3, Domain = 0, C = 0, B = 0 */
+			ptb[i] = i << 20 | 0x2c02;
+		}
+		for (i = 448; i < 512; i++) {
+			/* SPI flash region: 0x1c00_0000 - 0x1fff_ffff */
+			/* TEX = 0x2(device memory), Ap = 3, Domain = 0, C = 0, B = 0 */
+			ptb[i] = i << 20 | 0x2c02;
+		}
+		for (i = 512; i < 768; i++) {
+			/* default region: 0x2000_0000 - 0x2fff_ffff */
+			/* TEX = 0x2(device memory), Ap = 3, Domain = 0, C = 0, B = 0 */
+			ptb[i] = i << 20 | 0x2c02;
+		}
+		for (i = 768; i < 896; i++) {
+			/* NAND region: 0x3000_0000 - 0x37ff_ffff */
+			/* TEX = 0x2(device memory), Ap = 3, Domain = 0, C = 0, B = 0 */
+			ptb[i] = i << 20 | 0x2c02;
+		}
+		for (i = 896; i < 2048; i++) {
+			/* default: 0x3800_0000 - 0x7fff_ffff */
+			/* TEX = 0x2(device memory), Ap = 3, Domain = 0, C = 0, B = 0 */
+			ptb[i] = i << 20 | 0x2c02;
+		}
+		for (i = 2048; i < 2560; i++) {
+			/* shadow DRAM area: 0x8000_0000 - 0x9fff_ffff */
+			/* TEX = 0x0, Ap = 3, Domain = 0, C =1, B = 1 */
+			ptb[i] = i << 20 | 0x0c0e; //WB
+		}
+		for (i = 2560; i < 4096; i++) {
+			/* default: 0xa000_0000 - 0xffff_ffff */
+			/* TEX = 0x2(device memory), Ap = 3, Domain = 0, C = 0, B = 0 */
+			ptb[i] = i << 20 | 0x2c02;
+		}
 
-	for (i = 128; i < 480; i++) {
-		/* TEX = 0x2(device memory), Ap = 3, Domain = 0, C =0, B = 0 */
-		ptb[i] = i << 20 | 0x0c02;
-	}
+	} else if (cid == CPUCFG_PART_CA9) {
+		/* 4708 series */
+		/* Set up an identity-mapping for all 4GB, rw for everyone */
+		for (i = 0; i < 128; i++) {
+			/* DRAM area: TEX = 0x4, Ap = 3, Domain = 0, C =1, B = 0 */
+			ptb[i] = i << 20 | 0x4c0e;
+		}
 
-	for (i = 480; i < 512; i++) {
-		/* SPI region: TEX = 0x4, Ap = 3, Domain = 0, C =1, B = 0 */
-		ptb[i] = i << 20 | 0x4c0a;
-	}
+		for (i = 128; i < 480; i++) {
+			/* TEX = 0x2(device memory), Ap = 3, Domain = 0, C =0, B = 0 */
+			ptb[i] = i << 20 | 0x0c02;
+		}
 
-	for (i = 512; i < 4096; i++) {
-		/* TEX = 0x2(device memory), Ap = 3, Domain = 0, C =0, B = 0 */
-		ptb[i] = i << 20 | 0x2c02;
+		for (i = 480; i < 512; i++) {
+			/* SPI region: TEX = 0x4, Ap = 3, Domain = 0, C =1, B = 0 */
+			ptb[i] = i << 20 | 0x4c0a;
+		}
+
+		for (i = 512; i < 4096; i++) {
+			/* TEX = 0x2(device memory), Ap = 3, Domain = 0, C =0, B = 0 */
+			ptb[i] = i << 20 | 0x2c02;
+		}
 	}
 
 	/* Apply page table address to CP15 */
@@ -410,12 +465,26 @@ caches_on(void)
 	/* Set the access control to all-supervisor */
 	asm volatile("mcr p15, 0, %0, c3, c0, 0" : : "r" (~0));
 
-	/* Enable I$ and MMU */
+	if (cid == CPUCFG_PART_CA7) {
+		/* enable CCI-400 snoop bit */
+		*(uint32 *)0x18305000 = 0x1;
+		/* loop until chage completed */
+		while (*(uint32 *)0x1830000c & 0x1)
+		 ;
+
+		/* enable coherency bits */
+		*(uint32 *)0x18010040 = 11;
+		*(uint32 *)0x18010200 = 0xfffff;
+		isb();
+	}
+
+	/* Enable D$ and MMU */
 	asm("mrc p15, 0, %0, c1, c0, 0	@ get CR" : "=r" (val) : : "cc");
 	cp_delay();
 	val |= (CR_C | CR_M);
 	asm volatile("mcr p15, 0, %0, c1, c0, 0	@ set CR" : : "r" (val) : "cc");
 	isb();
+	cp_delay();
 }
 
 void

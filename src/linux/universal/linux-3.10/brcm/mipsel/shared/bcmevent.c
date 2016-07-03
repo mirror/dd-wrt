@@ -14,7 +14,7 @@
  * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- * $Id: bcmevent.c 491587 2014-07-16 23:28:37Z $
+ * $Id: bcmevent.c 526805 2015-01-15 02:27:42Z $
  */
 
 #include <typedefs.h>
@@ -23,14 +23,15 @@
 #include <proto/bcmeth.h>
 #include <proto/bcmevent.h>
 
-/* Use the actual name for event tracing */
-#define BCMEVENT_NAME(_event) {(_event), #_event}
 
 /* Table of event name strings for UIs and debugging dumps */
 typedef struct {
 	uint event;
 	const char *name;
 } bcmevent_name_str_t;
+
+/* Use the actual name for event tracing */
+#define BCMEVENT_NAME(_event) {(_event), #_event}
 
 static const bcmevent_name_str_t bcmevent_names[] = {
 	BCMEVENT_NAME(WLC_E_SET_SSID),
@@ -68,9 +69,6 @@ static const bcmevent_name_str_t bcmevent_names[] = {
 	BCMEVENT_NAME(WLC_E_ROAM_PREP),
 	BCMEVENT_NAME(WLC_E_PFN_NET_FOUND),
 	BCMEVENT_NAME(WLC_E_PFN_NET_LOST),
-#if defined(IBSS_PEER_DISCOVERY_EVENT)
-	BCMEVENT_NAME(WLC_E_IBSS_ASSOC),
-#endif /* defined(IBSS_PEER_DISCOVERY_EVENT) */
 	BCMEVENT_NAME(WLC_E_RADIO),
 	BCMEVENT_NAME(WLC_E_PSM_WATCHDOG),
 	BCMEVENT_NAME(WLC_E_PROBREQ_MSG),
@@ -87,6 +85,7 @@ static const bcmevent_name_str_t bcmevent_names[] = {
 	BCMEVENT_NAME(WLC_E_P2P_DISC_LISTEN_COMPLETE),
 #endif
 	BCMEVENT_NAME(WLC_E_RSSI),
+	BCMEVENT_NAME(WLC_E_PFN_SCAN_COMPLETE),
 	BCMEVENT_NAME(WLC_E_PFN_BEST_BATCHING),
 	BCMEVENT_NAME(WLC_E_EXTLOG_MSG),
 #ifdef WIFI_ACT_FRAME
@@ -156,17 +155,19 @@ static const bcmevent_name_str_t bcmevent_names[] = {
 #ifdef PROP_TXSTATUS
 	BCMEVENT_NAME(WLC_E_BCMC_CREDIT_SUPPORT),
 #endif
-	BCMEVENT_NAME(WLC_E_PSTA_PRIMARY_INTF_IND),
-
 	BCMEVENT_NAME(WLC_E_TXFAIL_THRESH),
-
-	BCMEVENT_NAME(WLC_E_AIBSS_TXFAIL),
-	BCMEVENT_NAME(WLC_E_CCA_CHAN_QUAL),
 #ifdef WLBSSLOAD_REPORT
 	BCMEVENT_NAME(WLC_E_BSS_LOAD),
 #endif
+#if defined(BT_WIFI_HANDOVER) || defined(WL_TBOW)
+	BCMEVENT_NAME(WLC_E_BT_WIFI_HANDOVER_REQ),
+#endif
+#ifdef WLFBT
+	BCMEVENT_NAME(WLC_E_FBT_AUTH_REQ_IND),
+#endif /* WLFBT */
 	BCMEVENT_NAME(WLC_E_AUTHORIZED),
 	BCMEVENT_NAME(WLC_E_PROBREQ_MSG_RX),
+	BCMEVENT_NAME(WLC_E_DPSTA_INTF_IND),
 };
 
 

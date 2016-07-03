@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: bcmutils.h 476411 2014-05-08 17:07:45Z $
+ * $Id: bcmutils.h 564801 2015-06-18 10:55:12Z $
  */
 
 #ifndef	_bcmutils_h_
@@ -33,6 +33,8 @@ extern "C" {
 #include <wlioctl.h>
 #endif
 
+#define BCM_BIT(x)		(1 << (x))
+
 /* ctype replacement */
 #define _BCM_U	0x01	/* upper */
 #define _BCM_L	0x02	/* lower */
@@ -43,11 +45,7 @@ extern "C" {
 #define _BCM_X	0x40	/* hex digit */
 #define _BCM_SP	0x80	/* hard space (0x20) */
 
-#if defined(BCMROMBUILD)
-extern const unsigned char BCMROMDATA(bcm_ctype)[];
-#else
 extern const unsigned char bcm_ctype[];
-#endif
 #define bcm_ismask(x)	(bcm_ctype[(int)(unsigned char)(x)])
 
 #define bcm_isalnum(c)	((bcm_ismask(c)&(_BCM_U|_BCM_L|_BCM_D)) != 0)
@@ -65,6 +63,7 @@ extern const unsigned char bcm_ctype[];
 #define bcm_toupper(c)	(bcm_islower((c)) ? ((c) + 'A' - 'a') : (c))
 
 #define CIRCULAR_ARRAY_FULL(rd_idx, wr_idx, max) ((wr_idx + 1)%max == rd_idx)
+#define KB(bytes)	(((bytes) + 1023) / 1024)
 
 /* Buffer structure for collecting string-formatted data
 * using bcm_bprintf() API.
@@ -85,6 +84,8 @@ struct bcmstrbuf {
 struct spktq;
 #endif
 #include <osl.h>
+#include <hnd_pktq.h>
+#include <hnd_pktpool.h>
 
 #define GPIO_PIN_NOTDEFINED 	0x20	/* Pin not defined */
 
@@ -105,267 +106,6 @@ struct spktq;
 	} \
 }
 
-/* osl multi-precedence packet queue */
-#define PKTQ_LEN_MAX            0xFFFF  /* Max uint16 65535 packets */
-#ifndef PKTQ_LEN_DEFAULT
-#define PKTQ_LEN_DEFAULT        128	/* Max 128 packets */
-#endif
-#ifndef PKTQ_MAX_PREC
-#define PKTQ_MAX_PREC           16	/* Maximum precedence levels */
-#endif
-
-typedef struct pktq_prec {
-	void *head;     /* first packet to dequeue */
-	void *tail;     /* last packet to dequeue */
-	uint16 len;     /* number of queued packets */
-	uint16 max;     /* maximum number of queued packets */
-} pktq_prec_t;
-
-#ifdef PKTQ_LOG
-typedef struct {
-	uint32 requested;    /* packets requested to be stored */
-	uint32 stored;	     /* packets stored */
-	uint32 saved;	     /* packets saved,
-	                            because a lowest priority queue has given away one packet
-	                      */
-	uint32 selfsaved;    /* packets saved,
-	                            because an older packet from the same queue has been dropped
-	                      */
-	uint32 full_dropped; /* packets dropped,
-	                            because pktq is full with higher precedence packets
-	                      */
-	uint32 dropped;      /* packets dropped because pktq per that precedence is full */
-	uint32 sacrificed;   /* packets dropped,
-	                            in order to save one from a queue of a highest priority
-	                      */
-	uint32 busy;         /* packets droped because of hardware/transmission error */
-	uint32 retry;        /* packets re-sent because they were not received */
-	uint32 ps_retry;     /* packets retried again prior to moving power save mode */
-	uint32 suppress;     /* packets which were suppressed and not transmitted */
-	uint32 retry_drop;   /* packets finally dropped after retry limit */
-	uint32 max_avail;    /* the high-water mark of the queue capacity for packets -
-	                            goes to zero as queue fills
-	                      */
-	uint32 max_used;     /* the high-water mark of the queue utilisation for packets -
-						        increases with use ('inverse' of max_avail)
-				          */
-	uint32 queue_capacity; /* the maximum capacity of the queue */
-	uint32 rtsfail;        /* count of rts attempts that failed to receive cts */
-	uint32 acked;          /* count of packets sent (acked) successfully */
-	uint32 txrate_succ;    /* running total of phy rate of packets sent successfully */
-	uint32 txrate_main;    /* running totoal of primary phy rate of all packets */
-	uint32 throughput;     /* actual data transferred successfully */
-	uint32  _logtime;      /* timestamp of last counter clear  */
-	uint32 airtime;        /* cumulative total medium access delay in useconds */
-} pktq_counters_t;
-
-typedef struct {
-	uint32                  _prec_log;
-	pktq_counters_t*        _prec_cnt[PKTQ_MAX_PREC];     /* Counters per queue  */
-#if defined(BCMDBG) && defined(PSPRETEND)
-	uint32 pps_time;        /* time spent in ps pretend state */
-#endif
-} pktq_log_t;
-#endif /* PKTQ_LOG */
-
-
-#define PKTQ_COMMON	\
-	uint16 num_prec;        /* number of precedences in use */			\
-	uint16 hi_prec;         /* rapid dequeue hint (>= highest non-empty prec) */	\
-	uint16 max;             /* total max packets */					\
-	uint16 len;             /* total number of packets */
-
-/* multi-priority pkt queue */
-struct pktq {
-	PKTQ_COMMON
-	/* q array must be last since # of elements can be either PKTQ_MAX_PREC or 1 */
-	struct pktq_prec q[PKTQ_MAX_PREC];
-#ifdef PKTQ_LOG
-	pktq_log_t*      pktqlog;
-#endif
-};
-
-/* simple, non-priority pkt queue */
-struct spktq {
-	PKTQ_COMMON
-	/* q array must be last since # of elements can be either PKTQ_MAX_PREC or 1 */
-	struct pktq_prec q[1];
-};
-
-#define PKTQ_PREC_ITER(pq, prec)        for (prec = (pq)->num_prec - 1; prec >= 0; prec--)
-
-/* fn(pkt, arg).  return true if pkt belongs to if */
-typedef bool (*ifpkt_cb_t)(void*, int);
-
-#ifdef BCMPKTPOOL
-#define POOL_ENAB(pool)		((pool) && (pool)->inited)
-#if defined(BCM4329C0)
-#define SHARED_POOL		(pktpool_shared_ptr)
-#else
-#define SHARED_POOL		(pktpool_shared)
-#endif /* BCM4329C0 */
-#else /* BCMPKTPOOL */
-#define POOL_ENAB(bus)		0
-#define SHARED_POOL		((struct pktpool *)NULL)
-#endif /* BCMPKTPOOL */
-
-#ifdef BCMFRAGPOOL
-#define SHARED_FRAG_POOL	(pktpool_shared_lfrag)
-#endif
-#define SHARED_RXFRAG_POOL	(pktpool_shared_rxlfrag)
-
-
-#ifndef PKTPOOL_LEN_MAX
-#define PKTPOOL_LEN_MAX		40
-#endif /* PKTPOOL_LEN_MAX */
-#define PKTPOOL_CB_MAX		3
-
-struct pktpool;
-typedef void (*pktpool_cb_t)(struct pktpool *pool, void *arg);
-typedef struct {
-	pktpool_cb_t cb;
-	void *arg;
-} pktpool_cbinfo_t;
-/* call back fn extension to populate host address in pool pkt */
-typedef int (*pktpool_cb_extn_t)(struct pktpool *pool, void *arg1, void* pkt, bool arg2);
-typedef struct {
-	pktpool_cb_extn_t cb;
-	void *arg;
-} pktpool_cbextn_info_t;
-
-
-#ifdef BCMDBG_POOL
-/* pkt pool debug states */
-#define POOL_IDLE	0
-#define POOL_RXFILL	1
-#define POOL_RXDH	2
-#define POOL_RXD11	3
-#define POOL_TXDH	4
-#define POOL_TXD11	5
-#define POOL_AMPDU	6
-#define POOL_TXENQ	7
-
-typedef struct {
-	void *p;
-	uint32 cycles;
-	uint32 dur;
-} pktpool_dbg_t;
-
-typedef struct {
-	uint8 txdh;	/* tx to host */
-	uint8 txd11;	/* tx to d11 */
-	uint8 enq;	/* waiting in q */
-	uint8 rxdh;	/* rx from host */
-	uint8 rxd11;	/* rx from d11 */
-	uint8 rxfill;	/* dma_rxfill */
-	uint8 idle;	/* avail in pool */
-} pktpool_stats_t;
-#endif /* BCMDBG_POOL */
-
-typedef struct pktpool {
-	bool inited;            /* pktpool_init was successful */
-	uint8 type;             /* type of lbuf: basic, frag, etc */
-	uint8 id;               /* pktpool ID:  index in registry */
-	bool istx;              /* direction: transmit or receive data path */
-
-	void * freelist;        /* free list: see PKTNEXTFREE(), PKTSETNEXTFREE() */
-	uint16 avail;           /* number of packets in pool's free list */
-	uint16 len;             /* number of packets managed by pool */
-	uint16 maxlen;          /* maximum size of pool <= PKTPOOL_LEN_MAX */
-	uint16 plen;            /* size of pkt buffer, excluding lbuf|lbuf_frag */
-
-	bool empty;
-	uint8 cbtoggle;
-	uint8 cbcnt;
-	uint8 ecbcnt;
-	bool emptycb_disable;
-	pktpool_cbinfo_t *availcb_excl;
-	pktpool_cbinfo_t cbs[PKTPOOL_CB_MAX];
-	pktpool_cbinfo_t ecbs[PKTPOOL_CB_MAX];
-	pktpool_cbextn_info_t cbext;
-	pktpool_cbextn_info_t rxcplidfn;
-#ifdef BCMDBG_POOL
-	uint8 dbg_cbcnt;
-	pktpool_cbinfo_t dbg_cbs[PKTPOOL_CB_MAX];
-	uint16 dbg_qlen;
-	pktpool_dbg_t dbg_q[PKTPOOL_LEN_MAX + 1];
-#endif
-} pktpool_t;
-
-#if defined(BCM4329C0)
-extern pktpool_t *pktpool_shared_ptr;
-#else
-extern pktpool_t *pktpool_shared;
-#ifdef BCMFRAGPOOL
-extern pktpool_t *pktpool_shared_lfrag;
-#endif
-extern pktpool_t *pktpool_shared_rxlfrag;
-#endif /* BCM4329C0 */
-
-/* Incarnate a pktpool registry. On success returns total_pools. */
-extern int pktpool_attach(osl_t *osh, uint32 total_pools);
-extern int pktpool_dettach(osl_t *osh); /* Relinquish registry */
-
-extern int pktpool_init(osl_t *osh, pktpool_t *pktp, int *pktplen, int plen, bool istx, uint8 type);
-extern int pktpool_deinit(osl_t *osh, pktpool_t *pktp);
-extern int pktpool_fill(osl_t *osh, pktpool_t *pktp, bool minimal);
-extern void* pktpool_get(pktpool_t *pktp);
-extern void pktpool_free(pktpool_t *pktp, void *p);
-extern int pktpool_add(pktpool_t *pktp, void *p);
-extern int pktpool_avail_notify_normal(osl_t *osh, pktpool_t *pktp);
-extern int pktpool_avail_notify_exclusive(osl_t *osh, pktpool_t *pktp, pktpool_cb_t cb);
-extern int pktpool_avail_register(pktpool_t *pktp, pktpool_cb_t cb, void *arg);
-extern int pktpool_empty_register(pktpool_t *pktp, pktpool_cb_t cb, void *arg);
-extern int pktpool_setmaxlen(pktpool_t *pktp, uint16 maxlen);
-extern int pktpool_setmaxlen_strict(osl_t *osh, pktpool_t *pktp, uint16 maxlen);
-extern void pktpool_emptycb_disable(pktpool_t *pktp, bool disable);
-extern bool pktpool_emptycb_disabled(pktpool_t *pktp);
-int pktpool_hostaddr_fill_register(pktpool_t *pktp, pktpool_cb_extn_t cb, void *arg);
-extern int pktpool_rxcplid_fill_register(pktpool_t *pktp, pktpool_cb_extn_t cb, void *arg);
-
-#define POOLPTR(pp)         ((pktpool_t *)(pp))
-#define POOLID(pp)          (POOLPTR(pp)->id)
-
-#define POOLSETID(pp, ppid) (POOLPTR(pp)->id = (ppid))
-
-#define pktpool_len(pp)     (POOLPTR(pp)->len)
-#define pktpool_avail(pp)   (POOLPTR(pp)->avail)
-#define pktpool_plen(pp)    (POOLPTR(pp)->plen)
-#define pktpool_maxlen(pp)  (POOLPTR(pp)->maxlen)
-
-
-/*
- * ----------------------------------------------------------------------------
- * A pool ID is assigned with a pkt pool during pool initialization. This is
- * done by maintaining a registry of all initialized pools, and the registry
- * index at which the pool is registered is used as the pool's unique ID.
- * ID 0 is reserved and is used to signify an invalid pool ID.
- * All packets henceforth allocated from a pool will be tagged with the pool's
- * unique ID. Packets allocated from the heap will use the reserved ID = 0.
- * Packets with non-zero pool id signify that they were allocated from a pool.
- * A maximum of 15 pools are supported, allowing a 4bit pool ID to be used
- * in place of a 32bit pool pointer in each packet.
- * ----------------------------------------------------------------------------
- */
-#define PKTPOOL_INVALID_ID          (0)
-#define PKTPOOL_MAXIMUM_ID          (15)
-
-/* Registry of pktpool(s) */
-extern pktpool_t *pktpools_registry[PKTPOOL_MAXIMUM_ID + 1];
-
-/* Pool ID to/from Pool Pointer converters */
-#define PKTPOOL_ID2PTR(id)          (pktpools_registry[id])
-#define PKTPOOL_PTR2ID(pp)          (POOLID(pp))
-
-
-#ifdef BCMDBG_POOL
-extern int pktpool_dbg_register(pktpool_t *pktp, pktpool_cb_t cb, void *arg);
-extern int pktpool_start_trigger(pktpool_t *pktp, void *p);
-extern int pktpool_dbg_dump(pktpool_t *pktp);
-extern int pktpool_dbg_notify(pktpool_t *pktp);
-extern int pktpool_stats_dump(pktpool_t *pktp, pktpool_stats_t *stats);
-#endif /* BCMDBG_POOL */
-
 /* forward definition of ether_addr structure used by some function prototypes */
 
 struct ether_addr;
@@ -373,95 +113,15 @@ struct ether_addr;
 extern int ether_isbcast(const void *ea);
 extern int ether_isnulladdr(const void *ea);
 
-extern uint pktsetprio(void *pkt, bool update_vtag);
-extern bool pktgetdscp(uint8 *pktdata, uint pktlen, uint8 *dscp);
-
-/* Get priority from a packet and pass it back in scb (or equiv) */
-#define	PKTPRIO_VDSCP	0x100		/* DSCP prio found after VLAN tag */
-#define	PKTPRIO_VLAN	0x200		/* VLAN prio found */
-#define	PKTPRIO_UPD	0x400		/* DSCP used to update VLAN prio */
-#define	PKTPRIO_DSCP	0x800		/* DSCP prio found */
-
-/* DSCP type definitions (RFC4594) */
-/* AF1x: High-Throughput Data (RFC2597) */
-#define DSCP_AF11	0x0A
-#define DSCP_AF12	0x0C
-#define DSCP_AF13	0x0E
-/* AF2x: Low-Latency Data (RFC2597) */
-#define DSCP_AF21	0x12
-#define DSCP_AF22	0x14
-#define DSCP_AF23	0x16
-/* AF3x: Multimedia Streaming (RFC2597) */
-#define DSCP_AF31	0x1A
-#define DSCP_AF32	0x1C
-#define DSCP_AF33	0x1E
-/* EF: Telephony (RFC3246) */
-#define DSCP_EF		0x2E
-
-
-/* operations on a specific precedence in packet queue */
-
-#define pktq_psetmax(pq, prec, _max)	((pq)->q[prec].max = (_max))
-#define pktq_pmax(pq, prec)		((pq)->q[prec].max)
-#define pktq_plen(pq, prec)		((pq)->q[prec].len)
-#define pktq_pavail(pq, prec)		((pq)->q[prec].max - (pq)->q[prec].len)
-#define pktq_pfull(pq, prec)		((pq)->q[prec].len >= (pq)->q[prec].max)
-#define pktq_pempty(pq, prec)		((pq)->q[prec].len == 0)
-
-#define pktq_ppeek(pq, prec)		((pq)->q[prec].head)
-#define pktq_ppeek_tail(pq, prec)	((pq)->q[prec].tail)
-
-extern void *pktq_penq(struct pktq *pq, int prec, void *p);
-extern void *pktq_penq_head(struct pktq *pq, int prec, void *p);
-extern void *pktq_pdeq(struct pktq *pq, int prec);
-extern void *pktq_pdeq_prev(struct pktq *pq, int prec, void *prev_p);
-extern void *pktq_pdeq_with_fn(struct pktq *pq, int prec, ifpkt_cb_t fn, int arg);
-extern void *pktq_pdeq_tail(struct pktq *pq, int prec);
-/* Empty the queue at particular precedence level */
-extern void pktq_pflush(osl_t *osh, struct pktq *pq, int prec, bool dir,
-	ifpkt_cb_t fn, int arg);
-/* Remove a specified packet from its queue */
-extern bool pktq_pdel(struct pktq *pq, void *p, int prec);
-
-/* operations on a set of precedences in packet queue */
-
-extern int pktq_mlen(struct pktq *pq, uint prec_bmp);
-extern void *pktq_mdeq(struct pktq *pq, uint prec_bmp, int *prec_out);
-extern void *pktq_mpeek(struct pktq *pq, uint prec_bmp, int *prec_out);
-
-/* operations on packet queue as a whole */
-
-#define pktq_len(pq)		((int)(pq)->len)
-#define pktq_max(pq)		((int)(pq)->max)
-#define pktq_avail(pq)		((int)((pq)->max - (pq)->len))
-#define pktq_full(pq)		((pq)->len >= (pq)->max)
-#define pktq_empty(pq)		((pq)->len == 0)
-
-/* operations for single precedence queues */
-#define pktenq(pq, p)		pktq_penq(((struct pktq *)(void *)pq), 0, (p))
-#define pktenq_head(pq, p)	pktq_penq_head(((struct pktq *)(void *)pq), 0, (p))
-#define pktdeq(pq)		pktq_pdeq(((struct pktq *)(void *)pq), 0)
-#define pktdeq_tail(pq)		pktq_pdeq_tail(((struct pktq *)(void *)pq), 0)
-#define pktqinit(pq, len)	pktq_init(((struct pktq *)(void *)pq), 1, len)
-
-extern void pktq_init(struct pktq *pq, int num_prec, int max_len);
-extern void pktq_set_max_plen(struct pktq *pq, int prec, int max_len);
-
-/* prec_out may be NULL if caller is not interested in return value */
-extern void *pktq_deq(struct pktq *pq, int *prec_out);
-extern void *pktq_deq_tail(struct pktq *pq, int *prec_out);
-extern void *pktq_peek(struct pktq *pq, int *prec_out);
-extern void *pktq_peek_tail(struct pktq *pq, int *prec_out);
-extern void pktq_flush(osl_t *osh, struct pktq *pq, bool dir, ifpkt_cb_t fn, int arg);
-
-
-#define BCM_MAC_RXCPL_IDX_BITS			13
-#define BCM_MAX_RXCPL_IDX_INVALID 		0
-#define BCM_MAC_RXCPL_IFIDX_BITS		4
+#define BCM_MAC_RXCPL_IDX_BITS			12
+#define BCM_MAX_RXCPL_IDX_INVALID		0
+#define BCM_MAC_RXCPL_IFIDX_BITS		3
+#define BCM_MAC_RXCPL_DOT11_BITS		1
 #define BCM_MAX_RXCPL_IFIDX			((1 << BCM_MAC_RXCPL_IFIDX_BITS) - 1)
-#define BCM_MAC_RXCPL_FLAG_BITS			2
+#define BCM_MAC_RXCPL_FLAG_BITS			4
 #define BCM_RXCPL_FLAGS_IN_TRANSIT		0x1
 #define BCM_RXCPL_FLAGS_FIRST_IN_FLUSHLIST	0x2
+#define BCM_RXCPL_FLAGS_RXCPLVALID		0x4
 
 #define BCM_RXCPL_SET_IN_TRANSIT(a)	((a)->rxcpl_id.flags |= BCM_RXCPL_FLAGS_IN_TRANSIT)
 #define BCM_RXCPL_CLR_IN_TRANSIT(a)	((a)->rxcpl_id.flags &= ~BCM_RXCPL_FLAGS_IN_TRANSIT)
@@ -470,6 +130,11 @@ extern void pktq_flush(osl_t *osh, struct pktq *pq, bool dir, ifpkt_cb_t fn, int
 #define BCM_RXCPL_SET_FRST_IN_FLUSH(a)	((a)->rxcpl_id.flags |= BCM_RXCPL_FLAGS_FIRST_IN_FLUSHLIST)
 #define BCM_RXCPL_CLR_FRST_IN_FLUSH(a)	((a)->rxcpl_id.flags &= ~BCM_RXCPL_FLAGS_FIRST_IN_FLUSHLIST)
 #define BCM_RXCPL_FRST_IN_FLUSH(a)	((a)->rxcpl_id.flags & BCM_RXCPL_FLAGS_FIRST_IN_FLUSHLIST)
+
+#define BCM_RXCPL_SET_VALID_INFO(a)	((a)->rxcpl_id.flags |= BCM_RXCPL_FLAGS_RXCPLVALID)
+#define BCM_RXCPL_CLR_VALID_INFO(a)	((a)->rxcpl_id.flags &= ~BCM_RXCPL_FLAGS_RXCPLVALID)
+#define BCM_RXCPL_VALID_INFO(a) (((a)->rxcpl_id.flags & BCM_RXCPL_FLAGS_RXCPLVALID) ? TRUE : FALSE)
+
 
 struct reorder_rxcpl_id_list {
 	uint16 head;
@@ -481,6 +146,7 @@ typedef struct rxcpl_id {
 	uint32		idx : BCM_MAC_RXCPL_IDX_BITS;
 	uint32		next_idx : BCM_MAC_RXCPL_IDX_BITS;
 	uint32		ifidx : BCM_MAC_RXCPL_IFIDX_BITS;
+	uint32		dot11 : BCM_MAC_RXCPL_DOT11_BITS;
 	uint32		flags : BCM_MAC_RXCPL_FLAG_BITS;
 } rxcpl_idx_id_t;
 
@@ -526,12 +192,38 @@ extern uint pktsegcnt_war(osl_t *osh, void *p);
 extern uint8 *pktdataoffset(osl_t *osh, void *p,  uint offset);
 extern void *pktoffset(osl_t *osh, void *p,  uint offset);
 
+/* Get priority from a packet and pass it back in scb (or equiv) */
+#define	PKTPRIO_VDSCP	0x100		/* DSCP prio found after VLAN tag */
+#define	PKTPRIO_VLAN	0x200		/* VLAN prio found */
+#define	PKTPRIO_UPD	0x400		/* DSCP used to update VLAN prio */
+#define	PKTPRIO_DSCP	0x800		/* DSCP prio found */
+
+/* DSCP type definitions (RFC4594) */
+/* AF1x: High-Throughput Data (RFC2597) */
+#define DSCP_AF11	0x0A
+#define DSCP_AF12	0x0C
+#define DSCP_AF13	0x0E
+/* AF2x: Low-Latency Data (RFC2597) */
+#define DSCP_AF21	0x12
+#define DSCP_AF22	0x14
+#define DSCP_AF23	0x16
+/* AF3x: Multimedia Streaming (RFC2597) */
+#define DSCP_AF31	0x1A
+#define DSCP_AF32	0x1C
+#define DSCP_AF33	0x1E
+/* EF: Telephony (RFC3246) */
+#define DSCP_EF		0x2E
+
+extern uint pktsetprio(void *pkt, bool update_vtag);
+extern bool pktgetdscp(uint8 *pktdata, uint pktlen, uint8 *dscp);
+
 /* string */
-extern int BCMROMFN(bcm_atoi)(const char *s);
-extern ulong BCMROMFN(bcm_strtoul)(const char *cp, char **endp, uint base);
-extern char *BCMROMFN(bcmstrstr)(const char *haystack, const char *needle);
-extern char *BCMROMFN(bcmstrcat)(char *dest, const char *src);
-extern char *BCMROMFN(bcmstrncat)(char *dest, const char *src, uint size);
+extern int bcm_atoi(const char *s);
+extern ulong bcm_strtoul(const char *cp, char **endp, uint base);
+extern char *bcmstrstr(const char *haystack, const char *needle);
+extern char *bcmstrnstr(const char *s, uint s_len, const char *substr, uint substr_len);
+extern char *bcmstrcat(char *dest, const char *src);
+extern char *bcmstrncat(char *dest, const char *src, uint size);
 extern ulong wchar2ascii(char *abuf, ushort *wbuf, ushort wbuflen, ulong abuflen);
 char* bcmstrtok(char **string, const char *delimiters, char *tokdelim);
 int bcmstricmp(const char *s1, const char *s2);
@@ -540,18 +232,19 @@ int bcmstrnicmp(const char* s1, const char* s2, int cnt);
 
 /* ethernet address */
 extern char *bcm_ether_ntoa(const struct ether_addr *ea, char *buf);
-extern int BCMROMFN(bcm_ether_atoe)(const char *p, struct ether_addr *ea);
+extern int bcm_ether_atoe(const char *p, struct ether_addr *ea);
 
 /* ip address */
 struct ipv4_addr;
 extern char *bcm_ip_ntoa(struct ipv4_addr *ia, char *buf);
 extern char *bcm_ipv6_ntoa(void *ipv6, char *buf);
+extern int bcm_atoipv4(const char *p, struct ipv4_addr *ip);
 
 /* delay */
 extern void bcm_mdelay(uint ms);
 /* variable access */
-#if defined(DONGLEBUILD) && defined(WLC_HIGH) && !defined(WLTEST) && \
-	!defined(ATE_BUILD)
+#if defined(DONGLEBUILD) && defined(WLC_HIGH) && (!defined(WLTEST) || \
+	defined(WLTEST_DISABLED)) && !defined(ATE_BUILD)
 #ifdef BCMDBG
 #define NVRAM_RECLAIM_CHECK(name)							\
 	if (attach_part_reclaimed == TRUE) {						\
@@ -598,7 +291,7 @@ extern int bcmdumplogent(char *buf, uint idx);
 
 #if defined(BCMTSTAMPEDLOGS)
 /* Store a TSF timestamp and a log line in the log buffer */
-extern void bcmtslog(uint32 tstamp, char *fmt, uint a1, uint a2);
+extern void bcmtslog(uint32 tstamp, const char *fmt, uint a1, uint a2);
 /* Print out the log buffer with timestamps */
 extern void bcmprinttslogs(void);
 /* Print out a microsecond timestamp as "sec.ms.us " */
@@ -689,9 +382,8 @@ extern int bcm_format_ssid(char* buf, const uchar ssid[], uint ssid_len);
 
 /* ** driver/apps-shared section ** */
 
-#define BCME_STRLEN 		64	/* Max string length for BCM errors */
-#define VALID_BCMERROR(e)  ((e <= 0) && (e >= BCME_LAST))
-
+#define BCME_STRLEN		64	/* Max string length for BCM errors */
+#define VALID_BCMERROR(e)	valid_bcmerror(e)
 
 /*
  * error codes could be added but the defined ones shouldn't be changed/deleted
@@ -748,14 +440,27 @@ extern int bcm_format_ssid(char* buf, const uchar ssid[], uint ssid_len);
 #define BCME_USAGE_ERROR                -44     /* WLCMD usage error */
 #define BCME_IOCTL_ERROR                -45     /* WLCMD ioctl error */
 #define BCME_SERIAL_PORT_ERR            -46     /* RWL serial port error */
-#define BCME_DISABLED                   -47     /* Disabled in this build */
+#define BCME_DISABLED			-47     /* Disabled in this build */
 #define BCME_DECERR				-48		/* Decrypt error */
 #define BCME_ENCERR				-49		/* Encrypt error */
 #define BCME_MICERR				-50		/* Integrity/MIC error */
 #define BCME_REPLAY				-51		/* Replay */
 #define BCME_IE_NOTFOUND		-52		/* IE not found */
-#define BCME_LAST			BCME_IE_NOTFOUND
+#define BCME_DATA_NOTFOUND		-53		/* Complete data not found in buffer */
+#define BCME_DEFER_REQ			BCME_BADOPTION		/* defer request */
+#define BCME_LAST			BCME_DATA_NOTFOUND
 
+#define BCME_NOTENABLED BCME_DISABLED
+
+/* This error code is *internal* to the driver, and is not propogated to users. It should
+ * only be used by IOCTL patch handlers as an indication that it did not handle the IOCTL.
+ * (Since the error code is internal, an entry in 'BCMERRSTRINGTABLE' is not required,
+ * nor does it need to be part of any OSL driver-to-OS error code mapping).
+ */
+#define BCME_IOCTL_PATCH_UNSUPPORTED	-9999
+#if (BCME_LAST <= BCME_IOCTL_PATCH_UNSUPPORTED)
+	#error "BCME_LAST <= BCME_IOCTL_PATCH_UNSUPPORTED"
+#endif
 
 /* These are collection of BCME Error strings */
 #define BCMERRSTRINGTABLE {		\
@@ -812,6 +517,7 @@ extern int bcm_format_ssid(char* buf, const uchar ssid[], uint ssid_len);
 	"MIC error", \
 	"Replay", \
 	"IE not found", \
+	"Data not found", \
 }
 
 #ifndef ABS
@@ -847,7 +553,7 @@ extern int bcm_format_ssid(char* buf, const uchar ssid[], uint ssid_len);
 #define DELTA(curr, prev) ((curr) > (prev) ? ((curr) - (prev)) : \
 	(0xffffffff - (prev) + (curr) + 1))
 #define CEIL(x, y)		(((x) + ((y) - 1)) / (y))
-#define	ROUNDUP(x, y)		((((x) + ((y) - 1)) / (y)) * (y))
+#define ROUNDUP(x, y)		((((x) + ((y) - 1)) / (y)) * (y))
 #define ROUNDDN(p, align)	((p) & ~((align) - 1))
 #define	ISALIGNED(a, x)		(((uintptr)(a) & ((x) - 1)) == 0)
 #define ALIGN_ADDR(addr, boundary) (void *)(((uintptr)(addr) + (boundary) - 1) \
@@ -905,6 +611,7 @@ extern bool isclr(const void *array, uint bit);
 #define	isclr(a, i)	((((const uint8 *)a)[(i) / NBBY] & (1 << ((i) % NBBY))) == 0)
 #endif
 #endif /* setbit */
+extern void set_bitrange(void *array, uint start, uint end, uint maxbit);
 
 #define	isbitset(a, i)	(((a) & (1 << (i))) != 0)
 
@@ -942,9 +649,9 @@ static INLINE uint32 getbit##NB(void *ptr, uint32 ix)               \
 	return ((*a >> pos) & MSK);                                     \
 }
 
-DECLARE_MAP_API(2,  4, 1, 15U, 0x0003) /* setbit2() and getbit2() */
-DECLARE_MAP_API(4,  3, 2,  7U, 0x000F) /* setbit4() and getbit4() */
-
+DECLARE_MAP_API(2, 4, 1, 15U, 0x0003) /* setbit2() and getbit2() */
+DECLARE_MAP_API(4, 3, 2, 7U, 0x000F) /* setbit4() and getbit4() */
+DECLARE_MAP_API(8, 2, 3, 3U, 0x00FF) /* setbit8() and getbit8() */
 
 /* basic mux operation - can be optimized on several architectures */
 #define MUX(pred, true, false) ((pred) ? (true) : (false))
@@ -998,12 +705,6 @@ DECLARE_MAP_API(4,  3, 2,  7U, 0x000F) /* setbit4() and getbit4() */
 #define MAC2STRDBG(ea) (ea)[0], (ea)[4], (ea)[5]
 #endif /* SIMPLE_MAC_PRINT */
 
-#define IPv4_ADDR_STR "%d.%d.%d.%d"
-#define IPv4_ADDR_TO_STR(addr)	((uint32)addr & 0xff000000) >> 24, \
-								((uint32)addr & 0x00ff0000) >> 16, \
-								((uint32)addr & 0x0000ff00) >> 8, \
-								((uint32)addr & 0x000000ff)
-
 /* bcm_format_flags() bit description structure */
 typedef struct bcm_bit_desc {
 	uint32	bit;
@@ -1045,18 +746,19 @@ xor_128bit_block(const uint8 *src1, const uint8 *src2, uint8 *dst)
 
 /* externs */
 /* crc */
-extern uint8 BCMROMFN(hndcrc8)(uint8 *p, uint nbytes, uint8 crc);
-extern uint16 BCMROMFN(hndcrc16)(uint8 *p, uint nbytes, uint16 crc);
-extern uint32 BCMROMFN(hndcrc32)(uint8 *p, uint nbytes, uint32 crc);
+extern uint8 hndcrc8(uint8 *p, uint nbytes, uint8 crc);
+extern uint16 hndcrc16(uint8 *p, uint nbytes, uint16 crc);
+extern uint32 hndcrc32(uint8 *p, uint nbytes, uint32 crc);
 
 /* format/print */
 #if defined(BCMDBG) || defined(DHD_DEBUG) || defined(BCMDBG_ERR) || \
-	defined(WLMSG_PRHDRS) || defined(WLMSG_PRPKT) || defined(WLMSG_ASSOC)
+	defined(WLMSG_PRHDRS) || defined(WLMSG_PRPKT) || defined(WLMSG_ASSOC) || \
+	defined(PHYTXERR_DUMP)
 /* print out the value a field has: fields may have 1-32 bits and may hold any value */
 extern int bcm_format_field(const bcm_bit_desc_ex_t *bd, uint32 field, char* buf, int len);
+#endif
 /* print out which bits in flags are set */
 extern int bcm_format_flags(const bcm_bit_desc_t *bd, uint32 flags, char* buf, int len);
-#endif
 
 #if defined(BCMDBG) || defined(DHD_DEBUG) || defined(BCMDBG_ERR) || \
 	defined(WLMSG_PRHDRS) || defined(WLMSG_PRPKT) || defined(WLMSG_ASSOC) || \
@@ -1075,6 +777,8 @@ extern void prhex(const char *msg, uchar *buf, uint len);
 
 /* IE parsing */
 
+/* packing is required if struct is passed across the bus */
+#include <packed_section_start.h>
 /* tag_ID/length/value_buffer tuple */
 typedef struct bcm_tlv {
 	uint8	id;
@@ -1082,18 +786,61 @@ typedef struct bcm_tlv {
 	uint8	data[1];
 } bcm_tlv_t;
 
-#define BCM_TLV_MAX_DATA_SIZE (255)
+#define BCM_TLV_SIZE(_tlv) ((_tlv) ? (OFFSETOF(bcm_tlv_t, data) + (_tlv)->len) : 0)
 
+/* bcm tlv w/ 16 bit id/len */
+typedef BWL_PRE_PACKED_STRUCT struct bcm_xtlv {
+	uint16	id;
+	uint16	len;
+	uint8	data[1];
+} BWL_POST_PACKED_STRUCT bcm_xtlv_t;
+#include <packed_section_end.h>
+
+
+/* descriptor of xtlv data src or dst  */
+typedef struct {
+	uint16	type;
+	uint16	len;
+	void	*ptr; /* ptr to memory location */
+} xtlv_desc_t;
+
+/* xtlv options */
+#define BCM_XTLV_OPTION_NONE	0x0000
+#define BCM_XTLV_OPTION_ALIGN32	0x0001
+
+typedef uint16 bcm_xtlv_opts_t;
+struct bcm_xtlvbuf {
+	bcm_xtlv_opts_t opts;
+	uint16 size;
+	uint8 *head; /* point to head of buffer */
+	uint8 *buf; /* current position of buffer */
+	/* allocated buffer may follow, but not necessarily */
+};
+typedef struct bcm_xtlvbuf bcm_xtlvbuf_t;
+
+#define BCM_TLV_MAX_DATA_SIZE (255)
+#define BCM_XTLV_MAX_DATA_SIZE (65535)
 #define BCM_TLV_HDR_SIZE (OFFSETOF(bcm_tlv_t, data))
+
+#define BCM_XTLV_HDR_SIZE (OFFSETOF(bcm_xtlv_t, data))
+/* LEN only stores the value's length without padding */
+#define BCM_XTLV_LEN(elt) ltoh16_ua(&(elt->len))
+#define BCM_XTLV_ID(elt) ltoh16_ua(&(elt->id))
+/* entire size of the XTLV including header, data, and optional padding */
+#define BCM_XTLV_SIZE(elt, opts) bcm_xtlv_size(elt, opts)
+#define bcm_valid_xtlv(elt, buflen, opts) (elt && ((int)(buflen) >= (int)BCM_XTLV_SIZE(elt, opts)))
 
 /* Check that bcm_tlv_t fits into the given buflen */
 #define bcm_valid_tlv(elt, buflen) (\
 	 ((int)(buflen) >= (int)BCM_TLV_HDR_SIZE) && \
 	 ((int)(buflen) >= (int)(BCM_TLV_HDR_SIZE + (elt)->len)))
 
-extern bcm_tlv_t *BCMROMFN(bcm_next_tlv)(bcm_tlv_t *elt, int *buflen);
-extern bcm_tlv_t *BCMROMFN(bcm_parse_tlvs)(void *buf, int buflen, uint key);
-extern bcm_tlv_t *BCMROMFN(bcm_parse_ordered_tlvs)(void *buf, int buflen, uint key);
+
+extern bcm_tlv_t *bcm_next_tlv(bcm_tlv_t *elt, int *buflen);
+extern bcm_tlv_t *bcm_parse_tlvs(void *buf, int buflen, uint key);
+extern bcm_tlv_t *bcm_parse_tlvs_min_bodylen(void *buf, int buflen, uint key, int min_bodylen);
+
+extern bcm_tlv_t *bcm_parse_ordered_tlvs(void *buf, int buflen, uint key);
 
 extern bcm_tlv_t *bcm_find_vendor_ie(void *tlvs, int tlvs_len, const char *voui, uint8 *type,
 	int type_len);
@@ -1104,6 +851,68 @@ extern uint8 *bcm_write_tlv_safe(int type, const void *data, int datalen, uint8 
 
 extern uint8 *bcm_copy_tlv(const void *src, uint8 *dst);
 extern uint8 *bcm_copy_tlv_safe(const void *src, uint8 *dst, int dst_maxlen);
+
+/* xtlv */
+
+/* return the next xtlv element, and update buffer len (remaining). Buffer length
+ * updated includes padding as specified by options
+ */
+extern bcm_xtlv_t *bcm_next_xtlv(bcm_xtlv_t *elt, int *buflen, bcm_xtlv_opts_t opts);
+
+/* initialize an xtlv buffer. Use options specified for packing/unpacking using
+ * the buffer. Caller is responsible for allocating both buffers.
+ */
+extern int bcm_xtlv_buf_init(bcm_xtlvbuf_t *tlv_buf, uint8 *buf, uint16 len,
+	bcm_xtlv_opts_t opts);
+
+extern uint16 bcm_xtlv_buf_len(struct bcm_xtlvbuf *tbuf);
+extern uint16 bcm_xtlv_buf_rlen(struct bcm_xtlvbuf *tbuf);
+extern uint8 *bcm_xtlv_buf(struct bcm_xtlvbuf *tbuf);
+extern uint8 *bcm_xtlv_head(struct bcm_xtlvbuf *tbuf);
+extern int bcm_xtlv_put_data(bcm_xtlvbuf_t *tbuf, uint16 type, const void *data, uint16 dlen);
+extern int bcm_xtlv_put_8(bcm_xtlvbuf_t *tbuf, uint16 type, const int8 data);
+extern int bcm_xtlv_put_16(bcm_xtlvbuf_t *tbuf, uint16 type, const int16 data);
+extern int bcm_xtlv_put_32(bcm_xtlvbuf_t *tbuf, uint16 type, const int32 data);
+extern int bcm_unpack_xtlv_entry(void **buf, uint16 xpct_type, uint16 xpct_len,
+	void *dst, bcm_xtlv_opts_t opts);
+extern int bcm_pack_xtlv_entry(void **buf, uint16 *buflen, uint16 type, uint16 len,
+	void *src, bcm_xtlv_opts_t opts);
+extern int bcm_xtlv_size(const bcm_xtlv_t *elt, bcm_xtlv_opts_t opts);
+
+/* callback for unpacking xtlv from a buffer into context. */
+typedef int (bcm_xtlv_unpack_cbfn_t)(void *ctx, uint8 *buf, uint16 type, uint16 len);
+
+/* unpack a tlv buffer using buffer, options, and callback */
+extern int bcm_unpack_xtlv_buf(void *ctx, void *buf, uint16 buflen,
+	bcm_xtlv_opts_t opts, bcm_xtlv_unpack_cbfn_t *cbfn);
+
+/* unpack a set of tlvs from the buffer using provided xtlv desc */
+extern int bcm_unpack_xtlv_buf_to_mem(void *buf, int *buflen, xtlv_desc_t *items,
+	bcm_xtlv_opts_t opts);
+
+/* pack a set of tlvs into buffer using provided xtlv desc */
+extern int bcm_pack_xtlv_buf_from_mem(void **buf, uint16 *buflen, xtlv_desc_t *items,
+	bcm_xtlv_opts_t opts);
+
+/* return data pointer of a given ID from xtlv buffer
+ * xtlv data length is given to *datalen_out, if the pointer is valid
+ */
+extern void *bcm_get_data_from_xtlv_buf(uint8 *tlv_buf, uint16 buflen, uint16 id,
+	uint16 *datalen_out, bcm_xtlv_opts_t opts);
+
+/* callback to return next tlv id and len to pack, if there is more tlvs to come and
+ * options e.g. alignment
+ */
+typedef bool (*bcm_pack_xtlv_next_info_cbfn_t)(void *ctx, uint16 *tlv_id, uint16 *tlv_len);
+
+/* callback to pack the tlv into length validated buffer */
+typedef void (*bcm_pack_xtlv_pack_next_cbfn_t)(void *ctx,
+	uint16 tlv_id, uint16 tlv_len, uint8* buf);
+
+/* pack a set of tlvs into buffer using get_next to interate */
+int bcm_pack_xtlv_buf(void *ctx, void *tlv_buf, uint16 buflen,
+	bcm_xtlv_opts_t opts, bcm_pack_xtlv_next_info_cbfn_t get_next,
+	bcm_pack_xtlv_pack_next_cbfn_t pack_next, int *outlen);
 
 /* bcmerror */
 extern const char *bcmerrorstr(int bcmerror);
@@ -1118,12 +927,13 @@ typedef uint32 mbool;
 /* generic datastruct to help dump routines */
 struct fielddesc {
 	const char *nameandfmt;
-	uint32 	offset;
-	uint32 	len;
+	uint32 offset;
+	uint32 len;
 };
 
 extern void bcm_binit(struct bcmstrbuf *b, char *buf, uint size);
-extern void bcm_bprhex(struct bcmstrbuf *b, const char *msg, bool newline, uint8 *buf, int len);
+extern void bcm_bprhex(struct bcmstrbuf *b, const char *msg, bool newline,
+	const uint8 *buf, int len);
 
 extern void bcm_inc_bytes(uchar *num, int num_bytes, uint8 amount);
 extern int bcm_cmp_bytes(const uchar *arg1, const uchar *arg2, uint8 nbytes);
@@ -1132,14 +942,14 @@ extern void bcm_print_bytes(const char *name, const uchar *cdata, int len);
 typedef  uint32 (*bcmutl_rdreg_rtn)(void *arg0, uint arg1, uint32 offset);
 extern uint bcmdumpfields(bcmutl_rdreg_rtn func_ptr, void *arg0, uint arg1, struct fielddesc *str,
                           char *buf, uint32 bufsize);
-extern uint BCMROMFN(bcm_bitcount)(uint8 *bitmap, uint bytelength);
+extern uint bcm_bitcount(uint8 *bitmap, uint bytelength);
 
 extern int bcm_bprintf(struct bcmstrbuf *b, const char *fmt, ...);
 
 /* power conversion */
-extern uint16 BCMROMFN(bcm_qdbm_to_mw)(uint8 qdbm);
-extern uint8 BCMROMFN(bcm_mw_to_qdbm)(uint16 mw);
-extern uint bcm_mkiovar(char *name, char *data, uint datalen, char *buf, uint len);
+extern uint16 bcm_qdbm_to_mw(uint8 qdbm);
+extern uint8 bcm_mw_to_qdbm(uint16 mw);
+extern uint bcm_mkiovar(const char *name, char *data, uint datalen, char *buf, uint len);
 
 unsigned int process_nvram_vars(char *varbuf, unsigned int len);
 
@@ -1162,20 +972,20 @@ _CSBTBL[256] =
 };
 
 static INLINE uint32 /* Uses table _CSBTBL for fast counting of 1's in a u32 */
-bcm_cntsetbits(const uint32 u32)
+bcm_cntsetbits(const uint32 u32arg)
 {
 	/* function local scope declaration of const _CSBTBL[] */
-	const uint8 * p = (const uint8 *)&u32;
+	const uint8 * p = (const uint8 *)&u32arg;
 	return (_CSBTBL[p[0]] + _CSBTBL[p[1]] + _CSBTBL[p[2]] + _CSBTBL[p[3]]);
 }
 
 
 static INLINE int /* C equivalent count of leading 0's in a u32 */
-C_bcm_count_leading_zeros(uint32 u32)
+C_bcm_count_leading_zeros(uint32 u32arg)
 {
 	int shifts = 0;
-	while (u32) {
-		shifts++; u32 >>= 1;
+	while (u32arg) {
+		shifts++; u32arg >>= 1;
 	}
 	return (32U - shifts);
 }
@@ -1205,14 +1015,14 @@ C_bcm_count_leading_zeros(uint32 u32)
 #endif /* __arm__ */
 
 static INLINE int
-bcm_count_leading_zeros(uint32 u32)
+bcm_count_leading_zeros(uint32 u32arg)
 {
 #if defined(__USE_ASM_CLZ__)
 	int zeros;
-	__asm__ volatile("clz    %0, %1 \n" : "=r" (zeros) : "r"  (u32));
+	__asm__ volatile("clz    %0, %1 \n" : "=r" (zeros) : "r"  (u32arg));
 	return zeros;
 #else	/* C equivalent */
-	return C_bcm_count_leading_zeros(u32);
+	return C_bcm_count_leading_zeros(u32arg);
 #endif  /* C equivalent */
 }
 
@@ -1248,12 +1058,43 @@ extern void bcm_mwbmap_show(struct bcm_mwbmap * mwbmap_hdl);
 
 extern void bcm_mwbmap_audit(struct bcm_mwbmap * mwbmap_hdl);
 /* End - Multiword bitmap based small Id allocator. */
+
+
+/* INTERFACE: Simple unique 16bit Id Allocator using a stack implementation. */
+
+#define ID16_INVALID                ((uint16)(~0))
+
+/*
+ * Construct a 16bit id allocator, managing 16bit ids in the range:
+ *    [start_val16 .. start_val16+total_ids)
+ * Note: start_val16 is inclusive.
+ * Returns an opaque handle to the 16bit id allocator.
+ */
+extern void * id16_map_init(osl_t *osh, uint16 total_ids, uint16 start_val16);
+extern void * id16_map_fini(osl_t *osh, void * id16_map_hndl);
+
+/* Allocate a unique 16bit id */
+extern uint16 id16_map_alloc(void * id16_map_hndl);
+
+/* Free a 16bit id value into the id16 allocator */
+extern void id16_map_free(void * id16_map_hndl, uint16 val16);
+
+/* Get the number of failures encountered during id allocation. */
+extern uint32 id16_map_failures(void * id16_map_hndl);
+
+/* Audit the 16bit id allocator state. */
+extern bool id16_map_audit(void * id16_map_hndl);
+/* End - Simple 16bit Id Allocator. */
+
 #endif /* BCMDRIVER */
 
 extern void bcm_uint64_right_shift(uint32* r, uint32 a_high, uint32 a_low, uint32 b);
 
 void bcm_add_64(uint32* r_hi, uint32* r_lo, uint32 offset);
 void bcm_sub_64(uint32* r_hi, uint32* r_lo, uint32 offset);
+
+/* calculate checksum for ip header, tcp / udp header / data */
+uint16 bcm_ip_cksum(uint8 *buf, uint32 len, uint32 sum);
 
 #ifndef _dll_t_
 #define _dll_t_
@@ -1309,35 +1150,151 @@ typedef struct dll {
 	struct dll * next_p;
 	struct dll * prev_p;
 } dll_t;
-
+#ifdef DLL_USE_MACROS
 #define dll_init(node_p)        ((node_p)->next_p = (node_p)->prev_p = (node_p))
-
-/* dll macros returing a pointer to dll_t */
 #define dll_head_p(list_p)      ((list_p)->next_p)
 #define dll_tail_p(list_p)      ((list_p)->prev_p)
-
 #define dll_next_p(node_p)      ((node_p)->next_p)
 #define dll_prev_p(node_p)      ((node_p)->prev_p)
-
 #define dll_empty(list_p)       ((list_p)->next_p == (list_p))
 #define dll_end(list_p, node_p) ((list_p) == (node_p))
 
 /* inserts the node new_p "after" the node at_p */
-#define dll_insert(new_p, at_p) ((new_p)->next_p = (at_p)->next_p,             \
-				(new_p)->prev_p = (at_p),                     \
-				(at_p)->next_p = (new_p),                     \
-				(new_p)->next_p->prev_p = (new_p))
+#define dll_insert(new_p, at_p) ((new_p)->next_p = (at_p)->next_p, \
+								(new_p)->prev_p = (at_p), \
+								(at_p)->next_p = (new_p), \
+								(new_p)->next_p->prev_p = (new_p))
 
 #define dll_append(list_p, node_p)      dll_insert((node_p), dll_tail_p(list_p))
 #define dll_prepend(list_p, node_p)     dll_insert((node_p), (list_p))
 
 /* deletes a node from any list that it "may" be in, if at all. */
-#define dll_delete(node_p)      ((node_p)->prev_p->next_p = (node_p)->next_p, \
-				(node_p)->next_p->prev_p = (node_p)->prev_p)
+#define dll_delete(node_p)	((node_p)->prev_p->next_p = (node_p)->next_p, \
+							(node_p)->next_p->prev_p = (node_p)->prev_p)
+#else
+static INLINE void
+dll_init(dll_t *node_p)
+{
+	node_p->next_p = node_p;
+	node_p->prev_p = node_p;
+}
+/* dll macros returing a pointer to dll_t */
+
+static INLINE dll_t *
+dll_head_p(dll_t *list_p)
+{
+	return list_p->next_p;
+}
+
+
+static INLINE dll_t *
+dll_tail_p(dll_t *list_p)
+{
+	return (list_p)->prev_p;
+}
+
+
+static INLINE dll_t *
+dll_next_p(dll_t *node_p)
+{
+	return (node_p)->next_p;
+}
+
+
+static INLINE dll_t *
+dll_prev_p(dll_t *node_p)
+{
+	return (node_p)->prev_p;
+}
+
+
+static INLINE bool
+dll_empty(dll_t *list_p)
+{
+	return ((list_p)->next_p == (list_p));
+}
+
+
+static INLINE bool
+dll_end(dll_t *list_p, dll_t * node_p)
+{
+	return (list_p == node_p);
+}
+
+
+/* inserts the node new_p "after" the node at_p */
+static INLINE void
+dll_insert(dll_t *new_p, dll_t * at_p)
+{
+	new_p->next_p = at_p->next_p;
+	new_p->prev_p = at_p;
+	at_p->next_p = new_p;
+	(new_p->next_p)->prev_p = new_p;
+}
+
+static INLINE void
+dll_append(dll_t *list_p, dll_t *node_p)
+{
+	dll_insert(node_p, dll_tail_p(list_p));
+}
+
+static INLINE void
+dll_prepend(dll_t *list_p, dll_t *node_p)
+{
+	dll_insert(node_p, list_p);
+}
+
+
+/* deletes a node from any list that it "may" be in, if at all. */
+static INLINE void
+dll_delete(dll_t *node_p)
+{
+	node_p->prev_p->next_p = node_p->next_p;
+	node_p->next_p->prev_p = node_p->prev_p;
+}
+#endif /*! defined(USE_DLL_MACRO) */
 #endif  /* ! defined(_dll_t_) */
+
+/* Elements managed in a double linked list */
+
+typedef struct dll_pool {
+	dll_t       free_list;
+	uint16      free_count;
+	uint16      elems_max;
+	uint16      elem_size;
+	dll_t       elements[1];
+} dll_pool_t;
+
+dll_pool_t * dll_pool_init(void * osh, uint16 elems_max, uint16 elem_size);
+void * dll_pool_alloc(dll_pool_t * dll_pool_p);
+void dll_pool_free(dll_pool_t * dll_pool_p, void * elem_p);
+void dll_pool_free_tail(dll_pool_t * dll_pool_p, void * elem_p);
+typedef void (* dll_elem_dump)(void * elem_p);
+#ifdef BCMDBG
+void dll_pool_dump(dll_pool_t * dll_pool_p, dll_elem_dump dump);
+#endif
+void dll_pool_detach(void * osh, dll_pool_t * pool, uint16 elems_max, uint16 elem_size);
+
+int valid_bcmerror(int e);
 
 #ifdef __cplusplus
 	}
 #endif
+
+/* #define DEBUG_COUNTER */
+#ifdef DEBUG_COUNTER
+#define CNTR_TBL_MAX 10
+typedef struct _counter_tbl_t {
+	char name[16];				/* name of this counter table */
+	uint32 prev_log_print;		/* Internal use. Timestamp of the previous log print */
+	uint log_print_interval;	/* Desired interval to print logs in ms */
+	uint needed_cnt;			/* How many counters need to be used */
+	uint32 cnt[CNTR_TBL_MAX];		/* Counting entries to increase at desired places */
+	bool enabled;				/* Whether to enable printing log */
+} counter_tbl_t;
+
+
+void counter_printlog(counter_tbl_t *ctr_tbl);
+#endif /* DEBUG_COUNTER */
 
 #endif	/* _bcmutils_h_ */
