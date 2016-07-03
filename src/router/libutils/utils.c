@@ -3762,12 +3762,10 @@ int internal_getRouterBrand()
 		return ROUTER_BUFFALO_WBR54G;
 	}
 
-	if (boardnum == 00 && nvram_match("boardtype", "0xF5B2")
-	    && nvram_match("boardrev", "0x1100")
-	    && nvram_match("pci/2/1/sb20in80and160hr5ghpo", "0")) {
-		setRouter("Asus RT-AC66U");
-		return ROUTER_ASUS_AC66U;
-	}
+//	if (nvram_match("productid", "RT-AC66U V2")) {
+//		setRouter("Asus RT-AC66U V2");
+//		return ROUTER_ASUS_AC66U;
+//	}
 
 	if (boardnum == 00 && nvram_match("boardtype", "0xF5B2")
 	    && nvram_match("boardrev", "0x1100")
