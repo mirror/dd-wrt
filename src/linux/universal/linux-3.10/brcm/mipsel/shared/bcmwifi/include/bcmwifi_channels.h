@@ -160,6 +160,7 @@ typedef uint16 chanspec_t;
 
 #else /* !WL11N_20MHZONLY */
 
+
 #define CHSPEC_IS10(chspec)	(((chspec) & WL_CHANSPEC_BW_MASK) == WL_CHANSPEC_BW_10)
 #define CHSPEC_IS20(chspec)	(((chspec) & WL_CHANSPEC_BW_MASK) == WL_CHANSPEC_BW_20)
 #ifndef CHSPEC_IS40
@@ -177,6 +178,14 @@ typedef uint16 chanspec_t;
 
 #endif /* !WL11N_20MHZONLY */
 
+#define BW_LE20(bw)		((bw) == WL_CHANSPEC_BW_20)
+#define CHSPEC_ISLE20(chspec)	(CHSPEC_IS20(chspec))
+
+#define BW_LE40(bw)		(BW_LE20(bw) || ((bw) == WL_CHANSPEC_BW_40))
+#define BW_LE80(bw)		(BW_LE40(bw) || ((bw) == WL_CHANSPEC_BW_80))
+#define BW_LE160(bw)		(BW_LE80(bw) || ((bw) == WL_CHANSPEC_BW_160))
+
+#define CHSPEC_BW_LE20(chspec)	(BW_LE20(CHSPEC_BW(chspec)))
 #define CHSPEC_IS5G(chspec)	(((chspec) & WL_CHANSPEC_BAND_MASK) == WL_CHANSPEC_BAND_5G)
 #define CHSPEC_IS2G(chspec)	(((chspec) & WL_CHANSPEC_BAND_MASK) == WL_CHANSPEC_BAND_2G)
 #define CHSPEC_SB_UPPER(chspec)	\

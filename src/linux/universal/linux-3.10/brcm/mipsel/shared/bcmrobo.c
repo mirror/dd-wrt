@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: bcmrobo.c 462657 2014-03-18 11:31:42Z $
+ * $Id: bcmrobo.c 581710 2015-08-25 09:58:34Z $
  */
 
 
@@ -78,6 +78,15 @@
 #define PAGE_FC		0x0a	/* Flow control register page */
 #define PAGE_GPHY_MII_P0	0x10	/* Port0 Internal GPHY MII registers page */
 #define PAGE_GPHY_MII_P4	0x14	/* Last/Port4 Internal GPHY MII registers page */
+#define PAGE_MIB_P0	0x20	/* Port0 MIB page */
+#define PAGE_MIB_P1	0x21	/* Port1 MIB page */
+#define PAGE_MIB_P2	0x22	/* Port2 MIB page */
+#define PAGE_MIB_P3	0x23	/* Port3 MIB page */
+#define PAGE_MIB_P4	0x24	/* Port4 MIB page */
+#define PAGE_MIB_P5	0x25	/* Port5 MIB page */
+#define PAGE_MIB_P6	0x26	/* Port6 MIB page */
+#define PAGE_MIB_P7	0x27	/* Port7 MIB page */
+#define PAGE_MIB_P8	0x28	/* Port8 (IMP) MIB page */
 #define PAGE_VLAN	0x34	/* VLAN page */
 #define PAGE_CFPTCAM	0xa0	/* CFP TCAM registers page */
 #define PAGE_CFP	0xa1	/* CFP configuration registers page */
@@ -96,14 +105,6 @@
 #define REG_CTRL_MIIPO	0x0E	/* 5325: MII Port Override register */
 #define REG_CTRL_PWRDOWN 0x0F   /* 5325: Power Down Mode register */
 #define REG_CTRL_SRST	0x79	/* Software reset control register */
-#ifdef PLC
-#define REG_CTRL_MIIP5O 0x5d    /* 53115: Port State Override register for port 5 */
-
-/* Management/Mirroring Registers */
-#define REG_MMR_ATCR    0x06    /* Aging Time Control register */
-#define REG_MMR_MCCR    0x10    /* Mirror Capture Control register */
-#define REG_MMR_IMCR    0x12    /* Ingress Mirror Control register */
-#endif /* PLC */
 
 /* Management Page registers */
 #define REG_MGMT_CFG	0x00
@@ -162,6 +163,37 @@
 #define REG_VTBL_ENTRY_5395	0x83	/* VLAN table entry register */
 
 #define REG_FC_OOBPAUSE		0xe0	/* OOB Pause Signal enable register */
+
+/* Port MIB registers */
+#define REG_MIB_TXDROPPKTS	0x08	/* MIB TxDropPkts register */
+#define REG_MIB_TXQ0PKT		0x0C	/* MIB TxQ0Pkt register */
+#define REG_MIB_TXBCPKTS	0x10	/* MIB TxBroadcastPkts register */
+#define REG_MIB_TXMCPKTS	0x14	/* MIB TxMulticastPkts register */
+#define REG_MIB_TXUCPKTS	0x18	/* MIB TxUnicastPkts register */
+#define REG_MIB_TXDISCARD	0x34	/* MIB TxDiscard register */
+#define REG_MIB_TXPAUSEPKTS	0x38	/* MIB TxPausetPkts register */
+#define REG_MIB_RXUNDERSZPKTS	0x58	/* MIB RxUndersizePkts register */
+#define REG_MIB_RXPAUSEPKTS	0x5C	/* MIB RxPausetPkts register */
+#define REG_MIB_RXOVERSZPKTS	0x78	/* MIB RxOversizePkts register */
+#define REG_MIB_RXJABBERS	0x7C	/* MIB RxJabbers register */
+#define REG_MIB_RXALIGNERROR	0x80	/* MIB RxAlignmentErrors register */
+#define REG_MIB_RXFCSERROR	0x84	/* MIB RxFCSErrors register */
+#define REG_MIB_RXDROPPKTS	0x90	/* MIB RxDropPkts register */
+#define REG_MIB_RXUCPKTS	0x94	/* MIB RxUnicastPkts register */
+#define REG_MIB_RXMCPKTS	0x98	/* MIB RxMulticastPkts register */
+#define REG_MIB_RXBCPKTS	0x9C	/* MIB RxBroadcastPkts register */
+#define REG_MIB_RXFRAGMENTS	0xA4	/* MIB RxFragments register */
+#define REG_MIB_RXDISCARD	0xC0	/* MIB RxDiscard register */
+
+#define REG_MIB_5325E_MODESEL		0x04	/* MIB Mode Select Register */
+#define REG_MIB_5325E_TXGOODPKTS	0x00	/* MIB TxGoodPkts register */
+#define REG_MIB_5325E_TXUCPKTS		0x02	/* MIB TxUnicastPkts register */
+#define REG_MIB_5325E_RXGOODPKTS	0x04	/* MIB RxGoodPkts register */
+#define REG_MIB_5325E_RXUCPKTS		0x06	/* MIB RxUnicastPkts register */
+#define REG_MIB_5325E_TXCOLBYTES	0x00	/* MIB TxCollisionBytes register */
+#define REG_MIB_5325E_TXOCTETBYTES	0x02	/* MIB TxOctetsBytes register */
+#define REG_MIB_5325E_RXFCSERRPKTS	0x04	/* MIB RxFCSErrorsPkts register */
+#define REG_MIB_5325E_RXGOODOCTETS	0x06	/* MIB RxGoodOctetsBytes register */
 
 /* CFP TCAM page registers */
 #define REG_CFPTCAM_ACC			0x00	/* CFP access register */
@@ -682,13 +714,13 @@ static dev_ops_t mdcmdio = {
  */
 
 #ifdef ROBO_SRAB
-#define SRAB_ENAB()	(1)
+#define SRAB_ENAB(sih)	((sih)->ccrev == 42)
 #define NS_CHIPCB_SRAB		0x18007000	/* NorthStar Chip Common B SRAB base */
 #define SET_ROBO_SRABREGS(robo)	((robo)->srabregs = \
 	(srabregs_t *)REG_MAP(NS_CHIPCB_SRAB, SI_CORE_SIZE))
 #define SET_ROBO_SRABOPS(robo)	((robo)->ops = &srab)
 #else
-#define SRAB_ENAB()	(0)
+#define SRAB_ENAB(sih)	(0)
 #define SET_ROBO_SRABREGS(robo)
 #define SET_ROBO_SRABOPS(robo)
 #endif /* ROBO_SRAB */
@@ -984,7 +1016,7 @@ bcm_robo_attach(si_t *sih, void *h, char *vars, miird_f miird, miiwr_f miiwr)
 	char *boothwver = nvram_get("boot_hw_ver");
 	if (boothwmodel == NULL || strcmp(boothwmodel, "WRT300N")) rreset = GPIO_PIN_NOTDEFINED;
 
-	if (SRAB_ENAB() && BCM4707_CHIP(sih->chip)) {
+	if (SRAB_ENAB(sih) && BCM4707_CHIP(sih->chip)) {
 		SET_ROBO_SRABREGS(robo);
 	}
 
@@ -1035,7 +1067,7 @@ bcm_robo_attach(si_t *sih, void *h, char *vars, miird_f miird, miiwr_f miiwr)
 			 */
 			robo->corerev = 3;
 		}
-		else if (SRAB_ENAB() && BCM4707_CHIP(sih->chip)) {
+		else if (SRAB_ENAB(sih) && BCM4707_CHIP(sih->chip)) {
 			srab_interface_reset(robo);
 			rc = srab_rreg(robo, PAGE_MMR, REG_VERSION_ID, &robo->corerev, 1);
 		}
@@ -1046,7 +1078,7 @@ bcm_robo_attach(si_t *sih, void *h, char *vars, miird_f miird, miiwr_f miiwr)
 		ET_MSG(("%s: Internal robo rev %d\n", __FUNCTION__, robo->corerev));
 	}
 
-	if (SRAB_ENAB() && BCM4707_CHIP(sih->chip)) {
+	if (SRAB_ENAB(sih) && BCM4707_CHIP(sih->chip)) {
 		rc = srab_rreg(robo, PAGE_MMR, REG_DEVICE_ID, &robo->devid, sizeof(uint32));
 
 		ET_MSG(("%s: devid read %ssuccesfully via srab: 0x%x\n",
@@ -1154,13 +1186,22 @@ bcm_robo_attach(si_t *sih, void *h, char *vars, miird_f miird, miiwr_f miiwr)
 		const char *var;
 
 		if (((sih->chip == BCM5357_CHIP_ID) && (sih->chippkg != BCM47186_PKG_ID)) ||
-		    ((sih->chip == BCM53572_CHIP_ID) && (sih->chippkg != BCM47188_PKG_ID)))
+		    ((sih->chip == BCM53572_CHIP_ID) && (sih->chippkg != BCM47188_PKG_ID))) {
 			led_gpios = 0x1f;
+		}
 		var = getvar(vars, "et_swleds");
 		if (var)
 			led_gpios = bcm_strtoul(var, NULL, 0);
-		if (PMUCTL_ENAB(sih) && led_gpios)
+		if (PMUCTL_ENAB(sih) && led_gpios) {
 			si_pmu_chipcontrol(sih, 2, (0x3ff << 8), (led_gpios << 8));
+		}
+	} else if (BCM53573_CHIP(sih->chip)) {
+		/* Support internal robo switch LED on/off after A1 chip revision */
+		if (sih->chippkg != BCM47189_PKG_ID && sih->chiprev >= 1) {
+			if (PMUCTL_ENAB(sih)) {
+				si_pmu_chipcontrol(sih, 8, 0x5, 0x5);
+			}
+		}
 	}
 
 #ifndef	_CFE_
@@ -1244,11 +1285,6 @@ bcm_robo_attach(si_t *sih, void *h, char *vars, miird_f miird, miiwr_f miiwr)
 		robo->pwrsave_phys = 0x1f;
 #endif /* _CFE_ */
 
-#ifdef PLC
-	/* See if one of the ports is connected to plc chipset */
-	robo->plc_hw = (getvar(vars, "plc_vifs") != NULL);
-#endif /* PLC */
-
 #ifdef BCMFA
 	robo->aux_pid = -1;
 	if (BCM4707_CHIP(CHIPID(robo->sih->chip))) {
@@ -1274,7 +1310,7 @@ error:
 void
 bcm_robo_detach(robo_info_t *robo)
 {
-	if (SRAB_ENAB() && robo->srabregs)
+	if (SRAB_ENAB(robo->sih) && robo->srabregs)
 		REG_UNMAP(robo->srabregs);
 
 	MFREE(si_osh(robo->sih), robo, sizeof(robo_info_t));
@@ -1286,9 +1322,6 @@ bcm_robo_enable_device(robo_info_t *robo)
 {
 	uint8 reg_offset, reg_val;
 	int ret = 0;
-#ifdef PLC
-	uint32 val32;
-#endif /* PLC */
 
 	/* Enable management interface access */
 	if (robo->ops->enable_mgmtif)
@@ -1326,13 +1359,6 @@ bcm_robo_enable_device(robo_info_t *robo)
 			}
 		}
 	}
-
-#ifdef PLC
-	if (robo->plc_hw) {
-		val32 = 0x100002;
-		robo->ops->write_reg(robo, PAGE_MMR, REG_MMR_ATCR, &val32, sizeof(val32));
-	}
-#endif /* PLC */
 
 	/* Disable management interface access */
 	if (robo->ops->disable_mgmtif)
@@ -1444,7 +1470,6 @@ robo_cpu_port_upd(robo_info_t *robo, pdesc_t *pdesc, int pdescsz)
 			if (strchr(port, FLAG_LAN) || strchr(port, FLAG_UNTAG)) {
 				/* Change it and return */
 				pdesc[pid].cpu = 1;
-				return;
 			}
 		}
 	}
@@ -1832,8 +1857,10 @@ bcm_robo_config_vlan(robo_info_t *robo, uint8 *mac_addr)
 		pdesc = pdesc97;
 		pdescsz = sizeof(pdesc97) / sizeof(pdesc_t);
 
-		if (SRAB_ENAB() && ROBO_IS_BCM5301X(robo->devid))
+		if ((SRAB_ENAB(robo->sih) && ROBO_IS_BCM5301X(robo->devid)) ||
+		    (BCM53573_CHIP(robo->sih->chip) && robo->sih->chippkg == BCM47189_PKG_ID)) {
 			robo_cpu_port_upd(robo, pdesc97, pdescsz);
+		}
 	}
 
 	/* setup each vlan. max. 16 vlans. */
@@ -2125,6 +2152,8 @@ bcm_robo_enable_switch(robo_info_t *robo)
 		val8 = 0;
 		if (robo->devid == DEVID5398 || ROBO_IS_BCM5301X(robo->devid))
 			max_port_ind = REG_CTRL_PORT7;
+		else if (BCM53573_CHIP(robo->sih->chip) && robo->sih->chippkg == BCM47189_PKG_ID)
+			max_port_ind = REG_CTRL_PORT5;
 		else
 			max_port_ind = REG_CTRL_PORT4;
 
@@ -2146,8 +2175,36 @@ bcm_robo_enable_switch(robo_info_t *robo)
 		robo->ops->write_reg(robo, PAGE_CTRL, REG_CTRL_MIIPO, &val8, sizeof(val8));
 		/* Init the EEE feature */
 		robo_eee_advertise_init(robo);
-	}
+#ifndef _CFE_
+		if (BCM53573_CHIP(robo->sih->chip) && robo->sih->chippkg == BCM47189_PKG_ID) {
+			/* Find the first cpu port and do software override from port 0 to 5 */
+			for (i = 0; i < 6; i++) {
+				if (!pdesc97[i].cpu)
+					continue;
 
+				/* Port 5 GMII Port States Override Register
+				 * (Page 0, Address 0x5d)
+				 */
+				val8 = 0;
+				robo->ops->read_reg(robo, PAGE_CTRL, REG_CTRL_PORT0_GMIIPO + i,
+					&val8, sizeof(val8));
+				val8 |=
+					(1 << 6) |	/* SW_OVERRIDE */
+					(1 << 5) |	/* TXFLOW_CNTL */
+					(1 << 4) |	/* RXFLOW_CNTL */
+							/* default(2 << 2) SPEED :
+							 * 2b10 1000Mbps
+							 */
+							/* default(1 << 1) DUPLX_MODE:
+							 * Full Duplex
+							 */
+					(1 << 0);	/* LINK_STS: Link up */
+				robo->ops->write_reg(robo, PAGE_CTRL, REG_CTRL_PORT0_GMIIPO + i,
+					&val8, sizeof(val8));
+			}
+		}
+#endif /* !CFE */
+	}
 
 	if (boothwmodel != NULL && !strcmp(boothwmodel, "E4200") && boothwver != NULL && !strcmp(boothwver, "1.0")) {
 		printk(KERN_EMERG "E4200 switch LEDs fix\n");
@@ -2173,20 +2230,20 @@ bcm_robo_enable_switch(robo_info_t *robo)
 	}
 
 	if (boardnum != NULL && boardtype != NULL && boardrev != NULL)
-	if (!strcmp(boardnum, "32") && !strcmp(boardtype, "0x0665")) {
+	if (!strcmp(boardnum, "32") && (!strcmp(boardtype, "0x0665") || !strcmp(boardtype, "0x072F"))){
 		/* WAN port LED fix*/
 		val16 = 0x3000 ;
 		robo->ops->write_reg(robo, PAGE_CTRL, 0x10, &val16, sizeof(val16));
 		val8 = 0x78 ;
 		robo->ops->write_reg(robo, PAGE_CTRL, 0x12, &val8, sizeof(val8)); 
-		if(!strcmp(boardrev, "0x1301"))
+		if(!strcmp(boardrev, "0x1301") || (!strcmp(boardrev, "0x1101") && !strcmp(boardtype, "0x072F")))
 		val8 = 0x01 ;
-		if(!strcmp(boardrev, "0x1101"))
+		if(!strcmp(boardrev, "0x1101") && strcmp(boardtype, "0x072F"))
 		val8 = 0x10 ;
 		robo->ops->write_reg(robo, PAGE_CTRL, 0x14, &val8, sizeof(val8)); 
 	}
 
-	if (SRAB_ENAB() && ROBO_IS_BCM5301X(robo->devid)) {
+	if (SRAB_ENAB(robo->sih) && ROBO_IS_BCM5301X(robo->devid)) {
 		int pdescsz = sizeof(pdesc97) / sizeof(pdesc_t);
 
 #ifdef CFG_SIM
@@ -2265,7 +2322,7 @@ bcm_robo_enable_switch(robo_info_t *robo)
 					&val8, sizeof(val8));
 				mang_mode_en = TRUE;
 
-				/* Enable ports 5 and 7 for SMP dual core 3 GMAC setup */
+				/* BCM_GMAC3: Enable ports 5 and 7 for SMP dual core 3 GMAC setup */
 
 				/* Port 5 GMII Port States Override Register
 				 * (Page 0, Address 0x5d)
@@ -2349,6 +2406,14 @@ bcm_robo_enable_switch(robo_info_t *robo)
 		/* Disable CFP by default */
 		val8 = 0x0;
 		robo->ops->write_reg(robo, PAGE_CFP, REG_CFP_CTL_REG, &val8, sizeof(val8));
+	}
+
+
+	/* Drop reserved bit, if any */
+	robo->ops->read_reg(robo, PAGE_CTRL, 0x2f, &val8, sizeof(val8));
+	if (robo->devid != DEVID5325 && val8 & (1 << 1)) {
+		val8 &= ~(1 << 1);
+		robo->ops->write_reg(robo, PAGE_CTRL, 0x2f, &val8, sizeof(val8));
 	}
 
 	/* Disable management interface access */
@@ -2460,7 +2525,7 @@ robo_dump_regs(robo_info_t *robo, struct bcmstrbuf *b)
 		bcm_bprintf(b, "(0x34,0x%02x)Port %d Tag: 0x%04x\n", pdesc[i].ptagr, i, val16);
 	}
 
-	if (SRAB_ENAB() && ROBO_IS_BCM5301X(robo->devid)) {
+	if (SRAB_ENAB(robo->sih) && ROBO_IS_BCM5301X(robo->devid)) {
 		robo->ops->read_reg(robo, PAGE_CTRL, REG_CTRL_PORT5_GMIIPO, &val8, sizeof(val8));
 		bcm_bprintf(b, "(0x%02x,0x%02x)Port 5 States Override: 0x%02x\n",
 			PAGE_CTRL, REG_CTRL_PORT5_GMIIPO, val8);
@@ -2539,6 +2604,211 @@ robo_dump_regs(robo_info_t *robo, struct bcmstrbuf *b)
 		robo_fa_aux_dump_rate_counter(robo, b, 3, " (IPv6 TCP RST)");
 #endif /* BCMFA */
 	}
+#ifndef	_CFE_
+	else if (robo->devid == DEVID53125) {
+		uint8 port_mib_page[] = { PAGE_MIB_P0, PAGE_MIB_P1, PAGE_MIB_P2, PAGE_MIB_P3,
+			PAGE_MIB_P4, PAGE_MIB_P5, PAGE_MIB_P6, PAGE_MIB_P7, PAGE_MIB_P8 };
+		int port_mib_page_sz = sizeof(port_mib_page) / sizeof(port_mib_page[0]);
+
+		/* Dump MIB registers interested */
+		for (i = 0; i < port_mib_page_sz; i++) {
+			uint8 page = port_mib_page[i];
+
+			/* Skip port 6 and port 7 for 47189 since they are not used */
+			if (i == 6 || i == 7)
+				continue;
+
+			val32 = 0;
+			robo->ops->read_reg(robo, page, REG_MIB_TXDROPPKTS, &val32,
+				sizeof(val32));
+			bcm_bprintf(b, "(0x%02x,0x%02x)Port %d tx_drop_pkts: %d\n",
+				page, REG_MIB_TXDROPPKTS, i, val32);
+
+			val32 = 0;
+			robo->ops->read_reg(robo, page, REG_MIB_TXQ0PKT, &val32,
+				sizeof(val32));
+			bcm_bprintf(b, "(0x%02x,0x%02x)Port %d tx_q0_pkts: %d\n",
+				page, REG_MIB_TXQ0PKT, i, val32);
+
+			val32 = 0;
+			robo->ops->read_reg(robo, page, REG_MIB_TXBCPKTS, &val32,
+				sizeof(val32));
+			bcm_bprintf(b, "(0x%02x,0x%02x)Port %d tx_broadcast_pkts: %d\n",
+				page, REG_MIB_TXBCPKTS, i, val32);
+
+			val32 = 0;
+			robo->ops->read_reg(robo, page, REG_MIB_TXMCPKTS, &val32,
+				sizeof(val32));
+			bcm_bprintf(b, "(0x%02x,0x%02x)Port %d tx_multicast_pkts: %d\n",
+				page, REG_MIB_TXMCPKTS, i, val32);
+
+			val32 = 0;
+			robo->ops->read_reg(robo, page, REG_MIB_TXUCPKTS, &val32,
+				sizeof(val32));
+			bcm_bprintf(b, "(0x%02x,0x%02x)Port %d tx_unicast_pkts: %d\n",
+				page, REG_MIB_TXUCPKTS, i, val32);
+
+			val32 = 0;
+			robo->ops->read_reg(robo, page, REG_MIB_TXDISCARD, &val32,
+				sizeof(val32));
+			bcm_bprintf(b, "(0x%02x,0x%02x)Port %d tx_discard_pkts: %d\n",
+				page, REG_MIB_TXDISCARD, i, val32);
+
+			val32 = 0;
+			robo->ops->read_reg(robo, page, REG_MIB_TXPAUSEPKTS, &val32,
+				sizeof(val32));
+			bcm_bprintf(b, "(0x%02x,0x%02x)Port %d tx_pause_pkts: %d\n",
+				page, REG_MIB_TXPAUSEPKTS, i, val32);
+
+			val32 = 0;
+			robo->ops->read_reg(robo, page, REG_MIB_RXUNDERSZPKTS, &val32,
+				sizeof(val32));
+			bcm_bprintf(b, "(0x%02x,0x%02x)Port %d tx_undersize_pkts: %d\n",
+				page, REG_MIB_RXUNDERSZPKTS, i, val32);
+
+			val32 = 0;
+			robo->ops->read_reg(robo, page, REG_MIB_RXPAUSEPKTS, &val32,
+				sizeof(val32));
+			bcm_bprintf(b, "(0x%02x,0x%02x)Port %d rx_pause_pkts: %d\n",
+				page, REG_MIB_RXPAUSEPKTS, i, val32);
+
+			val32 = 0;
+			robo->ops->read_reg(robo, page, REG_MIB_RXOVERSZPKTS, &val32,
+				sizeof(val32));
+			bcm_bprintf(b, "(0x%02x,0x%02x)Port %d rx_oversize_pkts: %d\n",
+				page, REG_MIB_RXOVERSZPKTS, i, val32);
+
+			val32 = 0;
+			robo->ops->read_reg(robo, page, REG_MIB_RXJABBERS, &val32,
+				sizeof(val32));
+			bcm_bprintf(b, "(0x%02x,0x%02x)Port %d rx_jabbers: %d\n",
+				page, REG_MIB_RXJABBERS, i, val32);
+
+			val32 = 0;
+			robo->ops->read_reg(robo, page, REG_MIB_RXALIGNERROR, &val32,
+				sizeof(val32));
+			bcm_bprintf(b, "(0x%02x,0x%02x)Port %d rx_alignment_error: %d\n",
+				page, REG_MIB_RXALIGNERROR, i, val32);
+
+			val32 = 0;
+			robo->ops->read_reg(robo, page, REG_MIB_RXFCSERROR, &val32,
+				sizeof(val32));
+			bcm_bprintf(b, "(0x%02x,0x%02x)Port %d rx_fcs_error: %d\n",
+				page, REG_MIB_RXFCSERROR, i, val32);
+
+			val32 = 0;
+			robo->ops->read_reg(robo, page, REG_MIB_RXDROPPKTS, &val32,
+				sizeof(val32));
+			bcm_bprintf(b, "(0x%02x,0x%02x)Port %d rx_drop_pkts: %d\n",
+				page, REG_MIB_RXDROPPKTS, i, val32);
+
+			val32 = 0;
+			robo->ops->read_reg(robo, page, REG_MIB_RXUCPKTS, &val32,
+				sizeof(val32));
+			bcm_bprintf(b, "(0x%02x,0x%02x)Port %d rx_unicast_pkts: %d\n",
+				page, REG_MIB_RXUCPKTS, i, val32);
+
+			val32 = 0;
+			robo->ops->read_reg(robo, page, REG_MIB_RXMCPKTS, &val32,
+				sizeof(val32));
+			bcm_bprintf(b, "(0x%02x,0x%02x)Port %d rx_multicast_pkts: %d\n",
+				page, REG_MIB_RXMCPKTS, i, val32);
+
+			val32 = 0;
+			robo->ops->read_reg(robo, page, REG_MIB_RXBCPKTS, &val32,
+				sizeof(val32));
+			bcm_bprintf(b, "(0x%02x,0x%02x)Port %d rx_broadcast_pkts: %d\n",
+				page, REG_MIB_RXBCPKTS, i, val32);
+
+			val32 = 0;
+			robo->ops->read_reg(robo, page, REG_MIB_RXFRAGMENTS, &val32,
+				sizeof(val32));
+			bcm_bprintf(b, "(0x%02x,0x%02x)Port %d rx_fragment: %d\n",
+				page, REG_MIB_RXFRAGMENTS, i, val32);
+
+			val32 = 0;
+			robo->ops->read_reg(robo, page, REG_MIB_RXDISCARD, &val32,
+				sizeof(val32));
+			bcm_bprintf(b, "(0x%02x,0x%02x)Port %d rx_discard_pkts: %d\n",
+				page, REG_MIB_RXDISCARD, i, val32);
+		}
+	}
+	else if (robo->devid == DEVID5325) {
+		uint8 port_mib_page[] = { PAGE_MIB_P0, PAGE_MIB_P1, PAGE_MIB_P2, PAGE_MIB_P3,
+			PAGE_MIB_P4, PAGE_MIB_P8 };
+		int port_mib_page_sz = sizeof(port_mib_page) / sizeof(port_mib_page[0]);
+		uint16 mib_group_sel = 0;
+
+		robo->ops->read_reg(robo, PAGE_MMR, REG_MIB_5325E_MODESEL, &mib_group_sel,
+			sizeof(val16));
+
+		/* Dump MIB registers interested */
+		for (i = 0; i < port_mib_page_sz; i++) {
+			uint8 page = port_mib_page[i];
+
+			if ((mib_group_sel & (0x1 << i)) == 0) {
+				/* replace index 5 to 8 for IMP port */
+				if (i == 5)
+					i = 8;
+
+				/* MIB Group 0 counters */
+				val32 = 0;
+				robo->ops->read_reg(robo, page, REG_MIB_5325E_TXGOODPKTS, &val32,
+					sizeof(val32));
+				bcm_bprintf(b, "(0x%02x,0x%02x), Port %d tx_good_pkts: %d\n",
+					page, REG_MIB_5325E_TXGOODPKTS, i, val32);
+
+				val32 = 0;
+				robo->ops->read_reg(robo, page, REG_MIB_5325E_TXUCPKTS, &val32,
+					sizeof(val32));
+				bcm_bprintf(b, "(0x%02x,0x%02x), Port %d tx_unicast_pkts: %d\n",
+					page, REG_MIB_5325E_TXUCPKTS, i, val32);
+
+				val32 = 0;
+				robo->ops->read_reg(robo, page, REG_MIB_5325E_RXGOODPKTS, &val32,
+					sizeof(val32));
+				bcm_bprintf(b, "(0x%02x,0x%02x), Port %d rx_good_pkts: %d\n",
+					page, REG_MIB_5325E_RXGOODPKTS, i, val32);
+
+				val32 = 0;
+				robo->ops->read_reg(robo, page, REG_MIB_5325E_RXUCPKTS, &val32,
+					sizeof(val32));
+				bcm_bprintf(b, "(0x%02x,0x%02x), Port %d rx_unicast_pkts: %d\n",
+					page, REG_MIB_5325E_RXUCPKTS, i, val32);
+			}
+			else {
+				/* replace index 5 to 8 for IMP port */
+				if (i == 5)
+					i = 8;
+
+				/* MIB Group 1 counters */
+				val32 = 0;
+				robo->ops->read_reg(robo, page, REG_MIB_5325E_TXCOLBYTES, &val32,
+					sizeof(val32));
+				bcm_bprintf(b, "(0x%02x,0x%02x), Port %d tx_collision_bytes: %d\n",
+					page, REG_MIB_5325E_TXCOLBYTES, i, val32);
+
+				val32 = 0;
+				robo->ops->read_reg(robo, page, REG_MIB_5325E_TXOCTETBYTES, &val32,
+					sizeof(val32));
+				bcm_bprintf(b, "(0x%02x,0x%02x), Port %d tx_octet_bytes: %d\n",
+					page, REG_MIB_5325E_TXOCTETBYTES, i, val32);
+
+				val32 = 0;
+				robo->ops->read_reg(robo, page, REG_MIB_5325E_RXFCSERRPKTS, &val32,
+					sizeof(val32));
+				bcm_bprintf(b, "(0x%02x,0x%02x), Port %d rx_fcserror_pkts: %d\n",
+					page, REG_MIB_5325E_RXFCSERRPKTS, i, val32);
+
+				val32 = 0;
+				robo->ops->read_reg(robo, page, REG_MIB_5325E_RXGOODOCTETS, &val32,
+					sizeof(val32));
+				bcm_bprintf(b, "(0x%02x,0x%02x), Port %d Rx_octet_bytes: %d\n",
+					page, REG_MIB_5325E_RXGOODOCTETS, i, val32);
+			}
+		}
+	}
+#endif /* !_CFE_ */
 
 exit:
 	/* Disable management interface access */
@@ -2583,7 +2853,9 @@ robo_power_save_mode_clear_auto(robo_info_t *robo, int32 phy)
 		 */
 		val16 = 0xa800;
 		robo->miiwr(robo->h, phy, REG_MII_AUTO_PWRDOWN, val16);
-	} else if ((robo->sih->chip == BCM5356_CHIP_ID) || (robo->sih->chip == BCM5357_CHIP_ID)) {
+	} else if ((robo->sih->chip == BCM5356_CHIP_ID) ||
+	           (BCM53573_CHIP(robo->sih->chip)) ||
+	           (robo->sih->chip == BCM5357_CHIP_ID)) {
 		/* To disable auto power down mode
 		 * clear bit 5 of Aux Status 2 register
 		 * (Shadow reg 0x1b). Shadow register
@@ -2634,6 +2906,7 @@ robo_power_save_mode_clear_manual(robo_info_t *robo, int32 phy)
 	} else if (robo->devid == DEVID5325) {
 		if ((robo->sih->chip == BCM5357_CHIP_ID) ||
 		    (robo->sih->chip == BCM4749_CHIP_ID) ||
+		    (BCM53573_CHIP(robo->sih->chip)) ||
 		    (robo->sih->chip == BCM53572_CHIP_ID)) {
 			robo->miiwr(robo->h, phy, 0x1f, 0x8b);
 			robo->miiwr(robo->h, phy, 0x14, 0x0008);
@@ -2756,7 +3029,9 @@ robo_power_save_mode_auto(robo_info_t *robo, int32 phy)
 		 * 0-3 wake up timer select: 0xF 1.26 sec
 		 */
 		robo->miiwr(robo->h, phy, REG_MII_AUTO_PWRDOWN, 0xA83F);
-	} else if ((robo->sih->chip == BCM5356_CHIP_ID) || (robo->sih->chip == BCM5357_CHIP_ID)) {
+	} else if ((robo->sih->chip == BCM5356_CHIP_ID) ||
+	           (BCM53573_CHIP(robo->sih->chip)) ||
+	           (robo->sih->chip == BCM5357_CHIP_ID)) {
 		/* To enable auto power down mode set bit 5 of
 		 * Auxillary Status 2 register (Shadow reg 0x1b)
 		 * Shadow register access is enabled by writing
@@ -2815,6 +3090,7 @@ robo_power_save_mode_manual(robo_info_t *robo, int32 phy)
 	} else  if (robo->devid == DEVID5325) {
 		if ((robo->sih->chip == BCM5357_CHIP_ID) ||
 		    (robo->sih->chip == BCM4749_CHIP_ID)||
+		    (BCM53573_CHIP(robo->sih->chip)) ||
 		    (robo->sih->chip == BCM53572_CHIP_ID)) {
 			robo->miiwr(robo->h, phy, 0x1f, 0x8b);
 			robo->miiwr(robo->h, phy, 0x14, 0x6000);
@@ -2940,41 +3216,6 @@ robo_power_save_mode_set(robo_info_t *robo, int32 mode, int32 phy)
 	return 0;
 }
 #endif /* _CFE_ */
-
-#ifdef PLC
-void
-robo_plc_hw_init(robo_info_t *robo)
-{
-	uint8 val8;
-
-	ASSERT(robo);
-
-	if (!robo->plc_hw)
-		return;
-
-	/* Enable management interface access */
-	if (robo->ops->enable_mgmtif)
-		robo->ops->enable_mgmtif(robo);
-
-	if (robo->devid == DEVID53115) {
-		/* Fix the duplex mode and speed for Port 5 */
-		val8 = ((1 << 6) | (1 << 2) | 3);
-		robo->ops->write_reg(robo, PAGE_CTRL, REG_CTRL_MIIP5O, &val8, sizeof(val8));
-	} else if ((robo->sih->chip == BCM5357_CHIP_ID) &&
-	           (robo->sih->chippkg == BCM5358_PKG_ID)) {
-		/* Fix the duplex mode and speed for Port 4 (MII port). Force
-		 * full duplex mode and set speed to 100.
-		 */
-		si_pmu_chipcontrol(robo->sih, 2, (1 << 1) | (1 << 2), (1 << 1) | (1 << 2));
-	}
-
-	/* Disable management interface access */
-	if (robo->ops->disable_mgmtif)
-		robo->ops->disable_mgmtif(robo);
-
-	ET_MSG(("%s: Configured PLC MII interface\n", __FUNCTION__));
-}
-#endif /* PLC */
 
 /* BCM53125 EEE IOP WAR for some other vendor's wrong EEE implementation. */
 

@@ -229,7 +229,7 @@ uint8 nvram_calc_crc(struct nvram_header * nvh);
 #define VALUE_TO_STRING(x) #x
 #define VALUE(x) VALUE_TO_STRING(x)
 #define VAR_NAME_VALUE(var) #var "="  VALUE(var)
-#pragma message (VAR_NAME_VALUE(NVRAM_SPACE))
+//#pragma message (VAR_NAME_VALUE(NVRAM_SPACE))
 
 #define ROM_ENVRAM_SPACE	0x1000
 #define NVRAM_LZMA_MAGIC	0x4c5a4d41	/* 'LZMA' */

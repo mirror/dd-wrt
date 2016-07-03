@@ -17,6 +17,7 @@
  *
  * $Id:$
  */
+
 #include <typedefs.h>
 #include <osl.h>
 #include <bcmutils.h>
@@ -53,8 +54,14 @@ hndsflash_init(si_t *sih)
 		hndsflash = ccsflash_init(sih);
 #endif	/* __mips__ */
 #ifdef __ARM_ARCH_7A__
-	if (!hndsflash)
-		hndsflash = spiflash_init(sih);
+	if (!hndsflash) {
+		/* 4708 (Northstar series) */
+		if (sih->ccrev == 42)
+			hndsflash = spiflash_init(sih);
+		/* 53573/47189 series */
+		else if (sih->ccrev == 54)
+			hndsflash = ccsflash_init(sih);
+	}
 #endif	/* __ARM_ARCH_7A__ */
 
 	si_setcoreidx(sih, origidx);

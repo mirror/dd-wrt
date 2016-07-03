@@ -16,7 +16,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: siutils.h 468310 2014-04-07 09:48:43Z $
+ * $Id: siutils.h 558201 2015-05-21 11:05:53Z $
  */
 
 #ifndef	_siutils_h_
@@ -114,12 +114,23 @@ typedef const struct si_pub si_t;
 
 /* SI routine enumeration: to be used by update function with multiple hooks */
 #define	SI_DOATTACH	1
-#define SI_PCIDOWN	2
-#define SI_PCIUP	3
+#define SI_PCIDOWN	2	/* wireless interface is down */
+#define SI_PCIUP	3	/* wireless interface is up */
 
 #ifdef SR_DEBUG
-#define PMU_RES     31
+#define PMU_RES		31
 #endif /* SR_DEBUG */
+
+/* "access" param defines for si_seci_access() below */
+#define SECI_ACCESS_STATUSMASK_SET	0
+#define SECI_ACCESS_INTRS			1
+#define SECI_ACCESS_UART_CTS		2
+#define SECI_ACCESS_UART_RTS		3
+#define SECI_ACCESS_UART_RXEMPTY	4
+#define SECI_ACCESS_UART_GETC		5
+#define SECI_ACCESS_UART_TXFULL		6
+#define SECI_ACCESS_UART_PUTC		7
+#define SECI_ACCESS_STATUSMASK_GET	8
 
 #if defined(BCMQT)
 #define	ISSIM_ENAB(sih)	TRUE
@@ -134,8 +145,12 @@ typedef const struct si_pub si_t;
 #define PMUCTL_ENAB(sih)	((sih)->cccaps & CC_CAP_PMU)
 #endif
 
+#ifdef AOB_NOT_PRESENT
+#define AOB_ENAB(sih)  0
+#else
 #define AOB_ENAB(sih)	((sih)->ccrev >= 35 ? \
 			((sih)->cccaps_ext & CC_CAP_EXT_AOB_PRESENT) : 0)
+#endif /* AOB_NOT_PRESENT */
 
 /* chipcommon clock/power control (exclusive with PMU's) */
 #if defined(BCMPMUCTL) && BCMPMUCTL
@@ -146,7 +161,6 @@ typedef const struct si_pub si_t;
 #define CCPLL_ENAB(sih)		((sih)->cccaps & CC_CAP_PLL_MASK)
 #endif
 
-typedef void (*gpio_handler_t)(uint32 stat, void *arg);
 typedef void (*gci_gpio_handler_t)(uint32 stat, void *arg);
 /* External BT Coex enable mask */
 #define CC_BTCOEX_EN_MASK  0x01
@@ -174,7 +188,9 @@ typedef void (*gci_gpio_handler_t)(uint32 stat, void *arg);
 #define	ARMCR4_BSZ_MASK		0x3f
 #define	ARMCR4_BSZ_MULT		8192
 #endif 
-
+#define	SI_BPIND_1BYTE		0x1
+#define	SI_BPIND_2BYTE		0x3
+#define	SI_BPIND_4BYTE		0xF
 #include <osl_decl.h>
 /* === exported functions === */
 extern si_t *si_attach(uint pcidev, osl_t *osh, void *regs, uint bustype,
@@ -182,7 +198,8 @@ extern si_t *si_attach(uint pcidev, osl_t *osh, void *regs, uint bustype,
 extern si_t *si_kattach(osl_t *osh);
 extern void si_detach(si_t *sih);
 extern bool si_pci_war16165(si_t *sih);
-
+extern void *
+si_d11_switch_addrbase(si_t *sih, uint coreunit);
 extern uint si_corelist(si_t *sih, uint coreid[]);
 extern uint si_coreid(si_t *sih);
 extern uint si_flag(si_t *sih);
@@ -204,17 +221,23 @@ extern void *si_wrapperregs(si_t *sih);
 extern uint32 si_core_cflags(si_t *sih, uint32 mask, uint32 val);
 extern void si_core_cflags_wo(si_t *sih, uint32 mask, uint32 val);
 extern uint32 si_core_sflags(si_t *sih, uint32 mask, uint32 val);
+extern void si_d11rsdb_core1_alt_reg_clk_dis(si_t *sih);
+extern void si_d11rsdb_core1_alt_reg_clk_en(si_t *sih);
 #ifdef WLC_HIGH_ONLY
 extern bool wlc_bmac_iscoreup(si_t *sih);
 #define si_iscoreup(sih)	wlc_bmac_iscoreup(sih)
 #else
 extern bool si_iscoreup(si_t *sih);
 #endif /* __CONFIG_USBAP__ */
+extern uint si_numcoreunits(si_t *sih, uint coreid);
+extern uint si_numd11coreunits(si_t *sih);
 extern uint si_findcoreidx(si_t *sih, uint coreid, uint coreunit);
 extern void *si_setcoreidx(si_t *sih, uint coreidx);
 extern void *si_setcore(si_t *sih, uint coreid, uint coreunit);
 #ifdef WLC_LOW
 extern uint si_corereg_ifup(si_t *sih, uint core_id, uint regoff, uint mask, uint val);
+extern uint si_corereg_unit_ifup(si_t *sih, uint core_id, uint coreunit, uint regoff,
+uint mask, uint val);
 extern void si_lowpwr_opt(si_t *sih);
 #endif /* WLC_LOW */
 extern void *si_switch_core(si_t *sih, uint coreid, uint *origidx, uint *intr_val);
@@ -259,15 +282,14 @@ extern void si_watchdog_ms(si_t *sih, uint32 ms);
 extern uint32 si_watchdog_msticks(void);
 extern void *si_gpiosetcore(si_t *sih);
 extern uint32 si_gpiocontrol(si_t *sih, uint32 mask, uint32 val, uint8 priority);
-extern uint32 si_gpioouten(si_t *sih, uint32 mask, uint32 val, uint8 priority);
-extern void set_hc595(uint32 pin,uint32 val);
-extern void set_hc595_core(si_t *sih);
 extern uint32 si_gpioouten2(si_t *sih, uint32 mask, uint32 val, uint8 priority);
 extern uint32 si_gpioout(si_t *sih, uint32 mask, uint32 val, uint8 priority);
 extern uint32 si_gpioout2(si_t *sih, uint32 mask, uint32 val, uint8 priority);
+extern uint32 si_gpioouten(si_t *sih, uint32 mask, uint32 val, uint8 priority);
 extern uint32 si_gpioin(si_t *sih);
 extern uint32 si_gpiointpolarity(si_t *sih, uint32 mask, uint32 val, uint8 priority);
 extern uint32 si_gpiointmask(si_t *sih, uint32 mask, uint32 val, uint8 priority);
+extern uint32 si_gpioeventintmask(si_t *sih, uint32 mask, uint32 val, uint8 priority);
 extern uint32 si_gpioled(si_t *sih, uint32 mask, uint32 val);
 extern uint32 si_gpioreserve(si_t *sih, uint32 gpio_num, uint8 priority);
 extern uint32 si_gpiorelease(si_t *sih, uint32 gpio_num, uint8 priority);
@@ -279,11 +301,6 @@ extern void si_gci_enable_gpio(si_t *sih, uint8 gpio, uint32 mask, uint32 value)
 extern uint8 si_gci_host_wake_gpio_init(si_t *sih);
 extern void si_gci_host_wake_gpio_enable(si_t *sih, uint8 gpio, bool state);
 
-/* GPIO event handlers */
-extern void *si_gpio_handler_register(si_t *sih, uint32 e, bool lev, gpio_handler_t cb, void *arg);
-extern void si_gpio_handler_unregister(si_t *sih, void* gpioh);
-extern void si_gpio_handler_process(si_t *sih);
-
 /* GCI interrupt handlers */
 extern void si_gci_handler_process(si_t *sih);
 
@@ -292,16 +309,20 @@ extern void *si_gci_gpioint_handler_register(si_t *sih, uint8 gpio, uint8 sts,
 	gci_gpio_handler_t cb, void *arg);
 extern void si_gci_gpioint_handler_unregister(si_t *sih, void* gci_i);
 extern uint8 si_gci_gpio_status(si_t *sih, uint8 gci_gpio, uint8 mask, uint8 value);
+extern void si_gci_config_wake_pin(si_t *sih, uint8 gpio_n, uint8 wake_events,
+	bool gci_gpio);
+extern void si_gci_free_wake_pin(si_t *sih, uint8 gpio_n);
 
 /* Wake-on-wireless-LAN (WOWL) */
 extern bool si_pci_pmecap(si_t *sih);
-extern bool si_pci_fastpmecap(osl_t *osh);
+extern bool si_pci_fastpmecap(struct osl_info *osh);
 extern bool si_pci_pmestat(si_t *sih);
 extern void si_pci_pmeclr(si_t *sih);
 extern void si_pci_pmeen(si_t *sih);
 extern void si_pci_pmestatclr(si_t *sih);
 extern uint si_pcie_readreg(void *sih, uint addrtype, uint offset);
 extern uint si_pcie_writereg(void *sih, uint addrtype, uint offset, uint val);
+extern void si_deepsleep_count(si_t *sih, bool arm_wakeup);
 
 
 
@@ -309,12 +330,17 @@ extern uint16 si_d11_devid(si_t *sih);
 extern int si_corepciid(si_t *sih, uint func, uint16 *pcivendor, uint16 *pcidevice,
 	uint8 *pciclass, uint8 *pcisubclass, uint8 *pciprogif, uint8 *pciheader);
 
+extern uint32 si_seci_access(si_t *sih, uint32 val, int access);
+extern void* si_seci_init(si_t *sih, uint8 seci_mode);
+extern void si_seci_clk_force(si_t *sih, bool val);
+extern bool si_seci_clk_force_status(si_t *sih);
+
+
 #if defined(BCMECICOEX)
 extern bool si_eci(si_t *sih);
 extern int si_eci_init(si_t *sih);
 extern void si_eci_notify_bt(si_t *sih, uint32 mask, uint32 val, bool interrupt);
 extern bool si_seci(si_t *sih);
-extern void* si_seci_init(si_t *sih, uint8 seci_mode);
 extern void* si_gci_init(si_t *sih);
 extern void si_seci_down(si_t *sih);
 extern void si_seci_upd(si_t *sih, bool enable);
@@ -325,7 +351,6 @@ static INLINE void * si_eci_init(si_t *sih) {return NULL;}
 #define si_eci_notify_bt(sih, type, val)  (0)
 #define si_seci(sih) 0
 #define si_seci_upd(sih, a)	do {} while (0)
-static INLINE void * si_seci_init(si_t *sih, uint8 use_seci) {return NULL;}
 static INLINE void * si_gci_init(si_t *sih) {return NULL;}
 #define si_seci_down(sih) do {} while (0)
 #define si_gci(sih) 0
@@ -358,6 +383,7 @@ extern int si_cis_source(si_t *sih);
 
 extern int BCMINITFN(si_otp_fabid)(si_t *sih, uint16 *fabid, bool rw);
 extern uint16 BCMATTACHFN(si_fabid)(si_t *sih);
+extern uint16 BCMINITFN(si_chipid)(si_t *sih);
 
 /*
  * Build device path. Path size must be >= SI_DEVPATH_BUFSZ.
@@ -414,6 +440,7 @@ extern void si_btc_enable_chipcontrol(si_t *sih);
 extern void si_btcombo_p250_4313_war(si_t *sih);
 extern void si_btcombo_43228_war(si_t *sih);
 extern void si_clk_pmu_htavail_set(si_t *sih, bool set_clear);
+extern void si_pmu_avb_clk_set(si_t *sih, osl_t *osh, bool set_flag);
 extern void si_pmu_synth_pwrsw_4313_war(si_t *sih);
 extern uint si_pll_reset(si_t *sih);
 /* === debug routines === */
@@ -433,12 +460,14 @@ struct bcmstrbuf;
 extern int si_dump_pcieinfo(si_t *sih, struct bcmstrbuf *b);
 #endif 
 
-#if defined(BCMDBG)
+#if defined(BCMDBG) || defined(BCMDBG_PHYDUMP)
 extern void si_dumpregs(si_t *sih, struct bcmstrbuf *b);
 #endif 
 
 extern uint32 si_ccreg(si_t *sih, uint32 offset, uint32 mask, uint32 val);
 extern uint32 si_pciereg(si_t *sih, uint32 offset, uint32 mask, uint32 val, uint type);
+extern int si_bpind_access(si_t *sih, uint32 addr_high, uint32 addr_low,
+	int32* data, bool read);
 #ifdef SR_DEBUG
 extern void si_dump_pmu(si_t *sih, void *pmu_var);
 extern void si_pmu_keep_on(si_t *sih, int32 int_val);
@@ -463,6 +492,7 @@ char *si_getnvramflvar(si_t *sih, const char *name);
 
 extern void si_muxenab(si_t *sih, uint32 w);
 extern void si_clear_backplane_to(si_t *sih);
+extern void si_slave_wrapper_add(si_t *sih);
 
 #if defined(WLOFFLD)
 extern uint32 si_tcm_size(si_t *sih);
@@ -479,10 +509,18 @@ extern uint32 si_gci_input(si_t *sih, uint reg);
 extern uint32 si_gci_int_enable(si_t *sih, bool enable);
 extern void si_gci_reset(si_t *sih);
 #ifdef BCMLTECOEX
-extern void si_ercx_init(si_t *sih, uint32 ltecx_mux);
-extern void si_wci2_init(si_t *sih, uint baudrate, uint32 ltecx_mux);
 extern void si_gci_seci_init(si_t *sih);
+extern void si_ercx_init(si_t *sih, uint32 ltecx_mux, uint32 ltecx_padnum,
+	uint32 ltecx_fnsel, uint32 ltecx_gcigpio);
+int32 si_gci_rev(void);
+extern void si_wci2_init(si_t *sih, uint8 baudrate, uint32 ltecx_mux, uint32 ltecx_padnum,
+	uint32 ltecx_fnsel, uint32 ltecx_gcigpio, uint32 xtalfreq);
 #endif /* BCMLTECOEX */
+
+#if defined(BCMECICOEX)
+extern bool si_btcx_wci2_init(si_t *sih);
+#endif /* BCMECICOEX */
+
 extern void si_gci_set_functionsel(si_t *sih, uint32 pin, uint8 fnsel);
 extern uint32 si_gci_get_functionsel(si_t *sih, uint32 pin);
 extern void si_gci_clear_functionsel(si_t *sih, uint8 fnsel);
@@ -497,6 +535,7 @@ extern uint32 si_gci_preinit_upd_indirect(uint32 regidx, uint32 setval, uint32 m
 #endif /* SI_ENUM_BASE_VARIABLE */
 extern uint8 si_enable_device_wake(si_t *sih, uint8 *wake_status, uint8 *cur_status);
 extern void si_swdenable(si_t *sih, uint32 swdflag);
+extern uint8 si_enable_perst_wake(si_t *sih, uint8 *perst_wake_mask, uint8 *perst_cur_status);
 
 #define CHIPCTRLREG1 0x1
 #define CHIPCTRLREG2 0x2
@@ -523,6 +562,13 @@ extern void si_pcie_hw_L1SS_war(si_t *sih);
 extern void si_pciedev_crwlpciegen2(si_t *sih);
 extern void si_pcie_prep_D3(si_t *sih, bool enter_D3);
 extern void si_pciedev_reg_pm_clk_period(si_t *sih);
+extern void si_pcie_disable_oobselltr(si_t *sih);
+
+#ifdef WLRSDB
+extern void si_d11rsdb_core_disable(si_t *sih, uint32 bits);
+extern void si_d11rsdb_core_reset(si_t *sih, uint32 bits, uint32 resetbits);
+extern void set_secondary_d11_core(si_t *sih, void **secmap, void **secwrap);
+#endif /* WLRSDB */
 
 
 /* Macro to enable clock gating changes in different cores */
@@ -538,17 +584,7 @@ extern void si_pciedev_reg_pm_clk_period(si_t *sih);
 #define PLL_DIV2_BIT_START	9
 #define PLL_DIV2_MASK		(0x37 << PLL_DIV2_BIT_START)
 #define PLL_DIV2_DIS_OP		(0x37 << PLL_DIV2_BIT_START)
-
-#if defined(WLTEST) && defined(DONGLEBUILD)
-#define UART_BAUDBASE_DIVIDER  16
-#define UART_REG_BIT_MASK      0xFF
-#define UART_INTERFACE_OFFSET 0x100
-#define UART_REG_ADD_GET(cc, intf, reg) ((uint8 *)(&cc->uart0data + reg + \
-	intf * UART_INTERFACE_OFFSET))
-
-extern int32 si_serial_baudrate_get(si_t *sih, void* param, void* arg);
-extern int32 si_serial_baudrate_set(si_t *sih, void* serialParam);
-#endif /* WLTEST && DONGLEBUILD */
+#define PLL_DIV2_CH6_4349	26
 
 #define PMUREG(si, member) \
 	(AOB_ENAB(si) ? \
@@ -562,20 +598,106 @@ extern int32 si_serial_baudrate_set(si_t *sih, void* serialParam);
 			       OFFSETOF(pmuregs_t, member), mask, val): \
 		si_pmu_corereg(si, cc_idx, OFFSETOF(chipcregs_t, member), mask, val))
 
-/* GCI Constants */
-#define ALLONES_32		0xFFFFFFFF
-#define GCI_CORECTRL_SECI_RST	0x1
-#define GCI_CORECTRL_SECI_EN	0x4
-#define GCI_CORECTRL_MODE_OFFSET	4
-#define GCI_CORECTRL_MODE_UART	(0x0 << GCI_CORECTRL_MODE_OFFSET)
-#define GCI_CORECTRL_MODE_SECI	(0x1 << GCI_CORECTRL_MODE_OFFSET)
-#define GCI_CORECTRL_MODE_BTSIG	(0x2 << GCI_CORECTRL_MODE_OFFSET)
-#define GCI_CORECTRL_MODE_GPIO	(0x3 << GCI_CORECTRL_MODE_OFFSET)
-#define GCI_CORECTRL_SCS_OFFSET		24 /* SECI Clk Stretch */
-#define GCI_CORECTRL_SCS_DEF	(0x19 << GCI_CORECTRL_SCS_OFFSET)
+/* GCI Macros */
+#define ALLONES_32				0xFFFFFFFF
+#define GCI_CCTL_SECIRST_OFFSET			0 /* SeciReset */
+#define GCI_CCTL_RSTSL_OFFSET			1 /* ResetSeciLogic */
+#define GCI_CCTL_SECIEN_OFFSET			2 /* EnableSeci  */
+#define GCI_CCTL_FSL_OFFSET			3 /* ForceSeciOutLow */
+#define GCI_CCTL_SMODE_OFFSET			4 /* SeciOpMode, 6:4 */
+#define GCI_CCTL_US_OFFSET			7 /* UpdateSeci */
+#define GCI_CCTL_BRKONSLP_OFFSET		8 /* BreakOnSleep */
+#define GCI_CCTL_SILOWTOUT_OFFSET		9 /* SeciInLowTimeout, 10:9 */
+#define GCI_CCTL_RSTOCC_OFFSET			11 /* ResetOffChipCoex */
+#define GCI_CCTL_ARESEND_OFFSET			12 /* AutoBTSigResend */
+#define GCI_CCTL_FGCR_OFFSET			16 /* ForceGciClkReq */
+#define GCI_CCTL_FHCRO_OFFSET			17 /* ForceHWClockReqOff */
+#define GCI_CCTL_FREGCLK_OFFSET			18 /* ForceRegClk */
+#define GCI_CCTL_FSECICLK_OFFSET		19 /* ForceSeciClk */
+#define GCI_CCTL_FGCA_OFFSET			20 /* ForceGciClkAvail */
+#define GCI_CCTL_FGCAV_OFFSET			21 /* ForceGciClkAvailValue */
+#define GCI_CCTL_SCS_OFFSET			24 /* SeciClkStretch, 31:24 */
 
-/* GCI bit definitions - From LTE */
-#define GCI_FROMLTE_FRAMESYNC	0x1
-/* End - GCI Constants */
+#define GCI_MODE_UART				0x0
+#define GCI_MODE_SECI				0x1
+#define GCI_MODE_BTSIG				0x2
+#define GCI_MODE_GPIO				0x3
+#define GCI_MODE_MASK				0x7
 
+#define GCI_CCTL_LOWTOUT_DIS			0x0
+#define GCI_CCTL_LOWTOUT_10BIT			0x1
+#define GCI_CCTL_LOWTOUT_20BIT			0x2
+#define GCI_CCTL_LOWTOUT_30BIT			0x3
+#define GCI_CCTL_LOWTOUT_MASK			0x3
+
+#define GCI_CCTL_SCS_DEF			0x19
+#define GCI_CCTL_SCS_MASK			0xFF
+
+#define GCI_SECIIN_MODE_OFFSET			0
+#define GCI_SECIIN_GCIGPIO_OFFSET		4
+#define GCI_SECIIN_RXID2IP_OFFSET		8
+
+#define GCI_SECIOUT_MODE_OFFSET			0
+#define GCI_SECIOUT_GCIGPIO_OFFSET		4
+#define	GCI_SECIOUT_LOOPBACK_OFFSET		8
+#define GCI_SECIOUT_SECIINRELATED_OFFSET	16
+
+#define GCI_SECIAUX_RXENABLE_OFFSET		0
+#define GCI_SECIFIFO_RXENABLE_OFFSET		16
+
+#define GCI_SECITX_ENABLE_OFFSET		0
+
+#define GCI_GPIOCTL_INEN_OFFSET			0
+#define GCI_GPIOCTL_OUTEN_OFFSET		1
+#define GCI_GPIOCTL_PDN_OFFSET			4
+#define GCI_GPIOCTL_BTSIG_OFFSET		5
+
+#define GCI_GPIOIDX_OFFSET			16
+
+#define GCI_LTECX_SECI_ID			0 /* SECI port for LTECX */
+
+/* To access per GCI bit registers */
+#define GCI_REG_WIDTH				32
+
+/* GCI bit positions */
+/* GCI [127:000] = WLAN [127:0] */
+#define GCI_WLAN_IP_ID				0
+#define GCI_WLAN_BEGIN				0
+#define GCI_WLAN_PRIO_POS			(GCI_WLAN_BEGIN + 4)
+#define GCI_WLAN_TXON_POS			(GCI_WLAN_BEGIN + 5)
+#define GCI_WLAN_PERST_POS			(GCI_WLAN_BEGIN + 15)
+
+/* GCI [639:512] = LTE [127:0] */
+#define GCI_LTE_IP_ID				4
+#define GCI_LTE_BEGIN				512
+#define GCI_LTE_FRAMESYNC_POS			(GCI_LTE_BEGIN + 0)
+#define GCI_LTE_RX_POS				(GCI_LTE_BEGIN + 1)
+#define GCI_LTE_TX_POS				(GCI_LTE_BEGIN + 2)
+#define GCI_LTE_AUXRXDVALID_POS			(GCI_LTE_BEGIN + 56)
+
+/* Reg Index corresponding to ECI bit no x of ECI space */
+#define GCI_REGIDX(x)				((x)/GCI_REG_WIDTH)
+/* Bit offset of ECI bit no x in 32-bit words */
+#define GCI_BITOFFSET(x)			((x)%GCI_REG_WIDTH)
+
+/* End - GCI Macros */
+
+#ifdef REROUTE_OOBINT
+#define CC_OOB          0x0
+#define M2MDMA_OOB      0x1
+#define PMU_OOB         0x2
+#define D11_OOB         0x3
+#define SDIOD_OOB       0x4
+#define PMU_OOB_BIT     (0x10 | PMU_OOB)
+#endif /* REROUTE_OOBINT */
+
+extern void si_pll_sr_reinit(si_t *sih);
+extern void si_pll_closeloop(si_t *sih);
+void si_config_4364_d11_oob(si_t *sih, uint coreid);
+#if (!defined(_CFE_) && !defined(_CFEZ_)) || defined(CFG_WL)
+void si_config_53573_d11_oob(si_t *sih, uint coreid);
+#endif /* (!_CFE_ && !_CFEZ_) || CFG_WL */
+extern void si_update_macclk_mul_fact(si_t *sih, uint mul_fact);
+extern uint32 si_get_macclk_mul_fact(si_t *sih);
 #endif	/* _siutils_h_ */
+extern void si_gci_set_femctrl(si_t *sih, osl_t *osh, bool set);
