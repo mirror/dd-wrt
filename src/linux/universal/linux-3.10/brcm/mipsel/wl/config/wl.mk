@@ -1845,6 +1845,8 @@ endif
 #ifdef BCMUTILS
 ifeq ($(BCMUTILS),1)
 	WLFILES_SRC += src/shared/bcmutils.c
+	WLFILES_SRC += src/shared/hnd_pktpool.c
+	WLFILES_SRC += src/shared/hnd_pktq.c
 endif
 #endif
 

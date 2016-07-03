@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: nflash.c 411518 2013-07-09 09:02:59Z $
+ * $Id: nflash.c 467150 2014-04-02 17:30:43Z $
  */
 
 #include <typedefs.h>
@@ -138,11 +138,15 @@ nflash_check_id(uint8 *id)
 	case NFL_VENDOR_MXIC:
 		name = "Mxic";
 		break;
-	case NFL_VENDOR_ZENTEL:
-		name = "Zentel";
+	case NFL_VENDOR_ZENTEL_ESMT:
+		name = "Zentel/Esmt";
+		break;
+	case NFL_VENDOR_WINBOND:
+		name = "Winbond";
 		break;
 	default:
-		printf("No NAND flash type found\n");
+//		printf("No NAND flash type found\n");
+		name = " ";
 		break;
 	}
 
