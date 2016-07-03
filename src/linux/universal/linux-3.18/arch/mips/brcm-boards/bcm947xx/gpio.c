@@ -221,6 +221,12 @@ if ((boardnum == 0) && nvram_match("boardtype", "0xf52e") && (nvram_match("board
 		isdefault = 0;
 }
 
+if (nvram_match("productid", "RT-AC66U")) {
+		printk(KERN_EMERG "Asus-RT-AC66U init\n");
+		gpios = 0;
+		isac66 = 1;
+		isdefault = 0;
+}
 if ((boardnum == 0) && nvram_match("boardtype", "0xF5B2") && nvram_match("boardrev", "0x1100") && nvram_match("pci/2/1/sb20in80and160hr5ghpo", "0"))
 {
 		printk(KERN_EMERG "Asus-RT-AC66U init\n");
