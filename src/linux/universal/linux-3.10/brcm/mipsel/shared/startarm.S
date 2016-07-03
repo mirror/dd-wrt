@@ -1,5 +1,5 @@
 /*
- * HNDRTE ARM run-time initialization and first level exception handling.
+ * RTE ARM run-time initialization and first level exception handling.
  *
  * Copyright (C) 2015, Broadcom Corporation. All Rights Reserved.
  * 
@@ -40,8 +40,17 @@
 	ldr	r0,=x; \
 	ldr	r1,=__watermark; \
 	str	r0,[r1]
+
+/* Similar to TRACE but restores r0 and r1 registers
+ * BUT stack must be initialized before invoking
+ */
+#define TRACE_SAFE(x)		\
+	push	{r0,r1};	\
+	TRACE	(x);		\
+	pop	{r0,r1};
 #else
 #define TRACE(x)
+#define TRACE_SAFE(x)
 #endif	/* BCMDBG */
 
 	

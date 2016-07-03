@@ -62,7 +62,7 @@ hndsflash_t *
 ccsflash_init(si_t *sih)
 {
 	chipcregs_t *cc;
-	uint32 id, id2;
+	uint32 id = 0, id2;
 	const char *name = "";
 	osl_t *osh;
 
@@ -137,6 +137,10 @@ ccsflash_init(si_t *sih)
 		case 0x17:
 			/* ST M25FL128 128 Mbit Serial Flash */
 			ccsflash.numblocks = 256;
+			break;
+		case 0x18:
+			/* MXIC MX25L25635F 256Mbit Serial Flash */
+			ccsflash.numblocks = 512;
 			break;
 		case 0xbf:
 			/* All of the following flashes are SST with
@@ -258,11 +262,21 @@ ccsflash_init(si_t *sih)
 
 	ccsflash.size = ccsflash.blocksize * ccsflash.numblocks;
 	ccsflash.phybase = SI_FLASH2;
+	ccsflash.device_id = id;
 
-	if (firsttime)
-		printf("Found an %s serial flash with %d %dKB blocks; total size %dMB\n",
-		       name, ccsflash.numblocks, ccsflash.blocksize / 1024,
-		       ccsflash.size / (1024 * 1024));
+	if (ccsflash.size) {
+		ccsflash.base = (uint32)REG_MAP(ccsflash.phybase, ccsflash.size);
+	}
+
+	if (firsttime) {
+		if (ccsflash.size == 0) {
+			printf("ERROR: Unknown flash, device_id:0x%02X\n", id);
+		} else {
+			printf("Found %s serial flash with %d %dKB blocks; total size %dMB\n",
+				name, ccsflash.numblocks, ccsflash.blocksize / 1024,
+				ccsflash.size / (1024 * 1024));
+		}
+	}
 
 	firsttime = FALSE;
 	return ccsflash.size ? &ccsflash : NULL;
@@ -291,29 +305,58 @@ ccsflash_read(hndsflash_t *sfl, uint offset, uint len, const uchar *buf)
 	else
 		cnt = len;
 
-	if (sih->ccrev == 12)
+	if (sih->ccrev == 12) {
 		from = (uint8 *)OSL_UNCACHED((void *)SI_FLASH2 + offset);
-	else
+	} else if (sih->ccrev == 54) {
+		from = (uint8 *)((void *)sfl->base + offset);
+	} else {
 		from = (uint8 *)OSL_CACHED((void *)SI_FLASH2 + offset);
+	}
 	to = (uint8 *)buf;
 
-	if (cnt < 4) {
-		for (i = 0; i < cnt; i ++) {
-			/* Cannot use R_REG because in bigendian that will
-			 * xor the address and we don't want that here.
-			 */
-			*to = *from;
-			from ++;
-			to ++;
+	if ((offset + len) <= SI_FLASH_WINDOW) {
+		if (cnt < 4) {
+			for (i = 0; i < cnt; i ++) {
+				/* Cannot use R_REG because in bigendian that will
+				 * xor the address and we don't want that here.
+				 */
+				*to = *from;
+				from ++;
+				to ++;
+			}
+			return cnt;
 		}
-		return cnt;
-	}
 
-	while (cnt >= 4) {
-		*(uint32 *)to = *(uint32 *)from;
-		from += 4;
-		to += 4;
-		cnt -= 4;
+		while (cnt >= 4) {
+			*(uint32 *)to = *(uint32 *)from;
+			from += 4;
+			to += 4;
+			cnt -= 4;
+		}
+	} else {
+		osl_t *osh = si_osh(sih);
+		chipcregs_t *cc = (chipcregs_t *)sfl->core;
+		uint cmd = 0, off = offset;
+
+		switch (sfl->device_id) {
+		case 0x18:
+			/* MXIC MX25L25635F 256Mbit Serial Flash */
+			cmd = SFLASH_ST_READ4B;
+			break;
+		default:
+			printf("ERROR: Need to support 4BYTE address command\n");
+			return -1;
+			break;
+		}
+
+		while (cnt) {
+			W_REG(osh, &cc->flashaddress, off);
+			ccsflash_cmd(osh, cc, cmd);
+			*to = R_REG(osh, &cc->flashdata) & 0xff;
+			off++;
+			to++;
+			cnt--;
+		}
 	}
 
 	return (len - cnt);
@@ -442,12 +485,29 @@ retry:		ccsflash_cmd(osh, cc, SFLASH_ST_WREN);
 					return -12;
 			}
 		} else if (sih->ccrev >= 20 || (CHIPID(sih->chip) == BCM4706_CHIP_ID)) {
+			uint cmd;
+
+			if ((off + len) <= SI_FLASH_WINDOW) {
+				cmd = SFLASH_ST_PP;
+			} else {
+				switch (sfl->device_id) {
+				case 0x18:
+					/* MXIC MX25L25635F 256Mbit Serial Flash */
+					cmd = SFLASH_ST_PP4B;
+					break;
+				default:
+					printf("ERROR: Need to support 4BYTE address command\n");
+					return -1;
+					break;
+				}
+			}
+
 			W_REG(osh, &cc->flashaddress, off);
 			data = GET_BYTE(buf);
 			buf++;
 			W_REG(osh, &cc->flashdata, data);
 			/* Issue a page program with CSA bit set */
-			ccsflash_cmd(osh, cc, SFLASH_ST_CSA | SFLASH_ST_PP);
+			ccsflash_cmd(osh, cc, SFLASH_ST_CSA | cmd);
 			ret = 1;
 			off++;
 			len--;
@@ -456,16 +516,15 @@ retry:		ccsflash_cmd(osh, cc, SFLASH_ST_WREN);
 					/* Page boundary, poll droping cs and return */
 					W_REG(NULL, &cc->flashcontrol, 0);
 					OSL_DELAY(1);
-					if (ccsflash_poll(sfl, off) == 0) {
-						/* Flash rejected command */
-						SFL_MSG(("sflash: pp rejected, ntry: %d,"
-						         " off: %d/%d, len: %d/%d, ret:"
-						         "%d\n", ntry, off, offset, len,
-						         length, ret));
-						if (ntry <= ST_RETRIES)
-							goto retry;
-						else
-							return -11;
+					for (;;) {
+						int status = ccsflash_poll(sfl, off);
+
+						if (status < 0) {
+							return status;
+						} else if ((status & SFLASH_ST_WIP)
+							!= SFLASH_ST_WIP) {
+							break;
+						}
 					}
 					return ret;
 				} else {
@@ -481,15 +540,15 @@ retry:		ccsflash_cmd(osh, cc, SFLASH_ST_WREN);
 			/* All done, drop cs & poll */
 			W_REG(NULL, &cc->flashcontrol, 0);
 			OSL_DELAY(1);
-			if (ccsflash_poll(sfl, off) == 0) {
-				/* Flash rejected command */
-				SFL_MSG(("ccsflash: pp rejected, ntry: %d, off: %d/%d,"
-				         " len: %d/%d, ret: %d\n",
-				         ntry, off, offset, len, length, ret));
-				if (ntry <= ST_RETRIES)
-					goto retry;
-				else
-					return -12;
+			for (;;) {
+				int status = ccsflash_poll(sfl, off);
+
+				if (status < 0) {
+					return status;
+				} else if ((status & SFLASH_ST_WIP)
+					!= SFLASH_ST_WIP) {
+					break;
+				}
 			}
 		} else {
 			ret = 1;
@@ -546,16 +605,43 @@ ccsflash_erase(hndsflash_t *sfl, uint offset)
 		return -22;
 
 	switch (sfl->type) {
-	case SFLASH_ST:
+	case SFLASH_ST: {
+		uint cmd = 0, off = offset;
 		ccsflash_cmd(osh, cc, SFLASH_ST_WREN);
 		W_REG(osh, &cc->flashaddress, offset);
 		/* Newer flashes have "sub-sectors" which can be erased independently
 		 * with a new command: ST_SSE. The ST_SE command erases 64KB just as
 		 * before.
 		 */
-		ccsflash_cmd(osh, cc,
-			(sfl->blocksize < (64 * 1024)) ? SFLASH_ST_SSE : SFLASH_ST_SE);
+		if (off < SI_FLASH_WINDOW) {
+			if (sfl->blocksize < (64 * 1024))
+				cmd = SFLASH_ST_SSE;
+			else
+				cmd = SFLASH_ST_SE;
+		}
+		else {
+			uint secmd = 0, ssecmd = 0;
+			switch (sfl->device_id) {
+			case 0x18:
+				/* MXIC MX25L25635F 256Mbit Serial Flash */
+				secmd = SFLASH_ST_SE4B;
+				ssecmd = SFLASH_ST_SSE4B;
+				break;
+			default:
+				printf("ERROR: Need to support 4BYTE address command\n");
+				return -1;
+				break;
+			}
+
+			if (sfl->blocksize < (64 * 1024))
+				cmd = ssecmd;
+			else
+				cmd = secmd;
+		}
+
+		ccsflash_cmd(osh, cc, cmd);
 		return sfl->blocksize;
+	}
 	case SFLASH_AT:
 		W_REG(osh, &cc->flashaddress, offset << 1);
 		ccsflash_cmd(osh, cc, SFLASH_AT_PAGE_ERASE);
