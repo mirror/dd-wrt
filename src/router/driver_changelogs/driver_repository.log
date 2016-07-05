@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r3022 | BrainSlayer | 2016-07-05 16:02:47 +0200 (Tue, 05 Jul 2016) | 1 line
+
+merge additional rx filter for incompressed ba and bar from qca hal
+------------------------------------------------------------------------
 r3021 | BrainSlayer | 2016-07-04 15:16:02 +0200 (Mon, 04 Jul 2016) | 1 line
 
 switch back to old intr mitigation values
