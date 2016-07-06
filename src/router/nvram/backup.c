@@ -227,6 +227,7 @@ static char *filter[] = {
 	"pmon_ver",
 	"prodid",
 	"product",
+	"productid",
 	"product_name",
 	"region",
 	"regrev",
