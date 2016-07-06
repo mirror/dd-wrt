@@ -247,12 +247,12 @@ void setMacFilter(char *iface)
 	char var[32];
 	char nvvar[32];
 
-	sysprintf("iwpriv %s set ACLClearAll=1", getRADev(iface));
-	sysprintf("iwpriv %s set AccessPolicy=0", getRADev(iface));
+	eval("iwpriv", getRADev(iface), "set", "ACLClearAll=1");
+	eval("iwpriv", getRADev(iface), "set", "AccessPolicy=0");
 
 	sprintf(nvvar, "%s_macmode", iface);
 	if (nvram_match(nvvar, "deny")) {
-		sysprintf("iwpriv %s set AccessPolicy=2", getRADev(iface));
+		eval("iwpriv", getRADev(iface), "set", "AccessPolicy=2");
 		char nvlist[32];
 
 		sprintf(nvlist, "%s_maclist", iface);
@@ -262,7 +262,7 @@ void setMacFilter(char *iface)
 		}
 	}
 	if (nvram_match(nvvar, "allow")) {
-		sysprintf("iwpriv %s set AccessPolicy=1", getRADev(iface));
+		eval("iwpriv", getRADev(iface), "set", "AccessPolicy=1");
 
 		char nvlist[32];
 
@@ -1177,16 +1177,16 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 		char bridged[32];
 		char *raif = get_wl_instance_name(idx);
 		sprintf(bridged, "%s_bridged", getRADev(dev));
-		sysprintf("ifconfig %s 0.0.0.0 down", raif);
+		eval("ifconfig", raif, "0.0.0.0", "down");
 		if (nvram_default_match(bridged, "1", "1")) {
-			sysprintf("ifconfig %s 0.0.0.0 up", raif);
+			eval("ifconfig", raif, "0.0.0.0", "up");
 			if (nvram_nmatch("infra", "wl%d_mode", idx)) {
 				br_add_interface(getBridge(raif, tmp), raif);
 			}
 		} else {
-			sysprintf("ifconfig %s mtu %s", raif, getMTU(raif));
-			sysprintf("ifconfig %s txqueuelen %s", raif, getTXQ(raif));
-			sysprintf("ifconfig %s %s netmask %s up", raif, nvram_nget("%s_ipaddr", getRADev(dev)), nvram_nget("%s_netmask", getRADev(dev)));
+			eval("ifconfig", raif, "mtu", getMTU(raif));
+			eval("ifconfig", raif, "txqueuelen", getTXQ(raif));
+			eval("ifconfig", raif, nvram_nget("%s_ipaddr", getRADev(dev)), "netmask", nvram_nget("%s_netmask", getRADev(dev)), "up");
 		}
 		char vathmac[32];
 
@@ -1250,29 +1250,29 @@ void init_network(int idx)
 		sprintf(apcliif, "apcli%d", idx);
 
 		sprintf(bridged, "%s_bridged", getRADev(dev));
-		sysprintf("ifconfig %s 0.0.0.0 down", raif);
+		eval("ifconfig", raif, "0.0.0.0", "down");
 		if (nvram_default_match(bridged, "1", "1")) {
 			if (getSTA() || getWET()) {
-				sysprintf("ifconfig %s 0.0.0.0 down", apcliif);
-				sysprintf("ifconfig %s 0.0.0.0 up", raif);
-				sysprintf("ifconfig %s 0.0.0.0 up", apcliif);
+				eval("ifconfig", apcliif, "0.0.0.0", "down");
+				eval("ifconfig", raif, "0.0.0.0", "up");
+				eval("ifconfig", apcliif, "0.0.0.0", "up");
 				br_add_interface(getBridge(apcliif, tmp), raif);
 				if (getWET())
 					br_add_interface(getBridge(apcliif, tmp), apcliif);
 			} else {
-				sysprintf("ifconfig %s 0.0.0.0 up", raif);
+				eval("ifconfig", raif, "0.0.0.0", "up");
 				br_add_interface(getBridge(raif, tmp), raif);
 			}
 		} else {
 			if (getSTA() || getWET()) {
-				sysprintf("ifconfig %s 0.0.0.0 up", raif);
-				sysprintf("ifconfig %s mtu %s", apcliif, getMTU(apcliif));
-				sysprintf("ifconfig %s txqueuelen %s", apcliif, getTXQ(apcliif));
-				sysprintf("ifconfig %s %s netmask %s up", raif, nvram_nget("%s_ipaddr", getRADev(dev)), nvram_nget("%s_netmask", getRADev(dev)));
+				eval("ifconfig", raif, "0.0.0.0", "up");
+				eval("ifconfig", apcliif, "mtu", getMTU(apcliif));
+				eval("ifconfig", apcliif, "txqueuelen", getTXQ(apcliif));
+				eval("ifconfig", raif, nvram_nget("%s_ipaddr", getRADev(dev)), "netmask", nvram_nget("%s_netmask", getRADev(dev)), "up");
 			} else {
-				sysprintf("ifconfig %s mtu %s", raif, getMTU(raif));
-				sysprintf("ifconfig %s txqueuelen %s", raif, getTXQ(raif));
-				sysprintf("ifconfig %s %s netmask %s up", raif, nvram_nget("%s_ipaddr", getRADev(dev)), nvram_nget("%s_netmask", getRADev(dev)));
+				eval("ifconfig", raif, "0.0.0.0", "up");
+				eval("ifconfig", raif, "txqueuelen", getTXQ(raif));
+				eval("ifconfig", raif, nvram_nget("%s_ipaddr", getRADev(dev)), "netmask", nvram_nget("%s_netmask", getRADev(dev)), "up");
 			}
 		}
 		char vathmac[32];
@@ -1294,8 +1294,8 @@ void init_network(int idx)
 					char ra[32];
 
 					sprintf(ra, "ra%d", count + (8 * idx));
-					sysprintf("ifconfig ra%d 0.0.0.0 down", count + (8 * idx));
-					sysprintf("ifconfig ra%d 0.0.0.0 up", count + (8 * idx));
+					eval("ifconfig", ra, "0.0.0.0", "down");
+					eval("ifconfig", ra, "0.0.0.0", "up");
 					br_add_interface(getBridge(getRADev(var), tmp), ra);
 				} else {
 					char ip[32];
@@ -1305,10 +1305,11 @@ void init_network(int idx)
 					sprintf(mask, "%s_netmask", getRADev(var));
 					char raa[32];
 					sprintf(raa, "ra%d", count + (8 * idx));
-					sysprintf("ifconfig %s down", raa);
-					sysprintf("ifconfig %s mtu %s", raa, getMTU(raa));
-					sysprintf("ifconfig %s txqueuelen %s", raa, getTXQ(raa));
-					sysprintf("ifconfig ra%d %s netmask %s up", count, nvram_safe_get(ip), nvram_safe_get(mask));
+
+					eval("ifconfig", raa, "0.0.0.0", "down");
+					eval("ifconfig", raa, "mtu", getMTU(raa));
+					eval("ifconfig", raa, "txqueuelen", getTXQ(raa));
+					eval("ifconfig", raa, nvram_safe_get(ip), "netmask", nvram_safe_get(mask), "up");
 				}
 
 				sprintf(vathmac, "%s_hwaddr", var);
@@ -1337,8 +1338,8 @@ void init_network(int idx)
 				continue;
 			hwaddr = nvram_get(wdsmacname);
 			if (hwaddr != NULL) {
-				sysprintf("ifconfig %s 0.0.0.0 down", wdsdev);
-				sysprintf("ifconfig %s 0.0.0.0 up", wdsdev);
+				eval("ifconfig", wdsdev, "0.0.0.0", "down");
+				eval("ifconfig", wdsdev, "0.0.0.0", "up");
 			}
 		}
 
