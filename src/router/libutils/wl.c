@@ -31,7 +31,7 @@
  * DD-WRT addition (loaned from radauth) 
  */
 
-u_int ieee80211_mhz2ieee(u_int freq)
+int ieee80211_mhz2ieee(int freq)
 {
 	if (freq == 2484)
 		return 14;
