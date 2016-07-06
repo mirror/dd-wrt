@@ -1092,8 +1092,8 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 								list[count].ht40plus = 1;
 							}
 							if (regmaxbw > 20 && regmaxbw >= max_bandwidth_khz) {
-								fprintf(stderr, "freq %d, htrange %d, startfreq %d stopfreq %d, regmaxbw %d hw_eirp %d max_eirp %d ht40plus %d ht40minus %d\n", freq_mhz, max_bandwidth_khz,
-									startfreq, stopfreq, regmaxbw, eirp, regpower.max_eirp, list[count].ht40plus, list[count].ht40minus);
+							//	fprintf(stderr, "freq %d, htrange %d, startfreq %d stopfreq %d, regmaxbw %d hw_eirp %d max_eirp %d ht40plus %d ht40minus %d\n", freq_mhz, max_bandwidth_khz,
+							//		startfreq, stopfreq, regmaxbw, eirp, regpower.max_eirp, list[count].ht40plus, list[count].ht40minus);
 							}
 							count++;
 						}
