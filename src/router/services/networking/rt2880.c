@@ -1177,7 +1177,7 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 		char bridged[32];
 		char *raif = get_wl_instance_name(idx);
 		sprintf(bridged, "%s_bridged", getRADev(dev));
-		sysprintf("ifconfig %s 0.0.0.0 up", down);
+		sysprintf("ifconfig %s 0.0.0.0 up", raif);
 		if (nvram_default_match(bridged, "1", "1")) {
 			sysprintf("ifconfig %s 0.0.0.0 up", raif);
 			if (nvram_nmatch("infra", "wl%d_mode", idx)) {
