@@ -1301,6 +1301,8 @@ void init_network(int idx)
 					eval("ifconfig", ra, "0.0.0.0", "down");
 					eval("ifconfig", ra, "0.0.0.0", "up");
 					br_add_interface(getBridge(getRADev(var), tmp), ra);
+					eval("ifconfig", ra, "0.0.0.0", "down");
+					eval("ifconfig", ra, "0.0.0.0", "up");
 				} else {
 					char ip[32];
 					char mask[32];
@@ -1440,10 +1442,14 @@ void init_network(int idx)
 			eval("ifconfig", dev, "up");
 			sleep(1);
 			br_add_interface("br1", dev);
+			eval("ifconfig", dev, "down");
+			eval("ifconfig", dev, "up");
 		} else if (nvram_match(wdsvarname, "3")) {
 			ifconfig(dev, IFUP, 0, 0);
 			sleep(1);
 			br_add_interface(getBridge(dev, tmp), dev);
+			eval("ifconfig", dev, "down");
+			eval("ifconfig", dev, "up");
 		}
 	}
 
