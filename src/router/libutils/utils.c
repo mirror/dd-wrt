@@ -2305,6 +2305,13 @@ int internal_getRouterBrand()
 	nvram_default_get("ath1_rxantenna", "7");
 	nvram_default_get("ath1_txantenna", "7");
 	return ROUTER_BOARD_WHRHPGN;
+#elif HAVE_AP120C
+	setRouter("Alfa AP120C");
+	nvram_default_get("ath0_rxantenna", "3");
+	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("ath1_rxantenna", "3");
+	nvram_default_get("ath1_txantenna", "3");
+	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WR650AC
 	setRouter("Comfast WR650AC");
 	nvram_default_get("ath0_rxantenna", "7");
