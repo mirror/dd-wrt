@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r3024 | BrainSlayer | 2016-07-06 19:17:50 +0200 (Wed, 06 Jul 2016) | 1 line
+
+change queuing mechanism to mac80211's internal one
+------------------------------------------------------------------------
 r3023 | BrainSlayer | 2016-07-06 14:56:11 +0200 (Wed, 06 Jul 2016) | 1 line
 
 mac80211: agg-rx: refuse ADDBA Request with timeout update
