@@ -170,7 +170,7 @@ static size_t default_msg_size;
 
 void __init init_msg_size(void)
 {
-	default_msg_size = getpagesize() * 2;
+	default_msg_size = getpagesize() * 4;
 }
 
 /**
@@ -264,7 +264,7 @@ static struct nl_msg *__nlmsg_alloc(size_t len)
 
 	nm = calloc(1, sizeof(*nm));
 	if (!nm)
-		goto errout2;
+		goto errout;
 
 	nm->nm_refcnt = 1;
 
@@ -283,7 +283,6 @@ static struct nl_msg *__nlmsg_alloc(size_t len)
 	return nm;
 errout:
 	free(nm);
-errout2:
 	return NULL;
 }
 
