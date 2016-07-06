@@ -729,8 +729,7 @@ static struct mdio_board_info ap120c_mdio0_info[] = {
 
 #define ALFA_AP120C_LAN_PHYMASK		BIT(5)
 #define ALFA_AP120C_MDIO_PHYMASK	ALFA_AP120C_LAN_PHYMASK
-#define ALFA_AP120C_MAC_OFFSET		0x1002
-#define ALFA_AP120C_CAL0_OFFSET		0x1000
+#define ALFA_AP120C_MAC_OFFSET		0x2
 
 
 extern void __init ap91_pci_init(u8 *cal_data, u8 *mac_addr);
