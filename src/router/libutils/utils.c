@@ -3150,7 +3150,7 @@ int internal_getRouterBrand()
 		return ROUTER_ASUS_RTN53;
 	}
 
-	if (boardnum == 0 && nvram_match("boardtype", "0xF5B2")
+	if (nvram_match("boardtype", "0xF5B2")
 	    && nvram_match("boardrev", "0x1100")
 	    && !nvram_match("pci/2/1/sb20in80and160hr5ghpo", "0")) {
 		setRouter("Asus RT-N66U");
@@ -3774,7 +3774,7 @@ int internal_getRouterBrand()
 		return ROUTER_ASUS_AC66U;
 	}
 
-	if (boardnum == 00 && nvram_match("boardtype", "0xF5B2")
+	if (nvram_match("boardtype", "0xF5B2")
 	    && nvram_match("boardrev", "0x1100")
 	    && nvram_match("pci/2/1/sb20in80and160hr5ghpo", "0")) {
 		setRouter("Asus RT-AC66U");
