@@ -15,6 +15,7 @@ void ap91_pci_init(u8 *cal_data, u8 *mac_addr);
 void ap91_pci_setup_wmac_led_pin(int pin);
 void ap91_pci_setup_wmac_gpio(u32 mask, u32 val);
 void ap91_set_tx_gain_buffalo(void);
+void ap91_set_eeprom(void);
 void __init ap91_wmac_disable_2ghz(void);
 void __init ap91_wmac_disable_5ghz(void);
 
