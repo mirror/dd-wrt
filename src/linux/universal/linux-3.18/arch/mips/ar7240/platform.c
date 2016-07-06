@@ -699,6 +699,40 @@ static struct mdio_board_info wpj344_mdio0_info[] = {
 };
 
 
+
+static struct ar8327_pad_cfg ap120c_ar8327_pad0_cfg = {
+	.mode = AR8327_PAD_MAC_RGMII,
+	.txclk_delay_en = true,
+	.rxclk_delay_en = true,
+	.txclk_delay_sel = AR8327_CLK_DELAY_SEL1,
+	.rxclk_delay_sel = AR8327_CLK_DELAY_SEL2,
+};
+
+static struct ar8327_platform_data ap120c_ar8327_data = {
+	.pad0_cfg = &ap120c_ar8327_pad0_cfg,
+	.port0_cfg = {
+		.force_link = 1,
+		.speed = AR8327_PORT_SPEED_1000,
+		.duplex = 1,
+		.txpause = 1,
+		.rxpause = 1,
+	},
+};
+
+static struct mdio_board_info ap120c_mdio0_info[] = {
+	{
+		.bus_id = "ag71xx-mdio.0",
+		.phy_addr = 0,
+		.platform_data = &ap120c_ar8327_data,
+	},
+};
+
+#define ALFA_AP120C_LAN_PHYMASK		BIT(5)
+#define ALFA_AP120C_MDIO_PHYMASK	ALFA_AP120C_LAN_PHYMASK
+#define ALFA_AP120C_MAC_OFFSET		0x1002
+#define ALFA_AP120C_CAL0_OFFSET		0x1000
+
+
 extern void __init ap91_pci_init(u8 *cal_data, u8 *mac_addr);
 void ar9xxx_add_device_wmac(u8 *cal_data, u8 *mac_addr) __init;
 
@@ -900,6 +934,7 @@ return NULL;
 void __init ap91_wmac_disable_2ghz(void);
 void __init ap91_wmac_disable_5ghz(void);
 void ap91_set_tx_gain_buffalo(void);
+void ap91_set_eeprom(void);
 
 int __init ar7240_platform_init(void)
 {
@@ -959,6 +994,11 @@ int __init ar7240_platform_init(void)
 	ee = (u8 *)KSEG1ADDR(0x1fff1000);
 #endif
 
+#ifdef CONFIG_AP120C
+	mac = (u8 *)KSEG1ADDR(0x1fff1002);
+	ee = (u8 *)KSEG1ADDR(0x1fff1000);
+#endif
+
 #ifdef CONFIG_WASP_SUPPORT
 #define DB120_MAC0_OFFSET	0
 #define DB120_MAC1_OFFSET	6
@@ -981,6 +1021,10 @@ int __init ar7240_platform_init(void)
 	mac = (u8 *)KSEG1ADDR(0x1fff0000);
 	ath79_init_mac(mac0, mac, -1);
 	ath79_init_mac(mac1, mac, 0);	
+    #elif CONFIG_AP120C
+    	mac = (u8 *)KSEG1ADDR(0x1fff1000);
+	ath79_init_mac(mac0, mac + ALFA_AP120C_MAC_OFFSET, 1);
+	ath79_init_mac(mac1, mac + ALFA_AP120C_MAC_OFFSET, 2);	
     #elif CONFIG_E380AC
 	mac = (u8 *)KSEG1ADDR(0x1f020000);
 	ath79_init_mac(mac0, mac, -1);
@@ -1221,6 +1265,27 @@ int __init ar7240_platform_init(void)
 	/* GMAC1 is connected to the internal switch */
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
 	ar71xx_add_device_eth(1);
+
+    #elif CONFIG_AP120C
+
+	ath79_setup_ar934x_eth_cfg(AR934X_ETH_CFG_RGMII_GMAC0 |
+							   BIT(15) | BIT(17) | BIT(19) | BIT(21));
+
+	ar71xx_add_device_mdio(0, 0x0);
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac0, 0);
+
+	mdiobus_register_board_info(ap120c_mdio0_info, ARRAY_SIZE(ap120c_mdio0_info));
+
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
+	ar71xx_eth0_data.phy_mask = ALFA_AP120C_LAN_PHYMASK;
+
+	ar71xx_eth0_pll_data.pll_1000 = 0x42000000;
+	ar71xx_eth0_pll_data.pll_10 = 0x00001313;
+
+	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio0_device.dev;
+
+	ar71xx_add_device_eth(0);
+
     #elif CONFIG_E325N
 	ath79_setup_ar934x_eth_cfg(AR934X_ETH_CFG_SW_PHY_SWAP);
 
@@ -1662,7 +1727,11 @@ int __init ar7240_platform_init(void)
 	ar9xxx_add_device_wmac(ee, NULL);
 #endif
 
-#if defined(CONFIG_DIR825C1)
+#if defined(CONFIG_AP120C)
+	ap91_pci_init(NULL, mac0);
+	ap91_set_eeprom();
+
+#elif defined(CONFIG_DIR825C1)
 	ap91_pci_init(ee + 0x4000, mac1);
 #elif !defined(CONFIG_DIR615I) && !defined(CONFIG_WR841V8)
 	ap91_pci_init(NULL, NULL);
