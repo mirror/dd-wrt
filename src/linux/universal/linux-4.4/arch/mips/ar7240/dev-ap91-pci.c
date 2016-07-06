@@ -61,6 +61,11 @@ void __init ap91_wmac_disable_5ghz(void)
 	wmac_data.disable_5ghz = true;
 }
 
+void __init ap91_set_eeprom(void)
+{
+	wmac_data.use_eeprom = true;
+}
+
 
 int pcibios_init(void);
 
