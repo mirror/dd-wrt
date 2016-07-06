@@ -102,6 +102,9 @@ endif
 ifeq ($(CONFIG_E355AC),y)
 CFLAGS += -DHAVE_E355AC
 endif
+ifeq ($(CONFIG_AP120C),y)
+CFLAGS += -DHAVE_AP120C
+endif
 ifeq ($(CONFIG_E380AC),y)
 CFLAGS += -DHAVE_E380AC
 endif
