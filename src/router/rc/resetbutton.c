@@ -245,6 +245,11 @@ int getbuttonstate()
 {
 	return !get_gpio(17);
 }
+#elif defined(HAVE_AP120C)
+int getbuttonstate()
+{
+	return !get_gpio(16);
+}
 #elif defined(HAVE_WR650AC)
 int getbuttonstate()
 {
@@ -1057,6 +1062,7 @@ void period_check(int sig)
 #elif defined(HAVE_WR650AC)
 #elif defined(HAVE_E355AC)
 #elif defined(HAVE_WR615N)
+#elif defined(HAVE_AP120C)
 #elif defined(HAVE_E380AC)
 #elif defined(HAVE_E325N)
 #elif defined(HAVE_DIR869)

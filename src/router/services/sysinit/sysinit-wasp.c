@@ -162,6 +162,7 @@ void start_sysinit(void)
 	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 3");
 #elif defined (HAVE_E355AC)
 #elif defined (HAVE_WR615N)
+#elif defined (HAVE_AP120C)
 #elif defined (HAVE_E380AC)
 #elif defined (HAVE_WR650AC)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
@@ -241,7 +242,7 @@ void start_sysinit(void)
 	}
 #endif
 
-#if !defined(HAVE_WR650AC) && !defined(HAVE_E355AC) && !defined(HAVE_E325N) && !defined(HAVE_E380AC) && !defined(HAVE_WR615N)
+#if !defined(HAVE_WR650AC) && !defined(HAVE_E355AC) && !defined(HAVE_E325N) && !defined(HAVE_E380AC) && !defined(HAVE_WR615N)  && !defined(HAVE_AP120C)
 #ifndef HAVE_JWAP606
 	eval("ifconfig", "eth0", "up");
 #if (defined(HAVE_MMS344) || defined(HAVE_XD3200)) && !defined(HAVE_DIR862)
@@ -399,6 +400,8 @@ void start_sysinit(void)
 #elif  HAVE_WR615N
 	setWirelessLed(0, 12);
 #elif  HAVE_E325N
+	setWirelessLed(0, 0);
+#elif  HAVE_AP120C
 	setWirelessLed(0, 0);
 #elif  HAVE_XD3200
 #elif  HAVE_E380AC
