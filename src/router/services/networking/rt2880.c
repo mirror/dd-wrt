@@ -1259,9 +1259,13 @@ void init_network(int idx)
 				br_add_interface(getBridge(apcliif, tmp), raif);
 				if (getWET())
 					br_add_interface(getBridge(apcliif, tmp), apcliif);
+				eval("ifconfig", apcliif, "0.0.0.0", "down");
+				eval("ifconfig", apcliif, "0.0.0.0", "up");
 			} else {
 				eval("ifconfig", raif, "0.0.0.0", "up");
 				br_add_interface(getBridge(raif, tmp), raif);
+				eval("ifconfig", raif, "0.0.0.0", "down");
+				eval("ifconfig", raif, "0.0.0.0", "up");
 			}
 		} else {
 			if (getSTA() || getWET()) {
