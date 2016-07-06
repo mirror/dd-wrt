@@ -272,11 +272,10 @@ unsigned int getCountry(const char *country);
 char *getCountryList(void);
 
 #endif
-u_int ieee80211_mhz2ieee(u_int freq);
+int ieee80211_mhz2ieee(int freq);
 #if defined(HAVE_RT2880) || defined(HAVE_RT61) || defined(HAVE_MADWIFI)
 int wifi_getchannel(char *ifname);
 struct wifi_interface *wifi_getfreq(char *ifname);
-u_int ieee80211_mhz2ieee(u_int freq);
 int get_radiostate(char *ifname);
 
 #endif
