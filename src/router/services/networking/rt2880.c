@@ -977,21 +977,16 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 	fprintf(fp, "HT_EXTCHA=%d\n", ext_chan);
 
 	int mcs;
-	if (idx == 0) {
-		if (nvram_default_match("wl0_greenfield", "1", "0"))
-			fprintf(fp, "HT_OpMode=1\n");	// green field mode
-		else
-			fprintf(fp, "HT_OpMode=0\n");
+	char gf[32];
+	sprintf(gf, "wl%d_greenfield", idx);
+	char nmcs[32];
+	sprintf(nmcs, "wl%d_nmcsidx", idx);
+	if (nvram_default_match(gf, "1", "0"))
+		fprintf(fp, "HT_OpMode=1\n");	// green field mode
+	else
+		fprintf(fp, "HT_OpMode=0\n");
 
-		mcs = atoi(nvram_default_get("wl0_nmcsidx", "-1"));
-	} else {
-		if (nvram_default_match("wl1_greenfield", "1", "0"))
-			fprintf(fp, "HT_OpMode=1\n");	// green field mode
-		else
-			fprintf(fp, "HT_OpMode=0\n");
-
-		mcs = atoi(nvram_default_get("wl1_nmcsidx", "-1"));
-	}
+	mcs = atoi(nvram_default_get(nmcs, "-1"));
 	if (mcs == -1)
 		fprintf(fp, "HT_MCS=33\n");
 	else
@@ -1177,7 +1172,6 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 		char bridged[32];
 		char *raif = get_wl_instance_name(idx);
 		sprintf(bridged, "%s_bridged", getRADev(dev));
-		eval("ifconfig", raif, "0.0.0.0", "down");
 		if (nvram_default_match(bridged, "1", "1")) {
 			eval("ifconfig", raif, "0.0.0.0", "up");
 			if (nvram_nmatch("infra", "wl%d_mode", idx)) {
@@ -1250,21 +1244,17 @@ void init_network(int idx)
 		sprintf(apcliif, "apcli%d", idx);
 
 		sprintf(bridged, "%s_bridged", getRADev(dev));
-		eval("ifconfig", raif, "0.0.0.0", "down");
 		if (nvram_default_match(bridged, "1", "1")) {
 			if (getSTA() || getWET()) {
-				eval("ifconfig", apcliif, "0.0.0.0", "down");
 				eval("ifconfig", raif, "0.0.0.0", "up");
 				eval("ifconfig", apcliif, "0.0.0.0", "up");
 				br_add_interface(getBridge(apcliif, tmp), raif);
 				if (getWET())
 					br_add_interface(getBridge(apcliif, tmp), apcliif);
-				eval("ifconfig", apcliif, "0.0.0.0", "down");
 				eval("ifconfig", apcliif, "0.0.0.0", "up");
 			} else {
 				eval("ifconfig", raif, "0.0.0.0", "up");
 				br_add_interface(getBridge(raif, tmp), raif);
-				eval("ifconfig", raif, "0.0.0.0", "down");
 				eval("ifconfig", raif, "0.0.0.0", "up");
 			}
 		} else {
@@ -1298,11 +1288,8 @@ void init_network(int idx)
 					char ra[32];
 
 					sprintf(ra, "ra%d", count + (8 * idx));
-					eval("ifconfig", ra, "0.0.0.0", "down");
 					eval("ifconfig", ra, "0.0.0.0", "up");
 					br_add_interface(getBridge(getRADev(var), tmp), ra);
-					eval("ifconfig", ra, "0.0.0.0", "down");
-					eval("ifconfig", ra, "0.0.0.0", "up");
 				} else {
 					char ip[32];
 					char mask[32];
@@ -1312,7 +1299,6 @@ void init_network(int idx)
 					char raa[32];
 					sprintf(raa, "ra%d", count + (8 * idx));
 
-					eval("ifconfig", raa, "0.0.0.0", "down");
 					eval("ifconfig", raa, "mtu", getMTU(raa));
 					eval("ifconfig", raa, "txqueuelen", getTXQ(raa));
 					eval("ifconfig", raa, nvram_safe_get(ip), "netmask", nvram_safe_get(mask), "up");
@@ -1424,7 +1410,6 @@ void init_network(int idx)
 		dev = nvram_safe_get(wdsdevname);
 		if (strlen(dev) == 0)
 			continue;
-		eval("ifconfig", dev, "down");
 
 		// eval ("ifconfig", dev, "down");
 		if (nvram_match(wdsvarname, "1")) {
@@ -1442,14 +1427,10 @@ void init_network(int idx)
 			eval("ifconfig", dev, "up");
 			sleep(1);
 			br_add_interface("br1", dev);
-			eval("ifconfig", dev, "down");
-			eval("ifconfig", dev, "up");
 		} else if (nvram_match(wdsvarname, "3")) {
 			ifconfig(dev, IFUP, 0, 0);
 			sleep(1);
 			br_add_interface(getBridge(dev, tmp), dev);
-			eval("ifconfig", dev, "down");
-			eval("ifconfig", dev, "up");
 		}
 	}
 
@@ -1481,6 +1462,16 @@ void configure_wifi(void)
 	init_network(0);
 	if (get_wl_instances() == 2)
 		init_network(1);
+	eval("ifconfig", "ra0", "down");
+	sleep(1);
+	eval("ifconfig", "ra0", "up");
+	if (get_wl_instances() == 2) {
+		eval("ifconfig", "ba0", "down");
+		sleep(1);
+		eval("ifconfig", "ba0", "up");
+
+	}
+
 }
 
 void start_configurewifi(void)
