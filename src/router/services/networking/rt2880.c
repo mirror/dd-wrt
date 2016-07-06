@@ -1177,6 +1177,7 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 		char bridged[32];
 		char *raif = get_wl_instance_name(idx);
 		sprintf(bridged, "%s_bridged", getRADev(dev));
+		sysprintf("ifconfig %s 0.0.0.0 up", down);
 		if (nvram_default_match(bridged, "1", "1")) {
 			sysprintf("ifconfig %s 0.0.0.0 up", raif);
 			if (nvram_nmatch("infra", "wl%d_mode", idx)) {
@@ -1249,8 +1250,10 @@ void init_network(int idx)
 		sprintf(apcliif, "apcli%d", idx);
 
 		sprintf(bridged, "%s_bridged", getRADev(dev));
+		sysprintf("ifconfig %s 0.0.0.0 down", raif);
 		if (nvram_default_match(bridged, "1", "1")) {
 			if (getSTA() || getWET()) {
+				sysprintf("ifconfig %s 0.0.0.0 down", apcliif);
 				sysprintf("ifconfig %s 0.0.0.0 up", raif);
 				sysprintf("ifconfig %s 0.0.0.0 up", apcliif);
 				br_add_interface(getBridge(apcliif, tmp), raif);
@@ -1291,6 +1294,7 @@ void init_network(int idx)
 					char ra[32];
 
 					sprintf(ra, "ra%d", count + (8 * idx));
+					sysprintf("ifconfig ra%d 0.0.0.0 down", count + (8 * idx));
 					sysprintf("ifconfig ra%d 0.0.0.0 up", count + (8 * idx));
 					br_add_interface(getBridge(getRADev(var), tmp), ra);
 				} else {
@@ -1301,6 +1305,7 @@ void init_network(int idx)
 					sprintf(mask, "%s_netmask", getRADev(var));
 					char raa[32];
 					sprintf(raa, "ra%d", count + (8 * idx));
+					sysprintf("ifconfig %s down", raa);
 					sysprintf("ifconfig %s mtu %s", raa, getMTU(raa));
 					sysprintf("ifconfig %s txqueuelen %s", raa, getTXQ(raa));
 					sysprintf("ifconfig ra%d %s netmask %s up", count, nvram_safe_get(ip), nvram_safe_get(mask));
@@ -1332,6 +1337,7 @@ void init_network(int idx)
 				continue;
 			hwaddr = nvram_get(wdsmacname);
 			if (hwaddr != NULL) {
+				sysprintf("ifconfig %s 0.0.0.0 down", wdsdev);
 				sysprintf("ifconfig %s 0.0.0.0 up", wdsdev);
 			}
 		}
@@ -1411,7 +1417,7 @@ void init_network(int idx)
 		dev = nvram_safe_get(wdsdevname);
 		if (strlen(dev) == 0)
 			continue;
-		ifconfig(dev, 0, 0, 0);
+		eval("ifconfig", dev, "down");
 
 		// eval ("ifconfig", dev, "down");
 		if (nvram_match(wdsvarname, "1")) {
