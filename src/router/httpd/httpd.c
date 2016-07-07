@@ -613,30 +613,6 @@ static int check_connect_type(void)
 	return ret;
 }
 
-int containsstring(char *source, char *cmp)
-{
-	if (cmp == NULL || source == NULL)
-		return 0;
-	int slen = strlen(source);
-	int clen = strlen(cmp);
-
-	if (slen < clen)
-		return 0;
-	int i;
-
-	for (i = 0; i < slen - clen; i++) {
-		int a;
-		int r = 0;
-
-		for (a = 0; a < clen; a++)
-			if (source[i + a] != cmp[a])
-				r++;
-		if (!r)
-			return 1;
-	}
-	return 0;
-}
-
 static char *last_log_ip = NULL;
 static int registered = -1;
 static int registered_real = -1;
@@ -984,7 +960,7 @@ static void handle_request(void)
 #endif
 
 #if 0
-	if (containsstring(file, "cgi-bin")) {
+	if (strstr(file, "cgi-bin")) {
 
 		auth_fail = 0;
 		if (!do_auth(conn_fp, auth_userid, auth_passwd, auth_realm, authorization, auth_check))
