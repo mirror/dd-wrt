@@ -1854,6 +1854,7 @@ static void filter_input(void)
 	if (nvram_match("pptpd_enable", "1")) {
 		if (nvram_match("limit_pptp", "1")) {
 			save2file("-A INPUT -i %s -p tcp --dport %d -j logbrute\n", wanface, PPTP_PORT);
+			save2file("-A INPUT -i %s -p tcp --dport %d -j %s\n", wanface, PPTP_PORT, log_accept);
 		} else {
 			save2file("-A INPUT -i %s -p tcp --dport %d -j %s\n", wanface, PPTP_PORT, log_accept);
 		}
@@ -1877,6 +1878,7 @@ static void filter_input(void)
 	    && nvram_match("proftpd_wan", "1")) {
 		if (nvram_match("limit_ftp", "1")) {
 			save2file("-A INPUT -i %s -p tcp --dport %s -j logbrute\n", wanface, nvram_safe_get("proftpd_port"));
+			save2file("-A INPUT -i %s -p tcp --dport %s -j %s\n", wanface, nvram_safe_get("proftpd_port"), log_accept);
 		} else {
 			save2file("-A INPUT -i %s -p tcp --dport %s -j %s\n", wanface, nvram_safe_get("proftpd_port"), log_accept);
 		}
@@ -2469,9 +2471,9 @@ static void filter_table(void)
 	if ((nvram_match("limit_telnet", "1")) || (nvram_match("limit_pptp", "1")) || (nvram_match("limit_ssh", "1")) || (nvram_match("limit_ftp", "1"))) {
 		save2file(":logbrute - [0:0]\n");
 		save2file("-A logbrute -m recent --set --name BRUTEFORCE --rsource\n");
-		save2file("-A logbrute -m recent ! --update --seconds 60 --hitcount 4 --name BRUTEFORCE --rsource -j %s\n",log_accept);
+		save2file("-A logbrute -m recent ! --update --seconds 60 --hitcount 4 --name BRUTEFORCE --rsource -j RETURN\n");
 		// -m limit rule is a fallback in case -m recent isn't included in a build
-		save2file("-A logbrute -m limit --limit 1/min --limit-burst 1 -j %s\n",log_accept);
+		save2file("-A logbrute -m limit --limit 1/min --limit-burst 1 -j RETURN\n");
 		if ((nvram_match("log_enable", "1"))
 		    && (nvram_match("log_dropped", "1")))
 			save2file("-A logbrute -j LOG --log-prefix \"[DROP BRUTEFORCE] : \" --log-tcp-options --log-ip-options\n");
