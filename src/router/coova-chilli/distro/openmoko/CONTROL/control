@@ -1,0 +1,10 @@
+Package: coova-chilli
+Priority: optional
+Section: Settings
+Version: 1.0.13-moko-1
+Architecture: armv4t
+Maintainer: David Bird wlan@mac.com
+Source: http://coova.github.io/
+Depends: python-core python-dbus python-pygtk python-pygobject iptables kernel-module-ipt-masquerade kernel-module-iptable-nat
+Description: Start / Stop and configure CoovaChilli
+.

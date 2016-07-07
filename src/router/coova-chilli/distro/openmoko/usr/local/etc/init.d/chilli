@@ -1,0 +1,36 @@
+#!/bin/sh
+
+[ -f /usr/local/sbin/chilli ] || exit 0
+[ -f /usr/local/etc/chilli.conf ] || exit 0
+
+. /usr/local/etc/chilli/functions
+. /usr/local/etc/chilli/om-helper
+
+RETVAL=0
+prog="chilli"
+
+case $1 in
+    start)
+	om_start
+        /sbin/modprobe tun >/dev/null 2>&1
+        echo 1 > /proc/sys/net/ipv4/ip_forward
+
+	writeconfig
+        radiusconfig
+	
+	ifconfig $HS_LANIF 0.0.0.0
+        /usr/local/sbin/chilli
+	;;
+    
+    restart)
+	$0 stop
+	$0 start
+	;;
+    
+    stop)
+	killall chilli
+	om_stop
+	;;
+esac
+
+exit $?
