@@ -227,7 +227,7 @@ void start_sysinit(void)
 	}
 
 	if (nvram_get("et_txq_thresh") == NULL) {
-		nvram_set("et_txq_thresh", "1024");
+		nvram_set("et_txq_thresh", "3300");
 	}
 
 	switch (getRouterBrand()) {
@@ -5123,7 +5123,7 @@ void start_sysinit(void)
 			nvram_set("et2macaddr", nvram_safe_get("et0macaddr"));
 			nvram_set("et2mdcport", nvram_safe_get("et0mdcport"));
 			nvram_set("et2phyaddr", nvram_safe_get("et0phyaddr"));
-			nvram_set("et_txq_thresh", "1024");
+			nvram_set("et_txq_thresh", "3300");
 			nvram_set("et0macaddr", "00:00:00:00:00:00");
 			nvram_set("et0mdcport", "0");
 			nvram_set("et0phyaddr", "30");
