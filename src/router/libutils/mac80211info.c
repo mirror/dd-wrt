@@ -334,7 +334,7 @@ void set_ath10kdistance(char *dev, unsigned int distance)
 			set_ath10kreg(dev, 0x0040, slot); // slot timing
 //			set_ath10kreg(dev, 0xf56c, sifs_pipeline);
 //			set_ath10kreg(dev, 0xa000, sifs);
-			set_ath10kreg(dev, 0x6000, ack | (cts << 16));
+			set_ath10kreg(dev, 0x6000, ack | (cts << 8));
 		} else {
 			set_ath10kreg(dev, 0x1070, slot);
 			set_ath10kreg(dev, 0x1030, sifs);
