@@ -1,1 +1,1 @@
-EXTRA_DIST = redhat/coova-chilli.spec suse/coova-chilli.spec 
+EXTRA_DIST = redhat/coova-chilli.spec suse/coova-chilli.spec

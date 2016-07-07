@@ -34,7 +34,7 @@ HS_DNS2=208.67.220.220
 HS_NASID=nas01
 HS_RADIUS=localhost
 HS_RADIUS2=localhost
-HS_UAMALLOW=www.coova.org
+# HS_UAMALLOW=www.coova.org
 HS_RADSECRET=testing123    # Set to be your RADIUS shared secret
 HS_UAMSECRET=change-me     # Set to be your UAM secret
 HS_UAMALIASNAME=chilli
@@ -52,7 +52,9 @@ HS_UAMALIASNAME=chilli
 #    option key $HS_RADPROXY_SECRET
 
 
-#   To alternatively use a HTTP URL for AAA instead of RADIUS:
+# To alternatively use a HTTP URL for AAA instead of RADIUS
+# Enable http for AAA and then specify the url to send the AAA Request
+# HS_AAA=http
 # HS_UAMAAAURL=http://my-site/script.php
 
 #   Put entire domains in the walled-garden with DNS inspection
@@ -130,13 +132,13 @@ HS_UAMHOMEPAGE=http://\$HS_UAMLISTEN:\$HS_UAMPORT/www/coova.html
 # HS_RADCONF=url	   # requires curl
 # HS_RADCONF_URL=https://coova.org/app/ap/config
 
-# HS_RADCONF=on		   # gather the ChilliSpot-Config attributes in
+# HS_RADCONF=on		   # gather the CoovaChilli-Config attributes in
 #			   # Administrative-User login
 # HS_RADCONF_SERVER=rad01.coova.org		 # RADIUS Server
 # HS_RADCONF_SECRET=coova-anonymous		 # RADIUS Shared Secret 
 # HS_RADCONF_AUTHPORT=1812			 # Auth port
-# HS_RADCONF_USER=chillispot			 # Username
-# HS_RADCONF_PWD=chillispot			 # Password
+# HS_RADCONF_USER=coovachilli			 # Username
+# HS_RADCONF_PWD=coovachilli			 # Password
 
 
 ###
@@ -147,16 +149,17 @@ HS_UAMHOMEPAGE=http://\$HS_UAMLISTEN:\$HS_UAMPORT/www/coova.html
 # is to block all unwanted traffic to the tun/tap. 
 #
 # HS_TCP_PORTS="80 443"
+# HS_UDP_PORTS="1701"
 
 ###
 #   Standard configurations
 #
 HS_MODE=hotspot
-HS_TYPE=chillispot
+HS_TYPE=coovachilli
 # HS_RADAUTH=1812
 # HS_RADACCT=1813
-# HS_ADMUSR=chillispot
-# HS_ADMPWD=chillispot
+# HS_ADMUSR=coovachilli
+# HS_ADMPWD=coovachilli
 
 
 ###
@@ -179,7 +182,7 @@ HS_WWWBIN=@ETCCHILLI@/wwwsh
 #   Some configurations used in certain user interfaces
 #
 HS_PROVIDER=Coova
-HS_PROVIDER_LINK=http://www.coova.org/
+HS_PROVIDER_LINK=http://coova.github.io/
 
 
 ###

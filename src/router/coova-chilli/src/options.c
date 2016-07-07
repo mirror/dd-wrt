@@ -1,21 +1,21 @@
 /* -*- mode: c; c-basic-offset: 2 -*- */
-/* 
+/*
  * Copyright (C) 2003, 2004, 2005 Mondru AB.
  * Copyright (C) 2007-2012 David Bird (Coova Technologies) <support@coova.com>
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 
 #include "chilli.h"
@@ -50,38 +50,38 @@ int option_aton(struct in_addr *addr, struct in_addr *mask,
   c = sscanf(pool, "%u.%u.%u.%u/%u.%u.%u.%u",
 	     &a1, &a2, &a3, &a4,
 	     &m1, &m2, &m3, &m4);
-  
+
   switch (c) {
-  case 4:
-    mask->s_addr = htonl(0xffffff00);
-    break;
-  case 5:
-    if (m1 > 32) {
-      log_err(0, "Invalid mask");
+    case 4:
+      mask->s_addr = htonl(0xffffff00);
+      break;
+    case 5:
+      if (m1 > 32) {
+        syslog(LOG_ERR, "Invalid mask");
+        return -1; /* Invalid mask */
+      }
+      mask->s_addr = m1 > 0 ? htonl(0xffffffff << (32 - m1)) : 0;
+      break;
+    case 8:
+      if (m1 >= 256 ||  m2 >= 256 || m3 >= 256 || m4 >= 256) {
+        syslog(LOG_ERR, "Invalid mask");
+        return -1; /* Wrong mask format */
+      }
+      m = m1 * 0x1000000 + m2 * 0x10000 + m3 * 0x100 + m4;
+      for (masklog = 0; ((1 << masklog) < ((~m)+1)); masklog++);
+      if (((~m)+1) != (1 << masklog)) {
+        syslog(LOG_ERR, "Invalid mask");
+        return -1; /* Wrong mask format (not all ones followed by all zeros)*/
+      }
+      mask->s_addr = htonl(m);
+      break;
+    default:
+      syslog(LOG_ERR, "Invalid mask");
       return -1; /* Invalid mask */
-    }
-    mask->s_addr = m1 > 0 ? htonl(0xffffffff << (32 - m1)) : 0;
-    break;
-  case 8:
-    if (m1 >= 256 ||  m2 >= 256 || m3 >= 256 || m4 >= 256) {
-      log_err(0, "Invalid mask");
-      return -1; /* Wrong mask format */
-    }
-    m = m1 * 0x1000000 + m2 * 0x10000 + m3 * 0x100 + m4;
-    for (masklog = 0; ((1 << masklog) < ((~m)+1)); masklog++);
-    if (((~m)+1) != (1 << masklog)) {
-      log_err(0, "Invalid mask");
-      return -1; /* Wrong mask format (not all ones followed by all zeros)*/
-    }
-    mask->s_addr = htonl(m);
-    break;
-  default:
-    log_err(0, "Invalid mask");
-    return -1; /* Invalid mask */
   }
 
   if (a1 >= 256 ||  a2 >= 256 || a3 >= 256 || a4 >= 256) {
-    log_err(0, "Wrong IP address format");
+    syslog(LOG_ERR, "Wrong IP address format");
     return -1;
   }
   else
@@ -113,13 +113,13 @@ static int opt_run(int argc, char **argv, int reload) {
 
   chilli_binconfig(file, sizeof(file), 0);
 
-  log_dbg("(Re)processing options [%s]", file);
+  syslog(LOG_DEBUG, "(Re)processing options [%s]", file);
 
-  if ((status = safe_fork()) < 0) {
-    log_err(errno, "fork() returned -1!");
+  if ((status = fork()) < 0) {
+    syslog(LOG_ERR, "%s: fork() returned -1!", strerror(errno));
     return -1;
   }
-  
+
   if (status > 0) { /* Parent */
     return status;
   }
@@ -137,10 +137,10 @@ static int opt_run(int argc, char **argv, int reload) {
   newargs[i++] = file;
   newargs[i++] = reload ? "-r" : NULL;
 
-  log_dbg("running chilli_opt on %s", file);
+  syslog(LOG_DEBUG, "running chilli_opt on %s", file);
 
   if (execv(SBINDIR "/chilli_opt", newargs) != 0) {
-    log_err(errno, "execl() did not return 0!");
+    syslog(LOG_ERR, "%s: execl() did not return 0!", strerror(errno));
     exit(0);
   }
 
@@ -151,43 +151,45 @@ int options_load(int argc, char **argv, bstring bt) {
   static char done_before = 0;
   char file[128];
   int fd;
+  int i;
+  const int RETRY = 3;
 
   chilli_binconfig(file, sizeof(file), 0);
 
   fd = open(file, O_RDONLY);
 
-  while (fd <= 0) {
+  for (i = 0; i < RETRY && fd < 0; i++) {
     int status = 0;
     int pid = opt_run(argc, argv, 0);
     waitpid(pid, &status, 0);
     if (WIFEXITED(status) && WEXITSTATUS(status) == 2) exit(0);
     fd = open(file, O_RDONLY);
-    if (fd <= 0) {
+    if (fd < 0) {
       if (done_before) break;
       else {
 	char *offline = getenv("CHILLI_OFFLINE");
 	if (offline) {
 	  execl(
 #ifdef ENABLE_CHILLISCRIPT
-		SBINDIR "/chilli_script", SBINDIR "/chilli_script", _options.binconfig, 
+              SBINDIR "/chilli_script", SBINDIR "/chilli_script", _options.binconfig,
 #else
-		offline,
+              offline,
 #endif
-		offline, (char *) 0);
+              offline, (char *) 0);
 
 	  break;
-	} 
+	}
 
-	log_warn(0, "could not generate configuration (%s), sleeping one second", file);
+	syslog(LOG_WARNING, "could not generate configuration (%s), sleeping one second", file);
 	sleep(1);
       }
     }
   }
 
-  if (fd <= 0) return 0;
+  if (fd < 0) return 0;
   done_before = 1;
 
-  log_dbg("PID %d rereading binary file %s", getpid(), file);
+  syslog(LOG_DEBUG, "PID %d rereading binary file %s", getpid(), file);
   return options_fromfd(fd, bt);
 }
 
@@ -195,23 +197,23 @@ int options_mkdir(char *path) {
 
   if (mkdir(path, S_IRWXU | S_IRWXG | S_IRWXO)) {
     switch (errno) {
-    case EEXIST:
-      /* not necessarily a directory */
-      unlink(path);
-      if (mkdir(path, S_IRWXU | S_IRWXG | S_IRWXO)) {
-	log_err(errno, "mkdir %s", path);
-	return -1;
-      }
-      break;
-    default:
-      log_err(errno, "mkdir %s", path);
-      return -1;
+      case EEXIST:
+        /* not necessarily a directory */
+        unlink(path);
+        if (mkdir(path, S_IRWXU | S_IRWXG | S_IRWXO)) {
+          syslog(LOG_ERR, "%s: mkdir %s", strerror(errno), path);
+          return -1;
+        }
+        break;
+      default:
+        syslog(LOG_ERR, "%s: mkdir %s", strerror(errno), path);
+        return -1;
     }
   }
 
   if (_options.uid && geteuid() == 0) {
     if (chown(path, _options.uid, _options.gid)) {
-      log_err(errno, "could not chown() %s", path);
+      syslog(LOG_ERR, "%s: could not chown() %s", strerror(errno), path);
     }
   }
   return 0;
@@ -227,7 +229,7 @@ int options_fromfd(int fd, bstring bt) {
 #ifdef ENABLE_MODULES
   char isReload[MAX_MODULES];
 #endif
-  
+
   int rd = safe_read(fd, &o, sizeof(o));
 
   if (rd == sizeof(o)) {
@@ -249,15 +251,15 @@ int options_fromfd(int fd, bstring bt) {
       }
     }
   }
-  
+
   close(fd);
 
   if (has_error) {
-    log_err(errno, "could not read configuration, some kind of mismatch fd=%d %s",
-	    fd, SBINDIR);
+    syslog(LOG_ERR, "could not read configuration, "
+           "some kind of mismatch fd=%d %s", fd, SBINDIR);
     return 0;
   }
-  
+
   if (!option_s_l(bt, &o.binconfig)) return 0;
   if (!option_s_l(bt, &o.pidfile)) return 0;
   if (!option_s_l(bt, &o.statedir)) return 0;
@@ -290,8 +292,10 @@ int options_fromfd(int fd, bstring bt) {
   if (!option_s_l(bt, &o.radiuslocationid)) return 0;
   if (!option_s_l(bt, &o.radiuslocationname)) return 0;
   if (!option_s_l(bt, &o.locationname)) return 0;
+#ifdef ENABLE_RADPROXY
   if (!option_s_l(bt, &o.proxysecret)) return 0;
-  
+#endif
+
   if (!option_s_l(bt, &o.dhcpif)) return 0;
 #ifdef ENABLE_MULTILAN
   for (i=0; i < MAX_MOREIF; i++) {
@@ -320,9 +324,13 @@ int options_fromfd(int fd, bstring bt) {
   if (!option_s_l(bt, &o.sslkeypass)) return 0;
   if (!option_s_l(bt, &o.sslcertfile)) return 0;
   if (!option_s_l(bt, &o.sslcafile)) return 0;
+  if (!option_s_l(bt, &o.sslciphers)) return 0;
 #endif
 #ifdef USING_IPC_UNIX
   if (!option_s_l(bt, &o.unixipc)) return 0;
+#endif
+#ifdef ENABLE_WPAD
+  if (!option_s_l(bt, &o.wpadpacfile)) return 0;
 #endif
 #ifdef HAVE_NETFILTER_COOVA
   if (!option_s_l(bt, &o.kname)) return 0;
@@ -360,7 +368,7 @@ int options_fromfd(int fd, bstring bt) {
 #endif
 
   for (i=0; i < MAX_UAM_DOMAINS; i++) {
-    if (!option_s_l(bt, &o.uamdomains[i])) 
+    if (!option_s_l(bt, &o.uamdomains[i]))
       return 0;
   }
 
@@ -391,14 +399,14 @@ int options_fromfd(int fd, bstring bt) {
     if (!_options.modules[i].name[0]) break;
     if (!_options.modules[i].ctx) continue;
     else {
-      struct chilli_module *m = 
-	(struct chilli_module *)_options.modules[i].ctx;
+      struct chilli_module *m =
+          (struct chilli_module *)_options.modules[i].ctx;
       if (!strcmp(_options.modules[i].name, o.modules[i].name))
 	isReload[i]=1;
       if (m->destroy)
 	m->destroy(isReload[i]);
     }
-    log_dbg("Unloading module %s",_options.modules[i].name);
+    syslog(LOG_DEBUG, "Unloading module %s",_options.modules[i].name);
     chilli_module_unload(_options.modules[i].ctx);
   }
 #endif
@@ -408,22 +416,22 @@ int options_fromfd(int fd, bstring bt) {
   _options._data = (char *)bt->data;
 
 #ifdef ENABLE_MODULES
-  log_dbg("Loading modules");
+  syslog(LOG_DEBUG, "Loading modules");
   for (i=0; i < MAX_MODULES; i++) {
     if (!_options.modules[i].name[0]) break;
-    log_dbg("Loading module %s",_options.modules[i].name);
-    chilli_module_load(&_options.modules[i].ctx, 
+    syslog(LOG_DEBUG, "Loading module %s",_options.modules[i].name);
+    chilli_module_load(&_options.modules[i].ctx,
 		       _options.modules[i].name);
     if (_options.modules[i].ctx) {
-      struct chilli_module *m = 
-	(struct chilli_module *)_options.modules[i].ctx;
+      struct chilli_module *m =
+          (struct chilli_module *)_options.modules[i].ctx;
       if (m->initialize)
-	m->initialize(_options.modules[i].conf, isReload[i]); 
+	m->initialize(_options.modules[i].conf, isReload[i]);
     }
   }
 #endif
 
-  /* 
+  /*
    *  We took the buffer and this bt will be destroyed.
    *  Give the bstring a bogus buffer so that bdestroy() works.
    */
@@ -440,7 +448,7 @@ int options_save(char *file, bstring bt) {
   mode_t oldmask;
   int fd, i;
 
-  log_dbg("PID %d saving options to %s", getpid(), file);
+  syslog(LOG_DEBUG, "PID %d saving options to %s", getpid(), file);
 
   memcpy(&o, &_options, sizeof(o));
 
@@ -485,7 +493,9 @@ int options_save(char *file, bstring bt) {
   if (!option_s_s(bt, &o.radiuslocationid)) return 0;
   if (!option_s_s(bt, &o.radiuslocationname)) return 0;
   if (!option_s_s(bt, &o.locationname)) return 0;
+#ifdef ENABLE_RADPROXY
   if (!option_s_s(bt, &o.proxysecret)) return 0;
+#endif
 
   if (!option_s_s(bt, &o.dhcpif)) return 0;
 #ifdef ENABLE_MULTILAN
@@ -515,9 +525,13 @@ int options_save(char *file, bstring bt) {
   if (!option_s_s(bt, &o.sslkeypass)) return 0;
   if (!option_s_s(bt, &o.sslcertfile)) return 0;
   if (!option_s_s(bt, &o.sslcafile)) return 0;
+  if (!option_s_s(bt, &o.sslciphers)) return 0;
 #endif
 #ifdef USING_IPC_UNIX
   if (!option_s_s(bt, &o.unixipc)) return 0;
+#endif
+#ifdef ENABLE_WPAD
+  if (!option_s_s(bt, &o.wpadpacfile)) return 0;
 #endif
 #ifdef HAVE_NETFILTER_COOVA
   if (!option_s_s(bt, &o.kname)) return 0;
@@ -555,7 +569,7 @@ int options_save(char *file, bstring bt) {
 #endif
 
   for (i = 0; i < MAX_UAM_DOMAINS; i++) {
-    if (!option_s_s(bt, &o.uamdomains[i])) 
+    if (!option_s_s(bt, &o.uamdomains[i]))
       return 0;
   }
 
@@ -569,35 +583,35 @@ int options_save(char *file, bstring bt) {
 
   umask(oldmask);
 
-  if (fd <= 0) {
+  if (fd < 0) {
 
-    log_err(errno, "could not save to %s", file);
+    syslog(LOG_ERR, "%s: could not save to %s", strerror(errno), file);
 
     return 0;
 
   } else {
     if (safe_write(fd, &o, sizeof(o)) < 0)
-      log_err(errno, "write()");
+      syslog(LOG_ERR, "%s: write()", strerror(errno));
 
     size_t len = bt->slen;
 
     if (safe_write(fd, &len, sizeof(len)) < 0)
-      log_err(errno, "write()");
+      syslog(LOG_ERR, "%s: write()", strerror(errno));
 
     if (safe_write(fd, bt->data, len) < 0)
-      log_err(errno, "write()");
+      syslog(LOG_ERR, "%s: write()", strerror(errno));
 
     options_md5(&o, cksum);
 
     if (safe_write(fd, cksum, sizeof(cksum)) < 0)
-      log_err(errno, "write()");
+      syslog(LOG_ERR, "%s: write()", strerror(errno));
 
     close(fd);
 
     if (_options.uid) {
       if (chown(file, _options.uid, _options.gid)) {
-	log_err(errno, "could not chown() %s", 
-		_options.binconfig);
+	syslog(LOG_ERR, "%d could not chown() %s",
+               errno, _options.binconfig);
       }
     }
   }
@@ -608,9 +622,9 @@ int options_save(char *file, bstring bt) {
 int options_binload(char *file) {
   int fd = open(file, O_RDONLY);
   int ok = 0;
-  if (fd > 0) {
+  if (fd >= 0) {
     bstring bt = bfromcstr("");
-    log_dbg("PID %d loading binary options file %s", getpid(), file);
+    syslog(LOG_DEBUG, "PID %d loading binary options file %s", getpid(), file);
     ok = options_fromfd(fd, bt);
     bdestroy(bt);
     return ok;
@@ -623,7 +637,7 @@ int process_options(int argc, char **argv, int minimal) {
   /*
    *  If ran with arguments besides the load file, then pass
    *  off the arguments to chilli_opt for processing. If chilli_opt
-   *  returns true, then we'll also start the server. 
+   *  returns true, then we'll also start the server.
    *
    */
 
@@ -637,7 +651,7 @@ int process_options(int argc, char **argv, int minimal) {
       }
     }
   }
-  
+
   umask(process_mask);
   return !reload_options(argc, argv);
 }
@@ -649,13 +663,13 @@ void reprocess_options(int argc, char **argv) {
 int reload_options(int argc, char **argv) {
   bstring bt = bfromcstr("");
   int ok = options_load(argc, argv, bt);
-  log_dbg("PID %d reloaded binary options file", getpid());
+  syslog(LOG_DEBUG, "PID %d reloaded binary options file", getpid());
   bdestroy(bt);
   return ok;
 }
 
 void options_destroy() {
-  if (_options._data) 
+  if (_options._data)
     free(_options._data);
 }
 
@@ -668,19 +682,19 @@ void options_cleanup() {
     if (!_options.modules[i].name[0]) break;
     if (!_options.modules[i].ctx) continue;
     else {
-      struct chilli_module *m = 
-	(struct chilli_module *)_options.modules[i].ctx;
+      struct chilli_module *m =
+          (struct chilli_module *)_options.modules[i].ctx;
       if (m->destroy)
 	m->destroy(0);
     }
-    log_dbg("Unloading module %s",_options.modules[i].name);
+    syslog(LOG_DEBUG, "Unloading module %s",_options.modules[i].name);
     chilli_module_unload(_options.modules[i].ctx);
   }
 #endif
 
   chilli_binconfig(file, sizeof(file), getpid());
-  log_dbg("Removing %s", file);
-  if (remove(file)) log_dbg("remove(%s) failed", file);
+  syslog(LOG_DEBUG, "Removing %s", file);
+  if (remove(file)) syslog(LOG_DEBUG, "remove(%s) failed", file);
   options_destroy();
 }
 

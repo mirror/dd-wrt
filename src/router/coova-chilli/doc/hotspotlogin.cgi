@@ -1,8 +1,8 @@
 #!/usr/bin/perl
 
-# chilli - coova.org. A Wireless LAN Access Point Controller
+# CoovaChilli - http://coova.github.io/. A Wireless LAN Access Point Controller
 # Copyright (C) 2003, 2004 Mondru AB.
-# Copyright (C) 2006-2008 David Bird <david@coova.com>
+# Copyright (C) 2006-2012 David Bird <david@coova.com>
 #
 # The contents of this file may be used under the terms of the GNU
 # General Public License Version 2, provided that the above copyright
@@ -45,254 +45,128 @@ $debug = 1;
 
 use Digest::MD5  qw(md5 md5_hex md5_base64);
 
-# Make sure that the form parameters are clean
-$OK_CHARS='-a-zA-Z0-9_.@&=%!';
-$_ = $input = <STDIN>;
-s/[^$OK_CHARS]/_/go;
-$input = $_;
+%data = { };
 
-# Make sure that the get query parameters are clean
-$OK_CHARS='-a-zA-Z0-9_.@&=%!';
-$_ = $query=$ENV{QUERY_STRING};
-s/[^$OK_CHARS]/_/go;
-$query = $_;
+$bgcolor = "#c0d8f4";
 
-
-# If she did not use https tell her that it was wrong.
-if (!$debug && !($ENV{HTTPS} =~ /^on$/)) {
-    print "Content-type: text/html\n\n
-<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">
-<html>
-<head>
-  <title>CoovaChilli Login Failed</title>
-  <meta http-equiv=\"Cache-control\" content=\"no-cache\">
-  <meta http-equiv=\"Pragma\" content=\"no-cache\">
-</head>
-<body bgColor = '#c0d8f4'>
-  <h1 style=\"text-align: center;\">CoovaChilli Login Failed</h1>
-  <center>
-    Login must use encrypted connection.
-  </center>
-</body>
-<!--
-<?xml version=\"1.0\" encoding=\"UTF-8\"?>
-<WISPAccessGatewayParam 
-  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"
-  xsi:noNamespaceSchemaLocation=\"http://www.acmewisp.com/WISPAccessGatewayParam.xsd\">
-<AuthenticationReply>
-<MessageType>120</MessageType>
-<ResponseCode>102</ResponseCode>
-<ReplyMessage>Login must use encrypted connection</ReplyMessage>
-</AuthenticationReply> 
-</WISPAccessGatewayParam>
--->
-</html>
-";
-    exit(0);
-}
-
-
-#Read form parameters which we care about
-@array = split('&',$input);
-foreach $var ( @array )
+sub getdata() 
 {
-    @array2 = split('=',$var);
-    if ($array2[0] =~ /^username$/i) { $username = $array2[1]; }
-    if ($array2[0] =~ /^password$/i) { $password = $array2[1]; }
-    if ($array2[0] =~ /^challenge$/) { $challenge = $array2[1]; }
-    if ($array2[0] =~ /^button$/) { $button = $array2[1]; }
-    if ($array2[0] =~ /^logout$/) { $logout = $array2[1]; }
-    if ($array2[0] =~ /^prelogin$/) { $prelogin = $array2[1]; }
-    if ($array2[0] =~ /^res$/) { $res = $array2[1]; }
-    if ($array2[0] =~ /^uamip$/) { $uamip = $array2[1]; }
-    if ($array2[0] =~ /^uamport$/) { $uamport = $array2[1]; }
-    if ($array2[0] =~ /^userurl$/)   { $userurl = $array2[1]; }
-    if ($array2[0] =~ /^timeleft$/)  { $timeleft = $array2[1]; }
-    if ($array2[0] =~ /^redirurl$/)  { $redirurl = $array2[1]; }
-}
-
-#Read query parameters which we care about
-@array = split('&',$query);
-foreach $var ( @array )
-{
-    @array2 = split('=',$var);
-    if ($array2[0] =~ /^username$/i) { $username = $array2[1]; }
-    if ($array2[0] =~ /^password$/i) { $password = $array2[1]; }
-    if ($array2[0] =~ /^res$/)       { $res = $array2[1]; }
-    if ($array2[0] =~ /^challenge$/) { $challenge = $array2[1]; }
-    if ($array2[0] =~ /^uamip$/)     { $uamip = $array2[1]; }
-    if ($array2[0] =~ /^uamport$/)   { $uamport = $array2[1]; }
-    if ($array2[0] =~ /^reply$/)     { $reply = $array2[1]; }
-    if ($array2[0] =~ /^userurl$/)   { $userurl = $array2[1]; }
-    if ($array2[0] =~ /^timeleft$/)  { $timeleft = $array2[1]; }
-    if ($array2[0] =~ /^redirurl$/)  { $redirurl = $array2[1]; }
-}
-
-
-$reply =~ s/\+/ /g;
-$reply =~s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/seg;
-
-$userurldecode = $userurl;
-$userurldecode =~ s/\+/ /g;
-$userurldecode =~s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/seg;
-
-$redirurldecode = $redirurl;
-$redirurldecode =~ s/\+/ /g;
-$redirurldecode =~s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/seg;
-
-$password =~ s/\+/ /g;
-$password =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/seg;
-
-# If attempt to login
-
-if ($button =~ /^Login$/ || ($res eq "wispr" && $username ne "")) {
-
-    print "Content-type: text/html\n\n";
-
-    $hexchal  = pack "H*", $challenge;
-
-    if (defined $uamsecret) {
-	$newchal  = md5($hexchal, $uamsecret);
+    local ($input) = @_;
+    foreach $var (split('&',$input))
+    {
+	local ($name, $value) = split('=',$var);
+	$data{lc($name)} = &urldecode($value);
     }
-    else {
-	$newchal  = $hexchal;
+}
+
+&getdata(<STDIN>);
+&getdata($ENV{QUERY_STRING});
+
+if (!$debug && !($ENV{HTTPS} =~ /^on$/)) 
+{
+    &error("CoovaChilli Login Failed", 
+	   "Login must use encrypted connection.");
+}
+
+if ($data{'button'} =~ /^Login$/ || 
+    ($data{'res'} eq "wispr" && $data{'username'} ne "")) 
+{
+    $hexchal  = pack "H*", $data{'challenge'};
+
+    if (defined $uamsecret)
+    {
+	$newchal = md5($hexchal, $uamsecret);
+    }
+    else
+    {
+	$newchal = $hexchal;
     }
 
-    if ($ntresponse == 1) {
+    $logonUrl = "http://$data{'uamip'}:$data{'uamport'}/logon?username=".&urlencode($data{'username'})."&";
+
+    if ($data{'wisprversion'} ne "" && $data{'wispreapmsg'} ne "") 
+    {
+	$logonUrl .= "WISPrEAPMsg=".&urlencode($data{'wispreapmsg'});
+	$logonUrl .= "&WISPrVersion=".&urlencode($data{'wisprversion'});
+    }
+    elsif ($ntresponse == 1) 
+    {
 	# Encode plain text into NT-Password 
-
-	$response = `$chilli_response -nt "$challenge" "$uamsecret" "$username" "$password"`;
-
-	$logonUrl = "http://$uamip:$uamport/logon?username=$username&ntresponse=$response";
-
-    } elsif ($userpassword == 1) {
+	$response = `$chilli_response -nt "$data{'challenge'}" "$uamsecret" "$data{'username'}" "$data{'password'}"`;
+	$logonUrl .= "ntresponse=".&urlencode($response);
+    }
+    elsif ($userpassword == 1) 
+    {
 	# Encode plain text password with challenge 
 	# (which may or may not be uamsecret encoded)
-
 	# If challange isn't long enough, repeat it until it is
-	while (length($newchal) < length($password)){
-		$newchal .= $newchal;
+	while (length($newchal) < length($data{'password'})){
+	    $newchal .= $newchal;
         }
 
-	$pappassword = unpack "H*", substr($password ^ $newchal, 0, length($password));
-
-	$logonUrl = "http://$uamip:$uamport/logon?username=$username&password=$pappassword";
-
-    } else {
+	$pappassword = unpack "H*", substr($data{'password'} ^ $newchal, 0, length($data{'password'}));
+	$logonUrl .= "password=".&urlencode($pappassword);
+    } 
+    else 
+    {
 	# Generate a CHAP response with the password and the
 	# challenge (which may have been uamsecret encoded)
-
-	$response = md5_hex("\0", $password, $newchal);
-
-	$logonUrl = "http://$uamip:$uamport/logon?username=$username&response=$response&userurl=$userurl";
+	$response = md5_hex("\0", $data{'password'}, $newchal);
+	$logonUrl .= "response=".&urlencode($response);
     }
 
-#sleep 5;
-print "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">
-<html>
-<head>
-  <title>CoovaChilli Login</title>
-  <meta http-equiv=\"Cache-control\" content=\"no-cache\">
-  <meta http-equiv=\"Pragma\" content=\"no-cache\">
-  <meta http-equiv=\"refresh\" content=\"0;url=$logonUrl\">
-</head>
-<body bgColor = '#c0d8f4'>
-<h1 style=\"text-align: center;\">Logging in to CoovaChilli</h1>
-  <center>
-    Please wait......
-  </center>
-</body>
-<!--
-<?xml version=\"1.0\" encoding=\"UTF-8\"?>
-<WISPAccessGatewayParam 
-  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"
-  xsi:noNamespaceSchemaLocation=\"http://www.acmewisp.com/WISPAccessGatewayParam.xsd\">
-<AuthenticationReply>
-<MessageType>120</MessageType>
-<ResponseCode>201</ResponseCode>
-<LoginResultsURL>$logonUrl</LoginResultsURL>
-</AuthenticationReply> 
-</WISPAccessGatewayParam>
--->
-</html>
-";
-    exit(0);
+    $loginUrl .= "&userurl=".&urlencode($data{'userurl'});
+
+    &redirect($logonUrl);
 }
 
-
-# Default: It was not a form request
 $result = 0;
 
-# If login successful
-if ($res =~ /^success$/) { 
+if ($data{'res'} eq "success") 
+{ 
     $result = 1;
 }
-
-# If login failed 
-if ($res =~ /^failed$/) { 
+elsif ($data{'res'} eq "failed") 
+{ 
     $result = 2;
 }
-
-# If logout successful
-if ($res =~ /^logoff$/) { 
+elsif ($data{'res'} eq "logoff") 
+{ 
     $result = 3;
 }
-
-# If tried to login while already logged in
-if ($res =~ /^already$/) { 
+elsif ($data{'res'} eq "already") 
+{ 
     $result = 4;
 }
-
-# If not logged in yet
-if ($res =~ /^notyet$/) { 
+elsif ($data{'res'} eq "notyet") 
+{ 
     $result = 5;
 }
-
-# If login from smart client
-if ($res =~ /^wispr$/) { 
+elsif ($data{'res'} eq "wispr") 
+{ 
     $result = 6;
 }
-
-# If requested a logging in pop up window
-if ($res =~ /^popup1$/) { 
+elsif ($data{'res'} eq "popup1") 
+{ 
     $result = 11;
 }
-
-# If requested a success pop up window
-if ($res =~ /^popup2$/) { 
+elsif ($data{'res'} eq "popup2") 
+{ 
     $result = 12;
 }
-
-# If requested a logout pop up window
-if ($res =~ /^popup3$/) { 
+elsif ($data{'res'} eq "popup3") 
+{ 
     $result = 13;
 }
 
-
-# Otherwise it was not a form request
-# Send out an error message
-if ($result == 0) {
-    print "Content-type: text/html\n\n
-<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">
-<html>
-<head>
-  <title>CoovaChilli Login Failed</title>
-  <meta http-equiv=\"Cache-control\" content=\"no-cache\">
-  <meta http-equiv=\"Pragma\" content=\"no-cache\">
-</head>
-<body bgColor = '#c0d8f4'>
-  <h1 style=\"text-align: center;\">CoovaChilli Login Failed</h1>
-  <center>
-    Login must be performed through CoovaChilli daemon.
-  </center>
-</body>
-</html>
-";
-    exit(0);
+if ($result == 0) 
+{
+    &error("CoovaChilli Login Failed",
+	   "Login must be performed through CoovaChilli daemon.");
 }
 
-#Generate the output
-if ($result != 6) {
+if ($result != 6) 
+{
     print "Content-type: text/html\n\n
 <!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">
 <html>
@@ -313,7 +187,7 @@ if ($result != 6) {
       if (mytimeleft) {
         time = mytimeleft - time;
         if (time <= 0) {
-          window.location = \"$loginpath?res=popup3&uamip=$uamip&uamport=$uamport\";
+          window.location = \"$loginpath?res=popup3&uamip=$data{'uamip'}&uamport=$data{'uamport'}\";
         }
       }
       if (time < 0) time = 0;
@@ -337,8 +211,8 @@ if ($result != 6) {
     }
 
     function popUp(URL) {
-      if (self.name != \"chillispot_popup\") {
-        chillispot_popup = window.open(URL, 'chillispot_popup', 'toolbar=0,scrollbars=0,location=0,statusbar=0,menubar=0,resizable=0,width=500,height=375');
+      if (self.name != \"coovachilli_popup\") {
+        coovachilli_popup = window.open(URL, 'coovachilli_popup', 'toolbar=0,scrollbars=0,location=0,statusbar=0,menubar=0,resizable=0,width=500,height=375');
       }
     }
 
@@ -346,20 +220,20 @@ if ($result != 6) {
       if (timeleft) {
         mytimeleft = timeleft;
       }
-      if ((result == 1) && (self.name == \"chillispot_popup\")) {
+      if ((result == 1) && (self.name == \"coovachilli_popup\")) {
         doTime();
       }
-      if ((result == 1) && (self.name != \"chillispot_popup\")) {
-        chillispot_popup = window.open(URL, 'chillispot_popup', 'toolbar=0,scrollbars=0,location=0,statusbar=0,menubar=0,resizable=0,width=500,height=375');
+      if ((result == 1) && (self.name != \"coovachilli_popup\")) {
+        coovachilli_popup = window.open(URL, 'coovachilli_popup', 'toolbar=0,scrollbars=0,location=0,statusbar=0,menubar=0,resizable=0,width=500,height=375');
       }
       if ((result == 2) || result == 5) {
         document.form1.UserName.focus()
       }
-      if ((result == 2) && (self.name != \"chillispot_popup\")) {
-        chillispot_popup = window.open('', 'chillispot_popup', 'toolbar=0,scrollbars=0,location=0,statusbar=0,menubar=0,resizable=0,width=400,height=200');
-        chillispot_popup.close();
+      if ((result == 2) && (self.name != \"coovachilli_popup\")) {
+        coovachilli_popup = window.open('', 'coovachilli_popup', 'toolbar=0,scrollbars=0,location=0,statusbar=0,menubar=0,resizable=0,width=400,height=200');
+        coovachilli_popup.close();
       }
-      if ((result == 12) && (self.name == \"chillispot_popup\")) {
+      if ((result == 12) && (self.name == \"coovachilli_popup\")) {
         doTime();
         if (redirurl) {
           opener.location = redirurl;
@@ -373,14 +247,14 @@ if ($result != 6) {
         self.focus();
         blur = 0;
       }
-      if ((result == 13) && (self.name == \"chillispot_popup\")) {
+      if ((result == 13) && (self.name == \"coovachilli_popup\")) {
         self.focus();
         blur = 1;
       }
     }
 
     function doOnBlur(result) {
-      if ((result == 12) && (self.name == \"chillispot_popup\")) {
+      if ((result == 12) && (self.name == \"coovachilli_popup\")) {
         if (blur == 0) {
           blur = 1;
           self.focus();
@@ -389,38 +263,31 @@ if ($result != 6) {
     }
   </script>
 </head>
-<body onLoad=\"javascript:doOnLoad($result, '$loginpath?res=popup2&uamip=$uamip&uamport=$uamport&userurl=$userurl&redirurl=$redirurl&timeleft=$timeleft','$userurldecode', '$redirurldecode', '$timeleft')\" onBlur = \"javascript:doOnBlur($result)\" bgColor = '#c0d8f4'>";
+<body onLoad=\"javascript:doOnLoad($result, '$loginpath?res=popup2&uamip=$data{'uamip'}&uamport=$data{'uamport'}&userurl=".&urlencode($data{'userurl'})."&redirurl=".&urlencode($data{'redirurl'})."&timeleft=$timeleft','$data{'userurl'}', '$data{'redirurl'}', '$timeleft')\" onBlur = \"javascript:doOnBlur($result)\" bgColor = '$bgcolor'>";
 }
 
-#      if (!window.opener) {
-#        document.bgColor = '#c0d8f4';
-#      }
-
-#print "THE INPUT: $input";
-#foreach $key (sort (keys %ENV)) {
-#	print $key, ' = ', $ENV{$key}, "<br>\n";
-#}
-
-if ($result == 2) {
-    print "
-  <h1 style=\"text-align: center;\">CoovaChilli Login Failed</h1>";
-    if ($reply) {
-	print "<center> $reply </BR></BR></center>";
+if ($result == 2) 
+{
+    print "<h1 style=\"text-align: center;\">CoovaChilli Login Failed</h1>";
+    if ($data{'reply'}) 
+    {
+	print "<center> $data{'reply'} </BR></BR></center>";
     }
 }
 
-if ($result == 5) {
-    print "
-  <h1 style=\"text-align: center;\">CoovaChilli Login</h1>";
+if ($result == 5) 
+{
+    print "<h1 style=\"text-align: center;\">CoovaChilli Login</h1>";
 }
 
-if ($result == 2 || $result == 5) {
+if ($result == 2 || $result == 5) 
+{
   print "
   <form name=\"form1\" method=\"post\" action=\"$loginpath\">
-  <INPUT TYPE=\"hidden\" NAME=\"challenge\" VALUE=\"$challenge\">
-  <INPUT TYPE=\"hidden\" NAME=\"uamip\" VALUE=\"$uamip\">
-  <INPUT TYPE=\"hidden\" NAME=\"uamport\" VALUE=\"$uamport\">
-  <INPUT TYPE=\"hidden\" NAME=\"userurl\" VALUE=\"$userurl\">
+  <INPUT TYPE=\"hidden\" NAME=\"challenge\" VALUE=\"$data{'challenge'}\">
+  <INPUT TYPE=\"hidden\" NAME=\"uamip\" VALUE=\"$data{'uamip'}\">
+  <INPUT TYPE=\"hidden\" NAME=\"uamport\" VALUE=\"$data{'uamport'}\">
+  <INPUT TYPE=\"hidden\" NAME=\"userurl\" VALUE=\"$data{'userurl'}\">
   <center>
   <table border=\"0\" cellpadding=\"5\" cellspacing=\"0\" style=\"width: 217px;\">
     <tbody>
@@ -433,7 +300,7 @@ if ($result == 2 || $result == 5) {
         <td><input STYLE=\"font-family: Arial\" type=\"password\" name=\"Password\" size=\"20\" maxlength=\"128\"></td>
       </tr>
       <tr>
-        <td align=\"center\" colspan=\"2\" height=\"23\"><input type=\"submit\" name=\"button\" value=\"Login\" onClick=\"javascript:popUp('$loginpath?res=popup1&uamip=$uamip&uamport=$uamport')\"></td> 
+        <td align=\"center\" colspan=\"2\" height=\"23\"><input type=\"submit\" name=\"button\" value=\"Login\" onClick=\"javascript:popUp('$loginpath?res=popup1&uamip=$data{'uamip'}&uamport=$data{'uamport'}')\"></td> 
       </tr>
     </tbody>
   </table>
@@ -443,34 +310,38 @@ if ($result == 2 || $result == 5) {
 </html>";
 }
 
-if ($result == 1) {
+if ($result == 1) 
+{
   print "
   <h1 style=\"text-align: center;\">Logged in to CoovaChilli</h1>";
 
-  if ($reply) { 
-      print "<center> $reply </BR></BR></center>";
+  if ($data{'reply'}) 
+  { 
+      print "<center> $data{'reply'} </BR></BR></center>";
   }
 
   print "
   <center>
-    <a href=\"http://$uamip:$uamport/logoff\">Logout</a>
+    <a href=\"http://$data{'uamip'}:$data{'uamport'}/logoff\">Logout</a>
   </center>
 </body>
 </html>";
 }
 
-if (($result == 4) || ($result == 12)) {
+if (($result == 4) || ($result == 12)) 
+{
   print "
   <h1 style=\"text-align: center;\">Logged in to CoovaChilli</h1>
   <center>
-    <a href=\"http://$uamip:$uamport/logoff\">Logout</a>
+    <a href=\"http://$data{'uamip'}:$data{'uamport'}/logoff\">Logout</a>
   </center>
 </body>
 </html>";
 }
 
 
-if ($result == 11) {
+if ($result == 11) 
+{
   print "<h1 style=\"text-align: center;\">Logging in to CoovaChilli</h1>";
   print "
   <center>
@@ -481,16 +352,95 @@ if ($result == 11) {
 }
 
 
-if (($result == 3) || ($result == 13)) {
+if (($result == 3) || ($result == 13)) 
+{
     print "
   <h1 style=\"text-align: center;\">Logged out from CoovaChilli</h1>
   <center>
-    <a href=\"http://$uamip:$uamport/prelogin\">Login</a>
+    <a href=\"http://$data{'uamip'}:$data{'uamport'}/prelogin\">Login</a>
   </center>
 </body>
 </html>";
 }
 
+sub header() {
+    local($title, $head) = @_;
+    print "Content-type: text/html\n\n
+<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">
+<html>
+<head>
+<title>$title</title>
+<meta http-equiv=\"Cache-control\" content=\"no-cache\">
+<meta http-equiv=\"Pragma\" content=\"no-cache\">
+$head
+</head>";
+}
 
-exit(0);
+sub body() {
+    local($headline, $mesg, $wispr) = @_;
+    print "<body bgColor=\"$bgcolor\">
+  <h1 style=\"text-align: center;\">$headline</h1>
+  <center>
+    $mesg
+  </center>
+</body>
+<!--
+$wispr
+-->
+</html>
+";
+}
 
+sub page() {
+    local($title, $head, $headline, $mesg, $wispr) = @_;
+    &header($title, $head);
+}
+
+sub redirect() {
+    local($url) = @_;
+    &header("CoovaChilli Login", 
+	    "<meta http-equiv=\"refresh\" content=\"0;url=$url\">");
+    &body("Logging in to CoovaChilli",
+	"Please wait...",
+	"<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<WISPAccessGatewayParam 
+  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"
+  xsi:noNamespaceSchemaLocation=\"http://www.acmewisp.com/WISPAccessGatewayParam.xsd\">
+<AuthenticationReply>
+<MessageType>120</MessageType>
+<ResponseCode>201</ResponseCode>
+<LoginResultsURL>$url</LoginResultsURL>
+</AuthenticationReply> 
+</WISPAccessGatewayParam>");
+    exit(0);
+}
+
+sub error() {
+    local($title, $mesg) = @_;
+    &header($title);
+    &body($title, $mesg, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<WISPAccessGatewayParam 
+  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"
+  xsi:noNamespaceSchemaLocation=\"http://www.acmewisp.com/WISPAccessGatewayParam.xsd\">
+<AuthenticationReply>
+<MessageType>120</MessageType>
+<ResponseCode>102</ResponseCode>
+<ReplyMessage>$mesg</ReplyMessage>
+</AuthenticationReply> 
+</WISPAccessGatewayParam>");
+    exit(0);
+}
+
+sub urlencode {
+    my $s = shift;
+    $s =~ s/ /+/g;
+    $s =~ s/([^A-Za-z0-9\+-])/sprintf("%%%02X", ord($1))/seg;
+    return $s;
+}
+
+sub urldecode {
+    my $s = shift;
+    $s =~ s/\%([A-Fa-f0-9]{2})/pack('C', hex($1))/seg;
+    $s =~ s/\+/ /g;
+    return $s;
+}

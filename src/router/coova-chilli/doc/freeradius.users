@@ -1,0 +1,9 @@
+steve	Auth-Type := Local, User-Password == "testing"
+	Class = 0702345678,
+	Session-Timeout = 3600,
+	Idle-Timeout = 600,
+	Acct-Interim-Interval = 60,
+#	WISPr-Redirection-URL = http://coova.github.io/,
+#	WISPr-Session-Terminate-Time = 2004-12-31T20:00:00+02:00,
+	WISPr-Bandwidth-Max-Up = 128000,
+	WISPr-Bandwidth-Max-Down = 512000

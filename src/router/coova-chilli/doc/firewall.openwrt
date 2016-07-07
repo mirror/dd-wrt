@@ -1,0 +1,59 @@
+#!/bin/sh
+#
+# Firewall script for CoovaChilli on OpenWRT
+#
+# Uses $WANIF (vlan1) as the external interface (Internet or intranet) and
+# $WLANIF (eth1) as the internal interface (access point).
+# $LANIF is used as a trusted management interface.
+#
+# SUMMARY
+# * All connections originating from CoovaChilli are allowed.
+# * Nothing is allowed in on WAN interface.
+# * Nothing is allowed in on WLAN interface.
+# * Everything is allowed in on LAN interface.
+# * Forwarding is allowed to and from WAN interface, but disallowed
+#   to and from the WLAN interface.
+# * NAT is enabled on the WAN interface.
+
+. /etc/functions.sh
+
+WANIF=$(nvram_get wan_ifname)
+WLANIF="eth1"
+LANIF="br0"
+
+IPTABLES="/usr/sbin/iptables"
+
+for T in filter nat mangle ; do
+  $IPTABLES -t $T -F
+  $IPTABLES -t $T -X
+done
+
+$IPTABLES -P INPUT DROP
+$IPTABLES -P FORWARD ACCEPT
+$IPTABLES -P OUTPUT ACCEPT
+
+#Allow related and established on all interfaces (input)
+$IPTABLES -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+
+#Allow related and established $WANIF. Reject everything else.
+$IPTABLES -A INPUT -i $WANIF -j REJECT
+
+#Allow related and established $WLANIF. Drop everything else.
+$IPTABLES -A INPUT -i $WLANIF -j DROP
+
+#Allow 3990 on other interfaces (input).
+$IPTABLES -A INPUT -p tcp -m tcp --dport 3990 --syn -j ACCEPT
+
+#Allow everything on loopback interface.
+$IPTABLES -A INPUT -i lo -j ACCEPT
+
+#Allow everything on $LANIF
+$IPTABLES -A INPUT -i $LANIF -j ACCEPT
+
+#Drop everything to and from $WLANIF (forward)
+$IPTABLES -A FORWARD -i $WLANIF -j DROP
+$IPTABLES -A FORWARD -o $WLANIF -j DROP
+                             
+#Enable NAT on output device.
+$IPTABLES -t nat -A POSTROUTING -o $WANIF -j MASQUERADE
+

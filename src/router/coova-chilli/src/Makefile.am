@@ -1,4 +1,4 @@
-AUTOMAKE_OPTIONS=foreign
+AUTOMAKE_OPTIONS=foreign subdir-objects
 
 SUBDIRS = 
 EXTRA_DIST = cmdline.ggo cmdline.patch \
@@ -9,38 +9,42 @@ cmdline.mini.sh cmdline.mini.gen
 chilliincludedir = $(includedir)/chilli
 chilliinclude_HEADERS = \
 chilli.h session.h garden.h radius.h options.h \
-tun.h ippool.h md5.h redir.h dhcp.h syserr.h iphash.h \
-radius_wispr.h radius_chillispot.h ssl.h dns.h net.h \
+tun.h ippool.h md5.h redir.h dhcp.h iphash.h \
+radius_wispr.h radius_coovachilli.h ssl.h dns.h net.h \
 pkt.h conn.h lookup.h chilli_limits.h cmdline.h debug.h \
 radius_pkt.h ../bstring/bstrlib.h ../config.h system.h 
 
 lib_LTLIBRARIES = libchilli.la
-sbin_PROGRAMS = chilli_multicall
+sbin_PROGRAMS = \
+chilli chilli_response chilli_radconfig chilli_opt 
 
 suid_programs =
 
 libchilli_la_SOURCES = \
-chilli.c tun.c ippool.c radius.c md5.c redir.c dhcp.c syserr.c \
+chilli.c tun.c ippool.c radius.c md5.c redir.c dhcp.c \
 iphash.c lookup.c system.h util.c options.c statusfile.c conn.c sig.c \
 garden.c dns.c session.c pkt.c chksum.c net.c safe.c
 
-AM_CFLAGS = -D_GNU_SOURCE -Wall -fno-builtin -fno-strict-aliasing \
-  -fomit-frame-pointer -pipe -I$(top_builddir)/bstring \
+AM_CFLAGS = -D_GNU_SOURCE -Wall -Werror -fno-builtin -fno-strict-aliasing \
+  -fomit-frame-pointer -funroll-loops -pipe -I$(top_builddir)/bstring \
  -DDEFCHILLICONF='"$(sysconfdir)/chilli.conf"'\
  -DDEFPIDFILE='"$(localstatedir)/run/chilli.pid"'\
  -DDEFSTATEDIR='"$(localstatedir)/run"'\
  -DSBINDIR='"$(sbindir)"' 
 
-chilli_multicall_SOURCES = multicall.c main.c main-radconfig.c main-response.c main-query.c main-opt.c
+chilli_SOURCES= main.c
+chilli_radconfig_SOURCES = main-radconfig.c 
+chilli_response_SOURCES = main-response.c 
+chilli_query_SOURCES = main-query.c 
+chilli_opt_SOURCES = main-opt.c 
 
 libchilli_la_LIBADD = $(top_builddir)/bstring/libbstring.la 
 LDADD = libchilli.la ${LIBRT} $(top_builddir)/bstring/libbstring.la 
-chilli_multicall_LDADD = $(LDADD)
 
 if WITH_MINICONFIG
-chilli_multicall_SOURCES += cmdline.mini.c
+chilli_opt_SOURCES += cmdline.mini.c
 else
-chilli_multicall_SOURCES += cmdline.c 
+chilli_opt_SOURCES += cmdline.c 
 endif
 
 if WITH_PATRICIA
@@ -85,7 +89,7 @@ libchilli_la_SOURCES += mssl.c mssl.h
 libchilli_la_LIBADD += -lmatrixssl
 LDADD += -lmatrixssl
 if WITH_MATRIXSSL_CLI
-SUBDIRS = mssl
+SUBDIRS += mssl
 endif
 endif
 
@@ -112,39 +116,45 @@ LDADD += ${LIBPCAP}
 endif
 
 if WITH_MULTIROUTE
+sbin_PROGRAMS += chilli_rtmon
+chilli_rtmon_SOURCES = main-rtmon.c 
 libchilli_la_SOURCES += rtmon.c rtmon.h
-chilli_multicall_SOURCES += main-rtmon.c
 endif
 
 if WITH_CHILLIQUERY
+sbin_PROGRAMS += chilli_query
 libchilli_la_SOURCES += cmdsock.c
 chilliinclude_HEADERS += cmdsock.h
 endif
 
 if WITH_CHILLIPROXY
-chilli_multicall_LDADD += ${LDADD}
+sbin_PROGRAMS += chilli_proxy
+chilli_proxy_SOURCES = main-proxy.c 
+chilli_proxy_LDADD = ${LDADD}
 if WITH_CURL
-chilli_multicall_LDADD += -lcurl -lz 
+chilli_proxy_LDADD += ${LIBCURL} 
 endif
-chilli_multicall_SOURCES += main-rtmon.c main-proxy.c 
-
 endif
 
 if WITH_CHILLIRADSEC
-chilli_multicall_LDADD += ${LDADD}
-chilli_multicall_SOURCES += main-radsec.c
+sbin_PROGRAMS += chilli_radsec
+chilli_radsec_SOURCES = main-radsec.c 
+chilli_radsec_LDADD = ${LDADD}
 endif
 
 if WITH_CHILLISCRIPT
-chilli_multicall_SOURCES += main-script.c 
-chilli_multicall_LDADD += ${LDADD}
+sbin_PROGRAMS += chilli_script
+suid_programs += chilli_script
+chilli_script_SOURCES = main-script.c 
+chilli_script_LDADD = ${LDADD}
 endif
 
 if WITH_CHILLIREDIR
-chilli_multicall_SOURCES += main-redir.c 
-chilli_multicall_LDADD += ${LDADD}
+sbin_PROGRAMS += chilli_redir
+chilli_redir_SOURCES = main-redir.c 
+chilli_redir_LDADD = ${LDADD}
 if WITH_CURL
-chilli_multicall_LDADD += -lcurl -lz 
+chilli_redir_LDADD += ${LIBCURL} 
 endif
 endif
 
@@ -156,13 +166,17 @@ endif
 if WITH_MODULES
 sample_la_SOURCES = sample-mod.c
 sample_la_LDFLAGS = -module -avoid-version
-pkglibdir = $(libdir)/coova-chilli
-pkglib_LTLIBRARIES = sample.la
+samplelibdir = $(libdir)/coova-chilli
+samplelib_LTLIBRARIES = sample.la
 libchilli_la_SOURCES += chilli_module.c
 libchilli_la_LIBADD += -ldl
 LDADD += -ldl
 chilliinclude_HEADERS += chilli_module.h
 AM_CFLAGS += -DDEFLIBDIR='"$(libdir)/coova-chilli"'
+endif
+
+if !HAVE_STRLCPY
+libchilli_la_SOURCES += ../extern/strlcpy.c
 endif
 
 CMDLINE = cmdline.ggo
