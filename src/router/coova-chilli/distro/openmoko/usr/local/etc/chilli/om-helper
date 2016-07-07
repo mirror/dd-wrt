@@ -1,0 +1,31 @@
+#!/bin/sh
+
+. /usr/local/etc/chilli/functions
+
+om_start() {
+    ldconfig
+    iwconfig $HS_LANIF mode ad-hoc
+    iwconfig $HS_LANIF essid ${HD_SSID:-Coova}
+    
+    # We need iptables
+    [ ! -e /usr/sbin/iptables ] && {
+	opkg update
+	opkg install iptables
+	[ ! -e /usr/sbin/iptables ] && {
+            # last attempt to install iptables
+	    opkg install http://downloads.openmoko.org/repository/testing/armv4t/iptables_1.3.8-r4_armv4t.opk
+	}
+    }
+    
+    iptables -I POSTROUTING -t nat -s $HS_NETWORK/$HS_NETMASK -j MASQUERADE
+}
+
+om_stop() {
+    iptables -D POSTROUTING -t nat -s $HS_NETWORK/$HS_NETMASK -j MASQUERADE
+    iwconfig $HS_LANIF mode managed
+    iwconfig $HS_LANIF essid ""
+}
+
+[ "$1" = "start" ] && om_start
+[ "$1" = "stop" ] && om_stop
+
