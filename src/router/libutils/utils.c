@@ -7947,6 +7947,7 @@ void getSystemMac(char *newmac)
 	case ROUTER_NETGEAR_R8000:
 	case ROUTER_NETGEAR_R8500:
 	case ROUTER_TRENDNET_TEW828:
+	case ROUTER_ASUS_AC3100:
 		strcpy(newmac, nvram_safe_get("et2macaddr"));
 		break;
 	case ROUTER_DLINK_DIR885:

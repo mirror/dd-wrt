@@ -2642,6 +2642,9 @@ void start_sysinit(void)
 		set_gpio(2, 1);	// fixup ses button
 		break;
 	case ROUTER_ASUS_AC3100:
+		set_gpio(11, 1);	// fixup reset button
+		nvram_unset("et0macaddr");
+		nvram_unset("et1macaddr");
 	case ROUTER_ASUS_AC88U:
 		/* ldo patch */
 		{
