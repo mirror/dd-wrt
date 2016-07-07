@@ -884,9 +884,9 @@ struct nvram_param srouter_defaults[] = {
 	{"wl_stbc_rx", "1"},	/* Default STBC RX setting */
 	{"wl_ampdu", "auto"},	/* Default AMPDU setting */
 	/* Default AMPDU retry limit per-tid setting */
-	{"wl_ampdu_rtylimit_tid", "7 7 7 7 7 7 7 7"},
+	{"wl_ampdu_rtylimit_tid", "5 5 5 5 5 5 5 5"},
 	/* Default AMPDU regular rate retry limit per-tid setting */
-	{"wl_ampdu_rr_rtylimit_tid", "3 3 3 3 3 3 3 3"},
+	{"wl_ampdu_rr_rtylimit_tid", "2 2 2 2 2 2 2 2"},
 	{"wl_ampdu_mpdu", "0"},
 	{"wl_ampdu_rts", "1"},
 	{"wl_amsdu", "auto"},	/* Disable AMSDU Tx by default */
@@ -2836,50 +2836,50 @@ struct nvram_param srouter_defaults[] = {
 	/*
 	 * EDCA parameters for STA 
 	 */
-	{"wl_wme_sta_bk", "15 1023 7 0 0 off"},	/* WME STA AC_BK paramters */
-	{"wl_wme_sta_be", "15 1023 3 0 0 off"},	/* WME STA AC_BE paramters */
-	{"wl_wme_sta_vi", "7 15 2 6016 3008 off"},	/* WME STA AC_VI
+	{"wl_wme_sta_bk", "15 1023 7 0 0 off off"},	/* WME STA AC_BK paramters */
+	{"wl_wme_sta_be", "15 1023 3 0 0 off off"},	/* WME STA AC_BE paramters */
+	{"wl_wme_sta_vi", "7 15 2 6016 3008 off off"},	/* WME STA AC_VI
 							 * paramters */
-	{"wl_wme_sta_vo", "3 7 2 3264 1504 off"},	/* WME STA AC_VO
+	{"wl_wme_sta_vo", "3 7 2 3264 1504 off off"},	/* WME STA AC_VO
 							 * paramters */
 
 	/*
 	 * EDCA parameters for AP 
 	 */
-	{"wl_wme_ap_bk", "15 1023 7 0 0 off"},	/* WME AP AC_BK paramters */
-	{"wl_wme_ap_be", "15 63 3 0 0 off"},	/* WME AP AC_BE paramters */
-	{"wl_wme_ap_vi", "7 15 1 6016 3008 off"},	/* WME AP AC_VI
+	{"wl_wme_ap_bk", "15 1023 7 0 0 off off"},	/* WME AP AC_BK paramters */
+	{"wl_wme_ap_be", "15 63 3 0 0 off off"},	/* WME AP AC_BE paramters */
+	{"wl_wme_ap_vi", "7 15 1 6016 3008 off off"},	/* WME AP AC_VI
 							 * paramters */
-	{"wl_wme_ap_vo", "3 7 1 3264 1504 off"},	/* WME AP AC_VO paramters */
+	{"wl_wme_ap_vo", "3 7 1 3264 1504 off off"},	/* WME AP AC_VO paramters */
 	{"wl_wme_no_ack", "off"},	/* WME No-Acknowledgmen mode */
 	{"wl_wme_apsd", "on"},	/* WME APSD mode */
 
-	{"wl1_wme_sta_bk", "15 1023 7 0 0 off"},	/* WME STA AC_BK paramters */
-	{"wl1_wme_sta_be", "15 1023 3 0 0 off"},	/* WME STA AC_BE paramters */
-	{"wl1_wme_sta_vi", "7 15 2 6016 3008 off"},	/* WME STA AC_VI                                                         * paramters */
-	{"wl1_wme_sta_vo", "3 7 2 3264 1504 off"},	/* WME STA AC_VO
+	{"wl1_wme_sta_bk", "15 1023 7 0 0 off off"},	/* WME STA AC_BK paramters */
+	{"wl1_wme_sta_be", "15 1023 3 0 0 off off"},	/* WME STA AC_BE paramters */
+	{"wl1_wme_sta_vi", "7 15 2 6016 3008 off off"},	/* WME STA AC_VI                                                         * paramters */
+	{"wl1_wme_sta_vo", "3 7 2 3264 1504 off off"},	/* WME STA AC_VO
 							 * paramters */
-	{"wl2_wme_sta_bk", "15 1023 7 0 0 off"},	/* WME STA AC_BK paramters */
-	{"wl2_wme_sta_be", "15 1023 3 0 0 off"},	/* WME STA AC_BE paramters */
-	{"wl2_wme_sta_vi", "7 15 2 6016 3008 off"},	/* WME STA AC_VI                                                         * paramters */
-	{"wl2_wme_sta_vo", "3 7 2 3264 1504 off"},	/* WME STA AC_VO
+	{"wl2_wme_sta_bk", "15 1023 7 0 0 off off"},	/* WME STA AC_BK paramters */
+	{"wl2_wme_sta_be", "15 1023 3 0 0 off off"},	/* WME STA AC_BE paramters */
+	{"wl2_wme_sta_vi", "7 15 2 6016 3008 off off"},	/* WME STA AC_VI                                                         * paramters */
+	{"wl2_wme_sta_vo", "3 7 2 3264 1504 off off"},	/* WME STA AC_VO
 							 * paramters */
 
 	/*
 	 * EDCA parameters for AP 
 	 */
-	{"wl1_wme_ap_bk", "15 1023 7 0 0 off"},	/* WME AP AC_BK paramters */
-	{"wl1_wme_ap_be", "15 63 3 0 0 off"},	/* WME AP AC_BE paramters */
-	{"wl1_wme_ap_vi", "7 15 1 6016 3008 off"},	/* WME AP AC_VI                                                  * paramters */
-	{"wl1_wme_ap_vo", "3 7 1 3264 1504 off"},	/* WME AP AC_VO
+	{"wl1_wme_ap_bk", "15 1023 7 0 0 off off"},	/* WME AP AC_BK paramters */
+	{"wl1_wme_ap_be", "15 63 3 0 0 off off"},	/* WME AP AC_BE paramters */
+	{"wl1_wme_ap_vi", "7 15 1 6016 3008 off off"},	/* WME AP AC_VI                                                  * paramters */
+	{"wl1_wme_ap_vo", "3 7 1 3264 1504 off off"},	/* WME AP AC_VO
 							 * paramters */
 	{"wl1_wme_no_ack", "off"},	/* WME No-Acknowledgmen mode */
 	{"wl1_wme_apsd", "on"},	/* WME APSD mode */
 
-	{"wl2_wme_ap_bk", "15 1023 7 0 0 off"},	/* WME AP AC_BK paramters */
-	{"wl2_wme_ap_be", "15 63 3 0 0 off"},	/* WME AP AC_BE paramters */
-	{"wl2_wme_ap_vi", "7 15 1 6016 3008 off"},	/* WME AP AC_VI                                                  * paramters */
-	{"wl2_wme_ap_vo", "3 7 1 3264 1504 off"},	/* WME AP AC_VO
+	{"wl2_wme_ap_bk", "15 1023 7 0 0 off off"},	/* WME AP AC_BK paramters */
+	{"wl2_wme_ap_be", "15 63 3 0 0 off off"},	/* WME AP AC_BE paramters */
+	{"wl2_wme_ap_vi", "7 15 1 6016 3008 off off"},	/* WME AP AC_VI                                                  * paramters */
+	{"wl2_wme_ap_vo", "3 7 1 3264 1504 off off"},	/* WME AP AC_VO
 							 * paramters */
 	{"wl2_wme_no_ack", "off"},	/* WME No-Acknowledgmen mode */
 	{"wl2_wme_apsd", "on"},	/* WME APSD mode */
