@@ -369,6 +369,7 @@ static int calclength(char *webfile, char *ifname)
 	int weblen = strlen(webfile);
 	int len = 0;
 	int i;
+	int iflen = strlen(ifname);
 	for (i = 0; i < weblen - 1; i++) {
 		if (webfile[i] == '%') {
 			if (webfile[i + 1] == '%') {
@@ -380,7 +381,7 @@ static int calclength(char *webfile, char *ifname)
 				len--;
 			}
 			if (webfile[i + 1] == 's') {
-				len += strlen(ifname);
+				len += iflen;
 				len -= 2;	// substract size for %s
 			}
 		}
