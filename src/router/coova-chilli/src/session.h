@@ -1,21 +1,21 @@
 /* -*- mode: c; c-basic-offset: 2 -*- */
-/* 
+/*
  * Copyright (C) 2003, 2004, 2005 Mondru AB.
  * Copyright (C) 2007-2012 David Bird (Coova Technologies) <support@coova.com>
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 
 #ifndef _SESSION_H
@@ -50,6 +50,19 @@ struct session_params {
 #define UAM_CLEAR_URL      (1<<8)
   uint16_t flags;
 
+#ifdef ENABLE_SESSPROXY
+  struct in_addr postauth_proxy;
+  uint16_t postauth_proxyport;
+#endif
+
+#ifdef ENABLE_SESSDHCP
+  struct in_addr dhcp_relay;
+#endif
+
+#ifdef ENABLE_SESSDNS
+  struct in_addr dns1;
+#endif
+
 #ifdef ENABLE_SESSGARDEN
   pass_through pass_throughs[SESSION_PASS_THROUGH_MAX];
   uint32_t pass_through_count;
@@ -71,7 +84,7 @@ struct redir_state {
   /* To store the RADIUS CUI attribute received in the Access Accept */
   uint8_t cuibuf[RADIUS_ATTR_VLEN];
   size_t cuilen;
-  
+
   /* To store the RADIUS STATE attribute between Radius requests */
   uint8_t statebuf[RADIUS_ATTR_VLEN];
   uint8_t statelen;
@@ -83,7 +96,7 @@ struct redir_state {
   uint8_t uamprotocol;
 
 #ifdef ENABLE_USERAGENT
-  char useragent[REDIR_USERAGENTSIZE]; 
+  char useragent[REDIR_USERAGENTSIZE];
 #endif
 
 #ifdef ENABLE_ACCEPTLANGUAGE
@@ -103,20 +116,22 @@ struct redir_state {
 struct session_state {
   struct redir_state redir;
 
-  int authenticated; /* 1 if user was authenticated */  
+  int authenticated; /* 1 if user was authenticated */
 
   char sessionid[REDIR_SESSIONID_LEN];
 #ifdef ENABLE_SESSIONID
-  char chilli_sessionid[56]; 
+  char chilli_sessionid[56];
 #endif
 #ifdef ENABLE_APSESSIONID
-  char ap_sessionid[128]; 
+  char ap_sessionid[128];
 #endif
 
   time_t start_time;
   time_t interim_time;
 
-  time_t last_sent_time; /* Last time a packet was sent. Used for idle timeout calculations */
+  struct timespec last_bw_time;
+
+  time_t last_up_time;
   time_t last_time; /* Last time a packet was received or sent */
   time_t uamtime;
 
@@ -169,7 +184,7 @@ struct session_state {
   int lanidx;
 #else
 #define app_conn_idx(x) 0
-#define app_conn_set_idx(x,c) 
+#define app_conn_set_idx(x,c)
 #endif
 
 #ifdef ENABLE_LEAKYBUCKET

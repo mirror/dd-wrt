@@ -8,8 +8,19 @@ UNDO_FILE=@VARRUN@/chilli.$TUNTAP.sh
 
 . @SYSCONFDIR@/chilli/functions
 
-[ -e "$UNDO_FILE" ] && sh $UNDO_FILE 2>/dev/null
-rm -f $UNDO_FILE 2>/dev/null
+run_down() {
+    [ -e "$UNDO_FILE" ] && sh $UNDO_FILE 2>/dev/null
+    rm -f $UNDO_FILE 2>/dev/null
+    
+    # site specific stuff optional
+    [ -e @SYSCONFDIR@/chilli/ipdown.sh ] && . @SYSCONFDIR@/chilli/ipdown.sh
+}
 
-# site specific stuff optional
-[ -e @SYSCONFDIR@/chilli/ipdown.sh ] && . @SYSCONFDIR@/chilli/ipdown.sh
+FLOCK=$(which flock)
+if [ -n "$FLOCK" ] && [ -z "$LOCKED_FILE" ]
+then
+    export LOCKED_FILE=/tmp/.chilli-flock
+    flock -x $LOCKED_FILE -c "$0 $@"
+else
+    run_down
+fi

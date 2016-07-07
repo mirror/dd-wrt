@@ -14,20 +14,18 @@ DEB_BUILD_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
 ifneq (,$(findstring debug,$(DEB_BUILD_OPTIONS)))
 	CFLAGS += -g
 endif
-ifeq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
-	INSTALL_PROGRAM += -s
-endif
 
 config.status: configure
 	dh_testdir
-	./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
+	CFLAGS="$(CFLAGS)" ./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
 	--prefix=/usr --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info \
 	--sysconfdir=/etc --localstatedir=/var --enable-largelimits \
 	--enable-proxyvsa --enable-miniportal --enable-chilliredir \
 	--enable-chilliproxy --enable-binstatusfile --enable-chilliscript \
 	--enable-chilliradsec --enable-dnslog --enable-layer3 --enable-eapol \
 	--enable-uamdomainfile --enable-redirdnsreq --enable-modules \
-	--enable-multiroute --enable-extadmvsa --with-openssl --with-poll
+	--enable-multiroute --enable-extadmvsa --with-openssl --with-poll \
+	--enable-json --enable-libjson
 
 configure:
 	@test -f configure || ./bootstrap
@@ -51,7 +49,7 @@ install: build
 	dh_clean -k
 	dh_prep
 	dh_installdirs
-	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp install
+	$(MAKE) DESTDIR=$(CURDIR)/debian/coova-chilli install
 
 # Build architecture-independent files here.
 binary-indep: build install
@@ -67,7 +65,9 @@ binary-arch: build install
 	dh_installman
 	dh_installinfo
 	dh_link
+ifeq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
 	dh_strip
+endif
 	dh_compress
 	dh_fixperms
 	dh_makeshlibs

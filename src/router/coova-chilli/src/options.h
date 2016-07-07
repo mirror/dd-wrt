@@ -1,21 +1,21 @@
 /* -*- mode: c; c-basic-offset: 2 -*- */
-/* 
- * Copyright (C) 2007-2012 David Bird (Coova Technologies) <support@coova.com>
+/*
+ * Copyright (C) 2007-2013 David Bird (Coova Technologies) <support@coova.com>
  * Copyright (C) 2003, 2004, 2005 Mondru AB.
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 
 #ifndef _OPTIONS_H
@@ -28,6 +28,8 @@ struct options_t {
   int initialized;
   int foreground;
   int debug;
+  int logfacility;
+  int loglevel;
   /* conf */
   uid_t uid;
   gid_t gid;
@@ -65,7 +67,16 @@ struct options_t {
   char * macdown;
   int txqlen;
 
+#ifdef USING_MMAP
   int ringsize;
+#endif
+
+#ifdef ENABLE_IPV6
+  struct in6_addr dns1_v6;
+  struct in6_addr dns2_v6;
+  struct in6_addr v6prefix;
+#endif
+
   int sndbuf;
   int rcvbuf;
 
@@ -78,10 +89,10 @@ struct options_t {
   char* radiussecret;            /* Radius shared secret */
 
 #ifdef ENABLE_LARGELIMITS
-  struct in_addr radiusacctserver1; 
-  struct in_addr radiusacctserver2; 
-  struct in_addr radiusadmserver1;  
-  struct in_addr radiusadmserver2;  
+  struct in_addr radiusacctserver1;
+  struct in_addr radiusacctserver2;
+  struct in_addr radiusadmserver1;
+  struct in_addr radiusadmserver2;
   char* radiusacctsecret;
   char* radiusadmsecret;
 #endif
@@ -95,7 +106,6 @@ struct options_t {
   int radiusnasporttype;         /* NAS-Port-Type */
   uint16_t coaport;              /* UDP port to listen to */
   int coanoipcheck;              /* Allow disconnect from any IP */
-  int logfacility;
   int radiustimeout;             /* Retry timeout in milli seconds */
   int radiusretry;               /* Total amount of retries */
   int radiusretrysec;            /* Amount of retries after we switch to secondary */
@@ -171,6 +181,13 @@ struct options_t {
   char *uamaliasname;            /* Simple hostname (no dots) DNS name for uamalias */
   char *uamhostname;             /* Simple hostname (no dots) DNS name for uamlisten */
 
+#ifdef ENABLE_FORCEDNS
+  struct in_addr forcedns1_addr;  /* IP address to force DNS to */
+  struct in_addr forcedns2_addr;  /* IP address to force DNS to */
+  uint16_t forcedns1_port;        /* Port to force DNS to */
+  uint16_t forcedns2_port;        /* Port to force DNS to */
+#endif
+
   /* booleans */
   uint8_t layer3;                   /* Layer3 only support */
   uint8_t allowdyn:1;               /* Allow dynamic address allocation */
@@ -200,7 +217,7 @@ struct options_t {
   uint8_t macreauth:1;              /* Use MAC re-authentication on /prelogin */
   uint8_t macauthdeny:1;            /* Deny any access to those given Access-Reject */
   uint8_t macallowlocal:1;          /* Do not use RADIUS for authenticating the macallowed */
-  uint8_t radiusoriginalurl:1;      /* Send ChilliSpot-OriginalURL in AccessRequest */
+  uint8_t radiusoriginalurl:1;      /* Send CoovaChilli-OriginalURL in AccessRequest */
   uint8_t dhcpradius:1;             /* Send certain DHCP options in RADIUS attributes */
   uint8_t has_nexthop:1;            /* Has a nexthop entry */
   uint8_t dhcp_broadcast:1;         /* always broadcast DHCP (when not relaying) */
@@ -220,10 +237,19 @@ struct options_t {
   uint8_t routeonetone:1;
   uint8_t statusfilesave:1;
   uint8_t dhcpnotidle:1;
+  uint8_t uamauthedallowed:1;
+  uint8_t postauth_proxyssl:1;
+  uint8_t nochallenge:1;
+
+#ifdef USING_MMAP
+  uint8_t mmapring:1;
+#endif
 
 #ifdef ENABLE_IPV6
   uint8_t ipv6:1;
   uint8_t ipv6only:1;
+  uint8_t ipv6to4:1;
+  uint8_t ipv4to6:1;
 #endif
 
 #ifdef ENABLE_LEAKYBUCKET
@@ -281,9 +307,19 @@ struct options_t {
   pass_through pass_throughs[MAX_PASS_THROUGHS];
   uint32_t num_pass_throughs;
 
+#ifdef ENABLE_AUTHEDALLOWED
+  pass_through authed_pass_throughs[MAX_PASS_THROUGHS];
+  uint32_t num_authed_pass_throughs;
+#endif
+
 #ifdef ENABLE_CHILLIREDIR
   regex_pass_through regex_pass_throughs[MAX_REGEX_PASS_THROUGHS];
   uint32_t regex_num_pass_throughs;
+#endif
+
+#ifdef ENABLE_LAYER3
+  pass_through ipsrc_pass_throughs[MAX_IPSRC_PASS_THROUGHS];
+  uint32_t ipsrc_num_pass_throughs;
 #endif
 
   char* uamdomains[MAX_UAM_DOMAINS];
@@ -293,7 +329,7 @@ struct options_t {
   uint8_t macok[MACOK_MAX][PKT_ETH_ALEN]; /* Allowed MACs */
   int macoklen;                   /* Number of MAC addresses */
   char* macsuffix;               /* Suffix to add to MAC address */
-  char* macpasswd;               /* Password to use for MAC authentication */  
+  char* macpasswd;               /* Password to use for MAC authentication */
 
   uint64_t defsessiontimeout;
   uint64_t defbandwidthmaxdown;
@@ -318,6 +354,7 @@ struct options_t {
   char *sslkeypass;
   char *sslcertfile;
   char *sslcafile;
+  char *sslciphers;
 #endif
 
   /* local content */
@@ -371,6 +408,10 @@ struct options_t {
 
 #ifdef USING_IPC_UNIX
   char *unixipc;
+#endif
+
+#ifdef ENABLE_WPAD
+  char *wpadpacfile;
 #endif
 
 #ifdef HAVE_NETFILTER_COOVA

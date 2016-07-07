@@ -1,16 +1,16 @@
+CoovaChilli is a feature rich software access controller that provides a
+captive portal / walled-garden environment and uses RADIUS or a HTTP protocol
+for access provisioning and accounting.
+Released under the GNU General Public License (GPL).
 
-Welcome to Coova-Chilli! Coova-Chilli is a fork of the original ChilliSpot
-project. It is largely backward compatible with ChilliSpot 1.1, but is
-actually based on the 1.0 release plus the merging of many other features
-and fixes from both ChilliSpot 1.1 snapshots and contributions from
-PicoPoint, Coova, and others in the community. For more information on
-Coova-Chilli, see:
+http://coova.github.io/
 
-http://www.coova.org/
+[![Build Status](https://travis-ci.org/coova/coova-chilli.svg?branch=master)](https://travis-ci.org/coova/coova-chilli)
 
-To get started from SVN:
+To get started after cloning git repository:
 
-  sh bootstrap
-  ./configure
-  make
-
+  `sh bootstrap`
+  
+  `./configure` 
+  
+  `make`

@@ -23,18 +23,18 @@ line or in a configuration file. When on the command line, options are
 prefixed with two dashes and may or may not have an equal sign, for
 instance, these are equivalent:
 
-.I chilli --uamallowed www.coova.org --uamanydns
+.I chilli --uamallowed www.example.com --uamanydns
 
-.I chilli --uamallowed="www.coova.org" --uamanydns
+.I chilli --uamallowed="www.example.com" --uamanydns
 
 Options that do not have arguments behave the same way, just without any
 equal sign or second argument. When in the configuration file, options must
 not have any dashes, but can still be used with or without the equal sign,
 as in:
 
-.I uamallowed "www.coova.org"
+.I uamallowed "www.example.com"
 
-.I uamallowed=www.coova.org
+.I uamallowed=www.example.com
 
 .I uamanydns
 
@@ -334,16 +334,16 @@ Max up stream bandwidth set by RADIUS WISPr-Bandwidth-Max-Up.
 Max down stream bandwidth set by RADIUS WISPr-Bandwidth-Max-Down.
 
 .TP
-.BI CHILLISPOT_MAX_INPUT_OCTETS= <bytes>
-Max input octets set by RADIUS ChilliSpot-Max-Input-Octets.
+.BI COOVACHILLI_MAX_INPUT_OCTETS= <bytes>
+Max input octets set by RADIUS CoovaChilli-Max-Input-Octets.
 
 .TP
-.BI CHILLISPOT_MAX_OUTPUT_OCTETS= <bytes>
-Max output octets set by RADIUS ChilliSpot-Max-Output-Octets.
+.BI COOVACHILLI_MAX_OUTPUT_OCTETS= <bytes>
+Max output octets set by RADIUS CoovaChilli-Max-Output-Octets.
 
 .TP
-.BI CHILLISPOT_MAX_TOTAL_OCTETS= <bytes>
-Max total octets set by RADIUS ChilliSpot-Max-Total-Octets.
+.BI COOVACHILLI_MAX_TOTAL_OCTETS= <bytes>
+Max total octets set by RADIUS CoovaChilli-Max-Total-Octets.
 
 .RE
 
@@ -428,7 +428,7 @@ Value of NAS-Port-Type attribute. Defaults to 19
 
 .TP
 .BI radiusoriginalurl
-Flag (defaults to off) to send the ChilliSpot-OriginalURL RADIUS VSA in
+Flag (defaults to off) to send the CoovaChilli-OriginalURL RADIUS VSA in
 Access-Request. 
 
 .TP
@@ -445,7 +445,7 @@ chilli configurations and establish a device 'system' session.
 .BI adminupdatefile " filename" 
 The file to use as the Administrative-User update file. When used in
 combination with the above adminuser and adminpasswd options,
-ChilliSpot-Config RADIUS attributes found in the Administrative-User
+CoovaChilli-Config RADIUS attributes found in the Administrative-User
 Access-Accept are put into the specified file. If the file changes,
 chilli will reload it's configuration (it's assumed that this file is
 included into the chilli configuration file).
@@ -458,16 +458,16 @@ RADIUS attribtues.
 .TP
 .B openidauth
 Allows OpenID authentication by sending
-.I ChilliSpot-Config=allow-openidauth
+.I CoovaChilli-Config=allow-openidauth
 in RADIUS Access-Requests to inform the RADIUS server of the option.
 
 .TP
 .B wpaguests
 Allows WPA Guest authentication by sending
-.I ChilliSpot-Config=allow-wpa-guests
+.I CoovaChilli-Config=allow-wpa-guests
 in RADIUS Access-Requests to inform the RADIUS server of the option. The
 RADIUS may return with an Access-Accept containing
-.I ChilliSpot-Config=require-uam-auth
+.I CoovaChilli-Config=require-uam-auth
 to give WPA access, but enforce the captive portal.
 
 .TP
@@ -585,7 +585,7 @@ Always respond to DHCP to the broadcast IP, when no relay.
 
 .TP
 .B eapolenable
-If this option is given IEEE 802.1x authentication is enabled. ChilliSpot
+If this option is given IEEE 802.1x authentication is enabled. CoovaChilli
 will listen for EAP authentication requests on the interface specified by
 .B dhcpif. 
 EAP messages received on this interface are forwarded to the radius server.
@@ -649,7 +649,7 @@ authenticating. Each entry in the list can be a domain names, IP addresses,
 or network segment. Example:
 
 .RS
-.BI uamallowed " www.chillispot.org,10.11.12.0/24"
+.BI uamallowed " www.example.com,10.11.12.0/24"
 
 Where each entry can be made more specific by specifying a protocol and port
 in the format 
@@ -666,12 +666,12 @@ is just as above (a domain, IP, or network), and
 .I port 
 is a port number. Example:
 
-.BI uamallowed " coova.org:80,icmp:coova.org"
+.BI uamallowed " www.example.com:80,icmp:www.example.com"
 
 Adding to your walled garden is useful for allowing access to a credit card payment gateways, 
 community website, or other publicly available resources.
 
-ChilliSpot resolves the domain names to a set of IP addresses during
+CoovaChilli resolves the domain names to a set of IP addresses during
 startup. Some big sites change the returned IP addresses for each
 lookup. This behaviour is not compatible with this option. Domain names in
 the list do get updated periodically based on the 
@@ -768,7 +768,7 @@ and
 .B dns2
 options. If the
 .B uamanydns
-option is given ChilliSpot will allow the client to use all DNS
+option is given CoovaChilli will allow the client to use all DNS
 servers. This is convenient for clients which are configured to
 use a fixed set of DNS servers. Since the server may not be available,
 requests are forwarded to the 
@@ -830,7 +830,7 @@ Return the so-called Chilli XML along with WISPr XML.
 
 .TP
 .B macauth
-If this option is given ChilliSpot will try to authenticate all users
+If this option is given CoovaChilli will try to authenticate all users
 based on their mac address alone. The User-Name sent to the radius
 server will consist of the MAC address and an optional suffix which
 is specified by the
@@ -932,6 +932,10 @@ Defines the location of the PEM formatted certificate file.
 .TP
 .BI sslcafile " filename"
 Defines the location of the PEM formatted CA certificate file.
+
+.TP
+.BI sslciphers " ciphers"
+Defines the ciphers that will be used.
 
 .TP
 .B redirssl
@@ -1040,9 +1044,8 @@ URL.
 .LP
 
 See
-.I http://www.coova.org/
+.I http://coova.github.io/
 for further documentation and community support.
-The original ChilliSpot project homepage is/was at www.chillispot.org.
 
 .SH AUTHORS
 

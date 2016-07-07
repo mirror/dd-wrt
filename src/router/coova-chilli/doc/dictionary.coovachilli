@@ -1,0 +1,104 @@
+#
+#	CoovaChilli captive portal
+#	http://coova.github.io/
+#
+
+VENDOR          CoovaChilli                   14559
+
+BEGIN-VENDOR	CoovaChilli
+
+ATTRIBUTE	CoovaChilli-Max-Input-Octets		1	integer
+ATTRIBUTE	CoovaChilli-Max-Output-Octets		2	integer
+ATTRIBUTE	CoovaChilli-Max-Total-Octets		3	integer
+ATTRIBUTE       CoovaChilli-Bandwidth-Max-Up        	4       integer
+ATTRIBUTE       CoovaChilli-Bandwidth-Max-Down      	5       integer
+ATTRIBUTE       CoovaChilli-Config                  	6       string
+ATTRIBUTE       CoovaChilli-Lang                    	7       string
+ATTRIBUTE       CoovaChilli-Version                 	8       string
+ATTRIBUTE       CoovaChilli-OriginalURL             	9       string
+ATTRIBUTE       CoovaChilli-Acct-View-Point             10	integer
+
+VALUE	CoovaChilli-Acct-View-Point CoovaChilli-NAS-View-Point	1
+VALUE	CoovaChilli-Acct-View-Point CoovaChilli-Client-View-Point 2
+
+ATTRIBUTE       CoovaChilli-Require-UAM		       11	string
+ATTRIBUTE       CoovaChilli-Require-Splash	       12	string
+ATTRIBUTE       CoovaChilli-Route-To-Interface	       13	string
+ATTRIBUTE       CoovaChilli-Config-File                 14       string
+
+ATTRIBUTE       CoovaChilli-Session-State       	       15	integer
+
+VALUE	CoovaChilli-Session-State Authorized       1
+VALUE	CoovaChilli-Session-State NotAuthorized    2
+VALUE	CoovaChilli-Session-State Started          3
+VALUE	CoovaChilli-Session-State Stopped          4
+VALUE	CoovaChilli-Session-State UserLogoutUrl          10
+VALUE	CoovaChilli-Session-State IdleTimeoutReached     11
+VALUE	CoovaChilli-Session-State TimeoutReached         12
+VALUE	CoovaChilli-Session-State LogoutTimeReached      13
+VALUE	CoovaChilli-Session-State InDataLimitReached     14
+VALUE	CoovaChilli-Session-State OutDataLimitReached    15
+VALUE	CoovaChilli-Session-State TotalDataLimitReached  16
+VALUE	CoovaChilli-Session-State LocationChanged	17
+
+ATTRIBUTE       CoovaChilli-Session-Id       	       16	string
+ATTRIBUTE       CoovaChilli-AP-Session-Id       	       17	string
+ATTRIBUTE       CoovaChilli-User-Agent       	       18	string
+ATTRIBUTE       CoovaChilli-Accept-Language     	       19	string
+
+ATTRIBUTE	CoovaChilli-Max-Input-Gigawords	       21	integer
+ATTRIBUTE	CoovaChilli-Max-Output-Gigawords	       22	integer
+ATTRIBUTE	CoovaChilli-Max-Total-Gigawords	       23	integer
+
+ATTRIBUTE	CoovaChilli-VLAN-Id		       24	integer
+ATTRIBUTE	CoovaChilli-Location		       25	string
+ATTRIBUTE	CoovaChilli-Old-Location		       26	string
+ATTRIBUTE	CoovaChilli-Location-Change-Count       27	integer
+
+ATTRIBUTE	CoovaChilli-Sys-Uptime		       40	integer
+ATTRIBUTE	CoovaChilli-Sys-LoadAvg		       41	string
+ATTRIBUTE	CoovaChilli-Sys-Memory		       42	string
+
+ATTRIBUTE       CoovaChilli-DHCP-Vendor-Class-Id	       50	octets
+ATTRIBUTE       CoovaChilli-DHCP-Client-Id	       51	octets
+ATTRIBUTE       CoovaChilli-DHCP-Options		       52	octets
+ATTRIBUTE       CoovaChilli-DHCP-Filename	       53	string
+ATTRIBUTE       CoovaChilli-DHCP-Hostname	       54	string
+ATTRIBUTE       CoovaChilli-DHCP-Server-Name	       55	string
+ATTRIBUTE       CoovaChilli-DHCP-Client-FQDN	       56	string
+ATTRIBUTE       CoovaChilli-DHCP-Parameter-Request-List 57	octets
+
+ATTRIBUTE       CoovaChilli-DHCP-IP-Address	       60	ipaddr
+ATTRIBUTE       CoovaChilli-DHCP-Netmask 	       61	ipaddr
+ATTRIBUTE       CoovaChilli-DHCP-DNS1 		       62	ipaddr
+ATTRIBUTE       CoovaChilli-DHCP-DNS2 		       63	ipaddr
+ATTRIBUTE       CoovaChilli-DHCP-Gateway		       64	ipaddr
+ATTRIBUTE       CoovaChilli-DHCP-Domain		       65	string
+ATTRIBUTE       CoovaChilli-DHCP-Relay		       66	ipaddr
+
+ATTRIBUTE       CoovaChilli-Inject-URL		       70	string
+
+ATTRIBUTE       CoovaChilli-PostAuthProxy-Address       75	ipaddr
+ATTRIBUTE       CoovaChilli-PostAuthProxy-Port	       76	integer
+
+ATTRIBUTE       CoovaChilli-Garden-Input-Octets	       80	integer
+ATTRIBUTE       CoovaChilli-Garden-Output-Octets	       81	integer
+ATTRIBUTE       CoovaChilli-Garden-Input-Gigawords      82	integer
+ATTRIBUTE       CoovaChilli-Garden-Output-Gigawords     83	integer
+ATTRIBUTE       CoovaChilli-Other-Input-Octets	       84	integer
+ATTRIBUTE       CoovaChilli-Other-Output-Octets	       85	integer
+ATTRIBUTE       CoovaChilli-Other-Input-Gigawords       86	integer
+ATTRIBUTE       CoovaChilli-Other-Output-Gigawords      87	integer
+
+# Configuration management parameters (CoovaChilli Only)
+ATTRIBUTE	CoovaChilli-UAM-Allowed			100	string
+ATTRIBUTE	CoovaChilli-MAC-Allowed			101	string
+ATTRIBUTE	CoovaChilli-Interval			102	integer
+
+# Inline with RFC 2882 use of VSE-Authorize-Only for remote config
+# Note that 14559 = 0x38df is used as prefix for the VSE.
+# This is recognized as the best (but bad) way of doing VSEs.
+# (CoovaChilli Only - CoovaChilli uses Service-Type = Administrative-User)
+VALUE	Service-Type			CoovaChilli-Authorize-Only 0x38df0001
+
+END-VENDOR	CoovaChilli

@@ -24,7 +24,7 @@ daemon to handle RadSec tunneling of RADIUS.
 .LP
 
 See
-.I http://www.coova.org/
+.I http://coova.github.io/
 for further documentation and community support.
 
 .SH AUTHORS

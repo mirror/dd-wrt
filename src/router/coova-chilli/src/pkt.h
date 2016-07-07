@@ -1,21 +1,21 @@
 /* -*- mode: c; c-basic-offset: 2 -*- */
-/* 
+/*
  * Copyright (C) 2003, 2004, 2005 Mondru AB.
  * Copyright (C) 2007-2012 David Bird (Coova Technologies) <support@coova.com>
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 
 
@@ -30,8 +30,8 @@
  */
 #define PKT_ETH_PROTO_IP     0x0800
 #define PKT_ETH_PROTO_ARP    0x0806
-#define PKT_ETH_PROTO_WOL    0x0842	
-#define PKT_ETH_PROTO_ETHBR  0x6558 
+#define PKT_ETH_PROTO_WOL    0x0842
+#define PKT_ETH_PROTO_ETHBR  0x6558
 #define PKT_ETH_PROTO_8021Q  0x8100
 #define PKT_ETH_PROTO_IPX    0x8137
 #define PKT_ETH_PROTO_IPv6   0x86dd
@@ -42,7 +42,7 @@
 #define PKT_ETH_PROTO_CHILLI 0xbeef
 
 #define PKT_IP_PLEN            1500 /* IP Payload Length */
-#define PKT_IP_VER_HLEN        0x45 
+#define PKT_IP_VER_HLEN        0x45
 #define PKT_IP_ALEN               4
 #define PKT_IP_HLEN              20
 #define PKT_IPv6_HLEN            40
@@ -202,39 +202,39 @@ struct pkt_dhcp6hdr_t {
 } __attribute__((packed));
 
 #define ICMPv6_NEXT_HEADER 58
-#define ipv6_version(x)  /*lazy!*/ \
-((((1<<31)|(1<<30)|(1<<29)|(1<<28))&(ntohl((x)->ver_class_label)))>>28)
-#define ipv6_class(x) \
-((((1<<27)|(1<<26)|(1<<25)|(1<<24)|(1<<23)|(1<<22)|(1<<21)|(1<<20))&(ntohl((x)->ver_class_label)))>>20)
+#define ipv6_version(x)  /*lazy!*/                                      \
+  ((((1<<31)|(1<<30)|(1<<29)|(1<<28))&(ntohl((x)->ver_class_label)))>>28)
+#define ipv6_class(x)                                                   \
+  ((((1<<27)|(1<<26)|(1<<25)|(1<<24)|(1<<23)|(1<<22)|(1<<21)|(1<<20))&(ntohl((x)->ver_class_label)))>>20)
 
 #define IPv6_ADDR_FMT "%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x"
-#define ipv6_exlode_addr(x) \
+#define ipv6_exlode_addr(x)                                             \
   (int) x[0], (int) x[1], (int) x[2], (int) x[3], (int) x[4], (int) x[5], \
-  (int) x[6], (int) x[7], (int) x[8], (int) x[9], (int) x[10], (int) x[11],\
-  (int) x[12], (int) x[13], (int) x[14], (int) x[15]
+    (int) x[6], (int) x[7], (int) x[8], (int) x[9], (int) x[10], (int) x[11], \
+    (int) x[12], (int) x[13], (int) x[14], (int) x[15]
 
-#define ipv6_nat64_pack(d, p) \
-  *(d)++ = 0x11; *(d)++ = 0x12; *(d)++ = 0; *(d)++ = 0; \
-  *(d)++ = 0; *(d)++ = 0; *(d)++ = 0; *(d)++ = 0; \
-  *(d)++ = 0; *(d)++ = 0; *(d)++ = 0; *(d)++ = 0; \
+#define ipv6_nat64_pack(d, p)                                           \
+  *(d)++ = 0x11; *(d)++ = 0x12; *(d)++ = 0; *(d)++ = 0;                 \
+  *(d)++ = 0; *(d)++ = 0; *(d)++ = 0; *(d)++ = 0;                       \
+  *(d)++ = 0; *(d)++ = 0; *(d)++ = 0; *(d)++ = 0;                       \
   *(d)++ = (p)[0]; *(d)++ = (p)[1]; *(d)++ = (p)[2] ;*(d)++ = (p)[3]
 
-#define ipv6_nat64_prefix(d) \
+#define ipv6_nat64_prefix(d)                            \
   *(d)++ = 0x11; *(d)++ = 0x12; *(d)++ = 0; *(d)++ = 0; \
-  *(d)++ = 0; *(d)++ = 0; *(d)++ = 0; *(d)++ = 0; \
-  *(d)++ = 0; *(d)++ = 0; *(d)++ = 0; *(d)++ = 0; \
+  *(d)++ = 0; *(d)++ = 0; *(d)++ = 0; *(d)++ = 0;       \
+  *(d)++ = 0; *(d)++ = 0; *(d)++ = 0; *(d)++ = 0;       \
   *(d)++ = 0; *(d)++ = 0; *(d)++ = 0; *(d)++ = 0
 
-#define ipv6_eui64_pack(d, p) \
-  *(d)++ = 0x11; *(d)++ = 0x11; *(d)++ = 0; *(d)++ = 0; \
-  *(d)++ = 0; *(d)++ = 0; *(d)++ = 0; *(d)++ = 0; \
-  *(d)++ = (p)[0]; *(d)++ = (p)[1]; *(d)++ = (p)[2] ;*(d)++ = 0xff; \
+#define ipv6_eui64_pack(d, p)                                           \
+  *(d)++ = 0x11; *(d)++ = 0x11; *(d)++ = 0; *(d)++ = 0;                 \
+  *(d)++ = 0; *(d)++ = 0; *(d)++ = 0; *(d)++ = 0;                       \
+  *(d)++ = (p)[0]; *(d)++ = (p)[1]; *(d)++ = (p)[2] ;*(d)++ = 0xff;     \
   *(d)++ = 0xfe; *(d)++ = (p)[3]; *(d)++ = (p)[4] ;*(d)++ = (p)[5]
 
-#define ipv6_eui64_prefix(d) \
+#define ipv6_eui64_prefix(d)                            \
   *(d)++ = 0x11; *(d)++ = 0x11; *(d)++ = 0; *(d)++ = 0; \
-  *(d)++ = 0; *(d)++ = 0; *(d)++ = 0; *(d)++ = 0; \
-  *(d)++ = 0; *(d)++ = 0; *(d)++ = 0; *(d)++ = 0; \
+  *(d)++ = 0; *(d)++ = 0; *(d)++ = 0; *(d)++ = 0;       \
+  *(d)++ = 0; *(d)++ = 0; *(d)++ = 0; *(d)++ = 0;       \
   *(d)++ = 0; *(d)++ = 0; *(d)++ = 0; *(d)++ = 0
 
 #endif
@@ -266,18 +266,18 @@ struct pkt_icmphdr_t {
 
 
 /*
-  0      7 8     15 16    23 24    31  
-  +--------+--------+--------+--------+ 
-  |     Source      |   Destination   | 
-  |      Port       |      Port       | 
-  +--------+--------+--------+--------+ 
-  |                 |                 | 
-  |     Length      |    Checksum     | 
-  +--------+--------+--------+--------+ 
-  |                                     
-  |          data octets ...            
-  +---------------- ...                 
-  
+  0      7 8     15 16    23 24    31
+  +--------+--------+--------+--------+
+  |     Source      |   Destination   |
+  |      Port       |      Port       |
+  +--------+--------+--------+--------+
+  |                 |                 |
+  |     Length      |    Checksum     |
+  +--------+--------+--------+--------+
+  |
+  |          data octets ...
+  +---------------- ...
+
   User Datagram Header Format
 */
 
@@ -291,25 +291,25 @@ struct pkt_udphdr_t {
 /*
   TCP Header Format
 
-    0                   1                   2                   3   
-    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 
-   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   |          Source Port          |       Destination Port        |
-   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   |                        Sequence Number                        |
-   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   |                    Acknowledgment Number                      |
-   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   |  Data |           |U|A|P|R|S|F|                               |
-   | Offset| Reserved  |R|C|S|S|Y|I|            Window             |
-   |       |           |G|K|H|T|N|N|                               |
-   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   |           Checksum            |         Urgent Pointer        |
-   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   |                    Options                    |    Padding    |
-   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   |                             data                              |
-   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+  0                   1                   2                   3
+  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+  |          Source Port          |       Destination Port        |
+  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+  |                        Sequence Number                        |
+  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+  |                    Acknowledgment Number                      |
+  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+  |  Data |           |U|A|P|R|S|F|                               |
+  | Offset| Reserved  |R|C|S|S|Y|I|            Window             |
+  |       |           |G|K|H|T|N|N|                               |
+  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+  |           Checksum            |         Urgent Pointer        |
+  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+  |                    Options                    |    Padding    |
+  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+  |                             data                              |
+  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 */
 
 struct pkt_tcphdr_t {
@@ -338,37 +338,37 @@ struct pkt_tcphdr_t {
 #define tcphdr_ack(hdr) (((hdr)->flags & TCPHDR_FLAG_ACK)==TCPHDR_FLAG_ACK)
 #define tcphdr_psh(hdr) (((hdr)->flags & TCPHDR_FLAG_PSH)==TCPHDR_FLAG_PSH)
 
-/*
-  0                   1                   2                   3
-   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   |     op (1)    |   htype (1)   |   hlen (1)    |   hops (1)    |
-   +---------------+---------------+---------------+---------------+
-   |                            xid (4)                            |
-   +-------------------------------+-------------------------------+
-   |           secs (2)            |           flags (2)           |
-   +-------------------------------+-------------------------------+
-   |                          ciaddr  (4)                          |
-   +---------------------------------------------------------------+
-   |                          yiaddr  (4)                          |
-   +---------------------------------------------------------------+
-   |                          siaddr  (4)                          |
-   +---------------------------------------------------------------+
-   |                          giaddr  (4)                          |
-   +---------------------------------------------------------------+
-   |                          chaddr  (16)                         |
-   |                             (cont)                            |
-   +---------------------------------------------------------------+
-   |                          sname   (64)                         |
-   |                             (cont)                            |
-   +---------------------------------------------------------------+
-   |                          file    (128)                        |
-   |                             (cont)                            |
-   +---------------------------------------------------------------+
-   |                          options (variable)                   |
-   |                             (cont)                            |
-   +---------------------------------------------------------------+
-*/
+    /*
+      0                   1                   2                   3
+      0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+      |     op (1)    |   htype (1)   |   hlen (1)    |   hops (1)    |
+      +---------------+---------------+---------------+---------------+
+      |                            xid (4)                            |
+      +-------------------------------+-------------------------------+
+      |           secs (2)            |           flags (2)           |
+      +-------------------------------+-------------------------------+
+      |                          ciaddr  (4)                          |
+      +---------------------------------------------------------------+
+      |                          yiaddr  (4)                          |
+      +---------------------------------------------------------------+
+      |                          siaddr  (4)                          |
+      +---------------------------------------------------------------+
+      |                          giaddr  (4)                          |
+      +---------------------------------------------------------------+
+      |                          chaddr  (16)                         |
+      |                             (cont)                            |
+      +---------------------------------------------------------------+
+      |                          sname   (64)                         |
+      |                             (cont)                            |
+      +---------------------------------------------------------------+
+      |                          file    (128)                        |
+      |                             (cont)                            |
+      +---------------------------------------------------------------+
+      |                          options (variable)                   |
+      |                             (cont)                            |
+      +---------------------------------------------------------------+
+    */
 
 struct dhcp_packet_t { /* From RFC 2131 */
   uint8_t op;       /* 1 Message op code / message type.  1 = BOOTREQUEST, 2 = BOOTREPLY */
@@ -402,21 +402,21 @@ struct dhcp_tag_t {
 
 struct arp_packet_t { /* From RFC 826 */
   uint16_t hrd; /* 16.bit: (ar$hrd) Hardware address space (e.g.,
-		    Ethernet, Packet Radio Net.) */
+                   Ethernet, Packet Radio Net.) */
   uint16_t pro; /* 16.bit: (ar$pro) Protocol address space.  For
-		    Ethernet hardware, this is from the set of type
-		    fields ether_typ$<protocol>. */
+                   Ethernet hardware, this is from the set of type
+                   fields ether_typ$<protocol>. */
   uint8_t hln;  /* 8.bit: (ar$hln) byte length of each hardware address */
   uint8_t pln;  /* 8.bit: (ar$pln) byte length of each protocol address */
   uint16_t op;  /* 16.bit: (ar$op)  opcode (ares_op$REQUEST | ares_op$REPLY) */
   uint8_t sha[PKT_ETH_ALEN]; /* nbytes: (ar$sha) Hardware address of
-		    sender of this packet, n from the ar$hln field. */
+                                sender of this packet, n from the ar$hln field. */
   uint8_t spa[PKT_IP_ALEN];  /* mbytes: (ar$spa) Protocol address of
-		    sender of this packet, m from the ar$pln field. */
+                                sender of this packet, m from the ar$pln field. */
   uint8_t tha[PKT_ETH_ALEN]; /* nbytes: (ar$tha) Hardware address of
-		  target of this packet (if known). */
+                                target of this packet (if known). */
   uint8_t tpa[PKT_IP_ALEN]; /* mbytes: (ar$tpa) Protocol address of
-				 target.*/
+                               target.*/
 } __attribute__((packed));
 
 
@@ -464,56 +464,38 @@ struct pkt_chillihdr_t {
 #define is_8021q(pkt) (((struct pkt_ethhdr8021q_t *)pkt)->tpid == htons(PKT_ETH_PROTO_8021Q))
 #define get8021q(pkt) (((struct pkt_ethhdr8021q_t *)pkt)->pcp_cfi_vid)
 
-#define sizeofeth2(is8021q)   (PKT_ETH_HLEN+((is8021q)?4:0))
-#define sizeofip2(is8021q)    (sizeofeth2(is8021q)+PKT_IP_HLEN)
-#define sizeofdot1x2(is8021q) (sizeofeth2(is8021q)+PKT_DOT1X_HLEN)
-#define sizeofudp2(is8021q)   (sizeofip2(is8021q)+PKT_UDP_HLEN)
-#define sizeoftcp2(is8021q)   (sizeofip2(is8021q)+PKT_TCP_HLEN)
-#ifdef ENABLE_IPV6
-#define sizeofip62(is8021q)   (sizeofeth2(is8021q)+PKT_IPv6_HLEN)
-#define sizeofudp62(is8021q)  (sizeofip62(is8021q)+PKT_UDP_HLEN)
-#define sizeoftcp62(is8021q)  (sizeofip62(is8021q)+PKT_TCP_HLEN)
-#endif
-
-#define sizeofeth(pkt)   sizeofeth2(is_8021q(pkt))
-#define sizeofip(pkt)    sizeofip2(is_8021q(pkt))
-#define sizeofdot1x(pkt) sizeofdot1x2(is_8021q(pkt))
-#define sizeofudp(pkt)   sizeofudp2(is_8021q(pkt))
-#define sizeoftcp(pkt)   sizeoftcp2(is_8021q(pkt))
-#define sizeofarp(pkt)   (sizeofeth(pkt)+sizeof(struct arp_packet_t))
+#define sizeofeth2(is1q) (PKT_ETH_HLEN+((is1q)?4:0))
+#define sizeofeth(pkt)   (sizeofeth2(is_8021q(pkt)))
 #define ethhdr8021q(pkt) ((struct pkt_ethhdr8021q_t *)pkt)
-#ifdef ENABLE_IPV6
-#define sizeofip6(pkt)   sizeofip62(is_8021q(pkt))
-#define sizeofudp6(pkt)  sizeofudp62(is_8021q(pkt))
-#define sizeoftcp6(pkt)  sizeoftcp62(is_8021q(pkt))
-#endif
 
-#define copy_ethproto(o,n)  \
-  if (is_8021q(o)) { \
+#define copy_ethproto(o,n)                                              \
+  if (is_8021q(o)) {                                                    \
     ((struct pkt_ethhdr8021q_t *)n)->tpid = htons(PKT_ETH_PROTO_8021Q); \
     ((struct pkt_ethhdr8021q_t *)n)->pcp_cfi_vid = ((struct pkt_ethhdr8021q_t *)o)->pcp_cfi_vid; \
     ((struct pkt_ethhdr8021q_t *)n)->prot = ((struct pkt_ethhdr8021q_t *)o)->prot; \
-  } else { \
+  } else {                                                              \
     ((struct pkt_ethhdr_t *)n)->prot = ((struct pkt_ethhdr_t *)o)->prot; \
   }
 
-#else
+#else /* ENABLE_IEEE80211Q */
 
-#define sizeofeth2(x)   (PKT_ETH_HLEN)
-#define sizeofip2(x)    (sizeofeth2(x)+PKT_IP_HLEN)
-#define sizeofdot1x2(x) (sizeofeth2(x)+PKT_DOT1X_HLEN)
-#define sizeofudp2(x)   (sizeofip2(x)+PKT_UDP_HLEN)
-#define sizeoftcp2(x)   (sizeofip2(x)+PKT_TCP_HLEN)
-#define sizeofeth(pkt)   sizeofeth2(0)
-#define sizeofip(pkt)    sizeofip2(0)
-#define sizeofdot1x(pkt) sizeofdot1x2(0)
-#define sizeofudp(pkt)   sizeofudp2(0)
-#define sizeoftcp(pkt)   sizeoftcp2(0)
-#define sizeofarp(pkt)   (sizeofeth(pkt)+sizeof(struct arp_packet_t))
-
-#define copy_ethproto(o,n) { \
+#define sizeofeth2(x)     (PKT_ETH_HLEN)
+#define sizeofeth(pkt)    (PKT_ETH_HLEN)
+#define copy_ethproto(o,n) {                                            \
     ((struct pkt_ethhdr_t *)n)->prot = ((struct pkt_ethhdr_t *)o)->prot; \
   }
+
+#endif /* ENABLE_IEEE80211Q */
+
+#define sizeofip(pkt)     (sizeofeth(pkt)+((pkt_iphdr(pkt)->version_ihl & 0xf)*4))
+#define sizeofdot1x(pkt)  (sizeofeth(pkt)+PKT_DOT1X_HLEN)
+#define sizeofudp(pkt)    (sizeofip(pkt)+PKT_UDP_HLEN)
+#define sizeoftcp(pkt)    (sizeofip(pkt)+PKT_TCP_HLEN)
+#define sizeofarp(pkt)    (sizeofeth(pkt)+sizeof(struct arp_packet_t))
+#ifdef ENABLE_IPV6
+#define sizeofip6(pkt)    (sizeofeth(pkt)+sizeof(pkt_ip6hdr_t))
+#define sizeofudp6(pkt)   (sizeofip6(pkt)+PKT_UDP_HLEN)
+#define sizeoftcp6(pkt)   (sizeofip6(pkt)+PKT_TCP_HLEN)
 #endif
 
 #define pkt_ethhdr(pkt)   ((struct pkt_ethhdr_t *)pkt)
@@ -529,8 +511,8 @@ struct pkt_chillihdr_t {
 #define pkt_eappkt(pkt)   ((struct eap_packet_t *)  (((uint8_t*)(pkt)) + sizeofdot1x(pkt)))
 #ifdef ENABLE_IPV6
 #define pkt_ip6hdr(pkt)   ((struct pkt_ip6hdr_t *)  (((uint8_t*)(pkt)) + sizeofeth(pkt)))
-#define pkt_udp6hdr(pkt)   ((struct pkt_udphdr_t *)  (((uint8_t*)(pkt)) + sizeofip6(pkt)))
-#define pkt_tcp6hdr(pkt)   ((struct pkt_tcphdr_t *)  (((uint8_t*)(pkt)) + sizeofip6(pk)))
+#define pkt_udp6hdr(pkt)  ((struct pkt_udphdr_t *)  (((uint8_t*)(pkt)) + sizeofip6(pkt)))
+#define pkt_tcp6hdr(pkt)  ((struct pkt_tcphdr_t *)  (((uint8_t*)(pkt)) + sizeofip6(pk)))
 #endif
 
 #define chilli_ethhdr(pkt)((struct pkt_chillihdr_t *)(((uint8_t*)(pkt)) + sizeofeth(pkt)))
@@ -559,16 +541,16 @@ struct pkt_buffer {
 };
 
 #define pkt_buffer_init(pb, b, blen, off)	\
-      (pb)->buf = (b);				\
-      (pb)->buflen = (blen);			\
-      (pb)->offset = (off);			\
-      (pb)->length = 0
+  (pb)->buf = (b);				\
+  (pb)->buflen = (blen);			\
+  (pb)->offset = (off);                         \
+  (pb)->length = 0
 
 #define pkt_buffer_init2(pb, b, blen, off, len)	\
-      (pb)->buf = (b);				\
-      (pb)->buflen = (blen);			\
-      (pb)->offset = (off);			\
-      (pb)->length = (len)
+  (pb)->buf = (b);				\
+  (pb)->buflen = (blen);			\
+  (pb)->offset = (off);                         \
+  (pb)->length = (len)
 
 #define pkt_buffer_head(pb)    ((pb)->buf + (pb)->offset)
 #define pkt_buffer_length(pb)  ((pb)->length)
@@ -577,5 +559,8 @@ struct pkt_buffer {
 #define pkt_buffer_is_ip(pb)   ((pb)->offset == PKT_BUFFER_IPOFF)
 #define pkt_buffer_is_eth(pb)  ((pb)->offset == PKT_BUFFER_ETHOFF)
 #define pkt_buffer_is_vlan(pb) ((pb)->offset == PKT_BUFFER_VLANOFF)
+
+#define MAC_FMT "%.2X-%.2X-%.2X-%.2X-%.2X-%.2X"
+#define MAC_ARG(x) (x)[0],(x)[1],(x)[2],(x)[3],(x)[4],(x)[5]
 
 #endif

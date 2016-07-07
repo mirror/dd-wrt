@@ -1,20 +1,20 @@
 /* -*- mode: c; c-basic-offset: 2 -*- */
-/* 
+/*
  * Copyright (C) 2007-2012 David Bird (Coova Technologies) <support@coova.com>
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 
 #define MAIN_FILE
@@ -40,7 +40,7 @@ static int debug = 1;
 static int chilli_pid = 0;
 static char * chilli_conf = "/tmp/local.conf";
 
-static int proc_route(struct rtmon_t *rtmon, 
+static int proc_route(struct rtmon_t *rtmon,
 		      struct rtmon_iface *iface,
 		      struct rtmon_route *route) {
 
@@ -77,7 +77,7 @@ int mrtmon_main(int argc, char *argv[]) {
   _options.foreground = debug;
   _options.debug = debug;
 
-  log_dbg("running");
+  syslog(LOG_DEBUG, "running");
 
   chilli_signals(&keep_going, &reload_config);
 
@@ -90,7 +90,7 @@ int mrtmon_main(int argc, char *argv[]) {
   }
 
   rtmon_check_updates(&_rtmon);
-  
+
   while (keep_going) {
     /* select */
 

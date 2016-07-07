@@ -24,7 +24,7 @@ static void coova_help(void)
 "    --name name                 Name of the table to be used. 'chilli' used if none given.\n"
 "    --source                    Indicates the source direction (lookup by source MAC/IP)\n"
 "    --dest                      Indicates the reply (lookup by dest address).\n"
-"xt_coova by: David Bird (Coova Technologies) <support@coova.com>.  http://www.coova.org/CoovaChilli\n");
+"xt_coova by: David Bird (Coova Technologies) <support@coova.com>.  http://coova.github.io/CoovaChilli\n");
 }
 
 static void coova_init(struct xt_entry_match *match)

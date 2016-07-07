@@ -1,7 +1,7 @@
 
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004-2011, the olsr.org team - see HISTORY file
+ * The olsr.org Optimized Link-State Routing daemon version 2 (olsrd2)
+ * Copyright (c) 2004-2015, the olsr.org team - see HISTORY file
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,17 +39,38 @@
  *
  */
 
+/**
+ * @file
+ */
+
 #ifndef COMMON_TYPES_H_
 #define COMMON_TYPES_H_
 
-/* support EXPORT macro of OLSR */
+#include <stddef.h>
+
+/*
+ * This line forces gcc NOT to demand memcpy with glibc version 2.14
+ * google for the memcpy/memmove debacle with gcc and glibc.
+ */
+// __asm__(".symver memcpy,memcpy@GLIBC_2.2.5");
+
 #ifndef EXPORT
-#  define EXPORT __attribute__((visibility ("default")))
+/*! Macro to declare a function should be visible for other subsystems */
+#define EXPORT __attribute__((visibility ("default")))
 #endif
 
 /* give everyone an arraysize implementation */
 #ifndef ARRAYSIZE
+/**
+ * @param a reference of an array (not a pointer!)
+ * @returns number of elements in array
+ */
 #define ARRAYSIZE(a)  (sizeof(a) / sizeof(*(a)))
+#endif
+
+#ifndef STRINGIFY
+/*! converts the parameter of the macro into a string */
+#define STRINGIFY(x) #x
 #endif
 
 /*
@@ -58,47 +79,33 @@
  */
 #ifndef INLINE
 #ifdef __GNUC__
+/*! force inlining with GCC */
 #define INLINE inline __attribute__((always_inline))
 #else
+/*! default to normal inlining */
 #define INLINE inline
 #endif
 #endif
 
-/*
- * This include file creates stdint/stdbool datatypes for
- * visual studio, because microsoft does not support C99
- */
-
-/* types */
-#ifdef _MSC_VER
-typedef unsigned char uint8_t;
-typedef unsigned short uint16_t;
-typedef unsigned int uint32_t;
-typedef signed char int8_t;
-typedef signed short int16_t;
-typedef signed int int32_t;
+/* printf size_t modifiers*/
+#if defined(__GNUC__)
+#define PRINTF_SIZE_T_SPECIFIER     "zu"
+#define PRINTF_SIZE_T_HEX_SPECIFIER "zx"
+#define PRINTF_SSIZE_T_SPECIFIER    "zd"
+#define PRINTF_PTRDIFF_T_SPECIFIER  "zd"
 #else
-#include <inttypes.h>
+/* maybe someone can check what to do about LLVM/Clang? */
+#error Please implement size_t modifiers
 #endif
 
+#include <limits.h>
+
+/* we have C99 ? */
 #if defined __STDC_VERSION__ && __STDC_VERSION__ >= 199901L
-
-/* we have a C99 environment */
+#include <inttypes.h>
 #include <stdbool.h>
-#elif defined __GNUC__
-
-/* we simulate a C99 environment */
-#define bool _Bool
-#define true 1
-#define false 0
-#define __bool_true_false_are_defined 1
-#endif
-
-/* add some safe-gaurds */
-#ifndef _MSC_VER
-#if !defined bool || !defined true || !defined false || !defined __bool_true_false_are_defined
-#error You have no C99-like boolean types. Please extend src/olsr_type.h!
-#endif
-#endif
+#else
+#error "OONF needs C99"
+#endif /* __STDC_VERSION__ && __STDC_VERSION__ >= 199901L */
 
 #endif /* COMMON_TYPES_H_ */

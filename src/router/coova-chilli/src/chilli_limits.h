@@ -1,25 +1,25 @@
 /* -*- mode: c; c-basic-offset: 2 -*- */
-/* 
+/*
  * Copyright (C) 2003, 2004, 2005 Mondru AB.
  * Copyright (C) 2007-2012 David Bird (Coova Technologies) <support@coova.com>
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 
-#ifndef _COOVALIMITS_H
-#define _COOVALIMITS_H
+#ifndef _CHILLI_LIMITS_H
+#define _CHILLI_LIMITS_H
 
 /*
  * extracted from various .h files, needs some cleanup.
@@ -36,7 +36,7 @@
 /* Bucket size = BUCKET_TIME * Bandwidth-Max radius attribute */
 /* Not used if BUCKET_SIZE is defined */
 #define BUCKET_TIME                        1 /* 1 seconds */
-#define BUCKET_SIZE_MIN                 5000 /* Minimum size of leaky bucket (~10 packets) */
+#define BUCKET_SIZE_MIN                 7000 /* Minimum size of leaky bucket (~10 packets) */
 
 #define CHECK_INTERVAL                     3 /* Time between checking connections */
 
@@ -54,7 +54,7 @@
 #define REDIR_CHALLEN                     16
 #define REDIR_MD5LEN                      16
 #define REDIR_MACSTRLEN                   17
-#define REDIR_MAXBUFFER                 5125
+#define REDIR_MAXBUFFER                65535
 
 #define REDIR_USERNAMESIZE               256 /* Max length of username */
 #define REDIR_MAXQUERYSTRING            2048
@@ -86,11 +86,11 @@
 #define RADIUS_MD5LEN                     16 /* Length of MD5 hash */
 #define RADIUS_AUTHLEN                    16 /* RFC 2865: Length of authenticator */
 #define RADIUS_PWSIZE                    128 /* RFC 2865: Max 128 octets in password */
-#define RADIUS_CHAPSIZE                   24 
+#define RADIUS_CHAPSIZE                   24
 #define RADIUS_QUEUESIZE                 256 /* Same size as id address space */
 #define RADIUS_ATTR_VLEN                 253
 #define RADIUS_HDRSIZE                    20
-#define RADIUS_MPPEKEYSSIZE               32 /* Length of MS_CHAP_MPPE_KEYS attribute */ 
+#define RADIUS_MPPEKEYSSIZE               32 /* Length of MS_CHAP_MPPE_KEYS attribute */
 
 #define UAMSERVER_MAX                      8
 
@@ -111,9 +111,10 @@
 #define MAX_RAWIF 1
 #endif
 
+#define MAX_EAP_LEN                     3000 /* Size of buffer to hold EAP message */
+
 #ifdef ENABLE_LARGELIMITS
 #define PKT_MAX_LEN                    65535 /* Maximum packet size we receive */
-#define MAX_EAP_LEN                     3000 /* Size of buffer to hold EAP message */
 #define SESSION_PASS_THROUGH_MAX          16
 #define MAX_PASS_THROUGHS               1024 /* Max number of allowed UAM pass-throughs */
 #define MAX_REGEX_PASS_THROUGHS          512 /* Max number of allowed UAM pass-throughs */
@@ -122,8 +123,7 @@
 #define MAX_SELECT                        56
 #define RADIUS_PACKSIZE                 4096
 #else
-#define PKT_MAX_LEN                     5000 /* Maximum packet size we receive */
-#define MAX_EAP_LEN                     1500 /* Size of buffer to hold EAP message */
+#define PKT_MAX_LEN                     9000 /* Maximum packet size we receive */
 #define SESSION_PASS_THROUGH_MAX           8
 #define MAX_PASS_THROUGHS                128 /* Max number of allowed UAM pass-throughs */
 #define MAX_REGEX_PASS_THROUGHS            8 /* Max number of allowed UAM pass-throughs */
@@ -132,6 +132,14 @@
 #define MAX_SELECT                        16
 #define RADIUS_PACKSIZE                 1600
 #define RADIUS_QUEUE_PACKET_PTR 1
+#endif
+
+#ifdef ENABLE_LAYER3
+#ifdef ENABLE_LARGELIMITS
+#define MAX_IPSRC_PASS_THROUGHS               512 /* Max number of allowed IP source addresses, for Layer3 */
+#else
+#define MAX_IPSRC_PASS_THROUGHS               8 /* Max number of allowed IP source addresses, for Layer3 */
+#endif
 #endif
 
 #endif

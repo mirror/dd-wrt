@@ -1,20 +1,20 @@
 /* -*- mode: c; c-basic-offset: 2 -*- */
-/* 
+/*
  * Copyright (C) 2007-2012 David Bird (Coova Technologies) <support@coova.com>
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 
 #ifndef _CONN_H
@@ -60,7 +60,7 @@ void conn_set_readhandler(struct conn_t *conn, conn_handler handler, void *ctx);
 void conn_set_donehandler(struct conn_t *conn, conn_handler handler, void *ctx);
 
 int conn_sock(struct conn_t *conn, struct in_addr *addr, int port);
-int conn_setup(struct conn_t *conn, char *hostname, int port, 
+int conn_setup(struct conn_t *conn, char *hostname, int port,
 	       bstring bwrite, bstring bread);
 void conn_finish(struct conn_t *conn);
 
