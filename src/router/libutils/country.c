@@ -1068,6 +1068,11 @@ void setRegulationDomain(char *reg)
 		strcpy(rrev0, "44");
 		strcpy(ccode1, "JP");
 		strcpy(rrev1, "45");
+	} else if (!strcmp(ccode, "CA")) {
+		strcpy(ccode0, "CA");
+		strcpy(rrev0, "2");
+		strcpy(ccode1, "CA");
+		strcpy(rrev1, "2");
 	} else if (!strcmp(ccode, "AU")) {
 		strcpy(ccode0, "Q1");
 		strcpy(rrev0, "27");
