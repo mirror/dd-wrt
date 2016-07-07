@@ -298,6 +298,7 @@ void set_ath10kdistance(char *dev, unsigned int distance)
 	unsigned int sifs = 16;
 	unsigned int ack = slot + sifs;
 	unsigned int cts = ack;
+//	unsigned int sifs_pipeline;
 	if ((int)distance == -1)
 		return;
 	if (slot == 0)		// too low value. 
@@ -308,25 +309,32 @@ void set_ath10kdistance(char *dev, unsigned int distance)
 		cts *= macclk;
 		slot *= macclk;
 		sifs *= macclk;
+	} else {
+//		sifs_pipeline = (sifs * 150) - ((400 * 150) / 1000);
+//		sifs = (sifs * 80) - 11;
 	}
 	if (!isb && ack > 0x3fff) {
 		fprintf(stderr, "invalid ack 0x%08x, max is 0x3fff. truncate it\n", ack);
 		ack = 0x3fff;
-	} else if (isb && ack > 0xffff) {
+		cts = 0x3fff;
+	} else if (isb && ack > 0xff) {
 		fprintf(stderr, "invalid ack 0x%08x, max is 0xff. truncate it\n", ack);
-		ack = 0xffff;
+		ack = 0xff;
+		cts = 0xff;
 	}
+	
 
 	unsigned int oldack;
 	if (isb)
-		oldack = get_ath10kreg(dev, 0xf424) & 0xffff;
+		oldack = get_ath10kreg(dev, 0x6000) & 0xff;
 	else
 		oldack = get_ath10kreg(dev, 0x8014) & 0x3fff;
 	if (oldack != ack) {
 		if (isb) {
-			set_ath10kreg(dev, 0x0040, baseslot);
-			set_ath10kreg(dev, 0xf420, ((sifs << 8) & 0x1ff00) | (slot & 0xff));
-			set_ath10kreg(dev, 0xf424, ack & 0xffff);
+			set_ath10kreg(dev, 0x0040, slot); // slot timing
+//			set_ath10kreg(dev, 0xf56c, sifs_pipeline);
+//			set_ath10kreg(dev, 0xa000, sifs);
+			set_ath10kreg(dev, 0x6000, ack | (cts << 16));
 		} else {
 			set_ath10kreg(dev, 0x1070, slot);
 			set_ath10kreg(dev, 0x1030, sifs);
