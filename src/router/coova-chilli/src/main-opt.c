@@ -26,6 +26,7 @@
 
 struct options_t _options;
 
+#ifdef NEED_PRINTF
 static const char *description =
     "CoovaChilli - A Wireless LAN Access Point Controller.\n"
     "  For more information on this project, visit: \n"
@@ -263,6 +264,7 @@ static const char *compile_options = "Compiled with "
 #endif
     ;
 
+#endif
 char *STRDUP(char *s) {
   if (!s) return 0;
   while (isspace((int) *s)) s++;
