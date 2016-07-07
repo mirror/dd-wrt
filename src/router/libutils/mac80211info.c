@@ -334,7 +334,9 @@ void set_ath10kdistance(char *dev, unsigned int distance)
 			set_ath10kreg(dev, 0x0040, slot); // slot timing
 //			set_ath10kreg(dev, 0xf56c, sifs_pipeline);
 //			set_ath10kreg(dev, 0xa000, sifs);
-			set_ath10kreg(dev, 0x6000, ack | (cts << 8));
+			unsigned int mask = get_ath10kreg(dev, 0x6000);
+			mask&=0xffff0000;
+			set_ath10kreg(dev, 0x6000, mask | ack | (cts << 8));
 		} else {
 			set_ath10kreg(dev, 0x1070, slot);
 			set_ath10kreg(dev, 0x1030, sifs);
@@ -351,7 +353,7 @@ unsigned int get_ath10kack(char *ifname)
 	unsigned int ack, slot, sifs, baseslot = 9;
 	/* since qualcom/atheros missed to implement one of the most important features in wireless devices, we need this evil hack here */
 	if (isb) {
-		baseslot = get_ath10kreg(ifname, 0x0040);
+	//	baseslot = get_ath10kreg(ifname, 0x0040);
 		ack = get_ath10kreg(ifname, 0x6000) & 0xff;
 		sifs = get_ath10kreg(ifname, 0xa000);
 		sifs += 11;
