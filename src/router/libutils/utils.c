@@ -1323,6 +1323,15 @@ int internal_getRouterBrand()
 		setRouter("Asus RT-AC3100");
 		return ROUTER_ASUS_AC3100;
 	}
+	if (nvram_match("productid", "RT-AC3100")) {
+		setRouter("Asus RT-AC3100");
+		return ROUTER_ASUS_AC3100;
+	}
+
+	if (nvram_match("odmpid", "RT-AC3100")) {
+		setRouter("Asus RT-AC3100");
+		return ROUTER_ASUS_AC3100;
+	}
 
 	if (nvram_match("model", "RT-AC5300")) {
 		setRouter("Asus RT-AC5300");
