@@ -352,8 +352,10 @@ unsigned int get_ath10kack(char *ifname)
 	/* since qualcom/atheros missed to implement one of the most important features in wireless devices, we need this evil hack here */
 	if (isb) {
 		baseslot = (get_ath10kreg(ifname, 0x0040));
-		ack = (get_ath10kreg(ifname, 0xf424) & 0xffff);
-		sifs = ((get_ath10kreg(ifname, 0xf420) >> 8) & 0x1ff);
+		ack = (get_ath10kreg(ifname, 0x6000) & 0xff);
+		sifs = ((get_ath10kreg(ifname, 0xa000);
+		sifs += 11;
+		sifs /= 80;
 	} else {
 		slot = (get_ath10kreg(ifname, 0x1070)) / macclk;
 		ack = (get_ath10kreg(ifname, 0x8014) & 0x3fff) / macclk;
