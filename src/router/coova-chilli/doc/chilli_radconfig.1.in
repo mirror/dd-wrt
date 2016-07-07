@@ -31,14 +31,14 @@ arguments as
 small number of settings to perform an 
 .I Administrative-User
 login. The utility will print out the value of all the 
-.I ChilliSpot-Config 
+.I CoovaChilli-Config 
 attributes in the Access-Accept. 
 
 .SH EXAMPLES
 
 .I # chilli_radconfig --radiusserver1=192.168.1.1 \
-   --radiussecret=MySecret --adminuser=chillispot \
-   --adminpasswd=chillispot > hs.conf
+   --radiussecret=MySecret --adminuser=coovachilli \
+   --adminpasswd=coovachilli > hs.conf
 
 .SH "SEE ALSO"
 .BR chilli(8)
@@ -49,9 +49,8 @@ attributes in the Access-Accept.
 .LP
 
 See
-.I http://www.coova.org/
+.I http://coova.github.io/
 for further documentation and community support.
-The original ChilliSpot project homepage is/was at www.chillispot.org.
 
 .SH AUTHORS
 

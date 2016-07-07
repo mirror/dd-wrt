@@ -1,21 +1,21 @@
 /* -*- mode: c; c-basic-offset: 2 -*- */
-/* 
+/*
  * Copyright (C) 2003, 2004, 2005 Mondru AB.
  * Copyright (C) 2007-2012 David Bird (Coova Technologies) <support@coova.com>
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 
 #define MAIN_FILE
@@ -55,9 +55,9 @@ static int hextochar(char *src, unsigned char * dst, int len) {
 static int chartohex(unsigned char *src, char *dst, int len) {
   char x[3];
   int n;
-  
+
   for (n=0; n < len; n++) {
-    safe_snprintf(x, sizeof(x), "%.2x", src[n]);
+    snprintf(x, sizeof(x), "%.2x", src[n]);
     dst[n*2+0] = x[0];
     dst[n*2+1] = x[1];
   }
@@ -96,12 +96,14 @@ int mresponse_main(int argc, char **argv) {
   if (argc < 4)
     return usage(argv[0]);
 
-  if (argc == 5) 
+  if (argc == 5)
     chap_ident = atoi(argv[idx+4]);
 
   /* challenge - argv 1 */
+  if (strlen(argv[idx+1]) >= sizeof(buffer))
+    return usage(argv[0]);
   memset(buffer, 0, sizeof(buffer));
-  strcpy(buffer, argv[idx+1]);
+  strlcpy(buffer, argv[idx+1], sizeof(buffer));
   hextochar(buffer, challenge, MD5LEN);
 
   /* uamsecret - argv 2 */
@@ -114,21 +116,21 @@ int mresponse_main(int argc, char **argv) {
     uint8_t user_password[RADIUS_PWSIZE + 1];
     uint8_t p[RADIUS_PWSIZE + 1];
     int m, n, plen = strlen(argv[idx+3]);
-    
+
     memset(p, 0, sizeof(p));
-    safe_strncpy((char *)p, argv[idx+3], RADIUS_PWSIZE);
-    
+    strlcpy((char *)p, argv[idx+3], RADIUS_PWSIZE);
+
     for (m=0; m < plen;) {
       for (n=0; n < REDIR_MD5LEN; m++, n++) {
 	user_password[m] = p[m] ^ challenge[n];
       }
     }
-    
+
     chartohex(user_password, buffer, plen);
     printf("%s\n", buffer);
-    
+
   } else if (usent) {
-    
+
 #ifdef HAVE_OPENSSL
     uint8_t ntresponse[24];
 
@@ -153,11 +155,11 @@ int mresponse_main(int argc, char **argv) {
 
     /* password - argv 3 */
     MD5Init(&context);
-    MD5Update(&context, (uint8_t*)&chap_ident, 1);	  
+    MD5Update(&context, (uint8_t*)&chap_ident, 1);
     MD5Update(&context, (uint8_t*)argv[idx+3], strlen(argv[idx+3]));
     MD5Update(&context, challenge, MD5LEN);
     MD5Final(response, &context);
-    
+
     chartohex(response, buffer, MD5LEN);
     printf("%s\n", buffer);
   }

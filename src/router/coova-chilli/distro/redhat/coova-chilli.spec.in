@@ -2,7 +2,7 @@ Summary:   Coova-Chilli is a Wireless LAN Access Point Controller
 Name:      @PACKAGE@
 Version:   @VERSION@
 Release:   1
-URL:       http://www.coova.org/
+URL:       http://coova.github.io/
 Source0:   %{name}-%{version}.tar.gz
 License:   GPL
 Group:     System Environment/Daemons
@@ -14,12 +14,12 @@ BuildRequires: openssl-devel
 
 %description 
 
-Coova-Chilli is a fork of the ChilliSpot project - an open source captive
-portal or wireless LAN access point controller. It supports web based login
+Coova-Chilli is an open source captive portal or wireless LAN access point
+controller. It supports web based login
 (Universal Access Method, or UAM), standard for public HotSpots, and it
 supports Wireless Protected Access (WPA), the standard for secure roamable
 networks. Authentication, Authorization and Accounting (AAA) is handled by
-your favorite radius server. Read more at http://www.coova.org/.
+your favorite radius server. Read more at http://coova.github.io/.
 
 %prep
 %setup 
@@ -69,7 +69,7 @@ fi
 %{_libdir}/*.so*
 %{_libdir}/python/CoovaChilliLib.py
 %{_sysconfdir}/init.d/chilli
-%doc AUTHORS COPYING ChangeLog INSTALL README doc/dictionary.chillispot doc/hotspotlogin.cgi
+%doc AUTHORS COPYING ChangeLog INSTALL README doc/dictionary.coovachilli doc/hotspotlogin.cgi
 %config %{_sysconfdir}/chilli.conf
 %config %{_sysconfdir}/chilli/gui-config-default.ini
 %config(noreplace) %{_sysconfdir}/chilli/defaults

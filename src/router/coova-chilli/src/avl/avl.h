@@ -1,7 +1,7 @@
 
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004-2011, the olsr.org team - see HISTORY file
+ * The olsr.org Optimized Link-State Routing daemon version 2 (olsrd2)
+ * Copyright (c) 2004-2015, the olsr.org team - see HISTORY file
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,6 +37,10 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
+ */
+
+/**
+ * @file
  */
 
 #ifndef _AVL_H
@@ -95,15 +99,6 @@ struct avl_node {
 };
 
 /**
- * Prototype for avl comparators
- * @param k1 first key
- * @param k2 second key
- * @param ptr custom data for tree comparator
- * @return +1 if k1>k2, -1 if k1<k2, 0 if k1==k2
- */
-typedef int (*avl_tree_comp) (const void *k1, const void *k2, void *ptr);
-
-/**
  * This struct is the central management part of an avl tree.
  * One of them is necessary for each avl_tree.
  */
@@ -131,20 +126,16 @@ struct avl_tree {
   bool allow_dups;
 
   /**
-   * pointer to the tree comparator
-   *
-   * First two parameters are keys to compare,
-   * third parameter is a copy of cmp_ptr
+   * Prototype for avl comparators
+   * @param k1 first key
+   * @param k2 second key
+   * @return +1 if k1>k2, -1 if k1<k2, 0 if k1==k2
    */
-  avl_tree_comp comp;
-
-  /**
-   * custom pointer delivered to the tree comparator
-   */
-  void *cmp_ptr;
+  int (*comp)(const void *k1, const void *k2);
 };
 
-EXPORT void avl_init(struct avl_tree *, avl_tree_comp, bool, void *);
+EXPORT void avl_init(struct avl_tree *,
+    int (*comp) (const void *k1, const void *k2), bool);
 EXPORT struct avl_node *avl_find(const struct avl_tree *, const void *);
 EXPORT struct avl_node *avl_find_greaterequal(const struct avl_tree *tree, const void *key);
 EXPORT struct avl_node *avl_find_lessequal(const struct avl_tree *tree, const void *key);
@@ -255,7 +246,7 @@ avl_delete(struct avl_tree *tree, struct avl_node *node) {
  *    (automatically converted to type 'element')
  */
 #define avl_first_element(tree, element, node_member) \
-  container_of((tree)->list_head.next, typeof(*(element)), node_member)
+  container_of((tree)->list_head.next, typeof(*(element)), node_member.list)
 
 /**
  * @param tree pointer to avl-tree
@@ -282,7 +273,7 @@ avl_delete(struct avl_tree *tree, struct avl_node *node) {
  *    (automatically converted to type 'element')
  */
 #define avl_last_element(tree, element, node_member) \
-  container_of((tree)->list_head.prev, typeof(*(element)), node_member)
+  container_of((tree)->list_head.prev, typeof(*(element)), node_member.list)
 
 /**
  * @param tree pointer to tree
@@ -308,7 +299,7 @@ avl_delete(struct avl_tree *tree, struct avl_node *node) {
  *    (automatically converted to type 'element')
  */
 #define avl_next_element(element, node_member) \
-  container_of((&(element)->node_member.list)->next, typeof(*(element)), node_member)
+  container_of((&(element)->node_member.list)->next, typeof(*(element)), node_member.list)
 
 /**
  * @param tree pointer to avl-tree
@@ -334,7 +325,7 @@ avl_delete(struct avl_tree *tree, struct avl_node *node) {
  *    (automatically converted to type 'element')
  */
 #define avl_prev_element(element, node_member) \
-  container_of((&(element)->node_member.list)->prev, typeof(*(element)), node_member)
+  container_of((&(element)->node_member.list)->prev, typeof(*(element)), node_member.list)
 
 /**
  * @param tree pointer to avl-tree
@@ -515,7 +506,7 @@ avl_delete(struct avl_tree *tree, struct avl_node *node) {
  *    the next node during the loop
  */
 #define avl_for_element_range_safe(first_element, last_element, element, node_member, ptr) \
-  for (element = (first_element), ptr = avl_next_element(first_element, node_member); \
+  for (element = (first_element), ptr = avl_next_element(element, node_member); \
        element->node_member.list.prev != &(last_element)->node_member.list; \
        element = ptr, ptr = avl_next_element(ptr, node_member))
 
@@ -533,7 +524,7 @@ avl_delete(struct avl_tree *tree, struct avl_node *node) {
  *    the previous node during the loop
  */
 #define avl_for_element_range_reverse_safe(first_element, last_element, element, node_member, ptr) \
-  for (element = (last_element), ptr = avl_prev_element(last_element, node_member); \
+  for (element = (last_element), ptr = avl_prev_element(element, node_member); \
        element->node_member.list.next != &(first_element)->node_member.list; \
        element = ptr, ptr = avl_prev_element(ptr, node_member))
 

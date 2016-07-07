@@ -29,22 +29,27 @@ sub man2wiki {
 	if ($line =~ /^\.TH (.*)$/) {
 	    $nl=0;
 	    @a = split / /, $line;
-	    $out .= "= [[CoovaChilli]] - ".trim($a[1])."(".trim($a[2]).") =\n";
+            $out .= "---\n";
+            $out .= "layout: page\n";
+            $out .= "title: CoovaChilli - ".trim($a[1])."(".trim($a[2]).")\n";
+            $out .= "permalink: /CoovaChilli/".trim($a[1])."(".trim($a[2]).").html\n";
+            $out .= "---\n\n";
 	} elsif ($line =~ /^\.SH (.*)$/) {
 	    $nl=0;
 	    $l = $1;
 	    $l =~ s/"//g; #"
-	    $out .= "\n== ".trim($l)." ==\n\n";
+	    $out .= "\n".trim($l)."\n";
 	    $in_ex = ($l eq 'EXAMPLES');
 	    $in_tp_s=0;
+	    $out .= "-----------------------------------------\n\n"
 	} elsif ($line =~ /^\.B (.*)$/) {
 	    $nl=0;
 	    $l = $1;
 	    $l =~ s/"//g; #"
 	    if ($in_tp) {
-		$out .= "; '''".trim($l)."''' ";
+		$out .= "> ***".trim($l)."*** ";
 	    } else {
-		$out .= "'''".trim($l)."''' ";
+		$out .= "***".trim($l)."*** ";
 	    }
 	} elsif ($line =~ /^\.TP/) {
 	    $nl=0;
@@ -56,22 +61,22 @@ sub man2wiki {
 	    $l =~ s/"//g; #"
 	    @a = split / /, $l, 2;
 	    if ($in_tp) {
-		$out .= "; '''".trim($a[0])."''' ";
-		$out .= "''".trim($a[1])."'' " if ($a[1]);
+		$out .= "> ***".trim($a[0])."*** ";
+		$out .= "*".trim($a[1])."* " if ($a[1]);
 	    } else {
-		$out .= "'''".trim($a[0])."''' ";
-		$out .= "''".trim($a[1])."'' ";
+		$out .= "***".trim($a[0])."*** ";
+		$out .= "*".trim($a[1])."* ";
 	    }
 	} elsif ($line =~ /^\.I (.*)$/) {
 	    $nl=0;
 	    $out .= " " if $in_ex;
-	    $out .= "''".trim($1)."'' ";
+	    $out .= "*".trim($1)."* ";
 	    $out .= "BACKSLASH" if $in_ex && $line =~ /\\$/;
 	    $out .= "\n " if $in_ex;
 	    $out .= "\n" if $in_tp_s && $nl;
 	} elsif ($line =~ /^\.LP/) {
 	} elsif ($line =~ /^\.RS/) {
-	    $out .= "\n<blockquote>";
+	    $out .= "\n>";
 #	    $out .= "\n: ";
 #	    $out .= "\n<div style='margin-left:60px;'>\n";
 	    $in_rs = 1;
@@ -79,7 +84,7 @@ sub man2wiki {
 #	    $out .= "\n</dd></dl>\n";
 	    if ($in_rs) {
 #		$out .= "\n</div>\n";
-		$out .= "</blockquote>\n\n";
+		$out .= "\n\n";
 		$in_rs = 0;
 	    }
 	} elsif ($line =~ /^\.BR (.*)$/) {
@@ -88,10 +93,10 @@ sub man2wiki {
 	    if ($link =~ /chilli/) {
 		$l = $link;
 		$l =~ s/\(\d+\)//g;
-		$out .= "[[CoovaChilli $l|$link]] ";
+		$out .= "[$l](/CoovaChilli/$link.html) ";
 	    } else {
 		$link =~ s/\s//g;
-		$out .= "'''$link'''";
+		$out .= "***$link***";
 	    }
 	} else {
 	    if ($line =~ /^$/) {
@@ -103,7 +108,7 @@ sub man2wiki {
 	    } else {
 		$nl=0;
 		if ($in_tp) {
-		    $out .= ": ";
+		    $out .= "\n\n";
 		    $in_tp=0;
 		}
 		$out .= "$line ";

@@ -1,39 +1,44 @@
 /*
- * $Id: printbuf.c,v 1.3 2004/08/07 03:12:21 mclark Exp $
+ * $Id: printbuf.c,v 1.5 2006/01/26 02:16:28 mclark Exp $
  *
- * Copyright Metaparadigm Pte. Ltd. 2004.
+ * Copyright (c) 2004, 2005 Metaparadigm Pte. Ltd.
  * Michael Clark <michael@metaparadigm.com>
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public (LGPL)
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
+ * This library is free software; you can redistribute it and/or modify
+ * it under the terms of the MIT license. See COPYING for details.
  *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details: http://www.gnu.org/
  *
+ * Copyright (c) 2008-2009 Yahoo! Inc.  All rights reserved.
+ * The copyrights to the contents of this file are licensed under the MIT License
+ * (http://www.opensource.org/licenses/mit-license.php)
  */
+
+#include "../config.h"
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdarg.h>
 #include <string.h>
 
-#include "bits.h"
+#ifdef HAVE_STDARG_H
+# include <stdarg.h>
+#else /* !HAVE_STDARG_H */
+# error Not enough var arg support!
+#endif /* HAVE_STDARG_H */
+
 #include "debug.h"
 #include "printbuf.h"
 
+static int printbuf_extend(struct printbuf *p, int min_size);
 
-struct printbuf* printbuf_new()
+struct printbuf* printbuf_new(void)
 {
   struct printbuf *p;
 
-  if(!(p = calloc(1, sizeof(struct printbuf)))) return NULL;
+  p = (struct printbuf*)calloc(1, sizeof(struct printbuf));
+  if(!p) return NULL;
   p->size = 32;
   p->bpos = 0;
-  if(!(p->buf = malloc(p->size))) {
+  if(!(p->buf = (char*)malloc(p->size))) {
     free(p);
     return NULL;
   }
@@ -41,19 +46,42 @@ struct printbuf* printbuf_new()
 }
 
 
-int printbuf_memappend(struct printbuf *p, char *buf, int size)
+/**
+ * Extend the buffer p so it has a size of at least min_size.
+ *
+ * If the current size is large enough, nothing is changed.
+ *
+ * Note: this does not check the available space!  The caller
+ *  is responsible for performing those calculations.
+ */
+static int printbuf_extend(struct printbuf *p, int min_size)
 {
-  char *t;
-  if(p->size - p->bpos <= size) {
-    int new_size = max(p->size * 2, p->bpos + size + 8);
-#if 0
-    mc_debug("printbuf_memappend: realloc "
-	     "bpos=%d wrsize=%d old_size=%d new_size=%d\n",
-	     p->bpos, size, p->size, new_size);
-#endif
-    if(!(t = realloc(p->buf, new_size))) return -1;
-    p->size = new_size;
-    p->buf = t;
+	char *t;
+	int new_size;
+
+	if (p->size >= min_size)
+		return 0;
+
+	new_size = p->size * 2;
+	if (new_size < min_size + 8)
+		new_size =  min_size + 8;
+#ifdef PRINTBUF_DEBUG
+	MC_DEBUG("printbuf_memappend: realloc "
+	  "bpos=%d min_size=%d old_size=%d new_size=%d\n",
+	  p->bpos, min_size, p->size, new_size);
+#endif /* PRINTBUF_DEBUG */
+	if(!(t = (char*)realloc(p->buf, new_size)))
+		return -1;
+	p->size = new_size;
+	p->buf = t;
+	return 0;
+}
+
+int printbuf_memappend(struct printbuf *p, const char *buf, int size)
+{
+  if (p->size <= p->bpos + size + 1) {
+    if (printbuf_extend(p, p->bpos + size + 1) < 0)
+      return -1;
   }
   memcpy(p->buf + p->bpos, buf, size);
   p->bpos += size;
@@ -61,6 +89,66 @@ int printbuf_memappend(struct printbuf *p, char *buf, int size)
   return size;
 }
 
+int printbuf_memset(struct printbuf *pb, int offset, int charvalue, int len)
+{
+	int size_needed;
+
+	if (offset == -1)
+		offset = pb->bpos;
+	size_needed = offset + len;
+	if (pb->size < size_needed)
+	{
+		if (printbuf_extend(pb, size_needed) < 0)
+			return -1;
+	}
+
+	memset(pb->buf + offset, charvalue, len);
+	if (pb->bpos < size_needed)
+		pb->bpos = size_needed;
+
+	return 0;
+}
+
+#if !defined(HAVE_VSNPRINTF) && defined(_MSC_VER)
+# define vsnprintf _vsnprintf
+#elif !defined(HAVE_VSNPRINTF) /* !HAVE_VSNPRINTF */
+# error Need vsnprintf!
+#endif /* !HAVE_VSNPRINTF && defined(WIN32) */
+
+#if !defined(HAVE_VASPRINTF)
+/* CAW: compliant version of vasprintf */
+static int vasprintf(char **buf, const char *fmt, va_list ap)
+{
+#ifndef WIN32
+	static char _T_emptybuffer = '\0';
+#endif /* !defined(WIN32) */
+	int chars;
+	char *b;
+
+	if(!buf) { return -1; }
+
+#ifdef WIN32
+	chars = _vscprintf(fmt, ap)+1;
+#else /* !defined(WIN32) */
+	/* CAW: RAWR! We have to hope to god here that vsnprintf doesn't overwrite
+	   our buffer like on some 64bit sun systems.... but hey, its time to move on */
+	chars = vsnprintf(&_T_emptybuffer, 0, fmt, ap)+1;
+	if(chars < 0) { chars *= -1; } /* CAW: old glibc versions have this problem */
+#endif /* defined(WIN32) */
+
+	b = (char*)malloc(sizeof(char)*chars);
+	if(!b) { return -1; }
+
+	if((chars = vsprintf(b, fmt, ap)) < 0)
+	{
+		free(b);
+	} else {
+		*buf = b;
+	}
+
+	return chars;
+}
+#endif /* !HAVE_VASPRINTF */
 
 int sprintbuf(struct printbuf *p, const char *msg, ...)
 {
@@ -76,20 +164,19 @@ int sprintbuf(struct printbuf *p, const char *msg, ...)
   /* if string is greater than stack buffer, then use dynamic string
      with vasprintf.  Note: some implementation of vsnprintf return -1
      if output is truncated whereas some return the number of bytes that
-     would have been writeen - this code handles both cases. */
+     would have been written - this code handles both cases. */
   if(size == -1 || size > 127) {
-    int ret;
     va_start(ap, msg);
-    if((size = vasprintf(&t, msg, ap)) == -1) return -1;
+    if((size = vasprintf(&t, msg, ap)) < 0) { va_end(ap); return -1; }
     va_end(ap);
-    ret = printbuf_memappend(p, t, size);
+    printbuf_memappend(p, t, size);
     free(t);
-    return ret;
+    return size;
   } else {
-    return printbuf_memappend(p, buf, size);
+    printbuf_memappend(p, buf, size);
+    return size;
   }
 }
-
 
 void printbuf_reset(struct printbuf *p)
 {

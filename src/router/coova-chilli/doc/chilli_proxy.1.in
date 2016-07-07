@@ -25,7 +25,7 @@ daemon to handle RADIUS to/from HTTP AAA conversion.
 .LP
 
 See
-.I http://www.coova.org/
+.I http://coova.github.io/
 for further documentation and community support.
 
 .SH AUTHORS

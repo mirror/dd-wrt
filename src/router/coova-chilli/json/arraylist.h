@@ -1,23 +1,20 @@
 /*
- * $Id: arraylist.h,v 1.2 2004/07/21 01:24:33 mclark Exp $
+ * $Id: arraylist.h,v 1.4 2006/01/26 02:16:28 mclark Exp $
  *
- * Copyright Metaparadigm Pte. Ltd. 2004.
+ * Copyright (c) 2004, 2005 Metaparadigm Pte. Ltd.
  * Michael Clark <michael@metaparadigm.com>
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public (LGPL)
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details: http://www.gnu.org/
+ * This library is free software; you can redistribute it and/or modify
+ * it under the terms of the MIT license. See COPYING for details.
  *
  */
 
 #ifndef _arraylist_h_
 #define _arraylist_h_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define ARRAY_LIST_DEFAULT_SIZE 32
 
@@ -35,18 +32,30 @@ extern struct array_list*
 array_list_new(array_list_free_fn *free_fn);
 
 extern void
-array_list_free(struct array_list *this);
+array_list_free(struct array_list *al);
 
 extern void*
-array_list_get_idx(struct array_list *this, int i);
+array_list_get_idx(struct array_list *al, int i);
 
 extern int
-array_list_put_idx(struct array_list *this, int i, void *data);
+array_list_put_idx(struct array_list *al, int i, void *data);
 
 extern int
-array_list_add(struct array_list *this, void *data);
+array_list_add(struct array_list *al, void *data);
 
 extern int
-array_list_length(struct array_list *this);
+array_list_length(struct array_list *al);
+
+extern void
+array_list_sort(struct array_list *arr, int(*compar)(const void *, const void *));
+
+extern void* array_list_bsearch(const void **key,
+		struct array_list *arr,
+		int (*sort_fn)(const void *, const void *));
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -30,6 +30,7 @@
 #include <linux/bitops.h>
 #include <linux/skbuff.h>
 #include <linux/inet.h>
+#include <linux/version.h>
 #include <net/net_namespace.h>
 
 #include <linux/netfilter/x_tables.h>
@@ -292,6 +293,10 @@ static int coova_mt_check(const struct xt_mtchk_param *par)
 	struct coova_table *t;
 #ifdef CONFIG_PROC_FS
 	struct proc_dir_entry *pde;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
+	kuid_t uid;
+	kgid_t gid;
+#endif
 #endif
 	unsigned i;
 	int ret = 0;
@@ -330,8 +335,15 @@ static int coova_mt_check(const struct xt_mtchk_param *par)
 		ret = -ENOMEM;
 		goto out;
 	}
+	
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
+	uid = make_kuid(&init_user_ns, ip_list_uid);
+	gid = make_kgid(&init_user_ns, ip_list_gid);
+    proc_set_user(pde, uid, gid);
+#else
 	pde->uid = ip_list_uid;
 	pde->gid = ip_list_gid;
+#endif
 #endif
 	spin_lock_bh(&coova_lock);
 	list_add_tail(&t->list, &tables);
@@ -445,14 +457,20 @@ static const struct seq_operations coova_seq_ops = {
 
 static int coova_seq_open(struct inode *inode, struct file *file)
 {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,10,0)
 	struct proc_dir_entry *pde = PDE(inode);
+#endif
 	struct coova_iter_state *st;
 
 	st = __seq_open_private(file, &coova_seq_ops, sizeof(*st));
 	if (st == NULL)
 		return -ENOMEM;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
+	st->table = PDE_DATA(inode);
+#else
 	st->table = pde->data;
+#endif
 	return 0;
 }
 
@@ -460,8 +478,12 @@ static ssize_t
 coova_mt_proc_write(struct file *file, const char __user *input,
 		    size_t size, loff_t *loff)
 {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
+	struct coova_table *t = PDE_DATA(file_inode(file));
+#else
 	const struct proc_dir_entry *pde = PDE(file->f_path.dentry->d_inode);
 	struct coova_table *t = pde->data;
+#endif
 	struct coova_entry *e;
 	char buf[sizeof("+b335:1d35:1e55:dead:c0de:1715:5afe:c0de")];
 	const char *c = buf;

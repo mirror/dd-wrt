@@ -1,94 +1,108 @@
 /*
- * $Id: arraylist.c,v 1.2 2004/07/21 01:24:33 mclark Exp $
+ * $Id: arraylist.c,v 1.4 2006/01/26 02:16:28 mclark Exp $
  *
- * Copyright Metaparadigm Pte. Ltd. 2004.
+ * Copyright (c) 2004, 2005 Metaparadigm Pte. Ltd.
  * Michael Clark <michael@metaparadigm.com>
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public (LGPL)
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details: http://www.gnu.org/
+ * This library is free software; you can redistribute it and/or modify
+ * it under the terms of the MIT license. See COPYING for details.
  *
  */
 
-#include <stdlib.h>
-#include <string.h>
-#include <strings.h>
+#include "../config.h"
 
-#include "bits.h"
+#ifdef STDC_HEADERS
+# include <stdlib.h>
+# include <string.h>
+#endif /* STDC_HEADERS */
+
+#if defined(HAVE_STRINGS_H) && !defined(_STRING_H) && !defined(__USE_BSD)
+# include <strings.h>
+#endif /* HAVE_STRINGS_H */
+
 #include "arraylist.h"
-
 
 struct array_list*
 array_list_new(array_list_free_fn *free_fn)
 {
-  struct array_list *this;
+  struct array_list *arr;
 
-  if(!(this = calloc(1, sizeof(struct array_list)))) return NULL;
-  this->size = ARRAY_LIST_DEFAULT_SIZE;
-  this->length = 0;
-  this->free_fn = free_fn;
-  if(!(this->array = calloc(sizeof(void*), this->size))) {
-    free(this);
+  arr = (struct array_list*)calloc(1, sizeof(struct array_list));
+  if(!arr) return NULL;
+  arr->size = ARRAY_LIST_DEFAULT_SIZE;
+  arr->length = 0;
+  arr->free_fn = free_fn;
+  if(!(arr->array = (void**)calloc(sizeof(void*), arr->size))) {
+    free(arr);
     return NULL;
   }
-  return this;
+  return arr;
 }
 
 extern void
-array_list_free(struct array_list *this)
+array_list_free(struct array_list *arr)
 {
   int i;
-  for(i = 0; i < this->length; i++)
-    if(this->array[i]) this->free_fn(this->array[i]);
-  free(this->array);
-  free(this);
+  for(i = 0; i < arr->length; i++)
+    if(arr->array[i]) arr->free_fn(arr->array[i]);
+  free(arr->array);
+  free(arr);
 }
 
 void*
-array_list_get_idx(struct array_list *this, int i)
+array_list_get_idx(struct array_list *arr, int i)
 {
-  if(i >= this->length) return NULL;
-  return this->array[i];
+  if(i >= arr->length) return NULL;
+  return arr->array[i];
 }
 
-static int array_list_expand_internal(struct array_list *this, int max)
+static int array_list_expand_internal(struct array_list *arr, int max)
 {
   void *t;
   int new_size;
 
-  if(max < this->size) return 0;
-  new_size = max(this->size << 1, max);
-  if(!(t = realloc(this->array, new_size*sizeof(void*)))) return -1;
-  this->array = t;
-  bzero(this->array + this->size, (new_size-this->size)*sizeof(void*));
-  this->size = new_size;
+  if(max < arr->size) return 0;
+  new_size = arr->size << 1;
+  if (new_size < max)
+    new_size = max;
+  if(!(t = realloc(arr->array, new_size*sizeof(void*)))) return -1;
+  arr->array = (void**)t;
+  (void)memset(arr->array + arr->size, 0, (new_size-arr->size)*sizeof(void*));
+  arr->size = new_size;
   return 0;
 }
 
 int
-array_list_put_idx(struct array_list *this, int idx, void *data)
+array_list_put_idx(struct array_list *arr, int idx, void *data)
 {
-  if(array_list_expand_internal(this, idx)) return -1;
-  if(this->array[idx]) this->free_fn(this->array[idx]);
-  this->array[idx] = data;
-  if(this->length <= idx) this->length = idx + 1;
+  if(array_list_expand_internal(arr, idx+1)) return -1;
+  if(arr->array[idx]) arr->free_fn(arr->array[idx]);
+  arr->array[idx] = data;
+  if(arr->length <= idx) arr->length = idx + 1;
   return 0;
 }
 
 int
-array_list_add(struct array_list *this, void *data)
+array_list_add(struct array_list *arr, void *data)
 {
-  return array_list_put_idx(this, this->length, data);
+  return array_list_put_idx(arr, arr->length, data);
+}
+
+void
+array_list_sort(struct array_list *arr, int(*sort_fn)(const void *, const void *))
+{
+  qsort(arr->array, arr->length, sizeof(arr->array[0]), sort_fn);
+}
+
+void* array_list_bsearch(const void **key, struct array_list *arr,
+		int (*sort_fn)(const void *, const void *))
+{
+	return bsearch(key, arr->array, arr->length, sizeof(arr->array[0]),
+			sort_fn);
 }
 
 int
-array_list_length(struct array_list *this)
+array_list_length(struct array_list *arr)
 {
-  return this->length;
+  return arr->length;
 }

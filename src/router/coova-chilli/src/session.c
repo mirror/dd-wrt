@@ -1,21 +1,21 @@
 /* -*- mode: c; c-basic-offset: 2 -*- */
-/* 
+/*
  * Copyright (C) 2003, 2004, 2005 Mondru AB.
  * Copyright (C) 2007-2012 David Bird (Coova Technologies) <support@coova.com>
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 
 #include "system.h"
@@ -25,8 +25,8 @@
 #include "chilli.h"
 
 #ifdef ENABLE_JSON
-int session_redir_json_fmt(bstring json, char *userurl, char *redirurl, 
-			   bstring logouturl, uint8_t *hismac, 
+int session_redir_json_fmt(bstring json, char *userurl, char *redirurl,
+			   bstring logouturl, uint8_t *hismac,
 			   struct in_addr *hisip) {
   bcatcstr(json,",\"redir\":{\"originalURL\":\"");
   bcatcstr(json, userurl?userurl:"");
@@ -41,15 +41,15 @@ int session_redir_json_fmt(bstring json, char *userurl, char *redirurl,
 #ifdef ENABLE_LAYER3
   if (!_options.layer3) {
 #endif
-  bcatcstr(json,"\",\"macAddress\":\"");
-  if (hismac) {
-    char mac[REDIR_MACSTRLEN+1];
-    safe_snprintf(mac, sizeof(mac), "%.2X-%.2X-%.2X-%.2X-%.2X-%.2X",
-		  (unsigned int)hismac[0], (unsigned int)hismac[1],
-		  (unsigned int)hismac[2], (unsigned int)hismac[3],
-		  (unsigned int)hismac[4], (unsigned int)hismac[5]);
-    bcatcstr(json, mac);
-  }
+    bcatcstr(json,"\",\"macAddress\":\"");
+    if (hismac) {
+      char mac[REDIR_MACSTRLEN+1];
+      snprintf(mac, sizeof(mac), "%.2X-%.2X-%.2X-%.2X-%.2X-%.2X",
+                    (unsigned int)hismac[0], (unsigned int)hismac[1],
+                    (unsigned int)hismac[2], (unsigned int)hismac[3],
+                    (unsigned int)hismac[4], (unsigned int)hismac[5]);
+      bcatcstr(json, mac);
+    }
 #ifdef ENABLE_LAYER3
   }
 #endif
@@ -57,24 +57,27 @@ int session_redir_json_fmt(bstring json, char *userurl, char *redirurl,
   return 0;
 }
 
-int session_json_params(struct session_state *state, 
+int session_json_params(struct session_state *state,
 			struct session_params *params,
 			bstring json, int init) {
   bstring tmp = bfromcstr("");
   time_t starttime = state->start_time;
-  
+
   bcatcstr(json,"\"sessionId\":\"");
   bcatcstr(json,state->sessionid);
   bcatcstr(json,"\",\"userName\":\"");
   bcatcstr(json,state->redir.username);
   bcatcstr(json, "\",\"startTime\":");
-  bassignformat(tmp, "%ld", mainclock_towall(init ? mainclock_now() : starttime));
+  bassignformat(tmp, "%ld", (long) mainclock_towall(init ? mainclock_now() : starttime));
   bconcat(json, tmp);
   bcatcstr(json,",\"sessionTimeout\":");
-  bassignformat(tmp, "%lld", params->sessiontimeout);
+  bassignformat(tmp, "%ld", (long) params->sessiontimeout);
+  bconcat(json, tmp);
+  bcatcstr(json,",\"terminateTime\":");
+  bassignformat(tmp, "%ld", (long) params->sessionterminatetime);
   bconcat(json, tmp);
   bcatcstr(json,",\"idleTimeout\":");
-  bassignformat(tmp, "%ld", params->idletimeout);
+  bassignformat(tmp, "%ld", (long) params->idletimeout);
   bconcat(json, tmp);
 #ifdef ENABLE_IEEE8021Q
   if (_options.ieee8021q && state->tag8021q) {
@@ -103,9 +106,9 @@ int session_json_params(struct session_state *state,
   return 0;
 }
 
-int session_json_acct(struct session_state *state, 
-		     struct session_params *params,
-		     bstring json, int init) {
+int session_json_acct(struct session_state *state,
+                      struct session_params *params,
+                      bstring json, int init) {
   bstring tmp = bfromcstr("");
   uint32_t inoctets = state->input_octets;
   uint32_t outoctets = state->output_octets;
@@ -113,31 +116,31 @@ int session_json_acct(struct session_state *state,
   uint32_t outgigawords = (state->output_octets >> 32);
   uint32_t sessiontime;
   uint32_t idletime;
-  
+
   sessiontime = mainclock_diffu(state->start_time);
-  idletime    = mainclock_diffu(state->last_sent_time);
+  idletime    = mainclock_diffu(state->last_up_time);
 
   init = init || !state->authenticated;
 
   bcatcstr(json,"\"sessionTime\":");
-  bassignformat(tmp, "%ld", init ? 0 : sessiontime);
+  bassignformat(tmp, "%ld", init ? 0 : (long)sessiontime);
   bconcat(json, tmp);
   bcatcstr(json,",\"idleTime\":");
-  bassignformat(tmp, "%ld", init ? 0 : idletime);
+  bassignformat(tmp, "%ld", init ? 0 : (long)idletime);
   bconcat(json, tmp);
   bcatcstr(json,",\"inputOctets\":");
-  bassignformat(tmp, "%ld",init ? 0 :  inoctets);
+  bassignformat(tmp, "%ld",init ? 0 :  (long)inoctets);
   bconcat(json, tmp);
   bcatcstr(json,",\"outputOctets\":");
-  bassignformat(tmp, "%ld", init ? 0 : outoctets);
+  bassignformat(tmp, "%ld", init ? 0 : (long)outoctets);
   bconcat(json, tmp);
   bcatcstr(json,",\"inputGigawords\":");
-  bassignformat(tmp, "%ld", init ? 0 : ingigawords);
+  bassignformat(tmp, "%ld", init ? 0 : (long)ingigawords);
   bconcat(json, tmp);
   bcatcstr(json,",\"outputGigawords\":");
-  bassignformat(tmp, "%ld", init ? 0 : outgigawords);
+  bassignformat(tmp, "%ld", init ? 0 : (long)outgigawords);
   bconcat(json, tmp);
-  bassignformat(tmp, ",\"viewPoint\":\"%s\"", 
+  bassignformat(tmp, ",\"viewPoint\":\"%s\"",
 		_options.swapoctets ? "nas" : "client");
   bconcat(json, tmp);
 
@@ -145,7 +148,7 @@ int session_json_acct(struct session_state *state,
   return 0;
 }
 
-int session_json_fmt(struct session_state *state, 
+int session_json_fmt(struct session_state *state,
 		     struct session_params *params,
 		     bstring json, int init) {
   bcatcstr(json,",\"session\":{");

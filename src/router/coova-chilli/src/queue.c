@@ -11,36 +11,36 @@
 /* returns packet id */
 static u_int32_t print_pkt (struct nfq_data *tb) {
   struct nfqnl_msg_packet_hdr *ph;
-  u_int32_t mark,ifi; 
+  u_int32_t mark,ifi;
   int id = 0;
-  char *data;
+  unsigned char *data;
   int ret;
-  
+
   ph = nfq_get_msg_packet_hdr(tb);
   if (ph){
     id = ntohl(ph->packet_id);
-    printf("hw_protocol=0x%04x hook=%u id=%u ",
+    printf("hw_protocol=0x%04x hook=%u id=%i ",
 	   ntohs(ph->hw_protocol), ph->hook, id);
   }
-  
+
   mark = nfq_get_nfmark(tb);
   if (mark)
     printf("mark=%u ", mark);
-  
+
   ifi = nfq_get_indev(tb);
   if (ifi)
     printf("indev=%u ", ifi);
-  
+
   ifi = nfq_get_outdev(tb);
   if (ifi)
     printf("outdev=%u ", ifi);
-  
+
   ret = nfq_get_payload(tb, &data);
   if (ret >= 0)
     printf("payload_len=%d ", ret);
-  
+
   fputc('\n', stdout);
-  
+
   return id;
 }
 
@@ -64,32 +64,32 @@ int q_setup() {
     fprintf(stderr, "error during nfq_open()\n");
     exit(1);
   }
-  
+
   printf("unbinding existing nf_queue handler for AF_INET (if any)\n");
   if (nfq_unbind_pf(h, AF_INET) < 0) {
     fprintf(stderr, "error during nfq_unbind_pf()\n");
     exit(1);
   }
-  
+
   printf("binding nfnetlink_queue as nf_queue handler for AF_INET\n");
   if (nfq_bind_pf(h, AF_INET) < 0) {
     fprintf(stderr, "error during nfq_bind_pf()\n");
     exit(1);
   }
-  
+
   printf("binding this socket to queue '0'\n");
   qh = nfq_create_queue(h,  0, &cb, NULL);
   if (!qh) {
     fprintf(stderr, "error during nfq_create_queue()\n");
     exit(1);
   }
-  
+
   printf("setting copy_packet mode\n");
   if (nfq_set_mode(qh, NFQNL_COPY_PACKET, 0xffff) < 0) {
     fprintf(stderr, "can't set packet_copy mode\n");
     exit(1);
   }
-  
+
   fd = nfq_fd(h);
 
   return 0;
@@ -100,24 +100,24 @@ int main(int argc, char **argv) {
   char buf[4096] __attribute__ ((aligned));
 
   q_setup();
-  
+
   while ((rv = recv(fd, buf, sizeof(buf), 0)) && rv >= 0) {
     printf("pkt received\n");
     nfq_handle_packet(h, buf, rv);
   }
-  
+
   printf("unbinding from queue 0\n");
   nfq_destroy_queue(qh);
-  
+
 #ifdef INSANE
-        /* normally, applications SHOULD NOT issue this command, since
-         * it detaches other programs/sockets from AF_INET, too ! */
+  /* normally, applications SHOULD NOT issue this command, since
+   * it detaches other programs/sockets from AF_INET, too ! */
   printf("unbinding from AF_INET\n");
   nfq_unbind_pf(h, AF_INET);
 #endif
-  
+
   printf("closing library handle\n");
   nfq_close(h);
-  
+
   exit(0);
 }

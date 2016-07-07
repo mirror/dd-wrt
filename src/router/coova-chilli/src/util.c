@@ -1,40 +1,34 @@
 /* -*- mode: c; c-basic-offset: 2 -*- */
-/* 
+/*
  * Copyright (C) 2003, 2004, 2005 Mondru AB.
  * Copyright (C) 2007-2012 David Bird (Coova Technologies) <support@coova.com>
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 
 #include "chilli.h"
 
-char *safe_strncpy(char *dst, const char *src, size_t size) {
-  if (!size) return dst;
-  dst[--size] = '\0';
-  return strncpy(dst, src, size);
-}
-
 int statedir_file(char *dst, int dlen, char *file, char *deffile) {
   char *statedir = _options.statedir ? _options.statedir : DEFSTATEDIR;
   if (!file && deffile) {
-    safe_snprintf(dst, dlen, "%s/%s", statedir, deffile);
+    snprintf(dst, dlen, "%s/%s", statedir, deffile);
   } else if (file) {
     if (file[0]=='/')
-      safe_snprintf(dst, dlen, "%s", file);
+      snprintf(dst, dlen, "%s", file);
     else
-      safe_snprintf(dst, dlen, "%s/%s", statedir, file);
+      snprintf(dst, dlen, "%s/%s", statedir, file);
   }
   return 0;
 }
@@ -69,7 +63,7 @@ int get_urlparts(char *src, char *host, int hostsize, int *port, int *uripos) {
   char *slash = NULL;
   char *colon = NULL;
   int hostlen;
-  
+
   *port = 0;
 
   if (!memcmp(src, "http://", 7)) {
@@ -81,13 +75,13 @@ int get_urlparts(char *src, char *host, int hostsize, int *port, int *uripos) {
     slashslash = src + 8;
   }
   else {
-    log_err(0, "URL must start with http:// or https:// [%s]!", src);
+    syslog(LOG_ERR, "URL must start with http:// or https:// [%s]!", src);
     return -1;
   }
-  
+
   slash = strstr(slashslash, "/");
   colon = strstr(slashslash, ":");
-  
+
   if (slash != NULL && colon != NULL && slash < colon) {
     /* .../...: */
     hostlen = slash - slashslash;
@@ -100,7 +94,7 @@ int get_urlparts(char *src, char *host, int hostsize, int *port, int *uripos) {
     /* ...:port/... */
     hostlen = colon - slashslash;
     if (1 != sscanf(colon+1, "%d", port)) {
-      log_err(0, "Not able to parse URL port: %s!", src);
+      syslog(LOG_ERR, "Not able to parse URL port: %s!", src);
       return -1;
     }
   }
@@ -109,11 +103,11 @@ int get_urlparts(char *src, char *host, int hostsize, int *port, int *uripos) {
   }
 
   if (hostlen > (hostsize-1)) {
-    log_err(0, "URL hostname larger than %d: %s!", hostsize-1, src);
+    syslog(LOG_ERR, "URL hostname larger than %d: %s!", hostsize-1, src);
     return -1;
   }
 
-  safe_strncpy(host, slashslash, hostsize);
+  strlcpy(host, slashslash, hostsize);
   host[hostlen] = 0;
 
   if (uripos) {
@@ -157,16 +151,16 @@ getline (char** lineptr, size_t* n, FILE* stream) {
   int c;
 
   if (*lineptr == NULL && n == NULL)
-    {
-      lptr1 = malloc (GETLINE_BUFSIZE);
-      if (lptr1 == NULL) return EOF;
-      nn = GETLINE_BUFSIZE;
-    }
+  {
+    lptr1 = malloc (GETLINE_BUFSIZE);
+    if (lptr1 == NULL) return EOF;
+    nn = GETLINE_BUFSIZE;
+  }
   else
-    {
-      lptr1 = *lineptr;
-      nn = *n;
-    }
+  {
+    lptr1 = *lineptr;
+    nn = *n;
+  }
   c = fgetc (stream);
   if (c == EOF) return EOF;
   {
@@ -174,23 +168,23 @@ getline (char** lineptr, size_t* n, FILE* stream) {
 
     offset = 0;
     while (c != EOF)
+    {
+      if (offset >= nn - 1)
       {
-        if (offset >= nn - 1)
-          {
-            char* lptr2;
-            lptr2 = realloc (lptr1, 2 * nn);
-            if (lptr2 == NULL) return EOF;
-            lptr1 = lptr2;
-            nn *= 2;
-          }
-        lptr1[offset++] = (char)c;
-        if (c == '\n') break;
-        c = fgetc (stream);
+        char* lptr2;
+        lptr2 = realloc (lptr1, 2 * nn);
+        if (lptr2 == NULL) return EOF;
+        lptr1 = lptr2;
+        nn *= 2;
       }
+      lptr1[offset++] = (char)c;
+      if (c == '\n') break;
+      c = fgetc (stream);
+    }
     lptr1[offset] = '\0';
     *lineptr = lptr1;
     *n = nn;
     return offset;
-  }  
+  }
 }
 #endif

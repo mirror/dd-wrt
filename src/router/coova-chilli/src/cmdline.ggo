@@ -1,4 +1,4 @@
-# chilli - ChilliSpot.org. A Wireless LAN Access Point Controller
+# CoovaChilli - http://coova.github.io/. A Wireless LAN Access Point Controller
 # Copyright (C) 2003, 2004, 2005 Mondru AB.
 # Copyright (c) 2006-2012 David Bird (Coova Technologies)
 #
@@ -19,7 +19,8 @@ option  "bin"           b "Binary config file" string no
 option  "reload"        r "Send reload after reconfigure" flag off
 option  "forgiving"     F "Forgiving of many configuration errors" flag off
 option  "debugfacility" - "Which modules to print debug messages for" int default="1" no
-option  "logfacility"   - "Syslog facility to be used for logging" int default="-1" no
+option  "logfacility"   - "Syslog facility to be used for logging (default LOG_DAEMON)" int default="3" no
+option  "loglevel"      - "Syslog log level to use in setlogmask (0 emerg, 7 debug)" int default="6" no
 
 option  "conf"        c "Read configuration file"       string no
 option  "interval"    - "Re-read configuration file at this interval"  int default="3600" no
@@ -60,6 +61,7 @@ option "tundev"      - "TUN/TAP Device, as in tun0 or tap1" string no
 option "mtu"         - "MTU given in DHCP" int default="1500" no
 option "autostatip"  - "Auto- static ip assignment" int default="0" no
 
+option "mmapring" - "Enable use of MMAP Rings (in Linux only)" flag off
 option "ringsize" - "TX/RX Ring Size (in kbytes; linux only)" int default="0" no
 option "sndbuf" - "SNDBUF size (in kb)" int default="0" no
 option "rcvbuf" - "RCVBUF size (in kb)" int default="0" no
@@ -135,10 +137,11 @@ option "uamlisten"    - "IP address to listen to for authentication requests" st
 option "dhcplisten"   - "IP address for DHCP default gateway (defaults to uamlisten)" string no
 option "uamport"      - "TCP port to bind to for authentication requests" int default="3990" no
 option "uamuiport"    - "TCP port to bind to for UAM UI requests" int default="3991" no
-option "uamallowed"   - "Domain names exempt from access check " string no multiple
+option "uamallowed"   - "Resources exempt from access check " string no multiple
 option "uamdomain"    - "Domain name allowed (active dns filtering; one per line!) " string no multiple
 option "uamdomainttl" - "DNS TTL to use (rewrite) when query matches a uamdomain" int default="60" no
 option "uamregex"     - "Regular expression to match URLs (one per line) " string no multiple
+option "nosystemdns"  - "Do not attempt to use the system DNS for DHCP" flag off
 option "uamanydns"    - "Allow client to use any DNS server" flag   off
 option "uamanyip"     - "Allow client to use any IP Address" flag   off
 option "uamnatanyip"  - "Source NAT clients using anyip to an IP of dynip pool" flag off
@@ -150,6 +153,9 @@ option "uamlogoutip"  - "HTTP Auto-Logout IP Address" string default="1.0.0.0" n
 option "uamaliasip"   - "Special IP Address aliased (redirect) to uamlisten/uamport" string default="1.0.0.1" no
 option "uamaliasname" - "Special simple hostname (no dots) to be resolved to uamaliasip" string no
 option "uamhostname"  - "Special simple hostname (no dots) to be resolved to uamlisten" string no
+
+option "authedallowed" - "Resources exempt from session limitations" string no multiple
+option "uamauthedallowed" - "Use uamallowed as resources exempt from session limitations" flag off
 
 option "uamaaaurl"    - "UAM AAA URL specifying the URL to use for the Chilli HTTP AAA" string no
 option "domaindnslocal" - "Option to consider all hostnames in domain as local" flag   off
@@ -184,7 +190,7 @@ option "uamui"       - "Program in inetd style to handle all uam requests" strin
 # Centralized Configuration
 option "adminuser"   - "RADIUS administrative user login username" string no
 option "adminpasswd" - "RADIUS administrative user login password" string no
-option "adminupdatefile" - "File for administrative user ChilliSpot-Config settings" string no
+option "adminupdatefile" - "File for administrative user CoovaChilli-Config settings" string no
 option "rtmonfile" - "File to update with routing settings" string no
 
 option "ethers" - "File containing a mapping of MAC addresses to static IP addresses" string no
@@ -201,21 +207,23 @@ option "only8021q"   - "Support 802.1Q VLAN tagged traffic only" flag off
 option "cmdsocket"   - "path to the command unix socket" string no
 option "cmdsocketport" - "Port of command socket. Only used if cmdsocket is not defined." int default="42424" no
 
-option "radiusoriginalurl" - "Turn on the sending of ChilliSpot-OriginalURL in Access-Request" flag off
+option "radiusoriginalurl" - "Turn on the sending of CoovaChilli-OriginalURL in Access-Request" flag off
 option "swapoctets"    - "Swap the meaning of input/output octets/packets" flag   off
 option "usestatusfile" - "Use the status file to keep track of sessions" string no
 option "statusfilesave" - "Aggressively save the status of sessions to status file" flag off
 option "localusers"    - "File keep 'Local' usernames and passwords" string no
 option "postauthproxy" - "IP of an upstream transparent proxy" string no
 option "postauthproxyport" - "Port of an upstream transparent proxy" int default="0" no
+option "postauthproxyssl" - "Send SSL to upstream transparent proxy" flag off
 option "wpaguests"     - "Allow WPA 'Guest' access" flag off
 option "openidauth"    - "Allow OpenID authentication" flag off
 option "papalwaysok"   - "Always allow 'PAP' authentication (depreciated; always on)" flag off
 option "mschapv2"      - "Use MSCHAPv2 authentication where possible" flag off
-option "chillixml"     - "Use ChilliSpot XML in WISPr blocks" flag   off
+option "chillixml"     - "Use CoovaChilli XML in WISPr blocks" flag   off
 option "acctupdate"    - "Allow updating of session attributes in Accounting-Response" flag off
 option "dnsparanoia"   - "Inspect DNS packets and drop responses with any non- A, CNAME, SOA, or MX records (to prevent dns tunnels)" flag off
 option "seskeepalive"  - "Keep sessions 'alive' after a restart of the server" flag off
+option "wpadpacfile" - "WPAD PAC file location" string no
 
 option "usetap"        - "Use a TAP instead of TUN (linux only)" flag   off
 option "noarpentries"  - "Do not create arp table entries in when using TAP." flag off
@@ -228,6 +236,7 @@ option "maxclients"    - "Maximum number of clients/subscribers" int default="51
 option "dhcphashsize"  - "Size of DHCP/MAC hash table" int default="56" no
 option "radiusqsize"  - "Size of RADIUS queue table" int default="0" no
 
+option "nochallenge" - "Disable the use of the challenge (PAP only)" flag off
 option "challengetimeout" - "Timeout in seconds for the generated challenge" int default="600" no
 option "challengetimeout2" - "Timeout in seconds for challenge during login" int default="1200" no
 
@@ -248,6 +257,7 @@ option "sslkeyfile"  - "SSL private key file in PEM format" string no
 option "sslkeypass"  - "SSL private key password" string no
 option "sslcertfile" - "SSL certificate file in PEM format" string no
 option "sslcafile"   - "SSL CA certificate file in PEM format" string no
+option "sslciphers"   - "SSL ciphers to use" string no
 option "unixipc"     - "The UNIX IPC Filename to use when compiled with --with-unixipc" string no
 option "uamallowpost" - "Enable to allow a HTTP POST to the standard uamport interface" flag off
 option "natip"     - "IP to use when doing nat on WAN (routeidx)" string no
@@ -260,6 +270,7 @@ option "ipwhitelist" - "Binary IP White List file" string no
 option "uamdomainfile" - "Load uamdomains (regex) from file" string no
 
 option "layer3" - "Layer3 only" flag off
+option "ipsrcallowed"  - "List of allowed source IP addresses, for Layer3" string no multiple
 option "patricia" - "Use patricia tries for walled garden lookup" flag off
 option "redirdnsreq" - "Send DNS query on redirect to pick of DNS based walled garden" flag off
 
@@ -273,6 +284,13 @@ option "extadmvsa" - "Extended administrative-user VSA script support" string no
 
 option "dhcpnotidle" - "DHCP counted for preventing idle-timeout" flag off
 
+option "forcedns1"   - "Force all DNS to a specific address" string no 
+option "forcedns1port"   - "Force all DNS to a specific port" int default="0" no 
+
+option "forcedns2"   - "Force all secondary DNS to a specific address" string no 
+option "forcedns2port"   - "Force all secondary DNS to a specific port" int default="0" no 
+
 option "ipv6" - "Enable IPv6 support" flag off
+option "ipv6mode" - "IPv6 mode is either 6and4 (default), 4to6, or 6to4" string no
 option "ipv6only" - "Enable IPv6-Only" flag off
 

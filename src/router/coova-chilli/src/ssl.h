@@ -1,20 +1,20 @@
 /* -*- mode: c; c-basic-offset: 2 -*- */
-/* 
+/*
  * Copyright (C) 2012 David Bird (Coova Technologies) <support@coova.com>
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 
 #ifndef _CHILLI_SSL_H_
@@ -55,21 +55,17 @@ typedef struct {
 #include <cyassl/openssl/pem.h>
 #endif
 
-#define OPENSSL_TMPKEY_RSA512   0
-#define OPENSSL_TMPKEY_RSA1024  1
-#define OPENSSL_TMPKEY_DH512    2
-#define OPENSSL_TMPKEY_DH1024   3
 #define OPENSSL_TMPKEY_MAX      4
 
 #define OPENSSL_NO_CERT      (SSL_VERIFY_NONE)
 #define OPENSSL_REQUEST_CERT (SSL_VERIFY_PEER)
-#define OPENSSL_REQUIRE_CERT (SSL_VERIFY_PEER|\
-                              SSL_VERIFY_CLIENT_ONCE|\
+#define OPENSSL_REQUIRE_CERT (SSL_VERIFY_PEER|                  \
+                              SSL_VERIFY_CLIENT_ONCE|           \
                               SSL_VERIFY_FAIL_IF_NO_PEER_CERT)
 
 typedef struct {
 #if OPENSSL_VERSION_NUMBER >= 0x10000000L
-  const 
+  const
 #endif
   SSL_METHOD *meth;
   SSL_CTX *ctx;

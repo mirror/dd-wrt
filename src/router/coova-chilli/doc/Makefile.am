@@ -5,7 +5,7 @@ chilli_redir.1 chilli_proxy.1 chilli_radsec.1 chilli_script.1
 
 man_aux = $(man_MANS:=.in)
 EXTRA_DIST = $(man_aux) \
-dictionary.chillispot hotspotlogin.cgi attributes fmttxt.pl
+dictionary.coovachilli hotspotlogin.cgi attributes fmttxt.pl
 
 edit = sed \
 	-e 's,@SBINDIR\@,$(sbindir),g' \
