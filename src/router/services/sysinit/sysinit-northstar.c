@@ -3043,8 +3043,15 @@ void start_sysinit(void)
 			}
 			nvram_commit();
 		}
+		if (strlen(nvram_safe_get("et2macaddr"))==0) {
+			nvram_set("et2macaddr", nvram_safe_get("et0macaddr"));
+			nvram_set("et2mdcport", nvram_safe_get("et0mdcport"));
+			nvram_set("et2phyaddr", nvram_safe_get("et0phyaddr"));
+			nvram_set("et_txq_thresh", "3300");
+		}
 		nvram_unset("et0macaddr");
 		nvram_unset("et1macaddr");
+
 	case ROUTER_ASUS_AC88U:
 		/* ldo patch */
 		{
