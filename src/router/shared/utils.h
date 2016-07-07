@@ -742,7 +742,7 @@
 
 #define ROUTER_NETGEAR_R6400 0xfc15
 
-#define ROUTER_ASUS_AC3100 0xfd15
+#define ROUTER_ASUS_AC3100 0xfd1b
 
 #define NVROUTER "DD_BOARD"
 
