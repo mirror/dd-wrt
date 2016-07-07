@@ -1200,7 +1200,7 @@ void start_restore_defaults(void)
 	};
 	struct nvram_param ea8500[] = {
 		{"lan_ifname", "br0"},
-		{"lan_ifnames", "van1 vlan2 ath0 ath1"},
+		{"lan_ifnames", "vlan1 vlan2 ath0 ath1"},
 		{"wan_ifname", "vlan2"},
 		{"wan_ifname2", "vlan2"},
 		{"wan_ifnames", "vlan2"},
