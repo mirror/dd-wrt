@@ -1,0 +1,12 @@
+#! /bin/sh
+# Run this script to setup the automake environment.
+# ./configure
+# make
+# make install
+
+libtoolize --force --copy
+aclocal
+autoheader
+autoconf
+automake --add-missing
+automake

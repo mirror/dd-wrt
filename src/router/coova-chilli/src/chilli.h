@@ -1,33 +1,33 @@
 /* -*- mode: c; c-basic-offset: 2 -*- */
-/* 
+/*
  * Copyright (C) 2007-2012 David Bird (Coova Technologies) <support@coova.com>
  * Copyright (C) 2003, 2004, 2005 Mondru AB.
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 
 #ifndef _CHILLI_H
 #define _CHILLI_H
 
 #include "system.h"
+#include "debug.h"
 #include "chilli_limits.h"
 #include "tun.h"
 #include "ippool.h"
 #include "radius.h"
 #include "redir.h"
-#include "syserr.h"
 #include "session.h"
 #include "dhcp.h"
 #include "options.h"
@@ -35,6 +35,10 @@
 #include "net.h"
 #include "md5.h"
 #include "dns.h"
+
+#ifndef HAVE_STRLCPY
+extern size_t strlcpy(char *dst, const char *src, size_t dsize);
+#endif
 
 /*#define XXX_IO_DAEMON 1*/
 
@@ -68,7 +72,7 @@
 
 /* Struct information for each connection */
 struct app_conn_t {
-  
+
   struct app_conn_t *next;    /* Next in linked list. 0: Last */
   struct app_conn_t *prev;    /* Previous in linked list. 0: First */
 
@@ -208,12 +212,12 @@ int chilli_connect(struct app_conn_t **appconn, struct dhcp_conn_t *conn);
 struct app_conn_t * chilli_connect_layer3(struct in_addr *src, struct dhcp_conn_t *conn);
 #endif
 
-int chilli_getconn(struct app_conn_t **conn, uint32_t ip, 
+int chilli_getconn(struct app_conn_t **conn, uint32_t ip,
 		   uint32_t nasip, uint32_t nasport);
 
 int chilli_appconn_run(int (*cb)(struct app_conn_t *, void *), void *d);
 
-int chilli_req_attrs(struct radius_t *radius, 
+int chilli_req_attrs(struct radius_t *radius,
 		     struct radius_packet_t *pack,
 		     acct_type type,
 		     uint32_t service_type,
@@ -234,19 +238,19 @@ int chilli_new_conn(struct app_conn_t **conn);
 
 int chilli_assign_snat(struct app_conn_t *appconn, int force);
 
-void chilli_print(bstring s, int listfmt, 
+void chilli_print(bstring s, int listfmt,
 		  struct app_conn_t *appconn,
 		  struct dhcp_conn_t *conn);
 
-int chilli_acct_fromsub(struct app_conn_t *appconn, 
+int chilli_acct_fromsub(struct app_conn_t *appconn,
 			struct pkt_ipphdr_t *ipph);
-int chilli_acct_tosub(struct app_conn_t *appconn, 
+int chilli_acct_tosub(struct app_conn_t *appconn,
 		      struct pkt_ipphdr_t *ipph);
 
 int terminate_appconn(struct app_conn_t *appconn, int terminate_cause);
 
-void config_radius_session(struct session_params *params, 
-			   struct radius_packet_t *pack, 
+void config_radius_session(struct session_params *params,
+			   struct radius_packet_t *pack,
 			   struct app_conn_t *appconn,
 			   int reconfig);
 
@@ -283,7 +287,7 @@ void child_killall(int sig);
 
 #ifdef ENABLE_PROXYVSA
 int radius_addvsa(struct radius_packet_t *pack, struct redir_state *state);
-int chilli_learn_location(uint8_t *loc, int loclen, 
+int chilli_learn_location(uint8_t *loc, int loclen,
 			  struct app_conn_t *appconn, char force);
 #endif
 
@@ -299,10 +303,10 @@ void NtPasswordHash(u_char *Password, int len, u_char *hash);
 void HashNtPasswordHash(u_char *hash, u_char *hashhash);
 void ChallengeHash(u_char *PeerChallenge, u_char *AuthenticatorChallenge,
 		   u_char *UserName, int UserNameLen, u_char *Challenge);
-void GenerateNTResponse(u_char *AuthenticatorChallenge, 
+void GenerateNTResponse(u_char *AuthenticatorChallenge,
 			u_char *PeerChallenge,
-			u_char *UserName, int UserNameLen, 
-			u_char *Password, int PasswordLen, 
+			u_char *UserName, int UserNameLen,
+			u_char *Password, int PasswordLen,
 			u_char *Response);
 void GenerateAuthenticatorResponse(u_char *Password, int PasswordLen,
 				   u_char *NTResponse, u_char *PeerChallenge,
@@ -360,19 +364,19 @@ struct loc_search_t {
     roamed_in_sess_count,
     roamed_out_sess_count;
 
-  time_t last_queried; 
+  time_t last_queried;
 
   struct list_entity loc_sess_head;
 
   uint64_t closed_bytes_up,
-    closed_bytes_down; 
+    closed_bytes_down;
 
 #ifdef ENABLE_GARDENACCOUNTING
   uint64_t garden_closed_bytes_up,
-    garden_closed_bytes_down; 
+    garden_closed_bytes_down;
 
   uint64_t other_closed_bytes_up,
-    other_closed_bytes_down; 
+    other_closed_bytes_down;
 #endif
 };
 

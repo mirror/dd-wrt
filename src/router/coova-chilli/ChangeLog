@@ -1,5 +1,81 @@
+== ChangeLog (CoovaChilli-v1.3.1.4) ==
+* Update refs to site to http://coova.github.io/ and fix software name.
+* xt_coova.c with kernel version >= 3.10.0 fixed
+* Compile with --enable-pppoe fixed
+* Compile with --enable-location fixed
+* enable_json should be =no by default or libchilli compile fails
+* syslog params with --with-ipc-msg fixed
+* When xt_coova is in use IP address is no longer removed from dhcpif
+* Compile with --netfilter-queue fixed
+* Support for vendor specific dhcp options (60/43) added
+* HS_LOCATIONOPT82 now maps to locationopt82 flag
+* HS_UDP_PORTS introduced in sample up.sh for permitting UDP ports in fw rules
+* DHCP relay functionality fixed
+* Introduce enable-json flag, support for JSON is no longer enabled by default
+* www.coova.org is no longer permitted by default
+* Most DEBUG level logging now only happens if enable.debug is true
+* IPtables rules re-ordered
+* Switch from mktemp() to mkstemp()
+* JSON replies can now include nasid
+* Added support for Travis CI https://travis-ci.org/coova/coova-chilli
+* Switch from safe_snprintf() to snprintf() 
+* Switch from safe_fork() to fork()
+* Update bstring library with fork from msteinert/bstring
+* An attempt to close an unopened proxy socket is no longer performed
+* Switch from strcpy(3) to strlcpy(3)
+* Use `new_socket` instead of `0` and `1` descriptors
+* Introduce CONTRIBUTING.md
+* Update AVL headers from http://www.olsr.org/git/?p=oonf.git;a=tree;f=src-api/common;hb=HEAD
+* Use AC_PROG_CC_C99 macro to specify C99 standard to compiler
+* An attempt to reopen a socket just because writing would block is no longer performed
+* Add license information for extern/strlcpy.c & libjson to LICENSE
+* Correct sequence number is now used in a TCP RESET.
+* SSLv2 & v3 support disabled
+* sslciphers option added
+* kmod_coova_sync gained layer3 support
+* radius_reply() replaced by radius_pkt_send()
+* Numerous churn to autoconf settings
+* Numerous bug fixes
+
+== ChangeLog (CoovaChilli-v1.3.1.3) ==
+* Fix json encoding for radius reply.
+
+== ChangeLog (CoovaChilli-v1.3.1.2) ==
+* Add json support.
+
+== ChangeLog (CoovaChilli-v1.3.1 git2763bb5) ==
+
+* Added NethServer distro spec.in
+* Pass redir_request *rreq to redir_main_exit()
+* Add terminateTime to chilli session json object
+* Pass redir_request *rreq to redir_main_exit() (Unbreaks building with OpenSSL support)
+* Reference the members of socket struct correctly
+* Do no drop IP fragments (needed for some UDP VPN)
+* Fixed automake warnings
+* Fix building using clang & dev_set_address() on the BSD's
+* Fix indentation of closing brakets in check_options()
+* Use ifaliasreq for BSDs & derivatives
+* When calling redir_main_exit() from redir_main() pass it forked
+* Allow Coova to be built using clang without any options enabled
+* Fix CR/LF > LF
+* Fix build with FreeBSD
+* Moved on github (https://github.com/coova/coova-chilli)
+* Added haserl dependency for miniportal
+* Added libtool, automake and libssl-dev, iptables, gengetopt as dependencies to build a .deb from sources
+* Now SO_REUSEPORT socket flag is checked at runtime
+* Fix compile w/o patricia support
 
 == ChangeLog (CoovaChilli current svn revision) ==
+
+* New compile time option ''--enable-authedallowed'' which will allocate memory and enable the ''authedallowed'' runtime option
+* New runtime option ''authedallowed'' which is used just like ''uamallowed'' but defines resources not to be subject to bandwidth limits or accounting (outside of "garden accounting")
+* Smoothed out leaky bucket bandwidth calculation by considering fractions of seconds
+* New runtime option ''uamauthedallowed'' is a boolean option that has all ''uamallowed'' resources put outside of bandwidth limits or accounting
+* New runtime option ''postauthproxyssl'' to have postauth proxy send https to proxy, previously this was the default when redirssl is used
+* Runtime option ''mmapring'' to enable using RX/TX rings when compiled with ''--with-mmap''
+* Fix ICMP fragmentation needed messages to carrying original IP header plus 8 bytes (64bits)
+* Added runtime option ''nosystemdns'' to prevent the use of the system DNS servers to be used for DHCP subscribers
+* Added compile option ''--enable-wpad'' to add support for WPAD via DHCP and DNS, new runtime option ''--wpadpacfile=filename''
 
 == ChangeLog (CoovaChilli-v1.3.0 svn revision 480) ==
 
@@ -62,7 +138,7 @@
 * Added ''uamanyipex'' that defines a subnet to exclude from ''uamanyip''
 * Changed the name of ''anyipexclude'' to ''uamnatanyipex'' to be more accurate, see http://lists.coova.org/pipermail/chilli/2011-March/001616.html
 * Support for Framed-IP-Netmask in RADIUS macauth replies
-* Added new attributes for DHCP parameter setting in RADIUS macauth replies, see dictionary.chillispot
+* Added new attributes for DHCP parameter setting in RADIUS macauth replies, see dictionary.coovachilli
 * Added compile time option ''--disable-coa'' to optionally remove CoA support
 * Added compile time option ''--disable-tcpreset'' to optionally disable TCP session resetting
 * Fixups for BSD based systems
@@ -156,7 +232,7 @@
 
 == ChangeLog (CoovaChilli-v1.2.1 svn revision 281) ==
 
-* Fix for when using WISPr-Session-Terminate-Time 
+* Fix for when using WISPr-Session-Terminate-Time
 * Fix for honoring WISPr-Redirection-URL in AccessAccept
 * Fix making *.''domain'' optionally "local DNS" instead of default
 * Fix for OpenSSL - cert file should not require full cert chain
@@ -165,7 +241,7 @@
 * Extended redir to support script content (miniportal) under SSL
 * Fix and change to RADIUS handling to make it more robust and avoid major problems during timeouts
 * New option ''--ethers'' that specifies a file with MAC Address and IP Address mappings
-	
+
 == ChangeLog (CoovaChilli-v1.2.0 svn revision 271) ==
 
 * Bumped version to 1.2.0 (passing 1.1.0 to avoid confusion w/chillispot 1.1.0)
@@ -219,7 +295,7 @@ onnects VPN connections.
 * The ''tcpmss'' option will rewrite the TCP Maximum Segment Size (TCP Option).
 * Added logoutURL to the JSON redir block
 * WISPr LoginURL bug fix      
-	
+
 == ChangeLog (CoovaChilli-v1.0.13 svn revision 199) ==
 
 * Accepts the parameter ''ntresponse'' in the ''logon'' which is used in MS-CHAPv2 (does not require the mschapv2 option, but simply passes through the ntresponse into the MSCHAPv2-Response
@@ -242,7 +318,7 @@ onnects VPN connections.
 * Added ''mtu'' option which sets the MTU returned by DHCP
 * Added ''tcpwin'' option to adjust all TCP windows coming and going
 * More parameters sent to the WISPr login URL.
-	
+
 == ChangeLog (CoovaChilli-v1.0.12 svn revision 171) ==
 
 * Bug fix in RADIUS timeout, note that option ''radiustimeout'' is in '''seconds'''!	
@@ -254,7 +330,7 @@ onnects VPN connections.
 * New option (in development) ''routeif'' to specify which WAN interface to use for the default - this also enables the use of internal routing instead of everything defaulting to the tun/tap
 * Anyip fixes by Gunther, thanks. 
 * Code cleanups
-	
+
 == ChangeLog (CoovaChilli-v1.0.11 svn revision 147) ==
 
 * Bug fix for RADIUS VSAs being sent
@@ -265,7 +341,7 @@ onnects VPN connections.
 * Bug fix for DHCP relay (RFC 1542)
 * Bug fix in IPC handling
 * Memory leak fix in logging
-	
+
 == ChangeLog (CoovaChilli-v1.0.9 svn revision 133) ==
 
 * Bug fix whereby the mac address of packets from the chilli redirect are overwritten	
@@ -290,7 +366,7 @@ onnects VPN connections.
 * Will install and use libchilli and libbstring shared libraries
 * Fix in 64-bit portability - thx ccesario for helping out
 * Fix for use with DHCP Relay clients
-	
+
 == ChangeLog (CoovaChilli-v1.0.7 svn revision 95) ==
 
 * First version of JSON interface, see [[CoovaChilli/JSON]]
@@ -316,12 +392,12 @@ onnects VPN connections.
 * Added the ''openidauth'' option to allow inform a RADIUS server that OpenID auth is allowed (requires ''papalwaysok'')
 * Added option ''defsessiontimeout'' to define a session time when not otherwise set by RADIUS
 * Added option ''defidletimeout'' to define a session idle timeout when not otherwise set by RADIUS
-	
+
 == ChangeLog (CoovaChilli-v1.0.5 svn revision 60) ==
 
 * Allow certain ICMP packets from external interface into chilli LAN for proper MTU negotiation - includes ICMP types 0, 3, 5, 11.
 * Fixups in WPA RADIUS proxy code - allow for change of credentials (logging out previous session) and drop fewer authentication requests.
-* Bug fix for when using local MAC authentication	
+* Bug fix for when using local MAC authentication
 
 == ChangeLog (CoovaChilli-v1.0.4 svn revision 51) ==
 

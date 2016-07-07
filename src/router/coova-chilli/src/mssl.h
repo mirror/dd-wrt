@@ -6,7 +6,7 @@
  * Copyright (C) 2005 Nicolas Thill <nthill@free.fr>
  *
  * Updated March 2008 by Eric Bishop <eric@gargoyle-router.com>
- *    - fixed bug to allow writing of more than 16k of data 
+ *    - fixed bug to allow writing of more than 16k of data
  * 	(Even Bill Gates offered 640K! How could a bug like that last this long???)
  *    - fixed bug caused by ssl->outBufferCount never being initialized
  *    - Initialized ssl->status & ssl->partial, since these weren't initialized either

@@ -187,9 +187,8 @@ UNIX socket used to daemon communication.
 .LP
 
 See
-.I http://www.coova.org/
+.I http://coova.github.io/
 for further documentation and community support.
-The original ChilliSpot project homepage is/was at www.chillispot.org.
 
 .SH AUTHORS
 

@@ -1,20 +1,20 @@
 /* -*- mode: c; c-basic-offset: 2 -*- */
-/* 
+/*
  * Copyright (C) 2007-2012 David Bird (Coova Technologies) <support@coova.com>
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 
 #include "chilli.h"
@@ -48,11 +48,11 @@ int http_parse_input(char *src, int len, int is_cookie) {
       /*bunescape(name);*/
 
       if ((eq_pos + 1) == end_pos || (end_pos - eq_pos) <= 1) {
-	log_dbg("%s = nil", name->data);
+	syslog(LOG_DEBUG, "%s = nil", name->data);
       } else {
         bassignblk(value, src+eq_pos+1, end_pos-eq_pos-1);
         /*bunescape(value);*/
-	log_dbg("%s = %s", name->data, value->data);
+	syslog(LOG_DEBUG, "%s = %s", name->data, value->data);
 	setenv((char *)name->data, (char *)value->data, 1);
       }
       start_pos = end_pos + 1;
@@ -71,7 +71,7 @@ int http_parse_input(char *src, int len, int is_cookie) {
 }
 
 /*
-static int chilli_status(bstring s) {
+  static int chilli_status(bstring s) {
   return 0;
   }*/
 
@@ -91,13 +91,13 @@ static int chilli_sessions(bstring b) {
 
   while (conn) {
     struct app_conn_t *appconn = (struct app_conn_t *)conn->peer;
-    
+
     if (appconn && appconn->s_state.authenticated) {
-      
+
     } else {
       state = "<font color=red>Redirect</font>";
     }
-    
+
     bassignformat(s,
 		  "{"
 		  "\"state\":\"%s\","
@@ -118,7 +118,7 @@ static int chilli_sessions(bstring b) {
     bcatcstr(s, "},");
     bconcat(b, s);
   }
-  
+
   bcatcstr(b, "]} ]}");
   return 0;
 }
@@ -138,29 +138,29 @@ static void json_walk(bstring prefix, struct json_object *obj) {
   json_object_object_foreach(obj, key, val) {
     bstring tmp = bfromcstr("");
     switch(json_object_get_type(val)) {
-    case json_type_object:
-      bassign(tmp, prefix);
-      bcatcstr(tmp, key);
-      bcatcstr(tmp, "_0_");
-      json_walk(tmp, val);
-      break;
-    case json_type_array:
-      bassign(tmp, prefix);
-      bcatcstr(tmp, key);
-      log_dbg("a %s=%s", tmp->data, json_object_to_json_string(val));
-      break;
-    default:
-      bassign(tmp, prefix);
-      bcatcstr(tmp, key);
-      log_dbg("%s=%s", tmp->data, json_object_to_json_string(val));
-      break;
+      case json_type_object:
+        bassign(tmp, prefix);
+        bcatcstr(tmp, key);
+        bcatcstr(tmp, "_0_");
+        json_walk(tmp, val);
+        break;
+      case json_type_array:
+        bassign(tmp, prefix);
+        bcatcstr(tmp, key);
+        syslog(LOG_DEBUG, "a %s=%s", tmp->data, json_object_to_json_string(val));
+        break;
+      default:
+        bassign(tmp, prefix);
+        bcatcstr(tmp, key);
+        syslog(LOG_DEBUG, "%s=%s", tmp->data, json_object_to_json_string(val));
+        break;
     }
     bdestroy(tmp);
   }
 }
 
-int ewtapi(struct redir_t *redir, 
-	   struct redir_socket_t *sock, 
+int ewtapi(struct redir_t *redir,
+	   struct redir_socket_t *sock,
 	   struct redir_conn_t *conn,
 	   struct redir_httpreq_t *httpreq) {
   char path[1024];
@@ -170,7 +170,7 @@ int ewtapi(struct redir_t *redir,
   bstring res = bfromcstr("");
   int i;
 
-  log_dbg("EWT API Request");
+  syslog(LOG_DEBUG, "EWT API Request");
 
   redir_getparam(redir, httpreq->qs, "s", s);
   redir_getparam(redir, httpreq->qs, "res", res);
@@ -178,12 +178,12 @@ int ewtapi(struct redir_t *redir,
   if (httpreq->qs) {
     http_parse_input(httpreq->qs, strlen(httpreq->qs), 0);
   }
-  
+
   if (httpreq->clen) {
     struct json_object *obj = 0;
     bblk_fromfd(b, 0, httpreq->clen);
     if ((obj = json_tokener_parse((char *)b->data))) {
-      log_dbg("obj.to_string()=%s", json_object_to_json_string(obj));
+      syslog(LOG_DEBUG, "obj.to_string()=%s", json_object_to_json_string(obj));
       json_object_object_foreach(obj, key, val) {
 	if (!strcmp(key, (char *)s->data)) {
 	  bstring tmp = bfromcstr("CAP_");
@@ -202,33 +202,33 @@ int ewtapi(struct redir_t *redir,
 		"Expires: Fri, 01 Jan 1971 00:00:00 GMT\r\n"
 		"Cache-Control: no-cache, must-revalidate\r\n"
 		"Content-type: application/json\r\n\r\n");
-  
+
   if (safe_write(1, b->data, b->slen) < 0) {
-    log_err(errno, "redir_write()");
+    syslog(LOG_ERR, "%s: redir_write()", strerror(errno));
   }
 
-  safe_snprintf(path, sizeof(path),
+  snprintf(path, sizeof(path),
 		"/var/coova/scripts/%s.sh", s->data);
 
   for (i=0; i < NUM_SERVICES; i++) {
     bassigncstr(b, "");
     if (!strcmp(ewt_services[i].name, (char *)s->data)) {
       ewt_services[i].func(b);
-      log_dbg("Internal EWT Service %s -> %s", ewt_services[i].name, b->data);
+      syslog(LOG_DEBUG, "Internal EWT Service %s -> %s", ewt_services[i].name, b->data);
       if (safe_write(1, b->data, b->slen) < 0) {
-	log_err(errno, "redir_write()");
+	syslog(LOG_ERR, "%s: redir_write()", strerror(errno));
       }
       bdestroy(b);
       bdestroy(s);
       bdestroy(res);
       return 0;
     }
-  } 
+  }
 
   setenv("EWTAPI", "1", 1);
-  log_dbg("EWT API Running %s", *binqqargs);
-  
+  syslog(LOG_DEBUG, "EWT API Running %s", *binqqargs);
+
   execv(*binqqargs, binqqargs);
-  log_err(errno, "count not exec %s", *binqqargs);
+  syslog(LOG_ERR, "%s: count not exec %s", strerror(errno), *binqqargs);
   return -1;
 }

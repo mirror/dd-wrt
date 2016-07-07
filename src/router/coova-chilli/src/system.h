@@ -1,45 +1,36 @@
 /* -*- mode: c; c-basic-offset: 2 -*- */
-/* 
+/*
  * Copyright (C) 2007-2012 David Bird (Coova Technologies) <support@coova.com>
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 
 #ifndef _SYSTEM_H
 #define _SYSTEM_H
 
-#include "../config.h"
+#include "config.h"
 #ifdef ENABLE_CONFIG
 #include ENABLE_CONFIG
 #endif
 
-/*
- *   I do not like this here, but otherwise
- *   __u64 is not defined. Set by -ansi
-#undef __STRICT_ANSI__
- */
-
-#include <stdarg.h>
-#include <stdio.h>
-#include <string.h>
-#include <time.h>
 #include <ctype.h>
-
-#ifdef HAVE_STDLIB_H
-#include <stdlib.h>
-#endif
+#include <stdint.h>
+#include <stdarg.h>
+#include <string.h>
+#include <stdio.h>
+#include <time.h>
 
 #ifdef HAVE_STDDEF_H
 #include <stddef.h>
@@ -51,6 +42,10 @@
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
+
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
 #endif
 
 #ifdef HAVE_ERRNO_H
@@ -75,10 +70,6 @@
 
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
-#endif
-
-#ifdef HAVE_SYS_SYSINFO_H
-#include <sys/sysinfo.h>
 #endif
 
 #ifdef HAVE_TIME_H
@@ -121,6 +112,11 @@
 #include <signal.h>
 #endif
 
+#ifdef HAVE_INTTYPES_H
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
+#endif
+
 #if defined(__linux__)
 #include <asm/types.h>
 #include <linux/if.h>
@@ -133,7 +129,16 @@
 #include <linux/un.h>
 #endif
 
-#elif defined (__FreeBSD__)  || defined (__APPLE__) || defined (__OpenBSD__) || defined (__NetBSD__) 
+#ifdef HAVE_SYS_SYSINFO_H
+#include <sys/sysinfo.h>
+#else
+#ifdef HAVE_LINUX_SYSINFO_H
+#define _LINUX_KERNEL_H
+#include <linux/sysinfo.h>
+#endif
+#endif
+
+#elif defined (__FreeBSD__)  || defined (__APPLE__) || defined (__OpenBSD__) || defined (__NetBSD__)
 #include <net/if.h>
 #include <net/bpf.h>
 #include <net/if_dl.h>
@@ -187,7 +192,7 @@
 #endif
 
 #ifdef MTRACE
-#include <mcheck.h> 
+#include <mcheck.h>
 #endif
 
 #ifdef DMALLOC
@@ -234,32 +239,12 @@
 #include <ifaddrs.h>
 #endif
 
-#undef LITTLE_ENDIAN
-#undef BIG_ENDIAN
-
-#if (defined(__BYTE_ORDER) && defined(__LITTLE_ENDIAN) && __BYTE_ORDER == __LITTLE_ENDIAN) || \
-    (defined(i386) || defined(__i386__) || defined(__i486__) || \
-     defined(__i586__) || defined(__i686__) || defined(vax) || defined(MIPSEL))
-# define LITTLE_ENDIAN 1
-# define BIG_ENDIAN 0
-#elif (defined(__BYTE_ORDER) && defined(__BIG_ENDIAN) && __BYTE_ORDER == __BIG_ENDIAN) || \
-      (defined(sparc) || defined(POWERPC) || defined(mc68000) || defined(sel))
-# define LITTLE_ENDIAN 0
-# define BIG_ENDIAN 1
-#else
-# define LITTLE_ENDIAN 0
-# define BIG_ENDIAN 0
-#endif
-
 #ifndef SI_LOAD_SHIFT
 #define SI_LOAD_SHIFT 16
 #endif
 
 #include <unistd.h>
 #include <errno.h>
-
-#define safe_snprintf portable_snprintf
-char *safe_strncpy(char *dst, const char *src, size_t size);
 
 int safe_accept(int fd, struct sockaddr *sa, socklen_t *lenptr);
 int safe_select(int nfds, fd_set *readfds, fd_set *writefds,
@@ -282,22 +267,22 @@ int safe_recvfrom(int sockfd, void *buf, size_t len, int flags,
 		  struct sockaddr *src_addr, socklen_t *addrlen);
 int safe_sendto(int s, const void *b, size_t blen, int flags,
 		const struct sockaddr *dest_addr, socklen_t addrlen);
+int safe_sendmsg(int sockfd, struct msghdr *msg, int flags);
 int safe_close (int fd);
-pid_t safe_fork();
 
 #ifndef TEMP_FAILURE_RETRY
-#define TEMP_FAILURE_RETRY(expression) \
-    ({ \
-        long int _result; \
-        do _result = (long int) (expression); \
-        while (_result == -1L && errno == EINTR); \
-        _result; \
-    })
+#define TEMP_FAILURE_RETRY(expression)          \
+  ({                                            \
+    long int _result;                           \
+    do _result = (long int) (expression);       \
+    while (_result == -1L && errno == EINTR);   \
+    _result;                                    \
+  })
 #endif
 
 #define SET_SA_FAMILY(addr, family)			\
-    memset ((char *) &(addr), '\0', sizeof(addr));	\
-    addr.sa_family = (family);
+  memset ((char *) &(addr), '\0', sizeof(addr));	\
+  addr.sa_family = (family);
 
 void copy_mac6(uint8_t *, uint8_t *);
 
@@ -317,6 +302,10 @@ void copy_mac6(uint8_t *, uint8_t *);
 #ifdef HAVE_AVL
 #include "avl/avl.h"
 #define HAVE_SEARCH 1
+#endif
+
+#if defined(USING_PCAP)
+#undef USING_MMAP
 #endif
 
 #endif

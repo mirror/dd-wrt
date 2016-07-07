@@ -1,7 +1,7 @@
 
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004-2011, the olsr.org team - see HISTORY file
+ * The olsr.org Optimized Link-State Routing daemon version 2 (olsrd2)
+ * Copyright (c) 2004-2015, the olsr.org team - see HISTORY file
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,6 +39,10 @@
  *
  */
 
+/**
+ * @file
+ */
+
 #ifndef LIST_H_
 #define LIST_H_
 
@@ -54,14 +58,10 @@
  * have a link to the head, no NULL element.
  */
 struct list_entity {
-  /**
-   * Pointer to next element in list or to list head if last element
-   */
+  /*! pointer to next element in list or to list head if last element */
   struct list_entity *next;
 
-  /**
-   * Pointer to previous element in list or list head if first element
-   */
+  /*! Pointer to previous element in list or list head if first element */
   struct list_entity *prev;
 };
 
@@ -411,7 +411,7 @@ list_merge(struct list_entity *add_to, struct list_entity *remove_from) {
  *    the next node during the loop
  */
 #define list_for_element_range_safe(first_element, last_element, element, list_member, ptr) \
-  for (element = (first_element), ptr = list_next_element(first_element, list_member); \
+  for (element = (first_element), ptr = list_next_element(element, list_member); \
        element->list_member.prev != &(last_element)->list_member; \
        element = ptr, ptr = list_next_element(ptr, list_member))
 
@@ -429,7 +429,7 @@ list_merge(struct list_entity *add_to, struct list_entity *remove_from) {
  *    the previous node during the loop
  */
 #define list_for_element_range_reverse_safe(first_element, last_element, element, list_member, ptr) \
-  for (element = (last_element), ptr = list_prev_element(last_element, list_member); \
+  for (element = (last_element), ptr = list_prev_element(element, list_member); \
        element->list_member.next != &(first_element)->list_member; \
        element = ptr, ptr = list_prev_element(ptr, list_member))
 

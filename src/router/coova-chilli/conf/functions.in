@@ -1,8 +1,8 @@
 #!/bin/sh
 #
 # Copyright (c) 2006-2012 David Bird (Coova Technologies)
-# Licensed under Gnu General Public License. 
-# http://www.coova.org/
+# Licensed under Gnu General Public License.
+# http://coova.github.io/
 #
 
 IPTABLES=/sbin/iptables
@@ -61,7 +61,7 @@ bailout() { echo $1; exit; }
 check_required() {
     [ -z "$HS_MODE" ]  && bailout "HS_MODE is required"
 }
-    
+
 configs1=/tmp/configs1.$$
 addconfig1() { [ -n "$*" ] && cat<<EOF>>$configs1
 $*
@@ -83,7 +83,7 @@ net		$HS_NETWORK/$HS_NETMASK
 uamlisten	$HS_UAMLISTEN
 uamport         $HS_UAMPORT
 dhcpif		$HS_LANIF
-uamallowed	"www.coova.org${HS_UAMSERVER:+,$HS_UAMSERVER}$webadmin$uamallow"
+uamallowed	"$HS_UAMSERVER$webadmin$uamallow"
 uamanydns
 $(cat $configs1)
 $HS_RAW_CONFIG1
@@ -105,8 +105,8 @@ EOF
 }
 
 writeconfig() {
-    [ -e $LOCAL_CONF ] || touch $LOCAL_CONF 
-    [ -e $HS_CONF ] || touch $HS_CONF 
+    [ -e $LOCAL_CONF ] || touch $LOCAL_CONF
+    [ -e $HS_CONF ] || touch $HS_CONF
     [ "$HS_USETAP" = "on" ] && addconfig1 "usetap"
     [ "$HS_NOARPENTRIES" = "on" ] && addconfig1 "noarpentries"
     [ "$HS_ANYIP" = "on" ] && addconfig1 "uamanyip"
@@ -144,7 +144,9 @@ writeconfig() {
     addconfig1 ${HS_DNS1:+"dns1 \"$HS_DNS1\""}
     addconfig1 ${HS_DNS2:+"dns2 \"$HS_DNS2\""}
     addconfig1 ${HS_TCPMSS:+"tcpmss \"$HS_TCPMSS\""}
+    addconfig1 ${HS_DHCPOPT:+"dhcpopt \"$HS_DHCPOPT\""}
 
+    [ "$HS_LOCATIONOPT82" = "on" ] && addconfig1 "locationopt82"
     [ "$HS_UAMHOMEPAGE" = "none" ] && HS_UAMHOMEPAGE=
     addconfig1 ${HS_UAMHOMEPAGE:+"uamhomepage $(eval echo $HS_UAMHOMEPAGE)"}
     addconfig1 ${HS_WISPRLOGIN:+"wisprlogin $HS_WISPRLOGIN"}
@@ -179,6 +181,9 @@ writeconfig() {
     HS_UAMALLOW=$(echo $HS_UAMALLOW|sed 's/ /,/g')
     uamallow=${HS_UAMALLOW:+",$HS_UAMALLOW"}
 
+    HS_IPSRCALLOWED=$(echo $HS_IPSRCALLOWED|sed 's/ /,/g')
+    addconfig1 ${HS_IPSRCALLOWED:+"ipsrcallowed $HS_IPSRCALLOWED"}
+
     addconfig1 ${HS_MAXCLIENTS:+"maxclients $HS_MAXCLIENTS"}
     addconfig1 ${HS_RADIUSQSIZE:+"radiusqsize $HS_RADIUSQSIZE"}
     addconfig1 ${HS_DHCPHASHSIZE:+"dhcphashsize $HS_DHCPHASHSIZE"}
@@ -205,7 +210,7 @@ writeconfig() {
 	network=$(echo  "$HS_LOC_NETWORK"| sed 's/[^a-zA-Z0-9]/_/g')
 	provider=$(echo "$HS_PROVIDER"   | sed 's/[^a-zA-Z0-9]/_/g')
 	[ -n "$provider" ] && provider="$provider,"
-	[ -n "$HS_SSID" ] && { 
+	[ -n "$HS_SSID" ] && {
 	    [ -n "$network" ] && network="${network}_"
 	    network="$network$HS_SSID"
 	}
@@ -221,7 +226,7 @@ writeconfig() {
     writeconfig1 > $MAIN_TEMP
 
     # Not using auto-config, so set hs.conf settings directly
-    if [ "$HS_RADCONF" != "on" -a "$HS_RADCONF" != "url" ]; then 
+    if [ "$HS_RADCONF" != "on" -a "$HS_RADCONF" != "url" ]; then
 	[ "$HS_PAP_OK" = "on" ] && addconfig2 "papalwaysok"
 	[ "$HS_MACAUTH" = "on" ] && addconfig2 "macauth"
 	[ "$HS_MACAUTH" = "on" -a -n "$HS_MACPASSWD" ] && addconfig2 "macpasswd \"$HS_MACPASSWD\""
@@ -240,6 +245,7 @@ writeconfig() {
 	[ "$HS_SWAPOCTETS" = "on" ] && addconfig2 "swapoctets"
 	[ "$HS_DOMAINDNSLOCAL" = "on" ] && addconfig2 "domaindnslocal"
 	[ "$HS_SESKEEPALIVE" = "on" ] && addconfig2 "seskeepalive"
+	[ "$HS_RADSEC" = "on" ] && addconfig2 "radsec"
 	[ -n "$HS_DNSLOG" ] && addconfig2 "dnslog \"$HS_DNSLOG\""
 	[ -n "$HS_USESTATUSFILE" ] && addconfig2 "usestatusfile \"$HS_USESTATUSFILE\""
 	[ -n "$HS_UAMLOGOUTIP" ] && addconfig2 "uamlogoutip \"$HS_UAMLOGOUTIP\""
@@ -263,6 +269,8 @@ writeconfig() {
 	    addconfig2 "sslkeyfile $HS_SSLKEYFILE"
 	    addconfig2 "sslcertfile $HS_SSLCERTFILE"
 	}
+
+	[ -n "$HS_SSLCAFILE" ] && addconfig2 "sslcafile $HS_SSLCAFILE"
 
 	[ -n "$HS_POSTAUTH_PROXY" -a -n "$HS_POSTAUTH_PROXYPORT" ] && {
 	    addconfig2 "postauthproxy $HS_POSTAUTH_PROXY"
@@ -293,7 +301,7 @@ writeconfig() {
 	    writeconfig2 > $HS_TEMP
 	fi
     fi
-    
+
     touch $MAIN_TEMP $HS_TEMP
     update_new_file $MAIN_TEMP $MAIN_CONF
     update_new_file $HS_TEMP $HS_CONF
@@ -327,9 +335,9 @@ checkfornew() {
 }
 
 radiusconfig() {
-    [ -e $LOCAL_CONF ] || touch $LOCAL_CONF 
-    [ -e $HS_CONF ] || touch $HS_CONF 
-    if [ "$HS_RADCONF" = "url" ]; then 
+    [ -e $LOCAL_CONF ] || touch $LOCAL_CONF
+    [ -e $HS_CONF ] || touch $HS_CONF
+    if [ "$HS_RADCONF" = "url" ]; then
 	for s in $HS_RADCONF_URL $HS_RADCONF_URLS; do
 	    sep='?'
 	    opt=
@@ -338,7 +346,7 @@ radiusconfig() {
 	    [ "$HS_RADCONF_USER" = "" ] || opt="-u '$HS_RADCONF_USER:$HS_RADCONF_PWD'"
 	    curl -k -A CoovaAP $opt "$s$sep$qs" 2>/dev/null > $HS_TEMP && break;
 	done
-    elif [ "$HS_RADCONF" = "on" ]; then 
+    elif [ "$HS_RADCONF" = "on" ]; then
 	for s in $HS_RADCONF_SERVER $HS_RADCONF_SERVERS; do
 	    $SBIN/chilli_radconfig \
 		--radiustimeout=30 \
@@ -354,7 +362,7 @@ radiusconfig() {
 		--adminpasswd="$HS_RADCONF_PWD" \
 		> $HS_TEMP && break;
 	done
-#    elif [ "$HS_LOCAL" != "on" ]; then 
+#    elif [ "$HS_LOCAL" != "on" ]; then
 #	$SBIN/chilli_radconfig > $HS_TEMP && { checkfornew; break; }
     fi
     checkfornew

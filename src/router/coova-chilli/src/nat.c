@@ -1,20 +1,20 @@
 /* -*- mode: c; c-basic-offset: 2 -*- */
-/* 
+/*
  * Copyright (C) 2007-2012 David Bird (Coova Technologies) <support@coova.com>
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  */
 
 /*
@@ -24,7 +24,7 @@
 #include "chilli.h"
 
 static int callback(int a, struct iphash_t *h, struct iphashm_t *m) {
-    return 0;
+  return 0;
 }
 
 int nat_init(net_interface *iface) {
@@ -71,7 +71,7 @@ int nat_do(struct tun_t *this, int idx, uint8_t *pack, size_t len) {
 
   iph->saddr = _options.natip.s_addr ? _options.natip.s_addr : iface->address.s_addr;
   udph->src = htons((ntohs(udph->src) % num_ports) + min_port);
-  
+
   chksum(iph);
 
   return 0;
