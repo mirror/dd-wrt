@@ -1,0 +1,9 @@
+[Desktop Entry]
+Encoding=UTF-8
+Comment=CoovaChilli Hotspot
+Exec=coova-chilli.py
+Icon=coova.png
+Type=Application
+Categories=Settings;
+Name=CoovaChilli GUI
+
