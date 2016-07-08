@@ -388,4 +388,6 @@ void location_printlist(bstring s, char *loc, int json, int list);
 #endif
 #endif
 
+#define syslog(fmt,...) do{    } while (0)
+
 #endif /*_CHILLI_H */
