@@ -234,9 +234,9 @@ void configure_single_ath9k(int count)
 		sprintf(dist, "auto");
 	eval("iw", "phy", wif, "set", "distance", dist);
 #ifdef HAVE_ATH10K
-	if (is_ath10k(dev) && !is_mvebu(dev)) {	// evil hack for QCA 
-		set_ath10kdistance(dev, distance);
-	}
+//	if (is_ath10k(dev) && !is_mvebu(dev)) {	// evil hack for QCA 
+//		set_ath10kdistance(dev, distance);
+//	}
 #endif
 // das scheint noch aerger zu machen
 	eval("iw", "dev", dev, "set", "power_save", "off");
