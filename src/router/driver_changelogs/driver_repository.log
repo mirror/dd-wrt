@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r3036 | BrainSlayer | 2016-07-08 15:27:39 +0200 (Fri, 08 Jul 2016) | 1 line
+
+missing header fix
+------------------------------------------------------------------------
+r3035 | BrainSlayer | 2016-07-08 15:24:24 +0200 (Fri, 08 Jul 2016) | 1 line
+
+no required anymore
+------------------------------------------------------------------------
 r3034 | BrainSlayer | 2016-07-08 12:24:15 +0200 (Fri, 08 Jul 2016) | 1 line
 
 ath10k: replace warning with an error message if HTT op version is unset
