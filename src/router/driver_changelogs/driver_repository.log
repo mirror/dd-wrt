@@ -1,4 +1,36 @@
 ------------------------------------------------------------------------
+r3034 | BrainSlayer | 2016-07-08 12:24:15 +0200 (Fri, 08 Jul 2016) | 1 line
+
+ath10k: replace warning with an error message if HTT op version is unset
+------------------------------------------------------------------------
+r3033 | BrainSlayer | 2016-07-08 12:21:16 +0200 (Fri, 08 Jul 2016) | 1 line
+
+ath10k: simplify pktlog htt event processing
+------------------------------------------------------------------------
+r3032 | BrainSlayer | 2016-07-08 12:17:50 +0200 (Fri, 08 Jul 2016) | 1 line
+
+ath10k: ensure txrx-compl-task is stopped when cleaning htt-tx
+------------------------------------------------------------------------
+r3031 | BrainSlayer | 2016-07-08 12:16:50 +0200 (Fri, 08 Jul 2016) | 1 line
+
+ath10k: remove debugfs support for Per STA total rx duration
+------------------------------------------------------------------------
+r3030 | BrainSlayer | 2016-07-08 12:15:40 +0200 (Fri, 08 Jul 2016) | 1 line
+
+ath10k: add support for ath10k_sta_statistics support
+------------------------------------------------------------------------
+r3029 | BrainSlayer | 2016-07-08 12:13:43 +0200 (Fri, 08 Jul 2016) | 1 line
+
+ath10k: fix 10.4 extended peer stats update
+------------------------------------------------------------------------
+r3028 | BrainSlayer | 2016-07-08 12:11:58 +0200 (Fri, 08 Jul 2016) | 1 line
+
+mac80211: parse wide bandwidth channel switch IE with workaround
+------------------------------------------------------------------------
+r3027 | BrainSlayer | 2016-07-08 12:06:33 +0200 (Fri, 08 Jul 2016) | 1 line
+
+QCA9888 and coverage class experimental patch
+------------------------------------------------------------------------
 r3026 | BrainSlayer | 2016-07-06 21:46:41 +0200 (Wed, 06 Jul 2016) | 1 line
 
 infinite loop prevention
