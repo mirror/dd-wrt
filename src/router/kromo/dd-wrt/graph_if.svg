@@ -31,14 +31,7 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 -->
-<svg xml:space='preserve' xmlns='http://www.w3.org/2000/svg' 
-	xmlns:xlink='http://www.w3.org/1999/xlink'
-	width='100%' height='100%' 
-	viewBox='0 0 600 300'
-	preserveAspectRatio='none'
-	onload='init(evt)'
-	encoding='UTF-8'
->
+<svg xml:space='preserve' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' width='100%' height='100%' viewBox='0 0 600 300' preserveAspectRatio='none' onload='init(evt)' encoding='UTF-8'>
 <g id='graph'>
 	<rect id='bg' x1='0' y1='0' width='600' height='300' fill='white' fill-opacity='0.0'/>
 
@@ -86,7 +79,7 @@ if (typeof getURL == 'undefined') {
 		var http_request = null;
 		if (typeof XMLHttpRequest != 'undefined') {
 			http_request = new XMLHttpRequest();
-		} else if (typeof ActiveXObject != 'undefined') {
+		} else{ if (typeof ActiveXObject != 'undefined') {
 			try {
 				http_request = new ActiveXObject('Msxml2.XMLHTTP');
 			} catch (e) {
@@ -94,6 +87,7 @@ if (typeof getURL == 'undefined') {
 					http_request = new ActiveXObject('Microsoft.XMLHTTP');
 				} catch (e) {}
 			}
+		}
 		}
 		if (!http_request) {
 			throw 'Both getURL and XMLHttpRequest are undefined';
@@ -237,7 +231,7 @@ function plot_data(obj) {
 	if (scale_type == status_band.up) {
 		if (plot_in[index_plot] > max) max = plot_in[index_plot];
 		if (plot_out[index_plot] > max) max = plot_out[index_plot];
-	} else if (scale_type == status_band.follow) {
+	} else { if (scale_type == status_band.follow) {
 		i = 0;
 		max = 0;
 		while (i < plot_in.length) {
@@ -245,6 +239,7 @@ function plot_data(obj) {
 			if (plot_out[i] > max) max = plot_out[i];
 			i++;
 		}
+	}
 	}
 
 	var rmax=makeRoundMax(max);
@@ -318,7 +313,6 @@ function formatSpeedBits(speed) {
 	// format speed in bits/sec, input: bytes/sec
 	if (speed < 125000) return Math.round(speed / 125) + " Kbps";
 	if (speed < 125000000) return Math.round(speed / 1250)/100 + " Mbps";
-	// else
 	return Math.round(speed / 1250000)/100 + " Gbps";  // wow!
 }
 
@@ -326,7 +320,6 @@ function formatSpeedBytes(speed) {
 	// format speed in bytes/sec, input:  bytes/sec
 	if (speed < 1048576) return Math.round(speed / 10.24)/100 + " " + share.kbytes + "/s";
 	if (speed < 1073741824) return Math.round(speed / 10485.76)/100 + " " + share.mbytes + "/s";
-	// else
 	return Math.round(speed / 10737418.24)/100 + " " + share.mbytes + "/s";  // wow!
 }
 
