@@ -3,9 +3,9 @@
 
  Purpose     :  Entity included in other project documents.
 
- $Id: license.sgml,v 2.9 2013/03/01 17:42:16 fabiankeil Exp $
+ $Id: license.sgml,v 2.10 2016/05/03 13:22:13 fabiankeil Exp $
 
-  Copyright (C) 2001-2013 the Privoxy Developers http://www.privoxy.org/
+  Copyright (C) 2001-2013 the Privoxy Developers https://www.privoxy.org/
   See LICENSE.
 
  ======================================================================
@@ -37,7 +37,7 @@
  it will be useful, but WITHOUT ANY WARRANTY; without even the implied
  warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  See the <ulink
- url="http://www.privoxy.org/user-manual/copyright.html#LICENSE">
+ url="https://www.privoxy.org/user-manual/copyright.html#LICENSE">
  <citetitle>license</citetitle></ulink> for details.
 </para>
 

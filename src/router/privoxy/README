@@ -5,7 +5,7 @@
  * Purpose     :  README file to give a short intro.
  *
  * Copyright   :  Written by and Copyright (C) 2001-2011 the
- *                Privoxy team. http://www.privoxy.org/
+ *                Privoxy team. https://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
  *                by and Copyright (C) 1997 Anonymous Coders and
@@ -32,8 +32,9 @@
  *
  *********************************************************************/
 
-This README is included with Privoxy 3.0.24. See http://www.privoxy.org/ for
-more information. The current code maturity level is "stable".
+This README is included with the development version of Privoxy 3.0.25. See
+https://www.privoxy.org/ for more information. The current code maturity level
+is "beta", but seems stable to us :).
 
 -------------------------------------------------------------------------------
 
@@ -50,9 +51,9 @@ Privoxy is an associated project of Software in the Public Interest (SPI).
 
 Helping hands and donations are welcome:
 
-  * http://www.privoxy.org/faq/general.html#PARTICIPATE
+  * https://www.privoxy.org/faq/general.html#PARTICIPATE
 
-  * http://www.privoxy.org/faq/general.html#DONATE
+  * https://www.privoxy.org/faq/general.html#DONATE
 
 -------------------------------------------------------------------------------
 
@@ -93,7 +94,7 @@ in '*.action' files. 'user.action' should be used for any actions
 customizations. On Unix-like systems, these files are typically installed in /
 etc/privoxy. On Windows, then wherever the executable itself is installed.
 There are many significant changes and advances from earlier versions. The User
-Manual has an explanation of all configuration options, and examples: http://
+Manual has an explanation of all configuration options, and examples: https://
 www.privoxy.org/user-manual/.
 
 Be sure to set your browser(s) for HTTP/HTTPS Proxy at <IP>:<Port>, or whatever
@@ -104,19 +105,25 @@ try it with FTP or other protocols for the simple reason it does not work.
 The actions list can be configured via the web interface accessed via http://
 p.p/, as well other options.
 
+All configuration files are subject to unannounced changes during the
+development process.
+
 -------------------------------------------------------------------------------
 
 5. DOCUMENTATION
 
-There should be documentation in the 'doc' subdirectory. In particular, see the
-User Manual there, the FAQ, and those interested in Privoxy development, should
-look at developer-manual.
+There should be documentation in the 'doc' subdirectory, but it may not be
+completed at this point. In particular, see the User Manual there, the FAQ, and
+those interested in Privoxy development, should look at developer-manual.
 
-The source and configuration files are all well commented. The main
-configuration files are: 'config', 'default.action', and 'default.filter'.
+The most up to date source of information on the current development version,
+may still be either comments in the source code, or the included configuration
+files. The source and configuration files are all well commented. The main
+configuration files are: 'config', 'default.action', and 'default.filter' in
+the top-level source directory.
 
 Included documentation may vary according to platform and packager. All
-documentation is posted on http://www.privoxy.org, in case you don't have it,
+documentation is posted on https://www.privoxy.org, in case you don't have it,
 or can't find it.
 
 -------------------------------------------------------------------------------
@@ -135,7 +142,7 @@ A lot of support requests don't contain enough information and can't be solved
 without a lot of back and forth which causes unnecessary delays. Reading this
 section should help to prevent that.
 
-Before contacting us to report a problem, please try to verify that it is a
+Before contacting us to report a problem, please try to verify that it is a 
 Privoxy problem, and not a browser or site problem or documented behaviour that
 just happens to be different than what you expected. If unsure, try toggling
 off Privoxy, and see if the problem persists.
@@ -156,7 +163,7 @@ requesting support:
 
   * The operating system and versions you run Privoxy on, e.g. Windows XP SP2.
 
-  * The name, platform, and version of the browser you were using (e.g.
+  * The name, platform, and version of the browser you were using (e.g. 
     Internet Explorer v5.5 for Mac).
 
   * The URL where the problem occurred, or some way for us to duplicate the
@@ -272,7 +279,7 @@ and you won't see them.
 
 Please send feedback on ads that slipped through, innocent images that were
 blocked, sites that don't work properly, and other configuration related
-problem of default.action file, to http://sourceforge.net/tracker/?group_id=
+problem of default.action file, to https://sourceforge.net/tracker/?group_id=
 11118&atid=460288, the Actions File Tracker.
 
 -------------------------------------------------------------------------------
@@ -305,8 +312,10 @@ feel free to use one of the mailing lists. To discuss issues that haven't been
 completely diagnosed yet, please use the Privoxy users list. Technically
 interested users and people who wish to contribute to the project are always
 welcome on the developers list. You can find an overview of all Privoxy-related
-mailing lists, including list archives, at: http://sourceforge.net/mail/?
-group_id=11118.
+mailing lists, including list archives, at: https://lists.privoxy.org/mailman/
+listinfo. The lists hosted on privoxy.org have been created in 2016, the
+previously-used lists hosted at SourceForge are deprecated but the archives may
+still be useful: https://sourceforge.net/mail/?group_id=11118.
 
 -------------------------------------------------------------------------------
 

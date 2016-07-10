@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.11 2006/07/18 14:48:45 david__schmidt Exp $
+# $Id: Makefile,v 1.12 2016/04/04 10:50:18 fabiankeil Exp $
 #
 # Written by and Copyright (C) 2001 the SourceForge
 # Privoxy team. http://www.privoxy.org/
@@ -25,35 +25,6 @@
 # or write to the Free Software Foundation, Inc., 59
 # Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
-# $Log: Makefile,v $
-# Revision 1.11  2006/07/18 14:48:45  david__schmidt
-# Reorganizing the repository: swapping out what was HEAD (the old 3.1 branch)
-# with what was really the latest development (the v_3_0_branch branch)
-#
-# Revision 1.5.2.2  2002/10/25 02:44:23  hal9
-# Port of make install, etc from main trunk. Needs testing! Add Slackware
-# support, and other related changes. Update related docs.
-#
-# Revision 1.5.2.1  2002/08/05 17:46:13  oes
-# Change make to gmake to fix auto-build on Solaris
-#
-# Revision 1.5  2002/04/11 12:51:34  oes
-# Bugfix
-#
-# Revision 1.4  2002/04/09 16:38:10  oes
-# Added option to run the whole build process
-#
-# Revision 1.3  2002/03/26 22:29:54  swa
-# we have a new homepage!
-#
-# Revision 1.2  2002/03/24 13:25:42  swa
-# name change related issues
-#
-# Revision 1.1  2001/12/01 11:24:29  jongfoster
-# Will display a warning if non-GNU make is used
-#
-#
-
 #############################################################################
 
 GNU_MAKE_CMD = gmake

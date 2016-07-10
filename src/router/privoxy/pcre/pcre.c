@@ -730,7 +730,7 @@ if (*p == '}') max = min; else
 /* Do paranoid checks, then fill in the required variables, and pass back the
 pointer to the terminating '}'. */
 
-if (min > 65535 || max > 65535)
+if (min < 0 || min > 65535 || max < -1 || max > 65535)
   *errorptr = ERR5;
 else
   {
@@ -2660,8 +2660,13 @@ while ((c = *(++ptr)) != 0)
         }
       else class_charcount++;
       ptr++;
+      if (*ptr == 0)
+        {
+        *errorptr = ERR6;
+        goto PCRE_ERROR_RETURN;
+        }
       }
-    while (*ptr != 0 && *ptr != ']');
+    while (*ptr != ']');
 
     /* Repeats for negated single chars are handled by the general code */
 

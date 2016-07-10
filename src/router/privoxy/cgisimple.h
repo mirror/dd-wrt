@@ -1,6 +1,6 @@
 #ifndef CGISIMPLE_H_INCLUDED
 #define CGISIMPLE_H_INCLUDED
-#define CGISIMPLE_H_VERSION "$Id: cgisimple.h,v 1.19 2013/11/24 14:23:28 fabiankeil Exp $"
+#define CGISIMPLE_H_VERSION "$Id: cgisimple.h,v 1.20 2016/03/17 10:40:53 fabiankeil Exp $"
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/cgisimple.h,v $
@@ -68,6 +68,11 @@ extern jb_err cgi_show_version (struct client_state *csp,
 extern jb_err cgi_show_request (struct client_state *csp,
                                 struct http_response *rsp,
                                 const struct map *parameters);
+#ifdef FEATURE_CLIENT_TAGS
+extern jb_err cgi_show_client_tags(struct client_state *csp,
+                                   struct http_response *rsp,
+                                   const struct map *parameters);
+#endif
 extern jb_err cgi_transparent_image (struct client_state *csp,
                                      struct http_response *rsp,
                                      const struct map *parameters);

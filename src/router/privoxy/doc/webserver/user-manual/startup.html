@@ -6,7 +6,7 @@
   <title>Starting Privoxy</title>
   <meta name="GENERATOR" content=
   "Modular DocBook HTML Stylesheet Version 1.79">
-  <link rel="HOME" title="Privoxy 3.0.24 User Manual" href="index.html">
+  <link rel="HOME" title="Privoxy 3.0.25 User Manual" href="index.html">
   <link rel="PREVIOUS" title="Quickstart to Using Privoxy" href=
   "quickstart.html">
   <link rel="NEXT" title="Privoxy Configuration" href="configuration.html">
@@ -21,7 +21,7 @@
     <table summary="Header navigation table" width="100%" border="0"
     cellpadding="0" cellspacing="0">
       <tr>
-        <th colspan="3" align="center">Privoxy 3.0.24 User Manual</th>
+        <th colspan="3" align="center">Privoxy 3.0.25 User Manual</th>
       </tr>
 
       <tr>
@@ -55,7 +55,7 @@
     protocols.</p>
 
     <div class="FIGURE">
-      <a name="AEN627" id="AEN627"></a>
+      <a name="AEN667" id="AEN667"></a>
 
       <p><b>Figure 2. Proxy Configuration Showing Mozilla/Netscape HTTP and
       HTTPS (SSL) Settings</b></p>
@@ -112,7 +112,7 @@
     only HTTP and HTTPS (SSL)!</p>
 
     <div class="FIGURE">
-      <a name="AEN672" id="AEN672"></a>
+      <a name="AEN712" id="AEN712"></a>
 
       <p><b>Figure 3. Proxy Configuration Showing Internet Explorer HTTP and
       HTTPS (Secure) Settings</b></p>
@@ -157,7 +157,33 @@
     </div>
 
     <div class="SECT2">
-      <h2 class="SECT2"><a name="START-WINDOWS" id="START-WINDOWS">5.2.
+      <h2 class="SECT2"><a name="START-FREEBSD" id="START-FREEBSD">5.2.
+      FreeBSD and ElectroBSD</a></h2>
+
+      <p>To start <span class="APPLICATION">Privoxy</span> upon booting, add
+      "privoxy_enable='YES'" to <tt class="FILENAME">/etc/rc.conf</tt>.
+      <span class="APPLICATION">Privoxy</span> will use <tt class=
+      "FILENAME">/usr/local/etc/privoxy/config</tt> as its main configuration
+      file.</p>
+
+      <p>If you installed <span class="APPLICATION">Privoxy</span> into a
+      jail, the paths above are relative to the jail root.</p>
+
+      <p>To start <span class="APPLICATION">Privoxy</span> manually, run:</p>
+
+      <table border="0" bgcolor="#E0E0E0" width="100%">
+        <tr>
+          <td>
+            <pre class="SCREEN">
+ # service privoxy onestart
+</pre>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="SECT2">
+      <h2 class="SECT2"><a name="START-WINDOWS" id="START-WINDOWS">5.3.
       Windows</a></h2>
 
       <p>Click on the <span class="APPLICATION">Privoxy</span> Icon to start
@@ -178,8 +204,8 @@
     </div>
 
     <div class="SECT2">
-      <h2 class="SECT2"><a name="START-UNICES" id="START-UNICES">5.3.
-      Solaris, NetBSD, FreeBSD, HP-UX and others</a></h2>
+      <h2 class="SECT2"><a name="START-UNICES" id="START-UNICES">5.4. Generic
+      instructions for Unix derivates (Solaris, NetBSD, HP-UX etc.)</a></h2>
 
       <p>Example Unix startup command:</p>
 
@@ -187,15 +213,20 @@
         <tr>
           <td>
             <pre class="SCREEN">
- # /usr/sbin/privoxy /etc/privoxy/config
+ # /usr/sbin/privoxy --user privoxy /etc/privoxy/config
 </pre>
           </td>
         </tr>
       </table>
+
+      <p>Note that if you installed <span class="APPLICATION">Privoxy</span>
+      through a package manager, the package will probably contain a
+      platform-specific script or configuration file to start <span class=
+      "APPLICATION">Privoxy</span> upon boot.</p>
     </div>
 
     <div class="SECT2">
-      <h2 class="SECT2"><a name="START-OS2" id="START-OS2">5.4. OS/2</a></h2>
+      <h2 class="SECT2"><a name="START-OS2" id="START-OS2">5.5. OS/2</a></h2>
 
       <p>During installation, <span class="APPLICATION">Privoxy</span> is
       configured to start automatically when the system restarts. You can
@@ -205,35 +236,29 @@
     </div>
 
     <div class="SECT2">
-      <h2 class="SECT2"><a name="START-MACOSX" id="START-MACOSX">5.5. Mac OS
+      <h2 class="SECT2"><a name="START-MACOSX" id="START-MACOSX">5.6. Mac OS
       X</a></h2>
 
-      <p>After downloading the privoxy software, unzip the downloaded file by
-      double-clicking on the zip file icon. Then, double-click on the
-      installer package icon and follow the installation process.</p>
-
       <p>The privoxy service will automatically start after a successful
-      installation. In addition, the privoxy service will automatically start
-      every time your computer starts up.</p>
+      installation (and thereafter every time your computer starts up)
+      however you will need to configure your web browser(s) to use it. To do
+      so, configure them to use a proxy for HTTP and HTTPS at the address
+      127.0.0.1:8118.</p>
 
       <p>To prevent the privoxy service from automatically starting when your
-      computer starts up, remove or rename the folder named
-      /Library/StartupItems/Privoxy.</p>
+      computer starts up, remove or rename the file <tt class=
+      "LITERAL">/Library/LaunchDaemons/org.ijbswa.privoxy.plist</tt> (on OS X
+      10.5 and higher) or the folder named <tt class=
+      "LITERAL">/Library/StartupItems/Privoxy</tt> (on OS X 10.4
+      'Tiger').</p>
 
-      <p>A simple application named Privoxy Utility has been created which
-      enables administrators to easily start and stop the privoxy
-      service.</p>
-
-      <p>In addition, the Privoxy Utility presents a simple way for
-      administrators to edit the various privoxy config files. A method to
-      uninstall the software is also available.</p>
-
-      <p>An administrator username and password must be supplied in order for
-      the Privoxy Utility to perform any of the tasks.</p>
+      <p>To manually start or stop the privoxy service, use the scripts
+      startPrivoxy.sh and stopPrivoxy.sh supplied in /Applications/Privoxy.
+      They must be run from an administrator account, using sudo.</p>
     </div>
 
     <div class="SECT2">
-      <h2 class="SECT2"><a name="CMDOPTIONS" id="CMDOPTIONS">5.6. Command
+      <h2 class="SECT2"><a name="CMDOPTIONS" id="CMDOPTIONS">5.7. Command
       Line Options</a></h2>
 
       <p><span class="APPLICATION">Privoxy</span> may be invoked with the

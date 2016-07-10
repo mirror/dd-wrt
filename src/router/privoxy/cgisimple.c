@@ -1,4 +1,4 @@
-const char cgisimple_rcs[] = "$Id: cgisimple.c,v 1.132 2015/11/06 13:38:13 fabiankeil Exp $";
+const char cgisimple_rcs[] = "$Id: cgisimple.c,v 1.142 2016/05/22 12:43:07 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/cgisimple.c,v $
@@ -6,7 +6,7 @@ const char cgisimple_rcs[] = "$Id: cgisimple.c,v 1.132 2015/11/06 13:38:13 fabia
  * Purpose     :  Simple CGIs to get information about Privoxy's
  *                status.
  *
- * Copyright   :  Written by and Copyright (C) 2001-2014 the
+ * Copyright   :  Written by and Copyright (C) 2001-2016 the
  *                Privoxy team. http://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -60,6 +60,9 @@ const char cgisimple_rcs[] = "$Id: cgisimple.c,v 1.132 2015/11/06 13:38:13 fabia
 #include "parsers.h"
 #include "urlmatch.h"
 #include "errlog.h"
+#ifdef FEATURE_CLIENT_TAGS
+#include "client-tags.h"
+#endif
 
 const char cgisimple_h_rcs[] = CGISIMPLE_H_VERSION;
 
@@ -178,7 +181,7 @@ jb_err cgi_die (struct client_state *csp,
       "<head>\n"
       " <title>Privoxy shutdown request received</title>\n"
       " <link rel=\"shortcut icon\" href=\"" CGI_PREFIX "error-favicon.ico\" type=\"image/x-icon\">\n"
-      " <link rel=\"stylesheet\" type=\"text/css\" href=\"http://config.privoxy.org/send-stylesheet\">\n"
+      " <link rel=\"stylesheet\" type=\"text/css\" href=\"" CGI_PREFIX "send-stylesheet\">\n"
       "</head>\n"
       "<body>\n"
       "<h1>Privoxy shutdown request received</h1>\n"
@@ -269,6 +272,172 @@ jb_err cgi_show_request(struct client_state *csp,
 
    return template_fill_for_cgi(csp, "show-request", exports, rsp);
 }
+
+
+#ifdef FEATURE_CLIENT_TAGS
+/*********************************************************************
+ *
+ * Function    :  cgi_create_client_tag_form
+ *
+ * Description :  Creates a HTML form to enable or disable a given
+ *                client tag.
+ *                XXX: Could use a template.
+ *
+ * Parameters  :
+ *          1  :  form = Buffer to fill with the generated form
+ *          2  :  size = Size of the form buffer
+ *          3  :  tag = Name of the tag this form should affect
+ *          4  :  toggle_state = Desired state after the button pressed 0
+ *          5  :  expires = Whether or not the tag should be enabled.
+ *                          Only checked if toggle_state is 1.
+ *
+ * Returns     :  void
+ *
+ *********************************************************************/
+static void cgi_create_client_tag_form(char *form, size_t size,
+   const char *tag, int toggle_state, int expires)
+{
+   char *button_name;
+
+   if (toggle_state == 1)
+   {
+      button_name = (expires == 1) ? "Enable" : "Enable temporarily";
+   }
+   else
+   {
+      assert(toggle_state == 0);
+      button_name = "Disable";
+   }
+
+   snprintf(form, size,
+      "<form method=\"GET\" action=\"client-tags\" style=\"display: inline\">\n"
+      " <input type=\"hidden\" name=\"tag\" value=\"%s\">\n"
+      " <input type=\"hidden\" name=\"toggle-state\" value=\"%u\">\n"
+      " <input type=\"hidden\" name=\"expires\" value=\"%u\">\n"
+      " <input type=\"submit\" value=\"%s\">\n"
+      "</form>", tag, toggle_state, !expires, button_name);
+}
+
+/*********************************************************************
+ *
+ * Function    :  cgi_show_client_tags
+ *
+ * Description :  Shows the tags that can be set based on the client
+ *                address (opt-in).
+ *
+ * Parameters  :
+ *          1  :  csp = Current client state (buffers, headers, etc...)
+ *          2  :  rsp = http_response data structure for output
+ *          3  :  parameters = map of cgi parameters
+ *
+ * CGI Parameters : none
+ *
+ * Returns     :  JB_ERR_OK on success
+ *                JB_ERR_MEMORY on out-of-memory error.
+ *
+ *********************************************************************/
+jb_err cgi_show_client_tags(struct client_state *csp,
+                        struct http_response *rsp,
+                        const struct map *parameters)
+{
+   struct map *exports;
+   struct client_tag_spec *this_tag;
+   jb_err err = JB_ERR_OK;
+   const char *toggled_tag;
+   const char *toggle_state;
+   const char *tag_expires;
+   time_t time_to_live;
+   char *client_tag_status;
+   char buf[1000];
+
+   assert(csp);
+   assert(rsp);
+   assert(parameters);
+
+   if (NULL == (exports = default_exports(csp, "client-tags")))
+   {
+      return JB_ERR_MEMORY;
+   }
+   assert(csp->client_address != NULL);
+   toggled_tag = lookup(parameters, "tag");
+   if (*toggled_tag != '\0')
+   {
+      tag_expires = lookup(parameters, "expires");
+      if (*tag_expires == '0')
+      {
+         time_to_live = 0;
+      }
+      else
+      {
+         time_to_live = csp->config->client_tag_lifetime;
+      }
+      toggle_state = lookup(parameters, "toggle-state");
+      if (*toggle_state == '1')
+      {
+         enable_client_specific_tag(csp, toggled_tag, time_to_live);
+      }
+      else
+      {
+         disable_client_specific_tag(csp, toggled_tag);
+      }
+   }
+   this_tag = csp->config->client_tags;
+   if (this_tag->name == NULL)
+   {
+      client_tag_status = strdup_or_die("<p>No tags available.</p>\n");
+   }
+   else
+   {
+      client_tag_status = strdup_or_die("<table border=\"1\">\n"
+         "<tr><th>Tag name</th>\n"
+         "<th>Current state</th><th>Change state</th><th>Description</th></tr>\n");
+      while ((this_tag != NULL) && (this_tag->name != NULL))
+      {
+         int tag_state;
+
+         privoxy_mutex_lock(&client_tags_mutex);
+         tag_state = client_has_requested_tag(csp->client_address, this_tag->name);
+         privoxy_mutex_unlock(&client_tags_mutex);
+         if (!err) err = string_append(&client_tag_status, "<tr><td>");
+         if (!err) err = string_append(&client_tag_status, this_tag->name);
+         if (!err) err = string_append(&client_tag_status, "</td><td>");
+         if (!err) err = string_append(&client_tag_status, tag_state == 1 ? "Enabled" : "Disabled");
+         if (!err) err = string_append(&client_tag_status, "</td><td>");
+         cgi_create_client_tag_form(buf, sizeof(buf), this_tag->name, !tag_state, 1);
+         if (!err) err = string_append(&client_tag_status, buf);
+         if (tag_state == 0)
+         {
+            cgi_create_client_tag_form(buf, sizeof(buf), this_tag->name, !tag_state, 0);
+            if (!err) err = string_append(&client_tag_status, buf);
+         }
+         if (!err) err = string_append(&client_tag_status, "</td><td>");
+         if (!err) err = string_append(&client_tag_status, this_tag->description);
+         if (!err) err = string_append(&client_tag_status, "</td></tr>\n");
+         if (err)
+         {
+            free_map(exports);
+            return JB_ERR_MEMORY;
+         }
+         this_tag = this_tag->next;
+      }
+      if (!err) err = string_append(&client_tag_status, "</table>\n");
+   }
+
+   if (map(exports, "client-tags", 1, client_tag_status, 0))
+   {
+      free_map(exports);
+      return JB_ERR_MEMORY;
+   }
+
+   if (map(exports, "client-ip-addr", 1, csp->client_address, 1))
+   {
+      free_map(exports);
+      return JB_ERR_MEMORY;
+   }
+
+   return template_fill_for_cgi(csp, "client-tags", exports, rsp);
+}
+#endif /* def FEATURE_CLIENT_TAGS */
 
 
 /*********************************************************************
@@ -1543,6 +1712,14 @@ static jb_err show_defines(struct map *exports)
 
    static const struct feature features[] = {
       {
+         "FEATURE_64_BIT_TIME_T",
+#if (SIZEOF_TIME_T == 8)
+         1,
+#else
+         0,
+#endif
+      },
+      {
          "FEATURE_ACCEPT_FILTER",
 #ifdef FEATURE_ACCEPT_FILTER
          1,
@@ -1561,6 +1738,14 @@ static jb_err show_defines(struct map *exports)
       {
          "FEATURE_CGI_EDIT_ACTIONS",
 #ifdef FEATURE_CGI_EDIT_ACTIONS
+         1,
+#else
+         0,
+#endif
+      },
+      {
+         "FEATURE_CLIENT_TAGS",
+#ifdef FEATURE_CLIENT_TAGS
          1,
 #else
          0,
@@ -1985,12 +2170,9 @@ static jb_err load_file(const char *filename, char **buffer, size_t *length)
          filename);
    }
 
-   *buffer = (char *)zalloc(*length + 1);
-   if (NULL == *buffer)
-   {
-      err = JB_ERR_MEMORY;
-   }
-   else if (1 != fread(*buffer, *length, 1, fp))
+   *buffer = zalloc_or_die(*length + 1);
+
+   if (1 != fread(*buffer, *length, 1, fp))
    {
       /*
        * May theoretically happen if the file size changes between

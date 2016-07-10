@@ -16,38 +16,18 @@
 #                your option) any later version.
 #
 ##############################################################################
+# This template should be kept in sync with the "blocked" template
+# whose JavaScript version duplicates the content.
        <h2>Support and Service:</h2>
         <p>
-          The Privoxy Team values your feedback. To provide you with the best support,
-          we ask that you:
+          The Privoxy Team values your feedback.
         </p>
-        <ul>
-          <li>
-            use the <a href="http://sourceforge.net/tracker/?group_id=11118&amp;atid=211118">Support Tracker</a>
-            if you need help.
-          </li>
-          <li>
-            submit ads and configuration related problems with the actions files through the
-            <a href="http://sourceforge.net/tracker/?group_id=11118&amp;atid=460288">Actionsfile Feedback Tracker</a>.
-          </li>
-          <li>
-            submit bugs only through the
-            <a href="http://sourceforge.net/tracker/?group_id=11118&amp;atid=111118">Bug Tracker</a>.
-            Please make sure that the bug has not been submitted yet.
-          </li>
-          <li>
-            submit feature requests only through the
-            <a href="http://sourceforge.net/tracker/?atid=361118&amp;group_id=11118&amp;func=browse">Feature
-            Request Tracker</a>.
-          </li>
-          <li>
-            read the <a title="Contacting the developers, Bug Reporting and Feature Requests"
-             href="@user-manual@contact.html">instructions in the User Manual</a>
-            to make sure your request contains all the information we need.
-          </li>
-        </ul>
         <p>
-         If you want to support the Privoxy Team, please have a look at the FAQ to learn how to
-         <a href="http://www.privoxy.org/faq/general.html#PARTICIPATE">participate</a>
-         or to <a href="http://www.privoxy.org/faq/general.html#DONATE">donate</a>.
+          Please have a look at the User Manual to learn how to
+          <a title="Privoxy User Manual: Contacting the developers, Bug Reporting and Feature Requests"
+           href="@user-manual@contact.html">get support or report problems</a>.
+        <p>
+          If you want to support the Privoxy Team, you can
+          <a href="https://www.privoxy.org/faq/general.html#PARTICIPATE">participate</a>
+          or <a href="https://www.privoxy.org/faq/general.html#DONATE">donate</a>.
         </p>

@@ -5,7 +5,7 @@
  * Purpose     :  INSTALL file to help with installing from source.
  *
  * Copyright   :  Written by and Copyright (C) 2001-2009 the
- *                Privoxy team. http://www.privoxy.org/
+ *                Privoxy team. https://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
  *                by and Copyright (C) 1997 Anonymous Coders and
@@ -40,8 +40,8 @@ compiler like gcc are required.
 
 When building from a source tarball, first unpack the source:
 
- tar xzvf privoxy-3.0.24-stable-src.tar.gz
- cd privoxy-3.0.24-stable
+ tar xzvf privoxy-3.0.25-beta-src.tar.gz
+ cd privoxy-3.0.25-beta
 
 For retrieving the current CVS sources, you'll need a CVS client installed.
 Note that sources from CVS are typically development quality, and may not be
@@ -97,8 +97,8 @@ configurations, configure like this:
 
  ./configure  --disable-toggle  --disable-editor  --disable-force
 
-Then build as above. In Privoxy 3.0.7 and later, all of these options can also
-be disabled through the configuration file.
+Note that all of these options can also be disabled through the configuration
+file.
 
 WARNING: If installing as root, the install will fail unless a non-root user or
 group is specified, or a privoxy user and group already exist on the system. If

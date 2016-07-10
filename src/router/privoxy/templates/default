@@ -32,7 +32,7 @@
 #  my-hostname:
 #    The hostname associated with my-ip-addr
 #  admin-address:
-#    The email address of the pxoxy's administrator, as configured
+#    The email address of the proxy administrator, as configured
 #    in the config file
 #  default-cgi:
 #    The URL for the "main menu" builtin CGI of this proxy
@@ -53,7 +53,7 @@
 #  unstable:
 #    this is an alpha or beta release of the proxy software
 #  have-adminaddr-info:
-#    An e-mail address for the local Privoxy adminstrator has
+#    An e-mail address for the local Privoxy administrator has
 #    been specified and is available through the "admin-address"
 #    symbol
 #  have-proxy-info:

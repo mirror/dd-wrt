@@ -1,4 +1,4 @@
-const char filters_rcs[] = "$Id: filters.c,v 1.199 2016/01/16 12:33:35 fabiankeil Exp $";
+const char filters_rcs[] = "$Id: filters.c,v 1.202 2016/05/25 10:50:55 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/filters.c,v $
@@ -70,6 +70,9 @@ const char filters_rcs[] = "$Id: filters.c,v 1.199 2016/01/16 12:33:35 fabiankei
 #include "deanimate.h"
 #include "urlmatch.h"
 #include "loaders.h"
+#ifdef FEATURE_CLIENT_TAGS
+#include "client-tags.h"
+#endif
 
 #ifdef _WIN32
 #include "win32.h"
@@ -81,6 +84,12 @@ typedef char *(*filter_function_ptr)();
 static filter_function_ptr get_filter_function(const struct client_state *csp);
 static jb_err remove_chunked_transfer_coding(char *buffer, size_t *size);
 static jb_err prepare_for_filtering(struct client_state *csp);
+static void apply_url_actions(struct current_action_spec *action,
+                              struct http_request *http,
+#ifdef FEATURE_CLIENT_TAGS
+                              const struct list *client_tags,
+#endif
+                              struct url_actions *b);
 
 #ifdef FEATURE_ACL
 #ifdef HAVE_RFC2553
@@ -926,6 +935,7 @@ pcrs_job *compile_dynamic_pcrs_job_list(const struct client_state *csp, const st
       {"path",   csp->http->path,  1},
       {"host",   csp->http->host,  1},
       {"origin", csp->ip_addr_str, 1},
+      {"listen-address", csp->listen_addr_str, 1},
       {NULL,     NULL,             1}
    };
 
@@ -1762,6 +1772,7 @@ static void set_privoxy_variables(const struct client_state *csp)
       { "PRIVOXY_PATH",   csp->http->path  },
       { "PRIVOXY_HOST",   csp->http->host  },
       { "PRIVOXY_ORIGIN", csp->ip_addr_str },
+      { "PRIVOXY_LISTEN_ADDRESS", csp->listen_addr_str },
    };
 
    for (i = 0; i < SZ(env); i++)
@@ -1954,12 +1965,8 @@ static char *gif_deanimate_response(struct client_state *csp)
 
    size = (size_t)(csp->iob->eod - csp->iob->cur);
 
-   if (  (NULL == (in =  (struct binbuffer *)zalloc(sizeof *in )))
-      || (NULL == (out = (struct binbuffer *)zalloc(sizeof *out))) )
-   {
-      log_error(LOG_LEVEL_DEANIMATE, "failed! (no mem)");
-      return NULL;
-   }
+   in =  zalloc_or_die(sizeof(*in));
+   out = zalloc_or_die(sizeof(*out));
 
    in->buffer = csp->iob->cur;
    in->size = size;
@@ -2326,12 +2333,15 @@ void get_url_actions(struct client_state *csp, struct http_request *http)
          return;
       }
 
+#ifdef FEATURE_CLIENT_TAGS
+      apply_url_actions(csp->action, http, csp->client_tags, b);
+#else
       apply_url_actions(csp->action, http, b);
+#endif
    }
 
    return;
 }
-
 
 /*********************************************************************
  *
@@ -2342,14 +2352,18 @@ void get_url_actions(struct client_state *csp, struct http_request *http)
  * Parameters  :
  *          1  :  action = Destination.
  *          2  :  http = Current URL
- *          3  :  b = list of URL actions to apply
+ *          3  :  client_tags = list of client tags
+ *          4  :  b = list of URL actions to apply
  *
  * Returns     :  N/A
  *
  *********************************************************************/
-void apply_url_actions(struct current_action_spec *action,
-                       struct http_request *http,
-                       struct url_actions *b)
+static void apply_url_actions(struct current_action_spec *action,
+                              struct http_request *http,
+#ifdef FEATURE_CLIENT_TAGS
+                              const struct list *client_tags,
+#endif
+                              struct url_actions *b)
 {
    if (b == NULL)
    {
@@ -2363,6 +2377,12 @@ void apply_url_actions(struct current_action_spec *action,
       {
          merge_current_action(action, b->action);
       }
+#ifdef FEATURE_CLIENT_TAGS
+      if (client_tag_match(b->url, client_tags))
+      {
+         merge_current_action(action, b->action);
+      }
+#endif
    }
 }
 
@@ -2424,14 +2444,7 @@ static const struct forward_spec *get_forward_override_settings(struct client_st
     * the lifetime of this request. Save its location
     * in csp as well, so sweep() can free it later on.
     */
-   fwd = csp->fwd = zalloc(sizeof(*fwd));
-   if (NULL == fwd)
-   {
-      log_error(LOG_LEVEL_FATAL,
-         "can't allocate memory for forward-override{%s}", forward_override_line);
-      /* Never get here - LOG_LEVEL_FATAL causes program exit */
-      return NULL;
-   }
+   fwd = csp->fwd = zalloc_or_die(sizeof(*fwd));
 
    vec_count = ssplit(forward_settings, " \t", vec, SZ(vec));
    if ((vec_count == 2) && !strcasecmp(vec[0], "forward"))

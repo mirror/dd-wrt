@@ -1,9 +1,9 @@
-# Note:  Makefile is built automatically from Makefile.in
+# Note:  GNUmakefile is built automatically from GNUmakefile.in
 #
-# $Id: GNUmakefile.in,v 1.231 2015/12/27 12:50:57 fabiankeil Exp $
+# $Id: GNUmakefile.in,v 1.251 2016/05/08 12:46:15 fabiankeil Exp $
 #
-# Written by and Copyright (C) 2001-2014 members of the
-# Privoxy team. http://www.privoxy.org/
+# Written by and Copyright (C) 2001-2016 members of the
+# Privoxy team. https://www.privoxy.org/
 #
 # Based on the Internet Junkbuster originally written
 # by and Copyright (C) 1997 Anonymous Coders and
@@ -144,7 +144,7 @@ DOC_DIR    = doc/source
 DOC_TMP    = $(DOC_DIR)/tmp
 DOC_STATUS = @DOC_STATUS@
 TIDY       = tidy -modify -indent -wrap 78 --tidy-mark no
-RSYNC	   = rsync -av
+RSYNC	   = rsync -av -c
 
 # Program to do LF->CRLF
 DOSFILTER  = $(PERL) -p -e 's/\n/\r\n/'
@@ -162,20 +162,24 @@ SOURCE_FORGE_NAME = ''
 #############################################################################
 
 TAR_ARCH = /tmp/privoxy-$(VERSION).tar.gz
+GEN_DIST_TAR_NAME = privoxy-$(TARGET_OS)-$(VERSION)-$(CODE_STATUS).tar
 
 #############################################################################
 # We include these files in our distributions
 #############################################################################
-CONFIGS = config trust default.action match-all.action user.action default.filter user.filter
+CONFIGS = 	config trust default.action match-all.action \
+		user.action default.filter user.filter \
+		regression-tests.action
+
 # take care that no CVS .cvsignore or other crappy files
 # are included here
 # and escape every '#' in the find. doh.
 CONFIG_FILES = $(CONFIGS) \
-		`find templates/ -type f | grep -v "CVS" | grep -v "\.\#" | grep -v ".*~" | grep -v ".cvsignore" | grep -v "TAGS"`
+		`find templates/ -type f | grep -v "CVS" | grep -v "\.\#" | grep -v ".*~" | grep -v ".cvsignore" | grep -v "TAGS" | sort`
 
 DOC_FILES = AUTHORS LICENSE README ChangeLog INSTALL \
-		`find doc/webserver/ -name "*.html" | grep -v "\(webserver\|team\)\/index\.html"` \
-		`find doc/webserver/ -name "*.css"` \
+		`find doc/webserver/ -name "*.html" | grep -v "\(webserver\|team\)\/index\.html" | sort` \
+		`find doc/webserver/ -name "*.css" | sort` \
                 $(MAN_PAGE)
 
 #############################################################################
@@ -189,6 +193,9 @@ C_SRC  = actions.c cgi.c cgiedit.c cgisimple.c deanimate.c encode.c \
 
 C_OBJS = $(C_SRC:.c=.@OBJEXT@)
 C_HDRS = $(C_SRC:.c=.h) project.h actionlist.h
+
+CLIENT_TAG_SRC = @FEATURE_CLIENT_TAGS_ONLY@client-tags.c
+CLIENT_TAG_OBJS = @FEATURE_CLIENT_TAGS_ONLY@client-tags.@OBJEXT@
 
 W32_SRC   = @WIN_ONLY@w32log.c w32taskbar.c win32.c w32svrapi.c
 W32_FILES = @WIN_ONLY@w32.res
@@ -221,8 +228,8 @@ SOCKET_LIB   = @SOCKET_LIB@
 # PThreads library, if needed.
 PTHREAD_LIB  = @PTHREAD_ONLY@@PTHREAD_LIB@
 
-SRCS         = $(C_SRC)  $(W32_SRC)  $(PCRS_SRC)  $(PCRE_SRC)  $(REGEX_SRC)
-OBJS         = $(C_OBJS) $(W32_OBJS) $(PCRS_OBJS) $(PCRE_OBJS) $(REGEX_OBJS)
+SRCS         = $(C_SRC) $(CLIENT_TAG_SRC) $(W32_SRC)  $(PCRS_SRC)  $(PCRE_SRC)  $(REGEX_SRC)
+OBJS         = $(C_OBJS) $(CLIENT_TAG_OBJS) $(W32_OBJS) $(PCRS_OBJS) $(PCRE_OBJS) $(REGEX_OBJS)
 HDRS         = $(C_HDRS) $(W32_HDRS) $(PCRS_HDRS) $(PCRE_OBJS) $(REGEX_HDRS)
 LIBS         = @LIBS@ $(W32_LIB) $(SOCKET_LIB) $(PTHREAD_LIB)
 
@@ -258,7 +265,7 @@ all: $(PROGRAM) default.action
 #############################################################################
 # Phony targets
 #############################################################################
-.PHONY: all inifiles solaris-dist \
+.PHONY: all inifiles \
 win-dist tarball-dist dok webserver clean clobber tags \
 install CONF_DEST LOG_DEST \
 PID_DEST check_doc install-strip uninstall GROUP_T
@@ -323,8 +330,8 @@ dist-check:
 # create tar.gz from CVS:
 # This make-target is usually called through 'create-archive'. If you
 # run 'make create-snapshot' without setting SNAPVERSION, you'll get a
-# tar.gz with the current date in the name and as a releasenumber in the
-# spec-file. But the main usage is to run it as follows (Red Hat example):
+# tar.gz with the current date in the name.
+# The main usage is to run it as follows (Red Hat example):
 # make SNAPVERSION=1.6x create-snapshot
 # This creates a tar.gz.
 #############################################################################
@@ -358,25 +365,27 @@ gen-dist: dist-check
 	@$(ECHO) ""
 	$(MAKE) $(PROGRAM)
 	$(STRIP_PROG) $(PROGRAM)
-	$(LN) -s current ../privoxy-$(VERSION)-$(CODE_STATUS)
+	$(LN) -s `pwd` ../privoxy-$(VERSION)-$(CODE_STATUS)
 # add program
-	(cd .. && $(TAR) -cvhf --exclude "PACKAGERS" privoxy-$(TARGET_OS)-$(VERSION)-$(CODE_STATUS)-src.tar privoxy-$(VERSION)-$(CODE_STATUS)/$(PROGRAM))
+	(cd .. && $(TAR) --exclude "PACKAGERS" -cvhf $(GEN_DIST_TAR_NAME) privoxy-$(VERSION)-$(CODE_STATUS)/$(PROGRAM))
 # add config files
 	for foo in $(CONFIG_FILES); do \
-		(cd .. && $(TAR) -uvhf --exclude "PACKAGERS" privoxy-$(TARGET_OS)-$(VERSION)-$(CODE_STATUS)-src.tar privoxy-$(VERSION)-$(CODE_STATUS)/$$foo;) \
+		(cd .. && $(TAR) --exclude "PACKAGERS" -uvhf $(GEN_DIST_TAR_NAME) privoxy-$(VERSION)-$(CODE_STATUS)/$$foo;) \
 	done;
 # add documentation
 	for foo in $(DOC_FILES); do \
-		(cd .. && $(TAR) -uvhf --exclude "PACKAGERS" privoxy-$(TARGET_OS)-$(VERSION)-$(CODE_STATUS)-src.tar privoxy-$(VERSION)-$(CODE_STATUS)/$$foo;) \
+		(cd .. && $(TAR) --exclude "PACKAGERS" -uvhf $(GEN_DIST_TAR_NAME) privoxy-$(VERSION)-$(CODE_STATUS)/$$foo;) \
 	done;
+# add tools
+	(cd .. && $(TAR) -uvhf $(GEN_DIST_TAR_NAME) privoxy-$(VERSION)-$(CODE_STATUS)/tools)
 # and zip the archive
 	$(RM) ../privoxy-$(VERSION)-$(CODE_STATUS)
-	$(GZIP_PROG) ../privoxy-$(TARGET_OS)-$(VERSION)-$(CODE_STATUS)-src.tar
+	$(GZIP_PROG) ../$(GEN_DIST_TAR_NAME)
 	@$(ECHO) Distribution with binary created.
 
 # anonymously ncftps the package to sourceforge
 gen-upload:
-	ncftpput -u anonymous -p ijbswa-developers@lists.sourceforge.net upload.sourceforge.net /incoming ../privoxy-$(TARGET_OS)-$(VERSION)-$(CODE_STATUS)-src.tar.gz
+	ncftpput -u anonymous -p ijbswa-developers@lists.sourceforge.net upload.sourceforge.net /incoming ../$(GEN_DIST_TAR_NAME).gz
 	@$(ECHO) -------------------------------------------------------
 	@$(ECHO) Now goto
 	@$(ECHO) https://sourceforge.net/project/admin/editpackages.php?group_id=11118
@@ -385,7 +394,7 @@ gen-upload:
 
 # use with care
 gen-clean:
-	$(RM) privoxy-$(TARGET_OS)-$(VERSION)-$(CODE_STATUS)-src.tar*
+	$(RM) ../$(GEN_DIST_TAR_NAME)*
 
 #############################################################################
 # Tarball distribution: No CVS dirs, dotfiles, debian build dir,
@@ -393,11 +402,11 @@ gen-clean:
 #############################################################################
 
 tarball-dist: dist-check clean clobber
-	$(LN) -s current ../privoxy-$(VERSION)-$(CODE_STATUS)
+	$(LN) -s `pwd` ../privoxy-$(VERSION)-$(CODE_STATUS)
 
 	for i in `find . -type f -a -not \( -path "*/CVS*" -o -name ".*" \
 	-o -path "*/debian/*" -o -path "*/actions/*" -o -name "*.php" -o \
-	-name "PACKAGERS" \)`; do \
+	-name "PACKAGERS" -o -path "*.git/*" \) | sort`; do \
 	   files="$$files privoxy-$(VERSION)-$(CODE_STATUS)/$$i"; \
 	done &&  \
 	cd .. && $(TAR) -cvhf privoxy-$(VERSION)-$(CODE_STATUS)-src.tar $$files ; \
@@ -515,7 +524,10 @@ dok-webserver:
 	$(PERL) -pi.bak -e 's/..\/p_doc.css/p_doc.css/;\
 	s/<\/HEAD/\n<meta name=\"description\" content=\"Privoxy helps users to protect their privacy.\"><\/HEAD/;\
 	s/\.\d\. //;\
-	s/__copy/&copy;/'\
+	s/__copy/&copy;/;\
+	s@(<SUB)@<p style="text-align: center">\1@; s@(</SUB)@\1></p@;\
+        s@ChameleonJohn@<br><a href="http://www.chameleonjohn.com/"><img align="middle"\
+ src="images/sponsors/chameleonjohn.png" alt="ChameleonJohn Coupons"></a>@' \
      doc/webserver/index.html && $(RM) doc/webserver/*.bak
 
 # privoxy-index.html for local documentation:
@@ -557,17 +569,6 @@ dok-release:
 	fi;
 	$(RM) -r doc/source/*bak doc/source/*/*bak;
 
-# Create release announcement in text and html, with short and long versions.
-# This is a standalone target, and must be invoked directly.
-# announce: dok-release
-# 	mkdir -p $(DOC_TMP)
-# 	cd $(DOC_TMP) && cp -f ../announce.sgml . && $(DB) -iannounce-big announce.sgml &&\
-# 	mv -f index.html announce.html && $(W3M_DUMP) announce.html > announce.txt
-# 	cd $(DOC_TMP) && $(DB) announce.sgml &&\
-# 	mv -f index.html announce-mini.html && $(W3M_DUMP) announce-mini.html > announce-mini.txt &&\
-# 	mv -f *html *txt ../../..
-# 	rm -fr $(DOC_TMP)
-
 # The main Privoxy config file, generated from sgml sources.
 # NOTE: This will require some hand editing.
 config-file: dok-release generate-config-file
@@ -591,7 +592,7 @@ generate-config-file:
 #
 # Webserver
 #
-# moves dokumentation to webserver
+# moves documentation to webserver
 #
 #############################################################################
 sf-shell:
@@ -730,8 +731,8 @@ $(PROGRAM): $(OBJS) $(W32_FILES)
 clean:
 	$(RM) a.out $(OBJS) $(W32_FILES) $(W32_INIS) $(PROGRAM) default.action \
 		config.base config.tmp \
-		`find . \( -name TAGS -o -name tags \) -and -not -path "./.git/refs/tags"` \
-		`find . -name "*.orig" -a -not -name rc.privoxy.orig`
+		`find . \( -name TAGS -o -name tags \) -a -not -path "./.git/*"` \
+		`find . -name "*.orig" -a -not -name rc.privoxy.orig -a -not -path "./.git/*"`
 
 clean-editor-files:
 	$(RM) `find . -name "*~"`

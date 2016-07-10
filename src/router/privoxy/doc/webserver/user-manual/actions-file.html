@@ -6,7 +6,7 @@
   <title>Actions Files</title>
   <meta name="GENERATOR" content=
   "Modular DocBook HTML Stylesheet Version 1.79">
-  <link rel="HOME" title="Privoxy 3.0.24 User Manual" href="index.html">
+  <link rel="HOME" title="Privoxy 3.0.25 User Manual" href="index.html">
   <link rel="PREVIOUS" title="The Main Configuration File" href=
   "config.html">
   <link rel="NEXT" title="Filter Files" href="filter-file.html">
@@ -21,7 +21,7 @@
     <table summary="Header navigation table" width="100%" border="0"
     cellpadding="0" cellspacing="0">
       <tr>
-        <th colspan="3" align="center">Privoxy 3.0.24 User Manual</th>
+        <th colspan="3" align="center">Privoxy 3.0.25 User Manual</th>
       </tr>
 
       <tr>
@@ -117,7 +117,7 @@
         in <tt class="FILENAME">default.action</tt> are:</p>
 
         <div class="TABLE">
-          <a name="AEN2599" id="AEN2599"></a>
+          <a name="AEN2750" id="AEN2750"></a>
 
           <p><b>Table 1. Default Configurations</b></p>
 
@@ -314,8 +314,8 @@
     actions</a>.</p>
 
     <div class="SECT2">
-      <h2 class="SECT2"><a name="AEN2698" id="AEN2698">8.1. Finding the Right
-      Mix</a></h2>
+      <h2 class="SECT2"><a name="RIGHT-MIX" id="RIGHT-MIX">8.1. Finding the
+      Right Mix</a></h2>
 
       <p>Note that some <a href="actions-file.html#ACTIONS">actions</a>, like
       cookie suppression or script disabling, may render some sites unusable
@@ -339,7 +339,7 @@
     </div>
 
     <div class="SECT2">
-      <h2 class="SECT2"><a name="AEN2705" id="AEN2705">8.2. How to
+      <h2 class="SECT2"><a name="HOW-TO-EDIT" id="HOW-TO-EDIT">8.2. How to
       Edit</a></h2>
 
       <p>The easiest way to edit the actions files is with a browser by using
@@ -644,8 +644,8 @@
       </div>
 
       <div class="SECT3">
-        <h3 class="SECT3"><a name="AEN2899" id="AEN2899">8.4.2. The Path
-        Pattern</a></h3>
+        <h3 class="SECT3"><a name="PATH-PATTERN" id="PATH-PATTERN">8.4.2. The
+        Path Pattern</a></h3>
 
         <p><span class="APPLICATION">Privoxy</span> uses <span class=
         "QUOTE">"modern"</span> POSIX 1003.2 <a href=
@@ -744,22 +744,24 @@
 
       <div class="SECT3">
         <h3 class="SECT3"><a name="TAG-PATTERN" id="TAG-PATTERN">8.4.3. The
-        Tag Pattern</a></h3>
+        Request Tag Pattern</a></h3>
 
-        <p>Tag patterns are used to change the applying actions based on the
-        request's tags. Tags can be created with either the <a href=
+        <p>Request tag patterns are used to change the applying actions based
+        on the request's tags. Tags can be created based on HTTP headers with
+        either the <a href=
         "actions-file.html#CLIENT-HEADER-TAGGER">client-header-tagger</a> or
         the <a href=
         "actions-file.html#SERVER-HEADER-TAGGER">server-header-tagger</a>
         action.</p>
 
-        <p>Tag patterns have to start with <span class="QUOTE">"TAG:"</span>,
-        so <span class="APPLICATION">Privoxy</span> can tell them apart from
-        URL patterns. Everything after the colon including white space, is
-        interpreted as a regular expression with path pattern syntax, except
-        that tag patterns aren't left-anchored automatically (<span class=
-        "APPLICATION">Privoxy</span> doesn't silently add a <span class=
-        "QUOTE">"^"</span>, you have to do it yourself if you need it).</p>
+        <p>Request tag patterns have to start with <span class=
+        "QUOTE">"TAG:"</span>, so <span class="APPLICATION">Privoxy</span>
+        can tell them apart from other patterns. Everything after the colon
+        including white space, is interpreted as a regular expression with
+        path pattern syntax, except that tag patterns aren't left-anchored
+        automatically (<span class="APPLICATION">Privoxy</span> doesn't
+        silently add a <span class="QUOTE">"^"</span>, you have to do it
+        yourself if you need it).</p>
 
         <p>To match all requests that are tagged with <span class=
         "QUOTE">"foo"</span> your pattern line should be <span class=
@@ -769,15 +771,16 @@
         "QUOTE">"TAG: foo"</span> wouldn't work as it requires white
         space.</p>
 
-        <p>Sections can contain URL and tag patterns at the same time, but
-        tag patterns are checked after the URL patterns and thus always
-        overrule them, even if they are located before the URL patterns.</p>
+        <p>Sections can contain URL and request tag patterns at the same
+        time, but request tag patterns are checked after the URL patterns and
+        thus always overrule them, even if they are located before the URL
+        patterns.</p>
 
-        <p>Once a new tag is added, Privoxy checks right away if it's matched
-        by one of the tag patterns and updates the action settings
-        accordingly. As a result tags can be used to activate other tagger
-        actions, as long as these other taggers look for headers that haven't
-        already be parsed.</p>
+        <p>Once a new request tag is added, Privoxy checks right away if it's
+        matched by one of the request tag patterns and updates the action
+        settings accordingly. As a result request tags can be used to
+        activate other tagger actions, as long as these other taggers look
+        for headers that haven't already be parsed.</p>
 
         <p>For example you could tag client requests which use the <tt class=
         "LITERAL">POST</tt> method, then use this tag to activate another
@@ -797,20 +800,85 @@
 
       <div class="SECT3">
         <h3 class="SECT3"><a name="NEGATIVE-TAG-PATTERNS" id=
-        "NEGATIVE-TAG-PATTERNS">8.4.4. The Negative Tag Patterns</a></h3>
+        "NEGATIVE-TAG-PATTERNS">8.4.4. The Negative Request Tag
+        Patterns</a></h3>
 
-        <p>To match requests that do not have a certain tag, specify a
-        negative tag pattern by prefixing the tag pattern line with either
+        <p>To match requests that do not have a certain request tag, specify
+        a negative tag pattern by prefixing the tag pattern line with either
         <span class="QUOTE">"NO-REQUEST-TAG:"</span> or <span class=
         "QUOTE">"NO-RESPONSE-TAG:"</span> instead of <span class=
         "QUOTE">"TAG:"</span>.</p>
 
-        <p>Negative tag patterns created with <span class=
+        <p>Negative request tag patterns created with <span class=
         "QUOTE">"NO-REQUEST-TAG:"</span> are checked after all client headers
         are scanned, the ones created with <span class=
         "QUOTE">"NO-RESPONSE-TAG:"</span> are checked after all server
         headers are scanned. In both cases all the created tags are
         considered.</p>
+      </div>
+
+      <div class="SECT3">
+        <h3 class="SECT3"><a name="CLIENT-TAG-PATTERN" id=
+        "CLIENT-TAG-PATTERN">8.4.5. The Client Tag Pattern</a></h3>
+
+        <div class="WARNING">
+          <table class="WARNING" border="1" width="100%">
+            <tr>
+              <td align="center"><b>Warning</b></td>
+            </tr>
+
+            <tr>
+              <td align="left">
+                <p>This is an experimental feature. The syntax is likely to
+                change in future versions.</p>
+              </td>
+            </tr>
+          </table>
+        </div>
+
+        <p>Client tag patterns are not set based on HTTP headers but based on
+        the client's IP address. Users can enable them themselves, but the
+        Privoxy admin controls which tags are available and what their effect
+        is.</p>
+
+        <p>After a client-specific tag has been defined with the <a href=
+        "config.html#CLIENT-SPECIFIC-TAG">client-specific-tag</a>, directive,
+        action sections can be activated based on the tag by using a
+        CLIENT-TAG pattern. The CLIENT-TAG pattern is evaluated at the same
+        priority as URL patterns, as a result the last matching pattern wins.
+        Tags that are created based on client or server headers are evaluated
+        later on and can overrule CLIENT-TAG and URL patterns!</p>
+
+        <p>The tag is set for all requests that come from clients that
+        requested it to be set. Note that "clients" are differentiated by IP
+        address, if the IP address changes the tag has to be requested
+        again.</p>
+
+        <p>Clients can request tags to be set by using the CGI interface
+        <a href="http://config.privoxy.org/client-tags" target=
+        "_top">http://config.privoxy.org/client-tags</a>.</p>
+
+        <p>Example:</p>
+
+        <table border="0" bgcolor="#E0E0E0" width="100%">
+          <tr>
+            <td>
+              <pre class="SCREEN">
+# If the admin defined the client-specific-tag circumvent-blocks,
+# and the request comes from a client that previously requested
+# the tag to be set, overrule all previous +block actions that
+# are enabled based on URL to CLIENT-TAG patterns.
+{-block}
+CLIENT-TAG:^circumvent-blocks$
+
+# This section is not overruled because it's located after
+# the previous one.
+{+block{Nobody is supposed to request this.}}
+example.org/blocked-example-page
+</pre>
+            </td>
+          </tr>
+        </table>
       </div>
     </div>
 
@@ -996,7 +1064,16 @@
                 <tr>
                   <td>
                     <pre class="SCREEN">
-+add-header{X-User-Tracking: sucks}
+# Add a DNT ("Do not track") header to all requests,
+# event to those that already have one.
+#
+# This is just an example, not a recommendation.
+#
+# There is no reason to believe that user-tracking websites care
+# about the DNT header and depending on the User-Agent, adding the
+# header may make user-tracking easier.
+{+add-header{DNT: 1}}
+/
 </pre>
                   </td>
                 </tr>
@@ -4077,7 +4154,7 @@ nasty-banner-server.example.com/junk.cgi\?output=trash
 # Create a short, easy to remember nickname for a favorite site
 # (relies on the browser to accept and forward invalid URLs to <span class=
 "APPLICATION">Privoxy</span>)
-{ +redirect{http://www.privoxy.org/user-manual/actions-file.html} }
+{ +redirect{https://www.privoxy.org/user-manual/actions-file.html} }
  a
 
 # Always use the expanded view for Undeadly.org articles
@@ -4513,7 +4590,7 @@ TAG:^image/
       </div>
 
       <div class="SECT3">
-        <h3 class="SECT3"><a name="AEN4638" id="AEN4638">8.5.36.
+        <h3 class="SECT3"><a name="SUMMARY" id="SUMMARY">8.5.36.
         Summary</a></h3>
 
         <p>Note that many of these actions have the potential to cause a page
@@ -4672,7 +4749,7 @@ TAG:^image/
       together:</p>
 
       <div class="SECT3">
-        <h3 class="SECT3"><a name="AEN4702" id="AEN4702">8.7.1.
+        <h3 class="SECT3"><a name="MATCH-ALL" id="MATCH-ALL">8.7.1.
         match-all.action</a></h3>
 
         <p>Remember <span class="emphasis"><i class="EMPHASIS">all actions
@@ -4721,7 +4798,7 @@ TAG:^image/
       </div>
 
       <div class="SECT3">
-        <h3 class="SECT3"><a name="AEN4724" id="AEN4724">8.7.2.
+        <h3 class="SECT3"><a name="DEFAULT-ACTION" id="DEFAULT-ACTION">8.7.2.
         default.action</a></h3>
 
         <p>If you aren't a developer, there's no need for you to edit the
@@ -5064,7 +5141,7 @@ wiki.
       </div>
 
       <div class="SECT3">
-        <h3 class="SECT3"><a name="AEN4837" id="AEN4837">8.7.3.
+        <h3 class="SECT3"><a name="USER-ACTION" id="USER-ACTION">8.7.3.
         user.action</a></h3>
 
         <p>So far we are painting with a broad brush by setting general
