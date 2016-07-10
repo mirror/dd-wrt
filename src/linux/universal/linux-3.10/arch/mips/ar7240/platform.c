@@ -1282,6 +1282,7 @@ int __init ar7240_platform_init(void)
 	ar71xx_eth0_pll_data.pll_1000 = 0x06000000;
 	ar71xx_add_device_eth(0);
 	#endif
+	#endif
 		#ifndef CONFIG_WDR4300
 		    #ifndef CONFIG_DIR825C1
 	/* GMAC1 is connected to the internal switch */
