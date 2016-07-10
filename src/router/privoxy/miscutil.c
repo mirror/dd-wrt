@@ -1,4 +1,4 @@
-const char miscutil_rcs[] = "$Id: miscutil.c,v 1.80 2016/01/16 12:33:36 fabiankeil Exp $";
+const char miscutil_rcs[] = "$Id: miscutil.c,v 1.81 2016/02/26 12:29:17 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/miscutil.c,v $
@@ -92,6 +92,40 @@ void *zalloc(size_t size)
 
 }
 
+
+/*********************************************************************
+ *
+ * Function    :  zalloc_or_die
+ *
+ * Description :  zalloc wrapper that either succeeds or causes
+ *                program termination.
+ *
+ *                Useful in situations were the string length is
+ *                "small" and zalloc() failures couldn't be handled
+ *                better anyway. In case of debug builds, failures
+ *                trigger an assert().
+ *
+ * Parameters  :
+ *          1  :  size = Size of memory chunk to return.
+ *
+ * Returns     :  Pointer to newly malloc'd memory chunk.
+ *
+ *********************************************************************/
+void *zalloc_or_die(size_t size)
+{
+   void *buffer;
+
+   buffer = zalloc(size);
+   if (buffer == NULL)
+   {
+      assert(buffer != NULL);
+      log_error(LOG_LEVEL_FATAL, "Out of memory in zalloc_or_die().");
+      exit(1);
+   }
+
+   return(buffer);
+
+}
 
 /*********************************************************************
  *

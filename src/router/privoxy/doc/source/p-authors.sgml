@@ -3,9 +3,9 @@
 
  Purpose     :  Entity included in other project documents.
 
- $Id: p-authors.sgml,v 2.73 2016/01/16 12:29:40 fabiankeil Exp $
+ $Id: p-authors.sgml,v 2.77 2016/05/03 13:22:13 fabiankeil Exp $
 
- Copyright (C) 2001-2013 Privoxy Developers http://www.privoxy.org/
+ Copyright (C) 2001-2013 Privoxy Developers https://www.privoxy.org/
  See LICENSE.
 
  ======================================================================
@@ -53,7 +53,7 @@ Current Privoxy Team:
  Karsten Hopp
  Alexander Lazic
  Daniel Leite
- Gï¿½bor Liptï¿½k
+ Gábor Lipták
  Adam Lock
  Guy Laroche
  Justin McMurtry
@@ -63,7 +63,7 @@ Current Privoxy Team:
  Haroon Rafique
  Georg Sauthoff
  Thomas Steudten
- Jï¿½rg Strohmayer
+ Jörg Strohmayer
  Rodney Stromlund
  Sviatoslav Sviridov
  Sarantis Paskalis
@@ -95,7 +95,7 @@ Current Privoxy Team:
  Sam Chen
  Ramkumar Chinchani
  Billy Crook
- Frï¿½dï¿½ric Crozat
+ Frédéric Crozat
  Matthew Daley
  Michael T. Davis
  Markus Dittrich
@@ -111,7 +111,7 @@ Current Privoxy Team:
  John McGowan
  Lizik Grelier
  Daniel Griscom
- Felix Grï¿½bert
+ Felix Gröbert
  Bernard Guillot
  Jeff H.
  Tim H.
@@ -146,21 +146,23 @@ Current Privoxy Team:
  Angelina Matson
  Jonathan McKenzie
  David Mediavilla
+ J. Momberger
  Raphael Moll
  Mathew Murphy
  Amuro Namie
  Mark Nelson
  Adam Piggott
- Petr Pï¿½sar
+ Petr Písar
  Dan Price
  Kai Raven
  Roberto Ragusa
- Fï¿½lix Rauch
+ Félix Rauch
  Chris John Riley
  Maynard Riley
  Andreas Rutkauskas
  Bart Schelstraete
  Gregory Seidman
+ Atman Sense
  Chung-chieh Shan
  Benjamin C. Wiley Sittler
  Simon South
@@ -178,13 +180,14 @@ Current Privoxy Team:
  David Wagner
  Glenn Washburn
  Song Weijia
- Jï¿½rg Weinmann
+ Jörg Weinmann
  Darren Wiebe
  Anduin Withers
  Yang Xia
  Jarry Xu
  Oliver Yeoh
  Jamie Zawinski
+ Eduard Wulff
 </literallayout>
 
 <para>

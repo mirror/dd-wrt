@@ -13,11 +13,11 @@
 <!entity p-authors SYSTEM "p-authors.sgml">
 <!entity config SYSTEM "p-config.sgml">
 <!entity changelog SYSTEM "changelog.sgml">
-<!entity p-version "3.0.24">
-<!entity p-status "stable">
+<!entity p-version "3.0.25">
+<!entity p-status "beta">
 <!entity % p-authors-formal "INCLUDE"> <!-- include additional text, etc  -->
-<!entity % p-not-stable "IGNORE">
-<!entity % p-stable "INCLUDE">
+<!entity % p-not-stable "INCLUDE">
+<!entity % p-stable "IGNORE">
 <!entity % p-text "IGNORE">        <!-- define we are not a text only doc -->
 <!entity % p-doc "INCLUDE">        <!-- and we are a formal doc           -->
 <!entity % p-readme "IGNORE">
@@ -36,9 +36,9 @@
                 This file belongs into
                 ijbswa.sourceforge.net:/home/groups/i/ij/ijbswa/htdocs/
 
- $Id: user-manual.sgml,v 2.199 2016/01/21 15:55:49 fabiankeil Exp $
+ $Id: user-manual.sgml,v 2.213 2016/05/27 15:24:13 fabiankeil Exp $
 
- Copyright (C) 2001-2014 Privoxy Developers http://www.privoxy.org/
+ Copyright (C) 2001-2016 Privoxy Developers https://www.privoxy.org/
  See LICENSE.
 
  ========================================================================
@@ -57,12 +57,12 @@
  <subscript>
 <!-- Completely the wrong markup, but very little is allowed  -->
 <!-- in this part of an article. FIXME -->
- <link linkend="copyright">Copyright</link> &my-copy; 2001-2014 by
- <ulink url="http://www.privoxy.org/">Privoxy Developers</ulink>
+ <link linkend="copyright">Copyright</link> &my-copy; 2001-2016 by
+ <ulink url="https://www.privoxy.org/">Privoxy Developers</ulink>
  </subscript>
 </pubdate>
 
-<pubdate>$Id: user-manual.sgml,v 2.199 2016/01/21 15:55:49 fabiankeil Exp $</pubdate>
+<pubdate>$Id: user-manual.sgml,v 2.213 2016/05/27 15:24:13 fabiankeil Exp $</pubdate>
 
 <!--
 
@@ -92,7 +92,7 @@ Hal.
  <para>
   The <citetitle>Privoxy User Manual</citetitle> gives users information on how to
   install, configure and use <ulink
-  url="http://www.privoxy.org/">Privoxy</ulink>.
+  url="https://www.privoxy.org/">Privoxy</ulink>.
  </para>
 
 <!-- Include privoxy.sgml boilerplate: -->
@@ -101,14 +101,11 @@ Hal.
 
  <para>
   You can find the latest version of the <citetitle>Privoxy User Manual</citetitle> at  <ulink
-  url="http://www.privoxy.org/user-manual/">http://www.privoxy.org/user-manual/</ulink>.
+  url="https://www.privoxy.org/user-manual/">https://www.privoxy.org/user-manual/</ulink>.
   Please see the <link linkend="contact">Contact section</link> on how to
   contact the developers.
  </para>
 
-<!--   <para> -->
-<!--    Feel free to send a note to the developers at <email>ijbswa-developers@lists.sourceforge.net</email>. -->
-<!--   </para> -->
 </abstract>
 
 </artheader>
@@ -162,7 +159,7 @@ Hal.
  <application>Privoxy</application> is available both in convenient pre-compiled
  packages for a wide range of operating systems, and as raw source code.
  For most users, we recommend using the packages, which can be downloaded from our
- <ulink url="http://sourceforge.net/projects/ijbswa/">Privoxy Project
+ <ulink url="https://sourceforge.net/projects/ijbswa/">Privoxy Project
  Page</ulink>.
 </para>
 
@@ -351,14 +348,14 @@ How to install the binary packages depends on your operating system:
 <para>
  The most convenient way to obtain the <application>Privoxy</application> sources
  is to download the source tarball from our
- <ulink url="http://sourceforge.net/project/showfiles.php?group_id=11118&amp;package_id=10571">project download
+ <ulink url="https://sourceforge.net/projects/ijbswa/files/Sources/">project download
  page</ulink>.
 </para>
 
 <para>
  If you like to live on the bleeding edge and are not afraid of using
  possibly unstable development versions, you can check out the up-to-the-minute
- version directly from <ulink url="http://sourceforge.net/cvs/?group_id=11118">the
+ version directly from <ulink url="https://sourceforge.net/p/ijbswa/code/?source=navbar">the
  CVS repository</ulink>.
 <!--
  deprecated...out of business.
@@ -379,8 +376,8 @@ How to install the binary packages depends on your operating system:
 <para>
  If you wish to receive an email notification whenever we release updates of
  <application>Privoxy</application> or the actions file, <ulink
- url="http://lists.sourceforge.net/lists/listinfo/ijbswa-announce/">subscribe
- to our announce  mailing list</ulink>, ijbswa-announce@lists.sourceforge.net.
+ url="https://lists.privoxy.org/mailman/listinfo/privoxy-announce">subscribe
+ to our announce mailing list</ulink>, privoxy-announce@lists.privoxy.org.
 </para>
 
 <para>
@@ -1066,6 +1063,29 @@ How to install the binary packages depends on your operating system:
 </para>
 </sect2>
 
+<sect2 id="start-freebsd">
+<title>FreeBSD and ElectroBSD</title>
+<para>
+ To start <application>Privoxy</application> upon booting, add
+ "privoxy_enable='YES'" to <filename>/etc/rc.conf</filename>.
+ <application>Privoxy</application> will use
+ <filename>/usr/local/etc/privoxy/config</filename> as its main
+ configuration file.
+</para>
+<para>
+ If you installed <application>Privoxy</application> into a jail, the
+ paths above are relative to the jail root.
+</para>
+<para>
+ To start <application>Privoxy</application> manually, run:
+</para>
+<para>
+ <screen>
+ # service privoxy onestart
+</screen>
+</para>
+</sect2>
+
 <sect2 id="start-windows">
 <title>Windows</title>
 <para>
@@ -1085,14 +1105,20 @@ Click on the &my-app; Icon to start <application>Privoxy</application>. If no co
 </sect2>
 
 <sect2 id="start-unices">
-<title>Solaris, NetBSD, FreeBSD, HP-UX and others</title>
+<title>Generic instructions for Unix derivates (Solaris, NetBSD, HP-UX etc.)</title>
 <para>
 Example Unix startup command:
 </para>
 <para>
  <screen>
- # /usr/sbin/privoxy /etc/privoxy/config
+ # /usr/sbin/privoxy --user privoxy /etc/privoxy/config
 </screen>
+</para>
+<para>
+ Note that if you installed <application>Privoxy</application> through
+ a package manager, the package will probably contain a platform-specific
+ script or configuration file to start <application>Privoxy</application>
+ upon boot.
 </para>
 </sect2>
 
@@ -1109,32 +1135,21 @@ Example Unix startup command:
 <sect2 id="start-macosx">
 <title>Mac OS X</title>
 <para>
-  After downloading the privoxy software, unzip the downloaded file by
-  double-clicking on the zip file icon.  Then, double-click on the
-  installer package icon and follow the installation process.
+ The privoxy service will automatically start after a successful installation
+ (and thereafter every time your computer starts up) however you will need to
+ configure your web browser(s) to use it. To do so, configure them to use a
+ proxy for HTTP and HTTPS at the address 127.0.0.1:8118.
 </para>
 <para>
-  The privoxy service will automatically start after a successful
-  installation.  In addition, the privoxy service will automatically
-  start every time your computer starts up.
+ To prevent the privoxy service from automatically starting when your computer
+ starts up, remove or rename the file <literal>/Library/LaunchDaemons/org.ijbswa.privoxy.plist</literal>
+ (on OS X 10.5 and higher) or the folder named
+ <literal>/Library/StartupItems/Privoxy</literal> (on OS X 10.4 'Tiger').
 </para>
 <para>
-  To prevent the privoxy service from automatically starting when your
-  computer starts up, remove or rename the folder named
-  /Library/StartupItems/Privoxy.
-</para>
-<para>
-  A simple application named Privoxy Utility has been created which
-  enables administrators to easily start and stop the privoxy service.
-</para>
-<para>
-  In addition, the Privoxy Utility presents a simple way for
-  administrators to edit the various privoxy config files.  A method
-  to uninstall the software is also available.
-</para>
-<para>
-  An administrator username and password must be supplied in order for
-  the Privoxy Utility to perform any of the tasks.
+ To manually start or stop the privoxy service, use the scripts startPrivoxy.sh
+ and stopPrivoxy.sh supplied in /Applications/Privoxy. They must be run from an
+ administrator account, using sudo.
 </para>
 </sect2>
 
@@ -1390,7 +1405,7 @@ for details.
 
 <!--   ~~~~~       New section      ~~~~~     -->
 
-<sect2>
+<sect2 id="control-with-webbrowser">
 <title>Controlling Privoxy with Your Web Browser</title>
 <para>
  <application>Privoxy</application>'s user interface can be reached through the special
@@ -1424,7 +1439,7 @@ for details.
  </member>
  <member>
   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&squf;&nbsp;&nbsp;<ulink
-  url="http://www.privoxy.org/&p-version;/user-manual/">Documentation</ulink>
+  url="https://www.privoxy.org/&p-version;/user-manual/">Documentation</ulink>
  </member>
  </simplelist>
  </msgtext>
@@ -1855,7 +1870,7 @@ for details.
 </para>
 
 <!--   ~~~~~       New section      ~~~~~     -->
-<sect2>
+<sect2 id="right-mix">
 <title>Finding the Right Mix</title>
 <para>
  Note that some <link linkend="actions">actions</link>, like cookie suppression
@@ -1880,7 +1895,7 @@ for details.
 </sect2>
 
 <!--   ~~~~~       New section      ~~~~~     -->
-<sect2>
+<sect2 id="how-to-edit">
 <title>How to Edit</title>
 <para>
  The easiest way to edit the actions files is with a browser by
@@ -2201,7 +2216,7 @@ for details.
 
 
 <!--   ~~~~~       New section      ~~~~~     -->
-<sect3><title>The Path Pattern</title>
+<sect3 id="path-pattern"><title>The Path Pattern</title>
 
 <para>
  <application>Privoxy</application> uses <quote>modern</quote> POSIX 1003.2
@@ -2301,18 +2316,18 @@ for details.
 
 
 <!--   ~~~~~       New section      ~~~~~     -->
-<sect3 id="tag-pattern"><title>The Tag Pattern</title>
+<sect3 id="tag-pattern"><title>The Request Tag Pattern</title>
 
 <para>
- Tag patterns are used to change the applying actions based on the
- request's tags. Tags can be created with either the
- <link linkend="CLIENT-HEADER-TAGGER">client-header-tagger</link>
+ Request tag patterns are used to change the applying actions based on the
+ request's tags. Tags can be created based on HTTP headers with either
+ the <link linkend="CLIENT-HEADER-TAGGER">client-header-tagger</link>
  or the  <link linkend="SERVER-HEADER-TAGGER">server-header-tagger</link> action.
 </para>
 
 <para>
- Tag patterns have to start with <quote>TAG:</quote>, so &my-app;
- can tell them apart from URL patterns. Everything after the colon
+ Request tag patterns have to start with <quote>TAG:</quote>, so &my-app;
+ can tell them apart from other patterns. Everything after the colon
  including white space, is interpreted as a regular expression with
  path pattern syntax, except that tag patterns aren't left-anchored
  automatically (&my-app; doesn't silently add a <quote>^</quote>,
@@ -2328,15 +2343,15 @@ for details.
 </para>
 
 <para>
- Sections can contain URL and tag patterns at the same time,
- but tag patterns are checked after the URL patterns and thus
+ Sections can contain URL and request tag patterns at the same time,
+ but request tag patterns are checked after the URL patterns and thus
  always overrule them, even if they are located before the URL patterns.
 </para>
 
 <para>
- Once a new tag is added, Privoxy checks right away if it's matched by one
- of the tag patterns and updates the action settings accordingly. As a result
- tags can be used to activate other tagger actions, as long as these other
+ Once a new request tag is added, Privoxy checks right away if it's matched by one
+ of the request tag patterns and updates the action settings accordingly. As a result
+ request tags can be used to activate other tagger actions, as long as these other
  taggers look for headers that haven't already be parsed.
 </para>
 
@@ -2361,21 +2376,77 @@ for details.
 </sect3>
 
 <!--   ~~~~~       New section      ~~~~~     -->
-<sect3 id="negative-tag-patterns"><title>The Negative Tag Patterns</title>
+<sect3 id="negative-tag-patterns"><title>The Negative Request Tag Patterns</title>
 
 <para>
- To match requests that do not have a certain tag, specify a negative tag pattern
+ To match requests that do not have a certain request tag, specify a negative tag pattern
  by prefixing the tag pattern line with either <quote>NO-REQUEST-TAG:</quote>
  or <quote>NO-RESPONSE-TAG:</quote> instead of <quote>TAG:</quote>.
 </para>
 
 <para>
- Negative tag patterns created with <quote>NO-REQUEST-TAG:</quote> are checked
+ Negative request tag patterns created with <quote>NO-REQUEST-TAG:</quote> are checked
  after all client headers are scanned, the ones created with <quote>NO-RESPONSE-TAG:</quote>
  are checked after all server headers are scanned. In both cases all the created
  tags are considered.
 </para>
 
+<!--   ~~~~~       New section      ~~~~~     -->
+<sect3 id="client-tag-pattern"><title>The Client Tag Pattern</title>
+
+<!-- XXX: This section contains duplicates content from the
+          client-specific-tag documentation. -->
+
+<warning>
+<para>
+ This is an experimental feature. The syntax is likely to change in future versions.
+</para>
+</warning>
+
+<para>
+ Client tag patterns are not set based on HTTP headers but based on
+ the client's IP address. Users can enable them themselves, but the
+ Privoxy admin controls which tags are available and what their effect
+ is.
+</para>
+
+<para>
+ After a client-specific tag has been defined with the
+ <link linkend="client-specific-tag">client-specific-tag</link>,
+ directive, action sections can be activated based on the tag by using a
+ CLIENT-TAG pattern. The CLIENT-TAG pattern is evaluated at the same priority
+ as URL patterns, as a result the last matching pattern wins. Tags that
+ are created based on client or server headers are evaluated later on
+ and can overrule CLIENT-TAG and URL patterns!
+</para>
+<para>
+ The tag is set for all requests that come from clients that requested
+ it to be set. Note that "clients" are  differentiated by IP address,
+ if the IP address changes the tag has to be requested again.
+</para>
+<para>
+ Clients can request tags to be set by using the CGI interface <ulink
+  url="http://config.privoxy.org/client-tags">http://config.privoxy.org/client-tags</ulink>.
+</para>
+
+<para>
+ Example:
+</para>
+
+<para>
+ <screen>
+# If the admin defined the client-specific-tag circumvent-blocks,
+# and the request comes from a client that previously requested
+# the tag to be set, overrule all previous +block actions that
+# are enabled based on URL to CLIENT-TAG patterns.
+{-block}
+CLIENT-TAG:^circumvent-blocks$
+
+# This section is not overruled because it's located after
+# the previous one.
+{+block{Nobody is supposed to request this.}}
+example.org/blocked-example-page</screen>
+</para>
 
 </sect2>
 
@@ -2568,7 +2639,16 @@ for details.
   <term>Example usage:</term>
   <listitem>
     <para>
-     <screen>+add-header{X-User-Tracking: sucks}</screen>
+     <screen># Add a DNT ("Do not track") header to all requests,
+# event to those that already have one.
+#
+# This is just an example, not a recommendation.
+#
+# There is no reason to believe that user-tracking websites care
+# about the DNT header and depending on the User-Agent, adding the
+# header may make user-tracking easier.
+{+add-header{DNT: 1}}
+/</screen>
    </para>
   </listitem>
  </varlistentry>
@@ -5416,7 +5496,7 @@ new action
 
 # Create a short, easy to remember nickname for a favorite site
 # (relies on the browser to accept and forward invalid URLs to &my-app;)
-{ +redirect{http://www.privoxy.org/user-manual/actions-file.html} }
+{ +redirect{https://www.privoxy.org/user-manual/actions-file.html} }
  a
 
 # Always use the expanded view for Undeadly.org articles
@@ -5840,7 +5920,7 @@ TAG:^image/
 
 
 <!--   ~~~~~       New section      ~~~~~     -->
-<sect3>
+<sect3 id="summary">
 <title>Summary</title>
 <para>
  Note that many of these actions have the potential to cause a page to
@@ -5983,7 +6063,7 @@ hal stop here
  and <filename>user.action</filename> file and see how all these pieces come together:
 </para>
 
-<sect3>
+<sect3 id="match-all">
 <title>match-all.action</title>
 <para>
  Remember <emphasis>all actions are disabled when matching starts</emphasis>,
@@ -6026,7 +6106,7 @@ hal stop here
 </para>
 </sect3>
 
-<sect3>
+<sect3 id="default-action">
 <title>default.action</title>
 
 <para>
@@ -6315,7 +6395,7 @@ wiki.
 
 </sect3>
 
-<sect3><title>user.action</title>
+<sect3 id="user-action"><title>user.action</title>
 
 <para>
  So far we are painting with a broad brush by setting general policies,
@@ -6693,8 +6773,10 @@ stupid-server.example.com/</screen>
 <para>
  The non-standard option letter <literal>D</literal> (dynamic) allows
  to use the variables $host, $origin (the IP address the request came from),
- $path and $url. They will be replaced with the value they refer to before
- the filter is executed.
+ $path, $url and $listen-address (the address on which Privoxy accepted the
+ client request. Example: 127.0.0.1:8118).
+ They will be replaced with the value they refer to before the filter
+ is executed.
 </para>
 
 <para>
@@ -6729,7 +6811,7 @@ stupid-server.example.com/</screen>
 
 <!--   ~~~~~~~~       New section Header    ~~~~~~~~~     -->
 
-<sect2><title>Filter File Tutorial</title>
+<sect2 id="filter-file-tut"><title>Filter File Tutorial</title>
 <para>
  Now, let's complete our <quote>foo</quote> content filter. We have already defined
  the heading, but the jobs are still missing. Since all it does is to replace
@@ -7451,9 +7533,10 @@ pre-defined filters for your convenience:
 </para>
 <para>
  External filters read the content from STDIN and write the rewritten
- content to STDOUT. The environment variables PRIVOXY_URL, PRIVOXY_PATH,
- PRIVOXY_HOST, PRIVOXY_ORIGIN can be used to get some details about the
- client request.
+ content to STDOUT.
+ The environment variables PRIVOXY_URL, PRIVOXY_PATH, PRIVOXY_HOST,
+ PRIVOXY_ORIGIN, PRIVOXY_LISTEN_ADDRESS can be used to get some details
+ about the client request.
 </para>
 <para>
  &my-app; will temporary store the content to filter in the
@@ -7899,7 +7982,7 @@ Requests</title>
 
 
 <!--   ~~~~~       New section      ~~~~~     -->
-<sect2>
+<sect2 id="internal-pages">
 <title>Privoxy's Internal Pages</title>
 
 <para>

@@ -1,5 +1,5 @@
 #############################################################################
-# $Id: regression-tests.action,v 1.59 2014/11/20 15:29:57 fabiankeil Exp $
+# $Id: regression-tests.action,v 1.61 2016/05/08 14:15:40 fabiankeil Exp $
 #############################################################################
 #
 # This is a configuration file for Privoxy-Regression-Test
@@ -40,7 +40,7 @@ for-privoxy-version=3.0.22
 # Level 15 needs = config line connection-sharing\s+0
 # Level 16 needs = feature status FEATURE_CONNECTION_KEEP_ALIVE Yes
 # Level 16 needs = config line connection-sharing\s+1
-# Level 17 needs = feature status FEATURE_PTHREAD Yes
+# Level 17 needs = feature status FEATURE_64_BIT_TIME_T Yes
 # Level 18 needs = feature status FEATURE_GRACEFUL_TERMINATION No
 # Level 19 needs = feature status FEATURE_GRACEFUL_TERMINATION Yes
 # Level 20 needs = feature status FEATURE_TOGGLE Yes
@@ -329,6 +329,7 @@ TAG:^hide-if-modified-since\{-60\}$
 # Expect Header = SOME CHANGE
 # Set Header    = If-Modified-Since: Wed, 31 Dec 1969 23:59:59 GMT
 # Expect Header = SOME CHANGE
+# Level = 17
 TAG:^hide-if-modified-since\{\+60\}$
 
 {+hide-if-modified-since{60} -crunch-if-none-match}

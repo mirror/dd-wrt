@@ -2,7 +2,7 @@
 # 
 #  File        :  $Source: /cvsroot/ijbswa/current/default.filter,v $
 # 
-#  $Id: default.filter,v 1.92 2014/10/17 14:45:10 fabiankeil Exp $
+#  $Id: default.filter,v 1.94 2016/05/25 10:51:41 fabiankeil Exp $
 #
 #  Purpose     :  Rules to process the content of web pages
 # 
@@ -57,7 +57,8 @@
 #     quoting.
 #
 # 'D' (Dynamic) allows the use of variables. Supported variables are:
-#     $host, $origin (the IP address the request came from), $path and $url.
+#     $host, $listen-address, $origin (the IP address the request came
+#     from), $path and $url.
 #
 #     Note that '$' is a bad choice as delimiter for dynamic filters as you
 #     might end up with unintended variables if you use a variable name
@@ -811,6 +812,16 @@ s@^Range:.*@RANGE-REQUEST@i
 CLIENT-HEADER-TAGGER: client-ip-address Tags the request with the client's IP address.
 
 s@^\w*\s+.*\s+HTTP/\d\.\d\s*@IP-ADDRESS: $origin@D
+
+#################################################################################
+#
+# listen-address: Tags the request with the listen-address on which the request
+#                 came in.
+#
+#################################################################################
+CLIENT-HEADER-TAGGER: listen-address Tags the request with the listen-address on which the request came in.
+
+s@^\w*\s+.*\s+HTTP/\d\.\d\s*@LISTEN-ADDRESS: $listen-address@D
 
 #################################################################################
 #

@@ -67,7 +67,7 @@
 #  unstable:
 #    This is an alpha or beta Privoxy release
 #  have-adminaddr-info:
-#    An e-mail address for the local Privoxy adminstrator has
+#    An e-mail address for the local Privoxy administrator has
 #    been specified and is available through the "admin-address"
 #    symbol
 #  have-proxy-info:
@@ -224,6 +224,11 @@
             </tr>
 
             <tr>
+              <td><code>FEATURE_64_BIT_TIME_T</code></td>
+              <td>@if-FEATURE_64_BIT_TIME_T-then@ Yes @else-not-FEATURE_64_BIT_TIME_T@ No @endif-FEATURE_64_BIT_TIME_T@</td>
+              <td>Dates before 1970 and after 2038 are (hopefully) supported.</td>
+            </tr>
+            <tr>
               <td><code>FEATURE_ACCEPT_FILTER</code></td>
               <td>@if-FEATURE_ACCEPT_FILTER-then@ Yes @else-not-FEATURE_ACCEPT_FILTER@ No @endif-FEATURE_ACCEPT_FILTER@</td>
               <td>Support for FreeBSD's accf_http(9) which is also available on some other BSDs.</td>
@@ -240,6 +245,13 @@
                  href="@default-cgi@edit-actions">@else-not-FEATURE_CGI_EDIT_ACTIONS@
                  @endif-FEATURE_CGI_EDIT_ACTIONS@web-based actions file
                  editor@if-FEATURE_CGI_EDIT_ACTIONS-then@</a>@else-not-FEATURE_CGI_EDIT_ACTIONS@@endif-FEATURE_CGI_EDIT_ACTIONS@.</td>
+            </tr>
+            <tr>
+              <td><code>FEATURE_CLIENT_TAGS</code></td>
+              <td>@if-FEATURE_CLIENT_TAGS-then@ Yes @else-not-FEATURE_CLIENT_TAGS@ No @endif-FEATURE_CLIENT_TAGS@</td>
+              <td>
+               Allows clients to request to be tagged.
+              </td>
             </tr>
             <tr>
               <td><code>FEATURE_COMPRESSION</code></td>

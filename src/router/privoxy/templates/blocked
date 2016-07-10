@@ -37,7 +37,7 @@
 #  my-hostname:
 #    The hostname associated with my-ip-addr
 #  admin-address:
-#    The email address of the pxoxy's administrator, as configured
+#    The email address of the proxy administrator, as configured
 #    in the config file
 #  default-cgi:
 #    The URL for the "main menu" builtin CGI of this proxy
@@ -68,7 +68,7 @@
 #  unstable:
 #    This is an alpha or beta release of the proxy software
 #  have-adminaddr-info:
-#    An e-mail address for the local Privoxy adminstrator has
+#    An e-mail address for the local Privoxy administrator has
 #    been specified and is available through the "admin-address"
 #    symbol
 #  have-proxy-info:
@@ -213,30 +213,19 @@
  \
     <tr> \
       <td class="info" colspan="2"> \
-        <big><b>Support and Service via Sourceforge:</b></big> \
+        <big><b>Support and Service:</b></big> \
         <p> \
-          We value your feedback. To provide you with the best support, \
-          we ask that you: \
+          The Privoxy Team values your feedback. \
         </p> \
-        <ul> \
-          <li> \
-            use the <a href="http://sourceforge.net/tracker/?group_id=11118&amp;atid=211118">support forum</a> or (better) the \
-            <a href="http://sourceforge.net/mail/?group_id=11118">mailing lists</a> to get help. \
-          </li> \
-          <li> \
-            submit banners and all problems with the actions file only through the \
-            <a href="javascript:void(window.open(\'http://www.privoxy.org/actions\',\'Feedback\',\'width=600,scrollbars=yes,toolbar=no,location=no,directories=no,status=no,menubar=no,copyhistory=no\').focus());">actions \
-            file feedback system</a>. \
-          </li> \
-          <li> \
-            submit bugs only through our <a href="http://sourceforge.net/tracker/?group_id=11118&amp;atid=111118">bug tracker</a>. \
-            Make sure that the bug has not yet been submitted. \
-          </li> \
-          <li> \
-            submit feature requests only through our <a href="http://sourceforge.net/tracker/?atid=361118&amp;group_id=11118&amp;func=browse">feature \
-            request tracker</a>. \
-          </li> \
-        </ul> \
+        <p> \
+          Please have a look at the User Manual to learn how to \
+          <a title="Privoxy User Manual: Contacting the developers, Bug Reporting and Feature Requests" \
+           href="@user-manual@contact.html">get support or report problems</a>. \
+        <p> \
+          If you want to support the Privoxy Team, you can \
+          <a href="https://www.privoxy.org/faq/general.html#PARTICIPATE">participate</a> \
+          or <a href="https://www.privoxy.org/faq/general.html#DONATE">donate</a>. \
+        </p> \
       </td> \
     </tr> \
  \

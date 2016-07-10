@@ -4,10 +4,10 @@
 <!entity p-intro SYSTEM "privoxy.sgml">
 <!entity contacting SYSTEM "contacting.sgml">
 <!entity buildsource SYSTEM "buildsource.sgml">
-<!entity p-version "3.0.24">
-<!entity p-status "stable">
-<!entity % p-not-stable "IGNORE">
-<!entity % p-stable "INCLUDE">
+<!entity p-version "3.0.25">
+<!entity p-status "beta">
+<!entity % p-not-stable "INCLUDE">
+<!entity % p-stable "IGNORE">
 <!entity % p-text "INCLUDE">       <!-- define we are a text only doc    -->
 <!entity % p-doc "IGNORE">         <!-- and never a text doc             -->
 <!entity % p-readme "INCLUDE">     <!-- all your README belong to us     -->
@@ -17,9 +17,9 @@
 
  Purpose     :  README for Privoxy
 
- $Id: readme.sgml,v 2.56 2016/01/21 15:55:49 fabiankeil Exp $
+ $Id: readme.sgml,v 2.60 2016/05/27 15:24:13 fabiankeil Exp $
 
- Copyright (C) 2001-2011 Privoxy Developers http://www.privoxy.org/
+ Copyright (C) 2001-2011 Privoxy Developers https://www.privoxy.org/
  See LICENSE.
 
  ========================================================================
@@ -81,7 +81,7 @@
  * Purpose     :  README file to give a short intro.
  *
  * Copyright   :  Written by and Copyright (C) 2001-2011 the
- *                Privoxy team. http://www.privoxy.org/
+ *                Privoxy team. https://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
  *                by and Copyright (C) 1997 Anonymous Coders and
@@ -115,7 +115,7 @@
 <para>
  <!-- include some conditional text -->
  This README is included with <![%p-not-stable;[ the development version of]]>
- Privoxy &p-version;. See http://www.privoxy.org/ for more information. The current code maturity
+ Privoxy &p-version;. See https://www.privoxy.org/ for more information. The current code maturity
  level is <quote>&p-status;</quote><![%p-not-stable;[, but seems stable to us :)]]>.
 </para>
 </abstract>
@@ -173,7 +173,7 @@
  /etc/privoxy.  On Windows, then wherever the executable itself is installed.
  There are many significant changes and advances from earlier versions. The
  <citetitle>User Manual</citetitle> has an explanation of all configuration
- options, and examples: http://www.privoxy.org/user-manual/.
+ options, and examples: https://www.privoxy.org/user-manual/.
 </para>
 <para>
  Be sure to set your browser(s) for HTTP/HTTPS Proxy at &lt;IP&gt;:&lt;Port&gt;, or
@@ -213,7 +213,7 @@
 
 <para>
  Included documentation may vary according to platform and packager. All
- documentation is posted on http://www.privoxy.org, in case you don't have it,
+ documentation is posted on https://www.privoxy.org, in case you don't have it,
  or can't find it.
 </para>
 </sect1>
@@ -226,13 +226,7 @@
 </sect1>
 
 <!-- <para> -->
-<!--  <LiteralLayout> -->
-<!--  ------------------------------------------------------------------------- -->
-<!--  ijbswa-developers@lists.sourceforge.net -->
-<!-- </LiteralLayout> -->
-<!-- </para> -->
-<!-- <para> -->
-<!--  $Id: readme.sgml,v 2.56 2016/01/21 15:55:49 fabiankeil Exp $ -->
+<!--  $Id: readme.sgml,v 2.60 2016/05/27 15:24:13 fabiankeil Exp $ -->
 <!-- </para> -->
 
 </article>
