@@ -3,7 +3,7 @@
 
 <html>
 <head>
-  <title>Privoxy 3.0.24 User Manual</title>
+  <title>Privoxy 3.0.25 User Manual</title>
   <meta name="GENERATOR" content=
   "Modular DocBook HTML Stylesheet Version 1.79">
   <link rel="NEXT" title="Introduction" href="introduction.html">
@@ -16,14 +16,14 @@
 "#840084" alink="#0000FF">
   <div class="ARTICLE">
     <div class="TITLEPAGE">
-      <h1 class="TITLE"><a name="AEN2" id="AEN2">Privoxy 3.0.24 User
+      <h1 class="TITLE"><a name="AEN2" id="AEN2">Privoxy 3.0.25 User
       Manual</a></h1>
 
       <p class="PUBDATE"><sub><a href="copyright.html">Copyright</a> &copy;
-      2001-2014 by <a href="http://www.privoxy.org/" target="_top">Privoxy
+      2001-2016 by <a href="https://www.privoxy.org/" target="_top">Privoxy
       Developers</a></sub><br></p>
 
-      <p class="PUBDATE">$Id: user-manual.sgml,v 2.199 2016/01/21 15:55:49
+      <p class="PUBDATE">$Id: user-manual.sgml,v 2.212 2016/05/25 10:50:55
       fabiankeil Exp $<br></p>
 
       <div>
@@ -32,7 +32,7 @@
 
           <p>The <i class="CITETITLE">Privoxy User Manual</i> gives users
           information on how to install, configure and use <a href=
-          "http://www.privoxy.org/" target="_top">Privoxy</a>.</p>
+          "https://www.privoxy.org/" target="_top">Privoxy</a>.</p>
 
           <p>Privoxy is a non-caching web proxy with advanced filtering
           capabilities for enhancing privacy, modifying web page data and
@@ -52,21 +52,21 @@
           <ul>
             <li>
               <p><a href=
-              "http://www.privoxy.org/faq/general.html#PARTICIPATE" target=
-              "_top">http://www.privoxy.org/faq/general.html#PARTICIPATE</a></p>
+              "https://www.privoxy.org/faq/general.html#PARTICIPATE" target=
+              "_top">https://www.privoxy.org/faq/general.html#PARTICIPATE</a></p>
             </li>
 
             <li>
-              <p><a href="http://www.privoxy.org/faq/general.html#DONATE"
+              <p><a href="https://www.privoxy.org/faq/general.html#DONATE"
               target=
-              "_top">http://www.privoxy.org/faq/general.html#DONATE</a></p>
+              "_top">https://www.privoxy.org/faq/general.html#DONATE</a></p>
             </li>
           </ul>
 
           <p>You can find the latest version of the <i class=
           "CITETITLE">Privoxy User Manual</i> at <a href=
-          "http://www.privoxy.org/user-manual/" target=
-          "_top">http://www.privoxy.org/user-manual/</a>. Please see the
+          "https://www.privoxy.org/user-manual/" target=
+          "_top">https://www.privoxy.org/user-manual/</a>. Please see the
           <a href="contact.html">Contact section</a> on how to contact the
           developers.</p>
         </div>
@@ -155,16 +155,19 @@
           <dl>
             <dt>5.1. <a href="startup.html#START-DEBIAN">Debian</a></dt>
 
-            <dt>5.2. <a href="startup.html#START-WINDOWS">Windows</a></dt>
+            <dt>5.2. <a href="startup.html#START-FREEBSD">FreeBSD and
+            ElectroBSD</a></dt>
 
-            <dt>5.3. <a href="startup.html#START-UNICES">Solaris, NetBSD,
-            FreeBSD, HP-UX and others</a></dt>
+            <dt>5.3. <a href="startup.html#START-WINDOWS">Windows</a></dt>
 
-            <dt>5.4. <a href="startup.html#START-OS2">OS/2</a></dt>
+            <dt>5.4. <a href="startup.html#START-UNICES">Generic instructions
+            for Unix derivates (Solaris, NetBSD, HP-UX etc.)</a></dt>
 
-            <dt>5.5. <a href="startup.html#START-MACOSX">Mac OS X</a></dt>
+            <dt>5.5. <a href="startup.html#START-OS2">OS/2</a></dt>
 
-            <dt>5.6. <a href="startup.html#CMDOPTIONS">Command Line
+            <dt>5.6. <a href="startup.html#START-MACOSX">Mac OS X</a></dt>
+
+            <dt>5.7. <a href="startup.html#CMDOPTIONS">Command Line
             Options</a></dt>
           </dl>
         </dd>
@@ -173,7 +176,8 @@
 
         <dd>
           <dl>
-            <dt>6.1. <a href="configuration.html#AEN796">Controlling Privoxy
+            <dt>6.1. <a href=
+            "configuration.html#CONTROL-WITH-WEBBROWSER">Controlling Privoxy
             with Your Web Browser</a></dt>
 
             <dt>6.2. <a href="configuration.html#CONFOVERVIEW">Configuration
@@ -336,6 +340,15 @@
 
                 <dt>7.6.13. <a href=
                 "config.html#CLIENT-HEADER-ORDER">client-header-order</a></dt>
+
+                <dt>7.6.14. <a href=
+                "config.html#CLIENT-SPECIFIC-TAG">client-specific-tag</a></dt>
+
+                <dt>7.6.15. <a href=
+                "config.html#CLIENT-TAG-LIFETIME">client-tag-lifetime</a></dt>
+
+                <dt>7.6.16. <a href=
+                "config.html#TRUST-X-FORWARDED-FOR">trust-x-forwarded-for</a></dt>
               </dl>
             </dd>
 
@@ -348,10 +361,11 @@
 
         <dd>
           <dl>
-            <dt>8.1. <a href="actions-file.html#AEN2698">Finding the Right
+            <dt>8.1. <a href="actions-file.html#RIGHT-MIX">Finding the Right
             Mix</a></dt>
 
-            <dt>8.2. <a href="actions-file.html#AEN2705">How to Edit</a></dt>
+            <dt>8.2. <a href="actions-file.html#HOW-TO-EDIT">How to
+            Edit</a></dt>
 
             <dt>8.3. <a href="actions-file.html#ACTIONS-APPLY">How Actions
             are Applied to Requests</a></dt>
@@ -364,15 +378,18 @@
                 <dt>8.4.1. <a href="actions-file.html#HOST-PATTERN">The Host
                 Pattern</a></dt>
 
-                <dt>8.4.2. <a href="actions-file.html#AEN2899">The Path
+                <dt>8.4.2. <a href="actions-file.html#PATH-PATTERN">The Path
                 Pattern</a></dt>
 
-                <dt>8.4.3. <a href="actions-file.html#TAG-PATTERN">The Tag
-                Pattern</a></dt>
+                <dt>8.4.3. <a href="actions-file.html#TAG-PATTERN">The
+                Request Tag Pattern</a></dt>
 
                 <dt>8.4.4. <a href=
-                "actions-file.html#NEGATIVE-TAG-PATTERNS">The Negative Tag
-                Patterns</a></dt>
+                "actions-file.html#NEGATIVE-TAG-PATTERNS">The Negative
+                Request Tag Patterns</a></dt>
+
+                <dt>8.4.5. <a href="actions-file.html#CLIENT-TAG-PATTERN">The
+                Client Tag Pattern</a></dt>
               </dl>
             </dd>
 
@@ -485,7 +502,7 @@
                 "actions-file.html#SET-IMAGE-BLOCKER">set-image-blocker</a></dt>
 
                 <dt>8.5.36. <a href=
-                "actions-file.html#AEN4638">Summary</a></dt>
+                "actions-file.html#SUMMARY">Summary</a></dt>
               </dl>
             </dd>
 
@@ -497,13 +514,13 @@
             <dd>
               <dl>
                 <dt>8.7.1. <a href=
-                "actions-file.html#AEN4702">match-all.action</a></dt>
+                "actions-file.html#MATCH-ALL">match-all.action</a></dt>
 
                 <dt>8.7.2. <a href=
-                "actions-file.html#AEN4724">default.action</a></dt>
+                "actions-file.html#DEFAULT-ACTION">default.action</a></dt>
 
                 <dt>8.7.3. <a href=
-                "actions-file.html#AEN4837">user.action</a></dt>
+                "actions-file.html#USER-ACTION">user.action</a></dt>
               </dl>
             </dd>
           </dl>
@@ -513,7 +530,7 @@
 
         <dd>
           <dl>
-            <dt>9.1. <a href="filter-file.html#AEN5005">Filter File
+            <dt>9.1. <a href="filter-file.html#FILTER-FILE-TUT">Filter File
             Tutorial</a></dt>
 
             <dt>9.2. <a href="filter-file.html#PREDEFINED-FILTERS">The
@@ -584,8 +601,8 @@
             <dt>14.1. <a href="appendix.html#REGEX">Regular
             Expressions</a></dt>
 
-            <dt>14.2. <a href="appendix.html#AEN5744">Privoxy's Internal
-            Pages</a></dt>
+            <dt>14.2. <a href="appendix.html#INTERNAL-PAGES">Privoxy's
+            Internal Pages</a></dt>
 
             <dt>14.3. <a href="appendix.html#CHAIN">Chain of Events</a></dt>
 

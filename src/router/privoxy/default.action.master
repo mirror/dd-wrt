@@ -11,7 +11,7 @@
 #
 #  File        :  $Source: /cvsroot/ijbswa/current/default.action.master,v $
 #
-#  $Id: default.action.master,v 1.326 2016/01/16 12:28:21 fabiankeil Exp $
+#  $Id: default.action.master,v 1.329 2016/05/12 08:42:25 fabiankeil Exp $
 #
 #  Requires    :  This version requires Privoxy v3.0.11 or later due to
 #                 syntax changes.
@@ -23,7 +23,7 @@
 #                 and enhancements are better placed in user.action,
 #                 the match-all section has been moved to match-all.action.
 #
-#  Copyright   :  Written by and Copyright (C) 2001-2013 the
+#  Copyright   :  Written by and Copyright (C) 2001-2016 the
 #                 Privoxy team. http://www.privoxy.org/
 #
 # Feedback welcome, for details please have a look at:
@@ -550,6 +550,7 @@ allow-ads   = -block -filter{banners-by-size} -filter{banners-by-link}
 +change-x-forwarded-for{block} \
 +client-header-tagger{css-requests} \
 +client-header-tagger{image-requests} \
++client-header-tagger{range-requests} \
 +hide-from-header{block} \
 +set-image-blocker{pattern} \
 }
@@ -563,6 +564,7 @@ standard.Cautious
 +change-x-forwarded-for{block} \
 +client-header-tagger{css-requests} \
 +client-header-tagger{image-requests} \
++client-header-tagger{range-requests} \
 +deanimate-gifs{last} \
 +filter{refresh-tags} \
 +filter{img-reorder} \
@@ -592,6 +594,7 @@ standard.Medium
 +change-x-forwarded-for{block} \
 +client-header-tagger{css-requests} \
 +client-header-tagger{image-requests} \
++client-header-tagger{range-requests} \
 +crunch-if-none-match \
 +crunch-outgoing-cookies \
 +crunch-incoming-cookies \
@@ -1935,6 +1938,9 @@ adn.speedtest.net
 .deutschlandradiokultur.de/
 # URL = http://klikki.fi/adv/wordpress2.html
 klikki.fi/adv/
+#MASTER# UNBLOCK-REFERRER: http://www.ardmediathek.de/tv
+# URL = http://www.ardmediathek.de/ard/static/img/ardmt/banner/ard-mediathek.svg
+.ardmediathek.de/
 
 
 #############################################################################
@@ -2573,5 +2579,14 @@ TAG:^CSS-REQUEST$
  -filter{blogspot} \
 }
 TAG:^(application|text)/(x-)?javascript$
+
+# Disable filtering for Range requests.
+#
+# With filtering enabled Privoxy would remove the Range headers
+# to be able to filter the whole response. The downside is that
+# it prevents clients from resuming downloads or skipping over
+# parts of multimedia files.
+{-filter -deanimate-gifs}
+TAG:^RANGE-REQUEST$
 
 #MASTER# set vi:nowrap

@@ -5,10 +5,10 @@
 <!entity p-intro SYSTEM "privoxy.sgml">
 <!entity history SYSTEM "history.sgml">
 <!entity seealso SYSTEM "seealso.sgml">
-<!entity p-version "3.0.24">
-<!entity p-status "stable">
-<!entity % p-not-stable "IGNORE">
-<!entity % p-stable "INCLUDE">
+<!entity p-version "3.0.25">
+<!entity p-status "beta">
+<!entity % p-not-stable "INCLUDE">
+<!entity % p-stable "IGNORE">
 <!entity % p-text "IGNORE">        <!-- define we are not a text only doc -->
 <!entity % p-doc "INCLUDE">        <!-- and we are a formal doc           -->
 <!entity % seealso-extra "INCLUDE"> <!-- extra stuff from seealso.sgml    -->
@@ -21,9 +21,9 @@
                 This file belongs into
                 ijbswa.sourceforge.net:/home/groups/i/ij/ijbswa/htdocs/
 
- $Id: developer-manual.sgml,v 2.60 2016/01/21 15:55:48 fabiankeil Exp $
+ $Id: developer-manual.sgml,v 2.71 2016/05/27 15:24:13 fabiankeil Exp $
 
- Copyright (C) 2001-2012 Privoxy Developers http://www.privoxy.org/
+ Copyright (C) 2001-2016 Privoxy Developers https://www.privoxy.org/
  See LICENSE.
 
  ========================================================================
@@ -42,14 +42,14 @@
      <subscript>
     <!-- Completely the wrong markup, but very little is allowed  -->
     <!-- in this part of an article. FIXME -->
-      <ulink url="http://www.privoxy.org/user-manual/copyright.html">Copyright</ulink>
-      &my-copy; 2001-2013 by
-      <ulink url="http://www.privoxy.org/">Privoxy Developers</ulink>
+      <ulink url="https://www.privoxy.org/user-manual/copyright.html">Copyright</ulink>
+      &my-copy; 2001-2016 by
+      <ulink url="https://www.privoxy.org/">Privoxy Developers</ulink>
      </subscript>
     </pubdate>
 
 
-    <pubdate>$Id: developer-manual.sgml,v 2.60 2016/01/21 15:55:48 fabiankeil Exp $</pubdate>
+    <pubdate>$Id: developer-manual.sgml,v 2.71 2016/05/27 15:24:13 fabiankeil Exp $</pubdate>
 
 <!--
 
@@ -98,14 +98,11 @@ Hal.
  Please note that this document is constantly evolving. This copy represents
  the state at the release of version &p-version;.
  You can find the latest version of the this manual at <ulink
- url="http://www.privoxy.org/developer-manual/">http://www.privoxy.org/developer-manual/</ulink>.
+ url="https://www.privoxy.org/developer-manual/">https://www.privoxy.org/developer-manual/</ulink>.
  Please have a look at the
- <ulink url="http://www.privoxy.org/user-manual/contact.html">contact section in the user manual</ulink>
+ <ulink url="https://www.privoxy.org/user-manual/contact.html">contact section in the user manual</ulink>
  if you are interested in contacting the developers.
 </para>
-<!--        <para> -->
-<!--    Feel free to send a note to the developers at <email>ijbswa-developers@lists.sourceforge.net</email>. -->
-<!--   </para> -->
 
     </abstract>
   </artheader>
@@ -137,7 +134,7 @@ Hal.
   <sect2 id="quickstart"><title>Quickstart to Privoxy Development</title>
    <para>
     The first step is to join the <ulink
-      url="mailto:ijbswa-developers@lists.sourceforge.net">developer's mailing list</ulink>.
+      url="https://lists.privoxy.org/mailman/listinfo/privoxy-devel">privoxy-devel mailing list</ulink>.
     You can submit your ideas, or even better patches. Patches are best
     submitted to the Sourceforge tracker set up for this purpose, but
     can be sent to the list for review too.
@@ -168,11 +165,8 @@ Hal.
     <sect2 id="cvsaccess"><title>Access to CVS</title>
       <para>
         The project's CVS repository is hosted on
-        <ulink url="http://sourceforge.net/">SourceForge.</ulink>
-        Please refer to the chapters 6 and 7 in
-        <ulink url="http://sourceforge.net/docman/?group_id=1">SF's site
-        documentation</ulink> for the technical access details for your
-        operating system. For historical reasons, the CVS server is
+        <ulink url="https://sourceforge.net/">SourceForge.</ulink>
+        For historical reasons, the CVS server is
         called <literal>ijbswa.cvs.sourceforge.net</literal>, the repository is
         called <literal>ijbswa</literal>, and the source tree module is called
         <literal>current</literal>.
@@ -186,7 +180,8 @@ Hal.
        mentioned, the sources are in the <literal>current</literal>
        <quote>module</quote>. Other modules are present for platform specific
        issues. There is a webview of the CVS hierarchy at <ulink
-       url="http://ijbswa.cvs.sourceforge.net/ijbswa/">http://ijbswa.cvs.sourceforge.net/ijbswa/</ulink>,
+        url="http://ijbswa.cvs.sourceforge.net/viewvc/ijbswa/"
+            >http://ijbswa.cvs.sourceforge.net/viewvc/ijbswa/</ulink>,
        which might help with visualizing how these pieces fit together.
      </para>
      <!--
@@ -267,7 +262,7 @@ Hal.
            <para>
             Note that near a major public release, we get more cautious.
             There is always the possibility to submit a patch to the <ulink
-            url="http://sourceforge.net/tracker/?atid=311118&amp;group_id=11118&amp;func=browse">patch
+            url="https://sourceforge.net/tracker/?atid=311118&amp;group_id=11118&amp;func=browse">patch
             tracker</ulink> instead.
           </para>
          </listitem>
@@ -303,7 +298,7 @@ Hal.
         <para>
           Alternately, proposed changes can be submitted as patches to the patch tracker on
           Sourceforge first: <ulink
-          url="http://sourceforge.net/tracker/?group_id=11118&#38;atid=311118">http://sourceforge.net/tracker/?group_id=11118&#38;atid=311118</ulink>.
+          url="https://sourceforge.net/tracker/?group_id=11118&#38;atid=311118">https://sourceforge.net/tracker/?group_id=11118&#38;atid=311118</ulink>.
           Then ask for peer review.
         </para>
        </listitem>
@@ -1808,7 +1803,7 @@ const char FILENAME_rcs[] = "$I&lt;!-- Break CVS Substitution -->d$";
  * Purpose     :  (Fill me in with a good description!)
  *
  * Copyright   :  Written by and Copyright (C) 2001-2009
- *                the Privoxy team. http://www.privoxy.org/
+ *                the Privoxy team. https://www.privoxy.org/
  *
  *                This program is free software; you can redistribute it
  *                and/or modify it under the terms of the GNU General
@@ -1862,7 +1857,7 @@ const char FILENAME_h_rcs[] = FILENAME_H_VERSION;
  * Purpose     :  (Fill me in with a good description!)
  *
  * Copyright   :  Written by and Copyright (C) 2001-2009
- *                the Privoxy team. http://www.privoxy.org/
+ *                the Privoxy team. https://www.privoxy.org/
  *
  *                This program is free software; you can redistribute it
  *                and/or modify it under the terms of the GNU General
@@ -1979,24 +1974,7 @@ Install the rpm. Any error messages?
         </orderedlist>
 </para>
     </sect2>
-
-    <!--   ~~~~~       New section      ~~~~~     -->
-    <sect2 id="testing-report"><title>Test reports</title>
-      <para>
-Please submit test reports only with the <ulink url="http://sourceforge.net/tracker/?func=add&amp;group_id=11118&amp;atid=395005">test form</ulink>
-at sourceforge. Three simple steps:
-        <itemizedlist>
-
-          <listitem><para>Select category: the distribution you test on.</para></listitem>
-          <listitem><para>Select group: the version of <application>Privoxy</application> that we are about to release.</para></listitem>
-          <listitem><para>Fill the Summary and Detailed Description with something
-              intelligent (keep it short and precise).</para>
-          </listitem>
-        </itemizedlist>
-        Do not mail to the mailing list (we cannot keep track on issues there).
-      </para>
-    </sect2>
-
+    <!-- XXX: Document how to write test reports and where to send them -->
   </sect1>
 
   <!--   ~~~~~       New section      ~~~~~     -->
@@ -2429,7 +2407,7 @@ at sourceforge. Three simple steps:
         be reset to one if this is the first RPM for
         <replaceable class="parameter">dist</replaceable> which is built from version
         X.Y.Z. Check the
-        <ulink url="http://sourceforge.net/project/showfiles.php?group_id=11118">file
+        <ulink url="https://sourceforge.net/project/showfiles.php?group_id=11118">file
         list</ulink> if unsure. Else, it must be set to the highest already available RPM
         release number for that version plus one.
       </para>
@@ -2563,9 +2541,9 @@ at sourceforge. Three simple steps:
 
     <sect3 id="newrelease-windows"><title>Windows</title>
       <para>
-        You should ensure you have the latest version of Cygwin (from
-        <ulink url="http://www.cygwin.com/">http://www.cygwin.com/</ulink>).
-        Run the following commands from within a Cygwin bash shell.
+        Use the <ulink url="http://www.fruitbat.org/Cygwin/index.html#cygwincirca">
+        Cygwin Time Machine</ulink> to install the last 1.5 version of Cygwin.
+        Run the following commands from within the Cygwin 1.5 bash shell.
       </para>
       <para>
         First, <emphasis>make sure that you have freshly exported the right
@@ -2736,114 +2714,10 @@ at sourceforge. Three simple steps:
 
     <sect3 id="newrelease-freebsd"><title>FreeBSD</title>
       <para>
-        Login to Sourceforge's compile-farm via ssh:
-      </para>
-      <para>
-        <programlisting>
-  ssh cf.sourceforge.net
-</programlisting>
-      </para>
-      <para>
-        Choose the right operating system.
-        When logged in, <emphasis>make sure that you have freshly exported the right
-        version into an empty directory</emphasis>. (See "Building and releasing
-        packages" above). Then run:
-      </para>
-      <para>
-        <programlisting>
-  cd current
-  autoheader && autoconf && ./configure
-</programlisting>
-      </para>
-      <para>
-        Then run:
-      </para>
-      <para>
-        <programlisting>
-  gmake freebsd-dist
-</programlisting>
-      </para>
-      <para>
-        which creates a gzip'ed tar archive. Sadly, you cannot use <command>make
-        freebsd-upload</command> on the Sourceforge machine (no ncftpput). You now have
-        to manually upload the archive to Sourceforge's ftp server and release
-        the file publicly. Use the release notes and Change Log from the
-        source tarball package.
+        Update the www/privoxy port and submit a diff upstream.
+        For details see the <ulink url="https://www.freebsd.org/doc/en_US.ISO8859-1/books/porters-handbook/">FreeBSD Porter's Handbook</ulink>.
       </para>
     </sect3>
-
-    <sect3 id="newrelease-hpux"><title>HP-UX 11</title>
-      <para>
-        First, <emphasis>make sure that you have freshly exported the right
-        version into an empty directory</emphasis>. (See "Building and releasing
-        packages" above). Then run:
-      </para>
-      <para>
-        <programlisting>
-  cd current
-  autoheader && autoconf && ./configure
-</programlisting>
-      </para>
-      <para>
-        Then do FIXME.
-      </para>
-    </sect3>
-
-    <sect3 id="newrelease-amiga"><title>Amiga OS</title>
-      <para>
-        First, <emphasis>make sure that you have freshly exported the right
-        version into an empty directory</emphasis>. (See "Building and releasing
-        packages" above). Then run:
-      </para>
-      <para>
-        <programlisting>
-  cd current
-  autoheader && autoconf && ./configure
-</programlisting>
-      </para>
-      <para>
-        Then do FIXME.
-      </para>
-    </sect3>
-
-    <sect3 id="newrelease-aix"><title>AIX</title>
-      <para>
-        Login to Sourceforge's compilefarm via ssh:
-      </para>
-      <para>
-        <programlisting>
-  ssh cf.sourceforge.net
-</programlisting>
-      </para>
-      <para>
-        Choose the right operating system.
-        When logged in, <emphasis>make sure that you have freshly exported the right
-        version into an empty directory</emphasis>. (See "Building and releasing
-        packages" above). Then run:
-      </para>
-      <para>
-        <programlisting>
-  cd current
-  autoheader && autoconf && ./configure
-</programlisting>
-      </para>
-      <para>
-        Then run:
-      </para>
-      <para>
-        <programlisting>
-  make aix-dist
-</programlisting>
-      </para>
-      <para>
-        which creates a gzip'ed tar archive. Sadly, you cannot use <command>make
-        aix-upload</command> on the Sourceforge machine (no ncftpput). You now have
-        to manually upload the archive to Sourceforge's ftp server and release
-        the file publicly. Use the release notes and Change Log from the
-        source tarball package.
-      </para>
-    </sect3>
-   </sect2>
 
    <sect2 id="releasing">
    <title>Uploading and Releasing Your Package</title>
@@ -2907,10 +2781,10 @@ at sourceforge. Three simple steps:
     <title>After the Release</title>
      <para>
       When all (or: most of the) packages have been uploaded and made available,
-      send an email to the <ulink url="mailto:ijbswa-announce@lists.sourceforge.net">announce
+      send an email to the <ulink url="mailto:privoxy-announce@lists.privoxy.org">announce
       mailing list</ulink>, Subject: "Version X.Y.Z available for download". Be sure to
       include the
-      <ulink url="http://sourceforge.net/project/showfiles.php?group_id=11118">download
+      <ulink url="https://sourceforge.net/project/showfiles.php?group_id=11118">download
       location</ulink>, the release notes and the Changelog. Also, post an
       updated News item on the project page Sourceforge, and update the Home
       page and docs linked from the Home page (see below). Other news sites
@@ -2965,7 +2839,7 @@ at sourceforge. Three simple steps:
 </programlisting>
    </para>
    <para>
-    This will do the upload to <ulink url="http://www.privoxy.org/">the
+    This will do the upload to <ulink url="https://www.privoxy.org/">the
     webserver</ulink> (www.privoxy.org) and ensure all files and directories
     there are group writable.
    </para>

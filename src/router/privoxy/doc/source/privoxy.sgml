@@ -3,9 +3,9 @@
 
  Purpose     :  Entity included in other project documents.
 
- $Id: privoxy.sgml,v 2.12 2011/09/04 11:10:12 fabiankeil Exp $
+ $Id: privoxy.sgml,v 2.13 2016/05/03 13:22:13 fabiankeil Exp $
 
- Copyright (C) 2001-2011 Privoxy Developers http://www.privoxy.org/
+ Copyright (C) 2001-2011 Privoxy Developers https://www.privoxy.org/
  See LICENSE.
 
  ======================================================================
@@ -47,14 +47,14 @@
  <itemizedlist>
   <listitem>
     <para>
-      <ulink url="http://www.privoxy.org/faq/general.html#PARTICIPATE"
-        >http://www.privoxy.org/faq/general.html#PARTICIPATE</ulink>
+      <ulink url="https://www.privoxy.org/faq/general.html#PARTICIPATE"
+        >https://www.privoxy.org/faq/general.html#PARTICIPATE</ulink>
     </para>
   </listitem>
   <listitem>
     <para>
-     <ulink url="http://www.privoxy.org/faq/general.html#DONATE"
-        >http://www.privoxy.org/faq/general.html#DONATE</ulink>
+     <ulink url="https://www.privoxy.org/faq/general.html#DONATE"
+        >https://www.privoxy.org/faq/general.html#DONATE</ulink>
     </para>
   </listitem>
  </itemizedlist>

@@ -1,4 +1,4 @@
-const char errlog_rcs[] = "$Id: errlog.c,v 1.124 2016/01/21 20:53:01 diem Exp $";
+const char errlog_rcs[] = "$Id: errlog.c,v 1.126 2016/02/26 12:29:38 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/errlog.c,v $
@@ -422,11 +422,10 @@ static long get_thread_id(void)
 #ifdef __MACH__
    /*
     * Mac OSX (and perhaps other Mach instances) doesn't have a unique
-    * value at the lowest order 4 bytes of pthread_self()'s return value, a pthread_t.
-    * pthread_t is supposed to be opaque... however it's fairly random.
-    * The following will address these two issues to make it mostly presentable.
+    * value at the lowest order 4 bytes of pthread_self()'s return value, a pthread_t,
+    * so trim the three lowest-order bytes from the value (16^3).
     */
-   this_thread = labs(this_thread % 1000);
+   this_thread = this_thread / 4096;
 #endif /* def __MACH__ */
 #elif defined(_WIN32)
    this_thread = GetCurrentThreadId();
@@ -717,15 +716,7 @@ void log_error(int loglevel, const char *fmt, ...)
 
    if (NULL == outbuf_save)
    {
-      outbuf_save = (char*)zalloc(log_buffer_size + 1); /* +1 for paranoia */
-      if (NULL == outbuf_save)
-      {
-         snprintf(tempbuf, sizeof(tempbuf),
-            "%s %08lx Fatal error: Out of memory in log_error().",
-            timestamp, thread_id);
-         fatal_error(tempbuf); /* Exit */
-         return;
-      }
+      outbuf_save = zalloc_or_die(log_buffer_size + 1); /* +1 for paranoia */
    }
    outbuf = outbuf_save;
 

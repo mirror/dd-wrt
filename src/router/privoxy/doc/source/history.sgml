@@ -3,9 +3,9 @@
 
  Purpose     :  Entity included in other project documents.
 
- $Id: history.sgml,v 2.9 2012/06/19 12:49:25 fabiankeil Exp $
+ $Id: history.sgml,v 2.10 2016/05/03 13:22:13 fabiankeil Exp $
 
-  Copyright (C) 2001-2009 Privoxy Developers http://www.privoxy.org/
+  Copyright (C) 2001-2009 Privoxy Developers https://www.privoxy.org/
   See LICENSE.
 
  ======================================================================
@@ -53,10 +53,10 @@
 
 <para>
  Then, some
- <ulink url="http://www.privoxy.org/user-manual/copyright.html#AUTHORS">developers</ulink>
+ <ulink url="https://www.privoxy.org/user-manual/copyright.html#AUTHORS">developers</ulink>
  picked up the thread, and started turning the software inside out, upside down,
  and then reassembled it, adding many
- <ulink url="http://www.privoxy.org/user-manual/introduction.html#FEATURES">new
+ <ulink url="https://www.privoxy.org/user-manual/introduction.html#FEATURES">new
  features</ulink> along the way.
 </para>
 

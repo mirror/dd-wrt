@@ -3,9 +3,9 @@
 
  Purpose     :  Entity included in other project documents.
 
- $Id: seealso.sgml,v 2.15 2014/11/11 12:19:52 fabiankeil Exp $
+ $Id: seealso.sgml,v 2.16 2016/05/03 13:22:13 fabiankeil Exp $
 
- Copyright (C) 2001-2009 Privoxy Developers http://www.privoxy.org/
+ Copyright (C) 2001-2009 Privoxy Developers https://www.privoxy.org/
  See LICENSE.
 
  ======================================================================
@@ -36,21 +36,21 @@
  <simplelist>
   <member>
    <ulink
-   url="http://www.privoxy.org/">http://www.privoxy.org/</ulink>,
+   url="https://www.privoxy.org/">https://www.privoxy.org/</ulink>,
    the <application>Privoxy</application> Home page.
   </member>
  </simplelist>
  <simplelist>
   <member>
    <ulink
-   url="http://www.privoxy.org/faq/">http://www.privoxy.org/faq/</ulink>,
+   url="https://www.privoxy.org/faq/">https://www.privoxy.org/faq/</ulink>,
    the <application>Privoxy</application> FAQ.
   </member>
  </simplelist>
  <simplelist>
   <member>
    <ulink
-   url="http://www.privoxy.org/developer-manual/">http://www.privoxy.org/developer-manual/</ulink>,
+   url="https://www.privoxy.org/developer-manual/">https://www.privoxy.org/developer-manual/</ulink>,
    the <application>Privoxy</application> developer manual.
   </member>
  </simplelist>

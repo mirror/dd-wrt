@@ -1,4 +1,4 @@
-const char cgiedit_rcs[] = "$Id: cgiedit.c,v 1.87 2014/10/18 11:31:52 fabiankeil Exp $";
+const char cgiedit_rcs[] = "$Id: cgiedit.c,v 1.88 2016/02/26 12:29:38 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/cgiedit.c,v $
@@ -1219,14 +1219,7 @@ jb_err edit_parse_actions_file(struct editable_file * file)
                return JB_ERR_PARSE;
             }
 
-            if ((new_alias = zalloc(sizeof(*new_alias))) == NULL)
-            {
-               /* Out of memory */
-               free(name);
-               free(value);
-               free_alias_list(alias_list);
-               return JB_ERR_MEMORY;
-            }
+            new_alias = zalloc_or_die(sizeof(*new_alias));
 
             err = get_actions(value, alias_list, new_alias->action);
             if (err)
@@ -1394,11 +1387,7 @@ jb_err edit_read_file_lines(FILE *fp, struct file_line ** pfile, int *newline)
 
    *pfile = NULL;
 
-   cur_line = first_line = zalloc(sizeof(struct file_line));
-   if (cur_line == NULL)
-   {
-      return JB_ERR_MEMORY;
-   }
+   cur_line = first_line = zalloc_or_die(sizeof(struct file_line));
 
    cur_line->type = FILE_LINE_UNPROCESSED;
 
@@ -1414,13 +1403,7 @@ jb_err edit_read_file_lines(FILE *fp, struct file_line ** pfile, int *newline)
    do
    {
       prev_line = cur_line;
-      cur_line = prev_line->next = zalloc(sizeof(struct file_line));
-      if (cur_line == NULL)
-      {
-         /* Out of memory */
-         edit_free_file_lines(first_line);
-         return JB_ERR_MEMORY;
-      }
+      cur_line = prev_line->next = zalloc_or_die(sizeof(struct file_line));
 
       cur_line->type = FILE_LINE_UNPROCESSED;
 
@@ -1550,12 +1533,7 @@ jb_err edit_read_file(struct client_state *csp,
       return err;
    }
 
-   file = (struct editable_file *) zalloc(sizeof(*file));
-   if (file == NULL)
-   {
-      edit_free_file_lines(lines);
-      return err;
-   }
+   file = zalloc_or_die(sizeof(*file));
 
    file->lines = lines;
    file->newline = newline;
@@ -3435,13 +3413,7 @@ jb_err cgi_edit_actions_add_url(struct client_state *csp,
    /* At this point, the section header is in cur_line - add after this. */
 
    /* Allocate the new line */
-   new_line = (struct file_line *)zalloc(sizeof(*new_line));
-   if (new_line == NULL)
-   {
-      free(new_pattern);
-      edit_free_file(file);
-      return JB_ERR_MEMORY;
-   }
+   new_line = zalloc_or_die(sizeof(*new_line));
 
    /* Fill in the data members of the new line */
    new_line->raw = NULL;
@@ -3828,13 +3800,7 @@ jb_err cgi_edit_actions_section_add(struct client_state *csp,
    }
 
    /* Allocate the new line */
-   new_line = (struct file_line *)zalloc(sizeof(*new_line));
-   if (new_line == NULL)
-   {
-      free(new_text);
-      edit_free_file(file);
-      return JB_ERR_MEMORY;
-   }
+   new_line = zalloc_or_die(sizeof(*new_line));
 
    /* Fill in the data members of the new line */
    new_line->raw = NULL;
