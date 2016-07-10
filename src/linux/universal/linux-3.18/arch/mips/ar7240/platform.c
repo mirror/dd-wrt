@@ -1617,6 +1617,7 @@ int __init ar7240_platform_init(void)
 	#ifndef CONFIG_E355AC
 	#ifndef CONFIG_WR615N
 	#ifndef CONFIG_E380AC
+	#ifndef CONFIG_AP120C
 	#ifndef CONFIG_XD3200
 	#ifndef CONFIG_E325N
 	#ifdef CONFIG_DIR859
@@ -1657,6 +1658,7 @@ int __init ar7240_platform_init(void)
 	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio0_device.dev;
 	ar71xx_eth0_pll_data.pll_1000 = 0x06000000;
 	ar71xx_add_device_eth(0);
+	#endif
 	#endif
 	#endif
 	#endif
