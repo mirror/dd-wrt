@@ -2482,7 +2482,7 @@ struct mime_handler mime_handlers[] = {
 	{"style/logo.png", "image/png", NULL, NULL, do_trial_logo, NULL, 0},
 #endif
 	{"**.css", "text/css", NULL, NULL, do_file, NULL, 0},
-	{"**.svg", "image/svg+xml", NULL, NULL, do_file, NULL, 0},
+	{"**.svg", "image/svg+xml", NULL, NULL, do_file, do_auth, 0},
 	{"**.gif", "image/gif", NULL, NULL, do_file, NULL, 0},
 	{"**.png", "image/png", NULL, NULL, do_file, NULL, 0},
 	{"**.jpg", "image/jpeg", NULL, NULL, do_file, NULL, 0},
