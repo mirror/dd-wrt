@@ -74,7 +74,7 @@
 #  unstable:
 #    this is an alpha or beta release of the proxy software
 #  have-adminaddr-info:
-#    An e-mail address for the local Privoxy adminstrator has
+#    An e-mail address for the local Privoxy administrator has
 #    been specified and is available through the "admin-address"
 #    symbol
 #  have-proxy-info:

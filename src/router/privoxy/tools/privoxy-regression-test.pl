@@ -7,7 +7,7 @@
 # A regression test "framework" for Privoxy. For documentation see:
 # perldoc privoxy-regression-test.pl
 #
-# $Id: privoxy-regression-test.pl,v 1.93 2013/12/24 13:36:58 fabiankeil Exp $
+# $Id: privoxy-regression-test.pl,v 1.99 2016/05/22 12:41:40 fabiankeil Exp $
 #
 # Wish list:
 #
@@ -19,7 +19,7 @@
 # - Document magic Expect Header values
 # - Internal fuzz support?
 #
-# Copyright (c) 2007-2013 Fabian Keil <fk@fabiankeil.de>
+# Copyright (c) 2007-2016 Fabian Keil <fk@fabiankeil.de>
 #
 # Permission to use, copy, modify, and distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -40,7 +40,7 @@ use strict;
 use Getopt::Long;
 
 use constant {
-    PRT_VERSION => 'Privoxy-Regression-Test 0.6',
+    PRT_VERSION => 'Privoxy-Regression-Test 0.7',
  
     CURL => 'curl',
 
@@ -341,7 +341,7 @@ sub load_regression_tests_through_privoxy () {
             $privoxy_features{$feature} = $1 if defined $feature;
             $feature = undef;
 
-        } elsif (m@This is <a href="http://www.privoxy.org/">Privoxy</a> (\d+\.\d+\.\d+) on@) {
+        } elsif (m@This is <a href="https?://www.privoxy.org/">Privoxy</a> (\d+\.\d+\.\d+) on@) {
             $privoxy_version = $1;
         }
     }
@@ -370,8 +370,9 @@ sub tokenize ($) {
 
     my ($token, $value) = (undef, undef);
 
-    # Remove leading and trailing white space.
-    s@^\s*@@;
+    # Remove leading and trailing white space and a
+    # a leading <pre> which is part of the first line.
+    s@^\s*(<pre>)?@@;
     s@\s*$@@;
 
     # Reverse HTML-encoding
@@ -525,6 +526,7 @@ sub load_action_files ($) {
         my $curl_url = quote($actionfiles[$file_number]);
         my $actionfile = undef;
         my $sticky_actions = undef;
+        my $level_offset = 0;
 
         foreach (@{get_cgi_page_or_else($curl_url)}) {
 
@@ -544,6 +546,11 @@ sub load_action_files ($) {
             next unless defined $token;
 
             # Load regression tests
+            if ($token eq 'default level offset') {
+
+                $level_offset = $value;
+                l(LL_FILE_LOADING, "Setting default level offset to " . $level_offset);
+            }
 
             if (token_starts_new_test($token)) {
 
@@ -552,6 +559,9 @@ sub load_action_files ($) {
                 $count++;
                 enlist_new_test(\@regression_tests, $token, $value, $si, $ri, $count);
                 $no_checks = 1; # Already validated by enlist_new_test().
+                if ($level_offset != 0) {
+                    $regression_tests[$si][$ri]{'level'} += $level_offset;
+                }
             }
 
             if ($token =~ /level\s+(\d+)/i) {
@@ -1903,7 +1913,7 @@ To verify that requests for a URL get redirected, use:
 
 To skip a test, add the following line:
 
-# Ignore = Yes
+    # Ignore = Yes
 
 The difference between a skipped test and a removed one is that removing
 a test affects the numbers of the following tests, while a skipped test
@@ -1922,14 +1932,14 @@ It is recommended to put the overwrite condition below the custom Privoxy
 section that causes the expected test failure and before the custom test
 that verifies that tests the now expected behaviour. Example:
 
-# The following section is expected to overwrite a section in
-# default.action, whose effect is tested. Thus also disable the
-# test that is now expected to fail and add a new one.
-#
-{+block{Facebook makes Firefox even more unstable. Do not want.}}
-# Overwrite condition = http://apps.facebook.com/onthefarm/track.php?creative=&cat=friendvisit&subcat=weeds&key=a789a971dc687bee4c20c044834fabdd&next=index.php%3Fref%3Dnotif%26visitId%3D898835505
-# Blocked URL = http://apps.facebook.com/
-.facebook./
+    # The following section is expected to overwrite a section in
+    # default.action, whose effect is being tested. Thus also disable
+    # the test that is now expected to fail and add a new one.
+    #
+    {+block{Facebook makes Firefox even more unstable. Do not want.}}
+    # Overwrite condition = http://apps.facebook.com/onthefarm/track.php?creative=&cat=friendvisit&subcat=weeds&key=a789a971dc687bee4c20c044834fabdd&next=index.php%3Fref%3Dnotif%26visitId%3D898835505
+    # Blocked URL = http://apps.facebook.com/
+    .facebook./
 
 =head1 TEST LEVELS
 
@@ -1947,6 +1957,13 @@ The current redirect test level is above the default
 max-level value as failed tests will result in outgoing
 connections. Use the B<--max-level> option to run them
 as well.
+
+The "Default level offset" directive can be used to change
+the default level by a given value. This directive affects
+all tests located after it until the end of the file or a another
+"Default level offset" directive is reached. The purpose of this
+directive is to make it more convenient to skip similar tests in
+a given file without having to remove or disable the tests completely.
 
 =head1 OPTIONS
 

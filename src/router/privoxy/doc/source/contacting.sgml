@@ -3,9 +3,9 @@
 
  Purpose     :  Entity included in other project documents.
 
- $Id: contacting.sgml,v 2.41 2014/12/19 12:30:38 fabiankeil Exp $
+ $Id: contacting.sgml,v 2.44 2016/05/22 12:42:11 fabiankeil Exp $
 
- Copyright (C) 2001-2011 Privoxy Developers http://www.privoxy.org/
+ Copyright (C) 2001-2011 Privoxy Developers https://www.privoxy.org/
  See LICENSE.
 
  ======================================================================
@@ -58,7 +58,7 @@
 <para>
   If you aren't using the latest Privoxy version, the problem may have been found
   and fixed in the meantime. We would appreciate if you could take the time
-  to <ulink url="http://www.privoxy.org/user-manual/installation.html">upgrade
+  to <ulink url="https://www.privoxy.org/user-manual/installation.html">upgrade
   to the latest version</ulink> and verify that the problem still exists.
 </para>
 <para>
@@ -189,7 +189,7 @@ debug  8192 # Non-fatal errors</literallayout>
 </para>
 
 <para>
-  The <ulink url="http://www.privoxy.org/user-manual/appendix.html#ACTIONSANAT">appendix
+  The <ulink url="https://www.privoxy.org/user-manual/appendix.html#ACTIONSANAT">appendix
   of the Privoxy User Manual</ulink> also has helpful information
   on understanding <literal>actions</literal>, and <literal>action</literal> debugging.
 </para>
@@ -197,7 +197,7 @@ debug  8192 # Non-fatal errors</literallayout>
 <sect2 id="contact-support"><title>Get Support</title>
 <para>
  All users are welcome to discuss their issues on the <ulink
- url="http://lists.sourceforge.net/lists/listinfo/ijbswa-users">users
+ url="https://lists.privoxy.org/mailman/listinfo/privoxy-users">users
  mailing list</ulink>, where the developers also hang around.
 </para>
 
@@ -262,8 +262,8 @@ debug  8192 # Non-fatal errors</literallayout>
  Please send feedback on ads that slipped through, innocent images that were
  blocked, sites that don't work properly, and other configuration related problem of
  <filename>default.action</filename> file, to
- <ulink url="http://sourceforge.net/tracker/?group_id=11118&amp;atid=460288">
- http://sourceforge.net/tracker/?group_id=11118&amp;atid=460288</ulink>,
+ <ulink url="https://sourceforge.net/tracker/?group_id=11118&amp;atid=460288">
+ https://sourceforge.net/tracker/?group_id=11118&amp;atid=460288</ulink>,
  the Actions File Tracker.
 </para>
 
@@ -275,7 +275,7 @@ debug  8192 # Non-fatal errors</literallayout>
 <para>
   Before reporting bugs, please make sure that the bug has <emphasis>not already been submitted</emphasis>
   and observe the additional hints at the top of the <ulink
-  url="http://sourceforge.net/tracker/?func=add&amp;group_id=11118&amp;atid=111118">submit
+  url="https://sourceforge.net/tracker/?func=add&amp;group_id=11118&amp;atid=111118">submit
   form</ulink>. If already submitted, please feel free to add any info to the
   original report that might help to solve the issue.
 </para>
@@ -305,14 +305,17 @@ users list. Technically interested users and people who wish to contribute to
 the project are always welcome on the developers list.
 You can find an overview of all <application>Privoxy</application>-related mailing lists,
 including list archives, at:
-<ulink url="http://sourceforge.net/mail/?group_id=11118">http://sourceforge.net/mail/?group_id=11118</ulink>.
+<ulink url="https://lists.privoxy.org/mailman/listinfo">https://lists.privoxy.org/mailman/listinfo</ulink>.
+The lists hosted on privoxy.org have been created in 2016, the previously-used
+lists hosted at SourceForge are deprecated but the archives may still be useful:
+<ulink url="https://sourceforge.net/mail/?group_id=11118">https://sourceforge.net/mail/?group_id=11118</ulink>.
 </para>
 </sect2>
 
 <sect2 id="sf-trackers"><title>SourceForge support trackers</title>
 <para>
  The
- <ulink url="http://sourceforge.net/tracker/?group_id=11118&#38;atid=211118">SourceForge support trackers</ulink>
+ <ulink url="https://sourceforge.net/tracker/?group_id=11118&#38;atid=211118">SourceForge support trackers</ulink>
  may be used as well, but have various technical problems that are unlikely to
  be fixed anytime soon. If you don't get a timely response, please try the
  mailing list as well. While it's hosted at SourceForge as well, it usually

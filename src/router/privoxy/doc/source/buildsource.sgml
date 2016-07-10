@@ -3,9 +3,9 @@
 
  Purpose     :  Entity included in other project documents.
 
- $Id: buildsource.sgml,v 2.19 2011/09/04 11:10:12 fabiankeil Exp $
+ $Id: buildsource.sgml,v 2.21 2016/05/03 13:22:13 fabiankeil Exp $
 
- Copyright (C) 2001-2009 Privoxy Developers http://www.privoxy.org/
+ Copyright (C) 2001-2009 Privoxy Developers https://www.privoxy.org/
  See LICENSE.
 
  ======================================================================
@@ -144,8 +144,7 @@
  ./configure  --disable-toggle  --disable-editor  --disable-force</screen>
 </para>
 <para>
-Then build as above. In Privoxy 3.0.7 and later, all of these options
-can also be disabled through the configuration file.
+ Note that all of these options can also be disabled through the configuration file.
 </para>
 <para>
  <emphasis>WARNING:</emphasis> If installing as root, the install will fail
@@ -241,7 +240,7 @@ can also be disabled through the configuration file.
  For more detailed instructions on how to build Redhat RPMs,
  Windows self-extracting installers, building on platforms with
  special requirements etc, please consult the <ulink
- url="http://www.privoxy.org/developer-manual/newrelease.html">developer manual</ulink>.
+ url="https://www.privoxy.org/developer-manual/newrelease.html">developer manual</ulink>.
 </para>
 
 <!-- print for README only -->

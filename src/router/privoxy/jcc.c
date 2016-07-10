@@ -1,4 +1,4 @@
-const char jcc_rcs[] = "$Id: jcc.c,v 1.440 2016/01/16 12:33:36 fabiankeil Exp $";
+const char jcc_rcs[] = "$Id: jcc.c,v 1.446 2016/05/25 10:54:01 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/jcc.c,v $
@@ -115,6 +115,9 @@ const char jcc_rcs[] = "$Id: jcc.c,v 1.440 2016/01/16 12:33:36 fabiankeil Exp $"
 #include "cgi.h"
 #include "loadcfg.h"
 #include "urlmatch.h"
+#ifdef FEATURE_CLIENT_TAGS
+#include "client-tags.h"
+#endif
 
 const char jcc_h_rcs[] = JCC_H_VERSION;
 const char project_h_rcs[] = PROJECT_H_VERSION;
@@ -184,6 +187,9 @@ privoxy_mutex_t connection_reuse_mutex;
 
 #ifdef FEATURE_EXTERNAL_FILTERS
 privoxy_mutex_t external_filter_mutex;
+#endif
+#ifdef FEATURE_CLIENT_TAGS
+privoxy_mutex_t client_tags_mutex;
 #endif
 
 #if !defined(HAVE_GETHOSTBYADDR_R) || !defined(HAVE_GETHOSTBYNAME_R)
@@ -1672,6 +1678,12 @@ static jb_err receive_client_request(struct client_state *csp)
       }
    }
 
+#ifdef FEATURE_CLIENT_TAGS
+   /* XXX: If the headers were enlisted sooner, passing csp would do. */
+   set_client_address(csp, headers);
+   get_tag_list_for_client(csp->client_tags, csp->client_address);
+#endif
+
    /*
     * Determine the actions for this URL
     */
@@ -2801,8 +2813,6 @@ static void chat(struct client_state *csp)
  *********************************************************************/
 static void prepare_csp_for_next_request(struct client_state *csp)
 {
-   unsigned int toggled_on_flag_set = (0 != (csp->flags & CSP_FLAG_TOGGLED_ON));
-
    csp->content_type = 0;
    csp->content_length = 0;
    csp->expected_content_length = 0;
@@ -2813,6 +2823,10 @@ static void prepare_csp_for_next_request(struct client_state *csp)
    free_http_request(csp->http);
    destroy_list(csp->headers);
    destroy_list(csp->tags);
+#ifdef FEATURE_CLIENT_TAGS
+   destroy_list(csp->client_tags);
+   freez(csp->client_address);
+#endif
    free_current_action(csp->action);
    if (NULL != csp->fwd)
    {
@@ -2821,7 +2835,9 @@ static void prepare_csp_for_next_request(struct client_state *csp)
    }
    /* XXX: Store per-connection flags someplace else. */
    csp->flags = (CSP_FLAG_ACTIVE | CSP_FLAG_REUSED_CLIENT_CONNECTION);
-   if (toggled_on_flag_set)
+#ifdef FEATURE_TOGGLE
+   if (global_toggle_state)
+#endif /* def FEATURE_TOGGLE */
    {
       csp->flags |= CSP_FLAG_TOGGLED_ON;
    }
@@ -3245,6 +3261,9 @@ static void initialize_mutexes(void)
    privoxy_mutex_init(&connection_reuse_mutex);
 #ifdef FEATURE_EXTERNAL_FILTERS
    privoxy_mutex_init(&external_filter_mutex);
+#endif
+#ifdef FEATURE_CLIENT_TAGS
+   privoxy_mutex_init(&client_tags_mutex);
 #endif
 
    /*
@@ -3966,18 +3985,18 @@ static void listen_loop(void)
       }
 #endif
 
-      csp_list = (struct client_states *)zalloc(sizeof(*csp_list));
-      if (NULL == csp_list)
-      {
-         log_error(LOG_LEVEL_FATAL,
-            "malloc(%d) for csp_list failed: %E", sizeof(*csp_list));
-         continue;
-      }
+      csp_list = zalloc_or_die(sizeof(*csp_list));
       csp = &csp_list->csp;
 
       log_error(LOG_LEVEL_CONNECT,
          "Waiting for the next client connection. Currently active threads: %d",
          active_threads);
+
+      /*
+       * This config may be outdated, but for accept_connection()
+       * it's fresh enough.
+       */
+      csp->config = config;
 
       if (!accept_connection(csp, bfds))
       {
@@ -4035,9 +4054,11 @@ static void listen_loop(void)
       if (block_acl(NULL,csp))
       {
          log_error(LOG_LEVEL_CONNECT,
-            "Connection from %s on socket %d dropped due to ACL", csp->ip_addr_str, csp->cfd);
+            "Connection from %s on %s (socket %d) dropped due to ACL",
+            csp->ip_addr_str, csp->listen_addr_str, csp->cfd);
          close_socket(csp->cfd);
          freez(csp->ip_addr_str);
+         freez(csp->listen_addr_str);
          freez(csp_list);
          continue;
       }
@@ -4053,6 +4074,7 @@ static void listen_loop(void)
             strlen(TOO_MANY_CONNECTIONS_RESPONSE));
          close_socket(csp->cfd);
          freez(csp->ip_addr_str);
+         freez(csp->listen_addr_str);
          freez(csp_list);
          continue;
       }

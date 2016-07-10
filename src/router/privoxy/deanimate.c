@@ -1,4 +1,4 @@
-const char deanimate_rcs[] = "$Id: deanimate.c,v 1.23 2012/03/09 16:24:36 fabiankeil Exp $";
+const char deanimate_rcs[] = "$Id: deanimate.c,v 1.24 2016/02/26 12:29:38 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/deanimate.c,v $
@@ -367,10 +367,7 @@ int gif_deanimate(struct binbuffer *src, struct binbuffer *dst, int get_first_im
    /*
     * Reserve a buffer for the current image block
     */
-   if (NULL == (image = (struct binbuffer *)zalloc(sizeof(*image))))
-   {
-      return 1;
-   }
+   image = zalloc_or_die(sizeof(*image));
 
    /*
     * Parse the GIF block by block and copy the relevant

@@ -1,7 +1,7 @@
 #ifndef PROJECT_H_INCLUDED
 #define PROJECT_H_INCLUDED
 /** Version string. */
-#define PROJECT_H_VERSION "$Id: project.h,v 1.212 2016/01/16 12:30:43 fabiankeil Exp $"
+#define PROJECT_H_VERSION "$Id: project.h,v 1.216 2016/05/25 10:50:55 fabiankeil Exp $"
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/project.h,v $
@@ -399,6 +399,9 @@ struct pattern_spec
 
 /** Pattern spec bitmap: It's a NO-RESPONSE-TAG pattern. */
 #define PATTERN_SPEC_NO_RESPONSE_TAG_PATTERN 0x00000008UL
+
+/** Pattern spec bitmap: It's a CLIENT-TAG pattern. */
+#define PATTERN_SPEC_CLIENT_TAG_PATTERN      0x00000010UL
 
 /**
  * An I/O buffer.  Holds a string which can be appended to, and can have data
@@ -924,6 +927,10 @@ struct client_state
    unsigned long ip_addr_long;
 #endif /* def HAVE_RFC2553 */
 
+   /** The host name and port (as a string of the form '<hostname>:<port>')
+       of the server socket to which the client connected. */
+   char *listen_addr_str;
+
    /** The URL that was requested */
    struct http_request http[1];
 
@@ -946,6 +953,17 @@ struct client_state
 
    /** List of all tags that apply to this request */
    struct list tags[1];
+
+#ifdef FEATURE_CLIENT_TAGS
+   /** List of all tags that apply to this client (assigned based on address) */
+   struct list client_tags[1];
+   /** The address of the client the request (presumably) came from.
+    *  Either the address returned by accept(), or the address provided
+    *  with the X-Forwarded-For header, provided Privoxy has been configured
+    *  to use it.
+    */
+   char *client_address;
+#endif
 
    /** MIME-Type key, see CT_* above */
    unsigned int content_type;
@@ -1202,6 +1220,15 @@ struct access_control_list
 /** Maximum number of loaders (actions, re_filter, ...) */
 #define NLOADERS 8
 
+/**
+ * This struct represents a client-spcific-tag and it's description
+ */
+struct client_tag_spec
+{
+   char *name;        /**< Name from "client-specific-tag bla" directive */
+   char *description; /**< Description from "client-specific-tag-description " directive */
+   struct client_tag_spec *next; /**< The pointer for chaining. */
+};
 
 /** configuration_spec::feature_flags: CGI actions editor. */
 #define RUNTIME_FEATURE_CGI_EDIT_ACTIONS             1U
@@ -1324,6 +1351,14 @@ struct configuration_spec
 
 #endif /* def FEATURE_TRUST */
 
+#ifdef FEATURE_CLIENT_TAGS
+   struct client_tag_spec client_tags[1];
+
+   /* Maximum number of seconds a temporarily enabled tag stays enabled. */
+   unsigned int client_tag_lifetime;
+#endif /* def FEATURE_CLIENT_TAGS */
+   int trust_x_forwarded_for;
+
 #ifdef FEATURE_ACL
 
    /** The access control list (ACL). */
@@ -1388,7 +1423,7 @@ struct configuration_spec
  */
 
 /** URL for the Privoxy home page. */
-#define HOME_PAGE_URL     "http://www.privoxy.org/"
+#define HOME_PAGE_URL     "https://www.privoxy.org/"
 
 /** URL for the Privoxy user manual. */
 #define USER_MANUAL_URL   HOME_PAGE_URL VERSION "/user-manual/"

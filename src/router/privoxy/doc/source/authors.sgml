@@ -3,10 +3,10 @@
 
  Purpose     :  AUTHORS file for Privoxy
 
- $Id: authors.sgml,v 2.28 2016/01/21 15:55:48 fabiankeil Exp $
+ $Id: authors.sgml,v 2.32 2016/05/27 15:24:13 fabiankeil Exp $
 
 
- Copyright (C) 2001-2009 Privoxy Developers http://www.privoxy.org/
+ Copyright (C) 2001-2009 Privoxy Developers https://www.privoxy.org/
  See LICENSE.
 
  ========================================================================
@@ -26,10 +26,10 @@
 <!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook V3.1//EN" [
 <!entity % dummy "IGNORE">
 <!entity authors SYSTEM "p-authors.sgml">
-<!entity p-version "3.0.24">
-<!entity p-status "stable">
-<!entity % p-not-stable "IGNORE">
-<!entity % p-stable "INCLUDE">
+<!entity p-version "3.0.25">
+<!entity p-status "beta">
+<!entity % p-not-stable "INCLUDE">
+<!entity % p-stable "IGNORE">
 <!entity % p-text "INCLUDE">           <!-- define we are a text only doc -->
 <!entity % p-authors-formal "INCLUDE"> <!-- include additional text, etc  -->
 ]>
@@ -60,8 +60,8 @@
 </para>
 
 <literallayout>
- Privoxy team. <ulink url="http://www.privoxy.org/">http://www.privoxy.org/</ulink>
- <email>ijbswa-developers@lists.sourceforge.net</email>
+ Privoxy team. <ulink url="https://www.privoxy.org/">https://www.privoxy.org/</ulink>
+ <email>privoxy-devel@lists.privoxy.org</email>
 </literallayout>
 
 </article>

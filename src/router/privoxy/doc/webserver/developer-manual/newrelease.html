@@ -503,9 +503,10 @@
         Hence it must be reset to one if this is the first RPM for <tt class=
         "REPLACEABLE"><i>dist</i></tt> which is built from version X.Y.Z.
         Check the <a href=
-        "http://sourceforge.net/project/showfiles.php?group_id=11118" target=
-        "_top">file list</a> if unsure. Else, it must be set to the highest
-        already available RPM release number for that version plus one.</p>
+        "https://sourceforge.net/project/showfiles.php?group_id=11118"
+        target="_top">file list</a> if unsure. Else, it must be set to the
+        highest already available RPM release number for that version plus
+        one.</p>
 
         <p>Then run:</p>
 
@@ -682,10 +683,11 @@
         <h3 class="SECT3"><a name="NEWRELEASE-WINDOWS" id=
         "NEWRELEASE-WINDOWS">6.3.6. Windows</a></h3>
 
-        <p>You should ensure you have the latest version of Cygwin (from
-        <a href="http://www.cygwin.com/" target=
-        "_top">http://www.cygwin.com/</a>). Run the following commands from
-        within a Cygwin bash shell.</p>
+        <p>Use the <a href=
+        "http://www.fruitbat.org/Cygwin/index.html#cygwincirca" target=
+        "_top">Cygwin Time Machine</a> to install the last 1.5 version of
+        Cygwin. Run the following commands from within the Cygwin 1.5 bash
+        shell.</p>
 
         <p>First, <span class="emphasis"><i class="EMPHASIS">make sure that
         you have freshly exported the right version into an empty
@@ -738,7 +740,7 @@
           <tr>
             <td>
               <pre class="PROGRAMLISTING">
-  debchange -v 3.0.24-stable-1 "New upstream version"
+  debchange -v 3.0.25-beta-1 "New upstream version"
 </pre>
             </td>
           </tr>
@@ -757,7 +759,7 @@
         </table>
 
         <p>This will create <tt class=
-        "FILENAME">../privoxy_3.0.24-stable-1_i386.deb</tt> which can be
+        "FILENAME">../privoxy_3.0.25-beta-1_i386.deb</tt> which can be
         uploaded. To upload the package to Sourceforge, simply issue</p>
 
         <table border="0" bgcolor="#E0E0E0" width="100%">
@@ -911,148 +913,10 @@
         <h3 class="SECT3"><a name="NEWRELEASE-FREEBSD" id=
         "NEWRELEASE-FREEBSD">6.3.9. FreeBSD</a></h3>
 
-        <p>Login to Sourceforge's compile-farm via ssh:</p>
-
-        <table border="0" bgcolor="#E0E0E0" width="100%">
-          <tr>
-            <td>
-              <pre class="PROGRAMLISTING">
-  ssh cf.sourceforge.net
-</pre>
-            </td>
-          </tr>
-        </table>
-
-        <p>Choose the right operating system. When logged in, <span class=
-        "emphasis"><i class="EMPHASIS">make sure that you have freshly
-        exported the right version into an empty directory</i></span>. (See
-        "Building and releasing packages" above). Then run:</p>
-
-        <table border="0" bgcolor="#E0E0E0" width="100%">
-          <tr>
-            <td>
-              <pre class="PROGRAMLISTING">
-  cd current
-  autoheader &amp;&amp; autoconf &amp;&amp; ./configure
-</pre>
-            </td>
-          </tr>
-        </table>
-
-        <p>Then run:</p>
-
-        <table border="0" bgcolor="#E0E0E0" width="100%">
-          <tr>
-            <td>
-              <pre class="PROGRAMLISTING">
-  gmake freebsd-dist
-</pre>
-            </td>
-          </tr>
-        </table>
-
-        <p>which creates a gzip'ed tar archive. Sadly, you cannot use
-        <b class="COMMAND">make freebsd-upload</b> on the Sourceforge machine
-        (no ncftpput). You now have to manually upload the archive to
-        Sourceforge's ftp server and release the file publicly. Use the
-        release notes and Change Log from the source tarball package.</p>
-      </div>
-
-      <div class="SECT3">
-        <h3 class="SECT3"><a name="NEWRELEASE-HPUX" id=
-        "NEWRELEASE-HPUX">6.3.10. HP-UX 11</a></h3>
-
-        <p>First, <span class="emphasis"><i class="EMPHASIS">make sure that
-        you have freshly exported the right version into an empty
-        directory</i></span>. (See "Building and releasing packages" above).
-        Then run:</p>
-
-        <table border="0" bgcolor="#E0E0E0" width="100%">
-          <tr>
-            <td>
-              <pre class="PROGRAMLISTING">
-  cd current
-  autoheader &amp;&amp; autoconf &amp;&amp; ./configure
-</pre>
-            </td>
-          </tr>
-        </table>
-
-        <p>Then do FIXME.</p>
-      </div>
-
-      <div class="SECT3">
-        <h3 class="SECT3"><a name="NEWRELEASE-AMIGA" id=
-        "NEWRELEASE-AMIGA">6.3.11. Amiga OS</a></h3>
-
-        <p>First, <span class="emphasis"><i class="EMPHASIS">make sure that
-        you have freshly exported the right version into an empty
-        directory</i></span>. (See "Building and releasing packages" above).
-        Then run:</p>
-
-        <table border="0" bgcolor="#E0E0E0" width="100%">
-          <tr>
-            <td>
-              <pre class="PROGRAMLISTING">
-  cd current
-  autoheader &amp;&amp; autoconf &amp;&amp; ./configure
-</pre>
-            </td>
-          </tr>
-        </table>
-
-        <p>Then do FIXME.</p>
-      </div>
-
-      <div class="SECT3">
-        <h3 class="SECT3"><a name="NEWRELEASE-AIX" id=
-        "NEWRELEASE-AIX">6.3.12. AIX</a></h3>
-
-        <p>Login to Sourceforge's compilefarm via ssh:</p>
-
-        <table border="0" bgcolor="#E0E0E0" width="100%">
-          <tr>
-            <td>
-              <pre class="PROGRAMLISTING">
-  ssh cf.sourceforge.net
-</pre>
-            </td>
-          </tr>
-        </table>
-
-        <p>Choose the right operating system. When logged in, <span class=
-        "emphasis"><i class="EMPHASIS">make sure that you have freshly
-        exported the right version into an empty directory</i></span>. (See
-        "Building and releasing packages" above). Then run:</p>
-
-        <table border="0" bgcolor="#E0E0E0" width="100%">
-          <tr>
-            <td>
-              <pre class="PROGRAMLISTING">
-  cd current
-  autoheader &amp;&amp; autoconf &amp;&amp; ./configure
-</pre>
-            </td>
-          </tr>
-        </table>
-
-        <p>Then run:</p>
-
-        <table border="0" bgcolor="#E0E0E0" width="100%">
-          <tr>
-            <td>
-              <pre class="PROGRAMLISTING">
-  make aix-dist
-</pre>
-            </td>
-          </tr>
-        </table>
-
-        <p>which creates a gzip'ed tar archive. Sadly, you cannot use
-        <b class="COMMAND">make aix-upload</b> on the Sourceforge machine (no
-        ncftpput). You now have to manually upload the archive to
-        Sourceforge's ftp server and release the file publicly. Use the
-        release notes and Change Log from the source tarball package.</p>
+        <p>Update the www/privoxy port and submit a diff upstream. For
+        details see the <a href=
+        "https://www.freebsd.org/doc/en_US.ISO8859-1/books/porters-handbook/"
+        target="_top">FreeBSD Porter's Handbook</a>.</p>
       </div>
     </div>
 
@@ -1090,7 +954,7 @@
       column, and click <tt class="LITERAL">Add Release</tt>. You will then
       need to create a new release for your package, using the format of
       <tt class="LITERAL">$VERSION ($CODE_STATUS)</tt>, e.g. <span class=
-      "emphasis"><i class="EMPHASIS">3.0.24 (beta)</i></span>.</p>
+      "emphasis"><i class="EMPHASIS">3.0.25 (beta)</i></span>.</p>
 
       <p>Now just follow the prompts. Be sure to add any appropriate Release
       notes. You should see your freshly uploaded packages in <span class=
@@ -1114,10 +978,10 @@
 
       <p>When all (or: most of the) packages have been uploaded and made
       available, send an email to the <a href=
-      "mailto:ijbswa-announce@lists.sourceforge.net" target="_top">announce
+      "mailto:privoxy-announce@lists.privoxy.org" target="_top">announce
       mailing list</a>, Subject: "Version X.Y.Z available for download". Be
       sure to include the <a href=
-      "http://sourceforge.net/project/showfiles.php?group_id=11118" target=
+      "https://sourceforge.net/project/showfiles.php?group_id=11118" target=
       "_top">download location</a>, the release notes and the Changelog.
       Also, post an updated News item on the project page Sourceforge, and
       update the Home page and docs linked from the Home page (see below).

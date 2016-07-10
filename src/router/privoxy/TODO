@@ -1,4 +1,4 @@
-$Id: TODO,v 1.141 2016/01/21 15:57:30 fabiankeil Exp $
+$Id: TODO,v 1.150 2016/04/10 08:07:10 fabiankeil Exp $
 
 Some Privoxy-related tasks, sorted by the time they
 have been added, not by priority.
@@ -65,7 +65,7 @@ http://www.privoxy.org/faq/general.html#DONATE
     This should be good enough for most of the content the
     user would want to filter.
 
-    Interested donors: 1.
+    Interested donors: 2.
 
 19) enable-forward-fallback. Syntax? Suggested by K.R.
 
@@ -105,7 +105,7 @@ http://www.privoxy.org/faq/general.html#DONATE
     Figure out a way to solve this. Introduce a cwd config option?
 
 41) Change documentation framework to one that works cross-platform.
-    Evaluate WML.
+    Evaluate WML and txt2tags.
 
 42) Add a DTrace USDT provider. Now that FreeBSD has userland DTrace
     support there's no longer any reason not to.
@@ -129,15 +129,19 @@ http://www.privoxy.org/faq/general.html#DONATE
     It would probably also make sense to look into what other
     projects did when migrating away from SF.
 
-    2014-05-13: Work in progress. Hosting wish list at the end
-    of this file.
+    2014-05: Work in progress. Hosting wish list at the end
+             of this file. Looks like most of the other projects
+             that left SF had lower standards and moved to hosters
+             that don't come close to sattisfying the requirements.
+    2016-03: The website has been moved away from SF infrastructure
+             and is also available through https:// now.
+    2016-04: Server rent for a year has been sponsored by ChameleonJohn.
 
     Interested donors: 1.
 
 54) Move away from CVS to a more modern revision control system.
-    Find out if there are any objection against going with Git.
-    Using Git would also have the advantage that SF now pretends
-    to support it, so we could do it independently from 53).
+    The move to git is work in progress:
+    https://sourceforge.net/p/ijbswa/mailman/message/34994343/
 
 58) Move more template strings from the code into the actual templates.
 
@@ -156,8 +160,8 @@ http://www.privoxy.org/faq/general.html#DONATE
     is no legal entity.
 
 65) Polish Website. Probably involves ditching the Docbook
-    mess in favour of wml. There are already several threads
-    in the mailinglist archives about this. See also #41.
+    mess. There are already several threads in the mailinglist
+    archives about this. See also #41.
 
 66) Stop hard-coding the number of action and filter files.
 
@@ -278,6 +282,7 @@ http://www.privoxy.org/faq/general.html#DONATE
 100) Create a cross-platform Privoxy control program and retire
      the win32 GUI. Integrate support for Privoxy-Regression-Test,
      Privoxy-Log-Parser, Privoxy-Filter-Test, uagen and similar tools.
+     Interested donors: 1.
 
 102) Add an include directive to split the config file into several parts.
 
@@ -344,6 +349,7 @@ http://www.privoxy.org/faq/general.html#DONATE
 121) Add HTTP/2 support. As a first step, incomming HTTP/1.x requests
      should be translated to outgoing HTTP/2 requests where possible
      (and if desired by the user).
+     Interested donors: 1.
 
 122) Allow customized log messages.
 
@@ -381,12 +387,6 @@ http://www.privoxy.org/faq/general.html#DONATE
      an action so the behaviour can be enabled on a per-request basis.
      Interested donors: 1.
 
-132) Provide a Tor hidden service to reach the Privoxy website.
-     Work in progress: http://jvauzb4sb3bwlsnc.onion/
-     This hidden service serves a copy of the www.privoxy.org content
-     (filtered through Privoxy to replace some absolute URLs).
-     Interested donors: 1.
-
 133) Consider allowing bitcoin donations.
      Interested donors: 2.
 
@@ -419,27 +419,8 @@ http://www.privoxy.org/faq/general.html#DONATE
 143) Add support for OpenBSD's pledge feature once it's stablelized.
      This should be a lot less work then #124.
 
-144) Allow Privoxy admins to pre-define tags that are be set for
-     clients that previously opted-in through the CGI interface.
-
-     This would be useful in multi-user setups where admins may
-     want to allow users to disable certain actions and filters
-     for themselves without affecting others.
-
-     Even in single-user setups this could be useful to allow
-     more fine-grained toggling. For example to disable request
-     blocking while still crunching cookies, or to disable
-     experimental filters only.
-
-     Interested donors: 1.
-
-145) Once #144 is implemented, allow clients to opt-in to the
-     tagging for a limited amount of time (or number of requests).
-
-     Interested donors: 1.
-
-146) Once #144 is implemented, optionally allow to save the opt-in
-     status to disk.
+146) Allow to save the internal client tag state to disk and
+     load it after restarts.
 
 147) Improve "Building from Source" section in the user manual.
      A common problem seems to be that it's not obvious to non-technical
@@ -447,6 +428,17 @@ http://www.privoxy.org/faq/general.html#DONATE
      used platforms. Adding a couple of examples should also be useful for
      technical users (like Privoxy developers) who want to install or test
      Privoxy on platforms they are not familiar with.
+
+148) Add a config directive to change the CGI_SITE_2_HOST
+     (default: config.privoxy.org).
+
+     If Privoxy is used as reverse proxy or intercepting proxy without
+     getting intercepted requests, error pages created from default templates
+     currently can result in client requests to config.privoxy.org on the
+     Internet which may not be desirable.
+
+149) Use poll() for socket selection so the number of sockets Privoxy
+     can deal with isn't limited to FD_SETSIZE anymore.
 
 ##########################################################################
 
