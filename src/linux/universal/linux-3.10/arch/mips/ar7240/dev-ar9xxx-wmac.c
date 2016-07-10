@@ -63,16 +63,25 @@ static struct platform_device ar9xxx_wmac_device = {
 		},
 };
 
-static void ar913x_wmac_init(void)
+static int ar913x_wmac_reset(void)
 {
 	ar71xx_device_stop(RESET_MODULE_AMBA2WMAC);
 	mdelay(10);
 
 	ar71xx_device_start(RESET_MODULE_AMBA2WMAC);
 	mdelay(10);
+	return 0;
+}
+
+static void __init ar913x_wmac_setup(void)
+{
+	ar913x_wmac_reset();
 
 	ar9xxx_wmac_resources[0].start = AR91XX_WMAC_BASE;
 	ar9xxx_wmac_resources[0].end = AR91XX_WMAC_BASE + AR91XX_WMAC_SIZE - 1;
+
+	ar9xxx_wmac_data.external_reset = ar913x_wmac_reset;
+
 }
 
 static int ar93xx_get_wmac_revision(void)
