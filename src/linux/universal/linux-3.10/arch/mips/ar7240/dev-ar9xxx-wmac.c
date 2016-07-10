@@ -73,7 +73,7 @@ static int ar913x_wmac_reset(void)
 	return 0;
 }
 
-static void __init ar913x_wmac_setup(void)
+static void __init ar913x_wmac_init(void)
 {
 	ar913x_wmac_reset();
 
