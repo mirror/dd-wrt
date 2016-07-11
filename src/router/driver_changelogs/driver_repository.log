@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r3053 | BrainSlayer | 2016-07-11 15:18:22 +0200 (Mon, 11 Jul 2016) | 1 line
+
+powersave fixes
+------------------------------------------------------------------------
+r3052 | BrainSlayer | 2016-07-11 13:10:41 +0200 (Mon, 11 Jul 2016) | 1 line
+
+disable kmalloc limitation which may hang coverage class code
+------------------------------------------------------------------------
 r3051 | BrainSlayer | 2016-07-11 12:06:29 +0200 (Mon, 11 Jul 2016) | 1 line
 
 merge nbd's spectral scan rework 
