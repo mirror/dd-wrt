@@ -1616,6 +1616,42 @@ void ast_channel_set_unbridged(struct ast_channel *chan, int value);
 void ast_channel_set_unbridged_nolock(struct ast_channel *chan, int value);
 
 /*!
+ * \brief This function will check if T.38 is active on the channel.
+ *
+ * \param chan Channel on which to check the unbridge_eval flag
+ *
+ * \return Returns 0 if the flag is down or 1 if the flag is up.
+ */
+int ast_channel_is_t38_active(struct ast_channel *chan);
+
+/*!
+ * \brief ast_channel_is_t38_active variant. Use this if the channel
+ *         is already locked prior to calling.
+ *
+ * \param chan Channel on which to check the is_t38_active flag
+ *
+ * \return Returns 0 if the flag is down or 1 if the flag is up.
+ */
+int ast_channel_is_t38_active_nolock(struct ast_channel *chan);
+
+/*!
+ * \brief Sets the is_t38_active flag
+ *
+ * \param chan Which channel is having its is_t38_active value set
+ * \param is_t38_active Non-zero if T.38 is active
+ */
+void ast_channel_set_is_t38_active(struct ast_channel *chan, int is_t38_active);
+
+/*!
+ * \brief Variant of ast_channel_set_is_t38_active. Use this if the channel
+ *         is already locked prior to calling.
+ *
+ * \param chan Which channel is having its is_t38_active value set
+ * \param is_t38_active Non-zero if T.38 is active
+ */
+void ast_channel_set_is_t38_active_nolock(struct ast_channel *chan, int is_t38_active);
+
+/*!
  * \brief Lock the given channel, then request softhangup on the channel with the given causecode
  * \param chan channel on which to hang up
  * \param causecode cause code to use (Zero if don't use cause code)
@@ -1950,6 +1986,21 @@ int ast_write_text(struct ast_channel *chan, struct ast_frame *frame);
 
 /*! \brief Send empty audio to prime a channel driver */
 int ast_prod(struct ast_channel *chan);
+
+/*!
+ * \brief Set specific read path on channel.
+ * \since 13.4.0
+ *
+ * \param chan Channel to setup read path.
+ * \param raw_format Format to expect from the channel driver.
+ * \param core_format What the core wants to read.
+ *
+ * \pre chan is locked
+ *
+ * \retval 0 on success.
+ * \retval -1 on error.
+ */
+int ast_set_read_format_path(struct ast_channel *chan, struct ast_format *raw_format, struct ast_format *core_format);
 
 /*!
  * \brief Sets read format on channel chan from capabilities
@@ -3890,6 +3941,26 @@ enum ama_flags ast_channel_string2amaflag(const char *flag);
  */
 const char *ast_channel_amaflags2string(enum ama_flags flags);
 
+enum AST_MONITORING_STATE {
+	AST_MONITOR_RUNNING,
+	AST_MONITOR_PAUSED
+};
+
+/*! Responsible for channel monitoring data */
+struct ast_channel_monitor {
+	struct ast_filestream *read_stream;
+	struct ast_filestream *write_stream;
+	char read_filename[FILENAME_MAX];
+	char write_filename[FILENAME_MAX];
+	char filename_base[FILENAME_MAX];
+	char beep_id[64];
+	int filename_changed;
+	char *format;
+	int joinfiles;
+	enum AST_MONITORING_STATE state;
+	int (*stop)(struct ast_channel *chan, int need_lock);
+};
+
 /* ACCESSOR FUNTIONS */
 /*! \brief Set the channel name */
 void ast_channel_name_set(struct ast_channel *chan, const char *name);
@@ -3905,7 +3976,7 @@ void ast_channel_name_set(struct ast_channel *chan, const char *name);
  *
  * \li language
  * \li accountcode
- * \li peeracccount
+ * \li peeraccount
  * \li linkedid
  */
 DECLARE_STRINGFIELD_SETTERS_FOR(name);

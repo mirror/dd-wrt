@@ -18,7 +18,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 431693 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/ari.h"
 #include "asterisk/astobj2.h"
@@ -163,9 +163,7 @@ int ast_ari_websocket_session_write(struct ast_ari_websocket_session *session,
 #ifdef AST_DEVMODE
 	if (!session->validator(message)) {
 		ast_log(LOG_ERROR, "Outgoing message failed validation\n");
-		return ast_websocket_write(session->ws_session,
-			AST_WEBSOCKET_OPCODE_TEXT, VALIDATION_FAILED,
-			strlen(VALIDATION_FAILED));
+		return ast_websocket_write_string(session->ws_session, VALIDATION_FAILED);
 	}
 #endif
 
@@ -176,9 +174,8 @@ int ast_ari_websocket_session_write(struct ast_ari_websocket_session *session,
 		return -1;
 	}
 
-	ast_debug(3, "Examining ARI event: \n%s\n", str);
-	if (ast_websocket_write(session->ws_session,
-				AST_WEBSOCKET_OPCODE_TEXT, str,	strlen(str))) {
+	ast_debug(3, "Examining ARI event (length %u): \n%s\n", (unsigned int) strlen(str), str);
+	if (ast_websocket_write_string(session->ws_session, str)) {
 		ast_log(LOG_NOTICE, "Problem occurred during websocket write, websocket closed\n");
 		return -1;
 	}

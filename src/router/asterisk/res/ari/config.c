@@ -24,7 +24,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 417317 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/config_options.h"
 #include "asterisk/http_websocket.h"
@@ -116,19 +116,31 @@ static void *user_alloc(const char *cat)
 static int user_sort_cmp(const void *obj_left, const void *obj_right, int flags)
 {
 	const struct ast_ari_conf_user *user_left = obj_left;
+	const struct ast_ari_conf_user *user_right = obj_right;
+	const char *key_right = obj_right;
+	int cmp;
 
-	if (flags & OBJ_PARTIAL_KEY) {
-		const char *key_right = obj_right;
-		return strncasecmp(user_left->username, key_right,
-			strlen(key_right));
-	} else if (flags & OBJ_KEY) {
-		const char *key_right = obj_right;
-		return strcasecmp(user_left->username, key_right);
-	} else {
-		const struct ast_ari_conf_user *user_right = obj_right;
-		const char *key_right = user_right->username;
-		return strcasecmp(user_left->username, key_right);
+	switch (flags & OBJ_SEARCH_MASK) {
+	case OBJ_SEARCH_OBJECT:
+		key_right = user_right->username;
+		/* Fall through */
+	case OBJ_SEARCH_KEY:
+		cmp = strcasecmp(user_left->username, key_right);
+		break;
+	case OBJ_SEARCH_PARTIAL_KEY:
+		/*
+		 * We could also use a partial key struct containing a length
+		 * so strlen() does not get called for every comparison instead.
+		 */
+		cmp = strncasecmp(user_left->username, key_right, strlen(key_right));
+		break;
+	default:
+		/* Sort can only work on something with a full or partial key. */
+		ast_assert(0);
+		cmp = 0;
+		break;
 	}
+	return cmp;
 }
 
 /*! \brief \ref aco_type item_find function */
@@ -138,7 +150,7 @@ static void *user_find(struct ao2_container *tmp_container, const char *cat)
 		return NULL;
 	}
 
-	return ao2_find(tmp_container, cat, OBJ_KEY);
+	return ao2_find(tmp_container, cat, OBJ_SEARCH_KEY);
 }
 
 static struct aco_type user_option = {
@@ -155,12 +167,17 @@ static struct aco_type user_option = {
 
 static struct aco_type *user[] = ACO_TYPES(&user_option);
 
+static void conf_general_dtor(void *obj)
+{
+	struct ast_ari_conf_general *general = obj;
+
+	ast_string_field_free_memory(general);
+}
+
 /*! \brief \ref ast_ari_conf destructor. */
 static void conf_destructor(void *obj)
 {
 	struct ast_ari_conf *cfg = obj;
-
-	ast_string_field_free_memory(cfg->general);
 
 	ao2_cleanup(cfg->general);
 	ao2_cleanup(cfg->users);
@@ -169,7 +186,7 @@ static void conf_destructor(void *obj)
 /*! \brief Allocate an \ref ast_ari_conf for config parsing */
 static void *conf_alloc(void)
 {
-	RAII_VAR(struct ast_ari_conf *, cfg, NULL, ao2_cleanup);
+	struct ast_ari_conf *cfg;
 
 	cfg = ao2_alloc_options(sizeof(*cfg), conf_destructor,
 		AO2_ALLOC_OPT_LOCK_NOLOCK);
@@ -177,21 +194,20 @@ static void *conf_alloc(void)
 		return NULL;
 	}
 
-	cfg->general = ao2_alloc_options(sizeof(*cfg->general), NULL,
+	cfg->general = ao2_alloc_options(sizeof(*cfg->general), conf_general_dtor,
 		AO2_ALLOC_OPT_LOCK_NOLOCK);
-	if (!cfg->general) {
-		return NULL;
-	}
-	aco_set_defaults(&general_option, "general", cfg->general);
-
-	if (ast_string_field_init(cfg->general, 64)) {
-		return NULL;
-	}
 
 	cfg->users = ao2_container_alloc_rbtree(AO2_ALLOC_OPT_LOCK_NOLOCK,
 		AO2_CONTAINER_ALLOC_OPT_DUPS_REPLACE, user_sort_cmp, NULL);
 
-	ao2_ref(cfg, +1);
+	if (!cfg->users
+		|| !cfg->general
+		|| ast_string_field_init(cfg->general, 64)
+		|| aco_set_defaults(&general_option, "general", cfg->general)) {
+		ao2_ref(cfg, -1);
+		return NULL;
+	}
+
 	return cfg;
 }
 
@@ -230,7 +246,7 @@ struct ast_ari_conf_user *ast_ari_config_validate_user(const char *username,
 		return NULL;
 	}
 
-	user = ao2_find(conf->users, username, OBJ_KEY);
+	user = ao2_find(conf->users, username, OBJ_SEARCH_KEY);
 	if (!user) {
 		return NULL;
 	}
@@ -309,6 +325,7 @@ int ast_ari_config_init(void)
 		return -1;
 	}
 
+	/* ARI general category options */
 	aco_option_register(&cfg_info, "enabled", ACO_EXACT, general_options,
 		"yes", OPT_BOOL_T, 1,
 		FLDSET(struct ast_ari_conf_general, enabled));
@@ -325,6 +342,7 @@ int ast_ari_config_init(void)
 		AST_DEFAULT_WEBSOCKET_WRITE_TIMEOUT_STR, OPT_INT_T, PARSE_IN_RANGE,
 		FLDSET(struct ast_ari_conf_general, write_timeout), 1, INT_MAX);
 
+	/* ARI type=user category options */
 	aco_option_register(&cfg_info, "type", ACO_EXACT, user, NULL,
 		OPT_NOOP_T, 0, 0);
 	aco_option_register(&cfg_info, "read_only", ACO_EXACT, user,

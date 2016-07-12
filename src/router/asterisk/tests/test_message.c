@@ -32,7 +32,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 420098 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <regex.h>
 
@@ -50,8 +50,6 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 420098 $")
 
 /*! \brief The number of user events we should get in a dialplan test */
 #define DEFAULT_EXPECTED_EVENTS 4
-
-static struct ast_context *test_message_context;
 
 /*! \brief The current number of received user events */
 static int received_user_events;
@@ -160,7 +158,7 @@ static int verify_user_event_fields(int user_event, const char *header, const ch
 				bad_headers_head = AST_VECTOR_GET(&bad_headers, user_event);
 			}
 			ast_variable_list_append(&bad_headers_head, bad_header);
-			AST_VECTOR_INSERT(&bad_headers, user_event, bad_headers_head);
+			AST_VECTOR_REPLACE(&bad_headers, user_event, bad_headers_head);
 		}
 		regfree(&regexbuf);
 		return -1;
@@ -312,7 +310,7 @@ AST_TEST_DEFINE(test_message_msg_tech_registration)
 		info->description =
 			"Test that:\n"
 			"\tA message technology can be registered once only\n"
-			"\tA registered message technology can be unregistered once only\n";
+			"\tA registered message technology can be unregistered once only";
 		return AST_TEST_NOT_RUN;
 	case TEST_EXECUTE:
 		break;
@@ -345,7 +343,7 @@ AST_TEST_DEFINE(test_message_msg_handler_registration)
 		info->description =
 			"Test that:\n"
 			"\tA message handler can be registered once only\n"
-			"\tA registered message handler can be unregistered once only\n";
+			"\tA registered message handler can be unregistered once only";
 		return AST_TEST_NOT_RUN;
 	case TEST_EXECUTE:
 		break;
@@ -393,7 +391,7 @@ AST_TEST_DEFINE(test_message_manipulation)
 			"This test covers the following:\n"
 			"\tSetting/getting the body\n"
 			"\tSetting/getting inbound/outbound variables\n"
-			"\tIterating over variables\n";
+			"\tIterating over variables";
 		return AST_TEST_NOT_RUN;
 	case TEST_EXECUTE:
 		break;
@@ -479,7 +477,7 @@ AST_TEST_DEFINE(test_message_queue_dialplan_nominal)
 		info->summary = "Test enqueueing messages to the dialplan";
 		info->description =
 			"Test that a message enqueued for the dialplan is\n"
-			"passed to that particular extension\n";
+			"passed to that particular extension";
 		return AST_TEST_NOT_RUN;
 	case TEST_EXECUTE:
 		break;
@@ -492,28 +490,28 @@ AST_TEST_DEFINE(test_message_queue_dialplan_nominal)
 	ast_variable_list_append(&expected_response, expected);
 	expected = ast_variable_new("Value","^foo$", __FILE__);
 	ast_variable_list_append(&expected_response, expected);
-	AST_VECTOR_INSERT(&expected_user_event_fields, 0, expected_response);
+	AST_VECTOR_REPLACE(&expected_user_event_fields, 0, expected_response);
 
 	expected_response = NULL;
 	expected = ast_variable_new("Verify", "^From$", __FILE__);
 	ast_variable_list_append(&expected_response, expected);
 	expected = ast_variable_new("Value","^bar$", __FILE__);
 	ast_variable_list_append(&expected_response, expected);
-	AST_VECTOR_INSERT(&expected_user_event_fields, 1, expected_response);
+	AST_VECTOR_REPLACE(&expected_user_event_fields, 1, expected_response);
 
 	expected_response = NULL;
 	expected = ast_variable_new("Verify", "^Body$", __FILE__);
 	ast_variable_list_append(&expected_response, expected);
 	expected = ast_variable_new("Value", "^a body$", __FILE__);
 	ast_variable_list_append(&expected_response, expected);
-	AST_VECTOR_INSERT(&expected_user_event_fields, 2, expected_response);
+	AST_VECTOR_REPLACE(&expected_user_event_fields, 2, expected_response);
 
 	expected_response = NULL;
 	expected = ast_variable_new("Verify", "^Custom$", __FILE__);
 	ast_variable_list_append(&expected_response, expected);
 	expected = ast_variable_new("Value", "^field$", __FILE__);
 	ast_variable_list_append(&expected_response, expected);
-	AST_VECTOR_INSERT(&expected_user_event_fields, 3, expected_response);
+	AST_VECTOR_REPLACE(&expected_user_event_fields, 3, expected_response);
 
 	ast_msg_set_to(msg, "foo");
 	ast_msg_set_from(msg, "bar");
@@ -550,7 +548,7 @@ AST_TEST_DEFINE(test_message_queue_handler_nominal)
 		info->summary = "Test enqueueing messages to a handler";
 		info->description =
 			"Test that a message enqueued can be handled by a\n"
-			"non-dialplan handler\n";
+			"non-dialplan handler";
 		return AST_TEST_NOT_RUN;
 	case TEST_EXECUTE:
 		break;
@@ -593,7 +591,7 @@ AST_TEST_DEFINE(test_message_queue_both_nominal)
 		info->description =
 			"Test that a message enqueued is passed to all\n"
 			"handlers that can process it, dialplan as well as\n"
-			"a custom handler\n";
+			"a custom handler";
 		return AST_TEST_NOT_RUN;
 	case TEST_EXECUTE:
 		break;
@@ -609,21 +607,21 @@ AST_TEST_DEFINE(test_message_queue_both_nominal)
 	ast_variable_list_append(&expected_response, expected);
 	expected = ast_variable_new("Value","^foo$", __FILE__);
 	ast_variable_list_append(&expected_response, expected);
-	AST_VECTOR_INSERT(&expected_user_event_fields, 0, expected_response);
+	AST_VECTOR_REPLACE(&expected_user_event_fields, 0, expected_response);
 
 	expected_response = NULL;
 	expected = ast_variable_new("Verify", "^From$", __FILE__);
 	ast_variable_list_append(&expected_response, expected);
 	expected = ast_variable_new("Value","^bar$", __FILE__);
 	ast_variable_list_append(&expected_response, expected);
-	AST_VECTOR_INSERT(&expected_user_event_fields, 1, expected_response);
+	AST_VECTOR_REPLACE(&expected_user_event_fields, 1, expected_response);
 
 	expected_response = NULL;
 	expected = ast_variable_new("Verify", "^Body$", __FILE__);
 	ast_variable_list_append(&expected_response, expected);
 	expected = ast_variable_new("Value", "^a body$", __FILE__);
 	ast_variable_list_append(&expected_response, expected);
-	AST_VECTOR_INSERT(&expected_user_event_fields, 2, expected_response);
+	AST_VECTOR_REPLACE(&expected_user_event_fields, 2, expected_response);
 
 	ast_msg_set_to(msg, "foo");
 	ast_msg_set_from(msg, "bar");
@@ -664,7 +662,7 @@ AST_TEST_DEFINE(test_message_has_destination_dialplan)
 		info->summary = "Test checking for a dialplan destination";
 		info->description =
 			"Test that a message's destination is verified via the\n"
-			"dialplan\n";
+			"dialplan";
 		return AST_TEST_NOT_RUN;
 	case TEST_EXECUTE:
 		break;
@@ -706,7 +704,7 @@ AST_TEST_DEFINE(test_message_has_destination_handler)
 		info->summary = "Test checking for a handler destination";
 		info->description =
 			"Test that a message's destination is verified via a\n"
-			"handler\n";
+			"handler";
 		return AST_TEST_NOT_RUN;
 	case TEST_EXECUTE:
 		break;
@@ -746,7 +744,7 @@ AST_TEST_DEFINE(test_message_msg_send)
 		info->summary = "Test message routing";
 		info->description =
 			"Test that a message can be routed if it has\n"
-			"a valid handler\n";
+			"a valid handler";
 		return AST_TEST_NOT_RUN;
 	case TEST_EXECUTE:
 		break;
@@ -822,9 +820,7 @@ static int unload_module(void)
 	AST_TEST_UNREGISTER(test_message_has_destination_handler);
 	AST_TEST_UNREGISTER(test_message_msg_send);
 
-	if (test_message_context) {
-		ast_context_destroy(test_message_context, AST_MODULE);
-	}
+	ast_context_destroy(NULL, AST_MODULE);
 
 	ast_manager_unregister_hook(&user_event_hook);
 
@@ -835,8 +831,7 @@ static int create_test_dialplan(void)
 {
 	int res = 0;
 
-	test_message_context = ast_context_find_or_create(NULL, NULL, TEST_CONTEXT, AST_MODULE);
-	if (!test_message_context) {
+	if (!ast_context_find_or_create(NULL, NULL, TEST_CONTEXT, AST_MODULE)) {
 		return -1;
 	}
 

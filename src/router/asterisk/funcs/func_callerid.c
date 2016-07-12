@@ -30,7 +30,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 411328 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/module.h"
 #include "asterisk/channel.h"
@@ -40,10 +40,11 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 411328 $")
 #include "asterisk/callerid.h"
 
 /*
- * Do not document the CALLERID(pres) datatype.
- * The name and number now have their own presentation value.  The pres
- * option will simply live on as a historical relic with as best
- * as can be managed backward compatible meaning.
+ * The CALLERID(pres) datatype is shorthand for getting/setting the
+ * combined value of name-pres and num-pres.  Some channel drivers
+ * don't make a distinction, so it makes sense to only use one property
+ * to get/set it.  The same applies to CONNECTEDLINE(pres),
+ * REDIRECTING(orig-pres), REDIRECTING(from-pres) and REDIRECTING(to-pres).
  *
  * Do not document the CALLERID(ton) datatype.
  * It is an alias for num-plan.
@@ -55,11 +56,6 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 411328 $")
  * It has turned out to not be needed.  The source value is really
  * only useful as a possible tracing aid.
  *
- * Do not document the CONNECTEDLINE(pres) datatype.
- * The name and number now have their own presentation value.  The pres
- * option will simply live on as a historical relic with as best
- * as can be managed backward compatible meaning.
- *
  * Do not document the CONNECTEDLINE(ton) datatype.
  * It is an alias for num-plan.
  *
@@ -68,12 +64,6 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 411328 $")
  * separate.  They represent two different parties and there is a case when
  * they are active at the same time.  The plain pres option will simply
  * live on as a historical relic.
- *
- * Do not document the REDIRECTING(orig-pres), REDIRECTING(from-pres),
- * or REDIRECTING(to-pres) datatypes.
- * The name and number now have their own presentation value.  The orig-pres,
- * from-pres, and to-pres options will simply live on as a historical relic
- * with as best as can be managed backward compatible meaning.
  *
  * Do not document the REDIRECTING(orig-ton), REDIRECTING(from-ton),
  * or REDIRECTING(to-ton) datatypes.
@@ -98,6 +88,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 411328 $")
 					<enum name = "num-valid" />
 					<enum name = "num-plan" />
 					<enum name = "num-pres" />
+					<enum name = "pres" />
 					<enum name = "subaddr" />
 					<enum name = "subaddr-valid" />
 					<enum name = "subaddr-type" />
@@ -144,6 +135,9 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 411328 $")
 		<description>
 			<para>Gets or sets Caller*ID data on the channel. Uses channel callerid by
 			default or optional callerid, if specified.</para>
+			<para>The <replaceable>pres</replaceable> field gets/sets a combined value
+			for <replaceable>name-pres</replaceable> and
+			<replaceable>num-pres</replaceable>.</para>
 			<para>The allowable values for the <replaceable>name-charset</replaceable>
 			field are the following:</para>
 			<enumlist>
@@ -168,7 +162,8 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 411328 $")
 		<description>
 			<para>Gets or sets Caller*ID presentation on the channel.
 			This function is deprecated in favor of CALLERID(num-pres)
-			and CALLERID(name-pres).
+			and CALLERID(name-pres) or CALLERID(pres) to get/set both
+			at once.
 			The following values are valid:</para>
 			<enumlist>
 				<enum name="allowed_not_screened">
@@ -218,6 +213,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 411328 $")
 					<enum name = "num-valid" />
 					<enum name = "num-plan" />
 					<enum name = "num-pres" />
+					<enum name = "pres" />
 					<enum name = "subaddr" />
 					<enum name = "subaddr-valid" />
 					<enum name = "subaddr-type" />
@@ -246,6 +242,9 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 411328 $")
 		</syntax>
 		<description>
 			<para>Gets or sets Connected Line data on the channel.</para>
+			<para>The <replaceable>pres</replaceable> field gets/sets a combined value
+			for <replaceable>name-pres</replaceable> and
+			<replaceable>num-pres</replaceable>.</para>
 			<para>The allowable values for the <replaceable>name-charset</replaceable>
 			field are the following:</para>
 			<enumlist>
@@ -279,6 +278,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 411328 $")
 					<enum name = "orig-num-valid" />
 					<enum name = "orig-num-plan" />
 					<enum name = "orig-num-pres" />
+					<enum name = "orig-pres" />
 					<enum name = "orig-subaddr" />
 					<enum name = "orig-subaddr-valid" />
 					<enum name = "orig-subaddr-type" />
@@ -294,6 +294,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 411328 $")
 					<enum name = "from-num-valid" />
 					<enum name = "from-num-plan" />
 					<enum name = "from-num-pres" />
+					<enum name = "from-pres" />
 					<enum name = "from-subaddr" />
 					<enum name = "from-subaddr-valid" />
 					<enum name = "from-subaddr-type" />
@@ -308,6 +309,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 411328 $")
 					<enum name = "to-num-valid" />
 					<enum name = "to-num-plan" />
 					<enum name = "to-num-pres" />
+					<enum name = "to-pres" />
 					<enum name = "to-subaddr" />
 					<enum name = "to-subaddr-valid" />
 					<enum name = "to-subaddr-type" />
@@ -366,22 +368,32 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 411328 $")
 		</syntax>
 		<description>
 			<para>Gets or sets Redirecting data on the channel.</para>
-			<para>The allowable values for the <replaceable>reason</replaceable>
+			<para>The <replaceable>orig-pres</replaceable>,
+			<replaceable>from-pres</replaceable> and <replaceable>to-pres</replaceable>
+			fields get/set a combined value for the corresponding
+			<replaceable>...-name-pres</replaceable> and <replaceable>...-num-pres</replaceable>
+			fields.</para>
+			<para>The recognized values for the <replaceable>reason</replaceable>
 			and <replaceable>orig-reason</replaceable> fields are the following:</para>
 			<enumlist>
-				<enum name = "unknown"><para>Unknown</para></enum>
-				<enum name = "cfb"><para>Call Forwarding Busy</para></enum>
-				<enum name = "cfnr"><para>Call Forwarding No Reply</para></enum>
-				<enum name = "unavailable"><para>Callee is Unavailable</para></enum>
-				<enum name = "time_of_day"><para>Time of Day</para></enum>
-				<enum name = "dnd"><para>Do Not Disturb</para></enum>
-				<enum name = "deflection"><para>Call Deflection</para></enum>
-				<enum name = "follow_me"><para>Follow Me</para></enum>
-				<enum name = "out_of_order"><para>Called DTE Out-Of-Order</para></enum>
 				<enum name = "away"><para>Callee is Away</para></enum>
 				<enum name = "cf_dte"><para>Call Forwarding By The Called DTE</para></enum>
+				<enum name = "cfb"><para>Call Forwarding Busy</para></enum>
+				<enum name = "cfnr"><para>Call Forwarding No Reply</para></enum>
 				<enum name = "cfu"><para>Call Forwarding Unconditional</para></enum>
+				<enum name = "deflection"><para>Call Deflection</para></enum>
+				<enum name = "dnd"><para>Do Not Disturb</para></enum>
+				<enum name = "follow_me"><para>Follow Me</para></enum>
+				<enum name = "out_of_order"><para>Called DTE Out-Of-Order</para></enum>
+				<enum name = "send_to_vm"><para>Send the call to voicemail</para></enum>
+				<enum name = "time_of_day"><para>Time of Day</para></enum>
+				<enum name = "unavailable"><para>Callee is Unavailable</para></enum>
+				<enum name = "unknown"><para>Unknown</para></enum>
 			</enumlist>
+			<note><para>You can set a user defined reason string that SIP can
+			send/receive instead.  The user defined reason string my need to be
+			quoted depending upon SIP or the peer's requirements.  These strings
+			are treated as unknown by the non-SIP channel drivers.</para></note>
 			<para>The allowable values for the <replaceable>xxx-name-charset</replaceable>
 			field are the following:</para>
 			<enumlist>

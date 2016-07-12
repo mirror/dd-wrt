@@ -34,7 +34,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419592 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/module.h"
 #include "asterisk/file.h"
@@ -42,6 +42,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419592 $")
 #include "asterisk/pbx.h"
 #include "asterisk/config.h"
 #include "asterisk/res_odbc.h"
+#include "asterisk/res_odbc_transaction.h"
 #include "asterisk/app.h"
 #include "asterisk/cli.h"
 #include "asterisk/strings.h"
@@ -136,6 +137,218 @@ struct odbc_datastore {
 	char names[0];
 };
 
+/* \brief Data source name
+ *
+ * This holds data that pertains to a DSN
+ */
+struct dsn {
+	/*! A connection to the database */
+	struct odbc_obj *connection;
+	/*! The name of the DSN as defined in res_odbc.conf */
+	char name[0];
+};
+
+#define DSN_BUCKETS 37
+
+struct ao2_container *dsns;
+
+static int dsn_hash(const void *obj, const int flags)
+{
+	const struct dsn *object;
+	const char *key;
+
+	switch (flags & OBJ_SEARCH_MASK) {
+	case OBJ_SEARCH_KEY:
+		key = obj;
+		break;
+	case OBJ_SEARCH_OBJECT:
+		object = obj;
+		key = object->name;
+		break;
+	default:
+		ast_assert(0);
+		return 0;
+	}
+	return ast_str_hash(key);
+}
+
+static int dsn_cmp(void *obj, void *arg, int flags)
+{
+	const struct dsn *object_left = obj;
+	const struct dsn *object_right = arg;
+	const char *right_key = arg;
+	int cmp;
+
+	switch (flags & OBJ_SEARCH_MASK) {
+	case OBJ_SEARCH_OBJECT:
+		right_key = object_right->name;
+		/* Fall through */
+	case OBJ_SEARCH_KEY:
+		cmp = strcmp(object_left->name, right_key);
+		break;
+	case OBJ_SEARCH_PARTIAL_KEY:
+		cmp = strncmp(object_left->name, right_key, strlen(right_key));
+		break;
+	default:
+		cmp = 0;
+		break;
+	}
+
+	if (cmp) {
+		return 0;
+	}
+
+	return CMP_MATCH;
+}
+
+static void dsn_destructor(void *obj)
+{
+	struct dsn *dsn = obj;
+
+	if (dsn->connection) {
+		ast_odbc_release_obj(dsn->connection);
+	}
+}
+
+/*!
+ * \brief Create a DSN and connect to the database
+ *
+ * \param name The name of the DSN as found in res_odbc.conf
+ * \retval NULL Fail
+ * \retval non-NULL The newly-created structure
+ */
+static struct dsn *create_dsn(const char *name)
+{
+	struct dsn *dsn;
+
+	dsn = ao2_alloc(sizeof(*dsn) + strlen(name) + 1, dsn_destructor);
+	if (!dsn) {
+		return NULL;
+	}
+
+	/* Safe */
+	strcpy(dsn->name, name);
+
+	dsn->connection = ast_odbc_request_obj(name, 0);
+	if (!dsn->connection) {
+		ao2_ref(dsn, -1);
+		return NULL;
+	}
+
+	if (!ao2_link_flags(dsns, dsn, OBJ_NOLOCK)) {
+		ao2_ref(dsn, -1);
+		return NULL;
+	}
+
+	return dsn;
+}
+
+static SQLHSTMT silent_execute(struct odbc_obj *obj, void *data);
+
+/*!
+ * \brief Determine if the connection has died.
+ *
+ * \param connection The connection to check
+ * \retval 1 Yep, it's dead
+ * \retval 0 It's alive and well
+ */
+static int connection_dead(struct odbc_obj *connection)
+{
+	SQLINTEGER dead;
+	SQLRETURN res;
+	SQLHSTMT stmt;
+
+	if (!connection) {
+		return 1;
+	}
+
+	res = SQLGetConnectAttr(connection->con, SQL_ATTR_CONNECTION_DEAD, &dead, 0, 0);
+	if (SQL_SUCCEEDED(res)) {
+		return dead == SQL_CD_TRUE ? 1 : 0;
+	}
+
+	/* If the Driver doesn't support SQL_ATTR_CONNECTION_DEAD do a direct
+	 * execute of a probing statement and see if that succeeds instead
+	 */
+	stmt = ast_odbc_direct_execute(connection, silent_execute, "SELECT 1");
+	if (!stmt) {
+		return 1;
+	}
+
+	SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+	return 0;
+}
+
+/*!
+ * \brief Retrieve a DSN, or create it if it does not exist.
+ *
+ * The created DSN is returned locked. This should be inconsequential
+ * to callers in most cases.
+ *
+ * When finished with the returned structure, the caller must call
+ * \ref release_dsn
+ *
+ * \param name Name of the DSN as found in res_odbc.conf
+ * \retval NULL Unable to retrieve or create the DSN
+ * \retval non-NULL The retrieved/created locked DSN
+ */
+static struct dsn *get_dsn(const char *name)
+{
+	struct dsn *dsn;
+
+	ao2_lock(dsns);
+	dsn = ao2_find(dsns, name, OBJ_SEARCH_KEY | OBJ_NOLOCK);
+	if (!dsn) {
+		dsn = create_dsn(name);
+	}
+	ao2_unlock(dsns);
+
+	if (!dsn) {
+		return NULL;
+	}
+
+	ao2_lock(dsn);
+	if (!dsn->connection) {
+		dsn->connection = ast_odbc_request_obj(name, 0);
+		if (!dsn->connection) {
+			ao2_unlock(dsn);
+			ao2_ref(dsn, -1);
+			return NULL;
+		}
+		return dsn;
+	}
+
+	if (connection_dead(dsn->connection)) {
+		ast_odbc_release_obj(dsn->connection);
+		dsn->connection = ast_odbc_request_obj(name, 0);
+		if (!dsn->connection) {
+			ao2_unlock(dsn);
+			ao2_ref(dsn, -1);
+			return NULL;
+		}
+	}
+
+	return dsn;
+}
+
+/*!
+ * \brief Unlock and unreference a DSN
+ *
+ * \param dsn The dsn to unlock and unreference
+ * \return NULL
+ */
+static void *release_dsn(struct dsn *dsn)
+{
+	if (!dsn) {
+		return NULL;
+	}
+
+	ao2_unlock(dsn);
+	ao2_ref(dsn, -1);
+
+	return NULL;
+}
+
 static AST_RWLIST_HEAD_STATIC(queries, acf_odbc_query);
 
 static int resultcount = 0;
@@ -165,7 +378,16 @@ static void odbc_datastore_free(void *data)
 	ast_free(result);
 }
 
-static SQLHSTMT generic_execute(struct odbc_obj *obj, void *data)
+/*!
+ * \brief Common execution function for SQL queries.
+ *
+ * \param obj DB connection
+ * \param data The query to execute
+ * \param silent If true, do not print warnings on failure
+ * \retval NULL Failed to execute query
+ * \retval non-NULL The executed statement
+ */
+static SQLHSTMT execute(struct odbc_obj *obj, void *data, int silent)
 {
 	int res;
 	char *sql = data;
@@ -179,7 +401,7 @@ static SQLHSTMT generic_execute(struct odbc_obj *obj, void *data)
 
 	res = SQLExecDirect(stmt, (unsigned char *)sql, SQL_NTS);
 	if ((res != SQL_SUCCESS) && (res != SQL_SUCCESS_WITH_INFO) && (res != SQL_NO_DATA)) {
-		if (res == SQL_ERROR) {
+		if (res == SQL_ERROR && !silent) {
 			int i;
 			SQLINTEGER nativeerror=0, numfields=0;
 			SQLSMALLINT diagbytes=0;
@@ -196,13 +418,25 @@ static SQLHSTMT generic_execute(struct odbc_obj *obj, void *data)
 			}
 		}
 
-		ast_log(LOG_WARNING, "SQL Exec Direct failed (%d)![%s]\n", res, sql);
+		if (!silent) {
+			ast_log(LOG_WARNING, "SQL Exec Direct failed (%d)![%s]\n", res, sql);
+		}
 		SQLCloseCursor(stmt);
 		SQLFreeHandle(SQL_HANDLE_STMT, stmt);
 		return NULL;
 	}
 
 	return stmt;
+}
+
+static SQLHSTMT generic_execute(struct odbc_obj *obj, void *data)
+{
+	return execute(obj, data, 0);
+}
+
+static SQLHSTMT silent_execute(struct odbc_obj *obj, void *data)
+{
+	return execute(obj, data, 1);
 }
 
 /*
@@ -213,7 +447,7 @@ static int acf_odbc_write(struct ast_channel *chan, const char *cmd, char *s, co
 	struct odbc_obj *obj = NULL;
 	struct acf_odbc_query *query;
 	char *t, varname[15];
-	int i, dsn, bogus_chan = 0;
+	int i, dsn_num, bogus_chan = 0;
 	int transactional = 0;
 	AST_DECLARE_APP_ARGS(values,
 		AST_APP_ARG(field)[100];
@@ -226,6 +460,7 @@ static int acf_odbc_write(struct ast_channel *chan, const char *cmd, char *s, co
 	struct ast_str *buf = ast_str_thread_get(&sql_buf, 16);
 	struct ast_str *insertbuf = ast_str_thread_get(&sql2_buf, 16);
 	const char *status = "FAILURE";
+	struct dsn *dsn = NULL;
 
 	if (!buf || !insertbuf) {
 		return -1;
@@ -323,17 +558,21 @@ static int acf_odbc_write(struct ast_channel *chan, const char *cmd, char *s, co
 	 * to multiple DSNs.  We MUST have a single handle all the way through the
 	 * transaction, or else we CANNOT enforce atomicity.
 	 */
-	for (dsn = 0; dsn < 5; dsn++) {
-		if (!ast_strlen_zero(query->writehandle[dsn])) {
+	for (dsn_num = 0; dsn_num < 5; dsn_num++) {
+		if (!ast_strlen_zero(query->writehandle[dsn_num])) {
 			if (transactional) {
 				/* This can only happen second time through or greater. */
 				ast_log(LOG_WARNING, "Transactions do not work well with multiple DSNs for 'writehandle'\n");
 			}
 
-			if ((obj = ast_odbc_retrieve_transaction_obj(chan, query->writehandle[dsn]))) {
+			if ((obj = ast_odbc_retrieve_transaction_obj(chan, query->writehandle[dsn_num]))) {
 				transactional = 1;
 			} else {
-				obj = ast_odbc_request_obj(query->writehandle[dsn], 0);
+				dsn = get_dsn(query->writehandle[dsn_num]);
+				if (!dsn) {
+					continue;
+				}
+				obj = dsn->connection;
 				transactional = 0;
 			}
 
@@ -341,10 +580,7 @@ static int acf_odbc_write(struct ast_channel *chan, const char *cmd, char *s, co
 				break;
 			}
 
-			if (obj && !transactional) {
-				ast_odbc_release_obj(obj);
-				obj = NULL;
-			}
+			dsn = release_dsn(dsn);
 		}
 	}
 
@@ -357,25 +593,25 @@ static int acf_odbc_write(struct ast_channel *chan, const char *cmd, char *s, co
 			status = "SUCCESS";
 
 		} else if (query->sql_insert) {
-			if (obj && !transactional) {
-				ast_odbc_release_obj(obj);
-				obj = NULL;
-			}
+			dsn = release_dsn(dsn);
 
-			for (transactional = 0, dsn = 0; dsn < 5; dsn++) {
-				if (!ast_strlen_zero(query->writehandle[dsn])) {
+			for (transactional = 0, dsn_num = 0; dsn_num < 5; dsn_num++) {
+				if (!ast_strlen_zero(query->writehandle[dsn_num])) {
 					if (transactional) {
 						/* This can only happen second time through or greater. */
 						ast_log(LOG_WARNING, "Transactions do not work well with multiple DSNs for 'writehandle'\n");
 					} else if (obj) {
-						ast_odbc_release_obj(obj);
-						obj = NULL;
+						dsn = release_dsn(dsn);
 					}
 
-					if ((obj = ast_odbc_retrieve_transaction_obj(chan, query->writehandle[dsn]))) {
+					if ((obj = ast_odbc_retrieve_transaction_obj(chan, query->writehandle[dsn_num]))) {
 						transactional = 1;
 					} else {
-						obj = ast_odbc_request_obj(query->writehandle[dsn], 0);
+						dsn = get_dsn(query->writehandle[dsn_num]);
+						if (!dsn) {
+							continue;
+						}
+						obj = dsn->connection;
 						transactional = 0;
 					}
 					if (obj) {
@@ -405,10 +641,7 @@ static int acf_odbc_write(struct ast_channel *chan, const char *cmd, char *s, co
 		pbx_builtin_setvar_helper(chan, "ODBCSTATUS", status);
 	}
 
-	if (obj && !transactional) {
-		ast_odbc_release_obj(obj);
-		obj = NULL;
-	}
+	dsn = release_dsn(dsn);
 
 	if (!bogus_chan) {
 		ast_autoservice_stop(chan);
@@ -419,11 +652,10 @@ static int acf_odbc_write(struct ast_channel *chan, const char *cmd, char *s, co
 
 static int acf_odbc_read(struct ast_channel *chan, const char *cmd, char *s, char *buf, size_t len)
 {
-	struct odbc_obj *obj = NULL;
 	struct acf_odbc_query *query;
 	char varname[15], rowcount[12] = "-1";
 	struct ast_str *colnames = ast_str_thread_get(&colnames_buf, 16);
-	int res, x, y, buflen = 0, escapecommas, rowlimit = 1, multirow = 0, dsn, bogus_chan = 0;
+	int res, x, y, buflen = 0, escapecommas, rowlimit = 1, multirow = 0, dsn_num, bogus_chan = 0;
 	AST_DECLARE_APP_ARGS(args,
 		AST_APP_ARG(field)[100];
 	);
@@ -435,6 +667,7 @@ static int acf_odbc_read(struct ast_channel *chan, const char *cmd, char *s, cha
 	struct odbc_datastore_row *row = NULL;
 	struct ast_str *sql = ast_str_thread_get(&sql_buf, 16);
 	const char *status = "FAILURE";
+	struct dsn *dsn = NULL;
 
 	if (!sql || !colnames) {
 		if (chan) {
@@ -522,28 +755,23 @@ static int acf_odbc_read(struct ast_channel *chan, const char *cmd, char *s, cha
 	}
 	AST_RWLIST_UNLOCK(&queries);
 
-	for (dsn = 0; dsn < 5; dsn++) {
-		if (!ast_strlen_zero(query->readhandle[dsn])) {
-			obj = ast_odbc_request_obj(query->readhandle[dsn], 0);
-			if (obj) {
-				stmt = ast_odbc_direct_execute(obj, generic_execute, ast_str_buffer(sql));
+	for (dsn_num = 0; dsn_num < 5; dsn_num++) {
+		if (!ast_strlen_zero(query->readhandle[dsn_num])) {
+			dsn = get_dsn(query->readhandle[dsn_num]);
+			if (!dsn) {
+				continue;
 			}
+			stmt = ast_odbc_direct_execute(dsn->connection, generic_execute, ast_str_buffer(sql));
 		}
 		if (stmt) {
 			break;
 		}
-		if (obj) {
-			ast_odbc_release_obj(obj);
-			obj = NULL;
-		}
+		dsn = release_dsn(dsn);
 	}
 
 	if (!stmt) {
 		ast_log(LOG_ERROR, "Unable to execute query [%s]\n", ast_str_buffer(sql));
-		if (obj) {
-			ast_odbc_release_obj(obj);
-			obj = NULL;
-		}
+		dsn = release_dsn(dsn);
 		if (!bogus_chan) {
 			pbx_builtin_setvar_helper(chan, "ODBCROWS", rowcount);
 			ast_autoservice_stop(chan);
@@ -557,8 +785,7 @@ static int acf_odbc_read(struct ast_channel *chan, const char *cmd, char *s, cha
 		ast_log(LOG_WARNING, "SQL Column Count error!\n[%s]\n\n", ast_str_buffer(sql));
 		SQLCloseCursor(stmt);
 		SQLFreeHandle (SQL_HANDLE_STMT, stmt);
-		ast_odbc_release_obj(obj);
-		obj = NULL;
+		dsn = release_dsn(dsn);
 		if (!bogus_chan) {
 			pbx_builtin_setvar_helper(chan, "ODBCROWS", rowcount);
 			ast_autoservice_stop(chan);
@@ -582,8 +809,7 @@ static int acf_odbc_read(struct ast_channel *chan, const char *cmd, char *s, cha
 		}
 		SQLCloseCursor(stmt);
 		SQLFreeHandle(SQL_HANDLE_STMT, stmt);
-		ast_odbc_release_obj(obj);
-		obj = NULL;
+		dsn = release_dsn(dsn);
 		if (!bogus_chan) {
 			pbx_builtin_setvar_helper(chan, "ODBCROWS", rowcount);
 			pbx_builtin_setvar_helper(chan, "ODBCSTATUS", status);
@@ -606,8 +832,7 @@ static int acf_odbc_read(struct ast_channel *chan, const char *cmd, char *s, cha
 				odbc_datastore_free(resultset);
 				SQLCloseCursor(stmt);
 				SQLFreeHandle(SQL_HANDLE_STMT, stmt);
-				ast_odbc_release_obj(obj);
-				obj = NULL;
+				dsn = release_dsn(dsn);
 				if (!bogus_chan) {
 					pbx_builtin_setvar_helper(chan, "ODBCSTATUS", "MEMERROR");
 					ast_autoservice_stop(chan);
@@ -639,8 +864,7 @@ static int acf_odbc_read(struct ast_channel *chan, const char *cmd, char *s, cha
 						odbc_datastore_free(resultset);
 						SQLCloseCursor(stmt);
 						SQLFreeHandle(SQL_HANDLE_STMT, stmt);
-						ast_odbc_release_obj(obj);
-						obj = NULL;
+						dsn = release_dsn(dsn);
 						if (!bogus_chan) {
 							pbx_builtin_setvar_helper(chan, "ODBCROWS", rowcount);
 							pbx_builtin_setvar_helper(chan, "ODBCSTATUS", "MEMERROR");
@@ -749,8 +973,7 @@ end_acf_read:
 				odbc_datastore_free(resultset);
 				SQLCloseCursor(stmt);
 				SQLFreeHandle(SQL_HANDLE_STMT, stmt);
-				ast_odbc_release_obj(obj);
-				obj = NULL;
+				dsn = release_dsn(dsn);
 				pbx_builtin_setvar_helper(chan, "ODBCSTATUS", "MEMERROR");
 				ast_autoservice_stop(chan);
 				return -1;
@@ -763,8 +986,7 @@ end_acf_read:
 	}
 	SQLCloseCursor(stmt);
 	SQLFreeHandle(SQL_HANDLE_STMT, stmt);
-	ast_odbc_release_obj(obj);
-	obj = NULL;
+	dsn = release_dsn(dsn);
 	if (resultset && !multirow) {
 		/* Fetch the first resultset */
 		if (!acf_fetch(chan, "", buf, buf, len)) {
@@ -1191,8 +1413,8 @@ static char *cli_odbc_read(struct ast_cli_entry *e, int cmd, struct ast_cli_args
 
 	if (a->argc == 5 && !strcmp(a->argv[4], "exec")) {
 		/* Execute the query */
-		struct odbc_obj *obj = NULL;
-		int dsn, executed = 0;
+		struct dsn *dsn = NULL;
+		int dsn_num, executed = 0;
 		SQLHSTMT stmt;
 		int rows = 0, res, x;
 		SQLSMALLINT colcount = 0, collength;
@@ -1206,19 +1428,18 @@ static char *cli_odbc_read(struct ast_cli_entry *e, int cmd, struct ast_cli_args
 			return CLI_SUCCESS;
 		}
 
-		for (dsn = 0; dsn < 5; dsn++) {
-			if (ast_strlen_zero(query->readhandle[dsn])) {
+		for (dsn_num = 0; dsn_num < 5; dsn_num++) {
+			if (ast_strlen_zero(query->readhandle[dsn_num])) {
 				continue;
 			}
-			ast_debug(1, "Found handle %s\n", query->readhandle[dsn]);
-			if (!(obj = ast_odbc_request_obj(query->readhandle[dsn], 0))) {
+			dsn = get_dsn(query->readhandle[dsn_num]);
+			if (!dsn) {
 				continue;
 			}
+			ast_debug(1, "Found handle %s\n", query->readhandle[dsn_num]);
 
-			ast_debug(1, "Got obj\n");
-			if (!(stmt = ast_odbc_direct_execute(obj, generic_execute, ast_str_buffer(sql)))) {
-				ast_odbc_release_obj(obj);
-				obj = NULL;
+			if (!(stmt = ast_odbc_direct_execute(dsn->connection, generic_execute, ast_str_buffer(sql)))) {
+				dsn = release_dsn(dsn);
 				continue;
 			}
 
@@ -1229,8 +1450,7 @@ static char *cli_odbc_read(struct ast_cli_entry *e, int cmd, struct ast_cli_args
 				ast_cli(a->fd, "SQL Column Count error!\n[%s]\n\n", ast_str_buffer(sql));
 				SQLCloseCursor(stmt);
 				SQLFreeHandle (SQL_HANDLE_STMT, stmt);
-				ast_odbc_release_obj(obj);
-				obj = NULL;
+				dsn = release_dsn(dsn);
 				AST_RWLIST_UNLOCK(&queries);
 				return CLI_SUCCESS;
 			}
@@ -1239,10 +1459,9 @@ static char *cli_odbc_read(struct ast_cli_entry *e, int cmd, struct ast_cli_args
 			if ((res != SQL_SUCCESS) && (res != SQL_SUCCESS_WITH_INFO)) {
 				SQLCloseCursor(stmt);
 				SQLFreeHandle(SQL_HANDLE_STMT, stmt);
-				ast_odbc_release_obj(obj);
-				obj = NULL;
+				dsn = release_dsn(dsn);
 				if (res == SQL_NO_DATA) {
-					ast_cli(a->fd, "Returned %d rows.  Query executed on handle %d:%s [%s]\n", rows, dsn, query->readhandle[dsn], ast_str_buffer(sql));
+					ast_cli(a->fd, "Returned %d rows.  Query executed on handle %d:%s [%s]\n", rows, dsn_num, query->readhandle[dsn_num], ast_str_buffer(sql));
 					break;
 				} else {
 					ast_cli(a->fd, "Error %d in FETCH [%s]\n", res, ast_str_buffer(sql));
@@ -1269,8 +1488,7 @@ static char *cli_odbc_read(struct ast_cli_entry *e, int cmd, struct ast_cli_args
 						ast_cli(a->fd, "SQL Get Data error %d!\n[%s]\n\n", res, ast_str_buffer(sql));
 						SQLCloseCursor(stmt);
 						SQLFreeHandle(SQL_HANDLE_STMT, stmt);
-						ast_odbc_release_obj(obj);
-						obj = NULL;
+						dsn = release_dsn(dsn);
 						AST_RWLIST_UNLOCK(&queries);
 						return CLI_SUCCESS;
 					}
@@ -1288,15 +1506,11 @@ static char *cli_odbc_read(struct ast_cli_entry *e, int cmd, struct ast_cli_args
 			}
 			SQLCloseCursor(stmt);
 			SQLFreeHandle(SQL_HANDLE_STMT, stmt);
-			ast_odbc_release_obj(obj);
-			obj = NULL;
-			ast_cli(a->fd, "Returned %d row%s.  Query executed on handle %d [%s]\n", rows, rows == 1 ? "" : "s", dsn, query->readhandle[dsn]);
+			dsn = release_dsn(dsn);
+			ast_cli(a->fd, "Returned %d row%s.  Query executed on handle %d [%s]\n", rows, rows == 1 ? "" : "s", dsn_num, query->readhandle[dsn_num]);
 			break;
 		}
-		if (obj) {
-			ast_odbc_release_obj(obj);
-			obj = NULL;
-		}
+		dsn = release_dsn(dsn);
 
 		if (!executed) {
 			ast_cli(a->fd, "Failed to execute query. [%s]\n", ast_str_buffer(sql));
@@ -1419,30 +1633,29 @@ static char *cli_odbc_write(struct ast_cli_entry *e, int cmd, struct ast_cli_arg
 
 	if (a->argc == 6 && !strcmp(a->argv[5], "exec")) {
 		/* Execute the query */
-		struct odbc_obj *obj = NULL;
-		int dsn, executed = 0;
+		struct dsn *dsn;
+		int dsn_num, executed = 0;
 		SQLHSTMT stmt;
 		SQLLEN rows = -1;
 
-		for (dsn = 0; dsn < 5; dsn++) {
-			if (ast_strlen_zero(query->writehandle[dsn])) {
+		for (dsn_num = 0; dsn_num < 5; dsn_num++) {
+			if (ast_strlen_zero(query->writehandle[dsn_num])) {
 				continue;
 			}
-			if (!(obj = ast_odbc_request_obj(query->writehandle[dsn], 0))) {
+			dsn = get_dsn(query->writehandle[dsn_num]);
+			if (!dsn) {
 				continue;
 			}
-			if (!(stmt = ast_odbc_direct_execute(obj, generic_execute, ast_str_buffer(sql)))) {
-				ast_odbc_release_obj(obj);
-				obj = NULL;
+			if (!(stmt = ast_odbc_direct_execute(dsn->connection, generic_execute, ast_str_buffer(sql)))) {
+				dsn = release_dsn(dsn);
 				continue;
 			}
 
 			SQLRowCount(stmt, &rows);
 			SQLCloseCursor(stmt);
 			SQLFreeHandle(SQL_HANDLE_STMT, stmt);
-			ast_odbc_release_obj(obj);
-			obj = NULL;
-			ast_cli(a->fd, "Affected %d rows.  Query executed on handle %d [%s]\n", (int)rows, dsn, query->writehandle[dsn]);
+			dsn = release_dsn(dsn);
+			ast_cli(a->fd, "Affected %d rows.  Query executed on handle %d [%s]\n", (int)rows, dsn_num, query->writehandle[dsn_num]);
 			executed = 1;
 			break;
 		}
@@ -1469,6 +1682,11 @@ static int load_module(void)
 	char *catg;
 	struct ast_flags config_flags = { 0 };
 
+	dsns = ao2_container_alloc(DSN_BUCKETS, dsn_hash, dsn_cmp);
+	if (!dsns) {
+		return AST_MODULE_LOAD_DECLINE;
+	}
+
 	res |= ast_custom_function_register(&fetch_function);
 	res |= ast_register_application_xml(app_odbcfinish, exec_odbcfinish);
 	AST_RWLIST_WRLOCK(&queries);
@@ -1477,6 +1695,7 @@ static int load_module(void)
 	if (!cfg || cfg == CONFIG_STATUS_FILEINVALID) {
 		ast_log(LOG_NOTICE, "Unable to load config for func_odbc: %s\n", config);
 		AST_RWLIST_UNLOCK(&queries);
+		ao2_ref(dsns, -1);
 		return AST_MODULE_LOAD_DECLINE;
 	}
 
@@ -1530,6 +1749,8 @@ static int unload_module(void)
 	AST_RWLIST_WRLOCK(&queries);
 
 	AST_RWLIST_UNLOCK(&queries);
+
+	ao2_ref(dsns, -1);
 	return res;
 }
 

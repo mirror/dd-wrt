@@ -29,7 +29,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 420124 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/astobj2.h"
 #include "asterisk/stasis.h"
@@ -71,6 +71,35 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 420124 $")
 			</syntax>
 		</managerEventInstance>
 	</managerEvent>
+	<managerEvent language="en_US" name="ContactStatus">
+		<managerEventInstance class="EVENT_FLAG_SYSTEM">
+			<synopsis>Raised when the state of a contact changes.</synopsis>
+			<syntax>
+				<parameter name="URI">
+					<para>This contact's URI.</para>
+				</parameter>
+				<parameter name="ContactStatus">
+					<para>New status of the contact.</para>
+					<enumlist>
+						<enum name="Unknown"/>
+						<enum name="Unreachable"/>
+						<enum name="Reachable"/>
+						<enum name="Created"/>
+						<enum name="Removed"/>
+					</enumlist>
+				</parameter>
+				<parameter name="AOR">
+					<para>The name of the associated aor.</para>
+				</parameter>
+				<parameter name="EndpointName">
+					<para>The name of the associated endpoint.</para>
+				</parameter>
+				<parameter name="RoundtripUsec">
+					<para>The RTT measured during the last qualify.</para>
+				</parameter>
+			</syntax>
+		</managerEventInstance>
+	</managerEvent>
 ***/
 
 static struct stasis_cp_all *endpoint_cache_all;
@@ -95,12 +124,7 @@ struct stasis_topic *ast_endpoint_topic_all_cached(void)
 	return stasis_cp_all_topic_cached(endpoint_cache_all);
 }
 
-static struct ast_manager_event_blob *peerstatus_to_ami(struct stasis_message *msg);
-
 STASIS_MESSAGE_TYPE_DEFN(ast_endpoint_snapshot_type);
-STASIS_MESSAGE_TYPE_DEFN(ast_endpoint_state_type,
-	.to_ami = peerstatus_to_ami,
-);
 
 static struct ast_manager_event_blob *peerstatus_to_ami(struct stasis_message *msg)
 {
@@ -136,6 +160,113 @@ static struct ast_manager_event_blob *peerstatus_to_ami(struct stasis_message *m
 		obj->snapshot->resource,
 		ast_str_buffer(peerstatus_event_string));
 }
+
+static struct ast_json *peerstatus_to_json(struct stasis_message *msg, const struct stasis_message_sanitizer *sanitize)
+{
+	struct ast_endpoint_blob *obj = stasis_message_data(msg);
+	struct ast_json *json_endpoint;
+	struct ast_json *json_peer;
+	struct ast_json *json_final;
+	const struct timeval *tv = stasis_message_timestamp(msg);
+
+	json_endpoint = ast_endpoint_snapshot_to_json(obj->snapshot, NULL);
+	if (!json_endpoint) {
+		return NULL;
+	}
+
+	json_peer = ast_json_object_create();
+	if (!json_peer) {
+		ast_json_unref(json_endpoint);
+		return NULL;
+	}
+
+	/* Copy all fields from the blob */
+	ast_json_object_update(json_peer, obj->blob);
+
+	json_final = ast_json_pack("{s: s, s: o, s: o, s: o }",
+		"type", "PeerStatusChange",
+		"timestamp", ast_json_timeval(*tv, NULL),
+		"endpoint", json_endpoint,
+		"peer", json_peer);
+	if (!json_final) {
+		ast_json_unref(json_endpoint);
+		ast_json_unref(json_peer);
+	}
+
+	return json_final;
+}
+
+STASIS_MESSAGE_TYPE_DEFN(ast_endpoint_state_type,
+	.to_ami = peerstatus_to_ami,
+	.to_json = peerstatus_to_json,
+);
+
+static struct ast_manager_event_blob *contactstatus_to_ami(struct stasis_message *msg)
+{
+	struct ast_endpoint_blob *obj = stasis_message_data(msg);
+	RAII_VAR(struct ast_str *, contactstatus_event_string, ast_str_create(64), ast_free);
+	const char *value;
+
+	if (!(value = ast_json_string_get(ast_json_object_get(obj->blob, "uri")))) {
+		return NULL;
+	}
+	ast_str_append(&contactstatus_event_string, 0, "URI: %s\r\n", value);
+
+	if (!(value = ast_json_string_get(ast_json_object_get(obj->blob, "contact_status")))) {
+		return NULL;
+	}
+	ast_str_append(&contactstatus_event_string, 0, "ContactStatus: %s\r\n", value);
+
+	if (!(value = ast_json_string_get(ast_json_object_get(obj->blob, "aor")))) {
+		return NULL;
+	}
+	ast_str_append(&contactstatus_event_string, 0, "AOR: %s\r\n", value);
+
+	if (!(value = ast_json_string_get(ast_json_object_get(obj->blob, "endpoint_name")))) {
+		return NULL;
+	}
+	ast_str_append(&contactstatus_event_string, 0, "EndpointName: %s\r\n", value);
+
+	if ((value = ast_json_string_get(ast_json_object_get(obj->blob, "roundtrip_usec")))) {
+		ast_str_append(&contactstatus_event_string, 0, "RoundtripUsec: %s\r\n", value);
+	}
+
+	return ast_manager_event_blob_create(EVENT_FLAG_SYSTEM, "ContactStatus",
+		"%s", ast_str_buffer(contactstatus_event_string));
+}
+
+static struct ast_json *contactstatus_to_json(struct stasis_message *msg, const struct stasis_message_sanitizer *sanitize)
+{
+	struct ast_endpoint_blob *obj = stasis_message_data(msg);
+	struct ast_json *json_endpoint;
+	struct ast_json *json_final;
+	const struct timeval *tv = stasis_message_timestamp(msg);
+
+	json_endpoint = ast_endpoint_snapshot_to_json(obj->snapshot, NULL);
+	if (!json_endpoint) {
+		return NULL;
+	}
+
+	json_final = ast_json_pack("{s: s, s: o, s: o, s: { s: s, s: s, s: s, s: s } } ",
+		"type", "ContactStatusChange",
+		"timestamp", ast_json_timeval(*tv, NULL),
+		"endpoint", json_endpoint,
+		"contact_info",
+		"uri", ast_json_string_get(ast_json_object_get(obj->blob, "uri")),
+		"contact_status", ast_json_string_get(ast_json_object_get(obj->blob, "contact_status")),
+		"aor", ast_json_string_get(ast_json_object_get(obj->blob, "aor")),
+		"roundtrip_usec", ast_json_string_get(ast_json_object_get(obj->blob, "roundtrip_usec")));
+	if (!json_final) {
+		ast_json_unref(json_endpoint);
+	}
+
+	return json_final;
+}
+
+STASIS_MESSAGE_TYPE_DEFN(ast_endpoint_contact_state_type,
+	.to_ami = contactstatus_to_ami,
+	.to_json = contactstatus_to_json
+);
 
 static void endpoint_blob_dtor(void *obj)
 {
@@ -294,6 +425,7 @@ static void endpoints_stasis_cleanup(void)
 {
 	STASIS_MESSAGE_TYPE_CLEANUP(ast_endpoint_snapshot_type);
 	STASIS_MESSAGE_TYPE_CLEANUP(ast_endpoint_state_type);
+	STASIS_MESSAGE_TYPE_CLEANUP(ast_endpoint_contact_state_type);
 
 	ao2_cleanup(endpoint_cache_all);
 	endpoint_cache_all = NULL;
@@ -312,6 +444,7 @@ int ast_endpoint_stasis_init(void)
 
 	res |= STASIS_MESSAGE_TYPE_INIT(ast_endpoint_snapshot_type);
 	res |= STASIS_MESSAGE_TYPE_INIT(ast_endpoint_state_type);
+	res |= STASIS_MESSAGE_TYPE_INIT(ast_endpoint_contact_state_type);
 
 	return res;
 }

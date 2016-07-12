@@ -25,9 +25,6 @@
 
 #include "asterisk/network.h"
 
-#if 0 //ndef __UCLIBC__
-#include <execinfo.h>
-#endif
 #include <time.h>	/* we want to override localtime_r */
 #include <unistd.h>
 #include <string.h>
@@ -528,31 +525,14 @@ long int ast_random(void);
 #define ast_free free
 #define ast_free_ptr ast_free
 
-/*
- * This buffer is in static memory. We never intend to read it,
- * nor do we care about multiple threads writing to it at the
- * same time. We only want to know if we're recursing too deep
- * already. 60 entries should be more than enough.  Function
- * call depth rarely exceeds 20 or so.
- */
-#define _AST_MEM_BACKTRACE_BUFLEN 60
-extern void *_ast_mem_backtrace_buffer[_AST_MEM_BACKTRACE_BUFLEN];
-
-/*
- * Ok, this sucks. But if we're already out of mem, we don't
- * want the logger to create infinite recursion (and a crash).
- */
-#if 0// __UCLIBC__
+#if defined(AST_IN_CORE)
 #define MALLOC_FAILURE_MSG \
-	do { \
-		if (backtrace(_ast_mem_backtrace_buffer, _AST_MEM_BACKTRACE_BUFLEN) < _AST_MEM_BACKTRACE_BUFLEN) { \
-			ast_log(LOG_ERROR, "Memory Allocation Failure in function %s at line %d of %s\n", func, lineno, file); \
-		} \
-	} while (0)
+	ast_log_safe(LOG_ERROR, "Memory Allocation Failure in function %s at line %d of %s\n", func, lineno, file)
 #else
 #define MALLOC_FAILURE_MSG \
-	ast_log(LOG_ERROR, "Memory Allocation Failure (compiled without backtrace support)");
+	ast_log(LOG_ERROR, "Memory Allocation Failure in function %s at line %d of %s\n", func, lineno, file)
 #endif
+
 /*!
  * \brief A wrapper for malloc()
  *
@@ -836,7 +816,7 @@ int ast_safe_mkdir(const char *base_path, const char *path, int mode);
  * \param a the array to bound check
  * \return 0 if value out of bounds, otherwise true (non-zero)
  */
-#define ARRAY_IN_BOUNDS(v, a) IN_BOUNDS(v, 0, ARRAY_LEN(a) - 1)
+#define ARRAY_IN_BOUNDS(v, a) IN_BOUNDS((int) (v), 0, ARRAY_LEN(a) - 1)
 
 /* Definition for Digest authorization */
 struct ast_http_digest {
@@ -1051,19 +1031,13 @@ char *ast_utils_which(const char *binary, char *fullpath, size_t fullpath_size);
  */
 
 #if defined(__clang__)
-
-#if defined(__has_feature) && __has_feature(blocks)
 typedef void (^_raii_cleanup_block_t)(void);
 static inline void _raii_cleanup_block(_raii_cleanup_block_t *b) { (*b)(); }
 
 #define RAII_VAR(vartype, varname, initval, dtor)                                                                \
     _raii_cleanup_block_t _raii_cleanup_ ## varname __attribute__((cleanup(_raii_cleanup_block),unused)) = NULL; \
-    vartype varname = initval;                                                                                   \
-    _raii_cleanup_ ## varname = ^{ dtor(varname); }
-
-#else
-	#error "CLANG must support the 'blocks' feature to compile Asterisk."
-#endif /* #if defined(__has_feature) && __has_feature(blocks) */
+    __block vartype varname = initval;                                                                           \
+    _raii_cleanup_ ## varname = ^{ {(void)dtor(varname);} }
 
 #elif defined(__GNUC__)
 
@@ -1114,5 +1088,28 @@ char *ast_crypt_encrypt(const char *key);
  * \return False (zero) if \a key doesn't match.
  */
 int ast_crypt_validate(const char *key, const char *expected);
+
+/*
+ * \brief Test that a file exists and is readable by the effective user.
+ * \since 13.7.0
+ *
+ * \param filename File to test.
+ * \return True (non-zero) if the file exists and is readable.
+ * \return False (zero) if the file either doesn't exists or is not readable.
+ */
+int ast_file_is_readable(const char *filename);
+
+/*
+ * \brief Compare 2 major.minor.patch.extra version strings.
+ * \since 13.7.0
+ *
+ * \param version1.
+ * \param version2.
+ *
+ * \return <0 if version 1 < version 2.
+ * \return =0 if version 1 = version 2.
+ * \return >0 if version 1 > version 2.
+ */
+int ast_compare_versions(const char *version1, const char *version2);
 
 #endif /* _ASTERISK_UTILS_H */

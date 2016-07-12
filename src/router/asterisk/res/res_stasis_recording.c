@@ -30,7 +30,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 421880 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/dsp.h"
 #include "asterisk/file.h"
@@ -91,9 +91,9 @@ static struct ast_json *recording_to_json(struct stasis_message *message,
 		return NULL;
 	}
 
-	return ast_json_pack("{s: s, s: O}",
+	return ast_json_pack("{s: s, s: o}",
 		"type", type,
-		"recording", blob);
+		"recording", ast_json_deep_copy(blob));
 }
 
 STASIS_MESSAGE_TYPE_DEFN(stasis_app_recording_snapshot_type,
@@ -212,7 +212,7 @@ enum ast_record_if_exists stasis_app_recording_if_exists_parse(
 		return AST_RECORD_IF_EXISTS_APPEND;
 	}
 
-	return -1;
+	return AST_RECORD_IF_EXISTS_ERROR;
 }
 
 static void recording_publish(struct stasis_app_recording *recording, const char *cause)
@@ -265,7 +265,13 @@ static enum stasis_app_control_channel_result check_rule_recording(
 	return STASIS_APP_CHANNEL_RECORDING;
 }
 
-struct stasis_app_control_rule rule_recording = {
+/*
+ * XXX This only works because there is one and only one rule in
+ * the system so it can be added to any number of channels
+ * without issue.  However, as soon as there is another rule then
+ * watch out for weirdness because of cross linked lists.
+ */
+static struct stasis_app_control_rule rule_recording = {
 	.check_rule = check_rule_recording
 };
 
@@ -358,6 +364,7 @@ static void recording_dtor(void *obj)
 	struct stasis_app_recording *recording = obj;
 
 	ast_free(recording->absolute_name);
+	ao2_cleanup(recording->control);
 	ao2_cleanup(recording->options);
 }
 
@@ -413,6 +420,7 @@ struct stasis_app_recording *stasis_app_control_record(
 
 	ao2_ref(options, +1);
 	recording->options = options;
+	ao2_ref(control, +1);
 	recording->control = control;
 	recording->state = STASIS_APP_RECORDING_STATE_QUEUED;
 
@@ -465,15 +473,7 @@ const char *stasis_app_recording_get_name(
 
 struct stasis_app_recording *stasis_app_recording_find_by_name(const char *name)
 {
-	RAII_VAR(struct stasis_app_recording *, recording, NULL, ao2_cleanup);
-
-	recording = ao2_find(recordings, name, OBJ_KEY);
-	if (recording == NULL) {
-		return NULL;
-	}
-
-	ao2_ref(recording, +1);
-	return recording;
+	return ao2_find(recordings, name, OBJ_KEY);
 }
 
 struct ast_json *stasis_app_recording_to_json(
@@ -595,13 +595,13 @@ enum stasis_app_recording_oper_results stasis_app_recording_operation(
 	recording_operation_cb cb;
 	SCOPED_AO2LOCK(lock, recording);
 
-	if (recording->state < 0 || recording->state >= STASIS_APP_RECORDING_STATE_MAX) {
+	if ((unsigned int)recording->state >= STASIS_APP_RECORDING_STATE_MAX) {
 		ast_log(LOG_WARNING, "Invalid recording state %u\n",
 			recording->state);
 		return -1;
 	}
 
-	if (operation < 0 || operation >= STASIS_APP_RECORDING_OPER_MAX) {
+	if ((unsigned int)operation >= STASIS_APP_RECORDING_OPER_MAX) {
 		ast_log(LOG_WARNING, "Invalid recording operation %u\n",
 			operation);
 		return -1;

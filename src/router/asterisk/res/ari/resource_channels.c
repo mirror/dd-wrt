@@ -24,13 +24,16 @@
  */
 
 /*** MODULEINFO
-	<depend type="module">res_stasis_app_playback</depend>
+	<depend type="module">res_stasis_answer</depend>
+	<depend type="module">res_stasis_playback</depend>
+	<depend type="module">res_stasis_recording</depend>
+	<depend type="module">res_stasis_snoop</depend>
 	<support_level>core</support_level>
  ***/
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 432404 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/file.h"
 #include "asterisk/pbx.h"
@@ -626,7 +629,7 @@ void ast_ari_channels_record(struct ast_variable *headers,
 		return;
 	}
 
-	if (options->if_exists == -1) {
+	if (options->if_exists == AST_RECORD_IF_EXISTS_ERROR) {
 		ast_ari_response_error(
 			response, 400, "Bad Request",
 			"ifExists invalid");

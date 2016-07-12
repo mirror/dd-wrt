@@ -32,7 +32,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 433064 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/paths.h"	/* use ast_config_AST_CONFIG_DIR */
 #include "asterisk/network.h"	/* we do some sockaddr manipulation here */
@@ -71,8 +71,9 @@ static char *extconfig_conf = "extconfig.conf";
 
 static struct ao2_container *cfg_hooks;
 static void config_hook_exec(const char *filename, const char *module, const struct ast_config *cfg);
-inline struct ast_variable *variable_list_switch(struct ast_variable *l1, struct ast_variable *l2);
-static int does_category_match(struct ast_category *cat, const char *category_name, const char *match);
+static inline struct ast_variable *variable_list_switch(struct ast_variable *l1, struct ast_variable *l2);
+static int does_category_match(struct ast_category *cat, const char *category_name,
+	const char *match, char sep);
 
 /*! \brief Structure to keep comments for rewriting configuration files */
 struct ast_comment {
@@ -614,7 +615,7 @@ struct ast_variable *ast_variable_browse(const struct ast_config *config, const 
 	return (cat) ? cat->root : NULL;
 }
 
-inline struct ast_variable *variable_list_switch(struct ast_variable *l1, struct ast_variable *l2)
+static inline struct ast_variable *variable_list_switch(struct ast_variable *l1, struct ast_variable *l2)
 {
     l1->next = l2->next;
     l2->next = l1;
@@ -723,6 +724,96 @@ const char *ast_variable_find(const struct ast_category *category, const char *v
 	return ast_variable_find_in_list(category->root, variable);
 }
 
+const struct ast_variable *ast_variable_find_variable_in_list(const struct ast_variable *list, const char *variable_name)
+{
+	const struct ast_variable *v;
+
+	for (v = list; v; v = v->next) {
+		if (!strcasecmp(variable_name, v->name)) {
+			return v;
+		}
+	}
+	return NULL;
+}
+
+int ast_variables_match(const struct ast_variable *left, const struct ast_variable *right)
+{
+	char *op;
+
+	if (left == right) {
+		return 1;
+	}
+
+	if (!(left && right)) {
+		return 0;
+	}
+
+	op = strrchr(right->name, ' ');
+	if (op) {
+		op++;
+	}
+
+	return ast_strings_match(left->value, op ? ast_strdupa(op) : NULL, right->value);
+}
+
+int ast_variable_lists_match(const struct ast_variable *left, const struct ast_variable *right, int exact_match)
+{
+	const struct ast_variable *field;
+	int right_count = 0;
+	int left_count = 0;
+
+	if (left == right) {
+		return 1;
+	}
+
+	if (!(left && right)) {
+		return 0;
+	}
+
+	for (field = right; field; field = field->next) {
+		char *space = strrchr(field->name, ' ');
+		const struct ast_variable *old;
+		char * name = (char *)field->name;
+
+		if (space) {
+			name = ast_strdup(field->name);
+			if (!name) {
+				return 0;
+			}
+			name[space - field->name] = '\0';
+		}
+
+		old = ast_variable_find_variable_in_list(left, name);
+		if (name != field->name) {
+			ast_free(name);
+		}
+
+		if (exact_match) {
+			if (!old || strcmp(old->value, field->value)) {
+				return 0;
+			}
+		} else {
+			if (!ast_variables_match(old, field)) {
+				return 0;
+			}
+		}
+
+		right_count++;
+	}
+
+	if (exact_match) {
+		for (field = left; field; field = field->next) {
+			left_count++;
+		}
+
+		if (right_count != left_count) {
+			return 0;
+		}
+	}
+
+	return 1;
+}
+
 const char *ast_variable_find_in_list(const struct ast_variable *list, const char *variable)
 {
 	const struct ast_variable *v;
@@ -733,6 +824,19 @@ const char *ast_variable_find_in_list(const struct ast_variable *list, const cha
 		}
 	}
 	return NULL;
+}
+
+const char *ast_variable_find_last_in_list(const struct ast_variable *list, const char *variable)
+{
+	const struct ast_variable *v;
+	const char *found = NULL;
+
+	for (v = list; v; v = v->next) {
+		if (!strcasecmp(variable, v->name)) {
+			found = v->value;
+		}
+	}
+	return found;
 }
 
 static struct ast_variable *variable_clone(const struct ast_variable *old)
@@ -761,7 +865,8 @@ static void move_variables(struct ast_category *old, struct ast_category *new)
 /*! \brief Returns true if ALL of the regex expressions and category name match.
  * Both can be NULL (I.E. no predicate) which results in a true return;
  */
-static int does_category_match(struct ast_category *cat, const char *category_name, const char *match)
+static int does_category_match(struct ast_category *cat, const char *category_name,
+	const char *match, char sep)
 {
 	char *dupmatch;
 	char *nvp = NULL;
@@ -780,7 +885,7 @@ static int does_category_match(struct ast_category *cat, const char *category_na
 
 	dupmatch = ast_strdupa(match);
 
-	while ((nvp = ast_strsep(&dupmatch, ',', AST_STRSEP_STRIP))) {
+	while ((nvp = ast_strsep(&dupmatch, sep, AST_STRSEP_STRIP))) {
 		struct ast_variable *v;
 		char *match_name;
 		char *match_value = NULL;
@@ -879,24 +984,30 @@ struct ast_category *ast_category_new_template(const char *name, const char *in_
 	return new_category(name, in_file, lineno, 1);
 }
 
-struct ast_category *ast_category_get(const struct ast_config *config,
-	const char *category_name, const char *filter)
+static struct ast_category *category_get_sep(const struct ast_config *config,
+	const char *category_name, const char *filter, char sep)
 {
 	struct ast_category *cat;
 
 	for (cat = config->root; cat; cat = cat->next) {
-		if (cat->name == category_name && does_category_match(cat, category_name, filter)) {
+		if (cat->name == category_name && does_category_match(cat, category_name, filter, sep)) {
 			return cat;
 		}
 	}
 
 	for (cat = config->root; cat; cat = cat->next) {
-		if (does_category_match(cat, category_name, filter)) {
+		if (does_category_match(cat, category_name, filter, sep)) {
 			return cat;
 		}
 	}
 
 	return NULL;
+}
+
+struct ast_category *ast_category_get(const struct ast_config *config,
+	const char *category_name, const char *filter)
+{
+	return category_get_sep(config, category_name, filter, ',');
 }
 
 const char *ast_category_get_name(const struct ast_category *category)
@@ -1022,7 +1133,7 @@ static void ast_includes_destroy(struct ast_config_include *incls)
 static struct ast_category *next_available_category(struct ast_category *cat,
 	const char *name, const char *filter)
 {
-	for (; cat && !does_category_match(cat, name, filter); cat = cat->next);
+	for (; cat && !does_category_match(cat, name, filter, ','); cat = cat->next);
 
 	return cat;
 }
@@ -1634,7 +1745,7 @@ static int process_text_line(struct ast_config *cfg, struct ast_category **cat,
 		 *		You can put a comma-separated list of categories and templates
 		 *		and '!' and '+' between parentheses, with obvious meaning.
 		 */
-		struct ast_category *newcat = NULL;
+		struct ast_category *newcat;
 		char *catname;
 
 		c = strchr(cur, ']');
@@ -1647,14 +1758,13 @@ static int process_text_line(struct ast_config *cfg, struct ast_category **cat,
 		if (*c++ != '(')
 			c = NULL;
 		catname = cur;
-		if (!(*cat = newcat = ast_category_new(catname,
-				S_OR(suggested_include_file, cfg->include_level == 1 ? "" : configfile),
-				lineno))) {
+		*cat = newcat = ast_category_new(catname,
+			S_OR(suggested_include_file, cfg->include_level == 1 ? "" : configfile),
+			lineno);
+		if (!newcat) {
 			return -1;
 		}
 		(*cat)->lineno = lineno;
-		*last_var = 0;
-		*last_cat = newcat;
 
 		/* add comments */
 		if (ast_test_flag(&flags, CONFIG_FLAG_WITHCOMMENTS))
@@ -1667,6 +1777,7 @@ static int process_text_line(struct ast_config *cfg, struct ast_category **cat,
 		/* If there are options or categories to inherit from, process them now */
 		if (c) {
 			if (!(cur = strchr(c, ')'))) {
+				ast_category_destroy(newcat);
 				ast_log(LOG_WARNING, "parse error: no closing ')', line %d of %s\n", lineno, configfile);
 				return -1;
 			}
@@ -1674,15 +1785,23 @@ static int process_text_line(struct ast_config *cfg, struct ast_category **cat,
 			while ((cur = strsep(&c, ","))) {
 				if (!strcasecmp(cur, "!")) {
 					(*cat)->ignored = 1;
-				} else if (!strcasecmp(cur, "+")) {
-					*cat = ast_category_get(cfg, catname, NULL);
+				} else if (cur[0] == '+') {
+					char *filter = NULL;
+
+					if (cur[1] != ',') {
+						filter = &cur[1];
+					}
+					*cat = category_get_sep(cfg, catname, filter, '&');
 					if (!(*cat)) {
-						if (newcat)
+						if (newcat) {
 							ast_category_destroy(newcat);
+						}
 						ast_log(LOG_WARNING, "Category addition requested, but category '%s' does not exist, line %d of %s\n", catname, lineno, configfile);
 						return -1;
 					}
 					if (newcat) {
+						ast_config_set_current_category(cfg, *cat);
+						(*cat)->ignored |= newcat->ignored;
 						move_variables(newcat, *cat);
 						ast_category_destroy(newcat);
 						newcat = NULL;
@@ -1692,18 +1811,35 @@ static int process_text_line(struct ast_config *cfg, struct ast_category **cat,
 
 					base = ast_category_get(cfg, cur, "TEMPLATES=include");
 					if (!base) {
+						if (newcat) {
+							ast_category_destroy(newcat);
+						}
 						ast_log(LOG_WARNING, "Inheritance requested, but category '%s' does not exist, line %d of %s\n", cur, lineno, configfile);
 						return -1;
 					}
 					if (ast_category_inherit(*cat, base)) {
+						if (newcat) {
+							ast_category_destroy(newcat);
+						}
 						ast_log(LOG_ERROR, "Inheritence requested, but allocation failed\n");
 						return -1;
 					}
 				}
 			}
 		}
-		if (newcat)
-			ast_category_append(cfg, *cat);
+
+		/*
+		 * We need to set *last_cat to newcat here regardless.  If the
+		 * category is being appended to we have no place for trailing
+		 * comments on the appended category.  The appended category
+		 * may be in another file or it already has trailing comments
+		 * that we would then leak.
+		 */
+		*last_var = NULL;
+		*last_cat = newcat;
+		if (newcat) {
+			ast_category_append(cfg, newcat);
+		}
 	} else if (cur[0] == '#') { /* A directive - #include or #exec */
 		char *cur2;
 		char real_inclusion_name[256];
@@ -1859,7 +1995,7 @@ set_new_variable:
 			} else if ((v = ast_variable_new(cur, ast_strip(c), S_OR(suggested_include_file, cfg->include_level == 1 ? "" : configfile)))) {
 				v->lineno = lineno;
 				v->object = object;
-				*last_cat = 0;
+				*last_cat = NULL;
 				*last_var = v;
 				/* Put and reset comments */
 				v->blanklines = 0;
@@ -1899,8 +2035,8 @@ static struct ast_config *config_text_file_load(const char *database, const char
 	struct stat statbuf;
 	struct cache_file_mtime *cfmtime = NULL;
 	struct cache_file_include *cfinclude;
-	struct ast_variable *last_var = 0;
-	struct ast_category *last_cat = 0;
+	struct ast_variable *last_var = NULL;
+	struct ast_category *last_cat = NULL;
 	/*! Growable string buffer */
 	struct ast_str *comment_buffer = NULL;	/*!< this will be a comment collector.*/
 	struct ast_str *lline_buffer = NULL;	/*!< A buffer for stuff behind the ; */
@@ -2856,6 +2992,7 @@ int ast_realtime_is_mapping_defined(const char *family)
 			return 1;
 		}
 	}
+	ast_debug(5, "Failed to find a realtime mapping for %s\n", family);
 
 	return 0;
 }
@@ -3829,6 +3966,8 @@ static void config_shutdown(void)
 
 	ast_cli_unregister_multiple(cli_config, ARRAY_LEN(cli_config));
 
+	clear_config_maps();
+
 	ao2_cleanup(cfg_hooks);
 	cfg_hooks = NULL;
 }
@@ -3836,7 +3975,7 @@ static void config_shutdown(void)
 int register_config_cli(void)
 {
 	ast_cli_register_multiple(cli_config, ARRAY_LEN(cli_config));
-	ast_register_atexit(config_shutdown);
+	ast_register_cleanup(config_shutdown);
 	return 0;
 }
 

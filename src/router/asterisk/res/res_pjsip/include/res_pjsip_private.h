@@ -19,6 +19,7 @@
 
 struct ao2_container;
 struct ast_threadpool_options;
+struct ast_sip_cli_context;
 
 /*!
  * \internal
@@ -272,6 +273,24 @@ void ast_sip_destroy_cli(void);
 
 /*!
  * \internal
+ * \brief Add res_pjsip global configuration options to the cli context.
+ *
+ * \param context context to add options to
+ * \retval 0 Success, -1 on failure
+ */
+int sip_cli_print_global(struct ast_sip_cli_context *context);
+
+/*!
+ * \internal
+ * \brief Add res_pjsip system configuration options to the cli context.
+ *
+ * \param context context to add options to
+ * \retval 0 Success, -1 on failure
+ */
+int sip_cli_print_system(struct ast_sip_cli_context *context);
+
+/*!
+ * \internal
  * \brief Used by res_pjsip.so to register a service without adding a self reference
  */
 int internal_sip_register_service(pjsip_module *module);
@@ -293,5 +312,17 @@ void internal_sip_register_endpoint_formatter(struct ast_sip_endpoint_formatter 
  * \brief Used by res_pjsip.so to unregister a endpoint formatter without removing a self reference
  */
 int internal_sip_unregister_endpoint_formatter(struct ast_sip_endpoint_formatter *obj);
+
+/*!
+ * \internal
+ * \brief Finds or creates contact_status for a contact
+ */
+struct ast_sip_contact_status *ast_res_pjsip_find_or_create_contact_status(const struct ast_sip_contact *contact);
+
+/*!
+ * \internal
+ * \brief Validate that the uri meets pjproject length restrictions
+ */
+int ast_sip_validate_uri_length(const char *uri);
 
 #endif /* RES_PJSIP_PRIVATE_H_ */

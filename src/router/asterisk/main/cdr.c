@@ -45,7 +45,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 433269 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <signal.h>
 #include <inttypes.h>
@@ -912,6 +912,16 @@ static struct cdr_object *cdr_object_create_and_append(struct cdr_object *cdr)
 	ast_string_field_set(new_cdr, linkedid, cdr_last->linkedid);
 	ast_string_field_set(new_cdr, appl, cdr_last->appl);
 	ast_string_field_set(new_cdr, data, cdr_last->data);
+	ast_string_field_set(new_cdr, context, cdr_last->context);
+	ast_string_field_set(new_cdr, exten, cdr_last->exten);
+
+	/*
+	 * If the current CDR says to disable all future ones,
+	 * keep the disable chain going
+	 */
+	if (ast_test_flag(&cdr_last->flags, AST_CDR_FLAG_DISABLE_ALL)) {
+		ast_set_flag(&new_cdr->flags, AST_CDR_FLAG_DISABLE_ALL);
+	}
 
 	/* Copy over other Party A information */
 	cdr_object_snapshot_copy(&new_cdr->party_a, &cdr_last->party_a);
@@ -1346,10 +1356,10 @@ static int base_process_party_a(struct cdr_object *cdr, struct ast_channel_snaps
 
 	ast_assert(strcasecmp(snapshot->name, cdr->party_a.snapshot->name) == 0);
 
-	/* Ignore any snapshots from a dead or dying channel */
+	/* Finalize the CDR if we're in hangup logic and we're set to do so */
 	if (ast_test_flag(&snapshot->softhangup_flags, AST_SOFTHANGUP_HANGUP_EXEC)
-			&& ast_test_flag(&mod_cfg->general->settings, CDR_END_BEFORE_H_EXTEN)) {
-		cdr_object_check_party_a_hangup(cdr);
+		&& ast_test_flag(&mod_cfg->general->settings, CDR_END_BEFORE_H_EXTEN)) {
+		cdr_object_finalize(cdr);
 		return 0;
 	}
 
@@ -2943,7 +2953,7 @@ int ast_cdr_setvar(const char *channel_name, const char *name, const char *value
 		for (it_cdr = cdr; it_cdr; it_cdr = it_cdr->next) {
 			struct varshead *headp = NULL;
 
-			if (it_cdr->fn_table == &finalized_state_fn_table) {
+			if (it_cdr->fn_table == &finalized_state_fn_table && it_cdr->next != NULL) {
 				continue;
 			}
 			if (!strcasecmp(channel_name, it_cdr->party_a.snapshot->name)) {
@@ -3096,12 +3106,8 @@ int ast_cdr_serialize_variables(const char *channel_name, struct ast_str **buf, 
 	struct cdr_object *it_cdr;
 	struct ast_var_t *variable;
 	const char *var;
-	RAII_VAR(char *, workspace, ast_malloc(256), ast_free);
+	char workspace[256];
 	int total = 0, x = 0, i;
-
-	if (!workspace) {
-		return 0;
-	}
 
 	if (!cdr) {
 		RAII_VAR(struct module_config *, mod_cfg,

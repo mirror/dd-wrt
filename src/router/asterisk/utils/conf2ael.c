@@ -28,7 +28,7 @@
  ***/
 
 #include "asterisk.h"
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 418019 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/paths.h"	/* CONFIG_DIR */
 #include <locale.h>
@@ -237,19 +237,6 @@ struct store_hint {
 
 AST_LIST_HEAD(store_hints, store_hint);
 
-static const struct cfextension_states {
-	int extension_state;
-	const char * const text;
-} extension_states[] = {
-	{ AST_EXTENSION_NOT_INUSE,                     "Idle" },
-	{ AST_EXTENSION_INUSE,                         "InUse" },
-	{ AST_EXTENSION_BUSY,                          "Busy" },
-	{ AST_EXTENSION_UNAVAILABLE,                   "Unavailable" },
-	{ AST_EXTENSION_RINGING,                       "Ringing" },
-	{ AST_EXTENSION_INUSE | AST_EXTENSION_RINGING, "InUse&Ringing" },
-	{ AST_EXTENSION_ONHOLD,                        "Hold" },
-	{ AST_EXTENSION_INUSE | AST_EXTENSION_ONHOLD,  "InUse&Hold" }
-};
 #define STATUS_NO_CONTEXT	1
 #define STATUS_NO_EXTENSION	2
 #define STATUS_NO_PRIORITY	3

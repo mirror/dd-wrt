@@ -1,5 +1,5 @@
 #! /bin/sh
-# $Id: rc.debian.asterisk 379791 2013-01-21 20:41:12Z mjordan $
+# $Id$
 #
 # Mon Jun 04 2007 Iñaki Baz Castillo <ibc@in.ilimit.es>
 # - Eliminated SAFE_ASTERISK since it doesn't work as LSB script (it could require a independent "safe_asterisk" init script).

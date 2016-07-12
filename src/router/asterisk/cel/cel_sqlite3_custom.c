@@ -41,7 +41,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419592 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <sqlite3.h>
 
@@ -63,7 +63,6 @@ AST_MUTEX_DEFINE_STATIC(lock);
 
 static const char config_file[] = "cel_sqlite3_custom.conf";
 
-static const char name[] = "cel_sqlite3_custom";
 static sqlite3 *db = NULL;
 
 static char table[80];

@@ -29,7 +29,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 429675 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <sys/socket.h>
 #include <netinet/in.h>

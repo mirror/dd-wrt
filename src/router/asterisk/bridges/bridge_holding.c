@@ -34,7 +34,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419044 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -205,7 +205,11 @@ static void participant_entertainment_start(struct ast_bridge_channel *bridge_ch
 	switch(hc->idle_mode) {
 	case IDLE_MODE_MOH:
 		moh_class = ast_bridge_channel_get_role_option(bridge_channel, "holding_participant", "moh_class");
-		ast_moh_start(bridge_channel->chan, moh_class, NULL);
+		if (ast_moh_start(bridge_channel->chan, moh_class, NULL)) {
+			ast_log(LOG_WARNING, "Failed to start moh, starting silence generator instead\n");
+			hc->idle_mode = IDLE_MODE_SILENCE;
+			hc->silence_generator = ast_channel_start_silence_generator(bridge_channel->chan);
+		}
 		break;
 	case IDLE_MODE_RINGING:
 		ast_indicate(bridge_channel->chan, AST_CONTROL_RINGING);
@@ -428,21 +432,17 @@ static void deferred_action(struct ast_bridge_channel *bridge_channel, const voi
 
 static int unload_module(void)
 {
-	ao2_cleanup(holding_bridge.format_capabilities);
-	holding_bridge.format_capabilities = NULL;
-	return ast_bridge_technology_unregister(&holding_bridge);
+	ast_bridge_technology_unregister(&holding_bridge);
+	return 0;
 }
 
 static int load_module(void)
 {
-	if (!(holding_bridge.format_capabilities = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT))) {
+	if (ast_bridge_technology_register(&holding_bridge)) {
+		unload_module();
 		return AST_MODULE_LOAD_DECLINE;
 	}
-	ast_format_cap_append_by_type(holding_bridge.format_capabilities, AST_MEDIA_TYPE_AUDIO);
-	ast_format_cap_append_by_type(holding_bridge.format_capabilities, AST_MEDIA_TYPE_VIDEO);
-	ast_format_cap_append_by_type(holding_bridge.format_capabilities, AST_MEDIA_TYPE_TEXT);
-
-	return ast_bridge_technology_register(&holding_bridge);
+	return AST_MODULE_LOAD_SUCCESS;
 }
 
 AST_MODULE_INFO_STANDARD(ASTERISK_GPL_KEY, "Holding bridge module");

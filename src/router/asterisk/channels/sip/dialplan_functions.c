@@ -25,7 +25,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 420562 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <math.h>
 
@@ -273,7 +273,7 @@ static int test_sip_rtpqos_1_get_stat(struct ast_rtp_instance *instance, struct 
 AST_TEST_DEFINE(test_sip_rtpqos_1)
 {
 	int i, res = AST_TEST_PASS;
-	struct ast_rtp_engine test_engine = {
+	static struct ast_rtp_engine test_engine = {
 		.name = "test",
 		.new = test_sip_rtpqos_1_new,
 		.destroy = test_sip_rtpqos_1_destroy,
@@ -386,7 +386,7 @@ AST_TEST_DEFINE(test_sip_rtpqos_1)
 			for (j = 1.0; j < 10.0; j += 0.3) {
 				*lookup[i].d8 = j;
 				ast_str_substitute_variables(&buffer, 0, chan, ast_str_buffer(varstr));
-				if (sscanf(ast_str_buffer(buffer), "%lf", &cmpdbl) != 1 || fabs(j - cmpdbl > .05)) {
+				if (sscanf(ast_str_buffer(buffer), "%lf", &cmpdbl) != 1 || fabs(j - cmpdbl) > .05) {
 					res = AST_TEST_FAIL;
 					ast_test_status_update(test, "%s != %f != %s\n", ast_str_buffer(varstr), j, ast_str_buffer(buffer));
 					break;

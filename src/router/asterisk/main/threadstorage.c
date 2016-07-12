@@ -38,7 +38,7 @@ void threadstorage_init(void)
 
 #else /* !defined(DEBUG_THREADLOCALS) */
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 397110 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/strings.h"
 #include "asterisk/utils.h"
@@ -258,7 +258,7 @@ void threadstorage_init(void)
 {
 	pthread_mutex_init(&threadstoragelock, NULL);
 	ast_cli_register_multiple(cli, ARRAY_LEN(cli));
-	ast_register_atexit(threadstorage_shutdown);
+	ast_register_cleanup(threadstorage_shutdown);
 }
 
 #endif /* !defined(DEBUG_THREADLOCALS) */

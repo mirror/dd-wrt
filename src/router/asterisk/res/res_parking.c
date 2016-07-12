@@ -35,6 +35,38 @@
 				<synopsis>Options that apply to every parking lot</synopsis>
 				<configOption name="parkeddynamic">
 					<synopsis>Enables dynamically created parkinglots.</synopsis>
+					<description>
+						<para>If the option is enabled then the following variables can
+							be used to dynamically create new parking lots.
+						</para>
+						<para>The <variable>PARKINGDYNAMIC</variable> variable specifies the
+							parking lot to use as a template to create a dynamic parking lot. It
+							is an error to specify a non-existent parking lot for the template.
+							If not set then the default parking lot is used as the template.
+						</para>
+						<para>The <variable>PARKINGDYNCONTEXT</variable> variable specifies the
+							dialplan context to use for the newly created dynamic parking lot. If
+							not set then the context from the parking lot template is used. The
+							context is created if it does not already exist and the new parking lot
+							needs to create extensions.
+						</para>
+						<para>The <variable>PARKINGDYNEXTEN</variable> variable specifies the
+							<literal>parkext</literal> to use for the newly created dynamic
+							parking lot. If not set then the <literal>parkext</literal> is used from
+							the parking lot template. If the template does not specify a
+							<literal>parkext</literal> then no extensions are created for the newly
+							created parking lot. The dynamic parking lot cannot be created if it
+							needs to create extensions that overlap existing parking lot extensions.
+							The only exception to this is for the <literal>parkext</literal>
+							extension and only if neither of the overlaping parking lot's
+							<literal>parkext</literal> is exclusive.
+						</para>
+						<para>The <variable>PARKINGDYNPOS</variable> variable specifies the
+							parking positions to use for the newly created dynamic parking lot. If
+							not set then the <literal>parkpos</literal> from the parking lot template
+							is used.
+						</para>
+					</description>
 				</configOption>
 			</configObject>
 			<configObject name="parking_lot">
@@ -45,19 +77,35 @@
 				</configOption>
 				<configOption name="parkext">
 					<synopsis>Extension to park calls to this parking lot.</synopsis>
-					<description><para>If this option is used, this extension will automatically be created to place calls into
-                        parking lots. In addition, if parkext_exclusive is set for this parking lot, the name of the parking lot
-                        will be included in the application's arguments so that it only parks to this parking lot. The extension
-                        will be created in <literal>context</literal>. Using this option also creates extensions for retrieving
-                        parked calls from the parking spaces in the same context.</para></description>
+					<description>
+						<para>If this option is used, this extension will automatically
+							be created to place calls into parking lots. In addition, if
+							<literal>parkext_exclusive</literal> is set for this parking
+							lot, the name of the parking lot will be included in the
+							application's arguments so that it only parks to this parking
+							lot. The extension will be created in <literal>context</literal>.
+							Using this option also creates extensions for retrieving
+							parked calls from the parking spaces in the same context.
+						</para>
+						<note>
+							<para>Generated parking extensions cannot overlap.
+								The only exception is if neither overlapping
+								<literal>parkext</literal> is exclusive.
+							</para>
+						</note>
+					</description>
 				</configOption>
 				<configOption name="parkext_exclusive" default="no">
 					<synopsis>If yes, the extension registered as parkext will park exclusively to this parking lot.</synopsis>
 				</configOption>
 				<configOption name="parkpos" default="701-750">
 					<synopsis>Numerical range of parking spaces which can be used to retrieve parked calls.</synopsis>
-					<description><para>If parkext is set, these extensions will automatically be mapped in <literal>context</literal>
-						in order to pick up calls parked to these parking spaces.</para></description>
+					<description>
+						<para>If <literal>parkext</literal> is set, these extensions
+							will automatically be mapped in <literal>context</literal>
+							in order to pick up calls parked to these parking spaces.
+						</para>
+					</description>
 				</configOption>
 				<configOption name="parkinghints" default="no">
 					<synopsis>If yes, this parking lot will add hints automatically for parking spaces.</synopsis>
@@ -178,9 +226,6 @@
 						</enumlist>
 					</description>
 				</configOption>
-				<configOption name="courtesytone">
-					<synopsis>If set, the sound set will be played to whomever is set by parkedplay</synopsis>
-				</configOption>
 			</configObject>
 		</configFile>
 	</configInfo>
@@ -188,7 +233,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419592 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "parking/res_parking.h"
 #include "asterisk/config.h"
@@ -568,14 +613,13 @@ const char *find_channel_parking_lot_name(struct ast_channel *chan)
 
 	/* The channel variable overrides everything */
 	name = pbx_builtin_getvar_helper(chan, "PARKINGLOT");
-	if (ast_strlen_zero(name) && !ast_strlen_zero(ast_channel_parkinglot(chan))) {
-		/* Use the channel's parking lot. */
-		name = ast_channel_parkinglot(chan);
-	}
-
-	/* If the name couldn't be pulled from that either, use the default parking lot name. */
 	if (ast_strlen_zero(name)) {
-		name = DEFAULT_PARKING_LOT;
+		/* Try the channel's parking lot. */
+		name = ast_channel_parkinglot(chan);
+		if (ast_strlen_zero(name)) {
+			/* Fall back to the default parking lot. */
+			name = DEFAULT_PARKING_LOT;
+		}
 	}
 
 	return name;
@@ -738,31 +782,21 @@ int parking_lot_cfg_create_extensions(struct parking_lot_cfg *lot_cfg)
 	}
 
 	/* We need the contexts list locked to safely be able to both read and lock the specific context within */
-	if (ast_wrlock_contexts()) {
-		ast_log(LOG_ERROR, "Failed to lock the contexts list.\n");
-		return -1;
-	}
+	ast_wrlock_contexts();
 
 	if (!(lot_context = ast_context_find_or_create(NULL, NULL, lot_cfg->parking_con, parkext_registrar_pointer))) {
 		ast_log(LOG_ERROR, "Parking lot '%s' -- Needs a context '%s' which does not exist and Asterisk was unable to create\n",
 			lot_cfg->name, lot_cfg->parking_con);
-		if (ast_unlock_contexts()) {
-			ast_assert(0);
-		}
+		ast_unlock_contexts();
 		return -1;
 	}
 
 	/* Once we know what context we will be modifying, we need to write lock it because we will be reading extensions
 	 * and we don't want something else to destroy them while we are looking at them.
 	 */
-	if (ast_wrlock_context(lot_context)) {
-		ast_log(LOG_ERROR, "failed to obtain write lock on context\n");
-		return -1;
-	}
+	ast_wrlock_context(lot_context);
 
-	if (ast_unlock_contexts()) {
-		ast_assert(0);
-	}
+	ast_unlock_contexts();
 
 	/* Handle generation/confirmation for the Park extension */
 	if ((existing_exten = pbx_find_extension(NULL, NULL, &find_info, lot_cfg->parking_con, lot_cfg->parkext, 1, NULL, NULL, E_MATCH))) {
@@ -830,9 +864,7 @@ int parking_lot_cfg_create_extensions(struct parking_lot_cfg *lot_cfg)
 		}
 	}
 
-	if (ast_unlock_context(lot_context)) {
-		ast_assert(0);
-	}
+	ast_unlock_context(lot_context);
 
 	return 0;
 }

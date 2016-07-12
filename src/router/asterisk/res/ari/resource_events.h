@@ -47,7 +47,22 @@ struct ast_ari_events_event_websocket_args {
 	size_t app_count;
 	/*! Parsing context for app. */
 	char *app_parse;
+	/*! Subscribe to all Asterisk events. If provided, the applications listed will be subscribed to all events, effectively disabling the application specific subscriptions. Default is 'false'. */
+	int subscribe_all;
 };
+
+/*!
+ * \brief WebSocket connection for events.
+ *
+ * \param ser HTTP TCP/TLS Server Session
+ * \param headers HTTP headers
+ * \param args Swagger parameters
+ *
+ * \retval 0 success
+ * \retval non-zero error
+ */
+int ast_ari_websocket_events_event_websocket_attempted(struct ast_tcptls_session_instance *ser, struct ast_variable *headers, struct ast_ari_events_event_websocket_args *args);
+
 /*!
  * \brief WebSocket connection for events.
  *
@@ -55,7 +70,7 @@ struct ast_ari_events_event_websocket_args {
  * \param headers HTTP headers.
  * \param args Swagger parameters.
  */
-void ast_ari_websocket_events_event_websocket(struct ast_ari_websocket_session *session, struct ast_variable *headers, struct ast_ari_events_event_websocket_args *args);
+void ast_ari_websocket_events_event_websocket_established(struct ast_ari_websocket_session *session, struct ast_variable *headers, struct ast_ari_events_event_websocket_args *args);
 /*! Argument struct for ast_ari_events_user_event() */
 struct ast_ari_events_user_event_args {
 	/*! Event name */

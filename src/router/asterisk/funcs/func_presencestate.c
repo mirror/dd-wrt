@@ -28,7 +28,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 431092 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/module.h"
 #include "asterisk/channel.h"
@@ -255,7 +255,9 @@ static enum ast_presence_state custom_presence_callback(const char *data, char *
 	char *_message;
 	char *_subtype;
 
-	ast_db_get(astdb_family, data, buf, sizeof(buf));
+	if (ast_db_get(astdb_family, data, buf, sizeof(buf))) {
+		return AST_PRESENCE_NOT_SET;
+	}
 
 	if (parse_data(buf, &state, &_subtype, &_message, &_options)) {
 		return AST_PRESENCE_INVALID;

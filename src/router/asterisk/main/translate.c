@@ -29,7 +29,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 432453 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <sys/time.h>
 #include <sys/resource.h>
@@ -44,6 +44,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 432453 $")
 #include "asterisk/cli.h"
 #include "asterisk/term.h"
 #include "asterisk/format.h"
+#include "asterisk/linkedlists.h"
 
 /*! \todo
  * TODO: sample frames for each supported input format.
@@ -297,6 +298,10 @@ static void destroy(struct ast_trans_pvt *pvt)
 		t->destroy(pvt);
 	}
 	ao2_cleanup(pvt->f.subclass.format);
+	if (pvt->explicit_dst) {
+		ao2_ref(pvt->explicit_dst, -1);
+		pvt->explicit_dst = NULL;
+	}
 	ast_free(pvt);
 	ast_module_unref(t->module);
 }
@@ -305,7 +310,7 @@ static void destroy(struct ast_trans_pvt *pvt)
  * \brief Allocate the descriptor, required outbuf space,
  * and possibly desc.
  */
-static struct ast_trans_pvt *newpvt(struct ast_translator *t)
+static struct ast_trans_pvt *newpvt(struct ast_translator *t, struct ast_format *explicit_dst)
 {
 	struct ast_trans_pvt *pvt;
 	int len;
@@ -331,6 +336,12 @@ static struct ast_trans_pvt *newpvt(struct ast_translator *t)
 	if (t->buf_size) {/* finally buffer and header */
 		pvt->outbuf.c = ofs + AST_FRIENDLY_OFFSET;
 	}
+	/*
+	 * If the format has an attribute module, explicit_dst includes the (joined)
+	 * result of the SDP negotiation. For example with the Opus Codec, the format
+	 * knows whether both parties want to do forward-error correction (FEC).
+	 */
+	pvt->explicit_dst = ao2_bump(explicit_dst);
 
 	ast_module_ref(t->module);
 
@@ -348,9 +359,16 @@ static struct ast_trans_pvt *newpvt(struct ast_translator *t)
 	pvt->f.src = pvt->t->name;
 	pvt->f.data.ptr = pvt->outbuf.c;
 
-	/* if the translator has not provided a format find one in the cache or create one */
+	/*
+	 * If the translator has not provided a format
+	 * A) use the joined one,
+	 * B) use the cached one, or
+	 * C) create one.
+	 */
 	if (!pvt->f.subclass.format) {
-		if (!ast_strlen_zero(pvt->t->format)) {
+		pvt->f.subclass.format = ao2_bump(pvt->explicit_dst);
+
+		if (!pvt->f.subclass.format && !ast_strlen_zero(pvt->t->format)) {
 			pvt->f.subclass.format = ast_format_cache_get(pvt->t->format);
 		}
 
@@ -379,9 +397,6 @@ static struct ast_trans_pvt *newpvt(struct ast_translator *t)
 /*! \brief framein wrapper, deals with bound checks.  */
 static int framein(struct ast_trans_pvt *pvt, struct ast_frame *f)
 {
-	int ret;
-	int samples = pvt->samples;	/* initial value */
-
 	/* Copy the last in jb timing info to the pvt */
 	ast_copy_flags(&pvt->f, f, AST_FRFLAG_HAS_TIMING_INFO);
 	pvt->f.ts = f->ts;
@@ -405,12 +420,7 @@ static int framein(struct ast_trans_pvt *pvt, struct ast_frame *f)
 	/* we require a framein routine, wouldn't know how to do
 	 * it otherwise.
 	 */
-	ret = pvt->t->framein(pvt, f);
-	/* diagnostic ... */
-	if (pvt->samples == samples)
-		ast_log(LOG_WARNING, "%s did not update samples %d\n",
-			pvt->t->name, pvt->samples);
-	return ret;
+	return pvt->t->framein(pvt, f);
 }
 
 /*! \brief generic frameout routine.
@@ -476,6 +486,7 @@ struct ast_trans_pvt *ast_translator_build_path(struct ast_format *dst, struct a
 
 	while (src_index != dst_index) {
 		struct ast_trans_pvt *cur;
+		struct ast_format *explicit_dst = NULL;
 		struct ast_translator *t = matrix_get(src_index, dst_index)->step;
 		if (!t) {
 			ast_log(LOG_WARNING, "No translator path from %s to %s\n",
@@ -483,7 +494,10 @@ struct ast_trans_pvt *ast_translator_build_path(struct ast_format *dst, struct a
 			AST_RWLIST_UNLOCK(&translators);
 			return NULL;
 		}
-		if (!(cur = newpvt(t))) {
+		if ((t->dst_codec.sample_rate == ast_format_get_sample_rate(dst)) && (t->dst_codec.type == ast_format_get_type(dst)) && (!strcmp(t->dst_codec.name, ast_format_get_name(dst)))) {
+			explicit_dst = dst;
+		}
+		if (!(cur = newpvt(t, explicit_dst))) {
 			ast_log(LOG_WARNING, "Failed to build translator step from %s to %s\n",
 				ast_format_get_name(src), ast_format_get_name(dst));
 			if (head) {
@@ -547,7 +561,12 @@ struct ast_frame *ast_translate(struct ast_trans_pvt *path, struct ast_frame *f,
 	}
 	delivery = f->delivery;
 	for (out = f; out && p ; p = p->next) {
-		framein(p, out);
+		struct ast_frame *current = out;
+
+		do {
+			framein(p, current);
+			current = AST_LIST_NEXT(current, frame_list);
+		} while (current);
 		if (out != f) {
 			ast_frfree(out);
 		}
@@ -556,22 +575,33 @@ struct ast_frame *ast_translate(struct ast_trans_pvt *path, struct ast_frame *f,
 	if (out) {
 		/* we have a frame, play with times */
 		if (!ast_tvzero(delivery)) {
-			/* Regenerate prediction after a discontinuity */
-			if (ast_tvzero(path->nextout)) {
-				path->nextout = ast_tvnow();
-			}
+			struct ast_frame *current = out;
 
-			/* Use next predicted outgoing timestamp */
-			out->delivery = path->nextout;
+			do {
+				/* Regenerate prediction after a discontinuity */
+				if (ast_tvzero(path->nextout)) {
+					path->nextout = ast_tvnow();
+				}
 
-			/* Predict next outgoing timestamp from samples in this
-			   frame. */
-			path->nextout = ast_tvadd(path->nextout, ast_samp2tv(
-				 out->samples, ast_format_get_sample_rate(out->subclass.format)));
-			if (f->samples != out->samples && ast_test_flag(out, AST_FRFLAG_HAS_TIMING_INFO)) {
-				ast_debug(4, "Sample size different %d vs %d\n", f->samples, out->samples);
-				ast_clear_flag(out, AST_FRFLAG_HAS_TIMING_INFO);
-			}
+				/* Use next predicted outgoing timestamp */
+				current->delivery = path->nextout;
+
+				/* Invalidate prediction if we're entering a silence period */
+				if (current->frametype == AST_FRAME_CNG) {
+					path->nextout = ast_tv(0, 0);
+				/* Predict next outgoing timestamp from samples in this
+				   frame. */
+				} else {
+					path->nextout = ast_tvadd(path->nextout, ast_samp2tv(
+						current->samples, ast_format_get_sample_rate(current->subclass.format)));
+				}
+
+				if (f->samples != current->samples && ast_test_flag(current, AST_FRFLAG_HAS_TIMING_INFO)) {
+					ast_debug(4, "Sample size different %d vs %d\n", f->samples, current->samples);
+					ast_clear_flag(current, AST_FRFLAG_HAS_TIMING_INFO);
+				}
+				current = AST_LIST_NEXT(current, frame_list);
+			} while (current);
 		} else {
 			out->delivery = ast_tv(0, 0);
 			ast_set2_flag(out, has_timing_info, AST_FRFLAG_HAS_TIMING_INFO);
@@ -580,10 +610,10 @@ struct ast_frame *ast_translate(struct ast_trans_pvt *path, struct ast_frame *f,
 				out->len = len;
 				out->seqno = seqno;
 			}
-		}
-		/* Invalidate prediction if we're entering a silence period */
-		if (out->frametype == AST_FRAME_CNG) {
-			path->nextout = ast_tv(0, 0);
+			/* Invalidate prediction if we're entering a silence period */
+			if (out->frametype == AST_FRAME_CNG) {
+				path->nextout = ast_tv(0, 0);
+			}
 		}
 	}
 	if (consume) {
@@ -621,7 +651,7 @@ static void generate_computational_cost(struct ast_translator *t, int seconds)
 		return;
 	}
 
-	pvt = newpvt(t);
+	pvt = newpvt(t, NULL);
 	if (!pvt) {
 		ast_log(LOG_WARNING, "Translator '%s' appears to be broken and will probably fail.\n", t->name);
 		t->comp_cost = 999999;
@@ -1271,9 +1301,12 @@ int ast_translator_best_choice(struct ast_format_cap *dst_cap,
 {
 	unsigned int besttablecost = INT_MAX;
 	unsigned int beststeps = INT_MAX;
+	struct ast_format *fmt;
+	struct ast_format *dst;
+	struct ast_format *src;
 	RAII_VAR(struct ast_format *, best, NULL, ao2_cleanup);
 	RAII_VAR(struct ast_format *, bestdst, NULL, ao2_cleanup);
-	RAII_VAR(struct ast_format_cap *, joint_cap, NULL, ao2_cleanup);
+	struct ast_format_cap *joint_cap;
 	int i;
 	int j;
 
@@ -1282,80 +1315,71 @@ int ast_translator_best_choice(struct ast_format_cap *dst_cap,
 		return -1;
 	}
 
-	if (!(joint_cap = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT))) {
+	joint_cap = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT);
+	if (!joint_cap) {
 		return -1;
 	}
 	ast_format_cap_get_compatible(dst_cap, src_cap, joint_cap);
 
-	for (i = 0; i < ast_format_cap_count(joint_cap); ++i) {
-		struct ast_format *fmt =
-			ast_format_cap_get_format(joint_cap, i);
-
-		if (!fmt) {
+	for (i = 0; i < ast_format_cap_count(joint_cap); ++i, ao2_cleanup(fmt)) {
+		fmt = ast_format_cap_get_format(joint_cap, i);
+		if (!fmt
+			|| ast_format_get_type(fmt) != AST_MEDIA_TYPE_AUDIO) {
 			continue;
 		}
 
-		if (!best) {
-			/* No ao2_ref operations needed, we're done with fmt */
-			best = fmt;
-			continue;
-		}
-
-		if (ast_format_get_sample_rate(best) <
-		    ast_format_get_sample_rate(fmt)) {
+		if (!best
+			|| ast_format_get_sample_rate(best) < ast_format_get_sample_rate(fmt)) {
 			ao2_replace(best, fmt);
 		}
-		ao2_ref(fmt, -1);
 	}
+	ao2_ref(joint_cap, -1);
 
 	if (best) {
 		ao2_replace(*dst_fmt_out, best);
 		ao2_replace(*src_fmt_out, best);
 		return 0;
 	}
+
 	/* need to translate */
 	AST_RWLIST_RDLOCK(&translators);
-
-	for (i = 0; i < ast_format_cap_count(dst_cap); ++i) {
-		struct ast_format *dst =
-			ast_format_cap_get_format(dst_cap, i);
-
-		if (!dst) {
+	for (i = 0; i < ast_format_cap_count(dst_cap); ++i, ao2_cleanup(dst)) {
+		dst = ast_format_cap_get_format(dst_cap, i);
+		if (!dst
+			|| ast_format_get_type(dst) != AST_MEDIA_TYPE_AUDIO) {
 			continue;
 		}
 
-		for (j = 0; j < ast_format_cap_count(src_cap); ++j) {
-			struct ast_format *src =
-				ast_format_cap_get_format(src_cap, j);
-			int x, y;
+		for (j = 0; j < ast_format_cap_count(src_cap); ++j, ao2_cleanup(src)) {
+			int x;
+			int y;
 
-			if (!src) {
+			src = ast_format_cap_get_format(src_cap, j);
+			if (!src
+				|| ast_format_get_type(src) != AST_MEDIA_TYPE_AUDIO) {
 				continue;
 			}
 
 			x = format2index(src);
 			y = format2index(dst);
 			if (x < 0 || y < 0) {
-				ao2_ref(src, -1);
 				continue;
 			}
 			if (!matrix_get(x, y) || !(matrix_get(x, y)->step)) {
-				ao2_ref(src, -1);
 				continue;
 			}
-			if (((matrix_get(x, y)->table_cost < besttablecost) ||
-			     (matrix_get(x, y)->multistep < beststeps))) {
+			if (matrix_get(x, y)->table_cost < besttablecost
+				|| matrix_get(x, y)->multistep < beststeps) {
 				/* better than what we have so far */
 				ao2_replace(best, src);
 				ao2_replace(bestdst, dst);
 				besttablecost = matrix_get(x, y)->table_cost;
 				beststeps = matrix_get(x, y)->multistep;
 			}
-			ao2_ref(src, -1);
 		}
-		ao2_ref(dst, -1);
 	}
 	AST_RWLIST_UNLOCK(&translators);
+
 	if (!best) {
 		return -1;
 	}

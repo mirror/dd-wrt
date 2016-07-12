@@ -32,7 +32,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 432258 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <math.h>
 #include "asterisk/options.h"
@@ -183,7 +183,7 @@ static int crypto_activate(struct ast_sdp_crypto *p, int suite_val, unsigned cha
 	}
 
 	/* Add the SRTP policies */
-	if (ast_rtp_instance_add_srtp_policy(rtp, remote_policy, local_policy)) {
+	if (ast_rtp_instance_add_srtp_policy(rtp, remote_policy, local_policy, 0)) {
 		ast_log(LOG_WARNING, "Could not set SRTP policies\n");
 		goto err;
 	}
@@ -238,7 +238,8 @@ int ast_sdp_crypto_process(struct ast_rtp_instance *rtp, struct ast_sdp_srtp *sr
 		return -1;
 	}
 
-	if (sscanf(tag, "%30d", &crypto->tag) != 1 || crypto->tag <= 0 || crypto->tag > 9) {
+	/* RFC4568 9.1 - tag is 1-9 digits, greater than zero */
+	if (sscanf(tag, "%30d", &crypto->tag) != 1 || crypto->tag <= 0 || crypto->tag > 999999999) {
 		ast_log(LOG_WARNING, "Unacceptable a=crypto tag: %s\n", tag);
 		return -1;
 	}

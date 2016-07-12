@@ -24,12 +24,13 @@
  */
 
 /*** MODULEINFO
+	<depend type="module">func_periodic_hook</depend>
 	<support_level>core</support_level>
  ***/
  
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 429033 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <sys/stat.h>
 #include <libgen.h>

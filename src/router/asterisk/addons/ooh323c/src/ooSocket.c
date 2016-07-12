@@ -15,7 +15,7 @@
  *****************************************************************************/
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 369602 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/io.h"
 #include "asterisk/lock.h"

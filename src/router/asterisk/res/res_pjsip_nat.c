@@ -32,34 +32,88 @@
 #include "asterisk/module.h"
 #include "asterisk/acl.h"
 
-static pj_bool_t handle_rx_message(struct ast_sip_endpoint *endpoint, pjsip_rx_data *rdata)
+static void rewrite_uri(pjsip_rx_data *rdata, pjsip_sip_uri *uri)
+{
+	pj_cstr(&uri->host, rdata->pkt_info.src_name);
+	if (strcasecmp("udp", rdata->tp_info.transport->type_name)) {
+		uri->transport_param = pj_str(rdata->tp_info.transport->type_name);
+	} else {
+		uri->transport_param.slen = 0;
+	}
+	uri->port = rdata->pkt_info.src_port;
+}
+
+static int rewrite_route_set(pjsip_rx_data *rdata, pjsip_dialog *dlg)
+{
+	pjsip_rr_hdr *rr = NULL;
+	pjsip_sip_uri *uri;
+
+	if (rdata->msg_info.msg->type == PJSIP_RESPONSE_MSG) {
+		pjsip_hdr *iter;
+		for (iter = rdata->msg_info.msg->hdr.prev; iter != &rdata->msg_info.msg->hdr; iter = iter->prev) {
+			if (iter->type == PJSIP_H_RECORD_ROUTE) {
+				rr = (pjsip_rr_hdr *)iter;
+				break;
+			}
+		}
+	} else if (pjsip_method_cmp(&rdata->msg_info.msg->line.req.method, &pjsip_register_method)) {
+		rr = pjsip_msg_find_hdr(rdata->msg_info.msg, PJSIP_H_RECORD_ROUTE, NULL);
+	}
+
+	if (rr) {
+		uri = pjsip_uri_get_uri(&rr->name_addr);
+		rewrite_uri(rdata, uri);
+		if (dlg && !pj_list_empty(&dlg->route_set) && !dlg->route_set_frozen) {
+			pjsip_routing_hdr *route = dlg->route_set.next;
+			uri = pjsip_uri_get_uri(&route->name_addr);
+			rewrite_uri(rdata, uri);
+		}
+
+		return 0;
+	}
+
+	return -1;
+}
+
+static int rewrite_contact(pjsip_rx_data *rdata, pjsip_dialog *dlg)
 {
 	pjsip_contact_hdr *contact;
+
+	contact = pjsip_msg_find_hdr(rdata->msg_info.msg, PJSIP_H_CONTACT, NULL);
+	if (contact && !contact->star && (PJSIP_URI_SCHEME_IS_SIP(contact->uri) || PJSIP_URI_SCHEME_IS_SIPS(contact->uri))) {
+		pjsip_sip_uri *uri = pjsip_uri_get_uri(contact->uri);
+
+		rewrite_uri(rdata, uri);
+
+		if (dlg && pj_list_empty(&dlg->route_set) && (!dlg->remote.contact
+			|| pjsip_uri_cmp(PJSIP_URI_IN_REQ_URI, dlg->remote.contact->uri, contact->uri))) {
+			dlg->remote.contact = (pjsip_contact_hdr*)pjsip_hdr_clone(dlg->pool, contact);
+			dlg->target = dlg->remote.contact->uri;
+		}
+		return 0;
+	}
+
+	return -1;
+}
+
+static pj_bool_t handle_rx_message(struct ast_sip_endpoint *endpoint, pjsip_rx_data *rdata)
+{
+	pjsip_dialog *dlg = pjsip_rdata_get_dlg(rdata);
 
 	if (!endpoint) {
 		return PJ_FALSE;
 	}
 
-	if (endpoint->nat.rewrite_contact && (contact = pjsip_msg_find_hdr(rdata->msg_info.msg, PJSIP_H_CONTACT, NULL)) &&
-		!contact->star && (PJSIP_URI_SCHEME_IS_SIP(contact->uri) || PJSIP_URI_SCHEME_IS_SIPS(contact->uri))) {
-		pjsip_sip_uri *uri = pjsip_uri_get_uri(contact->uri);
-		pjsip_dialog *dlg = pjsip_rdata_get_dlg(rdata);
-
-		pj_cstr(&uri->host, rdata->pkt_info.src_name);
-		if (strcasecmp("udp", rdata->tp_info.transport->type_name)) {
-			uri->transport_param = pj_str(rdata->tp_info.transport->type_name);
-		} else {
-			uri->transport_param.slen = 0;
-		}
-		uri->port = rdata->pkt_info.src_port;
-		ast_debug(4, "Re-wrote Contact URI host/port to %.*s:%d\n",
-			(int)pj_strlen(&uri->host), pj_strbuf(&uri->host), uri->port);
-
-		/* rewrite the session target since it may have already been pulled from the contact header */
-		if (dlg && (!dlg->remote.contact
-			|| pjsip_uri_cmp(PJSIP_URI_IN_REQ_URI, dlg->remote.contact->uri, contact->uri))) {
-			dlg->remote.contact = (pjsip_contact_hdr*)pjsip_hdr_clone(dlg->pool, contact);
-			dlg->target = dlg->remote.contact->uri;
+	if (endpoint->nat.rewrite_contact) {
+		/* rewrite_contact is intended to ensure we send requests/responses to
+		 * a routeable address when NAT is involved. The URI that dictates where
+		 * we send requests/responses can be determined either by Record-Route
+		 * headers or by the Contact header if no Record-Route headers are present.
+		 * We therefore will attempt to rewrite a Record-Route header first, and if
+		 * none are present, we fall back to rewriting the Contact header instead.
+		 */
+		if (rewrite_route_set(rdata, dlg)) {
+			rewrite_contact(rdata, dlg);
 		}
 	}
 
@@ -96,19 +150,19 @@ struct request_transport_details {
 };
 
 /*! \brief Callback function for finding the transport the request is going out on */
-static int find_transport_in_use(void *obj, void *arg, int flags)
+static int find_transport_state_in_use(void *obj, void *arg, int flags)
 {
-	struct ast_sip_transport *transport = obj;
+	struct ast_sip_transport_state *transport_state = obj;
 	struct request_transport_details *details = arg;
 
 	/* If an explicit transport or factory matches then this is what is in use, if we are unavailable
 	 * to compare based on that we make sure that the type is the same and the source IP address/port are the same
 	 */
-	if ((details->transport && details->transport == transport->state->transport) ||
-		(details->factory && details->factory == transport->state->factory) ||
-		((details->type == transport->type) && (transport->state->factory) &&
-			!pj_strcmp(&transport->state->factory->addr_name.host, &details->local_address) &&
-			transport->state->factory->addr_name.port == details->local_port)) {
+	if (transport_state && ((details->transport && details->transport == transport_state->transport) ||
+		(details->factory && details->factory == transport_state->factory) ||
+		((details->type == transport_state->type) && (transport_state->factory) &&
+			!pj_strcmp(&transport_state->factory->addr_name.host, &details->local_address) &&
+			transport_state->factory->addr_name.port == details->local_port))) {
 		return CMP_MATCH | CMP_STOP;
 	}
 
@@ -150,8 +204,9 @@ static int nat_invoke_hook(void *obj, void *arg, int flags)
 
 static pj_status_t nat_on_tx_message(pjsip_tx_data *tdata)
 {
-	RAII_VAR(struct ao2_container *, transports, NULL, ao2_cleanup);
+	RAII_VAR(struct ao2_container *, transport_states, NULL, ao2_cleanup);
 	RAII_VAR(struct ast_sip_transport *, transport, NULL, ao2_cleanup);
+	RAII_VAR(struct ast_sip_transport_state *, transport_state, NULL, ao2_cleanup);
 	struct request_transport_details details = { 0, };
 	pjsip_via_hdr *via = NULL;
 	struct ast_sockaddr addr = { { 0, } };
@@ -193,9 +248,19 @@ static pj_status_t nat_on_tx_message(pjsip_tx_data *tdata)
 		}
 	}
 
-	if (!(transports = ast_sorcery_retrieve_by_fields(ast_sip_get_sorcery(), "transport", AST_RETRIEVE_FLAG_MULTIPLE | AST_RETRIEVE_FLAG_ALL, NULL)) ||
-		!(transport = ao2_callback(transports, 0, find_transport_in_use, &details)) || !transport->localnet ||
-		ast_sockaddr_isnull(&transport->external_address)) {
+	if (!(transport_states = ast_sip_get_transport_states())) {
+		return PJ_SUCCESS;
+	}
+
+	if (!(transport_state = ao2_callback(transport_states, 0, find_transport_state_in_use, &details))) {
+		return PJ_SUCCESS;
+	}
+
+	if (!(transport = ast_sorcery_retrieve_by_id(ast_sip_get_sorcery(), "transport", transport_state->id))) {
+		return PJ_SUCCESS;
+	}
+
+	if ( !transport_state->localnet || 	ast_sockaddr_isnull(&transport_state->external_address)) {
 		return PJ_SUCCESS;
 	}
 
@@ -203,13 +268,13 @@ static pj_status_t nat_on_tx_message(pjsip_tx_data *tdata)
 	ast_sockaddr_set_port(&addr, tdata->tp_info.dst_port);
 
 	/* See if where we are sending this request is local or not, and if not that we can get a Contact URI to modify */
-	if (ast_apply_ha(transport->localnet, &addr) != AST_SENSE_ALLOW) {
+	if (ast_apply_ha(transport_state->localnet, &addr) != AST_SENSE_ALLOW) {
 		return PJ_SUCCESS;
 	}
 
 	/* Update the contact header with the external address */
 	if (uri || (uri = nat_get_contact_sip_uri(tdata))) {
-		pj_strdup2(tdata->pool, &uri->host, ast_sockaddr_stringify_host(&transport->external_address));
+		pj_strdup2(tdata->pool, &uri->host, ast_sockaddr_stringify_host(&transport_state->external_address));
 		if (transport->external_signaling_port) {
 			uri->port = transport->external_signaling_port;
 			ast_debug(4, "Re-wrote Contact URI port to %d\n", uri->port);
@@ -218,7 +283,7 @@ static pj_status_t nat_on_tx_message(pjsip_tx_data *tdata)
 
 	/* Update the via header if relevant */
 	if ((tdata->msg->type == PJSIP_REQUEST_MSG) && (via || (via = pjsip_msg_find_hdr(tdata->msg, PJSIP_H_VIA, NULL)))) {
-		pj_strdup2(tdata->pool, &via->sent_by.host, ast_sockaddr_stringify_host(&transport->external_address));
+		pj_strdup2(tdata->pool, &via->sent_by.host, ast_sockaddr_stringify_host(&transport_state->external_address));
 		if (transport->external_signaling_port) {
 			via->sent_by.port = transport->external_signaling_port;
 		}

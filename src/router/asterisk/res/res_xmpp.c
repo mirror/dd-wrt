@@ -48,7 +48,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 428687 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <ctype.h>
 #include <iksemel.h>
@@ -470,6 +470,7 @@ struct ast_xmpp_client_config {
 	int message_timeout;            /*!< Timeout for messages */
 	int priority;                   /*!< Resource priority */
 	struct ast_flags flags;         /*!< Various options that have been set */
+	struct ast_flags mod_flags;     /*!< Global options that have been modified */
 	enum ikshowtype status;         /*!< Presence status */
 	struct ast_xmpp_client *client; /*!< Pointer to the client */
 	struct ao2_container *buddies;  /*!< Configured buddies */
@@ -741,8 +742,6 @@ static void *xmpp_config_alloc(void)
 	if (!(cfg->global = ao2_alloc(sizeof(*cfg->global), NULL))) {
 		goto error;
 	}
-
-	ast_set_flag(&cfg->global->general, XMPP_AUTOREGISTER | XMPP_AUTOACCEPT | XMPP_USETLS | XMPP_USESASL | XMPP_KEEPALIVE);
 
 	if (!(cfg->clients = ao2_container_alloc(1, xmpp_config_hash, xmpp_config_cmp))) {
 		goto error;
@@ -3131,6 +3130,10 @@ done:
 /*! \brief Internal function called when we authenticated as a component */
 static int xmpp_component_authenticating(struct ast_xmpp_client *client, struct ast_xmpp_client_config *cfg, int type, iks *node)
 {
+	if (!strcmp(iks_name(node), "stream:features")) {
+		return 0;
+	}
+
 	if (strcmp(iks_name(node), "handshake")) {
 		ast_log(LOG_ERROR, "Failed to authenticate component '%s'\n", client->name);
 		return -1;
@@ -3306,6 +3309,11 @@ static int xmpp_pak_presence(struct ast_xmpp_client *client, struct ast_xmpp_cli
 	int status = pak->show ? pak->show : STATUS_DISAPPEAR;
 	enum ast_device_state state = AST_DEVICE_UNAVAILABLE;
 
+	/* If this is a component presence probe request answer immediately with our presence status */
+	if (ast_test_flag(&cfg->flags, XMPP_COMPONENT) && !ast_strlen_zero(type) && !strcasecmp(type, "probe")) {
+		xmpp_client_set_presence(client, pak->from->full, iks_find_attrib(pak->x, "to"), cfg->status, cfg->statusmsg);
+	}
+
 	/* If no resource is available this is a general buddy presence update, which we will ignore */
 	if (!pak->from->resource) {
 		return 0;
@@ -3318,11 +3326,6 @@ static int xmpp_pak_presence(struct ast_xmpp_client *client, struct ast_xmpp_cli
 				pak->from->partial, client->name);
 		}
 		return 0;
-	}
-
-	/* If this is a component presence probe request answer immediately with our presence status */
-	if (ast_test_flag(&cfg->flags, XMPP_COMPONENT) && !ast_strlen_zero(type) && !strcasecmp(type, "probe")) {
-		xmpp_client_set_presence(client, pak->from->full, iks_find_attrib(pak->x, "to"), cfg->status, cfg->statusmsg);
 	}
 
 	ao2_lock(buddy->resources);
@@ -3569,12 +3572,12 @@ int ast_xmpp_client_disconnect(struct ast_xmpp_client *client)
 	}
 
 	if (client->mwi_sub) {
-		client->mwi_sub = stasis_unsubscribe(client->mwi_sub);
+		client->mwi_sub = stasis_unsubscribe_and_join(client->mwi_sub);
 		xmpp_pubsub_unsubscribe(client, "message_waiting");
 	}
 
 	if (client->device_state_sub) {
-		client->device_state_sub = stasis_unsubscribe(client->device_state_sub);
+		client->device_state_sub = stasis_unsubscribe_and_join(client->device_state_sub);
 		xmpp_pubsub_unsubscribe(client, "device_state");
 	}
 
@@ -3835,6 +3838,10 @@ static int xmpp_client_config_merge_buddies(void *obj, void *arg, int flags)
 static int xmpp_client_config_post_apply(void *obj, void *arg, int flags)
 {
 	struct ast_xmpp_client_config *cfg = obj;
+	RAII_VAR(struct xmpp_config *, gcfg, ao2_global_obj_ref(globals), ao2_cleanup);
+
+	/* Merge global options that have not been modified */
+	ast_copy_flags(&cfg->flags, &gcfg->global->general, ~(cfg->mod_flags.flags) & (XMPP_AUTOPRUNE | XMPP_AUTOREGISTER | XMPP_AUTOACCEPT));
 
 	/* Merge buddies as need be */
 	ao2_callback(cfg->buddies, OBJ_MULTIPLE | OBJ_UNLINK, xmpp_client_config_merge_buddies, cfg->client->buddies);
@@ -3861,7 +3868,7 @@ static int xmpp_client_config_post_apply(void *obj, void *arg, int flags)
 			cfg->client->jid = iks_id_new(cfg->client->stack, cfg->user);
 		}
 
-		if (!cfg->client->jid || ast_strlen_zero(cfg->client->jid->user)) {
+		if (!cfg->client->jid || (ast_strlen_zero(cfg->client->jid->user) && !ast_test_flag(&cfg->flags, XMPP_COMPONENT))) {
 			ast_log(LOG_ERROR, "Jabber identity '%s' could not be created for client '%s' - client not active\n", cfg->user, cfg->name);
 			return -1;
 		}
@@ -4511,10 +4518,13 @@ static int client_bitfield_handler(const struct aco_option *opt, struct ast_vari
 		ast_set2_flag(&cfg->flags, ast_true(var->value), XMPP_KEEPALIVE);
 	} else if (!strcasecmp(var->name, "autoprune")) {
 		ast_set2_flag(&cfg->flags, ast_true(var->value), XMPP_AUTOPRUNE);
+		ast_set2_flag(&cfg->mod_flags, 1, XMPP_AUTOPRUNE);
 	} else if (!strcasecmp(var->name, "autoregister")) {
 		ast_set2_flag(&cfg->flags, ast_true(var->value), XMPP_AUTOREGISTER);
+		ast_set2_flag(&cfg->mod_flags, 1, XMPP_AUTOREGISTER);
 	} else if (!strcasecmp(var->name, "auth_policy")) {
 		ast_set2_flag(&cfg->flags, !strcasecmp(var->value, "accept") ? 1 : 0, XMPP_AUTOACCEPT);
+		ast_set2_flag(&cfg->mod_flags, 1, XMPP_AUTOACCEPT);
 	} else if (!strcasecmp(var->name, "sendtodialplan")) {
 		ast_set2_flag(&cfg->flags, ast_true(var->value), XMPP_SEND_TO_DIALPLAN);
 	} else {
@@ -4605,6 +4615,11 @@ static int load_module(void)
 	aco_option_register(&cfg_info, "port", ACO_EXACT, client_options, "5222", OPT_UINT_T, 0, FLDSET(struct ast_xmpp_client_config, port));
 	aco_option_register(&cfg_info, "timeout", ACO_EXACT, client_options, "5", OPT_UINT_T, 0, FLDSET(struct ast_xmpp_client_config, message_timeout));
 
+	/* Global options that can be overridden per client must not specify a default */
+	aco_option_register_custom(&cfg_info, "autoprune", ACO_EXACT, client_options, NULL, client_bitfield_handler, 0);
+	aco_option_register_custom(&cfg_info, "autoregister", ACO_EXACT, client_options, NULL, client_bitfield_handler, 0);
+	aco_option_register_custom(&cfg_info, "auth_policy", ACO_EXACT, client_options, NULL, client_bitfield_handler, 0);
+
 	aco_option_register_custom(&cfg_info, "debug", ACO_EXACT, client_options, "no", client_bitfield_handler, 0);
 	aco_option_register_custom(&cfg_info, "type", ACO_EXACT, client_options, "client", client_bitfield_handler, 0);
 	aco_option_register_custom(&cfg_info, "distribute_events", ACO_EXACT, client_options, "no", client_bitfield_handler, 0);
@@ -4612,9 +4627,6 @@ static int load_module(void)
 	aco_option_register_custom(&cfg_info, "usesasl", ACO_EXACT, client_options, "yes", client_bitfield_handler, 0);
 	aco_option_register_custom(&cfg_info, "forceoldssl", ACO_EXACT, client_options, "no", client_bitfield_handler, 0);
 	aco_option_register_custom(&cfg_info, "keepalive", ACO_EXACT, client_options, "yes", client_bitfield_handler, 0);
-	aco_option_register_custom(&cfg_info, "autoprune", ACO_EXACT, client_options, "no", client_bitfield_handler, 0);
-	aco_option_register_custom(&cfg_info, "autoregister", ACO_EXACT, client_options, "yes", client_bitfield_handler, 0);
-	aco_option_register_custom(&cfg_info, "auth_policy", ACO_EXACT, client_options, "accept", client_bitfield_handler, 0);
 	aco_option_register_custom(&cfg_info, "sendtodialplan", ACO_EXACT, client_options, "no", client_bitfield_handler, 0);
 	aco_option_register_custom(&cfg_info, "status", ACO_EXACT, client_options, "available", client_status_handler, 0);
 	aco_option_register_custom(&cfg_info, "buddy", ACO_EXACT, client_options, NULL, client_buddy_handler, 0);

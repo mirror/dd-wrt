@@ -34,7 +34,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 403617 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <pjsip.h>
 #include <pjlib.h>

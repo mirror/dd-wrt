@@ -39,6 +39,70 @@
 
 #include "asterisk/ari.h"
 
+/*! Argument struct for ast_ari_asterisk_get_object() */
+struct ast_ari_asterisk_get_object_args {
+	/*! The configuration class containing dynamic configuration objects. */
+	const char *config_class;
+	/*! The type of configuration object to retrieve. */
+	const char *object_type;
+	/*! The unique identifier of the object to retrieve. */
+	const char *id;
+};
+/*!
+ * \brief Retrieve a dynamic configuration object.
+ *
+ * \param headers HTTP headers
+ * \param args Swagger parameters
+ * \param[out] response HTTP response
+ */
+void ast_ari_asterisk_get_object(struct ast_variable *headers, struct ast_ari_asterisk_get_object_args *args, struct ast_ari_response *response);
+/*! Argument struct for ast_ari_asterisk_update_object() */
+struct ast_ari_asterisk_update_object_args {
+	/*! The configuration class containing dynamic configuration objects. */
+	const char *config_class;
+	/*! The type of configuration object to create or update. */
+	const char *object_type;
+	/*! The unique identifier of the object to create or update. */
+	const char *id;
+	/*! The body object should have a value that is a list of ConfigTuples, which provide the fields to update. Ex. [ { "attribute": "directmedia", "value": "false" } ] */
+	struct ast_json *fields;
+};
+/*!
+ * \brief Body parsing function for /asterisk/config/dynamic/{configClass}/{objectType}/{id}.
+ * \param body The JSON body from which to parse parameters.
+ * \param[out] args The args structure to parse into.
+ * \retval zero on success
+ * \retval non-zero on failure
+ */
+int ast_ari_asterisk_update_object_parse_body(
+	struct ast_json *body,
+	struct ast_ari_asterisk_update_object_args *args);
+
+/*!
+ * \brief Create or update a dynamic configuration object.
+ *
+ * \param headers HTTP headers
+ * \param args Swagger parameters
+ * \param[out] response HTTP response
+ */
+void ast_ari_asterisk_update_object(struct ast_variable *headers, struct ast_ari_asterisk_update_object_args *args, struct ast_ari_response *response);
+/*! Argument struct for ast_ari_asterisk_delete_object() */
+struct ast_ari_asterisk_delete_object_args {
+	/*! The configuration class containing dynamic configuration objects. */
+	const char *config_class;
+	/*! The type of configuration object to delete. */
+	const char *object_type;
+	/*! The unique identifier of the object to delete. */
+	const char *id;
+};
+/*!
+ * \brief Delete a dynamic configuration object.
+ *
+ * \param headers HTTP headers
+ * \param args Swagger parameters
+ * \param[out] response HTTP response
+ */
+void ast_ari_asterisk_delete_object(struct ast_variable *headers, struct ast_ari_asterisk_delete_object_args *args, struct ast_ari_response *response);
 /*! Argument struct for ast_ari_asterisk_get_info() */
 struct ast_ari_asterisk_get_info_args {
 	/*! Array of Filter information returned */
@@ -67,6 +131,132 @@ int ast_ari_asterisk_get_info_parse_body(
  * \param[out] response HTTP response
  */
 void ast_ari_asterisk_get_info(struct ast_variable *headers, struct ast_ari_asterisk_get_info_args *args, struct ast_ari_response *response);
+/*! Argument struct for ast_ari_asterisk_list_modules() */
+struct ast_ari_asterisk_list_modules_args {
+};
+/*!
+ * \brief List Asterisk modules.
+ *
+ * \param headers HTTP headers
+ * \param args Swagger parameters
+ * \param[out] response HTTP response
+ */
+void ast_ari_asterisk_list_modules(struct ast_variable *headers, struct ast_ari_asterisk_list_modules_args *args, struct ast_ari_response *response);
+/*! Argument struct for ast_ari_asterisk_get_module() */
+struct ast_ari_asterisk_get_module_args {
+	/*! Module's name */
+	const char *module_name;
+};
+/*!
+ * \brief Get Asterisk module information.
+ *
+ * \param headers HTTP headers
+ * \param args Swagger parameters
+ * \param[out] response HTTP response
+ */
+void ast_ari_asterisk_get_module(struct ast_variable *headers, struct ast_ari_asterisk_get_module_args *args, struct ast_ari_response *response);
+/*! Argument struct for ast_ari_asterisk_load_module() */
+struct ast_ari_asterisk_load_module_args {
+	/*! Module's name */
+	const char *module_name;
+};
+/*!
+ * \brief Load an Asterisk module.
+ *
+ * \param headers HTTP headers
+ * \param args Swagger parameters
+ * \param[out] response HTTP response
+ */
+void ast_ari_asterisk_load_module(struct ast_variable *headers, struct ast_ari_asterisk_load_module_args *args, struct ast_ari_response *response);
+/*! Argument struct for ast_ari_asterisk_unload_module() */
+struct ast_ari_asterisk_unload_module_args {
+	/*! Module's name */
+	const char *module_name;
+};
+/*!
+ * \brief Unload an Asterisk module.
+ *
+ * \param headers HTTP headers
+ * \param args Swagger parameters
+ * \param[out] response HTTP response
+ */
+void ast_ari_asterisk_unload_module(struct ast_variable *headers, struct ast_ari_asterisk_unload_module_args *args, struct ast_ari_response *response);
+/*! Argument struct for ast_ari_asterisk_reload_module() */
+struct ast_ari_asterisk_reload_module_args {
+	/*! Module's name */
+	const char *module_name;
+};
+/*!
+ * \brief Reload an Asterisk module.
+ *
+ * \param headers HTTP headers
+ * \param args Swagger parameters
+ * \param[out] response HTTP response
+ */
+void ast_ari_asterisk_reload_module(struct ast_variable *headers, struct ast_ari_asterisk_reload_module_args *args, struct ast_ari_response *response);
+/*! Argument struct for ast_ari_asterisk_list_log_channels() */
+struct ast_ari_asterisk_list_log_channels_args {
+};
+/*!
+ * \brief Gets Asterisk log channel information.
+ *
+ * \param headers HTTP headers
+ * \param args Swagger parameters
+ * \param[out] response HTTP response
+ */
+void ast_ari_asterisk_list_log_channels(struct ast_variable *headers, struct ast_ari_asterisk_list_log_channels_args *args, struct ast_ari_response *response);
+/*! Argument struct for ast_ari_asterisk_add_log() */
+struct ast_ari_asterisk_add_log_args {
+	/*! The log channel to add */
+	const char *log_channel_name;
+	/*! levels of the log channel */
+	const char *configuration;
+};
+/*!
+ * \brief Body parsing function for /asterisk/logging/{logChannelName}.
+ * \param body The JSON body from which to parse parameters.
+ * \param[out] args The args structure to parse into.
+ * \retval zero on success
+ * \retval non-zero on failure
+ */
+int ast_ari_asterisk_add_log_parse_body(
+	struct ast_json *body,
+	struct ast_ari_asterisk_add_log_args *args);
+
+/*!
+ * \brief Adds a log channel.
+ *
+ * \param headers HTTP headers
+ * \param args Swagger parameters
+ * \param[out] response HTTP response
+ */
+void ast_ari_asterisk_add_log(struct ast_variable *headers, struct ast_ari_asterisk_add_log_args *args, struct ast_ari_response *response);
+/*! Argument struct for ast_ari_asterisk_delete_log() */
+struct ast_ari_asterisk_delete_log_args {
+	/*! Log channels name */
+	const char *log_channel_name;
+};
+/*!
+ * \brief Deletes a log channel.
+ *
+ * \param headers HTTP headers
+ * \param args Swagger parameters
+ * \param[out] response HTTP response
+ */
+void ast_ari_asterisk_delete_log(struct ast_variable *headers, struct ast_ari_asterisk_delete_log_args *args, struct ast_ari_response *response);
+/*! Argument struct for ast_ari_asterisk_rotate_log() */
+struct ast_ari_asterisk_rotate_log_args {
+	/*! Log channel's name */
+	const char *log_channel_name;
+};
+/*!
+ * \brief Rotates a log channel.
+ *
+ * \param headers HTTP headers
+ * \param args Swagger parameters
+ * \param[out] response HTTP response
+ */
+void ast_ari_asterisk_rotate_log(struct ast_variable *headers, struct ast_ari_asterisk_rotate_log_args *args, struct ast_ari_response *response);
 /*! Argument struct for ast_ari_asterisk_get_global_var() */
 struct ast_ari_asterisk_get_global_var_args {
 	/*! The variable to get */

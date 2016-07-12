@@ -168,7 +168,7 @@ static void *worker_start(void *arg);
 static struct worker_thread *worker_thread_alloc(struct ast_threadpool *pool);
 static int worker_thread_start(struct worker_thread *worker);
 static int worker_idle(struct worker_thread *worker);
-static void worker_set_state(struct worker_thread *worker, enum worker_state state);
+static int worker_set_state(struct worker_thread *worker, enum worker_state state);
 static void worker_shutdown(struct worker_thread *worker);
 
 /*!
@@ -482,7 +482,16 @@ static int activate_thread(void *obj, void *arg, int flags)
 				worker->id);
 		return 0;
 	}
-	worker_set_state(worker, ALIVE);
+
+	if (worker_set_state(worker, ALIVE)) {
+		ast_debug(1, "Failed to activate thread %d. It is dead\n",
+				worker->id);
+		/* The worker thread will no longer exist in the active threads or
+		 * idle threads container after this.
+		 */
+		ao2_unlink(pool->active_threads, worker);
+	}
+
 	return CMP_MATCH;
 }
 
@@ -538,19 +547,32 @@ static int queued_task_pushed(void *data)
 	struct task_pushed_data *tpd = data;
 	struct ast_threadpool *pool = tpd->pool;
 	int was_empty = tpd->was_empty;
+	unsigned int existing_active;
 
 	if (pool->listener && pool->listener->callbacks->task_pushed) {
 		pool->listener->callbacks->task_pushed(pool, pool->listener, was_empty);
 	}
-	if (ao2_container_count(pool->idle_threads) == 0) {
+
+	existing_active = ao2_container_count(pool->active_threads);
+
+	/* The first pass transitions any existing idle threads to be active, and
+	 * will also remove any worker threads that have recently entered the dead
+	 * state.
+	 */
+	ao2_callback(pool->idle_threads, OBJ_UNLINK | OBJ_NOLOCK | OBJ_NODATA,
+			activate_thread, pool);
+
+	/* If no idle threads could be transitioned to active grow the pool as permitted. */
+	if (ao2_container_count(pool->active_threads) == existing_active) {
 		if (!pool->options.auto_increment) {
+			ao2_ref(tpd, -1);
 			return 0;
 		}
 		grow(pool, pool->options.auto_increment);
+		/* An optional second pass transitions any newly added threads. */
+		ao2_callback(pool->idle_threads, OBJ_UNLINK | OBJ_NOLOCK | OBJ_NODATA,
+				activate_thread, pool);
 	}
-
-	ao2_callback(pool->idle_threads, OBJ_UNLINK | OBJ_NOLOCK | OBJ_NODATA,
-			activate_thread, pool);
 
 	threadpool_send_state_changed(pool);
 	ao2_ref(tpd, -1);
@@ -797,7 +819,7 @@ static int queued_set_size(void *data)
 
 	/* We don't count zombie threads as being "live" when potentially resizing */
 	unsigned int current_size = ao2_container_count(pool->active_threads) +
-		ao2_container_count(pool->idle_threads);
+			ao2_container_count(pool->idle_threads);
 
 	if (current_size == num_threads) {
 		ast_debug(3, "Not changing threadpool size since new size %u is the same as current %u\n",
@@ -806,6 +828,12 @@ static int queued_set_size(void *data)
 	}
 
 	if (current_size < num_threads) {
+		ao2_callback(pool->idle_threads, OBJ_UNLINK | OBJ_NOLOCK | OBJ_NODATA | OBJ_MULTIPLE,
+				activate_thread, pool);
+
+		/* As the above may have altered the number of current threads update it */
+		current_size = ao2_container_count(pool->active_threads) +
+				ao2_container_count(pool->idle_threads);
 		grow(pool, num_threads - current_size);
 		ao2_callback(pool->idle_threads, OBJ_UNLINK | OBJ_NOLOCK | OBJ_NODATA | OBJ_MULTIPLE,
 				activate_thread, pool);
@@ -1117,27 +1145,158 @@ static int worker_idle(struct worker_thread *worker)
  *
  * The threadpool calls into this function in order to let a worker know
  * how it should proceed.
+ *
+ * \retval -1 failure (state transition not permitted)
+ * \retval 0 success
  */
-static void worker_set_state(struct worker_thread *worker, enum worker_state state)
+static int worker_set_state(struct worker_thread *worker, enum worker_state state)
 {
 	SCOPED_MUTEX(lock, &worker->lock);
+
+	switch (state) {
+	case ALIVE:
+		/* This can occur due to a race condition between being told to go active
+		 * and an idle timeout happening.
+		 */
+		if (worker->state == DEAD) {
+			return -1;
+		}
+		ast_assert(worker->state != ZOMBIE);
+		break;
+	case DEAD:
+		break;
+	case ZOMBIE:
+		ast_assert(worker->state != DEAD);
+		break;
+	}
+
 	worker->state = state;
 	worker->wake_up = 1;
 	ast_cond_signal(&worker->cond);
+
+	return 0;
+}
+
+/*! Serializer group shutdown control object. */
+struct ast_serializer_shutdown_group {
+	/*! Shutdown thread waits on this conditional. */
+	ast_cond_t cond;
+	/*! Count of serializers needing to shutdown. */
+	int count;
+};
+
+static void serializer_shutdown_group_dtor(void *vdoomed)
+{
+	struct ast_serializer_shutdown_group *doomed = vdoomed;
+
+	ast_cond_destroy(&doomed->cond);
+}
+
+struct ast_serializer_shutdown_group *ast_serializer_shutdown_group_alloc(void)
+{
+	struct ast_serializer_shutdown_group *shutdown_group;
+
+	shutdown_group = ao2_alloc(sizeof(*shutdown_group), serializer_shutdown_group_dtor);
+	if (!shutdown_group) {
+		return NULL;
+	}
+	ast_cond_init(&shutdown_group->cond, NULL);
+	return shutdown_group;
+}
+
+int ast_serializer_shutdown_group_join(struct ast_serializer_shutdown_group *shutdown_group, int timeout)
+{
+	int remaining;
+	ast_mutex_t *lock;
+
+	if (!shutdown_group) {
+		return 0;
+	}
+
+	lock = ao2_object_get_lockaddr(shutdown_group);
+	ast_assert(lock != NULL);
+
+	ao2_lock(shutdown_group);
+	if (timeout) {
+		struct timeval start;
+		struct timespec end;
+
+		start = ast_tvnow();
+		end.tv_sec = start.tv_sec + timeout;
+		end.tv_nsec = start.tv_usec * 1000;
+		while (shutdown_group->count) {
+			if (ast_cond_timedwait(&shutdown_group->cond, lock, &end)) {
+				/* Error or timed out waiting for the count to reach zero. */
+				break;
+			}
+		}
+	} else {
+		while (shutdown_group->count) {
+			if (ast_cond_wait(&shutdown_group->cond, lock)) {
+				/* Error */
+				break;
+			}
+		}
+	}
+	remaining = shutdown_group->count;
+	ao2_unlock(shutdown_group);
+	return remaining;
+}
+
+/*!
+ * \internal
+ * \brief Increment the number of serializer members in the group.
+ * \since 13.5.0
+ *
+ * \param shutdown_group Group shutdown controller.
+ *
+ * \return Nothing
+ */
+static void serializer_shutdown_group_inc(struct ast_serializer_shutdown_group *shutdown_group)
+{
+	ao2_lock(shutdown_group);
+	++shutdown_group->count;
+	ao2_unlock(shutdown_group);
+}
+
+/*!
+ * \internal
+ * \brief Decrement the number of serializer members in the group.
+ * \since 13.5.0
+ *
+ * \param shutdown_group Group shutdown controller.
+ *
+ * \return Nothing
+ */
+static void serializer_shutdown_group_dec(struct ast_serializer_shutdown_group *shutdown_group)
+{
+	ao2_lock(shutdown_group);
+	--shutdown_group->count;
+	if (!shutdown_group->count) {
+		ast_cond_signal(&shutdown_group->cond);
+	}
+	ao2_unlock(shutdown_group);
 }
 
 struct serializer {
+	/*! Threadpool the serializer will use to process the jobs. */
 	struct ast_threadpool *pool;
+	/*! Which group will wait for this serializer to shutdown. */
+	struct ast_serializer_shutdown_group *shutdown_group;
 };
 
 static void serializer_dtor(void *obj)
 {
 	struct serializer *ser = obj;
+
 	ao2_cleanup(ser->pool);
 	ser->pool = NULL;
+	ao2_cleanup(ser->shutdown_group);
+	ser->shutdown_group = NULL;
 }
 
-static struct serializer *serializer_create(struct ast_threadpool *pool)
+static struct serializer *serializer_create(struct ast_threadpool *pool,
+	struct ast_serializer_shutdown_group *shutdown_group)
 {
 	struct serializer *ser;
 
@@ -1147,16 +1306,21 @@ static struct serializer *serializer_create(struct ast_threadpool *pool)
 	}
 	ao2_ref(pool, +1);
 	ser->pool = pool;
+	ser->shutdown_group = ao2_bump(shutdown_group);
 	return ser;
 }
+
+AST_THREADSTORAGE_RAW(current_serializer);
 
 static int execute_tasks(void *data)
 {
 	struct ast_taskprocessor *tps = data;
 
+	ast_threadstorage_set_ptr(&current_serializer, tps);
 	while (ast_taskprocessor_execute(tps)) {
 		/* No-op */
 	}
+	ast_threadstorage_set_ptr(&current_serializer, NULL);
 
 	ast_taskprocessor_unreference(tps);
 	return 0;
@@ -1183,6 +1347,10 @@ static int serializer_start(struct ast_taskprocessor_listener *listener)
 static void serializer_shutdown(struct ast_taskprocessor_listener *listener)
 {
 	struct serializer *ser = ast_taskprocessor_listener_get_user_data(listener);
+
+	if (ser->shutdown_group) {
+		serializer_shutdown_group_dec(ser->shutdown_group);
+	}
 	ao2_cleanup(ser);
 }
 
@@ -1192,27 +1360,45 @@ static struct ast_taskprocessor_listener_callbacks serializer_tps_listener_callb
 	.shutdown = serializer_shutdown,
 };
 
-struct ast_taskprocessor *ast_threadpool_serializer(const char *name, struct ast_threadpool *pool)
+struct ast_taskprocessor *ast_threadpool_serializer_get_current(void)
 {
-	RAII_VAR(struct serializer *, ser, NULL, ao2_cleanup);
-	RAII_VAR(struct ast_taskprocessor_listener *, listener, NULL, ao2_cleanup);
-	struct ast_taskprocessor *tps = NULL;
+	return ast_threadstorage_get_ptr(&current_serializer);
+}
 
-	ser = serializer_create(pool);
+struct ast_taskprocessor *ast_threadpool_serializer_group(const char *name,
+	struct ast_threadpool *pool, struct ast_serializer_shutdown_group *shutdown_group)
+{
+	struct serializer *ser;
+	struct ast_taskprocessor_listener *listener;
+	struct ast_taskprocessor *tps;
+
+	ser = serializer_create(pool, shutdown_group);
 	if (!ser) {
 		return NULL;
 	}
 
 	listener = ast_taskprocessor_listener_alloc(&serializer_tps_listener_callbacks, ser);
 	if (!listener) {
+		ao2_ref(ser, -1);
 		return NULL;
 	}
-	ser = NULL; /* ownership transferred to listener */
+	/* ser ref transferred to listener */
 
 	tps = ast_taskprocessor_create_with_listener(name, listener);
-	if (!tps) {
-		return NULL;
+	if (tps && shutdown_group) {
+		serializer_shutdown_group_inc(shutdown_group);
 	}
 
+	ao2_ref(listener, -1);
 	return tps;
+}
+
+struct ast_taskprocessor *ast_threadpool_serializer(const char *name, struct ast_threadpool *pool)
+{
+	return ast_threadpool_serializer_group(name, pool, NULL);
+}
+
+long ast_threadpool_queue_size(struct ast_threadpool *pool)
+{
+	return ast_taskprocessor_size(pool->tps);
 }

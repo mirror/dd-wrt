@@ -33,7 +33,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 420124 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 /* ------------------------------------------------------------------- */
 
@@ -234,6 +234,45 @@ struct local_pvt {
 	/*! Extension to call */
 	char exten[AST_MAX_EXTENSION];
 };
+
+void ast_local_lock_all(struct ast_channel *chan, struct ast_channel **outchan,
+			struct ast_channel **outowner)
+{
+	struct local_pvt *p = ast_channel_tech_pvt(chan);
+
+	*outchan = NULL;
+	*outowner = NULL;
+
+	if (p) {
+		ao2_ref(p, 1);
+		ast_unreal_lock_all(&p->base, outchan, outowner);
+	}
+}
+
+void ast_local_unlock_all(struct ast_channel *chan)
+{
+	struct local_pvt *p = ast_channel_tech_pvt(chan);
+	struct ast_unreal_pvt *base;
+
+	if (!p) {
+		return;
+	}
+
+	base = &p->base;
+
+	if (base->owner) {
+		ast_channel_unlock(base->owner);
+		ast_channel_unref(base->owner);
+	}
+
+	if (base->chan) {
+		ast_channel_unlock(base->chan);
+		ast_channel_unref(base->chan);
+	}
+
+	ao2_unlock(base);
+	ao2_ref(p, -1);
+}
 
 struct ast_channel *ast_local_get_peer(struct ast_channel *ast)
 {
@@ -1001,22 +1040,11 @@ static int locals_cmp_cb(void *obj, void *arg, int flags)
  */
 static void local_shutdown(void)
 {
-	struct local_pvt *p;
-	struct ao2_iterator it;
-
 	/* First, take us out of the channel loop */
 	ast_cli_unregister_multiple(cli_local, ARRAY_LEN(cli_local));
 	ast_manager_unregister("LocalOptimizeAway");
 	ast_channel_unregister(&local_tech);
 
-	it = ao2_iterator_init(locals, 0);
-	while ((p = ao2_iterator_next(&it))) {
-		if (p->base.owner) {
-			ast_softhangup(p->base.owner, AST_SOFTHANGUP_APPUNLOAD);
-		}
-		ao2_ref(p, -1);
-	}
-	ao2_iterator_destroy(&it);
 	ao2_ref(locals, -1);
 	locals = NULL;
 
@@ -1066,6 +1094,6 @@ int ast_local_init(void)
 	ast_cli_register_multiple(cli_local, ARRAY_LEN(cli_local));
 	ast_manager_register_xml_core("LocalOptimizeAway", EVENT_FLAG_SYSTEM|EVENT_FLAG_CALL, manager_optimize_away);
 
-	ast_register_atexit(local_shutdown);
+	ast_register_cleanup(local_shutdown);
 	return 0;
 }

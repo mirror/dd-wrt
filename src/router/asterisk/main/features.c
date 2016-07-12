@@ -39,7 +39,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 430467 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/_private.h"
 
@@ -66,7 +66,6 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 430467 $")
 #include "asterisk/utils.h"
 #include "asterisk/adsi.h"
 #include "asterisk/devicestate.h"
-#include "asterisk/monitor.h"
 #include "asterisk/audiohook.h"
 #include "asterisk/global_datastores.h"
 #include "asterisk/astobj2.h"
@@ -78,6 +77,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 430467 $")
 #include "asterisk/stasis.h"
 #include "asterisk/stasis_channels.h"
 #include "asterisk/features_config.h"
+#include "asterisk/max_forwards.h"
 
 /*** DOCUMENTATION
 	<application name="Bridge" language="en_US">
@@ -318,11 +318,6 @@ struct ast_bridge_thread_obj
 	unsigned int return_to_pbx:1;
 };
 
-static const struct ast_datastore_info channel_app_data_datastore = {
-	.type = "Channel appdata datastore",
-	.destroy = ast_free_ptr,
-};
-
 static void set_config_flags(struct ast_channel *chan, struct ast_bridge_config *config)
 {
 	ast_clear_flag(config, AST_FLAGS_ALL);
@@ -424,22 +419,6 @@ static void add_features_datastores(struct ast_channel *caller, struct ast_chann
 	}
 
 	add_features_datastore(callee, &config->features_callee, &config->features_caller);
-}
-
-static void clear_dialed_interfaces(struct ast_channel *chan)
-{
-	struct ast_datastore *di_datastore;
-
-	ast_channel_lock(chan);
-	if ((di_datastore = ast_channel_datastore_find(chan, &dialed_interface_info, NULL))) {
-		if (option_debug) {
-			ast_log(LOG_DEBUG, "Removing dialed interfaces datastore on %s since we're bridging\n", ast_channel_name(chan));
-		}
-		if (!ast_channel_datastore_remove(chan, di_datastore)) {
-			ast_datastore_free(di_datastore);
-		}
-	}
-	ast_channel_unlock(chan);
 }
 
 static void bridge_config_set_limits_warning_values(struct ast_bridge_config *config, struct ast_bridge_features_limits *limits)
@@ -578,20 +557,13 @@ static int pre_bridge_setup(struct ast_channel *chan, struct ast_channel *peer, 
 	ast_channel_log("Pre-bridge PEER Channel info", peer);
 #endif
 
-	/*
-	 * If we are bridging a call, stop worrying about forwarding
-	 * loops.  We presume that if a call is being bridged, that the
-	 * humans in charge know what they're doing.  If they don't,
-	 * well, what can we do about that?
-	 */
-	clear_dialed_interfaces(chan);
-	clear_dialed_interfaces(peer);
-
 	res = 0;
 	ast_channel_lock(chan);
+	ast_max_forwards_reset(chan);
 	res |= ast_bridge_features_ds_append(chan, &config->features_caller);
 	ast_channel_unlock(chan);
 	ast_channel_lock(peer);
+	ast_max_forwards_reset(peer);
 	res |= ast_bridge_features_ds_append(peer, &config->features_callee);
 	ast_channel_unlock(peer);
 
@@ -1185,7 +1157,7 @@ int ast_features_init(void)
 	if (res) {
 		features_shutdown();
 	} else {
-		ast_register_atexit(features_shutdown);
+		ast_register_cleanup(features_shutdown);
 	}
 
 	return res;

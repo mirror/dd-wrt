@@ -24,12 +24,12 @@
  */
 
 /*** MODULEINFO
-	<support_level>extended</support_level>
+	<support_level>core</support_level>
  ***/
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 432237 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/module.h"
 #include "asterisk/http.h"
@@ -88,16 +88,10 @@ struct ast_websocket {
 	struct websocket_client *client;  /*!< Client object when connected as a client websocket */
 };
 
-/*! \brief Structure definition for protocols */
-struct websocket_protocol {
-	char *name;                      /*!< Name of the protocol */
-	ast_websocket_callback callback; /*!< Callback called when a new session is established */
-};
-
 /*! \brief Hashing function for protocols */
 static int protocol_hash_fn(const void *obj, const int flags)
 {
-	const struct websocket_protocol *protocol = obj;
+	const struct ast_websocket_protocol *protocol = obj;
 	const char *name = obj;
 
 	return ast_str_case_hash(flags & OBJ_KEY ? name : protocol->name);
@@ -106,7 +100,7 @@ static int protocol_hash_fn(const void *obj, const int flags)
 /*! \brief Comparison function for protocols */
 static int protocol_cmp_fn(void *obj, void *arg, int flags)
 {
-	const struct websocket_protocol *protocol1 = obj, *protocol2 = arg;
+	const struct ast_websocket_protocol *protocol1 = obj, *protocol2 = arg;
 	const char *protocol = arg;
 
 	return !strcasecmp(protocol1->name, flags & OBJ_KEY ? protocol : protocol2->name) ? CMP_MATCH | CMP_STOP : 0;
@@ -115,7 +109,7 @@ static int protocol_cmp_fn(void *obj, void *arg, int flags)
 /*! \brief Destructor function for protocols */
 static void protocol_destroy_fn(void *obj)
 {
-	struct websocket_protocol *protocol = obj;
+	struct ast_websocket_protocol *protocol = obj;
 	ast_free(protocol->name);
 }
 
@@ -173,63 +167,101 @@ static void session_destroy_fn(void *obj)
 
 	if (session->f) {
 		ast_websocket_close(session, 0);
-		fclose(session->f);
-		ast_verb(2, "WebSocket connection %s '%s' closed\n", session->client ? "to" : "from",
-			ast_sockaddr_stringify(&session->address));
+		if (session->f) {
+			fclose(session->f);
+			ast_verb(2, "WebSocket connection %s '%s' closed\n", session->client ? "to" : "from",
+				ast_sockaddr_stringify(&session->address));
+		}
 	}
 
 	ao2_cleanup(session->client);
 	ast_free(session->payload);
 }
 
+struct ast_websocket_protocol *AST_OPTIONAL_API_NAME(ast_websocket_sub_protocol_alloc)(const char *name)
+{
+	struct ast_websocket_protocol *protocol;
+
+	protocol = ao2_alloc(sizeof(*protocol), protocol_destroy_fn);
+	if (!protocol) {
+		return NULL;
+	}
+
+	protocol->name = ast_strdup(name);
+	if (!protocol->name) {
+		ao2_ref(protocol, -1);
+		return NULL;
+	}
+	protocol->version = AST_WEBSOCKET_PROTOCOL_VERSION;
+
+	return protocol;
+}
+
 int AST_OPTIONAL_API_NAME(ast_websocket_server_add_protocol)(struct ast_websocket_server *server, const char *name, ast_websocket_callback callback)
 {
-	struct websocket_protocol *protocol;
+	struct ast_websocket_protocol *protocol;
 
 	if (!server->protocols) {
+		return -1;
+	}
+
+	protocol = ast_websocket_sub_protocol_alloc(name);
+	if (!protocol) {
+		return -1;
+	}
+	protocol->session_established = callback;
+
+	if (ast_websocket_server_add_protocol2(server, protocol)) {
+		ao2_ref(protocol, -1);
+		return -1;
+	}
+
+	return 0;
+}
+
+int AST_OPTIONAL_API_NAME(ast_websocket_server_add_protocol2)(struct ast_websocket_server *server, struct ast_websocket_protocol *protocol)
+{
+	struct ast_websocket_protocol *existing;
+
+	if (!server->protocols) {
+		return -1;
+	}
+
+	if (protocol->version != AST_WEBSOCKET_PROTOCOL_VERSION) {
+		ast_log(LOG_WARNING, "WebSocket could not register sub-protocol '%s': "
+			"expected version '%u', got version '%u'\n",
+			protocol->name, AST_WEBSOCKET_PROTOCOL_VERSION, protocol->version);
 		return -1;
 	}
 
 	ao2_lock(server->protocols);
 
 	/* Ensure a second protocol handler is not registered for the same protocol */
-	if ((protocol = ao2_find(server->protocols, name, OBJ_KEY | OBJ_NOLOCK))) {
-		ao2_ref(protocol, -1);
+	existing = ao2_find(server->protocols, protocol->name, OBJ_KEY | OBJ_NOLOCK);
+	if (existing) {
+		ao2_ref(existing, -1);
 		ao2_unlock(server->protocols);
 		return -1;
 	}
-
-	if (!(protocol = ao2_alloc(sizeof(*protocol), protocol_destroy_fn))) {
-		ao2_unlock(server->protocols);
-		return -1;
-	}
-
-	if (!(protocol->name = ast_strdup(name))) {
-		ao2_ref(protocol, -1);
-		ao2_unlock(server->protocols);
-		return -1;
-	}
-
-	protocol->callback = callback;
 
 	ao2_link_flags(server->protocols, protocol, OBJ_NOLOCK);
 	ao2_unlock(server->protocols);
-	ao2_ref(protocol, -1);
 
-	ast_verb(2, "WebSocket registered sub-protocol '%s'\n", name);
+	ast_verb(2, "WebSocket registered sub-protocol '%s'\n", protocol->name);
+	ao2_ref(protocol, -1);
 
 	return 0;
 }
 
 int AST_OPTIONAL_API_NAME(ast_websocket_server_remove_protocol)(struct ast_websocket_server *server, const char *name, ast_websocket_callback callback)
 {
-	struct websocket_protocol *protocol;
+	struct ast_websocket_protocol *protocol;
 
 	if (!(protocol = ao2_find(server->protocols, name, OBJ_KEY))) {
 		return -1;
 	}
 
-	if (protocol->callback != callback) {
+	if (protocol->session_established != callback) {
 		ao2_ref(protocol, -1);
 		return -1;
 	}
@@ -263,21 +295,54 @@ int AST_OPTIONAL_API_NAME(ast_websocket_close)(struct ast_websocket *session, ui
 
 	ao2_lock(session);
 	res = ast_careful_fwrite(session->f, session->fd, frame, 4, session->timeout);
+
+	/* If an error occurred when trying to close this connection explicitly terminate it now.
+	 * Doing so will cause the thread polling on it to wake up and terminate.
+	 */
+	if (res) {
+		fclose(session->f);
+		session->f = NULL;
+		ast_verb(2, "WebSocket connection %s '%s' forcefully closed due to fatal write error\n",
+			session->client ? "to" : "from", ast_sockaddr_stringify(&session->address));
+	}
+
 	ao2_unlock(session);
 	return res;
 }
 
+static const char *opcode_map[] = {
+	[AST_WEBSOCKET_OPCODE_CONTINUATION] = "continuation",
+	[AST_WEBSOCKET_OPCODE_TEXT] = "text",
+	[AST_WEBSOCKET_OPCODE_BINARY] = "binary",
+	[AST_WEBSOCKET_OPCODE_CLOSE] = "close",
+	[AST_WEBSOCKET_OPCODE_PING] = "ping",
+	[AST_WEBSOCKET_OPCODE_PONG] = "pong",
+};
+
+static const char *websocket_opcode2str(enum ast_websocket_opcode opcode)
+{
+	if (opcode < AST_WEBSOCKET_OPCODE_CONTINUATION ||
+			opcode > AST_WEBSOCKET_OPCODE_PONG) {
+		return "<unknown>";
+	} else {
+		return opcode_map[opcode];
+	}
+}
 
 /*! \brief Write function for websocket traffic */
-int AST_OPTIONAL_API_NAME(ast_websocket_write)(struct ast_websocket *session, enum ast_websocket_opcode opcode, char *payload, uint64_t actual_length)
+int AST_OPTIONAL_API_NAME(ast_websocket_write)(struct ast_websocket *session, enum ast_websocket_opcode opcode, char *payload, uint64_t payload_size)
 {
 	size_t header_size = 2; /* The minimum size of a websocket frame is 2 bytes */
 	char *frame;
 	uint64_t length;
+	uint64_t frame_size;
 
-	if (actual_length < 126) {
-		length = actual_length;
-	} else if (actual_length < (1 << 16)) {
+	ast_debug(3, "Writing websocket %s frame, length %" PRIu64 "\n",
+			websocket_opcode2str(opcode), payload_size);
+
+	if (payload_size < 126) {
+		length = payload_size;
+	} else if (payload_size < (1 << 16)) {
 		length = 126;
 		/* We need an additional 2 bytes to store the extended length */
 		header_size += 2;
@@ -287,37 +352,37 @@ int AST_OPTIONAL_API_NAME(ast_websocket_write)(struct ast_websocket *session, en
 		header_size += 8;
 	}
 
-	frame = ast_alloca(header_size);
-	memset(frame, 0, header_size);
+	frame_size = header_size + payload_size;
+
+	frame = ast_alloca(frame_size + 1);
+	memset(frame, 0, frame_size + 1);
 
 	frame[0] = opcode | 0x80;
 	frame[1] = length;
 
 	/* Use the additional available bytes to store the length */
 	if (length == 126) {
-		put_unaligned_uint16(&frame[2], htons(actual_length));
+		put_unaligned_uint16(&frame[2], htons(payload_size));
 	} else if (length == 127) {
-		put_unaligned_uint64(&frame[2], htonl(actual_length));
+		put_unaligned_uint64(&frame[2], htonll(payload_size));
 	}
+
+	memcpy(&frame[header_size], payload, payload_size);
 
 	ao2_lock(session);
 	if (session->closing) {
 		ao2_unlock(session);
 		return -1;
 	}
-	if (ast_careful_fwrite(session->f, session->fd, frame, header_size, session->timeout)) {
+
+	if (ast_careful_fwrite(session->f, session->fd, frame, frame_size, session->timeout)) {
 		ao2_unlock(session);
 		/* 1011 - server terminating connection due to not being able to fulfill the request */
+		ast_debug(1, "Closing WS with 1011 because we can't fulfill a write request\n");
 		ast_websocket_close(session, 1011);
 		return -1;
 	}
 
-	if (ast_careful_fwrite(session->f, session->fd, payload, actual_length, session->timeout)) {
-		ao2_unlock(session);
-		/* 1011 - server terminating connection due to not being able to fulfill the request */
-		ast_websocket_close(session, 1011);
-		return -1;
-	}
 	fflush(session->f);
 	ao2_unlock(session);
 
@@ -418,6 +483,13 @@ static inline int ws_safe_read(struct ast_websocket *session, char *buf, int len
 	char *rbuf = buf;
 	int sanity = 10;
 
+	ao2_lock(session);
+	if (!session->f) {
+		ao2_unlock(session);
+		errno = ECONNABORTED;
+		return -1;
+	}
+
 	for (;;) {
 		clearerr(session->f);
 		rlen = fread(rbuf, 1, xlen, session->f);
@@ -426,6 +498,7 @@ static inline int ws_safe_read(struct ast_websocket *session, char *buf, int len
 				ast_log(LOG_WARNING, "Web socket closed abruptly\n");
 				*opcode = AST_WEBSOCKET_OPCODE_CLOSE;
 				session->closing = 1;
+				ao2_unlock(session);
 				return -1;
 			}
 
@@ -433,6 +506,7 @@ static inline int ws_safe_read(struct ast_websocket *session, char *buf, int len
 				ast_log(LOG_ERROR, "Error reading from web socket: %s\n", strerror(errno));
 				*opcode = AST_WEBSOCKET_OPCODE_CLOSE;
 				session->closing = 1;
+				ao2_unlock(session);
 				return -1;
 			}
 
@@ -440,6 +514,7 @@ static inline int ws_safe_read(struct ast_websocket *session, char *buf, int len
 				ast_log(LOG_WARNING, "Websocket seems unresponsive, disconnecting ...\n");
 				*opcode = AST_WEBSOCKET_OPCODE_CLOSE;
 				session->closing = 1;
+				ao2_unlock(session);
 				return -1;
 			}
 		}
@@ -452,9 +527,12 @@ static inline int ws_safe_read(struct ast_websocket *session, char *buf, int len
 			ast_log(LOG_ERROR, "ast_wait_for_input returned err: %s\n", strerror(errno));
 			*opcode = AST_WEBSOCKET_OPCODE_CLOSE;
 			session->closing = 1;
+			ao2_unlock(session);
 			return -1;
 		}
 	}
+
+	ao2_unlock(session);
 	return 0;
 }
 
@@ -471,7 +549,7 @@ int AST_OPTIONAL_API_NAME(ast_websocket_read)(struct ast_websocket *session, cha
 	*fragmented = 0;
 
 	if (ws_safe_read(session, &buf[0], MIN_WS_HDR_SZ, opcode)) {
-		return 0;
+		return -1;
 	}
 	frame_size += MIN_WS_HDR_SZ;
 
@@ -489,7 +567,7 @@ int AST_OPTIONAL_API_NAME(ast_websocket_read)(struct ast_websocket *session, cha
 		if (options_len) {
 			/* read the rest of the header options */
 			if (ws_safe_read(session, &buf[frame_size], options_len, opcode)) {
-				return 0;
+				return -1;
 			}
 			frame_size += options_len;
 		}
@@ -518,7 +596,7 @@ int AST_OPTIONAL_API_NAME(ast_websocket_read)(struct ast_websocket *session, cha
 		}
 
 		if (ws_safe_read(session, *payload, *payload_len, opcode)) {
-			return 0;
+			return -1;
 		}
 		/* If a mask is present unmask the payload */
 		if (mask_present) {
@@ -541,7 +619,7 @@ int AST_OPTIONAL_API_NAME(ast_websocket_read)(struct ast_websocket *session, cha
 					session->payload, session->payload_len, *payload_len);
 				*payload_len = 0;
 				ast_websocket_close(session, 1009);
-				return 0;
+				return -1;
 			}
 
 			session->payload = new_payload;
@@ -578,7 +656,7 @@ int AST_OPTIONAL_API_NAME(ast_websocket_read)(struct ast_websocket *session, cha
 		/* Make the payload available so the user can look at the reason code if they so desire */
 		if ((*payload_len) && (new_payload = ast_realloc(session->payload, *payload_len))) {
 			if (ws_safe_read(session, &buf[frame_size], (*payload_len), opcode)) {
-				return 0;
+				return -1;
 			}
 			session->payload = new_payload;
 			memcpy(session->payload, &buf[frame_size], *payload_len);
@@ -600,7 +678,7 @@ int AST_OPTIONAL_API_NAME(ast_websocket_read)(struct ast_websocket *session, cha
 /*!
  * \brief If the server has exactly one configured protocol, return it.
  */
-static struct websocket_protocol *one_protocol(
+static struct ast_websocket_protocol *one_protocol(
 	struct ast_websocket_server *server)
 {
 	SCOPED_AO2LOCK(lock, server->protocols);
@@ -643,7 +721,7 @@ int AST_OPTIONAL_API_NAME(ast_websocket_uri_cb)(struct ast_tcptls_session_instan
 	struct ast_variable *v;
 	char *upgrade = NULL, *key = NULL, *key1 = NULL, *key2 = NULL, *protos = NULL, *requested_protocols = NULL, *protocol = NULL;
 	int version = 0, flags = 1;
-	struct websocket_protocol *protocol_handler = NULL;
+	struct ast_websocket_protocol *protocol_handler = NULL;
 	struct ast_websocket *session;
 	struct ast_websocket_server *server;
 
@@ -742,12 +820,14 @@ int AST_OPTIONAL_API_NAME(ast_websocket_uri_cb)(struct ast_tcptls_session_instan
 		}
 		session->timeout =  AST_DEFAULT_WEBSOCKET_WRITE_TIMEOUT;
 
-		fprintf(ser->f, "HTTP/1.1 101 Switching Protocols\r\n"
-			"Upgrade: %s\r\n"
-			"Connection: Upgrade\r\n"
-			"Sec-WebSocket-Accept: %s\r\n",
-			upgrade,
-			websocket_combine_key(key, base64, sizeof(base64)));
+		if (protocol_handler->session_attempted
+		    && protocol_handler->session_attempted(ser, get_vars, headers)) {
+			ast_debug(3, "WebSocket connection from '%s' rejected by protocol handler '%s'\n",
+				ast_sockaddr_stringify(&ser->remote_address), protocol_handler->name);
+			websocket_bad_request(ser);
+			ao2_ref(protocol_handler, -1);
+			return 0;
+		}
 
 		/* RFC 6455, Section 4.1:
 		 *
@@ -759,11 +839,23 @@ int AST_OPTIONAL_API_NAME(ast_websocket_uri_cb)(struct ast_tcptls_session_instan
 		 *    Connection_.
 		 */
 		if (protocol) {
-			fprintf(ser->f, "Sec-WebSocket-Protocol: %s\r\n",
+			fprintf(ser->f, "HTTP/1.1 101 Switching Protocols\r\n"
+				"Upgrade: %s\r\n"
+				"Connection: Upgrade\r\n"
+				"Sec-WebSocket-Accept: %s\r\n"
+				"Sec-WebSocket-Protocol: %s\r\n\r\n",
+				upgrade,
+				websocket_combine_key(key, base64, sizeof(base64)),
 				protocol);
+		} else {
+			fprintf(ser->f, "HTTP/1.1 101 Switching Protocols\r\n"
+				"Upgrade: %s\r\n"
+				"Connection: Upgrade\r\n"
+				"Sec-WebSocket-Accept: %s\r\n\r\n",
+				upgrade,
+				websocket_combine_key(key, base64, sizeof(base64)));
 		}
 
-		fprintf(ser->f, "\r\n");
 		fflush(ser->f);
 	} else {
 
@@ -797,7 +889,7 @@ int AST_OPTIONAL_API_NAME(ast_websocket_uri_cb)(struct ast_tcptls_session_instan
 
 	/* Give up ownership of the socket and pass it to the protocol handler */
 	ast_tcptls_stream_set_exclusive_input(ser->stream_cookie, 0);
-	protocol_handler->callback(session, get_vars, headers);
+	protocol_handler->session_established(session, get_vars, headers);
 	ao2_ref(protocol_handler, -1);
 
 	/*
@@ -879,6 +971,22 @@ int AST_OPTIONAL_API_NAME(ast_websocket_add_protocol)(const char *name, ast_webs
 		ast_module_ref(ast_module_info->self);
 	}
 	return res;
+}
+
+int AST_OPTIONAL_API_NAME(ast_websocket_add_protocol2)(struct ast_websocket_protocol *protocol)
+{
+	struct ast_websocket_server *ws_server = websocketuri.data;
+
+	if (!ws_server) {
+		return -1;
+	}
+
+	if (ast_websocket_server_add_protocol2(ws_server, protocol)) {
+		return -1;
+	}
+
+	ast_module_ref(ast_module_info->self);
+	return 0;
 }
 
 static int websocket_remove_protocol_internal(const char *name, ast_websocket_callback callback)
@@ -1294,8 +1402,19 @@ int AST_OPTIONAL_API_NAME(ast_websocket_read_string)
 int AST_OPTIONAL_API_NAME(ast_websocket_write_string)
 	(struct ast_websocket *ws, const char *buf)
 {
+	uint64_t len = strlen(buf);
+
+	ast_debug(3, "Writing websocket string of length %" PRIu64 "\n", len);
+
+	/* We do not pass strlen(buf) to ast_websocket_write() directly because the
+	 * size_t returned by strlen() may not require the same storage size
+	 * as the uint64_t that ast_websocket_write() uses. This normally
+	 * would not cause a problem, but since ast_websocket_write() uses
+	 * the optional API, this function call goes through a series of macros
+	 * that may cause a 32-bit to 64-bit conversion to go awry.
+	 */
 	return ast_websocket_write(ws, AST_WEBSOCKET_OPCODE_TEXT,
-				   (char *)buf, strlen(buf));
+				   (char *)buf, len);
 }
 
 static int load_module(void)

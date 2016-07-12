@@ -39,12 +39,13 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 431643 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <regex.h>
 #include <pjsip.h>
 
 #include "asterisk/astobj2.h"
+#include "asterisk/cli.h"
 #include "asterisk/res_pjsip.h"
 #include "asterisk/module.h"
 #include "asterisk/pbx.h"
@@ -276,7 +277,7 @@ struct object_type_wizard {
 	struct ast_config *last_config;
 	char object_type[];
 };
-static AST_VECTOR(object_type_wizards, struct object_type_wizard *) object_type_wizards;
+static AST_VECTOR_RW(object_type_wizards, struct object_type_wizard *) object_type_wizards;
 
 /*! \brief Callbacks for vector deletes */
 #define NOT_EQUALS(a, b) (a != b)
@@ -304,12 +305,15 @@ static struct object_type_wizard *find_wizard(const char *object_type)
 {
 	int idx;
 
+	AST_VECTOR_RW_RDLOCK(&object_type_wizards);
 	for(idx = 0; idx < AST_VECTOR_SIZE(&object_type_wizards); idx++) {
 		struct object_type_wizard *otw = AST_VECTOR_GET(&object_type_wizards, idx);
 		if (!strcmp(otw->object_type, object_type)) {
+			AST_VECTOR_RW_UNLOCK(&object_type_wizards);
 			return otw;
 		}
 	}
+	AST_VECTOR_RW_UNLOCK(&object_type_wizards);
 
 	return NULL;
 }
@@ -334,10 +338,10 @@ static void *create_object(const struct ast_sorcery *sorcery,
 	return obj;
 }
 
-/*! \brief Finds a variable in a list and tests it */
+/*! \brief Finds the last variable in a list and tests it */
 static int is_variable_true(struct ast_variable *vars, const char *name)
 {
-	return ast_true(ast_variable_find_in_list(vars, name));
+	return ast_true(ast_variable_find_last_in_list(vars, name));
 }
 
 /*! \brief Appends a variable to the end of an existing list */
@@ -539,7 +543,7 @@ static int handle_auth(const struct ast_sorcery *sorcery, struct object_type_wiz
 	}
 
 	if (is_variable_true(wizvars, test_variable)) {
-		if (!ast_variable_find_in_list(vars, "username")) {
+		if (!ast_variable_find_last_in_list(vars, "username")) {
 			ast_log(LOG_ERROR,
 				"Wizard '%s' must have '%s_auth/username' if it %s.\n", id, direction, test_variable);
 			return -1;
@@ -557,7 +561,7 @@ static int handle_auth(const struct ast_sorcery *sorcery, struct object_type_wiz
 	variable_list_append_return(&vars, "@pjsip_wizard", id);
 
 	/* If the user set auth_type, don't override it. */
-	if (!ast_variable_find_in_list(vars, "auth_type")) {
+	if (!ast_variable_find_last_in_list(vars, "auth_type")) {
 		variable_list_append_return(&vars, "auth_type", "userpass");
 	}
 
@@ -599,8 +603,8 @@ static int handle_aor(const struct ast_sorcery *sorcery, struct object_type_wiza
 	variable_list_append(&vars, "@pjsip_wizard", id);
 
 	/* If the user explicitly specified an aor/contact, don't use remote hosts. */
-	if (!ast_variable_find_in_list(vars, "contact")) {
-		if (!(contact_pattern = ast_variable_find_in_list(wizvars, "contact_pattern"))) {
+	if (!ast_variable_find_last_in_list(vars, "contact")) {
+		if (!(contact_pattern = ast_variable_find_last_in_list(wizvars, "contact_pattern"))) {
 			contact_pattern = "sip:${REMOTE_HOST}";
 		}
 
@@ -645,10 +649,10 @@ static int handle_endpoint(const struct ast_sorcery *sorcery, struct object_type
 	struct ast_variable *wizvars = ast_category_first(wiz);
 	struct ast_sorcery_object *obj = NULL;
 	const char *id = ast_category_get_name(wiz);
-	const char *transport = ast_variable_find_in_list(wizvars, "transport");
-	const char *hint_context = hint_context = ast_variable_find_in_list(wizvars, "hint_context");
-	const char *hint_exten = ast_variable_find_in_list(wizvars, "hint_exten");
-	const char *hint_application= ast_variable_find_in_list(wizvars, "hint_application");
+	const char *transport = ast_variable_find_last_in_list(wizvars, "transport");
+	const char *hint_context = hint_context = ast_variable_find_last_in_list(wizvars, "hint_context");
+	const char *hint_exten = ast_variable_find_last_in_list(wizvars, "hint_exten");
+	const char *hint_application= ast_variable_find_last_in_list(wizvars, "hint_application");
 	char new_id[strlen(id) + MAX_ID_SUFFIX];
 	RAII_VAR(struct ast_variable *, vars, get_object_variables(wizvars, "endpoint/"), ast_variables_destroy);
 
@@ -656,7 +660,7 @@ static int handle_endpoint(const struct ast_sorcery *sorcery, struct object_type
 	variable_list_append_return(&vars, "aors", id);
 
 	if (ast_strlen_zero(hint_context)) {
-		hint_context = ast_variable_find_in_list(vars, "context");
+		hint_context = ast_variable_find_last_in_list(vars, "context");
 	}
 
 	if (ast_strlen_zero(hint_context)) {
@@ -737,7 +741,7 @@ static int handle_identify(const struct ast_sorcery *sorcery, struct object_type
 	variable_list_append_return(&vars, "endpoint", id);
 	variable_list_append_return(&vars, "@pjsip_wizard", id);
 
-	if (!ast_variable_find_in_list(vars, "match")) {
+	if (!ast_variable_find_last_in_list(vars, "match")) {
 		for (host_counter = 0; host_counter < host_count; host_counter++) {
 			char *rhost = AST_VECTOR_GET(remote_hosts_vector, host_counter);
 			char host[strlen(rhost) + 1];
@@ -787,7 +791,7 @@ static int handle_phoneprov(const struct ast_sorcery *sorcery, struct object_typ
 		return 0;
 	}
 
-	if (!ast_variable_find_in_list(wizvars, "phoneprov/MAC")) {
+	if (!ast_variable_find_last_in_list(wizvars, "phoneprov/MAC")) {
 		ast_log(LOG_ERROR,
 			"Wizard '%s' must have 'phoneprov/MAC' if it has_phoneprov.\n", id);
 		return -1;
@@ -834,7 +838,7 @@ static int handle_registrations(const struct ast_sorcery *sorcery, struct object
 	const char *id = ast_category_get_name(wiz);
 	const char *server_uri_pattern;
 	const char *client_uri_pattern;
-	const char *transport = ast_variable_find_in_list(wizvars, "transport");
+	const char *transport = ast_variable_find_last_in_list(wizvars, "transport");
 	const char *username;
 	char new_id[strlen(id) + MAX_ID_SUFFIX];
 	int host_count = AST_VECTOR_SIZE(remote_hosts_vector);
@@ -871,16 +875,16 @@ static int handle_registrations(const struct ast_sorcery *sorcery, struct object
 
 	variable_list_append_return(&vars, "@pjsip_wizard", id);
 
-	if (!(server_uri_pattern = ast_variable_find_in_list(wizvars, "server_uri_pattern"))) {
+	if (!(server_uri_pattern = ast_variable_find_last_in_list(wizvars, "server_uri_pattern"))) {
 		server_uri_pattern = "sip:${REMOTE_HOST}";
 	}
 
-	if (!(client_uri_pattern = ast_variable_find_in_list(wizvars, "client_uri_pattern"))) {
+	if (!(client_uri_pattern = ast_variable_find_last_in_list(wizvars, "client_uri_pattern"))) {
 		client_uri_pattern = "sip:${USERNAME}@${REMOTE_HOST}";
 	}
 
 	if(is_variable_true(wizvars, "sends_auth")) {
-		username = ast_variable_find_in_list(wizvars, "outbound_auth/username");
+		username = ast_variable_find_last_in_list(wizvars, "outbound_auth/username");
 	} else {
 		username = id;
 	}
@@ -958,7 +962,7 @@ static int wizard_apply_handler(const struct ast_sorcery *sorcery, struct object
 	int rc = -1;
 
 	AST_VECTOR_INIT(&remote_hosts_vector, 16);
-	remote_hosts = ast_variable_find_in_list(wizvars, "remote_hosts");
+	remote_hosts = ast_variable_find_last_in_list(wizvars, "remote_hosts");
 
 	if (!ast_strlen_zero(remote_hosts)) {
 		char *host;
@@ -997,6 +1001,7 @@ static int wizard_apply_handler(const struct ast_sorcery *sorcery, struct object
  * Everything below are the sorcery observers.
  */
 static void instance_created_observer(const char *name, struct ast_sorcery *sorcery);
+static void instance_destroying_observer(const char *name, struct ast_sorcery *sorcery);
 static void object_type_loaded_observer(const char *name,
 	const struct ast_sorcery *sorcery, const char *object_type, int reloaded);
 static void wizard_mapped_observer(const char *name, struct ast_sorcery *sorcery,
@@ -1007,6 +1012,7 @@ static void object_type_registered_observer(const char *name,
 
 const static struct ast_sorcery_global_observer global_observer = {
 	.instance_created = instance_created_observer,
+	.instance_destroying = instance_destroying_observer,
 };
 
 struct ast_sorcery_instance_observer observer = {
@@ -1135,7 +1141,9 @@ static void wizard_mapped_observer(const char *name, struct ast_sorcery *sorcery
 		otw->wizard_data = wizard_data;
 		otw->last_config = NULL;
 		strcpy(otw->object_type, object_type); /* Safe */
+		AST_VECTOR_RW_WRLOCK(&object_type_wizards);
 		AST_VECTOR_APPEND(&object_type_wizards, otw);
+		AST_VECTOR_RW_UNLOCK(&object_type_wizards);
 		ast_debug(1, "Wizard mapped for object_type '%s'\n", object_type);
 	}
 }
@@ -1150,76 +1158,149 @@ static void object_type_registered_observer(const char *name,
 }
 
 /*! \brief When the res_pjsip instance is created, add an observer to it and initialize the wizard vector.
- * Since you can't unload res_pjsip, this will only ever be called once.
+ * Also, bump the module's ref count so it can't be unloaded before the sorcery instance is
+ * destroyed.
  */
 static void instance_created_observer(const char *name, struct ast_sorcery *sorcery)
 {
 	if (strcmp(name, "res_pjsip")) {
 		return;
 	}
-
+	ast_module_ref(ast_module_info->self);
 	ast_sorcery_instance_observer_add(sorcery, &observer);
 }
 
+/*! \brief When the res_pjsip instance is destroyed, remove the observer
+ * and unref the module.  This should then allow this module to unload cleanly.
+ */
+static void instance_destroying_observer(const char *name, struct ast_sorcery *sorcery)
+{
+	if (strcmp(name, "res_pjsip")) {
+		return;
+	}
+
+	ast_sorcery_instance_observer_remove(sorcery, &observer);
+	ast_module_unref(ast_module_info->self);
+}
+
+static char *handle_export_primitives(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a)
+{
+	struct ast_sorcery *sorcery;
+	int idx;
+	FILE *f = NULL;
+	const char *fn = NULL;
+
+	switch (cmd) {
+	case CLI_INIT:
+		e->command = "pjsip export config_wizard primitives [to]";
+		e->usage =
+			"Usage: pjsip export config_wizard primitives [ to <filename ]\n"
+			"       Export the config_wizard objects as pjsip primitives to\n"
+			"       the console or to <filename>\n";
+		return NULL;
+	case CLI_GENERATE:
+		return NULL;
+	}
+
+	if (a->argc > 5) {
+		char date[256]="";
+		time_t t;
+		fn = a->argv[5];
+
+		time(&t);
+		ast_copy_string(date, ctime(&t), sizeof(date));
+		f = fopen(fn, "w");
+		if (!f) {
+			ast_log(LOG_ERROR, "Unable to write %s (%s)\n", fn, strerror(errno));
+			return CLI_FAILURE;
+		}
+
+		fprintf(f, ";!\n");
+		fprintf(f, ";! Automatically generated configuration file\n");
+		fprintf(f, ";! Filename: %s\n", fn);
+		fprintf(f, ";! Generator: %s\n", "'pjsip export config_wizard primitives'");
+		fprintf(f, ";! Creation Date: %s", date);
+		fprintf(f, ";!\n");
+	}
+
+	sorcery = ast_sip_get_sorcery();
+
+	AST_VECTOR_RW_RDLOCK(&object_type_wizards);
+	for(idx = 0; idx < AST_VECTOR_SIZE(&object_type_wizards); idx++) {
+		struct object_type_wizard *otw = AST_VECTOR_GET(&object_type_wizards, idx);
+		struct ao2_container *container;
+		struct ao2_iterator i;
+		void *o;
+
+		container = ast_sorcery_retrieve_by_fields(sorcery, otw->object_type, AST_RETRIEVE_FLAG_MULTIPLE, NULL);
+		if (!container) {
+			continue;
+		}
+
+		i = ao2_iterator_init(container, 0);
+		while ((o = ao2_iterator_next(&i))) {
+			struct ast_variable *vars;
+			struct ast_variable *v;
+
+			vars = ast_sorcery_objectset_create(sorcery, o);
+			if (vars && ast_variable_find_in_list(vars, "@pjsip_wizard")) {
+				if (f) {
+					fprintf(f, "\n[%s]\ntype = %s\n", ast_sorcery_object_get_id(o), otw->object_type);
+				} else {
+					ast_cli(a->fd, "\n[%s]\ntype = %s\n", ast_sorcery_object_get_id(o), otw->object_type);
+				}
+				for (v = vars; v; v = v->next) {
+					if (!ast_strlen_zero(v->value)) {
+						if (f) {
+							fprintf(f, "%s = %s\n", v->name, v->value);
+						} else {
+							ast_cli(a->fd, "%s = %s\n", v->name, v->value);
+						}
+					}
+				}
+			}
+			ast_variables_destroy(vars);
+			ao2_ref(o, -1);
+		}
+		ao2_iterator_destroy(&i);
+		ao2_cleanup(container);
+	}
+	AST_VECTOR_RW_UNLOCK(&object_type_wizards);
+
+	if (f) {
+		fclose(f);
+		ast_cli(a->fd, "Wrote configuration to %s\n", fn);
+	}
+
+
+	return CLI_SUCCESS;
+}
+
+static struct ast_cli_entry config_wizard_cli[] = {
+	AST_CLI_DEFINE(handle_export_primitives, "Export config wizard primitives"),
+};
+
 static int load_module(void)
 {
-	struct ast_sorcery *sorcery = NULL;
-	int i;
-
-	AST_VECTOR_INIT(&object_type_wizards, 12);
+	AST_VECTOR_RW_INIT(&object_type_wizards, 12);
 	ast_sorcery_global_observer_add(&global_observer);
-
-	/* If this module is loading AFTER res_pjsip, we need to manually add the instance observer
-	 * and map the wizards because the observers will never get triggered.
-	 * The we neeed to schedule a reload.
-	 */
-	if (ast_module_check("res_pjsip.so") && ast_sip_get_pjsip_endpoint()) {
-		sorcery = ast_sip_get_sorcery();
-		if (sorcery) {
-			/* Clean up and add the observer. */
-			ast_sorcery_instance_observer_remove(sorcery, &observer);
-			ast_sorcery_instance_observer_add(sorcery, &observer);
-
-			for (i = 0; object_types[i]; i++) {
-				ast_sorcery_apply_wizard_mapping(sorcery, object_types[i], "memory",
-					"pjsip_wizard", 0);
-			}
-
-			ast_module_reload("res_pjsip.so");
-		}
-	}
+	ast_cli_register_multiple(config_wizard_cli, ARRAY_LEN(config_wizard_cli));
 
 	return AST_MODULE_LOAD_SUCCESS;
 }
 
 static int unload_module(void)
 {
-	struct object_type_wizard *otw;
-	int i;
-
+	ast_cli_unregister_multiple(config_wizard_cli, ARRAY_LEN(config_wizard_cli));
 	ast_sorcery_global_observer_remove(&global_observer);
-
-	for (i = 0; object_types[i]; i++) {
-		RAII_VAR(struct ao2_container *, existing,
-			ao2_container_alloc_list(AO2_ALLOC_OPT_LOCK_NOLOCK, 0, NULL, NULL), ao2_cleanup);
-
-		otw = find_wizard(object_types[i]);
-		if (otw) {
-			if (otw->sorcery) {
-				ast_sorcery_instance_observer_remove(otw->sorcery, &observer);
-			}
-			otw->wizard->retrieve_multiple(otw->sorcery, otw->wizard_data, object_types[i], existing, NULL);
-			ao2_callback(existing, OBJ_NODATA | OBJ_UNLINK | OBJ_MULTIPLE, delete_existing_cb, otw);
-		}
-	}
-
 	AST_VECTOR_REMOVE_CMP_UNORDERED(&object_type_wizards, NULL, NOT_EQUALS, OTW_DELETE_CB);
-	AST_VECTOR_FREE(&object_type_wizards);
+	AST_VECTOR_RW_FREE(&object_type_wizards);
 
 	return 0;
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_GLOBAL_SYMBOLS | AST_MODFLAG_LOAD_ORDER, "PJSIP Config Wizard",
+		.support_level = AST_MODULE_SUPPORT_CORE,
 		.load = load_module,
 		.unload = unload_module,
 		.load_pri = AST_MODPRI_REALTIME_DRIVER,

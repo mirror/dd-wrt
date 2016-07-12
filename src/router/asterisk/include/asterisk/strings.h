@@ -145,8 +145,12 @@ static int force_inline attribute_pure ast_ends_with(const char *str, const char
 AST_INLINE_API(
 char * attribute_pure ast_skip_blanks(const char *str),
 {
-	while (*str && ((unsigned char) *str) < 33)
-		str++;
+	if (str) {
+		while (*str && ((unsigned char) *str) < 33) {
+			str++;
+		}
+	}
+
 	return (char *) str;
 }
 )
@@ -184,8 +188,12 @@ char *ast_trim_blanks(char *str),
 AST_INLINE_API(
 char * attribute_pure ast_skip_nonblanks(const char *str),
 {
-	while (*str && ((unsigned char) *str) > 32)
-		str++;
+	if (str) {
+		while (*str && ((unsigned char) *str) > 32) {
+			str++;
+		}
+	}
+
 	return (char *) str;
 }
 )
@@ -308,6 +316,60 @@ char *ast_unescape_semicolon(char *s);
   \return The converted string.
  */
 char *ast_unescape_c(char *s);
+
+/*!
+ * \brief Escape the 'to_escape' characters in the given string.
+ *
+ * \note The given output buffer will contain a truncated escaped
+ * version of the source string if the given buffer is not large
+ * enough.
+ *
+ * \param dest the escaped string
+ * \param s the source string to escape
+ * \param size The size of the destination buffer
+ * \param to_escape an array of characters to escape
+ *
+ * \return Pointer to the destination.
+ */
+char *ast_escape(char *dest, const char *s, size_t size, const char *to_escape);
+
+/*!
+ * \brief Escape standard 'C' sequences in the given string.
+ *
+ * \note The given output buffer will contain a truncated escaped
+ * version of the source string if the given buffer is not large
+ * enough.
+ *
+ * \param dest the escaped string
+ * \param s the source string to escape
+ * \param size The size of the destination buffer
+ *
+ * \return Pointer to the escaped string.
+ */
+char *ast_escape_c(char *dest, const char *s, size_t size);
+
+/*!
+ * \brief Escape the 'to_escape' characters in the given string.
+ *
+ * \note Caller is responsible for freeing the returned string
+ *
+ * \param s the source string to escape
+ * \param to_escape an array of characters to escape
+ *
+ * \return Pointer to the escaped string or NULL.
+ */
+char *ast_escape_alloc(const char *s, const char *to_escape);
+
+/*!
+ * \brief Escape standard 'C' sequences in the given string.
+ *
+ * \note Caller is responsible for freeing the returned string
+ *
+ * \param s the source string to escape
+ *
+ * \return Pointer to the escaped string or NULL.
+ */
+char *ast_escape_c_alloc(const char *s);
 
 /*!
   \brief Size-limited null-terminating string copy.
@@ -1233,7 +1295,8 @@ static force_inline char *attribute_pure ast_str_to_upper(char *str)
  * \retval AO2 container for strings
  * \retval NULL if allocation failed
  */
-struct ao2_container *ast_str_container_alloc_options(enum ao2_container_opts opts, int buckets);
+//struct ao2_container *ast_str_container_alloc_options(enum ao2_container_opts opts, int buckets);
+struct ao2_container *ast_str_container_alloc_options(enum ao2_alloc_opts opts, int buckets);
 
 /*!
  * \since 12
@@ -1272,4 +1335,34 @@ void ast_str_container_remove(struct ao2_container *str_container, const char *r
  * \return A pointer to buf
  */
 char *ast_generate_random_string(char *buf, size_t size);
+
+/*!
+ * \brief Compares 2 strings using realtime-style operators
+ * \since 13.9.0
+ *
+ * \param left The left side of the equation
+ * \param op The operator to apply
+ * \param right The right side of the equation
+ *
+ * \retval 1 matches
+ * \retval 0 doesn't match
+ *
+ * \details
+ *
+ * Operators:
+ * 	"=", "!=", "<", "<=", ">", ">=":
+ * 	   If both left and right can be converted to float, then they will be
+ * 	   compared as such. Otherwise the result will be derived from strcmp(left, right).
+ * "regex":
+ *     The right value will be compiled as a regular expression and matched against the left
+ *     value.
+ * "like":
+ *     Any '%' character in the right value will be converted to '.*' and the resulting
+ *     string will be handled as a regex.
+ * NULL , "":
+ *     If the right value starts and ends with a '/' then it will be processed as a regex.
+ *     Otherwise, same as "=".
+ */
+int ast_strings_match(const char *left, const char *op, const char *right);
+
 #endif /* _ASTERISK_STRINGS_H */

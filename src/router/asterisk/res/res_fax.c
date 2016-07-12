@@ -65,7 +65,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 430998 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/io.h"
 #include "asterisk/file.h"
@@ -523,7 +523,7 @@ static AST_RWLIST_HEAD_STATIC(faxmodules, fax_module);
 #define RES_FAX_MINRATE 4800
 #define RES_FAX_MAXRATE 14400
 #define RES_FAX_STATUSEVENTS 0
-#define RES_FAX_MODEM (AST_FAX_MODEM_V17 | AST_FAX_MODEM_V27 | AST_FAX_MODEM_V29)
+#define RES_FAX_MODEM (AST_FAX_MODEM_V17 | AST_FAX_MODEM_V27TER | AST_FAX_MODEM_V29)
 #define RES_FAX_T38TIMEOUT 5000
 
 struct fax_options {
@@ -828,7 +828,7 @@ static int update_modem_bits(enum ast_fax_modems *bits, const char *value)
 		if (!strcasecmp(m[j], "v17")) {
 			*bits |= AST_FAX_MODEM_V17;
 		} else if (!strcasecmp(m[j], "v27")) {
-			*bits |= AST_FAX_MODEM_V27;
+			*bits |= AST_FAX_MODEM_V27TER;
 		} else if (!strcasecmp(m[j], "v29")) {
 			*bits |= AST_FAX_MODEM_V29;
 		} else if (!strcasecmp(m[j], "v34")) {
@@ -907,7 +907,7 @@ static int ast_fax_modem_to_str(enum ast_fax_modems bits, char *tbuf, size_t buf
 		strcat(tbuf, "V17");
 		count++;
 	}
-	if (bits & AST_FAX_MODEM_V27) {
+	if (bits & AST_FAX_MODEM_V27TER) {
 		if (count) {
 			strcat(tbuf, ",");
 		}
@@ -936,22 +936,14 @@ static int check_modem_rate(enum ast_fax_modems modems, unsigned int rate)
 {
 	switch (rate) {
 	case 2400:
-		if (!(modems & (AST_FAX_MODEM_V34))) {
-			return 1;
-		}
-		break;
 	case 4800:
-		if (!(modems & (AST_FAX_MODEM_V27 | AST_FAX_MODEM_V34))) {
+		if (!(modems & (AST_FAX_MODEM_V27TER | AST_FAX_MODEM_V34))) {
 			return 1;
 		}
 		break;
 	case 7200:
-		if (!(modems & (AST_FAX_MODEM_V17 | AST_FAX_MODEM_V29 | AST_FAX_MODEM_V34))) {
-			return 1;
-		}
-		break;
 	case 9600:
-		if (!(modems & (AST_FAX_MODEM_V17 | AST_FAX_MODEM_V27 | AST_FAX_MODEM_V29 | AST_FAX_MODEM_V34))) {
+		if (!(modems & (AST_FAX_MODEM_V17 | AST_FAX_MODEM_V29 | AST_FAX_MODEM_V34))) {
 			return 1;
 		}
 		break;
@@ -2036,14 +2028,14 @@ static int report_receive_fax_status(struct ast_channel *chan, const char *filen
 			fax_bitrate = ast_strdupa(fax_bitrate);
 		}
 
-		json_object = ast_json_pack("{s: s, s: s, s: s, s: s, s: s, s: s, s: O}",
+		json_object = ast_json_pack("{s: s, s: s, s: s, s: s, s: s, s: s, s: o}",
 				"type", "receive",
 				"remote_station_id", S_OR(remote_station_id, ""),
 				"local_station_id", S_OR(local_station_id, ""),
 				"fax_pages", S_OR(fax_pages, ""),
 				"fax_resolution", S_OR(fax_resolution, ""),
 				"fax_bitrate", S_OR(fax_bitrate, ""),
-				"filenames", json_array);
+				"filenames", ast_json_ref(json_array));
 		if (!json_object) {
 			return -1;
 		}
@@ -3291,13 +3283,13 @@ static struct ast_frame *fax_gateway_framehook(struct ast_channel *chan, struct 
 
 		if (gateway->bridged) {
 			ast_set_read_format(chan, gateway->chan_read_format);
-			ast_set_read_format(chan, gateway->chan_write_format);
+			ast_set_write_format(chan, gateway->chan_write_format);
 
 			ast_channel_unlock(chan);
 			peer = ast_channel_bridge_peer(chan);
 			if (peer) {
 				ast_set_read_format(peer, gateway->peer_read_format);
-				ast_set_read_format(peer, gateway->peer_write_format);
+				ast_set_write_format(peer, gateway->peer_write_format);
 				ast_channel_make_compatible(chan, peer);
 			}
 			ast_channel_lock(chan);
@@ -3340,23 +3332,25 @@ static struct ast_frame *fax_gateway_framehook(struct ast_channel *chan, struct 
 			gateway->timeout_start = ast_tvnow();
 		}
 
+		ast_channel_unlock(chan);
+		ast_channel_lock_both(chan, peer);
+
 		/* we are bridged, change r/w formats to SLIN for v21 preamble
 		 * detection and T.30 */
 		ao2_replace(gateway->chan_read_format, ast_channel_readformat(chan));
-		ao2_replace(gateway->chan_write_format, ast_channel_readformat(chan));
+		ao2_replace(gateway->chan_write_format, ast_channel_writeformat(chan));
 
 		ao2_replace(gateway->peer_read_format, ast_channel_readformat(peer));
-		ao2_replace(gateway->peer_write_format, ast_channel_readformat(peer));
+		ao2_replace(gateway->peer_write_format, ast_channel_writeformat(peer));
 
 		ast_set_read_format(chan, ast_format_slin);
 		ast_set_write_format(chan, ast_format_slin);
 
-		ast_channel_unlock(chan);
 		ast_set_read_format(peer, ast_format_slin);
 		ast_set_write_format(peer, ast_format_slin);
 
-		ast_channel_make_compatible(chan, peer);
-		ast_channel_lock(chan);
+		ast_channel_unlock(peer);
+
 		gateway->bridged = 1;
 	}
 

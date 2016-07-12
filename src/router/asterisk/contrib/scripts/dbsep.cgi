@@ -14,7 +14,7 @@
 # the GNU General Public License Version 2. See the LICENSE file
 # at the top of the source tree.
 #
-# $Id: dbsep.cgi 253758 2010-03-22 19:05:27Z tilghman $
+# $Id$
 #
 
 use CGI;

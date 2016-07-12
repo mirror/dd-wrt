@@ -120,17 +120,15 @@ def upgrade():
     op.create_index('ps_registrations_id', 'ps_registrations', ['id'])
 
     ########################## add columns ###########################
-
     # new columns for endpoints
     op.add_column('ps_endpoints', sa.Column('media_address', sa.String(40)))
     op.add_column('ps_endpoints', sa.Column('redirect_method',
-                                            pjsip_redirect_method_values))
+        pjsip_redirect_method_values))
     op.add_column('ps_endpoints', sa.Column('set_var', sa.Text()))
 
     # rename mwi_fromuser to mwi_from_user
     op.alter_column('ps_endpoints', 'mwi_fromuser',
-                    new_column_name='mwi_from_user',
-                    existing_type=sa.String(40))
+        new_column_name='mwi_from_user', existing_type=sa.String(40))
 
     # new columns for contacts
     op.add_column('ps_contacts', sa.Column('outbound_proxy', sa.String(40)))
@@ -152,8 +150,7 @@ def downgrade():
     op.drop_column('ps_contacts', 'outbound_proxy')
 
     op.alter_column('ps_endpoints', 'mwi_from_user',
-                    new_column_name='mwi_fromuser',
-                    existing_type=sa.String(40))
+        new_column_name='mwi_fromuser', existing_type=sa.String(40))
 
     op.drop_column('ps_endpoints', 'set_var')
     op.drop_column('ps_endpoints', 'redirect_method')

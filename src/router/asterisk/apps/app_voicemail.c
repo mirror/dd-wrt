@@ -48,7 +48,6 @@
 
 /*** MODULEINFO
 	<defaultenabled>yes</defaultenabled>
-	<conflict>res_mwi_external</conflict>
 	<use type="module">res_adsi</use>
 	<use type="module">res_smdi</use>
 	<support_level>core</support_level>
@@ -102,7 +101,7 @@
 #endif
 #endif
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 432696 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/paths.h"	/* use ast_config_AST_SPOOL_DIR */
 #include <sys/time.h>
@@ -581,6 +580,8 @@ static AST_LIST_HEAD_STATIC(vmstates, vmstate);
 
 #define INTRO "vm-intro"
 
+#define MAX_MAIL_BODY_CONTENT_SIZE 134217728L // 128 Mbyte
+
 #define MAXMSG 100
 #define MAXMSGLIMIT 9999
 
@@ -617,15 +618,16 @@ static AST_LIST_HEAD_STATIC(vmstates, vmstate);
 #define VM_MESSAGEWRAP   (1 << 17)  /*!< Wrap around from the last message to the first, and vice-versa */
 #define VM_FWDURGAUTO    (1 << 18)  /*!< Autoset of Urgent flag on forwarded Urgent messages set globally */
 #define ERROR_LOCK_PATH  -100
+#define ERROR_MAX_MSGS   -101
 #define OPERATOR_EXIT     300
 
 enum vm_box {
-	NEW_FOLDER,
-	OLD_FOLDER,
-	WORK_FOLDER,
-	FAMILY_FOLDER,
-	FRIENDS_FOLDER,
-	GREETINGS_FOLDER
+	NEW_FOLDER = 		0,
+	OLD_FOLDER =		1,
+	WORK_FOLDER =		2,
+	FAMILY_FOLDER =		3,
+	FRIENDS_FOLDER =	4,
+	GREETINGS_FOLDER =	-1
 };
 
 enum vm_option_flags {
@@ -3624,8 +3626,8 @@ static int save_body(BODY *body, struct vm_state *vms, char *section, char *form
 	char *body_content;
 	char *body_decoded;
 	char *fn = is_intro ? vms->introfn : vms->fn;
-	unsigned long len;
-	unsigned long newlen;
+	unsigned long len = 0;
+	unsigned long newlen = 0;
 	char filename[256];
 
 	if (!body || body == NIL)
@@ -3634,12 +3636,18 @@ static int save_body(BODY *body, struct vm_state *vms, char *section, char *form
 	ast_mutex_lock(&vms->lock);
 	body_content = mail_fetchbody(vms->mailstream, vms->msgArray[vms->curmsg], section, &len);
 	ast_mutex_unlock(&vms->lock);
-	if (body_content != NIL) {
+	if (len > MAX_MAIL_BODY_CONTENT_SIZE) {
+		ast_log(AST_LOG_ERROR,
+			"Msgno %ld, section %s. The body's content size %ld is huge (max %ld). User:%s, mailbox %s\n",
+			vms->msgArray[vms->curmsg], section, len, MAX_MAIL_BODY_CONTENT_SIZE, vms->imapuser, vms->username);
+		return -1;
+	}
+	if (body_content != NIL && len) {
 		snprintf(filename, sizeof(filename), "%s.%s", fn, format);
 		/* ast_debug(1, body_content); */
 		body_decoded = rfc822_base64((unsigned char *) body_content, len, &newlen);
 		/* If the body of the file is empty, return an error */
-		if (!newlen) {
+		if (!newlen || !body_decoded) {
 			return -1;
 		}
 		write_file(filename, (char *) body_decoded, newlen);
@@ -7093,7 +7101,7 @@ static int save_to_folder(struct ast_vm_user *vmu, struct vm_state *vms, int msg
 	} else {
 		if (x >= vmu->maxmsg) {
 			ast_unlock_path(ddir);
-			return -1;
+			return ERROR_MAX_MSGS;
 		}
 	}
 	make_file(sfn, sizeof(sfn), dir, msg);
@@ -8918,7 +8926,7 @@ static int close_mailbox(struct vm_state *vms, struct ast_vm_user *vmu)
 		} else if ((!strcasecmp(vms->curbox, "INBOX") || !strcasecmp(vms->curbox, "Urgent")) && vms->heard[x] && ast_test_flag(vmu, VM_MOVEHEARD) && !vms->deleted[x]) {
 			/* Move to old folder before deleting */
 			res = save_to_folder(vmu, vms, x, 1, NULL, 0);
-			if (res == ERROR_LOCK_PATH) {
+			if (res == ERROR_LOCK_PATH || res == ERROR_MAX_MSGS) {
 				/* If save failed do not delete the message */
 				ast_log(AST_LOG_WARNING, "Save failed.  Not moving message: %s.\n", res == ERROR_LOCK_PATH ? "unable to lock path" : "destination folder full");
 				vms->deleted[x] = 0;
@@ -9099,7 +9107,7 @@ static int vm_intro_gr(struct ast_channel *chan, struct vm_state *vms)
 		if (!res) 
 			res = ast_say_number(chan, vms->newmessages, AST_DIGIT_ANY, ast_channel_language(chan), NULL);
 		if (!res) {
-			if ((vms->newmessages == 1)) {
+			if (vms->newmessages == 1) {
 				res = ast_play_and_wait(chan, "vm-INBOX");
 				if (!res)
 					res = ast_play_and_wait(chan, "vm-message");
@@ -9113,7 +9121,7 @@ static int vm_intro_gr(struct ast_channel *chan, struct vm_state *vms)
 		res = ast_play_and_wait(chan, "vm-youhave");
 		if (!res)
 			res = ast_say_number(chan, vms->oldmessages, AST_DIGIT_ANY, ast_channel_language(chan), NULL);
-		if ((vms->oldmessages == 1)){
+		if (vms->oldmessages == 1){
 			res = ast_play_and_wait(chan, "vm-Old");
 			if (!res)
 				res = ast_play_and_wait(chan, "vm-message");
@@ -9344,7 +9352,7 @@ static int vm_intro_en(struct ast_channel *chan, struct vm_state *vms)
 			if ((vms->oldmessages || vms->newmessages) && !res) {
 				res = ast_play_and_wait(chan, "vm-and");
 			} else if (!res) {
-				if ((vms->urgentmessages == 1))
+				if (vms->urgentmessages == 1)
 					res = ast_play_and_wait(chan, "vm-message");
 				else
 					res = ast_play_and_wait(chan, "vm-messages");
@@ -9357,7 +9365,7 @@ static int vm_intro_en(struct ast_channel *chan, struct vm_state *vms)
 			if (vms->oldmessages && !res)
 				res = ast_play_and_wait(chan, "vm-and");
 			else if (!res) {
-				if ((vms->newmessages == 1))
+				if (vms->newmessages == 1)
 					res = ast_play_and_wait(chan, "vm-message");
 				else
 					res = ast_play_and_wait(chan, "vm-messages");
@@ -9509,7 +9517,7 @@ static int vm_intro_se(struct ast_channel *chan, struct vm_state *vms)
 	}
 
 	if (vms->newmessages) {
-		if ((vms->newmessages == 1)) {
+		if (vms->newmessages == 1) {
 			res = ast_play_and_wait(chan, "digits/ett");
 			res = res ? res : ast_play_and_wait(chan, "vm-nytt");
 			res = res ? res : ast_play_and_wait(chan, "vm-message");
@@ -9553,7 +9561,7 @@ static int vm_intro_no(struct ast_channel *chan, struct vm_state *vms)
 	}
 
 	if (vms->newmessages) {
-		if ((vms->newmessages == 1)) {
+		if (vms->newmessages == 1) {
 			res = ast_play_and_wait(chan, "digits/1");
 			res = res ? res : ast_play_and_wait(chan, "vm-ny");
 			res = res ? res : ast_play_and_wait(chan, "vm-message");
@@ -9588,7 +9596,7 @@ static int vm_intro_de(struct ast_channel *chan, struct vm_state *vms)
 	res = ast_play_and_wait(chan, "vm-youhave");
 	if (!res) {
 		if (vms->newmessages) {
-			if ((vms->newmessages == 1))
+			if (vms->newmessages == 1)
 				res = ast_play_and_wait(chan, "digits/1F");
 			else
 				res = say_and_wait(chan, vms->newmessages, ast_channel_language(chan));
@@ -9597,7 +9605,7 @@ static int vm_intro_de(struct ast_channel *chan, struct vm_state *vms)
 			if (vms->oldmessages && !res)
 				res = ast_play_and_wait(chan, "vm-and");
 			else if (!res) {
-				if ((vms->newmessages == 1))
+				if (vms->newmessages == 1)
 					res = ast_play_and_wait(chan, "vm-message");
 				else
 					res = ast_play_and_wait(chan, "vm-messages");
@@ -9644,7 +9652,7 @@ static int vm_intro_es(struct ast_channel *chan, struct vm_state *vms)
 	if (!res) {
 		if (vms->newmessages) {
 			if (!res) {
-				if ((vms->newmessages == 1)) {
+				if (vms->newmessages == 1) {
 					res = ast_play_and_wait(chan, "digits/1M");
 					if (!res)
 						res = ast_play_and_wait(chan, "vm-message");
@@ -9695,7 +9703,7 @@ static int vm_intro_pt_BR(struct ast_channel *chan, struct vm_state *vms) {
 	if (vms->newmessages) {
 		if (!res)
 			res = ast_say_number(chan, vms->newmessages, AST_DIGIT_ANY, ast_channel_language(chan), "f");
-		if ((vms->newmessages == 1)) {
+		if (vms->newmessages == 1) {
 			if (!res)
 				res = ast_play_and_wait(chan, "vm-message");
 			if (!res)
@@ -9741,7 +9749,7 @@ static int vm_intro_fr(struct ast_channel *chan, struct vm_state *vms)
 			if (vms->oldmessages && !res)
 				res = ast_play_and_wait(chan, "vm-and");
 			else if (!res) {
-				if ((vms->newmessages == 1))
+				if (vms->newmessages == 1)
 					res = ast_play_and_wait(chan, "vm-message");
 				else
 					res = ast_play_and_wait(chan, "vm-messages");
@@ -9788,7 +9796,7 @@ static int vm_intro_nl(struct ast_channel *chan, struct vm_state *vms)
 			if (vms->oldmessages && !res)
 				res = ast_play_and_wait(chan, "vm-and");
 			else if (!res) {
-				if ((vms->newmessages == 1))
+				if (vms->newmessages == 1)
 					res = ast_play_and_wait(chan, "vm-message");
 				else
 					res = ast_play_and_wait(chan, "vm-messages");
@@ -9831,7 +9839,7 @@ static int vm_intro_pt(struct ast_channel *chan, struct vm_state *vms)
 		if (vms->newmessages) {
 			res = ast_say_number(chan, vms->newmessages, AST_DIGIT_ANY, ast_channel_language(chan), "f");
 			if (!res) {
-				if ((vms->newmessages == 1)) {
+				if (vms->newmessages == 1) {
 					res = ast_play_and_wait(chan, "vm-message");
 					if (!res)
 						res = ast_play_and_wait(chan, "vm-INBOXs");
@@ -9897,7 +9905,7 @@ static int vm_intro_cs(struct ast_channel *chan, struct vm_state *vms)
 				res = say_and_wait(chan, vms->newmessages, ast_channel_language(chan));
 			}
 			if (!res) {
-				if ((vms->newmessages == 1))
+				if (vms->newmessages == 1)
 					res = ast_play_and_wait(chan, "vm-novou");
 				if ((vms->newmessages) > 1 && (vms->newmessages < 5))
 					res = ast_play_and_wait(chan, "vm-nove");
@@ -9907,7 +9915,7 @@ static int vm_intro_cs(struct ast_channel *chan, struct vm_state *vms)
 			if (vms->oldmessages && !res)
 				res = ast_play_and_wait(chan, "vm-and");
 			else if (!res) {
-				if ((vms->newmessages == 1))
+				if (vms->newmessages == 1)
 					res = ast_play_and_wait(chan, "vm-zpravu");
 				if ((vms->newmessages) > 1 && (vms->newmessages < 5))
 					res = ast_play_and_wait(chan, "vm-zpravy");
@@ -9918,7 +9926,7 @@ static int vm_intro_cs(struct ast_channel *chan, struct vm_state *vms)
 		if (!res && vms->oldmessages) {
 			res = say_and_wait(chan, vms->oldmessages, ast_channel_language(chan));
 			if (!res) {
-				if ((vms->oldmessages == 1))
+				if (vms->oldmessages == 1)
 					res = ast_play_and_wait(chan, "vm-starou");
 				if ((vms->oldmessages) > 1 && (vms->oldmessages < 5))
 					res = ast_play_and_wait(chan, "vm-stare");
@@ -9926,7 +9934,7 @@ static int vm_intro_cs(struct ast_channel *chan, struct vm_state *vms)
 					res = ast_play_and_wait(chan, "vm-starych");
 			}
 			if (!res) {
-				if ((vms->oldmessages == 1))
+				if (vms->oldmessages == 1)
 					res = ast_play_and_wait(chan, "vm-zpravu");
 				if ((vms->oldmessages) > 1 && (vms->oldmessages < 5))
 					res = ast_play_and_wait(chan, "vm-zpravy");
@@ -14448,11 +14456,13 @@ AST_TEST_DEFINE(test_voicemail_notify_endl)
 		rewind(file);
 		while (fgets(buf, sizeof(buf), file)) {
 			if (
+			(strlen(buf) > 1 &&
 #ifdef IMAP_STORAGE
 			buf[strlen(buf) - 2] != '\r'
 #else
 			buf[strlen(buf) - 2] == '\r'
 #endif
+			)
 			|| buf[strlen(buf) - 1] != '\n') {
 				res = AST_TEST_FAIL;
 			}
@@ -14701,10 +14711,14 @@ static int unload_module(void)
  *
  * Module loading including tests for configuration or dependencies.
  * This function can return AST_MODULE_LOAD_FAILURE, AST_MODULE_LOAD_DECLINE,
- * or AST_MODULE_LOAD_SUCCESS. If a dependency or environment variable fails
- * tests return AST_MODULE_LOAD_FAILURE. If the module can not load the 
- * configuration file or other non-critical problem return 
- * AST_MODULE_LOAD_DECLINE. On success return AST_MODULE_LOAD_SUCCESS.
+ * or AST_MODULE_LOAD_SUCCESS.
+ *
+ * If a dependency, allocation or environment variable fails tests, return AST_MODULE_LOAD_FAILURE.
+ *
+ * If the module can't load the configuration file, can't register as a provider or
+ * has another issue not fatal to Asterisk itself, return AST_MODULE_LOAD_DECLINE.
+ *
+ * On success return AST_MODULE_LOAD_SUCCESS.
  */
 static int load_module(void)
 {
@@ -14713,7 +14727,7 @@ static int load_module(void)
 	umask(my_umask);
 
 	if (!(inprocess_container = ao2_container_alloc(573, inprocess_hash_fn, inprocess_cmp_fn))) {
-		return AST_MODULE_LOAD_DECLINE;
+		return AST_MODULE_LOAD_FAILURE;
 	}
 
 	/* compute the location of the voicemail spool directory */
@@ -14723,8 +14737,10 @@ static int load_module(void)
 		ast_log(AST_LOG_WARNING, "failed to reference mwi subscription taskprocessor.  MWI will not work\n");
 	}
 
-	if ((res = load_config(0)))
-		return res;
+	if ((res = load_config(0))) {
+		unload_module();
+		return AST_MODULE_LOAD_DECLINE;
+	}
 
 	res = ast_register_application_xml(app, vm_exec);
 	res |= ast_register_application_xml(app2, vm_execmain);
@@ -14745,10 +14761,26 @@ static int load_module(void)
 	res |= AST_TEST_REGISTER(test_voicemail_vm_info);
 #endif
 
-	res |= ast_vm_register(&vm_table);
-	res |= ast_vm_greeter_register(&vm_greeter_table);
 	if (res) {
-		return res;
+		ast_log(LOG_ERROR, "Failure registering applications, functions or tests\n");
+		unload_module();
+		return AST_MODULE_LOAD_DECLINE;
+	}
+
+	/* ast_vm_register may return DECLINE if another module registered for vm */
+	res = ast_vm_register(&vm_table);
+	if (res) {
+		ast_log(LOG_ERROR, "Failure registering as a voicemail provider\n");
+		unload_module();
+		return AST_MODULE_LOAD_DECLINE;
+	}
+
+	/* ast_vm_greeter_register may return DECLINE if another module registered as a greeter */
+	res = ast_vm_greeter_register(&vm_greeter_table);
+	if (res) {
+		ast_log(LOG_ERROR, "Failure registering as a greeter provider\n");
+		unload_module();
+		return AST_MODULE_LOAD_DECLINE;
 	}
 
 	ast_cli_register_multiple(cli_voicemail, ARRAY_LEN(cli_voicemail));
@@ -14761,7 +14793,7 @@ static int load_module(void)
 	ast_realtime_require_field("voicemail", "uniqueid", RQ_UINTEGER3, 11, "password", RQ_CHAR, 10, SENTINEL);
 	ast_realtime_require_field("voicemail_data", "filename", RQ_CHAR, 30, "duration", RQ_UINTEGER3, 5, SENTINEL);
 
-	return res;
+	return AST_MODULE_LOAD_SUCCESS;
 }
 
 static int dialout(struct ast_channel *chan, struct ast_vm_user *vmu, char *num, char *outgoing_context) 

@@ -23,7 +23,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 428687 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/astdb.h"
 #include "asterisk/astobj2.h"
@@ -43,6 +43,9 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 428687 $")
 
 /*! Number of hash buckets for device state subscriptions */
 #define DEVICE_STATE_BUCKETS 37
+
+/*! The key used for tracking a subscription to all device states */
+#define DEVICE_STATE_ALL "__AST_DEVICE_STATE_ALL_TOPIC"
 
 /*! Container for subscribed device states */
 static struct ao2_container *device_state_subscriptions;
@@ -105,18 +108,24 @@ static int device_state_subscriptions_cmp(void *obj, void *arg, int flags)
 static void device_state_subscription_destroy(void *obj)
 {
 	struct device_state_subscription *sub = obj;
-	sub->sub = stasis_unsubscribe(sub->sub);
+	sub->sub = stasis_unsubscribe_and_join(sub->sub);
 	ast_string_field_free_memory(sub);
 }
 
 static struct device_state_subscription *device_state_subscription_create(
 	const struct stasis_app *app, const char *device_name)
 {
-	struct device_state_subscription *sub = ao2_alloc(
-		sizeof(*sub), device_state_subscription_destroy);
+	struct device_state_subscription *sub;
 	const char *app_name = stasis_app_name(app);
-	size_t size = strlen(device_name) + strlen(app_name) + 2;
+	size_t size;
 
+	if (ast_strlen_zero(device_name)) {
+		device_name = DEVICE_STATE_ALL;
+	}
+
+	size = strlen(device_name) + strlen(app_name) + 2;
+
+ 	sub = ao2_alloc(sizeof(*sub), device_state_subscription_destroy);
 	if (!sub) {
 		return NULL;
 	}
@@ -294,6 +303,12 @@ static void device_state_cb(void *data, struct stasis_subscription *sub,
 {
 	struct ast_device_state_message *device_state;
 
+	if (stasis_subscription_final_message(sub, msg)) {
+		/* Remove stasis subscription's reference to device_state_subscription */
+		ao2_ref(data, -1);
+		return;
+	}
+
 	if (ast_device_state_message_type() != stasis_message_type(msg)) {
 		return;
 	}
@@ -314,27 +329,54 @@ static void *find_device_state(const struct stasis_app *app, const char *name)
 
 static int is_subscribed_device_state(struct stasis_app *app, const char *name)
 {
-	RAII_VAR(struct device_state_subscription *, sub,
-		 find_device_state_subscription(app, name), ao2_cleanup);
-	return sub != NULL;
+	struct device_state_subscription *sub;
+
+	sub = find_device_state_subscription(app, DEVICE_STATE_ALL);
+	if (sub) {
+		ao2_ref(sub, -1);
+		return 1;
+	}
+
+	sub = find_device_state_subscription(app, name);
+	if (sub) {
+		ao2_ref(sub, -1);
+		return 1;
+	}
+
+	return 0;
 }
 
 static int subscribe_device_state(struct stasis_app *app, void *obj)
 {
 	struct device_state_subscription *sub = obj;
+	struct stasis_topic *topic;
 
-	ast_debug(3, "Subscribing to device %s", sub->device_name);
+	if (!sub) {
+		sub = device_state_subscription_create(app, NULL);
+		if (!sub) {
+			return -1;
+		}
+	}
+
+	if (strcmp(sub->device_name, DEVICE_STATE_ALL)) {
+		topic = ast_device_state_topic(sub->device_name);
+	} else {
+		topic = ast_device_state_topic_all();
+	}
 
 	if (is_subscribed_device_state(app, sub->device_name)) {
 		ast_debug(3, "App %s is already subscribed to %s\n", stasis_app_name(app), sub->device_name);
 		return 0;
 	}
 
-	if (!(sub->sub = stasis_subscribe_pool(
-			ast_device_state_topic(sub->device_name),
-			device_state_cb, sub))) {
+	ast_debug(3, "Subscribing to device %s\n", sub->device_name);
+
+	sub->sub = stasis_subscribe_pool(topic, device_state_cb, ao2_bump(sub));
+	if (!sub->sub) {
 		ast_log(LOG_ERROR, "Unable to subscribe to device %s\n",
 			sub->device_name);
+		/* Reference we added when attempting to stasis_subscribe_pool */
+		ao2_ref(sub, -1);
 		return -1;
 	}
 

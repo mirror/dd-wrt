@@ -50,7 +50,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 430687 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
 #include <spandsp.h>
@@ -502,7 +502,7 @@ static int spandsp_modems(struct ast_fax_session_details *details)
 	if (AST_FAX_MODEM_V17 & details->modems) {
 		modems |= T30_SUPPORT_V17;
 	}
-	if (AST_FAX_MODEM_V27 & details->modems) {
+	if (AST_FAX_MODEM_V27TER & details->modems) {
 		modems |= T30_SUPPORT_V27TER;
 	}
 	if (AST_FAX_MODEM_V29 & details->modems) {
