@@ -37,7 +37,7 @@
 #include <pjmedia.h>
 #include <pjlib.h>
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 433057 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/module.h"
 #include "asterisk/udptl.h"
@@ -135,10 +135,13 @@ static void t38_change_state(struct ast_sip_session *session, struct ast_sip_ses
 	}
 
 	session->t38state = new_state;
-	ast_debug(2, "T.38 state changed to '%u' from '%u' on channel '%s'\n", new_state, old_state, ast_channel_name(session->channel));
+	ast_debug(2, "T.38 state changed to '%u' from '%u' on channel '%s'\n",
+		new_state, old_state,
+		session->channel ? ast_channel_name(session->channel) : "<gone>");
 
 	if (pj_timer_heap_cancel(pjsip_endpt_get_timer_heap(ast_sip_get_pjsip_endpoint()), &state->timer)) {
-		ast_debug(2, "Automatic T.38 rejection on channel '%s' terminated\n", ast_channel_name(session->channel));
+		ast_debug(2, "Automatic T.38 rejection on channel '%s' terminated\n",
+			session->channel ? ast_channel_name(session->channel) : "<gone>");
 		ao2_ref(session, -1);
 	}
 
@@ -158,6 +161,9 @@ static void t38_change_state(struct ast_sip_session *session, struct ast_sip_ses
 		parameters.max_ifp = ast_udptl_get_far_max_ifp(session_media->udptl);
 		parameters.request_response = AST_T38_REQUEST_NEGOTIATE;
 		ast_udptl_set_tag(session_media->udptl, "%s", ast_channel_name(session->channel));
+
+		/* Inform the bridge the channel is in that it needs to be reconfigured */
+		ast_channel_set_unbridged(session->channel, 1);
 		break;
 	case T38_ENABLED:
 		parameters = state->their_parms;
@@ -174,7 +180,8 @@ static void t38_change_state(struct ast_sip_session *session, struct ast_sip_ses
 		}
 		break;
 	case T38_LOCAL_REINVITE:
-		/* wait until we get a peer response before responding to local reinvite */
+		/* Inform the bridge the channel is in that it needs to be reconfigured */
+		ast_channel_set_unbridged(session->channel, 1);
 		break;
 	case T38_MAX_ENUM:
 		/* Well, that shouldn't happen */
@@ -198,7 +205,8 @@ static int t38_automatic_reject(void *obj)
 		return 0;
 	}
 
-	ast_debug(2, "Automatically rejecting T.38 request on channel '%s'\n", ast_channel_name(session->channel));
+	ast_debug(2, "Automatically rejecting T.38 request on channel '%s'\n",
+		session->channel ? ast_channel_name(session->channel) : "<gone>");
 
 	t38_change_state(session, session_media, datastore->data, T38_REJECTED);
 	ast_sip_session_resume_reinvite(session);
@@ -227,9 +235,9 @@ static struct t38_state *t38_state_get_or_alloc(struct ast_sip_session *session)
 		return datastore->data;
 	}
 
-	if (!(datastore = ast_sip_session_alloc_datastore(&t38_datastore, "t38")) ||
-		!(datastore->data = ast_calloc(1, sizeof(struct t38_state))) ||
-		ast_sip_session_add_datastore(session, datastore)) {
+	if (!(datastore = ast_sip_session_alloc_datastore(&t38_datastore, "t38"))
+		|| !(datastore->data = ast_calloc(1, sizeof(struct t38_state)))
+		|| ast_sip_session_add_datastore(session, datastore)) {
 		return NULL;
 	}
 
@@ -259,6 +267,8 @@ static int t38_initialize_session(struct ast_sip_session *session, struct ast_si
 	ast_channel_set_fd(session->channel, 5, ast_udptl_fd(session_media->udptl));
 	ast_udptl_set_error_correction_scheme(session_media->udptl, session->endpoint->media.t38.error_correction);
 	ast_udptl_setnat(session_media->udptl, session->endpoint->media.t38.nat);
+	ast_udptl_set_far_max_datagram(session_media->udptl, session->endpoint->media.t38.maxdatagram);
+	ast_debug(3, "UDPTL initialized on session for %s\n", ast_channel_name(session->channel));
 
 	return 0;
 }
@@ -323,9 +333,13 @@ static int t38_interpret_parameters(void *obj)
 	case AST_T38_REQUEST_NEGOTIATE:         /* Request T38 */
 		/* Negotiation can not take place without a valid max_ifp value. */
 		if (!parameters->max_ifp) {
-			t38_change_state(data->session, session_media, state, T38_REJECTED);
 			if (data->session->t38state == T38_PEER_REINVITE) {
+				t38_change_state(data->session, session_media, state, T38_REJECTED);
 				ast_sip_session_resume_reinvite(data->session);
+			} else if (data->session->t38state == T38_ENABLED) {
+				t38_change_state(data->session, session_media, state, T38_DISABLED);
+				ast_sip_session_refresh(data->session, NULL, NULL, NULL,
+					AST_SIP_SESSION_REFRESH_METHOD_INVITE, 1);
 			}
 			break;
 		} else if (data->session->t38state == T38_PEER_REINVITE) {
@@ -453,37 +467,75 @@ static void t38_masq(void *data, int framehook_id,
 	ast_framehook_detach(new_chan, framehook_id);
 }
 
+static int t38_consume(void *data, enum ast_frame_type type)
+{
+	return 0;
+}
+
+static const struct ast_datastore_info t38_framehook_datastore = {
+	.type = "T38 framehook",
+};
+
 /*! \brief Function called to attach T.38 framehook to channel when appropriate */
 static void t38_attach_framehook(struct ast_sip_session *session)
 {
+	int framehook_id;
+	struct ast_datastore *datastore = NULL;
 	static struct ast_framehook_interface hook = {
 		.version = AST_FRAMEHOOK_INTERFACE_VERSION,
 		.event_cb = t38_framehook,
+		.consume_cb = t38_consume,
 		.chan_fixup_cb = t38_masq,
 		.chan_breakdown_cb = t38_masq,
 	};
 
-	/* Only attach the framehook on the first outgoing INVITE or the first incoming INVITE */
-	if ((session->inv_session->state != PJSIP_INV_STATE_NULL &&
-		session->inv_session->state != PJSIP_INV_STATE_INCOMING) ||
-		!session->endpoint->media.t38.enabled) {
+	/* If the channel's already gone, bail */
+	if (!session->channel) {
 		return;
 	}
 
-	if (ast_framehook_attach(session->channel, &hook) < 0) {
+	/* Only attach the framehook if t38 is enabled for the endpoint */
+	if (!session->endpoint->media.t38.enabled) {
+		return;
+	}
+
+	/* Skip attaching the framehook if the T.38 datastore already exists for the channel */
+	ast_channel_lock(session->channel);
+	if ((datastore = ast_channel_datastore_find(session->channel, &t38_framehook_datastore, NULL))) {
+		ast_channel_unlock(session->channel);
+		return;
+	}
+	ast_channel_unlock(session->channel);
+
+	framehook_id = ast_framehook_attach(session->channel, &hook);
+	if (framehook_id < 0) {
 		ast_log(LOG_WARNING, "Could not attach T.38 Frame hook to channel, T.38 will be unavailable on '%s'\n",
 			ast_channel_name(session->channel));
+		return;
 	}
+
+	ast_channel_lock(session->channel);
+	datastore = ast_datastore_alloc(&t38_framehook_datastore, NULL);
+	if (!datastore) {
+		ast_log(LOG_ERROR, "Could not attach T.38 Frame hook to channel, T.38 will be unavailable on '%s'\n",
+			ast_channel_name(session->channel));
+		ast_framehook_detach(session->channel, framehook_id);
+		ast_channel_unlock(session->channel);
+		return;
+	}
+
+	ast_channel_datastore_add(session->channel, datastore);
+	ast_channel_unlock(session->channel);
 }
 
-/*! \brief Function called when an INVITE goes out */
+/*! \brief Function called when an INVITE arrives */
 static int t38_incoming_invite_request(struct ast_sip_session *session, struct pjsip_rx_data *rdata)
 {
 	t38_attach_framehook(session);
 	return 0;
 }
 
-/*! \brief Function called when an INVITE comes in */
+/*! \brief Function called when an INVITE is sent */
 static void t38_outgoing_invite_request(struct ast_sip_session *session, struct pjsip_tx_data *tdata)
 {
 	t38_attach_framehook(session);
@@ -553,9 +605,7 @@ static void t38_interpret_sdp(struct t38_state *state, struct ast_sip_session *s
 		} else if (!pj_stricmp2(&attr->name, "t38faxversion")) {
 			state->their_parms.version = pj_strtoul(&attr->value);
 		} else if (!pj_stricmp2(&attr->name, "t38faxmaxdatagram") || !pj_stricmp2(&attr->name, "t38maxdatagram")) {
-			if (session->endpoint->media.t38.maxdatagram) {
-				ast_udptl_set_far_max_datagram(session_media->udptl, session->endpoint->media.t38.maxdatagram);
-			} else {
+			if (!session->endpoint->media.t38.maxdatagram) {
 				ast_udptl_set_far_max_datagram(session_media->udptl, pj_strtoul(&attr->value));
 			}
 		} else if (!pj_stricmp2(&attr->name, "t38faxfillbitremoval")) {
@@ -591,10 +641,12 @@ static enum ast_sip_session_sdp_stream_defer defer_incoming_sdp_stream(
 	struct t38_state *state;
 
 	if (!session->endpoint->media.t38.enabled) {
+		ast_debug(3, "Not deferring incoming SDP stream: T.38 not enabled on %s\n", ast_channel_name(session->channel));
 		return AST_SIP_SESSION_SDP_DEFER_NOT_HANDLED;
 	}
 
 	if (t38_initialize_session(session, session_media)) {
+		ast_debug(3, "Not deferring incoming SDP stream: Failed to initialize UDPTL on %s\n", ast_channel_name(session->channel));
 		return AST_SIP_SESSION_SDP_DEFER_ERROR;
 	}
 
@@ -607,6 +659,7 @@ static enum ast_sip_session_sdp_stream_defer defer_incoming_sdp_stream(
 	/* If they are initiating the re-invite we need to defer responding until later */
 	if (session->t38state == T38_DISABLED) {
 		t38_change_state(session, session_media, state, T38_PEER_REINVITE);
+		ast_debug(3, "Deferring incoming SDP stream on %s for peer re-invite\n", ast_channel_name(session->channel));
 		return AST_SIP_SESSION_SDP_DEFER_NEEDED;
 	}
 
@@ -622,6 +675,7 @@ static int negotiate_incoming_sdp_stream(struct ast_sip_session *session, struct
 	RAII_VAR(struct ast_sockaddr *, addrs, NULL, ast_free);
 
 	if (!session->endpoint->media.t38.enabled) {
+		ast_debug(3, "Declining; T.38 not enabled on session\n");
 		return -1;
 	}
 
@@ -630,6 +684,7 @@ static int negotiate_incoming_sdp_stream(struct ast_sip_session *session, struct
 	}
 
 	if ((session->t38state == T38_REJECTED) || (session->t38state == T38_DISABLED)) {
+		ast_debug(3, "Declining; T.38 state is rejected or declined\n");
 		t38_change_state(session, session_media, state, T38_DISABLED);
 		return -1;
 	}
@@ -639,6 +694,7 @@ static int negotiate_incoming_sdp_stream(struct ast_sip_session *session, struct
 	/* Ensure that the address provided is valid */
 	if (ast_sockaddr_resolve(&addrs, host, PARSE_PORT_FORBID, AST_AF_INET) <= 0) {
 		/* The provided host was actually invalid so we error out this negotiation */
+		ast_debug(3, "Declining; provided host is invalid\n");
 		return -1;
 	}
 
@@ -646,6 +702,7 @@ static int negotiate_incoming_sdp_stream(struct ast_sip_session *session, struct
 	if ((ast_sockaddr_is_ipv6(addrs) && !session->endpoint->media.t38.ipv6) ||
 		(ast_sockaddr_is_ipv4(addrs) && session->endpoint->media.t38.ipv6)) {
 		/* The address does not match configured */
+		ast_debug(3, "Declining, provided host does not match configured address family\n");
 		return -1;
 	}
 
@@ -668,19 +725,22 @@ static int create_outgoing_sdp_stream(struct ast_sip_session *session, struct as
 	static const pj_str_t STR_T38UDPREDUNDANCY = { "t38UDPRedundancy", 16 };
 	struct t38_state *state;
 	pjmedia_sdp_media *media;
-	char hostip[PJ_INET6_ADDRSTRLEN+2];
+	const char *hostip = NULL;
 	struct ast_sockaddr addr;
 	char tmp[512];
 	pj_str_t stmp;
 
 	if (!session->endpoint->media.t38.enabled) {
+		ast_debug(3, "Not creating outgoing SDP stream: T.38 not enabled\n");
 		return 1;
 	} else if ((session->t38state != T38_LOCAL_REINVITE) && (session->t38state != T38_PEER_REINVITE) &&
 		(session->t38state != T38_ENABLED)) {
+		ast_debug(3, "Not creating outgoing SDP stream: T.38 not enabled\n");
 		return 1;
 	} else if (!(state = t38_state_get_or_alloc(session))) {
 		return -1;
 	} else if (t38_initialize_session(session, session_media)) {
+		ast_debug(3, "Not creating outgoing SDP stream: Failed to initialize T.38 session\n");
 		return -1;
 	}
 
@@ -693,14 +753,14 @@ static int create_outgoing_sdp_stream(struct ast_sip_session *session, struct as
 	media->desc.transport = STR_UDPTL;
 
 	if (ast_strlen_zero(session->endpoint->media.address)) {
-		pj_sockaddr localaddr;
-
-		if (pj_gethostip(session->endpoint->media.t38.ipv6 ? pj_AF_INET6() : pj_AF_INET(), &localaddr)) {
-			return -1;
-		}
-		pj_sockaddr_print(&localaddr, hostip, sizeof(hostip), 2);
+		hostip = ast_sip_get_host_ip_string(session->endpoint->media.t38.ipv6 ? pj_AF_INET6() : pj_AF_INET());
 	} else {
-		ast_copy_string(hostip, session->endpoint->media.address, sizeof(hostip));
+		hostip = session->endpoint->media.address;
+	}
+
+	if (ast_strlen_zero(hostip)) {
+		ast_debug(3, "Not creating outgoing SDP stream: no known host IP\n");
+		return -1;
 	}
 
 	media->conn->net_type = STR_IN;
@@ -767,6 +827,7 @@ static int apply_negotiated_sdp_stream(struct ast_sip_session *session, struct a
 	struct t38_state *state;
 
 	if (!session_media->udptl) {
+		ast_debug(3, "Not applying negotiated SDP stream: no UDTPL session\n");
 		return 0;
 	}
 
@@ -779,6 +840,7 @@ static int apply_negotiated_sdp_stream(struct ast_sip_session *session, struct a
 	/* Ensure that the address provided is valid */
 	if (ast_sockaddr_resolve(&addrs, host, PARSE_PORT_FORBID, AST_AF_UNSPEC) <= 0) {
 		/* The provided host was actually invalid so we error out this negotiation */
+		ast_debug(3, "Not applying negotiated SDP stream: failed to resolve remote stream host\n");
 		return -1;
 	}
 
@@ -793,11 +855,12 @@ static int apply_negotiated_sdp_stream(struct ast_sip_session *session, struct a
 /*! \brief Function which updates the media stream with external media address, if applicable */
 static void change_outgoing_sdp_stream_media_address(pjsip_tx_data *tdata, struct pjmedia_sdp_media *stream, struct ast_sip_transport *transport)
 {
+	RAII_VAR(struct ast_sip_transport_state *, transport_state, ast_sip_get_transport_state(ast_sorcery_object_get_id(transport)), ao2_cleanup);
 	char host[NI_MAXHOST];
 	struct ast_sockaddr addr = { { 0, } };
 
 	/* If the stream has been rejected there will be no connection line */
-	if (!stream->conn) {
+	if (!stream->conn || !transport_state) {
 		return;
 	}
 
@@ -805,7 +868,7 @@ static void change_outgoing_sdp_stream_media_address(pjsip_tx_data *tdata, struc
 	ast_sockaddr_parse(&addr, host, PARSE_PORT_FORBID);
 
 	/* Is the address within the SDP inside the same network? */
-	if (ast_apply_ha(transport->localnet, &addr) == AST_SENSE_ALLOW) {
+	if (ast_apply_ha(transport_state->localnet, &addr) == AST_SENSE_ALLOW) {
 		return;
 	}
 

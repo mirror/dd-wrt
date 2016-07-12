@@ -133,15 +133,6 @@
  */
 //#define ALWAYS_PICK_CHANNEL	1
 
-/*!
- * Define to force a RESTART on a channel that returns a cause
- * code of PRI_CAUSE_REQUESTED_CHAN_UNAVAIL(44).  If the cause
- * is because of a stuck channel on the peer and the channel is
- * always the next channel we pick for an outgoing call then
- * this can help.
- */
-#define FORCE_RESTART_UNAVAIL_CHANS		1
-
 #if defined(HAVE_PRI_CCSS)
 struct sig_pri_cc_agent_prv {
 	/*! Asterisk span D channel control structure. */
@@ -1376,14 +1367,38 @@ static void sig_pri_queue_unhold(struct sig_pri_span *pri, int chanpos)
 static void pri_queue_control(struct sig_pri_span *pri, int chanpos, int subclass)
 {
 	struct ast_frame f = {AST_FRAME_CONTROL, };
-	struct sig_pri_chan *p = pri->pvts[chanpos];
 
 	if (sig_pri_callbacks.queue_control) {
-		sig_pri_callbacks.queue_control(p->chan_pvt, subclass);
+		sig_pri_callbacks.queue_control(pri->pvts[chanpos]->chan_pvt, subclass);
 	}
 
 	f.subclass.integer = subclass;
 	pri_queue_frame(pri, chanpos, &f);
+}
+
+/*!
+ * \internal
+ * \brief Queue a request to hangup control frame onto the owner channel.
+ *
+ * \param pri PRI span control structure.
+ * \param chanpos Channel position in the span.
+ *
+ * \note Assumes the pri->lock is already obtained.
+ * \note Assumes the sig_pri_lock_private(pri->pvts[chanpos]) is already obtained.
+ *
+ * \return Nothing
+ */
+static void sig_pri_queue_hangup(struct sig_pri_span *pri, int chanpos)
+{
+	if (sig_pri_callbacks.queue_control) {
+		sig_pri_callbacks.queue_control(pri->pvts[chanpos]->chan_pvt, AST_CONTROL_HANGUP);
+	}
+
+	sig_pri_lock_owner(pri, chanpos);
+	if (pri->pvts[chanpos]->owner) {
+		ast_queue_hangup(pri->pvts[chanpos]->owner);
+		ast_channel_unlock(pri->pvts[chanpos]->owner);
+	}
 }
 
 /*!
@@ -4037,14 +4052,14 @@ static void sig_pri_send_aoce_termination_request(struct sig_pri_span *pri, int 
 	}
 
 	if (!(decoded = ast_aoc_create(AST_AOC_REQUEST, 0, AST_AOC_REQUEST_E))) {
-		ast_softhangup_nolock(pvt->owner, AST_SOFTHANGUP_DEV);
+		ast_queue_hangup(pvt->owner);
 		goto cleanup_termination_request;
 	}
 
 	ast_aoc_set_termination_request(decoded);
 
 	if (!(encoded = ast_aoc_encode(decoded, &encoded_size, pvt->owner))) {
-		ast_softhangup_nolock(pvt->owner, AST_SOFTHANGUP_DEV);
+		ast_queue_hangup(pvt->owner);
 		goto cleanup_termination_request;
 	}
 
@@ -4053,7 +4068,7 @@ static void sig_pri_send_aoce_termination_request(struct sig_pri_span *pri, int 
 	whentohangup.tv_sec = ms / 1000;
 
 	if (ast_queue_control_data(pvt->owner, AST_CONTROL_AOC, encoded, encoded_size)) {
-		ast_softhangup_nolock(pvt->owner, AST_SOFTHANGUP_DEV);
+		ast_queue_hangup(pvt->owner);
 		goto cleanup_termination_request;
 	}
 
@@ -4296,43 +4311,6 @@ static void sig_pri_handle_cis_subcmds(struct sig_pri_span *pri, int event_id,
 		}
 	}
 }
-
-#if defined(HAVE_PRI_AOC_EVENTS)
-/*!
- * \internal
- * \brief detect if AOC-S subcmd is present.
- * \since 1.8
- *
- * \param subcmds Subcommands to process if any. (Could be NULL).
- *
- * \note Knowing whether or not an AOC-E subcmd is present on certain
- * PRI hangup events is necessary to determine what method to use to hangup
- * the ast_channel.  If an AOC-E subcmd just came in, then a new AOC-E was queued
- * on the ast_channel.  If a soft hangup is used, the AOC-E msg will never make it
- * across the bridge, but if a AST_CONTROL_HANGUP frame is queued behind it
- * we can ensure the AOC-E frame makes it to it's destination before the hangup
- * frame is read.
- *
- *
- * \retval 0 AOC-E is not present in subcmd list
- * \retval 1 AOC-E is present in subcmd list
- */
-static int detect_aoc_e_subcmd(const struct pri_subcommands *subcmds)
-{
-	int i;
-
-	if (!subcmds) {
-		return 0;
-	}
-	for (i = 0; i < subcmds->counter_subcmd; ++i) {
-		const struct pri_subcommand *subcmd = &subcmds->subcmd[i];
-		if (subcmd->cmd == PRI_SUBCMD_AOC_E) {
-			return 1;
-		}
-	}
-	return 0;
-}
-#endif	/* defined(HAVE_PRI_AOC_EVENTS) */
 
 /*!
  * \internal
@@ -4704,7 +4682,7 @@ static void sig_pri_handle_subcmds(struct sig_pri_span *pri, int chanpos, int ev
 					f.frametype = AST_FRAME_TEXT;
 					f.subclass.integer = 0;
 					f.offset = 0;
-					f.data.ptr = &subcmd->u.display.text;
+					f.data.ptr = (void *)&subcmd->u.display.text;
 					f.datalen = subcmd->u.display.length + 1;
 					ast_queue_frame(owner, &f);
 					ast_channel_unlock(owner);
@@ -6579,9 +6557,8 @@ static void *pri_dchannel(void *vpri)
 								pri->pvts[chanpos]->call = NULL;
 							}
 						}
-						/* Force soft hangup if appropriate */
-						if (pri->pvts[chanpos]->owner)
-							ast_channel_softhangup_internal_flag_add(pri->pvts[chanpos]->owner, AST_SOFTHANGUP_DEV);
+						/* Force hangup if appropriate */
+						sig_pri_queue_hangup(pri, chanpos);
 						sig_pri_unlock_private(pri->pvts[chanpos]);
 					}
 				} else {
@@ -6593,8 +6570,8 @@ static void *pri_dchannel(void *vpri)
 								pri_destroycall(pri->pri, pri->pvts[x]->call);
 								pri->pvts[x]->call = NULL;
 							}
- 							if (pri->pvts[x]->owner)
-								ast_channel_softhangup_internal_flag_add(pri->pvts[x]->owner, AST_SOFTHANGUP_DEV);
+							/* Force hangup if appropriate */
+							sig_pri_queue_hangup(pri, x);
 							sig_pri_unlock_private(pri->pvts[x]);
 						}
 				}
@@ -7125,10 +7102,11 @@ static void *pri_dchannel(void *vpri)
 						break;
 					}
 					if (pri->pvts[chanpos]->owner) {
-						int do_hangup = 0;
-
 						snprintf(cause_str, sizeof(cause_str), "PRI PRI_EVENT_HANGUP (%d)", e->hangup.cause);
 						pri_queue_pvt_cause_data(pri, chanpos, cause_str, e->hangup.cause);
+					}
+					if (pri->pvts[chanpos]->owner) {
+						int do_hangup = 0;
 
 						/* Queue a BUSY instead of a hangup if our cause is appropriate */
 						ast_channel_hangupcause_set(pri->pvts[chanpos]->owner, e->hangup.cause);
@@ -7166,17 +7144,7 @@ static void *pri_dchannel(void *vpri)
 						}
 
 						if (do_hangup) {
-#if defined(HAVE_PRI_AOC_EVENTS)
-							if (detect_aoc_e_subcmd(e->hangup.subcmds)) {
-								/* If a AOC-E msg was sent during the release, we must use a
-								 * AST_CONTROL_HANGUP frame to guarantee that frame gets read before hangup */
-								pri_queue_control(pri, chanpos, AST_CONTROL_HANGUP);
-							} else {
-								ast_channel_softhangup_internal_flag_add(pri->pvts[chanpos]->owner, AST_SOFTHANGUP_DEV);
-							}
-#else
-							ast_channel_softhangup_internal_flag_add(pri->pvts[chanpos]->owner, AST_SOFTHANGUP_DEV);
-#endif	/* defined(HAVE_PRI_AOC_EVENTS) */
+							sig_pri_queue_hangup(pri, chanpos);
 						}
 					} else {
 						/*
@@ -7194,9 +7162,9 @@ static void *pri_dchannel(void *vpri)
 					pri_hangup(pri->pri, pri->pvts[chanpos]->call, e->hangup.cause);
 					pri->pvts[chanpos]->call = NULL;
 				}
-#if defined(FORCE_RESTART_UNAVAIL_CHANS)
 				if (e->hangup.cause == PRI_CAUSE_REQUESTED_CHAN_UNAVAIL
 					&& pri->sig != SIG_BRI_PTMP && !pri->resetting
+					&& pri->force_restart_unavailable_chans
 					&& pri->pvts[chanpos]->resetting == SIG_PRI_RESET_IDLE) {
 					ast_verb(3,
 						"Span %d: Forcing restart of channel %d/%d since channel reported in use\n",
@@ -7205,7 +7173,6 @@ static void *pri_dchannel(void *vpri)
 					pri->pvts[chanpos]->resetting = SIG_PRI_RESET_ACTIVE;
 					pri_reset(pri->pri, PVT_TO_CHANNEL(pri->pvts[chanpos]));
 				}
-#endif	/* defined(FORCE_RESTART_UNAVAIL_CHANS) */
 				if (e->hangup.aoc_units > -1)
 					ast_verb(3, "Channel %d/%d, span %d received AOC-E charging %d unit%s\n",
 						pri->pvts[chanpos]->logicalspan, pri->pvts[chanpos]->prioffset, pri->span, (int)e->hangup.aoc_units, (e->hangup.aoc_units == 1) ? "" : "s");
@@ -7280,10 +7247,11 @@ static void *pri_dchannel(void *vpri)
 					break;
 				}
 				if (pri->pvts[chanpos]->owner) {
-					int do_hangup = 0;
-
 					snprintf(cause_str, sizeof(cause_str), "PRI PRI_EVENT_HANGUP_REQ (%d)", e->hangup.cause);
 					pri_queue_pvt_cause_data(pri, chanpos, cause_str, e->hangup.cause);
+				}
+				if (pri->pvts[chanpos]->owner) {
+					int do_hangup = 0;
 
 					ast_channel_hangupcause_set(pri->pvts[chanpos]->owner, e->hangup.cause);
 					switch (ast_channel_state(pri->pvts[chanpos]->owner)) {
@@ -7326,16 +7294,11 @@ static void *pri_dchannel(void *vpri)
 							&& ast_channel_is_bridged(pri->pvts[chanpos]->owner)) {
 							sig_pri_send_aoce_termination_request(pri, chanpos,
 								pri_get_timer(pri->pri, PRI_TIMER_T305) / 2);
-						} else if (detect_aoc_e_subcmd(e->hangup.subcmds)) {
-							/* If a AOC-E msg was sent during the Disconnect, we must use a AST_CONTROL_HANGUP frame
-							 * to guarantee that frame gets read before hangup */
-							pri_queue_control(pri, chanpos, AST_CONTROL_HANGUP);
-						} else {
-							ast_channel_softhangup_internal_flag_add(pri->pvts[chanpos]->owner, AST_SOFTHANGUP_DEV);
-						}
-#else
-						ast_channel_softhangup_internal_flag_add(pri->pvts[chanpos]->owner, AST_SOFTHANGUP_DEV);
+						} else
 #endif	/* defined(HAVE_PRI_AOC_EVENTS) */
+						{
+							sig_pri_queue_hangup(pri, chanpos);
+						}
 					}
 					ast_verb(3, "Span %d: Channel %d/%d got hangup request, cause %d\n",
 						pri->span, pri->pvts[chanpos]->logicalspan,
@@ -7348,9 +7311,9 @@ static void *pri_dchannel(void *vpri)
 					pri_hangup(pri->pri, pri->pvts[chanpos]->call, e->hangup.cause);
 					pri->pvts[chanpos]->call = NULL;
 				}
-#if defined(FORCE_RESTART_UNAVAIL_CHANS)
 				if (e->hangup.cause == PRI_CAUSE_REQUESTED_CHAN_UNAVAIL
 					&& pri->sig != SIG_BRI_PTMP && !pri->resetting
+					&& pri->force_restart_unavailable_chans
 					&& pri->pvts[chanpos]->resetting == SIG_PRI_RESET_IDLE) {
 					ast_verb(3,
 						"Span %d: Forcing restart of channel %d/%d since channel reported in use\n",
@@ -7359,7 +7322,6 @@ static void *pri_dchannel(void *vpri)
 					pri->pvts[chanpos]->resetting = SIG_PRI_RESET_ACTIVE;
 					pri_reset(pri->pri, PVT_TO_CHANNEL(pri->pvts[chanpos]));
 				}
-#endif	/* defined(FORCE_RESTART_UNAVAIL_CHANS) */
 
 #ifdef SUPPORT_USERUSER
 				if (!ast_strlen_zero(e->hangup.useruserinfo)) {
@@ -8632,16 +8594,18 @@ int sig_pri_indicate(struct sig_pri_chan *p, struct ast_channel *chan, int condi
 					if (p->pri->aoc_passthrough_flag & SIG_PRI_AOC_GRANT_E) {
 						sig_pri_aoc_e_from_ast(p, decoded);
 					}
-					/* if hangup was delayed for this AOC-E msg, waiting_for_aoc
+					/*
+					 * If hangup was delayed for this AOC-E msg, waiting_for_aoc
 					 * will be set.  A hangup is already occuring via a timeout during
 					 * this delay.  Instead of waiting for that timeout to occur, go ahead
-					 * and initiate the softhangup since the delay is no longer necessary */
+					 * and initiate the hangup since the delay is no longer necessary.
+					 */
 					if (p->waiting_for_aoce) {
 						p->waiting_for_aoce = 0;
 						ast_debug(1,
 							"Received final AOC-E msg, continue with hangup on %s\n",
 							ast_channel_name(chan));
-						ast_softhangup_nolock(chan, AST_SOFTHANGUP_DEV);
+						ast_queue_hangup(chan);
 					}
 					break;
 				case AST_AOC_REQUEST:
@@ -9027,7 +8991,7 @@ void sig_pri_stop_pri(struct sig_pri_span *pri)
 #if defined(HAVE_PRI_MWI)
 	for (idx = 0; idx < ARRAY_LEN(pri->mbox); ++idx) {
 		if (pri->mbox[idx].sub) {
-			pri->mbox[idx].sub = stasis_unsubscribe(pri->mbox[idx].sub);
+			pri->mbox[idx].sub = stasis_unsubscribe_and_join(pri->mbox[idx].sub);
 		}
 	}
 #endif	/* defined(HAVE_PRI_MWI) */

@@ -29,7 +29,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 432971 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/logger.h"
 #include "asterisk/format.h"
@@ -93,14 +93,27 @@ static void format_cap_destroy(void *obj)
 	AST_VECTOR_FREE(&cap->preference_order);
 }
 
-static inline void format_cap_init(struct ast_format_cap *cap, enum ast_format_cap_flags flags)
+/*
+ * \brief Initialize values on an ast_format_cap
+ *
+ * \param cap ast_format_cap to initialize
+ * \param flags Unused.
+ * \retval 0 Success
+ * \retval -1 Failure
+ */
+static inline int format_cap_init(struct ast_format_cap *cap, enum ast_format_cap_flags flags)
 {
-	AST_VECTOR_INIT(&cap->formats, 0);
+	if (AST_VECTOR_INIT(&cap->formats, 0)) {
+		return -1;
+	}
 
 	/* TODO: Look at common usage of this and determine a good starting point */
-	AST_VECTOR_INIT(&cap->preference_order, 5);
+	if (AST_VECTOR_INIT(&cap->preference_order, 5)) {
+		return -1;
+	}
 
 	cap->framing = UINT_MAX;
+	return 0;
 }
 
 struct ast_format_cap *__ast_format_cap_alloc(enum ast_format_cap_flags flags)
@@ -112,7 +125,10 @@ struct ast_format_cap *__ast_format_cap_alloc(enum ast_format_cap_flags flags)
 		return NULL;
 	}
 
-	format_cap_init(cap, flags);
+	if (format_cap_init(cap, flags)) {
+		ao2_ref(cap, -1);
+		return NULL;
+	}
 
 	return cap;
 }
@@ -126,7 +142,10 @@ struct ast_format_cap *__ast_format_cap_alloc_debug(enum ast_format_cap_flags fl
 		return NULL;
 	}
 
-	format_cap_init(cap, flags);
+	if (format_cap_init(cap, flags)) {
+		ao2_ref(cap, -1);
+		return NULL;
+	}
 
 	return cap;
 }
@@ -151,7 +170,7 @@ static inline int format_cap_framed_init(struct format_cap_framed *framed, struc
 	framed->framing = framing;
 
 	if (ast_format_get_codec_id(format) >= AST_VECTOR_SIZE(&cap->formats)) {
-		if (AST_VECTOR_INSERT(&cap->formats, ast_format_get_codec_id(format), format_cap_framed_list_empty)) {
+		if (AST_VECTOR_REPLACE(&cap->formats, ast_format_get_codec_id(format), format_cap_framed_list_empty)) {
 			ao2_ref(framed, -1);
 			return -1;
 		}
@@ -233,6 +252,7 @@ int ast_format_cap_append_by_type(struct ast_format_cap *cap, enum ast_media_typ
 
 	for (id = 1; id < ast_codec_get_max(); ++id) {
 		struct ast_codec *codec = ast_codec_get_by_id(id);
+		struct ast_codec *codec2 = NULL;
 		struct ast_format *format;
 		int res;
 
@@ -245,7 +265,22 @@ int ast_format_cap_append_by_type(struct ast_format_cap *cap, enum ast_media_typ
 			continue;
 		}
 
-		format = ast_format_create(codec);
+		format = ast_format_cache_get(codec->name);
+
+		if (format == ast_format_none) {
+			ao2_ref(format, -1);
+			ao2_ref(codec, -1);
+			continue;
+		}
+
+		if (format) {
+			codec2 = ast_format_get_codec(format);
+		}
+		if (codec != codec2) {
+			ao2_cleanup(format);
+			format = ast_format_create(codec);
+		}
+		ao2_cleanup(codec2);
 		ao2_ref(codec, -1);
 
 		if (!format) {
@@ -324,7 +359,24 @@ int ast_format_cap_update_by_allow_disallow(struct ast_format_cap *cap, const ch
 	}
 
 	parse = ast_strdupa(list);
-	while ((this = strsep(&parse, ","))) {
+
+	/* If the list is being fed to us as a result of ast_format_cap_get_names,
+	 * strip off the paranthesis and immediately apply the inverse of the
+	 * allowing option
+	 */
+	if (parse[0] == '(' && parse[strlen(parse) - 1] == ')') {
+		parse++;
+		parse[strlen(parse) - 1] = '\0';
+
+		if (allowing) {
+			ast_format_cap_remove_by_type(cap, AST_MEDIA_TYPE_UNKNOWN);
+		} else {
+			ast_format_cap_append_by_type(cap, AST_MEDIA_TYPE_UNKNOWN);
+		}
+	}
+
+
+	while ((this = ast_strip(strsep(&parse, ",|")))) {
 		int framems = 0;
 		struct ast_format *format = NULL;
 

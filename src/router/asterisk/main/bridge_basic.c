@@ -29,7 +29,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 430200 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/channel.h"
 #include "asterisk/utils.h"
@@ -606,17 +606,16 @@ static int setup_dynamic_feature(void *obj, void *arg, void *data, int flags)
  */
 static int setup_bridge_features_dynamic(struct ast_bridge_features *features, struct ast_channel *chan)
 {
-	RAII_VAR(struct ao2_container *, applicationmap, NULL, ao2_cleanup);
+	struct ao2_container *applicationmap;
 	int res = 0;
 
 	ast_channel_lock(chan);
 	applicationmap = ast_get_chan_applicationmap(chan);
 	ast_channel_unlock(chan);
-	if (!applicationmap) {
-		return 0;
+	if (applicationmap) {
+		ao2_callback_data(applicationmap, 0, setup_dynamic_feature, features, &res);
+		ao2_ref(applicationmap, -1);
 	}
-
-	ao2_callback_data(applicationmap, 0, setup_dynamic_feature, features, &res);
 
 	return res;
 }
@@ -1297,8 +1296,6 @@ struct attended_transfer_properties {
 		AST_STRING_FIELD(exten);
 		/*! Context of transfer target */
 		AST_STRING_FIELD(context);
-		/*! Sound to play on failure */
-		AST_STRING_FIELD(failsound);
 		/*! Sound to play when transfer completes */
 		AST_STRING_FIELD(xfersound);
 		/*! The channel technology of the transferer channel */
@@ -1418,15 +1415,24 @@ static struct attended_transfer_properties *attended_transfer_properties_alloc(
 	char *tech;
 	char *addr;
 	char *serial;
-	RAII_VAR(struct ast_features_xfer_config *, xfer_cfg, NULL, ao2_cleanup);
+	struct ast_features_xfer_config *xfer_cfg;
 	struct ast_flags *transferer_features;
 
 	props = ao2_alloc(sizeof(*props), attended_transfer_properties_destructor);
-	if (!props || ast_string_field_init(props, 64)) {
+	if (!props) {
+		ast_log(LOG_ERROR, "Unable to create props - channel %s, context %s\n",
+			ast_channel_name(transferer), context);
 		return NULL;
 	}
 
 	ast_cond_init(&props->cond, NULL);
+
+	if (ast_string_field_init(props, 64)) {
+		ast_log(LOG_ERROR, "Unable to initialize prop fields - channel %s, context %s\n",
+			ast_channel_name(transferer), context);
+		ao2_ref(props, -1);
+		return NULL;
+	}
 
 	props->target_framehook_id = -1;
 	props->transferer = ast_channel_ref(transferer);
@@ -1448,8 +1454,8 @@ static struct attended_transfer_properties *attended_transfer_properties_alloc(
 	props->atxfernoanswertimeout = xfer_cfg->atxfernoanswertimeout;
 	props->atxferloopdelay = xfer_cfg->atxferloopdelay;
 	ast_string_field_set(props, context, get_transfer_context(transferer, context));
-	ast_string_field_set(props, failsound, xfer_cfg->xferfailsound);
 	ast_string_field_set(props, xfersound, xfer_cfg->xfersound);
+	ao2_ref(xfer_cfg, -1);
 
 	/*
 	 * Save the transferee's party information for any recall calls.
@@ -1695,17 +1701,54 @@ static void publish_transfer_fail(struct attended_transfer_properties *props)
  */
 static void play_sound(struct ast_channel *chan, const char *sound)
 {
-	RAII_VAR(struct ast_bridge_channel *, bridge_channel, NULL, ao2_cleanup);
+	struct ast_bridge_channel *bridge_channel;
 
 	ast_channel_lock(chan);
 	bridge_channel = ast_channel_get_bridge_channel(chan);
 	ast_channel_unlock(chan);
 
-	if (!bridge_channel) {
-		return;
+	if (bridge_channel) {
+		ast_bridge_channel_queue_playfile(bridge_channel, NULL, sound, NULL);
+		ao2_ref(bridge_channel, -1);
 	}
+}
 
-	ast_bridge_channel_queue_playfile(bridge_channel, NULL, sound, NULL);
+/*!
+ * \brief Helper method to play a fail sound on a channel in a bridge
+ *
+ * \param chan The channel to play the fail sound to
+ */
+static void play_failsound(struct ast_channel *chan)
+{
+	char *sound;
+
+	ast_channel_lock(chan);
+	sound = ast_get_chan_features_xferfailsound(chan);
+	ast_channel_unlock(chan);
+
+	if (sound) {
+		play_sound(chan, sound);
+		ast_free(sound);
+	}
+}
+
+/*!
+ * \brief Helper method to stream a fail sound on a channel
+ *
+ * \param chan The channel to stream the fail sound to
+ */
+static void stream_failsound(struct ast_channel *chan)
+{
+	char *sound;
+
+	ast_channel_lock(chan);
+	sound = ast_get_chan_features_xferfailsound(chan);
+	ast_channel_unlock(chan);
+
+	if (sound) {
+		ast_stream_and_wait(chan, sound, AST_DIGIT_NONE);
+		ast_free(sound);
+	}
 }
 
 /*!
@@ -1713,16 +1756,19 @@ static void play_sound(struct ast_channel *chan, const char *sound)
  */
 static void hold(struct ast_channel *chan)
 {
-	RAII_VAR(struct ast_bridge_channel *, bridge_channel, NULL, ao2_cleanup);
+	struct ast_bridge_channel *bridge_channel;
 
-	if (chan) {
-		ast_channel_lock(chan);
-		bridge_channel = ast_channel_get_bridge_channel(chan);
-		ast_channel_unlock(chan);
+	if (!chan) {
+		return;
+	}
 
-		ast_assert(bridge_channel != NULL);
+	ast_channel_lock(chan);
+	bridge_channel = ast_channel_get_bridge_channel(chan);
+	ast_channel_unlock(chan);
 
+	if (bridge_channel) {
 		ast_bridge_channel_write_hold(bridge_channel, NULL);
+		ao2_ref(bridge_channel, -1);
 	}
 }
 
@@ -1731,15 +1777,20 @@ static void hold(struct ast_channel *chan)
  */
 static void unhold(struct ast_channel *chan)
 {
-	RAII_VAR(struct ast_bridge_channel *, bridge_channel, NULL, ao2_cleanup);
+	struct ast_bridge_channel *bridge_channel;
+
+	if (!chan) {
+		return;
+	}
 
 	ast_channel_lock(chan);
 	bridge_channel = ast_channel_get_bridge_channel(chan);
 	ast_channel_unlock(chan);
 
-	ast_assert(bridge_channel != NULL);
-
-	ast_bridge_channel_write_unhold(bridge_channel);
+	if (bridge_channel) {
+		ast_bridge_channel_write_unhold(bridge_channel);
+		ao2_ref(bridge_channel, -1);
+	}
 }
 
 /*!
@@ -1747,15 +1798,16 @@ static void unhold(struct ast_channel *chan)
  */
 static void ringing(struct ast_channel *chan)
 {
-	RAII_VAR(struct ast_bridge_channel *, bridge_channel, NULL, ao2_cleanup);
+	struct ast_bridge_channel *bridge_channel;
 
 	ast_channel_lock(chan);
 	bridge_channel = ast_channel_get_bridge_channel(chan);
 	ast_channel_unlock(chan);
 
-	ast_assert(bridge_channel != NULL);
-
-	ast_bridge_channel_write_control_data(bridge_channel, AST_CONTROL_RINGING, NULL, 0);
+	if (bridge_channel) {
+		ast_bridge_channel_write_control_data(bridge_channel, AST_CONTROL_RINGING, NULL, 0);
+		ao2_ref(bridge_channel, -1);
+	}
 }
 
 /*!
@@ -1800,10 +1852,9 @@ static void bridge_unhold(struct ast_bridge *bridge)
 /*!
  * \brief Wrapper for \ref bridge_do_move
  */
-static int bridge_move(struct ast_bridge *dest, struct ast_bridge *src, struct ast_channel *channel, struct ast_channel *swap)
+static void bridge_move(struct ast_bridge *dest, struct ast_bridge *src, struct ast_channel *channel, struct ast_channel *swap)
 {
-	int res;
-	RAII_VAR(struct ast_bridge_channel *, bridge_channel, NULL, ao2_cleanup);
+	struct ast_bridge_channel *bridge_channel;
 
 	ast_bridge_lock_both(src, dest);
 
@@ -1811,18 +1862,18 @@ static int bridge_move(struct ast_bridge *dest, struct ast_bridge *src, struct a
 	bridge_channel = ast_channel_get_bridge_channel(channel);
 	ast_channel_unlock(channel);
 
-	ast_assert(bridge_channel != NULL);
+	if (bridge_channel) {
+		ao2_lock(bridge_channel);
+		bridge_channel->swap = swap;
+		ao2_unlock(bridge_channel);
 
-	ao2_lock(bridge_channel);
-	bridge_channel->swap = swap;
-	ao2_unlock(bridge_channel);
-
-	res = bridge_do_move(dest, bridge_channel, 1, 0);
+		bridge_do_move(dest, bridge_channel, 1, 0);
+	}
 
 	ast_bridge_unlock(dest);
 	ast_bridge_unlock(src);
 
-	return res;
+	ao2_cleanup(bridge_channel);
 }
 
 /*!
@@ -2033,7 +2084,8 @@ static const struct attended_transfer_state_properties state_properties[] = {
 
 static int calling_target_enter(struct attended_transfer_properties *props)
 {
-	return bridge_move(props->target_bridge, props->transferee_bridge, props->transferer, NULL);
+	bridge_move(props->target_bridge, props->transferee_bridge, props->transferer, NULL);
+	return 0;
 }
 
 static enum attended_transfer_state calling_target_exit(struct attended_transfer_properties *props,
@@ -2041,7 +2093,7 @@ static enum attended_transfer_state calling_target_exit(struct attended_transfer
 {
 	switch (stimulus) {
 	case STIMULUS_TRANSFEREE_HANGUP:
-		play_sound(props->transferer, props->failsound);
+		play_failsound(props->transferer);
 		publish_transfer_fail(props);
 		return TRANSFER_FAIL;
 	case STIMULUS_DTMF_ATXFER_COMPLETE:
@@ -2053,7 +2105,7 @@ static enum attended_transfer_state calling_target_exit(struct attended_transfer
 	case STIMULUS_TRANSFER_TARGET_HANGUP:
 	case STIMULUS_TIMEOUT:
 	case STIMULUS_DTMF_ATXFER_ABORT:
-		play_sound(props->transferer, props->failsound);
+		play_failsound(props->transferer);
 		return TRANSFER_REBRIDGE;
 	case STIMULUS_DTMF_ATXFER_THREEWAY:
 		bridge_unhold(props->transferee_bridge);
@@ -2072,10 +2124,7 @@ static enum attended_transfer_state calling_target_exit(struct attended_transfer
 
 static int hesitant_enter(struct attended_transfer_properties *props)
 {
-	if (bridge_move(props->transferee_bridge, props->target_bridge, props->transferer, NULL)) {
-		return -1;
-	}
-
+	bridge_move(props->transferee_bridge, props->target_bridge, props->transferer, NULL);
 	unhold(props->transferer);
 	return 0;
 }
@@ -2085,7 +2134,7 @@ static enum attended_transfer_state hesitant_exit(struct attended_transfer_prope
 {
 	switch (stimulus) {
 	case STIMULUS_TRANSFEREE_HANGUP:
-		play_sound(props->transferer, props->failsound);
+		play_failsound(props->transferer);
 		publish_transfer_fail(props);
 		return TRANSFER_FAIL;
 	case STIMULUS_DTMF_ATXFER_COMPLETE:
@@ -2096,7 +2145,7 @@ static enum attended_transfer_state hesitant_exit(struct attended_transfer_prope
 	case STIMULUS_TRANSFER_TARGET_HANGUP:
 	case STIMULUS_TIMEOUT:
 	case STIMULUS_DTMF_ATXFER_ABORT:
-		play_sound(props->transferer, props->failsound);
+		play_failsound(props->transferer);
 		return TRANSFER_RESUME;
 	case STIMULUS_DTMF_ATXFER_THREEWAY:
 		return TRANSFER_THREEWAY;
@@ -2115,11 +2164,7 @@ static enum attended_transfer_state hesitant_exit(struct attended_transfer_prope
 
 static int rebridge_enter(struct attended_transfer_properties *props)
 {
-	if (bridge_move(props->transferee_bridge, props->target_bridge,
-			props->transferer, NULL)) {
-		return -1;
-	}
-
+	bridge_move(props->transferee_bridge, props->target_bridge, props->transferer, NULL);
 	unhold(props->transferer);
 	return 0;
 }
@@ -2162,7 +2207,7 @@ static enum attended_transfer_state consulting_exit(struct attended_transfer_pro
 		 * a sound to the transferer to indicate the transferee is gone.
 		 */
 		bridge_basic_change_personality(props->target_bridge, BRIDGE_BASIC_PERSONALITY_NORMAL, NULL);
-		play_sound(props->transferer, props->failsound);
+		play_failsound(props->transferer);
 		ast_bridge_merge_inhibit(props->target_bridge, -1);
 		/* These next two lines are here to ensure that our reference to the target bridge
 		 * is cleaned up properly and that the target bridge is not destroyed when the
@@ -2177,8 +2222,9 @@ static enum attended_transfer_state consulting_exit(struct attended_transfer_pro
 		bridge_unhold(props->transferee_bridge);
 		return TRANSFER_COMPLETE;
 	case STIMULUS_TRANSFER_TARGET_HANGUP:
+		return TRANSFER_REBRIDGE;
 	case STIMULUS_DTMF_ATXFER_ABORT:
-		play_sound(props->transferer, props->failsound);
+		play_failsound(props->transferer);
 		return TRANSFER_REBRIDGE;
 	case STIMULUS_DTMF_ATXFER_THREEWAY:
 		bridge_unhold(props->transferee_bridge);
@@ -2210,7 +2256,7 @@ static enum attended_transfer_state double_checking_exit(struct attended_transfe
 {
 	switch (stimulus) {
 	case STIMULUS_TRANSFEREE_HANGUP:
-		play_sound(props->transferer, props->failsound);
+		play_failsound(props->transferer);
 		publish_transfer_fail(props);
 		return TRANSFER_FAIL;
 	case STIMULUS_TRANSFERER_HANGUP:
@@ -2220,7 +2266,7 @@ static enum attended_transfer_state double_checking_exit(struct attended_transfe
 		return TRANSFER_COMPLETE;
 	case STIMULUS_TRANSFER_TARGET_HANGUP:
 	case STIMULUS_DTMF_ATXFER_ABORT:
-		play_sound(props->transferer, props->failsound);
+		play_failsound(props->transferer);
 		return TRANSFER_RESUME;
 	case STIMULUS_DTMF_ATXFER_THREEWAY:
 		bridge_unhold(props->target_bridge);
@@ -2840,7 +2886,8 @@ static void transfer_pull(struct ast_bridge *self, struct ast_bridge_channel *br
 	}
 
 	if (self->num_channels == 1) {
-		RAII_VAR(struct ast_bridge_channel *, transferer_bridge_channel, NULL, ao2_cleanup);
+		struct ast_bridge_channel *transferer_bridge_channel;
+		int not_transferer;
 
 		ast_channel_lock(props->transferer);
 		transferer_bridge_channel = ast_channel_get_bridge_channel(props->transferer);
@@ -2850,7 +2897,9 @@ static void transfer_pull(struct ast_bridge *self, struct ast_bridge_channel *br
 			return;
 		}
 
-		if (AST_LIST_FIRST(&self->channels) != transferer_bridge_channel) {
+		not_transferer = AST_LIST_FIRST(&self->channels) != transferer_bridge_channel;
+		ao2_ref(transferer_bridge_channel, -1);
+		if (not_transferer) {
 			return;
 		}
 	}
@@ -2887,7 +2936,8 @@ static void recall_pull(struct ast_bridge *self, struct ast_bridge_channel *brid
 	}
 
 	if (self->num_channels == 1) {
-		RAII_VAR(struct ast_bridge_channel *, target_bridge_channel, NULL, ao2_cleanup);
+		struct ast_bridge_channel *target_bridge_channel;
+
 		if (!props->recall_target) {
 			/* No recall target means that the pull happened on a transferee. If there's still
 			 * a channel left in the bridge, we don't need to send a stimulus
@@ -2899,12 +2949,11 @@ static void recall_pull(struct ast_bridge *self, struct ast_bridge_channel *brid
 		target_bridge_channel = ast_channel_get_bridge_channel(props->recall_target);
 		ast_channel_unlock(props->recall_target);
 
-		if (!target_bridge_channel) {
-			return;
-		}
-
-		if (AST_LIST_FIRST(&self->channels) == target_bridge_channel) {
-			stimulate_attended_transfer(props, STIMULUS_TRANSFEREE_HANGUP);
+		if (target_bridge_channel) {
+			if (AST_LIST_FIRST(&self->channels) == target_bridge_channel) {
+				stimulate_attended_transfer(props, STIMULUS_TRANSFEREE_HANGUP);
+			}
+			ao2_ref(target_bridge_channel, -1);
 		}
 	}
 }
@@ -2926,7 +2975,8 @@ static void bridge_personality_atxfer_pull(struct ast_bridge *self, struct ast_b
 
 static enum attended_transfer_stimulus wait_for_stimulus(struct attended_transfer_properties *props)
 {
-	RAII_VAR(struct stimulus_list *, list, NULL, ast_free_ptr);
+	enum attended_transfer_stimulus stimulus;
+	struct stimulus_list *list;
 	SCOPED_MUTEX(lock, ao2_object_get_lockaddr(props));
 
 	while (!(list = AST_LIST_REMOVE_HEAD(&props->stimulus_queue, next))) {
@@ -2957,7 +3007,9 @@ static enum attended_transfer_stimulus wait_for_stimulus(struct attended_transfe
 			}
 		}
 	}
-	return list->stimulus;
+	stimulus = list->stimulus;
+	ast_free(list);
+	return stimulus;
 }
 
 /*!
@@ -3052,7 +3104,7 @@ static int add_transferer_role(struct ast_channel *chan, struct ast_bridge_featu
 	const char *atxfer_threeway;
 	const char *atxfer_complete;
 	const char *atxfer_swap;
-	RAII_VAR(struct ast_features_xfer_config *, xfer_cfg, NULL, ao2_cleanup);
+	struct ast_features_xfer_config *xfer_cfg;
 	SCOPED_CHANNELLOCK(lock, chan);
 
 	xfer_cfg = ast_get_chan_features_xfer_config(chan);
@@ -3070,6 +3122,7 @@ static int add_transferer_role(struct ast_channel *chan, struct ast_bridge_featu
 		atxfer_complete = ast_strdupa(xfer_cfg->atxfercomplete);
 		atxfer_swap = ast_strdupa(xfer_cfg->atxferswap);
 	}
+	ao2_ref(xfer_cfg, -1);
 
 	return ast_channel_add_bridge_role(chan, AST_TRANSFERER_ROLE_NAME) ||
 		ast_channel_set_bridge_role_option(chan, AST_TRANSFERER_ROLE_NAME, "abort", atxfer_abort) ||
@@ -3090,7 +3143,7 @@ static int grab_transfer(struct ast_channel *chan, char *exten, size_t exten_len
 	int digit_timeout;
 	int attempts = 0;
 	int max_attempts;
-	RAII_VAR(struct ast_features_xfer_config *, xfer_cfg, NULL, ao2_cleanup);
+	struct ast_features_xfer_config *xfer_cfg;
 	char *retry_sound;
 	char *invalid_sound;
 
@@ -3105,6 +3158,7 @@ static int grab_transfer(struct ast_channel *chan, char *exten, size_t exten_len
 	max_attempts = xfer_cfg->transferdialattempts;
 	retry_sound = ast_strdupa(xfer_cfg->transferretrysound);
 	invalid_sound = ast_strdupa(xfer_cfg->transferinvalidsound);
+	ao2_ref(xfer_cfg, -1);
 	ast_channel_unlock(chan);
 
 	/* Play the simple "transfer" prompt out and wait */
@@ -3288,7 +3342,7 @@ static int feature_attended_transfer(struct ast_bridge_channel *bridge_channel, 
 	props->transfer_target = dial_transfer(bridge_channel->chan, destination);
 	if (!props->transfer_target) {
 		ast_log(LOG_ERROR, "Unable to request outbound channel for attended transfer target.\n");
-		ast_stream_and_wait(props->transferer, props->failsound, AST_DIGIT_NONE);
+		stream_failsound(props->transferer);
 		ast_bridge_channel_write_unhold(bridge_channel);
 		attended_transfer_properties_shutdown(props);
 		return 0;
@@ -3299,7 +3353,7 @@ static int feature_attended_transfer(struct ast_bridge_channel *bridge_channel, 
 	props->target_bridge = ast_bridge_basic_new();
 	if (!props->target_bridge) {
 		ast_log(LOG_ERROR, "Unable to create bridge for attended transfer target.\n");
-		ast_stream_and_wait(props->transferer, props->failsound, AST_DIGIT_NONE);
+		stream_failsound(props->transferer);
 		ast_bridge_channel_write_unhold(bridge_channel);
 		ast_hangup(props->transfer_target);
 		props->transfer_target = NULL;
@@ -3310,7 +3364,7 @@ static int feature_attended_transfer(struct ast_bridge_channel *bridge_channel, 
 
 	if (attach_framehook(props, props->transfer_target)) {
 		ast_log(LOG_ERROR, "Unable to attach framehook to transfer target.\n");
-		ast_stream_and_wait(props->transferer, props->failsound, AST_DIGIT_NONE);
+		stream_failsound(props->transferer);
 		ast_bridge_channel_write_unhold(bridge_channel);
 		ast_hangup(props->transfer_target);
 		props->transfer_target = NULL;
@@ -3325,7 +3379,7 @@ static int feature_attended_transfer(struct ast_bridge_channel *bridge_channel, 
 
 	if (ast_call(props->transfer_target, destination, 0)) {
 		ast_log(LOG_ERROR, "Unable to place outbound call to transfer target.\n");
-		ast_stream_and_wait(bridge_channel->chan, props->failsound, AST_DIGIT_NONE);
+		stream_failsound(props->transferer);
 		ast_bridge_channel_write_unhold(bridge_channel);
 		ast_hangup(props->transfer_target);
 		props->transfer_target = NULL;
@@ -3341,7 +3395,7 @@ static int feature_attended_transfer(struct ast_bridge_channel *bridge_channel, 
 	if (ast_bridge_impart(props->target_bridge, props->transfer_target, NULL, NULL,
 		AST_BRIDGE_IMPART_CHAN_INDEPENDENT)) {
 		ast_log(LOG_ERROR, "Unable to place transfer target into bridge.\n");
-		ast_stream_and_wait(bridge_channel->chan, props->failsound, AST_DIGIT_NONE);
+		stream_failsound(props->transferer);
 		ast_bridge_channel_write_unhold(bridge_channel);
 		ast_hangup(props->transfer_target);
 		props->transfer_target = NULL;
@@ -3351,7 +3405,7 @@ static int feature_attended_transfer(struct ast_bridge_channel *bridge_channel, 
 
 	if (ast_pthread_create_detached(&thread, NULL, attended_transfer_monitor_thread, props)) {
 		ast_log(LOG_ERROR, "Unable to create monitoring thread for attended transfer.\n");
-		ast_stream_and_wait(bridge_channel->chan, props->failsound, AST_DIGIT_NONE);
+		stream_failsound(props->transferer);
 		ast_bridge_channel_write_unhold(bridge_channel);
 		attended_transfer_properties_shutdown(props);
 		return 0;
@@ -3376,35 +3430,46 @@ static void blind_transfer_cb(struct ast_channel *new_channel, struct transfer_c
 /*! \brief Internal built in feature for blind transfers */
 static int feature_blind_transfer(struct ast_bridge_channel *bridge_channel, void *hook_pvt)
 {
-	char exten[AST_MAX_EXTENSION] = "";
+	char xfer_exten[AST_MAX_EXTENSION] = "";
 	struct ast_bridge_features_blind_transfer *blind_transfer = hook_pvt;
-	const char *context;
+	const char *xfer_context;
 	char *goto_on_blindxfr;
 
 	ast_bridge_channel_write_hold(bridge_channel, NULL);
 
 	ast_channel_lock(bridge_channel->chan);
-	context = ast_strdupa(get_transfer_context(bridge_channel->chan,
+	xfer_context = ast_strdupa(get_transfer_context(bridge_channel->chan,
 		blind_transfer ? blind_transfer->context : NULL));
 	goto_on_blindxfr = ast_strdupa(S_OR(pbx_builtin_getvar_helper(bridge_channel->chan,
 		"GOTO_ON_BLINDXFR"), ""));
 	ast_channel_unlock(bridge_channel->chan);
 
 	/* Grab the extension to transfer to */
-	if (grab_transfer(bridge_channel->chan, exten, sizeof(exten), context)) {
+	if (grab_transfer(bridge_channel->chan, xfer_exten, sizeof(xfer_exten), xfer_context)) {
 		ast_bridge_channel_write_unhold(bridge_channel);
 		return 0;
 	}
 
 	if (!ast_strlen_zero(goto_on_blindxfr)) {
+		const char *chan_context;
+		const char *chan_exten;
+		int chan_priority;
+
 		ast_debug(1, "After transfer, transferer %s goes to %s\n",
 				ast_channel_name(bridge_channel->chan), goto_on_blindxfr);
-		ast_bridge_set_after_go_on(bridge_channel->chan, NULL, NULL, 0, goto_on_blindxfr);
+
+		ast_channel_lock(bridge_channel->chan);
+		chan_context = ast_strdupa(ast_channel_context(bridge_channel->chan));
+		chan_exten = ast_strdupa(ast_channel_exten(bridge_channel->chan));
+		chan_priority = ast_channel_priority(bridge_channel->chan);
+		ast_channel_unlock(bridge_channel->chan);
+		ast_bridge_set_after_go_on(bridge_channel->chan,
+			chan_context, chan_exten, chan_priority, goto_on_blindxfr);
 	}
 
-	if (ast_bridge_transfer_blind(0, bridge_channel->chan, exten, context, blind_transfer_cb,
-			bridge_channel->chan) != AST_BRIDGE_TRANSFER_SUCCESS &&
-			!ast_strlen_zero(goto_on_blindxfr)) {
+	if (ast_bridge_transfer_blind(0, bridge_channel->chan, xfer_exten, xfer_context,
+		blind_transfer_cb, bridge_channel->chan) != AST_BRIDGE_TRANSFER_SUCCESS
+		&& !ast_strlen_zero(goto_on_blindxfr)) {
 		ast_bridge_discard_after_goto(bridge_channel->chan);
 	}
 

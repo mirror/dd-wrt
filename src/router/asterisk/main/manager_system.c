@@ -25,7 +25,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 400186 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/stasis.h"
 #include "asterisk/stasis_message_router.h"
@@ -67,7 +67,7 @@ int manager_system_init(void)
 		return -1;
 	}
 
-	ast_register_atexit(manager_system_shutdown);
+	ast_register_cleanup(manager_system_shutdown);
 
 	/* If somehow we failed to add any routes, just shut down the whole
 	 * thing and fail it.

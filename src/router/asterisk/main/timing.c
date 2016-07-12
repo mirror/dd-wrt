@@ -31,7 +31,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 407749 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/_private.h"
 
@@ -289,7 +289,7 @@ int ast_timing_init(void)
 		return -1;
 	}
 
-	ast_register_atexit(timing_shutdown);
+	ast_register_cleanup(timing_shutdown);
 
 	return ast_cli_register_multiple(cli_timing, ARRAY_LEN(cli_timing));
 }

@@ -39,7 +39,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 430434 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -1364,6 +1364,12 @@ static int gendigittimeout = 8000;
 /* How long to wait for an extra digit, if there is an ambiguous match */
 static int matchdigittimeout = 3000;
 
+/*!
+ * To apease the stupid compiler option on ast_sched_del()
+ * since we don't care about the return value.
+ */
+static int not_used;
+
 #define SUBSTATE_UNSET 0
 #define SUBSTATE_OFFHOOK 1
 #define SUBSTATE_ONHOOK 2
@@ -2185,21 +2191,20 @@ static void cleanup_stale_contexts(char *new, char *old)
 	char *oldcontext, *newcontext, *stalecontext, *stringp, newlist[AST_MAX_CONTEXT];
 
 	while ((oldcontext = strsep(&old, "&"))) {
-		stalecontext = '\0';
+		stalecontext = NULL;
 		ast_copy_string(newlist, new, sizeof(newlist));
 		stringp = newlist;
 		while ((newcontext = strsep(&stringp, "&"))) {
 			if (strcmp(newcontext, oldcontext) == 0) {
 				/* This is not the context you're looking for */
-				stalecontext = '\0';
+				stalecontext = NULL;
 				break;
 			} else if (strcmp(newcontext, oldcontext)) {
 				stalecontext = oldcontext;
 			}
 
 		}
-		if (stalecontext)
-			ast_context_destroy(ast_context_find(stalecontext), "Skinny");
+		ast_context_destroy_by_name(stalecontext, "Skinny");
 	}
 }
 
@@ -2263,10 +2268,10 @@ static int skinny_register(struct skinny_req *req, struct skinnysession *s)
 	int instance;
 	int res = -1;
 
-	if (s->auth_timeout_sched && ast_sched_del(sched, s->auth_timeout_sched)) {
-		return 0;
+	if (-1 < s->auth_timeout_sched) {
+		not_used = ast_sched_del(sched, s->auth_timeout_sched);
+		s->auth_timeout_sched = -1;
 	}
-	s->auth_timeout_sched = 0;
 
 	AST_LIST_LOCK(&devices);
 	AST_LIST_TRAVERSE(&devices, d, list){
@@ -2374,6 +2379,7 @@ static char *callstate2str(int ind)
 static int transmit_response_bysession(struct skinnysession *s, struct skinny_req *req)
 {
 	int res = 0;
+	unsigned long len;
 
 	if (!s) {
 		ast_log(LOG_WARNING, "Asked to transmit to a non-existent session!\n");
@@ -2382,7 +2388,10 @@ static int transmit_response_bysession(struct skinnysession *s, struct skinny_re
 
 	ast_mutex_lock(&s->lock);
 
-	if ((letohl(req->len) > SKINNY_MAX_PACKET) || (letohl(req->len) < 0)) {
+	/* Don't optimize out assigning letohl() to len. It is necessary to guarantee that the comparison will always catch invalid values.
+	 * letohl() may or may not return a signed value depending upon which definition is used. */
+	len = letohl(req->len);
+	if (SKINNY_MAX_PACKET < len) {
 		ast_log(LOG_WARNING, "transmit_response: the length of the request (%u) is out of bounds (%d)\n", letohl(req->len), SKINNY_MAX_PACKET);
 		ast_mutex_unlock(&s->lock);
 		return -1;
@@ -4173,7 +4182,7 @@ static char *_skinny_show_device(int type, int fd, struct mansession *s, const s
 	struct skinny_speeddial *sd;
 	struct skinny_addon *sa;
 	struct skinny_serviceurl *surl;
-	struct ast_str *codec_buf = ast_str_alloca(64);
+	struct ast_str *codec_buf = ast_str_alloca(AST_FORMAT_CAP_NAMES_LEN);
 
 	if (argc < 4) {
 		return CLI_SHOWUSAGE;
@@ -4422,7 +4431,7 @@ static char *_skinny_show_line(int type, int fd, struct mansession *s, const str
 	struct skinny_device *d;
 	struct skinny_line *l;
 	struct skinny_subline *subline;
-	struct ast_str *codec_buf = ast_str_alloca(64);
+	struct ast_str *codec_buf = ast_str_alloca(AST_FORMAT_CAP_NAMES_LEN);
 	char group_buf[256];
 	char cbuf[256];
 
@@ -4860,7 +4869,7 @@ static int skinny_dialer_cb(const void *data)
 {
 	struct skinny_subchannel *sub = (struct skinny_subchannel *)data;
 	SKINNY_DEBUG(DEBUG_SUB, 3, "Sub %u - Dialer called from SCHED %d\n", sub->callid, sub->dialer_sched);
-	sub->dialer_sched = 0;
+	sub->dialer_sched = -1;
 	skinny_dialer(sub, 1);
 	return 0;
 }
@@ -4869,7 +4878,7 @@ static int skinny_autoanswer_cb(const void *data)
 {
 	struct skinny_subchannel *sub = (struct skinny_subchannel *)data;
 	skinny_locksub(sub);
-	sub->aa_sched = 0;
+	sub->aa_sched = -1;
 	setsubstate(sub, SKINNY_CONNECTED);
 	skinny_unlocksub(sub);
 	return 0;
@@ -4879,7 +4888,7 @@ static int skinny_cfwd_cb(const void *data)
 {
 	struct skinny_subchannel *sub = (struct skinny_subchannel *)data;
 	struct skinny_line *l = sub->line;
-	sub->cfwd_sched = 0;
+	sub->cfwd_sched = -1;
 	SKINNY_DEBUG(DEBUG_SUB, 3, "Sub %u - CFWDNOANS to %s.\n", sub->callid, l->call_forward_noanswer);
 	ast_channel_call_forward_set(sub->owner, l->call_forward_noanswer);
 	ast_queue_control(sub->owner, AST_CONTROL_REDIRECTING);
@@ -4921,7 +4930,7 @@ static int skinny_call(struct ast_channel *ast, const char *dest, int timeout)
 	skinny_locksub(sub);
 	AST_LIST_TRAVERSE(ast_channel_varshead(ast), current, entries) {
 		if (!(strcmp(ast_var_name(current), "SKINNY_AUTOANSWER"))) {
-			if (d->hookstate == SKINNY_ONHOOK && !sub->aa_sched) {
+			if (d->hookstate == SKINNY_ONHOOK && sub->aa_sched < 0) {
 				char buf[24];
 				int aatime;
 				char *stringp = buf, *curstr;
@@ -5072,7 +5081,7 @@ static int skinny_write(struct ast_channel *ast, struct ast_frame *frame)
 		}
 	} else {
 		if (ast_format_cap_iscompatible_format(ast_channel_nativeformats(ast), frame->subclass.format) == AST_FORMAT_CMP_NOT_EQUAL) {
-			struct ast_str *codec_buf = ast_str_alloca(64);
+			struct ast_str *codec_buf = ast_str_alloca(AST_FORMAT_CAP_NAMES_LEN);
 			ast_log(LOG_WARNING, "Asked to transmit frame type %s, while native formats is %s (read/write = %s/%s)\n",
 				ast_format_get_name(frame->subclass.format),
 				ast_format_cap_get_names(ast_channel_nativeformats(ast), &codec_buf),
@@ -5348,7 +5357,7 @@ static struct ast_channel *skinny_new(struct skinny_line *l, struct skinny_subli
 	struct ast_format *tmpfmt;
 	struct ast_format_cap *caps;
 #ifdef AST_DEVMODE
-	struct ast_str *codec_buf = ast_str_alloca(64);
+	struct ast_str *codec_buf = ast_str_alloca(AST_FORMAT_CAP_NAMES_LEN);
 #endif
 
 	if (!l->device || !l->device->session) {
@@ -5386,9 +5395,9 @@ static struct ast_channel *skinny_new(struct skinny_line *l, struct skinny_subli
 			sub->xferor = 0;
 			sub->related = NULL;
 			sub->calldirection = direction;
-			sub->aa_sched = 0;
-			sub->dialer_sched = 0;
-			sub->cfwd_sched = 0;
+			sub->aa_sched = -1;
+			sub->dialer_sched = -1;
+			sub->cfwd_sched = -1;
 			sub->dialType = DIALTYPE_NORMAL;
 			sub->getforward = 0;
 
@@ -5545,19 +5554,19 @@ static void setsubstate(struct skinny_subchannel *sub, int state)
 
 	skinny_locksub(sub);
 
-	if (sub->dialer_sched) {
+	if (-1 < sub->dialer_sched) {
 		skinny_sched_del(sub->dialer_sched, sub);
-		sub->dialer_sched = 0;
+		sub->dialer_sched = -1;
 	}
 
-	if (state != SUBSTATE_RINGIN && sub->aa_sched) {
+	if (state != SUBSTATE_RINGIN && -1 < sub->aa_sched) {
 		skinny_sched_del(sub->aa_sched, sub);
-		sub->aa_sched = 0;
+		sub->aa_sched = -1;
 		sub->aa_beep = 0;
 		sub->aa_mute = 0;
 	}
 
-	if (sub->cfwd_sched) {
+	if (sub->cfwd_sched > -1) {
 		if (state == SUBSTATE_CONNECTED) {
 			if (skinny_sched_del(sub->cfwd_sched, sub)) {
 				SKINNY_DEBUG(DEBUG_SUB, 3, "Sub %u - trying to change state from %s to %s, but already forwarded because no answer.\n",
@@ -5565,9 +5574,10 @@ static void setsubstate(struct skinny_subchannel *sub, int state)
 				skinny_unlocksub(sub);
 				return;
 			}
-			sub->cfwd_sched = 0;
+			sub->cfwd_sched = -1;
 		} else if (state == SUBSTATE_ONHOOK) {
 			skinny_sched_del(sub->cfwd_sched, sub);
+			sub->cfwd_sched = -1;
 		}
 	}
 
@@ -6167,9 +6177,7 @@ static int handle_ip_port_message(struct skinny_req *req, struct skinnysession *
 
 static void handle_keepalive_message(struct skinny_req *req, struct skinnysession *s)
 {
-	if (ast_sched_del(sched, s->keepalive_timeout_sched)) {
-		return;
-	}
+	not_used = ast_sched_del(sched, s->keepalive_timeout_sched);
 
 #ifdef AST_DEVMODE
 	{
@@ -6235,9 +6243,9 @@ static int handle_keypad_button_message(struct skinny_req *req, struct skinnyses
 	}
 
 	if ((sub->owner && ast_channel_state(sub->owner) <  AST_STATE_UP)) {
-		if (sub->dialer_sched && !skinny_sched_del(sub->dialer_sched, sub)) {
+		if (-1 < sub->dialer_sched && !skinny_sched_del(sub->dialer_sched, sub)) {
 			SKINNY_DEBUG(DEBUG_SUB, 3, "Sub %u - Got a digit and not timed out, so try dialing\n", sub->callid);
-			sub->dialer_sched = 0;
+			sub->dialer_sched = -1;
 			len = strlen(sub->exten);
 			if (len == 0) {
 				transmit_stop_tone(d, l->instance, sub->callid);
@@ -6635,7 +6643,7 @@ static int handle_capabilities_res_message(struct skinny_req *req, struct skinny
 	struct ast_format_cap *codecs = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT);
 	int i;
 #ifdef AST_DEVMODE
-	struct ast_str *codec_buf = ast_str_alloca(64);
+	struct ast_str *codec_buf = ast_str_alloca(AST_FORMAT_CAP_NAMES_LEN);
 #endif
 	
 
@@ -7072,9 +7080,9 @@ static int handle_soft_key_event_message(struct skinny_req *req, struct skinnyse
 	case SOFTKEY_BKSPC:
 		SKINNY_DEBUG(DEBUG_PACKET, 3, "Received SOFTKEY_BKSPC from %s, inst %d, callref %d\n",
 			d->name, instance, callreference);
-		if (sub->dialer_sched && !skinny_sched_del(sub->dialer_sched, sub)) {
+		if (-1 < sub->dialer_sched && !skinny_sched_del(sub->dialer_sched, sub)) {
 			size_t len;
-			sub->dialer_sched = 0;
+			sub->dialer_sched = -1;
 			len = strlen(sub->exten);
 			if (len > 0) {
 				sub->exten[len-1] = '\0';
@@ -7412,7 +7420,7 @@ static int skinny_noauth_cb(const void *data)
 {
 	struct skinnysession *s = (struct skinnysession *)data;
 	ast_log(LOG_WARNING, "Skinny Client failed to authenticate in %d seconds (SCHED %d)\n", auth_timeout, s->auth_timeout_sched);
-	s->auth_timeout_sched = 0;
+	s->auth_timeout_sched = -1;
 	end_session(s);
 	return 0;
 }
@@ -7421,7 +7429,7 @@ static int skinny_nokeepalive_cb(const void *data)
 {
 	struct skinnysession *s = (struct skinnysession *)data;
 	ast_log(LOG_WARNING, "Skinny Client failed to send keepalive in last %d seconds (SCHED %d)\n", keep_alive*3, s->keepalive_timeout_sched);
-	s->keepalive_timeout_sched = 0;
+	s->keepalive_timeout_sched = -1;
 	end_session(s);
 	return 0;
 }
@@ -7439,11 +7447,13 @@ static void skinny_session_cleanup(void *data)
 		ast_mutex_unlock(&s->lock);
 	}
 
-	if (s->auth_timeout_sched && !ast_sched_del(sched, s->auth_timeout_sched)) {
-		s->auth_timeout_sched = 0;
+	if (-1 < s->auth_timeout_sched) {
+		not_used = ast_sched_del(sched, s->auth_timeout_sched);
+		s->auth_timeout_sched = -1;
 	}
-	if (s->keepalive_timeout_sched && !ast_sched_del(sched, s->keepalive_timeout_sched)) {
-		s->keepalive_timeout_sched = 0;
+	if (-1 < s->keepalive_timeout_sched) {
+		not_used = ast_sched_del(sched, s->keepalive_timeout_sched);
+		s->keepalive_timeout_sched = -1;
 	}
 
 	if (d) {
@@ -7484,6 +7494,7 @@ static void *skinny_session(void *data)
 	struct skinnysession *s = data;
 
 	int dlen = 0;
+	int eventmessage = 0;
 	struct pollfd fds[1];
 
 	if (!s) {
@@ -7540,7 +7551,8 @@ static void *skinny_session(void *data)
 				break;
 			}
 
-			if (letohl(req->e) < 0) {
+			eventmessage = letohl(req->e);
+			if (eventmessage < 0) {
 				ast_log(LOG_ERROR, "Event Message is NULL from socket %d, This is bad\n", s->fd);
 				break;
 			}
@@ -7646,6 +7658,8 @@ static void *accept_thread(void *ignore)
 		ast_mutex_init(&s->lock);
 		memcpy(&s->sin, &sin, sizeof(sin));
 		s->fd = as;
+		s->auth_timeout_sched = -1;
+		s->keepalive_timeout_sched = -1;
 
 		if (ast_pthread_create(&s->t, NULL, skinny_session, s)) {
 			destroy_session(s);
@@ -7676,7 +7690,7 @@ static struct ast_channel *skinny_request(const char *type, struct ast_format_ca
 	char tmp[256];
 
 	if (!(ast_format_cap_has_type(cap, AST_MEDIA_TYPE_AUDIO))) {
-		struct ast_str *codec_buf = ast_str_alloca(64);
+		struct ast_str *codec_buf = ast_str_alloca(AST_FORMAT_CAP_NAMES_LEN);
 		ast_log(LOG_NOTICE, "Asked to get a channel of unsupported format '%s'\n", ast_format_cap_get_names(cap, &codec_buf));
 		return NULL;
 	}
@@ -8704,7 +8718,6 @@ static int unload_module(void)
 	struct skinny_device *d;
 	struct skinny_line *l;
 	struct skinny_subchannel *sub;
-	struct ast_context *con;
 	pthread_t tempthread;
 
 	ast_rtp_glue_unregister(&skinny_rtp_glue);
@@ -8743,7 +8756,7 @@ static int unload_module(void)
 				skinny_unlocksub(sub);
 			}
 			if (l->mwi_event_sub) {
-				l->mwi_event_sub = stasis_unsubscribe(l->mwi_event_sub);
+				l->mwi_event_sub = stasis_unsubscribe_and_join(l->mwi_event_sub);
 			}
 			ast_mutex_unlock(&l->lock);
 			unregister_exten(l);
@@ -8765,9 +8778,7 @@ static int unload_module(void)
 		ast_sched_context_destroy(sched);
 	}
 
-	con = ast_context_find(used_context);
-	if (con)
-		ast_context_destroy(con, "Skinny");
+	ast_context_destroy_by_name(used_context, "Skinny");
 
 	ao2_ref(default_cap, -1);
 	return 0;

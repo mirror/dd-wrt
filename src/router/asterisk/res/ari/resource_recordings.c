@@ -23,9 +23,14 @@
  * \author David M. Lee, II <dlee@digium.com>
  */
 
+/*** MODULEINFO
+	<depend type="module">res_stasis_recording</depend>
+	<support_level>core</support_level>
+ ***/
+
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419022 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/stasis_app_recording.h"
 #include "resource_recordings.h"

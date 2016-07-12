@@ -30,7 +30,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419592 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <sys/stat.h>
 
@@ -1202,38 +1202,44 @@ static int require_mysql(const char *database, const char *tablename, va_list ap
 							PICK_WHICH_ALTER_ACTION(bigint)
 						}
 					}
-				} else if (strncmp(column->type, "float", 5) == 0 && !ast_rq_is_int(type) && type != RQ_FLOAT) {
-					if (table->database->requirements == RQ_WARN) {
-						ast_log(LOG_WARNING, "Realtime table %s@%s: Column %s cannot be a %s\n", tablename, database, column->name, column->type);
-						res = -1;
-					} else if (table->database->requirements == RQ_CREATECLOSE && modify_mysql(database, tablename, column, type, size) == 0) {
-						table_altered = 1;
-					} else if (table->database->requirements == RQ_CREATECHAR && modify_mysql(database, tablename, column, RQ_CHAR, size) == 0) {
-						table_altered = 1;
-					} else {
-						res = -1;
+				} else if (strncmp(column->type, "float", 5) == 0) {
+					if (!ast_rq_is_int(type) && type != RQ_FLOAT) {
+						if (table->database->requirements == RQ_WARN) {
+							ast_log(LOG_WARNING, "Realtime table %s@%s: Column %s cannot be a %s\n", tablename, database, column->name, column->type);
+							res = -1;
+						} else if (table->database->requirements == RQ_CREATECLOSE && modify_mysql(database, tablename, column, type, size) == 0) {
+							table_altered = 1;
+						} else if (table->database->requirements == RQ_CREATECHAR && modify_mysql(database, tablename, column, RQ_CHAR, size) == 0) {
+							table_altered = 1;
+						} else {
+							res = -1;
+						}
 					}
-				} else if ((strncmp(column->type, "datetime", 8) == 0 || strncmp(column->type, "timestamp", 9) == 0) && type != RQ_DATETIME) {
-					if (table->database->requirements == RQ_WARN) {
-						ast_log(LOG_WARNING, "Realtime table %s@%s: Column %s cannot be a %s\n", tablename, database, column->name, column->type);
-						res = -1;
-					} else if (table->database->requirements == RQ_CREATECLOSE && modify_mysql(database, tablename, column, type, size) == 0) {
-						table_altered = 1;
-					} else if (table->database->requirements == RQ_CREATECHAR && modify_mysql(database, tablename, column, RQ_CHAR, size) == 0) {
-						table_altered = 1;
-					} else {
-						res = -1;
+				} else if (strncmp(column->type, "datetime", 8) == 0 || strncmp(column->type, "timestamp", 9) == 0) {
+					if (type != RQ_DATETIME) {
+						if (table->database->requirements == RQ_WARN) {
+							ast_log(LOG_WARNING, "Realtime table %s@%s: Column %s cannot be a %s\n", tablename, database, column->name, column->type);
+							res = -1;
+						} else if (table->database->requirements == RQ_CREATECLOSE && modify_mysql(database, tablename, column, type, size) == 0) {
+							table_altered = 1;
+						} else if (table->database->requirements == RQ_CREATECHAR && modify_mysql(database, tablename, column, RQ_CHAR, size) == 0) {
+							table_altered = 1;
+						} else {
+							res = -1;
+						}
 					}
-				} else if ((strncmp(column->type, "date", 4) == 0) && type != RQ_DATE) {
-					if (table->database->requirements == RQ_WARN) {
-						ast_log(LOG_WARNING, "Realtime table %s@%s: Column %s cannot be a %s\n", tablename, database, column->name, column->type);
-						res = -1;
-					} else if (table->database->requirements == RQ_CREATECLOSE && modify_mysql(database, tablename, column, type, size) == 0) {
-						table_altered = 1;
-					} else if (table->database->requirements == RQ_CREATECHAR && modify_mysql(database, tablename, column, RQ_CHAR, size) == 0) {
-						table_altered = 1;
-					} else {
-						res = -1;
+				} else if (strncmp(column->type, "date", 4) == 0) {
+					if (type != RQ_DATE) {
+						if (table->database->requirements == RQ_WARN) {
+							ast_log(LOG_WARNING, "Realtime table %s@%s: Column %s cannot be a %s\n", tablename, database, column->name, column->type);
+							res = -1;
+						} else if (table->database->requirements == RQ_CREATECLOSE && modify_mysql(database, tablename, column, type, size) == 0) {
+							table_altered = 1;
+						} else if (table->database->requirements == RQ_CREATECHAR && modify_mysql(database, tablename, column, RQ_CHAR, size) == 0) {
+							table_altered = 1;
+						} else {
+							res = -1;
+						}
 					}
 				} else { /* Other, possibly unsupported types? */
 					if (table->database->requirements == RQ_WARN) {
@@ -1512,7 +1518,7 @@ static int load_mysql_config(struct ast_config *config, const char *category, st
 	ast_debug(1, "MySQL RealTime database name: %s\n", conn->name);
 	ast_debug(1, "MySQL RealTime user: %s\n", conn->user);
 	ast_debug(1, "MySQL RealTime password: %s\n", conn->pass);
-	if(conn->charset)
+	if(!ast_strlen_zero(conn->charset))
 		ast_debug(1, "MySQL RealTime charset: %s\n", conn->charset);
 
 	return 1;
@@ -1527,13 +1533,13 @@ static int mysql_reconnect(struct mysql_conn *conn)
 	/* mutex lock should have been locked before calling this function. */
 
 reconnect_tryagain:
-	if ((!conn->connected) && (!ast_strlen_zero(conn->host) || conn->sock) && !ast_strlen_zero(conn->user) && !ast_strlen_zero(conn->name)) {
+	if ((!conn->connected) && (!ast_strlen_zero(conn->host) || !ast_strlen_zero(conn->sock)) && !ast_strlen_zero(conn->user) && !ast_strlen_zero(conn->name)) {
 		if (!mysql_init(&conn->handle)) {
 			ast_log(LOG_WARNING, "MySQL RealTime: Insufficient memory to allocate MySQL resource.\n");
 			conn->connected = 0;
 			return 0;
 		}
-		if(conn->charset && strlen(conn->charset) > 2){
+		if(strlen(conn->charset) > 2){
 			char set_names[255];
 			char statement[512];
 			snprintf(set_names, sizeof(set_names), "SET NAMES %s", conn->charset);

@@ -30,39 +30,31 @@
 #include "asterisk/res_pjsip.h"
 #include "asterisk/module.h"
 
-/*! \brief Local host address for IPv4 */
-static char host_ipv4[PJ_INET_ADDRSTRLEN + 2];
-
-/*! \brief Local host address for IPv6 */
-static char host_ipv6[PJ_INET6_ADDRSTRLEN + 2];
-
 /*! \brief Helper function which returns a UDP transport bound to the given address and port */
 static pjsip_transport *multihomed_get_udp_transport(pj_str_t *address, int port)
 {
-	struct ao2_container *transports = ast_sorcery_retrieve_by_fields(ast_sip_get_sorcery(), "transport",
-		AST_RETRIEVE_FLAG_MULTIPLE | AST_RETRIEVE_FLAG_ALL, NULL);
-	struct ast_sip_transport *transport;
+	struct ao2_container *transport_states = ast_sip_get_transport_states();
+	struct ast_sip_transport_state *transport_state;
 	struct ao2_iterator iter;
 	pjsip_transport *sip_transport = NULL;
 
-	if (!transports) {
+	if (!transport_states) {
 		return NULL;
 	}
 
-	for (iter = ao2_iterator_init(transports, 0); (transport = ao2_iterator_next(&iter)); ao2_ref(transport, -1)) {
-		if ((transport->type != AST_TRANSPORT_UDP) ||
-			(pj_strcmp(&transport->state->transport->local_name.host, address)) ||
-			(transport->state->transport->local_name.port != port)) {
+	for (iter = ao2_iterator_init(transport_states, 0); (transport_state = ao2_iterator_next(&iter)); ao2_ref(transport_state, -1)) {
+		if (transport_state && ((transport_state->type != AST_TRANSPORT_UDP) ||
+			(pj_strcmp(&transport_state->transport->local_name.host, address)) ||
+			(transport_state->transport->local_name.port != port))) {
 			continue;
 		}
 
-		sip_transport = transport->state->transport;
-		ao2_ref(transport, -1);
+		sip_transport = transport_state->transport;
 		break;
 	}
 	ao2_iterator_destroy(&iter);
 
-	ao2_ref(transports, -1);
+	ao2_ref(transport_states, -1);
 
 	return sip_transport;
 }
@@ -75,8 +67,10 @@ static int multihomed_rewrite_sdp(struct pjmedia_sdp_session *sdp)
 	}
 
 	/* If the host address is used in the SDP replace it with the address of what this is going out on */
-	if ((!pj_strcmp2(&sdp->conn->addr_type, "IP4") && !pj_strcmp2(&sdp->conn->addr, host_ipv4)) ||
-		(!pj_strcmp2(&sdp->conn->addr_type, "IP6") && !pj_strcmp2(&sdp->conn->addr, host_ipv6))) {
+	if ((!pj_strcmp2(&sdp->conn->addr_type, "IP4") && !pj_strcmp2(&sdp->conn->addr,
+		ast_sip_get_host_ip_string(pj_AF_INET()))) ||
+		(!pj_strcmp2(&sdp->conn->addr_type, "IP6") && !pj_strcmp2(&sdp->conn->addr,
+		ast_sip_get_host_ip_string(pj_AF_INET6())))) {
 		return 1;
 	}
 
@@ -204,23 +198,12 @@ static int unload_module(void)
 static int load_module(void)
 {
 	char hostname[MAXHOSTNAMELEN] = "";
-	pj_sockaddr addr;
 
 	CHECK_PJSIP_MODULE_LOADED();
 
 	if (!gethostname(hostname, sizeof(hostname) - 1)) {
 		ast_verb(2, "Performing DNS resolution of local hostname '%s' to get local IPv4 and IPv6 address\n",
 			hostname);
-	}
-
-	if (!pj_gethostip(pj_AF_INET(), &addr)) {
-		pj_sockaddr_print(&addr, host_ipv4, sizeof(host_ipv4), 2);
-		ast_verb(3, "Local IPv4 address determined to be: %s\n", host_ipv4);
-	}
-
-	if (!pj_gethostip(pj_AF_INET6(), &addr)) {
-		pj_sockaddr_print(&addr, host_ipv6, sizeof(host_ipv6), 2);
-		ast_verb(3, "Local IPv6 address determined to be: %s\n", host_ipv6);
 	}
 
 	if (ast_sip_register_service(&multihomed_module)) {

@@ -68,7 +68,7 @@ enum ast_module_unload_mode {
 enum ast_module_load_result {
 	AST_MODULE_LOAD_SUCCESS = 0,    /*!< Module loaded and configured */
 	AST_MODULE_LOAD_DECLINE = 1,    /*!< Module is not configured */
-	AST_MODULE_LOAD_SKIP = 2,       /*!< Module was skipped for some reason */
+	AST_MODULE_LOAD_SKIP = 2,       /*!< Module was skipped for some reason (For loader.c use only. Should never be returned by modules)*/
 	AST_MODULE_LOAD_PRIORITY = 3,   /*!< Module is not loaded yet, but is added to prioity heap */
 	AST_MODULE_LOAD_FAILURE = -1,   /*!< Module could not be loaded properly */
 };
@@ -159,6 +159,43 @@ int ast_update_module_list(int (*modentry)(const char *module, const char *descr
                                            int usecnt, const char *status, const char *like,
                                            enum ast_module_support_level support_level),
                            const char *like);
+
+/*!
+ * \brief Ask for a list of modules, descriptions, use counts and status.
+ * \param modentry A callback to an updater function
+ * \param like
+ * \param data Data passed into the callback for manipulation
+ *
+ * For each of the modules loaded, modentry will be executed with the resource,
+ * description, and usecount values of each particular module.
+ *
+ * \return the number of modules loaded
+ * \since 13.5.0
+ */
+int ast_update_module_list_data(int (*modentry)(const char *module, const char *description,
+                                                int usecnt, const char *status, const char *like,
+                                                enum ast_module_support_level support_level,
+                                                void *data),
+                                const char *like, void *data);
+
+/*!
+ * \brief Ask for a list of modules, descriptions, use counts and status.
+ * \param modentry A callback to an updater function
+ * \param like
+ * \param data Data passed into the callback for manipulation
+ * \param condition The condition to meet
+ *
+ * For each of the modules loaded, modentry will be executed with the resource,
+ * description, and usecount values of each particular module.
+ *
+ * \return the number of conditions met
+ * \since 13.5.0
+ */
+int ast_update_module_list_condition(int (*modentry)(const char *module, const char *description,
+                                                     int usecnt, const char *status, const char *like,
+                                                     enum ast_module_support_level support_level,
+                                                     void *data, const char *condition),
+                                     const char *like, void *data, const char *condition);
 
 /*!
  * \brief Check if module with the name given is loaded

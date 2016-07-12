@@ -30,7 +30,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 431841 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <regex.h>
 
@@ -129,7 +129,6 @@ static int sorcery_config_fields_cmp(void *obj, void *arg, int flags)
 {
 	const struct sorcery_config_fields_cmp_params *params = arg;
 	RAII_VAR(struct ast_variable *, objset, NULL, ast_variables_destroy);
-	RAII_VAR(struct ast_variable *, diff, NULL, ast_variables_destroy);
 
 	if (params->regex) {
 		/* If a regular expression has been provided see if it matches, otherwise move on */
@@ -139,11 +138,10 @@ static int sorcery_config_fields_cmp(void *obj, void *arg, int flags)
 		return 0;
 	} else if (params->fields &&
 	    (!(objset = ast_sorcery_objectset_create(params->sorcery, obj)) ||
-	     (ast_sorcery_changeset_create(objset, params->fields, &diff)) ||
-	     diff)) {
+	     (!ast_variable_lists_match(objset, params->fields, 0)))) {
 		/* If we can't turn the object into an object set OR if differences exist between the fields
-	     * passed in and what are present on the object they are not a match.
-	     */
+		 * passed in and what are present on the object they are not a match.
+		 */
 		return 0;
 	}
 
@@ -197,6 +195,7 @@ static void sorcery_config_retrieve_multiple(const struct ast_sorcery *sorcery, 
 	if (!config_objects) {
 		return;
 	}
+
 	ao2_callback(config_objects, 0, sorcery_config_fields_cmp, &params);
 }
 
@@ -294,6 +293,18 @@ static void sorcery_config_internal_load(void *data, const struct ast_sorcery *s
 			continue;
 		}
 
+		/*  Confirm an object with this id does not already exist in the bucket.
+		 *  If it exists, however, the configuration is invalid so stop
+		 *  processing and destroy it. */
+		obj = ao2_find(objects, id, OBJ_KEY);
+
+		if (obj) {
+			ast_log(LOG_ERROR, "Config file '%s' could not be loaded; configuration contains a duplicate object: '%s' of type '%s'\n",
+				config->filename, id, type);
+			ast_config_destroy(cfg);
+			return;
+		}
+
 		if (!(obj = ast_sorcery_alloc(sorcery, type, id)) ||
 		    ast_sorcery_objectset_apply(sorcery, obj, ast_category_first(category))) {
 
@@ -336,8 +347,17 @@ static void sorcery_config_reload(void *data, const struct ast_sorcery *sorcery,
 
 static void *sorcery_config_open(const char *data)
 {
-	char *tmp = ast_strdupa(data), *filename = strsep(&tmp, ","), *option;
+	char *tmp;
+	char *filename;
+	char *option;
 	struct sorcery_config *config;
+
+	if (ast_strlen_zero(data)) {
+		return NULL;
+	}
+
+ 	tmp = ast_strdupa(data);
+ 	filename = strsep(&tmp, ",");
 
 	if (ast_strlen_zero(filename) || !(config = ao2_alloc_options(sizeof(*config) + strlen(filename) + 1, sorcery_config_destructor, AO2_ALLOC_OPT_LOCK_NOLOCK))) {
 		return NULL;

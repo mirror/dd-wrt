@@ -25,7 +25,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 432404 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "resource_endpoints.h"
 

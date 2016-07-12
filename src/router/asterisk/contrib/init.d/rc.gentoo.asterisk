@@ -1,5 +1,5 @@
 #!/sbin/runscript
-# $Id: rc.gentoo.asterisk 379791 2013-01-21 20:41:12Z mjordan $
+# $Id$
 
 ### BEGIN INIT INFO
 # Provides:		asterisk

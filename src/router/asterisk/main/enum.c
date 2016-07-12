@@ -60,7 +60,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 413589 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -257,7 +257,7 @@ struct ebl_context {
 static int ebl_callback(void *context, unsigned char *answer, int len, unsigned char *fullanswer)
 {
 	struct ebl_context *c = context;
-	unsigned int i;
+	int i;
 
 	c->pos = 0;	/* default to empty */
 	c->separator[0] = 0;

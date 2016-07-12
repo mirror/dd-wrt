@@ -18,6 +18,7 @@
 
 /*** MODULEINFO
 	<depend>pjproject</depend>
+	<depend>res_pjproject</depend>
 	<depend>res_pjsip</depend>
 	<support_level>core</support_level>
  ***/
@@ -32,6 +33,8 @@
 #include "asterisk/test.h"
 #include "asterisk/taskprocessor.h"
 #include "asterisk/manager.h"
+#include "asterisk/named_locks.h"
+#include "asterisk/res_pjproject.h"
 #include "res_pjsip/include/res_pjsip_private.h"
 
 /*** DOCUMENTATION
@@ -50,6 +53,9 @@
 		</description>
 	</manager>
  ***/
+
+static int pj_max_hostname = PJ_MAX_HOSTNAME;
+static int pjsip_max_url_size = PJSIP_MAX_URL_SIZE;
 
 /*! \brief Internal function which returns the expiration time for a contact */
 static int registrar_get_expiration(const struct ast_sip_aor *aor, const pjsip_contact_hdr *contact, const pjsip_rx_data *rdata)
@@ -85,7 +91,7 @@ struct registrar_contact_details {
 	/*! \brief Pool used for parsing URI */
 	pj_pool_t *pool;
 	/*! \brief URI being looked for */
-	pjsip_uri *uri;
+	pjsip_sip_uri *uri;
 };
 
 /*! \brief Callback function for finding a contact */
@@ -113,6 +119,7 @@ static int registrar_validate_contacts(const pjsip_rx_data *rdata, struct ao2_co
 	while ((contact = (pjsip_contact_hdr *) pjsip_msg_find_hdr(rdata->msg_info.msg, PJSIP_H_CONTACT, contact->next))) {
 		int expiration = registrar_get_expiration(aor, contact, rdata);
 		RAII_VAR(struct ast_sip_contact *, existing, NULL, ao2_cleanup);
+		char contact_uri[pjsip_max_url_size];
 
 		if (contact->star) {
 			/* The expiration MUST be 0 when a '*' contact is used and there must be no other contact */
@@ -133,6 +140,19 @@ static int registrar_validate_contacts(const pjsip_rx_data *rdata, struct ao2_co
 		}
 
 		details.uri = pjsip_uri_get_uri(contact->uri);
+
+		/* pjsip_uri_print returns -1 if there's not enough room in the buffer */
+		if (pjsip_uri_print(PJSIP_URI_IN_CONTACT_HDR, details.uri, contact_uri, sizeof(contact_uri)) < 0) {
+			/* If the total length of the uri is greater than pjproject can handle, go no further */
+			pjsip_endpt_release_pool(ast_sip_get_pjsip_endpoint(), details.pool);
+			return -1;
+		}
+
+		if (details.uri->host.slen >= pj_max_hostname) {
+			/* If the length of the hostname is greater than pjproject can handle, go no further */
+			pjsip_endpt_release_pool(ast_sip_get_pjsip_endpoint(), details.pool);
+			return -1;
+		}
 
 		/* Determine if this is an add, update, or delete for policy enforcement purposes */
 		if (!(existing = ao2_callback(contacts, 0, registrar_find_contact, &details))) {
@@ -231,6 +251,7 @@ static void serializer_destroy(void *obj)
 
 static struct serializer *serializer_create(const char *aor_name)
 {
+	char tps_name[AST_TASKPROCESSOR_MAX_NAME + 1];
 	size_t size = strlen(aor_name) + 1;
 	struct serializer *ser = ao2_alloc(
 		sizeof(*ser) + size, serializer_destroy);
@@ -239,7 +260,11 @@ static struct serializer *serializer_create(const char *aor_name)
 		return NULL;
 	}
 
-	if (!(ser->serializer = ast_sip_create_serializer())) {
+	/* Create name with seq number appended. */
+	ast_taskprocessor_build_name(tps_name, sizeof(tps_name), "pjsip/aor/%s",
+		aor_name);
+
+	if (!(ser->serializer = ast_sip_create_serializer_named(tps_name))) {
 		ao2_ref(ser, -1);
 		return NULL;
 	}
@@ -407,27 +432,20 @@ static int registrar_validate_path(struct rx_task_data *task_data, struct ast_st
 	return -1;
 }
 
-static int rx_task(void *data)
+static int rx_task_core(struct rx_task_data *task_data, struct ao2_container *contacts,
+	const char *aor_name)
 {
 	static const pj_str_t USER_AGENT = { "User-Agent", 10 };
-
-	RAII_VAR(struct rx_task_data *, task_data, data, ao2_cleanup);
-	RAII_VAR(struct ao2_container *, contacts, NULL, ao2_cleanup);
 
 	int added = 0, updated = 0, deleted = 0;
 	pjsip_contact_hdr *contact_hdr = NULL;
 	struct registrar_contact_details details = { 0, };
 	pjsip_tx_data *tdata;
-	pjsip_response_addr addr;
-	const char *aor_name = ast_sorcery_object_get_id(task_data->aor);
 	RAII_VAR(struct ast_str *, path_str, NULL, ast_free);
 	struct ast_sip_contact *response_contact;
 	char *user_agent = NULL;
 	pjsip_user_agent_hdr *user_agent_hdr;
 	pjsip_expires_hdr *expires_hdr;
-
-	/* Retrieve the current contacts, we'll need to know whether to update or not */
-	contacts = ast_sip_location_retrieve_aor_contacts(task_data->aor);
 
 	/* So we don't count static contacts against max_contacts we prune them out from the container */
 	ao2_callback(contacts, OBJ_NODATA | OBJ_UNLINK | OBJ_MULTIPLE, registrar_prune_static, NULL);
@@ -473,7 +491,7 @@ static int rx_task(void *data)
 	/* Iterate each provided Contact header and add, update, or delete */
 	while ((contact_hdr = pjsip_msg_find_hdr(task_data->rdata->msg_info.msg, PJSIP_H_CONTACT, contact_hdr ? contact_hdr->next : NULL))) {
 		int expiration;
-		char contact_uri[PJSIP_MAX_URL_SIZE];
+		char contact_uri[pjsip_max_url_size];
 		RAII_VAR(struct ast_sip_contact *, contact, NULL, ao2_cleanup);
 
 		if (contact_hdr->star) {
@@ -499,9 +517,9 @@ static int rx_task(void *data)
 				continue;
 			}
 
-			if (ast_sip_location_add_contact(task_data->aor, contact_uri, ast_tvadd(ast_tvnow(),
+			if (ast_sip_location_add_contact_nolock(task_data->aor, contact_uri, ast_tvadd(ast_tvnow(),
 				ast_samp2tv(expiration, 1)), path_str ? ast_str_buffer(path_str) : NULL,
-					user_agent)) {
+					user_agent, task_data->endpoint)) {
 				ast_log(LOG_ERROR, "Unable to bind contact '%s' to AOR '%s'\n",
 						contact_uri, aor_name);
 				continue;
@@ -541,7 +559,7 @@ static int rx_task(void *data)
 			if (ast_sip_location_update_contact(contact_update)) {
 				ast_log(LOG_ERROR, "Failed to update contact '%s' expiration time to %d seconds.\n",
 					contact->uri, expiration);
-				ast_sorcery_delete(ast_sip_get_sorcery(), contact);
+				ast_sip_location_delete_contact(contact);
 				continue;
 			}
 			ast_debug(3, "Refreshed contact '%s' on AOR '%s' with new expiration of %d seconds\n",
@@ -558,7 +576,6 @@ static int rx_task(void *data)
 			ao2_cleanup(contact_update);
 		} else {
 			/* We want to report the user agent that was actually in the removed contact */
-			user_agent = ast_strdupa(contact->user_agent);
 			ast_sip_location_delete_contact(contact);
 			ast_verb(3, "Removed contact '%s' from AOR '%s' due to request\n", contact_uri, aor_name);
 			ast_test_suite_event_notify("AOR_CONTACT_REMOVED",
@@ -567,7 +584,7 @@ static int rx_task(void *data)
 					"UserAgent: %s",
 					contact_uri,
 					aor_name,
-					user_agent);
+					contact->user_agent);
 		}
 	}
 
@@ -580,15 +597,14 @@ static int rx_task(void *data)
 		ao2_callback(contacts, OBJ_NODATA | OBJ_MULTIPLE, registrar_delete_contact, NULL);
 	}
 
-	/* Update the contacts as things will probably have changed */
-	ao2_cleanup(contacts);
-
-	contacts = ast_sip_location_retrieve_aor_contacts(task_data->aor);
+	/* Re-retrieve contacts.  Caller will clean up the original container. */
+	contacts = ast_sip_location_retrieve_aor_contacts_nolock(task_data->aor);
 	response_contact = ao2_callback(contacts, 0, NULL, NULL);
 
 	/* Send a response containing all of the contacts (including static) that are present on this AOR */
 	if (ast_sip_create_response(task_data->rdata, 200, response_contact, &tdata) != PJ_SUCCESS) {
 		ao2_cleanup(response_contact);
+		ao2_cleanup(contacts);
 		return PJ_TRUE;
 	}
 	ao2_cleanup(response_contact);
@@ -597,19 +613,48 @@ static int rx_task(void *data)
 	registrar_add_date_header(tdata);
 
 	ao2_callback(contacts, 0, registrar_add_contact, tdata);
+	ao2_cleanup(contacts);
 
 	if ((expires_hdr = pjsip_msg_find_hdr(task_data->rdata->msg_info.msg, PJSIP_H_EXPIRES, NULL))) {
 		expires_hdr = pjsip_expires_hdr_create(tdata->pool, registrar_get_expiration(task_data->aor, NULL, task_data->rdata));
 		pjsip_msg_add_hdr(tdata->msg, (pjsip_hdr*)expires_hdr);
 	}
 
-	if (pjsip_get_response_addr(tdata->pool, task_data->rdata, &addr) == PJ_SUCCESS) {
-		ast_sip_send_response(&addr, tdata, task_data->endpoint);
-	} else {
-		pjsip_tx_data_dec_ref(tdata);
-	}
+	ast_sip_send_stateful_response(task_data->rdata, tdata, task_data->endpoint);
 
 	return PJ_TRUE;
+}
+
+static int rx_task(void *data)
+{
+	int res;
+	struct rx_task_data *task_data = data;
+	struct ao2_container *contacts = NULL;
+	struct ast_named_lock *lock;
+	const char *aor_name = ast_sorcery_object_get_id(task_data->aor);
+
+	lock = ast_named_lock_get(AST_NAMED_LOCK_TYPE_RWLOCK, "aor", aor_name);
+	if (!lock) {
+		ao2_cleanup(task_data);
+		return PJ_TRUE;
+	}
+
+	ao2_wrlock(lock);
+	contacts = ast_sip_location_retrieve_aor_contacts_nolock(task_data->aor);
+	if (!contacts) {
+		ao2_unlock(lock);
+		ast_named_lock_put(lock);
+		ao2_cleanup(task_data);
+		return PJ_TRUE;
+	}
+
+	res = rx_task_core(task_data, contacts, aor_name);
+	ao2_cleanup(contacts);
+	ao2_unlock(lock);
+	ast_named_lock_put(lock);
+	ao2_cleanup(task_data);
+
+	return res;
 }
 
 static pj_bool_t registrar_on_rx_request(struct pjsip_rx_data *rdata)
@@ -651,8 +696,12 @@ static pj_bool_t registrar_on_rx_request(struct pjsip_rx_data *rdata)
 	configured_aors = ast_strdupa(endpoint->aors);
 
 	/* Iterate the configured AORs to see if the user or the user+domain match */
-	while ((aor_name = strsep(&configured_aors, ","))) {
+	while ((aor_name = ast_strip(strsep(&configured_aors, ",")))) {
 		struct ast_sip_domain_alias *alias = NULL;
+
+		if (ast_strlen_zero(aor_name)) {
+			continue;
+		}
 
 		if (!pj_strcmp2(&uri->user, aor_name)) {
 			break;
@@ -795,6 +844,12 @@ static pjsip_module registrar_module = {
 static int load_module(void)
 {
 	const pj_str_t STR_REGISTER = { "REGISTER", 8 };
+
+	CHECK_PJPROJECT_MODULE_LOADED();
+
+	ast_pjproject_get_buildopt("PJ_MAX_HOSTNAME", "%d", &pj_max_hostname);
+	/* As of pjproject 2.4.5, PJSIP_MAX_URL_SIZE isn't exposed yet but we try anyway. */
+	ast_pjproject_get_buildopt("PJSIP_MAX_URL_SIZE", "%d", &pjsip_max_url_size);
 
 	CHECK_PJSIP_MODULE_LOADED();
 

@@ -29,7 +29,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 428687 $");
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$");
 
 #include "asterisk/astobj2.h"
 #include "asterisk/stasis_internal.h"
@@ -444,6 +444,10 @@ static void subscription_invoke(struct stasis_subscription *sub,
 static void send_subscription_subscribe(struct stasis_topic *topic, struct stasis_subscription *sub);
 static void send_subscription_unsubscribe(struct stasis_topic *topic, struct stasis_subscription *sub);
 
+void stasis_subscription_cb_noop(void *data, struct stasis_subscription *sub, struct stasis_message *message)
+{
+}
+
 struct stasis_subscription *internal_stasis_subscribe(
 	struct stasis_topic *topic,
 	stasis_subscription_cb callback,
@@ -458,22 +462,29 @@ struct stasis_subscription *internal_stasis_subscribe(
 	}
 
 	/* The ao2 lock is used for join_cond. */
-	sub = ao2_t_alloc(sizeof(*sub), subscription_dtor, topic->name);
+	sub = ao2_t_alloc(sizeof(*sub), subscription_dtor, stasis_topic_name(topic));
 	if (!sub) {
 		return NULL;
 	}
 	ast_uuid_generate_str(sub->uniqueid, sizeof(sub->uniqueid));
 
 	if (needs_mailbox) {
-		/* With a small number of subscribers, a thread-per-sub is
-		 * acceptable. For larger number of subscribers, a thread
+		char tps_name[AST_TASKPROCESSOR_MAX_NAME + 1];
+
+		/* Create name with seq number appended. */
+		ast_taskprocessor_build_name(tps_name, sizeof(tps_name), "sub%c:%s",
+			use_thread_pool ? 'p' : 'm',
+			stasis_topic_name(topic));
+
+		/*
+		 * With a small number of subscribers, a thread-per-sub is
+		 * acceptable. For a large number of subscribers, a thread
 		 * pool should be used.
 		 */
 		if (use_thread_pool) {
-			sub->mailbox = ast_threadpool_serializer(sub->uniqueid, pool);
+			sub->mailbox = ast_threadpool_serializer(tps_name, pool);
 		} else {
-			sub->mailbox = ast_taskprocessor_get(sub->uniqueid,
-				TPS_REF_DEFAULT);
+			sub->mailbox = ast_taskprocessor_get(tps_name, TPS_REF_DEFAULT);
 		}
 		if (!sub->mailbox) {
 			return NULL;
@@ -1270,8 +1281,8 @@ static struct ast_json *multi_user_event_to_json(
 
 	ast_json_object_set(out, "type", ast_json_string_create("ChannelUserevent"));
 	ast_json_object_set(out, "timestamp", ast_json_timeval(*tv, NULL));
-	ast_json_object_set(out, "eventname", ast_json_ref(ast_json_object_get(blob, "eventname")));
-	ast_json_object_set(out, "userevent", ast_json_ref(blob)); /* eventname gets duplicated, that's ok */
+	ast_json_object_set(out, "eventname", ast_json_string_create(ast_json_string_get((ast_json_object_get(blob, "eventname")))));
+	ast_json_object_set(out, "userevent", ast_json_deep_copy(blob));
 
 	for (type = 0; type < STASIS_UMOS_MAX; ++type) {
 		for (i = 0; i < AST_VECTOR_SIZE(&multi->snapshots[type]); ++i) {
@@ -1533,16 +1544,11 @@ STASIS_MESSAGE_TYPE_DEFN(ast_multi_user_event_type,
 
 /*! @} */
 
-/*! \brief Shutdown function */
-static void stasis_exit(void)
-{
-	ast_threadpool_shutdown(pool);
-	pool = NULL;
-}
-
 /*! \brief Cleanup function for graceful shutdowns */
 static void stasis_cleanup(void)
 {
+	ast_threadpool_shutdown(pool);
+	pool = NULL;
 	STASIS_MESSAGE_TYPE_CLEANUP(stasis_subscription_change_type);
 	STASIS_MESSAGE_TYPE_CLEANUP(ast_multi_user_event_type);
 	aco_info_destroy(&cfg_info);
@@ -1557,7 +1563,6 @@ int stasis_init(void)
 
 	/* Be sure the types are cleaned up after the message bus */
 	ast_register_cleanup(stasis_cleanup);
-	ast_register_atexit(stasis_exit);
 
 	if (aco_info_init(&cfg_info)) {
 		return -1;

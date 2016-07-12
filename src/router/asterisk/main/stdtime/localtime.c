@@ -50,7 +50,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 432693 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <signal.h>
 #include <sys/stat.h>
@@ -354,10 +354,9 @@ static int inotify_fd = -1;
 
 static void *inotify_daemon(void *data)
 {
-	struct {
-		struct inotify_event iev;
-		char name[FILENAME_MAX + 1];
-	} buf;
+	/* inotify_event is dynamically sized */
+	struct inotify_event *iev;
+	size_t real_sizeof_iev = sizeof(*iev) + FILENAME_MAX + 1;
 	ssize_t res;
 	struct state *cur;
 
@@ -372,14 +371,15 @@ static void *inotify_daemon(void *data)
 		inotify_thread = AST_PTHREADT_NULL;
 		return NULL;
 	}
+	iev = ast_alloca(real_sizeof_iev);
 
 	common_startup();
 
 	for (;/*ever*/;) {
 		/* This read should block, most of the time. */
-		if ((res = read(inotify_fd, &buf, sizeof(buf))) < sizeof(buf.iev) && res > 0) {
+		if ((res = read(inotify_fd, iev, real_sizeof_iev)) < sizeof(*iev) && res > 0) {
 			/* This should never happen */
-			ast_log(LOG_ERROR, "Inotify read less than a full event (%zd < %zu)?!!\n", res, sizeof(buf.iev));
+			ast_log(LOG_ERROR, "Inotify read less than a full event (%zd < %zu)?!!\n", res, sizeof(*iev));
 			break;
 		} else if (res < 0) {
 			if (errno == EINTR || errno == EAGAIN) {
@@ -395,7 +395,7 @@ static void *inotify_daemon(void *data)
 		}
 		AST_LIST_LOCK(&zonelist);
 		AST_LIST_TRAVERSE_SAFE_BEGIN(&zonelist, cur, list) {
-			if (cur->wd[0] == buf.iev.wd || cur->wd[1] == buf.iev.wd) {
+			if (cur->wd[0] == iev->wd || cur->wd[1] == iev->wd) {
 				AST_LIST_REMOVE_CURRENT(list);
 				sstate_free(cur);
 				break;
@@ -796,13 +796,16 @@ static void sstate_free(struct state *p)
 
 void ast_localtime_wakeup_monitor(struct ast_test *info)
 {
+	struct timeval wait_now = ast_tvnow();
+	struct timespec wait_time = { .tv_sec = wait_now.tv_sec + 2, .tv_nsec = wait_now.tv_usec * 1000 };
+
 	if (inotify_thread != AST_PTHREADT_NULL) {
 		AST_LIST_LOCK(&zonelist);
 #ifdef TEST_FRAMEWORK
 		test = info;
 #endif
 		pthread_kill(inotify_thread, SIGURG);
-		ast_cond_wait(&initialization, &(&zonelist)->lock);
+		ast_cond_timedwait(&initialization, &(&zonelist)->lock, &wait_time);
 #ifdef TEST_FRAMEWORK
 		test = NULL;
 #endif

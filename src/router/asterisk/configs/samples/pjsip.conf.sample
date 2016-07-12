@@ -167,6 +167,11 @@
 ; "contact_user=" sets the SIP contact header's user portion of the SIP URI
 ; this will affect the extension reached in dialplan when the far end calls you at this
 ; registration. The default is 's'.
+;
+; If you would like to enable line support and have incoming calls related to this
+; registration go to an endpoint automatically the "line" and "endpoint" options must
+; be set. The "endpoint" option specifies what endpoint the incoming call should be
+; associated with.
 
 ;[mytrunk]
 ;type=registration
@@ -178,6 +183,8 @@
 ;retry_interval=60
 ;forbidden_retry_interval=600
 ;expiration=3600
+;line=yes
+;endpoint=mytrunk
 
 ;[mytrunk_auth]
 ;type=auth
@@ -608,13 +615,23 @@
 ;disallow=      ; Media Codec s to disallow (default: "")
 ;dtmf_mode=rfc4733      ; DTMF mode (default: "rfc4733")
 ;media_address=         ; IP address used in SDP for media handling (default: "")
+;bind_rtp_to_media_address=     ; Bind the RTP session to the media_address.
+                                ; This causes all RTP packets to be sent from
+                                ; the specified address. (default: "no")
 ;force_rport=yes        ; Force use of return port (default: "yes")
 ;ice_support=no ; Enable the ICE mechanism to help traverse NAT (default: "no")
 ;identify_by=username   ; Way s for Endpoint to be identified (default:
                         ; "username")
 ;redirect_method=user   ; How redirects received from an endpoint are handled
                         ; (default: "user")
-;mailboxes=     ; Mailbox es to be associated with (default: "")
+;mailboxes=     ; NOTIFY the endpoint when state changes for any of the specified mailboxes.
+                ; Asterisk will send unsolicited MWI NOTIFY messages to the endpoint when state
+                ; changes happen for any of the specified mailboxes. (default: "")
+;voicemail_extension= ; The voicemail extension to send in the NOTIFY Message-Account header
+                      ; (default: global/default_voicemail_extension)
+;mwi_subscribe_replaces_unsolicited=no
+                      ; An MWI subscribe will replace unsoliticed NOTIFYs
+                      ; (default: "no")
 ;moh_suggest=default    ; Default Music On Hold class (default: "default")
 ;outbound_auth= ; Authentication object used for outbound requests (default:
                 ; "")
@@ -628,6 +645,7 @@
                         ; information to the called user agent (default: "yes")
 ;send_pai=no    ; Send the P Asserted Identity header (default: "no")
 ;send_rpid=no   ; Send the Remote Party ID header (default: "no")
+;rpid_immediate=no      ; Send connected line updates on unanswered incoming calls immediately. (default: "no")
 ;timers_min_se=90       ; Minimum session timers expiration period (default:
                         ; "90")
 ;timers=yes     ; Session timers for SIP packets (default: "yes")
@@ -648,6 +666,11 @@
                         ; "no")
 ;media_encryption_optimistic=no ; Use encryption if possible but don't fail the call
 								; if not possible.
+;g726_non_standard=no   ; When set to "yes" and an endpoint negotiates g.726
+                        ; audio then g.726 for AAL2 packing order is used contrary
+                        ; to what is recommended in RFC3551. Note, 'g726aal2' also
+                        ; needs to be specified in the codec allow list
+                        ; (default: "no")
 ;inband_progress=no     ; Determines whether chan_pjsip will indicate ringing
                         ; using inband progress (default: "no")
 ;call_group=    ; The numeric pickup groups for a channel (default: "")
@@ -719,6 +742,15 @@
                 ; byte tags (default: "no")
 ;set_var=       ; Variable set on a channel involving the endpoint. For multiple
 		; channel variables specify multiple 'set_var'(s)
+;rtp_keepalive= ; Interval, in seconds, between comfort noise RTP packets if
+                ; RTP is not flowing. This setting is useful for ensuring that
+                ; holes in NATs and firewalls are kept open throughout a call.
+;rtp_timeout=      ; Hang up channel if RTP is not received for the specified
+                   ; number of seconds when the channel is off hold (default:
+                   ; "0" or not enabled)
+;rtp_timeout_hold= ; Hang up channel if RTP is not received for the specified
+                   ; number of seconds when the channel is on hold (default:
+                   ; "0" or not enabled)
 
 ;==========================AUTH SECTION OPTIONS=========================
 ;[auth]
@@ -785,6 +817,12 @@
                                 ; clients are slow to process the received
                                 ; information. Value is in milliseconds; default
                                 ; is 100 ms.
+;allow_reload=no    ; Although transports can now be reloaded, that may not be
+                    ; desirable because of the slight possibility of dropped
+                    ; calls. To make sure there are no unintentional drops, if
+                    ; this option is set to 'no' (the default) changes to the
+                    ; particular transport will be ignored. If set to 'yes',
+                    ; changes (if any) will be applied.
 
 ;==========================AOR SECTION OPTIONS=========================
 ;[aor]
@@ -793,7 +831,11 @@
 ;default_expiration=3600        ; Default expiration time in seconds for
                                 ; contacts that are dynamically bound to an AoR
                                 ; (default: "3600")
-;mailboxes=     ; Mailbox es to be associated with (default: "")
+;mailboxes=           ; Allow subscriptions for the specified mailbox(es)
+                      ; This option applies when an external entity subscribes to an AoR
+                      ; for Message Waiting Indications. (default: "")
+;voicemail_extension= ; The voicemail extension to send in the NOTIFY Message-Account header
+                      ; (default: global/default_voicemail_extension)
 ;maximum_expiration=7200        ; Maximum time to keep an AoR (default: "7200")
 ;max_contacts=0 ; Maximum number of contacts that can bind to an AoR (default:
                 ; "0")
@@ -802,6 +844,7 @@
                         ; (default: "no")
 ;type=  ; Must be of type aor (default: "")
 ;qualify_frequency=0    ; Interval at which to qualify an AoR (default: "0")
+;qualify_timeout=3.0      ; Qualify timeout in fractional seconds (default: "3.0")
 ;authenticate_qualify=no        ; Authenticates a qualify request if needed
                                 ; (default: "no")
 ;outbound_proxy=        ; Outbound proxy used when sending OPTIONS request
@@ -854,10 +897,24 @@
 ;keep_alive_interval=20 ; The interval (in seconds) at which to send keepalive
                         ; messages on all active connection-oriented transports
                         ; (default: "0")
+;contact_expiration_check_interval=30
+                        ; The interval (in seconds) to check for expired contacts.
 ;endpoint_identifier_order=ip,username,anonymous
             ; The order by which endpoint identifiers are given priority.
             ; Identifier names are derived from res_pjsip_endpoint_identifier_*
             ; modules. (default: ip,username,anonymous)
+;max_initial_qualify_time=4 ; The maximum amount of time (in seconds) from
+                            ; startup that qualifies should be attempted on all
+                            ; contacts.  If greater than the qualify_frequency
+                            ; for an aor, qualify_frequency will be used instead.
+;regcontext=sipregistrations  ; If regcontext is specified, Asterisk will dynamically
+                              ; create and destroy a NoOp priority 1 extension for a
+                              ; given endpoint who registers or unregisters with us.
+                              ; The extension added is the name of the endpoint.
+;default_voicemail_extension=asterisk
+                   ; The voicemail extension to send in the NOTIFY Message-Account header
+                   ; if not set on endpoint or aor.
+                   ; (default: "")
 
 
 ; MODULE PROVIDING BELOW SECTION(S): res_pjsip_acl
@@ -897,8 +954,25 @@
                         ; registration is unsuccessful (default: "60")
 ;forbidden_retry_interval=0     ; Interval used when receiving a 403 Forbidden
                                 ; response (default: "0")
+;fatal_retry_interval=0 ; Interval used when receiving a fatal response.
+                        ; (default: "0") A fatal response is any permanent
+                        ; failure (non-temporary 4xx, 5xx, 6xx) response
+                        ; received from the registrar. NOTE - if also set
+                        ; the 'forbidden_retry_interval' takes precedence
+                        ; over this one when a 403 is received. Also, if
+                        ; 'auth_rejection_permanent' equals 'yes' a 401 and
+                        ; 407 become subject to this retry interval.
 ;server_uri=    ; SIP URI of the server to register against (default: "")
 ;transport=     ; Transport used for outbound authentication (default: "")
+;line=          ; When enabled this option will cause a 'line' parameter to be
+                ; added to the Contact header placed into the outgoing
+                ; registration request. If the remote server sends a call
+                ; this line parameter will be used to establish a relationship
+                ; to the outbound registration, ultimately causing the
+                ; configured endpoint to be used (default: "no")
+;endpoint=      ; When line support is enabled this configured endpoint name
+                ; is used for incoming calls that are related to the outbound
+                ; registration (default: "")
 ;type=  ; Must be of type registration (default: "")
 
 

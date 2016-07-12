@@ -32,7 +32,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 425783 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/causes.h"
 #include "asterisk/channel.h"
@@ -554,6 +554,23 @@ int ast_unreal_indicate(struct ast_channel *ast, int condition, const void *data
 		}
 		res = unreal_queue_indicate(p, ast, condition, data, datalen);
 		break;
+	case AST_CONTROL_RINGING:
+		/* Don't queue ringing frames if the channel is not in a "ring" state. Otherwise,
+		 * the real channel on the other end will likely start a playtones generator. It is
+		 * possible that this playtones generator will never be stopped under certain
+		 * circumstances.
+		 */
+		if (ast_channel_state(ast) == AST_STATE_RING) {
+			res = unreal_queue_indicate(p, ast, condition, data, datalen);
+		} else {
+			res = -1;
+		}
+		break;
+	case AST_CONTROL_PVT_CAUSE_CODE:
+		/* Return -1 so that asterisk core will correctly set up hangupcauses. */
+		unreal_queue_indicate(p, ast, condition, data, datalen);
+		res = -1;
+		break;
 	default:
 		res = unreal_queue_indicate(p, ast, condition, data, datalen);
 		break;
@@ -675,12 +692,12 @@ void ast_unreal_call_setup(struct ast_channel *semi1, struct ast_channel *semi2)
 	ast_connected_line_copy_from_caller(ast_channel_connected(semi2), ast_channel_caller(semi1));
 
 	ast_channel_language_set(semi2, ast_channel_language(semi1));
+	ast_channel_musicclass_set(semi2, ast_channel_musicclass(semi1));
+	ast_channel_parkinglot_set(semi2, ast_channel_parkinglot(semi1));
 
 	/* Crossover the accountcode and peeraccount to cross the unreal bridge. */
 	ast_channel_accountcode_set(semi2, ast_channel_peeraccount(semi1));
 	ast_channel_peeraccount_set(semi2, ast_channel_accountcode(semi1));
-
-	ast_channel_musicclass_set(semi2, ast_channel_musicclass(semi1));
 
 	ast_channel_cc_params_init(semi2, ast_channel_get_cc_config_params(semi1));
 
@@ -796,9 +813,11 @@ int ast_unreal_channel_push_to_bridge(struct ast_channel *ast, struct ast_bridge
 		return -1;
 	}
 
+	/* The bridge thread now controls the chan ref from the ast_unreal_pvt */
 	ao2_lock(p);
 	ast_set_flag(p, AST_UNREAL_CARETAKER_THREAD);
 	ao2_unlock(p);
+
 	ast_channel_unref(chan);
 
 	return 0;

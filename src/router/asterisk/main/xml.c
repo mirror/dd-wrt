@@ -31,7 +31,7 @@
 #include "asterisk/utils.h"
 #include "asterisk/autoconfig.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 400385 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #if defined(HAVE_LIBXML2)
 #include <libxml/parser.h>

@@ -35,7 +35,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 432556 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
@@ -357,6 +357,11 @@ int ast_app_exec_macro(struct ast_channel *autoservice_chan, struct ast_channel 
 	if (autoservice_chan) {
 		ast_autoservice_stop(autoservice_chan);
 	}
+
+	if (ast_check_hangup_locked(macro_chan)) {
+		ast_queue_hangup(macro_chan);
+	}
+
 	return res;
 }
 
@@ -433,6 +438,11 @@ int ast_app_exec_sub(struct ast_channel *autoservice_chan, struct ast_channel *s
 	if (autoservice_chan) {
 		ast_autoservice_stop(autoservice_chan);
 	}
+
+	if (!ignore_hangup && ast_check_hangup_locked(sub_chan)) {
+		ast_queue_hangup(sub_chan);
+	}
+
 	return res;
 }
 
@@ -494,7 +504,7 @@ int __ast_vm_register(const struct ast_vm_functions *vm_table, struct ast_module
 	if (table) {
 		ast_log(LOG_WARNING, "Voicemail provider already registered by %s.\n",
 			table->module_name);
-		return -1;
+		return AST_MODULE_LOAD_DECLINE;
 	}
 
 	table = ao2_alloc_options(sizeof(*table), NULL, AO2_ALLOC_OPT_LOCK_NOLOCK);
@@ -605,7 +615,7 @@ int __ast_vm_greeter_register(const struct ast_vm_greeter_functions *vm_table, s
 	if (table) {
 		ast_log(LOG_WARNING, "Voicemail greeter provider already registered by %s.\n",
 			table->module_name);
-		return -1;
+		return AST_MODULE_LOAD_DECLINE;
 	}
 
 	table = ao2_alloc_options(sizeof(*table), NULL, AO2_ALLOC_OPT_LOCK_NOLOCK);
@@ -1514,6 +1524,9 @@ static int __ast_play_and_record(struct ast_channel *chan, const char *playfile,
 		break;
 	case AST_RECORD_IF_EXISTS_APPEND:
 		ioflags |= O_APPEND;
+		break;
+	case AST_RECORD_IF_EXISTS_ERROR:
+		ast_assert(0);
 		break;
 	}
 

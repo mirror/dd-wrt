@@ -29,13 +29,14 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 429497 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/logger.h"
 #include "asterisk/codec.h"
 #include "asterisk/format.h"
 #include "asterisk/astobj2.h"
 #include "asterisk/strings.h"
+#include "asterisk/module.h"
 
 /*! \brief Number of buckets to use for format interfaces (should be prime for performance reasons) */
 #define FORMAT_INTERFACE_BUCKETS 53
@@ -126,7 +127,7 @@ int ast_format_init(void)
 		return -1;
 	}
 
-	ast_register_atexit(format_shutdown);
+	ast_register_cleanup(format_shutdown);
 
 	return 0;
 }
@@ -156,6 +157,8 @@ int __ast_format_interface_register(const char *codec, const struct ast_format_i
 	format_interface->interface = interface;
 	strcpy(format_interface->codec, codec); /* Safe */
 
+	/* Once registered a format interface cannot be unregistered. */
+	ast_module_shutdown_ref(mod);
 	ao2_link_flags(interfaces, format_interface, OBJ_NOLOCK);
 	ao2_ref(format_interface, -1);
 
@@ -295,6 +298,25 @@ struct ast_format *ast_format_attribute_set(const struct ast_format *format, con
 	return interface->format_attribute_set(format, name, value);
 }
 
+const void *ast_format_attribute_get(const struct ast_format *format, const char *name)
+{
+	const struct ast_format_interface *interface = format->interface;
+
+	if (!interface) {
+		struct format_interface *format_interface = ao2_find(interfaces, format->codec->name, OBJ_SEARCH_KEY);
+		if (format_interface) {
+			interface = format_interface->interface;
+			ao2_ref(format_interface, -1);
+		}
+	}
+
+	if (!interface || !interface->format_attribute_get) {
+		return NULL;
+	}
+
+	return interface->format_attribute_get(format, name);
+}
+
 struct ast_format *ast_format_parse_sdp_fmtp(const struct ast_format *format, const char *attributes)
 {
 	const struct ast_format_interface *interface = format->interface;
@@ -316,11 +338,21 @@ struct ast_format *ast_format_parse_sdp_fmtp(const struct ast_format *format, co
 
 void ast_format_generate_sdp_fmtp(const struct ast_format *format, unsigned int payload, struct ast_str **str)
 {
-	if (!format->interface || !format->interface->format_generate_sdp_fmtp) {
+	const struct ast_format_interface *interface = format->interface;
+
+	if (!interface) {
+		struct format_interface *format_interface = ao2_find(interfaces, format->codec->name, OBJ_SEARCH_KEY);
+		if (format_interface) {
+			interface = format_interface->interface;
+			ao2_ref(format_interface, -1);
+		}
+	}
+
+	if (!interface || !interface->format_generate_sdp_fmtp) {
 		return;
 	}
 
-	format->interface->format_generate_sdp_fmtp(format, payload, str);
+	interface->format_generate_sdp_fmtp(format, payload, str);
 }
 
 struct ast_codec *ast_format_get_codec(const struct ast_format *format)
@@ -375,7 +407,7 @@ unsigned int ast_format_get_minimum_bytes(const struct ast_format *format)
 
 unsigned int ast_format_get_sample_rate(const struct ast_format *format)
 {
-	return format->codec->sample_rate;
+	return format->codec->sample_rate ?: 8000;
 }
 
 unsigned int ast_format_determine_length(const struct ast_format *format, unsigned int samples)

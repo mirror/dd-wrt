@@ -33,7 +33,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 400186 $");
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$");
 
 #include "asterisk/module.h"
 #include "asterisk/logger.h"
@@ -98,7 +98,7 @@ static void security_event_stasis_cb(struct ast_json *json)
 	event_type_json = ast_json_object_get(json, "SecurityEvent");
 	event_type = ast_json_integer_get(event_type_json);
 
-	ast_assert(event_type >= 0 && event_type < AST_SECURITY_EVENT_NUM_TYPES);
+	ast_assert((unsigned int)event_type < AST_SECURITY_EVENT_NUM_TYPES);
 
 	if (!(str = ast_str_thread_get(&security_event_buf,
 			SECURITY_EVENT_BUF_INIT_LEN))) {
@@ -152,7 +152,7 @@ static int load_module(void)
 static int unload_module(void)
 {
 	if (security_stasis_sub) {
-		security_stasis_sub = stasis_unsubscribe(security_stasis_sub);
+		security_stasis_sub = stasis_unsubscribe_and_join(security_stasis_sub);
 	}
 
 	ast_logger_unregister_level(LOG_SECURITY_NAME);

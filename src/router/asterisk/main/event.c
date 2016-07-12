@@ -29,7 +29,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 417571 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/_private.h"
 
@@ -199,7 +199,7 @@ const char *ast_event_get_type_name(const struct ast_event *event)
 
 	type = ast_event_get_type(event);
 
-	if (type < 0 || type >= ARRAY_LEN(event_names)) {
+	if ((unsigned int)type >= ARRAY_LEN(event_names)) {
 		ast_log(LOG_ERROR, "Invalid event type - '%u'\n", type);
 		return "";
 	}

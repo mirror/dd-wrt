@@ -39,7 +39,7 @@
 #include <errno.h>
 #include <unistd.h>
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 385718 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/utils.h"
 #include "asterisk/module.h"
@@ -88,7 +88,7 @@ AST_TEST_DEFINE(poll_test)
 		info->category = "/main/poll/";
 		info->summary = "unit test for the ast_poll() API";
 		info->description =
-			"Verifies behavior for the ast_poll() API call\n";
+			"Verifies behavior for the ast_poll() API call";
 		return AST_TEST_NOT_RUN;
 	case TEST_EXECUTE:
 		break;

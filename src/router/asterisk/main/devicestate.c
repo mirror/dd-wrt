@@ -143,7 +143,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 422661 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/_private.h"
 #include "asterisk/channel.h"
@@ -214,6 +214,7 @@ static pthread_t change_thread = AST_PTHREADT_NULL;
 
 /*! \brief Flag for the queue */
 static ast_cond_t change_pending;
+static volatile int shuttingdown;
 
 struct stasis_subscription *devstate_message_sub;
 
@@ -397,6 +398,7 @@ enum ast_device_state ast_device_state(const char *device)
 /*! \brief Add device state provider */
 int ast_devstate_prov_add(const char *label, ast_devstate_prov_cb_type callback)
 {
+	struct devstate_prov *devcb;
 	struct devstate_prov *devprov;
 
 	if (!callback || !(devprov = ast_calloc(1, sizeof(*devprov))))
@@ -406,6 +408,14 @@ int ast_devstate_prov_add(const char *label, ast_devstate_prov_cb_type callback)
 	ast_copy_string(devprov->label, label, sizeof(devprov->label));
 
 	AST_RWLIST_WRLOCK(&devstate_provs);
+	AST_RWLIST_TRAVERSE(&devstate_provs, devcb, list) {
+		if (!strcasecmp(devcb->label, label)) {
+			ast_log(LOG_WARNING, "Device state provider '%s' already registered\n", label);
+			ast_free(devprov);
+			AST_RWLIST_UNLOCK(&devstate_provs);
+			return -1;
+		}
+	}
 	AST_RWLIST_INSERT_HEAD(&devstate_provs, devprov, list);
 	AST_RWLIST_UNLOCK(&devstate_provs);
 
@@ -539,7 +549,7 @@ static void *do_devstate_changes(void *data)
 {
 	struct state_change *next, *current;
 
-	for (;;) {
+	while (!shuttingdown) {
 		/* This basically pops off any state change entries, resets the list back to NULL, unlocks, and processes each state change */
 		AST_LIST_LOCK(&state_changes);
 		if (AST_LIST_EMPTY(&state_changes))
@@ -617,6 +627,18 @@ static void devstate_change_cb(void *data, struct stasis_subscription *sub, stru
 		device_state->cachable, NULL);
 }
 
+static void device_state_engine_cleanup(void)
+{
+	shuttingdown = 1;
+	AST_LIST_LOCK(&state_changes);
+	ast_cond_signal(&change_pending);
+	AST_LIST_UNLOCK(&state_changes);
+
+	if (change_thread != AST_PTHREADT_NULL) {
+		pthread_join(change_thread, NULL);
+	}
+}
+
 /*! \brief Initialize the device state engine in separate thread */
 int ast_device_state_engine_init(void)
 {
@@ -625,6 +647,7 @@ int ast_device_state_engine_init(void)
 		ast_log(LOG_ERROR, "Unable to start device state change thread.\n");
 		return -1;
 	}
+	ast_register_cleanup(device_state_engine_cleanup);
 
 	return 0;
 }

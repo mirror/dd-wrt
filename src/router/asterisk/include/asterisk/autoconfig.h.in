@@ -152,13 +152,13 @@
 /* Define to 1 if you have the `cosl' function. */
 #undef HAVE_COSL
 
-/* Define to 1 if you have the `crypt' function. */
+/* Define to 1 if you have the 'crypt' function. */
 #undef HAVE_CRYPT
 
 /* Define to 1 if you have the OpenSSL Cryptography library. */
 #undef HAVE_CRYPTO
 
-/* Define to 1 if you have the `crypt_r' function. */
+/* Define to 1 if you have the 'crypt_r' function. */
 #undef HAVE_CRYPT_R
 
 /* Define to 1 if you have a functional curl library. */
@@ -545,6 +545,9 @@
 /* Define to 1 if CRYPTO has the OpenSSL Elliptic Curve Support feature. */
 #undef HAVE_OPENSSL_EC
 
+/* Define if your system has SSL_CTX_set_ecdh_auto declared. */
+#undef HAVE_OPENSSL_ECDH_AUTO
+
 /* Define to 1 if CRYPTO has the OpenSSL SRTP Extension Support feature. */
 #undef HAVE_OPENSSL_SRTP
 
@@ -575,18 +578,28 @@
 /* Define if your system has the PJPROJECT libraries. */
 #undef HAVE_PJPROJECT
 
-/* Define to 1 if PJPROJECT has the pjsip_get_dest_info support feature. */
+/* Define if your system has PJPROJECT_BUNDLED */
+#undef HAVE_PJPROJECT_BUNDLED
+
+/* Define if your system has pjsip_dlg_create_uas_and_inc_lock declared. */
+#undef HAVE_PJSIP_DLG_CREATE_UAS_AND_INC_LOCK
+
+/* Define if your system has pjsip_endpt_set_ext_resolver declared. */
+#undef HAVE_PJSIP_EXTERNAL_RESOLVER
+
+/* Define if your system has pjsip_get_dest_info declared. */
 #undef HAVE_PJSIP_GET_DEST_INFO
 
 /* Define if your system has the PJSIP_REPLACE_MEDIA_STREAM headers. */
 #undef HAVE_PJSIP_REPLACE_MEDIA_STREAM
 
-/* Define to 1 if PJPROJECT has the pj_ssl_cert_load_from_files2 support
-   feature. */
+/* Define if your system has the PJSIP_TLS_TRANSPORT_PROTO headers. */
+#undef HAVE_PJSIP_TLS_TRANSPORT_PROTO
+
+/* Define if your system has pj_ssl_cert_load_from_files2 declared. */
 #undef HAVE_PJ_SSL_CERT_LOAD_FROM_FILES2
 
-/* Define to 1 if PJPROJECT has the PJSIP Transaction Group Lock Support
-   feature. */
+/* Define if your system has pjsip_tsx_create_uac2 declared. */
 #undef HAVE_PJ_TRANSACTION_GRP_LOCK
 
 /* Define to 1 if your system defines IP_PKTINFO. */
@@ -816,6 +829,12 @@
 
 /* Define to 1 if you have the ISDN SS7 library. */
 #undef HAVE_SS7
+
+/* Define if your system has the SSL_OP_NO_TLSV1_1 headers. */
+#undef HAVE_SSL_OP_NO_TLSV1_1
+
+/* Define if your system has the SSL_OP_NO_TLSV1_2 headers. */
+#undef HAVE_SSL_OP_NO_TLSV1_2
 
 /* Define to 1 if `stat' has the bug that it succeeds when given the
    zero-length file name argument. */
@@ -1300,6 +1319,14 @@
 
 /* Number of bits in a file offset, on hosts where this is settable. */
 #undef _FILE_OFFSET_BITS
+
+/* Prevent clang array-bounds warning by not using strcmp from bits/string2.h
+   */
+#undef _HAVE_STRING_ARCH_strcmp
+
+/* Prevent clang array-bounds warning by not using strsep from bits/string2.h
+   */
+#undef _HAVE_STRING_ARCH_strsep
 
 /* Define to 1 to make fseeko visible on some hosts (e.g. glibc 2.2). */
 #undef _LARGEFILE_SOURCE

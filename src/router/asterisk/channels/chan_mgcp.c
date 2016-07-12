@@ -40,7 +40,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 428687 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <sys/socket.h>
 #include <sys/ioctl.h>
@@ -488,14 +488,6 @@ static struct ast_channel_tech mgcp_tech = {
 	.send_digit_end = mgcp_senddigit_end,
 	.func_channel_read = acf_channel_read,
 };
-
-static void mwi_event_cb(void *userdata, struct stasis_subscription *sub, struct stasis_message *msg)
-{
-	/* This module does not handle MWI in an event-based manner.  However, it
-	 * subscribes to MWI for each mailbox that is configured so that the core
-	 * knows that we care about it.  Then, chan_mgcp will get the MWI from the
-	 * event cache instead of checking the mailbox directly. */
-}
 
 static int has_voicemail(struct mgcp_endpoint *p)
 {
@@ -1261,7 +1253,7 @@ static int mgcp_write(struct ast_channel *ast, struct ast_frame *frame)
 		}
 	} else {
 		if (ast_format_cap_iscompatible_format(ast_channel_nativeformats(ast), frame->subclass.format) == AST_FORMAT_CMP_NOT_EQUAL) {
-			struct ast_str *cap_buf = ast_str_alloca(64);
+			struct ast_str *cap_buf = ast_str_alloca(AST_FORMAT_CAP_NAMES_LEN);
 
 			ast_log(LOG_WARNING, "Asked to transmit frame type %s, while native formats is %s (read/write = %s/%s)\n",
 				ast_format_get_name(frame->subclass.format),
@@ -1994,9 +1986,9 @@ static int process_sdp(struct mgcp_subchannel *sub, struct mgcp_request *req)
 	int codec, codec_count=0;
 	int iterator;
 	struct mgcp_endpoint *p = sub->parent;
-	struct ast_str *global_buf = ast_str_alloca(64);
-	struct ast_str *peer_buf = ast_str_alloca(64);
-	struct ast_str *pvt_buf = ast_str_alloca(64);
+	struct ast_str *global_buf = ast_str_alloca(AST_FORMAT_CAP_NAMES_LEN);
+	struct ast_str *peer_buf = ast_str_alloca(AST_FORMAT_CAP_NAMES_LEN);
+	struct ast_str *pvt_buf = ast_str_alloca(AST_FORMAT_CAP_NAMES_LEN);
 
 	/* Get codec and RTP info from SDP */
 	m = get_sdp(req, "m");
@@ -3980,7 +3972,7 @@ static struct ast_channel *mgcp_request(const char *type, struct ast_format_cap 
 	char tmp[256];
 
 	if (!(ast_format_cap_iscompatible(cap, global_capability))) {
-		struct ast_str *cap_buf = ast_str_alloca(64);
+		struct ast_str *cap_buf = ast_str_alloca(AST_FORMAT_CAP_NAMES_LEN);
 		ast_log(LOG_NOTICE, "Asked to get a channel of unsupported format '%s'\n",
 			ast_format_cap_get_names(cap, &cap_buf));
 		/*return NULL;*/
@@ -4237,7 +4229,11 @@ static struct mgcp_gateway *build_gateway(char *cat, struct ast_variable *v)
 
 					mailbox_specific_topic = ast_mwi_topic(e->mailbox);
 					if (mailbox_specific_topic) {
-						e->mwi_event_sub = stasis_subscribe_pool(mailbox_specific_topic, mwi_event_cb, NULL);
+						/* This module does not handle MWI in an event-based manner.  However, it
+						 * subscribes to MWI for each mailbox that is configured so that the core
+						 * knows that we care about it.  Then, chan_mgcp will get the MWI from the
+						 * event cache instead of checking the mailbox directly. */
+						e->mwi_event_sub = stasis_subscribe_pool(mailbox_specific_topic, stasis_subscription_cb_noop, NULL);
 					}
 				}
 				snprintf(e->rqnt_ident, sizeof(e->rqnt_ident), "%08lx", (unsigned long)ast_random());
@@ -4999,7 +4995,9 @@ static int unload_module(void)
 		return -1;
 	}
 
-	close(mgcpsock);
+	if (mgcpsock > -1) {
+		close(mgcpsock);
+	}
 	ast_rtp_glue_unregister(&mgcp_rtp_glue);
 	ast_cli_unregister_multiple(cli_mgcp, sizeof(cli_mgcp) / sizeof(struct ast_cli_entry));
 	ast_sched_context_destroy(sched);

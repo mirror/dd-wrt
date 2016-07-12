@@ -1,4 +1,4 @@
- /*
+/*
  * Asterisk -- An open source telephony toolkit.
  *
  * Copyright (C) 1999 - 2009, Digium, Inc.
@@ -78,14 +78,13 @@ extern "C" {
 #include "asterisk/stasis.h"
 #include "asterisk/vector.h"
 
-/* Maximum number of payloads supported */
-#if defined(LOW_MEMORY)
+/*! Maximum number of payload types RTP can support. */
 #define AST_RTP_MAX_PT 128
-#else
-#define AST_RTP_MAX_PT 196
-#endif
 
-/* Maximum number of generations */
+/*! First dynamic RTP payload type */
+#define AST_RTP_PT_FIRST_DYNAMIC 96
+
+/*! Maximum number of generations */
 #define AST_RED_MAX_GENERATION 5
 
 /*!
@@ -229,6 +228,10 @@ enum ast_rtp_instance_stat {
 	AST_RTP_INSTANCE_STAT_REMOTE_SSRC,
 	/*! Retrieve channel unique ID */
 	AST_RTP_INSTANCE_STAT_CHANNEL_UNIQUEID,
+	/*! Retrieve number of octets transmitted */
+	AST_RTP_INSTANCE_STAT_TXOCTETCOUNT,
+	/*! Retrieve number of octets received */
+	AST_RTP_INSTANCE_STAT_RXOCTETCOUNT,
 };
 
 /* Codes for RTP-specific data - not defined by our AST_FORMAT codes */
@@ -356,6 +359,10 @@ struct ast_rtp_instance_stats {
 	unsigned int remote_ssrc;
 	/*! The Asterisk channel's unique ID that owns this instance */
 	char channel_uniqueid[MAX_CHANNEL_ID];
+	/*! Number of octets transmitted */
+	unsigned int txoctetcount;
+	/*! Number of octets received */
+	unsigned int rxoctetcount;
 };
 
 #define AST_RTP_STAT_SET(current_stat, combined, placement, value) \
@@ -625,7 +632,7 @@ struct ast_rtp_glue {
 	enum ast_rtp_glue_result (*get_trtp_info)(struct ast_channel *chan, struct ast_rtp_instance **instance);
 	/*! Callback for updating the destination that the remote side should send RTP to */
 	int (*update_peer)(struct ast_channel *chan, struct ast_rtp_instance *instance, struct ast_rtp_instance *vinstance, struct ast_rtp_instance *tinstance, const struct ast_format_cap *cap, int nat_active);
-	/*! Callback for retrieving codecs that the channel can do.  Result returned in result_cap*/
+	/*! Callback for retrieving codecs that the channel can do.  Result returned in result_cap. */
 	void (*get_codec)(struct ast_channel *chan, struct ast_format_cap *result_cap);
 	/*! Linked list information */
 	AST_RWLIST_ENTRY(ast_rtp_glue) entry;
@@ -930,7 +937,7 @@ int ast_rtp_instance_set_requested_target_address(struct ast_rtp_instance *insta
  * \since 1.8
  */
 #define ast_rtp_instance_set_remote_address(instance, address) \
-	ast_rtp_instance_set_requested_target_address((instance), (address));
+	ast_rtp_instance_set_requested_target_address((instance), (address))
 
 /*!
  * \brief Set the address that we are expecting to receive RTP on
@@ -1042,7 +1049,7 @@ void ast_rtp_instance_get_requested_target_address(struct ast_rtp_instance *inst
  * \since 1.8
  */
 #define ast_rtp_instance_get_remote_address(instance, address) \
-	ast_rtp_instance_get_incoming_source_address((instance), (address));
+	ast_rtp_instance_get_incoming_source_address((instance), (address))
 
 /*!
  * \brief Get the requested target address of the remote endpoint and
@@ -1078,7 +1085,7 @@ int ast_rtp_instance_get_and_cmp_requested_target_address(struct ast_rtp_instanc
  * \since 1.8
  */
 #define ast_rtp_instance_get_and_cmp_remote_address(instance, address) \
-	ast_rtp_instance_get_and_cmp_requested_target_address((instance), (address));
+	ast_rtp_instance_get_and_cmp_requested_target_address((instance), (address))
 
 /*!
  * \brief Set the value of an RTP instance extended property
@@ -1418,7 +1425,7 @@ unsigned int ast_rtp_lookup_sample_rate2(int asterisk_format, struct ast_format 
  * \code
  * struct ast_format_cap *astformats = ast_format_cap_alloc_nolock()
  * int nonastformats;
- * ast_rtp_codecs_payload_formats(&codecs, &astformats, &nonastformats);
+ * ast_rtp_codecs_payload_formats(&codecs, astformats, &nonastformats);
  * \endcode
  *
  * This retrieves all the formats known about in the codecs structure and puts the Asterisk ones in the integer
@@ -1449,6 +1456,7 @@ void ast_rtp_codecs_payload_formats(struct ast_rtp_codecs *codecs, struct ast_fo
  * \since 1.8
  */
 int ast_rtp_codecs_payload_code(struct ast_rtp_codecs *codecs, int asterisk_format, const struct ast_format *format, int code);
+
 /*!
  * \brief Search for a payload code in the ast_rtp_codecs structure
  *
@@ -2191,20 +2199,22 @@ int ast_rtp_instance_sendcng(struct ast_rtp_instance *instance, int level);
  * \param instance the RTP instance
  * \param remote_policy the remote endpoint's policy
  * \param local_policy our policy for this RTP instance's remote endpoint
+ * \param rtcp 1 for dedicated RTCP policies
  *
  * \retval 0 Success
  * \retval non-zero Failure
  */
-int ast_rtp_instance_add_srtp_policy(struct ast_rtp_instance *instance, struct ast_srtp_policy* remote_policy, struct ast_srtp_policy *local_policy);
+int ast_rtp_instance_add_srtp_policy(struct ast_rtp_instance *instance, struct ast_srtp_policy* remote_policy, struct ast_srtp_policy *local_policy, int rtcp);
 
 /*!
  * \brief Obtain the SRTP instance associated with an RTP instance
  *
  * \param instance the RTP instance
+ * \param rtcp 1 to request instance for RTCP
  * \retval the SRTP instance on success
  * \retval NULL if no SRTP instance exists
  */
-struct ast_srtp *ast_rtp_instance_get_srtp(struct ast_rtp_instance *instance);
+struct ast_srtp *ast_rtp_instance_get_srtp(struct ast_rtp_instance *instance, int rtcp);
 
 /*! \brief Custom formats declared in codecs.conf at startup must be communicated to the rtp_engine
  * so their mime type can payload number can be initialized. */
@@ -2287,6 +2297,38 @@ void ast_rtp_publish_rtcp_message(struct ast_rtp_instance *rtp,
 		struct stasis_message_type *message_type,
 		struct ast_rtp_rtcp_report *report,
 		struct ast_json *blob);
+
+/*!
+ * \brief Get the last RTP transmission time
+ *
+ * \param rtp The instance from which to get the last transmission time
+ * \return The last RTP transmission time
+ */
+time_t ast_rtp_instance_get_last_tx(const struct ast_rtp_instance *rtp);
+
+/*!
+ * \brief Set the last RTP transmission time
+ *
+ * \param rtp The instance on which to set the last transmission time
+ * \param time The last transmission time
+ */
+void ast_rtp_instance_set_last_tx(struct ast_rtp_instance *rtp, time_t time);
+
+/*
+ * \brief Get the last RTP reception time
+ *
+ * \param rtp The instance from which to get the last reception time
+ * \return The last RTP reception time
+ */
+time_t ast_rtp_instance_get_last_rx(const struct ast_rtp_instance *rtp);
+
+/*!
+ * \brief Set the last RTP reception time
+ *
+ * \param rtp The instance on which to set the last reception time
+ * \param time The last reception time
+ */
+void ast_rtp_instance_set_last_rx(struct ast_rtp_instance *rtp, time_t time);
 
 /*! \addtogroup StasisTopicsAndMessages
  * @{

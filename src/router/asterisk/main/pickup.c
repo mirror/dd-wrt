@@ -47,7 +47,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 420124 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/pickup.h"
 #include "asterisk/channel.h"
@@ -403,7 +403,7 @@ static void pickup_shutdown(void)
 int ast_pickup_init(void)
 {
 	STASIS_MESSAGE_TYPE_INIT(ast_call_pickup_type);
-	ast_register_atexit(pickup_shutdown);
+	ast_register_cleanup(pickup_shutdown);
 
 	return 0;
 }

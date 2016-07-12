@@ -31,7 +31,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419044 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/test.h"
 #include "asterisk/module.h"
@@ -245,7 +245,7 @@ AST_TEST_DEFINE(format_cap_append_all_unknown)
 	} else if (!ast_format_cap_has_type(caps, AST_MEDIA_TYPE_VIDEO)) {
 		ast_test_status_update(test, "Added all media formats but no video formats exist when they should\n");
 		return AST_TEST_FAIL;
-	} else if ((ast_format_cap_count(caps) + 1) != ast_codec_get_max()) {
+	} else if ((ast_format_cap_count(caps) + 1) != (ast_codec_get_max() - 1)) {
 		ast_test_status_update(test, "The number of formats in the capabilities structure does not match known number\n");
 		return AST_TEST_FAIL;
 	}
@@ -1079,7 +1079,7 @@ AST_TEST_DEFINE(format_cap_get_names)
 	RAII_VAR(struct ast_format *, ulaw_format, NULL, ao2_cleanup);
 	RAII_VAR(struct ast_codec *, alaw, NULL, ao2_cleanup);
 	RAII_VAR(struct ast_format *, alaw_format, NULL, ao2_cleanup);
-	struct ast_str *buffer = ast_str_alloca(128);
+	struct ast_str *buffer = ast_str_alloca(AST_FORMAT_CAP_NAMES_LEN);
 
 	switch (cmd) {
 	case TEST_INIT:
@@ -1088,7 +1088,7 @@ AST_TEST_DEFINE(format_cap_get_names)
 		info->summary = "Test getting the names of formats";
 		info->description =
 			"Test that obtaining the names from a format capabilities structure\n"
-			"produces the expected output.\n";
+			"produces the expected output.";
 		return AST_TEST_NOT_RUN;
 	case TEST_EXECUTE:
 		break;

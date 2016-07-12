@@ -29,7 +29,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 427466 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <dirent.h>
 #include <sys/stat.h>
@@ -902,7 +902,7 @@ static enum fsread_res ast_readaudio_callback(struct ast_filestream *s)
 
 		if (!fr /* stream complete */ || ast_write(s->owner, fr) /* error writing */) {
 			if (fr) {
-				ast_log(LOG_WARNING, "Failed to write frame\n");
+				ast_debug(2, "Failed to write frame\n");
 				ast_frfree(fr);
 			}
 			goto return_failure;
@@ -959,7 +959,7 @@ static enum fsread_res ast_readvideo_callback(struct ast_filestream *s)
 
 		if (!fr /* stream complete */ || ast_write(s->owner, fr) /* error writing */) {
 			if (fr) {
-				ast_log(LOG_WARNING, "Failed to write frame\n");
+				ast_debug(2, "Failed to write frame\n");
 				ast_frfree(fr);
 			}
 			ast_channel_vstreamid_set(s->owner, -1);
@@ -1096,7 +1096,7 @@ int ast_streamfile(struct ast_channel *chan, const char *filename, const char *p
 
 	fs = ast_openstream(chan, filename, preflang);
 	if (!fs) {
-		struct ast_str *codec_buf = ast_str_alloca(64);
+		struct ast_str *codec_buf = ast_str_alloca(AST_FORMAT_CAP_NAMES_LEN);
 		ast_log(LOG_WARNING, "Unable to open %s (format %s): %s\n",
 			filename, ast_format_cap_get_names(ast_channel_nativeformats(chan), &codec_buf), strerror(errno));
 		return -1;
@@ -1785,6 +1785,6 @@ int ast_file_init(void)
 	STASIS_MESSAGE_TYPE_INIT(ast_format_register_type);
 	STASIS_MESSAGE_TYPE_INIT(ast_format_unregister_type);
 	ast_cli_register_multiple(cli_file, ARRAY_LEN(cli_file));
-	ast_register_atexit(file_shutdown);
+	ast_register_cleanup(file_shutdown);
 	return 0;
 }

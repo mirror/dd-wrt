@@ -35,7 +35,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419175 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 #include <pthread.h>
 #include "asterisk/hashtab.h"
 #include "asterisk/lock.h"

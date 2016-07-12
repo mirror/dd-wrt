@@ -23,7 +23,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 416807 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/_private.h"
 #include "asterisk/astobj2.h"
@@ -878,6 +878,8 @@ static void rb_ao2_node_destructor(void *v_doomed)
 		 * same node.
 		 */
 		my_container = (struct ao2_container_rbtree *) doomed->common.my_container;
+		ast_assert(is_ao2_object(my_container));
+
 		__adjust_lock(my_container, AO2_LOCK_REQ_WRLOCK, 1);
 
 #if defined(AO2_DEBUG)
