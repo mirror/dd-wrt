@@ -502,6 +502,11 @@ ifeq ($(CONFIG_ONNET),y)
 	rm -f $(INSTALLDIR)/www/images/favicon.ico
 	ls -l $(INSTALLDIR)/www/help/
 #	cp -fa onnet/files/* $(INSTALLDIR) || true
+
+  ifeq ($(CONFIG_XD3200),y)
+	mkdir -p $(INSTALLDIR)/etc/config
+	cp onnet/extra/xd3200.startup $(INSTALLDIR)/etc/config/
+  endif
 endif
 
 ifeq ($(CONFIG_GLAUCO),y)
