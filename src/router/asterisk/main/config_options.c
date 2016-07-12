@@ -193,13 +193,12 @@ static int link_option_to_types(struct aco_info *info, struct aco_type **types, 
 			return -1;
 		}
 #ifdef AST_XML_DOCS
-		if (!info->hidden && !opt->no_doc &&
-			xmldoc_update_config_option(types, info->module, opt->name, type->name, opt->default_val, opt->match_type == ACO_REGEX, opt->type)) {
+		if (!info->hidden && !opt->no_doc && xmldoc_update_config_option(types, info->module, opt->name, type->name, opt->default_val, opt->match_type == ACO_REGEX, opt->type)) {
 #ifdef AST_DEVMODE
 			opt->doc_unavailable = 1;
 #endif
-#endif
 		}
+#endif
 	}
 	/* The container(s) should hold the only ref to opt */
 	ao2_ref(opt, -1);
