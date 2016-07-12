@@ -1,3 +1,27 @@
+version 2.77
+	    Calculate the length of TFTP error reply packet 
+	    correctly. This fixes a problem when the error 
+	    message in a TFTP packet exceeds the arbitrary 
+	    limit of 500 characters. The message was correctly
+	    truncated, but not the packet length, so 
+	    extra data was appended. This is a possible
+	    security risk, since the extra data comes from
+	    a buffer which is also used for DNS, so that
+	    previous DNS queries or replies may be leaked.
+	    Thanks to Mozilla for funding the security audit 
+	    which spotted this bug.
+
+	    Fix logic error in Linux netlink code. This could
+	    cause dnsmasq to enter a tight loop on systems
+	    with a very large number of network interfaces.
+	    Thanks to Ivan Kokshaysky for the diagnosis and
+	    patch.
+
+ 	    Fix problem with --dnssec-timestamp whereby receipt
+            of SIGHUP would erroneously engage timestamp checking.
+	    Thanks to Kevin Darbyshire-Bryant for this work.
+	
+
 version 2.76
             Include 0.0.0.0/8 in DNS rebind checks. This range 
 	    translates to hosts on  the local network, or, at 
