@@ -29,7 +29,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 424472 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/_private.h"
 #include "asterisk/module.h"
@@ -83,6 +83,8 @@ struct ast_taskprocessor {
 	pthread_t thread;
 	/*! Indicates if the taskprocessor is currently executing a task */
 	unsigned int executing:1;
+	/*! Indicates that a high water warning has been issued on this task processor */
+	unsigned int high_water_warned:1;
 };
 
 /*!
@@ -127,9 +129,6 @@ static int tps_ping_handler(void *datap);
 
 /*! \brief Remove the front task off the taskprocessor queue */
 static struct tps_task *tps_taskprocessor_pop(struct ast_taskprocessor *tps);
-
-/*! \brief Return the size of the taskprocessor queue */
-static int tps_taskprocessor_depth(struct ast_taskprocessor *tps);
 
 static char *cli_tps_ping(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a);
 static char *cli_tps_report(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a);
@@ -278,7 +277,7 @@ int ast_tps_init(void)
 
 	ast_cli_register_multiple(taskprocessor_clis, ARRAY_LEN(taskprocessor_clis));
 
-	ast_register_atexit(tps_shutdown);
+	ast_register_cleanup(tps_shutdown);
 
 	return 0;
 }
@@ -333,10 +332,11 @@ static void *tps_task_free(struct tps_task *task)
 }
 
 /* taskprocessor tab completion */
-static char *tps_taskprocessor_tab_complete(struct ast_taskprocessor *p, struct ast_cli_args *a)
+static char *tps_taskprocessor_tab_complete(struct ast_cli_args *a)
 {
 	int tklen;
 	int wordnum = 0;
+	struct ast_taskprocessor *p;
 	char *name = NULL;
 	struct ao2_iterator i;
 
@@ -348,10 +348,10 @@ static char *tps_taskprocessor_tab_complete(struct ast_taskprocessor *p, struct 
 	while ((p = ao2_iterator_next(&i))) {
 		if (!strncasecmp(a->word, p->name, tklen) && ++wordnum > a->n) {
 			name = ast_strdup(p->name);
-			ao2_ref(p, -1);
+			ast_taskprocessor_unreference(p);
 			break;
 		}
-		ao2_ref(p, -1);
+		ast_taskprocessor_unreference(p);
 	}
 	ao2_iterator_destroy(&i);
 	return name;
@@ -373,7 +373,7 @@ static char *cli_tps_ping(struct ast_cli_entry *e, int cmd, struct ast_cli_args 
 	const char *name;
 	struct timeval when;
 	struct timespec ts;
-	struct ast_taskprocessor *tps = NULL;
+	struct ast_taskprocessor *tps;
 
 	switch (cmd) {
 	case CLI_INIT:
@@ -383,7 +383,7 @@ static char *cli_tps_ping(struct ast_cli_entry *e, int cmd, struct ast_cli_args 
 			"	Displays the time required for a task to be processed\n";
 		return NULL;
 	case CLI_GENERATE:
-		return tps_taskprocessor_tab_complete(tps, a);
+		return tps_taskprocessor_tab_complete(a);
 	}
 
 	if (a->argc != 4)
@@ -395,22 +395,71 @@ static char *cli_tps_ping(struct ast_cli_entry *e, int cmd, struct ast_cli_args 
 		return CLI_SUCCESS;
 	}
 	ast_cli(a->fd, "\npinging %s ...", name);
-	when = ast_tvadd((begin = ast_tvnow()), ast_samp2tv(1000, 1000));
+
+	/*
+	 * Wait up to 5 seconds for a ping reply.
+	 *
+	 * On a very busy system it could take awhile to get a
+	 * ping response from some taskprocessors.
+	 */
+	begin = ast_tvnow();
+	when = ast_tvadd(begin, ast_samp2tv(5000, 1000));
 	ts.tv_sec = when.tv_sec;
 	ts.tv_nsec = when.tv_usec * 1000;
+
 	ast_mutex_lock(&cli_ping_cond_lock);
 	if (ast_taskprocessor_push(tps, tps_ping_handler, 0) < 0) {
+		ast_mutex_unlock(&cli_ping_cond_lock);
 		ast_cli(a->fd, "\nping failed: could not push task to %s\n\n", name);
-		ao2_ref(tps, -1);
+		ast_taskprocessor_unreference(tps);
 		return CLI_FAILURE;
 	}
 	ast_cond_timedwait(&cli_ping_cond, &cli_ping_cond_lock, &ts);
 	ast_mutex_unlock(&cli_ping_cond_lock);
+
 	end = ast_tvnow();
 	delta = ast_tvsub(end, begin);
 	ast_cli(a->fd, "\n\t%24s ping time: %.1ld.%.6ld sec\n\n", name, (long)delta.tv_sec, (long int)delta.tv_usec);
-	ao2_ref(tps, -1);
+	ast_taskprocessor_unreference(tps);
 	return CLI_SUCCESS;
+}
+
+/*!
+ * \internal
+ * \brief Taskprocessor ao2 container sort function.
+ * \since 13.8.0
+ *
+ * \param obj_left pointer to the (user-defined part) of an object.
+ * \param obj_right pointer to the (user-defined part) of an object.
+ * \param flags flags from ao2_callback()
+ *   OBJ_SEARCH_OBJECT - if set, 'obj_right', is an object.
+ *   OBJ_SEARCH_KEY - if set, 'obj_right', is a search key item that is not an object.
+ *   OBJ_SEARCH_PARTIAL_KEY - if set, 'obj_right', is a partial search key item that is not an object.
+ *
+ * \retval <0 if obj_left < obj_right
+ * \retval =0 if obj_left == obj_right
+ * \retval >0 if obj_left > obj_right
+ */
+static int tps_sort_cb(const void *obj_left, const void *obj_right, int flags)
+{
+	const struct ast_taskprocessor *tps_left = obj_left;
+	const struct ast_taskprocessor *tps_right = obj_right;
+	const char *right_key = obj_right;
+	int cmp;
+
+	switch (flags & OBJ_SEARCH_MASK) {
+	default:
+	case OBJ_SEARCH_OBJECT:
+		right_key = tps_right->name;
+		/* Fall through */
+	case OBJ_SEARCH_KEY:
+		cmp = strcasecmp(tps_left->name, right_key);
+		break;
+	case OBJ_SEARCH_PARTIAL_KEY:
+		cmp = strncasecmp(tps_left->name, right_key, strlen(right_key));
+		break;
+	}
+	return cmp;
 }
 
 static char *cli_tps_report(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a)
@@ -420,8 +469,11 @@ static char *cli_tps_report(struct ast_cli_entry *e, int cmd, struct ast_cli_arg
 	unsigned long qsize;
 	unsigned long maxqsize;
 	unsigned long processed;
-	struct ast_taskprocessor *p;
-	struct ao2_iterator i;
+	struct ao2_container *sorted_tps;
+	struct ast_taskprocessor *tps;
+	struct ao2_iterator iter;
+#define FMT_HEADERS		"%-45s %10s %10s %10s\n"
+#define FMT_FIELDS		"%-45s %10lu %10lu %10lu\n"
 
 	switch (cmd) {
 	case CLI_INIT:
@@ -434,22 +486,38 @@ static char *cli_tps_report(struct ast_cli_entry *e, int cmd, struct ast_cli_arg
 		return NULL;
 	}
 
-	if (a->argc != e->args)
+	if (a->argc != e->args) {
 		return CLI_SHOWUSAGE;
-
-	ast_cli(a->fd, "\n\t+----- Processor -----+--- Processed ---+- In Queue -+- Max Depth -+");
-	i = ao2_iterator_init(tps_singletons, 0);
-	while ((p = ao2_iterator_next(&i))) {
-		ast_copy_string(name, p->name, sizeof(name));
-		qsize = p->tps_queue_size;
-		maxqsize = p->stats->max_qsize;
-		processed = p->stats->_tasks_processed_count;
-		ast_cli(a->fd, "\n%24s   %17lu %12lu %12lu", name, processed, qsize, maxqsize);
-		ao2_ref(p, -1);
 	}
-	ao2_iterator_destroy(&i);
-	tcount = ao2_container_count(tps_singletons);
-	ast_cli(a->fd, "\n\t+---------------------+-----------------+------------+-------------+\n\t%d taskprocessors\n\n", tcount);
+
+	sorted_tps = ao2_container_alloc_rbtree(AO2_ALLOC_OPT_LOCK_NOLOCK, 0, tps_sort_cb,
+		NULL);
+	if (!sorted_tps
+		|| ao2_container_dup(sorted_tps, tps_singletons, 0)) {
+		ao2_cleanup(sorted_tps);
+		return CLI_FAILURE;
+	}
+
+	ast_cli(a->fd, "\n" FMT_HEADERS, "Processor", "Processed", "In Queue", "Max Depth");
+	tcount = 0;
+	iter = ao2_iterator_init(sorted_tps, AO2_ITERATOR_UNLINK);
+	while ((tps = ao2_iterator_next(&iter))) {
+		ast_copy_string(name, tps->name, sizeof(name));
+		qsize = tps->tps_queue_size;
+		if (tps->stats) {
+			maxqsize = tps->stats->max_qsize;
+			processed = tps->stats->_tasks_processed_count;
+		} else {
+			maxqsize = 0;
+			processed = 0;
+		}
+		ast_cli(a->fd, FMT_FIELDS, name, processed, qsize, maxqsize);
+		ast_taskprocessor_unreference(tps);
+		++tcount;
+	}
+	ao2_iterator_destroy(&iter);
+	ast_cli(a->fd, "\n%d taskprocessors\n\n", tcount);
+	ao2_ref(sorted_tps, -1);
 	return CLI_SUCCESS;
 }
 
@@ -506,7 +574,7 @@ static struct tps_task *tps_taskprocessor_pop(struct ast_taskprocessor *tps)
 	return task;
 }
 
-static int tps_taskprocessor_depth(struct ast_taskprocessor *tps)
+long ast_taskprocessor_size(struct ast_taskprocessor *tps)
 {
 	return (tps) ? tps->tps_queue_size : -1;
 }
@@ -593,7 +661,6 @@ static struct ast_taskprocessor *__allocate_taskprocessor(const char *name, stru
 		return NULL;
 	}
 	if (!(p->name = ast_strdup(name))) {
-		ao2_ref(p, -1);
 		return NULL;
 	}
 
@@ -607,6 +674,8 @@ static struct ast_taskprocessor *__allocate_taskprocessor(const char *name, stru
 
 	if (!(ao2_link(tps_singletons, p))) {
 		ast_log(LOG_ERROR, "Failed to add taskprocessor '%s' to container\n", p->name);
+		listener->tps = NULL;
+		ao2_ref(p, -1);
 		return NULL;
 	}
 
@@ -657,12 +726,7 @@ struct ast_taskprocessor *ast_taskprocessor_get(const char *name, enum ast_tps_o
 	}
 
 	p = __allocate_taskprocessor(name, listener);
-	if (!p) {
-		ao2_ref(listener, -1);
-		return NULL;
-	}
 
-	/* Unref listener here since the taskprocessor has gained a reference to the listener */
 	ao2_ref(listener, -1);
 	return p;
 }
@@ -692,15 +756,25 @@ void *ast_taskprocessor_unreference(struct ast_taskprocessor *tps)
 		return NULL;
 	}
 
+	/* To prevent another thread from finding and getting a reference to this
+	 * taskprocessor we hold the singletons lock. If we didn't do this then
+	 * they may acquire it and find that the listener has been shut down.
+	 */
+	ao2_lock(tps_singletons);
+
 	if (ao2_ref(tps, -1) > 3) {
+		ao2_unlock(tps_singletons);
 		return NULL;
 	}
+
 	/* If we're down to 3 references, then those must be:
 	 * 1. The reference we just got rid of
 	 * 2. The container
 	 * 3. The listener
 	 */
-	ao2_unlink(tps_singletons, tps);
+	ao2_unlink_flags(tps_singletons, tps, OBJ_NOLOCK);
+	ao2_unlock(tps_singletons);
+
 	listener_shutdown(tps->listener);
 	return NULL;
 }
@@ -724,6 +798,13 @@ static int taskprocessor_push(struct ast_taskprocessor *tps, struct tps_task *t)
 	ao2_lock(tps);
 	AST_LIST_INSERT_TAIL(&tps->tps_queue, t, list);
 	previous_size = tps->tps_queue_size++;
+
+	if (previous_size >= AST_TASKPROCESSOR_HIGH_WATER_LEVEL && !tps->high_water_warned) {
+		ast_log(LOG_WARNING, "The '%s' task processor queue reached %d scheduled tasks.\n",
+			tps->name, previous_size);
+		tps->high_water_warned = 1;
+	}
+
 	/* The currently executing task counts as still in queue */
 	was_empty = tps->executing ? 0 : previous_size == 0;
 	ao2_unlock(tps);
@@ -745,7 +826,7 @@ int ast_taskprocessor_execute(struct ast_taskprocessor *tps)
 {
 	struct ast_taskprocessor_local local;
 	struct tps_task *t;
-	int size;
+	long size;
 
 	ao2_lock(tps);
 	t = tps_taskprocessor_pop(tps);
@@ -777,12 +858,15 @@ int ast_taskprocessor_execute(struct ast_taskprocessor *tps)
 	 * after we pop an empty stack.
 	 */
 	tps->executing = 0;
-	size = tps_taskprocessor_depth(tps);
-	/* If we executed a task, bump the stats */
+	size = ast_taskprocessor_size(tps);
+
+	/* Update the stats */
 	if (tps->stats) {
-		tps->stats->_tasks_processed_count++;
-		if (size > tps->stats->max_qsize) {
-			tps->stats->max_qsize = size;
+		++tps->stats->_tasks_processed_count;
+
+		/* Include the task we just executed as part of the queue size. */
+		if (size >= tps->stats->max_qsize) {
+			tps->stats->max_qsize = size + 1;
 		}
 	}
 	ao2_unlock(tps);
@@ -802,4 +886,38 @@ int ast_taskprocessor_is_task(struct ast_taskprocessor *tps)
 	is_task = pthread_equal(tps->thread, pthread_self());
 	ao2_unlock(tps);
 	return is_task;
+}
+
+unsigned int ast_taskprocessor_seq_num(void)
+{
+	static int seq_num;
+
+	return (unsigned int) ast_atomic_fetchadd_int(&seq_num, +1);
+}
+
+void ast_taskprocessor_build_name(char *buf, unsigned int size, const char *format, ...)
+{
+	va_list ap;
+	int user_size;
+#define SEQ_STR_SIZE (1 + 8 + 1)	/* Dash plus 8 hex digits plus null terminator */
+
+	ast_assert(buf != NULL);
+	ast_assert(SEQ_STR_SIZE <= size);
+
+	va_start(ap, format);
+	user_size = vsnprintf(buf, size - (SEQ_STR_SIZE - 1), format, ap);
+	va_end(ap);
+	if (user_size < 0) {
+		/*
+		 * Wow!  We got an output error to a memory buffer.
+		 * Assume no user part of name written.
+		 */
+		user_size = 0;
+	} else if (size < user_size + SEQ_STR_SIZE) {
+		/* Truncate user part of name to make sequence number fit. */
+		user_size = size - SEQ_STR_SIZE;
+	}
+
+	/* Append sequence number to end of user name. */
+	snprintf(buf + user_size, SEQ_STR_SIZE, "-%08x", ast_taskprocessor_seq_num());
 }

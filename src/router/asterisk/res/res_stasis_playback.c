@@ -31,7 +31,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 421880 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/app.h"
 #include "asterisk/astobj2.h"
@@ -105,9 +105,9 @@ static struct ast_json *playback_to_json(struct stasis_message *message,
 		return NULL;
 	}
 
-	return ast_json_pack("{s: s, s: O}",
+	return ast_json_pack("{s: s, s: o}",
 		"type", type,
-		"playback", blob);
+		"playback", ast_json_deep_copy(blob));
 }
 
 STASIS_MESSAGE_TYPE_DEFN(stasis_app_playback_snapshot_type,
@@ -118,6 +118,7 @@ static void playback_dtor(void *obj)
 {
 	struct stasis_app_playback *playback = obj;
 
+	ao2_cleanup(playback->control);
 	ast_string_field_free_memory(playback);
 }
 
@@ -143,6 +144,7 @@ static struct stasis_app_playback *playback_create(
 		ast_string_field_set(playback, id, uuid);
 	}
 
+	ao2_ref(control, +1);
 	playback->control = control;
 
 	ao2_ref(playback, +1);
@@ -629,9 +631,9 @@ enum stasis_playback_oper_results stasis_app_playback_operation(
 	playback_opreation_cb cb;
 	SCOPED_AO2LOCK(lock, playback);
 
-	ast_assert(playback->state >= 0 && playback->state < STASIS_PLAYBACK_STATE_MAX);
+	ast_assert((unsigned int)playback->state < STASIS_PLAYBACK_STATE_MAX);
 
-	if (operation < 0 || operation >= STASIS_PLAYBACK_MEDIA_OP_MAX) {
+	if (operation >= STASIS_PLAYBACK_MEDIA_OP_MAX) {
 		ast_log(LOG_ERROR, "Invalid playback operation %u\n", operation);
 		return -1;
 	}

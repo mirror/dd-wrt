@@ -37,6 +37,7 @@
 #include "asterisk/astobj2.h"
 #include "asterisk/sorcery.h"
 #include "asterisk/app.h"
+#include "asterisk/taskprocessor.h"
 
 #define BODY_SIZE 1024
 #define EVENT_TYPE_SIZE 50
@@ -53,6 +54,8 @@ struct exten_state_subscription {
 	int id;
 	/*! The SIP subscription */
 	struct ast_sip_subscription *sip_sub;
+	/*! The serializer to use for notifications */
+	struct ast_taskprocessor *serializer;
 	/*! Context in which subscription looks for updates */
 	char context[AST_MAX_CONTEXT];
 	/*! Extension within the context to receive updates from */
@@ -112,7 +115,8 @@ static void exten_state_subscription_destructor(void *obj)
 	struct exten_state_subscription *sub = obj;
 
 	ast_free(sub->user_agent);
-	ao2_cleanup(sub->sip_sub);
+	ast_sip_subscription_destroy(sub->sip_sub);
+	ast_taskprocessor_unreference(sub->serializer);
 }
 
 static char *get_user_agent(const struct ast_sip_subscription *sip_sub)
@@ -156,7 +160,14 @@ static struct exten_state_subscription *exten_state_subscription_alloc(
 		return NULL;
 	}
 
-	exten_state_sub->sip_sub = ao2_bump(sip_sub);
+	exten_state_sub->sip_sub = sip_sub;
+
+	/* We keep our own reference to the serializer as there is no guarantee in state_changed
+	 * that the subscription tree is still valid when it is called. This can occur when
+	 * the subscription is terminated at around the same time as the state_changed
+	 * callback is invoked.
+	 */
+	exten_state_sub->serializer = ao2_bump(ast_sip_subscription_get_serializer(sip_sub));
 	exten_state_sub->last_exten_state = INITIAL_LAST_EXTEN_STATE;
 	exten_state_sub->last_presence_state = AST_PRESENCE_NOT_SET;
 	exten_state_sub->user_agent = get_user_agent(sip_sub);
@@ -205,11 +216,6 @@ static struct notify_task_data *alloc_notify_task_data(char *exten, struct exten
 	task_data->exten_state_data.device_state_info = ao2_bump(info->device_state_info);
 	task_data->exten_state_data.sub = exten_state_sub->sip_sub;
 
-	ast_sip_subscription_get_local_uri(exten_state_sub->sip_sub,
-			task_data->exten_state_data.local, sizeof(task_data->exten_state_data.local));
-	ast_sip_subscription_get_remote_uri(exten_state_sub->sip_sub,
-			task_data->exten_state_data.remote, sizeof(task_data->exten_state_data.remote));
-
 	if ((info->exten_state == AST_EXTENSION_DEACTIVATED) ||
 	    (info->exten_state == AST_EXTENSION_REMOVED)) {
 		ast_verb(2, "Watcher for hint %s %s\n", exten, info->exten_state
@@ -227,6 +233,19 @@ static int notify_task(void *obj)
 		.body_type = AST_SIP_EXTEN_STATE_DATA,
 		.body_data = &task_data->exten_state_data,
 	};
+
+	/* Terminated subscriptions are no longer associated with a valid tree, and sending
+	 * NOTIFY messages on a subscription which has already been terminated won't work.
+	 */
+	if (ast_sip_subscription_is_terminated(task_data->exten_state_sub->sip_sub)) {
+		return 0;
+	}
+
+	/* All access to the subscription must occur within a task executed within its serializer */
+	ast_sip_subscription_get_local_uri(task_data->exten_state_sub->sip_sub,
+			task_data->exten_state_data.local, sizeof(task_data->exten_state_data.local));
+	ast_sip_subscription_get_remote_uri(task_data->exten_state_sub->sip_sub,
+			task_data->exten_state_data.remote, sizeof(task_data->exten_state_data.remote));
 
 	/* Pool allocation has to happen here so that we allocate within a PJLIB thread */
 	task_data->exten_state_data.pool = pjsip_endpt_create_pool(ast_sip_get_pjsip_endpoint(),
@@ -263,8 +282,8 @@ static int state_changed(char *context, char *exten,
 
 	/* safe to push this async since we copy the data from info and
 	   add a ref for the device state info */
-	if (ast_sip_push_task(ast_sip_subscription_get_serializer(task_data->exten_state_sub->sip_sub),
-			      notify_task, task_data)) {
+	if (ast_sip_push_task(task_data->exten_state_sub->serializer, notify_task,
+		task_data)) {
 		ao2_cleanup(task_data);
 		return -1;
 	}
@@ -335,7 +354,7 @@ static int new_subscribe(struct ast_sip_endpoint *endpoint,
 {
 	if (!ast_exists_extension(NULL, endpoint->context, resource, PRIORITY_HINT, NULL)) {
 		ast_log(LOG_NOTICE, "Extension state subscription failed: Extension %s does not exist in context '%s' or has no associated hint\n",
-			endpoint->context, resource);
+			resource, endpoint->context);
 		return 404;
 	}
 
@@ -401,6 +420,7 @@ static struct ast_sip_exten_state_data *exten_state_data_alloc(struct ast_sip_su
 	struct ast_sip_exten_state_data *exten_state_data;
 	char *subtype = NULL;
 	char *message = NULL;
+	int presence_state;
 
 	exten_state_data = ao2_alloc(sizeof(*exten_state_data), exten_state_data_destructor);
 	if (!exten_state_data) {
@@ -408,11 +428,12 @@ static struct ast_sip_exten_state_data *exten_state_data_alloc(struct ast_sip_su
 	}
 
 	exten_state_data->exten = exten_state_sub->exten;
-	if ((exten_state_data->presence_state = ast_hint_presence_state(NULL, exten_state_sub->context,
-			exten_state_sub->exten, &subtype, &message)) == -1) {
+	presence_state = ast_hint_presence_state(NULL, exten_state_sub->context, exten_state_sub->exten, &subtype, &message);
+	if (presence_state  == -1 || presence_state == AST_PRESENCE_INVALID) {
 		ao2_cleanup(exten_state_data);
 		return NULL;
 	}
+	exten_state_data->presence_state = presence_state;
 	exten_state_data->presence_subtype = subtype;
 	exten_state_data->presence_message = message;
 	exten_state_data->user_agent = exten_state_sub->user_agent;

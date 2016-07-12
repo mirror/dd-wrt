@@ -16,14 +16,6 @@
  * at the top of the source tree.
  */
 
-/*** MODULEINFO
-	<depend>pjproject</depend>
-	<depend>res_pjsip</depend>
-	<depend>res_pjsip_pubsub</depend>
-	<depend>res_pjsip_exten_state</depend>
-	<support_level>core</support_level>
- ***/
-
 #include "asterisk.h"
 
 #include <pjsip.h>
@@ -31,54 +23,61 @@
 #include <pjlib.h>
 
 #include "asterisk/module.h"
-#include "asterisk/res_pjsip.h"
-#include "asterisk/res_pjsip_pubsub.h"
+#include "asterisk/pbx.h"
 #include "asterisk/res_pjsip_presence_xml.h"
-#include "asterisk/res_pjsip_body_generator_types.h"
 
 void ast_sip_sanitize_xml(const char *input, char *output, size_t len)
 {
 	char *copy = ast_strdupa(input);
 	char *break_point;
+	size_t remaining = len - 1;
 
 	output[0] = '\0';
 
-	while ((break_point = strpbrk(copy, "<>\"&'\n\r"))) {
+	while ((break_point = strpbrk(copy, "<>\"&'\n\r")) && remaining) {
 		char to_escape = *break_point;
 
 		*break_point = '\0';
-		strncat(output, copy, len);
+		strncat(output, copy, remaining);
+
+		/* The strncat function will write remaining+1 if the string length is
+		 * equal to or greater than the size provided to it. We take this into
+		 * account by subtracting 1, which ensures that the NULL byte is written
+		 * inside of the provided buffer.
+		 */
+		remaining = len - strlen(output) - 1;
 
 		switch (to_escape) {
 		case '<':
-			strncat(output, "&lt;", len);
+			strncat(output, "&lt;", remaining);
 			break;
 		case '>':
-			strncat(output, "&gt;", len);
+			strncat(output, "&gt;", remaining);
 			break;
 		case '"':
-			strncat(output, "&quot;", len);
+			strncat(output, "&quot;", remaining);
 			break;
 		case '&':
-			strncat(output, "&amp;", len);
+			strncat(output, "&amp;", remaining);
 			break;
 		case '\'':
-			strncat(output, "&apos;", len);
+			strncat(output, "&apos;", remaining);
 			break;
 		case '\r':
-			strncat(output, "&#13;", len);
+			strncat(output, "&#13;", remaining);
 			break;
 		case '\n':
-			strncat(output, "&#10;", len);
+			strncat(output, "&#10;", remaining);
 			break;
 		};
 
 		copy = break_point + 1;
+		remaining = len - strlen(output) - 1;
 	}
 
 	/* Be sure to copy everything after the final bracket */
-	if (*copy) {
-		strncat(output, copy, len);
+	if (*copy && remaining) {
+		strncat(output, copy, remaining);
 	}
 }
 
@@ -88,6 +87,12 @@ void ast_sip_presence_exten_state_to_str(int state, char **statestring, char **p
 	switch (state) {
 	case AST_EXTENSION_RINGING:
 		*statestring = "early";
+		*local_state = NOTIFY_INUSE;
+		*pidfstate = "busy";
+		*pidfnote = "Ringing";
+		break;
+	case (AST_EXTENSION_INUSE | AST_EXTENSION_RINGING):
+		*statestring = "confirmed";
 		*local_state = NOTIFY_INUSE;
 		*pidfstate = "busy";
 		*pidfnote = "Ringing";
@@ -122,7 +127,7 @@ void ast_sip_presence_exten_state_to_str(int state, char **statestring, char **p
 		*statestring = "terminated";
 		*local_state = NOTIFY_OPEN;
 		*pidfstate = "--";
-		*pidfnote ="Ready";
+		*pidfnote = "Ready";
 		break;
 	}
 }

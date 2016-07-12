@@ -28,7 +28,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 396850 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <ctype.h>
 
@@ -42,10 +42,6 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 396850 $")
 #include "asterisk/linkedlists.h"
 #include "asterisk/hashtab.h"
 
-
-#ifndef __AST_DEBUG_MALLOC
-void *_ast_mem_backtrace_buffer[_AST_MEM_BACKTRACE_BUFLEN];
-#endif
 
 #if (defined(MALLOC_DEBUG) && !defined(STANDALONE))
 static void _ast_hashtab_resize(struct ast_hashtab *tab, const char *file, int lineno, const char *func);
@@ -749,6 +745,8 @@ struct ast_hashtab_iter *ast_hashtab_start_write_traversal(struct ast_hashtab *t
 
 void ast_hashtab_end_traversal(struct ast_hashtab_iter *it)
 {
+	if (!it)
+		return;
 	if (it->tab->do_locking)
 		ast_rwlock_unlock(&it->tab->lock);
 	free(it);

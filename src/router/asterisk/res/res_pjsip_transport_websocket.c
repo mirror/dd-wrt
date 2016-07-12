@@ -63,8 +63,9 @@ static pj_status_t ws_send_msg(pjsip_transport *transport,
                             pjsip_transport_callback callback)
 {
 	struct ws_transport *wstransport = (struct ws_transport *)transport;
+	uint64_t len = tdata->buf.cur - tdata->buf.start;
 
-	if (ast_websocket_write(wstransport->ws_session, AST_WEBSOCKET_OPCODE_TEXT, tdata->buf.start, (int)(tdata->buf.cur - tdata->buf.start))) {
+	if (ast_websocket_write(wstransport->ws_session, AST_WEBSOCKET_OPCODE_TEXT, tdata->buf.start, len)) {
 		return PJ_EUNKNOWN;
 	}
 
@@ -79,6 +80,25 @@ static pj_status_t ws_send_msg(pjsip_transport *transport,
 static pj_status_t ws_destroy(pjsip_transport *transport)
 {
 	struct ws_transport *wstransport = (struct ws_transport *)transport;
+	int fd = ast_websocket_fd(wstransport->ws_session);
+
+	if (fd > 0) {
+		ast_websocket_close(wstransport->ws_session, 1000);
+		shutdown(fd, SHUT_RDWR);
+	}
+
+	ao2_ref(wstransport, -1);
+
+	return PJ_SUCCESS;
+}
+
+static void transport_dtor(void *arg)
+{
+	struct ws_transport *wstransport = arg;
+
+	if (wstransport->ws_session) {
+		ast_websocket_unref(wstransport->ws_session);
+	}
 
 	if (wstransport->transport.ref_cnt) {
 		pj_atomic_destroy(wstransport->transport.ref_cnt);
@@ -88,20 +108,28 @@ static pj_status_t ws_destroy(pjsip_transport *transport)
 		pj_lock_destroy(wstransport->transport.lock);
 	}
 
-	pjsip_endpt_release_pool(wstransport->transport.endpt, wstransport->transport.pool);
+	if (wstransport->transport.endpt && wstransport->transport.pool) {
+		pjsip_endpt_release_pool(wstransport->transport.endpt, wstransport->transport.pool);
+	}
 
 	if (wstransport->rdata.tp_info.pool) {
 		pjsip_endpt_release_pool(wstransport->transport.endpt, wstransport->rdata.tp_info.pool);
 	}
-
-	return PJ_SUCCESS;
 }
 
 static int transport_shutdown(void *data)
 {
-	pjsip_transport *transport = data;
+	struct ws_transport *wstransport = data;
 
-	pjsip_transport_shutdown(transport);
+	if (!wstransport->transport.is_shutdown && !wstransport->transport.is_destroying) {
+		pjsip_transport_shutdown(&wstransport->transport);
+	}
+
+	/* Note that the destructor calls PJSIP functions,
+	 * therefore it must be called in a PJSIP thread.
+	 */
+	ao2_ref(wstransport, -1);
+
 	return 0;
 }
 
@@ -116,32 +144,45 @@ struct transport_create_data {
 static int transport_create(void *data)
 {
 	struct transport_create_data *create_data = data;
-	struct ws_transport *newtransport;
+	struct ws_transport *newtransport = NULL;
 
 	pjsip_endpoint *endpt = ast_sip_get_pjsip_endpoint();
 	struct pjsip_tpmgr *tpmgr = pjsip_endpt_get_tpmgr(endpt);
 
 	pj_pool_t *pool;
-
 	pj_str_t buf;
+	pj_status_t status;
+
+	newtransport = ao2_t_alloc_options(sizeof(*newtransport), transport_dtor,
+			AO2_ALLOC_OPT_LOCK_NOLOCK, "pjsip websocket transport");
+	if (!newtransport) {
+		ast_log(LOG_ERROR, "Failed to allocate WebSocket transport.\n");
+		goto on_error;
+	}
+
+	newtransport->transport.endpt = endpt;
 
 	if (!(pool = pjsip_endpt_create_pool(endpt, "ws", 512, 512))) {
 		ast_log(LOG_ERROR, "Failed to allocate WebSocket endpoint pool.\n");
-		return -1;
+		goto on_error;
 	}
-
-	if (!(newtransport = PJ_POOL_ZALLOC_T(pool, struct ws_transport))) {
-		ast_log(LOG_ERROR, "Failed to allocate WebSocket transport.\n");
-		pjsip_endpt_release_pool(endpt, pool);
-		return -1;
-	}
-
-	newtransport->ws_session = create_data->ws_session;
-
-	pj_atomic_create(pool, 0, &newtransport->transport.ref_cnt);
-	pj_lock_create_recursive_mutex(pool, pool->obj_name, &newtransport->transport.lock);
 
 	newtransport->transport.pool = pool;
+	newtransport->ws_session = create_data->ws_session;
+
+	/* Keep the session until transport dies */
+	ast_websocket_ref(newtransport->ws_session);
+
+	status = pj_atomic_create(pool, 0, &newtransport->transport.ref_cnt);
+	if (status != PJ_SUCCESS) {
+		goto on_error;
+	}
+
+	status = pj_lock_create_recursive_mutex(pool, pool->obj_name, &newtransport->transport.lock);
+	if (status != PJ_SUCCESS) {
+		goto on_error;
+	}
+
 	pj_sockaddr_parse(pj_AF_UNSPEC(), 0, pj_cstr(&buf, ast_sockaddr_stringify(ast_websocket_remote_address(newtransport->ws_session))), &newtransport->transport.key.rem_addr);
 	newtransport->transport.key.rem_addr.addr.sa_family = pj_AF_INET();
 	newtransport->transport.key.type = ast_websocket_is_secure(newtransport->ws_session) ? transport_type_wss : transport_type_ws;
@@ -159,24 +200,34 @@ static int transport_create(void *data)
 	newtransport->transport.flag = pjsip_transport_get_flag_from_type((pjsip_transport_type_e)newtransport->transport.key.type);
 	newtransport->transport.info = (char *)pj_pool_alloc(newtransport->transport.pool, 64);
 
-	newtransport->transport.endpt = endpt;
 	newtransport->transport.tpmgr = tpmgr;
 	newtransport->transport.send_msg = &ws_send_msg;
 	newtransport->transport.destroy = &ws_destroy;
 
-	pjsip_transport_register(newtransport->transport.tpmgr, (pjsip_transport *)newtransport);
+	status = pjsip_transport_register(newtransport->transport.tpmgr,
+			(pjsip_transport *)newtransport);
+	if (status != PJ_SUCCESS) {
+		goto on_error;
+	}
+
+	/* Add a reference for pjsip transport manager */
+	ao2_ref(newtransport, +1);
 
 	newtransport->rdata.tp_info.transport = &newtransport->transport;
 	newtransport->rdata.tp_info.pool = pjsip_endpt_create_pool(endpt, "rtd%p",
 		PJSIP_POOL_RDATA_LEN, PJSIP_POOL_RDATA_INC);
 	if (!newtransport->rdata.tp_info.pool) {
 		ast_log(LOG_ERROR, "Failed to allocate WebSocket rdata.\n");
-		pjsip_endpt_release_pool(endpt, pool);
-		return -1;
+		pjsip_transport_destroy((pjsip_transport *)newtransport);
+		goto on_error;
 	}
 
 	create_data->transport = newtransport;
 	return 0;
+
+on_error:
+	ao2_cleanup(newtransport);
+	return -1;
 }
 
 struct transport_read_data {
@@ -197,12 +248,13 @@ static int transport_read(void *data)
 	pjsip_rx_data *rdata = &newtransport->rdata;
 	int recvd;
 	pj_str_t buf;
+	int pjsip_pkt_len;
 
 	pj_gettimeofday(&rdata->pkt_info.timestamp);
 
-	pj_memcpy(rdata->pkt_info.packet, read_data->payload,
-		PJSIP_MAX_PKT_LEN < read_data->payload_len ? PJSIP_MAX_PKT_LEN : read_data->payload_len);
-	rdata->pkt_info.len = read_data->payload_len;
+	pjsip_pkt_len = PJSIP_MAX_PKT_LEN < read_data->payload_len ? PJSIP_MAX_PKT_LEN : read_data->payload_len;
+	pj_memcpy(rdata->pkt_info.packet, read_data->payload, pjsip_pkt_len);
+	rdata->pkt_info.len = pjsip_pkt_len;
 	rdata->pkt_info.zero = 0;
 
 	pj_sockaddr_parse(pj_AF_UNSPEC(), 0, pj_cstr(&buf, ast_sockaddr_stringify(ast_websocket_remote_address(session))), &rdata->pkt_info.src_addr);
@@ -223,24 +275,27 @@ static int transport_read(void *data)
 static int get_write_timeout(void)
 {
 	int write_timeout = -1;
-	struct ao2_container *transports;
+	struct ao2_container *transport_states;
 
-	transports = ast_sorcery_retrieve_by_fields(ast_sip_get_sorcery(), "transport", AST_RETRIEVE_FLAG_ALL, NULL);
+	transport_states = ast_sip_get_transport_states();
 
-	if (transports) {
-		struct ao2_iterator it_transports = ao2_iterator_init(transports, 0);
-		struct ast_sip_transport *transport;
+	if (transport_states) {
+		struct ao2_iterator it_transport_states = ao2_iterator_init(transport_states, 0);
+		struct ast_sip_transport_state *transport_state;
 
-		for (; (transport = ao2_iterator_next(&it_transports)); ao2_cleanup(transport)) {
-			if (transport->type != AST_TRANSPORT_WS && transport->type != AST_TRANSPORT_WSS) {
+		for (; (transport_state = ao2_iterator_next(&it_transport_states)); ao2_cleanup(transport_state)) {
+			struct ast_sip_transport *transport;
+			if (transport_state->type != AST_TRANSPORT_WS && transport_state->type != AST_TRANSPORT_WSS) {
 				continue;
 			}
+			transport = ast_sorcery_retrieve_by_id(ast_sip_get_sorcery(), "transport", transport_state->id);
 			ast_debug(5, "Found %s transport with write timeout: %d\n",
 				transport->type == AST_TRANSPORT_WS ? "WS" : "WSS",
 				transport->write_timeout);
 			write_timeout = MAX(write_timeout, transport->write_timeout);
 		}
-		ao2_cleanup(transports);
+		ao2_iterator_destroy(&it_transport_states);
+		ao2_cleanup(transport_states);
 	}
 
 	if (write_timeout < 0) {
@@ -251,14 +306,22 @@ static int get_write_timeout(void)
 	return write_timeout;
 }
 
-/*!
- \brief WebSocket connection handler.
- */
+static struct ast_taskprocessor *create_websocket_serializer(void)
+{
+	char tps_name[AST_TASKPROCESSOR_MAX_NAME + 1];
+
+	/* Create name with seq number appended. */
+	ast_taskprocessor_build_name(tps_name, sizeof(tps_name), "pjsip/websocket");
+
+	return ast_sip_create_serializer_named(tps_name);
+}
+
+/*! \brief WebSocket connection handler. */
 static void websocket_cb(struct ast_websocket *session, struct ast_variable *parameters, struct ast_variable *headers)
 {
-	struct ast_taskprocessor *serializer = NULL;
+	struct ast_taskprocessor *serializer;
 	struct transport_create_data create_data;
-	struct ws_transport *transport = NULL;
+	struct ws_transport *transport;
 	struct transport_read_data read_data;
 
 	if (ast_websocket_set_nonblock(session)) {
@@ -271,7 +334,8 @@ static void websocket_cb(struct ast_websocket *session, struct ast_variable *par
 		return;
 	}
 
-	if (!(serializer = ast_sip_create_serializer())) {
+	serializer = create_websocket_serializer();
+	if (!serializer) {
 		ast_websocket_unref(session);
 		return;
 	}
@@ -367,7 +431,7 @@ static int load_module(void)
 	CHECK_PJSIP_MODULE_LOADED();
 
 	pjsip_transport_register_type(PJSIP_TRANSPORT_RELIABLE, "WS", 5060, &transport_type_ws);
-	pjsip_transport_register_type(PJSIP_TRANSPORT_RELIABLE, "WSS", 5060, &transport_type_wss);
+	pjsip_transport_register_type(PJSIP_TRANSPORT_RELIABLE | PJSIP_TRANSPORT_SECURE, "WSS", 5060, &transport_type_wss);
 
 	if (ast_sip_register_service(&websocket_module) != PJ_SUCCESS) {
 		return AST_MODULE_LOAD_DECLINE;

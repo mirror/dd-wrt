@@ -19,23 +19,18 @@ YESNO_NAME = 'yesno_values'
 YESNO_VALUES = ['yes', 'no']
 
 def upgrade():
-    op.alter_column('ps_endpoints', 'tos_audio',
-                    type_=sa.String(10))
-    op.alter_column('ps_endpoints', 'tos_video',
-                    type_=sa.String(10))
-    op.alter_column('ps_transports', 'tos',
-                    type_=sa.String(10))
-
-    # Can't cast YENO_VALUES to Integers, so dropping and adding is required
+    op.alter_column('ps_endpoints', 'tos_audio', type_=sa.String(10))
+    op.alter_column('ps_endpoints', 'tos_video', type_=sa.String(10))
     op.drop_column('ps_endpoints', 'cos_audio')
     op.drop_column('ps_endpoints', 'cos_video')
-    op.drop_column('ps_transports', 'cos')
-
     op.add_column('ps_endpoints', sa.Column('cos_audio', sa.Integer))
     op.add_column('ps_endpoints', sa.Column('cos_video', sa.Integer))
-    op.add_column('ps_transports', sa.Column('cos', sa.Integer))
-    pass
 
+    op.alter_column('ps_transports', 'tos', type_=sa.String(10))
+
+    # Can't cast YENO_VALUES to Integers, so dropping and adding is required
+    op.drop_column('ps_transports', 'cos')
+    op.add_column('ps_transports', sa.Column('cos', sa.Integer))
 
 def downgrade():
 
@@ -44,18 +39,15 @@ def downgrade():
     # Can't cast string to YESNO_VALUES, so dropping and adding is required
     op.drop_column('ps_endpoints', 'tos_audio')
     op.drop_column('ps_endpoints', 'tos_video')
-    op.drop_column('ps_transports', 'tos')
-
     op.add_column('ps_endpoints', sa.Column('tos_audio', yesno_values))
     op.add_column('ps_endpoints', sa.Column('tos_video', yesno_values))
-    op.add_column('ps_transports', sa.Column('tos', yesno_values))
-
-    # Can't cast integers to YESNO_VALUES, so dropping and adding is required
     op.drop_column('ps_endpoints', 'cos_audio')
     op.drop_column('ps_endpoints', 'cos_video')
-    op.drop_column('ps_transports', 'cos')
-
     op.add_column('ps_endpoints', sa.Column('cos_audio', yesno_values))
     op.add_column('ps_endpoints', sa.Column('cos_video', yesno_values))
+
+    op.drop_column('ps_transports', 'tos')
+    op.add_column('ps_transports', sa.Column('tos', yesno_values))
+    # Can't cast integers to YESNO_VALUES, so dropping and adding is required
+    op.drop_column('ps_transports', 'cos')
     op.add_column('ps_transports', sa.Column('cos', yesno_values))
-    pass

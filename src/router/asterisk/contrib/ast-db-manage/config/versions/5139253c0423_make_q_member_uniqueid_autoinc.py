@@ -33,28 +33,22 @@ import sqlalchemy as sa
 
 
 def upgrade():
+    context = op.get_context()
     # Was unable to find a way to use op.alter_column() to add the unique
     # index property.
     op.drop_column('queue_members', 'uniqueid')
-    op.add_column(
-        'queue_members',
-        sa.Column(
-            name='uniqueid', type_=sa.Integer, nullable=False,
-            unique=True))
+    op.add_column('queue_members', sa.Column(name='uniqueid', type_=sa.Integer,
+                                             nullable=False, unique=True))
     # The postgres backend does not like the autoincrement needed for
     # mysql here.  It is just the backend that is giving a warning and
     # not the database itself.
-    op.alter_column(
-        table_name='queue_members', column_name='uniqueid',
-        existing_type=sa.Integer, existing_nullable=False,
-        autoincrement=True)
+    op.alter_column(table_name='queue_members', column_name='uniqueid',
+                    existing_type=sa.Integer, existing_nullable=False,
+                    autoincrement=True)
 
 
 def downgrade():
     # Was unable to find a way to use op.alter_column() to remove the
     # unique index property.
     op.drop_column('queue_members', 'uniqueid')
-    op.add_column(
-        'queue_members',
-        sa.Column(name='uniqueid', type_=sa.String(80), nullable=False))
-
+    op.add_column('queue_members', sa.Column(name='uniqueid', type_=sa.String(80), nullable=False))

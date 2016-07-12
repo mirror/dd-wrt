@@ -36,7 +36,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 420124 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/astobj2.h"
 #include "asterisk/strings.h"
@@ -825,7 +825,7 @@ int ast_cc_set_param(struct ast_cc_config_params *params, const char * const nam
 		return 0;
 	}
 
-	if (!sscanf(value, "%30u", &value_as_uint) == 1) {
+	if (sscanf(value, "%30u", &value_as_uint) != 1) {
 		return -1;
 	}
 
@@ -2237,9 +2237,7 @@ static void call_destructor_with_no_monitor(const char * const monitor_type, voi
  * Note that it is not necessarily erroneous to add the same
  * device to the tree twice. If the same device is called by
  * two different extension during the same call, then
- * that is a legitimate situation. Of course, I'm pretty sure
- * the dialed_interfaces global datastore will not allow that
- * to happen anyway.
+ * that is a legitimate situation.
  *
  * \param device_name The name of the device being added to the tree
  * \param dialstring The dialstring used to dial the device being added
@@ -4665,7 +4663,7 @@ int ast_cc_init(void)
 					"Create generic monitor container"))) {
 		return -1;
 	}
-	if (!(cc_core_taskprocessor = ast_taskprocessor_get("CCSS core", TPS_REF_DEFAULT))) {
+	if (!(cc_core_taskprocessor = ast_taskprocessor_get("CCSS_core", TPS_REF_DEFAULT))) {
 		return -1;
 	}
 	if (!(cc_sched_context = ast_sched_context_create())) {
@@ -4688,7 +4686,7 @@ int ast_cc_init(void)
 	initialize_cc_devstate_map();
 	res |= ast_devstate_prov_add("ccss", ccss_device_state);
 
-	ast_register_atexit(cc_shutdown);
+	ast_register_cleanup(cc_shutdown);
 
 	return res;
 }

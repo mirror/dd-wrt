@@ -25,6 +25,7 @@
 #include "include/res_pjsip_private.h"
 #include "asterisk/sorcery.h"
 #include "asterisk/ast_version.h"
+#include "asterisk/res_pjsip_cli.h"
 
 #define DEFAULT_MAX_FORWARDS 70
 #define DEFAULT_KEEPALIVE_INTERVAL 0
@@ -32,6 +33,11 @@
 #define DEFAULT_OUTBOUND_ENDPOINT "default_outbound_endpoint"
 #define DEFAULT_DEBUG "no"
 #define DEFAULT_ENDPOINT_IDENTIFIER_ORDER "ip,username,anonymous"
+#define DEFAULT_MAX_INITIAL_QUALIFY_TIME 0
+#define DEFAULT_FROM_USER "asterisk"
+#define DEFAULT_REGCONTEXT ""
+#define DEFAULT_CONTACT_EXPIRATION_CHECK_INTERVAL 30
+#define DEFAULT_VOICEMAIL_EXTENSION ""
 
 static char default_useragent[256];
 
@@ -39,16 +45,25 @@ struct global_config {
 	SORCERY_OBJECT(details);
 	AST_DECLARE_STRING_FIELDS(
 		AST_STRING_FIELD(useragent);
+		AST_STRING_FIELD(regcontext);
 		AST_STRING_FIELD(default_outbound_endpoint);
 		/*! Debug logging yes|no|host */
 		AST_STRING_FIELD(debug);
 		/*! Order by which endpoint identifiers are checked (comma separated list) */
 		AST_STRING_FIELD(endpoint_identifier_order);
+		/*! User name to place in From header if there is no better option */
+		AST_STRING_FIELD(default_from_user);
+		/*! Default voicemail extension */
+		AST_STRING_FIELD(default_voicemail_extension);
 	);
 	/* Value to put in Max-Forwards header */
 	unsigned int max_forwards;
 	/* The interval at which to send keep alive messages to active connection-oriented transports */
 	unsigned int keep_alive_interval;
+	/* The maximum time for all contacts to be qualified at startup */
+	unsigned int max_initial_qualify_time;
+	/* The interval at which to check for expired contacts */
+	unsigned int contact_expiration_check_interval;
 };
 
 static void global_destructor(void *obj)
@@ -130,6 +145,38 @@ char *ast_sip_get_debug(void)
 	return res;
 }
 
+char *ast_sip_get_regcontext(void)
+{
+	char *res;
+	struct global_config *cfg;
+
+	cfg = get_global_cfg();
+	if (!cfg) {
+		return ast_strdup(DEFAULT_REGCONTEXT);
+	}
+
+	res = ast_strdup(cfg->regcontext);
+	ao2_ref(cfg, -1);
+
+	return res;
+}
+
+char *ast_sip_get_default_voicemail_extension(void)
+{
+	char *res;
+	struct global_config *cfg;
+
+	cfg = get_global_cfg();
+	if (!cfg) {
+		return ast_strdup(DEFAULT_VOICEMAIL_EXTENSION);
+	}
+
+	res = ast_strdup(cfg->default_voicemail_extension);
+	ao2_ref(cfg, -1);
+
+	return res;
+}
+
 char *ast_sip_get_endpoint_identifier_order(void)
 {
 	char *res;
@@ -158,6 +205,49 @@ unsigned int ast_sip_get_keep_alive_interval(void)
 	interval = cfg->keep_alive_interval;
 	ao2_ref(cfg, -1);
 	return interval;
+}
+
+unsigned int ast_sip_get_contact_expiration_check_interval(void)
+{
+	unsigned int interval;
+	struct global_config *cfg;
+
+	cfg = get_global_cfg();
+	if (!cfg) {
+		return DEFAULT_CONTACT_EXPIRATION_CHECK_INTERVAL;
+	}
+
+	interval = cfg->contact_expiration_check_interval;
+	ao2_ref(cfg, -1);
+	return interval;
+}
+
+unsigned int ast_sip_get_max_initial_qualify_time(void)
+{
+	unsigned int time;
+	struct global_config *cfg;
+
+	cfg = get_global_cfg();
+	if (!cfg) {
+		return DEFAULT_MAX_INITIAL_QUALIFY_TIME;
+	}
+
+	time = cfg->max_initial_qualify_time;
+	ao2_ref(cfg, -1);
+	return time;
+}
+
+void ast_sip_get_default_from_user(char *from_user, size_t size)
+{
+	struct global_config *cfg;
+
+	cfg = get_global_cfg();
+	if (!cfg) {
+		ast_copy_string(from_user, DEFAULT_FROM_USER, size);
+	} else {
+		ast_copy_string(from_user, cfg->default_from_user, size);
+		ao2_ref(cfg, -1);
+	}
 }
 
 /*!
@@ -213,6 +303,24 @@ static const struct ast_sorcery_instance_observer observer_callbacks_global = {
 	.object_type_loaded = global_loaded_observer,
 };
 
+int sip_cli_print_global(struct ast_sip_cli_context *context)
+{
+	struct global_config *cfg = get_global_cfg();
+
+	if (!cfg) {
+		cfg = ast_sorcery_alloc(ast_sip_get_sorcery(), "global", NULL);
+		if (!cfg) {
+			return -1;
+		}
+	}
+
+	ast_str_append(&context->output_buffer, 0, "\nGlobal Settings:\n\n");
+	ast_sip_cli_print_sorcery_objectset(cfg, context, 0);
+
+	ao2_ref(cfg, -1);
+	return 0;
+}
+
 int ast_sip_destroy_sorcery_global(void)
 {
 	struct ast_sorcery *sorcery = ast_sip_get_sorcery();
@@ -252,6 +360,19 @@ int ast_sip_initialize_sorcery_global(void)
 	ast_sorcery_object_field_register(sorcery, "global", "keep_alive_interval",
 		__stringify(DEFAULT_KEEPALIVE_INTERVAL),
 		OPT_UINT_T, 0, FLDSET(struct global_config, keep_alive_interval));
+	ast_sorcery_object_field_register(sorcery, "global", "max_initial_qualify_time",
+		__stringify(DEFAULT_MAX_INITIAL_QUALIFY_TIME),
+		OPT_UINT_T, 0, FLDSET(struct global_config, max_initial_qualify_time));
+	ast_sorcery_object_field_register(sorcery, "global", "default_from_user", DEFAULT_FROM_USER,
+		OPT_STRINGFIELD_T, 0, STRFLDSET(struct global_config, default_from_user));
+	ast_sorcery_object_field_register(sorcery, "global", "default_voicemail_extension",
+		DEFAULT_VOICEMAIL_EXTENSION, OPT_STRINGFIELD_T, 0, STRFLDSET(struct global_config,
+		default_voicemail_extension));
+	ast_sorcery_object_field_register(sorcery, "global", "regcontext", DEFAULT_REGCONTEXT,
+		OPT_STRINGFIELD_T, 0, STRFLDSET(struct global_config, regcontext));
+	ast_sorcery_object_field_register(sorcery, "global", "contact_expiration_check_interval",
+		__stringify(DEFAULT_CONTACT_EXPIRATION_CHECK_INTERVAL),
+		OPT_UINT_T, 0, FLDSET(struct global_config, contact_expiration_check_interval));
 
 	if (ast_sorcery_instance_observer_add(sorcery, &observer_callbacks_global)) {
 		return -1;

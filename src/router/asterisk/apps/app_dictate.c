@@ -5,7 +5,7 @@
  *
  * Anthony Minessale II <anthmct@yahoo.com>
  *
- * Donated by Sangoma Technologies <http://www.samgoma.com>
+ * Donated by Sangoma Technologies <http://www.sangoma.com>
  *
  * See http://www.asterisk.org for more information about
  * the Asterisk project. Please do not directly contact
@@ -33,7 +33,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419592 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <sys/stat.h>
 
@@ -175,7 +175,7 @@ static int dictate_exec(struct ast_channel *chan, const char *data)
 				ast_queue_frame(chan, &fr);
 				digit = 0;
 			}
-			if ((f->frametype == AST_FRAME_DTMF)) {
+			if (f->frametype == AST_FRAME_DTMF) {
 				int got = 1;
 				switch(mode) {
 				case DMODE_PLAY:

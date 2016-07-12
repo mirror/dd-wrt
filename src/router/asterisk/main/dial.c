@@ -29,7 +29,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 432385 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <sys/time.h>
 #include <signal.h>
@@ -44,6 +44,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 432385 $")
 #include "asterisk/app.h"
 #include "asterisk/causes.h"
 #include "asterisk/stasis_channels.h"
+#include "asterisk/max_forwards.h"
 
 /*! \brief Main dialing structure. Contains global options, channels being dialed, and more! */
 struct ast_dial {
@@ -294,18 +295,33 @@ static int begin_dial_prerun(struct ast_dial_channel *channel, struct ast_channe
 	char numsubst[AST_MAX_EXTENSION];
 	struct ast_format_cap *cap_all_audio = NULL;
 	struct ast_format_cap *cap_request;
+	struct ast_format_cap *requester_cap = NULL;
 	struct ast_assigned_ids assignedids = {
 		.uniqueid = channel->assignedid1,
 		.uniqueid2 = channel->assignedid2,
 	};
+
+	if (chan) {
+		int max_forwards;
+
+		ast_channel_lock(chan);
+		max_forwards = ast_max_forwards_get(chan);
+		requester_cap = ao2_bump(ast_channel_nativeformats(chan));
+		ast_channel_unlock(chan);
+
+		if (max_forwards <= 0) {
+			ast_log(LOG_WARNING, "Cannot dial from channel '%s'. Max forwards exceeded\n",
+					ast_channel_name(chan));
+		}
+	}
 
 	/* Copy device string over */
 	ast_copy_string(numsubst, channel->device, sizeof(numsubst));
 
 	if (cap && ast_format_cap_count(cap)) {
 		cap_request = cap;
-	} else if (chan) {
-		cap_request = ast_channel_nativeformats(chan);
+	} else if (requester_cap) {
+		cap_request = requester_cap;
 	} else {
 		cap_all_audio = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT);
 		ast_format_cap_append_by_type(cap_all_audio, AST_MEDIA_TYPE_AUDIO);
@@ -318,6 +334,7 @@ static int begin_dial_prerun(struct ast_dial_channel *channel, struct ast_channe
 		return -1;
 	}
 	cap_request = NULL;
+	ao2_cleanup(requester_cap);
 	ao2_cleanup(cap_all_audio);
 
 	if (chan) {
@@ -337,6 +354,7 @@ static int begin_dial_prerun(struct ast_dial_channel *channel, struct ast_channe
 	if (chan) {
 		ast_channel_inherit_variables(chan, channel->owner);
 		ast_channel_datastore_inherit(chan, channel->owner);
+		ast_max_forwards_decrement(channel->owner);
 
 		/* Copy over callerid information */
 		ast_party_redirecting_copy(ast_channel_redirecting(channel->owner), ast_channel_redirecting(chan));
@@ -363,14 +381,13 @@ static int begin_dial_prerun(struct ast_dial_channel *channel, struct ast_channe
 	ast_channel_unlock(channel->owner);
 
 	if (!ast_strlen_zero(predial_string)) {
-		const char *predial_callee = ast_app_expand_sub_args(chan, predial_string);
-		if (!predial_callee) {
-			ast_log(LOG_ERROR, "Could not expand subroutine arguments in predial request '%s'\n", predial_string);
+		if (chan) {
+			ast_autoservice_start(chan);
 		}
-		ast_autoservice_start(chan);
-		ast_pre_call(channel->owner, predial_callee);
-		ast_autoservice_stop(chan);
-		ast_free((char *) predial_callee);
+		ast_pre_call(channel->owner, predial_string);
+		if (chan) {
+			ast_autoservice_stop(chan);
+		}
 	}
 
 	return 0;
@@ -381,10 +398,6 @@ int ast_dial_prerun(struct ast_dial *dial, struct ast_channel *chan, struct ast_
 	struct ast_dial_channel *channel;
 	int res = -1;
 	char *predial_string = dial->options[AST_DIAL_OPTION_PREDIAL];
-
-	if (!ast_strlen_zero(predial_string)) {
-		ast_replace_subargument_delimiter(predial_string);
-	}
 
 	AST_LIST_LOCK(&dial->channels);
 	AST_LIST_TRAVERSE(&dial->channels, channel, list) {
@@ -435,10 +448,6 @@ static int begin_dial(struct ast_dial *dial, struct ast_channel *chan, int async
 	int success = 0;
 	char *predial_string = dial->options[AST_DIAL_OPTION_PREDIAL];
 
-	if (!ast_strlen_zero(predial_string)) {
-		ast_replace_subargument_delimiter(predial_string);
-	}
-
 	/* Iterate through channel list, requesting and calling each one */
 	AST_LIST_LOCK(&dial->channels);
 	AST_LIST_TRAVERSE(&dial->channels, channel, list) {
@@ -457,10 +466,6 @@ static int handle_call_forward(struct ast_dial *dial, struct ast_dial_channel *c
 	char *tmp = ast_strdupa(ast_channel_call_forward(channel->owner));
 	char *tech = "Local", *device = tmp, *stuff;
 	char *predial_string = dial->options[AST_DIAL_OPTION_PREDIAL];
-
-	if (!ast_strlen_zero(predial_string)) {
-		ast_replace_subargument_delimiter(predial_string);
-	}
 
 	/* If call forwarding is disabled just drop the original channel and don't attempt to dial the new one */
 	if (FIND_RELATIVE_OPTION(dial, channel, AST_DIAL_OPTION_DISABLE_CALL_FORWARDING)) {

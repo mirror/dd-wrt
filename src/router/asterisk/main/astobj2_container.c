@@ -22,7 +22,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 417213 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/_private.h"
 #include "asterisk/astobj2.h"
@@ -510,6 +510,12 @@ struct ao2_iterator ao2_iterator_init(struct ao2_container *c, int flags)
 
 void ao2_iterator_restart(struct ao2_iterator *iter)
 {
+	if (!is_ao2_object(iter->c)) {
+		ast_log(LOG_ERROR, "Iterator container is not valid.\n");
+		ast_assert(0);
+		return;
+	}
+
 	/* Release the last container node reference if we have one. */
 	if (iter->last_node) {
 		enum ao2_lock_req orig_lock;
@@ -1211,7 +1217,7 @@ int container_init(void)
 	}
 
 	ast_cli_register_multiple(cli_astobj2, ARRAY_LEN(cli_astobj2));
-	ast_register_atexit(container_cleanup);
+	ast_register_cleanup(container_cleanup);
 #endif	/* defined(AO2_DEBUG) */
 
 	return 0;

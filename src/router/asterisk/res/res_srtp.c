@@ -37,7 +37,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 426143 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <srtp/srtp.h>
 #include <srtp/crypto_kernel.h>

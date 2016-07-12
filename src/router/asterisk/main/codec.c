@@ -29,7 +29,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 432059 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/logger.h"
 #include "asterisk/codec.h"
@@ -245,7 +245,7 @@ int ast_codec_init(void)
 	}
 
 	ast_cli_register_multiple(codec_cli, ARRAY_LEN(codec_cli));
-	ast_register_atexit(codec_shutdown);
+	ast_register_cleanup(codec_shutdown);
 
 	return 0;
 }

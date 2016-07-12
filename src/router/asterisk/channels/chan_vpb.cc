@@ -59,7 +59,7 @@ extern "C" {
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419044 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/lock.h"
 #include "asterisk/utils.h"
@@ -2508,7 +2508,7 @@ static struct ast_channel *vpb_request(const char *type, struct ast_format_cap *
 	if (!(ast_format_cap_iscompatible_format(cap, ast_format_slin))) {
 		struct ast_str *buf;
 
-		buf = ast_str_create(256);
+		buf = ast_str_create(AST_FORMAT_CAP_NAMES_LEN);
 		if (!buf) {
 			return NULL;
 		}
@@ -2626,14 +2626,13 @@ static int unload_module(void)
 
 	if (bridges) {
 		ast_mutex_lock(&bridge_lock);
-		memset(bridges, 0, sizeof bridges);
-		ast_mutex_unlock(&bridge_lock);
-		ast_mutex_destroy(&bridge_lock);
 		for (int i = 0; i < max_bridges; i++) {
 			ast_mutex_destroy(&bridges[i].lock);
 			ast_cond_destroy(&bridges[i].cond);
 		}
 		ast_free(bridges);
+		bridges = NULL;
+		ast_mutex_unlock(&bridge_lock);
 	}
 
 	ao2_cleanup(vpb_tech.capabilities);

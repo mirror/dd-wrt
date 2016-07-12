@@ -30,7 +30,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 430817 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <regex.h>
 #include <ctype.h>
@@ -46,6 +46,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 430817 $")
 #include "asterisk/global_datastores.h"
 #include "asterisk/bridge_basic.h"
 #include "asterisk/bridge_after.h"
+#include "asterisk/max_forwards.h"
 
 /*** DOCUMENTATION
 	<function name="CHANNELS" language="en_US">
@@ -203,6 +204,30 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 430817 $")
 					<enum name="trace">
 						<para>R/W whether or not context tracing is enabled, only available
 						<emphasis>if CHANNEL_TRACE is defined</emphasis>.</para>
+					</enum>
+					<enum name="hangupsource">
+						<para>R/W returns the channel responsible for hangup.</para>
+					</enum>
+					<enum name="appname">
+						<para>R/O returns the internal application name.</para>
+					</enum>
+					<enum name="appdata">
+						<para>R/O returns the application data if available.</para>
+					</enum>
+					<enum name="exten">
+						<para>R/O returns the extension for an outbound channel.</para>
+					</enum>
+					<enum name="context">
+						<para>R/O returns the context for an outbound channel.</para>
+					</enum>
+					<enum name="channame">
+						<para>R/O returns the channel name for an outbound channel.</para>
+					</enum>
+					<enum name="uniqueid">
+						<para>R/O returns the channel uniqueid.</para>
+					</enum>
+					<enum name="linkedid">
+						<para>R/O returns the linkedid if available, otherwise returns the uniqueid.</para>
 					</enum>
 				</enumlist>
 				<para><emphasis>chan_sip</emphasis> provides the following additional options:</para>
@@ -388,6 +413,16 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 430817 $")
 					<enum name="caller_url">
 						<para>R/0 Returns caller URL</para>
 					</enum>
+					<enum name="max_forwards">
+						<para>R/W Get or set the maximum number of call forwards for this channel.
+
+						This number describes the number of times a call may be forwarded by this channel
+						before the call fails. "Forwards" in this case refers to redirects by phones as well
+						as calls to local channels.
+
+						Note that this has no relation to the SIP Max-Forwards header.
+						</para>
+					</enum>
 				</enumlist>
 			</parameter>
 		</syntax>
@@ -432,7 +467,7 @@ static int func_channel_read(struct ast_channel *chan, const char *function,
 	if (!strcasecmp(data, "audionativeformat")) {
 		tmpcap = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT);
 		if (tmpcap) {
-			struct ast_str *codec_buf = ast_str_alloca(128);
+			struct ast_str *codec_buf = ast_str_alloca(AST_FORMAT_CAP_NAMES_LEN);
 
 			ast_channel_lock(chan);
 			ast_format_cap_append_from_cap(tmpcap, ast_channel_nativeformats(chan), AST_MEDIA_TYPE_AUDIO);
@@ -443,7 +478,7 @@ static int func_channel_read(struct ast_channel *chan, const char *function,
 	} else if (!strcasecmp(data, "videonativeformat")) {
 		tmpcap = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT);
 		if (tmpcap) {
-			struct ast_str *codec_buf = ast_str_alloca(128);
+			struct ast_str *codec_buf = ast_str_alloca(AST_FORMAT_CAP_NAMES_LEN);
 
 			ast_channel_lock(chan);
 			ast_format_cap_append_from_cap(tmpcap, ast_channel_nativeformats(chan), AST_MEDIA_TYPE_VIDEO);
@@ -576,6 +611,10 @@ static int func_channel_read(struct ast_channel *chan, const char *function,
 				snprintf(buf, len, "%s", encrypt->media ? "1" : "");
 			}
 		}
+		ast_channel_unlock(chan);
+	} else if (!strcasecmp(data, "max_forwards")) {
+		ast_channel_lock(chan);
+		snprintf(buf, len, "%d", ast_max_forwards_get(chan));
 		ast_channel_unlock(chan);
 	} else if (!ast_channel_tech(chan) || !ast_channel_tech(chan)->func_channel_read || ast_channel_tech(chan)->func_channel_read(chan, function, data, buf, len)) {
 		ast_log(LOG_WARNING, "Unknown or unavailable item requested: '%s'\n", data);
@@ -737,6 +776,16 @@ static int func_channel_write_real(struct ast_channel *chan, const char *functio
 			store->media = ast_true(value) ? 1 : 0;
 		}
 		ast_channel_unlock(chan);
+	} else if (!strcasecmp(data, "max_forwards")) {
+		int max_forwards;
+		if (sscanf(value, "%d", &max_forwards) != 1) {
+			ast_log(LOG_WARNING, "Unable to set max forwards to '%s'\n", value);
+			ret = -1;
+		} else {
+			ast_channel_lock(chan);
+			ret = ast_max_forwards_set(chan, max_forwards);
+			ast_channel_unlock(chan);
+		}
 	} else if (!ast_channel_tech(chan)->func_channel_write
 		 || ast_channel_tech(chan)->func_channel_write(chan, function, data, value)) {
 		ast_log(LOG_WARNING, "Unknown or unavailable item requested: '%s'\n",

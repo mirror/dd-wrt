@@ -25,7 +25,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 428169 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "res_parking.h"
 #include "asterisk/utils.h"
@@ -136,15 +136,6 @@ static void do_sleep(struct timespec *to_sleep)
 	while ((nanosleep(to_sleep, to_sleep) == -1) && (errno == EINTR)) {
 	}
 }
-
-static int fake_fixup(struct ast_channel *clonechan, struct ast_channel *original)
-{
-	return 0;
-}
-
-static const struct ast_channel_tech fake_tech = {
-	.fixup = fake_fixup, /* silence warning from masquerade... though those shouldn't be happening now */
-};
 
 #define TEST_LOT_NAME "unit_tests_res_parking_test_lot"
 

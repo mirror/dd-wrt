@@ -307,7 +307,7 @@ const char *ast_variable_retrieve(struct ast_config *config,
 	const char *category, const char *variable);
 
 /*!
- * \brief Gets a variable from a specific category structure
+ * \brief Gets a variable value from a specific category structure by name
  *
  * \param category category structure under which the variable lies
  * \param variable which variable you wish to get the data for
@@ -321,7 +321,7 @@ const char *ast_variable_retrieve(struct ast_config *config,
 const char *ast_variable_find(const struct ast_category *category, const char *variable);
 
 /*!
- * \brief Gets a variable from a variable list
+ * \brief Gets the value of a variable from a variable list by name
  *
  * \param list variable list to search
  * \param variable which variable you wish to get the data for
@@ -333,6 +333,38 @@ const char *ast_variable_find(const struct ast_category *category, const char *v
  * \retval NULL if unable to find it.
  */
 const char *ast_variable_find_in_list(const struct ast_variable *list, const char *variable);
+
+/*!
+ * \brief Gets the value of the LAST occurrence of a variable from a variable list
+ *
+ * \param list The ast_variable list to search
+ * \param variable The name of the ast_variable you wish to fetch data for
+ *
+ * \details
+ * Iterates over a given ast_variable list to search for the last occurrence of an
+ * ast_variable entry with a name attribute matching the given name (variable).
+ * This is useful if the list has duplicate entries (such as in cases where entries
+ * are created by a template)
+ *
+ * \retval The variable value on success
+ * \retval NULL if unable to find it.
+ */
+const char *ast_variable_find_last_in_list(const struct ast_variable *list, const char *variable);
+
+/*!
+ * \brief Gets a variable from a variable list by name
+ * \since 13.9.0
+ *
+ * \param list variable list to search
+ * \param variable name you wish to get the data for
+ *
+ * \details
+ * Goes through a given variable list and searches for the given variable
+ *
+ * \retval The variable (not the value) on success
+ * \retval NULL if unable to find it.
+ */
+const struct ast_variable *ast_variable_find_variable_in_list(const struct ast_variable *list, const char *variable_name);
 
 /*!
  * \brief Retrieve a category if it exists
@@ -478,6 +510,17 @@ int ast_unload_realtime(const char *family);
  *
  * \note You should use the constant SENTINEL to terminate arguments, in
  * order to preserve cross-platform compatibility.
+ *
+ * TODO The return value of this function is routinely ignored. Ignoring
+ * the return value means that it's mostly pointless to be calling this.
+ * You'll see some warning messages potentially, but that's it.
+ *
+ * XXX This function is super useful for detecting configuration problems
+ * early, but unfortunately, the latest in configuration management, sorcery,
+ * doesn't work well with this. Users of sorcery are familiar with the fields
+ * they will need to write but don't know if realtime is being used. Sorcery
+ * knows what storage mechanism is being used but has no high-level knowledge
+ * of what sort of data is going to be written.
  */
 int ast_realtime_require_field(const char *family, ...) attribute_sentinel;
 
@@ -1188,6 +1231,66 @@ char *ast_realtime_decode_chunk(char *chunk);
  * \since 1.8
  */
 char *ast_realtime_encode_chunk(struct ast_str **dest, ssize_t maxlen, const char *chunk);
+
+/*!
+ * \brief Tests 2 variable values to see if they match
+ * \since 13.9.0
+ *
+ * \param left Variable to test
+ * \param right Variable to match against with an optional realtime-style operator in the name
+ *
+ * \retval 1 matches
+ * \retval 0 doesn't match
+ *
+ * \details
+ *
+ * The values of the variables are passed to ast_strings_match.
+ * If right->name is suffixed with a space and an operator, that operator
+ * is also passed to ast_strings_match.
+ *
+ * Examples:
+ *
+ * left->name = "id" (ignored)
+ * left->value = "abc"
+ * right->name = "id regex" (id is ignored)
+ * right->value = "a[bdef]c"
+ *
+ * will result in ast_strings_match("abc", "regex", "a[bdef]c") which will return 1.
+ *
+ * left->name = "id" (ignored)
+ * left->value = "abc"
+ * right->name = "id" (ignored)
+ * right->value = "abc"
+ *
+ * will result in ast_strings_match("abc", NULL, "abc") which will return 1.
+ *
+ * See the documentation for ast_strings_match for the valid operators.
+ */
+int ast_variables_match(const struct ast_variable *left, const struct ast_variable *right);
+
+/*!
+ * \brief Tests 2 variable lists to see if they match
+ * \since 13.9.0
+ *
+ * \param left Variable list to test
+ * \param right Variable list with an optional realtime-style operator in the names
+ * \param exact_match If true, all variables in left must match all variables in right
+ *        and vice versa.  This does exact value matches only.  Operators aren't supported.
+ *        Except for order, the left and right lists must be equal.
+ *
+ *        If false, every variable in the right list must match some variable in the left list
+ *        using the operators supplied. Variables in the left list that aren't in the right
+ *        list are ignored for matching purposes.
+ *
+ * \retval 1 matches
+ * \retval 0 doesn't match
+ *
+ * \details
+ * Iterates over the variable lists calling ast_variables_match.  If any match fails
+ * or a variable in the right list isn't in the left list, 0 is returned.
+ */
+int ast_variable_lists_match(const struct ast_variable *left, const struct ast_variable *right,
+	int exact_match);
 
 #if defined(__cplusplus) || defined(c_plusplus)
 }

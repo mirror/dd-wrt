@@ -27,6 +27,26 @@
 # extra cflags to build dependencies. Recursively expanded.
 MAKE_DEPS=-MD -MT $@ -MF .$(subst /,_,$@).d -MP
 
+ifeq ($(findstring ADDRESS_SANITIZER,$(MENUSELECT_CFLAGS)),ADDRESS_SANITIZER)
+    _ASTLDFLAGS+=-fsanitize=address
+    _ASTCFLAGS+=-fno-omit-frame-pointer -fsanitize=address
+endif
+
+ifeq ($(findstring THREAD_SANITIZER,$(MENUSELECT_CFLAGS)),THREAD_SANITIZER)
+    _ASTLDFLAGS+=-fsanitize=thread -pie -fPIE
+    _ASTCFLAGS+=-fno-omit-frame-pointer -pie -fPIE -fsanitize=thread
+endif
+
+ifeq ($(findstring LEAK_SANITIZER,$(MENUSELECT_CFLAGS)),LEAK_SANITIZER)
+    _ASTLDFLAGS+=-fsanitize=leak
+    _ASTCFLAGS+=-fno-omit-frame-pointer -fsanitize=leak
+endif
+
+ifeq ($(findstring UNDEFINED_SANITIZER,$(MENUSELECT_CFLAGS)),UNDEFINED_SANITIZER)
+    _ASTLDFLAGS+=-fsanitize=undefined
+    _ASTCFLAGS+=-fno-omit-frame-pointer -fsanitize=undefined
+endif
+
 ifeq ($(NOISY_BUILD),)
     ECHO_PREFIX=@
     CMD_PREFIX=@
@@ -65,6 +85,11 @@ endif
 CC_CFLAGS=$(PTHREAD_CFLAGS) $(_ASTCFLAGS) $(ASTCFLAGS)
 CXX_CFLAGS=$(PTHREAD_CFLAGS) $(filter-out -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations $(AST_DECLARATION_AFTER_STATEMENT),$(_ASTCFLAGS) $(ASTCFLAGS))
 
+# Clang -Werror warning suppressions
+ifeq ($(C_COMPILER_FAMILY),clang)
+	CC_CFLAGS+=-Wno-unused-value -Wno-parentheses-equality
+endif
+
 ifeq ($(GNU_LD),1)
 SO_SUPPRESS_SYMBOLS=-Wl,--version-script,$(subst .so,.exports,$@),--warn-common
 ifneq ($(wildcard $(subst .so,.dynamics,$@)),)
@@ -78,13 +103,15 @@ CC_LIBS=$(PTHREAD_LIBS) $(LIBS)
 CXX_LIBS=$(PTHREAD_LIBS) $(LIBS)
 
 # determine whether to double-compile so that the optimizer can report code path problems
-# this is only done when developer mode and DONT_OPTIMIZE are both enabled
-# in that case, we run the preprocessor to produce a .i or .ii file from the source
+# In this case, we run the preprocessor to produce a .i or .ii file from the source
 # code, then compile once with optimizer enabled (and the output to /dev/null),
 # and if that doesn't fail then compile again with optimizer disabled
-ifeq ($(findstring DONT_OPTIMIZE,$(MENUSELECT_CFLAGS))$(AST_DEVMODE),DONT_OPTIMIZEyes)
+
+ifeq ($(findstring COMPILE_DOUBLE,$(MENUSELECT_CFLAGS)),COMPILE_DOUBLE)
 COMPILE_DOUBLE=yes
-else
+endif
+
+ifeq ($(findstring DONT_OPTIMIZE,$(MENUSELECT_CFLAGS))$(AST_DEVMODE),)
 _ASTCFLAGS+=$(AST_FORTIFY_SOURCE)
 endif
 
@@ -101,10 +128,17 @@ endif
 
 %.o: %.i
 	$(ECHO_PREFIX) echo "   [CCi] $< -> $@"
+ifneq ($(AST_CLANG_BLOCKS),)
+ifeq ($(COMPILE_DOUBLE),yes)
+	$(CMD_PREFIX) $(CC) -o /dev/null -c $< $(CC_CFLAGS) $(OPTIMIZE) -Wno-unused-command-line-argument
+endif
+	$(CMD_PREFIX) $(CC) -o $@ -c $< $(CC_CFLAGS) $(_ASTCFLAGS_COVERAGE) -Wno-unused-command-line-argument
+else
 ifeq ($(COMPILE_DOUBLE),yes)
 	$(CMD_PREFIX) $(CC) -o /dev/null -c $< $(CC_CFLAGS) $(OPTIMIZE)
 endif
 	$(CMD_PREFIX) $(CC) -o $@ -c $< $(CC_CFLAGS) $(_ASTCFLAGS_COVERAGE)
+endif
 
 ifneq ($(COMPILE_DOUBLE),yes)
 %.o: %.c

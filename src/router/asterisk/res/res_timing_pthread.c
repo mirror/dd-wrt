@@ -29,7 +29,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 431807 $");
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$");
 
 #include <stdbool.h>
 #include <math.h>

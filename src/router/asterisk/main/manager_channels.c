@@ -28,7 +28,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 429206 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/callerid.h"
 #include "asterisk/channel.h"
@@ -408,6 +408,7 @@ struct ast_str *ast_manager_build_channel_state_string_prefix(
 {
 	struct ast_str *out = ast_str_create(1024);
 	int res = 0;
+	char *caller_name, *connected_name;
 
 	if (!out) {
 		return NULL;
@@ -417,6 +418,9 @@ struct ast_str *ast_manager_build_channel_state_string_prefix(
 		ast_free(out);
 		return NULL;
 	}
+
+	caller_name = ast_escape_c_alloc(snapshot->caller_name);
+	connected_name = ast_escape_c_alloc(snapshot->connected_name);
 
 	res = ast_str_set(&out, 0,
 		"%sChannel: %s\r\n"
@@ -431,34 +435,44 @@ struct ast_str *ast_manager_build_channel_state_string_prefix(
 		"%sContext: %s\r\n"
 		"%sExten: %s\r\n"
 		"%sPriority: %d\r\n"
-		"%sUniqueid: %s\r\n",
+		"%sUniqueid: %s\r\n"
+		"%sLinkedid: %s\r\n",
 		prefix, snapshot->name,
 		prefix, snapshot->state,
 		prefix, ast_state2str(snapshot->state),
 		prefix, S_OR(snapshot->caller_number, "<unknown>"),
-		prefix, S_OR(snapshot->caller_name, "<unknown>"),
+		prefix, S_OR(caller_name, "<unknown>"),
 		prefix, S_OR(snapshot->connected_number, "<unknown>"),
-		prefix, S_OR(snapshot->connected_name, "<unknown>"),
+		prefix, S_OR(connected_name, "<unknown>"),
 		prefix, snapshot->language,
 		prefix, snapshot->accountcode,
 		prefix, snapshot->context,
 		prefix, snapshot->exten,
 		prefix, snapshot->priority,
-		prefix, snapshot->uniqueid);
+		prefix, snapshot->uniqueid,
+		prefix, snapshot->linkedid);
 
 	if (!res) {
 		ast_free(out);
+		ast_free(caller_name);
+		ast_free(connected_name);
 		return NULL;
 	}
 
 	if (snapshot->manager_vars) {
 		struct ast_var_t *var;
+		char *val;
 		AST_LIST_TRAVERSE(snapshot->manager_vars, var, entries) {
+			val = ast_escape_c_alloc(var->value);
 			ast_str_append(&out, 0, "%sChanVariable: %s=%s\r\n",
 				       prefix,
-				       var->name, var->value);
+				       var->name, S_OR(val, ""));
+			ast_free(val);
 		}
 	}
+
+	ast_free(caller_name);
+	ast_free(connected_name);
 
 	return out;
 }
@@ -556,6 +570,9 @@ static struct ast_manager_event_blob *channel_new_callerid(
 	struct ast_channel_snapshot *old_snapshot,
 	struct ast_channel_snapshot *new_snapshot)
 {
+	struct ast_manager_event_blob *res;
+	char *callerid;
+
 	/* No NewCallerid event on cache clear or first event */
 	if (!old_snapshot || !new_snapshot) {
 		return NULL;
@@ -565,11 +582,19 @@ static struct ast_manager_event_blob *channel_new_callerid(
 		return NULL;
 	}
 
-	return ast_manager_event_blob_create(
+	if (!(callerid = ast_escape_c_alloc(
+		      ast_describe_caller_presentation(new_snapshot->caller_pres)))) {
+		return NULL;
+	}
+
+	res = ast_manager_event_blob_create(
 		EVENT_FLAG_CALL, "NewCallerid",
 		"CID-CallingPres: %d (%s)\r\n",
 		new_snapshot->caller_pres,
-		ast_describe_caller_presentation(new_snapshot->caller_pres));
+		callerid);
+
+	ast_free(callerid);
+	return res;
 }
 
 static struct ast_manager_event_blob *channel_new_connected_line(
@@ -1061,20 +1086,22 @@ static void channel_hold_cb(void *data, struct stasis_subscription *sub,
 	struct stasis_message *message)
 {
 	struct ast_channel_blob *obj = stasis_message_data(message);
-	const char *musicclass;
-	RAII_VAR(struct ast_str *, musicclass_string, NULL, ast_free);
-	RAII_VAR(struct ast_str *, channel_event_string, NULL, ast_free);
+	struct ast_str *musicclass_string = ast_str_create(32);
+	struct ast_str *channel_event_string;
 
-	if (!(musicclass_string = ast_str_create(32))) {
+	if (!musicclass_string) {
 		return;
 	}
 
 	channel_event_string = ast_manager_build_channel_state_string(obj->snapshot);
 	if (!channel_event_string) {
+		ast_free(musicclass_string);
 		return;
 	}
 
 	if (obj->blob) {
+		const char *musicclass;
+
 		musicclass = ast_json_string_get(ast_json_object_get(obj->blob, "musicclass"));
 
 		if (!ast_strlen_zero(musicclass)) {
@@ -1087,13 +1114,16 @@ static void channel_hold_cb(void *data, struct stasis_subscription *sub,
 		"%s",
 		ast_str_buffer(channel_event_string),
 		ast_str_buffer(musicclass_string));
+
+	ast_free(musicclass_string);
+	ast_free(channel_event_string);
 }
 
 static void channel_unhold_cb(void *data, struct stasis_subscription *sub,
 	struct stasis_message *message)
 {
 	struct ast_channel_blob *obj = stasis_message_data(message);
-	RAII_VAR(struct ast_str *, channel_event_string, NULL, ast_free);
+	struct ast_str *channel_event_string;
 
 	channel_event_string = ast_manager_build_channel_state_string(obj->snapshot);
 	if (!channel_event_string) {
@@ -1103,6 +1133,8 @@ static void channel_unhold_cb(void *data, struct stasis_subscription *sub,
 	manager_event(EVENT_FLAG_CALL, "Unhold",
 		"%s",
 		ast_str_buffer(channel_event_string));
+
+	ast_free(channel_event_string);
 }
 
 static void manager_channels_shutdown(void)
@@ -1136,7 +1168,7 @@ int manager_channels_init(void)
 		return -1;
 	}
 
-	ast_register_atexit(manager_channels_shutdown);
+	ast_register_cleanup(manager_channels_shutdown);
 
 	ret |= stasis_message_router_add_cache_update(message_router,
 		ast_channel_snapshot_type(), channel_snapshot_update, NULL);

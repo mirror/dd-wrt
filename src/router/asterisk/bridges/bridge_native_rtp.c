@@ -31,7 +31,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 430225 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -50,6 +50,8 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 430225 $")
 struct native_rtp_bridge_data {
 	/*! \brief Framehook used to intercept certain control frames */
 	int id;
+	/*! \brief Set when this framehook has been detached */
+	unsigned int detached;
 };
 
 /*! \brief Internal helper function which gets all RTP information (glue and instances) relating to the given channels */
@@ -261,6 +263,7 @@ static void native_rtp_bridge_stop(struct ast_bridge *bridge, struct ast_channel
 static struct ast_frame *native_rtp_framehook(struct ast_channel *chan, struct ast_frame *f, enum ast_framehook_event event, void *data)
 {
 	RAII_VAR(struct ast_bridge *, bridge, NULL, ao2_cleanup);
+	struct native_rtp_bridge_data *native_data = data;
 
 	if (!f || (event != AST_FRAMEHOOK_EVENT_WRITE)) {
 		return f;
@@ -272,13 +275,22 @@ static struct ast_frame *native_rtp_framehook(struct ast_channel *chan, struct a
 		/* native_rtp_bridge_start/stop are not being called from bridging
 		   core so we need to lock the bridge prior to calling these functions
 		   Unfortunately that means unlocking the channel, but as it
-		   should not be modified this should be okay...hopefully */
+		   should not be modified this should be okay... hopefully...
+		   unless this channel is being moved around right now and is in
+		   the process of having this framehook removed (which is fine). To
+		   ensure we then don't stop or start when we shouldn't we consult
+		   the data provided. If this framehook has been detached then the
+		   detached variable will be set. This is safe to check as it is only
+		   manipulated with the bridge lock held. */
 		ast_channel_unlock(chan);
 		ast_bridge_lock(bridge);
-		if (f->subclass.integer == AST_CONTROL_HOLD) {
-			native_rtp_bridge_stop(bridge, chan);
-		} else if ((f->subclass.integer == AST_CONTROL_UNHOLD) || (f->subclass.integer == AST_CONTROL_UPDATE_RTP_PEER)) {
-			native_rtp_bridge_start(bridge, chan);
+		if (!native_data->detached) {
+			if (f->subclass.integer == AST_CONTROL_HOLD) {
+				native_rtp_bridge_stop(bridge, chan);
+			} else if ((f->subclass.integer == AST_CONTROL_UNHOLD) ||
+				(f->subclass.integer == AST_CONTROL_UPDATE_RTP_PEER)) {
+				native_rtp_bridge_start(bridge, chan);
+			}
 		}
 		ast_bridge_unlock(bridge);
 		ast_channel_lock(chan);
@@ -310,8 +322,8 @@ static int native_rtp_bridge_compatible(struct ast_bridge *bridge)
 	RAII_VAR(struct ast_rtp_instance *, instance1, NULL, ao2_cleanup);
 	RAII_VAR(struct ast_rtp_instance *, vinstance0, NULL, ao2_cleanup);
 	RAII_VAR(struct ast_rtp_instance *, vinstance1, NULL, ao2_cleanup);
-	RAII_VAR(struct ast_format_cap *, cap0, ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT), ao2_cleanup);
-	RAII_VAR(struct ast_format_cap *, cap1, ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT), ao2_cleanup);
+	RAII_VAR(struct ast_format_cap *, cap0, NULL, ao2_cleanup);
+	RAII_VAR(struct ast_format_cap *, cap1, NULL, ao2_cleanup);
 	int read_ptime0, read_ptime1, write_ptime0, write_ptime1;
 
 	/* We require two channels before even considering native bridging */
@@ -361,6 +373,12 @@ static int native_rtp_bridge_compatible(struct ast_bridge *bridge)
 		return 0;
 	}
 
+	cap0 = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT);
+	cap1 = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT);
+	if (!cap0 || !cap1) {
+		return 0;
+	}
+
 	/* Make sure that codecs match */
 	if (glue0->get_codec) {
 		glue0->get_codec(bc0->chan, cap0);
@@ -369,8 +387,8 @@ static int native_rtp_bridge_compatible(struct ast_bridge *bridge)
 		glue1->get_codec(bc1->chan, cap1);
 	}
 	if (ast_format_cap_count(cap0) != 0 && ast_format_cap_count(cap1) != 0 && !ast_format_cap_iscompatible(cap0, cap1)) {
-		struct ast_str *codec_buf0 = ast_str_alloca(64);
-		struct ast_str *codec_buf1 = ast_str_alloca(64);
+		struct ast_str *codec_buf0 = ast_str_alloca(AST_FORMAT_CAP_NAMES_LEN);
+		struct ast_str *codec_buf1 = ast_str_alloca(AST_FORMAT_CAP_NAMES_LEN);
 		ast_debug(1, "Channel codec0 = %s is not codec1 = %s, cannot native bridge in RTP.\n",
 			ast_format_cap_get_names(cap0, &codec_buf0), ast_format_cap_get_names(cap1, &codec_buf1));
 		return 0;
@@ -397,6 +415,7 @@ static int native_rtp_bridge_framehook_attach(struct ast_bridge_channel *bridge_
 	static struct ast_framehook_interface hook = {
 		.version = AST_FRAMEHOOK_INTERFACE_VERSION,
 		.event_cb = native_rtp_framehook,
+		.destroy_cb = __ao2_cleanup,
 		.consume_cb = native_rtp_framehook_consume,
 		.disable_inheritance = 1,
 	};
@@ -406,10 +425,12 @@ static int native_rtp_bridge_framehook_attach(struct ast_bridge_channel *bridge_
 	}
 
 	ast_channel_lock(bridge_channel->chan);
+	hook.data = ao2_bump(data);
 	data->id = ast_framehook_attach(bridge_channel->chan, &hook);
 	ast_channel_unlock(bridge_channel->chan);
 	if (data->id < 0) {
-		ao2_cleanup(data);
+		/* We need to drop both the reference we hold, and the one the framehook would hold */
+		ao2_ref(data, -2);
 		return -1;
 	}
 
@@ -429,6 +450,7 @@ static void native_rtp_bridge_framehook_detach(struct ast_bridge_channel *bridge
 
 	ast_channel_lock(bridge_channel->chan);
 	ast_framehook_detach(bridge_channel->chan, data->id);
+	data->detached = 1;
 	ast_channel_unlock(bridge_channel->chan);
 	bridge_channel->tech_pvt = NULL;
 }
@@ -474,20 +496,17 @@ static struct ast_bridge_technology native_rtp_bridge = {
 
 static int unload_module(void)
 {
-	ao2_t_ref(native_rtp_bridge.format_capabilities, -1, "Dispose of capabilities in module unload");
-	return ast_bridge_technology_unregister(&native_rtp_bridge);
+	ast_bridge_technology_unregister(&native_rtp_bridge);
+	return 0;
 }
 
 static int load_module(void)
 {
-	if (!(native_rtp_bridge.format_capabilities = ast_format_cap_alloc(0))) {
+	if (ast_bridge_technology_register(&native_rtp_bridge)) {
+		unload_module();
 		return AST_MODULE_LOAD_DECLINE;
 	}
-	ast_format_cap_append_by_type(native_rtp_bridge.format_capabilities, AST_MEDIA_TYPE_AUDIO);
-	ast_format_cap_append_by_type(native_rtp_bridge.format_capabilities, AST_MEDIA_TYPE_VIDEO);
-	ast_format_cap_append_by_type(native_rtp_bridge.format_capabilities, AST_MEDIA_TYPE_TEXT);
-
-	return ast_bridge_technology_register(&native_rtp_bridge);
+	return AST_MODULE_LOAD_SUCCESS;
 }
 
 AST_MODULE_INFO_STANDARD(ASTERISK_GPL_KEY, "Native RTP bridging module");

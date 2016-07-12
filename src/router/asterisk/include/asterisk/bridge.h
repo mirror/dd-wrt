@@ -509,6 +509,8 @@ enum ast_bridge_impart_flags {
  * \param features Bridge features structure.
  * \param flags defined by enum ast_bridge_impart_flags.
  *
+ * \note The given bridge must be unlocked when calling this function.
+ *
  * \note The features parameter must be NULL or obtained by
  * ast_bridge_features_new().  You must not dereference features
  * after calling even if the call fails.
@@ -743,6 +745,18 @@ int ast_bridge_suspend(struct ast_bridge *bridge, struct ast_channel *chan);
  *       Doing so may result in bad things happening.
  */
 int ast_bridge_unsuspend(struct ast_bridge *bridge, struct ast_channel *chan);
+
+/*!
+ * \brief Sets BRIDGECHANNEL and BRIDGEPVTCALLID for a channel
+ *
+ * \pre chan must be locked before calling
+ *
+ * \param name channel name of the bridged peer
+ * \param pvtid Private CallID of the bridged peer
+ *
+ * \return nothing
+ */
+void ast_bridge_vars_set(struct ast_channel *chan, const char *name, const char *pvtid);
 
 struct ast_unreal_pvt;
 

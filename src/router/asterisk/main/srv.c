@@ -35,7 +35,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 388045 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <netinet/in.h>
 #include <arpa/nameser.h>

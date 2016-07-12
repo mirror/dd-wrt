@@ -86,6 +86,11 @@ int ast_pbx_init(void);				/*!< Provided by pbx.c */
  *
  * \retval 0 on success.
  * \retval -1 on error.
+ *
+ * \note This function should be rarely used in situations where
+ * something must be shutdown to avoid corruption, excessive data
+ * loss, or when external programs must be stopped.  All other
+ * cleanup in the core should use ast_register_cleanup.
  */
 int ast_register_atexit(void (*func)(void));
 
@@ -154,6 +159,8 @@ int ast_shutdown_final(void);
  * \param version the version string (typically a SVN revision keyword string)
  * \return nothing
  *
+ * \note As of 13.4.0, the \c version parameter is ignored.
+ *
  * This function should not be called directly, but instead the
  * ASTERISK_FILE_VERSION macro should be used to register a file with the core.
  */
@@ -170,12 +177,29 @@ void ast_register_file_version(const char *file, const char *version);
  */
 void ast_unregister_file_version(const char *file);
 
-/*! \brief Find version for given module name
+/*!
+ * \brief Find version for given module name
  * \param file Module name (i.e. chan_sip.so)
- * \return version string or NULL if the module is not found
+ *
+* \note As of 13.4.0, the file version is no longer tracked. As such,
+ * if the file exists, the Asterisk version will be returned.
+ *
+ * \retval NULL if the file doesn't exist.
+ * \retval The Asterisk version if the file does exist.
  */
 const char *ast_file_version_find(const char *file);
 
+/*!
+ * \brief Complete a source file name
+ * \param partial The partial name of the file to look up.
+ * \param n The n-th match to return.
+ *
+ * \retval NULL if there is no match for partial at the n-th position
+ * \retval Matching source file name
+ *
+ * \note A matching source file is allocataed on the heap, and must be
+ * free'd by the caller.
+ */
 char *ast_complete_source_filename(const char *partial, int n);
 
 /*!
@@ -198,6 +222,9 @@ char *ast_complete_source_filename(const char *partial, int n);
  * SVN from modifying them in this file; under normal circumstances they would
  * not be present and SVN would expand the Revision keyword into the file's
  * revision number.
+ *
+ * \deprecated All new files should use ASTERISK_REGISTER_FILE instead.
+ * \version 11.22.0 deprecated
  */
 #ifdef MTX_PROFILE
 #define	HAVE_MTX_PROFILE	/* used in lock.h */
@@ -226,6 +253,23 @@ char *ast_complete_source_filename(const char *partial, int n);
 #else /* LOW_MEMORY */
 #define ASTERISK_FILE_VERSION(file, x)
 #endif /* LOW_MEMORY */
+
+/*!
+ * \since 11.22.0
+ * \brief Register/unregister a source code file with the core.
+ *
+ * This macro will place a file-scope constructor and destructor into the
+ * source of the module using it; this will cause the file to be
+ * registered with the Asterisk core (and unregistered) at the appropriate
+ * times.
+ *
+ * Example:
+ *
+ * \code
+ * ASTERISK_REGISTER_FILE()
+ * \endcode
+ */
+#define ASTERISK_REGISTER_FILE() ASTERISK_FILE_VERSION(__FILE__, NULL)
 
 #if !defined(LOW_MEMORY)
 /*!

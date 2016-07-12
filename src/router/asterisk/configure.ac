@@ -20,7 +20,7 @@ AC_CONFIG_SRCDIR([main/asterisk.c])
 AC_CONFIG_AUX_DIR(`pwd`)
 
 AC_COPYRIGHT("Asterisk")
-AC_REVISION($Revision: 432808 $)
+AC_REVISION($Revision$)
 
 # preserve any CFLAGS or LDFLAGS that may be set
 # NOTE: This must be done before calling any macros that end up
@@ -283,6 +283,7 @@ AC_PATH_PROG([KPATHSEA], [kpsewhich], :)
 AC_PATH_PROG([XMLLINT], [xmllint], :)
 AC_PATH_PROG([XMLSTARLET], [xmlstarlet], :)
 AC_PATH_PROG([GIT], [git], :)
+AC_PATH_PROG([ALEMBIC], [alembic], :)
 if test "${WGET}" != ":" ; then
   DOWNLOAD=${WGET}
 else if test "${CURL}" != ":" ; then
@@ -386,6 +387,9 @@ AC_ARG_ENABLE([coverage],
 	esac])
 AC_SUBST(AST_CODE_COVERAGE)
 
+AST_CHECK_RAII()
+AST_CHECK_STRSEP_ARRAY_BOUNDS()
+
 # AST_EXT_LIB_SETUP is used to tell configure to handle variables for
 # various packages.
 # $1 is the prefix for the variables in makeopts and autoconfig.h
@@ -411,6 +415,7 @@ AST_EXT_LIB_SETUP([CRYPT], [password and data encryption], [crypt])
 AST_EXT_LIB_SETUP([CRYPTO], [OpenSSL Cryptography], [crypto])
 AST_EXT_LIB_SETUP_OPTIONAL([OPENSSL_SRTP], [OpenSSL SRTP Extension Support], [CRYPTO], [crypto])
 AST_EXT_LIB_SETUP_OPTIONAL([OPENSSL_EC], [OpenSSL Elliptic Curve Support], [CRYPTO], [crypto])
+AST_EXT_LIB_SETUP_OPTIONAL([OPENSSL_ECDH_AUTO], [OpenSSL Auto ECDH Support], [CRYPTO], [crypto])
 AST_EXT_LIB_SETUP([DAHDI], [DAHDI], [dahdi])
 AST_EXT_LIB_SETUP([FFMPEG], [Ffmpeg and avcodec], [avcodec])
 AST_EXT_LIB_SETUP([GSM], [External GSM], [gsm], [, use 'internal' GSM otherwise])
@@ -452,12 +457,38 @@ AST_EXT_LIB_SETUP([OPUS], [Opus], [opus])
 AST_EXT_LIB_SETUP([OSPTK], [OSP Toolkit], [osptk])
 AST_EXT_LIB_SETUP([OSS], [Open Sound System], [oss])
 AST_EXT_LIB_SETUP([PGSQL], [PostgreSQL], [postgres])
+
 AST_EXT_LIB_SETUP([PJPROJECT], [PJPROJECT], [pjproject])
-AST_EXT_LIB_SETUP([POPT], [popt], [popt])
+PJPROJECT_BUNDLED=no
+AH_TEMPLATE(m4_bpatsubst([[HAVE_PJPROJECT_BUNDLED]], [(.*)]), [Define to 1 when using the bundled pjproject.])
+
+AC_ARG_WITH([pjproject-bundled],
+	[AS_HELP_STRING([--with-pjproject-bundled],
+		[Use bundled pjproject libraries])],
+	[case "${enableval}" in
+	      n|no) PJPROJECT_BUNDLED=no ;;
+	      *) PJPROJECT_BUNDLED=yes ;;
+	esac])
+AC_SUBST(PJPROJECT_BUNDLED)
+
+if test "$PJPROJECT_BUNDLED" = "yes" -a "${ac_mandatory_list#*PJPROJECT*}" != "$ac_mandatory_list" ; then
+   AC_MSG_ERROR(--with-pjproject and --with-pjproject-bundled can't both be specified)
+fi
+
+if test "$PJPROJECT_BUNDLED" = "yes" ; then
+   ac_mandatory_list="$ac_mandatory_list PJPROJECT"
+   PJPROJECT_DIR="${ac_top_build_prefix}third-party/pjproject"
+fi
+
+AST_EXT_LIB_SETUP_OPTIONAL([PJSIP_DLG_CREATE_UAS_AND_INC_LOCK], [PJSIP Dialog Create UAS with Incremented Lock], [PJPROJECT], [pjsip])
 AST_EXT_LIB_SETUP_OPTIONAL([PJ_TRANSACTION_GRP_LOCK], [PJSIP Transaction Group Lock Support], [PJPROJECT], [pjsip])
 AST_EXT_LIB_SETUP_OPTIONAL([PJSIP_REPLACE_MEDIA_STREAM], [PJSIP Media Stream Replacement Support], [PJPROJECT], [pjsip])
 AST_EXT_LIB_SETUP_OPTIONAL([PJSIP_GET_DEST_INFO], [pjsip_get_dest_info support], [PJPROJECT], [pjsip])
 AST_EXT_LIB_SETUP_OPTIONAL([PJ_SSL_CERT_LOAD_FROM_FILES2], [pj_ssl_cert_load_from_files2 support], [PJPROJECT], [pjsip])
+AST_EXT_LIB_SETUP_OPTIONAL([PJSIP_EXTERNAL_RESOLVER], [PJSIP External Resolver Support], [PJPROJECT], [pjsip])
+AST_EXT_LIB_SETUP_OPTIONAL([PJSIP_TLS_TRANSPORT_PROTO], [PJSIP TLS Transport proto field support], [PJPROJECT], [pjsip])
+
+AST_EXT_LIB_SETUP([POPT], [popt], [popt])
 AST_EXT_LIB_SETUP([PORTAUDIO], [PortAudio], [portaudio])
 AST_EXT_LIB_SETUP([PRI], [ISDN PRI], [pri])
 AST_EXT_LIB_SETUP_OPTIONAL([PRI_SETUP_ACK_INBAND], [ISDN PRI progress inband ie in SETUP ACK], [PRI], [pri])
@@ -1031,6 +1062,70 @@ AST_GCC_ATTRIBUTE(may_alias)
 AST_GCC_ATTRIBUTE(constructor)
 AST_GCC_ATTRIBUTE(destructor)
 
+AC_MSG_CHECKING(for -fsanitize=address support)
+saved_sanitize_CFLAGS="${CFLAGS}"
+saved_sanitize_LDFLAGS="${LDFLAGS}"
+CFLAGS="-fsanitize=address -fno-omit-frame-pointer"
+LDFLAGS="-fsanitize=address"
+AC_COMPILE_IFELSE(
+	[AC_LANG_PROGRAM([], [int x = 1;])],
+	AC_MSG_RESULT(yes)
+	[AST_ADDRESS_SANITIZER=1],
+	[AST_ADDRESS_SANITIZER=]
+	AC_MSG_RESULT(no)
+)
+CFLAGS="${saved_sanitize_CFLAGS}"
+LDFLAGS="${saved_sanitize_LDFLAGS}"
+AC_SUBST(AST_ADDRESS_SANITIZER)
+
+AC_MSG_CHECKING(for -fsanitize=thread support)
+saved_sanitize_CFLAGS="${CFLAGS}"
+saved_sanitize_LDFLAGS="${LDFLAGS}"
+CFLAGS="-fno-omit-frame-pointer -pie -fPIE -fsanitize=thread"
+LDFLAGS="-fsanitize=thread -pie -fPIE"
+AC_COMPILE_IFELSE(
+	[AC_LANG_PROGRAM([], [int x = 1;])],
+	AC_MSG_RESULT(yes)
+	[AST_THREAD_SANITIZER=1],
+	[AST_THREAD_SANITIZER=]
+	AC_MSG_RESULT(no)
+)
+CFLAGS="${saved_sanitize_CFLAGS}"
+LDFLAGS="${saved_sanitize_LDFLAGS}"
+AC_SUBST(AST_THREAD_SANITIZER)
+
+AC_MSG_CHECKING(for -fsanitize=leak support)
+saved_sanitize_CFLAGS="${CFLAGS}"
+saved_sanitize_LDFLAGS="${LDFLAGS}"
+CFLAGS="-fno-omit-frame-pointer -fsanitize=leak"
+LDFLAGS="-fsanitize=leak"
+AC_COMPILE_IFELSE(
+	[AC_LANG_PROGRAM([], [int x = 1;])],
+	AC_MSG_RESULT(yes)
+	[AST_LEAK_SANITIZER=1],
+	[AST_LEAK_SANITIZER=]
+	AC_MSG_RESULT(no)
+)
+CFLAGS="${saved_sanitize_CFLAGS}"
+LDFLAGS="${saved_sanitize_LDFLAGS}"
+AC_SUBST(AST_LEAK_SANITIZER)
+
+AC_MSG_CHECKING(for -fsanitize=undefined support)
+saved_sanitize_CFLAGS="${CFLAGS}"
+saved_sanitize_LDFLAGS="${LDFLAGS}"
+CFLAGS="-fno-omit-frame-pointer -fsanitize=undefined"
+LDFLAGS="-fsanitize=undefined"
+AC_COMPILE_IFELSE(
+	[AC_LANG_PROGRAM([], [int x = 1;])],
+	AC_MSG_RESULT(yes)
+	[AST_UNDEFINED_SANITIZER=1],
+	[AST_UNDEFINED_SANITIZER=]
+	AC_MSG_RESULT(no)
+)
+CFLAGS="${saved_sanitize_CFLAGS}"
+LDFLAGS="${saved_sanitize_LDFLAGS}"
+AC_SUBST(AST_UNDEFINED_SANITIZER)
+
 AC_MSG_CHECKING(for -ffunction-sections support)
 saved_CFLAGS="${CFLAGS}"
 CFLAGS="${CFLAGS} -ffunction-sections"
@@ -1119,42 +1214,6 @@ else
 fi
 AC_SUBST(AST_NATIVE_ARCH)
 
-dnl Nested functions required for RAII implementation
-AC_LINK_IFELSE(
-	[AC_LANG_PROGRAM([], [
-		#if defined(__clang__)
-		choke
-		#endif
-		])
-	],[
-		dnl Nested functions required for RAII implementation
-		AC_MSG_CHECKING(for gcc -fnested-functions)
-		AC_COMPILE_IFELSE(
-			dnl Prototype needed due to http://gcc.gnu.org/bugzilla/show_bug.cgi?id=36774
-			[AC_LANG_PROGRAM([], [auto void foo(void); void foo(void) {}])],
-			AC_MSG_RESULT(no)
-			[AST_NESTED_FUNCTIONS=],
-			AC_MSG_RESULT(yes)
-			[AST_NESTED_FUNCTIONS=-fnested-functions]
-		)
-		AC_SUBST(AST_NESTED_FUNCTIONS)
-	],[
-		AC_MSG_CHECKING(for clang -fblocks)
-		if test "`echo "int main(){return ^{return 42;}();}" | ${CC} -o /dev/null -fblocks -x c - 2>&1`" = ""; then
-			[AST_CLANG_BLOCKS_LIBS=""]
-			[AST_CLANG_BLOCKS="-Wno-unknown-warning-option -fblocks"]
-			AC_MSG_RESULT(yes)
-		elif test "`echo "int main(){return ^{return 42;}();}" | ${CC} -o /dev/null -fblocks -x c -lBlocksRuntime - 2>&1`" = ""; then
-			[AST_CLANG_BLOCKS_LIBS="-lBlocksRuntime"]
-			[AST_CLANG_BLOCKS="-fblocks"]
-			AC_MSG_RESULT(yes)
-		else
-			AC_MSG_ERROR("BlocksRuntime is required for clang")
-		fi
-		AC_SUBST(AST_CLANG_BLOCKS_LIBS)
-		AC_SUBST(AST_CLANG_BLOCKS)
-	]
-)
 
 dnl Check to see if rpath should be set in LDFLAGS
 AC_ARG_ENABLE(rpath,
@@ -2093,20 +2152,36 @@ if test "${PG_CONFIG}" != No; then
    fi
 fi
 
-AST_PKG_CONFIG_CHECK([PJPROJECT], [libpjproject])
+if test "$USE_PJPROJECT" != "no" ; then
+   if test "$PJPROJECT_BUNDLED" = "yes" ; then
+       PJPROJECT_CONFIGURE([$PJPROJECT_DIR])
+   else
+      AST_PKG_CONFIG_CHECK([PJPROJECT], [libpjproject])
 
-AST_EXT_LIB_CHECK([PJ_TRANSACTION_GRP_LOCK], [pjsip], [pjsip_tsx_create_uac2], [pjsip.h], [$PJPROJECT_LIBS], [$PJPROJECT_CFLAGS])
+      AST_EXT_LIB_CHECK([PJSIP_DLG_CREATE_UAS_AND_INC_LOCK], [pjsip], [pjsip_dlg_create_uas_and_inc_lock], [pjsip.h], [$PJPROJECT_LIBS], [$PJPROJECT_CFLAGS])
+      AST_EXT_LIB_CHECK([PJ_TRANSACTION_GRP_LOCK], [pjsip], [pjsip_tsx_create_uac2], [pjsip.h], [$PJPROJECT_LIB], [$PJPROJECT_CFLAGS])
 
-saved_cppflags="${CPPFLAGS}"
-saved_libs="${LIBS}"
-CPPFLAGS="${CPPFLAGS} ${PJPROJECT_CFLAGS}"
-LIBS="${LIBS} ${PJPROJECT_LIBS}"
-AST_C_COMPILE_CHECK([PJSIP_REPLACE_MEDIA_STREAM], [pjmedia_mod_offer_flag flag = PJMEDIA_SDP_NEG_ALLOW_MEDIA_CHANGE], [pjmedia.h])
-LIBS="${saved_libs}"
-CPPFLAGS="${saved_cppflags}"
+      saved_cppflags="${CPPFLAGS}"
+      saved_libs="${LIBS}"
+      CPPFLAGS="${CPPFLAGS} ${PJPROJECT_CFLAGS}"
+      LIBS="${LIBS} ${PJPROJECT_LIB}"
+      AST_C_COMPILE_CHECK([PJSIP_REPLACE_MEDIA_STREAM], [pjmedia_mod_offer_flag flag = PJMEDIA_SDP_NEG_ALLOW_MEDIA_CHANGE], [pjmedia.h])
+      LIBS="${saved_libs}"
+      CPPFLAGS="${saved_cppflags}"
 
-AST_EXT_LIB_CHECK([PJSIP_GET_DEST_INFO], [pjsip], [pjsip_get_dest_info], [pjsip.h], [$PJPROJECT_LIBS], [$PJPROJECT_CFLAGS])
-AST_EXT_LIB_CHECK([PJ_SSL_CERT_LOAD_FROM_FILES2], [pj], [pj_ssl_cert_load_from_files2], [pjlib.h], [$PJPROJECT_LIBS], [$PJPROJECT_CFLAGS])
+      AST_EXT_LIB_CHECK([PJSIP_GET_DEST_INFO], [pjsip], [pjsip_get_dest_info], [pjsip.h], [$PJPROJECT_LIB], [$PJPROJECT_CFLAGS])
+      AST_EXT_LIB_CHECK([PJ_SSL_CERT_LOAD_FROM_FILES2], [pj], [pjsip/include/pjsip/sip_util.h], [pjlib.h], [$PJPROJECT_LIB], [$PJPROJECT_CFLAGS])
+      AST_EXT_LIB_CHECK([PJSIP_EXTERNAL_RESOLVER], [pjsip], [pjsip_endpt_set_ext_resolver], [pjsip.h], [$PJPROJECT_LIBS], [$PJPROJECT_CFLAGS])
+
+      saved_cppflags="${CPPFLAGS}"
+      saved_libs="${LIBS}"
+      CPPFLAGS="${CPPFLAGS} ${PJPROJECT_CFLAGS}"
+      LIBS="${LIBS} ${PJPROJECT_LIB}"
+      AST_C_COMPILE_CHECK([PJSIP_TLS_TRANSPORT_PROTO], [struct pjsip_tls_setting setting; int proto; proto = setting.proto;], [pjsip.h])
+      LIBS="${saved_libs}"
+      CPPFLAGS="${saved_cppflags}"
+   fi
+fi
 
 AST_EXT_LIB_CHECK([POPT], [popt], [poptStrerror], [popt.h])
 
@@ -2270,11 +2345,11 @@ AC_CHECK_FUNC([crypt], [SYSCRYPT=true], [SYSCRYPT=""])
 if test "x$LIBCRYPT_LIB" != "x" ; then
     CRYPT_LIB="$LIBCRYPT_LIB"
     CRYPT_INCLUDE="$LIBCRYPT_INCLUDE"
-    AC_DEFINE([HAVE_CRYPT], [1], [Define to 1 if you have the `crypt' function.])
+    AC_DEFINE([HAVE_CRYPT], [1], [Define to 1 if you have the 'crypt' function.])
 elif test "x$SYSCRYPT" != "x" ; then
     CRYPT_LIB=""
     CRYPT_INCLUDE=""
-    AC_DEFINE([HAVE_CRYPT], [1], [Define to 1 if you have the `crypt' function.])
+    AC_DEFINE([HAVE_CRYPT], [1], [Define to 1 if you have the 'crypt' function.])
 fi
 
 AC_SUBST(CRYPT_LIB)
@@ -2282,7 +2357,7 @@ AC_SUBST(CRYPT_INCLUDE)
 
 # Find crypt_r support
 AC_CHECK_LIB([crypt], [crypt_r],
-    [AC_DEFINE([HAVE_CRYPT_R], [1], [Define to 1 if you have the `crypt_r' function.])])
+    [AC_DEFINE([HAVE_CRYPT_R], [1], [Define to 1 if you have the 'crypt_r' function.])])
 
 AST_EXT_LIB_CHECK([CRYPTO], [crypto], [AES_encrypt], [openssl/aes.h])
 
@@ -2300,6 +2375,17 @@ fi
 if test "$PBX_OPENSSL" = "1";
 then
 	AST_EXT_LIB_CHECK([OPENSSL_EC], [ssl], [EC_KEY_new_by_curve_name], [openssl/ec.h], [-lcrypto])
+fi
+
+if test "$PBX_OPENSSL" = "1";
+then
+        AST_C_DECLARE_CHECK([OPENSSL_ECDH_AUTO], [SSL_CTX_set_ecdh_auto], [openssl/ssl.h])
+fi
+
+if test "$PBX_OPENSSL" = "1";
+then
+        AST_C_DEFINE_CHECK([SSL_OP_NO_TLSV1_1], [SSL_OP_NO_TLSv1_1], [openssl/ssl.h])
+        AST_C_DEFINE_CHECK([SSL_OP_NO_TLSV1_2], [SSL_OP_NO_TLSv1_2], [openssl/ssl.h])
 fi
 
 AST_EXT_LIB_CHECK([SRTP], [srtp], [srtp_init], [srtp/srtp.h])

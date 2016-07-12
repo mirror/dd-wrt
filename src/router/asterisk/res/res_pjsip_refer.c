@@ -59,6 +59,8 @@ struct refer_progress {
 	struct transfer_channel_data *transfer_data;
 	/*! \brief Uniqueid of transferee channel */
 	char *transferee;
+	/*! \brief Non-zero if the 100 notify has been sent */
+	int sent_100;
 };
 
 /*! \brief REFER Progress notification structure */
@@ -131,6 +133,18 @@ static int refer_progress_notify(void *data)
 		ao2_cleanup(notification->progress);
 
 		notification->progress->sub = NULL;
+	}
+
+	/* Send a deferred initial 100 Trying SIP frag NOTIFY if we haven't already. */
+	if (!notification->progress->sent_100) {
+		notification->progress->sent_100 = 1;
+		if (notification->response != 100) {
+			ast_debug(3, "Sending initial 100 Trying NOTIFY for progress monitor '%p'\n",
+				notification->progress);
+			if (pjsip_xfer_notify(sub, PJSIP_EVSUB_STATE_ACTIVE, 100, NULL, &tdata) == PJ_SUCCESS) {
+				pjsip_xfer_send_request(sub, tdata);
+			}
+		}
 	}
 
 	ast_debug(3, "Sending NOTIFY with response '%d' and state '%u' on subscription '%p' and progress monitor '%p'\n",
@@ -340,8 +354,8 @@ static int refer_progress_alloc(struct ast_sip_session *session, pjsip_rx_data *
 	const pj_str_t str_refer_sub = { "Refer-Sub", 9 };
 	pjsip_generic_string_hdr *refer_sub = NULL;
 	const pj_str_t str_true = { "true", 4 };
-	pjsip_tx_data *tdata;
 	pjsip_hdr hdr_list;
+	char tps_name[AST_TASKPROCESSOR_MAX_NAME + 1];
 
 	*progress = NULL;
 
@@ -363,7 +377,11 @@ static int refer_progress_alloc(struct ast_sip_session *session, pjsip_rx_data *
 	/* To prevent a potential deadlock we need the dialog so we can lock/unlock */
 	(*progress)->dlg = session->inv_session->dlg;
 
-	if (!((*progress)->serializer = ast_sip_create_serializer())) {
+	/* Create name with seq number appended. */
+	ast_taskprocessor_build_name(tps_name, sizeof(tps_name), "pjsip/refer/%s",
+		ast_sorcery_object_get_id(session->endpoint));
+
+	if (!((*progress)->serializer = ast_sip_create_serializer_named(tps_name))) {
 		goto error;
 	}
 
@@ -386,12 +404,6 @@ static int refer_progress_alloc(struct ast_sip_session *session, pjsip_rx_data *
 	/* Accept the REFER request */
 	ast_debug(3, "Accepting REFER request for progress monitor '%p'\n", *progress);
 	pjsip_xfer_accept((*progress)->sub, rdata, 202, &hdr_list);
-
-	/* Send initial NOTIFY Request */
-	ast_debug(3, "Sending initial 100 Trying NOTIFY for progress monitor '%p'\n", *progress);
-	if (pjsip_xfer_notify((*progress)->sub, PJSIP_EVSUB_STATE_ACTIVE, 100, NULL, &tdata) == PJ_SUCCESS) {
-		pjsip_xfer_send_request((*progress)->sub, tdata);
-	}
 
 	return 0;
 
@@ -973,6 +985,7 @@ static int refer_incoming_refer_request(struct ast_sip_session *session, struct 
 {
 	pjsip_generic_string_hdr *refer_to;
 	char *uri;
+	size_t uri_size;
 	pjsip_uri *target;
 	pjsip_sip_uri *target_uri;
 	RAII_VAR(struct refer_progress *, progress, NULL, ao2_cleanup);
@@ -1006,20 +1019,19 @@ static int refer_incoming_refer_request(struct ast_sip_session *session, struct 
 		return 0;
 	}
 
-	/* This is done on purpose (and is safe) - it's done so that the value passed to
-	 * pjsip_parse_uri is NULL terminated as required
+	/* The ast_copy_pj_str to uri is needed because it puts the NULL terminator to the uri
+	 * as pjsip_parse_uri require a NULL terminated uri
 	 */
-	uri = refer_to->hvalue.ptr;
-	uri[refer_to->hvalue.slen] = '\0';
 
-	target = pjsip_parse_uri(rdata->tp_info.pool, refer_to->hvalue.ptr, refer_to->hvalue.slen, 0);
+	uri_size = pj_strlen(&refer_to->hvalue) + 1;
+	uri = ast_alloca(uri_size);
+	ast_copy_pj_str(uri, &refer_to->hvalue, uri_size);
+
+	target = pjsip_parse_uri(rdata->tp_info.pool, uri, uri_size - 1, 0);
+
 	if (!target
 		|| (!PJSIP_URI_SCHEME_IS_SIP(target)
 			&& !PJSIP_URI_SCHEME_IS_SIPS(target))) {
-		size_t uri_size = pj_strlen(&refer_to->hvalue) + 1;
-		char *uri = ast_alloca(uri_size);
-
-		ast_copy_pj_str(uri, &refer_to->hvalue, uri_size);
 
 		pjsip_dlg_respond(session->inv_session->dlg, rdata, 400, NULL, NULL, NULL);
 		ast_debug(3, "Received a REFER without a parseable Refer-To ('%s') on channel '%s' from endpoint '%s'\n",
@@ -1087,10 +1099,41 @@ static int refer_incoming_request(struct ast_sip_session *session, pjsip_rx_data
 	}
 }
 
+/*!
+ * \brief Use the value of a channel variable as the value of a SIP header
+ *
+ * This looks up a variable name on a channel, then takes that value and adds
+ * it to an outgoing SIP request. If the header already exists on the message,
+ * then no action is taken.
+ *
+ * \pre chan is locked.
+ *
+ * \param chan The channel on which to find the variable.
+ * \param var_name The name of the channel variable to use.
+ * \param header_name The name of the SIP header to add to the outgoing message.
+ * \param tdata The outgoing SIP message on which to add the header
+ */
+static void add_header_from_channel_var(struct ast_channel *chan, const char *var_name, const char *header_name, pjsip_tx_data *tdata)
+{
+	const char *var_value;
+	pj_str_t pj_header_name;
+	pjsip_hdr *header;
+
+	var_value = pbx_builtin_getvar_helper(chan, var_name);
+	if (ast_strlen_zero(var_value)) {
+		return;
+	}
+
+	pj_cstr(&pj_header_name, header_name);
+	header = pjsip_msg_find_hdr_by_name(tdata->msg, &pj_header_name, NULL);
+	if (header) {
+		return;
+	}
+	ast_sip_add_header(tdata, header_name, var_value);
+}
+
 static void refer_outgoing_request(struct ast_sip_session *session, struct pjsip_tx_data *tdata)
 {
-	const char *hdr;
-
 	if (pjsip_method_cmp(&tdata->msg->line.req.method, &pjsip_invite_method)
 		|| !session->channel
 		|| session->inv_session->state != PJSIP_INV_STATE_NULL) {
@@ -1098,15 +1141,8 @@ static void refer_outgoing_request(struct ast_sip_session *session, struct pjsip
 	}
 
 	ast_channel_lock(session->channel);
-	hdr = pbx_builtin_getvar_helper(session->channel, "SIPREPLACESHDR");
-	if (!ast_strlen_zero(hdr)) {
-		ast_sip_add_header(tdata, "Replaces", hdr);
-	}
-
-	hdr = pbx_builtin_getvar_helper(session->channel, "SIPREFERREDBYHDR");
-	if (!ast_strlen_zero(hdr)) {
-		ast_sip_add_header(tdata, "Referred-By", hdr);
-	}
+	add_header_from_channel_var(session->channel, "SIPREPLACESHDR", "Replaces", tdata);
+	add_header_from_channel_var(session->channel, "SIPREFERREDBYHDR", "Referred-By", tdata);
 	ast_channel_unlock(session->channel);
 }
 

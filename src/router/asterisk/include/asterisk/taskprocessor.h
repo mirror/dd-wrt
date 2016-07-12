@@ -56,6 +56,11 @@
 
 struct ast_taskprocessor;
 
+/*! \brief Suggested maximum taskprocessor name length (less null terminator). */
+#define AST_TASKPROCESSOR_MAX_NAME	45
+
+#define AST_TASKPROCESSOR_HIGH_WATER_LEVEL 500
+
 /*!
  * \brief ast_tps_options for specification of taskprocessor options
  *
@@ -257,9 +262,39 @@ int ast_taskprocessor_execute(struct ast_taskprocessor *tps);
 int ast_taskprocessor_is_task(struct ast_taskprocessor *tps);
 
 /*!
+ * \brief Get the next sequence number to create a human friendly taskprocessor name.
+ * \since 13.8.0
+ *
+ * \return Sequence number for use in creating human friendly taskprocessor names.
+ */
+unsigned int ast_taskprocessor_seq_num(void);
+
+/*!
+ * \brief Build a taskprocessor name with a sequence number on the end.
+ * \since 13.8.0
+ *
+ * \param buf Where to put the built taskprocessor name.
+ * \param size How large is buf including null terminator.
+ * \param format printf format to create the non-sequenced part of the name.
+ *
+ * \note The user supplied part of the taskprocessor name is truncated
+ * to allow the full sequence number to be appended within the supplied
+ * buffer size.
+ *
+ * \return Nothing
+ */
+void __attribute__((format(printf, 3, 4))) ast_taskprocessor_build_name(char *buf, unsigned int size, const char *format, ...);
+
+/*!
  * \brief Return the name of the taskprocessor singleton
  * \since 1.6.1
  */
 const char *ast_taskprocessor_name(struct ast_taskprocessor *tps);
+
+/*!
+ * \brief Return the current size of the taskprocessor queue
+ * \since 13.7.0
+ */
+long ast_taskprocessor_size(struct ast_taskprocessor *tps);
 
 #endif /* __AST_TASKPROCESSOR_H__ */

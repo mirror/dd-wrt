@@ -47,7 +47,8 @@
 #define SEND_TO_VM_HEADER_VALUE "feature_send_to_vm"
 
 #define SEND_TO_VM_REDIRECT "REDIRECTING(reason)"
-#define SEND_TO_VM_REDIRECT_VALUE "\"send_to_vm\""
+#define SEND_TO_VM_REDIRECT_VALUE "send_to_vm"
+#define SEND_TO_VM_REDIRECT_QUOTED_VALUE "\"" SEND_TO_VM_REDIRECT_VALUE "\""
 
 static void send_response(struct ast_sip_session *session, int code, struct pjsip_rx_data *rdata)
 {
@@ -102,9 +103,13 @@ static int has_diversion_reason(pjsip_rx_data *rdata)
 	pjsip_param *reason;
 	pjsip_fromto_hdr *hdr = get_diversion_header(rdata);
 
-	return hdr &&
-		(reason = get_diversion_reason(hdr)) &&
-		!pj_stricmp2(&reason->value, SEND_TO_VM_REDIRECT_VALUE);
+	if (!hdr) {
+		return 0;
+	}
+	reason = get_diversion_reason(hdr);
+	return reason
+		&& (!pj_stricmp2(&reason->value, SEND_TO_VM_REDIRECT_QUOTED_VALUE)
+			|| !pj_stricmp2(&reason->value, SEND_TO_VM_REDIRECT_VALUE));
 }
 
 static int has_call_feature(pjsip_rx_data *rdata)
@@ -160,12 +165,10 @@ static int handle_incoming_request(struct ast_sip_session *session, struct pjsip
 	sip_session_datastore->data = other_party;
 
 	if (ast_sip_session_add_datastore(session, sip_session_datastore)) {
-		ast_channel_unref(other_party);
 		ao2_ref(sip_session_datastore, -1);
 		send_response(session, 500, rdata);
 		return -1;
 	}
-	ao2_ref(sip_session_datastore, -1);
 
 	if (has_feature) {
 		pbx_builtin_setvar_helper(other_party, SEND_TO_VM_HEADER,
@@ -177,6 +180,7 @@ static int handle_incoming_request(struct ast_sip_session *session, struct pjsip
 					  SEND_TO_VM_REDIRECT_VALUE);
 	}
 
+	ao2_ref(sip_session_datastore, -1);
 	return 0;
 }
 

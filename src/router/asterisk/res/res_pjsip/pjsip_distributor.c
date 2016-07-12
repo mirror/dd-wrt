@@ -22,22 +22,110 @@
 
 #include "asterisk/res_pjsip.h"
 #include "include/res_pjsip_private.h"
+#include "asterisk/taskprocessor.h"
+#include "asterisk/threadpool.h"
 
 static int distribute(void *data);
 static pj_bool_t distributor(pjsip_rx_data *rdata);
+static pj_status_t record_serializer(pjsip_tx_data *tdata);
 
 static pjsip_module distributor_mod = {
 	.name = {"Request Distributor", 19},
 	.priority = PJSIP_MOD_PRIORITY_TSX_LAYER - 6,
+	.on_tx_request = record_serializer,
 	.on_rx_request = distributor,
 	.on_rx_response = distributor,
 };
 
+/*!
+ * \internal
+ * \brief Record the task's serializer name on the tdata structure.
+ * \since 14.0.0
+ *
+ * \param tdata The outgoing message.
+ *
+ * \retval PJ_SUCCESS.
+ */
+static pj_status_t record_serializer(pjsip_tx_data *tdata)
+{
+	struct ast_taskprocessor *serializer;
+
+	serializer = ast_threadpool_serializer_get_current();
+	if (serializer) {
+		const char *name;
+
+		name = ast_taskprocessor_name(serializer);
+		if (!ast_strlen_zero(name)
+			&& (!tdata->mod_data[distributor_mod.id]
+				|| strcmp(tdata->mod_data[distributor_mod.id], name))) {
+			char *tdata_name;
+
+			/* The serializer in use changed. */
+			tdata_name = pj_pool_alloc(tdata->pool, strlen(name) + 1);
+			strcpy(tdata_name, name);/* Safe */
+
+			tdata->mod_data[distributor_mod.id] = tdata_name;
+		}
+	}
+
+	return PJ_SUCCESS;
+}
+
+/*!
+ * \internal
+ * \brief Find the request tdata to get the serializer it used.
+ * \since 14.0.0
+ *
+ * \param rdata The incoming message.
+ *
+ * \retval serializer on success.
+ * \retval NULL on error or could not find the serializer.
+ */
+static struct ast_taskprocessor *find_request_serializer(pjsip_rx_data *rdata)
+{
+	struct ast_taskprocessor *serializer = NULL;
+	pj_str_t tsx_key;
+	pjsip_transaction *tsx;
+
+	pjsip_tsx_create_key(rdata->tp_info.pool, &tsx_key, PJSIP_ROLE_UAC,
+		&rdata->msg_info.cseq->method, rdata);
+
+	tsx = pjsip_tsx_layer_find_tsx(&tsx_key, PJ_TRUE);
+	if (!tsx) {
+		ast_debug(1, "Could not find %.*s transaction for %d response.\n",
+			(int) pj_strlen(&rdata->msg_info.cseq->method.name),
+			pj_strbuf(&rdata->msg_info.cseq->method.name),
+			rdata->msg_info.msg->line.status.code);
+		return NULL;
+	}
+
+	if (tsx->last_tx) {
+		const char *serializer_name;
+
+		serializer_name = tsx->last_tx->mod_data[distributor_mod.id];
+		if (!ast_strlen_zero(serializer_name)) {
+			serializer = ast_taskprocessor_get(serializer_name, TPS_REF_IF_EXISTS);
+			if (serializer) {
+				ast_debug(3, "Found serializer %s on transaction %s\n",
+						serializer_name, tsx->obj_name);
+			}
+		}
+	}
+
+#ifdef HAVE_PJ_TRANSACTION_GRP_LOCK
+	pj_grp_lock_release(tsx->grp_lock);
+#else
+	pj_mutex_unlock(tsx->mutex);
+#endif
+
+	return serializer;
+}
+
 /*! Dialog-specific information the distributor uses */
 struct distributor_dialog_data {
-	/* Serializer to distribute tasks to for this dialog */
+	/*! Serializer to distribute tasks to for this dialog */
 	struct ast_taskprocessor *serializer;
-	/* Endpoint associated with this dialog */
+	/*! Endpoint associated with this dialog */
 	struct ast_sip_endpoint *endpoint;
 };
 
@@ -162,6 +250,8 @@ static pjsip_module endpoint_mod = {
 	.on_rx_request = endpoint_lookup,
 };
 
+#define SIP_MAX_QUEUE (AST_TASKPROCESSOR_HIGH_WATER_LEVEL * 3)
+
 static pj_bool_t distributor(pjsip_rx_data *rdata)
 {
 	pjsip_dialog *dlg = find_dialog(rdata);
@@ -170,18 +260,31 @@ static pj_bool_t distributor(pjsip_rx_data *rdata)
 	pjsip_rx_data *clone;
 
 	if (dlg) {
+		ast_debug(3, "Searching for serializer on dialog %s for %s\n",
+				dlg->obj_name, rdata->msg_info.info);
 		dist = pjsip_dlg_get_mod_data(dlg, distributor_mod.id);
 		if (dist) {
-			serializer = dist->serializer;
+			serializer = ao2_bump(dist->serializer);
+			if (serializer) {
+				ast_debug(3, "Found serializer %s on dialog %s\n",
+						ast_taskprocessor_name(serializer), dlg->obj_name);
+			}
 		}
+		pjsip_dlg_dec_lock(dlg);
 	}
 
-	if (rdata->msg_info.msg->type == PJSIP_REQUEST_MSG && (
-		!pjsip_method_cmp(&rdata->msg_info.msg->line.req.method, &pjsip_cancel_method) || 
-		!pjsip_method_cmp(&rdata->msg_info.msg->line.req.method, &pjsip_bye_method)) &&
-		!serializer) {
-		pjsip_endpt_respond_stateless(ast_sip_get_pjsip_endpoint(), rdata, 481, NULL, NULL, NULL);
-		goto end;
+	if (serializer) {
+		/* We have a serializer so we know where to send the message. */
+	} else if (rdata->msg_info.msg->type == PJSIP_RESPONSE_MSG) {
+		ast_debug(3, "No dialog serializer for response %s. Using request transaction as basis\n",
+				rdata->msg_info.info);
+		serializer = find_request_serializer(rdata);
+	} else if (!pjsip_method_cmp(&rdata->msg_info.msg->line.req.method, &pjsip_cancel_method)
+		|| !pjsip_method_cmp(&rdata->msg_info.msg->line.req.method, &pjsip_bye_method)) {
+		/* We have a BYE or CANCEL request without a serializer. */
+		pjsip_endpt_respond_stateless(ast_sip_get_pjsip_endpoint(), rdata,
+			PJSIP_SC_CALL_TSX_DOES_NOT_EXIST, NULL, NULL, NULL);
+		return PJ_TRUE;
 	}
 
 	pjsip_rx_data_clone(rdata, 0, &clone);
@@ -190,12 +293,21 @@ static pj_bool_t distributor(pjsip_rx_data *rdata)
 		clone->endpt_info.mod_data[endpoint_mod.id] = ao2_bump(dist->endpoint);
 	}
 
-	ast_sip_push_task(serializer, distribute, clone);
-
-end:
-	if (dlg) {
-		pjsip_dlg_dec_lock(dlg);
+	if (ast_sip_threadpool_queue_size() > SIP_MAX_QUEUE) {
+		/* When the threadpool is backed up this much, there is a good chance that we have encountered
+		 * some sort of terrible condition and don't need to be adding more work to the threadpool.
+		 * It's in our best interest to send back a 503 response and be done with it.
+		 */
+		if (rdata->msg_info.msg->type == PJSIP_REQUEST_MSG) {
+			pjsip_endpt_respond_stateless(ast_sip_get_pjsip_endpoint(), rdata, 503, NULL, NULL, NULL);
+		}
+		ao2_cleanup(clone->endpt_info.mod_data[endpoint_mod.id]);
+		pjsip_rx_data_free_cloned(clone);
+	} else {
+		ast_sip_push_task(serializer, distribute, clone);
 	}
+
+	ast_taskprocessor_unreference(serializer);
 
 	return PJ_TRUE;
 }

@@ -37,8 +37,9 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 420384 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
+#include <regex.h>
 #include "asterisk/strings.h"
 #include "asterisk/pbx.h"
 
@@ -60,58 +61,78 @@ int __ast_str_helper(struct ast_str **buf, ssize_t max_len,
 	int append, const char *fmt, va_list ap)
 #endif
 {
-	int res, need;
+	int res;
+	int added;
+	int need;
 	int offset = (append && (*buf)->__AST_STR_LEN) ? (*buf)->__AST_STR_USED : 0;
 	va_list aq;
 
+	if (max_len < 0) {
+		max_len = (*buf)->__AST_STR_LEN;	/* don't exceed the allocated space */
+	}
+
 	do {
-		if (max_len < 0) {
-			max_len = (*buf)->__AST_STR_LEN;	/* don't exceed the allocated space */
-		}
-		/*
-		 * Ask vsnprintf how much space we need. Remember that vsnprintf
-		 * does not count the final <code>'\\0'</code> so we must add 1.
-		 */
 		va_copy(aq, ap);
 		res = vsnprintf((*buf)->__AST_STR_STR + offset, (*buf)->__AST_STR_LEN - offset, fmt, aq);
-
-		need = res + offset + 1;
-		/*
-		 * If there is not enough space and we are below the max length,
-		 * reallocate the buffer and return a message telling to retry.
-		 */
-		if (need > (*buf)->__AST_STR_LEN && (max_len == 0 || (*buf)->__AST_STR_LEN < max_len) ) {
-			int len = (int)(*buf)->__AST_STR_LEN;
-			if (max_len && max_len < need) {	/* truncate as needed */
-				need = max_len;
-			} else if (max_len == 0) {	/* if unbounded, give more room for next time */
-				need += 16 + need / 4;
-			}
-			if (0) {	/* debugging */
-				ast_verbose("extend from %d to %d\n", len, need);
-			}
-			if (
-#if (defined(MALLOC_DEBUG) && !defined(STANDALONE))
-					_ast_str_make_space(buf, need, file, lineno, function)
-#else
-					ast_str_make_space(buf, need)
-#endif
-				) {
-				ast_verbose("failed to extend from %d to %d\n", len, need);
-				va_end(aq);
-				return AST_DYNSTR_BUILD_FAILED;
-			}
-			(*buf)->__AST_STR_STR[offset] = '\0';	/* Truncate the partial write. */
-
-			/* Restart va_copy before calling vsnprintf() again. */
-			va_end(aq);
-			continue;
-		}
 		va_end(aq);
-		break;
+
+		if (res < 0) {
+			/*
+			 * vsnprintf write to string failed.
+			 * I don't think this is possible with a memory buffer.
+			 */
+			res = AST_DYNSTR_BUILD_FAILED;
+			added = 0;
+			break;
+		}
+
+		/*
+		 * vsnprintf returns how much space we used or would need.
+		 * Remember that vsnprintf does not count the nil terminator
+		 * so we must add 1.
+		 */
+		added = res;
+		need = offset + added + 1;
+		if (need <= (*buf)->__AST_STR_LEN
+			|| (max_len && max_len <= (*buf)->__AST_STR_LEN)) {
+			/*
+			 * There was enough room for the string or we are not
+			 * allowed to try growing the string buffer.
+			 */
+			break;
+		}
+
+		/* Reallocate the buffer and try again. */
+		if (max_len == 0) {
+			/* unbounded, give more room for next time */
+			need += 16 + need / 4;
+		} else if (max_len < need) {
+			/* truncate as needed */
+			need = max_len;
+		}
+
+		if (
+#if (defined(MALLOC_DEBUG) && !defined(STANDALONE))
+			_ast_str_make_space(buf, need, file, lineno, function)
+#else
+			ast_str_make_space(buf, need)
+#endif
+			) {
+			ast_log_safe(LOG_VERBOSE, "failed to extend from %d to %d\n",
+				(int) (*buf)->__AST_STR_LEN, need);
+
+			res = AST_DYNSTR_BUILD_FAILED;
+			break;
+		}
 	} while (1);
-	/* update space used, keep in mind the truncation */
-	(*buf)->__AST_STR_USED = (res + offset > (*buf)->__AST_STR_LEN) ? (*buf)->__AST_STR_LEN - 1: res + offset;
+
+	/* Update space used, keep in mind truncation may be necessary. */
+	(*buf)->__AST_STR_USED = ((*buf)->__AST_STR_LEN <= offset + added)
+		? (*buf)->__AST_STR_LEN - 1
+		: offset + added;
+
+	/* Ensure that the string is terminated. */
+	(*buf)->__AST_STR_STR[(*buf)->__AST_STR_USED] = '\0';
 
 	return res;
 }
@@ -170,7 +191,8 @@ static int str_cmp(void *lhs, void *rhs, int flags)
 	return strcmp(lhs, rhs) ? 0 : CMP_MATCH;
 }
 
-struct ao2_container *ast_str_container_alloc_options(enum ao2_container_opts opts, int buckets)
+//struct ao2_container *ast_str_container_alloc_options(enum ao2_container_opts opts, int buckets)
+struct ao2_container *ast_str_container_alloc_options(enum ao2_alloc_opts opts, int buckets)
 {
 	return ao2_container_alloc_options(opts, buckets, str_hash, str_cmp);
 }
@@ -207,3 +229,129 @@ char *ast_generate_random_string(char *buf, size_t size)
 
 	return buf;
 }
+
+int ast_strings_match(const char *left, const char *op, const char *right)
+{
+	char *internal_op = (char *)op;
+	char *internal_right = (char *)right;
+	double left_num;
+	double right_num;
+	int scan_numeric = 0;
+
+	if (!(left && right)) {
+		return 0;
+	}
+
+	if (ast_strlen_zero(op)) {
+		if (ast_strlen_zero(left) && ast_strlen_zero(right)) {
+			return 1;
+		}
+
+		if (strlen(right) >= 2 && right[0] == '/' && right[strlen(right) - 1] == '/') {
+			internal_op = "regex";
+			internal_right = ast_strdupa(right);
+			/* strip the leading and trailing '/' */
+			internal_right++;
+			internal_right[strlen(internal_right) - 1] = '\0';
+			goto regex;
+		} else {
+			internal_op = "=";
+			goto equals;
+		}
+	}
+
+	if (!strcasecmp(op, "like")) {
+		char *tok;
+		struct ast_str *buffer = ast_str_alloca(128);
+
+		if (!strchr(right, '%')) {
+			return !strcmp(left, right);
+		} else {
+			internal_op = "regex";
+			internal_right = ast_strdupa(right);
+			tok = strsep(&internal_right, "%");
+			ast_str_set(&buffer, 0, "^%s", tok);
+
+			while ((tok = strsep(&internal_right, "%"))) {
+				ast_str_append(&buffer, 0, ".*%s", tok);
+			}
+			ast_str_append(&buffer, 0, "%s", "$");
+
+			internal_right = ast_str_buffer(buffer);
+			/* fall through to regex */
+		}
+	}
+
+regex:
+	if (!strcasecmp(internal_op, "regex")) {
+		regex_t expression;
+		int rc;
+
+		if (regcomp(&expression, internal_right, REG_EXTENDED | REG_NOSUB)) {
+			return 0;
+		}
+
+		rc = regexec(&expression, left, 0, NULL, 0);
+		regfree(&expression);
+		return !rc;
+	}
+
+equals:
+	scan_numeric = (sscanf(left, "%lf", &left_num) && sscanf(internal_right, "%lf", &right_num));
+
+	if (internal_op[0] == '=') {
+		if (ast_strlen_zero(left) && ast_strlen_zero(internal_right)) {
+			return 1;
+		}
+
+		if (scan_numeric) {
+			return (left_num == right_num);
+		} else {
+			return (!strcmp(left, internal_right));
+		}
+	}
+
+	if (internal_op[0] == '!' && internal_op[1] == '=') {
+		if (scan_numeric) {
+			return (left_num != right_num);
+		} else {
+			return !!strcmp(left, internal_right);
+		}
+	}
+
+	if (internal_op[0] == '<') {
+		if (scan_numeric) {
+			if (internal_op[1] == '=') {
+				return (left_num <= right_num);
+			} else {
+				return (left_num < right_num);
+			}
+		} else {
+			if (internal_op[1] == '=') {
+				return strcmp(left, internal_right) <= 0;
+			} else {
+				return strcmp(left, internal_right) < 0;
+			}
+		}
+	}
+
+	if (internal_op[0] == '>') {
+		if (scan_numeric) {
+			if (internal_op[1] == '=') {
+				return (left_num >= right_num);
+			} else {
+				return (left_num > right_num);
+			}
+		} else {
+			if (internal_op[1] == '=') {
+				return strcmp(left, internal_right) >= 0;
+			} else {
+				return strcmp(left, internal_right) > 0;
+			}
+		}
+	}
+
+	return 0;
+}
+
+

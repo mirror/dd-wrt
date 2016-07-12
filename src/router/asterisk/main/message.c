@@ -29,7 +29,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 424692 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/_private.h"
 
@@ -398,7 +398,7 @@ static void msg_destructor(void *obj)
 	struct ast_msg *msg = obj;
 
 	ast_string_field_free_memory(msg);
-	ao2_ref(msg->vars, -1);
+	ao2_cleanup(msg->vars);
 }
 
 struct ast_msg *ast_msg_alloc(void)
@@ -743,6 +743,7 @@ static void chan_cleanup(struct ast_channel *chan)
 	struct ast_datastore *msg_ds, *ds;
 	struct varshead *headp;
 	struct ast_var_t *vardata;
+	struct ast_frame *cur;
 
 	ast_channel_lock(chan);
 
@@ -769,6 +770,13 @@ static void chan_cleanup(struct ast_channel *chan)
 	headp = ast_channel_varshead(chan);
 	while ((vardata = AST_LIST_REMOVE_HEAD(headp, entries))) {
 		ast_var_delete(vardata);
+	}
+
+	/*
+	 * Remove frames from read queue
+	 */
+	while ((cur = AST_LIST_REMOVE_HEAD(ast_channel_readq(chan), frame_list))) {
+		ast_frfree(cur);
 	}
 
 	/*
@@ -1516,7 +1524,7 @@ int ast_msg_init(void)
 	res |= ast_register_application2(app_msg_send, msg_send_exec, NULL, NULL, NULL);
 	res |= ast_manager_register_xml_core("MessageSend", EVENT_FLAG_MESSAGE, action_messagesend);
 
-	ast_register_atexit(message_shutdown);
+	ast_register_cleanup(message_shutdown);
 
 	return res;
 }

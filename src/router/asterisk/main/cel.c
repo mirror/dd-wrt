@@ -38,7 +38,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 427870 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/_private.h"
 
@@ -284,7 +284,7 @@ static struct aco_type *general_options[] = ACO_TYPES(&general_option);
  * \brief Map of ast_cel_event_type to strings
  */
 static const char * const cel_event_types[CEL_MAX_EVENT_IDS] = {
-	[0]                        = "ALL",
+	[AST_CEL_ALL]              = "ALL",
 	[AST_CEL_CHANNEL_START]    = "CHAN_START",
 	[AST_CEL_CHANNEL_END]      = "CHAN_END",
 	[AST_CEL_ANSWER]           = "ANSWER",
@@ -524,16 +524,13 @@ enum ast_cel_event_type ast_cel_str_to_event_type(const char *name)
 	unsigned int i;
 
 	for (i = 0; i < ARRAY_LEN(cel_event_types); i++) {
-		if (!cel_event_types[i]) {
-			continue;
-		}
-
-		if (!strcasecmp(name, cel_event_types[i])) {
+		if (cel_event_types[i] && !strcasecmp(name, cel_event_types[i])) {
 			return i;
 		}
 	}
 
-	return -1;
+	ast_log(LOG_ERROR, "Unknown event name '%s'\n", name);
+	return AST_CEL_INVALID_VALUE;
 }
 
 static int ast_cel_track_event(enum ast_cel_event_type et)
@@ -544,7 +541,7 @@ static int ast_cel_track_event(enum ast_cel_event_type et)
 		return 0;
 	}
 
-	return (cfg->general->events & ((int64_t) 1 << et));
+	return (cfg->general->events & ((int64_t) 1 << et)) ? 1 : 0;
 }
 
 static int events_handler(const struct aco_option *opt, struct ast_variable *var, void *obj)
@@ -563,11 +560,10 @@ static int events_handler(const struct aco_option *opt, struct ast_variable *var
 
 		event_type = ast_cel_str_to_event_type(cur_event);
 
-		if (event_type == 0) {
+		if (event_type == AST_CEL_ALL) {
 			/* All events */
 			cfg->events = (int64_t) -1;
-		} else if (event_type == -1) {
-			ast_log(LOG_ERROR, "Unknown event name '%s'\n", cur_event);
+		} else if (event_type == AST_CEL_INVALID_VALUE) {
 			return -1;
 		} else {
 			cfg->events |= ((int64_t) 1 << event_type);
@@ -1513,22 +1509,13 @@ static void cel_engine_cleanup(void)
 	destroy_routes();
 	destroy_subscriptions();
 	STASIS_MESSAGE_TYPE_CLEANUP(cel_generic_type);
-}
 
-static void cel_engine_atexit(void)
-{
 	ast_cli_unregister(&cli_status);
 	aco_info_destroy(&cel_cfg_info);
 	ao2_global_obj_release(cel_configs);
 	ao2_global_obj_release(cel_dialstatus_store);
 	ao2_global_obj_release(cel_linkedids);
 	ao2_global_obj_release(cel_backends);
-}
-
-static void cel_engine_abort(void)
-{
-	cel_engine_cleanup();
-	cel_engine_atexit();
 }
 
 /*!
@@ -1714,7 +1701,7 @@ int ast_cel_engine_init(void)
 	ao2_global_obj_replace_unref(cel_linkedids, container);
 	ao2_cleanup(container);
 	if (!container) {
-		cel_engine_abort();
+		cel_engine_cleanup();
 		return -1;
 	}
 
@@ -1723,17 +1710,17 @@ int ast_cel_engine_init(void)
 	ao2_global_obj_replace_unref(cel_dialstatus_store, container);
 	ao2_cleanup(container);
 	if (!container) {
-		cel_engine_abort();
+		cel_engine_cleanup();
 		return -1;
 	}
 
 	if (STASIS_MESSAGE_TYPE_INIT(cel_generic_type)) {
-		cel_engine_abort();
+		cel_engine_cleanup();
 		return -1;
 	}
 
 	if (ast_cli_register(&cli_status)) {
-		cel_engine_abort();
+		cel_engine_cleanup();
 		return -1;
 	}
 
@@ -1741,12 +1728,12 @@ int ast_cel_engine_init(void)
 	ao2_global_obj_replace_unref(cel_backends, container);
 	ao2_cleanup(container);
 	if (!container) {
-		cel_engine_abort();
+		cel_engine_cleanup();
 		return -1;
 	}
 
 	if (aco_info_init(&cel_cfg_info)) {
-		cel_engine_abort();
+		cel_engine_cleanup();
 		return -1;
 	}
 
@@ -1759,7 +1746,7 @@ int ast_cel_engine_init(void)
 		struct cel_config *cel_cfg = cel_config_alloc();
 
 		if (!cel_cfg) {
-			cel_engine_abort();
+			cel_engine_cleanup();
 			return -1;
 		}
 
@@ -1772,16 +1759,15 @@ int ast_cel_engine_init(void)
 	}
 
 	if (create_subscriptions()) {
-		cel_engine_abort();
+		cel_engine_cleanup();
 		return -1;
 	}
 
 	if (ast_cel_check_enabled() && create_routes()) {
-		cel_engine_abort();
+		cel_engine_cleanup();
 		return -1;
 	}
 
-	ast_register_atexit(cel_engine_atexit);
 	ast_register_cleanup(cel_engine_cleanup);
 	return 0;
 }

@@ -17,7 +17,7 @@
 /*
  * Common header for console video support
  *
- * $Revision: 126572 $
+ * $Revision$
  */
 
 #ifndef CONSOLE_VIDEO_H

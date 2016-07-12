@@ -32,7 +32,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 431157 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <signal.h>
 
@@ -288,6 +288,10 @@ void ast_bridge_channel_leave_bridge_nolock(struct ast_bridge_channel *bridge_ch
 		new_state);
 
 	channel_set_cause(bridge_channel->chan, cause);
+
+	ast_channel_lock(bridge_channel->chan);
+	ast_bridge_vars_set(bridge_channel->chan, NULL, NULL);
+	ast_channel_unlock(bridge_channel->chan);
 
 	/* Change the state on the bridge channel */
 	bridge_channel->state = new_state;
@@ -633,6 +637,8 @@ void ast_bridge_channel_kick(struct ast_bridge_channel *bridge_channel, int caus
  */
 static int bridge_channel_write_frame(struct ast_bridge_channel *bridge_channel, struct ast_frame *frame)
 {
+	const struct ast_control_t38_parameters *t38_parameters;
+
 	ast_assert(frame->frametype != AST_FRAME_BRIDGE_ACTION_SYNC);
 
 	ast_bridge_channel_lock_bridge(bridge_channel);
@@ -659,6 +665,27 @@ static int bridge_channel_write_frame(struct ast_bridge_channel *bridge_channel,
 		 * We explicitly will not remember HOLD/UNHOLD frames because
 		 * things like attended transfers will handle them.
 		 */
+		switch (frame->subclass.integer) {
+		case AST_CONTROL_T38_PARAMETERS:
+			t38_parameters = frame->data.ptr;
+			switch (t38_parameters->request_response) {
+			case AST_T38_REQUEST_NEGOTIATE:
+			case AST_T38_NEGOTIATED:
+				bridge_channel->owed_t38_terminate = 1;
+				break;
+			case AST_T38_REQUEST_TERMINATE:
+			case AST_T38_TERMINATED:
+			case AST_T38_REFUSED:
+				bridge_channel->owed_t38_terminate = 0;
+				break;
+			default:
+				break;
+			}
+			break;
+		default:
+			break;
+		}
+		break;
 	default:
 		break;
 	}
@@ -669,6 +696,23 @@ static int bridge_channel_write_frame(struct ast_bridge_channel *bridge_channel,
 	 * support is added, claim successfully deferred.
 	 */
 	return 0;
+}
+
+/*!
+ * \internal
+ * \brief Cancel owed events by the channel to the bridge.
+ * \since 13.8.0
+ *
+ * \param bridge_channel Channel that owes events to the bridge.
+ *
+ * \note On entry, the bridge_channel->bridge is already locked.
+ *
+ * \return Nothing
+ */
+static void bridge_channel_cancel_owed_events(struct ast_bridge_channel *bridge_channel)
+{
+	bridge_channel->owed.dtmf_digit = '\0';
+	bridge_channel->owed_t38_terminate = 0;
 }
 
 void bridge_channel_settle_owed_events(struct ast_bridge *orig_bridge, struct ast_bridge_channel *bridge_channel)
@@ -688,6 +732,23 @@ void bridge_channel_settle_owed_events(struct ast_bridge *orig_bridge, struct as
 			bridge_channel->owed.dtmf_digit, orig_bridge->uniqueid,
 			ast_channel_name(bridge_channel->chan), frame.len);
 		bridge_channel->owed.dtmf_digit = '\0';
+		orig_bridge->technology->write(orig_bridge, NULL, &frame);
+	}
+	if (bridge_channel->owed_t38_terminate) {
+		struct ast_control_t38_parameters t38_parameters = {
+			.request_response = AST_T38_TERMINATED,
+		};
+		struct ast_frame frame = {
+			.frametype = AST_FRAME_CONTROL,
+			.subclass.integer = AST_CONTROL_T38_PARAMETERS,
+			.data.ptr = &t38_parameters,
+			.datalen = sizeof(t38_parameters),
+			.src = "Bridge channel owed T.38 terminate",
+		};
+
+		ast_debug(1, "T.38 terminate simulated to bridge %s because %s left.\n",
+			orig_bridge->uniqueid, ast_channel_name(bridge_channel->chan));
+		bridge_channel->owed_t38_terminate = 0;
 		orig_bridge->technology->write(orig_bridge, NULL, &frame);
 	}
 }
@@ -979,7 +1040,8 @@ int ast_bridge_channel_write_control_data(struct ast_bridge_channel *bridge_chan
 
 int ast_bridge_channel_write_hold(struct ast_bridge_channel *bridge_channel, const char *moh_class)
 {
-	RAII_VAR(struct ast_json *, blob, NULL, ast_json_unref);
+	struct ast_json *blob;
+	int res;
 	size_t datalen;
 
 	if (!ast_strlen_zero(moh_class)) {
@@ -990,12 +1052,16 @@ int ast_bridge_channel_write_hold(struct ast_bridge_channel *bridge_channel, con
 	} else {
 		moh_class = NULL;
 		datalen = 0;
+		blob = NULL;
 	}
 
 	ast_channel_publish_cached_blob(bridge_channel->chan, ast_channel_hold_type(), blob);
 
-	return ast_bridge_channel_write_control_data(bridge_channel, AST_CONTROL_HOLD,
+	res = ast_bridge_channel_write_control_data(bridge_channel, AST_CONTROL_HOLD,
 		moh_class, datalen);
+
+	ast_json_unref(blob);
+	return res;
 }
 
 int ast_bridge_channel_write_unhold(struct ast_bridge_channel *bridge_channel)
@@ -1510,6 +1576,51 @@ static void testsuite_notify_feature_success(struct ast_channel *chan, const cha
 #endif /* TEST_FRAMEWORK */
 }
 
+static int bridge_channel_feature_digit_add(
+	struct ast_bridge_channel *bridge_channel, int digit, size_t dtmf_len)
+{
+	if (dtmf_len < ARRAY_LEN(bridge_channel->dtmf_hook_state.collected) - 1) {
+		/* Add the new digit to the DTMF string so we can do our matching */
+		bridge_channel->dtmf_hook_state.collected[dtmf_len++] = digit;
+		bridge_channel->dtmf_hook_state.collected[dtmf_len] = '\0';
+
+		ast_debug(1, "DTMF feature string on %p(%s) is now '%s'\n",
+			  bridge_channel, ast_channel_name(bridge_channel->chan),
+			  bridge_channel->dtmf_hook_state.collected);
+	}
+
+	return dtmf_len;
+}
+
+static unsigned int bridge_channel_feature_digit_timeout(struct ast_bridge_channel *bridge_channel)
+{
+	unsigned int digit_timeout;
+	struct ast_features_general_config *gen_cfg;
+
+	/* Determine interdigit timeout */
+	ast_channel_lock(bridge_channel->chan);
+	gen_cfg = ast_get_chan_features_general_config(bridge_channel->chan);
+	ast_channel_unlock(bridge_channel->chan);
+
+	if (!gen_cfg) {
+		ast_log(LOG_ERROR, "Unable to retrieve features configuration.\n");
+		return 3000; /* Pick a reasonable failsafe timeout in ms */
+	}
+
+	digit_timeout = gen_cfg->featuredigittimeout;
+	ao2_ref(gen_cfg, -1);
+
+	return digit_timeout;
+}
+
+void ast_bridge_channel_feature_digit_add(struct ast_bridge_channel *bridge_channel, int digit)
+{
+	if (digit) {
+		bridge_channel_feature_digit_add(
+			bridge_channel, digit, strlen(bridge_channel->dtmf_hook_state.collected));
+	}
+}
+
 void ast_bridge_channel_feature_digit(struct ast_bridge_channel *bridge_channel, int digit)
 {
 	struct ast_bridge_features *features = bridge_channel->features;
@@ -1527,17 +1638,10 @@ void ast_bridge_channel_feature_digit(struct ast_bridge_channel *bridge_channel,
 	}
 
 	if (digit) {
-		/* There should always be room for the new digit. */
-		ast_assert(dtmf_len < ARRAY_LEN(bridge_channel->dtmf_hook_state.collected) - 1);
+		dtmf_len = bridge_channel_feature_digit_add(bridge_channel, digit, dtmf_len);
+	}
 
-		/* Add the new digit to the DTMF string so we can do our matching */
-		bridge_channel->dtmf_hook_state.collected[dtmf_len++] = digit;
-		bridge_channel->dtmf_hook_state.collected[dtmf_len] = '\0';
-
-		ast_debug(1, "DTMF feature string on %p(%s) is now '%s'\n",
-			bridge_channel, ast_channel_name(bridge_channel->chan),
-			bridge_channel->dtmf_hook_state.collected);
-
+	while (digit) {
 		/* See if a DTMF feature hook matches or can match */
 		hook = ao2_find(features->dtmf_hooks, bridge_channel->dtmf_hook_state.collected,
 			OBJ_SEARCH_PARTIAL_KEY);
@@ -1545,25 +1649,12 @@ void ast_bridge_channel_feature_digit(struct ast_bridge_channel *bridge_channel,
 			ast_debug(1, "No DTMF feature hooks on %p(%s) match '%s'\n",
 				bridge_channel, ast_channel_name(bridge_channel->chan),
 				bridge_channel->dtmf_hook_state.collected);
+			break;
 		} else if (dtmf_len != strlen(hook->dtmf.code)) {
 			unsigned int digit_timeout;
-			struct ast_features_general_config *gen_cfg;
-
 			/* Need more digits to match */
 			ao2_ref(hook, -1);
-
-			/* Determine interdigit timeout */
-			ast_channel_lock(bridge_channel->chan);
-			gen_cfg = ast_get_chan_features_general_config(bridge_channel->chan);
-			ast_channel_unlock(bridge_channel->chan);
-			if (!gen_cfg) {
-				ast_log(LOG_ERROR, "Unable to retrieve features configuration.\n");
-				digit_timeout = 3000; /* Pick a reasonable failsafe timeout in ms */
-			} else {
-				digit_timeout = gen_cfg->featuredigittimeout;
-				ao2_ref(gen_cfg, -1);
-			}
-
+			digit_timeout = bridge_channel_feature_digit_timeout(bridge_channel);
 			bridge_channel->dtmf_hook_state.interdigit_timeout =
 				ast_tvadd(ast_tvnow(), ast_samp2tv(digit_timeout, 1000));
 			return;
@@ -1612,10 +1703,21 @@ void ast_bridge_channel_feature_digit(struct ast_bridge_channel *bridge_channel,
 			 */
 			if (bridge_channel->chan && ast_check_hangup_locked(bridge_channel->chan)) {
 				ast_bridge_channel_kick(bridge_channel, 0);
+				bridge_channel->dtmf_hook_state.collected[0] = '\0';
+				return;
 			}
-			return;
+
+			/* if there is dtmf that has been collected then loop back through,
+			   but set digit to -1 so it doesn't try to do an add since the dtmf
+			   is already in the buffer */
+			dtmf_len = strlen(bridge_channel->dtmf_hook_state.collected);
+			if (!dtmf_len) {
+				return;
+			}
 		}
-	} else {
+	}
+
+	if (!digit) {
 		ast_debug(1, "DTMF feature string collection on %p(%s) timed out\n",
 			bridge_channel, ast_channel_name(bridge_channel->chan));
 	}
@@ -1720,6 +1822,17 @@ static void after_bridge_move_channel(struct ast_channel *chan_bridged, void *da
 		return;
 	}
 
+	/* The ast_channel_move function will end up updating the connected line information
+	 * on chan_target to the value we have here, but will not inform it. To ensure that
+	 * AST_FRAME_READ_ACTION_CONNECTED_LINE_MACRO is executed we wipe it away here. If
+	 * we don't do this then the change will be considered redundant, since the connected
+	 * line information is already there (despite the channel not being told).
+	 */
+	ast_channel_lock(chan_target);
+	ast_party_connected_line_free(ast_channel_connected_indicated(chan_target));
+	ast_party_connected_line_init(ast_channel_connected_indicated(chan_target));
+	ast_channel_unlock(chan_target);
+
 	if ((payload_size = ast_connected_line_build_data(connected_line_data,
 		sizeof(connected_line_data), &connected_target, NULL)) != -1) {
 		struct ast_control_read_action_payload *frame_payload;
@@ -1732,6 +1845,15 @@ static void after_bridge_move_channel(struct ast_channel *chan_bridged, void *da
 		memcpy(frame_payload->payload, connected_line_data, payload_size);
 		ast_queue_control_data(chan_target, AST_CONTROL_READ_ACTION, frame_payload, frame_size);
 	}
+
+	/* A connected line update is queued so that if chan_target is remotely involved with
+	 * anything (such as dialing a channel) the other channel(s) will be informed of the
+	 * new channel they are involved with.
+	 */
+	ast_channel_lock(chan_target);
+	ast_connected_line_copy_from_caller(&connected_target, ast_channel_caller(chan_target));
+	ast_channel_queue_connected_line_update(chan_target, &connected_target, NULL);
+	ast_channel_unlock(chan_target);
 
 	ast_party_connected_line_free(&connected_target);
 }
@@ -1853,6 +1975,13 @@ static void bridge_channel_handle_action(struct ast_bridge_channel *bridge_chann
 	default:
 		break;
 	}
+
+	/* While invoking an action it is possible for the channel to be hung up. So
+	 * that the bridge respects this we check here and if hung up kick it out.
+	 */
+	if (bridge_channel->chan && ast_check_hangup_locked(bridge_channel->chan)) {
+		ast_bridge_channel_kick(bridge_channel, 0);
+	}
 }
 
 /*!
@@ -1965,7 +2094,7 @@ void bridge_channel_internal_pull(struct ast_bridge_channel *bridge_channel)
 	ast_bridge_publish_leave(bridge, bridge_channel->chan);
 }
 
-int bridge_channel_internal_push(struct ast_bridge_channel *bridge_channel)
+int bridge_channel_internal_push_full(struct ast_bridge_channel *bridge_channel, int optimized)
 {
 	struct ast_bridge *bridge = bridge_channel->bridge;
 	struct ast_bridge_channel *swap;
@@ -1988,12 +2117,13 @@ int bridge_channel_internal_push(struct ast_bridge_channel *bridge_channel)
 	if (bridge->dissolved
 		|| bridge_channel->state != BRIDGE_CHANNEL_STATE_WAIT
 		|| (swap && swap->state != BRIDGE_CHANNEL_STATE_WAIT)
-		|| bridge->v_table->push(bridge, bridge_channel, swap)
-		|| ast_bridge_channel_establish_roles(bridge_channel)) {
+		|| bridge->v_table->push(bridge, bridge_channel, swap)) {
 		ast_debug(1, "Bridge %s: pushing %p(%s) into bridge failed\n",
 			bridge->uniqueid, bridge_channel, ast_channel_name(bridge_channel->chan));
 		return -1;
 	}
+
+	ast_bridge_channel_establish_roles(bridge_channel);
 
 	if (swap) {
 		int dissolve = ast_test_flag(&bridge->feature_flags, AST_BRIDGE_FLAG_DISSOLVE_EMPTY);
@@ -2001,6 +2131,9 @@ int bridge_channel_internal_push(struct ast_bridge_channel *bridge_channel)
 		/* This flag is cleared so the act of this channel leaving does not cause it to dissolve if need be */
 		ast_clear_flag(&bridge->feature_flags, AST_BRIDGE_FLAG_DISSOLVE_EMPTY);
 
+		if (optimized) {
+			bridge_channel_cancel_owed_events(swap);
+		}
 		ast_bridge_channel_leave_bridge(swap, BRIDGE_CHANNEL_STATE_END_NO_DISSOLVE, 0);
 		bridge_channel_internal_pull(swap);
 
@@ -2038,6 +2171,11 @@ int bridge_channel_internal_push(struct ast_bridge_channel *bridge_channel)
 
 	bridge->reconfigured = 1;
 	return 0;
+}
+
+int bridge_channel_internal_push(struct ast_bridge_channel *bridge_channel)
+{
+	return bridge_channel_internal_push_full(bridge_channel, 0);
 }
 
 /*!
@@ -2574,6 +2712,7 @@ int bridge_channel_internal_join(struct ast_bridge_channel *bridge_channel)
 			ast_indicate(bridge_channel->chan, AST_CONTROL_SRCCHANGE);
 		}
 
+		bridge_channel_impart_signal(bridge_channel->chan);
 		ast_bridge_unlock(bridge_channel->bridge);
 
 		/* Must release any swap ref after unlocking the bridge. */
@@ -2615,6 +2754,18 @@ int bridge_channel_internal_join(struct ast_bridge_channel *bridge_channel)
 		ast_channel_end_dtmf(bridge_channel->chan,
 			ast_channel_sending_dtmf_digit(bridge_channel->chan),
 			ast_channel_sending_dtmf_tv(bridge_channel->chan), "bridge end");
+	}
+
+	/* Complete any T.38 session before exiting the bridge. */
+	if (ast_channel_is_t38_active(bridge_channel->chan)) {
+		struct ast_control_t38_parameters t38_parameters = {
+			.request_response = AST_T38_TERMINATED,
+		};
+
+		ast_debug(1, "Channel %s simulating T.38 terminate for bridge end.\n",
+			ast_channel_name(bridge_channel->chan));
+		ast_indicate_data(bridge_channel->chan, AST_CONTROL_T38_PARAMETERS,
+			&t38_parameters, sizeof(t38_parameters));
 	}
 
 	/* Indicate a source change since this channel is leaving the bridge system. */

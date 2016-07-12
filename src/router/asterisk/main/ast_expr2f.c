@@ -520,7 +520,7 @@ static yyconst flex_int16_t yy_chk[159] =
 #include <stdio.h>
 
 #if !defined(STANDALONE)
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 373330 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 #else
 #ifndef __USE_ISOC99
 #define __USE_ISOC99 1

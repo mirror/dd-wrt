@@ -29,7 +29,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419044 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <math.h>
 
@@ -359,14 +359,13 @@ int ast_playtones_start(struct ast_channel *chan, int vol, const char *playlst, 
 
 		if (tone_data.midinote) {
 			/* midi notes must be between 0 and 127 */
-
-			if (tone_data.freq1 >= 0 && tone_data.freq1 <= 127) {
+			if (tone_data.freq1 <= 127) {
 				tone_data.freq1 = midi_tohz[tone_data.freq1];
 			} else {
 				tone_data.freq1 = 0;
 			}
 
-			if (tone_data.freq2 >= 0 && tone_data.freq2 <= 127) {
+			if (tone_data.freq2 <= 127) {
 				tone_data.freq2 = midi_tohz[tone_data.freq2];
 			} else {
 				tone_data.freq2 = 0;
@@ -1186,7 +1185,7 @@ int ast_indications_init(void)
 
 	ast_cli_register_multiple(cli_indications, ARRAY_LEN(cli_indications));
 
-	ast_register_atexit(indications_shutdown);
+	ast_register_cleanup(indications_shutdown);
 	return 0;
 }
 

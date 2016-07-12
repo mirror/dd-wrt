@@ -29,7 +29,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419044 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <sys/time.h>
 #include <sys/stat.h>
@@ -214,6 +214,6 @@ static void image_shutdown(void)
 int ast_image_init(void)
 {
 	ast_cli_register_multiple(cli_image, ARRAY_LEN(cli_image));
-	ast_register_atexit(image_shutdown);
+	ast_register_cleanup(image_shutdown);
 	return 0;
 }

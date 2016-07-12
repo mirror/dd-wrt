@@ -34,7 +34,7 @@
 #include "asterisk.h"
 #include <stdbool.h>
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 426097 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <fcntl.h>
 #include <netinet/in.h>

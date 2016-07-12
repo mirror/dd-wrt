@@ -39,7 +39,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 422037 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <ctype.h>
 #include <signal.h>
@@ -881,7 +881,7 @@ static struct mohclass *_get_mohbyname(const char *name, int warn, int flags, co
 #endif
 
 	if (!moh && warn) {
-		ast_debug(1, "Music on Hold class '%s' not found in memory\n", name);
+		ast_log(LOG_WARNING, "Music on Hold class '%s' not found in memory. Verify your configuration.\n", name);
 	}
 
 	return moh;
@@ -1349,6 +1349,18 @@ static struct mohclass *_moh_class_malloc(const char *file, int line, const char
 	return class;
 }
 
+static struct ast_variable *load_realtime_musiconhold(const char *name)
+{
+	struct ast_variable *var = ast_load_realtime("musiconhold", "name", name, SENTINEL);
+	if (!var) {
+		ast_log(LOG_WARNING,
+			"Music on Hold class '%s' not found in memory/database. "
+			"Verify your configuration.\n",
+			name);
+	}
+	return var;
+}
+
 static int local_ast_moh_start(struct ast_channel *chan, const char *mclass, const char *interpclass)
 {
 	struct mohclass *mohclass = NULL;
@@ -1356,6 +1368,7 @@ static int local_ast_moh_start(struct ast_channel *chan, const char *mclass, con
 	struct ast_variable *var = NULL;
 	int res = 0;
 	int realtime_possible = ast_check_realtime("musiconhold");
+	int warn_if_not_in_memory = !realtime_possible;
 
 	/* The following is the order of preference for which class to use:
 	 * 1) The channels explicitly set musicclass, which should *only* be
@@ -1369,28 +1382,28 @@ static int local_ast_moh_start(struct ast_channel *chan, const char *mclass, con
 	 * 4) The default class.
 	 */
 	if (!ast_strlen_zero(ast_channel_musicclass(chan))) {
-		mohclass = get_mohbyname(ast_channel_musicclass(chan), 1, 0);
+		mohclass = get_mohbyname(ast_channel_musicclass(chan), warn_if_not_in_memory, 0);
 		if (!mohclass && realtime_possible) {
-			var = ast_load_realtime("musiconhold", "name", ast_channel_musicclass(chan), SENTINEL);
+			var = load_realtime_musiconhold(ast_channel_musicclass(chan));
 		}
 	}
 	if (!mohclass && !var && !ast_strlen_zero(mclass)) {
-		mohclass = get_mohbyname(mclass, 1, 0);
+		mohclass = get_mohbyname(mclass, warn_if_not_in_memory, 0);
 		if (!mohclass && realtime_possible) {
-			var = ast_load_realtime("musiconhold", "name", mclass, SENTINEL);
+			var = load_realtime_musiconhold(mclass);
 		}
 	}
 	if (!mohclass && !var && !ast_strlen_zero(interpclass)) {
-		mohclass = get_mohbyname(interpclass, 1, 0);
+		mohclass = get_mohbyname(interpclass, warn_if_not_in_memory, 0);
 		if (!mohclass && realtime_possible) {
-			var = ast_load_realtime("musiconhold", "name", interpclass, SENTINEL);
+			var = load_realtime_musiconhold(interpclass);
 		}
 	}
 
 	if (!mohclass && !var) {
-		mohclass = get_mohbyname("default", 1, 0);
+		mohclass = get_mohbyname("default", warn_if_not_in_memory, 0);
 		if (!mohclass && realtime_possible) {
-			var = ast_load_realtime("musiconhold", "name", "default", SENTINEL);
+			var = load_realtime_musiconhold("default");
 		}
 	}
 
@@ -1821,7 +1834,8 @@ static char *handle_cli_moh_reload(struct ast_cli_entry *e, int cmd, struct ast_
 	if (a->argc != e->args)
 		return CLI_SHOWUSAGE;
 
-	reload();
+	/* The module loader will prevent concurrent reloads from occurring, so we delegate */
+	ast_module_reload("res_musiconhold");
 
 	return CLI_SUCCESS;
 }

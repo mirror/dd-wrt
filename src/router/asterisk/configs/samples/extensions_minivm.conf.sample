@@ -1,6 +1,6 @@
 ; MINI-VOICEMAIL dialplan example
 ; ---------------------------------------------------------------------------------------
-; ASTERISK_FILE_VERSION(__FILE__, "$Revision: 418870 $")
+; ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 ;
 ;
 ; This is an example on how to use the Mini-Voicemail system to build

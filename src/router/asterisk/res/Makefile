@@ -33,6 +33,9 @@ ael/ael_lex.o: _ASTCFLAGS+=-I. -Iael -Wno-unused
 
 ael/ael.tab.o: ael/ael.tab.c ael/ael.tab.h ../include/asterisk/ael_structs.h
 ael/ael.tab.o: _ASTCFLAGS+=-I. -Iael -DYYENABLE_NLS=0
+	ifneq ($(AST_CLANG_BLOCKS),)
+		_ASTCFLAGS+=-Wno-parentheses-equality
+	endif
 
 $(if $(filter res_ais,$(EMBEDDED_MODS)),modules.link,res_ais.so): ais/clm.o ais/evt.o
 ais/clm.o ais/evt.o: _ASTCFLAGS+=$(call MOD_ASTCFLAGS,res_ais)
@@ -73,9 +76,12 @@ endif
 ael/pval.o: ael/pval.c
 
 clean::
-	rm -f snmp/*.[oi] ael/*.[oi] ais/*.[oi] ari/*.[oi]
-	rm -f res_pjsip/*.[oi] stasis/*.[oi]
-	rm -f parking/*.o parking/*.i stasis_recording/*.[oi]
+	rm -f snmp/*.o snmp/*.i ael/*.o ael/*.i ais/*.o ais/*.i snmp/*.gcda snmp/*.gcno ael/*.gcda ael/*.gcno
+	rm -f res_pjsip/*.[oi] res_pjsip/*.gcda res_pjsip/*.gcno
+	rm -f stasis/*.[oi] stasis/*.gcda stasis/*.gcno
+	rm -f parking/*.[oi] parking/*.gcda parking/*.gcno
+	rm -f stasis_recording/*.[oi] stasis_recording/*.gcda stasis_recording/*.gcno
+	rm -f ari/*.[oi] ari/*.gcda ari/*.gcno
 
 $(if $(filter res_parking,$(EMBEDDED_MODS)),modules.link,res_parking.so): $(subst .c,.o,$(wildcard parking/*.c))
 $(subst .c,.o,$(wildcard parking/*.c)): _ASTCFLAGS+=$(call MOD_ASTCFLAGS,res_parking)
