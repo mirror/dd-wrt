@@ -224,11 +224,7 @@ endif
 
 $(ASTSSL_LIB): $(ASTSSL_LIB).$(ASTSSL_SO_VERSION)
 	$(ECHO_PREFIX) echo "   [LN] $< -> $@"
-	$(CMD_PREFIX) if [ -x "$(LDCONFIG)" ] ; then \
-		$(LDCONFIG) $(LDCONFIG_FLAGS) . 2>/dev/null ;\
-	else \
-		$(LN) -sf $< $@ ;\
-	fi
+	$(LN) -sf $< $@ ;\
 
 else # Darwin
 ASTSSL_LIB:=libasteriskssl.dylib
