@@ -193,7 +193,8 @@ size_t dhcp_reply(struct dhcp_context *context, char *iface_name, int int_index,
 	     be enough free space at the end of the packet to copy the option. */
 	  unsigned char *sopt;
 	  unsigned int total = option_len(opt) + 2;
-	  unsigned char *last_opt = option_find(mess, sz, OPTION_END, 0);
+	  unsigned char *last_opt = option_find1(&mess->options[0] + sizeof(u32), ((unsigned char *)mess) + sz,
+						 OPTION_END, 0);
 	  if (last_opt && last_opt < end - total)
 	    {
 	      end -= total;
@@ -1615,7 +1616,7 @@ static unsigned char *option_find1(unsigned char *p, unsigned char *end, int opt
 {
   while (1) 
     {
-      if (p > end)
+      if (p >= end)
 	return NULL;
       else if (*p == OPTION_END)
 	return opt == OPTION_END ? p : NULL;

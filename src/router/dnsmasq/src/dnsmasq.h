@@ -992,6 +992,7 @@ extern struct daemon {
 #endif
 #ifdef HAVE_DNSSEC
   struct ds_config *ds;
+  int dnssec_no_time_check;
   int back_to_the_future;
   char *timestamp_file;
 #endif

@@ -652,20 +652,23 @@ static void sanitise(char *buf)
 
 }
 
+#define MAXMESSAGE 500 /* limit to make packet < 512 bytes and definitely smaller than buffer */ 
 static ssize_t tftp_err(int err, char *packet, char *message, char *file)
 {
   struct errmess {
     unsigned short op, err;
     char message[];
   } *mess = (struct errmess *)packet;
-  ssize_t ret = 4;
+  ssize_t len, ret = 4;
   char *errstr = strerror(errno);
   
   sanitise(file);
 
   mess->op = htons(OP_ERR);
   mess->err = htons(err);
-  ret += (snprintf(mess->message, 500,  message, file, errstr) + 1);
+  len = snprintf(mess->message, MAXMESSAGE,  message, file, errstr);
+  ret += (len < MAXMESSAGE) ? len + 1 : MAXMESSAGE; /* include terminating zero */
+  
   my_syslog(MS_TFTP | LOG_ERR, "%s", mess->message);
   
   return  ret;

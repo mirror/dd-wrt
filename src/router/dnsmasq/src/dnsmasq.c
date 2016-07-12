@@ -750,7 +750,8 @@ int main (int argc, char **argv)
       
       my_syslog(LOG_INFO, _("DNSSEC validation enabled"));
       
-      if (option_bool(OPT_DNSSEC_TIME))
+      daemon->dnssec_no_time_check = option_bool(OPT_DNSSEC_TIME);
+      if (option_bool(OPT_DNSSEC_TIME) && !daemon->back_to_the_future)
 	my_syslog(LOG_INFO, _("DNSSEC signature timestamps not checked until first cache reload"));
       
       if (rc == 1)
@@ -1226,10 +1227,10 @@ static void async_event(int pipe, time_t now)
       {
       case EVENT_RELOAD:
 #ifdef HAVE_DNSSEC
-	if (option_bool(OPT_DNSSEC_VALID) && option_bool(OPT_DNSSEC_TIME))
+	if (daemon->dnssec_no_time_check && option_bool(OPT_DNSSEC_VALID) && option_bool(OPT_DNSSEC_TIME))
 	  {
 	    my_syslog(LOG_INFO, _("now checking DNSSEC signature timestamps"));
-	    reset_option_bool(OPT_DNSSEC_TIME);
+	    daemon->dnssec_no_time_check = 0;
 	  } 
 #endif
 	/* fall through */
