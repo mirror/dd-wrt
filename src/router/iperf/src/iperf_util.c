@@ -1,5 +1,5 @@
 /*
- * iperf, Copyright (c) 2014, The Regents of the University of
+ * iperf, Copyright (c) 2014, 2016, The Regents of the University of
  * California, through Lawrence Berkeley National Laboratory (subject
  * to receipt of any required approvals from the U.S. Dept. of
  * Energy).  All rights reserved.
@@ -285,6 +285,16 @@ get_optional_features(void)
     numfeatures++;
 #endif /* HAVE_SENDFILE */
 
+#if defined(HAVE_SO_MAX_PACING_RATE)
+    if (numfeatures > 0) {
+	strncat(features, ", ",
+		sizeof(features) - strlen(features) - 1);
+    }
+    strncat(features, "socket pacing",
+	sizeof(features) - strlen(features) - 1);
+    numfeatures++;
+#endif /* HAVE_SO_MAX_PACING_RATE */
+
     if (numfeatures == 0) {
 	strncat(features, "None", 
 		sizeof(features) - strlen(features) - 1);
@@ -340,19 +350,22 @@ iperf_json_printf(const char *format, ...)
 		j = cJSON_CreateBool(va_arg(argp, int));
 		break;
 		case 'd':
-		j = cJSON_CreateInt(va_arg(argp, int64_t));
+		j = cJSON_CreateNumber(va_arg(argp, int64_t));
 		break;
 		case 'f':
-		j = cJSON_CreateFloat(va_arg(argp, double));
+		j = cJSON_CreateNumber(va_arg(argp, double));
 		break;
 		case 's':
 		j = cJSON_CreateString(va_arg(argp, char *));
 		break;
 		default:
+		va_end(argp);
 		return NULL;
 	    }
-	    if (j == NULL)
-		return NULL;
+	    if (j == NULL) {
+	    	va_end(argp);
+	    	return NULL;
+	    }
 	    cJSON_AddItemToObject(o, name, j);
 	    np = name;
 	    break;
