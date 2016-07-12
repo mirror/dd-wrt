@@ -1,5 +1,5 @@
 /*
- * iperf, Copyright (c) 2014, 2015, The Regents of the University of
+ * iperf, Copyright (c) 2014, 2015, 2016, The Regents of the University of
  * California, through Lawrence Berkeley National Laboratory (subject
  * to receipt of any required approvals from the U.S. Dept. of
  * Energy).  All rights reserved.
@@ -74,7 +74,8 @@ iperf_errexit(struct iperf_test *test, const char *format, ...)
 	    fprintf(stderr, "iperf3: %s\n", str);
 	}
     va_end(argp);
-    iperf_delete_pidfile(test);
+    if (test)
+        iperf_delete_pidfile(test);
     exit(1);
 }
 
@@ -354,6 +355,10 @@ iperf_strerror(int i_errno)
             snprintf(errstr, len, "unable to set SCTP_INIT num of SCTP streams\n");
             perr = 1;
             break;
+	case IESETPACING:
+	    snprintf(errstr, len, "unable to set socket pacing");
+	    perr = 1;
+	    break;
     }
 
     if (herr || perr)

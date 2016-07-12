@@ -1,5 +1,5 @@
 /*
- * iperf, Copyright (c) 2014, 2015, The Regents of the University of
+ * iperf, Copyright (c) 2014, 2015, 2016, The Regents of the University of
  * California, through Lawrence Berkeley National Laboratory (subject
  * to receipt of any required approvals from the U.S. Dept. of
  * Energy).  All rights reserved.
@@ -87,6 +87,7 @@ struct iperf_stream_result
     iperf_size_t bytes_sent;
     iperf_size_t bytes_received_this_interval;
     iperf_size_t bytes_sent_this_interval;
+    iperf_size_t bytes_sent_omit;
     int stream_prev_total_retrans;
     int stream_retrans;
     int stream_prev_total_sacks;
@@ -98,6 +99,7 @@ struct iperf_stream_result
     int stream_max_snd_cwnd;
     struct timeval start_time;
     struct timeval end_time;
+    struct timeval start_time_fixed;
     TAILQ_HEAD(irlisthead, iperf_interval_results) interval_results;
     void     *data;
 };
@@ -152,7 +154,9 @@ struct iperf_stream
     double    jitter;
     double    prev_transit;
     int       outoforder_packets;
+    int       omitted_outoforder_packets;
     int       cnt_error;
+    int       omitted_cnt_error;
     uint64_t  target;
 
     struct sockaddr_storage local_addr;
@@ -236,7 +240,7 @@ struct iperf_test
     int       debug;				/* -d option - enable debug */
     int	      get_server_output;		/* --get-server-output */
     int	      udp_counters_64bit;		/* --use-64-bit-udp-counters */
-
+    int       no_fq_socket_pacing;	  /* --no-fq-socket-pacing */
     int	      multisend;
 
     char     *json_output_string; /* rendered JSON output if json_output is set */
