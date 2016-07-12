@@ -1289,7 +1289,7 @@ void ej_get_totaltraff(webs_t wp, int argc, char_t ** argv)
 	char *type;
 	char wanface[32];
 	char line[256];
-	unsigned long long rcvd, sent, megcounti, megcounto;
+	unsigned long long rcvd = 0, sent = 0, megcounti = 0, megcounto = 0;
 	FILE *in;
 	int ifl;
 
