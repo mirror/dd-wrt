@@ -54,7 +54,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 432534 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #if defined(__NetBSD__) || defined(__FreeBSD__)
 #include <pthread.h>
@@ -600,14 +600,6 @@ static int restart_monitor(void);
 
 static int dahdi_sendtext(struct ast_channel *c, const char *text);
 
-static void mwi_event_cb(void *userdata, struct stasis_subscription *sub, struct stasis_message *msg)
-{
-	/* This module does not handle MWI in an event-based manner.  However, it
-	 * subscribes to MWI for each mailbox that is configured so that the core
-	 * knows that we care about it.  Then, chan_dahdi will get the MWI from the
-	 * event cache instead of checking the mailbox directly. */
-}
-
 /*! \brief Avoid the silly dahdi_getevent which ignores a bunch of events */
 static inline int dahdi_get_event(int fd)
 {
@@ -919,6 +911,7 @@ static struct dahdi_chan_conf dahdi_chan_conf_default(void)
 			.privateprefix = "",
 			.unknownprefix = "",
 			.colp_send = SIG_PRI_COLP_UPDATE,
+			.force_restart_unavailable_chans = 1,
 			.resetinterval = -1,
 		},
 #endif
@@ -4206,7 +4199,7 @@ static int dahdi_digit_begin(struct ast_channel *chan, char digit)
 {
 	struct dahdi_pvt *pvt;
 	int idx;
-	int dtmf = -1;
+	int dtmf;
 	int res;
 
 	pvt = ast_channel_tech_pvt(chan);
@@ -4229,8 +4222,11 @@ static int dahdi_digit_begin(struct ast_channel *chan, char digit)
 		break;
 	}
 #endif
-	if ((dtmf = digit_to_dtmfindex(digit)) == -1)
+	dtmf = digit_to_dtmfindex(digit);
+	if (dtmf == -1) {
+		/* Not a valid DTMF digit */
 		goto out;
+	}
 
 	if (pvt->pulse || ioctl(pvt->subs[SUB_REAL].dfd, DAHDI_SENDTONE, &dtmf)) {
 		char dial_str[] = { 'T', digit, '\0' };
@@ -4240,10 +4236,19 @@ static int dahdi_digit_begin(struct ast_channel *chan, char digit)
 			pvt->dialing = 1;
 		}
 	} else {
-		ast_debug(1, "Channel %s started VLDTMF digit '%c'\n",
-			ast_channel_name(chan), digit);
 		pvt->dialing = 1;
 		pvt->begindigit = digit;
+
+		/* Flush the write buffer in DAHDI to start sending the digit immediately. */
+		dtmf = DAHDI_FLUSH_WRITE;
+		res = ioctl(pvt->subs[SUB_REAL].dfd, DAHDI_FLUSH, &dtmf);
+		if (res) {
+			ast_log(LOG_WARNING, "Unable to flush the DAHDI write buffer to send DTMF on channel %d: %s\n",
+				pvt->channel, strerror(errno));
+		}
+
+		ast_debug(1, "Channel %s started VLDTMF digit '%c'\n",
+			ast_channel_name(chan), digit);
 	}
 
 out:
@@ -4700,7 +4705,7 @@ static int drc_sample(int sample, float drc)
 	neg = (sample < 0 ? -1 : 1);
 	steep = drc*sample;
 	shallow = neg*(max-max/drc)+(float)sample/drc;
-	if (abs(steep) < abs(shallow)) {
+	if (fabsf(steep) < fabsf(shallow)) {
 		sample = steep;
 	}
 	else {
@@ -8780,39 +8785,52 @@ static int my_dahdi_write(struct dahdi_pvt *p, unsigned char *buf, int len, int 
 
 static int dahdi_write(struct ast_channel *ast, struct ast_frame *frame)
 {
-	struct dahdi_pvt *p = ast_channel_tech_pvt(ast);
+	struct dahdi_pvt *p;
 	int res;
 	int idx;
+
+	/* Write a frame of (presumably voice) data */
+	if (frame->frametype != AST_FRAME_VOICE) {
+		if (frame->frametype != AST_FRAME_IMAGE) {
+			ast_log(LOG_WARNING, "Don't know what to do with frame type '%u'\n",
+				frame->frametype);
+		}
+		return 0;
+	}
+
+	/* Return if it's not valid data */
+	if (!frame->data.ptr || !frame->datalen) {
+		return 0;
+	}
+
+	p = ast_channel_tech_pvt(ast);
+	ast_mutex_lock(&p->lock);
+
 	idx = dahdi_get_index(ast, p, 0);
 	if (idx < 0) {
+		ast_mutex_unlock(&p->lock);
 		ast_log(LOG_WARNING, "%s doesn't really exist?\n", ast_channel_name(ast));
 		return -1;
 	}
 
-	/* Write a frame of (presumably voice) data */
-	if (frame->frametype != AST_FRAME_VOICE) {
-		if (frame->frametype != AST_FRAME_IMAGE)
-			ast_log(LOG_WARNING, "Don't know what to do with frame type '%u'\n", frame->frametype);
-		return 0;
-	}
 	if (p->dialing) {
+		ast_mutex_unlock(&p->lock);
 		ast_debug(5, "Dropping frame since I'm still dialing on %s...\n",
 			ast_channel_name(ast));
 		return 0;
 	}
 	if (!p->owner) {
+		ast_mutex_unlock(&p->lock);
 		ast_debug(5, "Dropping frame since there is no active owner on %s...\n",
 			ast_channel_name(ast));
 		return 0;
 	}
 	if (p->cidspill) {
+		ast_mutex_unlock(&p->lock);
 		ast_debug(5, "Dropping frame since I've still got a callerid spill on %s...\n",
 			ast_channel_name(ast));
 		return 0;
 	}
-	/* Return if it's not valid data */
-	if (!frame->data.ptr || !frame->datalen)
-		return 0;
 
 	if (ast_format_cmp(frame->subclass.format, ast_format_slin) == AST_FORMAT_CMP_EQUAL) {
 		if (!p->subs[idx].linear) {
@@ -8833,10 +8851,12 @@ static int dahdi_write(struct ast_channel *ast, struct ast_frame *frame)
 		}
 		res = my_dahdi_write(p, (unsigned char *)frame->data.ptr, frame->datalen, idx, 0);
 	} else {
+		ast_mutex_unlock(&p->lock);
 		ast_log(LOG_WARNING, "Cannot handle frames in %s format\n",
 			ast_format_get_name(frame->subclass.format));
 		return -1;
 	}
+	ast_mutex_unlock(&p->lock);
 	if (res < 0) {
 		ast_log(LOG_WARNING, "write failed: %s\n", strerror(errno));
 		return -1;
@@ -12346,6 +12366,7 @@ static struct dahdi_pvt *mkintf(int channel, const struct dahdi_chan_conf *conf,
 #if defined(HAVE_PRI_MCID)
 						pris[span].pri.mcid_send = conf->pri.pri.mcid_send;
 #endif	/* defined(HAVE_PRI_MCID) */
+						pris[span].pri.force_restart_unavailable_chans = conf->pri.pri.force_restart_unavailable_chans;
 #if defined(HAVE_PRI_DATETIME_SEND)
 						pris[span].pri.datetime_send = conf->pri.pri.datetime_send;
 #endif	/* defined(HAVE_PRI_DATETIME_SEND) */
@@ -12592,7 +12613,11 @@ static struct dahdi_pvt *mkintf(int channel, const struct dahdi_chan_conf *conf,
 
 			mailbox_specific_topic = ast_mwi_topic(tmp->mailbox);
 			if (mailbox_specific_topic) {
-				tmp->mwi_event_sub = stasis_subscribe_pool(mailbox_specific_topic, mwi_event_cb, NULL);
+				/* This module does not handle MWI in an event-based manner.  However, it
+				 * subscribes to MWI for each mailbox that is configured so that the core
+				 * knows that we care about it.  Then, chan_dahdi will get the MWI from the
+				 * event cache instead of checking the mailbox directly. */
+				tmp->mwi_event_sub = stasis_subscribe_pool(mailbox_specific_topic, stasis_subscription_cb_noop, NULL);
 			}
 		}
 #ifdef HAVE_DAHDI_LINEREVERSE_VMWI
@@ -18258,6 +18283,8 @@ static int process_dahdi(struct dahdi_chan_conf *confp, const char *cat, struct 
 				else
 					ast_log(LOG_WARNING, "'%s' is not a valid reset interval, should be >= 60 seconds or 'never' at line %d.\n",
 						v->value, v->lineno);
+			} else if (!strcasecmp(v->name, "force_restart_unavailable_chans")) {
+				confp->pri.pri.force_restart_unavailable_chans = ast_true(v->value);
 			} else if (!strcasecmp(v->name, "minunused")) {
 				confp->pri.pri.minunused = atoi(v->value);
 			} else if (!strcasecmp(v->name, "minidle")) {
@@ -18804,6 +18831,11 @@ static int process_dahdi(struct dahdi_chan_conf *confp, const char *cat, struct 
 				if (element_count % 2 == 1) {
 					ast_log(LOG_ERROR, "Must be a silence duration for each ring duration: %s at line %d.\n", original_args, v->lineno);
 					cadence_is_ok = 0;
+				}
+
+				/* This check is only needed to satisfy the compiler that element_count can't cause an out of bounds */
+				if (element_count >= ARRAY_LEN(c)) {
+					element_count = ARRAY_LEN(c) - 1;
 				}
 
 				/* Ring cadences cannot be negative */

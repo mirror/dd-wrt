@@ -13,7 +13,7 @@
  * the GNU General Public License Version 2. See the LICENSE file
  * at the top of the source tree.
  *
- * $Revision: 369013 $
+ * $Revision$
  */
 
 /* 
@@ -42,7 +42,7 @@
  ***/
 
 #include "asterisk.h"	/* ast_strdupa */
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 369013 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 #include "asterisk/utils.h"	/* ast_strdupa */
 #include "console_video.h"	/* ast_strdupa */
 

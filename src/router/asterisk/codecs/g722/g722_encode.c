@@ -20,7 +20,7 @@
  * Computer Science, Speech Group
  * Chengxiang Lu and Alex Hauptmann
  *
- * $Id: g722_encode.c 194722 2009-05-15 17:59:08Z russell $
+ * $Id$
  */
 
 /*! \file */

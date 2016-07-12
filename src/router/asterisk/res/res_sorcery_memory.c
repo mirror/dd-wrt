@@ -30,7 +30,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419592 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <regex.h>
 
@@ -98,7 +98,21 @@ static int sorcery_memory_cmp(void *obj, void *arg, int flags)
 
 static int sorcery_memory_create(const struct ast_sorcery *sorcery, void *data, void *object)
 {
-	ao2_link(data, object);
+	void *existing;
+
+	ao2_lock(data);
+
+	existing = ao2_find(data, ast_sorcery_object_get_id(object), OBJ_KEY | OBJ_NOLOCK);
+	if (existing) {
+		ao2_ref(existing, -1);
+		ao2_unlock(data);
+		return -1;
+	}
+
+	ao2_link_flags(data, object, OBJ_NOLOCK);
+
+	ao2_unlock(data);
+
 	return 0;
 }
 
@@ -106,7 +120,6 @@ static int sorcery_memory_fields_cmp(void *obj, void *arg, int flags)
 {
 	const struct sorcery_memory_fields_cmp_params *params = arg;
 	RAII_VAR(struct ast_variable *, objset, NULL, ast_variables_destroy);
-	RAII_VAR(struct ast_variable *, diff, NULL, ast_variables_destroy);
 
 	if (params->regex) {
 		/* If a regular expression has been provided see if it matches, otherwise move on */
@@ -116,8 +129,7 @@ static int sorcery_memory_fields_cmp(void *obj, void *arg, int flags)
 		return 0;
 	} else if (params->fields &&
 	    (!(objset = ast_sorcery_objectset_create(params->sorcery, obj)) ||
-	     (ast_sorcery_changeset_create(objset, params->fields, &diff)) ||
-	     diff)) {
+	     (!ast_variable_lists_match(objset, params->fields, 0)))) {
 		/* If we can't turn the object into an object set OR if differences exist between the fields
 		 * passed in and what are present on the object they are not a match.
 		 */

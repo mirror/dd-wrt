@@ -497,6 +497,136 @@ enum ast_sorcery_apply_result __ast_sorcery_apply_wizard_mapping(struct ast_sorc
 #define ast_sorcery_apply_wizard_mapping(sorcery, type, name, data, caching) \
 	__ast_sorcery_apply_wizard_mapping((sorcery), (type), AST_MODULE, (name), (data), (caching));
 
+
+/*!
+ * \brief Pre-defined locations to insert at
+ */
+enum ast_sorcery_wizard_position {
+	AST_SORCERY_WIZARD_POSITION_LAST = -1,
+	AST_SORCERY_WIZARD_POSITION_FIRST = 0,
+};
+
+/*!
+ * \brief Insert an additional object wizard mapping at a specific position
+ * in the wizard list
+ *
+ * \param sorcery Pointer to a sorcery structure
+ * \param type Type of object to apply to
+ * \param module The name of the module, typically AST_MODULE
+ * \param name Name of the wizard to use
+ * \param data Data to be passed to wizard
+ * \param caching Wizard should cache
+ * \param position An index to insert to or one of ast_sorcery_wizard_position
+ *
+ * \return What occurred when applying the mapping
+ *
+ * \note This should be called *after* applying default mappings
+ * \note Wizards can be retrieved by using ast_sorcery_get_wizard_mapping_count
+ * and iterating over them using ast_sorcery_get_wizard_mapping.
+ *
+ * \since 13.4.0
+ */
+enum ast_sorcery_apply_result __ast_sorcery_insert_wizard_mapping(struct ast_sorcery *sorcery,
+	const char *type, const char *module, const char *name, const char *data,
+	unsigned int caching, int position);
+
+/*!
+ * \brief Insert an additional object wizard mapping at a specific position
+ * in the wizard list
+ *
+ * \param sorcery Pointer to a sorcery structure
+ * \param type Type of object to apply to
+ * \param module The name of the module, typically AST_MODULE
+ * \param name Name of the wizard to use
+ * \param data Data to be passed to wizard
+ * \param position One of ast_sorcery_wizard_position
+ *
+ * \return What occurred when applying the mapping
+ *
+ * \note This should be called *after* applying default mappings
+ * \since 13.4.0
+ */
+#define ast_sorcery_insert_wizard_mapping(sorcery, type, name, data, caching, position) \
+	__ast_sorcery_insert_wizard_mapping((sorcery), (type), AST_MODULE, (name), (data), \
+		(caching), (position))
+
+/*!
+ * \brief Remove an object wizard mapping
+ *
+ * \param sorcery Pointer to a sorcery structure
+ * \param type Type of object to remove from
+ * \param module The name of the module, typically AST_MODULE
+ * \param name The name of the wizard to remove
+ *
+ * \retval 0 success
+ * \retval -1 failure
+ *
+ * \since 13.4.0
+ */
+int __ast_sorcery_remove_wizard_mapping(struct ast_sorcery *sorcery,
+	const char *type, const char *module, const char *name);
+
+/*!
+ * \brief Remove an object wizard mapping
+ *
+ * \param sorcery Pointer to a sorcery structure
+ * \param type Type of object to remove from
+ * \param name The name of the wizard to remove
+ *
+ * \retval 0 success
+ * \retval -1 failure
+ *
+ * \since 13.4.0
+ */
+#define ast_sorcery_remove_wizard_mapping(sorcery, type, name) \
+	__ast_sorcery_remove_wizard_mapping((sorcery), (type), AST_MODULE, (name))
+
+/*!
+ * \brief Return the number of wizards mapped to an object type
+ *
+ * \param sorcery Pointer to a sorcery structure
+ * \param type Type of object
+ *
+ * \return Number of wizards or -1 for error
+ * \since 13.4.0
+ */
+int ast_sorcery_get_wizard_mapping_count(struct ast_sorcery *sorcery,
+	const char *type);
+
+/*!
+ * \brief By index, return a wizard mapped to an object type
+ *
+ * \param sorcery Pointer to a sorcery structure
+ * \param type Type of object
+ * \param index Index of the wizard
+ * \param wizard A pointer to receive the wizard pointer
+ * \param data A pointer to receive the data pointer
+ *
+ * \retval 0 success
+ * \retval -1 failure
+ *
+ * \warning The wizard will have its reference count bumped so you must
+ * call ao2_cleanup when you're done with it.
+ *
+ * \note The wizard and data returned are valid only for this object type
+ * and only while the wizard is applied to the object type.
+ *
+ * \since 13.4.0
+ */
+int ast_sorcery_get_wizard_mapping(struct ast_sorcery *sorcery,
+	const char *type, int index, struct ast_sorcery_wizard **wizard, void **data);
+
+/*!
+ * \brief Unregister an object type
+ *
+ * \param sorcery Pointer to a sorcery structure
+ * \param type Type of object
+ *
+ * \retval 0 success
+ * \retval -1 failure
+ */
+int ast_sorcery_object_unregister(struct ast_sorcery *sorcery, const char *type);
+
 /*!
  * \brief Register an object type
  *
@@ -1018,6 +1148,7 @@ void *ast_sorcery_retrieve_by_id(const struct ast_sorcery *sorcery, const char *
 
 /*!
  * \brief Retrieve an object or multiple objects using specific fields
+ * \since 13.9.0
  *
  * \param sorcery Pointer to a sorcery structure
  * \param type Type of object to retrieve
@@ -1032,6 +1163,29 @@ void *ast_sorcery_retrieve_by_id(const struct ast_sorcery *sorcery, const char *
  *
  * \note If the AST_RETRIEVE_FLAG_ALL flag is used you may omit fields to retrieve all objects
  *       of the given type.
+ *
+ * \note The fields parameter can contain realtime-style expressions in variable->name.
+ *       All operators defined for ast_strings_match can be used except for regex as
+ *       there's no common support for regex in the realtime backends at this time.
+ *       If multiple variables are in the fields list, all must match for an object to
+ *       be returned.  See ast_strings_match for more information.
+ *
+ * Example:
+ *
+ * The following code can be significantly faster when a realtime backend is in use
+ * because the expression "qualify_frequency > 0" is passed to the database to limit
+ * the number of rows returned.
+ *
+ *  struct ast_variable *var = ast_variable_new("qualify_frequency >", "0", "");
+ *  struct ao2_container *aors;
+ *
+ *  if (!var) {
+ *  	return;
+ *  }
+ *
+ *  aors = ast_sorcery_retrieve_by_fields(ast_sip_get_sorcery(),
+ *      "aor", AST_RETRIEVE_FLAG_MULTIPLE, var);
+ *
  */
 void *ast_sorcery_retrieve_by_fields(const struct ast_sorcery *sorcery, const char *type, unsigned int flags, struct ast_variable *fields);
 
@@ -1159,6 +1313,15 @@ struct ast_sorcery_object_type *ast_sorcery_get_object_type(const struct ast_sor
  */
 int ast_sorcery_is_object_field_registered(const struct ast_sorcery_object_type *object_type,
 		const char *field_name);
+
+/*!
+ * \brief Get the module that has opened the provided sorcery instance.
+ *
+ * \param sorcery The sorcery instance
+ *
+ * \return The module
+ */
+const char *ast_sorcery_get_module(const struct ast_sorcery *sorcery);
 
 #if defined(__cplusplus) || defined(c_plusplus)
 }

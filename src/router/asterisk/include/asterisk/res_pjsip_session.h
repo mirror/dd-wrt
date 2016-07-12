@@ -77,6 +77,10 @@ struct ast_sip_session_media {
 	enum ast_sip_session_media_encryption encryption;
 	/*! \brief The media transport in use for this stream */
 	pj_str_t transport;
+	/*! \brief Scheduler ID for RTP keepalive */
+	int keepalive_sched_id;
+	/*! \brief Scheduler ID for RTP timeout */
+	int timeout_sched_id;
 	/*! \brief Stream is on hold */
 	unsigned int held:1;
 	/*! \brief Stream type this session media handles */
@@ -145,6 +149,8 @@ struct ast_sip_session {
 	enum ast_sip_session_t38state t38state;
 	/*! The AOR associated with this session */
 	struct ast_sip_aor *aor;
+	/*! From header saved at invite creation */
+	pjsip_fromto_hdr *saved_from_hdr;
 };
 
 typedef int (*ast_sip_session_request_creation_cb)(struct ast_sip_session *session, pjsip_tx_data *tdata);
@@ -350,6 +356,12 @@ struct ast_sip_session_sdp_handler {
 	 */
 	int (*apply_negotiated_sdp_stream)(struct ast_sip_session *session, struct ast_sip_session_media *session_media, const struct pjmedia_sdp_session *local, const struct pjmedia_sdp_media *local_stream,
 		const struct pjmedia_sdp_session *remote, const struct pjmedia_sdp_media *remote_stream);
+	/*!
+	 * \brief Stop a session_media created by this handler but do not destroy resources
+	 * \param session The session for which media is being stopped
+	 * \param session_media The media to destroy
+	 */
+	void (*stream_stop)(struct ast_sip_session_media *session_media);
 	/*!
 	 * \brief Destroy a session_media created by this handler
 	 * \param session The session for which media is being destroyed

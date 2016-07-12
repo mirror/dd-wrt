@@ -16,7 +16,7 @@
 
 /*
  * Video codecs support for console_video.c
- * $Revision: 429675 $
+ * $Revision$
  */
 
 /*** MODULEINFO

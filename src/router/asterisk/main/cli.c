@@ -38,7 +38,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 433269 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/_private.h"
 #include "asterisk/paths.h"	/* use ast_config_AST_MODULE_DIR */
@@ -63,6 +63,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 433269 $")
 #include "asterisk/bridge.h"
 #include "asterisk/stasis_channels.h"
 #include "asterisk/stasis_bridges.h"
+#include "asterisk/vector.h"
 
 /*!
  * \brief List of restrictions per user.
@@ -108,6 +109,9 @@ AST_RWLIST_HEAD(module_level_list, module_level);
 static struct module_level_list debug_modules = AST_RWLIST_HEAD_INIT_VALUE;
 
 AST_THREADSTORAGE(ast_cli_buf);
+
+AST_RWLOCK_DEFINE_STATIC(shutdown_commands_lock);
+static AST_VECTOR(, struct ast_cli_entry *) shutdown_commands;
 
 /*! \brief Initial buffer size for resulting strings in ast_cli() */
 #define AST_CLI_INITLEN   256
@@ -802,7 +806,7 @@ static void print_uptimestr(int fd, struct timeval timeval, const char *prefix, 
 #define DAY (HOUR*24)
 #define WEEK (DAY*7)
 #define YEAR (DAY*365)
-#define NEEDCOMMA(x) ((x)? ",": "")	/* define if we need a comma */
+#define NEEDCOMMA(x) ((x) ? ", " : "")	/* define if we need a comma */
 	if (timeval.tv_sec < 0)	/* invalid, nothing to show */
 		return;
 
@@ -814,31 +818,33 @@ static void print_uptimestr(int fd, struct timeval timeval, const char *prefix, 
 	if (timeval.tv_sec > YEAR) {
 		x = (timeval.tv_sec / YEAR);
 		timeval.tv_sec -= (x * YEAR);
-		ast_str_append(&out, 0, "%d year%s%s ", x, ESS(x),NEEDCOMMA(timeval.tv_sec));
+		ast_str_append(&out, 0, "%d year%s%s", x, ESS(x), NEEDCOMMA(timeval.tv_sec));
 	}
 	if (timeval.tv_sec > WEEK) {
 		x = (timeval.tv_sec / WEEK);
 		timeval.tv_sec -= (x * WEEK);
-		ast_str_append(&out, 0, "%d week%s%s ", x, ESS(x),NEEDCOMMA(timeval.tv_sec));
+		ast_str_append(&out, 0, "%d week%s%s", x, ESS(x), NEEDCOMMA(timeval.tv_sec));
 	}
 	if (timeval.tv_sec > DAY) {
 		x = (timeval.tv_sec / DAY);
 		timeval.tv_sec -= (x * DAY);
-		ast_str_append(&out, 0, "%d day%s%s ", x, ESS(x),NEEDCOMMA(timeval.tv_sec));
+		ast_str_append(&out, 0, "%d day%s%s", x, ESS(x), NEEDCOMMA(timeval.tv_sec));
 	}
 	if (timeval.tv_sec > HOUR) {
 		x = (timeval.tv_sec / HOUR);
 		timeval.tv_sec -= (x * HOUR);
-		ast_str_append(&out, 0, "%d hour%s%s ", x, ESS(x),NEEDCOMMA(timeval.tv_sec));
+		ast_str_append(&out, 0, "%d hour%s%s", x, ESS(x), NEEDCOMMA(timeval.tv_sec));
 	}
 	if (timeval.tv_sec > MINUTE) {
 		x = (timeval.tv_sec / MINUTE);
 		timeval.tv_sec -= (x * MINUTE);
-		ast_str_append(&out, 0, "%d minute%s%s ", x, ESS(x),NEEDCOMMA(timeval.tv_sec));
+		ast_str_append(&out, 0, "%d minute%s%s", x, ESS(x), NEEDCOMMA(timeval.tv_sec));
 	}
 	x = timeval.tv_sec;
-	if (x > 0 || ast_str_strlen(out) == 0)	/* if there is nothing, print 0 seconds */
-		ast_str_append(&out, 0, "%d second%s ", x, ESS(x));
+	if (x > 0 || ast_str_strlen(out) == 0) {
+		/* if there is nothing, print 0 seconds */
+		ast_str_append(&out, 0, "%d second%s", x, ESS(x));
+	}
 	ast_cli(fd, "%s: %s\n", prefix, ast_str_buffer(out));
 }
 
@@ -1074,10 +1080,12 @@ static char *handle_chanlist(struct ast_cli_entry *e, int cmd, struct ast_cli_ar
 				char locbuf[40] = "(None)";
 				char appdata[40] = "(None)";
 
-				if (!cs->context && !cs->exten)
+				if (!ast_strlen_zero(cs->context) && !ast_strlen_zero(cs->exten)) {
 					snprintf(locbuf, sizeof(locbuf), "%s@%s:%d", cs->exten, cs->context, cs->priority);
-				if (cs->appl)
+				}
+				if (!ast_strlen_zero(cs->appl)) {
 					snprintf(appdata, sizeof(appdata), "%s(%s)", cs->appl, S_OR(cs->data, ""));
+				}
 				ast_cli(a->fd, FORMAT_STRING, cs->name, locbuf, ast_state2str(cs->state), appdata);
 			}
 		}
@@ -1526,7 +1534,7 @@ static char *handle_showchan(struct ast_cli_entry *e, int cmd, struct ast_cli_ar
 	struct ast_var_t *var;
 	struct ast_str *write_transpath = ast_str_alloca(256);
 	struct ast_str *read_transpath = ast_str_alloca(256);
-	struct ast_str *codec_buf = ast_str_alloca(64);
+	struct ast_str *codec_buf = ast_str_alloca(AST_FORMAT_CAP_NAMES_LEN);
 	struct ast_bridge *bridge;
 	struct ast_callid *callid;
 	char callid_buf[32];
@@ -2026,8 +2034,9 @@ static void cli_shutdown(void)
 /*! \brief initialize the _full_cmd string in * each of the builtins. */
 void ast_builtins_init(void)
 {
+	AST_VECTOR_INIT(&shutdown_commands, 0);
 	ast_cli_register_multiple(cli_cli, ARRAY_LEN(cli_cli));
-	ast_register_atexit(cli_shutdown);
+	ast_register_cleanup(cli_shutdown);
 }
 
 /*!
@@ -2204,6 +2213,13 @@ static int cli_is_registered(struct ast_cli_entry *e)
 	return 0;
 }
 
+static void remove_shutdown_command(struct ast_cli_entry *e)
+{
+	ast_rwlock_wrlock(&shutdown_commands_lock);
+	AST_VECTOR_REMOVE_ELEM_UNORDERED(&shutdown_commands, e, AST_VECTOR_ELEM_CLEANUP_NOOP);
+	ast_rwlock_unlock(&shutdown_commands_lock);
+}
+
 static int __ast_cli_unregister(struct ast_cli_entry *e, struct ast_cli_entry *ed)
 {
 	if (e->inuse) {
@@ -2212,6 +2228,7 @@ static int __ast_cli_unregister(struct ast_cli_entry *e, struct ast_cli_entry *e
 		AST_RWLIST_WRLOCK(&helpers);
 		AST_RWLIST_REMOVE(&helpers, e, list);
 		AST_RWLIST_UNLOCK(&helpers);
+		remove_shutdown_command(e);
 		ast_free(e->_full_cmd);
 		e->_full_cmd = NULL;
 		if (e->handler) {
@@ -2675,10 +2692,27 @@ char *ast_cli_generator(const char *text, const char *word, int state)
 	return __ast_cli_generator(text, word, state, 1);
 }
 
+static int allowed_on_shutdown(struct ast_cli_entry *e)
+{
+	int found = 0;
+	int i;
+
+	ast_rwlock_rdlock(&shutdown_commands_lock);
+	for (i = 0; i < AST_VECTOR_SIZE(&shutdown_commands); ++i) {
+		if (e == AST_VECTOR_GET(&shutdown_commands, i)) {
+			found = 1;
+			break;
+		}
+	}
+	ast_rwlock_unlock(&shutdown_commands_lock);
+
+	return found;
+}
+
 int ast_cli_command_full(int uid, int gid, int fd, const char *s)
 {
 	const char *args[AST_MAX_ARGS + 1];
-	struct ast_cli_entry *e;
+	struct ast_cli_entry *e = NULL;
 	int x;
 	char *duplicate = parse_args(s, &x, args + 1, AST_MAX_ARGS, NULL);
 	char tmp[AST_MAX_ARGS + 1];
@@ -2702,12 +2736,16 @@ int ast_cli_command_full(int uid, int gid, int fd, const char *s)
 		goto done;
 	}
 
+	if (ast_shutting_down() && !allowed_on_shutdown(e)) {
+		ast_cli(fd, "Command '%s' cannot be run during shutdown\n", s);
+		goto done;
+	}
+
 	ast_join(tmp, sizeof(tmp), args + 1);
 	/* Check if the user has rights to run this command. */
 	if (!cli_has_permissions(uid, gid, tmp)) {
 		ast_cli(fd, "You don't have permissions to run '%s' command\n", tmp);
-		ast_free(duplicate);
-		return 0;
+		goto done;
 	}
 
 	/*
@@ -2724,8 +2762,11 @@ int ast_cli_command_full(int uid, int gid, int fd, const char *s)
 		if (retval == CLI_FAILURE)
 			ast_cli(fd, "Command '%s' failed.\n", s);
 	}
-	ast_atomic_fetchadd_int(&e->inuse, -1);
+
 done:
+	if (e) {
+		ast_atomic_fetchadd_int(&e->inuse, -1);
+	}
 	ast_free(duplicate);
 	return 0;
 }
@@ -2745,4 +2786,15 @@ int ast_cli_command_multiple_full(int uid, int gid, int fd, size_t size, const c
 		}
 	}
 	return count;
+}
+
+int ast_cli_allow_at_shutdown(struct ast_cli_entry *e)
+{
+	int res;
+
+	ast_rwlock_wrlock(&shutdown_commands_lock);
+	res = AST_VECTOR_APPEND(&shutdown_commands, e);
+	ast_rwlock_unlock(&shutdown_commands_lock);
+
+	return res;
 }

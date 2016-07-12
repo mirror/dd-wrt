@@ -25,7 +25,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 428687 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "res_parking.h"
 #include "asterisk/utils.h"
@@ -236,8 +236,10 @@ static struct ast_channel *park_local_transfer(struct ast_channel *parker, const
 	/* Before we actually dial out let's inherit appropriate information. */
 	ast_channel_lock_both(parker, parkee);
 	ast_channel_req_accountcodes(parkee, parker, AST_CHANNEL_REQUESTOR_REPLACEMENT);
+	ast_channel_parkinglot_set(parkee, ast_channel_parkinglot(parker));
 	ast_connected_line_copy_from_caller(ast_channel_connected(parkee), ast_channel_caller(parker));
 	ast_channel_inherit_variables(parker, parkee);
+	ast_bridge_set_transfer_variables(parkee, ast_channel_name(parker), 0);
 	ast_channel_datastore_inherit(parker, parkee);
 	ast_channel_unlock(parker);
 
@@ -251,8 +253,6 @@ static struct ast_channel *park_local_transfer(struct ast_channel *parker, const
 		ast_hangup(parkee);
 		return NULL;
 	}
-
-	ast_bridge_set_transfer_variables(parkee_side_2, ast_channel_name(parker), 0);
 
 	ast_channel_unref(parkee_side_2);
 
@@ -474,20 +474,16 @@ static int parking_park_bridge_channel(struct ast_bridge_channel *bridge_channel
 static int parking_park_call(struct ast_bridge_channel *parker, char *exten, size_t length)
 {
 	RAII_VAR(struct parking_lot *, lot, NULL, ao2_cleanup);
-	const char *lot_name = NULL;
+	const char *lot_name;
 
 	ast_channel_lock(parker->chan);
-	lot_name = find_channel_parking_lot_name(parker->chan);
-	if (!ast_strlen_zero(lot_name)) {
-		lot_name = ast_strdupa(lot_name);
-	}
+	lot_name = ast_strdupa(find_channel_parking_lot_name(parker->chan));
 	ast_channel_unlock(parker->chan);
 
-	if (ast_strlen_zero(lot_name)) {
-		return -1;
-	}
-
 	lot = parking_lot_find_by_name(lot_name);
+	if (!lot) {
+		lot = parking_create_dynamic_lot(lot_name, parker->chan);
+	}
 	if (!lot) {
 		ast_log(AST_LOG_WARNING, "Cannot Park %s: lot %s unknown\n",
 			ast_channel_name(parker->chan), lot_name);
@@ -504,7 +500,8 @@ static int feature_park_call(struct ast_bridge_channel *bridge_channel, void *ho
 {
 	SCOPED_MODULE_USE(parking_get_module_info()->self);
 
-	return parking_park_call(bridge_channel, NULL, 0);
+	parking_park_call(bridge_channel, NULL, 0);
+	return 0;
 }
 
 /*!

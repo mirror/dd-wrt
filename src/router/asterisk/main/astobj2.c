@@ -27,7 +27,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 423418 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/_private.h"
 #include "asterisk/astobj2.h"
@@ -35,6 +35,9 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 423418 $")
 #include "astobj2_container_private.h"
 #include "asterisk/cli.h"
 #include "asterisk/paths.h"
+
+/* Use ast_log_safe in place of ast_log. */
+#define ast_log ast_log_safe
 
 static FILE *ref_log;
 
@@ -896,13 +899,7 @@ int astobj2_init(void)
 {
 #ifdef REF_DEBUG
 	char ref_filename[1024];
-#endif
 
-	if (container_init() != 0) {
-		return -1;
-	}
-
-#ifdef REF_DEBUG
 	snprintf(ref_filename, sizeof(ref_filename), "%s/refs", ast_config_AST_LOG_DIR);
 	ref_log = fopen(ref_filename, "w");
 	if (!ref_log) {
@@ -910,11 +907,16 @@ int astobj2_init(void)
 	}
 #endif
 
+	if (container_init() != 0) {
+		fclose(ref_log);
+		return -1;
+	}
+
 #if defined(AO2_DEBUG)
 	ast_cli_register_multiple(cli_astobj2, ARRAY_LEN(cli_astobj2));
 #endif	/* defined(AO2_DEBUG) */
 
-	ast_register_atexit(astobj2_cleanup);
+	ast_register_cleanup(astobj2_cleanup);
 
 	return 0;
 }

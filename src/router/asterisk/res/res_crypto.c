@@ -33,7 +33,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 429675 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/paths.h"	/* use ast_config_AST_KEY_DIR */
 #include <openssl/ssl.h>
@@ -652,13 +652,17 @@ static int load_module(void)
 	} else {
 		crypto_load(-1, -1);
 	}
+
+	/* This prevents dlclose from ever running, but allows CLI cleanup at shutdown. */
+	ast_module_shutdown_ref(ast_module_info->self);
 	return AST_MODULE_LOAD_SUCCESS;
 }
 
 static int unload_module(void)
 {
-	/* Can't unload this once we're loaded */
-	return -1;
+	ast_cli_unregister_multiple(cli_crypto, ARRAY_LEN(cli_crypto));
+
+	return 0;
 }
 
 /* needs usecount semantics defined */

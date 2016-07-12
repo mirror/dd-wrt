@@ -45,6 +45,13 @@ extern "C" {
 
 #define AST_CALLID_BUFFER_LENGTH 13
 
+enum ast_logger_results {
+	AST_LOGGER_SUCCESS = 0, /*!< Log channel was created or deleted successfully*/
+	AST_LOGGER_FAILURE = 1, /*!< Log channel already exists for create or doesn't exist for deletion of log channel */
+	AST_LOGGER_DECLINE = -1, /*!< Log channel request was not accepted */
+	AST_LOGGER_ALLOC_ERROR = -2 /*!< filename allocation error */
+};
+
 /*! \brief Used for sending a log message
 	This is the standard logger function.  Probably the only way you will invoke it would be something like this:
 	ast_log(AST_LOG_WHATEVER, "Problem with the %s Captain.  We should get some more.  Will %d be enough?\n", "flux capacitor", 10);
@@ -60,6 +67,17 @@ extern "C" {
  */
 
 void ast_log(int level, const char *file, int line, const char *function, const char *fmt, ...)
+	__attribute__((format(printf, 5, 6)));
+
+/*!
+ * \brief Used for sending a log message with protection against recursion.
+ *
+ * \note This function should be used by all error messages that might be directly
+ * or indirectly caused by logging.
+ *
+ * \see ast_log for documentation on the parameters.
+ */
+void ast_log_safe(int level, const char *file, int line, const char *function, const char *fmt, ...)
 	__attribute__((format(printf, 5, 6)));
 
 /* XXX needs documentation */
@@ -81,6 +99,36 @@ void ast_log_callid(int level, const char *file, int line, const char *function,
 	__attribute__((format(printf, 6, 7)));
 
 /*!
+ * \brief Retrieve the existing log channels
+ * \param logentry A callback to an updater function
+ * \param data Data passed into the callback for manipulation
+ *
+ * For each of the logging channels, logentry will be executed with the
+ * channel file name, log type, status of the log, and configuration levels.
+ *
+ * \retval 0 on success
+ * \retval 1 on failure
+ * \retval -2 on allocation error
+ */
+int ast_logger_get_channels(int (*logentry)(const char *channel, const char *type,
+	const char *status, const char *configuration, void *data), void *data);
+
+/*!
+ * \brief Create a log channel
+ *
+ * \param log_channel Log channel to create
+ * \param components Logging config levels to add to the log channel
+ */
+int ast_logger_create_channel(const char *log_channel, const char *components);
+
+/*!
+ * \brief Delete the specified log channel
+ *
+ * \param log_channel The log channel to delete
+ */
+int ast_logger_remove_channel(const char *log_channel);
+
+/*!
  * \brief Log a backtrace of the current thread's execution stack to the Asterisk log
  */
 void ast_log_backtrace(void);
@@ -90,6 +138,13 @@ int logger_reload(void);
 
 /*! \brief Reload logger while rotating log files */
 int ast_logger_rotate(void);
+
+/*!
+ * \brief Rotate the specified log channel.
+ *
+ * \param log_channel The log channel to rotate
+ */
+int ast_logger_rotate_channel(const char *log_channel);
 
 void __attribute__((format(printf, 5, 6))) ast_queue_log(const char *queuename, const char *callid, const char *agent, const char *event, const char *fmt, ...);
 
@@ -392,7 +447,7 @@ void ast_callid_strnprint(char *buffer, size_t buffer_size, struct ast_callid *c
 
 #define DEBUG_ATLEAST(level) \
 	(option_debug >= (level) \
-		|| (ast_opt_dbg_module && ast_debug_get_by_module(AST_MODULE) >= (level)))
+		|| (ast_opt_dbg_module && (int)ast_debug_get_by_module(AST_MODULE) >= (level)))
 
 /*!
  * \brief Log a DEBUG message

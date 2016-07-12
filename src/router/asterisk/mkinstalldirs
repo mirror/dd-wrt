@@ -4,7 +4,7 @@
 # Created: 1993-05-16
 # Public domain
 
-# $Id: mkinstalldirs 25628 2006-05-08 16:02:42Z kpfleming $
+# $Id$
 
 errstatus=0
 

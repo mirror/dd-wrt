@@ -30,10 +30,11 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419592 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/app.h"
 #include "asterisk/module.h"
+#include "asterisk/pbx.h"
 #include "asterisk/stasis.h"
 #include "asterisk/stasis_app_impl.h"
 
@@ -50,9 +51,26 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 419592 $")
 			</parameter>
 		</syntax>
 		<description>
-			<para>
-				Invoke a Stasis application.
-			</para>
+			<para>Invoke a Stasis application.</para>
+			<para>This application will set the following channel variable upon
+			completion:</para>
+			<variablelist>
+				<variable name="STASISSTATUS">
+					<para>This indicates the status of the execution of the
+					Stasis application.</para>
+					<value name="SUCCESS">
+						The channel has exited Stasis without any failures in
+						Stasis.
+					</value>
+					<value name="FAILED">
+						A failure occurred when executing the Stasis
+						The app registry is not instantiated; The app
+						application. Some (not all) possible reasons for this:
+						requested is not registered; The app requested is not
+						active; Stasis couldn't send a start message.
+					</value>
+				</variable>
+			</variablelist>
 		</description>
 	</application>
  ***/
@@ -67,6 +85,7 @@ static const char *stasis = "Stasis";
 static int app_exec(struct ast_channel *chan, const char *data)
 {
 	char *parse = NULL;
+	int ret = -1;
 
 	AST_DECLARE_APP_ARGS(args,
 		AST_APP_ARG(app_name);
@@ -76,17 +95,34 @@ static int app_exec(struct ast_channel *chan, const char *data)
 	ast_assert(chan != NULL);
 	ast_assert(data != NULL);
 
+	pbx_builtin_setvar_helper(chan, "STASISSTATUS", "");
+
 	/* parse the arguments */
 	parse = ast_strdupa(data);
 	AST_STANDARD_APP_ARGS(args, parse);
 
 	if (args.argc < 1) {
 		ast_log(LOG_WARNING, "Stasis app_name argument missing\n");
-		return -1;
+	} else {
+		ret = stasis_app_exec(chan,
+		                      args.app_name,
+		                      args.argc - 1,
+		                      args.app_argv);
 	}
 
-	return stasis_app_exec(
-		chan, args.app_name, args.argc - 1, args.app_argv);
+	if (ret) {
+		/* set ret to 0 so pbx_core doesnt hangup the channel */
+		if (!ast_check_hangup(chan)) {
+			ret = 0;
+		} else {
+			ret = -1;
+		}
+		pbx_builtin_setvar_helper(chan, "STASISSTATUS", "FAILED");
+	} else {
+		pbx_builtin_setvar_helper(chan, "STASISSTATUS", "SUCCESS");
+	}
+
+	return ret;
 }
 
 static int load_module(void)

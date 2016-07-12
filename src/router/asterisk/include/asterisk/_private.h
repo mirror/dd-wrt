@@ -17,6 +17,12 @@
 
 int load_modules(unsigned int);		/*!< Provided by loader.c */
 int load_pbx(void);			/*!< Provided by pbx.c */
+int load_pbx_builtins(void);	/*!< Provided by pbx_builtins.c */
+int load_pbx_functions_cli(void);	/*!< Provided by pbx_functions.c */
+int load_pbx_variables(void);	/*!< Provided by pbx_variables.c */
+int load_pbx_switch(void);		/*!< Provided by pbx_switch.c */
+int load_pbx_app(void);		/*!< Provided by pbx_app.c */
+int load_pbx_hangup_handler(void);	/*!< Provided by pbx_hangup_handler.c */
 int init_logger(void);			/*!< Provided by logger.c */
 void close_logger(void);		/*!< Provided by logger.c */
 void logger_queue_start(void);		/*!< Provided by logger.c */
@@ -32,6 +38,7 @@ int dnsmgr_reload(void);		/*!< Provided by dnsmgr.c */
 void threadstorage_init(void);		/*!< Provided by threadstorage.c */
 int ast_device_state_engine_init(void);	/*!< Provided by devicestate.c */
 int astobj2_init(void);			/*!< Provided by astobj2.c */
+int ast_named_locks_init(void);		/*!< Provided by named_locks.c */
 int ast_file_init(void);		/*!< Provided by file.c */
 int ast_features_init(void);            /*!< Provided by features.c */
 void ast_autoservice_init(void);	/*!< Provided by autoservice.c */
@@ -46,6 +53,7 @@ void ast_stun_init(void);               /*!< Provided by stun.c */
 int ast_cel_engine_init(void);		/*!< Provided by cel.c */
 int ast_cel_engine_reload(void);	/*!< Provided by cel.c */
 int ast_ssl_init(void);                 /*!< Provided by ssl.c */
+int ast_pj_init(void);                 /*!< Provided by libasteriskpj.c */
 int ast_test_init(void);            /*!< Provided by test.c */
 int ast_msg_init(void);             /*!< Provided by message.c */
 void ast_msg_shutdown(void);        /*!< Provided by message.c */

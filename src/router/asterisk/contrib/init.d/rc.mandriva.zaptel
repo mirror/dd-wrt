@@ -9,7 +9,7 @@
 #
 # hide: true
 
-# $Id: rc.mandriva.zaptel 135485 2008-08-04 17:12:15Z tilghman $
+# $Id$
 
 # Source function library.
 . /etc/rc.d/init.d/functions

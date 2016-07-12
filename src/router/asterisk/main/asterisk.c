@@ -149,7 +149,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 433247 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/_private.h"
 
@@ -372,9 +372,14 @@ struct console consoles[AST_MAX_CONNECTS];
 
 char ast_defaultlanguage[MAX_LANGUAGE] = DEFAULT_LANGUAGE;
 
-static int ast_el_add_history(char *);
-static int ast_el_read_history(char *);
-static int ast_el_write_history(char *);
+static int ast_el_add_history(const char *);
+static int ast_el_read_history(const char *);
+static int ast_el_write_history(const char *);
+
+static void ast_el_read_default_histfile(void);
+static void ast_el_write_default_histfile(void);
+
+static void asterisk_daemon(int isroot, const char *runuser, const char *rungroup);
 
 struct _cfg_paths {
 	char config_dir[PATH_MAX];
@@ -475,84 +480,79 @@ static struct {
 } sig_flags;
 
 #if !defined(LOW_MEMORY)
-struct file_version {
-	AST_RWLIST_ENTRY(file_version) list;
+struct registered_file {
+	AST_RWLIST_ENTRY(registered_file) list;
 	const char *file;
-	char *version;
 };
 
-static AST_RWLIST_HEAD_STATIC(file_versions, file_version);
+static AST_RWLIST_HEAD_STATIC(registered_files, registered_file);
 
 void ast_register_file_version(const char *file, const char *version)
 {
-	struct file_version *new;
-	char *work;
-	size_t version_length;
+	struct registered_file *reg;
 
-	work = ast_strdupa(version);
-	work = ast_strip(ast_strip_quoted(work, "$", "$"));
-	version_length = strlen(work) + 1;
-
-	if (!(new = ast_calloc(1, sizeof(*new) + version_length)))
+	reg = ast_calloc(1, sizeof(*reg));
+	if (!reg) {
 		return;
+	}
 
-	new->file = file;
-	new->version = (char *) new + sizeof(*new);
-	memcpy(new->version, work, version_length);
-	AST_RWLIST_WRLOCK(&file_versions);
-	AST_RWLIST_INSERT_HEAD(&file_versions, new, list);
-	AST_RWLIST_UNLOCK(&file_versions);
+	reg->file = file;
+	AST_RWLIST_WRLOCK(&registered_files);
+	AST_RWLIST_INSERT_HEAD(&registered_files, reg, list);
+	AST_RWLIST_UNLOCK(&registered_files);
 }
 
 void ast_unregister_file_version(const char *file)
 {
-	struct file_version *find;
+	struct registered_file *find;
 
-	AST_RWLIST_WRLOCK(&file_versions);
-	AST_RWLIST_TRAVERSE_SAFE_BEGIN(&file_versions, find, list) {
+	AST_RWLIST_WRLOCK(&registered_files);
+	AST_RWLIST_TRAVERSE_SAFE_BEGIN(&registered_files, find, list) {
 		if (!strcasecmp(find->file, file)) {
 			AST_RWLIST_REMOVE_CURRENT(list);
 			break;
 		}
 	}
 	AST_RWLIST_TRAVERSE_SAFE_END;
-	AST_RWLIST_UNLOCK(&file_versions);
+	AST_RWLIST_UNLOCK(&registered_files);
 
-	if (find)
+	if (find) {
 		ast_free(find);
+	}
 }
 
 char *ast_complete_source_filename(const char *partial, int n)
 {
-	struct file_version *find;
+	struct registered_file *find;
 	size_t len = strlen(partial);
 	int count = 0;
 	char *res = NULL;
 
-	AST_RWLIST_RDLOCK(&file_versions);
-	AST_RWLIST_TRAVERSE(&file_versions, find, list) {
+	AST_RWLIST_RDLOCK(&registered_files);
+	AST_RWLIST_TRAVERSE(&registered_files, find, list) {
 		if (!strncasecmp(find->file, partial, len) && ++count > n) {
 			res = ast_strdup(find->file);
 			break;
 		}
 	}
-	AST_RWLIST_UNLOCK(&file_versions);
+	AST_RWLIST_UNLOCK(&registered_files);
 	return res;
 }
 
-/*! \brief Find version for given module name */
 const char *ast_file_version_find(const char *file)
 {
-	struct file_version *iterator;
+	struct registered_file *iterator;
 
-	AST_RWLIST_WRLOCK(&file_versions);
-	AST_RWLIST_TRAVERSE(&file_versions, iterator, list) {
-		if (!strcasecmp(iterator->file, file))
+	AST_RWLIST_RDLOCK(&registered_files);
+	AST_RWLIST_TRAVERSE(&registered_files, iterator, list) {
+		if (!strcasecmp(iterator->file, file)) {
 			break;
+		}
 	}
-	AST_RWLIST_UNLOCK(&file_versions);
-	if (iterator)
-		return iterator->version;
+	AST_RWLIST_UNLOCK(&registered_files);
+	if (iterator) {
+		return ast_get_version();
+	}
 	return NULL;
 }
 
@@ -622,7 +622,7 @@ static char *handle_show_settings(struct ast_cli_entry *e, int cmd, struct ast_c
 	ast_cli(a->fd, "\nPBX Core settings\n");
 	ast_cli(a->fd, "-----------------\n");
 	ast_cli(a->fd, "  Version:                     %s\n", ast_get_version());
-	ast_cli(a->fd, "  Build Options:               %s\n", S_OR(AST_BUILDOPTS, "(none)"));
+	ast_cli(a->fd, "  Build Options:               %s\n", S_OR(ast_get_build_opts(), "(none)"));
 	if (ast_option_maxcalls)
 		ast_cli(a->fd, "  Maximum calls:               %d (Current %d)\n", ast_option_maxcalls, ast_active_channels());
 	else
@@ -1035,35 +1035,35 @@ static char *handle_clear_profile(struct ast_cli_entry *e, int cmd, struct ast_c
 static char *handle_show_version_files(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a)
 {
 #define FORMAT "%-25.25s %-40.40s\n"
-	struct file_version *iterator;
+	struct registered_file *iterator;
 	regex_t regexbuf;
 	int havepattern = 0;
 	int havename = 0;
 	int count_files = 0;
 	char *ret = NULL;
 	int matchlen, which = 0;
-	struct file_version *find;
+	struct registered_file *find;
 
 	switch (cmd) {
 	case CLI_INIT:
 		e->command = "core show file version [like]";
 		e->usage =
 			"Usage: core show file version [like <pattern>]\n"
-			"       Lists the revision numbers of the files used to build this copy of Asterisk.\n"
+			"       Lists the files along with the Asterisk version.\n"
 			"       Optional regular expression pattern is used to filter the file list.\n";
 		return NULL;
 	case CLI_GENERATE:
 		matchlen = strlen(a->word);
 		if (a->pos != 3)
 			return NULL;
-		AST_RWLIST_RDLOCK(&file_versions);
-		AST_RWLIST_TRAVERSE(&file_versions, find, list) {
+		AST_RWLIST_RDLOCK(&registered_files);
+		AST_RWLIST_TRAVERSE(&registered_files, find, list) {
 			if (!strncasecmp(a->word, find->file, matchlen) && ++which > a->n) {
 				ret = ast_strdup(find->file);
 				break;
 			}
 		}
-		AST_RWLIST_UNLOCK(&file_versions);
+		AST_RWLIST_UNLOCK(&registered_files);
 		return ret;
 	}
 
@@ -1088,20 +1088,20 @@ static char *handle_show_version_files(struct ast_cli_entry *e, int cmd, struct 
 
 	ast_cli(a->fd, FORMAT, "File", "Revision");
 	ast_cli(a->fd, FORMAT, "----", "--------");
-	AST_RWLIST_RDLOCK(&file_versions);
-	AST_RWLIST_TRAVERSE(&file_versions, iterator, list) {
+	AST_RWLIST_RDLOCK(&registered_files);
+	AST_RWLIST_TRAVERSE(&registered_files, iterator, list) {
 		if (havename && strcasecmp(iterator->file, a->argv[4]))
 			continue;
 
 		if (havepattern && regexec(&regexbuf, iterator->file, 0, NULL, 0))
 			continue;
 
-		ast_cli(a->fd, FORMAT, iterator->file, iterator->version);
+		ast_cli(a->fd, FORMAT, iterator->file, ast_get_version());
 		count_files++;
 		if (havename)
 			break;
 	}
-	AST_RWLIST_UNLOCK(&file_versions);
+	AST_RWLIST_UNLOCK(&registered_files);
 	if (!havename) {
 		ast_cli(a->fd, "%d files listed.\n", count_files);
 	}
@@ -1608,15 +1608,14 @@ static void *listener(void *unused)
 			if (errno != EINTR)
 				ast_log(LOG_WARNING, "Accept returned %d: %s\n", s, strerror(errno));
 		} else {
-#if !defined(SO_PASSCRED)
-			{
-#else
+#if defined(SO_PASSCRED)
 			int sckopt = 1;
 			/* turn on socket credentials passing. */
 			if (setsockopt(s, SOL_SOCKET, SO_PASSCRED, &sckopt, sizeof(sckopt)) < 0) {
 				ast_log(LOG_WARNING, "Unable to turn on socket credentials passing\n");
-			} else {
+			} else
 #endif
+			{
 				for (x = 0; x < AST_MAX_CONNECTS; x++) {
 					if (consoles[x].fd >= 0) {
 						continue;
@@ -2069,13 +2068,7 @@ static void really_quit(int num, shutdown_nice_t niceness, int restart)
 	}
 
 	if (ast_opt_console || (ast_opt_remote && !ast_opt_exec)) {
-		char filename[80] = "";
-		if (getenv("HOME")) {
-			snprintf(filename, sizeof(filename), "%s/.asterisk_history", getenv("HOME"));
-		}
-		if (!ast_strlen_zero(filename)) {
-			ast_el_write_history(filename);
-		}
+		ast_el_write_default_histfile();
 		if (consolethread == AST_PTHREADT_NULL || consolethread == pthread_self()) {
 			/* Only end if we are the consolethread, otherwise there's a race with that thread. */
 			if (el != NULL) {
@@ -2306,7 +2299,7 @@ static void console_verboser(const char *s)
 	}
 }
 
-static int ast_all_zeros(char *s)
+static int ast_all_zeros(const char *s)
 {
 	while (*s) {
 		if (*s > 32)
@@ -2317,7 +2310,7 @@ static int ast_all_zeros(char *s)
 }
 
 /* This is the main console CLI command handler.  Run by the main() thread. */
-static void consolehandler(char *s)
+static void consolehandler(const char *s)
 {
 	printf("%s", term_end());
 	fflush(stdout);
@@ -2335,7 +2328,7 @@ static void consolehandler(char *s)
 		ast_cli_command(STDOUT_FILENO, s);
 }
 
-static int remoteconsolehandler(char *s)
+static int remoteconsolehandler(const char *s)
 {
 	int ret = 0;
 
@@ -2448,6 +2441,7 @@ static char *handle_stop_now(struct ast_cli_entry *e, int cmd, struct ast_cli_ar
 		e->usage =
 			"Usage: core stop now\n"
 			"       Shuts down a running Asterisk immediately, hanging up all active calls .\n";
+		ast_cli_allow_at_shutdown(e);
 		return NULL;
 	case CLI_GENERATE:
 		return NULL;
@@ -2468,6 +2462,7 @@ static char *handle_stop_gracefully(struct ast_cli_entry *e, int cmd, struct ast
 			"Usage: core stop gracefully\n"
 			"       Causes Asterisk to not accept new calls, and exit when all\n"
 			"       active calls have terminated normally.\n";
+		ast_cli_allow_at_shutdown(e);
 		return NULL;
 	case CLI_GENERATE:
 		return NULL;
@@ -2487,6 +2482,7 @@ static char *handle_stop_when_convenient(struct ast_cli_entry *e, int cmd, struc
 		e->usage =
 			"Usage: core stop when convenient\n"
 			"       Causes Asterisk to perform a shutdown when all active calls have ended.\n";
+		ast_cli_allow_at_shutdown(e);
 		return NULL;
 	case CLI_GENERATE:
 		return NULL;
@@ -2508,6 +2504,7 @@ static char *handle_restart_now(struct ast_cli_entry *e, int cmd, struct ast_cli
 			"Usage: core restart now\n"
 			"       Causes Asterisk to hangup all calls and exec() itself performing a cold\n"
 			"       restart.\n";
+		ast_cli_allow_at_shutdown(e);
 		return NULL;
 	case CLI_GENERATE:
 		return NULL;
@@ -2528,6 +2525,7 @@ static char *handle_restart_gracefully(struct ast_cli_entry *e, int cmd, struct 
 			"Usage: core restart gracefully\n"
 			"       Causes Asterisk to stop accepting new calls and exec() itself performing a cold\n"
 			"       restart when all active calls have ended.\n";
+		ast_cli_allow_at_shutdown(e);
 		return NULL;
 	case CLI_GENERATE:
 		return NULL;
@@ -2547,6 +2545,7 @@ static char *handle_restart_when_convenient(struct ast_cli_entry *e, int cmd, st
 		e->usage =
 			"Usage: core restart when convenient\n"
 			"       Causes Asterisk to perform a cold restart when all active calls have ended.\n";
+		ast_cli_allow_at_shutdown(e);
 		return NULL;
 	case CLI_GENERATE:
 		return NULL;
@@ -2568,6 +2567,7 @@ static char *handle_abort_shutdown(struct ast_cli_entry *e, int cmd, struct ast_
 			"Usage: core abort shutdown\n"
 			"       Causes Asterisk to abort an executing shutdown or restart, and resume normal\n"
 			"       call operations.\n";
+		ast_cli_allow_at_shutdown(e);
 		return NULL;
 	case CLI_GENERATE:
 		return NULL;
@@ -2814,11 +2814,12 @@ static int ast_el_read_char(EditLine *editline, char *cp)
 
 			console_print(buf, 0);
 
-			if ((res < EL_BUF_SIZE - 1) && ((buf[res-1] == '\n') || (buf[res-2] == '\n'))) {
+			if ((res < EL_BUF_SIZE - 1) && ((buf[res-1] == '\n') || (res >= 2 && buf[res-2] == '\n'))) {
 				*cp = CC_REFRESH;
 				return(1);
-			} else
+			} else {
 				lastpos = 1;
+			}
 		}
 	}
 
@@ -3252,7 +3253,7 @@ static int ast_el_initialize(void)
 
 #define MAX_HISTORY_COMMAND_LENGTH 256
 
-static int ast_el_add_history(char *buf)
+static int ast_el_add_history(const char *buf)
 {
 	HistEvent ev;
 	char *stripped_buf;
@@ -3274,7 +3275,7 @@ static int ast_el_add_history(char *buf)
 	return history(el_hist, &ev, H_ENTER, stripped_buf);
 }
 
-static int ast_el_write_history(char *filename)
+static int ast_el_write_history(const char *filename)
 {
 	HistEvent ev;
 
@@ -3284,7 +3285,7 @@ static int ast_el_write_history(char *filename)
 	return (history(el_hist, &ev, H_SAVE, filename));
 }
 
-static int ast_el_read_history(char *filename)
+static int ast_el_read_history(const char *filename)
 {
 	HistEvent ev;
 
@@ -3295,11 +3296,32 @@ static int ast_el_read_history(char *filename)
 	return history(el_hist, &ev, H_LOAD, filename);
 }
 
+static void ast_el_read_default_histfile(void)
+{
+	char histfile[80] = "";
+	const char *home = getenv("HOME");
+
+	if (!ast_strlen_zero(home)) {
+		snprintf(histfile, sizeof(histfile), "%s/.asterisk_history", home);
+		ast_el_read_history(histfile);
+	}
+}
+
+static void ast_el_write_default_histfile(void)
+{
+	char histfile[80] = "";
+	const char *home = getenv("HOME");
+
+	if (!ast_strlen_zero(home)) {
+		snprintf(histfile, sizeof(histfile), "%s/.asterisk_history", home);
+		ast_el_write_history(histfile);
+	}
+}
+
 static void ast_remotecontrol(char *data)
 {
 	char buf[256] = "";
 	int res;
-	char filename[80] = "";
 	char *hostname;
 	char *cpid;
 	char *version;
@@ -3308,6 +3330,10 @@ static void ast_remotecontrol(char *data)
 
 	char *ebuf;
 	int num = 0;
+
+	ast_term_init();
+	printf("%s", term_end());
+	fflush(stdout);
 
 	memset(&sig_flags, 0, sizeof(sig_flags));
 	signal(SIGINT, __remote_quit_handler);
@@ -3407,15 +3433,11 @@ static void ast_remotecontrol(char *data)
 
 	ast_verbose("Connected to Asterisk %s currently running on %s (pid = %d)\n", version, hostname, pid);
 	remotehostname = hostname;
-	if (getenv("HOME"))
-		snprintf(filename, sizeof(filename), "%s/.asterisk_history", getenv("HOME"));
 	if (el_hist == NULL || el == NULL)
 		ast_el_initialize();
+	ast_el_read_default_histfile();
 
 	el_set(el, EL_GETCFN, ast_el_read_char);
-
-	if (!ast_strlen_zero(filename))
-		ast_el_read_history(filename);
 
 	for (;;) {
 		ebuf = (char *)el_gets(el, &num);
@@ -3598,7 +3620,7 @@ static void ast_readconfig(void)
 		} else if (!strcasecmp(v->name, "debug")) {
 			option_debug = 0;
 			if (sscanf(v->value, "%30d", &option_debug) != 1) {
-				option_debug = ast_true(v->value);
+				option_debug = ast_true(v->value) ? 1 : 0;
 			}
 #if HAVE_WORKING_FORK
 		/* Disable forking (-f at startup) */
@@ -3875,18 +3897,11 @@ static void main_atexit(void)
 int main(int argc, char *argv[])
 {
 	int c;
-	char filename[80] = "";
-	char hostname[MAXHOSTNAMELEN] = "";
 	char * xarg = NULL;
 	int x;
-	FILE *f;
-	sigset_t sigs;
-	int num;
 	int isroot = 1, rundir_exists = 0;
-	char *buf;
 	const char *runuser = NULL, *rungroup = NULL;
 	char *remotesock = NULL;
-	int moduleresult;         /*!< Result from the module load subsystem */
 	struct rlimit l;
 
 	/* Remember original args for restart */
@@ -3905,12 +3920,8 @@ int main(int argc, char *argv[])
 	if (argv[0] && (strstr(argv[0], "rasterisk")) != NULL) {
 		ast_set_flag(&ast_options, AST_OPT_FLAG_NO_FORK | AST_OPT_FLAG_REMOTE);
 	}
-	if (gethostname(hostname, sizeof(hostname)-1))
-		ast_copy_string(hostname, "<Unknown>", sizeof(hostname));
 	ast_mainpid = getpid();
 
-	if (getenv("HOME"))
-		snprintf(filename, sizeof(filename), "%s/.asterisk_history", getenv("HOME"));
 	/*! \brief Check for options
 	 *
 	 * \todo Document these options
@@ -4254,6 +4265,10 @@ int main(int argc, char *argv[])
 				quit_handler(0, SHUTDOWN_FAST, 0);
 				exit(0);
 			}
+			ast_term_init();
+			printf("%s", term_end());
+			fflush(stdout);
+
 			print_intro_message(runuser, rungroup);
 			printf("%s", term_quit());
 			ast_remotecontrol(NULL);
@@ -4269,6 +4284,19 @@ int main(int argc, char *argv[])
 		printf("%s", term_quit());
 		exit(1);
 	}
+
+	/* Not a remote console? Start the daemon. */
+	asterisk_daemon(isroot, runuser, rungroup);
+	return 0;
+}
+
+static void asterisk_daemon(int isroot, const char *runuser, const char *rungroup)
+{
+	FILE *f;
+	sigset_t sigs;
+	int num;
+	char *buf;
+	int moduleresult;         /*!< Result from the module load subsystem */
 
 	/* This needs to remain as high up in the initial start up as possible.
 	 * daemon causes a fork to occur, which has all sorts of unintended
@@ -4358,14 +4386,20 @@ int main(int argc, char *argv[])
 	register_config_cli();
 	read_config_maps();
 
-	astobj2_init();
+	if (astobj2_init()) {
+		printf("Failed: astobj2_init\n%s", term_quit());
+		exit(1);
+	}
+
+	if (ast_named_locks_init()) {
+		printf("Failed: ast_named_locks_init\n%s", term_quit());
+		exit(1);
+	}
 
 	if (ast_opt_console) {
 		if (el_hist == NULL || el == NULL)
 			ast_el_initialize();
-
-		if (!ast_strlen_zero(filename))
-			ast_el_read_history(filename);
+		ast_el_read_default_histfile();
 	}
 
 	ast_json_init();
@@ -4508,6 +4542,11 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
+	if (ast_pj_init()) {
+		printf("Failed: ast_pj_init\n%s", term_quit());
+		exit(1);
+	}
+
 	if (app_init()) {
 		printf("App core initialization failed.\n%s", term_quit());
 		exit(1);
@@ -4530,7 +4569,7 @@ int main(int argc, char *argv[])
 
 	/* initialize the data retrieval API */
 	if (ast_data_init()) {
-		printf ("Failed: ast_data_init\n%s", term_quit());
+		printf("Failed: ast_data_init\n%s", term_quit());
 		exit(1);
 	}
 
@@ -4621,6 +4660,36 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
+	if (load_pbx_builtins()) {
+		printf("Failed: load_pbx_builtins\n%s", term_quit());
+		exit(1);
+	}
+
+	if (load_pbx_functions_cli()) {
+		printf("Failed: load_pbx_functions_cli\n%s", term_quit());
+		exit(1);
+	}
+
+	if (load_pbx_variables()) {
+		printf("Failed: load_pbx_variables\n%s", term_quit());
+		exit(1);
+	}
+
+	if (load_pbx_switch()) {
+		printf("Failed: load_pbx_switch\n%s", term_quit());
+		exit(1);
+	}
+
+	if (load_pbx_app()) {
+		printf("Failed: load_pbx_app\n%s", term_quit());
+		exit(1);
+	}
+
+	if (load_pbx_hangup_handler()) {
+		printf("Failed: load_pbx_hangup_handler\n%s", term_quit());
+		exit(1);
+	}
+
 	if (ast_local_init()) {
 		printf("Failed: ast_local_init\n%s", term_quit());
 		exit(1);
@@ -4671,10 +4740,10 @@ int main(int argc, char *argv[])
 		sig_alert_pipe[0] = sig_alert_pipe[1] = -1;
 	}
 
+	ast_process_pending_reloads();
+
 	ast_set_flag(&ast_options, AST_OPT_FLAG_FULLY_BOOTED);
 	publish_fully_booted();
-
-	ast_process_pending_reloads();
 
 	pthread_sigmask(SIG_UNBLOCK, &sigs, NULL);
 
@@ -4685,7 +4754,7 @@ int main(int argc, char *argv[])
 	ast_lastreloadtime = ast_startuptime = ast_tvnow();
 	ast_cli_register_multiple(cli_asterisk_shutdown, ARRAY_LEN(cli_asterisk_shutdown));
 	ast_cli_register_multiple(cli_asterisk, ARRAY_LEN(cli_asterisk));
-	ast_register_atexit(main_atexit);
+	ast_register_cleanup(main_atexit);
 
 	run_startup_commands();
 
@@ -4697,6 +4766,11 @@ int main(int argc, char *argv[])
 		/* Console stuff now... */
 		/* Register our quit function */
 		char title[256];
+		char hostname[MAXHOSTNAMELEN] = "";
+
+		if (gethostname(hostname, sizeof(hostname) - 1)) {
+			ast_copy_string(hostname, "<Unknown>", sizeof(hostname));
+		}
 
 		ast_pthread_create_detached(&mon_sig_flags, NULL, monitor_sig_flags, NULL);
 
@@ -4714,30 +4788,17 @@ int main(int argc, char *argv[])
 			buf = (char *) el_gets(el, &num);
 
 			if (!buf && write(1, "", 1) < 0)
-				goto lostterm;
+				return; /* quit */
 
 			if (buf) {
 				if (buf[strlen(buf)-1] == '\n')
 					buf[strlen(buf)-1] = '\0';
 
-				consolehandler((char *)buf);
-			} else if (ast_opt_remote && (write(STDOUT_FILENO, "\nUse EXIT or QUIT to exit the asterisk console\n",
-				   strlen("\nUse EXIT or QUIT to exit the asterisk console\n")) < 0)) {
-				/* Whoa, stdout disappeared from under us... Make /dev/null's */
-				int fd;
-				fd = open("/dev/null", O_RDWR);
-				if (fd > -1) {
-					dup2(fd, STDOUT_FILENO);
-					dup2(fd, STDIN_FILENO);
-				} else
-					ast_log(LOG_WARNING, "Failed to open /dev/null to recover from dead console. Bad things will happen!\n");
-				break;
+				consolehandler(buf);
 			}
 		}
 	}
 
+	/* Stall until a quit signal is given */
 	monitor_sig_flags(NULL);
-
-lostterm:
-	return 0;
 }

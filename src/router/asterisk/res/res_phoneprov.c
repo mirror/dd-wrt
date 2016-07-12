@@ -52,7 +52,7 @@
 #ifdef SOLARIS
 #include <sys/sockio.h>
 #endif
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 426176 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/channel.h"
 #include "asterisk/file.h"
@@ -1193,8 +1193,7 @@ static struct ast_http_uri phoneprovuri = {
 
 static struct varshead *get_defaults(void)
 {
-	struct ast_config *phoneprov_cfg;
-	struct ast_config *cfg;
+	struct ast_config *phoneprov_cfg, *cfg = CONFIG_STATUS_FILEINVALID;
 	const char *value;
 	struct ast_variable *v;
 	struct ast_var_t *var;
@@ -1233,10 +1232,12 @@ static struct varshead *get_defaults(void)
 	if (!value) {
 		if ((cfg = ast_config_load("sip.conf", config_flags)) && cfg != CONFIG_STATUS_FILEINVALID) {
 			value = ast_variable_retrieve(cfg, "general", "bindport");
-			ast_config_destroy(cfg);
 		}
 	}
 	var = ast_var_assign(variable_lookup[AST_PHONEPROV_STD_SERVER_PORT], S_OR(value, "5060"));
+	if(cfg && cfg != CONFIG_STATUS_FILEINVALID) {
+		ast_config_destroy(cfg);
+	}
 	AST_VAR_LIST_INSERT_TAIL(defaults, var);
 
 	value = ast_variable_retrieve(phoneprov_cfg, "general", pp_general_lookup[AST_PHONEPROV_STD_PROFILE]);
@@ -1288,6 +1289,7 @@ static int load_users(void)
 	if (!(cfg = ast_config_load("users.conf", config_flags))
 		|| cfg == CONFIG_STATUS_FILEINVALID) {
 		ast_log(LOG_WARNING, "Unable to load users.conf\n");
+		ast_var_list_destroy(defaults);
 		return -1;
 	}
 
@@ -1337,6 +1339,7 @@ static int load_users(void)
 		}
 	}
 	ast_config_destroy(cfg);
+	ast_var_list_destroy(defaults);
 	return 0;
 }
 
@@ -1476,7 +1479,6 @@ static int reload(void)
 	ao2_lock(providers);
 	i = ao2_iterator_init(providers, 0);
 	for(; (provider = ao2_iterator_next(&i)); ao2_ref(provider, -1)) {
-		ast_log(LOG_VERBOSE, "Reloading provider '%s' users.\n", provider->provider_name);
 		if (provider->load_users()) {
 			ast_log(LOG_ERROR, "Unable to load provider '%s' users. Reload aborted.\n", provider->provider_name);
 			continue;
@@ -1553,7 +1555,6 @@ int ast_phoneprov_provider_register(char *provider_name,
 		return -1;
 	}
 
-	ast_log(LOG_VERBOSE, "Registered phoneprov provider '%s'.\n", provider_name);
 	return 0;
 }
 
@@ -1581,12 +1582,20 @@ static int extension_delete_cb(void *obj, void *arg, void *data, int flags)
 
 void ast_phoneprov_delete_extension(char *provider_name, char *macaddress)
 {
+	if (!users) {
+		return;
+	}
+
 	ao2_callback_data(users, OBJ_UNLINK | OBJ_NODATA | OBJ_MULTIPLE | OBJ_SEARCH_KEY,
 		extension_delete_cb, macaddress, provider_name);
 }
 
 void ast_phoneprov_delete_extensions(char *provider_name)
 {
+	if (!users) {
+		return;
+	}
+
 	ao2_callback(users, OBJ_UNLINK | OBJ_NODATA | OBJ_MULTIPLE, extensions_delete_cb, provider_name);
 }
 
@@ -1598,7 +1607,6 @@ void ast_phoneprov_provider_unregister(char *provider_name)
 
 	ast_phoneprov_delete_extensions(provider_name);
 	ao2_find(providers, provider_name, OBJ_SEARCH_KEY | OBJ_NODATA | OBJ_UNLINK);
-	ast_log(LOG_VERBOSE, "Unegistered phoneprov provider '%s'.\n", provider_name);
 }
 
 int ast_phoneprov_add_extension(char *provider_name, struct varshead *vars)
@@ -1671,7 +1679,6 @@ int ast_phoneprov_add_extension(char *provider_name, struct varshead *vars)
 			ast_log(LOG_WARNING, "Could not create http routes for '%s' - skipping\n", user->macaddress);
 			return -1;
 		}
-		ast_log(LOG_VERBOSE, "Created %s/%s for provider '%s'.\n", username, mac, provider_name);
 		ao2_link(users, user);
 
 	} else {
@@ -1690,7 +1697,6 @@ int ast_phoneprov_add_extension(char *provider_name, struct varshead *vars)
 			exten = delete_extension(exten);
 			return -1;
 		}
-		ast_log(LOG_VERBOSE, "Added %s/%s for provider '%s'.\n", username, mac, provider_name);
 	}
 
 	return 0;

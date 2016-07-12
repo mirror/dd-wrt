@@ -27,7 +27,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 425289 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <ne_request.h>
 #include <ne_session.h>

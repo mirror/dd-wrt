@@ -43,7 +43,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 431692 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -118,6 +118,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 431692 $")
 					<value name="KICKED">The channel was kicked from the conference.</value>
 					<value name="ENDMARKED">The channel left the conference as a result of the last marked user leaving.</value>
 					<value name="DTMF">The channel pressed a DTMF sequence to exit the conference.</value>
+					<value name="TIMEOUT">The channel reached its configured timeout.</value>
 				</variable>
 			</variablelist>
 		</description>
@@ -129,32 +130,51 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 431692 $")
 	</application>
 	<function name="CONFBRIDGE" language="en_US">
 		<synopsis>
-			Set a custom dynamic bridge, user, or menu profile on a channel for the ConfBridge application using the same options defined in confbridge.conf.
+			Set a custom dynamic bridge, user, or menu profile on a channel for the
+			ConfBridge application using the same options available in confbridge.conf.
 		</synopsis>
 		<syntax>
 			<parameter name="type" required="true">
-				<para>Type refers to which type of profile the option belongs too.  Type can be <literal>bridge</literal>, <literal>user</literal>, or
-				<literal>menu</literal>.</para>
+				<para>To what type of conference profile the option applies.</para>
+				<enumlist>
+					<enum name="bridge"></enum>
+					<enum name="menu"></enum>
+					<enum name="user"></enum>
+				</enumlist>
 			</parameter>
 			<parameter name="option" required="true">
-				<para>Option refers to <filename>confbridge.conf</filename> option that is being set dynamically on this channel, or
-				<literal>clear</literal> to remove already applied options from the channel.</para>
+				<para>Option refers to a <filename>confbridge.conf</filename> option
+				that is being set dynamically on this channel, or <literal>clear</literal>
+				to remove already applied profile options from the channel.</para>
 			</parameter>
 		</syntax>
 		<description>
+			<para>A custom profile uses the default profile type settings defined in
+			<filename>confbridge.conf</filename> as defaults if the profile template
+			is not explicitly specified first.</para>
+			<para>For <literal>bridge</literal> profiles the default template is <literal>default_bridge</literal>.</para>
+			<para>For <literal>menu</literal> profiles the default template is <literal>default_menu</literal>.</para>
+			<para>For <literal>user</literal> profiles the default template is <literal>default_user</literal>.</para>
 			<para>---- Example 1 ----</para>
-			<para>In this example the custom set user profile on this channel will automatically be used by the ConfBridge app.</para>
-			<para>exten => 1,1,Answer() </para>
-			<para>exten => 1,n,Set(CONFBRIDGE(user,announce_join_leave)=yes)</para>
-			<para>exten => 1,n,Set(CONFBRIDGE(user,startmuted)=yes)</para>
-			<para>exten => 1,n,ConfBridge(1) </para>
+			<para>In this example the custom user profile set on the channel will
+			automatically be used by the ConfBridge application.</para>
+			<para>exten => 1,1,Answer()</para>
+			<para>; In this example the effect of the following line is</para>
+			<para>; implied:</para>
+			<para>; same => n,Set(CONFBRIDGE(user,template)=default_user)</para>
+			<para>same => n,Set(CONFBRIDGE(user,announce_join_leave)=yes)</para>
+			<para>same => n,Set(CONFBRIDGE(user,startmuted)=yes)</para>
+			<para>same => n,ConfBridge(1) </para>
 			<para>---- Example 2 ----</para>
-			<para>This example shows how to use a predefined user or bridge profile in confbridge.conf as a template for a dynamic profile. Here we make a admin/marked user out of the default_user profile that is already defined in confbridge.conf.</para>
-			<para>exten => 1,1,Answer() </para>
-			<para>exten => 1,n,Set(CONFBRIDGE(user,template)=default_user)</para>
-			<para>exten => 1,n,Set(CONFBRIDGE(user,admin)=yes)</para>
-			<para>exten => 1,n,Set(CONFBRIDGE(user,marked)=yes)</para>
-			<para>exten => 1,n,ConfBridge(1)</para>
+			<para>This example shows how to use a predefined user profile in
+			<filename>confbridge.conf</filename> as a template for a dynamic profile.
+			Here we make an admin/marked user out of the <literal>my_user</literal>
+			profile that you define in <filename>confbridge.conf</filename>.</para>
+			<para>exten => 1,1,Answer()</para>
+			<para>same => n,Set(CONFBRIDGE(user,template)=my_user)</para>
+			<para>same => n,Set(CONFBRIDGE(user,admin)=yes)</para>
+			<para>same => n,Set(CONFBRIDGE(user,marked)=yes)</para>
+			<para>same => n,ConfBridge(1)</para>
 		</description>
 	</function>
 	<function name="CONFBRIDGE_INFO" language="en_US">
@@ -163,14 +183,32 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 431692 $")
 		</synopsis>
 		<syntax>
 			<parameter name="type" required="true">
-				<para>Type can be <literal>parties</literal>, <literal>admins</literal>, <literal>marked</literal>, or <literal>locked</literal>.</para>
+				<para>What conference information is requested.</para>
+				<enumlist>
+					<enum name="admins">
+						<para>Get the number of admin users in the conference.</para>
+					</enum>
+					<enum name="locked">
+						<para>Determine if the conference is locked. (0 or 1)</para>
+					</enum>
+					<enum name="marked">
+						<para>Get the number of marked users in the conference.</para>
+					</enum>
+					<enum name="muted">
+						<para>Determine if the conference is muted. (0 or 1)</para>
+					</enum>
+					<enum name="parties">
+						<para>Get the number of users in the conference.</para>
+					</enum>
+				</enumlist>
 			</parameter>
 			<parameter name="conf" required="true">
-				<para>Conf refers to the name of the conference being referenced.</para>
+				<para>The name of the conference being referenced.</para>
 			</parameter>
 		</syntax>
 		<description>
-			<para>This function returns a non-negative integer for valid conference identifiers (0 or 1 for <literal>locked</literal>) and "" for invalid conference identifiers.</para>
+			<para>This function returns a non-negative integer for valid conference
+			names and an empty string for invalid conference names.</para>
 		</description>
 	</function>
 	<manager name="ConfbridgeList" language="en_US">
@@ -720,6 +758,52 @@ static int conf_start_record(struct confbridge_conference *conference)
 	return 0;
 }
 
+/* \brief Playback the given filename and monitor for any dtmf interrupts.
+ *
+ * This function is used to playback sound files on a given channel and optionally
+ * allow dtmf interrupts to occur.
+ *
+ * If the optional bridge_channel parameter is given then sound file playback
+ * is played on that channel and dtmf interruptions are allowed. However, if
+ * bridge_channel is not set then the channel parameter is expected to be set
+ * instead and non interruptible playback is played on that channel.
+ *
+ * \param bridge_channel Bridge channel to play file on
+ * \param channel Optional channel to play file on if bridge_channel not given
+ * \param filename The file name to playback
+ *
+ * \retval -1 failure during playback, 0 on file was fully played, 1 on dtmf interrupt.
+ */
+static int play_file(struct ast_bridge_channel *bridge_channel, struct ast_channel *channel,
+		     const char *filename)
+{
+	struct ast_channel *chan;
+	const char *stop_digits;
+	int digit;
+
+	if (bridge_channel) {
+		chan = bridge_channel->chan;
+		stop_digits = AST_DIGIT_ANY;
+	} else {
+		chan = channel;
+		stop_digits = AST_DIGIT_NONE;
+	}
+
+	digit = ast_stream_and_wait(chan, filename, stop_digits);
+	if (digit < 0) {
+		ast_log(LOG_WARNING, "Failed to playback file '%s' to channel\n", filename);
+		return -1;
+	}
+
+	if (digit > 0) {
+		ast_stopstream(bridge_channel->chan);
+		ast_bridge_channel_feature_digit_add(bridge_channel, digit);
+		return 1;
+	}
+
+	return 0;
+}
+
 /*!
  * \internal
  * \brief Complain if the given sound file does not exist.
@@ -742,11 +826,13 @@ static int sound_file_exists(const char *filename)
  *
  * \param conference Conference bridge to peek at
  * \param user Optional Caller
+ * \param bridge_channel The bridged channel involved
  *
  * \note if caller is NULL, the announcment will be sent to all participants in the conference.
  * \return Returns 0 on success, -1 if the user hung up
  */
-static int announce_user_count(struct confbridge_conference *conference, struct confbridge_user *user)
+static int announce_user_count(struct confbridge_conference *conference, struct confbridge_user *user,
+			       struct ast_bridge_channel *bridge_channel)
 {
 	const char *other_in_party = conf_get_sound(CONF_SOUND_OTHER_IN_PARTY, conference->b_profile.sounds);
 	const char *only_one = conf_get_sound(CONF_SOUND_ONLY_ONE, conference->b_profile.sounds);
@@ -758,9 +844,7 @@ static int announce_user_count(struct confbridge_conference *conference, struct 
 	} else if (conference->activeusers == 2) {
 		if (user) {
 			/* Eep, there is one other person */
-			if (ast_stream_and_wait(user->chan,
-				only_one,
-				"")) {
+			if (play_file(bridge_channel, user->chan, only_one) < 0) {
 				return -1;
 			}
 		} else {
@@ -777,9 +861,7 @@ static int announce_user_count(struct confbridge_conference *conference, struct 
 			if (ast_say_number(user->chan, conference->activeusers - 1, "", ast_channel_language(user->chan), NULL)) {
 				return -1;
 			}
-			if (ast_stream_and_wait(user->chan,
-				other_in_party,
-				"")) {
+			if (play_file(bridge_channel, user->chan, other_in_party) < 0) {
 				return -1;
 			}
 		} else if (sound_file_exists(there_are) && sound_file_exists(other_in_party)) {
@@ -1000,8 +1082,33 @@ void conf_update_user_mute(struct confbridge_user *user)
 		"Conference: %s\r\n"
 		"Channel: %s",
 		mute_effective ? "muted" : "unmuted",
-		user->b_profile.name,
+		user->conference->b_profile.name,
 		ast_channel_name(user->chan));
+}
+
+/*
+ * \internal
+ * \brief Mute/unmute a single user.
+ */
+static void generic_mute_unmute_user(struct confbridge_conference *conference, struct confbridge_user *user, int mute)
+{
+	/* Set user level mute request. */
+	user->muted = mute ? 1 : 0;
+
+	conf_update_user_mute(user);
+	ast_test_suite_event_notify("CONF_MUTE",
+		"Message: participant %s %s\r\n"
+		"Conference: %s\r\n"
+		"Channel: %s",
+		ast_channel_name(user->chan),
+		mute ? "muted" : "unmuted",
+		conference->b_profile.name,
+		ast_channel_name(user->chan));
+	if (mute) {
+		send_mute_event(user, conference);
+	} else {
+		send_unmute_event(user, conference);
+	}
 }
 
 void conf_moh_stop(struct confbridge_user *user)
@@ -1096,7 +1203,7 @@ int conf_handle_inactive_waitmarked(struct confbridge_user *user)
 {
 	/* If we have not been quieted play back that they are waiting for the leader */
 	if (!ast_test_flag(&user->u_profile, USER_OPT_QUIET) && play_prompt_to_user(user,
-			conf_get_sound(CONF_SOUND_WAIT_FOR_LEADER, user->b_profile.sounds))) {
+			conf_get_sound(CONF_SOUND_WAIT_FOR_LEADER, user->conference->b_profile.sounds))) {
 		/* user hungup while the sound was playing */
 		return -1;
 	}
@@ -1108,7 +1215,7 @@ int conf_handle_only_unmarked(struct confbridge_user *user)
 	/* If audio prompts have not been quieted or this prompt quieted play it on out */
 	if (!ast_test_flag(&user->u_profile, USER_OPT_QUIET | USER_OPT_NOONLYPERSON)) {
 		if (play_prompt_to_user(user,
-			conf_get_sound(CONF_SOUND_ONLY_PERSON, user->b_profile.sounds))) {
+			conf_get_sound(CONF_SOUND_ONLY_PERSON, user->conference->b_profile.sounds))) {
 			/* user hungup while the sound was playing */
 			return -1;
 		}
@@ -1182,11 +1289,11 @@ static struct confbridge_conference *join_conference_bridge(const char *conferen
 	/* When finding a conference bridge that already exists make sure that it is not locked, and if so that we are not an admin */
 	if (conference && (max_members_reached || conference->locked) && !ast_test_flag(&user->u_profile, USER_OPT_ADMIN)) {
 		ao2_unlock(conference_bridges);
-		ao2_ref(conference, -1);
 		ast_debug(1, "Conference '%s' is locked and caller is not an admin\n", conference_name);
 		ast_stream_and_wait(user->chan,
-				conf_get_sound(CONF_SOUND_LOCKED, user->b_profile.sounds),
-				"");
+			conf_get_sound(CONF_SOUND_LOCKED, conference->b_profile.sounds),
+			"");
+		ao2_ref(conference, -1);
 		return NULL;
 	}
 
@@ -1220,7 +1327,6 @@ static struct confbridge_conference *join_conference_bridge(const char *conferen
 			app, conference_name, NULL);
 		if (!conference->bridge) {
 			ao2_ref(conference, -1);
-			conference = NULL;
 			ao2_unlock(conference_bridges);
 			ast_log(LOG_ERROR, "Conference '%s' mixing bridge could not be created.\n", conference_name);
 			return NULL;
@@ -1238,7 +1344,6 @@ static struct confbridge_conference *join_conference_bridge(const char *conferen
 		/* Link it into the conference bridges container */
 		if (!ao2_link(conference_bridges, conference)) {
 			ao2_ref(conference, -1);
-			conference = NULL;
 			ao2_unlock(conference_bridges);
 			ast_log(LOG_ERROR,
 				"Conference '%s' could not be added to the conferences list.\n", conference_name);
@@ -1265,6 +1370,13 @@ static struct confbridge_conference *join_conference_bridge(const char *conferen
 
 	ao2_lock(conference);
 
+	/* Determine if the new user should join the conference muted. */
+	if (ast_test_flag(&user->u_profile, USER_OPT_STARTMUTED)
+		|| (!ast_test_flag(&user->u_profile, USER_OPT_ADMIN) && conference->muted)) {
+		/* Set user level mute request. */
+		user->muted = 1;
+	}
+
 	/*
 	 * Suspend any MOH until the user actually joins the bridge of
 	 * the conference.  This way any pre-join file playback does not
@@ -1276,6 +1388,7 @@ static struct confbridge_conference *join_conference_bridge(const char *conferen
 		/* Invalid event, nothing was done, so we don't want to process a leave. */
 		ao2_unlock(conference);
 		ao2_ref(conference, -1);
+		user->conference = NULL;
 		return NULL;
 	}
 
@@ -1298,7 +1411,7 @@ static struct confbridge_conference *join_conference_bridge(const char *conferen
 
 	/* Announce number of users if need be */
 	if (ast_test_flag(&user->u_profile, USER_OPT_ANNOUNCEUSERCOUNT)) {
-		if (announce_user_count(conference, user)) {
+		if (announce_user_count(conference, user, NULL)) {
 			leave_conference(user);
 			return NULL;
 		}
@@ -1313,7 +1426,7 @@ static struct confbridge_conference *join_conference_bridge(const char *conferen
 		 * joined the conference yet.
 		 */
 		ast_autoservice_start(user->chan);
-		user_count_res = announce_user_count(conference, NULL);
+		user_count_res = announce_user_count(conference, NULL, NULL);
 		ast_autoservice_stop(user->chan);
 		if (user_count_res) {
 			leave_conference(user);
@@ -1467,7 +1580,12 @@ static int conf_get_pin(struct ast_channel *chan, struct confbridge_user *user)
 	const char *pin = user->u_profile.pin;
 	char *tmp = pin_guess;
 	int i, res;
-	unsigned int len = MAX_PIN ;
+	unsigned int len = MAX_PIN;
+
+	/*
+	 * NOTE: We have not joined a conference yet so we have to use
+	 * the bridge profile requested by the user.
+	 */
 
 	/* give them three tries to get the pin right */
 	for (i = 0; i < 3; i++) {
@@ -1495,6 +1613,13 @@ static int conf_get_pin(struct ast_channel *chan, struct confbridge_user *user)
 			len = MAX_PIN;
 		}
 	}
+	return -1;
+}
+
+static int user_timeout(struct ast_bridge_channel *bridge_channel, void *ignore)
+{
+	ast_bridge_channel_leave_bridge(bridge_channel, BRIDGE_CHANNEL_STATE_END, 0);
+	pbx_builtin_setvar_helper(bridge_channel->chan, "CONFBRIDGE_RESULT", "TIMEOUT");
 	return -1;
 }
 
@@ -1675,12 +1800,6 @@ static int confbridge_exec(struct ast_channel *chan, const char *data)
 		}
 	}
 
-	/* If the caller should be joined already muted, set the flag before we join. */
-	if (ast_test_flag(&user.u_profile, USER_OPT_STARTMUTED)) {
-		/* Set user level mute request. */
-		user.muted = 1;
-	}
-
 	/* Look for a conference bridge matching the provided name */
 	if (!(conference = join_conference_bridge(args.conf_name, &user))) {
 		pbx_builtin_setvar_helper(chan, "CONFBRIDGE_RESULT", "FAILED");
@@ -1718,18 +1837,28 @@ static int confbridge_exec(struct ast_channel *chan, const char *data)
 		ast_autoservice_start(chan);
 		play_sound_file(conference, user.name_rec_location);
 		play_sound_file(conference,
-			conf_get_sound(CONF_SOUND_HAS_JOINED, user.b_profile.sounds));
+			conf_get_sound(CONF_SOUND_HAS_JOINED, conference->b_profile.sounds));
 		ast_autoservice_stop(chan);
 	}
 
 	/* Play the Join sound to both the conference and the user entering. */
 	if (!quiet) {
-		const char *join_sound = conf_get_sound(CONF_SOUND_JOIN, user.b_profile.sounds);
+		const char *join_sound = conf_get_sound(CONF_SOUND_JOIN, conference->b_profile.sounds);
 
 		ast_stream_and_wait(chan, join_sound, "");
 		ast_autoservice_start(chan);
 		play_sound_file(conference, join_sound);
 		ast_autoservice_stop(chan);
+	}
+
+	if (user.u_profile.timeout) {
+		ast_bridge_interval_hook(&user.features,
+			0,
+			user.u_profile.timeout * 1000,
+			user_timeout,
+			NULL,
+			NULL,
+			AST_BRIDGE_HOOK_REMOVE_ON_PULL);
 	}
 
 	/* See if we need to automatically set this user as a video source or not */
@@ -1773,28 +1902,28 @@ static int confbridge_exec(struct ast_channel *chan, const char *data)
 		ast_autoservice_start(chan);
 		play_sound_file(conference, user.name_rec_location);
 		play_sound_file(conference,
-			conf_get_sound(CONF_SOUND_HAS_LEFT, user.b_profile.sounds));
+			conf_get_sound(CONF_SOUND_HAS_LEFT, conference->b_profile.sounds));
 		ast_autoservice_stop(chan);
 	}
 
 	/* play the leave sound */
 	if (!quiet) {
-		const char *leave_sound = conf_get_sound(CONF_SOUND_LEAVE, user.b_profile.sounds);
+		const char *leave_sound = conf_get_sound(CONF_SOUND_LEAVE, conference->b_profile.sounds);
 		ast_autoservice_start(chan);
 		play_sound_file(conference, leave_sound);
 		ast_autoservice_stop(chan);
 	}
 
-	/* Easy as pie, depart this channel from the conference bridge */
-	leave_conference(&user);
-	conference = NULL;
-
 	/* If the user was kicked from the conference play back the audio prompt for it */
 	if (!quiet && user.kicked) {
 		res = ast_stream_and_wait(chan,
-			conf_get_sound(CONF_SOUND_KICKED, user.b_profile.sounds),
+			conf_get_sound(CONF_SOUND_KICKED, conference->b_profile.sounds),
 			"");
 	}
+
+	/* Easy as pie, depart this channel from the conference bridge */
+	leave_conference(&user);
+	conference = NULL;
 
 	/* Restore volume adjustments to previous values in case they were changed */
 	if (volume_adjustments[0]) {
@@ -1815,33 +1944,18 @@ confbridge_cleanup:
 }
 
 static int action_toggle_mute(struct confbridge_conference *conference,
-	struct confbridge_user *user)
+			      struct confbridge_user *user,
+			      struct ast_bridge_channel *bridge_channel)
 {
 	int mute;
 
 	/* Toggle user level mute request. */
 	mute = !user->muted;
-	user->muted = mute;
+	generic_mute_unmute_user(conference, user, mute);
 
-	conf_update_user_mute(user);
-	ast_test_suite_event_notify("CONF_MUTE",
-		"Message: participant %s %s\r\n"
-		"Conference: %s\r\n"
-		"Channel: %s",
-		ast_channel_name(user->chan),
-		mute ? "muted" : "unmuted",
-		user->b_profile.name,
-		ast_channel_name(user->chan));
-	if (mute) {
-		send_mute_event(user, conference);
-	} else {
-		send_unmute_event(user, conference);
-	}
-
-	return ast_stream_and_wait(user->chan, (mute ?
-		conf_get_sound(CONF_SOUND_MUTED, user->b_profile.sounds) :
-		conf_get_sound(CONF_SOUND_UNMUTED, user->b_profile.sounds)),
-		"");
+	return play_file(bridge_channel, NULL,
+		conf_get_sound(mute ? CONF_SOUND_MUTED : CONF_SOUND_UNMUTED,
+			conference->b_profile.sounds)) < 0;
 }
 
 static int action_toggle_mute_participants(struct confbridge_conference *conference, struct confbridge_user *user)
@@ -1866,8 +1980,9 @@ static int action_toggle_mute_participants(struct confbridge_conference *confere
 
 	ao2_unlock(conference);
 
-	sound_to_play = conf_get_sound((mute ? CONF_SOUND_PARTICIPANTS_MUTED : CONF_SOUND_PARTICIPANTS_UNMUTED),
-		user->b_profile.sounds);
+	sound_to_play = conf_get_sound(
+		mute ? CONF_SOUND_PARTICIPANTS_MUTED : CONF_SOUND_PARTICIPANTS_UNMUTED,
+		conference->b_profile.sounds);
 
 	/* The host needs to hear it seperately, as they don't get the audio from play_sound_helper */
 	ast_stream_and_wait(user->chan, sound_to_play, "");
@@ -1973,9 +2088,8 @@ static int action_kick_last(struct confbridge_conference *conference,
 	int isadmin = ast_test_flag(&user->u_profile, USER_OPT_ADMIN);
 
 	if (!isadmin) {
-		ast_stream_and_wait(bridge_channel->chan,
-			conf_get_sound(CONF_SOUND_ERROR_MENU, user->b_profile.sounds),
-			"");
+		play_file(bridge_channel, NULL,
+			conf_get_sound(CONF_SOUND_ERROR_MENU, conference->b_profile.sounds));
 		ast_log(LOG_WARNING, "Only admin users can use the kick_last menu action. Channel %s of conf %s is not an admin.\n",
 			ast_channel_name(bridge_channel->chan),
 			conference->name);
@@ -1986,9 +2100,8 @@ static int action_kick_last(struct confbridge_conference *conference,
 	if (((last_user = AST_LIST_LAST(&conference->active_list)) == user)
 		|| (ast_test_flag(&last_user->u_profile, USER_OPT_ADMIN))) {
 		ao2_unlock(conference);
-		ast_stream_and_wait(bridge_channel->chan,
-			conf_get_sound(CONF_SOUND_ERROR_MENU, user->b_profile.sounds),
-			"");
+		play_file(bridge_channel, NULL,
+			conf_get_sound(CONF_SOUND_ERROR_MENU, conference->b_profile.sounds));
 	} else if (last_user && !last_user->kicked) {
 		last_user->kicked = 1;
 		pbx_builtin_setvar_helper(last_user->chan, "CONFBRIDGE_RESULT", "KICKED");
@@ -2056,7 +2169,7 @@ static int execute_menu_entry(struct confbridge_conference *conference,
 	AST_LIST_TRAVERSE(&menu_entry->actions, menu_action, action) {
 		switch (menu_action->id) {
 		case MENU_ACTION_TOGGLE_MUTE:
-			res |= action_toggle_mute(conference, user);
+			res |= action_toggle_mute(conference, user, bridge_channel);
 			break;
 		case MENU_ACTION_ADMIN_TOGGLE_MUTE_PARTICIPANTS:
 			if (!isadmin) {
@@ -2065,7 +2178,7 @@ static int execute_menu_entry(struct confbridge_conference *conference,
 			action_toggle_mute_participants(conference, user);
 			break;
 		case MENU_ACTION_PARTICIPANT_COUNT:
-			announce_user_count(conference, user);
+			announce_user_count(conference, user, bridge_channel);
 			break;
 		case MENU_ACTION_PLAYBACK:
 			if (!stop_prompts) {
@@ -2116,12 +2229,10 @@ static int execute_menu_entry(struct confbridge_conference *conference,
 				break;
 			}
 			conference->locked = (!conference->locked ? 1 : 0);
-			res |= ast_stream_and_wait(bridge_channel->chan,
-				(conference->locked ?
-				conf_get_sound(CONF_SOUND_LOCKED_NOW, user->b_profile.sounds) :
-				conf_get_sound(CONF_SOUND_UNLOCKED_NOW, user->b_profile.sounds)),
-				"");
-
+			res |= play_file(bridge_channel, NULL,
+				conf_get_sound(
+					conference->locked ? CONF_SOUND_LOCKED_NOW : CONF_SOUND_UNLOCKED_NOW,
+					conference->b_profile.sounds)) < 0;
 			break;
 		case MENU_ACTION_ADMIN_KICK_LAST:
 			res |= action_kick_last(conference, bridge_channel, user);
@@ -2352,7 +2463,7 @@ static void handle_cli_confbridge_list_item(struct ast_cli_args *a, struct confb
 		ast_channel_name(user->chan),
 		flag_str,
 		user->u_profile.name,
-		user->b_profile.name,
+		user->conference->b_profile.name,
 		user->menu_name,
 		S_COR(ast_channel_caller(user->chan)->id.number.valid,
 			ast_channel_caller(user->chan)->id.number.str, "<unknown>"));
@@ -2390,11 +2501,16 @@ static char *handle_cli_confbridge_list(struct ast_cli_entry *e, int cmd, struct
 	if (a->argc == 2) {
 		struct ao2_iterator iter;
 
-		ast_cli(a->fd, "Conference Bridge Name           Users  Marked Locked?\n");
-		ast_cli(a->fd, "================================ ====== ====== ========\n");
+		ast_cli(a->fd, "Conference Bridge Name           Users  Marked Locked Muted\n");
+		ast_cli(a->fd, "================================ ====== ====== ====== =====\n");
 		iter = ao2_iterator_init(conference_bridges, 0);
 		while ((conference = ao2_iterator_next(&iter))) {
-			ast_cli(a->fd, "%-32s %6u %6u %s\n", conference->name, conference->activeusers + conference->waitingusers, conference->markedusers, (conference->locked ? "locked" : "unlocked"));
+			ast_cli(a->fd, "%-32s %6u %6u %-6s %s\n",
+				conference->name,
+				conference->activeusers + conference->waitingusers,
+				conference->markedusers,
+				AST_CLI_YESNO(conference->locked),
+				AST_CLI_YESNO(conference->muted));
 			ao2_ref(conference, -1);
 		}
 		ao2_iterator_destroy(&iter);
@@ -2448,30 +2564,6 @@ static int generic_lock_unlock_helper(int lock, const char *conference_name)
 	ao2_ref(conference, -1);
 
 	return res;
-}
-
-/* \internal
- * \brief Mute/unmute a single user.
- */
-static void generic_mute_unmute_user(struct confbridge_conference *conference, struct confbridge_user *user, int mute)
-{
-	/* Set user level mute request. */
-	user->muted = mute ? 1 : 0;
-
-	conf_update_user_mute(user);
-	ast_test_suite_event_notify("CONF_MUTE",
-		"Message: participant %s %s\r\n"
-		"Conference: %s\r\n"
-		"Channel: %s",
-		ast_channel_name(user->chan),
-		mute ? "muted" : "unmuted",
-		conference->b_profile.name,
-		ast_channel_name(user->chan));
-	if (mute) {
-		send_mute_event(user, conference);
-	} else {
-		send_unmute_event(user, conference);
-	}
 }
 
 /* \internal
@@ -2884,12 +2976,14 @@ static int action_confbridgelistrooms(struct mansession *s, const struct message
 		"Parties: %u\r\n"
 		"Marked: %u\r\n"
 		"Locked: %s\r\n"
+		"Muted: %s\r\n"
 		"\r\n",
 		id_text,
 		conference->name,
 		conference->activeusers + conference->waitingusers,
 		conference->markedusers,
-		conference->locked ? "Yes" : "No");
+		AST_YESNO(conference->locked),
+		AST_YESNO(conference->muted));
 		ao2_unlock(conference);
 
 		ao2_ref(conference, -1);
@@ -3160,30 +3254,31 @@ static int func_confbridge_info(struct ast_channel *chan, const char *cmd, char 
 
 	/* get the correct count for the type requested */
 	ao2_lock(conference);
-	if (!strncasecmp(args.type, "parties", 7)) {
+	if (!strcasecmp(args.type, "parties")) {
 		AST_LIST_TRAVERSE(&conference->active_list, user, list) {
 			count++;
 		}
 		AST_LIST_TRAVERSE(&conference->waiting_list, user, list) {
 			count++;
 		}
-	} else if (!strncasecmp(args.type, "admins", 6)) {
+	} else if (!strcasecmp(args.type, "admins")) {
 		AST_LIST_TRAVERSE(&conference->active_list, user, list) {
 			if (ast_test_flag(&user->u_profile, USER_OPT_ADMIN)) {
 				count++;
 			}
 		}
-	} else if (!strncasecmp(args.type, "marked", 6)) {
+	} else if (!strcasecmp(args.type, "marked")) {
 		AST_LIST_TRAVERSE(&conference->active_list, user, list) {
 			if (ast_test_flag(&user->u_profile, USER_OPT_MARKEDUSER)) {
 				count++;
 			}
 		}
-	} else if (!strncasecmp(args.type, "locked", 6)) {
+	} else if (!strcasecmp(args.type, "locked")) {
 		count = conference->locked;
+	} else if (!strcasecmp(args.type, "muted")) {
+		count = conference->muted;
 	} else {
-		ast_log(LOG_ERROR, "Invalid keyword '%s' passed to CONFBRIDGE_INFO.  Should be one of: "
-			"parties, admins, marked, or locked.\n", args.type);
+		ast_log(LOG_ERROR, "Invalid keyword '%s' passed to CONFBRIDGE_INFO.\n", args.type);
 	}
 	snprintf(buf, len, "%d", count);
 	ao2_unlock(conference);

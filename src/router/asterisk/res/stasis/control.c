@@ -25,7 +25,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 431717 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/stasis_channels.h"
 
@@ -87,21 +87,19 @@ static void control_dtor(void *obj)
 {
 	struct stasis_app_control *control = obj;
 
+	ao2_cleanup(control->command_queue);
+
+	ast_channel_cleanup(control->channel);
+	ao2_cleanup(control->app);
+
+	ast_cond_destroy(&control->wait_cond);
 	AST_LIST_HEAD_DESTROY(&control->add_rules);
 	AST_LIST_HEAD_DESTROY(&control->remove_rules);
-
-	/* We may have a lingering silence generator; free it */
-	ast_channel_stop_silence_generator(control->channel, control->silgen);
-	control->silgen = NULL;
-
-	ao2_cleanup(control->command_queue);
-	ast_cond_destroy(&control->wait_cond);
-	ao2_cleanup(control->app);
 }
 
 struct stasis_app_control *control_create(struct ast_channel *channel, struct stasis_app *app)
 {
-	RAII_VAR(struct stasis_app_control *, control, NULL, ao2_cleanup);
+	struct stasis_app_control *control;
 	int res;
 
 	control = ao2_alloc(sizeof(*control), control_dtor);
@@ -109,28 +107,29 @@ struct stasis_app_control *control_create(struct ast_channel *channel, struct st
 		return NULL;
 	}
 
-	control->app = ao2_bump(app);
+	AST_LIST_HEAD_INIT(&control->add_rules);
+	AST_LIST_HEAD_INIT(&control->remove_rules);
 
 	res = ast_cond_init(&control->wait_cond, NULL);
 	if (res != 0) {
 		ast_log(LOG_ERROR, "Error initializing ast_cond_t: %s\n",
 			strerror(errno));
+		ao2_ref(control, -1);
 		return NULL;
 	}
+
+	control->app = ao2_bump(app);
+
+	ast_channel_ref(channel);
+	control->channel = channel;
 
 	control->command_queue = ao2_container_alloc_list(
 		AO2_ALLOC_OPT_LOCK_MUTEX, 0, NULL, NULL);
-
 	if (!control->command_queue) {
+		ao2_ref(control, -1);
 		return NULL;
 	}
 
-	control->channel = channel;
-
-	AST_LIST_HEAD_INIT(&control->add_rules);
-	AST_LIST_HEAD_INIT(&control->remove_rules);
-
-	ao2_ref(control, +1);
 	return control;
 }
 
@@ -252,6 +251,11 @@ static struct stasis_app_command *exec_command_on_condition(
 	}
 
 	ao2_lock(control->command_queue);
+	if (control->is_done) {
+		ao2_unlock(control->command_queue);
+		ao2_ref(command, -1);
+		return NULL;
+	}
 	if (can_exec_fn && (retval = can_exec_fn(control))) {
 		ao2_unlock(control->command_queue);
 		command_complete(command, retval);
@@ -319,7 +323,7 @@ static int app_control_dial(struct stasis_app_control *control,
 		AST_BRIDGE_IMPART_CHAN_INDEPENDENT)) {
 		ast_hangup(new_chan);
 	} else {
-		control_add_channel_to_bridge(control, chan, bridge);
+		control_swap_channel_in_bridge(control, bridge, chan, NULL);
 	}
 
 	return 0;
@@ -355,14 +359,39 @@ int stasis_app_control_dial(struct stasis_app_control *control, const char *endp
 	return 0;
 }
 
+static int app_control_add_role(struct stasis_app_control *control,
+		struct ast_channel *chan, void *data)
+{
+	char *role = data;
+
+	return ast_channel_add_bridge_role(chan, role);
+}
+
 int stasis_app_control_add_role(struct stasis_app_control *control, const char *role)
 {
-	return ast_channel_add_bridge_role(control->channel, role);
+	char *role_dup;
+
+	role_dup = ast_strdup(role);
+	if (!role_dup) {
+		return -1;
+	}
+
+	stasis_app_send_command_async(control, app_control_add_role, role_dup, ast_free_ptr);
+
+	return 0;
+}
+
+static int app_control_clear_roles(struct stasis_app_control *control,
+		struct ast_channel *chan, void *data)
+{
+	ast_channel_clear_bridge_roles(chan);
+
+	return 0;
 }
 
 void stasis_app_control_clear_roles(struct stasis_app_control *control)
 {
-	ast_channel_clear_bridge_roles(control->channel);
+	stasis_app_send_command_async(control, app_control_clear_roles, NULL, NULL);
 }
 
 int control_command_count(struct stasis_app_control *control)
@@ -378,7 +407,10 @@ int control_is_done(struct stasis_app_control *control)
 
 void control_mark_done(struct stasis_app_control *control)
 {
+	/* Locking necessary to sync with other threads adding commands to the queue. */
+	ao2_lock(control->command_queue);
 	control->is_done = 1;
+	ao2_unlock(control->command_queue);
 }
 
 struct stasis_app_control_continue_data {
@@ -403,7 +435,7 @@ static int app_control_continue(struct stasis_app_control *control,
 	/* Called from stasis_app_exec thread; no lock needed */
 	ast_explicit_goto(control->channel, continue_data->context, continue_data->extension, continue_data->priority);
 
-	control->is_done = 1;
+	control_mark_done(control);
 
 	return 0;
 }
@@ -598,9 +630,69 @@ int stasis_app_control_unmute(struct stasis_app_control *control, unsigned int d
 	return 0;
 }
 
+/*!
+ * \brief structure for queuing ARI channel variable setting
+ *
+ * It may seem weird to define this custom structure given that we already have
+ * ast_var_t and ast_variable defined elsewhere. The problem with those is that
+ * they are not tolerant of NULL channel variable value pointers. In fact, in both
+ * cases, the best they could do is to have a zero-length variable value. However,
+ * when un-setting a channel variable, it is important to pass a NULL value, not
+ * a zero-length string.
+ */
+struct chanvar {
+	/*! Name of variable to set/unset */
+	char *name;
+	/*! Value of variable to set. If unsetting, this will be NULL */
+	char *value;
+};
+
+static void free_chanvar(void *data)
+{
+	struct chanvar *var = data;
+
+	ast_free(var->name);
+	ast_free(var->value);
+	ast_free(var);
+}
+
+static int app_control_set_channel_var(struct stasis_app_control *control,
+	struct ast_channel *chan, void *data)
+{
+	struct chanvar *var = data;
+
+	pbx_builtin_setvar_helper(control->channel, var->name, var->value);
+
+	return 0;
+}
+
 int stasis_app_control_set_channel_var(struct stasis_app_control *control, const char *variable, const char *value)
 {
-	return pbx_builtin_setvar_helper(control->channel, variable, value);
+	struct chanvar *var;
+
+	var = ast_calloc(1, sizeof(*var));
+	if (!var) {
+		return -1;
+	}
+
+	var->name = ast_strdup(variable);
+	if (!var->name) {
+		free_chanvar(var);
+		return -1;
+	}
+
+	/* It's kosher for value to be NULL. It means the variable is being unset */
+	if (value) {
+		var->value = ast_strdup(value);
+		if (!var->value) {
+			free_chanvar(var);
+			return -1;
+		}
+	}
+
+	stasis_app_send_command_async(control, app_control_set_channel_var, var, free_chanvar);
+
+	return 0;
 }
 
 static int app_control_hold(struct stasis_app_control *control,
@@ -700,8 +792,7 @@ void stasis_app_control_silence_start(struct stasis_app_control *control)
 	stasis_app_send_command_async(control, app_control_silence_start, NULL, NULL);
 }
 
-static int app_control_silence_stop(struct stasis_app_control *control,
-	struct ast_channel *chan, void *data)
+void control_silence_stop_now(struct stasis_app_control *control)
 {
 	if (control->silgen) {
 		ast_debug(3, "%s: Stopping silence generator\n",
@@ -710,7 +801,12 @@ static int app_control_silence_stop(struct stasis_app_control *control,
 			control->channel, control->silgen);
 		control->silgen = NULL;
 	}
+}
 
+static int app_control_silence_stop(struct stasis_app_control *control,
+	struct ast_channel *chan, void *data)
+{
+	control_silence_stop_now(control);
 	return 0;
 }
 
@@ -745,7 +841,15 @@ static int app_send_command_on_condition(struct stasis_app_control *control,
 {
 	RAII_VAR(struct stasis_app_command *, command, NULL, ao2_cleanup);
 
-	if (control == NULL) {
+	if (control == NULL || control->is_done) {
+		/* If exec_command_on_condition fails, it calls the data_destructor.
+		 * In order to provide consistent behavior, we'll also call the data_destructor
+		 * on this error path. This way, callers never have to call the
+		 * data_destructor themselves.
+		 */
+		if (data_destructor) {
+			data_destructor(data);
+		}
 		return -1;
 	}
 
@@ -770,7 +874,15 @@ int stasis_app_send_command_async(struct stasis_app_control *control,
 {
 	RAII_VAR(struct stasis_app_command *, command, NULL, ao2_cleanup);
 
-	if (control == NULL) {
+	if (control == NULL || control->is_done) {
+		/* If exec_command fails, it calls the data_destructor. In order to
+		 * provide consistent behavior, we'll also call the data_destructor
+		 * on this error path. This way, callers never have to call the
+		 * data_destructor themselves.
+		 */
+		if (data_destructor) {
+			data_destructor(data);
+		}
 		return -1;
 	}
 
@@ -870,11 +982,8 @@ static void bridge_after_cb_failed(enum ast_bridge_after_cb_reason reason,
 		ast_bridge_after_cb_reason_string(reason));
 }
 
-int control_add_channel_to_bridge(
-	struct stasis_app_control *control,
-	struct ast_channel *chan, void *data)
+int control_swap_channel_in_bridge(struct stasis_app_control *control, struct ast_bridge *bridge, struct ast_channel *chan, struct ast_channel *swap)
 {
-	struct ast_bridge *bridge = data;
 	int res;
 
 	if (!control || !bridge) {
@@ -927,7 +1036,7 @@ int control_add_channel_to_bridge(
 
 		res = ast_bridge_impart(bridge,
 			chan,
-			NULL, /* swap channel */
+			swap,
 			NULL, /* features */
 			AST_BRIDGE_IMPART_CHAN_DEPARTABLE);
 		if (res != 0) {
@@ -941,6 +1050,11 @@ int control_add_channel_to_bridge(
 		control->bridge = bridge;
 	}
 	return 0;
+}
+
+int control_add_channel_to_bridge(struct stasis_app_control *control, struct ast_channel *chan, void *data)
+{
+	return control_swap_channel_in_bridge(control, data, chan, NULL);
 }
 
 int stasis_app_control_add_channel_to_bridge(
@@ -1011,24 +1125,36 @@ int stasis_app_control_queue_control(struct stasis_app_control *control,
 	return ast_queue_control(control->channel, frame_type);
 }
 
+void control_flush_queue(struct stasis_app_control *control)
+{
+	struct ao2_iterator iter;
+	struct stasis_app_command *command;
+
+	iter = ao2_iterator_init(control->command_queue, AO2_ITERATOR_UNLINK);
+	while ((command = ao2_iterator_next(&iter))) {
+		command_complete(command, -1);
+		ao2_ref(command, -1);
+	}
+	ao2_iterator_destroy(&iter);
+}
+
 int control_dispatch_all(struct stasis_app_control *control,
 	struct ast_channel *chan)
 {
 	int count = 0;
-	struct ao2_iterator i;
-	void *obj;
+	struct ao2_iterator iter;
+	struct stasis_app_command *command;
 
 	ast_assert(control->channel == chan);
 
-	i = ao2_iterator_init(control->command_queue, AO2_ITERATOR_UNLINK);
-
-	while ((obj = ao2_iterator_next(&i))) {
-		RAII_VAR(struct stasis_app_command *, command, obj, ao2_cleanup);
+	iter = ao2_iterator_init(control->command_queue, AO2_ITERATOR_UNLINK);
+	while ((command = ao2_iterator_next(&iter))) {
 		command_invoke(command, control, chan);
+		ao2_ref(command, -1);
 		++count;
 	}
+	ao2_iterator_destroy(&iter);
 
-	ao2_iterator_destroy(&i);
 	return count;
 }
 

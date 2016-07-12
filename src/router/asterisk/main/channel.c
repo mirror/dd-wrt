@@ -29,7 +29,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 432363 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/_private.h"
 
@@ -53,7 +53,6 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 432363 $")
 #include "asterisk/chanvars.h"
 #include "asterisk/linkedlists.h"
 #include "asterisk/indications.h"
-#include "asterisk/monitor.h"
 #include "asterisk/causes.h"
 #include "asterisk/callerid.h"
 #include "asterisk/utils.h"
@@ -75,6 +74,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 432363 $")
 #include "asterisk/bridge.h"
 #include "asterisk/test.h"
 #include "asterisk/stasis_channels.h"
+#include "asterisk/max_forwards.h"
 
 /*** DOCUMENTATION
  ***/
@@ -339,7 +339,7 @@ static char *complete_channeltypes(struct ast_cli_args *a)
 static char *handle_cli_core_show_channeltype(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a)
 {
 	struct chanlist *cl = NULL;
-	struct ast_str *codec_buf = ast_str_alloca(256);
+	struct ast_str *codec_buf = ast_str_alloca(AST_FORMAT_CAP_NAMES_LEN);
 
 	switch (cmd) {
 	case CLI_INIT:
@@ -872,6 +872,7 @@ __ast_channel_alloc_ap(int needqueue, int state, const char *cid_num, const char
 	ast_channel_hold_state_set(tmp, AST_CONTROL_UNHOLD);
 
 	ast_channel_streamid_set(tmp, -1);
+	ast_channel_vstreamid_set(tmp, -1);
 
 	ast_channel_fin_set(tmp, global_fin);
 	ast_channel_fout_set(tmp, global_fout);
@@ -1193,8 +1194,8 @@ int ast_queue_hangup_with_cause(struct ast_channel *chan, int cause)
 
 int ast_queue_hold(struct ast_channel *chan, const char *musicclass)
 {
-	RAII_VAR(struct ast_json *, blob, NULL, ast_json_unref);
 	struct ast_frame f = { AST_FRAME_CONTROL, .subclass.integer = AST_CONTROL_HOLD };
+	struct ast_json *blob = NULL;
 	int res;
 
 	if (!ast_strlen_zero(musicclass)) {
@@ -1208,6 +1209,8 @@ int ast_queue_hold(struct ast_channel *chan, const char *musicclass)
 	ast_channel_publish_cached_blob(chan, ast_channel_hold_type(), blob);
 
 	res = ast_queue_frame(chan, &f);
+
+	ast_json_unref(blob);
 
 	return res;
 }
@@ -3903,11 +3906,7 @@ static struct ast_frame *__ast_read(struct ast_channel *chan, int dropaudio)
 		switch (f->frametype) {
 		case AST_FRAME_CONTROL:
 			if (f->subclass.integer == AST_CONTROL_ANSWER) {
-				if (!ast_test_flag(ast_channel_flags(chan), AST_FLAG_OUTGOING)) {
-					ast_debug(1, "Ignoring answer on an inbound call!\n");
-					ast_frfree(f);
-					f = &ast_null_frame;
-				} else if (prestate == AST_STATE_UP && ast_channel_is_bridged(chan)) {
+				if (prestate == AST_STATE_UP && ast_channel_is_bridged(chan)) {
 					ast_debug(1, "Dropping duplicate answer!\n");
 					ast_frfree(f);
 					f = &ast_null_frame;
@@ -4112,78 +4111,133 @@ static struct ast_frame *__ast_read(struct ast_channel *chan, int dropaudio)
 					ast_frfree(f);
 					f = &ast_null_frame;
 				}
-			} else if ((f->frametype == AST_FRAME_VOICE) && ast_format_cap_iscompatible_format(ast_channel_nativeformats(chan), f->subclass.format) == AST_FORMAT_CMP_NOT_EQUAL) {
-				/* This frame is not one of the current native formats -- drop it on the floor */
-				struct ast_str *codec_buf = ast_str_alloca(64);
-				ast_log(LOG_NOTICE, "Dropping incompatible voice frame on %s of format %s since our native format has changed to %s\n",
-					ast_channel_name(chan), ast_format_get_name(f->subclass.format), ast_format_cap_get_names(ast_channel_nativeformats(chan), &codec_buf));
-				ast_frfree(f);
-				f = &ast_null_frame;
-			} else if ((f->frametype == AST_FRAME_VOICE)) {
-				/* Send frame to audiohooks if present */
-				if (ast_channel_audiohooks(chan)) {
-					struct ast_frame *old_frame = f;
-					f = ast_audiohook_write_list(chan, ast_channel_audiohooks(chan), AST_AUDIOHOOK_DIRECTION_READ, f);
-					if (old_frame != f)
-						ast_frfree(old_frame);
-				}
-				if (ast_channel_monitor(chan) && ast_channel_monitor(chan)->read_stream ) {
-					/* XXX what does this do ? */
-#ifndef MONITOR_CONSTANT_DELAY
-					int jump = ast_channel_outsmpl(chan) - ast_channel_insmpl(chan) - 4 * f->samples;
-					if (jump >= 0) {
-						jump = calc_monitor_jump((ast_channel_outsmpl(chan) - ast_channel_insmpl(chan)),
-						                         ast_format_get_sample_rate(f->subclass.format),
-						                         ast_format_get_sample_rate(ast_channel_monitor(chan)->read_stream->fmt->format));
-						if (ast_seekstream(ast_channel_monitor(chan)->read_stream, jump, SEEK_FORCECUR) == -1) {
-							ast_log(LOG_WARNING, "Failed to perform seek in monitoring read stream, synchronization between the files may be broken\n");
-						}
-						ast_channel_insmpl_set(chan, ast_channel_insmpl(chan) + (ast_channel_outsmpl(chan) - ast_channel_insmpl(chan)) + f->samples);
-					} else {
-						ast_channel_insmpl_set(chan, ast_channel_insmpl(chan) + f->samples);
-					}
-#else
-					int jump = calc_monitor_jump((ast_channel_outsmpl(chan) - ast_channel_insmpl(chan)),
-					                             ast_format_get_sample_rate(f->subclass.codec),
-					                             ast_format_get_sample_rate(ast_channel_monitor(chan)->read_stream->fmt->format));
-					if (jump - MONITOR_DELAY >= 0) {
-						if (ast_seekstream(ast_channel_monitor(chan)->read_stream, jump - f->samples, SEEK_FORCECUR) == -1)
-							ast_log(LOG_WARNING, "Failed to perform seek in monitoring read stream, synchronization between the files may be broken\n");
-						ast_channel_insmpl(chan) += ast_channel_outsmpl(chan) - ast_channel_insmpl(chan);
-					} else
-						ast_channel_insmpl(chan) += f->samples;
-#endif
-					if (ast_channel_monitor(chan)->state == AST_MONITOR_RUNNING) {
-						if (ast_writestream(ast_channel_monitor(chan)->read_stream, f) < 0)
-							ast_log(LOG_WARNING, "Failed to write data to channel monitor read stream\n");
-					}
-				}
+				break;
+			}
+			if (f->frametype != AST_FRAME_VOICE) {
+				break;
+			}
+			if (ast_format_cmp(f->subclass.format, ast_channel_rawreadformat(chan)) != AST_FORMAT_CMP_EQUAL
+				&& ast_format_cmp(f->subclass.format, ast_channel_readformat(chan)) != AST_FORMAT_CMP_EQUAL) {
+				struct ast_format *core_format;
 
-				if (ast_channel_readtrans(chan) && (f = ast_translate(ast_channel_readtrans(chan), f, 1)) == NULL) {
+				/*
+				 * Note: This frame may not be one of the current native
+				 * formats.  We may have gotten it out of the read queue from
+				 * a previous multi-frame translation, from a framehook
+				 * injected frame, or the device we're talking to isn't
+				 * respecting negotiated formats.  Regardless we will accept
+				 * all frames.
+				 *
+				 * Update the read translation path to handle the new format
+				 * that just came in.  If the core wants slinear we need to
+				 * setup a new translation path because the core is usually
+				 * doing something with the audio itself and may not handle
+				 * any other format.  e.g., Softmix bridge, holding bridge
+				 * announcer channel, recording, AMD...  Otherwise, we'll
+				 * setup to pass the frame as is to the core.  In this case
+				 * the core doesn't care.  The channel is likely in
+				 * autoservice, safesleep, or the channel is in a bridge.
+				 * Let the bridge technology deal with format compatibility
+				 * between the channels in the bridge.
+				 *
+				 * Beware of the transcode_via_slin and genericplc options as
+				 * they force any transcoding to go through slin on a bridge.
+				 * Unfortunately transcode_via_slin is enabled by default and
+				 * genericplc is enabled in the codecs.conf.sample file.
+				 *
+				 * XXX Only updating translation to slinear frames has some
+				 * corner cases if slinear is one of the native formats and
+				 * there are different sample rates involved.  We might wind
+				 * up with conflicting translation paths between channels
+				 * where the read translation path on this channel reduces
+				 * the sample rate followed by a write translation path on
+				 * the peer channel that increases the sample rate.
+				 */
+				core_format = ast_channel_readformat(chan);
+				if (!ast_format_cache_is_slinear(core_format)) {
+					core_format = f->subclass.format;
+				}
+				if (ast_set_read_format_path(chan, f->subclass.format, core_format)) {
+					/* Drop frame.  We couldn't make it compatible with the core. */
+					ast_frfree(f);
+					f = &ast_null_frame;
+					break;
+				}
+			}
+			/* Send frame to audiohooks if present */
+			if (ast_channel_audiohooks(chan)) {
+				struct ast_frame *old_frame = f;
+
+				f = ast_audiohook_write_list(chan, ast_channel_audiohooks(chan), AST_AUDIOHOOK_DIRECTION_READ, f);
+				if (old_frame != f) {
+					ast_frfree(old_frame);
+				}
+			}
+			if (ast_channel_monitor(chan) && ast_channel_monitor(chan)->read_stream) {
+				/* XXX what does this do ? */
+#ifndef MONITOR_CONSTANT_DELAY
+				int jump = ast_channel_outsmpl(chan) - ast_channel_insmpl(chan) - 4 * f->samples;
+				if (jump >= 0) {
+					jump = calc_monitor_jump((ast_channel_outsmpl(chan) - ast_channel_insmpl(chan)),
+						ast_format_get_sample_rate(f->subclass.format),
+						ast_format_get_sample_rate(ast_channel_monitor(chan)->read_stream->fmt->format));
+					if (ast_seekstream(ast_channel_monitor(chan)->read_stream, jump, SEEK_FORCECUR) == -1) {
+						ast_log(LOG_WARNING, "Failed to perform seek in monitoring read stream, synchronization between the files may be broken\n");
+					}
+					ast_channel_insmpl_set(chan, ast_channel_insmpl(chan) + (ast_channel_outsmpl(chan) - ast_channel_insmpl(chan)) + f->samples);
+				} else {
+					ast_channel_insmpl_set(chan, ast_channel_insmpl(chan) + f->samples);
+				}
+#else
+				int jump = calc_monitor_jump((ast_channel_outsmpl(chan) - ast_channel_insmpl(chan)),
+					ast_format_get_sample_rate(f->subclass.codec),
+					ast_format_get_sample_rate(ast_channel_monitor(chan)->read_stream->fmt->format));
+				if (jump - MONITOR_DELAY >= 0) {
+					if (ast_seekstream(ast_channel_monitor(chan)->read_stream, jump - f->samples, SEEK_FORCECUR) == -1) {
+						ast_log(LOG_WARNING, "Failed to perform seek in monitoring read stream, synchronization between the files may be broken\n");
+					}
+					ast_channel_insmpl(chan) += ast_channel_outsmpl(chan) - ast_channel_insmpl(chan);
+				} else {
+					ast_channel_insmpl(chan) += f->samples;
+				}
+#endif
+				if (ast_channel_monitor(chan)->state == AST_MONITOR_RUNNING) {
+					if (ast_writestream(ast_channel_monitor(chan)->read_stream, f) < 0)
+						ast_log(LOG_WARNING, "Failed to write data to channel monitor read stream\n");
+				}
+			}
+
+			if (ast_channel_readtrans(chan)
+				&& ast_format_cmp(f->subclass.format, ast_channel_rawreadformat(chan)) == AST_FORMAT_CMP_EQUAL) {
+				f = ast_translate(ast_channel_readtrans(chan), f, 1);
+				if (!f) {
 					f = &ast_null_frame;
 				}
-
-				/* it is possible for the translation process on chan->readtrans to have
-				   produced multiple frames from the single input frame we passed it; if
-				   this happens, queue the additional frames *before* the frames we may
-				   have queued earlier. if the readq was empty, put them at the head of
-				   the queue, and if it was not, put them just after the frame that was
-				   at the end of the queue.
-				*/
-				if (AST_LIST_NEXT(f, frame_list)) {
-					if (!readq_tail) {
-						ast_queue_frame_head(chan, AST_LIST_NEXT(f, frame_list));
-					} else {
-						__ast_queue_frame(chan, AST_LIST_NEXT(f, frame_list), 0, readq_tail);
-					}
-					ast_frfree(AST_LIST_NEXT(f, frame_list));
-					AST_LIST_NEXT(f, frame_list) = NULL;
-				}
-
-				/* Run generator sitting on the line if timing device not available
-				* and synchronous generation of outgoing frames is necessary       */
-				ast_read_generator_actions(chan, f);
 			}
+
+			/*
+			 * It is possible for the translation process on the channel to have
+			 * produced multiple frames from the single input frame we passed it; if
+			 * this happens, queue the additional frames *before* the frames we may
+			 * have queued earlier. if the readq was empty, put them at the head of
+			 * the queue, and if it was not, put them just after the frame that was
+			 * at the end of the queue.
+			 */
+			if (AST_LIST_NEXT(f, frame_list)) {
+				if (!readq_tail) {
+					ast_queue_frame_head(chan, AST_LIST_NEXT(f, frame_list));
+				} else {
+					__ast_queue_frame(chan, AST_LIST_NEXT(f, frame_list), 0, readq_tail);
+				}
+				ast_frfree(AST_LIST_NEXT(f, frame_list));
+				AST_LIST_NEXT(f, frame_list) = NULL;
+			}
+
+			/*
+			 * Run generator sitting on the line if timing device not available
+			 * and synchronous generation of outgoing frames is necessary
+			 */
+			ast_read_generator_actions(chan, f);
 			break;
 		default:
 			/* Just pass it on! */
@@ -4419,67 +4473,47 @@ static int indicate_redirecting(struct ast_channel *chan, const void *data, size
 	return res ? -1 : 0;
 }
 
-int ast_indicate_data(struct ast_channel *chan, int _condition,
-		const void *data, size_t datalen)
+static int indicate_data_internal(struct ast_channel *chan, int _condition, const void *data, size_t datalen)
 {
 	/* By using an enum, we'll get compiler warnings for values not handled
 	 * in switch statements. */
 	enum ast_control_frame_type condition = _condition;
 	struct ast_tone_zone_sound *ts = NULL;
+	const struct ast_control_t38_parameters *t38_parameters;
 	int res;
-	/* this frame is used by framehooks. if it is set, we must free it at the end of this function */
-	struct ast_frame *awesome_frame = NULL;
-
-	ast_channel_lock(chan);
-
-	/* Don't bother if the channel is about to go away, anyway. */
-	if ((ast_test_flag(ast_channel_flags(chan), AST_FLAG_ZOMBIE)
-			|| ast_check_hangup(chan))
-		&& condition != AST_CONTROL_MASQUERADE_NOTIFY) {
-		res = -1;
-		goto indicate_cleanup;
-	}
-
-	if (!ast_framehook_list_is_empty(ast_channel_framehooks(chan))) {
-		/* Do framehooks now, do it, go, go now */
-		struct ast_frame frame = {
-			.frametype = AST_FRAME_CONTROL,
-			.subclass.integer = condition,
-			.data.ptr = (void *) data, /* this cast from const is only okay because we do the ast_frdup below */
-			.datalen = datalen
-		};
-
-		/* we have now committed to freeing this frame */
-		awesome_frame = ast_frdup(&frame);
-
-		/* who knows what we will get back! the anticipation is killing me. */
-		if (!(awesome_frame = ast_framehook_list_write_event(ast_channel_framehooks(chan), awesome_frame))
-			|| awesome_frame->frametype != AST_FRAME_CONTROL) {
-			res = 0;
-			goto indicate_cleanup;
-		}
-
-		condition = awesome_frame->subclass.integer;
-		data = awesome_frame->data.ptr;
-		datalen = awesome_frame->datalen;
-	}
 
 	switch (condition) {
 	case AST_CONTROL_CONNECTED_LINE:
 		if (indicate_connected_line(chan, data, datalen)) {
 			res = 0;
-			goto indicate_cleanup;
+			return res;
 		}
 		break;
 	case AST_CONTROL_REDIRECTING:
 		if (indicate_redirecting(chan, data, datalen)) {
 			res = 0;
-			goto indicate_cleanup;
+			return res;
 		}
 		break;
 	case AST_CONTROL_HOLD:
 	case AST_CONTROL_UNHOLD:
-		ast_channel_hold_state_set(chan, condition);
+		ast_channel_hold_state_set(chan, _condition);
+		break;
+	case AST_CONTROL_T38_PARAMETERS:
+		t38_parameters = data;
+		switch (t38_parameters->request_response) {
+		case AST_T38_REQUEST_NEGOTIATE:
+		case AST_T38_NEGOTIATED:
+			ast_channel_set_is_t38_active_nolock(chan, 1);
+			break;
+		case AST_T38_REQUEST_TERMINATE:
+		case AST_T38_TERMINATED:
+		case AST_T38_REFUSED:
+			ast_channel_set_is_t38_active_nolock(chan, 0);
+			break;
+		default:
+			break;
+		}
 		break;
 	default:
 		break;
@@ -4487,7 +4521,7 @@ int ast_indicate_data(struct ast_channel *chan, int _condition,
 
 	if (is_visible_indication(condition)) {
 		/* A new visible indication is requested. */
-		ast_channel_visible_indication_set(chan, condition);
+		ast_channel_visible_indication_set(chan, _condition);
 	} else if (condition == AST_CONTROL_UNHOLD || _condition < 0) {
 		/* Visible indication is cleared/stopped. */
 		ast_channel_visible_indication_set(chan, 0);
@@ -4495,7 +4529,7 @@ int ast_indicate_data(struct ast_channel *chan, int _condition,
 
 	if (ast_channel_tech(chan)->indicate) {
 		/* See if the channel driver can handle this condition. */
-		res = ast_channel_tech(chan)->indicate(chan, condition, data, datalen);
+		res = ast_channel_tech(chan)->indicate(chan, _condition, data, datalen);
 	} else {
 		res = -1;
 	}
@@ -4503,7 +4537,7 @@ int ast_indicate_data(struct ast_channel *chan, int _condition,
 	if (!res) {
 		/* The channel driver successfully handled this indication */
 		res = 0;
-		goto indicate_cleanup;
+		return res;
 	}
 
 	/* The channel driver does not support this indication, let's fake
@@ -4516,7 +4550,7 @@ int ast_indicate_data(struct ast_channel *chan, int _condition,
 		/* Stop any tones that are playing */
 		ast_playtones_stop(chan);
 		res = 0;
-		goto indicate_cleanup;
+		return res;
 	}
 
 	/* Handle conditions that we have tones for. */
@@ -4524,7 +4558,7 @@ int ast_indicate_data(struct ast_channel *chan, int _condition,
 	case _XXX_AST_CONTROL_T38:
 		/* deprecated T.38 control frame */
 		res = -1;
-		goto indicate_cleanup;
+		return res;
 	case AST_CONTROL_T38_PARAMETERS:
 		/* there is no way to provide 'default' behavior for these
 		 * control frames, so we need to return failure, but there
@@ -4533,7 +4567,7 @@ int ast_indicate_data(struct ast_channel *chan, int _condition,
 		 * so just return right now. in addition, we want to return
 		 * whatever value the channel driver returned, in case it
 		 * has some meaning.*/
-		goto indicate_cleanup;
+		return res;
 	case AST_CONTROL_RINGING:
 		ts = ast_get_indication_tone(ast_channel_zone(chan), "ring");
 		/* It is common practice for channel drivers to return -1 if trying
@@ -4603,6 +4637,11 @@ int ast_indicate_data(struct ast_channel *chan, int _condition,
 		/* We have a tone to play, yay. */
 		ast_debug(1, "Driver for channel '%s' does not support indication %u, emulating it\n", ast_channel_name(chan), condition);
 		res = ast_playtones_start(chan, 0, ts->data, 1);
+		if (!res) {
+			ast_test_suite_event_notify("RINGING_INBAND",
+					"Channel: %s\r\n",
+					ast_channel_name(chan));
+		}
 		ts = ast_tone_zone_sound_unref(ts);
 	}
 
@@ -4610,6 +4649,53 @@ int ast_indicate_data(struct ast_channel *chan, int _condition,
 		/* not handled */
 		ast_log(LOG_WARNING, "Unable to handle indication %u for '%s'\n", condition, ast_channel_name(chan));
 	}
+
+	return res;
+}
+
+int ast_indicate_data(struct ast_channel *chan, int _condition, const void *data, size_t datalen)
+{
+	int res;
+	/* this frame is used by framehooks. if it is set, we must free it at the end of this function */
+	struct ast_frame *awesome_frame = NULL;
+
+	ast_channel_lock(chan);
+
+	/* Don't bother if the channel is about to go away, anyway. */
+	if ((ast_test_flag(ast_channel_flags(chan), AST_FLAG_ZOMBIE)
+			|| (ast_check_hangup(chan) && !ast_channel_is_leaving_bridge(chan)))
+		&& _condition != AST_CONTROL_MASQUERADE_NOTIFY) {
+		res = -1;
+		goto indicate_cleanup;
+	}
+
+	if (!ast_framehook_list_is_empty(ast_channel_framehooks(chan))) {
+		/* Do framehooks now, do it, go, go now */
+		struct ast_frame frame = {
+			.frametype = AST_FRAME_CONTROL,
+			.subclass.integer = _condition,
+			.data.ptr = (void *) data, /* this cast from const is only okay because we do the ast_frdup below */
+			.datalen = datalen
+		};
+
+		/* we have now committed to freeing this frame */
+		awesome_frame = ast_frdup(&frame);
+
+		/* who knows what we will get back! the anticipation is killing me. */
+		awesome_frame = ast_framehook_list_write_event(ast_channel_framehooks(chan),
+			awesome_frame);
+		if (!awesome_frame
+			|| awesome_frame->frametype != AST_FRAME_CONTROL) {
+			res = 0;
+			goto indicate_cleanup;
+		}
+
+		_condition = awesome_frame->subclass.integer;
+		data = awesome_frame->data.ptr;
+		datalen = awesome_frame->datalen;
+	}
+
+	res = indicate_data_internal(chan, _condition, data, datalen);
 
 indicate_cleanup:
 	ast_channel_unlock(chan);
@@ -4953,10 +5039,15 @@ int ast_write(struct ast_channel *chan, struct ast_frame *fr)
 				res = ast_senddigit_end(chan, fr->subclass.integer, fr->len);
 				ast_channel_lock(chan);
 				CHECK_BLOCKING(chan);
-			} else if (fr->frametype == AST_FRAME_CONTROL && fr->subclass.integer == AST_CONTROL_UNHOLD) {
-				/* This is a side case where Echo is basically being called and the person put themselves on hold and took themselves off hold */
-				res = (ast_channel_tech(chan)->indicate == NULL) ? 0 :
-					ast_channel_tech(chan)->indicate(chan, fr->subclass.integer, fr->data.ptr, fr->datalen);
+			} else if (fr->frametype == AST_FRAME_CONTROL
+				&& fr->subclass.integer == AST_CONTROL_UNHOLD) {
+				/*
+				 * This is a side case where Echo is basically being called
+				 * and the person put themselves on hold and took themselves
+				 * off hold.
+				 */
+				indicate_data_internal(chan, fr->subclass.integer, fr->data.ptr,
+					fr->datalen);
 			}
 			res = 0;	/* XXX explain, why 0 ? */
 			goto done;
@@ -4968,8 +5059,8 @@ int ast_write(struct ast_channel *chan, struct ast_frame *fr)
 	CHECK_BLOCKING(chan);
 	switch (fr->frametype) {
 	case AST_FRAME_CONTROL:
-		res = (ast_channel_tech(chan)->indicate == NULL) ? 0 :
-			ast_channel_tech(chan)->indicate(chan, fr->subclass.integer, fr->data.ptr, fr->datalen);
+		indicate_data_internal(chan, fr->subclass.integer, fr->data.ptr, fr->datalen);
+		res = 0;
 		break;
 	case AST_FRAME_DTMF_BEGIN:
 		if (ast_channel_audiohooks(chan)) {
@@ -5032,29 +5123,35 @@ int ast_write(struct ast_channel *chan, struct ast_frame *fr)
 		}
 
 		/* If the frame is in the raw write format, then it's easy... just use the frame - otherwise we will have to translate */
-		if (ast_format_cmp(fr->subclass.format, ast_channel_rawwriteformat(chan)) != AST_FORMAT_CMP_NOT_EQUAL) {
+		if (ast_format_cmp(fr->subclass.format, ast_channel_rawwriteformat(chan)) == AST_FORMAT_CMP_EQUAL) {
 			f = fr;
 		} else {
-			if ((ast_format_cap_iscompatible_format(ast_channel_nativeformats(chan), fr->subclass.format) == AST_FORMAT_CMP_NOT_EQUAL) &&
-			    (ast_format_cmp(ast_channel_writeformat(chan), fr->subclass.format) != AST_FORMAT_CMP_EQUAL)) {
-				struct ast_str *codec_buf = ast_str_alloca(64);
+			if (ast_format_cmp(ast_channel_writeformat(chan), fr->subclass.format) != AST_FORMAT_CMP_EQUAL) {
+				struct ast_str *codec_buf = ast_str_alloca(AST_FORMAT_CAP_NAMES_LEN);
 
 				/*
-				 * XXX Something is not right.  We are not compatible with this
-				 * frame.  Bad things can happen.  Problems range from no audio,
-				 * one-way audio, to unexplained line hangups.  As a last resort
-				 * try to adjust the format.  Ideally, we do not want to do this
-				 * because it indicates a deeper problem.  For now, we log these
-				 * events to reduce user impact and help identify the problem
-				 * areas.
+				 * We are not setup to write this frame.  Things may have changed
+				 * on the peer side of the world and we try to adjust the format to
+				 * make it compatible again.  However, bad things can happen if we
+				 * cannot setup a new translation path.  Problems range from no
+				 * audio, one-way audio, to garbled audio.  The best we can do is
+				 * request the call to hangup since we could not make it compatible.
+				 *
+				 * Being continuously spammed by this message likely indicates a
+				 * problem with the peer because it cannot make up its mind about
+				 * which format to use.
 				 */
-				ast_log(LOG_WARNING, "Codec mismatch on channel %s setting write format to %s from %s native formats %s\n",
-					ast_channel_name(chan), ast_format_get_name(fr->subclass.format), ast_format_get_name(ast_channel_writeformat(chan)),
+				ast_debug(1, "Channel %s changing write format from %s to %s, native formats %s\n",
+					ast_channel_name(chan),
+					ast_format_get_name(ast_channel_writeformat(chan)),
+					ast_format_get_name(fr->subclass.format),
 					ast_format_cap_get_names(ast_channel_nativeformats(chan), &codec_buf));
-				ast_set_write_format(chan, fr->subclass.format);
+				if (ast_set_write_format(chan, fr->subclass.format)) {
+					/* Could not handle the new write format.  Induce a hangup. */
+					break;
+				}
 			}
-
-			f = (ast_channel_writetrans(chan)) ? ast_translate(ast_channel_writetrans(chan), fr, 0) : fr;
+			f = ast_channel_writetrans(chan) ? ast_translate(ast_channel_writetrans(chan), fr, 0) : fr;
 		}
 
 		if (!f) {
@@ -5214,6 +5311,42 @@ done:
 	return res;
 }
 
+int ast_set_read_format_path(struct ast_channel *chan, struct ast_format *raw_format, struct ast_format *core_format)
+{
+	struct ast_trans_pvt *trans_old;
+	struct ast_trans_pvt *trans_new;
+
+	if (ast_format_cmp(ast_channel_rawreadformat(chan), raw_format) == AST_FORMAT_CMP_EQUAL
+		&& ast_format_cmp(ast_channel_readformat(chan), core_format) == AST_FORMAT_CMP_EQUAL) {
+		/* Nothing to setup */
+		return 0;
+	}
+
+	ast_debug(1, "Channel %s setting read format path: %s -> %s\n",
+		ast_channel_name(chan),
+		ast_format_get_name(raw_format),
+		ast_format_get_name(core_format));
+
+	/* Setup new translation path. */
+	if (ast_format_cmp(raw_format, core_format) != AST_FORMAT_CMP_EQUAL) {
+		trans_new = ast_translator_build_path(core_format, raw_format);
+		if (!trans_new) {
+			return -1;
+		}
+	} else {
+		/* No translation needed. */
+		trans_new = NULL;
+	}
+	trans_old = ast_channel_readtrans(chan);
+	if (trans_old) {
+		ast_translator_free_path(trans_old);
+	}
+	ast_channel_readtrans_set(chan, trans_new);
+	ast_channel_set_rawreadformat(chan, raw_format);
+	ast_channel_set_readformat(chan, core_format);
+	return 0;
+}
+
 struct set_format_access {
 	const char *direction;
 	struct ast_trans_pvt *(*get_trans)(const struct ast_channel *chan);
@@ -5266,7 +5399,14 @@ static int set_format(struct ast_channel *chan, struct ast_format_cap *cap_set, 
 		access = &set_format_access_write;
 	}
 
-	best_set_fmt = ast_format_cap_get_format(cap_set, 0);
+	best_set_fmt = ast_format_cap_get_best_by_type(cap_set, AST_MEDIA_TYPE_AUDIO);
+	if (!best_set_fmt) {
+		/*
+		 * Not setting any audio formats?
+		 * Assume a call without any sounds (video, text)
+		 */
+		return 0;
+	}
 
 	/* See if the underlying channel driver is capable of performing transcoding for us */
 	res = ast_channel_setoption(chan, access->setoption,
@@ -5328,15 +5468,16 @@ static int set_format(struct ast_channel *chan, struct ast_format_cap *cap_set, 
 		res = ast_translator_best_choice(cap_native, cap_set, &best_native_fmt, &best_set_fmt);
 	}
 	if (res < 0) {
-		struct ast_str *codec_from = ast_str_alloca(64);
-		struct ast_str *codec_to = ast_str_alloca(64);
+		struct ast_str *codec_native = ast_str_alloca(AST_FORMAT_CAP_NAMES_LEN);
+		struct ast_str *codec_set = ast_str_alloca(AST_FORMAT_CAP_NAMES_LEN);
 
-		ast_format_cap_get_names(cap_native, &codec_from);
+		ast_format_cap_get_names(cap_native, &codec_native);
 		ast_channel_unlock(chan);
-		ast_format_cap_get_names(cap_set, &codec_to);
+		ast_format_cap_get_names(cap_set, &codec_set);
 
-		ast_log(LOG_WARNING, "Unable to find a codec translation path from %s to %s\n",
-			ast_str_buffer(codec_from), ast_str_buffer(codec_to));
+		ast_log(LOG_WARNING, "Unable to find a codec translation path: %s -> %s\n",
+			ast_str_buffer(direction ? codec_set : codec_native),
+			ast_str_buffer(direction ? codec_native : codec_set));
 		return -1;
 	}
 
@@ -5380,10 +5521,11 @@ static int set_format(struct ast_channel *chan, struct ast_format_cap *cap_set, 
 		access->set_format(chan, best_set_fmt);
 		access->set_rawformat(chan, best_native_fmt);
 
-		ast_debug(1, "Set channel %s to %s format %s\n",
+		ast_debug(1, "Channel %s setting %s format path: %s -> %s\n",
 			ast_channel_name(chan),
 			access->direction,
-			ast_format_get_name(best_set_fmt));
+			ast_format_get_name(direction ? best_set_fmt : best_native_fmt),
+			ast_format_get_name(direction ? best_native_fmt : best_set_fmt));
 	}
 
 	ast_channel_unlock(chan);
@@ -5513,6 +5655,7 @@ static void call_forward_inherit(struct ast_channel *new_chan, struct ast_channe
 	ast_channel_lock_both(parent, new_chan);
 	ast_channel_inherit_variables(parent, new_chan);
 	ast_channel_datastore_inherit(parent, new_chan);
+	ast_max_forwards_decrement(new_chan);
 	ast_channel_unlock(new_chan);
 	ast_channel_unlock(parent);
 }
@@ -5632,6 +5775,7 @@ struct ast_channel *__ast_request_and_dial(const char *type, struct ast_format_c
 			ast_channel_lock_both(oh->parent_channel, chan);
 			ast_channel_inherit_variables(oh->parent_channel, chan);
 			ast_channel_datastore_inherit(oh->parent_channel, chan);
+			ast_max_forwards_decrement(chan);
 			ast_channel_unlock(oh->parent_channel);
 			ast_channel_unlock(chan);
 		}
@@ -5867,8 +6011,8 @@ struct ast_channel *ast_request(const char *type, struct ast_format_cap *request
 			res = ast_translator_best_choice(tmp_cap, chan->tech->capabilities, &tmp_fmt, &best_audio_fmt);
 			ao2_ref(tmp_cap, -1);
 			if (res < 0) {
-				struct ast_str *tech_codecs = ast_str_alloca(64);
-				struct ast_str *request_codecs = ast_str_alloca(64);
+				struct ast_str *tech_codecs = ast_str_alloca(AST_FORMAT_CAP_NAMES_LEN);
+				struct ast_str *request_codecs = ast_str_alloca(AST_FORMAT_CAP_NAMES_LEN);
 
 				ast_log(LOG_WARNING, "No translator path exists for channel type %s (native %s) to %s\n", type,
 					ast_format_cap_get_names(chan->tech->capabilities, &tech_codecs),
@@ -6199,15 +6343,17 @@ static int ast_channel_make_compatible_helper(struct ast_channel *from, struct a
 	RAII_VAR(struct ast_format *, best_dst_fmt, NULL, ao2_cleanup);
 	int no_path;
 
-	ast_channel_lock_both(from, to);
+	/*
+	 * We cannot short circuit this code because it is possible to ask
+	 * to make compatible two channels that are "compatible" because
+	 * they already have translation paths setup but together make for
+	 * a sub-optimal path.  e.g., The From channel has g722 -> ulaw
+	 * and the To channel has ulaw -> g722.  They are "compatible" but
+	 * together the translations are unnecessary and the audio loses
+	 * fidelity in the process.
+	 */
 
-	if ((ast_format_cmp(ast_channel_readformat(from), ast_channel_writeformat(to)) != AST_FORMAT_CMP_NOT_EQUAL) &&
-		(ast_format_cmp(ast_channel_readformat(to), ast_channel_writeformat(from)) != AST_FORMAT_CMP_NOT_EQUAL)) {
-		/* Already compatible!  Moving on ... */
-		ast_channel_unlock(to);
-		ast_channel_unlock(from);
-		return 0;
-	}
+	ast_channel_lock_both(from, to);
 
 	src_cap = ast_channel_nativeformats(from); /* shallow copy, do not destroy */
 	dst_cap = ast_channel_nativeformats(to);   /* shallow copy, do not destroy */
@@ -7296,7 +7442,7 @@ int ast_moh_start(struct ast_channel *chan, const char *mclass, const char *inte
 
 	ast_verb(3, "Music class %s requested but no musiconhold loaded.\n", mclass ? mclass : (interpclass ? interpclass : "default"));
 
-	return 0;
+	return -1;
 }
 
 void ast_moh_stop(struct ast_channel *chan)
@@ -7645,7 +7791,7 @@ void ast_channels_init(void)
 
 	ast_plc_reload();
 
-	ast_register_atexit(channels_shutdown);
+	ast_register_cleanup(channels_shutdown);
 
 }
 

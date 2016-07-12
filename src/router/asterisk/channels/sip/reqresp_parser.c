@@ -25,7 +25,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 426865 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "include/sip.h"
 #include "include/sip_utils.h"
@@ -2420,7 +2420,7 @@ struct sip_via *parse_via(const char *header)
 
 	/* store the port, we have to handle ipv6 addresses containing ':'
 	 * characters gracefully */
-	if (((parm = strchr(v->sent_by, ']')) && *(++parm) == ':') || (parm = strchr(v->sent_by, ':'))) {
+	if (((parm = strchr(v->sent_by, ']')) && *(++parm) == ':') || (!(parm = strchr(v->sent_by, ']')) && (parm = strchr(v->sent_by, ':')))) {
 		char *endptr;
 
 		v->port = strtol(++parm, &endptr, 10);

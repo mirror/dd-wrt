@@ -18,7 +18,7 @@
  * Computer Science, Speech Group
  * Chengxiang Lu and Alex Hauptmann
  *
- * $Id: g722.h 48959 2006-12-25 06:42:15Z rizzo $
+ * $Id$
  */
 
 

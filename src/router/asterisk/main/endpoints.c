@@ -29,7 +29,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 433064 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/astobj2.h"
 #include "asterisk/endpoints.h"
@@ -303,13 +303,14 @@ static struct ast_endpoint *endpoint_internal_create(const char *tech, const cha
 		return NULL;
 	}
 
-	endpoint->topics = stasis_cp_single_create(ast_endpoint_cache_all(),
-		endpoint->id);
-	if (!endpoint->topics) {
-		return NULL;
-	}
-
 	if (!ast_strlen_zero(resource)) {
+
+		endpoint->topics = stasis_cp_single_create(ast_endpoint_cache_all(),
+			endpoint->id);
+		if (!endpoint->topics) {
+			return NULL;
+		}
+
 		endpoint->router = stasis_message_router_create_pool(ast_endpoint_topic(endpoint));
 		if (!endpoint->router) {
 			return NULL;
@@ -325,9 +326,16 @@ static struct ast_endpoint *endpoint_internal_create(const char *tech, const cha
 
 		endpoint->tech_forward = stasis_forward_all(stasis_cp_single_topic(endpoint->topics),
 			stasis_cp_single_topic(tech_endpoint->topics));
+
 		endpoint_publish_snapshot(endpoint);
 		ao2_link(endpoints, endpoint);
 	} else {
+		endpoint->topics = stasis_cp_sink_create(ast_endpoint_cache_all(),
+			endpoint->id);
+		if (!endpoint->topics) {
+			return NULL;
+		}
+
 		ao2_link(tech_endpoints, endpoint);
 	}
 
@@ -415,6 +423,14 @@ const char *ast_endpoint_get_id(const struct ast_endpoint *endpoint)
 	return endpoint->id;
 }
 
+enum ast_endpoint_state ast_endpoint_get_state(const struct ast_endpoint *endpoint)
+{
+	if (!endpoint) {
+		return AST_ENDPOINT_UNKNOWN;
+	}
+	return endpoint->state;
+}
+
 void ast_endpoint_set_state(struct ast_endpoint *endpoint,
 	enum ast_endpoint_state state)
 {
@@ -456,7 +472,7 @@ static void endpoint_snapshot_dtor(void *obj)
 struct ast_endpoint_snapshot *ast_endpoint_snapshot_create(
 	struct ast_endpoint *endpoint)
 {
-	RAII_VAR(struct ast_endpoint_snapshot *, snapshot, NULL, ao2_cleanup);
+	struct ast_endpoint_snapshot *snapshot;
 	int channel_count;
 	struct ao2_iterator i;
 	void *obj;
@@ -492,7 +508,6 @@ struct ast_endpoint_snapshot *ast_endpoint_snapshot_create(
 	}
 	ao2_iterator_destroy(&i);
 
-	ao2_ref(snapshot, +1);
 	return snapshot;
 }
 

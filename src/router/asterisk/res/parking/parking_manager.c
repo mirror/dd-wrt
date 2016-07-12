@@ -25,7 +25,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 431114 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "res_parking.h"
 #include "asterisk/config.h"
@@ -154,6 +154,22 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision: 431114 $")
 				<xi:include xpointer="xpointer(/docs/managerEvent[@name='ParkedCall']/managerEventInstance/syntax/parameter)" />
 				<channel_snapshot prefix="Retriever"/>
 			</syntax>
+		</managerEventInstance>
+	</managerEvent>
+	<managerEvent language="en_US" name="ParkedCallSwap">
+		<managerEventInstance class="EVENT_FLAG_CALL">
+			<synopsis>Raised when a channel takes the place of a previously parked channel</synopsis>
+			<syntax>
+				<channel_snapshot prefix="Parkee"/>
+				<channel_snapshot prefix="Parker"/>
+				<xi:include xpointer="xpointer(/docs/managerEvent[@name='ParkedCall']/managerEventInstance/syntax/parameter)" />
+			</syntax>
+			<description>
+				<para>This event is raised when a channel initially parked in the parking lot
+				is swapped out with a different channel. The most common case for this is when
+				an attended transfer to a parking lot occurs. The Parkee information in the event
+				will indicate the party that was swapped into the parking lot.</para>
+			</description>
 		</managerEventInstance>
 	</managerEvent>
  ***/
@@ -521,12 +537,12 @@ static int manager_park(struct mansession *s, const struct message *m)
 	}
 
 	if (!ast_strlen_zero(timeout)) {
-		if (sscanf(timeout, "%30d", &timeout_override) != 1 || timeout < 0) {
+		if (sscanf(timeout, "%30d", &timeout_override) != 1 || timeout_override < 0) {
 			astman_send_error(s, m, "Invalid Timeout value.");
 			return 0;
 		}
 
-		if (timeout_override > 0) {
+		if (timeout_override) {
 			/* If greater than zero, convert to seconds for internal use. Must be >= 1 second. */
 			timeout_override = MAX(1, timeout_override / 1000);
 		}
@@ -538,11 +554,11 @@ static int manager_park(struct mansession *s, const struct message *m)
 		return 0;
 	}
 
-	ast_channel_lock(chan);
 	if (!ast_strlen_zero(timeout_channel)) {
+		ast_channel_lock(chan);
 		ast_bridge_set_transfer_variables(chan, timeout_channel, 0);
+		ast_channel_unlock(chan);
 	}
-	ast_channel_unlock(chan);
 
 	parker_chan = ast_channel_bridge_peer(chan);
 	if (!parker_chan || strcmp(ast_channel_name(parker_chan), timeout_channel)) {

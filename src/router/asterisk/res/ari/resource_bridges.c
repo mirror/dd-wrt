@@ -24,12 +24,14 @@
  */
 
 /*** MODULEINFO
+	<depend type="module">res_stasis_recording</depend>
+	<depend type="module">res_stasis_playback</depend>
 	<support_level>core</support_level>
  ***/
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 431145 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "resource_bridges.h"
 #include "asterisk/stasis.h"
@@ -295,10 +297,11 @@ static void *bridge_channel_control_thread(void *data)
 	thread_data = NULL;
 
 	stasis_app_control_execute_until_exhausted(bridge_channel, control);
+	stasis_app_control_flush_queue(control);
 
-	ast_hangup(bridge_channel);
-	ao2_cleanup(control);
 	stasis_forward_cancel(forward);
+	ao2_cleanup(control);
+	ast_hangup(bridge_channel);
 	return NULL;
 }
 
@@ -525,9 +528,7 @@ static enum play_found_result ari_bridges_play_found(const char *args_media,
 
 	control = stasis_app_control_find_by_channel(play_channel);
 	if (!control) {
-		ast_ari_response_error(
-			response, 500, "Internal Error", "Failed to get control snapshot");
-		return PLAY_FOUND_FAILURE;
+		return PLAY_FOUND_CHANNEL_UNAVAILABLE;
 	}
 
 	ao2_lock(control);
@@ -693,7 +694,7 @@ void ast_ari_bridges_record(struct ast_variable *headers,
 		return;
 	}
 
-	if (options->if_exists == -1) {
+	if (options->if_exists == AST_RECORD_IF_EXISTS_ERROR) {
 		ast_ari_response_error(
 			response, 400, "Bad Request",
 			"ifExists invalid");

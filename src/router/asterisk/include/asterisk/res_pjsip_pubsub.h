@@ -339,6 +339,14 @@ struct ast_sip_subscription_handler {
 struct ast_sip_subscription *ast_sip_create_subscription(const struct ast_sip_subscription_handler *handler,
 		struct ast_sip_endpoint *endpoint, const char *resource);
 
+/*!
+ * \brief Get the pjsip dialog that is associated with this subscription
+ * \since 13.9.0
+ *
+ * \retval NULL Could not get dialog
+ * \retval non-NULL The dialog
+ */
+pjsip_dialog *ast_sip_subscription_get_dialog(struct ast_sip_subscription *sub);
 
 /*!
  * \brief Get the endpoint that is associated with this subscription
@@ -379,6 +387,18 @@ struct ast_taskprocessor *ast_sip_subscription_get_serializer(struct ast_sip_sub
 int ast_sip_subscription_notify(struct ast_sip_subscription *sub, struct ast_sip_body_data *notify_data, int terminate);
 
 /*!
+ * \brief Retrieve the local sip uri for this subscription
+ * \since 13.9.0
+ *
+ * This is the local sip URI of the subscribed resource.
+ *
+ * \param sub The subscription
+ * \retval NULL Could not get uri
+ * \retval non-NULL The local pjsip_sip_uri
+ */
+pjsip_sip_uri *ast_sip_subscription_get_sip_uri(struct ast_sip_subscription *sub);
+
+/*!
  * \brief Retrieve the local URI for this subscription
  *
  * This is the local URI of the subscribed resource.
@@ -404,6 +424,16 @@ void ast_sip_subscription_get_remote_uri(struct ast_sip_subscription *sub, char 
  * \brief Get the name of the subscribed resource.
  */
 const char *ast_sip_subscription_get_resource_name(struct ast_sip_subscription *sub);
+
+/*!
+ * \brief Get whether the subscription has been terminated or not.
+ *
+ * \param sub The subscription.
+ * \retval 0 not terminated.
+ * \retval 1 terminated.
+ * \since 13.4.0
+ */
+int ast_sip_subscription_is_terminated(const struct ast_sip_subscription *sub);
 
 /*!
  * \brief Get a header value for a subscription.
@@ -673,6 +703,15 @@ const char *ast_sip_subscription_get_body_type(struct ast_sip_subscription *sub)
  * \brief Get the body subtype used for this subscription
  */
 const char *ast_sip_subscription_get_body_subtype(struct ast_sip_subscription *sub);
+
+/*!
+ * \since 13.6.0
+ * \brief Alert the pubsub core that the subscription is ready for destruction
+ *
+ * \param sub The subscription that is complete
+ * \return Nothing
+ */
+void ast_sip_subscription_destroy(struct ast_sip_subscription *sub);
 
 /*! \brief Determines whether the res_pjsip_pubsub module is loaded */
 #define CHECK_PJSIP_PUBSUB_MODULE_LOADED()			\

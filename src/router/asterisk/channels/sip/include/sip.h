@@ -291,8 +291,8 @@
 
 /* Sending PROGRESS in-band settings */
 #define SIP_PROG_INBAND        (3 << 25) /*!< DP: three settings, uses two bits */
-#define SIP_PROG_INBAND_NEVER  (0 << 25)
-#define SIP_PROG_INBAND_NO     (1 << 25)
+#define SIP_PROG_INBAND_NO     (0 << 25)
+#define SIP_PROG_INBAND_NEVER  (1 << 25)
 #define SIP_PROG_INBAND_YES    (2 << 25)
 
 #define SIP_USEPATH          (1 << 27) /*!< GDP: Trust and use incoming Path headers? */
@@ -547,8 +547,7 @@ enum sipregistrystate {
 		 * recover (not sure how correctly).
 		 */
 
-	REG_STATE_TIMEOUT,	/*!< Registration timed out
-		* \note XXX unused */
+	REG_STATE_TIMEOUT,	/*!< Registration about to expire, renewing registration */
 
 	REG_STATE_NOAUTH,	/*!< We have no accepted credentials
 		 * \note fatal - no chance to proceed */
@@ -774,6 +773,7 @@ struct sip_settings {
 	int tcp_enabled;
 	int default_max_forwards;    /*!< Default max forwards (SIP Anti-loop) */
 	int websocket_write_timeout; /*!< Socket write timeout for websocket transports, in ms */
+	int websocket_enabled;       /*!< Are websockets enabled? */
 };
 
 struct ast_websocket;
@@ -951,7 +951,6 @@ struct sip_st_dlg {
 	int st_cached_max_se;              /*!< Session-Timers cached Session-Expires */
 	enum st_mode st_cached_mode;       /*!< Session-Timers cached M.O. */
 	enum st_refresher st_cached_ref;   /*!< Session-Timers session refresher */
-	unsigned char quit_flag:1;         /*!< Stop trying to lock; just quit */
 };
 
 

@@ -39,23 +39,23 @@ struct sip_pvt *__sip_alloc(ast_string_field callid, struct ast_sockaddr *sin,
 #define sip_alloc(callid, addr, useglobal_nat, intended_method, req, logger_callid) \
 	__sip_alloc(callid, addr, useglobal_nat, intended_method, req, logger_callid, __FILE__, __LINE__, __PRETTY_FUNCTION__)
 
+/*!
+ * \brief Schedule final destruction of SIP dialog.
+ *
+ * \note This cannot be canceled.
+ *
+ * \details
+ * This function is used to keep a dialog around for a period of time in order
+ * to properly respond to any retransmits.
+ */
 void sip_scheddestroy_final(struct sip_pvt *p, int ms);
+
+/*! \brief Schedule destruction of SIP dialog */
 void sip_scheddestroy(struct sip_pvt *p, int ms);
-int sip_cancel_destroy(struct sip_pvt *p);
 
-/*! \brief Destroy SIP call structure.
- * Make it return NULL so the caller can do things like
- *	foo = sip_destroy(foo);
- * and reduce the chance of bugs due to dangling pointers.
- */
-struct sip_pvt *sip_destroy(struct sip_pvt *p);
+/*! \brief Cancel destruction of SIP dialog. */
+void sip_cancel_destroy(struct sip_pvt *pvt);
 
-/*! \brief Destroy SIP call structure.
- * Make it return NULL so the caller can do things like
- *	foo = sip_destroy(foo);
- * and reduce the chance of bugs due to dangling pointers.
- */
-void __sip_destroy(struct sip_pvt *p, int lockowner, int lockdialoglist);
 /*!
  * \brief Unlink a dialog from the dialogs container, as well as any other places
  * that it may be currently stored.

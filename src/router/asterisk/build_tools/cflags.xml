@@ -1,5 +1,10 @@
 <category name="MENUSELECT_CFLAGS" displayname="Compiler Flags" positive_output="yes" remove_on_change=".lastclean">
 		<member name="DONT_OPTIMIZE" displayname="Disable Optimizations by the Compiler">
+			<use autoselect="yes">COMPILE_DOUBLE</use>
+			<support_level>core</support_level>
+		</member>
+		<member name="COMPILE_DOUBLE" displayname="Pre-compile with optimizations to detect errors, then discard and recompile with DONT_OPTIMIZE.  Creates intermediate .i files">
+			<depend>DONT_OPTIMIZE</depend>
 			<support_level>core</support_level>
 		</member>
 		<member name="DEBUG_THREADS" displayname="Enable Thread Debugging">
@@ -77,11 +82,38 @@
 			<support_level>extended</support_level>
 		</member>
 		<member name="MALLOC_DEBUG" displayname="Keep Track of Memory Allocations">
+			<conflict>DEBUG_CHAOS</conflict>
 			<support_level>core</support_level>
 		</member>
 		<member name="DEBUG_CHAOS" displayname="Randomly FAIL memory allocations or other operations">
 			<conflict>MALLOC_DEBUG</conflict>
 			<support_level>core</support_level>
+		</member>
+		<member name="ADDRESS_SANITIZER" displayname="Address Sanitizer">
+			<depend>HAVE_ADDRESS_SANITIZER</depend>
+			<support_level>extended</support_level>
+			<conflict>THREAD_SANITIZER</conflict>
+			<conflict>LEAK_SANITIZER</conflict>
+			<conflict>MALLOC_DEBUG</conflict>
+			<conflict>DEBUG_CHAOS</conflict>
+		</member>
+		<member name="THREAD_SANITIZER" displayname="Thread Sanitizer">
+			<depend>HAVE_THREAD_SANITIZER</depend>
+			<support_level>extended</support_level>
+			<conflict>ADDRESS_SANITIZER</conflict>
+			<conflict>LEAK_SANITIZER</conflict>
+		</member>
+		<member name="LEAK_SANITIZER" displayname="Leak Sanitizer">
+			<depend>HAVE_LEAK_SANITIZER</depend>
+			<support_level>extended</support_level>
+			<conflict>ADDRESS_SANITIZER</conflict>
+			<conflict>THREAD_SANITIZER</conflict>
+			<conflict>MALLOC_DEBUG</conflict>
+			<conflict>DEBUG_CHAOS</conflict>
+		</member>
+		<member name="UNDEFINED_SANITIZER" displayname="Undefined Behavior Sanitizer">
+			<depend>HAVE_UNDEFINED_SANITIZER</depend>
+			<support_level>extended</support_level>
 		</member>
 		<member name="BUSYDETECT_TONEONLY" displayname="Enable additional comparision of only the tone duration not the silence part">
 			<conflict>BUSYDETECT_COMPARE_TONE_AND_SILENCE</conflict>

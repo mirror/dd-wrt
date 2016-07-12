@@ -1,5 +1,5 @@
 #!/bin/sh
-# $Id: ast_grab_core 197824 2009-05-28 21:50:27Z seanbright $
+# $Id$
 # lame quickie script to snarf a core of a hung asterisk process.
 # bugs to ast_grab_core, blinky-lights.org  (derrick daugherty)
 

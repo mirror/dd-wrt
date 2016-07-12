@@ -23,10 +23,15 @@
  * \author Jonathan Rose <jrose@digium.com>
  */
 
+/*** MODULEINFO
+	<depend type="module">res_stasis_mailbox</depend>
+	<support_level>core</support_level>
+ ***/
+
 #include "asterisk.h"
 #include "asterisk/stasis_app_mailbox.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision: 405554 $")
+ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "resource_mailboxes.h"
 

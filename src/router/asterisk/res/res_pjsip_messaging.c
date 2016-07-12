@@ -42,12 +42,15 @@
 #include "asterisk/pbx.h"
 #include "asterisk/res_pjsip.h"
 #include "asterisk/res_pjsip_session.h"
+#include "asterisk/taskprocessor.h"
 
 const pjsip_method pjsip_message_method = {PJSIP_OTHER_METHOD, {"MESSAGE", 7} };
 
 #define MAX_HDR_SIZE 512
 #define MAX_BODY_SIZE 1024
 #define MAX_USER_SIZE 128
+
+static struct ast_taskprocessor *message_serializer;
 
 /*!
  * \internal
@@ -527,6 +530,10 @@ static struct msg_data* msg_data_create(const struct ast_msg *msg, const char *t
 	/* Make sure we start with sip: */
 	mdata->to = ast_begins_with(to, "sip:") ? ast_strdup(++to) : ast_strdup(to - 3);
 	mdata->from = ast_strdup(from);
+	if (!mdata->to || !mdata->from) {
+		ao2_ref(mdata, -1);
+		return NULL;
+	}
 
 	/* sometimes from can still contain the tag at this point, so remove it */
 	if ((tag = strchr(mdata->from, ';'))) {
@@ -593,8 +600,8 @@ static int sip_msg_send(const struct ast_msg *msg, const char *to, const char *f
 	}
 
 	if (!(mdata = msg_data_create(msg, to, from)) ||
-	    ast_sip_push_task(NULL, msg_send, mdata)) {
-		ao2_ref(mdata, -1);
+	    ast_sip_push_task(message_serializer, msg_send, mdata)) {
+		ao2_cleanup(mdata);
 		return -1;
 	}
 	return 0;
@@ -610,7 +617,6 @@ static pj_status_t send_response(pjsip_rx_data *rdata, enum pjsip_status_code co
 {
 	pjsip_tx_data *tdata;
 	pj_status_t status;
-	pjsip_response_addr res_addr;
 
 	status = ast_sip_create_response(rdata, code, NULL, &tdata);
 	if (status != PJ_SUCCESS) {
@@ -623,15 +629,8 @@ static pj_status_t send_response(pjsip_rx_data *rdata, enum pjsip_status_code co
 	} else {
 		struct ast_sip_endpoint *endpoint;
 
-		/* Get where to send response. */
-		status = pjsip_get_response_addr(tdata->pool, rdata, &res_addr);
-		if (status != PJ_SUCCESS) {
-			ast_log(LOG_ERROR, "Unable to get response address (%d)\n", status);
-			return status;
-		}
-
 		endpoint = ast_pjsip_rdata_get_endpoint(rdata);
-		status = ast_sip_send_response(&res_addr, tdata, endpoint);
+		status = ast_sip_send_stateful_response(rdata, tdata, endpoint);
 		ao2_cleanup(endpoint);
 	}
 
@@ -678,9 +677,16 @@ static pj_bool_t module_on_rx_request(pjsip_rx_data *rdata)
 		return PJ_TRUE;
 	}
 
-	/* send it to the messaging core */
-	ast_msg_queue(msg);
-	send_response(rdata, PJSIP_SC_ACCEPTED, NULL, NULL);
+	/* Send it to the messaging core.
+	 *
+	 * If we are unable to send a response, the most likely reason is that we
+	 * are handling a retransmission of an incoming MESSAGE and were unable to
+	 * create a transaction due to a duplicate key. If we are unable to send
+	 * a response, we should not queue the message to the dialplan
+	 */
+	if (!send_response(rdata, PJSIP_SC_ACCEPTED, NULL, NULL)) {
+		ast_msg_queue(msg);
+	}
 
 	return PJ_TRUE;
 }
@@ -756,6 +762,13 @@ static int load_module(void)
 		return AST_MODULE_LOAD_DECLINE;
 	}
 
+	message_serializer = ast_sip_create_serializer_named("pjsip/messaging");
+	if (!message_serializer) {
+		ast_sip_unregister_service(&messaging_module);
+		ast_msg_tech_unregister(&msg_tech);
+		return AST_MODULE_LOAD_DECLINE;
+	}
+
 	ast_sip_session_register_supplement(&messaging_supplement);
 	return AST_MODULE_LOAD_SUCCESS;
 }
@@ -765,6 +778,7 @@ static int unload_module(void)
 	ast_sip_session_unregister_supplement(&messaging_supplement);
 	ast_msg_tech_unregister(&msg_tech);
 	ast_sip_unregister_service(&messaging_module);
+	ast_taskprocessor_unreference(message_serializer);
 	return 0;
 }
 

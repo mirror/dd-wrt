@@ -580,6 +580,7 @@ int ast_vm_is_registered(void);
  *
  * \retval 0 on success.
  * \retval -1 on error.
+ * \retval AST_MODULE_LOAD_DECLINE if there's already another provider registered.
  */
 int __ast_vm_register(const struct ast_vm_functions *vm_table, struct ast_module *module);
 
@@ -648,6 +649,7 @@ int ast_vm_greeter_is_registered(void);
  *
  * \retval 0 on success.
  * \retval -1 on error.
+ * \retval AST_MODULE_LOAD_DECLINE if there's already another greeter registered.
  */
 int __ast_vm_greeter_register(const struct ast_vm_greeter_functions *vm_table, struct ast_module *module);
 
@@ -985,6 +987,8 @@ int ast_play_and_wait(struct ast_channel *chan, const char *fn);
  * \since 12
  */
 enum ast_record_if_exists {
+	/*! Return an Error State for IF_Exists */
+	AST_RECORD_IF_EXISTS_ERROR = -1,
 	/*! Fail the recording. */
 	AST_RECORD_IF_EXISTS_FAIL,
 	/*! Overwrite the existing recording. */

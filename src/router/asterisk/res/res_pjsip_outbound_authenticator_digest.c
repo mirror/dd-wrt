@@ -101,13 +101,14 @@ cleanup:
 	return res;
 }
 
-static int digest_create_request_with_auth(const struct ast_sip_auth_vector *auths, pjsip_rx_data *challenge,
-		pjsip_transaction *tsx, pjsip_tx_data **new_request)
+static int digest_create_request_with_auth_from_old(const struct ast_sip_auth_vector *auths, pjsip_rx_data *challenge,
+		pjsip_tx_data *old_request, pjsip_tx_data **new_request)
 {
 	pjsip_auth_clt_sess auth_sess;
+	pjsip_cseq_hdr *cseq;
 
 	if (pjsip_auth_clt_init(&auth_sess, ast_sip_get_pjsip_endpoint(),
-				tsx->pool, 0) != PJ_SUCCESS) {
+				old_request->pool, 0) != PJ_SUCCESS) {
 		ast_log(LOG_WARNING, "Failed to initialize client authentication session\n");
 		return -1;
 	}
@@ -118,8 +119,17 @@ static int digest_create_request_with_auth(const struct ast_sip_auth_vector *aut
 	}
 
 	switch (pjsip_auth_clt_reinit_req(&auth_sess, challenge,
-				tsx->last_tx, new_request)) {
+				old_request, new_request)) {
 	case PJ_SUCCESS:
+		/* PJSIP creates a new transaction for new_request (meaning it creates a new
+		 * branch). However, it recycles the Call-ID, from-tag, and CSeq from the
+		 * original request. Some SIP implementations will not process the new request
+		 * since the CSeq is the same as the original request. Incrementing it here
+		 * fixes the interop issue
+		 */
+		cseq = pjsip_msg_find_hdr((*new_request)->msg, PJSIP_H_CSEQ, NULL);
+		ast_assert(cseq != NULL);
+		++cseq->cseq;
 		return 0;
 	case PJSIP_ENOCREDENTIAL:
 		ast_log(LOG_WARNING, "Unable to create request with auth."
@@ -140,8 +150,15 @@ static int digest_create_request_with_auth(const struct ast_sip_auth_vector *aut
 	return -1;
 }
 
+static int digest_create_request_with_auth(const struct ast_sip_auth_vector *auths, pjsip_rx_data *challenge,
+		pjsip_transaction *tsx, pjsip_tx_data **new_request)
+{
+	return digest_create_request_with_auth_from_old(auths, challenge, tsx->last_tx, new_request);
+}
+
 static struct ast_sip_outbound_authenticator digest_authenticator = {
 	.create_request_with_auth = digest_create_request_with_auth,
+	.create_request_with_auth_from_old = digest_create_request_with_auth_from_old,
 };
 
 static int load_module(void)

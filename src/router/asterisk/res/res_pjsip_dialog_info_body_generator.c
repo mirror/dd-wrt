@@ -133,6 +133,9 @@ static int dialog_info_generate_body_content(void *body, void *data)
 
 	dialog = ast_sip_presence_xml_create_node(state_data->pool, dialog_info, "dialog");
 	ast_sip_presence_xml_create_attr(state_data->pool, dialog, "id", state_data->exten);
+	if (state_data->exten_state == AST_EXTENSION_RINGING) {
+		ast_sip_presence_xml_create_attr(state_data->pool, dialog, "direction", "recipient");
+	}
 
 	state = ast_sip_presence_xml_create_node(state_data->pool, dialog, "state");
 	pj_strdup2(state_data->pool, &state->content, statestring);
@@ -163,14 +166,13 @@ static void dialog_info_to_string(void *body, struct ast_str **str)
 	int size;
 
 	do {
-		size = pj_xml_print(dialog_info, ast_str_buffer(*str), ast_str_size(*str), PJ_TRUE);
-		if (size == AST_PJSIP_XML_PROLOG_LEN) {
+		size = pj_xml_print(dialog_info, ast_str_buffer(*str), ast_str_size(*str) - 1, PJ_TRUE);
+		if (size <= AST_PJSIP_XML_PROLOG_LEN) {
 			ast_str_make_space(str, ast_str_size(*str) * 2);
 			++growths;
 		}
-	} while (size == AST_PJSIP_XML_PROLOG_LEN && growths < MAX_STRING_GROWTHS);
-
-	if (size == AST_PJSIP_XML_PROLOG_LEN) {
+	} while (size <= AST_PJSIP_XML_PROLOG_LEN && growths < MAX_STRING_GROWTHS);
+	if (size <= AST_PJSIP_XML_PROLOG_LEN) {
 		ast_log(LOG_WARNING, "dialog-info+xml body text too large\n");
 		return;
 	}
