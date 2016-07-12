@@ -694,6 +694,7 @@ void do_spectral_scan(struct mime_handler *handler, char *p, webs_t stream, char
 	}
 	pclose(fp);
 	sysprintf("echo disable > %s/spectral_scan_ctl", path);
+	free(buffer);
 	free(path);
 
 	websWrite(stream, "}");
@@ -1939,7 +1940,7 @@ static char *scanfile(char *buf, const char *tran)
 		int i;
 		int count = 0;
 		int ign = 0;
-		int val;
+		int val = 0;
 		int prev = 0;
 		for (i = 0; i < filelen; i++) {
 		      again:;
