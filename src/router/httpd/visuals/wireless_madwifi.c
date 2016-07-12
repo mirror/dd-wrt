@@ -381,12 +381,11 @@ void ej_update_acktiming(webs_t wp, int argc, char_t ** argv)
 
 void ej_show_acktiming(webs_t wp, int argc, char_t ** argv)
 {
-	unsigned int ack, distance;
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\">%s</div>\n", live_translate("share.acktiming"));
 	websWrite(wp, "<span id=\"wl_ack\">\n");
 	ej_update_acktiming(wp, argc, argv);
-	websWrite(wp, "</span> &nbsp;\n", ack, distance);
+	websWrite(wp, "</span> &nbsp;\n");
 	websWrite(wp, "</div>\n");
 }
 
