@@ -242,7 +242,7 @@ addresses associated with the interface.
 .B --local-service
 Accept DNS queries only from hosts whose address is on a local subnet,
 ie a subnet for which an interface exists on the server. This option
-only has effect is there are no --interface --except-interface,
+only has effect if there are no --interface --except-interface,
 --listen-address or --auth-server options. It is intended to be set as
 a default on installation, to allow unconfigured installations to be
 useful but also safe from being used for DNS amplification attacks.
@@ -1037,6 +1037,10 @@ is given, then read all the files contained in that directory. The advantage of
 using this option is the same as for --dhcp-hostsfile: the
 dhcp-optsfile will be re-read when dnsmasq receives SIGHUP. Note that
 it is possible to encode the information in a
+.B --dhcp-boot
+flag as DHCP options, using the options names bootfile-name,
+server-ip-address and tftp-server. This allows these to be included
+in a dhcp-optsfile.
 .TP
 .B --dhcp-hostsdir=<path>
 This is equivalent to dhcp-hostsfile, except for the following. The path MUST be a
@@ -1048,11 +1052,6 @@ is restarted; ie host records are only added dynamically.
 .TP
 .B --dhcp-optsdir=<path>
 This is equivalent to dhcp-optsfile, with the differences noted for --dhcp-hostsdir.
-.TP
-.B --dhcp-boot
-flag as DHCP options, using the options names bootfile-name,
-server-ip-address and tftp-server. This allows these to be included
-in a dhcp-optsfile.
 .TP 
 .B \-Z, --read-ethers
 Read /etc/ethers for information about hosts for the DHCP server. The

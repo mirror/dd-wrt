@@ -529,15 +529,16 @@ static int check_date_range(u32 date_start, u32 date_end)
 	  if (utime(daemon->timestamp_file, NULL) != 0)
 	    my_syslog(LOG_ERR, _("failed to update mtime on %s: %s"), daemon->timestamp_file, strerror(errno));
 	  
+	  my_syslog(LOG_INFO, _("system time considered valid, now checking DNSSEC signature timestamps."));
 	  daemon->back_to_the_future = 1;
-	  set_option_bool(OPT_DNSSEC_TIME);
+	  daemon->dnssec_no_time_check = 0;
 	  queue_event(EVENT_RELOAD); /* purge cache */
 	} 
 
       if (daemon->back_to_the_future == 0)
 	return 1;
     }
-  else if (option_bool(OPT_DNSSEC_TIME))
+  else if (daemon->dnssec_no_time_check)
     return 1;
   
   /* We must explicitly check against wanted values, because of SERIAL_UNDEF */

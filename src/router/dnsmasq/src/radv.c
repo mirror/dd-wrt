@@ -262,7 +262,9 @@ static void send_ra_alias(time_t now, int iface, char *iface_name, struct in6_ad
   parm.prio = calc_prio(ra_param);
   
   save_counter(0);
-  ra = expand(sizeof(struct ra_packet));
+  
+  if (!(ra = expand(sizeof(struct ra_packet))))
+    return;
   
   ra->type = ND_ROUTER_ADVERT;
   ra->code = 0;
