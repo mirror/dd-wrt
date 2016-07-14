@@ -242,6 +242,10 @@ void start_sysinit(void)
 	}
 #endif
 
+#if defined(HAVE_ONNET) && defined(HAVE_XD3200)
+	runStartup("/etc/config/", ".onnet");
+#endif
+
 #if !defined(HAVE_WR650AC) && !defined(HAVE_E355AC) && !defined(HAVE_E325N) && !defined(HAVE_E380AC) && !defined(HAVE_WR615N)  && !defined(HAVE_AP120C)
 #ifndef HAVE_JWAP606
 	eval("ifconfig", "eth0", "up");
