@@ -505,7 +505,7 @@ ifeq ($(CONFIG_ONNET),y)
 
   ifeq ($(CONFIG_XD3200),y)
 	mkdir -p $(INSTALLDIR)/etc/config
-	cp onnet/extra/xd3200.startup $(INSTALLDIR)/etc/config/xd3200.onnet
+	cp onnet/extra/* $(INSTALLDIR)/etc/config/
   endif
 endif
 
