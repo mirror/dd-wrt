@@ -117,6 +117,15 @@ int main(int argc, char **argv)
 			eval("startservice_f", "wifidog");
 		}
 #endif
+#ifdef HAVE_UNBOUND
+                if ((abs(now.tv_sec - then.tv_sec) > 100000000)
+		    && nvram_match("recursive_dns", "1")) {
+			eval("stopservice", "unbound");
+			sleep(1);
+			dd_syslog(LOG_DEBUG, "Restarting unbound daemon (time sync change)\n");
+			eval("startservice_f", "unbound");
+		}                
+#endif
 		dd_syslog(LOG_DEBUG, "We need to re-update after %d seconds\n", NTP_M_TIMER);
 
 		time = NTP_M_TIMER;
