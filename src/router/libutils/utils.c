@@ -1808,6 +1808,9 @@ int internal_getRouterBrand()
 #elif HAVE_RT3352
 	setRouter("Ralink RT3352 Device");
 	return ROUTER_BOARD_RT3352;
+#elif HAVE_RUT500
+	setRouter("Teltonika RUT500");
+	return ROUTER_BOARD_NEPTUNE;
 #elif HAVE_NEPTUNE
 	setRouter("Neptune-Mini");
 	return ROUTER_BOARD_NEPTUNE;
@@ -6780,7 +6783,11 @@ int led_control(int type, int act)
 	case ROUTER_BOARD_NEPTUNE:
 //              usb_gpio = 0x108;
 		// 0x10c //unknown gpio label, use as diag
+#ifdef HAVE_RUT500
+		diag_gpio = 0x10e;
+#else		
 		diag_gpio = 0x10c;
+#endif
 		break;
 	case ROUTER_ASUS_RTN10U:
 		ses_gpio = 0x007;
