@@ -836,7 +836,7 @@ ifneq ($(CONFIG_ATH9K),y)
 	rm -f $(INSTALLDIR)/www/jquery.ui.js
 	rm -f $(INSTALLDIR)/www/jquery.ui.css
 	rm -f $(INSTALLDIR)/www/jquery.flot.resize.js
-#	rm -f $(INSTALLDIR)/www/jquery.flot.navigate.js
+	rm -f $(INSTALLDIR)/www/jquery.flot.navigate.js
 	rm -f $(INSTALLDIR)/www/jquery.js
 endif
 ifneq ($(MPPPOE_SUPPORT),1)
