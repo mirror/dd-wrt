@@ -2306,7 +2306,7 @@ static void show_temp(webs_t wp, char *fmt)
 
 void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 {
-	int i, int cpufound = 0;
+	int i, cpufound = 0;
 #ifdef HAVE_MVEBU
 	if (getRouterBrand() == ROUTER_WRT_1900AC) {
 		show_temp(wp, 1, 1, "CPU %d.%d &#176;C");
