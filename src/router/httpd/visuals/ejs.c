@@ -2306,7 +2306,7 @@ static void show_temp(webs_t wp, char *fmt)
 
 void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 {
-	int i;
+	int i, int cpufound = 0;
 #ifdef HAVE_MVEBU
 	if (getRouterBrand() == ROUTER_WRT_1900AC) {
 		show_temp(wp, 1, 1, "CPU %d.%d &#176;C");
@@ -2321,10 +2321,9 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 #endif
 #ifdef HAVE_IPQ806X
 	show_temp(wp, "CPU %d.%d &#176;C");
-	return;
+	cpufound = 1;
 #endif
 #ifdef HAVE_BCMMODERN
-
 	static int tempcount = -2;
 	char buf[WLC_IOCTL_SMLEN];
 	int ret;
@@ -2368,6 +2367,7 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	for (i = 0; i < cc; i++) {
 		result[i] = (tempavg[i] / 2) + 200;
 	}
+	cpufound = 1;
 
 #ifdef HAVE_QTN
 	result[1] = rpc_get_temperature() / 100000;
@@ -2441,7 +2441,9 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 #endif
 #endif
 
+#ifndef HAVE_IPQ806X
 	if (fp != NULL) {
+		cpufound = 1;
 		int temp;
 		fscanf(fp, "%d", &temp);
 		fclose(fp);
@@ -2453,7 +2455,7 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 			low = 0;
 		websWrite(wp, "%d.%d &#176;C", high, low);	// no i2c lm75 found
 	}
-
+#endif
 	FILE *fp2 = NULL;
 #ifdef HAVE_ATH10K
 	int c = getdevicecount();
@@ -2475,17 +2477,17 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 			int temp;
 			fscanf(fp2, "%d", &temp);
 			fclose(fp2);
-			if ((i == 0 && fp) || found) {
+			if ((i == 0 && cpufound) || found) {
 				websWrite(wp, " / ");
 			}
 			found = 1;
 			websWrite(wp, "ath%d %d &#176;C", i, temp / 1000);
 		}
 	}
-	if (!found && !fp)
+	if (!found && !cpufound)
 		websWrite(wp, "%s", live_translate("status_router.notavail"));
 #endif
-	if (fp == NULL && fp2 == NULL)
+	if (!cpufound && fp2 == NULL)
 		websWrite(wp, "%s", live_translate("status_router.notavail"));	// no 
 
 #endif
