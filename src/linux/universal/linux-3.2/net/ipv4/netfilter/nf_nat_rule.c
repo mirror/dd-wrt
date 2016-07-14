@@ -162,12 +162,16 @@ static int __net_init nf_nat_rule_net_init(struct net *net)
 	struct ipt_replace *repl;
 
 	repl = ipt_alloc_initial_table(&nat_table);
+	printk(KERN_EMERG "alloced tabled\n");
 	if (repl == NULL)
 		return -ENOMEM;
+	printk(KERN_EMERG "register tabled\n");
 	net->ipv4.nat_table = ipt_register_table(net, &nat_table, repl);
 	kfree(repl);
+	printk(KERN_EMERG "check err\n");
 	if (IS_ERR(net->ipv4.nat_table))
 		return PTR_ERR(net->ipv4.nat_table);
+	printk(KERN_EMERG "no err\n");
 	return 0;
 }
 
@@ -186,13 +190,16 @@ int __init nf_nat_rule_init(void)
 	int ret;
 
 	ret = register_pernet_subsys(&nf_nat_rule_net_ops);
+	printk(KERN_INFO "%s:%d:%d\n",__func__,__LINE__,ret);
 	if (ret != 0)
 		goto out;
 	ret = xt_register_target(&ipt_snat_reg);
+	printk(KERN_INFO "%s:%d:%d\n",__func__,__LINE__,ret);
 	if (ret != 0)
 		goto unregister_table;
 
 	ret = xt_register_target(&ipt_dnat_reg);
+	printk(KERN_INFO "%s:%d:%d\n",__func__,__LINE__,ret);
 	if (ret != 0)
 		goto unregister_snat;
 
