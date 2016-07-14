@@ -925,8 +925,13 @@ void period_check(int sig)
 		val = get_gpio(0);
 	} else if (brand == ROUTER_BOARD_ECB9750) {
 		val = get_gpio(11) << 11;
+#ifdef HAVE_RUT500
+	} else if (brand == ROUTER_BOARD_NEPTUNE) {
+		val = (get_gpio(10) << 10);
+#else	
 	} else if (brand == ROUTER_BOARD_NEPTUNE) {
 		val = (get_gpio(10) << 10) | (get_gpio(0) << 0);
+#endif
 	} else if (brand == ROUTER_BOARD_RT3352) {
 		val = (get_gpio(10) << 10) | (get_gpio(0) << 0);
 	} else if (brand == ROUTER_BOARD_WR5422) {
@@ -1226,7 +1231,9 @@ void period_check(int sig)
 	case ROUTER_BOARD_WCRGN:
 	case ROUTER_BOARD_DIR600B:
 	case ROUTER_BOARD_RT3352:
+#ifndef HAVE_RUT500
 	case ROUTER_BOARD_NEPTUNE:
+#endif
 	case ROUTER_BOARD_DIR615D:
 	case ROUTER_BOARD_WHRG300N:
 	case ROUTER_ASUS_RTN10PLUS:
