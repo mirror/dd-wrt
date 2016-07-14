@@ -2460,11 +2460,17 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	int found = 0;
 	for (i = 0; i < c; i++) {
 		if (nvram_nmatch("disabled", "ath%d_net_mode", i)) {
-		    continue;
+			continue;
 		}
 		char path[64];
-		sprintf(path, "/sys/class/ieee80211/phy%d/device/hwmon/hwmon0/temp1_input", i);
-		fp2 = fopen(path, "rb");
+		int scan = 0;
+		for (scan = 0; scan < 20; scan++) {
+			sprintf(path, "/sys/class/ieee80211/phy%d/device/hwmon/hwmon%d/temp1_input", i, scan);
+			fp2 = fopen(path, "rb");
+			if (fp2)
+				break;
+		}
+
 		if (fp2 != NULL) {
 			int temp;
 			fscanf(fp2, "%d", &temp);
