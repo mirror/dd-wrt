@@ -350,12 +350,11 @@ unsigned int arpt_do_table(struct sk_buff *skb,
 }
 
 /* All zeroes == unconditional rule. */
-static inline bool unconditional(const struct arpt_entry *e)
+static inline bool unconditional(const struct arpt_arp *arp)
 {
 	static const struct arpt_arp uncond;
 
-	return e->target_offset == sizeof(struct arpt_entry) &&
-	       memcmp(&e->arp, &uncond, sizeof(uncond)) == 0;
+	return memcmp(arp, &uncond, sizeof(uncond)) == 0;
 }
 
 /* Figures out from what hook each rule can be called: returns 0 if
@@ -394,10 +393,11 @@ static int mark_source_chains(const struct xt_table_info *newinfo,
 				|= ((1 << hook) | (1 << NF_ARP_NUMHOOKS));
 
 			/* Unconditional return/END. */
-			if ((unconditional(e) &&
+			if ((e->target_offset == sizeof(struct arpt_entry) &&
 			     (strcmp(t->target.u.user.name,
 				     XT_STANDARD_TARGET) == 0) &&
-			     t->verdict < 0) || visited) {
+			     t->verdict < 0 && unconditional(&e->arp)) ||
+			    visited) {
 				unsigned int oldpos, size;
 
 				if ((strcmp(t->target.u.user.name,
@@ -465,12 +465,14 @@ static int mark_source_chains(const struct xt_table_info *newinfo,
 	return 1;
 }
 
-static inline int check_entry(const struct arpt_entry *e)
+static inline int check_entry(const struct arpt_entry *e, const char *name)
 {
 	const struct xt_entry_target *t;
 
-	if (!arp_checkentry(&e->arp))
+	if (!arp_checkentry(&e->arp)) {
+		duprintf("arp_tables: arp check failed %p %s.\n", e, name);
 		return -EINVAL;
+	}
 
 	if (e->target_offset + sizeof(struct xt_entry_target) > e->next_offset)
 		return -EINVAL;
@@ -511,6 +513,10 @@ find_check_entry(struct arpt_entry *e, const char *name, unsigned int size)
 	struct xt_target *target;
 	int ret;
 
+	ret = check_entry(e, name);
+	if (ret)
+		return ret;
+
 	t = arpt_get_target(e);
 	target = xt_request_find_target(NFPROTO_ARP, t->u.user.name,
 					t->u.user.revision);
@@ -536,7 +542,7 @@ static bool check_underflow(const struct arpt_entry *e)
 	const struct xt_entry_target *t;
 	unsigned int verdict;
 
-	if (!unconditional(e))
+	if (!unconditional(&e->arp))
 		return false;
 	t = arpt_get_target_c(e);
 	if (strcmp(t->u.user.name, XT_STANDARD_TARGET) != 0)
@@ -555,11 +561,9 @@ static inline int check_entry_size_and_hooks(struct arpt_entry *e,
 					     unsigned int valid_hooks)
 {
 	unsigned int h;
-	int err;
 
 	if ((unsigned long)e % __alignof__(struct arpt_entry) != 0 ||
-	    (unsigned char *)e + sizeof(struct arpt_entry) >= limit ||
-	    (unsigned char *)e + e->next_offset > limit) {
+	    (unsigned char *)e + sizeof(struct arpt_entry) >= limit) {
 		duprintf("Bad offset %p\n", e);
 		return -EINVAL;
 	}
@@ -571,10 +575,6 @@ static inline int check_entry_size_and_hooks(struct arpt_entry *e,
 		return -EINVAL;
 	}
 
-	err = check_entry(e);
-	if (err)
-		return err;
-
 	/* Check hooks & underflows */
 	for (h = 0; h < NF_ARP_NUMHOOKS; h++) {
 		if (!(valid_hooks & (1 << h)))
@@ -583,9 +583,9 @@ static inline int check_entry_size_and_hooks(struct arpt_entry *e,
 			newinfo->hook_entry[h] = hook_entries[h];
 		if ((unsigned char *)e - base == underflows[h]) {
 			if (!check_underflow(e)) {
-				pr_debug("Underflows must be unconditional and "
-					 "use the STANDARD target with "
-					 "ACCEPT/DROP\n");
+				pr_err("Underflows must be unconditional and "
+				       "use the STANDARD target with "
+				       "ACCEPT/DROP\n");
 				return -EINVAL;
 			}
 			newinfo->underflow[h] = underflows[h];
@@ -1219,8 +1219,7 @@ check_compat_entry_size_and_hooks(struct compat_arpt_entry *e,
 
 	duprintf("check_compat_entry_size_and_hooks %p\n", e);
 	if ((unsigned long)e % __alignof__(struct compat_arpt_entry) != 0 ||
-	    (unsigned char *)e + sizeof(struct compat_arpt_entry) >= limit ||
-	    (unsigned char *)e + e->next_offset > limit) {
+	    (unsigned char *)e + sizeof(struct compat_arpt_entry) >= limit) {
 		duprintf("Bad offset %p, limit = %p\n", e, limit);
 		return -EINVAL;
 	}
@@ -1233,7 +1232,7 @@ check_compat_entry_size_and_hooks(struct compat_arpt_entry *e,
 	}
 
 	/* For purposes of check_entry casting the compat entry is fine */
-	ret = check_entry((struct arpt_entry *)e);
+	ret = check_entry((struct arpt_entry *)e, name);
 	if (ret)
 		return ret;
 

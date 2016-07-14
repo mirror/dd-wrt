@@ -196,12 +196,11 @@ get_entry(const void *base, unsigned int offset)
 
 /* All zeroes == unconditional rule. */
 /* Mildly perf critical (only if packet tracing is on) */
-static inline bool unconditional(const struct ipt_entry *e)
+static inline bool unconditional(const struct ipt_ip *ip)
 {
 	static const struct ipt_ip uncond;
 
-	return e->target_offset == sizeof(struct ipt_entry) &&
-	       memcmp(&e->ip, &uncond, sizeof(uncond)) == 0;
+	return memcmp(ip, &uncond, sizeof(uncond)) == 0;
 #undef FWINV
 }
 
@@ -259,10 +258,11 @@ get_chainname_rulenum(const struct ipt_entry *s, const struct ipt_entry *e,
 	} else if (s == e) {
 		(*rulenum)++;
 
-		if (unconditional(s) &&
+		if (s->target_offset == sizeof(struct ipt_entry) &&
 		    strcmp(t->target.u.kernel.target->name,
 			   XT_STANDARD_TARGET) == 0 &&
-		   t->verdict < 0) {
+		   t->verdict < 0 &&
+		   unconditional(&s->ip)) {
 			/* Tail of chains: STANDARD target (return/policy) */
 			*comment = *chainname == hookname
 				? comments[NF_IP_TRACE_COMMENT_POLICY]
@@ -530,10 +530,11 @@ mark_source_chains(const struct xt_table_info *newinfo,
 			e->comefrom |= ((1 << hook) | (1 << NF_INET_NUMHOOKS));
 
 			/* Unconditional return/END. */
-			if ((unconditional(e) &&
+			if ((e->target_offset == sizeof(struct ipt_entry) &&
 			     (strcmp(t->target.u.user.name,
 				     XT_STANDARD_TARGET) == 0) &&
-			     t->verdict < 0) || visited) {
+			     t->verdict < 0 && unconditional(&e->ip)) ||
+			    visited) {
 				unsigned int oldpos, size;
 
 				if ((strcmp(t->target.u.user.name,
@@ -622,12 +623,14 @@ static void cleanup_match(struct xt_entry_match *m, struct net *net)
 }
 
 static int
-check_entry(const struct ipt_entry *e)
+check_entry(const struct ipt_entry *e, const char *name)
 {
 	const struct xt_entry_target *t;
 
-	if (!ip_checkentry(&e->ip))
+	if (!ip_checkentry(&e->ip)) {
+		duprintf("ip check failed %p %s.\n", e, name);
 		return -EINVAL;
+	}
 
 	ip_checkdefault(&e->ip);
 
@@ -719,6 +722,10 @@ find_check_entry(struct ipt_entry *e, struct net *net, const char *name,
 	struct xt_mtchk_param mtpar;
 	struct xt_entry_match *ematch;
 
+	ret = check_entry(e, name);
+	if (ret)
+		return ret;
+
 	j = 0;
 	mtpar.net	= net;
 	mtpar.table     = name;
@@ -762,7 +769,7 @@ static bool check_underflow(const struct ipt_entry *e)
 	const struct xt_entry_target *t;
 	unsigned int verdict;
 
-	if (!unconditional(e))
+	if (!unconditional(&e->ip))
 		return false;
 	t = ipt_get_target_c(e);
 	if (strcmp(t->u.user.name, XT_STANDARD_TARGET) != 0)
@@ -782,11 +789,9 @@ check_entry_size_and_hooks(struct ipt_entry *e,
 			   unsigned int valid_hooks)
 {
 	unsigned int h;
-	int err;
 
 	if ((unsigned long)e % __alignof__(struct ipt_entry) != 0 ||
-	    (unsigned char *)e + sizeof(struct ipt_entry) >= limit ||
-	    (unsigned char *)e + e->next_offset > limit) {
+	    (unsigned char *)e + sizeof(struct ipt_entry) >= limit) {
 		duprintf("Bad offset %p\n", e);
 		return -EINVAL;
 	}
@@ -798,10 +803,6 @@ check_entry_size_and_hooks(struct ipt_entry *e,
 		return -EINVAL;
 	}
 
-	err = check_entry(e);
-	if (err)
-		return err;
-
 	/* Check hooks & underflows */
 	for (h = 0; h < NF_INET_NUMHOOKS; h++) {
 		if (!(valid_hooks & (1 << h)))
@@ -810,9 +811,9 @@ check_entry_size_and_hooks(struct ipt_entry *e,
 			newinfo->hook_entry[h] = hook_entries[h];
 		if ((unsigned char *)e - base == underflows[h]) {
 			if (!check_underflow(e)) {
-				pr_debug("Underflows must be unconditional and "
-					 "use the STANDARD target with "
-					 "ACCEPT/DROP\n");
+				pr_err("Underflows must be unconditional and "
+				       "use the STANDARD target with "
+				       "ACCEPT/DROP\n");
 				return -EINVAL;
 			}
 			newinfo->underflow[h] = underflows[h];
@@ -1558,8 +1559,7 @@ check_compat_entry_size_and_hooks(struct compat_ipt_entry *e,
 
 	duprintf("check_compat_entry_size_and_hooks %p\n", e);
 	if ((unsigned long)e % __alignof__(struct compat_ipt_entry) != 0 ||
-	    (unsigned char *)e + sizeof(struct compat_ipt_entry) >= limit ||
-	    (unsigned char *)e + e->next_offset > limit) {
+	    (unsigned char *)e + sizeof(struct compat_ipt_entry) >= limit) {
 		duprintf("Bad offset %p, limit = %p\n", e, limit);
 		return -EINVAL;
 	}
@@ -1572,7 +1572,7 @@ check_compat_entry_size_and_hooks(struct compat_ipt_entry *e,
 	}
 
 	/* For purposes of check_entry casting the compat entry is fine */
-	ret = check_entry((struct ipt_entry *)e);
+	ret = check_entry((struct ipt_entry *)e, name);
 	if (ret)
 		return ret;
 
