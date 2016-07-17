@@ -2369,7 +2369,7 @@ _bcm5700_start_xmit(struct sk_buff *skb, struct net_device *dev)
 
 #ifdef BCM_VLAN
 	if (pUmDevice->vlgrp && vlan_tx_tag_present(skb)) {
-		pPacket->VlanTag = skb_vlan_tag_get(skb);
+		pPacket->VlanTag = vlan_tx_tag_get(skb);
 		pPacket->Flags |= SND_BD_FLAG_VLAN_TAG;
 	}
 #endif
