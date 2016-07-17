@@ -170,7 +170,7 @@
 #undef HAVE_STRUCT_ETHER_ADDR
 
 /* Define to 1 if you have the <sys/bitypes.h> header file. */
-#undef HAVE_SYS_BITYPES_H
+/*#undef HAVE_SYS_BITYPES_H */
 
 /* Define to 1 if you have the <sys/bufmod.h> header file. */
 #undef HAVE_SYS_BUFMOD_H
