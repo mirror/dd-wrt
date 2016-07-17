@@ -26,7 +26,7 @@ glib20-configure: libffi zlib
 
 	$(MAKE) -C glib20/libglib clean all
 
-glib20: libffi
+glib20: libffi zlib
 	$(MAKE) -C glib20/libiconv all
 	$(MAKE) -C glib20/gettext all
 	$(MAKE) -C glib20/libglib all
