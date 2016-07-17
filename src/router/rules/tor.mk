@@ -15,8 +15,7 @@ miniupnpc-install:
 	rm -f $(INSTALLDIR)/miniupnpc/usr/lib/*.a
 
 tor-configure: libevent miniupnpc-configure
-	cd tor && ./configure  --prefix=/usr ac_cv_host=$(ARCH)-uclibc-linux --target=$(ARCH)-linux --with-libminiupnpc-dir=$(TOP)/libminiupnpc --host=$(ARCH) CC="ccache $(ARCH)-linux-uclibc-gcc" \
-	--enable-upnp \
+	cd tor && ./configure  --prefix=/usr ac_cv_host=$(ARCH)-uclibc-linux --target=$(ARCH)-linux --disable-systemd --host=$(ARCH) CC="ccache $(ARCH)-linux-uclibc-gcc" \
 	--disable-asciidoc \
 	--disable-gcc-hardening \
 	CFLAGS="$(COPTS) $(MIPS16_OPT) -std=gnu99 -ffunction-sections -fdata-sections -Wl,--gc-sections  -I$(TOP)/zlib -I$(TOP) -I$(TOP)/miniupnpc  -I$(TOP)/openssl/include -I$(TOP)/libevent -I$(TOP)/libevent/include" \
