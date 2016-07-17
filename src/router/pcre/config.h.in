@@ -201,6 +201,9 @@ sure both macros are undefined; an emulation function will then be used. */
    or -2 (ANYCRLF). */
 #undef NEWLINE
 
+/* Define to 1 if your C compiler doesn't accept -c and -o together. */
+#undef NO_MINUS_C_MINUS_O
+
 /* PCRE uses recursive function calls to handle backtracking while matching.
    This can sometimes be a problem on systems that have stacks of limited
    size. Define NO_RECURSE to any value to get a version that doesn't use
