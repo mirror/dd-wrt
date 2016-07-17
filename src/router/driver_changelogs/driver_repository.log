@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r3065 | brainslayer | 2016-07-17 14:48:21 +0200 (Sun, 17 Jul 2016) | 1 line
+
+ath10k: fix rx status reporting for A-MSDU subframes
+------------------------------------------------------------------------
 r3064 | BrainSlayer | 2016-07-15 14:05:59 +0200 (Fri, 15 Jul 2016) | 1 line
 
 chandef doesnt seem to be used
