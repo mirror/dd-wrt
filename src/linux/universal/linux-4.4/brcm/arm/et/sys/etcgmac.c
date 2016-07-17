@@ -389,9 +389,11 @@ chipattach(etc_info_t *etc, void *osh, void *regsva)
 #ifndef _CFE_
 	/* override dma parameters, corerev 4 dma channel 1,2 and 3 default burstlen is 0. */
 	/* corerev 4,5: NS Ax; corerev 6: BCM43909 no HW prefetch; corerev 7: NS B0 */
+	printk(KERN_INFO "ET Corerev %d\n",etc->corerev);
 	if (etc->corerev == 4 ||
 	    etc->corerev == 5 ||
-	    etc->corerev == 7) {
+	    etc->corerev == 7 ||
+	    etc->corerev == 8) {
 #define DMA_CTL_TX 0
 #define DMA_CTL_RX 1
 
@@ -426,6 +428,10 @@ chipattach(etc_info_t *etc, void *osh, void *regsva)
 		                                  TXBURSTLEN == 128 ? DMA_BL_128 :
 		                                  TXBURSTLEN == 64 ? DMA_BL_64 :
 		                                  TXBURSTLEN == 32 ? DMA_BL_32 : DMA_BL_16);
+		/* override burst length to 64 on 53573(corerev 8) */
+		if (etc->corerev == 8) {
+			dmactl[DMA_CTL_TX][DMA_CTL_BL] = DMA_BL_64;
+		}
 
 		dmactl[DMA_CTL_RX][DMA_CTL_PT] =  (RXPREFTHRESH == 8 ? DMA_PT_8 :
 		                                   RXPREFTHRESH == 4 ? DMA_PT_4 :
@@ -907,7 +913,7 @@ gmac_reset(ch_t *ch)
 
 	cmdcfg &= ~(CC_TE | CC_RE | CC_RPI | CC_TAI | CC_HD | CC_ML |
 	            CC_CFE | CC_RL | CC_RED | CC_PE | CC_TPI | CC_PAD_EN | CC_PF);
-	cmdcfg |= (CC_PROM | CC_NLC | CC_CFE | CC_TPI | CC_AT);
+	cmdcfg |= (CC_PROM | CC_NLC | CC_CFE | CC_TPI | CC_AT(ch->etc->corerev));
 
 	if (cmdcfg != ocmdcfg)
 		W_REG(ch->osh, &ch->regs->cmdcfg, cmdcfg);
@@ -1259,8 +1265,12 @@ chipinreset:
 	if ((((CHIPID(ch->sih->chip) == BCM5357_CHIP_ID) ||
 	      (CHIPID(ch->sih->chip) == BCM4749_CHIP_ID)) &&
 	     (ch->sih->chippkg == BCM47186_PKG_ID)) ||
-	    ((CHIPID(ch->sih->chip) == BCM53572_CHIP_ID) && (ch->sih->chippkg == BCM47188_PKG_ID)))
+	    (BCM53573_CHIP(ch->sih->chip) &&
+	     (ch->sih->chippkg == BCM47189_PKG_ID)) ||
+	    ((CHIPID(ch->sih->chip) == BCM53572_CHIP_ID) &&
+	     (ch->sih->chippkg == BCM47188_PKG_ID))) {
 		sflags &= ~SISF_SW_ATTACHED;
+	}
 
 	if (sflags & SISF_SW_ATTACHED) {
 		ET_TRACE(("et%d: internal switch attached\n", ch->etc->unit));
@@ -1308,6 +1318,32 @@ chipinreset:
 				(PMU_CC1_IF_TYPE_MASK|PMU_CC1_SW_TYPE_MASK),
 				sw_type);
 		}
+	}
+
+	if (BCM53573_CHIP(ch->sih->chip) && (PMUCTL_ENAB(ch->sih))) {
+		uint32 sw_type;
+		/* set gmac0 depends on chip/package type */
+		if (ch->etc->unit == 0) {
+			char *var;
+			sw_type = PMU_CC4_SW_TYPE_EPHY | PMU_CC4_IF_TYPE_MII;
+			if ((var = getvar(ch->vars, "et_swtype")) != NULL)
+				sw_type = (bcm_atoi(var) & 0x0f) << 12;
+			else if ((BCM53573_CHIP(ch->sih->chip) &&
+			          (ch->sih->chippkg == BCM47189_PKG_ID)) ||
+			         (ch->sih->chippkg == HWSIM_PKG_ID))
+				sw_type = PMU_CC4_IF_TYPE_RGMII|PMU_CC4_SW_TYPE_RGMII;
+
+			si_pmu_chipcontrol(ch->sih, PMU_CHIPCTL4,
+				(PMU_CC4_IF_TYPE_MASK|PMU_CC4_SW_TYPE_MASK), sw_type);
+		}
+		else {
+			/* Set gmac1 to RGMII mode for 47189. */
+			sw_type = PMU_CC7_IF_TYPE_RGMII;
+			si_pmu_chipcontrol(ch->sih, PMU_CHIPCTL7,
+				PMU_CC7_IF_TYPE_MASK, sw_type);
+		}
+
+		printk(KERN_INFO "et%d: 53573 sw_type %04x\n", ch->etc->unit, sw_type);
 	}
 
 	if ((sflags & SISF_SW_ATTACHED) && (!ch->etc->robo)) {
