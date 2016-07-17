@@ -9,6 +9,7 @@
 #ifndef SQUID_HTTP_REGISTEREDHEADERS_H
 #define SQUID_HTTP_REGISTEREDHEADERS_H
 
+#include <vector>
 #include "base/LookupTable.h"
 #include <iosfwd>
 
