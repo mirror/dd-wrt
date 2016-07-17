@@ -20,7 +20,7 @@
 
 #include <arminc.h>
 #include <sbhndarm.h>
-#include <hndrte_armtrap.h>
+#include <hnd_armtrap.h>
 #include <hndsoc.h>
 #include <sbchipc.h>
 #include <bcmdevs.h>
@@ -4289,7 +4289,6 @@ initcpu:
 	mcr	p15,0,r0,c5,c0,0		/* DFSR */
 	mcr	p15,0,r0,c5,c0,1		/* IFSR */
 	mcr	p15,0,r0,c6,c0,0		/* DFAR */
-	mcr	p15,0,r0,c6,c0,1		/* WFSR */
 
 	/* Initialize system control register */
 	mrc	p15,0,r1,c1,c0,0
@@ -4305,7 +4304,15 @@ initcpu:
 	mcr	p15,0,r0,c7,c10,4		/* DSB */
 	mcr	p15,0,r0,c7,c5,4		/* ISB */
 
-	/* Identify current CPU */
+	/* Identify CPU ID */
+	mrc	p15,0,r9,c0,c0,0		/* retrieve cpu part no */
+	ldr	r8,=CORTEX_ID_MASK
+	and	r9,r9,r8
+	ldr	r8,=CORTEX_ID_A7
+	cmp	r9,r8
+	beq	check_startaddr
+
+	/* Cortex-A9.  Identify current core*/
 	mrc	p15,0,r0,c0,c0,5
 	and	r0,r0,#0xf			/* retrieve cpu core id */
 	cmp	r0,#0				/* cpu core 0? */
@@ -4324,10 +4331,20 @@ check_startaddr:
 	cmp	r0,r1
 	beq	szmem
 
-	/* Wake up core 1 */
+	cmp	r9,r8			/* Cortex-A7? */
+	beq	enable_smp
+
+	/* Cortex-A9, Wake up core 1 */
 	mov	r0,#0
-	mcr 	p15,0,r0,c7,c10,4
-	sev	
+	mcr	p15,0,r0,c7,c10,4
+	sev
+	b 	enable_cache
+
+enable_smp:
+	/* Enable SMP before cache enabled, for Cortex-A7 series core */
+	mrc	p15,0,r1,c1,c0,1
+	orr	r1,r1,#0x40
+	mcr	p15,0,r1,c1,c0,1
 
 enable_cache:
 	/* Enable I cache */
@@ -4335,82 +4352,12 @@ enable_cache:
 	orr	r1,r1,#0x1800			/* Enable I$ and branch prediction */
 	mcr	p15,0,r1,c1,c0,0
 
-#if defined(_CFEZ_)
-genpll_mdiv:
-	/* Correct the GENPLL setting for OTPed 4709C0 */
-	ldr	r0, =0x18000000			/* SI_ENUM_BASE */
-	ldr	r1, =0				/* CC_CHIPID */
-	ldr	r1, [r0, r1]
-	ldr	r0, =0x0000ffff			/* CID_ID_MASK */
-	and	r2, r1, r0
-	ldr	r0, =53030			/* BCM4709C0_CHIP_ID */
-	cmp	r2, r0				/* r2 to store chip id */
-	bne	genpll_mdiv_done
-	ldr	r0, =0x00300000			/* CID_PACKAGE_OPTION_MASK */
-	and	r2, r1, r0
-	cmp	r2, #0				/* BCM4709C0 package is 0 */
-	bne	genpll_mdiv_done
-
-	/* To set correct CH0-5 mdiv */
-	ldr	r0,=0x1800c154
-	ldr	r0,[r0]
-	ldr	r1,=0x3ff00000			/* Get CRU_GENPLL_CONTROL5 bit[29:20] */
-	and	r0,r0,r1
-	ldr	r1,=0x05000000			/* Check GENPLL NDIV = 0x50? */
-	cmp	r0,r1
-	bne	genpll_mdiv_done		/* Not equal. Skip this */
-	/* If we have done it, skip it */
-	ldr	r0,=0x1800c15c			/* CRU_GENPLL_CONTROL7 */
-	ldr	r0,[r0]
-	ldr	r1,=0x00ff0000
-	and	r0,r0,r1			/* Get CH3_MDIV */
-	ldr	r1,=0x00040000			/* If CH3_MDIV = 4, done */
-	cmp	r0,r1
-	beq	genpll_mdiv_done
-	/* Configure mdiv for GENPLL channel 0~3 */
-	/* Set CRU_CLKSET_KEY to unlock */
-	ldr	r0,=0x1800c180
-	ldr	r1,=0x0000ea68
-	str	r1,[r0]
-	/* Configure CRU_GENPLL_CONTROL6 */
-	ldr	r0,=0x1800c158
-	ldr	r1,[r0]
-	ldr	r2,=0xff000000
-	and	r1,r1,r2
-	ldr	r2,=0x00080c32			/* CH0_MDIV = 8, CH1_MDIV = 12, CH2_MDIV = 50 */
-	orr	r1,r1,r2
-	str	r1,[r0]
-	/* Configure CRU_GENPLL_CONTROL7 */
-	ldr	r0,=0x1800c15c
-	ldr	r1,[r0]
-	ldr	r2,=0xff000000
-	and	r1,r1,r2
-	ldr	r2,=0x00040810			/* CH3_MDIV = 4, CH4_MDIV = 8, CH5_MDIV = 16 */
-	orr	r1,r1,r2
-	str	r1,[r0]
-	/* Configure CRU_GENPLL_CONTROL5 */
-	ldr	r0,=0x1800c154
-	ldr	r1,[r0]
-	ldr	r2,=0x80000000
-	orr	r1,r1,r2			/* Enable SEL_SW_SETTING */
-	str	r1,[r0]
-	/* Configure CRU_GENPLL_CONTROL1 */
-	ldr	r0,=0x1800c144
-	ldr	r1,[r0]
-	bic	r1,r1,#0xf			/* Reload mdiv for CH0~3 */
-	str	r1,[r0]
-	orr	r1,r1,#0xf
-	str	r1,[r0]
-	bic	r1,r1,#0xf
-	str	r1,[r0]
-	/* Set CRU_CLKSET_KEY to unlock */
-	ldr	r0,=0x1800c180
-	ldr	r1,=0x0
-	str	r1,[r0]
-genpll_mdiv_done:
-#endif /* _CFEZ_ */
-
 #ifdef CFG_SHMOO
+	cmp	r9,r8				/* Cortex-A7? */
+	beq	ca7_shmoo_init
+
+	/* Cortex-A9, start l1/l2 mmu init for SHMOO */
+ca9_shmoo_init:
 	/* Invalidate data cache */
 	bl	cpu_inv_dcache_all
 
@@ -4502,7 +4449,7 @@ test_inv_way:
 
 l2cc_lockdown:
 	ldr	r1,=0xc0000000
-	ldr	r2,=0xc0020000			/* 128KB */
+	ldr	r2,=0xc0040000			/* 256KB */
 	ldr	r4,=0xa5a5a5a5
 	ldr	r5,=0xa5a5a5a5
 	ldr	r6,=0xa5a5a5a5
@@ -4528,9 +4475,20 @@ cdelay1:
 	/* Disable lockdown by line */
 	mov	r3,#0
 	ldr	r0,=IHOST_L2C_CACHE_ID
-	str	r3,[r0,#0x950]		
+	str	r3,[r0,#0x950]
 l2cc_init_done:
+	b	shmoo_init_done
+ca7_shmoo_init:
+	/* Need to add shmoo init code for ca7 */
+shmoo_init_done:
 #endif /* CFG_SHMOO */
+	/* Identify CPU ID */
+	mrc	p15,0,r7,c0,c0,0		/* retrieve cpu part no */
+	ldr	r6,=CORTEX_ID_MASK
+	and	r7,r7,r6
+	ldr	r6,=CORTEX_ID_A7
+	cmp	r7,r6
+	beq	init_pcie
 
 	/* BCM4708 WAR for PCIE2 */
 	ldr	r0,=0x1a000000
@@ -4575,11 +4533,15 @@ no_pcie:
 	mov	r8,r0
 	bl	ai_get_wrapper
 	mov	r9,r0
-	
+
 	/* Initialize memory controller and size memory */
 	mov	r0,r8
 	mov	r1,r9
 	bl	pcie_init
+	/* CA7 no need to do serdes and no socrom, skip it */
+	cmp	r7,r6
+	beq	init_ddr
+
 	bl	pcie_phy_init
 
 find_bootdev:
@@ -4635,7 +4597,16 @@ wait_for_host:
  * Find ddr core
  */
 init_ddr:
+	/* Identify CPU ID */
+	mrc	p15,0,r5,c0,c0,0		/* retrieve cpu part no */
+	ldr	r6,=CORTEX_ID_MASK
+	and	r5,r5,r6
+	ldr	r6,=CORTEX_ID_A7
+
 #ifdef CFG_SHMOO
+	cmp	r5,r6
+	beq	ca7_copy2cache
+
 	/* Copy to cache */
 copy2cache:
 	adrl	r0,startup		/* r0: source start address */
@@ -4679,7 +4650,7 @@ enable_arm_cyclecount:
 
 	/* setup stack pointer */
 	ldr	r0,=0xc0000000
-	ldr	r1,=0x20000			/* 128KB */
+	ldr	r1,=0x40000			/* 256KB */
 	add	r0,r0,r1
 	sub	r0,r0,#8
 	mov	sp,r0
@@ -4691,8 +4662,18 @@ enable_arm_cyclecount:
 	adrl	r1,startup
 	add	r0,r1,r0
 	mov	pc,lr
+	b	c_ddr_init_done
+
+ca7_copy2cache:
+	/* add CA7 shmoo c code handle here */
 c_ddr_init_done:
 #else	/* CFG_SHMOO */
+	cmp	r5,r6
+	/* load CMEM_CORE_ID if CA7 */
+	ldreq	r4,=(CMEM_CORE_ID << CIA_CID_SHIFT)
+	/* load NS_DDR23_CORE_ID if CA9 */
+	ldrne	r4,=(NS_DDR23_CORE_ID << CIA_CID_SHIFT)
+
 	ldr	r0,=SI_ENUM_BASE		/* r0:	core regs SI base address */
 	ldr	r1,=CC_EROMPTR
 	ldr	r1,[r0,r1]			/* r1:	erom pointer */
@@ -4709,12 +4690,11 @@ c_ddr_init_done:
 	b	1b
 
 panic:	b	.
-	
+
 	/* Found a CIA */
 2:	add	r1,r1,#8			/* Skip both CIA & CIB */
 	ldr	r3,=CIA_CID_MASK
 	and	r3,r3,r2
-	ldr	r4,=(NS_DDR23_CORE_ID << CIA_CID_SHIFT)
 	cmp	r3,r4
 	bne	1b
 
@@ -4729,22 +4709,190 @@ panic:	b	.
 	mov	r1,r9
 	mov	r2,r7			/* boot_dev */
 
-	bl	ddr_init
+	cmp	r5,r6
+	beq	ca7_ddr_init
+
+ca9_ddr_init:
+	bl	ddr_init_ca9
+	b	szmem
+
+ca7_ddr_init:
+	ldr	r7,=0x18007400
+	ldr	fp,[r7]				@ saved flag indicating DDR inited or not
+	bl	ddr_init_ca7
+
+	ldr	r0,=DDRC00_START
+	and	r1,fp,r0
+	cmp	r1,r0
+	beq	ca7_cpu_boost_done		@ don't boost CPU again in 2nd init DDR round
+
+ca7_cpu_boost_600MHz:
+	ldr	r0,=0x18003000			@ switch ClockRatioARM 1:1
+	ldr	r1,[r0]
+	bic	r1,r1,#(0x7<<9)
+	str	r1,[r0]
+
+	ldr	r0,=0x18003000			@ switch ClockRatioCCI 1:1
+	ldr	r1,[r0]
+	bic	r1,r1,#(0x3<<12)
+	str	r1,[r0]
+
+	ldr	r0,=0x18012660			@ set CPU Fvco to 1.8G
+	ldr	r1,=0xe
+	str	r1,[r0]
+	ldr	r0,=0x18012664
+	ldr	r1,=0x01680000
+	str	r1,[r0]
+
+	ldr	r0,=0x18012660			@ set CPU channels 2,1,0 mdiv to 12:6:3, and pdiv to 1
+	ldr	r1,=0xd
+	str	r1,[r0]
+	ldr	r0,=0x18012664
+	ldr	r1,=0x010c0603
+	str	r1,[r0]
+
+	ldr	r0,=0x18012660			@ set load_en for 3 channels
+	ldr	r1,=0xc
+	str	r1,[r0]
+	ldr	r0,=0x18012664
+	ldr	r1,[r0]
+	orr	r1,r1,#0x7000
+	str	r1,[r0]
+
+	ldr	r0,=0x18012600			@ update PLL with Fvco settings
+	ldr	r1,[r0]
+	orr	r1,r1,#0x400
+	str	r1,[r0]
+
+	ldr	r0,=0x1800002c			@ wait until CPU PLL being locked
+	ldr	r1,=0x1
+1:	ldr	r2,[r0]
+	and	r2,r2,r1
+	cmp	r2,r1
+	bne	1b
+
+	ldr	r0,=0x18012660			@ clear load_en for 3 channels
+	ldr	r1,=0xc
+	str	r1,[r0]
+	ldr	r0,=0x18012664
+	ldr	r1,[r0]
+	bic	r1,r1,#0x7000
+	str	r1,[r0]
+
+	ldr	r0,=0x18012600			@ set PLL control update bit
+	ldr	r1,[r0]
+	orr	r1,r1,#0x400
+	str	r1,[r0]
+
+	ldr	r0,=0x1800002c			@ wait until CPU PLL being locked
+	ldr	r1,=0x1
+1:	ldr	r2,[r0]
+	and	r2,r2,r1
+	cmp	r2,r1
+	bne	1b
+
+	ldr	r0,=0x18003000			@ boost CPU:CCI:NIC clock to 600:300:150
+	ldr	r1,[r0]
+	orr	r1,r1,#(0x1<<12)		@ switch ClockRatioCCI 2:1
+	str	r1,[r0]
+	ldr	r1,[r0]
+	orr	r1,r1,#(0x1<<9)			@ switch ClockRatioArm 2:1
+	str	r1,[r0]
+
+ca7_cpu_boost_900MHz:
+	ldr	r0,=0x18003000			@ switch ClockRatioARM 1:1
+	ldr	r1,[r0]
+	bic	r1,r1,#(0x7<<9)
+	str	r1,[r0]
+
+	ldr	r0,=0x18003000			@ switch ClockRatioCCI 1:1
+	ldr	r1,[r0]
+	bic	r1,r1,#(0x3<<12)
+	str	r1,[r0]
+
+	ldr	r0,=0x18012660			@ set CPU channels 2,1,0 mdiv to 12:6:2, and pdiv to 1
+	ldr	r1,=0xd
+	str	r1,[r0]
+	ldr	r0,=0x18012664
+	ldr	r1,[r0]
+	bic	r1,r1,#0xff
+	orr	r1,r1,#0x2
+	str	r1,[r0]
+
+	ldr	r0,=0x18012660			@ set load_en_ch for ch0
+	ldr	r1,=0xc
+	str	r1,[r0]
+	ldr	r0,=0x18012664
+	ldr	r1,[r0]
+	orr	r1,r1,#0x1000
+	str	r1,[r0]
+
+	ldr	r0,=0x18012600			@ set PLL control update bit
+	ldr	r1,[r0]
+	orr	r1,r1,#0x400
+	str	r1,[r0]
+
+	ldr	r0,=0x1800002c			@ wait until CPU PLL being locked
+	ldr	r1,=0x1
+1:	ldr	r2,[r0]
+	and	r2,r2,r1
+	cmp	r2,r1
+	bne	1b
+
+
+	ldr	r0,=SI_ENUM_BASE
+	ldr	r1,[r0]
+	ldr	r2,=CID_REV_MASK
+	and	r1,r1,r2
+	lsr	r1,r1,#CID_REV_SHIFT
+	cmp	r1,#0x2				@ 53573B0 revid is 2
+	bge	ca7_cpu_set_ratio		@ don't clear load_en if 53573B0
+
+	ldr	r0,=0x18012660			@ clear load_en for ch0
+	ldr	r1,=0xc
+	str	r1,[r0]
+	ldr	r0,=0x18012664
+	ldr	r1,[r0]
+	bic	r1,r1,#0x1000
+	str	r1,[r0]
+
+	ldr	r0,=0x18012600			@ set PLL control update bit
+	ldr	r1,[r0]
+	orr	r1,r1,#0x400
+	str	r1,[r0]
+
+	ldr	r0,=0x1800002c			@ wait until CPU PLL being locked
+	ldr	r1,=0x1
+1:	ldr	r2,[r0]
+	and	r2,r2,r1
+	cmp	r2,r1
+	bne	1b
+
+ca7_cpu_set_ratio:
+	ldr	r0,=0x18003000			@ boost CPU:CCI:NIC clock to 900:300:150
+	ldr	r1,[r0]
+	orr	r1,r1,#(0x1<<12)		@ switch ClockRatioCCI 2:1
+	str	r1,[r0]
+	ldr	r1,[r0]
+	orr	r1,r1,#(0x2<<9)			@ switch ClockRatioArm 3:1
+	str	r1,[r0]
+
+ca7_cpu_boost_done:
 #endif  /* CFG_SHMOO */
 
 szmem:
 	ldr	r3,=0x80000000
 	ldr	r2,=0xaa55beef
 	ldr	r1,=0x00000000
-	str	r1,[r3,#0x3c]
+	str	r1,[r3,#0x70]
 	ldr	r0,=(1 << 20)
 	ldr	r5,=(1 << 30)
 1:
 	ldr	r4,=0x80000000
 	add	r4,r4,r0
-	str	r2,[r4,#0x3c]
-	ldr	r1,[r4,#0x3c]			/* Read back to ensure completion */
-	ldr	r1,[r3,#0x3c]
+	str	r2,[r4,#0x70]
+	ldr	r1,[r4,#0x70]			/* Read back to ensure completion */
+	ldr	r1,[r3,#0x70]
 	cmp	r1,r2
 	beq	2f
 
@@ -4758,11 +4906,18 @@ szmem:
 
 /* Do CRU configure after DDR initied */
 #if !defined(CFG_ROMBOOT)
+	/* Identify CPU ID */
+	mrc	p15,0,r5,c0,c0,0		/* retrieve cpu part no */
+	ldr	r6,=CORTEX_ID_MASK
+	and	r5,r5,r6
+	ldr	r6,=CORTEX_ID_A7
+	cmp	r5,r6				/* Cortex-A7? */
+	beq	poll_ccu_done
 set_cru_policy7:
 	ldr	r0,=IHOST_PROC_CLK_WR_ACCESS
 	ldr	r1,=0xa5a501
 	str	r1,[r0]
-	
+
 	ldr	r3,=SI_ENUM_BASE
 	ldr	r4,=CC_CHIPID
 	ldr	r4,[r3,r4]
@@ -5136,7 +5291,7 @@ END(ai_get_wrapper)
 
 
 /* Interrupt handlers */
-/* Note: hndrte_arm.c for EXT_CBALL expects each trap handler to be 16 bytes */
+/* Note: hnd_rte_arm.c for EXT_CBALL expects each trap handler to be 16 bytes */
 LEAF(__traps)
 
 /* Undefined instruction exception handler */
@@ -5462,7 +5617,7 @@ END(__aeabi_unwind_cpp_pr0)
 /*
  * Setup the trap handler.
  */
-FUNC(hndrte_set_trap)
+FUNC(hnd_set_trap)
 
 	ldr	r2,=trap_hook
 	ldr	r1,[r2]
@@ -5470,7 +5625,7 @@ FUNC(hndrte_set_trap)
 	mov	r0,r1
 	bx	lr
 
-END(hndrte_set_trap)
+END(hnd_set_trap)
 
 /*
  * Turn remap off and then jump to an given address
