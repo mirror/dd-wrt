@@ -33,7 +33,7 @@
 #include <stdint.h>
 #endif
 #ifdef HAVE_SYS_BITYPES_H
-#include <sys/bitypes.h>
+//#include <sys/bitypes.h>
 #endif
 #include <sys/types.h>
 #include <sys/socket.h>
