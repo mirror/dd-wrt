@@ -18,6 +18,7 @@
  *
  */
 
+#include <sys/sysinfo.h>
 #include "chilli.h"
 #include "bstrlib.h"
 #ifdef ENABLE_MODULES
