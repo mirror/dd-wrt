@@ -179,9 +179,9 @@ static int scorpion_wmac_reset(void)
 			    }
 		    }
 
-		ar71xx_device_stop(1<<27); // rtc reset
+		ar71xx_device_stop(QCA955X_RESET_RTC); // rtc reset
 		udelay(10);
-		ar71xx_device_start(1<<27);
+		ar71xx_device_start(QCA955X_RESET_RTC);
 		udelay(10);
 	    return 0;
 }
