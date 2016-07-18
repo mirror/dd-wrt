@@ -1,6 +1,6 @@
 /*
  * Crash information logger
- * Copyright (C) 2010 Felix Fietkau <nbd@openwrt.org>
+ * Copyright (C) 2010 Felix Fietkau <nbd@nbd.name>
  *
  * Based on ramoops.c
  *   Copyright (C) 2010 Marco Stornelli <marco.stornelli@gmail.com>
@@ -75,7 +75,7 @@ void __init crashlog_init_bootmem(bootmem_data_t *bdata)
 #endif
 
 #ifdef CONFIG_HAVE_MEMBLOCK
-void __meminit crashlog_init_memblock(phys_addr_t addr, phys_addr_t size)
+void __init_memblock crashlog_init_memblock(phys_addr_t addr, phys_addr_t size)
 {
 	if (crashlog_addr)
 		return;
@@ -120,22 +120,19 @@ static void crashlog_printf(const char *fmt, ...)
 		return;
 
 	va_start(args, fmt);
-	crashlog_buf->len += vsnprintf(
+	crashlog_buf->len += vscnprintf(
 		&crashlog_buf->data[crashlog_buf->len],
 		len, fmt, args);
 	va_end(args);
 }
 
 static void crashlog_do_dump(struct kmsg_dumper *dumper,
-		enum kmsg_dump_reason reason, const char *s1, unsigned long l1,
-		const char *s2, unsigned long l2)
+		enum kmsg_dump_reason reason)
 {
-	unsigned long s1_start, s2_start;
-	unsigned long l1_cpy, l2_cpy;
 	struct timeval tv;
 	struct module *m;
 	char *buf;
-	int len;
+	size_t len;
 
 	if (!first)
 		crashlog_printf("\n===================================\n");
@@ -156,17 +153,10 @@ static void crashlog_do_dump(struct kmsg_dumper *dumper,
 	}
 
 	buf = (char *)&crashlog_buf->data[crashlog_buf->len];
-	len = get_maxlen();
 
-	l2_cpy = min(l2, (unsigned long)len);
-	l1_cpy = min(l1, (unsigned long)len - l2_cpy);
+	kmsg_dump_get_buffer(dumper, true, buf, get_maxlen(), &len);
 
-	s2_start = l2 - l2_cpy;
-	s1_start = l1 - l1_cpy;
-
-	memcpy(buf, s1 + s1_start, l1_cpy);
-	memcpy(buf + l1_cpy, s2 + s2_start, l2_cpy);
-	crashlog_buf->len += l1_cpy + l2_cpy;
+	crashlog_buf->len += len;
 }
 
 
@@ -182,6 +172,7 @@ int __init crashlog_init_fs(void)
 	crashlog_buf->magic = CRASHLOG_MAGIC;
 	crashlog_buf->len = 0;
 
+	dump.max_reason = KMSG_DUMP_OOPS;
 	dump.dump = crashlog_do_dump;
 	kmsg_dump_register(&dump);
 
