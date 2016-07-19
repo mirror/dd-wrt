@@ -449,6 +449,7 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 		[NL80211_STA_INFO_PLINK_STATE] = {.type = NLA_U8},
 		[NL80211_STA_INFO_CONNECTED_TIME] = {.type = NLA_U32},
 		[NL80211_STA_INFO_STA_FLAGS] = {.minlen = sizeof(struct nl80211_sta_flag_update)},
+		[NL80211_STA_INFO_EXPECTED_THROUGHPUT] = {.type = NLA_U32},
 	};
 	static struct nla_policy rate_policy[NL80211_RATE_INFO_MAX + 1] = {
 		[NL80211_RATE_INFO_BITRATE] = {.type = NLA_U16},
@@ -539,6 +540,12 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 				mac80211_info->wci->is_short_gi = 1;
 			}
 		}
+	}
+	if (mac80211_info->wci->txrate == 60 && sinfo[NL80211_STA_INFO_EXPECTED_THROUGHPUT]) {
+				unsigned int tx = nla_get_u32(sinfo[NL80211_STA_INFO_EXPECTED_THROUGHPUT]);
+				tx = tx * 1000;
+				tx = tx / 1024;
+				mac80211_info->wci->txrate = tx / 100;	
 	}
 	if (sinfo[NL80211_STA_INFO_STA_FLAGS]) {
 		sta_flags = (struct nl80211_sta_flag_update *)
