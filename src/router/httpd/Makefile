@@ -224,6 +224,12 @@ endif
 ifeq ($(CONFIG_MMS344),y)
 CFLAGS += -DHAVE_MMS344
 endif
+ifeq ($(CONFIG_XD3200),y)
+CFLAGS += -DHAVE_XD3200
+endif
+ifeq ($(CONFIG_AP120C),y)
+CFLAGS += -DHAVE_AP120C
+endif
 ifeq ($(CONFIG_OLSRD),y)
 CFLAGS += -DHAVE_OLSRD
 endif
