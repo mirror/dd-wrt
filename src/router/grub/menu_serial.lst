@@ -2,7 +2,7 @@ serial --unit=0 --speed=115200 --word=8 --parity=no --stop=1
 terminal --timeout=10 serial
 
 default 0
-timeout 5
+timeout 0
 
 title   DD-WRT
 root    (hd0,0)
