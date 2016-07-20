@@ -3570,6 +3570,8 @@ void start_sysinit(void)
 	case ROUTER_ASUS_RTN18U:
 		set_gpio(7, 1);	// fixup reset button
 		set_gpio(11, 1);	// fixup wps button
+		set_gpio(13, 1);
+//		nvram_set("usb_enable","1"); // fix wireless usb issue
 		break;
 	case ROUTER_ASUS_AC56U:
 		nvram_set("clkfreq", "800,666");
