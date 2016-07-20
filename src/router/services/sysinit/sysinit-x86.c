@@ -245,6 +245,15 @@ void start_sysinit(void)
 		nvram_set("et0macaddr", ether_etoa((char *)ifr.ifr_hwaddr.sa_data, eabuf));
 		close(s);
 	}
+	FILE *fp = fopen("/sys/bus/pci/devices/0000:04:00.0/device", "rb"); //pcengines apu fuckup check
+	if (fp) {
+		char checkbuf[32];
+		fgets(checkbuf, sizeof(checkbuf), fp);
+		fclose(fp);
+		if (!strcmp(checkbuf, "0xabcd"))
+			sys_reboot();
+	}
+
 	detect_wireless_devices();
 
 	mknod("/dev/rtc", S_IFCHR | 0644, makedev(253, 0));
