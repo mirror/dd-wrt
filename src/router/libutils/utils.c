@@ -6557,12 +6557,22 @@ int led_control(int type, int act)
 		wlan1_gpio = 0x102;
 		break;
 	case ROUTER_ASUS_RTN18U:
-		usb_power = 0x00d;	//usb power on/off
-		usb_gpio = 0x103;
-		usb_gpio1 = 0x10e;
 		power_gpio = 0x100;
-		connected_gpio = 0x106;
-		disconnected_gpio = 0x109;
+//		usb_power = 0x00d;	//usb power on/off
+		if (nvram_match("bl_version", "3.0.0.7")) {
+			usb_gpio = 0x10e;
+			connected_gpio = 0x103;
+			disconnected_gpio = 0x106;
+		} else if (nvram_match("bl_version", "1.0.0.0")) {
+			usb_gpio = 0x103;
+			connected_gpio = 0x106;
+			disconnected_gpio = 0x109;
+		} else {
+			usb_gpio = 0x103;
+			usb_gpio1 = 0x10e;
+			connected_gpio = 0x106;
+			disconnected_gpio = 0x109;
+		}
 		break;
 	case ROUTER_TPLINK_ARCHERC9:
 		ses_gpio = 0x002;
@@ -6785,7 +6795,7 @@ int led_control(int type, int act)
 		// 0x10c //unknown gpio label, use as diag
 #ifdef HAVE_RUT500
 		diag_gpio = 0x10e;
-#else		
+#else
 		diag_gpio = 0x10c;
 #endif
 		break;
@@ -6823,6 +6833,7 @@ int led_control(int type, int act)
 		break;
 #endif
 	}
+
 	if (type == LED_DIAG && v1func == 1) {
 		if (act == LED_ON)
 			C_led(1);
@@ -6903,6 +6914,7 @@ int led_control(int type, int act)
 		use_gpio = sec1_gpio;
 		break;
 	}
+
 	if ((use_gpio & 0x0ff) != 0x0ff) {
 		gpio_value = use_gpio & 0x0ff;
 		enable = (use_gpio & 0x100) == 0 ? 1 : 0;
