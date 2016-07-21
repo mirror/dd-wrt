@@ -361,7 +361,7 @@ static void read_session_identification() {
 	}
 
 	if (!done) {
-		TRACE(("err: %s for '%s'\n", strerror(errno), linebuf))
+		TRACE(("error reading remote ident: %s\n", strerror(errno)))
 		ses.remoteclosed();
 	} else {
 		/* linebuf is already null terminated */
@@ -550,10 +550,12 @@ static void update_timeout(long limit, long now, long last_event, long * timeout
 static long select_timeout() {
 	/* determine the minimum timeout that might be required, so
 	as to avoid waking when unneccessary */
-	long timeout = LONG_MAX;
+	long timeout = KEX_REKEY_TIMEOUT;
 	long now = monotonic_now();
 
-	update_timeout(KEX_REKEY_TIMEOUT, now, ses.kexstate.lastkextime, &timeout);
+	if (!ses.kexstate.sentkexinit) {
+		update_timeout(KEX_REKEY_TIMEOUT, now, ses.kexstate.lastkextime, &timeout);
+	}
 
 	if (ses.authstate.authdone != 1 && IS_DROPBEAR_SERVER) {
 		/* AUTH_TIMEOUT is only relevant before authdone */
