@@ -3589,6 +3589,15 @@ struct nvram_param srouter_defaults[] = {
 #ifdef HAVE_ROUTERSTYLE
 	{"router_style_dark", "0"},
 #endif
+#ifdef HAVE_ONNET
+	{"radius_country", "ARE"},
+	{"radius_state", "none"},
+	{"radius_locality", "none"},
+	{"radius_organisation", "none"},
+	{"radius_email", "none"},
+	{"radius_common", "none"},
+	{"radius_passphrase", "none"},
+#endif
 	{"ptoken", "0"},
 	{0, 0}
 };
