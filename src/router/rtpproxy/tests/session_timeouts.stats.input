@@ -1,0 +1,2 @@
+Gv nsess_created nsess_destroyed nsess_timeout nsess_complete nsess_nortp nsess_owrtp nsess_nortcp nsess_owrtcp
+Gv ncmds_rcvd ncmds_succd ncmds_errs ncmds_repld

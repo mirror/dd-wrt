@@ -1,0 +1,3 @@
+U %%CALLID%% 127.0.0.1 %%PORT1%% from_tag_1
+L %%CALLID%% 127.0.0.1 %%PORT2%% from_tag_1 to_tag_1
+R %%CALLID%% from_tag_1 to_tag_1

@@ -1,0 +1,76 @@
+12000
+12002
+12004
+12006
+12008
+12010
+12012
+12014
+12016
+12018
+nsess_created=5 nsess_destroyed=0 nsess_timeout=0 nsess_complete=5 nsess_nortp=0 nsess_owrtp=0 nsess_nortcp=0 nsess_owrtcp=0
+ncmds_rcvd=12 ncmds_succd=11 ncmds_errs=0 ncmds_repld=11
+nsess_created=5 nsess_destroyed=0 nsess_timeout=0 nsess_complete=5 nsess_nortp=0 nsess_owrtp=0 nsess_nortcp=0 nsess_owrtcp=0
+ncmds_rcvd=14 ncmds_succd=13 ncmds_errs=0 ncmds_repld=13
+12002
+12006
+12010
+12014
+12018
+12020
+12022
+12024
+12026
+12028
+12030
+12032
+nsess_created=12 nsess_destroyed=0 nsess_timeout=0 nsess_complete=5 nsess_nortp=0 nsess_owrtp=0 nsess_nortcp=0 nsess_owrtcp=0
+ncmds_rcvd=28 ncmds_succd=27 ncmds_errs=0 ncmds_repld=27
+nsess_created=12 nsess_destroyed=0 nsess_timeout=0 nsess_complete=5 nsess_nortp=0 nsess_owrtp=0 nsess_nortcp=0 nsess_owrtcp=0
+ncmds_rcvd=30 ncmds_succd=29 ncmds_errs=0 ncmds_repld=29
+12034
+12036
+12038
+12040
+nsess_created=12 nsess_destroyed=0 nsess_timeout=0 nsess_complete=9 nsess_nortp=0 nsess_owrtp=0 nsess_nortcp=0 nsess_owrtcp=0
+ncmds_rcvd=36 ncmds_succd=35 ncmds_errs=0 ncmds_repld=35
+nsess_created=12 nsess_destroyed=3 nsess_timeout=3 nsess_complete=9 nsess_nortp=0 nsess_owrtp=0 nsess_nortcp=0 nsess_owrtcp=0
+ncmds_rcvd=38 ncmds_succd=37 ncmds_errs=0 ncmds_repld=37
+0
+0
+0
+nsess_created=12 nsess_destroyed=3 nsess_timeout=3 nsess_complete=9 nsess_nortp=0 nsess_owrtp=0 nsess_nortcp=0 nsess_owrtcp=0
+ncmds_rcvd=43 ncmds_succd=39 ncmds_errs=3 ncmds_repld=42
+nsess_created=12 nsess_destroyed=8 nsess_timeout=8 nsess_complete=9 nsess_nortp=5 nsess_owrtp=0 nsess_nortcp=5 nsess_owrtcp=0
+ncmds_rcvd=45 ncmds_succd=41 ncmds_errs=3 ncmds_repld=44
+0
+0
+0
+0
+0
+12034
+12036
+12038
+12040
+0
+0
+0
+nsess_created=12 nsess_destroyed=8 nsess_timeout=8 nsess_complete=9 nsess_nortp=5 nsess_owrtp=0 nsess_nortcp=5 nsess_owrtcp=0
+ncmds_rcvd=59 ncmds_succd=47 ncmds_errs=11 ncmds_repld=58
+nsess_created=12 nsess_destroyed=12 nsess_timeout=12 nsess_complete=9 nsess_nortp=9 nsess_owrtp=0 nsess_nortcp=9 nsess_owrtcp=0
+ncmds_rcvd=61 ncmds_succd=49 ncmds_errs=11 ncmds_repld=60
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+nsess_created=12 nsess_destroyed=12 nsess_timeout=12 nsess_complete=9 nsess_nortp=9 nsess_owrtp=0 nsess_nortcp=9 nsess_owrtcp=0
+ncmds_rcvd=75 ncmds_succd=51 ncmds_errs=23 ncmds_repld=74
+MEMDEB: all clear
