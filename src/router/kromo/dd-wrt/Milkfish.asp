@@ -99,6 +99,10 @@ addEvent(window, "unload", function() {
 			</div>
 <div id="idmilkfish">
 		<div class="setting">
+			<div class="label"><% tran("share.intrface"); %></div>
+				<% show_ifselect("milkfish_if"); %>
+		</div>
+		<div class="setting">
 			<div class="label"><% tran("service.milkfish_fromswitch"); %></div>
 			<input class="spaceradio" type="radio" name="milkfish_fromswitch" value="on" <% nvc("milkfish_fromswitch", "on"); %> onclick="show_layer_ext(this, 'idfrom', true)" /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" name="milkfish_fromswitch" value="off" <% nvc("milkfish_fromswitch", "off"); %> onclick="show_layer_ext(this, 'idfrom', false)" /><% tran("share.disable"); %>

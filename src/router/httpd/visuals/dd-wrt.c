@@ -5498,7 +5498,10 @@ void ej_show_ifselect(webs_t wp, int argc, char_t ** argv)
 	for (i = 1; i < argc; i++) {
 		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", argv[i], nvram_match(ifname, argv[i]) ? "selected=\"selected\"" : "", argv[i]);
 	}
-
+	char *wanface = get_wan_face();
+	if (strcmp(wanface,"br0")) {
+		websWrite(wp, "<option value=\"%s\" %s >WAN</option>\n", wanface, nvram_match(ifname, wanface) ? "selected=\"selected\"" : "");
+	}
 	websWrite(wp, "<option value=\"%s\" %s >LAN</option>\n", nvram_safe_get("lan_ifname"), nvram_match(ifname, nvram_safe_get("lan_ifname")) ? "selected=\"selected\"" : "");
 	char *next;
 	char var[80];
@@ -5507,7 +5510,7 @@ void ej_show_ifselect(webs_t wp, int argc, char_t ** argv)
 	memset(eths, 0, 256);
 	getIfLists(eths, 256);
 	foreach(var, eths, next) {
-		if (!strcmp(get_wan_face(), var))
+		if (!strcmp(wanface, var))
 			continue;
 		if (!strcmp(nvram_safe_get("lan_ifname"), var))
 			continue;
@@ -5529,7 +5532,8 @@ void ej_show_iflist(webs_t wp, int argc, char_t ** argv)
 	getIfList(buffer, NULL);
 
 	foreach(var, buffer, next) {
-		if (nvram_match("wan_ifname", var)) {
+		char *wanface = get_wan_face();
+		if (strcmp(wanface,"br0" && nvram_match(wanface, var)) {
 			websWrite(wp, "<option value=\"%s\" >WAN</option>\n", var);
 			continue;
 		}
