@@ -245,7 +245,7 @@ init_config(struct cfg *cf, int argc, char **argv)
                 cf->stable->sched_offset = x / y;
             }
             x = (double)cf->stable->sched_hz / cf->stable->target_pfreq;
-            cf->stable->sched_offset = trunc(x * cf->stable->sched_offset) / x;
+            cf->stable->sched_offset = my_trunc(x * cf->stable->sched_offset) / x;
             cf->stable->sched_offset /= cf->stable->target_pfreq;
             warnx("sched_offset = %f",  cf->stable->sched_offset);
             break;
@@ -582,7 +582,7 @@ main(int argc, char **argv)
     char buf[256];
     struct recfilter loop_error;
     struct PFD phase_detector;
-    useconds_t usleep_time;
+    long usleep_time;
     struct sched_param sparam;
 #if RTPP_DEBUG
     double sleep_time, filter_lastval;
@@ -706,7 +706,7 @@ main(int argc, char **argv)
 
         clk = (eptime + cf.stable->sched_offset) * cf.stable->target_pfreq;
 
-        ncycles_ref = llrint(clk);
+        ncycles_ref = clk;
 
         eval = PFD_get_error(&phase_detector, clk);
 
