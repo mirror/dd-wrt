@@ -1,0 +1,3 @@
+Uc%%CODEC%%,0,3,8,18,9,101 callid_1 127.0.0.1 %%PORT1%% from_tag_1
+L callid_1 127.0.0.1 %%PORT2%% from_tag_1 to_tag_1
+P callid_1 playback1 session from_tag_1

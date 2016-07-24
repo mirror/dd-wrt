@@ -1,0 +1,178 @@
+OS=`uname`
+UID=`id -u`
+
+TZ=CET
+export TZ
+
+BASEDIR="${BASEDIR:-$(dirname -- $0)}"
+BASEDIR="$(readlink -f -- $BASEDIR)"
+
+BUILDDIR="${BUILDDIR:-${BASEDIR}}"
+TOP_BUILDDIR="${TOP_BUILDDIR:-${BASEDIR}/..}"
+
+RTPPROXY=$TOP_BUILDDIR/src/rtpproxy_debug
+MAKEANN=${TOP_BUILDDIR}/makeann/makeann
+EXTRACTAUDIO=${TOP_BUILDDIR}/extractaudio/extractaudio
+DIFF="diff -u"
+TCPDUMP="tcpdump"
+if [ ${UID} -eq 0 ]
+then
+  SUDO=""
+else
+  SUDO="sudo -n"
+fi
+
+sha256_compute() {
+  if [ "${OS}" != "FreeBSD" ]
+  then
+    for sfile in "${@}"
+    do
+      sha256sum "${sfile}" | awk "{print \"SHA256 (${sfile}) = \"\$1}"
+    done
+  else
+    sha256 "${@}"
+  fi
+}
+
+setup_buffers() {
+  if [ "${OS}" != "FreeBSD" ]
+  then
+    ${SUDO} -s "echo 49600 > /proc/sys/net/ipv4/udp_rmem_min"
+    ${SUDO} sysctl -w net.ipv4.udp_rmem_min=49600
+    ${SUDO} -s "echo 49600 > /proc/sys/net/ipv4/udp_wmem_min"
+    ${SUDO} sysctl -w net.ipv4.udp_wmem_min=49600
+    ${SUDO} -s "echo 33554432 > /proc/sys/net/core/rmem_max"
+    ${SUDO} sysctl -w net.core.rmem_max=33554432
+    ${SUDO} -s "echo 33554432 > /proc/sys/net/core/rmem_default"
+    ${SUDO} sysctl -w net.core.rmem_default=33554432
+  fi
+}
+
+sha256_verify() {
+  act_chksum=`sha256_compute "${1}" | awk '{print $4}'`
+  prop_chksum=`grep -w ${1} < ${2} | awk '{print $4}'`
+  if [ "${act_chksum}" = "${prop_chksum}" ]
+  then
+    ok "${1} data"
+  else
+    fail "${1} data"
+  fi
+}
+
+if [ "${OS}" != "FreeBSD" ]
+then
+  LOOPBACK_INTERFACE="lo"
+  SED_ARGS="-u"
+else
+  LOOPBACK_INTERFACE="lo0"
+  SED_ARGS="-l"
+fi
+
+SED="sed ${SED_ARGS}"
+
+rtpproxy_start() {
+  tempfoo="`basename $0`.XXXXX"
+  TMP_PIDFILE=`mktemp -t ${tempfoo}` || exit 1
+  TMP_SOCKFILE=`mktemp -t ${tempfoo}` || exit 1
+  ${RTPPROXY} -s ${TMP_SOCKFILE} -p ${TMP_PIDFILE} || exit 1
+  export TMP_PIDFILE
+  export TMP_SOCKFILE
+  i=0
+  while [ ! -s ${TMP_PIDFILE} ]
+  do
+    sleep 1
+    i=$((${i} + 1))
+    if [ ${i} -eq 3 ]
+    then
+      false
+      return
+    fi
+  done
+}
+
+rtpproxy_stop() {
+  SIGNAME="${1}"
+  kill -${SIGNAME} `cat ${TMP_PIDFILE}` || return
+  i=0
+  while [ -e ${TMP_PIDFILE} ]
+  do
+    sleep 1
+    i=$((${i} + 1))
+    if [ ${i} -eq 3 ]
+    then
+      kill -KILL `cat ${TMP_PIDFILE}`
+      false
+      return
+    fi
+  done
+}
+
+forcefail() {
+  RC=${1}
+  if [ ${RC} -eq 0 ]
+  then
+    echo >&2 "ALERT, forcefail() called with the bogus 0 RC!"
+    ${RC}=1
+  fi
+  shift
+  echo >&2 "FAILED: (rc=${RC})" "${@}"
+  if [ -n "$CONTINUE" ] ; then
+    return
+  fi
+  if [ -n "$INTERACTIVE" ] ; then
+    read -p "Continue? (y/n)" YN
+    if [ "$YN" != 'y' ] ; then
+      exit $RC
+    fi
+  else
+    exit $RC
+  fi
+}
+
+fail() {
+  RC=$?
+  echo >&2 "FAILED: (rc=$RC)" "$@"
+  if [ -n "$CONTINUE" ] ; then
+    return
+  fi
+  if [ -n "$INTERACTIVE" ] ; then
+    read -p "Continue? (y/n)" YN
+    if [ "$YN" != 'y' ] ; then
+      exit $RC
+    fi
+  else
+    exit $RC
+  fi
+}
+
+ok() {
+  echo >&2 "OK:" "$@"
+}
+
+report_rc() {
+  RC=${1}
+  shift
+  if [ ${RC} -eq 0 ]
+  then
+    ok "${@}"
+  else
+    fail "${@}"
+  fi
+}
+
+report() {
+  RC=${?}
+  report_rc ${RC} "${@}"
+}
+
+reportifnotfail() {
+  RC=$?
+  if [ "$RC" = 0 ]
+  then
+    false
+    fail "$@"
+  else
+    true
+    ok "$@"
+  fi
+}

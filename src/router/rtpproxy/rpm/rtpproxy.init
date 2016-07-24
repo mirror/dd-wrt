@@ -1,0 +1,102 @@
+#!/bin/bash
+#
+# Startup script for rtpproxy
+#
+# chkconfig: - 85 15
+# description: A symmetric RTP proxy
+#
+# processname: rtpproxy
+# pidfile: /var/run/rtpproxy.pid
+
+### BEGIN INIT INFO
+# Provides: rtpproxy
+# Required-Start: $local_fs $network $syslog
+# Required-Stop: $local_fs $network $syslog
+# Default-Start:
+# Default-Stop: 0 1 6
+# Short-Description: A symmetric RTP proxy
+# Description: A symmetric RTP proxy
+### END INIT INFO
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+prog=rtpproxy
+rtpproxy=/usr/bin/$prog
+
+user=rtpproxy
+lockfile=/var/lock/subsys/$prog
+pidfile=/var/run/$prog.pid
+
+OPTIONS=
+
+# User-defined options and/or overrides of the variables,
+# listed above, should go there:
+[ -e /etc/sysconfig/$prog ] && . /etc/sysconfig/$prog
+
+RETVAL=0
+
+start() {
+        echo -n $"Starting $prog: "
+
+        # check whether rtpproxy was already started
+        if pidofproc -p $pidfile > /dev/null 2>&1 ; then
+                echo -n "already running" && warning && echo
+	        return 0
+        fi
+
+        daemon $rtpproxy -p $pidfile -u $user $OPTIONS
+        RETVAL=$?
+        echo
+        [ $RETVAL = 0 ] && touch $lockfile
+        return $RETVAL
+}
+
+stop() {
+	echo -n $"Stopping $prog: "
+
+        # check whether rtpproxy was already started
+        if ! pidofproc -p $pidfile > /dev/null 2>&1 ; then
+                echo -n "not running" && warning && echo
+                return 0
+        fi
+
+	killproc -p $pidfile $prog
+	RETVAL=$?
+	echo
+	[ $RETVAL = 0 ] && rm -f $lockfile $pidfile
+	return $RETVAL
+}
+
+# See how we were called.
+case "$1" in
+  start)
+	start
+	;;
+  stop)
+	stop
+	;;
+  status)
+	status -p $pidfile $prog
+	RETVAL=$?
+	;;
+  restart|force-reload)
+	stop
+	start
+	;;
+  condrestart|try-restart)
+	if [ -f $pidfile ] ; then
+		stop
+		start
+	fi
+	;;
+  reload)
+	echo -n $"Reloading $prog: not supported" && failure && echo
+	RETVAL=3
+	;;
+  *)
+	echo $"Usage: $prog {start|stop|restart|condrestart|reload|status|help}"
+	RETVAL=2
+esac
+
+exit $RETVAL

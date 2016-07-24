@@ -1,0 +1,14 @@
+#!/bin/sh
+
+# test start up of rtpproxy and handling of SIGTERM and SIGHUP
+
+. $(dirname $0)/functions
+
+rtpproxy_start
+report "rtpproxy start"
+rtpproxy_stop TERM
+report "rtpproxy stop (SIGTERM)"
+rtpproxy_start
+report "rtpproxy start"
+rtpproxy_stop HUP
+report "rtpproxy stop (SIGHUP)"
