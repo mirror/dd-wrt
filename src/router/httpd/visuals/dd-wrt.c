@@ -5533,7 +5533,7 @@ void ej_show_iflist(webs_t wp, int argc, char_t ** argv)
 
 	foreach(var, buffer, next) {
 		char *wanface = get_wan_face();
-		if (strcmp(wanface,"br0" && nvram_match(wanface, var)) {
+		if (strcmp(wanface,"br0") && nvram_match(wanface, var)) {
 			websWrite(wp, "<option value=\"%s\" >WAN</option>\n", var);
 			continue;
 		}
