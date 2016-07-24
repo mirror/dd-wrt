@@ -56,6 +56,7 @@ static unsigned int type3_clocks[3] = { 150, 200, 0 };
 static unsigned int type4_clocks[10] = { 192, 200, 216, 228, 240, 252, 264, 280, 300, 0 };
 static unsigned int type7_clocks[10] = { 183, 187, 198, 200, 216, 225, 233, 237, 250, 0 };
 static unsigned int type8_clocks[9] = { 200, 300, 400, 500, 600, 632, 650, 662, 0 };
+
 static unsigned int type9_clocks[7] =	// 1200 seem to be the last value which works stable
 { 600, 800, 1000, 1200, 1400, 1600, 0 };
 static unsigned int type10_clocks[7] = { 300, 333, 400, 480, 500, 533, 0 };
@@ -166,8 +167,9 @@ void ej_show_routing(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "document.write(\"<option value=\\\"bgp\\\" %s >BGP</option>\");\n", nvram_selmatch(wp, "wk_mode", "bgp") ? "selected=\\\"selected\\\"" : "");
 	websWrite(wp, "document.write(\"<option value=\\\"router\\\" %s >\" + route.rip2_mod + \"</option>\");\n", nvram_selmatch(wp, "wk_mode", "router") ? "selected=\\\"selected\\\"" : "");
 	websWrite(wp, "document.write(\"<option value=\\\"ospf\\\" %s >\" + route.ospf_mod + \"</option>\");\n", nvram_selmatch(wp, "wk_mode", "ospf") ? "selected=\\\"selected\\\"" : "");
-	if (nvram_match("wk_mode","ospf bgp rip router")) {
-		websWrite(wp, "document.write(\"<option value=\\\"ospf bgp rip router\\\" %s >vtysh OSPF BGP RIP router</option>\");\n", nvram_selmatch(wp, "wk_mode", "ospf bgp rip router") ? "selected=\\\"selected\\\"" : "");
+	if (nvram_match("wk_mode", "ospf bgp rip router")) {
+		websWrite(wp, "document.write(\"<option value=\\\"ospf bgp rip router\\\" %s >vtysh OSPF BGP RIP router</option>\");\n",
+			  nvram_selmatch(wp, "wk_mode", "ospf bgp rip router") ? "selected=\\\"selected\\\"" : "");
 	}
 #endif
 #ifdef HAVE_OLSRD
@@ -1435,7 +1437,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 #endif
 				if (channelbw > 20 && !chan[i].ht40minus && !chan[i].ht40plus) {
 					i++;
-					continue; // do not show channels where bandwidth is not available
+					continue;	// do not show channels where bandwidth is not available
 				}
 				cprintf("%d\n", chan[i].channel);
 				cprintf("%d\n", chan[i].freq);
@@ -2976,12 +2978,12 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n", nvram_match(wl_width, "40") ? "selected=\\\"selected\\\"" : "");
 #endif
 #if defined(HAVE_ATH10K)
-		if (has_ac(prefix) && has_5ghz(prefix) &&nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("acn-mixed", "%s_net_mode", prefix)) {
+		if (has_ac(prefix) && has_5ghz(prefix) && nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("acn-mixed", "%s_net_mode", prefix)) {
 			websWrite(wp, "document.write(\"<option value=\\\"80\\\" %s >\" + share.vht80 + \"</option>\");\n", nvram_match(wl_width, "80") ? "selected=\\\"selected\\\"" : "");
 			if (has_vht160(prefix))
-			    websWrite(wp, "document.write(\"<option value=\\\"160\\\" %s >\" + share.vht160 + \"</option>\");\n", nvram_match(wl_width, "160") ? "selected=\\\"selected\\\"" : "");
+				websWrite(wp, "document.write(\"<option value=\\\"160\\\" %s >\" + share.vht160 + \"</option>\");\n", nvram_match(wl_width, "160") ? "selected=\\\"selected\\\"" : "");
 			if (has_vht80plus80(prefix))
-			    websWrite(wp, "document.write(\"<option value=\\\"80+80\\\" %s >\" + share.vht80plus + \"</option>\");\n", nvram_match(wl_width, "80+80") ? "selected=\\\"selected\\\"" : "");
+				websWrite(wp, "document.write(\"<option value=\\\"80+80\\\" %s >\" + share.vht80plus + \"</option>\");\n", nvram_match(wl_width, "80+80") ? "selected=\\\"selected\\\"" : "");
 		}
 #endif
 	}
@@ -3562,12 +3564,12 @@ if (!strcmp(prefix, "wl2"))
 #endif
 
 #if defined(HAVE_ATH10K)
-		if (has_ac(prefix)  && has_5ghz(prefix) && nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("acn-mixed", "%s_net_mode", prefix))
+		if (has_ac(prefix) && has_5ghz(prefix) && nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("acn-mixed", "%s_net_mode", prefix))
 			websWrite(wp, "document.write(\"<option value=\\\"80\\\" %s >\" + share.vht80 + \"</option>\");\n", nvram_match(wl_width, "80") ? "selected=\\\"selected\\\"" : "");
-			if (has_vht160(prefix))
-			    websWrite(wp, "document.write(\"<option value=\\\"160\\\" %s >\" + share.vht160 + \"</option>\");\n", nvram_match(wl_width, "160") ? "selected=\\\"selected\\\"" : "");
-			if (has_vht80plus80(prefix))
-			    websWrite(wp, "document.write(\"<option value=\\\"80+80\\\" %s >\" + share.vht80plus + \"</option>\");\n", nvram_match(wl_width, "80+80") ? "selected=\\\"selected\\\"" : "");
+		if (has_vht160(prefix))
+			websWrite(wp, "document.write(\"<option value=\\\"160\\\" %s >\" + share.vht160 + \"</option>\");\n", nvram_match(wl_width, "160") ? "selected=\\\"selected\\\"" : "");
+		if (has_vht80plus80(prefix))
+			websWrite(wp, "document.write(\"<option value=\\\"80+80\\\" %s >\" + share.vht80plus + \"</option>\");\n", nvram_match(wl_width, "80+80") ? "selected=\\\"selected\\\"" : "");
 #endif
 	}
 	websWrite(wp, "document.write(\"<option value=\\\"20\\\" %s >\" + share.full + \"</option>\");\n", nvram_match(wl_width, "20") ? "selected=\\\"selected\\\"" : "");
@@ -5499,7 +5501,7 @@ void ej_show_ifselect(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", argv[i], nvram_match(ifname, argv[i]) ? "selected=\"selected\"" : "", argv[i]);
 	}
 	char *wanface = get_wan_face();
-	if (strcmp(wanface,"br0")) {
+	if (strcmp(wanface, "br0")) {
 		websWrite(wp, "<option value=\"%s\" %s >WAN</option>\n", wanface, nvram_match(ifname, wanface) ? "selected=\"selected\"" : "");
 	}
 	websWrite(wp, "<option value=\"%s\" %s >LAN</option>\n", nvram_safe_get("lan_ifname"), nvram_match(ifname, nvram_safe_get("lan_ifname")) ? "selected=\"selected\"" : "");
@@ -5533,7 +5535,7 @@ void ej_show_iflist(webs_t wp, int argc, char_t ** argv)
 
 	foreach(var, buffer, next) {
 		char *wanface = get_wan_face();
-		if (strcmp(wanface,"br0") && nvram_match(wanface, var)) {
+		if (strcmp(wanface, "br0") && nvram_match(wanface, var)) {
 			websWrite(wp, "<option value=\"%s\" >WAN</option>\n", var);
 			continue;
 		}
