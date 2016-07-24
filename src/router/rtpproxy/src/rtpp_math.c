@@ -26,8 +26,80 @@
  */
 
 #include <math.h>
+#include <float.h>
 
 #include "rtpp_math.h"
+
+
+#define FORCE_EVAL(x) do {                        \
+	if (sizeof(x) == sizeof(float)) {         \
+		volatile float __x;               \
+		__x = (x);                        \
+	} else if (sizeof(x) == sizeof(double)) { \
+		volatile double __x;              \
+		__x = (x);                        \
+	} else {                                  \
+		volatile long double __x;         \
+		__x = (x);                        \
+	}                                         \
+} while(0)
+
+
+double my_trunc(double x)
+{
+	union {double f; unsigned long long i;} u = {x};
+	int e = (int)(u.i >> 52 & 0x7ff) - 0x3ff + 12;
+	unsigned long long m;
+
+	if (e >= 52 + 12)
+		return x;
+	if (e < 12)
+		e = 1;
+	m = -1ULL >> e;
+	if ((u.i & m) == 0)
+		return x;
+	FORCE_EVAL(x + 0x1p120f);
+	u.i &= ~m;
+	return u.f;
+}
+#ifndef DBL_EPSILON
+#define DBL_EPSILON 2.22044604925031308085e-16
+#endif
+
+#define EPS DBL_EPSILON
+
+
+static const double_t toint = 1/EPS;
+
+
+
+double my_round(double x)
+{
+	union {double f; unsigned long long i;} u = {x};
+	int e = u.i >> 52 & 0x7ff;
+	double_t y;
+
+	if (e >= 0x3ff+52)
+		return x;
+	if (u.i >> 63)
+		x = -x;
+	if (e < 0x3ff-1) {
+		/* raise inexact if x!=0 */
+		FORCE_EVAL(x + toint);
+		return 0*u.f;
+	}
+	y = x + toint - toint - x;
+	if (y > 0.5)
+		y = y + x - 1;
+	else if (y <= -0.5)
+		y = y + x + 1;
+	else
+		y = y + x;
+	if (u.i >> 63)
+		y = -y;
+	return y;
+}
+
 
 void
 PFD_init(struct PFD *pfd_p, double phi_round)
@@ -43,10 +115,10 @@ PFD_get_error(struct PFD *pfd_p, double dtime)
     double next_clk, err0r;
 
     if (pfd_p->phi_round > 0.0) {
-        dtime = trunc(dtime * pfd_p->phi_round) / pfd_p->phi_round;
+        dtime = my_trunc(dtime * pfd_p->phi_round) / pfd_p->phi_round;
     }
 
-    next_clk = trunc(dtime) + 1.0;
+    next_clk = my_trunc(dtime) + 1.0;
     if (pfd_p->target_clk == 0.0) {
         pfd_p->target_clk = next_clk;
         return (0.0);
