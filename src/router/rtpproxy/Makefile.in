@@ -873,7 +873,7 @@ uninstall-man: uninstall-man8
 
 
 rtpproxy.8: manpage.xml
-	xsltproc /usr/local/share/xsl/docbook/manpages/docbook.xsl manpage.xml
+	# xsltproc /usr/local/share/xsl/docbook/manpages/docbook.xsl manpage.xml
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

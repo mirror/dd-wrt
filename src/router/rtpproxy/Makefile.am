@@ -19,4 +19,4 @@ EXTRA_DIST=	README.remote manpage.xml debian/README.Debian debian/changelog \
   rpm/rtpproxy.spec freebsd/rtpproxy.in LICENSE README.md
 
 rtpproxy.8: manpage.xml
-	xsltproc /usr/local/share/xsl/docbook/manpages/docbook.xsl manpage.xml
+	#	xsltproc /usr/local/share/xsl/docbook/manpages/docbook.xsl manpage.xml
