@@ -1,4 +1,5 @@
  "milkfish_enabled" "enable Milkfish" "CHOICE" "2" "0" "1"  "FALSE" "0"
+ "milkfish_if" "milkfish interface"  "NULL"  "FALSE" "0"
  "milkfish_username" "milkfish username"  "NAME"  "255"  "TRUE" "3"
  "milkfish_password" "milkfish passw"  "NAME"  "255"  "TRUE" "3"
  "milkfish_ppptime" "always off on ddwrt"   "CHOICE" "1" "off"  "FALSE" "0"
