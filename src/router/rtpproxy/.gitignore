@@ -1,0 +1,17 @@
+*~
+*.orig
+*.rej
+*.o
+.deps
+.gdbinit
+autom4te.cache
+config.guess
+config.log
+config.status
+Makefile
+stamp-h1
+libtool
+extractaudio/extractaudio
+rtpproxy/rtpproxy
+rtpproxy/rtpproxy_debug
+makeann/makeann

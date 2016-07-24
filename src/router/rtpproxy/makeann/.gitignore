@@ -1,0 +1,7 @@
+*~
+*.orig
+*.rej
+*.o
+.deps
+Makefile
+makeann

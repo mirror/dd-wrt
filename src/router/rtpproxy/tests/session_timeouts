@@ -1,0 +1,95 @@
+#!/bin/sh
+
+# Test that session timeouts for fully setup sessions and half-setup sessions
+# work correctly and there is no early/late destruction of sessions.
+
+. $(dirname $0)/functions
+
+geninput() {
+  NFULL=5
+  NHALF=7
+  NHALF_LATE=3
+
+  IPV6="${1}"
+  i=0
+  while [ ${i} -lt ${NFULL} ]
+  do
+    ${SED} "s|%%CALLID%%|call_id_${i}|" session_timeouts.full.input
+    i=$((${i} + 1))
+  done
+  cat session_timeouts.stats.input
+  sleep 2
+  cat session_timeouts.stats.input
+  i=0
+  while [ ${i} -lt ${NFULL} ]
+  do
+    ${SED} "s|%%CALLID%%|call_id_${i}|" session_timeouts.lookup${IPV6}.input
+    i=$((${i} + 1))
+  done
+  while [ ${i} -lt $((${NFULL} + ${NHALF})) ]
+  do
+    ${SED} "s|%%CALLID%%|call_id_${i}|" session_timeouts.half${IPV6}.input
+    i=$((${i} + 1))
+  done
+  cat session_timeouts.stats.input
+  sleep 3
+  cat session_timeouts.stats.input
+  i=${NFULL}
+  while [ ${i} -lt $((${NFULL} + ${NHALF} - ${NHALF_LATE})) ]
+  do
+    ${SED} "s|%%CALLID%%|call_id_${i}|" session_timeouts.lookup${IPV6}.input
+    i=$((${i} + 1))
+  done
+  cat session_timeouts.stats.input
+  sleep 6
+  cat session_timeouts.stats.input
+  while [ ${i} -lt $((${NFULL} + ${NHALF})) ]
+  do
+    ${SED} "s|%%CALLID%%|call_id_${i}|" session_timeouts.lookup${IPV6}.input
+    i=$((${i} + 1))
+  done
+  cat session_timeouts.stats.input
+  sleep 3
+  cat session_timeouts.stats.input
+  i=0
+  while [ ${i} -lt $((${NFULL} + ${NHALF})) ]
+  do
+    ${SED} "s|%%CALLID%%|call_id_${i}|" session_timeouts.lookup${IPV6}.input
+    i=$((${i} + 1))
+  done
+  cat session_timeouts.stats.input
+  sleep 12
+  cat session_timeouts.stats.input
+  i=0
+  while [ ${i} -lt $((${NFULL} + ${NHALF})) ]
+  do
+    ${SED} "s|%%CALLID%%|call_id_${i}|" session_timeouts.lookup${IPV6}.input
+    i=$((${i} + 1))
+  done
+  cat session_timeouts.stats.input
+}
+
+(geninput | ${RTPPROXY} -f -s stdio: -T10 -b -m 12000 -W5 > session_timeouts.rout1)&
+RTPP1_PID=${!}
+(geninput | ${RTPPROXY} -f -s stdio: -T10 -b -m 13000 > session_timeouts.rout2)&
+RTPP2_PID=${!}
+(geninput "6" | ${RTPPROXY} -6 '::1' -f -s stdio: -T10 -b -m 12000 -W5 > session_timeouts.rout3)&
+RTPP3_PID=${!}
+(geninput "6" | ${RTPPROXY} -6 '::1' -f -s stdio: -T10 -b -m 13000 > session_timeouts.rout4)&
+RTPP4_PID=${!}
+wait ${RTPP1_PID}
+report "wait for rtpproxy #1 shutdown"
+wait ${RTPP2_PID}
+report "wait for rtpproxy #2 shutdown"
+wait ${RTPP3_PID}
+report "wait for rtpproxy #3 shutdown"
+wait ${RTPP4_PID}
+report "wait for rtpproxy #4 shutdown"
+${DIFF} session_timeouts.output1 session_timeouts.rout1
+report "checking rtpproxy #1 stdout"
+${DIFF} session_timeouts.output2 session_timeouts.rout2
+report "checking rtpproxy #2 stdout"
+${DIFF} session_timeouts6.output1 session_timeouts.rout3
+report "checking rtpproxy #3 stdout"
+${DIFF} session_timeouts6.output2 session_timeouts.rout4
+report "checking rtpproxy #4 stdout"

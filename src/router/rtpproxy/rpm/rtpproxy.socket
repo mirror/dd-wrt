@@ -1,0 +1,10 @@
+[Unit]
+Description=RTPproxy controlling socket
+
+[Socket]
+ListenStream=127.0.0.1:22222
+Accept=false
+
+[Install]
+WantedBy=sockets.target
+
