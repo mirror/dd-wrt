@@ -456,7 +456,7 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 		{
 			websWrite(wp, "%d", channel);
 		}
-    		websWrite(wp, " (%d MHz", freq);
+		websWrite(wp, " (%d MHz", freq);
 #ifdef HAVE_ATH9K
 		if (is_ath9k(prefix)) {
 			switch (interface->width) {
@@ -481,7 +481,7 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 			}
 		}
 #endif
-    		websWrite(wp, ")");
+		websWrite(wp, ")");
 		free(interface);
 
 	} else
