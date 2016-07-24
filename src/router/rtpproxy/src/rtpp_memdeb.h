@@ -29,7 +29,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#undef malloc
+/*#undef malloc
 #define malloc(n) rtpp_memdeb_malloc((n), __FILE__, __LINE__, __func__)
 #undef free
 #define free(p) rtpp_memdeb_free((p), __FILE__, __LINE__, __func__)
@@ -47,9 +47,9 @@ void rtpp_memdeb_free(void *, const char *, int, const char *);
 void *rtpp_memdeb_realloc(void *, size_t,  const char *, int, const char *);
 char *rtpp_memdeb_strdup(const char *, const char *, int, const char *);
 int rtpp_memdeb_asprintf(char **, const char *, const char *, int, const char *, ...);
+*/
+//#include <stdarg.h>
 
-#include <stdarg.h>
+//int rtpp_memdeb_vasprintf(char **, const char *, const char *, int, const char *, va_list);
 
-int rtpp_memdeb_vasprintf(char **, const char *, const char *, int, const char *, va_list);
-
-#define RTPP_CHECK_LEAKS 	1
+//#define RTPP_CHECK_LEAKS 	1
