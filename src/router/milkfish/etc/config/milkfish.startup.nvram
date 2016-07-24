@@ -34,6 +34,10 @@ if [ -z "$(nvram get milkfish_routerid)" ] ; then
     nvram set milkfish_routerid=$(md5sum /tmp/routerid.txt | awk '{print $1}' | cut -c1-32 )
     nvram set need_commit=1
 fi
+if [ -z "$(nvram get milkfish_if)" ] ; then
+    nvram set milkfish_if $(get_wanface)
+fi
+
 #if [ -z "$(nvram get milkfish_ppptime)" ] ; then
     nvram set milkfish_ppptime=off
 #    nvram set need_commit=1
