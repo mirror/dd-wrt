@@ -29,6 +29,7 @@
 #ifndef _RTP_H_
 #define _RTP_H_
 
+#include <endian.h>
 /*
  * RTP payload types
  */
