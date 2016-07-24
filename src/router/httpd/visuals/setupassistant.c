@@ -990,7 +990,7 @@ void sas_show_channel(webs_t wp, char *dev, char *prefix, int type)
 				sprintf(fr, "%d", chan[i].freq);
 				if (channelbw > 20 && !chan[i].ht40minus && !chan[i].ht40plus) {
 					i++;
-					continue; // do not show channels where bandwidth is not available
+					continue;	// do not show channels where bandwidth is not available
 				}
 				int freq = get_wififreq(prefix, chan[i].freq);
 				if (freq != -1) {
