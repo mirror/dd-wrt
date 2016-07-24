@@ -298,7 +298,7 @@ void set_ath10kdistance(char *dev, unsigned int distance)
 	unsigned int sifs = 16;
 	unsigned int ack = slot + sifs;
 	unsigned int cts = ack;
-//	unsigned int sifs_pipeline;
+//      unsigned int sifs_pipeline;
 	if ((int)distance == -1)
 		return;
 	if (slot == 0)		// too low value. 
@@ -310,8 +310,8 @@ void set_ath10kdistance(char *dev, unsigned int distance)
 		slot *= macclk;
 		sifs *= macclk;
 	} else {
-//		sifs_pipeline = (sifs * 150) - ((400 * 150) / 1000);
-//		sifs = (sifs * 80) - 11;
+//              sifs_pipeline = (sifs * 150) - ((400 * 150) / 1000);
+//              sifs = (sifs * 80) - 11;
 	}
 	if (!isb && ack > 0x3fff) {
 		fprintf(stderr, "invalid ack 0x%08x, max is 0x3fff. truncate it\n", ack);
@@ -322,7 +322,6 @@ void set_ath10kdistance(char *dev, unsigned int distance)
 		ack = 0xff;
 		cts = 0xff;
 	}
-	
 
 	unsigned int oldack;
 	if (isb)
@@ -331,11 +330,11 @@ void set_ath10kdistance(char *dev, unsigned int distance)
 		oldack = get_ath10kreg(dev, 0x8014) & 0x3fff;
 	if (oldack != ack) {
 		if (isb) {
-			set_ath10kreg(dev, 0x0040, slot); // slot timing
-//			set_ath10kreg(dev, 0xf56c, sifs_pipeline);
-//			set_ath10kreg(dev, 0xa000, sifs);
+			set_ath10kreg(dev, 0x0040, slot);	// slot timing
+//                      set_ath10kreg(dev, 0xf56c, sifs_pipeline);
+//                      set_ath10kreg(dev, 0xa000, sifs);
 			unsigned int mask = get_ath10kreg(dev, 0x6000);
-			mask&=0xffff0000;
+			mask &= 0xffff0000;
 			set_ath10kreg(dev, 0x6000, mask | ack | (cts << 8));
 		} else {
 			set_ath10kreg(dev, 0x1070, slot);
@@ -353,7 +352,7 @@ unsigned int get_ath10kack(char *ifname)
 	unsigned int ack, slot, sifs, baseslot = 9;
 	/* since qualcom/atheros missed to implement one of the most important features in wireless devices, we need this evil hack here */
 	if (isb) {
-	//	baseslot = get_ath10kreg(ifname, 0x0040);
+		//      baseslot = get_ath10kreg(ifname, 0x0040);
 		ack = get_ath10kreg(ifname, 0x6000) & 0xff;
 		sifs = get_ath10kreg(ifname, 0xa000);
 		sifs += 11;
@@ -423,6 +422,11 @@ nla_put_failure:
 	return 0;
 }
 
+struct statdata {
+	struct mac80211_info *mac80211_info;
+	int iftype;
+};
+
 static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 {
 	// struct nlattr *tb[NL80211_BAND_ATTR_MAX + 1];
@@ -432,7 +436,8 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
 	struct nl80211_sta_flag_update *sta_flags;
 	char mac_addr[20], dev[20];
-	struct mac80211_info *mac80211_info = data;
+	struct statdata *d = data;
+	struct mac80211_info *mac80211_info = d->mac80211_info;
 	mac80211_info->wci = add_to_wifi_clients(mac80211_info->wci);
 	// struct nlattr *sinfo[NL80211_STA_INFO_MAX + 1];
 	static struct nla_policy stats_policy[NL80211_STA_INFO_MAX + 1] = {
@@ -541,11 +546,11 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 			}
 		}
 	}
-	if (mac80211_info->wci->txrate == 60 && sinfo[NL80211_STA_INFO_EXPECTED_THROUGHPUT]) {
-				unsigned int tx = nla_get_u32(sinfo[NL80211_STA_INFO_EXPECTED_THROUGHPUT]);
-				tx = tx * 1000;
-				tx = tx / 1024;
-				mac80211_info->wci->txrate = tx / 100;	
+	if (d->iftype && sinfo[NL80211_STA_INFO_EXPECTED_THROUGHPUT]) {
+		unsigned int tx = nla_get_u32(sinfo[NL80211_STA_INFO_EXPECTED_THROUGHPUT]);
+		tx = tx * 1000;
+		tx = tx / 1024;
+		mac80211_info->wci->txrate = tx / 100;
 	}
 	if (sinfo[NL80211_STA_INFO_STA_FLAGS]) {
 		sta_flags = (struct nl80211_sta_flag_update *)
@@ -597,7 +602,8 @@ struct mac80211_info *mac80211_assoclist(char *interface)
 	glob_t globbuf;
 	char *globstring;
 	int globresult;
-	struct mac80211_info *mac80211_info = calloc(1, sizeof(struct mac80211_info));
+	struct statdata data;
+	data.mac80211_info = calloc(1, sizeof(struct mac80211_info));
 	if (interface)
 		asprintf(&globstring, "/sys/class/ieee80211/phy*/device/net/%s*", interface);
 	else
@@ -611,18 +617,20 @@ struct mac80211_info *mac80211_assoclist(char *interface)
 		if (!ifname)
 			continue;
 		// get noise for the actaul interface
-		getNoise_mac80211_internal(ifname + 1, mac80211_info);
+		getNoise_mac80211_internal(ifname + 1, data.mac80211_info);
 		msg = unl_genl_msg(&unl, NL80211_CMD_GET_STATION, true);
 		NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, if_nametoindex(ifname + 1));
-		unl_genl_request(&unl, msg, mac80211_cb_stations, mac80211_info);
+		if (is_ath10k(interface))
+			data.iftype = 1;
+		unl_genl_request(&unl, msg, mac80211_cb_stations, &data);
 	}
 	// print_wifi_clients(mac80211_info->wci);
 	// free_wifi_clients(mac80211_info->wci);
 	globfree(&globbuf);
-	return (mac80211_info);
+	return (data.mac80211_info);
 nla_put_failure:
 	nlmsg_free(msg);
-	return (mac80211_info);
+	return (data.mac80211_info);
 }
 
 char *mac80211_get_caps(char *interface, int shortgi, int greenfield)
@@ -1111,8 +1119,8 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 								list[count].ht40plus = 1;
 							}
 							if (regmaxbw > 20 && regmaxbw >= max_bandwidth_khz) {
-							//	fprintf(stderr, "freq %d, htrange %d, startfreq %d stopfreq %d, regmaxbw %d hw_eirp %d max_eirp %d ht40plus %d ht40minus %d\n", freq_mhz, max_bandwidth_khz,
-							//		startfreq, stopfreq, regmaxbw, eirp, regpower.max_eirp, list[count].ht40plus, list[count].ht40minus);
+								//      fprintf(stderr, "freq %d, htrange %d, startfreq %d stopfreq %d, regmaxbw %d hw_eirp %d max_eirp %d ht40plus %d ht40minus %d\n", freq_mhz, max_bandwidth_khz,
+								//              startfreq, stopfreq, regmaxbw, eirp, regpower.max_eirp, list[count].ht40plus, list[count].ht40minus);
 							}
 							count++;
 						}
