@@ -23,6 +23,7 @@
 #include <glob.h>
 #include <bcmnvram.h>
 #include <shutils.h>
+#include <utils.h>
 
 #include "unl.h"
 #include "mac80211regulatory.h"
@@ -620,8 +621,10 @@ struct mac80211_info *mac80211_assoclist(char *interface)
 		getNoise_mac80211_internal(ifname + 1, data.mac80211_info);
 		msg = unl_genl_msg(&unl, NL80211_CMD_GET_STATION, true);
 		NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, if_nametoindex(ifname + 1));
+#ifdef HAVE_ATH10K
 		if (is_ath10k(interface))
 			data.iftype = 1;
+#endif
 		unl_genl_request(&unl, msg, mac80211_cb_stations, &data);
 	}
 	// print_wifi_clients(mac80211_info->wci);
