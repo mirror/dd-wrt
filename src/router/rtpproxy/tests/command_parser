@@ -1,0 +1,21 @@
+#!/bin/sh
+
+# Tests a set of commands listed in the command_parser.input file
+# and runs those commands through the rtpp control channel, comparing
+# the results with the expected results contained in the
+# command_parser.output file.
+
+. $(dirname $0)/functions
+
+run_command_parser() {
+  for extra_opts in "${@}"
+  do
+    ${RTPPROXY} -b -f -s stdio: -m 23820 -M 23823 ${extra_opts} < $BASEDIR/command_parser.input || return 1
+  done
+}
+
+RECORD_DIR="${BUILDDIR}"
+run_command_parser "" "-P" "-r ${RECORD_DIR}" "-P -r ${RECORD_DIR}" > command_parser.rout
+report "wait for the rtproxy shutdown"
+${DIFF} ${BASEDIR}/command_parser.output command_parser.rout
+report "command_parser"

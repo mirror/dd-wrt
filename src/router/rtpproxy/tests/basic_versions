@@ -1,0 +1,10 @@
+#!/bin/sh
+
+# Test basic control protocol info commands. See basic_versions.input and
+# basic_versions.output files for commands and expected results.
+
+. $(dirname $0)/functions
+
+${RTPPROXY} -f -s stdio: < $BASEDIR/basic_versions.input | \
+  ${DIFF} ${BASEDIR}/basic_versions.output -
+report "basic_versions"

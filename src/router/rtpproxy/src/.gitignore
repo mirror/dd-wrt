@@ -1,0 +1,10 @@
+*~
+*.orig
+*.rej
+*.o
+.deps
+config.h
+Makefile
+rtpproxy
+ktrace.out
+rtpproxy_debug

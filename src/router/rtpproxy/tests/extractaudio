@@ -1,0 +1,32 @@
+#!/bin/sh
+
+# checksum tests to verify that captured audio is correct.
+
+. $(dirname $0)/functions
+
+TKINDS="mono stereo"
+
+ofiles=""
+extractaudio_RFILES="call1_alaw call1_ulaw call1_g722 call1_g729 call1_gsm"
+
+for tkind in ${TKINDS}
+do
+  if [ ${tkind} = "mono" ]
+  then
+    EXTRACTAUDIO_ARGS=""
+  else
+    EXTRACTAUDIO_ARGS="-s"
+  fi
+  for rfile in ${extractaudio_RFILES}
+  do
+    wfile="${rfile}.${tkind}.wav"
+    if [ -e "${wfile}" ]
+    then
+      rm "${wfile}"
+    fi
+    ${EXTRACTAUDIO} ${EXTRACTAUDIO_ARGS} ${rfile} ${wfile} 2>/dev/null >/dev/null
+    test -s ${wfile}
+    report "${rfile} -> ${wfile}"
+    sha256_verify ${wfile} extractaudio.checksums
+  done
+done
