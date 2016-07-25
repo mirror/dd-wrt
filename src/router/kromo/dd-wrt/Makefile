@@ -503,9 +503,14 @@ ifeq ($(CONFIG_ONNET),y)
 	ls -l $(INSTALLDIR)/www/help/
 #	cp -fa onnet/files/* $(INSTALLDIR) || true
 
-  ifeq ($(CONFIG_XD3200),y)
 	mkdir -p $(INSTALLDIR)/etc/config
-	cp onnet/extra/* $(INSTALLDIR)/etc/config/
+	cp onnet/extra/reboot.startup $(INSTALLDIR)/etc/config/
+
+  ifeq ($(CONFIG_XD3200),y)
+	cp onnet/extra/xd3200.onnet $(INSTALLDIR)/etc/config/
+  endif
+  ifeq ($(CONFIG_AP120C),y)
+	cp onnet/extra/ap120c.onnet $(INSTALLDIR)/etc/config/
   endif
 endif
 
