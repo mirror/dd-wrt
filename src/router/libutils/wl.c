@@ -258,7 +258,7 @@ int wifi_getchannel(char *ifname)
 	return channel;
 }
 
-int wifi_getrate(char *ifname)
+long long wifi_getrate(char *ifname)
 {
 	struct iwreq wrq;
 
@@ -1128,7 +1128,7 @@ int do80211priv(const char *ifname, int op, void *data, size_t len)
 
 #define KILO	1000
 
-int wifi_getrate(char *ifname)
+long long wifi_getrate(char *ifname)
 {
 #if defined(HAVE_ATH9K) && !defined(HAVE_MVEBU)
 	if (is_ath9k(ifname)) {
@@ -1143,8 +1143,9 @@ int wifi_getrate(char *ifname)
 		struct wifi_interface *interface = mac80211_get_interface(ifname);
 		if (!interface)
 			return -1;
-		int rate;
+		long long  rate;
 		int sgi = has_shortgi(ifname);
+		//fprintf(stderr,"sgi %d, width %d\n",sgi, interface->width);
 		switch (interface->width) {
 		case 2:
 			rate = 54000 * KILO;
@@ -1180,6 +1181,7 @@ int wifi_getrate(char *ifname)
 				rate = (HTTxRate160_400(mac80211_get_maxmcs(ifname))) * KILO;	// dummy, no qam256 info yet available
 			else
 				rate = (HTTxRate160_800(mac80211_get_maxmcs(ifname))) * KILO;	// dummy, no qam256 info yet available
+		//fprintf(stderr,"sgi %d, width %d %d\n",sgi, interface->width, rate);
 			break;
 		default:
 			rate = 54000 * KILO;
