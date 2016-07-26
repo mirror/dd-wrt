@@ -180,7 +180,7 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 		char strbuf[64];
 
 		if (site_survey_lists[i].channel & 0x1000) {
-			int cbw = site_survey_lists[i].channel & 0x100;
+			int cbw = site_survey_lists[i].channel & 0x300;
 			//0x000 = 80 mhz
 			//0x100 = 8080 mhz
 			//0x200 = 160 mhz
