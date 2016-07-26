@@ -396,7 +396,7 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 
 }
 
-extern int wifi_getrate(char *ifname);
+extern long long wifi_getrate(char *ifname);
 
 #define KILO	1e3
 #define MEGA	1e6
@@ -411,7 +411,7 @@ void ej_get_currate(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "%s", live_translate("share.disabled"));
 		return;
 	}
-	int rate = wifi_getrate(getRADev(nvram_safe_get("wifi_display")));
+	long long rate = wifi_getrate(getRADev(nvram_safe_get("wifi_display")));
 	char scale;
 	int divisor;
 

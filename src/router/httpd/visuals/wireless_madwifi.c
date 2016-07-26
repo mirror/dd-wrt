@@ -389,7 +389,7 @@ void ej_show_acktiming(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "</div>\n");
 }
 
-extern int wifi_getrate(char *ifname);
+extern long long wifi_getrate(char *ifname);
 
 #define KILO	1e3
 #define MEGA	1e6
@@ -405,7 +405,7 @@ void ej_get_currate(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "%s", live_translate("share.disabled"));
 		return;
 	}
-	int rate = wifi_getrate(ifname);
+	long long rate = wifi_getrate(ifname);
 	char scale;
 	int divisor;
 
@@ -425,7 +425,7 @@ void ej_get_currate(webs_t wp, int argc, char_t ** argv)
 		if (nvram_match(mode, "40"))
 			rate *= 2;
 	}
-	if (rate > 0.0) {
+	if (rate > 0) {
 		websWrite(wp, "%d %cb/s", rate / divisor, scale);
 	} else
 		websWrite(wp, "%s", live_translate("share.auto"));

@@ -37,7 +37,7 @@ extern int get_wl_instances(void);
 extern char *get_wl_instance_name(int instance);
 extern int get_maxbssid(char *ifname);
 
-int wifi_getrate(char *ifname);
+long long wifi_getrate(char *ifname);
 int wifi_gettxpower(char *ifname);
 int wifi_gettxpoweroffset(char *ifname);
 int bcm_gettxpower(char *wlname);
@@ -48,6 +48,8 @@ extern int HTTxRate40_800(unsigned int index);
 extern int HTTxRate40_400(unsigned int index);
 extern int HTTxRate80_800(unsigned int index);
 extern int HTTxRate80_400(unsigned int index);
+extern int HTTxRate160_800(unsigned int index);
+extern int HTTxRate160_400(unsigned int index);
 
 /*
  * Pass a wlioctl request to the specified interface.
