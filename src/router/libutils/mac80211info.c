@@ -531,12 +531,15 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 #ifdef NL80211_VHT_CAPABILITY_LEN
 			if (rinfo[NL80211_RATE_INFO_80_MHZ_WIDTH]) {
 				mac80211_info->wci->is_80mhz = 1;
+				mac80211_info->wci->is_vht = 1;
 			}
 			if (rinfo[NL80211_RATE_INFO_160_MHZ_WIDTH]) {
 				mac80211_info->wci->is_160mhz = 1;
+				mac80211_info->wci->is_vht = 1;
 			}
 			if (rinfo[NL80211_RATE_INFO_80P80_MHZ_WIDTH]) {
 				mac80211_info->wci->is_80p80mhz = 1;
+				mac80211_info->wci->is_vht = 1;
 			}
 			if (rinfo[NL80211_RATE_INFO_VHT_MCS]) {
 				mac80211_info->wci->is_vht = 1;
@@ -578,12 +581,15 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 #ifdef NL80211_VHT_CAPABILITY_LEN
 			if (rinfo[NL80211_RATE_INFO_80_MHZ_WIDTH]) {
 				mac80211_info->wci->rx_is_80mhz = 1;
+				mac80211_info->wci->rx_is_vht = 1;
 			}
 			if (rinfo[NL80211_RATE_INFO_160_MHZ_WIDTH]) {
 				mac80211_info->wci->rx_is_160mhz = 1;
+				mac80211_info->wci->rx_is_vht = 1;
 			}
 			if (rinfo[NL80211_RATE_INFO_80P80_MHZ_WIDTH]) {
 				mac80211_info->wci->rx_is_80p80mhz = 1;
+				mac80211_info->wci->rx_is_vht = 1;
 			}
 			if (rinfo[NL80211_RATE_INFO_VHT_MCS]) {
 				mac80211_info->wci->rx_is_vht = 1;
@@ -752,7 +758,7 @@ char *mac80211_get_vhtcaps(char *interface, int shortgi, int vht80, int vht160, 
 			 , ((cap & 3) == 1 ? "[MAX-MPDU-7991]" : "")
 			 , ((cap & 3) == 2 ? "[MAX-MPDU-11454]" : "")
 			 , (((cap & VHT_CAP_SUPP_CHAN_WIDTH_160MHZ) && has_5ghz(interface) && vht160) ? "[VHT160]" : "")
-			 , (((cap & VHT_CAP_SUPP_CHAN_WIDTH_160_80PLUS80MHZ) && has_5ghz(interface) && vht8080) ? "[VHT160-80PLUS80]" : "")
+			 , (((cap & VHT_CAP_SUPP_CHAN_WIDTH_160_80PLUS80MHZ) && has_5ghz(interface) && (vht8080 || vht160)) ? "[VHT160-80PLUS80]" : "")
 			 , ((cap & VHT_CAP_HTC_VHT) ? (((cap >> 26) & 3) == 2 ? "[VHT-LINK-ADAPT2]" : "") : "")
 			 , ((cap & VHT_CAP_HTC_VHT) ? (((cap >> 26) & 3) == 3 ? "[VHT-LINK-ADAPT3]" : "") : "")
 			 , ((cap >> 23) & 7)
@@ -775,6 +781,10 @@ int has_vht160(char *interface)
 #if defined(HAVE_ATH10K) || defined(HAVE_MVEBU)
 	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1);
 	if (strstr(vhtcaps, "VHT160")) {
+		free(vhtcaps);
+		return 1;
+	}
+	if (strstr(vhtcaps, "VHT160-80PLUS80")) {
 		free(vhtcaps);
 		return 1;
 	}
