@@ -192,6 +192,7 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 				break;
 			case 0x100:
 			case 0x200:
+			case 0x300:
 				speed = getrate(speed, 160);
 				break;
 			default:
