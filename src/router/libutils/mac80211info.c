@@ -1063,26 +1063,28 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 						break;
 					}
 					int flags = 0;
+					regmaxbw = 0;
 					for (cc = 0; cc < rrdcount; cc++) {
 						regfreq = rd->reg_rules[cc].freq_range;
 						if (!startfreq && regfreq.start_freq_khz > startlowbound && regfreq.start_freq_khz < starthighbound) {
 							startfreq = regfreq.start_freq_khz / 1000;
 						}
 						if (regfreq.end_freq_khz <= stophighbound && regfreq.end_freq_khz > stoplowbound) {
-							regmaxbw = regfreq.max_bandwidth_khz / 1000;
+							if ((regfreq.max_bandwidth_khz / 1000) > regmaxbw)
+							    regmaxbw = regfreq.max_bandwidth_khz / 1000;
 							stopfreq = regfreq.end_freq_khz / 1000;
 							regpower = rd->reg_rules[cc].power_rule;
 							flags = rd->reg_rules[cc].flags;
 						}
 					}
-
-//                                      fprintf(stderr, "pre: freq %d, htrange %d, startfreq %d stopfreq %d, regmaxbw %d\n", freq_mhz, htrange, startfreq, stopfreq, regmaxbw);
+					
+//                                      fprintf(stderr, "pre: freq %d, startfreq %d stopfreq %d, regmaxbw %d maxbw %d\n", freq_mhz, startfreq, stopfreq, regmaxbw, max_bandwidth_khz);
 
 //                                      regfreq = rd->reg_rules[rrc].freq_range;                                        
 //                                      startfreq = regfreq.start_freq_khz / 1000;
 //                                      stopfreq = regfreq.end_freq_khz / 1000;
-					if (!skip)
-						regmaxbw = 40;
+//					if (!skip)
+//						regmaxbw = 40;
 					if (!skip || ((freq_mhz - range) >= startfreq && (freq_mhz + range) <= stopfreq)) {
 						if (run == 1) {
 
@@ -1096,6 +1098,9 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 							if (checkband == 2 && freq_mhz > 4000)
 								continue;
 							if (checkband == 5 && freq_mhz < 4000)
+								continue;
+					    
+							if (max_bandwidth_khz > regmaxbw)
 								continue;
 							list[count].channel = ieee80211_mhz2ieee(freq_mhz);
 							list[count].freq = freq_mhz;
