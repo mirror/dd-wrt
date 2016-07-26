@@ -1206,7 +1206,7 @@ void print_vht_info(__u32 capa, const __u8 *mcs)
 		break;
 	case 2:
 		printf("160 MHz, 80+80 MHz\n");
-		fillENC("VHT80+80", " ");
+		fillENC("VHT160 VHT80+80", " ");
 		site_survey_lists[sscount].channel |= 0x1200;
 		break;
 	case 3:
