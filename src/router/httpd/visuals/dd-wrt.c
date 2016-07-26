@@ -3353,7 +3353,7 @@ if (nvram_nmatch("ap", "%s_mode", prefix)
 	sprintf(power, "%s_maxassoc", prefix);
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label10)</script></div>\n");
-	websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,0,256,wl_basic.label6)\" value=\"%s\" />\n", power, nvram_default_get(power, "256"));
+	websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,0,256,wl_adv.label10)\" value=\"%s\" />\n", power, nvram_default_get(power, "256"));
 	websWrite(wp, "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 256 \" + status_wireless.legend3 + \")\");\n//]]>\n</script></span>\n");
 	websWrite(wp, "</div>\n");
 }
@@ -4112,7 +4112,7 @@ if (!strcmp(prefix, "wl2"))
 		sprintf(power, "%s_maxassoc", prefix);
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label10)</script></div>\n");
-		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,0,256,wl_basic.label6)\" value=\"%s\" />\n", power, nvram_default_get(power, "256"));
+		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,0,256,wl_adv.label10)\" value=\"%s\" />\n", power, nvram_default_get(power, "256"));
 		websWrite(wp, "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 256 \" + status_wireless.legend3 + \")\");\n//]]>\n</script></span>\n");
 		websWrite(wp, "</div>\n");
 	}
