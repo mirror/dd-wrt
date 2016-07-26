@@ -950,7 +950,7 @@ static int hostapd_is_usable_chan(struct hostapd_iface *iface,
 {
 	int i;
 	struct hostapd_channel_data *chan;
-
+	wpa_printf(MSG_DEBUG, "check channel %d and primary %d\n",channel, primary);
 	for (i = 0; i < iface->current_mode->num_channels; i++) {
 		chan = &iface->current_mode->channels[i];
 		if (chan->chan != channel)
@@ -968,7 +968,7 @@ static int hostapd_is_usable_chan(struct hostapd_iface *iface,
 			   " PASSIVE-SCAN" : "",
 			   chan->flag & HOSTAPD_CHAN_RADAR ? " RADAR" : "");
 	}
-
+	wpa_printf(MSG_DEBUG, "nt fund\n");
 	return 0;
 }
 
