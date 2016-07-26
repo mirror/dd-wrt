@@ -196,10 +196,17 @@ static struct hostapd_config *hostapd_ctrl_iface_config_read(const char *fname)
 
 		if ((val = get_option(opt, "channel="))) {
 			conf->channel = atoi(val);
+			if (conf->vht_oper_chwidth == 2) {
+			if (conf->channel < 100)			
+				conf->vht_oper_centr_freq_seg0_idx = 50;
+			    else
+				conf->vht_oper_centr_freq_seg0_idx = 114;
+			} else {			
 			if (conf->secondary_channel==1)			
 				conf->vht_oper_centr_freq_seg0_idx = conf->channel + 6;
 			if (conf->secondary_channel==-1)			
 				conf->vht_oper_centr_freq_seg0_idx = conf->channel - 6;
+			}
 		}else if ((val = get_option(opt, "frequency=")))
 			conf->frequency = atoi(val);
 		else if ((val = get_option(opt, "ht_capab=")))
