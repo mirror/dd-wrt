@@ -5508,9 +5508,12 @@ void ej_show_ifselect(webs_t wp, int argc, char_t ** argv)
 	char *next;
 	char var[80];
 	char eths[256];
-
+	char eth2[256];
 	memset(eths, 0, 256);
 	getIfLists(eths, 256);
+	memset(eth2, 0 ,256);
+	getIfList(eth2, "ppp");
+	sprintf(eths, "%s %s", eths, eth2);
 	foreach(var, eths, next) {
 		if (!strcmp(wanface, var))
 			continue;
