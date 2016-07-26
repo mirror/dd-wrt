@@ -6705,7 +6705,7 @@ int led_control(int type, int act)
 		break;
 	case ROUTER_NETGEAR_R7500:
 		power_gpio = 0x000;	// power led 
-		diag_gpio = 0x0a0;	// power led orange     
+		diag_gpio = 0x00a;	// power led orange     
 		connected_gpio = 0x006;	// wan led
 		//usb_power = 0x000;    // usb enable
 		wlan0_gpio = 0x001;	// radio 0 
@@ -6717,7 +6717,7 @@ int led_control(int type, int act)
 		break;
 	case ROUTER_NETGEAR_R7800:
 		power_gpio = 0x000;	// power led 
-		diag_gpio = 0x0a0;	// power led orange     
+		diag_gpio = 0x00a;	// power led orange     
 		connected_gpio = 0x007;	// wan led
 		usb_power = 0x010;	// usb enable
 		usb_power1 = 0x00f;
