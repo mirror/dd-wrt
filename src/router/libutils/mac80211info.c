@@ -709,7 +709,7 @@ int has_2ghz(char *prefix)
 
 #ifdef HAVE_ATH10K
 
-char *mac80211_get_vhtcaps(char *interface, int shortgi)
+char *mac80211_get_vhtcaps(char *interface, int shortgi, int vht80, int vht160, int vht8080)
 {
 	struct nl_msg *msg;
 	struct nlattr *caps, *bands, *band;
@@ -734,8 +734,8 @@ char *mac80211_get_vhtcaps(char *interface, int shortgi)
 			continue;
 		cap = nla_get_u32(caps);
 		asprintf(&capstring, "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s[MAX-A-MPDU-LEN-EXP%d]%s%s", (cap & VHT_CAP_RXLDPC ? "[RXLDPC]" : "")
-			 , (((cap & VHT_CAP_SHORT_GI_80) && shortgi && has_5ghz(interface)) ? "[SHORT-GI-80]" : "")
-			 , (((cap & VHT_CAP_SHORT_GI_160) && shortgi && has_5ghz(interface)) ? "[SHORT-GI-160]" : "")
+			 , (((cap & VHT_CAP_SHORT_GI_80) && shortgi && has_5ghz(interface) && vht80) ? "[SHORT-GI-80]" : "")
+			 , (((cap & VHT_CAP_SHORT_GI_160) && shortgi && has_5ghz(interface) && vht160) ? "[SHORT-GI-160]" : "")
 			 , (cap & VHT_CAP_TXSTBC ? "[TX-STBC-2BY1]" : "")
 			 , (((cap >> 8) & 0x7) == 1 ? "[RX-STBC1]" : "")
 			 , (((cap >> 8) & 0x7) == 2 ? "[RX-STBC12]" : "")
@@ -751,8 +751,8 @@ char *mac80211_get_vhtcaps(char *interface, int shortgi)
 			 , (cap & VHT_CAP_TX_ANTENNA_PATTERN ? "[TX-ANTENNA-PATTERN]" : "")
 			 , ((cap & 3) == 1 ? "[MAX-MPDU-7991]" : "")
 			 , ((cap & 3) == 2 ? "[MAX-MPDU-11454]" : "")
-			 , (((cap & VHT_CAP_SUPP_CHAN_WIDTH_160MHZ) && has_5ghz(interface)) ? "[VHT160]" : "")
-			 , (((cap & VHT_CAP_SUPP_CHAN_WIDTH_160_80PLUS80MHZ) && has_5ghz(interface)) ? "[VHT160-80PLUS80]" : "")
+			 , (((cap & VHT_CAP_SUPP_CHAN_WIDTH_160MHZ) && has_5ghz(interface) && vht160) ? "[VHT160]" : "")
+			 , (((cap & VHT_CAP_SUPP_CHAN_WIDTH_160_80PLUS80MHZ) && has_5ghz(interface) && vht8080) ? "[VHT160-80PLUS80]" : "")
 			 , ((cap & VHT_CAP_HTC_VHT) ? (((cap >> 26) & 3) == 2 ? "[VHT-LINK-ADAPT2]" : "") : "")
 			 , ((cap & VHT_CAP_HTC_VHT) ? (((cap >> 26) & 3) == 3 ? "[VHT-LINK-ADAPT3]" : "") : "")
 			 , ((cap >> 23) & 7)
@@ -773,7 +773,7 @@ nla_put_failure:
 int has_vht160(char *interface)
 {
 #if defined(HAVE_ATH10K) || defined(HAVE_MVEBU)
-	char *vhtcaps = mac80211_get_vhtcaps(interface, 1);
+	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1);
 	if (strstr(vhtcaps, "VHT160")) {
 		free(vhtcaps);
 		return 1;
@@ -798,7 +798,7 @@ int has_greenfield(char *interface)
 int has_vht80plus80(char *interface)
 {
 #if defined(HAVE_ATH10K) || defined(HAVE_MVEBU)
-	char *vhtcaps = mac80211_get_vhtcaps(interface, 1);
+	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1);
 	if (strstr(vhtcaps, "VHT160-80PLUS80")) {
 		free(vhtcaps);
 		return 1;
@@ -817,7 +817,7 @@ int has_shortgi(char *interface)
 	}
 	free(htcaps);
 #if defined(HAVE_ATH10K) || defined(HAVE_MVEBU)
-	char *vhtcaps = mac80211_get_vhtcaps(interface, 1);
+	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1);
 	if (strstr(vhtcaps, "SHORT-GI")) {
 		free(vhtcaps);
 		return 1;
