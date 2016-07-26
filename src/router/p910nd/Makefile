@@ -1,6 +1,9 @@
-# Comment out line bellow if you don't want to use 
+# Define USE_WRAP if you want to compile with
 # libwrap (hosts.{allow,deny} access control)
-#LIBWRAP = -lwrap
+ifneq ($(USE_WRAP),)
+LIBS += -lwrap
+DEFINES += -DUSE_LIBWRAP
+endif
 
 # If you don't have it in /var/log/subsys, uncomment and define
 #CFLAGS += -DLOCKFILE_DIR=\"/var/log\"
@@ -13,10 +16,6 @@
 
 CFLAGS += $(COPTS)
 
-ifneq ("$(LIBWRAP)", "")
-LIBWRAP += -DUSE_LIBWRAP
-endif
-
 PROG = p910nd
 CONFIG = p910nd.conf
 INITSCRIPT = p910nd.init
@@ -28,7 +27,7 @@ SCRIPTDIR = /etc/init.d
 MANDIR = /usr/share/man/man8
 
 $(PROG):	p910nd.c
-	$(CC) -o $@ $^ $(CFLAGS) $(LIBWRAP)
+	$(CC) -o $@ $^ $(CFLAGS) $(DEFINES) $(LIBS)
 
 strip: $(PROG)
 	$(STRIP) -s $(PROG)
