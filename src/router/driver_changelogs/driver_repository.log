@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r3080 | brainslayer | 2016-07-26 12:19:12 +0200 (Tue, 26 Jul 2016) | 1 line
+
+workaround for QCA9984 fw crashing in station mode
+------------------------------------------------------------------------
+r3079 | brainslayer | 2016-07-26 08:51:04 +0200 (Tue, 26 Jul 2016) | 1 line
+
+ath9k: fix client mode beacon configuration
+------------------------------------------------------------------------
 r3078 | brainslayer | 2016-07-26 03:08:36 +0200 (Tue, 26 Jul 2016) | 1 line
 
 supress bogus eventid 36903 which is WDS_PEER_EVENTID
