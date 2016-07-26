@@ -758,7 +758,7 @@ char *mac80211_get_vhtcaps(char *interface, int shortgi, int vht80, int vht160, 
 			 , ((cap & 3) == 1 ? "[MAX-MPDU-7991]" : "")
 			 , ((cap & 3) == 2 ? "[MAX-MPDU-11454]" : "")
 			 , (((cap & VHT_CAP_SUPP_CHAN_WIDTH_160MHZ) && has_5ghz(interface) && vht160) ? "[VHT160]" : "")
-			 , (((cap & VHT_CAP_SUPP_CHAN_WIDTH_160_80PLUS80MHZ) && has_5ghz(interface) && (vht8080 || vht160)) ? "[VHT160-80PLUS80]" : "")
+			 , (((cap & VHT_CAP_SUPP_CHAN_WIDTH_160_80PLUS80MHZ) && has_5ghz(interface) && vht8080) ? "[VHT160-80PLUS80]" : "")
 			 , ((cap & VHT_CAP_HTC_VHT) ? (((cap >> 26) & 3) == 2 ? "[VHT-LINK-ADAPT2]" : "") : "")
 			 , ((cap & VHT_CAP_HTC_VHT) ? (((cap >> 26) & 3) == 3 ? "[VHT-LINK-ADAPT3]" : "") : "")
 			 , ((cap >> 23) & 7)
