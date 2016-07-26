@@ -357,6 +357,8 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		usebw = 80;
 	if (nvram_match(bw, "160"))
 		usebw = 160;
+	if (nvram_match(bw, "80+80"))
+		usebw = 8080;
 
 	if ((!strcmp(netmode, "ng-only") ||	//
 	     !strcmp(netmode, "na-only") ||	//
@@ -457,6 +459,8 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 				acs = mac80211autochannel(prefix, NULL, 2, 1, 0, AUTO_FORCEVHT80);
 			else if (usebw == 160)
 				acs = mac80211autochannel(prefix, NULL, 2, 1, 0, AUTO_FORCEVHT160);
+			else if (usebw == 8080)
+				acs = mac80211autochannel(prefix, NULL, 2, 1, 0, AUTO_FORCEVHT160);
 			else
 				acs = mac80211autochannel(prefix, NULL, 2, 1, 0, AUTO_ALL);
 			if (acs != NULL) {
@@ -522,7 +526,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		     !strcmp(netmode, "ac-only") || !strcmp(netmode, "acn-mixed"))) {
 			char shortgi[32];
 			sprintf(shortgi, "%s_shortgi", prefix);
-			caps = mac80211_get_vhtcaps(prefix, nvram_default_match(shortgi, "1", "1") ? 1 : 0);
+			caps = mac80211_get_vhtcaps(prefix, nvram_default_match(shortgi, "1", "1") ? 1 : 0, (usebw==80 || usebw==160 || usebw==8080)?1:0, usebw==160?1:0, usebw==8080?1:0);
 			if (strlen(caps)) {
 				fprintf(fp, "vht_capab=%s\n", caps);
 				free(caps);
