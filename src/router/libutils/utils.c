@@ -7580,7 +7580,6 @@ int HTTxRate160_800(unsigned int index)
 		return 2106000;
 	if (index == 31)
 		return 3120000;
-	fprintf(stderr, "rate %d\n", vHTTxRate160_800[index]);
 	return vHTTxRate160_800[index];
 }
 
@@ -7604,7 +7603,6 @@ int HTTxRate160_400(unsigned int index)
 		return 2340000;
 	if (index == 31)
 		return 3466700;
-	fprintf(stderr, "rate %d\n", vHTTxRate160_400[index]);
 	return vHTTxRate160_400[index];
 }
 
