@@ -1177,9 +1177,9 @@ int wifi_getrate(char *ifname)
 		case 8080:
 		case 160:
 			if (sgi)
-				rate = (HTTxRate40_400(mac80211_get_maxmcs(ifname))) * KILO;	// dummy, no qam256 info yet available
+				rate = (HTTxRate160_400(mac80211_get_maxmcs(ifname))) * KILO;	// dummy, no qam256 info yet available
 			else
-				rate = (HTTxRate40_800(mac80211_get_maxmcs(ifname))) * KILO;	// dummy, no qam256 info yet available
+				rate = (HTTxRate160_800(mac80211_get_maxmcs(ifname))) * KILO;	// dummy, no qam256 info yet available
 			break;
 		default:
 			rate = 54000 * KILO;

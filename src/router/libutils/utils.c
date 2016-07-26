@@ -7557,6 +7557,55 @@ int HTTxRate80_400(unsigned int index)
 	return vHTTxRate80_400[index];
 }
 
+int HTTxRate160_800(unsigned int index)
+{
+	static const int vHTTxRate160_800[32] = {
+		58500, 117000, 175500, 234000, 351000, 468000, 526500, 585000,
+		117000, 234000, 351000, 468000, 702000, 936000, 1053000, 1170000,
+		175500, 351000, 526500, 702000, 1053000, 1404000, 1579500,1755000,
+		234000, 468000, 702000, 936000, 1404000, 1872000, 2106000, 2340000, 
+
+	};
+	if (index > sizeof(vHTTxRate160_800) / sizeof(int) - 1) {
+		fprintf(stderr, "utils.c HTTxRate160_800() index overflow\n");
+		return 0;
+	}
+	if (index == 7)
+		return 780000;
+	if (index == 15)
+		return 1560000;
+	if (index == 23)
+		return 2106000;
+	if (index == 31)
+		return 3120000;
+	return vHTTxRate160_800[index];
+}
+
+int HTTxRate160_400(unsigned int index)
+{
+	static const int vHTTxRate160_400[32] = {
+		65000, 130000, 195000, 260000, 390000, 520000, 585000, 650000,	//
+		130000, 260000, 390000, 520000, 780000, 1040000, 1170000, 1300000,
+		195000, 390000, 585000, 780000, 1170000, 1560000, 1755000, 1950000,
+		260000, 520000, 780000, 1040000, 1560000, 2080000,2340000, 2600000, 
+	};
+	if (index > sizeof(vHTTxRate160_400) / sizeof(int) - 1) {
+		fprintf(stderr, "utils.c HTTxRate160_400() index overflow\n");
+		return 0;
+	}
+	if (index == 7)
+		return 866700;
+	if (index == 15)
+		return 1733300;
+	if (index == 23)
+		return 2340000;
+	if (index == 31)
+		return 3466700;
+
+	return vHTTxRate160_400[index];
+}
+
+
 int writeproc(char *path, char *value)
 {
 	int fd;
