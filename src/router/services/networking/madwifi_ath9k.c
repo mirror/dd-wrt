@@ -413,14 +413,23 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		}
 		if (has_5ghz(prefix)) {
 			if (iht == -1) {
-				if (nvram_match(bw, "80"))
-					i = 2;	// second index for 80 mhz
-				else
-					i = 1;
+				i = 1;
 			}
 		}
 		if (nvram_match(bw, "160")) {
 			channel = 100;
+			sprintf(ht, "HT40+");
+			iht = 1;
+			freq = 5500;
+		}else if (nvram_match(bw, "80")) {
+			channel = 44;
+			sprintf(ht, "HT40+");
+			iht = 1;
+			freq = 5220;
+		}else if (nvram_match(bw, "80+80")) {
+			channel = 100;
+			sprintf(ht, "HT40+");
+			iht = 1;
 			freq = 5500;
 		} else {
 
@@ -434,13 +443,8 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 					freq = 2437;
 				}
 				if (has_5ghz(prefix)) {
-					if (nvram_match(bw, "80")) {
-						channel = 44;
-						freq = 5220;
-					} else {
-						channel = 40;
-						freq = 5200;
-					}
+					channel = 40;
+					freq = 5200;
 				}
 			}
 		}
@@ -496,6 +500,8 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 				if (has_5ghz(prefix)) {
 					if (nvram_match(bw, "80")) {
 						channel = 44;
+						sprintf(ht, "HT40+");
+						iht = 1;
 						freq = 5220;
 					} else {
 						channel = 40;
@@ -570,6 +576,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 						if (channel < 100)
 							idx = 50;
 						fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", idx);
+						fprintf(fp, "vht_oper_centr_freq_seg1_idx=%d\n", idx);
 					} else {
 						fprintf(fp, "vht_oper_chwidth=0\n");
 					}
