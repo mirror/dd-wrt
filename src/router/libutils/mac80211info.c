@@ -299,6 +299,8 @@ void set_ath10kdistance(char *dev, unsigned int distance)
 	unsigned int sifs = 16;
 	unsigned int ack = slot + sifs;
 	unsigned int cts = ack;
+	if (!isb)
+	    return;
 //      unsigned int sifs_pipeline;
 	if ((int)distance == -1)
 		return;
