@@ -398,9 +398,9 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 
 extern long long wifi_getrate(char *ifname);
 
-#define KILO	1e3
-#define MEGA	1e6
-#define GIGA	1e9
+#define KILO	1000
+#define MEGA	1000000
+#define GIGA	1000000000
 
 void ej_get_currate(webs_t wp, int argc, char_t ** argv)
 {
@@ -413,7 +413,7 @@ void ej_get_currate(webs_t wp, int argc, char_t ** argv)
 	}
 	long long rate = wifi_getrate(getRADev(nvram_safe_get("wifi_display")));
 	char scale;
-	int divisor;
+	long long  divisor;
 
 	if (rate >= MEGA) {
 		scale = 'M';
@@ -423,7 +423,7 @@ void ej_get_currate(webs_t wp, int argc, char_t ** argv)
 		divisor = KILO;
 	}
 	if (rate > 0.0) {
-		websWrite(wp, "%d %cb/s", rate / divisor, scale);
+		websWrite(wp, "%lld %cb/s", rate / divisor, scale);
 	} else
 		websWrite(wp, "%s", live_translate("share.auto"));
 
