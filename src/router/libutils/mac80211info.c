@@ -300,8 +300,8 @@ void set_ath10kdistance(char *dev, unsigned int distance)
 	unsigned int ack = slot + sifs;
 	unsigned int cts = ack;
 	if (!isb)
-	    return;
-        unsigned int sifs_pipeline;
+		return;
+	unsigned int sifs_pipeline;
 	if ((int)distance == -1)
 		return;
 	if (slot == 0)		// too low value. 
@@ -313,8 +313,8 @@ void set_ath10kdistance(char *dev, unsigned int distance)
 		slot *= macclk;
 		sifs *= macclk;
 	} else {
-                sifs_pipeline = (sifs * 150) - ((400 * 150) / 1000);
-                sifs = (sifs * 80) - 11;
+		sifs_pipeline = (sifs * 150) - ((400 * 150) / 1000);
+		sifs = (sifs * 80) - 11;
 	}
 	if (!isb && ack > 0x3fff) {
 		fprintf(stderr, "invalid ack 0x%08x, max is 0x3fff. truncate it\n", ack);
@@ -334,8 +334,8 @@ void set_ath10kdistance(char *dev, unsigned int distance)
 	if (oldack != ack) {
 		if (isb) {
 			set_ath10kreg(dev, 0x0040, slot);	// slot timing
-                        set_ath10kreg(dev, 0xf56c, sifs_pipeline);
-                	set_ath10kreg(dev, 0xa000, sifs);
+			set_ath10kreg(dev, 0xf56c, sifs_pipeline);
+			set_ath10kreg(dev, 0xa000, sifs);
 			unsigned int mask = get_ath10kreg(dev, 0x6000);
 			mask &= 0xffff0000;
 			set_ath10kreg(dev, 0x6000, mask | ack | (cts << 8));
@@ -1073,20 +1073,20 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 						}
 						if (regfreq.end_freq_khz <= stophighbound && regfreq.end_freq_khz > stoplowbound) {
 							if ((regfreq.max_bandwidth_khz / 1000) > regmaxbw)
-							    regmaxbw = regfreq.max_bandwidth_khz / 1000;
+								regmaxbw = regfreq.max_bandwidth_khz / 1000;
 							stopfreq = regfreq.end_freq_khz / 1000;
 							regpower = rd->reg_rules[cc].power_rule;
 							flags = rd->reg_rules[cc].flags;
 						}
 					}
-					
+
 //                                      fprintf(stderr, "pre: freq %d, startfreq %d stopfreq %d, regmaxbw %d maxbw %d\n", freq_mhz, startfreq, stopfreq, regmaxbw, max_bandwidth_khz);
 
 //                                      regfreq = rd->reg_rules[rrc].freq_range;                                        
 //                                      startfreq = regfreq.start_freq_khz / 1000;
 //                                      stopfreq = regfreq.end_freq_khz / 1000;
-//					if (!skip)
-//						regmaxbw = 40;
+//                                      if (!skip)
+//                                              regmaxbw = 40;
 					if (!skip || ((freq_mhz - range) >= startfreq && (freq_mhz + range) <= stopfreq)) {
 						if (run == 1) {
 
@@ -1101,7 +1101,7 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 								continue;
 							if (checkband == 5 && freq_mhz < 4000)
 								continue;
-					    
+
 							if (max_bandwidth_khz > regmaxbw)
 								continue;
 							list[count].channel = ieee80211_mhz2ieee(freq_mhz);
