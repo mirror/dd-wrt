@@ -6558,7 +6558,7 @@ int led_control(int type, int act)
 		break;
 	case ROUTER_ASUS_RTN18U:
 		power_gpio = 0x100;
-//		usb_power = 0x00d;	//usb power on/off
+//              usb_power = 0x00d;      //usb power on/off
 		if (nvram_match("bl_version", "3.0.0.7")) {
 			usb_gpio = 0x10e;
 			connected_gpio = 0x103;
@@ -7564,8 +7564,8 @@ int HTTxRate160_800(unsigned int index)
 	static const int vHTTxRate160_800[32] = {
 		58500, 117000, 175500, 234000, 351000, 468000, 526500, 585000,
 		117000, 234000, 351000, 468000, 702000, 936000, 1053000, 1170000,
-		175500, 351000, 526500, 702000, 1053000, 1404000, 1579500,1755000,
-		234000, 468000, 702000, 936000, 1404000, 1872000, 2106000, 2340000, 
+		175500, 351000, 526500, 702000, 1053000, 1404000, 1579500, 1755000,
+		234000, 468000, 702000, 936000, 1404000, 1872000, 2106000, 2340000,
 
 	};
 	if (index > sizeof(vHTTxRate160_800) / sizeof(int) - 1) {
@@ -7589,7 +7589,7 @@ int HTTxRate160_400(unsigned int index)
 		65000, 130000, 195000, 260000, 390000, 520000, 585000, 650000,	//
 		130000, 260000, 390000, 520000, 780000, 1040000, 1170000, 1300000,
 		195000, 390000, 585000, 780000, 1170000, 1560000, 1755000, 1950000,
-		260000, 520000, 780000, 1040000, 1560000, 2080000,2340000, 2600000, 
+		260000, 520000, 780000, 1040000, 1560000, 2080000, 2340000, 2600000,
 	};
 	if (index > sizeof(vHTTxRate160_400) / sizeof(int) - 1) {
 		fprintf(stderr, "utils.c HTTxRate160_400() index overflow\n");
@@ -7605,7 +7605,6 @@ int HTTxRate160_400(unsigned int index)
 		return 3466700;
 	return vHTTxRate160_400[index];
 }
-
 
 int writeproc(char *path, char *value)
 {

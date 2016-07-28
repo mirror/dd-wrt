@@ -366,7 +366,6 @@ static int freq_quality(struct frequency *f, struct sort_data *s)
 		return 0;
 	}
 
-
 	int eirp = get_eirp(f->freq);
 	/* subtract noise delta to lowest noise. */
 	c -= (f->noise - s->lowest_noise);
