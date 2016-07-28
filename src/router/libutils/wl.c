@@ -1143,7 +1143,7 @@ long long wifi_getrate(char *ifname)
 		struct wifi_interface *interface = mac80211_get_interface(ifname);
 		if (!interface)
 			return -1;
-		long long  rate;
+		long long rate;
 		int sgi = has_shortgi(ifname);
 		//fprintf(stderr,"sgi %d, width %d\n",sgi, interface->width);
 		switch (interface->width) {
@@ -2495,14 +2495,13 @@ int wl_get_int(char *name, char *var, int *val)
 	return wl_get_val(name, var, val, sizeof(*val));
 }
 
-int
-wl_iovar_getbuf(char *ifname, char *iovar, void *param, int paramlen, void *bufptr, int buflen)
+int wl_iovar_getbuf(char *ifname, char *iovar, void *param, int paramlen, void *bufptr, int buflen)
 {
 	int err;
 	uint namelen;
 	uint iolen;
 
-	namelen = strlen(iovar) + 1;	 /* length of iovar name plus null */
+	namelen = strlen(iovar) + 1;	/* length of iovar name plus null */
 	iolen = namelen + paramlen;
 
 	/* check for overflow */
@@ -2510,7 +2509,7 @@ wl_iovar_getbuf(char *ifname, char *iovar, void *param, int paramlen, void *bufp
 		return (BCME_BUFTOOSHORT);
 
 	memcpy(bufptr, iovar, namelen);	/* copy iovar name including null */
-	memcpy((int8*)bufptr + namelen, param, paramlen);
+	memcpy((int8 *) bufptr + namelen, param, paramlen);
 
 	err = wl_ioctl(ifname, WLC_GET_VAR, bufptr, buflen);
 
