@@ -413,7 +413,7 @@ void ej_get_currate(webs_t wp, int argc, char_t ** argv)
 	}
 	long long rate = wifi_getrate(getRADev(nvram_safe_get("wifi_display")));
 	char scale;
-	long long  divisor;
+	long long divisor;
 
 	if (rate >= MEGA) {
 		scale = 'M';
