@@ -299,6 +299,10 @@ static bool usb_load_modules(char *fs)
 		insmod("vfat");
 		insmod("msdos");
 	}
+	if (!strcmp(fs, "exfat")) {
+		insmod("nls_base nls_cp932 nls_cp936 nls_cp950 nls_cp437 nls_iso8859-1 nls_iso8859-2 nls_utf8");
+		insmod("exfat");
+	}
 	if (!strcmp(fs, "xfs")) {
 		insmod("xfs");
 	}
@@ -355,8 +359,13 @@ static int usb_process_path(char *path, int host, char *part, char *devpath)
 
 			if (strstr(line, "file system")) {
 				if (strstr(line, "FAT")) {
-					fs = "vfat";
-					usb_load_modules(fs);
+					if (strstr(line, "exFAT")) {
+						fs = "exfat";
+						usb_load_modules(fs);
+					} else {
+						fs = "vfat";
+						usb_load_modules(fs);
+					}
 				} else if (strstr(line, "Ext2")) {
 					fs = "ext4";
 					usb_load_modules(fs);
@@ -457,7 +466,7 @@ static int usb_process_path(char *path, int host, char *part, char *devpath)
 		ret = eval("ntfs-3g", "-o", "compression,direct_io,big_writes", path, mount_point);
 	} else
 #endif
-	if (!strcmp(fs, "vfat")) {
+	if (!strcmp(fs, "vfat") || !strcmp(fs, "exfat")) {
 		ret = eval("/bin/mount", "-t", fs, "-o", "iocharset=utf8", path, mount_point);
 	} else {
 		ret = eval("/bin/mount", "-t", fs, path, mount_point);
