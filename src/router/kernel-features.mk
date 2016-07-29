@@ -103,6 +103,7 @@ define kernelfeatures
 		sed -i 's/\CONFIG_EXFAT_FS  is not set/# CONFIG_EXFAT_FS=m/g' $(LINUXDIR)/.config; \
 		echo "CONFIG_EXFAT_FS=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_EXFAT_DISCARD=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_EXFAT_DEFAULT_CODEPAGE=437" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_EXFAT_DELAYED_SYNC is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_EXFAT_KERNEL_DEBUG is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_EXFAT_DEBUG_MSG is not set" >> $(LINUXDIR)/.config; \
