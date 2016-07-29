@@ -97,6 +97,7 @@ define kernelfeatures
 	fi	
 	if [ "$(CONFIG_EXFAT)" != "y" ]; then \
 		sed -i 's/\CONFIG_EXFAT_FS=m/# CONFIG_EXFAT_FS is not set/g' $(LINUXDIR)/.config; \
+		echo "# CONFIG_EXFAT_FS is not set" >> $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_EXFAT)" = "y" ]; then \
 		sed -i 's/\CONFIG_EXFAT_FS  is not set/# CONFIG_EXFAT_FS=m/g' $(LINUXDIR)/.config; \
