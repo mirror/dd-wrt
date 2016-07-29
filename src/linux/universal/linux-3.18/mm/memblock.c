@@ -478,7 +478,7 @@ static void __init_memblock memblock_insert_region(struct memblock_type *type,
 	memblock_set_region_node(rgn, nid);
 	type->cnt++;
 	type->total_size += size;
-	if (type == &memblock.memory && idx == 0)
+	if (type == &memblock.memory)
 		crashlog_init_memblock(base, size);
 }
 
