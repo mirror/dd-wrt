@@ -20,6 +20,7 @@
 #define HAVE_INOTIFY
 #define HAVE_SYS_INOTIFY_H
 #define HAVE_GETIFADDRS 1
+#define HAVE_STRUCT_DIRENT_D_TYPE 1
 
 /* Enable if the system iconv.h exists.  ID3 tag reading in various character sets will not work properly otherwise. */
 //#define HAVE_ICONV_H
