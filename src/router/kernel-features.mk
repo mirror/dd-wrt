@@ -95,7 +95,17 @@ define kernelfeatures
 		sed -i 's/\CONFIG_MSDOS_FS=m/# CONFIG_MSDOS_FS is not set/g' $(LINUXDIR)/.config; \
 		sed -i 's/\CONFIG_VFAT_FS=m/# CONFIG_VFAT_FS is not set/g' $(LINUXDIR)/.config; \
 	fi	
-
+	if [ "$(CONFIG_EXFAT)" != "y" ]; then \
+		sed -i 's/\CONFIG_EXFAT_FS=m/# CONFIG_EXFAT_FS is not set/g' $(LINUXDIR)/.config; \
+	fi
+	if [ "$(CONFIG_EXFAT)" = "y" ]; then \
+		sed -i 's/\CONFIG_EXFAT_FS  is not set/# CONFIG_EXFAT_FS=m/g' $(LINUXDIR)/.config; \
+		echo "CONFIG_EXFAT_FS=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_EXFAT_DISCARD=y" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_EXFAT_DELAYED_SYNC is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_EXFAT_KERNEL_DEBUG is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_EXFAT_DEBUG_MSG is not set" >> $(LINUXDIR)/.config; \
+	fi
 	if [ "$(CONFIG_BONDING)" != "y" ]; then \
 		sed -i 's/\CONFIG_BONDING=m/# CONFIG_BONDING is not set/g' $(LINUXDIR)/.config; \
 	fi	
