@@ -104,7 +104,7 @@ define kernelfeatures
 		echo "CONFIG_EXFAT_FS=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_EXFAT_DISCARD=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_EXFAT_DEFAULT_CODEPAGE=437" >> $(LINUXDIR)/.config; \
-		echo "CONFIG_EXFAT_DEFAULT_IOCHARSET=utf8" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_EXFAT_DEFAULT_IOCHARSET=\"utf8\"" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_EXFAT_DELAYED_SYNC is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_EXFAT_KERNEL_DEBUG is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_EXFAT_DEBUG_MSG is not set" >> $(LINUXDIR)/.config; \
