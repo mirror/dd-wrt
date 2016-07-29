@@ -29,6 +29,7 @@
 #include <linux/kmsg_dump.h>
 #include <linux/module.h>
 #include <linux/pfn.h>
+#include <linux/vmalloc.h>
 #include <asm/io.h>
 
 #define CRASHLOG_PAGES	4
@@ -162,10 +163,21 @@ static void crashlog_do_dump(struct kmsg_dumper *dumper,
 
 int __init crashlog_init_fs(void)
 {
-	if (!crashlog_addr)
-		return -ENOMEM;
+	struct page *pages[CRASHLOG_PAGES];
+	pgprot_t prot;
+	int i;
 
-	crashlog_buf = ioremap(crashlog_addr, CRASHLOG_SIZE);
+	if (!crashlog_addr) {
+		printk("No memory allocated for crashlog\n");
+		return -ENOMEM;
+	}
+
+	printk("Crashlog allocated RAM at address 0x%lx\n", (unsigned long) crashlog_addr);
+	for (i = 0; i < CRASHLOG_PAGES; i++)
+		pages[i] = pfn_to_page((crashlog_addr >> PAGE_SHIFT) + i);
+
+	prot = pgprot_writecombine(PAGE_KERNEL);
+	crashlog_buf = vmap(pages, CRASHLOG_PAGES, VM_MAP, prot);
 
 	crashlog_copy();
 
