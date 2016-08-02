@@ -5520,7 +5520,7 @@ void ej_show_ifselect(webs_t wp, int argc, char_t ** argv)
 			continue;
 		if (!strcmp(nvram_safe_get("lan_ifname"), var))
 			continue;
-		if (!nvram_nmatch("0", "%s_bridged", var)
+		if (nvram_nmatch("1", "%s_bridged", var)
 		    && !isbridge(var))
 			continue;
 		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, nvram_match(ifname, var) ? "selected" : "", getNetworkLabel(var));
