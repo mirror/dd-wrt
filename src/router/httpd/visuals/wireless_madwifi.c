@@ -355,10 +355,10 @@ void ej_update_acktiming(webs_t wp, int argc, char_t ** argv)
 		return;
 	}
 #ifdef HAVE_ATH10K
-	if (is_ath10k(ifname) && !is_mvebu(ifname)) {
-		ack = get_ath10kack(ifname);
-		distance = get_ath10kdistance(ifname);
-	} else
+//	if (is_ath10k(ifname) && !is_mvebu(ifname)) {
+//		ack = get_ath10kack(ifname);
+//		distance = get_ath10kdistance(ifname);
+//	} else
 #endif
 #ifdef HAVE_ATH9K
 	if (is_ath9k(ifname) || is_mvebu(ifname)) {
