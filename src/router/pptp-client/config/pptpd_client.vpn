@@ -35,8 +35,10 @@ case $1 in
    echo "Attempting connect..."
    PPTPPID=`ps |grep "pppd "|grep "pptp"|awk '{print $1}'`
    kill $PPTPPID 2>/dev/null
+   killall pptp
    sleep 2
    kill -9 $PPTPPID 2>/dev/null
+   killall -9 pptp
    sleep 1
    pppd pty "pptp $(nvram get pptpd_client_srvip) --nolaunchpppd" file /tmp/pptpd_client/options.vpn user "$(nvram get pptpd_client_srvuser)" password "$(nvram get pptpd_client_srvpass)"
    echo "Connection dropped..."
@@ -70,8 +72,10 @@ case $1 in
    echo "Attempting connect..."
    PPTPPID=`ps |grep "pppd "|grep "pptp"|awk '{print $1}'`
    kill $PPTPPID 2>/dev/null
+   killall pptp
    sleep 2
    kill -9 $PPTPPID 2>/dev/null
+   killall -9 pptp
    sleep 1
    pppd pty "pptp $(nvram get pptpd_client_srvip) --nolaunchpppd" debug dump logfd 2 nodetach  file /tmp/pptpd_client/options.vpn user "$(nvram get pptpd_client_srvuser)" password "$(nvram get pptpd_client_srvpass)"
    echo "Connection dropped..."

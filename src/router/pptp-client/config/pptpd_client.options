@@ -10,10 +10,11 @@ nodeflate
 mppc
 lcp-echo-failure 4
 lcp-echo-interval 30
-persist
 maxfail 0
 usepeerdns
 idle 0
 ip-up-script /tmp/pptpd_client/ip-up
 ip-down-script /tmp/pptpd_client/ip-down
 ipparam kelokepptpd
+mtu 1500
+mru 1500
