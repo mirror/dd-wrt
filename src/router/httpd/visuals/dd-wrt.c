@@ -2869,7 +2869,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	sprintf(wl_ofdm_weak_det, "%s_ofdm_weak_det", prefix);
 
 #ifdef HAVE_ATH10K
-	if (!is_ath10k(prefix) && !is_mvebu(prefix))
+	if (!is_mvebu(prefix))
 #endif
 	{
 #if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
@@ -2881,7 +2881,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 			showAutoOption(wp, "wl_basic.intmit", wl_intmit);
 		}
 #if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
-		if (!is_ath11n(prefix))
+		if (!is_ath11n(prefix) && !is)
 #endif
 		{
 			websWrite(wp, "<div class=\"setting\">\n");
@@ -3866,7 +3866,7 @@ if (!strcmp(prefix, "wl2"))
 #endif
 
 #ifdef HAVE_ATH10K
-	if (!is_ath10k(prefix) && !is_mvebu(prefix))
+	if (!is_mvebu(prefix))
 #endif
 	{
 #if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
