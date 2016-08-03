@@ -759,7 +759,6 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 			fprintf(fp, "WPAPSK=%s\n", nvram_nget("wl%d_wpa_psk", idx));
 		else
 			fprintf(fp, "WPAPSK1=\n");
-		strcat(authmode, "WPA");
 		strcat(radius_server, nvram_nget("wl%d_radius_ipaddr", idx));
 		strcat(radius_port, nvram_nget("wl%d_radius_port", idx));
 		strcat(radius_key, nvram_nget("wl%d_radius_key", idx));
