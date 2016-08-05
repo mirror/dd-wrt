@@ -248,10 +248,12 @@ void start_sysinit(void)
 	FILE *fp = fopen("/sys/bus/pci/devices/0000:04:00.0/device", "rb"); //pcengines apu fuckup check
 	if (fp) {
 		char checkbuf[32];
-		fgets(checkbuf, sizeof(checkbuf), fp);
+		fscanf(fp, "%s", &checkbuf[0]);
 		fclose(fp);
-		if (!strcmp(checkbuf, "0xabcd"))
+		if (!strcmp(&checkbuf[0], "0xabcd")) {
 			sys_reboot();
+		}
+	
 	}
 
 	detect_wireless_devices();
