@@ -73,9 +73,14 @@ int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifnam
 			mac[9] = 'x';
 			mac[10] = 'x';
 		}
-		qual = wc->signal * 124 + 11600;
-		qual /= 10;
-//              if (wc->inactive_time < it) {
+		int signal = wc->signal;
+		if (signal >= -50)
+			qual = 1000;
+		else if (signal <= -100)
+			qual = 0;
+		else
+			qual = (wc->signal + 100) * 20;
+
 		if (cnt)
 			websWrite(wp, ",");
 
