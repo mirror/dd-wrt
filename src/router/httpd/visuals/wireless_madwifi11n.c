@@ -157,8 +157,15 @@ int ej_active_wireless_if_11n(webs_t wp, int argc, char_t ** argv, char *ifname,
 		if (si->isi_noise == 0) {
 			si->isi_noise = -95;
 		}
-		int qual = (si->isi_noise + si->isi_rssi) * 124 + 11600;
-		qual /= 10;
+
+		int signal = si->isi_noise + si->isi_rssi;
+		if (signal >= -50)
+			qual = 1000;
+		else if (signal <= -100)
+			qual = 0;
+		else
+			qual = (wc->signal + 100) * 20;
+
 		int rxrate = si->isi_rxrateKbps / 1000;
 		int txrate = si->isi_txrateKbps / 1000;
 		if (!rxrate)

@@ -302,8 +302,15 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 			}
 
 			{
-				int qual = table.Entry[i].AvgRssi0 * 124 + 11600;
-				qual /= 10;
+
+				int signal = table.Entry[i].AvgRssi0;
+				if (signal >= -50)
+					qual = 1000;
+				else if (signal <= -100)
+					qual = 0;
+				else
+					qual = (wc->signal + 100) * 20;
+
 				HTTRANSMIT_SETTING HTSetting;
 				int rate = 1;
 				char rx[32];
@@ -361,7 +368,14 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 			websWrite(wp, ",");
 		cnt++;
 
-		int qual = sta->rssi * 124 + 11600;
+		int signal = sta->rssi;
+		if (signal >= -50)
+			qual = 1000;
+		else if (signal <= -100)
+			qual = 0;
+		else
+			qual = (wc->signal + 100) * 20;
+
 		int rate = 1;
 		char rx[32];
 		char tx[32];
@@ -370,7 +384,6 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 		DisplayLastTxRxRateFor11n(getRADev(ifname), s, RT_OID_802_11_QUERY_LAST_TX_RATE, &rate);
 		snprintf(tx, 8, "%d.%d", rate / 1000, rate % 1000);
 
-		qual /= 10;
 		strcpy(mac, ieee80211_ntoa(sta->mac));
 		websWrite(wp, "'%s','%s','N/A','%s','%s','N/A','%d','%d','%d','%d'", mac, sta->ifname, tx, rx, sta->rssi, sta->noise, (sta->rssi - (sta->noise)), qual);
 		free(sta);
