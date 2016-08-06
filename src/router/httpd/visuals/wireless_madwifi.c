@@ -160,8 +160,15 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 		if (si->isi_noise == 0) {
 			si->isi_noise = -95;
 		}
-		int qual = (si->isi_noise + si->isi_rssi) * 124 + 11600;
-		qual /= 10;
+
+		int signal = si->isi_noise + si->isi_rssi;
+		if (signal >= -50)
+			qual = 1000;
+		else if (signal <= -100)
+			qual = 0;
+		else
+			qual = (wc->signal + 100) * 20;
+
 		char *type = "";
 		if (si->isi_athflags & IEEE80211_ATHC_WDS)
 			type = "WDS:";
@@ -355,10 +362,10 @@ void ej_update_acktiming(webs_t wp, int argc, char_t ** argv)
 		return;
 	}
 #ifdef HAVE_ATH10K
-//	if (is_ath10k(ifname) && !is_mvebu(ifname)) {
-//		ack = get_ath10kack(ifname);
-//		distance = get_ath10kdistance(ifname);
-//	} else
+//      if (is_ath10k(ifname) && !is_mvebu(ifname)) {
+//              ack = get_ath10kack(ifname);
+//              distance = get_ath10kdistance(ifname);
+//      } else
 #endif
 #ifdef HAVE_ATH9K
 	if (is_ath9k(ifname) || is_mvebu(ifname)) {
