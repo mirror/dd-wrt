@@ -159,6 +159,7 @@ int ej_active_wireless_if_11n(webs_t wp, int argc, char_t ** argv, char *ifname,
 		}
 
 		int signal = si->isi_noise + si->isi_rssi;
+		int qual = 0;
 		if (signal >= -50)
 			qual = 1000;
 		else if (signal <= -100)

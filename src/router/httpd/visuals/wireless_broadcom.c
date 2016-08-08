@@ -406,6 +406,7 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 		 * only for broadcom }
 		 */
 		int signal = rssi;
+		int qual = 0;
 		if (signal >= -50)
 			qual = 1000;
 		else if (signal <= -100)
