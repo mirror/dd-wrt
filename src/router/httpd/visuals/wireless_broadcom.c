@@ -411,7 +411,7 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 		else if (signal <= -100)
 			qual = 0;
 		else
-			qual = (wc->signal + 100) * 20;
+			qual = (signal + 100) * 20;
 		websWrite(wp, "'%s','%s','%s','%s','%s','%s','%d','%d','%d','%d'", mac, displayname, time, txrate, rxrate, info, rssi, noise, rssi - noise, qual);
 	}
 
