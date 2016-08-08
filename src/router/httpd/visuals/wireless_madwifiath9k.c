@@ -79,7 +79,7 @@ int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifnam
 		else if (signal <= -100)
 			qual = 0;
 		else
-			qual = (wc->signal + 100) * 20;
+			qual = (signal + 100) * 20;
 
 		if (cnt)
 			websWrite(wp, ",");
