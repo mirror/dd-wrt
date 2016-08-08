@@ -257,7 +257,7 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 	static RT_802_11_MAC_TABLE table = { 0 };
 
 	unsigned char *cp;
-	int s, len, i;
+	int s, len, i, qual;
 	struct iwreq iwr;
 	int ignore = 0;
 
