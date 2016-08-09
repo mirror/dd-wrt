@@ -717,7 +717,7 @@ int has_2ghz(char *prefix)
 
 #ifdef HAVE_ATH10K
 
-char *mac80211_get_vhtcaps(char *interface, int shortgi, int vht80, int vht160, int vht8080, int subf, int mubf)
+char *mac80211_get_vhtcaps(char *interface, int shortgi, int vht80, int vht160, int vht8080, int su_bf, int mu_bf)
 {
 	struct nl_msg *msg;
 	struct nlattr *caps, *bands, *band;
