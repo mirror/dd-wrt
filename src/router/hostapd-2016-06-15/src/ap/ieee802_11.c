@@ -2178,6 +2178,13 @@ static void handle_assoc(struct hostapd_data *hapd,
 	}
 #endif /* CONFIG_MBO */
 
+	if (hostapd_ubus_handle_event(hapd, &req)) {
+		wpa_printf(MSG_DEBUG, "Station " MACSTR " assoc rejected by ubus handler.\n",
+		       MAC2STR(mgmt->sa));
+		resp = WLAN_STATUS_UNSPECIFIED_FAILURE;
+		goto fail;
+	}
+
 	/*
 	 * sta->capability is used in check_assoc_ies() for RRM enabled
 	 * capability element.
@@ -2194,13 +2201,6 @@ static void handle_assoc(struct hostapd_data *hapd,
 		hostapd_logger(hapd, mgmt->sa, HOSTAPD_MODULE_IEEE80211,
 			       HOSTAPD_LEVEL_INFO, "No room for more AIDs");
 		resp = WLAN_STATUS_AP_UNABLE_TO_HANDLE_NEW_STA;
-		goto fail;
-	}
-
-	if (hostapd_ubus_handle_event(hapd, &req)) {
-		wpa_printf(MSG_DEBUG, "Station " MACSTR " assoc rejected by ubus handler.\n",
-		       MAC2STR(mgmt->sa));
-		resp = WLAN_STATUS_UNSPECIFIED_FAILURE;
 		goto fail;
 	}
 
@@ -2852,6 +2852,7 @@ static void handle_assoc_cb(struct hostapd_data *hapd,
 		new_assoc = 0;
 	sta->flags |= WLAN_STA_ASSOC;
 	sta->flags &= ~WLAN_STA_WNM_SLEEP_MODE;
+	sta->flags &= ~WLAN_STA_WDS;
 	if ((!hapd->conf->ieee802_1x && !hapd->conf->wpa && !hapd->conf->osen) ||
 	    sta->auth_alg == WLAN_AUTH_FT) {
 		/*

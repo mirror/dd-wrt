@@ -1,6 +1,6 @@
 /*
  * hostapd / ubus support
- * Copyright (c) 2013, Felix Fietkau <nbd@openwrt.org>
+ * Copyright (c) 2013, Felix Fietkau <nbd@nbd.name>
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
