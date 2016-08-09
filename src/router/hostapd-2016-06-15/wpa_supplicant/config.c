@@ -16,7 +16,7 @@
 #include "eap_peer/eap.h"
 #include "p2p/p2p.h"
 #include "fst/fst.h"
-#include "drivers/nl80211_copy.h"
+#include "ap/sta_info.h"
 #include "config.h"
 
 
@@ -1778,6 +1778,43 @@ static char * wpa_config_write_psk_list(const struct parse_data *data,
 
 #endif /* CONFIG_P2P */
 
+#ifdef CONFIG_MESH
+
+static int wpa_config_parse_mesh_basic_rates(const struct parse_data *data,
+					     struct wpa_ssid *ssid, int line,
+					     const char *value)
+{
+	int *rates = wpa_config_parse_int_array(value);
+
+	if (rates == NULL) {
+		wpa_printf(MSG_ERROR, "Line %d: Invalid mesh_basic_rates '%s'",
+			   line, value);
+		return -1;
+	}
+	if (rates[0] == 0) {
+		os_free(rates);
+		rates = NULL;
+	}
+
+	os_free(ssid->mesh_basic_rates);
+	ssid->mesh_basic_rates = rates;
+
+	return 0;
+}
+
+
+#ifndef NO_CONFIG_WRITE
+
+static char * wpa_config_write_mesh_basic_rates(const struct parse_data *data,
+						struct wpa_ssid *ssid)
+{
+	return wpa_config_write_freqs(data, ssid->mesh_basic_rates);
+}
+
+#endif /* NO_CONFIG_WRITE */
+
+#endif /* CONFIG_MESH */
+
 static int wpa_config_parse_mcast_rate(const struct parse_data *data,
 				       struct wpa_ssid *ssid, int line,
 				       const char *value)
@@ -1885,7 +1922,7 @@ static int wpa_config_parse_rates(const struct parse_data *data,
 	pos = (char *)value;
 	r = strtok_r(pos, ",", &sptr);
 	i = 0;
-	while (pos && i < NL80211_MAX_SUPP_RATES) {
+	while (pos && i < WLAN_SUPP_RATES_MAX) {
 		rate = 0.0;
 		if (r)
 			rate = strtod(r, &end);
@@ -1910,11 +1947,11 @@ static char * wpa_config_write_rates(const struct parse_data *data,
 	if (ssid->rates[0] <= 0)
 		return NULL;
 
-	value = os_malloc(6 * NL80211_MAX_SUPP_RATES + 1);
+	value = os_malloc(6 * WLAN_SUPP_RATES_MAX + 1);
 	if (value == NULL)
 		return NULL;
 	pos = value;
-	for (i = 0; i < NL80211_MAX_SUPP_RATES - 1; i++) {
+	for (i = 0; i < WLAN_SUPP_RATES_MAX - 1; i++) {
 		res = os_snprintf(pos, 6, "%.1f,", (double)ssid->rates[i] / 2);
 		if (res < 0) {
 			os_free(value);
@@ -1923,54 +1960,17 @@ static char * wpa_config_write_rates(const struct parse_data *data,
 		pos += res;
 	}
 	res = os_snprintf(pos, 6, "%.1f",
-			  (double)ssid->rates[NL80211_MAX_SUPP_RATES - 1] / 2);
+			  (double)ssid->rates[WLAN_SUPP_RATES_MAX - 1] / 2);
 	if (res < 0) {
 		os_free(value);
 		return NULL;
 	}
 
-	value[6 * NL80211_MAX_SUPP_RATES] = '\0';
+	value[6 * WLAN_SUPP_RATES_MAX] = '\0';
 	return value;
 }
 #endif /* NO_CONFIG_WRITE */
 
-
-#ifdef CONFIG_MESH
-
-static int wpa_config_parse_mesh_basic_rates(const struct parse_data *data,
-					     struct wpa_ssid *ssid, int line,
-					     const char *value)
-{
-	int *rates = wpa_config_parse_int_array(value);
-
-	if (rates == NULL) {
-		wpa_printf(MSG_ERROR, "Line %d: Invalid mesh_basic_rates '%s'",
-			   line, value);
-		return -1;
-	}
-	if (rates[0] == 0) {
-		os_free(rates);
-		rates = NULL;
-	}
-
-	os_free(ssid->mesh_basic_rates);
-	ssid->mesh_basic_rates = rates;
-
-	return 0;
-}
-
-
-#ifndef NO_CONFIG_WRITE
-
-static char * wpa_config_write_mesh_basic_rates(const struct parse_data *data,
-						struct wpa_ssid *ssid)
-{
-	return wpa_config_write_freqs(data, ssid->mesh_basic_rates);
-}
-
-#endif /* NO_CONFIG_WRITE */
-
-#endif /* CONFIG_MESH */
 
 
 /* Helper macros for network block parser */
@@ -2150,6 +2150,7 @@ static const struct parse_data ssid_fields[] = {
 	{ INT_RANGE(peerkey, 0, 1) },
 	{ INT_RANGE(mixed_cell, 0, 1) },
 	{ INT_RANGE(frequency, 0, 65000) },
+	{ INT_RANGE(fixed_freq, 0, 1) },
 #ifdef CONFIG_ACS
 	{ INT_RANGE(acs, 0, 1) },
 #endif /* CONFIG_ACS */

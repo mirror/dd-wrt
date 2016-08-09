@@ -2332,7 +2332,8 @@ wpa_driver_nl80211_finish_drv_init(struct wpa_driver_nl80211_data *drv,
 
 	if (drv->hostapd || bss->static_ap)
 		nlmode = NL80211_IFTYPE_AP;
-	else if (bss->if_dynamic)
+	else if (bss->if_dynamic ||
+		 nl80211_get_ifmode(bss) == NL80211_IFTYPE_MESH_POINT)
 		nlmode = nl80211_get_ifmode(bss);
 	else
 		nlmode = NL80211_IFTYPE_STATION;
@@ -2393,13 +2394,18 @@ wpa_driver_nl80211_finish_drv_init(struct wpa_driver_nl80211_data *drv,
 }
 
 
-static int wpa_driver_nl80211_del_beacon(struct wpa_driver_nl80211_data *drv)
+static int wpa_driver_nl80211_del_beacon(struct i802_bss *bss)
 {
+	struct wpa_driver_nl80211_data *drv = bss->drv;
 	struct nl_msg *msg;
 
+	if (!bss->beacon_set)
+		return 0;
+
+	bss->beacon_set = 0;
 	wpa_printf(MSG_DEBUG, "nl80211: Remove beacon (ifindex=%d)",
-		   drv->ifindex);
-	msg = nl80211_drv_msg(drv, 0, NL80211_CMD_DEL_BEACON);
+		   bss->ifindex);
+	msg = nl80211_bss_msg(bss, 0, NL80211_CMD_DEL_BEACON);
 	return send_and_recv_msgs(drv, msg, NULL, NULL);
 }
 
@@ -2451,7 +2457,7 @@ static void wpa_driver_nl80211_deinit(struct i802_bss *bss)
 	nl80211_remove_monitor_interface(drv);
 
 	if (is_ap_interface(drv->nlmode))
-		wpa_driver_nl80211_del_beacon(drv);
+		wpa_driver_nl80211_del_beacon(bss);
 
 	if (drv->eapol_sock >= 0) {
 		eloop_unregister_read_sock(drv->eapol_sock);
@@ -3794,7 +3800,7 @@ static int nl80211_set_channel(struct i802_bss *bss,
 		   freq->freq, freq->ht_enabled, freq->vht_enabled,
 		   freq->bandwidth, freq->center_freq1, freq->center_freq2);
 
-	msg = nl80211_drv_msg(drv, 0, set_chan ? NL80211_CMD_SET_CHANNEL :
+	msg = nl80211_bss_msg(bss, 0, set_chan ? NL80211_CMD_SET_CHANNEL :
 			      NL80211_CMD_SET_WIPHY);
 	if (!msg || nl80211_put_freq_params(msg, freq) < 0) {
 		nlmsg_free(msg);
@@ -4384,8 +4390,7 @@ static void nl80211_teardown_ap(struct i802_bss *bss)
 		nl80211_remove_monitor_interface(drv);
 	else
 		nl80211_mgmt_unsubscribe(bss, "AP teardown");
-
-	bss->beacon_set = 0;
+	wpa_driver_nl80211_del_beacon(bss);
 }
 
 
@@ -4639,7 +4644,7 @@ static int wpa_driver_nl80211_ibss(struct wpa_driver_nl80211_data *drv,
 				   struct wpa_driver_associate_params *params)
 {
 	struct nl_msg *msg;
-	int ret = -1;
+	int ret = -1, i;
 	int count = 0;
 
 	wpa_printf(MSG_DEBUG, "nl80211: Join IBSS (ifindex=%d)", drv->ifindex);
@@ -4665,6 +4670,53 @@ retry:
 	if (nl80211_put_freq_params(msg, &params->freq) < 0 ||
 	    nl80211_put_beacon_int(msg, params->beacon_int))
 		goto fail;
+
+	if (params->fixed_freq) {
+		wpa_printf(MSG_DEBUG, "  * fixed_freq");
+		nla_put_flag(msg, NL80211_ATTR_FREQ_FIXED);
+	}
+
+	if (params->beacon_int > 0) {
+		wpa_printf(MSG_DEBUG, "  * beacon_int=%d",
+			   params->beacon_int);
+		nla_put_u32(msg, NL80211_ATTR_BEACON_INTERVAL,
+			    params->beacon_int);
+	}
+
+	if (params->rates[0] > 0) {
+		wpa_printf(MSG_DEBUG, "  * basic_rates:");
+		i = 0;
+		while (i < NL80211_MAX_SUPP_RATES &&
+		       params->rates[i] > 0) {
+			wpa_printf(MSG_DEBUG, "    %.1f",
+				   (double)params->rates[i] / 2);
+			i++;
+		}
+		nla_put(msg, NL80211_ATTR_BSS_BASIC_RATES, i,
+			params->rates);
+	}
+
+	if (params->mcast_rate > 0) {
+		wpa_printf(MSG_DEBUG, "  * mcast_rate=%.1f",
+			   (double)params->mcast_rate / 10);
+		nla_put_u32(msg, NL80211_ATTR_MCAST_RATE, params->mcast_rate);
+	}
+
+	if (params->ht_set) {
+		switch(params->htmode) {
+			case NL80211_CHAN_HT20:
+				wpa_printf(MSG_DEBUG, "  * ht=HT20");
+				break;
+			case NL80211_CHAN_HT40PLUS:
+				wpa_printf(MSG_DEBUG, "  * ht=HT40+");
+				break;
+			case NL80211_CHAN_HT40MINUS:
+				wpa_printf(MSG_DEBUG, "  * ht=HT40-");
+				break;
+		}
+		nla_put_u32(msg, NL80211_ATTR_WIPHY_CHANNEL_TYPE,
+			    params->htmode);
+	}
 
 	ret = nl80211_set_conn_keys(params, msg);
 	if (ret)
@@ -6386,8 +6438,6 @@ static int wpa_driver_nl80211_if_remove(struct i802_bss *bss,
 	} else {
 		wpa_printf(MSG_DEBUG, "nl80211: First BSS - reassign context");
 		nl80211_teardown_ap(bss);
-		if (!bss->added_if && !drv->first_bss->next)
-			wpa_driver_nl80211_del_beacon(drv);
 		nl80211_destroy_bss(bss);
 		if (!bss->added_if)
 			i802_set_iface_flags(bss, 0);
@@ -6749,8 +6799,7 @@ static int wpa_driver_nl80211_deinit_ap(void *priv)
 	struct wpa_driver_nl80211_data *drv = bss->drv;
 	if (!is_ap_interface(drv->nlmode))
 		return -1;
-	wpa_driver_nl80211_del_beacon(drv);
-	bss->beacon_set = 0;
+	wpa_driver_nl80211_del_beacon(bss);
 
 	/*
 	 * If the P2P GO interface was dynamically added, then it is
@@ -6769,8 +6818,7 @@ static int wpa_driver_nl80211_stop_ap(void *priv)
 	struct wpa_driver_nl80211_data *drv = bss->drv;
 	if (!is_ap_interface(drv->nlmode))
 		return -1;
-	wpa_driver_nl80211_del_beacon(drv);
-	bss->beacon_set = 0;
+	wpa_driver_nl80211_del_beacon(bss);
 	return 0;
 }
 

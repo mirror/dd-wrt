@@ -12,8 +12,8 @@
 #endif /* __linux__ */
 
 #include "common.h"
-#include "fst/fst.h"
 #include "build_features.h"
+#include "fst/fst.h"
 #include "wpa_supplicant_i.h"
 #include "driver_i.h"
 #include "p2p_supplicant.h"
@@ -75,10 +75,10 @@ static void usage(void)
 	       "  -g = global ctrl_interface\n"
 	       "  -G = global ctrl_interface group\n"
 	       "  -h = show this help text\n"
+	       "  -H = connect to a hostapd instance to manage state changes\n"
 	       "  -i = interface name\n"
 	       "  -I = additional configuration file\n"
 	       "  -K = include keys (passwords, etc.) in debug output\n"
-	       "  -H = connect to a hostapd instance to manage state changes\n"
 	       "  -L = show license (BSD)\n"
 #ifdef CONFIG_P2P
 	       "  -m = Configuration file for the P2P Device interface\n"

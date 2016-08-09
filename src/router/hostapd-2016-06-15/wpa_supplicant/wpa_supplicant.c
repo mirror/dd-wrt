@@ -114,9 +114,9 @@ const char *const wpa_supplicant_full_license5 =
 
 static int hostapd_stop(struct wpa_supplicant *wpa_s)
 {
-	const char *cmd = "DOWN";
+	const char *cmd = "STOP_AP";
 	char buf[256];
-	int len = sizeof(buf);
+	size_t len = sizeof(buf);
 
 	if (wpa_ctrl_request(wpa_s->hostapd, cmd, os_strlen(cmd), buf, &len, NULL) < 0) {
 		wpa_printf(MSG_ERROR, "\nFailed to stop hostapd AP interfaces\n");
@@ -129,14 +129,14 @@ static int hostapd_reload(struct wpa_supplicant *wpa_s, struct wpa_bss *bss)
 {
 	char *cmd = NULL;
 	char buf[256];
-	int len = sizeof(buf);
+	size_t len = sizeof(buf);
 	enum hostapd_hw_mode hw_mode;
 	u8 channel;
 	int sec_chan = 0;
 	int ret;
 
 	if (!bss)
-		return;
+		return -1;
 
 	if (bss->ht_param & HT_INFO_HT_PARAM_STA_CHNL_WIDTH) {
 		int sec = bss->ht_param & HT_INFO_HT_PARAM_SECONDARY_CHNL_OFF_MASK;
@@ -1956,19 +1956,27 @@ void ibss_mesh_setup_freq(struct wpa_supplicant *wpa_s,
 		}
 	}
 
-	/* Find secondary channel */
-	for (i = 0; i < mode->num_channels; i++) {
-		sec_chan = &mode->channels[i];
-		if (sec_chan->chan == channel + ht40 * 4)
-			break;
-		sec_chan = NULL;
-	}
-	if (!sec_chan)
-		return;
+#ifdef CONFIG_HT_OVERRIDES
+	if (ssid->disable_ht40)
+		ht40 = 0;
+#endif /* CONFIG_HT_OVERRIDES */
 
-	/* Check secondary channel flags */
-	if (sec_chan->flag & (HOSTAPD_CHAN_DISABLED | HOSTAPD_CHAN_NO_IR))
-		return;
+	if (ht40) {
+		/* Find secondary channel */
+		for (i = 0; i < mode->num_channels; i++) {
+			sec_chan = &mode->channels[i];
+			if (sec_chan->chan == channel + ht40 * 4)
+				break;
+			sec_chan = NULL;
+		}
+		if (!sec_chan)
+			return;
+
+		/* Check secondary channel flags */
+		if (sec_chan->flag &
+		    (HOSTAPD_CHAN_DISABLED | HOSTAPD_CHAN_NO_IR))
+			return;
+	}
 
 	freq->channel = pri_chan->chan;
 
@@ -1984,6 +1992,7 @@ void ibss_mesh_setup_freq(struct wpa_supplicant *wpa_s,
 		freq->sec_channel_offset = 1;
 		break;
 	default:
+		freq->sec_channel_offset = 0;
 		break;
 	}
 
@@ -2512,7 +2521,7 @@ static void wpas_start_assoc_cb(struct wpa_radio_work *work, int deinit)
 			params.beacon_int = wpa_s->conf->beacon_int;
 		params.fixed_freq = ssid->fixed_freq;
 		i = 0;
-		while (i < NL80211_MAX_SUPP_RATES) {
+		while (i < WLAN_SUPP_RATES_MAX) {
 			params.rates[i] = ssid->rates[i];
 			i++;
 		}
@@ -4701,7 +4710,7 @@ static int wpa_supplicant_init_iface(struct wpa_supplicant *wpa_s,
 	}
 
 	if (iface->hostapd_ctrl) {
-		char *cmd = "DOWN";
+		char *cmd = "STOP_AP";
 		char buf[256];
 		int len = sizeof(buf);
 
@@ -5032,10 +5041,6 @@ static void wpa_supplicant_deinit_iface(struct wpa_supplicant *wpa_s,
 	os_free(wpa_s);
 }
 
-extern void supplicant_event(void *ctx, enum wpa_event_type event,
-			     union wpa_event_data *data);
-
-
 #ifdef CONFIG_MATCH_IFACE
 
 /**
@@ -5102,6 +5107,13 @@ static int wpa_supplicant_match_existing(struct wpa_global *global)
 }
 
 #endif /* CONFIG_MATCH_IFACE */
+
+extern void supplicant_event(void *ctx, enum wpa_event_type event,
+			     union wpa_event_data *data);
+
+extern void supplicant_event_global(void *ctx, enum wpa_event_type event,
+ 				 union wpa_event_data *data);
+
 
 
 /**
@@ -5360,6 +5372,7 @@ struct wpa_global * wpa_supplicant_init(struct wpa_params *params)
 #endif /* CONFIG_NO_WPA_MSG */
 
 	wpa_supplicant_event = supplicant_event;
+	wpa_supplicant_event_global = supplicant_event_global;
 	if (params->wpa_debug_file_path)
 		wpa_debug_open_file(params->wpa_debug_file_path);
 	else

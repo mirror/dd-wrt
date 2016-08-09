@@ -1,6 +1,6 @@
 /*
  * hostapd / ubus support
- * Copyright (c) 2013, Felix Fietkau <nbd@openwrt.org>
+ * Copyright (c) 2013, Felix Fietkau <nbd@nbd.name>
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -14,10 +14,18 @@
 #include "wps_hostapd.h"
 #include "sta_info.h"
 #include "ubus.h"
+#include "ap_drv_ops.h"
+#include "beacon.h"
 
 static struct ubus_context *ctx;
 static struct blob_buf b;
 static int ctx_ref;
+
+static inline struct hostapd_data *get_hapd_from_object(struct ubus_object *obj)
+{
+	return container_of(obj, struct hostapd_data, ubus.obj);
+}
+
 
 struct ubus_banned_client {
 	struct avl_node avl;
@@ -293,12 +301,132 @@ hostapd_bss_wps_cancel(struct ubus_context *ctx, struct ubus_object *obj,
 	return 0;
 }
 
+static int
+hostapd_bss_update_beacon(struct ubus_context *ctx, struct ubus_object *obj,
+			struct ubus_request_data *req, const char *method,
+			struct blob_attr *msg)
+{
+	int rc;
+	struct hostapd_data *hapd = container_of(obj, struct hostapd_data, ubus.obj);
+
+	rc = ieee802_11_set_beacon(hapd);
+
+	if (rc != 0)
+		return UBUS_STATUS_NOT_SUPPORTED;
+
+	return 0;
+}
+
+enum {
+	CSA_FREQ,
+	CSA_BCN_COUNT,
+	__CSA_MAX
+};
+
+static const struct blobmsg_policy csa_policy[__CSA_MAX] = {
+	/*
+	 * for now, frequency and beacon count are enough, add more
+	 * parameters on demand
+	 */
+	[CSA_FREQ] = { "freq", BLOBMSG_TYPE_INT32 },
+	[CSA_BCN_COUNT] = { "bcn_count", BLOBMSG_TYPE_INT32 },
+};
+
+#ifdef NEED_AP_MLME
+static int
+hostapd_switch_chan(struct ubus_context *ctx, struct ubus_object *obj,
+		    struct ubus_request_data *req, const char *method,
+		    struct blob_attr *msg)
+{
+	struct blob_attr *tb[__CSA_MAX];
+	struct hostapd_data *hapd = get_hapd_from_object(obj);
+	struct csa_settings css;
+
+	blobmsg_parse(csa_policy, __CSA_MAX, tb, blob_data(msg), blob_len(msg));
+
+	if (!tb[CSA_FREQ])
+		return UBUS_STATUS_INVALID_ARGUMENT;
+
+	memset(&css, 0, sizeof(css));
+	css.freq_params.freq = blobmsg_get_u32(tb[CSA_FREQ]);
+	if (tb[CSA_BCN_COUNT])
+		css.cs_count = blobmsg_get_u32(tb[CSA_BCN_COUNT]);
+
+	if (hostapd_switch_channel(hapd, &css) != 0)
+		return UBUS_STATUS_NOT_SUPPORTED;
+	return UBUS_STATUS_OK;
+}
+#endif
+
+enum {
+	VENDOR_ELEMENTS,
+	__VENDOR_ELEMENTS_MAX
+};
+
+static const struct blobmsg_policy ve_policy[__VENDOR_ELEMENTS_MAX] = {
+	/* vendor elements are provided as hex-string */
+	[VENDOR_ELEMENTS] = { "vendor_elements", BLOBMSG_TYPE_STRING },
+};
+
+static int
+hostapd_vendor_elements(struct ubus_context *ctx, struct ubus_object *obj,
+			struct ubus_request_data *req, const char *method,
+			struct blob_attr *msg)
+{
+	struct blob_attr *tb[__VENDOR_ELEMENTS_MAX];
+	struct hostapd_data *hapd = get_hapd_from_object(obj);
+	struct hostapd_bss_config *bss = hapd->conf;
+	struct wpabuf *elems;
+	const char *pos;
+	size_t len;
+
+	blobmsg_parse(ve_policy, __VENDOR_ELEMENTS_MAX, tb,
+		      blob_data(msg), blob_len(msg));
+
+	if (!tb[VENDOR_ELEMENTS])
+		return UBUS_STATUS_INVALID_ARGUMENT;
+
+	pos = blobmsg_data(tb[VENDOR_ELEMENTS]);
+	len = os_strlen(pos);
+	if (len & 0x01)
+			return UBUS_STATUS_INVALID_ARGUMENT;
+
+	len /= 2;
+	if (len == 0) {
+		wpabuf_free(bss->vendor_elements);
+		bss->vendor_elements = NULL;
+		return 0;
+	}
+
+	elems = wpabuf_alloc(len);
+	if (elems == NULL)
+		return 1;
+
+	if (hexstr2bin(pos, wpabuf_put(elems, len), len)) {
+		wpabuf_free(elems);
+		return UBUS_STATUS_INVALID_ARGUMENT;
+	}
+
+	wpabuf_free(bss->vendor_elements);
+	bss->vendor_elements = elems;
+
+	/* update beacons if vendor elements were set successfully */
+	if (ieee802_11_update_beacons(hapd->iface) != 0)
+		return UBUS_STATUS_NOT_SUPPORTED;
+	return UBUS_STATUS_OK;
+}
+
 static const struct ubus_method bss_methods[] = {
 	UBUS_METHOD_NOARG("get_clients", hostapd_bss_get_clients),
 	UBUS_METHOD("del_client", hostapd_bss_del_client, del_policy),
 	UBUS_METHOD_NOARG("list_bans", hostapd_bss_list_bans),
 	UBUS_METHOD_NOARG("wps_start", hostapd_bss_wps_start),
 	UBUS_METHOD_NOARG("wps_cancel", hostapd_bss_wps_cancel),
+	UBUS_METHOD_NOARG("update_beacon", hostapd_bss_update_beacon),
+#ifdef NEED_AP_MLME
+	UBUS_METHOD("switch_chan", hostapd_switch_chan, csa_policy),
+#endif
+	UBUS_METHOD("set_vendor_elements", hostapd_vendor_elements, ve_policy),
 };
 
 static struct ubus_object_type bss_object_type =
