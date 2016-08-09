@@ -121,7 +121,6 @@
 #define DEBUG(format, args...)
 #endif
 
-
 static char *suspense;
 static unsigned int count = 0;
 static char log_accept[15];
@@ -2563,7 +2562,8 @@ static void filter_table(void)
 	if (has_gateway()) {
 		if ((nvram_match("log_enable", "1"))
 		    && (nvram_match("log_dropped", "1")))
-			save2file("-A logdrop -m state --state NEW -j LOG --log-prefix \"DROP \" --log-tcp-sequence --log-tcp-options --log-ip-options\n-A logdrop -m state --state INVALID -j LOG --log-prefix \"DROP \" --log-tcp-sequence --log-tcp-options --log-ip-options\n");
+			save2file
+			    ("-A logdrop -m state --state NEW -j LOG --log-prefix \"DROP \" --log-tcp-sequence --log-tcp-options --log-ip-options\n-A logdrop -m state --state INVALID -j LOG --log-prefix \"DROP \" --log-tcp-sequence --log-tcp-options --log-ip-options\n");
 	} else {
 		if ((nvram_match("log_enable", "1"))
 		    && (nvram_match("log_dropped", "1")))
@@ -2641,7 +2641,7 @@ void start_firewall6(void)
 		return;
 
 	fprintf(stderr, "start firewall6\n");
-	
+
 	insmod("nf_defrag_ipv6 nf_log_ipv6 ip6_tables nf_conntrack_ipv6 ip6table_filter");
 
 	eval("ip6tables", "-F", "INPUT");
@@ -2699,11 +2699,7 @@ void start_loadfwmodules(void)
 	       " xt_connbytes xt_connlimit"
 	       " xt_CLASSIFY xt_recent"
 	       " xt_conntrack xt_state"
-	       " xt_string xt_LOG xt_iprange xt_tcpmss" 
-	       " xt_NETMAP compat_xtables" 
-	       " ipt_MASQUERADE iptable_filter nf_reject_ipv4" 
-	       " ipt_REJECT nf_nat_h323" 
-	       " ipt_TRIGGER nf_nat_masquerade_ipv4 ipt_ah");
+	       " xt_string xt_LOG xt_iprange xt_tcpmss" " xt_NETMAP compat_xtables" " ipt_MASQUERADE iptable_filter nf_reject_ipv4" " ipt_REJECT nf_nat_h323" " ipt_TRIGGER nf_nat_masquerade_ipv4 ipt_ah");
 
 }
 

@@ -717,7 +717,7 @@ int has_2ghz(char *prefix)
 
 #ifdef HAVE_ATH10K
 
-char *mac80211_get_vhtcaps(char *interface, int shortgi, int vht80, int vht160, int vht8080)
+char *mac80211_get_vhtcaps(char *interface, int shortgi, int vht80, int vht160, int vht8080, int subf, int mubf)
 {
 	struct nl_msg *msg;
 	struct nlattr *caps, *bands, *band;
@@ -741,7 +741,7 @@ char *mac80211_get_vhtcaps(char *interface, int shortgi, int vht80, int vht160, 
 		if (!caps)
 			continue;
 		cap = nla_get_u32(caps);
-		asprintf(&capstring, "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s[MAX-A-MPDU-LEN-EXP%d]%s%s", (cap & VHT_CAP_RXLDPC ? "[RXLDPC]" : "")
+		asprintf(&capstring, "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s[MAX-A-MPDU-LEN-EXP%d]%s%s%s%s%s%s", (cap & VHT_CAP_RXLDPC ? "[RXLDPC]" : "")
 			 , (((cap & VHT_CAP_SHORT_GI_80) && shortgi && has_5ghz(interface) && vht80) ? "[SHORT-GI-80]" : "")
 			 , (((cap & VHT_CAP_SHORT_GI_160) && shortgi && has_5ghz(interface) && vht160) ? "[SHORT-GI-160]" : "")
 			 , (cap & VHT_CAP_TXSTBC ? "[TX-STBC-2BY1]" : "")
@@ -749,10 +749,10 @@ char *mac80211_get_vhtcaps(char *interface, int shortgi, int vht80, int vht160, 
 			 , (((cap >> 8) & 0x7) == 2 ? "[RX-STBC12]" : "")
 			 , (((cap >> 8) & 0x7) == 3 ? "[RX-STBC123]" : "")
 			 , (((cap >> 8) & 0x7) == 4 ? "[RX-STBC1234]" : "")
-			 , (cap & VHT_CAP_SU_BEAMFORMER_CAPABLE ? "[SU-BEAMFORMER]" : "")
-			 , (cap & VHT_CAP_SU_BEAMFORMEE_CAPABLE ? "[SU-BEAMFORMEE]" : "")
-			 , (cap & VHT_CAP_MU_BEAMFORMER_CAPABLE ? "[MU-BEAMFORMER]" : "")
-			 , (cap & VHT_CAP_MU_BEAMFORMEE_CAPABLE ? "[MU-BEAMFORMEE]" : "")
+			 , (((cap & VHT_CAP_SU_BEAMFORMER_CAPABLE) && su_bf) ? "[SU-BEAMFORMER]" : "")
+			 , (((cap & VHT_CAP_SU_BEAMFORMEE_CAPABLE) && su_bf) ? "[SU-BEAMFORMEE]" : "")
+			 , (((cap & VHT_CAP_MU_BEAMFORMER_CAPABLE) && mu_bf) ? "[MU-BEAMFORMER]" : "")
+			 , (((cap & VHT_CAP_MU_BEAMFORMEE_CAPABLE) && mu_bf) ? "[MU-BEAMFORMEE]" : "")
 			 , (cap & VHT_CAP_VHT_TXOP_PS ? "[VHT-TXOP-PS]" : "")
 			 , (cap & VHT_CAP_HTC_VHT ? "[HTC-VHT]" : "")
 			 , (cap & VHT_CAP_RX_ANTENNA_PATTERN ? "[RX-ANTENNA-PATTERN]" : "")
@@ -764,8 +764,12 @@ char *mac80211_get_vhtcaps(char *interface, int shortgi, int vht80, int vht160, 
 			 , ((cap & VHT_CAP_HTC_VHT) ? (((cap >> 26) & 3) == 2 ? "[VHT-LINK-ADAPT2]" : "") : "")
 			 , ((cap & VHT_CAP_HTC_VHT) ? (((cap >> 26) & 3) == 3 ? "[VHT-LINK-ADAPT3]" : "") : "")
 			 , ((cap >> 23) & 7)
-			 , ((cap & VHT_CAP_SU_BEAMFORMEE_CAPABLE) ? (((cap >> 13) & 7) ? "[BF-ANTENNA-2]" : "") : "")
-			 , ((cap & VHT_CAP_SU_BEAMFORMER_CAPABLE) ? (((cap >> 16) & 7) ? "[SOUNDING-DIMENSION-2]" : "") : "")
+			 , ((((cap & VHT_CAP_SU_BEAMFORMEE_CAPABLE)) && su_bf) ? ((((cap >> 13) & 1)) ? "[BF-ANTENNA-2]" : "") : "")
+			 , ((((cap & VHT_CAP_SU_BEAMFORMER_CAPABLE)) && su_bf) ? ((((cap >> 16) & 1)) ? "[SOUNDING-DIMENSION-2]" : "") : "")
+			 , ((((cap & VHT_CAP_SU_BEAMFORMEE_CAPABLE)) && su_bf) ? ((((cap >> 13) & 2)) ? "[BF-ANTENNA-3]" : "") : "")
+			 , ((((cap & VHT_CAP_SU_BEAMFORMER_CAPABLE)) && su_bf) ? ((((cap >> 16) & 2)) ? "[SOUNDING-DIMENSION-3]" : "") : "")
+			 , ((((cap & VHT_CAP_SU_BEAMFORMEE_CAPABLE)) && su_bf) ? ((((cap >> 13) & 4)) ? "[BF-ANTENNA-4]" : "") : "")
+			 , ((((cap & VHT_CAP_SU_BEAMFORMER_CAPABLE)) && su_bf) ? ((((cap >> 16) & 4)) ? "[SOUNDING-DIMENSION-4]" : "") : "")
 
 		    );
 	}
@@ -781,7 +785,7 @@ nla_put_failure:
 int has_vht160(char *interface)
 {
 #if defined(HAVE_ATH10K) || defined(HAVE_MVEBU)
-	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1);
+	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1, 1, 1);
 	if (strstr(vhtcaps, "VHT160")) {
 		free(vhtcaps);
 		return 1;
@@ -810,8 +814,34 @@ int has_greenfield(char *interface)
 int has_vht80plus80(char *interface)
 {
 #if defined(HAVE_ATH10K) || defined(HAVE_MVEBU)
-	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1);
+	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1, 1, 1);
 	if (strstr(vhtcaps, "VHT160-80PLUS80")) {
+		free(vhtcaps);
+		return 1;
+	}
+	free(vhtcaps);
+#endif
+	return 0;
+}
+
+int has_subeamforming(char *interface)
+{
+#if defined(HAVE_ATH10K) || defined(HAVE_MVEBU)
+	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1, 1, 1);
+	if (strstr(vhtcaps, "SU-BEAMFORMER")) {
+		free(vhtcaps);
+		return 1;
+	}
+	free(vhtcaps);
+#endif
+	return 0;
+}
+
+int has_mubeamforming(char *interface)
+{
+#if defined(HAVE_ATH10K) || defined(HAVE_MVEBU)
+	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1, 1, 1);
+	if (strstr(vhtcaps, "MU-BEAMFORMER")) {
 		free(vhtcaps);
 		return 1;
 	}
@@ -829,7 +859,7 @@ int has_shortgi(char *interface)
 	}
 	free(htcaps);
 #if defined(HAVE_ATH10K) || defined(HAVE_MVEBU)
-	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1);
+	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1, 1, 1);
 	if (strstr(vhtcaps, "SHORT-GI")) {
 		free(vhtcaps);
 		return 1;
@@ -840,9 +870,10 @@ int has_shortgi(char *interface)
 }
 
 static struct nla_policy freq_policy[NL80211_FREQUENCY_ATTR_MAX + 1] = {
-	[NL80211_FREQUENCY_ATTR_FREQ] = {.type = NLA_U32},
-	[NL80211_FREQUENCY_ATTR_DISABLED] = {.type = NLA_FLAG},
-	[NL80211_FREQUENCY_ATTR_MAX_TX_POWER] = {.type = NLA_U32},
+	[NL80211_FREQUENCY_ATTR_FREQ] = {
+					 .type = NLA_U32},[NL80211_FREQUENCY_ATTR_DISABLED] = {
+											       .type = NLA_FLAG},[NL80211_FREQUENCY_ATTR_MAX_TX_POWER] = {
+																			  .type = NLA_U32},
 };
 
 int mac80211_check_band(char *interface, int checkband)
@@ -908,7 +939,9 @@ static void check_validchannels(struct wifi_channels *list, int bw)
 {
 	int distance = 10;
 	int count = 0;
-	char *debugstr[] = { "20MHz", "40MHz", "80MHz", "160MHz" };
+	char *debugstr[] = {
+		"20MHz", "40MHz", "80MHz", "160MHz"
+	};
 	switch (bw) {
 	case 20:
 		return;		// all valid
@@ -1227,10 +1260,7 @@ void free_wifi_clients(struct wifi_client_info *wci)
 		struct wifi_client_info *next = wci->next;
 		free(wci);
 		wci = next;
-	}
-}
-
-static int get_max_mcs_index(const __u8 *mcs)
+}} static int get_max_mcs_index(const __u8 *mcs)
 {
 	unsigned int mcs_bit, prev_bit = -2, prev_cont = 0;
 	for (mcs_bit = 0; mcs_bit <= 76; mcs_bit++) {
@@ -1368,8 +1398,7 @@ void mac80211_set_antennas(int phy, uint32_t tx_ant, uint32_t rx_ant)
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY_ANTENNA_RX, rx_ant);
 	unl_genl_request(&unl, msg, NULL, NULL);
 	return;
-nla_put_failure:
-	nlmsg_free(msg);
+      nla_put_failure:nlmsg_free(msg);
 	return;
 }
 
@@ -1547,5 +1576,4 @@ void main(int argc, char *argv[])
 	fprintf(stderr, "phy0 %d %d %d %d\n", mac80211_get_avail_tx_antenna(0), mac80211_get_avail_rx_antenna(0), mac80211_get_configured_tx_antenna(0), mac80211_get_configured_rx_antenna(0));
 	fprintf(stderr, "phy1 %d %d %d %d\n", mac80211_get_avail_tx_antenna(1), mac80211_get_avail_rx_antenna(1), mac80211_get_configured_tx_antenna(1), mac80211_get_configured_rx_antenna(1));
 }
-
 #endif
