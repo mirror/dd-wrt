@@ -10,6 +10,7 @@
 #define CONFIG_SSID_H
 
 #include "common/defs.h"
+#include "ap/sta_info.h"
 #include "utils/list.h"
 #include "eap_peer/eap_config.h"
 #include "drivers/nl80211_copy.h"
@@ -712,7 +713,7 @@ struct wpa_ssid {
 	 */
 	void *parent_cred;
 
-	unsigned char rates[NL80211_MAX_SUPP_RATES];
+	unsigned char rates[WLAN_SUPP_RATES_MAX];
 	double mcast_rate;
 	int ht_set;
 	unsigned int htmode;

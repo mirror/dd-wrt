@@ -19,7 +19,7 @@
 
 #define WPA_SUPPLICANT_DRIVER_VERSION 4
 
-#include "drivers/nl80211_copy.h"
+#include "ap/sta_info.h"
 #include "common/defs.h"
 #include "common/ieee802_11_defs.h"
 #include "utils/list.h"
@@ -588,9 +588,7 @@ struct wpa_driver_associate_params {
 	 * responsible for selecting with which BSS to associate. */
 	const u8 *bssid;
 
-	int beacon_interval;
-	int fixed_freq;
-	unsigned char rates[NL80211_MAX_SUPP_RATES];
+	unsigned char rates[WLAN_SUPP_RATES_MAX];
 	int mcast_rate;
 	int ht_set;
 	unsigned int htmode;
@@ -834,7 +832,7 @@ struct wpa_driver_associate_params {
 	 * 1 = fix control channel; this prevents IBSS merging with another
 	 *	channel
 	 */
-	// int fixed_freq;
+	int fixed_freq;
 
 	/**
 	 * disable_ht - Disable HT (IEEE 802.11n) for this connection

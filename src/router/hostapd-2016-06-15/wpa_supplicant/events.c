@@ -4050,7 +4050,7 @@ void supplicant_event(void *ctx, enum wpa_event_type event,
 #endif /* CONFIG_AP */
 		break;
 	case EVENT_ACS_CHANNEL_SELECTED:
-#ifdef CONFIG_ACS
+#if defined(CONFIG_ACS) && defined(CONFIG_AP)
 		if (!wpa_s->ap_iface)
 			break;
 		hostapd_acs_channel_selected(wpa_s->ap_iface->bss[0],

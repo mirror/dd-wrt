@@ -667,7 +667,6 @@ int main(int argc, char *argv[])
 	wpa_supplicant_event_global = hostapd_wpa_event_global;
 	for (;;) {
 		c = getopt(argc, argv, "b:Bde:f:hi:KP:STtu:g:G:v::");
-		c = getopt(argc, argv, "b:Bde:f:hi:KP:STtu:vg:G:");
 		if (c < 0)
 			break;
 		switch (c) {
