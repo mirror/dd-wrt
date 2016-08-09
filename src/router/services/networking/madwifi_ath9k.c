@@ -157,9 +157,9 @@ void configure_single_ath9k(int count)
 	char wl_intmit[32];
 
 	sprintf(wl_intmit, "%s_intmit", dev);
-	
+
 #ifdef HAVE_ATH10K
-	if (is_ath10k(dev))	
+	if (is_ath10k(dev))
 		sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/ani_enable", nvram_default_get(wl_intmit, "0"), wif);
 	else
 #endif
@@ -240,9 +240,9 @@ void configure_single_ath9k(int count)
 		sprintf(dist, "auto");
 	eval("iw", "phy", wif, "set", "distance", dist);
 #ifdef HAVE_ATH10K
-//	if (is_ath10k(dev) && !is_mvebu(dev)) {	// evil hack for QCA 
-//		set_ath10kdistance(dev, distance);
-//	}
+//      if (is_ath10k(dev) && !is_mvebu(dev)) { // evil hack for QCA 
+//              set_ath10kdistance(dev, distance);
+//      }
 #endif
 // das scheint noch aerger zu machen
 	eval("iw", "dev", dev, "set", "power_save", "off");
@@ -427,12 +427,12 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 			sprintf(ht, "HT40+");
 			iht = 1;
 			freq = 5500;
-		}else if (nvram_match(bw, "80")) {
+		} else if (nvram_match(bw, "80")) {
 			channel = 44;
 			sprintf(ht, "HT40+");
 			iht = 1;
 			freq = 5220;
-		}else if (nvram_match(bw, "80+80")) {
+		} else if (nvram_match(bw, "80+80")) {
 			channel = 100;
 			sprintf(ht, "HT40+");
 			iht = 1;
@@ -538,7 +538,13 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		     !strcmp(netmode, "ac-only") || !strcmp(netmode, "acn-mixed"))) {
 			char shortgi[32];
 			sprintf(shortgi, "%s_shortgi", prefix);
-			caps = mac80211_get_vhtcaps(prefix, nvram_default_match(shortgi, "1", "1") ? 1 : 0, (usebw==80 || usebw==160 || usebw==8080)?1:0, usebw==160?1:0, usebw==8080?1:0);
+			char mubf[32];
+			sprintf(shortgi, "%s_mubf", prefix);
+			char subf[32];
+			sprintf(shortgi, "%s_subf", prefix);
+			caps =
+			    mac80211_get_vhtcaps(prefix, nvram_default_match(shortgi, "1", "1") ? 1 : 0, (usebw == 80 || usebw == 160 || usebw == 8080) ? 1 : 0, usebw == 160 ? 1 : 0, usebw == 8080 ? 1 : 0,
+						 nvram_default_match(subf, "1", "0"), nvram_default_match(mubf, "1", "0"));
 			if (strlen(caps)) {
 				fprintf(fp, "vht_capab=%s\n", caps);
 				free(caps);
