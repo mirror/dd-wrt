@@ -2426,7 +2426,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 #endif
 // #if defined(HAVE_MAKSAT) || defined(HAVE_TMK) || defined(HAVE_BKM)
 	//if (registered_has_cap(19)) {
-	//	eval("batstart.sh");
+	//      eval("batstart.sh");
 	//}
 // #endif
 #ifdef HAVE_WPS

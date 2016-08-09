@@ -1011,7 +1011,7 @@ void start_lan(void)
 		}
 		strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
 		break;
-//	case ROUTER_NETGEAR_R7800:
+//      case ROUTER_NETGEAR_R7800:
 	case ROUTER_LINKSYS_EA8500:
 		if (getSTA() || getWET() || CANBRIDGE()) {
 			nvram_setz(lan_ifnames, "vlan1 vlan2 ath0 ath1");
@@ -2145,7 +2145,7 @@ void start_lan(void)
 	strcpy(wl_face, get_wdev());
 #if defined(HAVE_MADWIFI) || defined(HAVE_RT2880) || defined(HAVE_RT61)
 #ifndef HAVE_NOWIFI
-void deconfigure_wifi(void);
+	void deconfigure_wifi(void);
 
 	deconfigure_wifi();
 #endif
@@ -3793,9 +3793,9 @@ void start_wan(int status)
 					sleep(1);
 				}
 				const char *peer = inet_ntop(AF_INET,
-						       &sin_addr(&ifr.ifr_dstaddr),
-						       client,
-						       16);
+							     &sin_addr(&ifr.ifr_dstaddr),
+							     client,
+							     16);
 
 				nvram_set("wan_gateway", peer);
 
@@ -4080,8 +4080,8 @@ void start_wan(int status)
 				sleep(1);
 			}
 			const char *peer = inet_ntop(AF_INET, &sin_addr(&ifr.ifr_dstaddr),
-					       client,
-					       16);
+						     client,
+						     16);
 
 			nvram_set("wan_gateway", peer);
 
@@ -4285,8 +4285,8 @@ void start_wan(int status)
 				sleep(1);
 			}
 			const char *peer = inet_ntop(AF_INET, &sin_addr(&ifr.ifr_dstaddr),
-					       client,
-					       16);
+						     client,
+						     16);
 
 			nvram_set("wan_gateway", peer);
 
@@ -4407,8 +4407,8 @@ void start_wan(int status)
 		if (nvram_match("wl_gmode", "-1")) {
 			diag_led(WL, STOP_LED);
 #if 0
-			eval("wl","led", "0","0","1");
-			eval("wl","led", "0","1","1");
+			eval("wl", "led", "0", "0", "1");
+			eval("wl", "led", "0", "1", "1");
 #endif
 		}
 		diag_led(DIAG, STOP_LED);
@@ -4490,7 +4490,7 @@ static const char *ipv6_router_address(struct in6_addr *in6addr, char *addr6)
 
 static void start_ipv6_tunnel(char *wan_ifname)
 {
-	 
+
 	char *remote_endpoint = nvram_safe_get("ipv6_tun_end_ipv4");
 	char *tun_client_ipv6 = nvram_safe_get("ipv6_tun_client_addr");
 	char *tun_client_pref = nvram_safe_get("ipv6_tun_client_addr_pref");
@@ -4498,7 +4498,7 @@ static void start_ipv6_tunnel(char *wan_ifname)
 	char *ipv6_pf_len = nvram_safe_get("ipv6_pf_len");
 
 	int mtu = atoi(nvram_default_get("wan_mtu", "1500")) - 20;
-	
+
 	stop_ipv6_tunnel(wan_ifname);
 
 	if (nvram_invmatch("ipv6_mtu", ""))
@@ -4537,7 +4537,7 @@ static void start_wan6_done(char *wan_ifname)
 {
 	if (nvram_match("ipv6_enable", "0"))
 		return;
-	
+
 	eval("ip", "-6", "addr", "flush", "scope", "global");
 
 	if (nvram_match("ipv6_typ", "ipv6native")) {
@@ -4679,7 +4679,7 @@ void start_wan_done(char *wan_ifname)
 
 	//stop_dnsmasq (); 
 	//start_dnsmasq (); 
-	
+
 	cprintf("start firewall\n");
 	/*
 	 * Start firewall 
@@ -4904,7 +4904,7 @@ void start_wan_done(char *wan_ifname)
 		eval("wget", nvram_safe_get("ipv6_tun_upd_url"), "-O", "/tmp/tunnelstat");
 #endif
 #ifdef HAVE_IPV6
-		if (nvram_match("wshaper_enable", "1")){
+		if (nvram_match("wshaper_enable", "1")) {
 			stop_ipv6_tunnel(wan_ifname);
 			start_ipv6_tunnel(wan_ifname);
 		}
