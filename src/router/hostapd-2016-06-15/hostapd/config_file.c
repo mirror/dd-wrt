@@ -206,6 +206,9 @@ static int hostapd_config_read_maclist(const char *fname,
 			continue;
 		}
 		vlan_id = 0;
+		pos = buf;
+		while (*pos != '\0' && *pos != ' ' && *pos != '\t')
+			pos++;
 		while (*pos == ' ' || *pos == '\t')
 			pos++;
 		if (*pos != '\0')
@@ -667,6 +670,7 @@ static int hostapd_parse_das_client(struct hostapd_bss_config *bss,
 	if (secret == NULL)
 		return -1;
 
+	*secret = 0;
 	secret++;
 
 	if (hostapd_parse_ip_addr(val, &bss->radius_das_client_addr))

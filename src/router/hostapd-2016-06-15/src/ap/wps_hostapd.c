@@ -1140,7 +1140,9 @@ int hostapd_init_wps(struct hostapd_data *hapd,
 		if (conf->rsn_pairwise & WPA_CIPHER_TKIP) {
 			wps->encr_types_rsn |= WPS_ENCR_TKIP;
 		}
-	} else if (conf->wpa & WPA_PROTO_WPA) {
+	} 
+	
+	if (conf->wpa & WPA_PROTO_WPA) {
 		if (conf->wpa_key_mgmt & WPA_KEY_MGMT_PSK)
 			wps->auth_types |= WPS_AUTH_WPAPSK;
 		if (conf->wpa_key_mgmt & WPA_KEY_MGMT_IEEE8021X)
