@@ -2847,6 +2847,8 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	char wl_doth[32];
 	char wl_csma[32];
 	char wl_shortgi[32];
+	char wl_subf[32];
+	char wl_mubf[32];
 
 	sprintf(wl_csma, "%s_csma", prefix);
 	sprintf(wl_doth, "%s_doth", prefix);
@@ -2860,6 +2862,8 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	sprintf(wl_ff, "%s_ff", prefix);
 	sprintf(wl_preamble, "%s_preamble", prefix);
 	sprintf(wl_shortgi, "%s_shortgi", prefix);
+	sprintf(wl_subf, "%s_subf", prefix);
+	sprintf(wl_mubf, "%s_mubf", prefix);
 	sprintf(wl_preambletime, "%s_preambletime", prefix);
 	sprintf(wl_sifstime, "%s_sifstime", prefix);
 	sprintf(wl_xr, "%s_xr", prefix);
@@ -2919,6 +2923,16 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	if (has_shortgi(prefix)) {
 		nvram_default_get(wl_shortgi, "1");
 		showRadio(wp, "wl_basic.shortgi", wl_shortgi);
+	}
+#endif
+#ifdef HAVE_ATH10K
+	if (has_subeamforming(prefix)) {
+		nvram_default_get(wl_subf, "0");
+		showRadio(wp, "wl_basic.subf", wl_subf);
+	}
+	if (has_mubeamforming(prefix)) {
+		nvram_default_get(wl_mubf, "0");
+		showRadio(wp, "wl_basic.mubf", wl_mubf);
 	}
 #endif
 #ifndef HAVE_BUFFALO
@@ -3498,6 +3512,8 @@ if (!strcmp(prefix, "wl2"))
 	char wl_doth[32];
 	char wl_csma[32];
 	char wl_shortgi[32];
+	char wl_subf[32];
+	char wl_mubf[32];
 
 	sprintf(wl_csma, "%s_csma", prefix);
 	sprintf(wl_doth, "%s_doth", prefix);
@@ -3511,6 +3527,8 @@ if (!strcmp(prefix, "wl2"))
 	sprintf(wl_ff, "%s_ff", prefix);
 	sprintf(wl_preamble, "%s_preamble", prefix);
 	sprintf(wl_shortgi, "%s_shortgi", prefix);
+	sprintf(wl_subf, "%s_subf", prefix);
+	sprintf(wl_mubf, "%s_mubf", prefix);
 	sprintf(wl_preambletime, "%s_preambletime", prefix);
 	sprintf(wl_sifstime, "%s_sifstime", prefix);
 	sprintf(wl_xr, "%s_xr", prefix);
@@ -3913,6 +3931,16 @@ if (!strcmp(prefix, "wl2"))
 	if (has_shortgi(prefix)) {
 		nvram_default_get(wl_shortgi, "1");
 		showRadio(wp, "wl_basic.shortgi", wl_shortgi);
+	}
+#endif
+#ifdef HAVE_ATH10K
+	if (has_subeamforming(prefix)) {
+		nvram_default_get(wl_subf, "0");
+		showRadio(wp, "wl_basic.subf", wl_subf);
+	}
+	if (has_mubeamforming(prefix)) {
+		nvram_default_get(wl_mubf, "0");
+		showRadio(wp, "wl_basic.mubf", wl_mubf);
 	}
 #endif
 #ifndef HAVE_BUFFALO

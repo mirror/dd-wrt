@@ -539,9 +539,9 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 			char shortgi[32];
 			sprintf(shortgi, "%s_shortgi", prefix);
 			char mubf[32];
-			sprintf(shortgi, "%s_mubf", prefix);
+			sprintf(mubf, "%s_mubf", prefix);
 			char subf[32];
-			sprintf(shortgi, "%s_subf", prefix);
+			sprintf(subf, "%s_subf", prefix);
 			caps =
 			    mac80211_get_vhtcaps(prefix, nvram_default_match(shortgi, "1", "1") ? 1 : 0, (usebw == 80 || usebw == 160 || usebw == 8080) ? 1 : 0, usebw == 160 ? 1 : 0, usebw == 8080 ? 1 : 0,
 						 nvram_default_match(subf, "1", "0"), nvram_default_match(mubf, "1", "0"));
