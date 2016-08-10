@@ -297,6 +297,8 @@ void *get_deviceinfo(char *var)
 	static char res[256];
 	memset(res, 0, sizeof(res));
 	FILE *fp = fopen("/dev/mtdblock/12", "rb");
+	if (!fp)
+	    return NULL;
 	char newname[64];
 	snprintf(newname, 64, "%s=", var);
 	char *mem = safe_malloc(0x2000);
@@ -393,6 +395,7 @@ void start_sysinit(void)
 	insmod("tmp421");
 	insmod("mii");
 	insmod("stmmac");	//for debugging purposes compiled as module
+	insmod("stmmac-platform");	//for debugging purposes compiled as module
 	insmod("qcom-wdt");
 	
 	/*
