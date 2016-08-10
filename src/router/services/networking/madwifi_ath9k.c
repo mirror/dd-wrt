@@ -1028,8 +1028,8 @@ static void addvhtcaps(char *prefix, FILE * fp)
 			mask |= IEEE80211_VHT_CAP_SHORT_GI_80;
 			mask |= IEEE80211_VHT_CAP_SHORT_GI_160;
 		}
-		fprintf(fp, "vht_capa=0\n");
-		fprintf(fp, "vht_capa_mask=%d\n", mask);
+		fprintf(fp, "\tvht_capa=0\n");
+		fprintf(fp, "\tvht_capa_mask=%d\n", mask);
 	}
 #endif
 #ifdef HAVE_ATH9K
@@ -1037,7 +1037,7 @@ static void addvhtcaps(char *prefix, FILE * fp)
 		char shortgi[32];
 		sprintf(shortgi, "%s_shortgi", prefix);
 		if (nvram_match(shortgi, "0"))
-			fprintf(fp, "disable_sgi=1\n");
+			fprintf(fp, "\tdisable_sgi=1\n");
 	}
 #endif
 }
@@ -1061,13 +1061,14 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride)
 			led_control(LED_SEC1, LED_ON);
 		sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", prefix);
 		FILE *fp = fopen(fstr, "wb");
-		addvhtcaps(prefix, fp);
 		fprintf(fp, "ap_scan=1\n");
 		fprintf(fp, "fast_reauth=1\n");
 		fprintf(fp, "eapol_version=1\n");
 		// fprintf (fp, "ctrl_interface_group=0\n");
 		// fprintf (fp, "ctrl_interface=/var/run/wpa_supplicant\n");
 		fprintf(fp, "network={\n");
+
+		addvhtcaps(prefix, fp);		
 		if (!ssidoverride)
 			ssidoverride = nvram_nget("%s_ssid", prefix);
 		fprintf(fp, "\tssid=\"%s\"\n", ssidoverride);
@@ -1128,13 +1129,13 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride)
 			led_control(LED_SEC1, LED_ON);
 		sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", prefix);
 		FILE *fp = fopen(fstr, "wb");
-		addvhtcaps(prefix, fp);
 		fprintf(fp, "ap_scan=1\n");
 		fprintf(fp, "fast_reauth=1\n");
 		fprintf(fp, "eapol_version=1\n");
 		// fprintf (fp, "ctrl_interface_group=0\n");
 		// fprintf (fp, "ctrl_interface=/var/run/wpa_supplicant\n");
 		fprintf(fp, "network={\n");
+		addvhtcaps(prefix, fp);
 		if (!ssidoverride)
 			ssidoverride = nvram_nget("%s_ssid", prefix);
 		fprintf(fp, "\tssid=\"%s\"\n", ssidoverride);
@@ -1292,10 +1293,10 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride)
 		sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", prefix);
 		FILE *fp = fopen(fstr, "wb");
 		fprintf(fp, "ap_scan=1\n");
-		addvhtcaps(prefix, fp);
 		// fprintf (fp, "ctrl_interface_group=0\n");
 		// fprintf (fp, "ctrl_interface=/var/run/wpa_supplicant\n");
 		fprintf(fp, "network={\n");
+		addvhtcaps(prefix, fp);
 		if (!ssidoverride)
 			ssidoverride = nvram_nget("%s_ssid", prefix);
 		fprintf(fp, "\tssid=\"%s\"\n", ssidoverride);
