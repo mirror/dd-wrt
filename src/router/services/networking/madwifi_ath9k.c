@@ -987,6 +987,61 @@ void setupradauth_ath9k(char *prefix, char *driver, int iswan) {
 	}
 */
 
+static void addvhtcaps(char *prefix, FILE * fp)
+{
+
+/* must use integer mask */
+#define IEEE80211_VHT_CAP_SU_BEAMFORMER_CAPABLE			0x00000800
+#define IEEE80211_VHT_CAP_SU_BEAMFORMEE_CAPABLE			0x00001000
+#define IEEE80211_VHT_CAP_MU_BEAMFORMER_CAPABLE			0x00080000
+#define IEEE80211_VHT_CAP_MU_BEAMFORMEE_CAPABLE			0x00100000
+#define IEEE80211_VHT_CAP_SHORT_GI_80				0x00000020
+#define IEEE80211_VHT_CAP_SHORT_GI_160				0x00000040
+#define IEEE80211_VHT_CAP_BEAMFORMEE_STS_SHIFT                  13
+#define IEEE80211_VHT_CAP_BEAMFORMEE_STS_MASK			\
+		(7 << IEEE80211_VHT_CAP_BEAMFORMEE_STS_SHIFT)
+#define IEEE80211_VHT_CAP_SOUNDING_DIMENSIONS_SHIFT		16
+#define IEEE80211_VHT_CAP_SOUNDING_DIMENSIONS_MASK		\
+		(7 << IEEE80211_VHT_CAP_SOUNDING_DIMENSIONS_SHIFT)
+
+	unsigned int mask;
+#ifdef HAVE_ATH10K
+	if (has_ac(prefix)) {
+		char shortgi[32];
+		sprintf(shortgi, "%s_shortgi", prefix);
+		char mubf[32];
+		sprintf(mubf, "%s_mubf", prefix);
+		char subf[32];
+		sprintf(subf, "%s_subf", prefix);
+		mask = 0;
+		if (nvram_default_match(subf, "0", "0")) {
+			mask |= IEEE80211_VHT_CAP_SU_BEAMFORMER_CAPABLE;
+			mask |= IEEE80211_VHT_CAP_SU_BEAMFORMEE_CAPABLE;
+			mask |= IEEE80211_VHT_CAP_BEAMFORMEE_STS_MASK;
+			mask |= IEEE80211_VHT_CAP_SOUNDING_DIMENSIONS_MASK;
+		}
+		if (nvram_default_match(mubf, "0", "0")) {
+			mask |= IEEE80211_VHT_CAP_MU_BEAMFORMER_CAPABLE;
+			mask |= IEEE80211_VHT_CAP_MU_BEAMFORMEE_CAPABLE;
+		}
+		if (nvram_default_match(shortgi, "0", "1")) {
+			mask |= IEEE80211_VHT_CAP_SHORT_GI_80;
+			mask |= IEEE80211_VHT_CAP_SHORT_GI_160;
+		}
+		fprintf(fp, "vht_capa=0\n");
+		fprintf(fp, "vht_capa_mask=%d\n", mask);
+	}
+#endif
+#ifdef HAVE_ATH9K
+	if (is_ath9k(prefix)) {
+		char shortgi[32];
+		sprintf(shortgi, "%s_shortgi", prefix);
+		if (nvram_match(shortgi, "0"))
+			fprintf(fp, "disable_sgi=1\n");
+	}
+#endif
+}
+
 void setupSupplicant_ath9k(char *prefix, char *ssidoverride)
 {
 #ifdef HAVE_REGISTER
@@ -1006,6 +1061,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride)
 			led_control(LED_SEC1, LED_ON);
 		sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", prefix);
 		FILE *fp = fopen(fstr, "wb");
+		addvhtcaps(prefix, fp);
 		fprintf(fp, "ap_scan=1\n");
 		fprintf(fp, "fast_reauth=1\n");
 		fprintf(fp, "eapol_version=1\n");
@@ -1072,6 +1128,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride)
 			led_control(LED_SEC1, LED_ON);
 		sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", prefix);
 		FILE *fp = fopen(fstr, "wb");
+		addvhtcaps(prefix, fp);
 		fprintf(fp, "ap_scan=1\n");
 		fprintf(fp, "fast_reauth=1\n");
 		fprintf(fp, "eapol_version=1\n");
@@ -1235,6 +1292,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride)
 		sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", prefix);
 		FILE *fp = fopen(fstr, "wb");
 		fprintf(fp, "ap_scan=1\n");
+		addvhtcaps(prefix, fp);
 		// fprintf (fp, "ctrl_interface_group=0\n");
 		// fprintf (fp, "ctrl_interface=/var/run/wpa_supplicant\n");
 		fprintf(fp, "network={\n");
