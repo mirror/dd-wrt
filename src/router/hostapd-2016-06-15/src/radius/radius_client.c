@@ -1447,15 +1447,11 @@ radius_client_init(void *ctx, struct hostapd_radius_servers *conf)
 		radius->auth_serv_sock6 = radius->acct_serv_sock6 =
 		radius->auth_sock = radius->acct_sock = -1;
 
-	if (conf->auth_server && radius_client_init_auth(radius)) {
-		radius_client_deinit(radius);
-		return NULL;
-	}
+	if (conf->auth_server)
+	    radius_client_init_auth(radius);
 
-	if (conf->acct_server && radius_client_init_acct(radius)) {
-		radius_client_deinit(radius);
-		return NULL;
-	}
+	if (conf->acct_server)
+	    radius_client_init_acct(radius);
 
 	if (conf->retry_primary_interval)
 		eloop_register_timeout(conf->retry_primary_interval, 0,
