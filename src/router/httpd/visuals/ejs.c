@@ -3085,8 +3085,7 @@ int tf_webWriteESC(webs_t wp, const char *value)
 		    && (*c != '\\')) {
 			buf[n++] = *c;
 		} else {
-			sprintf(buf + n, "&#%d;", *c);
-			n += strlen(buf + n);
+			n += sprintf(&buf[n], "&#%d;", *c);
 		}
 		if (n > (sizeof(buf) - 10)) {	// ! extra space for &...
 			buf[n] = 0;
@@ -3116,17 +3115,14 @@ int tf_webWriteJS(webs_t wp, const char *s)
 	r = 0;
 	for (; *s; s++) {
 		if (*s == '<') {
-			sprintf(buf + n, "&lt;");
-			n += 4;
+			n += sprintf(buf + n, "&lt;");
 		} else if (*s == '>') {
-			sprintf(buf + n, "&gt;");
-			n += 4;
+			n += sprintf(buf + n, "&gt;");
 		} else if ((*s != '"') && (*s != '\\') && (*s != '/')
 			   && (*s != '*') && (*s != '\'') && (isprint(*s))) {
 			buf[n++] = *s;
 		} else {
-			sprintf(buf + n, "\\x%02x", *s);
-			n += 4;
+			n += sprintf(&buf[n], "\\x%02x", *s);
 		}
 		if (n > (sizeof(buf) - 10)) {	// ! extra space for \xHH
 			buf[n] = 0;
