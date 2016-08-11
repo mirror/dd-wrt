@@ -497,6 +497,8 @@ static int match_one(const char *pattern, int patternlen, const char *string)
 static void do_file_2(struct mime_handler *handler, char *path, webs_t stream, char *query, char *attach)	//jimmy, https, 8/4/2003
 {
 
+	int len;
+	char *buffer = malloc(4096);
 	FILE *web = getWebsFile(path);
 
 	if (web == NULL) {
@@ -509,33 +511,24 @@ static void do_file_2(struct mime_handler *handler, char *path, webs_t stream, c
 		if (!handler->send_headers)
 			send_headers(200, "Ok", handler->extra_header, handler->mime_type, ftell(fp), attach);
 		fseek(fp, 0, SEEK_SET);
-		char *buffer = malloc(4096);
-		int len;
 		while ((len = fread(buffer, 1, 4096, fp)) == 4096) {
 			wfwrite(buffer, 1, len, stream);
 		}
 		if (len)
 			wfwrite(buffer, 1, len, stream);
-		free(buffer);
 		fclose(fp);
 	} else {
-		int len = getWebsFileLen(path);
-
+		len = getWebsFileLen(path);
 		if (!handler->send_headers)
 			send_headers(200, "Ok", handler->extra_header, handler->mime_type, len, attach);
-		int a;
-		char buf[128];
-		int tot = 0;
-
-		for (a = 0; a < len / 128; a++) {
-			tot += fread(buf, 1, 128, web);
-			wfwrite(buf, 128, 1, stream);
+		while (len) {
+			int ret = fread(buffer, 1, len > 4096 ? 4096 : len, web);
+			len -= ret;
+			wfwrite(buf, ret, 1, stream);
 		}
-		len = fread(buf, 1, (len % 128), web);
-		tot += len;
-		wfwrite(buf, len, 1, stream);
 		fclose(web);
 	}
+	free(buffer);
 }
 
 void
