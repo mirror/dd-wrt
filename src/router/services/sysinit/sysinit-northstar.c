@@ -5247,7 +5247,6 @@ void start_sysinit(void)
 				fclose(out);
 		}
 		nvram_unset("et1macaddr");
-		nvram_set("bootpartition", "0");
 		break;
 	case ROUTER_ASUS_AC1200:
 		nvram_unset("et1macaddr");
