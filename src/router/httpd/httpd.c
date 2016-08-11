@@ -524,7 +524,7 @@ static void do_file_2(struct mime_handler *handler, char *path, webs_t stream, c
 		while (len) {
 			int ret = fread(buffer, 1, len > 4096 ? 4096 : len, web);
 			len -= ret;
-			wfwrite(buf, ret, 1, stream);
+			wfwrite(buffer, ret, 1, stream);
 		}
 		fclose(web);
 	}
