@@ -154,8 +154,10 @@ static int generate_dropbear_rsa_host_key(void)
 
 	fp = fopen(TMP_HOST_KEY_FILE, "r");
 
-	if (fp == (void *)0)
+	if (fp == (void *)0){
+		free(buf);
 		return -1;
+	}
 
 	ret = fread(buf, 1, 4095, fp);
 
