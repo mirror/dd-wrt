@@ -118,7 +118,7 @@ int getbuttonstate()
 #elif HAVE_WPE53G
 	return get_gpio(6);
 #elif HAVE_NP25G
-	return  get_gpio(4);
+	return get_gpio(4);
 #elif HAVE_OPENRISC
 	return get_gpio(0);
 #else
@@ -164,18 +164,13 @@ int getbuttonstate()
 int getbuttonstate()
 {
 	int ret = 0;
-	if (getRouterBrand() == ROUTER_NETGEAR_R7500)
-		ret = get_gpio(54);
-	else if (getRouterBrand() == ROUTER_NETGEAR_R7500V2)
-		ret = get_gpio(54);
-	else if (getRouterBrand() == ROUTER_NETGEAR_R7800)
-		ret = get_gpio(54);
-	else if (getRouterBrand() == ROUTER_TRENDNET_TEW827)
-		ret = get_gpio(54);
-	else if (getRouterBrand() == ROUTER_LINKSYS_EA8500)
+	switch (getRouterBrand()) {
+	case ROUTER_LINKSYS_EA8500:
 		ret = get_gpio(68);
-	else
-		return 0;
+		break;
+	default:
+		ret = get_gpio(54);
+	}
 	return !ret;
 }
 #elif defined(HAVE_DAP3410)
@@ -522,7 +517,7 @@ char *filename = "/dev/gpio";
 
 int read_bit(int bit)
 {
-	
+
 	int file;
 	struct gpio_bit _bit;
 
@@ -853,8 +848,8 @@ static void handle_ses(void)
 #endif
 #ifdef HAVE_ERC
 #ifdef HAVE_HORNET
-	dd_syslog(LOG_DEBUG, "XXXXXXXX: TURN LED ON\n");
-	set_gpio(1, 1);
+			dd_syslog(LOG_DEBUG, "XXXXXXXX: TURN LED ON\n");
+			set_gpio(1, 1);
 #endif
 #endif
 
@@ -875,8 +870,8 @@ static void handle_ses(void)
 #endif
 #ifdef HAVE_ERC
 #ifdef HAVE_HORNET
-	dd_syslog(LOG_DEBUG, "XXXXXXXX: TURN LED OFF\n");
-	set_gpio(1, 0);
+			dd_syslog(LOG_DEBUG, "XXXXXXXX: TURN LED OFF\n");
+			set_gpio(1, 0);
 #endif
 #endif
 			ses_mode = 1;
@@ -933,7 +928,7 @@ void period_check(int sig)
 #ifdef HAVE_RUT500
 	} else if (brand == ROUTER_BOARD_NEPTUNE) {
 		val = (get_gpio(10) << 10);
-#else	
+#else
 	} else if (brand == ROUTER_BOARD_NEPTUNE) {
 		val = (get_gpio(10) << 10) | (get_gpio(0) << 0);
 #endif
@@ -1043,8 +1038,8 @@ void period_check(int sig)
 	val |= get_gpio(5) << 5;	//aoss pushbutton
 #elif defined(HAVE_CARAMBOLA)
 #if defined(HAVE_ERC)
-//	wifigpio = 0x117;
-//	val |= get_gpio(23) << 23;
+//      wifigpio = 0x117;
+//      val |= get_gpio(23) << 23;
 #endif
 #elif defined(HAVE_HORNET)
 	sesgpio = 0x00b;
