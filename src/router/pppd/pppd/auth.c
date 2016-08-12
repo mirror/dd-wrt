@@ -441,9 +441,12 @@ setupapfile(argv)
 	return 0;
     }
     ufile = fopen(fname, "r");
-    if (seteuid(euid) == -1)
+    if (seteuid(euid) == -1) {
+	free(fname);
 	fatal("unable to regain privileges: %m");
+    }
     if (ufile == NULL) {
+	free(fname);
 	option_error("unable to open user login data file %s", fname);
 	return 0;
     }
@@ -454,6 +457,7 @@ setupapfile(argv)
     if (fgets(u, MAXNAMELEN - 1, ufile) == NULL
 	|| fgets(p, MAXSECRETLEN - 1, ufile) == NULL) {
 	fclose(ufile);
+	free(fname);
 	option_error("unable to read user login data file %s", fname);
 	return 0;
     }
