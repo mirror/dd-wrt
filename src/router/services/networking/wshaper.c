@@ -1074,7 +1074,7 @@ void start_wshaper(void)
 
 	if (!strcmp(wshaper_dev, "WAN")) {
 		eval("ifconfig", "imq1", "down");
-		eval(script_name, ul_val, dl_val, wan_dev, mtu_val, "imq0", aqd);
+		eval(script_name, ul_val, dl_val, wan_dev, mtu_val, "imq0", aqd, "0");
 	} else {
 		eval("ifconfig", "imq1", "down");
 		eval("ifconfig", "imq1", "mtu", "1500");
