@@ -118,6 +118,9 @@ kernel:
 ifeq ($(CONFIG_R7500),y)
 	sed -i 's/\CONFIG_ARM_ATAG_DTB_COMPAT=y/# CONFIG_ARM_ATAG_DTB_COMPAT is not set/g' $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_R7500v2),y)
+	sed -i 's/\CONFIG_ARM_ATAG_DTB_COMPAT=y/# CONFIG_ARM_ATAG_DTB_COMPAT is not set/g' $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_R7800),y)
 	sed -i 's/\CONFIG_ARM_ATAG_DTB_COMPAT=y/# CONFIG_ARM_ATAG_DTB_COMPAT is not set/g' $(LINUXDIR)/.config
 endif
@@ -431,10 +434,12 @@ endif
 	-rm -rf $(ARCH)-uclibc/ipq806x;
 	-mkdir -p $(ARCH)-uclibc/ipq806x;
 	cp $(ARCH)-uclibc/uImage $(ARCH)-uclibc/ipq806x-R7500-uImage;
+	cp $(ARCH)-uclibc/uImage $(ARCH)-uclibc/ipq806x-R7500v2-uImage;
 	cp $(ARCH)-uclibc/uImage $(ARCH)-uclibc/ipq806x-R7800-uImage;
 	cp $(ARCH)-uclibc/uImage $(ARCH)-uclibc/ipq806x-TEW827-uImage;
 	cp $(ARCH)-uclibc/uImage $(ARCH)-uclibc/ipq806x-EA8500-uImage;
 	cat $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq8064-r7500.dtb >> $(ARCH)-uclibc/ipq806x-R7500-uImage;
+	cat $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq8064-r7500v2.dtb >> $(ARCH)-uclibc/ipq806x-R7500v2-uImage;
 	cat $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq8064-r7800.dtb >> $(ARCH)-uclibc/ipq806x-R7800-uImage;
 	cat $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq8064-tew827.dtb >> $(ARCH)-uclibc/ipq806x-TEW827-uImage;
 	cat $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq8064-ea8500.dtb >> $(ARCH)-uclibc/ipq806x-EA8500-uImage;
@@ -449,6 +454,10 @@ endif
 	( dd if=$(ARCH)-uclibc/ipq806x-R7500-uImage of=$(ARCH)-uclibc/vmlinux-r7500.uImage.normal bs=2048k conv=sync; )
 	
 	( dd if=$(ARCH)-uclibc/vmlinux-r7500.uImage.normal bs=2097023 count=1 conv=sync of=$(ARCH)-uclibc/vmlinux-r7500.uImage.new; )
+	
+	( dd if=$(ARCH)-uclibc/ipq806x-R7500v2-uImage of=$(ARCH)-uclibc/vmlinux-r7500v2.uImage.normal bs=2176k conv=sync; )
+	
+	( dd if=$(ARCH)-uclibc/vmlinux-r7500v2.uImage.normal bs=2228095 count=1 conv=sync of=$(ARCH)-uclibc/vmlinux-r7500v2.uImage.new; )
 	
 	( dd if=$(ARCH)-uclibc/ipq806x-R7800-uImage of=$(ARCH)-uclibc/vmlinux-r7800.uImage.normal bs=2176k conv=sync; )
 	
@@ -465,6 +474,8 @@ endif
 
 	./tools/r7500/mkimage -A arm -O linux -C none -T kernel -a 0x42208000 -e 0x42208000 -n 'Linux-3.18' -d $(ARCH)-uclibc/vmlinux-r7500.uImage.new $(ARCH)-uclibc/vmlinux-r7500.uImage.final
 	
+	./tools/r7500/mkimage -A arm -O linux -C none -T kernel -a 0x42208000 -e 0x42208000 -n 'Linux-3.18' -d $(ARCH)-uclibc/vmlinux-r7500v2.uImage.new $(ARCH)-uclibc/vmlinux-r7500v2.uImage.final
+	
 	./tools/r7500/mkimage -A arm -O linux -C none -T kernel -a 0x42208000 -e 0x42208000 -n 'Linux-3.18' -d $(ARCH)-uclibc/vmlinux-r7800.uImage.new $(ARCH)-uclibc/vmlinux-r7800.uImage.final
 
 	./tools/r7500/mkimage -A arm -O linux -C none -T kernel -a 0x42208000 -e 0x42208000 -n 'Linux-3.18' -d $(ARCH)-uclibc/vmlinux-TEW827.uImage.new $(ARCH)-uclibc/vmlinux-TEW827.uImage.final
@@ -473,6 +484,9 @@ endif
 	
 	echo -ne '\xff' >> $(ARCH)-uclibc/vmlinux-r7500.uImage.final;
 	cat $(ARCH)-uclibc/rootfs.dummy >> $(ARCH)-uclibc/vmlinux-r7500.uImage.final;
+	
+	echo -ne '\xff' >> $(ARCH)-uclibc/vmlinux-r7500v2.uImage.final;
+	cat $(ARCH)-uclibc/rootfs.dummy >> $(ARCH)-uclibc/vmlinux-r7500v2.uImage.final;
 	
 	echo -ne '\xff' >> $(ARCH)-uclibc/vmlinux-r7800.uImage.final;
 	cat $(ARCH)-uclibc/rootfs.dummy >> $(ARCH)-uclibc/vmlinux-r7800.uImage.final;
@@ -485,6 +499,8 @@ endif
 	
 	
 	( dd if=$(ARCH)-uclibc/vmlinux-r7500.uImage.final bs=2048k conv=sync count=1; dd if=$(ARCH)-uclibc/root.squashfs.new bs=64k; ) > $(ARCH)-uclibc/ddwrt-R7500v1.bin
+	
+	( dd if=$(ARCH)-uclibc/vmlinux-r7500v2.uImage.final bs=2176k conv=sync count=1; dd if=$(ARCH)-uclibc/root.squashfs.new bs=64k; ) > $(ARCH)-uclibc/ddwrt-R7500v2.bin
 	
 	( dd if=$(ARCH)-uclibc/vmlinux-r7800.uImage.final bs=2176k conv=sync count=1; dd if=$(ARCH)-uclibc/root.squashfs.new bs=64k; ) > $(ARCH)-uclibc/ddwrt-R7800.bin
 
@@ -500,6 +516,8 @@ endif
 	
 	#beware max image size is 24MB
 	./tools/r7500/mkdniimg -B R7500 -v 1.0.0.94 -r "" -H "29764841+0+128+256+3x3+4x4" -i $(ARCH)-uclibc/ddwrt-R7500v1.bin -o $(ARCH)-uclibc/R7500v1-factory-to-ddwrt.img
+	#beware max image size is 24MB
+	./tools/r7500/mkdniimg -B R7500v2 -v V1.0.2.4 -r "" -H "29764958+0+128+512+3x3+4x4" -i $(ARCH)-uclibc/ddwrt-R7500v2.bin -o $(ARCH)-uclibc/R7500v2-factory-to-ddwrt.img
 	#beware max image size is 29MB
 	./tools/r7500/mkdniimg -B R7800 -v 1.0.0.40 -r "" -H "29764958+0+128+512+4x4+4x4+cascade" -i $(ARCH)-uclibc/ddwrt-R7800.bin -o $(ARCH)-uclibc/R7800-factory-to-ddwrt.img
 
@@ -522,6 +540,7 @@ endif
 	
 
 	-./tools/trx_n -m 55000000 -o $(ARCH)-uclibc/ddwrt-netgear-R7500v1.bin $(ARCH)-uclibc/ddwrt-R7500v1.bin 
+	-./tools/trx_n -m 55000000 -o $(ARCH)-uclibc/ddwrt-netgear-R7500v2.bin $(ARCH)-uclibc/ddwrt-R7500v2.bin
 	-./tools/trx_n -m 55000000 -o $(ARCH)-uclibc/ddwrt-netgear-R7800.bin $(ARCH)-uclibc/ddwrt-R7800.bin
 	-./tools/trx_n -m 55000000 -o $(ARCH)-uclibc/ddwrt-trendnet-tew827.bin $(ARCH)-uclibc/ddwrt-ipq806x-AP148-squashfs-nand-factory.ubi
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ddwrt-Linksys-EA8500.bin $(ARCH)-uclibc/ddwrt-EA8500.bin
