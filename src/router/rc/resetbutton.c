@@ -522,6 +522,7 @@ char *filename = "/dev/gpio";
 
 int read_bit(int bit)
 {
+	
 	int file;
 	struct gpio_bit _bit;
 
@@ -544,6 +545,7 @@ int read_bit(int bit)
 		/* 
 		 * ERROR HANDLING; you can check errno to see what went wrong 
 		 */
+		close(file);
 		return 1;
 	}
 
@@ -555,6 +557,7 @@ int read_bit(int bit)
 		/* 
 		 * ERROR HANDLING; you can check errno to see what went wrong 
 		 */
+		close(file);
 		return 1;
 	}
 
