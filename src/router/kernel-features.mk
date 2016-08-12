@@ -100,7 +100,7 @@ define kernelfeatures
 		echo "# CONFIG_EXFAT_FS is not set" >> $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_EXFAT)" = "y" ]; then \
-		sed -i 's/\CONFIG_EXFAT_FS  is not set/# CONFIG_EXFAT_FS=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_EXFAT_FS is not set/CONFIG_EXFAT_FS=m/g' $(LINUXDIR)/.config; \
 		echo "CONFIG_EXFAT_FS=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_EXFAT_DISCARD=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_EXFAT_DEFAULT_CODEPAGE=437" >> $(LINUXDIR)/.config; \
