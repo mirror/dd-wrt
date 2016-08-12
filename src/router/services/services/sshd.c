@@ -164,6 +164,7 @@ static int generate_dropbear_rsa_host_key(void)
 	if (ret <= 0)
 		return -1;
 
+	buf[ret] = 0; // terminate by 0. buf isnt initialized
 	nvram_set(NVRAM_RSA_KEY_NAME, buf);
 	nvram_commit();
 	free(buf);
