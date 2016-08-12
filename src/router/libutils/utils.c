@@ -2093,6 +2093,11 @@ int internal_getRouterBrand()
 		setRouter("Netgear R7800");
 		return ROUTER_NETGEAR_R7800;
 	}
+	
+	if (!strcmp(modelstr, "R7500v2")) {
+		setRouter("Netgear R7500v2");
+		return ROUTER_NETGEAR_R7500V2;
+	}
 
 	if (!strcmp(modelstr, "R7500")) {
 		setRouter("Netgear R7500");
@@ -6703,6 +6708,7 @@ int led_control(int type, int act)
 		usb_gpio = 0x111;	//usb1 
 		usb_gpio1 = 0x112;	//usb2 
 		break;
+	case ROUTER_NETGEAR_R7500V2:
 	case ROUTER_NETGEAR_R7500:
 		power_gpio = 0x000;	// power led 
 		diag_gpio = 0x00a;	// power led orange     
