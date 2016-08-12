@@ -437,6 +437,7 @@ setupapfile(argv)
     euid = geteuid();
     if (seteuid(getuid()) == -1) {
 	option_error("unable to reset uid before opening %s: %m", fname);
+	free(fname);
 	return 0;
     }
     ufile = fopen(fname, "r");
