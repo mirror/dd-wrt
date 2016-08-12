@@ -25,7 +25,7 @@ CWARNS += -W -Wall -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings -Waggre
 # CWARNS += -Wpacked
 
 #CFLAGS	+= $(CWARNS) -D_GNU_SOURCE -D_DEBUG -g3 -O0
-CFLAGS	+= $(CWARNS) $(EXTRA_CFLAGS) -D_GNU_SOURCE
+CFLAGS	+= $(CWARNS) $(EXTRA_CFLAGS) $(MIPS16_OPT)  -ffunction-sections -fdata-sections -Wl,--gc-sections  -D_GNU_SOURCE
 LDFLAGS += $(EXTRA_LDFLAGS)
 #CC      = @gcc
 RM      = rm

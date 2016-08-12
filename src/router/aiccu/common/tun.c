@@ -15,6 +15,9 @@
 
 /* The tun/tap device HANDLE */
 #ifndef _WIN32
+#ifndef ETH_P_IPV6
+#define ETH_P_IPV6	0x86DD		/* IPv6 over bluebook		*/
+#endif
 int			tun_fd;
 
 /*
