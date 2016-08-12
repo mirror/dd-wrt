@@ -498,37 +498,28 @@ static void do_file_2(struct mime_handler *handler, char *path, webs_t stream, c
 {
 
 	int len;
-	char *buffer = malloc(4096);
 	FILE *web = getWebsFile(path);
 
 	if (web == NULL) {
-		FILE *fp;
-		int c;
-
-		if (!(fp = fopen(path, "rb")))
+		if (!(web = fopen(path, "rb")))
 			return;
 		fseek(fp, 0, SEEK_END);
-		if (!handler->send_headers)
-			send_headers(200, "Ok", handler->extra_header, handler->mime_type, ftell(fp), attach);
+		len = ftell(in);
 		fseek(fp, 0, SEEK_SET);
-		while ((len = fread(buffer, 1, 4096, fp)) == 4096) {
-			wfwrite(buffer, 1, len, stream);
-		}
-		if (len)
-			wfwrite(buffer, 1, len, stream);
-		fclose(fp);
+
 	} else {
 		len = getWebsFileLen(path);
-		if (!handler->send_headers)
-			send_headers(200, "Ok", handler->extra_header, handler->mime_type, len, attach);
-		while (len) {
-			int ret = fread(buffer, 1, len > 4096 ? 4096 : len, web);
-			len -= ret;
-			wfwrite(buffer, ret, 1, stream);
-		}
-		fclose(web);
+	}
+	if (!handler->send_headers)
+		send_headers(200, "Ok", handler->extra_header, handler->mime_type, len, attach);
+	char *buffer = malloc(4096);
+	while (len) {
+		int ret = fread(buffer, 1, len > 4096 ? 4096 : len, web);
+		len -= ret;
+		wfwrite(buffer, ret, 1, stream);
 	}
 	free(buffer);
+	fclose(web);
 }
 
 void
