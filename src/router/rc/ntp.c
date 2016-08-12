@@ -44,9 +44,14 @@ void check_udhcpd(timer_t t, int arg)
 				// killps("udhcpd","-9");
 				killall("dnsmasq", SIGKILL);
 				killall("udhcpd", SIGKILL);
+				killall("unbound", SIGKILL);
 #ifdef HAVE_UDHCPD
 				sleep(1);
 				eval("startservice", "udhcpd");
+#endif
+#ifdef HAVE_UNBOUND
+                                sleep(1);
+                                eval("startservice", "unbound");
 #endif
 				sleep(1);
 				eval("startservice", "dnsmasq");
@@ -58,6 +63,10 @@ void check_udhcpd(timer_t t, int arg)
 #ifdef HAVE_UDHCPD
 				sleep(1);
 				eval("startservice", "udhcpd");
+#endif
+#ifdef HAVE_UNBOUND
+				sleep(1);
+				eval("startservice", "unbound");
 #endif
 				sleep(1);
 				eval("startservice", "dnsmasq");
