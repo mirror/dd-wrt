@@ -497,15 +497,15 @@ static int match_one(const char *pattern, int patternlen, const char *string)
 static void do_file_2(struct mime_handler *handler, char *path, webs_t stream, char *query, char *attach)	//jimmy, https, 8/4/2003
 {
 
-	int len;
+	size_t len;
 	FILE *web = getWebsFile(path);
 
 	if (web == NULL) {
 		if (!(web = fopen(path, "rb")))
 			return;
-		fseek(fp, 0, SEEK_END);
-		len = ftell(in);
-		fseek(fp, 0, SEEK_SET);
+		fseek(web, 0, SEEK_END);
+		len = ftell(web);
+		fseek(web, 0, SEEK_SET);
 
 	} else {
 		len = getWebsFileLen(path);
@@ -514,7 +514,7 @@ static void do_file_2(struct mime_handler *handler, char *path, webs_t stream, c
 		send_headers(200, "Ok", handler->extra_header, handler->mime_type, len, attach);
 	char *buffer = malloc(4096);
 	while (len) {
-		int ret = fread(buffer, 1, len > 4096 ? 4096 : len, web);
+		size_t ret = fread(buffer, 1, len > 4096 ? 4096 : len, web);
 		len -= ret;
 		wfwrite(buffer, ret, 1, stream);
 	}
