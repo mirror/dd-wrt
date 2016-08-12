@@ -137,7 +137,7 @@ void start_resetbutton(void)
 	int ret = 0;
 
 	ret = eval("resetbutton");
-	dd_syslog(LOG_INFO, "reset button : resetbutton daemon successfully started\n");
+	dd_syslog(LOG_INFO, "resetbutton : resetbutton daemon successfully started\n");
 
 	cprintf("done\n");
 	return;
