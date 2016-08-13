@@ -615,6 +615,10 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 	unsigned int prio;
 	unsigned int parent;
 	char buf[256];
+	char target[64] = "";
+	
+	if(uplimit < 3000)
+		strcpy(target, "target 20ms noecn");
 
 	unsigned int quantum = atoi(get_mtu_val(buf)) + 14;
 
@@ -632,6 +636,7 @@ void add_client_classes(unsigned int base, unsigned int level)
 	unsigned int prio;
 	unsigned int parent;
 	char buf[256];
+	
 
 	unsigned int quantum = atoi(get_mtu_val(buf)) + 14;
 
@@ -830,11 +835,11 @@ void add_client_classes(unsigned int base, unsigned int level)
 	if (!strcmp(aqd, "codel")
 	    || !strcmp(aqd, "fq_codel")
 	    || !strcmp(aqd, "pie")) {
-		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s", wan_dev, base + 1, base + 1, aqd);
-		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s", wan_dev, base + 2, base + 2, aqd);
-		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s", wan_dev, base + 3, base + 3, aqd);
-		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s", wan_dev, base + 4, base + 4, aqd);
-		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s", wan_dev, base + 5, base + 5, aqd);
+		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s %s", wan_dev, base + 1, base + 1, aqd, target);
+		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s %s", wan_dev, base + 2, base + 2, aqd, target);
+		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s %s", wan_dev, base + 3, base + 3, aqd, target);
+		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s %s", wan_dev, base + 4, base + 4, aqd, target);
+		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s %s", wan_dev, base + 5, base + 5, aqd, target);
 
 		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s", "imq0", base + 1, base + 1, aqd);
 		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s", "imq0", base + 2, base + 2, aqd);
