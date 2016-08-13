@@ -617,8 +617,13 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 	char buf[256];
 	char target[64] = "";
 	
-	if(uplimit < 3000)
-		strcpy(target, "target 20ms noecn");
+	int max = 50;
+	int sub = 0;
+	int sec = 0;
+	if(uprate <= 2000){
+		sec = max - (uprate / 50);
+		sprintf(target, "target %dms noecn", sec);
+	}
 
 	unsigned int quantum = atoi(get_mtu_val(buf)) + 14;
 
