@@ -618,7 +618,6 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 	char target[64] = "";
 	
 	int max = 50;
-	int sub = 0;
 	int sec = 0;
 	if(uprate <= 2000){
 		sec = max - (uprate / 50);
