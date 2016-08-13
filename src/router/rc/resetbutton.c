@@ -917,67 +917,65 @@ void period_check(int sig)
 #endif
 
 #else
-	if (brand == ROUTER_BOARD_WCRGN) {
+	switch (brand) {
+	case ROUTER_BOARD_WCRGN:
+	case ROUTER_BOARD_WHRG300N:
+	case ROUTER_BOARD_DIR600B:
+	case ROUTER_ASUS_RTN10PLUS:
+	case ROUTER_BOARD_DIR615D:
+	case ROUTER_BOARD_RT3352:
 		val = (get_gpio(10) << 10) | (get_gpio(0) << 0);
-	} else if (brand == ROUTER_BOARD_WHRG300N) {
-		val = (get_gpio(10) << 10) | (get_gpio(0) << 0);
-	} else if (brand == ROUTER_BOARD_HAMEA15) {
+		break;
+	case ROUTER_BOARD_ESR6650:
+	case ROUTER_BOARD_HAMEA15:
+	case ROUTER_BOARD_EAP9550:
+	case ROUTER_BOARD_ESR9752:
 		val = get_gpio(0);
-	} else if (brand == ROUTER_BOARD_ECB9750) {
+		break;
+	case ROUTER_BOARD_ECB9750:
 		val = get_gpio(11) << 11;
+		break;
+	case ROUTER_BOARD_ECB9750:
+		val = get_gpio(11) << 11;
+		break;
+	case ROUTER_BOARD_NEPTUNE:
 #ifdef HAVE_RUT500
-	} else if (brand == ROUTER_BOARD_NEPTUNE) {
 		val = (get_gpio(10) << 10);
 #else
-	} else if (brand == ROUTER_BOARD_NEPTUNE) {
 		val = (get_gpio(10) << 10) | (get_gpio(0) << 0);
 #endif
-	} else if (brand == ROUTER_BOARD_RT3352) {
-		val = (get_gpio(10) << 10) | (get_gpio(0) << 0);
-	} else if (brand == ROUTER_BOARD_WR5422) {
+		break;
+	case ROUTER_BOARD_F5D8235:
+	case ROUTER_BOARD_BR6574N:
+	case ROUTER_BOARD_ACXNR22:
+	case ROUTER_BOARD_TECHNAXX3G:
+	case ROUTER_BOARD_ESR6650:
+	case ROUTER_BOARD_W502U:
+	case ROUTER_BOARD_WR5422:
 		val = get_gpio(10) << 10;
-	} else if (brand == ROUTER_BOARD_DIR600B) {
-		val = (get_gpio(10) << 10) | (get_gpio(0) << 0);
-	} else if (brand == ROUTER_BOARD_F5D8235) {
-		val = get_gpio(10) << 10;
-	} else if (brand == ROUTER_ASUS_RTN10PLUS) {
-		val = get_gpio(10) << 10 | (get_gpio(0) << 0);
-	} else if (brand == ROUTER_BOARD_RT15N) {
+		break;
+	case ROUTER_BOARD_RT15N:
 		val = get_gpio(12) << 12;
-	} else if (brand == ROUTER_BOARD_DIR615D) {
-		val = (get_gpio(10) << 10) | (get_gpio(0) << 0);
-	} else if (brand == ROUTER_BOARD_ESR6650) {
-		val = get_gpio(10) << 10;
-	} else if (brand == ROUTER_BOARD_EAP9550) {
-		val = get_gpio(0);
-	} else if (brand == ROUTER_BOARD_ESR9752) {
-		val = get_gpio(0);
-	} else if (brand == ROUTER_BOARD_AR670W) {
+		break;
+	case ROUTER_BOARD_AR670W:
+	case ROUTER_BOARD_AR690W:
 		val = get_gpio(9) << 9;
-	} else if (brand == ROUTER_BOARD_AR690W) {
-		val = get_gpio(9) << 9;
-	} else if (brand == ROUTER_BOARD_BR6574N) {
-		val = get_gpio(10) << 10;
-	} else if (brand == ROUTER_BOARD_ACXNR22) {
-		val = get_gpio(10) << 10;
-	} else if (brand == ROUTER_BOARD_TECHNAXX3G) {
-		val = get_gpio(10) << 10;
-	} else if (brand == ROUTER_WHR300HP2) {
+		break;
+	case ROUTER_WHR300HP2:
 		val = (get_gpio(52) << 1) | (get_gpio(53) << 2);
-	} else if (brand == ROUTER_BOARD_E1700) {
+		break;
+	case ROUTER_BOARD_E1700:
+	case ROUTER_DIR810L:
 		val = (get_gpio(1) << 1) | (get_gpio(2) << 2);
-	} else if (brand == ROUTER_DIR810L) {
-		val = (get_gpio(1) << 1) | (get_gpio(2) << 2);
-	} else if (brand == ROUTER_DIR860LB1) {
+		break;
+	case ROUTER_DIR860LB1:
 		val = (get_gpio(7) << 7) | (get_gpio(18) << 18);
-	} else if (brand == ROUTER_BOARD_W502U) {
-		val = get_gpio(10) << 10;
-	} else if (brand == ROUTER_BOARD_GW2380) {
+		break;
+	case ROUTER_BOARD_GW2380:
+	case ROUTER_BOARD_GW2388:
 		val = get_gpio(240);
-	} else if (brand == ROUTER_BOARD_GW2388) {
-		val = get_gpio(240);
-	} else {
-
+		break;
+	default:
 		if ((fp = fopen(GPIO_FILE, "r"))) {
 #ifdef HAVE_XSCALE
 			fscanf(fp, "%d", &val);
@@ -995,6 +993,7 @@ void period_check(int sig)
 			fclose(fp);
 		} else
 			perror(GPIO_FILE);
+		break;
 	}
 #endif
 	DEBUG("resetbutton: GPIO = 0x%x\n", val);
@@ -1238,6 +1237,8 @@ void period_check(int sig)
 	case ROUTER_BOARD_WHRG300N:
 	case ROUTER_ASUS_RTN10PLUS:
 	case ROUTER_TPLINK_ARCHERC9:
+	case ROUTER_ASUS_RTN12:
+	case ROUTER_NETGEAR_WNR2000V2:
 		sesgpio = 0x100;
 		break;
 	case ROUTER_DIR860LB1:
@@ -1245,72 +1246,37 @@ void period_check(int sig)
 		break;
 	case ROUTER_BOARD_E1700:
 	case ROUTER_DIR810L:
-		sesgpio = 0x102;
-		break;
 	case ROUTER_WHR300HP2:
+	case ROUTER_ASUS_RTN10:
+	case ROUTER_LINKSYS_WTR54GS:
+	case ROUTER_NETGEAR_WNDR4000:
 		sesgpio = 0x102;
 		break;
+	case ROUTER_ASUS_WL500G_PRE:
 	case ROUTER_ASUS_WL700GE:
 		sesgpio = 0x004;	// gpio 4, normal
 		break;
 	case ROUTER_ASUS_RTN10PLUSD1:
 		sesgpio = 0x114;	// gpio 20, inversed
 		break;
-	case ROUTER_ASUS_RTN10:
-		sesgpio = 0x102;	// gpio 2, inversed
-		break;
-	case ROUTER_ASUS_RTN12:
-	case ROUTER_NETGEAR_WNR2000V2:
-		sesgpio = 0x100;	// gpio 0, inversed
-		break;
-	case ROUTER_LINKSYS_WTR54GS:
-	case ROUTER_NETGEAR_WNDR4000:
-		sesgpio = 0x102;	// gpio 2, inversed
-		break;
-	case ROUTER_WRT54G:
-	case ROUTER_WRT54G_V8:
-	case ROUTER_WRTSL54GS:
-	case ROUTER_WRT150N:
-	case ROUTER_WRT160N:
-	case ROUTER_WRT300N:
-	case ROUTER_WRT300NV11:
-	case ROUTER_WRT610NV2:
-	case ROUTER_ASKEY_RT220XD:	// not soldered
-	case ROUTER_DYNEX_DX_NRUTER:
-	case ROUTER_LINKSYS_E4200:
-	case ROUTER_ASUS_RTN66:
-		sesgpio = 0x104;	// gpio 4, inversed
-		break;
-	case ROUTER_ASUS_AC66U:
-		sesgpio = 0x104;	// gpio 4, inversed
-		break;
 	case ROUTER_LINKSYS_EA6900:
 	case ROUTER_LINKSYS_EA6700:
 	case ROUTER_LINKSYS_EA6350:
 	case ROUTER_LINKSYS_EA6500V2:
 	case ROUTER_TRENDNET_TEW812:
-		sesgpio = 0x107;	// gpio 7, inversed
-		break;
 	case ROUTER_DLINK_DIR890:
 	case ROUTER_DLINK_DIR880:
 	case ROUTER_DLINK_DIR895:
 	case ROUTER_TRENDNET_TEW828:
-		sesgpio = 0x107;	// gpio 7, inversed
-		break;
 	case ROUTER_DLINK_DIR885:
-		sesgpio = 0x107;	// gpio 7, inversed
-//              wifigpio = 0x10a;       // gpio 10, inversed
-		break;
 	case ROUTER_DLINK_DIR868:
 	case ROUTER_DLINK_DIR868C:
+	case ROUTER_DLINK_DIR330:
 		sesgpio = 0x107;	// gpio 7, inversed
 		break;
 	case ROUTER_ASUS_AC67U:
 		wifigpio = 0x10f;
 		sesgpio = 0x107;	// gpio 7, inversed
-		break;
-	case ROUTER_DLINK_DIR860:
-		sesgpio = 0x108;	// gpio 7, inversed
 		break;
 	case ROUTER_ASUS_AC87U:
 		sesgpio = 0x102;	// gpio 2, inversed
@@ -1339,12 +1305,10 @@ void period_check(int sig)
 	case ROUTER_ASUS_RTN18U:
 		sesgpio = 0x10b;	// gpio 11, inversed
 		break;
-	case ROUTER_ASUS_WL500G_PRE:
-		sesgpio = 0x004;	// gpio 4, normal
-		break;
 	case ROUTER_ASUS_WL550GE:
 		sesgpio = 0x00f;	// gpio 15, normal
 		break;
+	case ROUTER_DLINK_DIR860:
 	case ROUTER_WRT310N:
 	case ROUTER_WRT350N:
 	case ROUTER_WRT610N:
@@ -1359,9 +1323,6 @@ void period_check(int sig)
 		break;
 	case ROUTER_ASUS_WL500W:
 		sesgpio = 0x007;	// gpio 7, normal
-		break;
-	case ROUTER_DLINK_DIR330:
-		sesgpio = 0x107;	// gpio 7, inversed
 		break;
 	case ROUTER_ASUS_WL520GUGC:
 	case ROUTER_ASUS_WL500G_PRE_V2:
@@ -1389,28 +1350,30 @@ void period_check(int sig)
 	case ROUTER_NETGEAR_WNDR4500:
 	case ROUTER_NETGEAR_WNDR4500V2:
 	case ROUTER_NETGEAR_R6300:
-		sesgpio = 0x104;
-		wifigpio = 0x105;
-		break;
 	case ROUTER_NETGEAR_AC1450:
-		sesgpio = 0x104;
-		wifigpio = 0x105;
-		break;
 	case ROUTER_NETGEAR_R6250:
-		sesgpio = 0x104;
-		wifigpio = 0x105;
-		break;
 	case ROUTER_NETGEAR_R6300V2:
-		sesgpio = 0x104;
+	case ROUTER_NETGEAR_R7000:
 		wifigpio = 0x105;
+		//fall through
+	case ROUTER_WRT54G:
+	case ROUTER_WRT54G_V8:
+	case ROUTER_WRTSL54GS:
+	case ROUTER_WRT150N:
+	case ROUTER_WRT160N:
+	case ROUTER_WRT300N:
+	case ROUTER_WRT300NV11:
+	case ROUTER_WRT610NV2:
+	case ROUTER_ASKEY_RT220XD:	// not soldered
+	case ROUTER_DYNEX_DX_NRUTER:
+	case ROUTER_LINKSYS_E4200:
+	case ROUTER_ASUS_RTN66:
+	case ROUTER_ASUS_AC66U:
+		sesgpio = 0x104;
 		break;
 	case ROUTER_NETGEAR_R6400:
 		sesgpio = 0x103;
 		wifigpio = 0x104;
-		break;
-	case ROUTER_NETGEAR_R7000:
-		sesgpio = 0x104;
-		wifigpio = 0x105;
 		break;
 	case ROUTER_NETGEAR_R7500:
 	case ROUTER_NETGEAR_R7500V2:
@@ -1425,6 +1388,7 @@ void period_check(int sig)
 		sesgpio = 0x104;
 		wifigpio = 0x113;
 		break;
+	case ROUTER_LINKSYS_EA6500:
 	case ROUTER_NETGEAR_EX6200:
 		wifigpio = 0x104;
 		break;
@@ -1438,9 +1402,6 @@ void period_check(int sig)
 	case ROUTER_LINKSYS_E1550:
 	case ROUTER_LINKSYS_E2500:
 		sesgpio = 0x109;	// gpio 9, inversed
-		break;
-	case ROUTER_LINKSYS_EA6500:
-		sesgpio = 0x104;	// gpio 4, inversed
 		break;
 	case ROUTER_LINKSYS_EA8500:
 		sesgpio = 0x165;
