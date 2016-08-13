@@ -926,14 +926,10 @@ void period_check(int sig)
 	case ROUTER_BOARD_RT3352:
 		val = (get_gpio(10) << 10) | (get_gpio(0) << 0);
 		break;
-	case ROUTER_BOARD_ESR6650:
 	case ROUTER_BOARD_HAMEA15:
 	case ROUTER_BOARD_EAP9550:
 	case ROUTER_BOARD_ESR9752:
 		val = get_gpio(0);
-		break;
-	case ROUTER_BOARD_ECB9750:
-		val = get_gpio(11) << 11;
 		break;
 	case ROUTER_BOARD_ECB9750:
 		val = get_gpio(11) << 11;
