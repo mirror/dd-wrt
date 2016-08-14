@@ -1,5 +1,5 @@
 # Nmap nmap payload database -*- mode: fundamental; -*-
-# $Id: nmap-payloads 35385 2015-11-05 20:41:05Z dmiller $
+# $Id: nmap-payloads 35742 2016-03-28 16:48:38Z dmiller $
 #
 # These payloads are sent with every host discovery or port scan probe
 # by default. This database should only include payloads that are
@@ -137,6 +137,13 @@ udp 520
 # packet starting with "SNRESPS:", followed by some data whose purpose
 # is not known.
 udp 626 "SNQUERY: 127.0.0.1:AAAAAA:xsvr"
+
+# OpenVPN P_CONTROL_HARD_RESET_CLIENT_V2
+# Byte 0; 0x38 opcode
+# Byte 1-8: Session ID, random
+# Byte 9: Message packet-id array length (0)
+# Byte 10-13: Message packet-id (0)
+udp 1194 "8d\xc1x\x01\xb8\x9b\xcb\x8f\0\0\0\0\0"
 
 # Citrix MetaFrame application browser service
 # Original idea from http://sh0dan.org/oldfiles/hackingcitrix.html
