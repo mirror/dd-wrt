@@ -1,4 +1,20 @@
-# Nmap Changelog ($Id: CHANGELOG 35723 2016-03-22 04:10:10Z dmiller $); -*-text-*-
+# Nmap Changelog ($Id: CHANGELOG 35745 2016-03-29 15:27:50Z dmiller $); -*-text-*-
+
+Nmap 7.12 [2016-03-29]
+
+o [Zenmap] Avoid file corruption in zenmap.conf, reported as files containing
+  many null ("\x00") characters. Example exception:
+    ValueError: unable to parse colour specification
+
+o [NSE] VNC updates including vnc-brute support for TLS security type and
+  negotiating a lower RFB version if the server sends an unknown higher
+  version.  [Daniel Miller]
+
+o [NSE] Added STARTTLS support for VNC, NNTP, and LMTP [Daniel Miller]
+
+o Added new service probes and match lines for OpenVPN on UDP and TCP.
+
+Nmap 7.11 [2016-03-22]
 
 o [NSE][GH#341] Added support for diffie-hellman-group-exchange-* SSH key
   exchange methods to ssh2.lua, allowing ssh-hostkey to run on servers that
