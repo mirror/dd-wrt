@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r3104 | brainslayer | 2016-08-14 11:32:24 +0200 (Sun, 14 Aug 2016) | 1 line
+
+if region code isnt defined. old behaviour should apply
+------------------------------------------------------------------------
+r3103 | brainslayer | 2016-08-14 11:29:59 +0200 (Sun, 14 Aug 2016) | 1 line
+
+latest mwlwifi driver. seems to add region code locking
+------------------------------------------------------------------------
 r3102 | brainslayer | 2016-08-09 17:16:32 +0200 (Tue, 09 Aug 2016) | 1 line
 
 reenable beamforming for ath10k again
