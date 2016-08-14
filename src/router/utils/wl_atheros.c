@@ -30,10 +30,7 @@ void showinterface(char *base, char *ifname)
 		int a;
 		int pos = 0;
 		for (a = 0; a < cnt; a++) {
-			fprintf(stdout,
-				"assoclist %2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X\n",
-				p[pos], p[pos + 1], p[pos + 2], p[pos + 3],
-				p[pos + 4], p[pos + 5]);
+			fprintf(stdout, "assoclist %2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X\n", p[pos], p[pos + 1], p[pos + 2], p[pos + 3], p[pos + 4], p[pos + 5]);
 			pos += 6;
 		}
 		free(buf);
@@ -44,14 +41,18 @@ void showinterface(char *base, char *ifname)
 
 int matchmac(char *base, char *ifname, char *mac)
 {
+	unsigned char rmac[32];
+	ether_etoa(mac, rmac);
 #ifdef HAVE_ATH9K
 	if (is_ath9k(ifname)) {
 		struct mac80211_info *mac80211_info;
 		struct wifi_client_info *wc;
 		mac80211_info = mac80211_assoclist(base);
 		for (wc = mac80211_info->wci; wc; wc = wc->next) {
+//                      fprintf(stderr,"%s == %s\n",wc->ifname,ifname);
+//                      fprintf(stderr,"%s == %s\n",wc->mac, mac);
 			if (!strcmp(ifname, wc->ifname)
-			    && !strcmp(mac, wc->mac)) {
+			    && !strcmp(rmac, wc->mac)) {
 				free_wifi_clients(mac80211_info->wci);
 				free(mac80211_info);
 				return 1;
@@ -88,15 +89,14 @@ int main(int argc, char *argv[])
 				for (c = 0; c < ifcount; c++) {
 					char interface[32];
 					sprintf(interface, "ath%d", c);
-					showinterface(interface,interface);
+					showinterface(interface, interface);
 					char vif[32];
 					sprintf(vif, "%s_vifs", interface);
 					char var[80], *next;
 					char *vifs = nvram_safe_get(vif);
 					if (vifs != NULL) {
 						foreach(var, vifs, next) {
-							showinterface(interface,
-								      var);
+							showinterface(interface, var);
 						}
 					}
 				}
@@ -116,11 +116,8 @@ int main(int argc, char *argv[])
 					char interface[32];
 					sprintf(interface, "ath%d", c);
 					rssi = getRssi(interface, rmac);
-					if (rssi != 0 && rssi != -1
-					    && matchmac(interface, interface,
-							rmac)) {
-						fprintf(stdout, "rssi is %d\n",
-							rssi);
+					if (rssi != 0 && rssi != -1 && matchmac(interface, interface, rmac)) {
+						fprintf(stdout, "rssi is %d\n", rssi);
 						return 0;
 					}
 					char vif[32];
@@ -129,17 +126,9 @@ int main(int argc, char *argv[])
 					char *vifs = nvram_safe_get(vif);
 					if (vifs != NULL) {
 						foreach(var, vifs, next) {
-							rssi =
-							    getRssi(var, rmac);
-							if (rssi != 0
-							    && rssi != -1
-							    &&
-							    matchmac(interface,
-								     var,
-								     rmac)) {
-								fprintf(stdout,
-									"rssi is %d\n",
-									rssi);
+							rssi = getRssi(var, rmac);
+							if (rssi != 0 && rssi != -1 && matchmac(interface, var, rmac)) {
+								fprintf(stdout, "rssi is %d\n", rssi);
 								return 0;
 							}
 
@@ -164,11 +153,8 @@ int main(int argc, char *argv[])
 					sprintf(interface, "ath%d", c);
 
 					rssi = getNoise(interface, rmac);
-					if (rssi != 0 && rssi != -1
-					    && matchmac(interface, interface,
-							rmac)) {
-						fprintf(stdout, "noise is %d\n",
-							rssi);
+					if (rssi != 0 && rssi != -1 && matchmac(interface, interface, rmac)) {
+						fprintf(stdout, "noise is %d\n", rssi);
 						return 0;
 					}
 					char vif[32];
@@ -177,17 +163,9 @@ int main(int argc, char *argv[])
 					char *vifs = nvram_safe_get(vif);
 					if (vifs != NULL) {
 						foreach(var, vifs, next) {
-							rssi =
-							    getNoise(var, rmac);
-							if (rssi != 0
-							    && rssi != -1
-							    &&
-							    matchmac(interface,
-								     var,
-								     rmac)) {
-								fprintf(stdout,
-									"noise is %d\n",
-									rssi);
+							rssi = getNoise(var, rmac);
+							if (rssi != 0 && rssi != -1 && matchmac(interface, var, rmac)) {
+								fprintf(stdout, "noise is %d\n", rssi);
 								return 0;
 							}
 						}
@@ -207,10 +185,8 @@ int main(int argc, char *argv[])
 				sprintf(interface, "ath%d", c);
 
 				rssi = getNoise(interface, rmac);
-				if (rssi != 0 && rssi != -1
-				    && matchmac(interface, interface, rmac)) {
-					fprintf(stdout, "ifname is %s\n",
-						interface);
+				if (rssi != 0 && rssi != -1 && matchmac(interface, interface, rmac)) {
+					fprintf(stdout, "ifname is %s\n", interface);
 					return 0;
 				}
 				char vif[32];
@@ -220,12 +196,8 @@ int main(int argc, char *argv[])
 				if (vifs != NULL) {
 					foreach(var, vifs, next) {
 						rssi = getNoise(var, rmac);
-						if (rssi != 0 && rssi != -1
-						    && matchmac(interface, var,
-								rmac)) {
-							fprintf(stdout,
-								"ifname is %s\n",
-								var);
+						if (rssi != 0 && rssi != -1 && matchmac(interface, var, rmac)) {
+							fprintf(stdout, "ifname is %s\n", var);
 							return 0;
 						}
 					}
@@ -247,12 +219,8 @@ int main(int argc, char *argv[])
 					sprintf(interface, "ath%d", c);
 
 					uptime = getUptime(interface, rmac);
-					if (uptime != 0 && uptime != -1
-					    && matchmac(interface, interface,
-							rmac)) {
-						fprintf(stdout,
-							"uptime is %d\n",
-							uptime);
+					if (uptime != 0 && uptime != -1 && matchmac(interface, interface, rmac)) {
+						fprintf(stdout, "uptime is %d\n", uptime);
 						return 0;
 					}
 					char vif[32];
@@ -261,18 +229,9 @@ int main(int argc, char *argv[])
 					char *vifs = nvram_safe_get(vif);
 					if (vifs != NULL) {
 						foreach(var, vifs, next) {
-							uptime =
-							    getUptime(var,
-								      rmac);
-							if (uptime != 0
-							    && uptime != -1
-							    &&
-							    matchmac(interface,
-								     var,
-								     rmac)) {
-								fprintf(stdout,
-									"uptime is %d\n",
-									uptime);
+							uptime = getUptime(var, rmac);
+							if (uptime != 0 && uptime != -1 && matchmac(interface, var, rmac)) {
+								fprintf(stdout, "uptime is %d\n", uptime);
 								return 0;
 							}
 						}
