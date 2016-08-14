@@ -1,5 +1,5 @@
 # Nmap service detection probe list -*- mode: fundamental; -*-
-# $Id: nmap-service-probes 35672 2016-03-12 23:26:24Z dmiller $
+# $Id: nmap-service-probes 35742 2016-03-28 16:48:38Z dmiller $
 #
 # This is a database of custom probes and expected responses that the
 # Nmap Security Scanner ( https://nmap.org ) uses to
@@ -459,7 +459,7 @@ match directupdate m|^OK Welcome <[\d.]+> on DirectUpdate engine VER=\[([\d.]+) 
 match diskmonitor m|^000001a2[0-9a-f]{410}\r\n| p/Active@ Hard Disk Monitor/
 match diskmonitor m|^0000019a[0-9a-f]{402}\r\n| p/Active@ Hard Disk Monitor/
 
-match dlmtp m|^220 DSPAM DLMTP ([\w._-]+) Authentication Required\r\n| p/DSPAM dlmtpd/ v/$1/
+match lmtp m|^220 DSPAM DLMTP ([\w._-]+) Authentication Required\r\n| p/DSPAM lmtpd/ v/$1/ cpe:/a:dspam:dspam:$1/
 
 match doka5 m|^\xff\0\0\x14\x9d\0\0\0\0\0\0\0\0\0\0\x11l\0\0\0\x17\0\0| p/Surecomp DOKA 5/ cpe:/a:surecomp:doka_5/
 
@@ -14617,3 +14617,19 @@ sslports 2482
 
 match giop m|GIOP\x01\0\x01\x01@\0\0\0\0\0\0\0\x01\0\0\0\x02\0\0\0'\0\0\0IDL:omg\.org/CORBA/OBJECT_NOT_EXIST:1\.0\0\0\0\0\0\0\x01\0\0\0| p/omg.org CORBA naming service/
 softmatch giop m|^GIOP\x01\x00\x01\x01........\x01\x00\x00\x00|
+
+##############################NEXT PROBE##############################
+# P_CONTROL_HARD_RESET_CLIENT_V2
+Probe TCP OpenVPN q|\0\x0e87\xa5&\x08\xa2\x1b\xa0\xb1\0\0\0\0\0|
+ports 1194,443,500
+rarity 9
+match openvpn m|^\0\x1a@........\x01\0\0\0\x007\xa5&\x08\xa2\x1b\xa0\xb1\0\0\0\0$| p/OpenVPN/
+
+
+##############################NEXT PROBE##############################
+# P_CONTROL_HARD_RESET_CLIENT_V2
+Probe UDP OpenVPN q|8d\xc1x\x01\xb8\x9b\xcb\x8f\0\0\0\0\0|
+ports 1194,443,500
+rarity 9
+match openvpn m|^@........\x01\0\0\0\0d\xc1x\x01\xb8\x9b\xcb\x8f\0\0\0\0$| p/OpenVPN/
+
