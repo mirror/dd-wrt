@@ -3785,7 +3785,7 @@ static int tcp_process_frto(struct sock *sk, int flag)
 
 static inline u32 prandom_u32_max(u32 ep_ro)
 {
-	return (u32)(((u64) prandom_u32() * ep_ro) >> 32);
+	return (u32)(((u64) random32() * ep_ro) >> 32);
 }
 
 /* RFC 5961 7 [ACK Throttling] */
