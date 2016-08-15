@@ -270,6 +270,10 @@
 			phy4: ethernet-phy@4 {
 				device_type = "ethernet-phy";
 				reg = <4>;
+				qca,ar8327-initvals = <
+					0x000e4 0x6a545     /* MAC_POWER_SEL */
+					0x0000c 0x80        /* PAD6_MODE */
+					>;
 			};
 		};
 
