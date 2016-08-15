@@ -273,7 +273,7 @@ void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<script type=\"text/javascript\">Capture(networking.assign);</script> %d\n", count);
 		sprintf(vlan_name, "bridge%d", count);
 		showIfOptions(wp, vlan_name, finalbuffer, tag);
-		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.bridge);</script><script type=\"text/javascript\">Capture(networking.iface);</script>&nbsp;");
+		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.iface);</script><script type=\"text/javascript\">Capture(networking.iface);</script>&nbsp;");
 		sprintf(vlan_name, "bridgeif%d", count);
 		showIfOptions(wp, vlan_name, bufferif, port);
 		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.prio);</script>&nbsp;");
