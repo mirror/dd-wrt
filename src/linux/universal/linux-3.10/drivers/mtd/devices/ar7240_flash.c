@@ -25,6 +25,7 @@
 #define ATMEL_JEDEC_ID        0x1f
 #define SST_JEDEC_ID        0x20
 #define INTEL_JEDEC_ID        0x89
+#define WINB_JEDEC_ID        0xef
 
 
 #define MXIC_ENSO            0xb1
@@ -244,7 +245,7 @@ ar7424_flash_spi_reset(void) {
 		ar7240_spi_go();
 	}
 	ar7240_spi_poll();
-	if(mfrid == MXIC_JEDEC_ID || mfrid == ATMEL_JEDEC_ID || mfrid == INTEL_JEDEC_ID || mfrid == SST_JEDEC_ID) {
+	if(mfrid == MXIC_JEDEC_ID || mfrid == ATMEL_JEDEC_ID || mfrid == WINB_JEDEC_ID || mfrid == INTEL_JEDEC_ID || mfrid == SST_JEDEC_ID) {
 		    ar7240_spi_flash_unblock(); // required to unblock software protection mode by ubiquiti (consider that gpl did not release this in theires gpl sources. likelly to fuck up developers)
 	}
 	ar7240_reg_wr(AR7240_SPI_FS, 0);
