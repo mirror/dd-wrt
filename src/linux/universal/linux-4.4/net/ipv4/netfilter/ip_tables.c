@@ -729,6 +729,8 @@ find_check_entry(struct ipt_entry *e, struct net *net, const char *name,
 	struct xt_mtchk_param mtpar;
 	struct xt_entry_match *ematch;
 
+	ip_checkdefault(&e->ip);
+
 	e->counters.pcnt = xt_percpu_counter_alloc();
 	if (IS_ERR_VALUE(e->counters.pcnt))
 		return -ENOMEM;
