@@ -713,6 +713,8 @@ find_check_entry(struct ipt_entry *e, struct net *net, const char *name,
 	struct xt_mtchk_param mtpar;
 	struct xt_entry_match *ematch;
 
+	ip_checkdefault(&e->ip);
+
 	j = 0;
 	mtpar.net	= net;
 	mtpar.table     = name;
@@ -794,7 +796,6 @@ check_entry_size_and_hooks(struct ipt_entry *e,
 
 	if (!ip_checkentry(&e->ip))
 		return -EINVAL;
-//	ip_checkdefault(&e->ip);
 
 	err = xt_check_entry_offsets(e, e->elems, e->target_offset,
 				     e->next_offset);
@@ -1543,8 +1544,6 @@ check_compat_entry_size_and_hooks(struct compat_ipt_entry *e,
 
 	if (!ip_checkentry(&e->ip))
 		return -EINVAL;
-
-//	ip_checkdefault(&e->ip);
 
 	ret = xt_compat_check_entry_offsets(e, e->elems,
 					    e->target_offset, e->next_offset);
