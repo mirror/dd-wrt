@@ -278,7 +278,7 @@ include rules/ubi-utils.mk
 include rules/libffi.mk
 include rules/lzo.mk
 include rules/java.mk
-
+include rules/softether.mk
 #
 # Generic rules
 #
