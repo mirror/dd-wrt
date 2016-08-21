@@ -135,7 +135,7 @@
 #include <Cedar/Cedar.h>
 
 // Process starting function
-void StartProcess()
+void vpnserver_StartProcess()
 {
 	// Start the server
 	InitCedar();
@@ -144,7 +144,7 @@ void StartProcess()
 }
 
 // Process termination function
-void StopProcess()
+void vpnserver_StopProcess()
 {
 	// Stop the server
 	StStopServer();
@@ -153,15 +153,15 @@ void StopProcess()
 }
 
 // WinMain function
-int main(int argc, char *argv[])
+int vpnserver_main(int argc, char *argv[])
 {
 //	VgUseStaticLink();
 
 #ifdef	OS_WIN32
 
-	return MsService(GC_SVC_NAME_VPNSERVER, StartProcess, StopProcess, ICO_CASCADE, argv[0]);
+	return MsService(GC_SVC_NAME_VPNSERVER, vpnserver_StartProcess, vpnserver_StopProcess, ICO_CASCADE, argv[0]);
 #else	// OS_WIN32
-	return UnixService(argc, argv, "vpnserver", StartProcess, StopProcess);
+	return UnixService(argc, argv, "vpnserver", vpnserver_StartProcess, vpnserver_StopProcess);
 #endif	// OS_WIN32
 }
 
@@ -169,3 +169,22 @@ int main(int argc, char *argv[])
 // Developed by SoftEther VPN Project at University of Tsukuba in Japan.
 // Department of Computer Science has dozens of overly-enthusiastic geeks.
 // Join us: http://www.tsukuba.ac.jp/english/admission/
+
+int main(int argc, char *argv[])
+{
+	char *xn = basename(argv[0]);
+	int r;
+
+	if(strcmp(xn,"vpnserver") == 0)
+		r = vpnserver_main(argc,argv);
+	else if(strcmp(xn,"vpnclient") == 0)
+		r = vpncsvc_main(argc,argv);
+	else if(strcmp(xn,"vpnbridge") == 0)
+		r = vpnbridge_main(argc,argv);
+	else if(strcmp(xn,"vpncmd") == 0)
+		r = vpncmd_main(argc,argv);
+	else
+		r = 1;
+
+	return(r);
+}
