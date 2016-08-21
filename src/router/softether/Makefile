@@ -341,7 +341,7 @@ src/bin/BuiltHamcoreFiles/unix/hamcore.se2: tmp/hamcorebuilder $(HAMCORE_FILES)
 # hamcorebuilder Utility
 tmp/hamcorebuilder: src/hamcorebuilder/hamcorebuilder.c $(HEADERS_MAYAQUA) $(HEADERS_CEDAR) $(OBJECTS_MAYAQUA) $(OBJECTS_CEDAR)
 	@mkdir -p tmp/
-	gcc $(OPTIONS_COMPILE_RELEASE_L) $(OBJECTS_MAYAQUA) $(OBJECTS_CEDAR) src/hamcorebuilder/hamcorebuilder.c $(OPTIONS_LINK_RELEASE_L) -o tmp/hamcorebuilder
+	ccache gcc $(OPTIONS_COMPILE_RELEASE_L) $(OBJECTS_MAYAQUA) $(OBJECTS_CEDAR) src/hamcorebuilder/hamcorebuilder.c $(OPTIONS_LINK_RELEASE_L) -o tmp/hamcorebuilder
 
 # vpnserver
 bin/vpnserver/vpnserver: tmp/as/vpnserver.a bin/vpnserver/hamcore.se2 $(HEADERS_MAYAQUA) $(HEADERS_CEDAR)
@@ -429,9 +429,9 @@ clean:
 	-rm -f tmp/objs/vpncmd.o
 	-rm -f tmp/as/vpncmd.a
 	-rm -f bin/vpncmd/vpncmd
-	-rm -f bin/vpncmd/hamcore.se2
+#	-rm -f bin/vpncmd/hamcore.se2
 #	-rm -f tmp/hamcorebuilder
-	-rm -f src/bin/BuiltHamcoreFiles/unix/hamcore.se2
+#	-rm -f src/bin/BuiltHamcoreFiles/unix/hamcore.se2
 
 # Help Strings
 help:

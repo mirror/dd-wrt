@@ -928,7 +928,8 @@ void *UnixNewSingleInstance(char *instance_name)
 		StrCpy(tmp, sizeof(tmp), instance_name);
 	}
 
-	GetExeDir(dir, sizeof(dir));
+	snprintf(dir, sizeof(dir), "/var/lib");
+//	GetExeDir(dir, sizeof(dir));
 
 	// File name generation
 	Format(name, sizeof(name), "%s/.%s", dir, tmp);
