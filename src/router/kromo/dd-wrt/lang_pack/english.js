@@ -1911,6 +1911,10 @@ service.dlna_type_audio="Audio";
 service.dlna_type_video="Video";
 service.dlna_type_images="Images";
 
+// SoftEther
+
+service.softether_legend="SoftEther VPN";
+
 // Zabbix
 service.zabbix_legend="Zabbix";
 service.zabbix_cl="Client";
