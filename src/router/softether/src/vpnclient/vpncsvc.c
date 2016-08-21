@@ -125,7 +125,7 @@
 #include <Cedar/Cedar.h>
 
 // Process start function
-void StartProcess()
+void vpncsvc_StartProcess()
 {
 	// Start the client
 	InitCedar();
@@ -133,7 +133,7 @@ void StartProcess()
 }
 
 // Process termination function
-void StopProcess()
+void vpncsvc_StopProcess()
 {
   	// Stop the client
 	CtStopClient();
@@ -141,13 +141,13 @@ void StopProcess()
 }
 
 // WinMain function
-int main(int argc, char *argv[])
+int vpncsvc_main(int argc, char *argv[])
 {
 #ifdef	OS_WIN32
 
-	return MsService(GC_SVC_NAME_VPNCLIENT, StartProcess, StopProcess, ICO_MACHINE, argv[0]);
+	return MsService(GC_SVC_NAME_VPNCLIENT, vpncsvc_StartProcess, vpncsvc_StopProcess, ICO_MACHINE, argv[0]);
 #else	// OS_WIN32
-	return UnixService(argc, argv, "vpnclient", StartProcess, StopProcess);
+	return UnixService(argc, argv, "vpnclient", vpncsvc_StartProcess, vpncsvc_StopProcess);
 #endif	// OS_WIN32
 }
 
