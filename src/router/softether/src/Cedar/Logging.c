@@ -517,7 +517,7 @@ UINT GetEraserCheckInterval()
 ERASER *NewEraser(LOG *log, UINT64 min_size)
 {
 	ERASER *e;
-	char dir[MAX_PATH];
+//	char dir[MAX_PATH];
 
 	if (min_size == 0)
 	{
@@ -538,11 +538,11 @@ ERASER *NewEraser(LOG *log, UINT64 min_size)
 
 	e = ZeroMalloc(sizeof(ERASER));
 
-	GetExeDir(dir, sizeof(dir));
+//	GetExeDir(dir, sizeof(dir));
 
 	e->Log = log;
 	e->MinFreeSpace = min_size;
-	e->DirName = CopyStr(dir);
+	e->DirName = CopyStr("/var/lib");
 	e->HaltEvent = NewEvent();
 
 	e->Thread = NewThread(EraserThread, e);
