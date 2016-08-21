@@ -522,7 +522,7 @@ bool CheckFileSystem()
 {
 	bool ok = true;
 	char exe[MAX_PATH];
-	char exe_dir[MAX_PATH];
+//	char exe_dir[MAX_PATH];
 	DIRLIST *dirs;
 	UINT i;
 
