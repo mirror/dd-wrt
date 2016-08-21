@@ -1539,6 +1539,11 @@ ifeq ($(CONFIG_OPENDPI),y)
 CFLAGS_EXTRA += -DHAVE_OPENDPI
 endif
 
+ifeq ($(CONFIG_SOFTETHER),y)
+CFLAGS_EXTRA += -DHAVE_SOFTETHER
+OBJS += softether.o
+endif
+
 ifeq ($(CONFIG_WOL),y)
 CFLAGS_EXTRA += -DHAVE_WOL
 OBJS += wol.o
