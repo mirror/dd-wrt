@@ -3551,6 +3551,11 @@ struct nvram_param srouter_defaults[] = {
 	{"privoxy_advanced", "0"},
 	{"privoxy_transp_enable", "0"},
 #endif
+#ifdef HAVE_SOFTETHER
+	{"setherclient_enable", "0"},
+	{"setherbridge_enable", "0"},
+	{"setherserver_enable", "0"},
+#endif
 #ifdef HAVE_TOR
 	{"tor_enable", "0"},
 	{"tor_relayonly", "0"},
