@@ -605,11 +605,11 @@ VI_FILE *ViOpenFile(char *path)
 	{
 		IO *io;
 		char fullpath[MAX_PATH];
-		char exedir[MAX_PATH];
+//		char exedir[MAX_PATH];
 
-		GetExeDir(exedir, sizeof(exedir));
+//		GetExeDir(exedir, sizeof(exedir));
 
-		ConbinePath(fullpath, sizeof(fullpath), exedir, path);
+		ConbinePath(fullpath, sizeof(fullpath), "/var/lib", path);
 
 		io = FileOpen(fullpath, false);
 		if (io == NULL)

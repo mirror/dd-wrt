@@ -2389,9 +2389,9 @@ void InnerFilePathW(wchar_t *dst, UINT size, wchar_t *src)
 	}
 	else
 	{
-		wchar_t dir[MAX_SIZE];
-		GetExeDirW(dir, sizeof(dir));
-		ConbinePathW(dst, size, dir, &src[1]);
+//		wchar_t dir[MAX_SIZE];
+//		GetExeDirW(dir, sizeof(dir));
+		ConbinePathW(dst, size, L"/var/lib", &src[1]);
 	}
 }
 void InnerFilePath(char *dst, UINT size, char *src)

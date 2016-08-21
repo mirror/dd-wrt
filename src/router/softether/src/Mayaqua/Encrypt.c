@@ -639,7 +639,7 @@ void FreeCipher(CIPHER *c)
 // Verify whether the certificate is disabled by CRL in a particular directory
 bool IsXRevoked(X *x)
 {
-	char dirname[MAX_PATH];
+//	char dirname[MAX_PATH];
 	UINT i;
 	bool ret = false;
 	DIRLIST *t;
@@ -649,10 +649,10 @@ bool IsXRevoked(X *x)
 		return false;
 	}
 
-	GetExeDir(dirname, sizeof(dirname));
+//	GetExeDir(dirname, sizeof(dirname));
 
 	// Search the CRL file
-	t = EnumDir(dirname);
+	t = EnumDir("/var/lib");
 
 	for (i = 0;i < t->NumFiles;i++)
 	{
@@ -664,7 +664,7 @@ bool IsXRevoked(X *x)
 				char filename[MAX_PATH];
 				X_CRL *r;
 
-				ConbinePath(filename, sizeof(filename), dirname, name);
+				ConbinePath(filename, sizeof(filename), "/var/lib", name);
 
 				r = FileToXCrl(filename);
 
