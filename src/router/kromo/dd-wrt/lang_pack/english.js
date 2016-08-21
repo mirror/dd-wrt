@@ -1914,6 +1914,9 @@ service.dlna_type_images="Images";
 // SoftEther
 
 service.softether_legend="SoftEther VPN";
+service.softether_bridge="Bridge";
+service.softether_client="Client";
+service.softether_server="Server";
 
 // Zabbix
 service.zabbix_legend="Zabbix";
