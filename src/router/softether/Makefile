@@ -383,8 +383,8 @@ install: $(INSTALL_BINDIR)vpnserver
 	@echo "Execute 'vpncmd' to run SoftEther VPN Command-Line Utility to configure VPN Server, VPN Bridge or VPN Client."
 	@echo "--------------------------------------------------------------------"
 	@echo
-	mkdir -p $(INSTALLDIR)/etc/config
-	cp -f config/* $(INSTALLDIR)/etc/config
+	mkdir -p $(INSTALLDIR)/softether/etc/config
+	cp -f config/* $(INSTALLDIR)/softether/etc/config
 	rm -f $(INSTALL_BINDIR)/vpnclient
 	rm -f $(INSTALL_BINDIR)/vpnbridge
 	rm -f $(INSTALL_BINDIR)/vpncmd
