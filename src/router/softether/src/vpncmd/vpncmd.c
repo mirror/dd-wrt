@@ -131,8 +131,8 @@
 #include <Mayaqua/Mayaqua.h>
 #include <Cedar/Cedar.h>
 
-// main function
-int main(int argc, char *argv[])
+// vpncmd_main function
+int vpncmd_main(int argc, char *argv[])
 {
 	wchar_t *s;
 	UINT ret = 0;
@@ -166,7 +166,7 @@ int main(int argc, char *argv[])
 #ifdef	OS_WIN32
 	{
 		UINT i;
-		LIST *o = MsGetProcessList();
+		LIST *o = vpncmd_MsGetProcessList();
 		bool b = false;
 
 		for (i = 0;i < LIST_NUM(o);i++)
@@ -180,7 +180,7 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		MsFreeProcessList(o);
+		vpncmd_MsFreeProcessList(o);
 
 		if (b == false)
 		{

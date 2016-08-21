@@ -135,7 +135,7 @@
 #include <Cedar/Cedar.h>
 
 // Process start function
-void StartProcess()
+void vpnbridge_StartProcess()
 {
 	// Start the server
 	InitCedar();
@@ -144,7 +144,7 @@ void StartProcess()
 }
 
 // Process stop function
-void StopProcess()
+void vpnbridge_StopProcess()
 {
 	// Stop the server
 	StStopServer();
@@ -153,14 +153,14 @@ void StopProcess()
 }
 
 // WinMain function
-int main(int argc, char *argv[])
+int vpnbridge_main(int argc, char *argv[])
 {
 //	VgUseStaticLink();
 
 #ifdef	OS_WIN32
-	return MsService(GC_SVC_NAME_VPNBRIDGE, StartProcess, StopProcess, ICO_BRIDGE, argv[0]);
+	return MsService(GC_SVC_NAME_VPNBRIDGE, vpnbridge_StartProcess, vpnbridge_StopProcess, ICO_BRIDGE, argv[0]);
 #else	// OS_WIN32
-	return UnixService(argc, argv, "vpnbridge", StartProcess, StopProcess);
+	return UnixService(argc, argv, "vpnbridge", vpnbridge_StartProcess, vpnbridge_StopProcess);
 #endif	// OS_WIN32
 }
 
