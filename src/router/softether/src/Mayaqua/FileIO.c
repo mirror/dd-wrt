@@ -1425,7 +1425,7 @@ void GetExeDir(char *name, UINT size)
 	{
 		return;
 	}
-
+//	snprintf(name, size, "/var/lib");
 	GetDirNameFromFilePath(name, size, exe_file_name);
 }
 void GetExeDirW(wchar_t *name, UINT size)
@@ -1435,7 +1435,7 @@ void GetExeDirW(wchar_t *name, UINT size)
 	{
 		return;
 	}
-
+//	UniStrCpy(name, size, L"/var/lib");
 	GetDirNameFromFilePathW(name, size, exe_file_name_w);
 }
 
