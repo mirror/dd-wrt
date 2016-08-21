@@ -92,6 +92,9 @@ static int start_services_main(int argc, char **argv)
 #ifdef HAVE_CPUTEMP
 	start_service_f("hwmon");
 #endif
+#ifdef HAVE_SOFTETHER
+	start_service_f("softether");
+#endif
 #ifdef HAVE_TELNET
 	start_service_f("telnetd");
 #endif
@@ -286,6 +289,9 @@ static int stop_services_main(int argc, char **argv)
 	stop_service_f("wland");
 #ifdef HAVE_TELNET
 	stop_service_f("telnetd");
+#endif
+#ifdef HAVE_SOFTETHER
+	stop_service_f("softether");
 #endif
 #ifdef HAVE_MACTELNET
 	stop_service_f("mactelnetd");
@@ -644,6 +650,9 @@ static void handle_services(void)
 #endif
 #ifdef HAVE_TOR
 	startstop_f("tor");
+#endif
+#ifdef HAVE_SOFTETHER
+	startstop_f("softether");
 #endif
 #ifdef HAVE_TELNET
 	startstop_f("telnetd");
