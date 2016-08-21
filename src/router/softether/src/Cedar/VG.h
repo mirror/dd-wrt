@@ -117,9 +117,9 @@
 #define	VG_HUBNAME			"VPNGATE"
 
 
-bool InitVg();
-void FreeVg();
-void VgUseStaticLink();
+//bool InitVg();
+//void FreeVg();
+//void VgUseStaticLink();
 
 #endif	// VG_H
 

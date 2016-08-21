@@ -1607,8 +1607,8 @@ bool ServerAccept(CONNECTION *c)
 			goto CLEANUP;
 		}
 
-		if (GetGlobalServerFlag(GSF_DISABLE_AC) == 0)
-		{
+//		if (GetGlobalServerFlag(GSF_DISABLE_AC) == 0)
+//		{
 			if (hub->HubDb != NULL && c->FirstSock != NULL)
 			{
 				IP ip;
@@ -1628,7 +1628,7 @@ bool ServerAccept(CONNECTION *c)
 					goto CLEANUP;
 				}
 			}
-		}
+//		}
 
 		Lock(hub->lock);
 		{
@@ -2022,10 +2022,10 @@ bool ServerAccept(CONNECTION *c)
 						{
 							// Attempt external authentication registered users
 							bool fail_ext_user_auth = false;
-							if (GetGlobalServerFlag(GSF_DISABLE_RADIUS_AUTH) != 0)
-							{
-								fail_ext_user_auth = true;
-							}
+//							if (GetGlobalServerFlag(GSF_DISABLE_RADIUS_AUTH) != 0)
+//							{
+//								fail_ext_user_auth = true;
+//							}
 
 							if (fail_ext_user_auth == false)
 							{
@@ -2044,10 +2044,10 @@ bool ServerAccept(CONNECTION *c)
 							bool b = false;
 							bool fail_ext_user_auth = false;
 
-							if (GetGlobalServerFlag(GSF_DISABLE_RADIUS_AUTH) != 0)
-							{
-								fail_ext_user_auth = true;
-							}
+//							if (GetGlobalServerFlag(GSF_DISABLE_RADIUS_AUTH) != 0)
+//							{
+//								fail_ext_user_auth = true;
+//							}
 
 							if (fail_ext_user_auth == false)
 							{
@@ -2085,8 +2085,8 @@ bool ServerAccept(CONNECTION *c)
 					break;
 
 				case CLIENT_AUTHTYPE_CERT:
-					if (GetGlobalServerFlag(GSF_DISABLE_CERT_AUTH) == 0)
-					{
+//					if (GetGlobalServerFlag(GSF_DISABLE_CERT_AUTH) == 0)
+//					{
 						// Certificate authentication
 						cert_size = PackGetDataSize(p, "cert");
 						if (cert_size >= 1 && cert_size <= 100000)
@@ -2134,17 +2134,17 @@ bool ServerAccept(CONNECTION *c)
 							}
 							Free(cert_buf);
 						}
-					}
-					else
-					{
-						// Certificate authentication is not supported in the open source version
-						HLog(hub, "LH_AUTH_CERT_NOT_SUPPORT_ON_OPEN_SOURCE", c->Name, username);
-						Unlock(hub->lock);
-						ReleaseHub(hub);
-						FreePack(p);
-						c->Err = ERR_AUTHTYPE_NOT_SUPPORTED;
-						goto CLEANUP;
-					}
+//					}
+//					else
+//					{
+//						// Certificate authentication is not supported in the open source version
+//						HLog(hub, "LH_AUTH_CERT_NOT_SUPPORT_ON_OPEN_SOURCE", c->Name, username);
+//						Unlock(hub->lock);
+//						ReleaseHub(hub);
+//						FreePack(p);
+//						c->Err = ERR_AUTHTYPE_NOT_SUPPORTED;
+//						goto CLEANUP;
+//					}
 					break;
 
 				default:
@@ -6291,22 +6291,22 @@ bool ServerDownloadSignature(CONNECTION *c, char **error_detail_str)
 				{
 					bool b = false;
 
-					// Show the WebUI if the configuration allow to use the WebUI
-					if (c->Cedar->Server != NULL && c->Cedar->Server->UseWebUI)
-					{
-						WU_WEBPAGE *page;
-
-						// Show the WebUI
-						page = WuGetPage(h->Target, c->Cedar->WebUI);
-
-						if (page != NULL)
-						{
-							PostHttp(s, page->header, page->data, page->size);
-							b = true;
-							WuFreeWebPage(page);
-						}
-
-					}
+//					// Show the WebUI if the configuration allow to use the WebUI
+//					if (c->Cedar->Server != NULL && c->Cedar->Server->UseWebUI)
+//					{
+//						WU_WEBPAGE *page;
+//
+//						// Show the WebUI
+//						page = WuGetPage(h->Target, c->Cedar->WebUI);
+//
+//						if (page != NULL)
+//						{
+//							PostHttp(s, page->header, page->data, page->size);
+//							b = true;
+//							WuFreeWebPage(page);
+//						}
+//
+//					}
 
 					if (c->FirstSock->RemoteIP.addr[0] == 127)
 					{
