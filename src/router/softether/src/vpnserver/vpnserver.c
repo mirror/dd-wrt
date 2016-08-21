@@ -155,7 +155,7 @@ void StopProcess()
 // WinMain function
 int main(int argc, char *argv[])
 {
-	VgUseStaticLink();
+//	VgUseStaticLink();
 
 #ifdef	OS_WIN32
 

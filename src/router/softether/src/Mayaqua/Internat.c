@@ -123,7 +123,7 @@
 #include <Mayaqua/Mayaqua.h>
 
 extern LOCK *token_lock;
-static char charset[MAX_SIZE] = "EUCJP";
+static char charset[MAX_SIZE] = "UTF-8";
 static LOCK *iconv_lock = NULL;
 void *iconv_cache_wide_to_str = 0;
 void *iconv_cache_str_to_wide = 0;
@@ -924,36 +924,32 @@ USHORT *WideToUtf16(wchar_t *str)
 void InitInternational()
 {
 #ifdef	OS_UNIX
-	void *d;
+//	void *d;
 
 	if (iconv_lock != NULL)
 	{
 		return;
 	}
 
-	GetCurrentCharSet(charset, sizeof(charset));
-	d = IconvWideToStrInternal();
-	if (d == (void *)-1)
-	{
-#ifdef	UNIX_MACOS
-		StrCpy(charset, sizeof(charset), "utf-8");
-#else	// UNIX_MACOS
-		StrCpy(charset, sizeof(charset), "EUCJP");
-#endif	// UNIX_MACOS
-		d = IconvWideToStrInternal();
-		if (d == (void *)-1)
-		{
-			StrCpy(charset, sizeof(charset), "US");
-		}
-		else
-		{
-			IconvFreeInternal(d);
-		}
-	}
-	else
-	{
-		IconvFreeInternal(d);
-	}
+//	GetCurrentCharSet(charset, sizeof(charset));
+//	d = IconvWideToStrInternal();
+//	if (d == (void *)-1)
+//	{
+//		StrCpy(charset, sizeof(charset), "utf-8");
+//		d = IconvWideToStrInternal();
+//		if (d == (void *)-1)
+//		{
+//			StrCpy(charset, sizeof(charset), "US");
+//		}
+//		else
+//		{
+//			IconvFreeInternal(d);
+//		}
+//	}
+//	else
+//	{
+//		IconvFreeInternal(d);
+//	}
 
 	iconv_lock = NewLockMain();
 
@@ -1124,12 +1120,12 @@ void *IconvStrToWideInternal()
 	return (void *)iconv_open(IsBigEndian() ? "UTF-16BE" : "UTF-16LE", charset);
 }
 
-// Close the handle
-int IconvFreeInternal(void *d)
-{
-	iconv_close((iconv_t)d);
-	return 0;
-}
+//// Close the handle
+//int IconvFreeInternal(void *d)
+//{
+//	iconv_close((iconv_t)d);
+//	return 0;
+//}
 
 void *IconvWideToStr()
 {
@@ -1162,49 +1158,49 @@ int IconvFree(void *d)
 	return 0;
 }
 
-// Get the character set that is currently used from the environment variable
-void GetCurrentCharSet(char *name, UINT size)
-{
-	char tmp[MAX_SIZE];
-	TOKEN_LIST *t;
-	// Validate arguments
-	if (name == NULL)
-	{
-		return;
-	}
-
-	Zero(tmp, sizeof(tmp));
-	if (GetEnv("LANG", tmp, sizeof(tmp)) == false || IsEmptyStr(tmp))
-	{
-		Zero(tmp, sizeof(tmp));
-		if (GetEnv("LOCATION", tmp, sizeof(tmp)) == false || IsEmptyStr(tmp))
-		{
-			StrCpy(tmp, sizeof(tmp), "C");
-		}
-	}
-
-	Trim(tmp);
-
-	t = ParseToken(tmp, ".");
-	if (t->NumTokens >= 2)
-	{
-		StrCpy(name, size, t->Token[1]);
-	}
-	else
-	{
-		if (t->NumTokens == 1)
-		{
-			StrCpy(name, size, t->Token[0]);
-		}
-		else
-		{
-			StrCpy(name, size, "eucJP");
-		}
-	}
-	FreeToken(t);
-
-	StrUpper(name);
-}
+//// Get the character set that is currently used from the environment variable
+//void GetCurrentCharSet(char *name, UINT size)
+//{
+//	char tmp[MAX_SIZE];
+//	TOKEN_LIST *t;
+//	// Validate arguments
+//	if (name == NULL)
+//	{
+//		return;
+//	}
+//
+//	Zero(tmp, sizeof(tmp));
+//	if (GetEnv("LANG", tmp, sizeof(tmp)) == false || IsEmptyStr(tmp))
+//	{
+//		Zero(tmp, sizeof(tmp));
+//		if (GetEnv("LOCATION", tmp, sizeof(tmp)) == false || IsEmptyStr(tmp))
+//		{
+//			StrCpy(tmp, sizeof(tmp), "C");
+//		}
+//	}
+//
+//	Trim(tmp);
+//
+//	t = ParseToken(tmp, ".");
+//	if (t->NumTokens >= 2)
+//	{
+//		StrCpy(name, size, t->Token[1]);
+//	}
+//	else
+//	{
+//		if (t->NumTokens == 1)
+//		{
+//			StrCpy(name, size, t->Token[0]);
+//		}
+//		else
+//		{
+//			StrCpy(name, size, "UTF-8");
+//		}
+//	}
+//	FreeToken(t);
+//
+//	StrUpper(name);
+//}
 
 #endif	// OS_UNIX
 
