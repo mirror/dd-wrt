@@ -161,10 +161,10 @@ bool TryGetRootCertChain(LIST *o, X *x, bool auto_save, X **found_root_x)
 		UINT i;
 		DIRLIST *dir;
 		wchar_t dirname[MAX_SIZE];
-		wchar_t exedir[MAX_SIZE];
+//		wchar_t exedir[MAX_SIZE];
 
-		GetExeDirW(exedir, sizeof(exedir));
-		CombinePathW(dirname, sizeof(dirname), exedir, L"chain_certs");
+//		GetExeDirW(exedir, sizeof(exedir));
+		CombinePathW(dirname, sizeof(dirname), L"/var/lib", L"chain_certs");
 		MakeDirExW(dirname);
 
 		if (auto_save)
@@ -461,7 +461,7 @@ void AddXToCertList(LIST *o, X *x)
 void AddAllChainCertsToCertList(LIST *o)
 {
 	wchar_t dirname[MAX_SIZE];
-	wchar_t exedir[MAX_SIZE];
+//	wchar_t exedir[MAX_SIZE];
 	DIRLIST *dir;
 	// Validate arguments
 	if (o == NULL)
@@ -469,9 +469,9 @@ void AddAllChainCertsToCertList(LIST *o)
 		return;
 	}
 
-	GetExeDirW(exedir, sizeof(exedir));
+//	GetExeDirW(exedir, sizeof(exedir));
 
-	CombinePathW(dirname, sizeof(dirname), exedir, L"chain_certs");
+	CombinePathW(dirname, sizeof(dirname), L"/var/lib", L"chain_certs");
 
 	MakeDirExW(dirname);
 

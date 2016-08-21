@@ -913,7 +913,7 @@ void *UnixNewSingleInstance(char *instance_name)
 	UNIXLOCKFILE *ret;
 	char tmp[MAX_SIZE];
 	char name[MAX_SIZE];
-	char dir[MAX_PATH];
+//	char dir[MAX_PATH];
 	int fd;
 	struct flock lock;
 	int mode = S_IRUSR | S_IWUSR;
@@ -928,11 +928,11 @@ void *UnixNewSingleInstance(char *instance_name)
 		StrCpy(tmp, sizeof(tmp), instance_name);
 	}
 
-	snprintf(dir, sizeof(dir), "/var/lib");
+//	snprintf(dir, sizeof(dir), "/var/lib");
 //	GetExeDir(dir, sizeof(dir));
 
 	// File name generation
-	Format(name, sizeof(name), "%s/.%s", dir, tmp);
+	Format(name, sizeof(name), "/var/run/.%s", tmp);
 
 	fd = open(name, O_WRONLY);
 	if (fd == -1)
@@ -2305,14 +2305,14 @@ void UnixGenPidFileName(char *name, UINT size)
 	char exe_name[MAX_PATH];
 	UCHAR hash[MD5_SIZE];
 	char tmp1[64];
-	char dir[MAX_PATH];
+//	char dir[MAX_PATH];
 	// Validate arguments
 	if (name == NULL)
 	{
 		return;
 	}
 
-	GetExeDir(dir, sizeof(dir));
+//	GetExeDir(dir, sizeof(dir));
 
 	GetExeName(exe_name, sizeof(exe_name));
 	StrCat(exe_name, sizeof(exe_name), ":pid_hash");
@@ -2321,7 +2321,7 @@ void UnixGenPidFileName(char *name, UINT size)
 	Hash(hash, exe_name, StrLen(exe_name), false);
 	BinToStr(tmp1, sizeof(tmp1), hash, sizeof(hash));
 
-	Format(name, size, "%s/.pid_%s", dir, tmp1);
+	Format(name, size, "/var/run/.pid_%s", tmp1);
 }
 
 // Delete the PID file
@@ -2350,14 +2350,14 @@ void UnixGenCtlFileName(char *name, UINT size)
 	char exe_name[MAX_PATH];
 	UCHAR hash[MD5_SIZE];
 	char tmp1[64];
-	char dir[MAX_PATH];
+//	char dir[MAX_PATH];
 	// Validate arguments
 	if (name == NULL)
 	{
 		return;
 	}
 
-	GetExeDir(dir, sizeof(dir));
+//	GetExeDir(dir, sizeof(dir));
 
 	GetExeName(exe_name, sizeof(exe_name));
 	StrCat(exe_name, sizeof(exe_name), ":pid_hash");
@@ -2366,7 +2366,7 @@ void UnixGenCtlFileName(char *name, UINT size)
 	Hash(hash, exe_name, StrLen(exe_name), false);
 	BinToStr(tmp1, sizeof(tmp1), hash, sizeof(hash));
 
-	Format(name, size, "%s/.ctl_%s", dir, tmp1);
+	Format(name, size, "/var/run/.ctl_%s", tmp1);
 }
 
 // Write the CTL file

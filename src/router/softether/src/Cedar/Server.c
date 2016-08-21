@@ -1098,7 +1098,7 @@ void FreeEnumLogFile(LIST *o)
 // Enumerate the log files associated with the virtual HUB (All logs are listed in the case of server administrator)
 LIST *EnumLogFile(char *hubname)
 {
-	char exe_dir[MAX_PATH];
+//	char exe_dir[MAX_PATH];
 	char tmp[MAX_PATH];
 	LIST *o = NewListFast(CmpLogFile);
 	DIRLIST *dir;
@@ -1108,7 +1108,7 @@ LIST *EnumLogFile(char *hubname)
 		hubname = NULL;
 	}
 
-	GetExeDir(exe_dir, sizeof(exe_dir));
+//	GetExeDir(exe_dir, sizeof(exe_dir));
 
 	// Enumerate in the server_log
 	if (hubname == NULL)
@@ -1117,7 +1117,7 @@ LIST *EnumLogFile(char *hubname)
 	}
 
 	// Enumerate in the packet_log
-	Format(tmp, sizeof(tmp), "%s/packet_log", exe_dir);
+	Format(tmp, sizeof(tmp), "/var/log/packet_log");
 	dir = EnumDir(tmp);
 	if (dir != NULL)
 	{
@@ -1142,7 +1142,7 @@ LIST *EnumLogFile(char *hubname)
 	}
 
 	// Enumerate in the security_log
-	Format(tmp, sizeof(tmp), "%s/security_log", exe_dir);
+	Format(tmp, sizeof(tmp), "/var/log/security_log");
 	dir = EnumDir(tmp);
 	if (dir != NULL)
 	{
@@ -1173,7 +1173,7 @@ LIST *EnumLogFile(char *hubname)
 void EnumLogFileDir(LIST *o, char *dirname)
 {
 	UINT i;
-	char exe_dir[MAX_PATH];
+//	char exe_dir[MAX_PATH];
 	char dir_full_path[MAX_PATH];
 	DIRLIST *dir;
 	// Validate arguments
@@ -1182,8 +1182,8 @@ void EnumLogFileDir(LIST *o, char *dirname)
 		return;
 	}
 
-	GetExeDir(exe_dir, sizeof(exe_dir));
-	Format(dir_full_path, sizeof(dir_full_path), "%s/%s", exe_dir, dirname);
+//	GetExeDir(exe_dir, sizeof(exe_dir));
+	Format(dir_full_path, sizeof(dir_full_path), "/var/log/%s", dirname);
 
 	dir = EnumDir(dir_full_path);
 	if (dir == NULL)
@@ -1201,7 +1201,7 @@ void EnumLogFileDir(LIST *o, char *dirname)
 			char file_path[MAX_PATH];
 
 			Format(file_path, sizeof(file_path), "%s/%s", dirname, e->FileName);
-			Format(full_path, sizeof(full_path), "%s/%s", exe_dir, file_path);
+			Format(full_path, sizeof(full_path), "/var/log/%s", file_path);
 
 			if (EndWith(file_path, ".log"))
 			{
