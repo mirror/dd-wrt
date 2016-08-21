@@ -9647,8 +9647,8 @@ void VirtualDhcpServer(VH *v, PKT *p)
 				ret.DnsServer2 = v->DhcpDns2;
 				ret.Gateway = v->DhcpGateway;
 
-				if (GetGlobalServerFlag(GSF_DISABLE_PUSH_ROUTE) == 0)
-				{
+//				if (GetGlobalServerFlag(GSF_DISABLE_PUSH_ROUTE) == 0)
+//				{
 					Copy(&ret.ClasslessRoute, &v->PushRoute, sizeof(DHCP_CLASSLESS_ROUTE_TABLE));
 
 					if (IsIpcMacAddress(p->MacAddressSrc))
@@ -9697,7 +9697,7 @@ void VirtualDhcpServer(VH *v, PKT *p)
 							}
 						}
 					}
-				}
+//				}
 
 				if (opt->Opcode != DHCP_INFORM)
 				{

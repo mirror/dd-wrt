@@ -155,7 +155,7 @@ void StopProcess()
 // WinMain function
 int main(int argc, char *argv[])
 {
-	VgUseStaticLink();
+//	VgUseStaticLink();
 
 #ifdef	OS_WIN32
 	return MsService(GC_SVC_NAME_VPNBRIDGE, StartProcess, StopProcess, ICO_BRIDGE, argv[0]);

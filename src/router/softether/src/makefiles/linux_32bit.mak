@@ -281,8 +281,8 @@ tmp/objs/Cedar/UdpAccel.o: src/Cedar/UdpAccel.c $(HEADERS_MAYAQUA) $(HEADERS_CED
 tmp/objs/Cedar/UT.o: src/Cedar/UT.c $(HEADERS_MAYAQUA) $(HEADERS_CEDAR)
 	$(CC) $(OPTIONS_COMPILE) -c src/Cedar/UT.c -o tmp/objs/Cedar/UT.o
 
-tmp/objs/Cedar/VG.o: src/Cedar/VG.c $(HEADERS_MAYAQUA) $(HEADERS_CEDAR)
-	$(CC) $(OPTIONS_COMPILE) -c src/Cedar/VG.c -o tmp/objs/Cedar/VG.o
+#tmp/objs/Cedar/VG.o: src/Cedar/VG.c $(HEADERS_MAYAQUA) $(HEADERS_CEDAR)
+#	$(CC) $(OPTIONS_COMPILE) -c src/Cedar/VG.c -o tmp/objs/Cedar/VG.o
 
 tmp/objs/Cedar/Virtual.o: src/Cedar/Virtual.c $(HEADERS_MAYAQUA) $(HEADERS_CEDAR)
 	$(CC) $(OPTIONS_COMPILE) -c src/Cedar/Virtual.c -o tmp/objs/Cedar/Virtual.o
@@ -299,8 +299,8 @@ tmp/objs/Cedar/VLanWin32.o: src/Cedar/VLanWin32.c $(HEADERS_MAYAQUA) $(HEADERS_C
 tmp/objs/Cedar/WaterMark.o: src/Cedar/WaterMark.c $(HEADERS_MAYAQUA) $(HEADERS_CEDAR)
 	$(CC) $(OPTIONS_COMPILE) -c src/Cedar/WaterMark.c -o tmp/objs/Cedar/WaterMark.o
 
-tmp/objs/Cedar/WebUI.o: src/Cedar/WebUI.c $(HEADERS_MAYAQUA) $(HEADERS_CEDAR)
-	$(CC) $(OPTIONS_COMPILE) -c src/Cedar/WebUI.c -o tmp/objs/Cedar/WebUI.o
+#tmp/objs/Cedar/WebUI.o: src/Cedar/WebUI.c $(HEADERS_MAYAQUA) $(HEADERS_CEDAR)
+#	$(CC) $(OPTIONS_COMPILE) -c src/Cedar/WebUI.c -o tmp/objs/Cedar/WebUI.o
 
 tmp/objs/Cedar/WinUi.o: src/Cedar/WinUi.c $(HEADERS_MAYAQUA) $(HEADERS_CEDAR)
 	$(CC) $(OPTIONS_COMPILE) -c src/Cedar/WinUi.c -o tmp/objs/Cedar/WinUi.o

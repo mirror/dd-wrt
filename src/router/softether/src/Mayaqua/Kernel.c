@@ -1378,10 +1378,10 @@ void GetTimeStrEx(wchar_t *str, UINT size, SYSTEMTIME *st, LOCALE *locale)
 		return;
 	}
 
-	if (_GETLANG() == SE_LANG_JAPANESE || _GETLANG() == SE_LANG_CHINESE_ZH)
-	{
-		tag = L"%2u%s%2u%s%2u%s";
-	}
+//	if (_GETLANG() == SE_LANG_JAPANESE || _GETLANG() == SE_LANG_CHINESE_ZH)
+//	{
+//		tag = L"%2u%s%2u%s%2u%s";
+//	}
 
 	locale = (locale != NULL ? locale : &current_locale);
 	UniFormat(str, size,
@@ -1401,10 +1401,10 @@ void GetDateStrEx(wchar_t *str, UINT size, SYSTEMTIME *st, LOCALE *locale)
 		return;
 	}
 
-	if (_GETLANG() == SE_LANG_JAPANESE || _GETLANG() == SE_LANG_CHINESE_ZH)
-	{
-		tag = L"%4u%s%2u%s%2u%s(%s)";
-	}
+//	if (_GETLANG() == SE_LANG_JAPANESE || _GETLANG() == SE_LANG_CHINESE_ZH)
+//	{
+//		tag = L"%4u%s%2u%s%2u%s(%s)";
+//	}
 
 	locale = (locale != NULL ? locale : &current_locale);
 	UniFormat(str, size,

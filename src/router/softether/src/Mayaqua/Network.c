@@ -12966,14 +12966,18 @@ bool StartSSLEx(SOCK *sock, X *x, K *priv, bool client_tls, UINT ssl_timeout, ch
 	{
 		if (sock->ServerMode)
 		{
+#ifndef OPENSSL_NO_SSL3_METHOD
 			if (sock->AcceptOnlyTls == false)
 			{
 				SSL_CTX_set_ssl_version(ssl_ctx, SSLv23_method());
 			}
 			else
 			{
+#endif // OPENSSL_NO_SSL3_METHOD
 				SSL_CTX_set_ssl_version(ssl_ctx, TLSv1_method());
+#ifndef OPENSSL_NO_SSL3_METHOD
 			}
+#endif // OPENSSL_NO_SSL3_METHOD
 
 			Unlock(openssl_lock);
 			AddChainSslCertOnDirectory(ssl_ctx);
@@ -12981,20 +12985,28 @@ bool StartSSLEx(SOCK *sock, X *x, K *priv, bool client_tls, UINT ssl_timeout, ch
 		}
 		else
 		{
+#ifndef OPENSSL_NO_SSL3_METHOD
 			if (client_tls == false)
 			{
 				SSL_CTX_set_ssl_version(ssl_ctx, SSLv3_method());
 			}
 			else
 			{
+#endif // OPENSSL_NO_SSL3_METHOD
 				SSL_CTX_set_ssl_version(ssl_ctx, TLSv1_client_method());
+#ifndef OPENSSL_NO_SSL3_METHOD
 			}
+#endif // OPENSSL_NO_SSL3_METHOD
 		}
 		sock->ssl = SSL_new(ssl_ctx);
 		SSL_set_fd(sock->ssl, (int)sock->socket);
 
 #ifdef	SSL_CTRL_SET_TLSEXT_HOSTNAME
+#ifndef OPENSSL_NO_SSL3_METHOD
 		if (sock->ServerMode == false && client_tls)
+#else // OPENSSL_NO_SSL3_METHOD
+		if (sock->ServerMode == false)
+#endif // OPENSSL_NO_SSL3_METHOD
 		{
 			if (IsEmptyStr(sni_hostname) == false)
 			{
