@@ -1053,8 +1053,8 @@ UINT StMakeOpenVpnConfigFile(ADMIN *a, RPC_READ_LOG_FILE *t)
 	UINT ret = ERR_NO_ERROR;
 	ZIP_PACKER *p;
 	FIFO *f;
-	BUF *readme_buf;
-	BUF *readme_pdf_buf;
+//	BUF *readme_buf;
+//	BUF *readme_pdf_buf;
 	BUF *sample_buf;
 	OPENVPN_SSTP_CONFIG config;
 	LIST *port_list;
@@ -1081,11 +1081,11 @@ UINT StMakeOpenVpnConfigFile(ADMIN *a, RPC_READ_LOG_FILE *t)
 
 	p = NewZipPacker();
 
-	// readme.txt
-	readme_buf = ReadDump("|openvpn_readme.txt");
-
-	// readme.pdf
-	readme_pdf_buf = ReadDump("|openvpn_readme.pdf");
+//	// readme.txt
+//	readme_buf = ReadDump("|openvpn_readme.txt");
+//
+//	// readme.pdf
+//	readme_pdf_buf = ReadDump("|openvpn_readme.pdf");
 
 	// sample.ovpn
 	sample_buf = ReadDump("|openvpn_sample.ovpn");
@@ -1094,7 +1094,8 @@ UINT StMakeOpenVpnConfigFile(ADMIN *a, RPC_READ_LOG_FILE *t)
 	GetMachineHostName(my_hostname, sizeof(my_hostname));
 	my_hostname[16] = 0;
 
-	if (readme_buf == NULL || sample_buf == NULL || readme_pdf_buf == NULL)
+//	if (readme_buf == NULL || sample_buf == NULL || readme_pdf_buf == NULL)
+	if (sample_buf == NULL)
 	{
 		ret = ERR_INTERNAL_ERROR;
 	}
@@ -1279,8 +1280,8 @@ UINT StMakeOpenVpnConfigFile(ADMIN *a, RPC_READ_LOG_FILE *t)
 			StrLower(my_hostname);
 		}
 
-		ZipAddFileSimple(p, "readme.txt", LocalTime64(), 0, readme_buf->Buf, readme_buf->Size);
-		ZipAddFileSimple(p, "readme.pdf", LocalTime64(), 0, readme_pdf_buf->Buf, readme_pdf_buf->Size);
+//		ZipAddFileSimple(p, "readme.txt", LocalTime64(), 0, readme_buf->Buf, readme_buf->Size);
+//		ZipAddFileSimple(p, "readme.pdf", LocalTime64(), 0, readme_pdf_buf->Buf, readme_pdf_buf->Size);
 
 		ReplaceStrEx((char *)config_l3_buf->Buf, config_l3_buf->Size, (char *)config_l3_buf->Buf,
 			"$TAG_TUN_TAP$", "tun", false);
@@ -1358,9 +1359,9 @@ UINT StMakeOpenVpnConfigFile(ADMIN *a, RPC_READ_LOG_FILE *t)
 			SeekBuf(t->Buffer, 0, 0);
 		}
 
-		FreeBuf(readme_buf);
+//		FreeBuf(readme_buf);
 		FreeBuf(sample_buf);
-		FreeBuf(readme_pdf_buf);
+//		FreeBuf(readme_pdf_buf);
 		FreeBuf(x_buf);
 
 		FreeX(dummy_x);
@@ -2218,10 +2219,10 @@ UINT StSetAcList(ADMIN *a, RPC_AC_LIST *t)
 		return ERR_NOT_SUPPORTED;
 	}
 
-	if (GetGlobalServerFlag(GSF_DISABLE_AC) != 0 && LIST_NUM(t->o) >= 1)
-	{
-		return ERR_NOT_SUPPORTED_FUNCTION_ON_OPENSOURCE;
-	}
+//	if (GetGlobalServerFlag(GSF_DISABLE_AC) != 0 && LIST_NUM(t->o) >= 1)
+//	{
+//		return ERR_NOT_SUPPORTED_FUNCTION_ON_OPENSOURCE;
+//	}
 
 	CHECK_RIGHT;
 	NO_SUPPORT_FOR_BRIDGE;
@@ -3664,10 +3665,10 @@ UINT StSetSysLog(ADMIN *a, SYSLOG_SETTING *t)
 
 	SERVER_ADMIN_ONLY;
 
-	if (GetGlobalServerFlag(GSF_DISABLE_SYSLOG) != 0 && t->SaveType != SYSLOG_NONE)
-	{
-		return ERR_NOT_SUPPORTED_FUNCTION_ON_OPENSOURCE;
-	}
+//	if (GetGlobalServerFlag(GSF_DISABLE_SYSLOG) != 0 && t->SaveType != SYSLOG_NONE)
+//	{
+//		return ERR_NOT_SUPPORTED_FUNCTION_ON_OPENSOURCE;
+//	}
 
 	if (GetServerCapsBool(s, "b_support_syslog") == false)
 	{
@@ -5068,13 +5069,13 @@ UINT StSetUser(ADMIN *a, RPC_SET_USER *t)
 
 	CHECK_RIGHT;
 
-	if (GetGlobalServerFlag(GSF_DISABLE_RADIUS_AUTH) != 0)
-	{
-		if (t->AuthType == AUTHTYPE_USERCERT || t->AuthType == AUTHTYPE_RADIUS || t->AuthType == AUTHTYPE_ROOTCERT || t->AuthType == AUTHTYPE_NT)
-		{
-			return ERR_NOT_SUPPORTED_AUTH_ON_OPENSOURCE;
-		}
-	}
+//	if (GetGlobalServerFlag(GSF_DISABLE_RADIUS_AUTH) != 0)
+//	{
+//		if (t->AuthType == AUTHTYPE_USERCERT || t->AuthType == AUTHTYPE_RADIUS || t->AuthType == AUTHTYPE_ROOTCERT || t->AuthType == AUTHTYPE_NT)
+//		{
+//			return ERR_NOT_SUPPORTED_AUTH_ON_OPENSOURCE;
+//		}
+//	}
 
 	if (StrCmpi(t->Name, "*") == 0)
 	{
@@ -5201,13 +5202,13 @@ UINT StCreateUser(ADMIN *a, RPC_SET_USER *t)
 
 	CHECK_RIGHT;
 
-	if (GetGlobalServerFlag(GSF_DISABLE_RADIUS_AUTH) != 0)
-	{
-		if (t->AuthType == AUTHTYPE_USERCERT || t->AuthType == AUTHTYPE_RADIUS || t->AuthType == AUTHTYPE_ROOTCERT || t->AuthType == AUTHTYPE_NT)
-		{
-			return ERR_NOT_SUPPORTED_AUTH_ON_OPENSOURCE;
-		}
-	}
+//	if (GetGlobalServerFlag(GSF_DISABLE_RADIUS_AUTH) != 0)
+//	{
+//		if (t->AuthType == AUTHTYPE_USERCERT || t->AuthType == AUTHTYPE_RADIUS || t->AuthType == AUTHTYPE_ROOTCERT || t->AuthType == AUTHTYPE_NT)
+//		{
+//			return ERR_NOT_SUPPORTED_AUTH_ON_OPENSOURCE;
+//		}
+//	}
 
 	if (t->AuthType == AUTHTYPE_USERCERT)
 	{
@@ -7694,10 +7695,10 @@ UINT StSetHubRadius(ADMIN *a, RPC_RADIUS *t)
 		return ERR_NOT_SUPPORTED;
 	}
 
-	if (GetGlobalServerFlag(GSF_DISABLE_RADIUS_AUTH) != 0 && IsEmptyStr(t->RadiusServerName) == false)
-	{
-		return ERR_NOT_SUPPORTED_FUNCTION_ON_OPENSOURCE;
-	}
+//	if (GetGlobalServerFlag(GSF_DISABLE_RADIUS_AUTH) != 0 && IsEmptyStr(t->RadiusServerName) == false)
+//	{
+//		return ERR_NOT_SUPPORTED_FUNCTION_ON_OPENSOURCE;
+//	}
 
 	CHECK_RIGHT;
 

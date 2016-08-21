@@ -235,7 +235,7 @@ bool UniInChar(wchar_t *string, wchar_t c);
 UNI_TOKEN_LIST *UniGetLines(wchar_t *str);
 
 #ifdef	OS_UNIX
-void GetCurrentCharSet(char *name, UINT size);
+//void GetCurrentCharSet(char *name, UINT size);
 UINT UnixCalcStrToUni(char *str);
 UINT UnixStrToUni(wchar_t *s, UINT size, char *str);
 UINT UnixCalcUniToStr(wchar_t *s);
@@ -245,7 +245,7 @@ void *IconvStrToWide();
 int IconvFree(void *d);
 void *IconvWideToStrInternal();
 void *IconvStrToWideInternal();
-int IconvFreeInternal(void *d);
+//int IconvFreeInternal(void *d);
 #endif	// OS_UNIX
 
 #endif	// INTERNAT_H

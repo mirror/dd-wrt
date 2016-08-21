@@ -1315,7 +1315,8 @@ void BuildHamcore(char *dst_filename, char *src_dir, bool unix_only)
 					c->Size = b->Size;
 					tmp_size = CalcCompress(c->Size);
 					tmp = Malloc(tmp_size);
-					c->SizeCompressed = Compress(tmp, tmp_size, b->Buf, b->Size);
+//					c->SizeCompressed = Compress(tmp, tmp_size, b->Buf, b->Size);
+					c->SizeCompressed = CompressEx(tmp, tmp_size, b->Buf, b->Size, 9);
 					c->Buffer = tmp;
 					Insert(o, c);
 					Print("%s: %u -> %u\n", s, c->Size, c->SizeCompressed);

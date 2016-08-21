@@ -920,10 +920,10 @@ bool IsIpDeniedByAcList(IP *ip, LIST *o)
 		return false;
 	}
 
-	if (GetGlobalServerFlag(GSF_DISABLE_AC) != 0)
-	{
-		return false;
-	}
+//	if (GetGlobalServerFlag(GSF_DISABLE_AC) != 0)
+//	{
+//		return false;
+//	}
 
 	for (i = 0;i < LIST_NUM(o);i++)
 	{
@@ -955,10 +955,10 @@ bool IsIpMaskedByAc(IP *ip, AC *ac)
 		return false;
 	}
 
-	if (GetGlobalServerFlag(GSF_DISABLE_AC) != 0)
-	{
-		return false;
-	}
+//	if (GetGlobalServerFlag(GSF_DISABLE_AC) != 0)
+//	{
+//		return false;
+//	}
 
 	if (IsIP4(ip))
 	{
