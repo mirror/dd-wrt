@@ -2,6 +2,7 @@
 # Automatically generated make config: don't edit
 #
 CONFIG_JAVA=y
+CONFIG_SOFTETHER=y
 CONFIG_QCA9887=y
 CONFIG_QCA99X0=y
 CONFIG_BTRFSPROGS=y
