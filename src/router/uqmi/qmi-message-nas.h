@@ -442,6 +442,158 @@ struct qmi_nas_get_system_selection_preference_response {
 	} data;
 };
 
+struct qmi_nas_get_cell_location_info_response {
+	struct {
+		unsigned int geran_info : 1;
+		unsigned int umts_info : 1;
+		unsigned int cdma_info : 1;
+		unsigned int intrafrequency_lte_info : 1;
+		unsigned int interfrequency_lte_info : 1;
+		unsigned int lte_info_neighboring_gsm : 1;
+		unsigned int lte_info_neighboring_wcdma : 1;
+		unsigned int umts_cell_id : 1;
+		unsigned int umts_info_neighboring_lte : 1;
+	} set;
+	struct {
+		struct {
+			uint32_t cell_id;
+			char *plmn;
+			uint16_t lac;
+			uint16_t geran_absolute_rf_channel_number;
+			uint8_t base_station_identity_code;
+			uint32_t timing_advance;
+			uint16_t rx_level;
+			unsigned int cell_n;
+			struct {
+				uint32_t cell_id;
+				char *plmn;
+				uint16_t lac;
+				uint16_t geran_absolute_rf_channel_number;
+				uint8_t base_station_identity_code;
+				uint16_t rx_level;
+			} *cell;
+		} geran_info;
+		struct {
+			uint16_t cell_id;
+			char *plmn;
+			uint16_t lac;
+			uint16_t utra_absolute_rf_channel_number;
+			uint16_t primary_scrambling_code;
+			int16_t rscp;
+			int16_t ecio;
+			unsigned int cell_n;
+			struct {
+				uint16_t utra_absolute_rf_channel_number;
+				uint16_t primary_scrambling_code;
+				int16_t rscp;
+				int16_t ecio;
+			} *cell;
+			unsigned int neighboring_geran_n;
+			struct {
+				uint16_t geran_absolute_rf_channel_number;
+				uint8_t network_color_code;
+				uint8_t base_station_color_code;
+				int16_t rssi;
+			} *neighboring_geran;
+		} umts_info;
+		struct {
+			uint16_t system_id;
+			uint16_t network_id;
+			uint16_t base_station_id;
+			uint16_t reference_pn;
+			uint32_t latitude;
+			uint32_t longitude;
+		} cdma_info;
+		struct {
+			bool ue_in_idle;
+			char *plmn;
+			uint16_t tracking_area_code;
+			uint32_t global_cell_id;
+			uint16_t eutra_absolute_rf_channel_number;
+			uint16_t serving_cell_id;
+			uint8_t cell_reselection_priority;
+			uint8_t s_non_intra_search_threshold;
+			uint8_t serving_cell_low_threshold;
+			uint8_t s_intra_search_threshold;
+			unsigned int cell_n;
+			struct {
+				uint16_t physical_cell_id;
+				int16_t rsrq;
+				int16_t rsrp;
+				int16_t rssi;
+				int16_t cell_selection_rx_level;
+			} *cell;
+		} intrafrequency_lte_info;
+		struct {
+			bool ue_in_idle;
+			unsigned int frequency_n;
+			struct {
+				uint16_t eutra_absolute_rf_channel_number;
+				uint8_t cell_selection_rx_level_low_threshold;
+				uint8_t cell_selection_rx_level_high_threshold;
+				uint8_t cell_reselection_priority;
+				unsigned int cell_n;
+				struct {
+					uint16_t physical_cell_id;
+					int16_t rsrq;
+					int16_t rsrp;
+					int16_t rssi;
+					int16_t cell_selection_rx_level;
+				} *cell;
+			} *frequency;
+		} interfrequency_lte_info;
+		struct {
+			bool ue_in_idle;
+			unsigned int frequency_n;
+			struct {
+				uint8_t cell_reselection_priority;
+				uint8_t cell_reselection_high_threshold;
+				uint8_t cell_reselection_low_threshold;
+				uint8_t ncc_permitted;
+				unsigned int cell_n;
+				struct {
+					uint16_t geran_absolute_rf_channel_number;
+					bool band_is_1900;
+					bool cell_id_valid;
+					uint8_t base_station_identity_code;
+					int16_t rssi;
+					int16_t cell_selection_rx_level;
+				} *cell;
+			} *frequency;
+		} lte_info_neighboring_gsm;
+		struct {
+			bool ue_in_idle;
+			unsigned int frequency_n;
+			struct {
+				uint16_t utra_absolute_rf_channel_number;
+				uint8_t cell_reselection_priority;
+				uint16_t cell_reselection_high_threshold;
+				uint16_t cell_reselection_low_threshold;
+				unsigned int cell_n;
+				struct {
+					uint16_t primary_scrambling_code;
+					int16_t cpich_rscp;
+					int16_t cpich_ecno;
+					int16_t cell_selection_rx_level;
+				} *cell;
+			} *frequency;
+		} lte_info_neighboring_wcdma;
+		uint32_t umts_cell_id;
+		struct {
+			QmiNasWcdmaRrcState rrc_state;
+			unsigned int frequency_n;
+			struct {
+				uint16_t eutra_absolute_rf_channel_number;
+				uint16_t physical_cell_id;
+				float rsrp;
+				float rsrq;
+				int16_t cell_selection_rx_level;
+				bool is_tdd;
+			} *frequency;
+		} umts_info_neighboring_lte;
+	} data;
+};
+
 struct qmi_nas_get_system_info_response {
 	struct {
 		unsigned int cdma_service_status : 1;
@@ -749,6 +901,45 @@ struct qmi_nas_config_signal_info_request {
 	} data;
 };
 
+struct qmi_nas_get_tx_rx_info_request {
+	struct {
+		unsigned int radio_interface : 1;
+	} set;
+	struct {
+		QmiNasRadioInterface radio_interface;
+	} data;
+};
+
+struct qmi_nas_get_tx_rx_info_response {
+	struct {
+		unsigned int rx_chain_0_info : 1;
+		unsigned int rx_chain_1_info : 1;
+		unsigned int tx_info : 1;
+	} set;
+	struct {
+		struct {
+			bool is_radio_tuned;
+			int32_t rx_power;
+			int32_t ecio;
+			int32_t rscp;
+			int32_t rsrp;
+			uint32_t phase;
+		} rx_chain_0_info;
+		struct {
+			bool is_radio_tuned;
+			int32_t rx_power;
+			int32_t ecio;
+			int32_t rscp;
+			int32_t rsrp;
+			uint32_t phase;
+		} rx_chain_1_info;
+		struct {
+			bool is_in_traffic;
+			int32_t tx_power;
+		} tx_info;
+	} data;
+};
+
 struct qmi_nas_get_cdma_position_info_response {
 	struct {
 		unsigned int cdma_position_info : 1;
@@ -814,6 +1005,9 @@ int qmi_parse_nas_set_system_selection_preference_response(struct qmi_msg *msg);
 int qmi_set_nas_get_system_selection_preference_request(struct qmi_msg *msg);
 int qmi_parse_nas_get_system_selection_preference_response(struct qmi_msg *msg, struct qmi_nas_get_system_selection_preference_response *res);
 
+int qmi_set_nas_get_cell_location_info_request(struct qmi_msg *msg);
+int qmi_parse_nas_get_cell_location_info_response(struct qmi_msg *msg, struct qmi_nas_get_cell_location_info_response *res);
+
 int qmi_set_nas_get_system_info_request(struct qmi_msg *msg);
 int qmi_parse_nas_get_system_info_response(struct qmi_msg *msg, struct qmi_nas_get_system_info_response *res);
 
@@ -822,6 +1016,9 @@ int qmi_parse_nas_get_signal_info_response(struct qmi_msg *msg, struct qmi_nas_g
 
 int qmi_set_nas_config_signal_info_request(struct qmi_msg *msg, struct qmi_nas_config_signal_info_request *req);
 int qmi_parse_nas_config_signal_info_response(struct qmi_msg *msg);
+
+int qmi_set_nas_get_tx_rx_info_request(struct qmi_msg *msg, struct qmi_nas_get_tx_rx_info_request *req);
+int qmi_parse_nas_get_tx_rx_info_response(struct qmi_msg *msg, struct qmi_nas_get_tx_rx_info_response *res);
 
 int qmi_set_nas_get_cdma_position_info_request(struct qmi_msg *msg);
 int qmi_parse_nas_get_cdma_position_info_response(struct qmi_msg *msg, struct qmi_nas_get_cdma_position_info_response *res);

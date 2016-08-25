@@ -1,3 +1,24 @@
+/*
+ * uqmi -- tiny QMI support implementation
+ *
+ * Copyright (C) 2014-2015 Felix Fietkau <nbd@openwrt.org>
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the
+ * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+ * Boston, MA 02110-1301 USA.
+ */
+
 #ifndef __UQMI_H
 #define __UQMI_H
 
@@ -34,7 +55,8 @@ static inline void dump_packet(const char *prefix, void *ptr, int len)
     __qmi_service(QMI_SERVICE_RMTFS), \
     __qmi_service(QMI_SERVICE_CAT), \
     __qmi_service(QMI_SERVICE_RMS), \
-    __qmi_service(QMI_SERVICE_OMA)
+    __qmi_service(QMI_SERVICE_OMA), \
+    __qmi_service(QMI_SERVICE_WDA)
 
 #define __qmi_service(_n) __##_n
 enum {
@@ -65,6 +87,8 @@ struct qmi_dev {
 	uint32_t service_release_cid;
 
 	uint8_t ctl_tid;
+
+	bool is_mbim;
 };
 
 struct qmi_request {

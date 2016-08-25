@@ -1,3 +1,24 @@
+/*
+ * uqmi -- tiny QMI support implementation
+ *
+ * Copyright (C) 2014-2015 Felix Fietkau <nbd@openwrt.org>
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the
+ * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+ * Boston, MA 02110-1301 USA.
+ */
+
 #include <libubox/uloop.h>
 #include <libubox/utils.h>
 #include <stdio.h>
@@ -22,6 +43,7 @@ static const struct option uqmi_getopt[] = {
 	{ "device", required_argument, NULL, 'd' },
 	{ "keep-client-id", required_argument, NULL, 'k' },
 	{ "release-client-id", required_argument, NULL, 'r' },
+	{ "mbim",  no_argument, NULL, 'm' },
 	{ NULL, 0, NULL, 0 }
 };
 #undef __uqmi_command
@@ -33,20 +55,22 @@ static int usage(const char *progname)
 		"  --single, -s:                     Print output as a single line (for scripts)\n"
 		"  --device=NAME, -d NAME:           Set device name to NAME (required)\n"
 		"  --keep-client-id <name>:          Keep Client ID for service <name>\n"
-		"                                    (implies --keep-client-id)\n"
 		"  --release-client-id <name>:       Release Client ID after exiting\n"
+		"  --mbim, -m                        NAME is an MBIM device with EXT_QMUX support\n"
 		"\n"
 		"Services:                           dms, nas, pds, wds, wms\n"
 		"\n"
 		"Actions:\n"
 		"  --get-versions:                   Get service versions\n"
 		"  --set-client-id <name>,<id>:      Set Client ID for service <name> to <id>\n"
+		"                                    (implies --keep-client-id)\n"
 		"  --get-client-id <name>:           Connect and get Client ID for service <name>\n"
 		"                                    (implies --keep-client-id)\n"
 		wds_helptext
 		dms_helptext
 		nas_helptext
 		wms_helptext
+		wda_helptext
 		"\n", progname);
 	return 1;
 }
@@ -86,7 +110,7 @@ int main(int argc, char **argv)
 	signal(SIGINT, handle_exit_signal);
 	signal(SIGTERM, handle_exit_signal);
 
-	while ((ch = getopt_long(argc, argv, "d:k:s", uqmi_getopt, NULL)) != -1) {
+	while ((ch = getopt_long(argc, argv, "d:k:sm", uqmi_getopt, NULL)) != -1) {
 		int cmd_opt = CMD_OPT(ch);
 
 		if (ch < 0 && cmd_opt >= 0 && cmd_opt < __UQMI_COMMAND_LAST) {
@@ -106,6 +130,9 @@ int main(int argc, char **argv)
 			break;
 		case 's':
 			single_line = true;
+			break;
+		case 'm':
+			dev.is_mbim = true;
 			break;
 		default:
 			return usage(argv[0]);

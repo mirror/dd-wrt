@@ -1,4 +1,28 @@
+/*
+ * uqmi -- tiny QMI support implementation
+ *
+ * Copyright (C) 2014-2015 Felix Fietkau <nbd@openwrt.org>
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the
+ * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+ * Boston, MA 02110-1301 USA.
+ */
+
 #include "qmi-message.h"
+
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#define CEILDIV(x,y) (((x) + (y) - 1) / (y))
 
 static void cmd_wms_list_messages_cb(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg)
 {
@@ -67,6 +91,7 @@ pdu_decode_7bit_char(char *dest, int len, unsigned char c, bool *escape)
 	fprintf(stderr, " %02x", c);
 	dest += len;
 	if (*escape) {
+		*escape = false;
 		switch(c) {
 		case 0x0A:
 			*dest = 0x0C;
@@ -158,13 +183,13 @@ pdu_decode_7bit_str(char *dest, const unsigned char *data, int data_len, int bit
 	return len;
 }
 
-static void decode_udh(const unsigned char *data)
+static int decode_udh(const unsigned char *data)
 {
 	const unsigned char *end;
-	unsigned int type, len;
+	unsigned int type, len, udh_len;
 
-	len = *(data++);
-	end = data + len;
+	udh_len = *(data++);
+	end = data + udh_len;
 	while (data < end) {
 		const unsigned char *val;
 
@@ -176,38 +201,30 @@ static void decode_udh(const unsigned char *data)
 			break;
 
 		switch (type) {
-		case 0:
+		case 0x00:
 			blobmsg_add_u32(&status, "concat_ref", (uint32_t) val[0]);
-			blobmsg_add_u32(&status, "concat_part", (uint32_t) val[2] + 1);
+			blobmsg_add_u32(&status, "concat_part", (uint32_t) val[2]);
 			blobmsg_add_u32(&status, "concat_parts", (uint32_t) val[1]);
+			break;
+		case 0x08:
+			blobmsg_add_u32(&status, "concat_ref", (uint32_t) (val[0] << 8 | val[1]));
+			blobmsg_add_u32(&status, "concat_part", (uint32_t) val[3]);
+			blobmsg_add_u32(&status, "concat_parts", (uint32_t) val[2]);
 			break;
 		default:
 			break;
 		}
 	}
+
+	return udh_len + 1;
 }
 
-static void decode_7bit_field(char *name, const unsigned char *data, int data_len, bool udh)
+static void decode_7bit_field(char *name, const unsigned char *data, int data_len, int bit_offset)
 {
-	const unsigned char *udh_start;
-	char *dest;
-	int pos_offset = 0;
-
-	if (udh) {
-		int len = data[0] + 1;
-
-		udh_start = data;
-		data += len;
-		data_len -= len;
-		pos_offset = len % 7;
-	}
-
-	dest = blobmsg_alloc_string_buffer(&status, name, 3 * (data_len * 8 / 7) + 2);
-	pdu_decode_7bit_str(dest, data, data_len, pos_offset);
+	char *dest = blobmsg_alloc_string_buffer(&status, name, 3 * data_len + 2);
+	pdu_decode_7bit_str(dest, data, CEILDIV(data_len * 7, 8), bit_offset);
+	dest[data_len] = 0;
 	blobmsg_add_string_buffer(&status);
-
-	if (udh)
-		decode_udh(udh_start);
 }
 
 static char *pdu_add_semioctet(char *str, char val)
@@ -246,12 +263,48 @@ pdu_decode_address(char *str, unsigned char *data, int len)
 	*str = 0;
 }
 
-static void wms_decode_address(char *str, char *name, unsigned char *data, int len)
+static void wms_decode_address(char *name, unsigned char *data, int len)
 {
-	str = blobmsg_alloc_string_buffer(&status, name, len * 2 + 2);
+	char *str = blobmsg_alloc_string_buffer(&status, name, len * 2 + 2);
 	pdu_decode_address(str, data, len);
 	blobmsg_add_string_buffer(&status);
 }
+
+static void blobmsg_add_hex(struct blob_buf *buf, const char *name, unsigned const char *data, int len)
+{
+	char* str = blobmsg_alloc_string_buffer(buf, name, len * 2 + 1);
+	for (int i = 0; i < len; i++) {
+		str += sprintf(str, "%02x", data[i]);
+	}
+	blobmsg_add_string_buffer(buf);
+}
+
+#define cmd_wms_delete_message_cb no_cb
+static enum qmi_cmd_result
+cmd_wms_delete_message_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
+{
+	char *err;
+	int id;
+
+	id = strtoul(arg, &err, 10);
+	if (err && *err) {
+		uqmi_add_error("Invalid message ID");
+		return QMI_CMD_EXIT;
+	}
+
+	static struct qmi_wms_delete_request mreq = {
+		QMI_INIT(memory_storage, QMI_WMS_STORAGE_TYPE_UIM),
+		QMI_INIT(message_mode, QMI_WMS_MESSAGE_MODE_GSM_WCDMA),
+	};
+
+	mreq.set.memory_index = 1;
+	mreq.data.memory_index = id;
+
+	qmi_set_wms_delete_request(msg, &mreq);
+
+	return QMI_CMD_REQUEST;
+}
+
 
 static void cmd_wms_get_message_cb(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg)
 {
@@ -270,15 +323,15 @@ static void cmd_wms_get_message_cb(struct qmi_dev *qmi, struct qmi_request *req,
 
 	cur_len = *(data++);
 	if (data + cur_len >= end)
-		return;
+		goto error;
 
 	if (cur_len) {
-		wms_decode_address(str, "smsc", data, cur_len - 1);
+		wms_decode_address("smsc", data, cur_len - 1);
 		data += cur_len;
 	}
 
 	if (data + 3 >= end)
-		return;
+		goto error;
 
 	first = *(data++);
 	sent = (first & 0x3) == 1;
@@ -287,27 +340,23 @@ static void cmd_wms_get_message_cb(struct qmi_dev *qmi, struct qmi_request *req,
 
 	cur_len = *(data++);
 	if (data + cur_len >= end)
-		return;
+		goto error;
 
 	if (cur_len) {
 		cur_len = (cur_len + 1) / 2;
-		wms_decode_address(str, sent ? "receiver" : "sender", data, cur_len);
+		wms_decode_address(sent ? "receiver" : "sender", data, cur_len);
 		data += cur_len + 1;
 	}
 
 	if (data + 3 >= end)
-		return;
+		goto error;
 
 	/* Protocol ID */
 	if (*(data++) != 0)
-		return;
+		goto error;
 
 	/* Data Encoding */
 	dcs = *(data++);
-
-	/* only 7-bit encoding supported for now */
-	if (dcs & 0x0c)
-		return;
 
 	if (dcs & 0x10)
 		blobmsg_add_u32(&status, "class", (dcs & 3));
@@ -317,7 +366,7 @@ static void cmd_wms_get_message_cb(struct qmi_dev *qmi, struct qmi_request *req,
 		data++;
 	} else {
 		if (data + 6 >= end)
-			return;
+			goto error;
 
 		str = blobmsg_alloc_string_buffer(&status, "timestamp", 32);
 
@@ -348,9 +397,47 @@ static void cmd_wms_get_message_cb(struct qmi_dev *qmi, struct qmi_request *req,
 		data += 7;
 	}
 
-	cur_len = *(data++);
-	decode_7bit_field("text", data, end - data, !!(first & 0x40));
+	int message_len = *(data++);
+	int udh_len = 0;
+	int bit_offset = 0;
+
+	/* User Data Header */
+	if (first & 0x40) {
+		udh_len = decode_udh(data);
+		data += udh_len;
+		bit_offset = udh_len % 7;
+		}
+
+	if (data >= end)
+		goto error;
+
+	switch(dcs & 0x0c) {
+		case 0x00:
+			/* 7 bit GSM alphabet */
+			message_len = message_len - CEILDIV(udh_len * 8, 7);
+			message_len = MIN(message_len, CEILDIV((end - data) * 8, 7));
+			decode_7bit_field("text", data, message_len, bit_offset);
+			break;
+		case 0x04:
+			/* 8 bit data */
+			message_len = MIN(message_len - udh_len, end - data);
+			blobmsg_add_hex(&status, "data", data, message_len);
+			break;
+		case 0x08:
+			/* 16 bit UCS-2 string */
+			message_len = MIN(message_len - udh_len, end - data);
+			blobmsg_add_hex(&status, "ucs-2", data, message_len);
+			break;
+		default:
+			goto error;
+		}
+
 	blobmsg_close_table(&status, c);
+	return;
+
+error:
+	blobmsg_close_table(&status, c);
+	fprintf(stderr, "There was an error reading message.\n");
 }
 
 static enum qmi_cmd_result
@@ -389,7 +476,7 @@ static void cmd_wms_get_raw_message_cb(struct qmi_dev *qmi, struct qmi_request *
 	data = (unsigned char *) res.data.raw_message_data.raw_data;
 	str = blobmsg_alloc_string_buffer(&status, NULL, res.data.raw_message_data.raw_data_n * 3);
 	for (i = 0; i < res.data.raw_message_data.raw_data_n; i++) {
-		str += sprintf(str, " %02x" + (i ? 0 : 1), data[i]);
+		str += sprintf(str, &" %02x"[i ? 0 : 1], data[i]);
 	}
 	blobmsg_add_string_buffer(&status);
 }
@@ -446,7 +533,7 @@ pdu_encode_semioctet(unsigned char *dest, const char *str)
 		str++;
 	}
 
-	return len;
+	return lower ? len : (len + 1);
 }
 
 static int
@@ -494,7 +581,7 @@ pdu_encode_number(unsigned char *dest, const char *str, bool smsc)
 	}
 
 	for (i = 0; str[i]; i++) {
-		if (str[i] >= '0' || str[i] <= '9')
+		if (str[i] >= '0' && str[i] <= '9')
 			continue;
 
 		ascii = true;
@@ -525,7 +612,7 @@ pdu_encode_data(unsigned char *dest, const char *str)
 
 	dest[len++] = 0;
 	len += pdu_encode_7bit_str(&dest[len], str);
-	dest[0] = len - 1;
+	dest[0] = strlen(str);
 
 	return len;
 }
@@ -546,12 +633,12 @@ cmd_wms_send_message_prepare(struct qmi_dev *qmi, struct qmi_request *req, struc
 	unsigned char protocol_id = 0x00;
 	unsigned char dcs = 0x00;
 
-	if (!_send.smsc || !*_send.smsc || !_send.target || !*_send.target) {
+	if (!_send.target || !*_send.target) {
 		uqmi_add_error("Missing argument");
 		return QMI_CMD_EXIT;
 	}
 
-	if (strlen(_send.smsc) > 16 || strlen(_send.target) > 16 || strlen(arg) > 160) {
+	if ((_send.smsc && strlen(_send.smsc) > 16) || strlen(_send.target) > 16 || strlen(arg) > 160) {
 		uqmi_add_error("Argument too long");
 		return QMI_CMD_EXIT;
 	}
@@ -559,7 +646,11 @@ cmd_wms_send_message_prepare(struct qmi_dev *qmi, struct qmi_request *req, struc
 	if (_send.flash)
 		dcs |= 0x10;
 
-	cur += pdu_encode_number(cur, _send.smsc, true);
+	if (!_send.smsc || !*_send.smsc)
+		*(cur++) = 0;
+	else
+		cur += pdu_encode_number(cur, _send.smsc, true);
+
 	*(cur++) = first_octet;
 	*(cur++) = 0; /* reference */
 
