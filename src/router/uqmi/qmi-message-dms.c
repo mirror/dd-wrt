@@ -1111,6 +1111,7 @@ int qmi_set_dms_activate_automatic_request(struct qmi_msg *msg, struct qmi_dms_a
 
 		__qmi_alloc_reset();
 		i = strlen(req->data.activation_code);
+		put_tlv_var(uint8_t, i, 1);
 		strncpy(__qmi_alloc_static(i), req->data.activation_code, i);
 
 		buf = __qmi_get_buf(&ofs);
@@ -1142,9 +1143,7 @@ int qmi_set_dms_activate_manual_request(struct qmi_msg *msg, struct qmi_dms_acti
 		i = 6;
 		put_tlv_var(uint8_t, i, 1);
 		strncpy(__qmi_alloc_static(i), req->data.info.service_programming_code, i);
-		i = 2;
-		put_tlv_var(uint8_t, i, 1);
-		strncpy(__qmi_alloc_static(i), req->data.info.system_identification_number, i);
+		put_tlv_var(uint16_t, cpu_to_le16(req->data.info.system_identification_number), 2);
 		i = strlen(req->data.info.mobile_directory_number);
 		if (i > 15)
 			i = 15;
@@ -1169,6 +1168,7 @@ int qmi_set_dms_activate_manual_request(struct qmi_msg *msg, struct qmi_dms_acti
 		i = strlen(req->data.mn_ha_key);
 		if (i > 16)
 			i = 16;
+		put_tlv_var(uint8_t, i, 1);
 		strncpy(__qmi_alloc_static(i), req->data.mn_ha_key, i);
 
 		buf = __qmi_get_buf(&ofs);
@@ -1184,10 +1184,27 @@ int qmi_set_dms_activate_manual_request(struct qmi_msg *msg, struct qmi_dms_acti
 		i = strlen(req->data.mn_aaa_key);
 		if (i > 16)
 			i = 16;
+		put_tlv_var(uint8_t, i, 1);
 		strncpy(__qmi_alloc_static(i), req->data.mn_aaa_key, i);
 
 		buf = __qmi_get_buf(&ofs);
 		tlv_new(msg, 0x12, ofs, buf);
+	}
+
+	if (req->set.prl) {
+		void *buf;
+		unsigned int ofs;
+		unsigned int i;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint16_t, cpu_to_le16(req->data.prl.prl_total_length), 2);
+		put_tlv_var(uint16_t, cpu_to_le16(req->data.prl.prl_segment_n), 2);
+		for (i = 0; i < req->data.prl.prl_segment_n; i++) {
+			put_tlv_var(uint8_t, req->data.prl.prl_segment[i], 1);
+		}
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x13, ofs, buf);
 	}
 
 	return 0;
@@ -2423,27 +2440,27 @@ int qmi_set_dms_set_service_programming_code_request(struct qmi_msg *msg, struct
 	qmi_init_request_message(msg, QMI_SERVICE_DMS);
 	msg->svc.message = cpu_to_le16(0x0052);
 
-	if (req->data.current) {
+	if (req->data.current_code) {
 		void *buf;
 		unsigned int ofs;
 		unsigned int i;
 
 		__qmi_alloc_reset();
 		i = 6;
-		strncpy(__qmi_alloc_static(i), req->data.current, i);
+		strncpy(__qmi_alloc_static(i), req->data.current_code, i);
 
 		buf = __qmi_get_buf(&ofs);
 		tlv_new(msg, 0x01, ofs, buf);
 	}
 
-	if (req->data.new) {
+	if (req->data.new_code) {
 		void *buf;
 		unsigned int ofs;
 		unsigned int i;
 
 		__qmi_alloc_reset();
 		i = 6;
-		strncpy(__qmi_alloc_static(i), req->data.new, i);
+		strncpy(__qmi_alloc_static(i), req->data.new_code, i);
 
 		buf = __qmi_get_buf(&ofs);
 		tlv_new(msg, 0x02, ofs, buf);
@@ -2453,6 +2470,159 @@ int qmi_set_dms_set_service_programming_code_request(struct qmi_msg *msg, struct
 }
 
 int qmi_parse_dms_set_service_programming_code_response(struct qmi_msg *msg)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+
+	return qmi_check_message_status(tlv_buf, tlv_len);
+}
+
+int qmi_set_dms_get_supported_messages_request(struct qmi_msg *msg)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_DMS);
+	msg->svc.message = cpu_to_le16(0x001E);
+
+	return 0;
+}
+
+int qmi_parse_dms_get_supported_messages_response(struct qmi_msg *msg, struct qmi_dms_get_supported_messages_response *res)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	struct tlv *tlv;
+	int i;
+	uint32_t found[1] = {};
+
+	memset(res, 0, sizeof(*res));
+
+	__qmi_alloc_reset();
+	while ((tlv = tlv_get_next(&tlv_buf, &tlv_len)) != NULL) {
+		unsigned int cur_tlv_len = le16_to_cpu(tlv->len);
+		unsigned int ofs = 0;
+
+		switch(tlv->type) {
+		case 0x10:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
+			i = le16_to_cpu(*(uint16_t *) get_next(2));
+			res->data.list = __qmi_alloc_static(i * sizeof(res->data.list[0]));
+			while(i-- > 0) {
+				res->data.list[res->data.list_n] = *(uint8_t *) get_next(1);
+				res->data.list_n++;
+			}
+
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	return 0;
+
+error_len:
+	fprintf(stderr, "%s: Invalid TLV length in message, tlv=0x%02x, len=%d\n",
+	        __func__, tlv->type, le16_to_cpu(tlv->len));
+	return QMI_ERROR_INVALID_DATA;
+}
+
+int qmi_set_dms_get_usb_composition_request(struct qmi_msg *msg)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_DMS);
+	msg->svc.message = cpu_to_le16(0x555B);
+
+	return 0;
+}
+
+int qmi_parse_dms_get_usb_composition_response(struct qmi_msg *msg, struct qmi_dms_get_usb_composition_response *res)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	struct tlv *tlv;
+	int i;
+	uint32_t found[1] = {};
+
+	memset(res, 0, sizeof(*res));
+
+	__qmi_alloc_reset();
+	while ((tlv = tlv_get_next(&tlv_buf, &tlv_len)) != NULL) {
+		unsigned int cur_tlv_len = le16_to_cpu(tlv->len);
+		unsigned int ofs = 0;
+
+		switch(tlv->type) {
+		case 0x10:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
+			qmi_set(res, composition, *(uint8_t *) get_next(1));
+			break;
+
+		case 0x11:
+			if (found[0] & (1 << 2))
+				break;
+
+			found[0] |= (1 << 2);
+			i = *(uint8_t *) get_next(1);
+			res->data.supported = __qmi_alloc_static(i * sizeof(res->data.supported[0]));
+			while(i-- > 0) {
+				res->data.supported[res->data.supported_n] = *(uint8_t *) get_next(1);
+				res->data.supported_n++;
+			}
+
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	return 0;
+
+error_len:
+	fprintf(stderr, "%s: Invalid TLV length in message, tlv=0x%02x, len=%d\n",
+	        __func__, tlv->type, le16_to_cpu(tlv->len));
+	return QMI_ERROR_INVALID_DATA;
+}
+
+int qmi_set_dms_set_usb_composition_request(struct qmi_msg *msg, struct qmi_dms_set_usb_composition_request *req)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_DMS);
+	msg->svc.message = cpu_to_le16(0x555C);
+
+	if (req->set.composition) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.composition, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x01, ofs, buf);
+	}
+
+	return 0;
+}
+
+int qmi_parse_dms_set_usb_composition_response(struct qmi_msg *msg)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+
+	return qmi_check_message_status(tlv_buf, tlv_len);
+}
+
+int qmi_set_dms_set_fcc_authentication_request(struct qmi_msg *msg)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_DMS);
+	msg->svc.message = cpu_to_le16(0x555F);
+
+	return 0;
+}
+
+int qmi_parse_dms_set_fcc_authentication_response(struct qmi_msg *msg)
 {
 	void *tlv_buf = &msg->svc.tlv;
 	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);

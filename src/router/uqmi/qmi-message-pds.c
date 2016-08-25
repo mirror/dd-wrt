@@ -343,6 +343,211 @@ int qmi_parse_pds_set_gps_service_state_response(struct qmi_msg *msg)
 	return qmi_check_message_status(tlv_buf, tlv_len);
 }
 
+int qmi_set_pds_get_default_tracking_session_request(struct qmi_msg *msg)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_PDS);
+	msg->svc.message = cpu_to_le16(0x0029);
+
+	return 0;
+}
+
+int qmi_parse_pds_get_default_tracking_session_response(struct qmi_msg *msg, struct qmi_pds_get_default_tracking_session_response *res)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	struct tlv *tlv;
+	int i;
+	uint32_t found[1] = {};
+
+	memset(res, 0, sizeof(*res));
+
+	__qmi_alloc_reset();
+	while ((tlv = tlv_get_next(&tlv_buf, &tlv_len)) != NULL) {
+		unsigned int cur_tlv_len = le16_to_cpu(tlv->len);
+		unsigned int ofs = 0;
+
+		switch(tlv->type) {
+		case 0x01:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
+			res->set.info = 1;
+			res->data.info.session_operation = *(uint8_t *) get_next(1);
+			res->data.info.position_data_timeout = *(uint8_t *) get_next(1);
+			res->data.info.interval = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.info.accuracy_threshold = le32_to_cpu(*(uint32_t *) get_next(4));
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	return 0;
+
+error_len:
+	fprintf(stderr, "%s: Invalid TLV length in message, tlv=0x%02x, len=%d\n",
+	        __func__, tlv->type, le16_to_cpu(tlv->len));
+	return QMI_ERROR_INVALID_DATA;
+}
+
+int qmi_set_pds_set_default_tracking_session_request(struct qmi_msg *msg, struct qmi_pds_set_default_tracking_session_request *req)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_PDS);
+	msg->svc.message = cpu_to_le16(0x002A);
+
+	if (req->set.info) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.info.session_operation, 1);
+		put_tlv_var(uint8_t, req->data.info.position_data_timeout, 1);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.info.interval), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.info.accuracy_threshold), 4);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x01, ofs, buf);
+	}
+
+	return 0;
+}
+
+int qmi_parse_pds_set_default_tracking_session_response(struct qmi_msg *msg)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+
+	return qmi_check_message_status(tlv_buf, tlv_len);
+}
+
+int qmi_set_pds_get_agps_config_request(struct qmi_msg *msg, struct qmi_pds_get_agps_config_request *req)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_PDS);
+	msg->svc.message = cpu_to_le16(0x002E);
+
+	if (req->set.network_mode) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.network_mode, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x12, ofs, buf);
+	}
+
+	return 0;
+}
+
+int qmi_parse_pds_get_agps_config_response(struct qmi_msg *msg, struct qmi_pds_get_agps_config_response *res)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	struct tlv *tlv;
+	int i;
+	uint32_t found[1] = {};
+
+	memset(res, 0, sizeof(*res));
+
+	__qmi_alloc_reset();
+	while ((tlv = tlv_get_next(&tlv_buf, &tlv_len)) != NULL) {
+		unsigned int cur_tlv_len = le16_to_cpu(tlv->len);
+		unsigned int ofs = 0;
+
+		switch(tlv->type) {
+		case 0x10:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
+			res->set.location_server_address = 1;
+			res->data.location_server_address.ip = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.location_server_address.port = le32_to_cpu(*(uint32_t *) get_next(4));
+			break;
+
+		case 0x11:
+			if (found[0] & (1 << 2))
+				break;
+
+			found[0] |= (1 << 2);
+			i = *(uint8_t *) get_next(1);
+			res->data.location_server_url = __qmi_alloc_static(i * sizeof(res->data.location_server_url[0]));
+			while(i-- > 0) {
+				res->data.location_server_url[res->data.location_server_url_n] = *(uint8_t *) get_next(1);
+				res->data.location_server_url_n++;
+			}
+
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	return 0;
+
+error_len:
+	fprintf(stderr, "%s: Invalid TLV length in message, tlv=0x%02x, len=%d\n",
+	        __func__, tlv->type, le16_to_cpu(tlv->len));
+	return QMI_ERROR_INVALID_DATA;
+}
+
+int qmi_set_pds_set_agps_config_request(struct qmi_msg *msg, struct qmi_pds_set_agps_config_request *req)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_PDS);
+	msg->svc.message = cpu_to_le16(0x002F);
+
+	if (req->set.location_server_address) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.location_server_address.ip), 4);
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.location_server_address.port), 4);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x10, ofs, buf);
+	}
+
+	if (req->data.location_server_url) {
+		void *buf;
+		unsigned int ofs;
+		unsigned int i;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.location_server_url_n, 1);
+		for (i = 0; i < req->data.location_server_url_n; i++) {
+			put_tlv_var(uint8_t, req->data.location_server_url[i], 1);
+		}
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x11, ofs, buf);
+	}
+
+	if (req->set.network_mode) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.network_mode, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x14, ofs, buf);
+	}
+
+	return 0;
+}
+
+int qmi_parse_pds_set_agps_config_response(struct qmi_msg *msg)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+
+	return qmi_check_message_status(tlv_buf, tlv_len);
+}
+
 int qmi_set_pds_get_auto_tracking_state_request(struct qmi_msg *msg)
 {
 	qmi_init_request_message(msg, QMI_SERVICE_PDS);

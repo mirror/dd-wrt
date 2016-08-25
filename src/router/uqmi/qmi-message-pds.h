@@ -68,6 +68,73 @@ struct qmi_pds_set_gps_service_state_request {
 	} data;
 };
 
+struct qmi_pds_get_default_tracking_session_response {
+	struct {
+		unsigned int info : 1;
+	} set;
+	struct {
+		struct {
+			QmiPdsOperatingMode session_operation;
+			uint8_t position_data_timeout;
+			uint32_t interval;
+			uint32_t accuracy_threshold;
+		} info;
+	} data;
+};
+
+struct qmi_pds_set_default_tracking_session_request {
+	struct {
+		unsigned int info : 1;
+	} set;
+	struct {
+		struct {
+			QmiPdsOperatingMode session_operation;
+			uint8_t position_data_timeout;
+			uint32_t interval;
+			uint32_t accuracy_threshold;
+		} info;
+	} data;
+};
+
+struct qmi_pds_get_agps_config_request {
+	struct {
+		unsigned int network_mode : 1;
+	} set;
+	struct {
+		QmiPdsNetworkMode network_mode;
+	} data;
+};
+
+struct qmi_pds_get_agps_config_response {
+	struct {
+		unsigned int location_server_address : 1;
+	} set;
+	struct {
+		struct {
+			uint32_t ip;
+			uint32_t port;
+		} location_server_address;
+		unsigned int location_server_url_n;
+		uint8_t *location_server_url;
+	} data;
+};
+
+struct qmi_pds_set_agps_config_request {
+	struct {
+		unsigned int location_server_address : 1;
+		unsigned int network_mode : 1;
+	} set;
+	struct {
+		struct {
+			uint32_t ip;
+			uint32_t port;
+		} location_server_address;
+		unsigned int location_server_url_n;
+		uint8_t *location_server_url;
+		QmiPdsNetworkMode network_mode;
+	} data;
+};
+
 struct qmi_pds_get_auto_tracking_state_response {
 	struct {
 		unsigned int state : 1;
@@ -101,6 +168,18 @@ int qmi_parse_pds_get_gps_service_state_response(struct qmi_msg *msg, struct qmi
 
 int qmi_set_pds_set_gps_service_state_request(struct qmi_msg *msg, struct qmi_pds_set_gps_service_state_request *req);
 int qmi_parse_pds_set_gps_service_state_response(struct qmi_msg *msg);
+
+int qmi_set_pds_get_default_tracking_session_request(struct qmi_msg *msg);
+int qmi_parse_pds_get_default_tracking_session_response(struct qmi_msg *msg, struct qmi_pds_get_default_tracking_session_response *res);
+
+int qmi_set_pds_set_default_tracking_session_request(struct qmi_msg *msg, struct qmi_pds_set_default_tracking_session_request *req);
+int qmi_parse_pds_set_default_tracking_session_response(struct qmi_msg *msg);
+
+int qmi_set_pds_get_agps_config_request(struct qmi_msg *msg, struct qmi_pds_get_agps_config_request *req);
+int qmi_parse_pds_get_agps_config_response(struct qmi_msg *msg, struct qmi_pds_get_agps_config_response *res);
+
+int qmi_set_pds_set_agps_config_request(struct qmi_msg *msg, struct qmi_pds_set_agps_config_request *req);
+int qmi_parse_pds_set_agps_config_response(struct qmi_msg *msg);
 
 int qmi_set_pds_get_auto_tracking_state_request(struct qmi_msg *msg);
 int qmi_parse_pds_get_auto_tracking_state_response(struct qmi_msg *msg, struct qmi_pds_get_auto_tracking_state_response *res);
