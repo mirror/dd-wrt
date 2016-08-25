@@ -1,3 +1,24 @@
+/*
+ * uqmi -- tiny QMI support implementation
+ *
+ * Copyright (C) 2014-2015 Felix Fietkau <nbd@openwrt.org>
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the
+ * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+ * Boston, MA 02110-1301 USA.
+ */
+
 #include <stdio.h>
 #include <string.h>
 #include <strings.h>
@@ -20,16 +41,20 @@ static void no_cb(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *
 static void cmd_version_cb(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg)
 {
 	struct qmi_ctl_get_version_info_response res;
+	void *c;
 	char name_buf[16];
 	int i;
 
 	qmi_parse_ctl_get_version_info_response(msg, &res);
+
+	c = blobmsg_open_table(&status, NULL);
 	for (i = 0; i < res.data.service_list_n; i++) {
 		sprintf(name_buf, "service_%d", res.data.service_list[i].service);
 		blobmsg_printf(&status, name_buf, "%d,%d",
 			res.data.service_list[i].major_version,
 			res.data.service_list[i].minor_version);
 	}
+	blobmsg_close_table(&status, c);
 }
 
 static enum qmi_cmd_result
@@ -95,10 +120,47 @@ cmd_set_client_id_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct q
 	return QMI_CMD_DONE;
 }
 
+static int
+qmi_get_array_idx(const char **array, int size, const char *str)
+{
+	int i;
+
+	for (i = 0; i < size; i++) {
+		if (!array[i])
+			continue;
+
+		if (!strcmp(array[i], str))
+			return i;
+	}
+
+	return -1;
+}
+
+#define cmd_ctl_set_data_format_cb no_cb
+static enum qmi_cmd_result
+cmd_ctl_set_data_format_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
+{
+	struct qmi_ctl_set_data_format_request sreq = {};
+	const char *modes[] = {
+		[QMI_CTL_DATA_LINK_PROTOCOL_802_3] = "802.3",
+		[QMI_CTL_DATA_LINK_PROTOCOL_RAW_IP] = "raw-ip",
+	};
+	int mode = qmi_get_array_idx(modes, ARRAY_SIZE(modes), arg);
+
+	if (mode < 0) {
+		uqmi_add_error("Invalid mode (modes: 802.3, raw-ip)");
+		return QMI_CMD_EXIT;
+	}
+
+	qmi_set_ctl_set_data_format_request(msg, &sreq);
+	return QMI_CMD_DONE;
+}
+
 #include "commands-wds.c"
 #include "commands-dms.c"
 #include "commands-nas.c"
 #include "commands-wms.c"
+#include "commands-wda.c"
 
 #define __uqmi_command(_name, _optname, _arg, _type) \
 	[__UQMI_COMMAND_##_name] = { \

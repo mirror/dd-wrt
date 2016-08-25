@@ -326,3 +326,32 @@ int qmi_parse_ctl_sync_response(struct qmi_msg *msg)
 	return qmi_check_message_status(tlv_buf, tlv_len);
 }
 
+int qmi_set_ctl_internal_proxy_open_request(struct qmi_msg *msg, struct qmi_ctl_internal_proxy_open_request *req)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_CTL);
+	msg->ctl.message = cpu_to_le16(0xFF00);
+
+	if (req->data.device_path) {
+		void *buf;
+		unsigned int ofs;
+		unsigned int i;
+
+		__qmi_alloc_reset();
+		i = strlen(req->data.device_path);
+		strncpy(__qmi_alloc_static(i), req->data.device_path, i);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x01, ofs, buf);
+	}
+
+	return 0;
+}
+
+int qmi_parse_ctl_internal_proxy_open_response(struct qmi_msg *msg)
+{
+	void *tlv_buf = &msg->ctl.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->ctl.tlv_len);
+
+	return qmi_check_message_status(tlv_buf, tlv_len);
+}
+
