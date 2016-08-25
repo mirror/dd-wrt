@@ -552,7 +552,7 @@ int msm_pcie_vreg_init(struct msm_pcie_dev_t *dev)
 		}
 
 		if (info->opt_mode) {
-			rc = regulator_set_optimum_mode(vreg, info->opt_mode);
+			rc = regulator_set_load(vreg, info->opt_mode);
 			if (rc < 0) {
 				PCIE_ERR(dev,
 					"PCIe: RC%d can't set mode for %s: %d\n",
