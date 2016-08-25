@@ -289,16 +289,22 @@ struct qmi_dms_activate_automatic_request {
 struct qmi_dms_activate_manual_request {
 	struct {
 		unsigned int info : 1;
+		unsigned int prl : 1;
 	} set;
 	struct {
 		struct {
 			char *service_programming_code;
-			char *system_identification_number;
+			uint16_t system_identification_number;
 			char *mobile_directory_number;
 			char *mobile_identification_number;
 		} info;
 		char *mn_ha_key;
 		char *mn_aaa_key;
+		struct {
+			uint16_t prl_total_length;
+			unsigned int prl_segment_n;
+			uint8_t *prl_segment;
+		} prl;
 	} data;
 };
 
@@ -634,8 +640,37 @@ struct qmi_dms_set_service_programming_code_request {
 	struct {
 	} set;
 	struct {
-		char *current;
-		char *new;
+		char *current_code;
+		char *new_code;
+	} data;
+};
+
+struct qmi_dms_get_supported_messages_response {
+	struct {
+	} set;
+	struct {
+		unsigned int list_n;
+		uint8_t *list;
+	} data;
+};
+
+struct qmi_dms_get_usb_composition_response {
+	struct {
+		unsigned int composition : 1;
+	} set;
+	struct {
+		uint8_t composition;
+		unsigned int supported_n;
+		uint8_t *supported;
+	} data;
+};
+
+struct qmi_dms_set_usb_composition_request {
+	struct {
+		unsigned int composition : 1;
+	} set;
+	struct {
+		uint8_t composition;
 	} data;
 };
 
@@ -782,4 +817,16 @@ int qmi_parse_dms_get_software_version_response(struct qmi_msg *msg, struct qmi_
 
 int qmi_set_dms_set_service_programming_code_request(struct qmi_msg *msg, struct qmi_dms_set_service_programming_code_request *req);
 int qmi_parse_dms_set_service_programming_code_response(struct qmi_msg *msg);
+
+int qmi_set_dms_get_supported_messages_request(struct qmi_msg *msg);
+int qmi_parse_dms_get_supported_messages_response(struct qmi_msg *msg, struct qmi_dms_get_supported_messages_response *res);
+
+int qmi_set_dms_get_usb_composition_request(struct qmi_msg *msg);
+int qmi_parse_dms_get_usb_composition_response(struct qmi_msg *msg, struct qmi_dms_get_usb_composition_response *res);
+
+int qmi_set_dms_set_usb_composition_request(struct qmi_msg *msg, struct qmi_dms_set_usb_composition_request *req);
+int qmi_parse_dms_set_usb_composition_response(struct qmi_msg *msg);
+
+int qmi_set_dms_set_fcc_authentication_request(struct qmi_msg *msg);
+int qmi_parse_dms_set_fcc_authentication_response(struct qmi_msg *msg);
 

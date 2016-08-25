@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 2.6)
 
 PROJECT(uqmi C)
-ADD_DEFINITIONS(-Os -ggdb -Wall -Werror --std=gnu99 -Wmissing-declarations)
+ADD_DEFINITIONS(-Os -ggdb -Wall -Werror --std=gnu99 -Wmissing-declarations  -Wno-enum-conversion)
 
 SET(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
 
-SET(SOURCES main.c dev.c commands.c qmi-message.c)
+SET(SOURCES main.c dev.c commands.c qmi-message.c mbim.c)
 
 #FIND_LIBRARY(json json-c json)
 #SET(LIBS ubox blobmsg_json ${json})
@@ -21,7 +21,7 @@ ENDIF()
 
 SET(service_headers)
 SET(service_sources)
-FOREACH(service ctl dms nas pds wds wms)
+FOREACH(service ctl dms nas pds wds wms wda)
 	ADD_CUSTOM_COMMAND(
 		OUTPUT qmi-message-${service}.h
 		COMMAND ./data/gen-header.pl ${service}_ ./data/qmi-service-${service}.json > qmi-message-${service}.h

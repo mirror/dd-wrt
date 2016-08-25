@@ -388,6 +388,659 @@ error_len:
 	return QMI_ERROR_INVALID_DATA;
 }
 
+int qmi_set_wds_get_packet_statistics_request(struct qmi_msg *msg, struct qmi_wds_get_packet_statistics_request *req)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_WDS);
+	msg->svc.message = cpu_to_le16(0x0024);
+
+	if (req->set.mask) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint32_t, cpu_to_le32(req->data.mask), 4);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x01, ofs, buf);
+	}
+
+	return 0;
+}
+
+int qmi_parse_wds_get_packet_statistics_response(struct qmi_msg *msg, struct qmi_wds_get_packet_statistics_response *res)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	struct tlv *tlv;
+	int i;
+	uint32_t found[1] = {};
+
+	memset(res, 0, sizeof(*res));
+
+	__qmi_alloc_reset();
+	while ((tlv = tlv_get_next(&tlv_buf, &tlv_len)) != NULL) {
+		unsigned int cur_tlv_len = le16_to_cpu(tlv->len);
+		unsigned int ofs = 0;
+
+		switch(tlv->type) {
+		case 0x10:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
+			qmi_set(res, tx_packets_ok, le32_to_cpu(*(uint32_t *) get_next(4)));
+			break;
+
+		case 0x11:
+			if (found[0] & (1 << 2))
+				break;
+
+			found[0] |= (1 << 2);
+			qmi_set(res, rx_packets_ok, le32_to_cpu(*(uint32_t *) get_next(4)));
+			break;
+
+		case 0x12:
+			if (found[0] & (1 << 3))
+				break;
+
+			found[0] |= (1 << 3);
+			qmi_set(res, tx_packets_error, le32_to_cpu(*(uint32_t *) get_next(4)));
+			break;
+
+		case 0x13:
+			if (found[0] & (1 << 4))
+				break;
+
+			found[0] |= (1 << 4);
+			qmi_set(res, rx_packets_error, le32_to_cpu(*(uint32_t *) get_next(4)));
+			break;
+
+		case 0x14:
+			if (found[0] & (1 << 5))
+				break;
+
+			found[0] |= (1 << 5);
+			qmi_set(res, tx_overflows, le32_to_cpu(*(uint32_t *) get_next(4)));
+			break;
+
+		case 0x15:
+			if (found[0] & (1 << 6))
+				break;
+
+			found[0] |= (1 << 6);
+			qmi_set(res, rx_overflows, le32_to_cpu(*(uint32_t *) get_next(4)));
+			break;
+
+		case 0x19:
+			if (found[0] & (1 << 7))
+				break;
+
+			found[0] |= (1 << 7);
+			qmi_set(res, tx_bytes_ok, le64_to_cpu(*(uint64_t *) get_next(8)));
+			break;
+
+		case 0x1A:
+			if (found[0] & (1 << 8))
+				break;
+
+			found[0] |= (1 << 8);
+			qmi_set(res, rx_bytes_ok, le64_to_cpu(*(uint64_t *) get_next(8)));
+			break;
+
+		case 0x1B:
+			if (found[0] & (1 << 9))
+				break;
+
+			found[0] |= (1 << 9);
+			qmi_set(res, last_call_tx_bytes_ok, le64_to_cpu(*(uint64_t *) get_next(8)));
+			break;
+
+		case 0x1C:
+			if (found[0] & (1 << 10))
+				break;
+
+			found[0] |= (1 << 10);
+			qmi_set(res, last_call_rx_bytes_ok, le64_to_cpu(*(uint64_t *) get_next(8)));
+			break;
+
+		case 0x1D:
+			if (found[0] & (1 << 11))
+				break;
+
+			found[0] |= (1 << 11);
+			qmi_set(res, tx_packets_dropped, le32_to_cpu(*(uint32_t *) get_next(4)));
+			break;
+
+		case 0x1E:
+			if (found[0] & (1 << 12))
+				break;
+
+			found[0] |= (1 << 12);
+			qmi_set(res, rx_packets_dropped, le32_to_cpu(*(uint32_t *) get_next(4)));
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	return 0;
+
+error_len:
+	fprintf(stderr, "%s: Invalid TLV length in message, tlv=0x%02x, len=%d\n",
+	        __func__, tlv->type, le16_to_cpu(tlv->len));
+	return QMI_ERROR_INVALID_DATA;
+}
+
+int qmi_set_wds_get_profile_list_request(struct qmi_msg *msg, struct qmi_wds_get_profile_list_request *req)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_WDS);
+	msg->svc.message = cpu_to_le16(0x002A);
+
+	if (req->set.profile_type) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.profile_type, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x10, ofs, buf);
+	}
+
+	return 0;
+}
+
+int qmi_parse_wds_get_profile_list_response(struct qmi_msg *msg, struct qmi_wds_get_profile_list_response *res)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	struct tlv *tlv;
+	int i;
+	uint32_t found[1] = {};
+
+	memset(res, 0, sizeof(*res));
+
+	__qmi_alloc_reset();
+	while ((tlv = tlv_get_next(&tlv_buf, &tlv_len)) != NULL) {
+		unsigned int cur_tlv_len = le16_to_cpu(tlv->len);
+		unsigned int ofs = 0;
+
+		switch(tlv->type) {
+		case 0x01:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
+			i = *(uint8_t *) get_next(1);
+			res->data.profile_list = __qmi_alloc_static(i * sizeof(res->data.profile_list[0]));
+			while(i-- > 0) {
+				unsigned int ii;
+				res->data.profile_list[res->data.profile_list_n].profile_type = *(uint8_t *) get_next(1);
+				res->data.profile_list[res->data.profile_list_n].profile_index = *(uint8_t *) get_next(1);
+				ii = *(uint8_t *) get_next(1);
+				res->data.profile_list[res->data.profile_list_n].profile_name = __qmi_copy_string(get_next(ii), ii);
+				res->data.profile_list_n++;
+			}
+
+			break;
+
+		case 0xE0:
+			if (found[0] & (1 << 2))
+				break;
+
+			found[0] |= (1 << 2);
+			qmi_set(res, extended_error_code, le16_to_cpu(*(uint16_t *) get_next(2)));
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	return 0;
+
+error_len:
+	fprintf(stderr, "%s: Invalid TLV length in message, tlv=0x%02x, len=%d\n",
+	        __func__, tlv->type, le16_to_cpu(tlv->len));
+	return QMI_ERROR_INVALID_DATA;
+}
+
+int qmi_set_wds_get_profile_settings_request(struct qmi_msg *msg, struct qmi_wds_get_profile_settings_request *req)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_WDS);
+	msg->svc.message = cpu_to_le16(0x002B);
+
+	if (req->set.profile_id) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.profile_id.profile_type, 1);
+		put_tlv_var(uint8_t, req->data.profile_id.profile_index, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x01, ofs, buf);
+	}
+
+	return 0;
+}
+
+int qmi_parse_wds_get_profile_settings_response(struct qmi_msg *msg, struct qmi_wds_get_profile_settings_response *res)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	struct tlv *tlv;
+	int i;
+	uint32_t found[1] = {};
+
+	memset(res, 0, sizeof(*res));
+
+	__qmi_alloc_reset();
+	while ((tlv = tlv_get_next(&tlv_buf, &tlv_len)) != NULL) {
+		unsigned int cur_tlv_len = le16_to_cpu(tlv->len);
+		unsigned int ofs = 0;
+
+		switch(tlv->type) {
+		case 0x10:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
+			i = cur_tlv_len - ofs;
+			res->data.profile_name = __qmi_copy_string(get_next(i), i);
+			break;
+
+		case 0x11:
+			if (found[0] & (1 << 2))
+				break;
+
+			found[0] |= (1 << 2);
+			qmi_set(res, pdp_type, *(uint8_t *) get_next(1));
+			break;
+
+		case 0x14:
+			if (found[0] & (1 << 3))
+				break;
+
+			found[0] |= (1 << 3);
+			i = cur_tlv_len - ofs;
+			res->data.apn_name = __qmi_copy_string(get_next(i), i);
+			break;
+
+		case 0x15:
+			if (found[0] & (1 << 4))
+				break;
+
+			found[0] |= (1 << 4);
+			qmi_set(res, primary_ipv4_dns_address, le32_to_cpu(*(uint32_t *) get_next(4)));
+			break;
+
+		case 0x16:
+			if (found[0] & (1 << 5))
+				break;
+
+			found[0] |= (1 << 5);
+			qmi_set(res, secondary_ipv4_dns_address, le32_to_cpu(*(uint32_t *) get_next(4)));
+			break;
+
+		case 0x19:
+			if (found[0] & (1 << 6))
+				break;
+
+			found[0] |= (1 << 6);
+			res->set.gprs_requested_qos = 1;
+			res->data.gprs_requested_qos.precedence_class = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.gprs_requested_qos.delay_class = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.gprs_requested_qos.reliability_class = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.gprs_requested_qos.peak_throughput_class = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.gprs_requested_qos.mean_throughput_class = le32_to_cpu(*(uint32_t *) get_next(4));
+			break;
+
+		case 0x1A:
+			if (found[0] & (1 << 7))
+				break;
+
+			found[0] |= (1 << 7);
+			res->set.gprs_minimum_qos = 1;
+			res->data.gprs_minimum_qos.precedence_class = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.gprs_minimum_qos.delay_class = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.gprs_minimum_qos.reliability_class = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.gprs_minimum_qos.peak_throughput_class = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.gprs_minimum_qos.mean_throughput_class = le32_to_cpu(*(uint32_t *) get_next(4));
+			break;
+
+		case 0x1B:
+			if (found[0] & (1 << 8))
+				break;
+
+			found[0] |= (1 << 8);
+			i = cur_tlv_len - ofs;
+			res->data.username = __qmi_copy_string(get_next(i), i);
+			break;
+
+		case 0x1C:
+			if (found[0] & (1 << 9))
+				break;
+
+			found[0] |= (1 << 9);
+			i = cur_tlv_len - ofs;
+			res->data.password = __qmi_copy_string(get_next(i), i);
+			break;
+
+		case 0x1D:
+			if (found[0] & (1 << 10))
+				break;
+
+			found[0] |= (1 << 10);
+			qmi_set(res, authentication, *(uint8_t *) get_next(1));
+			break;
+
+		case 0x1E:
+			if (found[0] & (1 << 11))
+				break;
+
+			found[0] |= (1 << 11);
+			qmi_set(res, ipv4_address_preference, le32_to_cpu(*(uint32_t *) get_next(4)));
+			break;
+
+		case 0x1F:
+			if (found[0] & (1 << 12))
+				break;
+
+			found[0] |= (1 << 12);
+			qmi_set(res, pcscf_address_using_pco, *(uint8_t *) get_next(1));
+			break;
+
+		case 0x21:
+			if (found[0] & (1 << 13))
+				break;
+
+			found[0] |= (1 << 13);
+			qmi_set(res, pcscf_address_using_dhcp, *(uint8_t *) get_next(1));
+			break;
+
+		case 0x22:
+			if (found[0] & (1 << 14))
+				break;
+
+			found[0] |= (1 << 14);
+			qmi_set(res, imcn_flag, *(uint8_t *) get_next(1));
+			break;
+
+		case 0x28:
+			if (found[0] & (1 << 15))
+				break;
+
+			found[0] |= (1 << 15);
+			res->set.ipv6_address_preference = 1;
+			for (i = 0; i < 8; i++) {
+				res->data.ipv6_address_preference.address[i] = be16_to_cpu(*(uint16_t *) get_next(2));
+			}
+			break;
+
+		case 0x2B:
+			if (found[0] & (1 << 16))
+				break;
+
+			found[0] |= (1 << 16);
+			res->set.ipv6_primary_dns_address_preference = 1;
+			for (i = 0; i < 8; i++) {
+				res->data.ipv6_primary_dns_address_preference[i] = be16_to_cpu(*(uint16_t *) get_next(2));
+			}
+
+			break;
+
+		case 0x2C:
+			if (found[0] & (1 << 17))
+				break;
+
+			found[0] |= (1 << 17);
+			res->set.ipv6_secondary_dns_address_preference = 1;
+			for (i = 0; i < 8; i++) {
+				res->data.ipv6_secondary_dns_address_preference[i] = be16_to_cpu(*(uint16_t *) get_next(2));
+			}
+
+			break;
+
+		case 0xE0:
+			if (found[0] & (1 << 18))
+				break;
+
+			found[0] |= (1 << 18);
+			qmi_set(res, extended_error_code, le16_to_cpu(*(uint16_t *) get_next(2)));
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	return 0;
+
+error_len:
+	fprintf(stderr, "%s: Invalid TLV length in message, tlv=0x%02x, len=%d\n",
+	        __func__, tlv->type, le16_to_cpu(tlv->len));
+	return QMI_ERROR_INVALID_DATA;
+}
+
+int qmi_set_wds_get_default_settings_request(struct qmi_msg *msg, struct qmi_wds_get_default_settings_request *req)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_WDS);
+	msg->svc.message = cpu_to_le16(0x002C);
+
+	if (req->set.profile_type) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.profile_type, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x01, ofs, buf);
+	}
+
+	return 0;
+}
+
+int qmi_parse_wds_get_default_settings_response(struct qmi_msg *msg, struct qmi_wds_get_default_settings_response *res)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	struct tlv *tlv;
+	int i;
+	uint32_t found[1] = {};
+
+	memset(res, 0, sizeof(*res));
+
+	__qmi_alloc_reset();
+	while ((tlv = tlv_get_next(&tlv_buf, &tlv_len)) != NULL) {
+		unsigned int cur_tlv_len = le16_to_cpu(tlv->len);
+		unsigned int ofs = 0;
+
+		switch(tlv->type) {
+		case 0x10:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
+			i = cur_tlv_len - ofs;
+			res->data.profile_name = __qmi_copy_string(get_next(i), i);
+			break;
+
+		case 0x11:
+			if (found[0] & (1 << 2))
+				break;
+
+			found[0] |= (1 << 2);
+			qmi_set(res, pdp_type, *(uint8_t *) get_next(1));
+			break;
+
+		case 0x14:
+			if (found[0] & (1 << 3))
+				break;
+
+			found[0] |= (1 << 3);
+			i = cur_tlv_len - ofs;
+			res->data.apn_name = __qmi_copy_string(get_next(i), i);
+			break;
+
+		case 0x15:
+			if (found[0] & (1 << 4))
+				break;
+
+			found[0] |= (1 << 4);
+			qmi_set(res, primary_ipv4_dns_address, le32_to_cpu(*(uint32_t *) get_next(4)));
+			break;
+
+		case 0x16:
+			if (found[0] & (1 << 5))
+				break;
+
+			found[0] |= (1 << 5);
+			qmi_set(res, secondary_ipv4_dns_address, le32_to_cpu(*(uint32_t *) get_next(4)));
+			break;
+
+		case 0x19:
+			if (found[0] & (1 << 6))
+				break;
+
+			found[0] |= (1 << 6);
+			res->set.gprs_requested_qos = 1;
+			res->data.gprs_requested_qos.precedence_class = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.gprs_requested_qos.delay_class = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.gprs_requested_qos.reliability_class = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.gprs_requested_qos.peak_throughput_class = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.gprs_requested_qos.mean_throughput_class = le32_to_cpu(*(uint32_t *) get_next(4));
+			break;
+
+		case 0x1A:
+			if (found[0] & (1 << 7))
+				break;
+
+			found[0] |= (1 << 7);
+			res->set.gprs_minimum_qos = 1;
+			res->data.gprs_minimum_qos.precedence_class = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.gprs_minimum_qos.delay_class = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.gprs_minimum_qos.reliability_class = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.gprs_minimum_qos.peak_throughput_class = le32_to_cpu(*(uint32_t *) get_next(4));
+			res->data.gprs_minimum_qos.mean_throughput_class = le32_to_cpu(*(uint32_t *) get_next(4));
+			break;
+
+		case 0x1B:
+			if (found[0] & (1 << 8))
+				break;
+
+			found[0] |= (1 << 8);
+			i = cur_tlv_len - ofs;
+			res->data.username = __qmi_copy_string(get_next(i), i);
+			break;
+
+		case 0x1C:
+			if (found[0] & (1 << 9))
+				break;
+
+			found[0] |= (1 << 9);
+			i = cur_tlv_len - ofs;
+			res->data.password = __qmi_copy_string(get_next(i), i);
+			break;
+
+		case 0x1D:
+			if (found[0] & (1 << 10))
+				break;
+
+			found[0] |= (1 << 10);
+			qmi_set(res, authentication, *(uint8_t *) get_next(1));
+			break;
+
+		case 0x1E:
+			if (found[0] & (1 << 11))
+				break;
+
+			found[0] |= (1 << 11);
+			qmi_set(res, ipv4_address_preference, le32_to_cpu(*(uint32_t *) get_next(4)));
+			break;
+
+		case 0x1F:
+			if (found[0] & (1 << 12))
+				break;
+
+			found[0] |= (1 << 12);
+			qmi_set(res, pcscf_address_using_pco, *(uint8_t *) get_next(1));
+			break;
+
+		case 0x21:
+			if (found[0] & (1 << 13))
+				break;
+
+			found[0] |= (1 << 13);
+			qmi_set(res, pcscf_address_using_dhcp, *(uint8_t *) get_next(1));
+			break;
+
+		case 0x22:
+			if (found[0] & (1 << 14))
+				break;
+
+			found[0] |= (1 << 14);
+			qmi_set(res, imcn_flag, *(uint8_t *) get_next(1));
+			break;
+
+		case 0x28:
+			if (found[0] & (1 << 15))
+				break;
+
+			found[0] |= (1 << 15);
+			res->set.ipv6_address_preference = 1;
+			for (i = 0; i < 8; i++) {
+				res->data.ipv6_address_preference.address[i] = be16_to_cpu(*(uint16_t *) get_next(2));
+			}
+			break;
+
+		case 0x2B:
+			if (found[0] & (1 << 16))
+				break;
+
+			found[0] |= (1 << 16);
+			res->set.ipv6_primary_dns_address_preference = 1;
+			for (i = 0; i < 8; i++) {
+				res->data.ipv6_primary_dns_address_preference[i] = be16_to_cpu(*(uint16_t *) get_next(2));
+			}
+
+			break;
+
+		case 0x2C:
+			if (found[0] & (1 << 17))
+				break;
+
+			found[0] |= (1 << 17);
+			res->set.ipv6_secondary_dns_address_preference = 1;
+			for (i = 0; i < 8; i++) {
+				res->data.ipv6_secondary_dns_address_preference[i] = be16_to_cpu(*(uint16_t *) get_next(2));
+			}
+
+			break;
+
+		case 0xE0:
+			if (found[0] & (1 << 18))
+				break;
+
+			found[0] |= (1 << 18);
+			qmi_set(res, extended_error_code, le16_to_cpu(*(uint16_t *) get_next(2)));
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	return 0;
+
+error_len:
+	fprintf(stderr, "%s: Invalid TLV length in message, tlv=0x%02x, len=%d\n",
+	        __func__, tlv->type, le16_to_cpu(tlv->len));
+	return QMI_ERROR_INVALID_DATA;
+}
+
 int qmi_set_wds_get_current_settings_request(struct qmi_msg *msg, struct qmi_wds_get_current_settings_request *req)
 {
 	qmi_init_request_message(msg, QMI_SERVICE_WDS);
@@ -676,6 +1329,59 @@ error_len:
 	return QMI_ERROR_INVALID_DATA;
 }
 
+int qmi_set_wds_get_autoconnect_setting_request(struct qmi_msg *msg)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_WDS);
+	msg->svc.message = cpu_to_le16(0x0034);
+
+	return 0;
+}
+
+int qmi_parse_wds_get_autoconnect_setting_response(struct qmi_msg *msg, struct qmi_wds_get_autoconnect_setting_response *res)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+	struct tlv *tlv;
+	int i;
+	uint32_t found[1] = {};
+
+	memset(res, 0, sizeof(*res));
+
+	__qmi_alloc_reset();
+	while ((tlv = tlv_get_next(&tlv_buf, &tlv_len)) != NULL) {
+		unsigned int cur_tlv_len = le16_to_cpu(tlv->len);
+		unsigned int ofs = 0;
+
+		switch(tlv->type) {
+		case 0x01:
+			if (found[0] & (1 << 1))
+				break;
+
+			found[0] |= (1 << 1);
+			qmi_set(res, setting, *(int8_t *) get_next(1));
+			break;
+
+		case 0x10:
+			if (found[0] & (1 << 2))
+				break;
+
+			found[0] |= (1 << 2);
+			qmi_set(res, roaming, *(int8_t *) get_next(1));
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	return 0;
+
+error_len:
+	fprintf(stderr, "%s: Invalid TLV length in message, tlv=0x%02x, len=%d\n",
+	        __func__, tlv->type, le16_to_cpu(tlv->len));
+	return QMI_ERROR_INVALID_DATA;
+}
+
 int qmi_set_wds_get_data_bearer_technology_request(struct qmi_msg *msg)
 {
 	qmi_init_request_message(msg, QMI_SERVICE_WDS);
@@ -808,6 +1514,44 @@ int qmi_set_wds_set_ip_family_request(struct qmi_msg *msg, struct qmi_wds_set_ip
 }
 
 int qmi_parse_wds_set_ip_family_response(struct qmi_msg *msg)
+{
+	void *tlv_buf = &msg->svc.tlv;
+	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);
+
+	return qmi_check_message_status(tlv_buf, tlv_len);
+}
+
+int qmi_set_wds_set_autoconnect_setting_request(struct qmi_msg *msg, struct qmi_wds_set_autoconnect_setting_request *req)
+{
+	qmi_init_request_message(msg, QMI_SERVICE_WDS);
+	msg->svc.message = cpu_to_le16(0x0051);
+
+	if (req->set.setting) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.setting, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x01, ofs, buf);
+	}
+
+	if (req->set.roaming) {
+		void *buf;
+		unsigned int ofs;
+
+		__qmi_alloc_reset();
+		put_tlv_var(uint8_t, req->data.roaming, 1);
+
+		buf = __qmi_get_buf(&ofs);
+		tlv_new(msg, 0x10, ofs, buf);
+	}
+
+	return 0;
+}
+
+int qmi_parse_wds_set_autoconnect_setting_response(struct qmi_msg *msg)
 {
 	void *tlv_buf = &msg->svc.tlv;
 	unsigned int tlv_len = le16_to_cpu(msg->svc.tlv_len);

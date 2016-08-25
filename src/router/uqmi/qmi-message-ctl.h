@@ -94,6 +94,14 @@ struct qmi_ctl_set_data_format_response {
 	} data;
 };
 
+struct qmi_ctl_internal_proxy_open_request {
+	struct {
+	} set;
+	struct {
+		char *device_path;
+	} data;
+};
+
 int qmi_set_ctl_set_instance_id_request(struct qmi_msg *msg, struct qmi_ctl_set_instance_id_request *req);
 int qmi_parse_ctl_set_instance_id_response(struct qmi_msg *msg, struct qmi_ctl_set_instance_id_response *res);
 
@@ -111,4 +119,7 @@ int qmi_parse_ctl_set_data_format_response(struct qmi_msg *msg, struct qmi_ctl_s
 
 int qmi_set_ctl_sync_request(struct qmi_msg *msg);
 int qmi_parse_ctl_sync_response(struct qmi_msg *msg);
+
+int qmi_set_ctl_internal_proxy_open_request(struct qmi_msg *msg, struct qmi_ctl_internal_proxy_open_request *req);
+int qmi_parse_ctl_internal_proxy_open_response(struct qmi_msg *msg);
 
