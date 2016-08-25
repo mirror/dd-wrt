@@ -182,7 +182,7 @@ static int qcom_dwc3_hs_phy_init(struct usb_phy *x)
 	if (ret)
 		dev_err(phy->dev, "cannot set voltage for v1p8\n");
 
-	ret = regulator_set_optimum_mode(phy->v1p8, PHY_1P8_HPM_LOAD);
+	ret = regulator_set_load(phy->v1p8, PHY_1P8_HPM_LOAD);
 	if (ret < 0)
 		dev_err(phy->dev, "cannot set HPM of regulator v1p8\n");
 
@@ -190,7 +190,7 @@ static int qcom_dwc3_hs_phy_init(struct usb_phy *x)
 	if (ret)
 		dev_err(phy->dev, "cannot enable v1p8\n");
 
-	ret = regulator_set_optimum_mode(phy->v3p3, PHY_3P3_HPM_LOAD);
+	ret = regulator_set_load(phy->v3p3, PHY_3P3_HPM_LOAD);
 	if (ret < 0)
 		dev_err(phy->dev, "cannot set HPM of regulator v3p3\n");
 
