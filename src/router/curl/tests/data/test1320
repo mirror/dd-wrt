@@ -25,8 +25,11 @@ smtp: sure hit me
 smtp
 http-proxy
 </server>
+<features>
+http
+</features>
  <name>
-SMTP send tunneled trough HTTP proxy
+SMTP send tunneled through HTTP proxy
  </name>
 <stdin>
 From: different
@@ -35,7 +38,7 @@ To: another
 body
 </stdin>
  <command>
-smtp://smtp.1320:%SMTPPORT/user --mail-rcpt 1320@foo --mail-rcpt 1320@foobar.example --mail-from 1320@from -T - -p -x %HOSTIP:%PROXYPORT
+smtp://smtp.1320:%SMTPPORT/1320 --mail-rcpt recipient@example.com --mail-from sender@example.com -T - -p -x %HOSTIP:%PROXYPORT
 </command>
 </client>
 
@@ -46,10 +49,9 @@ smtp://smtp.1320:%SMTPPORT/user --mail-rcpt 1320@foo --mail-rcpt 1320@foobar.exa
 ^User-Agent: curl/.*
 </strip>
 <protocol>
-EHLO user
-MAIL FROM:<1320@from>
-RCPT TO:<1320@foo>
-RCPT TO:<1320@foobar.example>
+EHLO 1320
+MAIL FROM:<sender@example.com>
+RCPT TO:<recipient@example.com>
 DATA
 QUIT
 </protocol>
@@ -64,7 +66,6 @@ body
 CONNECT smtp.1320:%SMTPPORT HTTP/1.1
 Host: smtp.1320:%SMTPPORT
 User-Agent: curl/7.24.0-DEV (i686-pc-linux-gnu) libcurl/7.24.0-DEV OpenSSL/1.0.0e zlib/1.2.3.4 c-ares/1.7.6-DEV libidn/1.23 libssh2/1.4.0_DEV librtmp/2.2e
-Proxy-Connection: Keep-Alive
 
 </proxy>
 </verify>

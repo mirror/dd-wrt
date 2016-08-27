@@ -2,6 +2,7 @@
 <info>
 <keywords>
 IMAP
+Clear Text
 STATUS
 CUSTOMREQUEST
 </keywords>
@@ -22,7 +23,7 @@ CUSTOMREQUEST
 imap
 </server>
  <name>
-IMAP STATUS (CUSTOMREQUEST)
+IMAP mailbox STATUS (CUSTOMREQUEST)
  </name>
  <command>
 imap://%HOSTIP:%IMAPPORT -u user:secret -X 'STATUS 809 (UIDNEXT MESSAGES)'

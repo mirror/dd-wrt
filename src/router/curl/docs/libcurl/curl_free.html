@@ -4,15 +4,20 @@
 <title>curl_free man page</title>
 <meta name="generator" content="roffit">
 <STYLE type="text/css">
-P.level0 {
+pre {
+  overflow: auto;
+  margin: 0;
+}
+
+P.level0, pre.level0 {
  padding-left: 2em;
 }
 
-P.level1 {
+P.level1, pre.level1 {
  padding-left: 4em;
 }
 
-P.level2 {
+P.level2, pre.level2 {
  padding-left: 6em;
 }
 
@@ -50,7 +55,7 @@ p.roffit {
 <p class="level0"><span Class="bold">#include &lt;curl/curl.h&gt;</span> 
 <p class="level0"><span Class="bold">void curl_free( char * ptr  );</span> 
 <p class="level0"><a name="DESCRIPTION"></a><h2 class="nroffsh">DESCRIPTION</h2>
-<p class="level0">curl_free reclaims memory that has been obtained through a libcurl call.  Use curl_free() instead of free() to avoid anomalies that can result from differences in memory management between your application and libcurl. <a name="SEE"></a><h2 class="nroffsh">SEE ALSO</h2>
-<p class="level0"><a class="emphasis" href="./curl_unescape.html">curl_unescape(3)</a> <p class="roffit">
+<p class="level0">curl_free reclaims memory that has been obtained through a libcurl call.  Use <a Class="emphasis" href="./curl_free.html">curl_free</a> instead of free() to avoid anomalies that can result from differences in memory management between your application and libcurl. <a name="SEE"></a><h2 class="nroffsh">SEE ALSO</h2>
+<p class="level0"><a Class="manpage" href="./curl_easy_unescape.html">curl_easy_unescape</a>, <a Class="manpage" href="./curl_easy_escape.html">curl_easy_escape</a><p class="roffit">
  This HTML page was made with <a href="http://daniel.haxx.se/projects/roffit/">roffit</a>.
 </body></html>

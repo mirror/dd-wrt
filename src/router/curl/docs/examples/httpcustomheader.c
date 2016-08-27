@@ -5,11 +5,11 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2012, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
- * are also available at http://curl.haxx.se/docs/copyright.html.
+ * are also available at https://curl.haxx.se/docs/copyright.html.
  *
  * You may opt to use, copy, modify, merge, publish, distribute and/or sell
  * copies of the Software, and permit persons to whom the Software is
@@ -19,6 +19,10 @@
  * KIND, either express or implied.
  *
  ***************************************************************************/
+/* <DESC>
+ * HTTP request with custom modified, removed and added headers
+ * </DESC>
+ */
 #include <stdio.h>
 #include <curl/curl.h>
 
@@ -31,20 +35,25 @@ int main(void)
   if(curl) {
     struct curl_slist *chunk = NULL;
 
-    chunk = curl_slist_append(chunk, "Accept: moo");
+    /* Remove a header curl would otherwise add by itself */
+    chunk = curl_slist_append(chunk, "Accept:");
+
+    /* Add a custom header */
     chunk = curl_slist_append(chunk, "Another: yes");
 
-    /* request with the built-in Accept: */
+    /* Modify a header curl otherwise adds differently */
+    chunk = curl_slist_append(chunk, "Host: example.com");
+
+    /* Add a header with "blank" contents to the right of the colon. Note that
+       we're then using a semicolon in the string we pass to curl! */
+    chunk = curl_slist_append(chunk, "X-silly-header;");
+
+    /* set our custom set of headers */
+    res = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, chunk);
+
     curl_easy_setopt(curl, CURLOPT_URL, "localhost");
     curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
-    res = curl_easy_perform(curl);
-    /* Check for errors */
-    if(res != CURLE_OK)
-      fprintf(stderr, "curl_easy_perform() failed: %s\n",
-              curl_easy_strerror(res));
 
-    /* redo request with our own custom Accept: */
-    res = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, chunk);
     res = curl_easy_perform(curl);
     /* Check for errors */
     if(res != CURLE_OK)

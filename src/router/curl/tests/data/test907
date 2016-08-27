@@ -2,8 +2,9 @@
 <info>
 <keywords>
 SMTP
-SMTP AUTH PLAIN SASL-IR
-RFC4616
+SASL
+SASL AUTH DIGEST-MD5
+RFC2831
 RFC4954
 </keywords>
 </info>
@@ -12,8 +13,10 @@ RFC4954
 # Server-side
 <reply>
 <servercmd>
-REPLY EHLO 250 AUTH PLAIN
-REPLY AUTH 235 Authenticated
+AUTH DIGEST-MD5
+REPLY AUTH 334 cmVhbG09ImN1cmwiLG5vbmNlPSI1MzAwZDE3YTFkNjk1YmQ0MTFlNGNkZjk2Zjk1NDhjMjNjZWQ2MTc1IixhbGdvcml0aG09bWQ1LXNlc3MscW9wPSJhdXRoIg==
+REPLY dXNlcm5hbWU9InVzZXIiLHJlYWxtPSJjdXJsIixub25jZT0iNTMwMGQxN2ExZDY5NWJkNDExZTRjZGY5NmY5NTQ4YzIzY2VkNjE3NSIsY25vbmNlPSIzNDMzMzIzMTM0MzMzMjMyMzQzMzMyMzMzNDMzMzIzNCIsbmM9IjAwMDAwMDAxIixkaWdlc3QtdXJpPSJzbXRwL2N1cmwiLHJlc3BvbnNlPWJkYmExNzYwOGY4NmMyZjEzYTczMTM1NzdkZjkyMzNkLHFvcD1hdXRo 334
+REPLY  235 Authenticated
 </servercmd>
 </reply>
 
@@ -23,14 +26,19 @@ REPLY AUTH 235 Authenticated
 <server>
 smtp
 </server>
+<features>
+!SSPI
+debug
+crypto
+</features>
  <name>
-SMTP plain authentication with initial response
+SMTP DIGEST-MD5 authentication
  </name>
 <stdin>
 mail body
 </stdin>
  <command>
-smtp://%HOSTIP:%SMTPPORT/user --mail-rcpt 907@foo --mail-from 907@from -u test:1234 --sasl-ir -T -
+smtp://%HOSTIP:%SMTPPORT/907 --mail-rcpt recipient@example.com --mail-from sender@example.com -u user:secret -T -
 </command>
 </client>
 
@@ -38,10 +46,12 @@ smtp://%HOSTIP:%SMTPPORT/user --mail-rcpt 907@foo --mail-from 907@from -u test:1
 # Verify data after the test has been "shot"
 <verify>
 <protocol>
-EHLO user
-AUTH PLAIN dGVzdAB0ZXN0ADEyMzQ=
-MAIL FROM:<907@from>
-RCPT TO:<907@foo>
+EHLO 907
+AUTH DIGEST-MD5
+dXNlcm5hbWU9InVzZXIiLHJlYWxtPSJjdXJsIixub25jZT0iNTMwMGQxN2ExZDY5NWJkNDExZTRjZGY5NmY5NTQ4YzIzY2VkNjE3NSIsY25vbmNlPSIzNDMzMzIzMTM0MzMzMjMyMzQzMzMyMzMzNDMzMzIzNCIsbmM9IjAwMDAwMDAxIixkaWdlc3QtdXJpPSJzbXRwL2N1cmwiLHJlc3BvbnNlPWJkYmExNzYwOGY4NmMyZjEzYTczMTM1NzdkZjkyMzNkLHFvcD1hdXRo
+
+MAIL FROM:<sender@example.com>
+RCPT TO:<recipient@example.com>
 DATA
 QUIT
 </protocol>

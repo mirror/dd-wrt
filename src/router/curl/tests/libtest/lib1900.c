@@ -5,11 +5,11 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 2013, Linus Nielsen Feltzing, <linus@haxx.se>
+ * Copyright (C) 2013 - 2016, Linus Nielsen Feltzing, <linus@haxx.se>
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
- * are also available at http://curl.haxx.se/docs/copyright.html.
+ * are also available at https://curl.haxx.se/docs/copyright.html.
  *
  * You may opt to use, copy, modify, merge, publish, distribute and/or sell
  * copies of the Software, and permit persons to whom the Software is
@@ -38,12 +38,6 @@ int num_handles;
 int blacklist_num_servers;
 int blacklist_num_sites;
 
-int parse_url_file(const char *filename);
-void free_urls(void);
-int create_handles(void);
-void setup_handle(char *base_url, CURLM *m, int handlenum);
-void remove_handles(void);
-
 static size_t
 write_callback(void *contents, size_t size, size_t nmemb, void *userp)
 {
@@ -54,7 +48,7 @@ write_callback(void *contents, size_t size, size_t nmemb, void *userp)
   return realsize;
 }
 
-int parse_url_file(const char *filename)
+static int parse_url_file(const char *filename)
 {
   FILE *f;
   int filetime;
@@ -91,21 +85,21 @@ int parse_url_file(const char *filename)
   return num_handles;
 }
 
-void free_urls(void)
+static void free_urls(void)
 {
   int i;
   for(i = 0;i < num_handles;i++) {
-    free(urlstring[i]);
+    Curl_safefree(urlstring[i]);
   }
   for(i = 0;i < blacklist_num_servers;i++) {
-    free(server_blacklist[i]);
+    Curl_safefree(server_blacklist[i]);
   }
   for(i = 0;i < blacklist_num_sites;i++) {
-    free(site_blacklist[i]);
+    Curl_safefree(site_blacklist[i]);
   }
 }
 
-int create_handles(void)
+static int create_handles(void)
 {
   int i;
 
@@ -115,11 +109,11 @@ int create_handles(void)
   return 0;
 }
 
-void setup_handle(char *base_url, CURLM *m, int handlenum)
+static void setup_handle(char *base_url, CURLM *m, int handlenum)
 {
   char urlbuf[256];
 
-  sprintf(urlbuf, "%s%s", base_url, urlstring[handlenum]);
+  snprintf(urlbuf, sizeof(urlbuf), "%s%s", base_url, urlstring[handlenum]);
   curl_easy_setopt(handles[handlenum], CURLOPT_URL, urlbuf);
   curl_easy_setopt(handles[handlenum], CURLOPT_VERBOSE, 1L);
   curl_easy_setopt(handles[handlenum], CURLOPT_FAILONERROR, 1L);
@@ -128,7 +122,7 @@ void setup_handle(char *base_url, CURLM *m, int handlenum)
   curl_multi_add_handle(m, handles[handlenum]);
 }
 
-void remove_handles(void)
+static void remove_handles(void)
 {
   int i;
 
@@ -155,7 +149,7 @@ int test(char *URL)
 
   curl_global_init(CURL_GLOBAL_ALL);
 
-  m = curl_multi_init();
+  multi_init(m);
 
   create_handles();
 
@@ -185,7 +179,7 @@ int test(char *URL)
       now = tutil_tvnow();
       msnow = now.tv_sec * 1000 + now.tv_usec / 1000;
       mslast = last_handle_add.tv_sec * 1000 + last_handle_add.tv_usec / 1000;
-      if(msnow - mslast >= urltime[handlenum] && handlenum < num_handles) {
+      if((msnow - mslast) >= urltime[handlenum]) {
         fprintf(stdout, "Adding handle %d\n", handlenum);
         setup_handle(URL, m, handlenum);
         last_handle_add = now;
@@ -198,12 +192,12 @@ int test(char *URL)
     abort_on_test_timeout();
 
     /* See how the transfers went */
-    while ((msg = curl_multi_info_read(m, &msgs_left))) {
-      if (msg->msg == CURLMSG_DONE) {
+    while((msg = curl_multi_info_read(m, &msgs_left))) {
+      if(msg->msg == CURLMSG_DONE) {
         int i, found = 0;
 
         /* Find out which handle this message is about */
-        for (i = 0; i < num_handles; i++) {
+        for(i = 0; i < num_handles; i++) {
           found = (msg->easy_handle == handles[i]);
           if(found)
             break;

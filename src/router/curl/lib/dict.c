@@ -5,11 +5,11 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2012, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
- * are also available at http://curl.haxx.se/docs/copyright.html.
+ * are also available at https://curl.haxx.se/docs/copyright.html.
  *
  * You may opt to use, copy, modify, merge, publish, distribute and/or sell
  * copies of the Software, and permit persons to whom the Software is
@@ -57,10 +57,6 @@
 #include "strequal.h"
 #include "dict.h"
 #include "rawstr.h"
-
-#define _MPRINTF_REPLACE /* use our functions only */
-#include <curl/mprintf.h>
-
 #include "curl_memory.h"
 /* The last #include file should be: */
 #include "memdebug.h"
@@ -95,13 +91,13 @@ const struct Curl_handler Curl_handler_dict = {
   PROTOPT_NONE | PROTOPT_NOURLQUERY      /* flags */
 };
 
-static char *unescape_word(struct SessionHandle *data, const char *inputbuff)
+static char *unescape_word(struct Curl_easy *data, const char *inputbuff)
 {
   char *newp;
   char *dictp;
   char *ptr;
   int len;
-  char byte;
+  char ch;
   int olen=0;
 
   newp = curl_easy_unescape(data, inputbuff, 0, &len);
@@ -113,18 +109,17 @@ static char *unescape_word(struct SessionHandle *data, const char *inputbuff)
     /* According to RFC2229 section 2.2, these letters need to be escaped with
        \[letter] */
     for(ptr = newp;
-        (byte = *ptr) != 0;
+        (ch = *ptr) != 0;
         ptr++) {
-      if((byte <= 32) || (byte == 127) ||
-          (byte == '\'') || (byte == '\"') || (byte == '\\')) {
+      if((ch <= 32) || (ch == 127) ||
+          (ch == '\'') || (ch == '\"') || (ch == '\\')) {
         dictp[olen++] = '\\';
       }
-      dictp[olen++] = byte;
+      dictp[olen++] = ch;
     }
     dictp[olen]=0;
-
-    free(newp);
   }
+  free(newp);
   return dictp;
 }
 
@@ -138,7 +133,7 @@ static CURLcode dict_do(struct connectdata *conn, bool *done)
   char *nthdef = NULL; /* This is not part of the protocol, but required
                           by RFC 2229 */
   CURLcode result=CURLE_OK;
-  struct SessionHandle *data=conn->data;
+  struct Curl_easy *data=conn->data;
   curl_socket_t sockfd = conn->sock[FIRSTSOCKET];
 
   char *path = data->state.path;

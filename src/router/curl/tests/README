@@ -81,6 +81,9 @@ The cURL Test Suite
   machine, or just move the servers in case you have local services on any of
   those ports.
 
+  The HTTP server supports listening on a Unix domain socket, the default
+  location is 'http.sock'.
+
  1.4 Run
 
   'make test'. This builds the test suite support code and invokes the
@@ -97,7 +100,9 @@ The cURL Test Suite
   (like "./runtests.pl 3 4" to test 3 and 4 only). It also supports test case
   ranges with 'to', as in "./runtests 3 to 9" which runs the seven tests from
   3 to 9. Any test numbers starting with ! are disabled, as are any test
-  numbers found in the file data/DISABLED (one per line).
+  numbers found in the files data/DISABLED or data/DISABLED.local (one per
+  line). The latter is meant for local temporary disables and will be ignored
+  by git.
 
   When -s is not present, each successful test will display on one line the
   test number and description and on the next line a set of flags, the test
@@ -144,7 +149,9 @@ The cURL Test Suite
   runtests.pl's -t option will enable torture testing mode, which runs each
   test many times and makes each different memory allocation fail on each
   successive run.  This tests the out of memory error handling code to ensure
-  that memory leaks do not occur even in those situations.
+  that memory leaks do not occur even in those situations. It can help to
+  compile curl with CPPFLAGS=-DMEMDEBUG_LOG_SYNC when using this option, to
+  ensure that the memory log file is properly written even if curl crashes.
 
  1.7 Debug
 
@@ -198,25 +205,26 @@ The cURL Test Suite
  2.1 Test case numbering
 
      1   -  99   HTTP
-     100 - 199   FTP*
-     200 - 299   FILE*
+     100 - 199   FTP
+     200 - 299   FILE
      300 - 399   HTTPS
      400 - 499   FTPS
      500 - 599   libcurl source code tests, not using the curl command tool
      600 - 699   SCP/SFTP
      700 - 799   SOCKS4 (even numbers) and SOCK5 (odd numbers)
-     800 - 899   POP3, IMAP, SMTP
-     1000 - 1299 miscellaneous*
-     1300 - 1399 unit tests*
-     1400 - 1499 miscellaneous*
+     800 - 849   IMAP
+     850 - 899   POP3
+     900 - 999   SMTP
+     1000 - 1299 miscellaneous
+     1300 - 1399 unit tests
+     1400 - 1499 miscellaneous
      1500 - 1599 libcurl source code tests, not using the curl command tool
                  (same as 5xx)
-     2000 - x    multiple sequential protocols per test case*
+     1600 - 1699 unit tests
+     2000 - x    multiple sequential protocols per test case
 
-  Since 30-apr-2003, there's nothing in the system that requires us to keep
-  within these number series, and those sections marked with * actually
-  contain tests for a variety of protocols. Each test case now specifies its
-  own server requirements, independent of test number.
+  There's nothing in the system that *requires* us to keep within these number
+  series.
 
 3. Write tests
 

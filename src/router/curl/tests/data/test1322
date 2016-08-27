@@ -1,29 +1,57 @@
 <testcase>
 <info>
 <keywords>
-POP3
-CRLF-in-URL
+HTTP
+HTTP GET
+--resolve
+trailing dot
 </keywords>
 </info>
 
+#
+# Server-side
+<reply>
+<data>
+HTTP/1.1 200 OK
+Date: Thu, 09 Nov 2010 14:49:00 GMT
+Server: test-server/fake
+Last-Modified: Tue, 13 Jun 2000 12:10:00 GMT
+ETag: "21025-dc7-39462498"
+Accept-Ranges: bytes
+Content-Length: 6
+Connection: close
+Content-Type: text/html
+Funny-head: yesyes
+
+-foo-
+</data>
+</reply>
+
+#
 # Client-side
 <client>
 <server>
-pop3
+http
 </server>
- <name>
-POP3 with URL-encoded CR LF in the URL
- </name>
- <command>
-pop3://%HOSTIP:%POP3PORT/%0d%0a/1322
+<name>
+HTTP with --resolve and hostname with trailing dot
+</name>
+<command>
+--resolve example.com:%HTTPPORT:%HOSTIP http://example.com.:%HTTPPORT/1322
 </command>
 </client>
 
 #
+# Verify data after the test has been "shot"
 <verify>
-# 3 - CURLE_URL_MALFORMAT
-<errorcode>
-3
-</errorcode>
+<strip>
+^User-Agent:.*
+</strip>
+<protocol>
+GET /1322 HTTP/1.1
+Host: example.com:%HTTPPORT
+Accept: */*
+
+</protocol>
 </verify>
 </testcase>

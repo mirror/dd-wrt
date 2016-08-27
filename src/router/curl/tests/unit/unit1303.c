@@ -5,11 +5,11 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2011, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2016, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
- * are also available at http://curl.haxx.se/docs/copyright.html.
+ * are also available at https://curl.haxx.se/docs/copyright.html.
  *
  * You may opt to use, copy, modify, merge, publish, distribute and/or sell
  * copies of the Software, and permit persons to whom the Software is
@@ -25,17 +25,17 @@
 #include "connect.h"
 #include "memdebug.h" /* LAST include file */
 
-static struct SessionHandle *data;
+static struct Curl_easy *data;
 
-static CURLcode unit_setup( void )
+static CURLcode unit_setup(void)
 {
   data = curl_easy_init();
-  if (!data)
+  if(!data)
     return CURLE_OUT_OF_MEMORY;
   return CURLE_OK;
 }
 
-static void unit_stop( void )
+static void unit_stop(void)
 {
   curl_easy_cleanup(data);
 }
@@ -131,6 +131,8 @@ const struct timetest run[] = {
 /* this is the pretended start time of the transfer */
 data->progress.t_startsingle.tv_sec = BASE;
 data->progress.t_startsingle.tv_usec = 0;
+data->progress.t_startop.tv_sec = BASE;
+data->progress.t_startop.tv_usec = 0;
 
 for(i=0; i < sizeof(run)/sizeof(run[0]); i++) {
   NOW(run[i].now_s, run[i].now_us);

@@ -4,15 +4,20 @@
 <title>runtests.pl man page</title>
 <meta name="generator" content="roffit">
 <STYLE type="text/css">
-P.level0 {
+pre {
+  overflow: auto;
+  margin: 0;
+}
+
+P.level0, pre.level0 {
  padding-left: 2em;
 }
 
-P.level1 {
+P.level1, pre.level1 {
  padding-left: 4em;
 }
 
-P.level2 {
+P.level2, pre.level2 {
  padding-left: 6em;
 }
 
@@ -57,9 +62,11 @@ p.roffit {
 <p class="level0"><a name="-bN"></a><span class="nroffip">-bN</span> 
 <p class="level1">Use N as the base TCP/UDP port number on which to start the test servers. 
 <p class="level0"><a name="-c"></a><span class="nroffip">-c &lt;curl&gt;</span> 
-<p class="level1">Provide a custom curl binary to run the tests with. Default is the curl executable in the build tree. 
+<p class="level1">Provide a path to a custom curl binary to run the tests with. Default is the curl executable in the build tree. 
 <p class="level0"><a name="-d"></a><span class="nroffip">-d</span> 
 <p class="level1">Enable protocol debug: have the servers display protocol output. 
+<p class="level0"><a name="-e"></a><span class="nroffip">-e</span> 
+<p class="level1">Run the test event-based (if possible). This will make runtests invoke curl with --test-event option. This option only works if both curl and libcurl were built debug-enabled. 
 <p class="level0"><a name="-g"></a><span class="nroffip">-g</span> 
 <p class="level1">Run the given test(s) with gdb. This is best used on a single test case and curl built --disable-shared. This then fires up gdb with command line set to run the specified test case. Simply (set a break-point and) type 'run' to start. 
 <p class="level0"><a name="-h"></a><span class="nroffip">-h</span> 
@@ -81,7 +88,9 @@ p.roffit {
 <p class="level0"><a name="-tnum"></a><span class="nroffip">-t[num]</span> 
 <p class="level1">Selects a <span Class="bold">torture</span> test for the given tests. This makes runtests.pl first run the tests once and count the number of memory allocations made. It then reruns the test that number of times, each time forcing one of the allocations to fail until all allocs have been tested. By setting <span Class="emphasis">num</span> you can force the allocation with that number to be set to fail at once instead of looping through everyone, which is very handy when debugging and then often in combination with <a class="emphasis" href="#-g">-g</a>. 
 <p class="level0"><a name="-v"></a><span class="nroffip">-v</span> 
-<p class="level1">Enable verbose output. Speaks more than default. <a name="RUNNING"></a><h2 class="nroffsh">RUNNING TESTS</h2>
+<p class="level1">Enable verbose output. Speaks more than default. 
+<p class="level0"><a name="-vc"></a><span class="nroffip">-vc &lt;curl&gt;</span> 
+<p class="level1">Provide a path to a custom curl binary to run when verifying that the servers running are indeed our test servers. Default is the curl executable in the build tree. <a name="RUNNING"></a><h2 class="nroffsh">RUNNING TESTS</h2>
 <p class="level0">Many tests have conditions that must be met before the test case can run fine. They could depend on built-in features in libcurl or features present in the operating system or even in third-party libraries that curl may or may not use. 
 <p class="level0">The test script checks most of these by itself to determine when it is safe to attempt to run each test.  Those which cannot be run due to failed requirements will simply be skipped and listed at the completion of all test cases.  In some unusual configurations, the test script cannot make the correct determination for all tests.  In these cases, the problematic tests can be skipped using the "!keyword" skip feature documented earlier. <a name="WRITING"></a><h2 class="nroffsh">WRITING TESTS</h2>
 <p class="level0">The simplest way to write test cases is to start with a similar existing test, save it with a new number and then adjust it to fit. There's an attempt to document the test case file format in the tests/FILEFORMAT. <p class="roffit">
