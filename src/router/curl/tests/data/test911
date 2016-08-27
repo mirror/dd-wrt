@@ -25,7 +25,7 @@ SMTP with no mail data
 </stdin>
 
  <command>
-smtp://%HOSTIP:%SMTPPORT/user --mail-rcpt 911@foo --mail-rcpt 911@foobar.example --mail-from 911@from -T -
+smtp://%HOSTIP:%SMTPPORT/911 --mail-rcpt recipient@example.com --mail-from sender@example.com -T -
 </command>
 </client>
 
@@ -33,10 +33,9 @@ smtp://%HOSTIP:%SMTPPORT/user --mail-rcpt 911@foo --mail-rcpt 911@foobar.example
 # Verify data after the test has been "shot"
 <verify>
 <protocol>
-EHLO user
-MAIL FROM:<911@from>
-RCPT TO:<911@foo>
-RCPT TO:<911@foobar.example>
+EHLO 911
+MAIL FROM:<sender@example.com>
+RCPT TO:<recipient@example.com>
 DATA
 QUIT
 </protocol>

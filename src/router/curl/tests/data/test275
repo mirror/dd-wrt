@@ -69,18 +69,17 @@ CONNECT remotesite.com.275:%HTTPPORT HTTP/1.1
 Host: remotesite.com.275:%HTTPPORT
 Proxy-Authorization: Basic eW91YXJlOnlvdXJzZWxm
 User-Agent: curl/7.10.7-pre2 (i686-pc-linux-gnu) libcurl/7.10.7-pre2 OpenSSL/0.9.7a zlib/1.1.3
-Proxy-Connection: Keep-Alive
 
 </proxy>
 <protocol>
 GET /we/want/that/page/275 HTTP/1.1
-Authorization: Basic aWFtOm15c2VsZg==
 Host: remotesite.com.275:%HTTPPORT
+Authorization: Basic aWFtOm15c2VsZg==
 Accept: */*
 
 GET /we/want/that/page/275 HTTP/1.1
-Authorization: Basic aWFtOm15c2VsZg==
 Host: remotesite.com.275:%HTTPPORT
+Authorization: Basic aWFtOm15c2VsZg==
 Accept: */*
 
 </protocol>

@@ -6,11 +6,11 @@
 #                            | (__| |_| |  _ <| |___
 #                             \___|\___/|_| \_\_____|
 #
-# Copyright (C) 1998 - 2010, Daniel Stenberg, <daniel@haxx.se>, et al.
+# Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
 #
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution. The terms
-# are also available at http://curl.haxx.se/docs/copyright.html.
+# are also available at https://curl.haxx.se/docs/copyright.html.
 #
 # You may opt to use, copy, modify, merge, publish, distribute and/or sell
 # copies of the Software, and permit persons to whom the Software is
@@ -33,11 +33,14 @@ BEGIN {
 use strict;
 use warnings;
 use Cwd;
+use Cwd 'abs_path';
 
 use serverhelp qw(
     server_pidfilename
     server_logfilename
     );
+
+use pathhelp;
 
 my $stunnel = "stunnel";
 
@@ -50,7 +53,9 @@ my $stuncert;
 
 my $ver_major;
 my $ver_minor;
+my $fips_support;
 my $stunnel_version;
+my $tstunnel_windows;
 my $socketopt;
 my $cmd;
 
@@ -61,6 +66,7 @@ my $ipvnum = 4;       # default IP version of stunneled server
 my $idnum = 1;        # dafault stunneled server instance number
 my $proto = 'https';  # default secure server protocol
 my $conffile;         # stunnel configuration file
+my $capath;           # certificate chain PEM folder
 my $certfile;         # certificate chain PEM file
 
 #***************************************************************************
@@ -112,7 +118,12 @@ while(@ARGV) {
     }
     elsif($ARGV[0] eq '--stunnel') {
         if($ARGV[1]) {
-            $stunnel = $ARGV[1];
+            if($ARGV[1] =~ /^([\w\/]+)$/) {
+                $stunnel = $ARGV[1];
+            }
+            else {
+                $stunnel = "\"". $ARGV[1] ."\"";
+            }
             shift @ARGV;
         }
     }
@@ -172,7 +183,9 @@ if(!$logfile) {
 
 $conffile = "$path/stunnel.conf";
 
+$capath = abs_path($path);
 $certfile = "$srcdir/". ($stuncert?"certs/$stuncert":"stunnel.pem");
+$certfile = abs_path($certfile);
 
 my $ssltext = uc($proto) ." SSL/TLS:";
 
@@ -184,7 +197,11 @@ foreach my $veropt (('-version', '-V')) {
         if($verstr =~ /^stunnel (\d+)\.(\d+) on /) {
             $ver_major = $1;
             $ver_minor = $2;
-            last;
+        }
+        elsif($verstr =~ /^sslVersion.*fips *= *yes/) {
+            # the fips option causes an error if stunnel doesn't support it
+            $fips_support = 1;
+            last
         }
     }
     last if($ver_major);
@@ -201,11 +218,22 @@ if((!$ver_major) || (!$ver_minor)) {
 $stunnel_version = (100*$ver_major) + $ver_minor;
 
 #***************************************************************************
-# Verify minimmum stunnel required version
+# Verify minimum stunnel required version
 #
 if($stunnel_version < 310) {
     print "$ssltext Unsupported stunnel version $ver_major.$ver_minor\n";
     exit 1;
+}
+
+#***************************************************************************
+# Find out if we are running on Windows using the tstunnel binary
+#
+if($stunnel =~ /tstunnel(\.exe)?"?$/) {
+    $tstunnel_windows = 1;
+
+    # convert Cygwin/MinGW paths to Win32 format
+    $capath = pathhelp::sys_native_abs_path($capath);
+    $certfile = pathhelp::sys_native_abs_path($certfile);
 }
 
 #***************************************************************************
@@ -243,19 +271,24 @@ if($stunnel_version >= 400) {
     $SIG{TERM} = \&exit_signal_handler;
     # stunnel configuration file
     if(open(STUNCONF, ">$conffile")) {
-	print STUNCONF "
-	CApath = $path
-	cert = $certfile
-	pid = $pidfile
-	debug = $loglevel
-	output = $logfile
-	socket = $socketopt
-	foreground = yes
-	
-	[curltest]
-	accept = $accept_port
-	connect = $target_port
-	";
+        print STUNCONF "CApath = $capath\n";
+        print STUNCONF "cert = $certfile\n";
+        print STUNCONF "debug = $loglevel\n";
+        print STUNCONF "socket = $socketopt\n";
+        if($fips_support) {
+            # disable fips in case OpenSSL doesn't support it
+            print STUNCONF "fips = no\n";
+        }
+        if(!$tstunnel_windows) {
+            # do not use Linux-specific options on Windows
+            print STUNCONF "output = $logfile\n";
+            print STUNCONF "pid = $pidfile\n";
+            print STUNCONF "foreground = yes\n";
+        }
+        print STUNCONF "\n";
+        print STUNCONF "[curltest]\n";
+        print STUNCONF "accept = $accept_port\n";
+        print STUNCONF "connect = $target_port\n";
         if(!close(STUNCONF)) {
             print "$ssltext Error closing file $conffile\n";
             exit 1;
@@ -268,13 +301,18 @@ if($stunnel_version >= 400) {
     if($verbose) {
         print uc($proto) ." server (stunnel $ver_major.$ver_minor)\n";
         print "cmd: $cmd\n";
-        print "CApath = $path\n";
+        print "CApath = $capath\n";
         print "cert = $certfile\n";
-        print "pid = $pidfile\n";
         print "debug = $loglevel\n";
-        print "output = $logfile\n";
         print "socket = $socketopt\n";
-        print "foreground = yes\n";
+        if($fips_support) {
+            print "fips = no\n";
+        }
+        if(!$tstunnel_windows) {
+            print "pid = $pidfile\n";
+            print "output = $logfile\n";
+            print "foreground = yes\n";
+        }
         print "\n";
         print "[curltest]\n";
         print "accept = $accept_port\n";
@@ -286,6 +324,25 @@ if($stunnel_version >= 400) {
 # Set file permissions on certificate pem file.
 #
 chmod(0600, $certfile) if(-f $certfile);
+
+#***************************************************************************
+# Run tstunnel on Windows.
+#
+if($tstunnel_windows) {
+    # Fake pidfile for tstunnel on Windows.
+    if(open(OUT, ">$pidfile")) {
+        print OUT $$ . "\n";
+        close(OUT);
+    }
+
+    # Put an "exec" in front of the command so that the child process
+    # keeps this child's process ID.
+    exec("exec $cmd") || die "Can't exec() $cmd: $!";
+
+    # exec() should never return back here to this process. We protect
+    # ourselves by calling die() just in case something goes really bad.
+    die "error: exec() has returned";
+}
 
 #***************************************************************************
 # Run stunnel.

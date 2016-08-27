@@ -7,11 +7,11 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2012, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
- * are also available at http://curl.haxx.se/docs/copyright.html.
+ * are also available at https://curl.haxx.se/docs/copyright.html.
  *
  * You may opt to use, copy, modify, merge, publish, distribute and/or sell
  * copies of the Software, and permit persons to whom the Software is
@@ -31,11 +31,13 @@ typedef enum {
 
 typedef struct {
   URLPatternType type;
+  int globindex; /* the number of this particular glob or -1 if not used
+                    within {} or [] */
   union {
     struct {
       char **elements;
-      short size;
-      short ptr_s;
+      int size;
+      int ptr_s;
     } Set;
     struct {
       char min_c;
@@ -44,31 +46,31 @@ typedef struct {
       int step;
     } CharRange;
     struct {
-      int min_n;
-      int max_n;
-      short padlength;
-      int ptr_n;
-      int step;
-    } NumRange ;
+      unsigned long min_n;
+      unsigned long max_n;
+      int padlength;
+      unsigned long ptr_n;
+      unsigned long step;
+    } NumRange;
   } content;
 } URLPattern;
 
 /* the total number of globs supported */
-#define GLOB_PATTERN_NUM 9
+#define GLOB_PATTERN_NUM 100
 
 typedef struct {
-  char *literal[10];
-  URLPattern pattern[GLOB_PATTERN_NUM+1];
+  URLPattern pattern[GLOB_PATTERN_NUM];
   size_t size;
   size_t urllen;
   char *glob_buffer;
   char beenhere;
-  char errormsg[80]; /* error message buffer */
+  const char *error; /* error message */
+  size_t pos;        /* column position of error or 0 */
 } URLGlob;
 
-int glob_url(URLGlob**, char*, int *, FILE *);
-int glob_next_url(char **, URLGlob *);
-int glob_match_url(char **, char*, URLGlob *);
+CURLcode glob_url(URLGlob**, char*, unsigned long *, FILE *);
+CURLcode glob_next_url(char **, URLGlob *);
+CURLcode glob_match_url(char **, char*, URLGlob *);
 void glob_cleanup(URLGlob* glob);
 
 #endif /* HEADER_CURL_TOOL_URLGLOB_H */
