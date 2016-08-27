@@ -220,9 +220,6 @@
 #ifdef TARGET_LINUX
 
 #ifdef HAVE_LINUX_IF_TUN_H
-#if 0 //ndef __UCLIBC__
-#define _LINUX_IF_ETHER_H
-#endif
 #include <linux/if_tun.h>
 #endif
 
