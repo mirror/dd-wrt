@@ -3,10 +3,11 @@
 <keywords>
 HTTP
 HTTP CONNECT
+HTTP proxy
 IPv6
 </keywords>
-
 </info>
+
 #
 # Server-side
 <reply>
@@ -55,7 +56,7 @@ HTTP CONNECT to IPv6 numerical address
  </name>
 # 0x4ce == 1230, the test number
  <command>
--g http://[1234:1234:1234::4ce]:%HTTPPORT/wanted/page/1230 -p -x %HOSTIP:%HTTPPORT
+http://[1234:1234:1234::4ce]:%HTTPPORT/wanted/page/1230 -p -x %HOSTIP:%HTTPPORT
 </command>
 </client>
 
@@ -68,7 +69,6 @@ HTTP CONNECT to IPv6 numerical address
 <protocol>
 CONNECT [1234:1234:1234::4ce]:%HTTPPORT HTTP/1.1
 Host: [1234:1234:1234::4ce]:%HTTPPORT
-Proxy-Connection: Keep-Alive
 
 GET /wanted/page/1230 HTTP/1.1
 Host: [1234:1234:1234::4ce]:%HTTPPORT

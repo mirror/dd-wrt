@@ -2,7 +2,8 @@
 <info>
 <keywords>
 SMTP
-SMTP AUTH PLAIN
+SASL
+SASL AUTH PLAIN
 RFC4616
 RFC4954
 </keywords>
@@ -12,9 +13,9 @@ RFC4954
 # Server-side
 <reply>
 <servercmd>
-REPLY EHLO 250 AUTH PLAIN
+AUTH PLAIN
 REPLY AUTH 334 PLAIN supported
-REPLY dGVzdAB0ZXN0ADEyMzQ= 235 Authenticated
+REPLY dXNlcgB1c2VyAHNlY3JldA== 235 Authenticated
 </servercmd>
 </reply>
 
@@ -31,7 +32,7 @@ SMTP plain authentication
 mail body
 </stdin>
  <command>
-smtp://%HOSTIP:%SMTPPORT/user --mail-rcpt 903@foo --mail-from 903@from -u test:1234 -T -
+smtp://%HOSTIP:%SMTPPORT/903 --mail-rcpt recipient@example.com --mail-from sender@example.com -u user:secret -T -
 </command>
 </client>
 
@@ -39,11 +40,11 @@ smtp://%HOSTIP:%SMTPPORT/user --mail-rcpt 903@foo --mail-from 903@from -u test:1
 # Verify data after the test has been "shot"
 <verify>
 <protocol>
-EHLO user
+EHLO 903
 AUTH PLAIN
-dGVzdAB0ZXN0ADEyMzQ=
-MAIL FROM:<903@from>
-RCPT TO:<903@foo>
+dXNlcgB1c2VyAHNlY3JldA==
+MAIL FROM:<sender@example.com>
+RCPT TO:<recipient@example.com>
 DATA
 QUIT
 </protocol>

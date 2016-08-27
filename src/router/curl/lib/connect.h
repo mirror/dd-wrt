@@ -7,11 +7,11 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2011, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
- * are also available at http://curl.haxx.se/docs/copyright.html.
+ * are also available at https://curl.haxx.se/docs/copyright.html.
  *
  * You may opt to use, copy, modify, merge, publish, distribute and/or sell
  * copies of the Software, and permit persons to whom the Software is
@@ -31,34 +31,32 @@ CURLcode Curl_is_connected(struct connectdata *conn,
                            bool *connected);
 
 CURLcode Curl_connecthost(struct connectdata *conn,
-                          const struct Curl_dns_entry *host, /* connect to
-                                                                this */
-                          curl_socket_t *sockconn, /* not set if error */
-                          Curl_addrinfo **addr, /* the one we used */
-                          bool *connected); /* truly connected? */
+                          const struct Curl_dns_entry *host);
 
 /* generic function that returns how much time there's left to run, according
    to the timeouts set */
-long Curl_timeleft(struct SessionHandle *data,
+long Curl_timeleft(struct Curl_easy *data,
                    struct timeval *nowp,
                    bool duringconnect);
 
 #define DEFAULT_CONNECT_TIMEOUT 300000 /* milliseconds == five minutes */
+#define HAPPY_EYEBALLS_TIMEOUT     200 /* milliseconds to wait between
+                                          IPv4/IPv6 connection attempts */
 
 /*
  * Used to extract socket and connectdata struct for the most recent
- * transfer on the given SessionHandle.
+ * transfer on the given Curl_easy.
  *
  * The returned socket will be CURL_SOCKET_BAD in case of failure!
  */
-curl_socket_t Curl_getconnectinfo(struct SessionHandle *data,
+curl_socket_t Curl_getconnectinfo(struct Curl_easy *data,
                                   struct connectdata **connp);
 
 #ifdef USE_WINSOCK
 /* When you run a program that uses the Windows Sockets API, you may
    experience slow performance when you copy data to a TCP server.
 
-   http://support.microsoft.com/kb/823764
+   https://support.microsoft.com/kb/823764
 
    Work-around: Make the Socket Send Buffer Size Larger Than the Program Send
    Buffer Size
@@ -103,5 +101,24 @@ CURLcode Curl_socket(struct connectdata *conn,
                      const Curl_addrinfo *ai,
                      struct Curl_sockaddr_ex *addr,
                      curl_socket_t *sockfd);
+
+void Curl_tcpnodelay(struct connectdata *conn, curl_socket_t sockfd);
+
+#ifdef CURLDEBUG
+/*
+ * Curl_connclose() sets the bit.close bit to TRUE with an explanation.
+ * Nothing else.
+ */
+void Curl_conncontrol(struct connectdata *conn,
+                      bool closeit,
+                      const char *reason);
+#define connclose(x,y) Curl_conncontrol(x,TRUE, y)
+#define connkeep(x,y) Curl_conncontrol(x, FALSE, y)
+#else /* if !CURLDEBUG */
+
+#define connclose(x,y) (x)->bits.close = TRUE
+#define connkeep(x,y) (x)->bits.close = FALSE
+
+#endif
 
 #endif /* HEADER_CURL_CONNECT_H */

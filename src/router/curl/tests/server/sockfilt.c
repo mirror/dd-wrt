@@ -5,11 +5,11 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2013, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2016, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
- * are also available at http://curl.haxx.se/docs/copyright.html.
+ * are also available at https://curl.haxx.se/docs/copyright.html.
  *
  * You may opt to use, copy, modify, merge, publish, distribute and/or sell
  * copies of the Software, and permit persons to whom the Software is
@@ -23,7 +23,7 @@
 
 /* Purpose
  *
- * 1. Accept a TCP connection on a custom port (ipv4 or ipv6), or connect
+ * 1. Accept a TCP connection on a custom port (IPv4 or IPv6), or connect
  *    to a given (localhost) port.
  *
  * 2. Get commands on STDIN. Pass data on to the TCP stream.
@@ -53,31 +53,34 @@
  *
  * This program is a single-threaded process.
  *
- * This program is intended to be highly portable and as such it must be kept as
- * simple as possible, due to this the only signal handling mechanisms used will
- * be those of ANSI C, and used only in the most basic form which is good enough
- * for the purpose of this program.
+ * This program is intended to be highly portable and as such it must be kept
+ * as simple as possible, due to this the only signal handling mechanisms used
+ * will be those of ANSI C, and used only in the most basic form which is good
+ * enough for the purpose of this program.
  *
  * For the above reason and the specific needs of this program signals SIGHUP,
- * SIGPIPE and SIGALRM will be simply ignored on systems where this can be done.
- * If possible, signals SIGINT and SIGTERM will be handled by this program as an
- * indication to cleanup and finish execution as soon as possible.  This will be
- * achieved with a single signal handler 'exit_signal_handler' for both signals.
+ * SIGPIPE and SIGALRM will be simply ignored on systems where this can be
+ * done.  If possible, signals SIGINT and SIGTERM will be handled by this
+ * program as an indication to cleanup and finish execution as soon as
+ * possible.  This will be achieved with a single signal handler
+ * 'exit_signal_handler' for both signals.
  *
  * The 'exit_signal_handler' upon the first SIGINT or SIGTERM received signal
  * will just set to one the global var 'got_exit_signal' storing in global var
  * 'exit_signal' the signal that triggered this change.
  *
  * Nothing fancy that could introduce problems is used, the program at certain
- * points in its normal flow checks if var 'got_exit_signal' is set and in case
- * this is true it just makes its way out of loops and functions in structured
- * and well behaved manner to achieve proper program cleanup and termination.
+ * points in its normal flow checks if var 'got_exit_signal' is set and in
+ * case this is true it just makes its way out of loops and functions in
+ * structured and well behaved manner to achieve proper program cleanup and
+ * termination.
  *
- * Even with the above mechanism implemented it is worthwile to note that other
- * signals might still be received, or that there might be systems on which it
- * is not possible to trap and ignore some of the above signals.  This implies
- * that for increased portability and reliability the program must be coded as
- * if no signal was being ignored or handled at all.  Enjoy it!
+ * Even with the above mechanism implemented it is worthwile to note that
+ * other signals might still be received, or that there might be systems on
+ * which it is not possible to trap and ignore some of the above signals.
+ * This implies that for increased portability and reliability the program
+ * must be coded as if no signal was being ignored or handled at all.  Enjoy
+ * it!
  */
 
 #ifdef HAVE_SIGNAL_H
@@ -91,9 +94,6 @@
 #endif
 #ifdef HAVE_NETDB_H
 #include <netdb.h>
-#endif
-#ifdef USE_WINSOCK
-#include <conio.h>  /* for _kbhit() used in select_ws() */
 #endif
 
 #define ENABLE_CURLX_PRINTF
@@ -288,10 +288,10 @@ static ssize_t read_wincon(int fd, void *buf, size_t count)
   }
 
   if(GetConsoleMode(handle, &mode)) {
-    success = ReadConsole(handle, buf, count, &rcount, NULL);
+    success = ReadConsole(handle, buf, curlx_uztoul(count), &rcount, NULL);
   }
   else {
-    success = ReadFile(handle, buf, count, &rcount, NULL);
+    success = ReadFile(handle, buf, curlx_uztoul(count), &rcount, NULL);
   }
   if(success) {
     return rcount;
@@ -300,6 +300,7 @@ static ssize_t read_wincon(int fd, void *buf, size_t count)
   errno = GetLastError();
   return -1;
 }
+#undef  read
 #define read(a,b,c) read_wincon(a,b,c)
 
 /*
@@ -322,10 +323,10 @@ static ssize_t write_wincon(int fd, const void *buf, size_t count)
   }
 
   if(GetConsoleMode(handle, &mode)) {
-    success = WriteConsole(handle, buf, count, &wcount, NULL);
+    success = WriteConsole(handle, buf, curlx_uztoul(count), &wcount, NULL);
   }
   else {
-    success = WriteFile(handle, buf, count, &wcount, NULL);
+    success = WriteFile(handle, buf, curlx_uztoul(count), &wcount, NULL);
   }
   if(success) {
     return wcount;
@@ -334,6 +335,7 @@ static ssize_t write_wincon(int fd, const void *buf, size_t count)
   errno = GetLastError();
   return -1;
 }
+#undef  write
 #define write(a,b,c) write_wincon(a,b,c)
 #endif
 
@@ -470,23 +472,28 @@ static void lograw(unsigned char *buffer, ssize_t len)
   unsigned char *ptr = buffer;
   char *optr = data;
   ssize_t width=0;
+  int left = sizeof(data);
 
   for(i=0; i<len; i++) {
     switch(ptr[i]) {
     case '\n':
-      sprintf(optr, "\\n");
+      snprintf(optr, left, "\\n");
       width += 2;
       optr += 2;
+      left-=2;
       break;
     case '\r':
-      sprintf(optr, "\\r");
+      snprintf(optr, left, "\\r");
       width += 2;
       optr += 2;
+      left-=2;
       break;
     default:
-      sprintf(optr, "%c", (ISGRAPH(ptr[i]) || ptr[i]==0x20) ?ptr[i]:'.');
+      snprintf(optr, left, "%c", (ISGRAPH(ptr[i]) ||
+                                  ptr[i]==0x20) ?ptr[i]:'.');
       width++;
       optr++;
+      left--;
       break;
     }
 
@@ -494,6 +501,7 @@ static void lograw(unsigned char *buffer, ssize_t len)
       logmsg("'%s'", data);
       width = 0;
       optr = data;
+      left = sizeof(data);
     }
   }
   if(width)
@@ -507,25 +515,186 @@ static void lograw(unsigned char *buffer, ssize_t len)
  * to re-create a select() function with support for other handle types.
  *
  * select() function with support for WINSOCK2 sockets and all
- * other handle types supported by WaitForMultipleObjectsEx().
+ * other handle types supported by WaitForMultipleObjectsEx() as
+ * well as disk files, anonymous and names pipes, and character input.
  *
- * TODO: Differentiate between read/write/except for non-SOCKET handles.
- *
- * http://msdn.microsoft.com/en-us/library/windows/desktop/ms687028.aspx
- * http://msdn.microsoft.com/en-us/library/windows/desktop/ms741572.aspx
+ * https://msdn.microsoft.com/en-us/library/windows/desktop/ms687028.aspx
+ * https://msdn.microsoft.com/en-us/library/windows/desktop/ms741572.aspx
  */
+struct select_ws_wait_data {
+  HANDLE handle; /* actual handle to wait for during select */
+  HANDLE event;  /* internal event to abort waiting thread */
+};
+static DWORD WINAPI select_ws_wait_thread(LPVOID lpParameter)
+{
+  struct select_ws_wait_data *data;
+  HANDLE handle, handles[2];
+  INPUT_RECORD inputrecord;
+  LARGE_INTEGER size, pos;
+  DWORD type, length;
+
+  /* retrieve handles from internal structure */
+  data = (struct select_ws_wait_data *) lpParameter;
+  if(data) {
+    handle = data->handle;
+    handles[0] = data->event;
+    handles[1] = handle;
+    free(data);
+  }
+  else
+    return -1;
+
+  /* retrieve the type of file to wait on */
+  type = GetFileType(handle);
+  switch(type) {
+    case FILE_TYPE_DISK:
+       /* The handle represents a file on disk, this means:
+        * - WaitForMultipleObjectsEx will always be signalled for it.
+        * - comparison of current position in file and total size of
+        *   the file can be used to check if we reached the end yet.
+        *
+        * Approach: Loop till either the internal event is signalled
+        *           or if the end of the file has already been reached.
+        */
+      while(WaitForMultipleObjectsEx(1, handles, FALSE, 0, FALSE)
+            == WAIT_TIMEOUT) {
+        /* get total size of file */
+        length = 0;
+        size.QuadPart = 0;
+        size.LowPart = GetFileSize(handle, &length);
+        if((size.LowPart != INVALID_FILE_SIZE) ||
+           (GetLastError() == NO_ERROR)) {
+          size.HighPart = length;
+          /* get the current position within the file */
+          pos.QuadPart = 0;
+          pos.LowPart = SetFilePointer(handle, 0, &pos.HighPart,
+                                       FILE_CURRENT);
+          if((pos.LowPart != INVALID_SET_FILE_POINTER) ||
+             (GetLastError() == NO_ERROR)) {
+            /* compare position with size, abort if not equal */
+            if(size.QuadPart == pos.QuadPart) {
+              /* sleep and continue waiting */
+              SleepEx(0, FALSE);
+              continue;
+            }
+          }
+        }
+        /* there is some data available, stop waiting */
+        break;
+      }
+      break;
+
+    case FILE_TYPE_CHAR:
+       /* The handle represents a character input, this means:
+        * - WaitForMultipleObjectsEx will be signalled on any kind of input,
+        *   including mouse and window size events we do not care about.
+        *
+        * Approach: Loop till either the internal event is signalled
+        *           or we get signalled for an actual key-event.
+        */
+      while(WaitForMultipleObjectsEx(2, handles, FALSE, INFINITE, FALSE)
+            == WAIT_OBJECT_0 + 1) {
+        /* check if this is an actual console handle */
+        length = 0;
+        if(GetConsoleMode(handle, &length)) {
+          /* retrieve an event from the console buffer */
+          length = 0;
+          if(PeekConsoleInput(handle, &inputrecord, 1, &length)) {
+            /* check if the event is not an actual key-event */
+            if(length == 1 && inputrecord.EventType != KEY_EVENT) {
+              /* purge the non-key-event and continue waiting */
+              ReadConsoleInput(handle, &inputrecord, 1, &length);
+              continue;
+            }
+          }
+        }
+        /* there is some data available, stop waiting */
+        break;
+      }
+      break;
+
+    case FILE_TYPE_PIPE:
+       /* The handle represents an anonymous or named pipe, this means:
+        * - WaitForMultipleObjectsEx will always be signalled for it.
+        * - peek into the pipe and retrieve the amount of data available.
+        *
+        * Approach: Loop till either the internal event is signalled
+        *           or there is data in the pipe available for reading.
+        */
+      while(WaitForMultipleObjectsEx(1, handles, FALSE, 0, FALSE)
+            == WAIT_TIMEOUT) {
+        /* peek into the pipe and retrieve the amount of data available */
+        length = 0;
+        if(PeekNamedPipe(handle, NULL, 0, NULL, &length, NULL)) {
+          /* if there is no data available, sleep and continue waiting */
+          if(length == 0) {
+            SleepEx(0, FALSE);
+            continue;
+          }
+        }
+        else {
+          /* if the pipe has been closed, sleep and continue waiting */
+          if(GetLastError() == ERROR_BROKEN_PIPE) {
+            SleepEx(0, FALSE);
+            continue;
+          }
+        }
+        /* there is some data available, stop waiting */
+        break;
+      }
+      break;
+
+    default:
+      /* The handle has an unknown type, try to wait on it */
+      WaitForMultipleObjectsEx(2, handles, FALSE, INFINITE, FALSE);
+      break;
+  }
+
+  return 0;
+}
+static HANDLE select_ws_wait(HANDLE handle, HANDLE event)
+{
+  struct select_ws_wait_data *data;
+  HANDLE thread = NULL;
+
+  /* allocate internal waiting data structure */
+  data = malloc(sizeof(struct select_ws_wait_data));
+  if(data) {
+    data->handle = handle;
+    data->event = event;
+
+    /* launch waiting thread */
+    thread = CreateThread(NULL, 0,
+                          &select_ws_wait_thread,
+                          data, 0, NULL);
+
+    /* free data if thread failed to launch */
+    if(!thread) {
+      free(data);
+    }
+  }
+
+  return thread;
+}
+struct select_ws_data {
+  curl_socket_t fd;      /* the original input handle   (indexed by fds) */
+  curl_socket_t wsasock; /* the internal socket handle  (indexed by wsa) */
+  WSAEVENT wsaevent;     /* the internal WINSOCK2 event (indexed by wsa) */
+  HANDLE thread;         /* the internal threads handle (indexed by thd) */
+};
 static int select_ws(int nfds, fd_set *readfds, fd_set *writefds,
                      fd_set *exceptfds, struct timeval *timeout)
 {
-  long networkevents;
-  DWORD milliseconds, wait, idx, mode, avail, events, inputs;
-  WSAEVENT wsaevent, *wsaevents;
+  DWORD milliseconds, wait, idx;
   WSANETWORKEVENTS wsanetevents;
-  INPUT_RECORD *inputrecords;
+  struct select_ws_data *data;
   HANDLE handle, *handles;
-  curl_socket_t sock, *fdarr, *wsasocks;
+  curl_socket_t sock;
+  long networkevents;
+  WSAEVENT wsaevent;
   int error, fds;
-  DWORD nfd = 0, wsa = 0;
+  HANDLE waitevent = NULL;
+  DWORD nfd = 0, thd = 0, wsa = 0;
   int ret = 0;
 
   /* check if the input value is valid */
@@ -536,13 +705,20 @@ static int select_ws(int nfds, fd_set *readfds, fd_set *writefds,
 
   /* check if we got descriptors, sleep in case we got none */
   if(!nfds) {
-    Sleep((timeout->tv_sec * 1000) + (timeout->tv_usec / 1000));
+    Sleep((timeout->tv_sec*1000)+(DWORD)(((double)timeout->tv_usec)/1000.0));
     return 0;
   }
 
-  /* allocate internal array for the original input handles */
-  fdarr = malloc(nfds * sizeof(curl_socket_t));
-  if(fdarr == NULL) {
+  /* create internal event to signal waiting threads */
+  waitevent = CreateEvent(NULL, TRUE, FALSE, NULL);
+  if(!waitevent) {
+    errno = ENOMEM;
+    return -1;
+  }
+
+  /* allocate internal array for the internal data */
+  data = malloc(nfds * sizeof(struct select_ws_data));
+  if(data == NULL) {
     errno = ENOMEM;
     return -1;
   }
@@ -550,23 +726,14 @@ static int select_ws(int nfds, fd_set *readfds, fd_set *writefds,
   /* allocate internal array for the internal event handles */
   handles = malloc(nfds * sizeof(HANDLE));
   if(handles == NULL) {
+    free(data);
     errno = ENOMEM;
     return -1;
   }
 
-  /* allocate internal array for the internal socket handles */
-  wsasocks = malloc(nfds * sizeof(curl_socket_t));
-  if(wsasocks == NULL) {
-    errno = ENOMEM;
-    return -1;
-  }
-
-  /* allocate internal array for the internal WINSOCK2 events */
-  wsaevents = malloc(nfds * sizeof(WSAEVENT));
-  if(wsaevents == NULL) {
-    errno = ENOMEM;
-    return -1;
-  }
+  /* clear internal arrays */
+  memset(data, 0, nfds * sizeof(struct select_ws_data));
+  memset(handles, 0, nfds * sizeof(HANDLE));
 
   /* loop over the handles in the input descriptor sets */
   for(fds = 0; fds < nfds; fds++) {
@@ -584,9 +751,13 @@ static int select_ws(int nfds, fd_set *readfds, fd_set *writefds,
 
     /* only wait for events for which we actually care */
     if(networkevents) {
-      fdarr[nfd] = curlx_sitosk(fds);
+      data[nfd].fd = curlx_sitosk(fds);
       if(fds == fileno(stdin)) {
-        handles[nfd] = GetStdHandle(STD_INPUT_HANDLE);
+        handle = GetStdHandle(STD_INPUT_HANDLE);
+        handle = select_ws_wait(handle, waitevent);
+        handles[nfd] = handle;
+        data[thd].thread = handle;
+        thd++;
       }
       else if(fds == fileno(stdout)) {
         handles[nfd] = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -599,14 +770,19 @@ static int select_ws(int nfds, fd_set *readfds, fd_set *writefds,
         if(wsaevent != WSA_INVALID_EVENT) {
           error = WSAEventSelect(fds, wsaevent, networkevents);
           if(error != SOCKET_ERROR) {
-            handles[nfd] = wsaevent;
-            wsasocks[wsa] = curlx_sitosk(fds);
-            wsaevents[wsa] = wsaevent;
+            handle = (HANDLE) wsaevent;
+            handles[nfd] = handle;
+            data[wsa].wsasock = curlx_sitosk(fds);
+            data[wsa].wsaevent = wsaevent;
             wsa++;
           }
           else {
-            handles[nfd] = (HANDLE) curlx_sitosk(fds);
             WSACloseEvent(wsaevent);
+            handle = (HANDLE) curlx_sitosk(fds);
+            handle = select_ws_wait(handle, waitevent);
+            handles[nfd] = handle;
+            data[thd].thread = handle;
+            thd++;
           }
         }
       }
@@ -625,55 +801,20 @@ static int select_ws(int nfds, fd_set *readfds, fd_set *writefds,
   /* wait for one of the internal handles to trigger */
   wait = WaitForMultipleObjectsEx(nfd, handles, FALSE, milliseconds, FALSE);
 
+  /* signal the event handle for the waiting threads */
+  SetEvent(waitevent);
+
   /* loop over the internal handles returned in the descriptors */
   for(idx = 0; idx < nfd; idx++) {
     handle = handles[idx];
-    sock = fdarr[idx];
+    sock = data[idx].fd;
     fds = curlx_sktosi(sock);
 
     /* check if the current internal handle was triggered */
     if(wait != WAIT_FAILED && (wait - WAIT_OBJECT_0) <= idx &&
        WaitForSingleObjectEx(handle, 0, FALSE) == WAIT_OBJECT_0) {
-      /* try to handle the event with STD* handle functions */
+      /* first handle stdin, stdout and stderr */
       if(fds == fileno(stdin)) {
-        /* check if there is no data in the input buffer */
-        if(!stdin->_cnt) {
-          /* check if we are getting data from a PIPE */
-          if(!GetConsoleMode(handle, &mode)) {
-            /* check if there is no data from PIPE input */
-            if(!PeekNamedPipe(handle, NULL, 0, NULL, &avail, NULL))
-              avail = 0;
-            if(!avail) {
-              FD_CLR(sock, readfds);
-              /* reduce CPU load */
-              Sleep(10);
-            }
-          } /* check if there is no data from keyboard input */
-          else if (!_kbhit()) {
-            /* check if there are INPUT_RECORDs in the input buffer */
-            if(GetNumberOfConsoleInputEvents(handle, &events)) {
-              if(events > 0) {
-                /* remove INPUT_RECORDs from the input buffer */
-                inputrecords = (INPUT_RECORD*)malloc(events *
-                                                     sizeof(INPUT_RECORD));
-                if(inputrecords) {
-                  if(!ReadConsoleInput(handle, inputrecords,
-                                       events, &inputs))
-                    inputs = 0;
-                  free(inputrecords);
-                }
-
-                /* check if we got all inputs, otherwise clear buffer */
-                if(events != inputs)
-                  FlushConsoleInputBuffer(handle);
-              }
-            }
-
-            /* remove from descriptor set since there is no real data */
-            FD_CLR(sock, readfds);
-          }
-        }
-
         /* stdin is never ready for write or exceptional */
         FD_CLR(sock, writefds);
         FD_CLR(sock, exceptfds);
@@ -685,6 +826,7 @@ static int select_ws(int nfds, fd_set *readfds, fd_set *writefds,
       }
       else {
         /* try to handle the event with the WINSOCK2 functions */
+        wsanetevents.lNetworkEvents = 0;
         error = WSAEnumNetworkEvents(fds, handle, &wsanetevents);
         if(error != SOCKET_ERROR) {
           /* remove from descriptor set if not ready for read/accept/close */
@@ -724,15 +866,31 @@ static int select_ws(int nfds, fd_set *readfds, fd_set *writefds,
     }
   }
 
-  for(idx = 0; idx < wsa; idx++) {
-    WSAEventSelect(wsasocks[idx], NULL, 0);
-    WSACloseEvent(wsaevents[idx]);
+  for(fds = 0; fds < nfds; fds++) {
+    if(FD_ISSET(fds, readfds))
+      logmsg("select_ws: %d is readable", fds);
+
+    if(FD_ISSET(fds, writefds))
+      logmsg("select_ws: %d is writable", fds);
+
+    if(FD_ISSET(fds, exceptfds))
+      logmsg("select_ws: %d is excepted", fds);
   }
 
-  free(wsaevents);
-  free(wsasocks);
+  for(idx = 0; idx < wsa; idx++) {
+    WSAEventSelect(data[idx].wsasock, NULL, 0);
+    WSACloseEvent(data[idx].wsaevent);
+  }
+
+  for(idx = 0; idx < thd; idx++) {
+    WaitForSingleObject(data[idx].thread, INFINITE);
+    CloseHandle(data[idx].thread);
+  }
+
+  CloseHandle(waitevent);
+
   free(handles);
-  free(fdarr);
+  free(data);
 
   return ret;
 }
@@ -889,7 +1047,7 @@ static bool juggle(curl_socket_t *sockfdp,
       return FALSE;
 
     logmsg("Received %c%c%c%c (on stdin)",
-           buffer[0], buffer[1], buffer[2], buffer[3] );
+           buffer[0], buffer[1], buffer[2], buffer[3]);
 
     if(!memcmp("PING", buffer, 4)) {
       /* send reply on stdout, just proving we are alive */
@@ -900,7 +1058,7 @@ static bool juggle(curl_socket_t *sockfdp,
     else if(!memcmp("PORT", buffer, 4)) {
       /* Question asking us what PORT number we are listening to.
          Replies to PORT with "IPv[num]/[port]" */
-      sprintf((char *)buffer, "%s/%hu\n", ipv_inuse, port);
+      snprintf((char *)buffer, sizeof(buffer), "%s/%hu\n", ipv_inuse, port);
       buffer_len = (ssize_t)strlen((char *)buffer);
       snprintf(data, sizeof(data), "PORT\n%04zx\n", buffer_len);
       if(!write_stdout(data, 10))
@@ -922,7 +1080,7 @@ static bool juggle(curl_socket_t *sockfdp,
       buffer[5] = '\0';
 
       buffer_len = (ssize_t)strtol((char *)buffer, NULL, 16);
-      if (buffer_len > (ssize_t)sizeof(buffer)) {
+      if(buffer_len > (ssize_t)sizeof(buffer)) {
         logmsg("ERROR: Buffer size (%zu bytes) too small for data size "
                "(%zd bytes)", sizeof(buffer), buffer_len);
         return FALSE;
@@ -1320,7 +1478,7 @@ int main(int argc, char *argv[])
       me.sa4.sin_family = AF_INET;
       me.sa4.sin_port = htons(connectport);
       me.sa4.sin_addr.s_addr = INADDR_ANY;
-      if (!addr)
+      if(!addr)
         addr = "127.0.0.1";
       Curl_inet_pton(AF_INET, addr, &me.sa4.sin_addr);
 
@@ -1331,7 +1489,7 @@ int main(int argc, char *argv[])
       memset(&me.sa6, 0, sizeof(me.sa6));
       me.sa6.sin6_family = AF_INET6;
       me.sa6.sin6_port = htons(connectport);
-      if (!addr)
+      if(!addr)
         addr = "::1";
       Curl_inet_pton(AF_INET6, addr, &me.sa6.sin6_addr);
 

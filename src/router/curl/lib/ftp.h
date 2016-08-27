@@ -7,11 +7,11 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2013, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
- * are also available at http://curl.haxx.se/docs/copyright.html.
+ * are also available at https://curl.haxx.se/docs/copyright.html.
  *
  * You may opt to use, copy, modify, merge, publish, distribute and/or sell
  * copies of the Software, and permit persons to whom the Software is
@@ -97,9 +97,9 @@ typedef enum {
                             file */
 } curl_ftpfile;
 
-/* This FTP struct is used in the SessionHandle. All FTP data that is
+/* This FTP struct is used in the Curl_easy. All FTP data that is
    connection-oriented must be in FTP_conn to properly deal with the fact that
-   perhaps the SessionHandle is changed between the times the connection is
+   perhaps the Curl_easy is changed between the times the connection is
    used. */
 struct FTP {
   curl_off_t *bytecountp;
@@ -147,6 +147,11 @@ struct ftp_conn {
   curl_off_t known_filesize; /* file size is different from -1, if wildcard
                                 LIST parsing was done and wc_statemach set
                                 it */
+  /* newhost is the (allocated) IP addr or host name to connect the data
+     connection to */
+  char *newhost;          /* this is the pair to connect the DATA... */
+  unsigned short newport; /* connection to */
+
 };
 
 #define DEFAULT_ACCEPT_TIMEOUT   60000 /* milliseconds == one minute */

@@ -5,11 +5,11 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2007, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) 1998 - 2013, Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
-.\" * are also available at http://curl.haxx.se/docs/copyright.html.
+.\" * are also available at https://curl.haxx.se/docs/copyright.html.
 .\" *
 .\" * You may opt to use, copy, modify, merge, publish, distribute and/or sell
 .\" * copies of the Software, and permit persons to whom the Software is
@@ -49,10 +49,14 @@ default, the test script stops as soon as an error is detected.
 .IP "-bN"
 Use N as the base TCP/UDP port number on which to start the test servers.
 .IP "-c <curl>"
-Provide a custom curl binary to run the tests with. Default is the curl
-executable in the build tree.
+Provide a path to a custom curl binary to run the tests with. Default is the
+curl executable in the build tree.
 .IP "-d"
 Enable protocol debug: have the servers display protocol output.
+.IP "-e"
+Run the test event-based (if possible). This will make runtests invoke curl
+with --test-event option. This option only works if both curl and libcurl were
+built debug-enabled.
 .IP "-g"
 Run the given test(s) with gdb. This is best used on a single test case and
 curl built --disable-shared. This then fires up gdb with command line set to
@@ -88,6 +92,10 @@ through everyone, which is very handy when debugging and then often in
 combination with \fI-g\fP.
 .IP "-v"
 Enable verbose output. Speaks more than default.
+.IP "-vc <curl>"
+Provide a path to a custom curl binary to run when verifying that the servers
+running are indeed our test servers. Default is the curl executable in the
+build tree.
 .SH "RUNNING TESTS"
 Many tests have conditions that must be met before the test case can run
 fine. They could depend on built-in features in libcurl or features present in

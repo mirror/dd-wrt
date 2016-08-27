@@ -3,7 +3,7 @@ LATEST VERSION
   You always find news about what's going on as well as the latest versions
   from the curl web pages, located at:
 
-        http://curl.haxx.se
+        https://curl.haxx.se
 
 SIMPLE USAGE
 
@@ -41,16 +41,27 @@ SIMPLE USAGE
 
   Get a file from an SSH server using SFTP:
 
-        curl -u username sftp://shell.example.com/etc/issue
+        curl -u username sftp://example.com/etc/issue
 
-  Get a file from an SSH server using SCP using a private key to authenticate:
+  Get a file from an SSH server using SCP using a private key
+  (not password-protected) to authenticate:
 
-        curl -u username: --key ~/.ssh/id_dsa --pubkey ~/.ssh/id_dsa.pub \
-            scp://shell.example.com/~/personal.txt
+        curl -u username: --key ~/.ssh/id_rsa \
+             scp://example.com/~/file.txt
+
+  Get a file from an SSH server using SCP using a private key
+  (password-protected) to authenticate:
+
+        curl -u username: --key ~/.ssh/id_rsa --pass private_key_password \
+             scp://example.com/~/file.txt
 
   Get the main page from an IPv6 web server:
 
-        curl -g "http://[2001:1890:1112:1::20]/"
+        curl "http://[2001:1890:1112:1::20]/"
+
+  Get a file from an SMB server:
+
+        curl -u "domain\username:passwd" smb://server.example.com/share/file.txt
 
 DOWNLOAD TO A FILE
 
@@ -91,10 +102,13 @@ USING PASSWORDS
 
  SFTP / SCP
 
-   This is similar to FTP, but you can specify a private key to use instead of
-   a password. Note that the private key may itself be protected by a password
-   that is unrelated to the login password of the remote system.  If you
-   provide a private key file you must also provide a public key file.
+   This is similar to FTP, but you can use the --key option to specify a
+   private key to use instead of a password. Note that the private key may
+   itself be protected by a password that is unrelated to the login password
+   of the remote system; this password is specified using the --pass option.
+   Typically, curl will automatically extract the public key from the private
+   key file, but in cases where curl does not have the proper library support,
+   a matching public key file must be specified using the --pubkey option.
 
  HTTP
 
@@ -108,10 +122,10 @@ USING PASSWORDS
         curl -u name:passwd http://machine.domain/full/path/to/file
 
    HTTP offers many different methods of authentication and curl supports
-   several: Basic, Digest, NTLM and Negotiate. Without telling which method to
-   use, curl defaults to Basic. You can also ask curl to pick the most secure
-   ones out of the ones that the server accepts for the given URL, by using
-   --anyauth.
+   several: Basic, Digest, NTLM and Negotiate (SPNEGO). Without telling which
+   method to use, curl defaults to Basic. You can also ask curl to pick the
+   most secure ones out of the ones that the server accepts for the given URL,
+   by using --anyauth.
 
    NOTE! According to the URL specification, HTTP URLs can not contain a user
    and password, so that style will not work when using curl via a proxy, even
@@ -217,6 +231,11 @@ UPLOADING
   a fashion similar to:
 
         curl --proxytunnel -x proxy:port -T localfile ftp.upload.com
+
+SMB / SMBS
+
+        curl -T file.txt -u "domain\username:passwd" 
+         smb://server.example.com/share/
 
  HTTP
 
@@ -451,8 +470,8 @@ COOKIES
   stored cookies which match the request as it follows the location.  The
   file "empty.txt" may be a nonexistent file.
 
-  Alas, to both read and write cookies from a netscape cookie file, you can
-  set both -b and -c to use the same file:
+  To read and write cookies from a netscape cookie file, you can set both -b
+  and -c to use the same file:
 
         curl -b cookies.txt -c cookies.txt www.example.com
 
@@ -805,7 +824,7 @@ LDAP
   Working with LDAP URLs":
   http://developer.netscape.com/docs/manuals/dirsdk/csdk30/url.htm
 
-  RFC 2255, "The LDAP URL Format" http://curl.haxx.se/rfc/rfc2255.txt
+  RFC 2255, "The LDAP URL Format" https://curl.haxx.se/rfc/rfc2255.txt
 
   To show you an example, this is how I can get all people from my local LDAP
   server that has a certain sub-domain in their email address:
@@ -956,9 +975,9 @@ IPv6
   When this style is used, the -g option must be given to stop curl from
   interpreting the square brackets as special globbing characters.  Link local
   and site local addresses including a scope identifier, such as fe80::1234%1,
-  may also be used, but the scope portion must be numeric and the percent
-  character must be URL escaped. The previous example in an SFTP URL might
-  look like:
+  may also be used, but the scope portion must be numeric or match an existing
+  network interface on Linux and the percent character must be URL escaped. The
+  previous example in an SFTP URL might look like:
 
     sftp://[fe80::1234%251]/
 
@@ -992,7 +1011,7 @@ MAILING LISTS
 
   For your convenience, we have several open mailing lists to discuss curl,
   its development and things relevant to this. Get all info at
-  http://curl.haxx.se/mail/. Some of the lists available are:
+  https://curl.haxx.se/mail/. Some of the lists available are:
 
   curl-users
 

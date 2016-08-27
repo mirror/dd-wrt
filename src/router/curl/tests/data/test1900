@@ -32,6 +32,9 @@ Handle 3 Completed with status 0
 <server>
 http-pipe
 </server>
+<features>
+http
+</features>
 <tool>
 lib1900
 </tool>
@@ -49,6 +52,7 @@ http://%HOSTIP:%HTTPPIPEPORT/
 0 1k.txt
 0 1k.txt
 0 1k.txt
+</file>
 </client>
 
 # Verify data after the test has been "shot"

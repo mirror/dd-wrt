@@ -7,11 +7,11 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2012, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
- * are also available at http://curl.haxx.se/docs/copyright.html.
+ * are also available at https://curl.haxx.se/docs/copyright.html.
  *
  * You may opt to use, copy, modify, merge, publish, distribute and/or sell
  * copies of the Software, and permit persons to whom the Software is
@@ -51,7 +51,7 @@
  * 'stream' member is a pointer to a stream controlling object as returned
  * from a 'fopen' call or a standard stream.
  *
- * 'config' member is a pointer to associated 'Configurable' struct.
+ * 'config' member is a pointer to associated 'OperationConfig' struct.
  *
  * 'bytes' member represents amount written so far.
  *
@@ -69,7 +69,7 @@ struct OutStruct {
   bool s_isreg;
   bool fopened;
   FILE *stream;
-  struct Configurable *config;
+  struct OperationConfig *config;
   curl_off_t bytes;
   curl_off_t init;
 #ifdef USE_METALINK
@@ -85,12 +85,12 @@ struct OutStruct {
  * 'fd' member is either 'stdin' file descriptor number STDIN_FILENO
  * or a file descriptor as returned from an 'open' call for some file.
  *
- * 'config' member is a pointer to associated 'Configurable' struct.
+ * 'config' member is a pointer to associated 'OperationConfig' struct.
  */
 
 struct InStruct {
   int fd;
-  struct Configurable *config;
+  struct OperationConfig *config;
 };
 
 
@@ -135,15 +135,13 @@ typedef enum {
   HTTPREQ_UNSPEC,  /* first in list */
   HTTPREQ_GET,
   HTTPREQ_HEAD,
-  HTTPREQ_POST,
-  HTTPREQ_SIMPLEPOST,
-  HTTPREQ_CUSTOM,
-  HTTPREQ_LAST     /* last in list */
+  HTTPREQ_FORMPOST,
+  HTTPREQ_SIMPLEPOST
 } HttpReq;
 
 
 /*
- * Complete struct declarations which have Configurable struct members,
+ * Complete struct declarations which have OperationConfig struct members,
  * just in case this header is directly included in some source file.
  */
 
