@@ -5,11 +5,11 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2013, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2016, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
- * are also available at http://curl.haxx.se/docs/copyright.html.
+ * are also available at https://curl.haxx.se/docs/copyright.html.
  *
  * You may opt to use, copy, modify, merge, publish, distribute and/or sell
  * copies of the Software, and permit persons to whom the Software is
@@ -29,7 +29,7 @@
 #include "curlx.h" /* from the private lib dir */
 
 /* just to please curl_base64.h we create a fake struct */
-struct SessionHandle {
+struct Curl_easy {
   int fake;
 };
 
@@ -101,7 +101,7 @@ static int readline(char **buffer, size_t *bufsize, FILE *stream)
     int bytestoread = curlx_uztosi(*bufsize - offset);
 
     if(!fgets(*buffer + offset, bytestoread, stream))
-      return (offset != 0) ? GPE_OK : GPE_END_OF_FILE ;
+      return (offset != 0) ? GPE_OK : GPE_END_OF_FILE;
 
     length = offset + strlen(*buffer + offset);
     if(*(*buffer + length - 1) == '\n')
@@ -152,46 +152,27 @@ static int appenddata(char  **dst_buf,   /* dest buffer */
                       char   *src_buf,   /* source buffer */
                       int     src_b64)   /* != 0 if source is base64 encoded */
 {
-  size_t need_alloc, src_len;
-  union {
-    unsigned char *as_uchar;
-             char *as_char;
-  } buf64;
+  size_t need_alloc = 0;
+  size_t src_len = strlen(src_buf);
 
-  src_len = strlen(src_buf);
   if(!src_len)
     return GPE_OK;
 
-  buf64.as_char = NULL;
+  need_alloc = src_len + *dst_len + 1;
 
   if(src_b64) {
-    /* base64 decode the given buffer */
-    int error = (int) Curl_base64_decode(src_buf, &buf64.as_uchar, &src_len);
-    if(error)
-      return GPE_OUT_OF_MEMORY;
-    src_buf = buf64.as_char;
-    if(!src_len || !src_buf) {
-      /*
-      ** currently there is no way to tell apart an OOM condition in
-      ** Curl_base64_decode() from zero length decoded data. For now,
-      ** let's just assume it is an OOM condition, currently we have
-      ** no input for this function that decodes to zero length data.
-      */
-      if(buf64.as_char)
-        free(buf64.as_char);
-      return GPE_OUT_OF_MEMORY;
-    }
-  }
+    if(src_buf[src_len - 1] == '\r')
+      src_len--;
 
-  need_alloc = src_len + *dst_len + 1;
+    if(src_buf[src_len - 1] == '\n')
+      src_len--;
+  }
 
   /* enlarge destination buffer if required */
   if(need_alloc > *dst_alloc) {
     size_t newsize = need_alloc * 2;
     char *newptr = realloc(*dst_buf, newsize);
     if(!newptr) {
-      if(buf64.as_char)
-        free(buf64.as_char);
       return GPE_OUT_OF_MEMORY;
     }
     *dst_alloc = newsize;
@@ -203,8 +184,42 @@ static int appenddata(char  **dst_buf,   /* dest buffer */
   *dst_len += src_len;
   *(*dst_buf + *dst_len) = '\0';
 
-  if(buf64.as_char)
-    free(buf64.as_char);
+  return GPE_OK;
+}
+
+static int decodedata(char  **buf,   /* dest buffer */
+                      size_t *len)   /* dest buffer data length */
+{
+  int error = 0;
+  unsigned char *buf64 = NULL;
+  size_t src_len = 0;
+
+  if(!*len)
+    return GPE_OK;
+
+  /* base64 decode the given buffer */
+  error = (int) Curl_base64_decode(*buf, &buf64, &src_len);
+  if(error)
+    return GPE_OUT_OF_MEMORY;
+
+  if(!src_len) {
+    /*
+    ** currently there is no way to tell apart an OOM condition in
+    ** Curl_base64_decode() from zero length decoded data. For now,
+    ** let's just assume it is an OOM condition, currently we have
+    ** no input for this function that decodes to zero length data.
+    */
+    free(buf64);
+
+    return GPE_OUT_OF_MEMORY;
+  }
+
+  /* memcpy to support binary blobs */
+  memcpy(*buf, buf64, src_len);
+  *len = src_len;
+  *(*buf + src_len) = '\0';
+
+  free(buf64);
 
   return GPE_OK;
 }
@@ -308,6 +323,13 @@ int getpart(char **outbuf, size_t *outlen,
         if(in_wanted_part) {
           /* end of wanted part */
           in_wanted_part = 0;
+
+          /* Do we need to base64 decode the data? */
+          if(base64) {
+            error = decodedata(outbuf, outlen);
+            if(error)
+              return error;
+          }
           break;
         }
       }
@@ -318,6 +340,13 @@ int getpart(char **outbuf, size_t *outlen,
         if(in_wanted_part) {
           /* end of wanted part */
           in_wanted_part = 0;
+
+          /* Do we need to base64 decode the data? */
+          if(base64) {
+            error = decodedata(outbuf, outlen);
+            if(error)
+              return error;
+          }
           break;
         }
       }
@@ -405,15 +434,13 @@ int getpart(char **outbuf, size_t *outlen,
 
   } /* while */
 
-  if(buffer)
-    free(buffer);
+  free(buffer);
 
   if(error != GPE_OK) {
     if(error == GPE_END_OF_FILE)
       error = GPE_OK;
     else {
-      if(*outbuf)
-        free(*outbuf);
+      free(*outbuf);
       *outbuf = NULL;
       *outlen = 0;
     }

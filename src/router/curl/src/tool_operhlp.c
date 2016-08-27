@@ -5,11 +5,11 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2013, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
- * are also available at http://curl.haxx.se/docs/copyright.html.
+ * are also available at https://curl.haxx.se/docs/copyright.html.
  *
  * You may opt to use, copy, modify, merge, publish, distribute and/or sell
  * copies of the Software, and permit persons to whom the Software is
@@ -29,35 +29,13 @@
 
 #include "tool_cfgable.h"
 #include "tool_convert.h"
+#include "tool_doswin.h"
 #include "tool_operhlp.h"
-#include "tool_version.h"
 #include "tool_metalink.h"
 
 #include "memdebug.h" /* keep this as LAST include */
 
-/*
- * my_useragent: returns allocated string with default user agent
- */
-char *my_useragent(void)
-{
-  return strdup( CURL_NAME "/" CURL_VERSION );
-}
-
-/*
- * Print list of OpenSSL supported engines
- */
-void list_engines(const struct curl_slist *engines)
-{
-  puts("Build-time engines:");
-  if(!engines) {
-    puts("  <none>");
-    return;
-  }
-  for(; engines; engines = engines->next)
-    printf("  %s\n", engines->data);
-}
-
-void clean_getout(struct Configurable *config)
+void clean_getout(struct OperationConfig *config)
 {
   struct getout *next;
   struct getout *node = config->url_list;
@@ -151,7 +129,7 @@ char *add_file_name_to_url(CURL *curl, char *url, const char *filename)
  */
 CURLcode get_url_file_name(char **filename, const char *url)
 {
-  const char *pc;
+  const char *pc, *pc2;
 
   *filename = NULL;
 
@@ -161,17 +139,33 @@ CURLcode get_url_file_name(char **filename, const char *url)
     pc += 3;
   else
     pc = url;
-  pc = strrchr(pc, '/');
 
-  if(pc) {
+  pc2 = strrchr(pc, '\\');
+  pc = strrchr(pc, '/');
+  if(pc2 && (!pc || pc < pc2))
+    pc = pc2;
+
+  if(pc)
     /* duplicate the string beyond the slash */
     pc++;
-    if(*pc) {
-      *filename = strdup(pc);
-      if(!*filename)
-        return CURLE_OUT_OF_MEMORY;
-    }
+  else
+    /* no slash => empty string */
+    pc = "";
+
+  *filename = strdup(pc);
+  if(!*filename)
+    return CURLE_OUT_OF_MEMORY;
+
+#if defined(MSDOS) || defined(WIN32)
+  {
+    char *sanitized;
+    SANITIZEcode sc = sanitize_file_name(&sanitized, *filename, 0);
+    Curl_safefree(*filename);
+    if(sc)
+      return CURLE_URL_MALFORMAT;
+    *filename = sanitized;
   }
+#endif /* MSDOS || WIN32 */
 
   /* in case we built debug enabled, we allow an environment variable
    * named CURL_TESTDIR to prefix the given file name to put it into a
@@ -186,66 +180,11 @@ CURLcode get_url_file_name(char **filename, const char *url)
       Curl_safefree(*filename);
       *filename = strdup(buffer); /* clone the buffer */
       curl_free(tdir);
+      if(!*filename)
+        return CURLE_OUT_OF_MEMORY;
     }
   }
 #endif
 
   return CURLE_OK;
 }
-
-/*
- * This is the main global constructor for the app. Call this before
- * _any_ libcurl usage. If this fails, *NO* libcurl functions may be
- * used, or havoc may be the result.
- */
-CURLcode main_init(void)
-{
-#if defined(__DJGPP__) || defined(__GO32__)
-  /* stop stat() wasting time */
-  _djstat_flags |= _STAT_INODE | _STAT_EXEC_MAGIC | _STAT_DIRSIZE;
-#endif
-
-  return curl_global_init(CURL_GLOBAL_DEFAULT);
-}
-
-/*
- * This is the main global destructor for the app. Call this after
- * _all_ libcurl usage is done.
- */
-void main_free(void)
-{
-  curl_global_cleanup();
-  convert_cleanup();
-  metalink_cleanup();
-}
-
-#ifdef CURLDEBUG
-void memory_tracking_init(void)
-{
-  char *env;
-  /* if CURL_MEMDEBUG is set, this starts memory tracking message logging */
-  env = curlx_getenv("CURL_MEMDEBUG");
-  if(env) {
-    /* use the value as file name */
-    char fname[CURL_MT_LOGFNAME_BUFSIZE];
-    if(strlen(env) >= CURL_MT_LOGFNAME_BUFSIZE)
-      env[CURL_MT_LOGFNAME_BUFSIZE-1] = '\0';
-    strcpy(fname, env);
-    curl_free(env);
-    curl_memdebug(fname);
-    /* this weird stuff here is to make curl_free() get called
-       before curl_memdebug() as otherwise memory tracking will
-       log a free() without an alloc! */
-  }
-  /* if CURL_MEMLIMIT is set, this enables fail-on-alloc-number-N feature */
-  env = curlx_getenv("CURL_MEMLIMIT");
-  if(env) {
-    char *endptr;
-    long num = strtol(env, &endptr, 10);
-    if((endptr != env) && (endptr == env + strlen(env)) && (num > 0))
-      curl_memlimit(num);
-    curl_free(env);
-  }
-}
-#endif
-

@@ -5,11 +5,11 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2012, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
- * are also available at http://curl.haxx.se/docs/copyright.html.
+ * are also available at https://curl.haxx.se/docs/copyright.html.
  *
  * You may opt to use, copy, modify, merge, publish, distribute and/or sell
  * copies of the Software, and permit persons to whom the Software is
@@ -353,9 +353,11 @@ static int parsedate(const char *date, time_t *output)
       /* a name coming up */
       char buf[32]="";
       size_t len;
-      sscanf(date, "%31[ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz]",
-             buf);
-      len = strlen(buf);
+      if(sscanf(date, "%31[ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                          "abcdefghijklmnopqrstuvwxyz]", buf))
+        len = strlen(buf);
+      else
+        len = 0;
 
       if(wdaynum == -1) {
         wdaynum = checkday(buf, len);
@@ -410,8 +412,10 @@ static int parsedate(const char *date, time_t *output)
         if(error)
           return PARSEDATE_FAIL;
 
+#if LONG_MAX != INT_MAX
         if((lval > (long)INT_MAX) || (lval < (long)INT_MIN))
           return PARSEDATE_FAIL;
+#endif
 
         val = curlx_sltosi(lval);
 
@@ -526,8 +530,10 @@ static int parsedate(const char *date, time_t *output)
     /* Add the time zone diff between local time zone and GMT. */
     long delta = (long)(tzoff!=-1?tzoff:0);
 
-    if((delta>0) && (t + delta < t))
-      return -1; /* time_t overflow */
+    if((delta>0) && (t > LONG_MAX - delta)) {
+      *output = 0x7fffffff;
+      return PARSEDATE_LATER; /* time_t overflow */
+    }
 
     t += delta;
   }
@@ -539,7 +545,7 @@ static int parsedate(const char *date, time_t *output)
 
 time_t curl_getdate(const char *p, const time_t *now)
 {
-  time_t parsed;
+  time_t parsed = -1;
   int rc = parsedate(p, &parsed);
   (void)now; /* legacy argument from the past that we ignore */
 
@@ -556,9 +562,6 @@ time_t curl_getdate(const char *p, const time_t *now)
 /*
  * Curl_gmtime() is a gmtime() replacement for portability. Do not use the
  * gmtime_r() or gmtime() functions anywhere else but here.
- *
- * To make sure no such function calls slip in, we define them to cause build
- * errors, which is why we use the name within parentheses in this function.
  *
  */
 

@@ -4,15 +4,20 @@
 <title>curl_printf man page</title>
 <meta name="generator" content="roffit">
 <STYLE type="text/css">
-P.level0 {
+pre {
+  overflow: auto;
+  margin: 0;
+}
+
+P.level0, pre.level0 {
  padding-left: 2em;
 }
 
-P.level1 {
+P.level1, pre.level1 {
  padding-left: 4em;
 }
 
-P.level2 {
+P.level2, pre.level2 {
  padding-left: 6em;
 }
 
@@ -62,11 +67,10 @@ p.roffit {
 <p class="level1"><span Class="bold">curl_mvsnprintf()</span> vsnprintf() clone.  Many systems don't have this. It is just like <span Class="bold">vsprintf</span> but with an extra argument after the buffer that specifies the length of the target buffer. 
 <p class="level1"><span Class="bold">curl_maprintf()</span> Like printf() but returns the output string as a malloc()ed string. The returned string must be free()ed by the receiver. 
 <p class="level1"><span Class="bold">curl_mvaprintf()</span> Like curl_maprintf() but takes a va_list pointer argument instead of a variable amount of arguments. 
-<p class="level0">
-<p class="level0">To easily use all these cloned functions instead of the normal ones, #define _MPRINTF_REPLACE before you include the &lt;curl/mprintf.h&gt; file. Then all the normal names like printf, fprintf, sprintf etc will use the curl-functions instead. <a name="AVAILABILITY"></a><h2 class="nroffsh">AVAILABILITY</h2>
-<p class="level0">These function will be removed from the public libcurl API in a near future. They will instead be made "available" by source code access only, and then as curlx_-prefixed functions. See lib/README.curlx for further details. <a name="RETURN"></a><h2 class="nroffsh">RETURN VALUE</h2>
+<p class="level0"><a name="AVAILABILITY"></a><h2 class="nroffsh">AVAILABILITY</h2>
+<p class="level0">These functions will be removed from the public libcurl API in the future. Do not use them in any new programs or projects. <a name="RETURN"></a><h2 class="nroffsh">RETURN VALUE</h2>
 <p class="level0">The <span Class="bold">curl_maprintf</span> and <span Class="bold">curl_mvaprintf</span> functions return a pointer to a newly allocated string, or NULL if it failed. 
 <p class="level0">All other functions return the number of characters they actually outputted. <a name="SEE"></a><h2 class="nroffsh">SEE ALSO</h2>
-<p class="level0"><span Class="manpage">printf (3)</span> <span Class="manpage">  sprintf (3)</span> <span Class="manpage">  fprintf (3)</span> <span Class="manpage">  vprintf (3) </span> <p class="roffit">
+<p class="level0"><span Class="manpage">printf (3)</span>, <span Class="manpage">sprintf (3)</span>, <span Class="manpage">fprintf (3)</span>, <span Class="manpage">vprintf (3)</span><p class="roffit">
  This HTML page was made with <a href="http://daniel.haxx.se/projects/roffit/">roffit</a>.
 </body></html>

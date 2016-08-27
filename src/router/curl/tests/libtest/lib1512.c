@@ -5,11 +5,11 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 2013, Linus Nielsen Feltzing <linus@haxx.se>
+ * Copyright (C) 2013 - 2016, Linus Nielsen Feltzing <linus@haxx.se>
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
- * are also available at http://curl.haxx.se/docs/copyright.html.
+ * are also available at https://curl.haxx.se/docs/copyright.html.
  *
  * You may opt to use, copy, modify, merge, publish, distribute and/or sell
  * copies of the Software, and permit persons to whom the Software is
@@ -34,7 +34,7 @@
 
 int test(char *URL)
 {
-  CURLcode res;
+  int res = 0;
   CURL *curl[NUM_HANDLES] = {NULL, NULL};
   char *port = libtest_arg3;
   char *address = libtest_arg2;
@@ -44,12 +44,13 @@ int test(char *URL)
   char target_url[256];
   (void)URL; /* URL is setup in the code */
 
-  if (curl_global_init(CURL_GLOBAL_ALL) != CURLE_OK) {
+  if(curl_global_init(CURL_GLOBAL_ALL) != CURLE_OK) {
     fprintf(stderr, "curl_global_init() failed\n");
     return TEST_ERR_MAJOR_BAD;
   }
 
-  sprintf(dnsentry, "server.example.curl:%s:%s", port, address);
+  snprintf(dnsentry, sizeof(dnsentry), "server.example.curl:%s:%s",
+           port, address);
   printf("%s\n", dnsentry);
   slist = curl_slist_append(slist, dnsentry);
 
@@ -58,8 +59,9 @@ int test(char *URL)
     /* get an easy handle */
     easy_init(curl[i]);
     /* specify target */
-    sprintf(target_url, "http://server.example.curl:%s/path/1512%04i",
-            port, i + 1);
+    snprintf(target_url, sizeof(target_url),
+             "http://server.example.curl:%s/path/1512%04i",
+             port, i + 1);
     target_url[sizeof(target_url) - 1] = '\0';
     easy_setopt(curl[i], CURLOPT_URL, target_url);
     /* go verbose */
@@ -84,6 +86,6 @@ test_cleanup:
   curl_slist_free_all(slist);
   curl_global_cleanup();
 
-  return (int)res;
+  return res;
 }
 

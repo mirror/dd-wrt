@@ -2,8 +2,10 @@
 <info>
 <keywords>
 SMTP
-SMTP AUTH LOGIN SASL-IR
+SASL
+SASL AUTH OAUTH2
 RFC4954
+RFC6749
 </keywords>
 </info>
 
@@ -11,9 +13,9 @@ RFC4954
 # Server-side
 <reply>
 <servercmd>
-REPLY EHLO 250 AUTH LOGIN
-REPLY AUTH 334 UGFzc3dvcmQ6
-REPLY MTIzNA== 235 Authenticated
+AUTH XOAUTH2
+REPLY AUTH 334 XOAUTH2 supported
+REPLY dXNlcj11c2VyAWF1dGg9QmVhcmVyIG1GXzkuQjVmLTQuMUpxTQEB 235 Authenticated
 </servercmd>
 </reply>
 
@@ -24,13 +26,13 @@ REPLY MTIzNA== 235 Authenticated
 smtp
 </server>
  <name>
-SMTP login authentication with initial response
+SMTP OAuth 2.0 (XOAUTH2) authentication
  </name>
 <stdin>
 mail body
 </stdin>
  <command>
-smtp://%HOSTIP:%SMTPPORT/user --mail-rcpt 908@foo --mail-from 908@from -u test:1234 --sasl-ir -T -
+smtp://%HOSTIP:%SMTPPORT/908 --mail-rcpt recipient@example.com --mail-from sender@example.com -u user --oauth2-bearer mF_9.B5f-4.1JqM -T -
 </command>
 </client>
 
@@ -38,11 +40,11 @@ smtp://%HOSTIP:%SMTPPORT/user --mail-rcpt 908@foo --mail-from 908@from -u test:1
 # Verify data after the test has been "shot"
 <verify>
 <protocol>
-EHLO user
-AUTH LOGIN dGVzdA==
-MTIzNA==
-MAIL FROM:<908@from>
-RCPT TO:<908@foo>
+EHLO 908
+AUTH XOAUTH2
+dXNlcj11c2VyAWF1dGg9QmVhcmVyIG1GXzkuQjVmLTQuMUpxTQEB
+MAIL FROM:<sender@example.com>
+RCPT TO:<recipient@example.com>
 DATA
 QUIT
 </protocol>

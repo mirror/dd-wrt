@@ -5,11 +5,11 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2012, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2016, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
- * are also available at http://curl.haxx.se/docs/copyright.html.
+ * are also available at https://curl.haxx.se/docs/copyright.html.
  *
  * You may opt to use, copy, modify, merge, publish, distribute and/or sell
  * copies of the Software, and permit persons to whom the Software is
@@ -20,10 +20,9 @@
  *
  ***************************************************************************/
 #include "tool_setup.h"
-
-#define _MPRINTF_REPLACE /* we want curl-functions instead of native ones */
-#include <curl/mprintf.h>
-
+#define ENABLE_CURLX_PRINTF
+/* use our own printf() functions */
+#include "curlx.h"
 #include "tool_cfgable.h"
 #include "tool_writeout.h"
 
@@ -58,6 +57,7 @@ typedef enum {
   VAR_PRIMARY_PORT,
   VAR_LOCAL_IP,
   VAR_LOCAL_PORT,
+  VAR_HTTP_VERSION,
   VAR_NUM_OF_VARS /* must be the last */
 } replaceid;
 
@@ -96,6 +96,7 @@ static const struct variable replacements[]={
   {"remote_port", VAR_PRIMARY_PORT},
   {"local_ip", VAR_LOCAL_IP},
   {"local_port", VAR_LOCAL_PORT},
+  {"http_version", VAR_HTTP_VERSION},
   {NULL, VAR_NONE}
 };
 
@@ -103,7 +104,7 @@ void ourWriteOut(CURL *curl, struct OutStruct *outs, const char *writeinfo)
 {
   FILE *stream = stdout;
   const char *ptr = writeinfo;
-  char *stringp;
+  char *stringp = NULL;
   long longinfo;
   double doubleinfo;
 
@@ -278,6 +279,26 @@ void ourWriteOut(CURL *curl, struct OutStruct *outs, const char *writeinfo)
                    curl_easy_getinfo(curl, CURLINFO_LOCAL_PORT,
                                      &longinfo))
                   fprintf(stream, "%ld", longinfo);
+                break;
+              case VAR_HTTP_VERSION:
+                if(CURLE_OK ==
+                   curl_easy_getinfo(curl, CURLINFO_HTTP_VERSION,
+                                     &longinfo)) {
+                  const char *version = "0";
+                  switch (longinfo) {
+                  case CURL_HTTP_VERSION_1_0:
+                    version = "1.0";
+                    break;
+                  case CURL_HTTP_VERSION_1_1:
+                    version = "1.1";
+                    break;
+                  case CURL_HTTP_VERSION_2_0:
+                    version = "2";
+                    break;
+                  }
+
+                  fprintf(stream, version);
+                }
                 break;
               default:
                 break;
