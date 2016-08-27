@@ -214,7 +214,7 @@ int cipher_kt_iv_size (const cipher_kt_t *cipher_kt);
 /**
  * Returns the block size of the cipher, in bytes.
  *
- * @param cipher_kt	Static cipher parameters. May not be NULL.
+ * @param cipher_kt 	Static cipher parameters
  *
  * @return 		Block size, in bytes.
  */
@@ -223,12 +223,12 @@ int cipher_kt_block_size (const cipher_kt_t *cipher_kt);
 /**
  * Returns the mode that the cipher runs in.
  *
- * @param cipher	Static cipher parameters.
+ * @param cipher_kt	Static cipher parameters. May not be NULL.
  *
  * @return 		Cipher mode, either \c OPENVPN_MODE_CBC, \c
  * 			OPENVPN_MODE_OFB or \c OPENVPN_MODE_CFB
  */
-int cipher_kt_mode (const cipher_kt_t *cipher);
+int cipher_kt_mode (const cipher_kt_t *cipher_kt);
 
 /**
  * Check if the supplied cipher is a supported CBC mode cipher.
