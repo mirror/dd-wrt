@@ -1,4 +1,11 @@
-#!/usr/bin/env perl
+#! /usr/bin/env perl
+# Copyright 2014-2016 The OpenSSL Project Authors. All Rights Reserved.
+#
+# Licensed under the OpenSSL license (the "License").  You may not use
+# this file except in compliance with the License.  You can obtain a copy
+# in the file LICENSE in the source distribution or at
+# https://www.openssl.org/source/license.html
+
 #
 # ====================================================================
 # Written by Andy Polyakov <appro@openssl.org> for the OpenSSL
@@ -27,12 +34,21 @@
 # Cortex-A53	1.32		1.29		1.46
 # Cortex-A57(*)	1.95		0.85		0.93
 # Denver	1.96		0.86		0.80
+# Mongoose	1.33		1.20		1.20
 #
 # (*)	original 3.64/1.34/1.32 results were for r0p0 revision
 #	and are still same even for updated module;
 
 $flavour = shift;
-open STDOUT,">".shift;
+$output  = shift;
+
+$0 =~ m/(.*[\/\\])[^\/\\]+$/; $dir=$1;
+( $xlate="${dir}arm-xlate.pl" and -f $xlate ) or
+( $xlate="${dir}../../perlasm/arm-xlate.pl" and -f $xlate) or
+die "can't locate arm-xlate.pl";
+
+open OUT,"| \"$^X\" $xlate $flavour $output";
+*STDOUT=*OUT;
 
 $prefix="aes_v8";
 
@@ -60,7 +76,7 @@ my ($zero,$rcon,$mask,$in0,$in1,$tmp,$key)=
 
 $code.=<<___;
 .align	5
-rcon:
+.Lrcon:
 .long	0x01,0x01,0x01,0x01
 .long	0x0c0f0e0d,0x0c0f0e0d,0x0c0f0e0d,0x0c0f0e0d	// rotate-n-splat
 .long	0x1b,0x1b,0x1b,0x1b
@@ -89,7 +105,7 @@ $code.=<<___;
 	tst	$bits,#0x3f
 	b.ne	.Lenc_key_abort
 
-	adr	$ptr,rcon
+	adr	$ptr,.Lrcon
 	cmp	$bits,#192
 
 	veor	$zero,$zero,$zero
@@ -254,7 +270,7 @@ $code.=<<___;
 	cmp	x0,#0
 	b.ne	.Ldec_key_abort
 
-	sub	$out,$out,#464		// restore original $out
+	sub	$out,$out,#240		// restore original $out
 	mov	x4,#-16
 	add	$inp,$out,x12,lsl#4	// end of key schedule
 
@@ -304,7 +320,7 @@ $code.=<<___;
 .type	${prefix}_${dir}crypt,%function
 .align	5
 ${prefix}_${dir}crypt:
-	ldr	$rounds,[$key,#464]
+	ldr	$rounds,[$key,#240]
 	vld1.32	{$rndkey0},[$key],#16
 	vld1.8	{$inout},[$inp]
 	sub	$rounds,$rounds,#2
@@ -367,7 +383,7 @@ $code.=<<___;
 	cclr	$step,eq
 
 	cmp	$enc,#0			// en- or decrypting?
-	ldr	$rounds,[$key,#464]
+	ldr	$rounds,[$key,#240]
 	and	$len,$len,#-16
 	vld1.8	{$ivec},[$ivp]
 	vld1.8	{$dat},[$inp],$step
@@ -690,7 +706,7 @@ $code.=<<___	if ($flavour !~ /64/);
 	ldr		r4, [ip]		@ load remaining arg
 ___
 $code.=<<___;
-	ldr		$rounds,[$key,#464]
+	ldr		$rounds,[$key,#240]
 
 	ldr		$ctr, [$ivp, #12]
 	vld1.32		{$dat0},[$ivp]

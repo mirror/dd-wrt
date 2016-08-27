@@ -1,4 +1,11 @@
-#!/usr/bin/env perl
+#! /usr/bin/env perl
+# Copyright 2007-2016 The OpenSSL Project Authors. All Rights Reserved.
+#
+# Licensed under the OpenSSL license (the "License").  You may not use
+# this file except in compliance with the License.  You can obtain a copy
+# in the file LICENSE in the source distribution or at
+# https://www.openssl.org/source/license.html
+
 
 # ====================================================================
 # Written by Andy Polyakov <appro@fy.chalmers.se> for the OpenSSL
@@ -19,7 +26,7 @@
 # February 2010
 #
 # Rescheduling instructions to favour Power6 pipeline gave 10%
-# performance improvement on the platfrom in question (and marginal
+# performance improvement on the platform in question (and marginal
 # improvement even on others). It should be noted that Power6 fails
 # to process byte in 18 cycles, only in 23, because it fails to issue
 # 4 load instructions in two cycles, only in 3. As result non-compact
@@ -330,9 +337,9 @@ $code.=<<___;
 .byte	0xe1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0c, 0x7d
 
 
-.globl	.asm_AES_encrypt
+.globl	.AES_encrypt
 .align	7
-.asm_AES_encrypt:
+.AES_encrypt:
 	$STU	$sp,-$FRAME($sp)
 	mflr	r0
 
@@ -520,7 +527,7 @@ Lenc_done:
 
 .align	5
 Lppc_AES_encrypt:
-	lwz	$acc00,464($key)
+	lwz	$acc00,240($key)
 	addi	$Tbl1,$Tbl0,3
 	lwz	$t0,0($key)
 	addi	$Tbl2,$Tbl0,2
@@ -664,7 +671,7 @@ Lenc_loop:
 
 .align	4
 Lppc_AES_encrypt_compact:
-	lwz	$acc00,464($key)
+	lwz	$acc00,240($key)
 	addi	$Tbl1,$Tbl0,2048
 	lwz	$t0,0($key)
 	lis	$mask80,0x8080
@@ -806,11 +813,11 @@ Lenc_compact_done:
 	blr
 	.long	0
 	.byte	0,12,0x14,0,0,0,0,0
-.size	.asm_AES_encrypt,.-.asm_AES_encrypt
+.size	.AES_encrypt,.-.AES_encrypt
 
-.globl	.asm_AES_decrypt
+.globl	.AES_decrypt
 .align	7
-.asm_AES_decrypt:
+.AES_decrypt:
 	$STU	$sp,-$FRAME($sp)
 	mflr	r0
 
@@ -998,7 +1005,7 @@ Ldec_done:
 
 .align	5
 Lppc_AES_decrypt:
-	lwz	$acc00,464($key)
+	lwz	$acc00,240($key)
 	addi	$Tbl1,$Tbl0,3
 	lwz	$t0,0($key)
 	addi	$Tbl2,$Tbl0,2
@@ -1142,7 +1149,7 @@ Ldec_loop:
 
 .align	4
 Lppc_AES_decrypt_compact:
-	lwz	$acc00,464($key)
+	lwz	$acc00,240($key)
 	addi	$Tbl1,$Tbl0,2048
 	lwz	$t0,0($key)
 	lis	$mask80,0x8080
@@ -1441,7 +1448,7 @@ Ldec_compact_done:
 	blr
 	.long	0
 	.byte	0,12,0x14,0,0,0,0,0
-.size	.asm_AES_decrypt,.-.asm_AES_decrypt
+.size	.AES_decrypt,.-.AES_decrypt
 
 .asciz	"AES for PPC, CRYPTOGAMS by <appro\@openssl.org>"
 .align	7
