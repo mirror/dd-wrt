@@ -194,11 +194,11 @@ BIN_CFLAGS={- $target{bin_cflags} -}
 PERL={- $config{perl} -}
 
 ARFLAGS= {- $target{arflags} -}
-AR=$(CROSS_COMPILE){- $target{ar} || "ar" -} $(ARFLAGS) r
+AR={- $target{ar} || "ar" -} $(ARFLAGS) r
 RANLIB= {- $target{ranlib} -}
-NM= $(CROSS_COMPILE){- $target{nm} || "nm" -}
+NM= {- $target{nm} || "nm" -}
 RCFLAGS={- $target{shared_rcflag} -}
-RC= $(CROSS_COMPILE){- $target{rc} || "windres" -}
+RC= {- $target{rc} || "windres" -}
 RM= rm -f
 RMDIR= rmdir
 TAR= {- $target{tar} || "tar" -}
