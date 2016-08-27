@@ -17,7 +17,7 @@
 
 # include <unistd.h>
 
-# if _POSIX_VERSION >= 200112L
+# if 0 //  _POSIX_VERSION >= 200112L
 
 # include <pthread.h>
 
