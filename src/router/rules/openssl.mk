@@ -56,12 +56,12 @@ endif
 
 openssl:
 	$(MAKE) -C openssl CC="$(CC) -I$(TOP)/zlib -L$(TOP)/zlib -I$(TOP)/openssl/crypto -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
-	$(MAKE) -C openssl build-shared CC="$(CC) -I$(TOP)/zlib -L$(TOP)/zlib -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
+	$(MAKE) -C openssl build_libs CC="$(CC) -I$(TOP)/zlib -L$(TOP)/zlib -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
 	$(MAKE)  -C openssl build_apps CC="$(CC) -I$(TOP)/zlib -L$(TOP)/zlib -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
 	rm -f openssl/apps/openssl
 
 openssl-shared: openssl
-	$(MAKE) -C openssl build-shared CC="$(CC) -I$(TOP)/zlib -L$(TOP)/zlib -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
+	$(MAKE) -C openssl build_libs CC="$(CC) -I$(TOP)/zlib -L$(TOP)/zlib -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
 
 
 openssl-apps: openssl-shared	
@@ -93,8 +93,8 @@ openssl-clean:
 	$(MAKE) -C openssl clean
 
 
-OPENSSL_NO_CIPHERS:= no-rc5 no-idea no-md2 no-mdc2 no-sha0 no-smime \
-			no-rmd160 no-aes192 no-camellia no-ripemd no-ans1 no-krb5
+OPENSSL_NO_CIPHERS:= no-rc5 no-idea no-md2 no-mdc2 \
+			no-rmd160 no-camellia no-ripemd
 ifeq ($(CONFIG_XSCALE),y)
 OPENSSL_OPTIONS:= no-err no-hw threads no-sse2 no-perlasm zlib-dynamic -DHAVE_CRYPTODEV
 else
@@ -115,11 +115,7 @@ openssl-configure:
 	$(MAKE) -C openssl clean
 
 	-$(MAKE) -C openssl CC="$(CC) -I$(TOP)/zlib -L$(TOP)/zlib -I$(TOP)/openssl/crypto -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
-	-$(MAKE) -C openssl build-shared CC="$(CC) -I$(TOP)/zlib -L$(TOP)/zlib -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
+	-$(MAKE) -C openssl build_libs CC="$(CC) -I$(TOP)/zlib -L$(TOP)/zlib -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
 	-$(MAKE) -C openssl build_apps CC="$(CC) -I$(TOP)/zlib -L$(TOP)/zlib -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
 	-rm -f openssl/apps/openssl
 	
-	-$(MAKE) -C openssl CC="$(CC) -I$(TOP)/zlib -L$(TOP)/zlib -I$(TOP)/openssl/crypto -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
-	-$(MAKE) -C openssl build-shared CC="$(CC) -I$(TOP)/zlib -L$(TOP)/zlib -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
-	-$(MAKE) -C openssl build_apps CC="$(CC) -I$(TOP)/zlib -L$(TOP)/zlib -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
-	-rm -f openssl/apps/openssl
