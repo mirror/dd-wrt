@@ -1,4 +1,11 @@
-#!/usr/bin/env perl
+#! /usr/bin/env perl
+# Copyright 2007-2016 The OpenSSL Project Authors. All Rights Reserved.
+#
+# Licensed under the OpenSSL license (the "License").  You may not use
+# this file except in compliance with the License.  You can obtain a copy
+# in the file LICENSE in the source distribution or at
+# https://www.openssl.org/source/license.html
+
 
 # ====================================================================
 # Written by Andy Polyakov <appro@openssl.org> for the OpenSSL
@@ -32,8 +39,20 @@
 # Profiler-assisted and platform-specific optimization resulted in 16%
 # improvement on Cortex A8 core and ~21.5 cycles per byte.
 
-while (($output=shift) && ($output!~/^\w[\w\-]*\.\w+$/)) {}
-open STDOUT,">$output";
+$flavour = shift;
+if ($flavour=~/\w[\w\-]*\.\w+$/) { $output=$flavour; undef $flavour; }
+else { while (($output=shift) && ($output!~/\w[\w\-]*\.\w+$/)) {} }
+
+if ($flavour && $flavour ne "void") {
+    $0 =~ m/(.*[\/\\])[^\/\\]+$/; $dir=$1;
+    ( $xlate="${dir}arm-xlate.pl" and -f $xlate ) or
+    ( $xlate="${dir}../../perlasm/arm-xlate.pl" and -f $xlate) or
+    die "can't locate arm-xlate.pl";
+
+    open STDOUT,"| \"$^X\" $xlate $flavour $output";
+} else {
+    open STDOUT,">$output";
+}
 
 $s0="r0";
 $s1="r1";
@@ -58,15 +77,12 @@ $code=<<___;
 #endif
 
 .text
-#if __ARM_ARCH__<7
-.code	32
-#else
+#if defined(__thumb2__) && !defined(__APPLE__)
 .syntax	unified
-# ifdef __thumb2__
 .thumb
-# else
+#else
 .code	32
-# endif
+#undef __thumb2__
 #endif
 
 .type	AES_Te,%object
@@ -177,19 +193,23 @@ AES_Te:
 
 @ void AES_encrypt(const unsigned char *in, unsigned char *out,
 @ 		 const AES_KEY *key) {
-.global asm_AES_encrypt
-.type   asm_AES_encrypt,%function
+.global AES_encrypt
+.type   AES_encrypt,%function
 .align	5
-asm_AES_encrypt:
-#if __ARM_ARCH__<7
+AES_encrypt:
+#ifndef	__thumb2__
 	sub	r3,pc,#8		@ AES_encrypt
 #else
-	adr	r3,asm_AES_encrypt
+	adr	r3,AES_encrypt
 #endif
 	stmdb   sp!,{r1,r4-r12,lr}
+#ifdef	__APPLE__
+	adr	$tbl,AES_Te
+#else
+	sub	$tbl,r3,#AES_encrypt-AES_Te	@ Te
+#endif
 	mov	$rounds,r0		@ inp
 	mov	$key,r2
-	sub	$tbl,r3,#asm_AES_encrypt-AES_Te	@ Te
 #if __ARM_ARCH__<7
 	ldrb	$s0,[$rounds,#3]	@ load input data in endian-neutral
 	ldrb	$t1,[$rounds,#2]	@ manner...
@@ -283,7 +303,7 @@ asm_AES_encrypt:
 	moveq	pc,lr			@ be binary compatible with V4, yet
 	bx	lr			@ interoperable with Thumb ISA:-)
 #endif
-.size	asm_AES_encrypt,.-asm_AES_encrypt
+.size	AES_encrypt,.-AES_encrypt
 
 .type   _armv4_AES_encrypt,%function
 .align	2
@@ -291,7 +311,7 @@ _armv4_AES_encrypt:
 	str	lr,[sp,#-4]!		@ push lr
 	ldmia	$key!,{$t1-$i1}
 	eor	$s0,$s0,$t1
-	ldr	$rounds,[$key,#464-16]
+	ldr	$rounds,[$key,#240-16]
 	eor	$s1,$s1,$t2
 	eor	$s2,$s2,$t3
 	eor	$s3,$s3,$i1
@@ -422,24 +442,24 @@ _armv4_AES_encrypt:
 	ldr	pc,[sp],#4		@ pop and return
 .size	_armv4_AES_encrypt,.-_armv4_AES_encrypt
 
-.global asm_AES_set_encrypt_key
-.type   asm_AES_set_encrypt_key,%function
+.global AES_set_encrypt_key
+.type   AES_set_encrypt_key,%function
 .align	5
-asm_AES_set_encrypt_key:
+AES_set_encrypt_key:
 _armv4_AES_set_encrypt_key:
-#if __ARM_ARCH__<7
+#ifndef	__thumb2__
 	sub	r3,pc,#8		@ AES_set_encrypt_key
 #else
-	adr	r3,asm_AES_set_encrypt_key
+	adr	r3,AES_set_encrypt_key
 #endif
 	teq	r0,#0
-#if __ARM_ARCH__>=7
+#ifdef	__thumb2__
 	itt	eq			@ Thumb2 thing, sanity check in ARM
 #endif
 	moveq	r0,#-1
 	beq	.Labrt
 	teq	r2,#0
-#if __ARM_ARCH__>=7
+#ifdef	__thumb2__
 	itt	eq			@ Thumb2 thing, sanity check in ARM
 #endif
 	moveq	r0,#-1
@@ -450,18 +470,22 @@ _armv4_AES_set_encrypt_key:
 	teq	r1,#192
 	beq	.Lok
 	teq	r1,#256
-#if __ARM_ARCH__>=7
+#ifdef	__thumb2__
 	itt	ne			@ Thumb2 thing, sanity check in ARM
 #endif
 	movne	r0,#-1
 	bne	.Labrt
 
 .Lok:	stmdb   sp!,{r4-r12,lr}
-	sub	$tbl,r3,#_armv4_AES_set_encrypt_key-AES_Te-1024	@ Te4
-
 	mov	$rounds,r0		@ inp
 	mov	lr,r1			@ bits
 	mov	$key,r2			@ key
+
+#ifdef	__APPLE__
+	adr	$tbl,AES_Te+1024				@ Te4
+#else
+	sub	$tbl,r3,#_armv4_AES_set_encrypt_key-AES_Te-1024	@ Te4
+#endif
 
 #if __ARM_ARCH__<7
 	ldrb	$s0,[$rounds,#3]	@ load input data in endian-neutral
@@ -516,7 +540,7 @@ _armv4_AES_set_encrypt_key:
 	teq	lr,#128
 	bne	.Lnot128
 	mov	$rounds,#10
-	str	$rounds,[$key,#464-16]
+	str	$rounds,[$key,#240-16]
 	add	$t3,$tbl,#256			@ rcon
 	mov	lr,#255
 
@@ -579,7 +603,7 @@ _armv4_AES_set_encrypt_key:
 	teq	lr,#192
 	bne	.Lnot192
 	mov	$rounds,#12
-	str	$rounds,[$key,#464-24]
+	str	$rounds,[$key,#240-24]
 	add	$t3,$tbl,#256			@ rcon
 	mov	lr,#255
 	mov	$rounds,#8
@@ -607,7 +631,7 @@ _armv4_AES_set_encrypt_key:
 	str	$s2,[$key,#-16]
 	subs	$rounds,$rounds,#1
 	str	$s3,[$key,#-12]
-#if __ARM_ARCH__>=7
+#ifdef	__thumb2__
 	itt	eq				@ Thumb2 thing, sanity check in ARM
 #endif
 	subeq	r2,$key,#216
@@ -651,7 +675,7 @@ _armv4_AES_set_encrypt_key:
 #endif
 
 	mov	$rounds,#14
-	str	$rounds,[$key,#464-32]
+	str	$rounds,[$key,#240-32]
 	add	$t3,$tbl,#256			@ rcon
 	mov	lr,#255
 	mov	$rounds,#7
@@ -679,7 +703,7 @@ _armv4_AES_set_encrypt_key:
 	str	$s2,[$key,#-24]
 	subs	$rounds,$rounds,#1
 	str	$s3,[$key,#-20]
-#if __ARM_ARCH__>=7
+#ifdef	__thumb2__
 	itt	eq				@ Thumb2 thing, sanity check in ARM
 #endif
 	subeq	r2,$key,#256
@@ -722,12 +746,12 @@ _armv4_AES_set_encrypt_key:
 	moveq	pc,lr			@ be binary compatible with V4, yet
 	bx	lr			@ interoperable with Thumb ISA:-)
 #endif
-.size	asm_AES_set_encrypt_key,.-asm_AES_set_encrypt_key
+.size	AES_set_encrypt_key,.-AES_set_encrypt_key
 
-.global asm_AES_set_decrypt_key
-.type   asm_AES_set_decrypt_key,%function
+.global AES_set_decrypt_key
+.type   AES_set_decrypt_key,%function
 .align	5
-asm_AES_set_decrypt_key:
+AES_set_decrypt_key:
 	str	lr,[sp,#-4]!            @ push lr
 	bl	_armv4_AES_set_encrypt_key
 	teq	r0,#0
@@ -737,7 +761,7 @@ asm_AES_set_decrypt_key:
 	mov	r0,r2			@ AES_set_encrypt_key preserves r2,
 	mov	r1,r2			@ which is AES_KEY *key
 	b	_armv4_AES_set_enc2dec_key
-.size	asm_AES_set_decrypt_key,.-asm_AES_set_decrypt_key
+.size	AES_set_decrypt_key,.-AES_set_decrypt_key
 
 @ void AES_set_enc2dec_key(const AES_KEY *inp,AES_KEY *out)
 .global	AES_set_enc2dec_key
@@ -747,12 +771,12 @@ AES_set_enc2dec_key:
 _armv4_AES_set_enc2dec_key:
 	stmdb   sp!,{r4-r12,lr}
 
-	ldr	$rounds,[r0,#464]
+	ldr	$rounds,[r0,#240]
 	mov	$i1,r0			@ input
 	add	$i2,r0,$rounds,lsl#4
-	mov	$key,r1			@ ouput
+	mov	$key,r1			@ output
 	add	$tbl,r1,$rounds,lsl#4
-	str	$rounds,[r1,#464]
+	str	$rounds,[r1,#240]
 
 .Linv:	ldr	$s0,[$i1],#16
 	ldr	$s1,[$i1,#-12]
@@ -945,19 +969,23 @@ AES_Td:
 
 @ void AES_decrypt(const unsigned char *in, unsigned char *out,
 @ 		 const AES_KEY *key) {
-.global asm_AES_decrypt
-.type   asm_AES_decrypt,%function
+.global AES_decrypt
+.type   AES_decrypt,%function
 .align	5
-asm_AES_decrypt:
-#if __ARM_ARCH__<7
-	sub	r3,pc,#8		@ asm_AES_decrypt
+AES_decrypt:
+#ifndef	__thumb2__
+	sub	r3,pc,#8		@ AES_decrypt
 #else
-	adr	r3,asm_AES_decrypt
+	adr	r3,AES_decrypt
 #endif
 	stmdb   sp!,{r1,r4-r12,lr}
+#ifdef	__APPLE__
+	adr	$tbl,AES_Td
+#else
+	sub	$tbl,r3,#AES_decrypt-AES_Td	@ Td
+#endif
 	mov	$rounds,r0		@ inp
 	mov	$key,r2
-	sub	$tbl,r3,#asm_AES_decrypt-AES_Td		@ Td
 #if __ARM_ARCH__<7
 	ldrb	$s0,[$rounds,#3]	@ load input data in endian-neutral
 	ldrb	$t1,[$rounds,#2]	@ manner...
@@ -1051,7 +1079,7 @@ asm_AES_decrypt:
 	moveq	pc,lr			@ be binary compatible with V4, yet
 	bx	lr			@ interoperable with Thumb ISA:-)
 #endif
-.size	asm_AES_decrypt,.-asm_AES_decrypt
+.size	AES_decrypt,.-AES_decrypt
 
 .type   _armv4_AES_decrypt,%function
 .align	2
@@ -1059,7 +1087,7 @@ _armv4_AES_decrypt:
 	str	lr,[sp,#-4]!		@ push lr
 	ldmia	$key!,{$t1-$i1}
 	eor	$s0,$s0,$t1
-	ldr	$rounds,[$key,#464-16]
+	ldr	$rounds,[$key,#240-16]
 	eor	$s1,$s1,$t2
 	eor	$s2,$s2,$t3
 	eor	$s3,$s3,$i1

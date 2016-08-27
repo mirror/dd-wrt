@@ -1,4 +1,12 @@
-/* crypto/aes/aes_core.c */
+/*
+ * Copyright 2002-2016 The OpenSSL Project Authors. All Rights Reserved.
+ *
+ * Licensed under the OpenSSL license (the "License").  You may not use
+ * this file except in compliance with the License.  You can obtain a copy
+ * in the file LICENSE in the source distribution or at
+ * https://www.openssl.org/source/license.html
+ */
+
 /**
  * rijndael-alg-fst.c
  *
@@ -28,18 +36,14 @@
 /* Note: rewritten a little bit to provide error control and an OpenSSL-
    compatible API */
 
-#ifndef AES_DEBUG
-# ifndef NDEBUG
-#  define NDEBUG
-# endif
-#endif
 #include <assert.h>
 
 #include <stdlib.h>
+#include <openssl/crypto.h>
 #include <openssl/aes.h>
 #include "aes_locl.h"
 
-#if 1 //ndef AES_ASM
+#ifndef AES_ASM
 /*-
 Te0[x] = S [x].[02, 01, 01, 03];
 Te1[x] = S [x].[03, 02, 01, 01];
@@ -622,41 +626,30 @@ static const u32 rcon[] = {
     0x1B000000, 0x36000000, /* for 128-bit blocks, Rijndael never uses more than 10 rcon values */
 };
 
-extern  int asm_AES_set_encrypt_key(const unsigned char *userKey, const int bits,AES_KEY *key);
-
 /**
  * Expand the cipher key into the encryption key schedule.
  */
-int private_AES_set_encrypt_key(const unsigned char *userKey, const int bits,
-                                AES_KEY *key)
+int AES_set_encrypt_key(const unsigned char *userKey, const int bits,
+                        AES_KEY *key)
 {
 
     u32 *rk;
     int i = 0;
     u32 temp;
 
-#ifdef ASMAES512
-#ifndef ASMNOKEY
-	if (bits<512)
-	    return asm_AES_set_encrypt_key(userKey,bits,key);
-#endif
-#endif
-
     if (!userKey || !key)
         return -1;
-    if (bits != 128 && bits != 192 && bits != 256 && bits != 512)
+    if (bits != 128 && bits != 192 && bits != 256)
         return -2;
 
     rk = key->rd_key;
 
-    if (bits==128)
+    if (bits == 128)
         key->rounds = 10;
-    else if (bits==192)
+    else if (bits == 192)
         key->rounds = 12;
-    else if (bits==256)
-        key->rounds = 14;
     else
-        key->rounds = 16;
+        key->rounds = 14;
 
     rk[0] = GETU32(userKey     );
     rk[1] = GETU32(userKey +  4);
@@ -732,89 +725,22 @@ int private_AES_set_encrypt_key(const unsigned char *userKey, const int bits,
             rk += 8;
             }
     }
-    
-    	rk[8] = GETU32(userKey + 32);
-	rk[9] = GETU32(userKey + 36);
-	rk[10] = GETU32(userKey + 40);
-	rk[11] = GETU32(userKey + 44);
-	rk[12] = GETU32(userKey + 48);
-	rk[13] = GETU32(userKey + 52);
-	rk[14] = GETU32(userKey + 56);
-	rk[15] = GETU32(userKey + 60);
-
-	if (bits == 512) {
-		while (1) {
-			temp = rk[ 15];
-			rk[ 16] = rk[ 0] ^
-				(Te2[(temp >> 16) & 0xff] & 0xff000000) ^
-				(Te3[(temp >>  8) & 0xff] & 0x00ff0000) ^
-				(Te0[(temp      ) & 0xff] & 0x0000ff00) ^
-				(Te1[(temp >> 24)       ] & 0x000000ff) ^
-				rcon[i];
-			rk[17] = rk[ 1] ^ rk[16];
-			rk[18] = rk[ 2] ^ rk[17];
-			rk[19] = rk[ 3] ^ rk[18];
-			if (++i == 7) {
-				return 0;
-			}
-			temp = rk[19];
-			rk[20] = rk[ 4] ^
-				(Te2[(temp >> 24)       ] & 0xff000000) ^
-				(Te3[(temp >> 16) & 0xff] & 0x00ff0000) ^
-				(Te0[(temp >>  8) & 0xff] & 0x0000ff00) ^
-				(Te1[(temp      ) & 0xff] & 0x000000ff);
-			rk[21] = rk[ 5] ^ rk[20];
-			rk[22] = rk[ 6] ^ rk[21];
-			rk[23] = rk[ 7] ^ rk[22];
-			temp = rk[23];
-			rk[24] = rk[ 8] ^
-				(Te2[(temp >> 24)       ] & 0xff000000) ^
-				(Te3[(temp >> 16) & 0xff] & 0x00ff0000) ^
-				(Te0[(temp >>  8) & 0xff] & 0x0000ff00) ^
-				(Te1[(temp      ) & 0xff] & 0x000000ff);
-			rk[25] = rk[ 9] ^ rk[24];
-			rk[26] = rk[ 10] ^ rk[25];
-			rk[27] = rk[ 11] ^ rk[26];
-			temp = rk[27];
-			rk[28] = rk[ 12] ^
-				(Te2[(temp >> 24)       ] & 0xff000000) ^
-				(Te3[(temp >> 16) & 0xff] & 0x00ff0000) ^
-				(Te0[(temp >>  8) & 0xff] & 0x0000ff00) ^
-				(Te1[(temp      ) & 0xff] & 0x000000ff);
-			rk[29] = rk[ 13] ^ rk[28];
-			rk[30] = rk[ 14] ^ rk[29];
-			rk[31] = rk[ 15] ^ rk[30];
-
-			rk += 16;
-        	}
-	}
-
     return 0;
 }
-
-extern int asm_AES_set_decrypt_key(const unsigned char *userKey, const int bits,
-			 AES_KEY *key);
 
 /**
  * Expand the cipher key into the decryption key schedule.
  */
-int private_AES_set_decrypt_key(const unsigned char *userKey, const int bits,
-                                AES_KEY *key)
+int AES_set_decrypt_key(const unsigned char *userKey, const int bits,
+                        AES_KEY *key)
 {
 
     u32 *rk;
     int i, j, status;
     u32 temp;
 
-#ifdef ASMAES512
-#ifndef ASMNOKEY
-	if (bits<512)
-	    return asm_AES_set_decrypt_key(userKey,bits,key);
-#endif
-#endif
-
     /* first, start with an encryption schedule */
-    status = private_AES_set_encrypt_key(userKey, bits, key);
+    status = AES_set_encrypt_key(userKey, bits, key);
     if (status < 0)
         return status;
 
@@ -854,8 +780,6 @@ int private_AES_set_decrypt_key(const unsigned char *userKey, const int bits,
     return 0;
 }
 
-extern void asm_AES_encrypt(const unsigned char *in, unsigned char *out,const AES_KEY *key);
-
 /*
  * Encrypt a single block
  * in and out can overlap
@@ -869,17 +793,8 @@ void AES_encrypt(const unsigned char *in, unsigned char *out,
     int r;
 #endif /* ?FULL_UNROLL */
 
-#ifdef ASMAES512
-//	if (key->rounds<16)
-	    {
-	    asm_AES_encrypt(in,out,key);
-	    return;
-	    }
-#endif
-
     assert(in && out && key);
     rk = key->rd_key;
-
 
     /*
      * map byte array block to cipher state
@@ -957,19 +872,6 @@ void AES_encrypt(const unsigned char *in, unsigned char *out,
             t1 = Te0[s1 >> 24] ^ Te1[(s2 >> 16) & 0xff] ^ Te2[(s3 >>  8) & 0xff] ^ Te3[s0 & 0xff] ^ rk[53];
             t2 = Te0[s2 >> 24] ^ Te1[(s3 >> 16) & 0xff] ^ Te2[(s0 >>  8) & 0xff] ^ Te3[s1 & 0xff] ^ rk[54];
             t3 = Te0[s3 >> 24] ^ Te1[(s0 >> 16) & 0xff] ^ Te2[(s1 >>  8) & 0xff] ^ Te3[s2 & 0xff] ^ rk[55];
-            if (key->rounds > 14) {
-            /* round 14: */
-            s0 = Te0[t0 >> 24] ^ Te1[(t1 >> 16) & 0xff] ^ Te2[(t2 >>  8) & 0xff] ^ Te3[t3 & 0xff] ^ rk[56];
-            s1 = Te0[t1 >> 24] ^ Te1[(t2 >> 16) & 0xff] ^ Te2[(t3 >>  8) & 0xff] ^ Te3[t0 & 0xff] ^ rk[57];
-            s2 = Te0[t2 >> 24] ^ Te1[(t3 >> 16) & 0xff] ^ Te2[(t0 >>  8) & 0xff] ^ Te3[t1 & 0xff] ^ rk[58];
-            s3 = Te0[t3 >> 24] ^ Te1[(t0 >> 16) & 0xff] ^ Te2[(t1 >>  8) & 0xff] ^ Te3[t2 & 0xff] ^ rk[59];
-            /* round 15: */
-            t0 = Te0[s0 >> 24] ^ Te1[(s1 >> 16) & 0xff] ^ Te2[(s2 >>  8) & 0xff] ^ Te3[s3 & 0xff] ^ rk[60];
-            t1 = Te0[s1 >> 24] ^ Te1[(s2 >> 16) & 0xff] ^ Te2[(s3 >>  8) & 0xff] ^ Te3[s0 & 0xff] ^ rk[61];
-            t2 = Te0[s2 >> 24] ^ Te1[(s3 >> 16) & 0xff] ^ Te2[(s0 >>  8) & 0xff] ^ Te3[s1 & 0xff] ^ rk[62];
-            t3 = Te0[s3 >> 24] ^ Te1[(s0 >> 16) & 0xff] ^ Te2[(s1 >>  8) & 0xff] ^ Te3[s2 & 0xff] ^ rk[63];
-         }
-
         }
     }
     rk += key->rounds << 2;
@@ -1069,8 +971,6 @@ void AES_encrypt(const unsigned char *in, unsigned char *out,
     PUTU32(out + 12, s3);
 }
 
-extern void asm_AES_decrypt(const unsigned char *in, unsigned char *out,const AES_KEY *key);
-
 /*
  * Decrypt a single block
  * in and out can overlap
@@ -1084,13 +984,6 @@ void AES_decrypt(const unsigned char *in, unsigned char *out,
 #ifndef FULL_UNROLL
     int r;
 #endif /* ?FULL_UNROLL */
-#ifdef ASMAES512
-//	if (key->rounds<16)
-	    {
-	    asm_AES_decrypt(in,out,key);
-	    return;
-	    }
-#endif
 
     assert(in && out && key);
     rk = key->rd_key;
@@ -1172,18 +1065,6 @@ void AES_decrypt(const unsigned char *in, unsigned char *out,
             t2 = Td0[s2 >> 24] ^ Td1[(s1 >> 16) & 0xff] ^ Td2[(s0 >>  8) & 0xff] ^ Td3[s3 & 0xff] ^ rk[54];
             t3 = Td0[s3 >> 24] ^ Td1[(s2 >> 16) & 0xff] ^ Td2[(s1 >>  8) & 0xff] ^ Td3[s0 & 0xff] ^ rk[55];
         }
-        if (key->rounds > 14) {
-            /* round 14: */
-            s0 = Td0[t0 >> 24] ^ Td1[(t3 >> 16) & 0xff] ^ Td2[(t2 >>  8) & 0xff] ^ Td3[t1 & 0xff] ^ rk[56];
-            s1 = Td0[t1 >> 24] ^ Td1[(t0 >> 16) & 0xff] ^ Td2[(t3 >>  8) & 0xff] ^ Td3[t2 & 0xff] ^ rk[57];
-            s2 = Td0[t2 >> 24] ^ Td1[(t1 >> 16) & 0xff] ^ Td2[(t0 >>  8) & 0xff] ^ Td3[t3 & 0xff] ^ rk[58];
-            s3 = Td0[t3 >> 24] ^ Td1[(t2 >> 16) & 0xff] ^ Td2[(t1 >>  8) & 0xff] ^ Td3[t0 & 0xff] ^ rk[59];
-            /* round 15: */
-            t0 = Td0[s0 >> 24] ^ Td1[(s3 >> 16) & 0xff] ^ Td2[(s2 >>  8) & 0xff] ^ Td3[s1 & 0xff] ^ rk[60];
-            t1 = Td0[s1 >> 24] ^ Td1[(s0 >> 16) & 0xff] ^ Td2[(s3 >>  8) & 0xff] ^ Td3[s2 & 0xff] ^ rk[61];
-            t2 = Td0[s2 >> 24] ^ Td1[(s1 >> 16) & 0xff] ^ Td2[(s0 >>  8) & 0xff] ^ Td3[s3 & 0xff] ^ rk[62];
-            t3 = Td0[s3 >> 24] ^ Td1[(s2 >> 16) & 0xff] ^ Td2[(s1 >>  8) & 0xff] ^ Td3[s0 & 0xff] ^ rk[63];
-         }
     }
     rk += key->rounds << 2;
 #else  /* !FULL_UNROLL */
@@ -1327,11 +1208,11 @@ static const u32 rcon[] = {
 /**
  * Expand the cipher key into the encryption key schedule.
  */
-int private_AES_set_encrypt_key(const unsigned char *userKey, const int bits,
-                                AES_KEY *key)
+int AES_set_encrypt_key(const unsigned char *userKey, const int bits,
+                        AES_KEY *key)
 {
     u32 *rk;
-   	int i = 0;
+    int i = 0;
     u32 temp;
 
     if (!userKey || !key)
@@ -1341,9 +1222,9 @@ int private_AES_set_encrypt_key(const unsigned char *userKey, const int bits,
 
     rk = key->rd_key;
 
-    if (bits==128)
+    if (bits == 128)
         key->rounds = 10;
-    else if (bits==192)
+    else if (bits == 192)
         key->rounds = 12;
     else
         key->rounds = 14;
@@ -1428,8 +1309,8 @@ int private_AES_set_encrypt_key(const unsigned char *userKey, const int bits,
 /**
  * Expand the cipher key into the decryption key schedule.
  */
-int private_AES_set_decrypt_key(const unsigned char *userKey, const int bits,
-                                AES_KEY *key)
+int AES_set_decrypt_key(const unsigned char *userKey, const int bits,
+                        AES_KEY *key)
 {
 
     u32 *rk;
@@ -1437,7 +1318,7 @@ int private_AES_set_decrypt_key(const unsigned char *userKey, const int bits,
     u32 temp;
 
     /* first, start with an encryption schedule */
-    status = private_AES_set_encrypt_key(userKey, bits, key);
+    status = AES_set_encrypt_key(userKey, bits, key);
     if (status < 0)
         return status;
 
@@ -1474,7 +1355,7 @@ int private_AES_set_decrypt_key(const unsigned char *userKey, const int bits,
             rk[j] = tpe ^ ROTATE(tpd,16) ^
                 ROTATE(tp9,24) ^ ROTATE(tpb,8);
 #else
-            rk[j] = tpe ^ (tpd >> 16) ^ (tpd << 16) ^ 
+            rk[j] = tpe ^ (tpd >> 16) ^ (tpd << 16) ^
                 (tp9 >> 8) ^ (tp9 << 24) ^
                 (tpb >> 24) ^ (tpb << 8);
 #endif
