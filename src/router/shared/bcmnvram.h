@@ -115,6 +115,10 @@ extern char *nvram_nset(char *value,const char *fmt,...);
 
 extern int nvram_nmatch(char *match,const char *fmt,...);
 
+extern int nvram_geti(const char *name);
+
+extern void nvram_seti(const char *name, int value);
+
 /*
  * Set the value of an NVRAM variable. The name and value strings are
  * copied into private storage. Pointers to previously set values
