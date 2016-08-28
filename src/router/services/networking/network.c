@@ -495,7 +495,7 @@ int wlconf_up(char *name)
 		return -1;	// no wireless device
 
 	if (nvram_nmatch("disabled", "wl%d_net_mode", instance))
-		return -1;
+		return -2;
 
 	char prefix[16];
 	sprintf(prefix, "wl%d", instance);
@@ -2299,14 +2299,19 @@ void start_lan(void)
 			 * If not a wl i/f then simply add it to the bridge 
 			 */
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
-			if (wlconf_up(name)) {
-				// #ifdef HAVE_PORTSETUP
+			int conf = wlconf_up(name);
+#else
+			int conf = strcmp(name, "wl0") ? -1 : 0;
+#endif
+			switch (conf) {
+			case -1:
 				do_portsetup(lan_ifname, name);
-				// #else
-				// br_add_interface (getBridge (name), name);
-				// #endif
-			} else {
-
+				break;
+			case -2:	//ignore 
+				br_del_interface(lan_ifname, name);				
+			break;
+			case 0:
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 				if (nvram_match("mac_clone_enable", "1") && nvram_invmatch("def_whwaddr", "00:00:00:00:00:00")
 				    && nvram_invmatch("def_whwaddr", "")) {
 					ether_atoe(nvram_safe_get("def_whwaddr"), ifr.ifr_hwaddr.sa_data);
@@ -2335,15 +2340,6 @@ void start_lan(void)
 						config_macs(name);
 					}
 				}
-
-#else
-			cprintf("configure %s\n", name);
-			if (strcmp(name, "wl0"))	// check if the interface is a
-				// buffalo wireless
-			{
-				do_portsetup(lan_ifname, name);
-			} else {
-
 #endif
 				/*
 				 * get the instance number of the wl i/f 
@@ -2649,6 +2645,7 @@ void start_lan(void)
 
 		}
 	}
+
 	/*
 	 * Sveasoft - Bring up and configure wds interfaces 
 	 */
