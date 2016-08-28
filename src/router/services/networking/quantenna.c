@@ -268,7 +268,7 @@ void start_qtn(void)
 	gen_rpc_qcsapi_ip();
 	gen_stateless_conf();
 
-	nvram_set("qtn_ready", "0");
+	nvram_seti("qtn_ready", 0);
 	sysprintf("cp /etc/qtn/* /tmp/");
 	if (!nvram_match("QTN_RPC_CLIENT", ""))
 		eval("ifconfig", "br0:1", nvram_safe_get("QTN_RPC_CLIENT"), "netmask", "255.255.255.0");

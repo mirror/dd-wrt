@@ -80,7 +80,7 @@ static int deconfig(void)
 	nvram_set("wan_gateway", "0.0.0.0");
 	nvram_set("wan_get_dns", "");
 	// nvram_set("wan_wins","0.0.0.0"); // Don't care for linksys spec
-	nvram_set("wan_lease", "0");
+	nvram_seti("wan_lease", 0);
 
 	unlink("/tmp/get_lease_time");
 	unlink("/tmp/lease_time");
@@ -407,7 +407,7 @@ static int bound(void)
 		cprintf("start wan done\n");
 		start_wan_done(wan_ifname);
 	}
-	nvram_set("dhcpc_done", "1");
+	nvram_seti("dhcpc_done", 1);
 	cprintf("done\n");
 	return 0;
 }

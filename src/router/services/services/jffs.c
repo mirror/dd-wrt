@@ -39,7 +39,7 @@ void start_jffs2(void)
 	if (nvram_match("sys_enable_jffs2", "1")) {
 		insmod("crc32 lzma_compress lzma_decompress lzo_compress lzo_decompress jffs2");
 		if (nvram_match("sys_clean_jffs2", "1")) {
-			nvram_set("sys_clean_jffs2", "0");
+			nvram_seti("sys_clean_jffs2", 0);
 			nvram_commit();
 #ifdef HAVE_WNDR3700V4
 			itworked = eval("erase", rwpart);
@@ -53,9 +53,9 @@ void start_jffs2(void)
 			sprintf(dev, "/dev/mtdblock/%d", getMTD("ddwrt"));
 			itworked += mount(dev, "/jffs", "jffs2", MS_MGC_VAL, NULL);
 			if (itworked) {
-				nvram_set("jffs_mounted", "0");
+				nvram_seti("jffs_mounted", 0);
 			} else {
-				nvram_set("jffs_mounted", "1");
+				nvram_seti("jffs_mounted", 1);
 			}
 
 		} else {
@@ -65,9 +65,9 @@ void start_jffs2(void)
 			sprintf(dev, "/dev/mtdblock/%d", getMTD("ddwrt"));
 			itworked += mount(dev, "/jffs", "jffs2", MS_MGC_VAL, NULL);
 			if (itworked) {
-				nvram_set("jffs_mounted", "0");
+				nvram_seti("jffs_mounted", 0);
 			} else {
-				nvram_set("jffs_mounted", "1");
+				nvram_seti("jffs_mounted", 1);
 			}
 
 		}

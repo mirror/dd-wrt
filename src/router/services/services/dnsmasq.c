@@ -120,7 +120,7 @@ void start_dnsmasq(void)
 	if (nvram_match("dhcp_dnsmasq", "1")
 	    && nvram_match("lan_proto", "dhcp")
 	    && nvram_match("dnsmasq_enable", "0")) {
-		nvram_set("dnsmasq_enable", "1");
+		nvram_seti("dnsmasq_enable", 1);
 		nvram_commit();
 	}
 

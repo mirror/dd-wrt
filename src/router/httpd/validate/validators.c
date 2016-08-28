@@ -600,7 +600,7 @@ void validate_reboot(webs_t wp, char *value, struct variable *v)
 {
 	if (value && v) {
 		nvram_set(v->name, value);
-		nvram_set("do_reboot", "1");
+		nvram_seti("do_reboot", 1);
 	}
 }
 
@@ -690,14 +690,14 @@ void validate_wan_ipaddr(webs_t wp, char *value, struct variable *v)
 	get_merge_ipaddr(wp, "wan_netmask_static", wan_netmask_static);
 
 	if (!strcmp(wan_proto, "pptp")) {
-		nvram_set("pptp_pass", "0");	// disable pptp passthrough
+		nvram_seti("pptp_pass", 0);	// disable pptp passthrough
 	}
 
 	if (!strcmp(wan_proto, "pptp") && !strcmp("0.0.0.0", wan_ipaddr)) {	// Sveasoft: allow 0.0.0.0 for pptp IP addr
 		pptp_skip_check = TRUE;
-		nvram_set("pptp_use_dhcp", "1");
+		nvram_seti("pptp_use_dhcp", 1);
 	} else
-		nvram_set("pptp_use_dhcp", "0");
+		nvram_seti("pptp_use_dhcp", 0);
 
 	if (strcmp(wan_proto, "pppoe_dual")) {
 		if (FALSE == pptp_skip_check && !valid_ipaddr(wp, wan_ipaddr, &which[0]))
@@ -759,14 +759,14 @@ void validate_portsetup(webs_t wp, char *value, struct variable *v)
 		if (mtu)
 			nvram_set(val, mtu);
 		else
-			nvram_set(val, "1500");
+			nvram_seti(val, 1500);
 
 		sprintf(val, "%s_txq", var);
 		char *txq = websGetVar(wp, val, NULL);
 		if (txq)
 			nvram_set(val, txq);
 		else
-			nvram_set(val, "1000");
+			nvram_seti(val, 1000);
 
 		if (bridged && strcmp(bridged, "0") == 0) {
 			copymergetonv(wp, "%s_ipaddr", var);
@@ -1581,18 +1581,18 @@ void validate_dynamic_route(webs_t wp, char *value, struct variable *v)
 	nvram_set("dr_setting", dr_setting);
 
 	if (!dr_setting || atoi(dr_setting) == 0) {
-		nvram_set("dr_lan_tx", "0");
-		nvram_set("dr_lan_rx", "0");
-		nvram_set("dr_wan_tx", "0");
-		nvram_set("dr_wan_rx", "0");
+		nvram_seti("dr_lan_tx", 0);
+		nvram_seti("dr_lan_rx", 0);
+		nvram_seti("dr_wan_tx", 0);
+		nvram_seti("dr_wan_rx", 0);
 	} else if (atoi(dr_setting) == 1) {
 		nvram_set("dr_lan_tx", "1 2");
 		nvram_set("dr_lan_rx", "1 2");
-		nvram_set("dr_wan_tx", "0");
-		nvram_set("dr_wan_rx", "0");
+		nvram_seti("dr_wan_tx", 0);
+		nvram_seti("dr_wan_rx", 0);
 	} else if (atoi(dr_setting) == 2) {
-		nvram_set("dr_lan_tx", "0");
-		nvram_set("dr_lan_rx", "0");
+		nvram_seti("dr_lan_tx", 0);
+		nvram_seti("dr_lan_rx", 0);
 		nvram_set("dr_wan_tx", "1 2");
 		nvram_set("dr_wan_rx", "1 2");
 	} else if (atoi(dr_setting) == 3) {
@@ -1601,19 +1601,19 @@ void validate_dynamic_route(webs_t wp, char *value, struct variable *v)
 		nvram_set("dr_wan_tx", "1 2");
 		nvram_set("dr_wan_rx", "1 2");
 	} else {
-		nvram_set("dr_lan_tx", "0");
-		nvram_set("dr_lan_rx", "0");
-		nvram_set("dr_wan_tx", "0");
-		nvram_set("dr_wan_rx", "0");
+		nvram_seti("dr_lan_tx", 0);
+		nvram_seti("dr_lan_rx", 0);
+		nvram_seti("dr_wan_tx", 0);
+		nvram_seti("dr_wan_rx", 0);
 	}
 
 	/*
 	 * <lonewolf> 
 	 */
 	if (atoi(websGetVar(wp, "dyn_default", "0")) == 1)
-		nvram_set("dyn_default", "1");
+		nvram_seti("dyn_default", 1);
 	else
-		nvram_set("dyn_default", "0");
+		nvram_seti("dyn_default", 0);
 
 	if (nvram_match("wk_mode", "ospf")) {
 		nvram_set("zebra_conf", websGetVar(wp, "zebra_conf", ""));
@@ -1631,7 +1631,7 @@ void validate_wl_gmode(webs_t wp, char *value, struct variable *v)
 	if (!valid_choice(wp, value, v))
 		return;
 	if (atoi(value) == GMODE_AFTERBURNER) {
-		nvram_set("wl0_lazywds", "0");
+		nvram_seti("wl0_lazywds", 0);
 		nvram_set("wl0_wds", "");
 		nvram_set("wl0_mode", "ap");
 		/*
@@ -2303,7 +2303,7 @@ void validate_wds(webs_t wp, char *value, struct variable *v)
 		memset(netmask, 0, sizeof(netmask));
 
 		// disable until validated
-		nvram_set(enabled_var, "0");
+		nvram_seti(enabled_var, 0);
 
 		// subnet params validation
 		for (i = 0; i < 4; i++) {
@@ -2334,13 +2334,13 @@ void validate_wds(webs_t wp, char *value, struct variable *v)
 		snprintf(ipaddr_var, 31, "%s_%s", wds, "ipaddr");
 		snprintf(netmask_var, 31, "%s_%s", wds, "netmask");
 
-		nvram_set(enabled_var, "1");
+		nvram_seti(enabled_var, 1);
 		snprintf(ipaddr_var, 31, "%s_%s%d", wds, "ipaddr", i);
 		nvram_set(ipaddr_var, ipaddr);
 		snprintf(netmask_var, 31, "%s_%s%d", wds, "netmask", i);
 		nvram_set(netmask_var, netmask);
 	} else
-		nvram_set(enabled_var, "0");
+		nvram_seti(enabled_var, 0);
 
 	for (h = 1; h <= MAX_WDS_DEVS; h++) {
 		memset(hwaddr, 0, sizeof(hwaddr));
@@ -2399,7 +2399,7 @@ void validate_wds(webs_t wp, char *value, struct variable *v)
 			memset(netmask, 0, sizeof(netmask));
 
 			// disable until validated
-			nvram_set(enabled_var, "0");
+			nvram_seti(enabled_var, 0);
 
 			// subnet params validation
 			for (i = 0; i < 4; i++) {
@@ -2431,7 +2431,7 @@ void validate_wds(webs_t wp, char *value, struct variable *v)
 			snprintf(ipaddr_var, 31, "%s_%s", wds, "ipaddr");
 			snprintf(netmask_var, 31, "%s_%s", wds, "netmask");
 
-			nvram_set(enabled_var, "1");
+			nvram_seti(enabled_var, 1);
 			nvram_set(ipaddr_var, ipaddr);
 			nvram_set(netmask_var, netmask);
 		}

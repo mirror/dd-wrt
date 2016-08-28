@@ -1368,7 +1368,7 @@ void init_network(int idx)
 	sprintf(br1ipaddr, "wl%d_br1_ipaddr", idx);
 	sprintf(br1netmask, "wl%d_br1_netmask", idx);
 	if (nvram_get(br1enable) == NULL)
-		nvram_set(br1enable, "0");
+		nvram_seti(br1enable, 0);
 	if (nvram_get(br1ipaddr) == NULL)
 		nvram_set(br1ipaddr, "0.0.0.0");
 	if (nvram_get(br1netmask) == NULL)
@@ -1405,7 +1405,7 @@ void init_network(int idx)
 		sprintf(wdsdevname, "wl%d_wds%d_if", idx, s);
 		sprintf(br1enable, "wl%d_br1_enable", idx);
 		if (nvram_get(wdsvarname) == NULL)
-			nvram_set(wdsvarname, "0");
+			nvram_seti(wdsvarname, 0);
 		dev = nvram_safe_get(wdsdevname);
 		if (strlen(dev) == 0)
 			continue;

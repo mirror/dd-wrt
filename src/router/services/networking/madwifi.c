@@ -809,27 +809,27 @@ void addWPS(FILE * fp, char *prefix, int configured)
 		}
 //# WPS configuration (AP configured, do not allow external WPS Registrars)
 		if (nvram_match("wps_forcerelease", "1")) {
-			nvram_set("wps_status", "0");
+			nvram_seti("wps_status", 0);
 			nvram_commit();
 			fprintf(fp, "wps_state=1\n");
 		} else {
 			if (configured) {
 				if (nvram_match("wps_status", "")) {
-					nvram_set("wps_status", "1");
+					nvram_seti("wps_status", 1);
 					nvram_commit();
 				}
 			} else {
 				if (nvram_match("wps_status", "")) {
-					nvram_set("wps_status", "0");
+					nvram_seti("wps_status", 0);
 					nvram_commit();
 				}
 			}
 
 			if (nvram_match("wps_status", "0")) {
-				nvram_set("wps_status", "0");
+				nvram_seti("wps_status", 0);
 				fprintf(fp, "wps_state=1\n");
 			} else {
-				nvram_set("wps_status", "1");
+				nvram_seti("wps_status", 1);
 				fprintf(fp, "wps_state=2\n");
 			}
 		}
@@ -1204,27 +1204,27 @@ static void set_rate(char *dev, char *priv)
 
 	if (nvram_match(bw, "20") && nvram_match(xr, "0"))
 		if (atof(r) == 27.0f || atof(r) == 1.5f || atof(r) == 2.0f || atof(r) == 3.0f || atof(r) == 4.5f || atof(r) == 9.0f || atof(r) == 13.5f) {
-			nvram_set(rate, "0");
+			nvram_seti(rate, 0);
 			r = "0";
 		}
 	if (nvram_match(bw, "40"))
 		if (atof(r) == 27.0f || atof(r) == 1.5f || atof(r) == 2.0f || atof(r) == 3.0f || atof(r) == 4.5f || atof(r) == 9.0f || atof(r) == 13.5f) {
-			nvram_set(rate, "0");
+			nvram_seti(rate, 0);
 			r = "0";
 		}
 	if (nvram_match(bw, "10"))
 		if (atof(r) > 27.0f || atof(r) == 1.5f || atof(r) == 2.0f || atof(r) == 13.5f) {
-			nvram_set(rate, "0");
+			nvram_seti(rate, 0);
 			r = "0";
 		}
 	if (nvram_match(bw, "5"))
 		if (atof(r) > 13.5) {
-			nvram_set(rate, "0");
+			nvram_seti(rate, 0);
 			r = "0";
 		}
 	if (nvram_match(bw, "2"))
 		if (atof(r) > 6.75) {
-			nvram_set(rate, "0");
+			nvram_seti(rate, 0);
 			r = "0";
 		}
 	if (!strcmp(netmode, "b-only"))
@@ -2462,7 +2462,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 		sprintf(br1ipaddr, "ath%d_br1_ipaddr", c);
 		sprintf(br1netmask, "ath%d_br1_netmask", c);
 		if (nvram_get(br1enable) == NULL)
-			nvram_set(br1enable, "0");
+			nvram_seti(br1enable, 0);
 		if (nvram_get(br1ipaddr) == NULL)
 			nvram_set(br1ipaddr, "0.0.0.0");
 		if (nvram_get(br1netmask) == NULL)
@@ -2502,7 +2502,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 			sprintf(wdsdevname, "ath%d_wds%d_if", c, s);
 			sprintf(br1enable, "ath%d_br1_enable", c);
 			if (nvram_get(wdsvarname) == NULL)
-				nvram_set(wdsvarname, "0");
+				nvram_seti(wdsvarname, 0);
 			dev = nvram_safe_get(wdsdevname);
 			if (strlen(dev) == 0)
 				continue;

@@ -671,7 +671,7 @@ do_upgrade_post(char *url, webs_t stream, int len, char *boundary)	// jimmy,
 	if (nvram_match("sv_restore_defaults", "1")) {
 		eval("erase", "nvram");
 #ifdef HAVE_BUFFALO_SA
-		nvram_set("sv_restore_defaults", "1");
+		nvram_seti("sv_restore_defaults", 1);
 		if (region_sa)
 			nvram_set("region", "SA");
 #endif

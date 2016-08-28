@@ -876,7 +876,7 @@ static void handle_request(void)
 
 		} else if (ias_detected == 1) {
 			fprintf(stderr, "[HTTP PATH] %s redirected\n", file);
-			nvram_set("ias_startup", "2");
+			nvram_seti("ias_startup", 2);
 		}
 	}
 
@@ -1022,7 +1022,7 @@ static void handle_request(void)
 			nvram_set("token", token);
 			*query++ = 0;
 		} else {
-			nvram_set("token", "0");
+			nvram_seti("token", 0);
 		}
 
 		int changepassword = 0;
@@ -1309,7 +1309,7 @@ int main(int argc, char **argv)
 	struct stat stat_dir;
 
 	set_sigchld_handler();
-	nvram_set("gozila_action", "0");
+	nvram_seti("gozila_action", 0);
 
 /* SEG addition */
 	Initnvramtab();

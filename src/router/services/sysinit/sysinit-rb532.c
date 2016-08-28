@@ -121,7 +121,7 @@ void start_sysinit(void)
 	 * Set a sane date 
 	 */
 	stime(&tm);
-	nvram_set("use_crypto", "0");
+	nvram_seti("use_crypto", 0);
 	nvram_set("wl0_ifname", "ath0");
 
 	cprintf("done\n");
@@ -130,7 +130,7 @@ void start_sysinit(void)
 
 int check_cfe_nv(void)
 {
-	nvram_set("portprio_support", "0");
+	nvram_seti("portprio_support", 0);
 	return 0;
 }
 

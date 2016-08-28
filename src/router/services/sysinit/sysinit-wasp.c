@@ -107,7 +107,7 @@ static void setdlinkcountry(void)
 	}
 	if (set) {
 		if (!nvram_get("nocountrysel"))
-			nvram_set("nocountrysel", "1");
+			nvram_seti("nocountrysel", 1);
 		nvram_set("ath0_regdomain",set);
 		nvram_set("ath1_regdomain",set);
 	}
@@ -440,7 +440,7 @@ void start_sysinit(void)
 
 int check_cfe_nv(void)
 {
-	nvram_set("portprio_support", "0");
+	nvram_seti("portprio_support", 0);
 	return 0;
 }
 

@@ -292,7 +292,7 @@ void save_radius_user(webs_t wp)
 
 	char *value = websGetVar(wp, "action", "");
 	addAction("freeradius");
-	nvram_set("nowebaction", "1");
+	nvram_seti("nowebaction", 1);
 	applytake(value);
 }
 

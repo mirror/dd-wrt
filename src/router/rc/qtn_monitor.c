@@ -190,7 +190,7 @@ QTN_RESET:
 
 	eval("ifconfig", "br0:2", "down");
 	eval("killall", "tftpd");
-	nvram_set("qtn_ready", "1");
+	nvram_seti("qtn_ready", 1);
 
 	dbG("[QTN] update router_command.sh from brcm to qtn\n");
 	qcsapi_wifi_run_script("set_test_mode", "update_router_command");

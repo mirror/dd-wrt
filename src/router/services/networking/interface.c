@@ -239,7 +239,7 @@ void start_setup_vlans(void)
 	// we don't want to disable everything!
 
 	if (nvram_match("wan_vdsl", "1") && !nvram_match("fromvdsl", "1")) {
-		nvram_set("vdsl_state", "0");
+		nvram_seti("vdsl_state", 0);
 		enable_dtag_vlan(1);
 		return;
 	}

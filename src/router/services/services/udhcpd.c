@@ -207,11 +207,11 @@ void start_udhcpd(void)
 
 	// Wolf add - keep lease within reasonable timeframe
 	if (atoi(nvram_safe_get("dhcp_lease")) < 10) {
-		nvram_set("dhcp_lease", "10");
+		nvram_seti("dhcp_lease", 10);
 		nvram_commit();
 	}
 	if (atoi(nvram_safe_get("dhcp_lease")) > 5760) {
-		nvram_set("dhcp_lease", "5760");
+		nvram_seti("dhcp_lease", 5760);
 		nvram_commit();
 	}
 

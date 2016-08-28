@@ -51,7 +51,7 @@ void wps_ap_register(webs_t wp)
 #ifdef HAVE_WZRHPAG300NH
 		eval("hostapd_cli", "-i", "ath1", "wps_ap_pin", "set", pin, "300");
 #endif
-		nvram_set("wps_status", "2");
+		nvram_seti("wps_status", 2);
 	}
 }
 
@@ -63,23 +63,23 @@ void wps_register(webs_t wp)
 #ifdef HAVE_WZRHPAG300NH
 		eval("hostapd_cli", "-i", "ath1", "wps_pin", "any", pin, "300");
 #endif
-		nvram_set("wps_status", "3");
+		nvram_seti("wps_status", 3);
 	}
 }
 
 void wps_forcerelease(webs_t wp)
 {
-	nvram_set("wps_forcerelease", "1");
+	nvram_seti("wps_forcerelease", 1);
 	addAction("wireless");
-	nvram_set("nowebaction", "1");
+	nvram_seti("nowebaction", 1);
 	service_restart();
 }
 
 void wps_configure(webs_t wp)
 {
-	nvram_set("wps_status", "1");
+	nvram_seti("wps_status", 1);
 	addAction("wireless");
-	nvram_set("nowebaction", "1");
+	nvram_seti("nowebaction", 1);
 	service_restart();
 }
 #endif

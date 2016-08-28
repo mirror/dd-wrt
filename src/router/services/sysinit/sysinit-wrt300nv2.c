@@ -71,7 +71,7 @@ void start_sysinit(void)
 	klogctl(8, NULL, atoi(nvram_safe_get("console_loglevel")));
 	cprintf("sysinit() get router\n");
 
-	nvram_set("intel_eth", "0");
+	nvram_seti("intel_eth", 0);
 
 #if 1
 	insmod("ixp400th");
@@ -126,14 +126,14 @@ void start_sysinit(void)
 	stime(&tm);
 	nvram_set("wl0_ifname", "ath0");
 
-	nvram_set("use_crypto", "0");
+	nvram_seti("use_crypto", 0);
 	cprintf("done\n");
 	return;
 }
 
 int check_cfe_nv(void)
 {
-	nvram_set("portprio_support", "0");
+	nvram_seti("portprio_support", 0);
 	return 0;
 }
 

@@ -210,7 +210,7 @@ void ej_wireless_filter_table(webs_t wp, int argc, char_t ** argv)
 
 	}
 	// cprintf("%s():set wl_active_add_mac = 0\n",__FUNCTION__);
-	nvram_set("wl_active_add_mac", "0");
+	nvram_seti("wl_active_add_mac", 0);
 	return;
 }
 

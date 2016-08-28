@@ -396,7 +396,7 @@ static void parse_upnp_forward()
 			sprintf(name, "forward_port%d", i);
 			nvram_unset(name);
 		}
-		nvram_set("forward_cur", "0");
+		nvram_seti("forward_cur", 0);
 		return;
 	}
 
