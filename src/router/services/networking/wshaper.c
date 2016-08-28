@@ -313,9 +313,9 @@ static void aqos_tables(void)
 	char *qos_mac = nvram_safe_get("svqos_macs");
 	char *qos_svcs = NULL;
 
-	char level[32], level2[32], level3[32], data[32], type[32], prio[32], proto1[32], proto2[32], proto3[32], proto4[32], proto[32];
+	char data[32], type[32], proto1[32], proto2[32], proto3[32], proto4[32], proto[32];
 	char srvname[32], srvtype[32], srvdata[32], srvlevel[32];
-
+	int level, level2, level3, prio;
 	char nullmask[24];
 	strcpy(nullmask, qos_nfmark(0));
 	insmod("xt_physdev");
@@ -324,12 +324,12 @@ static void aqos_tables(void)
 	int ret = 0;
 
 	do {
-		ret = sscanf(qos_mac, "%31s %31s %31s %31s %31s %31s |", data, level, level2, type, level3, prio);
+		ret = sscanf(qos_mac, "%31s %d %d %31s %d %d |", data, &level, &level2, type, &level3, &prio);
 		if (ret < 6)
 			break;
 
 		fprintf(outmacs, "%s\n", data);
-		add_client_classes(base, atoi(level), atoi(level2), atoi(level3), atoi(prio));
+		add_client_classes(base, level, level2, level3, prio);
 
 		qos_svcs = nvram_safe_get("svqos_svcs");
 		do {
@@ -348,12 +348,12 @@ static void aqos_tables(void)
 	while ((qos_mac = strpbrk(++qos_mac, "|")) && qos_mac++);
 
 	do {
-		ret = sscanf(qos_ipaddr, "%31s %31s %31s %31s %31s |", data, level, level2, level3, prio);
+		ret = sscanf(qos_ipaddr, "%31s %d %d %d %d |", data, &level, &level2, &level3, &prio);
 		if (ret < 5)
 			break;
 
 		fprintf(outips, "%s\n", data);
-		add_client_classes(base, atoi(level), atoi(level2), atoi(level3), atoi(prio));
+		add_client_classes(base, level, level2, level3, prio);
 
 		qos_svcs = nvram_safe_get("svqos_svcs");
 		do {
@@ -376,7 +376,7 @@ static void aqos_tables(void)
 	char *qos_devs = nvram_safe_get("svqos_devs");
 	do {
 		memset(proto, 0, sizeof(proto));
-		ret = sscanf(qos_devs, "%31s %31s %31s %31s %31s %31s |", data, level, level2, level3, prio, proto);
+		ret = sscanf(qos_devs, "%31s %d %d %d %d %31s |", data, &level, &level2, &level3, &prio, proto);
 		if (ret < 5)
 			break;
 		if (!strcmp(proto, "|") || !strcmp(proto, "none")) {
@@ -452,7 +452,7 @@ static void aqos_tables(void)
 	int oldbase = base;
 	do {
 		memset(proto, 0, sizeof(proto));
-		ret = sscanf(qos_devs, "%31s %31s %31s %31s %31s %31s |", data, level, level2, level3, prio, proto);
+		ret = sscanf(qos_devs, "%31s %d %d %d %d %31s |", data, &level, &level2, &level3, &prio, proto);
 		if (ret < 5)
 			break;
 		if (!strcmp(proto, "|") || !strcmp(proto, "none")) {
@@ -465,7 +465,7 @@ static void aqos_tables(void)
 		memset(proto4, 0, sizeof(proto4));
 
 		qos_svcs = nvram_safe_get("svqos_svcs");
-		add_client_classes(base, atoi(level), atoi(level2), atoi(level3), atoi(prio));
+		add_client_classes(base, level, level2, level3, prio);
 
 		char chainname_in[32];
 		sprintf(chainname_in, "FILTER_%s_IN", data);
@@ -527,7 +527,7 @@ static void aqos_tables(void)
 	base = oldbase;
 	do {
 		memset(proto, 0, sizeof(proto));
-		ret = sscanf(qos_devs, "%31s %31s %31s %31s %31s %31s |", data, level, level2, level3, prio, proto);
+		ret = sscanf(qos_devs, "%31s %d %d %d %d %31s |", data, &level, &level2, &level3, &prio, proto);
 		if (ret < 5)
 			break;
 
@@ -560,8 +560,8 @@ static int svqos_iptables(void)
 {
 	char *qos_pkts = nvram_safe_get("svqos_pkts");
 	char *qos_svcs = nvram_safe_get("svqos_svcs");
-	char name[32], type[32], data[32], level[32], pkt_filter[4];
-
+	char name[32], type[32], data[32], pkt_filter[4];
+	int level;
 	char *wshaper_dev = nvram_get("wshaper_dev");
 	char *wan_dev = get_wanface();
 
@@ -770,13 +770,13 @@ static int svqos_iptables(void)
 		 *  vpn format is "interface level | interface level |" ..etc 
 		 */
 		do {
-			if (sscanf(qos_vpn, "%32s %32s |", data, level) < 2)
+			if (sscanf(qos_vpn, "%32s %d |", data, &level) < 2)
 				break;
 
 			/* incomming data */
-			eval("iptables", "-t", "mangle", "-I", "VPN_IN", "1", "-i", data, "-j", "MARK", "--set-mark", qos_nfmark(atol(level)));
+			eval("iptables", "-t", "mangle", "-I", "VPN_IN", "1", "-i", data, "-j", "MARK", "--set-mark", qos_nfmark(level));
 			char s_level[32];
-			sprintf(s_level, "%d", atoi(level) / 10);
+			sprintf(s_level, "%d", level / 10);
 			/* outgoing data */
 			if (is_in_bridge(data)) {
 #ifdef HAVE_ATH9K
@@ -810,10 +810,10 @@ static int svqos_iptables(void)
 	 *      mac format is "mac level | mac level |" ..etc 
 	 */
 	do {
-		if (sscanf(qos_mac, "%31s %31s |", data, level) < 2)
+		if (sscanf(qos_mac, "%31s %d |", data, &level) < 2)
 			break;
 
-		add_client_classes(base, atoi(level));
+		add_client_classes(base, level);
 
 		qos_svcs = nvram_safe_get("svqos_svcs");
 		do {
@@ -835,10 +835,10 @@ static int svqos_iptables(void)
 	 */
 	do {
 
-		if (sscanf(qos_ipaddr, "%31s %31s |", data, level) < 2)
+		if (sscanf(qos_ipaddr, "%31s %d |", data, &level) < 2)
 			break;
 
-		add_client_classes(base, atoi(level));
+		add_client_classes(base, level);
 
 		qos_svcs = nvram_safe_get("svqos_svcs");
 		do {
@@ -860,10 +860,10 @@ static int svqos_iptables(void)
 
 	do {
 
-		if (sscanf(qos_devs, "%31s %31s |", data, level) < 2)
+		if (sscanf(qos_devs, "%31s %d |", data, &level) < 2)
 			break;
 
-		add_client_classes(base, atoi(level));
+		add_client_classes(base, level);
 
 		svcs = nvram_safe_get("svqos_svcs");
 		do {
@@ -893,30 +893,30 @@ static int svqos_iptables(void)
 	 */
 	do {
 
-		if (sscanf(qos_svcs, "%31s %31s %31s %31s ", name, type, data, level) < 4)
+		if (sscanf(qos_svcs, "%31s %31s %31s %d ", name, type, data, &level) < 4)
 			break;
 
 		if (strstr(type, "udp") || strstr(type, "both")) {
-			eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-p", "udp", "-m", "udp", "--dport", data, "-j", "MARK", "--set-mark", qos_nfmark(atol(level)));
-			eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-p", "udp", "-m", "udp", "--sport", data, "-j", "MARK", "--set-mark", qos_nfmark(atol(level)));
+			eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-p", "udp", "-m", "udp", "--dport", data, "-j", "MARK", "--set-mark", qos_nfmark(level));
+			eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-p", "udp", "-m", "udp", "--sport", data, "-j", "MARK", "--set-mark", qos_nfmark(level));
 		}
 
 		if (strstr(type, "tcp") || strstr(type, "both")) {
-			eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-p", "tcp", "-m", "tcp", "--dport", data, "-j", "MARK", "--set-mark", qos_nfmark(atol(level)));
-			eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-p", "tcp", "-m", "tcp", "--sport", data, "-j", "MARK", "--set-mark", qos_nfmark(atol(level)));
+			eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-p", "tcp", "-m", "tcp", "--dport", data, "-j", "MARK", "--set-mark", qos_nfmark(level));
+			eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-p", "tcp", "-m", "tcp", "--sport", data, "-j", "MARK", "--set-mark", qos_nfmark(level));
 		}
 
 		if (strstr(type, "l7")) {
 			insmod("ipt_layer7");
 			insmod("xt_layer7");
-			eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "layer7", "--l7proto", name, "-j", "MARK", "--set-mark", qos_nfmark(atol(level)));
+			eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "layer7", "--l7proto", name, "-j", "MARK", "--set-mark", qos_nfmark(level));
 		}
 #ifdef HAVE_OPENDPI
 		if (strstr(type, "dpi")) {
 			char dpi[32];
 			sprintf(dpi, "--%s", name);
 			eval("insmod", "xt_opendpi", "bt_hash_size=2", "bt_hash_timeout=3600");
-			eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "ndpi", dpi, "-j", "MARK", "--set-mark", qos_nfmark(atol(level)));
+			eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "ndpi", dpi, "-j", "MARK", "--set-mark", qos_nfmark(level));
 		}
 #endif
 
@@ -955,16 +955,16 @@ static int svqos_iptables(void)
 				insmod("xt_ipp2p");
 				char s_proto[32];
 				sprintf(s_proto, "--%s", proto);
-				eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-p", "tcp", "-m", "ipp2p", s_proto, "-j", "MARK", "--set-mark", qos_nfmark(atol(level)));
+				eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-p", "tcp", "-m", "ipp2p", s_proto, "-j", "MARK", "--set-mark", qos_nfmark(level));
 
 				if (!strcmp(proto, "bit")) {
 					// bittorrent detection enhanced 
 #ifdef HAVE_MICRO
-					eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "layer7", "--l7proto", "bt", "-j", "MARK", "--set-mark", qos_nfmark(atol(level)));
+					eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "layer7", "--l7proto", "bt", "-j", "MARK", "--set-mark", qos_nfmark(level));
 #else
-					eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "length", "--length", "0:550", "-m", "layer7", "--l7proto", "bt", "-j", "MARK", "--set-mark", qos_nfmark(atol(level)));
+					eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "length", "--length", "0:550", "-m", "layer7", "--l7proto", "bt", "-j", "MARK", "--set-mark", qos_nfmark(level));
 #endif
-					eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "layer7", "--l7proto", "bt2", "-j", "MARK", "--set-mark", qos_nfmark(atol(level)));
+					eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "layer7", "--l7proto", "bt2", "-j", "MARK", "--set-mark", qos_nfmark(level));
 				}
 			}
 		}
