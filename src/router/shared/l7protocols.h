@@ -546,6 +546,7 @@ l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{"whatOAsapp", NDPI_ONLY},
 	{"whatsapp", NDPI_ONLY},
+	{"whatsapp_voice", NDPI_ONLY},
 #endif
 	{"whois", L7_ONLY},
 #ifdef HAVE_OPENDPI
