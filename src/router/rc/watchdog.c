@@ -136,16 +136,16 @@ static void watchdog(void)
 			if (tempfp) {
 				fscanf(tempfp, "%d", &cpu);
 				fclose(tempfp);
-				if (cpu > ((atoi(nvram_safe_get("hwmon_temp_max")) + 10) * 1000)) {
+				if (cpu > ((nvram_geti("hwmon_temp_max") + 10) * 1000)) {
 					system("/bin/echo 255 > /sys/class/hwmon/hwmon0/pwm1");
 
-				} else if (cpu > ((atoi(nvram_safe_get("hwmon_temp_max")) + 5) * 1000)) {
+				} else if (cpu > ((nvram_geti("hwmon_temp_max") + 5) * 1000)) {
 					system("/bin/echo 150 > /sys/class/hwmon/hwmon0/pwm1");
 
-				} else if (cpu > ((atoi(nvram_safe_get("hwmon_temp_max"))) * 1000)) {
+				} else if (cpu > ((nvram_geti("hwmon_temp_max")) * 1000)) {
 					system("/bin/echo 100 > /sys/class/hwmon/hwmon0/pwm1");
 
-				} else if (cpu < ((atoi(nvram_safe_get("hwmon_temp_hyst"))) * 1000)) {
+				} else if (cpu < ((nvram_geti("hwmon_temp_hyst")) * 1000)) {
 					system("/bin/echo 0 > /sys/class/hwmon/hwmon0/pwm1");
 
 				}

@@ -54,7 +54,7 @@ int get_tx_power_qtn(void)
 	int txpower = 80;
 
 	p_to_table = &txpower_list_qtn_rtac87u[0];
-	txpower = atoi(nvram_safe_get("wl1_txpwr"));
+	txpower = nvram_geti("wl1_txpwr");
 
 	for (p_to_table; p_to_table->min != 0; ++p_to_table) {
 		if (txpower >= p_to_table->min && txpower <= p_to_table->max) {
@@ -80,8 +80,8 @@ int gen_stateless_conf(void)
 	char key[65];
 	char ssid[65];
 	char region[5];
-	int channel = atoi(nvram_safe_get("wl1_channel"));
-	int bw = atoi(nvram_safe_get("wl1_nbw"));
+	int channel = nvram_geti("wl1_channel");
+	int bw = nvram_geti("wl1_nbw");
 	uint32_t index = 0;
 
 	sprintf(ssid, "%s", nvram_safe_get("wl1_ssid"));

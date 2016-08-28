@@ -165,8 +165,8 @@ void start_pppoe(int pppoe_num)
 	nvram_set(pppoeifname, "");
 
 	cprintf("start session %d\n", pppoe_num);
-	sprintf(idletime, "%d", atoi(nvram_safe_get("ppp_idletime")) * 60);
-	snprintf(retry_num, sizeof(retry_num), "%d", (atoi(nvram_safe_get("ppp_redialperiod")) / 5) - 1);
+	sprintf(idletime, "%d", nvram_geti("ppp_idletime") * 60);
+	snprintf(retry_num, sizeof(retry_num), "%d", (nvram_geti("ppp_redialperiod") / 5) - 1);
 
 	snprintf(username, sizeof(username), "%s", nvram_safe_get(ppp_username[pppoe_num]));
 	snprintf(passwd, sizeof(passwd), "%s", nvram_safe_get(ppp_passwd[pppoe_num]));

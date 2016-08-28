@@ -1017,7 +1017,7 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 #ifdef HAVE_SUPERCHANNEL
 	sprintf(sc, "%s_regulatory", interface);
 	if (issuperchannel()
-	    && atoi(nvram_default_get(sc, "1")) == 0)
+	    && nvram_default_geti(sc, 1) == 0)
 		skip = 0;
 #endif
 	rd = mac80211_get_regdomain(country);

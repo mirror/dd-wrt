@@ -91,9 +91,9 @@ void start_radvd(void)
 
 	if (nvram_invmatch("ipv6_mtu", "")) {
 		do_mtu = 1;
-		mtu = atoi(nvram_safe_get("ipv6_mtu"));
+		mtu = nvram_geti("ipv6_mtu");
 	} else {
-		mtu = atoi(nvram_safe_get("wan_mtu")) - 20;
+		mtu = nvram_geti("wan_mtu") - 20;
 	}
 
 	if ((fp = fopen("/proc/sys/net/ipv6/conf/all/forwarding", "r+"))) {
@@ -109,9 +109,9 @@ void start_radvd(void)
 
 		if (nvram_match("ipv6_typ", "ipv6native")) {
 			if (do_mtu) {
-				mtu = atoi(nvram_safe_get("ipv6_mtu"));
+				mtu = nvram_geti("ipv6_mtu");
 			} else {
-				mtu = atoi(nvram_safe_get("wan_mtu"));
+				mtu = nvram_geti("wan_mtu");
 			}
 
 		}

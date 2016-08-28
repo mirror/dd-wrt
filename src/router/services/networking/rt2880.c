@@ -985,7 +985,7 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 	else
 		fprintf(fp, "HT_OpMode=0\n");
 
-	mcs = atoi(nvram_default_get(nmcs, "-1"));
+	mcs = nvram_default_geti(nmcs, -1);
 	if (mcs == -1)
 		fprintf(fp, "HT_MCS=33\n");
 	else

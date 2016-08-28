@@ -575,7 +575,7 @@ void start_nas_single(char *type, char *prefix)
 				}
 
 			} else if (!strcmp(auth_mode, "32")) {
-				int idx = atoi(nvram_safe_get(index));
+				int idx = nvram_geti(index);
 				char wepkey[32];
 
 				sprintf(wepkey, "%s_key%d", prefix, idx);

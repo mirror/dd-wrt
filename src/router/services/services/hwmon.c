@@ -84,8 +84,8 @@ void stop_hwmon(void)
 
 void start_hwmon(void)
 {
-	int temp_max = atoi(nvram_safe_get("hwmon_temp_max")) * TEMP_MUL;
-	int temp_hyst = atoi(nvram_safe_get("hwmon_temp_hyst")) * TEMP_MUL;
+	int temp_max = nvram_geti("hwmon_temp_max") * TEMP_MUL;
+	int temp_hyst = nvram_geti("hwmon_temp_hyst") * TEMP_MUL;
 
 	sysprintf("/bin/echo %d > %s/%s_max", temp_max, TEMP_PATH, TEMP_PREFIX);
 	sysprintf("/bin/echo %d > %s/%s_max_hyst", temp_hyst, TEMP_PATH, TEMP_PREFIX);
