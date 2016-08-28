@@ -29,7 +29,7 @@ void ej_show_vlantagging(webs_t wp, int argc, char_t ** argv)
 	memset(buffer, 0, 256);
 	getIfList(buffer, NULL);
 	int totalcount = 0;
-	int realcount = atoi(nvram_default_get("vlan_tagcount", "0"));
+	int realcount = nvram_default_geti("vlan_tagcount", 0);
 
 	wordlist = nvram_safe_get("vlan_tags");
 	foreach(word, wordlist, next) {
