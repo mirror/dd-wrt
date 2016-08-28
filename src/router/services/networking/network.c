@@ -2311,8 +2311,8 @@ void start_lan(void)
 				do_portsetup(lan_ifname, name);
 				break;
 			case -2:	//ignore 
-				br_del_interface(lan_ifname, name);				
-			break;
+				br_del_interface(lan_ifname, name);
+				break;
 			case 0:
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 				if (nvram_match("mac_clone_enable", "1") && nvram_invmatch("def_whwaddr", "00:00:00:00:00:00")
@@ -5261,6 +5261,8 @@ void start_hotplug_net(void)
 
 int init_mtu(char *wan_proto)
 {
+	int mtu = nvram_geti("wan_mtu");
+
 	if (strcmp(wan_proto, "pppoe") == 0 || strcmp(wan_proto, "pppoe_dual") == 0) {	// 576 < mtu < 1454(linksys japan) |
 		// 1492(other)
 		if (nvram_match("mtu_enable", "0")) {	// Auto
@@ -5273,41 +5275,32 @@ int init_mtu(char *wan_proto)
 
 		} else {	// Manual
 #ifdef BUFFALO_JP
-			if (atoi(nvram_safe_get("wan_mtu")) > 1454) {
+			if (mtu > 1454) {
 				nvram_seti("wan_mtu", 1454);
 			}
 #else
-			if (atoi(nvram_safe_get("wan_mtu")) > 1492) {
+			if (mtu > 1492) {
 				nvram_seti("wan_mtu", 1492);
 			}
 #endif
-			if (atoi(nvram_safe_get("wan_mtu")) < 576) {
+			if (mtu < 576) {
 				nvram_seti("wan_mtu", 576);
 			}
 		}
 	} else if (strcmp(wan_proto, "pptp") == 0 || strcmp(wan_proto, "l2tp") == 0) {	// 1200 < mtu < 1400 (1460)
-//      if( nvram_match( "mtu_enable", "0" ) )
-//      {                       // Auto
-//          nvram_seti( "mtu_enable", 1);;
-//          nvram_seti( "wan_mtu", 1460);;     // set max value (linksys
-//                                              // request to set to 1460)                                              // 2003/06/23
-//      }
-//      else
-		{		// Manual
-			if (atoi(nvram_safe_get("wan_mtu")) > 1460) {
-				nvram_seti("wan_mtu", 1460);	// set max value (linksys
-				// request to set to 1460)
-				// 2003/06/23
-			}
-			if (atoi(nvram_safe_get("wan_mtu")) < 1200) {
-				nvram_seti("wan_mtu", 1200);
-			}
+		if (mtu > 1460) {
+			nvram_seti("wan_mtu", 1460);	// set max value (linksys
+			// request to set to 1460)
+			// 2003/06/23
+		}
+		if (mtu < 1200) {
+			nvram_seti("wan_mtu", 1200);
 		}
 	} else {		// 576 < mtu < 1500
 		if (nvram_match("mtu_enable", "0")) {	// Auto
 			nvram_seti("wan_mtu", 1500);	// set max value
 		} else {	// Manual
-			if (atoi(nvram_safe_get("wan_mtu")) < 576) {
+			if (mtu < 576) {
 				nvram_seti("wan_mtu", 576);
 			}
 		}
