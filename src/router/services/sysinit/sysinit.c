@@ -237,8 +237,8 @@ static void buffalo_defaults(int force)
 					nvram_set("wl_wpa_psk", wpapsk);
 					nvram_set("wl0_wpa_psk", wpapsk);
 				} else {
-					nvram_set("wl_wpa_psk", "12345678");
-					nvram_set("wl0_wpa_psk", "12345678");
+					nvram_seti("wl_wpa_psk", 12345678);
+					nvram_seti("wl0_wpa_psk", 12345678);
 				}
 			}
 			{
@@ -286,7 +286,7 @@ static void buffalo_defaults(int force)
 				if (wpapsk)
 					nvram_set("wl1_wpa_psk", wpapsk);
 				else
-					nvram_set("wl1_wpa_psk", "12345678");
+					nvram_seti("wl1_wpa_psk", 12345678);
 			}
 		}
 		struct ifreq ifr;
@@ -364,23 +364,23 @@ static void buffalo_defaults(int force)
 		    || !strcmp(region, "KR")
 		    || !strcmp(region, "TW")
 		    || !strcmp(region, "RU"))
-			nvram_set("wps_status", "0");
+			nvram_seti("wps_status", 0);
 		else
-			nvram_set("wps_status", "1");
+			nvram_seti("wps_status", 1);
 		nvram_set("wl_country_code", region);
 #ifdef HAVE_BCMMODERN
 
 		unsigned long boardnum = strtoul(nvram_safe_get("boardnum"), NULL, 0);
 
 		nvram_set("wl0_country_code", "Q1");
-		nvram_set("wl0_country_rev", "27");
+		nvram_seti("wl0_country_rev", 27);
 		nvram_set("wl1_country_code", "Q1");
-		nvram_set("wl1_country_rev", "27");
+		nvram_seti("wl1_country_rev", 27);
 		if (!strcmp(region, "JP")) {
 			nvram_set("wl0_country_code", "JP");
-			nvram_set("wl0_country_rev", "45");
+			nvram_seti("wl0_country_rev", 45);
 			nvram_set("wl1_country_code", "JP");
-			nvram_set("wl1_country_rev", "45");
+			nvram_seti("wl1_country_rev", 45);
 		}
 
 		if (!strcmp(region, "US")) {
@@ -389,22 +389,22 @@ static void buffalo_defaults(int force)
 			    && nvram_match("melco_id", "RD_BB13049")) {
 				// WXR-1900DHP
 				nvram_set("wl1_country_code", "Q2");
-				nvram_set("wl1_country_rev", "41");
+				nvram_seti("wl1_country_rev", 41);
 				nvram_set("wl0_country_code", "Q1");
-				nvram_set("wl0_country_rev", "61");
+				nvram_seti("wl0_country_rev", 61);
 			} else {
 				nvram_set("wl0_country_code", "Q2");
-				nvram_set("wl0_country_rev", "41");
+				nvram_seti("wl0_country_rev", 41);
 				nvram_set("wl1_country_code", "Q1");
-				nvram_set("wl1_country_rev", "61");
+				nvram_seti("wl1_country_rev", 61);
 			}
 		}
 
 		if (!strcmp(region, "EU")) {
 			nvram_set("wl0_country_code", "EU");
-			nvram_set("wl0_country_rev", "61");
+			nvram_seti("wl0_country_rev", 61);
 			nvram_set("wl1_country_code", "EU");
-			nvram_set("wl1_country_rev", "61");
+			nvram_seti("wl1_country_rev", 61);
 		}
 
 		if (!strcmp(region, "AP")) {
@@ -413,14 +413,14 @@ static void buffalo_defaults(int force)
 			    && nvram_match("melco_id", "RD_BB13049")) {
 				// WXR-1900DHP
 				nvram_set("wl1_country_code", "CN");
-				nvram_set("wl1_country_rev", "34");
+				nvram_seti("wl1_country_rev", 34);
 				nvram_set("wl0_country_code", "Q2");
-				nvram_set("wl0_country_rev", "41");
+				nvram_seti("wl0_country_rev", 41);
 			} else {
 				nvram_set("wl0_country_code", "CN");
-				nvram_set("wl0_country_rev", "34");
+				nvram_seti("wl0_country_rev", 34);
 				nvram_set("wl1_country_code", "Q2");
-				nvram_set("wl1_country_rev", "41");
+				nvram_seti("wl1_country_rev", 41);
 			}
 		}
 
@@ -430,14 +430,14 @@ static void buffalo_defaults(int force)
 			    && nvram_match("melco_id", "RD_BB13049")) {
 				// WXR-1900DHP
 				nvram_set("wl1_country_code", "KR");
-				nvram_set("wl1_country_rev", "55");
+				nvram_seti("wl1_country_rev", 55);
 				nvram_set("wl0_country_code", "Q2");
-				nvram_set("wl0_country_rev", "41");
+				nvram_seti("wl0_country_rev", 41);
 			} else {
 				nvram_set("wl0_country_code", "KR");
-				nvram_set("wl0_country_rev", "55");
+				nvram_seti("wl0_country_rev", 55);
 				nvram_set("wl1_country_code", "Q2");
-				nvram_set("wl1_country_rev", "41");
+				nvram_seti("wl1_country_rev", 41);
 			}
 		}
 
@@ -447,14 +447,14 @@ static void buffalo_defaults(int force)
 			    && nvram_match("melco_id", "RD_BB13049")) {
 				// WXR-1900DHP
 				nvram_set("wl1_country_code", "CH");
-				nvram_set("wl1_country_rev", "34");
+				nvram_seti("wl1_country_rev", 34);
 				nvram_set("wl0_country_code", "Q2");
-				nvram_set("wl0_country_rev", "41");
+				nvram_seti("wl0_country_rev", 41);
 			} else {
 				nvram_set("wl0_country_code", "CH");
-				nvram_set("wl0_country_rev", "34");
+				nvram_seti("wl0_country_rev", 34);
 				nvram_set("wl1_country_code", "Q2");
-				nvram_set("wl1_country_rev", "41");
+				nvram_seti("wl1_country_rev", 41);
 			}
 		}
 
@@ -464,14 +464,14 @@ static void buffalo_defaults(int force)
 			    && nvram_match("melco_id", "RD_BB13049")) {
 				// WXR-1900DHP
 				nvram_set("wl1_country_code", "TW");
-				nvram_set("wl1_country_rev", "34");
+				nvram_seti("wl1_country_rev", 34);
 				nvram_set("wl0_country_code", "Q2");
-				nvram_set("wl0_country_rev", "41");
+				nvram_seti("wl0_country_rev", 41);
 			} else {
 				nvram_set("wl0_country_code", "TW");
-				nvram_set("wl0_country_rev", "34");
+				nvram_seti("wl0_country_rev", 34);
 				nvram_set("wl1_country_code", "Q2");
-				nvram_set("wl1_country_rev", "41");
+				nvram_seti("wl1_country_rev", 41);
 			}
 		}
 
@@ -481,21 +481,21 @@ static void buffalo_defaults(int force)
 			    && nvram_match("melco_id", "RD_BB13049")) {
 				// WXR-1900DHP
 				nvram_set("wl1_country_code", "RU");
-				nvram_set("wl1_country_rev", "37");
+				nvram_seti("wl1_country_rev", 37);
 				nvram_set("wl0_country_code", "Q2");
-				nvram_set("wl0_country_rev", "41");
+				nvram_seti("wl0_country_rev", 41);
 			} else {
 				nvram_set("wl0_country_code", "RU");
-				nvram_set("wl0_country_rev", "37");
+				nvram_seti("wl0_country_rev", 37);
 				nvram_set("wl1_country_code", "Q2");
-				nvram_set("wl1_country_rev", "41");
+				nvram_seti("wl1_country_rev", 41);
 			}
 		}
 #else
 		nvram_set("wl0_country_code", region);
 		nvram_set("wl1_country_code", region);
 #endif
-		nvram_set("ias_startup", "3");
+		nvram_seti("ias_startup", 3);
 		nvram_unset("http_userpln");
 		nvram_unset("http_pwdpln");
 #ifdef HAVE_SPOTPASS
@@ -585,7 +585,7 @@ static void buffalo_defaults(int force)
 
 		}
 
-		nvram_set("ias_startup", "3");
+		nvram_seti("ias_startup", 3);
 		nvram_unset("http_userpln");
 		nvram_unset("http_pwdpln");
 #ifdef HAVE_SPOTPASS
@@ -815,10 +815,10 @@ static void buffalo_defaults(int force)
 		    || !strcmp(region, "KR")
 		    || !strcmp(region, "TW")
 		    || !strcmp(region, "RU"))
-			nvram_set("wps_status", "0");
+			nvram_seti("wps_status", 0);
 		else
-			nvram_set("wps_status", "1");
-		nvram_set("ias_startup", "3");
+			nvram_seti("wps_status", 1);
+		nvram_seti("ias_startup", 3);
 		nvram_unset("http_userpln");
 		nvram_unset("http_pwdpln");
 #ifdef HAVE_SPOTPASS
@@ -956,7 +956,7 @@ static void ses_cleanup(void)
 	/*
 	 * well known event to cleanly initialize state machine 
 	 */
-	nvram_set("ses_event", "2");
+	nvram_seti("ses_event", 2);
 
 	/*
 	 * Delete lethal dynamically generated variables 
@@ -2116,8 +2116,8 @@ void start_restore_defaults(void)
 			fgets(line, sizeof(line), fmem);
 			if (sscanf(line, "%*s %lu", &msize) == 1) {
 				if (msize > (8 * 1024 * 1024)) {
-					nvram_set("ip_conntrack_max", "4096");
-					nvram_set("ip_conntrack_tcp_timeouts", "3600");
+					nvram_seti("ip_conntrack_max", 4096);
+					nvram_seti("ip_conntrack_tcp_timeouts", 3600);
 				}
 			}
 			fclose(fmem);
@@ -2759,19 +2759,19 @@ void start_restore_defaults(void)
 
 	if (restore_defaults && nvram_get("vlan0ports") == NULL && nvram_get("vlan1ports")
 	    && nvram_get("vlan2ports")) {
-		nvram_set("port0vlans", "2");
-		nvram_set("port1vlans", "1");
-		nvram_set("port2vlans", "1");
-		nvram_set("port3vlans", "1");
-		nvram_set("port4vlans", "1");
+		nvram_seti("port0vlans", 2);
+		nvram_seti("port1vlans", 1);
+		nvram_seti("port2vlans", 1);
+		nvram_seti("port3vlans", 1);
+		nvram_seti("port4vlans", 1);
 		nvram_set("port5vlans", "1 2 16");
 	}
 
 	if (brand == ROUTER_WRT54G || brand == ROUTER_WRT54G1X || brand == ROUTER_LINKSYS_WRT55AG) {
 		if (!nvram_get("aa0"))
-			nvram_set("aa0", "3");
+			nvram_seti("aa0", 3);
 		if (!nvram_get("ag0"))
-			nvram_set("ag0", "255");
+			nvram_seti("ag0", 255);
 		if (!nvram_get("gpio2"))
 			nvram_set("gpio2", "adm_eecs");
 		if (!nvram_get("gpio3"))
@@ -2785,26 +2785,26 @@ void start_restore_defaults(void)
 		if (!nvram_get("boardflags") || nvram_match("boardflags", ""))
 			nvram_set("boardflags", "0x0388");
 		if (!nvram_get("boardflags2"))
-			nvram_set("boardflags2", "0");
+			nvram_seti("boardflags2", 0);
 	}
 
 	if (restore_defaults &&
 	    (brand == ROUTER_ASUS_RTN10 || brand == ROUTER_ASUS_RTN10U || brand == ROUTER_ASUS_RTN12 || brand == ROUTER_ASUS_RTN12B ||
 	     brand == ROUTER_ASUS_RTN53 || brand == ROUTER_ASUS_RTN10PLUSD1 || brand == ROUTER_ASUS_RTN16)) {
-		nvram_set("wl0_txpwr", "17");
+		nvram_seti("wl0_txpwr", 17);
 	}
 
 	if (restore_defaults && (brand == ROUTER_LINKSYS_E4200)) {
-		nvram_set("wl0_txpwr", "100");
-		nvram_set("wl1_txpwr", "100");
+		nvram_seti("wl0_txpwr", 100);
+		nvram_seti("wl1_txpwr", 100);
 	}
 #ifndef HAVE_BUFFALO
 	if (restore_defaults && brand == ROUTER_BUFFALO_WHRG54S && nvram_match("DD_BOARD", "Buffalo WHR-HP-G54")) {
-		nvram_set("wl0_txpwr", "28");
+		nvram_seti("wl0_txpwr", 28);
 	}
 #endif
 	if (restore_defaults && brand == ROUTER_BUFFALO_WLI_TX4_G54HP) {
-		nvram_set("wl0_txpwr", "28");
+		nvram_seti("wl0_txpwr", 28);
 	}
 
 	/*
@@ -2849,12 +2849,12 @@ void start_restore_defaults(void)
 		}
 	}
 	if (atoi(nvram_safe_get("nvram_ver")) < 3) {
-		nvram_set("nvram_ver", "3");
-		nvram_set("block_multicast", "1");
+		nvram_seti("nvram_ver", 3);
+		nvram_seti("block_multicast", 1);
 	}
-	nvram_set("gozila_action", "0");
-	nvram_set("generate_key", "0");
-	nvram_set("clone_wan_mac", "0");
+	nvram_seti("gozila_action", 0);
+	nvram_seti("generate_key", 0);
+	nvram_seti("clone_wan_mac", 0);
 	nvram_unset("flash_active");
 
 	cprintf("check CFE nv\n");
@@ -3129,42 +3129,42 @@ void start_nvram(void)
 	 */
 #if 0
 // TEMP!!!!
-	nvram_set("wl_bss_opmode_cap_reqd", "2");
-	nvram_set("wl_channel", "52");
-	nvram_set("wl_nband", "1");
-	nvram_set("wl_nmode", "2");
-	nvram_set("wl_nreqd", "1");
+	nvram_seti("wl_bss_opmode_cap_reqd", 2);
+	nvram_seti("wl_channel", 52);
+	nvram_seti("wl_nband", 1);
+	nvram_seti("wl_nmode", 2);
+	nvram_seti("wl_nreqd", 1);
 
 	nvram_set("wl0_authmode", "open");
 	nvram_set("wl0_macmode1", "disabled");
 	nvram_set("wl1_auth_mode", "none");
 	nvram_set("wl1_authmode", "open");
-	nvram_set("wl1_bss_opmode_cap_reqd", "2");
+	nvram_seti("wl1_bss_opmode_cap_reqd", 2);
 	nvram_set("wl1_vifs", "");
 
-	nvram_set("af_dnathost", "0");
-	nvram_set("af_dnatport", "0");
-	nvram_set("af_registered", "0");
-	nvram_set("af_serviceid", "0");
-	nvram_set("br0_mtu", "1500");
+	nvram_seti("af_dnathost", 0);
+	nvram_seti("af_dnatport", 0);
+	nvram_seti("af_registered", 0);
+	nvram_seti("af_serviceid", 0);
+	nvram_seti("br0_mtu", 1500);
 	nvram_set("bridges", "br0>Off>32768>1500");
-	nvram_set("bridges_count", "1");
+	nvram_seti("bridges_count", 1);
 	nvram_set("bridgesif", "");
-	nvram_set("bridgesif_count", "0");
+	nvram_seti("bridgesif_count", 0);
 	nvram_set("browser_method", "USE_LAN");
-	nvram_set("eth0_mtu", "1500");
-	nvram_set("eth0_multicast", "0");
-	nvram_set("eth0_nat", "1");
-	nvram_set("eth1_mtu", "1500");
-	nvram_set("eth2_mtu", "1500");
-	nvram_set("vlan1_mtu", "1500");
-	nvram_set("vlan1_multicast", "0");
-	nvram_set("vlan1_nat", "1");
-	nvram_set("vlan2_bridged", "1");
-	nvram_set("vlan2_mtu", "1500");
-	nvram_set("vlan2_multicast", "0");
-	nvram_set("vlan2_nat", "1");
-	nvram_set("vlan_tagcount", "0");
+	nvram_seti("eth0_mtu", 1500);
+	nvram_seti("eth0_multicast", 0);
+	nvram_seti("eth0_nat", 1);
+	nvram_seti("eth1_mtu", 1500);
+	nvram_seti("eth2_mtu", 1500);
+	nvram_seti("vlan1_mtu", 1500);
+	nvram_seti("vlan1_multicast", 0);
+	nvram_seti("vlan1_nat", 1);
+	nvram_seti("vlan2_bridged", 1);
+	nvram_seti("vlan2_mtu", 1500);
+	nvram_seti("vlan2_multicast", 0);
+	nvram_seti("vlan2_nat", 1);
+	nvram_seti("vlan_tagcount", 0);
 	nvram_set("vlan_tags", "");
 	nvram_set("wan_iface", "");
 #endif
@@ -3173,8 +3173,8 @@ void start_nvram(void)
 	// null wireless mac */
 
 	nvram_set("wan_get_dns", "");
-	nvram_set("filter_id", "1");
-	nvram_set("wl_active_add_mac", "0");
+	nvram_seti("filter_id", 1);
+	nvram_seti("wl_active_add_mac", 0);
 	nvram_set("ddns_change", "");
 	nvram_unset("action_service");
 	nvram_set("wan_get_domain", "");
@@ -3187,12 +3187,12 @@ void start_nvram(void)
 	// }
 	if (nvram_match("wl_gmode", "5"))	// Mixed mode had been
 		// changed to 5
-		nvram_set("wl_gmode", "1");
+		nvram_seti("wl_gmode", 1);
 
 	if (nvram_match("wl_gmode", "4"))	// G-ONLY mode had been
 		// changed to 2, after 1.40.1 
 		// for WiFi G certication
-		nvram_set("wl_gmode", "2");
+		nvram_seti("wl_gmode", 2);
 
 	// nvram_set("wl_country","Worldwide"); // The country always Worldwide
 
@@ -3206,7 +3206,7 @@ void start_nvram(void)
 #ifdef HAVE_UPNP
 	if ((nvram_match("restore_defaults", "1"))
 	    || (nvram_match("upnpcas", "1"))) {
-		nvram_set("upnp_clear", "1");
+		nvram_seti("upnp_clear", 1);
 	} else {
 		char s[32];
 		char *nv;
@@ -3241,13 +3241,13 @@ void start_nvram(void)
 
 #ifdef HAVE_SET_BOOT
 	if (!nvram_match("boot_wait_web", "0"))
-		nvram_set("boot_wait_web", "1");
+		nvram_seti("boot_wait_web", 1);
 #endif
 #ifndef HAVE_BUFFALO
 	if (check_hw_type() == BCM5352E_CHIP) {
-		nvram_set("opo", "0");	// OFDM power reducement in quarter
+		nvram_seti("opo", 0);	// OFDM power reducement in quarter
 		// dbm (2 dbm in this case)
-		nvram_set("ag0", "0");	// Antenna Gain definition in dbm
+		nvram_seti("ag0", 0);	// Antenna Gain definition in dbm
 	}
 #endif
 
@@ -3292,7 +3292,7 @@ void start_nvram(void)
 	// issue)
 
 	nvram_unset("do_reboot");	//for GUI, see broadcom.c
-	nvram_set("auth_time", "0");
+	nvram_seti("auth_time", 0);
 
 #ifdef DIST
 	nvram_set("dist_type", DIST);
@@ -3321,8 +3321,8 @@ void start_nvram(void)
 #ifdef HAVE_WIVIZ
 	if (!strlen(nvram_safe_get("hopseq"))
 	    || !strlen(nvram_safe_get("hopdwell"))) {
-		nvram_set("hopdwell", "1000");
-		nvram_set("hopseq", "0");
+		nvram_seti("hopdwell", 1000);
+		nvram_seti("hopseq", 0);
 	}
 #endif
 	nvram_unset("lasthour");

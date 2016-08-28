@@ -59,11 +59,11 @@ void start_gen_radius_cert(void)
 	prep();
 	gen_cert("/jffs/etc/freeradius/certs/server.cnf", TYPE_SERVER, nvram_safe_get("radius_common"), nvram_safe_get("radius_passphrase"));
 	gen_cert("/jffs/etc/freeradius/certs/ca.cnf", TYPE_CA, nvram_safe_get("radius_common"), nvram_safe_get("radius_passphrase"));
-	nvram_set("cert_running", "1");
+	nvram_seti("cert_running", 1);
 	//this takes a long time (depending from the cpu speed)
 	system("cd /jffs/etc/freeradius/certs && ./bootstrap");
 	sysprintf("sed \"s/private_key_password = whatever/private_key_password = %s/g\" /etc/freeradius/eap.conf > /jffs/etc/freeradius/eap.conf", nvram_safe_get("radius_passphrase"));
-	nvram_set("cert_running", "0");
+	nvram_seti("cert_running", 0);
 }
 
 void start_freeradius(void)

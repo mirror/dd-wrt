@@ -29,6 +29,7 @@ CFLAGS	+= -I. -I$(SRCBASE)/include.v23 -Wall
 endif
 endif
 
+CFLAGS	+= -I. -I$(TOP)/shared
 
 #CFLAGS	+= -g -DDEBUG
 CFLAGS	+= -s $(COPTS) $(MIPS16_OPT) -fPIC

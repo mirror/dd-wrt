@@ -86,7 +86,7 @@ void execute(webs_t wp);
 #endif
 void clone_mac(webs_t wp)
 {
-	nvram_set("clone_wan_mac", "1");
+	nvram_seti("clone_wan_mac", 1);
 }
 
 /*
@@ -152,7 +152,7 @@ void dhcp_release(webs_t wp)
 	nvram_set("wan_netmask", "0.0.0.0");
 	nvram_set("wan_gateway", "0.0.0.0");
 	nvram_set("wan_get_dns", "");
-	nvram_set("wan_lease", "0");
+	nvram_seti("wan_lease", 0);
 
 	unlink("/tmp/get_lease_time");
 	unlink("/tmp/lease_time");
@@ -339,7 +339,7 @@ void validate_filter_policy(webs_t wp, char *value, struct variable *v)
 	if (f_id)
 		nvram_set("filter_id", f_id);
 	else
-		nvram_set("filter_id", "1");
+		nvram_seti("filter_id", 1);
 
 	save_policy(wp);
 }
@@ -517,7 +517,7 @@ void delete_old_routes(void)
 void delete_static_route(webs_t wp)
 {
 	addAction("routing");
-	nvram_set("nowebaction", "1");
+	nvram_seti("nowebaction", 1);
 	char *buf = safe_malloc(2500);
 	char *buf_name = safe_malloc(2500);
 
@@ -581,7 +581,7 @@ void generate_wep_key_single(char *prefix, char *passphrase, char *bit, char *tx
 
 	gen_key(passphrase, atoi(bit));
 
-	nvram_set("generate_key", "1");
+	nvram_seti("generate_key", 1);
 
 	if (atoi(bit) == 64) {
 		char key1[27] = "";
@@ -842,7 +842,7 @@ _8021xprv
 	sprintf(n, "%s_key", prefix);
 	char *tx = websGetVar(wp, n, "");
 	if (strlen(tx) == 0) {
-		nvram_set(n, "1");
+		nvram_seti(n, 1);
 	} else {
 		copytonv(wp, n);
 	}
@@ -945,7 +945,7 @@ void add_active_mac(webs_t wp)
 	memset(buf, 0, msize);
 	char *ifname = websGetVar(wp, "ifname", NULL);
 
-	nvram_set("wl_active_add_mac", "1");
+	nvram_seti("wl_active_add_mac", 1);
 
 	for (i = 0; i < MAX_LEASES + 2; i++) {
 		char active_mac[] = "onXXX";
@@ -1445,7 +1445,7 @@ void qos_save(webs_t wp)
 
 	if (strcmp(data, "0") == 0) {
 		addAction("qos");
-		nvram_set("nowebaction", "1");
+		nvram_seti("nowebaction", 1);
 		applytake(value);
 		return;
 	}
@@ -1733,7 +1733,7 @@ void qos_save(webs_t wp)
 	nvram_set("svqos_port4bw", websGetVar(wp, "svqos_port4bw", "0"));
 
 	addAction("qos");
-	nvram_set("nowebaction", "1");
+	nvram_seti("nowebaction", 1);
 	applytake(value);
 
 }
@@ -2066,12 +2066,12 @@ void add_vifs_single(char *prefix, int device)
 	else
 		sprintf(n, "%s %s", vifs, v);
 	sprintf(v2, "%s_closed", v);
-	nvram_set(v2, "0");
+	nvram_seti(v2, 0);
 	sprintf(v2, "%s_mode", v);
 	nvram_set(v2, "ap");
 
 	sprintf(v2, "%s_ap_isolate", v);
-	nvram_set(v2, "0");
+	nvram_seti(v2, 0);
 	sprintf(v2, "%s_ssid", v);
 #ifdef HAVE_MAKSAT
 #ifdef HAVE_MAKSAT_BLANK
@@ -2107,19 +2107,19 @@ void add_vifs_single(char *prefix, int device)
 	sprintf(v2, "%s_vifs", prefix);
 	nvram_set(v2, n);
 	sprintf(v2, "%s_bridged", v);
-	nvram_set(v2, "1");
+	nvram_seti(v2, 1);
 	sprintf(v2, "%s_nat", v);
-	nvram_set(v2, "1");
+	nvram_seti(v2, 1);
 	sprintf(v2, "%s_ipaddr", v);
 	nvram_set(v2, "0.0.0.0");
 	sprintf(v2, "%s_netmask", v);
 	nvram_set(v2, "0.0.0.0");
 
 	sprintf(v2, "%s_gtk_rekey", v);
-	nvram_set(v2, "3600");
+	nvram_seti(v2, 3600);
 
 	sprintf(v2, "%s_radius_port", v);
-	nvram_set(v2, "1812");
+	nvram_seti(v2, 1812);
 
 	sprintf(v2, "%s_radius_ipaddr", v);
 	nvram_set(v2, "0.0.0.0");
@@ -2130,7 +2130,7 @@ void add_vifs_single(char *prefix, int device)
 	nvram_set(v2, "0.0.0.0");
 
 	sprintf(v2, "%s_radius2_port", v);
-	nvram_set(v2, "1812");
+	nvram_seti(v2, 1812);
 
 	sprintf(v2, "%s_local_ip", v);
 	nvram_set(v2, "0.0.0.0");
@@ -2151,7 +2151,7 @@ void add_vifs_single(char *prefix, int device)
 #endif
 
 		sprintf(v2, "%s_bridged", v);
-		nvram_set(v2, "0");
+		nvram_seti(v2, 0);
 
 		sprintf(v2, "%s_ipaddr", v);
 		nvram_set(v2, getFreeLocalIpNet());
@@ -2181,7 +2181,7 @@ void add_vifs_single(char *prefix, int device)
 
 		add_mdhcpd(v, 20, 200, 3600);
 		//required to use mdhcpd
-		nvram_set("dhcp_dnsmasq", "1");
+		nvram_seti("dhcp_dnsmasq", 1);
 
 		rep(v, '.', 'X');
 
@@ -2776,9 +2776,9 @@ void save_networking(webs_t wp)
 		} else {
 			sprintf(n, "%s_mcast", ifname);
 			if (!strcmp(mcast, "On"))
-				nvram_set(n, "1");
+				nvram_seti(n, 1);
 			else
-				nvram_set(n, "0");
+				nvram_seti(n, 0);
 		}
 		sprintf(var, "bridgeprio%d", i);
 		prio = websGetVar(wp, var, NULL);
@@ -3571,17 +3571,17 @@ static void save_prefix(webs_t wp, char *prefix)
 #ifdef HAVE_MADWIFI
 	if (cbwchanged || chanchanged) {
 		if (nvram_match(chanbw, "40")) {
-			nvram_set(sifs, "8");
-			nvram_set(preamble, "14");
+			nvram_seti(sifs, 8);
+			nvram_seti(preamble, 14);
 		} else if (nvram_match(chanbw, "5")) {
-			nvram_set(sifs, "64");
-			nvram_set(preamble, "80");
+			nvram_seti(sifs, 64);
+			nvram_seti(preamble, 80);
 		} else if (nvram_match(chanbw, "10")) {
-			nvram_set(sifs, "32");
-			nvram_set(preamble, "40");
+			nvram_seti(sifs, 32);
+			nvram_seti(preamble, 40);
 		} else {
-			nvram_set(sifs, "16");
-			nvram_set(preamble, "20");
+			nvram_seti(sifs, 16);
+			nvram_seti(preamble, 20);
 		}
 
 	}
@@ -4231,7 +4231,7 @@ void port_vlan_table_save(webs_t wp)
 	// nvram_set("ub1_ifnames", br1vlans);
 	// nvram_set("ub2_ifnames", br2vlans);
 	nvram_set("trunking", buff);
-	nvram_set("vlans", "1");
+	nvram_seti("vlans", 1);
 
 	nvram_commit();
 
@@ -4310,7 +4310,7 @@ void tf_upnp(webs_t wp)
 
 	if (((v = websGetVar(wp, "remove", NULL)) != NULL) && (*v)) {
 		if (strcmp(v, "all") == 0) {
-			nvram_set("upnp_clear", "1");
+			nvram_seti("upnp_clear", 1);
 		} else {
 			int which = atoi(nvram_default_get("forward_cur", "0"));
 			int i = atoi(v);
@@ -4444,7 +4444,7 @@ void nassrv_save(webs_t wp)
 	validate_cgi(wp);
 
 	addAction("nassrv");
-	nvram_set("nowebaction", "1");
+	nvram_seti("nowebaction", 1);
 #ifdef HAVE_MINIDLNA
 	dlna_save(wp);
 #endif
@@ -4517,7 +4517,7 @@ void nintendo_save(webs_t wp)
 			sprintf(param, "%s_ssid", var);
 			nvram_set(param, "NintendoSpotPass1");
 			sprintf(param, "%s_bridged", var);
-			nvram_set(param, "0");
+			nvram_seti(param, 0);
 			sprintf(param, "%s_ipaddr", var);
 			nvram_set(param, "192.168.12.1");
 			sprintf(param, "%s_netmask", var);
@@ -4535,7 +4535,7 @@ void nintendo_save(webs_t wp)
 			// dhcpd
 			sprintf(param, "%s>On>20>200>60", var);
 			nvram_set("mdhcpd", param);
-			nvram_set("mdhcpd_count", "1");
+			nvram_seti("mdhcpd_count", 1);
 		}
 
 	} else if (enabled == 1 && !strcmp(websGetVar(wp, "spotpass", "0"), "0")) {
@@ -4553,14 +4553,14 @@ void nintendo_save(webs_t wp)
 				nvram_set("spotpass_vif", "");
 
 				nvram_set("mdhcpd", "");
-				nvram_set("mdhcpd_count", "0");
+				nvram_seti("mdhcpd_count", 0);
 			}
 		}
 	}
 
 	if (atoi(websGetVar(wp, "spotpass", "")) != enabled) {
 		addAction("wireless");
-		nvram_set("nowebaction", "1");
+		nvram_seti("nowebaction", 1);
 	}
 
 	nvram_set("spotpass", websGetVar(wp, "spotpass", "0"));

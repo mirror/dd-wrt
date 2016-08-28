@@ -837,7 +837,7 @@ void ej_filter_init(webs_t wp, int argc, char_t ** argv)
 		// press apply.
 		nvram_set("filter_id", f_id);
 	else
-		nvram_set("filter_id", "1");
+		nvram_seti("filter_id", 1);
 
 	return;
 }

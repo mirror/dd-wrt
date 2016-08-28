@@ -333,7 +333,7 @@ void start_overclock(void)	// hidden feature. must be called with
 			putc(0x30, in);	// 0x2c for 220 mhz 0x30 for 240 mhz
 		} else {
 			fixclk(in, 184, 200);
-			nvram_set("cpuclk", "200");
+			nvram_seti("cpuclk", 200);
 			nvram_commit();
 			clk = atoi(nvram_default_get("cpuclk", "180"));
 			putc(0x28, in);	// 0x2c for 220 mhz 0x30 for 240 mhz
@@ -431,7 +431,7 @@ void start_overclock(void)	// hidden feature. must be called with
 			putc(0x30, in);	// 0x2c for 220 mhz 0x30 for 240 mhz
 		} else {
 			fixclk(in, 184, 200);
-			nvram_set("cpuclk", "200");
+			nvram_seti("cpuclk", 200);
 			nvram_commit();
 			clk = atoi(nvram_default_get("cpuclk", "180"));
 			putc(0x28, in);	// 0x2c for 220 mhz 0x30 for 240 mhz
@@ -491,7 +491,7 @@ void start_overclock(void)	// hidden feature. must be called with
 		else if (clk == 240)
 			putc(0xc, in);	// 0x2c for 220 mhz 0x30 for 240 mhz
 		else {
-			nvram_set("cpuclk", "220");
+			nvram_seti("cpuclk", 220);
 			clk = atoi(nvram_default_get("cpuclk", "180"));
 			nvram_commit();
 			putc(0xb, in);	// 0x2c for 220 mhz 0x30 for 240 mhz
@@ -541,7 +541,7 @@ void start_overclock(void)	// hidden feature. must be called with
 		else if (clk == 240)
 			putc(0xc, in);	// 0x2c for 220 mhz 0x30 for 240 mhz
 		else {
-			nvram_set("cpuclk", "220");
+			nvram_seti("cpuclk", 220);
 			clk = atoi(nvram_default_get("cpuclk", "180"));
 			nvram_commit();
 			putc(0xb, in);	// 0x2c for 220 mhz 0x30 for 240 mhz
@@ -586,7 +586,7 @@ void start_overclock(void)	// hidden feature. must be called with
 		else if (clk == 240)
 			putc(0xc, in);	// 0x2c for 220 mhz 0x30 for 240 mhz
 		else {
-			nvram_set("cpuclk", "220");
+			nvram_seti("cpuclk", 220);
 			clk = atoi(nvram_default_get("cpuclk", "180"));
 			nvram_commit();
 			putc(0xb, in);	// 0x2c for 220 mhz 0x30 for 240 mhz

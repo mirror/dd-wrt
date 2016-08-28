@@ -3524,7 +3524,7 @@ int internal_getRouterBrand()
 				insmod("switch-robo");
 				rmmod("switch-robo");
 				rmmod("switch-core");
-				nvram_set("boardnum", "2");
+				nvram_seti("boardnum", 2);
 				nvram_set("boardtype", "bcm94710dev");
 			}
 			if (nvram_match("phyid_num", "0x00000000")) {

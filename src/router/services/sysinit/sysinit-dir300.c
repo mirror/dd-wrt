@@ -113,7 +113,7 @@ void start_sysinit(void)
 	}
 #else
 	if (!nvram_match("dir400preconfig", "1")) {
-		nvram_set("dir400preconfig", "1");
+		nvram_seti("dir400preconfig", 1);
 		nvram_commit();
 		int mtd = getMTD("fullflash");
 		char mtdpath[64];
@@ -267,7 +267,7 @@ void start_sysinit(void)
 
 int check_cfe_nv(void)
 {
-	nvram_set("portprio_support", "0");
+	nvram_seti("portprio_support", 0);
 	return 0;
 }
 

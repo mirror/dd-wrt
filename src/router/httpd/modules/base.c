@@ -286,7 +286,7 @@ void Initnvramtab()
 							tmp->argv[i] = getFileString(in);
 						}
 						tmp->argv[i] = NULL;
-						nvram_set("sputnik_rereg", "1");
+						nvram_seti("sputnik_rereg", 1);
 					}
 #endif
 					if (tmp->validatename == NULL) {
@@ -1104,7 +1104,7 @@ int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, char_t *
 	int sleep_time;
 	struct gozila_action *act;
 
-	nvram_set("gozila_action", "1");
+	nvram_seti("gozila_action", 1);
 	my_next_page[0] = '\0';
 	submit_button = websGetVar(wp, "submit_button", NULL);	/* every html 
 								 * must have
@@ -1176,9 +1176,9 @@ int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, char_t *
 		do_ej(NULL, path, wp, NULL);	// refresh
 	websDone(wp, 200);
 
-	nvram_set("gozila_action", "0");
-	nvram_set("generate_key", "0");
-	nvram_set("clone_wan_mac", "0");
+	nvram_seti("gozila_action", 0);
+	nvram_seti("generate_key", 0);
+	nvram_seti("clone_wan_mac", 0);
 
 	return 1;
 }
@@ -1389,8 +1389,8 @@ static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, ch
 		cprintf("done\n");
 		// If web page configuration is changed, the EZC configuration
 		// function should be disabled.(2004-07-29)
-		nvram_set("is_default", "0");
-		nvram_set("is_modified", "1");
+		nvram_seti("is_default", 0);
+		nvram_seti("is_modified", 1);
 		if (act) {
 			fprintf(stderr, "%s:submit_button=[%s] service=[%s] sleep_time=[%d] action=[%d]\n", value, act->name, act->service, act->sleep_time, act->action);
 
@@ -1418,7 +1418,7 @@ static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, ch
   /** Restore defaults **/
 	else if (!strncmp(value, "Restore", 7)) {
 		ACTION("ACT_SW_RESTORE");
-		nvram_set("sv_restore_defaults", "1");
+		nvram_seti("sv_restore_defaults", 1);
 #ifdef HAVE_BUFFALO_SA
 		int region_sa = 0;
 		if (nvram_default_match("region", "SA", ""))
@@ -1490,7 +1490,7 @@ static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, ch
 		eval("erase", "nvram");
 #endif
 #ifdef HAVE_BUFFALO_SA
-		nvram_set("sv_restore_defaults", "1");
+		nvram_seti("sv_restore_defaults", 1);
 		if (region_sa)
 			nvram_set("region", "SA");
 #endif
