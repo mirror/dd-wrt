@@ -160,7 +160,7 @@ int rpc_qcsapi_init(int verbose)
 	return -1;
 }
 
-#define nvram_get_int(name) atoi(nvram_safe_get(name))
+#define nvram_get_int(name) nvram_geti(name)
 
 int rpc_qtn_ready()
 {

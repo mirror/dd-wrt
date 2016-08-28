@@ -507,7 +507,7 @@ bool set_forward_port(const netconf_nat_t * nat)
 	if (!valid_forward_port(nat))
 		return FALSE;
 
-	int which = atoi(nvram_default_get("forward_cur", "0"));
+	int which = nvram_default_geti("forward_cur", 0));
 
 	/*
 	 * Set
@@ -586,7 +586,7 @@ bool del_forward_port(const netconf_nat_t * nat)
 	if (!valid_forward_port(nat))
 		return FALSE;
 
-	int which = atoi(nvram_default_get("forward_cur", "0"));
+	int which = nvram_default_geti("forward_cur", 0);
 
 	/*
 	 * Set

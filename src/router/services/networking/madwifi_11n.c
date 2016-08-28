@@ -595,7 +595,7 @@ void configure_single_11n(int count)
 	int vif = 0;
 	sprintf(wl_poll, "%s_pollingmode", dev);
 
-	setsysctrl(wif, "pollingmode", atoi(nvram_default_get(wl_poll, "0")));
+	setsysctrl(wif, "pollingmode", nvram_default_geti(wl_poll, 0)));
 
 	char *vifs = nvram_safe_get(wifivifs);
 	int countvaps = 1;
@@ -715,7 +715,7 @@ void configure_single_11n(int count)
 
 	cprintf("adjust sensitivity\n");
 
-	int distance = atoi(nvram_default_get(sens, "2000"));	// to meter
+	int distance = nvram_default_geti(sens, 2000);	// to meter
 	if (nvram_nmatch("1", "%s_pollingmode", var)) {
 		setdistance(wif, 100000, 20);
 	} else {
@@ -743,13 +743,13 @@ void configure_single_11n(int count)
 	sprintf(wl_ofdm_weak_det, "%s_ofdm_weak_det", dev);
 	sprintf(wl_csma, "%s_csma", dev);
 
-	setsysctrl(wif, "csma", atoi(nvram_default_get(wl_csma, "1")));
-	setsysctrl(wif, "intmit", atoi(nvram_default_get(wl_intmit, "-1")));
-	int level = atoi(nvram_default_get(wl_noise_immunity, "4"));
+	setsysctrl(wif, "csma", nvram_default_geti(wl_csma, 1));
+	setsysctrl(wif, "intmit", nvram_default_geti(wl_intmit, -1));
+	int level = nvram_default_geti(wl_noise_immunity, 4);
 	if (level < 0)
 		level = 4;
 	setsysctrl(wif, "noise_immunity", level);
-	setsysctrl(wif, "ofdm_weak_det", atoi(nvram_default_get(wl_ofdm_weak_det, "1")));
+	setsysctrl(wif, "ofdm_weak_det", nvram_default_geti(wl_ofdm_weak_det, 1));
 #endif
 
 	if (isEMP(dev))		//check this only if the current installed card is usually a emp card. this is made to prevent card destruction
@@ -1016,7 +1016,7 @@ void configure_single_11n(int count)
 
 	cprintf("adjust power\n");
 
-	int newpower = atoi(nvram_default_get(power, "16"));
+	int newpower = nvram_default_geti(power, 16);
 
 	sysprintf("iwconfig %s txpower %ddBm", dev, newpower);
 

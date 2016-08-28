@@ -80,7 +80,7 @@ void start_bonding(void)
 		eval("ifconfig", tag, "0.0.0.0", "up");
 		eval("ifenslave", tag, port);
 	}
-	int c = atoi(nvram_safe_get("bonding_number"));
+	int c = nvram_geti("bonding_number");
 	int i;
 
 	for (i = 0; i < c; i++) {

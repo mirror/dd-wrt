@@ -177,8 +177,8 @@ void configure_single_ath9k(int count)
 		txchain = maxtxchain;
 		rxchain = maxrxchain;
 	} else {
-		txchain = atoi(nvram_safe_get(txantenna));
-		rxchain = atoi(nvram_safe_get(rxantenna));
+		txchain = nvram_geti(txantenna);
+		rxchain = nvram_geti(rxantenna);
 	}
 	int reset = 0;
 	if (txchain > maxtxchain) {
@@ -232,7 +232,7 @@ void configure_single_ath9k(int count)
 	getMacAddr(dev, macaddr);
 #endif
 	nvram_set(athmac, macaddr);
-	int distance = atoi(nvram_default_get(sens, "2000"));	// to meter
+	int distance = nvram_default_geti(sens, 2000);	// to meter
 	char dist[32];
 	if (distance > 0)
 		sprintf(dist, "%d", distance);
@@ -457,7 +457,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	} else {
 		// also we still should take care on the selected mode
 		sprintf(nfreq, "%s_channel", prefix);
-		freq = atoi(nvram_default_get(nfreq, "0"));
+		freq = nvram_default_geti(nfreq, 0);
 
 		if (freq == 0) {
 			struct mac80211_ac *acs;
@@ -1515,7 +1515,7 @@ void ath9k_start_supplicant(int count)
 			}
 		}
 	}
-	int newpower = atoi(nvram_default_get(power, "16"));
+	int newpower = nvram_default_geti(power, 16);
 	sysprintf("iw phy %s set txpower fixed %d", wif, newpower * 100);
 }
 #endif

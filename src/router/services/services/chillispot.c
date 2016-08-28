@@ -168,7 +168,7 @@ void main_config(void)
 	int log_level = 0;
 
 	FILE *fp;
-	log_level = atoi(nvram_safe_get("log_level"));
+	log_level = nvram_geti("log_level");
 	mkdir("/tmp/chilli", 0700);
 
 	if (!(fp = fopen("/tmp/chilli/ip-up.sh", "w"))) {

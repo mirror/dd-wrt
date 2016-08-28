@@ -136,8 +136,8 @@ void start_pppoe_dual(int status)
 		ifconfig(wan_ifname, IFUP, nvram_safe_get("wan_ipaddr_static"), nvram_safe_get("wan_netmask_static"));
 	}
 
-	snprintf(idletime, sizeof(idletime), "%d", atoi(nvram_safe_get("ppp_idletime")) * 60);
-	snprintf(retry_num, sizeof(retry_num), "%d", (atoi(nvram_safe_get("ppp_redialperiod")) / 5) - 1);
+	snprintf(idletime, sizeof(idletime), "%d", nvram_geti("ppp_idletime") * 60);
+	snprintf(retry_num, sizeof(retry_num), "%d", (nvram_geti("ppp_redialperiod") / 5) - 1);
 
 	snprintf(username, sizeof(username), "%s", nvram_safe_get("ppp_username"));
 	snprintf(passwd, sizeof(passwd), "%s", nvram_safe_get("ppp_passwd"));
@@ -238,7 +238,7 @@ void start_pppoe_dual(int status)
 	// if MRU is not Auto force MTU/MRU of interface to value selected by 
 	// theuser on web page
 	if (nvram_match("mtu_enable", "1")) {
-		if (atoi(nvram_safe_get("wan_mtu")) > 0) {
+		if (nvram_geti("wan_mtu") > 0) {
 			fprintf(fp, "mtu %s\n", nvram_safe_get("wan_mtu"));
 			fprintf(fp, "mru %s\n", nvram_safe_get("wan_mtu"));
 		}
@@ -246,10 +246,10 @@ void start_pppoe_dual(int status)
 		// If MRU set to Auto we still allow custom MTU/MRU settings for
 		// expirienced users
 		if (nvram_invmatch("pppoe_ppp_mtu", ""))
-			if (atoi(nvram_safe_get("pppoe_ppp_mtu")) > 0)
+			if (nvram_geti("pppoe_ppp_mtu") > 0)
 				fprintf(fp, "mtu %s\n", nvram_safe_get("pppoe_ppp_mtu"));
 		if (nvram_invmatch("pppoe_ppp_mru", ""))
-			if (atoi(nvram_safe_get("pppoe_ppp_mru")) > 0)
+			if (nvram_geti("pppoe_ppp_mru") > 0)
 				fprintf(fp, "mru %s\n", nvram_safe_get("pppoe_ppp_mru"));
 	}
 

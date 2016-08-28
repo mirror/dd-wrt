@@ -119,7 +119,7 @@ int bcm_gettxpower(char *wlname)
 	char cmd[32];
 	char wl[16];
 	sprintf(wl, "%s_txpwr", wlname);
-	pwr = atoi(nvram_safe_get(wl));
+	pwr = nvram_safe_get(wl);
 	if (!strcmp(wlname, "wl0"))
 		c = 0;
 	else if (!strcmp(wlname, "wl1"))
@@ -130,7 +130,7 @@ int bcm_gettxpower(char *wlname)
 		return pwr;
 #ifdef HAVE_QTN
 	if (c == 1)
-		return atoi(nvram_safe_get("wl1_txpwr"));
+		return nvram_geti("wl1_txpwr");
 #endif
 	sprintf(cmd, "wl -i %s txpwr1", get_wl_instance_name(c));
 	FILE *in = popen(cmd, "r");

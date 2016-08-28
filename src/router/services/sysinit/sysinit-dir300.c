@@ -71,7 +71,7 @@ void start_sysinit(void)
 	 */
 
 	cprintf("sysinit() klogctl\n");
-	klogctl(8, NULL, atoi(nvram_safe_get("console_loglevel")));
+	klogctl(8, NULL, nvram_geti("console_loglevel"));
 	cprintf("sysinit() get router\n");
 
 #ifndef HAVE_DIR400

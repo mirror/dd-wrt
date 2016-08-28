@@ -2848,7 +2848,7 @@ void start_restore_defaults(void)
 #endif
 		}
 	}
-	if (atoi(nvram_safe_get("nvram_ver")) < 3) {
+	if (nvram_geti("nvram_ver") < 3) {
 		nvram_seti("nvram_ver", 3);
 		nvram_seti("block_multicast", 1);
 	}

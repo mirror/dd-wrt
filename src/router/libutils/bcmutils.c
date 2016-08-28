@@ -930,7 +930,7 @@ int check_hw_type(void)
 
 int ct_openlog(const char *ident, int option, int facility, char *log_name)
 {
-	int level = atoi(nvram_safe_get(log_name));
+	int level = nvram_geti(log_name);
 
 	switch (level) {
 	case CONSOLE_ONLY:

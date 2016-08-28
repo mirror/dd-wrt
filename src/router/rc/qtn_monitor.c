@@ -81,13 +81,13 @@ void rpc_parse_nvram_from_httpd(void)
 	rpc_qcsapi_set_key_passphrase(WIFINAME, nvram_safe_get("wl1_wpa_psk"));
 	rpc_qcsapi_set_dtim(nvram_safe_get("wl1_dtim"));
 	rpc_qcsapi_set_beacon_interval(nvram_safe_get("wl1_bcn"));
-	rpc_set_radio(1, 0, atoi(nvram_default_get("wl1_radio", "1")));
+	rpc_set_radio(1, 0, nvram_default_geti("wl1_radio", 1));
 	//rpc_update_macmode(nvram_safe_get("wl1_macmode"));
 	//rpc_update_wlmaclist();
 	//rpc_update_wdslist();
 	//rpc_update_wdslist();
 	//rpc_update_wds_psk(nvram_safe_get("wl1_wds_psk"));
-	rpc_update_ap_isolate(WIFINAME, atoi(nvram_safe_get("wl1_ap_isolate")));
+	rpc_update_ap_isolate(WIFINAME, nvram_geti("wl1_ap_isolate"));
 
 	char *viflist[4] = { "wl1.1", "wl1.2", "wl1.3" };
 	int cnt = 0;
@@ -232,7 +232,7 @@ QTN_RESET:
 		if (ret < 0)
 			dbG("Qcsapi rpc_qcsapi_wifi_disable_wps %s error, return: %d\n", WIFINAME, ret);
 
-		rpc_set_radio(1, 0, atoi(nvram_default_get("wl1_radio", "1")));
+		rpc_set_radio(1, 0, nvram_default_geti("wl1_radio", 1));
 
 	}
 #endif
