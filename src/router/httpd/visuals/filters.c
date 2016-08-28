@@ -442,7 +442,7 @@ void ej_filter_policy_select(webs_t wp, int argc, char_t ** argv)
 			// name 
 			// value
 		}
-		websWrite(wp, "<option value=%d %s>%d ( %s ) </option>\n", i, (atoi(nvram_safe_get("filter_id")) == i ? "selected=\"selected\" " : ""), i, name);
+		websWrite(wp, "<option value=%d %s>%d ( %s ) </option>\n", i, (nvram_geti("filter_id") == i ? "selected=\"selected\" " : ""), i, name);
 	}
 	D("okay");
 	return;
@@ -620,7 +620,7 @@ void ej_filter_tod_get(webs_t wp, int argc, char_t ** argv)
 		return;
 	}
 
-	filter_tod_init(atoi(nvram_safe_get("filter_id")));
+	filter_tod_init(nvram_geti("filter_id"));
 
 	if (!strcmp(type, "day_all_init")) {
 		if (day_all == 0)

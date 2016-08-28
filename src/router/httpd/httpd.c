@@ -277,13 +277,13 @@ static int auth_check(char *user, char *pass, char *dirname, char *authorization
 	u_int64_t curr_time = (u_int64_t)time(NULL);
 	char s_curr_time[24];
 	sprintf(s_curr_time, "%llu", curr_time);
-	if (nvram_get("ias_startup") && atoi(nvram_safe_get("ias_startup")) > 0) {
+	if (nvram_get("ias_startup") && nvram_geti("ias_startup") > 0) {
 		fprintf(stderr, "IAS ignore\n");
 		return 1;
 	}
 
-	int submittedtoken = atoi(nvram_safe_get("token"));
-	int currenttoken = atoi(nvram_safe_get("ptoken"));
+	int submittedtoken = nvram_geti("token");
+	int currenttoken = nvram_geti("ptoken");
 
 	//protect config changes
 	if (!strcmp(curr_page, "apply.cgi") || !strcmp(curr_page, "nvram.cgi") || !strcmp(curr_page, "upgrade.cgi")) {
@@ -855,7 +855,7 @@ static void handle_request(void)
 #else
 #ifdef HAVE_BUFFALO
 #ifdef HAVE_IAS
-	int ias_startup = atoi(nvram_safe_get("ias_startup"));
+	int ias_startup = nvram_geti("ias_startup");
 	int ias_detected = 0;
 	char redirect_path[48];
 

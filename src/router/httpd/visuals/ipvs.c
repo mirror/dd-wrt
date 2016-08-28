@@ -31,7 +31,7 @@ void ej_show_ipvsassignments(webs_t wp, int argc, char_t ** argv)
 	char ipvs_name[32];
 
 	if (strlen(nvram_safe_get("ipvs"))) {
-		int realcount = atoi(nvram_default_get("ipvstarget_count", "0"));
+		int realcount = nvram_default_geti("ipvstarget_count", 0);
 		websWrite(wp, "<fieldset>\n");
 		websWrite(wp, "<legend>%s</legend>\n", live_translate("networking.ipvs_targets"));
 
@@ -145,7 +145,7 @@ void ej_show_ipvs(webs_t wp, int argc, char_t ** argv)
 
 	char *schedulers[] = { "wrr", "lc", "wlc", "fo", "ovf", "lblc", "lblcr", "dh", "sh", "sed", "nq", NULL };
 
-	int realcount = atoi(nvram_default_get("ipvs_count", "0"));
+	int realcount = nvram_default_geti("ipvs_count", 0);
 
 	websWrite(wp, "<h2>%s</h2>\n", live_translate("networking.ipvs"));
 	websWrite(wp, "<fieldset>\n");

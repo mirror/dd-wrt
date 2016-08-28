@@ -73,11 +73,12 @@ void ej_show_bondings(webs_t wp, int argc, char_t ** argv)
 	}
 #endif
 
-	for (i = 0; i < atoi(nvram_safe_get("bonding_number")); i++) {
+	for (i = 0; i < nvram_geti("bonding_number"); i++) {
 		sprintf(bondnames, "%s bond%d", bondnames, i);
 	}
 	int totalcount = 0;
-	int realcount = atoi(nvram_default_get("bonding_count", "0"));
+
+	int realcount = nvram_default_geti("bonding_count", 0);
 
 	wordlist = nvram_safe_get("bondings");
 	foreach(word, wordlist, next) {

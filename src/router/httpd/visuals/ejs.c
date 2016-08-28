@@ -2604,7 +2604,7 @@ void ej_get_txpower(webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_MADWIFI
 		txpower = wifi_gettxpower(m);
 #elif HAVE_RT2880
-		txpower = atoi(nvram_safe_get(txpwr));
+		txpower = nvram_geti(txpwr);
 #else				//broadcom
 		txpower = bcm_gettxpower(m);
 #endif
@@ -3218,7 +3218,7 @@ void ej_getsetuppage(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "  </div>\n");
 	websWrite(wp, "  <div class=\"setting\">\n");
 	websWrite(wp, "    <div class=\"label\"><script type=\"text/javascript\">Capture(dsl.snr)</script></div>\n");
-	websWrite(wp, "    <span id=\"dsl_snr_up\">%d</span> dB / <span id=\"dsl_snr_down\">%d</span> dB\n", atoi(nvram_safe_get("dsl_snr_up")), atoi(nvram_safe_get("dsl_snr_down")));
+	websWrite(wp, "    <span id=\"dsl_snr_up\">%d</span> dB / <span id=\"dsl_snr_down\">%d</span> dB\n", nvram_geti("dsl_snr_up"), nvram_geti("dsl_snr_down"));
 	websWrite(wp, "  </div>\n");
 	websWrite(wp, "</fieldset>\n");
 	websWrite(wp, "<br />\n");

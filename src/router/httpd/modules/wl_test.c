@@ -298,11 +298,11 @@ int Check_TSSI(webs_t wp, char *value)
 	nvram_set("wl_delay", wl_delay);
 	// nvram_set("wl_tssi_check",wl_tssi_check);
 
-	atten_bb = atoi(nvram_safe_get("wl_atten_bb"));
-	atten_radio = atoi(nvram_safe_get("wl_atten_radio"));
-	atten_ctl = atoi(nvram_safe_get("wl_atten_ctl"));
-	idelay = atoi(nvram_safe_get("wl_delay"));
-	// tssi_check=atoi(nvram_safe_get("wl_tssi_check"));
+	atten_bb = nvram_geti("wl_atten_bb");
+	atten_radio = nvram_geti("wl_atten_radio");
+	atten_ctl = nvram_geti("wl_atten_ctl");
+	idelay = nvram_geti("wl_delay");
+	// tssi_check=nvram_geti("wl_tssi_check"));
 
 	dprintf("wl_atten_bb=[%s], wl_atten_radio=[%s], wl_atten_ctl=[%s]\n", wl_atten_bb, wl_atten_radio, wl_atten_ctl);
 
@@ -406,9 +406,9 @@ int Enable_TSSI(char *value)
 	 * buf[80];
 	 * 
 	 * enabled=atoi(value); if(enabled) {
-	 * atten_bb=atoi(nvram_safe_get("wl_atten_bb"));
-	 * atten_radio=atoi(nvram_safe_get("wl_atten_radio"));
-	 * atten_ctl=atoi(nvram_safe_get("wl_atten_ctl"));
+	 * atten_bb=nvram_geti("wl_atten_bb"));
+	 * atten_radio=nvram_geti("wl_atten_radio"));
+	 * atten_ctl=nvram_geti("wl_atten_ctl"));
 	 * 
 	 * memset(buf,0,sizeof(buf)); sprintf(buf,"wl atten %d %d
 	 * %d",atten_bb,atten_radio,atten_ctl); mysystem(buf); } 
@@ -488,8 +488,8 @@ int StartContinueTx_4702(webs_t wp, char *value)
 		// sprintf(buf,"wl fqacurcy %d",channel);
 		// mysystem(buf); 
 
-		// channel=atoi(nvram_safe_get("wl_channel"));
-		// rate=atoi(nvram_safe_get("wl_rate"));
+		// channel=nvram_geti("wl_channel"));
+		// rate=nvram_geti("wl_rate"));
 		rates = rate / 1000000;
 		printf("\nrate=%d, rates=%f\n", rate, rates);
 		if (rates == 5)
