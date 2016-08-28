@@ -2021,7 +2021,7 @@ static void configure_single(int count)
 
 	cprintf("adjust power\n");
 
-	int newpower = nvram_default_geti(power, 16));
+	int newpower = nvram_default_geti(power, 16);
 	char s_dbm[32];
 	sprintf(s_dbm, "%ddBm", newpower);
 	eval("iwconfig", dev, "txpower", s_dbm);
