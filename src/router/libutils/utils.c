@@ -4507,7 +4507,6 @@ unsigned int write_gpio(char *device, unsigned int val)
 	}
 }
 
-static char hw_error = 0;
 int diag_led_4704(int type, int act)
 {
 #if defined(HAVE_IPQ806X) || defined(HAVE_MVEBU) || defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_LAGUNA) || defined(HAVE_MAGICBOX) || defined(HAVE_RB600) || defined(HAVE_FONERA) || defined(HAVE_MERAKI)|| defined(HAVE_LS2) || defined(HAVE_WHRAG108) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_RT2880) || defined(HAVE_OPENRISC)
@@ -4521,6 +4520,7 @@ int diag_led_4704(int type, int act)
 	 */
 	return 1;
 #endif
+	static char hw_error = 0;
 	// int brand;
 	control = read_gpio("/dev/gpio/control");
 	in = read_gpio("/dev/gpio/in");
@@ -4555,11 +4555,11 @@ int diag_led_4704(int type, int act)
 
 int diag_led_4712(int type, int act)
 {
-	unsigned int control, in, outen, out, ctr_mask, out_mask;
 
 #if defined(HAVE_IPQ806X) || defined(HAVE_MVEBU) || defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_LAGUNA) || defined(HAVE_MAGICBOX) || defined(HAVE_RB600) || defined(HAVE_FONERA)|| defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_WHRAG108) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_RT2880) || defined(HAVE_OPENRISC)
 	return 0;
 #else
+	unsigned int control, in, outen, out, ctr_mask, out_mask;
 
 #ifdef BCM94712AGR
 	/*
@@ -4989,7 +4989,6 @@ int killall(const char *name, int sig)
 
 void set_ip_forward(char c)
 {
-	FILE *fp;
 	char ch[8];
 	sprintf(ch, "%c", c);
 	writeproc("/proc/sys/net/ipv4/ip_forward", ch);
@@ -5080,7 +5079,7 @@ static int gstrcmp(char *str1, char *str2)
 
 int getIfList(char *buffer, const char *ifprefix)
 {
-	getIfListB(buffer, ifprefix, 0);
+	return getIfListB(buffer, ifprefix, 0);
 }
 
 // returns a physical interfacelist filtered by ifprefix. if ifprefix is
@@ -7399,8 +7398,7 @@ int has_spectralscanning(const char *prefix)
 }
 #endif
 
-#ifdef HAVE_ATH5K
-int is_ath5k(const char *prefix)
+static int devicecountbydriver(const char *prefix, char *drivername)
 {
 	glob_t globbuf;
 	int count = 0;
@@ -7411,61 +7409,38 @@ int is_ath5k(const char *prefix)
 	devnum = get_ath9k_phy_ifname(prefix);
 	if (devnum == -1)
 		return 0;
-	asprintf(&globstring, "/sys/class/ieee80211/phy%d/device/driver/module/drivers/pci:ath5k", devnum);
+	asprintf(&globstring, "/sys/class/ieee80211/phy%d/device/driver/module/drivers/pci:%s", devnum,drivername);
 	globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
 	free(globstring);
 	if (globresult == 0)
 		count = (int)globbuf.gl_pathc;
 	globfree(&globbuf);
 	return (count);
+
+
+}
+
+#ifdef HAVE_ATH5K
+int is_ath5k(const char *prefix)
+{
+	return devicecountbydriver(prefix, "ath5k");
 }
 #endif
 #ifdef HAVE_MVEBU
 int is_mvebu(const char *prefix)
 {
-	glob_t globbuf;
-	int count = 0;
-	char *globstring;
-	int globresult;
-	int devnum;
-	// get legacy interface count
-	// correct index if there are legacy cards arround
-	devnum = get_ath9k_phy_ifname(prefix);
-	if (devnum == -1)
-		return 0;
-	asprintf(&globstring, "/sys/class/ieee80211/phy%d/device/driver/module/drivers/pci:mwlwifi", devnum);
-	globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
-	free(globstring);
-	if (globresult == 0)
-		count = (int)globbuf.gl_pathc;
-	globfree(&globbuf);
-	return (count);
+	return devicecountbydriver(prefix, "mwlwifi");
 }
 #endif
 #ifdef HAVE_ATH10K
 int is_ath10k(const char *prefix)
 {
-	glob_t globbuf;
-	int count = 0;
-	char *globstring;
-	int globresult;
-	int devnum;
 	// get legacy interface count
 #ifdef HAVE_MADWIFI_MIMO
 	if (!nvram_match("mimo_driver", "ath9k"))
 		return (0);
 #endif
-	// correct index if there are legacy cards arround
-	devnum = get_ath9k_phy_ifname(prefix);
-	if (devnum == -1)
-		return 0;
-	asprintf(&globstring, "/sys/class/ieee80211/phy%d/device/driver/module/drivers/pci:ath10k_pci", devnum);
-	globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
-	free(globstring);
-	if (globresult == 0)
-		count = (int)globbuf.gl_pathc;
-	globfree(&globbuf);
-	return (count);
+	return devicecountbydriver(prefix, "ath10k_pci");
 }
 
 #endif
@@ -7645,7 +7620,7 @@ int writevaproc(char *value, char *fmt, ...)
 	return writeproc(varbuf, value);
 }
 
-int set_smp_affinity(int irq, int cpu)
+void set_smp_affinity(int irq, int cpu)
 {
 	char s_cpu[32];
 	snprintf(s_cpu, sizeof(s_cpu), "%d", cpu);
@@ -8018,7 +7993,6 @@ void getPortMapping(int *vlanmap)
 u_int64_t freediskSpace(char *path)
 {
 	struct statfs sizefs;
-	u_int64_t free = 0;
 
 	if ((statfs(path, &sizefs) != 0) || (sizefs.f_type == 0x73717368)) {
 		memset(&sizefs, 0, sizeof(sizefs));
@@ -8095,7 +8069,7 @@ char *foreach_last(char *next, char *word)
 #include <linux/if_bridge.h>
 int isbridge(char *name)
 {
-	int i, ret = 0, num;
+	int i, num;
 	char ifname[IFNAMSIZ];
 	int ifindices[MAX_BRIDGES];
 	int br_socket_fd = -1;
