@@ -45,6 +45,8 @@ CONFIGURE_ARGS_OVPN += \
 
 openvpn-conf-prep:
 	-rm -f openvpn/Makefile
+	cd openvpn && aclocal
+	cd openvpn && automake
 
 openvpn-conf: $(SSL_DEP)
 	if ! test -e "$(OVPN)/Makefile"; then cd $(OVPN) && ./configure $(CONFIGURE_ARGS_OVPN); fi 
