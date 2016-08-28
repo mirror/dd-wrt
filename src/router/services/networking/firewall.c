@@ -2748,7 +2748,7 @@ void start_firewall(void)
 	 * Determine LOG level 
 	 */
 	DEBUG("start firewall()........1\n");
-	log_level = atoi(nvram_safe_get("log_level"));
+	log_level = nvram_geti("log_level");
 	// sprintf(log_drop, "%s", (log_level & 1) ? "logdrop" : "DROP");
 	// sprintf(log_accept, "%s", (log_level & 2) ? "logaccept" : TARG_PASS);
 	// sprintf(log_reject, "%s", (log_level & 1) ? "logreject" : TARG_RST);
@@ -2842,7 +2842,7 @@ void start_firewall(void)
 		web_lanport = HTTPS_PORT;
 	else
 #endif
-		web_lanport = atoi(nvram_safe_get("http_lanport")) ? : HTTP_PORT;
+		web_lanport = nvram_geti("http_lanport") ? : HTTP_PORT;
 
 	/*
 	 * Remove existent file 

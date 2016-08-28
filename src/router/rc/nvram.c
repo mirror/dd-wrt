@@ -70,7 +70,7 @@ int main(int argc, char **argv)
 			size = sizeof(struct nvram_header) + (long)name - (long)buf;
 			int space = NVRAMSPACE;
 			if (nvram_get("nvram_space"))
-				space = atoi(nvram_safe_get("nvram_space"));
+				space = nvram_geti("nvram_space");
 			fprintf(stderr, "size: %d bytes (%d left)\n", size, space - size);
 		} else if (!strncmp(*argv, "backup", 6)) {
 			if (*++argv) {

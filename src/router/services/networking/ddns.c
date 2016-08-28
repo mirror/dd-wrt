@@ -59,7 +59,7 @@ char _conf[] = "ddns_conf_XX";
 int init_ddns(void)
 {
 
-	int flag = atoi(nvram_safe_get("ddns_enable"));
+	int flag = nvram_geti("ddns_enable");
 
 	switch (flag) {
 	case 0:		// ddns disabled
@@ -245,7 +245,7 @@ void start_ddns(void)
 		// mins
 		// fprintf (fp, " --forced_update_period %s", "2419200"); //force
 		// update after 28days
-		fprintf(fp, " --forced_update_period %d", atoi(nvram_safe_get("ddns_force")) * 24 * 60 * 60);	// force 
+		fprintf(fp, " --forced_update_period %d", nvram_geti("ddns_force") * 24 * 60 * 60);	// force 
 		// update 
 		// after 
 		// 28days

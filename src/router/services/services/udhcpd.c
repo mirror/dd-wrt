@@ -178,8 +178,8 @@ void start_udhcpd(void)
 	fprintf(fp, "start %d.%d.%d.%s\n", get_single_ip(nvram_safe_get("lan_ipaddr"), 0), get_single_ip(nvram_safe_get("lan_ipaddr"), 1), get_single_ip(nvram_safe_get("lan_ipaddr"), 2), nvram_safe_get("dhcp_start"));
 	fprintf(fp, "end %d.%d.%d.%d\n",
 		get_single_ip(nvram_safe_get("lan_ipaddr"), 0),
-		get_single_ip(nvram_safe_get("lan_ipaddr"), 1), get_single_ip(nvram_safe_get("lan_ipaddr"), 2), atoi(nvram_safe_get("dhcp_start")) + atoi(nvram_safe_get("dhcp_num")) - 1);
-	int dhcp_max = atoi(nvram_safe_get("dhcp_num")) + atoi(nvram_safe_get("static_leasenum"));
+		get_single_ip(nvram_safe_get("lan_ipaddr"), 1), get_single_ip(nvram_safe_get("lan_ipaddr"), 2), nvram_geti("dhcp_start") + nvram_geti("dhcp_num") - 1);
+	int dhcp_max = nvram_geti("dhcp_num") + nvram_geti("static_leasenum");
 	fprintf(fp, "max_leases %d\n", dhcp_max);
 	fprintf(fp, "interface %s\n", nvram_safe_get("lan_ifname"));
 	fprintf(fp, "remaining yes\n");
@@ -206,16 +206,16 @@ void start_udhcpd(void)
 		fprintf(fp, "option wins %s\n", nvram_safe_get("wan_wins"));
 
 	// Wolf add - keep lease within reasonable timeframe
-	if (atoi(nvram_safe_get("dhcp_lease")) < 10) {
+	if (nvram_geti("dhcp_lease") < 10) {
 		nvram_seti("dhcp_lease", 10);
 		nvram_commit();
 	}
-	if (atoi(nvram_safe_get("dhcp_lease")) > 5760) {
+	if (nvram_geti("dhcp_lease") > 5760) {
 		nvram_seti("dhcp_lease", 5760);
 		nvram_commit();
 	}
 
-	fprintf(fp, "option lease %d\n", atoi(nvram_safe_get("dhcp_lease")) ? atoi(nvram_safe_get("dhcp_lease")) * 60 : 86400);
+	fprintf(fp, "option lease %d\n", nvram_geti("dhcp_lease") ? nvram_geti("dhcp_lease") * 60 : 86400);
 
 	dns_list = get_dns_list();
 
@@ -292,7 +292,7 @@ void start_udhcpd(void)
 		else
 			fprintf(fp, "%s %s %s\n", nvram_safe_get("lan_ipaddr"), mac, nvram_safe_get("router_name"));
 	}
-	int leasenum = atoi(nvram_safe_get("static_leasenum"));
+	int leasenum = nvram_geti("static_leasenum");
 
 	if (leasenum > 0) {
 		char *lease = nvram_safe_get("static_leases");

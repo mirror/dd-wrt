@@ -70,7 +70,7 @@ static void unbound_config(void)
 	fprintf(fp, "remote-control:\n");
 	fclose(fp);
 
-	int leasenum = atoi(nvram_safe_get("static_leasenum"));
+	int leasenum = nvram_geti("static_leasenum");
 
 	if (leasenum > 0) {
 		char *lease = nvram_safe_get("static_leases");

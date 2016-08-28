@@ -554,7 +554,7 @@ int wlconf_up(char *name)
 	 * eval("wl","lrl","16"); eval("wl","srl","16");
 	 * eval("wl","interference","0"); eval("wl","radio","on");
 	 */
-	gmode = atoi(nvram_nget("wl%d_gmode", instance));
+	gmode = nvram_ngeti("wl%d_gmode", instance);
 
 	/*
 	 * Get current phy type 
@@ -572,7 +572,7 @@ int wlconf_up(char *name)
 		WL_IOCTL(name, WLC_SET_PLCPHDR, &val, sizeof(val));
 	}
 	// adjust txpwr and txant
-	val = atoi(nvram_nget("wl%d_txpwr", instance));
+	val = nvram_ngeti("wl%d_txpwr", instance);
 	if (val < 1 || val > TXPWR_MAX)
 		val = TXPWR_DEFAULT;
 	char pwr[8];
@@ -583,7 +583,7 @@ int wlconf_up(char *name)
 	eval("wl", "-i", name, "txpwr1", "-m", "-o", pwr);
 #endif
 #ifdef HAVE_80211AC
-	val = atoi(nvram_nget("wl%d_txpwrusr", instance));
+	val = nvram_ngeti("wl%d_txpwrusr", instance);
 	if (val == 1)
 		eval("wl", "-i", name, "txpwr1", "-1");
 #endif
@@ -592,7 +592,7 @@ int wlconf_up(char *name)
 	/*
 	 * Set txant 
 	 */
-	val = atoi(nvram_nget("wl%d_txant", instance));
+	val = nvram_ngeti("wl%d_txant", instance);
 	if (val < 0 || val > 3 || val == 2)
 		val = 3;
 	WL_IOCTL(name, WLC_SET_TXANT, &val, sizeof(val));
@@ -601,7 +601,7 @@ int wlconf_up(char *name)
 	 * if (nvram_match ("boardtype", "bcm94710dev")) { if (val == 0) val = 1;
 	 * if (val == 1) val = 0; } 
 	 */
-	val = atoi(nvram_nget("wl%d_antdiv", instance));
+	val = nvram_ngeti("wl%d_antdiv", instance);
 	WL_IOCTL(name, WLC_SET_ANTDIV, &val, sizeof(val));
 
 	/*
@@ -3473,7 +3473,7 @@ void start_wan(int status)
 	} else
 #endif
 	{
-		int mtu = atoi(nvram_safe_get("wan_mtu"));
+		int mtu = nvram_geti("wan_mtu");
 		if (mtu == 1500)
 			mtu = atoi(getMTU(ethname));
 		ifr.ifr_mtu = mtu;
@@ -3657,10 +3657,10 @@ void start_wan(int status)
 			if (strlen(nvram_safe_get("3gnmvariant"))) {
 				int netmode;
 				int netmodetoggle;
-				netmode = atoi(nvram_default_get("wan_conmode", "0"));
+				netmode = nvram_default_geti("wan_conmode", 0);
 				if (netmode == 5) {
 					if (strlen(nvram_safe_get("3gnetmodetoggle"))) {
-						netmodetoggle = atoi(nvram_safe_get("3gnetmodetoggle"));
+						netmodetoggle = nvram_geti("3gnetmodetoggle");
 						if (netmodetoggle == 1) {
 							// 2g
 							netmode = 2;
@@ -3719,7 +3719,7 @@ void start_wan(int status)
 			fprintf(fp, "noauth\n");
 			fprintf(fp, "ipcp-max-failure 30\n");
 			if (nvram_match("mtu_enable", "1")) {
-				if (atoi(nvram_safe_get("wan_mtu")) > 0) {
+				if (nvram_geti("wan_mtu") > 0) {
 					fprintf(fp, "mtu %s\n", nvram_safe_get("wan_mtu"));
 					fprintf(fp, "mru %s\n", nvram_safe_get("wan_mtu"));
 				}
@@ -3818,8 +3818,8 @@ void start_wan(int status)
 		char username[80], passwd[80];
 		char idletime[20], retry_num[20];
 
-		snprintf(idletime, sizeof(idletime), "%d", atoi(nvram_safe_get("ppp_idletime")) * 60);
-		snprintf(retry_num, sizeof(retry_num), "%d", (atoi(nvram_safe_get("ppp_redialperiod")) / 5) - 1);
+		snprintf(idletime, sizeof(idletime), "%d", nvram_geti("ppp_idletime") * 60);
+		snprintf(retry_num, sizeof(retry_num), "%d", (nvram_geti("ppp_redialperiod") / 5) - 1);
 
 		snprintf(username, sizeof(username), "%s", nvram_safe_get("ppp_username"));
 		snprintf(passwd, sizeof(passwd), "%s", nvram_safe_get("ppp_passwd"));
@@ -3973,7 +3973,7 @@ void start_wan(int status)
 		// if MRU is not Auto force MTU/MRU of interface to value selected by 
 		// theuser on web page
 		if (nvram_match("mtu_enable", "1")) {
-			if (atoi(nvram_safe_get("wan_mtu")) > 0) {
+			if (nvram_geti("wan_mtu") > 0) {
 				fprintf(fp, "mtu %s\n", nvram_safe_get("wan_mtu"));
 				fprintf(fp, "mru %s\n", nvram_safe_get("wan_mtu"));
 			}
@@ -3982,10 +3982,10 @@ void start_wan(int status)
 			// If MRU set to Auto we still allow custom MTU/MRU settings for
 			// expirienced users
 			if (nvram_invmatch("pppoe_ppp_mtu", ""))
-				if (atoi(nvram_safe_get("pppoe_ppp_mtu")) > 0)
+				if (nvram_geti("pppoe_ppp_mtu") > 0)
 					fprintf(fp, "mtu %s\n", nvram_safe_get("pppoe_ppp_mtu"));
 			if (nvram_invmatch("pppoe_ppp_mru", ""))
-				if (atoi(nvram_safe_get("pppoe_ppp_mru")) > 0)
+				if (nvram_geti("pppoe_ppp_mru") > 0)
 					fprintf(fp, "mru %s\n", nvram_safe_get("pppoe_ppp_mru"));
 		}
 
@@ -4149,8 +4149,8 @@ void start_wan(int status)
 		stop_atm();
 		start_atm();
 
-		snprintf(idletime, sizeof(idletime), "%d", atoi(nvram_safe_get("ppp_idletime")) * 60);
-		snprintf(retry_num, sizeof(retry_num), "%d", (atoi(nvram_safe_get("ppp_redialperiod")) / 5) - 1);
+		snprintf(idletime, sizeof(idletime), "%d", nvram_geti("ppp_idletime") * 60);
+		snprintf(retry_num, sizeof(retry_num), "%d", (nvram_geti("ppp_redialperiod") / 5) - 1);
 
 		snprintf(username, sizeof(username), "%s", nvram_safe_get("ppp_username"));
 		snprintf(passwd, sizeof(passwd), "%s", nvram_safe_get("ppp_passwd"));
@@ -4195,7 +4195,7 @@ void start_wan(int status)
 			fprintf(fp, "default-asyncmap\n");
 
 		if (nvram_match("mtu_enable", "1")) {
-			if (atoi(nvram_safe_get("wan_mtu")) > 0) {
+			if (nvram_geti("wan_mtu") > 0) {
 				fprintf(fp, "mtu %s\n", nvram_safe_get("wan_mtu"));
 				fprintf(fp, "mru %s\n", nvram_safe_get("wan_mtu"));
 			}
@@ -4204,10 +4204,10 @@ void start_wan(int status)
 			// If MRU set to Auto we still allow custom MTU/MRU settings for
 			// expirienced users
 			if (nvram_invmatch("pppoe_ppp_mtu", ""))
-				if (atoi(nvram_safe_get("pppoe_ppp_mtu")) > 0)
+				if (nvram_geti("pppoe_ppp_mtu") > 0)
 					fprintf(fp, "mtu %s\n", nvram_safe_get("pppoe_ppp_mtu"));
 			if (nvram_invmatch("pppoe_ppp_mru", ""))
-				if (atoi(nvram_safe_get("pppoe_ppp_mru")) > 0)
+				if (nvram_geti("pppoe_ppp_mru") > 0)
 					fprintf(fp, "mru %s\n", nvram_safe_get("pppoe_ppp_mru"));
 		}
 
@@ -4494,12 +4494,12 @@ static void start_ipv6_tunnel(char *wan_ifname)
 	char *ipv6_prefix = nvram_safe_get("ipv6_prefix");
 	char *ipv6_pf_len = nvram_safe_get("ipv6_pf_len");
 
-	int mtu = atoi(nvram_default_get("wan_mtu", "1500")) - 20;
+	int mtu = nvram_default_geti("wan_mtu", 1500) - 20;
 
 	stop_ipv6_tunnel(wan_ifname);
 
 	if (nvram_invmatch("ipv6_mtu", ""))
-		mtu = atoi(nvram_safe_get("ipv6_mtu"));
+		mtu = nvram_geti("ipv6_mtu");
 	eval("ip", "tunnel", "add", "ip6tun", "mode", "sit", "ttl", "64", "local", get_wan_ipaddr(), "remote", remote_endpoint);
 	char s_mtu[32];
 	sprintf(s_mtu, "%d", mtu);
@@ -4550,7 +4550,7 @@ static void start_wan6_done(char *wan_ifname)
 
 		p = ipv6_router_address(NULL, addr6);
 		if (*p) {
-			snprintf(ip, sizeof(ip), "%s/%d", p, atoi(nvram_safe_get("ipv6_pf_len")) ? : 64);
+			snprintf(ip, sizeof(ip), "%s/%d", p, nvram_geti("ipv6_pf_len") ? : 64);
 			eval("ip", "-6", "addr", "add", ip, "dev", nvram_safe_get("lan_ifname"));
 		}
 		if (nvram_match("wan_proto", "disabled")) {

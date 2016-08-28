@@ -85,7 +85,7 @@ int dhcp6c_state_main(int argc, char **argv)
 	// extract prefix from configured IPv6 address
 	if (inet_pton(AF_INET6, nvram_safe_get("ipv6_rtr_addr"), &addr) > 0) {
 
-		r = atoi(nvram_safe_get("ipv6_pf_len")) ? : 64;
+		r = nvram_geti("ipv6_pf_len") ? : 64;
 		for (r = 128 - r, i = 15; r > 0; r -= 8) {
 			if (r >= 8)
 				addr.s6_addr[i--] = 0;

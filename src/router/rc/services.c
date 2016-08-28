@@ -219,7 +219,7 @@ static int start_services_main(int argc, char **argv)
 	start_service_f("spotpass");
 #endif
 #ifdef HAVE_IAS
-	if (atoi(nvram_safe_get("ias_startup")) > 0) {
+	if (nvram_geti("ias_startup") > 0) {
 		nvram_seti("ias_startup", 3);
 		nvram_seti("ias_dnsresp", 1);
 		system("/usr/sbin/dns_responder 192.168.11.1 55300 &");

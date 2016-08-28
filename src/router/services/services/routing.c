@@ -243,7 +243,7 @@ static int zebra_ospf_init(void)
 						fprintf(fp, "!\n! WDS: %s\n", nvram_nget("wl%d_wds%d_desc", c, s));
 						fprintf(fp, "interface %s\n", dev);
 
-						if (atoi(nvram_safe_get(wdsdevospf))
+						if (nvram_geti(wdsdevospf)
 						    > 0)
 							fprintf(fp, " ip ospf cost %s\n", nvram_safe_get(wdsdevospf));
 					}
@@ -263,7 +263,7 @@ static int zebra_ospf_init(void)
 			char wdsdevospf[32] = { 0 };
 			sprintf(wdsdevospf, "wl_wds%d_ospf", s);
 
-			if (atoi(nvram_safe_get(wdsdevospf)) < 0)
+			if (nvram_geti(wdsdevospf) < 0)
 				fprintf(fp, " passive-interface %s\n", nvram_nget("wl_wds%d_if", s));
 		}
 
@@ -354,7 +354,7 @@ static int zebra_ospf6_init(void)
 						fprintf(fp, "!\n! WDS: %s\n", nvram_nget("wl%d_wds%d_desc", c, s));
 						fprintf(fp, "interface %s\n", dev);
 
-						if (atoi(nvram_safe_get(wdsdevospf))
+						if (nvram_geti(wdsdevospf)
 						    > 0)
 							fprintf(fp, " ip ospf cost %s\n", nvram_safe_get(wdsdevospf));
 					}
@@ -375,7 +375,7 @@ static int zebra_ospf6_init(void)
 			char wdsdevospf[32] = { 0 };
 			sprintf(wdsdevospf, "wl_wds%d_ospf", s);
 
-			if (atoi(nvram_safe_get(wdsdevospf)) < 0)
+			if (nvram_geti(wdsdevospf) < 0)
 				fprintf(fp, " passive-interface %s\n", nvram_nget("wl_wds%d_if", s));
 		}
 
