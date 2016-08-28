@@ -1491,7 +1491,7 @@ static void configure_single(int count)
 	int vif = 0;
 	sprintf(wl_poll, "%s_pollingmode", dev);
 
-	setsysctrl(wif, "pollingmode", atoi(nvram_default_get(wl_poll, "0")));
+	setsysctrl(wif, "pollingmode", nvram_default_geti(wl_poll, 0));
 
 	char *vifs = nvram_safe_get(wifivifs);
 	int countvaps = 1;
@@ -1620,7 +1620,7 @@ static void configure_single(int count)
 
 	cprintf("adjust sensitivity\n");
 
-	int distance = atoi(nvram_default_get(sens, "2000"));	// to meter
+	int distance = nvram_default_geti(sens, 2000);	// to meter
 	if (nvram_nmatch("1", "%s_pollingmode", var)) {
 		setdistance(wif, 100000, 20);
 	} else {
@@ -1646,13 +1646,13 @@ static void configure_single(int count)
 	sprintf(wl_ofdm_weak_det, "%s_ofdm_weak_det", dev);
 	sprintf(wl_csma, "%s_csma", dev);
 
-	setsysctrl(wif, "csma", atoi(nvram_default_get(wl_csma, "1")));
-	setsysctrl(wif, "intmit", atoi(nvram_default_get(wl_intmit, "-1")));
-	int level = atoi(nvram_default_get(wl_noise_immunity, "4"));
+	setsysctrl(wif, "csma", nvram_default_geti(wl_csma, 1));
+	setsysctrl(wif, "intmit", nvram_default_geti(wl_intmit, -1));
+	int level = nvram_default_geti(wl_noise_immunity, 4);
 	if (level < 0)
 		level = 4;
 	setsysctrl(wif, "noise_immunity", level);
-	setsysctrl(wif, "ofdm_weak_det", atoi(nvram_default_get(wl_ofdm_weak_det, "1")));
+	setsysctrl(wif, "ofdm_weak_det", nvram_default_geti(wl_ofdm_weak_det, 1));
 
 	if (isEMP(dev))		//check this only if the current installed card is usually a emp card. this is made to prevent card destruction
 	{
@@ -1684,7 +1684,7 @@ static void configure_single(int count)
 #endif
 
 #if defined(HAVE_NS2)  || defined(HAVE_NS5) || defined(HAVE_LC2) || defined(HAVE_LC5) || defined(HAVE_NS3)
-	int tx = atoi(nvram_default_get(txantenna, "0"));
+	int tx = nvram_default_geti(txantenna, 0);
 	setsysctrl(wif, "diversity", 0);
 	switch (tx) {
 	case 0:		// vertical
@@ -1716,8 +1716,8 @@ static void configure_single(int count)
 	int tx = 1;
 	int diva = 0;		//atoi( nvram_default_get( diversity, "0" ) );
 //#elif defined(HAVE_EOC5610)
-//      int rx = atoi(nvram_default_get(txantenna, "1"));
-//      int tx = atoi(nvram_default_get(txantenna, "1"));
+//      int rx = nvram_default_geti(txantenna, "1"));
+//      int tx = nvram_default_geti(txantenna, "1"));
 //      int diva = 0;           //atoi( nvram_default_get( diversity, "0" ) );
 //      int rx = 1;
 //      int tx = 0;             // fix to internal path, since both antennas use the same connector. so only the switch matters
@@ -1729,9 +1729,9 @@ static void configure_single(int count)
 //      int tx = 0;             // fix to internal path, since both antennas use the same connector. so only the switch matters
 //      int diva = 1;           //1;// atoi( nvram_default_get( diversity, "0" ) );
 #else
-	int rx = atoi(nvram_default_get(rxantenna, "1"));
-	int tx = atoi(nvram_default_get(txantenna, "1"));
-	int diva = atoi(nvram_default_get(diversity, "0"));
+	int rx = nvram_default_geti(rxantenna, 1);
+	int tx = nvram_default_geti(txantenna, 1);
+	int diva = nvram_default_geti(diversity, 0);
 #endif
 	setsysctrl(wif, "diversity", diva);
 	setsysctrl(wif, "rxantenna", rx);
@@ -2021,7 +2021,7 @@ static void configure_single(int count)
 
 	cprintf("adjust power\n");
 
-	int newpower = atoi(nvram_default_get(power, "16"));
+	int newpower = nvram_default_geti(power, 16));
 	char s_dbm[32];
 	sprintf(s_dbm, "%ddBm", newpower);
 	eval("iwconfig", dev, "txpower", s_dbm);
@@ -2388,7 +2388,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 			if (nvram_get(regdomain) != NULL)	// reg domain is
 				// defined in nvram
 			{
-				int destination = atoi(nvram_safe_get(regdomain));	// read 
+				int destination = nvram_geti(regdomain);	// read 
 
 				// new 
 				// target 

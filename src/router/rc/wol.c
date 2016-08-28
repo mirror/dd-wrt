@@ -30,7 +30,7 @@ static int wol_run(void)
 	while (nvram_match("wol_enable", "1")) {
 		int interval = 0;
 
-		interval = atoi(nvram_safe_get("wol_interval")) > WOL_INTERVAL ? atoi(nvram_safe_get("wol_interval")) : WOL_INTERVAL;
+		interval = nvram_geti("wol_interval") > WOL_INTERVAL ? nvram_geti("wol_interval") : WOL_INTERVAL;
 
 		if (strlen(nvram_get("wol_passwd")) <= 0)
 			passwd_param[0] = 0;

@@ -304,7 +304,7 @@ int getRssi_11n(char *ifname, unsigned char *mac)
 
 			free(buf);
 
-			return rssi + atoi(nvram_default_get(nb, "0"));
+			return rssi + nvram_default_geti(nb, 0);
 		}
 		if (!memcmp(&si->isi_macaddr[0], mac, 6))
 			break;
@@ -421,7 +421,7 @@ int getNoise_11n(char *ifname, unsigned char *mac)
 			int noise = si->isi_noise;
 
 			free(buf);
-			return noise + atoi(nvram_default_get(nb, "0"));
+			return noise + nvram_default_geti(nb, 0);
 		}
 		if (!memcmp(&si->isi_macaddr[0], mac, 6))
 			break;

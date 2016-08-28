@@ -109,6 +109,8 @@ extern int nvram_default_match (char *var, char *match, char *def);
 
 extern char *nvram_default_get (char *var, char *def);
 
+int nvram_default_geti(char *var, int def);
+
 extern char *nvram_nget(const char *fmt,...);
 
 extern char *nvram_nset(char *value,const char *fmt,...);
@@ -118,6 +120,10 @@ extern int nvram_nmatch(char *match,const char *fmt,...);
 extern int nvram_geti(const char *name);
 
 extern void nvram_seti(const char *name, int value);
+
+int nvram_ngeti(const char *fmt, ...);
+
+
 
 /*
  * Set the value of an NVRAM variable. The name and value strings are

@@ -208,7 +208,7 @@ void start_pptpd(void)
 	 * overhead) 
 	 */
 //	if (nvram_match("mtu_enable", "1"))
-//		mss = atoi(nvram_safe_get("wan_mtu")) - 40 - 108;
+//		mss = nvram_geti("wan_mtu") - 40 - 108;
 //	else
 //		mss = 1500 - 40 - 108;
 	char bcast[32];

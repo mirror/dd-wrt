@@ -1348,7 +1348,7 @@ char *get3GControlDevice(void)
 	char *ttsdevice = "/dev/usb/tts/0";
 #ifdef HAVE_CAMBRIA
 	int gpio1, gpio2;
-	int select = atoi(nvram_safe_get("wan_select"));
+	int select = nvram_geti("wan_select");
 	switch (select) {
 	case 1:
 		gpio1 = 1;
@@ -1368,8 +1368,8 @@ char *get3GControlDevice(void)
 		break;
 	}
 
-	if (gpio1 == atoi(nvram_safe_get("gpio26"))
-	    && gpio2 == atoi(nvram_safe_get("gpio27")))
+	if (gpio1 == nvram_geti("gpio26")
+	    && gpio2 == nvram_geti("gpio27"))
 		needreset = 0;
 
 	if (gpio1) {

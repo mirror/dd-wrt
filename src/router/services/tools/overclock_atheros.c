@@ -120,7 +120,7 @@ void start_overclock(void)	// hidden feature. must be called with
 		putc(getc(in), out);
 	fclose(in);
 	fclose(out);
-	int clk = atoi(nvram_default_get("cpuclk", "180"));
+	int clk = nvram_geti("cpuclk", 180);
 
 	in = fopen("/tmp/boot", "r+b");
 	fseek(in, 0xe64b, SEEK_SET);
@@ -335,7 +335,7 @@ void start_overclock(void)	// hidden feature. must be called with
 			fixclk(in, 184, 200);
 			nvram_seti("cpuclk", 200);
 			nvram_commit();
-			clk = atoi(nvram_default_get("cpuclk", "180"));
+			clk = nvram_default_geti("cpuclk", 180);
 			putc(0x28, in);	// 0x2c for 220 mhz 0x30 for 240 mhz
 		}
 
@@ -433,7 +433,7 @@ void start_overclock(void)	// hidden feature. must be called with
 			fixclk(in, 184, 200);
 			nvram_seti("cpuclk", 200);
 			nvram_commit();
-			clk = atoi(nvram_default_get("cpuclk", "180"));
+			clk = nvram_default_geti("cpuclk", 180);
 			putc(0x28, in);	// 0x2c for 220 mhz 0x30 for 240 mhz
 		}
 		fclose(in);
@@ -492,7 +492,7 @@ void start_overclock(void)	// hidden feature. must be called with
 			putc(0xc, in);	// 0x2c for 220 mhz 0x30 for 240 mhz
 		else {
 			nvram_seti("cpuclk", 220);
-			clk = atoi(nvram_default_get("cpuclk", "180"));
+			clk = nvram_default_geti("cpuclk", 180);
 			nvram_commit();
 			putc(0xb, in);	// 0x2c for 220 mhz 0x30 for 240 mhz
 		}
@@ -542,7 +542,7 @@ void start_overclock(void)	// hidden feature. must be called with
 			putc(0xc, in);	// 0x2c for 220 mhz 0x30 for 240 mhz
 		else {
 			nvram_seti("cpuclk", 220);
-			clk = atoi(nvram_default_get("cpuclk", "180"));
+			clk = nvram_default_geti("cpuclk", 180);
 			nvram_commit();
 			putc(0xb, in);	// 0x2c for 220 mhz 0x30 for 240 mhz
 		}
@@ -587,7 +587,7 @@ void start_overclock(void)	// hidden feature. must be called with
 			putc(0xc, in);	// 0x2c for 220 mhz 0x30 for 240 mhz
 		else {
 			nvram_seti("cpuclk", 220);
-			clk = atoi(nvram_default_get("cpuclk", "180"));
+			clk = nvram_default_geti("cpuclk", 180);
 			nvram_commit();
 			putc(0xb, in);	// 0x2c for 220 mhz 0x30 for 240 mhz
 		}

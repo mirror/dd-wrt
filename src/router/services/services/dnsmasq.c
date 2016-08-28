@@ -98,7 +98,7 @@ static int landhcp(void)
 static int hasmdhcp(void)
 {
 	if (nvram_get("mdhcpd_count") != NULL) {
-		int mdhcpcount = atoi(nvram_safe_get("mdhcpd_count"));
+		int mdhcpcount = nvram_geti("mdhcpd_count");
 		return mdhcpcount > 0 ? 1 : 0;
 	}
 	return 0;
@@ -168,7 +168,7 @@ void start_dnsmasq(void)
 	if (nvram_get("mdhcpd_count") != NULL) {
 		char *word = malloc(128);
 		memset(word, 0, 128);
-		mdhcpcount = atoi(nvram_safe_get("mdhcpd_count"));
+		mdhcpcount = nvram_geti("mdhcpd_count");
 		for (i = 0; i < mdhcpcount; i++) {
 			if (strlen(nvram_nget("%s_ipaddr", getmdhcp(0, i, word))) == 0 || strlen(nvram_nget("%s_netmask", getmdhcp(0, i, word)))
 			    == 0)
@@ -236,7 +236,7 @@ void start_dnsmasq(void)
 		memset(word, 0, 128);
 
 		if (landhcp())
-			dhcp_max += atoi(nvram_safe_get("dhcp_num")) + atoi(nvram_safe_get("static_leasenum"));
+			dhcp_max += nvram_geti("dhcp_num") + nvram_geti("static_leasenum");
 		for (i = 0; i < mdhcpcount; i++) {
 			if (strlen(nvram_nget("%s_ipaddr", getmdhcp(0, i, word))) == 0 || strlen(nvram_nget("%s_netmask", getmdhcp(0, i, word)))
 			    == 0)
@@ -299,8 +299,8 @@ void start_dnsmasq(void)
 		if (nvram_match("auth_dnsmasq", "1"))
 			fprintf(fp, "dhcp-authoritative\n");
 		if (landhcp()) {
-			unsigned int dhcpnum = atoi(nvram_safe_get("dhcp_num"));
-			unsigned int dhcpstart = atoi(nvram_safe_get("dhcp_start"));
+			unsigned int dhcpnum = nvram_geti("dhcp_num");
+			unsigned int dhcpstart = nvram_geti("dhcp_start");
 			unsigned int ip1 = get_single_ip(nvram_safe_get("lan_ipaddr"), 0);
 			unsigned int ip2 = get_single_ip(nvram_safe_get("lan_ipaddr"), 1);
 			unsigned int ip3 = get_single_ip(nvram_safe_get("lan_ipaddr"), 2);
@@ -352,7 +352,7 @@ void start_dnsmasq(void)
 			free(word);
 		}
 
-		int leasenum = atoi(nvram_safe_get("static_leasenum"));
+		int leasenum = nvram_geti("static_leasenum");
 
 		if (leasenum > 0) {
 			char *lease = nvram_safe_get("static_leases");

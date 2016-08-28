@@ -96,7 +96,7 @@ static void create_pptp_config(char *servername, char *username)
 		fprintf(fp, "mtu %s\n", nvram_safe_get("wan_mtu"));
 
 	if (nvram_match("ppp_demand", "1")) {	// demand mode
-		fprintf(fp, "idle %d\n", nvram_match("ppp_demand", "1") ? atoi(nvram_safe_get("ppp_idletime")) * 60 : 0);
+		fprintf(fp, "idle %d\n", nvram_match("ppp_demand", "1") ? nvram_geti("ppp_idletime") * 60 : 0);
 		fprintf(fp, "demand\n");	// Dial on demand
 		fprintf(fp, "persist\n");	// Do not exit after a connection is
 		// terminated.

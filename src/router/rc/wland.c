@@ -62,7 +62,7 @@ static int do_ap_watchdog(void)
 	int val = 0;
 	struct stat s;
 	static time_t last;
-	int interval = atoi(nvram_safe_get("apwatchdog_interval")) > WLAND_INTERVAL ? atoi(nvram_safe_get("apwatchdog_interval")) : WLAND_INTERVAL;
+	int interval = nvram_geti("apwatchdog_interval") > WLAND_INTERVAL ? nvram_geti("apwatchdog_interval") : WLAND_INTERVAL;
 
 	system2("wl assoclist 2>&1 > /tmp/.assoclist");
 	stat("/tmp/.assoclist", &s);
@@ -73,7 +73,7 @@ static int do_ap_watchdog(void)
 		cprintf("resetting ap radio\n");
 		eval("wlconf", get_wdev(), "down");
 
-		val = atoi(nvram_safe_get("wl0_channel")) + 1;
+		val = nvram_geti("wl0_channel") + 1;
 		if (val <= 2 || val >= 14)
 			val = 2;
 
@@ -566,7 +566,7 @@ static void do_madwifi_check(void)
 						eval("ifconfig", dev, "up");
 						char power[32];
 						sprintf(power, "%s_txpwrdbm", dev);
-						int newpower = atoi(nvram_default_get(power, "16"));
+						int newpower = nvram_default_geti(power, 16);
 						sysprintf("iwconfig %s txpower %ddBm", dev, newpower);
 						eval("startservice", "set_routes", "-f");
 						lastchans[i] = -1;
@@ -689,7 +689,7 @@ int main(int argc, char **argv)
 			char dst[32];
 			sprintf(dst, "%s_distance", dev);
 			if (is_ath10k(dev)) {	// evil hack for QCA 
-				set_ath10kdistance(dev, atoi(nvram_safe_get(dst)));
+				set_ath10kdistance(dev, nvram_geti(dst)));
 			}
 		}
 #endif*/

@@ -153,7 +153,7 @@ void start_l2tp(int status)
 		}
 
 		if (nvram_match("mtu_enable", "1")) {
-			int wan_mtu = atoi(nvram_safe_get("wan_mtu"));
+			int wan_mtu = nvram_geti("wan_mtu");
 			if (wan_mtu > 0) {
 				fprintf(fp, "mtu %d\n"	//
 					"mru %d\n", wan_mtu, wan_mtu);
@@ -171,7 +171,7 @@ void start_l2tp(int status)
 				"ipcp-accept-local\n"	//
 				"connect true\n"	//
 				"noipdefault\n"	//
-				"ktune\n", nvram_match("ppp_demand", "1") ? atoi(nvram_safe_get("ppp_idletime")) * 60 : 0);
+				"ktune\n", nvram_match("ppp_demand", "1") ? nvram_geti("ppp_idletime") * 60 : 0);
 			// to 1 in demand mode if the local
 			// address changes
 		} else {	// keepalive mode

@@ -139,6 +139,16 @@ char *nvram_nget(const char *fmt, ...)
 	return nvram_safe_get(varbuf);
 }
 
+int nvram_ngeti(const char *fmt, ...)
+{
+	char varbuf[64];
+	va_list args;
+	va_start(args, (char *)fmt);
+	vsnprintf(varbuf, sizeof(varbuf), fmt, args);
+	va_end(args);
+	return atoi(nvram_safe_get(varbuf));
+}
+
 char *nvram_nset(char *value, const char *fmt, ...)
 {
 	char varbuf[64];
@@ -191,12 +201,25 @@ int nvram_default_match(char *var, char *match, char *def)
 
 char *nvram_default_get(char *var, char *def)
 {
+	char tmp[100];
 	char *v = nvram_get(var);
 	if (v == NULL || strlen(v) == 0) {
 		nvram_set(var, def);
 		return def;
 	}
 	return nvram_safe_get(var);
+}
+
+int nvram_default_geti(char *var, int def)
+{
+	char tmp[100];
+	char *v = nvram_get(var);
+	if (v == NULL || strlen(v) == 0) {
+		snprintf(tmp, sizeof(tmp), "%d", def);
+		nvram_set(var, tmp);
+		return def;
+	}
+	return atoi(nvram_safe_get(var));
 }
 
 void fwritenvram(char *var, FILE * fp)

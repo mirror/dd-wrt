@@ -66,9 +66,9 @@ void start_tor(void)
 	if (nvram_invmatch("tor_id", ""))
 		fprintf(fp, "Nickname %s\n", nvram_safe_get("tor_id"));
 	if (nvram_invmatch("tor_bwrate", ""))
-		fprintf(fp, "RelayBandwidthRate %d\n", atoi(nvram_safe_get("tor_bwrate")) * 1024);
+		fprintf(fp, "RelayBandwidthRate %d\n", nvram_geti("tor_bwrate") * 1024);
 	if (nvram_invmatch("tor_bwburst", ""))
-		fprintf(fp, "RelayBandwidthBurst %d\n", atoi(nvram_safe_get("tor_bwburst")) * 1024);
+		fprintf(fp, "RelayBandwidthBurst %d\n", nvram_geti("tor_bwburst") * 1024);
 
 //      fprintf(fp, "ControlPort 9051\n");
 	if (nvram_match("tor_relay", "1")) {
