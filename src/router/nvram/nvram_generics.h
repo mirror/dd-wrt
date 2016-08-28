@@ -68,11 +68,7 @@ char *nvram_get_collection(char *name)
 		cprintf("chain = %s\n", chain);
 		if (chains == NULL)
 			chains = malloc(strlen(chain) + 1);
-		chains =
-		    (char *)realloc(chains,
-				    chains !=
-				    NULL ? strlen(chains) + strlen(chain) +
-				    1 : strlen(chain) + 1);
+		chains = (char *)realloc(chains, chains != NULL ? strlen(chains) + strlen(chain) + 1 : strlen(chain) + 1);
 		cprintf("alloc okay\n");
 		memcpy(&chains[offset], chain, strlen(chain));
 		offset += strlen(chain);
@@ -156,6 +152,19 @@ char *nvram_nset(char *value, const char *fmt, ...)
 char *nvram_safe_get(const char *name)
 {
 	return nvram_get(name) ? : "";
+}
+
+int nvram_geti(const char *name)
+{
+
+	return atoi(nvram_safe_get(name));
+}
+
+void nvram_seti(const char *name, int value)
+{
+	char tmp[100];
+	snprintf(tmp, sizeof(tmp), "%d", value);
+	nvram_set(name, tmp);
 }
 
 void nvram_safe_unset(const char *name)
