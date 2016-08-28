@@ -538,34 +538,40 @@ int getUptime(char *ifname, unsigned char *mac)
 
 void radio_off(int idx)
 {
-	if (idx == -1) {
-		eval("iwpriv", "ra0", "set", "RadioOn=0");
-		eval("iwpriv", "ra0", "set", "WlanLed=0");
-		eval("iwpriv", "ba0", "set", "RadioOn=0");
-		eval("iwpriv", "ba0", "set", "WlanLed=0");
-	} else if (idx == 0) {
-		eval("iwpriv", "ra0", "set", "RadioOn=0");
-		eval("iwpriv", "ra0", "set", "WlanLed=0");
-	} else {
-		eval("iwpriv", "ba0", "set", "RadioOn=0");
-		eval("iwpriv", "ba0", "set", "WlanLed=0");
+	switch (idx) {
+	case -1:
+		idx = 1;
+	case 0:
+		if (!nvram_match("wl0_net_mode", "disabled")) {
+			eval("iwpriv", "ra0", "set", "RadioOn=0");
+			eval("iwpriv", "ra0", "set", "WlanLed=0");
+		}
+	case 1:
+		if (!nvram_match("wl1_net_mode", "disabled") && idx == 1) {
+			eval("iwpriv", "ba0", "set", "RadioOn=0");
+			eval("iwpriv", "ba0", "set", "WlanLed=0");
+		}
+
 	}
 	led_control(LED_WLAN0, LED_OFF);
 }
 
 void radio_on(int idx)
 {
-	if (idx == -1) {
-		eval("iwpriv", "ra0", "set", "RadioOn=1");
-		eval("iwpriv", "ra0", "set", "WlanLed=1");
-		eval("iwpriv", "ba0", "set", "RadioOn=1");
-		eval("iwpriv", "ba0", "set", "WlanLed=1");
-	} else if (idx == 0) {
-		eval("iwpriv", "ra0", "set", "RadioOn=1");
-		eval("iwpriv", "ra0", "set", "WlanLed=1");
-	} else {
-		eval("iwpriv", "ba0", "set", "RadioOn=1");
-		eval("iwpriv", "ba0", "set", "WlanLed=1");
+	switch (idx) {
+	case -1:
+		idx = 1;
+	case 0:
+		if (!nvram_match("wl0_net_mode", "disabled")) {
+			eval("iwpriv", "ra0", "set", "RadioOn=1");
+			eval("iwpriv", "ra0", "set", "WlanLed=1");
+		}
+	case 1:
+		if (!nvram_match("wl1_net_mode", "disabled") && idx == 1) {
+			eval("iwpriv", "ba0", "set", "RadioOn=1");
+			eval("iwpriv", "ba0", "set", "WlanLed=1");
+		}
+
 	}
 	led_control(LED_WLAN0, LED_ON);
 }
