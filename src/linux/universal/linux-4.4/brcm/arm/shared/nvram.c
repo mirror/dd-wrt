@@ -98,14 +98,14 @@ hash(const char *s)
 	return hashval;
 }
 
+static unsigned long nvram_space = MAX_NVRAM_SPACE;
 /* (Re)initialize the hash table. Should be locked. */
 static int
 BCMINITFN(nvram_rehash)(struct nvram_header *header)
 {
 	char buf[] = "0xXXXXXXXX", *name, *value, *end, *eq;
 	char *nvram_space_str = _nvram_get("nvram_space");
-	unsigned long nvram_space = DEF_NVRAM_SPACE; // default, not max
-
+	unsigned long nvram_space_new;
 	if (nvram_space_str)
 		nvram_space =  bcm_strtoul(nvram_space_str, NULL, 0);
 
@@ -126,7 +126,16 @@ BCMINITFN(nvram_rehash)(struct nvram_header *header)
 		_nvram_set(name, value);
 		*eq = '=';
 	}
-
+		
+	nvram_space_str = _nvram_get("nvram_space");
+	if (nvram_space_str) {
+		nvram_space_new =  bcm_strtoul(nvram_space_str, NULL, 0);
+		if (nvram_space_new < nvram_space) {
+		    nvram_space = nvram_space_new;
+		    nvram_rehash(header);
+		}
+	}	
+	
 	/* Set special SDRAM parameters */
 	if (!_nvram_get("sdram_init")) {
 		sprintf(buf, "0x%04X", (uint16)(header->crc_ver_init >> 16));
