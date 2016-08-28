@@ -86,11 +86,11 @@ void start_quagga_writememory(void)
 		fread(buf, len, 1, in);
 		buf[len] = 0;
 		fclose(in);
-		nvram_set("zebra_copt", "1");
+		nvram_seti("zebra_copt", 1);
 		nvram_set("zebra_conf", buf);
 		free(buf);
 	} else {
-		nvram_set("zebra_copt", "0");
+		nvram_seti("zebra_copt", 0);
 		nvram_unset("zebra_conf");
 	}
 	in = fopen("/tmp/ospfd.conf", "rb");
@@ -105,11 +105,11 @@ void start_quagga_writememory(void)
 		fread(buf, len, 1, in);
 		buf[len] = 0;
 		fclose(in);
-		nvram_set("ospfd_copt", "1");
+		nvram_seti("ospfd_copt", 1);
 		nvram_set("ospfd_conf", buf);
 		free(buf);
 	} else {
-		nvram_set("ospfd_copt", "0");
+		nvram_seti("ospfd_copt", 0);
 		nvram_unset("ospfd_conf");
 	}
 
@@ -125,11 +125,11 @@ void start_quagga_writememory(void)
 		fread(buf, len, 1, in);
 		buf[len] = 0;
 		fclose(in);
-		nvram_set("ospf6d_copt", "1");
+		nvram_seti("ospf6d_copt", 1);
 		nvram_set("ospf6d_conf", buf);
 		free(buf);
 	} else {
-		nvram_set("ospf6d_copt", "0");
+		nvram_seti("ospf6d_copt", 0);
 		nvram_unset("ospf6d_conf");
 	}
 
@@ -145,11 +145,11 @@ void start_quagga_writememory(void)
 		fread(buf, len, 1, in);
 		buf[len] = 0;
 		fclose(in);
-		nvram_set("bgpd_copt", "1");
+		nvram_seti("bgpd_copt", 1);
 		nvram_set("bgpd_conf", buf);
 		free(buf);
 	} else {
-		nvram_set("bgpd_copt", "0");
+		nvram_seti("bgpd_copt", 0);
 		nvram_unset("bgpd_conf");
 	}
 
@@ -165,11 +165,11 @@ void start_quagga_writememory(void)
 		fread(buf, len, 1, in);
 		buf[len] = 0;
 		fclose(in);
-		nvram_set("ripd_copt", "1");
+		nvram_seti("ripd_copt", 1);
 		nvram_set("ripd_conf", buf);
 		free(buf);
 	} else {
-		nvram_set("ripd_copt", "0");
+		nvram_seti("ripd_copt", 0);
 		nvram_unset("ripd_conf");
 	}
 

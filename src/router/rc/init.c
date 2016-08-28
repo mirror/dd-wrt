@@ -524,7 +524,7 @@ int main(int argc, char **argv)
 	 * Add vlan 
 	 */
 	boardflags = strtoul(nvram_safe_get("boardflags"), NULL, 0);
-	nvram_set("wanup", "0");
+	nvram_seti("wanup", 0);
 
 	set_ip_forward('1');
 	set_tcp_params();
@@ -608,7 +608,7 @@ int main(int argc, char **argv)
 	int cnt = get_wl_instances();
 #ifdef HAVE_QTN
 	cnt = 1;
-	nvram_set("qtn_ready", "0");
+	nvram_seti("qtn_ready", 0);
 #endif
 #endif
 	int c;

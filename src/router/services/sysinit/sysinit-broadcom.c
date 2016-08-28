@@ -128,27 +128,27 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 	char eaddr[32];
 
 #ifndef HAVE_BUFFALO
-	nvram_set("pa0maxpwr", "251");	// force pa0maxpwr to be 251
+	nvram_seti("pa0maxpwr", 251);	// force pa0maxpwr to be 251
 #endif
 
 	if (check_hw_type() == BCM4702_CHIP)
 		nvram_unset("wl0_abenable");
 	else {
-		nvram_set("wl0_abenable", "1");
-		nvram_set("wl1_abenable", "1");
+		nvram_seti("wl0_abenable", 1);
+		nvram_seti("wl1_abenable", 1);
 	}
 
 	switch (brand) {
 	case ROUTER_LINKSYS_WRH54G:
-		nvram_set("wl0gpio0", "135");
+		nvram_seti("wl0gpio0", 135);
 		break;
 	case ROUTER_BUFFALO_WZRRSG54:
 		nvram_unset("wl0_abenable");
 		nvram_unset("wl1_abenable");
 		break;
 	case ROUTER_ASUS_WL550GE:
-		nvram_set("wl0gpio1", "0");
-		nvram_set("wl0gpio2", "0");
+		nvram_seti("wl0gpio1", 0);
+		nvram_seti("wl0gpio2", 0);
 		break;
 	case ROUTER_ASUS_WL500W:
 	case ROUTER_WRT54G:
@@ -158,29 +158,29 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 	case ROUTER_RT480W:
 	case ROUTER_USR_5465:
 	case ROUTER_ASUS_RTN10:
-		nvram_set("wl0gpio0", "136");
+		nvram_seti("wl0gpio0", 136);
 		break;
 	case ROUTER_ASUS_RTN10U:
-		nvram_set("ledbh5", "7");
+		nvram_seti("ledbh5", 7);
 		break;
 	case ROUTER_WAP54G_V3:
-		nvram_set("wl0gpio0", "0");
-		nvram_set("wl0gpio2", "255");
-		nvram_set("wl0gpio3", "255");
-		nvram_set("wl0gpio5", "136");
+		nvram_seti("wl0gpio0", 0);
+		nvram_seti("wl0gpio2", 255);
+		nvram_seti("wl0gpio3", 255);
+		nvram_seti("wl0gpio5", 136);
 		break;
 	case ROUTER_ASUS_WL520GUGC:
-		nvram_set("wl0gpio0", "0");
-		nvram_set("wl0gpio1", "136");
-		nvram_set("wl0gpio2", "0");
-		nvram_set("wl0gpio3", "0");
+		nvram_seti("wl0gpio0", 0);
+		nvram_seti("wl0gpio1", 136);
+		nvram_seti("wl0gpio2", 0);
+		nvram_seti("wl0gpio3", 0);
 		break;
 	case ROUTER_LINKSYS_WTR54GS:
 	case ROUTER_WAP54G_V1:
-		nvram_set("wl0gpio0", "136");
-		nvram_set("wl0gpio1", "0");
-		nvram_set("wl0gpio2", "0");
-		nvram_set("wl0gpio3", "0");
+		nvram_seti("wl0gpio0", 136);
+		nvram_seti("wl0gpio1", 0);
+		nvram_seti("wl0gpio2", 0);
+		nvram_seti("wl0gpio3", 0);
 		break;
 	case ROUTER_BUFFALO_WBR54G:
 	case ROUTER_BUFFALO_WBR2G54S:
@@ -192,21 +192,21 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 	case ROUTER_WRT350N:
 	case ROUTER_WRT600N:
 	case ROUTER_USR_5461:
-		nvram_set("wl0gpio0", "8");
+		nvram_seti("wl0gpio0", 8);
 		break;
 	case ROUTER_NETGEAR_WG602_V4:
-		nvram_set("wl0gpio0", "8");
-		nvram_set("wl0gpio1", "0");
-		nvram_set("wl0gpio2", "0");
-		nvram_set("wl0gpio3", "0");
+		nvram_seti("wl0gpio0", 8);
+		nvram_seti("wl0gpio1", 0);
+		nvram_seti("wl0gpio2", 0);
+		nvram_seti("wl0gpio3", 0);
 		break;
 	case ROUTER_BUFFALO_WHRG54S:
 	case ROUTER_BUFFALO_WLI_TX4_G54HP:
-		nvram_set("wl0gpio2", "136");
+		nvram_seti("wl0gpio2", 136);
 		break;
 	case ROUTER_BUFFALO_WLA2G54C:
-		nvram_set("wl0gpio0", "0");
-		nvram_set("wl0gpio5", "136");
+		nvram_seti("wl0gpio0", 0);
+		nvram_seti("wl0gpio5", 136);
 		break;
 	case ROUTER_ASUS_WL500GD:
 	case ROUTER_ASUS_WL500G_PRE:
@@ -215,30 +215,30 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 	case ROUTER_BELKIN_F5D7230_V2000:
 		// case ROUTER_BELKIN_F5D7230_V3000:
 	case ROUTER_BELKIN_F5D7231:
-		nvram_set("wl0gpio3", "136");
+		nvram_seti("wl0gpio3", 136);
 		break;
 	case ROUTER_NETGEAR_WGR614L:
 	case ROUTER_NETGEAR_WGR614V9:
-		nvram_set("wl0gpio5", "8");
+		nvram_seti("wl0gpio5", 8);
 		break;
 	case ROUTER_BELKIN_F5D7231_V2000:
-		nvram_set("wl0gpio0", "2");
-		nvram_set("wl0gpio1", "0");
+		nvram_seti("wl0gpio0", 2);
+		nvram_seti("wl0gpio1", 0);
 		break;
 	case ROUTER_BUFFALO_WLAG54C:
 	case ROUTER_ASUS_WL700GE:
-		nvram_set("wl0gpio0", "135");
+		nvram_seti("wl0gpio0", 135);
 		break;
 	case ROUTER_NETGEAR_WNR3500L:
 	case ROUTER_NETGEAR_WNR3500LV2:
-		nvram_set("ledbh0", "7");
+		nvram_seti("ledbh0", 7);
 		break;
 	case ROUTER_WRT320N:
-		nvram_set("ledbh0", "136");
-		nvram_set("ledbh1", "11");
+		nvram_seti("ledbh0", 136);
+		nvram_seti("ledbh1", 11);
 		break;
 	case ROUTER_NETGEAR_WNR2000V2:
-		nvram_set("ledbh5", "8");
+		nvram_seti("ledbh5", 8);
 		break;
 	}
 
@@ -302,11 +302,11 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 			MAC_ADD(mac);
 			nvram_set("pci/2/1/macaddr", mac);
 		}
-		nvram_set("partialboots", "0");
+		nvram_seti("partialboots", 0);
 		nvram_commit();
 	case ROUTER_LINKSYS_EA2700:
-		nvram_set("bootpartition", "0");
-		nvram_set("partialboots", "0");
+		nvram_seti("bootpartition", 0);
+		nvram_seti("partialboots", 0);
 		nvram_commit();
 		insmod("emf igs wl");	// load module
 		break;
@@ -683,7 +683,7 @@ void start_sysinit(void)
 		nvram_set("lan_ifnames", "eth1 eth2");
 		nvram_set("wl0_ifname", "eth2");
 		nvram_set("wan_ifname", "eth0");	// WAN to nonexist. iface.
-		nvram_set("port_swap", "1");
+		nvram_seti("port_swap", 1);
 		if (nvram_match("wan_to_lan", "yes") && nvram_invmatch("wan_proto", "disabled"))	// = 
 			// 
 			// no 
@@ -794,7 +794,7 @@ void start_sysinit(void)
 	case ROUTER_NETGEAR_WNDR4500V2:
 	case ROUTER_NETGEAR_R6300:
 		if (nvram_get("clkfreq") == NULL)	//set it only if it doesnt exist
-			nvram_set("clkfreq", "600");
+			nvram_seti("clkfreq", 600);
 		nvram_set("vlan1hwname", "et0");
 		nvram_set("vlan2hwname", "et0");
 		nvram_set("vlan1ports", "0 1 2 3 8*");
@@ -1819,8 +1819,8 @@ void start_sysinit(void)
 		set_gpio(0, 1);
 		if (!nvram_match("ledbh0", "0")
 		    || !nvram_match("ledbh1", "0")) {
-			nvram_set("ledbh0", "0");
-			nvram_set("ledbh1", "0");
+			nvram_seti("ledbh0", 0);
+			nvram_seti("ledbh1", 0);
 			need_reboot = 1;
 		}
 		if (nvram_match("vlan0ports", "0 1 2 3 5*")
@@ -1982,16 +1982,16 @@ void start_sysinit(void)
 		else
 			set_regulation(1, "US", "0");
 
-		nvram_set("pci/2/1/ledbh13", "136");
+		nvram_seti("pci/2/1/ledbh13", 136);
 		set_gpio(13, 0);
 		break;
 
 	case ROUTER_D1800H:
 		if (nvram_get("ledbh0") == NULL || nvram_match("ledbh11", "130")) {
-			nvram_set("ledbh0", "11");
-			nvram_set("ledbh1", "11");
-			nvram_set("ledbh2", "11");
-			nvram_set("ledbh11", "136");
+			nvram_seti("ledbh0", 11);
+			nvram_seti("ledbh1", 11);
+			nvram_seti("ledbh2", 11);
+			nvram_seti("ledbh11", 136);
 			need_reboot = 1;
 		}
 		nvram_set("pci/2/1/maxp2ga0", "0x70");
@@ -2426,7 +2426,7 @@ void start_sysinit(void)
 		nvram_set("lan_ifnames", "eth1 eth2");
 		nvram_set("wl0_ifname", "eth2");
 		nvram_set("wan_ifname", "eth0");	// WAN to nonexist. iface.
-		nvram_set("port_swap", "1");
+		nvram_seti("port_swap", 1);
 		set_gpio(7, 0);
 		if (nvram_match("wan_to_lan", "yes") && nvram_invmatch("wan_proto", "disabled"))	// = 
 			// 
@@ -2489,10 +2489,10 @@ void start_sysinit(void)
 
 	case ROUTER_WRT610N:
 		nvram_set("wan_ifname", "vlan2");
-		nvram_set("pci/1/1/ledbh0", "11");
-		nvram_set("pci/1/1/ledbh1", "135");
-		nvram_set("pci/1/2/ledbh0", "11");
-		nvram_set("pci/1/2/ledbh2", "135");
+		nvram_seti("pci/1/1/ledbh0", 11);
+		nvram_seti("pci/1/1/ledbh1", 135);
+		nvram_seti("pci/1/2/ledbh0", 11);
+		nvram_seti("pci/1/2/ledbh2", 135);
 		nvram_set("pci/1/1/boardflags2", "0x0400");
 		nvram_set("pci/1/2/boardflags2", "0x0602");
 
@@ -2515,8 +2515,8 @@ void start_sysinit(void)
 	case ROUTER_WRT610NV2:
 		nvram_set("wan_ifname", "vlan2");
 		nvram_set("vlan2hwname", "et0");
-		nvram_set("pci/1/1/ledbh2", "8");
-		nvram_set("sb/1/ledbh1", "8");
+		nvram_seti("pci/1/1/ledbh2", 8);
+		nvram_seti("sb/1/ledbh1", 8);
 		if (nvram_match("vlan1ports", "1 2 3 4 8*"))
 			nvram_set("vlan1ports", "4 3 2 1 8*");
 		if (startswith(nvram_safe_get("pci/1/1/macaddr"), "00:90:4C")
@@ -2587,7 +2587,7 @@ void start_sysinit(void)
 		nvram_set("lan_ifnames", "vlan0 eth2");
 		nvram_set("wan_ifname", "vlan1");
 		nvram_set("wl0_ifname", "eth2");
-		nvram_set("pci/1/1/ledbh0", "136");
+		nvram_seti("pci/1/1/ledbh0", 136);
 		if (nvram_match("vlan1ports", "\"4 5*\"")) {
 			nvram_set("vlan0ports", "3 2 1 0 5*");
 			nvram_set("vlan1ports", "4 5");
@@ -2599,8 +2599,8 @@ void start_sysinit(void)
 		// with CR added
 		nvram_set("vlan0hwname", "et0");
 		nvram_set("vlan1hwname", "et0");
-		nvram_set("et0mdcport", "0");
-		nvram_set("et0phyaddr", "30");
+		nvram_seti("et0mdcport", 0);
+		nvram_seti("et0phyaddr", 30);
 		nvram_set("gpio2", "adm_eecs");
 		nvram_set("gpio3", "adm_eesk");
 		nvram_set("gpio4", "adm_eedi");
@@ -2619,7 +2619,7 @@ void start_sysinit(void)
 		if (nvram_match("vlan1ports", "0 5u"))
 			nvram_set("vlan1ports", "0 5");
 		if (!nvram_get("Fix_WL520GUGC_clock")) {
-			nvram_set("Fix_WL520GUGC_clock", "1");
+			nvram_seti("Fix_WL520GUGC_clock", 1);
 			need_reboot = 1;
 		}
 		break;
@@ -2631,7 +2631,7 @@ void start_sysinit(void)
 		if (nvram_match("sromrev", "2")
 		    && nvram_match("boardrev", "0x10")
 		    && nvram_match("boardtype", "0x48E")) {
-			nvram_set("sromrev", "3");	// This is a fix for WGR614L NA - which has a wrong sromrev
+			nvram_seti("sromrev", 3);	// This is a fix for WGR614L NA - which has a wrong sromrev
 			need_reboot = 1;
 		}
 		break;
@@ -2743,7 +2743,7 @@ void start_sysinit(void)
 	switch (brand) {
 	case ROUTER_WRT320N:
 		if (!nvram_match("reset_gpio", "5")) {
-			nvram_set("reset_gpio", "5");
+			nvram_seti("reset_gpio", 5);
 			need_reboot = 1;
 		}
 		break;
@@ -2753,7 +2753,7 @@ void start_sysinit(void)
 		break;
 
 	case ROUTER_WRT54G_V8:
-		nvram_set("reset_gpio", "7");
+		nvram_seti("reset_gpio", 7);
 		break;
 
 	case ROUTER_ASUS_WL700GE:
@@ -2785,7 +2785,7 @@ void start_sysinit(void)
 		if (!nvram_match("buffalo_hp", "1")
 		    && (nvram_match("boardflags", "0x1658")
 			|| nvram_match("boardflags", "0x2658"))) {
-			nvram_set("buffalo_hp", "1");
+			nvram_seti("buffalo_hp", 1);
 #ifndef HAVE_BUFFALO		// if HAVE_BUFFALO not used to be FCC/CE
 			// valid
 			nvram_set("boardflags", "0x3658");	// enable high gain
@@ -2798,7 +2798,7 @@ void start_sysinit(void)
 	case ROUTER_BUFFALO_WHRG54S:	// for HP only
 		if (!nvram_match("buffalo_hp", "1")
 		    && nvram_match("boardflags", "0x1758")) {
-			nvram_set("buffalo_hp", "1");
+			nvram_seti("buffalo_hp", 1);
 #ifndef HAVE_BUFFALO		// if HAVE_BUFFALO not used to be FCC/CE
 			// valid
 			nvram_set("boardflags", "0x3758");	// enable high gain
@@ -2870,7 +2870,7 @@ void start_sysinit(void)
 
 #ifdef HAVE_80211AC
 	if (nvram_get("et_txq_thresh") == NULL) {
-		nvram_set("et_txq_thresh", "3300");
+		nvram_seti("et_txq_thresh", 3300);
 //              nvram_set("et_dispatch_mode","1"); 1=better throughput 0=better ping
 	}
 #endif
@@ -2891,9 +2891,9 @@ void start_sysinit(void)
 		char module[80], *modules = "", *next;
 
 #ifdef HAVE_ACK
-		nvram_set("portprio_support", "0");	// no portprio support in NEWD or BCMMODERN
+		nvram_seti("portprio_support", 0);	// no portprio support in NEWD or BCMMODERN
 #else
-		nvram_set("portprio_support", "1");	// only switch drivers in VINT support this
+		nvram_seti("portprio_support", 1);	// only switch drivers in VINT support this
 #endif
 
 		if (check_vlan_support() && check_hw_type() != BCM5325E_CHIP) {
@@ -2915,7 +2915,7 @@ void start_sysinit(void)
 			case ROUTER_LINKSYS_E3200:
 			case ROUTER_LINKSYS_E4200:
 			case ROUTER_NETGEAR_WNDR4000:
-				nvram_set("portprio_support", "0");
+				nvram_seti("portprio_support", 0);
 #ifdef HAVE_BCMMODERN
 				modules = "bcm57xx switch-core switch-robo";
 #else
@@ -2980,11 +2980,11 @@ void start_sysinit(void)
 			case ROUTER_LINKSYS_E1500:
 			case ROUTER_LINKSYS_E1550:
 			case ROUTER_LINKSYS_E2500:
-				nvram_set("portprio_support", "0");
+				nvram_seti("portprio_support", 0);
 				modules = "";
 				break;
 			case ROUTER_ASUS_AC1200:
-				nvram_set("portprio_support", "0");
+				nvram_seti("portprio_support", 0);
 				modules = "";
 				break;
 			default:
@@ -3007,7 +3007,7 @@ void start_sysinit(void)
 			case ROUTER_LINKSYS_E3200:
 			case ROUTER_LINKSYS_E4200:
 			case ROUTER_NETGEAR_WNDR4000:
-				nvram_set("portprio_support", "0");
+				nvram_seti("portprio_support", 0);
 #ifdef HAVE_BCMMODERN
 				modules = "bcm57xx switch-core switch-robo";
 #else
@@ -3036,14 +3036,14 @@ void start_sysinit(void)
 				modules = "switch-core switch-robo";
 				break;
 			case ROUTER_BUFFALO_WZRRSG54:
-				nvram_set("portprio_support", "0");
+				nvram_seti("portprio_support", 0);
 				modules = "";
 				break;
 			case ROUTER_WRT54G3G:
 				if (check_vlan_support())
 					modules = "switch-core switch-robo pcmcia_core yenta_socket ds";
 				else {
-					nvram_set("portprio_support", "0");
+					nvram_seti("portprio_support", 0);
 
 					modules = "pcmcia_core yenta_socket ds";
 				}
@@ -3060,11 +3060,11 @@ void start_sysinit(void)
 			case ROUTER_LINKSYS_E1500:
 			case ROUTER_LINKSYS_E1550:
 			case ROUTER_LINKSYS_E2500:
-				nvram_set("portprio_support", "0");
+				nvram_seti("portprio_support", 0);
 				modules = "";
 				break;
 			case ROUTER_ASUS_AC1200:
-				nvram_set("portprio_support", "0");
+				nvram_seti("portprio_support", 0);
 				modules = "";
 				break;
 
@@ -3075,7 +3075,7 @@ void start_sysinit(void)
 				else
 #endif
 				{
-					nvram_set("portprio_support", "0");
+					nvram_seti("portprio_support", 0);
 					modules = "switch-core switch-robo";
 				}
 				break;
@@ -3177,7 +3177,7 @@ int check_cfe_nv(void)
 			if (nvram_match("clkfreq", "200")
 			    && nvram_match("overclocking", "200")) {
 				ret += check_nv("clkfreq", "216");
-				nvram_set("overclocking", "216");
+				nvram_seti("overclocking", 216);
 			}
 
 			if (ret) {
@@ -3409,16 +3409,16 @@ char *enable_dtag_vlan(int enable)
 {
 	int donothing = 0;
 
-	nvram_set("fromvdsl", "1");
+	nvram_seti("fromvdsl", 1);
 	if (nvram_match("vdsl_state", "1") && enable)
 		donothing = 1;
 	if ((nvram_match("vdsl_state", "0")
 	     || nvram_match("vdsl_state", "")) && !enable)
 		donothing = 1;
 	if (enable)
-		nvram_set("vdsl_state", "1");
+		nvram_seti("vdsl_state", 1);
 	else
-		nvram_set("vdsl_state", "0");
+		nvram_seti("vdsl_state", 0);
 
 	char *eth = "eth0";
 #ifdef HAVE_MADWIFI
@@ -3523,7 +3523,7 @@ char *enable_dtag_vlan(int enable)
 			start_setup_vlans();
 		}
 	}
-	nvram_set("fromvdsl", "0");
+	nvram_seti("fromvdsl", 0);
 	return eth;
 }
 

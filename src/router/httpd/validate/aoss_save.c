@@ -59,7 +59,7 @@ void aoss_save(webs_t wp)
 	if (nvram_match("aoss_aes", "0")
 	    && nvram_match("aoss_tkip", "0")
 	    && nvram_match("aoss_wep", "0")) {
-		nvram_set("aoss_aes", "1");
+		nvram_seti("aoss_aes", 1);
 	}
 	if (strlen(nvram_safe_get("aoss_vifs"))) {
 		nvram_unset("ath0_vifs");
@@ -75,7 +75,7 @@ void aoss_save(webs_t wp)
 	if (registrar && nvram_invmatch("wps_registrar", registrar)) {
 		nvram_set("wps_registrar", registrar);
 		addAction("wireless");
-		nvram_set("nowebaction", "1");
+		nvram_seti("nowebaction", 1);
 		service_restart();
 	}
 	// all other vars

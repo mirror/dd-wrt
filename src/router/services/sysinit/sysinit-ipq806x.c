@@ -413,9 +413,9 @@ void start_sysinit(void)
 		}
 		start_finishupgrade();
 		if (getbootdevice())
-			nvram_set("bootpartition", "1");
+			nvram_seti("bootpartition", 1);
 		else
-			nvram_set("bootpartition", "0");
+			nvram_seti("bootpartition", 0);
 		break;
 	case ROUTER_LINKSYS_EA8500:
 		if (maddr) {

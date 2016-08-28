@@ -279,13 +279,13 @@ void start_sysinit(void)
 	getRouterBrand();	// restore some default settings
 
 	if (!nvram_get("ath0_rxantenna"))
-		nvram_set("ath0_rxantenna", "3");
+		nvram_seti("ath0_rxantenna", 3);
 	if (!nvram_get("ath0_txantenna"))
-		nvram_set("ath0_txantenna", "3");
+		nvram_seti("ath0_txantenna", 3);
 	if (!nvram_get("ath1_rxantenna"))
-		nvram_set("ath1_rxantenna", "3");
+		nvram_seti("ath1_rxantenna", 3);
 	if (!nvram_get("ath1_txantenna"))
-		nvram_set("ath1_txantenna", "3");
+		nvram_seti("ath1_txantenna", 3);
 
 	/*
 	 * Set a sane date 
@@ -299,7 +299,7 @@ void start_sysinit(void)
 
 int check_cfe_nv(void)
 {
-	nvram_set("portprio_support", "0");
+	nvram_seti("portprio_support", 0);
 	return 0;
 }
 

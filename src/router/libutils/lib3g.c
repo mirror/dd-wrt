@@ -1373,17 +1373,17 @@ char *get3GControlDevice(void)
 		needreset = 0;
 
 	if (gpio1) {
-		nvram_set("gpio26", "1");
+		nvram_seti("gpio26", 1);
 		set_gpio(26, 1);
 	} else {
-		nvram_set("gpio26", "0");
+		nvram_seti("gpio26", 0);
 		set_gpio(26, 0);
 	}
 	if (gpio2) {
-		nvram_set("gpio27", "1");
+		nvram_seti("gpio27", 1);
 		set_gpio(27, 1);
 	} else {
-		nvram_set("gpio27", "0");
+		nvram_seti("gpio27", 0);
 		set_gpio(27, 0);
 	}
 #endif

@@ -156,9 +156,9 @@ void start_sysinit(void)
 #endif
 #endif
 	fprintf(stderr, "try modules for ethernet adapters\n");
-	nvram_set("intel_eth", "0");
+	nvram_seti("intel_eth", 0);
 	if (detect_ethernet_devices())
-		nvram_set("intel_eth", "1");
+		nvram_seti("intel_eth", 1);
 
 	detect_wireless_devices();
 
@@ -454,8 +454,8 @@ void start_sysinit(void)
 	}
 	set_gpio(26, 0);
 	set_gpio(27, 0);
-	nvram_set("gpio26", "0");
-	nvram_set("gpio27", "0");
+	nvram_seti("gpio26", 0);
+	nvram_seti("gpio27", 0);
 #endif
 
 	/* cf capability ? */
@@ -492,7 +492,7 @@ void start_sysinit(void)
 #ifndef HAVE_NOP8670
 	eval("hwclock", "-s");
 #endif
-	nvram_set("use_crypto", "0");
+	nvram_seti("use_crypto", 0);
 	cprintf("done\n");
 	eval("/bin/tar", "-xzf", "/dev/mtdblock/4", "-C", "/");
 	FILE *in = fopen("/tmp/nvram/nvram.db", "rb");
@@ -512,7 +512,7 @@ void start_sysinit(void)
 
 int check_cfe_nv(void)
 {
-	nvram_set("portprio_support", "0");
+	nvram_seti("portprio_support", 0);
 	return 0;
 }
 

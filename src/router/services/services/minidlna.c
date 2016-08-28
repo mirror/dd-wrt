@@ -49,7 +49,7 @@ void start_dlna(void)
 		mkdir("/jffs/minidlna", 0700);
 		if (nvram_match("dlna_cleandb", "1")) {
 			unlink("/jffs/minidlna/files.db");
-			nvram_set("dlna_cleandb", "0");
+			nvram_seti("dlna_cleandb", 0);
 		}
 		fprintf(fp, "db_dir=/jffs/minidlna\n");
 #ifndef HAVE_VENTANA

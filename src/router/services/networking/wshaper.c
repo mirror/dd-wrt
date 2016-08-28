@@ -1091,7 +1091,7 @@ void start_wshaper(void)
 #endif
 	down_upIF();
 	down_clearIF();
-	nvram_set("qos_done", "1");
+	nvram_seti("qos_done", 1);
 
 	return;
 }
@@ -1118,7 +1118,7 @@ void stop_wshaper(void)
 	else
 		script_name = "svqos2";
 
-	nvram_set("qos_done", "0");
+	nvram_seti("qos_done", 0);
 
 	eval(script_name, "stop", "XX", wan_dev, "XX", "imq0", "imq1");
 

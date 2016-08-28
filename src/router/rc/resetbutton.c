@@ -763,7 +763,7 @@ static void handle_reset(void)
 		if (nvram_default_match("region", "SA", ""))
 			region_sa = 1;
 #endif
-		nvram_set("sv_restore_defaults", "1");
+		nvram_seti("sv_restore_defaults", 1);
 		nvram_commit();
 		eval("killall", "ledtool");	// stop blinking on
 		// nvram_commit
@@ -777,7 +777,7 @@ static void handle_reset(void)
 		led_control(LED_DIAG, LED_ON);
 #endif
 #ifdef HAVE_BUFFALO_SA
-		nvram_set("sv_restore_defaults", "1");
+		nvram_seti("sv_restore_defaults", 1);
 		if (region_sa)
 			nvram_set("region", "SA");
 		nvram_commit();

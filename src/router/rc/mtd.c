@@ -309,11 +309,11 @@ int mtd_write(const char *path, const char *mtd)
 	case ROUTER_TRENDNET_TEW828:
 		if (nvram_match("bootpartition", "1")) {
 			mtd = "linux2";
-			nvram_set("bootpartition", "0");
+			nvram_seti("bootpartition", 0);
 			nvram_commit();
 		} else {
 			mtd = "linux2";
-			nvram_set("bootpartition", "1");
+			nvram_seti("bootpartition", 1);
 			nvram_commit();
 		}
 		break;
@@ -341,7 +341,7 @@ int mtd_write(const char *path, const char *mtd)
 		break;
 #endif
 	}
-	nvram_set("flash_active", "1");
+	nvram_seti("flash_active", 1);
 	sleep(1);
 
 	/* 
@@ -862,7 +862,7 @@ int mtd_write(const char *path, const char *mtd)
 
 	ret = 0;
 fail:
-	nvram_set("flash_active", "0");
+	nvram_seti("flash_active", 0);
 	if (buf) {
 		/* 
 		 * Dummy read to ensure chip(s) are out of lock/suspend state 

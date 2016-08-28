@@ -61,7 +61,7 @@ void start_olsrd(void)
 		fprintf(fp, "MainIp %s\n", nvram_safe_get("lan_ipaddr"));
 #ifdef HAVE_IPV6
 		if (nvram_match("olsrd_smartgw", "1")) {
-			nvram_set("ipv6_enable", "1");
+			nvram_seti("ipv6_enable", 1);
 			start_ipv6();	// load ipv6 drivers
 			fprintf(fp, "RtTable auto\n");
 			fprintf(fp, "RtTableDefault auto\n");

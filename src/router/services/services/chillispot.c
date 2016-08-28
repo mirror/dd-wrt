@@ -65,7 +65,7 @@ void start_chilli(void)
 	    && nvram_match("chilli_def_enable", "0")
 	    && !nvram_match("hotss_enable", "1")) {
 		nvram_unset("chilli_def_enable");
-		nvram_set("chilli_enable", "0");
+		nvram_seti("chilli_enable", 0);
 		return;
 	}
 
@@ -102,11 +102,11 @@ void start_chilli(void)
 	if (nvram_match("hotss_enable", "1")) {
 		stop_cron();
 		if (!nvram_match("chilli_enable", "1")) {
-			nvram_set("chilli_enable", "1");	// to get care of firewall, network, etc.
-			nvram_set("chilli_def_enable", "0");
+			nvram_seti("chilli_enable", 1);	// to get care of firewall, network, etc.
+			nvram_seti("chilli_def_enable", 0);
 		}
 		if (!nvram_match("hotss_preconfig", "1")) {
-			nvram_set("hotss_preconfig", "1");
+			nvram_seti("hotss_preconfig", 1);
 			sprintf(ssid, "HotSpotSystem.com-%s_%s", nvram_get("hotss_operatorid"), nvram_get("hotss_locationid"));
 			nvram_set("wl0_ssid", ssid);
 		}

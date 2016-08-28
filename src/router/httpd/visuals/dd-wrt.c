@@ -2090,11 +2090,11 @@ static void show_chanshift(webs_t wp, char *prefix)
 	sprintf(wl_channelbw, "%s_channelbw", prefix);
 	sprintf(wl_chanshift, "%s_chanshift", prefix);
 	if (atoi(nvram_safe_get(wl_channelbw)) > 2 && (atoi(nvram_safe_get(wl_chanshift)) & 0xf) > 10)
-		nvram_set(wl_chanshift, "10");
+		nvram_seti(wl_chanshift, 10);
 	if (atoi(nvram_safe_get(wl_channelbw)) > 5 && (atoi(nvram_safe_get(wl_chanshift)) & 0xf) > 10)
-		nvram_set(wl_chanshift, "10");
+		nvram_seti(wl_chanshift, 10);
 	if (atoi(nvram_safe_get(wl_channelbw)) > 10 && (atoi(nvram_safe_get(wl_chanshift)) & 0xf) > 0)
-		nvram_set(wl_chanshift, "0");
+		nvram_seti(wl_chanshift, 0);
 
 	if (nvram_match(wl_channelbw, "5")
 	    || nvram_match(wl_channelbw, "10")
@@ -2706,12 +2706,12 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 #ifdef HAVE_SUB3
 	if (txpower > 28) {
 		txpower = 28;
-		nvram_set(power, "28");
+		nvram_seti(power, 28);
 	}
 #else
 	if (txpower > 30) {
 		txpower = 28;
-		nvram_set(power, "30");
+		nvram_seti(power, 30);
 	}
 #endif
 #endif
@@ -3854,12 +3854,12 @@ if (!strcmp(prefix, "wl2"))
 #ifdef HAVE_SUB3
 	if (txpower > 28) {
 		txpower = 28;
-		nvram_set(power, "28");
+		nvram_seti(power, 28);
 	}
 #else
 	if (txpower > 30) {
 		txpower = 30;
-		nvram_set(power, "30");
+		nvram_seti(power, 30);
 	}
 #endif
 #endif
@@ -5630,7 +5630,7 @@ void ej_show_status_gpio_output(webs_t wp, int argc, char_t ** argv)
 				sprintf(nvgpio, "gpio%s", var);
 				nvgpio = nvram_nget("gpio_%s", var);
 				if (!nvgpio)
-					nvram_set(nvgpio, "0");
+					nvram_seti(nvgpio, 0);
 				websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" %s />\n", nvgpio, nvram_match(nvgpio, "1") ? "checked=\"checked\"" : "");
 				websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"0\" %s />\n", nvgpio, nvram_match(nvgpio, "0") ? "checked=\"checked\"" : "");
 			}

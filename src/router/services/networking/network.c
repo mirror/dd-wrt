@@ -869,7 +869,7 @@ void start_lan(void)
 			|| nvram_match("wan_proto", "disabled"))) {
 			if (!nvram_match("fullswitch_set", "1")) {
 				nvram_set("lan_default", lan_ifnames);
-				nvram_set("fullswitch_set", "1");
+				nvram_seti("fullswitch_set", 1);
 			}
 			sprintf(lan_ifnames, "%s %s", nvram_safe_get("lan_default"), nvram_safe_get("wan_default"));
 			strcpy(wan_ifname, "");
@@ -2295,6 +2295,9 @@ void start_lan(void)
 			} else
 				perror(lan_ifname);
 #endif
+			char wl_name[] = "wlXXXXXXXXXX_mode";
+			int unit;
+			char tmp[256];
 			/*
 			 * If not a wl i/f then simply add it to the bridge 
 			 */
@@ -2344,8 +2347,6 @@ void start_lan(void)
 				/*
 				 * get the instance number of the wl i/f 
 				 */
-				char wl_name[] = "wlXXXXXXXXXX_mode";
-				int unit;
 
 #if defined(HAVE_MADWIFI) || defined(HAVE_RT2880) || defined(HAVE_RT61)
 				unit = 0;
@@ -2356,7 +2357,6 @@ void start_lan(void)
 				/*
 				 * Do not attach the main wl i/f if in wds or client/adhoc 
 				 */
-				char tmp[256];
 				led_control(LED_BRIDGE, LED_OFF);
 				if (nvram_match(wl_name, "wet")
 				    || nvram_match(wl_name, "apstawet")) {
@@ -2615,7 +2615,7 @@ void start_lan(void)
 		sprintf(br1netmask, "wl%d_br1_netmask", c);
 #endif
 		if (nvram_get(br1enable) == NULL)
-			nvram_set(br1enable, "0");
+			nvram_seti(br1enable, 0);
 		if (nvram_get(br1ipaddr) == NULL)
 			nvram_set(br1ipaddr, "0.0.0.0");
 		if (nvram_get(br1netmask) == NULL)
@@ -2672,7 +2672,7 @@ void start_lan(void)
 			sprintf(wdsdevname, "ath%d_wds%d_if", c, s);
 			sprintf(br1enable, "ath%d_br1_enable", c);
 			if (nvram_get(wdsvarname) == NULL)
-				nvram_set(wdsvarname, "0");
+				nvram_seti(wdsvarname, 0);
 #else
 			char br1enable[32];
 
@@ -2680,7 +2680,7 @@ void start_lan(void)
 			sprintf(wdsdevname, "wl%d_wds%d_if", c, s);
 			sprintf(br1enable, "wl%d_br1_enable", c);
 			if (nvram_get(wdsvarname) == NULL)
-				nvram_set(wdsvarname, "0");
+				nvram_seti(wdsvarname, 0);
 #endif
 			dev = nvram_safe_get(wdsdevname);
 			if (strlen(dev) == 0)
@@ -3515,7 +3515,7 @@ void start_wan(int status)
 #ifdef HAVE_3G
 	if ((strcmp(wan_proto, "3g") == 0)) {
 		if (!nvram_match("usb_enable", "1")) {
-			nvram_set("usb_enable", "1");	//  simply enable it, otherwise 3g might not work
+			nvram_seti("usb_enable", 1);	//  simply enable it, otherwise 3g might not work
 			nvram_commit();
 			start_drivers();
 		}
@@ -3664,16 +3664,16 @@ void start_wan(int status)
 						if (netmodetoggle == 1) {
 							// 2g
 							netmode = 2;
-							nvram_set("3gnetmodetoggle", "0");
+							nvram_seti("3gnetmodetoggle", 0);
 						} else {
 							// auto
 							netmode = 0;
-							nvram_set("3gnetmodetoggle", "1");
+							nvram_seti("3gnetmodetoggle", 1);
 						}
 					} else {
 						// auto
 						netmode = 0;
-						nvram_set("3gnetmodetoggle", "1");
+						nvram_seti("3gnetmodetoggle", 1);
 					}
 				}
 				sysprintf("export COMGNMVARIANT=%s;export COMGTNM=%d;comgt -d %s -s /etc/comgt/netmode.comgt >/tmp/comgt-netmode.out", nvram_safe_get("3gnmvariant"), netmode, controldevice);
@@ -3684,7 +3684,7 @@ void start_wan(int status)
 			retcgatt = sysprintf("comgt CGATT -d %s >/tmp/comgt-cgatt.out 2>&1", controldevice);
 			// if (retcgatt == 0) 
 			// {
-			// nvram_set("3g_fastdial", "1");
+			// nvram_seti("3g_fastdial", 1);
 			// return (5);
 			// }
 			if (strlen(nvram_safe_get("wan_apn")))
@@ -4308,7 +4308,7 @@ void start_wan(int status)
 #ifdef HAVE_IPETH
 	else if (strcmp(wan_proto, "iphone") == 0) {
 		if (!nvram_match("usb_enable", "1")) {
-			nvram_set("usb_enable", "1");	//  simply enable it, otherwise 3g might not work
+			nvram_seti("usb_enable", 1);	//  simply enable it, otherwise 3g might not work
 			nvram_commit();
 			start_drivers();
 		}
@@ -4839,7 +4839,7 @@ void start_wan_done(char *wan_ifname)
 	stop_dhcpfwd();
 	start_dhcpfwd();
 #endif
-	nvram_set("wanup", "1");
+	nvram_seti("wanup", 1);
 #ifdef HAVE_MILKFISH
 	if (nvram_match("milkfish_enabled", "1")) {
 		cprintf("starting milkfish netup script\n");
@@ -4913,7 +4913,7 @@ void stop_wan(void)
 {
 	char *wan_ifname = get_wan_face();
 
-	nvram_set("wanup", "0");
+	nvram_seti("wanup", 0);
 
 	led_control(LED_CONNECTED, LED_OFF);
 	unlink("/tmp/.wanuptime");
@@ -5264,51 +5264,51 @@ int init_mtu(char *wan_proto)
 	if (strcmp(wan_proto, "pppoe") == 0 || strcmp(wan_proto, "pppoe_dual") == 0) {	// 576 < mtu < 1454(linksys japan) |
 		// 1492(other)
 		if (nvram_match("mtu_enable", "0")) {	// Auto
-			nvram_set("mtu_enable", "1");
+			nvram_seti("mtu_enable", 1);
 #ifdef BUFFALO_JP
-			nvram_set("wan_mtu", "1454");	// set max value
+			nvram_seti("wan_mtu", 1454);	// set max value
 #else
-			nvram_set("wan_mtu", "1492");	// set max value
+			nvram_seti("wan_mtu", 1492);	// set max value
 #endif
 
 		} else {	// Manual
 #ifdef BUFFALO_JP
 			if (atoi(nvram_safe_get("wan_mtu")) > 1454) {
-				nvram_set("wan_mtu", "1454");
+				nvram_seti("wan_mtu", 1454);
 			}
 #else
 			if (atoi(nvram_safe_get("wan_mtu")) > 1492) {
-				nvram_set("wan_mtu", "1492");
+				nvram_seti("wan_mtu", 1492);
 			}
 #endif
 			if (atoi(nvram_safe_get("wan_mtu")) < 576) {
-				nvram_set("wan_mtu", "576");
+				nvram_seti("wan_mtu", 576);
 			}
 		}
 	} else if (strcmp(wan_proto, "pptp") == 0 || strcmp(wan_proto, "l2tp") == 0) {	// 1200 < mtu < 1400 (1460)
 //      if( nvram_match( "mtu_enable", "0" ) )
 //      {                       // Auto
-//          nvram_set( "mtu_enable", "1" );
-//          nvram_set( "wan_mtu", "1460" );     // set max value (linksys
+//          nvram_seti( "mtu_enable", 1);;
+//          nvram_seti( "wan_mtu", 1460);;     // set max value (linksys
 //                                              // request to set to 1460)                                              // 2003/06/23
 //      }
 //      else
 		{		// Manual
 			if (atoi(nvram_safe_get("wan_mtu")) > 1460) {
-				nvram_set("wan_mtu", "1460");	// set max value (linksys
+				nvram_seti("wan_mtu", 1460);	// set max value (linksys
 				// request to set to 1460)
 				// 2003/06/23
 			}
 			if (atoi(nvram_safe_get("wan_mtu")) < 1200) {
-				nvram_set("wan_mtu", "1200");
+				nvram_seti("wan_mtu", 1200);
 			}
 		}
 	} else {		// 576 < mtu < 1500
 		if (nvram_match("mtu_enable", "0")) {	// Auto
-			nvram_set("wan_mtu", "1500");	// set max value
+			nvram_seti("wan_mtu", 1500);	// set max value
 		} else {	// Manual
 			if (atoi(nvram_safe_get("wan_mtu")) < 576) {
-				nvram_set("wan_mtu", "576");
+				nvram_seti("wan_mtu", 576);
 			}
 		}
 	}
