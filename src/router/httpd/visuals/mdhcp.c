@@ -11,7 +11,7 @@ void ej_show_mdhcp(webs_t wp, int argc, char_t ** argv)
 	memset(buffer, 0, 256);
 	getIfList(buffer, NULL);
 	int totalcount = 0;
-	int realcount = atoi(nvram_default_get("mdhcpd_count", "0"));
+	int realcount = nvram_default_geti("mdhcpd_count", 0);
 
 	wordlist = nvram_safe_get("mdhcpd");
 	foreach(word, wordlist, next) {

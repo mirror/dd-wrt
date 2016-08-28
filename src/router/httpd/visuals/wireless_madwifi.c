@@ -100,7 +100,7 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 	struct iwreq iwr;
 	char nb[32];
 	sprintf(nb, "%s_bias", ifname);
-	int bias = atoi(nvram_default_get(nb, "0"));
+	int bias = nvram_default_geti(nb, 0);
 	if (!ifexists(ifname)) {
 		printf("IOCTL_STA_INFO ifresolv %s failed!\n", ifname);
 		return cnt;

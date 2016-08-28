@@ -55,10 +55,10 @@ int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifnam
 	int bias, qual, it;
 	int co = 0;
 	sprintf(nb, "%s_bias", ifname);
-	bias = atoi(nvram_default_get(nb, "0"));
+	bias = nvram_default_geti(nb, 0);
 
 	// sprintf(it, "inactivity_time", ifname);
-//      it = atoi(nvram_default_get("inacttime", "300000"));
+//      it = nvram_default_geti("inacttime", 300000);
 
 	mac80211_info = mac80211_assoclist(ifname);
 	for (wc = mac80211_info->wci; wc; wc = wc->next) {

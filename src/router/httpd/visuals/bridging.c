@@ -32,7 +32,7 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 
 	memset(buffer, 0, 256);
 	getIfList(buffer, NULL);
-	int realcount = atoi(nvram_default_get("bridges_count", "0"));
+	int realcount = nvram_default_geti("bridges_count", 0);
 
 	wordlist = nvram_safe_get("bridges");
 	foreach(word, wordlist, next) {
@@ -256,7 +256,7 @@ void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 	strcat(checkbuffer, finalbuffer);
 	strcpy(finalbuffer, checkbuffer);
 	free(checkbuffer);
-	int realcount = atoi(nvram_default_get("bridgesif_count", "0"));
+	int realcount = nvram_default_geti("bridgesif_count", 0);
 
 	wordlist = nvram_safe_get("bridgesif");
 	foreach(word, wordlist, next) {
