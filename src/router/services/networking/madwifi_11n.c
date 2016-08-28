@@ -191,27 +191,27 @@ static void set_rate(char *dev, char *priv)
 
 	if (nvram_match(bw, "20") && nvram_match(xr, "0"))
 		if (atof(r) == 27.0f || atof(r) == 1.5f || atof(r) == 2.0f || atof(r) == 3.0f || atof(r) == 4.5f || atof(r) == 9.0f || atof(r) == 13.5f) {
-			nvram_set(rate, "0");
+			nvram_seti(rate, 0);
 			r = "0";
 		}
 	if (nvram_match(bw, "40"))
 		if (atof(r) == 27.0f || atof(r) == 1.5f || atof(r) == 2.0f || atof(r) == 3.0f || atof(r) == 4.5f || atof(r) == 9.0f || atof(r) == 13.5f) {
-			nvram_set(rate, "0");
+			nvram_seti(rate, 0);
 			r = "0";
 		}
 	if (nvram_match(bw, "10"))
 		if (atof(r) > 27.0f || atof(r) == 1.5f || atof(r) == 2.0f || atof(r) == 13.5f) {
-			nvram_set(rate, "0");
+			nvram_seti(rate, 0);
 			r = "0";
 		}
 	if (nvram_match(bw, "5"))
 		if (atof(r) > 13.5) {
-			nvram_set(rate, "0");
+			nvram_seti(rate, 0);
 			r = "0";
 		}
 	if (nvram_match(bw, "2"))
 		if (atof(r) > 6.75) {
-			nvram_set(rate, "0");
+			nvram_seti(rate, 0);
 			r = "0";
 		}
 /*

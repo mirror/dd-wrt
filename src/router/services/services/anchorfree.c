@@ -105,15 +105,15 @@ void start_anchorfree(void)
 {
 	int need_commit = 0;
 
-	nvram_set("af_dnathost", "0");
-	nvram_set("af_dnatport", "0");
+	nvram_seti("af_dnathost", 0);
+	nvram_seti("af_dnatport", 0);
 	if (nvram_match("af_serviceid", "0"))
-		nvram_set("af_registered", "0");
-	nvram_set("af_serviceid", "0");
+		nvram_seti("af_registered", 0);
+	nvram_seti("af_serviceid", 0);
 
 	if (nvram_match("af_enable", "1")
 	    && !nvram_match("af_registered", "1")) {
-		nvram_set("af_registered", "1");
+		nvram_seti("af_registered", 1);
 		dd_syslog(LOG_INFO, "anchorfree : starting redirection\n");
 		char devid[256];
 
@@ -142,23 +142,23 @@ void start_anchorfree(void)
 
 		if (nvram_match("af_ssid", "1")
 		    && !nvram_match("af_ssid_created", "1")) {
-			nvram_set("af_ssid_created", "1");
+			nvram_seti("af_ssid_created", 1);
 #ifndef HAVE_MADWIFI
 			nvram_set("wl0_vifs", "wl0.1");
 			nvram_set("wl_vifs", "wl0.1");
 			nvram_set("wl0.1_ssid", nvram_safe_get("af_ssid_name"));
-			nvram_set("wl0.1_bridged", "0");
+			nvram_seti("wl0.1_bridged", 0);
 			nvram_set("wl0.1_ipaddr", "172.45.0.1");
 			nvram_set("wl0.1_netmask", "255.255.255.0");
-			nvram_set("mdhcpd_count", "1");
+			nvram_seti("mdhcpd_count", 1);
 			nvram_set("mdhcpd", "wl0.1>On>100>50>3600");
 #else
 			nvram_set("ath0_vifs", "ath0.1");
 			nvram_set("ath0.1_ssid", nvram_safe_get("af_ssid_name"));
-			nvram_set("ath0.1_bridged", "0");
+			nvram_seti("ath0.1_bridged", 0);
 			nvram_set("ath0.1_ipaddr", "172.45.0.1");
 			nvram_set("ath0.1_netmask", "255.255.255.0");
-			nvram_set("mdhcpd_count", "1");
+			nvram_seti("mdhcpd_count", 1);
 			nvram_set("mdhcpd", "ath0.1>On>100>50>3600");
 #endif
 			need_commit = 1;
@@ -180,15 +180,15 @@ void start_anchorfree(void)
 			}
 		} else if (nvram_match("af_ssid", "0")
 			   && nvram_match("af_ssid_created", "1")) {
-			nvram_set("af_ssid_created", "0");
+			nvram_seti("af_ssid_created", 0);
 #ifndef HAVE_MADWIFI
 			nvram_set("wl0_vifs", "");
 			nvram_set("wl_vifs", "");
-			nvram_set("mdhcpd_count", "0");
+			nvram_seti("mdhcpd_count", 0);
 			nvram_set("mdhcpd", "");
 #else
 			nvram_set("ath0_vifs", "");
-			nvram_set("mdhcpd_count", "0");
+			nvram_seti("mdhcpd_count", 0);
 			nvram_set("mdhcpd", "");
 #endif
 			need_commit = 1;
@@ -261,7 +261,7 @@ void start_anchorfree(void)
 		if (response == NULL) {
 			fprintf(stderr, "error while registration (cannot reach registration site)!\n");
 			nvram_set("af_servicestatus", "cannot reach registration site!");
-			nvram_set("af_registered", "0");
+			nvram_seti("af_registered", 0);
 			nvram_commit();
 			return;
 		}
@@ -272,7 +272,7 @@ void start_anchorfree(void)
 			fprintf(stderr, "registration failed (bad status)\n");
 			nvram_set("af_servicestatus", "registration failed (bad status)");
 			fclose(response);
-			nvram_set("af_registered", "0");
+			nvram_seti("af_registered", 0);
 			nvram_commit();
 			return;
 		}
@@ -281,7 +281,7 @@ void start_anchorfree(void)
 		if (strcmp(status, "OK")) {
 			fprintf(stderr, "registration failed\n");
 			fclose(response);
-			nvram_set("af_registered", "0");
+			nvram_seti("af_registered", 0);
 			nvram_commit();
 			return;
 		}
@@ -291,7 +291,7 @@ void start_anchorfree(void)
 			fprintf(stderr, "registration failed (bad sid)\n");
 			nvram_set("af_servicestatus", "registration failed (bad sid)");
 			fclose(response);
-			nvram_set("af_registered", "0");
+			nvram_seti("af_registered", 0);
 			nvram_commit();
 			return;
 		}
@@ -306,15 +306,15 @@ void start_anchorfree(void)
 		fclose(response);
 		need_commit = 1;
 	} else if (nvram_match("af_ssid_created", "1")) {
-		nvram_set("af_ssid_created", "0");
+		nvram_seti("af_ssid_created", 0);
 #ifndef HAVE_MADWIFI
 		nvram_set("wl0_vifs", "");
 		nvram_set("wl_vifs", "");
-		nvram_set("mdhcpd_count", "0");
+		nvram_seti("mdhcpd_count", 0);
 		nvram_set("mdhcpd", "");
 #else
 		nvram_set("ath0_vifs", "");
-		nvram_set("mdhcpd_count", "0");
+		nvram_seti("mdhcpd_count", 0);
 		nvram_set("mdhcpd", "");
 #endif
 		need_commit = 1;
@@ -381,7 +381,7 @@ void stop_anchorfree(void)
 {
 	if (!nvram_match("af_serviceid", "0")
 	    && nvram_match("af_registered", "1")) {
-		nvram_set("af_registered", "0");
+		nvram_seti("af_registered", 0);
 		char dest[32];
 		char source[32];
 

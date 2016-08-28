@@ -363,7 +363,7 @@ void start_sysinit(void)
 
 int check_cfe_nv(void)
 {
-	nvram_set("portprio_support", "0");
+	nvram_seti("portprio_support", 0);
 	return 0;
 }
 

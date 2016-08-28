@@ -60,7 +60,7 @@ static int open_site_survey(void)
 
 int roaming_daemon(void)
 {
-	nvram_set("roaming_enable", "0");
+	nvram_seti("roaming_enable", 0);
 	nvram_set("roaming_ssid", "");
 	char *ifname = getSTA();
 
@@ -134,7 +134,7 @@ int roaming_daemon(void)
 		if (bestssid && !nvram_match("roaming_ssid", bestssid)) {
 			fprintf(stderr, "selecting %s with rssi %d for roaming\n", bestssid, bestrssi);
 			nvram_set("roaming_ssid", bestssid);
-			nvram_set("roaming_enable", "1");
+			nvram_seti("roaming_enable", 1);
 #ifdef HAVE_MADWIFI
 			eval("iwconfig", ifname, "essid", bestssid);
 #else

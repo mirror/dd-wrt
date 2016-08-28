@@ -80,10 +80,10 @@ void start_sysinit(void)
 	int s;
 
 	fprintf(stderr, "try modules for ethernet adapters\n");
-	nvram_set("intel_eth", "0");
+	nvram_seti("intel_eth", 0);
 	insmod("cns3xxx_eth");
 	if (detect_ethernet_devices())
-		nvram_set("intel_eth", "1");
+		nvram_seti("intel_eth", 1);
 
 	//load mmc drivers
 	insmod("mmc_core");
@@ -158,7 +158,7 @@ void start_sysinit(void)
 
 int check_cfe_nv(void)
 {
-	nvram_set("portprio_support", "0");
+	nvram_seti("portprio_support", 0);
 	return 0;
 }
 
