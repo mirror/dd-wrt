@@ -1034,7 +1034,7 @@ void validate_wl_wep(webs_t wp, char *value, struct variable *v)
 		return;
 #ifdef ABURN_WSEC_CHECK
 	if (strcmp(value, "off")
-	    && atoi(nvram_safe_get("wl_gmode")) == GMODE_AFTERBURNER) {
+	    && nvram_geti("wl_gmode") == GMODE_AFTERBURNER) {
 		websDebugWrite(wp, "<br>Invalid <b>%s</b>: must be set to <b>Off</b> when 54g Mode is AfterBurner.", v->longname);
 		return;
 	}
@@ -2965,7 +2965,7 @@ void validate_blocked_service(webs_t wp, char *value, struct variable *v)
 	D("validate_blocked_service");
 	char filter[32];
 	sprintf(filter, "numfilterservice%s", nvram_safe_get("filter_id"));
-	int numfilters = atoi(nvram_default_get(filter, "4"));
+	int numfilters = nvram_default_geti(filter, 4);
 	for (i = 0; i < numfilters; i++) {
 		char blocked_service[] = "blocked_serviceXXX";
 		char *service;

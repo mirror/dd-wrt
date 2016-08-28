@@ -1812,7 +1812,7 @@ void filter_remove(webs_t wp)
 {
 	char filter[32];
 	sprintf(filter, "numfilterservice%s", nvram_safe_get("filter_id"));
-	int numfilters = atoi(nvram_default_get(filter, "4"));
+	int numfilters = nvram_default_geti(filter, 4);
 	if (numfilters > 0)
 		numfilters--;
 	char num[32];
@@ -1824,7 +1824,7 @@ void filter_add(webs_t wp)
 {
 	char filter[32];
 	sprintf(filter, "numfilterservice%s", nvram_safe_get("filter_id"));
-	int numfilters = atoi(nvram_default_get(filter, "4"));
+	int numfilters = nvram_default_geti(filter, 4);
 	numfilters++;
 	char num[32];
 	sprintf(num, "%d", numfilters);
@@ -1933,7 +1933,7 @@ void add_mdhcpd(char *iface, int start, int max, int leasetime)
 	int var[8];
 
 	// add mdhcpd
-	if (atoi(nvram_safe_get("mdhcpd_count")) > 0)
+	if (nvram_geti("mdhcpd_count") > 0)
 		sprintf(mdhcpd, " %s>On>%d>%d>%d", iface, start, max, leasetime);
 	else
 		sprintf(mdhcpd, "%s>On>%d>%d>%d", iface, start, max, leasetime);
@@ -1942,7 +1942,7 @@ void add_mdhcpd(char *iface, int start, int max, int leasetime)
 	nvram_set("mdhcpd", mdhcpds);
 	free(mdhcpds);
 
-	sprintf(var, "%d", atoi(nvram_safe_get("mdhcpd_count")) + 1);
+	sprintf(var, "%d", nvram_geti("mdhcpd_count") + 1);
 	nvram_set("mdhcpd_count", var);
 }
 
@@ -1992,7 +1992,7 @@ void remove_mdhcp(char *iface)
 		//fprintf(stderr, "[MDHCP] %s\n", mdhcpds);
 		nvram_set("mdhcpd", mdhcpds);
 
-		len = atoi(nvram_safe_get("mdhcpd_count"));
+		len = nvram_geti("mdhcpd_count");
 		if (len > 0) {
 			len--;
 			//fprintf(stderr, "[MDHCPDS] %d\n", len);
@@ -2385,7 +2385,7 @@ void add_bond(webs_t wp)
 	char word[256];
 	char *next, *wordlist;
 	int count = 0;
-	int realcount = atoi(nvram_safe_get("bonding_count"));
+	int realcount = nvram_geti("bonding_count");
 
 	if (realcount == 0) {
 		wordlist = nvram_safe_get("bondings");
@@ -2429,7 +2429,7 @@ void del_bond(webs_t wp)
 
 	char var[32];
 
-	realcount = atoi(nvram_safe_get("bonding_count")) - 1;
+	realcount = nvram_geti("bonding_count") - 1;
 	sprintf(var, "%d", realcount);
 	nvram_set("bonding_count", var);
 	nvram_set("bondings", newwordlist);
@@ -2558,16 +2558,16 @@ static void trunkspaces(char *str)
 void save_networking(webs_t wp)
 {
 	char *value = websGetVar(wp, "action", "");
-	int vlancount = atoi(nvram_safe_get("vlan_tagcount"));
-	int bridgescount = atoi(nvram_safe_get("bridges_count"));
-	int bridgesifcount = atoi(nvram_safe_get("bridgesif_count"));
-	int mdhcpd_count = atoi(nvram_safe_get("mdhcpd_count"));
+	int vlancount = nvram_geti("vlan_tagcount");
+	int bridgescount = nvram_geti("bridges_count");
+	int bridgesifcount = nvram_geti("bridgesif_count");
+	int mdhcpd_count = nvram_geti("mdhcpd_count");
 #ifdef HAVE_IPVS
-	int ipvscount = atoi(nvram_safe_get("ipvs_count"));
-	int ipvstargetcount = atoi(nvram_safe_get("ipvstarget_count"));
+	int ipvscount = nvram_geti("ipvs_count");
+	int ipvstargetcount = nvram_geti("ipvstarget_count");
 #endif
 #ifdef HAVE_BONDING
-	int bondcount = atoi(nvram_safe_get("bonding_count"));
+	int bondcount = nvram_geti("bonding_count");
 #endif
 	int i;
 
@@ -2909,7 +2909,7 @@ void add_vlan(webs_t wp)
 	char word[256];
 	char *next, *wordlist;
 	int count = 0;
-	int realcount = atoi(nvram_safe_get("vlan_tagcount"));
+	int realcount = nvram_geti("vlan_tagcount");
 
 	if (realcount == 0) {
 		wordlist = nvram_safe_get("vlan_tags");
@@ -2964,7 +2964,7 @@ void del_vlan(webs_t wp)
 
 	char var[32];
 
-	realcount = atoi(nvram_safe_get("vlan_tagcount")) - 1;
+	realcount = nvram_geti("vlan_tagcount") - 1;
 	sprintf(var, "%d", realcount);
 	nvram_set("vlan_tagcount", var);
 	nvram_set("vlan_tags", newwordlist);
@@ -2979,7 +2979,7 @@ void add_mdhcp(webs_t wp)
 	char word[256];
 	char *next, *wordlist;
 	int count = 0;
-	int realcount = atoi(nvram_safe_get("mdhcpd_count"));
+	int realcount = nvram_geti("mdhcpd_count");
 
 	if (realcount == 0) {
 		wordlist = nvram_safe_get("mdhcpd");
@@ -3023,7 +3023,7 @@ void del_mdhcp(webs_t wp)
 
 	char var[32];
 
-	realcount = atoi(nvram_safe_get("mdhcpd_count")) - 1;
+	realcount = nvram_geti("mdhcpd_count") - 1;
 	sprintf(var, "%d", realcount);
 	nvram_set("mdhcpd_count", var);
 	nvram_set("mdhcpd", newwordlist);
@@ -3067,7 +3067,7 @@ void del_bridge(webs_t wp)
 		count++;
 	}
 
-	realcount = atoi(nvram_safe_get("bridges_count")) - 1;
+	realcount = nvram_geti("bridges_count") - 1;
 	char var[32];
 
 	sprintf(var, "%d", realcount);
@@ -3084,7 +3084,7 @@ void add_bridge(webs_t wp)
 	char word[256];
 	char *next, *wordlist;
 	int count = 0;
-	int realcount = atoi(nvram_safe_get("bridges_count"));
+	int realcount = nvram_geti("bridges_count");
 
 	if (realcount == 0) {
 		wordlist = nvram_safe_get("bridges");
@@ -3128,7 +3128,7 @@ void del_bridgeif(webs_t wp)
 
 	char var[32];
 
-	realcount = atoi(nvram_safe_get("bridgesif_count")) - 1;
+	realcount = nvram_geti("bridgesif_count") - 1;
 	sprintf(var, "%d", realcount);
 	nvram_set("bridgesif_count", var);
 	nvram_set("bridgesif", newwordlist);
@@ -3144,7 +3144,7 @@ void add_bridgeif(webs_t wp)
 	char word[256];
 	char *next, *wordlist;
 	int count = 0;
-	int realcount = atoi(nvram_safe_get("bridgesif_count"));
+	int realcount = nvram_geti("bridgesif_count");
 
 	if (realcount == 0) {
 		wordlist = nvram_safe_get("bridgesif");
@@ -3169,7 +3169,7 @@ void add_ipvs(webs_t wp)
 	char word[256];
 	char *next, *wordlist;
 	int count = 0;
-	int realcount = atoi(nvram_safe_get("ipvs_count"));
+	int realcount = nvram_geti("ipvs_count");
 
 	if (realcount == 0) {
 		wordlist = nvram_safe_get("ipvs");
@@ -3211,7 +3211,7 @@ void del_ipvs(webs_t wp)
 		count++;
 	}
 
-	realcount = atoi(nvram_safe_get("ipvs_count")) - 1;
+	realcount = nvram_geti("ipvs_count") - 1;
 	char var[32];
 
 	sprintf(var, "%d", realcount);
@@ -3227,7 +3227,7 @@ void add_ipvstarget(webs_t wp)
 	char word[256];
 	char *next, *wordlist;
 	int count = 0;
-	int realcount = atoi(nvram_safe_get("ipvstarget_count"));
+	int realcount = nvram_geti("ipvstarget_count");
 
 	if (realcount == 0) {
 		wordlist = nvram_safe_get("ipvstarget");
@@ -3269,7 +3269,7 @@ void del_ipvstarget(webs_t wp)
 		count++;
 	}
 
-	realcount = atoi(nvram_safe_get("ipvstarget_count")) - 1;
+	realcount = nvram_geti("ipvstarget_count") - 1;
 	char var[32];
 
 	sprintf(var, "%d", realcount);
@@ -4312,7 +4312,7 @@ void tf_upnp(webs_t wp)
 		if (strcmp(v, "all") == 0) {
 			nvram_seti("upnp_clear", 1);
 		} else {
-			int which = atoi(nvram_default_get("forward_cur", "0"));
+			int which = nvram_default_geti("forward_cur", 0);
 			int i = atoi(v);
 			char val[32];
 
@@ -4461,7 +4461,7 @@ void nintendo_save(webs_t wp)
 	char var[32], param[32];
 	int device = 0;
 
-	int enabled = atoi(nvram_default_get("spotpass", "0"));
+	int enabled = nvram_default_geti("spotpass", 0);
 
 	device = prefix[strlen(prefix) - 1] - '0';
 

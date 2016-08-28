@@ -2089,11 +2089,11 @@ static void show_chanshift(webs_t wp, char *prefix)
 
 	sprintf(wl_channelbw, "%s_channelbw", prefix);
 	sprintf(wl_chanshift, "%s_chanshift", prefix);
-	if (atoi(nvram_safe_get(wl_channelbw)) > 2 && (atoi(nvram_safe_get(wl_chanshift)) & 0xf) > 10)
+	if (nvram_geti(wl_channelbw) > 2 && (nvram_geti(wl_chanshift) & 0xf) > 10)
 		nvram_seti(wl_chanshift, 10);
-	if (atoi(nvram_safe_get(wl_channelbw)) > 5 && (atoi(nvram_safe_get(wl_chanshift)) & 0xf) > 10)
+	if (nvram_geti(wl_channelbw) > 5 && (nvram_geti(wl_chanshift) & 0xf) > 10)
 		nvram_seti(wl_chanshift, 10);
-	if (atoi(nvram_safe_get(wl_channelbw)) > 10 && (atoi(nvram_safe_get(wl_chanshift)) & 0xf) > 0)
+	if (nvram_geti(wl_channelbw) > 10 && (nvram_geti(wl_chanshift) & 0xf) > 0)
 		nvram_seti(wl_chanshift, 0);
 
 	if (nvram_match(wl_channelbw, "5")
@@ -2701,7 +2701,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(wp, " 	</div>\n");
 
 	}
-	int txpower = atoi(nvram_safe_get(power));
+	int txpower = nvram_geti(power);
 #ifdef HAVE_ESPOD
 #ifdef HAVE_SUB3
 	if (txpower > 28) {
@@ -3849,7 +3849,7 @@ if (!strcmp(prefix, "wl2"))
 		websWrite(wp, " 	</div>\n");
 
 	}
-	int txpower = atoi(nvram_safe_get(power));
+	int txpower = nvram_geti(power);
 #ifdef HAVE_ESPOD
 #ifdef HAVE_SUB3
 	if (txpower > 28) {
@@ -5402,7 +5402,7 @@ void ej_show_filters(webs_t wp, int argc, char_t ** argv)
 {
 	char filter[32];
 	sprintf(filter, "numfilterservice%s", nvram_safe_get("filter_id"));
-	int numfilters = atoi(nvram_default_get(filter, "4"));
+	int numfilters = nvram_default_geti(filter, 4);
 	int i;
 	for (i = 0; i < numfilters; i++) {
 		websWrite(wp, "<div class=\"setting\">\n"	//
@@ -5424,7 +5424,7 @@ void ej_gen_filters(webs_t wp, int argc, char_t ** argv)
 {
 	char filter[32];
 	sprintf(filter, "numfilterservice%s", nvram_safe_get("filter_id"));
-	int numfilters = atoi(nvram_default_get(filter, "4"));
+	int numfilters = nvram_default_geti(filter, 4);
 	int i;
 	for (i = 0; i < numfilters; i++) {
 		websWrite(wp, "var servport_name%d = \"", i);

@@ -769,7 +769,7 @@ void ej_wl_ioctl(webs_t wp, int argc, char_t ** argv)
 
 	ejArgs(argc, argv, "%s %s %s", &op, &type, &var);
 
-	if ((unit = atoi(nvram_safe_get("wl_unit"))) < 0)
+	if ((unit = nvram_geti("wl_unit")) < 0)
 		return;
 
 	snprintf(prefix, sizeof(prefix), "wl%d_", unit);
