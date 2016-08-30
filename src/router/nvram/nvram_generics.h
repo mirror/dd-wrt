@@ -93,7 +93,7 @@ int nvram_match(char *name, char *match)
 }
 
 int nvram_matchi(char *name, int match)
-
+{
 	char tmp[100];
 	snprintf(tmp, sizeof(tmp), "%d", match);
 	return nvram_match(name, tmp);
@@ -114,7 +114,7 @@ int nvram_invmatch(char *name, char *invmatch)
 
 
 int nvram_invmatchi(char *name, int invmatch)
-
+{
 	char tmp[100];
 	snprintf(tmp, sizeof(tmp), "%d", invmatch);
 	return nvram_invmatch(name, tmp);
