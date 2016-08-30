@@ -35,7 +35,7 @@
 #if !defined(HAVE_IAS) && !defined(HAVE_BUFFALO)
 char *nvram_selget(webs_t wp, char *name)
 {
-	if (nvram_match("gozila_action", "1")) {
+	if (nvram_matchi("gozila_action", 1)) {
 		char *buf = GOZILA_GET(wp, name);
 
 		if (buf) {

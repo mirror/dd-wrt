@@ -69,7 +69,7 @@ void start_sysinit(void)
 		nvram_commit();
 	}
 #endif
-	if (!nvram_match("disable_watchdog", "1"))
+	if (!nvram_matchi("disable_watchdog",1))
 		eval("watchdog");
 	/*
 	 * Setup console 

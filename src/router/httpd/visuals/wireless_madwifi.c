@@ -147,7 +147,7 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 		char mac[32];
 
 		strncpy(mac, ieee80211_ntoa(si->isi_macaddr), 31);
-		if (nvram_match("maskmac", "1") && macmask) {
+		if (nvram_matchi("maskmac", 1) && macmask) {
 			mac[0] = 'x';
 			mac[1] = 'x';
 			mac[3] = 'x';
@@ -216,7 +216,7 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 	for (i = 0; i < c; i++) {
 		sprintf(devs, "ath%d", i);
 		sprintf(turbo, "%s_channelbw", devs);
-		if (nvram_match(turbo, "40"))
+		if (nvram_matchi(turbo, 40))
 			t = 2;
 		else
 			t = 1;
@@ -279,7 +279,7 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 				sprintf(wdsdevname, "ath%d_wds%d_if", i, s);
 				sprintf(wdsmacname, "ath%d_wds%d_hwaddr", i, s);
 				sprintf(turbo, "ath%d_channelbw", i);
-				if (nvram_match(turbo, "40"))
+				if (nvram_matchi(turbo, 40))
 					t = 2;
 				else
 					t = 1;
@@ -287,7 +287,7 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 				dev = nvram_safe_get(wdsdevname);
 				if (dev == NULL || strlen(dev) == 0)
 					continue;
-				if (nvram_match(wdsvarname, "0"))
+				if (nvram_matchi(wdsvarname, 0))
 					continue;
 #if defined(HAVE_MADWIFI_MIMO)
 				if (is_ar5008(devs))
@@ -430,7 +430,7 @@ void ej_get_currate(webs_t wp, int argc, char_t ** argv)
 #endif
 	{
 
-		if (nvram_match(mode, "40"))
+		if (nvram_matchi(mode, 40))
 			rate *= 2;
 	}
 	if (rate > 0) {

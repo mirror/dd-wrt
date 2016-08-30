@@ -54,7 +54,7 @@ void stop_gen_radius_cert(void)
 
 void start_gen_radius_cert(void)
 {
-	if (nvram_match("cert_running", "1") && pidof("openssl") > 0)
+	if (nvram_matchi("cert_running", 1) && pidof("openssl") > 0)
 		return;		//already running
 	prep();
 	gen_cert("/jffs/etc/freeradius/certs/server.cnf", TYPE_SERVER, nvram_safe_get("radius_common"), nvram_safe_get("radius_passphrase"));
@@ -85,7 +85,7 @@ void start_freeradius(void)
 
 	nvram_default_get("radius_port", "1812");
 	nvram_default_get("radius_enabled", "0");
-	if (!nvram_match("radius_enabled", "1"))
+	if (!nvram_matchi("radius_enabled", 1))
 		return;
 
 #ifndef HAVE_OPENRISC
@@ -96,7 +96,7 @@ void start_freeradius(void)
 #elif HAVE_IPQ806X
 	eval("mount", "-t", "ubifs", "-o", "sync", "ubi0:rootfs_data", "/jffs");
 #else
-	if (!nvram_match("jffs_mounted", "1") && (freediskSpace("/jffs") < 134217728))
+	if (!nvram_matchi("jffs_mounted", 1) && (freediskSpace("/jffs") < 134217728))
 		return;		//jffs is a requirement for radius and must be mounted at this point here
 #endif
 #endif

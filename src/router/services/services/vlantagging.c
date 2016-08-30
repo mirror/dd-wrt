@@ -163,7 +163,7 @@ int getBridgeSTP(char *br)
 		return 0;
 	}
 	if (!strcmp(br, "br0"))
-		return nvram_match("lan_stp", "1") ? 1 : 0;
+		return nvram_matchi("lan_stp", 1) ? 1 : 0;
 	return -1;
 }
 

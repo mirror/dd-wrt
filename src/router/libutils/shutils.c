@@ -106,7 +106,7 @@ int waitfor(int fd, int timeout)
 
 static void flog(const char *fmt, ...)
 {
-	if (nvram_match("flog_enabled", "1")) {
+	if (nvram_matchi("flog_enabled", 1)) {
 		char varbuf[256];
 		va_list args;
 
@@ -123,7 +123,7 @@ int system2(char *command)
 {
 #ifndef HAVE_X86		//we must disable this on x86 since nvram is not available at startup
 
-	if (nvram_match("console_debug", "1")) {
+	if (nvram_matchi("console_debug", 1)) {
 		fprintf(stderr, "system: %s\n", command);
 		flog("system: %s\n", command);
 	}
@@ -198,7 +198,7 @@ int _evalpid(char *const argv[], char *path, int timeout, int *ppid)
 	// char buf[254] = "";
 #ifndef HAVE_X86		//we must disable this on x86 since nvram is not available at startup
 
-	if (nvram_match("console_debug", "1")) {
+	if (nvram_matchi("console_debug", 1)) {
 		int i = 0;
 
 		while (argv[i] != NULL) {

@@ -98,7 +98,7 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 //                              fprintf(stderr,"5 Ghz %d is not compatible to a-only/mixed/na-only %X\n",achans.ic_chans[i].ic_freq,achans.ic_chans[i].ic_flags);
 				continue;
 			}
-			if (nvram_match(wl_turbo, "40")
+			if (nvram_matchi(wl_turbo, 40)
 			    && (nvram_match(wl_mode, "n5-only")
 				|| nvram_match(wl_mode, "mixed")
 				|| nvram_match(wl_mode, "na-only"))) {
@@ -126,7 +126,7 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 			    && achans.ic_chans[i].ic_ieee > 11 && achans.ic_chans[i].ic_ieee <= 14)
 				continue;
 #endif
-			if (nvram_match(wl_turbo, "40")
+			if (nvram_matchi(wl_turbo, 40)
 			    && (nvram_match(wl_mode, "n2-only")
 				|| nvram_match(wl_mode, "n-only")
 				|| nvram_match(wl_mode, "mixed")

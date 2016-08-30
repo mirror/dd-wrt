@@ -49,13 +49,13 @@ void start_tor(void)
 
 	stop_tor();
 
-	if (nvram_match("tor_enable", "0"))
+	if (nvram_matchi("tor_enable", 0))
 		return;
 
 	mkdir("/tmp/tor", 0700);
 	FILE *fp = fopen("/tmp/torrc", "wb");
 	fprintf(fp, "Log notice syslog\n");
-	if (nvram_match("tor_relayonly", "1"))
+	if (nvram_matchi("tor_relayonly", 1))
 		fprintf(fp, "SocksPort 0\n");
 	else {
 		fprintf(fp, "SocksPort 9050\n");
@@ -71,17 +71,17 @@ void start_tor(void)
 		fprintf(fp, "RelayBandwidthBurst %d\n", nvram_geti("tor_bwburst") * 1024);
 
 //      fprintf(fp, "ControlPort 9051\n");
-	if (nvram_match("tor_relay", "1")) {
+	if (nvram_matchi("tor_relay", 1)) {
 		eval("iptables", "-I", "INPUT", "-p", "tcp", "-i", get_wan_face(), "--dport", "9001", "-j", "ACCEPT");
 		fprintf(fp, "ORPort 9001\n");
 	}
-	if (nvram_match("tor_dir", "1")) {
+	if (nvram_matchi("tor_dir", 1)) {
 		eval("iptables", "-I", "INPUT", "-p", "tcp", "-i", get_wan_face(), "--dport", "9030", "-j", "ACCEPT");
 		fprintf(fp, "DirPort 9030\n");
 	}
-	if (nvram_match("tor_bridge", "1"))
+	if (nvram_matchi("tor_bridge", 1))
 		fprintf(fp, "BridgeRelay 1\n");
-	if (nvram_match("tor_transparent", "1")) {
+	if (nvram_matchi("tor_transparent", 1)) {
 		fprintf(fp, "VirtualAddrNetwork 10.192.0.0/10\n");
 		fprintf(fp, "AutomapHostsOnResolve 1\n");
 		fprintf(fp, "TransPort 9040\n");
@@ -96,9 +96,9 @@ void start_tor(void)
 	eval("mkdir", "-p", "/tmp/tor");
 	fprintf(fp, "DataDirectory /tmp/tor\n");
 #else
-	if (nvram_match("enable_jffs2", "1")
-	    && nvram_match("jffs_mounted", "1")
-	    && nvram_match("sys_enable_jffs2", "1")) {
+	if (nvram_matchi("enable_jffs2", 1)
+	    && nvram_matchi("jffs_mounted", 1)
+	    && nvram_matchi("sys_enable_jffs2", 1)) {
 		eval("mkdir", "-p", "/jffs/tor");
 		fprintf(fp, "DataDirectory /jffs/tor\n");
 	} else {

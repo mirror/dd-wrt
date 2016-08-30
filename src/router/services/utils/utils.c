@@ -45,7 +45,7 @@ void getLANMac(char *newmac)
 
 #ifndef HAVE_BUFFALO
 
-	if (nvram_match("port_swap", "1")) {
+	if (nvram_matchi("port_swap", 1)) {
 		if (strlen(nvram_safe_get("et1macaddr")) != 0)	// safe:
 			// maybe
 			// et1macaddr 
@@ -72,7 +72,7 @@ void getWirelessMac(char *newmac, int instance)
 	if (instance < 0)
 		instance = 0;
 
-	if (nvram_match("port_swap", "1")) {
+	if (nvram_matchi("port_swap", 1)) {
 		if (strlen(nvram_safe_get("et1macaddr")) != 0)	// safe:
 			// maybe
 			// et1macaddr 
@@ -157,7 +157,7 @@ void getWANMac(char *newmac)
 		if (nvram_invmatch("wan_proto", "disabled")) {
 			MAC_ADD(newmac);	// et0macaddr +1
 
-			if (nvram_match("port_swap", "1")) {
+			if (nvram_matchi("port_swap", 1)) {
 				if (strlen(nvram_safe_get("et1macaddr")) != 0)	// safe:
 					// maybe
 					// et1macaddr 

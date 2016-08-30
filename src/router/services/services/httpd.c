@@ -33,7 +33,7 @@ void start_httpd(void)
 	int ret = 0;
 	stop_httpd();
 	update_timezone();
-	if (nvram_invmatch("http_enable", "0")
+	if (nvram_invmatchi("http_enable", 0)
 	    && !f_exists("/var/run/httpd.pid")) {
 		chdir("/www");
 		cprintf("[HTTPD Starting on /www]\n");
@@ -48,7 +48,7 @@ void start_httpd(void)
 		chdir("/");
 	}
 #ifdef HAVE_HTTPS
-	if (nvram_invmatch("https_enable", "0")
+	if (nvram_invmatchi("https_enable", 0)
 	    && !f_exists("/var/run/httpsd.pid")) {
 
 		// Generate a new certificate

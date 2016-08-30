@@ -31,7 +31,7 @@
 // unfinished. do not use
 void start_wifidog(void)
 {
-	if (nvram_match("wd_enable", "1")) {
+	if (nvram_matchi("wd_enable", 1)) {
 		insmod("ipt_mark ipt_mac xt_mark xt_mac");
 		mkdir("/tmp/wifidog/", 0744);
 		FILE *fp = fopen("/tmp/wifidog/wifidog.conf", "wb");
@@ -54,13 +54,13 @@ void start_wifidog(void)
 		fprintf(fp, "TrustedMACList %s\n", nvram_safe_get("wd_maclist"));
 		fprintf(fp, "AuthServer {\n");
 		fprintf(fp, "Hostname %s\n", nvram_safe_get("wd_hostname"));
-		fprintf(fp, "SSLAvailable %s\n", nvram_match("wd_sslavailable", "1") ? "yes" : "no");
+		fprintf(fp, "SSLAvailable %s\n", nvram_matchi("wd_sslavailable", 1) ? "yes" : "no");
 		fprintf(fp, "SSLPort %s\n", nvram_safe_get("wd_sslport"));
 		fprintf(fp, "HTTPPort %s\n", nvram_safe_get("wd_httpport"));
 		if (strlen(nvram_safe_get("wd_messagefile")) > 0) {
 			fprintf(fp, "HtmlMessageFile %s\n", nvram_safe_get("wd_messagefile"));
 		}
-		if (nvram_match("wd_auth", "1")) {
+		if (nvram_matchi("wd_auth", 1)) {
 			if (strlen(nvram_safe_get("wd_realm")) > 0)
 				fprintf(fp, "HTTPDRealm %s\n", nvram_safe_get("wd_realm"));
 			fprintf(fp, "HTTPDUserName %s\n", nvram_safe_get("wd_username"));

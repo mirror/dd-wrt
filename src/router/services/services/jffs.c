@@ -36,9 +36,9 @@ void start_jffs2(void)
 	char *rwpart = "ddwrt";
 	int itworked = 0;
 
-	if (nvram_match("sys_enable_jffs2", "1")) {
+	if (nvram_matchi("sys_enable_jffs2", 1)) {
 		insmod("crc32 lzma_compress lzma_decompress lzo_compress lzo_decompress jffs2");
-		if (nvram_match("sys_clean_jffs2", "1")) {
+		if (nvram_matchi("sys_clean_jffs2", 1)) {
 			nvram_seti("sys_clean_jffs2", 0);
 			nvram_commit();
 #ifdef HAVE_WNDR3700V4

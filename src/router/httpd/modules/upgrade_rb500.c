@@ -271,7 +271,7 @@ do_upgrade_post(char *url, webs_t stream, int len, char *boundary)	// jimmy,
 	 * Restore factory original settings if told to. This will also cause a
 	 * restore defaults on reboot of a Sveasoft firmware. 
 	 */
-	if (nvram_match("sv_restore_defaults", "1")) {
+	if (nvram_matchi("sv_restore_defaults", 1)) {
 		unlink("/usr/local/nvram/nvram.bin");
 	}
 	/*

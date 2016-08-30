@@ -17,7 +17,7 @@
 
 void start_privoxy(void)
 {
-	if (!nvram_match("privoxy_enable", "1"))
+	if (!nvram_matchi("privoxy_enable", 1))
 		return;
 
 	int mode = 0;
@@ -33,7 +33,7 @@ void start_privoxy(void)
 	mkdir("/var/log/privoxy", 0777);
 
 	char *wan = get_wan_ipaddr();
-	if (nvram_match("privoxy_transp_enable", "1")) {
+	if (nvram_matchi("privoxy_transp_enable", 1)) {
 		sysprintf("iptables -t nat -D PREROUTING -p tcp -d ! %s --dport 80 -j DNAT --to %s:8118", wan, ip);
 		sysprintf("iptables -t nat -I PREROUTING -p tcp -d ! %s --dport 80 -j DNAT --to %s:8118", wan, ip);
 		sysprintf("iptables -t nat -D PREROUTING -p tcp -s %s/%s -d %s --dport %s -j ACCEPT", ip, mask, ip, webif_port);
@@ -74,7 +74,7 @@ void start_privoxy(void)
 
 	FILE *fp = fopen("/tmp/privoxy.conf", "wb");
 
-	if (nvram_match("privoxy_advanced", "1") && nvram_invmatch("privoxy_conf", "")) {
+	if (nvram_matchi("privoxy_advanced", 1) && nvram_invmatch("privoxy_conf", "")) {
 		fprintf(fp, "%s", nvram_safe_get("privoxy_conf"));
 	} else {
 		fprintf(fp, "confdir /etc/privoxy\n"

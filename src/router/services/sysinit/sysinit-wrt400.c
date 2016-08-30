@@ -57,7 +57,7 @@ void start_sysinit(void)
 {
 	time_t tm = 0;
 
-	if (!nvram_match("disable_watchdog", "1"))
+	if (!nvram_matchi("disable_watchdog",1))
 		eval("watchdog");
 	/*
 	 * Setup console 
@@ -147,7 +147,7 @@ void start_sysinit(void)
 		eval("swconfig", "dev", "eth0", "set", "reset", "1");
 		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 		if (nvram_match("wan_proto", "disabled")
-		    && nvram_match("fullswitch", "1")) {
+		    && nvram_matchi("fullswitch",1)) {
 			eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 1 2 3 4 5");
 		} else {
 			eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 1 3 4 5");
@@ -187,7 +187,7 @@ void start_sysinit(void)
 		system("swconfig dev switch0 set reset 1");
 		system("swconfig dev switch0 set enable_vlan 1");
 		if (nvram_match("wan_proto", "disabled")
-		    && nvram_match("fullswitch", "1")) {
+		    && nvram_matchi("fullswitch",1)) {
 			system("swconfig dev switch0 vlan 1 set ports \"0t 1 2 3 4 5\"");
 		} else {
 			system("swconfig dev switch0 vlan 1 set ports \"0t 2 3 4 5\"");

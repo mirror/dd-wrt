@@ -60,7 +60,7 @@ void start_ftpsrv(void)
 	struct samba3_user *samba3users, *cu, *cunext;
 	struct samba3_share *samba3shares;
 
-	if (!nvram_match("proftpd_enable", "1"))
+	if (!nvram_matchi("proftpd_enable", 1))
 		return;
 
 	ftpsrv_umount();
@@ -89,7 +89,7 @@ void start_ftpsrv(void)
 	fclose(fp);
 
 	// add ftp user (for anonymous access) 
-	if (nvram_match("proftpd_anon", "1")) {
+	if (nvram_matchi("proftpd_anon", 1)) {
 		fp = fopen("/tmp/proftpd/etc/passwd", "ab");
 		fprintf(fp, "ftp:x:0:0:Ftp Anon,,,:/tmp/root:/bin/sh\n");
 		fclose(fp);
@@ -140,8 +140,8 @@ void start_ftpsrv(void)
 
 		fprintf(fp, "<Directory      \"~/%s\">\n", cs->label);
 
-		if (!strcmp(cs->access_perms, "rw")) 
-			fprintf(fp,"  <Limit WRITE>\n    AllowAll\n  </Limit>\n");
+		if (!strcmp(cs->access_perms, "rw"))
+			fprintf(fp, "  <Limit WRITE>\n    AllowAll\n  </Limit>\n");
 		for (csu = cs->users; csu; csu = csunext) {
 			samba3users = getsamba3users();
 			for (cu = samba3users; cu; cu = cunext) {
@@ -163,7 +163,7 @@ void start_ftpsrv(void)
 		free(cs);
 	}
 
-	if (nvram_match("proftpd_rad", "0"))
+	if (nvram_matchi("proftpd_rad", 0))
 		fprintf(fp, "AuthUserFile	/tmp/proftpd/etc/passwd\n");
 	else {
 		fprintf(fp, "AuthOrder mod_radius.c\n"
@@ -176,13 +176,8 @@ void start_ftpsrv(void)
 		fprintf(fp, "RadiusUserInfo 0 0 %s /bin/false\n", "/mnt");	//TODO allow to choose dir
 	}
 	// Anonymous ftp - read only
-	if (nvram_match("proftpd_anon", "1")) {
-		fprintf(fp,
-			"<Anonymous      \"%s\">\n"
-			"User           ftp\n"
-			"Group          root\n"
-			"UserAlias      anonymous ftp\n"
-			"</Anonymous>\n", nvram_safe_get("proftpd_anon_dir"));
+	if (nvram_matchi("proftpd_anon", 1)) {
+		fprintf(fp, "<Anonymous      \"%s\">\n" "User           ftp\n" "Group          root\n" "UserAlias      anonymous ftp\n" "</Anonymous>\n", nvram_safe_get("proftpd_anon_dir"));
 	}
 	fclose(fp);
 	chmod("/tmp/proftpd/etc/passwd", S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);

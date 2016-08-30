@@ -56,7 +56,7 @@
 
 void start_process_monitor(void)
 {
-	if (nvram_match("pmonitor_enable", "0"))
+	if (nvram_matchi("pmonitor_enable", 0))
 		return;
 
 	pid_t pid;

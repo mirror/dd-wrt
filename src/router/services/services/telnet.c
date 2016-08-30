@@ -38,7 +38,7 @@ void start_telnetd(void)
 #endif
 	stop_telnetd();
 
-	if (!nvram_invmatch("telnetd_enable", "0"))
+	if (!nvram_invmatchi("telnetd_enable", 0))
 		return;
 
 #ifdef HAVE_REGISTER

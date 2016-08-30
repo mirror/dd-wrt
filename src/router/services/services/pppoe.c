@@ -180,7 +180,7 @@ void start_pppoe(int pppoe_num)
 		"-p", passwd,
 		"-r", nvram_safe_get("wan_mtu"),	// del by honor, add by tallest.
 		"-t", nvram_safe_get("wan_mtu"),
-		"-i", nvram_match(ppp_demand[pppoe_num], "1") ? idletime : "0",
+		"-i", nvram_matchi(ppp_demand[pppoe_num], 1) ? idletime : "0",
 		"-I", "10",	// Send an LCP echo-request frame to the
 		// server every 10 seconds
 		"-T", "20",	// pppd will presume the server to be dead if 
@@ -221,11 +221,11 @@ void start_pppoe(int pppoe_num)
 		*arg++ = "-a";
 		*arg++ = nvram_safe_get(ppp_ac[pppoe_num]);
 	}
-	if (nvram_match("ppp_static", "1")) {
+	if (nvram_matchi("ppp_static", 1)) {
 		*arg++ = "-L";
 		*arg++ = nvram_safe_get("ppp_static_ip");
 	}
-	// if (nvram_match("pppoe_demand", "1") || nvram_match("pppoe_keepalive", 
+	// if (nvram_matchi("pppoe_demand",1) || nvram_match("pppoe_keepalive", 
 	// "1"))
 	*arg++ = "-k";
 
@@ -242,7 +242,7 @@ void start_pppoe(int pppoe_num)
 	start_pppmodules();
 	_evalpid(pppoe_argv, NULL, 0, &pid);
 
-	if (nvram_match(ppp_demand[pppoe_num], "1")) {
+	if (nvram_matchi(ppp_demand[pppoe_num], 1)) {
 		// int timeout = 5;
 		start_tmp_ppp(pppoe_num);
 
@@ -264,7 +264,7 @@ void stop_pppoe(void)
 
 	unlink("/tmp/ppp/link");
 	stop_process("pppd", "pppoe process");
-	if (nvram_match("wan_vdsl", "1")) {
+	if (nvram_matchi("wan_vdsl", 1)) {
 		eval("ifconfig", nvram_safe_get("wan_iface"), "down");
 		eval("vconfig", "rem", nvram_safe_get("wan_iface"));
 	}

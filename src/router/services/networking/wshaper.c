@@ -105,7 +105,7 @@ static void svqos_reset_ports(void)
 #ifndef HAVE_OPENRISC
 #ifndef HAVE_ADM5120
 #ifndef HAVE_TW6600
-	if (nvram_match("portprio_support", "1")) {
+	if (nvram_matchi("portprio_support", 1)) {
 		writeproc("/proc/switch/eth0/port/1/enable", "1");
 		writeproc("/proc/switch/eth0/port/2/enable", "1");
 		writeproc("/proc/switch/eth0/port/3/enable", "1");
@@ -172,7 +172,7 @@ static int svqos_set_ports(void)
 #ifndef HAVE_STORM
 #ifndef HAVE_OPENRISC
 #ifndef HAVE_ADM5120
-	if (nvram_match("portprio_support", "1")) {
+	if (nvram_matchi("portprio_support", 1)) {
 		int loop = 1;
 		char nvram_var[32] = {
 			0
@@ -692,7 +692,7 @@ static int svqos_iptables(void)
 	/* add openvpn filter rules */
 #ifdef HAVE_AQOS
 #ifdef HAVE_OPENVPN
-	if (nvram_invmatch("openvpn_enable", "0") || nvram_invmatch("openvpncl_enable", "0")) {
+	if (nvram_invmatchi("openvpn_enable", 0) || nvram_invmatchi("openvpncl_enable", 0)) {
 		char iflist[256];
 		char word[256];
 		char *next;
@@ -975,7 +975,7 @@ static int svqos_iptables(void)
 	eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-j", "CONNMARK", "--save-mark");
 	eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-j", "RETURN");
 	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-m", "mark", "--mark", nullmask, "-j", "SVQOS_SVCS");
-	if (nvram_invmatch("openvpn_enable", "0") || nvram_invmatch("openvpncl_enable", "0")) {
+	if (nvram_invmatchi("openvpn_enable", 0) || nvram_invmatchi("openvpncl_enable", 0)) {
 		eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "VPN_DSCP");
 	}
 #ifndef HAVE_80211AC
@@ -1019,13 +1019,13 @@ void start_wshaper(void)
 
 	wshaper_dev = nvram_safe_get("wshaper_dev");
 
-	if (!nvram_invmatch("qos_type", "0"))
+	if (!nvram_invmatchi("qos_type", 0))
 		script_name = "svqos";
 	else
 		script_name = "svqos2";
 
 	stop_wshaper();
-	if (!nvram_invmatch("wshaper_enable", "0"))
+	if (!nvram_invmatchi("wshaper_enable", 0))
 		return;
 
 	if (!strcmp(wshaper_dev, "WAN")
@@ -1113,7 +1113,7 @@ void stop_wshaper(void)
 		wan_dev = "xx";
 
 	char *script_name;
-	if (!nvram_invmatch("qos_type", "0"))
+	if (!nvram_invmatchi("qos_type", 0))
 		script_name = "svqos";
 	else
 		script_name = "svqos2";

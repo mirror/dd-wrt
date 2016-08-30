@@ -45,7 +45,7 @@ void start_snmp(void)
 
 	stop_snmp();
 
-	if (!nvram_invmatch("snmpd_enable", "0"))
+	if (!nvram_invmatchi("snmpd_enable", 0))
 		return;
 #ifdef HAVE_NEXTMEDIA
 	if (f_exists("/jffs/etc/snmpd.conf")) {

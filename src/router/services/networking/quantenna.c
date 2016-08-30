@@ -178,7 +178,7 @@ int gen_stateless_conf(void)
 	/* if media bridge mode, always auto channel */
 	fprintf(fp, "wifi0_channel=%d\n", channel);
 	fprintf(fp, "wifi0_pwr=%d\n", get_tx_power_qtn());
-	if (nvram_match("wl1_itxbf", "1") || nvram_match("wl1_txbf", "1")) {
+	if (nvram_matchi("wl1_itxbf", 1) || nvram_matchi("wl1_txbf", 1)) {
 		fprintf(fp, "wifi0_bf=1\n");
 	} else {
 		fprintf(fp, "wifi0_bf=0\n");

@@ -1894,7 +1894,7 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 		// is enabled
 		if (!IEEE80211_IS_CHAN_STURBO(&achans.ic_chans[i])
 		    && !IEEE80211_IS_CHAN_DTURBO(&achans.ic_chans[i])) {
-			if (nvram_match(wl_turbo, "40"))
+			if (nvram_matchi(wl_turbo, 40))
 				continue;
 		}
 		// filter out turbo channels if turbo mode is disabled
@@ -1904,7 +1904,7 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 		 * (wl_turbo, "0")) continue; }
 		 */
 		if (IEEE80211_IS_CHAN_STURBO(&achans.ic_chans[i])) {
-			if (!nvram_match(wl_turbo, "40"))
+			if (!nvram_matchi(wl_turbo, 40))
 				continue;
 		}
 

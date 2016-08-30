@@ -154,7 +154,7 @@ void start_iptqueue(void)
 {
 	int ret = 0;
 
-	if (!nvram_invmatch("iptqueue_enable", "0"))
+	if (!nvram_invmatchi("iptqueue_enable", 0))
 		return;
 
 	ret = eval("iptqueue");
@@ -180,7 +180,7 @@ void start_ipv6(void)
 {
 	int ret = 0;
 
-	if (!nvram_invmatch("ipv6_enable", "0"))
+	if (!nvram_invmatchi("ipv6_enable", 0))
 		return;
 
 	insmod("ipv6 tunnel4 ip_tunnel sit xfrm_algo esp6 ah6 mip6 tunnel6 ip6_tunnel xfrm6_mode_beet xfrm6_mode_ro xfrm6_mode_transport xfrm6_mode_tunnel xfrm6_tunnel xfrm_ipcomp ipcomp6");

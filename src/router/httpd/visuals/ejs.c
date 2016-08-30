@@ -218,7 +218,7 @@ void ej_nvram_selget(webs_t wp, int argc, char_t ** argv)
 	char *name;
 
 	name = argv[0];
-	if (nvram_match("gozila_action", "1")) {
+	if (nvram_matchi("gozila_action", 1)) {
 		char *buf = websGetVar(wp, name, NULL);
 
 		if (buf) {
@@ -812,8 +812,8 @@ void ej_get_http_prefix(webs_t wp, int argc, char_t ** argv)
 		strcpy(http, "http");
 
 	if (nvram_match("browser_method", "USE_LAN")) {	// Use LAN to browser
-		if (nvram_match("restore_defaults", "1")
-		    || nvram_match("sv_restore_defaults", "1")) {
+		if (nvram_matchi("restore_defaults", 1)
+		    || nvram_matchi("sv_restore_defaults", 1)) {
 
 			strcpy(http, "http");
 		} else
@@ -1295,7 +1295,7 @@ void ej_get_totaltraff(webs_t wp, int argc, char_t ** argv)
 
 	type = argv[0];
 
-	if (!nvram_match("ttraff_enable", "1"))
+	if (!nvram_matchi("ttraff_enable", 1))
 		return;
 
 	if (nvram_match("ttraff_iface", "") || !nvram_get("ttraff_iface"))
@@ -1423,7 +1423,7 @@ void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 
 		show_bwif(wp, get_wan_face(), name);
 
-		if (nvram_match("dtag_vlan8", "1")) {
+		if (nvram_matchi("dtag_vlan8", 1)) {
 			if (getRouterBrand() == ROUTER_WRT600N || getRouterBrand() == ROUTER_WRT610N)
 				show_bwif(wp, "eth2.0008", "IPTV");
 			else
@@ -1506,13 +1506,13 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 		vlan_supp = 1;
 
 #ifdef HAVE_SPUTNIK_APD
-	int sputnik = nvram_match("apd_enable", "1");
+	int sputnik = nvram_matchi("apd_enable", 1);
 #else
 	int sputnik = 0;
 #endif
 	int openvpn = nvram_match("openvpn_enable",
-				  "1") | nvram_match("openvpncl_enable", "1");
-	int auth = nvram_match("status_auth", "1");
+				  "1") | nvram_matchi("openvpncl_enable", 1);
+	int auth = nvram_matchi("status_auth", 1);
 	int registered = 1;
 #ifdef HAVE_REGISTER
 	if (!isregistered_real())
@@ -2254,7 +2254,7 @@ void ej_get_service_state(webs_t wp, int argc, char_t ** argv)
 
 #ifdef HAVE_SAMBA_SERVER
 	websWrite(wp, "<div class=\"setting\"><div class=\"label\">%s</div>", live_translate("service.samba3_srv"));
-	if (nvram_match("samba3_enable", "1")) {
+	if (nvram_matchi("samba3_enable", 1)) {
 		websWrite(wp, "%s", live_translate("share.enabled"));
 		if (pidof("smbd") > 0) {
 			websWrite(wp, " - %s", live_translate("diag.running"));
@@ -3000,8 +3000,8 @@ void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 			 */
 
 			if (!strcmp(hostname, "*")
-			    && nvram_match("dhcp_dnsmasq", "1")
-			    && nvram_match("dhcpd_usenvram", "0")) {
+			    && nvram_matchi("dhcp_dnsmasq", 1)
+			    && nvram_matchi("dhcpd_usenvram", 0)) {
 				if (!(host = fopen("/tmp/dnsmasq.leases", "r")))
 					host = fopen("/jffs/dnsmasq.leases", "r");
 
@@ -3027,8 +3027,8 @@ void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 			 */
 
 			if (!strcmp(hostname, "*")
-			    && nvram_match("dhcp_dnsmasq", "1")
-			    && nvram_match("dhcpd_usenvram", "1")) {
+			    && nvram_matchi("dhcp_dnsmasq", 1)
+			    && nvram_matchi("dhcpd_usenvram", 1)) {
 				sscanf(nvram_nget("dnsmasq_lease_%s", ip), "%*s %*s %*s %s", hostname);
 			}
 			/*
@@ -3149,7 +3149,7 @@ void ej_tf_upnp(webs_t wp, int argc, char_t ** argv)
 	int len, pos, count;
 	char *temp;
 
-	if (nvram_match("upnp_enable", "1")) {
+	if (nvram_matchi("upnp_enable", 1)) {
 		for (i = 0; i < 50; i++) {
 			websWrite(wp, (i > 0) ? ",'" : "'");
 

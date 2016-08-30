@@ -46,7 +46,7 @@ void sas_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *prefix, cha
 
 char *nvram_selget(webs_t wp, char *name)
 {
-	if (nvram_match("gozila_action", "1")) {
+	if (nvram_matchi("gozila_action", 1)) {
 		char *buf = GOZILA_GET(wp, name);
 
 		if (buf) {
@@ -101,7 +101,7 @@ static char *sas_nvram_nget(webs_t wp, const char *fmt, ...)
 
 static char *sas_nvram_default_get(webs_t wp, char *var, char *def)
 {
-	if (nvram_match("gozila_action", "1")) {
+	if (nvram_matchi("gozila_action", 1)) {
 		char *buf = GOZILA_GET(wp, var);
 		if (buf) {
 			return buf;
@@ -119,7 +119,7 @@ static char *sas_nvram_default_get(webs_t wp, char *var, char *def)
 static int sas_nvram_default_match(webs_t wp, char *var, char *match, char *def)
 {
 	fprintf(stderr, "[sas_nvram_default_match] %s\n", var);
-	if (nvram_match("gozila_action", "1")) {
+	if (nvram_matchi("gozila_action", 1)) {
 		fprintf(stderr, "[sas_nvram_default_match] %s gozila\n", var);
 		char *buf = GOZILA_GET(wp, var);
 		if (buf) {
@@ -336,7 +336,7 @@ char *sas_get_single_ip(webs_t wp, char *label, int position)
 	char d[32];
 	char *g;
 
-	if (nvram_match("gozila_action", "1")) {
+	if (nvram_matchi("gozila_action", 1)) {
 		sprintf(name, "%s_%i", label, position);
 		g = GOZILA_GET(wp, name);
 		fprintf(stderr, "[sas_get_single_ip] %s %s %i\n", name, g, position);
@@ -381,7 +381,7 @@ char *sas_get_dns_ip(webs_t wp, char *label, int entry, int position)
 	char d[32];
 	char *g;
 
-	if (nvram_match("gozila_action", "1")) {
+	if (nvram_matchi("gozila_action", 1)) {
 		sprintf(name, "%s%i_%i", label, entry, position);
 		g = GOZILA_GET(wp, name);
 		if (g) {
@@ -1635,14 +1635,14 @@ char *sas_get_wep_value(webs_t wp, char *temp, char *type, char *_bit, char *pre
 	char wl_wep[] = "wlX.XX_wep_XXXXXX";
 
 	// check for httpd post values
-	if (nvram_match("gozila_action", "1")
-	    && !nvram_match("generate_key", "1")) {
+	if (nvram_matchi("gozila_action", 1)
+	    && !nvram_matchi("generate_key", 1)) {
 		char label[32];
 		sprintf(label, "%s_%s", prefix, type);
 		return nvram_selget(wp, label);
 	}
 
-	if (nvram_match("generate_key", "1")) {
+	if (nvram_matchi("generate_key", 1)) {
 		snprintf(wl_wep, sizeof(wl_wep), "%s_wep_gen", prefix);
 	} else {
 		snprintf(wl_wep, sizeof(wl_wep), "%s_wep_buf", prefix);

@@ -39,12 +39,12 @@ void start_rstats(void)
 {
 	// If jffs has been disabled force rstats files to temp memory
 	if (nvram_match("rstats_path", "/jffs/")
-	    && nvram_match("enable_jffs2", "1")) {
+	    && nvram_matchi("enable_jffs2", 1)) {
 		nvram_set("rstats_path", "");
 		nvram_commit();
 	}
 
-	if (nvram_match("rstats_enable", "1")) {
+	if (nvram_matchi("rstats_enable", 1)) {
 		stop_rstats();
 		eval("rstats");
 		dd_syslog(LOG_INFO, "rstats daemon successfully started\n");

@@ -67,7 +67,7 @@ void start_hotplug_usb(void)
 	char *action;
 	int class, subclass, protocol;
 
-	if (!(nvram_match("usb_automnt", "1")))
+	if (!(nvram_matchi("usb_automnt", 1)))
 		return;
 
 	if (!(action = getenv("ACTION")) || !(device = getenv("TYPE")))
@@ -132,7 +132,7 @@ void start_hotplug_block(void)
 {
 	char *devpath;
 	char *action;
-	if (!(nvram_match("usb_automnt", "1")))
+	if (!(nvram_matchi("usb_automnt", 1)))
 		return;
 
 	if (!(action = getenv("ACTION")))
@@ -507,7 +507,7 @@ static int usb_add_ufd(char *devpath)
 								int linenum = 0;
 								while (fgets(line_part, sizeof(line_part), fpp) != NULL) {
 									if (linenum++ == 5)
-									    break;
+										break;
 									char *fs = getfs(line_part);
 									if (fs) {
 										sprintf(targetname, "%s_%s", entry->d_name, part);

@@ -551,7 +551,7 @@ int dns_to_resolv(void)
 	if (nvram_invmatch("lan_domain", "")) {
 		fprintf(fp_w, "search %s\n", nvram_safe_get("lan_domain"));
 	}
-	if (nvram_match("dnsmasq_enable", "1")) {
+	if (nvram_matchi("dnsmasq_enable", 1)) {
 		fprintf(fp_w, "nameserver %s\n", nvram_get("lan_ipaddr"));
 		fclose(fp_w);
 		if (!(fp_w = fopen(RESOLV_FORW, "w"))) {
@@ -582,7 +582,7 @@ int dns_to_resolv(void)
 #ifdef HAVE_3G
 					   || nvram_match("wan_proto", "3g")
 #endif
-	    ) && nvram_match("ppp_demand", "1"))
+	    ) && nvram_matchi("ppp_demand", 1))
 		fprintf(fp_w, "nameserver 1.1.1.1\n");
 
 	fclose(fp_w);
@@ -834,9 +834,9 @@ int check_flash(void)
 
 	// The V1.X some images cann't support intel flash, so we want to avoid
 	// user to downgrade.
-	if (nvram_match("skip_amd_check", "1")) {
+	if (nvram_matchi("skip_amd_check", 1)) {
 		if (strstr(nvram_safe_get("flash_type"), "Intel")
-		    && nvram_invmatch("skip_intel_check", "1"))
+		    && nvram_invmatchi("skip_intel_check", 1))
 			return TRUE;
 		else
 			return FALSE;
@@ -1484,14 +1484,14 @@ int route_manip(int cmd, char *name, int metric, char *dst, char *gateway, char 
 
 int route_add(char *name, int metric, char *dst, char *gateway, char *genmask)
 {
-	if (nvram_match("console_debug", "1"))
+	if (nvram_matchi("console_debug", 1))
 		fprintf(stderr, "route_add: if:%s dst:%s gw: %s mask: %s \n", name, dst, gateway, genmask);
 	return route_manip(SIOCADDRT, name, metric, dst, gateway, genmask);
 }
 
 int route_del(char *name, int metric, char *dst, char *gateway, char *genmask)
 {
-	if (nvram_match("console_debug", "1"))
+	if (nvram_matchi("console_debug", 1))
 		fprintf(stderr, "route_del: if:%s dst:%s gw: %s mask: %s \n", name, dst, gateway, genmask);
 	return route_manip(SIOCDELRT, name, metric, dst, gateway, genmask);
 }
@@ -1657,7 +1657,7 @@ int doMultiCast(void)
 
 	if (nvram_match("wan_proto", "disabled"))
 		return 0;
-	if (nvram_match("block_multicast", "0")) {
+	if (nvram_matchi("block_multicast", 0)) {
 		ifcount++;
 	}
 	char *lan_ifnames = nvram_safe_get("lan_ifnames");

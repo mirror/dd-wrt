@@ -192,8 +192,8 @@ static int zebra_ospf_init(void)
 		return errno;
 	}
 
-	if (nvram_match("zebra_copt", "1")) {
-		if (nvram_match("zebra_log", "1")) {
+	if (nvram_matchi("zebra_copt", 1)) {
+		if (nvram_matchi("zebra_log", 1)) {
 			fprintf(fp, "log file /var/log/zebra.log\n");
 		}
 	}
@@ -209,7 +209,7 @@ static int zebra_ospf_init(void)
 		return errno;
 	}
 
-	if (nvram_match("ospfd_copt", "1")
+	if (nvram_matchi("ospfd_copt", 1)
 	    && strlen(nvram_safe_get("ospfd_conf"))) {
 		fwritenvram("ospfd_conf", fp);
 	} else {
@@ -267,7 +267,7 @@ static int zebra_ospf_init(void)
 				fprintf(fp, " passive-interface %s\n", nvram_nget("wl_wds%d_if", s));
 		}
 
-		if (nvram_match("zebra_log", "1")) {
+		if (nvram_matchi("zebra_log", 1)) {
 			fprintf(fp, "!\n");
 			fprintf(fp, "log file /var/log/ospf.log\n");
 		}
@@ -278,7 +278,7 @@ static int zebra_ospf_init(void)
 	fflush(fp);
 	fclose(fp);
 
-	if (nvram_match("dyn_default", "1"))
+	if (nvram_matchi("dyn_default", 1))
 		while (!eval("ip", "route", "del", "default")) ;
 
 	// ret1 = eval("zebra", "-d", "-r", "-f", "/tmp/zebra.conf");
@@ -303,8 +303,8 @@ static int zebra_ospf6_init(void)
 		return errno;
 	}
 
-	if (nvram_match("zebra_copt", "1")) {
-		if (nvram_match("zebra_log", "1")) {
+	if (nvram_matchi("zebra_copt", 1)) {
+		if (nvram_matchi("zebra_log", 1)) {
 			fprintf(fp, "log file /var/log/zebra.log\n");
 		}
 	}
@@ -320,7 +320,7 @@ static int zebra_ospf6_init(void)
 		return errno;
 	}
 
-	if (nvram_match("ospf6d_copt", "1")
+	if (nvram_matchi("ospf6d_copt", 1)
 	    && strlen(nvram_safe_get("ospf6d_conf"))) {
 		fwritenvram("ospf6d_conf", fp);
 	} else {
@@ -379,7 +379,7 @@ static int zebra_ospf6_init(void)
 				fprintf(fp, " passive-interface %s\n", nvram_nget("wl_wds%d_if", s));
 		}
 
-		if (nvram_match("zebra_log", "1")) {
+		if (nvram_matchi("zebra_log", 1)) {
 			fprintf(fp, "!\n");
 			fprintf(fp, "log file /var/log/ospf6.log\n");
 		}
@@ -390,7 +390,7 @@ static int zebra_ospf6_init(void)
 	fflush(fp);
 	fclose(fp);
 
-	// if (nvram_match("dyn_default", "1"))
+	// if (nvram_matchi("dyn_default",1))
 	// while (!eval("ip", "route", "del", "default")) ;
 
 	// ret1 = eval("zebra", "-d", "-r", "-f", "/tmp/zebra.conf");
@@ -415,7 +415,7 @@ static int zebra_ripd_init(void)
 
 	// printf("Start zebra\n");
 	if (!strcmp(lt, "0") && !strcmp(lr, "0") && !strcmp(wt, "0") && !strcmp(wr, "0")
-	    && !nvram_match("zebra_copt", "1")) {
+	    && !nvram_matchi("zebra_copt", 1)) {
 		fprintf(stderr, "zebra disabled.\n");
 		return 0;
 	}
@@ -428,8 +428,8 @@ static int zebra_ripd_init(void)
 		return errno;
 	}
 
-	if (nvram_match("zebra_copt", "1")) {
-		if (nvram_match("zebra_log", "1")) {
+	if (nvram_matchi("zebra_copt", 1)) {
+		if (nvram_matchi("zebra_log", 1)) {
 			fprintf(fp, "log file /var/log/zebra.log\n");
 		}
 	}
@@ -445,7 +445,7 @@ static int zebra_ripd_init(void)
 		return errno;
 	}
 
-	if (nvram_match("ripd_copt", "1")) {
+	if (nvram_matchi("ripd_copt", 1)) {
 		fwritenvram("ripd_conf", fp);
 	} else {
 
@@ -509,7 +509,7 @@ static int zebra_bgp_init(void)
 	int ret1, ret2;
 
 	if (!strcmp(lt, "0") && !strcmp(lr, "0") && !strcmp(wt, "0") && !strcmp(wr, "0")
-	    && !nvram_match("zebra_copt", "1")) {
+	    && !nvram_matchi("zebra_copt", 1)) {
 		return 0;
 	}
 
@@ -521,8 +521,8 @@ static int zebra_bgp_init(void)
 		return errno;
 	}
 
-	if (nvram_match("zebra_copt", "1")) {
-		if (nvram_match("zebra_log", "1")) {
+	if (nvram_matchi("zebra_copt", 1)) {
+		if (nvram_matchi("zebra_log", 1)) {
 			fprintf(fp, "log file /var/log/zebra.log\n");
 		}
 	}
@@ -537,7 +537,7 @@ static int zebra_bgp_init(void)
 		perror("/tmp/bgpd.conf");
 		return errno;
 	}
-	if (nvram_match("bgpd_copt", "1")) {
+	if (nvram_matchi("bgpd_copt", 1)) {
 		fwritenvram("bgpd_conf", fp);
 	} else {
 		fprintf(fp, "router bgp %s\n", nvram_safe_get("routing_bgp_as"));
@@ -584,19 +584,19 @@ static int bird_init(void)
 	if (nvram_match("wk_mode", "bgp"))
 		nvram_set("routing_bgp", "on");
 
-	if (nvram_match("dr_setting", "1")) {
+	if (nvram_matchi("dr_setting", 1)) {
 		nvram_set("routing_wan", "on");
 		nvram_set("routing_lan", "off");
 	}
-	if (nvram_match("dr_setting", "2")) {
+	if (nvram_matchi("dr_setting", 2)) {
 		nvram_set("routing_wan", "off");
 		nvram_set("routing_lan", "on");
 	}
-	if (nvram_match("dr_setting", "3")) {
+	if (nvram_matchi("dr_setting", 3)) {
 		nvram_set("routing_wan", "on");
 		nvram_set("routing_lan", "on");
 	}
-	if (nvram_match("dr_setting", "0")) {
+	if (nvram_matchi("dr_setting", 0)) {
 		nvram_set("routing_wan", "off");
 		nvram_set("routing_lan", "off");
 	}
@@ -666,7 +666,7 @@ static int bird_init(void)
 void start_zebra(void)
 {
 
-	if (!nvram_invmatch("zebra_enable", "0"))
+	if (!nvram_invmatchi("zebra_enable", 0))
 		return;
 
 #ifdef HAVE_BIRD

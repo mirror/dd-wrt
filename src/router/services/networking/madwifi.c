@@ -305,13 +305,13 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		sprintf(psk, "-i%s", prefix);
 #ifdef HAVE_RELAYD
 		if ((nvram_match(wmode, "wdssta"))
-		    && nvram_match(bridged, "1"))
+		    && nvram_matchi(bridged, 1))
 			eval("wpa_supplicant", "-b", getBridge(prefix, tmp), background, driver, psk, "-c", fstr);
 		else
 			eval("wpa_supplicant", background, driver, psk, "-c", fstr);
 #else
 		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "wet"))
-		    && nvram_match(bridged, "1"))
+		    && nvram_matchi(bridged, 1))
 			eval("wpa_supplicant", "-b", getBridge(prefix, tmp), background, driver, psk, "-c", fstr);
 		else
 			eval("wpa_supplicant", background, driver, psk, "-c", fstr);
@@ -480,13 +480,13 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		sprintf(psk, "-i%s", prefix);
 		eval("iwpriv", prefix, "hostroaming", "2");
 #ifdef HAVE_RELAYD
-		if (nvram_match(bridged, "1")
+		if (nvram_matchi(bridged, 1)
 		    && (nvram_match(wmode, "wdssta")))
 			eval("wpa_supplicant", "-b", nvram_safe_get("lan_ifname"), background, driver, psk, "-c", fstr);
 		else
 			eval("wpa_supplicant", background, driver, psk, "-c", fstr);
 #else
-		if (nvram_match(bridged, "1")
+		if (nvram_matchi(bridged, 1)
 		    && (nvram_match(wmode, "wdssta")
 			|| nvram_match(wmode, "wet")))
 			eval("wpa_supplicant", "-b", nvram_safe_get("lan_ifname"), background, driver, psk, "-c", fstr);
@@ -547,13 +547,13 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		sprintf(psk, "-i%s", prefix);
 #ifdef HAVE_RELAYD
 		if ((nvram_match(wmode, "wdssta"))
-		    && nvram_match(bridged, "1"))
+		    && nvram_matchi(bridged, 1))
 			eval("wpa_supplicant", "-b", getBridge(prefix, tmp), background, driver, psk, "-c", fstr);
 		else
 			eval("wpa_supplicant", background, driver, psk, "-c", fstr);
 #else
 		if ((nvram_match(wmode, "wdssta") || nvram_match(wmode, "wet"))
-		    && nvram_match(bridged, "1"))
+		    && nvram_matchi(bridged, 1))
 			eval("wpa_supplicant", "-b", getBridge(prefix, tmp), background, driver, psk, "-c", fstr);
 		else
 			eval("wpa_supplicant", background, driver, psk, "-c", fstr);
@@ -803,12 +803,12 @@ void addWPS(FILE * fp, char *prefix, int configured)
 	if (!strcmp(prefix, "ath0")
 	    || !strcmp(prefix, "ath1")) {
 		fprintf(fp, "eap_server=1\n");
-		if (nvram_match("wps_enabled", "1")) {
+		if (nvram_matchi("wps_enabled", 1)) {
 			config_methods = (char *)realloc(config_methods, strlen(config_methods) + strlen(" push_button") + 1);
 			strcat(config_methods, " push_button");
 		}
 //# WPS configuration (AP configured, do not allow external WPS Registrars)
-		if (nvram_match("wps_forcerelease", "1")) {
+		if (nvram_matchi("wps_forcerelease", 1)) {
 			nvram_seti("wps_status", 0);
 			nvram_commit();
 			fprintf(fp, "wps_state=1\n");
@@ -825,7 +825,7 @@ void addWPS(FILE * fp, char *prefix, int configured)
 				}
 			}
 
-			if (nvram_match("wps_status", "0")) {
+			if (nvram_matchi("wps_status", 0)) {
 				nvram_seti("wps_status", 0);
 				fprintf(fp, "wps_state=1\n");
 			} else {
@@ -833,7 +833,7 @@ void addWPS(FILE * fp, char *prefix, int configured)
 				fprintf(fp, "wps_state=2\n");
 			}
 		}
-		if (nvram_match("wps_registrar", "1")) {
+		if (nvram_matchi("wps_registrar", 1)) {
 			fprintf(fp, "ap_setup_locked=0\n");
 			fprintf(fp, "upnp_iface=%s\n", nvram_safe_get("lan_ifname"));
 			fprintf(fp, "model_description=Wireless Access Point\n");
@@ -1113,11 +1113,11 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 
 		if (nvram_default_match(type, "0", "0"))
 			pragma = "-n1 ";
-		if (nvram_match(type, "1"))
+		if (nvram_matchi(type, 1))
 			pragma = "-n2 ";
-		if (nvram_match(type, "2"))
+		if (nvram_matchi(type, 2))
 			pragma = "-n3 ";
-		if (nvram_match(type, "3"))
+		if (nvram_matchi(type, 3))
 			pragma = "";
 		sysprintf("wrt-radauth %s %s %s %s %s 1 1 0 &", pragma, prefix, server, port, share);
 	} else {
@@ -1202,27 +1202,27 @@ static void set_rate(char *dev, char *priv)
 	char *netmode = nvram_default_get(net, "mixed");
 #endif
 
-	if (nvram_match(bw, "20") && nvram_match(xr, "0"))
+	if (nvram_matchi(bw, 20) && nvram_matchi(xr, 0))
 		if (atof(r) == 27.0f || atof(r) == 1.5f || atof(r) == 2.0f || atof(r) == 3.0f || atof(r) == 4.5f || atof(r) == 9.0f || atof(r) == 13.5f) {
 			nvram_seti(rate, 0);
 			r = "0";
 		}
-	if (nvram_match(bw, "40"))
+	if (nvram_matchi(bw, 40))
 		if (atof(r) == 27.0f || atof(r) == 1.5f || atof(r) == 2.0f || atof(r) == 3.0f || atof(r) == 4.5f || atof(r) == 9.0f || atof(r) == 13.5f) {
 			nvram_seti(rate, 0);
 			r = "0";
 		}
-	if (nvram_match(bw, "10"))
+	if (nvram_matchi(bw, 10))
 		if (atof(r) > 27.0f || atof(r) == 1.5f || atof(r) == 2.0f || atof(r) == 13.5f) {
 			nvram_seti(rate, 0);
 			r = "0";
 		}
-	if (nvram_match(bw, "5"))
+	if (nvram_matchi(bw, 5))
 		if (atof(r) > 13.5) {
 			nvram_seti(rate, 0);
 			r = "0";
 		}
-	if (nvram_match(bw, "2"))
+	if (nvram_matchi(bw, 2))
 		if (atof(r) > 6.75) {
 			nvram_seti(rate, 0);
 			r = "0";
@@ -2178,7 +2178,7 @@ static void configure_single(int count)
 		wdsdev = nvram_safe_get(wdsdevname);
 		if (strlen(wdsdev) == 0)
 			continue;
-		if (nvram_match(wdsvarname, "0"))
+		if (nvram_matchi(wdsvarname, 0))
 			continue;
 		hwaddr = nvram_get(wdsmacname);
 		if (hwaddr != NULL) {
@@ -2200,7 +2200,7 @@ static void configure_single(int count)
 		wdsdev = nvram_safe_get(wdsdevname);
 		if (strlen(wdsdev) == 0)
 			continue;
-		if (nvram_match(wdsvarname, "0"))
+		if (nvram_matchi(wdsvarname, 0))
 			continue;
 		hwaddr = nvram_get(wdsmacname);
 		if (hwaddr != NULL) {
@@ -2433,7 +2433,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 	nvram_unset("wps_forcerelease");
 #endif
 #ifdef HAVE_AOSS
-	if (nvram_match("aoss_success", "1"))
+	if (nvram_matchi("aoss_success", 1))
 		led_control(LED_SES, LED_ON);
 #endif
 
@@ -2467,7 +2467,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 			nvram_set(br1ipaddr, "0.0.0.0");
 		if (nvram_get(br1netmask) == NULL)
 			nvram_set(br1netmask, "255.255.255.0");
-		if (nvram_match(br1enable, "1")) {
+		if (nvram_matchi(br1enable, 1)) {
 			ifconfig("br1", 0, 0, 0);
 
 			// eval ("ifconfig", "br1", "down");
@@ -2509,7 +2509,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 			ifconfig(dev, 0, 0, 0);
 
 			// eval ("ifconfig", dev, "down");
-			if (nvram_match(wdsvarname, "1")) {
+			if (nvram_matchi(wdsvarname, 1)) {
 				char *wdsip;
 				char *wdsnm;
 				char wdsbc[32] = { 0 };
@@ -2519,11 +2519,11 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 				snprintf(wdsbc, 31, "%s", wdsip);
 				get_broadcast(wdsbc, wdsnm);
 				eval("ifconfig", dev, wdsip, "broadcast", wdsbc, "netmask", wdsnm, "up");
-			} else if (nvram_match(wdsvarname, "2")
-				   && nvram_match(br1enable, "1")) {
+			} else if (nvram_matchi(wdsvarname, 2)
+				   && nvram_matchi(br1enable, 1)) {
 				eval("ifconfig", dev, "up");
 				br_add_interface("br1", dev);
-			} else if (nvram_match(wdsvarname, "3")) {
+			} else if (nvram_matchi(wdsvarname, 3)) {
 				ifconfig(dev, IFUP, 0, 0);
 				br_add_interface(getBridge(dev, tmp), dev);
 			}
