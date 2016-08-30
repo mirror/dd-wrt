@@ -588,7 +588,7 @@ static void handle_hotspot(void)
 #endif
 #ifdef HAVE_UNBOUND
 	startstop_f("unbound");
-#endif	
+#endif
 #ifdef HAVE_DNSMASQ
 	startstop_f("dnsmasq");
 #endif

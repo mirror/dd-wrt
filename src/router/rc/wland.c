@@ -68,7 +68,7 @@ static int do_ap_watchdog(void)
 	stat("/tmp/.assoclist", &s);
 	unlink("/tmp/.assoclist");
 
-	if (s.st_size <= 0 && time(NULL) - last > interval && nvram_match("apwatchdog_enable", "1") && nvram_invmatch("wl_net_mode", "disabled")) {
+	if (s.st_size <= 0 && time(NULL) - last > interval && nvram_matchi("apwatchdog_enable", 1) && nvram_invmatch("wl_net_mode", "disabled")) {
 		time(&last);
 		cprintf("resetting ap radio\n");
 		eval("wlconf", get_wdev(), "down");
@@ -197,11 +197,11 @@ int containsMAC(char *ip)
 
 static void do_aqos_check(void)
 {
-	if (!nvram_invmatch("wshaper_enable", "0"))
+	if (!nvram_invmatchi("wshaper_enable", 0))
 		return;
-	if (nvram_match("qos_done", "0"))
+	if (nvram_matchi("qos_done", 0))
 		return;
-	if (!nvram_invmatch("svqos_defaults", "0"))
+	if (!nvram_invmatchi("svqos_defaults", 0))
 		return;
 
 	FILE *arp = fopen("/proc/net/arp", "rb");
@@ -458,7 +458,7 @@ static void do_client_check(void)
 
 #endif
 		eval("wl", "-i", ifname, "disassoc");
-		if (nvram_match("roaming_enable", "1")) {
+		if (nvram_matchi("roaming_enable", 1)) {
 			eval("wl", "-i", ifname, "join", nvram_safe_get("roaming_ssid"));
 		} else {
 			eval("wl", "-i", ifname, "join", nvram_nget("wl%d_ssid", instance));
@@ -498,7 +498,7 @@ static void do_madwifi_check(void)
 		if (is_ar5008(dev))
 			continue;
 #endif
-		if (nvram_match("wds_watchdog_debug", "1"))
+		if (nvram_matchi("wds_watchdog_debug", 1))
 			for (s = 1; s <= 10; s++) {
 				char wdsvarname[32] = { 0 };
 				char wdsdevname[32] = { 0 };
@@ -512,7 +512,7 @@ static void do_madwifi_check(void)
 				wdsdev = nvram_safe_get(wdsdevname);
 				if (strlen(wdsdev) == 0)
 					continue;
-				if (nvram_match(wdsvarname, "0"))
+				if (nvram_matchi(wdsvarname, 0))
 					continue;
 				hwaddr = nvram_get(wdsmacname);
 				if (hwaddr != NULL) {

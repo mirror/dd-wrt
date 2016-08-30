@@ -41,7 +41,7 @@ int main(int argc, char **argv)
 
 	openlog("process_monitor", LOG_PID | LOG_NDELAY, LOG_DAEMON);
 
-	if (nvram_invmatch("dhcp_dnsmasq", "1")) {
+	if (nvram_invmatchi("dhcp_dnsmasq", 1)) {
 		leasetime = atol(nvram_safe_get("dhcp_lease")) * 60;
 		if (leasetime <= 0)
 			leasetime = 86400;
@@ -54,7 +54,7 @@ int main(int argc, char **argv)
 		dd_timer_settime(udhcpd_id, 0, &t1, NULL);
 	}
 
-	if (nvram_invmatch("ntp_enable", "0")) {	// && check_wan_link(0) ) {
+	if (nvram_invmatchi("ntp_enable", 0)) {	// && check_wan_link(0) ) {
 
 		/* 
 		 * init ntp timer 
@@ -81,7 +81,7 @@ int main(int argc, char **argv)
 		gettimeofday(&then, NULL);
 
 		if ((abs(now.tv_sec - then.tv_sec) > 100000000)
-		    && nvram_match("cron_enable", "1")) {
+		    && nvram_matchi("cron_enable", 1)) {
 			eval("stopservice", "cron");
 			sleep(1);
 			dd_syslog(LOG_DEBUG, "Restarting cron  (time sync change)\n");
@@ -90,7 +90,7 @@ int main(int argc, char **argv)
 		}
 #ifdef HAVE_SNMP
 		if ((abs(now.tv_sec - then.tv_sec) > 100000000)
-		    && nvram_match("snmpd_enable", "1")) {
+		    && nvram_matchi("snmpd_enable", 1)) {
 			eval("stopservice", "snmp");
 			sleep(1);
 			dd_syslog(LOG_DEBUG, "Restarting snmpd  (time sync change)\n");
@@ -100,7 +100,7 @@ int main(int argc, char **argv)
 #endif
 #ifdef HAVE_CHILLI
 		if ((abs(now.tv_sec - then.tv_sec) > 100000000)
-		    && (nvram_match("chilli_enable", "1") || nvram_match("hotss_enable", "1"))) {
+		    && (nvram_matchi("chilli_enable", 1) || nvram_matchi("hotss_enable", 1))) {
 			eval("stopservice", "chilli");
 			sleep(1);
 			dd_syslog(LOG_DEBUG, "Restarting Chillispot (time sync change)\n");
@@ -110,7 +110,7 @@ int main(int argc, char **argv)
 #endif
 #ifdef HAVE_WIFIDOG		// dirty fix for wifidog
 		if ((abs(now.tv_sec - then.tv_sec) > 100000000)
-		    && nvram_match("wd_enable", "1")) {
+		    && nvram_matchi("wd_enable", 1)) {
 			eval("stopservice", "wifidog");
 			sleep(1);
 			dd_syslog(LOG_DEBUG, "Restarting Wifidog daemon (time sync change)\n");
@@ -118,13 +118,13 @@ int main(int argc, char **argv)
 		}
 #endif
 #ifdef HAVE_UNBOUND
-                if ((abs(now.tv_sec - then.tv_sec) > 100000000)
-		    && nvram_match("recursive_dns", "1")) {
+		if ((abs(now.tv_sec - then.tv_sec) > 100000000)
+		    && nvram_matchi("recursive_dns", 1)) {
 			eval("stopservice", "unbound");
 			sleep(1);
 			dd_syslog(LOG_DEBUG, "Restarting unbound daemon (time sync change)\n");
 			eval("startservice_f", "unbound");
-		}                
+		}
 #endif
 		dd_syslog(LOG_DEBUG, "We need to re-update after %d seconds\n", NTP_M_TIMER);
 
