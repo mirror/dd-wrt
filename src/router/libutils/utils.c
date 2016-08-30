@@ -42,9 +42,7 @@
 #include <netdb.h>
 #include <resolv.h>
 #include <signal.h>
-#if defined(HAVE_ATH9K) || defined(HAVE_ATH5K) || defined(HAVE_ATH10K)
 #include <glob.h>
-#endif
 
 #include <utils.h>
 #include <wlutils.h>
