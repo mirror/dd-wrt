@@ -92,6 +92,13 @@ int nvram_match(char *name, char *match)
 	return (value && !strcmp(value, match));
 }
 
+int nvram_matchi(char *name, int match)
+
+	char tmp[100];
+	snprintf(tmp, sizeof(tmp), "%d", match);
+	return nvram_match(name, tmp);
+}
+
 /*
  * Inversely match an NVRAM variable.
  * @param	name	name of variable to match
@@ -103,6 +110,14 @@ int nvram_invmatch(char *name, char *invmatch)
 {
 	const char *value = nvram_get(name);
 	return (value && strcmp(value, invmatch));
+}
+
+
+int nvram_invmatchi(char *name, int invmatch)
+
+	char tmp[100];
+	snprintf(tmp, sizeof(tmp), "%d", invmatch);
+	return nvram_invmatch(name, tmp);
 }
 
 char *nvram_prefix_get(const char *name, const char *prefix)
