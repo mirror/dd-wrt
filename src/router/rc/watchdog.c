@@ -36,7 +36,7 @@ static void watchdog(void)
 	while (1) {
 		write(fd, "\0", 1);
 		fsync(fd);
-		if (!nvram_match("flash_active", "1")) {
+		if (!nvram_matchi("flash_active", 1)) {
 
 #ifndef HAVE_RT2880
 #ifdef HAVE_REGISTER
@@ -156,7 +156,7 @@ static void watchdog(void)
 #endif
 
 		sleep(5);
-		if (nvram_match("warn_enabled", "1")) {
+		if (nvram_matchi("warn_enabled", 1)) {
 			counter++;
 			if (!(counter % 60))
 				system("notifier&");	// 

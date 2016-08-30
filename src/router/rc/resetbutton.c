@@ -821,7 +821,7 @@ static void handle_ses(void)
 	runStartup("/mmc/etc/config", ".sesbutton");	// if available
 	runStartup("/tmp/etc/config", ".sesbutton");	// if available
 	count = 0;
-	if (nvram_match("usb_ses_umount", "1")) {
+	if (nvram_matchi("usb_ses_umount", 1)) {
 		led_control(LED_DIAG, LED_FLASH);
 		runStartup("/etc/config", ".umount");
 		sleep(5);
@@ -830,7 +830,7 @@ static void handle_ses(void)
 		led_control(LED_DIAG, LED_FLASH);
 	}
 
-	if (nvram_match("radiooff_button", "1")) {
+	if (nvram_matchi("radiooff_button", 1)) {
 		led_control(LED_SES, LED_FLASH);	// when pressed, blink white
 		switch (ses_mode) {
 
@@ -880,7 +880,7 @@ static void handle_ses(void)
 
 	}
 #if defined(HAVE_AOSS) || defined(HAVE_WPS)
-	else if (nvram_match("radiooff_button", "2")) {
+	else if (nvram_matchi("radiooff_button", 2)) {
 		sysprintf("startstop aoss");
 	}
 #endif
@@ -893,8 +893,8 @@ void period_check(int sig)
 	unsigned int val = 0;
 
 #ifdef HAVE_RADIOOFF
-	if (initses == 1 && nvram_match("radiooff_boot_off", "1")
-	    && nvram_match("radiooff_button", "1")) {
+	if (initses == 1 && nvram_matchi("radiooff_boot_off", 1)
+	    && nvram_matchi("radiooff_button", 1)) {
 		ses_mode = 1;
 		initses = 0;
 	}
@@ -1420,7 +1420,7 @@ void period_check(int sig)
 	/* 
 	 * The value is zero during button-pushed. 
 	 */
-	if (state && nvram_match("resetbutton_enable", "1")) {
+	if (state && nvram_matchi("resetbutton_enable", 1)) {
 		DEBUG("resetbutton: mode=%d, count=%d\n", mode, count);
 
 		if (mode == 0) {

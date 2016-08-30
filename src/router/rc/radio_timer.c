@@ -48,17 +48,17 @@ int main(int argc, char **argv)
 		if (currtime->tm_year > 100)	// ntp time must be set
 		{
 
-			if (nvram_match("radio0_timer_enable", "1")) {
+			if (nvram_matchi("radio0_timer_enable", 1)) {
 				radiotime0 = (unsigned int)strtol(nvram_safe_get("radio0_on_time"), NULL, 2);	// convert  binary  string  to  long  int
 				radiotime0 += ((radiotime0 & 1) << 24);	// duplicate 23-24h bit to the start to take care of midnight
 				radiotime0 = (radiotime0 >> (24 - currtime->tm_hour - 1)) & 3;	// get pattern only (last two bits)
 			}
-			if (nvram_match("radio1_timer_enable", "1")) {
+			if (nvram_matchi("radio1_timer_enable", 1)) {
 				radiotime1 = (unsigned int)strtol(nvram_safe_get("radio1_on_time"), NULL, 2);
 				radiotime1 += ((radiotime1 & 1) << 24);
 				radiotime1 = (radiotime1 >> (24 - currtime->tm_hour - 1)) & 3;
 			}
-			if (nvram_match("radio2_timer_enable", "1")) {
+			if (nvram_matchi("radio2_timer_enable", 1)) {
 				radiotime2 = (unsigned int)strtol(nvram_safe_get("radio2_on_time"), NULL, 2);
 				radiotime2 += ((radiotime2 & 1) << 24);
 				radiotime2 = (radiotime2 >> (24 - currtime->tm_hour - 1)) & 3;
@@ -94,11 +94,11 @@ int main(int argc, char **argv)
 				}
 			}
 
-			if (nvram_match("radio0_timer_enable", "0"))
+			if (nvram_matchi("radio0_timer_enable", 0))
 				radiotime0 = 0;
-			if (nvram_match("radio1_timer_enable", "0"))
+			if (nvram_matchi("radio1_timer_enable", 0))
 				radiotime1 = 0;
-			if (nvram_match("radio2_timer_enable", "0"))
+			if (nvram_matchi("radio2_timer_enable", 0))
 				radiotime2 = 0;
 
 			if (((needchange) && currtime->tm_min == 0) || (firsttime))	// change when min = 0  or firstime

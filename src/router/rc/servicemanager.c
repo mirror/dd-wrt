@@ -78,7 +78,7 @@ static int _STOPPED(const char *method, const char *name)
 				stops_running[0]--;
 		}
 #else
-		if (nvram_match("service_debug", "1"))
+		if (nvram_matchi("service_debug", 1))
 			fprintf(stderr, "calling %s_%s not required!\n", method, name);
 		if (!strcmp(method, "stop")) {
 			if (stops_running)
@@ -118,7 +118,7 @@ static int handle_service(const char *method, const char *name)
 		STOPPED();
 	}
 #ifndef HAVE_X86
-	if (nvram_match("service_debug", "1"))
+	if (nvram_matchi("service_debug", 1))
 		fprintf(stderr, "calling %s_%s\n", method, name);
 #endif
 	// lcdmessaged("Starting Service",name);
@@ -150,7 +150,7 @@ static int handle_service(const char *method, const char *name)
 			stops_running[0]--;
 	}
 #ifndef HAVE_X86
-	if (nvram_match("service_debug", "1")) {
+	if (nvram_matchi("service_debug", 1)) {
 		if (stops_running)
 			fprintf(stderr, "calling done %s_%s (pending stops %d)\n", method, name, stops_running[0]);
 		else
@@ -243,7 +243,7 @@ static int stop_running_main(int argc, char **argv)
 	int dead = 0;
 	while (stops_running != NULL && stop_running() && dead < 100) {
 #ifndef HAVE_X86
-		if (nvram_match("service_debugrunnings", "1"))
+		if (nvram_matchi("service_debugrunnings", 1))
 			fprintf(stderr, "%s: dead: %d running %d\n", __func__, dead, stops_running[0]);
 #endif
 		if (dead == 0)

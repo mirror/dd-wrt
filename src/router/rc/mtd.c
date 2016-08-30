@@ -292,7 +292,7 @@ int mtd_write(const char *path, const char *mtd)
 		break;
 #endif
 	case ROUTER_TRENDNET_TEW827:
-		if (nvram_match("bootpartition", "0")) {
+		if (nvram_matchi("bootpartition", 0)) {
 			mtd = "linux2";
 			eval("startservice", "bootsecondary");
 		} else {
@@ -307,7 +307,7 @@ int mtd_write(const char *path, const char *mtd)
 	case ROUTER_LINKSYS_EA6400:
 	case ROUTER_LINKSYS_EA6500V2:
 	case ROUTER_TRENDNET_TEW828:
-		if (nvram_match("bootpartition", "1")) {
+		if (nvram_matchi("bootpartition", 1)) {
 			mtd = "linux2";
 			nvram_seti("bootpartition", 0);
 			nvram_commit();
@@ -589,7 +589,6 @@ int mtd_write(const char *path, const char *mtd)
 		// else
 		// count +=
 		// http_get (path, &buf[off], len - off, erase_info.start + off);
-
 
 		/* 
 		 * for debug 
