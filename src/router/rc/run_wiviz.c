@@ -24,7 +24,7 @@ int run_wiviz_main(int argc, char **argv)
 		else {
 			char *hopseq = nvram_safe_get("hopseq");
 			FILE *fp = fopen("/tmp/wiviz2-cfg", "wb");
-			if (nvram_match("hopseq", "0"))
+			if (nvram_matchi("hopseq", 0))
 				fprintf(fp, "channelsel=hop&");
 			else if (strstr(hopseq, ","))
 				fprintf(fp, "channelsel=hop&");

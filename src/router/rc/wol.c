@@ -21,13 +21,13 @@ static int wol_run(void)
 	char hostname_param[32] = { 0 };
 	char *hostname = NULL;
 
-	if (nvram_match("wol_enable", "0"))
+	if (nvram_matchi("wol_enable", 0))
 		return 0;
 
 	/* 
 	 * Most of time it goes to sleep 
 	 */
-	while (nvram_match("wol_enable", "1")) {
+	while (nvram_matchi("wol_enable", 1)) {
 		int interval = 0;
 
 		interval = nvram_geti("wol_interval") > WOL_INTERVAL ? nvram_geti("wol_interval") : WOL_INTERVAL;

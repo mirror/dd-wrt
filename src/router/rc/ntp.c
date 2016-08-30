@@ -36,9 +36,9 @@ int isRunning(char *name)
 
 void check_udhcpd(timer_t t, int arg)
 {
-	if (nvram_invmatch("router_disable", "1")
+	if (nvram_invmatchi("router_disable", 1)
 	    || nvram_match("lan_proto", "dhcp")) {
-		if (nvram_match("dhcp_dnsmasq", "1")) {
+		if (nvram_matchi("dhcp_dnsmasq", 1)) {
 			if (!isRunning("dnsmasq")) {
 				// killps("dnsmasq","-9");
 				// killps("udhcpd","-9");
@@ -50,8 +50,8 @@ void check_udhcpd(timer_t t, int arg)
 				eval("startservice", "udhcpd");
 #endif
 #ifdef HAVE_UNBOUND
-                                sleep(1);
-                                eval("startservice", "unbound");
+				sleep(1);
+				eval("startservice", "unbound");
 #endif
 				sleep(1);
 				eval("startservice", "dnsmasq");
@@ -81,7 +81,7 @@ int do_ntp(void)		// called from ntp_main and
 {
 	char *servers;
 
-	if (!nvram_match("ntp_enable", "1"))
+	if (!nvram_matchi("ntp_enable", 1))
 		return 0;
 	update_timezone();
 
