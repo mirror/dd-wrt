@@ -10,6 +10,7 @@
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
  * $Id: nvram_linux.c,v 1.9 2003/12/03 10:14:06 honor Exp $
+ *
  */
 
 #include <stdio.h>
