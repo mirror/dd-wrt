@@ -748,6 +748,7 @@ endif
 	../../../broadcom/opt/bufenc/encrypt mipsel-uclibc/rt2880-webflash.bin mipsel-uclibc/WHR-G300N-webflash_enc.bin WHR-G300N-DD-WRT
 	./tools/whrg300n mipsel-uclibc/aligned.uimage mipsel-uclibc/whrg300n-firmware.tftp
 	./tools/make_firmware mipsel-uclibc/aligned.uimage
+	./tools/rut500/rut500 mipsel-uclibc/root.uimage mipsel-uclibc/rut500.uimage
 
 
 include rules/all.mk
