@@ -67,9 +67,9 @@ int init_ddns(void)
 		break;
 
 	case 1:
-		if (nvram_match("ddns_dyndnstype", "2"))
+		if (nvram_matchi("ddns_dyndnstype", 2))
 			strcpy(service, "statdns@dyndns.org");
-		else if (nvram_match("ddns_dyndnstype", "3"))
+		else if (nvram_matchi("ddns_dyndnstype", 3))
 			strcpy(service, "custom@dyndns.org");
 		else
 			strcpy(service, "dyndns@dyndns.org");
@@ -229,13 +229,13 @@ void start_ddns(void)
 		// fprintf(fp, " -u %s", nvram_safe_get(_username));    // username/email
 		// fprintf(fp, " -p %s", nvram_safe_get(_passwd));      // password
 		fprintf(fp, " -a %s", nvram_safe_get(_hostname));	// alias/hostname
-		if (nvram_match("ddns_enable", "1")
-		    || nvram_match("ddns_enable", "6")
-		    || nvram_match("ddns_enable", "7")) {
-			if (nvram_match(_wildcard, "1"))
+		if (nvram_matchi("ddns_enable", 1)
+		    || nvram_matchi("ddns_enable", 6)
+		    || nvram_matchi("ddns_enable", 7)) {
+			if (nvram_matchi(_wildcard, 1))
 				fprintf(fp, " --wildcard");
 		}
-		if (nvram_match("ddns_enable", "7"))
+		if (nvram_matchi("ddns_enable", 7))
 			fprintf(fp, " --update_period_sec %s", "900");	// check ip
 		// every 15
 		// mins
@@ -253,7 +253,7 @@ void start_ddns(void)
 		// file
 		fprintf(fp, " --cache_dir %s", "/tmp/ddns");	// cache dir
 		fprintf(fp, " --exec %s", "ddns_success");	// run after update
-		if (nvram_match("ddns_enable", "5")) {
+		if (nvram_matchi("ddns_enable", 5)) {
 			fprintf(fp, " --dyndns_server_name %s", nvram_safe_get("ddns_custom_5"));
 			if (nvram_invmatch(_url, ""))
 				fprintf(fp, " --dyndns_server_url %s", nvram_safe_get(_url));

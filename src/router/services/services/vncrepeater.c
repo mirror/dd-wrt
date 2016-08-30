@@ -37,7 +37,7 @@
 
 void start_vncrepeater(void)
 {
-	if (!nvram_match("vncr_enable", "1"))
+	if (!nvram_matchi("vncr_enable", 1))
 		return;
 	eval("iptables", "-D", "INPUT", "-p", "tcp", "-i", get_wan_face(), "--dport", "5900", "-j", "ACCEPT");
 	eval("iptables", "-I", "INPUT", "-p", "tcp", "-i", get_wan_face(), "--dport", "5900", "-j", "ACCEPT");

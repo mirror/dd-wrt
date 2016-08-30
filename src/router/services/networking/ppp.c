@@ -242,7 +242,7 @@ int ipdown_main(int argc, char **argv)
 	nvram_set("pppd_pppifname", "");
 
 	// write PPP traffic statistics to nvram if wanted
-	if (nvram_match("ppp_traffic", "1")) {
+	if (nvram_matchi("ppp_traffic", 1)) {
 		char buffer[64];
 		long long old_in, old_out;
 		long long in, out;
@@ -277,7 +277,7 @@ int ipdown_main(int argc, char **argv)
 		nvram_commit();
 	}
 
-	if (nvram_match("ppp_demand", "1")
+	if (nvram_matchi("ppp_demand", 1)
 	    && (nvram_match("wan_proto", "pptp")
 		|| nvram_match("wan_proto", "l2tp")
 		|| nvram_match("wan_proto", "pppoe_dual")
@@ -323,7 +323,7 @@ int disconnected_pppoe_main(int argc, char **argv)
 	int pppoe_num = atoi(argv[1]);
 	char ppp_demand[2][20] = { "ppp_demand", "ppp_demand_1" };
 
-	if (nvram_match(ppp_demand[pppoe_num], "1")
+	if (nvram_matchi(ppp_demand[pppoe_num], 1)
 	    && nvram_match("action_service", "")) {
 		cprintf("tallest:=====( kill pppoe %d )=====\n", pppoe_num);
 		stop_single_pppoe(pppoe_num);

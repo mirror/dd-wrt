@@ -29,7 +29,7 @@
 
 void start_mmc(void)
 {
-	if (nvram_match("mmc_enable", "1")) {
+	if (nvram_matchi("mmc_enable", 1)) {
 
 #ifdef HAVE_FONERA
 		int res = insmod("mmc");
@@ -49,7 +49,7 @@ void start_mmc(void)
 		int mmc_di = 0, mmc_do = 0, mmc_clk = 0, mmc_cs = 0;
 		char dddi[16], dddo[16], ddclk[16], ddcs[16];
 
-		if (nvram_match("mmc_gpio", "1"))	// manual gpio asigments
+		if (nvram_matchi("mmc_gpio", 1))	// manual gpio asigments
 		{
 			mmc_di = strtoul(nvram_safe_get("mmc_di"), NULL, 0);
 			mmc_do = strtoul(nvram_safe_get("mmc_do"), NULL, 0);

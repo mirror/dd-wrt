@@ -112,7 +112,7 @@ static void makeipup(void)
 		//->use something like $(( ($(date +%s) - $(date -d "$dates" +%s)) / (60*60*24*31) )) for computing uptime in the gui
 	    );
 	//      per peer shaping
-	if (nvram_match("pppoeradius_enabled", "1")) {
+	if (nvram_matchi("pppoeradius_enabled", 1)) {
 		fprintf(fp, "IN=`grep -i RP-Upstream-Speed-Limit /var/run/radattr.$1 | awk '{print $2}'`\n" "OUT=`grep -i RP-Downstream-Speed-Limit /var/run/radattr.$1 | awk '{print $2}'`\n" "if [ ! -z $IN ] && [ $IN -gt 0 ]\n" "then tc qdisc del dev $1 ingress\n" "\t tc qdisc add dev $1 handle ffff: ingress\n" "\t tc filter add dev $1 parent ffff: protocol ip prio 50 u32 match ip src 0.0.0.0/0 police rate \"$IN\"kbit burst \"$IN\"kbit drop flowid :1\n" "fi\n" "if [ ! -z $OUT ] && [ $OUT -gt 0 ]\n"	//only if Speed limit !0 and !empty
 			"then	tc qdisc del root dev $1\n" "\t tc qdisc add dev $1 root tbf rate \"$OUT\"kbit latency 50ms burst \"$OUT\"kbit\n" "fi\n");
 	}
@@ -132,7 +132,7 @@ static void makeipup(void)
 		fprintf(fp, "iptables -D FORWARD -i $1 -j ACCEPT\n" "iptables -D FORWARD -o $1 -j ACCEPT\n");
 	if (nvram_match("filter", "on"))	// only needed if firewall is enabled
 		fprintf(fp, "iptables -D INPUT -i $1 -j ACCEPT\n");
-	if (nvram_match("pppoeradius_enabled", "1"))
+	if (nvram_matchi("pppoeradius_enabled", 1))
 		fprintf(fp, "tc qdisc del root dev $1\n" "tc qdisc del dev $1 ingress\n");
 	fclose(fp);
 
@@ -140,13 +140,13 @@ static void makeipup(void)
 	chmod("/tmp/pppoeserver/ip-down.sh", 0700);
 
 	//      copy existing peer data to /tmp
-	if ((nvram_match("usb_enable", "1")
-	     && nvram_match("usb_storage", "1")
-	     && nvram_match("usb_automnt", "1")
+	if ((nvram_matchi("usb_enable", 1)
+	     && nvram_matchi("usb_storage", 1)
+	     && nvram_matchi("usb_automnt", 1)
 	     && nvram_match("usb_mntpoint", "jffs"))
-	    || (nvram_match("enable_jffs2", "1")
-		&& nvram_match("jffs_mounted", "1")
-		&& nvram_match("sys_enable_jffs2", "1")))
+	    || (nvram_matchi("enable_jffs2", 1)
+		&& nvram_matchi("jffs_mounted", 1)
+		&& nvram_matchi("sys_enable_jffs2", 1)))
 		mkdir("/jffs/etc", 0700);
 	mkdir("/jffs/etc/pppoeserver", 0700);
 	eval("/bin/cp", "/jffs/etc/pppoeserver/pppoe_peer.db", "/tmp/");
@@ -205,13 +205,13 @@ static void do_pppoeconfig(FILE * fp)
 	}
 	struct dns_lists *dns_list = get_dns_list();
 
-/*	if (nvram_match("dnsmasq_enable", "1")) {
+/*	if (nvram_matchi("dnsmasq_enable",1)) {
 		if (strcmp(getifip(), "")) {
 			fprintf(fp, "ms-dns %s\n", getifip());
 			fprintf(fp, "ms-dns %s\n",
 					dns_list->dns_server[0]);
 		}
-	} else if (nvram_match("local_dns", "1")) {
+	} else if (nvram_matchi("local_dns",1)) {
 		if (dns_list && (strcmp(getifip(), "")
 				 || strlen(dns_list->dns_server[0]) > 0
 				 || strlen(dns_list->dns_server[1]) > 0
@@ -390,13 +390,13 @@ void stop_pppoeserver(void)
 		//      unlink("/tmp/pppoeserver/calc-uptime.sh");
 
 		//      backup peer data to jffs/usb if available
-		if ((nvram_match("usb_enable", "1")
-		     && nvram_match("usb_storage", "1")
-		     && nvram_match("usb_automnt", "1")
+		if ((nvram_matchi("usb_enable", 1)
+		     && nvram_matchi("usb_storage", 1)
+		     && nvram_matchi("usb_automnt", 1)
 		     && nvram_match("usb_mntpoint", "jffs"))
-		    || (nvram_match("enable_jffs2", "1")
-			&& nvram_match("jffs_mounted", "1")
-			&& nvram_match("sys_enable_jffs2", "1"))) {
+		    || (nvram_matchi("enable_jffs2", 1)
+			&& nvram_matchi("jffs_mounted", 1)
+			&& nvram_matchi("sys_enable_jffs2", 1))) {
 			mkdir("/jffs/etc", 0700);
 			mkdir("/jffs/etc/pppoeserver", 0700);
 			eval("/bin/cp", "/tmp/pppoe_peer.db", "/jffs/etc/pppoeserver");

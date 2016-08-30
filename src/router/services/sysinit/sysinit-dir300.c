@@ -64,7 +64,7 @@ void start_sysinit(void)
 	struct stat tmp_stat;
 	time_t tm = 0;
 
-	if (!nvram_match("disable_watchdog", "1"))
+	if (!nvram_matchi("disable_watchdog",1))
 		eval("watchdog");
 	/*
 	 * Setup console 
@@ -112,7 +112,7 @@ void start_sysinit(void)
 		fclose(fp);
 	}
 #else
-	if (!nvram_match("dir400preconfig", "1")) {
+	if (!nvram_matchi("dir400preconfig",1)) {
 		nvram_seti("dir400preconfig", 1);
 		nvram_commit();
 		int mtd = getMTD("fullflash");

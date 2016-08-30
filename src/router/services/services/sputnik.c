@@ -34,7 +34,7 @@
 void start_sputnik(void)
 {
 	// Only start if enabled
-	if (!nvram_invmatch("apd_enable", "0"))
+	if (!nvram_invmatchi("apd_enable", 0))
 		return;
 	insmod("ipt_mark ipt_mac xt_mark xt_mac");
 

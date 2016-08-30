@@ -136,7 +136,7 @@ int mk_nocat_conf(void)
 	if (strlen(mac) == 0)
 		strcpy(mac, nvram_safe_get("et0macaddr_safe"));
 
-	if (nvram_match("port_swap", "1"))
+	if (nvram_matchi("port_swap", 1))
 		fprintf(fp, "GatewayMAC\t%s\n", nvram_safe_get("et1macaddr"));
 	else
 		fprintf(fp, "GatewayMAC\t%s\n", mac);
@@ -246,7 +246,7 @@ void start_splashd(void)
 {
 	FILE *fp;
 
-	if (!nvram_match("NC_enable", "1"))
+	if (!nvram_matchi("NC_enable", 1))
 		return;
 
 	/*

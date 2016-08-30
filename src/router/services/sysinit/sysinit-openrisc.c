@@ -130,7 +130,7 @@ void start_sysinit(void)
 	install_sdcard();
 	cprintf("sysinit() setup console\n");
 	eval("insmod", "ks8695_wdt", "wdt_time=30");	// load watchdog module with 30 seconds timeout
-	if (!nvram_match("disable_watchdog", "1"))
+	if (!nvram_matchi("disable_watchdog",1))
 		eval("watchdog");
 	/*
 	 * Setup console 

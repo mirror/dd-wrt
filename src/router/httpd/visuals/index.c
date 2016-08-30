@@ -70,11 +70,11 @@ void ej_get_clone_mac(webs_t wp, int argc, char_t ** argv)
 
 	ejArgs(argc, argv, "%d", &which);
 
-	if (nvram_match("clone_wan_mac", "1"))
+	if (nvram_matchi("clone_wan_mac", 1))
 		c = nvram_safe_get("http_client_mac");
 	else {
 		if (nvram_match("def_hwaddr", "00:00:00:00:00:00")) {
-			if (nvram_match("port_swap", "1"))
+			if (nvram_matchi("port_swap", 1))
 				c = strdup(nvram_safe_get("et1macaddr"));
 			else {
 				c = &buf[0];
@@ -97,7 +97,7 @@ void ej_get_clone_mac(webs_t wp, int argc, char_t ** argv)
 void macclone_onload(webs_t wp, char *arg)
 {
 
-	if (nvram_match("clone_wan_mac", "1"))
+	if (nvram_matchi("clone_wan_mac", 1))
 		websWrite(wp, arg);
 
 	return;

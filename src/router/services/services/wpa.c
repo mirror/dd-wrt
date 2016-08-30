@@ -137,11 +137,11 @@ void start_radius(char *prefix)
 
 		if (nvram_default_match(type, "0", "0"))
 			pragma = "-n1 ";
-		if (nvram_match(type, "1"))
+		if (nvram_matchi(type, 1))
 			pragma = "-n2 ";
-		if (nvram_match(type, "2"))
+		if (nvram_matchi(type, 2))
 			pragma = "-n3 ";
-		if (nvram_match(type, "3"))
+		if (nvram_matchi(type, 3))
 			pragma = "";
 		sleep(1);	// some delay is usefull
 		sysprintf("wrt-radauth %s %s %s %s %s %s %s %s &", pragma,

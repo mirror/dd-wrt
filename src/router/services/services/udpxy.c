@@ -36,7 +36,7 @@ void start_udpxy(void)
 	char *nicfrom, *listen_if, *listen_port;
 	char *cmd = "/usr/sbin/udpxy";
 
-	if (!nvram_match("udpxy_enable", "1"))
+	if (!nvram_matchi("udpxy_enable", 1))
 		return;
 
 	nicfrom = nvram_safe_get("tvnicfrom");

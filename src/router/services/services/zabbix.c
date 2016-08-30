@@ -17,7 +17,7 @@
 
 void start_zabbix(void)
 {
-	if (!nvram_match("zabbix_enable", "1"))
+	if (!nvram_matchi("zabbix_enable", 1))
 		return;
 	if (pidof("zabbix_agentd") > 0) {
 		//syslog(LOG_INFO, "dlna : minidlna already running\n");

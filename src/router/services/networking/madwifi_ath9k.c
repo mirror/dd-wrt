@@ -138,18 +138,18 @@ void configure_single_ath9k(int count)
 
 	sprintf(bw, "%s_channelbw", dev);
 	if (isath5k) {
-		if (nvram_match(bw, "5"))
+		if (nvram_matchi(bw, 5))
 			sysprintf("echo 5 > /sys/kernel/debug/ieee80211/%s/ath5k/bwmode", wif);
-		else if (nvram_match(bw, "10"))
+		else if (nvram_matchi(bw, 10))
 			sysprintf("echo 10 > /sys/kernel/debug/ieee80211/%s/ath5k/bwmode", wif);
-		else if (nvram_match(bw, "40"))
+		else if (nvram_matchi(bw, 40))
 			sysprintf("echo 40 > /sys/kernel/debug/ieee80211/%s/ath5k/bwmode", wif);
 		else
 			sysprintf("echo 20 > /sys/kernel/debug/ieee80211/%s/ath5k/bwmode", wif);
 	} else {
-		if (nvram_match(bw, "5"))
+		if (nvram_matchi(bw, 5))
 			sysprintf("echo 5 > /sys/kernel/debug/ieee80211/%s/ath9k/chanbw", wif);
-		else if (nvram_match(bw, "10"))
+		else if (nvram_matchi(bw, 10))
 			sysprintf("echo 10 > /sys/kernel/debug/ieee80211/%s/ath9k/chanbw", wif);
 		else
 			sysprintf("echo 20 > /sys/kernel/debug/ieee80211/%s/ath9k/chanbw", wif);
@@ -259,7 +259,7 @@ void configure_single_ath9k(int count)
 		char *clonename = "def_whwaddr";
 		if (!strcmp(apm, "sta"))
 			clonename = "def_hwaddr";
-		if (nvram_match("mac_clone_enable", "1")
+		if (nvram_matchi("mac_clone_enable", 1)
 		    && nvram_invmatch(clonename, "00:00:00:00:00:00")
 		    && nvram_invmatch(clonename, "")) {
 			eval("ifconfig", dev, "hw", "ether", nvram_safe_get(clonename));
@@ -355,13 +355,13 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	sprintf(bw, "%s_channelbw", prefix);
 	ht[0] = 0;
 	int usebw = 20;
-	if (nvram_match(bw, "40"))
+	if (nvram_matchi(bw, 40))
 		usebw = 40;
-	if (nvram_match(bw, "2040"))
+	if (nvram_matchi(bw, 2040))
 		usebw = 40;
-	if (nvram_match(bw, "80"))
+	if (nvram_matchi(bw, 80))
 		usebw = 80;
-	if (nvram_match(bw, "160"))
+	if (nvram_matchi(bw, 160))
 		usebw = 160;
 	if (nvram_match(bw, "80+80"))
 		usebw = 8080;
@@ -383,7 +383,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		}
 		if (!isath5k)
 			fprintf(fp, "ieee80211n=1\n");
-		if (nvram_match(bw, "2040")) {
+		if (nvram_matchi(bw, 2040)) {
 			fprintf(fp, "dynamic_ht40=1\n");
 		} else {
 			fprintf(fp, "dynamic_ht40=0\n");
@@ -422,12 +422,12 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 				i = 1;
 			}
 		}
-		if (nvram_match(bw, "160")) {
+		if (nvram_matchi(bw, 160)) {
 			channel = 100;
 			sprintf(ht, "HT40+");
 			iht = 1;
 			freq = 5500;
-		} else if (nvram_match(bw, "80")) {
+		} else if (nvram_matchi(bw, 80)) {
 			channel = 44;
 			sprintf(ht, "HT40+");
 			iht = 1;
@@ -504,7 +504,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 					freq = 2437;
 				}
 				if (has_5ghz(prefix)) {
-					if (nvram_match(bw, "80")) {
+					if (nvram_matchi(bw, 80)) {
 						channel = 44;
 						sprintf(ht, "HT40+");
 						iht = 1;
@@ -567,15 +567,15 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 					//fprintf(fp, "local_pwr_constraint=3\n");
 				}
 
-				if (nvram_match(bw, "40")) {
+				if (nvram_matchi(bw, 40)) {
 					fprintf(fp, "vht_oper_chwidth=0\n");
 					int idx = channel + (2 * iht);
 					fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", idx);
-				} else if (nvram_match(bw, "80")) {
+				} else if (nvram_matchi(bw, 80)) {
 					fprintf(fp, "vht_oper_chwidth=1\n");
 					int idx = channel + (6 * iht);
 					fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", idx);
-				} else if (nvram_match(bw, "160")) {
+				} else if (nvram_matchi(bw, 160)) {
 					fprintf(fp, "vht_oper_chwidth=2\n");
 					int idx = 114;
 					if (channel < 100)
@@ -740,7 +740,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	char wmm[32];
 	sprintf(wmm, "%s_wmm", ifname);
 	fprintf(fp, "wmm_enabled=%s\n", nvram_default_get(wmm, "1"));
-	if (nvram_match("mac_clone_enable", "1")
+	if (nvram_matchi("mac_clone_enable", 1)
 	    && nvram_invmatch("def_whwaddr", "00:00:00:00:00:00")
 	    && nvram_invmatch("def_whwaddr", "")
 	    && !strcmp(maininterface, "ath0")) {
@@ -975,11 +975,11 @@ void setupradauth_ath9k(char *prefix, char *driver, int iswan) {
 
 		if (nvram_default_match(type, "0", "0"))
 			pragma = "-n1 ";
-		if (nvram_match(type, "1"))
+		if (nvram_matchi(type,1))
 			pragma = "-n2 ";
-		if (nvram_match(type, "2"))
+		if (nvram_matchi(type,2))
 			pragma = "-n3 ";
-		if (nvram_match(type, "3"))
+		if (nvram_matchi(type,3))
 			pragma = "";
 		sleep(1);	// some delay is usefull
 		sysprintf("wrt-radauth %s %s %s %s %s 1 1 0 &", pragma,
@@ -1036,7 +1036,7 @@ static void addvhtcaps(char *prefix, FILE * fp)
 	if (is_ath9k(prefix)) {
 		char shortgi[32];
 		sprintf(shortgi, "%s_shortgi", prefix);
-		if (nvram_match(shortgi, "0"))
+		if (nvram_matchi(shortgi, 0))
 			fprintf(fp, "\tdisable_sgi=1\n");
 	}
 #endif
@@ -1068,7 +1068,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride)
 		// fprintf (fp, "ctrl_interface=/var/run/wpa_supplicant\n");
 		fprintf(fp, "network={\n");
 
-		addvhtcaps(prefix, fp);		
+		addvhtcaps(prefix, fp);
 		if (!ssidoverride)
 			ssidoverride = nvram_nget("%s_ssid", prefix);
 		fprintf(fp, "\tssid=\"%s\"\n", ssidoverride);
@@ -1403,14 +1403,14 @@ void ath9k_start_supplicant(int count)
 			sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
 #ifdef HAVE_RELAYD
 			if ((nvram_match(wmode, "wdssta"))
-			    && nvram_match(bridged, "1"))
+			    && nvram_matchi(bridged, 1))
 				eval("wpa_supplicant", "-b", getBridge(dev, tmp), background, "-Dnl80211", psk, "-H", ctrliface, "-c", fstr);
 			else
 				eval("wpa_supplicant", background, "-Dnl80211", psk, "-H", ctrliface, "-c", fstr);
 #else
 			if ((nvram_match(wmode, "wdssta")
 			     || nvram_match(wmode, "wet"))
-			    && nvram_match(bridged, "1"))
+			    && nvram_matchi(bridged, 1))
 				eval("wpa_supplicant", "-b", getBridge(dev, tmp), background, "-Dnl80211", psk, "-H", ctrliface, "-c", fstr);
 			else
 				eval("wpa_supplicant", background, "-Dnl80211", psk, "-H", ctrliface, "-c", fstr);
@@ -1419,14 +1419,14 @@ void ath9k_start_supplicant(int count)
 			sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", dev);
 #ifdef HAVE_RELAYD
 			if ((nvram_match(wmode, "wdssta"))
-			    && nvram_match(bridged, "1"))
+			    && nvram_matchi(bridged, 1))
 				eval("wpa_supplicant", "-b", getBridge(dev, tmp), background, "-Dnl80211", psk, "-c", fstr);
 			else
 				eval("wpa_supplicant", background, "-Dnl80211", psk, "-c", fstr);
 #else
 			if ((nvram_match(wmode, "wdssta")
 			     || nvram_match(wmode, "wet"))
-			    && nvram_match(bridged, "1"))
+			    && nvram_matchi(bridged, 1))
 				eval("wpa_supplicant", "-b", getBridge(dev, tmp), background, "-Dnl80211", psk, "-c", fstr);
 			else
 				eval("wpa_supplicant", background, "-Dnl80211", psk, "-c", fstr);
@@ -1505,7 +1505,7 @@ void ath9k_start_supplicant(int count)
 			wdsdev = nvram_safe_get(wdsdevname);
 			if (strlen(wdsdev) == 0)
 				continue;
-			if (nvram_match(wdsvarname, "0"))
+			if (nvram_matchi(wdsvarname, 0))
 				continue;
 			hwaddr = nvram_get(wdsmacname);
 			if (hwaddr != NULL) {

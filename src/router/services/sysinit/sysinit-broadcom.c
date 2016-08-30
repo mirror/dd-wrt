@@ -439,7 +439,7 @@ static int check_nv(char *name, char *value)
 {
 	int ret = 0;
 
-	if (nvram_match("manual_boot_nv", "1"))
+	if (nvram_matchi("manual_boot_nv",1))
 		return 0;
 
 	if (!nvram_get(name)) {
@@ -493,7 +493,7 @@ void start_sysinit(void)
 #endif
 	cprintf("sysinit() setup console\n");
 #ifndef HAVE_MICRO
-	if (!nvram_match("disable_watchdog", "1"))
+	if (!nvram_matchi("disable_watchdog",1))
 		eval("watchdog");	// system watchdog
 #endif
 #ifdef HAVE_80211AC
@@ -1817,8 +1817,8 @@ void start_sysinit(void)
 	case ROUTER_ASUS_RTN12:
 		basic_params = vlan_0_1;
 		set_gpio(0, 1);
-		if (!nvram_match("ledbh0", "0")
-		    || !nvram_match("ledbh1", "0")) {
+		if (!nvram_matchi("ledbh0",0)
+		    || !nvram_matchi("ledbh1",0)) {
 			nvram_seti("ledbh0", 0);
 			nvram_seti("ledbh1", 0);
 			need_reboot = 1;
@@ -1987,7 +1987,7 @@ void start_sysinit(void)
 		break;
 
 	case ROUTER_D1800H:
-		if (nvram_get("ledbh0") == NULL || nvram_match("ledbh11", "130")) {
+		if (nvram_get("ledbh0") == NULL || nvram_matchi("ledbh11",130)) {
 			nvram_seti("ledbh0", 11);
 			nvram_seti("ledbh1", 11);
 			nvram_seti("ledbh2", 11);
@@ -2131,7 +2131,7 @@ void start_sysinit(void)
 		basic_params = vlan_1_2;
 		nvram_set("vlan2hwname", "et0");
 		//fix lan port numbering on CSE41, CSE51
-		if (nvram_match("clkdivsf", "4")
+		if (nvram_matchi("clkdivsf",4)
 		    && nvram_match("vlan1ports", "1 2 3 4 5*")) {
 			nvram_set("vlan1ports", "4 3 2 1 5*");
 		}
@@ -2496,7 +2496,7 @@ void start_sysinit(void)
 		nvram_set("pci/1/1/boardflags2", "0x0400");
 		nvram_set("pci/1/2/boardflags2", "0x0602");
 
-		if (!nvram_match("bootnv_ver", "6")) {
+		if (!nvram_matchi("bootnv_ver",6)) {
 			if (startswith(nvram_safe_get("pci/1/1/macaddr"), "00:90:4C")
 			    || startswith(nvram_safe_get("pci/1/2/macaddr"), "00:90:4C")) {
 				unsigned char mac[20];
@@ -2628,7 +2628,7 @@ void start_sysinit(void)
 	case ROUTER_NETGEAR_WGR614V9:
 		if (nvram_match("vlan1ports", "0 5u"))
 			nvram_set("vlan1ports", "0 5");
-		if (nvram_match("sromrev", "2")
+		if (nvram_matchi("sromrev",2)
 		    && nvram_match("boardrev", "0x10")
 		    && nvram_match("boardtype", "0x48E")) {
 			nvram_seti("sromrev", 3);	// This is a fix for WGR614L NA - which has a wrong sromrev
@@ -2674,7 +2674,7 @@ void start_sysinit(void)
 
 	unsigned char mac[20];
 
-	if (nvram_match("port_swap", "1"))
+	if (nvram_matchi("port_swap",1))
 		strcpy(mac, nvram_safe_get("et1macaddr"));
 	else
 		strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -2717,7 +2717,7 @@ void start_sysinit(void)
 	case ROUTER_ALLNET01:
 	case ROUTER_BELKIN_F5D7231_V2000:
 
-		if (!nvram_match("no_sercom", "1")) {
+		if (!nvram_matchi("no_sercom",1)) {
 			//fix mac
 			unsigned char mac[6];
 			FILE *in = fopen("/dev/mtdblock/0", "rb");
@@ -2742,7 +2742,7 @@ void start_sysinit(void)
 	 */
 	switch (brand) {
 	case ROUTER_WRT320N:
-		if (!nvram_match("reset_gpio", "5")) {
+		if (!nvram_matchi("reset_gpio",5)) {
 			nvram_seti("reset_gpio", 5);
 			need_reboot = 1;
 		}
@@ -2782,7 +2782,7 @@ void start_sysinit(void)
 		break;
 
 	case ROUTER_BUFFALO_WLI_TX4_G54HP:
-		if (!nvram_match("buffalo_hp", "1")
+		if (!nvram_matchi("buffalo_hp",1)
 		    && (nvram_match("boardflags", "0x1658")
 			|| nvram_match("boardflags", "0x2658"))) {
 			nvram_seti("buffalo_hp", 1);
@@ -2796,7 +2796,7 @@ void start_sysinit(void)
 		break;
 
 	case ROUTER_BUFFALO_WHRG54S:	// for HP only
-		if (!nvram_match("buffalo_hp", "1")
+		if (!nvram_matchi("buffalo_hp",1)
 		    && nvram_match("boardflags", "0x1758")) {
 			nvram_seti("buffalo_hp", 1);
 #ifndef HAVE_BUFFALO		// if HAVE_BUFFALO not used to be FCC/CE
@@ -3174,8 +3174,8 @@ int check_cfe_nv(void)
 			ret += check_nv("sdram_init", "0x010b");
 			ret += check_nv("sdram_config", "0x0062");
 
-			if (nvram_match("clkfreq", "200")
-			    && nvram_match("overclocking", "200")) {
+			if (nvram_matchi("clkfreq",200)
+			    && nvram_matchi("overclocking",200)) {
 				ret += check_nv("clkfreq", "216");
 				nvram_seti("overclocking", 216);
 			}
@@ -3410,9 +3410,9 @@ char *enable_dtag_vlan(int enable)
 	int donothing = 0;
 
 	nvram_seti("fromvdsl", 1);
-	if (nvram_match("vdsl_state", "1") && enable)
+	if (nvram_matchi("vdsl_state",1) && enable)
 		donothing = 1;
-	if ((nvram_match("vdsl_state", "0")
+	if ((nvram_matchi("vdsl_state",0)
 	     || nvram_match("vdsl_state", "")) && !enable)
 		donothing = 1;
 	if (enable)
@@ -3501,8 +3501,8 @@ char *enable_dtag_vlan(int enable)
 		writevaproc("1", "/proc/switch/%s/enable_vlan", eth);
 		if (enable) {
 			fprintf(stderr, "enable vlan port mapping %s/%s\n", vlan_lan_ports, vlan7ports);
-			if (!nvram_match("dtag_vlan8", "1")
-			    || nvram_match("wan_vdsl", "0")) {
+			if (!nvram_matchi("dtag_vlan8",1)
+			    || nvram_matchi("wan_vdsl",0)) {
 				writevaproc(vlan_lan_ports, "/proc/switch/%s/vlan/%d/ports", eth, lan_vlan_num);
 				start_setup_vlans();
 				writevaproc(" ", "/proc/switch/%s/vlan/%d/ports", eth, wan_vlan_num);

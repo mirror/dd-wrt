@@ -56,7 +56,7 @@
 
 void start_vpn_modules(void)
 {
-	if (nvram_match("pptp_pass", "1")) {
+	if (nvram_matchi("pptp_pass", 1)) {
 		insmod("nf_conntrack_proto_gre ip_conntrack_proto_gre");
 		dd_syslog(LOG_INFO, "vpn modules : nf_conntrack_proto_gre successfully loaded\n");
 		insmod("nf_nat_proto_gre ip_nat_proto_gre");

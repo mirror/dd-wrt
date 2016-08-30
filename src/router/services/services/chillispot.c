@@ -61,32 +61,32 @@ void start_chilli(void)
 
 #ifdef HAVE_HOTSPOT
 
-	if (nvram_match("chilli_enable", "1")
-	    && nvram_match("chilli_def_enable", "0")
-	    && !nvram_match("hotss_enable", "1")) {
+	if (nvram_matchi("chilli_enable", 1)
+	    && nvram_matchi("chilli_def_enable", 0)
+	    && !nvram_matchi("hotss_enable", 1)) {
 		nvram_unset("chilli_def_enable");
 		nvram_seti("chilli_enable", 0);
 		return;
 	}
 
-	if (!nvram_match("chilli_enable", "1")
-	    && !nvram_match("hotss_enable", "1")) {
+	if (!nvram_matchi("chilli_enable", 1)
+	    && !nvram_matchi("hotss_enable", 1)) {
 		nvram_unset("chilli_def_enable");
 		return;
 	}
 #else
-	if (!nvram_match("chilli_enable", "1"))
+	if (!nvram_matchi("chilli_enable", 1))
 		return;
 
 #endif
 
-	if ((nvram_match("usb_enable", "1")
-	     && nvram_match("usb_storage", "1")
-	     && nvram_match("usb_automnt", "1")
+	if ((nvram_matchi("usb_enable", 1)
+	     && nvram_matchi("usb_storage", 1)
+	     && nvram_matchi("usb_automnt", 1)
 	     && nvram_match("usb_mntpoint", "jffs"))
-	    || (nvram_match("enable_jffs2", "1")
-		&& nvram_match("jffs_mounted", "1")
-		&& nvram_match("sys_enable_jffs2", "1")))
+	    || (nvram_matchi("enable_jffs2", 1)
+		&& nvram_matchi("jffs_mounted", 1)
+		&& nvram_matchi("sys_enable_jffs2", 1)))
 		jffs = 1;
 
 	stop_chilli();		//ensure that its stopped
@@ -99,20 +99,20 @@ void start_chilli(void)
 
 #ifdef HAVE_HOTSPOT
 
-	if (nvram_match("hotss_enable", "1")) {
+	if (nvram_matchi("hotss_enable", 1)) {
 		stop_cron();
-		if (!nvram_match("chilli_enable", "1")) {
+		if (!nvram_matchi("chilli_enable", 1)) {
 			nvram_seti("chilli_enable", 1);	// to get care of firewall, network, etc.
 			nvram_seti("chilli_def_enable", 0);
 		}
-		if (!nvram_match("hotss_preconfig", "1")) {
+		if (!nvram_matchi("hotss_preconfig", 1)) {
 			nvram_seti("hotss_preconfig", 1);
 			sprintf(ssid, "HotSpotSystem.com-%s_%s", nvram_get("hotss_operatorid"), nvram_get("hotss_locationid"));
 			nvram_set("wl0_ssid", ssid);
 		}
 		hotspotsys_config();
 		start_cron();
-	} else if (nvram_match("chilli_enable", "1")) {
+	} else if (nvram_matchi("chilli_enable", 1)) {
 		nvram_unset("chilli_def_enable");
 		chilli_config();
 	}
@@ -188,8 +188,8 @@ void main_config(void)
 		sprintf(log_reject, "%s", "logreject");
 	else
 		sprintf(log_reject, "%s", TARG_RST);
-	int hss_enable = nvram_match("hotss_enable", "1");
-	int chilli_enable = nvram_match("chilli_enable", "1");
+	int hss_enable = nvram_matchi("hotss_enable", 1);
+	int chilli_enable = nvram_matchi("chilli_enable", 1);
 
 /*	if we have a gw traffic will go there.
 	but if we dont have any gw we might use chilli on a local network only 
@@ -238,12 +238,12 @@ void main_config(void)
 	fprintf(fp, "iptables -D INPUT -i $DEV -j %s\n", log_accept);
 	fprintf(fp, "iptables -D FORWARD -i $DEV -j %s\n", log_accept);
 	fprintf(fp, "iptables -D FORWARD -o $DEV -j %s\n", log_accept);
-	if (nvram_match("chilli_enable", "1")
-	    && nvram_match("hotss_enable", "0")
+	if (nvram_matchi("chilli_enable", 1)
+	    && nvram_matchi("hotss_enable", 0)
 	    && nvram_invmatch("chilli_interface", "br0"))
 		fprintf(fp, "iptables -t nat -D PREROUTING -i %s ! -s $NET/$MASK -j %s\n", nvram_safe_get("chilli_interface"), log_drop);
-	if (nvram_match("chilli_enable", "1")
-	    && nvram_match("hotss_enable", "1")
+	if (nvram_matchi("chilli_enable", 1)
+	    && nvram_matchi("hotss_enable", 1)
 	    && nvram_invmatch("hotss_interface", "br0"))
 		fprintf(fp, "iptables -t nat -D PREROUTING -i %s ! -s $NET/$MASK -j %s\n", nvram_safe_get("hotss_interface"), log_drop);
 	if (nvram_match("wan_proto", "disabled")) {
@@ -365,7 +365,7 @@ void chilli_config(void)
 	}
 	if (nvram_invmatch("chilli_uamsecret", ""))
 		fprintf(fp, "uamsecret %s\n", nvram_get("chilli_uamsecret"));
-	if (nvram_invmatch("chilli_uamanydns", "0"))
+	if (nvram_invmatchi("chilli_uamanydns", 0))
 		fprintf(fp, "uamanydns\n");
 	if (nvram_invmatch("chilli_uamallowed", ""))
 		fprintf(fp, "uamallowed %s\n", nvram_get("chilli_uamallowed"));
@@ -379,14 +379,14 @@ void chilli_config(void)
 #endif
 	if (nvram_invmatch("chilli_net", ""))
 		fprintf(fp, "net %s\n", nvram_get("chilli_net"));
-	if (nvram_match("chilli_macauth", "1")) {
+	if (nvram_matchi("chilli_macauth", 1)) {
 		fprintf(fp, "macauth\n");
 		if (strlen(nvram_safe_get("chilli_macpasswd")) > 0)
 			fprintf(fp, "macpasswd %s\n", nvram_get("chilli_macpasswd"));
 		else
 			fprintf(fp, "macpasswd password\n");
 	}
-	if (nvram_match("chilli_802.1Xauth", "1"))
+	if (nvram_matchi("chilli_802.1Xauth", 1))
 		fprintf(fp, "eapolenable\n");
 
 	if (nvram_invmatch("chilli_radiusnasid", ""))
@@ -514,21 +514,21 @@ void hotspotsys_config(void)
 	fprintf(fp, "uamsecret hotsys123\n");
 	fprintf(fp, "uamanydns\n");
 	fprintf(fp, "radiusnasid %s_%s\n", nvram_get("hotss_operatorid"), nvram_get("hotss_locationid"));
-	if (!nvram_match("hotss_loginonsplash", "1")) {
+	if (!nvram_matchi("hotss_loginonsplash", 1)) {
 		fprintf(fp,
 			"uamhomepage %s://%s/customer/index.php?operator=%s&location=%s%s\n",
-			nvram_safe_get("hotss_customuamproto"), uamdomain, nvram_get("hotss_operatorid"), nvram_get("hotss_locationid"), nvram_match("hotss_customsplash", "1") ? "&forward=1" : "");
+			nvram_safe_get("hotss_customuamproto"), uamdomain, nvram_get("hotss_operatorid"), nvram_get("hotss_locationid"), nvram_matchi("hotss_customsplash", 1) ? "&forward=1" : "");
 	}
 	fprintf(fp, "coaport 3799\n");
 	fprintf(fp, "coanoipcheck\n");
 	fprintf(fp, "domain key.chillispot.info\n");
 
 	if (nvram_invmatch("hotss_uamallowed", "")
-	    && nvram_match("hotss_uamenable", "1"))
+	    && nvram_matchi("hotss_uamenable", 1))
 		fprintf(fp, "uamallowed %s\n", nvram_get("hotss_uamallowed"));
 #ifdef HAVE_COOVA_CHILLI
 	if (nvram_invmatch("hotss_uamdomain", "")
-	    && nvram_match("hotss_uamenable", "1")) {
+	    && nvram_matchi("hotss_uamenable", 1)) {
 		dnslist = nvram_safe_get("hotss_uamdomain");
 		foreach(var, dnslist, next) {
 			fprintf(fp, "uamdomain %s\n", var);

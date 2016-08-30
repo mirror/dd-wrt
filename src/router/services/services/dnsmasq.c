@@ -88,9 +88,9 @@ static char *getmdhcp(int count, int index, char *word)
 static int landhcp(void)
 {
 	if (!getWET())
-		if (nvram_match("dhcp_dnsmasq", "1")
+		if (nvram_matchi("dhcp_dnsmasq", 1)
 		    && nvram_match("lan_proto", "dhcp")
-		    && nvram_match("dhcpfwd_enable", "0"))
+		    && nvram_matchi("dhcpfwd_enable", 0))
 			return 1;
 	return 0;
 }
@@ -106,7 +106,7 @@ static int hasmdhcp(void)
 
 static int canlan(void)
 {
-	if (nvram_match("dhcpfwd_enable", "0"))
+	if (nvram_matchi("dhcpfwd_enable", 0))
 		return 1;
 	return 0;
 }
@@ -117,21 +117,21 @@ void start_dnsmasq(void)
 	struct dns_lists *dns_list = NULL;
 	int i;
 
-	if (nvram_match("dhcp_dnsmasq", "1")
+	if (nvram_matchi("dhcp_dnsmasq", 1)
 	    && nvram_match("lan_proto", "dhcp")
-	    && nvram_match("dnsmasq_enable", "0")) {
+	    && nvram_matchi("dnsmasq_enable", 0)) {
 		nvram_seti("dnsmasq_enable", 1);
 		nvram_commit();
 	}
 
-	if (!nvram_invmatch("dnsmasq_enable", "0")) {
+	if (!nvram_invmatchi("dnsmasq_enable", 0)) {
 		stop_dnsmasq();
 		return;
 	}
 
 	usejffs = 0;
 
-	if (nvram_match("dhcpd_usejffs", "1")) {
+	if (nvram_matchi("dhcpd_usejffs", 1)) {
 		if (!(fp = fopen("/jffs/dnsmasq.leases", "a"))) {
 			usejffs = 0;
 		} else {
@@ -148,12 +148,12 @@ void start_dnsmasq(void)
 		return;
 	}
 //    fprintf(fp, "bind-interfaces\n");
-	if (nvram_match("chilli_enable", "1")) {
+	if (nvram_matchi("chilli_enable", 1)) {
 		if (canlan())
 			fprintf(fp, "interface=%s", get_wdev());
 		else
 			fprintf(fp, "interface=%s,", get_wdev());
-	} else if (nvram_match("pptpd_enable", "1")) {
+	} else if (nvram_matchi("pptpd_enable", 1)) {
 		if (canlan())
 			fprintf(fp, "listen-address=%s,%s", "127.0.0.1", nvram_safe_get("lan_ipaddr"));
 		else
@@ -174,12 +174,12 @@ void start_dnsmasq(void)
 			    == 0)
 				continue;
 			if (canlan() || i > 0) {
-				if (nvram_match("pptpd_enable", "1"))
+				if (nvram_matchi("pptpd_enable", 1))
 					fprintf(fp, ",%s", nvram_nget("%s_ipaddr", getmdhcp(0, i, word)));
 				else
 					fprintf(fp, ",%s", getmdhcp(0, i, word));
 			} else {
-				if (nvram_match("pptpd_enable", "1"))
+				if (nvram_matchi("pptpd_enable", 1))
 					fprintf(fp, "%s", nvram_nget("%s_ipaddr", getmdhcp(0, i, word)));
 				else
 					fprintf(fp, "%s", getmdhcp(0, i, word));
@@ -190,11 +190,11 @@ void start_dnsmasq(void)
 	}
 	fprintf(fp, "\n");
 	fprintf(fp, "resolv-file=/tmp/resolv.dnsmasq\n" "all-servers\n");
-	if (nvram_match("dnsmasq_strict", "1"))
+	if (nvram_matchi("dnsmasq_strict", 1))
 		fprintf(fp, "strict-order\n");
 
 #ifdef HAVE_UNBOUND
-	if (nvram_match("recursive_dns", "1")) {
+	if (nvram_matchi("recursive_dns", 1)) {
 		fprintf(fp, "port=0\n");
 	}
 #endif
@@ -220,7 +220,7 @@ void start_dnsmasq(void)
 		/*
 		 * DHCP leasefile 
 		 */
-		if (nvram_match("dhcpd_usenvram", "1")) {
+		if (nvram_matchi("dhcpd_usenvram", 1)) {
 			fprintf(fp, "leasefile-ro\n");
 			fprintf(fp, "dhcp-script=%s\n", "/etc/lease_update.sh");
 		} else {
@@ -257,7 +257,7 @@ void start_dnsmasq(void)
 		    && nvram_invmatch("wan_wins", "0.0.0.0"))
 			fprintf(fp, "dhcp-option=44,%s\n", nvram_safe_get("wan_wins"));
 		free(word);
-		if (nvram_match("dns_dnsmasq", "0")) {
+		if (nvram_matchi("dns_dnsmasq", 0)) {
 			dns_list = get_dns_list();
 
 			if (dns_list && (strlen(dns_list->dns_server[0]) > 0 || strlen(dns_list->dns_server[1]) > 0 || strlen(dns_list->dns_server[2]) > 0)) {
@@ -280,7 +280,7 @@ void start_dnsmasq(void)
 				free(dns_list);
 		} else {
 #ifdef HAVE_UNBOUND
-			if (nvram_match("recursive_dns", "1")) {
+			if (nvram_matchi("recursive_dns", 1)) {
 				char *word = malloc(128);
 				memset(word, 0, 128);
 				fprintf(fp, "dhcp-option=%s,6,%s\n", nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ipaddr"));
@@ -296,7 +296,7 @@ void start_dnsmasq(void)
 #endif
 		}
 
-		if (nvram_match("auth_dnsmasq", "1"))
+		if (nvram_matchi("auth_dnsmasq", 1))
 			fprintf(fp, "dhcp-authoritative\n");
 		if (landhcp()) {
 			unsigned int dhcpnum = nvram_geti("dhcp_num");
@@ -374,7 +374,7 @@ void start_dnsmasq(void)
 					fprintf(fp, "dhcp-host=%s,%s,%s,%sm\n", mac, host, ip, time);
 
 #ifdef HAVE_UNBOUND
-				if (!nvram_match("recursive_dns", "1"))
+				if (!nvram_matchi("recursive_dns", 1))
 #endif
 					addHost(host, ip, 1);
 			}
@@ -382,10 +382,10 @@ void start_dnsmasq(void)
 		}
 	}
 	/* stop dns rebinding for private addresses */
-	if (nvram_match("dnsmasq_no_dns_rebind", "1")) {
+	if (nvram_matchi("dnsmasq_no_dns_rebind", 1)) {
 		fprintf(fp, "stop-dns-rebind\n");
 	}
-	if (nvram_match("dnsmasq_add_mac", "1")) {
+	if (nvram_matchi("dnsmasq_add_mac", 1)) {
 		fprintf(fp, "add-mac\n");
 	}
 	/*

@@ -78,7 +78,7 @@ void do_vsp_page(struct mime_handler *handler, char *url, webs_t stream, char *q
  */
 int sys_commit(void)
 {
-	if (nvram_match("dhcpnvram", "1")) {
+	if (nvram_matchi("dhcpnvram", 1)) {
 		killall("dnsmasq", SIGUSR2);	// update lease -- tofu
 		sleep(1);
 	}
@@ -673,12 +673,11 @@ void do_spectral_scan(struct mime_handler *handler, char *p, webs_t stream, char
 		sysprintf("echo chanscan > %s/spectral_scan_ctl", path);
 	sysprintf("iw %s scan 2> /dev/null", ifname);
 	char *exec;
-//	sysprintf("fft_eval %s/spectral_scan0 2> /dev/null > %s", path,json_cache);
+//      sysprintf("fft_eval %s/spectral_scan0 2> /dev/null > %s", path,json_cache);
 	asprintf(&exec, "fft_eval \"%s/spectral_scan0\"", path);
 
-	
 	FILE *fp = popen(exec, "rb");
-//	FILE *fp = fopen(json_cache, "rb");
+//      FILE *fp = fopen(json_cache, "rb");
 	free(exec);
 	if (!fp)
 		return;
@@ -698,7 +697,6 @@ void do_spectral_scan(struct mime_handler *handler, char *p, webs_t stream, char
 	free(path);
 
 	websWrite(stream, "}");
-	
 
 }
 #endif
@@ -1520,7 +1518,7 @@ static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, ch
 
 footer:
 
-	if (nvram_match("do_reboot", "1")) {
+	if (nvram_matchi("do_reboot", 1)) {
 		action = REBOOT;
 	}
 	/*
@@ -1609,7 +1607,7 @@ int do_auth(webs_t wp, char *userid, char *passwd, char *realm, char *authorisat
 
 int do_cauth(webs_t wp, char *userid, char *passwd, char *realm, char *authorisation, int (*auth_check) (char *userid, char *passwd, char *dirname, char *authorisation))
 {
-	if (nvram_match("info_passwd", "0"))
+	if (nvram_matchi("info_passwd", 0))
 		return 1;
 	return do_auth(wp, userid, passwd, realm, authorisation, auth_check);
 }
@@ -2157,7 +2155,7 @@ static void do_syslog(struct mime_handler *handler, char *url, webs_t stream, ch
 		  "<style type=\"text/css\">\n body { font: 9px Tahoma, Arial, sans-serif; font-size: small; color: #666; } \n fieldset { border: 1px solid #333; border-radius: 4px; border-width: 1px;}\n</style>\n</head>\n");
 	websWrite(stream, "<body>\n<fieldset><legend>System Log</legend>");
 
-	if (nvram_match("syslogd_enable", "1")) {
+	if (nvram_matchi("syslogd_enable", 1)) {
 		FILE *fp = fopen(filename, "r");
 		if (fp != NULL) {
 			char line[1024];

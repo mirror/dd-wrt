@@ -48,11 +48,11 @@ void start_aoss(void)
 		return;
 	}
 #endif
-	if (nvram_match("aoss_enable", "0")) {
+	if (nvram_matchi("aoss_enable", 0)) {
 		stop_aoss();
 #ifdef HAVE_WPS
 		unlink("/tmp/.wpsdone");
-		if (nvram_match("wps_enabled", "1")) {
+		if (nvram_matchi("wps_enabled", 1)) {
 			if (!nvram_match("ath0_net_mode", "disabled")) {
 				eval("hostapd_cli", "-i", "ath0", "wps_pbc");
 #ifdef HAVE_IDEXX
@@ -184,7 +184,7 @@ void start_aoss(void)
 	     || nvram_match("ath0_mode", "wdsap"))
 	    && !nvram_match("ath0_net_mode", "disabled")) {
 		hasaoss = 1;
-		eval("80211n_wlanconfig", "aossg","create", "wlandev", "wifi0", "wlanmode", "ap");
+		eval("80211n_wlanconfig", "aossg", "create", "wlandev", "wifi0", "wlanmode", "ap");
 		eval("iwconfig", "aossg", "essid", "ESSID-AOSS");
 		eval("iwpriv", "aossg", "authmode", "4");
 		eval("iwconfig", "aossg", "key", "[1]", "4D454C434F");

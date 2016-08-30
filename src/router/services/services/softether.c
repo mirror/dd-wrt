@@ -34,25 +34,25 @@ static void stop_softetherserver(void);
 
 void start_softether(void)
 {
-	if (!nvram_match("setherclient_enable", "1")) {
+	if (!nvram_matchi("setherclient_enable", 1)) {
 		stop_softetherclient();
 	}
 
-	if (!nvram_match("setherserver_enable", "1")) {
+	if (!nvram_matchi("setherserver_enable", 1)) {
 		stop_softetherserver();
 	}
 
-	if (!nvram_match("setherbridge_enable", "1")) {
+	if (!nvram_matchi("setherbridge_enable", 1)) {
 		stop_softetherbridge();
 	}
 
-	if (nvram_match("setherclient_enable", "1")) {
+	if (nvram_matchi("setherclient_enable", 1)) {
 		eval("vpnclient", "start");
 	}
-	if (nvram_match("setherserver_enable", "1")) {
+	if (nvram_matchi("setherserver_enable", 1)) {
 		eval("vpnserver", "start");
 	}
-	if (nvram_match("setherbridge_enable", "1")) {
+	if (nvram_matchi("setherbridge_enable", 1)) {
 		eval("vpnbridge", "start");
 	}
 	return;

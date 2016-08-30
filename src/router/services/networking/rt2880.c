@@ -221,7 +221,7 @@ void setupSupplicant(char *prefix)
 		char bvar[32];
 
 		sprintf(bvar, "%s_bridged", prefix);
-		if (nvram_match(bvar, "1")
+		if (nvram_matchi(bvar, 1)
 		    && (nvram_match(wmode, "wdssta")
 			|| nvram_match(wmode, "wet")))
 			eval("wpa_supplicant", "-b", nvram_safe_get("lan_ifname"), "-B", "-Dralink", psk, "-c", fstr);
@@ -363,11 +363,11 @@ void start_radius(void)
 
 		if (nvram_default_match(type, "0", "0"))
 			pragma = "-n1 ";
-		if (nvram_match(type, "1"))
+		if (nvram_matchi(type, 1))
 			pragma = "-n2 ";
-		if (nvram_match(type, "2"))
+		if (nvram_matchi(type, 2))
 			pragma = "-n3 ";
-		if (nvram_match(type, "3"))
+		if (nvram_matchi(type, 3))
 			pragma = "";
 		sleep(1);	// some delay is usefull
 		sysprintf("wrt-radauth %s %s %s %s %s %s %s %s &", pragma,
@@ -390,11 +390,11 @@ void start_radius(void)
 
 		if (nvram_default_match(type, "0", "0"))
 			pragma = "-n1 ";
-		if (nvram_match(type, "1"))
+		if (nvram_matchi(type, 1))
 			pragma = "-n2 ";
-		if (nvram_match(type, "2"))
+		if (nvram_matchi(type, 2))
 			pragma = "-n3 ";
-		if (nvram_match(type, "3"))
+		if (nvram_matchi(type, 3))
 			pragma = "";
 		sleep(1);	// some delay is usefull
 		sysprintf("wrt-radauth %s %s %s %s %s %s %s %s &", pragma,
@@ -924,7 +924,7 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 		wdsdev = nvram_safe_get(wdsdevname);
 		if (strlen(wdsdev) == 0)
 			continue;
-		if (nvram_match(wdsvarname, "0"))
+		if (nvram_matchi(wdsvarname, 0))
 			continue;
 		hwaddr = nvram_get(wdsmacname);
 		if (hwaddr != NULL) {
@@ -1154,13 +1154,13 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 
 	if (isSTA(idx)) {
 #if (defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_AR690W) || defined(HAVE_VF803) || defined(HAVE_DIR810L) || defined(HAVE_HAMEA15)) && !defined(HAVE_ALL02310N)
-		if (nvram_match("mac_clone_enable", "1") && nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") && nvram_invmatch("def_whwaddr", "")) {
+		if (nvram_matchi("mac_clone_enable", 1) && nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") && nvram_invmatch("def_whwaddr", "")) {
 			sysprintf("insmod rt2860v2_sta mac=%s", nvram_safe_get("def_whwaddr"));
 		} else {
 			sysprintf("insmod rt2860v2_sta mac=%s", mac);
 		}
 #else
-		if (nvram_match("mac_clone_enable", "1") && nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") && nvram_invmatch("def_whwaddr", "")) {
+		if (nvram_matchi("mac_clone_enable", 1) && nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") && nvram_invmatch("def_whwaddr", "")) {
 			sysprintf("insmod rt2860v2_sta mac=%s", nvram_safe_get("def_whwaddr"));
 		} else {
 			insmod("rt2860v2_sta");
@@ -1192,21 +1192,21 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 	} else {
 		if (idx == 0) {
 #if (defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_AR690W) || defined(HAVE_VF803) || defined(HAVE_DIR810L) || defined(HAVE_HAMEA15)) && !defined(HAVE_ALL02310N)
-			if (nvram_match("mac_clone_enable", "1") && nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") && nvram_invmatch("def_whwaddr", "")) {
+			if (nvram_matchi("mac_clone_enable", 1) && nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") && nvram_invmatch("def_whwaddr", "")) {
 				sysprintf("insmod rt2860v2_ap mac=%s", nvram_safe_get("def_whwaddr"));
-				if (nvram_match("rtchip", "3062"))
+				if (nvram_matchi("rtchip", 3062))
 					sysprintf("insmod /lib/rt3062/rt3062ap.ko mac=%s", nvram_safe_get("def_whwaddr"));
 				else
 					sysprintf("insmod /lib/rt3062/rt2860ap.ko mac=%s", nvram_safe_get("def_whwaddr"));
 			} else {
-				if (nvram_match("rtchip", "3062"))
+				if (nvram_matchi("rtchip", 3062))
 					sysprintf("insmod /lib/rt3062/rt3062ap.ko mac=%s", mac);
 				else
 					sysprintf("insmod /lib/rt3062/rt2860ap.ko mac=%s", mac);
 				sysprintf("insmod rt2860v2_ap mac=%s", mac);
 			}
 #else
-			if (nvram_match("mac_clone_enable", "1") && nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") && nvram_invmatch("def_whwaddr", "")) {
+			if (nvram_matchi("mac_clone_enable", 1) && nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") && nvram_invmatch("def_whwaddr", "")) {
 				sysprintf("insmod rt2860v2_ap mac=%s", nvram_safe_get("def_whwaddr"));
 			} else {
 				insmod("rt2860v2_ap");
@@ -1325,7 +1325,7 @@ void init_network(int idx)
 			wdsdev = nvram_safe_get(wdsdevname);
 			if (strlen(wdsdev) == 0)
 				continue;
-			if (nvram_match(wdsvarname, "0"))
+			if (nvram_matchi(wdsvarname, 0))
 				continue;
 			hwaddr = nvram_get(wdsmacname);
 			if (hwaddr != NULL) {
@@ -1373,7 +1373,7 @@ void init_network(int idx)
 		nvram_set(br1ipaddr, "0.0.0.0");
 	if (nvram_get(br1netmask) == NULL)
 		nvram_set(br1netmask, "255.255.255.0");
-	if (nvram_match(br1enable, "1")) {
+	if (nvram_matchi(br1enable, 1)) {
 		ifconfig("br1", 0, 0, 0);
 
 		// eval ("ifconfig", "br1", "down");
@@ -1411,7 +1411,7 @@ void init_network(int idx)
 			continue;
 
 		// eval ("ifconfig", dev, "down");
-		if (nvram_match(wdsvarname, "1")) {
+		if (nvram_matchi(wdsvarname, 1)) {
 			char *wdsip;
 			char *wdsnm;
 			char wdsbc[32] = { 0 };
@@ -1421,12 +1421,12 @@ void init_network(int idx)
 			snprintf(wdsbc, 31, "%s", wdsip);
 			get_broadcast(wdsbc, wdsnm);
 			eval("ifconfig", dev, wdsip, "broadcast", wdsbc, "netmask", wdsnm, "up");
-		} else if (nvram_match(wdsvarname, "2")
-			   && nvram_match(br1enable, "1")) {
+		} else if (nvram_matchi(wdsvarname, 2)
+			   && nvram_matchi(br1enable, 1)) {
 			eval("ifconfig", dev, "up");
 			sleep(1);
 			br_add_interface("br1", dev);
-		} else if (nvram_match(wdsvarname, "3")) {
+		} else if (nvram_matchi(wdsvarname, 3)) {
 			ifconfig(dev, IFUP, 0, 0);
 			sleep(1);
 			br_add_interface(getBridge(dev, tmp), dev);

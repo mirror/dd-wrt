@@ -61,7 +61,7 @@ void start_sysinit(void)
 	time_t tm = 0;
 	FILE *fp;
 
-	if (!nvram_match("disable_watchdog", "1")) {
+	if (!nvram_matchi("disable_watchdog",1)) {
 		insmod("orion_wdt");
 		eval("watchdog");
 	}
@@ -118,7 +118,7 @@ void start_sysinit(void)
 /*	
 	system("swconfig dev switch0 set reset 1");
 	system("swconfig dev switch0 set enable_vlan 1");
-	if (nvram_match("wan_proto", "disabled") && nvram_match("fullswitch", "1")) {
+	if (nvram_match("wan_proto", "disabled") && nvram_matchi("fullswitch",1)) {
 		system("swconfig dev switch0 vlan 1 set ports \"0 1 2 3 5\"");
 	} else {
 		system("swconfig dev switch0 vlan 1 set ports \"5t 0 1 2 3\"");

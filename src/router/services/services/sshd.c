@@ -57,7 +57,7 @@ static int generate_dropbear_rsa_host_key(void);
 void start_sshd(void)
 {
 
-	if (!nvram_invmatch("sshd_enable", "0"))
+	if (!nvram_invmatchi("sshd_enable", 0))
 		return;
 	empty_dir_check();
 	int changed = 0;
@@ -74,8 +74,8 @@ void start_sshd(void)
 	write_key_file("sshd_authorized_keys", AUTHORIZED_KEYS_FILE, 0600);
 	stop_sshd();
 	char *port = nvram_safe_get("sshd_port");
-	char *passwd_ok = nvram_match("sshd_passwd_auth", "1") ? "" : "-s";
-	char *forwarding_ok = nvram_match("sshd_forwarding", "1") ? "-a" : "";
+	char *passwd_ok = nvram_matchi("sshd_passwd_auth", 1) ? "" : "-s";
+	char *forwarding_ok = nvram_matchi("sshd_forwarding", 1) ? "-a" : "";
 
 #ifdef HAVE_MAKSAT
 	sysprintf("dropbear -r %s -p %s %s %s", RSA_HOST_KEY_FILE, port, passwd_ok, forwarding_ok);
@@ -154,7 +154,7 @@ static int generate_dropbear_rsa_host_key(void)
 
 	fp = fopen(TMP_HOST_KEY_FILE, "r");
 
-	if (fp == (void *)0){
+	if (fp == (void *)0) {
 		free(buf);
 		return -1;
 	}
@@ -164,7 +164,7 @@ static int generate_dropbear_rsa_host_key(void)
 	if (ret <= 0)
 		return -1;
 
-	buf[ret] = 0; // terminate by 0. buf isnt initialized
+	buf[ret] = 0;		// terminate by 0. buf isnt initialized
 	nvram_set(NVRAM_RSA_KEY_NAME, buf);
 	nvram_commit();
 	free(buf);

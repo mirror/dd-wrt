@@ -59,7 +59,7 @@ void start_syslog(void)
 {
 	int ret1 = 0, ret2 = 0;
 
-	if (!nvram_invmatch("syslogd_enable", "0"))
+	if (!nvram_invmatchi("syslogd_enable", 0))
 		return;
 	update_timezone();
 	if (strlen(nvram_safe_get("syslogd_rem_ip")) > 0)

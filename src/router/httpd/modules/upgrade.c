@@ -400,7 +400,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 			if (!strncmp(buf, "bgn", 3) || !strncmp(buf, "WZR", 3)
 			    || !strncmp(buf, "WHR", 3)
 			    || !strncmp(buf, "WLA", 3)
-				) {
+			    ) {
 				char *write_argv_buf[4];
 				write_argv_buf[0] = "buffalo_flash";
 				write_argv_buf[1] = upload_fifo;
@@ -668,7 +668,7 @@ do_upgrade_post(char *url, webs_t stream, int len, char *boundary)	// jimmy,
 	if (nvram_default_match("region", "SA", ""))
 		region_sa = 1;
 #endif
-	if (nvram_match("sv_restore_defaults", "1")) {
+	if (nvram_matchi("sv_restore_defaults", 1)) {
 		eval("erase", "nvram");
 #ifdef HAVE_BUFFALO_SA
 		nvram_seti("sv_restore_defaults", 1);

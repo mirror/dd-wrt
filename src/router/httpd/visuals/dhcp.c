@@ -39,9 +39,9 @@
 static int landhcp(void)
 {
 	if (!getWET())
-		if (nvram_match("dhcp_dnsmasq", "1")
+		if (nvram_matchi("dhcp_dnsmasq", 1)
 		    && nvram_match("lan_proto", "dhcp")
-		    && nvram_match("dhcpfwd_enable", "0"))
+		    && nvram_matchi("dhcpfwd_enable", 0))
 			return 1;
 	return 0;
 }
@@ -104,12 +104,12 @@ void ej_dumpleases(webs_t wp, int argc, char_t ** argv)
 	if (landhcp() || hasmdhcp()) {
 		cprintf("entry dumpleases:%d\n", __LINE__);
 
-		if (nvram_invmatch("dhcpd_usenvram", "1")) {
+		if (nvram_invmatchi("dhcpd_usenvram", 1)) {
 			/*
 			 * Parse leases file 
 			 */
 			cprintf("open default leases\n");
-			if (nvram_match("dhcpd_usejffs", "1")) {
+			if (nvram_matchi("dhcpd_usejffs", 1)) {
 				fp = fopen("/jffs/dnsmasq.leases", "r");
 				if (!fp) {
 					fp = fopen("/tmp/dnsmasq.leases", "r");
@@ -141,7 +141,7 @@ void ej_dumpleases(webs_t wp, int argc, char_t ** argv)
 					if ((p = strrchr(ip, '.')) == NULL)
 						continue;
 					cprintf("entry dumpleases:%d\n", __LINE__);
-					if (nvram_match("maskmac", "1")
+					if (nvram_matchi("maskmac", 1)
 					    && macmask) {
 						mac[0] = 'x';
 						mac[1] = 'x';
@@ -180,7 +180,7 @@ void ej_dumpleases(webs_t wp, int argc, char_t ** argv)
 				if ((p = strrchr(ip, '.')) == NULL)
 					continue;
 				cprintf("entry dumpleases:%d\n", __LINE__);
-				if (nvram_match("maskmac", "1") && macmask) {
+				if (nvram_matchi("maskmac", 1) && macmask) {
 					mac[0] = 'x';
 					mac[1] = 'x';
 					mac[3] = 'x';
@@ -230,7 +230,7 @@ void ej_dumpleases(webs_t wp, int argc, char_t ** argv)
 				if (!strcmp(mac, "00:00:00:00:00:00"))
 					continue;
 				cprintf("entry dumpleases:%d\n", __LINE__);
-				if (nvram_match("maskmac", "1") && macmask) {
+				if (nvram_matchi("maskmac", 1) && macmask) {
 
 					mac[0] = 'x';
 					mac[1] = 'x';

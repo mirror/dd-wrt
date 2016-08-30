@@ -117,7 +117,7 @@ static void start_heartbeat(int status)
 	} else
 		eval("bpalogin", "-c", "/tmp/bpalogin.conf");
 
-	if (nvram_invmatch("ppp_demand", "1")) {
+	if (nvram_invmatchi("ppp_demand", 1)) {
 		if (status != REDIAL)
 			start_redial();
 	}

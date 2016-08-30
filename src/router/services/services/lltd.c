@@ -34,7 +34,7 @@ void start_lltd(void)
 {
 	int ret;
 
-	if (nvram_match("lltd_enabled", "0")) {
+	if (nvram_matchi("lltd_enabled", 0)) {
 		stop_lltd();
 		return;
 	}

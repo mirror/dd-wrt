@@ -79,12 +79,12 @@ static void create_pptp_config(char *servername, char *username)
 	// server addresses
 	fprintf(fp, "pty 'pptp %s --localbind %s --nolaunchpppd", servername, nvram_safe_get("wan_ipaddr"));
 
-	if (nvram_match("pptp_reorder", "0"))
+	if (nvram_matchi("pptp_reorder", 0))
 		fprintf(fp, " --nobuffer");
 
 	// PPTP client also supports synchronous mode.
 	// This should improve the speeds.
-	if (nvram_match("pptp_synchronous", "1"))
+	if (nvram_matchi("pptp_synchronous", 1))
 		fprintf(fp, " --sync'\nsync\n");
 	else
 		fprintf(fp, "'\n");
@@ -92,11 +92,11 @@ static void create_pptp_config(char *servername, char *username)
 	fprintf(fp, "user '%s'\n", username);
 	// fprintf(fp, "persist\n"); // Do not exit after a connection is terminated.
 
-	if (nvram_match("mtu_enable", "1"))
+	if (nvram_matchi("mtu_enable", 1))
 		fprintf(fp, "mtu %s\n", nvram_safe_get("wan_mtu"));
 
-	if (nvram_match("ppp_demand", "1")) {	// demand mode
-		fprintf(fp, "idle %d\n", nvram_match("ppp_demand", "1") ? nvram_geti("ppp_idletime") * 60 : 0);
+	if (nvram_matchi("ppp_demand", 1)) {	// demand mode
+		fprintf(fp, "idle %d\n", nvram_matchi("ppp_demand", 1) ? nvram_geti("ppp_idletime") * 60 : 0);
 		fprintf(fp, "demand\n");	// Dial on demand
 		fprintf(fp, "persist\n");	// Do not exit after a connection is
 		// terminated.
@@ -115,7 +115,7 @@ static void create_pptp_config(char *servername, char *username)
 	} else {		// keepalive mode
 		start_redial();
 	}
-	if (nvram_match("pptp_encrypt", "0")) {
+	if (nvram_matchi("pptp_encrypt", 0)) {
 		fprintf(fp, "nomppe\n");	// Disable mppe negotiation
 		fprintf(fp, "noccp\n");	// Disable CCP (Compression Control
 		// Protocol)
@@ -204,7 +204,7 @@ void start_pptp(int status)
 	/*
 	 * Bring up WAN interface 
 	 */
-	if (nvram_match("pptp_use_dhcp", "1")) {
+	if (nvram_matchi("pptp_use_dhcp", 1)) {
 		// pid_t pid;
 		// char *wan_ipaddr;
 		// char *wan_netmask;
@@ -219,7 +219,7 @@ void start_pptp(int status)
 		start_dhcpc(wan_ifname, NULL, NULL, 1);
 		int timeout;
 
-		for (timeout = 60; !nvram_match("dhcpc_done", "1") && timeout > 0; --timeout) {	/* wait for info from dhcp server */
+		for (timeout = 60; !nvram_matchi("dhcpc_done", 1) && timeout > 0; --timeout) {	/* wait for info from dhcp server */
 			sleep(1);
 		}
 		stop_dhcpc();	/* we don't need dhcp client anymore */
@@ -252,7 +252,7 @@ void start_pptp(int status)
 	}
 	ret = _evalpid(pptp_argv, NULL, 0, NULL);
 
-	if (nvram_match("ppp_demand", "1")) {
+	if (nvram_matchi("ppp_demand", 1)) {
 		/*
 		 * Trigger Connect On Demand if user press Connect button in Status
 		 * page 

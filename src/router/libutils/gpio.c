@@ -360,9 +360,7 @@ void set_gpio(int gpio, int value)
 	//fprintf(stderr, "GPIO %d value %d\n", gpio, value);
 	int brand = getRouterBrand();
 
-	if ( brand == ROUTER_NETGEAR_R7500 ||
-	     brand == ROUTER_NETGEAR_R7500V2 ||
-	     brand == ROUTER_NETGEAR_R7800 ) {
+	if (brand == ROUTER_NETGEAR_R7500 || brand == ROUTER_NETGEAR_R7500V2 || brand == ROUTER_NETGEAR_R7800) {
 		switch (gpio) {
 		case 0:	// power
 			sysprintf("echo %d > /sys/class/leds/r7X00\\:white\\:power/brightness", value);
