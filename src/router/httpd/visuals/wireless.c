@@ -219,7 +219,7 @@ int dhcp_lease_table_init(void)
 	FILE *fp, *fp_w;
 	int count = 0;
 
-	if (nvram_match("dhcp_dnsmasq", "1")) {
+	if (nvram_matchi("dhcp_dnsmasq", 1)) {
 		unsigned long expires;
 		char mac[32];
 		char ip[32];
@@ -556,7 +556,7 @@ char *get_wep_value(char *temp, char *type, char *_bit, char *prefix)
 	char *wordlist;
 	char wl_wep[] = "wlX.XX_wep_XXXXXX";
 
-	if (nvram_match("generate_key", "1")) {
+	if (nvram_matchi("generate_key", 1)) {
 		snprintf(wl_wep, sizeof(wl_wep), "%s_wep_gen", prefix);
 	} else {
 		snprintf(wl_wep, sizeof(wl_wep), "%s_wep_buf", prefix);

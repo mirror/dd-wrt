@@ -110,7 +110,7 @@ void start_pppoe_dual(int status)
 #endif
 	stop_pppoe_dual();
 /*
-	if (nvram_match("pptp_use_dhcp", "0")) {
+	if (nvram_matchi("pptp_use_dhcp",0)) {
 		ifconfig(wan_ifname, IFUP, nvram_safe_get("wan_ipaddr"), nvram_safe_get("wan_netmask"));
 		struct dns_lists *dns_list = NULL;
 		dns_to_resolv();
@@ -132,7 +132,7 @@ void start_pppoe_dual(int status)
 */
 //      }
 
-	if (nvram_match("pptp_use_dhcp", "0")) {
+	if (nvram_matchi("pptp_use_dhcp", 0)) {
 		ifconfig(wan_ifname, IFUP, nvram_safe_get("wan_ipaddr_static"), nvram_safe_get("wan_netmask_static"));
 	}
 
@@ -185,7 +185,7 @@ void start_pppoe_dual(int status)
 	// Those are default options we use + user/passwd
 	// By using user/password options we dont have to deal with chap/pap
 	// secrets files.
-	if (nvram_match("ppp_compression", "1")) {
+	if (nvram_matchi("ppp_compression", 1)) {
 		fprintf(fp, "mppc\n");
 	} else {
 		fprintf(fp, "noccp\n");
@@ -210,7 +210,7 @@ void start_pppoe_dual(int status)
 		fprintf(fp, "%s\n", nvram_safe_get("ppp_mppe"));
 	else
 		fprintf(fp, "nomppe\n");
-	if (nvram_match("ppp_mlppp", "1"))
+	if (nvram_matchi("ppp_mlppp", 1))
 		fprintf(fp, "mp\n");
 	fprintf(fp, "usepeerdns\nuser '%s'\n" "password '%s'\n", username, passwd);
 
@@ -220,7 +220,7 @@ void start_pppoe_dual(int status)
 	// 0 PPPD will not escape any control characters
 	// Not all ISP's can handle this. By default use default-asyncmap
 	// and if ppp_asyncmap=1 do not escape
-	if (nvram_match("ppp_asyncmap", "1"))
+	if (nvram_matchi("ppp_asyncmap", 1))
 		fprintf(fp, "asyncmap 0\n");
 	else
 		fprintf(fp, "default-asyncmap\n");
@@ -237,7 +237,7 @@ void start_pppoe_dual(int status)
 
 	// if MRU is not Auto force MTU/MRU of interface to value selected by 
 	// theuser on web page
-	if (nvram_match("mtu_enable", "1")) {
+	if (nvram_matchi("mtu_enable", 1)) {
 		if (nvram_geti("wan_mtu") > 0) {
 			fprintf(fp, "mtu %s\n", nvram_safe_get("wan_mtu"));
 			fprintf(fp, "mru %s\n", nvram_safe_get("wan_mtu"));
@@ -254,13 +254,13 @@ void start_pppoe_dual(int status)
 	}
 
 	// Allow runtime debugging
-	if (nvram_match("ppp_debug", "1"))
+	if (nvram_matchi("ppp_debug", 1))
 		fprintf(fp, "debug\n");
 
 	fprintf(fp, "persist\n" "lcp-echo-interval 3\n" "lcp-echo-failure 20\n");
 
 #ifdef HAVE_IPV6
-	if (nvram_match("ipv6_enable", "1"))
+	if (nvram_matchi("ipv6_enable", 1))
 		fprintf(fp, "ipv6 ,\n");
 #endif
 	fclose(fp);

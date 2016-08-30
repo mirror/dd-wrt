@@ -247,7 +247,7 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 #ifdef HAVE_QTN
 		}
 #endif
-		if (nvram_match("maskmac", "1") && macmask) {
+		if (nvram_matchi("maskmac", 1) && macmask) {
 			mac[0] = 'x';
 			mac[1] = 'x';
 			mac[3] = 'x';
@@ -586,7 +586,7 @@ int ej_active_wds_instance(webs_t wp, int argc, char_t ** argv, int instance, in
 				continue;
 			fclose(fp2);
 		}
-		if (nvram_match("maskmac", "1") && macmask) {
+		if (nvram_matchi("maskmac", 1) && macmask) {
 			mac[0] = 'x';
 			mac[1] = 'x';
 			mac[3] = 'x';

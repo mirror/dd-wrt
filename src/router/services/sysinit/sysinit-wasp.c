@@ -123,7 +123,7 @@ void start_sysinit(void)
 	struct ifreq ifr;
 	int s;
 
-	if (!nvram_match("disable_watchdog", "1"))
+	if (!nvram_matchi("disable_watchdog",1))
 		eval("watchdog");
 
 	/*

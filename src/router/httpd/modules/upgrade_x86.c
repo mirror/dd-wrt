@@ -364,7 +364,7 @@ do_upgrade_post(char *url, webs_t stream, int len, char *boundary)	// jimmy,
 	 * restore defaults on reboot of a Sveasoft firmware. 
 	 */
 #ifndef HAVE_EROUTER
-	if (nvram_match("sv_restore_defaults", "1")) {
+	if (nvram_matchi("sv_restore_defaults", 1)) {
 		unlink("/usr/local/nvram/nvram.bin");
 		char drive[64];
 		char *drv = getdisc();
@@ -383,7 +383,7 @@ do_upgrade_post(char *url, webs_t stream, int len, char *boundary)	// jimmy,
 		fclose(in);
 	}
 #else
-	if (nvram_match("sv_restore_defaults", "1")) {
+	if (nvram_matchi("sv_restore_defaults", 1)) {
 		eval("erase", "nvram");
 	}
 #endif

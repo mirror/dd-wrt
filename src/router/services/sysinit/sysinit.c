@@ -988,7 +988,7 @@ static void ses_restore_defaults(void)
 void start_restore_defaults(void)
 {
 #ifdef HAVE_BUFFALO_SA
-	if (nvram_invmatch("sv_restore_defaults", "0")
+	if (nvram_invmatchi("sv_restore_defaults",0)
 	    && (!strcmp(getUEnv("region"), "AP")
 		|| !strcmp(getUEnv("region"), "US")))
 		nvram_set("region", "SA");
@@ -2065,7 +2065,7 @@ void start_restore_defaults(void)
 	int brand = getRouterBrand();
 	linux_overrides = generic;
 
-	if (nvram_invmatch("sv_restore_defaults", "0"))	// ||
+	if (nvram_invmatchi("sv_restore_defaults",0))	// ||
 		// nvram_invmatch("os_name", 
 		// "linux"))
 	{
@@ -2085,7 +2085,7 @@ void start_restore_defaults(void)
 #else
 	int brand = getRouterBrand();
 
-	if (nvram_invmatch("sv_restore_defaults", "0"))	// ||
+	if (nvram_invmatchi("sv_restore_defaults",0))	// ||
 		// nvram_invmatch("os_name", 
 		// "linux"))
 	{
@@ -2684,7 +2684,7 @@ void start_restore_defaults(void)
 				nvram_set("vlan0ports", "4 1 2 3 5*");
 				break;
 			default:
-				if (nvram_match("bootnv_ver", "4")
+				if (nvram_matchi("bootnv_ver",4)
 				    || nvram_match("boardnum", "WAP54GV3_8M_0614"))
 					nvram_set("vlan0ports", "3 2 1 0 5*");
 				else
@@ -2746,7 +2746,7 @@ void start_restore_defaults(void)
 				nvram_set("vlan1ports", "4 5");
 				break;
 			default:
-				if (nvram_match("bootnv_ver", "4")
+				if (nvram_matchi("bootnv_ver",4)
 				    || nvram_match("boardnum", "WAP54GV3_8M_0614"))
 					nvram_set("vlan1ports", "4 5");
 				else
@@ -2928,7 +2928,7 @@ void start_drivers(void)
 #ifdef HAVE_USB
 
 	fprintf(stderr, "[USB] checking...\n");
-	if (nvram_match("usb_enable", "1")) {
+	if (nvram_matchi("usb_enable",1)) {
 		led_control(USB_POWER, LED_ON);
 		led_control(USB_POWER1, LED_ON);
 		led_control(LED_USB, LED_ON);
@@ -2942,16 +2942,16 @@ void start_drivers(void)
 		rmmod("xhci-plat-hcd");
 		insmod("xhci-plat-hcd");
 #endif
-		if (nvram_match("usb_storage", "1")) {
+		if (nvram_matchi("usb_storage",1)) {
 			insmod("scsi_mod scsi_wait_scan sd_mod cdrom sr_mod usb-storage sata_mv ehci-orion");
 		}
 
-		if (nvram_match("usb_printer", "1")) {
+		if (nvram_matchi("usb_printer",1)) {
 			cprintf("loading printer\n");
 			insmod("printer usblp");
 		}
 #ifdef HAVE_USBIP
-		if (nvram_match("usb_ip", "1")) {
+		if (nvram_matchi("usb_ip",1)) {
 			cprintf("loading usb over ip drivers\n");
 			insmod("usbip_common_mod usbip usbip-core usbip-host");
 			eval("usbipd", "-D");
@@ -3185,11 +3185,11 @@ void start_nvram(void)
 	// else
 	// nvram_set("wl_macmode1","other");
 	// }
-	if (nvram_match("wl_gmode", "5"))	// Mixed mode had been
+	if (nvram_matchi("wl_gmode",5))	// Mixed mode had been
 		// changed to 5
 		nvram_seti("wl_gmode", 1);
 
-	if (nvram_match("wl_gmode", "4"))	// G-ONLY mode had been
+	if (nvram_matchi("wl_gmode",4))	// G-ONLY mode had been
 		// changed to 2, after 1.40.1 
 		// for WiFi G certication
 		nvram_seti("wl_gmode", 2);
@@ -3204,8 +3204,8 @@ void start_nvram(void)
 	// 1.41.3
 
 #ifdef HAVE_UPNP
-	if ((nvram_match("restore_defaults", "1"))
-	    || (nvram_match("upnpcas", "1"))) {
+	if ((nvram_matchi("restore_defaults",1))
+	    || (nvram_matchi("upnpcas",1))) {
 		nvram_seti("upnp_clear", 1);
 	} else {
 		char s[32];
@@ -3240,7 +3240,7 @@ void start_nvram(void)
 	// honor)
 
 #ifdef HAVE_SET_BOOT
-	if (!nvram_match("boot_wait_web", "0"))
+	if (!nvram_matchi("boot_wait_web",0))
 		nvram_seti("boot_wait_web", 1);
 #endif
 #ifndef HAVE_BUFFALO
@@ -3273,14 +3273,14 @@ void start_nvram(void)
 
 	// fix openvpnclient and server values (was 0/1 now is yes/no/adaptive)
 	// convert 0 -> no and 1 -> adaptive
-	if (nvram_match("openvpn_lzo", "0"))
+	if (nvram_matchi("openvpn_lzo",0))
 		nvram_set("openvpn_lzo", "no");
-	if (nvram_match("openvpn_lzo", "1"))
+	if (nvram_matchi("openvpn_lzo",1))
 		nvram_set("openvpn_lzo", "adaptive");
 
-	if (nvram_match("openvpncl_lzo", "0"))
+	if (nvram_matchi("openvpncl_lzo",0))
 		nvram_set("openvpncl_lzo", "no");
-	if (nvram_match("openvpncl_lzo", "1"))
+	if (nvram_matchi("openvpncl_lzo",1))
 		nvram_set("openvpncl_lzo", "adaptive");
 
 	nvram_unset("vdsl_state");	// important (this value should never 

@@ -77,7 +77,7 @@ void start_l2tp(int status)
 	stop_l2tp();
 
 	insmod("n_hdlc");
-	if (nvram_match("l2tp_use_dhcp", "0")) {
+	if (nvram_matchi("l2tp_use_dhcp", 0)) {
 		ifconfig(wan_ifname, IFUP, nvram_safe_get("wan_ipaddr"), nvram_safe_get("wan_netmask"));
 		struct dns_lists *dns_list = NULL;
 		dns_to_resolv();
@@ -140,8 +140,8 @@ void start_l2tp(int status)
 			"require authentication = %s\n"	//
 			"name = %s\n"	//
 			"pppoptfile = /tmp/ppp/options.l2tp\n"	//
-			"length bit = yes\n", nvram_safe_get("l2tp_server_name"), nvram_safe_get("l2tp_server_ip"), nvram_match("l2tp_req_chap", "0") ? "no" : "yes", nvram_match("l2tp_ref_pap", "0") ? "no" : "yes",
-			nvram_match("l2tp_req_auth", "0") ? "no" : "yes", username);
+			"length bit = yes\n", nvram_safe_get("l2tp_server_name"), nvram_safe_get("l2tp_server_ip"), nvram_matchi("l2tp_req_chap", 0) ? "no" : "yes", nvram_matchi("l2tp_ref_pap", 0) ? "no" : "yes",
+			nvram_matchi("l2tp_req_auth", 0) ? "no" : "yes", username);
 		fclose(fp);
 
 		/*
@@ -152,7 +152,7 @@ void start_l2tp(int status)
 			return;
 		}
 
-		if (nvram_match("mtu_enable", "1")) {
+		if (nvram_matchi("mtu_enable", 1)) {
 			int wan_mtu = nvram_geti("wan_mtu");
 			if (wan_mtu > 0) {
 				fprintf(fp, "mtu %d\n"	//
@@ -165,13 +165,13 @@ void start_l2tp(int status)
 			"usepeerdns\n"	// Ask the peer for up to 2 DNS
 			"user '%s'\n", username);
 
-		if (nvram_match("ppp_demand", "1")) {	// demand mode
+		if (nvram_matchi("ppp_demand", 1)) {	// demand mode
 			fprintf(fp, "idle %d\n"	//
 				"ipcp-accept-remote\n"	//
 				"ipcp-accept-local\n"	//
 				"connect true\n"	//
 				"noipdefault\n"	//
-				"ktune\n", nvram_match("ppp_demand", "1") ? nvram_geti("ppp_idletime") * 60 : 0);
+				"ktune\n", nvram_matchi("ppp_demand", 1) ? nvram_geti("ppp_idletime") * 60 : 0);
 			// to 1 in demand mode if the local
 			// address changes
 		} else {	// keepalive mode
@@ -183,7 +183,7 @@ void start_l2tp(int status)
 			"nopcomp\n"	// Disable protocol field compression
 			"refuse-eap\n"	// Disable protocol field compression
 			"noaccomp\n");	// Disable Address/Control
-		if (nvram_match("l2tp_encrypt", "0")) {
+		if (nvram_matchi("l2tp_encrypt", 0)) {
 			fprintf(fp, "nomppe\n"	// Disable mppe negotiation
 				"noccp\n");	// Disable CCP (Compression Control
 			// Protocol)
@@ -241,7 +241,7 @@ void start_l2tp(int status)
 	_evalpid(l2tp_argv, NULL, 0, NULL);
 	sleep(1);
 
-	if (nvram_match("ppp_demand", "1")) {
+	if (nvram_matchi("ppp_demand", 1)) {
 		/*
 		 * Trigger Connect On Demand if user press Connect button in Status
 		 * page 

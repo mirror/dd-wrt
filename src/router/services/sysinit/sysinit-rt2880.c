@@ -84,7 +84,7 @@ void start_sysinit(void)
 	/*
 	 * Set a sane date 
 	 */
-	if (!nvram_match("disable_watchdog", "1")) {
+	if (!nvram_matchi("disable_watchdog",1)) {
 		insmod("mt7621_wdt");
 		eval("watchdog");
 	}

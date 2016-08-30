@@ -39,15 +39,15 @@
 void start_dlna(void)
 {
 	struct dlna_share *dlna_shares, *cs, *csnext;
-	if (!nvram_match("dlna_enable", "1"))
+	if (!nvram_matchi("dlna_enable", 1))
 		return;
 	mkdir("/tmp/db", 0700);
 	FILE *fp = fopen("/tmp/minidlna.conf", "wb");
 #ifndef HAVE_VENTANA
-	if (nvram_match("jffs_mounted", "1") || (freediskSpace("/jffs") > 134217728)) {
+	if (nvram_matchi("jffs_mounted", 1) || (freediskSpace("/jffs") > 134217728)) {
 #endif
 		mkdir("/jffs/minidlna", 0700);
-		if (nvram_match("dlna_cleandb", "1")) {
+		if (nvram_matchi("dlna_cleandb", 1)) {
 			unlink("/jffs/minidlna/files.db");
 			nvram_seti("dlna_cleandb", 0);
 		}
@@ -78,10 +78,10 @@ void start_dlna(void)
 		free(cs);
 	}
 	fprintf(fp, "friendly_name=%s\n", nvram_safe_get("router_name"));	//enter any name you want here, but should be unique within a network
-	if (nvram_match("dlna_thumb", "1")) {
+	if (nvram_matchi("dlna_thumb", 1)) {
 		fprintf(fp, "album_art_names=Cover.jpg/cover.jpg/AlbumArtSmall.jpg/albumartsmall.jpg/AlbumArt.jpg/albumart.jpg/Album.jpg/album.jpg/Folder.jpg/folder.jpg/Thumb.jpg/thumb.jpg\n");
 	}
-	if (nvram_match("dlna_merge", "1")) {
+	if (nvram_matchi("dlna_merge", 1)) {
 		fprintf(fp, "merge_media_dirs=yes\n");
 	}
 	fprintf(fp, "inotify=yes\n");

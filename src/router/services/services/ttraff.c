@@ -56,7 +56,7 @@
 
 void start_ttraff(void)
 {
-	if (!nvram_match("ttraff_enable", "1"))
+	if (!nvram_matchi("ttraff_enable", 1))
 		return;
 
 	if ((nvram_match("ttraff_iface", "") || !nvram_get("ttraff_iface"))

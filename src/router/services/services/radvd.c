@@ -83,10 +83,10 @@ void start_radvd(void)
 	int do_mtu = 0, do_6to4 = 0, do_6rd = 0;
 	FILE *fp;
 
-	if (!nvram_match("ipv6_enable", "1") || !nvram_match("radvd_enable", "1"))
+	if (!nvram_matchi("ipv6_enable", 1) || !nvram_matchi("radvd_enable", 1))
 		return;
 
-	if (nvram_match("dhcp6s_enable", "1") && (nvram_match("dhcp6s_seq_ips", "1") || nvram_invmatch("dhcp6s_hosts", "")))
+	if (nvram_matchi("dhcp6s_enable", 1) && (nvram_matchi("dhcp6s_seq_ips", 1) || nvram_invmatch("dhcp6s_hosts", "")))
 		manual = 1;
 
 	if (nvram_invmatch("ipv6_mtu", "")) {
@@ -101,7 +101,7 @@ void start_radvd(void)
 		fclose(fp);
 	}
 
-	if (nvram_match("radvd_custom", "1")) {
+	if (nvram_matchi("radvd_custom", 1)) {
 		buf = nvram_safe_get("radvd_conf");
 		if (buf != NULL)
 			writenvram("radvd_conf", "/tmp/radvd.conf");

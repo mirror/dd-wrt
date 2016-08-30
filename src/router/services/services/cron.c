@@ -63,9 +63,9 @@ void start_cron(void)
 	struct stat buf;
 	FILE *fp;
 
-	if (nvram_match("cron_enable", "0"))
+	if (nvram_matchi("cron_enable", 0))
 		return;
-	
+
 	sysprintf("grep -q crontabs /etc/passwd || echo \"crontabs:*:0:0:Contab User,,,:/var:/bin/false\" >> /etc/passwd");
 
 	stop_cron();
@@ -86,7 +86,7 @@ void start_cron(void)
 	 * pppoe reconnect 
 	 */
 	unlink("/tmp/cron.d/pppoe_reconnect");	// may change, so we reconnect
-	if (nvram_match("reconnect_enable", "1")) {
+	if (nvram_matchi("reconnect_enable", 1)) {
 
 		fp = fopen("/tmp/cron.d/pppoe_reconnect", "w");
 		fprintf(fp, "%s %s * * * root /sbin/stopservice wan -f; /sbin/startservice wan_boot -f\n", nvram_safe_get("reconnect_minutes"), nvram_safe_get("reconnect_hours"));
@@ -96,8 +96,8 @@ void start_cron(void)
 	 * reboot scheduler 
 	 */
 	unlink("/tmp/cron.d/check_schedules");
-	if (nvram_match("schedule_enable", "1")
-	    && nvram_match("schedule_hour_time", "2")) {
+	if (nvram_matchi("schedule_enable", 1)
+	    && nvram_matchi("schedule_hour_time", 2)) {
 
 		fp = fopen("/tmp/cron.d/check_schedules", "w");
 		fprintf(fp, "%s %s * * %s root startservice run_rc_shutdown; /sbin/reboot\n", nvram_safe_get("schedule_minutes"), nvram_safe_get("schedule_hours"), nvram_safe_get("schedule_weekdays"));
@@ -109,9 +109,9 @@ void start_cron(void)
 	unlink("/tmp/cron.d/ppp_peer_backup");	// 
 	if (nvram_default_match("sys_enable_jffs2", "1", "0")) {
 		fp = fopen("/tmp/cron.d/ppp_peer_backup", "w");
-		if (nvram_match("pppoeserver_enabled", "1"))
+		if (nvram_matchi("pppoeserver_enabled", 1))
 			fprintf(fp, "1 0,12 * * * root /bin/cp /tmp/pppoe_peer.db /jffs/etc/freeradius/\n");
-		if (nvram_match("pptpd_enable", "1"))
+		if (nvram_matchi("pptpd_enable", 1))
 			fprintf(fp, "1 0,12 * * * root /bin/cp /tmp/pptp_peer.db /jffs/etc/freeradius/\n");
 		fclose(fp);
 	}
@@ -137,7 +137,7 @@ void start_cron(void)
 
 	unlink("/tmp/cron.d/hotss_checkalive");
 
-	if (nvram_match("hotss_enable", "1")) {
+	if (nvram_matchi("hotss_enable", 1)) {
 
 		fp = fopen("/tmp/cron.d/hotss_checkalive", "w");
 

@@ -17,7 +17,7 @@
 
 void start_transmission(void)
 {
-	if (!nvram_match("transmission_enable", "1"))
+	if (!nvram_matchi("transmission_enable", 1))
 		return;
 
 	eval("mkdir", "-p", nvram_safe_get("transmission_dir"));

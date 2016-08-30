@@ -864,10 +864,10 @@ void start_lan(void)
 		/*
 		 * add wan ifname to lan_ifnames if we use fullswitch 
 		 */
-		if (nvram_match("fullswitch", "1")
+		if (nvram_matchi("fullswitch", 1)
 		    && (getSTA() || getWET()
 			|| nvram_match("wan_proto", "disabled"))) {
-			if (!nvram_match("fullswitch_set", "1")) {
+			if (!nvram_matchi("fullswitch_set", 1)) {
 				nvram_set("lan_default", lan_ifnames);
 				nvram_seti("fullswitch_set", 1);
 			}
@@ -877,7 +877,7 @@ void start_lan(void)
 			nvram_nset("1", "%s_bridged", nvram_safe_get("wan_default"));
 #endif
 		} else {
-			if (nvram_match("fullswitch_set", "1")) {
+			if (nvram_matchi("fullswitch_set", 1)) {
 				strcpy(lan_ifnames, nvram_safe_get("lan_default"));
 				nvram_unset("lan_default");
 				strcpy(wan_ifname, nvram_safe_get("wan_default"));
@@ -1203,7 +1203,7 @@ void start_lan(void)
 	system("swconfig dev eth0 set reset 1");
 	system("swconfig dev eth0 set enable_vlan 1");
 	if (nvram_match("wan_proto", "disabled")
-	    && nvram_match("fullswitch", "1")) {
+	    && nvram_matchi("fullswitch", 1)) {
 		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 1 2 3 4 5");
 	} else {
 #ifdef HAVE_WZRG300NH2
@@ -2094,7 +2094,7 @@ void start_lan(void)
 #ifdef HAVE_NOWIFI
 	nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10");
 #else
-	if (nvram_match("wifi_bonding", "1"))
+	if (nvram_matchi("wifi_bonding", 1))
 		nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 bond0");
 	else
 		nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 ath0 ath1 ath2 ath3 ath4 ath5 ath6 ath7 ath8");
@@ -2163,7 +2163,7 @@ void start_lan(void)
 	ifconfig(wl_face, 0, 0, 0);
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 
-	if (nvram_match("mac_clone_enable", "1") && nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") && nvram_invmatch("def_whwaddr", "")) {
+	if (nvram_matchi("mac_clone_enable", 1) && nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") && nvram_invmatch("def_whwaddr", "")) {
 		ether_atoe(nvram_safe_get("def_whwaddr"), ifr.ifr_hwaddr.sa_data);
 
 	} else {
@@ -2315,7 +2315,7 @@ void start_lan(void)
 				break;
 			case 0:
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
-				if (nvram_match("mac_clone_enable", "1") && nvram_invmatch("def_whwaddr", "00:00:00:00:00:00")
+				if (nvram_matchi("mac_clone_enable", 1) && nvram_invmatch("def_whwaddr", "00:00:00:00:00:00")
 				    && nvram_invmatch("def_whwaddr", "")) {
 					ether_atoe(nvram_safe_get("def_whwaddr"), ifr.ifr_hwaddr.sa_data);
 
@@ -2366,7 +2366,7 @@ void start_lan(void)
 					led_control(LED_BRIDGE, LED_ON);
 					/* Enable host DHCP relay */
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
-					if (nvram_match("lan_dhcp", "1")) {
+					if (nvram_matchi("lan_dhcp", 1)) {
 #ifdef HAVE_DHDAP
 						is_dhd = !dhd_probe(name);
 						if (is_dhd) {
@@ -2379,7 +2379,7 @@ void start_lan(void)
 						}
 					}
 					/* Enable WET DHCP relay if requested */
-					if (nvram_match("dhcp_relay", "1"))	// seems to fix some dhcp problems, also Netgear does it this way
+					if (nvram_matchi("dhcp_relay", 1))	// seems to fix some dhcp problems, also Netgear does it this way
 					{
 						enable_dhcprelay(lan_ifname);
 					}
@@ -2419,7 +2419,7 @@ void start_lan(void)
 					eval("wl", "-i", name, "ssid", nvram_nget("wl%d_ssid", get_wl_instance(name)));
 					// eval ("brctl", "addif", lan_ifname, name);
 #ifndef HAVE_FON
-					if (nvram_match("fon_enable", "0"))
+					if (nvram_matchi("fon_enable", 0))
 						do_mssid(name);
 #endif
 #endif
@@ -2552,7 +2552,7 @@ void start_lan(void)
 #define getWDSSTA() NULL
 #endif
 #ifndef HAVE_NOWIFI
-	if (nvram_match("mac_clone_enable", "1") && nvram_invmatch("def_hwaddr", "00:00:00:00:00:00") && nvram_invmatch("def_hwaddr", "")) {
+	if (nvram_matchi("mac_clone_enable", 1) && nvram_invmatch("def_hwaddr", "00:00:00:00:00:00") && nvram_invmatch("def_hwaddr", "")) {
 #ifdef HAVE_MADWIFI
 		char *wifi = "wifi0";
 #else
@@ -2562,7 +2562,7 @@ void start_lan(void)
 		eval("ifconfig", wifi, "hw", "ether", nvram_safe_get("def_whwaddr"));
 //              eval("ifconfig", wifi, "up");
 	}
-	if (nvram_match("mac_clone_enable", "1") && nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") && nvram_invmatch("def_whwaddr", "")) {
+	if (nvram_matchi("mac_clone_enable", 1) && nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") && nvram_invmatch("def_whwaddr", "")) {
 #ifdef HAVE_MADWIFI
 		char *wifi = "wifi0";
 #else
@@ -2620,7 +2620,7 @@ void start_lan(void)
 			nvram_set(br1ipaddr, "0.0.0.0");
 		if (nvram_get(br1netmask) == NULL)
 			nvram_set(br1netmask, "255.255.255.0");
-		if (nvram_match(br1enable, "1")) {
+		if (nvram_matchi(br1enable, 1)) {
 			ifconfig("br1", 0, 0, 0);
 
 			// eval ("ifconfig", "br1", "down");
@@ -2688,7 +2688,7 @@ void start_lan(void)
 			ifconfig(dev, 0, 0, 0);
 
 			// eval ("ifconfig", dev, "down");
-			if (nvram_match(wdsvarname, "1")) {
+			if (nvram_matchi(wdsvarname, 1)) {
 				char *wdsip;
 				char *wdsnm;
 				char wdsbc[32] = { 0 };
@@ -2703,12 +2703,12 @@ void start_lan(void)
 				snprintf(wdsbc, 31, "%s", wdsip);
 				get_broadcast(wdsbc, wdsnm);
 				eval("ifconfig", dev, wdsip, "broadcast", wdsbc, "netmask", wdsnm, "up");
-			} else if (nvram_match(wdsvarname, "2")
-				   && nvram_match(br1enable, "1")) {
+			} else if (nvram_matchi(wdsvarname, 2)
+				   && nvram_matchi(br1enable, 1)) {
 				eval("ifconfig", dev, "up");
 				sleep(1);
 				br_add_interface("br1", dev);
-			} else if (nvram_match(wdsvarname, "3")) {
+			} else if (nvram_matchi(wdsvarname, 3)) {
 				ifconfig(dev, IFUP, 0, 0);
 				sleep(1);
 				char tmp[256];
@@ -2868,7 +2868,7 @@ void start_lan(void)
 		 * Light or go out the DMZ led even if there is no wan ip. 
 		 */
 		if (nvram_invmatch("dmz_ipaddr", "")
-		    && nvram_invmatch("dmz_ipaddr", "0"))
+		    && nvram_invmatchi("dmz_ipaddr", 0))
 			diag_led(DMZ, START_LED);
 		else
 			diag_led(DMZ, STOP_LED);
@@ -3035,7 +3035,7 @@ void start_wan(int status)
 
 	start_firewall();	// start firewall once, to fix problem with rules which should exist even before wan is up
 	// wan test mode
-	if (nvram_match("wan_testmode", "1")) {
+	if (nvram_matchi("wan_testmode", 1)) {
 		status = 0;	// avoid redialing
 		fprintf(stderr, "[SERVICE WAN] testmode\n");
 	}
@@ -3307,11 +3307,11 @@ void start_wan(int status)
 #endif
 #endif
 #ifdef HAVE_MULTICAST
-	if (!nvram_match("dtag_vlan8", "1") || nvram_match("wan_vdsl", "0"))
+	if (!nvram_matchi("dtag_vlan8", 1) || nvram_matchi("wan_vdsl", 0))
 		stop_igmprt();
 #endif
 #ifdef HAVE_UDPXY
-	if (!nvram_match("udpxy_enable", "1"))
+	if (!nvram_matchi("udpxy_enable", 1))
 		stop_udpxy();
 #endif
 
@@ -3393,7 +3393,7 @@ void start_wan(int status)
 
 	char mac[20];
 
-	if (nvram_match("mac_clone_enable", "1") && nvram_invmatch("def_hwaddr", "00:00:00:00:00:00") && nvram_invmatch("def_hwaddr", "")) {
+	if (nvram_matchi("mac_clone_enable", 1) && nvram_invmatch("def_hwaddr", "00:00:00:00:00:00") && nvram_invmatch("def_hwaddr", "")) {
 		ether_atoe(nvram_safe_get("def_hwaddr"), ifr.ifr_hwaddr.sa_data);
 	} else {
 
@@ -3514,7 +3514,7 @@ void start_wan(int status)
 	 */
 #ifdef HAVE_3G
 	if ((strcmp(wan_proto, "3g") == 0)) {
-		if (!nvram_match("usb_enable", "1")) {
+		if (!nvram_matchi("usb_enable", 1)) {
 			nvram_seti("usb_enable", 1);	//  simply enable it, otherwise 3g might not work
 			nvram_commit();
 			start_drivers();
@@ -3545,19 +3545,19 @@ void start_wan(int status)
 				eval("uqmi", "-d", "/dev/cdc-wdm0", "--set-client-id", wdsid, "--release-client-id", "wds");
 			}
 			clientid = 0;
-			if (nvram_match("wan_conmode", "6"))
+			if (nvram_matchi("wan_conmode", 6))
 				eval("uqmi", "-d", "/dev/cdc-wdm0", "--set-network-modes", "lte");
 //              if (nvram_match("wan_conmode","5")) //unsupported and useless. i dont know what that means
 //                  sysprintf("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=LTE");
-			if (nvram_match("wan_conmode", "4"))
+			if (nvram_matchi("wan_conmode", 4))
 				eval("uqmi", "-d", "/dev/cdc-wdm0", "--set-network-modes", "gsm,umts");
-			if (nvram_match("wan_conmode", "3"))
+			if (nvram_matchi("wan_conmode", 3))
 				eval("uqmi", "-d", "/dev/cdc-wdm0", "--set-network-modes", "umts,gsm");
-			if (nvram_match("wan_conmode", "2"))
+			if (nvram_matchi("wan_conmode", 2))
 				eval("uqmi", "-d", "/dev/cdc-wdm0", "--set-network-modes", "gsm");
-			if (nvram_match("wan_conmode", "1"))
+			if (nvram_matchi("wan_conmode", 1))
 				eval("uqmi", "-d", "/dev/cdc-wdm0", "--set-network-modes", "umts");
-			if (nvram_match("wan_conmode", "0"))
+			if (nvram_matchi("wan_conmode", 0))
 				eval("uqmi", "-d", "/dev/cdc-wdm0", "--set-network-modes", "all");
 
 			//set pin
@@ -3608,19 +3608,19 @@ void start_wan(int status)
 		} else
 #elif HAVE_LIBQMI
 		if (controldevice && !strcmp(controldevice, "qmi")) {
-			if (nvram_match("wan_conmode", "6"))
+			if (nvram_matchi("wan_conmode", 6))
 				sysprintf("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=LTE");
 //              if (nvram_match("wan_conmode","5")) //unsupported and useless. i dont know what that means
 //                  sysprintf("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=LTE");
-			if (nvram_match("wan_conmode", "4"))
+			if (nvram_matchi("wan_conmode", 4))
 				sysprintf("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=GSMUMTS");
-			if (nvram_match("wan_conmode", "3"))
+			if (nvram_matchi("wan_conmode", 3))
 				sysprintf("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=UMTSGSM");
-			if (nvram_match("wan_conmode", "2"))
+			if (nvram_matchi("wan_conmode", 2))
 				sysprintf("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=GSM");
-			if (nvram_match("wan_conmode", "1"))
+			if (nvram_matchi("wan_conmode", 1))
 				sysprintf("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=UMTS");
-			if (nvram_match("wan_conmode", "0"))
+			if (nvram_matchi("wan_conmode", 0))
 				sysprintf("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=ANY");
 
 			//set pin
@@ -3688,7 +3688,7 @@ void start_wan(int status)
 			// return (5);
 			// }
 			if (strlen(nvram_safe_get("wan_apn")))
-				if (!nvram_match("wan_dial", "2"))
+				if (!nvram_matchi("wan_dial", 2))
 					sysprintf("export COMGTAPN=\"%s\";comgt APN -d %s", nvram_safe_get("wan_apn"), controldevice);
 			// Lets open option file and enter all the parameters.
 			char *username = nvram_safe_get("ppp_username");
@@ -3718,7 +3718,7 @@ void start_wan(int status)
 			fprintf(fp, "noipdefault\n");
 			fprintf(fp, "noauth\n");
 			fprintf(fp, "ipcp-max-failure 30\n");
-			if (nvram_match("mtu_enable", "1")) {
+			if (nvram_matchi("mtu_enable", 1)) {
 				if (nvram_geti("wan_mtu") > 0) {
 					fprintf(fp, "mtu %s\n", nvram_safe_get("wan_mtu"));
 					fprintf(fp, "mru %s\n", nvram_safe_get("wan_mtu"));
@@ -3729,17 +3729,17 @@ void start_wan(int status)
 			fprintf(fp, "460800\n");
 //      fprintf(fp,"connect \"/usr/sbin/comgt DIAL -d %s\"\n",controldevice);
 			char *dial = "*99***1#";
-			if (nvram_match("wan_dial", "0"))
+			if (nvram_matchi("wan_dial", 0))
 				dial = "ATD*99***1#";
-			if (nvram_match("wan_dial", "1"))
+			if (nvram_matchi("wan_dial", 1))
 				dial = "ATD*99#";
-			if (nvram_match("wan_dial", "2"))
+			if (nvram_matchi("wan_dial", 2))
 				dial = "ATDT#777";
-			if (nvram_match("wan_dial", "3"))
+			if (nvram_matchi("wan_dial", 3))
 				dial = "ATD*99***3#";
-			if (nvram_match("wan_dial", "4"))
+			if (nvram_matchi("wan_dial", 4))
 				dial = "ATD*99***2#";
-			if (nvram_match("wan_dial", "5"))
+			if (nvram_matchi("wan_dial", 5))
 				dial = "ATD*99***4#";
 			fprintf(fp, "connect \"COMGTDIAL='%s' /usr/sbin/comgt DIAL -d %s >/tmp/comgt.out 2>&1\"\n", dial, nvram_safe_get("3gdata"));
 			if (strlen(username))
@@ -3756,7 +3756,7 @@ void start_wan(int status)
 			/*
 			 * Pretend that the WAN interface is up 
 			 */
-			if (nvram_match("ppp_demand", "1")) {
+			if (nvram_matchi("ppp_demand", 1)) {
 				/*
 				 * Wait for ppp0 to be created 
 				 */
@@ -3842,10 +3842,10 @@ void start_wan(int status)
 		char tvnic[32];
 
 		if (!strncmp(pppoe_wan_ifname, "vlan", 4)) {
-			if (nvram_match("wan_vdsl", "1")) {
+			if (nvram_matchi("wan_vdsl", 1)) {
 				char *ifn = enable_dtag_vlan(1);
 
-				if (nvram_match("dtag_vlan8", "1")) {
+				if (nvram_matchi("dtag_vlan8", 1)) {
 					sprintf(vlannic, "%s.0008", ifn);
 					if (!ifexists(vlannic)) {
 						eval("vconfig", "set_name_type", "DEV_PLUS_VID");
@@ -3878,10 +3878,10 @@ void start_wan(int status)
 			}
 
 		} else {
-			if (nvram_match("wan_vdsl", "1"))	// Deutsche Telekom
+			if (nvram_matchi("wan_vdsl", 1))	// Deutsche Telekom
 				// VDSL2 Vlan 7 Tag
 			{
-				if (nvram_match("dtag_vlan8", "1")) {
+				if (nvram_matchi("dtag_vlan8", 1)) {
 					sprintf(vlannic, "%s.0008", pppoe_wan_ifname);
 					if (!ifexists(vlannic)) {
 						eval("vconfig", "set_name_type", "DEV_PLUS_VID");
@@ -3914,7 +3914,7 @@ void start_wan(int status)
 		// Those are default options we use + user/passwd
 		// By using user/password options we dont have to deal with chap/pap
 		// secrets files.
-		if (nvram_match("ppp_compression", "1")) {
+		if (nvram_matchi("ppp_compression", 1)) {
 			fprintf(fp, "mppc\n");
 		} else {
 			fprintf(fp, "noccp\n");
@@ -3944,7 +3944,7 @@ void start_wan(int status)
 			fprintf(fp, "%s\n", nvram_safe_get("ppp_mppe"));
 		else
 			fprintf(fp, "nomppe\n");
-		if (nvram_match("ppp_mlppp", "1"))
+		if (nvram_matchi("ppp_mlppp", 1))
 			fprintf(fp, "mp\n");
 		fprintf(fp, "usepeerdns\nuser '%s'\n"	// 
 			"password '%s'\n", username, passwd);
@@ -3955,7 +3955,7 @@ void start_wan(int status)
 		// 0 PPPD will not escape any control characters
 		// Not all ISP's can handle this. By default use default-asyncmap
 		// and if ppp_asyncmap=1 do not escape
-		if (nvram_match("ppp_asyncmap", "1"))
+		if (nvram_matchi("ppp_asyncmap", 1))
 			fprintf(fp, "asyncmap 0\n");
 		else
 			fprintf(fp, "default-asyncmap\n");
@@ -3972,7 +3972,7 @@ void start_wan(int status)
 
 		// if MRU is not Auto force MTU/MRU of interface to value selected by 
 		// theuser on web page
-		if (nvram_match("mtu_enable", "1")) {
+		if (nvram_matchi("mtu_enable", 1)) {
 			if (nvram_geti("wan_mtu") > 0) {
 				fprintf(fp, "mtu %s\n", nvram_safe_get("wan_mtu"));
 				fprintf(fp, "mru %s\n", nvram_safe_get("wan_mtu"));
@@ -3990,7 +3990,7 @@ void start_wan(int status)
 		}
 
 		// Allow runtime debugging
-		if (nvram_match("ppp_debug", "1"))
+		if (nvram_matchi("ppp_debug", 1))
 			fprintf(fp, "debug\n");
 
 		// Demand dial.. This is not pretty.
@@ -4002,7 +4002,7 @@ void start_wan(int status)
 		// do not upset the idletime counter.
 		// When not using demand dialing, it only takes 15 seconds to detect
 		// the lost connection.
-		if (nvram_match("ppp_demand", "1"))
+		if (nvram_matchi("ppp_demand", 1))
 			fprintf(fp, "demand\n"	//
 				"idle %s\n"	//
 				"10.112.112.112:10.112.112.113\n"	//
@@ -4017,7 +4017,7 @@ void start_wan(int status)
 				"lcp-echo-interval 3\n"	//
 				"lcp-echo-failure 20\n");
 #ifdef HAVE_IPV6
-		if (nvram_match("ipv6_enable", "1"))
+		if (nvram_matchi("ipv6_enable", 1))
 			fprintf(fp, "+ipv6\n");
 #endif
 
@@ -4045,7 +4045,7 @@ void start_wan(int status)
 		/*
 		 * Pretend that the WAN interface is up 
 		 */
-		if (nvram_match("ppp_demand", "1")) {
+		if (nvram_matchi("ppp_demand", 1)) {
 			/*
 			 * Wait for ppp0 to be created 
 			 */
@@ -4099,12 +4099,12 @@ void start_wan(int status)
 #endif
 #ifdef HAVE_PPPOEDUAL
 	if (strcmp(wan_proto, "pppoe_dual") == 0) {
-		if (nvram_match("pptp_iptv", "1"))
+		if (nvram_matchi("pptp_iptv", 1))
 			nvram_set("tvnicfrom", nvram_safe_get("wan_iface"));
 		else
 			nvram_unset("tvnicfrom");
 
-		if (nvram_match("pptp_use_dhcp", "1")) {
+		if (nvram_matchi("pptp_use_dhcp", 1)) {
 			nvram_set("wan_get_dns", "");
 			char *pppoe_dual_ifname = nvram_safe_get("wan_ifname");
 			if (isClient()) {
@@ -4161,13 +4161,13 @@ void start_wan(int status)
 		// Lets open option file and enter all the parameters.
 		fp = fopen("/tmp/ppp/options.pppoa", "w");
 
-		fprintf(fp, "plugin /usr/lib/pppoatm.so %s.%s %s", nvram_safe_get("vpi"), nvram_safe_get("vci"), nvram_match("atm_encaps", "0") ? "llc-encaps" : "vc-encaps");
+		fprintf(fp, "plugin /usr/lib/pppoatm.so %s.%s %s", nvram_safe_get("vpi"), nvram_safe_get("vci"), nvram_matchi("atm_encaps", 0) ? "llc-encaps" : "vc-encaps");
 		fprintf(fp, "\n");
 
 		// Those are default options we use + user/passwd
 		// By using user/password options we dont have to deal with chap/pap
 		// secrets files.
-		if (nvram_match("ppp_compression", "1")) {
+		if (nvram_matchi("ppp_compression", 1)) {
 			fprintf(fp, "mppc\n");
 		} else {
 			fprintf(fp, "noccp\n");
@@ -4184,17 +4184,17 @@ void start_wan(int status)
 			fprintf(fp, "%s\n", nvram_safe_get("ppp_mppe"));
 		else
 			fprintf(fp, "nomppe\n");
-		if (nvram_match("ppp_mlppp", "1"))
+		if (nvram_matchi("ppp_mlppp", 1))
 			fprintf(fp, "mp\n");
 		fprintf(fp, "usepeerdns\nuser '%s'\n"	//
 			"password '%s'\n", username, passwd);
 
-		if (nvram_match("ppp_asyncmap", "1"))
+		if (nvram_matchi("ppp_asyncmap", 1))
 			fprintf(fp, "asyncmap 0\n");
 		else
 			fprintf(fp, "default-asyncmap\n");
 
-		if (nvram_match("mtu_enable", "1")) {
+		if (nvram_matchi("mtu_enable", 1)) {
 			if (nvram_geti("wan_mtu") > 0) {
 				fprintf(fp, "mtu %s\n", nvram_safe_get("wan_mtu"));
 				fprintf(fp, "mru %s\n", nvram_safe_get("wan_mtu"));
@@ -4211,10 +4211,10 @@ void start_wan(int status)
 					fprintf(fp, "mru %s\n", nvram_safe_get("pppoe_ppp_mru"));
 		}
 
-		if (nvram_match("ppp_debug", "1"))
+		if (nvram_matchi("ppp_debug", 1))
 			fprintf(fp, "debug\n");
 
-		if (nvram_match("ppp_demand", "1"))
+		if (nvram_matchi("ppp_demand", 1))
 			fprintf(fp, "demand\n"	//
 				"idle %s\n"	//
 				"10.112.112.112:10.112.112.113\n"	// 
@@ -4250,7 +4250,7 @@ void start_wan(int status)
 		/*
 		 * Pretend that the WAN interface is up 
 		 */
-		if (nvram_match("ppp_demand", "1")) {
+		if (nvram_matchi("ppp_demand", 1)) {
 			/*
 			 * Wait for ppp0 to be created 
 			 */
@@ -4307,7 +4307,7 @@ void start_wan(int status)
 	}
 #ifdef HAVE_IPETH
 	else if (strcmp(wan_proto, "iphone") == 0) {
-		if (!nvram_match("usb_enable", "1")) {
+		if (!nvram_matchi("usb_enable", 1)) {
 			nvram_seti("usb_enable", 1);	//  simply enable it, otherwise 3g might not work
 			nvram_commit();
 			start_drivers();
@@ -4327,7 +4327,7 @@ void start_wan(int status)
 #endif
 #ifdef HAVE_PPTP
 	else if (strcmp(wan_proto, "pptp") == 0) {
-		if (nvram_match("pptp_iptv", "1"))
+		if (nvram_matchi("pptp_iptv", 1))
 			nvram_set("tvnicfrom", nvram_safe_get("wan_iface"));
 		else
 			nvram_unset("tvnicfrom");
@@ -4337,12 +4337,12 @@ void start_wan(int status)
 #endif
 #ifdef HAVE_L2TP
 	else if (strcmp(wan_proto, "l2tp") == 0) {
-		if (nvram_match("pptp_iptv", "1"))
+		if (nvram_matchi("pptp_iptv", 1))
 			nvram_set("tvnicfrom", nvram_safe_get("wan_iface"));
 		else
 			nvram_unset("tvnicfrom");
 
-		if (nvram_match("l2tp_use_dhcp", "1")) {
+		if (nvram_matchi("l2tp_use_dhcp", 1)) {
 			nvram_set("wan_get_dns", "");
 			char *l2tp_ifname = nvram_safe_get("wan_ifname");
 			if (isClient()) {
@@ -4413,8 +4413,8 @@ void start_wan(int status)
 	/*
 	 * Light or go out the DMZ led even if there is no wan ip. 
 	 */
-	if (nvram_match("dmz_enable", "1") && nvram_invmatch("dmz_ipaddr", "")
-	    && nvram_invmatch("dmz_ipaddr", "0"))
+	if (nvram_matchi("dmz_enable", 1) && nvram_invmatch("dmz_ipaddr", "")
+	    && nvram_invmatchi("dmz_ipaddr", 0))
 		diag_led(DMZ, START_LED);
 	else
 		diag_led(DMZ, STOP_LED);
@@ -4532,7 +4532,7 @@ static void stop_ipv6_tunnel(char *wan_ifname)
 
 static void start_wan6_done(char *wan_ifname)
 {
-	if (nvram_match("ipv6_enable", "0"))
+	if (nvram_matchi("ipv6_enable", 0))
 		return;
 
 	eval("ip", "-6", "addr", "flush", "scope", "global");
@@ -4578,7 +4578,7 @@ static void start_wan6_done(char *wan_ifname)
 #endif
 void start_wan_done(char *wan_ifname)
 {
-	if (nvram_match("wan_testmode", "1")) {
+	if (nvram_matchi("wan_testmode", 1)) {
 		fprintf(stderr, "[WAN IF] testmode: skipping wan_done\n");
 		return;
 	}
@@ -4627,7 +4627,7 @@ void start_wan_done(char *wan_ifname)
 				if ((nvram_match("wan_proto", "pppoe")
 				     || nvram_match("wan_proto", "pppoa")
 				     || nvram_match("wan_proto", "pppoe_dual"))
-				    && nvram_match("ppp_demand", "1")) {
+				    && nvram_matchi("ppp_demand", 1)) {
 					printf("Wait ppp interface to init (3) ...\n");
 					sleep(1);
 				} else
@@ -4644,7 +4644,7 @@ void start_wan_done(char *wan_ifname)
 	} else if (nvram_match("wan_proto", "l2tp")) {
 		route_del(nvram_safe_get("wan_iface"), 0, nvram_safe_get("wan_gateway"), NULL, "255.255.255.255");
 		route_add(nvram_safe_get("wan_iface"), 0, nvram_safe_get("l2tp_get_ip"), NULL, "255.255.255.255");
-		if (nvram_match("l2tp_use_dhcp", "1"))
+		if (nvram_matchi("l2tp_use_dhcp", 1))
 			route_add(nvram_safe_get("wan_ifname"), 0, nvram_safe_get("l2tp_server_ip"), nvram_safe_get("wan_gateway_buf"), "255.255.255.255");	// fixed 
 	}
 
@@ -4695,7 +4695,7 @@ void start_wan_done(char *wan_ifname)
 	    || nvram_match("wan_proto", "pppoa")
 	    || nvram_match("wan_proto", "l2tp")
 	    || nvram_match("wan_proto", "3g")) {
-		if (nvram_match("ppp_demand", "1")) {	// ntp and ddns will trigger DOD, so we must
+		if (nvram_matchi("ppp_demand", 1)) {	// ntp and ddns will trigger DOD, so we must
 			// stop them when wan is unavaile.
 			if (f_exists("/tmp/ppp/link")) {
 				start_wan_service();
@@ -4841,7 +4841,7 @@ void start_wan_done(char *wan_ifname)
 #endif
 	nvram_seti("wanup", 1);
 #ifdef HAVE_MILKFISH
-	if (nvram_match("milkfish_enabled", "1")) {
+	if (nvram_matchi("milkfish_enabled", 1)) {
 		cprintf("starting milkfish netup script\n");
 		eval("/etc/config/milkfish.netup");
 	}
@@ -4871,13 +4871,13 @@ void start_wan_done(char *wan_ifname)
 #endif
 	cprintf("start igmp proxy\n");
 #ifdef HAVE_MULTICAST
-	if (!nvram_match("dtag_vlan8", "1") || nvram_match("wan_vdsl", "0"))
+	if (!nvram_matchi("dtag_vlan8", 1) || nvram_matchi("wan_vdsl", 0))
 		stop_igmprt();
 	start_igmprt();
 #endif
 	cprintf("ready\n");
 #ifdef HAVE_UDPXY
-	if (!nvram_match("udpxy_enable", "1"))
+	if (!nvram_matchi("udpxy_enable", 1))
 		stop_udpxy();
 	start_udpxy();
 #endif
@@ -4888,7 +4888,7 @@ void start_wan_done(char *wan_ifname)
 	start_duallink();
 #endif
 #endif
-	if (nvram_match("ipv6_enable", "1") && nvram_match("ipv6_typ", "ipv6in4")) {
+	if (nvram_matchi("ipv6_enable", 1) && nvram_match("ipv6_typ", "ipv6in4")) {
 #ifdef HAVE_CURL
 		eval("/usr/bin/curl", "-s", "-k", nvram_safe_get("ipv6_tun_upd_url"), "-o", "/tmp/tunnelstat");
 		FILE *fp = fopen("/tmp/tunnelstat", "r");
@@ -4901,7 +4901,7 @@ void start_wan_done(char *wan_ifname)
 		eval("wget", nvram_safe_get("ipv6_tun_upd_url"), "-O", "/tmp/tunnelstat");
 #endif
 #ifdef HAVE_IPV6
-		if (nvram_match("wshaper_enable", "1")) {
+		if (nvram_matchi("wshaper_enable", 1)) {
 			stop_ipv6_tunnel(wan_ifname);
 			start_ipv6_tunnel(wan_ifname);
 		}
@@ -5202,12 +5202,12 @@ void start_hotplug_net(void)
 	if (!strcmp(action, "add")) {
 
 		eval("ifconfig", interface, "up");
-		if (nvram_match(bridged, "1"))
+		if (nvram_matchi(bridged, 1))
 			br_add_interface(getBridge(ifname, tmp), interface);
 	}
 	if (!strcmp(action, "remove")) {
 		eval("ifconfig", interface, "down");
-		if (nvram_match(bridged, "1"))
+		if (nvram_matchi(bridged, 1))
 			br_del_interface(getBridge(ifname, tmp), interface);
 	}
 	return;
@@ -5236,7 +5236,7 @@ void start_hotplug_net(void)
 		 */
 
 		if (!strncmp(interface, "wds", 3)
-		    && nvram_match("wl_lazywds", "1"))
+		    && nvram_matchi("wl_lazywds", 1))
 			br_add_interface("br0", interface);	// eval ("brctl",
 		// "addif", "br0",
 		// interface);
@@ -5265,7 +5265,7 @@ int init_mtu(char *wan_proto)
 
 	if (strcmp(wan_proto, "pppoe") == 0 || strcmp(wan_proto, "pppoe_dual") == 0) {	// 576 < mtu < 1454(linksys japan) |
 		// 1492(other)
-		if (nvram_match("mtu_enable", "0")) {	// Auto
+		if (nvram_matchi("mtu_enable", 0)) {	// Auto
 			nvram_seti("mtu_enable", 1);
 #ifdef BUFFALO_JP
 			nvram_seti("wan_mtu", 1454);	// set max value
@@ -5297,7 +5297,7 @@ int init_mtu(char *wan_proto)
 			nvram_seti("wan_mtu", 1200);
 		}
 	} else {		// 576 < mtu < 1500
-		if (nvram_match("mtu_enable", "0")) {	// Auto
+		if (nvram_matchi("mtu_enable", 0)) {	// Auto
 			nvram_seti("wan_mtu", 1500);	// set max value
 		} else {	// Manual
 			if (mtu < 576) {

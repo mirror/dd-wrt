@@ -52,7 +52,7 @@ void start_dhcpfwd(void)
 #ifdef HAVE_DHCPFORWARD
 	FILE *fp;
 
-	if (nvram_match("dhcpfwd_enable", "1")) {
+	if (nvram_matchi("dhcpfwd_enable", 1)) {
 		nvram_set("lan_proto", "static");
 		mkdir("/tmp/dhcp-fwd", 0700);
 		mkdir("/var/run/dhcp-fwd", 0700);
@@ -131,7 +131,7 @@ void start_dhcpfwd(void)
 	}
 #endif
 #ifdef HAVE_DHCPRELAY
-	if (nvram_match("dhcpfwd_enable", "1")) {
+	if (nvram_matchi("dhcpfwd_enable", 1)) {
 		eval("dhcrelay", "-i", nvram_safe_get("lan_ifname"), nvram_safe_get("dhcpfwd_ip"));
 		syslog(LOG_INFO, "dhcrelay : dhcp relay successfully started\n");
 	}
