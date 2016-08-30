@@ -99,20 +99,20 @@ static void unbound_config(void)
 void start_unbound(void)
 {
 	FILE *fp = NULL;
-	
-	if (nvram_match("recursive_dns", "1")) {
+
+	if (nvram_matchi("recursive_dns", 1)) {
 		update_timezone();
 		unbound_config();
-		
-		fp = fopen("/jffs/etc/unbound.conf", "r");//test if custom config is available
-		
+
+		fp = fopen("/jffs/etc/unbound.conf", "r");	//test if custom config is available
+
 		if (fp != NULL) {
 			eval("unbound", "-c", "/jffs/etc/unbound.conf");
 			fclose(fp);
 		} else {
 			eval("unbound", "-c", "/tmp/unbound.conf");
 		}
-		
+
 		dd_syslog(LOG_INFO, "unbound : recursive dns resolver daemon successfully started\n");
 	}
 	return;

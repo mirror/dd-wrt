@@ -50,7 +50,7 @@ void start_wol(void)
 
 	stop_wol();
 
-	if (nvram_match("wol_enable", "0"))
+	if (nvram_matchi("wol_enable", 0))
 		return;
 
 	_evalpid(wol_argv, NULL, 0, &pid);

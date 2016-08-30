@@ -1653,7 +1653,7 @@ void validate_wl_gmode(webs_t wp, char *value, struct variable *v)
 #ifdef ABURN_WSEC_CHECK
 		    nvram_invmatch("wl0_wep", "off") ||
 #endif
-		    nvram_invmatch("wl0_mode", "ap") || nvram_invmatch("wl0_lazywds", "0")
+		    nvram_invmatch("wl0_mode", "ap") || nvram_invmatchi("wl0_lazywds", 0)
 		    || nvram_invmatch("wl0_wds", "")) {
 			/*
 			 * notify the user 
@@ -2297,7 +2297,7 @@ void validate_wds(webs_t wp, char *value, struct variable *v)
 	/*
 	 * validate separate br1 bridge params 
 	 */
-	if (nvram_match(enabled_var, "1")) {
+	if (nvram_matchi(enabled_var, 1)) {
 
 		memset(ipaddr, 0, sizeof(ipaddr));
 		memset(netmask, 0, sizeof(netmask));
@@ -2389,11 +2389,11 @@ void validate_wds(webs_t wp, char *value, struct variable *v)
 		 */
 
 		if (strcmp(hwaddr, "00:00:00:00:00:00")
-		    && nvram_invmatch(enabled_var, "0")) {
+		    && nvram_invmatchi(enabled_var, 0)) {
 			snprintf(wds_list, 199, "%s %s", wds_list, hwaddr);
 		}
 
-		if (nvram_match(enabled_var, "1")) {
+		if (nvram_matchi(enabled_var, 1)) {
 
 			memset(ipaddr, 0, sizeof(ipaddr));
 			memset(netmask, 0, sizeof(netmask));
@@ -2440,7 +2440,7 @@ void validate_wds(webs_t wp, char *value, struct variable *v)
 		 * keep the wds devices in sync w enabled entries 
 		 */
 		snprintf(wdsif_var, 31, "%s_if", wds);
-		if (!nvram_match(enabled_var, "0")) {
+		if (!nvram_matchi(enabled_var, 0)) {
 #ifdef HAVE_MADWIFI
 			snprintf(wds_if, 31, "%s.wds%d", interface, (devcount++));
 #else

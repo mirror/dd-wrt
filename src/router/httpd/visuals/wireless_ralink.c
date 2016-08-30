@@ -290,7 +290,7 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 			cnt++;
 			char mac[32];
 			strcpy(mac, ieee80211_ntoa(table.Entry[i].Addr));
-			if (nvram_match("maskmac", "1") && macmask) {
+			if (nvram_matchi("maskmac", 1) && macmask) {
 				mac[0] = 'x';
 				mac[1] = 'x';
 				mac[3] = 'x';

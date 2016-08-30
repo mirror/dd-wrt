@@ -17,7 +17,7 @@
 
 void start_lighttpd(void)
 {
-	if (!nvram_match("lighttpd_enable", "1"))
+	if (!nvram_matchi("lighttpd_enable", 1))
 		return;
 
 	FILE *fp;

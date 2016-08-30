@@ -1222,7 +1222,7 @@ void print_vht_info(__u32 capa, const __u8 *mcs)
 
 	PRINT_VHT_CAPA(6, "short GI (160/80+80 MHz)");
 	if (capa & BIT(6)) {
-//		site_survey_lists[sscount].channel |= 0x1200;
+//              site_survey_lists[sscount].channel |= 0x1200;
 		fillENC("SGI", " ");
 	}
 	PRINT_VHT_CAPA(7, "TX STBC");

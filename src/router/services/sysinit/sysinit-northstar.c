@@ -220,7 +220,7 @@ void start_sysinit(void)
 	mknod("/dev/gpio/outen", S_IFCHR | 0644, makedev(127, 2));
 	mknod("/dev/gpio/control", S_IFCHR | 0644, makedev(127, 3));
 	mknod("/dev/gpio/hc595", S_IFCHR | 0644, makedev(127, 4));
-	if (nvram_invmatch("boot_wait", "on") || nvram_match("wait_time", "1")) {
+	if (nvram_invmatch("boot_wait", "on") || nvram_matchi("wait_time",1)) {
 		nvram_set("boot_wait", "on");
 		nvram_seti("wait_time", 3);
 		nvram_commit();
@@ -3782,7 +3782,7 @@ void start_sysinit(void)
 		break;
 	case ROUTER_DLINK_DIR880:
 		setdlinkcountry(2, 0);
-		if (nvram_get("0:venid") == NULL || nvram_match("0:maxp2ga0", "94")) {
+		if (nvram_get("0:venid") == NULL || nvram_matchi("0:maxp2ga0",94)) {
 			char buf[64];
 			FILE *fp = popen("cat /dev/mtdblock0|grep lanmac", "r");
 			fread(buf, 1, 24, fp);
@@ -5121,7 +5121,7 @@ void start_sysinit(void)
 		set_gpio(12, 1);	// fixup ses button
 		break;
 	case ROUTER_TRENDNET_TEW828:
-		if (!nvram_match("et0macaddr", "00:00:00:00:00:00") || !nvram_match("image_second_offset", "16777216")) {
+		if (!nvram_match("et0macaddr", "00:00:00:00:00:00") || !nvram_matchi("image_second_offset",16777216)) {
 			nvram_set("et2macaddr", nvram_safe_get("et0macaddr"));
 			nvram_set("et2mdcport", nvram_safe_get("et0mdcport"));
 			nvram_set("et2phyaddr", nvram_safe_get("et0phyaddr"));
@@ -5301,7 +5301,7 @@ void start_sysinit(void)
 	stime(&tm);
 //      nvram_set("wl0_ifname", "ath0");
 
-	if (!nvram_match("disable_watchdog", "1")) {
+	if (!nvram_matchi("disable_watchdog",1)) {
 		eval("watchdog");
 	}
 
@@ -5399,9 +5399,9 @@ char *enable_dtag_vlan(int enable)
 	int donothing = 0;
 
 	nvram_seti("fromvdsl", 1);
-	if (nvram_match("vdsl_state", "1") && enable)
+	if (nvram_matchi("vdsl_state",1) && enable)
 		donothing = 1;
-	if ((nvram_match("vdsl_state", "0")
+	if ((nvram_matchi("vdsl_state",0)
 	     || nvram_match("vdsl_state", "")) && !enable)
 		donothing = 1;
 	if (enable)
@@ -5467,8 +5467,8 @@ char *enable_dtag_vlan(int enable)
 		writevaproc("1", "/proc/switch/%s/enable_vlan", eth);
 		if (enable) {
 			fprintf(stderr, "enable vlan port mapping %s/%s\n", vlan_lan_ports, vlan7ports);
-			if (!nvram_match("dtag_vlan8", "1")
-			    || nvram_match("wan_vdsl", "0")) {
+			if (!nvram_matchi("dtag_vlan8",1)
+			    || nvram_matchi("wan_vdsl",0)) {
 				writevaproc(vlan_lan_ports, "/proc/switch/%s/vlan/%d/ports", eth, lan_vlan_num);
 				start_setup_vlans();
 				writevaproc(" ", "/proc/switch/%s/vlan/%d/ports", eth, wan_vlan_num);

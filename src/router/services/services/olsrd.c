@@ -60,7 +60,7 @@ void start_olsrd(void)
 		fprintf(fp, "MprCoverage\t%s\n", nvram_safe_get("olsrd_coverage"));
 		fprintf(fp, "MainIp %s\n", nvram_safe_get("lan_ipaddr"));
 #ifdef HAVE_IPV6
-		if (nvram_match("olsrd_smartgw", "1")) {
+		if (nvram_matchi("olsrd_smartgw", 1)) {
 			nvram_seti("ipv6_enable", 1);
 			start_ipv6();	// load ipv6 drivers
 			fprintf(fp, "RtTable auto\n");
@@ -90,8 +90,8 @@ void start_olsrd(void)
 //            fprintf(fp, "LinkQualityDijkstraLimit\t%s %s\n",
 //                    nvram_safe_get("olsrd_lqdijkstramin"),
 //                    nvram_safe_get("olsrd_lqdijkstramax"));
-		fprintf(fp, "UseHysteresis\t%s\n", nvram_match("olsrd_hysteresis", "1") ? "yes" : "no");
-		if (nvram_match("olsrd_hysteresis", "0"))
+		fprintf(fp, "UseHysteresis\t%s\n", nvram_matchi("olsrd_hysteresis", 1) ? "yes" : "no");
+		if (nvram_matchi("olsrd_hysteresis", 0))
 			fprintf(fp, "LinkQualityLevel\t%s\n", nvram_safe_get("olsrd_lqlevel"));
 		else
 			fprintf(fp, "LinkQualityLevel\t0\n");

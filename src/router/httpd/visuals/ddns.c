@@ -57,7 +57,7 @@ void ej_show_ddns_status(webs_t wp, int argc, char_t ** argv)
 		// service
 		websWrite(wp, " ");
 
-	if (nvram_match("ddns_enable", "0"))	// only for no hidden page
+	if (nvram_matchi("ddns_enable", 0))	// only for no hidden page
 	{
 		websWrite(wp, "%s", live_translate("ddnsm.all_disabled"));
 		return;

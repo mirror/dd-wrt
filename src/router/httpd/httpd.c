@@ -580,7 +580,7 @@ static int check_connect_type(void)
 
 	for (j = 0; j < c; j++) {
 		sprintf(temp, "wl%d_web_filter", j);
-		if (nvram_invmatch(temp, "1"))
+		if (nvram_invmatchi(temp, 1))
 			continue;
 
 		wlmac = get_wl_assoc_mac(j, &count_wl);
@@ -716,12 +716,12 @@ static void handle_request(void)
 		return;
 	}
 	int nodetect = 0;
-	if (nvram_match("status_auth", "0") && endswith(file, "Info.htm"))
+	if (nvram_matchi("status_auth", 0) && endswith(file, "Info.htm"))
 		nodetect = 1;
-	if (nvram_match("no_crossdetect", "1"))
+	if (nvram_matchi("no_crossdetect", 1))
 		nodetect = 1;
 #ifdef HAVE_IAS
-	if (nvram_match("ias_startup", "3") || nvram_match("ias_startup", "2")) {
+	if (nvram_matchi("ias_startup", 3) || nvram_matchi("ias_startup", 2)) {
 		nodetect = 1;
 		typedef struct {
 			char *iso;
@@ -867,7 +867,7 @@ static void handle_request(void)
 		}
 
 		if (!endswith(file, ".js") && !endswith(file, "detect.asp")
-		    && ias_detected == 0 && nvram_match("ias_startup", "3")) {
+		    && ias_detected == 0 && nvram_matchi("ias_startup", 3)) {
 
 			fprintf(stderr, "[HTTP PATH] %s redirect\n", file);
 			sprintf(redirect_path, "Location: http://%s/detect.asp", nvram_get("lan_ipaddr"));
@@ -886,7 +886,7 @@ static void handle_request(void)
 		ias_sid_set();
 
 	char hostname[32];
-	if (strlen(host) < 32 && ias_detected == 1 && (nvram_match("ias_dnsresp", "1"))) {
+	if (strlen(host) < 32 && ias_detected == 1 && (nvram_matchi("ias_dnsresp", 1))) {
 		strncpy(hostname, host, strspn(host, "123456789.:"));
 		if (!strcmp(hostname, nvram_get("lan_ipaddr"))) {
 
@@ -927,7 +927,7 @@ static void handle_request(void)
 #ifdef HAVE_IAS
 				file = "index.asp";
 #else
-				if (nvram_invmatch("status_auth", "0"))
+				if (nvram_invmatchi("status_auth", 0))
 					file = "Info.htm";
 				else
 					file = "index.asp";
@@ -936,7 +936,7 @@ static void handle_request(void)
 		}
 	} else {
 		{
-			if (nvram_invmatch("status_auth", "1"))
+			if (nvram_invmatchi("status_auth", 1))
 				if (strcmp(file, "Info.htm") == 0)
 					file = "index.asp";
 		}
@@ -1058,7 +1058,7 @@ static void handle_request(void)
 					file = "changepass.asp";
 			} else {
 				if (endswith(file, "changepass.asp")) {
-					if (nvram_invmatch("status_auth", "0"))
+					if (nvram_invmatchi("status_auth", 0))
 						file = "Info.htm";
 					else
 						file = "index.asp";

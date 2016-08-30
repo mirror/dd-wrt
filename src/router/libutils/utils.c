@@ -286,7 +286,7 @@ char
 	    && !strcmp(get_wshaper_dev(), "ppp0"))
 		return nvram_safe_get("wan_mtu");
 	else if (nvram_match("wshaper_dev", "WAN")) {
-		if (nvram_match("wan_mtu", "1500"))
+		if (nvram_matchi("wan_mtu", 1500))
 			return getMTU(get_wshaper_dev());
 		else
 			return nvram_safe_get("wan_mtu");
@@ -616,10 +616,10 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 	unsigned int parent;
 	char buf[256];
 	char target[64] = "";
-	
+
 	int max = 50;
 	int sec = 0;
-	if(uprate <= 2000){
+	if (uprate <= 2000) {
 		sec = max - (uprate / 50);
 		sprintf(target, "target %dms noecn", sec);
 	}
@@ -640,7 +640,6 @@ void add_client_classes(unsigned int base, unsigned int level)
 	unsigned int prio;
 	unsigned int parent;
 	char buf[256];
-	
 
 	unsigned int quantum = atoi(get_mtu_val(buf)) + 14;
 
@@ -698,7 +697,7 @@ void add_client_classes(unsigned int base, unsigned int level)
 		break;
 	}
 
-	if (nvram_match("qos_type", "0")) {	// HTB
+	if (nvram_matchi("qos_type", 0)) {	// HTB
 		sysprintf	// interior
 		    ("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d", wan_dev, parent, base, uprate, uplimit, quantum);
 		sysprintf	// expempt
@@ -1190,7 +1189,7 @@ int internal_getRouterBrand()
 
 	if ((!strncmp(nvram_safe_get("boardnum"), "2013", 4) || !strncmp(nvram_safe_get("boardnum"), "2014", 4)) && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1110")
-	    && nvram_match("0:rxchain", "7")) {
+	    && nvram_matchi("0:rxchain", 7)) {
 #ifdef HAVE_BUFFALO
 		setRouter("WZR-900DHP");
 #else
@@ -1201,7 +1200,7 @@ int internal_getRouterBrand()
 
 	if ((!strncmp(nvram_safe_get("boardnum"), "2013", 4) || !strncmp(nvram_safe_get("boardnum"), "2014", 4)) && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1110")
-	    && nvram_match("0:rxchain", "3")) {
+	    && nvram_matchi("0:rxchain", 3)) {
 #ifdef HAVE_BUFFALO
 		setRouter("WZR-600DHP2");
 #else
@@ -1227,13 +1226,13 @@ int internal_getRouterBrand()
 		return ROUTER_LINKSYS_EA6900;
 	}
 
-	if (nvram_match("boardtype", "0x0646") && nvram_match("boardrev", "0x1100") && nvram_match("boardnum", "01") && !strncmp(nvram_safe_get("modelNumber"), "EA6400", 6)) {
+	if (nvram_match("boardtype", "0x0646") && nvram_match("boardrev", "0x1100") && nvram_matchi("boardnum", 01) && !strncmp(nvram_safe_get("modelNumber"), "EA6400", 6)) {
 		setRouter("Linksys EA6400");
 
 		return ROUTER_LINKSYS_EA6400;
 	}
 
-	if (nvram_match("boardtype", "0x0646") && nvram_match("boardrev", "0x1100") && nvram_match("boardnum", "01") && !strncmp(nvram_safe_get("modelNumber"), "EA6300", 6)) {
+	if (nvram_match("boardtype", "0x0646") && nvram_match("boardrev", "0x1100") && nvram_matchi("boardnum", 01) && !strncmp(nvram_safe_get("modelNumber"), "EA6300", 6)) {
 		setRouter("Linksys EA6300");
 
 		return ROUTER_LINKSYS_EA6400;
@@ -1245,13 +1244,13 @@ int internal_getRouterBrand()
 		return ROUTER_LINKSYS_EA6700;
 	}
 
-	if (nvram_match("boardtype", "0xE646") && nvram_match("boardrev", "0x1200") && nvram_match("boardnum", "20140309")) {
+	if (nvram_match("boardtype", "0xE646") && nvram_match("boardrev", "0x1200") && nvram_matchi("boardnum", 20140309)) {
 		setRouter("Linksys EA6350");
 
 		return ROUTER_LINKSYS_EA6350;
 	}
 
-	if (nvram_match("boardtype", "0xE646") && nvram_match("boardrev", "0x1100") && nvram_match("boardnum", "20130125")) {
+	if (nvram_match("boardtype", "0xE646") && nvram_match("boardrev", "0x1100") && nvram_matchi("boardnum", 20130125)) {
 		setRouter("Linksys EA6200");
 
 		return ROUTER_LINKSYS_EA6350;
@@ -2102,7 +2101,7 @@ int internal_getRouterBrand()
 		setRouter("Netgear R7800");
 		return ROUTER_NETGEAR_R7800;
 	}
-	
+
 	if (!strcmp(modelstr, "R7500v2")) {
 		setRouter("Netgear R7500v2");
 		return ROUTER_NETGEAR_R7500V2;
@@ -3140,7 +3139,7 @@ int internal_getRouterBrand()
 	}
 
 	if (boardnum == 45 && nvram_match("boardtype", "0x0472")
-	    && nvram_match("boardrev", "0x23") && nvram_match("parkid", "1")) {
+	    && nvram_match("boardrev", "0x23") && nvram_matchi("parkid", 1)) {
 		setRouter("Asus WL-500W");
 		return ROUTER_ASUS_WL500W;
 	}
@@ -3183,12 +3182,12 @@ int internal_getRouterBrand()
 
 	if (nvram_match("boardtype", "0xF5B2")
 	    && nvram_match("boardrev", "0x1100")
-	    && !nvram_match("pci/2/1/sb20in80and160hr5ghpo", "0")) {
+	    && !nvram_matchi("pci/2/1/sb20in80and160hr5ghpo", 0)) {
 		setRouter("Asus RT-N66U");
 		return ROUTER_ASUS_RTN66;
 	}
 
-	if (nvram_match("boardnum", "1") && nvram_match("boardtype", "0x054d")
+	if (nvram_matchi("boardnum", 1) && nvram_match("boardtype", "0x054d")
 	    && nvram_match("boardrev", "0x1109")) {
 		setRouter("NetCore NW715P");
 		return ROUTER_NETCORE_NW715P;
@@ -3250,7 +3249,7 @@ int internal_getRouterBrand()
 #endif
 
 #endif
-	if (nvram_match("boardnum", "00") && nvram_match("boardtype", "0x0101")
+	if (nvram_matchi("boardnum", 00) && nvram_match("boardtype", "0x0101")
 	    && nvram_match("boardrev", "0x10")) {
 		setRouter("Buffalo WBR2-G54 / WBR2-G54S");
 		return ROUTER_BUFFALO_WBR2G54S;
@@ -3272,7 +3271,7 @@ int internal_getRouterBrand()
 		return ROUTER_BUFFALO_WAPM_HP_AM54G54;
 	}
 
-	if (nvram_match("boardnum", "00") && nvram_match("boardrev", "0x11")
+	if (nvram_matchi("boardnum", 00) && nvram_match("boardrev", "0x11")
 	    && nvram_match("boardtype", "0x048e") && melco_id == 32093) {
 		setRouter("Buffalo WHR-G125");
 		return ROUTER_BUFFALO_WHRG54S;
@@ -3284,19 +3283,19 @@ int internal_getRouterBrand()
 		return ROUTER_HUAWEI_B970B;
 	}
 
-	if (nvram_match("boardnum", "00") && nvram_match("boardrev", "0x10")
+	if (nvram_matchi("boardnum", 00) && nvram_match("boardrev", "0x10")
 	    && nvram_match("boardtype", "0x048e") && melco_id == 32139) {
 		setRouter("Buffalo WCA-G");
 		return ROUTER_BUFFALO_WCAG;	//vlan1 is lan, vlan0 is unused, implementation not done. will me made after return to germany
 	}
 
-	if (nvram_match("boardnum", "00") && nvram_match("boardrev", "0x11")
+	if (nvram_matchi("boardnum", 00) && nvram_match("boardrev", "0x11")
 	    && nvram_match("boardtype", "0x048e") && melco_id == 32064) {
 		setRouter("Buffalo WHR-HP-G125");
 		return ROUTER_BUFFALO_WHRG54S;
 	}
 
-	if (nvram_match("boardnum", "00") && nvram_match("boardrev", "0x13")
+	if (nvram_matchi("boardnum", 00) && nvram_match("boardrev", "0x13")
 	    && nvram_match("boardtype", "0x467")) {
 		if (nvram_match("boardflags", "0x1658")
 		    || nvram_match("boardflags", "0x2658")
@@ -3304,12 +3303,12 @@ int internal_getRouterBrand()
 			setRouter("Buffalo WLI-TX4-G54HP");
 			return ROUTER_BUFFALO_WLI_TX4_G54HP;
 		}
-		if (!nvram_match("buffalo_hp", "1")
+		if (!nvram_matchi("buffalo_hp", 1)
 		    && nvram_match("boardflags", "0x2758")) {
 			setRouter("Buffalo WHR-G54S");
 			return ROUTER_BUFFALO_WHRG54S;
 		}
-		if (nvram_match("buffalo_hp", "1")
+		if (nvram_matchi("buffalo_hp", 1)
 		    || nvram_match("boardflags", "0x1758")) {
 #ifndef HAVE_BUFFALO
 			setRouter("Buffalo WHR-HP-G54");
@@ -3324,7 +3323,7 @@ int internal_getRouterBrand()
 		}
 	}
 
-	if (nvram_match("boardnum", "00") && nvram_match("boardrev", "0x10")
+	if (nvram_matchi("boardnum", 00) && nvram_match("boardrev", "0x10")
 	    && nvram_match("boardtype", "0x470")) {
 		setRouter("Buffalo WHR-AM54G54");
 		return ROUTER_BUFFALO_WHRAM54G54;
@@ -3440,7 +3439,7 @@ int internal_getRouterBrand()
 
 	if (nvram_match("boardtype", "0x0101")) {
 		if (startswith(et0, "00:11:50") || startswith(et0, "00:30:BD") || startswith(et0, "00:30:bd")) {
-			if (nvram_match("Belkin_ver", "2000")) {
+			if (nvram_matchi("Belkin_ver", 2000)) {
 				setRouter("Belkin F5D7230-4 v2000");
 				return ROUTER_BELKIN_F5D7230_V2000;
 			} else {
@@ -3454,7 +3453,7 @@ int internal_getRouterBrand()
 		}
 	}
 	if (boardnum == 1 && nvram_match("boardtype", "0x456")
-	    && nvram_match("test_led_gpio", "2")) {
+	    && nvram_matchi("test_led_gpio", 2)) {
 		setRouter("Belkin F5D7230-4 v3000");
 		return ROUTER_BELKIN_F5D7230_V3000;
 	}
@@ -3542,7 +3541,7 @@ int internal_getRouterBrand()
 	}
 #endif
 	if (boardnum == 0 && nvram_match("boardtype", "0x478")
-	    && nvram_match("cardbus", "0") && nvram_match("boardrev", "0x10")
+	    && nvram_matchi("cardbus", 0) && nvram_match("boardrev", "0x10")
 	    && nvram_match("boardflags", "0x110") && melco_id == 32027) {
 		setRouter("Buffalo WZR-G144NH");
 		return ROUTER_BUFFALO_WZRG144NH;
@@ -3555,14 +3554,14 @@ int internal_getRouterBrand()
 #ifndef HAVE_BUFFALO
 
 	if (boardnum == 8 && nvram_match("boardtype", "0x0472")
-	    && nvram_match("cardbus", "1")) {
+	    && nvram_matchi("cardbus", 1)) {
 		setRouter("Netgear WNR834B");
 		return ROUTER_NETGEAR_WNR834B;
 	}
 
 	if (boardnum == 1 && nvram_match("boardtype", "0x0472")
 	    && nvram_match("boardrev", "0x23")) {
-		if (nvram_match("cardbus", "1")) {
+		if (nvram_matchi("cardbus", 1)) {
 			setRouter("Netgear WNR834B v2");
 			return ROUTER_NETGEAR_WNR834BV2;
 		} else {
@@ -3578,7 +3577,7 @@ int internal_getRouterBrand()
 			setRouter("Linksys WRT300N v1.1");
 			return ROUTER_WRT300NV11;
 		} else if (nvram_match("boot_hw_model", "WRT150N")
-			   && nvram_match("boot_hw_ver", "1")) {
+			   && nvram_matchi("boot_hw_ver", 1)) {
 			setRouter("Linksys WRT150N v1");
 			return ROUTER_WRT150N;
 		} else if (nvram_match("boot_hw_model", "WRT150N")
@@ -3665,17 +3664,17 @@ int internal_getRouterBrand()
 	}
 
 	if (boardnum == 42 && nvram_match("boardtype", "0x0472")
-	    && nvram_match("cardbus", "1")) {
+	    && nvram_matchi("cardbus", 1)) {
 		setRouter("Linksys WRT300N v1");
 		return ROUTER_WRT300N;
 	}
 
-	if (boardnum == 42 && nvram_match("boardtype", "0x478") && nvram_match("cardbus", "1")) {
+	if (boardnum == 42 && nvram_match("boardtype", "0x478") && nvram_matchi("cardbus", 1)) {
 		setRouter("Linksys WRT350N");
 		return ROUTER_WRT350N;
 	}
 
-	if (nvram_match("boardnum", "20070615") && nvram_match("boardtype", "0x478") && nvram_match("cardbus", "0")) {
+	if (nvram_matchi("boardnum", 20070615) && nvram_match("boardtype", "0x478") && nvram_matchi("cardbus", 0)) {
 		if (nvram_match("switch_type", "BCM5395")) {
 			setRouter("Linksys WRT600N v1.1");
 			return ROUTER_WRT600N;
@@ -3722,7 +3721,7 @@ int internal_getRouterBrand()
 	}
 
 	if (boardnum == 1 && nvram_match("boardtype", "0x456")
-	    && nvram_match("test_led_gpio", "0")) {
+	    && nvram_matchi("test_led_gpio", 0)) {
 		setRouter("Netgear WG602 v3");
 		return ROUTER_NETGEAR_WG602_V3;
 	}
@@ -3807,7 +3806,7 @@ int internal_getRouterBrand()
 
 	if (nvram_match("boardtype", "0xF5B2")
 	    && nvram_match("boardrev", "0x1100")
-	    && nvram_match("pci/2/1/sb20in80and160hr5ghpo", "0")) {
+	    && nvram_matchi("pci/2/1/sb20in80and160hr5ghpo", 0)) {
 		setRouter("Asus RT-AC66U");
 		return ROUTER_ASUS_AC66U;
 	}
@@ -3925,7 +3924,7 @@ int internal_getRouterBrand()
 		return ROUTER_LINKSYS_WRH54G;
 	}
 
-	if (nvram_match("boardnum", "00") && nvram_match("boardtype", "0x048E")
+	if (nvram_matchi("boardnum", 00) && nvram_match("boardtype", "0x048E")
 	    && nvram_match("boardrev", "0x10")) {
 		setRouter("Linksys WRT54G v8.1");
 		return ROUTER_WRT54G_V81;
@@ -3975,7 +3974,7 @@ int internal_getRouterBrand()
 	if (nvram_match("boardnum", "WAP54GV3_8M_0614")
 	    && (nvram_match("boardtype", "0x0467")
 		|| nvram_match("boardtype", "0x467"))
-	    && nvram_match("WAPver", "3")) {
+	    && nvram_matchi("WAPver", 3)) {
 		setRouter("Linksys WAP54G v3.x");
 		return ROUTER_WAP54G_V3;
 	}
@@ -3989,7 +3988,7 @@ int internal_getRouterBrand()
 	if ((boardnum == 1 || boardnum == 3500)
 	    && nvram_match("boardtype", "0x04CF")
 	    && (nvram_match("boardrev", "0x1213")
-		|| nvram_match("boardrev", "02"))) {
+		|| nvram_matchi("boardrev", 02))) {
 		setRouter("Netgear WNR3500 v2/U/L v1");
 		return ROUTER_NETGEAR_WNR3500L;
 	}
@@ -3999,13 +3998,13 @@ int internal_getRouterBrand()
 		return ROUTER_NETGEAR_WNR3500LV2;
 	}
 
-	if (nvram_match("boardnum", "01") && nvram_match("boardtype", "0xb4cf")
+	if (nvram_matchi("boardnum", 01) && nvram_match("boardtype", "0xb4cf")
 	    && nvram_match("boardrev", "0x1100")) {
 		setRouter("Netgear WNDR3400");
 		return ROUTER_NETGEAR_WNDR3400;
 	}
 
-	if (nvram_match("boardnum", "01") && nvram_match("boardtype", "0xF52C")
+	if (nvram_matchi("boardnum", 01) && nvram_match("boardtype", "0xF52C")
 	    && nvram_match("boardrev", "0x1101")) {
 
 		int mtd = getMTD("board_data");
@@ -4027,7 +4026,7 @@ int internal_getRouterBrand()
 		return ROUTER_NETGEAR_WNDR4000;
 	}
 
-	if (nvram_match("boardnum", "4536")
+	if (nvram_matchi("boardnum", 4536)
 	    && nvram_match("boardtype", "0xf52e")
 	    && nvram_match("boardrev", "0x1102")) {
 		int mtd = getMTD("board_data");
@@ -4056,7 +4055,7 @@ int internal_getRouterBrand()
 		return ROUTER_NETGEAR_WNDR4500;
 	}
 
-	if (nvram_match("boardnum", "679") && nvram_match("boardtype", "0x0646")
+	if (nvram_matchi("boardnum", 679) && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1110")) {
 		setRouter("Netgear R6250");
 		return ROUTER_NETGEAR_R6250;
@@ -4887,7 +4886,7 @@ char *get_wan_face(void)
 	}
 #else
 	else if (getSTA()) {
-		if (nvram_match("wifi_bonding", "1"))
+		if (nvram_matchi("wifi_bonding", 1))
 			strcpy(localwanface, "bond0");
 		else
 			strcpy(localwanface, getSTA());
@@ -5382,7 +5381,7 @@ int led_control(int type, int act)
 	int usb_power = 0x0ff;
 	int usb_power1 = 0x0ff;
 	int v1func = 0;
-	int connblue = nvram_match("connblue", "1") ? 1 : 0;
+	int connblue = nvram_matchi("connblue", 1) ? 1 : 0;
 
 	switch (getRouterBrand())	// gpio definitions here: 0xYZ,
 		// Y=0:normal, Y=1:inverted, Z:gpio
@@ -6722,7 +6721,7 @@ int led_control(int type, int act)
 		diag_gpio = 0x00a;	// power led orange     
 		diag_gpio_disabled = 0x000;	// power led orange     
 		connected_gpio = 0x006;	// wan led
-		usb_power = 0x010;    // usb enable
+		usb_power = 0x010;	// usb enable
 		wlan0_gpio = 0x001;	// radio 0 
 		wlan1_gpio = 0x102;	// radio 1 
 		ses_gpio = 0x009;	// wps led
@@ -7287,7 +7286,7 @@ int has_gateway(void)
 {
 	if (nvram_match("wk_mode", "gateway"))
 		return 1;
-	if (nvram_match("wk_mode", "olsr") && nvram_match("olsrd_gateway", "1"))
+	if (nvram_match("wk_mode", "olsr") && nvram_matchi("olsrd_gateway", 1))
 		return 1;
 	return 0;
 }
@@ -7409,14 +7408,13 @@ static int devicecountbydriver(const char *prefix, char *drivername)
 	devnum = get_ath9k_phy_ifname(prefix);
 	if (devnum == -1)
 		return 0;
-	asprintf(&globstring, "/sys/class/ieee80211/phy%d/device/driver/module/drivers/pci:%s", devnum,drivername);
+	asprintf(&globstring, "/sys/class/ieee80211/phy%d/device/driver/module/drivers/pci:%s", devnum, drivername);
 	globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
 	free(globstring);
 	if (globresult == 0)
 		count = (int)globbuf.gl_pathc;
 	globfree(&globbuf);
 	return (count);
-
 
 }
 
@@ -7887,7 +7885,7 @@ void getPortMapping(int *vlanmap)
 			vlanmap[3] = 2;
 			vlanmap[4] = 3;
 		}
-		if (nvram_match("vlan1ports", "4 3 2 1 5*") && nvram_match("boardnum", "32")) {	//R7000
+		if (nvram_match("vlan1ports", "4 3 2 1 5*") && nvram_matchi("boardnum", 32)) {	//R7000
 			vlanmap[1] = 1;
 			vlanmap[2] = 2;
 			vlanmap[3] = 3;
@@ -7936,13 +7934,13 @@ void getPortMapping(int *vlanmap)
 			vlanmap[3] = 1;
 			vlanmap[4] = 0;
 		}
-		if (nvram_match("vlan1ports", "0 1 2 3 8*") && nvram_match("boardnum", "4536")) {	// WNDR4500/WNDR4500V2/R6300V1
+		if (nvram_match("vlan1ports", "0 1 2 3 8*") && nvram_matchi("boardnum", 4536)) {	// WNDR4500/WNDR4500V2/R6300V1
 			vlanmap[1] = 3;
 			vlanmap[2] = 2;
 			vlanmap[3] = 1;
 			vlanmap[4] = 0;
 		}
-		if (nvram_match("vlan1ports", "3 2 1 0 5 7 8*") && nvram_match("boardnum", "32")) {
+		if (nvram_match("vlan1ports", "3 2 1 0 5 7 8*") && nvram_matchi("boardnum", 32)) {
 			vlanmap[1] = 0;
 			vlanmap[2] = 1;
 			vlanmap[3] = 2;
@@ -7971,7 +7969,7 @@ void getPortMapping(int *vlanmap)
 			vlanmap[3] = 1;
 			vlanmap[4] = 0;
 		}
-		if (nvram_match("vlan1ports", "0 1 2 3 5*") && nvram_match("boardnum", "679")) {	//R6300V2
+		if (nvram_match("vlan1ports", "0 1 2 3 5*") && nvram_matchi("boardnum", 679)) {	//R6300V2
 			vlanmap[1] = 3;
 			vlanmap[2] = 2;
 			vlanmap[3] = 1;

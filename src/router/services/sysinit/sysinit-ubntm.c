@@ -58,7 +58,7 @@ void start_sysinit(void)
 {
 	time_t tm = 0;
 
-	if (!nvram_match("disable_watchdog", "1"))
+	if (!nvram_matchi("disable_watchdog",1))
 		eval("watchdog");
 	/*
 	 * Setup console 
@@ -174,19 +174,19 @@ void start_sysinit(void)
 	detect_wireless_devices();
 
 #ifdef HAVE_WPE72
-	if (!nvram_match("wlanled", "0"))
+	if (!nvram_matchi("wlanled",0))
 		eval("/sbin/wlanled", "-l", "generic_14:-94", "-l", "generic_15:-80", "-l", "generic_16:-73", "-l", "generic_17:-65");
 #elif HAVE_DAP3310
 	set_gpio(14, 1);
 	set_gpio(13, 1);
 	set_gpio(20, 1);
-	if (!nvram_match("wlanled", "0"))
+	if (!nvram_matchi("wlanled",0))
 		eval("/sbin/wlanled", "-L", "generic_14:-94", "-l", "generic_13:-76", "-L", "generic_20:-65");
 #elif HAVE_DAP3410
 	set_gpio(14, 1);
 	set_gpio(15, 1);
 	set_gpio(16, 1);
-	if (!nvram_match("wlanled", "0"))
+	if (!nvram_matchi("wlanled",0))
 		eval("/sbin/wlanled", "-L", "generic_14:-94", "-L", "generic_15:-76", "-L", "generic_16:-65");
 #elif HAVE_UBNTXW
 	if (brand == ROUTER_UBNT_UAPAC) {
@@ -194,7 +194,7 @@ void start_sysinit(void)
 		setWirelessLed(1, 8);
 	} else {
 		writeproc("/proc/sys/dev/wifi0/softled", "0");
-		if (!nvram_match("wlanled", "0"))
+		if (!nvram_matchi("wlanled",0))
 			eval("/sbin/wlanled", "-L", "generic_11:-94", "-L", "generic_16:-80", "-l", "generic_13:-73", "-L", "generic_14:-65");
 	}
 #else
@@ -210,13 +210,13 @@ void start_sysinit(void)
 		break;
 	default:
 		writeproc("/proc/sys/dev/wifi0/softled", "0");
-		if (!nvram_match("wlanled", "0"))
+		if (!nvram_matchi("wlanled",0))
 			eval("/sbin/wlanled", "-l", "generic_0:-94", "-l", "generic_1:-80", "-l", "generic_11:-73", "-l", "generic_7:-65");
 
 	}
 #endif
 	/* ubnt has a hardware fault as it seems, so the power bridge feature can break the hardware which causes endless reboot loops. we keep it disabled here. devices which are already broken will work again then */
-	if (nvram_match("ubnt_power", "1"))
+	if (nvram_matchi("ubnt_power",1))
 		set_gpio(8, 1);
 
 	/*

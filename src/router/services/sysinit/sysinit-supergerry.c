@@ -51,7 +51,7 @@ void start_sysinit(void)
 	time_t tm = 0;
 
 	eval("/bin/tar", "-xzf", "/dev/mtdblock4", "-C", "/");
-	if (!nvram_match("disable_watchdog", "1"))
+	if (!nvram_matchi("disable_watchdog",1))
 		eval("watchdog");
 	/*
 	 * Setup console 

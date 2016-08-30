@@ -140,10 +140,10 @@ void start_sysinit(void)
 		fclose(in);
 	}
 
-	if (!nvram_match("disable_watchdog", "1"))
+	if (!nvram_matchi("disable_watchdog",1))
 		eval("watchdog");	// system watchdog
 #ifdef HAVE_ERC
-	if (isregistered_real() && nvram_match("ree_resetme", "1")) {
+	if (isregistered_real() && nvram_matchi("ree_resetme",1)) {
 		fprintf(stderr, "Restoring REE default nvram\n");
 		eval("nvram", "restore", "/etc/defaults/x86ree.backup");
 		eval("reboot");

@@ -30,7 +30,7 @@
 void start_pppoerelay(void)
 {
 	killall("pppoe-relay", SIGTERM);
-	if (nvram_match("pppoerelay_enable", "1")) {
+	if (nvram_matchi("pppoerelay_enable", 1)) {
 		if (getSTA())
 			eval("pppoe-relay", "-S", getSTA(), "-C", "br0");
 		else

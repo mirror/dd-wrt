@@ -47,10 +47,10 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 		sprintf(temp, "oet%d_en", tun);
 		websWrite(wp,
 			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idoet%d', true)\" /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
-			  temp, (nvram_match(temp, "1") ? "checked=\"checked\"" : ""), tun);
+			  temp, (nvram_matchi(temp, 1) ? "checked=\"checked\"" : ""), tun);
 		websWrite(wp,
 			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idoet%d', false)\" /><script type=\"text/javascript\">Capture(share.disable)</script>\n",
-			  temp, (nvram_match(temp, "0") ? "checked=\"checked\"" : ""), tun);
+			  temp, (nvram_matchi(temp, 0) ? "checked=\"checked\"" : ""), tun);
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<div id=\"idoet%d\">\n", tun);
 		websWrite(wp, "<div class=\"setting\">\n");
@@ -78,12 +78,12 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 	websWrite( wp,
 		   "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
 		   temp,
-		   ( nvram_match( temp, "1" ) ? "checked=\"checked\"" :
+		   ( nvram_matchi( temp,1)) ? "checked=\"checked\"" :
 		     "" ) );
 	websWrite( wp,
 		   "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s /><script type=\"text/javascript\">Capture(share.disable)</script>\n",
 		   temp,
-		   ( nvram_match( temp, "0" ) ? "checked=\"checked\"" :
+		   ( nvram_matchi( temp,0)) ? "checked=\"checked\"" :
 		     "" ) );
 	websWrite( wp, "</div>\n" );
 	websWrite( wp, "<div class=\"setting\">\n" );
@@ -93,12 +93,12 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 	websWrite( wp,
 		   "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
 		   temp,
-		   ( nvram_match( temp, "1" ) ? "checked=\"checked\"" :
+		   ( nvram_matchi( temp,1)) ? "checked=\"checked\"" :
 		     "" ) );
 	websWrite( wp,
 		   "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s /><script type=\"text/javascript\">Capture(share.disable)</script>\n",
 		   temp,
-		   ( nvram_match( temp, "0" ) ? "checked=\"checked\"" :
+		   ( nvram_matchi( temp,0)) ? "checked=\"checked\"" :
 		     "" ) );
 	websWrite( wp, "</div>\n" );
 	websWrite( wp, "<div class=\"setting\">\n" );
@@ -116,12 +116,12 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 	websWrite( wp,
 		   "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
 		   temp,
-		   ( nvram_match( temp, "1" ) ? "checked=\"checked\"" :
+		   ( nvram_matchi( temp,1)) ? "checked=\"checked\"" :
 		     "" ) );
 	websWrite( wp,
 		   "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s /><script type=\"text/javascript\">Capture(share.disable)</script>\n",
 		   temp,
-		   ( nvram_match( temp, "0" ) ? "checked=\"checked\"" :
+		   ( nvram_matchi( temp,0)) ? "checked=\"checked\"" :
 		     "" ) );
 	websWrite( wp, "</div>\n" );
 	websWrite( wp, "<div class=\"setting\">\n" );
@@ -138,10 +138,10 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 		sprintf(temp, "oet%d_bridged", tun);
 		websWrite(wp,
 			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idbridged%d', false)\" /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
-			  temp, (nvram_match(temp, "1") ? "checked=\"checked\"" : ""), tun);
+			  temp, (nvram_matchi(temp, 1) ? "checked=\"checked\"" : ""), tun);
 		websWrite(wp,
 			  " <input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idbridged%d', true)\" /><script type=\"text/javascript\">Capture(share.disable)</script>\n",
-			  temp, (nvram_match(temp, "0") ? "checked=\"checked\"" : ""), tun);
+			  temp, (nvram_matchi(temp, 0) ? "checked=\"checked\"" : ""), tun);
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<div id=\"idbridged%d\">\n", tun);
 		websWrite(wp, "<div class=\"setting\">\n");

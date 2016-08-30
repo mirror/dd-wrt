@@ -234,11 +234,11 @@ void start_setup_vlans(void)
 	 * no VLAN #16 
 	 */
 
-	if (!nvram_get("port5vlans") || nvram_match("vlans", "0"))
+	if (!nvram_get("port5vlans") || nvram_matchi("vlans", 0))
 		return;		// for some reason VLANs are not set up, and
 	// we don't want to disable everything!
 
-	if (nvram_match("wan_vdsl", "1") && !nvram_match("fromvdsl", "1")) {
+	if (nvram_matchi("wan_vdsl", 1) && !nvram_matchi("fromvdsl", 1)) {
 		nvram_seti("vdsl_state", 0);
 		enable_dtag_vlan(1);
 		return;

@@ -151,7 +151,7 @@ int bcm_gettxpower(char *wlname)
 char *get_wdev(void)
 {
 #ifdef HAVE_MADWIFI
-	if (nvram_match("wifi_bonding", "1"))
+	if (nvram_matchi("wifi_bonding", 1))
 		return "bond0";
 	else {
 		return "ath0";

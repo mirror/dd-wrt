@@ -1366,7 +1366,7 @@ void rpc_update_wdslist()
 		}
 	}
 
-	if (nvram_match("wl1_mode_x", "0"))
+	if (nvram_matchi("wl1_mode_x", 0))
 		return;
 
 	pp = p = strdup(nvram_safe_get("wl1_wdslist"));
@@ -1408,7 +1408,7 @@ void rpc_update_wds_psk(const char *wds_psk)
 	if (!rpc_qtn_ready())
 		return;
 
-	if (nvram_match("wl1_mode_x", "0"))
+	if (nvram_matchi("wl1_mode_x", 0))
 		return;
 
 	for (i = 0; i < 8; i++) {
@@ -1613,7 +1613,7 @@ char *getWscStatusStr_qtn()
 		return "Fail due to PBC session overlap!";
 		break;
 	default:
-		if (nvram_match("wps_enable", "1"))
+		if (nvram_matchi("wps_enable", 1))
 			return "Idle";
 		else
 			return "Not used";

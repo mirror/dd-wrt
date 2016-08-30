@@ -95,7 +95,7 @@ char *websGetVar(webs_t wp, char *var, char *d)
 
 char *GOZILA_GET(webs_t wp, char *name)
 {
-	return nvram_match("gozila_action", "1") ? websGetVar(wp, name, NULL) : nvram_safe_get(name);
+	return nvram_matchi("gozila_action", 1) ? websGetVar(wp, name, NULL) : nvram_safe_get(name);
 }
 
 static void *load_visual_service(char *name)
@@ -212,7 +212,7 @@ void start_gozila(char *name, webs_t wp)
 	fptr = (int (*)(webs_t wp))dlsym(s_service, service);
 	if (fptr)
 		(*fptr) (wp);
-	else if (nvram_match("console_debug", "1"))
+	else if (nvram_matchi("console_debug", 1))
 		fprintf(stderr, "function %s not found \n", service);
 #ifndef MEMLEAK_OVERRIDE
 	dlclose(s_service);
@@ -249,7 +249,7 @@ int start_validator(char *name, webs_t wp, char *value, struct variable *v)
 	    dlsym(s_service, service);
 	if (fptr)
 		ret = (*fptr) (wp, value, v);
-	else if (nvram_match("console_debug", "1"))
+	else if (nvram_matchi("console_debug", 1))
 		fprintf(stderr, "function %s not found \n", service);
 #ifndef MEMLEAK_OVERRIDE
 	dlclose(s_service);
@@ -288,7 +288,7 @@ void *start_validator_nofree(char *name, void *handle, webs_t wp, char *value, s
 	cprintf("found. pointer is %p\n", fptr);
 	if (fptr)
 		(*fptr) (wp, value, v);
-	else if (nvram_match("console_debug", "1"))
+	else if (nvram_matchi("console_debug", 1))
 		fprintf(stderr, "function %s not found \n", service);
 	cprintf("start_sevice_nofree done()\n");
 	return handle;
@@ -297,7 +297,7 @@ void *start_validator_nofree(char *name, void *handle, webs_t wp, char *value, s
 void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t ** argv)
 {
 
-	if (nvram_match("console_debug", "1")) {
+	if (nvram_matchi("console_debug", 1)) {
 		fprintf(stderr, "call_ej %s\n", name);
 		int i = 0;
 		for (i = 0; i < argc; i++)
@@ -340,7 +340,7 @@ void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t ** argv)
 		memdebug_enter();
 		if (fptr)
 			(*fptr) (wp, argc, argv);
-		else if (nvram_match("console_debug", "1"))
+		else if (nvram_matchi("console_debug", 1))
 			fprintf(stderr, "function %s not found \n", service);
 		memdebug_leave_info(service);
 	}

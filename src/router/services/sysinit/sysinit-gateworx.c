@@ -481,7 +481,7 @@ void start_sysinit(void)
 	eval("ledtool", "4", "1");	// blink the led 4 times
 
 	fprintf(stderr, "Enable Watchdog\n");
-	if (!nvram_match("disable_watchdog", "1"))
+	if (!nvram_matchi("disable_watchdog",1))
 		eval("watchdog");	// system watchdog
 
 	/*

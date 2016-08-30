@@ -281,7 +281,7 @@ void setupSupplicant(char *prefix)
 		char bvar[32];
 
 		sprintf(bvar, "%s_bridged", prefix);
-		if (nvram_match(bvar, "1")
+		if (nvram_matchi(bvar, 1)
 		    && (nvram_match(wmode, "wdssta")
 			|| nvram_match(wmode, "wet")))
 			eval("wpa_supplicant", "-b", nvram_safe_get("lan_ifname"), "-B", "-Dwext", psk, "-c", fstr);

@@ -40,7 +40,7 @@ void start_igmprt(void)
 
 	FILE *fp = fopen("/tmp/igmpproxy.conf", "wb");
 
-	if (nvram_match("dtag_vlan8", "1") && nvram_match("wan_vdsl", "1")) {
+	if (nvram_matchi("dtag_vlan8", 1) && nvram_matchi("wan_vdsl", 1)) {
 		fprintf(fp, "quickleave\nphyint %s upstream  ratelimit 0  threshold 1\n", nvram_safe_get("tvnicfrom"));
 		fprintf(fp, "phyint %s disabled\n", get_wan_face());
 #ifdef HAVE_PPTP
@@ -61,7 +61,7 @@ void start_igmprt(void)
 	} else {
 		fprintf(fp, "quickleave\nphyint %s upstream  ratelimit 0  threshold 1\n", get_wan_face());
 	}
-	if (nvram_match("block_multicast", "0")) {
+	if (nvram_matchi("block_multicast", 0)) {
 		fprintf(fp, "phyint %s downstream  ratelimit 0  threshold 1\n", nvram_safe_get("lan_ifname"));
 		ifcount++;
 	} else {

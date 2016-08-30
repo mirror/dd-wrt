@@ -72,7 +72,7 @@ void start_dhcp6c(void)
 		fclose(fp);
 	}
 
-	if (nvram_match("dhcp6c_custom", "1")) {
+	if (nvram_matchi("dhcp6c_custom", 1)) {
 		buf = nvram_get("dhcp6c_conf");
 		if (buf != NULL)
 			writenvram("dhcp6c_conf", "/tmp/dhcp6c.conf");
@@ -118,9 +118,9 @@ void start_dhcp6s(void)
 	} __attribute__((__packed__)) duid;
 	uint16 duid_len = 0;
 
-	if (!nvram_match("ipv6_enable", "1"))
+	if (!nvram_matchi("ipv6_enable", 1))
 		return;
-	if (!nvram_match("dhcp6s_enable", "1"))
+	if (!nvram_matchi("dhcp6s_enable", 1))
 		return;
 
 	if (ether_atoe(nvram_safe_get("lan_hwaddr"), ea)) {
@@ -141,7 +141,7 @@ void start_dhcp6s(void)
 		fclose(fp);
 	}
 
-	if (nvram_match("dhcp6s_custom", "1")) {
+	if (nvram_matchi("dhcp6s_custom", 1)) {
 		buf = nvram_get("dhcp6s_conf");
 		if (buf != NULL)
 			writenvram("dhcp6s_conf", "/tmp/dhcp6s.conf");
@@ -160,7 +160,7 @@ void start_dhcp6s(void)
 		fprintf(fp, ";\n");
 		if (nvram_invmatch("ipv6_get_domain", ""))
 			fprintf(fp, "option domain-name \"%s\";\n", nvram_safe_get("ipv6_get_domain"));
-		if (nvram_match("dhcp6s_seq_ips", "1")) {
+		if (nvram_matchi("dhcp6s_seq_ips", 1)) {
 			dd_syslog(LOG_INFO, "kong: dhcp6c ipv6_prefix: %s\n", nvram_get("ipv6_prefix"));
 			fprintf(fp, "\ninterface %s {\n", nvram_get("lan_ifname"));
 			fprintf(fp, "\tallow rapid-commit;\n\taddress-pool pool1 30 86400;\n};\n");

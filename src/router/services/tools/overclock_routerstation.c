@@ -100,39 +100,39 @@ void start_overclock(void)	// hidden feature. must be called with
 	fclose(in);
 	int ret = 1;
 	if (!ret3) {
-		if (nvram_match("cpuclk", "200"))
+		if (nvram_matchi("cpuclk", 200))
 			ret = overclock_3(out, "200", 0x1);
-		if (nvram_match("cpuclk", "300"))
+		if (nvram_matchi("cpuclk", 300))
 			ret = overclock_3(out, "300", 0x2);
-		if (nvram_match("cpuclk", "333"))
+		if (nvram_matchi("cpuclk", 333))
 			ret = overclock_3(out, "333", 0x3);
-		if (nvram_match("cpuclk", "400"))
+		if (nvram_matchi("cpuclk", 400))
 			ret = overclock_3(out, "400", 0x6);
-		if (nvram_match("cpuclk", "600"))
+		if (nvram_matchi("cpuclk", 600))
 			ret = overclock_3(out, "600", 0x7);
-		if (nvram_match("cpuclk", "680"))	//special ubiquiti setting with different ddram clock settings
+		if (nvram_matchi("cpuclk", 680))	//special ubiquiti setting with different ddram clock settings
 			ret = overclock_3(out, "680", 0xc);
-		if (nvram_match("cpuclk", "720"))
+		if (nvram_matchi("cpuclk", 720))
 			ret = overclock_3(out, "720", 0xe);	//need to be validated
-		if (nvram_match("cpuclk", "800"))
+		if (nvram_matchi("cpuclk", 800))
 			ret = overclock_3(out, "800", 0xf);
 
 	} else {
-		if (nvram_match("cpuclk", "200"))
+		if (nvram_matchi("cpuclk", 200))
 			ret = overclock(out, "200", 0x1);
-		if (nvram_match("cpuclk", "300"))
+		if (nvram_matchi("cpuclk", 300))
 			ret = overclock(out, "300", 0x2);
-		if (nvram_match("cpuclk", "333"))
+		if (nvram_matchi("cpuclk", 333))
 			ret = overclock(out, "333", 0x3);
-		if (nvram_match("cpuclk", "400"))
+		if (nvram_matchi("cpuclk", 400))
 			ret = overclock(out, "400", 0x6);
-		if (nvram_match("cpuclk", "600"))
+		if (nvram_matchi("cpuclk", 600))
 			ret = overclock(out, "600", 0x7);
-		if (nvram_match("cpuclk", "680"))	//special ubiquiti setting with different ddram clock settings
+		if (nvram_matchi("cpuclk", 680))	//special ubiquiti setting with different ddram clock settings
 			ret = overclock(out, "680", 0xa);
-		if (nvram_match("cpuclk", "720"))
+		if (nvram_matchi("cpuclk", 720))
 			ret = overclock(out, "720", 0x1e);	//magic atheros values
-		if (nvram_match("cpuclk", "800"))
+		if (nvram_matchi("cpuclk", 800))
 			ret = overclock(out, "800", 0x1f);
 	}
 	fclose(out);

@@ -101,12 +101,12 @@ void delete_leases(webs_t wp)
 	if (nvram_match("lan_proto", "static"))
 		return;
 
-	if (nvram_match("fon_enable", "1")
-	    || (nvram_match("chilli_nowifibridge", "1")
-		&& nvram_match("chilli_enable", "1"))) {
+	if (nvram_matchi("fon_enable", 1)
+	    || (nvram_matchi("chilli_nowifibridge", 1)
+		&& nvram_matchi("chilli_enable", 1))) {
 		iface = nvram_safe_get("wl0_ifname");
 	} else {
-		if (nvram_match("chilli_enable", "1"))
+		if (nvram_matchi("chilli_enable", 1))
 			iface = nvram_safe_get("wl0_ifname");
 		else
 			iface = nvram_safe_get("lan_ifname");
@@ -2549,7 +2549,7 @@ static void trunkspaces(char *str)
 		if (str[i] == ' ') {
 			memmove(&str[i], &str[i + 1], len - i);
 			i--;
-			len=strlen(str);
+			len = strlen(str);
 			continue;
 		}
 	}
@@ -3570,13 +3570,13 @@ static void save_prefix(webs_t wp, char *prefix)
 	}
 #ifdef HAVE_MADWIFI
 	if (cbwchanged || chanchanged) {
-		if (nvram_match(chanbw, "40")) {
+		if (nvram_matchi(chanbw, 40)) {
 			nvram_seti(sifs, 8);
 			nvram_seti(preamble, 14);
-		} else if (nvram_match(chanbw, "5")) {
+		} else if (nvram_matchi(chanbw, 5)) {
 			nvram_seti(sifs, 64);
 			nvram_seti(preamble, 80);
-		} else if (nvram_match(chanbw, "10")) {
+		} else if (nvram_matchi(chanbw, 10)) {
 			nvram_seti(sifs, 32);
 			nvram_seti(preamble, 40);
 		} else {

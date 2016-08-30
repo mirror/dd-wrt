@@ -46,7 +46,7 @@ void start_samba3(void)
 	int uniqueuserid = 1000;
 	FILE *fp;
 
-	if (!nvram_match("samba3_enable", "1")) {	// not set txworkq 
+	if (!nvram_matchi("samba3_enable", 1)) {	// not set txworkq 
 		set_smp_affinity(163, 2);
 		set_smp_affinity(169, 2);
 	} else {
@@ -54,8 +54,8 @@ void start_samba3(void)
 		set_smp_affinity(169, 2);
 	}
 
-	if (!nvram_match("samba3_enable", "1")) {
-		if (nvram_match("txworkq", "1")) {
+	if (!nvram_matchi("samba3_enable", 1)) {
+		if (nvram_matchi("txworkq", 1)) {
 			nvram_unset("txworkq");
 			nvram_commit();
 		}
@@ -65,7 +65,7 @@ void start_samba3(void)
 
 	update_timezone();
 
-	if (!nvram_match("txworkq", "1")) {
+	if (!nvram_matchi("txworkq", 1)) {
 		nvram_seti("txworkq", 1);
 		nvram_commit();
 	}
@@ -73,7 +73,7 @@ void start_samba3(void)
 	sysprintf("echo \"nobody:*:65534:65534:nobody:/var:/bin/false\" >> /etc/passwd");
 	mkdir("/var/samba", 0700);
 	eval("touch", "/var/samba/smbpasswd");
-	if (nvram_match("samba3_advanced", "1")) {
+	if (nvram_matchi("samba3_advanced", 1)) {
 		write_nvram("/tmp/smb.conf", "samba3_conf");
 	} else {
 		samba3users = getsamba3users();

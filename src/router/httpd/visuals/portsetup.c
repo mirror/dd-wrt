@@ -166,7 +166,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 
 			sprintf(nld_enable, "nld_%s_enable", var);
 			websWrite(wp, "<div class=\"setting\">\n<div class=\"label\">ZCM enable</div>\n");
-			websWrite(wp, "<input class=\"spaceradio\" type=\"checkbox\" name=\"nld_%s_enable\" value=\"1\" %s /></div>\n", var, nvram_match(nld_enable, "1") ? "checked=\"checked\"" : "");
+			websWrite(wp, "<input class=\"spaceradio\" type=\"checkbox\" name=\"nld_%s_enable\" value=\"1\" %s /></div>\n", var, nvram_matchi(nld_enable, 1) ? "checked=\"checked\"" : "");
 
 			sprintf(nld_bridge, "nld_%s_bridge", var);
 			nvram_default_get(nld_bridge, "br0");
@@ -194,7 +194,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 
 			sprintf(bat_enable, "bat_%s_enable", var);
 			websWrite(wp, "<div class=\"setting\">\n<div class=\"label\">L2Mesh enable</div>\n");
-			websWrite(wp, "<input class=\"spaceradio\" type=\"checkbox\" name=\"bat_%s_enable\" value=\"1\" %s /></div>\n", var, nvram_match(bat_enable, "1") ? "checked=\"checked\"" : "");
+			websWrite(wp, "<input class=\"spaceradio\" type=\"checkbox\" name=\"bat_%s_enable\" value=\"1\" %s /></div>\n", var, nvram_matchi(bat_enable, 1) ? "checked=\"checked\"" : "");
 
 			sprintf(bat_bridge, "bat_%s_bridge", var);
 			nvram_default_get(bat_bridge, "br0");
@@ -217,8 +217,8 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		}
 		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n ");
 		if (!isbridge)
-			websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_bridged\"), \"%s_idnet\", %s);\n", var, layer, nvram_match(ssid, "0") ? "true" : "false");
-		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_dns_redirect\"), \"%s_idredirect\", %s);\n", var, layer, nvram_match(redirect, "1") ? "true" : "false");
+			websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_bridged\"), \"%s_idnet\", %s);\n", var, layer, nvram_matchi(ssid, 0) ? "true" : "false");
+		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_dns_redirect\"), \"%s_idredirect\", %s);\n", var, layer, nvram_matchi(redirect, 1) ? "true" : "false");
 		websWrite(wp, "//]]>\n</script>\n");
 		websWrite(wp, "</fieldset>\n");
 	      skip:;
