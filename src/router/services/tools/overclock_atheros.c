@@ -120,7 +120,7 @@ void start_overclock(void)	// hidden feature. must be called with
 		putc(getc(in), out);
 	fclose(in);
 	fclose(out);
-	int clk = nvram_geti("cpuclk", 180);
+	int clk = nvram_default_geti("cpuclk", 180);
 
 	in = fopen("/tmp/boot", "r+b");
 	fseek(in, 0xe64b, SEEK_SET);
