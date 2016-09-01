@@ -50,8 +50,7 @@
 #define NVRAMSPACE NVRAM_SPACE
 #endif
 
-
-static char *filter[] = { 
+static char *filter[] = {
 	"ATEMODE",
 	"Ate_power_on_off_ret",
 	"CFEver",
@@ -169,9 +168,7 @@ static char *filter[] = {
 	"il0macaddr",
 	"image_first_offset",
 	"image_second_offset",
-	"itt2ga0"
-	"itt2ga1"
-	"lan_ifname",
+	"itt2ga0" "itt2ga1" "lan_ifname",
 	"lan_ifnames",
 	"landevs",
 	"ledbh0",
@@ -205,8 +202,7 @@ static char *filter[] = {
 	"modelNumber",
 	"nospare",
 	"ntype",
-	"nvram_factory_reset"
-	"nvram_reboot",
+	"nvram_factory_reset" "nvram_reboot",
 	"nvram_space",
 	"nvram_version",
 	"odmpid",
@@ -317,7 +313,7 @@ int nvram_critical(char *name)
 			return 1;
 		}
 	}
-	if (strncmp(name, "sb/", 3) && strncmp(name, "pci/", 4)  && strncmp(name, "pcie/", 5) && strncmp(name, "0:", 2) && strncmp(name, "1:", 2) && strncmp(name, "2:", 2) && !strstr(name,"_hwaddr"))
+	if (strncmp(name, "sb/", 3) && strncmp(name, "pci/", 4) && strncmp(name, "pcie/", 5) && strncmp(name, "0:", 2) && strncmp(name, "1:", 2) && strncmp(name, "2:", 2) && !strstr(name, "_hwaddr"))
 		return 0;
 	else
 		return 1;
@@ -379,66 +375,80 @@ int nvram_restore(char *filename)
 	}
 #endif
 	sign[6] = 0;
-	FILE *fp = fopen(filename, "rb");
-	if (!fp)
-		return -1;
-	fseek(fp, 0, SEEK_END);
-	int len = ftell(fp);
-	fseek(fp, 0, SEEK_SET);
-	int count = 0;
+	int c = 0;
+	for (c = 0; c < 2; c++) {
+		FILE *fp = fopen(filename, "rb");
+		if (!fp)
+			return -1;
+		fseek(fp, 0, SEEK_END);
+		int len = ftell(fp);
+		fseek(fp, 0, SEEK_SET);
+		int count = 0;
 
-	fread(sign, 6, 1, fp);
-	len -= 6;
-	if (!strcmp(sign, "DD-WRT")) {
-		nvram_clear();
-		nvram_open();
-		unsigned char b;
-
-		fread((char *)&b, 1, 1, fp);
-		count = b;
-		fread((char *)&b, 1, 1, fp);
-		count += ((unsigned int)b << 8);
-		len -= 2;
-		int i;
-
-		for (i = 0; i < count && len > 0; i++) {
-			unsigned short l = 0;
-			unsigned char c = 0;
-
-			fread((char *)&c, 1, 1, fp);
-			char *name = (char *)malloc(c + 1);
-
-			fread(name, c, 1, fp);
-			name[c] = 0;
-			len -= (c + 1);
-
-			fread((char *)&b, 1, 1, fp);
-			l = b;
-			fread((char *)&b, 1, 1, fp);
-			l += ((unsigned int)b << 8);
-
-			char *value = (char *)malloc(l + 1);
-
-			fread(value, l, 1, fp);
-			len -= (l + 2);
-			value[l] = 0;
-			// cprintf("setting %s to %s\n",name,value);
-			if (!strcmp(name, "nvram_ver"))
-				nvram_ver = value;
-
-			if (!nvram_critical(name)) {
-				nvram_immed_set(name, value);
+		fread(sign, 6, 1, fp);
+		len -= 6;
+		if (!strcmp(sign, "DD-WRT")) {
+			if (c) {
+				nvram_clear();
+				nvram_open();
 			}
-			free(value);
-			free(name);
+			unsigned char b;
+
+			fread((char *)&b, 1, 1, fp);
+			count = b;
+			fread((char *)&b, 1, 1, fp);
+			count += ((unsigned int)b << 8);
+			len -= 2;
+			int i;
+
+			for (i = 0; i < count && len > 0; i++) {
+				unsigned short l = 0;
+				unsigned char c = 0;
+
+				fread((char *)&c, 1, 1, fp);
+				char *name = (char *)malloc(c + 1);
+
+				fread(name, c, 1, fp);
+				name[c] = 0;
+				len -= (c + 1);
+
+				fread((char *)&b, 1, 1, fp);
+				l = b;
+				fread((char *)&b, 1, 1, fp);
+				l += ((unsigned int)b << 8);
+
+				char *value = (char *)malloc(l + 1);
+
+				fread(value, l, 1, fp);
+				len -= (l + 2);
+				value[l] = 0;
+				// cprintf("setting %s to %s\n",name,value);
+				if (!strcmp(name, "nvram_ver"))
+					nvram_ver = value;
+
+				if (!c && !strcmp(name, "DD_BOARD")) {
+					if (!nvram_match("DD_BOARD", value)) {
+						fprintf(stderr, "incompatible backup file!\n");
+						fclose(fp);
+						return -2;
+					}
+				}
+				if (c && !nvram_critical(name)) {
+					nvram_immed_set(name, value);
+				}
+				free(value);
+				free(name);
+			}
+			if (c) {
+				nvram_close();
+				nvram_commit();
+			}
+		} else {
+			fclose(fp);
+			return -2;
 		}
-		nvram_close();
-	} else {
-		return -2;
+		fclose(fp);
 	}
-
-	nvram_commit();
-
 	return 0;
 
 }
@@ -454,7 +464,7 @@ int nvram_backup(char *filename)
 	}
 #endif
 	char *buf = (char *)malloc(NVRAMSPACE);
-	memset(buf,0,NVRAMSPACE);
+	memset(buf, 0, NVRAMSPACE);
 
 	nvram_getall(buf, NVRAMSPACE);
 	char *p = buf;
