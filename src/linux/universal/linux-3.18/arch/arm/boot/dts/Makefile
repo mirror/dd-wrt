@@ -473,6 +473,7 @@ dtb-$(CONFIG_MACH_ARMADA_38X) += \
 	armada-385-linksys-caiman.dtb \
 	armada-385-linksys-cobra.dtb \
 	armada-385-linksys-shelby.dtb \
+	armada-385-linksys-rango.dtb \
 	armada-385-rd.dtb
 dtb-$(CONFIG_MACH_ARMADA_XP) += \
 	armada-xp-axpwifiap.dtb \
