@@ -3,7 +3,7 @@
 
  Purpose     :  Entity included in other project documents.
 
- $Id: contacting.sgml,v 2.44 2016/05/22 12:42:11 fabiankeil Exp $
+ $Id: contacting.sgml,v 2.45 2016/07/28 08:24:59 fabiankeil Exp $
 
  Copyright (C) 2001-2011 Privoxy Developers https://www.privoxy.org/
  See LICENSE.
@@ -318,8 +318,7 @@ lists hosted at SourceForge are deprecated but the archives may still be useful:
  <ulink url="https://sourceforge.net/tracker/?group_id=11118&#38;atid=211118">SourceForge support trackers</ulink>
  may be used as well, but have various technical problems that are unlikely to
  be fixed anytime soon. If you don't get a timely response, please try the
- mailing list as well. While it's hosted at SourceForge as well, it usually
- works as expected.
+ mailing list as well.
 </para>
 
 </sect2>

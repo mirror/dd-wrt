@@ -6,9 +6,9 @@
 # A parser for Privoxy log messages. For incomplete documentation run
 # perldoc privoxy-log-parser(.pl), for fancy screenshots see:
 #
-# http://www.fabiankeil.de/sourcecode/privoxy-log-parser/
+# https://www.fabiankeil.de/sourcecode/privoxy-log-parser/
 #
-# $Id: privoxy-log-parser.pl,v 1.162 2014/06/03 10:26:21 fabiankeil Exp $
+# $Id: privoxy-log-parser.pl,v 1.163 2016/08/26 11:19:53 fabiankeil Exp $
 #
 # TODO:
 #       - LOG_LEVEL_CGI, LOG_LEVEL_ERROR, LOG_LEVEL_WRITE content highlighting
@@ -2470,7 +2470,7 @@ sub VersionMessage {
     my $version_message;
 
     $version_message .= 'Privoxy-Log-Parser ' . PRIVOXY_LOG_PARSER_VERSION  . "\n";
-    $version_message .= 'http://www.fabiankeil.de/sourcecode/privoxy-log-parser/' . "\n";
+    $version_message .= 'https://www.fabiankeil.de/sourcecode/privoxy-log-parser/' . "\n";
 
     print $version_message;
 }
