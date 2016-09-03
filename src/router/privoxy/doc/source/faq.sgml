@@ -8,10 +8,10 @@
 <!entity history SYSTEM "history.sgml">
 <!entity copyright SYSTEM "copyright.sgml">
 <!entity license SYSTEM "license.sgml">
-<!entity p-version "3.0.25">
-<!entity p-status "beta">
-<!entity % p-not-stable "INCLUDE">
-<!entity % p-stable "IGNORE">
+<!entity p-version "3.0.26">
+<!entity p-status "stable">
+<!entity % p-not-stable "IGNORE">
+<!entity % p-stable "INCLUDE">
 <!entity % p-text "IGNORE">        <!-- define we are not a text only doc -->
 <!entity % p-doc "INCLUDE">        <!-- and we are a formal doc           -->
 <!entity % p-supp-userman "INCLUDE"> <!-- Include all from supported.sgml -->
@@ -27,7 +27,7 @@
                 This file belongs into
                 ijbswa.sourceforge.net:/home/groups/i/ij/ijbswa/htdocs/
 
- $Id: faq.sgml,v 2.125 2016/05/27 15:24:13 fabiankeil Exp $
+ $Id: faq.sgml,v 2.131 2016/08/26 12:27:34 fabiankeil Exp $
 
  Copyright (C) 2001-2014 Privoxy Developers https://www.privoxy.org/
  See LICENSE.
@@ -73,12 +73,12 @@
  <subscript>
 <!-- Completely the wrong markup, but very little is allowed  -->
 <!-- in this part of an article. FIXME -->
- <link linkend="copyright">Copyright</link> &my-copy; 2001-2014 by
+ <link linkend="copyright">Copyright</link> &my-copy; 2001-2016 by
  <ulink url="https://www.privoxy.org/">Privoxy Developers</ulink>
  </subscript>
 </pubdate>
 
-<pubdate>$Id: faq.sgml,v 2.125 2016/05/27 15:24:13 fabiankeil Exp $</pubdate>
+<pubdate>$Id: faq.sgml,v 2.131 2016/08/26 12:27:34 fabiankeil Exp $</pubdate>
 
 <!--
 
@@ -546,7 +546,59 @@ warranty? Registration?</title>
  public user mailing list or, if it's a private matter, to
  <ulink url="mailto:fk@fabiankeil.de">Fabian Keil</ulink> (Privoxy's SPI liaison)
  directly.
+</para>
 </sect3>
+</sect2>
+<sect2 id="sponsor"><title>How can I become a sponsor and get my logo or link on privoxy.org?</title>
+<para>
+ We are currently offering the following sponsor levels as an experiment:
+</para>
+<variablelist>
+ <varlistentry>
+  <term>Gold (10000 EUR/year)</term>
+  <listitem>
+   <para>
+    Logo shown at the bottom of the
+    <ulink url="https://www.privoxy.org/">Privoxy homepage</ulink>.
+    Logo, link and self description on the
+    <ulink url="https://www.privoxy.org/sponsors/">sponsor page</ulink>.
+   </para>
+  </listitem>
+ </varlistentry>
+ <varlistentry>
+  <term>Silver (1000 EUR/year)</term>
+  <listitem>
+   <para>
+    Logo shown randomly at the bottom of the
+    <ulink url="https://www.privoxy.org/">Privoxy homepage</ulink>.
+    Logo, link and self description on the
+    <ulink url="https://www.privoxy.org/sponsors/">sponsor page</ulink>.
+   </para>
+  </listitem>
+ </varlistentry>
+ <varlistentry>
+  <term>Bronze (500 EUR/year)</term>
+  <listitem>
+   <para>
+    Logo and link on the <ulink url="https://www.privoxy.org/sponsors/">sponsor page</ulink>.
+   </para>
+  </listitem>
+ </varlistentry>
+</variablelist>
+<para>
+ The logo sizes depend on the sponsor level. Logos are served from
+ our server, no requests are made to the sponsor website unless
+ the links are being used.
+</para>
+<para>
+ The details may change over time but changes will only affect new sponsors
+ (or existing sponsors that explicitly agreed to the changes).
+</para>
+<para>
+ If you want to become a sponsor, please contact
+ <ulink url="mailto:fk@fabiankeil.de">Fabian Keil</ulink>.
+ New sponsors are only accepted if no developer objects.
+</para>
 
 </sect2>
 
@@ -2974,6 +3026,7 @@ browsing has slowed to a crawl. What gives? </title>
  <ulink url="http://pcre.org/original/doc/html/pcrestack.html">pcrestack man page</ulink>
  and the documentation of your operating system.
 </para>
+</sect2>
 
 </sect1>
 

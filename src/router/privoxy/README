@@ -32,9 +32,8 @@
  *
  *********************************************************************/
 
-This README is included with the development version of Privoxy 3.0.25. See
-https://www.privoxy.org/ for more information. The current code maturity level
-is "beta", but seems stable to us :).
+This README is included with Privoxy 3.0.26. See https://www.privoxy.org/ for
+more information. The current code maturity level is "stable".
 
 -------------------------------------------------------------------------------
 
@@ -105,22 +104,16 @@ try it with FTP or other protocols for the simple reason it does not work.
 The actions list can be configured via the web interface accessed via http://
 p.p/, as well other options.
 
-All configuration files are subject to unannounced changes during the
-development process.
-
 -------------------------------------------------------------------------------
 
 5. DOCUMENTATION
 
-There should be documentation in the 'doc' subdirectory, but it may not be
-completed at this point. In particular, see the User Manual there, the FAQ, and
-those interested in Privoxy development, should look at developer-manual.
+There should be documentation in the 'doc' subdirectory. In particular, see the
+User Manual there, the FAQ, and those interested in Privoxy development, should
+look at developer-manual.
 
-The most up to date source of information on the current development version,
-may still be either comments in the source code, or the included configuration
-files. The source and configuration files are all well commented. The main
-configuration files are: 'config', 'default.action', and 'default.filter' in
-the top-level source directory.
+The source and configuration files are all well commented. The main
+configuration files are: 'config', 'default.action', and 'default.filter'.
 
 Included documentation may vary according to platform and packager. All
 documentation is posted on https://www.privoxy.org, in case you don't have it,
@@ -323,6 +316,5 @@ still be useful: https://sourceforge.net/mail/?group_id=11118.
 
 The SourceForge support trackers may be used as well, but have various
 technical problems that are unlikely to be fixed anytime soon. If you don't get
-a timely response, please try the mailing list as well. While it's hosted at
-SourceForge as well, it usually works as expected.
+a timely response, please try the mailing list as well.
 

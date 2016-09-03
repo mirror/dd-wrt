@@ -13,11 +13,11 @@
 <!entity p-authors SYSTEM "p-authors.sgml">
 <!entity config SYSTEM "p-config.sgml">
 <!entity changelog SYSTEM "changelog.sgml">
-<!entity p-version "3.0.25">
-<!entity p-status "beta">
+<!entity p-version "3.0.26">
+<!entity p-status "stable">
 <!entity % p-authors-formal "INCLUDE"> <!-- include additional text, etc  -->
-<!entity % p-not-stable "INCLUDE">
-<!entity % p-stable "IGNORE">
+<!entity % p-not-stable "IGNORE">
+<!entity % p-stable "INCLUDE">
 <!entity % p-text "IGNORE">        <!-- define we are not a text only doc -->
 <!entity % p-doc "INCLUDE">        <!-- and we are a formal doc           -->
 <!entity % p-readme "IGNORE">
@@ -36,7 +36,7 @@
                 This file belongs into
                 ijbswa.sourceforge.net:/home/groups/i/ij/ijbswa/htdocs/
 
- $Id: user-manual.sgml,v 2.213 2016/05/27 15:24:13 fabiankeil Exp $
+ $Id: user-manual.sgml,v 2.216 2016/08/26 12:27:34 fabiankeil Exp $
 
  Copyright (C) 2001-2016 Privoxy Developers https://www.privoxy.org/
  See LICENSE.
@@ -62,7 +62,7 @@
  </subscript>
 </pubdate>
 
-<pubdate>$Id: user-manual.sgml,v 2.213 2016/05/27 15:24:13 fabiankeil Exp $</pubdate>
+<pubdate>$Id: user-manual.sgml,v 2.216 2016/08/26 12:27:34 fabiankeil Exp $</pubdate>
 
 <!--
 
@@ -2390,6 +2390,7 @@ for details.
  are checked after all server headers are scanned. In both cases all the created
  tags are considered.
 </para>
+</sect3>
 
 <!--   ~~~~~       New section      ~~~~~     -->
 <sect3 id="client-tag-pattern"><title>The Client Tag Pattern</title>
@@ -2447,6 +2448,8 @@ CLIENT-TAG:^circumvent-blocks$
 {+block{Nobody is supposed to request this.}}
 example.org/blocked-example-page</screen>
 </para>
+
+</sect3>
 
 </sect2>
 
