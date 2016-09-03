@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 dnl
-dnl $Id: configure.in,v 1.199 2016/05/25 10:54:11 fabiankeil Exp $
+dnl $Id: configure.in,v 1.203 2016/08/26 12:26:43 fabiankeil Exp $
 dnl
 dnl Written by and Copyright (C) 2001-2016 the
 dnl Privoxy team. https://www.privoxy.org/
@@ -32,7 +32,7 @@ dnl =================================================================
 dnl AutoConf Initialization
 dnl =================================================================
 
-AC_REVISION($Revision: 1.199 $)
+AC_REVISION($Revision: 1.203 $)
 AC_INIT(jcc.c)
 
 if test ! -f config.h.in; then
@@ -78,8 +78,8 @@ dnl =================================================================
 
 VERSION_MAJOR=3
 VERSION_MINOR=0
-VERSION_POINT=25
-CODE_STATUS="beta"
+VERSION_POINT=26
+CODE_STATUS="stable"
 
 dnl CODE_STATUS can be "alpha", "beta", "stable" or "UNRELEASED",
 dnl and will be used for CGI output. Increment version number and
@@ -282,7 +282,7 @@ if test $dodk = auto; then
 	dodk=no
 	if test $target_type = unix; then
 		case "$host_os" in
-		linux* | gnu*)
+		linux* | gnu* | *bsd*)
 			dodk=yes
 		;;
 		esac
@@ -383,6 +383,7 @@ dnl      echo -n "checking for $i/html/docbook.dsl..."
     for i in /usr/share/sgml/CATALOG.docbk30 \
              /usr/share/sgml/CATALOG.docbk31 \
              /usr/share/sgml/CATALOG.docbk31 \
+             /usr/local/share/sgml/docbook/2.4.1/docbook.cat \
              /usr/local/share/sgml/docbook/3.0/docbook.cat \
              /usr/local/share/sgml/docbook/3.1/docbook.cat \
              /usr/share/sgml/docbook/dtd/3.1/docbook.cat \

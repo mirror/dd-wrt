@@ -1,4 +1,4 @@
-const char w32_svrapi_rcs[] = "$Id: w32svrapi.c,v 1.5 2011/09/04 11:10:56 fabiankeil Exp $";
+const char w32_svrapi_rcs[] = "$Id: w32svrapi.c,v 1.6 2016/07/22 12:12:33 ler762 Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/w32svrapi.c,v $
@@ -785,6 +785,9 @@ static void WINAPI privoxy_w32_service_start(DWORD dw, LPSTR* pszArgs)
    w32_set_service_status(hSrv_status, &srv_status);
 
 #ifndef FEATURE_PTHREAD
+   /* NOTE: a cygwin cross-compiler build for --host=i686-w64-mingw32 must disable POSIX threading - eg
+    *         ./configure --host=i686-w64-mingw32 --disable-pthread
+    */
    child_id = _beginthread(w32_service_listen_loop, 0, NULL);
    if (child_id > 0)
 #else

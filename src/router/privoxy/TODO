@@ -1,4 +1,4 @@
-$Id: TODO,v 1.150 2016/04/10 08:07:10 fabiankeil Exp $
+$Id: TODO,v 1.152 2016/08/26 12:27:18 fabiankeil Exp $
 
 Some Privoxy-related tasks, sorted by the time they
 have been added, not by priority.
@@ -439,6 +439,11 @@ http://www.privoxy.org/faq/general.html#DONATE
 
 149) Use poll() for socket selection so the number of sockets Privoxy
      can deal with isn't limited to FD_SETSIZE anymore.
+
+150) Add blacklistd support.
+
+151) Let the dok-tidy target work cross-platform without introducing
+     a ton of white-space changes that hide the content changes.
 
 ##########################################################################
 

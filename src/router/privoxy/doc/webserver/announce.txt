@@ -1,12 +1,44 @@
-               Announcing Privoxy 3.0.25 beta
+               Announcing Privoxy 3.0.26 stable
 --------------------------------------------------------------------
 
-Privoxy 3.0.25 beta introduces client-specific tags and includes
-a couple of minor improvements. It will be followed by a stable
-release in the near future.
+Privoxy 3.0.26 stable is a bug-fix release for the previously
+released 3.0.25 beta which introduced client-specific tags and
+included a couple of minor improvements.
 --------------------------------------------------------------------
 ChangeLog for Privoxy
 --------------------------------------------------------------------
+- Bug fixes:
+  - Fixed crashes with "listen-addr :8118" (SF Bug #902).
+    The regression was introduced in 3.0.25 beta and reported
+    by Marvin Renich in Debian bug #834941.
+
+- General improvements:
+  - Log when privoxy is toggled on or off via cgi interface.
+  - Highlight the "Info: Now toggled " on/off log message
+    in the Windows log viewer.
+  - Highlight the loading actions/filter file log message
+    in the Windows log viewer.
+  - Mention client-specific tags on the toggle page as a
+    potentionally more appropriate alternative.
+
+- Documentation improvements:
+  - Update download section on the homepage.
+    The downloads are available from the website now.
+  - Add sponsor FAQ.
+  - Remove obsolete reference to mailing lists hosted at SourceForge.
+  - Update the "Before the Release" section of the developer manual.
+
+- Infrastructure improvements:
+  - Add perl script to generate an RSS feed for the packages
+    Submitted by "Unknown".
+
+- Build system improvements:
+  - strptime.h: fix a compiler warning about ambiguous else.
+  - configure.in: Check for Docbook goo on the BSDs as well.
+  - GNUMakefile.in: Let the dok-user target remove temporary files.
+
+*** Version 3.0.20 beta ***
+
 - Bug fixes:
   - Always use the current toggle state for new requests.
     Previously new requests on reused connections inherited

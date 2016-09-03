@@ -1,6 +1,6 @@
 # Note:  GNUmakefile is built automatically from GNUmakefile.in
 #
-# $Id: GNUmakefile.in,v 1.251 2016/05/08 12:46:15 fabiankeil Exp $
+# $Id: GNUmakefile.in,v 1.252 2016/07/28 08:16:04 fabiankeil Exp $
 #
 # Written by and Copyright (C) 2001-2016 members of the
 # Privoxy team. https://www.privoxy.org/
@@ -452,7 +452,8 @@ dok-user:
 	# FIXME: temp fix so same stylesheet gets in more than one place so it works
 	# for all doc set-ups, including the 'user manual' config option in local
 	# system where it MUST be in same directory as html.
-	$(PERL) -pi.bak -e 's/<\/head/\n<LINK REL=\"STYLESHEET\" TYPE=\"text\/css\" HREF=\"p_doc.css\">\n<\/head/i' doc/webserver/user-manual/*html
+	$(PERL) -pi.bak -e 's/<\/head/\n<LINK REL=\"STYLESHEET\" TYPE=\"text\/css\" HREF=\"p_doc.css\">\n<\/head/i' doc/webserver/user-manual/*html && \
+	rm doc/webserver/user-manual/*html.bak
 
 # faq
 dok-faq:
