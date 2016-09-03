@@ -3,7 +3,7 @@
 
  Purpose     :  Entity included in other project documents.
 
- $Id: changelog.sgml,v 2.20 2016/05/27 17:27:55 fabiankeil Exp $
+ $Id: changelog.sgml,v 2.23 2016/08/26 13:14:35 fabiankeil Exp $
 
  Copyright (C) 2013-2016 Privoxy Developers https://www.privoxy.org/
  See LICENSE.
@@ -20,15 +20,132 @@
   user-manual
 -->
 
-<para>
-  <application>Privoxy 3.0.25</application> beta introduces client-specific
-  tags and includes a couple of minor improvements. It will be followed
-  by a stable release in the near future.
-</para>
 
 <!--
  The SGML ChangeLog can be generated with: utils/changelog2doc.pl ChangeLog
 -->
+
+<para>
+  <application>Privoxy 3.0.26</application> stable is a bug-fix release
+  for the previously released 3.0.25 beta which introduced client-specific
+  tags and included a couple of minor improvements.
+</para>
+<para>
+ <itemizedlist>
+  <listitem>
+   <para>
+    Bug fixes:
+    <itemizedlist>
+    <listitem>
+     <para>
+      Fixed crashes with "listen-addr :8118" (SF Bug #902).
+      The regression was introduced in 3.0.25 beta and reported
+      by Marvin Renich in Debian bug #834941.
+    </para>
+    </listitem>
+    </itemizedlist>
+   </para>
+  </listitem>
+  <listitem>
+   <para>
+    General improvements:
+    <itemizedlist>
+    <listitem>
+     <para>
+      Log when privoxy is toggled on or off via cgi interface.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Highlight the "Info: Now toggled " on/off log message
+      in the Windows log viewer.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Highlight the loading actions/filter file log message
+      in the Windows log viewer.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Mention client-specific tags on the toggle page as a
+      potentionally more appropriate alternative.
+     </para>
+     </listitem>
+    </itemizedlist>
+   </para>
+  </listitem>
+  <listitem>
+   <para>
+    Documentation improvements:
+    <itemizedlist>
+    <listitem>
+     <para>
+      Update download section on the homepage.
+      The downloads are available from the website now.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Add sponsor FAQ.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Remove obsolete reference to mailing lists hosted at SourceForge.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Update the "Before the Release" section of the developer manual.
+     </para>
+     </listitem>
+    </itemizedlist>
+   </para>
+  </listitem>
+  <listitem>
+   <para>
+    Infrastructure improvements:
+    <itemizedlist>
+    <listitem>
+     <para>
+      Add perl script to generate an RSS feed for the packages
+      Submitted by "Unknown".
+     </para>
+     </listitem>
+    </itemizedlist>
+   </para>
+  </listitem>
+  <listitem>
+   <para>
+    Build system improvements:
+    <itemizedlist>
+    <listitem>
+     <para>
+      strptime.h: fix a compiler warning about ambiguous else.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      configure.in: Check for Docbook goo on the BSDs as well.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      GNUMakefile.in: Let the dok-user target remove temporary files.
+     </para>
+     </listitem>
+    </itemizedlist>
+   </para>
+  </listitem>
+ </itemizedlist>
+</para>
+
+<para>
+ Changes between <application>Privoxy 3.0.25 beta</application>
+ and the previous release:
+</para>
 <para>
  <itemizedlist>
   <listitem>

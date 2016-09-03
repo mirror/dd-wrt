@@ -5,10 +5,10 @@
 <!entity p-intro SYSTEM "privoxy.sgml">
 <!entity history SYSTEM "history.sgml">
 <!entity seealso SYSTEM "seealso.sgml">
-<!entity p-version "3.0.25">
-<!entity p-status "beta">
-<!entity % p-not-stable "INCLUDE">
-<!entity % p-stable "IGNORE">
+<!entity p-version "3.0.26">
+<!entity p-status "stable">
+<!entity % p-not-stable "IGNORE">
+<!entity % p-stable "INCLUDE">
 <!entity % p-text "IGNORE">        <!-- define we are not a text only doc -->
 <!entity % p-doc "INCLUDE">        <!-- and we are a formal doc           -->
 <!entity % seealso-extra "INCLUDE"> <!-- extra stuff from seealso.sgml    -->
@@ -21,7 +21,7 @@
                 This file belongs into
                 ijbswa.sourceforge.net:/home/groups/i/ij/ijbswa/htdocs/
 
- $Id: developer-manual.sgml,v 2.71 2016/05/27 15:24:13 fabiankeil Exp $
+ $Id: developer-manual.sgml,v 2.81 2016/08/26 12:32:19 fabiankeil Exp $
 
  Copyright (C) 2001-2016 Privoxy Developers https://www.privoxy.org/
  See LICENSE.
@@ -49,7 +49,7 @@
     </pubdate>
 
 
-    <pubdate>$Id: developer-manual.sgml,v 2.71 2016/05/27 15:24:13 fabiankeil Exp $</pubdate>
+    <pubdate>$Id: developer-manual.sgml,v 2.81 2016/08/26 12:32:19 fabiankeil Exp $</pubdate>
 
 <!--
 
@@ -2102,24 +2102,28 @@ Install the rpm. Any error messages?
       <listitem>
        <para>
          Increment the version number (point from odd to even in development
-         branches!) in <filename>configure.in</filename>. (RPM spec files
-         will need to be incremented as well.)
+         branches!) in <filename>configure.in</filename> and update the code
+         status (CODE_STATUS="xxx") to one of "alpha", "beta" or "stable".
+         Rebuild configure and GNUMakefile to make sure the updated values are
+         being used.
        </para>
       </listitem>
       <listitem>
        <para>
-        If <filename>default.action</filename> has changed since last
-        release (i.e. software release or standalone actions file release),
-        bump up its version info to A.B in this line:
+        Use the dok-release target to update the sgml documentation source files.
        </para>
+      </listitem>
+      <listitem>
        <para>
+        If action file processing has changed and is not backward-compatible,
+        make sure the "for-privoxy-version=x.y.z" minimum version number in
+        default.action.master has been updated:
         <programlisting>
-  {+add-header{X-Actions-File-Version: A.B} -filter -no-popups}
+{{settings}}
+#############################################################################
+#MASTER# COMMENT: The minimum Privoxy version:
+for-privoxy-version=3.0.11
 </programlisting>
-       </para>
-       <para>
-        Then change the version info in doc/webserver/actions/index.php,
-        line: '$required_actions_file_version = "A.B";'
        </para>
       </listitem>
       <listitem>
@@ -2129,7 +2133,7 @@ Install the rpm. Any error messages?
         without the ability to build these). Some docs may require
         rather obscure processing tools. <filename>config</filename>,
         the man page (and the html version of the man page)
-        fall in this category. REAMDE, the man page, AUTHORS, and config
+        fall in this category. README, the man page, AUTHORS, and config
         should all also be committed to CVS for other packagers. The
         formal docs should be uploaded to the webserver. See the
         Section "Updating the webserver" in this manual for details.
@@ -2718,6 +2722,7 @@ Install the rpm. Any error messages?
         For details see the <ulink url="https://www.freebsd.org/doc/en_US.ISO8859-1/books/porters-handbook/">FreeBSD Porter's Handbook</ulink>.
       </para>
     </sect3>
+   </sect2>
 
    <sect2 id="releasing">
    <title>Uploading and Releasing Your Package</title>

@@ -110,6 +110,11 @@
             and will not affect your web browsing.</p>
           <p><a href="@default-cgi@toggle?set=@if-enabled-display-then@disable@else-not-enabled-display@enable@endif-enabled-display@">Click
             here</a> to @if-enabled-display-then@disable@else-not-enabled-display@enable@endif-enabled-display@ Privoxy.</p>
+        <p>
+         The toggle state affects all clients that are using Privoxy.
+         In multi-user setups <a href="@user-manual@config.html#CLIENT-SPECIFIC-TAG">
+         client-specific tags</a> can be used as a more powerful alternative.
+        </p>
       </td>
     </tr>
 

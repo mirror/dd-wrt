@@ -1,4 +1,4 @@
-const char jbsockets_rcs[] = "$Id: jbsockets.c,v 1.136 2016/05/25 10:50:55 fabiankeil Exp $";
+const char jbsockets_rcs[] = "$Id: jbsockets.c,v 1.137 2016/08/22 14:50:18 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/jbsockets.c,v $
@@ -1221,6 +1221,7 @@ int accept_connection(struct client_state * csp, jb_socket fds[])
    int max_selected_socket;
    fd_set selected_fds;
    jb_socket fd;
+   const char *host_addr;
    size_t listen_addr_size;
 
    c_length = sizeof(client);
@@ -1355,16 +1356,17 @@ int accept_connection(struct client_state * csp, jb_socket fds[])
     * The string needs space for strlen(...) + 7 characters:
     * strlen(haddr[i]) + 1 (':') + 5 (port digits) + 1 ('\0')
     */
-   listen_addr_size = strlen(csp->config->haddr[i]) + 7;
+   host_addr = (csp->config->haddr[i] != NULL) ? csp->config->haddr[i] : "";
+   listen_addr_size = strlen(host_addr) + 7;
    csp->listen_addr_str = malloc_or_die(listen_addr_size);
    retval = snprintf(csp->listen_addr_str, listen_addr_size,
-      "%s:%d", csp->config->haddr[i], csp->config->hport[i]);
+      "%s:%d", host_addr, csp->config->hport[i]);
    if ((-1 == retval) || listen_addr_size <= retval)
    {
       log_error(LOG_LEVEL_ERROR,
          "Server name (%s) and port number (%d) ASCII decimal representation"
          "don't fit into %d bytes",
-         csp->config->haddr[i], csp->config->hport[i], listen_addr_size);
+         host_addr, csp->config->hport[i], listen_addr_size);
       return 0;
    }
 
