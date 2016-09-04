@@ -168,7 +168,7 @@ if [ "$7" != "0" ] ; then
 	$TCA $7 parent 1:3 classid 1:10 htb rate $((50*${LL}/100))kbit ceil ${LL}kbit prio 1 quantum $((${4}+18))
 	$TCA $7 parent 1:4 classid 1:20 htb rate $((25*${LL}/100))kbit ceil ${LL}kbit prio 2 quantum $((${4}+18))
 	$TCA $7 parent 1:5 classid 1:30 htb rate $((15*${LL}/100))kbit ceil ${LL}kbit prio 5 quantum $((${4}+18))
-	$TCA $7 parent 1:6 classid 1:40 htb rate $((5*${DL}/100))kbit ceil ${LL}kbit prio 7 quantum $((${4}+18))
+	$TCA $7 parent 1:6 classid 1:40 htb rate $((5*${LL}/100))kbit ceil ${LL}kbit prio 7 quantum $((${4}+18))
 
 	if [ "$6" = "sfq" ]
 	then
