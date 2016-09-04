@@ -15,6 +15,7 @@ if test "$PHP_ICONV" != "no"; then
 
   if test "$iconv_avail" != "no"; then
     if test -z "$ICONV_DIR"; then
+      PHP_ICONV_PREFIX=""
     else
       PHP_ICONV_PREFIX="$ICONV_DIR"
     fi
