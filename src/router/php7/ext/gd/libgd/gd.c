@@ -3097,7 +3097,7 @@ void gdImageGetClip (gdImagePtr im, int *x1P, int *y1P, int *x2P, int *y2P)
 	*x2P = im->cx2;
 	*y2P = im->cy2;
 }
-
+#if 0
 /* convert a palette image to true color */
 int gdImagePaletteToTrueColor(gdImagePtr src)
 {
@@ -3168,3 +3168,4 @@ clean_on_error:
 	return 0;
 }
 
+#endif
