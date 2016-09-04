@@ -173,6 +173,7 @@ PHP_CONFIGURE_ARGS= \
 	
 php7-configure: minidlna-configure libpng-configure libgd-configure libxml2-configure libpng libgd libxml2 zlib curl
 	rm -f php7/config.cache
+	rm -rf php7/autom4te.cache
 	cd php7 && autoconf
 	cd php7 && './configure'  '--host=$(ARCH)-linux-uclibc'  $(PHP_CONFIGURE_ARGS) \
 	'CFLAGS=$(COPTS) -I$(TOP)/minidlna/jpeg-8 -I$(TOP)/libmcrypt -I$(TOP)/libgd/libpng -I$(TOP)/libxml2/include -I$(TOP)/glib20/libiconv/include -I$(TOP)/curl/include -DNEED_PRINTF -L$(TOP)/glib20/libiconv/lib/.libs -L$(TOP)/zlib -lz -L$(TOP)/curl/lib/.libs -lcurl -liconv' \
