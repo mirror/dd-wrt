@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r3126 | brainslayer | 2016-09-06 00:03:13 +0200 (Tue, 06 Sep 2016) | 1 line
+
+mac80211: fix packet loss on fq reordering
+------------------------------------------------------------------------
 r3125 | brainslayer | 2016-09-05 14:49:28 +0200 (Mon, 05 Sep 2016) | 1 line
 
 mac80211: fix sequence number assignment for PS response
