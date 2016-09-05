@@ -2084,6 +2084,10 @@ int internal_getRouterBrand()
 		setRouter("Linksys WRT 1900ACS");
 		return ROUTER_WRT_1900ACS;	// similar
 	}
+	if (!strcmp(modelstr, "WRT3200ACM")) {
+		setRouter("Linksys WRT 3200ACM");
+		return ROUTER_WRT_1900ACS;	// similar
+	}
 #elif HAVE_IPQ806X
 	FILE *fp = fopen("/sys/firmware/devicetree/base/model", "rb");
 	if (!fp) {
