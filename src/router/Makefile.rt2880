@@ -246,6 +246,10 @@ endif
 ifeq ($(CONFIG_BUFFALO),y)
 	sed -i 's/\# CONFIG_JFFS2_ZLIB is not set/CONFIG_JFFS2_ZLIB=y/g' $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_RUT500),y)
+	sed -i 's/\# CONFIG_EAP9550 is not set/CONFIG_EAP9550=y/g' $(LINUXDIR)/.config
+endif
+
 	$(kernelfeatures)
 
 	$(MAKE) -C $(LINUXDIR) oldconfig	
@@ -746,9 +750,9 @@ ifeq ($(CONFIG_BR6574N),y)
 	./tools/csys/edimax mipsel-uclibc/aligned.uimage mipsel-uclibc/edimax-6574.bin WNRA
 endif	
 	../../../broadcom/opt/bufenc/encrypt mipsel-uclibc/rt2880-webflash.bin mipsel-uclibc/WHR-G300N-webflash_enc.bin WHR-G300N-DD-WRT
-	./tools/whrg300n mipsel-uclibc/aligned.uimage mipsel-uclibc/whrg300n-firmware.tftp
-	./tools/make_firmware mipsel-uclibc/aligned.uimage
-	./tools/rut500/rut500 mipsel-uclibc/root.uimage mipsel-uclibc/rut500.uimage
+	-./tools/whrg300n mipsel-uclibc/aligned.uimage mipsel-uclibc/whrg300n-firmware.tftp
+	-./tools/make_firmware mipsel-uclibc/aligned.uimage
+	./tools/rut500/rut500 mipsel-uclibc/aligned.uimage mipsel-uclibc/rut500.uimage
 
 
 include rules/all.mk
