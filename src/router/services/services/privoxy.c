@@ -83,6 +83,7 @@ void start_privoxy(void)
 			"actionsfile default.action\n"
 			"actionsfile %s\n"
 			"filterfile default.filter\n"
+			"filterfile user.filter\n"
 			"logfile logfile\n"
 			"listen-address  %s:8118\n"
 			"toggle  1\n"
@@ -91,7 +92,7 @@ void start_privoxy(void)
 			"enable-edit-actions 0\n"
 			"buffer-limit 4096\n"
 			"accept-intercepted-requests %d\n"
-			"split-large-forms 0\n" "keep-alive-timeout 5\n" "socket-timeout 300\n" "handle-as-empty-doc-returns-ok 1\n", whitelist ? "/tmp/user.action" : "user.action", ip, mode);
+			"split-large-forms 0\n" "socket-timeout 60\n" "handle-as-empty-doc-returns-ok 1\n", whitelist ? "/tmp/user.action" : "user.action", ip, mode);
 	}
 	fclose(fp);
 	eval("privoxy", "/tmp/privoxy.conf");
