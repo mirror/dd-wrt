@@ -441,6 +441,9 @@ endif
 ifeq ($(CONFIG_ERC),y)
 CFLAGS += -DHAVE_ERC
 endif
+ifeq ($(CONFIG_RUT500),y)
+CFLAGS += -DHAVE_RUT500
+endif
 ifeq ($(CONFIG_3G),y)
 CFLAGS += -DHAVE_3G
 endif
