@@ -37,6 +37,8 @@ void start_igmprt(void)
 	char *argv[] = { "igmprt", "/tmp/igmpproxy.conf", NULL };
 
 	int ifcount = 0;
+	if (nvram_match("wan_proto", "disabled") || !strlen(get_wan_face()))	// todo: add upstream 
+		return;
 
 	FILE *fp = fopen("/tmp/igmpproxy.conf", "wb");
 
@@ -84,17 +86,10 @@ void start_igmprt(void)
 	}
 	fprintf(fp, "phyint lo disabled\n");
 	fclose(fp);
-	if (nvram_match("wan_proto", "disabled"))	// todo: add upstream 
-		// config
-	{
-		// ret = _evalpid (igmp_proxybr_argv, NULL, 0, &pid);
-		return;
-	} else {
-		if (ifcount) {
-			if (pidof("igmprt") < 1)
-				ret = _evalpid(argv, NULL, 0, &pid);
-			dd_syslog(LOG_INFO, "igmprt : multicast daemon successfully started\n");
-		}
+	if (ifcount) {
+		if (pidof("igmprt") < 1)
+			ret = _evalpid(argv, NULL, 0, &pid);
+		dd_syslog(LOG_INFO, "igmprt : multicast daemon successfully started\n");
 	}
 
 	cprintf("done\n");
