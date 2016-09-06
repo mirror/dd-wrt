@@ -227,7 +227,7 @@ void start_sysinit(void)
 	}
 
 	if (nvram_get("et_txq_thresh") == NULL) {
-		nvram_set("et_txq_thresh", "1024");
+		nvram_seti("et_txq_thresh", 1024);
 	}
 
 	switch (getRouterBrand()) {
@@ -2632,7 +2632,7 @@ void start_sysinit(void)
 		}
 		nvram_unset("et0macaddr");
 		nvram_unset("et1macaddr");
-		nvram_set("et_txq_thresh", "3300");
+		nvram_seti("et_txq_thresh", 3300);
 		nvram_commit();
 		set_gpio(6, 1);	//reset button
 		set_gpio(1, 0);	//LED button
