@@ -303,12 +303,12 @@ No match
     ething
 No match
 
-/^\пїЅ/
-    пїЅ
+/^\Ѓ/
+    Ѓ
  0: \x81
 
-/^пїЅ/
-    пїЅ
+/^я/
+    я
  0: \xff
 
 /^[0-9]+$/
@@ -6247,24 +6247,24 @@ No match
     aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa 
 No match
     
-/(?i)reg(?:ul(?:[aпїЅ]|ae)r|ex)/
+/(?i)reg(?:ul(?:[aд]|ae)r|ex)/
     REGular
  0: REGular
     regulaer
  0: regulaer
     Regex  
  0: Regex
-    regulпїЅr 
+    regulдr 
  0: regul\xe4r
 
-/пїЅпїЅпїЅпїЅ[пїЅ-пїЅпїЅ-пїЅ]+/
-    пїЅпїЅпїЅпїЅпїЅ
+/Ежед[а-яА-Я]+/
+    Ежеда
  0: \xc5\xe6\xe5\xe4\xe0
-    пїЅпїЅпїЅпїЅпїЅ
+    Ежедя
  0: \xc5\xe6\xe5\xe4\xff
-    пїЅпїЅпїЅпїЅпїЅ
+    ЕжедА
  0: \xc5\xe6\xe5\xe4\xc0
-    пїЅпїЅпїЅпїЅпїЅ
+    ЕжедЯ
  0: \xc5\xe6\xe5\xe4\xdf
 
 /(?<=Z)X./
