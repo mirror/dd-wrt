@@ -662,11 +662,11 @@
     dthing
     ething
 
-/^\пїЅ/
-    пїЅ
+/^\Ѓ/
+    Ѓ
 
-/^пїЅ/
-    пїЅ
+/^я/
+    я
 
 /^[0-9]+$/
     0
@@ -3949,17 +3949,17 @@
 /(a+)*b/
     aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa 
     
-/(?i)reg(?:ul(?:[aпїЅ]|ae)r|ex)/
+/(?i)reg(?:ul(?:[aд]|ae)r|ex)/
     REGular
     regulaer
     Regex  
-    regulпїЅr 
+    regulдr 
 
-/пїЅпїЅпїЅпїЅ[пїЅ-пїЅпїЅ-пїЅ]+/
-    пїЅпїЅпїЅпїЅпїЅ
-    пїЅпїЅпїЅпїЅпїЅ
-    пїЅпїЅпїЅпїЅпїЅ
-    пїЅпїЅпїЅпїЅпїЅ
+/Ежед[а-яА-Я]+/
+    Ежеда
+    Ежедя
+    ЕжедА
+    ЕжедЯ
 
 /(?<=Z)X./
     \x84XAZXB

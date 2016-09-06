@@ -10,27 +10,27 @@
 /^[\w]+/
     *** Failers
 No match
-    ï¿½cole
+    École
 No match
 
 /^[\w]+/Lfr_FR
-    ï¿½cole
- 0: ï¿½cole
+    École
+ 0: École
 
 /^[\w]+/
     *** Failers
 No match
-    ï¿½cole
+    École
 No match
 
 /^[\W]+/
-    ï¿½cole
+    École
  0: \xc9
 
 /^[\W]+/Lfr_FR
     *** Failers
  0: *** 
-    ï¿½cole
+    École
 No match
 
 /[\b]/
@@ -52,15 +52,15 @@ No match
 /^\w+/
     *** Failers
 No match
-    ï¿½cole
+    École
 No match
 
 /^\w+/Lfr_FR
-    ï¿½cole
- 0: ï¿½cole
+    École
+ 0: École
 
 /(.+)\b(.+)/
-    ï¿½cole
+    École
  0: \xc9cole
  1: \xc9
  2: cole
@@ -70,22 +70,22 @@ No match
  0: *** Failers
  1: *** 
  2: Failers
-    ï¿½cole
+    École
 No match
 
-/ï¿½cole/i
-    ï¿½cole
+/École/i
+    École
  0: \xc9cole
     *** Failers
 No match
-    ï¿½cole
+    école
 No match
 
-/ï¿½cole/iLfr_FR
-    ï¿½cole
- 0: ï¿½cole
-    ï¿½cole
- 0: ï¿½cole
+/École/iLfr_FR
+    École
+ 0: École
+    école
+ 0: école
 
 /\w/IS
 Capturing subpattern count = 0
@@ -104,21 +104,21 @@ No need char
 Subject length lower bound = 1
 Starting chars: 0 1 2 3 4 5 6 7 8 9 A B C D E F G H I J K L M N O P 
   Q R S T U V W X Y Z _ a b c d e f g h i j k l m n o p q r s t u v w x y z 
-  ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ 
-  ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ ï¿½ 
+  ª µ º À Á Â Ã Ä Å Æ Ç È É Ê Ë Ì Í Î Ï Ð Ñ Ò Ó Ô Õ Ö Ø Ù Ú Û Ü Ý Þ ß à á â 
+  ã ä å æ ç è é ê ë ì í î ï ð ñ ò ó ô õ ö ø ù ú û ü ý þ ÿ 
 
 /^[\xc8-\xc9]/iLfr_FR
-    ï¿½cole
- 0: ï¿½
-    ï¿½cole
- 0: ï¿½
+    École
+ 0: É
+    école
+ 0: é
 
 /^[\xc8-\xc9]/Lfr_FR
-    ï¿½cole
- 0: ï¿½
+    École
+ 0: É
     *** Failers 
 No match
-    ï¿½cole
+    école
 No match
 
 /\W+/Lfr_FR
@@ -141,21 +141,21 @@ No match
 
 /\w+/Lfr_FR
     >>>\xaa<<<
- 0: ï¿½
+ 0: ª
     >>>\xba<<< 
- 0: ï¿½
+ 0: º
 
 /[\w]+/Lfr_FR
     >>>\xaa<<<
- 0: ï¿½
+ 0: ª
     >>>\xba<<< 
- 0: ï¿½
+ 0: º
 
 /[[:alpha:]]+/Lfr_FR
     >>>\xaa<<<
- 0: ï¿½
+ 0: ª
     >>>\xba<<< 
- 0: ï¿½
+ 0: º
     
 /[[:alpha:]][[:lower:]][[:upper:]]/DZLfr_FR 
 ------------------------------------------------------------------

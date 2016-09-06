@@ -3,11 +3,11 @@
     
 < forbid W 
 
-/ï¿½ï¿½ï¿½xxx/8?DZSS
+/ÃÃÃxxx/8?DZSS
 **Failed: invalid UTF-8 string cannot be converted to UTF-32
 
 /abc/8
-    ï¿½]
+    Ã]
 **Failed: invalid UTF-8 string cannot be used as input in UTF mode
 
 /X(\C{3})/8
@@ -875,7 +875,7 @@ Error -24 (bad offset value)
     \x{10000}ab\>5
 Error -24 (bad offset value)
 
-/ï¿½/8
+/í¼€/8
 **Failed: character value is ill-formed UTF-32
 
 /\w+\x{C4}/8BZ
