@@ -1131,6 +1131,7 @@ int isXR36(char *ifname);
 int isFXXN_PRO(char *ifname);
 char *get3GControlDevice(void);
 int mac80211_get_maxmcs(char *interface);
+int mac80211_get_maxvhtmcs(char *interface);
 int get_ath9k_phy_idx(int idx);
 int get_ath9k_phy_ifname(const char *ifname);
 

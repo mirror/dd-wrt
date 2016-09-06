@@ -1260,7 +1260,10 @@ void free_wifi_clients(struct wifi_client_info *wci)
 		struct wifi_client_info *next = wci->next;
 		free(wci);
 		wci = next;
-}} static int get_max_mcs_index(const __u8 *mcs)
+	}
+}
+
+static int get_max_mcs_index(const __u8 *mcs)
 {
 	unsigned int mcs_bit, prev_bit = -2, prev_cont = 0;
 	for (mcs_bit = 0; mcs_bit <= 76; mcs_bit++) {
@@ -1304,6 +1307,24 @@ static int get_ht_mcs(const __u8 *mcs)
 	} else {
 		return (get_max_mcs_index(mcs));
 	}
+}
+
+static int get_vht_mcs(__u32 capa, const __u8 *mcs)
+{
+	__u16 tmp;
+	int i;
+	int latest=0;
+	tmp = mcs[4] | (mcs[5] << 8);
+	for (i = 1; i <= 8; i++) {
+		switch ((tmp >> ((i-1)*2) ) & 3) {
+		case 0: latest = i*7; break;
+		case 1: latest = i*8; break;
+		case 2: latest = i*9; break;
+		case 3: 
+		break;
+		}
+	}
+	return latest;
 }
 
 int mac80211_get_maxrate(char *interface)
@@ -1371,6 +1392,40 @@ int mac80211_get_maxmcs(char *interface)
 		if (tb[NL80211_BAND_ATTR_HT_MCS_SET]
 		    && nla_len(tb[NL80211_BAND_ATTR_HT_MCS_SET]) == 16)
 			maxmcs = get_ht_mcs(nla_data(tb[NL80211_BAND_ATTR_HT_MCS_SET]));
+	}
+	nlmsg_free(msg);
+	return maxmcs;
+out:
+	return 0;
+nla_put_failure:
+	nlmsg_free(msg);
+	return 0;
+}
+
+int mac80211_get_maxvhtmcs(char *interface)
+{
+	struct nlattr *tb[NL80211_BAND_ATTR_MAX + 1];
+	struct nl_msg *msg;
+	struct nlattr *bands, *band;
+	int rem;
+	int phy;
+	int maxmcs = 0;
+	phy = mac80211_get_phyidx_by_vifname(interface);
+	if (phy == -1)
+		return 0;
+	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
+	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
+	if (unl_genl_request_single(&unl, msg, &msg) < 0)
+		return 0;
+	bands = unl_find_attr(&unl, msg, NL80211_ATTR_WIPHY_BANDS);
+	if (!bands)
+		goto out;
+	nla_for_each_nested(band, bands, rem) {
+		nla_parse(tb, NL80211_BAND_ATTR_MAX, nla_data(band), nla_len(band), NULL);
+		if (tb[NL80211_BAND_ATTR_VHT_CAPA] &&
+			    tb[NL80211_BAND_ATTR_VHT_MCS_SET])
+				maxmcs = get_vht_mcs(nla_get_u32(tb[NL80211_BAND_ATTR_VHT_CAPA]),
+					       nla_data(tb[NL80211_BAND_ATTR_VHT_MCS_SET]));
 	}
 	nlmsg_free(msg);
 	return maxmcs;

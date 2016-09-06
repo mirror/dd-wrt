@@ -695,7 +695,7 @@ void add_client_classes(unsigned int base, unsigned int level)
 		break;
 	}
 
-	if (nvram_matchi("qos_type", 0)) {	
+	if (nvram_matchi("qos_type", 0)) {
 		// HTB
 		// internal
 		sysprintf("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d", wan_dev, parent, base, uprate, uplimit, quantum);
@@ -725,8 +725,8 @@ void add_client_classes(unsigned int base, unsigned int level)
 			sysprintf("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio %d", "imq1", base, base + 4, lanrate * 15 / 100, lanlimit, quantum, prio + 1);
 			sysprintf("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 7", "imq1", base, base + 5, lanrate * 5 / 100, lanlimit, quantum);
 		}
-		
-	} else {	
+
+	} else {
 		// HFSC
 		// internal
 		sysprintf("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit", wan_dev, 1, base, uprate, uplimit);
@@ -756,7 +756,7 @@ void add_client_classes(unsigned int base, unsigned int level)
 			sysprintf("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit", "imq1", base, base + 4, uprate * 15 / 100, lanlimit);
 			sysprintf("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit", "imq1", base, base + 5, uprate * 5 / 100, lanlimit);
 		}
-		
+
 	}
 
 #if defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN)
@@ -7437,155 +7437,170 @@ int is_ath10k(const char *prefix)
 
 #endif
 
-int HTTxRate20_800(unsigned int index)
+int VHTTxRate20_800(unsigned int index)
 {
-	static const int vHTTxRate20_800[32] = {
-		6500, 13000, 19500, 26000, 39000, 52000, 58500, 65000,	// MCS 0 -8 
-		13000, 26000, 39000, 52000, 78000, 104000, 117000, 130000,	// MCS 8 - 15
-		19500, 39000, 58500, 78000, 117000, 156000, 175500, 195000,	// MCS 16 - 23
-		26000, 52000, 78000, 104000, 156000, 208000, 234000, 260000	// MCS 24 - 31
+	static const int vHTTxRate20_800[40] = {
+		6500, 13000, 19500, 26000, 39000, 52000, 58500, 65000, 78000, 78000,	// MCS 0 -8 
+		13000, 26000, 39000, 52000, 78000, 104000, 117000, 130000, 156000, 156000,	// MCS 8 - 15
+		19500, 39000, 58500, 78000, 117000, 156000, 175500, 195000, 234000, 260000,	// MCS 16 - 23
+		26000, 52000, 78000, 104000, 156000, 208000, 234000, 260000, 312000, 312000	// MCS 24 - 31
 	};
 	if (index > sizeof(HTTxRate20_800) / sizeof(int) - 1) {
-		fprintf(stderr, "utils.c HTTxRate20_800() index overflow\n");
 		return 0;
 	}
 	return vHTTxRate20_800[index];
 }
 
-int HTTxRate20_400(unsigned int index)
+int VHTTxRate20_400(unsigned int index)
 {
-	static const int vHTTxRate20_400[32] = { 7200, 14400, 21700, 28900, 43300, 57800, 65000, 72200,	//
-		14444, 28889, 43333, 57778, 86667, 115556, 130000, 144444,	//
-		21700, 43300, 65000, 86700, 130000, 173300, 195000, 216700,	//
-		28900, 57800, 86700, 115600, 173300, 231100, 260000, 288900	//
+	static const int vHTTxRate20_400[40] = {
+		7200, 14400, 21700, 28900, 43300, 57800, 65000, 72200, 86700, 86700,	//
+		14444, 28889, 43333, 57778, 86667, 115556, 130000, 144444, 173300, 173300,	//
+		21700, 43300, 65000, 86700, 130000, 173300, 195000, 216700, 260000, 288900,	//
+		28900, 57800, 86700, 115600, 173300, 231100, 260000, 288900, 346700	//
 	};
 	if (index > sizeof(vHTTxRate20_400) / sizeof(int) - 1) {
-		fprintf(stderr, "utils.c HTTxRate20_400() index overflow\n");
 		return 0;
 	}
 	return vHTTxRate20_400[index];
 }
 
-int HTTxRate40_800(unsigned int index)
+int VHTTxRate40_800(unsigned int index)
 {
-	static const int vHTTxRate40_800[32] = { 13500, 27000, 40500, 54000, 81000, 108000, 121500, 135000,	//
-		27000, 54000, 81000, 108000, 162000, 216000, 243000, 270000,	//
-		40500, 81000, 121500, 162000, 243000, 324000, 364500, 405000,	//
-		54000, 108000, 162000, 216000, 324000, 432000, 486000, 540000	//
+	static const int vHTTxRate40_800[40] = {
+		13500, 27000, 40500, 54000, 81000, 108000, 121500, 135000, 162000, 180000,	//
+		27000, 54000, 81000, 108000, 162000, 216000, 243000, 270000, 324000, 360000,	//
+		40500, 81000, 121500, 162000, 243000, 324000, 364500, 405000, 486000, 540000,	//
+		54000, 108000, 162000, 216000, 324000, 432000, 486000, 540000, 648000, 720000	//
 	};
 	if (index > sizeof(vHTTxRate40_800) / sizeof(int) - 1) {
-		fprintf(stderr, "utils.c HTTxRate40_800() index overflow\n");
 		return 0;
 	}
 	return vHTTxRate40_800[index];
 }
 
-int HTTxRate40_400(unsigned int index)
+int VHTTxRate40_400(unsigned int index)
 {
-	static const int vHTTxRate40_400[32] = { 15000, 30000, 45000, 60000, 90000, 120000, 135000, 150000,	//
-		30000, 60000, 90000, 120000, 180000, 240000, 270000, 300000,	//
-		45000, 90000, 135000, 180000, 270000, 360000, 405000, 450000,	//
-		60000, 120000, 180000, 240000, 360000, 480000, 540000, 600000	//
+	static const int vHTTxRate40_400[40] = {
+		15000, 30000, 45000, 60000, 90000, 120000, 135000, 150000, 180000, 200000,	//
+		30000, 60000, 90000, 120000, 180000, 240000, 270000, 300000, 360000, 400000,	//
+		45000, 90000, 135000, 180000, 270000, 360000, 405000, 450000, 540000, 600000,	//
+		60000, 120000, 180000, 240000, 360000, 480000, 540000, 600000, 720000, 800000	//
 	};
 	if (index > sizeof(vHTTxRate40_400) / sizeof(int) - 1) {
-		fprintf(stderr, "utils.c HTTxRate40_400() index overflow\n");
 		return 0;
 	}
 	return vHTTxRate40_400[index];
 }
 
-int HTTxRate80_800(unsigned int index)
+int VHTTxRate80_800(unsigned int index)
 {
-	static const int vHTTxRate80_800[32] = {
-		29300, 58500, 87800, 117000, 175500, 234000, 263300, 292500,	//
-		58500, 117000, 175500, 234000, 351000, 468000, 526500, 585000,
-		87800, 175500, 263300, 351000, 526500, 702000, 0, 877500,	//
-		117000, 234000, 351000, 468000, 702000, 936000, 1053000, 1170000
+	static const int vHTTxRate80_800[40] = {
+		29300, 58500, 87800, 117000, 175500, 234000, 263300, 292500, 351000, 390000,	//
+		58500, 117000, 175500, 234000, 351000, 468000, 526500, 585000, 702000, 780000,
+		87800, 175500, 263300, 351000, 526500, 702000, 0, 877500, 1053000, 1170000,	//
+		117000, 234000, 351000, 468000, 702000, 936000, 1053000, 1170000, 1404000, 1560000
 	};
 	if (index > sizeof(vHTTxRate80_800) / sizeof(int) - 1) {
-		fprintf(stderr, "utils.c HTTxRate80_800() index overflow\n");
 		return 0;
 	}
-	if (index == 7)
-		return 390000;
-	if (index == 15)
-		return 780000;
-	if (index == 23)
-		return 1170000;
-	if (index == 31)
-		return 1560000;
 	return vHTTxRate80_800[index];
 }
 
-int HTTxRate80_400(unsigned int index)
+int VHTTxRate80_400(unsigned int index)
 {
-	static const int vHTTxRate80_400[32] = {
-		32500, 65000, 97500, 130000, 195000, 260000, 292500, 325000,	//
-		65000, 130000, 195000, 260000, 390000, 520000, 585000, 650000,	//
-		97500, 195000, 292500, 390000, 585000, 780000, 0, 975000,	//
-		130000, 260000, 390000, 520000, 780000, 1040000, 1170000, 1300000
+	static const int vHTTxRate80_400[40] = {
+		32500, 65000, 97500, 130000, 195000, 260000, 292500, 325000, 390000, 433300,	//
+		65000, 130000, 195000, 260000, 390000, 520000, 585000, 650000, 780000, 866700,	//
+		97500, 195000, 292500, 390000, 585000, 780000, 0, 975000, 1170000, 1300000,	//
+		130000, 260000, 390000, 520000, 780000, 1040000, 1170000, 1300000, 1560000, 1733300
 	};
 	if (index > sizeof(vHTTxRate80_400) / sizeof(int) - 1) {
-		fprintf(stderr, "utils.c HTTxRate80_400() index overflow\n");
 		return 0;
 	}
-	if (index == 7)
-		return 433300;
-	if (index == 15)
-		return 866700;
-	if (index == 23)
-		return 1300000;
-	if (index == 31)
-		return 1733300;
 
 	return vHTTxRate80_400[index];
 }
 
-int HTTxRate160_800(unsigned int index)
+int VHTTxRate160_800(unsigned int index)
 {
-	static const int vHTTxRate160_800[32] = {
-		58500, 117000, 175500, 234000, 351000, 468000, 526500, 585000,
-		117000, 234000, 351000, 468000, 702000, 936000, 1053000, 1170000,
-		175500, 351000, 526500, 702000, 1053000, 1404000, 1579500, 1755000,
-		234000, 468000, 702000, 936000, 1404000, 1872000, 2106000, 2340000,
+	static const int vHTTxRate160_800[40] = {
+		58500, 117000, 175500, 234000, 351000, 468000, 526500, 585000, 702000, 780000,
+		117000, 234000, 351000, 468000, 702000, 936000, 1053000, 1170000, 1404000, 1560000,
+		175500, 351000, 526500, 702000, 1053000, 1404000, 1579500, 1755000, 2106000, 2106000,
+		234000, 468000, 702000, 936000, 1404000, 1872000, 2106000, 2340000, 2808000, 3120000,
 
 	};
 	if (index > sizeof(vHTTxRate160_800) / sizeof(int) - 1) {
-		fprintf(stderr, "utils.c HTTxRate160_800() index overflow\n");
 		return 0;
 	}
-	if (index == 7)
-		return 780000;
-	if (index == 15)
-		return 1560000;
-	if (index == 23)
-		return 2106000;
-	if (index == 31)
-		return 3120000;
 	return vHTTxRate160_800[index];
 }
 
-int HTTxRate160_400(unsigned int index)
+int VHTTxRate160_400(unsigned int index)
 {
-	static const int vHTTxRate160_400[32] = {
-		65000, 130000, 195000, 260000, 390000, 520000, 585000, 650000,	//
-		130000, 260000, 390000, 520000, 780000, 1040000, 1170000, 1300000,
-		195000, 390000, 585000, 780000, 1170000, 1560000, 1755000, 1950000,
-		260000, 520000, 780000, 1040000, 1560000, 2080000, 2340000, 2600000,
+	static const int vHTTxRate160_400[40] = {
+		65000, 130000, 195000, 260000, 390000, 520000, 585000, 650000, 780000, 866700,	//
+		130000, 260000, 390000, 520000, 780000, 1040000, 1170000, 1300000, 1560000, 1733300,
+		195000, 390000, 585000, 780000, 1170000, 1560000, 1755000, 1950000, 2340000, 2340000,
+		260000, 520000, 780000, 1040000, 1560000, 2080000, 2340000, 2600000, 3120000, 3466700,
 	};
 	if (index > sizeof(vHTTxRate160_400) / sizeof(int) - 1) {
 		fprintf(stderr, "utils.c HTTxRate160_400() index overflow\n");
 		return 0;
 	}
-	if (index == 7)
-		return 866700;
-	if (index == 15)
-		return 1733300;
-	if (index == 23)
-		return 2340000;
-	if (index == 31)
-		return 3466700;
 	return vHTTxRate160_400[index];
+}
+
+static int HTtoVHTindex(int mcs)
+{
+	if (mcs < 8)
+		return mcs;
+	if (mcs < 16)
+		return mcs + 2;
+	if (mcs < 24)
+		return mcs + 4;
+	return mcs + 6;
+}
+
+int HTTxRate160_400(unsigned int index)
+{
+	return VHTTxRate160_400(HTtoVHTindex(index));
+}
+
+int HTTxRate160_800(unsigned int index)
+{
+	return VHTTxRate160_800(HTtoVHTindex(index));
+}
+
+int HTTxRate80_400(unsigned int index)
+{
+	return VHTTxRate80_400(HTtoVHTindex(index));
+}
+
+int HTTxRate80_800(unsigned int index)
+{
+	return VHTTxRate80_800(HTtoVHTindex(index));
+}
+
+int HTTxRate40_400(unsigned int index)
+{
+	return VHTTxRate40_400(HTtoVHTindex(index));
+}
+
+int HTTxRate40_800(unsigned int index)
+{
+	return VHTTxRate40_800(HTtoVHTindex(index));
+}
+
+int HTTxRate20_400(unsigned int index)
+{
+	return VHTTxRate20_400(HTtoVHTindex(index));
+}
+
+int HTTxRate20_800(unsigned int index)
+{
+	return VHTTxRate20_800(HTtoVHTindex(index));
 }
 
 int writeproc(char *path, char *value)
