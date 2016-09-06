@@ -3,10 +3,10 @@
     
 < forbid W 
 
-/ï¿½ï¿½ï¿½xxx/8?DZSS
+/ÃÃÃxxx/8?DZSS
 
 /abc/8
-    ï¿½]
+    Ã]
 
 /X(\C{3})/8
     X\x{11234}Y
@@ -255,7 +255,7 @@ correctly, but that messes up comparisons). --/
     \x{10000}ab\>4
     \x{10000}ab\>5
 
-/ï¿½/8
+/í¼€/8
 
 /\w+\x{C4}/8BZ
     a\x{C4}\x{C4}
