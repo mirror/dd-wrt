@@ -227,7 +227,7 @@ void start_sysinit(void)
 	}
 
 	if (nvram_get("et_txq_thresh") == NULL) {
-		nvram_seti("et_txq_thresh", 3300);
+		nvram_set("et_txq_thresh", "1024");
 	}
 
 	switch (getRouterBrand()) {
@@ -443,9 +443,9 @@ void start_sysinit(void)
 				extra_params++;
 			}
 			nvram_set("pci/1/1/venid", "0x14E4");
-			nvram_commit();
 		}
 		nvram_unset("et1macaddr");
+		nvram_commit();
 		set_gpio(6, 1);	//reset button
 		set_gpio(2, 0);	//power led
 		set_gpio(3, 1);	//power led
@@ -667,9 +667,9 @@ void start_sysinit(void)
 				extra_params++;
 			}
 			nvram_set("pci/1/1/venid", "0x14E4");
-			nvram_commit();
 		}
 		nvram_unset("et1macaddr");
+		nvram_commit();
 		set_gpio(6, 1);	//reset button
 		set_gpio(2, 0);	//power led
 		set_gpio(3, 1);	//power led
@@ -891,9 +891,9 @@ void start_sysinit(void)
 				extra_params++;
 			}
 			nvram_seti("pci/1/1/ddwrt", 1);
-			nvram_commit();
 		}
 		nvram_unset("et1macaddr");
+		nvram_commit();
 		set_gpio(6, 1);	//reset button
 		set_gpio(2, 0);	//power led
 		set_gpio(3, 1);	//power led
@@ -1100,9 +1100,9 @@ void start_sysinit(void)
 			nvram_seti("wl0_pcie_mrrs", 128);
 			nvram_seti("wl1_pcie_mrrs", 128);
 			nvram_seti("pci/1/1/ddwrt", 1);
-			nvram_commit();
 		}
 		nvram_unset("et1macaddr");
+		nvram_commit();
 		set_gpio(11, 1);
 		set_gpio(6, 1);
 		break;
@@ -1350,9 +1350,9 @@ void start_sysinit(void)
 			nvram_seti("wl0_pcie_mrrs", 128);
 			nvram_seti("wl1_pcie_mrrs", 128);
 			nvram_seti("pci/1/1/ddwrt", 1);
-			nvram_commit();
 		}
 		nvram_unset("et1macaddr");
+		nvram_commit();
 		set_gpio(15, 1);	//wlan button led on
 		set_gpio(4, 1);
 		set_gpio(9, 1);
@@ -1556,9 +1556,9 @@ void start_sysinit(void)
 			nvram_set("devpath1", "pci/2/1");
 			nvram_seti("wl_pcie_mrrs", 128);
 			nvram_seti("0:ddwrt", 1);
-			nvram_commit();
 		}
 		nvram_unset("et1macaddr");
+		nvram_commit();
 		set_gpio(0, 1);	//USB
 		set_gpio(4, 1);	//wifi
 		set_gpio(6, 1);	//reset button
@@ -1892,10 +1892,10 @@ void start_sysinit(void)
 				extra_params++;
 			}
 
-			nvram_commit();
 		}
 		nvram_unset("et0macaddr");
 		nvram_unset("et1macaddr");
+		nvram_commit();
 		set_gpio(6, 1);	//reset button
 		set_gpio(15, 1);
 		break;
@@ -2628,11 +2628,14 @@ void start_sysinit(void)
 				extra_params++;
 			}
 
-			nvram_commit();
+			
 		}
 		nvram_unset("et0macaddr");
 		nvram_unset("et1macaddr");
+		nvram_set("et_txq_thresh", "3300");
+		nvram_commit();
 		set_gpio(6, 1);	//reset button
+		set_gpio(1, 0);	//LED button
 		//set_gpio(10, 0);
 		set_gpio(20, 0);
 		break;
