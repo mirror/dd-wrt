@@ -65,16 +65,16 @@ No match
     a\x{12257}b
 No match
 
-/[ï¿½]/8
+/[Ã]/8
 Failed: invalid UTF-8 string at offset 1
 
-/ï¿½/8
+/Ã/8
 Failed: invalid UTF-8 string at offset 0
 
-/ï¿½ï¿½ï¿½xxx/8
+/ÃÃÃxxx/8
 Failed: invalid UTF-8 string at offset 0
 
-/ï¿½ï¿½ï¿½xxx/8?DZSSO
+/ÃÃÃxxx/8?DZSSO
 ------------------------------------------------------------------
         Bra
         \X{c0}\X{c0}\X{c0}xxx

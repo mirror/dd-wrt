@@ -9,21 +9,21 @@
 
 /^[\w]+/
     *** Failers
-    ï¿½cole
+    École
 
 /^[\w]+/Lfr_FR
-    ï¿½cole
+    École
 
 /^[\w]+/
     *** Failers
-    ï¿½cole
+    École
 
 /^[\W]+/
-    ï¿½cole
+    École
 
 /^[\W]+/Lfr_FR
     *** Failers
-    ï¿½cole
+    École
 
 /[\b]/
     \b
@@ -37,39 +37,39 @@
 
 /^\w+/
     *** Failers
-    ï¿½cole
+    École
 
 /^\w+/Lfr_FR
-    ï¿½cole
+    École
 
 /(.+)\b(.+)/
-    ï¿½cole
+    École
 
 /(.+)\b(.+)/Lfr_FR
     *** Failers
-    ï¿½cole
+    École
 
-/ï¿½cole/i
-    ï¿½cole
+/École/i
+    École
     *** Failers
-    ï¿½cole
+    école
 
-/ï¿½cole/iLfr_FR
-    ï¿½cole
-    ï¿½cole
+/École/iLfr_FR
+    École
+    école
 
 /\w/IS
 
 /\w/ISLfr_FR
 
 /^[\xc8-\xc9]/iLfr_FR
-    ï¿½cole
-    ï¿½cole
+    École
+    école
 
 /^[\xc8-\xc9]/Lfr_FR
-    ï¿½cole
+    École
     *** Failers 
-    ï¿½cole
+    école
 
 /\W+/Lfr_FR
     >>>\xaa<<<
