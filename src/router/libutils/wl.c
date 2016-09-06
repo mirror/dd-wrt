@@ -1134,6 +1134,8 @@ int do80211priv(const char *ifname, int op, void *data, size_t len)
 
 #define KILO	1000
 
+
+
 long long wifi_getrate(char *ifname)
 {
 #if defined(HAVE_ATH9K) && !defined(HAVE_MVEBU)
@@ -1152,47 +1154,48 @@ long long wifi_getrate(char *ifname)
 		long long rate;
 		int sgi = has_shortgi(ifname);
 		//fprintf(stderr,"sgi %d, width %d\n",sgi, interface->width);
+		int vhtmcs = mac80211_get_maxvhtmcs(ifname);
+		int mcs = mac80211_get_maxmcs(ifname);
 		switch (interface->width) {
 		case 2:
-			rate = 54000 * KILO;
+			rate = 54000;
 			break;
 		case 5:
-			rate = 54000 * KILO / 4;
+			rate = 54000 / 4;
 			break;
 		case 10:
-			rate = 54000 * KILO / 2;
+			rate = 54000 / 2;
 			break;
 		case 20:
 			if (sgi)
-				rate = (HTTxRate20_400(mac80211_get_maxmcs(ifname))) * KILO;
+				rate = vhtmcs ? VHTTxRate20_400(vhtmcs) : HTTxRate20_400(mcs);
 			else
-				rate = (HTTxRate20_800(mac80211_get_maxmcs(ifname))) * KILO;
+				rate = vhtmcs ? VHTTxRate20_800(vhtmcs) : HTTxRate20_800(mcs);
 			break;
 		case 40:
 			if (sgi)
-				rate = (HTTxRate40_400(mac80211_get_maxmcs(ifname))) * KILO;
+				rate = vhtmcs ? VHTTxRate40_400(vhtmcs) : HTTxRate40_400(mcs);
 			else
-				rate = (HTTxRate40_800(mac80211_get_maxmcs(ifname))) * KILO;
-
+				rate = vhtmcs ? VHTTxRate40_800(vhtmcs) : HTTxRate40_800(mcs);
 			break;
 		case 80:
 			if (sgi)
-				rate = (HTTxRate80_400(mac80211_get_maxmcs(ifname))) * KILO;
+				rate = vhtmcs ? VHTTxRate80_400(vhtmcs) : HTTxRate80_400(mcs);
 			else
-				rate = (HTTxRate80_800(mac80211_get_maxmcs(ifname))) * KILO;
+				rate = vhtmcs ? VHTTxRate80_800(vhtmcs) : HTTxRate80_800(mcs);
 			break;
 		case 8080:
 		case 160:
 			if (sgi)
-				rate = (((long long)HTTxRate160_400(mac80211_get_maxmcs(ifname)))) * KILO;	// dummy, no qam256 info yet available
+				rate = vhtmcs ? VHTTxRate160_400(vhtmcs) : HTTxRate160_400(mcs);
 			else
-				rate = (((long long)HTTxRate160_800(mac80211_get_maxmcs(ifname)))) * KILO;	// dummy, no qam256 info yet available
+				rate = vhtmcs ? VHTTxRate160_800(vhtmcs) : HTTxRate160_800(mcs);
 			break;
 		default:
-			rate = 54000 * KILO;
+			rate = 54000;
 		}
 		free(interface);
-		return rate;
+		return rate * KILO;
 	} else
 #endif
 	{
