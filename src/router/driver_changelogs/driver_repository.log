@@ -1,4 +1,27 @@
 ------------------------------------------------------------------------
+r3130 | brainslayer | 2016-09-06 18:18:40 +0200 (Tue, 06 Sep 2016) | 1 line
+
+change order
+------------------------------------------------------------------------
+r3129 | brainslayer | 2016-09-06 12:20:07 +0200 (Tue, 06 Sep 2016) | 1 line
+
+fix corner case
+------------------------------------------------------------------------
+r3128 | brainslayer | 2016-09-06 11:10:32 +0200 (Tue, 06 Sep 2016) | 1 line
+
+add custom pid
+------------------------------------------------------------------------
+r3127 | brainslayer | 2016-09-06 10:24:56 +0200 (Tue, 06 Sep 2016) | 8 lines
+
+Indicate hardware (or firmware) supports that CQM packet-loss report
+will be generated based on station kickout algorithm. As of now mac80211
+tracks connection loss by missing msdu counts (50) whereas ath10k
+firmware tracks them by missing ppdus (+ BAR tries). While firmware is
+trying to adapt its rate table, mac80211 might send out low_ack event to
+hostapd. This is causing frequent connect and disconnect iteration under
+noisy environment or when station is roaming around.
+
+------------------------------------------------------------------------
 r3126 | brainslayer | 2016-09-06 00:03:13 +0200 (Tue, 06 Sep 2016) | 1 line
 
 mac80211: fix packet loss on fq reordering
