@@ -1,3 +1,5 @@
+#include "first.h"
+
 #include "server.h"
 #include "log.h"
 #include "stream.h"
@@ -6,6 +8,8 @@
 #include "configparser.h"
 #include "configfile.h"
 #include "proc_open.h"
+#include "request.h"
+#include "version.h"
 
 #include <sys/stat.h>
 
@@ -18,6 +22,7 @@
 #include <ctype.h>
 #include <limits.h>
 #include <assert.h>
+#include <glob.h>
 
 
 static int config_insert(server *srv) {
@@ -50,7 +55,7 @@ static int config_insert(server *srv) {
 
 		{ "server.max-read-idle",              NULL, T_CONFIG_SHORT,   T_CONFIG_SCOPE_CONNECTION }, /* 20 */
 		{ "server.max-write-idle",             NULL, T_CONFIG_SHORT,   T_CONFIG_SCOPE_CONNECTION }, /* 21 */
-		{ "server.error-handler-404",          NULL, T_CONFIG_STRING,  T_CONFIG_SCOPE_CONNECTION }, /* 22 */
+		{ "server.error-handler",              NULL, T_CONFIG_STRING,  T_CONFIG_SCOPE_CONNECTION }, /* 22 */
 		{ "server.max-fds",                    NULL, T_CONFIG_SHORT,   T_CONFIG_SCOPE_SERVER     }, /* 23 */
 #ifdef HAVE_LSTAT
 		{ "server.follow-symlink",             NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 24 */
@@ -108,34 +113,15 @@ static int config_insert(server *srv) {
 		{ "ssl.honor-cipher-order",            NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 66 */
 		{ "ssl.empty-fragments",               NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 67 */
 		{ "server.upload-temp-file-size",      NULL, T_CONFIG_INT,     T_CONFIG_SCOPE_SERVER     }, /* 68 */
-
-		{ "server.host",
-			"use server.bind instead",
-			T_CONFIG_DEPRECATED, T_CONFIG_SCOPE_UNSET },
-		{ "server.docroot",
-			"use server.document-root instead",
-			T_CONFIG_DEPRECATED, T_CONFIG_SCOPE_UNSET },
-		{ "server.virtual-root",
-			"load mod_simple_vhost and use simple-vhost.server-root instead",
-			T_CONFIG_DEPRECATED, T_CONFIG_SCOPE_UNSET },
-		{ "server.virtual-default-host",
-			"load mod_simple_vhost and use simple-vhost.default-host instead",
-			T_CONFIG_DEPRECATED, T_CONFIG_SCOPE_UNSET },
-		{ "server.virtual-docroot",
-			"load mod_simple_vhost and use simple-vhost.document-root instead",
-			T_CONFIG_DEPRECATED, T_CONFIG_SCOPE_UNSET },
-		{ "server.userid",
-			"use server.username instead",
-			T_CONFIG_DEPRECATED, T_CONFIG_SCOPE_UNSET },
-		{ "server.groupid",
-			"use server.groupname instead",
-			T_CONFIG_DEPRECATED, T_CONFIG_SCOPE_UNSET },
-		{ "server.use-keep-alive",
-			"use server.max-keep-alive-requests = 0 instead",
-			T_CONFIG_DEPRECATED, T_CONFIG_SCOPE_UNSET },
-		{ "server.force-lower-case-files",
-			"use server.force-lowercase-filenames instead",
-			T_CONFIG_DEPRECATED, T_CONFIG_SCOPE_UNSET },
+		{ "mimetype.xattr-name",               NULL, T_CONFIG_STRING,  T_CONFIG_SCOPE_SERVER     }, /* 69 */
+		{ "server.listen-backlog",             NULL, T_CONFIG_INT,     T_CONFIG_SCOPE_CONNECTION }, /* 70 */
+		{ "server.error-handler-404",          NULL, T_CONFIG_STRING,  T_CONFIG_SCOPE_CONNECTION }, /* 71 */
+		{ "server.http-parseopt-header-strict",NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER     }, /* 72 */
+		{ "server.http-parseopt-host-strict",  NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER     }, /* 73 */
+		{ "server.http-parseopt-host-normalize",NULL,T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER     }, /* 74 */
+		{ "server.bsd-accept-filter",          NULL, T_CONFIG_STRING,  T_CONFIG_SCOPE_CONNECTION }, /* 75 */
+		{ "server.stream-request-body",        NULL, T_CONFIG_SHORT,   T_CONFIG_SCOPE_CONNECTION }, /* 76 */
+		{ "server.stream-response-body",       NULL, T_CONFIG_SHORT,   T_CONFIG_SCOPE_CONNECTION }, /* 77 */
 
 		{ NULL,                                NULL, T_CONFIG_UNSET,   T_CONFIG_SCOPE_UNSET      }
 	};
@@ -151,7 +137,6 @@ static int config_insert(server *srv) {
 
 	cv[10].destination = srv->srvconf.event_handler;
 	cv[11].destination = srv->srvconf.pid_file;
-	cv[12].destination = &(srv->srvconf.max_request_size);
 	cv[13].destination = &(srv->srvconf.max_worker);
 
 	cv[23].destination = &(srv->srvconf.max_fds);
@@ -171,6 +156,10 @@ static int config_insert(server *srv) {
 	cv[55].destination = srv->srvconf.breakagelog_file;
 
 	cv[68].destination = &(srv->srvconf.upload_temp_file_size);
+	cv[69].destination = srv->srvconf.xattr_name;
+	cv[72].destination = &(srv->srvconf.http_header_strict);
+	cv[73].destination = &(srv->srvconf.http_host_strict);
+	cv[74].destination = &(srv->srvconf.http_host_normalize);
 
 	srv->config_storage = calloc(1, srv->config_context->used * sizeof(specific_config *));
 
@@ -188,24 +177,32 @@ static int config_insert(server *srv) {
 		s->ssl_pemfile   = buffer_init();
 		s->ssl_ca_file   = buffer_init();
 		s->error_handler = buffer_init();
-		s->server_tag    = buffer_init();
+		s->error_handler_404 = buffer_init();
+		s->server_tag    = buffer_init_string(PACKAGE_DESC);
 		s->ssl_cipher_list = buffer_init();
 		s->ssl_dh_file   = buffer_init();
 		s->ssl_ec_curve  = buffer_init();
 		s->errorfile_prefix = buffer_init();
+	      #if defined(__FreeBSD__) || defined(__NetBSD__) \
+	       || defined(__OpenBSD__) || defined(__DragonflyBSD__)
+		s->bsd_accept_filter = (i == 0)
+		  ? buffer_init()
+		  : buffer_init_buffer(srv->config_storage[0]->bsd_accept_filter);
+	      #endif
 		s->max_keep_alive_requests = 16;
 		s->max_keep_alive_idle = 5;
 		s->max_read_idle = 60;
 		s->max_write_idle = 360;
+		s->max_request_size = 0;
 		s->use_xattr     = 0;
 		s->ssl_enabled   = 0;
 		s->ssl_honor_cipher_order = 1;
 		s->ssl_empty_fragments = 0;
 		s->ssl_use_sslv2 = 0;
 		s->ssl_use_sslv3 = 0;
-		s->use_ipv6      = 0;
-		s->set_v6only    = 1;
-		s->defer_accept  = 0;
+		s->use_ipv6      = (i == 0) ? 0 : srv->config_storage[0]->use_ipv6;
+		s->set_v6only    = (i == 0) ? 1 : srv->config_storage[0]->set_v6only;
+		s->defer_accept  = (i == 0) ? 0 : srv->config_storage[0]->defer_accept;
 #ifdef HAVE_LSTAT
 		s->follow_symlink = 1;
 #endif
@@ -225,12 +222,16 @@ static int config_insert(server *srv) {
 		s->ssl_verifyclient_depth = 9;
 		s->ssl_verifyclient_export_cert = 0;
 		s->ssl_disable_client_renegotiation = 1;
+		s->listen_backlog = (0 == i ? 1024 : srv->config_storage[0]->listen_backlog);
+		s->stream_request_body = 0;
+		s->stream_response_body = 0;
 
 		/* all T_CONFIG_SCOPE_CONNECTION options */
 		cv[2].destination = s->errorfile_prefix;
 		cv[7].destination = s->server_tag;
 		cv[8].destination = &(s->use_ipv6);
 
+		cv[12].destination = &(s->max_request_size);
 		cv[14].destination = s->document_root;
 		cv[15].destination = &(s->force_lowercase_filenames);
 		cv[16].destination = &(s->log_condition_handling);
@@ -281,12 +282,36 @@ static int config_insert(server *srv) {
 		cv[65].destination = &(s->ssl_disable_client_renegotiation);
 		cv[66].destination = &(s->ssl_honor_cipher_order);
 		cv[67].destination = &(s->ssl_empty_fragments);
+		cv[70].destination = &(s->listen_backlog);
+		cv[71].destination = s->error_handler_404;
+	      #if defined(__FreeBSD__) || defined(__NetBSD__) \
+	       || defined(__OpenBSD__) || defined(__DragonflyBSD__)
+		cv[75].destination = s->bsd_accept_filter;
+	      #endif
+		cv[76].destination = &(s->stream_request_body);
+		cv[77].destination = &(s->stream_response_body);
 
 		srv->config_storage[i] = s;
 
 		if (0 != (ret = config_insert_values_global(srv, config->value, cv, i == 0 ? T_CONFIG_SCOPE_SERVER : T_CONFIG_SCOPE_CONNECTION))) {
 			break;
 		}
+
+		if (s->stream_request_body & FDEVENT_STREAM_REQUEST_BUFMIN) {
+			s->stream_request_body |= FDEVENT_STREAM_REQUEST;
+		}
+		if (s->stream_response_body & FDEVENT_STREAM_RESPONSE_BUFMIN) {
+			s->stream_response_body |= FDEVENT_STREAM_RESPONSE;
+		}
+	}
+
+	{
+		specific_config *s = srv->config_storage[0];
+		s->http_parseopts= /*(global, but stored in con->conf.http_parseopts)*/
+		   (srv->srvconf.http_header_strict  ?(HTTP_PARSEOPT_HEADER_STRICT) :0)
+		  |(srv->srvconf.http_host_strict    ?(HTTP_PARSEOPT_HOST_STRICT
+		                                      |HTTP_PARSEOPT_HOST_NORMALIZE):0)
+		  |(srv->srvconf.http_host_normalize ?(HTTP_PARSEOPT_HOST_NORMALIZE):0);
 	}
 
 	if (buffer_string_is_empty(stat_cache_string)) {
@@ -311,6 +336,66 @@ static int config_insert(server *srv) {
 
 	buffer_free(stat_cache_string);
 
+	{
+		data_string *ds;
+		int prepend_mod_indexfile = 1;
+		int append_mod_dirlisting = 1;
+		int append_mod_staticfile = 1;
+
+		/* prepend default modules */
+		for (i = 0; i < srv->srvconf.modules->used; i++) {
+			ds = (data_string *)srv->srvconf.modules->data[i];
+
+			if (buffer_is_equal_string(ds->value, CONST_STR_LEN("mod_indexfile"))) {
+				prepend_mod_indexfile = 0;
+			}
+
+			if (buffer_is_equal_string(ds->value, CONST_STR_LEN("mod_staticfile"))) {
+				append_mod_staticfile = 0;
+			}
+
+			if (buffer_is_equal_string(ds->value, CONST_STR_LEN("mod_dirlisting"))) {
+				append_mod_dirlisting = 0;
+			}
+
+			if (0 == prepend_mod_indexfile &&
+			    0 == append_mod_dirlisting &&
+			    0 == append_mod_staticfile) {
+				break;
+			}
+		}
+
+		if (prepend_mod_indexfile) {
+			/* mod_indexfile has to be loaded before mod_fastcgi and friends */
+			array *modules = array_init();
+
+			ds = data_string_init();
+			buffer_copy_string_len(ds->value, CONST_STR_LEN("mod_indexfile"));
+			array_insert_unique(modules, (data_unset *)ds);
+
+			for (i = 0; i < srv->srvconf.modules->used; i++) {
+				data_unset *du = srv->srvconf.modules->data[i];
+				array_insert_unique(modules, du->copy(du));
+			}
+
+			array_free(srv->srvconf.modules);
+			srv->srvconf.modules = modules;
+		}
+
+		/* append default modules */
+		if (append_mod_dirlisting) {
+			ds = data_string_init();
+			buffer_copy_string_len(ds->value, CONST_STR_LEN("mod_dirlisting"));
+			array_insert_unique(srv->srvconf.modules, (data_unset *)ds);
+		}
+
+		if (append_mod_staticfile) {
+			ds = data_string_init();
+			buffer_copy_string_len(ds->value, CONST_STR_LEN("mod_staticfile"));
+			array_insert_unique(srv->srvconf.modules, (data_unset *)ds);
+		}
+	}
+
 	return ret;
 
 }
@@ -320,15 +405,20 @@ static int config_insert(server *srv) {
 int config_setup_connection(server *srv, connection *con) {
 	specific_config *s = srv->config_storage[0];
 
+	PATCH(http_parseopts);
+
 	PATCH(allow_http11);
 	PATCH(mimetypes);
 	PATCH(document_root);
+	PATCH(high_precision_timestamps);
 	PATCH(max_keep_alive_requests);
 	PATCH(max_keep_alive_idle);
 	PATCH(max_read_idle);
 	PATCH(max_write_idle);
+	PATCH(max_request_size);
 	PATCH(use_xattr);
 	PATCH(error_handler);
+	PATCH(error_handler_404);
 	PATCH(errorfile_prefix);
 #ifdef HAVE_LSTAT
 	PATCH(follow_symlink);
@@ -351,6 +441,10 @@ int config_setup_connection(server *srv, connection *con) {
 
 	PATCH(range_requests);
 	PATCH(force_lowercase_filenames);
+	/*PATCH(listen_backlog);*//*(not necessary; used only at startup)*/
+	PATCH(stream_request_body);
+	PATCH(stream_response_body);
+
 	PATCH(ssl_enabled);
 
 	PATCH(ssl_pemfile);
@@ -383,10 +477,8 @@ int config_setup_connection(server *srv, connection *con) {
 	return 0;
 }
 
-int config_patch_connection(server *srv, connection *con, comp_key_t comp) {
+int config_patch_connection(server *srv, connection *con) {
 	size_t i, j;
-
-	con->conditional_is_valid[comp] = 1;
 
 	/* skip the first, the global context */
 	for (i = 1; i < srv->config_context->used; i++) {
@@ -404,8 +496,10 @@ int config_patch_connection(server *srv, connection *con, comp_key_t comp) {
 				PATCH(document_root);
 			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("server.range-requests"))) {
 				PATCH(range_requests);
-			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("server.error-handler-404"))) {
+			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("server.error-handler"))) {
 				PATCH(error_handler);
+			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("server.error-handler-404"))) {
+				PATCH(error_handler_404);
 			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("server.errorfile-prefix"))) {
 				PATCH(errorfile_prefix);
 			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("mimetype.assign"))) {
@@ -418,6 +512,8 @@ int config_patch_connection(server *srv, connection *con, comp_key_t comp) {
 				PATCH(max_write_idle);
 			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("server.max-read-idle"))) {
 				PATCH(max_read_idle);
+			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("server.max-request-size"))) {
+				PATCH(max_request_size);
 			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("mimetype.use-xattr"))) {
 				PATCH(use_xattr);
 			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("etag.use-inode"))) {
@@ -461,6 +557,10 @@ int config_patch_connection(server *srv, connection *con, comp_key_t comp) {
 				buffer_copy_buffer(con->server_name, s->server_name);
 			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("server.tag"))) {
 				PATCH(server_tag);
+			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("server.stream-request-body"))) {
+				PATCH(stream_request_body);
+			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("server.stream-response-body"))) {
+				PATCH(stream_response_body);
 			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("connection.kbytes-per-second"))) {
 				PATCH(kbytes_per_second);
 			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("debug.log-request-handling"))) {
@@ -481,6 +581,10 @@ int config_patch_connection(server *srv, connection *con, comp_key_t comp) {
 				PATCH(allow_http11);
 			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("server.force-lowercase-filenames"))) {
 				PATCH(force_lowercase_filenames);
+		      #if 0 /*(not necessary; used only at startup)*/
+			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("server.listen-backlog"))) {
+				PATCH(listen_backlog);
+		      #endif
 			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("server.kbytes-per-second"))) {
 				PATCH(global_kbytes_per_second);
 				PATCH(global_bytes_per_second_cnt);
@@ -997,31 +1101,67 @@ static int tokenizer_init(tokenizer_t *t, const buffer *source, const char *inpu
 	return 0;
 }
 
-int config_parse_file(server *srv, config_t *context, const char *fn) {
+static int config_parse_file_stream(server *srv, config_t *context, const buffer *filename) {
 	tokenizer_t t;
 	stream s;
 	int ret;
-	buffer *filename;
-
-	if (buffer_string_is_empty(context->basedir) ||
-			(fn[0] == '/' || fn[0] == '\\') ||
-			(fn[0] == '.' && (fn[1] == '/' || fn[1] == '\\'))) {
-		filename = buffer_init_string(fn);
-	} else {
-		filename = buffer_init_buffer(context->basedir);
-		buffer_append_string(filename, fn);
-	}
 
 	if (0 != stream_open(&s, filename)) {
 		log_error_write(srv, __FILE__, __LINE__, "sbss",
 				"opening configfile ", filename, "failed:", strerror(errno));
-		ret = -1;
+		return -1;
 	} else {
 		tokenizer_init(&t, filename, s.start, s.size);
 		ret = config_parse(srv, context, &t);
 	}
 
 	stream_close(&s);
+	return ret;
+}
+
+int config_parse_file(server *srv, config_t *context, const char *fn) {
+	buffer *filename;
+	size_t i;
+	int ret = -1;
+      #ifdef GLOB_BRACE
+	int flags = GLOB_BRACE;
+      #else
+	int flags = 0;
+      #endif
+	glob_t gl;
+
+	if ((fn[0] == '/' || fn[0] == '\\') ||
+	    (fn[0] == '.' && (fn[1] == '/' || fn[1] == '\\')) ||
+	    (fn[0] == '.' && fn[1] == '.' && (fn[2] == '/' || fn[2] == '\\'))) {
+		filename = buffer_init_string(fn);
+	} else {
+		filename = buffer_init_buffer(context->basedir);
+		buffer_append_string(filename, fn);
+	}
+
+	switch (glob(filename->ptr, flags, NULL, &gl)) {
+	case 0:
+		for (i = 0; i < gl.gl_pathc; ++i) {
+			buffer_copy_string(filename, gl.gl_pathv[i]);
+			ret = config_parse_file_stream(srv, context, filename);
+			if (0 != ret) break;
+		}
+		globfree(&gl);
+		break;
+	case GLOB_NOMATCH:
+		if (filename->ptr[strcspn(filename->ptr, "*?[]{}")] != '\0') { /*(contains glob metachars)*/
+			ret = 0; /* not an error if no files match glob pattern */
+		}
+		else {
+			log_error_write(srv, __FILE__, __LINE__, "sb", "include file not found: ", filename);
+		}
+		break;
+	case GLOB_ABORTED:
+	case GLOB_NOSPACE:
+		log_error_write(srv, __FILE__, __LINE__, "sbss", "glob()", filename, "failed:", strerror(errno));
+		break;
+	}
+
 	buffer_free(filename);
 	return ret;
 }
@@ -1102,13 +1242,12 @@ int config_parse_cmd(server *srv, config_t *context, const char *cmd) {
 static void context_init(server *srv, config_t *context) {
 	context->srv = srv;
 	context->ok = 1;
-	context->configs_stack = array_init();
-	context->configs_stack->is_weakref = 1;
+	vector_config_weak_init(&context->configs_stack);
 	context->basedir = buffer_init();
 }
 
 static void context_free(config_t *context) {
-	array_free(context->configs_stack);
+	vector_config_weak_clear(&context->configs_stack);
 	buffer_free(context->basedir);
 }
 
@@ -1119,7 +1258,7 @@ int config_read(server *srv, const char *fn) {
 	data_string *dcwd;
 	int ret;
 	char *pos;
-	data_array *modules;
+	buffer *filename;
 
 	context_init(srv, &context);
 	context.all_configs = srv->config_context;
@@ -1131,7 +1270,6 @@ int config_read(server *srv, const char *fn) {
 #endif
 	if (pos) {
 		buffer_copy_string_len(context.basedir, fn, pos - fn + 1);
-		fn = pos + 1;
 	}
 
 	dc = data_config_init();
@@ -1143,97 +1281,32 @@ int config_read(server *srv, const char *fn) {
 	context.current = dc;
 
 	/* default context */
-	srv->config = dc->value;
 	dpid = data_integer_init();
 	dpid->value = getpid();
 	buffer_copy_string_len(dpid->key, CONST_STR_LEN("var.PID"));
-	array_insert_unique(srv->config, (data_unset *)dpid);
+	array_insert_unique(dc->value, (data_unset *)dpid);
 
 	dcwd = data_string_init();
 	buffer_string_prepare_copy(dcwd->value, 1023);
 	if (NULL != getcwd(dcwd->value->ptr, dcwd->value->size - 1)) {
 		buffer_commit(dcwd->value, strlen(dcwd->value->ptr));
 		buffer_copy_string_len(dcwd->key, CONST_STR_LEN("var.CWD"));
-		array_insert_unique(srv->config, (data_unset *)dcwd);
+		array_insert_unique(dc->value, (data_unset *)dcwd);
 	} else {
 		dcwd->free((data_unset*) dcwd);
 	}
 
-	ret = config_parse_file(srv, &context, fn);
+	filename = buffer_init_string(fn);
+	ret = config_parse_file_stream(srv, &context, filename);
+	buffer_free(filename);
 
 	/* remains nothing if parser is ok */
-	force_assert(!(0 == ret && context.ok && 0 != context.configs_stack->used));
+	force_assert(!(0 == ret && context.ok && 0 != context.configs_stack.used));
 	context_free(&context);
 
 	if (0 != ret) {
 		return ret;
 	}
-
-	if (NULL != (dc = (data_config *)array_get_element(srv->config_context, "global"))) {
-		srv->config = dc->value;
-	} else {
-		return -1;
-	}
-
-	if (NULL != (modules = (data_array *)array_get_element(srv->config, "server.modules"))) {
-		data_string *ds;
-		data_array *prepends;
-
-		if (modules->type != TYPE_ARRAY) {
-			fprintf(stderr, "server.modules must be an array");
-			return -1;
-		}
-
-		prepends = data_array_init();
-
-		/* prepend default modules */
-		if (NULL == array_get_element(modules->value, "mod_indexfile")) {
-			ds = data_string_init();
-			buffer_copy_string_len(ds->value, CONST_STR_LEN("mod_indexfile"));
-			array_insert_unique(prepends->value, (data_unset *)ds);
-		}
-
-		prepends = (data_array *)configparser_merge_data((data_unset *)prepends, (data_unset *)modules);
-		force_assert(NULL != prepends);
-		buffer_copy_buffer(prepends->key, modules->key);
-		array_replace(srv->config, (data_unset *)prepends);
-		modules->free((data_unset *)modules);
-		modules = prepends;
-
-		/* append default modules */
-		if (NULL == array_get_element(modules->value, "mod_dirlisting")) {
-			ds = data_string_init();
-			buffer_copy_string_len(ds->value, CONST_STR_LEN("mod_dirlisting"));
-			array_insert_unique(modules->value, (data_unset *)ds);
-		}
-
-		if (NULL == array_get_element(modules->value, "mod_staticfile")) {
-			ds = data_string_init();
-			buffer_copy_string_len(ds->value, CONST_STR_LEN("mod_staticfile"));
-			array_insert_unique(modules->value, (data_unset *)ds);
-		}
-	} else {
-		data_string *ds;
-
-		modules = data_array_init();
-
-		/* server.modules is not set */
-		ds = data_string_init();
-		buffer_copy_string_len(ds->value, CONST_STR_LEN("mod_indexfile"));
-		array_insert_unique(modules->value, (data_unset *)ds);
-
-		ds = data_string_init();
-		buffer_copy_string_len(ds->value, CONST_STR_LEN("mod_dirlisting"));
-		array_insert_unique(modules->value, (data_unset *)ds);
-
-		ds = data_string_init();
-		buffer_copy_string_len(ds->value, CONST_STR_LEN("mod_staticfile"));
-		array_insert_unique(modules->value, (data_unset *)ds);
-
-		buffer_copy_string_len(modules->key, CONST_STR_LEN("server.modules"));
-		array_insert_unique(srv->config, (data_unset *)modules);
-	}
-
 
 	if (0 != config_insert(srv)) {
 		return -1;
@@ -1289,6 +1362,43 @@ int config_set_defaults(server *srv) {
 			return -1;
 		}
 	}
+
+	if (!srv->srvconf.upload_tempdirs->used) {
+		data_string *ds = data_string_init();
+		const char *tmpdir = getenv("TMPDIR");
+		if (NULL == tmpdir) tmpdir = "/var/tmp";
+		buffer_copy_string(ds->value, tmpdir);
+		array_insert_unique(srv->srvconf.upload_tempdirs, (data_unset *)ds);
+	}
+
+	if (srv->srvconf.upload_tempdirs->used) {
+		buffer * const b = srv->tmp_buf;
+		size_t len;
+		if (!buffer_string_is_empty(srv->srvconf.changeroot)) {
+			buffer_copy_buffer(b, srv->srvconf.changeroot);
+			buffer_append_slash(b);
+		} else {
+			buffer_reset(b);
+		}
+		len = buffer_string_length(b);
+
+		for (i = 0; i < srv->srvconf.upload_tempdirs->used; ++i) {
+			const data_string * const ds = (data_string *)srv->srvconf.upload_tempdirs->data[i];
+			buffer_string_set_length(b, len); /*(truncate)*/
+			buffer_append_string_buffer(b, ds->value);
+			if (-1 == stat(b->ptr, &st1)) {
+				log_error_write(srv, __FILE__, __LINE__, "sb",
+					"server.upload-dirs doesn't exist:", b);
+			} else if (!S_ISDIR(st1.st_mode)) {
+				log_error_write(srv, __FILE__, __LINE__, "sb",
+					"server.upload-dirs isn't a directory:", b);
+			}
+		}
+	}
+
+	chunkqueue_set_tempdirs_default(
+		srv->srvconf.upload_tempdirs,
+		srv->srvconf.upload_temp_file_size);
 
 	if (buffer_string_is_empty(s->document_root)) {
 		log_error_write(srv, __FILE__, __LINE__, "s",

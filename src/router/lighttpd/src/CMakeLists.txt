@@ -1,6 +1,7 @@
 include(CheckCSourceCompiles)
 include(CheckIncludeFiles)
 include(CheckFunctionExists)
+include(CheckSymbolExists)
 include(CheckVariableExists)
 include(CheckTypeSize)
 include(CheckLibraryExists)
@@ -27,11 +28,11 @@ option(WITH_LUA "with lua 5.1 for mod_magnet [default: off]")
 # option(WITH_KERBEROS5 "use Kerberos5 support with OpenSSL [default: off]")
 option(WITH_FAM "fam/gamin for reducing number of stat() calls [default: off]")
 option(WITH_GDBM "gdbm storage for mod_trigger_b4_dl [default: off]")
-option(WITH_MEMCACHE "memcached storage for mod_trigger_b4_dl [default: off]")
+option(WITH_MEMCACHED "memcached storage for mod_trigger_b4_dl [default: off]")
 option(WITH_LIBEV "libev support for fdevent handlers [default: off]")
 option(WITH_LIBUNWIND "with libunwind to print backtraces in asserts [default: off]")
 
-if(CMAKE_COMPILER_IS_GNUCC)
+if(CMAKE_C_COMPILER_ID MATCHES "GNU" OR CMAKE_C_COMPILER_ID MATCHES "Clang")
 	option(BUILD_EXTRA_WARNINGS "extra warnings")
 
 	if(BUILD_EXTRA_WARNINGS)
@@ -45,6 +46,8 @@ option(BUILD_STATIC "build a static lighttpd with all modules added")
 
 if(BUILD_STATIC)
 	set(LIGHTTPD_STATIC 1)
+elseif(APPLE)
+	set(CMAKE_SHARED_MODULE_PREFIX "")
 else()
 	set(CMAKE_SHARED_LIBRARY_PREFIX "")
 endif()
@@ -155,6 +158,10 @@ check_function_exists(issetugid HAVE_ISSETUGID)
 check_function_exists(inet_pton HAVE_INET_PTON)
 check_function_exists(memset_s HAVE_MEMSET_S)
 check_function_exists(explicit_bzero HAVE_EXPLICIT_BZERO)
+check_symbol_exists(clock_gettime "time.h" HAVE_CLOCK_GETTIME)
+if (NOT HAVE_CLOCK_GETTIME)
+	check_library_exists(rt clock_gettime "time.h" HAVE_CLOCK_GETTIME)
+endif()
 check_c_source_compiles("
 	#include <sys/types.h>
 	#include <sys/socket.h>
@@ -171,6 +178,14 @@ check_c_source_compiles("
 		__dummy(x);
 	}
 	" HAVE_WEAK_SYMBOLS)
+check_c_source_compiles("
+	#include <time.h>
+	int main(void) {
+		struct tm t;
+		t.tm_gmtoff = 0;
+		return 0;
+	}
+	" HAVE_STRUCT_TM_GMTOFF)
 
 ## refactor me
 macro(XCONFIG _package _include_DIR _link_DIR _link_FLAGS _cflags)
@@ -221,11 +236,16 @@ else()
 endif()
 
 if(WITH_OPENSSL)
+	if(APPLE)
+		set(CMAKE_REQUIRED_INCLUDES /opt/local/include)
+	endif()
 	check_include_files(openssl/ssl.h HAVE_OPENSSL_SSL_H)
+	if(APPLE)
+		set(CMAKE_REQUIRED_INCLUDES)
+	endif()
 	if(HAVE_OPENSSL_SSL_H)
 		check_library_exists(crypto BIO_f_base64 "" HAVE_LIBCRYPTO)
 		if(HAVE_LIBCRYPTO)
-			set(OPENSSL_NO_KRB5 1)
 			check_library_exists(ssl SSL_new "" HAVE_LIBSSL)
 		endif()
 	endif()
@@ -397,7 +417,7 @@ else()
 endif()
 
 if(WITH_LUA)
-	pkg_search_module(LUA REQUIRED lua lua5.1 lua-5.1)
+	pkg_search_module(LUA REQUIRED lua5.3 lua-5.3 lua5.2 lua-5.2 lua5.1 lua-5.1 lua)
 	message(STATUS "found lua at: INCDIR: ${LUA_INCLUDE_DIRS} LIBDIR: ${LUA_LIBRARY_DIRS} LDFLAGS: ${LUA_LDFLAGS} CFLAGS: ${LUA_CFLAGS}")
 	set(HAVE_LIBLUA 1 "Have liblua")
 	set(HAVE_LUA_H  1 "Have liblua header")
@@ -427,12 +447,14 @@ else()
 	unset(HAVE_GDBM)
 endif()
 
-if(WITH_MEMCACHE)
-	check_include_files(memcache.h HAVE_MEMCACHE_H)
-	check_library_exists(memcache mc_new "" HAVE_MEMCACHE)
-else()
-	unset(HAVE_MEMCACHE_H)
-	unset(HAVE_MEMCACHE)
+if(WITH_MEMCACHED)
+	check_include_files(libmemcached/memcached.h HAVE_LIBMEMCACHED_MEMCACHED_H)
+	check_library_exists(memcached memcached "" HAVE_LIBMEMCACHED)
+	if(HAVE_LIBMEMCACHED_MEMCACHED_H AND HAVE_LIBMEMCACHED)
+		set(USE_MEMCACHED 1)
+	else()
+		message(FATAL_ERROR "didn't find libmemcached")
+	endif()
 endif()
 
 if(NOT BUILD_STATIC)
@@ -480,6 +502,7 @@ set(COMMON_SRC
 	stat_cache.c plugin.c joblist.c etag.c array.c
 	data_string.c data_count.c data_array.c
 	data_integer.c md5.c data_fastcgi.c
+	vector.c
 	fdevent_select.c fdevent_libev.c
 	fdevent_poll.c fdevent_linux_sysepoll.c
 	fdevent_solaris_devpoll.c fdevent_solaris_port.c
@@ -503,6 +526,10 @@ if(WIN32)
 endif()
 
 add_executable(lemon lemon.c)
+if(CMAKE_C_COMPILER_ID MATCHES "GNU" OR CMAKE_C_COMPILER_ID MATCHES "Clang")
+	# yeah, lemon is a mess... but: it only needs to run at compile time
+	add_target_properties(lemon COMPILE_FLAGS -Wno-cast-align)
+endif()
 
 ## Build parsers by using lemon...
 lemon_parser(configparser.y)
@@ -563,6 +590,29 @@ add_and_install_library(mod_userdir mod_userdir.c)
 add_and_install_library(mod_usertrack mod_usertrack.c)
 add_and_install_library(mod_webdav mod_webdav.c)
 
+add_executable(test_buffer
+	test_buffer.c
+	buffer.c
+)
+add_test(NAME test_buffer COMMAND test_buffer)
+
+add_executable(test_base64
+	test_base64.c
+	buffer.c
+	base64.c
+)
+add_test(NAME test_base64 COMMAND test_base64)
+
+add_executable(test_configfile
+	test_configfile.c
+	buffer.c
+	array.c
+	data_string.c
+	keyvalue.c
+	log.c
+)
+add_test(NAME test_configfile COMMAND test_configfile)
+
 if(HAVE_PCRE_H)
 	target_link_libraries(lighttpd ${PCRE_LDFLAGS})
 	add_target_properties(lighttpd COMPILE_FLAGS ${PCRE_CFLAGS})
@@ -572,10 +622,10 @@ if(HAVE_PCRE_H)
 	add_target_properties(mod_dirlisting COMPILE_FLAGS ${PCRE_CFLAGS})
 	target_link_libraries(mod_redirect ${PCRE_LDFLAGS})
 	add_target_properties(mod_redirect COMPILE_FLAGS ${PCRE_CFLAGS})
-	target_link_libraries(mod_ssi ${PCRE_LDFLAGS})
-	add_target_properties(mod_ssi COMPILE_FLAGS ${PCRE_CFLAGS})
 	target_link_libraries(mod_trigger_b4_dl ${PCRE_LDFLAGS})
 	add_target_properties(mod_trigger_b4_dl COMPILE_FLAGS ${PCRE_CFLAGS})
+	target_link_libraries(test_configfile ${PCRE_LDFLAGS})
+	add_target_properties(test_configfile COMPILE_FLAGS ${PCRE_CFLAGS})
 endif()
 
 target_link_libraries(mod_magnet ${LUA_LDFLAGS})
@@ -630,21 +680,22 @@ if(HAVE_GDBM_H)
 	target_link_libraries(mod_trigger_b4_dl gdbm)
 endif()
 
-if(HAVE_MEMCACHE_H)
-	target_link_libraries(mod_trigger_b4_dl memcache)
+if(WITH_MEMCACHED)
+	target_link_libraries(mod_trigger_b4_dl memcached)
 endif()
 
-if(CMAKE_COMPILER_IS_GNUCC)
+if(CMAKE_C_COMPILER_ID MATCHES "GNU" OR CMAKE_C_COMPILER_ID MATCHES "Clang")
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -Wall -g -Wshadow -W -pedantic ${WARN_CFLAGS}")
 	set(CMAKE_C_FLAGS_RELEASE        "${CMAKE_C_FLAGS_RELEASE}     -O2")
 	set(CMAKE_C_FLAGS_DEBUG          "${CMAKE_C_FLAGS_DEBUG}       -O0")
 	set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_WITHDEBINFO} -O2")
 	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${WARN_LDFLAGS}")
 	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${WARN_LDFLAGS}")
-	add_definitions(-D_GNU_SOURCE)
 endif()
 
-add_target_properties(lighttpd LINK_FLAGS "-Wl,-export-dynamic")
+if((NOT APPLE) OR CMAKE_C_COMPILER_ID MATCHES "GNU")
+	add_target_properties(lighttpd LINK_FLAGS "-Wl,-export-dynamic")
+endif()
 
 set_target_properties(lighttpd PROPERTIES CMAKE_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
 
@@ -682,6 +733,13 @@ endif()
 if(WITH_LIBUNWIND)
 	target_link_libraries(lighttpd ${LIBUNWIND_LDFLAGS})
 	add_target_properties(lighttpd COMPILE_FLAGS ${LIBUNWIND_CFLAGS})
+
+	target_link_libraries(test_buffer ${LIBUNWIND_LDFLAGS})
+	add_target_properties(test_buffer COMPILE_FLAGS ${LIBUNWIND_CFLAGS})
+	target_link_libraries(test_base64 ${LIBUNWIND_LDFLAGS})
+	add_target_properties(test_base64 COMPILE_FLAGS ${LIBUNWIND_CFLAGS})
+	target_link_libraries(test_configfile ${PCRE_LDFLAGS} ${LIBUNWIND_LDFLAGS})
+	add_target_properties(test_configfile COMPILE_FLAGS ${PCRE_CFLAGS} ${LIBUNWIND_CFLAGS})
 endif()
 
 if(NOT WIN32)

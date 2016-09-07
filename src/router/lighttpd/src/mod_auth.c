@@ -1,3 +1,5 @@
+#include "first.h"
+
 #include "plugin.h"
 #include "http_auth.h"
 #include "log.h"
@@ -285,7 +287,7 @@ static handler_t mod_auth_uri_handler(server *srv, connection *con, void *p_d) {
 		}
 	}
 
-	if (!auth_satisfied) {
+	if (1 != auth_satisfied) { /*(0 or -2)*/
 		data_string *method, *realm;
 		method = (data_string *)array_get_element(req, "method");
 		realm = (data_string *)array_get_element(req, "realm");
@@ -293,21 +295,29 @@ static handler_t mod_auth_uri_handler(server *srv, connection *con, void *p_d) {
 		con->http_status = 401;
 		con->mode = DIRECT;
 
+		if (!method) return HANDLER_FINISHED;/*(should not happen; config is validated at startup)*/
+		if (!realm) return HANDLER_FINISHED; /*(should not happen; config is validated at startup)*/
+
 		if (0 == strcmp(method->value->ptr, "basic")) {
 			buffer_copy_string_len(p->tmp_buf, CONST_STR_LEN("Basic realm=\""));
 			buffer_append_string_buffer(p->tmp_buf, realm->value);
-			buffer_append_string_len(p->tmp_buf, CONST_STR_LEN("\""));
+			buffer_append_string_len(p->tmp_buf, CONST_STR_LEN("\", charset=\"UTF-8\""));
 
 			response_header_insert(srv, con, CONST_STR_LEN("WWW-Authenticate"), CONST_BUF_LEN(p->tmp_buf));
 		} else if (0 == strcmp(method->value->ptr, "digest")) {
 			char hh[33];
-			http_auth_digest_generate_nonce(srv, p, srv->tmp_buf, hh);
+			http_auth_digest_generate_nonce(srv, p, srv->tmp_buf, &hh);
 
 			buffer_copy_string_len(p->tmp_buf, CONST_STR_LEN("Digest realm=\""));
 			buffer_append_string_buffer(p->tmp_buf, realm->value);
-			buffer_append_string_len(p->tmp_buf, CONST_STR_LEN("\", nonce=\""));
+			buffer_append_string_len(p->tmp_buf, CONST_STR_LEN("\", charset=\"UTF-8\", nonce=\""));
+			buffer_append_uint_hex(p->tmp_buf, (uintmax_t)srv->cur_ts);
+			buffer_append_string_len(p->tmp_buf, CONST_STR_LEN(":"));
 			buffer_append_string(p->tmp_buf, hh);
 			buffer_append_string_len(p->tmp_buf, CONST_STR_LEN("\", qop=\"auth\""));
+			if (-2 == auth_satisfied) {
+				buffer_append_string_len(p->tmp_buf, CONST_STR_LEN(", stale=true"));
+			}
 
 			response_header_insert(srv, con, CONST_STR_LEN("WWW-Authenticate"), CONST_BUF_LEN(p->tmp_buf));
 		} else {

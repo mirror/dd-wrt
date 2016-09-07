@@ -3,7 +3,196 @@
 NEWS
 ====
 
-- 1.4.39
+- 1.4.41
+  * remove long-deprecated, non-functional config opts
+  * [config] inherit server.use-ipv6 and server.set-v6only (fixes #678)
+  * [mod_auth] fix Digest auth to be better than Basic (fixes #1844)
+  * [mod_ssi] fix #config sizefmt="bytes"
+  * [autobuild] move inet_pton detection later
+  * [core] #include <sys/filio.h> for FIONREAD (fixes #2726)
+  * [autobuild] clock_gettime() -lrt with glibc < 2.17
+  * [security] do not emit HTTP_PROXY to CGI env
+  * [build_cmake] clock_gettime() -lrt w/ glibc < 2.17 (fixes #2737)
+  * [core] avoid spurious trace and error abort
+  * [core] stay in CON_STATE_CLOSE until done with req
+  * [core] $HTTP["remoteip"] must handle IPv6 w/o []
+  * [mod_status] show keep-alive status w/ text output (fixes #2740)
+  * do not set REDIRECT_URI in mod_magnet, mod_rewrite (#2738)
+  * revert 1.4.40 swap of REQUEST_URI, REDIRECT_URI (fixes #2738)
+  * [core] permit IPv6 address scope identifier
+  * [TLS] better handling of SSL_ERROR_WANT_READ/WRITE
+  * [TLS] read all available records from SSL_read()
+  * [core] try AF_INET after AF_INET6 if use-ipv6
+  * [core] set chunkqueue tempdirs at startup
+  * [security] ensure gid != 0 if server.username set (fixes #2725)
+  * [security] disable stat_cache if !follow-symlink (fixes #2724)
+  * [core] fix buffer_copy_string_hex() assert (fixes #2742)
+  * [security] encode quoting chars in HTML and XML
+  * [cmake] always define _GNU_SOURCE
+  * [cmake] enable warnings for GCC and Clang
+  * [cmake] set cmake_minimum_required to 2.8.2
+
+- 1.4.40 - 2016-07-16
+  * [mod_ssi] enhance support for ssi vars (thx fbrosson)
+  * add handling for lua 5.2 and 5.3 (fixes #2674)
+  * use libmemcached instead of deprecated libmemcache
+  * add force_assert for more allocation results
+  * [mod_cgi] use MAP_PRIVATE to mmap temporary file (fixes #2715)
+  * [core] do not send SIGHUP to process group unless server.max-workers is used (fixes #2711)
+  * [mod_cgi] edge case chdir "/" when docroot "/" (fixes #2460)
+  * [mod_cgi] issue trace and exit if execve() fails (closes #2302)
+  * [configparser] don't continue after parse error (fixes #2717)
+  * [core] never evaluate else branches until the previous branches are ready (fixes #2598)
+  * [core] fix conditional cache handling
+  * [core] improve conditional enabling (thx Gwenlliana, #2598)
+  * [mod_compress] case-insensitive content-codings (fixes #2645)
+  * [plugins] don't include dlfcn.h if not needed (fixes #2548)
+  * [mod_fastcgi] 404 for X-Sendfile file not found (fixes #2474)
+  * [mod_cgi] send 500 if CGI ends and there is no response (fixes #2542)
+  * [mod_cgi] consolidate CGI cleanup code
+  * [mod_cgi] simplify mod_cgi_handle_subrequest()
+  * [mod_cgi] kill CGI if fail to write request body
+  * [mod_proxy] use case-insensitive comparision to filter headers, send Connection: Close to backend (fixes #421)
+  * [mod_dirlisting] dir-listing.hide-dotfiles = "enabled" by default (fixes #1081)
+  * [mod_secdownload] fix buffer overflow in secdl_verify_mac (reported by Fortify Open Review Project)
+  * [mod_fastcgi,mod_scgi] fix leaking file-descriptor when backend spawning failed (reported by Fortify Open Review Project)
+  * [core] improve array API to prevent memory leaks
+  * [core] refactor array search; raise array size limit to SSIZE_MAX
+  * [core] fix memory leak in configparser_merge_data
+  * [core] provide array_extract_element and use it
+  * [core] configparser: error on duplicate keys in array merge (fixes #2685)
+  * [core] more careful parse of $SERVER["socket"] config str (prepare #2204)
+  * [core] accept $SERVER["socket"] without port, use server.port as fallback (fixes #2204)
+  * [mod_magnet] define lua_pushglobaltable (for lua5.1) and use it (fixes #2719)
+  * [ssl] support disabling ssl.verifyclient.activate in SNI callback (fixes #2531)
+  * restart (some) syscalls after SIGCHLD interrupted them; should fix LDAP problems (fixes #2464)
+  * [core] log remote address on request timeouts (fixes #652)
+  * [autobuild] use AC_CANONICAL_HOST instead of AC_CANONICAL_TARGET (fixes #1866)
+  * [core] fix request_start in keep-alive requests to mark time when received first byte (fixes #2412)
+  * [core] truncate pidfile on exit (fixes #2695)
+  * consistent inclusion of config.h at top of files (fixes #2073)
+  * [core] add generic vector implementation
+  * [core] replace array weakref with vector
+  * [base64] fix crash due to broken force_assert
+  * [unittests] add test_buffer and test_base64 unit tests
+  * [buffer] refactor buffer_path_simplify (fixes #2560)
+  * validate return values from strtol, strtoul (fixes #2564)
+  * [mod_ssi] Add SSI vars SCRIPT_{URI,URL} and REQUEST_SCHEME (fixes #2721)
+  * [config] warn if server.upload-dirs has non-existent dirs (fixes #2508)
+  * [mod_proxy] accept LF delimited headers, not just CRLF (fixes #2594)
+  * [core] wait for grandchild to be ready when daemonizing (fixes #2712, thx pasdVn)
+  * [core] respond 411 Length Required if request has Transfer-Encoding: chunked (fixes #631)
+  * [core] fixed the loading for default modules if they are specified explicitly
+  * [core] lighttpd -tt performs preflight startup checks (fixes #411)
+  * [stat] mimetype.xattr-name global config option (fixes #2631)
+  * [mod_webdav] allow Depth: Infinity lock on file (fixes #2296)
+  * [mod_status] use snprintf() instead of sprintf()
+  * pass buf size to li_tohex()
+  * use li_[iu]tostrn() instead of li_[iu]tostr()
+  * [stream] fstat() after open() to obtain file size
+  * [core] clean up srv before exiting for lighttpd -[vVh]
+  * [mod_fastcgi,mod_scgi] check for spawning on same unix socket (fixes #319)
+  * [mod_cgi] always set QUERY_STRING (fixes #1339)
+  * [mod_auth] send charset="UTF-8" in WWW-Authenticate (fixes #1468)
+  * [mod_magnet] rename var for clarity (fixes #1483)
+  * [mod_extforward] reset cond_cache for scheme (fixes #1499)
+  * [mod_webdav] readdir POSIX compat (fixes #1826)
+  * [mod_expire] reset caching response headers for error docs (fixes #1919)
+  * [mod_status] page refresh option (fixes #2170)
+  * [mod_status] table w/ count of con states (fixes #2427)
+  * [mod_dirlisting] class for dir <tr> (fixes #2304)
+  * [core] define __STDC_WANT_LIB_EXT1__ (fixes #2722)
+  * [core] setrlimit max-fds <= rlim_max for non-root (fixes #2723)
+  * [mod_ssi] config ssi.conditional-requests
+  * [mod_ssi] config ssi.exec (fixes #2051)
+  * [mod_redirect,mod_rewrite] short-circuit if blank replacement (fixes #2085)
+  * [mod_indexfile] save physical path to env (fixes #448, #892)
+  * [core] open fd when appending file to cq (fixes #2655)
+  * [config] server.listen-backlog option (fixes #1825, #2116)
+  * [core] retry tempdirs on partial write, ENOSPC (fixes #2588)
+  * [core] compile with upcoming openssl 1.1.0 release (fixes #2727)
+  * [core] improve dynamic handler control flow logic
+  * [core] defer reading request body until handle subrequest (fixes #2541)
+  * [core] always poll for client POLLHUP/POLLERR events (fixes #399)
+  * [mod_fastcgi,mod_scgi,mod_proxy] handlers can read response before sending req body (fixes #131, #2566)
+  * [mod_cgi] asynchronous send of request body to CGI
+  * [core] compile with upcoming openssl 1.1.0 release (fixes #2727)
+  * [core] set REDIRECT_STATUS to error_handler_saved_status (fixes #1828)
+  * [core] server.error-handler new directive for error pages (fixes #2702)
+  * [core] support IPv6 in $HTTP["remote-ip"] CIDR cond match (fixes #2706)
+  * [core] http_response_send_file() shared code (#2017)
+  * [mod_fastcgi] use http_response_xsendfile() (fixes #799, fixes #851, fixes #2017, fixes #2076)
+  * [mod_scgi] X-Sendfile feature (fixes #2253)
+  * [mod_cgi] X-Sendfile feature (fixes #2313)
+  * [mod_webdav] lseek,read if fs can not mmap (#2666, fixes #962)
+  * [mod_compress] use mmap and trap SIGBUS (#2666, fixes #1879)
+  * fallback to lseek()/read() if mmap() fails (#fixes 2666)
+  * [mod_auth] skip blank lines and comment lines (fixes #2327)
+  * [core] fallback to write if sendfile not supported (fixes #471, #987)
+  * [core] preserve PATH_INFO case on case-insensitive fs (fixes #406)
+  * [mod_ssi, mod_cml] set DOCUMENT_ROOT to basedir (fixes #2383)
+  * [core] cmd line opt to shutdown after idle time limit (fixes #2696)
+  * [core] lighttpd -1 handles single request on stdin socket (fixes #1584)
+  * [mod_fastcgi,mod_scgi] IPv6 support (fixes #2372)
+  * [mod_status] add JSON output option (fixed #2432)
+  * [mod_webdav] map COPY/MOVE Destination to aliases (fixes #1787)
+  * [mod_webdav] improve PROPFIND,PROPPATCH (#1818, #1953)
+  * [core] reset response headers, write_queue for error docs
+  * build with libressl
+  * static build instructions using SCons or make
+  * [mod_auth] preserve WWW-Authenticate for error docs (fixes #2730)
+  * check close() return code after writing to file
+  * adjustments for openssl 1.1.0 pre-release
+  * [config] support include file glob (fixes #1221)
+  * [mod_evasive] 302 redirect option if limit reached (fixes #2199)
+  * [build] enhancements for cross-compiling (fixes #2276)
+  * [mod_accesslog] report aborted con state with %X (fixes #1890)
+  * [mod_ssi] fix SSI statement parser
+  * [mod_ssi] include relative to alias,userdir (fixes #222)
+  * [mod_ssi] add PCRE_* options to constrain regex
+  * [mod_ssi] more flexible quoting (fixes #1768)
+  * [core] wrap IPv6 literal in "[]" in redirect URL
+  * [mod_ssi] fix parse of tag across buf boundary (fixes #2732)
+  * [mod_cgi,mod_scgi] X-Sendfile sets file_started (fixes #2733)
+  * [mod_fastcgi] no chunked response w/ X-Sendfile (fixes #2733)
+  * [config] opts for http header parsing strictness (fixes #551, fixes #1086, f
+ixes #1184, fixes #2143, #2258, #2281, fixes #946, fixes #1330, fixes #602, #101
+6)
+  * [config] normalize IP strings in lighttpd.conf
+  * [build_cmake] use MODULE on Mac OS X (fixes #1761)
+  * [config] server.bsd-accept-filter option
+  * [mod_webdav] create file w/ LOCK request if ENOENT
+  * [core] buffer large responses to tempfiles (fixes #758, fixes #760, fixes #933, fixes #1387, #1283, fixes #2083)
+  * [core] stream response to client (#949)
+  * [TLS] release openssl buffers as used (fixes #1265, fixes #1283, #881)
+  * [config] config options to stream request/response (#949, #376)
+  * [core] option to stream request body to backend (fixes #376)
+  * [core] option to stream response body to client (fixes #949, #760, #1283, #1387)
+  * drain backend socket/pipe bufs upon FDEVENT_HUP
+  * remove excess calls to joblist_append()
+  * defer choosing "Transfer-Encoding: chunked"
+  * asynchronous, bidirectional streaming options
+  * fix errors detected by Coverity Scan
+  * [cygwin] fix mod_proxy and mod_fastcgi ioctl use
+  * [mod_webdav] remove excess SQL param to UNLOCK
+  * graceful shutdown without unnecessary 1 sec delay
+  * [core] disable Nagle algorithm (TCP_NODELAY)
+  * [core] add declarations to fdevent.h (#2373)
+  * [tests] remove dependency on CGI.pm
+  * [TLS] fix return value checks during cert init
+  * [core] fix server.max-request-size to be precise (fixes #2131)
+  * [mod_webdav] fix proppatch mem leak, other fixes (#fixes 1334, #fixes 2000)
+  * [autobuild] CMake check for struct tm tm_gmtoff (fixes #2014)
+  * [mod_uploadprogress] fix mem leak (#1858)
+  * [core] make server.max-request-size scopeable (fixes #1901)
+  * [mod_fastcgi,mod_scgi] check for spawning on same unix socket (#319)
+  * [mod_accesslog] %a %A %C %D %k %{}t %{}T (fixes #1145, fixes #1415, fixes #2
+081)
+  * [mod_access] new directive url.access-allow (fixes #1421)
+  * [core] fdevent_libev: update use of ev_timer
+  * [mod_cgi] handle local redirect response (fixes #2108)
+
+- 1.4.39 - 2016-01-02
   * [core] fix memset_s call (fixes #2698)
   * [chunk] fix use after free / double free (fixes #2700)
 
