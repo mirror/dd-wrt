@@ -1,0 +1,16 @@
+#!/bin/sh
+# Copyright (C) 2012 Igor Drach
+# leaigor@gmail.com
+
+set -e
+
+case "$1" in
+    start)
+	mkdir -p /tmp/xupnpd-feeds
+	XUPNPDROOTDIR=/usr/share/xupnpd /usr/bin/xupnpd
+	;;
+    stop)
+	killall xupnpd
+	rm /var/run/xupnpd.pid
+	;;
+esac

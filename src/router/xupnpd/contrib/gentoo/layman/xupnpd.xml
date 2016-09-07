@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE repositories SYSTEM "/dtd/repositories.dtd">
+<repositories xmlns="" version="1.0">
+  <repo quality="experimental" status="unofficial">
+    <name><![CDATA[xupnpd]]></name>
+    <description><![CDATA[Semen Panevin's overlay for xupnpd]]></description>
+    <owner type="person">
+      <email>semen@icelan.ru</email>
+      <name><![CDATA[Semen Panevin]]></name>
+    </owner>
+    <source type="svn">http://tsdemuxer.googlecode.com/svn/trunk/xupnpd/src/contrib/gentoo/portage</source>
+  </repo>
+</repositories>

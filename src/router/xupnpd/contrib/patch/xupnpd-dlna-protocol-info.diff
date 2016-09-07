@@ -1,0 +1,20 @@
+Index: xupnpd_soap.lua
+===================================================================
+--- xupnpd_soap.lua	(revision 394)
++++ xupnpd_soap.lua	(working copy)
+@@ -252,6 +252,15 @@
+ function services.cms.GetProtocolInfo()
+     local protocols={}
+ 
++    if cfg.dlna_extras==true then
++        for i,mtype in pairs(mime) do
++            if mtype[5]~='*' then
++                local dlna_pn=string.gsub(mtype[5],';.*','')
++                table.insert(protocols,mtype[4]..dlna_pn)
++            end
++        end
++    end
++
+     for i,j in pairs(upnp_proto) do table.insert(protocols,j..'*') end
+ 
+     return {{'Sink',''}, {'Source',table.concat(protocols,',')}}
