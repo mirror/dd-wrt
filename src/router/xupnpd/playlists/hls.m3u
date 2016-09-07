@@ -1,0 +1,13 @@
+#EXTM3U name="TV" plugin=hls
+
+#EXTINF:0, Пятый Канал
+http://btv-net.mediacdn.ru/TVB7/5channel/playlist.m3u8
+
+#EXTINF:0, Россия Культура
+http://btv-net.mediacdn.ru/TVB7/russiak/playlist.m3u8
+
+#EXTINF:0, Россия 24
+http://btv-net.mediacdn.ru/TVB7/russia24/playlist.m3u8
+
+#EXTINF:0, Карусель
+http://btv-net.mediacdn.ru/TVB7/carousel/playlist.m3u8

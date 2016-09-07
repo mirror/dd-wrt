@@ -1,0 +1,5 @@
+#EXTM3U
+#EXTINF:0 event=reload ,Reload
+file://./localmedia/test.mpeg
+#EXTINF:0 event=update_feeds ,Update feeds
+file://./localmedia/test.mpeg

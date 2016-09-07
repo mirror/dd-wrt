@@ -1,0 +1,12 @@
+Package: xupnpd
+Version: 1.03-ubuntu1
+Section: net
+Architecture: i386
+Depends: libuuid1
+Priority: extra
+Maintainer: clark15b@doom9 <clark15b@gmail.com>
+Homepage: http://xupnpd.org
+Description: xupnpd - eXtensible UPnP agent
+ This program is a light DLNA Media Server which provides ContentDirectory:1 service for sharing IPTV unicast streams over local area network (with udpxy for multicast to HTTP unicast conversion).
+ The program shares UTF8-encoded M3U playlists with links over local area network as content of the directory.
+ You can watch HDTV broadcasts (multicast or unicast) and listen Internet Radio in IP network without transcoding and PC.

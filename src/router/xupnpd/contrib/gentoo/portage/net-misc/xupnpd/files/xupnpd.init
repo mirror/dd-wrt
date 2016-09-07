@@ -1,0 +1,25 @@
+#!/sbin/runscript
+# Copyright 1999-2010 Gentoo Foundation
+# Distributed under the terms of the GNU General Public License, v2 or later
+
+runas_user=xupnpd:xupnpd
+rundir=/run/xupnpd
+pidfile=${rundir}/xupnpd.pid
+
+command="/usr/sbin/xupnpd"
+start_stop_daemon_args="--env XUPNPDROOTDIR=/usr/share/xupnpd --user ${runas_user}"
+
+description="xupnpd - eXtensible UPnP agent"
+
+depend() {
+	need localmount net
+	after bootmisc
+	use logger
+}
+
+start_pre() {
+	checkpath --directory --owner ${runas_user} --mode 0755 ${rundir}
+#	checkpath --directory --owner ${runas_user} --mode 0775 /var/lib/xupnpd/playlists
+#	checkpath --directory --owner ${runas_user} --mode 0775 /var/lib/xupnpd/playlists/example
+#	checkpath --directory --owner ${runas_user} --mode 0775 /usr/share/xupnpd/plugins
+}

@@ -1,0 +1,13 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2012 Igor Drach
+# leaigor@gmail.com
+START=99
+STOP=99
+
+start() {
+	XUPNPDROOTDIR=/usr/share/xupnpd /usr/bin/xupnpd
+}
+
+stop () {
+	killall xupnpd
+}

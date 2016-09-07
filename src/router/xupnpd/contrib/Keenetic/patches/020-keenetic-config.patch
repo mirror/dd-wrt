@@ -1,0 +1,28 @@
+--- a/xupnpd.lua
++++ b/xupnpd.lua
+@@ -1,10 +1,10 @@
+ cfg={}
+ 
+ -- multicast interface for SSDP exchange, 'eth0', 'br0', 'br-lan' for example
+-cfg.ssdp_interface='lo'
++cfg.ssdp_interface='br0'
+ 
+ -- 'cfg.ssdp_loop' enables multicast loop (if player and server in one host)
+-cfg.ssdp_loop=1
++cfg.ssdp_loop=0
+ 
+ -- HTTP port for incoming connections
+ cfg.http_port=4044
+@@ -13,10 +13,10 @@ cfg.http_port=4044
+ cfg.log_facility='local0'
+ 
+ -- 'cfg.daemon' detach server from terminal
+-cfg.daemon=false
++cfg.daemon=true
+ 
+ -- silent mode - no logs, no pid file
+-cfg.embedded=false
++cfg.embedded=true
+ 
+ -- 'cfg.debug' enables SSDP debug output to stdout (if cfg.daemon=false)
+ -- 0-off, 1-basic, 2-messages

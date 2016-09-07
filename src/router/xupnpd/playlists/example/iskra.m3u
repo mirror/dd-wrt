@@ -1,0 +1,112 @@
+﻿#EXTM3U url-tvg="http://www.teleguide.info/download/new3/jtv.zip" m3uautoload=1 cache=500 deinterlace=4
+#EXTINF:-1 tvg-name="Первый_канал" tvg-logo="Первый канал" group-title="Эфирные каналы" ,Первый канал
+udp://@233.34.28.1:1001
+#EXTINF:-1 tvg-name="Россия_1" tvg-logo="Россия 1" ,Россия 1
+udp://@233.34.28.2:1001
+#EXTINF:-1 tvg-name="ТВЦ" tvg-logo="ТВ Центр" ,ТВ Центр
+udp://@233.34.28.3:1001
+#EXTINF:-1 tvg-name="НТВ" tvg-logo="НТВ" ,НТВ
+udp://@233.34.28.4:1001
+#EXTINF:-1 tvg-name="Россия_Культура" tvg-logo="Россия К" ,Россия К
+udp://@233.34.28.5:1001
+#EXTINF:-1 tvg-name="Россия_2_(Спорт)" tvg-logo="Россия 2" ,Россия 2
+udp://@233.34.28.6:1001
+#EXTINF:-1 tvg-name="Спорт_1" tvg-logo="Спорт1" ,Спорт 1
+udp://@233.34.28.31:1001
+#EXTINF:-1 tvg-name="Столица" tvg-logo="Столица" ,Столица
+udp://@233.34.28.30:1001
+#EXTINF:-1 tvg-name="Россия_24" tvg-logo="Россия 24" ,Россия 24
+udp://@239.255.10.46:5500
+#EXTINF:-1 tvg-name="EuroNews" tvg-logo="Euronews" ,Euronews
+udp://@233.34.28.29:1001
+#EXTINF:-1 tvg-name="СТС" tvg-logo="СТС" ,СТС
+udp://@233.34.28.10:1001
+#EXTINF:-1 tvg-name="Домашний" tvg-logo="Домашний" ,Домашний
+udp://@233.34.28.9:1001
+#EXTINF:-1 tvg-name="РЕН_ТВ" tvg-logo="РЕН-ТВ" ,РЕН-ТВ
+udp://@233.34.28.8:1001
+#EXTINF:-1 tvg-name="ТНТ" tvg-logo="ТНТ" ,ТНТ
+udp://@233.34.28.12:1001
+#EXTINF:-1 tvg-name="ДТВ" tvg-logo="ДТВ" ,ДТВ
+udp://@233.34.28.11:1001
+#EXTINF:-1 tvg-name="Пятый_Канал" tvg-logo="Пятый" ,Пятый
+udp://@239.255.10.62:5500
+#EXTINF:-1 tvg-name="Канал_2x2" tvg-logo="2x2" ,2x2
+udp://@239.255.10.41:5500
+#EXTINF:-1 tvg-name="MTV-Russia" tvg-logo="MTV-Russia" ,MTV Россия
+udp://@233.34.28.28:1001
+#EXTINF:-1 tvg-name="Муз_ТВ" tvg-logo="МузТВ" ,МузТВ
+udp://@233.34.28.7:1001
+#EXTINF:-1 tvg-name="ТВ-3" tvg-logo="ТВ3" ,ТВ3
+udp://@233.34.28.27:1001
+#EXTINF:-1 tvg-name="7_ТВ" tvg-logo="7 ТВ" ,7 ТВ
+udp://@233.34.28.26:1001
+#EXTINF:-1 tvg-name="Карусель" tvg-logo="Карусель" ,Карусель
+udp://@239.255.10.25:5500
+#EXTINF:-1 tvg-name="Радость_моя" tvg-logo="Радость моя" ,Радость моя
+udp://@239.255.10.97:5500
+
+#EXTINF:-1 tvg-name="ТДК" tvg-logo="ТДК" group-title="Спутниковые каналы" ,Телевизионный Дамский Клуб
+udp://@239.255.10.84:5500
+#EXTINF:-1 tvg-name="РБК" tvg-logo="РБК" ,РБК
+udp://@239.255.10.52:5500
+#EXTINF:-1 tvg-name="Amazing_Life_(Удивительная_жизнь)" tvg-logo="Amazing Life" ,Amazing Life
+udp://@239.255.10.8:5500
+#EXTINF:-1 tvg-name="Первый_игровой" tvg-logo="Первый Игровой" ,Первый Игровой
+udp://@239.255.10.39:5500
+#EXTINF:-1 tvg-name="МИР" tvg-logo="Мир" ,Мир
+udp://@239.255.10.89:5500
+#EXTINF:-1 tvg-name="ТРО" tvg-logo="ТРО Союз" ,ТРО
+udp://@239.255.10.53:5500
+#EXTINF:-1 tvg-name="Союз" tvg-logo="Союз" ,Союз
+udp://@239.255.10.77:5500
+#EXTINF:-1 tvg-name="О2ТВ" tvg-logo="О2ТВ" ,О2ТВ
+udp://@239.255.10.78:5500
+#EXTINF:-1 tvg-name="Bridge_TV" tvg-logo="BridgeTV" ,BridgeTV
+udp://@239.255.10.61:5500
+#EXTINF:-1 tvg-name="A-ONE" tvg-logo="A-One" ,A ONE
+udp://@239.255.10.33:5500
+#EXTINF:-1 tvg-name="Music_Box_RU" tvg-logo="Music Box RU" ,Music Box Ru
+udp://@239.255.10.16:5500
+#EXTINF:-1 tvg-name="Music_Box_TV" tvg-logo="MusicBoxTV" ,MusicBoxTV
+udp://@239.255.10.87:5500
+#EXTINF:-1 tvg-name="Юмор Box" tvg-logo="Юмор Box" ,Юмор Box
+udp://@239.255.10.110:5500
+#EXTINF:-1 tvg-name="Мать_и_Дитя" tvg-logo="Мать и дитя" ,Мать и дитя
+udp://@239.255.10.114:5500
+#EXTINF:-1 tvg-name="Улыбка_ребенка" tvg-logo="Улыбка Ребенка" ,Улыбка Ребенка
+udp://@239.255.10.122:5500
+#EXTINF:-1 tvg-name="Первый_образовательный" tvg-logo="Первый образовательный" ,Первый образовательный
+udp://@239.255.10.117:5500
+#EXTINF:-1 tvg-name="Styletv" tvg-logo="Styletv" ,Styletv
+udp://@239.255.10.118:5500
+#EXTINF:-1 tvg-name="ТТС" tvg-logo="ТТС" ,ТТС
+udp://@239.255.10.119:5500
+#EXTINF:-1 tvg-name="Домашний_магазин" tvg-logo="Домашний магазин" ,Домашний магазин
+udp://@239.255.10.116:5500
+#EXTINF:-1 tvg-name="Подмосковье" tvg-logo="Подмосковье" ,Подмосковье
+udp://@239.255.10.120:5500
+#EXTINF:-1 tvg-name="8_канал_(Беларусь)" tvg-logo="8 канал" ,8 канал
+udp://@239.255.10.136:5500
+#EXTINF:-1 tvg-name="TVARM" tvg-logo="TVARM" ,TVARM.RU
+udp://@239.255.10.85:5500
+#EXTINF:-1 tvg-name="Татарстан_-_Новый_Век" tvg-logo="Татарстан" ,Татарстан Новый Век
+udp://@239.255.10.134:5500
+#EXTINF:-1 tvg-name="Russia_Today" tvg-logo="Russia Today" ,Russia Today
+udp://@239.255.10.121:5500
+#EXTINF:-1 tvg-name="Bloomberg" tvg-logo="Bloomberg" ,Bloomberg
+udp://@239.255.10.135:5500
+#EXTINF:-1 tvg-name="BBC_World" tvg-logo="BBC World" ,BBC World
+udp://@239.255.10.6:5500
+#EXTINF:-1 tvg-name="NHK_World" tvg-logo="NHK World" ,NHK World
+udp://@239.255.10.124:5500
+#EXTINF:-1 tvg-name="CCTV-Русский" tvg-logo="Cctv4" ,CCTV
+udp://@239.255.10.129:5500
+#EXTINF:-1 tvg-name="Deutsche_Welle" tvg-logo="Deutsche Welle" ,Deutsche Welle
+udp://@239.255.10.17:5500
+#EXTINF:-1 tvg-name="TV5" tvg-logo="TV5" ,TV5 Monde
+udp://@239.255.10.44:5500
+#EXTINF:-1 tvg-name="France_24" tvg-logo="France 24" ,France 24
+udp://@239.255.10.45:5500
+#EXTINF:-1 tvg-name="3D Test" tvg-logo="3D Test" ,3D Test
+udp://@239.255.10.9:5500

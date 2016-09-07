@@ -1,0 +1,42 @@
+#!/bin/sh
+
+MOUNTPNT="/media/DISK_A1"
+MOUNT="$MOUNTPNT/system"
+XUPNPD="$MOUNT/usr/bin/xupnpd"
+
+export PATH=$MOUNT/bin:$MOUNT/sbin:$MOUNT/usr/bin:$MOUNT/usr/sbin:/sbin:/usr/sbin:/bin:/usr/bin
+export LD_LIBRARY_PATH=$MOUNT/lib:$MOUNT/usr/lib:/lib:/usr/lib
+
+start() {
+	iptables -I INPUT -i lo -j ACCEPT
+	$XUPNPD
+}
+
+stop() {
+	killall xupnpd
+	iptables -D INPUT -i lo -j ACCEPT
+}
+
+case "$1" in
+	start)
+	    start
+	    ;;
+	stop)
+	    stop
+	    ;;
+	restart)
+	    stop
+	    start
+	    ;;
+    link_up)
+        ;;
+    ppp_up)
+        ;;
+    link_down)
+        ;;
+    ppp_down)
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart|link_up|link_down|ppp_up|ppp_down}"
+        ;; 
+esac
