@@ -1134,8 +1134,6 @@ int do80211priv(const char *ifname, int op, void *data, size_t len)
 
 #define KILO	1000
 
-
-
 long long wifi_getrate(char *ifname)
 {
 #if defined(HAVE_ATH9K) && !defined(HAVE_MVEBU)
@@ -1167,29 +1165,11 @@ long long wifi_getrate(char *ifname)
 			rate = 54000 / 2;
 			break;
 		case 20:
-			if (sgi)
-				rate = vhtmcs ? VHTTxRate20_400(vhtmcs) : HTTxRate20_400(mcs);
-			else
-				rate = vhtmcs ? VHTTxRate20_800(vhtmcs) : HTTxRate20_800(mcs);
-			break;
 		case 40:
-			if (sgi)
-				rate = vhtmcs ? VHTTxRate40_400(vhtmcs) : HTTxRate40_400(mcs);
-			else
-				rate = vhtmcs ? VHTTxRate40_800(vhtmcs) : HTTxRate40_800(mcs);
-			break;
 		case 80:
-			if (sgi)
-				rate = vhtmcs ? VHTTxRate80_400(vhtmcs) : HTTxRate80_400(mcs);
-			else
-				rate = vhtmcs ? VHTTxRate80_800(vhtmcs) : HTTxRate80_800(mcs);
-			break;
 		case 8080:
 		case 160:
-			if (sgi)
-				rate = vhtmcs ? VHTTxRate160_400(vhtmcs) : HTTxRate160_400(mcs);
-			else
-				rate = vhtmcs ? VHTTxRate160_800(vhtmcs) : HTTxRate160_800(mcs);
+			rate = VHTTxRate(mcs, vhtmcs, sgi, interface->width);
 			break;
 		default:
 			rate = 54000;

@@ -1313,13 +1313,13 @@ static int get_vht_mcs(__u32 capa, const __u8 *mcs)
 {
 	__u16 tmp;
 	int i;
-	int latest=0;
+	int latest=-1;
 	tmp = mcs[4] | (mcs[5] << 8);
 	for (i = 1; i <= 8; i++) {
 		switch ((tmp >> ((i-1)*2) ) & 3) {
-		case 0: latest = i*7; break;
-		case 1: latest = i*8; break;
-		case 2: latest = i*9; break;
+		case 0: latest = ((i-1)*9) + 7; break;
+		case 1: latest = ((i-1)*9) + 8; break;
+		case 2: latest = ((i-1)*9) + 9; break;
 		case 3: 
 		break;
 		}
@@ -1409,7 +1409,7 @@ int mac80211_get_maxvhtmcs(char *interface)
 	struct nlattr *bands, *band;
 	int rem;
 	int phy;
-	int maxmcs = 0;
+	int maxmcs = -1;
 	phy = mac80211_get_phyidx_by_vifname(interface);
 	if (phy == -1)
 		return 0;
