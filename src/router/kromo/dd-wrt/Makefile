@@ -676,7 +676,11 @@ ifeq ($(CONFIG_ERC),y)
 ifeq ($(CONFIG_CARAMBOLA),y)
 	cp -fa erc/extra_hornet/* $(INSTALLDIR) || true
 else
-	cp -fa erc/extra/* $(INSTALLDIR) || true
+ifeq ($(CONFIG_RUT500),y)
+		cp -fa erc/extra_rut500/* $(INSTALLDIR) || true
+else
+		cp -fa erc/extra/* $(INSTALLDIR) || true
+endif
 endif
 endif
 ifeq ($(CONFIG_MAKSAT_CORAL),y)
