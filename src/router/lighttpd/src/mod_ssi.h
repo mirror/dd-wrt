@@ -1,5 +1,6 @@
 #ifndef _MOD_SSI_H_
 #define _MOD_SSI_H_
+#include "first.h"
 
 #include "base.h"
 #include "buffer.h"
@@ -7,23 +8,18 @@
 
 #include "plugin.h"
 
-#ifdef HAVE_PCRE_H
-#include <pcre.h>
-#endif
-
 /* plugin config for all request/connections */
 
 typedef struct {
 	array *ssi_extension;
 	buffer *content_type;
+	unsigned short conditional_requests;
+	unsigned short ssi_exec;
 } plugin_config;
 
 typedef struct {
 	PLUGIN_DATA;
 
-#ifdef HAVE_PCRE_H
-	pcre *ssi_regex;
-#endif
 	buffer *timefmt;
 	int sizefmt;
 

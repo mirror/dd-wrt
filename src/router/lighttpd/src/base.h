@@ -1,9 +1,7 @@
 #ifndef _BASE_H_
 #define _BASE_H_
+#include "first.h"
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
 #include "settings.h"
 
 #include <sys/types.h>
@@ -32,6 +30,12 @@
 
 #if defined HAVE_LIBSSL && defined HAVE_OPENSSL_SSL_H
 # define USE_OPENSSL
+# include <openssl/opensslconf.h>
+#  ifndef USE_OPENSSL_KERBEROS
+#   ifndef OPENSSL_NO_KRB5
+#   define OPENSSL_NO_KRB5
+#   endif
+#  endif
 # include <openssl/ssl.h>
 # if ! defined OPENSSL_NO_TLSEXT && ! defined SSL_CTRL_SET_TLSEXT_HOSTNAME
 #  define OPENSSL_NO_TLSEXT
@@ -247,10 +251,12 @@ typedef struct {
 	buffer *document_root;
 	buffer *server_name;
 	buffer *error_handler;
+	buffer *error_handler_404;
 	buffer *server_tag;
 	buffer *dirlist_encoding;
 	buffer *errorfile_prefix;
 
+	unsigned short high_precision_timestamps;
 	unsigned short max_keep_alive_requests;
 	unsigned short max_keep_alive_idle;
 	unsigned short max_read_idle;
@@ -258,6 +264,8 @@ typedef struct {
 	unsigned short use_xattr;
 	unsigned short follow_symlink;
 	unsigned short range_requests;
+	unsigned short stream_request_body;
+	unsigned short stream_response_body;
 
 	/* debug */
 
@@ -295,7 +303,9 @@ typedef struct {
 	unsigned short etag_use_mtime;
 	unsigned short etag_use_size;
 	unsigned short force_lowercase_filenames; /* if the FS is case-insensitive, force all files to lower-case */
+	unsigned int http_parseopts;
 	unsigned int max_request_size;
+	int listen_backlog;
 
 	unsigned short kbytes_per_second; /* connection kb/s limit */
 
@@ -317,6 +327,11 @@ typedef struct {
 	 *
 	 */
 	off_t *global_bytes_per_second_cnt_ptr; /*  */
+
+#if defined(__FreeBSD__) || defined(__NetBSD__) \
+ || defined(__OpenBSD__) || defined(__DragonflyBSD__)
+	buffer *bsd_accept_filter;
+#endif
 
 #ifdef USE_OPENSSL
 	SSL_CTX *ssl_ctx; /* not patched */
@@ -343,14 +358,30 @@ typedef enum {
 	CON_STATE_CLOSE
 } connection_state_t;
 
-typedef enum { COND_RESULT_UNSET, COND_RESULT_FALSE, COND_RESULT_TRUE } cond_result_t;
+typedef enum {
+	/* condition not active at the moment because itself or some
+	 * pre-condition depends on data not available yet
+	 */
+	COND_RESULT_UNSET,
+
+	/* special "unset" for branches not selected due to pre-conditions
+	 * not met (but pre-conditions are not "unset" anymore)
+	 */
+	COND_RESULT_SKIP,
+
+	/* actually evaluated the condition itself */
+	COND_RESULT_FALSE, /* not active */
+	COND_RESULT_TRUE, /* active */
+} cond_result_t;
+
 typedef struct {
+	/* current result (with preconditions) */
 	cond_result_t result;
+	/* result without preconditions (must never be "skip") */
+	cond_result_t local_result;
 	int patterncount;
 	int matches[3 * 10];
 	buffer *comp_value; /* just a pointer */
-	
-	comp_key_t comp_type;
 } cond_cache_t;
 
 typedef struct {
@@ -363,8 +394,7 @@ typedef struct {
 
 	time_t connection_start;
 	time_t request_start;
-
-	struct timeval start_tv;
+	struct timespec request_start_hp;
 
 	size_t request_count;        /* number of requests handled in this connection */
 	size_t loops_per_request;    /* to catch endless loops in a single request
@@ -431,9 +461,8 @@ typedef struct {
 	buffer *server_name;
 
 	/* error-handler */
-	buffer *error_handler;
 	int error_handler_saved_status;
-	int in_error_handler;
+	http_method_t error_handler_saved_method;
 
 	struct server_socket *srv_socket;   /* reference to the server-socket */
 
@@ -496,6 +525,7 @@ typedef struct {
 	buffer *breakagelog_file;
 
 	unsigned short dont_daemonize;
+	unsigned short preflight_check;
 	buffer *changeroot;
 	buffer *username;
 	buffer *groupname;
@@ -513,7 +543,6 @@ typedef struct {
 	unsigned short max_worker;
 	unsigned short max_fds;
 	unsigned short max_conns;
-	unsigned int max_request_size;
 
 	unsigned short log_request_header_on_error;
 	unsigned short log_state_handling;
@@ -527,6 +556,12 @@ typedef struct {
 	} stat_cache_engine;
 	unsigned short enable_cores;
 	unsigned short reject_expect_100_with_417;
+	buffer *xattr_name;
+
+	unsigned short http_header_strict;
+	unsigned short http_host_strict;
+	unsigned short http_host_normalize;
+	unsigned short high_precision_timestamps;
 } server_config;
 
 typedef struct server_socket {
@@ -611,7 +646,6 @@ typedef struct server {
 	buffer *ts_date_str;
 
 	/* config-file */
-	array *config;
 	array *config_touched;
 
 	array *config_context;

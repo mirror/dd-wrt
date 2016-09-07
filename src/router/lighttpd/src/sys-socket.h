@@ -1,5 +1,6 @@
 #ifndef WIN32_SOCKET_H
 #define WIN32_SOCKET_H
+#include "first.h"
 
 #ifdef __WIN32
 
@@ -20,6 +21,11 @@
 #include <arpa/inet.h>
 
 #include <netdb.h>
+
+#ifdef HAVE_SYS_FILIO_H
+#include <sys/filio.h>  /* FIONREAD (for illumos (OpenIndiana)) */
+#endif
+
 #endif
 
 #endif

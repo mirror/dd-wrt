@@ -1,3 +1,5 @@
+#include "first.h"
+
 #include "base.h"
 #include "log.h"
 #include "buffer.h"
@@ -74,7 +76,6 @@ SETDEFAULTS_FUNC(mod_usertrack_set_defaults) {
 		{ "usertrack.cookie-max-age",    NULL, T_CONFIG_INT, T_CONFIG_SCOPE_CONNECTION },          /* 1 */
 		{ "usertrack.cookie-domain",     NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },       /* 2 */
 
-		{ "usertrack.cookiename",        NULL, T_CONFIG_DEPRECATED, T_CONFIG_SCOPE_CONNECTION },
 		{ NULL,                          NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET }
 	};
 
@@ -226,10 +227,10 @@ URIHANDLER_FUNC(mod_usertrack_uri_handler) {
 	li_MD5_Update(&Md5Ctx, CONST_STR_LEN("+"));
 
 	/* we assume sizeof(time_t) == 4 here, but if not it ain't a problem at all */
-	li_itostr(hh, srv->cur_ts);
+	li_itostrn(hh, sizeof(hh), srv->cur_ts);
 	li_MD5_Update(&Md5Ctx, (unsigned char *)hh, strlen(hh));
 	li_MD5_Update(&Md5Ctx, (unsigned char *)srv->entropy, sizeof(srv->entropy));
-	li_itostr(hh, rand());
+	li_itostrn(hh, sizeof(hh), rand());
 	li_MD5_Update(&Md5Ctx, (unsigned char *)hh, strlen(hh));
 
 	li_MD5_Final(h, &Md5Ctx);

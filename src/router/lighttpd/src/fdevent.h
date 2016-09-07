@@ -1,9 +1,6 @@
 #ifndef _FDEVENT_H_
 #define _FDEVENT_H_
-
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
+#include "first.h"
 
 #include "settings.h"
 
@@ -19,12 +16,14 @@
 
 #if defined(HAVE_EPOLL_CTL) && defined(HAVE_SYS_EPOLL_H)
 # define USE_LINUX_EPOLL
+struct epoll_event;     /* declaration */
 #endif
 
 /* MacOS 10.3.x has poll.h under /usr/include/, all other unixes
  * under /usr/include/sys/ */
 #if defined HAVE_POLL && (defined(HAVE_SYS_POLL_H) || defined(HAVE_POLL_H))
 # define USE_POLL
+struct pollfd;          /* declaration */
 #endif
 
 #if defined HAVE_SELECT
@@ -39,6 +38,7 @@
 
 #if defined HAVE_SYS_DEVPOLL_H && defined(__sun)
 # define USE_SOLARIS_DEVPOLL
+struct pollfd;          /* declaration */
 #endif
 
 #if defined HAVE_PORT_H && defined HAVE_PORT_CREATE && defined(__sun)
@@ -48,13 +48,15 @@
 
 #if defined HAVE_SYS_EVENT_H && defined HAVE_KQUEUE
 # define USE_FREEBSD_KQUEUE
+struct kevent;          /* declaration */
 #endif
 
 #if defined HAVE_LIBEV
 # define USE_LIBEV
+struct ev_loop;         /* declaration */
 #endif
 
-struct server;
+struct server;          /* declaration */
 
 typedef handler_t (*fdevent_handler)(struct server *srv, void *ctx, int revents);
 
@@ -67,6 +69,13 @@ typedef handler_t (*fdevent_handler)(struct server *srv, void *ctx, int revents)
 #define FDEVENT_ERR    BV(3)
 #define FDEVENT_HUP    BV(4)
 #define FDEVENT_NVAL   BV(5)
+
+#define FDEVENT_STREAM_REQUEST          BV(0)
+#define FDEVENT_STREAM_REQUEST_BUFMIN   BV(1)
+#define FDEVENT_STREAM_REQUEST_POLLIN   BV(15)
+
+#define FDEVENT_STREAM_RESPONSE         BV(0)
+#define FDEVENT_STREAM_RESPONSE_BUFMIN  BV(1)
 
 typedef enum { FD_EVENT_TYPE_UNSET = -1,
 		FD_EVENT_TYPE_CONNECTION,
@@ -176,8 +185,12 @@ fdevents *fdevent_init(struct server *srv, size_t maxfds, fdevent_handler_t type
 int fdevent_reset(fdevents *ev); /* "init" after fork() */
 void fdevent_free(fdevents *ev);
 
-int fdevent_event_set(fdevents *ev, int *fde_ndx, int fd, int events); /* events can be FDEVENT_IN, FDEVENT_OUT or FDEVENT_IN | FDEVENT_OUT */
-int fdevent_event_del(fdevents *ev, int *fde_ndx, int fd);
+#define fdevent_event_get_interest(ev, fd) \
+        ((fd) >= 0 ? (ev)->fdarray[(fd)]->events : 0)
+void fdevent_event_set(fdevents *ev, int *fde_ndx, int fd, int events); /* events can be FDEVENT_IN, FDEVENT_OUT or FDEVENT_IN | FDEVENT_OUT */
+void fdevent_event_add(fdevents *ev, int *fde_ndx, int fd, int event); /* events can be FDEVENT_IN or FDEVENT_OUT */
+void fdevent_event_clr(fdevents *ev, int *fde_ndx, int fd, int event); /* events can be FDEVENT_IN or FDEVENT_OUT */
+void fdevent_event_del(fdevents *ev, int *fde_ndx, int fd);
 int fdevent_event_get_revent(fdevents *ev, size_t ndx);
 int fdevent_event_get_fd(fdevents *ev, size_t ndx);
 fdevent_handler fdevent_get_handler(fdevents *ev, int fd);

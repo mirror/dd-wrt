@@ -1,7 +1,11 @@
 #ifndef _LOG_H_
 #define _LOG_H_
+#include "first.h"
 
 #include "server.h"
+
+struct timespec; /* declaration */
+int log_clock_gettime_realtime (struct timespec *ts);
 
 ssize_t write_all(int fd, const void* buf, size_t count);
 

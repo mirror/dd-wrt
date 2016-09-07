@@ -1,5 +1,6 @@
 #ifndef _PLUGIN_H_
 #define _PLUGIN_H_
+#include "first.h"
 
 #include "base.h"
 #include "buffer.h"
@@ -19,7 +20,6 @@
 #define SIGHUP_FUNC        SERVER_FUNC
 
 #define SUBREQUEST_FUNC    CONNECTION_FUNC
-#define JOBLIST_FUNC       CONNECTION_FUNC
 #define PHYSICALPATH_FUNC  CONNECTION_FUNC
 #define REQUESTDONE_FUNC   CONNECTION_FUNC
 #define URIHANDLER_FUNC    CONNECTION_FUNC
@@ -44,7 +44,6 @@ typedef struct {
 	handler_t (* handle_physical)        (server *srv, connection *con, void *p_d);    /* mapping url to physical path */
 	handler_t (* handle_request_done)    (server *srv, connection *con, void *p_d);    /* at the end of a request */
 	handler_t (* handle_connection_close)(server *srv, connection *con, void *p_d);    /* at the end of a connection */
-	handler_t (* handle_joblist)         (server *srv, connection *con, void *p_d);    /* after all events are handled */
 
 
 
@@ -72,7 +71,6 @@ handler_t plugins_call_handle_request_done(server *srv, connection *con);
 handler_t plugins_call_handle_docroot(server *srv, connection *con);
 handler_t plugins_call_handle_physical(server *srv, connection *con);
 handler_t plugins_call_handle_connection_close(server *srv, connection *con);
-handler_t plugins_call_handle_joblist(server *srv, connection *con);
 handler_t plugins_call_connection_reset(server *srv, connection *con);
 
 handler_t plugins_call_handle_trigger(server *srv);
@@ -84,8 +82,6 @@ handler_t plugins_call_cleanup(server *srv);
 
 int config_insert_values_global(server *srv, array *ca, const config_values_t *cv, config_scope_type_t scope);
 int config_insert_values_internal(server *srv, array *ca, const config_values_t *cv, config_scope_type_t scope);
-int config_setup_connection(server *srv, connection *con);
-int config_patch_connection(server *srv, connection *con, comp_key_t comp);
 int config_check_cond(server *srv, connection *con, data_config *dc);
 int config_append_cond_match_buffer(connection *con, data_config *dc, buffer *buf, int n);
 

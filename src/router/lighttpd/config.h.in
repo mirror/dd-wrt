@@ -15,6 +15,9 @@
 /* Define to 1 if you have the `chroot' function. */
 #undef HAVE_CHROOT
 
+/* Define to 1 if you have the `clock_gettime' function. */
+#undef HAVE_CLOCK_GETTIME
+
 /* crypt */
 #undef HAVE_CRYPT
 
@@ -135,6 +138,9 @@
 /* libldap */
 #undef HAVE_LIBLDAP
 
+/* Define to 1 if you have the <libmemcached/memcached.h> header file. */
+#undef HAVE_LIBMEMCACHED_MEMCACHED_H
+
 /* libpcre */
 #undef HAVE_LIBPCRE
 
@@ -167,12 +173,6 @@
 
 /* Define to 1 if you have the `madvise' function. */
 #undef HAVE_MADVISE
-
-/* libmemcache */
-#undef HAVE_MEMCACHE
-
-/* memcache.h */
-#undef HAVE_MEMCACHE_H
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
@@ -410,12 +410,8 @@
    slash. */
 #undef LSTAT_FOLLOWS_SLASHED_SYMLINK
 
-/* Define to the sub-directory in which libtool stores uninstalled libraries.
-   */
+/* Define to the sub-directory where libtool stores uninstalled libraries. */
 #undef LT_OBJDIR
-
-/* Define to 1 if your C compiler doesn't accept -c and -o together. */
-#undef NO_MINUS_C_MINUS_O
 
 /* Name of package */
 #undef PACKAGE
@@ -449,6 +445,12 @@
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
+
+/* libmemcached */
+#undef USE_MEMCACHED
+
+/* with kerberos */
+#undef USE_OPENSSL_KERBEROS
 
 /* Enable extensions on AIX 3, Interix.  */
 #ifndef _ALL_SOURCE
