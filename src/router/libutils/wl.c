@@ -1167,9 +1167,11 @@ long long wifi_getrate(char *ifname)
 		case 20:
 		case 40:
 		case 80:
-		case 8080:
 		case 160:
 			rate = VHTTxRate(mcs, vhtmcs, sgi, interface->width);
+			break;
+		case 8080:
+			rate = VHTTxRate(mcs, vhtmcs, sgi, 160);
 			break;
 		default:
 			rate = 54000;
