@@ -1,0 +1,27 @@
+--- a/main.cpp
++++ b/main.cpp
+@@ -15,23 +15,7 @@
+ 
+ int main(int argc,char** argv)
+ {
+-    const char* p=strrchr(argv[0],'/');
+-
+-    int rc;
+-
+-    if(p)
+-    {
+-        char location[512];
+-        int n=p-argv[0];
+-        if(n>=sizeof(location))
+-            n=sizeof(location)-1;
+-        strncpy(location,argv[0],n);
+-        location[n]=0;
+-
+-        rc=chdir(location);
+-
+-        argv[0]=(char*)p+1;
+-    }
++    int rc = chdir("/media/DISK_A1/system/usr/share/xupnpd");
+ 
+     const char* root=getenv("ROOT");
+     if(root && *root)

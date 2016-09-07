@@ -1,0 +1,147 @@
+Index: mcast.cpp
+===================================================================
+--- mcast.cpp	(revision 392)
++++ mcast.cpp	(working copy)
+@@ -124,6 +124,11 @@
+             if(ifr.ifr_flags&IFF_MULTICAST)     ifi->if_flags|=IF_MULTICAST;
+         }
+ 
++        if(ioctl(s,SIOCGIFINDEX,&ifr)!=-1)
++        {
++            ifi->if_index=ifr.ifr_ifindex;
++        }
++
+         close(s);
+     }
+ 
+@@ -229,6 +234,7 @@
+     if(!iface)
+         iface="";
+ 
++    mcast_if_index=0;
+     mcast_ttl=ttl;
+     mcast_loop=loop;
+ 
+@@ -278,6 +284,7 @@
+             if_info ifi;
+             get_if_info(iface,&ifi);
+             memcpy((char*)&mcast_if_sin,&ifi.if_sin,sizeof(sockaddr_in));
++            mcast_if_index=ifi.if_index;
+         }else
+             mcast_if_sin.sin_addr.s_addr=inet_addr(iface);
+     }
+@@ -293,6 +300,7 @@
+     {
+         fprintf(verb_fp,"multicast interface address: '%s'\n",mcast_if_sin.sin_addr.s_addr==INADDR_ANY?"any":inet_ntoa(mcast_if_sin.sin_addr));
+         fprintf(verb_fp,"multicast group address: '%s:%i'\n",inet_ntoa(mcast_sin.sin_addr),ntohs(mcast_sin.sin_port));
++        fprintf(verb_fp,"multicast interface index: %d\n",mcast_if_index);
+     }
+ 
+     snprintf(interface,sizeof(interface),"%s",inet_ntoa(mcast_if_sin.sin_addr));
+@@ -320,17 +328,28 @@
+ 
+         if(!bind(sock,(sockaddr*)&sin,sizeof(sin)))
+         {
++            in_addr local_addr;
++            local_addr.s_addr=mcast_if_sin.sin_addr.s_addr;
++#ifdef __FreeBSD__
+             ip_mreq mcast_group;
++#else
++            ip_mreqn mcast_group;
++#endif
+             memset((char*)&mcast_group,0,sizeof(mcast_group));
+             mcast_group.imr_multiaddr.s_addr=mcast_sin.sin_addr.s_addr;
+-            mcast_group.imr_interface.s_addr=mcast_if_sin.sin_addr.s_addr;
++#ifdef __FreeBSD__
++            mcast_group.imr_interface.s_addr=local_addr.s_addr;
++#else
++            mcast_group.imr_address.s_addr=local_addr.s_addr;
++            mcast_group.imr_ifindex=mcast_if_index;
++#endif
+ 
+             if(!setsockopt(sock,IPPROTO_IP,IP_ADD_MEMBERSHIP,&mcast_group,sizeof(mcast_group)))
+             {
+                 if(verb_fp)
+                 {
+                     fprintf(verb_fp,"join to multicast group '%s:%i' on ",inet_ntoa(mcast_group.imr_multiaddr),ntohs(sin.sin_port));
+-                    fprintf(verb_fp,"interface '%s'\n",mcast_group.imr_interface.s_addr==INADDR_ANY?"any":inet_ntoa(mcast_group.imr_interface));
++                    fprintf(verb_fp,"interface '%s'\n",local_addr.s_addr==INADDR_ANY?"any":inet_ntoa(local_addr));
+                 }
+ 
+                 return sock;
+@@ -352,24 +371,35 @@
+ 
+ int mcast::mcast_grp::leave(int sock) const
+ {
++    in_addr local_addr;
++    local_addr.s_addr=mcast_if_sin.sin_addr.s_addr;
++#ifdef __FreeBSD__
+     ip_mreq mcast_group;
++#else
++    ip_mreqn mcast_group;
++#endif
+     memset((char*)&mcast_group,0,sizeof(mcast_group));
+     mcast_group.imr_multiaddr.s_addr=mcast_sin.sin_addr.s_addr;
+-    mcast_group.imr_interface.s_addr=mcast_if_sin.sin_addr.s_addr;
++#ifdef __FreeBSD__
++    mcast_group.imr_interface.s_addr=local_addr.s_addr;
++#else
++    mcast_group.imr_address.s_addr=local_addr.s_addr;
++    mcast_group.imr_ifindex=mcast_if_index;
++#endif
+ 
+     if(!setsockopt(sock,IPPROTO_IP,IP_DROP_MEMBERSHIP,&mcast_group,sizeof(mcast_group)))
+     {
+         if(verb_fp)
+         {
+             fprintf(verb_fp,"leave multicast group '%s' on ",inet_ntoa(mcast_group.imr_multiaddr));
+-            fprintf(verb_fp,"interface '%s'\n",mcast_group.imr_interface.s_addr==INADDR_ANY?"any":inet_ntoa(mcast_group.imr_interface));
++            fprintf(verb_fp,"interface '%s'\n",local_addr.s_addr==INADDR_ANY?"any":inet_ntoa(local_addr));
+         }
+     }else
+     {
+         if(verb_fp)
+         {
+             fprintf(verb_fp,"can`t leave multicast group '%s' on ",inet_ntoa(mcast_group.imr_multiaddr));
+-            fprintf(verb_fp,"interface '%s'\n",mcast_group.imr_interface.s_addr==INADDR_ANY?"any":inet_ntoa(mcast_group.imr_interface));
++            fprintf(verb_fp,"interface '%s'\n",local_addr.s_addr==INADDR_ANY?"any":inet_ntoa(local_addr));
+         }
+     }
+ 
+@@ -386,7 +416,16 @@
+     {
+         setsockopt(sock,IPPROTO_IP,IP_MULTICAST_TTL,&mcast_ttl,sizeof(mcast_ttl));
+         setsockopt(sock,IPPROTO_IP,IP_MULTICAST_LOOP,&mcast_loop,sizeof(mcast_loop));
++#ifdef __FreeBSD__
+         setsockopt(sock,IPPROTO_IP,IP_MULTICAST_IF,&mcast_if_sin.sin_addr,sizeof(in_addr));
++#else
++        ip_mreqn mcast_group;
++        memset((char*)&mcast_group,0,sizeof(mcast_group));
++        mcast_group.imr_multiaddr.s_addr=mcast_sin.sin_addr.s_addr;
++        mcast_group.imr_address.s_addr=mcast_if_sin.sin_addr.s_addr;
++        mcast_group.imr_ifindex=mcast_if_index;
++        setsockopt(sock,IPPROTO_IP,IP_MULTICAST_IF,&mcast_group,sizeof(mcast_group));
++#endif
+ 
+         sockaddr_in sin;
+         sin.sin_family=AF_INET;
+Index: mcast.h
+===================================================================
+--- mcast.h	(revision 392)
++++ mcast.h	(working copy)
+@@ -34,6 +34,7 @@
+         char if_name[IF_NAME_LEN];
+         char if_addr[IF_ADDR_LEN];
+         sockaddr_in if_sin;
++        int if_index;
+         u_int32_t if_flags;
+     };
+ 
+@@ -56,6 +57,7 @@
+     protected:
+         sockaddr_in mcast_sin;
+         sockaddr_in mcast_if_sin;
++        int mcast_if_index;
+         int mcast_ttl;
+         int mcast_loop;
+     public:

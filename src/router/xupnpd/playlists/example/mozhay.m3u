@@ -1,0 +1,253 @@
+
+#EXTM3U url-tvg="http://mozhay.tv/jtv.zip"  m3uautoload=1 cache=500 deinterlace=1 tvg-shift=0
+
+#EXTINF:0 tvg-name="Первый_канал" group-title="Основные",Первый канал
+http://001.mozhay.tv
+#EXTINF:0 tvg-name="Россия_1" group-title="Основные",Россия 1
+http://002.mozhay.tv
+#EXTINF:0 tvg-name="ТВЦ" group-title="Основные",ТВЦ
+http://003.mozhay.tv
+#EXTINF:0 tvg-name="НТВ" group-title="Основные",НТВ
+http://004.mozhay.tv
+#EXTINF:0 tvg-name="Пятый_Канал" group-title="Основные",Пятый Канал
+http://017.mozhay.tv
+#EXTINF:0 tvg-name="Россия_Культура" group-title="Основные",Россия К
+http://005.mozhay.tv
+#EXTINF:0 tvg-name="7_ТВ" group-title="Основные",7 ТВ
+http://007.mozhay.tv
+#EXTINF:0 tvg-name="8_канал_(Беларусь)" group-title="Основные",8 Канал
+http://173.mozhay.tv
+#EXTINF:0 tvg-name="СТС" group-title="Основные",СТС
+http://010.mozhay.tv
+#EXTINF:0 tvg-name="ТНТ" group-title="Основные",ТНТ
+http://012.mozhay.tv
+#EXTINF:0 tvg-name="Домашний" group-title="Основные",Домашний
+http://013.mozhay.tv
+#EXTINF:0 tvg-name="РЕН_ТВ" group-title="Основные",РЕН
+http://011.mozhay.tv
+#EXTINF:0 tvg-name="ДТВ" group-title="Основные",ДТВ
+http://014.mozhay.tv
+#EXTINF:0 tvg-name="ТВ-3" group-title="Основные",ТВ3
+http://015.mozhay.tv
+#EXTINF:0 tvg-name="Звезда" group-title="Основные",Звезда
+http://016.mozhay.tv
+#EXTINF:0 tvg-name="Россия_2_(Спорт)" group-title="Основные",Россия 2
+http://006.mozhay.tv
+#EXTINF:0 tvg-name="Канал_2x2" group-title="Основные",2x2
+http://020.mozhay.tv
+#EXTINF:0 tvg-name="Комеди_ТВ" group-title="Основные",Комеди ТВ
+http://99.mozhay.tv
+
+#EXTINF:0 tvg-name="Первый_канал" tvg-shift=-4 group-title="Основные (Сдвиг времени)",Первый канал +4
+http://167.mozhay.tv
+#EXTINF:0 tvg-name="СТС" tvg-shift=-2 group-title="Основные (Сдвиг времени)",СТС +2
+http://141.mozhay.tv
+#EXTINF:0 tvg-name="РЕН_ТВ" tvg-logo="РЕН" tvg-shift=-2 group-title="Основные (Сдвиг времени)",РЕН +2
+http://143.mozhay.tv
+#EXTINF:0 tvg-name="ДТВ" tvg-logo="ДТВ" tvg-shift=-7 group-title="Основные (Сдвиг времени)",ДТВ +7
+http://140.mozhay.tv
+
+#EXTINF:0 tvg-name="TV1000" group-title="Кино",TV 1000
+http://054.mozhay.tv
+#EXTINF:0 tvg-name="TV_1000_Action" tvg-logo="TV 1000" group-title="Кино",TV 1000 Action
+http://055.mozhay.tv
+#EXTINF:0 tvg-name="ТВ-1000_Русское_кино" group-title="Кино",TV 1000 Русское кино
+http://056.mozhay.tv
+#EXTINF:0 tvg-name="TV_XXI_(TV21)" group-title="Кино",TVXXI
+http://057.mozhay.tv
+#EXTINF:0 tvg-name="Феникс_Кино" group-title="Кино",Феникс+ Кино
+http://053.mozhay.tv
+#EXTINF:0 tvg-name="Еврокино" group-title="Кино",Еврокино
+http://061.mozhay.tv
+#EXTINF:0 tvg-name="Русский_Иллюзион" group-title="Кино",Русский Иллюзион
+http://062.mozhay.tv
+#EXTINF:0 tvg-name="Иллюзион__" group-title="Кино",Иллюзион +
+http://063.mozhay.tv
+#EXTINF:0 tvg-name="Ретро_ТВ" group-title="Кино",Ретро ТВ
+http://121.mozhay.tv
+#EXTINF:0 tvg-name="Universal_Channel" group-title="Кино",Universal Channel
+http://050.mozhay.tv
+#EXTINF:0 tvg-name="Set" group-title="Кино",SET
+http://051.mozhay.tv
+#EXTINF:0 tvg-name="AXN_Sci-fi" group-title="Кино",AXN Sci-Fi
+http://052.mozhay.tv
+#EXTINF:0 tvg-name="Настоящее_Страшное_ТВ" group-title="Кино",НСТ Страшное
+http://060.mozhay.tv
+#EXTINF:0 tvg-name="Настоящее_смешное_телевидение_(НСТ)" group-title="Кино",НСТ Смешное
+http://067.mozhay.tv
+
+#EXTINF:0 tvg-name="РТР_Планета" group-title="Региональные",РТР Планета
+http://027.mozhay.tv
+#EXTINF:0 tvg-name="МИР" group-title="Региональные",Мир
+http://021.mozhay.tv
+#EXTINF:0 tvg-name="МИР" tvg-shift=-2  group-title="Региональные",Мир -2
+http://142.mozhay.tv
+#EXTINF:0 tvg-name="Татарстан_-_Новый_Век" group-title="Региональные",Татарстан
+http://160.mozhay.tv
+#EXTINF:0 tvg-name="ТРО" group-title="Региональные",ТРО Союз
+http://161.mozhay.tv
+#EXTINF:0 tvg-name="Беларусь_ТВ" group-title="Региональные",Беларусь ТВ
+http://168.mozhay.tv
+#EXTINF:0 tvg-name="ТВ-Центр-Международное" group-title="Региональные",ТВ-Центр-Международное
+http://169.mozhay.tv
+#EXTINF:0 tvg-name="НТК" group-title="Региональные",НТК Орбита
+http://174.mozhay.tv
+#EXTINF:0 tvg-name="ВТВ_(Беларусь)" group-title="Региональные",ВТВ_(Беларусь)
+http://87.mozhay.tv
+#EXTINF:0 group-title="Региональные",ТБН
+http://182.mozhay.tv
+#EXTINF:0 group-title="Региональные",INT
+http://162.mozhay.tv
+#EXTINF:0 group-title="Региональные",Пик
+http://180.mozhay.tv
+#EXTINF:0 group-title="Региональные",Az TV (Азербайджан)
+http://170.mozhay.tv
+#EXTINF:0 group-title="Региональные",C1 (Азербайджан)
+http://171.mozhay.tv
+#EXTINF:0 group-title="Региональные",K+ (Казахстан)
+http://178.mozhay.tv
+#EXTINF:0 tvg-name="Arirang_TV" group-title="Региональные",Arirang (Корея)
+http://179.mozhay.tv
+#EXTINF:0 tvg-name="Fashion_TV" group-title="Региональные",Fashion TV (Англ.)
+http://80.mozhay.tv
+
+#EXTINF:0 tvg-name="Моя_Планета" group-title="Познавательные",Моя планета
+http://126.mozhay.tv
+#EXTINF:0 tvg-name="Discovery" group-title="Познавательные",Discovery
+http://100.mozhay.tv
+#EXTINF:0 tvg-name="National_Geographic" group-title="Познавательные",National Geographic
+http://111.mozhay.tv
+#EXTINF:0 tvg-name="Animal_Planet" group-title="Познавательные",Animal Planet
+http://112.mozhay.tv
+#EXTINF:0 tvg-name="Viasat_Nature_CEE" group-title="Познавательные",Viasat Nature
+http://101.mozhay.tv
+#EXTINF:0 tvg-name="Viasat_Explorer" group-title="Познавательные",Viasat_Explorer
+http://102.mozhay.tv
+#EXTINF:0 tvg-name="Viasat_History" group-title="Познавательные",Viasat History
+http://103.mozhay.tv
+#EXTINF:0 tvg-name="Da_Vinci" group-title="Познавательные",Da Vinci Learning
+http://104.mozhay.tv
+#EXTINF:0 tvg-name="Fox_Crime" group-title="Познавательные",FOX Crime
+http://064.mozhay.tv
+#EXTINF:0 tvg-name="Fox_Life" group-title="Познавательные",FOX Life
+http://065.mozhay.tv
+#EXTINF:0 tvg-name="24_Техно" group-title="Познавательные",24 Техно
+http://105.mozhay.tv
+#EXTINF:0 tvg-name="Зоопарк" group-title="Познавательные",ZooПАРК
+http://106.mozhay.tv
+#EXTINF:0 tvg-name="Драйв_ТВ" group-title="Познавательные",Драйв
+http://122.mozhay.tv
+#EXTINF:0 tvg-name="Охота_и_рыбалка" group-title="Познавательные",Охота и рыбалка
+http://123.mozhay.tv
+#EXTINF:0 tvg-name="Усадьба" group-title="Познавательные",Усадьба ТВ
+http://125.mozhay.tv
+#EXTINF:0 tvg-name="Домашние_животные" group-title="Познавательные",Домашние Животные
+http://107.mozhay.tv
+#EXTINF:0 tvg-name="Психология21" group-title="Познавательные",Психология 21
+http://108.mozhay.tv
+#EXTINF:0 tvg-name="Загородная_жизнь" group-title="Познавательные",Загородная жизнь
+http://110.mozhay.tv
+#EXTINF:0 group-title="Познавательные",Мужской
+http://120.mozhay.tv
+#EXTINF:0 tvg-name="Вопросы_и_ответы" group-title="Познавательные",Вопросы и ответы
+http://109.mozhay.tv
+#EXTINF:0 tvg-name="Здоровое_Телевидение" group-title="Познавательные",Здоровое Телевидение
+http://124.mozhay.tv
+#EXTINF:0 tvg-name="Сарафан_ТВ" group-title="Познавательные",Сарафан ТВ
+http://066.mozhay.tv
+#EXTINF:0 tvg-name="Живи" group-title="Познавательные",Живи
+http://85.mozhay.tv
+#EXTINF:0 tvg-name="Телекафе" group-title="Познавательные",Телекафе
+http://86.mozhay.tv
+
+#EXTINF:0 tvg-name="Спорт_1" group-title="Спортивные",Спорт 1
+http://041.mozhay.tv
+#EXTINF:0 tvg-name="Eurosport" group-title="Спортивные",Eurosport
+http://042.mozhay.tv
+#EXTINF:0 tvg-name="Eurosport_2" group-title="Спортивные",Eurosport 2
+http://043.mozhay.tv
+#EXTINF:0 tvg-name="Viasat_Sport" group-title="Спортивные",Viasat Sport
+http://040.mozhay.tv
+#EXTINF:0 tvg-name="Русский_Экстрим" group-title="Спортивные",Русский Экстрим
+http://037.mozhay.tv
+#EXTINF:0 tvg-name="КХЛ-ТВ" group-title="Спортивные",КХЛ
+http://036.mozhay.tv
+
+#EXTINF:0 tvg-name="Карусель" group-title="Детские",Карусель
+http://074.mozhay.tv
+#EXTINF:0 tvg-name="Disney_Channel" group-title="Детские",Disney Channel
+http://075.mozhay.tv
+#EXTINF:0 tvg-name="Nickelodeon" group-title="Детские",Nickelodeon
+http://076.mozhay.tv
+#EXTINF:0 tvg-name="Детский_канал" group-title="Детские",Детский канал
+http://077.mozhay.tv
+#EXTINF:0 tvg-name="Мультимания" group-title="Детские",Мультимания
+http://64.mozhay.tv
+#EXTINF:0 tvg-name="Улыбка_ребенка" group-title="Детские",Улыбка ребенка
+http://66.mozhay.tv
+#EXTINF:0 tvg-name="Tiji" group-title="Детские",TiJi
+http://69.mozhay.tv
+#EXTINF:0 tvg-name="Gulli" group-title="Детские",Gulli
+http://70.mozhay.tv
+
+#EXTINF:0 tvg-name="MTV-Russia" group-title="Музыкальные",MTV-Russia
+http://81.mozhay.tv
+#EXTINF:0 tvg-name="MTV-Russia" tvg-shift=-2 group-title="Музыкальные",MTV-Russia +2
+http://82.mozhay.tv
+#EXTINF:0 tvg-name="Муз_ТВ" group-title="Музыкальные",Муз_ТВ
+http://88.mozhay.tv
+#EXTINF:0 tvg-name="A-ONE" group-title="Музыкальные",A-ONE
+http://83.mozhay.tv
+#EXTINF:0 tvg-name="Музыка_Первого" group-title="Музыкальные",Музыка Первого
+http://84.mozhay.tv
+#EXTINF:0 group-title="Музыкальные",Europa Plus TV
+http://90.mozhay.tv
+#EXTINF:0 tvg-name="Шансон_ТВ" group-title="Музыкальные",Шансон_ТВ
+http://89.mozhay.tv
+
+#EXTINF:0 tvg-name="Россия_24" group-title="Новостные",Россия 24
+http://030.mozhay.tv
+#EXTINF:0 tvg-name="EuroNews" group-title="Новостные",Euronews
+http://034.mozhay.tv
+#EXTINF:0 tvg-name="Эксперт_ТВ" group-title="Новостные",Эксперт ТВ
+http://026.mozhay.tv
+#EXTINF:0 tvg-name="РБК" group-title="Новостные",РБК
+http://024.mozhay.tv
+#EXTINF:0 tvg-name="Russia_Today" group-title="Новостные",Russia Today (Англ.)
+http://025.mozhay.tv
+#EXTINF:0 tvg-logo="Russia Today" group-title="Новостные",RTD (Англ.)
+http://045.mozhay.tv
+#EXTINF:0 tvg-name="BBC_World" group-title="Новостные",BBC World (Англ.)
+http://033.mozhay.tv
+#EXTINF:0 group-title="Новостные",PressTV (Англ.)
+http://181.mozhay.tv
+#EXTINF:0 group-title="Новостные",NHK World (Англ.)
+http://035.mozhay.tv
+#EXTINF:0 group-title="Новостные",Al Jazeera (Англ.)
+http://032.mozhay.tv
+
+#EXTINF:0 group-title="Магазин на диване",TV Club
+http://127.mozhay.tv
+#EXTINF:0 group-title="Магазин на диване",TV Club+
+http://152.mozhay.tv
+#EXTINF:0 group-title="Магазин на диване",Домашний Магазин
+http://150.mozhay.tv
+#EXTINF:0 group-title="Магазин на диване",TV SALE
+http://151.mozhay.tv
+#EXTINF:0 group-title="Магазин на диване",Italia Channel 912 (Италия)
+http://176.mozhay.tv
+
+#EXTINF:0 group-title="На арабском",RTR Arab
+http://031.mozhay.tv
+#EXTINF:0 group-title="На арабском",Arab Sport
+http://044.mozhay.tv
+#EXTINF:0 group-title="На арабском",ARAB 1
+http://113.mozhay.tv
+#EXTINF:0 group-title="На арабском",ARAB 2
+http://114.mozhay.tv
+#EXTINF:0 group-title="На арабском",qqwdghr
+http://175.mozhay.tv
+#EXTINF:0 group-title="На арабском",TVRi
+http://177.mozhay.tv
+#EXTINF:0 group-title="На арабском",Hod Hod TV
+http://65.mozhay.tv
