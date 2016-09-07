@@ -1,5 +1,6 @@
 #ifndef _MOD_CACHE_H_
 #define _MOD_CACHE_H_
+#include "first.h"
 
 #include "buffer.h"
 #include "server.h"
@@ -8,8 +9,8 @@
 #include "stream.h"
 #include "plugin.h"
 
-#if defined(HAVE_MEMCACHE_H)
-#include <memcache.h>
+#if defined(USE_MEMCACHED)
+#include <libmemcached/memcached.h>
 #endif
 
 #define plugin_data mod_cache_plugin_data
@@ -19,8 +20,8 @@ typedef struct {
 
 	array  *mc_hosts;
 	buffer *mc_namespace;
-#if defined(HAVE_MEMCACHE_H)
-	struct memcache *mc;
+#if defined(USE_MEMCACHED)
+	memcached_st *memc;
 #endif
 	buffer *power_magnet;
 } plugin_config;

@@ -1,3 +1,5 @@
+#include "first.h"
+
 #include "base.h"
 #include "log.h"
 #include "buffer.h"
@@ -144,6 +146,7 @@ static size_t secdl_algorithm_mac_length(secdl_algorithm alg) {
 }
 
 static int secdl_verify_mac(server *srv, plugin_config *config, const char* protected_path, const char* mac, size_t maclen) {
+	UNUSED(srv);
 	if (0 == maclen || secdl_algorithm_mac_length(config->algorithm) != maclen) return 0;
 
 	switch (config->algorithm) {
@@ -153,7 +156,7 @@ static int secdl_verify_mac(server *srv, plugin_config *config, const char* prot
 		{
 			li_MD5_CTX Md5Ctx;
 			HASH HA1;
-			char hexmd5[32];
+			char hexmd5[33];
 			const char *ts_str;
 			const char *rel_uri;
 
@@ -173,7 +176,7 @@ static int secdl_verify_mac(server *srv, plugin_config *config, const char* prot
 			li_MD5_Update(&Md5Ctx, ts_str, 8);
 			li_MD5_Final(HA1, &Md5Ctx);
 
-			li_tohex(hexmd5, (const char *)HA1, 16);
+			li_tohex(hexmd5, sizeof(hexmd5), (const char *)HA1, 16);
 
 			return (32 == maclen) && const_time_memeq(mac, hexmd5, 32);
 		}

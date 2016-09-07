@@ -1,3 +1,5 @@
+#include "first.h"
+
 #include "server.h"
 #include "log.h"
 #include "http_auth.h"
@@ -42,9 +44,10 @@
 typedef unsigned char HASH[HASHLEN];
 typedef char HASHHEX[HASHHEXLEN+1];
 
-static void CvtHex(const HASH Bin, char Hex[33]) {
-	li_tohex(Hex, (const char*) Bin, 16);
+static void CvtHex(const HASH Bin, char (*Hex)[33]) {
+	li_tohex(*Hex, sizeof(*Hex), (const char*) Bin, 16);
 }
+
 
 /**
  * the $apr1$ handling is taken from apache 1.3.x
@@ -64,29 +67,27 @@ static void CvtHex(const HASH Bin, char Hex[33]) {
 handler_t auth_ldap_init(server *srv, mod_auth_plugin_config *s);
 
 static int http_auth_get_password(server *srv, mod_auth_plugin_data *p, buffer *username, buffer *realm, buffer *password) {
-	int ret = -1;
-
 	if (buffer_is_empty(username) || buffer_is_empty(realm)) return -1;
 
 	if (p->conf.auth_backend == AUTH_BACKEND_HTDIGEST) {
-		stream f;
-		char * f_line;
+		FILE *fp;
+		char f_user[1024];
 
 		if (buffer_string_is_empty(p->conf.auth_htdigest_userfile)) return -1;
 
-		if (0 != stream_open(&f, p->conf.auth_htdigest_userfile)) {
+		fp = fopen(p->conf.auth_htdigest_userfile->ptr, "r");
+		if (NULL == fp) {
 			log_error_write(srv, __FILE__, __LINE__, "sbss", "opening digest-userfile", p->conf.auth_htdigest_userfile, "failed:", strerror(errno));
 
 			return -1;
 		}
 
-		f_line = f.start;
+		while (NULL != fgets(f_user, sizeof(f_user), fp)) {
+			char *f_pwd, *f_realm;
+			size_t u_len, r_len;
 
-		while (f_line - f.start != f.size) {
-			char *f_user, *f_pwd, *e, *f_realm;
-			size_t u_len, pwd_len, r_len;
-
-			f_user = f_line;
+			/* skip blank lines and comment lines (beginning '#') */
+			if (f_user[0] == '#' || f_user[0] == '\n' || f_user[0] == '\0') continue;
 
 			/*
 			 * htdigest format
@@ -94,24 +95,20 @@ static int http_auth_get_password(server *srv, mod_auth_plugin_data *p, buffer *
 			 * user:realm:md5(user:realm:password)
 			 */
 
-			if (NULL == (f_realm = memchr(f_user, ':', f.size - (f_user - f.start) ))) {
+			if (NULL == (f_realm = strchr(f_user, ':'))) {
 				log_error_write(srv, __FILE__, __LINE__, "sbs",
 						"parsed error in", p->conf.auth_htdigest_userfile,
 						"expected 'username:realm:hashed password'");
 
-				stream_close(&f);
-
-				return -1;
+				continue; /* skip bad lines */
 			}
 
-			if (NULL == (f_pwd = memchr(f_realm + 1, ':', f.size - (f_realm + 1 - f.start)))) {
+			if (NULL == (f_pwd = strchr(f_realm + 1, ':'))) {
 				log_error_write(srv, __FILE__, __LINE__, "sbs",
 						"parsed error in", p->conf.auth_plain_userfile,
 						"expected 'username:realm:hashed password'");
 
-				stream_close(&f);
-
-				return -1;
+				continue; /* skip bad lines */
 			}
 
 			/* get pointers to the fields */
@@ -120,55 +117,47 @@ static int http_auth_get_password(server *srv, mod_auth_plugin_data *p, buffer *
 			r_len = f_pwd - f_realm;
 			f_pwd++;
 
-			if (NULL != (e = memchr(f_pwd, '\n', f.size - (f_pwd - f.start)))) {
-				pwd_len = e - f_pwd;
-			} else {
-				pwd_len = f.size - (f_pwd - f.start);
-			}
-
 			if (buffer_string_length(username) == u_len &&
 			    (buffer_string_length(realm) == r_len) &&
 			    (0 == strncmp(username->ptr, f_user, u_len)) &&
 			    (0 == strncmp(realm->ptr, f_realm, r_len))) {
 				/* found */
 
+				size_t pwd_len = strlen(f_pwd);
+				if (f_pwd[pwd_len-1] == '\n') --pwd_len;
+
 				buffer_copy_string_len(password, f_pwd, pwd_len);
 
-				ret = 0;
-				break;
+				fclose(fp);
+				return 0;
 			}
-
-			/* EOL */
-			if (!e) break;
-
-			f_line = e + 1;
 		}
 
-		stream_close(&f);
+		fclose(fp);
 	} else if (p->conf.auth_backend == AUTH_BACKEND_HTPASSWD ||
 		   p->conf.auth_backend == AUTH_BACKEND_PLAIN) {
-		stream f;
-		char * f_line;
+		FILE *fp;
+		char f_user[1024];
 		buffer *auth_fn;
 
 		auth_fn = (p->conf.auth_backend == AUTH_BACKEND_HTPASSWD) ? p->conf.auth_htpasswd_userfile : p->conf.auth_plain_userfile;
 
 		if (buffer_string_is_empty(auth_fn)) return -1;
 
-		if (0 != stream_open(&f, auth_fn)) {
+		fp = fopen(auth_fn->ptr, "r");
+		if (NULL == fp) {
 			log_error_write(srv, __FILE__, __LINE__, "sbss",
 					"opening plain-userfile", auth_fn, "failed:", strerror(errno));
 
 			return -1;
 		}
 
-		f_line = f.start;
+		while (NULL != fgets(f_user, sizeof(f_user), fp)) {
+			char *f_pwd;
+			size_t u_len;
 
-		while (f_line - f.start != f.size) {
-			char *f_user, *f_pwd, *e;
-			size_t u_len, pwd_len;
-
-			f_user = f_line;
+			/* skip blank lines and comment lines (beginning '#') */
+			if (f_user[0] == '#' || f_user[0] == '\n' || f_user[0] == '\0') continue;
 
 			/*
 			 * htpasswd format
@@ -176,50 +165,38 @@ static int http_auth_get_password(server *srv, mod_auth_plugin_data *p, buffer *
 			 * user:crypted passwd
 			 */
 
-			if (NULL == (f_pwd = memchr(f_user, ':', f.size - (f_user - f.start) ))) {
+			if (NULL == (f_pwd = strchr(f_user, ':'))) {
 				log_error_write(srv, __FILE__, __LINE__, "sbs",
 						"parsed error in", auth_fn,
 						"expected 'username:hashed password'");
 
-				stream_close(&f);
-
-				return -1;
+				continue; /* skip bad lines */
 			}
 
 			/* get pointers to the fields */
 			u_len = f_pwd - f_user;
 			f_pwd++;
 
-			if (NULL != (e = memchr(f_pwd, '\n', f.size - (f_pwd - f.start)))) {
-				pwd_len = e - f_pwd;
-			} else {
-				pwd_len = f.size - (f_pwd - f.start);
-			}
-
 			if (buffer_string_length(username) == u_len &&
 			    (0 == strncmp(username->ptr, f_user, u_len))) {
 				/* found */
 
+				size_t pwd_len = strlen(f_pwd);
+				if (f_pwd[pwd_len-1] == '\n') --pwd_len;
+
 				buffer_copy_string_len(password, f_pwd, pwd_len);
 
-				ret = 0;
-				break;
+				fclose(fp);
+				return 0;
 			}
-
-			/* EOL */
-			if (!e) break;
-
-			f_line = e + 1;
 		}
 
-		stream_close(&f);
+		fclose(fp);
 	} else if (p->conf.auth_backend == AUTH_BACKEND_LDAP) {
-		ret = 0;
-	} else {
-		return -1;
+		return 0;
 	}
 
-	return ret;
+	return -1;
 }
 
 int http_auth_match_rules(server *srv, array *req, const char *username, const char *group, const char *host) {
@@ -231,6 +208,7 @@ int http_auth_match_rules(server *srv, array *req, const char *username, const c
 	UNUSED(host);
 
 	require = (data_string *)array_get_element(req, "require");
+	if (!require) return -1; /*(should not happen; config is validated at startup)*/
 
 	/* if we get here, the user we got a authed user */
 	if (0 == strcmp(require->value->ptr, "valid-user")) {
@@ -539,7 +517,7 @@ static int http_auth_basic_password_compare(server *srv, mod_auth_plugin_data *p
 
 		li_MD5_CTX Md5Ctx;
 		HASH HA1;
-		char a1[256];
+		char a1[33];
 
 		li_MD5_Init(&Md5Ctx);
 		li_MD5_Update(&Md5Ctx, CONST_BUF_LEN(username));
@@ -549,7 +527,7 @@ static int http_auth_basic_password_compare(server *srv, mod_auth_plugin_data *p
 		li_MD5_Update(&Md5Ctx, (unsigned char *)pw, strlen(pw));
 		li_MD5_Final(HA1, &Md5Ctx);
 
-		CvtHex(HA1, a1);
+		CvtHex(HA1, &a1);
 
 		if (0 == strcmp(password->ptr, a1)) {
 			return 0;
@@ -744,6 +722,7 @@ int http_auth_basic_check(server *srv, connection *con, mod_auth_plugin_data *p,
 	data_string *realm;
 
 	realm = (data_string *)array_get_element(req, "realm");
+	if (!realm) return 0; /*(should not happen; config is validated at startup)*/
 
 	username = buffer_init();
 
@@ -817,8 +796,8 @@ typedef struct {
 
 /* return values: -1: error/bad request, 0: failed, 1: success */
 int http_auth_digest_check(server *srv, connection *con, mod_auth_plugin_data *p, array *req, const char *realm_str) {
-	char a1[256];
-	char a2[256];
+	char a1[33];
+	char a2[33];
 
 	char *username = NULL;
 	char *realm = NULL;
@@ -908,6 +887,7 @@ int http_auth_digest_check(server *srv, connection *con, mod_auth_plugin_data *p
 					*(dkv[i].ptr) = c + dkv[i].key_len;
 					c += strlen(c) - 1;
 				}
+				break;
 			}
 		}
 	}
@@ -962,6 +942,7 @@ int http_auth_digest_check(server *srv, connection *con, mod_auth_plugin_data *p
 	}
 
 	m = get_http_method_name(con->request.http_method);
+	force_assert(m);
 
 	/* password-string == HA1 */
 	password = buffer_init();
@@ -1001,12 +982,28 @@ int http_auth_digest_check(server *srv, connection *con, mod_auth_plugin_data *p
 
 	buffer_free(password);
 
+	/* detect if attacker is attempting to reuse valid digest for one uri
+	 * on a different request uri.  Might also happen if intermediate proxy
+	 * altered client request line.  (Altered request would not result in
+	 * the same digest as that calculated by the client.) */
+	{
+		const size_t ulen = strlen(uri);
+		const size_t rlen = buffer_string_length(con->request.uri);
+		if (!buffer_is_equal_string(con->request.uri, uri, ulen)
+		    && !(rlen < ulen && 0 == memcmp(con->request.uri->ptr, uri, rlen) && uri[rlen] == '?')) {
+			log_error_write(srv, __FILE__, __LINE__, "sbssss",
+					"digest: auth failed: uri mismatch (", con->request.uri, "!=", uri, "), IP:", inet_ntop_cache_get_ip(srv, &(con->dst_addr)));
+			buffer_free(b);
+			return -1;
+		}
+	}
+
 	if (algorithm &&
 	    strcasecmp(algorithm, "md5-sess") == 0) {
 		li_MD5_Init(&Md5Ctx);
 		/* Errata ID 1649: http://www.rfc-editor.org/errata_search.php?rfc=2617 */
-		CvtHex(HA1, a1);
-		li_MD5_Update(&Md5Ctx, (unsigned char *)a1, 32);
+		CvtHex(HA1, &a1);
+		li_MD5_Update(&Md5Ctx, (unsigned char *)a1, HASHHEXLEN);
 		li_MD5_Update(&Md5Ctx, CONST_STR_LEN(":"));
 		li_MD5_Update(&Md5Ctx, (unsigned char *)nonce, strlen(nonce));
 		li_MD5_Update(&Md5Ctx, CONST_STR_LEN(":"));
@@ -1014,7 +1011,7 @@ int http_auth_digest_check(server *srv, connection *con, mod_auth_plugin_data *p
 		li_MD5_Final(HA1, &Md5Ctx);
 	}
 
-	CvtHex(HA1, a1);
+	CvtHex(HA1, &a1);
 
 	/* calculate H(A2) */
 	li_MD5_Init(&Md5Ctx);
@@ -1029,7 +1026,7 @@ int http_auth_digest_check(server *srv, connection *con, mod_auth_plugin_data *p
 	}
 */
 	li_MD5_Final(HA2, &Md5Ctx);
-	CvtHex(HA2, HA2Hex);
+	CvtHex(HA2, &HA2Hex);
 
 	/* calculate response */
 	li_MD5_Init(&Md5Ctx);
@@ -1047,7 +1044,7 @@ int http_auth_digest_check(server *srv, connection *con, mod_auth_plugin_data *p
 	};
 	li_MD5_Update(&Md5Ctx, (unsigned char *)HA2Hex, HASHHEXLEN);
 	li_MD5_Final(RespHash, &Md5Ctx);
-	CvtHex(RespHash, a2);
+	CvtHex(RespHash, &a2);
 
 	if (0 != strcmp(a2, respons)) {
 		/* digest not ok */
@@ -1074,6 +1071,28 @@ int http_auth_digest_check(server *srv, connection *con, mod_auth_plugin_data *p
 		return 0;
 	}
 
+	/* check age of nonce.  Note that rand() is used in nonce generation
+	 * in http_auth_digest_generate_nonce().  If that were replaced
+	 * with nanosecond time, then nonce secret would remain unique enough
+	 * for the purposes of Digest auth, and would be reproducible (and
+	 * verifiable) if nanoseconds were inclued with seconds as part of the
+	 * nonce "timestamp:secret".  Since that is not done, timestamp in
+	 * nonce could theoretically be modified and still produce same md5sum,
+	 * but that is highly unlikely within a 10 min (moving) window of valid
+	 * time relative to current time (now) */
+	{
+		time_t ts = 0;
+		const unsigned char * const nonce_uns = (unsigned char *)nonce;
+		for (i = 0; i < 8 && light_isxdigit(nonce_uns[i]); ++i) {
+			ts = (ts << 4) + hex2int(nonce_uns[i]);
+		}
+		if (i != 8 || nonce[8] != ':'
+		    || ts > srv->cur_ts || srv->cur_ts - ts > 600) { /*(10 mins)*/
+			buffer_free(b);
+			return -2; /* nonce is stale; have client regenerate digest */
+		} /*(future: might send nextnonce when expiration is imminent)*/
+	}
+
 	/* remember the username */
 	buffer_copy_string(p->auth_user, username);
 
@@ -1087,7 +1106,7 @@ int http_auth_digest_check(server *srv, connection *con, mod_auth_plugin_data *p
 }
 
 
-int http_auth_digest_generate_nonce(server *srv, mod_auth_plugin_data *p, buffer *fn, char out[33]) {
+int http_auth_digest_generate_nonce(server *srv, mod_auth_plugin_data *p, buffer *fn, char (*out)[33]) {
 	HASH h;
 	li_MD5_CTX Md5Ctx;
 	char hh[LI_ITOSTRING_LENGTH];
@@ -1100,10 +1119,10 @@ int http_auth_digest_generate_nonce(server *srv, mod_auth_plugin_data *p, buffer
 	li_MD5_Update(&Md5Ctx, CONST_STR_LEN("+"));
 
 	/* we assume sizeof(time_t) == 4 here, but if not it ain't a problem at all */
-	li_itostr(hh, srv->cur_ts);
+	li_itostrn(hh, sizeof(hh), srv->cur_ts);
 	li_MD5_Update(&Md5Ctx, (unsigned char *)hh, strlen(hh));
 	li_MD5_Update(&Md5Ctx, (unsigned char *)srv->entropy, sizeof(srv->entropy));
-	li_itostr(hh, rand());
+	li_itostrn(hh, sizeof(hh), rand());
 	li_MD5_Update(&Md5Ctx, (unsigned char *)hh, strlen(hh));
 
 	li_MD5_Final(h, &Md5Ctx);

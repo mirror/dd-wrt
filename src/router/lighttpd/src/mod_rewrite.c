@@ -1,3 +1,5 @@
+#include "first.h"
+
 #include "base.h"
 #include "log.h"
 #include "buffer.h"
@@ -343,7 +345,7 @@ URIHANDLER_FUNC(mod_rewrite_con_reset) {
 	return HANDLER_GO_ON;
 }
 
-static int process_rewrite_rules(server *srv, connection *con, plugin_data *p, rewrite_rule_buffer *kvb) {
+static handler_t process_rewrite_rules(server *srv, connection *con, plugin_data *p, rewrite_rule_buffer *kvb) {
 	size_t i;
 	handler_ctx *hctx;
 
@@ -381,6 +383,10 @@ static int process_rewrite_rules(server *srv, connection *con, plugin_data *p, r
 						"execution error while matching: ", n);
 				return HANDLER_ERROR;
 			}
+		} else if (0 == pattern_len) {
+			/* short-circuit if blank replacement pattern
+			 * (do not attempt to match against remaining rewrite rules) */
+			return HANDLER_GO_ON;
 		} else {
 			const char **list;
 			size_t start;
@@ -482,8 +488,6 @@ URIHANDLER_FUNC(mod_rewrite_uri_handler) {
 	if (!p->conf.rewrite) return HANDLER_GO_ON;
 
 	return process_rewrite_rules(srv, con, p, p->conf.rewrite);
-
-	return HANDLER_GO_ON;
 }
 #endif
 

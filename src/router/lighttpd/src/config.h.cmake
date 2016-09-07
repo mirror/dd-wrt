@@ -8,6 +8,10 @@
 #define PACKAGE_VERSION "${PACKAGE_VERSION}"
 #define LIBRARY_DIR "${LIGHTTPD_LIBRARY_DIR}"
 
+#ifndef _GNU_SOURCE
+# define _GNU_SOURCE
+#endif
+
 /* System */
 #cmakedefine  HAVE_SYS_DEVPOLL_H
 #cmakedefine  HAVE_SYS_EPOLL_H
@@ -40,7 +44,6 @@
 /* OpenSSL */
 #cmakedefine  HAVE_OPENSSL_SSL_H
 #cmakedefine  HAVE_LIBCRYPTO
-#cmakedefine  OPENSSL_NO_KRB5
 #cmakedefine  HAVE_LIBSSL
 
 /* BZip */
@@ -99,7 +102,7 @@
 #cmakedefine  HAVE_GDBM
 
 /* memcache */
-#cmakedefine  HAVE_MEMCACHE_H
+#cmakedefine  USE_MEMCACHED
 
 /* inotify */
 #cmakedefine  HAVE_INOTIFY_INIT

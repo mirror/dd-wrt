@@ -1,5 +1,6 @@
 #ifndef _CHUNK_H_
 #define _CHUNK_H_
+#include "first.h"
 
 #include "buffer.h"
 #include "array.h"
@@ -45,14 +46,20 @@ typedef struct {
 
 	array *tempdirs;
 	unsigned int upload_temp_file_size;
+	unsigned int tempdir_idx;
 } chunkqueue;
 
 chunkqueue *chunkqueue_init(void);
-void chunkqueue_set_tempdirs(chunkqueue *cq, array *tempdirs, unsigned int upload_temp_file_size);
+void chunkqueue_set_tempdirs_default (array *tempdirs, unsigned int upload_temp_file_size);
 void chunkqueue_append_file(chunkqueue *cq, buffer *fn, off_t offset, off_t len); /* copies "fn" */
+void chunkqueue_append_file_fd(chunkqueue *cq, buffer *fn, int fd, off_t offset, off_t len); /* copies "fn" */
 void chunkqueue_append_mem(chunkqueue *cq, const char *mem, size_t len); /* copies memory */
 void chunkqueue_append_buffer(chunkqueue *cq, buffer *mem); /* may reset "mem" */
 void chunkqueue_prepend_buffer(chunkqueue *cq, buffer *mem); /* may reset "mem" */
+void chunkqueue_append_chunkqueue(chunkqueue *cq, chunkqueue *src);
+
+struct server; /*(declaration)*/
+int chunkqueue_append_mem_to_tempfile(struct server *srv, chunkqueue *cq, const char *mem, size_t len);
 
 /* functions to handle buffers to read into: */
 /* return a pointer to a buffer in *mem with size *len;

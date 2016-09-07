@@ -1,3 +1,5 @@
+#include "first.h"
+
 #include "base.h"
 #include "log.h"
 #include "buffer.h"
@@ -18,6 +20,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <errno.h>
 #include <time.h>
 
@@ -33,7 +36,22 @@
 # include <bzlib.h>
 #endif
 
+#if defined HAVE_SYS_MMAN_H && defined HAVE_MMAP && defined ENABLE_MMAP
+#define USE_MMAP
+
 #include "sys-mmap.h"
+#include <setjmp.h>
+#include <signal.h>
+
+static volatile int sigbus_jmp_valid;
+static sigjmp_buf sigbus_jmp;
+
+static void sigbus_handler(int sig) {
+	UNUSED(sig);
+	if (sigbus_jmp_valid) siglongjmp(sigbus_jmp, 1);
+	log_failed_assert(__FILE__, __LINE__, "SIGBUS");
+}
+#endif
 
 /* request: accept-encoding */
 #define HTTP_ACCEPT_ENCODING_IDENTITY BV(0)
@@ -417,6 +435,9 @@ static int deflate_file_to_buffer_bzip2(server *srv, connection *con, plugin_dat
 static int deflate_file_to_file(server *srv, connection *con, plugin_data *p, buffer *fn, stat_cache_entry *sce, int type) {
 	int ifd, ofd;
 	int ret;
+#ifdef USE_MMAP
+	volatile int mapped = 0;/* quiet warning: might be clobbered by 'longjmp' */
+#endif
 	void *start;
 	const char *filename = fn->ptr;
 	ssize_t r;
@@ -497,22 +518,30 @@ static int deflate_file_to_file(server *srv, connection *con, plugin_data *p, bu
 	}
 
 #ifdef USE_MMAP
-	if (MAP_FAILED == (start = mmap(NULL, sce->st.st_size, PROT_READ, MAP_SHARED, ifd, 0))) {
-		log_error_write(srv, __FILE__, __LINE__, "sbss", "mmaping", fn, "failed", strerror(errno));
+	if (MAP_FAILED != (start = mmap(NULL, sce->st.st_size, PROT_READ, MAP_SHARED, ifd, 0))) {
+		mapped = 1;
+		signal(SIGBUS, sigbus_handler);
+		sigbus_jmp_valid = 1;
+		if (0 != sigsetjmp(sigbus_jmp, 1)) {
+			sigbus_jmp_valid = 0;
 
-		close(ofd);
-		close(ifd);
+			log_error_write(srv, __FILE__, __LINE__, "sbd", "SIGBUS in mmap:",
+				fn, ifd);
 
-		/* Remove the incomplete cache file, so that later hits aren't served from it */
-		if (-1 == unlink(p->ofn->ptr)) {
-			log_error_write(srv, __FILE__, __LINE__, "sbss", "unlinking incomplete cachefile", p->ofn, "failed:", strerror(errno));
+			munmap(start, sce->st.st_size);
+			close(ofd);
+			close(ifd);
+
+			/* Remove the incomplete cache file, so that later hits aren't served from it */
+			if (-1 == unlink(p->ofn->ptr)) {
+				log_error_write(srv, __FILE__, __LINE__, "sbss", "unlinking incomplete cachefile", p->ofn, "failed:", strerror(errno));
+			}
+
+			return -1;
 		}
-
-		return -1;
-	}
-#else
-	start = malloc(sce->st.st_size);
-	if (NULL == start || sce->st.st_size != read(ifd, start, sce->st.st_size)) {
+	} else
+#endif  /* FIXME: might attempt to read very large file completely into memory; see compress.max-filesize config option */
+	if (NULL == (start = malloc(sce->st.st_size)) || sce->st.st_size != read(ifd, start, sce->st.st_size)) {
 		log_error_write(srv, __FILE__, __LINE__, "sbss", "reading", fn, "failed", strerror(errno));
 
 		close(ofd);
@@ -526,7 +555,6 @@ static int deflate_file_to_file(server *srv, connection *con, plugin_data *p, bu
 
 		return -1;
 	}
-#endif
 
 	ret = -1;
 	switch(type) {
@@ -559,15 +587,20 @@ static int deflate_file_to_file(server *srv, connection *con, plugin_data *p, bu
 	}
 
 #ifdef USE_MMAP
-	munmap(start, sce->st.st_size);
-#else
-	free(start);
+	if (mapped) {
+		sigbus_jmp_valid = 0;
+		munmap(start, sce->st.st_size);
+	} else
 #endif
+		free(start);
 
-	close(ofd);
 	close(ifd);
 
-	if (ret != 0) {
+	if (0 != close(ofd) || ret != 0) {
+		if (0 == ret) {
+			log_error_write(srv, __FILE__, __LINE__, "sbss", "writing cachefile", p->ofn, "failed:", strerror(errno));
+		}
+
 		/* Remove the incomplete cache file, so that later hits aren't served from it */
 		if (-1 == unlink(p->ofn->ptr)) {
 			log_error_write(srv, __FILE__, __LINE__, "sbss", "unlinking incomplete cachefile", p->ofn, "failed:", strerror(errno));
@@ -584,6 +617,9 @@ static int deflate_file_to_file(server *srv, connection *con, plugin_data *p, bu
 static int deflate_file_to_buffer(server *srv, connection *con, plugin_data *p, buffer *fn, stat_cache_entry *sce, int type) {
 	int ifd;
 	int ret = -1;
+#ifdef USE_MMAP
+	volatile int mapped = 0;/* quiet warning: might be clobbered by 'longjmp' */
+#endif
 	void *start;
 
 	/* overflow */
@@ -604,22 +640,29 @@ static int deflate_file_to_buffer(server *srv, connection *con, plugin_data *p, 
 	}
 
 #ifdef USE_MMAP
-	if (MAP_FAILED == (start = mmap(NULL, sce->st.st_size, PROT_READ, MAP_SHARED, ifd, 0))) {
-		log_error_write(srv, __FILE__, __LINE__, "sbss", "mmaping", fn, "failed", strerror(errno));
+	if (MAP_FAILED != (start = mmap(NULL, sce->st.st_size, PROT_READ, MAP_SHARED, ifd, 0))) {
+		mapped = 1;
+		signal(SIGBUS, sigbus_handler);
+		sigbus_jmp_valid = 1;
+		if (0 != sigsetjmp(sigbus_jmp, 1)) {
+			sigbus_jmp_valid = 0;
 
-		close(ifd);
-		return -1;
-	}
-#else
-	start = malloc(sce->st.st_size);
-	if (NULL == start || sce->st.st_size != read(ifd, start, sce->st.st_size)) {
+			log_error_write(srv, __FILE__, __LINE__, "sbd", "SIGBUS in mmap:",
+				fn, ifd);
+
+			munmap(start, sce->st.st_size);
+			close(ifd);
+			return -1;
+		}
+	} else
+#endif  /* FIXME: might attempt to read very large file completely into memory; see compress.max-filesize config option */
+	if (NULL == (start = malloc(sce->st.st_size)) || sce->st.st_size != read(ifd, start, sce->st.st_size)) {
 		log_error_write(srv, __FILE__, __LINE__, "sbss", "reading", fn, "failed", strerror(errno));
 
 		close(ifd);
 		free(start);
 		return -1;
 	}
-#endif
 
 	switch(type) {
 #ifdef USE_ZLIB
@@ -643,10 +686,13 @@ static int deflate_file_to_buffer(server *srv, connection *con, plugin_data *p, 
 	}
 
 #ifdef USE_MMAP
-	munmap(start, sce->st.st_size);
-#else
-	free(start);
+	if (mapped) {
+		sigbus_jmp_valid = 0;
+		munmap(start, sce->st.st_size);
+	} else
 #endif
+		free(start);
+
 	close(ifd);
 
 	if (ret != 0) return -1;
@@ -702,18 +748,22 @@ static int mod_compress_patch_connection(server *srv, connection *con, plugin_da
 }
 #undef PATCH
 
-static int mod_compress_contains_encoding(const char *headervalue, const char *encoding) {
-	const char *m;
-	for ( ;; ) {
-		m = strstr(headervalue, encoding);
-		if (NULL == m) return 0;
-		if (m == headervalue || m[-1] == ' ' || m[-1] == ',') return 1;
-
-		/* only partial match, search for next value */
-		m = strchr(m, ',');
-		if (NULL == m) return 0;
-		headervalue = m + 1;
-	}
+static int mod_compress_contains_encoding(const char *headervalue, const char *encoding, size_t len) {
+	const char *m = headervalue;
+	do {
+		while (*m == ',' || *m == ' ' || *m == '\t') {
+			++m;
+		}
+		if (0 == strncasecmp(m, encoding, len)) {
+			/*(not a full HTTP field parse: not parsing for q-values and not handling q=0)*/
+			m += len;
+			if (*m == '\0' || *m == ',' || *m == ';' || *m == ' ' || *m == '\t')
+				return 1;
+		} else if (*m != '\0') {
+			++m;
+		}
+	} while ((m = strchr(m, ',')));
+	return 0;
 }
 
 PHYSICALPATH_FUNC(mod_compress_physical) {
@@ -809,16 +859,16 @@ PHYSICALPATH_FUNC(mod_compress_physical) {
 
 				/* get client side support encodings */
 #ifdef USE_ZLIB
-				if (mod_compress_contains_encoding(value, "gzip")) accept_encoding |= HTTP_ACCEPT_ENCODING_GZIP;
-				if (mod_compress_contains_encoding(value, "x-gzip")) accept_encoding |= HTTP_ACCEPT_ENCODING_X_GZIP;
-				if (mod_compress_contains_encoding(value, "deflate")) accept_encoding |= HTTP_ACCEPT_ENCODING_DEFLATE;
-				if (mod_compress_contains_encoding(value, "compress")) accept_encoding |= HTTP_ACCEPT_ENCODING_COMPRESS;
+				if (mod_compress_contains_encoding(value, CONST_STR_LEN("gzip"))) accept_encoding |= HTTP_ACCEPT_ENCODING_GZIP;
+				if (mod_compress_contains_encoding(value, CONST_STR_LEN("x-gzip"))) accept_encoding |= HTTP_ACCEPT_ENCODING_X_GZIP;
+				if (mod_compress_contains_encoding(value, CONST_STR_LEN("deflate"))) accept_encoding |= HTTP_ACCEPT_ENCODING_DEFLATE;
+				if (mod_compress_contains_encoding(value, CONST_STR_LEN("compress"))) accept_encoding |= HTTP_ACCEPT_ENCODING_COMPRESS;
 #endif
 #ifdef USE_BZ2LIB
-				if (mod_compress_contains_encoding(value, "bzip2")) accept_encoding |= HTTP_ACCEPT_ENCODING_BZIP2;
-				if (mod_compress_contains_encoding(value, "x-bzip2")) accept_encoding |= HTTP_ACCEPT_ENCODING_X_BZIP2;
+				if (mod_compress_contains_encoding(value, CONST_STR_LEN("bzip2"))) accept_encoding |= HTTP_ACCEPT_ENCODING_BZIP2;
+				if (mod_compress_contains_encoding(value, CONST_STR_LEN("x-bzip2"))) accept_encoding |= HTTP_ACCEPT_ENCODING_X_BZIP2;
 #endif
-				if (mod_compress_contains_encoding(value, "identity")) accept_encoding |= HTTP_ACCEPT_ENCODING_IDENTITY;
+				if (mod_compress_contains_encoding(value, CONST_STR_LEN("identity"))) accept_encoding |= HTTP_ACCEPT_ENCODING_IDENTITY;
 
 				/* find matching entries */
 				matched_encodings = accept_encoding & p->conf.allowed_encodings;

@@ -1,3 +1,5 @@
+#include "first.h"
+
 #include "network.h"
 #include "fdevent.h"
 #include "log.h"
@@ -48,6 +50,28 @@ static void ssl_info_callback(const SSL *ssl, int where, int ret) {
 }
 #endif
 
+void
+network_accept_tcp_nagle_disable (const int fd)
+{
+    static int noinherit_tcpnodelay = -1;
+    int opt;
+
+    if (!noinherit_tcpnodelay) /* TCP_NODELAY inherited from listen socket */
+        return;
+
+    if (noinherit_tcpnodelay < 0) {
+        socklen_t optlen = sizeof(opt);
+        if (0 == getsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &opt, &optlen)) {
+            noinherit_tcpnodelay = !opt;
+            if (opt)           /* TCP_NODELAY inherited from listen socket */
+                return;
+        }
+    }
+
+    opt = 1;
+    (void)setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &opt, sizeof(opt));
+}
+
 static handler_t network_server_handle_fdevent(server *srv, void *context, int revents) {
 	server_socket *srv_socket = (server_socket *)context;
 	connection *con;
@@ -67,18 +91,7 @@ static handler_t network_server_handle_fdevent(server *srv, void *context, int r
 	 *
 	 * we jump out after 100 to give the waiting connections a chance */
 	for (loops = 0; loops < 100 && NULL != (con = connection_accept(srv, srv_socket)); loops++) {
-		handler_t r;
-
 		connection_state_machine(srv, con);
-
-		switch(r = plugins_call_handle_joblist(srv, con)) {
-		case HANDLER_FINISHED:
-		case HANDLER_GO_ON:
-			break;
-		default:
-			log_error_write(srv, __FILE__, __LINE__, "d", r);
-			break;
-		}
 	}
 	return HANDLER_GO_ON;
 }
@@ -108,9 +121,10 @@ static int network_ssl_servername_callback(SSL *ssl, int *al, server *srv) {
 	config_cond_cache_reset(srv, con);
 	config_setup_connection(srv, con);
 
-	config_patch_connection(srv, con, COMP_SERVER_SOCKET);
-	config_patch_connection(srv, con, COMP_HTTP_SCHEME);
-	config_patch_connection(srv, con, COMP_HTTP_HOST);
+	con->conditional_is_valid[COMP_SERVER_SOCKET] = 1;
+	con->conditional_is_valid[COMP_HTTP_SCHEME] = 1;
+	con->conditional_is_valid[COMP_HTTP_HOST] = 1;
+	config_patch_connection(srv, con);
 
 	if (NULL == con->conf.ssl_pemfile_x509 || NULL == con->conf.ssl_pemfile_pkey) {
 		/* x509/pkey available <=> pemfile was set <=> pemfile got patched: so this should never happen, unless you nest $SERVER["socket"] */
@@ -150,6 +164,8 @@ static int network_ssl_servername_callback(SSL *ssl, int *al, server *srv) {
 			NULL
 		);
 		SSL_set_verify_depth(ssl, con->conf.ssl_verifyclient_depth);
+	} else {
+		SSL_set_verify(ssl, SSL_VERIFY_NONE, NULL);
 	}
 
 	return SSL_TLSEXT_ERR_OK;
@@ -160,17 +176,14 @@ static int network_server_init(server *srv, buffer *host_token, specific_config 
 	int val;
 	socklen_t addr_len;
 	server_socket *srv_socket;
-	char *sp;
 	unsigned int port = 0;
 	const char *host;
 	buffer *b;
-	int is_unix_domain_socket = 0;
-	int fd;
+	int err;
 
 #ifdef __WIN32
 	WORD wVersionRequested;
 	WSADATA wsaData;
-	int err;
 
 	wVersionRequested = MAKEWORD( 2, 2 );
 
@@ -181,8 +194,11 @@ static int network_server_init(server *srv, buffer *host_token, specific_config 
 		    return -1;
 	}
 #endif
+	err = -1;
 
 	srv_socket = calloc(1, sizeof(*srv_socket));
+	force_assert(NULL != srv_socket);
+	srv_socket->addr.plain.sa_family = AF_INET; /* default */
 	srv_socket->fd = -1;
 	srv_socket->fde_ndx = -1;
 
@@ -192,86 +208,59 @@ static int network_server_init(server *srv, buffer *host_token, specific_config 
 	b = buffer_init();
 	buffer_copy_buffer(b, host_token);
 
-	/* ipv4:port
-	 * [ipv6]:port
-	 */
-	if (NULL == (sp = strrchr(b->ptr, ':'))) {
-		log_error_write(srv, __FILE__, __LINE__, "sb", "value of $SERVER[\"socket\"] has to be \"ip:port\".", b);
-
-		goto error_free_socket;
-	}
-
 	host = b->ptr;
-
-	/* check for [ and ] */
-	if (b->ptr[0] == '[' && *(sp-1) == ']') {
-		*(sp-1) = '\0';
-		host++;
-
-		s->use_ipv6 = 1;
-	}
-
-	*(sp++) = '\0';
-
-	port = strtol(sp, NULL, 10);
 
 	if (host[0] == '/') {
 		/* host is a unix-domain-socket */
-		is_unix_domain_socket = 1;
-	} else if (port == 0 || port > 65535) {
-		log_error_write(srv, __FILE__, __LINE__, "sd", "port out of range:", port);
-
-		goto error_free_socket;
-	}
-
-	if (*host == '\0') host = NULL;
-
-	if (is_unix_domain_socket) {
 #ifdef HAVE_SYS_UN_H
-
 		srv_socket->addr.plain.sa_family = AF_UNIX;
-
-		if (-1 == (srv_socket->fd = socket(srv_socket->addr.plain.sa_family, SOCK_STREAM, 0))) {
-			log_error_write(srv, __FILE__, __LINE__, "ss", "socket failed:", strerror(errno));
-			goto error_free_socket;
-		}
 #else
 		log_error_write(srv, __FILE__, __LINE__, "s",
 				"ERROR: Unix Domain sockets are not supported.");
 		goto error_free_socket;
 #endif
+	} else {
+		/* ipv4:port
+		 * [ipv6]:port
+		 */
+		size_t len = buffer_string_length(b);
+		char *sp = NULL;
+		if (0 == len) {
+			log_error_write(srv, __FILE__, __LINE__, "s", "value of $SERVER[\"socket\"] must not be empty");
+			goto error_free_socket;
+		}
+		if ((b->ptr[0] == '[' && b->ptr[len-1] == ']') || NULL == (sp = strrchr(b->ptr, ':'))) {
+			/* use server.port if set in config, or else default from config_set_defaults() */
+			port = srv->srvconf.port;
+			sp = b->ptr + len; /* point to '\0' at end of string so end of IPv6 address can be found below */
+		} else {
+			/* found ip:port separator at *sp; port doesn't end in ']', so *sp hopefully doesn't split an IPv6 address */
+			*sp = '\0';
+			port = strtol(sp+1, NULL, 10);
+		}
+
+		/* check for [ and ] */
+		if (b->ptr[0] == '[' && *(sp-1) == ']') {
+			*(sp-1) = '\0';
+			host++;
+
+			s->use_ipv6 = 1;
+		}
+
+		if (port == 0 || port > 65535) {
+			log_error_write(srv, __FILE__, __LINE__, "sd", "port not set or out of range:", port);
+
+			goto error_free_socket;
+		}
 	}
+
+	if (*host == '\0') host = NULL;
 
 #ifdef HAVE_IPV6
 	if (s->use_ipv6) {
 		srv_socket->addr.plain.sa_family = AF_INET6;
-
-		if (-1 == (srv_socket->fd = socket(srv_socket->addr.plain.sa_family, SOCK_STREAM, IPPROTO_TCP))) {
-			log_error_write(srv, __FILE__, __LINE__, "ss", "socket failed:", strerror(errno));
-			goto error_free_socket;
-		}
 	}
 #endif
-
-	if (srv_socket->fd == -1) {
-		srv_socket->addr.plain.sa_family = AF_INET;
-		if (-1 == (srv_socket->fd = socket(srv_socket->addr.plain.sa_family, SOCK_STREAM, IPPROTO_TCP))) {
-			log_error_write(srv, __FILE__, __LINE__, "ss", "socket failed:", strerror(errno));
-			goto error_free_socket;
-		}
-	}
-
-	/* set FD_CLOEXEC now, fdevent_fcntl_set is called later; needed for pipe-logger forks */
-	fd_close_on_exec(srv_socket->fd);
-
-	/* */
-	srv->cur_fds = srv_socket->fd;
-
-	val = 1;
-	if (setsockopt(srv_socket->fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) < 0) {
-		log_error_write(srv, __FILE__, __LINE__, "ss", "socketsockopt(SO_REUSEADDR) failed:", strerror(errno));
-		goto error_free_socket;
-	}
 
 	switch(srv_socket->addr.plain.sa_family) {
 #ifdef HAVE_IPV6
@@ -285,16 +274,6 @@ static int network_server_init(server *srv, buffer *host_token, specific_config 
 			struct addrinfo hints, *res;
 			int r;
 
-			if (s->set_v6only) {
-				val = 1;
-				if (-1 == setsockopt(srv_socket->fd, IPPROTO_IPV6, IPV6_V6ONLY, &val, sizeof(val))) {
-					log_error_write(srv, __FILE__, __LINE__, "ss", "socketsockopt(IPV6_V6ONLY) failed:", strerror(errno));
-					goto error_free_socket;
-				}
-			} else {
-				log_error_write(srv, __FILE__, __LINE__, "s", "warning: server.set-v6only will be removed soon, update your config to have different sockets for ipv4 and ipv6");
-			}
-
 			memset(&hints, 0, sizeof(hints));
 
 			hints.ai_family   = AF_INET6;
@@ -302,6 +281,21 @@ static int network_server_init(server *srv, buffer *host_token, specific_config 
 			hints.ai_protocol = IPPROTO_TCP;
 
 			if (0 != (r = getaddrinfo(host, NULL, &hints, &res))) {
+				hints.ai_family = AF_INET;
+				if (
+				  #ifdef EAI_ADDRFAMILY
+				    EAI_ADDRFAMILY == r &&
+				  #endif
+				    0 == getaddrinfo(host, NULL, &hints, &res)) {
+					memcpy(&srv_socket->addr.ipv4, res->ai_addr, res->ai_addrlen);
+					srv_socket->addr.ipv4.sin_family = AF_INET;
+					srv_socket->addr.ipv4.sin_port = htons(port);
+					addr_len = sizeof(struct sockaddr_in);
+					/*assert(addr_len == res->ai_addrlen);*/
+					freeaddrinfo(res);
+					break;
+				}
+
 				log_error_write(srv, __FILE__, __LINE__,
 						"sssss", "getaddrinfo failed: ",
 						gai_strerror(r), "'", host, "'");
@@ -344,10 +338,9 @@ static int network_server_init(server *srv, buffer *host_token, specific_config 
 			memcpy(&(srv_socket->addr.ipv4.sin_addr.s_addr), he->h_addr_list[0], he->h_length);
 		}
 		srv_socket->addr.ipv4.sin_port = htons(port);
-
 		addr_len = sizeof(struct sockaddr_in);
-
 		break;
+#ifdef HAVE_SYS_UN_H
 	case AF_UNIX:
 		memset(&srv_socket->addr, 0, sizeof(struct sockaddr_un));
 		srv_socket->addr.un.sun_family = AF_UNIX;
@@ -367,10 +360,33 @@ static int network_server_init(server *srv, buffer *host_token, specific_config 
 #endif
 		}
 
-		/* check if the socket exists and try to connect to it. */
-		if (-1 != (fd = connect(srv_socket->fd, (struct sockaddr *) &(srv_socket->addr), addr_len))) {
-			close(fd);
+		break;
+#endif
+	default:
+		goto error_free_socket;
+	}
 
+	if (srv->srvconf.preflight_check) {
+		err = 0;
+		goto error_free_socket;
+	}
+
+	if (srv->sockets_disabled) { /* lighttpd -1 (one-shot mode) */
+#ifdef USE_OPENSSL
+		if (s->ssl_enabled) srv_socket->ssl_ctx = s->ssl_ctx;
+#endif
+		goto srv_sockets_append;
+	}
+
+#ifdef HAVE_SYS_UN_H
+	if (AF_UNIX == srv_socket->addr.plain.sa_family) {
+		/* check if the socket exists and try to connect to it. */
+		force_assert(host); /*(static analysis hint)*/
+		if (-1 == (srv_socket->fd = socket(srv_socket->addr.plain.sa_family, SOCK_STREAM, 0))) {
+			log_error_write(srv, __FILE__, __LINE__, "ss", "socket failed:", strerror(errno));
+			goto error_free_socket;
+		}
+		if (0 == connect(srv_socket->fd, (struct sockaddr *) &(srv_socket->addr), addr_len)) {
 			log_error_write(srv, __FILE__, __LINE__, "ss",
 				"server socket is still in use:",
 				host);
@@ -393,10 +409,48 @@ static int network_server_init(server *srv, buffer *host_token, specific_config 
 
 			goto error_free_socket;
 		}
+	} else
+#endif
+	{
+		if (-1 == (srv_socket->fd = socket(srv_socket->addr.plain.sa_family, SOCK_STREAM, IPPROTO_TCP))) {
+			log_error_write(srv, __FILE__, __LINE__, "ss", "socket failed:", strerror(errno));
+			goto error_free_socket;
+		}
 
-		break;
-	default:
+#ifdef HAVE_IPV6
+		if (AF_INET6 == srv_socket->addr.plain.sa_family
+		    && host != NULL) {
+			if (s->set_v6only) {
+				val = 1;
+				if (-1 == setsockopt(srv_socket->fd, IPPROTO_IPV6, IPV6_V6ONLY, &val, sizeof(val))) {
+					log_error_write(srv, __FILE__, __LINE__, "ss", "socketsockopt(IPV6_V6ONLY) failed:", strerror(errno));
+					goto error_free_socket;
+				}
+			} else {
+				log_error_write(srv, __FILE__, __LINE__, "s", "warning: server.set-v6only will be removed soon, update your config to have different sockets for ipv4 and ipv6");
+			}
+		}
+#endif
+	}
+
+	/* set FD_CLOEXEC now, fdevent_fcntl_set is called later; needed for pipe-logger forks */
+	fd_close_on_exec(srv_socket->fd);
+
+	/* */
+	srv->cur_fds = srv_socket->fd;
+
+	val = 1;
+	if (setsockopt(srv_socket->fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) < 0) {
+		log_error_write(srv, __FILE__, __LINE__, "ss", "socketsockopt(SO_REUSEADDR) failed:", strerror(errno));
 		goto error_free_socket;
+	}
+
+	if (srv_socket->addr.plain.sa_family != AF_UNIX) {
+		val = 1;
+		if (setsockopt(srv_socket->fd, IPPROTO_TCP, TCP_NODELAY, &val, sizeof(val)) < 0) {
+			log_error_write(srv, __FILE__, __LINE__, "ss", "socketsockopt(TCP_NODELAY) failed:", strerror(errno));
+			goto error_free_socket;
+		}
 	}
 
 	if (0 != bind(srv_socket->fd, (struct sockaddr *) &(srv_socket->addr), addr_len)) {
@@ -415,7 +469,7 @@ static int network_server_init(server *srv, buffer *host_token, specific_config 
 		goto error_free_socket;
 	}
 
-	if (-1 == listen(srv_socket->fd, 128 * 8)) {
+	if (-1 == listen(srv_socket->fd, s->listen_backlog)) {
 		log_error_write(srv, __FILE__, __LINE__, "ss", "listen failed: ", strerror(errno));
 		goto error_free_socket;
 	}
@@ -440,29 +494,37 @@ static int network_server_init(server *srv, buffer *host_token, specific_config 
 			log_error_write(srv, __FILE__, __LINE__, "ss", "can't set TCP_DEFER_ACCEPT: ", strerror(errno));
 		}
 #endif
-	} else {
+#if defined(__FreeBSD__) || defined(__NetBSD__) \
+ || defined(__OpenBSD__) || defined(__DragonflyBSD__)
+	} else if (!buffer_is_empty(s->bsd_accept_filter)
+		   && (buffer_is_equal_string(s->bsd_accept_filter, CONST_STR_LEN("httpready"))
+			|| buffer_is_equal_string(s->bsd_accept_filter, CONST_STR_LEN("dataready")))) {
 #ifdef SO_ACCEPTFILTER
 		/* FreeBSD accf_http filter */
 		struct accept_filter_arg afa;
 		memset(&afa, 0, sizeof(afa));
-		strcpy(afa.af_name, "httpready");
+		strncpy(afa.af_name, s->bsd_accept_filter->ptr, sizeof(afa.af_name));
 		if (setsockopt(srv_socket->fd, SOL_SOCKET, SO_ACCEPTFILTER, &afa, sizeof(afa)) < 0) {
 			if (errno != ENOENT) {
-				log_error_write(srv, __FILE__, __LINE__, "ss", "can't set accept-filter 'httpready': ", strerror(errno));
+				log_error_write(srv, __FILE__, __LINE__, "SBss", "can't set accept-filter '", s->bsd_accept_filter, "':", strerror(errno));
 			}
 		}
 #endif
+#endif
 	}
 
+srv_sockets_append:
 	srv_socket->is_ssl = s->ssl_enabled;
 
 	if (srv->srv_sockets.size == 0) {
 		srv->srv_sockets.size = 4;
 		srv->srv_sockets.used = 0;
 		srv->srv_sockets.ptr = malloc(srv->srv_sockets.size * sizeof(server_socket*));
+		force_assert(NULL != srv->srv_sockets.ptr);
 	} else if (srv->srv_sockets.used == srv->srv_sockets.size) {
 		srv->srv_sockets.size += 4;
 		srv->srv_sockets.ptr = realloc(srv->srv_sockets.ptr, srv->srv_sockets.size * sizeof(server_socket*));
+		force_assert(NULL != srv->srv_sockets.ptr);
 	}
 
 	srv->srv_sockets.ptr[srv->srv_sockets.used++] = srv_socket;
@@ -486,7 +548,7 @@ error_free_socket:
 
 	buffer_free(b);
 
-	return -1;
+	return err; /* -1 if error; 0 if srv->srvconf.preflight_check successful */
 }
 
 int network_close(server *srv) {
@@ -699,6 +761,9 @@ int network_init(server *srv) {
 #ifndef SSL_OP_NO_COMPRESSION
 # define SSL_OP_NO_COMPRESSION 0
 #endif
+#ifndef SSL_MODE_RELEASE_BUFFERS    /* OpenSSL >= 1.0.0 */
+#define SSL_MODE_RELEASE_BUFFERS 0
+#endif
 		long ssloptions =
 			SSL_OP_ALL | SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION | SSL_OP_NO_COMPRESSION;
 
@@ -769,7 +834,7 @@ int network_init(server *srv) {
 
 		if (!s->ssl_use_sslv2) {
 			/* disable SSLv2 */
-			if (!(SSL_OP_NO_SSLv2 & SSL_CTX_set_options(s->ssl_ctx, SSL_OP_NO_SSLv2))) {
+			if ((SSL_OP_NO_SSLv2 & SSL_CTX_set_options(s->ssl_ctx, SSL_OP_NO_SSLv2)) != SSL_OP_NO_SSLv2) {
 				log_error_write(srv, __FILE__, __LINE__, "ss", "SSL:",
 						ERR_error_string(ERR_get_error(), NULL));
 				return -1;
@@ -778,7 +843,7 @@ int network_init(server *srv) {
 
 		if (!s->ssl_use_sslv3) {
 			/* disable SSLv3 */
-			if (!(SSL_OP_NO_SSLv3 & SSL_CTX_set_options(s->ssl_ctx, SSL_OP_NO_SSLv3))) {
+			if ((SSL_OP_NO_SSLv3 & SSL_CTX_set_options(s->ssl_ctx, SSL_OP_NO_SSLv3)) != SSL_OP_NO_SSLv3) {
 				log_error_write(srv, __FILE__, __LINE__, "ss", "SSL:",
 						ERR_error_string(ERR_get_error(), NULL));
 				return -1;
@@ -814,20 +879,29 @@ int network_init(server *srv) {
 				return -1;
 			}
 		} else {
+			BIGNUM *dh_p, *dh_g;
 			/* Default DH parameters from RFC5114 */
 			dh = DH_new();
 			if (dh == NULL) {
 				log_error_write(srv, __FILE__, __LINE__, "s", "SSL: DH_new () failed");
 				return -1;
 			}
-			dh->p = BN_bin2bn(dh1024_p,sizeof(dh1024_p), NULL);
-			dh->g = BN_bin2bn(dh1024_g,sizeof(dh1024_g), NULL);
-			dh->length = 160;
-			if ((dh->p == NULL) || (dh->g == NULL)) {
+			dh_p = BN_bin2bn(dh1024_p,sizeof(dh1024_p), NULL);
+			dh_g = BN_bin2bn(dh1024_g,sizeof(dh1024_g), NULL);
+			if ((dh_p == NULL) || (dh_g == NULL)) {
 				DH_free(dh);
 				log_error_write(srv, __FILE__, __LINE__, "s", "SSL: BN_bin2bn () failed");
 				return -1;
 			}
+		      #if OPENSSL_VERSION_NUMBER < 0x10100000L \
+			|| defined(LIBRESSL_VERSION_NUMBER)
+			dh->p = dh_p;
+			dh->g = dh_g;
+			dh->length = 160;
+		      #else
+			DH_set0_pqg(dh, dh_p, NULL, dh_g);
+			DH_set_length(dh, 160);
+		      #endif
 		}
 		SSL_CTX_set_tmp_dh(s->ssl_ctx,dh);
 		SSL_CTX_set_options(s->ssl_ctx,SSL_OP_SINGLE_DH_USE);
@@ -892,13 +966,13 @@ int network_init(server *srv) {
 			SSL_CTX_set_verify_depth(s->ssl_ctx, s->ssl_verifyclient_depth);
 		}
 
-		if (SSL_CTX_use_certificate(s->ssl_ctx, s->ssl_pemfile_x509) < 0) {
+		if (1 != SSL_CTX_use_certificate(s->ssl_ctx, s->ssl_pemfile_x509)) {
 			log_error_write(srv, __FILE__, __LINE__, "ssb", "SSL:",
 					ERR_error_string(ERR_get_error(), NULL), s->ssl_pemfile);
 			return -1;
 		}
 
-		if (SSL_CTX_use_PrivateKey(s->ssl_ctx, s->ssl_pemfile_pkey) < 0) {
+		if (1 != SSL_CTX_use_PrivateKey(s->ssl_ctx, s->ssl_pemfile_pkey)) {
 			log_error_write(srv, __FILE__, __LINE__, "ssb", "SSL:",
 					ERR_error_string(ERR_get_error(), NULL), s->ssl_pemfile);
 			return -1;
@@ -912,7 +986,10 @@ int network_init(server *srv) {
 			return -1;
 		}
 		SSL_CTX_set_default_read_ahead(s->ssl_ctx, 1);
-		SSL_CTX_set_mode(s->ssl_ctx, SSL_CTX_get_mode(s->ssl_ctx) | SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
+		SSL_CTX_set_mode(s->ssl_ctx,  SSL_CTX_get_mode(s->ssl_ctx)
+					    | SSL_MODE_ENABLE_PARTIAL_WRITE
+					    | SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER
+					    | SSL_MODE_RELEASE_BUFFERS);
 
 # ifndef OPENSSL_NO_TLSEXT
 		if (!SSL_CTX_set_tlsext_servername_callback(s->ssl_ctx, network_ssl_servername_callback) ||
@@ -1015,6 +1092,8 @@ int network_register_fdevents(server *srv) {
 		return -1;
 	}
 
+	if (srv->sockets_disabled) return 0; /* lighttpd -1 (one-shot mode) */
+
 	/* register fdevents after reset */
 	for (i = 0; i < srv->srv_sockets.used; i++) {
 		server_socket *srv_socket = srv->srv_sockets.ptr[i];
@@ -1037,9 +1116,7 @@ int network_write_chunkqueue(server *srv, connection *con, chunkqueue *cq, off_t
 		off_t limit = con->conf.global_kbytes_per_second * 1024 - *(con->conf.global_bytes_per_second_cnt_ptr);
 		if (limit <= 0) {
 			/* we reached the global traffic limit */
-
 			con->traffic_limit_reached = 1;
-			joblist_append(srv, con);
 
 			return 1;
 		} else {
@@ -1051,9 +1128,7 @@ int network_write_chunkqueue(server *srv, connection *con, chunkqueue *cq, off_t
 		off_t limit = con->conf.kbytes_per_second * 1024 - con->bytes_written_cur_second;
 		if (limit <= 0) {
 			/* we reached the traffic limit */
-
 			con->traffic_limit_reached = 1;
-			joblist_append(srv, con);
 
 			return 1;
 		} else {
@@ -1069,7 +1144,7 @@ int network_write_chunkqueue(server *srv, connection *con, chunkqueue *cq, off_t
 	 */
 	if (cq->first && cq->first->next) {
 		corked = 1;
-		setsockopt(con->fd, IPPROTO_TCP, TCP_CORK, &corked, sizeof(corked));
+		(void)setsockopt(con->fd, IPPROTO_TCP, TCP_CORK, &corked, sizeof(corked));
 	}
 #endif
 
@@ -1089,7 +1164,7 @@ int network_write_chunkqueue(server *srv, connection *con, chunkqueue *cq, off_t
 #ifdef TCP_CORK
 	if (corked) {
 		corked = 0;
-		setsockopt(con->fd, IPPROTO_TCP, TCP_CORK, &corked, sizeof(corked));
+		(void)setsockopt(con->fd, IPPROTO_TCP, TCP_CORK, &corked, sizeof(corked));
 	}
 #endif
 
