@@ -42,23 +42,7 @@ int wifi_gettxpower(char *ifname);
 int wifi_gettxpoweroffset(char *ifname);
 int bcm_gettxpower(char *wlname);
 
-extern int HTTxRate20_800(unsigned int index);
-extern int HTTxRate20_400(unsigned int index);
-extern int HTTxRate40_800(unsigned int index);
-extern int HTTxRate40_400(unsigned int index);
-extern int HTTxRate80_800(unsigned int index);
-extern int HTTxRate80_400(unsigned int index);
-extern int HTTxRate160_800(unsigned int index);
-extern int HTTxRate160_400(unsigned int index);
-
-extern int VHTTxRate20_800(unsigned int index);
-extern int VHTTxRate20_400(unsigned int index);
-extern int VHTTxRate40_800(unsigned int index);
-extern int VHTTxRate40_400(unsigned int index);
-extern int VHTTxRate80_800(unsigned int index);
-extern int VHTTxRate80_400(unsigned int index);
-extern int VHTTxRate160_800(unsigned int index);
-extern int VHTTxRate160_400(unsigned int index);
+extern int VHTTxRate(unsigned int mcs, unsigned int vhtmcs, unsigned int sgi, unsigned int bw);
 
 /*
  * Pass a wlioctl request to the specified interface.
