@@ -1,0 +1,1 @@
+CONFIG_PROTECT="/usr/share/xupnpd/xupnpd.lua /usr/share/xupnpd/plugins"
