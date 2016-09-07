@@ -1,3 +1,5 @@
+#include "first.h"
+
 #include "array.h"
 #include "buffer.h"
 
@@ -9,13 +11,13 @@
 #include <errno.h>
 #include <assert.h>
 
+#define ARRAY_NOT_FOUND ((size_t)(-1))
+
 array *array_init(void) {
 	array *a;
 
 	a = calloc(1, sizeof(*a));
 	force_assert(a);
-
-	a->next_power_of_2 = 1;
 
 	return a;
 }
@@ -28,17 +30,18 @@ array *array_init_array(array *src) {
 
 	a->used = src->used;
 	a->size = src->size;
-	a->next_power_of_2 = src->next_power_of_2;
 	a->unique_ndx = src->unique_ndx;
 
 	a->data = malloc(sizeof(*src->data) * src->size);
+	force_assert(NULL != a->data);
 	for (i = 0; i < src->size; i++) {
 		if (src->data[i]) a->data[i] = src->data[i]->copy(src->data[i]);
 		else a->data[i] = NULL;
 	}
 
-	a->sorted = malloc(sizeof(*src->sorted)   * src->size);
-	memcpy(a->sorted, src->sorted, sizeof(*src->sorted)   * src->size);
+	a->sorted = malloc(sizeof(*src->sorted) * src->size);
+	force_assert(NULL != a->sorted);
+	memcpy(a->sorted, src->sorted, sizeof(*src->sorted) * src->size);
 	return a;
 }
 
@@ -46,10 +49,8 @@ void array_free(array *a) {
 	size_t i;
 	if (!a) return;
 
-	if (!a->is_weakref) {
-		for (i = 0; i < a->size; i++) {
-			if (a->data[i]) a->data[i]->free(a->data[i]);
-		}
+	for (i = 0; i < a->size; i++) {
+		if (a->data[i]) a->data[i]->free(a->data[i]);
 	}
 
 	if (a->data) free(a->data);
@@ -62,13 +63,12 @@ void array_reset(array *a) {
 	size_t i;
 	if (!a) return;
 
-	if (!a->is_weakref) {
-		for (i = 0; i < a->used; i++) {
-			a->data[i]->reset(a->data[i]);
-		}
+	for (i = 0; i < a->used; i++) {
+		a->data[i]->reset(a->data[i]);
 	}
 
 	a->used = 0;
+	a->unique_ndx = 0;
 }
 
 data_unset *array_pop(array *a) {
@@ -78,53 +78,94 @@ data_unset *array_pop(array *a) {
 
 	a->used --;
 	du = a->data[a->used];
+	force_assert(a->sorted[a->used] == a->used); /* only works on "simple" lists */
 	a->data[a->used] = NULL;
 
 	return du;
 }
 
-static int array_get_index(array *a, const char *key, size_t keylen, int *rndx) {
-	int ndx = -1;
-	int i, pos = 0;
+/* returns index of element or ARRAY_NOT_FOUND
+ * if rndx != NULL it stores the position in a->sorted[] where the key needs
+ * to be inserted
+ */
+static size_t array_get_index(array *a, const char *key, size_t keylen, size_t *rndx) {
+	/* invariant: [lower-1] < key < [upper]
+	 * "virtual elements": [-1] = -INFTY, [a->used] = +INFTY
+	 * also an invariant: 0 <= lower <= upper <= a->used
+	 */
+	size_t lower = 0, upper = a->used;
+	force_assert(upper <= SSIZE_MAX); /* (lower + upper) can't overflow */
 
-	if (key == NULL) return -1;
+	while (lower != upper) {
+		size_t probe = (lower + upper) / 2;
+		int cmp = buffer_caseless_compare(key, keylen, CONST_BUF_LEN(a->data[a->sorted[probe]]->key));
+		assert(lower < upper); /* from loop invariant (lower <= upper) + (lower != upper) */
+		assert((lower <= probe) && (probe < upper)); /* follows from lower < upper */
 
-	/* try to find the string */
-	for (i = pos = a->next_power_of_2 / 2; ; i >>= 1) {
-		int cmp;
-
-		if (pos < 0) {
-			pos += i;
-		} else if (pos >= (int)a->used) {
-			pos -= i;
+		if (cmp == 0) {
+			/* found */
+			if (rndx) *rndx = probe;
+			return a->sorted[probe];
+		} else if (cmp < 0) {
+			/* key < [probe] */
+			upper = probe; /* still: lower <= upper */
 		} else {
-			cmp = buffer_caseless_compare(key, keylen, CONST_BUF_LEN(a->data[a->sorted[pos]]->key));
-
-			if (cmp == 0) {
-				/* found */
-				ndx = a->sorted[pos];
-				break;
-			} else if (cmp < 0) {
-				pos -= i;
-			} else {
-				pos += i;
-			}
+			/* key > [probe] */
+			lower = probe + 1; /* still: lower <= upper */
 		}
-		if (i == 0) break;
 	}
 
-	if (rndx) *rndx = pos;
-
-	return ndx;
+	/* not found: [lower-1] < key < [upper] = [lower] ==> insert at [lower] */
+	if (rndx) *rndx = lower;
+	return ARRAY_NOT_FOUND;
 }
 
 data_unset *array_get_element(array *a, const char *key) {
-	int ndx;
+	size_t ndx;
+	force_assert(NULL != key);
 
-	if (-1 != (ndx = array_get_index(a, key, strlen(key), NULL))) {
-		/* found, leave here */
-
+	if (ARRAY_NOT_FOUND != (ndx = array_get_index(a, key, strlen(key), NULL))) {
+		/* found, return it */
 		return a->data[ndx];
+	}
+
+	return NULL;
+}
+
+data_unset *array_extract_element(array *a, const char *key) {
+	size_t ndx, pos;
+	force_assert(NULL != key);
+
+	if (ARRAY_NOT_FOUND != (ndx = array_get_index(a, key, strlen(key), &pos))) {
+		/* found */
+		const size_t last_ndx = a->used - 1;
+		data_unset *entry = a->data[ndx];
+
+		/* now we need to swap it with the last element (if it isn't already the last element) */
+		if (ndx != last_ndx) {
+			/* to swap we also need to modify the index in a->sorted - find pos of last_elem there */
+			size_t last_elem_pos;
+			/* last element must be present at the expected position */
+			force_assert(last_ndx == array_get_index(a, CONST_BUF_LEN(a->data[last_ndx]->key), &last_elem_pos));
+
+			/* move entry from last_ndx to ndx */
+			a->data[ndx] = a->data[last_ndx];
+			a->data[last_ndx] = NULL;
+
+			/* fix index entry for moved entry */
+			a->sorted[last_elem_pos] = ndx;
+		} else {
+			a->data[ndx] = NULL;
+		}
+
+		/* remove entry in a->sorted: move everything after pos one step to the left */
+		if (pos != last_ndx) {
+			memmove(a->sorted + pos, a->sorted + pos + 1, (last_ndx - pos) * sizeof(*a->sorted));
+		}
+		a->sorted[last_ndx] = ARRAY_NOT_FOUND;
+		--a->used;
+
+		return entry;
 	}
 
 	return NULL;
@@ -166,49 +207,27 @@ void array_set_key_value(array *hdrs, const char *key, size_t key_len, const cha
 	array_insert_unique(hdrs, (data_unset *)ds_dst);
 }
 
-/* replace or insert data, return the old one with the same key */
-data_unset *array_replace(array *a, data_unset *du) {
-	int ndx;
-
-	force_assert(NULL != du);
-	if (-1 == (ndx = array_get_index(a, CONST_BUF_LEN(du->key), NULL))) {
-		array_insert_unique(a, du);
-		return NULL;
-	} else {
-		data_unset *old = a->data[ndx];
-		a->data[ndx] = du;
-		return old;
-	}
-}
-
-int array_insert_unique(array *a, data_unset *str) {
-	int ndx = -1;
-	int pos = 0;
-	size_t j;
+/* if entry already exists return pointer to existing entry, otherwise insert entry and return NULL */
+static data_unset **array_find_or_insert(array *a, data_unset *entry) {
+	size_t ndx, pos, j;
 
 	/* generate unique index if neccesary */
-	if (buffer_is_empty(str->key) || str->is_index_key) {
-		buffer_copy_int(str->key, a->unique_ndx++);
-		str->is_index_key = 1;
+	if (buffer_is_empty(entry->key) || entry->is_index_key) {
+		buffer_copy_int(entry->key, a->unique_ndx++);
+		entry->is_index_key = 1;
+		force_assert(0 != a->unique_ndx); /* must not wrap or we'll get problems */
 	}
 
-	/* try to find the string */
-	if (-1 != (ndx = array_get_index(a, CONST_BUF_LEN(str->key), &pos))) {
-		/* found, leave here */
-		if (a->data[ndx]->type == str->type) {
-			str->insert_dup(a->data[ndx], str);
-		} else {
-			SEGFAULT();
-		}
-		return 0;
+	/* try to find the entry */
+	if (ARRAY_NOT_FOUND != (ndx = array_get_index(a, CONST_BUF_LEN(entry->key), &pos))) {
+		/* found collision, return it */
+		return &a->data[ndx];
 	}
 
 	/* insert */
 
-	if (a->used+1 > INT_MAX) {
-		/* we can't handle more then INT_MAX entries: see array_get_index() */
-		return -1;
-	}
+	/* there couldn't possibly be enough memory to store so many entries */
+	force_assert(a->used + 1 <= SSIZE_MAX);
 
 	if (a->size == 0) {
 		a->size   = 16;
@@ -226,20 +245,14 @@ int array_insert_unique(array *a, data_unset *str) {
 		for (j = a->used; j < a->size; j++) a->data[j] = NULL;
 	}
 
-	ndx = (int) a->used;
+	ndx = a->used;
 
 	/* make sure there is nothing here */
 	if (a->data[ndx]) a->data[ndx]->free(a->data[ndx]);
 
-	a->data[a->used++] = str;
+	a->data[a->used++] = entry;
 
-	if (pos != ndx &&
-	    ((pos < 0) ||
-	     buffer_caseless_compare(CONST_BUF_LEN(str->key), CONST_BUF_LEN(a->data[a->sorted[pos]]->key)) > 0)) {
-		pos++;
-	}
-
-	/* move everything on step to the right */
+	/* move everything one step to the right */
 	if (pos != ndx) {
 		memmove(a->sorted + (pos + 1), a->sorted + (pos), (ndx - pos) * sizeof(*a->sorted));
 	}
@@ -247,9 +260,29 @@ int array_insert_unique(array *a, data_unset *str) {
 	/* insert */
 	a->sorted[pos] = ndx;
 
-	if (a->next_power_of_2 == (size_t)ndx) a->next_power_of_2 <<= 1;
+	return NULL;
+}
 
-	return 0;
+/* replace or insert data (free existing entry) */
+void array_replace(array *a, data_unset *entry) {
+	data_unset **old;
+
+	force_assert(NULL != entry);
+	if (NULL != (old = array_find_or_insert(a, entry))) {
+		force_assert(*old != entry);
+		(*old)->free(*old);
+		*old = entry;
+	}
+}
+
+void array_insert_unique(array *a, data_unset *entry) {
+	data_unset **old;
+
+	force_assert(NULL != entry);
+	if (NULL != (old = array_find_or_insert(a, entry))) {
+		force_assert((*old)->type == entry->type);
+		entry->insert_dup(*old, entry);
+	}
 }
 
 void array_print_indent(int depth) {
@@ -320,7 +353,7 @@ int array_print(array *a, int depth) {
 			int j;
 
 			if (i && (i % 5) == 0) {
-				fprintf(stdout, "# %zd\n", i);
+				fprintf(stdout, "# %zu\n", i);
 				array_print_indent(depth + 1);
 			}
 			fprintf(stdout, "\"%s\"", du->key->ptr);
@@ -334,7 +367,7 @@ int array_print(array *a, int depth) {
 	}
 	if (!(i && (i - 1 % 5) == 0)) {
 		array_print_indent(depth + 1);
-		fprintf(stdout, "# %zd\n", i);
+		fprintf(stdout, "# %zu\n", i);
 	}
 	array_print_indent(depth);
 	fprintf(stdout, ")");

@@ -1,3 +1,5 @@
+#include "first.h"
+
 #include "array.h"
 #include "fastcgi.h"
 
@@ -52,6 +54,7 @@ data_fastcgi *data_fastcgi_init(void) {
 	data_fastcgi *ds;
 
 	ds = calloc(1, sizeof(*ds));
+	force_assert(NULL != ds);
 
 	ds->key = buffer_init();
 	ds->host = buffer_init();

@@ -1,3 +1,5 @@
+#include "first.h"
+
 #include "request.h"
 #include "keyvalue.h"
 #include "log.h"
@@ -10,17 +12,14 @@
 #include <stdio.h>
 #include <ctype.h>
 
-static int request_check_hostname(server *srv, connection *con, buffer *host) {
+static int request_check_hostname(buffer *host) {
 	enum { DOMAINLABEL, TOPLABEL } stage = TOPLABEL;
 	size_t i;
 	int label_len = 0;
-	size_t host_len;
+	size_t host_len, hostport_len;
 	char *colon;
 	int is_ip = -1; /* -1 don't know yet, 0 no, 1 yes */
 	int level = 0;
-
-	UNUSED(srv);
-	UNUSED(con);
 
 	/*
 	 *       hostport      = host [ ":" port ]
@@ -32,11 +31,6 @@ static int request_check_hostname(server *srv, connection *con, buffer *host) {
 	 *       IPv6address   = "[" ... "]"
 	 *       port          = *digit
 	 */
-
-	/* no Host: */
-	if (buffer_is_empty(host)) return 0;
-
-	host_len = buffer_string_length(host);
 
 	/* IPv6 adress */
 	if (host->ptr[0] == '[') {
@@ -74,6 +68,8 @@ static int request_check_hostname(server *srv, connection *con, buffer *host) {
 		return 0;
 	}
 
+	hostport_len = host_len = buffer_string_length(host);
+
 	if (NULL != (colon = memchr(host->ptr, ':', host_len))) {
 		char *c = colon + 1;
 
@@ -92,12 +88,11 @@ static int request_check_hostname(server *srv, connection *con, buffer *host) {
 	/* if the hostname ends in a "." strip it */
 	if (host->ptr[host_len-1] == '.') {
 		/* shift port info one left */
-		if (NULL != colon) memmove(colon-1, colon, buffer_string_length(host) - host_len);
-		buffer_string_set_length(host, buffer_string_length(host) - 1);
-		host_len -= 1;
+		if (NULL != colon) memmove(colon-1, colon, hostport_len - host_len);
+		buffer_string_set_length(host, --hostport_len);
+		if (--host_len == 0) return -1;
 	}
 
-	if (host_len == 0) return -1;
 
 	/* scan from the right and skip the \0 */
 	for (i = host_len; i-- > 0; ) {
@@ -207,6 +202,135 @@ static int request_check_hostname(server *srv, connection *con, buffer *host) {
 	return 0;
 }
 
+int http_request_host_normalize(buffer *b) {
+    /*
+     * check for and canonicalize numeric IP address and portnum (optional)
+     * (IP address may be followed by ":portnum" (optional))
+     * - IPv6: "[...]"
+     * - IPv4: "x.x.x.x"
+     * - IPv4: 12345678   (32-bit decimal number)
+     * - IPv4: 012345678  (32-bit octal number)
+     * - IPv4: 0x12345678 (32-bit hex number)
+     *
+     * allow any chars (except ':' and '\0' and stray '[' or ']')
+     *   (other code may check chars more strictly or more pedantically)
+     * ':'  delimits (optional) port at end of string
+     * "[]" wraps IPv6 address literal
+     * '\0' should have been rejected earlier were it present
+     *
+     * any chars includes, but is not limited to:
+     * - allow '-' any where, even at beginning of word
+     *     (security caution: might be confused for cmd flag if passed to shell)
+     * - allow all-digit TLDs
+     *     (might be mistaken for IPv4 addr by inet_aton()
+     *      unless non-digits appear in subdomain)
+     */
+
+    /* Note: not using getaddrinfo() since it does not support "[]" around IPv6
+     * and is not as lenient as inet_aton() and inet_addr() for IPv4 strings.
+     * Not using inet_pton() (when available) on IPv4 for similar reasons. */
+
+    const char * const p = b->ptr;
+    const size_t blen = buffer_string_length(b);
+    long port = 0;
+
+    if (*p != '[') {
+        char * const colon = (char *)memchr(p, ':', blen);
+        if (colon) {
+            if (*p == ':') return -1; /*(empty host then port, or naked IPv6)*/
+            if (colon[1] != '\0') {
+                char *e;
+                port = strtol(colon+1, &e, 0); /*(allow decimal, octal, hex)*/
+                if (0 < port && port <= USHRT_MAX && *e == '\0') {
+                    /* valid port */
+                } else {
+                    return -1;
+                }
+            } /*(else ignore stray colon at string end)*/
+            buffer_string_set_length(b, (size_t)(colon - p)); /*(remove port str)*/
+        }
+
+        if (light_isdigit(*p)) {
+            /* (IPv4 address literal or domain starting w/ digit (e.g. 3com))*/
+            struct in_addr addr;
+          #if defined(HAVE_INET_ATON) /*(Windows does not provide inet_aton())*/
+            if (0 != inet_aton(p, &addr))
+          #else
+            if ((addr.s_addr = inet_addr(p)) != INADDR_NONE)
+          #endif
+            {
+              #if defined(HAVE_INET_PTON)/*(expect inet_ntop() if inet_pton())*/
+               #ifndef INET_ADDRSTRLEN
+               #define INET_ADDRSTRLEN 16
+               #endif
+                char buf[INET_ADDRSTRLEN];
+                inet_ntop(AF_INET, (const void *)&addr, buf, sizeof(buf));
+                buffer_copy_string(b, buf);
+              #else
+                buffer_copy_string(b, inet_ntoa(addr)); /*(not thread-safe)*/
+              #endif
+            }
+        }
+    } else { /* IPv6 addr */
+      #if defined(HAVE_IPV6) && defined(HAVE_INET_PTON)
+
+        struct in6_addr addr;
+        char *bracket = b->ptr+blen-1;
+        char *percent = strchr(b->ptr+1, '%');
+        size_t len;
+        int rc;
+        char buf[INET6_ADDRSTRLEN+16]; /*(+16 for potential %interface name)*/
+        if (blen <= 2) return -1; /*(invalid "[]")*/
+        if (*bracket != ']') {
+            bracket = (char *)memchr(b->ptr+1, ']', blen-1);
+            if (NULL == bracket || bracket[1] != ':'  || bracket - b->ptr == 1){
+               return -1;
+            }
+            if (bracket[2] != '\0') { /*(ignore stray colon at string end)*/
+                char *e;
+                port = strtol(bracket+2, &e, 0); /*(allow decimal, octal, hex)*/
+                if (0 < port && port <= USHRT_MAX && *e == '\0') {
+                    /* valid port */
+                } else {
+                    return -1;
+                }
+            }
+        }
+
+        *bracket = '\0';/*(terminate IPv6 string)*/
+        if (percent) *percent = '\0'; /*(remove %interface from address)*/
+        rc = inet_pton(AF_INET6, b->ptr+1, &addr);
+        if (percent) *percent = '%'; /*(restore %interface)*/
+        *bracket = ']'; /*(restore bracket)*/
+        if (1 != rc) return -1;
+
+        inet_ntop(AF_INET6,(const void *)&addr, buf, sizeof(buf));
+        len = strlen(buf);
+        if (percent) {
+            if (percent > bracket) return -1;
+            if (len + (size_t)(bracket - percent) >= sizeof(buf)) return -1;
+            memcpy(buf+len, percent, (size_t)(bracket - percent));
+            len += (size_t)(bracket - percent);
+        }
+        buffer_string_set_length(b, 1); /* truncate after '[' */
+        buffer_append_string_len(b, buf, len);
+        buffer_append_string_len(b, CONST_STR_LEN("]"));
+
+      #else
+
+        return -1;
+
+      #endif
+    }
+
+    if (port) {
+        buffer_append_string_len(b, CONST_STR_LEN(":"));
+        buffer_append_int(b, (int)port);
+    }
+
+    return 0;
+}
+
 #if 0
 #define DUMP_HEADER
 #endif
@@ -300,6 +424,7 @@ int http_request_parse(server *srv, connection *con) {
 	size_t i, first, ilen;
 
 	int done = 0;
+	const unsigned int http_header_strict = (con->conf.http_parseopts & HTTP_PARSEOPT_HEADER_STRICT);
 
 	/*
 	 * Request: "^(GET|POST|HEAD) ([^ ]+(\\?[^ ]+|)) (HTTP/1\\.[01])$"
@@ -476,13 +601,18 @@ int http_request_parse(server *srv, connection *con) {
 
 				/* check uri for invalid characters */
 				jlen = buffer_string_length(con->request.uri);
-				for (j = 0; j < jlen; j++) {
-					if (!request_uri_is_valid_char(con->request.uri->ptr[j])) {
-						unsigned char buf[2];
+				if (http_header_strict) {
+					for (j = 0; j < jlen && request_uri_is_valid_char(con->request.uri->ptr[j]); j++) ;
+				} else {
+					char *z = memchr(con->request.uri->ptr, '\0', jlen);
+					j = (NULL == z) ? jlen : (size_t)(z - con->request.uri->ptr);
+				}
+				if (j < jlen) {
 						con->http_status = 400;
 						con->keep_alive = 0;
 
 						if (srv->srvconf.log_request_header_on_error) {
+							unsigned char buf[2];
 							buf[0] = con->request.uri->ptr[j];
 							buf[1] = '\0';
 
@@ -505,7 +635,6 @@ int http_request_parse(server *srv, connection *con) {
 						}
 
 						return 0;
-					}
 				}
 
 				buffer_copy_buffer(con->request.orig_uri, con->request.uri);
@@ -703,7 +832,7 @@ int http_request_parse(server *srv, connection *con) {
 				}
 				break;
 			default:
-				if (*cur < 32 || ((unsigned char)*cur) >= 127) {
+				if (http_header_strict ? (*cur < 32 || ((unsigned char)*cur) >= 127) : *cur == '\0') {
 					con->http_status = 400;
 					con->keep_alive = 0;
 					con->response.keep_alive = 0;
@@ -1026,9 +1155,9 @@ int http_request_parse(server *srv, connection *con) {
 			case '\t':
 				/* strip leading WS */
 				if (value == cur) value = cur+1;
-				/* fallthrough */
+				break;
 			default:
-				if (*cur >= 0 && *cur < 32 && *cur != '\t') {
+				if (http_header_strict ? (*cur >= 0 && *cur < 32) : *cur == '\0') {
 					if (srv->srvconf.log_request_header_on_error) {
 						log_error_write(srv, __FILE__, __LINE__, "sds",
 								"invalid char in header", (int)*cur, "-> 400");
@@ -1085,8 +1214,11 @@ int http_request_parse(server *srv, connection *con) {
 	}
 
 	/* check hostname field if it is set */
-	if (NULL != con->request.http_host &&
-	    0 != request_check_hostname(srv, con, con->request.http_host)) {
+	if (!buffer_is_empty(con->request.http_host) &&
+	    (((con->conf.http_parseopts & HTTP_PARSEOPT_HOST_STRICT) &&
+	      0 != request_check_hostname(con->request.http_host))
+	     || ((con->conf.http_parseopts & HTTP_PARSEOPT_HOST_NORMALIZE) &&
+		 0 != http_request_host_normalize(con->request.http_host)))) {
 
 		if (srv->srvconf.log_request_header_on_error) {
 			log_error_write(srv, __FILE__, __LINE__, "s",
@@ -1131,7 +1263,15 @@ int http_request_parse(server *srv, connection *con) {
 		}
 		break;
 	default:
-		/* the may have a content-length */
+		/* require Content-Length if request contains request body */
+		if (array_get_element(con->request.headers, "Transfer-Encoding")) {
+			/* presence of Transfer-Encoding in request headers requires "chunked"
+			 * be final encoding in HTTP/1.1.  Return 411 Length Required as
+			 * lighttpd does not support request input transfer-encodings */
+			con->keep_alive = 0;
+			con->http_status = 411; /* 411 Length Required */
+			return 0;
+		}
 		break;
 	}
 
@@ -1147,22 +1287,6 @@ int http_request_parse(server *srv, connection *con) {
 					"request-size too long:", (off_t) con->request.content_length, "-> 413");
 			return 0;
 		}
-
-		/* divide by 1024 as srvconf.max_request_size is in kBytes */
-		if (srv->srvconf.max_request_size != 0 &&
-		    (con->request.content_length >> 10) > srv->srvconf.max_request_size) {
-			/* the request body itself is larger then
-			 * our our max_request_size
-			 */
-
-			con->http_status = 413;
-			con->keep_alive = 0;
-
-			log_error_write(srv, __FILE__, __LINE__, "sos",
-					"request-size too long:", (off_t) con->request.content_length, "-> 413");
-			return 0;
-		}
-
 
 		/* we have content */
 		if (con->request.content_length != 0) {

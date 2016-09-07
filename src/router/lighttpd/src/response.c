@@ -1,3 +1,5 @@
+#include "first.h"
+
 #include "response.h"
 #include "keyvalue.h"
 #include "log.h"
@@ -5,7 +7,6 @@
 #include "chunk.h"
 
 #include "configfile.h"
-#include "connections.h"
 
 #include "plugin.h"
 
@@ -25,7 +26,6 @@
 #include <stdio.h>
 
 #include "sys-socket.h"
-#include "version.h"
 
 int http_response_write_header(server *srv, connection *con) {
 	buffer *b;
@@ -108,9 +108,7 @@ int http_response_write_header(server *srv, connection *con) {
 	}
 
 	if (!have_server) {
-		if (buffer_is_empty(con->conf.server_tag)) {
-			buffer_append_string_len(b, CONST_STR_LEN("\r\nServer: " PACKAGE_DESC));
-		} else if (!buffer_string_is_empty(con->conf.server_tag)) {
+		if (!buffer_string_is_empty(con->conf.server_tag)) {
 			buffer_append_string_len(b, CONST_STR_LEN("\r\nServer: "));
 			buffer_append_string_encoded(b, CONST_BUF_LEN(con->conf.server_tag), ENCODING_HTTP_HEADER);
 		}
@@ -166,7 +164,8 @@ static void https_add_ssl_entries(connection *con) {
 		buffer_append_string(envds->key, xobjsn);
 		buffer_copy_string_len(
 			envds->value,
-			(const char *)xe->value->data, xe->value->length
+			(const char *)X509_NAME_ENTRY_get_data(xe)->data,
+			X509_NAME_ENTRY_get_data(xe)->length
 		);
 		/* pick one of the exported values as "REMOTE_USER", for example
 		 * ssl.verifyclient.username   = "SSL_CLIENT_S_DN_UID" or "SSL_CLIENT_S_DN_emailAddress"
@@ -246,7 +245,6 @@ handler_t http_response_prepare(server *srv, connection *con) {
 		if (con->conf.log_condition_handling) {
 			log_error_write(srv, __FILE__, __LINE__,  "s",  "run condition");
 		}
-		config_patch_connection(srv, con, COMP_SERVER_SOCKET); /* SERVERsocket */
 
 		/**
 		 * prepare strings
@@ -279,15 +277,6 @@ handler_t http_response_prepare(server *srv, connection *con) {
 		buffer_copy_buffer(con->uri.authority, con->request.http_host);
 		buffer_to_lower(con->uri.authority);
 
-		config_patch_connection(srv, con, COMP_HTTP_SCHEME);    /* Scheme:      */
-		config_patch_connection(srv, con, COMP_HTTP_HOST);      /* Host:        */
-		config_patch_connection(srv, con, COMP_HTTP_REMOTE_IP); /* Client-IP */
-		config_patch_connection(srv, con, COMP_HTTP_REFERER);   /* Referer:     */
-		config_patch_connection(srv, con, COMP_HTTP_USER_AGENT);/* User-Agent:  */
-		config_patch_connection(srv, con, COMP_HTTP_LANGUAGE);  /* Accept-Language:  */
-		config_patch_connection(srv, con, COMP_HTTP_COOKIE);    /* Cookie:  */
-		config_patch_connection(srv, con, COMP_HTTP_REQUEST_METHOD); /* REQUEST_METHOD */
-
 		/** their might be a fragment which has to be cut away */
 		if (NULL != (qstr = strchr(con->request.uri->ptr, '#'))) {
 			buffer_string_set_length(con->request.uri, qstr - con->request.uri->ptr);
@@ -318,8 +307,18 @@ handler_t http_response_prepare(server *srv, connection *con) {
 			buffer_path_simplify(con->uri.path, srv->tmp_buf);
 		}
 
-		config_patch_connection(srv, con, COMP_HTTP_URL); /* HTTPurl */
-		config_patch_connection(srv, con, COMP_HTTP_QUERY_STRING); /* HTTPqs */
+		con->conditional_is_valid[COMP_SERVER_SOCKET] = 1;       /* SERVERsocket */
+		con->conditional_is_valid[COMP_HTTP_SCHEME] = 1;         /* Scheme:      */
+		con->conditional_is_valid[COMP_HTTP_HOST] = 1;           /* Host:        */
+		con->conditional_is_valid[COMP_HTTP_REMOTE_IP] = 1;      /* Client-IP */
+		con->conditional_is_valid[COMP_HTTP_REFERER] = 1;        /* Referer:     */
+		con->conditional_is_valid[COMP_HTTP_USER_AGENT] =        /* User-Agent:  */
+		con->conditional_is_valid[COMP_HTTP_LANGUAGE] = 1;       /* Accept-Language:  */
+		con->conditional_is_valid[COMP_HTTP_COOKIE] = 1;         /* Cookie:  */
+		con->conditional_is_valid[COMP_HTTP_REQUEST_METHOD] = 1; /* REQUEST_METHOD */
+		con->conditional_is_valid[COMP_HTTP_URL] = 1;            /* HTTPurl */
+		con->conditional_is_valid[COMP_HTTP_QUERY_STRING] = 1;   /* HTTPqs */
+		config_patch_connection(srv, con);
 
 #ifdef USE_OPENSSL
 		if (con->srv_socket->is_ssl && con->conf.ssl_verifyclient) {
@@ -340,6 +339,18 @@ handler_t http_response_prepare(server *srv, connection *con) {
 			log_error_write(srv, __FILE__, __LINE__,  "sb", "URI-path (raw)  : ", con->uri.path_raw);
 			log_error_write(srv, __FILE__, __LINE__,  "sb", "URI-path (clean): ", con->uri.path);
 			log_error_write(srv, __FILE__, __LINE__,  "sb", "URI-query       : ", con->uri.query);
+		}
+
+		/* con->conf.max_request_size is in kBytes */
+		if (0 != con->conf.max_request_size &&
+		    (off_t)con->request.content_length > ((off_t)con->conf.max_request_size << 10)) {
+			log_error_write(srv, __FILE__, __LINE__, "sos",
+					"request-size too long:", (off_t) con->request.content_length, "-> 413");
+			con->keep_alive = 0;
+			con->http_status = 413;
+			con->file_finished = 1;
+
+			return HANDLER_FINISHED;
 		}
 
 
@@ -447,7 +458,6 @@ handler_t http_response_prepare(server *srv, connection *con) {
 		if (con->physical.rel_path->used > 1) {
 			buffer *b = con->physical.rel_path;
 			size_t len = buffer_string_length(b);
-			size_t i;
 
 			/* strip trailing " /" or "./" once */
 			if (len > 1 &&
@@ -695,13 +705,24 @@ handler_t http_response_prepare(server *srv, connection *con) {
 
 			/* we have a PATHINFO */
 			if (pathinfo) {
-				buffer_copy_string(con->request.pathinfo, pathinfo);
+				size_t len = strlen(pathinfo), reqlen;
+				if (con->conf.force_lowercase_filenames
+				    && len <= (reqlen = buffer_string_length(con->request.uri))
+				    && 0 == strncasecmp(con->request.uri->ptr + reqlen - len, pathinfo, len)) {
+					/* attempt to preserve case-insensitive PATH_INFO
+					 * (works in common case where mod_alias, mod_magnet, and other modules
+					 *  have not modified the PATH_INFO portion of request URI, or did so
+					 *  with exactly the PATH_INFO desired) */
+					buffer_copy_string_len(con->request.pathinfo, con->request.uri->ptr + reqlen - len, len);
+				} else {
+					buffer_copy_string_len(con->request.pathinfo, pathinfo, len);
+				}
 
 				/*
 				 * shorten uri.path
 				 */
 
-				buffer_string_set_length(con->uri.path, buffer_string_length(con->uri.path) - strlen(pathinfo));
+				buffer_string_set_length(con->uri.path, buffer_string_length(con->uri.path) - len);
 			}
 
 			if (con->conf.log_request_handling) {

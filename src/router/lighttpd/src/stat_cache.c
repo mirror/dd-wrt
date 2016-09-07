@@ -1,3 +1,5 @@
+#include "first.h"
+
 #include "log.h"
 #include "stat_cache.h"
 #include "fdevent.h"
@@ -108,6 +110,7 @@ stat_cache *stat_cache_init(void) {
 	stat_cache *sc = NULL;
 
 	sc = calloc(1, sizeof(*sc));
+	force_assert(NULL != sc);
 
 	sc->dir_name = buffer_init();
 	sc->hash_key = buffer_init();
@@ -127,6 +130,7 @@ static stat_cache_entry * stat_cache_entry_init(void) {
 	stat_cache_entry *sce = NULL;
 
 	sce = calloc(1, sizeof(*sce));
+	force_assert(NULL != sce);
 
 	sce->name = buffer_init();
 	sce->etag = buffer_init();
@@ -151,6 +155,7 @@ static fam_dir_entry * fam_dir_entry_init(void) {
 	fam_dir_entry *fam_dir = NULL;
 
 	fam_dir = calloc(1, sizeof(*fam_dir));
+	force_assert(NULL != fam_dir);
 
 	fam_dir->name = buffer_init();
 
@@ -215,24 +220,24 @@ void stat_cache_free(stat_cache *sc) {
 }
 
 #if defined(HAVE_XATTR)
-static int stat_cache_attr_get(buffer *buf, char *name) {
+static int stat_cache_attr_get(buffer *buf, char *name, char *xattrname) {
 	int attrlen;
 	int ret;
 
 	buffer_string_prepare_copy(buf, 1023);
 	attrlen = buf->size - 1;
-	if(0 == (ret = attr_get(name, "Content-Type", buf->ptr, &attrlen, 0))) {
+	if(0 == (ret = attr_get(name, xattrname, buf->ptr, &attrlen, 0))) {
 		buffer_commit(buf, attrlen);
 	}
 	return ret;
 }
 #elif defined(HAVE_EXTATTR)
-static int stat_cache_attr_get(buffer *buf, char *name) {
+static int stat_cache_attr_get(buffer *buf, char *name, char *xattrname) {
 	ssize_t attrlen;
 
 	buffer_string_prepare_copy(buf, 1023);
 
-	if (-1 != (attrlen = extattr_get_file(name, EXTATTR_NAMESPACE_USER, "Content-Type", buf->ptr, buf->size - 1))) {
+	if (-1 != (attrlen = extattr_get_file(name, EXTATTR_NAMESPACE_USER, xattrname, buf->ptr, buf->size - 1))) {
 		buf->used = attrlen + 1;
 		buf->ptr[attrlen] = '\0';
 		return 0;
@@ -417,7 +422,7 @@ handler_t stat_cache_get_entry(server *srv, connection *con, buffer *name, stat_
 
 		if (buffer_is_equal(name, sce->name)) {
 			if (srv->srvconf.stat_cache_engine == STAT_CACHE_ENGINE_SIMPLE) {
-				if (sce->stat_ts == srv->cur_ts) {
+				if (sce->stat_ts == srv->cur_ts && con->conf.follow_symlink) {
 					*ret_sce = sce;
 					return HANDLER_GO_ON;
 				}
@@ -518,9 +523,11 @@ handler_t stat_cache_get_entry(server *srv, connection *con, buffer *name, stat_
 				ctrl.size = 16;
 				ctrl.used = 0;
 				ctrl.ptr = malloc(ctrl.size * sizeof(*ctrl.ptr));
+				force_assert(NULL != ctrl.ptr);
 			} else if (ctrl.size == ctrl.used) {
 				ctrl.size += 16;
 				ctrl.ptr = realloc(ctrl.ptr, ctrl.size * sizeof(*ctrl.ptr));
+				force_assert(NULL != ctrl.ptr);
 			}
 
 			ctrl.ptr[ctrl.used++] = file_ndx;
@@ -601,7 +608,7 @@ handler_t stat_cache_get_entry(server *srv, connection *con, buffer *name, stat_
 		buffer_reset(sce->content_type);
 #if defined(HAVE_XATTR) || defined(HAVE_EXTATTR)
 		if (con->conf.use_xattr) {
-			stat_cache_attr_get(sce->content_type, name->ptr);
+			stat_cache_attr_get(sce->content_type, name->ptr, srv->srvconf.xattr_name->ptr);
 		}
 #endif
 		/* xattr did not set a content-type. ask the config */
@@ -640,6 +647,7 @@ handler_t stat_cache_get_entry(server *srv, connection *con, buffer *name, stat_
 			fam_dir->version = 1;
 
 			fam_dir->req = calloc(1, sizeof(FAMRequest));
+			force_assert(NULL != fam_dir);
 
 			if (0 != FAMMonitorDirectory(&sc->fam, fam_dir->name->ptr,
 						     fam_dir->req, fam_dir)) {
@@ -683,6 +691,38 @@ handler_t stat_cache_get_entry(server *srv, connection *con, buffer *name, stat_
 	return HANDLER_GO_ON;
 }
 
+int stat_cache_open_rdonly_fstat (server *srv, connection *con, buffer *name, struct stat *st) {
+	/*(Note: O_NOFOLLOW affects only the final path segment, the target file,
+	 * not any intermediate symlinks along the path)*/
+	#ifndef O_BINARY
+	#define O_BINARY 0
+	#endif
+	#ifndef O_LARGEFILE
+	#define O_LARGEFILE 0
+	#endif
+	#ifndef O_NOCTTY
+	#define O_NOCTTY 0
+	#endif
+	#ifndef O_NONBLOCK
+	#define O_NONBLOCK 0
+	#endif
+	#ifndef O_NOFOLLOW
+	#define O_NOFOLLOW 0
+	#endif
+	const int oflags = O_BINARY | O_LARGEFILE | O_NOCTTY | O_NONBLOCK
+			 | (con->conf.follow_symlink ? 0 : O_NOFOLLOW);
+	const int fd = open(name->ptr, O_RDONLY | oflags);
+	if (fd >= 0) {
+		if (0 == fstat(fd, st)) {
+			return fd;
+		} else {
+			close(fd);
+		}
+	}
+	UNUSED(srv); /*(might log_error_write(srv, ...) in the future)*/
+	return -1;
+}
+
 /**
  * remove stat() from cache which havn't been stat()ed for
  * more than 10 seconds
@@ -719,6 +759,7 @@ int stat_cache_trigger_cleanup(server *srv) {
 	if (!sc->files) return 0;
 
 	keys = calloc(1, sizeof(int) * sc->files->size);
+	force_assert(NULL != keys);
 
 	stat_cache_tag_old_entries(srv, sc->files, keys, &max_ndx);
 

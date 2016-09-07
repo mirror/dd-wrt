@@ -1,9 +1,12 @@
+#include "first.h"
+
 #include "buffer.h"
 #include "server.h"
 #include "log.h"
 #include "connections.h"
 #include "fdevent.h"
 
+#include "configfile.h"
 #include "request.h"
 #include "response.h"
 #include "network.h"
@@ -48,12 +51,14 @@ static connection *connections_get_new_connection(server *srv) {
 		conns->size = 128;
 		conns->ptr = NULL;
 		conns->ptr = malloc(sizeof(*conns->ptr) * conns->size);
+		force_assert(NULL != conns->ptr);
 		for (i = 0; i < conns->size; i++) {
 			conns->ptr[i] = connection_init(srv);
 		}
 	} else if (conns->size == conns->used) {
 		conns->size += 128;
 		conns->ptr = realloc(conns->ptr, sizeof(*conns->ptr) * conns->size);
+		force_assert(NULL != conns->ptr);
 
 		for (i = conns->used; i < conns->size; i++) {
 			conns->ptr[i] = connection_init(srv);
@@ -113,12 +118,9 @@ static int connection_del(server *srv, connection *con) {
 	return 0;
 }
 
-int connection_close(server *srv, connection *con) {
+static int connection_close(server *srv, connection *con) {
 #ifdef USE_OPENSSL
 	server_socket *srv_sock = con->srv_socket;
-#endif
-
-#ifdef USE_OPENSSL
 	if (srv_sock->is_ssl) {
 		if (con->ssl) SSL_free(con->ssl);
 		con->ssl = NULL;
@@ -138,6 +140,7 @@ int connection_close(server *srv, connection *con) {
 				"(warning) close:", con->fd, strerror(errno));
 	}
 #endif
+	con->fd = -1;
 
 	srv->cur_fds--;
 #if 0
@@ -151,263 +154,173 @@ int connection_close(server *srv, connection *con) {
 	return 0;
 }
 
-#if 0
-static void dump_packet(const unsigned char *data, size_t len) {
-	size_t i, j;
-
-	if (len == 0) return;
-
-	for (i = 0; i < len; i++) {
-		if (i % 16 == 0) fprintf(stderr, "  ");
-
-		fprintf(stderr, "%02x ", data[i]);
-
-		if ((i + 1) % 16 == 0) {
-			fprintf(stderr, "  ");
-			for (j = 0; j <= i % 16; j++) {
-				unsigned char c;
-
-				if (i-15+j >= len) break;
-
-				c = data[i-15+j];
-
-				fprintf(stderr, "%c", c > 32 && c < 128 ? c : '.');
-			}
-
-			fprintf(stderr, "\n");
-		}
-	}
-
-	if (len % 16 != 0) {
-		for (j = i % 16; j < 16; j++) {
-			fprintf(stderr, "   ");
-		}
-
-		fprintf(stderr, "  ");
-		for (j = i & ~0xf; j < len; j++) {
-			unsigned char c;
-
-			c = data[j];
-			fprintf(stderr, "%c", c > 32 && c < 128 ? c : '.');
-		}
-		fprintf(stderr, "\n");
-	}
-}
-#endif
-
-static int connection_handle_read_ssl(server *srv, connection *con) {
-#ifdef USE_OPENSSL
-	int r, ssl_err, len, count = 0;
-	char *mem = NULL;
-	size_t mem_len = 0;
-
-	if (!con->srv_socket->is_ssl) return -1;
-
-	ERR_clear_error();
-	do {
-		chunkqueue_get_memory(con->read_queue, &mem, &mem_len, 0, SSL_pending(con->ssl));
-#if 0
-		/* overwrite everything with 0 */
-		memset(mem, 0, mem_len);
-#endif
-
-		len = SSL_read(con->ssl, mem, mem_len);
-		chunkqueue_use_memory(con->read_queue, len > 0 ? len : 0);
-
-		if (con->renegotiations > 1 && con->conf.ssl_disable_client_renegotiation) {
-			log_error_write(srv, __FILE__, __LINE__, "s", "SSL: renegotiation initiated by client, killing connection");
-			connection_set_state(srv, con, CON_STATE_ERROR);
-			return -1;
-		}
-
-		if (len > 0) {
-			con->bytes_read += len;
-			count += len;
-		}
-	} while (len == (ssize_t) mem_len && count < MAX_READ_LIMIT);
-
-
-	if (len < 0) {
-		int oerrno = errno;
-		switch ((r = SSL_get_error(con->ssl, len))) {
-		case SSL_ERROR_WANT_READ:
-		case SSL_ERROR_WANT_WRITE:
-			con->is_readable = 0;
-
-			/* the manual says we have to call SSL_read with the same arguments next time.
-			 * we ignore this restriction; no one has complained about it in 1.5 yet, so it probably works anyway.
-			 */
-
-			return 0;
-		case SSL_ERROR_SYSCALL:
-			/**
-			 * man SSL_get_error()
-			 *
-			 * SSL_ERROR_SYSCALL
-			 *   Some I/O error occurred.  The OpenSSL error queue may contain more
-			 *   information on the error.  If the error queue is empty (i.e.
-			 *   ERR_get_error() returns 0), ret can be used to find out more about
-			 *   the error: If ret == 0, an EOF was observed that violates the
-			 *   protocol.  If ret == -1, the underlying BIO reported an I/O error
-			 *   (for socket I/O on Unix systems, consult errno for details).
-			 *
-			 */
-			while((ssl_err = ERR_get_error())) {
-				/* get all errors from the error-queue */
-				log_error_write(srv, __FILE__, __LINE__, "sds", "SSL:",
-						r, ERR_error_string(ssl_err, NULL));
-			}
-
-			switch(oerrno) {
-			default:
-				log_error_write(srv, __FILE__, __LINE__, "sddds", "SSL:",
-						len, r, oerrno,
-						strerror(oerrno));
-				break;
-			}
-
-			break;
-		case SSL_ERROR_ZERO_RETURN:
-			/* clean shutdown on the remote side */
-
-			if (r == 0) {
-				/* FIXME: later */
-			}
-
-			/* fall thourgh */
-		default:
-			while((ssl_err = ERR_get_error())) {
-				switch (ERR_GET_REASON(ssl_err)) {
-				case SSL_R_SSL_HANDSHAKE_FAILURE:
-				case SSL_R_TLSV1_ALERT_UNKNOWN_CA:
-				case SSL_R_SSLV3_ALERT_CERTIFICATE_UNKNOWN:
-				case SSL_R_SSLV3_ALERT_BAD_CERTIFICATE:
-					if (!con->conf.log_ssl_noise) continue;
-					break;
-				default:
-					break;
-				}
-				/* get all errors from the error-queue */
-				log_error_write(srv, __FILE__, __LINE__, "sds", "SSL:",
-				                r, ERR_error_string(ssl_err, NULL));
-			}
-			break;
-		}
-
-		connection_set_state(srv, con, CON_STATE_ERROR);
-
-		return -1;
-	} else if (len == 0) {
-		con->is_readable = 0;
-		/* the other end close the connection -> KEEP-ALIVE */
-
-		return -2;
-	} else {
-		joblist_append(srv, con);
-	}
-
-	return 0;
-#else
-	UNUSED(srv);
-	UNUSED(con);
-	return -1;
-#endif
-}
-
-/* 0: everything ok, -1: error, -2: con closed */
-static int connection_handle_read(server *srv, connection *con) {
-	int len;
-	char *mem = NULL;
-	size_t mem_len = 0;
-	int toread;
-
-	if (con->srv_socket->is_ssl) {
-		return connection_handle_read_ssl(srv, con);
-	}
-
-	/* default size for chunks is 4kb; only use bigger chunks if FIONREAD tells
-	 *  us more than 4kb is available
-	 * if FIONREAD doesn't signal a big chunk we fill the previous buffer
-	 *  if it has >= 1kb free
+static void connection_handle_close_state(server *srv, connection *con) {
+	/* we have to do the linger_on_close stuff regardless
+	 * of con->keep_alive; even non-keepalive sockets may
+	 * still have unread data, and closing before reading
+	 * it will make the client not see all our output.
 	 */
-#if defined(__WIN32)
-	chunkqueue_get_memory(con->read_queue, &mem, &mem_len, 0, 4096);
+	int len;
+	char buf[1024];
 
-	len = recv(con->fd, mem, mem_len, 0);
-#else /* __WIN32 */
-	if (ioctl(con->fd, FIONREAD, &toread) || toread == 0 || toread <= 4*1024) {
-		toread = 4096;
+	len = read(con->fd, buf, sizeof(buf));
+	if (len == 0 || (len < 0 && errno != EAGAIN && errno != EINTR) ) {
+		con->close_timeout_ts = srv->cur_ts - (HTTP_LINGER_TIMEOUT+1);
 	}
-	else if (toread > MAX_READ_LIMIT) {
-		toread = MAX_READ_LIMIT;
+
+	if (srv->cur_ts - con->close_timeout_ts > HTTP_LINGER_TIMEOUT) {
+		connection_close(srv, con);
+
+		if (srv->srvconf.log_state_handling) {
+			log_error_write(srv, __FILE__, __LINE__, "sd",
+					"connection closed for fd", con->fd);
+		}
 	}
-	chunkqueue_get_memory(con->read_queue, &mem, &mem_len, 0, toread);
+}
 
-	len = read(con->fd, mem, mem_len);
-#endif /* __WIN32 */
+static void connection_handle_shutdown(server *srv, connection *con) {
+	int r;
 
-	chunkqueue_use_memory(con->read_queue, len > 0 ? len : 0);
+#ifdef USE_OPENSSL
+	server_socket *srv_sock = con->srv_socket;
+	if (srv_sock->is_ssl) {
+		int ret, ssl_r;
+		unsigned long err;
+		ERR_clear_error();
+		switch ((ret = SSL_shutdown(con->ssl))) {
+		case 1:
+			/* ok */
+			break;
+		case 0:
+			/* wait for fd-event
+			 *
+			 * FIXME: wait for fdevent and call SSL_shutdown again
+			 *
+			 */
+			ERR_clear_error();
+			if (-1 != (ret = SSL_shutdown(con->ssl))) break;
 
-	if (len < 0) {
-		con->is_readable = 0;
+			/* fall through */
+		default:
 
-#if defined(__WIN32)
-		{
-			int lastError = WSAGetLastError();
-			switch (lastError) {
-			case EAGAIN:
-				return 0;
-			case EINTR:
-				/* we have been interrupted before we could read */
-				con->is_readable = 1;
-				return 0;
-			case ECONNRESET:
-				/* suppress logging for this error, expected for keep-alive */
+			switch ((ssl_r = SSL_get_error(con->ssl, ret))) {
+			case SSL_ERROR_ZERO_RETURN:
+				break;
+			case SSL_ERROR_WANT_WRITE:
+				/*con->is_writable = -1;*//*(no effect; shutdown() called below)*/
+			case SSL_ERROR_WANT_READ:
+				break;
+			case SSL_ERROR_SYSCALL:
+				/* perhaps we have error waiting in our error-queue */
+				if (0 != (err = ERR_get_error())) {
+					do {
+						log_error_write(srv, __FILE__, __LINE__, "sdds", "SSL:",
+								ssl_r, ret,
+								ERR_error_string(err, NULL));
+					} while((err = ERR_get_error()));
+				} else if (errno != 0) { /* ssl bug (see lighttpd ticket #2213): sometimes errno == 0 */
+					switch(errno) {
+					case EPIPE:
+					case ECONNRESET:
+						break;
+					default:
+						log_error_write(srv, __FILE__, __LINE__, "sddds", "SSL (error):",
+							ssl_r, ret, errno,
+							strerror(errno));
+						break;
+					}
+				}
+
 				break;
 			default:
-				log_error_write(srv, __FILE__, __LINE__, "sd", "connection closed - recv failed: ", lastError);
+				while((err = ERR_get_error())) {
+					log_error_write(srv, __FILE__, __LINE__, "sdds", "SSL:",
+							ssl_r, ret,
+							ERR_error_string(err, NULL));
+				}
+
 				break;
 			}
 		}
-#else /* __WIN32 */
-		switch (errno) {
-		case EAGAIN:
-			return 0;
-		case EINTR:
-			/* we have been interrupted before we could read */
-			con->is_readable = 1;
-			return 0;
-		case ECONNRESET:
-			/* suppress logging for this error, expected for keep-alive */
-			break;
-		default:
-			log_error_write(srv, __FILE__, __LINE__, "ssd", "connection closed - read failed: ", strerror(errno), errno);
-			break;
-		}
-#endif /* __WIN32 */
-
-		connection_set_state(srv, con, CON_STATE_ERROR);
-
-		return -1;
-	} else if (len == 0) {
-		con->is_readable = 0;
-		/* the other end close the connection -> KEEP-ALIVE */
-
-		/* pipelining */
-
-		return -2;
-	} else if (len != (ssize_t) mem_len) {
-		/* we got less then expected, wait for the next fd-event */
-
-		con->is_readable = 0;
+		ERR_clear_error();
 	}
-
-	con->bytes_read += len;
-#if 0
-	dump_packet(b->ptr, len);
 #endif
 
-	return 0;
+	switch(r = plugins_call_handle_connection_close(srv, con)) {
+	case HANDLER_GO_ON:
+	case HANDLER_FINISHED:
+		break;
+	default:
+		log_error_write(srv, __FILE__, __LINE__, "sd", "unhandling return value", r);
+		break;
+	}
+
+	srv->con_closed++;
+	connection_reset(srv, con);
+
+	/* close the connection */
+	if ((0 == shutdown(con->fd, SHUT_WR))) {
+		con->close_timeout_ts = srv->cur_ts;
+		connection_set_state(srv, con, CON_STATE_CLOSE);
+
+		if (srv->srvconf.log_state_handling) {
+			log_error_write(srv, __FILE__, __LINE__, "sd",
+					"shutdown for fd", con->fd);
+		}
+	} else {
+		connection_close(srv, con);
+	}
+}
+
+static void connection_handle_response_end_state(server *srv, connection *con) {
+        /* log the request */
+        /* (even if error, connection dropped, still write to access log if http_status) */
+	if (con->http_status) {
+		plugins_call_handle_request_done(srv, con);
+	}
+
+	if (con->state != CON_STATE_ERROR) srv->con_written++;
+
+	if ((con->request.content_length
+	     && (off_t)con->request.content_length > con->request_content_queue->bytes_in)
+	    || con->state == CON_STATE_ERROR) {
+		/* request body is present and has not been read completely */
+		con->keep_alive = 0;
+	}
+
+        if (con->keep_alive) {
+		connection_reset(srv, con);
+#if 0
+		con->request_start = srv->cur_ts;
+		con->read_idle_ts = srv->cur_ts;
+#endif
+		connection_set_state(srv, con, CON_STATE_REQUEST_START);
+	} else {
+		connection_handle_shutdown(srv, con);
+	}
+}
+
+static void connection_handle_errdoc_init(server *srv, connection *con) {
+	/* modules that produce headers required with error response should
+	 * typically also produce an error document.  Make an exception for
+	 * mod_auth WWW-Authenticate response header. */
+	buffer *www_auth = NULL;
+	if (401 == con->http_status) {
+		data_string *ds = (data_string *)array_get_element(con->response.headers, "WWW-Authenticate");
+		if (NULL != ds) {
+			www_auth = buffer_init_buffer(ds->value);
+		}
+	}
+
+	con->response.transfer_encoding = 0;
+	buffer_reset(con->physical.path);
+	array_reset(con->response.headers);
+	chunkqueue_reset(con->write_queue);
+
+	if (NULL != www_auth) {
+		response_header_insert(srv, con, CONST_STR_LEN("WWW-Authenticate"), CONST_BUF_LEN(www_auth));
+		buffer_free(www_auth);
+	}
 }
 
 static int connection_handle_write_prepare(server *srv, connection *con) {
@@ -468,7 +381,7 @@ static int connection_handle_write_prepare(server *srv, connection *con) {
 
 		con->file_finished = 0;
 
-		buffer_reset(con->physical.path);
+		connection_handle_errdoc_init(srv, con);
 
 		/* try to send static errorfile */
 		if (!buffer_string_is_empty(con->conf.errorfile_prefix)) {
@@ -478,11 +391,11 @@ static int connection_handle_write_prepare(server *srv, connection *con) {
 			buffer_append_int(con->physical.path, con->http_status);
 			buffer_append_string_len(con->physical.path, CONST_STR_LEN(".html"));
 
-			if (HANDLER_ERROR != stat_cache_get_entry(srv, con, con->physical.path, &sce)) {
+			if (0 == http_chunk_append_file(srv, con, con->physical.path)) {
 				con->file_finished = 1;
-
-				http_chunk_append_file(srv, con, con->physical.path, 0, sce->st.st_size);
-				response_header_overwrite(srv, con, CONST_STR_LEN("Content-Type"), CONST_BUF_LEN(sce->content_type));
+				if (HANDLER_ERROR != stat_cache_get_entry(srv, con, con->physical.path, &sce)) {
+					response_header_overwrite(srv, con, CONST_STR_LEN("Content-Type"), CONST_BUF_LEN(sce->content_type));
+				}
 			}
 		}
 
@@ -520,9 +433,8 @@ static int connection_handle_write_prepare(server *srv, connection *con) {
 					     "</html>\n"
 					     ));
 
-			http_chunk_append_buffer(srv, con, b);
+			(void)http_chunk_append_buffer(srv, con, b);
 			buffer_free(b);
-			http_chunk_close(srv, con);
 
 			response_header_overwrite(srv, con, CONST_STR_LEN("Content-Type"), CONST_STR_LEN("text/html"));
 		}
@@ -572,7 +484,21 @@ static int connection_handle_write_prepare(server *srv, connection *con) {
 
 		if (((con->parsed_response & HTTP_CONTENT_LENGTH) == 0) &&
 		    ((con->response.transfer_encoding & HTTP_TRANSFER_ENCODING_CHUNKED) == 0)) {
-			con->keep_alive = 0;
+			if (con->request.http_version == HTTP_VERSION_1_1) {
+				off_t qlen = chunkqueue_length(con->write_queue);
+				con->response.transfer_encoding = HTTP_TRANSFER_ENCODING_CHUNKED;
+				if (qlen) {
+					/* create initial Transfer-Encoding: chunked segment */
+					buffer *b = srv->tmp_chunk_len;
+					buffer_string_set_length(b, 0);
+					buffer_append_uint_hex(b, (uintmax_t)qlen);
+					buffer_append_string_len(b, CONST_STR_LEN("\r\n"));
+					chunkqueue_prepend_buffer(con->write_queue, b);
+					chunkqueue_append_mem(con->write_queue, CONST_STR_LEN("\r\n"));
+				}
+			} else {
+				con->keep_alive = 0;
+			}
 		}
 
 		/**
@@ -614,18 +540,15 @@ static int connection_handle_write(server *srv, connection *con) {
 		con->write_request_ts = srv->cur_ts;
 		if (con->file_finished) {
 			connection_set_state(srv, con, CON_STATE_RESPONSE_END);
-			joblist_append(srv, con);
 		}
 		break;
 	case -1: /* error on our side */
 		log_error_write(srv, __FILE__, __LINE__, "sd",
 				"connection closed: write failed on fd", con->fd);
 		connection_set_state(srv, con, CON_STATE_ERROR);
-		joblist_append(srv, con);
 		break;
 	case -2: /* remote close */
 		connection_set_state(srv, con, CON_STATE_ERROR);
-		joblist_append(srv, con);
 		break;
 	case 1:
 		con->write_request_ts = srv->cur_ts;
@@ -646,6 +569,7 @@ connection *connection_init(server *srv) {
 	UNUSED(srv);
 
 	con = calloc(1, sizeof(*con));
+	force_assert(NULL != con);
 
 	con->fd = 0;
 	con->ndx = -1;
@@ -679,7 +603,6 @@ connection *connection_init(server *srv) {
 	CLEAN(parse_request);
 
 	CLEAN(server_name);
-	CLEAN(error_handler);
 	CLEAN(dst_addr_buf);
 #if defined USE_OPENSSL && ! defined OPENSSL_NO_TLSEXT
 	CLEAN(tlsext_server_name);
@@ -689,10 +612,6 @@ connection *connection_init(server *srv) {
 	con->write_queue = chunkqueue_init();
 	con->read_queue = chunkqueue_init();
 	con->request_content_queue = chunkqueue_init();
-	chunkqueue_set_tempdirs(
-		con->request_content_queue,
-		srv->srvconf.upload_tempdirs,
-		srv->srvconf.upload_temp_file_size);
 
 	con->request.headers      = array_init();
 	con->response.headers     = array_init();
@@ -701,8 +620,10 @@ connection *connection_init(server *srv) {
 	/* init plugin specific connection structures */
 
 	con->plugin_ctx = calloc(1, (srv->plugins.used + 1) * sizeof(void *));
+	force_assert(NULL != con->plugin_ctx);
 
 	con->cond_cache = calloc(srv->config_context->used, sizeof(cond_cache_t));
+	force_assert(NULL != con->cond_cache);
 	config_setup_connection(srv, con);
 
 	return con;
@@ -748,7 +669,6 @@ void connections_free(server *srv) {
 		CLEAN(parse_request);
 
 		CLEAN(server_name);
-		CLEAN(error_handler);
 		CLEAN(dst_addr_buf);
 #if defined USE_OPENSSL && ! defined OPENSSL_NO_TLSEXT
 		CLEAN(tlsext_server_name);
@@ -821,7 +741,6 @@ int connection_reset(server *srv, connection *con) {
 	CLEAN(parse_request);
 
 	CLEAN(server_name);
-	CLEAN(error_handler);
 #if defined USE_OPENSSL && ! defined OPENSSL_NO_TLSEXT
 	CLEAN(tlsext_server_name);
 #endif
@@ -866,7 +785,9 @@ int connection_reset(server *srv, connection *con) {
 	/* config_cond_cache_reset(srv, con); */
 
 	con->header_len = 0;
-	con->in_error_handler = 0;
+	con->error_handler_saved_status = 0;
+	/*con->error_handler_saved_method = HTTP_METHOD_UNSET;*/
+	/*(error_handler_saved_method value is not valid unless error_handler_saved_status is set)*/
 
 	config_setup_connection(srv, con);
 
@@ -879,12 +800,12 @@ int connection_reset(server *srv, connection *con) {
  * we get called by the state-engine and by the fdevent-handler
  */
 static int connection_handle_read_state(server *srv, connection *con)  {
-	connection_state_t ostate = con->state;
 	chunk *c, *last_chunk;
 	off_t last_offset;
 	chunkqueue *cq = con->read_queue;
-	chunkqueue *dst_cq = con->request_content_queue;
 	int is_closed = 0; /* the connection got closed, if we don't have a complete header, -> error */
+	/* when in CON_STATE_READ: about to receive first byte for a request: */
+	int is_request_start = chunkqueue_is_empty(cq);
 
 	if (con->is_readable) {
 		con->read_idle_ts = srv->cur_ts;
@@ -905,8 +826,14 @@ static int connection_handle_read_state(server *srv, connection *con)  {
 	/* we might have got several packets at once
 	 */
 
-	switch(ostate) {
-	case CON_STATE_READ:
+	/* update request_start timestamp when first byte of
+	 * next request is received on a keep-alive connection */
+	if (con->request_count > 1 && is_request_start) {
+		con->request_start = srv->cur_ts;
+		if (con->conf.high_precision_timestamps)
+			log_clock_gettime_realtime(&con->request_start_hp);
+	}
+
 		/* if there is a \r\n\r\n in the chunkqueue
 		 *
 		 * scan the chunk-queue twice
@@ -983,33 +910,11 @@ found_header_end:
 			con->http_status = 414; /* Request-URI too large */
 			con->keep_alive = 0;
 			connection_set_state(srv, con, CON_STATE_HANDLE_REQUEST);
+		} else if (is_closed) {
+			/* the connection got closed and we didn't got enough data to leave CON_STATE_READ;
+			 * the only way is to leave here */
+			connection_set_state(srv, con, CON_STATE_ERROR);
 		}
-		break;
-	case CON_STATE_READ_POST:
-		if (con->request.content_length <= 64*1024) {
-			/* don't buffer request bodies <= 64k on disk */
-			chunkqueue_steal(dst_cq, cq, con->request.content_length - dst_cq->bytes_in);
-		}
-		else if (0 != chunkqueue_steal_with_tempfiles(srv, dst_cq, cq, con->request.content_length - dst_cq->bytes_in )) {
-			con->http_status = 413; /* Request-Entity too large */
-			con->keep_alive = 0;
-			connection_set_state(srv, con, CON_STATE_HANDLE_REQUEST);
-		}
-
-		/* Content is ready */
-		if (dst_cq->bytes_in == (off_t)con->request.content_length) {
-			connection_set_state(srv, con, CON_STATE_HANDLE_REQUEST);
-		}
-
-		break;
-	default: break;
-	}
-
-	/* the connection got closed and we didn't got enough data to leave one of the READ states
-	 * the only way is to leave here */
-	if (is_closed && ostate == con->state) {
-		connection_set_state(srv, con, CON_STATE_ERROR);
-	}
 
 	chunkqueue_remove_finished_chunks(cq);
 
@@ -1075,8 +980,7 @@ static handler_t connection_handle_fdevent(server *srv, void *context, int reven
 		}
 	}
 
-	if (con->state == CON_STATE_READ ||
-	    con->state == CON_STATE_READ_POST) {
+	if (con->state == CON_STATE_READ) {
 		connection_handle_read_state(srv, con);
 	}
 
@@ -1148,6 +1052,14 @@ connection *connection_accept(server *srv, server_socket *srv_socket) {
 		}
 		return NULL;
 	} else {
+		if (cnt_addr.plain.sa_family != AF_UNIX) {
+			network_accept_tcp_nagle_disable(cnt);
+		}
+		return connection_accepted(srv, srv_socket, &cnt_addr, cnt);
+	}
+}
+
+connection *connection_accepted(server *srv, server_socket *srv_socket, sock_addr *cnt_addr, int cnt) {
 		connection *con;
 
 		srv->cur_fds++;
@@ -1163,15 +1075,12 @@ connection *connection_accept(server *srv, server_socket *srv_socket) {
 
 		con->fd = cnt;
 		con->fde_ndx = -1;
-#if 0
-		gettimeofday(&(con->start_tv), NULL);
-#endif
 		fdevent_register(srv->ev, con->fd, connection_handle_fdevent, con);
 
 		connection_set_state(srv, con, CON_STATE_REQUEST_START);
 
 		con->connection_start = srv->cur_ts;
-		con->dst_addr = cnt_addr;
+		con->dst_addr = *cnt_addr;
 		buffer_copy_string(con->dst_addr_buf, inet_ntop_cache_get_ip(srv, &(con->dst_addr)));
 		con->srv_socket = srv_socket;
 
@@ -1201,15 +1110,11 @@ connection *connection_accept(server *srv, server_socket *srv_socket) {
 		}
 #endif
 		return con;
-	}
 }
 
 
 int connection_state_machine(server *srv, connection *con) {
 	int done = 0, r;
-#ifdef USE_OPENSSL
-	server_socket *srv_sock = con->srv_socket;
-#endif
 
 	if (srv->srvconf.log_state_handling) {
 		log_error_write(srv, __FILE__, __LINE__, "sds",
@@ -1221,15 +1126,17 @@ int connection_state_machine(server *srv, connection *con) {
 	while (done == 0) {
 		size_t ostate = con->state;
 
+		if (srv->srvconf.log_state_handling) {
+			log_error_write(srv, __FILE__, __LINE__, "sds",
+					"state for fd", con->fd, connection_get_state(con->state));
+		}
+
 		switch (con->state) {
 		case CON_STATE_REQUEST_START: /* transient */
-			if (srv->srvconf.log_state_handling) {
-				log_error_write(srv, __FILE__, __LINE__, "sds",
-						"state for fd", con->fd, connection_get_state(con->state));
-			}
-
 			con->request_start = srv->cur_ts;
 			con->read_idle_ts = srv->cur_ts;
+			if (con->conf.high_precision_timestamps)
+				log_clock_gettime_realtime(&con->request_start_hp);
 
 			con->request_count++;
 			con->loops_per_request = 0;
@@ -1238,11 +1145,6 @@ int connection_state_machine(server *srv, connection *con) {
 
 			break;
 		case CON_STATE_REQUEST_END: /* transient */
-			if (srv->srvconf.log_state_handling) {
-				log_error_write(srv, __FILE__, __LINE__, "sds",
-						"state for fd", con->fd, connection_get_state(con->state));
-			}
-
 			buffer_reset(con->uri.authority);
 			buffer_reset(con->uri.path);
 			buffer_reset(con->uri.query);
@@ -1259,6 +1161,7 @@ int connection_state_machine(server *srv, connection *con) {
 			connection_set_state(srv, con, CON_STATE_HANDLE_REQUEST);
 
 			break;
+		case CON_STATE_READ_POST:
 		case CON_STATE_HANDLE_REQUEST:
 			/*
 			 * the request is parsed
@@ -1269,47 +1172,85 @@ int connection_state_machine(server *srv, connection *con) {
 			 *
 			 */
 
-			if (srv->srvconf.log_state_handling) {
-				log_error_write(srv, __FILE__, __LINE__, "sds",
-						"state for fd", con->fd, connection_get_state(con->state));
-			}
-
 			switch (r = http_response_prepare(srv, con)) {
+			case HANDLER_WAIT_FOR_EVENT:
+				if (!con->file_finished && (!con->file_started || 0 == con->conf.stream_response_body)) {
+					break; /* come back here */
+				}
+				/* response headers received from backend; fall through to start response */
 			case HANDLER_FINISHED:
+				if (con->error_handler_saved_status > 0) {
+					con->request.http_method = con->error_handler_saved_method;
+				}
 				if (con->mode == DIRECT) {
-					if (con->http_status == 404 ||
-					    con->http_status == 403) {
-						/* 404 error-handler */
+					if (con->error_handler_saved_status) {
+						if (con->error_handler_saved_status > 0) {
+							con->http_status = con->error_handler_saved_status;
+						} else if (con->http_status == 404 || con->http_status == 403) {
+							/* error-handler-404 is a 404 */
+							con->http_status = -con->error_handler_saved_status;
+						} else {
+							/* error-handler-404 is back and has generated content */
+							/* if Status: was set, take it otherwise use 200 */
+						}
+					} else if (con->http_status >= 400) {
+						buffer *error_handler = NULL;
+						if (!buffer_string_is_empty(con->conf.error_handler)) {
+							error_handler = con->conf.error_handler;
+						} else if ((con->http_status == 404 || con->http_status == 403)
+							   && !buffer_string_is_empty(con->conf.error_handler_404)) {
+							error_handler = con->conf.error_handler_404;
+						}
 
-						if (con->in_error_handler == 0 &&
-						    (!buffer_string_is_empty(con->conf.error_handler) ||
-						     !buffer_string_is_empty(con->error_handler))) {
+						if (error_handler) {
 							/* call error-handler */
 
-							con->error_handler_saved_status = con->http_status;
-							con->http_status = 0;
-
-							if (buffer_string_is_empty(con->error_handler)) {
-								buffer_copy_buffer(con->request.uri, con->conf.error_handler);
-							} else {
-								buffer_copy_buffer(con->request.uri, con->error_handler);
+							/* set REDIRECT_STATUS to save current HTTP status code
+							 * for access by dynamic handlers
+							 * https://redmine.lighttpd.net/issues/1828 */
+							data_string *ds;
+							if (NULL == (ds = (data_string *)array_get_unused_element(con->environment, TYPE_STRING))) {
+								ds = data_string_init();
 							}
-							buffer_reset(con->physical.path);
+							buffer_copy_string_len(ds->key, CONST_STR_LEN("REDIRECT_STATUS"));
+							buffer_append_int(ds->value, con->http_status);
+							array_insert_unique(con->environment, (data_unset *)ds);
 
-							con->in_error_handler = 1;
+							if (error_handler == con->conf.error_handler) {
+								plugins_call_connection_reset(srv, con);
 
-							connection_set_state(srv, con, CON_STATE_HANDLE_REQUEST);
+								if (con->request.content_length) {
+									if ((off_t)con->request.content_length != chunkqueue_length(con->request_content_queue)) {
+										con->keep_alive = 0;
+									}
+									con->request.content_length = 0;
+									chunkqueue_reset(con->request_content_queue);
+								}
+
+								con->is_writable = 1;
+								con->file_finished = 0;
+								con->file_started = 0;
+								con->got_response = 0;
+								con->parsed_response = 0;
+								con->response.keep_alive = 0;
+								con->response.content_length = -1;
+								con->response.transfer_encoding = 0;
+
+								con->error_handler_saved_status = con->http_status;
+								con->error_handler_saved_method = con->request.http_method;
+
+								con->request.http_method = HTTP_METHOD_GET;
+							} else { /*(preserve behavior for server.error-handler-404)*/
+								con->error_handler_saved_status = -con->http_status; /*(negative to flag old behavior)*/
+							}
+
+							buffer_copy_buffer(con->request.uri, error_handler);
+							connection_handle_errdoc_init(srv, con);
+							con->http_status = 0; /*(after connection_handle_errdoc_init())*/
 
 							done = -1;
 							break;
-						} else if (con->in_error_handler) {
-							/* error-handler is a 404 */
-
-							con->http_status = con->error_handler_saved_status;
 						}
-					} else if (con->in_error_handler) {
-						/* error-handler is back and has generated content */
-						/* if Status: was set, take it otherwise use 200 */
 					}
 				}
 				if (con->http_status == 0) con->http_status = 200;
@@ -1322,16 +1263,9 @@ int connection_state_machine(server *srv, connection *con) {
 
 				fdwaitqueue_append(srv, con);
 
-				connection_set_state(srv, con, CON_STATE_HANDLE_REQUEST);
-
 				break;
 			case HANDLER_COMEBACK:
 				done = -1;
-				/* fallthrough */
-			case HANDLER_WAIT_FOR_EVENT:
-				/* come back here */
-				connection_set_state(srv, con, CON_STATE_HANDLE_REQUEST);
-
 				break;
 			case HANDLER_ERROR:
 				/* something went wrong */
@@ -1350,11 +1284,6 @@ int connection_state_machine(server *srv, connection *con) {
 			 *
 			 */
 
-			if (srv->srvconf.log_state_handling) {
-				log_error_write(srv, __FILE__, __LINE__, "sds",
-						"state for fd", con->fd, connection_get_state(con->state));
-			}
-
 			if (-1 == connection_handle_write_prepare(srv, con)) {
 				connection_set_state(srv, con, CON_STATE_ERROR);
 
@@ -1364,239 +1293,60 @@ int connection_state_machine(server *srv, connection *con) {
 			connection_set_state(srv, con, CON_STATE_WRITE);
 			break;
 		case CON_STATE_RESPONSE_END: /* transient */
-			/* log the request */
-
-			if (srv->srvconf.log_state_handling) {
-				log_error_write(srv, __FILE__, __LINE__, "sds",
-						"state for fd", con->fd, connection_get_state(con->state));
-			}
-
-			plugins_call_handle_request_done(srv, con);
-
-			srv->con_written++;
-
-			if (con->keep_alive) {
-				connection_set_state(srv, con, CON_STATE_REQUEST_START);
-
-#if 0
-				con->request_start = srv->cur_ts;
-				con->read_idle_ts = srv->cur_ts;
-#endif
-			} else {
-				switch(r = plugins_call_handle_connection_close(srv, con)) {
-				case HANDLER_GO_ON:
-				case HANDLER_FINISHED:
-					break;
-				default:
-					log_error_write(srv, __FILE__, __LINE__, "sd", "unhandling return value", r);
-					break;
-				}
-
-#ifdef USE_OPENSSL
-				if (srv_sock->is_ssl) {
-					switch (SSL_shutdown(con->ssl)) {
-					case 1:
-						/* done */
-						break;
-					case 0:
-						/* wait for fd-event
-						 *
-						 * FIXME: wait for fdevent and call SSL_shutdown again
-						 *
-						 */
-
-						break;
-					default:
-						log_error_write(srv, __FILE__, __LINE__, "ss", "SSL:",
-								ERR_error_string(ERR_get_error(), NULL));
-					}
-				}
-#endif
-				if ((0 == shutdown(con->fd, SHUT_WR))) {
-					con->close_timeout_ts = srv->cur_ts;
-					connection_set_state(srv, con, CON_STATE_CLOSE);
-				} else {
-					connection_close(srv, con);
-				}
-
-				srv->con_closed++;
-			}
-
-			connection_reset(srv, con);
-
+		case CON_STATE_ERROR:        /* transient */
+			connection_handle_response_end_state(srv, con);
 			break;
 		case CON_STATE_CONNECT:
-			if (srv->srvconf.log_state_handling) {
-				log_error_write(srv, __FILE__, __LINE__, "sds",
-						"state for fd", con->fd, connection_get_state(con->state));
-			}
-
 			chunkqueue_reset(con->read_queue);
 
 			con->request_count = 0;
 
 			break;
 		case CON_STATE_CLOSE:
-			if (srv->srvconf.log_state_handling) {
-				log_error_write(srv, __FILE__, __LINE__, "sds",
-						"state for fd", con->fd, connection_get_state(con->state));
-			}
-
-			/* we have to do the linger_on_close stuff regardless
-			 * of con->keep_alive; even non-keepalive sockets may
-			 * still have unread data, and closing before reading
-			 * it will make the client not see all our output.
-			 */
-			{
-				int len;
-				char buf[1024];
-
-				len = read(con->fd, buf, sizeof(buf));
-				if (len == 0 || (len < 0 && errno != EAGAIN && errno != EINTR) ) {
-					con->close_timeout_ts = srv->cur_ts - (HTTP_LINGER_TIMEOUT+1);
-				}
-			}
-
-			if (srv->cur_ts - con->close_timeout_ts > HTTP_LINGER_TIMEOUT) {
-				connection_close(srv, con);
-
-				if (srv->srvconf.log_state_handling) {
-					log_error_write(srv, __FILE__, __LINE__, "sd",
-							"connection closed for fd", con->fd);
-				}
-			}
-
+			connection_handle_close_state(srv, con);
 			break;
-		case CON_STATE_READ_POST:
 		case CON_STATE_READ:
-			if (srv->srvconf.log_state_handling) {
-				log_error_write(srv, __FILE__, __LINE__, "sds",
-						"state for fd", con->fd, connection_get_state(con->state));
-			}
-
 			connection_handle_read_state(srv, con);
 			break;
 		case CON_STATE_WRITE:
-			if (srv->srvconf.log_state_handling) {
-				log_error_write(srv, __FILE__, __LINE__, "sds",
-						"state for fd", con->fd, connection_get_state(con->state));
-			}
-
-			/* only try to write if we have something in the queue */
-			if (!chunkqueue_is_empty(con->write_queue)) {
-				if (con->is_writable) {
-					if (-1 == connection_handle_write(srv, con)) {
-						log_error_write(srv, __FILE__, __LINE__, "ds",
-								con->fd,
-								"handle write failed.");
-						connection_set_state(srv, con, CON_STATE_ERROR);
-					}
-				}
-			} else if (con->file_finished) {
-				connection_set_state(srv, con, CON_STATE_RESPONSE_END);
-			}
-
-			break;
-		case CON_STATE_ERROR: /* transient */
-
-			/* even if the connection was drop we still have to write it to the access log */
-			if (con->http_status) {
-				plugins_call_handle_request_done(srv, con);
-			}
-#ifdef USE_OPENSSL
-			if (srv_sock->is_ssl) {
-				int ret, ssl_r;
-				unsigned long err;
-				ERR_clear_error();
-				switch ((ret = SSL_shutdown(con->ssl))) {
-				case 1:
-					/* ok */
-					break;
-				case 0:
-					ERR_clear_error();
-					if (-1 != (ret = SSL_shutdown(con->ssl))) break;
-
-					/* fall through */
-				default:
-
-					switch ((ssl_r = SSL_get_error(con->ssl, ret))) {
-					case SSL_ERROR_WANT_WRITE:
-					case SSL_ERROR_WANT_READ:
-						break;
-					case SSL_ERROR_SYSCALL:
-						/* perhaps we have error waiting in our error-queue */
-						if (0 != (err = ERR_get_error())) {
-							do {
-								log_error_write(srv, __FILE__, __LINE__, "sdds", "SSL:",
-										ssl_r, ret,
-										ERR_error_string(err, NULL));
-							} while((err = ERR_get_error()));
-						} else if (errno != 0) { /* ssl bug (see lighttpd ticket #2213): sometimes errno == 0 */
-							switch(errno) {
-							case EPIPE:
-							case ECONNRESET:
-								break;
-							default:
-								log_error_write(srv, __FILE__, __LINE__, "sddds", "SSL (error):",
-									ssl_r, ret, errno,
-									strerror(errno));
-								break;
-							}
+			do {
+				/* only try to write if we have something in the queue */
+				if (!chunkqueue_is_empty(con->write_queue)) {
+					if (con->is_writable) {
+						if (-1 == connection_handle_write(srv, con)) {
+							log_error_write(srv, __FILE__, __LINE__, "ds",
+									con->fd,
+									"handle write failed.");
+							connection_set_state(srv, con, CON_STATE_ERROR);
+							break;
 						}
+						if (con->state != CON_STATE_WRITE) break;
+					}
+				} else if (con->file_finished) {
+					connection_set_state(srv, con, CON_STATE_RESPONSE_END);
+					break;
+				}
 
+				if (con->mode != DIRECT && !con->file_finished) {
+					switch(r = plugins_call_handle_subrequest(srv, con)) {
+					case HANDLER_WAIT_FOR_EVENT:
+					case HANDLER_FINISHED:
+					case HANDLER_GO_ON:
 						break;
+					case HANDLER_WAIT_FOR_FD:
+						srv->want_fds++;
+						fdwaitqueue_append(srv, con);
+						break;
+					case HANDLER_COMEBACK:
 					default:
-						while((err = ERR_get_error())) {
-							log_error_write(srv, __FILE__, __LINE__, "sdds", "SSL:",
-									ssl_r, ret,
-									ERR_error_string(err, NULL));
-						}
-
+						log_error_write(srv, __FILE__, __LINE__, "sdd", "unexpected subrequest handler ret-value: ", con->fd, r);
+						/* fall through */
+					case HANDLER_ERROR:
+						connection_set_state(srv, con, CON_STATE_ERROR);
 						break;
 					}
 				}
-				ERR_clear_error();
-			}
-#endif
-
-			switch(con->mode) {
-			case DIRECT:
-#if 0
-				log_error_write(srv, __FILE__, __LINE__, "sd",
-						"emergency exit: direct",
-						con->fd);
-#endif
-				break;
-			default:
-				switch(r = plugins_call_handle_connection_close(srv, con)) {
-				case HANDLER_GO_ON:
-				case HANDLER_FINISHED:
-					break;
-				default:
-					log_error_write(srv, __FILE__, __LINE__, "sd", "unhandling return value", r);
-					break;
-				}
-				break;
-			}
-
-			connection_reset(srv, con);
-
-			/* close the connection */
-			if ((0 == shutdown(con->fd, SHUT_WR))) {
-				con->close_timeout_ts = srv->cur_ts;
-				connection_set_state(srv, con, CON_STATE_CLOSE);
-
-				if (srv->srvconf.log_state_handling) {
-					log_error_write(srv, __FILE__, __LINE__, "sd",
-							"shutdown for fd", con->fd);
-				}
-			} else {
-				connection_close(srv, con);
-			}
-
-			con->keep_alive = 0;
-
-			srv->con_closed++;
+			} while (con->state == CON_STATE_WRITE && (!chunkqueue_is_empty(con->write_queue) ? con->is_writable : con->file_finished));
 
 			break;
 		default:
@@ -1620,11 +1370,11 @@ int connection_state_machine(server *srv, connection *con) {
 				connection_get_state(con->state));
 	}
 
+	r = 0;
 	switch(con->state) {
-	case CON_STATE_READ_POST:
 	case CON_STATE_READ:
 	case CON_STATE_CLOSE:
-		fdevent_event_set(srv->ev, &(con->fde_ndx), con->fd, FDEVENT_IN);
+		r = FDEVENT_IN;
 		break;
 	case CON_STATE_WRITE:
 		/* request write-fdevent only if we really need it
@@ -1634,14 +1384,37 @@ int connection_state_machine(server *srv, connection *con) {
 		if (!chunkqueue_is_empty(con->write_queue) &&
 		    (con->is_writable == 0) &&
 		    (con->traffic_limit_reached == 0)) {
-			fdevent_event_set(srv->ev, &(con->fde_ndx), con->fd, FDEVENT_OUT);
-		} else {
-			fdevent_event_del(srv->ev, &(con->fde_ndx), con->fd);
+			r |= FDEVENT_OUT;
+		}
+		/* fall through */
+	case CON_STATE_READ_POST:
+		if (con->conf.stream_request_body & FDEVENT_STREAM_REQUEST_POLLIN) {
+			r |= FDEVENT_IN;
 		}
 		break;
 	default:
-		fdevent_event_del(srv->ev, &(con->fde_ndx), con->fd);
 		break;
+	}
+	if (-1 != con->fd) {
+		const int events = fdevent_event_get_interest(srv->ev, con->fd);
+		if (con->is_readable < 0) {
+			con->is_readable = 0;
+			r |= FDEVENT_IN;
+		}
+		if (con->is_writable < 0) {
+			con->is_writable = 0;
+			r |= FDEVENT_OUT;
+		}
+		if (r != events) {
+			/* update timestamps when enabling interest in events */
+			if ((r & FDEVENT_IN) && !(events & FDEVENT_IN)) {
+				con->read_idle_ts = srv->cur_ts;
+			}
+			if ((r & FDEVENT_OUT) && !(events & FDEVENT_OUT)) {
+				con->write_request_ts = srv->cur_ts;
+			}
+			fdevent_event_set(srv->ev, &con->fde_ndx, con->fd, r);
+		}
 	}
 
 	return 0;

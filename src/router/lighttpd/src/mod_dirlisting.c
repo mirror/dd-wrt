@@ -1,3 +1,5 @@
+#include "first.h"
+
 #include "base.h"
 #include "log.h"
 #include "buffer.h"
@@ -14,6 +16,7 @@
 #include <dirent.h>
 #include <assert.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <time.h>
@@ -29,8 +32,6 @@
 #ifdef HAVE_SYS_EXTATTR_H
 #include <sys/extattr.h>
 #endif
-
-#include "version.h"
 
 /* plugin config for all request/connections */
 
@@ -247,7 +248,7 @@ SETDEFAULTS_FUNC(mod_dirlisting_set_defaults) {
 		s->excludes = excludes_buffer_init();
 		s->dir_listing = 0;
 		s->external_css = buffer_init();
-		s->hide_dot_files = 0;
+		s->hide_dot_files = 1;
 		s->show_readme = 0;
 		s->hide_readme_file = 0;
 		s->show_header = 0;
@@ -435,11 +436,11 @@ static void http_dirls_sort(dirls_entry_t **ent, int num) {
 /* buffer must be able to hold "999.9K"
  * conversion is simple but not perfect
  */
-static int http_list_directory_sizefmt(char *buf, off_t size) {
-	const char unit[] = "KMGTPE";	/* Kilo, Mega, Tera, Peta, Exa */
-	const char *u = unit - 1;		/* u will always increment at least once */
+static int http_list_directory_sizefmt(char *buf, size_t bufsz, off_t size) {
+	const char unit[] = " KMGTPE";	/* Kilo, Mega, Giga, Tera, Peta, Exa */
+	const char *u = unit;		/* u will always increment at least once */
 	int remain;
-	char *out = buf;
+	size_t buflen;
 
 	if (size < 100)
 		size += 99;
@@ -463,14 +464,49 @@ static int http_list_directory_sizefmt(char *buf, off_t size) {
 		u++;
 	}
 
-	li_itostr(out, size);
-	out += strlen(out);
-	out[0] = '.';
-	out[1] = remain + '0';
-	out[2] = *u;
-	out[3] = '\0';
+	li_itostrn(buf, bufsz, size);
+	buflen = strlen(buf);
+	if (buflen + 3 >= bufsz) return buflen;
+	buf[buflen+0] = '.';
+	buf[buflen+1] = remain + '0';
+	buf[buflen+2] = *u;
+	buf[buflen+3] = '\0';
 
-	return (out + 3 - buf);
+	return buflen + 3;
+}
+
+/* don't want to block when open()ing a fifo */
+#if defined(O_NONBLOCK)
+# define FIFO_NONBLOCK O_NONBLOCK
+#else
+# define FIFO_NONBLOCK 0
+#endif
+
+static void http_list_directory_include_file(buffer *out, buffer *path, const char *classname, int encode) {
+	int fd = open(path->ptr, O_RDONLY | FIFO_NONBLOCK);
+	ssize_t rd;
+	char buf[8192];
+
+	if (-1 == fd) return;
+
+	if (encode) {
+		buffer_append_string_len(out, CONST_STR_LEN("<pre class=\""));
+		buffer_append_string(out, classname);
+		buffer_append_string_len(out, CONST_STR_LEN("\">"));
+	}
+
+	while ((rd = read(fd, buf, sizeof(buf))) > 0) {
+		if (encode) {
+			buffer_append_string_encoded(out, buf, (size_t)rd, ENCODING_MINIMAL_XML);
+		} else {
+			buffer_append_string_len(out, buf, (size_t)rd);
+		}
+	}
+	close(fd);
+
+	if (encode) {
+		buffer_append_string_len(out, CONST_STR_LEN("</pre>"));
+	}
 }
 
 static void http_list_directory_header(server *srv, connection *con, plugin_data *p, buffer *out) {
@@ -531,23 +567,13 @@ static void http_list_directory_header(server *srv, connection *con, plugin_data
 
 	/* HEADER.txt */
 	if (p->conf.show_header) {
-		stream s;
 		/* if we have a HEADER file, display it in <pre class="header"></pre> */
 
 		buffer_copy_buffer(p->tmp_buf, con->physical.path);
 		buffer_append_slash(p->tmp_buf);
 		buffer_append_string_len(p->tmp_buf, CONST_STR_LEN("HEADER.txt"));
 
-		if (-1 != stream_open(&s, p->tmp_buf)) {
-			if (p->conf.encode_header) {
-				buffer_append_string_len(out, CONST_STR_LEN("<pre class=\"header\">"));
-				buffer_append_string_encoded(out, s.start, s.size, ENCODING_MINIMAL_XML);
-				buffer_append_string_len(out, CONST_STR_LEN("</pre>"));
-			} else {
-				buffer_append_string_len(out, s.start, s.size);
-			}
-		}
-		stream_close(&s);
+		http_list_directory_include_file(out, p->tmp_buf, "header", p->conf.encode_header);
 	}
 
 	buffer_append_string_len(out, CONST_STR_LEN("<h2>Index of "));
@@ -565,7 +591,7 @@ static void http_list_directory_header(server *srv, connection *con, plugin_data
 		"</tr>"
 		"</thead>\n"
 		"<tbody>\n"
-		"<tr>"
+		"<tr class=\"d\">"
 			"<td class=\"n\"><a href=\"../\">Parent Directory</a>/</td>"
 			"<td class=\"m\">&nbsp;</td>"
 			"<td class=\"s\">- &nbsp;</td>"
@@ -584,23 +610,13 @@ static void http_list_directory_footer(server *srv, connection *con, plugin_data
 	));
 
 	if (p->conf.show_readme) {
-		stream s;
 		/* if we have a README file, display it in <pre class="readme"></pre> */
 
 		buffer_copy_buffer(p->tmp_buf,  con->physical.path);
 		buffer_append_slash(p->tmp_buf);
 		buffer_append_string_len(p->tmp_buf, CONST_STR_LEN("README.txt"));
 
-		if (-1 != stream_open(&s, p->tmp_buf)) {
-			if (p->conf.encode_readme) {
-				buffer_append_string_len(out, CONST_STR_LEN("<pre class=\"readme\">"));
-				buffer_append_string_encoded(out, s.start, s.size, ENCODING_MINIMAL_XML);
-				buffer_append_string_len(out, CONST_STR_LEN("</pre>"));
-			} else {
-				buffer_append_string_len(out, s.start, s.size);
-			}
-		}
-		stream_close(&s);
+		http_list_directory_include_file(out, p->tmp_buf, "readme", p->conf.encode_readme);
 	}
 
 	if(p->conf.auto_layout) {
@@ -610,8 +626,6 @@ static void http_list_directory_footer(server *srv, connection *con, plugin_data
 
 		if (!buffer_string_is_empty(p->conf.set_footer)) {
 			buffer_append_string_buffer(out, p->conf.set_footer);
-		} else if (buffer_is_empty(con->conf.server_tag)) {
-			buffer_append_string_len(out, CONST_STR_LEN(PACKAGE_DESC));
 		} else {
 			buffer_append_string_buffer(out, con->conf.server_tag);
 		}
@@ -666,9 +680,9 @@ static int http_list_directory(server *srv, connection *con, plugin_data *p, buf
 	name_max = NAME_MAX;
 #endif
 
-	path = malloc(buffer_string_length(dir) + name_max + 1);
+	path = malloc(i + name_max + 1);
 	force_assert(NULL != path);
-	strcpy(path, dir->ptr);
+	memcpy(path, dir->ptr, i+1);
 	path_file = path + i;
 
 	if (NULL == (dp = opendir(path))) {
@@ -799,7 +813,7 @@ static int http_list_directory(server *srv, connection *con, plugin_data *p, buf
 		strftime(datebuf, sizeof(datebuf), "%Y-%b-%d %H:%M:%S", localtime(&(tmp->mtime)));
 #endif
 
-		buffer_append_string_len(out, CONST_STR_LEN("<tr><td class=\"n\"><a href=\""));
+		buffer_append_string_len(out, CONST_STR_LEN("<tr class=\"d\"><td class=\"n\"><a href=\""));
 		buffer_append_string_encoded(out, DIRLIST_ENT_NAME(tmp), tmp->namelen, ENCODING_REL_URI_PART);
 		buffer_append_string_len(out, CONST_STR_LEN("/\">"));
 		buffer_append_string_encoded(out, DIRLIST_ENT_NAME(tmp), tmp->namelen, ENCODING_MINIMAL_XML);
@@ -819,7 +833,7 @@ static int http_list_directory(server *srv, connection *con, plugin_data *p, buf
 		if (con->conf.use_xattr) {
 			memcpy(path_file, DIRLIST_ENT_NAME(tmp), tmp->namelen + 1);
 			attrlen = sizeof(attrval) - 1;
-			if (attr_get(path, "Content-Type", attrval, &attrlen, 0) == 0) {
+			if (attr_get(path, srv->srvconf.xattr_name->ptr, attrval, &attrlen, 0) == 0) {
 				attrval[attrlen] = '\0';
 				content_type = attrval;
 			}
@@ -827,7 +841,7 @@ static int http_list_directory(server *srv, connection *con, plugin_data *p, buf
 #elif defined(HAVE_EXTATTR)
 		if (con->conf.use_xattr) {
 			memcpy(path_file, DIRLIST_ENT_NAME(tmp), tmp->namelen + 1);
-			if(-1 != (attrlen = extattr_get_file(path, EXTATTR_NAMESPACE_USER, "Content-Type", attrval, sizeof(attrval)-1))) {
+			if(-1 != (attrlen = extattr_get_file(path, EXTATTR_NAMESPACE_USER, srv->srvconf.xattr_name->ptr, attrval, sizeof(attrval)-1))) {
 				attrval[attrlen] = '\0';
 				content_type = attrval;
 			}
@@ -860,7 +874,7 @@ static int http_list_directory(server *srv, connection *con, plugin_data *p, buf
 #else
 		strftime(datebuf, sizeof(datebuf), "%Y-%b-%d %H:%M:%S", localtime(&(tmp->mtime)));
 #endif
-		http_list_directory_sizefmt(sizebuf, tmp->size);
+		http_list_directory_sizefmt(sizebuf, sizeof(sizebuf), tmp->size);
 
 		buffer_append_string_len(out, CONST_STR_LEN("<tr><td class=\"n\"><a href=\""));
 		buffer_append_string_encoded(out, DIRLIST_ENT_NAME(tmp), tmp->namelen, ENCODING_REL_URI_PART);

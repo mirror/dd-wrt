@@ -1,3 +1,5 @@
+#include "first.h"
+
 #include "fdevent.h"
 #include "buffer.h"
 #include "log.h"
@@ -156,6 +158,7 @@ int fdevent_solaris_port_init(fdevents *ev) {
 	}
 
 	ev->port_events = malloc(ev->maxfds * sizeof(*ev->port_events));
+	force_assert(NULL != ev->port_events);
 
 	return 0;
 }

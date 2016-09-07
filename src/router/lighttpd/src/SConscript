@@ -44,6 +44,7 @@ common_src = Split("base64.c buffer.c log.c \
 	stat_cache.c plugin.c joblist.c etag.c array.c \
 	data_string.c data_count.c data_array.c \
 	data_integer.c md5.c data_fastcgi.c \
+	vector.c \
 	fdevent_select.c fdevent_libev.c \
 	fdevent_poll.c fdevent_linux_sysepoll.c \
 	fdevent_solaris_devpoll.c fdevent_solaris_port.c \
@@ -105,21 +106,21 @@ modules = {
 	'mod_mysql_vhost' : { 'src' : [ 'mod_mysql_vhost.c' ], 'lib' : [ env['LIBMYSQL'] ] },
 #	'mod_uploadprogress' : { 'src' : [ 'mod_uploadprogress.c' ] },
 	'mod_evasive' : { 'src' : [ 'mod_evasive.c' ] },
-	'mod_ssi' : { 'src' : [ 'mod_ssi_exprparser.c', 'mod_ssi_expr.c', 'mod_ssi.c' ], 'lib' : [ env['LIBPCRE'] ] },
+	'mod_ssi' : { 'src' : [ 'mod_ssi_exprparser.c', 'mod_ssi_expr.c', 'mod_ssi.c' ] },
 	'mod_flv_streaming' : { 'src' : [ 'mod_flv_streaming.c' ] },
 	'mod_cml': {
 		'src' : [ 'mod_cml_lua.c', 'mod_cml.c', 'mod_cml_funcs.c' ],
-		'lib' : [ env['LIBPCRE'], env['LIBMEMCACHE'], env['LIBLUA'] ] 
+		'lib' : [ env['LIBPCRE'], env['LIBMEMCACHED'], env['LIBLUA'] ]
 	},
 }
 
-if env['with_memcache']:
-	modules[mod_trigger_b4_dl] = { 'src' : [ 'mod_trigger_b4_dl.c' ], 'lib' : [ env['LIBPCRE'], env['LIBMEMCACHE'] ] }
+if env['with_memcached']:
+	modules['mod_trigger_b4_dl'] = { 'src' : [ 'mod_trigger_b4_dl.c' ], 'lib' : [ env['LIBPCRE'], env['LIBMEMCACHED'] ] }
 
 if env['with_lua']:
 	modules['mod_magnet'] = { 'src' : [ 'mod_magnet.c', 'mod_magnet_cache.c' ], 'lib' : [ env['LIBLUA'] ] }
 
-staticenv = env.Clone(CPPFLAGS=[ env['CPPFLAGS'], '-DLIGHTTPD_STATIC', '-DOPENSSL_NO_KRB5'])
+staticenv = env.Clone(CPPFLAGS=[ env['CPPFLAGS'], '-DLIGHTTPD_STATIC' ])
 
 ## all the core-sources + the modules
 staticsrc = src + common_src

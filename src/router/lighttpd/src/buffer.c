@@ -1,3 +1,5 @@
+#include "first.h"
+
 #include "buffer.h"
 
 #include <stdlib.h>
@@ -268,23 +270,13 @@ static char* utostr(char * const buf_end, uintmax_t val) {
 }
 
 static char* itostr(char * const buf_end, intmax_t val) {
-	char *cur = buf_end;
-	if (val >= 0) return utostr(buf_end, (uintmax_t) val);
-
-	/* can't take absolute value, as it isn't defined for INTMAX_MIN */
-	do {
-		int mod = val % 10;
-		val /= 10;
-		/* val * 10 + mod == orig val, -10 < mod < 10 */
-		/* we want a negative mod */
-		if (mod > 0) {
-			mod -= 10;
-			val += 1;
-		}
-		/* prepend digit abs(mod) */
-		*(--cur) = (char) ('0' + (-mod));
-	} while (0 != val);
-	*(--cur) = '-';
+	/* absolute value not defined for INTMAX_MIN, but can take absolute
+	 * value of any negative number via twos complement cast to unsigned.
+	 * negative sign is prepended after (now unsigned) value is converted
+	 * to string */
+	uintmax_t uval = val >= 0 ? (uintmax_t)val : ((uintmax_t)~val) + 1;
+	char *cur = utostr(buf_end, uval);
+	if (val < 0) *(--cur) = '-';
 
 	return cur;
 }
@@ -353,10 +345,6 @@ void li_itostrn(char *buf, size_t buf_len, intmax_t val) {
 	memcpy(buf, str, p_buf_end - str);
 }
 
-void li_itostr(char *buf, intmax_t val) {
-	li_itostrn(buf, LI_ITOSTRING_LENGTH, val);
-}
-
 void li_utostrn(char *buf, size_t buf_len, uintmax_t val) {
 	char p_buf[LI_ITOSTRING_LENGTH];
 	char* const p_buf_end = p_buf + sizeof(p_buf);
@@ -368,10 +356,6 @@ void li_utostrn(char *buf, size_t buf_len, uintmax_t val) {
 
 	force_assert(buf_len >= (size_t) (p_buf_end - str));
 	memcpy(buf, str, p_buf_end - str);
-}
-
-void li_utostr(char *buf, uintmax_t val) {
-	li_utostrn(buf, LI_ITOSTRING_LENGTH, val);
 }
 
 char int2hex(char c) {
@@ -466,7 +450,7 @@ int buffer_caseless_compare(const char *a, size_t a_len, const char *b, size_t b
 		if (cb >= 'A' && cb <= 'Z') cb |= 32;
 
 		if (ca == cb) continue;
-		return ca - cb;
+		return ((int)ca) - ((int)cb);
 	}
 	if (a_len == b_len) return 0;
 	return a_len < b_len ? -1 : 1;
@@ -485,8 +469,10 @@ int buffer_is_equal_right_len(const buffer *b1, const buffer *b2, size_t len) {
 	return 0 == memcmp(b1->ptr + b1->used - 1 - len, b2->ptr + b2->used - 1 - len, len);
 }
 
-void li_tohex(char *buf, const char *s, size_t s_len) {
+void li_tohex(char *buf, size_t buf_len, const char *s, size_t s_len) {
 	size_t i;
+	force_assert(2 * s_len > s_len);
+	force_assert(2 * s_len < buf_len);
 
 	for (i = 0; i < s_len; i++) {
 		buf[2*i] = hex_chars[(s[i] >> 4) & 0x0F];
@@ -500,10 +486,10 @@ void buffer_copy_string_hex(buffer *b, const char *in, size_t in_len) {
 	force_assert(in_len * 2 > in_len);
 
 	buffer_string_set_length(b, 2 * in_len);
-	li_tohex(b->ptr, in, in_len);
+	li_tohex(b->ptr, buffer_string_length(b)+1, in, in_len);
 }
 
-/* everything except: ! ( ) * - . 0-9 A-Z _ a-z ~ */
+/* everything except: ! ( ) * - . 0-9 A-Z _ a-z */
 static const char encoded_chars_rel_uri_part[] = {
 	/*
 	0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
@@ -515,7 +501,7 @@ static const char encoded_chars_rel_uri_part[] = {
 	1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  40 -  4F @ */
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0,  /*  50 -  5F [ \ ] ^ */
 	1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  60 -  6F ` */
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1,  /*  70 -  7F { | } ~ DEL */
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1,  /*  70 -  7F { | } DEL */
 	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  80 -  8F */
 	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  90 -  9F */
 	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  A0 -  AF */
@@ -526,7 +512,7 @@ static const char encoded_chars_rel_uri_part[] = {
 	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  F0 -  FF */
 };
 
-/* everything except: ! ( ) * - . / 0-9 A-Z _ a-z ~ */
+/* everything except: ! ( ) * - . / 0-9 A-Z _ a-z */
 static const char encoded_chars_rel_uri[] = {
 	/*
 	0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
@@ -538,7 +524,7 @@ static const char encoded_chars_rel_uri[] = {
 	1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  40 -  4F @ */
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0,  /*  50 -  5F [ \ ] ^ */
 	1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  60 -  6F ` */
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1,  /*  70 -  7F { | } ~ DEL */
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1,  /*  70 -  7F { | } DEL */
 	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  80 -  8F */
 	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  90 -  9F */
 	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  A0 -  AF */
@@ -555,11 +541,11 @@ static const char encoded_chars_html[] = {
 	*/
 	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  00 -  0F control chars */
 	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  10 -  1F */
-	0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  20 -  2F & */
+	0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0,  /*  20 -  2F " & ' */
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0,  /*  30 -  3F < > */
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  40 -  4F */
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  50 -  5F */
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  60 -  6F */
+	1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  60 -  6F ` */
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,  /*  70 -  7F DEL */
 	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  80 -  8F */
 	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  90 -  9F */
@@ -577,11 +563,11 @@ static const char encoded_chars_minimal_xml[] = {
 	*/
 	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  00 -  0F control chars */
 	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  10 -  1F */
-	0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  20 -  2F & */
+	0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0,  /*  20 -  2F " & ' */
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0,  /*  30 -  3F < > */
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  40 -  4F */
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  50 -  5F */
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  60 -  6F */
+	1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  60 -  6F ` */
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,  /*  70 -  7F DEL */
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  80 -  8F */
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  90 -  9F */
@@ -882,9 +868,15 @@ void buffer_urldecode_query(buffer *url) {
 	buffer_urldecode_internal(url, 1);
 }
 
-/* Remove "/../", "//", "/./" parts from path,
- * strips leading spaces,
- * prepends "/" if not present already
+/* - special case: empty string returns empty string
+ * - on windows or cygwin: replace \ with /
+ * - strip leading spaces
+ * - prepends "/" if not present already
+ * - resolve "/../", "//" and "/./" the usual way:
+ *   the first one removes a preceding component, the other two
+ *   get compressed to "/".
+ * - "/." and "/.." at the end are similar, but always leave a trailing
+ *   "/"
  *
  * /blah/..         gets  /
  * /blah/../foo     gets  /foo
@@ -897,10 +889,9 @@ void buffer_urldecode_query(buffer *url) {
 
 void buffer_path_simplify(buffer *dest, buffer *src)
 {
-	int toklen;
-	char c, pre1;
+	/* current character, the one before, and the one before that from input */
+	char c, pre1, pre2;
 	char *start, *slash, *walk, *out;
-	unsigned short pre;
 
 	force_assert(NULL != dest && NULL != src);
 
@@ -933,53 +924,60 @@ void buffer_path_simplify(buffer *dest, buffer *src)
 	out   = dest->ptr;
 	slash = dest->ptr;
 
-
+	/* skip leading spaces */
 	while (*walk == ' ') {
 		walk++;
 	}
 
-	pre1 = *(walk++);
-	c    = *(walk++);
-	pre  = pre1;
-	if (pre1 != '/') {
-		pre = ('/' << 8) | pre1;
+	pre2 = pre1 = 0;
+	c = *(walk++);
+	/* prefix with '/' if not already present */
+	if (c != '/') {
+		pre1 = '/';
 		*(out++) = '/';
 	}
-	*(out++) = pre1;
 
-	if (pre1 == '\0') {
-		dest->used = (out - start) + 1;
-		return;
-	}
-
-	for (;;) {
-		if (c == '/' || c == '\0') {
-			toklen = out - slash;
-			if (toklen == 3 && pre == (('.' << 8) | '.')) {
-				out = slash;
-				if (out > start) {
-					out--;
-					while (out > start && *out != '/') out--;
-				}
-
-				if (c == '\0') out++;
-			} else if (toklen == 1 || pre == (('/' << 8) | '.')) {
-				out = slash;
-				if (c == '\0') out++;
-			}
-
-			slash = out;
-		}
-
-		if (c == '\0') break;
-
+	while (c != '\0') {
+		/* assert((src != dest || out <= walk) && slash <= out); */
+		/* the following comments about out and walk are only interesting if
+		 * src == dest; otherwise the memory areas don't overlap anyway.
+		 */
+		pre2 = pre1;
 		pre1 = c;
-		pre  = (pre << 8) | pre1;
+
+		/* possibly: out == walk - need to read first */
 		c    = *walk;
 		*out = pre1;
 
 		out++;
 		walk++;
+		/* (out <= walk) still true; also now (slash < out) */
+
+		if (c == '/' || c == '\0') {
+			const size_t toklen = out - slash;
+			if (toklen == 3 && pre2 == '.' && pre1 == '.') {
+				/* "/../" or ("/.." at end of string) */
+				out = slash;
+				/* if there is something before "/..", there is at least one
+				 * component, which needs to be removed */
+				if (out > start) {
+					out--;
+					while (out > start && *out != '/') out--;
+				}
+
+				/* don't kill trailing '/' at end of path */
+				if (c == '\0') out++;
+				/* slash < out before, so out_new <= slash + 1 <= out_before <= walk */
+			} else if (toklen == 1 || (pre2 == '/' && pre1 == '.')) {
+				/* "//" or "/./" or (("/" or "/.") at end of string) */
+				out = slash;
+				/* don't kill trailing '/' at end of path */
+				if (c == '\0') out++;
+				/* slash < out before, so out_new <= slash + 1 <= out_before <= walk */
+			}
+
+			slash = out;
+		}
 	}
 
 	buffer_string_set_length(dest, out - start);
@@ -1096,7 +1094,7 @@ void print_backtrace(FILE *file) {
 
 void log_failed_assert(const char *filename, unsigned int line, const char *msg) {
 	/* can't use buffer here; could lead to recursive assertions */
-	fprintf(stderr, "%s.%d: %s\n", filename, line, msg);
+	fprintf(stderr, "%s.%u: %s\n", filename, line, msg);
 	print_backtrace(stderr);
 	fflush(stderr);
 	abort();

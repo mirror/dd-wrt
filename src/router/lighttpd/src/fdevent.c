@@ -1,3 +1,5 @@
+#include "first.h"
+
 #include "base.h"
 #include "log.h"
 
@@ -16,8 +18,10 @@ fdevents *fdevent_init(server *srv, size_t maxfds, fdevent_handler_t type) {
 	fdevents *ev;
 
 	ev = calloc(1, sizeof(*ev));
+	force_assert(NULL != ev);
 	ev->srv = srv;
 	ev->fdarray = calloc(maxfds, sizeof(*ev->fdarray));
+	force_assert(NULL != ev->fdarray);
 	ev->maxfds = maxfds;
 
 	switch(type) {
@@ -107,6 +111,7 @@ static fdnode *fdnode_init(void) {
 	fdnode *fdn;
 
 	fdn = calloc(1, sizeof(*fdn));
+	force_assert(NULL != fdn);
 	fdn->fd = -1;
 	return fdn;
 }
@@ -136,8 +141,6 @@ int fdevent_unregister(fdevents *ev, int fd) {
 	if (!ev) return 0;
 	fdn = ev->fdarray[fd];
 
-	force_assert(fdn->events == 0);
-
 	fdnode_free(fdn);
 
 	ev->fdarray[fd] = NULL;
@@ -145,28 +148,49 @@ int fdevent_unregister(fdevents *ev, int fd) {
 	return 0;
 }
 
-int fdevent_event_del(fdevents *ev, int *fde_ndx, int fd) {
-	int fde = fde_ndx ? *fde_ndx : -1;
+void fdevent_event_del(fdevents *ev, int *fde_ndx, int fd) {
+	if (-1 == fd) return;
+	if (NULL == ev->fdarray[fd]) return;
 
-	if (NULL == ev->fdarray[fd]) return 0;
-
-	if (ev->event_del) fde = ev->event_del(ev, fde, fd);
+	if (ev->event_del) *fde_ndx = ev->event_del(ev, *fde_ndx, fd);
 	ev->fdarray[fd]->events = 0;
-
-	if (fde_ndx) *fde_ndx = fde;
-
-	return 0;
 }
 
-int fdevent_event_set(fdevents *ev, int *fde_ndx, int fd, int events) {
-	int fde = fde_ndx ? *fde_ndx : -1;
+void fdevent_event_set(fdevents *ev, int *fde_ndx, int fd, int events) {
+	if (-1 == fd) return;
 
-	if (ev->event_set) fde = ev->event_set(ev, fde, fd, events);
+	/*(Note: skips registering with kernel if initial events is 0,
+         * so caller should pass non-zero events for initial registration.
+         * If never registered due to never being called with non-zero events,
+         * then FDEVENT_HUP or FDEVENT_ERR will never be returned.) */
+	if (ev->fdarray[fd]->events == events) return;/*(no change; nothing to do)*/
+
+	if (ev->event_set) *fde_ndx = ev->event_set(ev, *fde_ndx, fd, events);
 	ev->fdarray[fd]->events = events;
+}
 
-	if (fde_ndx) *fde_ndx = fde;
+void fdevent_event_add(fdevents *ev, int *fde_ndx, int fd, int event) {
+	int events;
+	if (-1 == fd) return;
 
-	return 0;
+	events = ev->fdarray[fd]->events;
+	if ((events & event) || 0 == event) return; /*(no change; nothing to do)*/
+
+	events |= event;
+	if (ev->event_set) *fde_ndx = ev->event_set(ev, *fde_ndx, fd, events);
+	ev->fdarray[fd]->events = events;
+}
+
+void fdevent_event_clr(fdevents *ev, int *fde_ndx, int fd, int event) {
+	int events;
+	if (-1 == fd) return;
+
+	events = ev->fdarray[fd]->events;
+	if (!(events & event)) return; /*(no change; nothing to do)*/
+
+	events &= ~event;
+	if (ev->event_set) *fde_ndx = ev->event_set(ev, *fde_ndx, fd, events);
+	ev->fdarray[fd]->events = events;
 }
 
 int fdevent_poll(fdevents *ev, int timeout_ms) {
