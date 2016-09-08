@@ -167,6 +167,7 @@ void ej_show_routing(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "document.write(\"<option value=\\\"bgp\\\" %s >BGP</option>\");\n", nvram_selmatch(wp, "wk_mode", "bgp") ? "selected=\\\"selected\\\"" : "");
 	websWrite(wp, "document.write(\"<option value=\\\"router\\\" %s >\" + route.rip2_mod + \"</option>\");\n", nvram_selmatch(wp, "wk_mode", "router") ? "selected=\\\"selected\\\"" : "");
 	websWrite(wp, "document.write(\"<option value=\\\"ospf\\\" %s >\" + route.ospf_mod + \"</option>\");\n", nvram_selmatch(wp, "wk_mode", "ospf") ? "selected=\\\"selected\\\"" : "");
+	websWrite(wp, "document.write(\"<option value=\\\"ospf router\\\" %s >\" + route.ospf_rip2_mod + \"</option>\");\n", nvram_selmatch(wp, "wk_mode", "ospf router") ? "selected=\\\"selected\\\"" : "");
 	if (nvram_match("wk_mode", "ospf bgp rip router")) {
 		websWrite(wp, "document.write(\"<option value=\\\"ospf bgp rip router\\\" %s >vtysh OSPF BGP RIP router</option>\");\n",
 			  nvram_selmatch(wp, "wk_mode", "ospf bgp rip router") ? "selected=\\\"selected\\\"" : "");
@@ -179,6 +180,24 @@ void ej_show_routing(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "//]]>\n</script>\n");
 	return;
 
+}
+
+void ej_has_routing(webs_t wp, int argc, char_t ** argv)
+{
+	char *sub;
+	char var[32], *next;
+	sub = nvram_safe_get("wk_mode");
+	foreach(var, sub, next) {
+		if (!strcmp(argv[0], "zebra") && !strcmp(var, "bgp"))
+		    return;
+		if (!strcmp(argv[0], "zebra") && !strcmp(var, "router"))
+		    return;
+		if (!strcmp(argv[0], "zebra") && !strcmp(var, "ospf"))
+		    return;
+		if (!strcmp(var, argv[0]))
+		    return;
+	}
+	websWrite(wp, "%s", argv[1]);
 }
 
 #ifdef HAVE_BUFFALO
@@ -5154,7 +5173,7 @@ void ej_get_wdsp2p(webs_t wp, int argc, char_t ** argv)
 	char wlwds[32];
 
 	sprintf(wlwds, "%s_wds1_enable", interface);
-	if (nvram_selmatch(wp, "wk_mode", "ospf") && nvram_selmatch(wp, "expert_mode", "1") && nvram_selmatch(wp, wlwds, "1")) {
+	if ((nvram_selmatch(wp, "wk_mode", "ospf") || nvram_selmatch(wp, "wk_mode", "ospf router")) && nvram_selmatch(wp, "expert_mode", "1") && nvram_selmatch(wp, wlwds, "1")) {
 		char buf[16];
 
 		sprintf(buf, "%s_wds%d_ospf", interface, index);
