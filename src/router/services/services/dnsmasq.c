@@ -111,6 +111,27 @@ static int canlan(void)
 	return 0;
 }
 
+static void makeentry(FILE * fp, char *ifname, int dhcpnum, int dhcpstart, char *ip, char *netmask, char *leasetime)
+{
+	unsigned int ip1 = get_single_ip(ip, 0);
+	unsigned int ip2 = get_single_ip(ip, 1);
+	unsigned int ip3 = get_single_ip(ip, 2);
+	unsigned int ip4 = get_single_ip(ip, 3);
+	unsigned int im1 = get_single_ip(netmask, 0);
+	unsigned int im2 = get_single_ip(netmask, 1);
+	unsigned int im3 = get_single_ip(netmask, 2);
+	unsigned int im4 = get_single_ip(netmask, 3);
+	unsigned int sip = ((ip1 & im1) << 24) + ((ip2 & im2) << 16) + ((ip3 & im3) << 8) + dhcpstart;
+	unsigned int eip = sip + dhcpnum - 1;
+
+	fprintf(fp, "dhcp-range=%s,", ifname);
+
+	fprintf(fp, "%d.%d.%d.%d,", ip1 & im1, ip2 & im2, ip3 & im3, dhcpstart);
+	fprintf(fp, "%d.%d.%d.%d,", (eip >> 24) & 0xff, (eip >> 16) & 0xff, (eip >> 8) & 0xff, eip & 0xff);
+	fprintf(fp, "%s,", netmask);
+	fprintf(fp, "%sm\n", leasetime);
+}
+
 void start_dnsmasq(void)
 {
 	FILE *fp;
@@ -301,24 +322,10 @@ void start_dnsmasq(void)
 		if (landhcp()) {
 			unsigned int dhcpnum = nvram_geti("dhcp_num");
 			unsigned int dhcpstart = nvram_geti("dhcp_start");
-			unsigned int ip1 = get_single_ip(nvram_safe_get("lan_ipaddr"), 0);
-			unsigned int ip2 = get_single_ip(nvram_safe_get("lan_ipaddr"), 1);
-			unsigned int ip3 = get_single_ip(nvram_safe_get("lan_ipaddr"), 2);
-			unsigned int ip4 = get_single_ip(nvram_safe_get("lan_ipaddr"), 4);
-			unsigned int im1 = get_single_ip(nvram_safe_get("lan_netmask"), 0);
-			unsigned int im2 = get_single_ip(nvram_safe_get("lan_netmask"), 1);
-			unsigned int im3 = get_single_ip(nvram_safe_get("lan_netmask"), 2);
-			unsigned int im4 = get_single_ip(nvram_safe_get("lan_netmask"), 4);
-			unsigned int sip = ((ip1 & im1) << 24) + ((ip2 & im2) << 16) + ((ip3 & im3) << 8) + dhcpstart;
-			unsigned int eip = sip + dhcpnum - 1;
-			// Do new code - multi-subnet range
-			// Assumes that lan_netmask is set accordingly
-			// Assumes that dhcp_num is a multiple of 256
-			fprintf(fp, "dhcp-range=%s,", nvram_safe_get("lan_ifname"));
-			fprintf(fp, "%d.%d.%d.%d,", ip1 & im1, ip2 & im2, ip3 & im3, dhcpstart);
-			fprintf(fp, "%d.%d.%d.%d,", (eip >> 24) & 0xff, (eip >> 16) & 0xff, (eip >> 8) & 0xff, eip & 0xff);
-			fprintf(fp, "%s,", nvram_safe_get("lan_netmask"));
-			fprintf(fp, "%sm\n", nvram_safe_get("dhcp_lease"));
+			char *ip = nvram_safe_get("lan_ipaddr");
+			char *netmask = nvram_safe_get("lan_netmask");
+			char *leasetime = nvram_safe_get("dhcp_lease");
+			makeentry(fp, nvram_safe_get("lan_ifname"), dhcpnum, dhcpstart, ip, netmask, leasetime);
 		}
 
 		for (i = 0; i < mdhcpcount; i++) {
@@ -330,26 +337,13 @@ void start_dnsmasq(void)
 			    == 0)
 				continue;
 			char *ifname = getmdhcp(0, i, word);
-			unsigned int dhcpstart = atoi(getmdhcp(2, i, word));
 			unsigned int dhcpnum = atoi(getmdhcp(3, i, word));
-			unsigned int ip1 = get_single_ip(nvram_nget("%s_ipaddr", ifname), 0);
-			unsigned int ip2 = get_single_ip(nvram_nget("%s_ipaddr", ifname), 1);
-			unsigned int ip3 = get_single_ip(nvram_nget("%s_ipaddr", ifname), 2);
-			unsigned int ip4 = get_single_ip(nvram_nget("%s_ipaddr", ifname), 4);
-			unsigned int im1 = get_single_ip(nvram_nget("%s_netmask", ifname), 0);
-			unsigned int im2 = get_single_ip(nvram_nget("%s_netmask", ifname), 1);
-			unsigned int im3 = get_single_ip(nvram_nget("%s_netmask", ifname), 2);
-			unsigned int im4 = get_single_ip(nvram_nget("%s_netmask", ifname), 4);
-			unsigned int sip = ((ip1 & im1) << 24) + ((ip2 & im2) << 16) + ((ip3 & im3) << 8) + dhcpstart;
-			unsigned int eip = sip + dhcpnum - 1;
-
-			fprintf(fp, "dhcp-range=%s,", ifname);
-
-			fprintf(fp, "%d.%d.%d.%d,", ip1 & im1, ip2 & im2, ip3 & im3, dhcpstart);
-			fprintf(fp, "%d.%d.%d.%d,", (eip >> 24) & 0xff, (eip >> 16) & 0xff, (eip >> 8) & 0xff, eip & 0xff);
-			fprintf(fp, "%s,", nvram_nget("%s_netmask", ifname));
-			fprintf(fp, "%sm\n", getmdhcp(4, i, word));
+			unsigned int dhcpstart = atoi(getmdhcp(2, i, word));
+			char *ip = nvram_nget("%s_ipaddr", ifname);
+			char *netmask = nvram_nget("%s_netmask", ifname);
+			char *leasetime = getmdhcp(4, i, word);
 			free(word);
+			makeentry(fp, ifname, dhcpnum, dhcpstart, ip, netmask, leasetime);
 		}
 
 		int leasenum = nvram_geti("static_leasenum");

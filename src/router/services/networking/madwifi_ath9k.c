@@ -463,16 +463,20 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 			struct mac80211_ac *acs;
 			fprintf(stderr, "call mac80211autochannel for interface: %s\n", prefix);
 			eval("ifconfig", prefix, "up");
-			if (usebw == 40)
+			switch (usebw) {
+			case 40:
 				acs = mac80211autochannel(prefix, NULL, 2, 1, 0, AUTO_FORCEHT40);
-			else if (usebw == 80)
+				break;
+			case 80:
 				acs = mac80211autochannel(prefix, NULL, 2, 1, 0, AUTO_FORCEVHT80);
-			else if (usebw == 160)
+				break;
+			case 160:
+			case 8080:
 				acs = mac80211autochannel(prefix, NULL, 2, 1, 0, AUTO_FORCEVHT160);
-			else if (usebw == 8080)
-				acs = mac80211autochannel(prefix, NULL, 2, 1, 0, AUTO_FORCEVHT160);
-			else
+				break;
+			default:
 				acs = mac80211autochannel(prefix, NULL, 2, 1, 0, AUTO_ALL);
+			}
 			if (acs != NULL) {
 				freq = acs->freq;
 				channel = ieee80211_mhz2ieee(freq);
