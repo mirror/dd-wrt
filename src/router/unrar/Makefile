@@ -2,8 +2,8 @@
 # Makefile for UNIX - unrar
 
 # Linux using GCC
-#CXX=g++
-CXXFLAGS=$(COPTS)
+CXX=ccache $(ARCH)-linux-uclibc-g++
+CXXFLAGS=$(COPTS) $(MIPS16_OPT)
 LIBFLAGS=-fPIC
 DEFINES=-D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -DRAR_SMP -DNEED_PRINTF
 #STRIP=strip
