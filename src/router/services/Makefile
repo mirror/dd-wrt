@@ -231,6 +231,9 @@ endif
 ifeq ($(CONFIG_GLAUCO),y)
 CFLAGS_EXTRA += -DHAVE_GLAUCO
 endif
+ifeq ($(CONFIG_RUT500),y)
+CFLAGS_EXTRA += -DHAVE_RUT500
+endif
 ifeq ($(CONFIG_DHDAP),y)
 CFLAGS_EXTRA += -DHAVE_DHDAP
 endif
