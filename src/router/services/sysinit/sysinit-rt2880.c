@@ -292,7 +292,17 @@ void start_sysinit(void)
 #endif
 #endif
 
-#if defined(HAVE_ALLNET11N) || defined(HAVE_ESR6650) || defined(HAVE_WR5422) || defined(HAVE_RT10N) || \
+#ifdef HAVE_RUT500
+		eval("switch", "reg", "w", "14", "405555");
+		eval("switch", "reg", "w", "50", "2001");
+		eval("switch", "reg", "w", "90", "7f7f");
+		eval("switch", "reg", "w", "98", "7f3f");
+		eval("switch", "reg", "w", "e4", "3f");
+		eval("switch", "reg", "w", "40", "1001");
+		eval("switch", "reg", "w", "44", "1001");
+		eval("switch", "reg", "w", "48", "1002");
+		eval("switch", "reg", "w", "70", "ffff506f");
+#elif defined(HAVE_ALLNET11N) || defined(HAVE_ESR6650) || defined(HAVE_WR5422) || defined(HAVE_RT10N) || \
     defined(HAVE_ACXNR22) || defined(HAVE_W502U) || defined(HAVE_ESR9752) || defined(HAVE_ALL02310N)
 		eval("switch", "reg", "w", "14", "405555");
 		eval("switch", "reg", "w", "50", "2001");
