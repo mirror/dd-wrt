@@ -1066,7 +1066,7 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 				{
 					int cc;
 					int isband = 0;
-					if (freq_mhz >= 4900)
+					if (freq_mhz >= 4800)
 						isband = 1;
 					if (freq_mhz >= 5500)
 						isband = 2;
@@ -1079,12 +1079,12 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 					switch (isband) {
 					case 0:
 						startlowbound = 2200000;
-						starthighbound = 4900000;
+						starthighbound = 4800000;
 						stophighbound = 2700000;
 						stoplowbound = 0;
 						break;
 					case 1:
-						startlowbound = 4900000;
+						startlowbound = 4800000;
 						starthighbound = 5350000;
 						stophighbound = 5350000;
 						stoplowbound = 2700000;
