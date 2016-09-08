@@ -1312,6 +1312,7 @@ route.bird_legend="Bird Konfiguration";
 route.bird_log="Bird Log";
 route.bird_copt="Bird Konfigurationsmodus";
 route.ospf_mod="OSPF-Router";
+route.ospf_rip2_mod="OSPF & RIP2-Router";
 route.ospf_legend="OSPF Routing";
 route.ospf_conf="OSPF Konfiguration";
 route.ospf_copt="OSPF Konfigurationsmodus";
