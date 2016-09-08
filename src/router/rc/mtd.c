@@ -308,7 +308,7 @@ int mtd_write(const char *path, const char *mtd)
 	case ROUTER_LINKSYS_EA6500V2:
 	case ROUTER_TRENDNET_TEW828:
 		if (nvram_matchi("bootpartition", 1)) {
-			mtd = "linux";
+			mtd = "linux2";
 			nvram_seti("bootpartition", 0);
 			nvram_commit();
 		} else {
