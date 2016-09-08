@@ -1419,6 +1419,8 @@ ifeq ($(CONFIG_ATH9K),y)
 	$(CC) -shared -c $(ATH9KCFLAGS) $(MIPS16_OPT) $(ATH9KFILES) 
 endif
 	$(CC) -shared $(CFLAGS) $(LDFLAGS)  -o $@ $^ $(NOBJS) $(ATH9KOBJS) -L../nvram -lnvram  $(WLDFLAGS) $(ATH9KLDFLAGS)
+#	$(CC) -shared -c $(ATH9KCFLAGS) $(MIPS16_OPT) $(ATH9KFILES) -DTEST
+#	$(CC) -DTEST $(CFLAGS) $(LDFLAGS)  -o testlib $^ $(NOBJS) $(ATH9KOBJS) -L../nvram -L. -lnvram -lutils  $(WLDFLAGS) $(ATH9KLDFLAGS)
 
 
 libutils.a: $(OBJS)
