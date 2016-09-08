@@ -1011,14 +1011,17 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 	char sc[32];
 	int skip = 1;
 	int rrdcount = 0;
+	int super = 0;
 	phy = mac80211_get_phyidx_by_vifname(interface);
 	if (phy == -1)
 		return NULL;
 #ifdef HAVE_SUPERCHANNEL
 	sprintf(sc, "%s_regulatory", interface);
 	if (issuperchannel()
-	    && nvram_default_geti(sc, 1) == 0)
+	    && nvram_default_geti(sc, 1) == 0) {
+		super = 1;
 		skip = 0;
+	}
 #endif
 	rd = mac80211_get_regdomain(country);
 	// for now just leave 
@@ -1029,8 +1032,9 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 	if (unl_genl_request_single(&unl, msg, &msg) < 0)
 		return NULL;
 	bands = unl_find_attr(&unl, msg, NL80211_ATTR_WIPHY_BANDS);
-	if (!bands)
+	if (!bands) {
 		goto out;
+	}
 	for (run = 0; run < 2; run++) {
 		if (run == 1) {
 			list = (struct wifi_channels *)malloc(sizeof(struct wifi_channels) * (chancount + 1));
@@ -1099,21 +1103,29 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 					}
 					int flags = 0;
 					regmaxbw = 0;
-					for (cc = 0; cc < rrdcount; cc++) {
-						regfreq = rd->reg_rules[cc].freq_range;
-						if (!startfreq && regfreq.start_freq_khz > startlowbound && regfreq.start_freq_khz < starthighbound) {
-							startfreq = regfreq.start_freq_khz / 1000;
-						}
-						if (regfreq.end_freq_khz <= stophighbound && regfreq.end_freq_khz > stoplowbound) {
-							if ((regfreq.max_bandwidth_khz / 1000) > regmaxbw)
-								regmaxbw = regfreq.max_bandwidth_khz / 1000;
-							stopfreq = regfreq.end_freq_khz / 1000;
-							regpower = rd->reg_rules[cc].power_rule;
-							flags = rd->reg_rules[cc].flags;
+					if (super) {
+						startfreq = 2200;
+						stopfreq = 6200;
+						regpower.max_eirp = 40 * 100;
+						regmaxbw = 160;
+						flags = 0;
+					} else {
+						for (cc = 0; cc < rrdcount; cc++) {
+							regfreq = rd->reg_rules[cc].freq_range;
+							if (!startfreq && regfreq.start_freq_khz > startlowbound && regfreq.start_freq_khz < starthighbound) {
+								startfreq = regfreq.start_freq_khz / 1000;
+							}
+							if (regfreq.end_freq_khz <= stophighbound && regfreq.end_freq_khz > stoplowbound) {
+								if ((regfreq.max_bandwidth_khz / 1000) > regmaxbw)
+									regmaxbw = regfreq.max_bandwidth_khz / 1000;
+								stopfreq = regfreq.end_freq_khz / 1000;
+								regpower = rd->reg_rules[cc].power_rule;
+								flags = rd->reg_rules[cc].flags;
+							}
 						}
 					}
 
-//                                      fprintf(stderr, "pre: freq %d, startfreq %d stopfreq %d, regmaxbw %d maxbw %d\n", freq_mhz, startfreq, stopfreq, regmaxbw, max_bandwidth_khz);
+//                                      fprintf(stderr, "pre: run %d, freq %d, startfreq %d stopfreq %d, regmaxbw %d maxbw %d\n", run, freq_mhz, startfreq, stopfreq, regmaxbw, max_bandwidth_khz);
 
 //                                      regfreq = rd->reg_rules[rrc].freq_range;                                        
 //                                      startfreq = regfreq.start_freq_khz / 1000;
@@ -1164,7 +1176,7 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 								list[count].no_ibss = 1;
 							list[count].ht40minus = 0;
 							list[count].ht40plus = 0;
-							//                              fprintf(stderr,"freq %d, htrange %d, startfreq %d, stopfreq %d\n", freq_mhz, htrange, startfreq, stopfreq);
+//                                                      fprintf(stderr,"freq %d, htrange %d, startfreq %d, stopfreq %d\n", freq_mhz, range, startfreq, stopfreq);
 							if (((freq_mhz - range) - (max_bandwidth_khz / 2)) >= startfreq) {	// 5510 -         5470  
 								list[count].ht40minus = 1;
 							}
@@ -1313,15 +1325,21 @@ static int get_vht_mcs(__u32 capa, const __u8 *mcs)
 {
 	__u16 tmp;
 	int i;
-	int latest=-1;
+	int latest = -1;
 	tmp = mcs[4] | (mcs[5] << 8);
 	for (i = 1; i <= 8; i++) {
-		switch ((tmp >> ((i-1)*2) ) & 3) {
-		case 0: latest = ((i-1)*9) + 7; break;
-		case 1: latest = ((i-1)*9) + 8; break;
-		case 2: latest = ((i-1)*9) + 9; break;
-		case 3: 
-		break;
+		switch ((tmp >> ((i - 1) * 2)) & 3) {
+		case 0:
+			latest = ((i - 1) * 9) + 7;
+			break;
+		case 1:
+			latest = ((i - 1) * 9) + 8;
+			break;
+		case 2:
+			latest = ((i - 1) * 9) + 9;
+			break;
+		case 3:
+			break;
 		}
 	}
 	return latest;
@@ -1422,10 +1440,8 @@ int mac80211_get_maxvhtmcs(char *interface)
 		goto out;
 	nla_for_each_nested(band, bands, rem) {
 		nla_parse(tb, NL80211_BAND_ATTR_MAX, nla_data(band), nla_len(band), NULL);
-		if (tb[NL80211_BAND_ATTR_VHT_CAPA] &&
-			    tb[NL80211_BAND_ATTR_VHT_MCS_SET])
-				maxmcs = get_vht_mcs(nla_get_u32(tb[NL80211_BAND_ATTR_VHT_CAPA]),
-					       nla_data(tb[NL80211_BAND_ATTR_VHT_MCS_SET]));
+		if (tb[NL80211_BAND_ATTR_VHT_CAPA] && tb[NL80211_BAND_ATTR_VHT_MCS_SET])
+			maxmcs = get_vht_mcs(nla_get_u32(tb[NL80211_BAND_ATTR_VHT_CAPA]), nla_data(tb[NL80211_BAND_ATTR_VHT_MCS_SET]));
 	}
 	nlmsg_free(msg);
 	return maxmcs;
@@ -1628,6 +1644,7 @@ nla_put_failure:
 #ifdef TEST
 void main(int argc, char *argv[])
 {
+	mac80211_get_channels("ath0", "US", 20, 255);
 	fprintf(stderr, "phy0 %d %d %d %d\n", mac80211_get_avail_tx_antenna(0), mac80211_get_avail_rx_antenna(0), mac80211_get_configured_tx_antenna(0), mac80211_get_configured_rx_antenna(0));
 	fprintf(stderr, "phy1 %d %d %d %d\n", mac80211_get_avail_tx_antenna(1), mac80211_get_avail_rx_antenna(1), mac80211_get_configured_tx_antenna(1), mac80211_get_configured_rx_antenna(1));
 }
