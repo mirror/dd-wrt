@@ -12,6 +12,7 @@ privoxy-install:
 	install -D privoxy/default.action $(INSTALLDIR)/privoxy/etc/privoxy/default.action
 	install -D privoxy/user.action $(INSTALLDIR)/privoxy/etc/privoxy/user.action
 	install -D privoxy/default.filter $(INSTALLDIR)/privoxy/etc/privoxy/default.filter
+	install -D privoxy/user.filter $(INSTALLDIR)/privoxy/etc/privoxy/user.filter
 	install -D privoxy/trust $(INSTALLDIR)/privoxy/etc/privoxy/trust
 	install -D privoxy/configs/privoxy.webproxy $(INSTALLDIR)/privoxy/etc/config/privoxy.webproxy
 	install -D privoxy/configs/privoxy.nvramconfig $(INSTALLDIR)/privoxy/etc/config/privoxy.nvramconfig
