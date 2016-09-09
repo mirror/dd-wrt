@@ -2422,6 +2422,12 @@ static void mangle_table(void)
 	 * Clamp TCP MSS to PMTU of WAN interface 
 	 */
 	save2file("-I FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
+	
+#ifdef HAVE_PRIVOXY
+	if ( (nvram_matchi("privoxy_enable", 1)) && (nvram_matchi("wshaper_enable", 1)) ) {	
+		save2file("-I OUTPUT -p tcp --sport 8118 -j IMQ --todev 0\n");
+	}
+#endif
 
 	/*
 	 * Sveasoft add - avoid the "mark everything" rule, Reformed's PPPoE code 
@@ -2911,10 +2917,7 @@ void start_firewall(void)
 	else
 		diag_led(DMZ, STOP_LED);
 	cprintf("done");
-#ifdef XBOX_SUPPORT
-	writeproc("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout", "65");
-	writeproc("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeouts", "65 180");
-#endif
+
 	cprintf("Start firewall\n");
 	/*
 	 * We don't forward packet until those policies are set. 
