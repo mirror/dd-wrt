@@ -581,6 +581,8 @@ int main(int argc, char **argv)
 #else
 	fprintf(fp, "OTAi %s (c) 2016 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
 #endif
+#elif HAVE_RAYTRONIK
+	fprintf(fp, "RAYTRONIK %s (c) 2016 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
 #elif HAVE_HDWIFI
 	fprintf(fp, "HDWIFI %s (c) 2016 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
 #else
