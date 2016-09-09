@@ -70,27 +70,30 @@ static unsigned int type11_clocks[4] = { 600, 800, 900, 0 };
 #define IFMAP(a) (a)
 #endif
 
+void show_ip(webs_t wp, char *prefix, char *var, int nm, char *type)
+{
+	char name[64];
+	if (prefix)
+		snprintf(name, "%s_%s", prefix, var);
+	else
+		snprintf(name, "%s", var);
+	char *ipv = nvram_default_get(name, "0.0.0.0");
+	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,%d,%d,%s)\" name=\"%s_0\" value=\"%d\" />.", nm ? 0 : 1, nm ? 255 : 223, type, name, get_single_ip(ipv, 0));
+	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,%s)\" name=\"%s_1\" value=\"%d\" />.", type, name, get_single_ip(ipv, 1));
+	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,%s)\" name=\"%s_2\" value=\"%d\" />.", type, name, get_single_ip(ipv, 2));
+	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,%s)\" name=\"%s_3\" value=\"%d\" />\n", type, name, get_single_ip(ipv, 3));
+
+}
+
 void show_ipnetmask(webs_t wp, char *var)
 {
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(share.ip)</script></div>\n");
-
-	char *ipv = nvram_nget("%s_ipaddr", var);
-
-	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,1,223,share.ip)\" name=\"%s_ipaddr_0\" value=\"%d\" />.", var, get_single_ip(ipv, 0));
-	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.ip)\" name=\"%s_ipaddr_1\" value=\"%d\" />.", var, get_single_ip(ipv, 1));
-	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.ip)\" name=\"%s_ipaddr_2\" value=\"%d\" />.", var, get_single_ip(ipv, 2));
-	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.ip)\" name=\"%s_ipaddr_3\" value=\"%d\" />\n", var, get_single_ip(ipv, 3));
+	show_ip(wp, var, "ipaddr", 0, "share.ip");
 	websWrite(wp, "</div>\n");
-
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(share.subnet)</script></div>\n");
-	ipv = nvram_nget("%s_netmask", var);
-
-	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_0\" value=\"%d\" />.", var, get_single_ip(ipv, 0));
-	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_1\" value=\"%d\" />.", var, get_single_ip(ipv, 1));
-	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_2\" value=\"%d\" />.", var, get_single_ip(ipv, 2));
-	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_3\" value=\"%d\" />", var, get_single_ip(ipv, 3));
+	show_ip(wp, var, "netmask", 1, "share.subnet");
 	websWrite(wp, "</div>\n");
 
 }
@@ -189,13 +192,13 @@ void ej_has_routing(webs_t wp, int argc, char_t ** argv)
 	sub = nvram_safe_get("wk_mode");
 	foreach(var, sub, next) {
 		if (!strcmp(argv[0], "zebra") && !strcmp(var, "bgp"))
-		    return;
+			return;
 		if (!strcmp(argv[0], "zebra") && !strcmp(var, "router"))
-		    return;
+			return;
 		if (!strcmp(argv[0], "zebra") && !strcmp(var, "ospf"))
-		    return;
+			return;
 		if (!strcmp(var, argv[0]))
-		    return;
+			return;
 	}
 	websWrite(wp, "%s", argv[1]);
 }
@@ -954,11 +957,8 @@ void ej_show_dhcpd_settings(webs_t wp, int argc, char_t ** argv)
 	if (nvram_matchi("dhcpfwd_enable", 1)) {
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(idx.dhcp_srv)</script></div>\n");
-		char *ipfwd = nvram_safe_get("dhcpfwd_ip");
-
-		websWrite(wp,
-			  "<input type=\"hidden\" name=\"dhcpfwd_ip\" value=\"4\" /><input class=\"num\" maxlength=\"3\" size=\"3\" name=\"dhcpfwd_ip_0\" onblur=\"valid_range(this,0,255,idx.dhcp_srv)\" value=\"%d\" />.<input class=\"num\" maxlength=\"3\" size=\"3\" name=\"dhcpfwd_ip_1\" onblur=\"valid_range(this,0,255,idx.dhcp_srv)\" value=\"%d\" />.<input class=\"num\" maxlength=\"3\" name=\"dhcpfwd_ip_2\" size=\"3\" onblur=\"valid_range(this,0,255,idx.dhcp_srv)\" value=\"%d\" />.<input class=\"num\" maxlength=\"3\" name=\"dhcpfwd_ip_3\" size=\"3\" onblur=\"valid_range(this,0,254,idx.dhcp_srv)\" value=\"%d\"\" /></div>\n",
-			  get_single_ip(ipfwd, 0), get_single_ip(ipfwd, 1), get_single_ip(ipfwd, 2), get_single_ip(ipfwd, 3));
+		show_ip(wp, NULL, "dhcpfwd_ip", 0, "idx.dhcp_srv");
+		websWrite(wp, "</div>\n");
 	} else {
 		char buf[20];
 
@@ -1011,11 +1011,7 @@ void ej_show_dhcpd_settings(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<input type=\"hidden\" name=\"wan_wins\" value=\"4\" />\n");
 		char *wins = nvram_default_get("wan_wins", "0.0.0.0");
 
-		for (i = 0; i < 4; i++) {
-			websWrite(wp,
-				  "<input class=\"num\" name=\"wan_wins_%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,%d,&#34;WINS&#34;)\" value=\"%d\" />%s",
-				  i, i == 3 ? 254 : 255, get_single_ip(wins, i), i < 3 ? "." : "");
-		}
+		show_ip(wp, NULL, "wan_wins", 0, "&#34;WINS&#34;");
 
 		websWrite(wp, "</div>\n<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(idx.dhcp_dnsmasq)</script></div>\n");
@@ -2000,14 +1996,8 @@ static void showbridgesettings(webs_t wp, char *var, int mcast, int dual)
 	websWrite(wp, "<div id=\"%s_idredirect\">\n", vvar);
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(idx.dns_redirect)</script></div>\n");
-	char dnsip[32];
-	sprintf(dnsip, "%s_dns_ipaddr", var);
-	char *ipv = nvram_default_get(dnsip, "0.0.0.0");
 	websWrite(wp, "<input type=\"hidden\" name=\"%s_dns_ipaddr\" value=\"4\" />\n", var);
-	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,223,share.ip)\" name=\"%s_dns_ipaddr_0\" value=\"%d\" />.", var, get_single_ip(ipv, 0));
-	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.ip)\" name=\"%s_dns_ipaddr_1\" value=\"%d\" />.", var, get_single_ip(ipv, 1));
-	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.ip)\" name=\"%s_dns_ipaddr_2\" value=\"%d\" />.", var, get_single_ip(ipv, 2));
-	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.ip)\" name=\"%s_dns_ipaddr_3\" value=\"%d\" />\n", var, get_single_ip(ipv, 3));
+	show_ip(wp, var, "dns_ipaddr", 0, "share.ip");
 	websWrite(wp, "</div>\n");
 
 	websWrite(wp, "</div>\n");
@@ -2016,27 +2006,13 @@ static void showbridgesettings(webs_t wp, char *var, int mcast, int dual)
 
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(share.ip)</script></div>\n");
-	char ip[32];
-
-	sprintf(ip, "%s_ipaddr", var);
-	ipv = nvram_safe_get(ip);
-
 	websWrite(wp, "<input type=\"hidden\" name=\"%s_ipaddr\" value=\"4\" />\n", var);
-	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,1,223,share.ip)\" name=\"%s_ipaddr_0\" value=\"%d\" />.", var, get_single_ip(ipv, 0));
-	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.ip)\" name=\"%s_ipaddr_1\" value=\"%d\" />.", var, get_single_ip(ipv, 1));
-	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.ip)\" name=\"%s_ipaddr_2\" value=\"%d\" />.", var, get_single_ip(ipv, 2));
-	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.ip)\" name=\"%s_ipaddr_3\" value=\"%d\" />\n", var, get_single_ip(ipv, 3));
+	show_ip(wp, var, "ipaddr", 0, "share.ip");
 	websWrite(wp, "</div>\n");
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(share.subnet)</script></div>\n");
-	sprintf(ip, "%s_netmask", var);
-	ipv = nvram_safe_get(ip);
-
 	websWrite(wp, "<input type=\"hidden\" name=\"%s_netmask\" value=\"4\" />\n", var);
-	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_0\" value=\"%d\" />.", var, get_single_ip(ipv, 0));
-	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_1\" value=\"%d\" />.", var, get_single_ip(ipv, 1));
-	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_2\" value=\"%d\" />.", var, get_single_ip(ipv, 2));
-	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_3\" value=\"%d\" />", var, get_single_ip(ipv, 3));
+	show_ip(wp, var, "netmask", 0, "share.subnet");
 	websWrite(wp, "</div>\n");
 
 #ifdef HAVE_MADWIFI
@@ -2440,27 +2416,14 @@ static int show_virtualssid(webs_t wp, char *prefix)
 
 			websWrite(wp, "<div class=\"setting\">\n");
 			websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(share.ip)</script></div>\n");
-			char ip[32];
 
-			sprintf(ip, "%s_ipaddr", var);
-			char *ipv = nvram_safe_get(ip);
+			show_ip(wp, var, "ipaddr", 0, "share.ip");
 
-			websWrite(wp, "<input type=\"hidden\" name=\"%s_ipaddr\" value=\"4\" />\n", var);
-			websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,1,223,share.ip)\" name=\"%s_ipaddr_0\" value=\"%d\" />.", var, get_single_ip(ipv, 0));
-			websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.ip)\" name=\"%s_ipaddr_1\" value=\"%d\" />.", var, get_single_ip(ipv, 1));
-			websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.ip)\" name=\"%s_ipaddr_2\" value=\"%d\" />.", var, get_single_ip(ipv, 2));
-			websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.ip)\" name=\"%s_ipaddr_3\" value=\"%d\" />\n", var, get_single_ip(ipv, 3));
 			websWrite(wp, "</div>\n");
 			websWrite(wp, "<div class=\"setting\">\n");
 			websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(share.subnet)</script></div>\n");
-			sprintf(ip, "%s_netmask", var);
-			ipv = nvram_safe_get(ip);
 
-			websWrite(wp, "<input type=\"hidden\" name=\"%s_netmask\" value=\"4\" />\n", var);
-			websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_0\" value=\"%d\" />.", var, get_single_ip(ipv, 0));
-			websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_1\" value=\"%d\" />.", var, get_single_ip(ipv, 1));
-			websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_2\" value=\"%d\" />.", var, get_single_ip(ipv, 2));
-			websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_3\" value=\"%d\" />", var, get_single_ip(ipv, 3));
+			show_ip(wp, var, "ipaddr", 0, "share.subnet");
 			websWrite(wp, "</div>\n");
 
 			sprintf(ssid, "%s_ap_isolate", var);
@@ -4352,15 +4315,11 @@ void show_radius(webs_t wp, char *prefix, int showmacformat, int backup)
 		websWrite(wp, "</select>\n");
 		websWrite(wp, "</div>\n");
 	}
-	char *rad = nvram_nget("%s_radius_ipaddr", prefix);
 
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label3)</script></div>\n");
 	websWrite(wp, "<input type=\"hidden\" name=\"%s_radius_ipaddr\" value=\"4\" />\n", prefix);
-	websWrite(wp, "<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_0\" onblur=\"valid_range(this,0,255,radius.label3)\" class=\"num\" value=\"%d\" />.", prefix, get_single_ip(rad, 0));
-	websWrite(wp, "<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_1\" onblur=\"valid_range(this,0,255,radius.label3)\" class=\"num\" value=\"%d\" />.", prefix, get_single_ip(rad, 1));
-	websWrite(wp, "<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_2\" onblur=\"valid_range(this,0,255,radius.label3)\" class=\"num\" value=\"%d\" />.", prefix, get_single_ip(rad, 2));
-	websWrite(wp, "<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_3\" onblur=\"valid_range(this,1,254,radius.label3)\" class=\"num\" value=\"%d\" />\n", prefix, get_single_ip(rad, 3));
+	show_ip(wp, prefix, "radius_ipaddr", 0, "radius.label3");
 	websWrite(wp, "</div>\n");
 
 	websWrite(wp, "<div class=\"setting\">\n");
@@ -4388,14 +4347,10 @@ void show_radius(webs_t wp, char *prefix, int showmacformat, int backup)
 		websWrite(wp, "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 600)\");\n//]]>\n</script></span>\n</div>\n");
 #endif
 
-		rad = nvram_nget("%s_radius2_ipaddr", prefix);
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label23)</script></div>\n");
 		websWrite(wp, "<input type=\"hidden\" name=\"%s_radius2_ipaddr\" value=\"4\" />\n", prefix);
-		websWrite(wp, "<input size=\"3\" maxlength=\"3\" name=\"%s_radius2_ipaddr_0\" onblur=\"valid_range(this,0,255,radius.label23)\" class=\"num\" value=\"%d\" />.", prefix, get_single_ip(rad, 0));
-		websWrite(wp, "<input size=\"3\" maxlength=\"3\" name=\"%s_radius2_ipaddr_1\" onblur=\"valid_range(this,0,255,radius.label23)\" class=\"num\" value=\"%d\" />.", prefix, get_single_ip(rad, 1));
-		websWrite(wp, "<input size=\"3\" maxlength=\"3\" name=\"%s_radius2_ipaddr_2\" onblur=\"valid_range(this,0,255,radius.label23)\" class=\"num\" value=\"%d\" />.", prefix, get_single_ip(rad, 2));
-		websWrite(wp, "<input size=\"3\" maxlength=\"3\" name=\"%s_radius2_ipaddr_3\" onblur=\"valid_range(this,1,254,radius.label23)\" class=\"num\" value=\"%d\" />\n", prefix, get_single_ip(rad, 3));
+		show_ip(wp, prefix, "radius2_ipaddr", 0, "radius.label23");
 		websWrite(wp, "</div>\n");
 
 		websWrite(wp, "<div class=\"setting\">\n");
@@ -4431,16 +4386,12 @@ void show_radius(webs_t wp, char *prefix, int showmacformat, int backup)
 			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idacct', false);\" name=\"%s_acct\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
 			  vvar, prefix, nvram_default_match(acct, "0", "0") ? "checked=\"checked\"" : "");
 		websWrite(wp, "</div>\n");
-		char *rad = nvram_nget("%s_acct_ipaddr", prefix);
 
 		websWrite(wp, "<div id=\"%s_idacct\">\n", vvar);
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label13)</script></div>\n");
 		websWrite(wp, "<input type=\"hidden\" name=\"%s_acct_ipaddr\" value=\"4\" />\n", prefix);
-		websWrite(wp, "<input size=\"3\" maxlength=\"3\" name=\"%s_acct_ipaddr_0\" onblur=\"valid_range(this,0,255,radius.label13)\" class=\"num\" value=\"%d\" />.", prefix, get_single_ip(rad, 0));
-		websWrite(wp, "<input size=\"3\" maxlength=\"3\" name=\"%s_acct_ipaddr_1\" onblur=\"valid_range(this,0,255,radius.label13)\" class=\"num\" value=\"%d\" />.", prefix, get_single_ip(rad, 1));
-		websWrite(wp, "<input size=\"3\" maxlength=\"3\" name=\"%s_acct_ipaddr_2\" onblur=\"valid_range(this,0,255,radius.label13)\" class=\"num\" value=\"%d\" />.", prefix, get_single_ip(rad, 2));
-		websWrite(wp, "<input size=\"3\" maxlength=\"3\" name=\"%s_acct_ipaddr_3\" onblur=\"valid_range(this,1,254,radius.label13)\" class=\"num\" value=\"%d\" />\n", prefix, get_single_ip(rad, 3));
+		show_ip(wp, prefix, "acct_ipaddr", 0, "radius.label13");
 		websWrite(wp, "</div>\n");
 
 		websWrite(wp, "<div class=\"setting\">\n");
@@ -4463,18 +4414,11 @@ void show_radius(webs_t wp, char *prefix, int showmacformat, int backup)
 		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_acct\"), \"%s_idacct\", %s);\n", prefix, vvar, nvram_matchi(acct, 1) ? "true" : "false");
 		websWrite(wp, "//]]>\n</script>\n");
 	}
-	char local_ip[32];
-	sprintf(local_ip, "%s_local_ip", prefix);
-
-	rad = nvram_default_get(local_ip, "0.0.0.0");
 /* force client ip */
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(radius.local_ip)</script></div>\n");
 	websWrite(wp, "<input type=\"hidden\" name=\"%s_local_ip\" value=\"4\" />\n", prefix);
-	websWrite(wp, "<input size=\"3\" maxlength=\"3\" name=\"%s_local_ip_0\" onblur=\"valid_range(this,0,255,radius.label3)\" class=\"num\" value=\"%d\" />.", prefix, get_single_ip(rad, 0));
-	websWrite(wp, "<input size=\"3\" maxlength=\"3\" name=\"%s_local_ip_1\" onblur=\"valid_range(this,0,255,radius.label3)\" class=\"num\" value=\"%d\" />.", prefix, get_single_ip(rad, 1));
-	websWrite(wp, "<input size=\"3\" maxlength=\"3\" name=\"%s_local_ip_2\" onblur=\"valid_range(this,0,255,radius.label3)\" class=\"num\" value=\"%d\" />.", prefix, get_single_ip(rad, 2));
-	websWrite(wp, "<input size=\"3\" maxlength=\"3\" name=\"%s_local_ip_3\" onblur=\"valid_range(this,0,254,radius.label3)\" class=\"num\" value=\"%d\" />\n", prefix, get_single_ip(rad, 3));
+	show_ip(wp, prefix, "local_ip", 0, "radius.label3");
 	websWrite(wp, "</div>\n");
 
 #endif
