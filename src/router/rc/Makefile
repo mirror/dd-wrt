@@ -409,6 +409,9 @@ endif
 ifeq ($(CONFIG_ONNET),y)
 CFLAGS += -DHAVE_ONNET
 endif
+ifeq ($(CONFIG_RAYTRONIK),y)
+CFLAGS += -DHAVE_RAYTRONIK
+endif
 ifeq ($(CONFIG_WIFIDOG),y)
 CFLAGS += -DHAVE_WIFIDOG
 endif
