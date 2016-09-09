@@ -444,9 +444,9 @@ void start_sysinit(void)
 				extra_params++;
 			}
 			nvram_set("pci/1/1/venid", "0x14E4");
-			nvram_unset("et1macaddr");
 			nvram_commit();
 		}
+		nvram_unset("et1macaddr");
 		set_gpio(6, 1);	//reset button
 		set_gpio(2, 0);	//power led
 		set_gpio(3, 1);	//power led
@@ -668,9 +668,9 @@ void start_sysinit(void)
 				extra_params++;
 			}
 			nvram_set("pci/1/1/venid", "0x14E4");
-			nvram_unset("et1macaddr");
 			nvram_commit();
 		}
+		nvram_unset("et1macaddr");
 		set_gpio(6, 1);	//reset button
 		set_gpio(2, 0);	//power led
 		set_gpio(3, 1);	//power led
@@ -892,9 +892,9 @@ void start_sysinit(void)
 				extra_params++;
 			}
 			nvram_seti("pci/1/1/ddwrt", 1);
-			nvram_unset("et1macaddr");
 			nvram_commit();
 		}
+		nvram_unset("et1macaddr");
 		set_gpio(6, 1);	//reset button
 		set_gpio(2, 0);	//power led
 		set_gpio(3, 1);	//power led
@@ -1101,9 +1101,9 @@ void start_sysinit(void)
 			nvram_seti("wl0_pcie_mrrs", 128);
 			nvram_seti("wl1_pcie_mrrs", 128);
 			nvram_seti("pci/1/1/ddwrt", 1);
-			nvram_unset("et1macaddr");
 			nvram_commit();
 		}
+		nvram_unset("et1macaddr");
 		set_gpio(11, 1);
 		set_gpio(6, 1);
 		break;
@@ -1351,9 +1351,9 @@ void start_sysinit(void)
 			nvram_seti("wl0_pcie_mrrs", 128);
 			nvram_seti("wl1_pcie_mrrs", 128);
 			nvram_seti("pci/1/1/ddwrt", 1);
-			nvram_unset("et1macaddr");
 			nvram_commit();
 		}
+		nvram_unset("et1macaddr");
 		set_gpio(15, 1);	//wlan button led on
 		set_gpio(4, 1);
 		set_gpio(9, 1);
@@ -1557,9 +1557,9 @@ void start_sysinit(void)
 			nvram_set("devpath1", "pci/2/1");
 			nvram_seti("wl_pcie_mrrs", 128);
 			nvram_seti("0:ddwrt", 1);
-			nvram_unset("et1macaddr");
 			nvram_commit();
 		}
+		nvram_unset("et1macaddr");
 		set_gpio(0, 1);	//USB
 		set_gpio(4, 1);	//wifi
 		set_gpio(6, 1);	//reset button
@@ -1892,11 +1892,10 @@ void start_sysinit(void)
 				nvram_nset(extra_params->value, "2:%s", extra_params->name);
 				extra_params++;
 			}
-
-			nvram_unset("et0macaddr");
-			nvram_unset("et1macaddr");
 			nvram_commit();
 		}
+		nvram_unset("et0macaddr");
+		nvram_unset("et1macaddr");
 		set_gpio(6, 1);	//reset button
 		set_gpio(15, 1);
 		break;
@@ -2628,11 +2627,12 @@ void start_sysinit(void)
 				nvram_nset(extra_params->value, "2:%s", extra_params->name);
 				extra_params++;
 			}
-			nvram_unset("et0macaddr");
-			nvram_unset("et1macaddr");
+
 			nvram_seti("et_txq_thresh", 3300);
 			nvram_commit();
 		}
+		nvram_unset("et0macaddr");
+		nvram_unset("et1macaddr");
 		set_gpio(6, 1);	//reset button
 		set_gpio(1, 0);	//LED button
 		//set_gpio(10, 0);
@@ -3057,10 +3057,10 @@ void start_sysinit(void)
 			nvram_set("vlan2ports", "4 8u");
 			nvram_set("vlan1hwname", "et2");
 			nvram_set("vlan2hwname", "et2");
-			nvram_unset("et0macaddr");
-			nvram_unset("et1macaddr");
 			nvram_commit();
 		}
+		nvram_unset("et0macaddr");
+		nvram_unset("et1macaddr");
 	case ROUTER_ASUS_AC88U:
 		/* ldo patch */
 		{
@@ -3753,9 +3753,10 @@ void start_sysinit(void)
 			fprintf(stderr, "set 5g mac 1 %s\n", &buf[10]);
 			nvram_set("1:macaddr", &buf[10]);
 			nvram_commit();
-			nvram_unset("et0macaddr");
-			nvram_unset("et1macaddr");
 		}
+		
+		nvram_unset("et0macaddr");
+		nvram_unset("et1macaddr");
 
 		if (!strncmp(nvram_safe_get("et0macaddr"), "00:90", 5)) {
 			char buf[64];
