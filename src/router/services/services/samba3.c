@@ -192,21 +192,31 @@ void start_samba3(void)
 		fclose(fp);
 	}
 	chmod("/jffs", 0777);
+	
+	char conffile[64];
+	
+	fp = fopen("/jffs/etc/smb.conf", "r");	//test if custom config is available
+	if (fp != NULL) {
+		strcpy(conffile, "--configfile=\/jffs\/etc\/smb.conf");
+		fclose(fp);
+	} else {
+		strcpy(conffile, "--configfile=\/tmp\/smb.conf");
+	}
 
 #ifdef HAVE_SMP
-	if (eval("/usr/bin/taskset", "0x2", "/usr/sbin/smbd", "-D", "--configfile=/tmp/smb.conf"))
+	if (eval("/usr/bin/taskset", "0x2", "/usr/sbin/smbd", "-D", conffile))
 #endif
-		eval("/usr/sbin/smbd", "-D", "--configfile=/tmp/smb.conf");
+		eval("/usr/sbin/smbd", "-D", conffile);
 
-	eval("/usr/sbin/nmbd", "-D", "--configfile=/tmp/smb.conf");
+	eval("/usr/sbin/nmbd", "-D", conffile);
 	if (pidof("nmbd") <= 0) {
-		eval("/usr/sbin/nmbd", "-D", "--configfile=/tmp/smb.conf");
+		eval("/usr/sbin/nmbd", "-D", conffile);
 	}
 	if (pidof("smbd") <= 0) {
 #ifdef HAVE_SMP
-		if (eval("/usr/bin/taskset", "0x2", "/usr/sbin/smbd", "-D", "--configfile=/tmp/smb.conf"))
+		if (eval("/usr/bin/taskset", "0x2", "/usr/sbin/smbd", "-D", conffile))
 #endif
-			eval("/usr/sbin/smbd", "-D", "--configfile=/tmp/smb.conf");
+			eval("/usr/sbin/smbd", "-D", conffile);
 	}
 	syslog(LOG_INFO, "Samba3 : samba started\n");
 
