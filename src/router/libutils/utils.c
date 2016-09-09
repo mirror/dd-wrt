@@ -1093,6 +1093,7 @@ void setRouter(char *name)
 #else
 	if (name)
 		nvram_set(NVROUTER, name);
+#endif
 #elif HAVE_ESPOD
 	if (name)
 		nvram_set("DD_BOARD2", name);
