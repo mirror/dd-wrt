@@ -98,6 +98,8 @@ struct nvram_param srouter_defaults[] = {
 	{"router_style", "eneo"},
 #elif HAVE_ONNET
 	{"router_style", "onnet"},
+#elif HAVE_RAYTRONIK
+	{"router_style", "raytronik"},
 #elif HAVE_KORENRON
 	{"router_style", "korenron"},
 #elif HAVE_TESTEM
@@ -273,6 +275,8 @@ struct nvram_param srouter_defaults[] = {
 #elif HAVE_AXTEL
 	{"lan_ipaddr", "192.168.11.1"},	/* LAN IP address */
 	{"ath0_regdomain", "MEXICO"},	/* LAN IP address */
+#elif HAVE_RAYTRONIK
+	{"lan_ipaddr", "10.0.0.1"},	/* LAN IP address */
 #else
 	{"lan_ipaddr", "192.168.1.1"},	/* LAN IP address */
 #endif
@@ -1065,6 +1069,9 @@ struct nvram_param srouter_defaults[] = {
 	{"ath0_ssid", "OTAi"},
 	{"ath1_ssid", "OTAi_1"},
 #endif
+#elif defined(HAVE_RAYTRONIK)
+	{"ath0_ssid", "raytronik"},
+	{"ath1_ssid", "raytronik"},
 #elif defined(HAVE_GGEW) && defined(HAVE_NS5)
 	{"ath0_ssid", "GGEWnet-WLAN"},	/* Service set ID (network name) */
 #elif defined(HAVE_GGEW) && defined(HAVE_EOC5610)
@@ -1683,6 +1690,8 @@ struct nvram_param srouter_defaults[] = {
 	{"router_name", "Enterprise AP"},
 #elif  HAVE_ONNET
 	{"router_name", "OTAi"},
+#elif  HAVE_RAYTRONIK
+	{"router_name", "RN-150M"},
 #elif  HAVE_DDLAN
 	{"router_name", "WDSL-Modem XXX"},
 #elif  HAVE_TMK
@@ -3597,7 +3606,7 @@ struct nvram_param srouter_defaults[] = {
 #ifdef HAVE_ROUTERSTYLE
 	{"router_style_dark", "0"},
 #endif
-#ifdef HAVE_ONNET
+#if defined(HAVE_ONNET) || defined(HAVE_RAYTRONIK)
 	{"radius_country", "ARE"},
 	{"radius_state", "none"},
 	{"radius_locality", "none"},
