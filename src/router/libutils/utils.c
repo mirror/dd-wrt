@@ -1086,6 +1086,13 @@ void setRouter(char *name)
 	if (name)
 		nvram_set(NVROUTER, name);
 #endif
+#elif HAVE_RAYTRONIK
+#ifdef HAVE_AC722
+	nvram_set("DD_BOARD", "RN-150M");
+	nvram_set("DD_BOARD2", "RN-150M");
+#else
+	if (name)
+		nvram_set(NVROUTER, name);
 #elif HAVE_ESPOD
 	if (name)
 		nvram_set("DD_BOARD2", name);
