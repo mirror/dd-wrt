@@ -57,9 +57,7 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.remoteIP)</script></div>\n");
 		websWrite(wp, "<input type=\"hidden\" name=\"oet%d_rem\" value=\"0.0.0.0\"/>\n", tun);
 		sprintf(temp, "oet%d_rem", tun);
-		websWrite(wp,
-			  "<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_0\" onblur=\"valid_range(this,0,255,eoip.remoteIP)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_1\" onblur=\"valid_range(this,0,255,eoip.tunnelID)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_2\" onblur=\"valid_range(this,0,255,eoip.tunnelID)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_3\" onblur=\"valid_range(this,1,254,eoip.tunnelID)\" value=\"%d\" />\n",
-			  temp, get_single_ip(nvram_safe_get(temp), 0), temp, get_single_ip(nvram_safe_get(temp), 1), temp, get_single_ip(nvram_safe_get(temp), 2), temp, get_single_ip(nvram_safe_get(temp), 3));
+		show_ip(wp, NULL, temp, 0, "eoip.remoteIP");
 		websWrite(wp, "</div>\n");
 /*
 	websWrite( wp, "<div class=\"setting\">\n" );
@@ -148,17 +146,13 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(share.ip)</script></div>\n");
 		websWrite(wp, "<input type=\"hidden\" name=\"oet%d_ipaddr\" value=\"0.0.0.0\"/>\n", tun);
 		sprintf(temp, "oet%d_ipaddr", tun);
-		websWrite(wp,
-			  "<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_0\" onblur=\"valid_range(this,0,255,share.ip)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_1\" onblur=\"valid_range(this,0,255,share.ip)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_2\" onblur=\"valid_range(this,0,255,share.ip)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_3\" onblur=\"valid_range(this,1,254,share.ip)\" value=\"%d\" />\n",
-			  temp, get_single_ip(nvram_safe_get(temp), 0), temp, get_single_ip(nvram_safe_get(temp), 1), temp, get_single_ip(nvram_safe_get(temp), 2), temp, get_single_ip(nvram_safe_get(temp), 3));
+		show_ip(wp, NULL, temp, 0, "share.ip");
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(share.subnet)</script></div>\n");
 		websWrite(wp, "<input type=\"hidden\" name=\"oet%d_netmask\" value=\"0.0.0.0\"/>\n", tun);
 		sprintf(temp, "oet%d_netmask", tun);
-		websWrite(wp,
-			  "<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_0\" onblur=\"valid_range(this,0,255,share.subnet)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_1\" onblur=\"valid_range(this,0,255,share.subnet)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_2\" onblur=\"valid_range(this,0,255,share.subnet)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_3\" onblur=\"valid_range(this,0,254,share.subnet)\" value=\"%d\" />\n",
-			  temp, get_single_ip(nvram_safe_get(temp), 0), temp, get_single_ip(nvram_safe_get(temp), 1), temp, get_single_ip(nvram_safe_get(temp), 2), temp, get_single_ip(nvram_safe_get(temp), 3));
+		show_ip(wp, NULL, temp, 1, "share.subnet");
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "</div>\n");

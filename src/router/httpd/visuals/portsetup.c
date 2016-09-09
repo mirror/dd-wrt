@@ -142,14 +142,9 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<div id=\"%s_idredirect\">\n", layer);
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(idx.dns_redirect)</script></div>\n");
-		char dnsip[32];
-		sprintf(dnsip, "%s_dns_ipaddr", var);
-		char *ipv = nvram_default_get(dnsip, "0.0.0.0");
 		websWrite(wp, "<input type=\"hidden\" name=\"%s_dns_ipaddr\" value=\"4\" />\n", var);
-		websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,223,share.ip)\" name=\"%s_dns_ipaddr_0\" value=\"%d\" />.", var, get_single_ip(ipv, 0));
-		websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.ip)\" name=\"%s_dns_ipaddr_1\" value=\"%d\" />.", var, get_single_ip(ipv, 1));
-		websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.ip)\" name=\"%s_dns_ipaddr_2\" value=\"%d\" />.", var, get_single_ip(ipv, 2));
-		websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.ip)\" name=\"%s_dns_ipaddr_3\" value=\"%d\" />\n", var, get_single_ip(ipv, 3));
+		show_ip(wp, var, "dns_ipaddr", 0, "share.ip");
+
 		websWrite(wp, "</div>\n");
 
 		websWrite(wp, "</div>\n");
