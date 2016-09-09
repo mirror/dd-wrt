@@ -1224,13 +1224,13 @@ int internal_getRouterBrand()
 		return ROUTER_LINKSYS_EA6900;
 	}
 
-	if (nvram_match("boardtype", "0x0646") && nvram_match("boardrev", "0x1100") && nvram_matchi("boardnum", 01) && !strncmp(nvram_safe_get("modelNumber"), "EA6400", 6)) {
+	if (nvram_match("boardtype", "0x0646") && nvram_match("boardrev", "0x1100") && nvram_match("boardnum", "01") && !strncmp(nvram_safe_get("modelNumber"), "EA6400", 6)) {
 		setRouter("Linksys EA6400");
 
 		return ROUTER_LINKSYS_EA6400;
 	}
 
-	if (nvram_match("boardtype", "0x0646") && nvram_match("boardrev", "0x1100") && nvram_matchi("boardnum", 01) && !strncmp(nvram_safe_get("modelNumber"), "EA6300", 6)) {
+	if (nvram_match("boardtype", "0x0646") && nvram_match("boardrev", "0x1100") && nvram_match("boardnum", "01") && !strncmp(nvram_safe_get("modelNumber"), "EA6300", 6)) {
 		setRouter("Linksys EA6300");
 
 		return ROUTER_LINKSYS_EA6400;
@@ -3251,7 +3251,7 @@ int internal_getRouterBrand()
 #endif
 
 #endif
-	if (nvram_matchi("boardnum", 00) && nvram_match("boardtype", "0x0101")
+	if (nvram_match("boardnum", "00") && nvram_match("boardtype", "0x0101")
 	    && nvram_match("boardrev", "0x10")) {
 		setRouter("Buffalo WBR2-G54 / WBR2-G54S");
 		return ROUTER_BUFFALO_WBR2G54S;
@@ -3273,7 +3273,7 @@ int internal_getRouterBrand()
 		return ROUTER_BUFFALO_WAPM_HP_AM54G54;
 	}
 
-	if (nvram_matchi("boardnum", 00) && nvram_match("boardrev", "0x11")
+	if (nvram_match("boardnum", "00") && nvram_match("boardrev", "0x11")
 	    && nvram_match("boardtype", "0x048e") && melco_id == 32093) {
 		setRouter("Buffalo WHR-G125");
 		return ROUTER_BUFFALO_WHRG54S;
@@ -3285,19 +3285,19 @@ int internal_getRouterBrand()
 		return ROUTER_HUAWEI_B970B;
 	}
 
-	if (nvram_matchi("boardnum", 00) && nvram_match("boardrev", "0x10")
+	if (nvram_match("boardnum", "00") && nvram_match("boardrev", "0x10")
 	    && nvram_match("boardtype", "0x048e") && melco_id == 32139) {
 		setRouter("Buffalo WCA-G");
 		return ROUTER_BUFFALO_WCAG;	//vlan1 is lan, vlan0 is unused, implementation not done. will me made after return to germany
 	}
 
-	if (nvram_matchi("boardnum", 00) && nvram_match("boardrev", "0x11")
+	if (nvram_match("boardnum", "00") && nvram_match("boardrev", "0x11")
 	    && nvram_match("boardtype", "0x048e") && melco_id == 32064) {
 		setRouter("Buffalo WHR-HP-G125");
 		return ROUTER_BUFFALO_WHRG54S;
 	}
 
-	if (nvram_matchi("boardnum", 00) && nvram_match("boardrev", "0x13")
+	if (nvram_match("boardnum", "00") && nvram_match("boardrev", "0x13")
 	    && nvram_match("boardtype", "0x467")) {
 		if (nvram_match("boardflags", "0x1658")
 		    || nvram_match("boardflags", "0x2658")
@@ -3325,7 +3325,7 @@ int internal_getRouterBrand()
 		}
 	}
 
-	if (nvram_matchi("boardnum", 00) && nvram_match("boardrev", "0x10")
+	if (nvram_match("boardnum", "00") && nvram_match("boardrev", "0x10")
 	    && nvram_match("boardtype", "0x470")) {
 		setRouter("Buffalo WHR-AM54G54");
 		return ROUTER_BUFFALO_WHRAM54G54;
@@ -3926,7 +3926,7 @@ int internal_getRouterBrand()
 		return ROUTER_LINKSYS_WRH54G;
 	}
 
-	if (nvram_matchi("boardnum", 00) && nvram_match("boardtype", "0x048E")
+	if (nvram_match("boardnum", "00") && nvram_match("boardtype", "0x048E")
 	    && nvram_match("boardrev", "0x10")) {
 		setRouter("Linksys WRT54G v8.1");
 		return ROUTER_WRT54G_V81;
@@ -4000,13 +4000,13 @@ int internal_getRouterBrand()
 		return ROUTER_NETGEAR_WNR3500LV2;
 	}
 
-	if (nvram_matchi("boardnum", 01) && nvram_match("boardtype", "0xb4cf")
+	if (nvram_match("boardnum", "01") && nvram_match("boardtype", "0xb4cf")
 	    && nvram_match("boardrev", "0x1100")) {
 		setRouter("Netgear WNDR3400");
 		return ROUTER_NETGEAR_WNDR3400;
 	}
 
-	if (nvram_matchi("boardnum", 01) && nvram_match("boardtype", "0xF52C")
+	if (nvram_match("boardnum", "01") && nvram_match("boardtype", "0xF52C")
 	    && nvram_match("boardrev", "0x1101")) {
 
 		int mtd = getMTD("board_data");
