@@ -87,6 +87,7 @@ var update;
 addEvent(window, "load", function() {
 	
 	show_layer_ext(document.static.ospfd_copt, 'idospfd', <% nvem("ospfd_copt", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.static.ripd_copt, 'idripd', <% nvem("ripd_copt", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.static.zebra_copt, 'idzebra', <% nvem("zebra_copt", "1", "1", "0"); %> == 1);
 	
 	update = new StatusbarUpdate();
@@ -171,7 +172,25 @@ addEvent(window, "unload", function() {
 							</fieldset><br/>							
 							<% has_routing("bgp","-->"); %>
 							<% has_routing("router","<!--"); %>
-
+							<legend><% tran("route.rip2_legend"); %></legend>
+							<div class="setting">
+								<div class="label"><% tran("route.rip2_copt"); %></div>
+								<input class="spaceradio" type="radio" value="1" name="ripd_copt" <% nvc("ripd_copt","1"); %> onclick="show_layer_ext(this, 'idripd', true)" /><% tran("route.copt_gui"); %>&nbsp;
+								<input class="spaceradio" type="radio" value="0" name="ripd_copt" <% nvc("ripd_copt","0"); %> onclick="show_layer_ext(this, 'idripd', false)" /><% tran("route.copt_vtysh"); %>
+							</div>
+							<div id="idripd">
+								<div class="setting">
+								    <div class="label"><% tran("route.ripd_conf"); %></div>
+								    <textarea cols="60" rows="12" id="ripd_conf" name="ripd_conf"></textarea>
+								    <script type="text/javascript">
+								    //<![CDATA[
+								    var ospfd_conf = fix_cr( '<% nvg("ripd_conf"); %>' );
+								    document.getElementById("ripd_conf").value = ripd_conf;
+								    //]]>
+								    </script>
+								</div>
+							</div>
+							</fieldset><br />
 							<% has_routing("router","-->"); %>
 							<% has_routing("zebra","<!--"); %>
 							<fieldset>
