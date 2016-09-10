@@ -173,6 +173,7 @@ addEvent(window, "unload", function() {
 							<% has_routing("bgp","-->"); %>
 							<% has_routing("router","<!--"); %>
 							<legend><% tran("route.rip2_legend"); %></legend>
+							<fieldset>
 							<div class="setting">
 								<div class="label"><% tran("route.rip2_copt"); %></div>
 								<input class="spaceradio" type="radio" value="1" name="ripd_copt" <% nvc("ripd_copt","1"); %> onclick="show_layer_ext(this, 'idripd', true)" /><% tran("route.copt_gui"); %>&nbsp;
@@ -180,7 +181,7 @@ addEvent(window, "unload", function() {
 							</div>
 							<div id="idripd">
 								<div class="setting">
-								    <div class="label"><% tran("route.ripd_conf"); %></div>
+								    <div class="label"><% tran("route.rip2_conf"); %></div>
 								    <textarea cols="60" rows="12" id="ripd_conf" name="ripd_conf"></textarea>
 								    <script type="text/javascript">
 								    //<![CDATA[
