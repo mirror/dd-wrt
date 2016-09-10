@@ -113,6 +113,9 @@ endif
 ifeq ($(CONFIG_STORM),y)
 OPENSSL_OPTIONS:= no-err no-hw threads no-sse2 no-perlasm zlib-dynamic -DHAVE_CRYPTODEV
 endif
+ifeq ($(CONFIG_VENTANA),y)
+OPENSSL_OPTIONS:= no-err no-hw threads no-sse2 no-perlasm zlib-dynamic -DHAVE_CRYPTODEV
+endif
 
 
 
