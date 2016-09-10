@@ -29,7 +29,7 @@ lighttpd: openssl
 	make -C lighttpd 
 
 lighttpd-clean:
-	make -C lighttpd clean
+	-make -C lighttpd clean
 
 lighttpd-install:
 	install -D lighttpd/src/.libs/lighttpd $(INSTALLDIR)/lighttpd/usr/sbin/lighttpd
