@@ -445,7 +445,8 @@ static int zebra_ripd_init(void)
 		return errno;
 	}
 
-	if (nvram_matchi("ripd_copt", 1)) {
+	if (nvram_matchi("ripd_copt", 1)
+	    && strlen(nvram_safe_get("ripd_conf"))) {
 		fwritenvram("ripd_conf", fp);
 	} else {
 

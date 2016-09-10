@@ -1536,12 +1536,17 @@ route.bird_legend="Bird Configuration";
 route.bird_log="Bird Log";
 route.bird_copt="Bird Config Style";
 route.ospf_mod="OSPF Router";
-route.ospf_rip2_mod="OSPF & RIP2-Router";
 route.ospf_legend="OSPF Routing";
 route.ospf_conf="OSPF Configuration";
 route.ospf_copt="OSPF Config Style";
 route.copt_gui="GUI";
 route.copt_vtysh="Vtysh";
+
+route.ospf_rip2_mod="OSPF & RIP2-Router";
+route.rip2_legend="RIP2 Routing";
+route.rip2_conf="RIP2 Configuration";
+route.rip2_copt="RIP2 Config Style";
+
 route.gateway_legend="Dynamic Routing";
 route.static_legend="Static Routing";
 route.static_setno="Select set number";

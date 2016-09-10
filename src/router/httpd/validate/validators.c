@@ -1615,10 +1615,12 @@ void validate_dynamic_route(webs_t wp, char *value, struct variable *v)
 	else
 		nvram_seti("dyn_default", 0);
 
-	if (nvram_match("wk_mode", "ospf") || nvram_match("wk_mode", "router")) {
+	if (nvram_match("wk_mode", "ospf") || nvram_match("wk_mode", "router") || nvram_match("wk_mode", "ospf router")) {
 		nvram_set("zebra_conf", websGetVar(wp, "zebra_conf", ""));
 		nvram_set("ospfd_conf", websGetVar(wp, "ospfd_conf", ""));
+		nvram_set("ripd_conf", websGetVar(wp, "ripd_conf", ""));
 		nvram_set("zebra_copt", websGetVar(wp, "zebra_copt", "0"));
+		nvram_set("ripd_copt", websGetVar(wp, "ripd_copt", "0"));
 		nvram_set("ospfd_copt", websGetVar(wp, "ospfd_copt", "0"));
 	}
 	/*
