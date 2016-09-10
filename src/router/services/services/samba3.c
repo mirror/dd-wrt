@@ -197,10 +197,10 @@ void start_samba3(void)
 	
 	fp = fopen("/jffs/etc/smb.conf", "r");	//test if custom config is available
 	if (fp != NULL) {
-		strcpy(conffile, "--configfile=\/jffs\/etc\/smb.conf");
+		strcpy(conffile, "--configfile=/jffs/etc/smb.conf");
 		fclose(fp);
 	} else {
-		strcpy(conffile, "--configfile=\/tmp\/smb.conf");
+		strcpy(conffile, "--configfile=/tmp/smb.conf");
 	}
 
 #ifdef HAVE_SMP
