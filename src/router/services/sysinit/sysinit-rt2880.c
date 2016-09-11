@@ -292,7 +292,7 @@ void start_sysinit(void)
 #endif
 #endif
 
-#ifdef HAVE_RUT500
+#ifdef NAVE_RUT500
 		eval("switch", "reg", "w", "14", "7f5555");
 		eval("switch", "reg", "w", "50", "2001");
 		eval("switch", "reg", "w", "90", "7f7f");
@@ -305,14 +305,14 @@ void start_sysinit(void)
 #elif defined(HAVE_ALLNET11N) || defined(HAVE_ESR6650) || defined(HAVE_WR5422) || defined(HAVE_RT10N) || \
     defined(HAVE_ACXNR22) || defined(HAVE_W502U) || defined(HAVE_ESR9752) || defined(HAVE_ALL02310N)
 		eval("switch", "reg", "w", "14", "405555");
-		eval("switch", "reg", "w", "50", "2001");
-		eval("switch", "reg", "w", "90", "7f7f");
-		eval("switch", "reg", "w", "98", "7f3f");
-		eval("switch", "reg", "w", "e4", "3f");
 		eval("switch", "reg", "w", "40", "1002");
 		eval("switch", "reg", "w", "44", "1001");
 		eval("switch", "reg", "w", "48", "1001");
+		eval("switch", "reg", "w", "50", "2001");
 		eval("switch", "reg", "w", "70", "ffff417e");
+		eval("switch", "reg", "w", "90", "7f7f");
+		eval("switch", "reg", "w", "98", "7f3f");
+		eval("switch", "reg", "w", "e4", "3f");
 #ifdef HAVE_ESR9752
 		eval("switch", "reg", "w", "c8", "3f502b28");
 #endif
@@ -333,15 +333,15 @@ void start_sysinit(void)
 #elif HAVE_BR6574N
 #elif HAVE_F5D8235
 		eval("switch", "reg", "w", "14", "405555");
-		eval("switch", "reg", "w", "50", "2001");
-		eval("switch", "reg", "w", "90", "7f7f");
-		eval("switch", "reg", "w", "98", "7f40");
 		eval("switch", "reg", "w", "e4", "20");
 		eval("switch", "reg", "w", "40", "1001");
 		eval("switch", "reg", "w", "44", "1001");
 		eval("switch", "reg", "w", "48", "1001");
+		eval("switch", "reg", "w", "50", "2001");
 		eval("switch", "reg", "w", "4c", "1");
 		eval("switch", "reg", "w", "70", "ffffffff");
+		eval("switch", "reg", "w", "90", "7f7f");
+		eval("switch", "reg", "w", "98", "7f40");
 #elif HAVE_EAP9550
 		eval("switch", "reg", "w", "14", "5555");
 		eval("switch", "reg", "w", "40", "1001");
