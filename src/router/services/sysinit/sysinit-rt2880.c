@@ -84,7 +84,7 @@ void start_sysinit(void)
 	/*
 	 * Set a sane date 
 	 */
-	if (!nvram_matchi("disable_watchdog",1)) {
+	if (!nvram_matchi("disable_watchdog", 1)) {
 		insmod("mt7621_wdt");
 		eval("watchdog");
 	}
@@ -293,15 +293,15 @@ void start_sysinit(void)
 #endif
 
 #ifdef HAVE_RUT500
-		eval("switch", "reg", "w", "14", "405555");
+		eval("switch", "reg", "w", "14", "7f5555");
 		eval("switch", "reg", "w", "50", "2001");
 		eval("switch", "reg", "w", "90", "7f7f");
-		eval("switch", "reg", "w", "98", "7f3f");
-		eval("switch", "reg", "w", "e4", "3f");
-		eval("switch", "reg", "w", "40", "1001");
+		eval("switch", "reg", "w", "98", "7f1f");
+		eval("switch", "reg", "w", "e4", "0");
+		eval("switch", "reg", "w", "40", "1002");
 		eval("switch", "reg", "w", "44", "1001");
-		eval("switch", "reg", "w", "48", "1002");
-		eval("switch", "reg", "w", "70", "ffff506f");
+		eval("switch", "reg", "w", "48", "0001");
+		eval("switch", "reg", "w", "70", "0000415e");
 #elif defined(HAVE_ALLNET11N) || defined(HAVE_ESR6650) || defined(HAVE_WR5422) || defined(HAVE_RT10N) || \
     defined(HAVE_ACXNR22) || defined(HAVE_W502U) || defined(HAVE_ESR9752) || defined(HAVE_ALL02310N)
 		eval("switch", "reg", "w", "14", "405555");
@@ -434,7 +434,17 @@ char *enable_dtag_vlan(int enable)
 			// now we got vlan7, how do we trunk now. lets find out
 			return "eth2";
 		} else {
-#if !defined(HAVE_AR670W) && !defined(HAVE_BR6574N) && !defined(HAVE_F5D8235)
+#ifdef NAVE_RUT500
+			eval("switch", "reg", "w", "14", "7f5555");
+			eval("switch", "reg", "w", "50", "2001");
+			eval("switch", "reg", "w", "90", "7f7f");
+			eval("switch", "reg", "w", "98", "7f1f");
+			eval("switch", "reg", "w", "e4", "0");
+			eval("switch", "reg", "w", "40", "1002");
+			eval("switch", "reg", "w", "44", "1001");
+			eval("switch", "reg", "w", "48", "0001");
+			eval("switch", "reg", "w", "70", "0000415e");
+#elif !defined(HAVE_AR670W) && !defined(HAVE_BR6574N) && !defined(HAVE_F5D8235)
 			eval("switch", "reg", "w", "14", "405555");
 			eval("switch", "reg", "w", "50", "2001");
 			eval("switch", "reg", "w", "90", "7f7f");
