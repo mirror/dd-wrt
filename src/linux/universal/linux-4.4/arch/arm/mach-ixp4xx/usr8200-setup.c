@@ -30,6 +30,7 @@
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>
 #include <asm/mach/flash.h>
+#include <mach/hardware.h>
 
 static struct flash_platform_data usr8200_flash_data = {
 	.map_name	= "cfi_probe",
