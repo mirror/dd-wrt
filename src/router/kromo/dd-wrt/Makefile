@@ -516,7 +516,7 @@ endif
 
 ifeq ($(CONFIG_RAYTRONIK),y)
 	mkdir $(INSTALLDIR)/www/style/raytronik
-	cp raytronik/style.css $(INSTALLDIR)/www/style/raytroniki
+	cp raytronik/style.css $(INSTALLDIR)/www/style/raytronik
 	cp onnet/images/* $(INSTALLDIR)/www/images
 endif
 
