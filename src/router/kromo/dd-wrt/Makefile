@@ -514,6 +514,12 @@ ifeq ($(CONFIG_ONNET),y)
   endif
 endif
 
+ifeq ($(CONFIG_RAYTRONIK),y)
+	mkdir $(INSTALLDIR)/www/style/raytronik
+	cp raytronik/style.css $(INSTALLDIR)/www/style/raytroniki
+	cp onnet/images/* $(INSTALLDIR)/www/images
+endif
+
 ifeq ($(CONFIG_GLAUCO),y)
 	cp -f glauco/logo.png $(INSTALLDIR)/www/style
 	cp -f glauco/logo-help.png $(INSTALLDIR)/www/help/logo-help.png
