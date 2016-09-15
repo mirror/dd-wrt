@@ -504,6 +504,9 @@ endif
 ifeq ($(CONFIG_ONNET_BLANK),y)
 CFLAGS += -DHAVE_ONNET_BLANK
 endif
+ifeq ($(CONFIG_RAYTRONIK),y)
+CFLAGS += -DHAVE_RAYTRONIK
+endif
 ifeq ($(CONFIG_VILIM),y)
 CFLAGS += -DHAVE_VILIM
 endif
