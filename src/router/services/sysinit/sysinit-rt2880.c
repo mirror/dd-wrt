@@ -292,16 +292,31 @@ void start_sysinit(void)
 #endif
 #endif
 
-#ifdef NAVE_RUT500
+#ifdef HAVE_RUT500
 		eval("switch", "reg", "w", "14", "7f5555");
-		eval("switch", "reg", "w", "50", "2001");
-		eval("switch", "reg", "w", "90", "7f7f");
-		eval("switch", "reg", "w", "98", "7f1f");
-		eval("switch", "reg", "w", "e4", "0");
 		eval("switch", "reg", "w", "40", "1002");
 		eval("switch", "reg", "w", "44", "1001");
-		eval("switch", "reg", "w", "48", "0001");
-		eval("switch", "reg", "w", "70", "0000415e");
+		eval("switch", "reg", "w", "48", "1");
+		eval("switch", "reg", "w", "50", "2001");
+		eval("switch", "reg", "w", "54", "0");
+		eval("switch", "reg", "w", "58", "0");
+		eval("switch", "reg", "w", "5c", "0");
+		eval("switch", "reg", "w", "60", "0");
+		eval("switch", "reg", "w", "64", "0");
+		eval("switch", "reg", "w", "68", "0");
+		eval("switch", "reg", "w", "6c", "0");
+		eval("switch", "reg", "w", "70", "415e");
+		eval("switch", "reg", "w", "74", "0");
+		eval("switch", "reg", "w", "78", "0");
+		eval("switch", "reg", "w", "7c", "0");
+		eval("switch", "reg", "w", "90", "10007f7f");
+		eval("switch", "reg", "w", "98", "7f1f");
+		eval("switch", "reg", "w", "e4", "3e000000");
+		writeproc("/proc/rt3052/mii/ctrl", "write 0 0 0x3300");
+		writeproc("/proc/rt3052/mii/ctrl", "write 1 0 0x3300");
+		writeproc("/proc/rt3052/mii/ctrl", "write 2 0 0x3300");
+		writeproc("/proc/rt3052/mii/ctrl", "write 3 0 0x3300");
+		writeproc("/proc/rt3052/mii/ctrl", "write 4 0 0x3300");
 #elif defined(HAVE_ALLNET11N) || defined(HAVE_ESR6650) || defined(HAVE_WR5422) || defined(HAVE_RT10N) || \
     defined(HAVE_ACXNR22) || defined(HAVE_W502U) || defined(HAVE_ESR9752) || defined(HAVE_ALL02310N)
 		eval("switch", "reg", "w", "14", "405555");
@@ -434,16 +449,26 @@ char *enable_dtag_vlan(int enable)
 			// now we got vlan7, how do we trunk now. lets find out
 			return "eth2";
 		} else {
-#ifdef NAVE_RUT500
+#ifdef HAVE_RUT500
 			eval("switch", "reg", "w", "14", "7f5555");
-			eval("switch", "reg", "w", "50", "2001");
-			eval("switch", "reg", "w", "90", "7f7f");
-			eval("switch", "reg", "w", "98", "7f1f");
-			eval("switch", "reg", "w", "e4", "0");
 			eval("switch", "reg", "w", "40", "1002");
 			eval("switch", "reg", "w", "44", "1001");
-			eval("switch", "reg", "w", "48", "0001");
-			eval("switch", "reg", "w", "70", "0000415e");
+			eval("switch", "reg", "w", "48", "1");
+			eval("switch", "reg", "w", "50", "2001");
+			eval("switch", "reg", "w", "54", "0");
+			eval("switch", "reg", "w", "58", "0");
+			eval("switch", "reg", "w", "5c", "0");
+			eval("switch", "reg", "w", "60", "0");
+			eval("switch", "reg", "w", "64", "0");
+			eval("switch", "reg", "w", "68", "0");
+			eval("switch", "reg", "w", "6c", "0");
+			eval("switch", "reg", "w", "70", "415e");
+			eval("switch", "reg", "w", "74", "0");
+			eval("switch", "reg", "w", "78", "0");
+			eval("switch", "reg", "w", "7c", "0");
+			eval("switch", "reg", "w", "90", "10007f7f");
+			eval("switch", "reg", "w", "98", "7f1f");
+			eval("switch", "reg", "w", "e4", "3e000000");
 #elif !defined(HAVE_AR670W) && !defined(HAVE_BR6574N) && !defined(HAVE_F5D8235)
 			eval("switch", "reg", "w", "14", "405555");
 			eval("switch", "reg", "w", "50", "2001");
