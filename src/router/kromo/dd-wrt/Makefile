@@ -519,6 +519,7 @@ ifeq ($(CONFIG_RAYTRONIK),y)
 	cp raytronik/style.css $(INSTALLDIR)/www/style/raytronik
 	cp raytronik/images/* $(INSTALLDIR)/www/images
 	cp raytronik/About.htm $(INSTALLDIR)/www
+	cp raytronik/help/* $(INSTALLDIR)/www/help
 endif
 
 ifeq ($(CONFIG_GLAUCO),y)
