@@ -1,3 +1,0 @@
-#!/bin/sh
-
-wl -i $1 assoclist | wc -l
