@@ -30,20 +30,20 @@ $page['type'] = detect_page_type(PAGE_TYPE_IMAGE);
 require_once dirname(__FILE__).'/include/page_header.php';
 
 //	VAR		TYPE	OPTIONAL 	FLAGS	VALIDATION	EXCEPTION
-$fields = array(
-	'css' =>		array(T_ZBX_INT, O_OPT, P_SYS, null,				null),
-	'imageid' =>	array(T_ZBX_STR, O_OPT, P_SYS, null,				null),
-	'iconid' =>		array(T_ZBX_INT, O_OPT, P_SYS, DB_ID,				null),
-	'width' =>		array(T_ZBX_INT, O_OPT, P_SYS, BETWEEN(1, 2000),	null),
-	'height' =>		array(T_ZBX_INT, O_OPT, P_SYS, BETWEEN(1, 2000),	null),
-);
+$fields = [
+	'css' =>		[T_ZBX_INT, O_OPT, P_SYS, null,				null],
+	'imageid' =>	[T_ZBX_STR, O_OPT, P_SYS, null,				null],
+	'iconid' =>		[T_ZBX_INT, O_OPT, P_SYS, DB_ID,				null],
+	'width' =>		[T_ZBX_INT, O_OPT, P_SYS, BETWEEN(1, 2000),	null],
+	'height' =>		[T_ZBX_INT, O_OPT, P_SYS, BETWEEN(1, 2000),	null],
+];
 check_fields($fields);
 
 $resize = false;
 if (isset($_REQUEST['width']) || isset($_REQUEST['height'])) {
 	$resize = true;
-	$width = get_request('width', 0);
-	$height = get_request('height', 0);
+	$width = getRequest('width', 0);
+	$height = getRequest('height', 0);
 }
 
 if (isset($_REQUEST['css'])) {
@@ -52,11 +52,11 @@ if (isset($_REQUEST['css'])) {
 			' width: 50px;'.
 			' background-image: url("images/general/no_icon.png"); }'."\n";
 
-	$images = API::Image()->get(array(
-		'output' => array('imageid'),
-		'filter' => array('imagetype' => IMAGE_TYPE_ICON),
+	$images = API::Image()->get([
+		'output' => ['imageid'],
+		'filter' => ['imagetype' => IMAGE_TYPE_ICON],
 		'select_image' => true
-	));
+	]);
 	foreach ($images as $image) {
 		$image['image'] = base64_decode($image['image']);
 		$ico = imagecreatefromstring($image['image']);
@@ -75,12 +75,12 @@ if (isset($_REQUEST['css'])) {
 	echo $css;
 }
 elseif (isset($_REQUEST['iconid'])) {
-	$iconid = get_request('iconid', 0);
+	$iconid = getRequest('iconid', 0);
 
 	if ($iconid > 0) {
 		$image = get_image_by_imageid($iconid);
-		$image = $image['image'];
-		$source = imageFromString($image);
+
+		$source = $image['image'] ? imageFromString($image['image']) : get_default_image();
 	}
 	else {
 		$source = get_default_image();
@@ -89,17 +89,20 @@ elseif (isset($_REQUEST['iconid'])) {
 	if ($resize) {
 		$source = imageThumb($source, $width, $height);
 	}
+
 	imageOut($source);
 }
 elseif (isset($_REQUEST['imageid'])) {
-	$imageid = get_request('imageid', 0);
+	$imageid = getRequest('imageid', 0);
 
-	session_start();
-	if (isset($_SESSION['image_id'][$imageid])) {
-		echo $_SESSION['image_id'][$imageid];
-		unset($_SESSION['image_id'][$imageid]);
+	if (CSession::keyExists('image_id')) {
+		$image_data = CSession::getValue('image_id');
+		if (array_key_exists($imageid, $image_data)) {
+			echo $image_data[$imageid];
+			unset($image_data[$imageid]);
+			CSession::setValue('image_id', $image_data);
+		}
 	}
-	session_write_close();
 }
 
 require_once dirname(__FILE__).'/include/page_footer.php';

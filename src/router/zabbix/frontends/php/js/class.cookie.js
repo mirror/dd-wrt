@@ -22,19 +22,11 @@ var cookie = {
 	prefix:	null,
 
 	init: function() {
-		var path = new Curl();
-		var filename = basename(path.getPath(), '.php');
-		var cookieName = 'cb_' + filename + (this.prefix ? '_' + this.prefix : '');
 		var allCookies = document.cookie.split('; ');
 
 		for (var i = 0; i < allCookies.length; i++) {
 			var cookiePair = allCookies[i].split('=');
-			if (cookiePair[0].indexOf('cb_') > -1 && cookiePair[0].indexOf(cookieName) == -1) {
-				this.erase(cookiePair[0]);
-			}
-			else {
-				this.cookies[cookiePair[0]] = cookiePair[1];
-			}
+			this.cookies[cookiePair[0]] = cookiePair[1];
 		}
 	},
 
@@ -145,7 +137,7 @@ var cookie = {
 			list_part = this.read(name + '_' + part);
 			part++;
 		}
-		var range = list.split(',');
+		var range = (list != '') ? list.split(',') : [];
 		return range;
 	},
 
@@ -160,24 +152,12 @@ var cookie = {
 		return value_json;
 	},
 
-	printall: function() {
-		var allCookies = document.cookie.split('; ');
-		for (var i = 0; i < allCookies.length; i++) {
-			var cookiePair = allCookies[i].split('=');
-			SDI('[' + cookiePair[0] + '] is ' + cookiePair[1]); // assumes print is already defined
-		}
-	},
-
 	erase: function(name) {
 		this.create(name, '', -1);
 		this.cookies[name] = undefined;
 	},
 
 	eraseArray: function(name) {
-		if (name.indexOf('cb_') != 0) {
-			name = 'cb_' + name;
-		}
-
 		var partCount = parseInt(this.read(name + '_parts'), 10);
 
 		if (!is_null(partCount)) {

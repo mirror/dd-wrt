@@ -19,9 +19,9 @@ dnl
 
 dnl Process this file with autoconf to produce a configure script.
 
-AC_INIT([Zabbix],[2.2.12])
+AC_INIT([Zabbix],[3.2.0])
 AC_CONFIG_SRCDIR(src/zabbix_server/server.c)
-AM_INIT_AUTOMAKE([subdir-objects])
+AM_INIT_AUTOMAKE
 
 AC_MSG_NOTICE([Configuring $PACKAGE_NAME $PACKAGE_VERSION])
 
@@ -54,13 +54,13 @@ AC_CHECK_HEADERS(stdio.h stdlib.h string.h unistd.h netdb.h signal.h \
   sys/vfs.h sys/pstat.h sys/sysinfo.h sys/statvfs.h sys/statfs.h \
   sys/socket.h sys/loadavg.h arpa/inet.h \
   sys/vmmeter.h strings.h vm/vm_param.h \
-  sys/time.h kstat.h sys/syscall.h sys/sysmacros.h sys/procfs.h \
+  sys/time.h kstat.h sys/syscall.h sys/sysmacros.h \
   stdint.h mach/host_info.h mach/mach_host.h knlist.h pwd.h \
   sys/var.h arpa/nameser.h assert.h sys/dkstat.h sys/disk.h sys/sched.h \
   zone.h nlist.h kvm.h linux/kernel.h procinfo.h sys/dk.h \
   sys/resource.h pthread.h windows.h process.h conio.h sys/wait.h regex.h \
   stdarg.h winsock2.h pdh.h psapi.h sys/sem.h sys/ipc.h sys/shm.h Winldap.h \
-  sys/timeb.h Winber.h lber.h ws2tcpip.h inttypes.h sys/file.h grp.h \
+  Winber.h lber.h ws2tcpip.h inttypes.h sys/file.h grp.h \
   execinfo.h libperfstat.h sys/systemcfg.h sys/mnttab.h mntent.h sys/times.h \
   dlfcn.h sys/utsname.h)
 AC_CHECK_HEADERS(resolv.h, [], [], [
@@ -121,6 +121,15 @@ AC_CHECK_HEADERS(devstat.h, [], [], [
 #  include <sys/dkstat.h>
 #endif
 ])
+AC_CHECK_HEADERS(linux/netlink.h, [
+	AC_CHECK_HEADERS(linux/inet_diag.h, [
+		AC_DEFINE([HAVE_INET_DIAG], 1, [Define to 1 if you have NETLINK INET_DIAG support.])
+	])
+], [], [
+#ifdef HAVE_SYS_SOCKET_H
+#  include <sys/socket.h>
+#endif
+])
 
 dnl *****************************************************************
 dnl *                                                               *
@@ -146,15 +155,12 @@ AC_CHECK_LIB(m, main)
 AC_CHECK_LIB(kvm, main)
 
 dnl check for DNS lookup functions
-found_resolv="yes"
+found_resolv="no"
+LIBRESOLV_CHECK_CONFIG([no])
 if test "x$found_resolv" != "xyes"; then
 	AC_MSG_ERROR([Unable to do DNS lookups (libresolv check failed)])
 fi
 LIBS="${LIBS} ${RESOLV_LIBS}"
-AC_SEARCH_LIBS([res_mkquery], [], [AC_DEFINE([HAVE_RES_MKQUERY], 1, [Define if res_mkquery exists])])
-AC_SEARCH_LIBS([__res_mkquery], [], [AC_DEFINE([HAVE_RES_MKQUERY], 1, [Define if res_mkquery exists])])
-AC_SEARCH_LIBS([res_send], [], [AC_DEFINE([HAVE_RES_SEND], 1, [Define if res_send exists])])
-AC_SEARCH_LIBS([__res_send], [], [AC_DEFINE([HAVE_RES_SEND], 1, [Define if res_send exists])]) 
 
 dnl *****************************************************************
 dnl *                                                               *
@@ -1091,6 +1097,7 @@ have_snmp="no"
 have_ipmi="no"
 have_ipv6="no"
 have_ssh2="no"
+have_tls="no"
 
 if test "x$ipv6" = "xyes"; then
 	AC_DEFINE(HAVE_IPV6,1,[Define to 1 if IPv6 should be enabled.])
@@ -1133,7 +1140,7 @@ if test "x$server" = "xyes" || test "x$proxy" = "xyes"; then
 
 	dnl Checking for Oracle support
 	AX_LIB_ORACLE_OCI([10.0])
-	if test "x$WANT_ORACLE_OCI" = "xyes"; then
+	if test "x$want_oracle_oci" = "xyes"; then
 		if test "x$have_db" != "xno"; then
 			AC_MSG_ERROR([You can configure for only one database.])
 		fi
@@ -1144,10 +1151,6 @@ if test "x$server" = "xyes" || test "x$proxy" = "xyes"; then
 			ORACLE_CPPFLAGS="$ORACLE_OCI_CFLAGS"
 			ORACLE_LDFLAGS="$ORACLE_OCI_LDFLAGS"
 			ORACLE_LIBS="$ORACLE_OCI_LIBS"
-
-			AC_SUBST(ORACLE_CPPFLAGS)
-			AC_SUBST(ORACLE_LDFLAGS)
-			AC_SUBST(ORACLE_LIBS)
 
 			AC_DEFINE(HAVE_ORACLE,1,[Define to 1 if Oracle should be enabled.])
 		else
@@ -1180,7 +1183,7 @@ if test "x$server" = "xyes" || test "x$proxy" = "xyes"; then
 
 	dnl Checking for SQLite3 support
 	AX_LIB_SQLITE3()
-	if test "x$WANT_SQLITE3" = "xyes"; then
+	if test "x$want_sqlite3" = "xyes"; then
 		if test "x$have_db" != "xno"; then
 			AC_MSG_ERROR([You can configure for only one database.])
 		fi
@@ -1189,7 +1192,10 @@ if test "x$server" = "xyes" || test "x$proxy" = "xyes"; then
 			have_db="SQLite v3.x"
 
 			saved_CPPFLAGS="$CPPFLAGS"
-			CPPFLAGS="$CPPFLAGS $SQLITE3_CPPFLAGS $SQLITE3_LDFLAGS"
+			saved_LDFLAGS="$LDFLAGS"
+
+			CPPFLAGS="$CPPFLAGS $SQLITE3_CPPFLAGS"
+			LDFLAGS="$LDFLAGS $SQLITE3_LDFLAGS $SQLITE3_LIBS"
 
 			AC_MSG_CHECKING([for function sqlite3_open_v2() in sqlite3.h])
 			AC_TRY_LINK([#include <sqlite3.h>],
@@ -1201,6 +1207,7 @@ if test "x$server" = "xyes" || test "x$proxy" = "xyes"; then
 				AC_MSG_RESULT(no))
 
 			CPPFLAGS="$saved_CPPFLAGS"
+			LDFLAGS="$saved_LDFLAGS"
 		else
 			AC_MSG_ERROR([SQLite3 library not found])
 		fi
@@ -1222,15 +1229,14 @@ if test "x$server" = "xyes" || test "x$proxy" = "xyes"; then
 		AC_MSG_RESULT(no)
 	fi
 
-	DB_CPPFLAGS="$IBM_DB2_CPPFLAGS $MYSQL_CFLAGS $ORACLE_CPPFLAGS $POSTGRESQL_CFLAGS $SQLITE3_CPPFLAGS"
+	DB_CFLAGS="$IBM_DB2_CPPFLAGS $MYSQL_CFLAGS $ORACLE_CPPFLAGS $POSTGRESQL_CFLAGS $SQLITE3_CPPFLAGS"
 	DB_LDFLAGS="$IBM_DB2_LDFLAGS $MYSQL_LDFLAGS $ORACLE_LDFLAGS $POSTGRESQL_LDFLAGS $SQLITE3_LDFLAGS"
 	DB_LIBS="$IBM_DB2_LIBS $MYSQL_LIBS $ORACLE_LIBS $POSTGRESQL_LIBS $SQLITE3_LIBS"
-
-	AC_SUBST(DB_CPPFLAGS)
+	
+	AC_SUBST(DB_CFLAGS)
 	AC_SUBST(DB_LDFLAGS)
 	AC_SUBST(DB_LIBS)
 
-	CFLAGS="${CFLAGS} ${DB_CPPFLAGS}"
 	SERVER_LDFLAGS="${SERVER_LDFLAGS} ${DB_LDFLAGS}"
 	SERVER_LIBS="${SERVER_LIBS} ${DB_LIBS}"
 
@@ -1246,9 +1252,10 @@ if test "x$server" = "xyes" || test "x$proxy" = "xyes"; then
 			have_jabber="yes"
 		fi
 	fi
-	CFLAGS="$CFLAGS $JABBER_CPPFLAGS"
 	SERVER_LDFLAGS="$SERVER_LDFLAGS $JABBER_LDFLAGS"
 	SERVER_LIBS="$SERVER_LIBS $JABBER_LIBS"
+
+	AC_SUBST(JABBER_CPPFLAGS)
 
 	dnl Check for LIBXML2 [by default - skip]
 	LIBXML2_CHECK_CONFIG([no])
@@ -1259,27 +1266,29 @@ if test "x$server" = "xyes" || test "x$proxy" = "xyes"; then
 			have_libxml2="yes"
 		fi
 	fi
-	CFLAGS="$CFLAGS $LIBXML2_CFLAGS"
 	SERVER_LDFLAGS="$SERVER_LDFLAGS $LIBXML2_LDFLAGS"
 	SERVER_LIBS="$SERVER_LIBS $LIBXML2_LIBS"
 
 	PROXY_LDFLAGS="$PROXY_LDFLAGS $LIBXML2_LDFLAGS"
 	PROXY_LIBS="$PROXY_LIBS $LIBXML2_LIBS"
 
+	AC_SUBST(LIBXML2_CFLAGS)
+
 	dnl Checking for unixODBC support
 	LIBUNIXODBC_CHECK_CONFIG([no])
 	if test "x$want_unixodbc" = "xyes"; then
-		if test "x$found_unixodbc" != "xyes"; then
-			AC_MSG_ERROR($found_unixodbc)
+		if test "x$unixodbc_error" != "x"; then
+			AC_MSG_ERROR($unixodbc_error)
 		fi
 		have_unixodbc="yes"
 	fi
-	CFLAGS="$CFLAGS $UNIXODBC_CFLAGS"
 	SERVER_LDFLAGS="$SERVER_LDFLAGS $UNIXODBC_LDFLAGS"
 	SERVER_LIBS="$SERVER_LIBS $UNIXODBC_LIBS"
 
 	PROXY_LDFLAGS="$PROXY_LDFLAGS $UNIXODBC_LDFLAGS"
 	PROXY_LIBS="$PROXY_LIBS $UNIXODBC_LIBS"
+
+	AC_SUBST(UNIXODBC_CFLAGS)
 
 	dnl Check for Net-SNMP [by default - skip]
 	LIBNETSNMP_CHECK_CONFIG([no])
@@ -1290,12 +1299,13 @@ if test "x$server" = "xyes" || test "x$proxy" = "xyes"; then
 			have_snmp="yes"
 		fi
 	fi
-	CFLAGS="$CFLAGS $SNMP_CFLAGS"
 	SERVER_LDFLAGS="$SERVER_LDFLAGS $SNMP_LDFLAGS"
 	SERVER_LIBS="$SERVER_LIBS $SNMP_LIBS"
 
 	PROXY_LDFLAGS="$PROXY_LDFLAGS $SNMP_LDFLAGS"
 	PROXY_LIBS="$PROXY_LIBS $SNMP_LIBS"
+
+	AC_SUBST(SNMP_CFLAGS)
 
 	dnl Check for LIBSSH2 [by default - skip] at least of version 1.0.0.
 	LIBSSH2_CHECK_CONFIG([no])
@@ -1308,12 +1318,13 @@ if test "x$server" = "xyes" || test "x$proxy" = "xyes"; then
 			have_ssh2="yes"
 		fi
 	fi
-	CFLAGS="$CFLAGS $SSH2_CFLAGS"
 	SERVER_LDFLAGS="$SERVER_LDFLAGS $SSH2_LDFLAGS"
 	SERVER_LIBS="$SERVER_LIBS $SSH2_LIBS"
 
 	PROXY_LDFLAGS="$PROXY_LDFLAGS $SSH2_LDFLAGS"
 	PROXY_LIBS="$PROXY_LIBS $SSH2_LIBS"
+
+	AC_SUBST(SSH2_CFLAGS)
 
 	found_openipmi="no"
 	dnl Check for libOpenIPMI [by default - skip]
@@ -1325,13 +1336,87 @@ if test "x$server" = "xyes" || test "x$proxy" = "xyes"; then
 			have_ipmi="yes"
 		fi
 	fi
-	CFLAGS="$CFLAGS $OPENIPMI_CFLAGS"
 	SERVER_LDFLAGS="$SERVER_LDFLAGS $OPENIPMI_LDFLAGS"
 	SERVER_LIBS="$SERVER_LIBS $OPENIPMI_LIBS"
 
 	PROXY_LDFLAGS="$PROXY_LDFLAGS $OPENIPMI_LDFLAGS"
 	PROXY_LIBS="$PROXY_LIBS $OPENIPMI_LIBS"
+
+	AC_SUBST(OPENIPMI_CFLAGS)
 fi
+
+dnl Check for mbed TLS (PolarSSL) libpolarssl [by default - skip]
+LIBMBEDTLS_CHECK_CONFIG([no])
+if test "x$want_mbedtls" = "xyes"; then
+	if test "x$have_tls" != "xno"; then
+		AC_MSG_ERROR([You can configure for only one TLS library (--with-mbedtls, --with-gnutls or --with-openssl).])
+	fi
+
+	if test "x$found_mbedtls" != "xyes"; then
+		AC_MSG_ERROR([mbed TLS (PolarSSL) library libpolarssl not found])
+	elif test "x$accept_mbedtls_version" != "xyes"; then
+		AC_MSG_ERROR([mbed TLS (PolarSSL) library version requirement not met (>= 1.3.9)])
+	else
+		have_tls="mbed TLS"
+	fi
+	TLS_CFLAGS="$MBEDTLS_CFLAGS"
+	TLS_LDFLAGS="$MBEDTLS_LDFLAGS"
+	TLS_LIBS="$MBEDTLS_LIBS"
+fi
+
+dnl Check for GnuTLS libgnutls [by default - skip]
+LIBGNUTLS_CHECK_CONFIG([no])
+if test "x$want_gnutls" = "xyes"; then
+	if test "x$have_tls" != "xno"; then
+		AC_MSG_ERROR([You can configure for only one TLS library (--with-mbedtls, --with-gnutls or --with-openssl).])
+	fi
+
+	if test "x$found_gnutls" != "xyes"; then
+		AC_MSG_ERROR([GnuTLS library libgnutls not found])
+	elif test "x$accept_gnutls_version" != "xyes"; then
+		AC_MSG_ERROR([GnuTLS library version requirement not met (>= 3.1.18)])
+	else
+		have_tls="GnuTLS"
+	fi
+	TLS_CFLAGS="$GNUTLS_CFLAGS"
+	TLS_LDFLAGS="$GNUTLS_LDFLAGS"
+	TLS_LIBS="$GNUTLS_LIBS"
+fi
+
+dnl Check for OpenSSL libssl and libcrypto [by default - skip]
+LIBOPENSSL_CHECK_CONFIG([no])
+if test "x$want_openssl" = "xyes"; then
+	if test "x$have_tls" != "xno"; then
+		AC_MSG_ERROR([You can configure for only one TLS library (--with-mbedtls, --with-gnutls or --with-openssl).])
+	fi
+
+	if test "x$found_openssl" != "xyes"; then
+		AC_MSG_ERROR([OpenSSL library libssl or libcrypto not found])
+	elif test "x$accept_openssl_version" != "xyes"; then
+		AC_MSG_ERROR([OpenSSL library version requirement not met (>= 1.0.1)])
+	else
+		have_tls="OpenSSL"
+	fi
+	TLS_CFLAGS="$OPENSSL_CFLAGS"
+	TLS_LDFLAGS="$OPENSSL_LDFLAGS"
+	TLS_LIBS="$OPENSSL_LIBS"
+fi
+AC_SUBST(TLS_CFLAGS)
+
+SERVER_LDFLAGS="$SERVER_LDFLAGS $TLS_LDFLAGS"
+SERVER_LIBS="$SERVER_LIBS $TLS_LIBS"
+
+PROXY_LDFLAGS="$PROXY_LDFLAGS $TLS_LDFLAGS"
+PROXY_LIBS="$PROXY_LIBS $TLS_LIBS"
+
+AGENT_LDFLAGS="$AGENT_LDFLAGS $TLS_LDFLAGS"
+AGENT_LIBS="$AGENT_LIBS $TLS_LIBS"
+
+ZBXGET_LDFLAGS="$ZBXGET_LDFLAGS $TLS_LDFLAGS"
+ZBXGET_LIBS="$ZBXGET_LIBS $TLS_LIBS"
+
+SENDER_LDFLAGS="$SENDER_LDFLAGS $TLS_LDFLAGS"
+SENDER_LIBS="$SENDER_LIBS $TLS_LIBS"
 
 if test "x$java" = "xyes"; then
 	AC_CHECK_PROGS([JAVAC], [javac], [no])
@@ -1344,9 +1429,6 @@ if test "x$java" = "xyes"; then
 	fi
 fi
 
-AM_CONDITIONAL(JABBER, test "x$found_jabber" = "xyes")
-AM_CONDITIONAL(WITH_ODBC, test "x$have_unixodbc" = "xyes")
-
 found_ldap="no"
 dnl Check for libLDAP [by default - skip]
 LIBLDAP_CHECK_CONFIG([no])
@@ -1355,8 +1437,6 @@ if test "x$want_ldap" = "xyes"; then
 		AC_MSG_ERROR([Invalid LDAP directory - unable to find ldap.h])
 	fi
 fi
-CFLAGS="$CFLAGS $LDAP_CPPFLAGS"
-
 SERVER_LDFLAGS="$SERVER_LDFLAGS $LDAP_LDFLAGS"
 SERVER_LIBS="$SERVER_LIBS $LDAP_LIBS"
 
@@ -1365,6 +1445,8 @@ PROXY_LIBS="$PROXY_LIBS $LDAP_LIBS"
 
 AGENT_LDFLAGS="$AGENT_LDFLAGS $LDAP_LDFLAGS"
 AGENT_LIBS="$AGENT_LIBS $LDAP_LIBS"
+
+AC_SUBST(LDAP_CPPFLAGS)
 
 found_curl="no"
 dnl Checking for libCurl [by default - skip]
@@ -1377,7 +1459,7 @@ fi
 if test "x$found_curl" = "xyes"; then
 	have_web_monitoring="cURL"
 fi
-CFLAGS="$CFLAGS $LIBCURL_CPPFLAGS"
+CFLAGS="$LIBCURL_CFLAGS $CFLAGS"
 
 SERVER_LDFLAGS="$SERVER_LDFLAGS $LIBCURL_LDFLAGS"
 SERVER_LIBS="$SERVER_LIBS $LIBCURL_LIBS"
@@ -1395,9 +1477,10 @@ LIBICONV_CHECK_CONFIG([no])
 if test "x$found_iconv" != "xyes"; then
 	AC_MSG_ERROR([Unable to use iconv (libiconv check failed)])
 fi
-CFLAGS="$CFLAGS $ICONV_CFLAGS"
 LDFLAGS="$LDFLAGS $ICONV_LDFLAGS"
 LIBS="$LIBS $ICONV_LIBS"
+
+AC_SUBST(ICONV_CFLAGS)
 
 RANLIB="ranlib"
 AC_SUBST(RANLIB)
@@ -1410,6 +1493,12 @@ AC_SUBST(PROXY_LIBS)
 
 AC_SUBST(AGENT_LDFLAGS)
 AC_SUBST(AGENT_LIBS)
+
+AC_SUBST(ZBXGET_LDFLAGS)
+AC_SUBST(ZBXGET_LIBS)
+
+AC_SUBST(SENDER_LDFLAGS)
+AC_SUBST(SENDER_LIBS)
 
 dnl *****************************************************************
 dnl *                                                               *
@@ -1426,6 +1515,14 @@ if test "x${MKDIR_P}" = "x"; then
         AC_SUBST([MKDIR_P], ${mkdir_p})
 fi
 AC_MSG_RESULT([ok (${MKDIR_P})])
+
+dnl Check if process statistics collector should be enabled
+case "x$ARCH" in
+	xlinux|xsolaris)
+		AC_DEFINE(ZBX_PROCSTAT_COLLECTOR, 1 , [Define to 1 on linux and solaris platforms])
+		;;
+esac		
+
 
 dnl *****************************************************************
 dnl *                                                               *
@@ -1485,18 +1582,17 @@ AC_OUTPUT([
 	src/zabbix_server/discoverer/Makefile
 	src/zabbix_server/housekeeper/Makefile
 	src/zabbix_server/httppoller/Makefile
-	src/zabbix_server/nodewatcher/Makefile
 	src/zabbix_server/pinger/Makefile
 	src/zabbix_server/poller/Makefile
 	src/zabbix_server/snmptrapper/Makefile
 	src/zabbix_server/timer/Makefile
 	src/zabbix_server/trapper/Makefile
-	src/zabbix_server/utils/Makefile
 	src/zabbix_server/watchdog/Makefile
 	src/zabbix_server/escalator/Makefile
 	src/zabbix_server/proxypoller/Makefile
 	src/zabbix_server/selfmon/Makefile
 	src/zabbix_server/vmware/Makefile
+	src/zabbix_server/taskmanager/Makefile
 	src/zabbix_proxy/Makefile
 	src/zabbix_proxy/heart/Makefile
 	src/zabbix_proxy/housekeeper/Makefile
@@ -1518,6 +1614,49 @@ Configuration:
   Compiler:              ${CC}
   Compiler flags:        ${CFLAGS}
 
+  Library-specific flags:"
+
+if test "x$DB_CFLAGS" != "x"; then
+	echo "    database:              ${DB_CFLAGS}"
+fi
+
+if test "x$JABBER_CPPFLAGS" != "x"; then
+	echo "    Jabber:                ${JABBER_CPPFLAGS}"
+fi
+
+if test "x$LIBXML2_CFLAGS" != "x"; then
+	echo "    libXML2:               ${LIBXML2_CFLAGS}"
+fi
+
+if test "x$UNIXODBC_CFLAGS" != "x"; then
+	echo "    unixODBC:              ${UNIXODBC_CFLAGS}"
+fi
+
+if test "x$SNMP_CFLAGS" != "x"; then
+	echo "    Net-SNMP:              ${SNMP_CFLAGS}"
+fi
+
+if test "x$OPENIPMI_CFLAGS" != "x"; then
+	echo "    OpenIPMI:              ${OPENIPMI_CFLAGS}"
+fi
+
+if test "x$SSH2_CFLAGS" != "x"; then
+	echo "    libssh2:               ${SSH2_CFLAGS}"
+fi
+
+if test "x$TLS_CFLAGS" != "x"; then
+	echo "    TLS:                   ${TLS_CFLAGS}"
+fi
+
+if test "x$LDAP_CPPFLAGS" != "x"; then
+	echo "    LDAP:                  ${LDAP_CPPFLAGS}"
+fi
+
+if test "x$ICONV_CFLAGS" != "x"; then
+	echo "    iconv:                 ${ICONV_CFLAGS}"
+fi
+
+echo "
   Enable server:         ${server}"
 
 if test "x$server" != "xno"; then
@@ -1529,9 +1668,10 @@ echo "  Server details:
     SNMP:                  ${have_snmp}
     IPMI:                  ${have_ipmi}
     SSH:                   ${have_ssh2}
+    TLS:                   ${have_tls}
     ODBC:                  ${have_unixodbc}
-    Linker flags:          ${LDFLAGS} ${SERVER_LDFLAGS}
-    Libraries:             ${LIBS} ${SERVER_LIBS}"
+    Linker flags:          ${SERVER_LDFLAGS} ${LDFLAGS}
+    Libraries:             ${SERVER_LIBS} ${LIBS}"
 
 fi
 
@@ -1546,9 +1686,10 @@ echo "  Proxy details:
     SNMP:                  ${have_snmp}
     IPMI:                  ${have_ipmi}
     SSH:                   ${have_ssh2}
+    TLS:                   ${have_tls}
     ODBC:                  ${have_unixodbc}
-    Linker flags:          ${LDFLAGS} ${PROXY_LDFLAGS}
-    Libraries:             ${LIBS} ${PROXY_LIBS}"
+    Linker flags:          ${PROXY_LDFLAGS} ${LDFLAGS}
+    Libraries:             ${PROXY_LIBS} ${LIBS}"
 
 fi
 
@@ -1558,8 +1699,9 @@ echo "
 if test "x$agent" != "xno"; then
 
 echo "  Agent details:
-    Linker flags:          ${LDFLAGS} ${AGENT_LDFLAGS}
-    Libraries:             ${LIBS} ${AGENT_LIBS}"
+    TLS:                   ${have_tls}
+    Linker flags:          ${AGENT_LDFLAGS} ${LDFLAGS}
+    Libraries:             ${AGENT_LIBS} ${LIBS}"
 
 fi
 

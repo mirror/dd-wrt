@@ -20,6 +20,7 @@
 #include "common.h"
 #include "sysinfo.h"
 #include "stats.h"
+#include "log.h"
 
 int	SYSTEM_CPU_NUM(AGENT_REQUEST *request, AGENT_RESULT *result)
 {
@@ -28,7 +29,10 @@ int	SYSTEM_CPU_NUM(AGENT_REQUEST *request, AGENT_RESULT *result)
 	long	ncpu;
 
 	if (1 < request->nparam)
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Too many parameters."));
 		return SYSINFO_RET_FAIL;
+	}
 
 	type = get_rparam(request, 0);
 
@@ -37,10 +41,16 @@ int	SYSTEM_CPU_NUM(AGENT_REQUEST *request, AGENT_RESULT *result)
 	else if (0 == strcmp(type, "max"))
 		name = _SC_NPROCESSORS_CONF;
 	else
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid first parameter."));
 		return SYSINFO_RET_FAIL;
+	}
 
 	if (-1 == (ncpu = sysconf(name)))
+	{
+		SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot obtain number of CPUs: %s", zbx_strerror(errno)));
 		return SYSINFO_RET_FAIL;
+	}
 
 	SET_UI64_RESULT(result, ncpu);
 
@@ -53,16 +63,22 @@ int	SYSTEM_CPU_UTIL(AGENT_REQUEST *request, AGENT_RESULT *result)
 	int	cpu_num, state, mode;
 
 	if (3 < request->nparam)
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Too many parameters."));
 		return SYSINFO_RET_FAIL;
+	}
 
 	tmp = get_rparam(request, 0);
 
 	if (NULL == tmp || '\0' == *tmp || 0 == strcmp(tmp, "all"))
-		cpu_num = 0;
+	{
+		cpu_num = ZBX_CPUNUM_ALL;
+	}
 	else if (SUCCEED != is_uint31_1(tmp, &cpu_num))
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid first parameter."));
 		return SYSINFO_RET_FAIL;
-	else
-		cpu_num++;
+	}
 
 	tmp = get_rparam(request, 1);
 
@@ -82,8 +98,15 @@ int	SYSTEM_CPU_UTIL(AGENT_REQUEST *request, AGENT_RESULT *result)
 		state = ZBX_CPU_STATE_SOFTIRQ;
 	else if (0 == strcmp(tmp, "steal"))
 		state = ZBX_CPU_STATE_STEAL;
+	else if (0 == strcmp(tmp, "guest"))
+		state = ZBX_CPU_STATE_GCPU;
+	else if (0 == strcmp(tmp, "guest_nice"))
+		state = ZBX_CPU_STATE_GNICE;
 	else
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid second parameter."));
 		return SYSINFO_RET_FAIL;
+	}
 
 	tmp = get_rparam(request, 2);
 
@@ -94,26 +117,13 @@ int	SYSTEM_CPU_UTIL(AGENT_REQUEST *request, AGENT_RESULT *result)
 	else if (0 == strcmp(tmp, "avg15"))
 		mode = ZBX_AVG15;
 	else
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid third parameter."));
 		return SYSINFO_RET_FAIL;
+	}
 
 	return get_cpustat(result, cpu_num, state, mode);
 }
-
-#if !defined(HAVE_GETLOADAVG)
-int getloadavg(double *a, int n)
-{
-	int i;
-	double b[3];
-	FILE *f = fopen("/proc/loadavg", "rbe");
-	if (!f) return -1;
-	i = fscanf(f, "%lf %lf %lf", b, b+1, b+2);
-	fclose(f);
-	if (n > i) n = i;
-	if (n < 0) return -1;
-	memcpy(a, b, n * sizeof *a);
-	return n;
-}
-#endif
 
 int	SYSTEM_CPU_LOAD(AGENT_REQUEST *request, AGENT_RESULT *result)
 {
@@ -122,14 +132,22 @@ int	SYSTEM_CPU_LOAD(AGENT_REQUEST *request, AGENT_RESULT *result)
 	double	load[ZBX_AVG_COUNT], value;
 
 	if (2 < request->nparam)
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Too many parameters."));
 		return SYSINFO_RET_FAIL;
+	}
 
 	tmp = get_rparam(request, 0);
 
 	if (NULL == tmp || '\0' == *tmp || 0 == strcmp(tmp, "all"))
+	{
 		per_cpu = 0;
+	}
 	else if (0 != strcmp(tmp, "percpu"))
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid first parameter."));
 		return SYSINFO_RET_FAIL;
+	}
 
 	tmp = get_rparam(request, 1);
 
@@ -140,17 +158,27 @@ int	SYSTEM_CPU_LOAD(AGENT_REQUEST *request, AGENT_RESULT *result)
 	else if (0 == strcmp(tmp, "avg15"))
 		mode = ZBX_AVG15;
 	else
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid second parameter."));
 		return SYSINFO_RET_FAIL;
+	}
 
 	if (mode >= getloadavg(load, 3))
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Cannot obtain load average."));
 		return SYSINFO_RET_FAIL;
+	}
 
 	value = load[mode];
 
 	if (1 == per_cpu)
 	{
 		if (0 >= (cpu_num = sysconf(_SC_NPROCESSORS_ONLN)))
+		{
+			SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot obtain number of CPUs: %s",
+				zbx_strerror(errno)));
 			return SYSINFO_RET_FAIL;
+		}
 		value /= cpu_num;
 	}
 
@@ -166,8 +194,13 @@ int     SYSTEM_CPU_SWITCHES(AGENT_REQUEST *request, AGENT_RESULT *result)
 	zbx_uint64_t	value = 0;
 	FILE		*f;
 
+	ZBX_UNUSED(request);
+
 	if (NULL == (f = fopen("/proc/stat", "r")))
+	{
+		SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot open /proc/stat: %s", zbx_strerror(errno)));
 		return SYSINFO_RET_FAIL;
+	}
 
 	while (NULL != fgets(line, sizeof(line), f))
 	{
@@ -183,6 +216,9 @@ int     SYSTEM_CPU_SWITCHES(AGENT_REQUEST *request, AGENT_RESULT *result)
 	}
 	zbx_fclose(f);
 
+	if (SYSINFO_RET_FAIL == ret)
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Cannot find a line with \"ctxt\" in /proc/stat."));
+
 	return ret;
 }
 
@@ -193,8 +229,13 @@ int     SYSTEM_CPU_INTR(AGENT_REQUEST *request, AGENT_RESULT *result)
 	zbx_uint64_t	value = 0;
 	FILE		*f;
 
+	ZBX_UNUSED(request);
+
 	if (NULL == (f = fopen("/proc/stat", "r")))
+	{
+		SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot open /proc/stat: %s", zbx_strerror(errno)));
 		return SYSINFO_RET_FAIL;
+	}
 
 	while (NULL != fgets(line, sizeof(line), f))
 	{
@@ -209,6 +250,9 @@ int     SYSTEM_CPU_INTR(AGENT_REQUEST *request, AGENT_RESULT *result)
 		break;
 	}
 	zbx_fclose(f);
+
+	if (SYSINFO_RET_FAIL == ret)
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Cannot find a line with \"intr\" in /proc/stat."));
 
 	return ret;
 }

@@ -19,105 +19,95 @@
 **/
 
 
-$screenWidget = new CWidget();
-$screenWidget->addFlicker(new CDiv(null, null, 'scrollbar_cntr'), CProfile::get('web.screens.filter.state', 1));
+$widget = (new CWidget())
+	->setTitle(_('Screens'))
+	->addItem((new CList())
+	->addClass(ZBX_STYLE_OBJECT_GROUP)
+	->addItem([
+		(new CSpan())->addItem(new CLink(_('All screens'), 'screenconf.php')),
+		'/',
+		(new CSpan())
+			->addClass(ZBX_STYLE_SELECTED)
+			->addItem(
+				new CLink($data['screen']['name'], 'screens.php?elementid='.$data['screen']['screenid'].
+					'&fullscreen='.$data['fullscreen']
+				)
+			)
+	]))
+	->addItem((new CFilter('web.screens.filter.state'))->addNavigator());
 
-// header form
-$configComboBox = new CComboBox('config', 'screens.php', 'javascript: redirect(this.options[this.selectedIndex].value);');
-$configComboBox->addItem('screens.php', _('Screens'));
-$configComboBox->addItem('slides.php', _('Slide shows'));
-$headerForm = new CForm();
-$headerForm->addItem($configComboBox);
+$controls = (new CList())->addItem(
+	new CComboBox('config', 'screens.php', 'redirect(this.options[this.selectedIndex].value);', [
+		'screens.php' => _('Screens'),
+		'slides.php' => _('Slide shows')
+	])
+);
 
-if (empty($this->data['screens'])) {
-	$screenWidget->addPageHeader(_('SCREENS'), $headerForm);
-	$screenWidget->addItem(BR());
-	$screenWidget->addItem(new CTableInfo(_('No screens found.')));
+// Append screens combobox to page header.
+$form = (new CForm())
+	->setName('headerForm')
+	->addVar('fullscreen', $data['fullscreen']);
 
-	$screenBuilder = new CScreenBuilder();
-	CScreenBuilder::insertScreenStandardJs(array(
-		'timeline' => $screenBuilder->timeline
-	));
-}
-else {
-	if (!isset($this->data['screens'][$this->data['elementIdentifier']])) {
-		// this means id was fetched from profile and this screen does not exist
-		// in this case we need to show the first one
-		$screen = reset($this->data['screens']);
-	}
-	else {
-		$screen = $this->data['screens'][$this->data['elementIdentifier']];
-	}
+if (check_dynamic_items($data['screen']['screenid'], 0)) {
+	$pageFilter = new CPageFilter([
+		'groups' => [
+			'monitored_hosts' => true,
+			'with_items' => true
+		],
+		'hosts' => [
+			'monitored_hosts' => true,
+			'with_items' => true,
+			'DDFirstLabel' => _('not selected')
+		],
+		'hostid' => getRequest('hostid'),
+		'groupid' => getRequest('groupid')
+	]);
+	$_REQUEST['groupid'] = $pageFilter->groupid;
+	$_REQUEST['hostid'] = $pageFilter->hostid;
 
-	// if elementid is used to fetch an element, saving it in profile
-	if (!$this->data['use_screen_name']) {
-		CProfile::update('web.screens.elementid', $screen['screenid'] , PROFILE_TYPE_ID);
-	}
-
-	// page header
-	$screenWidget->addPageHeader(_('SCREENS'), array(
-		$headerForm,
-		SPACE,
-		get_icon('favourite', array('fav' => 'web.favorite.screenids', 'elname' => 'screenid', 'elid' => $screen['screenid'])),
-		SPACE,
-		get_icon('fullscreen', array('fullscreen' => $this->data['fullscreen']))
-	));
-	$screenWidget->addItem(BR());
-
-	// append screens combobox to page header
-	$headerForm = new CForm('get');
-	$headerForm->setName('headerForm');
-	$headerForm->addVar('fullscreen', $this->data['fullscreen']);
-
-	$elementsComboBox = new CComboBox('elementid', $screen['screenid'], 'submit()');
-	foreach ($this->data['screens'] as $dbScreen) {
-		$elementsComboBox->addItem($dbScreen['screenid'],
-			htmlspecialchars(get_node_name_by_elid($dbScreen['screenid'], null, NAME_DELIMITER).$dbScreen['name']));
-	}
-	$headerForm->addItem(array(_('Screens').SPACE, $elementsComboBox));
-
-	if (check_dynamic_items($screen['screenid'], 0)) {
-		$pageFilter = new CPageFilter(array(
-			'groups' => array(
-				'monitored_hosts' => true,
-				'with_items' => true
-			),
-			'hosts' => array(
-				'monitored_hosts' => true,
-				'with_items' => true,
-				'DDFirstLabel' => _('Default')
-			),
-			'hostid' => get_request('hostid', null),
-			'groupid' => get_request('groupid', null)
-		));
-		$_REQUEST['groupid'] = $pageFilter->groupid;
-		$_REQUEST['hostid'] = $pageFilter->hostid;
-
-		$headerForm->addItem(array(SPACE, _('Group'), SPACE, $pageFilter->getGroupsCB(true)));
-		$headerForm->addItem(array(SPACE, _('Host'), SPACE, $pageFilter->getHostsCB(true)));
-	}
-
-	$screenWidget->addHeader($screen['name'], $headerForm);
-
-	// append screens to widget
-	$screenBuilder = new CScreenBuilder(array(
-		'screenid' => $screen['screenid'],
-		'mode' => SCREEN_MODE_PREVIEW,
-		'profileIdx' => 'web.screens',
-		'profileIdx2' => $screen['screenid'],
-		'groupid' => get_request('groupid'),
-		'hostid' => get_request('hostid'),
-		'period' => $this->data['period'],
-		'stime' => $this->data['stime']
-	));
-	$screenWidget->addItem($screenBuilder->show());
-
-	CScreenBuilder::insertScreenStandardJs(array(
-		'timeline' => $screenBuilder->timeline,
-		'profileIdx' => $screenBuilder->profileIdx
-	));
-
-	$screenWidget->addItem(BR());
+	$controls
+		->addItem([ _('Group').SPACE, $pageFilter->getGroupsCB()])
+		->addItem([ _('Host').SPACE, $pageFilter->getHostsCB()]);
 }
 
-return $screenWidget;
+// page header
+$controls
+	->addItem($data['screen']['editable']
+		? (new CButton('edit', _('Edit screen')))
+			->onClick('redirect("screenedit.php?screenid='.$data['screen']['screenid'].'")')
+		: null
+	)
+	->addItem(get_icon('favourite',
+		[
+			'fav' => 'web.favorite.screenids',
+			'elname' => 'screenid',
+			'elid' => $data['screen']['screenid']
+		]
+	))
+	->addItem(get_icon('fullscreen', ['fullscreen' => $data['fullscreen']]));
+
+$form->addItem($controls);
+
+$widget->setControls($form);
+
+// Append screens to widget.
+$screenBuilder = new CScreenBuilder([
+	'screenid' => $data['screen']['screenid'],
+	'mode' => SCREEN_MODE_PREVIEW,
+	'profileIdx' => 'web.screens',
+	'profileIdx2' => $data['screen']['screenid'],
+	'groupid' => getRequest('groupid'),
+	'hostid' => getRequest('hostid'),
+	'period' => $data['period'],
+	'stime' => $data['stime']
+]);
+$widget->addItem(
+	(new CDiv($screenBuilder->show()))->addClass(ZBX_STYLE_TABLE_FORMS_CONTAINER)
+);
+
+CScreenBuilder::insertScreenStandardJs([
+	'timeline' => $screenBuilder->timeline,
+	'profileIdx' => $screenBuilder->profileIdx
+]);
+
+return $widget;

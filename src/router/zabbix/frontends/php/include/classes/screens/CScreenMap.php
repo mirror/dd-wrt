@@ -22,24 +22,17 @@
 class CScreenMap extends CScreenBase {
 
 	/**
-	 * Params for monitoring maps js.
-	 *
-	 * @var array
-	 */
-	private $data = array();
-
-	/**
 	 * Process screen.
 	 *
 	 * @return CDiv (screen inside container)
 	 */
 	public function get() {
-		$image = new CImg('map.php?noedit=1&sysmapid='.$this->screenitem['resourceid'].'&width='.$this->screenitem['width']
-			.'&height='.$this->screenitem['height'].'&curtime='.time());
-		$image->setAttribute('id', 'map_'.$this->screenitem['screenitemid']);
+		$image = (new CImg('map.php?noedit=1&sysmapid='.$this->screenitem['resourceid'].
+			'&width='.$this->screenitem['width'].'&height='.$this->screenitem['height'].'&curtime='.time()))
+			->setId('map_'.$this->screenitem['screenitemid']);
 
 		if ($this->mode == SCREEN_MODE_PREVIEW) {
-			$sysmap = API::Map()->get(array(
+			$sysmap = API::Map()->get([
 				'sysmapids' => $this->screenitem['resourceid'],
 				'output' => API_OUTPUT_EXTEND,
 				'selectSelements' => API_OUTPUT_EXTEND,
@@ -47,28 +40,35 @@ class CScreenMap extends CScreenBase {
 				'expandUrls' => true,
 				'nopermissions' => true,
 				'preservekeys' => true
-			));
+			]);
 			$sysmap = reset($sysmap);
+
+			if (array_key_exists('severity_min', $this->screenitem)) {
+				$sysmap['severity_min'] = $this->screenitem['severity_min'];
+			}
 
 			$image->setSrc($image->getAttribute('src').'&severity_min='.$sysmap['severity_min']);
 
-			$actionMap = getActionMapBySysmap($sysmap, array('severity_min' => $sysmap['severity_min']));
-			$image->setMap($actionMap->getName());
+			$action_map = getActionMapBySysmap($sysmap, ['severity_min' => $sysmap['severity_min']]);
+			$image->setMap($action_map->getName());
 
-			$output = array($actionMap, $image);
+			$output = [$action_map, $image];
 		}
 		elseif ($this->mode == SCREEN_MODE_EDIT) {
-			$output = array($image, BR(), new CLink(_('Change'), $this->action));
+			$output = [$image, BR(), new CLink(_('Change'), $this->action)];
 		}
 		else {
-			$output = array($image);
+			$output = [$image];
 		}
 
 		$this->insertFlickerfreeJs();
 
-		$div = new CDiv($output, 'map-container flickerfreescreen', $this->getScreenId());
-		$div->setAttribute('data-timestamp', $this->timestamp);
-		$div->addStyle('position: relative;');
+		$div = (new CDiv($output))
+			->addClass('map-container')
+			->addClass('flickerfreescreen')
+			->setId($this->getScreenId())
+			->setAttribute('data-timestamp', $this->timestamp)
+			->addStyle('position: relative;');
 
 		return $div;
 	}

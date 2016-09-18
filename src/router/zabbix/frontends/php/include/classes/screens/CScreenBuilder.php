@@ -105,7 +105,7 @@ class CScreenBuilder {
 	 * @param boolean	$options['updateProfile']
 	 * @param array		$options['screen']
 	 */
-	public function __construct(array $options = array()) {
+	public function __construct(array $options = []) {
 		$this->isFlickerfree = isset($options['isFlickerfree']) ? $options['isFlickerfree'] : true;
 		$this->mode = isset($options['mode']) ? $options['mode'] : SCREEN_MODE_SLIDESHOW;
 		$this->timestamp = !empty($options['timestamp']) ? $options['timestamp'] : time();
@@ -124,13 +124,13 @@ class CScreenBuilder {
 		if (!empty($options['screen'])) {
 			$this->screen = $options['screen'];
 		}
-		elseif (!empty($options['screenid'])) {
-			$this->screen = API::Screen()->get(array(
+		elseif (array_key_exists('screenid', $options) && $options['screenid'] > 0) {
+			$this->screen = API::Screen()->get([
 				'screenids' => $options['screenid'],
 				'output' => API_OUTPUT_EXTEND,
 				'selectScreenItems' => API_OUTPUT_EXTEND,
 				'editable' => ($this->mode == SCREEN_MODE_EDIT)
-			));
+			]);
 
 			if (!empty($this->screen)) {
 				$this->screen = reset($this->screen);
@@ -145,13 +145,13 @@ class CScreenBuilder {
 		$this->profileIdx2 = !empty($options['profileIdx2']) ? $options['profileIdx2'] : null;
 		$this->updateProfile = isset($options['updateProfile']) ? $options['updateProfile'] : true;
 
-		$this->timeline = CScreenBase::calculateTime(array(
+		$this->timeline = CScreenBase::calculateTime([
 			'profileIdx' => $this->profileIdx,
 			'profileIdx2' => $this->profileIdx2,
 			'updateProfile' => $this->updateProfile,
 			'period' => !empty($options['period']) ? $options['period'] : null,
 			'stime' => !empty($options['stime']) ? $options['stime'] : null
-		));
+		]);
 	}
 
 	/**
@@ -163,33 +163,39 @@ class CScreenBuilder {
 	 * @param int		$options['resourcetype']
 	 * @param int		$options['screenitemid']
 	 * @param int		$options['hostid']
+	 * @param array		$options['screen']
+	 * @param int		$options['screenid']
 	 *
 	 * @return CScreenBase
 	 */
-	public static function getScreen(array $options = array()) {
-		// get resourcetype from screenitem
-		if (empty($options['screenitem']) && !empty($options['screenitemid'])) {
-			if (!empty($options['hostid'])) {
-				$options['screenitem'] = API::TemplateScreenItem()->get(array(
-					'screenitemids' => $options['screenitemid'],
-					'hostids' => $options['hostid'],
-					'output' => API_OUTPUT_EXTEND
-				));
+	public static function getScreen(array $options = []) {
+		if (!array_key_exists('resourcetype', $options)) {
+			$options['resourcetype'] = null;
+
+			// get resourcetype from screenitem
+			if (!array_key_exists('screenitem', $options) && array_key_exists('screenitemid', $options)) {
+				if (array_key_exists('hostid', $options) && $options['hostid'] > 0) {
+					$options['screenitem'] = API::TemplateScreenItem()->get([
+						'screenitemids' => $options['screenitemid'],
+						'hostids' => $options['hostid'],
+						'output' => API_OUTPUT_EXTEND
+					]);
+				}
+				else {
+					$options['screenitem'] = API::ScreenItem()->get([
+						'screenitemids' => $options['screenitemid'],
+						'output' => API_OUTPUT_EXTEND
+					]);
+				}
+				$options['screenitem'] = reset($options['screenitem']);
 			}
-			else {
-				$options['screenitem'] = API::ScreenItem()->get(array(
-					'screenitemids' => $options['screenitemid'],
-					'output' => API_OUTPUT_EXTEND
-				));
+
+			if (array_key_exists('screenitem', $options) && array_key_exists('resourcetype', $options['screenitem'])) {
+				$options['resourcetype'] = $options['screenitem']['resourcetype'];
 			}
-			$options['screenitem'] = reset($options['screenitem']);
 		}
 
-		if (zbx_empty($options['resourcetype']) && !zbx_empty($options['screenitem']['resourcetype'])) {
-			$options['resourcetype'] = $options['screenitem']['resourcetype'];
-		}
-
-		if (zbx_empty($options['resourcetype'])) {
+		if ($options['resourcetype'] === null) {
 			return null;
 		}
 
@@ -207,10 +213,10 @@ class CScreenBuilder {
 			case SCREEN_RESOURCE_PLAIN_TEXT:
 				return new CScreenPlainText($options);
 
-			case SCREEN_RESOURCE_HOSTS_INFO:
+			case SCREEN_RESOURCE_HOST_INFO:
 				return new CScreenHostsInfo($options);
 
-			case SCREEN_RESOURCE_TRIGGERS_INFO:
+			case SCREEN_RESOURCE_TRIGGER_INFO:
 				return new CScreenTriggersInfo($options);
 
 			case SCREEN_RESOURCE_SERVER_INFO:
@@ -222,13 +228,14 @@ class CScreenBuilder {
 			case SCREEN_RESOURCE_SCREEN:
 				return new CScreenScreen($options);
 
-			case SCREEN_RESOURCE_TRIGGERS_OVERVIEW:
+			case SCREEN_RESOURCE_TRIGGER_OVERVIEW:
 				return new CScreenTriggersOverview($options);
 
 			case SCREEN_RESOURCE_DATA_OVERVIEW:
 				return new CScreenDataOverview($options);
 
 			case SCREEN_RESOURCE_URL:
+				$options = self::appendTemplatedScreenOption($options);
 				return new CScreenUrl($options);
 
 			case SCREEN_RESOURCE_ACTIONS:
@@ -252,9 +259,56 @@ class CScreenBuilder {
 			case SCREEN_RESOURCE_CHART:
 				return new CScreenChart($options);
 
+			case SCREEN_RESOURCE_LLD_GRAPH:
+				$options = self::appendTemplatedScreenOption($options);
+				return new CScreenLldGraph($options);
+
+			case SCREEN_RESOURCE_LLD_SIMPLE_GRAPH:
+				$options = self::appendTemplatedScreenOption($options);
+				return new CScreenLldSimpleGraph($options);
+
+			case SCREEN_RESOURCE_HTTPTEST_DETAILS:
+				return new CScreenHttpTestDetails($options);
+
+			case SCREEN_RESOURCE_DISCOVERY:
+				return new CScreenDiscovery($options);
+
+			case SCREEN_RESOURCE_HTTPTEST:
+				return new CScreenHttpTest($options);
+
+			case SCREEN_RESOURCE_PROBLEM:
+				if (array_key_exists('period', $options)) {
+					$options['data']['filter']['period'] = $options['period'];
+				}
+				if (array_key_exists('stime', $options)) {
+					$options['data']['filter']['stime'] = $options['stime'];
+				}
+				return new CScreenProblem($options);
+
 			default:
 				return null;
 		}
+	}
+
+	/**
+	 * Appends boolean option 'isTemplatedScreen' to ouput options.
+	 *
+	 * @param array $options
+	 *
+	 * @return array
+	 */
+	protected static function appendTemplatedScreenOption(array $options) {
+		if (array_key_exists('screen', $options)) {
+			$options['isTemplatedScreen'] = (bool) $options['screen']['templateid'];
+		}
+		elseif (array_key_exists('screenid', $options) && $options['screenid'] > 0) {
+			$options['isTemplatedScreen'] = (bool) API::TemplateScreen()->get([
+				'screenids' => [$options['screenid']],
+				'output' => []
+			]);
+		}
+
+		return $options;
 	}
 
 	/**
@@ -264,12 +318,12 @@ class CScreenBuilder {
 	 */
 	public function show() {
 		if (empty($this->screen)) {
-			return new CTableInfo(_('No screens found.'));
+			return new CTableInfo();
 		}
 
-		$skipedFields = array();
-		$screenitems = array();
-		$emptyScreenColumns = array();
+		$skipedFields = [];
+		$screenitems = [];
+		$emptyScreenColumns = [];
 
 		// calculate table columns and rows
 		foreach ($this->screen['screenitems'] as $screenitem) {
@@ -279,7 +333,7 @@ class CScreenBuilder {
 				for ($j = 0; $j < $screenitem['colspan'] || $j == 0; $j++) {
 					if ($i != 0 || $j != 0) {
 						if (!isset($skipedFields[$screenitem['y'] + $i])) {
-							$skipedFields[$screenitem['y'] + $i] = array();
+							$skipedFields[$screenitem['y'] + $i] = [];
 						}
 						$skipedFields[$screenitem['y'] + $i][$screenitem['x'] + $j] = 1;
 					}
@@ -288,36 +342,80 @@ class CScreenBuilder {
 		}
 
 		// create screen table
-		$screenTable = new CTable();
-		$screenTable->setAttribute('class',
-			in_array($this->mode, array(SCREEN_MODE_PREVIEW, SCREEN_MODE_SLIDESHOW)) ? 'screen_view' : 'screen_edit'
-		);
-		$screenTable->setAttribute('id', 'iframe');
+		$screenTable = (new CTable())
+			->setId(self::makeScreenTableId($this->screen['screenid']))
+			->addClass(ZBX_STYLE_SCREEN_TABLE);
+
+		if ($this->mode == SCREEN_MODE_EDIT) {
+			$screenTable->addClass(ZBX_STYLE_DASHED_BORDER);
+		}
 
 		// action top row
 		if ($this->mode == SCREEN_MODE_EDIT) {
-			$newColumns = array(new CCol(new CImg('images/general/zero.png', 'zero', 1, 1)));
+			$newColumns = [(new CCol())->addClass(ZBX_STYLE_CELL_WIDTH)];
 
-			for ($i = 0, $size = $this->screen['hsize'] + 1; $i < $size; $i++) {
-				$icon = new CImg('images/general/plus.png', null, null, null, 'pointer');
-				$icon->addAction('onclick', 'javascript: location.href = "screenedit.php?config=1&screenid='.$this->screen['screenid'].'&add_col='.$i.'";');
+			for ($i = 0, $size = $this->screen['hsize']; $i < $size; $i++) {
+				if ($this->screen['hsize'] >= SCREEN_MAX_SIZE) {
+					$link = (new CDiv('+'))
+						->addClass(ZBX_STYLE_TREEVIEW_PLUS)
+						->addClass(ZBX_STYLE_DISABLED);
+				}
+				else {
+					$link = (new CLink('+', 'screenedit.php?screenid='.$this->screen['screenid'].
+						url_param('templateid').'&add_col='.$i
+					))
+						->addClass(ZBX_STYLE_TREEVIEW_PLUS)
+						->addSID();
+				}
 
-				array_push($newColumns, new CCol($icon));
+				$newColumns[] = (new CCol($link))
+					->addClass(ZBX_STYLE_CENTER)
+					->addClass(ZBX_STYLE_MIDDLE);
 			}
+
+			if ($this->screen['hsize'] >= SCREEN_MAX_SIZE) {
+				$link = (new CDiv('+'))
+					->addClass(ZBX_STYLE_TREEVIEW_PLUS)
+					->addClass(ZBX_STYLE_DISABLED);
+			}
+			else {
+				$link = (new CLink('+', 'screenedit.php?screenid='.$this->screen['screenid'].url_param('templateid').
+					'&add_col='.$this->screen['hsize']
+				))
+					->addClass(ZBX_STYLE_TREEVIEW_PLUS)
+					->addSID();
+			}
+
+			$newColumns[] = (new CCol($link))
+				->addClass(ZBX_STYLE_CENTER)
+				->addClass(ZBX_STYLE_MIDDLE)
+				->addClass(ZBX_STYLE_CELL_WIDTH);
 
 			$screenTable->addRow($newColumns);
 		}
 
 		for ($r = 0; $r < $this->screen['vsize']; $r++) {
-			$newColumns = array();
+			$newColumns = [];
 			$emptyScreenRow = true;
 
 			// action left cell
 			if ($this->mode == SCREEN_MODE_EDIT) {
-				$icon = new CImg('images/general/plus.png', null, null, null, 'pointer');
-				$icon->addAction('onclick', 'javascript: location.href = "screenedit.php?config=1&screenid='.$this->screen['screenid'].'&add_row='.$r.'";');
+				if ($this->screen['vsize'] >= SCREEN_MAX_SIZE) {
+					$link = (new CDiv('+'))
+						->addClass(ZBX_STYLE_TREEVIEW_PLUS)
+						->addClass(ZBX_STYLE_DISABLED);
+				}
+				else {
+					$link = (new CLink('+', 'screenedit.php?screenid='.$this->screen['screenid'].
+						url_param('templateid').'&add_row='.$r
+					))
+						->addClass(ZBX_STYLE_TREEVIEW_PLUS)
+						->addSID();
+				}
 
-				array_push($newColumns, new CCol($icon));
+				$newColumns[] = (new CCol($link))
+					->addClass(ZBX_STYLE_CENTER)
+					->addClass(ZBX_STYLE_MIDDLE);
 			}
 
 			for ($c = 0; $c < $this->screen['hsize']; $c++) {
@@ -327,7 +425,7 @@ class CScreenBuilder {
 
 				// screen item
 				$isEditForm = false;
-				$screenitem = array();
+				$screenitem = [];
 
 				foreach ($screenitems as $tmprow) {
 					if ($tmprow['x'] == $c && $tmprow['y'] == $r) {
@@ -337,7 +435,7 @@ class CScreenBuilder {
 				}
 
 				if (empty($screenitem)) {
-					$screenitem = array(
+					$screenitem = [
 						'screenitemid' => 0,
 						'resourcetype' => 0,
 						'resourceid' => 0,
@@ -352,20 +450,23 @@ class CScreenBuilder {
 						'url' => '',
 						'dynamic' => 0,
 						'sort_triggers' => SCREEN_SORT_TRIGGERS_DATE_DESC
-					);
+					];
 				}
 
 				if (!empty($screenitem['screenitemid'])) {
 					$emptyScreenRow = false;
-					$emptyScreenColumns[$c] = 1;
+					$emptyScreenColumns[$c] = true;
 				}
 
 				// action
-				if ($this->mode == SCREEN_MODE_EDIT && $screenitem['screenitemid'] != 0) {
-					$action = 'screenedit.php?form=update'.url_param('screenid').'&screenitemid='.$screenitem['screenitemid'];
-				}
-				elseif ($this->mode == SCREEN_MODE_EDIT && $screenitem['screenitemid'] == 0) {
-					$action = 'screenedit.php?form=update'.url_param('screenid').'&x='.$c.'&y='.$r;
+				if ($this->mode == SCREEN_MODE_EDIT) {
+					if ($screenitem['screenitemid'] != 0) {
+						$action = 'screenedit.php?form=update'.url_params(['screenid', 'templateid']).
+							'&screenitemid='.$screenitem['screenitemid'];
+					}
+					else {
+						$action = 'screenedit.php?form=update'.url_params(['screenid', 'templateid']).'&x='.$c.'&y='.$r;
+					}
 				}
 				else {
 					$action = null;
@@ -376,13 +477,15 @@ class CScreenBuilder {
 						&& (isset($_REQUEST['form']) && $_REQUEST['form'] == 'update')
 						&& ((isset($_REQUEST['x']) && $_REQUEST['x'] == $c && isset($_REQUEST['y']) && $_REQUEST['y'] == $r)
 								|| (isset($_REQUEST['screenitemid']) && bccomp($_REQUEST['screenitemid'], $screenitem['screenitemid']) == 0))) {
-					$screenView = new CView('configuration.screen.constructor.edit', array('screen' => $this->screen));
+					$screenView = new CView('monitoring.screen.constructor.edit', ['screen' => $this->screen]);
 					$item = $screenView->render();
 					$isEditForm = true;
 				}
 				// screen cell
 				elseif (!empty($screenitem['screenitemid']) && isset($screenitem['resourcetype'])) {
-					$screenBase = CScreenBuilder::getScreen(array(
+					$screenBase = CScreenBuilder::getScreen([
+						'screen' => $this->screen,
+						'screenid' => $this->screen['screenid'],
 						'isFlickerfree' => $this->isFlickerfree,
 						'pageFile' => $this->pageFile,
 						'mode' => $this->mode,
@@ -394,15 +497,10 @@ class CScreenBuilder {
 						'timeline' => $this->timeline,
 						'resourcetype' => $screenitem['resourcetype'],
 						'screenitem' => $screenitem
-					));
+					]);
 
 					if (!empty($screenBase)) {
-						if ($this->mode == SCREEN_MODE_EDIT && !empty($screenitem['screenitemid'])) {
-							$screenBase->action = 'screenedit.php?form=update'.url_param('screenid').'&screenitemid='.$screenitem['screenitemid'];
-						}
-						elseif ($this->mode == SCREEN_MODE_EDIT && empty($screenitem['screenitemid'])) {
-							$screenBase->action = 'screenedit.php?form=update'.url_param('screenid').'&x='.$c.'&y='.$r;
-						}
+						$screenBase->action = $action;
 
 						$item = $screenBase->get();
 					}
@@ -411,91 +509,127 @@ class CScreenBuilder {
 					}
 				}
 				// change/empty cell
+				elseif ($this->mode == SCREEN_MODE_EDIT) {
+					$item =[
+						(new CDiv(
+							(new CLink(_('Change'), $action))->addClass('empty_change_link')
+						))->addClass(ZBX_STYLE_CENTER)
+					];
+				}
 				else {
-					$item = array(SPACE);
-					if ($this->mode == SCREEN_MODE_EDIT) {
-						array_push($item, BR(), new CLink(_('Change'), $action, 'empty_change_link'));
-					}
-				}
-
-				// align
-				$halign = 'def';
-				if ($screenitem['halign'] == HALIGN_CENTER) {
-					$halign = 'cntr';
-				}
-				if ($screenitem['halign'] == HALIGN_LEFT) {
-					$halign = 'left';
-				}
-				if ($screenitem['halign'] == HALIGN_RIGHT) {
-					$halign = 'right';
-				}
-
-				$valign = 'def';
-				if ($screenitem['valign'] == VALIGN_MIDDLE) {
-					$valign = 'mdl';
-				}
-				if ($screenitem['valign'] == VALIGN_TOP) {
-					$valign = 'top';
-				}
-				if ($screenitem['valign'] == VALIGN_BOTTOM) {
-					$valign = 'bttm';
+					$item = null;
 				}
 
 				if ($this->mode == SCREEN_MODE_EDIT && !$isEditForm) {
-					$item = new CDiv($item, 'draggable');
-					$item->setAttribute('id', 'position_'.$r.'_'.$c);
-					$item->setAttribute('data-xcoord', $c);
-					$item->setAttribute('data-ycoord', $r);
+					$item = (new CDiv($item))
+						->addClass('draggable')
+						->setId('position_'.$r.'_'.$c)
+						->setAttribute('data-xcoord', $c)
+						->setAttribute('data-ycoord', $r);
 				}
 
 				// colspan/rowspan
-				$newColumn = new CCol($item, $halign.'_'.$valign.' screenitem');
-				if (!empty($screenitem['colspan'])) {
+				$newColumn = (new CCol($item))->addClass('screenitem');
+
+				if ($screenitem['halign'] == HALIGN_CENTER || $isEditForm) {
+					$newColumn->addClass(ZBX_STYLE_CENTER);
+				}
+				elseif ($screenitem['halign'] == HALIGN_LEFT) {
+					$newColumn->addClass(ZBX_STYLE_LEFT);
+				}
+				elseif ($screenitem['halign'] == HALIGN_RIGHT) {
+					$newColumn->addClass(ZBX_STYLE_RIGHT);
+				}
+
+				if ($screenitem['valign'] == VALIGN_MIDDLE || $isEditForm) {
+					$newColumn->addClass(ZBX_STYLE_MIDDLE);
+				}
+				elseif ($screenitem['valign'] == VALIGN_TOP) {
+					$newColumn->addClass(ZBX_STYLE_TOP);
+				}
+				elseif ($screenitem['valign'] == VALIGN_BOTTOM) {
+					$newColumn->addClass(ZBX_STYLE_BOTTOM);
+				}
+
+				if ($screenitem['colspan'] > 1) {
 					$newColumn->setColSpan($screenitem['colspan']);
 				}
-				if (!empty($screenitem['rowspan'])) {
+				if ($screenitem['rowspan'] > 1) {
 					$newColumn->setRowSpan($screenitem['rowspan']);
 				}
-				array_push($newColumns, $newColumn);
+				$newColumns[] = $newColumn;
 			}
 
 			// action right cell
 			if ($this->mode == SCREEN_MODE_EDIT) {
-				$icon = new CImg('images/general/minus.png', null, null, null, 'pointer');
-				if ($emptyScreenRow) {
-					$removeRowLink = 'javascript: location.href = "screenedit.php?screenid='.$this->screen['screenid'].'&rmv_row='.$r.'";';
+				if ($this->screen['vsize'] == SCREEN_MIN_SIZE) {
+					$link = (new CDiv('−'))
+						->addClass(ZBX_STYLE_TREEVIEW_PLUS)
+						->addClass(ZBX_STYLE_DISABLED);
 				}
 				else {
-					$removeRowLink = 'javascript: if (Confirm("'._('This screen-row is not empty. Delete it?').'")) {'.
-						' location.href = "screenedit.php?screenid='.$this->screen['screenid'].'&rmv_row='.$r.'"; }';
+					$link = (new CLink('−', 'screenedit.php?screenid='.$this->screen['screenid'].
+						url_param('templateid').'&rmv_row='.$r
+					))
+						->addClass(ZBX_STYLE_TREEVIEW_PLUS)
+						->addSID();
+					if (!$emptyScreenRow) {
+						$link->addConfirmation(_('This screen row is not empty. Delete it?'));
+					}
 				}
-				$icon->addAction('onclick', $removeRowLink);
-				array_push($newColumns, new CCol($icon));
+
+				$newColumns[] = (new CCol($link))
+					->addClass(ZBX_STYLE_CENTER)
+					->addClass(ZBX_STYLE_MIDDLE);
 			}
 			$screenTable->addRow(new CRow($newColumns));
 		}
 
 		// action bottom row
 		if ($this->mode == SCREEN_MODE_EDIT) {
-			$icon = new CImg('images/general/plus.png', null, null, null, 'pointer');
-			$icon->addAction('onclick', 'javascript: location.href = "screenedit.php?screenid='.$this->screen['screenid'].'&add_row='.$this->screen['vsize'].'";');
-			$newColumns = array(new CCol($icon));
-
-			for ($i = 0; $i < $this->screen['hsize']; $i++) {
-				$icon = new CImg('images/general/minus.png', null, null, null, 'pointer');
-				if (isset($emptyScreenColumns[$i])) {
-					$removeColumnLink = 'javascript: if (Confirm("'._('This screen-column is not empty. Delete it?').'")) {'.
-						' location.href = "screenedit.php?screenid='.$this->screen['screenid'].'&rmv_col='.$i.'"; }';
-				}
-				else {
-					$removeColumnLink = 'javascript: location.href = "screenedit.php?config=1&screenid='.$this->screen['screenid'].'&rmv_col='.$i.'";';
-				}
-				$icon->addAction('onclick', $removeColumnLink);
-
-				array_push($newColumns, new CCol($icon));
+			if ($this->screen['vsize'] >= SCREEN_MAX_SIZE) {
+				$link = (new CDiv('+'))
+					->addClass(ZBX_STYLE_TREEVIEW_PLUS)
+					->addClass(ZBX_STYLE_DISABLED);
+			}
+			else {
+				$link = (new CLink('+', 'screenedit.php?screenid='.$this->screen['screenid'].url_param('templateid').
+					'&add_row='.$this->screen['vsize']
+				))
+					->addClass(ZBX_STYLE_TREEVIEW_PLUS)
+					->addSID();
 			}
 
-			array_push($newColumns, new CCol(new CImg('images/general/zero.png', 'zero', 1, 1)));
+			$newColumns = [
+				(new CCol($link))
+					->addClass(ZBX_STYLE_CENTER)
+					->addClass(ZBX_STYLE_MIDDLE)
+			];
+
+			for ($i = 0; $i < $this->screen['hsize']; $i++) {
+				if ($this->screen['hsize'] == SCREEN_MIN_SIZE) {
+					$link = (new CDiv('−'))
+						->addClass(ZBX_STYLE_TREEVIEW_PLUS)
+						->addClass(ZBX_STYLE_DISABLED);
+				}
+				else {
+					$link = (new CLink('−', 'screenedit.php?screenid='.$this->screen['screenid'].
+						url_param('templateid').'&rmv_col='.$i
+					))
+						->addClass(ZBX_STYLE_TREEVIEW_PLUS)
+						->addSID();
+
+					if (array_key_exists($i, $emptyScreenColumns)) {
+						$link->addConfirmation(_('This screen column is not empty. Delete it?'));
+					}
+				}
+
+				$newColumns[] = (new CCol($link))
+					->addClass(ZBX_STYLE_CENTER)
+					->addClass(ZBX_STYLE_MIDDLE);
+			}
+
+			$newColumns[] = '';
 			$screenTable->addRow($newColumns);
 		}
 
@@ -511,17 +645,17 @@ class CScreenBuilder {
 	 * @param array $options['timeline']
 	 * @param string $options['profileIdx']
 	 */
-	public static function insertScreenScrollJs(array $options = array()) {
+	public static function insertScreenScrollJs(array $options = []) {
 		$options['timeline'] = empty($options['timeline']) ? '' : $options['timeline'];
 		$options['profileIdx'] = empty($options['profileIdx']) ? '' : $options['profileIdx'];
 
-		$timeControlData = array(
+		$timeControlData = [
 			'id' => 'scrollbar',
 			'loadScroll' => 1,
 			'mainObject' => 1,
 			'periodFixed' => CProfile::get($options['profileIdx'].'.timelinefixed', 1),
 			'sliderMaximumTimePeriod' => ZBX_MAX_PERIOD
-		);
+		];
 
 		zbx_add_post_js('timeControl.addObject("scrollbar", '.zbx_jsvalue($options['timeline']).', '.zbx_jsvalue($timeControlData).');');
 	}
@@ -543,7 +677,7 @@ class CScreenBuilder {
 	 * @param string $screenid
 	 */
 	public static function insertInitScreenJs($screenid) {
-		zbx_add_post_js('init_screen("'.$screenid.'", "iframe", "'.$screenid.'");');
+		zbx_add_post_js('init_screen("'.$screenid.'", "'.self::makeScreenTableId($screenid).'", "'.$screenid.'");');
 	}
 
 	/**
@@ -573,9 +707,20 @@ class CScreenBuilder {
 	 *
 	 * @static
 	 */
-	public static function insertScreenStandardJs(array $options = array()) {
+	public static function insertScreenStandardJs(array $options = []) {
 		CScreenBuilder::insertScreenScrollJs($options);
 		CScreenBuilder::insertScreenRefreshTimeJs();
 		CScreenBuilder::insertProcessObjectsJs();
+	}
+
+	/**
+	 * Creates a string for screen table ID attribute.
+	 *
+	 * @param string $screenId
+	 *
+	 * @return string
+	 */
+	protected static function makeScreenTableId($screenId) {
+		return 'screentable_'.$screenId;
 	}
 }

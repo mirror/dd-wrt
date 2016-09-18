@@ -20,12 +20,12 @@
 
 
 function graphType($type = null) {
-	$types = array(
+	$types = [
 		GRAPH_TYPE_NORMAL => _('Normal'),
 		GRAPH_TYPE_STACKED => _('Stacked'),
 		GRAPH_TYPE_PIE => _('Pie'),
 		GRAPH_TYPE_EXPLODED => _('Exploded')
-	);
+	];
 
 	if (is_null($type)) {
 		return $types;
@@ -38,25 +38,15 @@ function graphType($type = null) {
 	}
 }
 
-function graph_item_type2str($type) {
-	switch ($type) {
-		case GRAPH_ITEM_SUM:
-			return _('Graph sum');
-		case GRAPH_ITEM_SIMPLE:
-		default:
-			return _('Simple');
-	}
-}
-
 function graph_item_drawtypes() {
-	return array(
+	return [
 		GRAPH_ITEM_DRAWTYPE_LINE,
 		GRAPH_ITEM_DRAWTYPE_FILLED_REGION,
 		GRAPH_ITEM_DRAWTYPE_BOLD_LINE,
 		GRAPH_ITEM_DRAWTYPE_DOT,
 		GRAPH_ITEM_DRAWTYPE_DASHED_LINE,
 		GRAPH_ITEM_DRAWTYPE_GRADIENT_LINE
-	);
+	];
 }
 
 function graph_item_drawtype2str($drawtype) {
@@ -97,7 +87,7 @@ function graph_item_calc_fnc2str($calc_fnc) {
 }
 
 function getGraphDims($graphid = null) {
-	$graphDims = array();
+	$graphDims = [];
 
 	$graphDims['shiftYtop'] = 35;
 	if (is_null($graphid)) {
@@ -148,16 +138,6 @@ function getGraphDims($graphid = null) {
 	return $graphDims;
 }
 
-function get_graphs_by_hostid($hostid) {
-	return DBselect(
-		'SELECT DISTINCT g.*'.
-		' FROM graphs g,graphs_items gi,items i'.
-		' WHERE g.graphid=gi.graphid'.
-			' AND gi.itemid=i.itemid'.
-			' AND i.hostid='.zbx_dbstr($hostid)
-	);
-}
-
 function get_realhosts_by_graphid($graphid) {
 	$graph = getGraphByGraphId($graphid);
 	if (!empty($graph['templateid'])) {
@@ -183,105 +163,104 @@ function get_hosts_by_graphid($graphid) {
  *	sql is split to many sql's to optimize search on history tables
  */
 function get_min_itemclock_by_graphid($graphid) {
-	$itemids = array();
-	$dbItems = DBselect(
-		'SELECT DISTINCT gi.itemid'.
-		' FROM graphs_items gi'.
-		' WHERE gi.graphid='.zbx_dbstr($graphid)
-	);
-	while ($item = DBfetch($dbItems)) {
-		$itemids[$item['itemid']] = $item['itemid'];
-	}
+	$items = DBfetchArray(DBselect(
+		'SELECT DISTINCT i.itemid,i.value_type,i.history,i.trends'.
+		' FROM items i,graphs_items gi'.
+		' WHERE i.itemid=gi.itemid'.
+			' AND gi.graphid='.zbx_dbstr($graphid)
+	));
 
-	return get_min_itemclock_by_itemid($itemids);
+	return get_min_itemclock_by_itemid($items);
 }
 
 /**
- * Return the time of the 1st appearance of item in trends.
+ * Return the time of the 1st appearance of items in history or trends.
  *
- * @param array $itemIds
+ * @param array $items
+ * @param array $items[]['itemid']
+ * @param array $items[]['value_type']
+ * @param array $items[]['history']
+ * @param array $items[]['trends']
  *
  * @return int (unixtime)
  */
-function get_min_itemclock_by_itemid($itemIds) {
-	zbx_value2array($itemIds);
+function get_min_itemclock_by_itemid($items) {
+	$item_types = [
+		ITEM_VALUE_TYPE_FLOAT => [],
+		ITEM_VALUE_TYPE_STR => [],
+		ITEM_VALUE_TYPE_LOG => [],
+		ITEM_VALUE_TYPE_UINT64 => [],
+		ITEM_VALUE_TYPE_TEXT => []
+	];
 
-	$min = null;
-	$result = time() - SEC_PER_YEAR;
+	$max = ['history' => 0, 'trends' => 0];
 
-	$itemTypes = array(
-		ITEM_VALUE_TYPE_FLOAT => array(),
-		ITEM_VALUE_TYPE_STR => array(),
-		ITEM_VALUE_TYPE_LOG => array(),
-		ITEM_VALUE_TYPE_UINT64 => array(),
-		ITEM_VALUE_TYPE_TEXT => array()
-	);
+	foreach ($items as $item) {
+		$item_types[$item['value_type']][] = $item['itemid'];
 
-	$dbItems = DBselect(
-		'SELECT i.itemid,i.value_type'.
-		' FROM items i'.
-		' WHERE '.dbConditionInt('i.itemid', $itemIds)
-	);
-
-	while ($item = DBfetch($dbItems)) {
-		$itemTypes[$item['value_type']][$item['itemid']] = $item['itemid'];
-	}
-
-	// data for ITEM_VALUE_TYPE_FLOAT and ITEM_VALUE_TYPE_UINT64 can be stored in trends tables or history table
-	// get max trends and history values for such type items to find out in what tables to look for data
-	$sqlFrom = 'history';
-	$sqlFromNum = '';
-
-	if (!empty($itemTypes[ITEM_VALUE_TYPE_FLOAT]) || !empty($itemTypes[ITEM_VALUE_TYPE_UINT64])) {
-		$itemIdsNumeric = zbx_array_merge($itemTypes[ITEM_VALUE_TYPE_FLOAT], $itemTypes[ITEM_VALUE_TYPE_UINT64]);
-
-		$sql = 'SELECT MAX(i.history) AS history,MAX(i.trends) AS trends'.
-				' FROM items i'.
-				' WHERE '.dbConditionInt('i.itemid', $itemIdsNumeric);
-		if ($tableForNumeric = DBfetch(DBselect($sql))) {
-			$sqlFromNum = ($tableForNumeric['history'] > $tableForNumeric['trends']) ? 'history' : 'trends';
-			$result = time() - (SEC_PER_DAY * max($tableForNumeric['history'], $tableForNumeric['trends']));
+		if ($item['value_type'] == ITEM_VALUE_TYPE_FLOAT || $item['value_type'] == ITEM_VALUE_TYPE_UINT64) {
+			$max['history'] = max($max['history'], (int) $item['history']);
+			$max['trends'] = max($max['trends'], (int) $item['trends']);
 		}
 	}
 
-	foreach ($itemTypes as $type => $items) {
-		if (empty($items)) {
-			continue;
+	$sql_unions = [];
+	foreach ($item_types as $type => $itemids) {
+		if ($itemids) {
+			switch ($type) {
+				case ITEM_VALUE_TYPE_FLOAT:
+					$sql_from = ($max['history'] > $max['trends']) ? 'history' : 'trends';
+					break;
+				case ITEM_VALUE_TYPE_STR:
+					$sql_from = 'history_str';
+					break;
+				case ITEM_VALUE_TYPE_LOG:
+					$sql_from = 'history_log';
+					break;
+				case ITEM_VALUE_TYPE_UINT64:
+					$sql_from = ($max['history'] > $max['trends']) ? 'history_uint' : 'trends_uint';
+					break;
+				case ITEM_VALUE_TYPE_TEXT:
+					$sql_from = 'history_text';
+					break;
+				default:
+					$sql_from = 'history';
+			}
+
+			foreach ($itemids as $itemid) {
+				$sql_unions[] =
+					'SELECT MIN(h.clock) AS clock'.
+					' FROM '.$sql_from.' h'.
+					' WHERE h.itemid='.zbx_dbstr($itemid);
+			}
 		}
-
-		switch ($type) {
-			case ITEM_VALUE_TYPE_FLOAT:
-				$sqlFrom = $sqlFromNum;
-				break;
-			case ITEM_VALUE_TYPE_STR:
-				$sqlFrom = 'history_str';
-				break;
-			case ITEM_VALUE_TYPE_LOG:
-				$sqlFrom = 'history_log';
-				break;
-			case ITEM_VALUE_TYPE_UINT64:
-				$sqlFrom = $sqlFromNum.'_uint';
-				break;
-			case ITEM_VALUE_TYPE_TEXT:
-				$sqlFrom = 'history_text';
-				break;
-			default:
-				$sqlFrom = 'history';
-		}
-
-		foreach ($itemIds as $itemId) {
-			$sqlUnions[] = 'SELECT MIN(ht.clock) AS c FROM '.$sqlFrom.' ht WHERE ht.itemid='.zbx_dbstr($itemId);
-		}
-
-		$dbMin = DBfetch(DBselect(
-			'SELECT MIN(ht.c) AS min_clock'.
-			' FROM ('.implode(' UNION ALL ', $sqlUnions).') ht'
-		));
-
-		$min = $min ? min($min, $dbMin['min_clock']) : $dbMin['min_clock'];
 	}
 
-	return $min ? $min: $result;
+	$row = DBfetch(DBselect(
+		'SELECT MIN(h.clock) AS min_clock'.
+		' FROM ('.implode(' UNION ALL ', $sql_unions).') h'
+	));
+	$min_clock = $row['min_clock'];
+
+	// in case DB clock column is corrupted having negative numbers, return min clock from max possible history storage
+	if ($min_clock == 0) {
+		if ($item_types[ITEM_VALUE_TYPE_FLOAT] || $item_types[ITEM_VALUE_TYPE_UINT64]) {
+			$min_clock = time() - SEC_PER_DAY * max($max['history'], $max['trends']);
+
+			/*
+			 * In case history storage exceeds the maximum time difference between current year and minimum 1970
+			 * (for example year 2014 - 200 years < year 1970), correct year to 1970 (unix time timestamp 0).
+			 */
+			if ($min_clock < 0) {
+				$min_clock = 0;
+			}
+		}
+		else {
+			$min_clock = time() - SEC_PER_YEAR;
+		}
+	}
+
+	return $min_clock;
 }
 
 function getGraphByGraphId($graphId) {
@@ -306,8 +285,8 @@ function getGraphByGraphId($graphId) {
  *
  * @return array|bool
  */
-function getSameGraphItemsForHost($gitems, $destinationHostId, $error = true, array $flags = array()) {
-	$result = array();
+function getSameGraphItemsForHost($gitems, $destinationHostId, $error = true, array $flags = []) {
+	$result = [];
 
 	$flagsSql = $flags ? ' AND '.dbConditionInt('dest.flags', $flags) : '';
 
@@ -346,36 +325,39 @@ function getSameGraphItemsForHost($gitems, $destinationHostId, $error = true, ar
 /**
  * Copy specified graph to specified host.
  *
- * @param string $graphId
- * @param string $hostId
+ * @param string $graphid
+ * @param string $hostid
  *
  * @return array
  */
-function copyGraphToHost($graphId, $hostId) {
-	$graphs = API::Graph()->get(array(
-		'graphids' => $graphId,
-		'output' => API_OUTPUT_EXTEND,
-		'selectHosts' => array('hostid', 'name'),
-		'selectGraphItems' => API_OUTPUT_EXTEND
-	));
+function copyGraphToHost($graphid, $hostid) {
+	$graphs = API::Graph()->get([
+		'output' => ['graphid', 'name', 'width', 'height', 'yaxismin', 'yaxismax', 'show_work_period', 'show_triggers',
+			'graphtype', 'show_legend', 'show_3d', 'percent_left', 'percent_right', 'ymin_type', 'ymax_type',
+			'ymin_itemid', 'ymax_itemid'
+		],
+		'selectGraphItems' => ['itemid', 'drawtype', 'sortorder', 'color', 'yaxisside', 'calc_fnc', 'type'],
+		'selectHosts' => ['hostid', 'name'],
+		'graphids' => $graphid
+	]);
 	$graph = reset($graphs);
-	$graphHost = reset($graph['hosts']);
+	$host = reset($graph['hosts']);
 
-	if ($graphHost['hostid'] == $hostId) {
-		error(_s('Graph "%1$s" already exists on "%2$s".', $graph['name'], $graphHost['name']));
+	if ($host['hostid'] == $hostid) {
+		error(_s('Graph "%1$s" already exists on "%2$s".', $graph['name'], $host['name']));
 
 		return false;
 	}
 
 	$graph['gitems'] = getSameGraphItemsForHost(
 		$graph['gitems'],
-		$hostId,
+		$hostid,
 		true,
-		array(ZBX_FLAG_DISCOVERY_NORMAL, ZBX_FLAG_DISCOVERY_CREATED)
+		[ZBX_FLAG_DISCOVERY_NORMAL, ZBX_FLAG_DISCOVERY_CREATED]
 	);
 
 	if (!$graph['gitems']) {
-		$host = get_host_by_hostid($hostId);
+		$host = get_host_by_hostid($hostid);
 
 		info(_s('Skipped copying of graph "%1$s" to host "%2$s".', $graph['name'], $host['host']));
 
@@ -383,15 +365,13 @@ function copyGraphToHost($graphId, $hostId) {
 	}
 
 	// retrieve actual ymax_itemid and ymin_itemid
-	if ($graph['ymax_itemid'] && $itemId = get_same_item_for_host($graph['ymax_itemid'], $hostId)) {
-		$graph['ymax_itemid'] = $itemId;
+	if ($graph['ymax_itemid'] && $itemid = get_same_item_for_host($graph['ymax_itemid'], $hostid)) {
+		$graph['ymax_itemid'] = $itemid;
 	}
 
-	if ($graph['ymin_itemid'] && $itemId = get_same_item_for_host($graph['ymin_itemid'], $hostId)) {
-		$graph['ymin_itemid'] = $itemId;
+	if ($graph['ymin_itemid'] && $itemid = get_same_item_for_host($graph['ymin_itemid'], $hostid)) {
+		$graph['ymin_itemid'] = $itemid;
 	}
-
-	unset($graph['templateid']);
 
 	return API::Graph()->create($graph);
 }
@@ -406,22 +386,22 @@ function navigation_bar_calc($idx = null, $idx2 = 0, $update = false) {
 				CProfile::update($idx.'.stime', $_REQUEST['stime'], PROFILE_TYPE_STR, $idx2);
 			}
 		}
-		$_REQUEST['period'] = get_request('period', CProfile::get($idx.'.period', ZBX_PERIOD_DEFAULT, $idx2));
-		$_REQUEST['stime'] = get_request('stime', CProfile::get($idx.'.stime', null, $idx2));
+		$_REQUEST['period'] = getRequest('period', CProfile::get($idx.'.period', ZBX_PERIOD_DEFAULT, $idx2));
+		$_REQUEST['stime'] = getRequest('stime', CProfile::get($idx.'.stime', null, $idx2));
 	}
 
-	$_REQUEST['period'] = get_request('period', ZBX_PERIOD_DEFAULT);
-	$_REQUEST['stime'] = get_request('stime', null);
+	$_REQUEST['period'] = getRequest('period', ZBX_PERIOD_DEFAULT);
+	$_REQUEST['stime'] = getRequest('stime');
 
 	if ($_REQUEST['period'] < ZBX_MIN_PERIOD) {
-		show_message(_n('Minimum time period to display is %1$s hour.',
-			'Minimum time period to display is %1$s hours.',
-			(int) ZBX_MIN_PERIOD / SEC_PER_HOUR
+		show_error_message(_n('Minimum time period to display is %1$s minute.',
+			'Minimum time period to display is %1$s minutes.',
+			(int) ZBX_MIN_PERIOD / SEC_PER_MIN
 		));
 		$_REQUEST['period'] = ZBX_MIN_PERIOD;
 	}
 	elseif ($_REQUEST['period'] > ZBX_MAX_PERIOD) {
-		show_message(_n('Maximum time period to display is %1$s day.',
+		show_error_message(_n('Maximum time period to display is %1$s day.',
 			'Maximum time period to display is %1$s days.',
 			(int) ZBX_MAX_PERIOD / SEC_PER_DAY
 		));
@@ -442,18 +422,18 @@ function navigation_bar_calc($idx = null, $idx2 = 0, $update = false) {
 }
 
 function get_next_color($palettetype = 0) {
-	static $prev_color = array('dark' => true, 'color' => 0, 'grad' => 0);
+	static $prev_color = ['dark' => true, 'color' => 0, 'grad' => 0];
 
 	switch ($palettetype) {
 		case 1:
-			$grad = array(200, 150, 255, 100, 50, 0);
+			$grad = [200, 150, 255, 100, 50, 0];
 			break;
 		case 2:
-			$grad = array(100, 50, 200, 150, 250, 0);
+			$grad = [100, 50, 200, 150, 250, 0];
 			break;
 		case 0:
 		default:
-			$grad = array(255, 200, 150, 100, 50, 0);
+			$grad = [255, 200, 150, 100, 50, 0];
 			break;
 	}
 
@@ -463,10 +443,10 @@ function get_next_color($palettetype = 0) {
 
 	switch ($prev_color['color']) {
 		case 0:
-			$r = $set_grad;
+			$g = $set_grad;
 			break;
 		case 1:
-			$g = $set_grad;
+			$r = $set_grad;
 			break;
 		case 2:
 			$b = $set_grad;
@@ -491,30 +471,30 @@ function get_next_color($palettetype = 0) {
 	}
 	$prev_color['color'] = ($prev_color['color'] + 1) % 7;
 
-	return array($r, $g, $b);
+	return [$r, $g, $b];
 }
 
 function get_next_palette($palette = 0, $palettetype = 0) {
-	static $prev_color = array(0, 0, 0, 0);
+	static $prev_color = [0, 0, 0, 0];
 
 	switch ($palette) {
 		case 0:
-			$palettes = array(
-				array(150, 0, 0), array(0, 100, 150), array(170, 180, 180), array(152, 100, 0), array(130, 0, 150),
-				array(0, 0, 150), array(200, 100, 50), array(250, 40, 40), array(50, 150, 150), array(100, 150, 0)
-			);
+			$palettes = [
+				[150, 0, 0], [0, 100, 150], [170, 180, 180], [152, 100, 0], [130, 0, 150],
+				[0, 0, 150], [200, 100, 50], [250, 40, 40], [50, 150, 150], [100, 150, 0]
+			];
 			break;
 		case 1:
-			$palettes = array(
-				array(0, 100, 150), array(153, 0, 30), array(100, 150, 0), array(130, 0, 150), array(0, 0, 100),
-				array(200, 100, 50), array(152, 100, 0), array(0, 100, 0), array(170, 180, 180), array(50, 150, 150)
-			);
+			$palettes = [
+				[0, 100, 150], [153, 0, 30], [100, 150, 0], [130, 0, 150], [0, 0, 100],
+				[200, 100, 50], [152, 100, 0], [0, 100, 0], [170, 180, 180], [50, 150, 150]
+			];
 			break;
 		case 2:
-			$palettes = array(
-				array(170, 180, 180), array(152, 100, 0), array(50, 200, 200), array(153, 0, 30), array(0, 0, 100),
-				array(100, 150, 0), array(130, 0, 150), array(0, 100, 150), array(200, 100, 50), array(0, 100, 0)
-			);
+			$palettes = [
+				[170, 180, 180], [152, 100, 0], [50, 200, 200], [153, 0, 30], [0, 0, 100],
+				[100, 150, 0], [130, 0, 150], [0, 100, 150], [200, 100, 50], [0, 100, 0]
+			];
 			break;
 		case 3:
 		default:
@@ -556,65 +536,6 @@ function get_next_palette($palette = 0, $palettetype = 0) {
 	return $result;
 }
 
-function imageDiagonalMarks($im,$x, $y, $offset, $color) {
-	global $colors;
-
-	$gims = array(
-		'lt' => array(0, 0, -9, 0, -9, -3, -3, -9, 0, -9),
-		'rt' => array(0, 0, 9, 0, 9, -3, 3,-9, 0, -9),
-		'lb' => array(0, 0, -9, 0, -9, 3, -3, 9, 0, 9),
-		'rb' => array(0, 0, 9, 0, 9, 3, 3, 9, 0, 9)
-	);
-
-	foreach ($gims['lt'] as $num => $px) {
-		if (($num % 2) == 0) {
-			$gims['lt'][$num] = $px + $x - $offset;
-		}
-		else {
-			$gims['lt'][$num] = $px + $y - $offset;
-		}
-	}
-
-	foreach ($gims['rt'] as $num => $px) {
-		if (($num % 2) == 0) {
-			$gims['rt'][$num] = $px + $x + $offset;
-		}
-		else {
-			$gims['rt'][$num] = $px + $y - $offset;
-		}
-	}
-
-	foreach ($gims['lb'] as $num => $px) {
-		if (($num % 2) == 0) {
-			$gims['lb'][$num] = $px + $x - $offset;
-		}
-		else {
-			$gims['lb'][$num] = $px + $y + $offset;
-		}
-	}
-
-	foreach ($gims['rb'] as $num => $px) {
-		if (($num % 2) == 0) {
-			$gims['rb'][$num] = $px + $x + $offset;
-		}
-		else {
-			$gims['rb'][$num] = $px + $y + $offset;
-		}
-	}
-
-	imagefilledpolygon($im, $gims['lt'], 5, $color);
-	imagepolygon($im, $gims['lt'], 5, $colors['Dark Red']);
-
-	imagefilledpolygon($im, $gims['rt'], 5, $color);
-	imagepolygon($im, $gims['rt'], 5, $colors['Dark Red']);
-
-	imagefilledpolygon($im, $gims['lb'], 5, $color);
-	imagepolygon($im, $gims['lb'], 5, $colors['Dark Red']);
-
-	imagefilledpolygon($im, $gims['rb'], 5, $color);
-	imagepolygon($im, $gims['rb'], 5, $colors['Dark Red']);
-}
-
 /**
  * Draw trigger recent change markers.
  *
@@ -626,15 +547,13 @@ function imageDiagonalMarks($im,$x, $y, $offset, $color) {
  * @param string   $marks	"t" - top, "r" - right, "b" - bottom, "l" - left
  */
 function imageVerticalMarks($im, $x, $y, $offset, $color, $marks) {
-	global $colors;
-
 	$polygons = 5;
-	$gims = array(
-		't' => array(0, 0, -6, -6, -3, -9, 3, -9, 6, -6),
-		'r' => array(0, 0, 6, -6, 9, -3, 9, 3, 6, 6),
-		'b' => array(0, 0, 6, 6, 3, 9, -3, 9, -6, 6),
-		'l' => array(0, 0, -6, 6, -9, 3, -9, -3, -6, -6)
-	);
+	$gims = [
+		't' => [0, 0, -6, -6, -3, -9, 3, -9, 6, -6],
+		'r' => [0, 0, 6, -6, 9, -3, 9, 3, 6, 6],
+		'b' => [0, 0, 6, 6, 3, 9, -3, 9, -6, 6],
+		'l' => [0, 0, -6, 6, -9, 3, -9, -3, -6, -6]
+	];
 
 	foreach ($gims['t'] as $num => $px) {
 		if (($num % 2) == 0) {
@@ -672,21 +591,24 @@ function imageVerticalMarks($im, $x, $y, $offset, $color, $marks) {
 		}
 	}
 
+	$color = get_color($im, $color);
+	$polygon_color = get_color($im, '960000');
+
 	if (strpos($marks, 't') !== false) {
 		imagefilledpolygon($im, $gims['t'], $polygons, $color);
-		imagepolygon($im, $gims['t'], $polygons, $colors['Dark Red']);
+		imagepolygon($im, $gims['t'], $polygons, $polygon_color);
 	}
 	if (strpos($marks, 'r') !== false) {
 		imagefilledpolygon($im, $gims['r'], $polygons, $color);
-		imagepolygon($im, $gims['r'], $polygons, $colors['Dark Red']);
+		imagepolygon($im, $gims['r'], $polygons, $polygon_color);
 	}
 	if (strpos($marks, 'b') !== false) {
 		imagefilledpolygon($im, $gims['b'], $polygons, $color);
-		imagepolygon($im, $gims['b'], $polygons, $colors['Dark Red']);
+		imagepolygon($im, $gims['b'], $polygons, $polygon_color);
 	}
 	if (strpos($marks, 'l') !== false) {
 		imagefilledpolygon($im, $gims['l'], $polygons, $color);
-		imagepolygon($im, $gims['l'], $polygons, $colors['Dark Red']);
+		imagepolygon($im, $gims['l'], $polygons, $polygon_color);
 	}
 }
 
@@ -751,17 +673,17 @@ function imageTextSize($fontsize, $angle, $string) {
 
 	$ar = imagettfbbox($fontsize, $angle, $ttf, $string);
 
-	return array(
+	return [
 		'height' => abs($ar[1] - $ar[5]),
 		'width' => abs($ar[0] - $ar[4]),
 		'baseline' => $ar[1]
-	);
+	];
 }
 
 function dashedLine($image, $x1, $y1, $x2, $y2, $color) {
 	// style for dashed lines
 	if (!is_array($color)) {
-		$style = array($color, $color, IMG_COLOR_TRANSPARENT, IMG_COLOR_TRANSPARENT);
+		$style = [$color, $color, IMG_COLOR_TRANSPARENT, IMG_COLOR_TRANSPARENT];
 	}
 	else {
 		$style = $color;

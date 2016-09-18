@@ -7,18 +7,17 @@ SUBDIRS = \
 	discoverer \
 	housekeeper \
 	httppoller \
-	nodewatcher \
 	pinger \
 	poller \
 	snmptrapper \
 	timer \
 	trapper \
-	utils \
 	watchdog \
 	escalator \
 	proxypoller \
 	selfmon \
-	vmware
+	vmware \
+	taskmanager
 
 sbin_PROGRAMS = zabbix_server
 
@@ -40,19 +39,18 @@ zabbix_server_LDADD = \
 	timer/libzbxtimer.a \
 	trapper/libzbxtrapper.a \
 	snmptrapper/libzbxsnmptrapper.a \
-	nodewatcher/libzbxnodewatcher.a \
-	utils/libzbxutils.a \
 	httppoller/libzbxhttppoller.a \
 	watchdog/libzbxwatchdog.a \
 	escalator/libzbxescalator.a \
 	proxypoller/libzbxproxypoller.a \
 	selfmon/libzbxselfmon.a \
 	vmware/libzbxvmware.a \
+	taskmanager/libzbxtaskmanager.a \
 	$(top_srcdir)/src/libs/zbxsysinfo/libzbxserversysinfo.a \
-	$(top_srcdir)/src/libs/zbxsysinfo/$(ARCH)/libspecsysinfo.a \
 	$(top_srcdir)/src/libs/zbxsysinfo/common/libcommonsysinfo.a \
 	$(top_srcdir)/src/libs/zbxsysinfo/simple/libsimplesysinfo.a \
 	$(top_srcdir)/src/libs/zbxlog/libzbxlog.a \
+	$(top_srcdir)/src/libs/zbxserver/libzbxserver.a \
 	$(top_srcdir)/src/libs/zbxdbcache/libzbxdbcache.a \
 	$(top_srcdir)/src/libs/zbxmemory/libzbxmemory.a \
 	$(top_srcdir)/src/libs/zbxregexp/libzbxregexp.a \
@@ -68,7 +66,6 @@ zabbix_server_LDADD = \
 	$(top_srcdir)/src/libs/zbxjson/libzbxjson.a \
 	$(top_srcdir)/src/libs/zbxexec/libzbxexec.a \
 	$(top_srcdir)/src/libs/zbxself/libzbxself.a \
-	$(top_srcdir)/src/libs/zbxserver/libzbxserver.a \
 	$(top_srcdir)/src/libs/zbxicmpping/libzbxicmpping.a \
 	$(top_srcdir)/src/libs/zbxdbupgrade/libzbxdbupgrade.a \
 	$(top_srcdir)/src/libs/zbxdbhigh/libzbxdbhigh.a \

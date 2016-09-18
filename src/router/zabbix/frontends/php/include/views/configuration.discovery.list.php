@@ -17,75 +17,79 @@
 ** along with this program; if not, write to the Free Software
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
-?>
-<?php
-$discoveryWidget = new CWidget();
 
-// create new discovery rule button
-$createForm = new CForm('get');
-$createForm->cleanItems();
-$createForm->addItem(new CSubmit('form', _('Create discovery rule')));
-$discoveryWidget->addPageHeader(_('CONFIGURATION OF DISCOVERY RULES'), $createForm);
-$discoveryWidget->addHeader(_('Discovery rules'));
-$discoveryWidget->addHeaderRowNumber();
+$widget = (new CWidget())
+	->setTitle(_('Discovery rules'))
+	->setControls((new CForm('get'))
+		->cleanItems()
+		->addItem((new CList())->addItem(new CSubmit('form', _('Create discovery rule'))))
+	)
+	->addItem((new CFilter('web.discoveryconf.filter.state'))
+		->addColumn((new CFormList())->addRow(_('Name'),
+			(new CTextBox('filter_name', $data['filter']['name']))
+				->setWidth(ZBX_TEXTAREA_FILTER_SMALL_WIDTH)
+				->setAttribute('autofocus', 'autofocus')
+		))
+		->addColumn((new CFormList())->addRow(_('Status'),
+			(new CRadioButtonList('filter_status', (int) $data['filter']['status']))
+				->addValue(_('Any'), -1)
+				->addValue(_('Enabled'), DRULE_STATUS_ACTIVE)
+				->addValue(_('Disabled'), DRULE_STATUS_DISABLED)
+				->setModern(true)
+		))
+	);
 
 // create form
-$discoveryForm = new CForm();
-$discoveryForm->setName('druleForm');
+$discoveryForm = (new CForm())->setName('druleForm');
 
 // create table
-$discoveryTable = new CTableInfo(_('No discovery rules found.'));
-$discoveryTable->setHeader(array(
-	new CCheckBox('all_drules', null, "checkAll('".$discoveryForm->getName()."', 'all_drules', 'g_druleid');"),
-	$this->data['displayNodes'] ? _('Node') : null,
-	make_sorting_header(_('Name'), 'name'),
-	_('IP range'),
-	_('Delay'),
-	_('Checks'),
-	_('Status')
-));
+$discoveryTable = (new CTableInfo())
+	->setHeader([
+		(new CColHeader(
+			(new CCheckBox('all_drules'))->onClick("checkAll('".$discoveryForm->getName()."', 'all_drules', 'g_druleid');")
+		))->addClass(ZBX_STYLE_CELL_WIDTH),
+		make_sorting_header(_('Name'), 'name', $this->data['sort'], $this->data['sortorder']),
+		_('IP range'),
+		_('Delay'),
+		_('Checks'),
+		_('Status')
+	]);
 foreach ($data['drules'] as $drule) {
 	array_push($drule['description'], new CLink($drule['name'], '?form=update&druleid='.$drule['druleid']));
 
-	$status = new CCol(new CLink(
-		discovery_status2str($drule['status']),
-		'?g_druleid'.SQUAREBRACKETS.'='.$drule['druleid'].($drule['status'] == DRULE_STATUS_ACTIVE ? '&go=disable' : '&go=activate'),
-		discovery_status2style($drule['status'])
-	));
+	$status = new CCol(
+		(new CLink(
+			discovery_status2str($drule['status']),
+			'?g_druleid[]='.$drule['druleid'].
+			'&action='.($drule['status'] == DRULE_STATUS_ACTIVE ? 'drule.massdisable' : 'drule.massenable')
+		))
+			->addClass(ZBX_STYLE_LINK_ACTION)
+			->addClass(discovery_status2style($drule['status']))
+			->addSID()
+	);
 
-	$discoveryTable->addRow(array(
-		new CCheckBox('g_druleid['.$drule['druleid'].']', null, null, $drule['druleid']),
-		$this->data['displayNodes'] ? $drule['nodename'] : null,
+	$discoveryTable->addRow([
+		new CCheckBox('g_druleid['.$drule['druleid'].']', $drule['druleid']),
 		$drule['description'],
 		$drule['iprange'],
-		$drule['delay'],
+		convertUnitsS($drule['delay']),
 		!empty($drule['checks']) ? implode(', ', $drule['checks']) : '',
 		$status
-	));
+	]);
 }
 
-// create go buttons
-$goComboBox = new CComboBox('go');
-$goOption = new CComboItem('activate', _('Enable selected'));
-$goOption->setAttribute('confirm', _('Enable selected discovery rules?'));
-$goComboBox->addItem($goOption);
-
-$goOption = new CComboItem('disable', _('Disable selected'));
-$goOption->setAttribute('confirm', _('Disable selected discovery rules?'));
-$goComboBox->addItem($goOption);
-
-$goOption = new CComboItem('delete', _('Delete selected'));
-$goOption->setAttribute('confirm', _('Delete selected discovery rules?'));
-$goComboBox->addItem($goOption);
-
-$goButton = new CSubmit('goButton', _('Go').' (0)');
-$goButton->setAttribute('id','goButton');
-zbx_add_post_js('chkbxRange.pageGoName = "g_druleid";');
-
 // append table to form
-$discoveryForm->addItem(array($this->data['paging'], $discoveryTable, $this->data['paging'], get_table_header(array($goComboBox, $goButton))));
+$discoveryForm->addItem([
+	$discoveryTable,
+	$this->data['paging'],
+	new CActionButtonList('action', 'g_druleid', [
+		'drule.massenable' => ['name' => _('Enable'), 'confirm' => _('Enable selected discovery rules?')],
+		'drule.massdisable' => ['name' => _('Disable'), 'confirm' => _('Disable selected discovery rules?')],
+		'drule.massdelete' => ['name' => _('Delete'), 'confirm' => _('Delete selected discovery rules?')]
+	])
+]);
 
 // append form to widget
-$discoveryWidget->addItem($discoveryForm);
-return $discoveryWidget;
-?>
+$widget->addItem($discoveryForm);
+
+return $widget;

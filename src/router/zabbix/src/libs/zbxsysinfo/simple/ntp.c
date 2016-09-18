@@ -143,10 +143,9 @@ out:
 
 int	check_ntp(char *host, unsigned short port, int timeout, int *value_int)
 {
-	zbx_sock_t	s;
+	zbx_socket_t	s;
 	int		ret;
-	char		request[NTP_PACKET_SIZE], *response = NULL;
-	size_t		response_len;
+	char		request[NTP_PACKET_SIZE];
 	ntp_data	data;
 
 	*value_int = 0;
@@ -159,10 +158,10 @@ int	check_ntp(char *host, unsigned short port, int timeout, int *value_int)
 
 		if (SUCCEED == (ret = zbx_udp_send(&s, request, sizeof(request), timeout)))
 		{
-			if (SUCCEED == (ret = zbx_udp_recv(&s, &response, &response_len, timeout)))
+			if (SUCCEED == (ret = zbx_udp_recv(&s, timeout)))
 			{
 				*value_int = (SUCCEED == unpack_ntp(&data, (unsigned char *)request,
-						(unsigned char *)response, response_len));
+						(unsigned char *)s.buffer, s.read_bytes));
 			}
 		}
 
@@ -170,7 +169,7 @@ int	check_ntp(char *host, unsigned short port, int timeout, int *value_int)
 	}
 
 	if (FAIL == ret)
-		zabbix_log(LOG_LEVEL_DEBUG, "NTP check error: %s", zbx_tcp_strerror());
+		zabbix_log(LOG_LEVEL_DEBUG, "NTP check error: %s", zbx_socket_strerror());
 
 	return SYSINFO_RET_OK;
 }

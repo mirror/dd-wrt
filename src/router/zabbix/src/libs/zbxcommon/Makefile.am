@@ -7,9 +7,10 @@ libzbxcommon_a_SOURCES = \
 	xml.c \
 	comms.c \
 	str.c \
-	time.c \
 	zbxgetopt.c \
 	alias.c \
 	file.c \
-	setproctitle.c
+	setproctitle.c \
+	iprange.c
 
+libzbxcommon_a_CFLAGS = @ICONV_CFLAGS@

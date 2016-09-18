@@ -64,7 +64,6 @@ calendar.prototype = {
 		this.timeobjects = new Array();
 		if (!(this.status = this.checkOuterObj(timeobjects))) {
 			throw 'Calendar: constructor expects second parameter to be list of DOM nodes [d,M,Y,H,i].';
-			return false;
 		}
 		this.calendarcreate(parentNodeid);
 
@@ -170,14 +169,15 @@ calendar.prototype = {
 				var val = null;
 				var result = false;
 
-				if (this.timeobjects[0].tagName.toLowerCase() == 'input') {
+				if (this.timeobjects[0].tagName.toLowerCase() === 'input') {
 					val = this.timeobjects[0].value;
 				}
 				else {
 					val = (IE) ? this.timeobjects[0].innerText : this.timeobjects[0].textContent;
 				}
 
-				if (jQuery(this.timeobjects[0]).attr('data-timestamp') > 0) {
+				// allow unix timestamp 0 (year 1970)
+				if (jQuery(this.timeobjects[0]).attr('data-timestamp') >= 0) {
 					this.setNow(jQuery(this.timeobjects[0]).attr('data-timestamp'));
 				}
 				else {
@@ -203,7 +203,7 @@ calendar.prototype = {
 					}
 				}
 
-				if(!result) {
+				if (!result) {
 					return false;
 				}
 				break;
@@ -248,7 +248,6 @@ calendar.prototype = {
 				break;
 			default:
 				return false;
-				break;
 		}
 
 		if (!is_null(this.clndr_utime_field)) {
@@ -258,115 +257,50 @@ calendar.prototype = {
 	},
 
 	setSDateDMY: function(d, m, y) {
-		d = parseInt(d,10);
-		m = parseInt(m,10);
-		y = parseInt(y,10);
+		var dateHolder = new Date(y, m - 1, d, 0, 0, 0);
 
-		var result = false;
-		if (m > 0 && m < 13) {
-			this.sdt.setMonth(m - 1);
-			result = true;
+		if (y >= 1970 && dateHolder.getFullYear() == y && dateHolder.getMonth() == m - 1 && dateHolder.getDate() == d) {
+			this.sdt.setTime(dateHolder.getTime());
+			return true;
 		}
 
-		if (y > 1969) {
-			this.sdt.setFullYear(y);
-			result = true;
-		}
-
-		if (d > -1 && d < 29) {
-			this.sdt.setDate(d);
-			result = true;
-		}
-		else if (d > 28 && result) {
-			if (d <= this.daysInMonth(this.sdt.getMonth(), this.sdt.getFullYear())) {
-				this.sdt.setDate(d);
-				result = true;
-			}
-		}
-		this.sdt.setHours(00);
-		this.sdt.setMinutes(00);
-		this.sdt.setSeconds(00);
-		return result;
+		return false;
 	},
 
 	setDateToOuterObj: function() {
 		switch (this.timeobjects.length) {
 			case 1:
-				var timestring = this.sdt.getDate() + '.' + (this.sdt.getMonth() + 1) + '.' + this.sdt.getFullYear() + ' ' + this.sdt.getHours() + ':' + this.sdt.getMinutes();
-				if (this.timeobjects[0].tagName.toLowerCase() == 'input') {
-					this.timeobjects[0].value = timestring;
+				// uses default format
+				var date = this.sdt.format();
+
+				if (this.timeobjects[0].tagName.toLowerCase() === 'input') {
+					this.timeobjects[0].value = date;
 				}
 				else {
 					if (IE) {
-						this.timeobjects[0].innerText =  timestring;
+						this.timeobjects[0].innerText =  date;
 					}
 					else {
-						this.timeobjects[0].textContent = timestring;
+						this.timeobjects[0].textContent = date;
 					}
 				}
 				break;
+
 			case 3:
 			case 5:
-				// day
-				if (this.timeobjects[0].tagName.toLowerCase() == 'input') {
-					this.timeobjects[0].value = this.sdt.getDate();
-				}
-				else {
-					if (IE) {
-						this.timeobjects[0].innerText = this.sdt.getDate();
-					}
-					else {
-						this.timeobjects[0].textContent = this.sdt.getDate();
-					}
-				}
-				// month
-				if (this.timeobjects[1].tagName.toLowerCase() == 'input') {
-					this.timeobjects[1].value = this.sdt.getMonth() + 1;
-				}
-				else {
-					if(IE) {
-						this.timeobjects[1].innerText = this.sdt.getMonth() + 1;
-					}
-					else {
-						this.timeobjects[1].textContent = this.sdt.getMonth() + 1;
-					}
-				}
-				// year
-				if (this.timeobjects[2].tagName.toLowerCase() == 'input') {
-					this.timeobjects[2].value = this.sdt.getFullYear();
-				}
-				else {
-					if (IE) {
-						this.timeobjects[2].innerText = this.sdt.getFullYear();
-					}
-					else {
-						this.timeobjects[2].textContent = this.sdt.getFullYear();
-					}
-				}
+				// custom date format for input fields
+				var date = this.sdt.format('d m Y H i').split(' ');
 
-				if (this.timeobjects.length > 4) {
-					// hour
-					if (this.timeobjects[3].tagName.toLowerCase() == 'input') {
-						this.timeobjects[3].value = this.sdt.getHours();
+				for (var i = 0; i < this.timeobjects.length; i++) {
+					if (this.timeobjects[i].tagName.toLowerCase() === 'input') {
+						this.timeobjects[i].value = date[i];
 					}
 					else {
 						if (IE) {
-							this.timeobjects[3].innerText = this.sdt.getHours();
+							this.timeobjects[i].innerText = date[i];
 						}
 						else {
-							this.timeobjects[3].textContent = this.sdt.getHours();
-						}
-					}
-					// minute
-					if (this.timeobjects[4].tagName.toLowerCase() == 'input') {
-						this.timeobjects[4].value = this.sdt.getMinutes();
-					}
-					else {
-						if (IE) {
-							this.timeobjects[4].innerText = this.sdt.getMinutes();
-						}
-						else {
-							this.timeobjects[4].textContent = this.sdt.getMinutes();
+							this.timeobjects[i].textContent = date[i];
 						}
 					}
 				}
@@ -379,7 +313,7 @@ calendar.prototype = {
 	},
 
 	setNow: function(timestamp) {
-		var now = (isNaN(timestamp)) ? new Date() : new Date(timestamp * 1000);
+		var now = (isNaN(timestamp)) ? new CDate() : new CDate(timestamp * 1000);
 		this.day = now.getDate();
 		this.month = now.getMonth();
 		this.year = now.getFullYear();
@@ -392,7 +326,6 @@ calendar.prototype = {
 	},
 
 	setDone: function() {
-		this.syncSDT();
 		this.syncBSDateBySDT();
 		this.ondateselected();
 	},
@@ -439,9 +372,16 @@ calendar.prototype = {
 
 	monthup: function() {
 		this.month++;
+
 		if (this.month > 11) {
-			this.month = 0;
-			this.yearup();
+			// prevent months from running in loop in year 2038
+			if (this.year < 2038) {
+				this.month = 0;
+				this.yearup();
+			}
+			else {
+				this.month = 11;
+			}
 		}
 		else {
 			this.syncCDT();
@@ -451,9 +391,16 @@ calendar.prototype = {
 
 	monthdown: function() {
 		this.month--;
+
 		if (this.month < 0) {
-			this.month = 11;
-			this.yeardown();
+			// prevent months from running in loop in year 1970
+			if (this.year > 1970) {
+				this.month = 11;
+				this.yeardown();
+			}
+			else {
+				this.month = 0;
+			}
 		}
 		else {
 			this.syncCDT();
@@ -479,22 +426,6 @@ calendar.prototype = {
 		this.setCDate();
 	},
 
-	setSDT: function(d, m, y, h, i) {
-		this.sdt.setMinutes(i);
-		this.sdt.setHours(h);
-		this.sdt.setDate(d);
-		this.sdt.setMonth(m);
-		this.sdt.setFullYear(y);
-	},
-
-	setCDT: function(d, m, y, h, i) {
-		this.cdt.setMinutes(i);
-		this.cdt.setHours(h);
-		this.cdt.setDate(d);
-		this.cdt.setMonth(m);
-		this.cdt.setFullYear(y);
-	},
-
 	syncBSDateBySDT: function() {
 		this.minute = this.sdt.getMinutes();
 		this.hour = this.sdt.getHours();
@@ -504,66 +435,35 @@ calendar.prototype = {
 	},
 
 	syncSDT: function() {
-		this.setSDT(this.day, this.month, this.year, this.hour, this.minute);
+		this.sdt.setTimeObject(this.year, this.month, this.day, this.hour, this.minute);
 	},
 
 	syncCDT: function() {
-		this.setCDT(1, this.month, this.year, this.hour, this.minute);
+		this.cdt.setTimeObject(this.year, this.month, 1, this.hour, this.minute);
 	},
 
 	setCDate: function() {
 		this.clndr_minute.value = this.minute;
+		this.clndr_minute.onchange();
 		this.clndr_hour.value = this.hour;
-		if (IE) {
-			this.clndr_month.innerHTML = this.monthname[this.month].toString();
-			this.clndr_year.innerHTML = this.year;
-		}
-		else {
-			this.clndr_month.textContent = this.monthname[this.month];
-			this.clndr_year.textContent = this.year;
-		}
+		this.clndr_hour.onchange();
+		this.clndr_month.textContent = this.monthname[this.month];
+		this.clndr_year.textContent = this.year;
 		this.createDaysTab();
 	},
 
-	daysInFeb: function(year) {
-		// February has 29 days in any year evenly divisible by four,
-		// EXCEPT for centurial years which are not also divisible by 400.
-		return (year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)) ? 29 : 28;
-	},
-
-	daysInMonth: function(m, y) {
-		m++;
-		var days = 31;
-		if (m == 4 || m == 6 || m == 9 || m == 11) {
-			days = 30;
-		}
-		else if (m == 2) {
-			days = this.daysInFeb(y);
-		}
-		return days;
-	},
-
 	createDaysTab: function() {
-		this.clndr_days.update('');
-		var table = document.createElement('table');
-		this.clndr_days.appendChild(table);
-
-		table.setAttribute('cellpadding', '1');
-		table.setAttribute('cellspacing', '1');
-		table.setAttribute('width', '100%');
-		table.className = 'calendartab';
-
-		var tbody = document.createElement('tbody');
-		table.appendChild(tbody);
+		var tbody = this.clndr_days;
+		tbody.update('');
 
 		var cur_month = this.cdt.getMonth();
 
-		// make 0 - monday, not sunday(as default)
+		// make 0 - Monday, not Sunday (as default)
 		var prev_days = this.cdt.getDay() - 1;
 		if (prev_days < 0) {
 			prev_days = 6;
 		}
-		if(prev_days > 0) {
+		if (prev_days > 0) {
 			this.cdt.setTime(this.cdt.getTime() - prev_days * 86400000);
 		}
 
@@ -575,9 +475,6 @@ calendar.prototype = {
 				tr.appendChild(td);
 				Element.extend(td);
 
-				if (x > 4) {
-					td.className = 'holiday';
-				}
 				if (cur_month != this.cdt.getMonth()) {
 					td.addClassName('grey');
 				}
@@ -599,7 +496,7 @@ calendar.prototype = {
 	calendarcreate: function(parentNodeid) {
 		this.clndr_calendar = document.createElement('div');
 		Element.extend(this.clndr_calendar);
-		this.clndr_calendar.className = 'calendar';
+		this.clndr_calendar.className = 'overlay-dialogue calendar';
 		this.clndr_calendar.hide();
 
 		if (typeof(parentNodeid) == 'undefined') {
@@ -610,145 +507,112 @@ calendar.prototype = {
 		}
 
 		/*
-		 * Calendar hat
+		 * Calendar header
 		 */
-		var line_div = document.createElement('div');
-		this.clndr_calendar.appendChild(line_div);
-		var table = document.createElement('table');
-		line_div.appendChild(table);
-
-		table.setAttribute('cellpadding', '2');
-		table.setAttribute('cellspacing', '0');
-		table.setAttribute('width', '100%');
-		table.className = 'calendarhat';
+		var header = document.createElement('div');
+		this.clndr_calendar.appendChild(header);
+		header.className = 'calendar-header';
 
 		//  year
-		var tbody = document.createElement('tbody');
-		table.appendChild(tbody);
+		var year_div = document.createElement('div');
+		year_div.className = 'calendar-year';
+		header.appendChild(year_div);
 
-		var tr = document.createElement('tr');
-		tbody.appendChild(tr);
+		var arrow_left = document.createElement('span');
+		arrow_left.className = 'arrow-left';
+		var arrow_right = document.createElement('span');
+		arrow_right.className = 'arrow-right';
 
-		var td = document.createElement('td');
-		tr.appendChild(td);
+		this.clndr_yeardown = document.createElement('button');
+		this.clndr_yeardown.setAttribute('type', 'button');
+		this.clndr_yeardown.className = 'btn-grey';
+		this.clndr_yeardown.appendChild(arrow_left);
+		year_div.appendChild(this.clndr_yeardown);
 
-		this.clndr_yeardown = document.createElement('span');
-		td.appendChild(this.clndr_yeardown);
+		this.clndr_year = document.createTextNode('');
+		year_div.appendChild(this.clndr_year);
 
-		this.clndr_yeardown.className = 'clndr_left_arrow';
-		this.clndr_yeardown.appendChild(document.createTextNode(String.fromCharCode(0x00AB)));
-
-		var td = document.createElement('td');
-		tr.appendChild(td);
-		td.className = 'long';
-
-		this.clndr_year = document.createElement('span');
-		td.appendChild(this.clndr_year);
-
-		this.clndr_year.className = 'title';
-		this.clndr_year.appendChild(document.createTextNode('2008'));
-
-		var td = document.createElement('td');
-		tr.appendChild(td);
-
-		this.clndr_yearup = document.createElement('span');
-		td.appendChild(this.clndr_yearup);
-
-		this.clndr_yearup.className = 'clndr_right_arrow';
-		this.clndr_yearup.appendChild(document.createTextNode(String.fromCharCode(0x00BB)));
+		this.clndr_yearup = document.createElement('button');
+		this.clndr_yearup.setAttribute('type', 'button');
+		this.clndr_yearup.className = 'btn-grey';
+		this.clndr_yearup.appendChild(arrow_right);
+		year_div.appendChild(this.clndr_yearup);
 
 		// month
-		var tr = document.createElement('tr');
-		tbody.appendChild(tr);
+		var month_div = document.createElement('div');
+		month_div.className = 'calendar-month';
+		header.appendChild(month_div);
 
-		var td = document.createElement('td');
-		tr.appendChild(td);
+		var arrow_left = document.createElement('span');
+		arrow_left.className = 'arrow-left';
+		var arrow_right = document.createElement('span');
+		arrow_right.className = 'arrow-right';
 
-		this.clndr_monthdown = document.createElement('span');
-		td.appendChild(this.clndr_monthdown);
+		this.clndr_monthdown = document.createElement('button');
+		this.clndr_monthdown.setAttribute('type', 'button');
+		this.clndr_monthdown.className = 'btn-grey';
+		this.clndr_monthdown.appendChild(arrow_left);
+		month_div.appendChild(this.clndr_monthdown);
 
-		this.clndr_monthdown.className = 'clndr_left_arrow';
-		this.clndr_monthdown.appendChild(document.createTextNode(String.fromCharCode(0x00AB)));
+		this.clndr_month = document.createTextNode('');
+		month_div.appendChild(this.clndr_month);
 
-		var td = document.createElement('td');
-		tr.appendChild(td);
-
-		td.className = 'long';
-
-		this.clndr_month = document.createElement('span');
-		td.appendChild(this.clndr_month);
-
-		this.clndr_month.className = 'title';
-		this.clndr_month.appendChild(document.createTextNode('March'));
-
-		var td = document.createElement('td');
-		tr.appendChild(td);
-
-		this.clndr_monthup = document.createElement('span');
-		td.appendChild(this.clndr_monthup);
-
-		this.clndr_monthup.className = 'clndr_right_arrow';
-
-		this.clndr_monthup.appendChild(document.createTextNode(String.fromCharCode(0x00BB)));
+		this.clndr_monthup = document.createElement('button');
+		this.clndr_monthup.setAttribute('type', 'button');
+		this.clndr_monthup.className = 'btn-grey';
+		this.clndr_monthup.appendChild(arrow_right);
+		month_div.appendChild(this.clndr_monthup);
 
 		// days heading
 		var table = document.createElement('table');
-		line_div.appendChild(table);
+		this.clndr_calendar.appendChild(table);
 
-		table.setAttribute('cellpadding', '2');
-		table.setAttribute('cellspacing', '0');
-		table.setAttribute('width', '100%');
-		table.className = 'calendarhat';
-
-		var tbody = document.createElement('tbody');
-		table.appendChild(tbody);
+		var thead = document.createElement('thead');
+		table.appendChild(thead);
 
 		var tr = document.createElement('tr');
-		tbody.appendChild(tr);
+		thead.appendChild(tr);
 
-		tr.className='header';
-
-		var td = document.createElement('td');
+		var td = document.createElement('th');
 		tr.appendChild(td);
 		td.appendChild(document.createTextNode(locale['S_MONDAY_SHORT_BIG']));
 
-		var td = document.createElement('td');
+		var td = document.createElement('th');
 		tr.appendChild(td);
 		td.appendChild(document.createTextNode(locale['S_TUESDAY_SHORT_BIG']));
 
-		var td = document.createElement('td');
+		var td = document.createElement('th');
 		tr.appendChild(td);
 		td.appendChild(document.createTextNode(locale['S_WEDNESDAY_SHORT_BIG']));
 
-		var td = document.createElement('td');
+		var td = document.createElement('th');
 		tr.appendChild(td);
 		td.appendChild(document.createTextNode(locale['S_THURSDAY_SHORT_BIG']));
 
-		var td = document.createElement('td');
+		var td = document.createElement('th');
 		tr.appendChild(td);
 		td.appendChild(document.createTextNode(locale['S_FRIDAY_SHORT_BIG']));
 
-		var td = document.createElement('td');
+		var td = document.createElement('th');
 		tr.appendChild(td);
 		td.appendChild(document.createTextNode(locale['S_SATURDAY_SHORT_BIG']));
 
-		var td = document.createElement('td');
+		var td = document.createElement('th');
 		tr.appendChild(td);
 		td.appendChild(document.createTextNode(locale['S_SUNDAY_SHORT_BIG']));
 
 		/*
 		 * Days calendar
 		 */
-		this.clndr_days = document.createElement('div');
+		this.clndr_days = document.createElement('tbody');
 		Element.extend(this.clndr_days);
-		this.clndr_calendar.appendChild(this.clndr_days);
-		this.clndr_days.className = 'calendardays';
+		table.appendChild(this.clndr_days);
 
 		/*
 		 * Hours & minutes
 		 */
 		var line_div = document.createElement('div');
-		line_div.className = 'calendartime';
+		line_div.className = 'calendar-time';
 
 		// hour
 		this.clndr_hour = document.createElement('input');
@@ -756,6 +620,7 @@ calendar.prototype = {
 		this.clndr_hour.setAttribute('name', 'hour');
 		this.clndr_hour.setAttribute('value', 'hh');
 		this.clndr_hour.setAttribute('maxlength', '2');
+		this.clndr_hour.onchange = function() { validateDatePartBox(this, 0, 23, 2); };
 		this.clndr_hour.className = 'calendar_textbox';
 
 		// minutes
@@ -764,48 +629,33 @@ calendar.prototype = {
 		this.clndr_minute.setAttribute('name', 'minute');
 		this.clndr_minute.setAttribute('value', 'mm');
 		this.clndr_minute.setAttribute('maxlength', '2');
+		this.clndr_minute.onchange = function() { validateDatePartBox(this, 0, 59, 2); };
 		this.clndr_minute.className = 'calendar_textbox';
 
-		// column 1
-		var column1 = document.createElement('td');
-		column1.setAttribute('width', '27%');
-		column1.setAttribute('align', 'right');
-		column1.appendChild(document.createTextNode(locale['S_TIME']));
-		// column 2
-		var column2 = document.createElement('td');
-		column2.setAttribute('width', '46%');
-		column2.setAttribute('align', 'center');
-		column2.appendChild(this.clndr_hour);
-		column2.appendChild(document.createTextNode(' : '));
-		column2.appendChild(this.clndr_minute);
-		// column 3
-		var column3 = document.createElement('td');
-		column3.setAttribute('width', '27%');
-		column3.appendChild(document.createTextNode(' '));
-		// table
-		var row = document.createElement('tr');
-		row.appendChild(column1);
-		row.appendChild(column2);
-		row.appendChild(column3);
-		var table = document.createElement('table');
-		table.setAttribute('width', '100%');
-		var tbody = document.createElement('tbody');
-		table.appendChild(tbody);
-		tbody.appendChild(row);
-		line_div.appendChild(table);
+		line_div.appendChild(document.createTextNode(locale['S_TIME'] + " "));
+		line_div.appendChild(this.clndr_hour);
+		line_div.appendChild(document.createTextNode(' : '));
+		line_div.appendChild(this.clndr_minute);
+		this.clndr_calendar.appendChild(line_div);
+
+		/*
+		 * Footer
+		 */
+		var line_div = document.createElement('div');
+		line_div.className = 'calendar-footer';
 
 		// now
-		this.clndr_now = document.createElement('input');
+		this.clndr_now = document.createElement('button');
+		this.clndr_now.className = 'btn-grey';
 		this.clndr_now.setAttribute('type', 'button');
 		this.clndr_now.setAttribute('value', locale['S_NOW']);
-		this.clndr_now.setAttribute('style', 'float:left;margin:0px 3px;');
+		this.clndr_now.appendChild(document.createTextNode(locale['S_NOW']));
 		line_div.appendChild(this.clndr_now);
 
 		// done
-		this.clndr_done = document.createElement('input');
+		this.clndr_done = document.createElement('button');
 		this.clndr_done.setAttribute('type', 'button');
-		this.clndr_done.setAttribute('value', locale['S_DONE']);
-		this.clndr_done.setAttribute('style', 'float:right;margin:0px 3px;');
+		this.clndr_done.appendChild(document.createTextNode(locale['S_DONE']));
 		line_div.appendChild(this.clndr_done);
 		this.clndr_calendar.appendChild(line_div);
 	}

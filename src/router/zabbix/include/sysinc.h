@@ -54,9 +54,13 @@
 #	include <Iphlpapi.h>
 #endif
 
+#ifdef HAVE_NETIOAPI_H
+#	include <Netioapi.h>
+#endif
+
 #ifdef HAVE_WINDOWS_H
 /* to speed build process and reduce size of the Win32 header files */
-#define WIN32_LEAN_AND_MEAN	1
+#	define WIN32_LEAN_AND_MEAN	1
 #	include <windows.h>
 #endif
 
@@ -131,9 +135,9 @@
 #endif
 
 #ifdef HAVE_ARPA_NAMESER_H
-#ifdef MAC_OS_X
-#	define BIND_8_COMPAT 1
-#endif
+#	ifdef MAC_OS_X
+#		define BIND_8_COMPAT 1
+#	endif
 #	include <arpa/nameser.h>
 #endif
 
@@ -159,10 +163,6 @@
 
 #ifdef HAVE_KSTAT_H
 #	include <kstat.h>
-#endif
-
-#ifdef HAVE_LDAP
-#	include <ldap.h>
 #endif
 
 #ifdef HAVE_WINLDAP_H
@@ -222,12 +222,6 @@
 
 #ifdef HAVE_SYS_PROC_H
 #	include <sys/proc.h>
-#endif
-
-#ifdef HAVE_SYS_PROCFS_H
-/* This is needed to access the correct procfs.h definitions */
-#	define _STRUCTURED_PROC 1
-#	include <sys/procfs.h>
 #endif
 
 #ifdef HAVE_SYS_PSTAT_H
@@ -334,10 +328,6 @@
 #	include <unistd.h>
 #endif
 
-#ifdef HAVE_LBER_H
-#	include <lber.h>
-#endif
-
 #ifdef HAVE_SYS_IPC_H
 #	include <sys/ipc.h>
 #endif
@@ -388,33 +378,18 @@
 #	if !defined(HAVE_FUNCTION_CURL_EASY_ESCAPE)
 #		define curl_easy_escape(handle, string, length) curl_escape(string, length)
 #	endif
-#endif
-
-/* Net-SNMP is used */
-#ifdef HAVE_NETSNMP
-#	define SNMP_NO_DEBUGGING		/* disabling debugging messages from Net-SNMP library */
-#	include <net-snmp/net-snmp-config.h>
-#	include <net-snmp/net-snmp-includes.h>
-#endif
-
-/* LIBXML2 is used */
-#ifdef HAVE_LIBXML2
-#	include <libxml/parser.h>
-#	include <libxml/tree.h>
-#	include <libxml/xpath.h>
+#	if 0x071004 >= LIBCURL_VERSION_NUM	/* version 7.16.4 */
+#		define CURLOPT_KEYPASSWD	CURLOPT_SSLKEYPASSWD
+#	endif
+#	if 0x071400 <= LIBCURL_VERSION_NUM	/* version 7.20.0 */
+#		define HAVE_SMTP_AUTHENTICATION	1
+#	endif
+#	define ZBX_CURLOPT_MAXREDIRS	10L
 #endif
 
 /* Required for advanced sigaction */
 #ifdef HAVE_SYS_UCONTEXT_H
 #	include <sys/ucontext.h>
-#endif
-
-#ifdef HAVE_ICONV
-#	include <iconv.h>
-#endif
-
-#ifdef HAVE_SSH2
-#	include <libssh2.h>
 #endif
 
 #ifdef HAVE_IO_H
@@ -431,6 +406,11 @@
 
 #ifdef HAVE_DLFCN_H
 #	include <dlfcn.h>
+#endif
+
+#ifdef HAVE_ZONE_H
+#	include <zone.h>
+#	include <utmpx.h>
 #endif
 
 #endif

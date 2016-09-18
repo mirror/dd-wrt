@@ -27,17 +27,25 @@ abstract class CImporter {
 	protected $referencer;
 
 	/**
-	 * @var array
+	 * @var CImportedObjectContainer
 	 */
-	protected $options = array();
+	protected $importedObjectContainer;
 
 	/**
-	 * @param array             $options
-	 * @param CImportReferencer $referencer
+	 * @var array
 	 */
-	public function __construct(array $options, CImportReferencer $referencer) {
+	protected $options = [];
+
+	/**
+	 * @param array						$options					import options "createMissing", "updateExisting" and "deleteMissing"
+	 * @param CImportReferencer			$referencer					class containing all importable objects
+	 * @param CImportedObjectContainer	$importedObjectContainer	class containing processed host and template IDs
+	 */
+	public function __construct(array $options, CImportReferencer $referencer,
+			CImportedObjectContainer $importedObjectContainer) {
 		$this->options = $options;
 		$this->referencer = $referencer;
+		$this->importedObjectContainer = $importedObjectContainer;
 	}
 
 	/**

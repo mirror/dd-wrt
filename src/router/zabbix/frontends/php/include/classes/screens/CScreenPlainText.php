@@ -38,43 +38,32 @@ class CScreenPlainText extends CScreenBase {
 		}
 
 		if ($this->screenitem['resourceid'] == 0) {
-			$table = new CTableInfo(_('No values found.'));
-			$table->setHeader(array(_('Timestamp'), _('Item')));
+			$table = (new CTableInfo())
+				->setHeader([_('Timestamp'), _('Item')]);
 
 			return $this->getOutput($table);
 		}
 
-		$items = CMacrosResolverHelper::resolveItemNames(array(get_item_by_itemid($this->screenitem['resourceid'])));
+		$items = CMacrosResolverHelper::resolveItemNames([get_item_by_itemid($this->screenitem['resourceid'])]);
 		$item = reset($items);
-
-		switch ($item['value_type']) {
-			case ITEM_VALUE_TYPE_TEXT:
-			case ITEM_VALUE_TYPE_LOG:
-				$orderField = 'id';
-				break;
-			case ITEM_VALUE_TYPE_FLOAT:
-			case ITEM_VALUE_TYPE_UINT64:
-			default:
-				$orderField = array('itemid', 'clock');
-		}
 
 		$host = get_host_by_itemid($this->screenitem['resourceid']);
 
-		$table = new CTableInfo(_('No values found.'));
-		$table->setHeader(array(_('Timestamp'), $host['name'].NAME_DELIMITER.$item['name_expanded']));
+		$table = (new CTableInfo())
+			->setHeader([_('Timestamp'), _('Value')]);
 
 		$stime = zbxDateToTime($this->timeline['stime']);
 
-		$histories = API::History()->get(array(
+		$histories = API::History()->get([
 			'history' => $item['value_type'],
 			'itemids' => $this->screenitem['resourceid'],
 			'output' => API_OUTPUT_EXTEND,
 			'sortorder' => ZBX_SORT_DOWN,
-			'sortfield' => $orderField,
+			'sortfield' => ['itemid', 'clock'],
 			'limit' => $this->screenitem['elements'],
 			'time_from' => $stime,
 			'time_till' => $stime + $this->timeline['period']
-		));
+		]);
 		foreach ($histories as $history) {
 			switch ($item['value_type']) {
 				case ITEM_VALUE_TYPE_FLOAT:
@@ -83,7 +72,7 @@ class CScreenPlainText extends CScreenBase {
 				case ITEM_VALUE_TYPE_TEXT:
 				case ITEM_VALUE_TYPE_STR:
 				case ITEM_VALUE_TYPE_LOG:
-					$value = $this->screenitem['style'] ? new CJSscript($history['value']) : $history['value'];
+					$value = $this->screenitem['style'] ? new CJsScript($history['value']) : $history['value'];
 					break;
 				default:
 					$value = $history['value'];
@@ -94,9 +83,20 @@ class CScreenPlainText extends CScreenBase {
 				$value = applyValueMap($value, $item['valuemapid']);
 			}
 
-			$table->addRow(array(zbx_date2str(_('d M Y H:i:s'), $history['clock']), new CCol($value, 'pre')));
+			if ($this->screenitem['style'] == 0) {
+				$value = new CPre($value);
+			}
+
+			$table->addRow([zbx_date2str(DATE_TIME_FORMAT_SECONDS, $history['clock']), $value]);
 		}
 
-		return $this->getOutput($table);
+		$footer = (new CList())
+			->addItem(_s('Updated: %s', zbx_date2str(TIME_FORMAT_SECONDS)))
+			->addClass(ZBX_STYLE_DASHBRD_WIDGET_FOOT);
+
+		return $this->getOutput(
+			(new CUiWidget(uniqid(), [$table, $footer]))
+				->setHeader($host['name'].NAME_DELIMITER.$item['name_expanded'])
+		);
 	}
 }

@@ -27,35 +27,73 @@
 #include "comms.h"
 #include "servercomms.h"
 
-int	connect_to_server(zbx_sock_t *sock, int timeout, int retry_interval)
+extern unsigned int	configured_tls_connect_mode;
+
+#if defined(HAVE_POLARSSL) || defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
+extern char	*CONFIG_TLS_SERVER_CERT_ISSUER;
+extern char	*CONFIG_TLS_SERVER_CERT_SUBJECT;
+extern char	*CONFIG_TLS_PSK_IDENTITY;
+#endif
+
+int	connect_to_server(zbx_socket_t *sock, int timeout, int retry_interval)
 {
 	int	res, lastlogtime, now;
+	char	*tls_arg1, *tls_arg2;
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In connect_to_server() [%s]:%d [timeout:%d]",
 			CONFIG_SERVER, CONFIG_SERVER_PORT, timeout);
 
-	if (FAIL == (res = zbx_tcp_connect(sock, CONFIG_SOURCE_IP, CONFIG_SERVER, CONFIG_SERVER_PORT, timeout)))
+	switch (configured_tls_connect_mode)
+	{
+		case ZBX_TCP_SEC_UNENCRYPTED:
+			tls_arg1 = NULL;
+			tls_arg2 = NULL;
+			break;
+#if defined(HAVE_POLARSSL) || defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
+		case ZBX_TCP_SEC_TLS_CERT:
+			tls_arg1 = CONFIG_TLS_SERVER_CERT_ISSUER;
+			tls_arg2 = CONFIG_TLS_SERVER_CERT_SUBJECT;
+			break;
+		case ZBX_TCP_SEC_TLS_PSK:
+			tls_arg1 = CONFIG_TLS_PSK_IDENTITY;
+			tls_arg2 = NULL;	/* zbx_tls_connect() will find PSK */
+			break;
+#endif
+		default:
+			THIS_SHOULD_NEVER_HAPPEN;
+			return FAIL;
+	}
+
+	if (FAIL == (res = zbx_tcp_connect(sock, CONFIG_SOURCE_IP, CONFIG_SERVER, CONFIG_SERVER_PORT, timeout,
+			configured_tls_connect_mode, tls_arg1, tls_arg2)))
 	{
 		if (0 == retry_interval)
 		{
 			zabbix_log(LOG_LEVEL_WARNING, "Unable to connect to the server [%s]:%d [%s]",
-					CONFIG_SERVER, CONFIG_SERVER_PORT, zbx_tcp_strerror());
+					CONFIG_SERVER, CONFIG_SERVER_PORT, zbx_socket_strerror());
 		}
 		else
 		{
-			zabbix_log(LOG_LEVEL_WARNING, "Unable to connect to the server [%s]:%d [%s]. Will retry every %d second(s)",
-					CONFIG_SERVER, CONFIG_SERVER_PORT, zbx_tcp_strerror(), retry_interval);
+			zabbix_log(LOG_LEVEL_WARNING, "Unable to connect to the server [%s]:%d [%s]. Will retry every"
+					" %d second(s)", CONFIG_SERVER, CONFIG_SERVER_PORT, zbx_socket_strerror(),
+					retry_interval);
+
 			lastlogtime = (int)time(NULL);
-			while (FAIL == (res = zbx_tcp_connect(sock, CONFIG_SOURCE_IP, CONFIG_SERVER, CONFIG_SERVER_PORT, timeout)))
+
+			while (FAIL == (res = zbx_tcp_connect(sock, CONFIG_SOURCE_IP, CONFIG_SERVER, CONFIG_SERVER_PORT,
+					timeout, configured_tls_connect_mode, tls_arg1, tls_arg2)))
 			{
 				now = (int)time(NULL);
-				if (60 <= now - lastlogtime)
+
+				if (LOG_ENTRY_INTERVAL_DELAY <= now - lastlogtime)
 				{
 					zabbix_log(LOG_LEVEL_WARNING, "Still unable to connect...");
 					lastlogtime = now;
 				}
+
 				sleep(retry_interval);
 			}
+
 			zabbix_log(LOG_LEVEL_WARNING, "Connection restored.");
 		}
 	}
@@ -63,33 +101,7 @@ int	connect_to_server(zbx_sock_t *sock, int timeout, int retry_interval)
 	return res;
 }
 
-static int	send_data_to_server(zbx_sock_t *sock, const char *data)
-{
-	int	res;
-
-	zabbix_log(LOG_LEVEL_DEBUG, "In send_data_to_server() [%s]", data);
-
-	if (FAIL == (res = zbx_tcp_send(sock, data)))
-		zabbix_log(LOG_LEVEL_ERR, "Error while sending data to the server [%s]", zbx_tcp_strerror());
-
-	return res;
-}
-
-static int	recv_data_from_server(zbx_sock_t *sock, char **data)
-{
-	int	res;
-
-	zabbix_log(LOG_LEVEL_DEBUG, "In recv_data_from_server()");
-
-	if (FAIL == (res = zbx_tcp_recv(sock, data)))
-		zabbix_log(LOG_LEVEL_ERR, "Error while receiving answer from server [%s]", zbx_tcp_strerror());
-	else
-		zabbix_log(LOG_LEVEL_DEBUG, "Received [%s] from server", *data);
-
-	return res;
-}
-
-void	disconnect_server(zbx_sock_t *sock)
+void	disconnect_server(zbx_socket_t *sock)
 {
 	zbx_tcp_close(sock);
 }
@@ -100,17 +112,11 @@ void	disconnect_server(zbx_sock_t *sock)
  *                                                                            *
  * Purpose: get configuration and other data from server                      *
  *                                                                            *
- * Parameters:                                                                *
- *                                                                            *
- * Return value: SUCCESS - processed successfully                             *
+ * Return value: SUCCEED - processed successfully                             *
  *               FAIL - an error occurred                                     *
  *                                                                            *
- * Author: Alexander Vladishev                                                *
- *                                                                            *
- * Comments:                                                                  *
- *                                                                            *
  ******************************************************************************/
-int	get_data_from_server(zbx_sock_t *sock, const char *request, char **data)
+int	get_data_from_server(zbx_socket_t *sock, const char *request, char **error)
 {
 	const char	*__function_name = "get_data_from_server";
 
@@ -123,11 +129,19 @@ int	get_data_from_server(zbx_sock_t *sock, const char *request, char **data)
 	zbx_json_addstring(&j, "request", request, ZBX_JSON_TYPE_STRING);
 	zbx_json_addstring(&j, "host", CONFIG_HOSTNAME, ZBX_JSON_TYPE_STRING);
 
-	if (FAIL == send_data_to_server(sock, j.buffer))
+	if (SUCCEED != zbx_tcp_send(sock, j.buffer))
+	{
+		*error = zbx_strdup(*error, zbx_socket_strerror());
 		goto exit;
+	}
 
-	if (FAIL == recv_data_from_server(sock, data))
+	if (SUCCEED != zbx_tcp_recv(sock))
+	{
+		*error = zbx_strdup(*error, zbx_socket_strerror());
 		goto exit;
+	}
+
+	zabbix_log(LOG_LEVEL_DEBUG, "Received [%s] from server", sock->buffer);
 
 	ret = SUCCEED;
 exit:
@@ -144,40 +158,29 @@ exit:
  *                                                                            *
  * Purpose: send data to server                                               *
  *                                                                            *
- * Parameters:                                                                *
- *                                                                            *
- * Return value: SUCCESS - processed successfully                             *
+ * Return value: SUCCEED - processed successfully                             *
  *               FAIL - an error occurred                                     *
  *                                                                            *
- * Author: Alexander Vladishev                                                *
- *                                                                            *
- * Comments:                                                                  *
- *                                                                            *
  ******************************************************************************/
-int	put_data_to_server(zbx_sock_t *sock, struct zbx_json *j, char **error)
+int	put_data_to_server(zbx_socket_t *sock, struct zbx_json *j, char **error)
 {
 	const char	*__function_name = "put_data_to_server";
 
-	char		*info = NULL, *err = NULL;
 	int		ret = FAIL;
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s() datalen:" ZBX_FS_SIZE_T, __function_name, (zbx_fs_size_t)j->buffer_size);
 
-	if (SUCCEED != send_data_to_server(sock, j->buffer))
-		goto out;
-
-	if (SUCCEED != zbx_recv_response(sock, &info, 0, &err))
+	if (SUCCEED != zbx_tcp_send(sock, j->buffer))
 	{
-		*error = zbx_dsprintf(*error, "error:\"%s\", info:\"%s\"", ZBX_NULL2EMPTY_STR(err),
-				ZBX_NULL2EMPTY_STR(info));
+		*error = zbx_strdup(*error, zbx_socket_strerror());
 		goto out;
 	}
 
+	if (SUCCEED != zbx_recv_response(sock, 0, error))
+		goto out;
+
 	ret = SUCCEED;
 out:
-	zbx_free(info);
-	zbx_free(err);
-
 	zabbix_log(LOG_LEVEL_DEBUG, "End of %s():%s", __function_name, zbx_result_string(ret));
 
 	return ret;

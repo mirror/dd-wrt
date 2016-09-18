@@ -20,11 +20,58 @@
 #include "common.h"
 
 #include "zbxdb.h"
+
+#if defined(HAVE_IBM_DB2)
+#	include <sqlcli1.h>
+#elif defined(HAVE_MYSQL)
+#	include "mysql.h"
+#	include "errmsg.h"
+#	include "mysqld_error.h"
+#elif defined(HAVE_ORACLE)
+#	include "oci.h"
+#elif defined(HAVE_POSTGRESQL)
+#	include <libpq-fe.h>
+#elif defined(HAVE_SQLITE3)
+#	include <sqlite3.h>
+#endif
+
 #include "dbschema.h"
 #include "log.h"
 #if defined(HAVE_SQLITE3)
 #	include "mutexs.h"
 #endif
+
+struct zbx_db_result
+{
+#if defined(HAVE_IBM_DB2)
+	SQLHANDLE	hstmt;
+	SQLSMALLINT	nalloc;
+	SQLSMALLINT	ncolumn;
+	DB_ROW		values;
+	DB_ROW		values_cli;
+	SQLINTEGER	*values_len;
+#elif defined(HAVE_MYSQL)
+	MYSQL_RES	*result;
+#elif defined(HAVE_ORACLE)
+	OCIStmt		*stmthp;	/* the statement handle for select operations */
+	int 		ncolumn;
+	DB_ROW		values;
+	ub4		*values_alloc;
+	OCILobLocator	**clobs;
+#elif defined(HAVE_POSTGRESQL)
+	PGresult	*pg_result;
+	int		row_num;
+	int		fld_num;
+	int		cursor;
+	DB_ROW		values;
+#elif defined(HAVE_SQLITE3)
+	int		curow;
+	char		**data;
+	int		nrow;
+	int		ncolumn;
+	DB_ROW		values;
+#endif
+};
 
 static int	txn_level = 0;	/* transaction level, nested transactions are not supported */
 static int	txn_error = 0;	/* failed transaction */
@@ -32,12 +79,32 @@ static int	txn_error = 0;	/* failed transaction */
 extern int	CONFIG_LOG_SLOW_QUERIES;
 
 #if defined(HAVE_IBM_DB2)
+typedef struct
+{
+	SQLHANDLE	henv;
+	SQLHANDLE	hdbc;
+}
+zbx_ibm_db2_handle_t;
+
 static zbx_ibm_db2_handle_t	ibm_db2;
 
-void	zbx_ibm_db2_log_errors(SQLSMALLINT htype, SQLHANDLE hndl, zbx_err_codes_t err, const char *context);
+static int	IBM_DB2server_status();
+static int	zbx_ibm_db2_success(SQLRETURN ret);
+static int	zbx_ibm_db2_success_ext(SQLRETURN ret);
+static void	zbx_ibm_db2_log_errors(SQLSMALLINT htype, SQLHANDLE hndl, zbx_err_codes_t err, const char *context);
 #elif defined(HAVE_MYSQL)
 static MYSQL			*conn = NULL;
 #elif defined(HAVE_ORACLE)
+typedef struct
+{
+	OCIEnv		*envhp;
+	OCIError	*errhp;
+	OCISvcCtx	*svchp;
+	OCIServer	*srvhp;
+	OCIStmt		*stmthp;	/* the statement handle for execute operations */
+}
+zbx_oracle_db_handle_t;
+
 static zbx_oracle_db_handle_t	oracle;
 
 /* 64-bit integer binding is supported only starting with Oracle 11.2 */
@@ -46,6 +113,8 @@ static zbx_oracle_db_handle_t	oracle;
 static OCINumber	**oci_ids = NULL;
 static int		oci_ids_alloc = 0;
 static int		oci_ids_num = 0;
+
+static ub4	OCI_DBserver_status();
 
 #elif defined(HAVE_POSTGRESQL)
 static PGconn			*conn = NULL;
@@ -185,6 +254,7 @@ static int	is_recoverable_mysql_error(void)
 		case CR_CONNECTION_ERROR:
 		case CR_SERVER_LOST:
 		case CR_UNKNOWN_HOST:
+		case CR_COMMANDS_OUT_OF_SYNC:
 		case ER_SERVER_SHUTDOWN:
 		case ER_ACCESS_DENIED_ERROR:		/* wrong user or password */
 		case ER_ILLEGAL_GRANT_FOR_TABLE:	/* user without any privileges */
@@ -213,10 +283,13 @@ int	zbx_db_connect(char *host, char *user, char *password, char *dbname, char *d
 	int		ret = ZBX_DB_OK, last_txn_error, last_txn_level;
 #if defined(HAVE_IBM_DB2)
 	char		*connect = NULL;
+#elif defined(HAVE_MYSQL)
+	my_bool		mysql_reconnect = 1;
 #elif defined(HAVE_ORACLE)
 	char		*connect = NULL;
 	sword		err = OCI_SUCCESS;
 #elif defined(HAVE_POSTGRESQL)
+	int		rc;
 	char		*cport = NULL;
 	DB_RESULT	result;
 	DB_ROW		row;
@@ -268,6 +341,13 @@ int	zbx_db_connect(char *host, char *user, char *password, char *dbname, char *d
 		ret = ZBX_DB_FAIL;
 	}
 
+	/* set codepage to utf-8 */
+	if (ZBX_DB_OK == ret && SUCCEED != zbx_ibm_db2_success(SQLSetConnectAttr(ibm_db2.hdbc, SQL_ATTR_CLIENT_CODEPAGE,
+			(SQLPOINTER)(SQLUINTEGER)1208, SQL_IS_UINTEGER)))
+	{
+		ret = ZBX_DB_FAIL;
+	}
+
 	/* connect to the database */
 	if (ZBX_DB_OK == ret && SUCCEED != zbx_ibm_db2_success(SQLDriverConnect(ibm_db2.hdbc, NULL, (SQLCHAR *)connect,
 			SQL_NTS, NULL, 0, NULL, SQL_DRIVER_NOPROMPT)))
@@ -309,6 +389,8 @@ int	zbx_db_connect(char *host, char *user, char *password, char *dbname, char *d
 		zbx_ibm_db2_log_errors(SQL_HANDLE_DBC, ibm_db2.hdbc, ERR_Z3001, dbname);
 	}
 #elif defined(HAVE_MYSQL)
+	ZBX_UNUSED(dbschema);
+
 	if (NULL == (conn = mysql_init(NULL)))
 	{
 		zabbix_log(LOG_LEVEL_CRIT, "cannot allocate or initialize MYSQL database connection object");
@@ -321,6 +403,19 @@ int	zbx_db_connect(char *host, char *user, char *password, char *dbname, char *d
 		ret = ZBX_DB_FAIL;
 	}
 
+	/* The RECONNECT option setting is placed here, AFTER the connection	*/
+	/* is made, due to a bug in MySQL versions prior to 5.1.6 where it	*/
+	/* reset the options value to the default, regardless of what it was	*/
+	/* set to prior to the connection. MySQL allows changing connection	*/
+	/* options on an open connection, so setting it here is safe.		*/
+
+	if (0 != mysql_options(conn, MYSQL_OPT_RECONNECT, &mysql_reconnect))
+		zabbix_log(LOG_LEVEL_WARNING, "Cannot set MySQL reconnect option.");
+
+	/* in contrast to "set names utf8" results of this call will survive auto-reconnects */
+	if (0 != mysql_set_character_set(conn, "utf8"))
+		zabbix_log(LOG_LEVEL_WARNING, "cannot set MySQL character set to \"utf8\"");
+
 	if (ZBX_DB_OK == ret && 0 != mysql_select_db(conn, dbname))
 	{
 		zabbix_errlog(ERR_Z3001, dbname, mysql_errno(conn), mysql_error(conn));
@@ -330,13 +425,9 @@ int	zbx_db_connect(char *host, char *user, char *password, char *dbname, char *d
 	if (ZBX_DB_FAIL == ret && SUCCEED == is_recoverable_mysql_error())
 		ret = ZBX_DB_DOWN;
 
-	if (ZBX_DB_OK == ret)
-	{
-		if (0 < (ret = zbx_db_execute("%s", "set names utf8")))
-			ret = ZBX_DB_OK;
-	}
-
 #elif defined(HAVE_ORACLE)
+	ZBX_UNUSED(dbschema);
+
 #if defined(HAVE_GETENV) && defined(HAVE_PUTENV)
 	if (NULL == getenv("NLS_LANG"))
 		putenv("NLS_LANG=.UTF8");
@@ -433,6 +524,19 @@ int	zbx_db_connect(char *host, char *user, char *password, char *dbname, char *d
 		goto out;
 	}
 
+	if (NULL != dbschema && '\0' != *dbschema)
+	{
+		char	*dbschema_esc;
+
+		dbschema_esc = zbx_db_dyn_escape_string(dbschema);
+		if (ZBX_DB_DOWN == (rc = zbx_db_execute("set schema '%s'", dbschema_esc)) || ZBX_DB_FAIL == rc)
+			ret = rc;
+		zbx_free(dbschema_esc);
+	}
+
+	if (ZBX_DB_FAIL == ret || ZBX_DB_DOWN == ret)
+		goto out;
+
 	result = zbx_db_select("%s", "select oid from pg_type where typname='bytea'");
 
 	if ((DB_RESULT)ZBX_DB_DOWN == result || NULL == result)
@@ -475,6 +579,8 @@ int	zbx_db_connect(char *host, char *user, char *password, char *dbname, char *d
 	}
 out:
 #elif defined(HAVE_SQLITE3)
+	ZBX_UNUSED(dbschema);
+
 #ifdef HAVE_FUNCTION_SQLITE3_OPEN_V2
 	if (SQLITE_OK != sqlite3_open_v2(dbname, &conn, SQLITE_OPEN_READWRITE, NULL))
 #else
@@ -526,7 +632,7 @@ out:
 #if defined(HAVE_SQLITE3)
 void	zbx_create_sqlite3_mutex(void)
 {
-	if (ZBX_MUTEX_ERROR == zbx_mutex_create_force(&sqlite_access, ZBX_MUTEX_SQLITE3))
+	if (FAIL == zbx_mutex_create_force(&sqlite_access, ZBX_MUTEX_SQLITE3))
 	{
 		zbx_error("cannot create mutex for SQLite3");
 		exit(EXIT_FAILURE);
@@ -562,6 +668,9 @@ void	zbx_db_init(const char *dbname, const char *const db_schema)
 	}
 	else
 		zbx_create_sqlite3_mutex();
+#else	/* not HAVE_SQLITE3 */
+	ZBX_UNUSED(dbname);
+	ZBX_UNUSED(db_schema);
 #endif	/* HAVE_SQLITE3 */
 }
 
@@ -886,7 +995,7 @@ int	zbx_db_bind_parameter(int position, void *buffer, unsigned char type)
 			if (oci_ids_num >= oci_ids_alloc)
 			{
 				old_alloc = oci_ids_alloc;
-				oci_ids_alloc = (0 == oci_ids_alloc ? 8 : oci_ids_alloc * 1.5);
+				oci_ids_alloc = (0 == oci_ids_alloc ? 8 : oci_ids_alloc * 3 / 2);
 				oci_ids = zbx_realloc(oci_ids, oci_ids_alloc * sizeof(OCINumber *));
 
 				for (i = old_alloc; i < oci_ids_alloc; i++)
@@ -1214,8 +1323,8 @@ DB_RESULT	zbx_db_vselect(const char *fmt, va_list args)
 	zabbix_log(LOG_LEVEL_DEBUG, "query [txnlev:%d] [%s]", txn_level, sql);
 
 #if defined(HAVE_IBM_DB2)
-	result = zbx_malloc(result, sizeof(ZBX_IBM_DB2_RESULT));
-	memset(result, 0, sizeof(ZBX_IBM_DB2_RESULT));
+	result = zbx_malloc(result, sizeof(struct zbx_db_result));
+	memset(result, 0, sizeof(struct zbx_db_result));
 
 	/* allocate a statement handle */
 	if (SUCCEED != zbx_ibm_db2_success(ret = SQLAllocHandle(SQL_HANDLE_STMT, ibm_db2.hdbc, &result->hstmt)))
@@ -1265,14 +1374,19 @@ error:
 		zbx_ibm_db2_log_errors(SQL_HANDLE_DBC, ibm_db2.hdbc, ERR_Z3005, sql);
 		zbx_ibm_db2_log_errors(SQL_HANDLE_STMT, result->hstmt, ERR_Z3005, sql);
 
-		IBM_DB2free_result(result);
+		DBfree_result(result);
 
 		result = (SQL_CD_TRUE == IBM_DB2server_status() ? NULL : (DB_RESULT)ZBX_DB_DOWN);
 	}
 #elif defined(HAVE_MYSQL)
+	result = zbx_malloc(NULL, sizeof(struct zbx_db_result));
+	result->result = NULL;
+
 	if (NULL == conn)
 	{
 		zabbix_errlog(ERR_Z3003);
+
+		DBfree_result(result);
 		result = NULL;
 	}
 	else
@@ -1281,14 +1395,15 @@ error:
 		{
 			zabbix_errlog(ERR_Z3005, mysql_errno(conn), mysql_error(conn), sql);
 
+			DBfree_result(result);
 			result = (SUCCEED == is_recoverable_mysql_error() ? (DB_RESULT)ZBX_DB_DOWN : NULL);
 		}
 		else
-			result = mysql_store_result(conn);
+			result->result = mysql_store_result(conn);
 	}
 #elif defined(HAVE_ORACLE)
-	result = zbx_malloc(NULL, sizeof(ZBX_OCI_DB_RESULT));
-	memset(result, 0, sizeof(ZBX_OCI_DB_RESULT));
+	result = zbx_malloc(NULL, sizeof(struct zbx_db_result));
+	memset(result, 0, sizeof(struct zbx_db_result));
 
 	err = OCIHandleAlloc((dvoid *)oracle.envhp, (dvoid **)&result->stmthp, OCI_HTYPE_STMT, (size_t)0, (dvoid **)0);
 
@@ -1427,12 +1542,12 @@ error:
 		int	server_status;
 
 		server_status = OCI_handle_sql_error(ERR_Z3005, err, sql);
-		OCI_DBfree_result(result);
+		DBfree_result(result);
 
 		result = (ZBX_DB_DOWN == server_status ? (DB_RESULT)(intptr_t)server_status : NULL);
 	}
 #elif defined(HAVE_POSTGRESQL)
-	result = zbx_malloc(NULL, sizeof(ZBX_PG_DB_RESULT));
+	result = zbx_malloc(NULL, sizeof(struct zbx_db_result));
 	result->pg_result = PQexec(conn, sql);
 	result->values = NULL;
 	result->cursor = 0;
@@ -1449,7 +1564,7 @@ error:
 		zabbix_errlog(ERR_Z3005, 0, error, sql);
 		zbx_free(error);
 
-		PG_DBfree_result(result);
+		DBfree_result(result);
 		result = (CONNECTION_OK == PQstatus(conn) ? NULL : (DB_RESULT)ZBX_DB_DOWN);
 	}
 	else	/* init rownum */
@@ -1458,7 +1573,7 @@ error:
 	if (0 == txn_level)
 		zbx_mutex_lock(&sqlite_access);
 
-	result = zbx_malloc(NULL, sizeof(ZBX_SQ_DB_RESULT));
+	result = zbx_malloc(NULL, sizeof(struct zbx_db_result));
 	result->curow = 0;
 
 lbl_get_table:
@@ -1470,7 +1585,7 @@ lbl_get_table:
 		zabbix_errlog(ERR_Z3005, 0, error, sql);
 		sqlite3_free(error);
 
-		SQ_DBfree_result(result);
+		DBfree_result(result);
 
 		switch (ret)
 		{
@@ -1527,68 +1642,6 @@ DB_RESULT	zbx_db_select_n(const char *query, int n)
 }
 
 #ifdef HAVE_POSTGRESQL
-/******************************************************************************
- *                                                                            *
- * Function: zbx_db_bytea_escape                                              *
- *                                                                            *
- * Purpose: converts from binary string to the null terminated escaped string *
- *                                                                            *
- * Transformations:                                                           *
- *      <= 0x1f || '\'' || '\\' || >= 0x7f -> \\ooo (ooo is an octal number)  *
- *                                                                            *
- * Parameters:                                                                *
- *      input - null terminated hexadecimal string                            *
- *      output - pointer to buffer                                            *
- *      olen - size of returned buffer                                        *
- *                                                                            *
- ******************************************************************************/
-size_t	zbx_db_bytea_escape(const u_char *input, size_t ilen, char **output, size_t *olen)
-{
-	const u_char	*i = input;
-	char		*o;
-	size_t		len = 1;	/* '\0' */
-
-	while (i - input < ilen)
-	{
-		if (0x1f >= *i || '\'' == *i || '\\' == *i || 0x7f <= *i)
-		{
-			if (1 == ZBX_PG_ESCAPE_BACKSLASH)
-				len++;
-			len += 4;
-		}
-		else
-			len++;
-		i++;
-	}
-
-	if (*olen < len)
-	{
-		*olen = len;
-		*output = zbx_realloc(*output, *olen);
-	}
-	o = *output;
-	i = input;
-
-	while (i - input < ilen)
-	{
-		if (0x1f >= *i || '\'' == *i || '\\' == *i || 0x7f <= *i)
-		{
-			if (1 == ZBX_PG_ESCAPE_BACKSLASH)
-				*o++ = '\\';
-			*o++ = '\\';
-			*o++ = ((*i >> 6) & 0x7) + 0x30;
-			*o++ = ((*i >> 3) & 0x7) + 0x30;
-			*o++ = (*i & 0x7) + 0x30;
-		}
-		else
-			*o++ = *i;
-		i++;
-	}
-	*o = '\0';
-
-	return len - 1;
-}
-
 /******************************************************************************
  *                                                                            *
  * Function: zbx_db_bytea_unescape                                            *
@@ -1663,7 +1716,10 @@ DB_ROW	zbx_db_fetch(DB_RESULT result)
 
 	return result->values;
 #elif defined(HAVE_MYSQL)
-	return mysql_fetch_row(result);
+	if (NULL == result->result)
+		return NULL;
+
+	return (DB_ROW)mysql_fetch_row(result->result);
 #elif defined(HAVE_ORACLE)
 	if (OCI_NO_DATA == (rc = OCIStmtFetch2(result->stmthp, oracle.errhp, 1, OCI_FETCH_NEXT, 0, OCI_DEFAULT)))
 		return NULL;
@@ -1797,10 +1853,9 @@ int	zbx_db_is_null(const char *field)
 	return FAIL;
 }
 
-#if defined(HAVE_IBM_DB2)
-/* in zbxdb.h - #define DBfree_result   IBM_DB2free_result */
-void	IBM_DB2free_result(DB_RESULT result)
+void	DBfree_result(DB_RESULT result)
 {
+#if defined(HAVE_IBM_DB2)
 	if (NULL == result)
 		return;
 
@@ -1822,11 +1877,13 @@ void	IBM_DB2free_result(DB_RESULT result)
 		SQLFreeHandle(SQL_HANDLE_STMT, result->hstmt);
 
 	zbx_free(result);
-}
+#elif defined(HAVE_MYSQL)
+	if (NULL == result)
+		return;
+
+	mysql_free_result(result->result);
+	zbx_free(result);
 #elif defined(HAVE_ORACLE)
-/* in zbxdb.h - #define DBfree_result   OCI_DBfree_result */
-void	OCI_DBfree_result(DB_RESULT result)
-{
 	if (NULL == result)
 		return;
 
@@ -1855,11 +1912,7 @@ void	OCI_DBfree_result(DB_RESULT result)
 		OCIHandleFree((dvoid *)result->stmthp, OCI_HTYPE_STMT);
 
 	zbx_free(result);
-}
 #elif defined(HAVE_POSTGRESQL)
-/* in zbxdb.h - #define DBfree_result   PG_DBfree_result */
-void	PG_DBfree_result(DB_RESULT result)
-{
 	if (NULL == result)
 		return;
 
@@ -1872,11 +1925,7 @@ void	PG_DBfree_result(DB_RESULT result)
 
 	PQclear(result->pg_result);
 	zbx_free(result);
-}
 #elif defined(HAVE_SQLITE3)
-/* in zbxdb.h - #define DBfree_result   SQ_DBfree_result */
-void	SQ_DBfree_result(DB_RESULT result)
-{
 	if (NULL == result)
 		return;
 
@@ -1886,12 +1935,12 @@ void	SQ_DBfree_result(DB_RESULT result)
 	}
 
 	zbx_free(result);
-}
 #endif	/* HAVE_SQLITE3 */
+}
 
 #if defined(HAVE_IBM_DB2)
 /* server status: SQL_CD_TRUE or SQL_CD_FALSE */
-int	IBM_DB2server_status()
+static int	IBM_DB2server_status()
 {
 	int	server_status = SQL_CD_TRUE;
 
@@ -1904,17 +1953,17 @@ int	IBM_DB2server_status()
 	return (SQL_CD_FALSE == server_status ? SQL_CD_TRUE : SQL_CD_FALSE);
 }
 
-int	zbx_ibm_db2_success(SQLRETURN ret)
+static int	zbx_ibm_db2_success(SQLRETURN ret)
 {
 	return (SQL_SUCCESS == ret || SQL_SUCCESS_WITH_INFO == ret ? SUCCEED : FAIL);
 }
 
-int	zbx_ibm_db2_success_ext(SQLRETURN ret)
+static int	zbx_ibm_db2_success_ext(SQLRETURN ret)
 {
 	return (SQL_SUCCESS == ret || SQL_SUCCESS_WITH_INFO == ret || SQL_NO_DATA_FOUND == ret ? SUCCEED : FAIL);
 }
 
-void	zbx_ibm_db2_log_errors(SQLSMALLINT htype, SQLHANDLE hndl, zbx_err_codes_t err, const char *context)
+static void	zbx_ibm_db2_log_errors(SQLSMALLINT htype, SQLHANDLE hndl, zbx_err_codes_t err, const char *context)
 {
 	SQLCHAR		tmp_message[SQL_MAX_MESSAGE_LENGTH + 1], sqlstate[SQL_SQLSTATE_SIZE + 1];
 	char		message[SQL_MAX_MESSAGE_LENGTH + SQL_SQLSTATE_SIZE + 2];
@@ -1942,7 +1991,7 @@ void	zbx_ibm_db2_log_errors(SQLSMALLINT htype, SQLHANDLE hndl, zbx_err_codes_t e
 }
 #elif defined(HAVE_ORACLE)
 /* server status: OCI_SERVER_NORMAL or OCI_SERVER_NOT_CONNECTED */
-ub4	OCI_DBserver_status()
+static ub4	OCI_DBserver_status()
 {
 	sword	err;
 	ub4	server_status = OCI_SERVER_NOT_CONNECTED;
@@ -1975,8 +2024,6 @@ static size_t	zbx_db_get_escape_string_len(const char *src)
 
 	for (s = src; NULL != s && '\0' != *s; s++)
 	{
-		if ('\r' == *s)
-			continue;
 #if defined(HAVE_MYSQL)
 		if ('\'' == *s || '\\' == *s)
 #elif defined(HAVE_POSTGRESQL)
@@ -2017,9 +2064,6 @@ static void	zbx_db_escape_string(const char *src, char *dst, size_t len)
 
 	for (s = src, d = dst; NULL != s && '\0' != *s && 0 < len; s++)
 	{
-		if ('\r' == *s)
-			continue;
-
 #if defined(HAVE_MYSQL)
 		if ('\'' == *s || '\\' == *s)
 #elif defined(HAVE_POSTGRESQL)
@@ -2085,9 +2129,6 @@ char	*zbx_db_dyn_escape_string_len(const char *src, size_t max_src_len)
 
 	for (s = src; '\0' != *s && 0 < max_src_len; s++)
 	{
-		if ('\r' == *s)
-			continue;
-
 		/* only UTF-8 characters should reduce a variable max_src_len */
 		if (0x80 != (0xc0 & *s) && 0 == --max_src_len)
 			break;
@@ -2132,12 +2173,6 @@ char	*zbx_db_dyn_escape_string_len(const char *src, size_t max_src_len)
 
 	for (s = src; '\0' != *s;)
 	{
-		if ('\r' == *s)
-		{
-			s++;
-			continue;
-		}
-
 		csize = zbx_utf8_char_len(s);
 
 		/* process non-UTF-8 characters as single byte characters */

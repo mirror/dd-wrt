@@ -17,226 +17,6 @@
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
 
-// trigger log expression
-var logexpr_count = 0;
-var key_count = 0;
-
-function nextObject(n) {
-	var t = n.parentNode.tagName;
-	do {
-		n = n.nextSibling;
-	} while (n && n.nodeType != 1 && n.parentNode.tagName == t);
-
-	return n;
-}
-
-function previousObject(p) {
-	var t = p.parentNode.tagName;
-	do {
-		p = p.previousSibling;
-	} while (p && p.nodeType != 1 && p.parentNode.tagName == t);
-
-	return p;
-}
-
-function call_ins_macro_menu(ev) {
-	show_popup_menu(ev,
-		[
-			[locale['S_INSERT_MACRO'], null, null, {'outer' : ['pum_oheader'], 'inner' : ['pum_iheader']}],
-			['TRIGGER.VALUE=0', function() { set_macro(0); },
-			null, {'outer' : ['pum_o_item'], 'inner' : ['pum_i_item']}],
-			['TRIGGER.VALUE=1', function() { set_macro(1); },
-			null, {'outer' : ['pum_o_item'], 'inner' : ['pum_i_item']}],
-			['TRIGGER.VALUE=2', function() { set_macro(2); },
-			null, {'outer' : ['pum_o_item'], 'inner' : ['pum_i_item']}],
-			['TRIGGER.VALUE#0', function() { set_macro(10); },
-			null, {'outer' : ['pum_o_item'], 'inner' : ['pum_i_item']}],
-			['TRIGGER.VALUE#1', function() { set_macro(11); },
-			null, {'outer' : ['pum_o_item'], 'inner' : ['pum_i_item']}],
-			['TRIGGER.VALUE#2', function() { set_macro(12); },
-			null, {'outer' : ['pum_o_item'], 'inner' : ['pum_i_item']}]
-		], 150);
-
-	return false;
-}
-
-function call_triggerlog_menu(evnt, id, name, menu_options) {
-	var tname = locale['S_CREATE_LOG_TRIGGER'];
-
-	if (typeof(menu_options) != 'undefined') {
-		show_popup_menu(evnt,
-			[
-				[name, null, null, {'outer' : ['pum_oheader'], 'inner' : ['pum_iheader']}],
-				[tname, "javascript: openWinCentered('tr_logform.php?sform=1&itemid=" + id + "', 'TriggerLog', 760, 540, 'titlebar=no, resizable=yes, scrollbars=yes, dialog=no');", {'outer' : ['pum_o_item'], 'inner' : ['pum_i_item']}],
-				menu_options
-			], 240);
-	}
-	else {
-		show_popup_menu(evnt,
-			[
-				[name, null, null, {'outer' : ['pum_oheader'], 'inner' : ['pum_iheader']}],
-				[tname, "javascript: openWinCentered('tr_logform.php?sform=1&itemid=" + id + "', 'ServiceForm', 760, 540, 'titlebar=no, resizable=yes, scrollbars=yes, dialog=no');", {'outer' : ['pum_o_item'], 'inner' : ['pum_i_item']}]
-			], 140);
-	}
-	return false;
-}
-
-function add_logexpr() {
-	var REGEXP_EXCLUDE = 1;
-	try {
-		var expr = document.getElementById('logexpr');
-		var expr_t = document.getElementById('expr_type');
-		var bt_and = document.getElementById('add_key_and');
-		var bt_or = document.getElementById('add_key_or');
-		var iregexp = document.getElementById('iregexp');
-	}
-	catch(e) {
-		throw('Error: ' + (IE ? e.description : e));
-	}
-
-	var ex = bt_and.disabled ? '|' : '&';
-	var ex_v = bt_and.disabled ? ' OR ' : ' AND ';
-	if (expr_t.value == REGEXP_EXCLUDE) {
-		ex = bt_and.disabled ? '&' : '|';
-	}
-
-	var expression = '';
-	var expr_v = '';
-	var lp;
-	for (lp = 0; lp < key_count; lp++) {
-		var key = document.getElementsByName('keys[' + lp + '][value]')[0];
-		var typ = document.getElementsByName('keys[' + lp + '][type]')[0];
-		if (typeof(key) != 'undefined' && typeof(typ) != 'undefined') {
-			if (expression != '') {
-				expression += ex;
-				expr_v += ex_v;
-			}
-			expression += typ.value + '(' + key.value + ')';
-			expr_v += typ.value + '(' + key.value + ')';
-			remove_keyword('keytr' + lp);
-		}
-	}
-
-	if (typeof(expr.value) != 'undefined' && expr.value != '') {
-		if (expression != '') {
-			expression += ex;
-			expr_v += ex_v;
-		}
-		expression += iregexp.checked ? 'iregexp' : 'regexp';
-		expression += '(' + expr.value + ')';
-		expr_v += iregexp.checked ? 'iregexp' : 'regexp';
-		expr_v += '(' + expr.value + ')';
-	}
-
-	if (expression == '') {
-		return false;
-	}
-
-	var classattr = IE ? 'className' : 'class';
-
-	var tr = document.createElement('tr');
-	document.getElementById('exp_list').firstChild.appendChild(tr);
-
-	tr.setAttribute(classattr, 'even_row');
-	tr.setAttribute('id', 'logtr' + logexpr_count);
-
-	var td = document.createElement('td');
-	tr.appendChild(td);
-	td.appendChild(document.createTextNode(expr_v));
-
-	jQuery(td).append(jQuery('<input>', {
-		name: 'expressions[' + logexpr_count + '][value]',
-		type: 'hidden',
-		value: expression
-	}));
-
-	jQuery(td).append(jQuery('<input>', {
-		name: 'expressions[' + logexpr_count + '][view]',
-		type: 'hidden',
-		value: expr_v
-	}));
-
-	var td = document.createElement('td');
-	tr.appendChild(td);
-
-	td.appendChild(document.createTextNode(expr_t.options[expr_t.selectedIndex].text));
-
-	jQuery(td).append(jQuery('<input>', {
-		name: 'expressions[' + logexpr_count + '][type]',
-		type: 'hidden',
-		value: expr_t.value
-	}));
-
-	// optional
-	var td = document.createElement('td');
-	tr.appendChild(td);
-
-	td.setAttribute(IE ? 'cssText' : 'style', 'white-space: nowrap;');
-
-	var img = document.createElement('img');
-	img.setAttribute('src', 'images/general/arrow_up.png');
-	img.setAttribute('border', '0');
-	img.setAttribute('alt', 'up');
-
-	var url = document.createElement('a');
-	url.setAttribute('href', 'javascript: element_up("logtr' + logexpr_count + '");');
-	url.setAttribute(classattr, 'action');
-	url.appendChild(img);
-
-	td.appendChild(url);
-	td.appendChild(document.createTextNode(' '));
-
-	var img = document.createElement('img');
-	img.setAttribute('src', 'images/general/arrow_down.png');
-	img.setAttribute('border', '0');
-	img.setAttribute('alt', 'down');
-
-	var url = document.createElement('a');
-	url.setAttribute('href', 'javascript: element_down("logtr' + logexpr_count + '");');
-	url.setAttribute(classattr, 'action');
-	url.appendChild(img);
-
-	td.appendChild(url);
-
-	var td = document.createElement('td');
-	tr.appendChild(td);
-
-	var url = document.createElement('a');
-	url.setAttribute('href', 'javascript: if (confirm("' + locale['S_DELETE_EXPRESSION_Q'] + '")) { remove_expression("logtr' + logexpr_count + '"); }');
-	url.setAttribute(classattr, 'action');
-	url.appendChild(document.createTextNode(locale['S_DELETE']));
-
-	td.appendChild(url);
-
-	logexpr_count++;
-	expr.value = '';
-	expr_t.selectedIndex=0;
-	bt_and.disabled = false;
-	bt_or.disabled = false;
-}
-
-function remove_expression(expr_id) {
-	var expr_tr = document.getElementById(expr_id);
-	var id = getIdFromNodeId(expr_id);
-	if (is_number(id)) {
-		var elm_v = document.getElementsByName('expressions[' + id + '][value]')[0];
-		var elm_t = document.getElementsByName('expressions[' + id + '][type]')[0];
-		var elm_s = document.getElementsByName('expressions[' + id + '][view]')[0];
-
-		if (typeof(elm_v) != 'undefined') {
-			elm_v.parentNode.removeChild(elm_v);
-		}
-		if (typeof(elm_t) != 'undefined') {
-			elm_t.parentNode.removeChild(elm_t);
-		}
-		if (typeof(elm_s) != 'undefined') {
-			elm_s.parentNode.removeChild(elm_s);
-		}
-	}
-	if (typeof(expr_tr) != 'undefined') {
-		expr_tr.parentNode.removeChild(expr_tr);
-	}
-}
 
 function getIdFromNodeId(id) {
 	if (typeof(id) == 'string') {
@@ -249,225 +29,6 @@ function getIdFromNodeId(id) {
 	return null;
 }
 
-function element_up(elementid) {
-	var c_obj = document.getElementById(elementid);
-	var p_obj = c_obj.parentNode;
-
-	if (typeof(p_obj) == 'undefined') {
-		return null;
-	}
-
-	var c2_obj = previousObject(c_obj);
-	if (c2_obj && c2_obj.id.length > 0) {
-		swapNodes(c2_obj, c_obj);
-		swapNodesNames(c2_obj, c_obj);
-	}
-}
-
-function element_down(elementid) {
-	var c_obj = document.getElementById(elementid);
-	var p_obj = c_obj.parentNode;
-
-	if (typeof(p_obj) == 'undefined') {
-		return null;
-	}
-
-	var c2_obj = nextObject(c_obj);
-	if (c2_obj && c2_obj.id.length > 0) {
-		swapNodes(c_obj, c2_obj);
-		swapNodesNames(c_obj, c2_obj);
-	}
-}
-
-function swapNodes(n1, n2) {
-	var p1, p2, b;
-
-	if ((p1 = n1.parentNode) && (p2 = n2.parentNode)) {
-		b = nextObject(n2);
-		if (n1 == b) {
-			return;
-		}
-
-		p1.replaceChild(n2, n1); // new, old
-		if (b) {
-			// n1 - the node which we insert
-			// b - the node before which we insert
-			p2.insertBefore(n1, b);
-		}
-		else {
-			p2.appendChild(n1);
-		}
-	}
-}
-
-function swapNodesNames(n1, n2) {
-	var id1 = n1.id;
-	var id2 = n2.id;
-	if (is_string(id1) && is_string(id2)) {
-		var reg = /logtr([0-9])/i;
-		id1 = parseInt(id1.replace(reg, '$1'));
-		id2 = parseInt(id2.replace(reg, '$1'));
-	}
-
-	if (is_number(id1) && is_number(id2)) {
-		var elm = [];
-		elm[0] = document.getElementsByName('expressions[' + id1 + '][value]')[0];
-		elm[1] = document.getElementsByName('expressions[' + id1 + '][type]')[0];
-		elm[2] = document.getElementsByName('expressions[' + id1 + '][view]')[0];
-		elm[3] = document.getElementsByName('expressions[' + id2 + '][value]')[0];
-		elm[4] = document.getElementsByName('expressions[' + id2 + '][type]')[0];
-		elm[5] = document.getElementsByName('expressions[' + id2 + '][view]')[0];
-
-		swapNodes(elm[0], elm[3]);
-		swapNodes(elm[1], elm[4]);
-		swapNodes(elm[2], elm[5]);
-
-		return true;
-	}
-	return false;
-}
-
-function closeForm(page) {
-	try {
-		// set header confirmation message to opener
-		var msg = IE ? document.getElementById('page_msg').innerText : document.getElementById('page_msg').textContent;
-		window.opener.location.replace(page + '?msg=' + encodeURI(msg));
-	}
-	catch(e) {
-		zbx_throw(e);
-	}
-
-	if (IE) {
-		// close current popup after 1s, wait when opener window is refreshed (IE7 issue)
-		window.setTimeout(function() { window.self.close() }, 1000);
-	}
-	else {
-		window.self.close();
-	}
-}
-
-function add_keyword(bt_type) {
-	try {
-		var expr = document.getElementById('logexpr');
-		var iregexp = document.getElementById('iregexp');
-		var cb = document.getElementById(bt_type == 'and' ? 'add_key_or' : 'add_key_and');
-	}
-	catch(e) {
-		throw('Error: ' + (IE ? e.description : e));
-	}
-
-	if (typeof(expr.value) == 'undefined' || expr.value == '') {
-		return false;
-	}
-
-	cb.disabled = true;
-
-	var classattr = IE ? 'className' : 'class';
-
-	var tr = document.createElement('tr');
-	document.getElementById('key_list').firstChild.appendChild(tr);
-
-	tr.setAttribute(classattr, 'even_row');
-	tr.setAttribute('id', 'keytr' + key_count);
-
-	// keyword
-	var td = document.createElement('td');
-	tr.appendChild(td);
-
-	td.appendChild(document.createTextNode(expr.value));
-
-	var input = IE ? document.createElement('<input name="keys[' + key_count + '][value]" />') : document.createElement('input');
-	input.setAttribute('type', 'hidden');
-	input.setAttribute('value', expr.value);
-	!IE ? input.setAttribute('name', 'keys[' + key_count + '][value]') : '';
-
-	td.appendChild(input);
-
-	// type
-	var td = document.createElement('td');
-	tr.appendChild(td);
-
-	td.appendChild(document.createTextNode(iregexp.checked ? 'iregexp' : 'regexp'));
-
-	var input = IE ? document.createElement('<input name="keys[' + key_count + '][type]" />') : document.createElement('input');
-	input.setAttribute('type', 'hidden');
-	input.setAttribute('value', iregexp.checked ? 'iregexp' : 'regexp');
-	!IE ? input.setAttribute('name', 'keys[' + key_count + '][type]') : '';
-
-	td.appendChild(input);
-
-	// delete
-	var td = document.createElement('td');
-	tr.appendChild(td);
-
-	var url = document.createElement('a');
-	url.setAttribute('href', 'javascript: if(confirm("' + locale['S_DELETE_KEYWORD_Q'] + '")) remove_keyword("keytr' + key_count + '");');
-	url.setAttribute(classattr, 'action');
-	url.appendChild(document.createTextNode(locale['S_DELETE']));
-
-	td.appendChild(url);
-
-	key_count++;
-	expr.value = '';
-}
-
-function add_keyword_and() {
-	add_keyword('and');
-}
-
-function add_keyword_or() {
-	add_keyword('or');
-}
-
-function getIdFromNodeKeyId(id) {
-	if (typeof(id) == 'string') {
-		var reg = /keytr([0-9])/i;
-		id = parseInt(id.replace(reg, '$1'));
-	}
-	if (typeof(id) == 'number') {
-		return id;
-	}
-	return null;
-}
-
-function remove_keyword(key_id) {
-	var key_tr = document.getElementById(key_id);
-	var id = getIdFromNodeKeyId(key_id);
-	if (is_number(id)) {
-		var elm_v = document.getElementsByName('keys[' + id + '][value]')[0];
-		var elm_t = document.getElementsByName('keys[' + id + '][type]')[0];
-
-		if (typeof(elm_v) == 'undefined') {
-			elm_v.parentNode.removeChild(elm_v);
-		}
-		if (typeof(elm_t) == 'undefined') {
-			elm_t.parentNode.removeChild(elm_t);
-		}
-	}
-	if (typeof(key_tr) != 'undefined') {
-		key_tr.parentNode.removeChild(key_tr);
-	}
-
-	var lp;
-	var bData = false;
-	for (lp = 0; lp < key_count; lp++) {
-		var elm_v = document.getElementsByName('keys[' + lp + '][value]')[0];
-		if (typeof(elm_v) != 'undefined') {
-			bData = true;
-		}
-	}
-	if (!bData) {
-		var bt_and = document.getElementById('add_key_and');
-		var bt_or = document.getElementById('add_key_or');
-		if (typeof(bt_and) != 'undefined') {
-			bt_and.disabled = false;
-		}
-		if (typeof(bt_or) != 'undefined') {
-			bt_or.disabled = false;
-		}
-	}
-}
-
 function check_target(e) {
 	var targets = document.getElementsByName('expr_target_single');
 	for (var i = 0; i < targets.length; ++i) {
@@ -475,39 +36,50 @@ function check_target(e) {
 	}
 }
 
-function delete_expression(expr_id) {
-	document.getElementsByName('remove_expression')[0].value = expr_id;
+/**
+ * Remove part of expression.
+ *
+ * @param string id		Expression temporary ID.
+ * @param number type	Expression (type = 0) or recovery expression (type = 1).
+ */
+function delete_expression(id, type) {
+	// If type is expression.
+	if (type == 0) {
+		jQuery('#remove_expression').val(id);
+	}
+	// Type is recovery expression.
+	else {
+		jQuery('#remove_recovery_expression').val(id);
+	}
 }
 
-function copy_expression(id) {
-	var expr_temp = document.getElementsByName('expr_temp')[0];
-	if (expr_temp.value.length > 0 && !confirm(locale['DO_YOU_REPLACE_CONDITIONAL_EXPRESSION_Q'])) {
+/**
+ * Insert expression part into input field.
+ *
+ * @param string id		Expression temporary ID.
+ * @param number type	Expression (type = 0) or recovery expression (type = 1).
+ */
+function copy_expression(id, type) {
+	// If type is expression.
+	if (type == 0) {
+		var element = document.getElementsByName('expr_temp')[0];
+	}
+	// Type is recovery expression.
+	else {
+		var element = document.getElementsByName('recovery_expr_temp')[0];
+	}
+
+	if (element.value.length > 0 && !confirm(t('Do you wish to replace the conditional expression?'))) {
 		return null;
 	}
 
 	var src = document.getElementById(id);
 	if (typeof src.textContent != 'undefined') {
-		expr_temp.value = src.textContent;
+		element.value = src.textContent;
 	}
 	else {
-		expr_temp.value = src.innerText;
+		element.value = src.innerText;
 	}
-}
-
-function set_macro(v) {
-	var expr_temp = jQuery('#expr_temp');
-	if (expr_temp.val().length > 0 && !confirm(locale['DO_YOU_REPLACE_CONDITIONAL_EXPRESSION_Q'])) {
-		return false;
-	}
-
-	var sign = '=';
-	if (v >= 10) {
-		v %= 10;
-		sign = '#';
-	}
-	expr_temp.val('{TRIGGER.VALUE}' + sign + v);
-
-	return true;
 }
 
 /*
@@ -546,103 +118,18 @@ function cloneRow(elementid, count) {
 	newEntry.style.display = '';
 }
 
-// dashboard js menu
-function create_page_menu(e, id) {
-	if (!e) {
-		e = window.event;
-	}
-	id = 'menu_' + id;
-
-	var dbrd_menu = [];
-
-	// to create a copy of array, but not references!!!!
-	for (var i=0; i < page_menu[id].length; i++) {
-		if (typeof(page_menu[id][i]) != 'undefined' && !empty(page_menu[id][i])) {
-			dbrd_menu[i] = page_menu[id][i].clone();
-		}
-	}
-
-	for (var i = 0; i < page_submenu[id].length; i++) {
-		if (typeof(page_submenu[id][i]) != 'undefined' && !empty(page_submenu[id][i])) {
-			var row = page_submenu[id][i];
-			var menu_row = [row.name, "javascript: rm4favorites('" + row.favobj + "', '" + row.favid + "', '" + i + "');"];
-			dbrd_menu[dbrd_menu.length-1].push(menu_row);
-		}
-	}
-	show_popup_menu(e, dbrd_menu);
-}
-
-// triggers js menu
-function create_mon_trigger_menu(e, args, items) {
-	var tr_menu = [[t('Triggers'), null, null, {'outer' : ['pum_oheader'], 'inner' : ['pum_iheader']}], [t('Events'), 'events.php?triggerid=' + args[0].triggerid + '&nav_time=' + args[0].lastchange + '&source=0', null]];
-	if (args.length > 1 && !is_null(args[1])) {
-		tr_menu.push(args[1]);
-	}
-	if (args.length > 1 && !is_null(args[2])) {
-		tr_menu.push(args[2]);
-	}
-
-	// getting info about types of items that we have
-	var has_char_items = false;
-	var has_int_items = false;
-
-	// checking every item
-	for (var itemid in items) {
-		// if no info about type is given
-		if (!isset(itemid, items)) {
-			continue;
-		}
-		if (!isset('value_type', items[itemid])) {
-			continue;
-		}
-
-		// 1, 2, 4 - character types
-		if (items[itemid].value_type == '1' || items[itemid].value_type == '2' || items[itemid].value_type == '4') {
-			has_char_items = true;
-		}
-		// 0, 3 - numeric types
-		if (items[itemid].value_type == '0' || items[itemid].value_type == '3') {
-			has_int_items = true;
-		}
-	}
-
-	var history_section_caption = '';
-	// we have chars and numbers, or we have none (probably 'value_type' key was not set)
-	if (has_char_items == has_int_items) {
-		history_section_caption = t('History and simple graphs');
-	}
-	// we have only character items, so 'history' should be shown
-	else if (has_char_items) {
-		history_section_caption = t('History');
-	}
-	// we have only numeric items, so 'simple graphs' should be shown
-	else {
-		history_section_caption = t('Simple graphs');
-	}
-
-	tr_menu.push([history_section_caption, null, null, {'outer' : ['pum_oheader'], 'inner' : ['pum_iheader']}]);
-
-	for (var itemid in items) {
-		if (!isset(itemid, items)) {
-			continue;
-		}
-		tr_menu.push([items[itemid].name, 'history.php?action=' + items[itemid].action + '&itemid=' + items[itemid].itemid, null]);
-	}
-	show_popup_menu(e, tr_menu, 280);
-}
-
 function testUserSound(idx) {
 	var sound = $(idx).options[$(idx).selectedIndex].value;
 	var repeat = $('messages_sounds.repeat').options[$('messages_sounds.repeat').selectedIndex].value;
 
 	if (repeat == 1) {
-		AudioList.play(sound);
+		AudioControl.playOnce(sound);
 	}
 	else if (repeat > 1) {
-		AudioList.loop(sound, {'seconds': repeat});
+		AudioControl.playLoop(sound, repeat);
 	}
 	else {
-		AudioList.loop(sound, {'seconds': $('messages_timeout').value});
+		AudioControl.playLoop(sound, $('messages_timeout').value);
 	}
 }
 
@@ -651,13 +138,6 @@ function removeObjectById(id) {
 	if (obj != null && typeof(obj) == 'object') {
 		obj.parentNode.removeChild(obj);
 	}
-}
-
-/**
- * Converts all HTML entities into the corresponding symbols.
- */
-jQuery.unescapeHtml = function(html) {
-	return jQuery('<div />').html(html).text();
 }
 
 /**
@@ -699,6 +179,45 @@ function validateNumericBox(obj, allowempty, allownegative) {
 }
 
 /**
+ * Validates and formats input element containing a part of date.
+ *
+ * @param object {obj}			input element value of which is being validated
+ * @param int {min}				minimal allowed value (inclusive)
+ * @param int {max}				maximum allowed value (inclusive)
+ * @param int {paddingSize}		number of zeroes used for padding
+ */
+function validateDatePartBox(obj, min, max, paddingSize) {
+	if (obj != null) {
+		min = min ? min : 0;
+		max = max ? max : 59;
+		paddingSize = paddingSize ? paddingSize : 2;
+
+		var paddingZeroes = [];
+		for (var i = 0; i != paddingSize; i++) {
+			paddingZeroes.push('0');
+		}
+		paddingZeroes = paddingZeroes.join('');
+
+		var currentValue = obj.value.toString();
+
+		if (/^[0-9]+$/.match(currentValue)) {
+			var intValue = parseInt(currentValue, 10);
+
+			if (intValue < min || intValue > max) {
+				obj.value = paddingZeroes;
+			}
+			else if (currentValue.length < paddingSize) {
+				var paddedValue = paddingZeroes + obj.value;
+				obj.value = paddedValue.substring(paddedValue.length - paddingSize);
+			}
+		}
+		else {
+			obj.value = paddingZeroes;
+		}
+	}
+}
+
+/**
  * Translates the given string.
  *
  * @param {String} str
@@ -717,84 +236,43 @@ function getUniqueId() {
 	if (typeof getUniqueId.id === 'undefined') {
 		getUniqueId.id = 0;
 	}
+
 	return 'new' + (getUniqueId.id++).toString();
 }
 
 /**
- * Color palette, (implementation from PHP)
+ * Color palette object used for geting different colors from color palette.
  */
-var prevColor = {'color': 0, 'gradient': 0};
+var colorPalette = (function() {
+	'use strict';
 
-function incrementNextColor() {
-	prevColor['color']++;
-	if (prevColor['color'] == 7) {
-		prevColor['color'] = 0;
+	var current_color = 0,
+		palette = [
+			'1A7C11', 'F63100', '2774A4', 'A54F10', 'FC6EA3', '6C59DC', 'AC8C14', '611F27', 'F230E0', '5CCD18',
+			'BB2A02', '5A2B57', '89ABF8', '7EC25C', '274482', '2B5429', '8048B4', 'FD5434', '790E1F', '87AC4D', 'E89DF4'
+		];
 
-		prevColor['gradient']++;
-		if (prevColor['gradient'] == 3) {
-			prevColor['gradient'] = 0;
+	return {
+		incrementNextColor: function() {
+			if (++current_color == palette.length) {
+				current_color = 0;
+			}
+		},
+
+		/**
+		 * Gets next color from palette.
+		 *
+		 * @return string	hexadecimal color code
+		 */
+		getNextColor: function() {
+			var color = palette[current_color];
+
+			this.incrementNextColor();
+
+			return color;
 		}
 	}
-}
-
-function getNextColor(paletteType) {
-	var palette, gradient, hexColor, r, g, b;
-
-	switch (paletteType) {
-		case 1:
-			palette = [200, 150, 255, 100, 50, 0];
-			break;
-		case 2:
-			palette = [100, 50, 200, 150, 250, 0];
-			break;
-		case 0:
-		default:
-			palette = [255, 200, 150, 100, 50, 0];
-			break;
-	}
-
-	gradient = palette[prevColor['gradient']];
-	r = (100 < gradient) ? 0 : 255;
-	g = r;
-	b = r;
-
-	switch (prevColor['color']) {
-		case 0:
-			r = gradient;
-			break;
-		case 1:
-			g = gradient;
-			break;
-		case 2:
-			b = gradient;
-			break;
-		case 3:
-			b = gradient;
-			r = b;
-			break;
-		case 4:
-			b = gradient;
-			g = b;
-			break;
-		case 5:
-			g = gradient;
-			r = g;
-			break;
-		case 6:
-			b = gradient;
-			g = b;
-			r = b;
-			break;
-	}
-
-	incrementNextColor();
-
-	hexColor = ('0' + parseInt(r, 10).toString(16)).slice(-2)
-				+ ('0' + parseInt(g, 10).toString(16)).slice(-2)
-				+ ('0' + parseInt(b, 10).toString(16)).slice(-2);
-
-	return hexColor.toUpperCase();
-}
+}());
 
 /**
  * Used for php ctweenbox object.
@@ -809,7 +287,7 @@ function getNextColor(paletteType) {
  *
  * @return true
  */
-function moveListBoxSelectedItem(formname, objname, from, to, action) {
+function moveListBoxSelectedItem(objname, from, to, action) {
 	to = jQuery('#' + to);
 
 	jQuery('#' + from).find('option:selected').each(function(i, fromel) {
@@ -826,8 +304,11 @@ function moveListBoxSelectedItem(formname, objname, from, to, action) {
 		}
 		fromel = jQuery(fromel);
 		if (action.toLowerCase() == 'add') {
-			jQuery(document.forms[formname]).append("<input name='" + objname + '[' + fromel.val() + ']'
-				+ "' id='" + objname + '_' + fromel.val() + "' value='" + fromel.val() + "' type='hidden'>");
+			jQuery(this)
+				.closest('form')
+				.append("<input name='" + objname + '[' + fromel.val() + ']' + "' id='" + objname + '_' + fromel.val()
+					+ "' value='" + fromel.val() + "' type='hidden'>"
+				);
 		}
 		else if (action.toLowerCase() == 'rmv') {
 			jQuery('#' + objname + '_' + fromel.val()).remove();
@@ -909,12 +390,13 @@ function formatTimestamp(timestamp, isTsDouble, isExtend) {
 		months = 0;
 
 	if (isExtend) {
-		years = parseInt(timestamp / 31536000);
-		months = parseInt((timestamp - years * 31536000) / 2592000);
+		years = Math.floor(timestamp / 31536000);
+		months = Math.floor((timestamp - years * 31536000) / 2592000);
 	}
 
-	var days = parseInt((timestamp - years * 31536000 - months * 2592000) / 86400),
-		hours = parseInt((timestamp - years * 31536000 - months * 2592000 - days * 86400) / 3600);
+	var days = Math.floor((timestamp - years * 31536000 - months * 2592000) / 86400),
+		hours = Math.floor((timestamp - years * 31536000 - months * 2592000 - days * 86400) / 3600),
+		minutes = Math.floor((timestamp - years * 31536000 - months * 2592000 - days * 86400 - hours * 3600) / 60);
 
 	// due to imprecise calculations it is possible that the remainder contains 12 whole months but no whole years
 	if (months == 12) {
@@ -932,6 +414,9 @@ function formatTimestamp(timestamp, isTsDouble, isExtend) {
 		if (hours.toString().length == 1) {
 			hours = '0' + hours;
 		}
+		if (minutes.toString().length == 1) {
+			minutes = '0' + minutes;
+		}
 	}
 
 	var str = (years == 0) ? '' : years + locale['S_YEAR_SHORT'] + ' ';
@@ -940,6 +425,7 @@ function formatTimestamp(timestamp, isTsDouble, isExtend) {
 		? days + locale['S_DAY_SHORT'] + ' '
 		: ((days == 0) ? '' : days + locale['S_DAY_SHORT'] + ' ');
 	str += (hours == 0) ? '' : hours + locale['S_HOUR_SHORT'] + ' ';
+	str += (minutes == 0) ? '' : minutes + locale['S_MINUTE_SHORT'] + ' ';
 
 	return str;
 }
@@ -1014,154 +500,191 @@ function stripslashes(str) {
 	});
 }
 
+function overlayDialogueDestroy() {
+	jQuery('#overlay_bg, #overlay_dialogue').remove();
+	jQuery('body').css({'overflow': ''});
+	jQuery('body[style=""]').removeAttr('style');
+}
+
+/**
+ * Display modal window
+ *
+ * @param string title					modal window title
+ * @param object content				window content
+ * @param array  buttons				window buttons
+ * @param string buttons[]['title']
+ * @param string buttons[]['class']
+ * @param bool	 buttons[]['cancel']	(optional) it means what this button has cancel action
+ * @param bool	 buttons[]['focused']
+ * @param bool   buttons[]['enabled']
+ * @param object buttons[]['click']
+ */
+function overlayDialogue(params) {
+	var overlay_bg = jQuery('<div>', {
+		id: 'overlay_bg',
+		class: 'overlay-bg',
+		css: {
+			'display': 'none'
+		}
+	});
+
+	var overlay_dialogue_footer = jQuery('<div>', {
+		class: 'overlay-dialogue-footer'
+	});
+
+	var button_focused = null,
+		cancel_action = null;
+
+	jQuery.each(params.buttons, function(index, obj) {
+		var button = jQuery('<button>', {
+			type: 'button',
+			text: obj.title
+		}).click(function() {
+			obj.action();
+			overlayDialogueDestroy();
+			return false;
+		});
+
+		if ('class' in obj) {
+			button.addClass(obj.class);
+		}
+
+		if ('enabled' in obj && obj.enabled === false) {
+			button.attr('disabled', 'disabled');
+		}
+
+		if ('focused' in obj && obj.focused === true) {
+			button_focused = button;
+		}
+
+		if ('cancel' in obj && obj.cancel === true) {
+			cancel_action = obj.action;
+		}
+
+		overlay_dialogue_footer.append(button);
+	});
+
+	overlay_dialogue = jQuery('<div>', {
+		id: 'overlay_dialogue',
+		class: 'overlay-dialogue',
+		css: {
+			'position': 'fixed',
+			'top': '40%',
+			'left': '50%',
+			'display': 'none'
+		}
+	})
+		.append(
+			jQuery('<button>', {
+				class: 'overlay-close-btn'
+			})
+				.click(function() {
+					if (cancel_action !== null) {
+						cancel_action();
+					}
+					overlayDialogueDestroy();
+					return false;
+				})
+		)
+		.append(
+			jQuery('<div>', {
+				class: 'dashbrd-widget-head'
+			}).append(jQuery('<h4>').text(params.title))
+		)
+		.append(
+			jQuery('<div>', {
+				class: 'overlay-dialogue-body'
+			}).append(params.content)
+		)
+		.append(overlay_dialogue_footer)
+		.on('keypress keydown', function(e) {
+			if (e.which == 27) { // ESC
+				if (cancel_action !== null) {
+					cancel_action();
+				}
+				overlayDialogueDestroy();
+				return false;
+			}
+		});
+
+	overlay_bg
+		.appendTo('body')
+		.show();
+	overlay_dialogue
+		.appendTo('body')
+		.css({
+			'margin-top': '-' + (overlay_dialogue.outerHeight() / 2) + 'px',
+			'margin-left': '-' + (overlay_dialogue.outerWidth() / 2) + 'px'
+		})
+		.show();
+
+	var focusable = jQuery(':focusable', overlay_dialogue);
+
+	if (focusable.length > 0) {
+		var first_focusable = focusable.filter(':first'),
+			last_focusable = focusable.filter(':last');
+
+		first_focusable.on('keydown', function(e) {
+			if (e.keyCode == 9 && e.shiftKey) {
+				last_focusable.focus();
+				return false;
+			}
+		});
+
+		last_focusable.on('keydown', function(e) {
+			if (e.keyCode == 9 && !e.shiftKey) {
+				first_focusable.focus();
+				return false;
+			}
+		});
+	}
+
+	jQuery('body').css({'overflow': 'hidden'});
+
+	if (button_focused !== null) {
+		button_focused.focus();
+	}
+}
+
 /**
  * Execute script.
  *
- * @param string hostId			host id
- * @param string scriptId		script id
+ * @param string hostid			host id
+ * @param string scriptid		script id
  * @param string confirmation	confirmation text
  */
-function executeScript(hostId, scriptId, confirmation) {
+function executeScript(hostid, scriptid, confirmation) {
 	var execute = function() {
-		if (!empty(hostId)) {
-			openWinCentered('scripts_exec.php?hostid=' + hostId + '&scriptid=' + scriptId, 'Tools', 560, 470,
+		if (hostid !== null) {
+			openWinCentered('scripts_exec.php?hostid=' + hostid + '&scriptid=' + scriptid, 'Tools', 950, 470,
 				'titlebar=no, resizable=yes, scrollbars=yes, dialog=no'
 			);
 		}
 	};
 
 	if (confirmation.length > 0) {
-		var scriptDialog = jQuery('#scriptDialog');
-
-		if (scriptDialog.length == 0) {
-			scriptDialog = jQuery('<div>', {
-				id: 'scriptDialog',
-				css: {
-					display: 'none',
-					'white-space': 'normal'
-				}
-			});
-
-			jQuery('body').append(scriptDialog);
-		}
-
-		scriptDialog
-			.text(confirmation)
-			.dialog({
-				buttons: [
-					{text: t('Execute'), click: function() {
-						jQuery(this).dialog('destroy');
+		overlayDialogue({
+			'title': t('Execution confirmation'),
+			'content': jQuery('<span>').text(confirmation),
+			'buttons': [
+				{
+					'title': t('Cancel'),
+					'class': 'btn-alt',
+					'focused': (hostid === null),
+					'action': function() {}
+				},
+				{
+					'title': t('Execute'),
+					'enabled': (hostid !== null),
+					'focused': (hostid !== null),
+					'action': function() {
 						execute();
-					}},
-					{text: t('Cancel'), click: function() {
-						jQuery(this).dialog('destroy');
-					}}
-				],
-				draggable: true,
-				modal: true,
-				width: (scriptDialog.outerWidth() + 20 > 600) ? 600 : 'inherit',
-				resizable: false,
-				minWidth: 200,
-				minHeight: 100,
-				title: t('Execution confirmation'),
-				close: function() {
-					jQuery(this).dialog('destroy');
+					}
 				}
-			});
-
-		if (empty(hostId)) {
-			jQuery('.ui-dialog-buttonset button:first').prop('disabled', true).addClass('ui-state-disabled');
-			jQuery('.ui-dialog-buttonset button:last').addClass('main').focus();
-		}
-		else {
-			jQuery('.ui-dialog-buttonset button:first').addClass('main');
-		}
+			]
+		});
 	}
 	else {
 		execute();
 	}
-}
-
-/**
- * Makes all elements which are not supported for printing view to disappear by including css file.
- *
- * @param bool show
- */
-function printLess(show) {
-	if (!jQuery('#printLess').length) {
-		jQuery('<link rel="stylesheet" type="text/css" id="printLess">')
-			.appendTo('head')
-			.attr('href', './styles/print.css');
-
-		jQuery('.header_l.left, .header_r.right').each(function(i, obj) {
-			if (jQuery(this).find('input, form, select, .menu_icon').length) {
-				jQuery(this).addClass('hide-all-children');
-			}
-		});
-
-		jQuery('body')
-			.prepend('<div class="printless">&laquo;BACK</div>')
-			.click(function() {
-				printLess(false);
-			});
-	}
-
-	jQuery('#printLess').prop('disabled', !show);
-}
-
-/**
- * Display jQuery model window.
- *
- * @param string title					modal window title
- * @param string text					window message
- * @param array  buttons				window buttons
- * @param array  buttons[]['text']		button text
- * @param object buttons[]['click']		button click action
- */
-function showModalWindow(title, text, buttons) {
-	var modalWindow = jQuery('#modalWindow');
-
-	if (modalWindow.length == 0) {
-		modalWindow = jQuery('<div>', {
-			id: 'modalWindow',
-			css: {
-				padding: '10px',
-				display: 'none',
-				'white-space': 'normal'
-			}
-		});
-
-		jQuery('body').append(modalWindow);
-	}
-
-	modalWindow
-		.text(text)
-		.dialog({
-			title: title,
-			buttons: buttons,
-			draggable: true,
-			modal: true,
-			resizable: false,
-			width: 'inherit',
-			minWidth: 200,
-			minHeight: 120,
-			close: function() {
-				jQuery(this).dialog('destroy');
-			}
-		});
-}
-
-/**
- * Disable setup step button
- *
- * @param buttonId
- */
-function disableSetupStepButton(buttonId) {
-	jQuery(buttonId).
-		addClass('ui-state-disabled').
-		addClass('ui-button-disabled').
-		attr('disabled', 'disabled').
-		attr('aria-disabled', 'true');
-
-	jQuery('.info_bar .ok').remove();
 }

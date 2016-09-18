@@ -36,7 +36,7 @@ abstract class CValidator {
 	 */
 	private $error;
 
-	public function __construct(array $options = array()) {
+	public function __construct(array $options = []) {
 		// set options
 		foreach ($options as $key => $value) {
 			$this->$key = $value;
@@ -109,5 +109,30 @@ abstract class CValidator {
 		}
 
 		$this->setError(vsprintf($message, $arguments));
+	}
+
+
+	/**
+	 * Returns string represenation of a variable
+	 *
+	 * @param mixed $value
+	 * @return string
+	 */
+	protected function stringify($value) {
+		if (is_bool($value)) {
+			return $value ? 'true' : 'false';
+		}
+		elseif (is_null($value)) {
+			return 'null';
+		}
+		elseif (is_object($value)) {
+			return get_class($value);
+		}
+		elseif (is_scalar($value)) {
+			return (string)$value;
+		}
+		else {
+			return gettype($value);
+		}
 	}
 }

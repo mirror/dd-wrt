@@ -53,7 +53,8 @@ static int	zbx_execute_script_on_agent(DC_HOST *host, const char *command, char 
 	}
 
 	port = zbx_strdup(port, item.interface.port_orig);
-	substitute_simple_macros(NULL, NULL, NULL, NULL, &host->hostid, NULL, NULL, &port, MACRO_TYPE_COMMON, NULL, 0);
+	substitute_simple_macros(NULL, NULL, NULL, NULL, &host->hostid, NULL, NULL, NULL,
+			&port, MACRO_TYPE_COMMON, NULL, 0);
 
 	if (SUCCEED != (ret = is_ushort(port, &item.interface.port)))
 	{
@@ -68,7 +69,7 @@ static int	zbx_execute_script_on_agent(DC_HOST *host, const char *command, char 
 
 	init_result(&agent_result);
 
-	alarm(CONFIG_TIMEOUT);
+	zbx_alarm_on(CONFIG_TIMEOUT);
 
 	if (SUCCEED != (ret = get_value_agent(&item, &agent_result)))
 	{
@@ -79,7 +80,7 @@ static int	zbx_execute_script_on_agent(DC_HOST *host, const char *command, char 
 	else if (NULL != result && ISSET_TEXT(&agent_result))
 		*result = zbx_strdup(*result, agent_result.text);
 
-	alarm(0);
+	zbx_alarm_off();
 
 	free_result(&agent_result);
 
@@ -113,7 +114,8 @@ static int	zbx_execute_ipmi_command(DC_HOST *host, const char *command, char *er
 	}
 
 	port = zbx_strdup(port, item.interface.port_orig);
-	substitute_simple_macros(NULL, NULL, NULL, NULL, &host->hostid, NULL, NULL, &port, MACRO_TYPE_COMMON, NULL, 0);
+	substitute_simple_macros(NULL, NULL, NULL, NULL, &host->hostid, NULL, NULL, NULL, &port,
+			MACRO_TYPE_COMMON, NULL, 0);
 
 	if (SUCCEED != (ret = is_ushort(port, &item.interface.port)))
 	{
@@ -139,10 +141,10 @@ static int	zbx_execute_script_on_terminal(DC_HOST *host, zbx_script_t *script, c
 		char *error, size_t max_error_len)
 {
 	const char	*__function_name = "zbx_execute_script_on_terminal";
-	int		ret;
+	int		ret = FAIL, i;
 	AGENT_RESULT	agent_result;
 	DC_ITEM		item;
-	int             (*function)();
+	int             (*function)(DC_ITEM *, AGENT_RESULT *);
 
 #ifdef HAVE_SSH2
 	assert(ZBX_SCRIPT_TYPE_SSH == script->type || ZBX_SCRIPT_TYPE_TELNET == script->type);
@@ -156,9 +158,18 @@ static int	zbx_execute_script_on_terminal(DC_HOST *host, zbx_script_t *script, c
 	memset(&item, 0, sizeof(item));
 	memcpy(&item.host, host, sizeof(item.host));
 
-	if (SUCCEED != (ret = DCconfig_get_interface_by_type(&item.interface, host->hostid, INTERFACE_TYPE_AGENT)))
+	for (i = 0; INTERFACE_TYPE_COUNT > i; i++)
 	{
-		zbx_snprintf(error, max_error_len, "Zabbix agent interface is not defined for host [%s]", host->host);
+		if (SUCCEED == (ret = DCconfig_get_interface_by_type(&item.interface, host->hostid,
+				INTERFACE_TYPE_PRIORITY[i])))
+		{
+			break;
+		}
+	}
+
+	if (FAIL == ret)
+	{
+		zbx_snprintf(error, max_error_len, "No interface defined for host [%s]", host->host);
 		goto fail;
 	}
 
@@ -175,7 +186,7 @@ static int	zbx_execute_script_on_terminal(DC_HOST *host, zbx_script_t *script, c
 			break;
 	}
 
-	substitute_simple_macros(NULL, NULL, NULL, NULL, &host->hostid, NULL, NULL,
+	substitute_simple_macros(NULL, NULL, NULL, NULL, &host->hostid, NULL, NULL, NULL,
 			&script->port, MACRO_TYPE_COMMON, NULL, 0);
 
 	if ('\0' != *script->port && SUCCEED != (ret = is_ushort(script->port, NULL)))
@@ -203,7 +214,7 @@ static int	zbx_execute_script_on_terminal(DC_HOST *host, zbx_script_t *script, c
 
 	init_result(&agent_result);
 
-	alarm(CONFIG_TIMEOUT);
+	zbx_alarm_on(CONFIG_TIMEOUT);
 
 	if (SUCCEED != (ret = function(&item, &agent_result)))
 	{
@@ -214,7 +225,7 @@ static int	zbx_execute_script_on_terminal(DC_HOST *host, zbx_script_t *script, c
 	else if (NULL != result && ISSET_TEXT(&agent_result))
 		*result = zbx_strdup(*result, agent_result.text);
 
-	alarm(0);
+	zbx_alarm_off();
 
 	free_result(&agent_result);
 
@@ -359,9 +370,9 @@ int	zbx_execute_script(DC_HOST *host, zbx_script_t *script, char **result, char 
 			break;
 		case ZBX_SCRIPT_TYPE_SSH:
 #ifdef HAVE_SSH2
-			substitute_simple_macros(NULL, NULL, NULL, NULL, &host->hostid, NULL, NULL,
+			substitute_simple_macros(NULL, NULL, NULL, NULL, &host->hostid, NULL, NULL, NULL,
 					&script->publickey, MACRO_TYPE_COMMON, NULL, 0);
-			substitute_simple_macros(NULL, NULL, NULL, NULL, &host->hostid, NULL, NULL,
+			substitute_simple_macros(NULL, NULL, NULL, NULL, &host->hostid, NULL, NULL, NULL,
 					&script->privatekey, MACRO_TYPE_COMMON, NULL, 0);
 			/* break; is not missing here */
 #else
@@ -369,9 +380,9 @@ int	zbx_execute_script(DC_HOST *host, zbx_script_t *script, char **result, char 
 			break;
 #endif
 		case ZBX_SCRIPT_TYPE_TELNET:
-			substitute_simple_macros(NULL, NULL, NULL, NULL, &host->hostid, NULL, NULL,
+			substitute_simple_macros(NULL, NULL, NULL, NULL, &host->hostid, NULL, NULL, NULL,
 					&script->username, MACRO_TYPE_COMMON, NULL, 0);
-			substitute_simple_macros(NULL, NULL, NULL, NULL, &host->hostid, NULL, NULL,
+			substitute_simple_macros(NULL, NULL, NULL, NULL, &host->hostid, NULL, NULL, NULL,
 					&script->password, MACRO_TYPE_COMMON, NULL, 0);
 
 			ret = zbx_execute_script_on_terminal(host, script, result, error, max_error_len);
@@ -386,7 +397,7 @@ int	zbx_execute_script(DC_HOST *host, zbx_script_t *script, char **result, char 
 
 			if (SUCCEED == check_script_permissions(groupid, host->hostid, error, max_error_len))
 			{
-				substitute_simple_macros(NULL, NULL, NULL, NULL, NULL, host, NULL,
+				substitute_simple_macros(NULL, NULL, NULL, NULL, NULL, host, NULL, NULL,
 						&script->command, MACRO_TYPE_SCRIPT, NULL, 0);
 
 				ret = zbx_execute_script(host, script, result, error, max_error_len);	/* recursion */

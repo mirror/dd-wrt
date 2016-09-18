@@ -19,6 +19,9 @@
 
 #include "common.h"
 #include "log.h"
+
+#ifdef HAVE_UNIXODBC
+
 #include "zbxodbc.h"
 
 #define CALLODBC(fun, rc, h_type, h, msg)	(SQL_SUCCESS != (rc = (fun)) && 0 == odbc_Diag((h_type), (h), rc, (msg)))
@@ -36,7 +39,7 @@ const char	*get_last_odbc_strerror(void)
 #	define set_last_odbc_strerror(fmt, ...) __zbx_set_last_odbc_strerror(ZBX_CONST_STRING(fmt), ##__VA_ARGS__)
 #else
 #	define set_last_odbc_strerror __zbx_set_last_odbc_strerror
-#endif /* HAVE___VA_ARGS__ */
+#endif
 static void	__zbx_set_last_odbc_strerror(const char *fmt, ...)
 {
 	va_list	args;
@@ -48,7 +51,7 @@ static void	__zbx_set_last_odbc_strerror(const char *fmt, ...)
 	va_end(args);
 }
 
-#define clean_odbc_strerror() zbx_last_odbc_strerror[0]='\0'
+#define clean_odbc_strerror()	zbx_last_odbc_strerror[0] = '\0'
 
 static void	odbc_free_row_data(ZBX_ODBC_DBH *pdbh)
 {
@@ -296,17 +299,25 @@ ZBX_ODBC_RESULT	odbc_DBselect(ZBX_ODBC_DBH *pdbh, char *query)
 		goto end;
 	}
 
-	pdbh->row_data = zbx_malloc(pdbh->row_data, sizeof(char *) * (size_t)pdbh->col_num);
-	memset(pdbh->row_data, 0, sizeof(char *) * (size_t)pdbh->col_num);
-
-	pdbh->data_len = zbx_malloc(pdbh->data_len, sizeof(SQLLEN) * (size_t)pdbh->col_num);
-	memset(pdbh->data_len, 0, sizeof(SQLLEN) * (size_t)pdbh->col_num);
+	pdbh->data_len = (SQLLEN *)zbx_malloc(pdbh->data_len, sizeof(SQLLEN) * pdbh->col_num);
 
 	for (i = 0; i < pdbh->col_num; i++)
 	{
-		pdbh->row_data[i] = zbx_malloc(pdbh->row_data[i], MAX_STRING_LEN);
+		if (0 != CALLODBC(SQLColAttribute(pdbh->hstmt, (SQLUSMALLINT)(i + 1), SQL_DESC_OCTET_LENGTH, NULL, 0,
+				NULL, &pdbh->data_len[i]), rc, SQL_HANDLE_STMT, pdbh->hstmt,
+				"Cannot execute ODBC query"))
+		{
+			goto end;
+		}
+	}
+
+	pdbh->row_data = zbx_malloc(pdbh->row_data, sizeof(char *) * (size_t)pdbh->col_num);
+
+	for (i = 0; i < pdbh->col_num; i++)
+	{
+		pdbh->row_data[i] = zbx_malloc(NULL, pdbh->data_len[i]);
 		if (0 != CALLODBC(SQLBindCol(pdbh->hstmt, (SQLUSMALLINT)(i + 1), SQL_C_CHAR, pdbh->row_data[i],
-				MAX_STRING_LEN, &pdbh->data_len[i]), rc, SQL_HANDLE_STMT, pdbh->hstmt,
+				pdbh->data_len[i], &pdbh->data_len[i]), rc, SQL_HANDLE_STMT, pdbh->hstmt,
 				"Cannot bind column in ODBC result"))
 		{
 			goto end;
@@ -321,3 +332,5 @@ end:
 
 	return result;
 }
+
+#endif	/* HAVE_UNIXODBC */

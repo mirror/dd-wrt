@@ -19,6 +19,7 @@
 
 #include "common.h"
 #include "sysinfo.h"
+#include "proc.h"
 
 ZBX_METRIC	parameters_specific[] =
 /*	KEY			FLAG		FUNCTION		TEST PARAMETERS */
@@ -44,6 +45,7 @@ ZBX_METRIC	parameters_specific[] =
 
 	{"vm.memory.size",	CF_HAVEPARAMS,	VM_MEMORY_SIZE,		"total"},
 
+	{"proc.cpu.util",	CF_HAVEPARAMS,	PROC_CPU_UTIL,		"inetd"},
 	{"proc.num",		CF_HAVEPARAMS,	PROC_NUM,		"inetd"},
 	{"proc.mem",		CF_HAVEPARAMS,	PROC_MEM,		"inetd"},
 
@@ -52,6 +54,7 @@ ZBX_METRIC	parameters_specific[] =
 	{"system.cpu.util",	CF_HAVEPARAMS,	SYSTEM_CPU_UTIL,	"all,user,avg1"},
 	{"system.cpu.load",	CF_HAVEPARAMS,	SYSTEM_CPU_LOAD,	"all,avg1"},
 	{"system.cpu.num",	CF_HAVEPARAMS,	SYSTEM_CPU_NUM,		"online"},
+	{"system.cpu.discovery",0,		SYSTEM_CPU_DISCOVERY,	NULL},
 
 	{"system.uname",	0,		SYSTEM_UNAME,		NULL},
 

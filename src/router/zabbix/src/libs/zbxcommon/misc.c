@@ -21,7 +21,41 @@
 #include "log.h"
 #include "setproctitle.h"
 
+/* scheduler support */
+
+#define ZBX_SCHEDULER_FILTER_DAY	1
+#define ZBX_SCHEDULER_FILTER_HOUR	2
+#define ZBX_SCHEDULER_FILTER_MINUTE	3
+#define ZBX_SCHEDULER_FILTER_SECOND	4
+
+typedef struct zbx_scheduler_filter
+{
+	int				start;
+	int				end;
+	int				step;
+
+	struct zbx_scheduler_filter	*next;
+}
+zbx_scheduler_filter_t;
+
+typedef struct zbx_scheduler_interval
+{
+	zbx_scheduler_filter_t		*mdays;
+	zbx_scheduler_filter_t		*wdays;
+	zbx_scheduler_filter_t		*hours;
+	zbx_scheduler_filter_t		*minutes;
+	zbx_scheduler_filter_t		*seconds;
+
+	int				filter_level;
+
+	struct zbx_scheduler_interval	*next;
+}
+zbx_scheduler_interval_t;
+
+ZBX_THREAD_LOCAL volatile sig_atomic_t	zbx_timed_out;	/* 0 - no timeout occurred, 1 - SIGALRM took place */
+
 #ifdef _WINDOWS
+
 char	ZABBIX_SERVICE_NAME[ZBX_SERVICE_NAME_LEN] = APPLICATION_NAME;
 char	ZABBIX_EVENT_SOURCE[ZBX_SERVICE_NAME_LEN] = APPLICATION_NAME;
 
@@ -219,6 +253,153 @@ double	zbx_current_time(void)
 
 /******************************************************************************
  *                                                                            *
+ * Function: is_leap_year                                                     *
+ *                                                                            *
+ * Return value:  SUCCEED - year is a leap year                               *
+ *                FAIL    - year is not a leap year                           *
+ *                                                                            *
+ ******************************************************************************/
+static int	is_leap_year(int year)
+{
+	return 0 == year % 4 && (0 != year % 100 || 0 == year % 400) ? SUCCEED : FAIL;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: zbx_get_time                                                     *
+ *                                                                            *
+ * Purpose:                                                                   *
+ *     get current time and store it in memory locations provided by caller   *
+ *                                                                            *
+ * Parameters:                                                                *
+ *     tm           - [OUT] broken-down representation of the current time    *
+ *     milliseconds - [OUT] milliseconds since the previous second            *
+ *     tz           - [OUT] local time offset from UTC (optional)             *
+ *                                                                            *
+ * Comments:                                                                  *
+ *     On Windows localtime() and gmtime() return pointers to static,         *
+ *     thread-local storage locations. On Unix localtime() and gmtime() are   *
+ *     not thread-safe and re-entrant as they return pointers to static       *
+ *     storage locations which can be overwritten by localtime(), gmtime()    *
+ *     or other time functions in other threads or signal handlers. To avoid  *
+ *     this we use localtime_r() and gmtime_r().                              *
+ *                                                                            *
+ ******************************************************************************/
+void	zbx_get_time(struct tm *tm, long *milliseconds, zbx_timezone_t *tz)
+{
+#ifdef _WINDOWS
+	struct _timeb	current_time;
+
+	_ftime(&current_time);
+	*tm = *localtime(&current_time.time);	/* localtime() cannot return NULL if called with valid parameter */
+	*milliseconds = current_time.millitm;
+#else
+	struct timeval	current_time;
+
+	gettimeofday(&current_time, NULL);
+	localtime_r(&current_time.tv_sec, tm);
+	*milliseconds = current_time.tv_usec / 1000;
+#endif
+	if (NULL != tz)
+	{
+#ifdef HAVE_TM_TM_GMTOFF
+#	define ZBX_UTC_OFF	tm->tm_gmtoff
+#else
+#	define ZBX_UTC_OFF	offset
+		long		offset;
+		struct tm	tm_utc;
+#ifdef _WINDOWS
+		tm_utc = *gmtime(&current_time.time);	/* gmtime() cannot return NULL if called with valid parameter */
+#else
+		gmtime_r(&current_time.tv_sec, &tm_utc);
+#endif
+		offset = (tm->tm_yday - tm_utc.tm_yday) * SEC_PER_DAY + (tm->tm_hour - tm_utc.tm_hour) * SEC_PER_HOUR +
+				(tm->tm_min - tm_utc.tm_min) * SEC_PER_MIN;	/* assuming seconds are equal */
+
+		while (tm->tm_year > tm_utc.tm_year)
+			offset += (SUCCEED == is_leap_year(tm_utc.tm_year++) ? SEC_PER_YEAR + SEC_PER_DAY : SEC_PER_YEAR);
+
+		while (tm->tm_year < tm_utc.tm_year)
+			offset -= (SUCCEED == is_leap_year(--tm_utc.tm_year) ? SEC_PER_YEAR + SEC_PER_DAY : SEC_PER_YEAR);
+#endif
+		tz->tz_sign = (0 <= ZBX_UTC_OFF ? '+' : '-');
+		tz->tz_hour = labs(ZBX_UTC_OFF) / SEC_PER_HOUR;
+		tz->tz_min = (labs(ZBX_UTC_OFF) - tz->tz_hour * SEC_PER_HOUR) / SEC_PER_MIN;
+		/* assuming no remaining seconds like in historic Asia/Riyadh87, Asia/Riyadh88 and Asia/Riyadh89 */
+#undef ZBX_UTC_OFF
+	}
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: zbx_utc_time                                                     *
+ *                                                                            *
+ * Purpose: get UTC time from time from broken down time elements             *
+ *                                                                            *
+ * Parameters:                                                                *
+ *     year  - [IN] year (1970-...)                                           *
+ *     month - [IN] month (1-12)                                              *
+ *     mday  - [IN] day of month (1-..., depending on month and year)         *
+ *     hour  - [IN] hours (0-23)                                              *
+ *     min   - [IN] minutes (0-59)                                            *
+ *     sec   - [IN] seconds (0-61, leap seconds are not strictly validated)   *
+ *     t     - [OUT] Epoch timestamp                                          *
+ *                                                                            *
+ * Return value:  SUCCEED - date is valid and resulting timestamp is positive *
+ *                FAIL - otherwise                                            *
+ *                                                                            *
+ ******************************************************************************/
+int	zbx_utc_time(int year, int mon, int mday, int hour, int min, int sec, int *t)
+{
+/* number of leap years before but not including year */
+#define ZBX_LEAP_YEARS(year)	(((year) - 1) / 4 - ((year) - 1) / 100 + ((year) - 1) / 400)
+
+	/* days since the beginning of non-leap year till the beginning of the month */
+	static const int	month_day[12] = { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334 };
+	static const int	epoch_year = 1970;
+
+	if (epoch_year <= year && 1 <= mon && mon <= 12 && 1 <= mday && mday <= zbx_day_in_month(year, mon) &&
+			0 <= hour && hour <= 23 && 0 <= min && min <= 59 && 0 <= sec && sec <= 61 &&
+			0 <= (*t = (year - epoch_year) * SEC_PER_YEAR +
+			(ZBX_LEAP_YEARS(2 < mon ? year + 1 : year) - ZBX_LEAP_YEARS(epoch_year)) * SEC_PER_DAY +
+			(month_day[mon - 1] + mday - 1) * SEC_PER_DAY + hour * SEC_PER_HOUR + min * SEC_PER_MIN + sec))
+	{
+		return SUCCEED;
+	}
+
+	return FAIL;
+#undef ZBX_LEAP_YEARS
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: zbx_day_in_month                                                 *
+ *                                                                            *
+ * Purpose: returns number of days in a month                                 *
+ *                                                                            *
+ * Parameters:                                                                *
+ *     year  - [IN] year                                                      *
+ *     mon   - [IN] month (1-12)                                              *
+ *                                                                            *
+ * Return value: 28-31 depending on number of days in the month, defaults to  *
+ *               30 if the month is outside of allowed range                  *
+ *                                                                            *
+ * Author: Alexander Vladishev                                                *
+ *                                                                            *
+ ******************************************************************************/
+int	zbx_day_in_month(int year, int mon)
+{
+	/* number of days in the month of a non-leap year */
+	static const unsigned char	month[12] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+
+	if (1 <= mon && mon <= 12)	/* add one day in February of a leap year */
+		return month[mon - 1] + (2 == mon && SUCCEED == is_leap_year(year) ? 1 : 0);
+
+	return 30;
+}
+
+/******************************************************************************
+ *                                                                            *
  * Function: zbx_calloc2                                                      *
  *                                                                            *
  * Purpose: allocates nmemb * size bytes of memory and fills it with zeros    *
@@ -253,7 +434,7 @@ void    *zbx_calloc2(const char *filename, int line, void *old, size_t nmemb, si
 	zabbix_log(LOG_LEVEL_CRIT, "[file:%s,line:%d] zbx_calloc: out of memory. Requested " ZBX_FS_SIZE_T " bytes.",
 			filename, line, (zbx_fs_size_t)size);
 
-	exit(FAIL);
+	exit(EXIT_FAILURE);
 }
 
 /******************************************************************************
@@ -292,7 +473,7 @@ void    *zbx_malloc2(const char *filename, int line, void *old, size_t size)
 	zabbix_log(LOG_LEVEL_CRIT, "[file:%s,line:%d] zbx_malloc: out of memory. Requested " ZBX_FS_SIZE_T " bytes.",
 			filename, line, (zbx_fs_size_t)size);
 
-	exit(FAIL);
+	exit(EXIT_FAILURE);
 }
 
 /******************************************************************************
@@ -324,7 +505,7 @@ void    *zbx_realloc2(const char *filename, int line, void *old, size_t size)
 	zabbix_log(LOG_LEVEL_CRIT, "[file:%s,line:%d] zbx_realloc: out of memory. Requested " ZBX_FS_SIZE_T " bytes.",
 			filename, line, (zbx_fs_size_t)size);
 
-	exit(FAIL);
+	exit(EXIT_FAILURE);
 }
 
 char    *zbx_strdup2(const char *filename, int line, char *old, const char *str)
@@ -343,12 +524,35 @@ char    *zbx_strdup2(const char *filename, int line, char *old, const char *str)
 	zabbix_log(LOG_LEVEL_CRIT, "[file:%s,line:%d] zbx_strdup: out of memory. Requested " ZBX_FS_SIZE_T " bytes.",
 			filename, line, (zbx_fs_size_t)(strlen(str) + 1));
 
-	exit(FAIL);
+	exit(EXIT_FAILURE);
+}
+
+/****************************************************************************************
+ *                                                                                      *
+ * Function: zbx_guaranteed_memset                                                      *
+ *                                                                                      *
+ * Purpose: For overwriting sensitive data in memory.                                   *
+ *          Similar to memset() but should not be optimized out by a compiler.          *
+ *                                                                                      *
+ * Derived from:                                                                        *
+ *   http://www.dwheeler.com/secure-programs/Secure-Programs-HOWTO/protect-secrets.html *
+ * See also:                                                                            *
+ *   http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1381.pdf on secure_memset()       *
+ *                                                                                      *
+ ****************************************************************************************/
+void	*zbx_guaranteed_memset(void *v, int c, size_t n)
+{
+	volatile signed char	*p = (volatile signed char *)v;
+
+	while (0 != n--)
+		*p++ = (signed char)c;
+
+	return v;
 }
 
 /******************************************************************************
  *                                                                            *
- * Function: zbx_setproctitle                                                 *
+ * Function: __zbx_zbx_setproctitle                                           *
  *                                                                            *
  * Purpose: set process title                                                 *
  *                                                                            *
@@ -358,18 +562,19 @@ char    *zbx_strdup2(const char *filename, int line, char *old, const char *str)
 void	__zbx_zbx_setproctitle(const char *fmt, ...)
 {
 #if defined(HAVE_FUNCTION_SETPROCTITLE) || defined(PS_OVERWRITE_ARGV) || defined(PS_PSTAT_ARGV)
-	char	title[MAX_STRING_LEN];
-	va_list	args;
+	const char	*__function_name = "__zbx_zbx_setproctitle";
+	char		title[MAX_STRING_LEN];
+	va_list		args;
 
 	va_start(args, fmt);
 	zbx_vsnprintf(title, sizeof(title), fmt, args);
 	va_end(args);
 
-	zabbix_log(LOG_LEVEL_DEBUG, "%s", title);
+	zabbix_log(LOG_LEVEL_DEBUG, "%s() title:'%s'", __function_name, title);
 #endif
 
 #if defined(HAVE_FUNCTION_SETPROCTITLE)
-	setproctitle(title);
+	setproctitle("%s", title);
 #elif defined(PS_OVERWRITE_ARGV) || defined(PS_PSTAT_ARGV)
 	setproctitle_set_status(title);
 #endif
@@ -401,7 +606,7 @@ int	check_time_period(const char *period, time_t now)
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s() period:'%s'", __function_name, period);
 
-	if (now == (time_t)NULL)
+	if ((time_t)0 == now)
 		now = time(NULL);
 
 	tm = localtime(&now);
@@ -494,7 +699,7 @@ static int	get_current_delay(int delay, const char *flex_intervals, time_t now)
 			}
 		}
 		else
-			zabbix_log(LOG_LEVEL_ERR, "wrong delay period format [%s]", s);
+			zabbix_log(LOG_LEVEL_ERR, "wrong delay period format: \"%s\"", s);
 
 		if (NULL == delim)
 			break;
@@ -604,7 +809,7 @@ static int	get_next_delay_interval(const char *flex_intervals, time_t now, time_
 			}
 		}
 		else
-			zabbix_log(LOG_LEVEL_ERR, "wrong delay period format [%s]", s);
+			zabbix_log(LOG_LEVEL_ERR, "wrong delay period format: \"%s\"", s);
 
 		if (NULL != delim)
 			s = delim + 1;
@@ -620,17 +825,796 @@ static int	get_next_delay_interval(const char *flex_intervals, time_t now, time_
 
 /******************************************************************************
  *                                                                            *
+ * Function: scheduler_filter_free                                            *
+ *                                                                            *
+ * Purpose: frees scheduler interval filter                                   *
+ *                                                                            *
+ * Parameters: filter - [IN] scheduler interval filter                        *
+ *                                                                            *
+ ******************************************************************************/
+static void	scheduler_filter_free(zbx_scheduler_filter_t *filter)
+{
+	zbx_scheduler_filter_t	*filter_next;
+
+	for (; NULL != filter; filter = filter_next)
+	{
+		filter_next = filter->next;
+		zbx_free(filter);
+	}
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: scheduler_interval_free                                          *
+ *                                                                            *
+ * Purpose: frees scheduler interval                                          *
+ *                                                                            *
+ * Parameters: filter - [IN] scheduler interval                               *
+ *                                                                            *
+ ******************************************************************************/
+static void	scheduler_interval_free(zbx_scheduler_interval_t *interval)
+{
+	zbx_scheduler_interval_t	*interval_next;
+
+	for (; NULL != interval; interval = interval_next)
+	{
+		interval_next = interval->next;
+
+		scheduler_filter_free(interval->mdays);
+		scheduler_filter_free(interval->wdays);
+		scheduler_filter_free(interval->hours);
+		scheduler_filter_free(interval->minutes);
+		scheduler_filter_free(interval->seconds);
+
+		zbx_free(interval);
+	}
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: scheduler_parse_filter_r                                         *
+ *                                                                            *
+ * Purpose: parses text string into scheduler filter                          *
+ *                                                                            *
+ * Parameters: filter  - [IN/OUT] the first filter                            *
+ *             text    - [IN] the text to parse                               *
+ *             len     - [IN/OUT] the number of characters left to parse      *
+ *             min     - [IN] the minimal time unit value                     *
+ *             max     - [IN] the maximal time unit value                     *
+ *             var_len - [IN] the maximum number of characters for a filter   *
+ *                       variable (<from>, <to>, <step>)                      *
+ *                                                                            *
+ * Return value: SUCCEED - the fitler was successfully parsed                 *
+ *               FAIL    - otherwise                                          *
+ *                                                                            *
+ * Comments: This function recursively calls itself for each filter fragment. *
+ *                                                                            *
+ ******************************************************************************/
+static int	scheduler_parse_filter_r(zbx_scheduler_filter_t **filter, const char *text, int *len, int min, int max,
+		int var_len)
+{
+	int			start = 0, end = 0, step = 1;
+	const char		*pstart, *pend;
+	zbx_scheduler_filter_t	*filter_new;
+
+	pstart = pend = text;
+	while (0 != isdigit(*pend) && 0 < *len)
+	{
+		pend++;
+		(*len)--;
+	}
+
+	if (pend != pstart)
+	{
+		if (pend - pstart > var_len)
+			return FAIL;
+
+		if (SUCCEED != is_uint_n_range(pstart, pend - pstart, &start, sizeof(start), min, max))
+			return FAIL;
+
+		if ('-' == *pend)
+		{
+			pstart = pend + 1;
+
+			do
+			{
+				pend++;
+				(*len)--;
+			}
+			while (0 != isdigit(*pend) && 0 < *len);
+
+			/* empty or too long value, fail */
+			if (pend == pstart || pend - pstart > var_len)
+				return FAIL;
+
+			if (SUCCEED != is_uint_n_range(pstart, pend - pstart, &end, sizeof(end), min, max))
+				return FAIL;
+
+			if (end < start)
+				return FAIL;
+		}
+		else
+		{
+			/* step is valid only for defined range */
+			if ('/' == *pend)
+				return FAIL;
+
+			end = start;
+		}
+	}
+	else
+	{
+		start = min;
+		end = max;
+	}
+
+	if ('/' == *pend)
+	{
+		pstart = pend + 1;
+
+		do
+		{
+			pend++;
+			(*len)--;
+		}
+		while (0 != isdigit(*pend) && 0 < *len);
+
+		/* empty or too long step, fail */
+		if (pend == pstart || pend - pstart > var_len)
+			return FAIL;
+
+		if (SUCCEED != is_uint_n_range(pstart, pend - pstart, &step, sizeof(step), 1, end - start))
+			return FAIL;
+	}
+	else
+	{
+		if (pend == text)
+			return FAIL;
+	}
+
+	if (',' == *pend)
+	{
+		/* no next filter after ',' */
+		if (0 == --(*len))
+			return FAIL;
+
+		pend++;
+
+		if (SUCCEED != scheduler_parse_filter_r(filter, pend, len, min, max, var_len))
+			return FAIL;
+	}
+
+	filter_new = zbx_malloc(NULL, sizeof(zbx_scheduler_filter_t));
+	filter_new->start = start;
+	filter_new->end = end;
+	filter_new->step = step;
+	filter_new->next = *filter;
+	*filter = filter_new;
+
+	return SUCCEED;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: scheduler_parse_filter                                           *
+ *                                                                            *
+ * Purpose: parses text string into scheduler filter                          *
+ *                                                                            *
+ * Parameters: filter  - [IN/OUT] the first filter                            *
+ *             text    - [IN] the text to parse                               *
+ *             len     - [IN/OUT] the number of characters left to parse      *
+ *             min     - [IN] the minimal time unit value                     *
+ *             max     - [IN] the maximal time unit value                     *
+ *             var_len - [IN] the maximum number of characters for a filter   *
+ *                       variable (<from>, <to>, <step>)                      *
+ *                                                                            *
+ * Return value: SUCCEED - the fitler was successfully parsed                 *
+ *               FAIL    - otherwise                                          *
+ *                                                                            *
+ * Comments: This function will fail if a filter already exists. This         *
+ *           user from defining multiple filters of the same time unit in a   *
+ *           single interval. For example: h0h12 is invalid filter and its    *
+ *           parsing must fail.                                               *
+ *                                                                            *
+ ******************************************************************************/
+static int	scheduler_parse_filter(zbx_scheduler_filter_t **filter, const char *text, int *len, int min, int max,
+		int var_len)
+{
+	if (NULL != *filter)
+		return FAIL;
+
+	return scheduler_parse_filter_r(filter, text, len, min, max, var_len);
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: scheduler_interval_parse                                         *
+ *                                                                            *
+ * Purpose: parses scheduler interval                                         *
+ *                                                                            *
+ * Parameters: interval - [IN/OUT] the first interval                         *
+ *             text     - [IN] the text to parse                              *
+ *             len      - [IN] the text length                                *
+ *                                                                            *
+ * Return value: SUCCEED - the interval was successfully parsed               *
+ *               FAIL    - otherwise                                          *
+ *                                                                            *
+ ******************************************************************************/
+static int	scheduler_interval_parse(zbx_scheduler_interval_t *interval, const char *text, int len)
+{
+	int	ret = SUCCEED;
+
+	if (0 == len)
+		return FAIL;
+
+	while (SUCCEED == ret && 0 != len)
+	{
+		int	old_len = len--;
+
+		switch (*text)
+		{
+			case '\0':
+				return FAIL;
+			case 'h':
+				if (ZBX_SCHEDULER_FILTER_HOUR < interval->filter_level)
+					return FAIL;
+
+				ret = scheduler_parse_filter(&interval->hours, text + 1, &len, 0, 23, 2);
+				interval->filter_level = ZBX_SCHEDULER_FILTER_HOUR;
+
+				break;
+			case 's':
+				if (ZBX_SCHEDULER_FILTER_SECOND < interval->filter_level)
+					return FAIL;
+
+				ret = scheduler_parse_filter(&interval->seconds, text + 1, &len, 0, 59, 2);
+				interval->filter_level = ZBX_SCHEDULER_FILTER_SECOND;
+
+				break;
+			case 'w':
+				if ('d' != text[1])
+					return FAIL;
+
+				if (ZBX_SCHEDULER_FILTER_DAY < interval->filter_level)
+					return FAIL;
+
+				len--;
+				ret = scheduler_parse_filter(&interval->wdays, text + 2, &len, 1, 7, 1);
+				interval->filter_level = ZBX_SCHEDULER_FILTER_DAY;
+
+				break;
+			case 'm':
+				if ('d' == text[1])
+				{
+					if (ZBX_SCHEDULER_FILTER_DAY < interval->filter_level ||
+							NULL != interval->wdays)
+					{
+						return FAIL;
+					}
+
+					len--;
+					ret = scheduler_parse_filter(&interval->mdays, text + 2, &len, 1, 31, 2);
+					interval->filter_level = ZBX_SCHEDULER_FILTER_DAY;
+				}
+				else
+				{
+					if (ZBX_SCHEDULER_FILTER_MINUTE < interval->filter_level)
+						return FAIL;
+
+					ret = scheduler_parse_filter(&interval->minutes, text + 1, &len, 0, 59, 2);
+					interval->filter_level = ZBX_SCHEDULER_FILTER_MINUTE;
+				}
+
+				break;
+			default:
+				return FAIL;
+		}
+
+		text += old_len - len;
+	}
+
+	return ret;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: preprocess_flexible_interval                                     *
+ *                                                                            *
+ * Purpose: parses out the flexible interval in a text format and scheduler   *
+ *          interval in zbx_scheduler_interval_t structure                    *
+ *                                                                            *
+ * Parameters: text       - [IN] the text to parse                            *
+ *             interval   - [OUT] the parsed scheduler interval. Must be a    *
+ *                          pointer to a NULL pointer on the first call. It   *
+ *                          will be left untouched if the text does not       *
+ *                          contain scheduler intervals                       *
+ *             out        - [IN/OUT] flexible interval in text format         *
+ *             out_alloc  - [IN/OUT] the number of bytes allocated for out    *
+ *             out_offset - [IN/OUT] the flexible interval length in out      *
+ *                          buffer                                            *
+ *                                                                            *
+ * Return value: SUCCEED - the text was successfully parsed                   *
+ *               FAIL    - otherwise                                          *
+ *                                                                            *
+ * Comments: This function recursively calls itself for each interval.        *
+ *                                                                            *
+ ******************************************************************************/
+static int	preprocess_flexible_interval(const char *text, zbx_scheduler_interval_t **interval,
+		char **out, size_t *out_alloc, size_t *out_offset, char **errmsg)
+{
+	const char			*ptr;
+	zbx_scheduler_interval_t	*new_interval;
+
+	ptr = strchr(text, ';');
+
+	if (NULL == ptr)
+		ptr = text + strlen(text);
+
+	if (0 != isdigit(*text))
+	{
+		if (0 != *out_offset)
+			zbx_chrcpy_alloc(out, out_alloc, out_offset, ';');
+
+		zbx_strncpy_alloc(out, out_alloc, out_offset, text, ptr - text);
+	}
+
+	if ('\0' != *ptr)
+	{
+		if (SUCCEED != preprocess_flexible_interval(ptr + 1, interval, out, out_alloc, out_offset, errmsg))
+			return FAIL;
+	}
+
+	/* flexible interval has already been copied, return success */
+	if (0 != isdigit(*text))
+		return SUCCEED;
+
+	new_interval = zbx_malloc(NULL, sizeof(zbx_scheduler_interval_t));
+	memset(new_interval, 0, sizeof(zbx_scheduler_interval_t));
+
+	if (SUCCEED != scheduler_interval_parse(new_interval, text, ptr - text))
+	{
+		size_t	errmsg_alloc = 0, errmsg_offset = 0;
+
+		zbx_free(*errmsg);
+		zbx_strcpy_alloc(errmsg, &errmsg_alloc, &errmsg_offset, "invalid scheduling interval: \"");
+		zbx_strncpy_alloc(errmsg, &errmsg_alloc, &errmsg_offset, text, ptr - text + 1);
+		zbx_strcpy_alloc(errmsg, &errmsg_alloc, &errmsg_offset, "\"");
+
+		scheduler_interval_free(new_interval);
+		return FAIL;
+	}
+
+	new_interval->next = *interval;
+	*interval = new_interval;
+
+	return SUCCEED;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: scheduler_get_nearest_filter_value                               *
+ *                                                                            *
+ * Purpose: gets the next nearest value that satisfies the filter chain       *
+ *                                                                            *
+ * Parameters: filter - [IN] the filter chain                                 *
+ *             value  - [IN] the current value                                *
+ *                      [OUT] the next nearest value (>= than input value)    *
+ *                                                                            *
+ * Return value: SUCCEED - the next nearest value was successfully found      *
+ *               FAIL    - otherwise                                          *
+ *                                                                            *
+ ******************************************************************************/
+static int	scheduler_get_nearest_filter_value(const zbx_scheduler_filter_t *filter, int *value)
+{
+	const zbx_scheduler_filter_t	*filter_next = NULL;
+
+	for (; NULL != filter; filter = filter->next)
+	{
+		/* find matching filter */
+		if (filter->start <= *value && *value <= filter->end)
+		{
+			int	next = *value, offset;
+
+			/* apply step */
+			offset = (next - filter->start) % filter->step;
+			if (0 != offset)
+				next += filter->step - offset;
+
+			/* succeed if the calculated value is still in filter range */
+			if (next <= filter->end)
+			{
+				*value = next;
+				return SUCCEED;
+			}
+		}
+
+		/* find the next nearest filter */
+		if (filter->start > *value && (NULL == filter_next || filter_next->start > filter->start))
+			filter_next = filter;
+	}
+
+	/* The value is not in a range of any filters, but we have next nearest filter. */
+	if (NULL != filter_next)
+	{
+		*value = filter_next->start;
+		return SUCCEED;
+	}
+
+	return FAIL;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: scheduler_get_wday_nextcheck                                     *
+ *                                                                            *
+ * Purpose: calculates the next day that satisfies the week day filter        *
+ *                                                                            *
+ * Parameters: interval - [IN] the scheduler interval                         *
+ *             tm       - [IN/OUT] the input/output date & time               *
+ *                                                                            *
+ * Return value: SUCCEED - the next day was found                             *
+ *               FAIL    - the next day satisfying week day filter was not    *
+ *                         found in the current month                         *
+ *                                                                            *
+ ******************************************************************************/
+static int	scheduler_get_wday_nextcheck(const zbx_scheduler_interval_t *interval, struct tm *tm)
+{
+	int	value_now, value_next;
+
+	if (NULL == interval->wdays)
+		return SUCCEED;
+
+	value_now = value_next = (0 == tm->tm_wday ? 7 : tm->tm_wday);
+
+	/* get the nearest week day from the current week day*/
+	if (SUCCEED != scheduler_get_nearest_filter_value(interval->wdays, &value_next))
+	{
+		/* in the case of failure move month day to the next week, reset week day and try again */
+		tm->tm_mday += 7 - value_now + 1;
+		value_now = value_next = 1;
+
+		if (SUCCEED != scheduler_get_nearest_filter_value(interval->wdays, &value_next))
+		{
+			/* a valid week day filter must always match some day of a new week */
+			THIS_SHOULD_NEVER_HAPPEN;
+			return FAIL;
+		}
+	}
+
+	/* adjust the month day by the week day offset */
+	tm->tm_mday += value_next - value_now;
+
+	/* check if the resulting month day is valid */
+	return (-1 != mktime(tm) ? SUCCEED : FAIL);
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: scheduler_validate_wday_filter                                   *
+ *                                                                            *
+ * Purpose: checks if the specified date satisfies week day filter            *
+ *                                                                            *
+ * Parameters: interval - [IN] the scheduler interval                         *
+ *             tm       - [IN] the date & time to validate                    *
+ *                                                                            *
+ * Return value: SUCCEED - the input date satisfies week day filter           *
+ *               FAIL    - otherwise                                          *
+ *                                                                            *
+ ******************************************************************************/
+static int	scheduler_validate_wday_filter(const zbx_scheduler_interval_t *interval, struct tm *tm)
+{
+	time_t				nextcheck;
+	const zbx_scheduler_filter_t	*filter;
+	int				value;
+
+	if (NULL == interval->wdays)
+		return SUCCEED;
+
+	/* mktime will aso set correct wday value */
+	if (-1 == (nextcheck = mktime(tm)))
+		return FAIL;
+
+	value = (0 == tm->tm_wday ? 7 : tm->tm_wday);
+
+	/* check if the value match week day filter */
+	for (filter = interval->wdays; NULL != filter; filter = filter->next)
+	{
+		if (filter->start <= value && value <= filter->end)
+		{
+			int	next = value, offset;
+
+			/* apply step */
+			offset = (next - filter->start) % filter->step;
+			if (0 != offset)
+				next += filter->step - offset;
+
+			/* succeed if the calculated value is still in filter range */
+			if (next <= filter->end)
+				return SUCCEED;
+		}
+	}
+
+	return FAIL;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: scheduler_get_day_nextcheck                                      *
+ *                                                                            *
+ * Purpose: calculates the next day that satisfies month and week day filters *
+ *                                                                            *
+ * Parameters: interval - [IN] the scheduler interval                         *
+ *             tm       - [IN/OUT] the input/output date & time               *
+ *                                                                            *
+ * Return value: SUCCEED - the next day was found                             *
+ *               FAIL    - the next day satisfying day filters was not        *
+ *                         found in the current month                         *
+ *                                                                            *
+ ******************************************************************************/
+static int	scheduler_get_day_nextcheck(const zbx_scheduler_interval_t *interval, struct tm *tm)
+{
+	/* first check if the provided tm structure has valid date format */
+	if (-1 == mktime(tm))
+		return FAIL;
+
+	if (NULL == interval->mdays)
+		return scheduler_get_wday_nextcheck(interval, tm);
+
+	/* iterate through month days until week day filter matches or we have ran out of month days */
+	while (SUCCEED == scheduler_get_nearest_filter_value(interval->mdays, &tm->tm_mday))
+	{
+		if (SUCCEED == scheduler_validate_wday_filter(interval, tm))
+			return SUCCEED;
+
+		tm->tm_mday++;
+
+		/* check if the date is still valid - we haven't ran out of month days */
+		if (-1 == mktime(tm))
+			break;
+	}
+
+	return FAIL;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: scheduler_get_filter_nextcheck                                   *
+ *                                                                            *
+ * Purpose: calculates the time/day that satisfies the specified filter       *
+ *                                                                            *
+ * Parameters: interval - [IN] the scheduler interval                         *
+ *             level    - [IN] the filter level, see ZBX_SCHEDULER_FILTER_*   *
+ *                        defines                                             *
+ *             tm       - [IN/OUT] the input/output date & time               *
+ *                                                                            *
+ * Return value: SUCCEED - the next time/day was found                        *
+ *               FAIL    - the next time/day was not found on the current     *
+ *                         filter level                                       *
+ *                                                                            *
+ ******************************************************************************/
+static int	scheduler_get_filter_nextcheck(const zbx_scheduler_interval_t *interval, int level, struct tm *tm)
+{
+	const zbx_scheduler_filter_t	*filter;
+	int				max, *value;
+
+	/* initialize data depending on filter level */
+	switch (level)
+	{
+		case ZBX_SCHEDULER_FILTER_DAY:
+			return scheduler_get_day_nextcheck(interval, tm);
+		case ZBX_SCHEDULER_FILTER_HOUR:
+			max = 23;
+			filter = interval->hours;
+			value = &tm->tm_hour;
+			break;
+		case ZBX_SCHEDULER_FILTER_MINUTE:
+			max = 59;
+			filter = interval->minutes;
+			value = &tm->tm_min;
+			break;
+		case ZBX_SCHEDULER_FILTER_SECOND:
+			max = 59;
+			filter = interval->seconds;
+			value = &tm->tm_sec;
+			break;
+		default:
+			THIS_SHOULD_NEVER_HAPPEN;
+			return FAIL;
+	}
+
+	if (max < *value)
+		return FAIL;
+
+	/* handle unspecified (default) filter */
+	if (NULL == filter)
+	{
+		/* Empty filter matches all valid values if the filter level is less than        */
+		/* interval filter level. For example if interval filter level is minutes - m30, */
+		/* then hour filter matches all hours.                                           */
+		if (interval->filter_level > level)
+			return SUCCEED;
+
+		/* If the filter level is greater than interval filter level, then filter       */
+		/* matches only 0 value. For example if interval filter level is minutes - m30, */
+		/* then seconds filter matches the 0th second.                                  */
+		return 0 == *value ? SUCCEED : FAIL;
+	}
+
+	return scheduler_get_nearest_filter_value(filter, value);
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: scheduler_apply_day_filter                                       *
+ *                                                                            *
+ * Purpose: applies day filter to the specified time/day calculating the next *
+ *          scheduled check                                                   *
+ *                                                                            *
+ * Parameters: interval - [IN] the scheduler interval                         *
+ *             tm       - [IN/OUT] the input/output date & time               *
+ *                                                                            *
+ ******************************************************************************/
+static void	scheduler_apply_day_filter(zbx_scheduler_interval_t *interval, struct tm *tm)
+{
+	int	day = tm->tm_mday, mon = tm->tm_mon, year = tm->tm_year;
+
+	while (SUCCEED != scheduler_get_filter_nextcheck(interval, ZBX_SCHEDULER_FILTER_DAY, tm))
+	{
+		if (11 < ++tm->tm_mon)
+		{
+			tm->tm_mon = 0;
+			tm->tm_year++;
+		}
+
+		tm->tm_mday = 1;
+	}
+
+	/* reset hours, minutes and seconds if the day has been changed */
+	if (tm->tm_mday != day || tm->tm_mon != mon || tm->tm_year != year)
+	{
+		tm->tm_hour = 0;
+		tm->tm_min = 0;
+		tm->tm_sec = 0;
+	}
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: scheduler_apply_hour_filter                                      *
+ *                                                                            *
+ * Purpose: applies hour filter to the specified time/day calculating the     *
+ *          next scheduled check                                              *
+ *                                                                            *
+ * Parameters: interval - [IN] the scheduler interval                         *
+ *             tm       - [IN/OUT] the input/output date & time               *
+ *                                                                            *
+ ******************************************************************************/
+static void	scheduler_apply_hour_filter(zbx_scheduler_interval_t *interval, struct tm *tm)
+{
+	int	hour = tm->tm_hour;
+
+	while (SUCCEED != scheduler_get_filter_nextcheck(interval, ZBX_SCHEDULER_FILTER_HOUR, tm))
+	{
+		tm->tm_mday++;
+		tm->tm_hour = 0;
+
+		/* day has been changed, we have to reapply day filter */
+		scheduler_apply_day_filter(interval, tm);
+	}
+
+	/* reset minutes and seconds if hours has been changed */
+	if (tm->tm_hour != hour)
+	{
+		tm->tm_min = 0;
+		tm->tm_sec = 0;
+	}
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: scheduler_apply_minute_filter                                    *
+ *                                                                            *
+ * Purpose: applies minute filter to the specified time/day calculating the   *
+ *          next scheduled check                                              *
+ *                                                                            *
+ * Parameters: interval - [IN] the scheduler interval                         *
+ *             tm       - [IN/OUT] the input/output date & time               *
+ *                                                                            *
+ ******************************************************************************/
+static void	scheduler_apply_minute_filter(zbx_scheduler_interval_t *interval, struct tm *tm)
+{
+	int	min = tm->tm_min;
+
+	while (SUCCEED != scheduler_get_filter_nextcheck(interval, ZBX_SCHEDULER_FILTER_MINUTE, tm))
+	{
+		tm->tm_hour++;
+		tm->tm_min = 0;
+
+		/* hours have been changed, we have to reapply hour filter */
+		scheduler_apply_hour_filter(interval, tm);
+	}
+
+	/* reset seconds if minutes has been changed */
+	if (tm->tm_min != min)
+		tm->tm_sec = 0;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: scheduler_apply_second_filter                                    *
+ *                                                                            *
+ * Purpose: applies second filter to the specified time/day calculating the   *
+ *          next scheduled check                                              *
+ *                                                                            *
+ * Parameters: interval - [IN] the scheduler interval                         *
+ *             tm       - [IN/OUT] the input/output date & time               *
+ *                                                                            *
+ ******************************************************************************/
+static void	scheduler_apply_second_filter(zbx_scheduler_interval_t *interval, struct tm *tm)
+{
+	while (SUCCEED != scheduler_get_filter_nextcheck(interval, ZBX_SCHEDULER_FILTER_SECOND, tm))
+	{
+		tm->tm_min++;
+		tm->tm_sec = 0;
+
+		/* minutes have been changed, we have to reapply minute filter */
+		scheduler_apply_minute_filter(interval, tm);
+	}
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: scheduler_get_nextcheck                                          *
+ *                                                                            *
+ * Purpose: applies second filter to the specified time/day calculating the   *
+ *          next scheduled check                                              *
+ *                                                                            *
+ * Parameters: interval - [IN] the scheduler interval                         *
+ *             now      - [IN] the current timestamp                          *
+ *                                                                            *
+ * Return Value: Timestamp when the next check must be scheduled.             *
+ *                                                                            *
+ ******************************************************************************/
+static time_t	scheduler_get_nextcheck(zbx_scheduler_interval_t *interval, time_t now)
+{
+	struct tm	tm_start, tm;
+	int		nextcheck = 0, current_nextcheck;
+
+	tm_start = *(localtime(&now));
+	tm_start.tm_isdst = -1;
+
+	for (; NULL != interval; interval = interval->next)
+	{
+		tm = tm_start;
+
+		scheduler_apply_day_filter(interval, &tm);
+		scheduler_apply_hour_filter(interval, &tm);
+		scheduler_apply_minute_filter(interval, &tm);
+		scheduler_apply_second_filter(interval, &tm);
+
+		current_nextcheck = mktime(&tm);
+
+		if (0 == nextcheck || current_nextcheck < nextcheck)
+			nextcheck = current_nextcheck;
+	}
+
+	return nextcheck;
+}
+
+/******************************************************************************
+ *                                                                            *
  * Function: calculate_item_nextcheck                                         *
  *                                                                            *
  * Purpose: calculate nextcheck timestamp for item                            *
  *                                                                            *
- * Parameters: seed      - [IN] the seed value applied to delay to spread     *
- *                              item checks over the delay period             *
- *             item_type - [IN] the item type                                 *
- *             delay     - [IN] default delay value, can be overridden        *
- *             flex_intervals - [IN] descriptions of flexible intervals       *
- *                                   in the form [dd/d1-d2,hh:mm-hh:mm;]      *
- *             now       - [IN] current timestamp                             *
+ * Parameters: seed             - [IN] the seed value applied to delay to     *
+ *                                     spread item checks over the delay      *
+ *                                     period                                 *
+ *             item_type        - [IN] the item type                          *
+ *             delay            - [IN] default delay value, can be overridden *
+ *             custom_intervals - [IN] descriptions of flexible intervals     *
+ *                                     in the form [dd/d1-d2,hh:mm-hh:mm;]    *
+ *             now              - [IN] current timestamp                      *
  *                                                                            *
  * Return value: nextcheck value                                              *
  *                                                                            *
@@ -644,7 +1628,7 @@ static int	get_next_delay_interval(const char *flex_intervals, time_t now, time_
  *           !!! Don't forget to sync code with PHP !!!                       *
  *                                                                            *
  ******************************************************************************/
-int	calculate_item_nextcheck(zbx_uint64_t seed, int item_type, int delay, const char *flex_intervals, time_t now)
+int	calculate_item_nextcheck(zbx_uint64_t seed, int item_type, int delay, const char *custom_intervals, time_t now)
 {
 	int	nextcheck = 0;
 
@@ -659,7 +1643,29 @@ int	calculate_item_nextcheck(zbx_uint64_t seed, int item_type, int delay, const 
 	else
 	{
 		int	current_delay = 0, try = 0;
-		time_t	next_interval, t, tmax;
+		time_t	next_interval, t, tmax, scheduled_check = 0;
+		char	*flex = NULL;
+		size_t	flex_alloc = 0, flex_offset = 0;
+
+		/* first try to parse out and calculate scheduled intervals */
+		if (NULL != custom_intervals)
+		{
+			zbx_scheduler_interval_t	*interval = NULL;
+			char				*errmsg = NULL;
+
+			if (SUCCEED == preprocess_flexible_interval(custom_intervals, &interval, &flex, &flex_alloc,
+					&flex_offset, &errmsg))
+			{
+				custom_intervals = flex;
+				scheduled_check = scheduler_get_nextcheck(interval, now + 1);
+				scheduler_interval_free(interval);
+			}
+			else
+			{
+				zabbix_log(LOG_LEVEL_ERR, "%s", errmsg);
+				zbx_free(errmsg);
+			}
+		}
 
 		/* Try to find the nearest 'nextcheck' value with condition */
 		/* 'now' < 'nextcheck' < 'now' + SEC_PER_YEAR. If it is not */
@@ -671,7 +1677,7 @@ int	calculate_item_nextcheck(zbx_uint64_t seed, int item_type, int delay, const 
 		while (t < tmax)
 		{
 			/* calculate 'nextcheck' value for the current interval */
-			current_delay = get_current_delay(delay, flex_intervals, t);
+			current_delay = get_current_delay(delay, custom_intervals, t);
 
 			if (0 != current_delay)
 			{
@@ -694,7 +1700,7 @@ int	calculate_item_nextcheck(zbx_uint64_t seed, int item_type, int delay, const 
 
 			/* 'nextcheck' < end of the current interval ? */
 			/* the end of the current interval is the beginning of the next interval - 1 */
-			if (FAIL != get_next_delay_interval(flex_intervals, t, &next_interval) &&
+			if (FAIL != get_next_delay_interval(custom_intervals, t, &next_interval) &&
 					nextcheck >= next_interval)
 			{
 				/* 'nextcheck' is beyond the current interval */
@@ -704,6 +1710,11 @@ int	calculate_item_nextcheck(zbx_uint64_t seed, int item_type, int delay, const 
 			else
 				break;	/* nextcheck is within the current interval */
 		}
+
+		zbx_free(flex);
+
+		if (0 != scheduled_check && scheduled_check < nextcheck)
+			nextcheck = scheduled_check;
 	}
 
 	return nextcheck;
@@ -875,380 +1886,61 @@ int	is_ip(const char *ip)
 
 /******************************************************************************
  *                                                                            *
- * Function: ip6_str2dig                                                      *
- *                                                                            *
- * Purpose: convert short ipv6 addresses to the digital type                  *
- *                                                                            *
- * Parameters: ip     - [IN] IPv6 IP address [12fc::2]                        *
- *             groups - [OUT] 8 groups of 16 bit each                         *
- *                      2001:0db8:0000:0000:0000:ff00:0042:8329               *
- *                                                                            *
- * Return value: FAIL - invalid IP address, SUCCEED - conversion OK           *
- *                                                                            *
- ******************************************************************************/
-int	ip6_str2dig(const char *ip, unsigned short *groups)
-{
-	const char	*ptr;
-	char		buf[5];
-	int		c = 0, dc, pos = 0;
-	size_t		ip_len, j, len;
-
-	for (ptr = strchr(ip, ':'); NULL != ptr; ptr = strchr(ptr + 1, ':'))
-		c++;
-
-	if (2 > c || c > 7)
-		return FAIL;
-
-	ip_len = strlen(ip);
-
-	if ((':' == ip[0] && ':' != ip[1]) || (':' == ip[ip_len - 1] && ':' != ip[ip_len - 2]))
-		return FAIL;
-
-	memset(groups, 0, sizeof(unsigned short) * 8);
-
-	dc = 0;	/* double colon flag */
-	len = 0;
-
-	for (j = 0; j < ip_len; j++)
-	{
-		if (0 != isxdigit(ip[j]))
-		{
-			if (len > 3)
-				return FAIL;
-			buf[len++] = ip[j];
-		}
-		else if (':' != ip[j])
-			return FAIL;
-
-		if (':' == ip[j] || '\0' == ip[j + 1])
-		{
-			if (0 != len)
-			{
-				buf[len] = '\0';
-				sscanf(buf, "%hx", &groups[pos]);
-				pos++;
-				len = 0;
-			}
-
-			if (':' == ip[j + 1])
-			{
-				if (0 == dc)
-				{
-					dc = 1;
-					pos += (8 - c) + (0 == j);
-				}
-				else
-					return FAIL;
-			}
-		}
-	}
-
-	return SUCCEED;
-}
-
-#if defined(HAVE_IPV6)
-/******************************************************************************
- *                                                                            *
- * Function: ip6_dig2str                                                      *
- *                                                                            *
- * Purpose: convert ipv6 addresses to a string                                *
- *                                                                            *
- * Parameters: groups - [IN] 8 groups of 16 bit each                          *
- *             ip     - [OUT] short IPv6 address [12fc::0]                    *
- *             ip_len - [IN] ip buffer len                                    *
- *                                                                            *
- * Return value: pointer to result buffer                                     *
- *                                                                            *
- ******************************************************************************/
-void	ip6_dig2str(unsigned short *groups, char *ip, size_t ip_len)
-{
-	size_t		offset = 0;
-	int		i, c = 0, m = 0, idx = -1, idx2 = -1;
-
-	for (i = 0; i <= 8; i++)
-	{
-		if (i < 8 && groups[i] == 0)
-		{
-			if (idx2 == -1)
-				idx2 = i;
-			c++;
-		}
-		else
-		{
-			if (c != 0 && c > m)
-			{
-				m = c;
-				idx = idx2;
-			}
-			c = 0;
-			idx2 = -1;
-		}
-	}
-
-	for (i = 0; i < 8; i++)
-	{
-		if (groups[i] != 0 || idx == -1 || i < idx)
-		{
-			offset += zbx_snprintf(ip + offset, ip_len - offset, "%hx", groups[i]);
-			if (i > idx)
-				idx = -1;
-			if (i < 7)
-				offset += zbx_snprintf(ip + offset, ip_len - offset, ":");
-		}
-		else if (idx == i)
-		{
-			offset += zbx_snprintf(ip + offset, ip_len - offset, ":");
-			if (idx == 0)
-				offset += zbx_snprintf(ip + offset, ip_len - offset, ":");
-		}
-	}
-}
-
-/******************************************************************************
- *                                                                            *
- * Function: ip6_in_list                                                      *
- *                                                                            *
- * Purpose: check if ip matches range of ip addresses                         *
- *                                                                            *
- * Parameters: list - [IN] comma-separated list of ip ranges                  *
- *                    12fc::2-55,::45,12fc::ff00/120                          *
- *             ip   - [IN] IPv6 ip address [12fc::2]                          *
- *                                                                            *
- * Return value: FAIL - out of range, SUCCEED - within the range              *
- *                                                                            *
- ******************************************************************************/
-static int	ip6_in_list(char *list, const char *ip)
-{
-	unsigned short	i[8], j[9], mask;
-	char		*start, *comma = NULL, *slash = NULL, *dash = NULL;
-	int		ret = FAIL;
-
-	if (FAIL == ip6_str2dig(ip, i))
-		return FAIL;
-
-	for (start = list; '\0' != *start;)
-	{
-		if (NULL != (comma = strchr(start, ',')))
-			*comma = '\0';
-
-		if (NULL != (dash = strchr(start, '-')))
-			*dash = '\0';
-		else if (NULL != (slash = strchr(start, '/')))
-			*slash = '\0';
-
-		if (FAIL == ip6_str2dig(start, j))
-			goto next;
-
-		if (i[0] != j[0] || i[1] != j[1] || i[2] != j[2] || i[3] != j[3] ||
-				i[4] != j[4] || i[5] != j[5] || i[6] != j[6])
-		{
-			goto next;
-		}
-
-		if (NULL != dash)
-		{
-			if (1 != sscanf(dash + 1, "%hx", &j[8]))
-				goto next;
-		}
-		else if (NULL != slash)
-		{
-			if (1 != sscanf(slash + 1, "%hu", &j[8]) || 112 > j[8] || j[8] > 128)
-				goto next;
-
-			mask = 0xffff << (128 - j[8]);
-			j[8] = j[7] | ~mask;
-			j[7] = j[7] & mask;
-		}
-		else
-			j[8] = j[7];
-
-		if (i[7] >= j[7] && i[7] <= j[8])
-		{
-			ret = SUCCEED;
-			break;
-		}
-next:
-		if (NULL != dash)
-		{
-			*dash = '-';
-			dash = NULL;
-		}
-		else if (NULL != slash)
-		{
-			*slash = '/';
-			slash = NULL;
-		}
-
-		if (comma != NULL)
-		{
-			*comma = ',';
-			start = comma + 1;
-			comma = NULL;
-		}
-		else
-			break;
-	}
-
-	if (dash != NULL)
-		*dash = '-';
-	else if (slash != NULL)
-		*slash = '/';
-
-	if (comma != NULL)
-		*comma = ',';
-
-	return ret;
-}
-#endif	/* HAVE_IPV6 */
-/******************************************************************************
- *                                                                            *
- * Function: ip4_str2dig                                                      *
- *                                                                            *
- * Purpose: convert short ipv4 addresses to the digital type                  *
- *                                                                            *
- * Parameters: ip     - [IN] IPv4 IP address [192.168.0.1]                    *
- *             ip_dig - [OUT] 4-byte unsigned integer                         *
- *                                                                            *
- * Return value: FAIL - invalid IP address, SUCCEED - conversion OK           *
- *                                                                            *
- ******************************************************************************/
-int	ip4_str2dig(const char *ip, unsigned int *ip_dig)
-{
-	unsigned short  i[4];
-
-	if (4 != sscanf(ip, "%hu.%hu.%hu.%hu", &i[0], &i[1], &i[2], &i[3]))
-		return FAIL;
-
-	if (255 < i[0] || 255 < i[1] || 255 < i[2] || 255 < i[3])
-		return FAIL;
-
-	*ip_dig = (i[0] << 24) + (i[1] << 16) + (i[2] << 8) + i[3];
-
-	return SUCCEED;
-}
-
-/******************************************************************************
- *                                                                            *
- * Function: ip4_in_list                                                      *
- *                                                                            *
- * Purpose: check if ip matches range of ip addresses                         *
- *                                                                            *
- * Parameters: list - [IN] comma-separated list of ip ranges                  *
- *                    192.168.0.1-64,192.168.0.128,10.10.0.0/24               *
- *             ip   - [IN] IPv4 ip address [192.168.0.1]                      *
- *                                                                            *
- * Return value: FAIL - out of range, SUCCEED - within the range              *
- *                                                                            *
- ******************************************************************************/
-static int	ip4_in_list(char *list, const char *ip)
-{
-	unsigned short	i;
-	unsigned int	mask, ip_dig[2], first, last;
-	char		*start = NULL, *comma = NULL, *slash = NULL, *dash = NULL;
-	int		ret = FAIL;
-
-	if (SUCCEED != ip4_str2dig(ip, &ip_dig[0]))
-		return FAIL;
-
-	for (start = list; '\0' != *start;)
-	{
-		if (NULL != (comma = strchr(start, ',')))
-			*comma = '\0';
-
-		if (NULL != (dash = strchr(start, '-')))
-			*dash = '\0';
-		else if (NULL != (slash = strchr(start, '/')))
-			*slash = '\0';
-
-		if (SUCCEED != ip4_str2dig(start, &ip_dig[1]))
-			goto next;
-
-		if (NULL != dash)
-		{
-			if (1 != sscanf(dash + 1, "%hu", &i) || 255 < i)
-				goto next;
-
-			first = ip_dig[1];
-			last = (ip_dig[1] & 0xffffff00) + i;
-		}
-		else if (NULL != slash)
-		{
-			if (1 != sscanf(slash + 1, "%hu", &i) || 16 > i || i > 30)
-				goto next;
-
-			mask = 0xffffffff << (32 - i);
-			first = (ip_dig[1] & mask) + 1;
-			last = (ip_dig[1] | ~mask) - 1;
-		}
-		else
-		{
-			first = ip_dig[1];
-			last = ip_dig[1];
-		}
-
-		if (first <= ip_dig[0] && ip_dig[0] <= last)
-		{
-			ret = SUCCEED;
-			break;
-		}
-next:
-		if (NULL != dash)
-		{
-			*dash = '-';
-			dash = NULL;
-		}
-		else if (NULL != slash)
-		{
-			*slash = '/';
-			slash = NULL;
-		}
-
-		if (NULL != comma)
-		{
-			*comma = ',';
-			start = comma + 1;
-			comma = NULL;
-		}
-		else
-			break;
-	}
-
-	if (NULL != dash)
-		*dash = '-';
-	else if (NULL != slash)
-		*slash = '/';
-
-	if (NULL != comma)
-		*comma = ',';
-
-	return ret;
-}
-/******************************************************************************
- *                                                                            *
  * Function: ip_in_list                                                       *
  *                                                                            *
  * Purpose: check if ip matches range of ip addresses                         *
  *                                                                            *
- * Parameters: ip   - [IN] ip address                                         *
- *             list - [IN] comma-separated list of ip ranges                  *
- *                    192.168.0.1-64,192.168.0.128,10.10.0.0/24,12fc:21       *
+ * Parameters: list - [IN] comma-separated list of ip ranges                  *
+ *                    192.168.0.1-64,192.168.0.128,10.10.0.0/24,12fc::21      *
+ *             ip   - [IN] ip address                                         *
  *                                                                            *
  * Return value: FAIL - out of range, SUCCEED - within the range              *
  *                                                                            *
  ******************************************************************************/
-int	ip_in_list(char *list, const char *ip)
+int	ip_in_list(const char *list, const char *ip)
 {
 	const char	*__function_name = "ip_in_list";
 
+	int		ipaddress[8];
+	zbx_iprange_t	iprange;
+	char		*address = NULL;
+	size_t		address_alloc = 0, address_offset;
+	const char	*ptr;
 	int		ret = FAIL;
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s() list:'%s' ip:'%s'", __function_name, list, ip);
 
-	ret = ip4_in_list(list, ip);
-#if defined(HAVE_IPV6)
-	if (SUCCEED != ret)
-		ret = ip6_in_list(list, ip);
+	if (SUCCEED != iprange_parse(&iprange, ip))
+		goto out;
+#ifndef HAVE_IPV6
+	if (ZBX_IPRANGE_V6 == iprange.type)
+		goto out;
 #endif
+	iprange_first(&iprange, ipaddress);
+
+	for (ptr = list; '\0' != *ptr; list = ptr + 1)
+	{
+		if (NULL == (ptr = strchr(list, ',')))
+			ptr = list + strlen(list);
+
+		address_offset = 0;
+		zbx_strncpy_alloc(&address, &address_alloc, &address_offset, list, ptr - list);
+
+		if (SUCCEED != iprange_parse(&iprange, address))
+			continue;
+#ifndef HAVE_IPV6
+		if (ZBX_IPRANGE_V6 == iprange.type)
+			continue;
+#endif
+		if (SUCCEED == iprange_validate(&iprange, ipaddress))
+		{
+			ret = SUCCEED;
+			break;
+		}
+	}
+
+	zbx_free(address);
+out:
 	zabbix_log(LOG_LEVEL_DEBUG, "End of %s():%s", __function_name, zbx_result_string(ret));
 
 	return ret;
@@ -1260,8 +1952,8 @@ int	ip_in_list(char *list, const char *ip)
  *                                                                            *
  * Purpose: check if integer matches a list of integers                       *
  *                                                                            *
- * Parameters: list -  integers [i1-i2,i3,i4,i5-i6] (10-25,45,67-699          *
- *             value-  value                                                  *
+ * Parameters: list  - integers [i1-i2,i3,i4,i5-i6] (10-25,45,67-699)         *
+ *             value - integer to check                                       *
  *                                                                            *
  * Return value: FAIL - out of period, SUCCEED - within the period            *
  *                                                                            *
@@ -1316,6 +2008,11 @@ int	int_in_list(char *list, int value)
 	zabbix_log(LOG_LEVEL_DEBUG, "End of %s():%s", __function_name, zbx_result_string(ret));
 
 	return ret;
+}
+
+int	zbx_double_compare(double a, double b)
+{
+	return fabs(a - b) < ZBX_DOUBLE_EPSILON ? SUCCEED : FAIL;
 }
 
 /******************************************************************************
@@ -1607,9 +2304,73 @@ int	is_uint_n_range(const char *str, size_t n, void *value, size_t size, zbx_uin
 		/* of 'value' buffer while on big endian architecture it will be stored starting from the last */
 		/* bytes. We handle it by storing the offset in the most significant byte of short value and   */
 		/* then use the first byte as source offset.                                                   */
-		unsigned short value_offset = (unsigned short)((sizeof(zbx_uint64_t) - size) << 8);
+		unsigned short	value_offset = (unsigned short)((sizeof(zbx_uint64_t) - size) << 8);
 
-		memcpy(value, (unsigned char*)&value_uint64 + *((unsigned char*)&value_offset), size);
+		memcpy(value, (unsigned char *)&value_uint64 + *((unsigned char *)&value_offset), size);
+	}
+
+	return SUCCEED;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: is_hex_n_range                                                   *
+ *                                                                            *
+ * Purpose: check if the string is unsigned hexadecimal integer within the    *
+ *          specified range and optionally store it into value parameter      *
+ *                                                                            *
+ * Parameters: str   - [IN] string to check                                   *
+ *             n     - [IN] string length                                     *
+ *             value - [OUT] a pointer to output buffer where the converted   *
+ *                     value is to be written (optional, can be NULL)         *
+ *             size  - [IN] size of the output buffer (optional)              *
+ *             min   - [IN] the minimum acceptable value                      *
+ *             max   - [IN] the maximum acceptable value                      *
+ *                                                                            *
+ * Return value:  SUCCEED - the string is unsigned integer                    *
+ *                FAIL - the string is not a hexadecimal number or its value  *
+ *                       is outside the specified range                       *
+ *                                                                            *
+ ******************************************************************************/
+int	is_hex_n_range(const char *str, size_t n, void *value, size_t size, zbx_uint64_t min, zbx_uint64_t max)
+{
+	zbx_uint64_t		value_uint64 = 0, c;
+	const zbx_uint64_t	max_uint64 = ~(zbx_uint64_t)__UINT64_C(0);
+	int			len = 0;
+
+	if ('\0' == *str || 0 == n || sizeof(zbx_uint64_t) < size || (0 == size && NULL != value))
+		return FAIL;
+
+	while ('\0' != *str && 0 < n--)
+	{
+		if ('0' <= *str && *str <= '9')
+			c = *str - '0';
+		else if ('a' <= *str && *str <= 'f')
+			c = 10 + (*str - 'a');
+		else if ('A' <= *str && *str <= 'F')
+			c = 10 + (*str - 'A');
+		else
+			return FAIL;	/* not a hexadecimal digit */
+
+		if (16 < ++len && (max_uint64 >> 4) < value_uint64)
+			return FAIL;	/* maximum value exceeded */
+
+		value_uint64 = (value_uint64 << 4) + c;
+
+		str++;
+	}
+	if (min > value_uint64 || value_uint64 > max)
+		return FAIL;
+
+	if (NULL != value)
+	{
+		/* On little endian architecture the output value will be stored starting from the first bytes */
+		/* of 'value' buffer while on big endian architecture it will be stored starting from the last */
+		/* bytes. We handle it by storing the offset in the most significant byte of short value and   */
+		/* then use the first byte as source offset.                                                   */
+		unsigned short	value_offset = (unsigned short)((sizeof(zbx_uint64_t) - size) << 8);
+
+		memcpy(value, (unsigned char *)&value_uint64 + *((unsigned char *)&value_offset), size);
 	}
 
 	return SUCCEED;
@@ -1771,73 +2532,6 @@ int	is_hex_string(const char *str)
 
 /******************************************************************************
  *                                                                            *
- * Function: uint64_in_list                                                   *
- *                                                                            *
- * Purpose: check if uin64 integer matches a list of integers                 *
- *                                                                            *
- * Parameters: list  - integers [i1-i2,i3,i4,i5-i6] (10-25,45,67-699)         *
- *             value - value                                                  *
- *                                                                            *
- * Return value: FAIL - out of period, SUCCEED - within the list              *
- *                                                                            *
- * Author: Alexei Vladishev                                                   *
- *                                                                            *
- ******************************************************************************/
-int	uint64_in_list(char *list, zbx_uint64_t value)
-{
-	const char	*__function_name = "uint64_in_list";
-	char		*start = NULL, *end = NULL;
-	zbx_uint64_t	i1, i2, tmp_uint64;
-	int		ret = FAIL;
-	char		c = '\0';
-
-	zabbix_log(LOG_LEVEL_DEBUG, "In %s() list:'%s' value:" ZBX_FS_UI64, __function_name, list, value);
-
-	for (start = list; start[0] != '\0';)
-	{
-		if (NULL != (end = strchr(start, ',')))
-		{
-			c=end[0];
-			end[0]='\0';
-		}
-
-		if (sscanf(start,ZBX_FS_UI64 "-" ZBX_FS_UI64,&i1,&i2) == 2)
-		{
-			if (i1 <= value && value <= i2)
-			{
-				ret = SUCCEED;
-				break;
-			}
-		}
-		else
-		{
-			sscanf(start, ZBX_FS_UI64, &tmp_uint64);
-			if (tmp_uint64 == value)
-			{
-				ret = SUCCEED;
-				break;
-			}
-		}
-
-		if (end != NULL)
-		{
-			*end = c;
-			start = end + 1;
-		}
-		else
-			break;
-	}
-
-	if (NULL != end)
-		*end = c;
-
-	zabbix_log(LOG_LEVEL_DEBUG, "End of %s():%s", __function_name, zbx_result_string(ret));
-
-	return ret;
-}
-
-/******************************************************************************
- *                                                                            *
  * Function: get_nearestindex                                                 *
  *                                                                            *
  * Purpose: get nearest index position of sorted elements in array            *
@@ -1922,23 +2616,6 @@ int	uint64_array_add(zbx_uint64_t **values, int *alloc, int *num, zbx_uint64_t v
 
 /******************************************************************************
  *                                                                            *
- * Function: uint64_array_merge                                               *
- *                                                                            *
- * Purpose: merge two uint64 arrays                                           *
- *                                                                            *
- * Author: Alexander Vladishev                                                *
- *                                                                            *
- ******************************************************************************/
-void	uint64_array_merge(zbx_uint64_t **values, int *alloc, int *num, zbx_uint64_t *value, int value_num, int alloc_step)
-{
-	int	i;
-
-	for (i = 0; i < value_num; i++)
-		uint64_array_add(values, alloc, num, value[i], alloc_step);
-}
-
-/******************************************************************************
- *                                                                            *
  * Function: uint64_array_exists                                              *
  *                                                                            *
  * Author: Alexander Vladishev                                                *
@@ -1979,35 +2656,30 @@ void	uint64_array_remove(zbx_uint64_t *values, int *num, const zbx_uint64_t *rm_
 	}
 }
 
-/******************************************************************************
- *                                                                            *
- * Function: uint64_array_remove_both                                         *
- *                                                                            *
- * Purpose: remove equal values from both arrays                              *
- *                                                                            *
- * Parameters:                                                                *
- *                                                                            *
- * Return value:                                                              *
- *                                                                            *
- * Author: Alexander Vladishev                                                *
- *                                                                            *
- * Comments:                                                                  *
- *                                                                            *
- ******************************************************************************/
-void	uint64_array_remove_both(zbx_uint64_t *values, int *num, zbx_uint64_t *rm_values, int *rm_num)
+zbx_uint64_t	suffix2factor(char c)
 {
-	int	rindex, index;
-
-	for (rindex = 0; rindex < *rm_num; rindex++)
+	switch (c)
 	{
-		index = get_nearestindex(values, sizeof(zbx_uint64_t), *num, rm_values[rindex]);
-		if (index == *num || values[index] != rm_values[rindex])
-			continue;
-
-		memmove(&values[index], &values[index + 1], sizeof(zbx_uint64_t) * ((*num) - index - 1));
-		(*num)--;
-		memmove(&rm_values[rindex], &rm_values[rindex + 1], sizeof(zbx_uint64_t) * ((*rm_num) - rindex - 1));
-		(*rm_num)--; rindex--;
+		case 'K':
+			return ZBX_KIBIBYTE;
+		case 'M':
+			return ZBX_MEBIBYTE;
+		case 'G':
+			return ZBX_GIBIBYTE;
+		case 'T':
+			return ZBX_TEBIBYTE;
+		case 's':
+			return 1;
+		case 'm':
+			return SEC_PER_MIN;
+		case 'h':
+			return SEC_PER_HOUR;
+		case 'd':
+			return SEC_PER_DAY;
+		case 'w':
+			return SEC_PER_WEEK;
+		default:
+			return 1;
 	}
 }
 
@@ -2040,36 +2712,8 @@ int	str2uint64(const char *str, const char *suffixes, zbx_uint64_t *value)
 
 	if (NULL != strchr(suffixes, *p))
 	{
-		switch (*p)
-		{
-			case 'K':
-				factor = ZBX_KIBIBYTE;
-				break;
-			case 'M':
-				factor = ZBX_MEBIBYTE;
-				break;
-			case 'G':
-				factor = ZBX_GIBIBYTE;
-				break;
-			case 'T':
-				factor = ZBX_TEBIBYTE;
-				break;
-			case 's':
-				factor = 1;
-				break;
-			case 'm':
-				factor = SEC_PER_MIN;
-				break;
-			case 'h':
-				factor = SEC_PER_HOUR;
-				break;
-			case 'd':
-				factor = SEC_PER_DAY;
-				break;
-			case 'w':
-				factor = SEC_PER_WEEK;
-				break;
-		}
+		factor = suffix2factor(*p);
+
 		sz--;
 	}
 
@@ -2098,41 +2742,10 @@ int	str2uint64(const char *str, const char *suffixes, zbx_uint64_t *value)
 double	str2double(const char *str)
 {
 	size_t	sz;
-	double	factor = 1;
 
 	sz = strlen(str) - 1;
 
-	switch (str[sz])
-	{
-		case 'K':
-			factor = ZBX_KIBIBYTE;
-			break;
-		case 'M':
-			factor = ZBX_MEBIBYTE;
-			break;
-		case 'G':
-			factor = ZBX_GIBIBYTE;
-			break;
-		case 'T':
-			factor = ZBX_TEBIBYTE;
-			break;
-		case 's':
-			break;
-		case 'm':
-			factor = SEC_PER_MIN;
-			break;
-		case 'h':
-			factor = SEC_PER_HOUR;
-			break;
-		case 'd':
-			factor = SEC_PER_DAY;
-			break;
-		case 'w':
-			factor = SEC_PER_WEEK;
-			break;
-	}
-
-	return atof(str) * factor;
+	return atof(str) * suffix2factor(str[sz]);
 }
 
 /******************************************************************************
@@ -2148,7 +2761,7 @@ double	str2double(const char *str)
  *           !!! Don't forget to sync the code with PHP !!!                   *
  *                                                                            *
  ******************************************************************************/
-int	is_hostname_char(char c)
+int	is_hostname_char(unsigned char c)
 {
 	if (0 != isalnum(c))
 		return SUCCEED;
@@ -2172,7 +2785,7 @@ int	is_hostname_char(char c)
  *           !!! Don't forget to sync the code with PHP !!!                   *
  *                                                                            *
  ******************************************************************************/
-int	is_key_char(char c)
+int	is_key_char(unsigned char c)
 {
 	if (0 != isalnum(c))
 		return SUCCEED;
@@ -2196,7 +2809,7 @@ int	is_key_char(char c)
  *           !!! Don't forget to sync the code with PHP !!!                   *
  *                                                                            *
  ******************************************************************************/
-int	is_function_char(char c)
+int	is_function_char(unsigned char c)
 {
 	if (0 != islower(c))
 		return SUCCEED;
@@ -2217,7 +2830,7 @@ int	is_function_char(char c)
  *           !!! Don't forget to sync the code with PHP !!!                   *
  *                                                                            *
  ******************************************************************************/
-int	is_macro_char(char c)
+int	is_macro_char(unsigned char c)
 {
 	if (0 != isupper(c))
 		return SUCCEED;
@@ -2229,6 +2842,34 @@ int	is_macro_char(char c)
 		return SUCCEED;
 
 	return FAIL;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: is_discovery_macro                                               *
+ *                                                                            *
+ * Purpose: checks if the name is a valid discovery macro                     *
+ *                                                                            *
+ * Return value:  SUCCEED - the name is a valid discovery macro               *
+ *                FAIL - otherwise                                            *
+ *                                                                            *
+ ******************************************************************************/
+int	is_discovery_macro(const char *name)
+{
+	if ('{' != *name++ || '#' != *name++)
+		return FAIL;
+
+	do
+	{
+		if (SUCCEED != is_macro_char(*name++))
+			return FAIL;
+
+	} while ('}' != *name);
+
+	if ('\0' != name[1])
+		return FAIL;
+
+	return SUCCEED;
 }
 
 /******************************************************************************
@@ -2428,3 +3069,21 @@ fail:
 
 	return res;
 }
+
+#if !defined(_WINDOWS)
+unsigned int	zbx_alarm_on(unsigned int seconds)
+{
+	zbx_timed_out = 0;
+
+	return alarm(seconds);
+}
+
+unsigned int	zbx_alarm_off(void)
+{
+	unsigned int	ret;
+
+	ret = alarm(0);
+	zbx_timed_out = 0;
+	return ret;
+}
+#endif

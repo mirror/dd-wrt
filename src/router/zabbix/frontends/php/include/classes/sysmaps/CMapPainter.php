@@ -25,20 +25,17 @@ class CMapPainter {
 	protected $mapData;
 	protected $options;
 
-	public function __construct(array $mapData, array $options = array()) {
-		$this->options = array(
-			'map' => array(
-				'bgColor' => 'white',
-				'borderColor' => 'black',
-				'titleColor' => 'darkred',
-				'border' => true,
+	public function __construct(array $mapData, array $options = []) {
+		$this->options = [
+			'map' => [
 				'drawAreas' => true
-			),
-			'grid' => array(
-				'size' => 50,
-				'color' => 'black'
-			)
-		);
+			],
+			'grid' => [
+				'size' => 50
+			],
+			'graphtheme' => []
+		];
+
 		foreach ($options as $key => $option) {
 			$this->options[$key] = array_merge($this->options[$key], $option);
 		}
@@ -57,26 +54,23 @@ class CMapPainter {
 			$this->paintAreas();
 		}
 
-		$this->paintBorder();
-
 		return $this->canvas->getCanvas();
 	}
 
-	protected function paintBorder() {
-		if ($this->options['map']['border']) {
-			$this->canvas->drawBorder($this->options['map']['borderColor']);
-		}
-	}
-
 	protected function paintBackground() {
-		$this->canvas->fill($this->options['map']['bgColor']);
-		if ($this->mapData['backgroundid'] && ($bgImage = get_image_by_imageid($this->mapData['backgroundid']))) {
-			$this->canvas->setBgImage($bgImage['image']);
+		$this->canvas->fill($this->options['graphtheme']['backgroundcolor']);
+
+		if ($this->mapData['backgroundid']) {
+			$image = get_image_by_imageid($this->mapData['backgroundid']);
+
+			if ($image['image']) {
+				$this->canvas->setBgImage($image['image']);
+			}
 		}
 	}
 
 	protected function paintTitle() {
-		$this->canvas->drawTitle($this->mapData['name'], $this->options['map']['titleColor']);
+		$this->canvas->drawTitle($this->mapData['name'], $this->options['graphtheme']['textcolor']);
 	}
 
 	protected function paintGrid() {
@@ -92,17 +86,16 @@ class CMapPainter {
 		$dims = imageTextSize(8, 0, '00');
 		for ($xy = $size; $xy < $maxSize; $xy += $size) {
 			if ($xy < $width) {
-				$this->canvas->drawLine($xy, 0, $xy, $height, $this->options['grid']['color'], MAP_LINK_DRAWTYPE_DASHED_LINE);
-				$this->canvas->drawText(8, 0, $xy + 3, $dims['height'] + 3, $this->options['grid']['color'], $xy);
+				$this->canvas->drawLine($xy, 0, $xy, $height, $this->options['graphtheme']['gridcolor'], MAP_LINK_DRAWTYPE_DASHED_LINE);
+				$this->canvas->drawText(8, 0, $xy + 3, $dims['height'] + 3, $this->options['graphtheme']['maingridcolor'], $xy);
 			}
 			if ($xy < $height) {
-				$this->canvas->drawLine(0, $xy, $width, $xy, $this->options['grid']['color'], MAP_LINK_DRAWTYPE_DASHED_LINE);
-				$this->canvas->drawText(8, 0, 3, $xy + $dims['height'] + 3, $this->options['grid']['color'], $xy);
+				$this->canvas->drawLine(0, $xy, $width, $xy, $this->options['graphtheme']['gridcolor'], MAP_LINK_DRAWTYPE_DASHED_LINE);
+				$this->canvas->drawText(8, 0, 3, $xy + $dims['height'] + 3, $this->options['graphtheme']['maingridcolor'], $xy);
 			}
 		}
 
-		$this->canvas->drawText(8, 0, 2, $dims['height'] + 3, 'black', 'Y X:');
-
+		$this->canvas->drawText(8, 0, 2, $dims['height'] + 3, $this->options['graphtheme']['maingridcolor'], 'Y X:');
 	}
 
 	protected function paintAreas() {
@@ -114,21 +107,21 @@ class CMapPainter {
 					$selement['y'] + 1,
 					$selement['x'] + $selement['width'] - 1,
 					$selement['y'] + $selement['height'] - 1,
-					'gray1'
+					$this->options['graphtheme']['maingridcolor']
 				);
 				$this->canvas->drawRectangle(
 					$selement['x'],
 					$selement['y'],
 					$selement['x'] + $selement['width'],
 					$selement['y'] + $selement['height'],
-					'gray2'
+					$this->options['graphtheme']['maingridcolor']
 				);
 				$this->canvas->drawRectangle(
 					$selement['x'] - 1,
 					$selement['y'] - 1,
 					$selement['x'] + $selement['width'] + 1,
 					$selement['y'] + $selement['height'] + 1,
-					'gray3'
+					$this->options['graphtheme']['maingridcolor']
 				);
 			}
 		}

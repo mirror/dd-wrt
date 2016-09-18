@@ -34,18 +34,25 @@ class CScreenSystemStatus extends CScreenBase {
 		// rewrite page file
 		$page['file'] = $this->pageFile;
 
-		$item = new CUIWidget('hat_syssum', make_system_status(array(
-			'groupids' => null,
-			'hostids' => null,
-			'maintenance' => null,
-			'severity' => null,
-			'limit' => null,
-			'extAck' => 0,
-			'screenid' => $this->screenid
-		)));
-		$item->setHeader(_('Status of Zabbix'), SPACE);
-		$item->setFooter(_s('Updated: %s', zbx_date2str(_('H:i:s'))));
+		$table = make_system_status(
+			[
+				'groupids' => null,
+				'hostids' => null,
+				'maintenance' => null,
+				'trigger_name' => '',
+				'severity' => null,
+				'limit' => null,
+				'extAck' => 0
+			],
+			$this->pageFile.'?screenid='.$this->screenid
+		);
 
-		return $this->getOutput($item);
+		$footer = (new CList())
+			->addItem(_s('Updated: %s', zbx_date2str(TIME_FORMAT_SECONDS)))
+			->addClass(ZBX_STYLE_DASHBRD_WIDGET_FOOT);
+
+		return $this->getOutput(
+			(new CUiWidget('hat_syssum', [$table, $footer]))->setHeader(_('System status'))
+		);
 	}
 }

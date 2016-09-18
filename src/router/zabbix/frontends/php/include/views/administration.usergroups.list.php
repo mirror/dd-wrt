@@ -18,54 +18,65 @@
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
 
-
-$userGroupsWidget = new CWidget();
-
-// append page header to widget
-$createForm = new CForm('get');
-$createForm->cleanItems();
-$configurationComboBox = new CComboBox('config', 'usergrps.php', 'javascript: redirect(this.options[this.selectedIndex].value);');
-$configurationComboBox->addItem('usergrps.php', _('User groups'));
-$configurationComboBox->addItem('users.php', _('Users'));
-$createForm->addItem(array($configurationComboBox, new CSubmit('form', _('Create user group'))));
-$userGroupsWidget->addPageHeader(_('CONFIGURATION OF USER GROUPS'), $createForm);
-
-// append header to widget
-$userGroupsWidget->addHeader(_('User groups'));
-$userGroupsWidget->addHeaderRowNumber();
+$widget = (new CWidget())
+	->setTitle(_('User groups'))
+	->setControls((new CForm('get'))
+		->cleanItems()
+		->addItem((new CList())->addItem(new CSubmit('form', _('Create user group'))))
+	)
+	->addItem((new CFilter('web.usergroup.filter.state'))
+		->addColumn((new CFormList())->addRow(_('Name'),
+			(new CTextBox('filter_name', $data['filter']['name']))
+				->setWidth(ZBX_TEXTAREA_FILTER_SMALL_WIDTH)
+				->setAttribute('autofocus', 'autofocus')
+		))
+		->addColumn((new CFormList())->addRow(_('Status'),
+			(new CRadioButtonList('filter_users_status', (int) $data['filter']['users_status']))
+				->addValue(_('Any'), -1)
+				->addValue(_('Enabled'), GROUP_STATUS_ENABLED)
+				->addValue(_('Disabled'), GROUP_STATUS_DISABLED)
+				->setModern(true)
+		))
+	);
 
 // create form
-$userGroupsForm = new CForm();
-$userGroupsForm->setName('userGroupsForm');
+$userGroupsForm = (new CForm())->setName('userGroupsForm');
 
 // create user group table
-$userGroupTable = new CTableInfo(_('No user groups found.'));
-$userGroupTable->setHeader(array(
-	new CCheckBox('all_groups', null, "checkAll('".$userGroupsForm->getName()."','all_groups','group_groupid');"),
-	$this->data['displayNodes'] ? _('Node') : null,
-	make_sorting_header(_('Name'), 'name'),
-	'#',
-	_('Members'),
-	_('Status'),
-	_('Frontend access'),
-	_('Debug mode')
-));
+$userGroupTable = (new CTableInfo())
+	->setHeader([
+		(new CColHeader(
+			(new CCheckBox('all_groups'))->onClick("checkAll('".$userGroupsForm->getName()."','all_groups','group_groupid');")
+		))->addClass(ZBX_STYLE_CELL_WIDTH),
+		make_sorting_header(_('Name'), 'name', $this->data['sort'], $this->data['sortorder']),
+		'#',
+		_('Members'),
+		_('Frontend access'),
+		_('Debug mode'),
+		_('Status')
+	]);
 
 foreach ($this->data['usergroups'] as $usrgrp) {
 	$userGroupId = $usrgrp['usrgrpid'];
 
 	$debugMode = ($usrgrp['debug_mode'] == GROUP_DEBUG_MODE_ENABLED)
-		? new CLink(_('Enabled'), 'usergrps.php?go=disable_debug&usrgrpid='.$userGroupId, 'orange')
-		: new CLink(_('Disabled'), 'usergrps.php?go=enable_debug&usrgrpid='.$userGroupId, 'enabled');
+		? (new CLink(_('Enabled'), 'usergrps.php?action=usergroup.massdisabledebug&usrgrpid='.$userGroupId))
+			->addClass(ZBX_STYLE_LINK_ACTION)
+			->addClass(ZBX_STYLE_ORANGE)
+			->addSID()
+		: (new CLink(_('Disabled'), 'usergrps.php?action=usergroup.massenabledebug&usrgrpid='.$userGroupId))
+			->addClass(ZBX_STYLE_LINK_ACTION)
+			->addClass(ZBX_STYLE_GREEN)
+			->addSID();
 
 	// gui access
 	$guiAccess = user_auth_type2str($usrgrp['gui_access']);
-	$guiAccessStyle = 'enabled';
+	$guiAccessStyle = ZBX_STYLE_LINK_ACTION.' '.ZBX_STYLE_GREEN;
 	if ($usrgrp['gui_access'] == GROUP_GUI_ACCESS_INTERNAL) {
-		$guiAccessStyle = 'orange';
+		$guiAccessStyle = ZBX_STYLE_LINK_ACTION.' '.ZBX_STYLE_ORANGE;
 	}
 	if ($usrgrp['gui_access'] == GROUP_GUI_ACCESS_DISABLED) {
-		$guiAccessStyle = 'disabled';
+		$guiAccessStyle = ZBX_STYLE_LINK_ACTION.' '.ZBX_STYLE_RED;
 	}
 
 	if (granted2update_group($userGroupId)) {
@@ -73,95 +84,89 @@ foreach ($this->data['usergroups'] as $usrgrp) {
 			? GROUP_GUI_ACCESS_SYSTEM
 			: $usrgrp['gui_access'] + 1;
 
-		$guiAccess = new CLink(
+		$guiAccess = (new CLink(
 			$guiAccess,
-			'usergrps.php?go=set_gui_access&set_gui_access='.$nextGuiAuth.'&usrgrpid='.$userGroupId,
-			$guiAccessStyle
-		);
+			'usergrps.php?action=usergroup.set_gui_access&set_gui_access='.$nextGuiAuth.'&usrgrpid='.$userGroupId
+		))
+			->addClass($guiAccessStyle)
+			->addSID();
 
 		$usersStatus = ($usrgrp['users_status'] == GROUP_STATUS_ENABLED)
-			? new CLink(_('Enabled'), 'usergrps.php?go=disable_status&usrgrpid='.$userGroupId, 'enabled')
-			: new CLink(_('Disabled'), 'usergrps.php?go=enable_status&usrgrpid='.$userGroupId, 'disabled');
+			? (new CLink(_('Enabled'), 'usergrps.php?action=usergroup.massdisable&usrgrpid='.$userGroupId))
+				->addClass(ZBX_STYLE_LINK_ACTION)
+				->addClass(ZBX_STYLE_GREEN)
+				->addSID()
+			: (new CLink(_('Disabled'), 'usergrps.php?action=usergroup.massenable&usrgrpid='.$userGroupId))
+				->addClass(ZBX_STYLE_LINK_ACTION)
+				->addClass(ZBX_STYLE_RED)
+				->addSID();
 	}
 	else {
-		$guiAccess = new CSpan($guiAccess, $guiAccessStyle);
-		$usersStatus = ($usrgrp['users_status'] == GROUP_STATUS_ENABLED) ? new CSpan(_('Enabled'), 'enabled') : new CSpan(_('Disabled'), 'disabled');
+		$guiAccess = (new CSpan($guiAccess))->addClass($guiAccessStyle);
+		$usersStatus = ($usrgrp['users_status'] == GROUP_STATUS_ENABLED)
+			? (new CSpan(_('Enabled')))->addClass(ZBX_STYLE_GREEN)
+			: (new CSpan(_('Disabled')))->addClass(ZBX_STYLE_RED);
 	}
 
 	if (isset($usrgrp['users'])) {
 		$userGroupUsers = $usrgrp['users'];
 		order_result($userGroupUsers, 'alias');
 
-		$users = array();
+		$users = [];
+		$i = 0;
+
 		foreach ($userGroupUsers as $user) {
-			$userTypeStyle = 'enabled';
-			if ($user['type'] == USER_TYPE_ZABBIX_ADMIN) {
-				$userTypeStyle = 'orange';
-			}
-			if ($user['type'] == USER_TYPE_SUPER_ADMIN) {
-				$userTypeStyle = 'disabled';
+			$i++;
+
+			if ($i > $this->data['config']['max_in_table']) {
+				$users[] = ' &hellip;';
+
+				break;
 			}
 
-			$userStatusStyle = 'enabled';
-			if ($user['gui_access'] == GROUP_GUI_ACCESS_DISABLED) {
-				$userStatusStyle = 'disabled';
-			}
-			if ($user['users_status'] == GROUP_STATUS_DISABLED) {
-				$userStatusStyle = 'disabled';
+			if ($users) {
+				$users[] = ', ';
 			}
 
-			$users[] = new CLink(getUserFullname($user),
-				'users.php?form=update&userid='.$user['userid'],
-				$userStatusStyle
-			);
-			$users[] = ', ';
+			$users[] = (new CLink(getUserFullname($user), 'users.php?form=update&userid='.$user['userid']))
+					->addClass(ZBX_STYLE_LINK_ALT)
+					->addClass($user['gui_access'] == GROUP_GUI_ACCESS_DISABLED || $user['users_status'] == GROUP_STATUS_DISABLED
+						? ZBX_STYLE_RED
+						: ZBX_STYLE_GREEN);
 		}
-		array_pop($users);
 	}
 
-	$userGroupTable->addRow(array(
-		new CCheckBox('group_groupid['.$userGroupId.']', null, null, $userGroupId),
-		$this->data['displayNodes'] ? $usrgrp['nodename'] : null,
-		new CLink($usrgrp['name'], 'usergrps.php?form=update&usrgrpid='.$userGroupId),
-		array(new CLink(_('Users'), 'users.php?filter_usrgrpid='.$userGroupId), ' (', count($usrgrp['users']), ')'),
-		new CCol($users, 'wraptext'),
-		$usersStatus,
+	$name = new CLink($usrgrp['name'], 'usergrps.php?form=update&usrgrpid='.$userGroupId);
+
+	$userGroupTable->addRow([
+		new CCheckBox('group_groupid['.$userGroupId.']', $userGroupId),
+		(new CCol($name))->addClass(ZBX_STYLE_NOWRAP),
+		[new CLink(_('Users'), 'users.php?filter_usrgrpid='.$userGroupId), CViewHelper::showNum(count($usrgrp['users']))],
+		$users,
 		$guiAccess,
-		$debugMode
-	));
+		$debugMode,
+		$usersStatus
+	]);
 }
 
-// append GO buttons
-$goComboBox = new CComboBox('go');
-
-$goOption = new CComboItem('enable_status', _('Enable selected'));
-$goOption->setAttribute('confirm', _('Enable selected groups?'));
-$goComboBox->addItem($goOption);
-
-$goOption = new CComboItem('disable_status', _('Disable selected'));
-$goOption->setAttribute('confirm', _('Disable selected groups?'));
-$goComboBox->addItem($goOption);
-
-$goOption = new CComboItem('enable_debug', _('Enable DEBUG'));
-$goOption->setAttribute('confirm', _('Enable debug mode in selected groups?'));
-$goComboBox->addItem($goOption);
-
-$goOption = new CComboItem('disable_debug', _('Disable DEBUG'));
-$goOption->setAttribute('confirm', _('Disable debug mode in selected groups?'));
-$goComboBox->addItem($goOption);
-
-$goOption = new CComboItem('delete', _('Delete selected'));
-$goOption->setAttribute('confirm', _('Delete selected groups?'));
-$goComboBox->addItem($goOption);
-
-$goButton = new CSubmit('goButton', _('Go').' (0)');
-$goButton->setAttribute('id', 'goButton');
-zbx_add_post_js('chkbxRange.pageGoName = "group_groupid";');
-
 // append table to form
-$userGroupsForm->addItem(array($this->data['paging'], $userGroupTable, $this->data['paging'], get_table_header(array($goComboBox, $goButton))));
+$userGroupsForm->addItem([
+	$userGroupTable,
+	$this->data['paging'],
+	new CActionButtonList('action', 'group_groupid', [
+		'usergroup.massenable' => ['name' => _('Enable'), 'confirm' => _('Enable selected groups?')],
+		'usergroup.massdisable' => ['name' => _('Disable'), 'confirm' => _('Disable selected groups?')],
+		'usergroup.massenabledebug' => ['name' => _('Enable debug mode'),
+			'confirm' => _('Enable debug mode in selected groups?')
+		],
+		'usergroup.massdisabledebug' => ['name' => _('Disable debug mode'),
+			'confirm' => _('Disable debug mode in selected groups?')
+		],
+		'usergroup.massdelete' => ['name' => _('Delete'), 'confirm' => _('Delete selected groups?')]
+	])
+]);
 
 // append form to widget
-$userGroupsWidget->addItem($userGroupsForm);
+$widget->addItem($userGroupsForm);
 
-return $userGroupsWidget;
+return $widget;
