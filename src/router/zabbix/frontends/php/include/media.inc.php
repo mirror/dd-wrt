@@ -20,23 +20,19 @@
 
 
 function media_type2str($type = null) {
-	$mediaTypes = array(
+	$types = [
 		MEDIA_TYPE_EMAIL => _('Email'),
 		MEDIA_TYPE_EXEC => _('Script'),
 		MEDIA_TYPE_SMS => _('SMS'),
 		MEDIA_TYPE_JABBER => _('Jabber'),
 		MEDIA_TYPE_EZ_TEXTING => _('Ez Texting')
-	);
+	];
 
 	if ($type === null) {
-		natsort($mediaTypes);
+		natsort($types);
 
-		return $mediaTypes;
+		return $types;
 	}
-	elseif (isset($mediaTypes[$type])) {
-		return $mediaTypes[$type];
-	}
-	else {
-		return _('Unknown');
-	}
+
+	return $types[$type];
 }

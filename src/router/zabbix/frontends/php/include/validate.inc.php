@@ -23,29 +23,8 @@ function unset_request($key) {
 	unset($_GET[$key], $_POST[$key], $_REQUEST[$key]);
 }
 
-function is_int_range($value) {
-	if (!empty($value)) {
-		foreach (explode(',', $value) as $int_range) {
-			$int_range = explode('-', $int_range);
-			if (count($int_range) > 2) {
-				return false;
-			}
-			foreach ($int_range as $int_val) {
-				if (!is_numeric($int_val)) {
-					return false;
-				}
-			}
-		}
-	}
-	return true;
-}
-
 function BETWEEN($min, $max, $var = null) {
 	return '({'.$var.'}>='.$min.'&&{'.$var.'}<='.$max.')&&';
-}
-
-function GT($value, $var = '') {
-	return '({'.$var.'}>='.$value.')&&';
 }
 
 function IN($array, $var = '') {
@@ -58,143 +37,6 @@ function IN($array, $var = '') {
 
 function HEX($var = null) {
 	return 'preg_match("/^([a-zA-Z0-9]+)$/",{'.$var.'})&&';
-}
-
-function validate_ipv4($str, &$arr) {
-	if (!preg_match('/^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})$/', $str, $arr)) {
-		return false;
-	}
-
-	for ($i = 1; $i <= 4; $i++) {
-		if (!is_numeric($arr[$i]) || $arr[$i] > 255 || $arr[$i] < 0 ) {
-			return false;
-		}
-	}
-
-	return true;
-}
-
-function validate_ipv6($str) {
-	$pattern1 = '([a-f0-9]{1,4}:){7}[a-f0-9]{1,4}';
-	$pattern2 = ':(:[a-f0-9]{1,4}){1,7}';
-	$pattern3 = '[a-f0-9]{1,4}::([a-f0-9]{1,4}:){0,5}[a-f0-9]{1,4}';
-	$pattern4 = '([a-f0-9]{1,4}:){2}:([a-f0-9]{1,4}:){0,4}[a-f0-9]{1,4}';
-	$pattern5 = '([a-f0-9]{1,4}:){3}:([a-f0-9]{1,4}:){0,3}[a-f0-9]{1,4}';
-	$pattern6 = '([a-f0-9]{1,4}:){4}:([a-f0-9]{1,4}:){0,2}[a-f0-9]{1,4}';
-	$pattern7 = '([a-f0-9]{1,4}:){5}:([a-f0-9]{1,4}:){0,1}[a-f0-9]{1,4}';
-	$pattern8 = '([a-f0-9]{1,4}:){6}:[a-f0-9]{1,4}';
-	$pattern9 = '([a-f0-9]{1,4}:){1,7}:';
-	$pattern10 = '::';
-
-	$full = "/^($pattern1)$|^($pattern2)$|^($pattern3)$|^($pattern4)$|^($pattern5)$|^($pattern6)$|^($pattern7)$|^($pattern8)$|^($pattern9)$|^($pattern10)$/i";
-
-	if (!preg_match($full, $str)) {
-		return false;
-	}
-	return true;
-}
-
-function validate_ip($str, &$arr) {
-	if (validate_ipv4($str, $arr)) {
-		return true;
-	}
-
-	if (ZBX_HAVE_IPV6) {
-		return validate_ipv6($str);
-	}
-
-	return false;
-}
-
-/**
- * Validate IP mask. IP/bits.
- * bits range for IPv4: 16 - 30
- * bits range for IPv6: 112 - 128
- *
- * @param string $ip_range
- *
- * @return bool
- */
-function validate_ip_range_mask($ip_range) {
-	$parts = explode('/', $ip_range);
-
-	if (count($parts) != 2) {
-		return false;
-	}
-	$ip = $parts[0];
-	$bits = $parts[1];
-
-	if (validate_ipv4($ip, $arr)) {
-		return preg_match('/^\d{1,2}$/', $bits) && $bits >= 16 && $bits <= 30;
-	}
-	elseif (ZBX_HAVE_IPV6 && validate_ipv6($ip, $arr)) {
-		return preg_match('/^\d{1,3}$/', $bits) && $bits >= 112 && $bits <= 128;
-	}
-	else {
-		return false;
-	}
-}
-
-/*
- * Validate IP range. ***.***.***.***[-***]
- */
-function validate_ip_range_range($ip_range) {
-	$parts = explode('-', $ip_range);
-	if (($parts_count = count($parts)) > 2) {
-		return false;
-	}
-
-	if (validate_ipv4($parts[0], $arr)) {
-		$ip_parts = explode('.', $parts[0]);
-
-		if ($parts_count == 2) {
-			if (!preg_match('/^([0-9]{1,3})$/', $parts[1])) {
-				return false;
-			}
-			sscanf($ip_parts[3], "%d", $from_value);
-			sscanf($parts[1], "%d", $to_value);
-
-			if (($to_value > 255) || ($from_value > $to_value)) {
-				return false;
-			}
-		}
-	}
-	elseif (ZBX_HAVE_IPV6 && validate_ipv6($parts[0])) {
-		$ip_parts = explode(':', $parts[0]);
-		$ip_parts_count = count($ip_parts);
-
-		if ($parts_count == 2) {
-			if (!preg_match('/^([a-f0-9]{1,4})$/i', $parts[1])) {
-				return false;
-			}
-			sscanf($ip_parts[$ip_parts_count - 1], "%x", $from_value);
-			sscanf($parts[1], "%x", $to_value);
-
-			if ($from_value > $to_value) {
-				return false;
-			}
-		}
-	}
-	else {
-		return false;
-	}
-	return true;
-}
-
-function validate_ip_range($str) {
-	foreach (explode(',', $str) as $ip_range) {
-		if (zbx_strpos($ip_range, '/') !== false) {
-			if (!validate_ip_range_mask($ip_range)) {
-				return false;
-			}
-		}
-		else {
-			if (!validate_ip_range_range($ip_range)) {
-				return false;
-			}
-		}
-	}
-	return true;
 }
 
 function validate_port_list($str) {
@@ -213,7 +55,7 @@ function validate_port_list($str) {
 }
 
 function calc_exp($fields, $field, $expression) {
-	if (zbx_strstr($expression, '{}')) {
+	if (strpos($expression, '{}') !== false) {
 		if (!isset($_REQUEST[$field])) {
 			return false;
 		}
@@ -236,8 +78,8 @@ function calc_exp($fields, $field, $expression) {
 }
 
 function calc_exp2($fields, $expression) {
-	foreach ($fields as $f => $checks) {
-		$expression = str_replace('{'.$f.'}', '$_REQUEST["'.$f.'"]', $expression);
+	foreach ($fields as $field => $checks) {
+		$expression = str_replace('{'.$field.'}', '$_REQUEST["'.$field.'"]', $expression);
 	}
 	return eval('return ('.trim($expression, '& ').') ? 1 : 0;');
 }
@@ -281,7 +123,7 @@ function check_type(&$field, $flags, &$var, $type, $caption = null) {
 		$caption = $field;
 	}
 
-	if (is_array($var) && $type != T_ZBX_IP) {
+	if (is_array($var)) {
 		$err = ZBX_VALID_OK;
 
 		foreach ($var as $v) {
@@ -294,35 +136,17 @@ function check_type(&$field, $flags, &$var, $type, $caption = null) {
 	$error = false;
 	$message = '';
 
-	if ($type == T_ZBX_IP) {
-		if (!validate_ip($var, $arr)) {
-			$error = true;
-			$message = _s('Field "%1$s" is not IP.', $caption);
-		}
-	}
-	elseif ($type == T_ZBX_IP_RANGE) {
-		if (!validate_ip_range($var)) {
-			$error = true;
-			$message = _s('Field "%1$s" is not IP range.', $caption);
-		}
-	}
-	elseif ($type == T_ZBX_INT_RANGE) {
-		if (!is_int_range($var)) {
-			$error = true;
-			$message = _s('Field "%1$s" is not integer list or range.', $caption);
-		}
-	}
-	elseif ($type == T_ZBX_INT) {
+	if ($type == T_ZBX_INT) {
 		if (!zbx_is_int($var)) {
 			$error = true;
 			$message = _s('Field "%1$s" is not integer.', $caption);
 		}
 	}
 	elseif ($type == T_ZBX_DBL) {
-		$decimalValidator = new CDecimalValidator(array(
+		$decimalValidator = new CDecimalValidator([
 			'maxPrecision' => 16,
 			'maxScale' => 4,
-			'messageFormat' => _('Value "%2$s" of "%1$s" has incorrect decimal format.'),
+			'messageInvalid' => _('Value "%2$s" of "%1$s" has incorrect decimal format.'),
 			'messagePrecision' => _(
 				'Value "%2$s" of "%1$s" is too long: it cannot have more than %3$s digits before the decimal point '.
 				'and more than %4$s digits after the decimal point.'
@@ -335,7 +159,7 @@ function check_type(&$field, $flags, &$var, $type, $caption = null) {
 				'Value "%2$s" of "%1$s" has too many digits after the decimal point: '.
 				'it cannot have more than %3$s digits.'
 			)
-		));
+		]);
 		$decimalValidator->setObjectName($caption);
 
 		if (!$decimalValidator->validate($var)) {
@@ -344,14 +168,14 @@ function check_type(&$field, $flags, &$var, $type, $caption = null) {
 		}
 	}
 	elseif ($type == T_ZBX_DBL_BIG) {
-		$decimalValidator = new CDecimalValidator(array(
+		$decimalValidator = new CDecimalValidator([
 			'maxScale' => 4,
-			'messageFormat' => _('Value "%2$s" of "%1$s" has incorrect decimal format.'),
+			'messageInvalid' => _('Value "%2$s" of "%1$s" has incorrect decimal format.'),
 			'messageScale' => _(
 				'Value "%2$s" of "%1$s" has too many digits after the decimal point: '.
 				'it cannot have more than %3$s digits.'
 			)
-		));
+		]);
 		$decimalValidator->setObjectName($caption);
 
 		if (!$decimalValidator->validate($var)) {
@@ -360,9 +184,9 @@ function check_type(&$field, $flags, &$var, $type, $caption = null) {
 		}
 	}
 	elseif ($type == T_ZBX_DBL_STR) {
-		$decimalStringValidator = new CDecimalStringValidator(array(
+		$decimalStringValidator = new CDecimalStringValidator([
 			'messageInvalid' => _('Value "%2$s" of "%1$s" has incorrect decimal format.')
-		));
+		]);
 		$decimalStringValidator->setObjectName($caption);
 
 		if (!$decimalStringValidator->validate($var)) {
@@ -380,10 +204,16 @@ function check_type(&$field, $flags, &$var, $type, $caption = null) {
 		$colorValidator = new CColorValidator();
 
 		if (!$colorValidator->validate($var)) {
-			$var = 'FFFFFF';
-
 			$error = true;
 			$message = _s('Colour "%1$s" is not correct: expecting hexadecimal colour code (6 symbols).', $caption);
+		}
+	}
+	elseif ($type == T_ZBX_TP) {
+		$timePeriodValidator = new CTimePeriodValidator();
+
+		if (!$timePeriodValidator->validate($var)) {
+			$error = true;
+			$message = _s('Field "%1$s" is not correct: %2$s', $caption, $timePeriodValidator->getError());
 		}
 	}
 
@@ -470,7 +300,7 @@ function check_field(&$fields, &$field, $checks) {
 		}
 	}
 
-	if (!($flags & NO_TRIM)) {
+	if (!($flags & P_NO_TRIM)) {
 		check_trim($_REQUEST[$field]);
 	}
 
@@ -510,7 +340,7 @@ function invalid_url($msg = null) {
 
 	// backup messages before including page_header.php
 	$temp = $ZBX_MESSAGES;
-	$ZBX_MESSAGES = null;
+	$ZBX_MESSAGES = [];
 
 	require_once dirname(__FILE__).'/page_header.php';
 
@@ -524,16 +354,13 @@ function invalid_url($msg = null) {
 
 function check_fields(&$fields, $show_messages = true) {
 	// VAR	TYPE	OPTIONAL	FLAGS	VALIDATION	EXCEPTION
-	$system_fields = array(
-		'sid' =>			array(T_ZBX_STR, O_OPT, P_SYS, HEX(),		null),
-		'switch_node' =>	array(T_ZBX_INT, O_OPT, P_SYS, DB_ID,		null),
-		'triggers_hash' =>	array(T_ZBX_STR, O_OPT, P_SYS, NOT_EMPTY,	null),
-		'print' =>			array(T_ZBX_INT, O_OPT, P_SYS, IN('1'),		null),
-		'sort' =>			array(T_ZBX_STR, O_OPT, P_SYS, null,		null),
-		'sortorder' =>		array(T_ZBX_STR, O_OPT, P_SYS, null,		null),
-		'page' =>			array(T_ZBX_INT, O_OPT, P_SYS, null,		null), // paging
-		'ddreset' =>		array(T_ZBX_INT, O_OPT, P_SYS, null,		null)
-	);
+	$system_fields = [
+		'sid' =>			[T_ZBX_STR, O_OPT, P_SYS, HEX(),		null],
+		'triggers_hash' =>	[T_ZBX_STR, O_OPT, P_SYS, NOT_EMPTY,	null],
+		'print' =>			[T_ZBX_INT, O_OPT, P_SYS, IN('1'),		null],
+		'page' =>			[T_ZBX_INT, O_OPT, P_SYS, null,		null], // paging
+		'ddreset' =>		[T_ZBX_INT, O_OPT, P_SYS, null,		null]
+	];
 	$fields = zbx_array_merge($system_fields, $fields);
 
 	$err = ZBX_VALID_OK;
@@ -586,7 +413,7 @@ function validateNumber($value, $min = null, $max = null) {
 }
 
 function validateUserMacro($value) {
-	return preg_match('/^'.ZBX_PREG_EXPRESSION_USER_MACROS.'$/', $value);
+	return ((new CUserMacroParser())->parse($value) == CParser::PARSE_SUCCESS);
 }
 
 /**

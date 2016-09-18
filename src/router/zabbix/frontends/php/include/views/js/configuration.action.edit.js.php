@@ -1,140 +1,107 @@
-<!-- Discovery Actions-->
-<script type="text/x-jquery-tmpl" id="opGroupRowTPL">
-<tr id="opGroupRow_#{groupid}">
-	<td>
-		<input name="new_operation[opgroup][#{groupid}][groupid]" type="hidden" value="#{groupid}" />
-		<span style="font-size: 1.1em; font-weight: bold;"> #{name} </span>
-	</td>
-	<td>
-		<input type="button" class="input link_menu" name="remove" value="<?php echo CHtml::encode(_('Remove')); ?>" onclick="removeOpGroupRow('#{groupid}');" />
-	</td>
-</tr>
-</script>
-
-<script type="text/x-jquery-tmpl" id="opTemplateRowTPL">
-<tr id="opTemplateRow_#{templateid}">
-	<td>
-		<input name="new_operation[optemplate][#{templateid}][templateid]" type="hidden" value="#{templateid}" />
-		<span style="font-size: 1.1em; font-weight: bold;"> #{name} </span>
-	</td>
-	<td>
-		<input type="button" class="input link_menu" name="remove" value="<?php echo CHtml::encode(_('Remove')); ?>" onclick="removeOpTemplateRow('#{templateid}');" />
-	</td>
-</tr>
-</script>
-
 <!-- Trigger Actions-->
 <script type="text/x-jquery-tmpl" id="opmsgUsrgrpRowTPL">
-<tr id="opmsgUsrgrpRow_#{usrgrpid}">
+<tr id="#{row}#{usrgrpid}">
 	<td>
-		<input name="new_operation[opmessage_grp][#{usrgrpid}][usrgrpid]" type="hidden" value="#{usrgrpid}" />
+		<input name="#{field}[opmessage_grp][#{usrgrpid}][usrgrpid]" type="hidden" value="#{usrgrpid}" />
 		<span>#{name}</span>
 	</td>
-	<td>
-		<input type="button" class="input link_menu" name="remove" value="<?php echo CHtml::encode(_('Remove')); ?>" onclick="removeOpmsgUsrgrpRow('#{usrgrpid}');" />
+	<td class="<?= ZBX_STYLE_NOWRAP ?>">
+		<button type="button" class="<?= ZBX_STYLE_BTN_LINK ?>" name="remove" onclick="removeRow('#{row}#{usrgrpid}');"><?= _('Remove') ?></button>
 	</td>
 </tr>
 </script>
 
 <script type="text/x-jquery-tmpl" id="opmsgUserRowTPL">
-<tr id="opmsgUserRow_#{userid}">
+<tr id="#{row}#{id}">
 	<td>
-		<input name="new_operation[opmessage_usr][#{userid}][userid]" type="hidden" value="#{userid}" />
-		<span>#{fullname}</span>
+		<input name="#{field}[opmessage_usr][#{id}][userid]" type="hidden" value="#{id}" />
+		<span>#{name}</span>
 	</td>
-	<td>
-		<input type="button" class="input link_menu" name="remove" value="<?php echo CHtml::encode(_('Remove')); ?>" onclick="removeOpmsgUserRow('#{userid}');" />
+	<td class="<?= ZBX_STYLE_NOWRAP ?>">
+		<button type="button" class="<?= ZBX_STYLE_BTN_LINK ?>" name="remove" onclick="removeRow('#{row}#{id}');"><?= _('Remove') ?></button>
 	</td>
 </tr>
 </script>
 
 <script type="text/x-jquery-tmpl" id="opCmdGroupRowTPL">
-<tr id="opCmdGroupRow_#{groupid}">
+<tr id="#{row}#{groupid}">
 	<td>
-		<input name="new_operation[opcommand_grp][#{groupid}][groupid]" type="hidden" value="#{groupid}" />
-		<input name="new_operation[opcommand_grp][#{groupid}][name]" type="hidden" value="#{name}" />
+		<input name="#{field}[opcommand_grp][#{groupid}][groupid]" type="hidden" value="#{groupid}" />
+		<input name="#{field}[opcommand_grp][#{groupid}][name]" type="hidden" value="#{name}" />
 		#{objectCaption}
 		<span>#{name}</span>
 	</td>
-	<td>
-		<input type="button" class="input link_menu" name="remove" value="<?php echo CHtml::encode(_('Remove')); ?>" onclick="removeOpCmdRow('#{groupid}', 'groupid');" />
+	<td class="<?= ZBX_STYLE_NOWRAP ?>">
+		<button type="button" class="<?= ZBX_STYLE_BTN_LINK ?>" name="remove" onclick="removeRow('#{row}#{groupid}');"><?= _('Remove') ?></button>
 	</td>
 </tr>
 </script>
 
 <script type="text/x-jquery-tmpl" id="opCmdHostRowTPL">
-<tr id="opCmdHostRow_#{hostid}">
+<tr id="#{row}#{hostid}">
 	<td>
-		<input name="new_operation[opcommand_hst][#{hostid}][hostid]" type="hidden" value="#{hostid}" />
-		<input name="new_operation[opcommand_hst][#{hostid}][name]" type="hidden" value="#{name}" />
+		<input name="#{field}[opcommand_hst][#{hostid}][hostid]" type="hidden" value="#{hostid}" />
+		<input name="#{field}[opcommand_hst][#{hostid}][name]" type="hidden" value="#{name}" />
 		#{objectCaption}
 		<span>#{name}</span>
 	</td>
-	<td>
-		<input type="button" class="input link_menu" name="remove" value="<?php echo CHtml::encode(_('Remove')); ?>" onclick="removeOpCmdRow('#{hostid}', 'hostid');" />
+	<td class="<?= ZBX_STYLE_NOWRAP ?>">
+		<button type="button" class="<?= ZBX_STYLE_BTN_LINK ?>" name="remove" onclick="removeRow('#{row}#{hostid}');"><?= _('Remove') ?></button>
 	</td>
 </tr>
 </script>
 
 <script type="text/x-jquery-tmpl" id="opcmdEditFormTPL">
-<div id="opcmdEditForm">
-	<table class="objectgroup border_dotted ui-corner-all inlineblock" style="min-width: 310px;">
-		<tbody>
-		<tr>
-			<td><?php echo _('Target'); ?></td>
-			<td>
-				<select name="opCmdTarget" class="input select">
-					<option value="current"><?php echo CHtml::encode(_('Current host')); ?></option>
-					<option value="host"><?php echo CHtml::encode(_('Host')); ?></option>
-					<option value="hostGroup"><?php echo CHtml::encode(_('Host group')); ?></option>
-				</select>
-			</td>
-			<td style="padding-left: 0;">
-				<div id="opCmdTargetSelect" class="inlineblock">
-					<input name="action" type="hidden" value="#{action}" />
-					<input name="opCmdId" type="hidden" value="#{opcmdid}" />
-				</div>
-			</td>
-		</tr>
-		<tr>
-			<td colspan="3">
-				<input type="button" class="input link_menu" name="save" value="#{operationName}" />&nbsp;
-				<input type="button" class="input link_menu" name="cancel" value="<?php echo CHtml::encode(_('Cancel')); ?>" />
-			</td>
-		</tr>
-		</tbody>
-	</table>
-</div>
-</script>
-
-<!-- Script -->
-<script type="text/x-jquery-tmpl" id="operationTypesTPL">
-<tr id="operationTypeScriptElements" class="hidden">
-	<td><?php echo CHtml::encode(_('Execute on')); ?></td>
-	<td>
-		<div class="objectgroup inlineblock border_dotted ui-corner-all" id="uniqList">
-			<div>
-				<input type="radio" id="execute_on_agent" name="execute_on" value="0" class="input radio">
-				<label for="execute_on_agent"><?php echo CHtml::encode(_('Zabbix agent')); ?></label>
-			</div>
-			<div>
-				<input type="radio" id="execute_on_server" name="execute_on" value="1" class="input radio">
-				<label for="execute_on_server"><?php echo CHtml::encode(_('Zabbix server')); ?></label>
-			</div>
+<li>
+	<div class="<?= ZBX_STYLE_TABLE_FORMS_TD_LEFT ?>"></div>
+	<div class="<?= ZBX_STYLE_TABLE_FORMS_TD_RIGHT ?>">
+		<div id="opcmdEditForm" class="<?= ZBX_STYLE_TABLE_FORMS_SEPARATOR ?>" style="min-width: <?= ZBX_TEXTAREA_STANDARD_WIDTH ?>px;">
+			<table style="width: 100%;">
+				<tbody>
+				<tr>
+					<?= (new CCol([
+							_('Target'),
+							(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
+							new CComboBox('opCmdTarget', null, null, [
+								'current' => _('Current host'),
+								'host' => _('Host'),
+								'hostGroup' => _('Host group')
+							]),
+							(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
+							new CVar('opCmdId', '#{opcmdid}')
+						]))->toString()
+					?>
+				</tr>
+				<tr>
+					<?= (new CCol(
+							new CHorList([
+								(new CButton('save', '#{operationName}'))->addClass(ZBX_STYLE_BTN_LINK),
+								(new CButton('cancel', _('Cancel')))->addClass(ZBX_STYLE_BTN_LINK)
+							])
+						))
+							->setColSpan(3)
+							->toString()
+					?>
+				</tr>
+				</tbody>
+			</table>
 		</div>
-	</td>
-</tr>
+	</div>
+</li>
 </script>
 
 <script type="text/javascript">
 	var ZBX_SCRIPT_TYPES = {
-		script: <?php echo ZBX_SCRIPT_TYPE_CUSTOM_SCRIPT; ?>,
-		ipmi: <?php echo ZBX_SCRIPT_TYPE_IPMI; ?>,
-		telnet: <?php echo ZBX_SCRIPT_TYPE_TELNET; ?>,
-		ssh: <?php echo ZBX_SCRIPT_TYPE_SSH; ?>,
-		userscript: <?php echo ZBX_SCRIPT_TYPE_GLOBAL_SCRIPT; ?>
+		script: <?= ZBX_SCRIPT_TYPE_CUSTOM_SCRIPT ?>,
+		ipmi: <?= ZBX_SCRIPT_TYPE_IPMI ?>,
+		telnet: <?= ZBX_SCRIPT_TYPE_TELNET ?>,
+		ssh: <?= ZBX_SCRIPT_TYPE_SSH ?>,
+		userscript: <?= ZBX_SCRIPT_TYPE_GLOBAL_SCRIPT ?>
 	};
 
+	/**
+	 * @see init.js add.popup event
+	 */
 	function addPopupValues(list) {
 		var i,
 			value,
@@ -151,80 +118,87 @@
 
 			switch (list.object) {
 				case 'userid':
-					if (jQuery('#opmsgUserRow_' + value.userid).length) {
+					if (list.parentId == 'opmsgUserListFooter') {
+						value.field = 'new_operation';
+						value.row = 'opmsgUserRow_';
+					}
+					else {
+						value.field = 'new_recovery_operation';
+						value.row = 'recOpmsgUserRow_';
+					}
+
+					if (jQuery('#' + value.row + value.id).length) {
 						continue;
 					}
 
 					tpl = new Template(jQuery('#opmsgUserRowTPL').html());
-					container = jQuery('#opmsgUserListFooter');
+					container = jQuery('#' + list.parentId);
 					container.before(tpl.evaluate(value));
 					break;
 
 				case 'usrgrpid':
-					if (jQuery('#opmsgUsrgrpRow_' + value.usrgrpid).length) {
+					if (list.parentId == 'opmsgUsrgrpListFooter') {
+						value.field = 'new_operation';
+						value.row = 'opmsgUsrgrpRow_';
+					}
+					else {
+						value.field = 'new_recovery_operation';
+						value.row = 'recOpmsgUsrgrpRow_';
+					}
+
+					if (jQuery('#' + value.row + value.id).length) {
 						continue;
 					}
 
 					tpl = new Template(jQuery('#opmsgUsrgrpRowTPL').html());
-
-					container = jQuery('#opmsgUsrgrpListFooter');
-					container.before(tpl.evaluate(value));
-					break;
-
-				case 'dsc_groupid':
-					if (jQuery('#opGroupRow_' + value.groupid).length) {
-						continue;
-					}
-
-					tpl = new Template(jQuery('#opGroupRowTPL').html());
-					container = jQuery('#opGroupListFooter');
-					container.before(tpl.evaluate(value));
-					break;
-
-				case 'dsc_templateid':
-					if (jQuery('#opTemplateRow_' + value.templateid).length) {
-						continue;
-					}
-
-					tpl = new Template(jQuery('#opTemplateRowTPL').html());
-					container = jQuery('#opTemplateListFooter');
+					container = jQuery('#' + list.parentId);
 					container.before(tpl.evaluate(value));
 					break;
 
 				case 'groupid':
+					if (list.parentId == 'opCmdListFooter') {
+						value.field = 'new_operation';
+						value.row = 'opCmdGroupRow_';
+					}
+					else {
+						value.field = 'new_recovery_operation';
+						value.row = 'recOpCmdGroupRow_';
+					}
+
 					tpl = new Template(jQuery('#opCmdGroupRowTPL').html());
 
-					value.objectCaption = <?php echo CJs::encodeJson(_('Host group').NAME_DELIMITER); ?>;
+					value.objectCaption = <?= CJs::encodeJson(_('Host group').NAME_DELIMITER) ?>;
 
-					container = jQuery('#opCmdListFooter');
-					if (jQuery('#opCmdGroupRow_' + value.groupid).length == 0) {
+					container = jQuery('#' + list.parentId);
+					if (jQuery('#' + value.row + value.groupid).length == 0) {
 						container.before(tpl.evaluate(value));
 					}
 					break;
 
 				case 'hostid':
+					if (list.parentId == 'opCmdListFooter') {
+						value.field = 'new_operation';
+						value.row = 'opCmdHostRow_';
+					}
+					else {
+						value.field = 'new_recovery_operation';
+						value.row = 'recOpCmdHostRow_';
+					}
+
 					tpl = new Template(jQuery('#opCmdHostRowTPL').html());
 
 					if (value.hostid.toString() != '0') {
-						value.objectCaption = <?php echo CJs::encodeJson(_('Host').NAME_DELIMITER); ?>;
+						value.objectCaption = <?= CJs::encodeJson(_('Host').NAME_DELIMITER) ?>;
 					}
 					else {
-						value.name = <?php echo CJs::encodeJson(_('Current host')); ?>;
+						value.name = <?= CJs::encodeJson(_('Current host')) ?>;
 					}
 
-					container = jQuery('#opCmdListFooter');
-					if (jQuery('#opCmdHostRow_' + value.hostid).length == 0) {
+					container = jQuery('#' + list.parentId);
+					if (jQuery('#' + value.row + value.hostid).length == 0) {
 						container.before(tpl.evaluate(value));
 					}
 					break;
-			}
-
-			// IE8 hack to fix inline-block container resizing
-			if (jQuery.browser.msie && parseInt(jQuery.browser.version) == 8) {
-				inlineContainers = container.parents('.inlineblock').filter(function() {
-					return jQuery(this).css('display') == 'inline-block';
-				});
-				inlineContainers.last().addClass('ie8fix-inline').removeClass('ie8fix-inline');
 			}
 		}
 	}
@@ -236,83 +210,89 @@
 		processTypeOfCalculation();
 	}
 
-	function removeOperation(index) {
-		jQuery('#operations_' + index).find('*').remove();
-		jQuery('#operations_' + index).remove();
+	function removeOperation(index, type) {
+		if (type == <?= ACTION_OPERATION ?>) {
+			var row = jQuery('#operations_' + index);
+		}
+		else {
+			var row = jQuery('#recovery_operations_' + index);
+		}
+
+		var rowParent = row.parent();
+
+		row.find('*').remove();
+		row.remove();
 	}
 
 	function removeOperationCondition(index) {
 		jQuery('#opconditions_' + index).find('*').remove();
 		jQuery('#opconditions_' + index).remove();
+
+		processOperationTypeOfCalculation();
 	}
 
-	function removeOpmsgUsrgrpRow(usrgrpid) {
-		jQuery('#opmsgUsrgrpRow_' + usrgrpid).remove();
+	function removeRow(id) {
+		jQuery('#' + id).remove();
 	}
 
-	function removeOpmsgUserRow(userid) {
-		jQuery('#opmsgUserRow_' + userid).remove();
-	}
+	function showOpCmdForm(opCmdId, type) {
+		var objectTPL = {
+				opcmdid: 'new',
+				objectid: 0,
+				name: '',
+				target: 'current',
+				operationName: <?= CJs::encodeJson(_('Add')) ?>
+			},
+			tpl,
+			parentId;
 
-	function removeOpGroupRow(groupid) {
-		jQuery('#opGroupRow_' + groupid).remove();
-	}
+		if (jQuery('#opcmdEditForm').length > 0) {
+			closeOpCmdForm();
+		}
 
-	function removeOpTemplateRow(tplid) {
-		jQuery('#opTemplateRow_' + tplid).remove();
-	}
-
-	function removeOpCmdRow(opCmdRowId, object) {
-		if (object == 'groupid') {
-			jQuery('#opCmdGroupRow_' + opCmdRowId).remove();
+		if (type == <?= ACTION_OPERATION ?>) {
+			parentId = 'opCmdList';
 		}
 		else {
-			jQuery('#opCmdHostRow_' + opCmdRowId).remove();
+			parentId = 'recOpCmdList';
 		}
-	}
-
-	function showOpCmdForm(opCmdId) {
-		var objectTPL = {},
-			tpl;
-
-		if (jQuery('#opcmdEditForm').length > 0 && !closeOpCmdForm()) {
-			return true;
-		}
-
-		objectTPL.action = 'create';
-		objectTPL.opcmdid = 'new';
-		objectTPL.objectid = 0;
-		objectTPL.name = '';
-		objectTPL.target = 'current';
-		objectTPL.operationName = <?php echo CJs::encodeJson(_('Add')); ?>;
 
 		tpl = new Template(jQuery('#opcmdEditFormTPL').html());
-		jQuery('#opCmdList').after(tpl.evaluate(objectTPL));
+		jQuery('#' + parentId).closest('li').after(tpl.evaluate(objectTPL));
 
 		// actions
 		jQuery('#opcmdEditForm')
-			.find('#opCmdTargetSelect')
+			.find('#pCmdTargetSelect')
 			.toggle(objectTPL.target != 'current').end()
-			.find('input[name="save"]').click(saveOpCmdForm).end()
-			.find('input[name="cancel"]').click(closeOpCmdForm).end()
+			.find('button[name="save"]').click(function() {
+				saveOpCmdForm(type)
+			}).end()
+			.find('button[name="cancel"]').click(closeOpCmdForm).end()
 			.find('select[name="opCmdTarget"]').val(objectTPL.target).change(changeOpCmdTarget);
 	}
 
-	function saveOpCmdForm() {
+	function saveOpCmdForm(type) {
 		var objectForm = jQuery('#opcmdEditForm'),
-			object = {};
+			object = {},
+			parentId;
 
-		object.action = jQuery(objectForm).find('input[name="action"]').val();
 		object.target = jQuery(objectForm).find('select[name="opCmdTarget"]').val();
+
+		if (type == <?= ACTION_OPERATION ?>) {
+			parentId = 'opCmdListFooter';
+		}
+		else {
+			parentId = 'recOpCmdListFooter';
+		}
 
 		// host group
 		if (object.target == 'hostGroup') {
-			var values = jQuery('#opCmdTargetObject').multiSelect.getData('opCmdTargetObject');
+			var values = jQuery('#opCmdTargetObject').multiSelect('getData');
 
 			object.opcommand_grpid = jQuery(objectForm).find('input[name="opCmdId"]').val();
 
 			if (empty(values)) {
-				alert(<?php echo CJs::encodeJson(_('You did not specify host group for operation.')); ?>);
+				alert(<?= CJs::encodeJson(_('You did not specify host group for operation.')) ?>);
 
 				return true;
 			}
@@ -327,12 +307,12 @@
 						addPopupValues({
 							object: 'groupid',
 							values: [{
-								action: object.action,
 								target: object.target,
 								opcommand_grpid: object.opcommand_grpid,
 								groupid: data.id,
 								name: data.name
-							}]
+							}],
+							parentId: parentId
 						});
 					}
 				}
@@ -341,19 +321,14 @@
 
 		// host
 		else if (object.target == 'host') {
-			var values = jQuery('#opCmdTargetObject').multiSelect.getData('opCmdTargetObject');
-
-			object.opcommand_hstid = jQuery(objectForm).find('input[name="opCmdId"]').val();
+			var values = jQuery('#opCmdTargetObject').multiSelect('getData');
 
 			if (object.target != 'current' && empty(values)) {
-				alert(<?php echo CJs::encodeJson(_('You did not specify host for operation.')); ?>);
+				alert(<?= CJs::encodeJson(_('You did not specify host for operation.')) ?>);
 
 				return true;
 			}
 			else {
-				if (object.opcommand_hstid == 'new') {
-					object['opcommand_grpid'] = null;
-				}
 				for (var key in values) {
 					var data = values[key];
 
@@ -361,12 +336,11 @@
 						addPopupValues({
 							object: 'hostid',
 							values: [{
-								action: object.action,
 								target: object.target,
-								opcommand_hstid: object.opcommand_hstid,
 								hostid: data.id,
 								name: data.name
-							}]
+							}],
+							parentId: parentId
 						});
 					}
 				}
@@ -375,43 +349,42 @@
 
 		// current
 		else {
-			object.object = 'hostid';
-			object.opcommand_hstid = jQuery(objectForm).find('input[name="opCmdId"]').val();
-			object.hostid = 0;
-			object.name = '';
-
-			if (object.opcommand_hstid == 'new') {
-				delete(object['opcommand_hstid']);
-			}
-
-			addPopupValues({object: object.object, values: [object]});
+			addPopupValues({
+				object: 'hostid',
+				values: [{
+					hostid: 0,
+					name: ''
+				}],
+				parentId: parentId
+			});
 		}
 
-		jQuery(objectForm).remove();
+		closeOpCmdForm();
 	}
 
 	function changeOpCmdTarget() {
-		var opCmdTarget = jQuery('#opcmdEditForm select[name="opCmdTarget"]').val();
+		var opCmdTarget = jQuery('#opcmdEditForm select[name="opCmdTarget"]'),
+			opCmdTargetVal = opCmdTarget.val();
 
-		jQuery('#opCmdTargetSelect').toggle(opCmdTarget != 'current');
+		if (jQuery('#opCmdTargetObject').length > 0) {
+			jQuery('.multiselect-wrapper').remove();
+		}
 
 		// multiselect
-		if (opCmdTarget != 'current') {
-			jQuery('.multiselect-wrapper').remove();
-
+		if (opCmdTargetVal != 'current') {
 			var opCmdTargetObject = jQuery('<div>', {
 				id: 'opCmdTargetObject',
 				'class': 'multiselect'
 			});
 
-			jQuery('#opCmdTargetSelect').append(opCmdTargetObject);
+			opCmdTarget.parent().append(opCmdTargetObject);
 
-			var srctbl = (opCmdTarget == 'host') ? 'hosts' : 'host_groups',
-				srcfld1 = (opCmdTarget == 'host') ? 'hostid' : 'groupid';
+			var srctbl = (opCmdTargetVal == 'host') ? 'hosts' : 'host_groups',
+				srcfld1 = (opCmdTargetVal == 'host') ? 'hostid' : 'groupid';
 
 			jQuery(opCmdTargetObject).multiSelectHelper({
 				id: 'opCmdTargetObject',
-				objectName: (opCmdTarget == 'host') ? 'hosts' : 'hostGroup',
+				objectName: (opCmdTargetVal == 'host') ? 'hosts' : 'hostGroup',
 				name: 'opCmdTargetObjectName[]',
 				objectOptions: {
 					editable: true
@@ -427,179 +400,201 @@
 	}
 
 	function closeOpCmdForm() {
-		jQuery('#opCmdDraft').attr('id', jQuery('#opCmdDraft').attr('origid'));
-		jQuery('#opcmdEditForm').remove();
-
-		return true;
+		jQuery('#opcmdEditForm').closest('li').remove();
 	}
 
-	function showOpTypeForm() {
-		var currentOpType,
-			opTypeFields,
-			showFields = [],
-			fieldClass,
+	function showOpTypeForm(type) {
+		var current_op_type,
+			optype_fieldids = {},
+			fieldId,
 			f;
 
-		if (jQuery('#new_operation_opcommand_type').length == 0) {
+		if (type == <?= ACTION_OPERATION ?>) {
+			var opcommand_type = jQuery('#new_operation_opcommand_type'),
+				opcommand_script = '#new_operation_opcommand_script',
+				opcommand_execute_on = '#new_operation_opcommand_execute_on',
+				opcommand_port = '#new_operation_opcommand_port',
+				opcommand_command = '#new_operation_opcommand_command',
+				opcommand_command_ipmi = '#new_operation_opcommand_command_ipmi',
+				opcommand_authtype = '#new_operation_opcommand_authtype',
+				opcommand_username = '#new_operation_opcommand_username';
+		}
+		else {
+			var opcommand_type = jQuery('#new_recovery_operation_opcommand_type'),
+				opcommand_script = '#new_recovery_operation_opcommand_script',
+				opcommand_execute_on = '#new_recovery_operation_opcommand_execute_on',
+				opcommand_port = '#new_recovery_operation_opcommand_port',
+				opcommand_command = '#new_recovery_operation_opcommand_command',
+				opcommand_command_ipmi = '#new_recovery_operation_opcommand_command_ipmi',
+				opcommand_authtype = '#new_recovery_operation_opcommand_authtype',
+				opcommand_username = '#new_recovery_operation_opcommand_username';
+		}
+
+		if (opcommand_type.length == 0) {
 			return;
 		}
 
-		currentOpType = jQuery('#new_operation_opcommand_type').val();
+		current_op_type = opcommand_type.val();
 
-		opTypeFields = {
-			class_opcommand_userscript: [ZBX_SCRIPT_TYPES.userscript],
-			class_opcommand_execute_on: [ZBX_SCRIPT_TYPES.script],
-			class_opcommand_port: [ZBX_SCRIPT_TYPES.ssh, ZBX_SCRIPT_TYPES.telnet],
-			class_opcommand_command: [ZBX_SCRIPT_TYPES.script, ZBX_SCRIPT_TYPES.ssh, ZBX_SCRIPT_TYPES.telnet],
-			class_opcommand_command_ipmi: [ZBX_SCRIPT_TYPES.ipmi],
-			class_authentication_method: [ZBX_SCRIPT_TYPES.ssh],
-			class_authentication_username: [ZBX_SCRIPT_TYPES.ssh, ZBX_SCRIPT_TYPES.telnet],
-			class_authentication_publickey: [],
-			class_authentication_privatekey: [],
-			class_authentication_password: [ZBX_SCRIPT_TYPES.ssh, ZBX_SCRIPT_TYPES.telnet],
-			class_authentication_passphrase: [ZBX_SCRIPT_TYPES.ssh]
-		};
+		optype_fieldids[opcommand_script] = [ZBX_SCRIPT_TYPES.userscript];
+		optype_fieldids[opcommand_execute_on] = [ZBX_SCRIPT_TYPES.script];
+		optype_fieldids[opcommand_port] = [ZBX_SCRIPT_TYPES.ssh, ZBX_SCRIPT_TYPES.telnet];
+		optype_fieldids[opcommand_command] = [ZBX_SCRIPT_TYPES.script, ZBX_SCRIPT_TYPES.ssh, ZBX_SCRIPT_TYPES.telnet];
+		optype_fieldids[opcommand_command_ipmi] = [ZBX_SCRIPT_TYPES.ipmi];
+		optype_fieldids[opcommand_authtype] = [ZBX_SCRIPT_TYPES.ssh];
+		optype_fieldids[opcommand_username] = [ZBX_SCRIPT_TYPES.ssh, ZBX_SCRIPT_TYPES.telnet];
 
-		for (fieldClass in opTypeFields) {
-			jQuery('#operationlist .' + fieldClass).toggleClass('hidden', true).find(':input').prop('disabled', true);
+		for (fieldId in optype_fieldids) {
+			var show = false;
 
-			for (f = 0; f < opTypeFields[fieldClass].length; f++) {
-				if (currentOpType == opTypeFields[fieldClass][f]) {
-					showFields.push(fieldClass);
+			for (f = 0; f < optype_fieldids[fieldId].length; f++) {
+				if (current_op_type == optype_fieldids[fieldId][f]) {
+					show = true;
 				}
 			}
+
+			jQuery(fieldId)
+				.closest('li')
+				.toggle(show)
+				.find(':input')
+				.prop('disabled', !show);
 		}
 
-		for (f = 0; f < showFields.length; f++) {
-			jQuery('#operationlist .' + showFields[f]).toggleClass('hidden', false).find(':input').prop('disabled', false);
-		}
-
-		if (jQuery.inArray('class_authentication_method', showFields) !== -1) {
-			showOpTypeAuth();
-		}
+		showOpTypeAuth(type);
 	}
 
-	function showOpTypeAuth() {
-		var currentOpTypeAuth = parseInt(jQuery('#new_operation_opcommand_authtype').val(), 10);
+	function showOpTypeAuth(type) {
+		var show_password = false,
+			show_publickey = false;
 
-		if (currentOpTypeAuth === <?php echo ITEM_AUTHTYPE_PASSWORD; ?>) {
-			jQuery('#operationlist .class_authentication_publickey').toggleClass('hidden', true);
-			jQuery('#new_operation_opcommand_publickey').prop('disabled', true);
-			jQuery('#operationlist .class_authentication_privatekey').toggleClass('hidden', true);
-			jQuery('#new_operation_opcommand_privatekey').prop('disabled', true);
-			jQuery('.class_authentication_password').toggleClass('hidden', false);
-			jQuery('.class_authentication_passphrase').toggleClass('hidden', true);
-			jQuery('#new_operation_opcommand_password').prop('disabled', false);
-			jQuery('#new_operation_opcommand_passphrase').prop('disabled', true);
+		if (type == <?= ACTION_OPERATION ?>) {
+			var current_op_type = parseInt(jQuery('#new_operation_opcommand_type').val(), 10),
+				opcommand_authtype = 'new_operation_opcommand_authtype',
+				opcommand_password = 'new_operation_opcommand_password',
+				opcommand_publickey = 'new_operation_opcommand_publickey',
+				opcommand_privatekey = 'new_operation_opcommand_privatekey',
+				opcommand_passphrase = 'new_operation_opcommand_passphrase';
 		}
 		else {
-			jQuery('#operationlist .class_authentication_publickey').toggleClass('hidden', false).prop('disabled', false);
-			jQuery('#new_operation_opcommand_publickey').prop('disabled', false);
-			jQuery('#operationlist .class_authentication_privatekey').toggleClass('hidden', false).prop('disabled', false);
-			jQuery('#new_operation_opcommand_privatekey').prop('disabled', false);
-			jQuery('.class_authentication_password').toggleClass('hidden', true);
-			jQuery('.class_authentication_passphrase').toggleClass('hidden', false);
-			jQuery('#new_operation_opcommand_password').prop('disabled', true);
-			jQuery('#new_operation_opcommand_passphrase').prop('disabled', false);
+			var current_op_type = parseInt(jQuery('#new_recovery_operation_opcommand_type').val(), 10),
+				opcommand_authtype = 'new_recovery_operation_opcommand_authtype',
+				opcommand_password = 'new_recovery_operation_opcommand_password',
+				opcommand_publickey = 'new_recovery_operation_opcommand_publickey',
+				opcommand_privatekey = 'new_recovery_operation_opcommand_privatekey',
+				opcommand_passphrase = 'new_recovery_operation_opcommand_passphrase';
 		}
+
+		if (current_op_type === <?= ZBX_SCRIPT_TYPE_SSH ?>) {
+			var current_op_type_auth = parseInt(jQuery('#' + opcommand_authtype).val(), 10);
+
+			show_password = (current_op_type_auth === <?= ITEM_AUTHTYPE_PASSWORD ?>);
+			show_publickey = !show_password;
+		}
+		else if (current_op_type === <?= ZBX_SCRIPT_TYPE_TELNET ?>) {
+			show_password = true;
+		}
+
+		jQuery('#' + opcommand_password)
+			.closest('li')
+			.toggle(show_password)
+			.find(':input')
+			.prop('disabled', !show_password);
+		jQuery('#' + opcommand_publickey + ', #' + opcommand_privatekey + ', #' + opcommand_passphrase)
+			.closest('li')
+			.toggle(show_publickey)
+			.find(':input')
+			.prop('disabled', !show_publickey);
 	}
 
 	function processTypeOfCalculation() {
-		var count = jQuery('#conditionTable tr').length - 1;
+		var show_formula = (jQuery('#evaltype').val() == <?= CONDITION_EVAL_TYPE_EXPRESSION ?>),
+			labels = jQuery('#conditionTable .label');
 
-		if (count > 1) {
-			jQuery('#conditionRow').css('display', '');
+		jQuery('#evaltype').closest('li').toggle(labels.length > 1);
+		jQuery('#conditionLabel').toggle(!show_formula);
+		jQuery('#formula').toggle(show_formula);
 
-			var groupOperator = '',
-				globalOperator = '',
-				str = '';
+		if (labels.length > 1) {
+			var conditions = [];
 
-			if (jQuery('#evaltype').val() == <?php echo ACTION_EVAL_TYPE_AND; ?>) {
-				groupOperator = <?php echo CJs::encodeJson(_('and')); ?>;
-				globalOperator = <?php echo CJs::encodeJson(_('and')); ?>;
-			}
-			else if (jQuery('#evaltype').val() == <?php echo ACTION_EVAL_TYPE_OR; ?>) {
-				groupOperator = <?php echo CJs::encodeJson(_('or')); ?>;
-				globalOperator = <?php echo CJs::encodeJson(_('or')); ?>;
-			}
-			else {
-				groupOperator = <?php echo CJs::encodeJson(_('or')); ?>;
-				globalOperator = <?php echo CJs::encodeJson(_('and')); ?>;
-			}
+			labels.each(function(index, label) {
+				label = jQuery(label);
 
-			var conditionTypeHold = '';
-
-			jQuery('#conditionTable tr').not('.header').each(function() {
-				var conditionType = jQuery(this).find('.label').data('conditiontype');
-
-				if (empty(str)) {
-					str = ' (' + jQuery(this).find('.label').data('label');
-					conditionTypeHold = conditionType;
-				}
-				else {
-					if (conditionType != conditionTypeHold) {
-						str += ') ' + globalOperator + ' (' + jQuery(this).find('.label').data('label');
-						conditionTypeHold = conditionType;
-					}
-					else {
-						str += ' ' + groupOperator + ' ' + jQuery(this).find('.label').data('label');
-					}
-				}
+				conditions.push({
+					id: label.data('formulaid'),
+					type: label.data('conditiontype')
+				});
 			});
-			str += ')';
 
-			jQuery('#conditionLabel').html(str);
-		}
-		else {
-			jQuery('#conditionRow').css('display', 'none');
+			jQuery('#conditionLabel').html(getConditionFormula(conditions, +jQuery('#evaltype').val()));
 		}
 	}
 
-	function addDiscoveryTemplates() {
-		var values = jQuery('#discoveryTemplates').multiSelect.getData('discoveryTemplates');
+	function processOperationTypeOfCalculation() {
+		var labels = jQuery('#operationConditionTable .label');
 
-		for (var key in values) {
-			var data = values[key];
+		jQuery('#operationEvaltype').closest('li').toggle(labels.length > 1);
 
-			if (!empty(data.id)) {
-				addPopupValues({
-					object: 'dsc_templateid',
-					values: [{
-						templateid: data.id,
-						name: data.name
-					}]
+		if (labels.length > 1) {
+			var conditions = [];
+
+			labels.each(function(index, label) {
+				label = jQuery(label);
+
+				conditions.push({
+					id: label.data('formulaid'),
+					type: label.data('conditiontype')
 				});
-			}
+			});
+
+			jQuery('#operationConditionLabel').html(getConditionFormula(conditions, +jQuery('#operationEvaltype').val()));
 		}
-
-		jQuery('#dsc_templateid').multiSelect.clean();
-	}
-
-	function addDiscoveryHostGroup() {
-		var values = jQuery('#discoveryHostGroup').multiSelect.getData('discoveryHostGroup');
-
-		for (var key in values) {
-			var data = values[key];
-
-			if (!empty(data.id)) {
-				addPopupValues({
-					object: 'dsc_groupid',
-					values: [{
-						groupid: data.id,
-						name: data.name
-					}]
-				});
-			}
-		}
-
-		jQuery('#dsc_groupid').multiSelect.clean();
 	}
 
 	jQuery(document).ready(function() {
+		jQuery('#new_operation_opmessage_default_msg').on('change', function() {
+			var default_message = jQuery(this).is(':checked');
+
+			jQuery('#new_operation_opmessage_subject, #new_operation_opmessage_message')
+				.closest('li')
+				.toggle(!default_message);
+		});
+
+		jQuery('#new_recovery_operation_opmessage_default_msg').on('change', function() {
+			var default_message = jQuery(this).is(':checked');
+
+			jQuery('#new_recovery_operation_opmessage_subject, #new_recovery_operation_opmessage_message')
+				.closest('li')
+				.toggle(!default_message);
+		});
+
+		jQuery('#new_operation_opmessage_default_msg, #new_recovery_operation_opmessage_default_msg').trigger('change');
+
 		// clone button
 		jQuery('#clone').click(function() {
 			jQuery('#actionid, #delete, #clone').remove();
-			jQuery('#cancel').addClass('ui-corner-left');
+			jQuery('#update')
+				.text(<?= CJs::encodeJson(_('Add')) ?>)
+				.attr({id: 'add', name: 'add'});
+
+			// Remove operations IDs.
+			var operationid_RegExp = /operations\[\d+\]\[operationid\]/;
+			jQuery('input[name^=operations]').each(function() {
+				// Intentional usage of JS Prototype.
+				if ($(this).getAttribute('name').match(operationid_RegExp)) {
+					$(this).remove();
+				}
+			});
+
+			// Remove recovery operations IDs
+			var recovery_operationid_RegExp = /recovery_operations\[\d+\]\[operationid\]/;
+			jQuery('input[name^=recovery_operations]').each(function() {
+				// Intentional usage of JS Prototype.
+				if ($(this).getAttribute('name').match(recovery_operationid_RegExp)) {
+					$(this).remove();
+				}
+			});
+
 			jQuery('#form').val('clone');
 			jQuery('#name').focus();
 		});
@@ -609,12 +604,22 @@
 		});
 
 		// new operation form command type
-		showOpTypeForm();
+		showOpTypeForm(<?= ACTION_OPERATION ?>);
+		showOpTypeForm(<?= ACTION_RECOVERY_OPERATION ?>);
 
-		jQuery('#select_opcommand_script').click(function() {
-			PopUp('popup.php?srctbl=scripts&srcfld1=scriptid&srcfld2=name&dstfrm=action.edit&dstfld1=new_operation_opcommand_scriptid&dstfld2=new_operation_opcommand_script', 480, 720);
+		jQuery('#select_operation_opcommand_script').click(function() {
+			PopUp('popup.php?srctbl=scripts&srcfld1=scriptid&srcfld2=name&dstfrm=action.edit'
+				+ '&dstfld1=new_operation_opcommand_scriptid&dstfld2=new_operation_opcommand_script'
+			);
+		});
+
+		jQuery('#select_recovery_operation_opcommand_script').click(function() {
+			PopUp('popup.php?srctbl=scripts&srcfld1=scriptid&srcfld2=name&dstfrm=action.edit'
+				+ '&dstfld1=new_recovery_operation_opcommand_scriptid&dstfld2=new_recovery_operation_opcommand_script'
+			);
 		});
 
 		processTypeOfCalculation();
+		processOperationTypeOfCalculation();
 	});
 </script>

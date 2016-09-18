@@ -23,6 +23,7 @@
 #include "proxy.h"
 
 #include "proxyconfig.h"
+#include "../../libs/zbxcrypto/tls_tcp_active.h"
 
 /******************************************************************************
  *                                                                            *
@@ -34,7 +35,7 @@
  * Author: Alexander Vladishev                                                *
  *                                                                            *
  ******************************************************************************/
-void	send_proxyconfig(zbx_sock_t *sock, struct zbx_json_parse *jp)
+void	send_proxyconfig(zbx_socket_t *sock, struct zbx_json_parse *jp)
 {
 	const char	*__function_name = "send_proxyconfig";
 	zbx_uint64_t	proxy_hostid;
@@ -43,11 +44,11 @@ void	send_proxyconfig(zbx_sock_t *sock, struct zbx_json_parse *jp)
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __function_name);
 
-	if (SUCCEED != get_active_proxy_id(jp, &proxy_hostid, host, &error))
+	if (SUCCEED != get_active_proxy_id(jp, &proxy_hostid, host, sock, &error))
 	{
 		zbx_send_response(sock, FAIL, error, CONFIG_TIMEOUT);
-		zabbix_log(LOG_LEVEL_WARNING, "proxy configuration request from active proxy on \"%s\" failed: %s",
-				get_ip_by_socket(sock), error);
+		zabbix_log(LOG_LEVEL_WARNING, "cannot parse proxy configuration data request from active proxy at"
+				" \"%s\": %s", sock->peer, error);
 		goto out;
 	}
 
@@ -58,20 +59,20 @@ void	send_proxyconfig(zbx_sock_t *sock, struct zbx_json_parse *jp)
 	if (SUCCEED != get_proxyconfig_data(proxy_hostid, &j, &error))
 	{
 		zbx_send_response(sock, FAIL, error, CONFIG_TIMEOUT);
-		zabbix_log(LOG_LEVEL_WARNING, "cannot collect proxy configuration: %s", error);
+		zabbix_log(LOG_LEVEL_WARNING, "cannot collect configuration data for proxy \"%s\" at \"%s\": %s",
+				host, sock->peer, error);
 		goto clean;
 	}
 
-	zabbix_log(LOG_LEVEL_WARNING, "sending configuration data to proxy \"%s\", datalen " ZBX_FS_SIZE_T,
-			host, (zbx_fs_size_t)j.buffer_size);
+	zabbix_log(LOG_LEVEL_WARNING, "sending configuration data to proxy \"%s\" at \"%s\", datalen " ZBX_FS_SIZE_T,
+			host, sock->peer, (zbx_fs_size_t)j.buffer_size);
 	zabbix_log(LOG_LEVEL_DEBUG, "%s", j.buffer);
 
-	alarm(CONFIG_TIMEOUT);
-
-	if (SUCCEED != zbx_tcp_send(sock, j.buffer))
-		zabbix_log(LOG_LEVEL_WARNING, "cannot send configuration: %s", zbx_tcp_strerror());
-
-	alarm(0);
+	if (SUCCEED != zbx_tcp_send_to(sock, j.buffer, CONFIG_TRAPPER_TIMEOUT))
+	{
+		zabbix_log(LOG_LEVEL_WARNING, "cannot send configuration data to proxy \"%s\" at \"%s\": %s",
+				host, sock->peer, zbx_socket_strerror());
+	}
 clean:
 	zbx_json_free(&j);
 out:
@@ -89,7 +90,7 @@ out:
  * Author: Alexander Vladishev                                                *
  *                                                                            *
  ******************************************************************************/
-void	recv_proxyconfig(zbx_sock_t *sock, struct zbx_json_parse *jp)
+void	recv_proxyconfig(zbx_socket_t *sock, struct zbx_json_parse *jp)
 {
 	const char		*__function_name = "recv_proxyconfig";
 	struct zbx_json_parse	jp_data;
@@ -99,14 +100,17 @@ void	recv_proxyconfig(zbx_sock_t *sock, struct zbx_json_parse *jp)
 
 	if (SUCCEED != (ret = zbx_json_brackets_by_name(jp, ZBX_PROTO_TAG_DATA, &jp_data)))
 	{
-		zabbix_log(LOG_LEVEL_WARNING, "invalid proxy configuration data: %s", zbx_json_strerror());
+		zabbix_log(LOG_LEVEL_WARNING, "cannot parse proxy configuration data received from server at"
+				" \"%s\": %s", sock->peer, zbx_json_strerror());
 		zbx_send_response(sock, ret, zbx_json_strerror(), CONFIG_TIMEOUT);
-	}
-	else
-	{
-		process_proxyconfig(&jp_data);
-		zbx_send_response(sock, ret, NULL, CONFIG_TIMEOUT);
+		goto out;
 	}
 
+	if (SUCCEED != check_access_passive_proxy(sock, ZBX_SEND_RESPONSE, "configuration update"))
+		goto out;
+
+	process_proxyconfig(&jp_data);
+	zbx_send_response(sock, ret, NULL, CONFIG_TIMEOUT);
+out:
 	zabbix_log(LOG_LEVEL_DEBUG, "End of %s()", __function_name);
 }

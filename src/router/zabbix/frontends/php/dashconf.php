@@ -26,32 +26,37 @@ require_once dirname(__FILE__).'/include/html.inc.php';
 
 $page['title'] = _('Dashboard configuration');
 $page['file'] = 'dashconf.php';
-$page['hist_arg'] = array();
-$page['scripts'] = array('multiselect.js');
+$page['scripts'] = ['multiselect.js'];
 $page['type'] = detect_page_type(PAGE_TYPE_HTML);
+
+ob_start();
 
 require_once dirname(__FILE__).'/include/page_header.php';
 
 //	VAR						 TYPE		 OPTIONAL FLAGS	VALIDATION		EXCEPTION
-$fields = array(
-	'filterEnable' =>	array(T_ZBX_INT, O_OPT, P_SYS,	null,			null),
-	'grpswitch' =>		array(T_ZBX_INT, O_OPT, P_SYS,	BETWEEN(0, 1),	null),
-	'groupids' =>		array(T_ZBX_INT, O_OPT, P_SYS,	null,			null),
-	'hidegroupids' =>	array(T_ZBX_INT, O_OPT, P_SYS,	null,			null),
-	'trgSeverity' =>	array(T_ZBX_INT, O_OPT, P_SYS,	null,			null),
-	'maintenance' =>	array(T_ZBX_INT, O_OPT, P_SYS,	BETWEEN(0, 1),	null),
-	'extAck' =>			array(T_ZBX_INT, O_OPT, P_SYS,	null,			null),
-	'form_refresh' =>	array(T_ZBX_INT, O_OPT, P_SYS,	null,			null),
-	'save' =>			array(T_ZBX_STR, O_OPT, P_SYS,	null,			null)
-);
+$fields = [
+	'filterEnable' =>				[T_ZBX_INT, O_OPT, P_SYS,			null,			null],
+	'grpswitch' =>					[T_ZBX_INT, O_OPT, P_SYS,			BETWEEN(0, 1),	null],
+	'groupids' =>					[T_ZBX_INT, O_OPT, P_SYS,			null,			null],
+	'groupids_subgroupids' =>		[T_ZBX_INT, O_OPT, P_SYS,			null,			null],
+	'hidegroupids' =>				[T_ZBX_INT, O_OPT, P_SYS,			null,			null],
+	'hidegroupids_subgroupids' =>	[T_ZBX_INT, O_OPT, P_SYS,			null,			null],
+	'trgSeverity' =>				[T_ZBX_INT, O_OPT, P_SYS,			null,			null],
+	'trigger_name' =>				[T_ZBX_STR, O_OPT, P_SYS,			null,			null],
+	'maintenance' =>				[T_ZBX_INT, O_OPT, P_SYS,			BETWEEN(0, 1),	null],
+	'extAck' =>						[T_ZBX_INT, O_OPT, P_SYS,			null,			null],
+	'form_refresh' =>				[T_ZBX_INT, O_OPT, P_SYS,			null,			null],
+	'update' =>						[T_ZBX_STR, O_OPT, P_SYS|P_ACT,	null,			null],
+	'cancel' =>						[T_ZBX_STR, O_OPT, P_SYS,			null,			null]
+];
 check_fields($fields);
 
 /*
  * Actions
  */
-if (isset($_REQUEST['save'])) {
+if (hasRequest('update')) {
 	// filter
-	$filterEnable = get_request('filterEnable', 0);
+	$filterEnable = getRequest('filterEnable', 0);
 	CProfile::update('web.dashconf.filter.enable', $filterEnable, PROFILE_TYPE_INT);
 
 	if ($filterEnable == 1) {
@@ -60,58 +65,89 @@ if (isset($_REQUEST['save'])) {
 
 		if ($_REQUEST['grpswitch'] == 1) {
 			// show groups
-			$groupIds = get_request('groupids', array());
+			$groupids = getRequest('groupids', []);
+			$subgroupids = getRequest('groupids_subgroupids', []);
 
-			CFavorite::remove('web.dashconf.groups.groupids');
-			foreach ($groupIds as $groupId) {
-				CFavorite::add('web.dashconf.groups.groupids', $groupId);
+			$result = true;
+
+			DBstart();
+
+			$result &= CFavorite::remove('web.dashconf.groups.groupids');
+			$result &= CFavorite::remove('web.dashconf.groups.subgroupids');
+
+			foreach ($groupids as $groupid) {
+				$result &= CFavorite::add('web.dashconf.groups.groupids', $groupid);
+			}
+
+			foreach ($subgroupids as $groupid) {
+				$result &= CFavorite::add('web.dashconf.groups.subgroupids', $groupid);
 			}
 
 			// hide groups
-			$hideGroupIds = get_request('hidegroupids', array());
+			$hide_groupids = getRequest('hidegroupids', []);
+			$hide_subgroupids = getRequest('hidegroupids_subgroupids', []);
 
-			CFavorite::remove('web.dashconf.groups.hide.groupids');
-			foreach ($hideGroupIds as $hideGroupId) {
-				CFavorite::add('web.dashconf.groups.hide.groupids', $hideGroupId);
+			$result &= CFavorite::remove('web.dashconf.groups.hide.groupids');
+			$result &= CFavorite::remove('web.dashconf.groups.hide.subgroupids');
+
+			foreach ($hide_groupids as $groupid) {
+				$result &= CFavorite::add('web.dashconf.groups.hide.groupids', $groupid);
 			}
+
+			foreach ($hide_subgroupids as $groupid) {
+				$result &= CFavorite::add('web.dashconf.groups.hide.subgroupids', $groupid);
+			}
+
+			DBend($result);
 		}
 
 		// hosts
-		$_REQUEST['maintenance'] = get_request('maintenance', 0);
-		CProfile::update('web.dashconf.hosts.maintenance', $_REQUEST['maintenance'], PROFILE_TYPE_INT);
+		CProfile::update('web.dashconf.hosts.maintenance', getRequest('maintenance', 0), PROFILE_TYPE_INT);
 
 		// triggers
-		$_REQUEST['trgSeverity'] = get_request('trgSeverity', array());
-		$_REQUEST['extAck'] = get_request('extAck', 0);
+		CProfile::update('web.dashconf.triggers.severity',
+			implode(';', array_keys(getRequest('trgSeverity', []))), PROFILE_TYPE_STR
+		);
+		CProfile::update('web.dashconf.triggers.name', getRequest('trigger_name', ''), PROFILE_TYPE_STR);
 
-		CProfile::update('web.dashconf.triggers.severity', implode(';', array_keys($_REQUEST['trgSeverity'])), PROFILE_TYPE_STR);
-		CProfile::update('web.dashconf.events.extAck', $_REQUEST['extAck'], PROFILE_TYPE_INT);
+		// events
+		$config = select_config();
+		if ($config['event_ack_enable']) {
+			CProfile::update('web.dashconf.events.extAck', getRequest('extAck', 0), PROFILE_TYPE_INT);
+		}
 	}
 
-	jsRedirect('dashboard.php');
+	jSredirect(ZBX_DEFAULT_URL);
 }
+elseif (hasRequest('cancel')) {
+	ob_end_clean();
+	redirect(ZBX_DEFAULT_URL);
+}
+
+ob_end_flush();
 
 /*
  * Display
  */
-$data = array(
+$data = [
 	'config' => select_config()
-);
+];
 
-if (isset($_REQUEST['form_refresh'])) {
-	$data['isFilterEnable'] = get_request('filterEnable', 0);
-	$data['maintenance'] = get_request('maintenance', 0);
-	$data['extAck'] = get_request('extAck', 0);
+if (hasRequest('form_refresh')) {
+	$data['isFilterEnable'] = getRequest('filterEnable', 0);
+	$data['maintenance'] = getRequest('maintenance', 0);
+	$data['extAck'] = getRequest('extAck', 0);
 
-	$data['severity'] = get_request('trgSeverity', array());
+	$data['severity'] = getRequest('trgSeverity', []);
 	$data['severity'] = array_keys($data['severity']);
+	$data['trigger_name'] = getRequest('trigger_name', '');
 
 	// groups
-	$data['grpswitch'] = get_request('grpswitch', 0);
-	$data['groupIds'] = get_request('groupids', array());
-	$data['groupIds'] = zbx_toHash($data['groupIds']);
-	$data['hideGroupIds'] = get_request('hidegroupids', array());
-	$data['hideGroupIds'] = zbx_toHash($data['hideGroupIds']);
+	$data['grpswitch'] = getRequest('grpswitch', 0);
+	$groupids = getRequest('groupids', []);
+	$subgroupids = getRequest('groupids_subgroupids', []);
+	$hide_groupids = getRequest('hidegroupids', []);
+	$hide_subgroupids = getRequest('hidegroupids_subgroupids', []);
 }
 else {
 	$data['isFilterEnable'] = CProfile::get('web.dashconf.filter.enable', 0);
@@ -119,73 +155,73 @@ else {
 	$data['extAck'] = CProfile::get('web.dashconf.events.extAck', 0);
 
 	$data['severity'] = CProfile::get('web.dashconf.triggers.severity', '0;1;2;3;4;5');
-	$data['severity'] = zbx_empty($data['severity']) ? array() : explode(';', $data['severity']);
+	$data['severity'] = zbx_empty($data['severity']) ? [] : explode(';', $data['severity']);
+	$data['trigger_name'] = CProfile::get('web.dashconf.triggers.name', '');
 
 	// groups
 	$data['grpswitch'] = CProfile::get('web.dashconf.groups.grpswitch', 0);
-	$data['groupIds'] = CFavorite::get('web.dashconf.groups.groupids');
-	$data['groupIds'] = zbx_objectValues($data['groupIds'], 'value');
-	$data['groupIds'] = zbx_toHash($data['groupIds']);
-	$data['hideGroupIds'] = CFavorite::get('web.dashconf.groups.hide.groupids');
-	$data['hideGroupIds'] = zbx_objectValues($data['hideGroupIds'], 'value');
-	$data['hideGroupIds'] = zbx_toHash($data['hideGroupIds']);
+	$groupids = zbx_objectValues(CFavorite::get('web.dashconf.groups.groupids'), 'value');
+	$subgroupids = zbx_objectValues(CFavorite::get('web.dashconf.groups.subgroupids'), 'value');
+	$hide_groupids = zbx_objectValues(CFavorite::get('web.dashconf.groups.hide.groupids'), 'value');
+	$hide_subgroupids = zbx_objectValues(CFavorite::get('web.dashconf.groups.hide.subgroupids'), 'value');
 }
 
 $data['severity'] = zbx_toHash($data['severity']);
-$data['severities'] = array(
+$data['severities'] = [
 	TRIGGER_SEVERITY_NOT_CLASSIFIED,
 	TRIGGER_SEVERITY_INFORMATION,
 	TRIGGER_SEVERITY_WARNING,
 	TRIGGER_SEVERITY_AVERAGE,
 	TRIGGER_SEVERITY_HIGH,
 	TRIGGER_SEVERITY_DISASTER
-);
+];
 
 if ($data['grpswitch']) {
 	// show groups
-	$data['groups'] = API::HostGroup()->get(array(
-		'nodeids' => get_current_nodeid(true),
-		'groupids' => $data['groupIds'],
-		'output' => array('groupid', 'name')
-	));
+	$data['groups'] = API::HostGroup()->get([
+		'output' => ['groupid', 'name'],
+		'groupids' => $groupids,
+		'preservekeys' => true
+	]);
 
-	foreach ($data['groups'] as &$group) {
-		$group['nodename'] = get_node_name_by_elid($group['groupid'], true, ': ');
+	foreach ($subgroupids as $groupid) {
+		if (array_key_exists($groupid, $data['groups'])) {
+			$data['groups'][$groupid]['name'] .= '/*';
+		}
 	}
-	unset($group);
 
-	CArrayHelper::sort($data['groups'], array(
-		array('field' => 'nodename', 'order' => ZBX_SORT_UP),
-		array('field' => 'name', 'order' => ZBX_SORT_UP)
-	));
+	CArrayHelper::sort($data['groups'], [
+		['field' => 'name', 'order' => ZBX_SORT_UP]
+	]);
 
 	foreach ($data['groups'] as &$group) {
 		$group['id'] = $group['groupid'];
-		$group['prefix'] = $group['nodename'];
-		unset($group['groupid'], $group['nodename']);
+
+		unset($group['groupid']);
 	}
 	unset($group);
 
 	// hide groups
-	$data['hideGroups'] = API::HostGroup()->get(array(
-		'nodeids' => get_current_nodeid(true),
-		'groupids' => $data['hideGroupIds'],
-		'output' => array('groupid', 'name')
-	));
-	foreach ($data['hideGroups'] as &$hideGroup) {
-		$hideGroup['nodename'] = get_node_name_by_elid($hideGroup['groupid'], true, ': ');
-	}
-	unset($hideGroup);
+	$data['hideGroups'] = API::HostGroup()->get([
+		'output' => ['groupid', 'name'],
+		'groupids' => $hide_groupids,
+		'preservekeys' => true
+	]);
 
-	CArrayHelper::sort($data['hideGroups'], array(
-		array('field' => 'nodename', 'order' => ZBX_SORT_UP),
-		array('field' => 'name', 'order' => ZBX_SORT_UP)
-	));
+	foreach ($hide_subgroupids as $groupid) {
+		if (array_key_exists($groupid, $data['hideGroups'])) {
+			$data['hideGroups'][$groupid]['name'] .= '/*';
+		}
+	}
+
+	CArrayHelper::sort($data['hideGroups'], [
+		['field' => 'name', 'order' => ZBX_SORT_UP]
+	]);
 
 	foreach ($data['hideGroups'] as &$group) {
 		$group['id'] = $group['groupid'];
-		$group['prefix'] = $group['nodename'];
-		unset($group['groupid'], $group['nodename']);
+
+		unset($group['groupid']);
 	}
 	unset($group);
 }

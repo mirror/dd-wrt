@@ -19,82 +19,91 @@
 **/
 
 
-$applicationWidget = new CWidget();
-
-$createForm = new CForm('get');
-$createForm->cleanItems();
-$createForm->addVar('hostid', $this->data['hostid']);
-
-// append host summary to widget header
-if (empty($this->data['hostid'])) {
-	$createButton = new CSubmit('form', _('Create application (select host first)'));
-	$createButton->setEnabled(false);
-	$createForm->addItem($createButton);
+if ($this->data['hostid'] == 0) {
+	$create_button = (new CSubmit('form', _('Create application (select host first)')))->setEnabled(false);
 }
 else {
-	$createForm->addItem(new CSubmit('form', _('Create application')));
-
-	$applicationWidget->addItem(get_header_host_table('applications', $this->data['hostid']));
+	$create_button = new CSubmit('form', _('Create application'));
 }
 
-$applicationWidget->addPageHeader(_('CONFIGURATION OF APPLICATIONS'), $createForm);
-
-// create widget header
-$filterForm = new CForm('get');
-$filterForm->addItem(array(_('Group').SPACE, $this->data['pageFilter']->getGroupsCB(true)));
-$filterForm->addItem(array(SPACE._('Host').SPACE, $this->data['pageFilter']->getHostsCB(true)));
-
-$applicationWidget->addHeader(_('Applications'), $filterForm);
-$applicationWidget->addHeaderRowNumber();
+$widget = (new CWidget())
+	->setTitle(_('Applications'))
+	->setControls((new CForm('get'))
+		->cleanItems()
+		->addItem((new CList())
+			->addItem([_('Group'), SPACE, $this->data['pageFilter']->getGroupsCB()])
+			->addItem([_('Host'), SPACE, $this->data['pageFilter']->getHostsCB()])
+			->addItem($create_button)
+		)
+	)
+	->addItem(get_header_host_table('applications', $this->data['hostid']));
 
 // create form
-$applicationForm = new CForm();
-$applicationForm->setName('applicationForm');
-$applicationForm->addVar('groupid', $this->data['groupid']);
-$applicationForm->addVar('hostid', $this->data['hostid']);
+$form = (new CForm())->setName('application_form');
 
 // create table
-$applicationTable = new CTableInfo(_('No applications found.'));
-$applicationTable->setHeader(array(
-	new CCheckBox('all_applications', null, "checkAll('".$applicationForm->getName()."', 'all_applications', 'applications');"),
-	$this->data['displayNodes'] ? _('Node') : null,
-	($this->data['hostid'] > 0) ? null : _('Host'),
-	make_sorting_header(_('Application'), 'name'),
-	_('Show')
-));
+$applicationTable = (new CTableInfo())
+	->setHeader([
+		(new CColHeader(
+			(new CCheckBox('all_applications'))
+				->onClick("checkAll('".$form->getName()."', 'all_applications', 'applications');")
+		))->addClass(ZBX_STYLE_CELL_WIDTH),
+		($this->data['hostid'] > 0) ? null : _('Host'),
+		make_sorting_header(_('Application'), 'name', $this->data['sort'], $this->data['sortorder']),
+		_('Items'),
+		$data['showInfoColumn'] ? _('Info') : null
+	]);
+
+$current_time = time();
 
 foreach ($this->data['applications'] as $application) {
+	$info_icons = [];
+
 	// inherited app, display the template list
 	if ($application['templateids'] && !empty($application['sourceTemplates'])) {
-		$name = array();
+		$name = [];
 
-		CArrayHelper::sort($application['sourceTemplates'], array('name'));
+		CArrayHelper::sort($application['sourceTemplates'], ['name']);
 
 		foreach ($application['sourceTemplates'] as $template) {
-			$name[] = new CLink($template['name'], 'applications.php?hostid='.$template['hostid'], 'unknown');
+			$name[] = (new CLink($template['name'], 'applications.php?hostid='.$template['hostid']))
+				->addClass(ZBX_STYLE_LINK_ALT)
+				->addClass(ZBX_STYLE_GREY);
 			$name[] = ', ';
 		}
 		array_pop($name);
 		$name[] = NAME_DELIMITER;
 		$name[] = $application['name'];
 	}
+	elseif ($application['flags'] == ZBX_FLAG_DISCOVERY_CREATED && $application['discoveryRule']) {
+		$name = [(new CLink(CHtml::encode($application['discoveryRule']['name']),
+						'disc_prototypes.php?parent_discoveryid='.$application['discoveryRule']['itemid']))
+					->addClass(ZBX_STYLE_LINK_ALT)
+					->addClass(ZBX_STYLE_ORANGE)
+		];
+		$name[] = NAME_DELIMITER.$application['name'];
+
+		if ($application['applicationDiscovery']['ts_delete'] != 0) {
+			$info_icons[] = getApplicationLifetimeIndicator(
+				$current_time, $application['applicationDiscovery']['ts_delete']
+			);
+		}
+	}
 	else {
-		$name = new CLink(
-			$application['name'],
-			'applications.php?'.
-				'form=update'.
-				'&applicationid='.$application['applicationid'].
-				'&hostid='.$application['hostid'].
-				'&groupid='.$this->data['groupid']
+		$name = new CLink($application['name'],
+			'applications.php?form=update&applicationid='.$application['applicationid'].
+				'&hostid='.$application['hostid']
 		);
 	}
 
-	$applicationTable->addRow(array(
-		new CCheckBox('applications['.$application['applicationid'].']', null, null, $application['applicationid']),
-		$this->data['displayNodes'] ? $application['nodename'] : null,
-		($this->data['hostid'] > 0) ? null : $application['host'],
-		$name,
-		array(
+	$checkBox = new CCheckBox('applications['.$application['applicationid'].']', $application['applicationid']);
+	$checkBox->setEnabled(!$application['discoveryRule']);
+
+	$applicationTable->addRow([
+		$checkBox,
+		($this->data['hostid'] > 0) ? null : $application['host']['name'],
+		(new CCol($name))->addClass(ZBX_STYLE_NOWRAP),
+		[
 			new CLink(
 				_('Items'),
 				'items.php?'.
@@ -102,36 +111,29 @@ foreach ($this->data['applications'] as $application) {
 					'&filter_set=1'.
 					'&filter_application='.urlencode($application['name'])
 			),
-			SPACE.'('.count($application['items']).')'
-		)
-	));
+			CViewHelper::showNum(count($application['items']))
+		],
+		$data['showInfoColumn'] ? makeInformationList($info_icons) : null
+	]);
 }
 
-// create go buttons
-$goComboBox = new CComboBox('go');
-$goOption = new CComboItem('activate', _('Enable selected'));
-$goOption->setAttribute('confirm', _('Enable selected applications?'));
-$goComboBox->addItem($goOption);
-
-$goOption = new CComboItem('disable', _('Disable selected'));
-$goOption->setAttribute('confirm', _('Disable selected applications?'));
-$goComboBox->addItem($goOption);
-
-$goOption = new CComboItem('delete', _('Delete selected'));
-$goOption->setAttribute('confirm', _('Delete selected applications?'));
-$goComboBox->addItem($goOption);
-
-$goButton = new CSubmit('goButton', _('Go').' (0)');
-$goButton->setAttribute('id', 'goButton');
-
-zbx_add_post_js('chkbxRange.pageGoName = "applications";');
-zbx_add_post_js('chkbxRange.prefix = "'.$this->data['hostid'].'";');
 zbx_add_post_js('cookie.prefix = "'.$this->data['hostid'].'";');
 
 // append table to form
-$applicationForm->addItem(array($this->data['paging'], $applicationTable, $this->data['paging'], get_table_header(array($goComboBox, $goButton))));
+$form->addItem([
+	$applicationTable,
+	$this->data['paging'],
+	new CActionButtonList('action', 'applications',
+		[
+			'application.massenable' => ['name' => _('Enable'), 'confirm' => _('Enable selected applications?')],
+			'application.massdisable' => ['name' => _('Disable'), 'confirm' => _('Disable selected applications?')],
+			'application.massdelete' => ['name' => _('Delete'), 'confirm' => _('Delete selected applications?')]
+		],
+		$this->data['hostid']
+	)
+]);
 
 // append form to widget
-$applicationWidget->addItem($applicationForm);
+$widget->addItem($form);
 
-return $applicationWidget;
+return $widget;

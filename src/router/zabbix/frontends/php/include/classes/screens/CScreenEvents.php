@@ -27,24 +27,19 @@ class CScreenEvents extends CScreenBase {
 	 * @return CDiv (screen inside container)
 	 */
 	public function get() {
-		$options = array(
+		$options = [
 			'monitored' => true,
-			'value' => array(TRIGGER_VALUE_TRUE, TRIGGER_VALUE_FALSE),
+			'value' => [TRIGGER_VALUE_TRUE, TRIGGER_VALUE_FALSE],
 			'triggerLimit' => $this->screenitem['elements'],
 			'eventLimit' => $this->screenitem['elements']
-		);
+		];
 
-		$item = new CTableInfo(_('No events found.'));
-		$item->setHeader(array(
-			_('Time'),
-			is_show_all_nodes() ? _('Node') : null,
-			_('Host'),
-			_('Description'),
-			_('Value'),
-			_('Severity')
-		));
+		$table = (new CTableInfo())->setHeader([_('Time'), _('Host'), _('Description'), _('Value'), _('Severity')]);
 
 		$events = getLastEvents($options);
+
+		$config = select_config();
+
 		foreach ($events as $event) {
 			$trigger = $event['trigger'];
 			$host = $event['host'];
@@ -54,19 +49,22 @@ class CScreenEvents extends CScreenBase {
 			// add colors and blinking to span depending on configuration and trigger parameters
 			addTriggerValueStyle($statusSpan, $event['value'], $event['clock'], $event['acknowledged']);
 
-			$item->addRow(array(
-				zbx_date2str(_('d M Y H:i:s'), $event['clock']),
-				get_node_name_by_elid($event['objectid']),
+			$table->addRow([
+				zbx_date2str(DATE_TIME_FORMAT_SECONDS, $event['clock']),
 				$host['name'],
 				new CLink(
 					$trigger['description'],
 					'tr_events.php?triggerid='.$event['objectid'].'&eventid='.$event['eventid']
 				),
 				$statusSpan,
-				getSeverityCell($trigger['priority'])
-			));
+				getSeverityCell($trigger['priority'], $config)
+			]);
 		}
 
-		return $this->getOutput($item);
+		$footer = (new CList())
+			->addItem(_s('Updated: %s', zbx_date2str(TIME_FORMAT_SECONDS)))
+			->addClass(ZBX_STYLE_DASHBRD_WIDGET_FOOT);
+
+		return $this->getOutput((new CUiWidget(uniqid(), [$table, $footer]))->setHeader(_('History of events')));
 	}
 }

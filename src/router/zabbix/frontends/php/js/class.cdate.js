@@ -52,7 +52,9 @@ CDate.prototype = {
 
 	/**
 	* Formats date according given format. Uses server timezone.
-	* Supported formats: 'd M Y H:i', 'j. M Y G:i', 'Y/m/d H:i', 'M jS, Y h:i A', 'Y M d H:i', 'd.m.Y H:i'
+	* Supported formats:	'd M Y H:i', 'j. M Y G:i', 'Y/m/d H:i', 'Y-m-d H:i', 'Y-m-d H:i:s', 'Y-m-d', 'H:i:s', 'H:i',
+	*						'M jS, Y h:i A', 'Y M d H:i', 'd.m.Y H:i' and 'd m Y H i'
+	*						Format 'd m Y H i' is also accepted but used internally for date input fields.
 	*
 	* @param format PHP style date format limited to supported formats
 	*
@@ -65,16 +67,8 @@ CDate.prototype = {
 			mnth = this.getMonth(),
 			yr = this.getFullYear(),
 			hrs = this.getHours(),
-			mnts = this.getMinutes();
-
-		/**
-		 * Transform datetime parts to two digits e.g., 2 becomes 02
-		 * @param int val
-		 * @return string
-		 */
-		var appZr = function(val) {
-			return val < 10 ? '0' + val : val;
-		}
+			mnts = this.getMinutes(),
+			sec = this.getSeconds();
 
 		/**
 		 * Append date suffix according to English rules e.g., 3 becomes 3rd
@@ -96,22 +90,42 @@ CDate.prototype = {
 
 		switch(format) {
 			case 'd M Y H:i':
-				return appZr(dt) + ' ' + shortMn[mnth] + ' ' + yr + ' ' + appZr(hrs) + ':' + appZr(mnts);
+				return appendZero(dt) + ' ' + shortMn[mnth] + ' ' + yr + ' ' + appendZero(hrs) + ':' + appendZero(mnts);
 			case 'j. M Y G:i':
-				return dt + '. ' + shortMn[mnth] + ' ' + yr + ' ' + hrs + ':' + appZr(mnts);
+				return dt + '. ' + shortMn[mnth] + ' ' + yr + ' ' + hrs + ':' + appendZero(mnts);
 			case 'Y/m/d H:i':
-				return yr + '/' + appZr(mnth + 1) + '/' + appZr(dt) + ' ' + appZr(hrs) + ':' + appZr(mnts);
+				return yr + '/' + appendZero(mnth + 1) + '/' + appendZero(dt) + ' ' + appendZero(hrs) + ':' +
+					appendZero(mnts);
+			case 'Y-m-d H:i':
+				return yr + '-' + appendZero(mnth + 1) + '-' + appendZero(dt) + ' ' + appendZero(hrs) + ':' +
+					appendZero(mnts);
+			case 'Y-m-d':
+				return yr + '-' + appendZero(mnth + 1) + '-' + appendZero(dt);
+			case 'H:i:s':
+				return  appendZero(hrs) + ':' + appendZero(mnts) + ':' + appendZero(sec);
+			case 'H:i':
+				return  appendZero(hrs) + ':' + appendZero(mnts);
 			case 'M jS, Y h:i A':
 				var ampm = (hrs < 12) ? 'AM' : 'PM';
-				hrs = appZr((hrs + 11) % 12 + 1);
-				return shortMn[mnth] + ' ' + appSfx(dt) + ', ' + yr + ' ' + hrs + ':' + appZr(mnts) + ' ' + ampm;
+				hrs = appendZero((hrs + 11) % 12 + 1);
+				return shortMn[mnth] + ' ' + appSfx(dt) + ', ' + yr + ' ' + hrs + ':' + appendZero(mnts) + ' ' + ampm;
 			case 'Y M d H:i':
-				return  yr + ' ' + shortMn[mnth] + ' ' +appZr(dt) + ' ' + appZr(hrs) + ':' + appZr(mnts);
+				return  yr + ' ' + shortMn[mnth] + ' ' +appendZero(dt) + ' ' + appendZero(hrs) + ':' + appendZero(mnts);
 			case 'd.m.Y H:i':
-				return appZr(dt) + '.' + appZr(mnth + 1) + '.' + yr + ' ' + appZr(hrs) + ':' + appZr(mnts);
+				return appendZero(dt) + '.' + appendZero(mnth + 1) + '.' + yr + ' ' + appendZero(hrs) + ':' +
+					appendZero(mnts);
+			case 'd. m. Y H:i':
+				return appendZero(dt) + '. ' + appendZero(mnth + 1) + '. ' + yr + ' ' + appendZero(hrs) + ':' +
+					appendZero(mnts);
+			// date format used for date input fields
+			case 'd m Y H i':
+				return appendZero(dt) + ' ' + appendZero(mnth + 1) + ' ' + yr + ' ' + appendZero(hrs) + ' ' +
+					appendZero(mnts);
+			default:
+				// defaults to Y-m-d H:i:s
+				return yr + '-' + appendZero(mnth + 1) + '-' + appendZero(dt) + ' ' + appendZero(hrs) + ':' +
+					appendZero(mnts) + ':' + appendZero(sec);
 		}
-
-		return false;
 	},
 
 	getZBXDate: function() {
@@ -133,25 +147,14 @@ CDate.prototype = {
 	},
 
 	setZBXDate: function(strdate) {
-		this.server = 1;
-
-		var theDate = {
-			Y: strdate.toString().substr(0, 4),
-			m: strdate.toString().substr(4, 2),
-			d: strdate.toString().substr(6, 2),
-			H: strdate.toString().substr(8, 2),
-			i: strdate.toString().substr(10, 2),
-			s: strdate.toString().substr(12, 2)
-		};
-
-		this.serverDate.setFullYear(theDate.Y);
-		this.serverDate.setMonth(theDate.m - 1);
-		this.serverDate.setDate(theDate.d);
-		this.serverDate.setHours(theDate.H);
-		this.serverDate.setMinutes(theDate.i);
-		this.serverDate.setSeconds(theDate.s);
-		this.serverDate.setMilliseconds(0);
-		this.calcTZdiff();
+		this.setTimeObject(
+			strdate.toString().substr(0, 4),
+			strdate.toString().substr(4, 2) - 1,
+			strdate.toString().substr(6, 2),
+			strdate.toString().substr(8, 2),
+			strdate.toString().substr(10, 2),
+			strdate.toString().substr(12, 2)
+		);
 
 		return this.getTime();
 	},
@@ -255,15 +258,38 @@ CDate.prototype = {
 		this.calcTZdiff();
 	},
 
-	setMonth: function(arg) {
+	setTimeObject: function(y, m, d, h, i, s) {
 		this.server = 1;
-		this.serverDate.setMonth(arg);
-		this.calcTZdiff();
-	},
+		function hasAttr(arg) {
+			return (typeof(arg) != 'undefined' && arg !== null);
+		}
 
-	setFullYear: function(arg) {
-		this.server = 1;
-		this.serverDate.setFullYear(arg);
+		if (hasAttr(y)) {
+			this.serverDate.setFullYear(y);
+		}
+
+		if (hasAttr(m) && hasAttr(d)) {
+			this.serverDate.setMonth(m, d);
+		}
+		else if (hasAttr(m)) {
+			this.serverDate.setMonth(m);
+		}
+		else if (hasAttr(d)) {
+			this.serverDate.setDate(d);
+		}
+
+		if (hasAttr(h)) {
+			this.serverDate.setHours(h);
+		}
+
+		if (hasAttr(i)) {
+			this.serverDate.setMinutes(i);
+		}
+
+		if (hasAttr(s)) {
+			this.serverDate.setSeconds(s);
+		}
+
 		this.calcTZdiff();
 	},
 
@@ -274,23 +300,5 @@ CDate.prototype = {
 		this.calcTZdiff(arg);
 		this.serverDate.setTime(arg - this.tzDiff * 1000);
 		this.clientDate.setTime(arg);
-	},
-
-	debug: function(fnc_name, id) {
-		if (this.debug_status) {
-			var str = 'CDate.' + fnc_name;
-			if (typeof(id) != 'undefined') {
-				str += ' :' + id;
-			}
-			if (this.debug_prev == str) {
-				return true;
-			}
-
-			this.debug_info += str;
-			if (this.debug_status == 2) {
-				SDI(str);
-			}
-			this.debug_prev = str;
-		}
 	}
 }

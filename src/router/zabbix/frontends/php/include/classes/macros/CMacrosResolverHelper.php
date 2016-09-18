@@ -30,6 +30,17 @@ class CMacrosResolverHelper {
 	private static $macrosResolver;
 
 	/**
+	 * Create CMacrosResolver object and store in static variable.
+	 *
+	 * @static
+	 */
+	private static function init() {
+		if (self::$macrosResolver === null) {
+			self::$macrosResolver = new CMacrosResolver();
+		}
+	}
+
+	/**
 	 * Resolve macros.
 	 *
 	 * @static
@@ -57,10 +68,10 @@ class CMacrosResolverHelper {
 	public static function resolveHttpTestName($hostId, $name) {
 		self::init();
 
-		$macros = self::$macrosResolver->resolve(array(
+		$macros = self::$macrosResolver->resolve([
 			'config' => 'httpTestName',
-			'data' => array($hostId => array($name))
-		));
+			'data' => [$hostId => [$name]]
+		]);
 
 		return $macros[$hostId][0];
 	}
@@ -83,7 +94,7 @@ class CMacrosResolverHelper {
 		self::init();
 
 		// agent primary ip and dns
-		$data = array();
+		$data = [];
 		foreach ($interfaces as $interface) {
 			if ($interface['type'] == INTERFACE_TYPE_AGENT && $interface['main'] == INTERFACE_PRIMARY) {
 				$data[$interface['hostid']][] = $interface['ip'];
@@ -91,10 +102,10 @@ class CMacrosResolverHelper {
 			}
 		}
 
-		$resolvedData = self::$macrosResolver->resolve(array(
+		$resolvedData = self::$macrosResolver->resolve([
 			'config' => 'hostInterfaceIpDnsAgentPrimary',
 			'data' => $data
-		));
+		]);
 
 		foreach ($resolvedData as $hostId => $texts) {
 			$n = 0;
@@ -112,7 +123,7 @@ class CMacrosResolverHelper {
 		}
 
 		// others ip and dns
-		$data = array();
+		$data = [];
 		foreach ($interfaces as $interface) {
 			if (!($interface['type'] == INTERFACE_TYPE_AGENT && $interface['main'] == INTERFACE_PRIMARY)) {
 				$data[$interface['hostid']][] = $interface['ip'];
@@ -120,10 +131,10 @@ class CMacrosResolverHelper {
 			}
 		}
 
-		$resolvedData = self::$macrosResolver->resolve(array(
+		$resolvedData = self::$macrosResolver->resolve([
 			'config' => 'hostInterfaceIpDns',
 			'data' => $data
-		));
+		]);
 
 		foreach ($resolvedData as $hostId => $texts) {
 			$n = 0;
@@ -141,15 +152,15 @@ class CMacrosResolverHelper {
 		}
 
 		// port
-		$data = array();
+		$data = [];
 		foreach ($interfaces as $interface) {
 			$data[$interface['hostid']][] = $interface['port'];
 		}
 
-		$resolvedData = self::$macrosResolver->resolve(array(
+		$resolvedData = self::$macrosResolver->resolve([
 			'config' => 'hostInterfacePort',
 			'data' => $data
-		));
+		]);
 
 		foreach ($resolvedData as $hostId => $texts) {
 			$n = 0;
@@ -176,10 +187,9 @@ class CMacrosResolverHelper {
 	 * @return string
 	 */
 	public static function resolveTriggerName(array $trigger) {
-		$macros = self::resolveTriggerNames(array($trigger));
-		$macros = reset($macros);
+		$triggers = self::resolveTriggerNames([$trigger['triggerid'] => $trigger]);
 
-		return $macros['description'];
+		return $triggers[$trigger['triggerid']]['description'];
 	}
 
 	/**
@@ -188,16 +198,17 @@ class CMacrosResolverHelper {
 	 * @static
 	 *
 	 * @param array $triggers
+	 * @param bool  $references_only
 	 *
 	 * @return array
 	 */
-	public static function resolveTriggerNames(array $triggers) {
+	public static function resolveTriggerNames(array $triggers, $references_only = false) {
 		self::init();
 
-		return self::$macrosResolver->resolve(array(
-			'config' => 'triggerName',
-			'data' => zbx_toHash($triggers, 'triggerid')
-		));
+		return self::$macrosResolver->resolveTriggerNames($triggers, [
+			'references_only' => $references_only,
+			'events' => false
+		]);
 	}
 
 	/**
@@ -210,10 +221,9 @@ class CMacrosResolverHelper {
 	 * @return string
 	 */
 	public static function resolveTriggerDescription(array $trigger) {
-		$macros = self::resolveTriggerDescriptions(array($trigger));
-		$macros = reset($macros);
+		$triggers = self::resolveTriggerDescriptions([$trigger['triggerid'] => $trigger]);
 
-		return $macros['comments'];
+		return $triggers[$trigger['triggerid']]['comments'];
 	}
 
 	/**
@@ -228,10 +238,24 @@ class CMacrosResolverHelper {
 	public static function resolveTriggerDescriptions(array $triggers) {
 		self::init();
 
-		return self::$macrosResolver->resolve(array(
-			'config' => 'triggerDescription',
-			'data' => zbx_toHash($triggers, 'triggerid')
-		));
+		return self::$macrosResolver->resolveTriggerDescriptions($triggers);
+	}
+
+	/**
+	 * Resolve macros in trigger url.
+	 *
+	 * @static
+	 *
+	 * @param array $triggers
+	 * @param string $triggers[triggerid]['expression']
+	 * @param string $triggers[triggerid]['url']
+	 *
+	 * @return array
+	 */
+	public static function resolveTriggerUrls(array $triggers) {
+		self::init();
+
+		return self::$macrosResolver->resolveTriggerUrls($triggers);
 	}
 
 	/**
@@ -244,7 +268,7 @@ class CMacrosResolverHelper {
 	 * @return string
 	 */
 	public static function resolveTriggerNameById($triggerId) {
-		$macros = self::resolveTriggerNameByIds(array($triggerId));
+		$macros = self::resolveTriggerNameByIds([$triggerId]);
 		$macros = reset($macros);
 
 		return $macros['description'];
@@ -268,26 +292,57 @@ class CMacrosResolverHelper {
 			' WHERE '.dbConditionInt('t.triggerid', $triggerIds)
 		));
 
-		return self::$macrosResolver->resolve(array(
-			'config' => 'triggerName',
-			'data' => zbx_toHash($triggers, 'triggerid')
-		));
+		return self::$macrosResolver->resolveTriggerNames(zbx_toHash($triggers, 'triggerid'), [
+			'references_only' => false,
+			'events' => false
+		]);
 	}
 
 	/**
-	 * Resolve macros in trigger reference.
+	 * Resolve macros in trigger expression.
 	 *
 	 * @static
 	 *
 	 * @param string $expression
-	 * @param string $text
+	 * @param array  $options		see resolveTriggerExpressions() for more details ('sources' is not supported here)
 	 *
 	 * @return string
 	 */
-	public static function resolveTriggerReference($expression, $text) {
+	public static function resolveTriggerExpression($expression, array $options = []) {
 		self::init();
 
-		return self::$macrosResolver->resolveTriggerReference($expression, $text);
+		return self::$macrosResolver->resolveTriggerExpressions([['expression' => $expression]], [
+			'html' => array_key_exists('html', $options) && $options['html'],
+			'resolve_usermacros' => array_key_exists('resolve_usermacros', $options) && $options['resolve_usermacros'],
+			'resolve_macros' => array_key_exists('resolve_macros', $options) && $options['resolve_macros'],
+			'sources' => ['expression']
+		])[0]['expression'];
+	}
+
+	/**
+	 * Resolve macros in trigger expressions.
+	 *
+	 * @static
+	 *
+	 * @param array  $triggers
+	 * @param string $triggers[]['expression']
+	 * @param array  $options
+	 * @param bool   $options['html']				(optional) returns formatted trigger expression
+	 * @param bool   $options['resolve_usermacros']	(optional) resolve user macros
+	 * @param bool   $options['resolve_macros']		(optional) resolve macros in item keys and functions
+	 * @param array  $options['sources']			(optional) an array of the field names; default ['expression']
+	 *
+	 * @return array
+	 */
+	public static function resolveTriggerExpressions(array $triggers, array $options = []) {
+		self::init();
+
+		return self::$macrosResolver->resolveTriggerExpressions($triggers, [
+			'html' => array_key_exists('html', $options) && $options['html'],
+			'resolve_usermacros' => array_key_exists('resolve_usermacros', $options) && $options['resolve_usermacros'],
+			'resolve_macros' => array_key_exists('resolve_macros', $options) && $options['resolve_macros'],
+			'sources' => array_key_exists('sources', $options) ? $options['sources'] : ['expression']
+		]);
 	}
 
 	/**
@@ -302,16 +357,9 @@ class CMacrosResolverHelper {
 	 * @return string
 	 */
 	public static function resolveTriggerExpressionUserMacro(array $trigger) {
-		if (zbx_empty($trigger['expression'])) {
-			return $trigger['expression'];
-		}
-
 		self::init();
 
-		$triggers = self::$macrosResolver->resolve(array(
-			'config' => 'triggerExpressionUser',
-			'data' => zbx_toHash(array($trigger), 'triggerid')
-		));
+		$triggers = self::$macrosResolver->resolveTriggerExpressionUserMacro(zbx_toHash([$trigger], 'triggerid'));
 		$trigger = reset($triggers);
 
 		return $trigger['expression'];
@@ -329,13 +377,12 @@ class CMacrosResolverHelper {
 	public static function resolveEventDescription(array $event) {
 		self::init();
 
-		$macros = self::$macrosResolver->resolve(array(
-			'config' => 'eventDescription',
-			'data' => array($event['triggerid'] => $event)
-		));
-		$macros = reset($macros);
+		$events = self::$macrosResolver->resolveTriggerNames([$event['triggerid'] => $event], [
+			'references_only' => false,
+			'events' => true
+		]);
 
-		return $macros['description'];
+		return $events[$event['triggerid']]['description'];
 	}
 
 	/**
@@ -353,10 +400,10 @@ class CMacrosResolverHelper {
 	public static function resolveGraphName($name, array $items) {
 		self::init();
 
-		$graph = self::$macrosResolver->resolve(array(
+		$graph = self::$macrosResolver->resolve([
 			'config' => 'graphName',
-			'data' => array(array('name' => $name, 'items' => $items))
-		));
+			'data' => [['name' => $name, 'items' => $items]]
+		]);
 		$graph = reset($graph);
 
 		return $graph['name'];
@@ -377,16 +424,16 @@ class CMacrosResolverHelper {
 	public static function resolveGraphNameByIds(array $data) {
 		self::init();
 
-		$graphIds = array();
-		$graphMap = array();
+		$graphIds = [];
+		$graphMap = [];
 		foreach ($data as $graph) {
 			// skip graphs without macros
 			if (strpos($graph['name'], '{') !== false) {
-				$graphMap[$graph['graphid']] = array(
+				$graphMap[$graph['graphid']] = [
 					'graphid' => $graph['graphid'],
 					'name' => $graph['name'],
-					'items' => array()
-				);
+					'items' => []
+				];
 				$graphIds[$graph['graphid']] = $graph['graphid'];
 			}
 		}
@@ -401,13 +448,13 @@ class CMacrosResolverHelper {
 		));
 
 		foreach ($items as $item) {
-			$graphMap[$item['graphid']]['items'][] = array('hostid' => $item['hostid'], 'host' => $item['host']);
+			$graphMap[$item['graphid']]['items'][] = ['hostid' => $item['hostid'], 'host' => $item['host']];
 		}
 
-		$graphMap = self::$macrosResolver->resolve(array(
+		$graphMap = self::$macrosResolver->resolve([
 			'config' => 'graphName',
 			'data' => $graphMap
-		));
+		]);
 
 		$resolvedGraph = reset($graphMap);
 		foreach ($data as &$graph) {
@@ -478,13 +525,61 @@ class CMacrosResolverHelper {
 	}
 
 	/**
-	 * Create CMacrosResolver object and store in static variable.
+	 * Expand functional macros in given map label.
+	 *
+	 * @param string $label			label to expand
+	 * @param array  $replaceHosts	list of hosts in order which they appear in trigger expression if trigger label is
+	 * given, or single host when host label is given
+	 *
+	 * @return string
+	 */
+	public static function resolveMapLabelMacros($label, $replaceHosts = null) {
+		self::init();
+
+		return self::$macrosResolver->resolveMapLabelMacros($label, $replaceHosts);
+	}
+
+	/**
+	 * Resolve all kinds of macros in map labels.
 	 *
 	 * @static
+	 *
+	 * @param array  $selement
+	 * @param string $selement['label']						label to expand
+	 * @param int    $selement['elementtype']				element type
+	 * @param int    $selement['elementid']					element id
+	 * @param string $selement['elementExpressionTrigger']	if type is trigger, then trigger expression
+	 *
+	 * @return string
 	 */
-	private static function init() {
-		if (self::$macrosResolver === null) {
-			self::$macrosResolver = new CMacrosResolver();
-		}
+	public static function resolveMapLabelMacrosAll(array $selement) {
+		self::init();
+
+		return self::$macrosResolver->resolveMapLabelMacrosAll($selement);
+	}
+
+	/**
+	 * Resolve macros in screen element URL.
+	 *
+	 * @static
+	 *
+	 * @param array $screenElement
+	 *
+	 * @return string
+	 */
+	public static function resolveScreenElementURL(array $screenElement) {
+		self::init();
+
+		$macros = self::$macrosResolver->resolve([
+			'config' => $screenElement['config'],
+			'data' => [
+				$screenElement['hostid'] => [
+					'url' => $screenElement['url']
+				]
+			]
+		]);
+		$macros = reset($macros);
+
+		return $macros['url'];
 	}
 }

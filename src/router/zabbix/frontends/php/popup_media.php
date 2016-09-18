@@ -27,32 +27,31 @@ require_once dirname(__FILE__).'/include/js.inc.php';
 $page['title'] = _('Media');
 $page['file'] = 'popup_media.php';
 
-define('ZBX_PAGE_NO_MENU', 1);
-
-require_once dirname(__FILE__).'/include/page_header.php';
-
-if (CWebUser::$data['alias'] == ZBX_GUEST_USER) {
-	access_deny();
+if (CWebUser::getType() < USER_TYPE_ZABBIX_ADMIN
+		|| (CWebUser::isGuest() && CWebUser::getType() < USER_TYPE_SUPER_ADMIN)) {
+	access_deny(ACCESS_DENY_PAGE);
 }
 
+define('ZBX_PAGE_NO_MENU', 1);
+require_once dirname(__FILE__).'/include/page_header.php';
+
 //		VAR			TYPE	OPTIONAL FLAGS	VALIDATION	EXCEPTION
-$fields = array(
-	'dstfrm'=>		array(T_ZBX_STR, O_MAND,P_SYS,	NOT_EMPTY,		NULL),
+$fields = [
+	'dstfrm'=>		[T_ZBX_STR, O_MAND,P_SYS,	NOT_EMPTY,		null],
 
-	'media'=>		array(T_ZBX_INT, O_OPT,	P_SYS,	NULL,			NULL),
-	'mediatypeid'=>	array(T_ZBX_INT, O_OPT,	P_SYS,	DB_ID,			'isset({add})'),
-	'sendto'=>		array(T_ZBX_STR, O_OPT,	NULL,	NOT_EMPTY,		'isset({add})'),
-	'period'=>		array(T_ZBX_STR, O_OPT,	NULL,	NOT_EMPTY,		'isset({add})'),
-	'active'=>		array(T_ZBX_STR, O_OPT,	NULL,	NOT_EMPTY,		'isset({add})'),
+	'media'=>		[T_ZBX_INT, O_OPT,	P_SYS,	null,			null],
+	'mediatypeid'=>	[T_ZBX_INT, O_OPT,	P_SYS,	DB_ID,			'isset({add})'],
+	'sendto'=>		[T_ZBX_STR, O_OPT,	null,	NOT_EMPTY,		'isset({add})'],
+	'period'=>		[T_ZBX_STR, O_OPT,	null,	NOT_EMPTY,		'isset({add})'],
+	'active'=>		[T_ZBX_INT, O_OPT,	null,	IN([MEDIA_STATUS_ACTIVE, MEDIA_STATUS_DISABLED]), null],
 
-	'severity'=>	array(T_ZBX_INT, O_OPT,	NULL,	NOT_EMPTY,	NULL),
+	'severity'=>	[T_ZBX_INT, O_OPT,	null,	NOT_EMPTY,	null],
 /* actions */
-	'add'=>			array(T_ZBX_STR, O_OPT, P_SYS|P_ACT,	NULL,	NULL),
+	'add'=>			[T_ZBX_STR, O_OPT, P_SYS|P_ACT,	null,	null],
 /* other */
-	'form'=>		array(T_ZBX_STR, O_OPT, P_SYS,	NULL,	NULL),
-	'form_refresh'=>array(T_ZBX_STR, O_OPT, NULL,	NULL,	NULL)
-);
-
+	'form'=>		[T_ZBX_STR, O_OPT, P_SYS,	null,	null],
+	'form_refresh'=>[T_ZBX_INT, O_OPT, null,	null,	null]
+];
 check_fields($fields);
 
 insert_js_function('add_media');
@@ -61,7 +60,7 @@ if (isset($_REQUEST['add'])) {
 	$validator = new CTimePeriodValidator();
 	if ($validator->validate($_REQUEST['period'])) {
 		$severity = 0;
-		$_REQUEST['severity'] = get_request('severity', array());
+		$_REQUEST['severity'] = getRequest('severity', []);
 		foreach ($_REQUEST['severity'] as $id) {
 			$severity |= 1 << $id;
 		}
@@ -72,7 +71,7 @@ if (isset($_REQUEST['add'])) {
 				zbx_jsvalue($_REQUEST['mediatypeid']).','.
 				CJs::encodeJson($_REQUEST['sendto']).',"'.
 				$_REQUEST['period'].'",'.
-				$_REQUEST['active'].','.
+				getRequest('active', MEDIA_STATUS_DISABLED).','.
 				$severity.');'.
 				'</script>';
 	}
@@ -81,66 +80,79 @@ if (isset($_REQUEST['add'])) {
 	}
 }
 
-if (isset($_REQUEST['media']) && !isset($_REQUEST['form_refresh'])) {
-	$rq_severity = get_request('severity', 63);
+$config = select_config();
 
-	$severity = array();
-	for ($i = 0; $i < TRIGGER_SEVERITY_COUNT; $i++) {
-		if ($rq_severity & (1 << $i)) {
-			$severity[$i] = $i;
+$severityNames = [];
+for ($severity = TRIGGER_SEVERITY_NOT_CLASSIFIED; $severity < TRIGGER_SEVERITY_COUNT; $severity++) {
+	$severityNames[$severity] = getSeverityName($severity, $config);
+}
+
+if (isset($_REQUEST['media']) && !isset($_REQUEST['form_refresh'])) {
+	$severityRequest = getRequest('severity', 63);
+
+	$severities = [];
+	for ($severity = TRIGGER_SEVERITY_NOT_CLASSIFIED; $severity < TRIGGER_SEVERITY_COUNT; $severity++) {
+		if ($severityRequest & (1 << $severity)) {
+			$severities[$severity] = $severity;
 		}
 	}
 }
 else {
-	$severity = get_request('severity', array(0, 1, 2, 3, 4, 5));
+	$severities = getRequest('severity', array_keys($severityNames));
 }
 
-$media = get_request('media', -1);
-$sendto = get_request('sendto', '');
-$mediatypeid = get_request('mediatypeid', 0);
-$active = get_request('active', 0);
-$period = get_request('period', ZBX_DEFAULT_INTERVAL);
+$media = getRequest('media', -1);
+$sendto = getRequest('sendto', '');
+$mediatypeid = getRequest('mediatypeid', 0);
+$active = getRequest('active', MEDIA_STATUS_ACTIVE);
+$period = getRequest('period', ZBX_DEFAULT_INTERVAL);
 
+$mediatypes = API::MediaType()->get([
+	'output' => ['description'],
+	'preservekeys' => true
+]);
+CArrayHelper::sort($mediatypes, ['description']);
 
-$frmMedia = new CFormTable(_('New media'));
-$frmMedia->addVar('media', $media);
-$frmMedia->addVar('dstfrm', $_REQUEST['dstfrm']);
-
-$cmbType = new CComboBox('mediatypeid', $mediatypeid);
-$types = DBfetchArrayAssoc(DBselect(
-	'SELECT mt.mediatypeid,mt.description'.
-	' FROM media_type mt'.
-	whereDbNode('mt.mediatypeid')
-), 'mediatypeid');
-CArrayHelper::sort($types, array('description'));
-foreach ($types as $mediaTypeId => $type) {
-	$cmbType->addItem($mediaTypeId,
-		get_node_name_by_elid($type['mediatypeid'], null, NAME_DELIMITER).$type['description']
-	);
+foreach ($mediatypes as &$mediatype) {
+	$mediatype = $mediatype['description'];
 }
-$frmMedia->addRow(_('Type'), $cmbType);
-$frmMedia->addRow(_('Send to'), new CTextBox('sendto', $sendto, 48, 'no', 100));
-$frmMedia->addRow(_('When active'), new CTextBox('period', $period, 48, 'no', 100));
+unset($mediatype);
 
-$frm_row = array();
-foreach (getSeverityCaption() as $i => $caption) {
-	$frm_row[] = array(
-		new CCheckBox('severity['.$i.']', str_in_array($i, $severity), null, $i),
-		$caption
-	);
+$frm_row = [];
+
+for ($severity = TRIGGER_SEVERITY_NOT_CLASSIFIED; $severity < TRIGGER_SEVERITY_COUNT; $severity++) {
+	$frm_row[] = new CLabel([
+		(new CCheckBox('severity['.$severity.']', $severity))->setChecked(str_in_array($severity, $severities)),
+		getSeverityName($severity, $config)
+	], 'severity['.$severity.']');
 	$frm_row[] = BR();
 }
-$frmMedia->addRow(_('Use if severity'), $frm_row);
+array_pop($frm_row);
 
-$cmbStat = new CComboBox('active', $active);
-$cmbStat->addItem(0, _('Enabled'));
-$cmbStat->addItem(1, _('Disabled'));
-$frmMedia->addRow(_('Status'), $cmbStat);
+$frmMedia = (new CFormList(_('Media')))
+	->addRow(_('Type'), new CComboBox('mediatypeid', $mediatypeid, null, $mediatypes))
+	->addRow(_('Send to'), (new CTextBox('sendto', $sendto, false, 100))->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH))
+	->addRow(_('When active'), (new CTextBox('period', $period, false, 100))->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH))
+	->addRow(_('Use if severity'), $frm_row)
+	->addRow(_('Enabled'), (new CCheckBox('active', MEDIA_STATUS_ACTIVE))->setChecked($active == MEDIA_STATUS_ACTIVE));
 
-$frmMedia->addItemToBottomRow(array(
-	new CSubmit('add', ($media > -1) ? _('Save') : _('Add')),
-	new CButtonCancel(null, 'close_window();')
-));
-$frmMedia->Show();
+$mediaTab = (new CTabView())
+	->addTab('mediaTab', _('Media'), $frmMedia)
+	->setFooter(makeFormFooter(
+		new CSubmit('add', ($media > -1) ? _('Update') : _('Add')),
+		[
+			new CButtonCancel(null, 'window.close();')
+		]
+	));
+
+$form = (new CForm())
+	->addVar('media', $media)
+	->addVar('dstfrm', $_REQUEST['dstfrm'])
+	->addItem($mediaTab);
+
+$widget = (new CWidget())
+	->setTitle(_('Media'))
+	->addItem($form)
+	->show();
 
 require_once dirname(__FILE__).'/include/page_footer.php';

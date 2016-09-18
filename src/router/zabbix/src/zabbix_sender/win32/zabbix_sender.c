@@ -25,17 +25,18 @@
 
 const char	*progname = NULL;
 const char	title_message[] = "";
-const char	usage_message[] = "";
+const char	*usage_message[] = {NULL};
 
 const char	*help_message[] = {NULL};
+
+unsigned char	program_type	= ZBX_PROGRAM_TYPE_SENDER;
 
 int	zabbix_sender_send_values(const char *address, unsigned short port, const char *source,
 		const zabbix_sender_value_t *values, int count, char **result)
 {
-	zbx_sock_t	sock;
+	zbx_socket_t	sock;
 	int		ret, i;
 	struct zbx_json	json;
-	char		*answer = NULL;
 
 	if (1 > count)
 	{
@@ -59,14 +60,15 @@ int	zabbix_sender_send_values(const char *address, unsigned short port, const ch
 	}
 	zbx_json_close(&json);
 
-	if (SUCCEED == (ret = zbx_tcp_connect(&sock, source, address, port, GET_SENDER_TIMEOUT)))
+	if (SUCCEED == (ret = zbx_tcp_connect(&sock, source, address, port, GET_SENDER_TIMEOUT,
+			ZBX_TCP_SEC_UNENCRYPTED, NULL, NULL)))
 	{
 		if (SUCCEED == (ret = zbx_tcp_send(&sock, json.buffer)))
 		{
-			if (SUCCEED == (ret = zbx_tcp_recv(&sock, &answer)))
+			if (SUCCEED == (ret = zbx_tcp_recv(&sock)))
 			{
 				if (NULL != result)
-					*result = zbx_strdup(NULL, answer);
+					*result = zbx_strdup(NULL, sock.buffer);
 			}
 		}
 
@@ -74,7 +76,7 @@ int	zabbix_sender_send_values(const char *address, unsigned short port, const ch
 	}
 
 	if (FAIL == ret && NULL != result)
-		*result = zbx_strdup(NULL, zbx_tcp_strerror());
+		*result = zbx_strdup(NULL, zbx_socket_strerror());
 
 	zbx_json_free(&json);
 

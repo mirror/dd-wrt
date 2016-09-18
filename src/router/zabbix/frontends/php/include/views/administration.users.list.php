@@ -18,51 +18,64 @@
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
 
-
-$usersWidget = new CWidget();
-
-// append page header to widget
-$createForm = new CForm('get');
-$createForm->cleanItems();
-$configurationComboBox = new CComboBox('config', 'users.php', 'javascript: redirect(this.options[this.selectedIndex].value);');
-$configurationComboBox->addItem('usergrps.php', _('User groups'));
-$configurationComboBox->addItem('users.php', _('Users'));
-$createForm->addItem(array($configurationComboBox, new CSubmit('form', _('Create user'))));
-$usersWidget->addPageHeader(_('CONFIGURATION OF USERS'), $createForm);
-
-// append form header to widget
-$userGroupListForm = new CForm('get');
-$userGroupComboBox = new CComboBox('filter_usrgrpid', $_REQUEST['filter_usrgrpid'], 'submit()');
-$userGroupComboBox->addItem(0, _('All'));
+$userGroupComboBox = (new CComboBox('filter_usrgrpid', $_REQUEST['filter_usrgrpid'], 'submit()'))
+	->addItem(0, _('All'));
 
 foreach ($this->data['userGroups'] as $userGroup) {
 	$userGroupComboBox->addItem($userGroup['usrgrpid'], $userGroup['name']);
 }
-$userGroupListForm->addItem(array(_('User group').SPACE, $userGroupComboBox));
 
-$usersWidget->addHeader(_('Users'), $userGroupListForm);
-$usersWidget->addHeaderRowNumber();
+$widget = (new CWidget())
+	->setTitle(_('Users'))
+	->setControls((new CForm('get'))
+		->cleanItems()
+		->addItem((new CList())
+			->addItem([_('User group'), SPACE, $userGroupComboBox])
+			->addItem(new CSubmit('form', _('Create user')))
+		)
+	)
+	->addItem((new CFilter('web.user.filter.state'))
+		->addColumn((new CFormList())->addRow(_('Alias'),
+			(new CTextBox('filter_alias', $data['filter']['alias']))
+				->setWidth(ZBX_TEXTAREA_FILTER_SMALL_WIDTH)
+				->setAttribute('autofocus', 'autofocus')
+		))
+		->addColumn((new CFormList())->addRow(_('Name'),
+			(new CTextBox('filter_name', $data['filter']['name']))->setWidth(ZBX_TEXTAREA_FILTER_SMALL_WIDTH)
+		))
+		->addColumn((new CFormList())->addRow(_('Surname'),
+			(new CTextBox('filter_surname', $data['filter']['surname']))->setWidth(ZBX_TEXTAREA_FILTER_SMALL_WIDTH)
+		))
+		->addColumn((new CFormList())->addRow(_('User type'),
+			(new CRadioButtonList('filter_type', (int) $data['filter']['type']))
+				->addValue(_('Any'), -1)
+				->addValue(user_type2str(USER_TYPE_ZABBIX_USER), USER_TYPE_ZABBIX_USER)
+				->addValue(user_type2str(USER_TYPE_ZABBIX_ADMIN), USER_TYPE_ZABBIX_ADMIN)
+				->addValue(user_type2str(USER_TYPE_SUPER_ADMIN), USER_TYPE_SUPER_ADMIN)
+				->setModern(true)
+		))
+	);
 
 // create form
-$usersForm = new CForm();
-$usersForm->setName('userForm');
+$usersForm = (new CForm())->setName('userForm');
 
 // create users table
-$usersTable = new CTableInfo(_('No users found.'));
-$usersTable->setHeader(array(
-	new CCheckBox('all_users', null, "checkAll('".$usersForm->getName()."', 'all_users', 'group_userid');"),
-	$this->data['displayNodes'] ? _('Node') : null,
-	make_sorting_header(_('Alias'), 'alias'),
-	make_sorting_header(_('Name'), 'name'),
-	make_sorting_header(_('Surname'), 'surname'),
-	make_sorting_header(_('User type'), 'type'),
-	_('Groups'),
-	_('Is online?'),
-	_('Login'),
-	_('Frontend access'),
-	_('Debug mode'),
-	_('Status')
-));
+$usersTable = (new CTableInfo())
+	->setHeader([
+		(new CColHeader(
+			(new CCheckBox('all_users'))->onClick("checkAll('".$usersForm->getName()."', 'all_users', 'group_userid');")
+		))->addClass(ZBX_STYLE_CELL_WIDTH),
+		make_sorting_header(_('Alias'), 'alias', $this->data['sort'], $this->data['sortorder']),
+		make_sorting_header(_x('Name', 'user first name'), 'name', $this->data['sort'], $this->data['sortorder']),
+		make_sorting_header(_('Surname'), 'surname', $this->data['sort'], $this->data['sortorder']),
+		make_sorting_header(_('User type'), 'type', $this->data['sort'], $this->data['sortorder']),
+		_('Groups'),
+		_('Is online?'),
+		_('Login'),
+		_('Frontend access'),
+		_('Debug mode'),
+		_('Status')
+	]);
 
 foreach ($this->data['users'] as $user) {
 	$userId = $user['userid'];
@@ -70,82 +83,99 @@ foreach ($this->data['users'] as $user) {
 
 	// online time
 	if ($session['lastaccess']) {
-		$onlineTime = ($user['autologout'] == 0 || ZBX_USER_ONLINE_TIME < $user['autologout']) ? ZBX_USER_ONLINE_TIME : $user['autologout'];
+		$online_time = ($user['autologout'] == 0 || ZBX_USER_ONLINE_TIME < $user['autologout'])
+			? ZBX_USER_ONLINE_TIME
+			: $user['autologout'];
 
-		$online = (($session['lastaccess'] + $onlineTime) >= time())
-			? new CCol(_('Yes').' ('.date('r', $session['lastaccess']).')', 'enabled')
-			: new CCol(_('No').' ('.date('r', $session['lastaccess']).')', 'disabled');
+		$online = ($session['status'] == ZBX_SESSION_ACTIVE && $user['users_status'] == GROUP_STATUS_ENABLED
+				&& ($session['lastaccess'] + $online_time) >= time())
+			? (new CCol(_('Yes').' ('.zbx_date2str(DATE_TIME_FORMAT_SECONDS, $session['lastaccess']).')'))
+				->addClass(ZBX_STYLE_GREEN)
+			: (new CCol(_('No').' ('.zbx_date2str(DATE_TIME_FORMAT_SECONDS, $session['lastaccess']).')'))
+				->addClass(ZBX_STYLE_RED);
 	}
 	else {
-		$online = new CCol(_('No'), 'disabled');
+		$online = (new CCol(_('No')))->addClass(ZBX_STYLE_RED);
 	}
 
 	// blocked
 	$blocked = ($user['attempt_failed'] >= ZBX_LOGIN_ATTEMPTS)
-		? new CLink(_('Blocked'), 'users.php?go=unblock&group_userid'.SQUAREBRACKETS.'='.$userId, 'on')
-		: new CSpan(_('Ok'), 'green');
+		? (new CLink(_('Blocked'), 'users.php?action=user.massunblock&group_userid[]='.$userId))
+			->addClass(ZBX_STYLE_LINK_ACTION)
+			->addClass(ZBX_STYLE_RED)
+			->addSID()
+		: (new CSpan(_('Ok')))->addClass(ZBX_STYLE_GREEN);
 
 	// user groups
 	order_result($user['usrgrps'], 'name');
 
-	$usersGroups = array();
-	foreach ($user['usrgrps'] as $userGroup) {
-		$usersGroups[] = new CLink($userGroup['name'], 'usergrps.php?form=update&usrgrpid='.$userGroup['usrgrpid']);
-		$usersGroups[] = BR();
-	}
-	array_pop($usersGroups);
+	$usersGroups = [];
+	$i = 0;
 
-	// user type style
-	$userTypeStyle = 'enabled';
-	if ($user['type'] == USER_TYPE_ZABBIX_ADMIN) {
-		$userTypeStyle = 'orange';
-	}
-	if ($user['type'] == USER_TYPE_SUPER_ADMIN) {
-		$userTypeStyle = 'disabled';
+	foreach ($user['usrgrps'] as $userGroup) {
+		$i++;
+
+		if ($i > $this->data['config']['max_in_table']) {
+			$usersGroups[] = ' &hellip;';
+
+			break;
+		}
+
+		if ($usersGroups) {
+			$usersGroups[] = ', ';
+		}
+
+		$usersGroups[] = (new CLink(
+			$userGroup['name'],
+			'usergrps.php?form=update&usrgrpid='.$userGroup['usrgrpid']))
+			->addClass($userGroup['gui_access'] == GROUP_GUI_ACCESS_DISABLED
+					|| $userGroup['users_status'] == GROUP_STATUS_DISABLED
+				? ZBX_STYLE_LINK_ALT . ' ' . ZBX_STYLE_RED
+				: ZBX_STYLE_LINK_ALT . ' ' . ZBX_STYLE_GREEN);
 	}
 
 	// gui access style
-	$guiAccessStyle = 'green';
+	$guiAccessStyle = ZBX_STYLE_GREEN;
 	if ($user['gui_access'] == GROUP_GUI_ACCESS_INTERNAL) {
-		$guiAccessStyle = 'orange';
+		$guiAccessStyle = ZBX_STYLE_ORANGE;
 	}
 	if ($user['gui_access'] == GROUP_GUI_ACCESS_DISABLED) {
-		$guiAccessStyle = 'disabled';
+		$guiAccessStyle = ZBX_STYLE_GREY;
 	}
 
+	$alias = new CLink($user['alias'], 'users.php?form=update&userid='.$userId);
+
 	// append user to table
-	$usersTable->addRow(array(
-		new CCheckBox('group_userid['.$userId.']', null, null, $userId),
-		$this->data['displayNodes'] ? $user['nodename'] : null,
-		new CLink($user['alias'], 'users.php?form=update&userid='.$userId),
+	$usersTable->addRow([
+		new CCheckBox('group_userid['.$userId.']', $userId),
+		(new CCol($alias))->addClass(ZBX_STYLE_NOWRAP),
 		$user['name'],
 		$user['surname'],
 		user_type2str($user['type']),
 		$usersGroups,
 		$online,
 		$blocked,
-		new CSpan(user_auth_type2str($user['gui_access']), $guiAccessStyle),
-		($user['debug_mode'] == GROUP_DEBUG_MODE_ENABLED) ? new CSpan(_('Enabled'), 'orange') : new CSpan(_('Disabled'), 'green'),
-		($user['users_status'] == 1) ? new CSpan(_('Disabled'), 'red') : new CSpan(_('Enabled'), 'green')
-	));
+		(new CSpan(user_auth_type2str($user['gui_access'])))->addClass($guiAccessStyle),
+		($user['debug_mode'] == GROUP_DEBUG_MODE_ENABLED)
+			? (new CSpan(_('Enabled')))->addClass(ZBX_STYLE_ORANGE)
+			: (new CSpan(_('Disabled')))->addClass(ZBX_STYLE_GREEN),
+		($user['users_status'] == GROUP_STATUS_DISABLED)
+			? (new CSpan(_('Disabled')))->addClass(ZBX_STYLE_RED)
+			: (new CSpan(_('Enabled')))->addClass(ZBX_STYLE_GREEN)
+	]);
 }
 
-// append Go buttons
-$goComboBox = new CComboBox('go');
-$goOption = new CComboItem('unblock', _('Unblock selected'));
-$goOption->setAttribute('confirm', _('Unblock selected users?'));
-$goComboBox->addItem($goOption);
-$goOption = new CComboItem('delete', _('Delete selected'));
-$goOption->setAttribute('confirm', _('Delete selected users?'));
-$goComboBox->addItem($goOption);
-$goButton = new CSubmit('goButton', _('Go').' (0)');
-$goButton->setAttribute('id', 'goButton');
-zbx_add_post_js('chkbxRange.pageGoName = "group_userid";');
-
 // append table to form
-$usersForm->addItem(array($this->data['paging'], $usersTable, $this->data['paging'], get_table_header(array($goComboBox, $goButton))));
+$usersForm->addItem([
+	$usersTable,
+	$this->data['paging'],
+	new CActionButtonList('action', 'group_userid', [
+		'user.massunblock' => ['name' => _('Unblock'), 'confirm' => _('Unblock selected users?')],
+		'user.massdelete' => ['name' => _('Delete'), 'confirm' => _('Delete selected users?')]
+	])
+]);
 
 // append form to widget
-$usersWidget->addItem($usersForm);
+$widget->addItem($usersForm);
 
-return $usersWidget;
+return $widget;

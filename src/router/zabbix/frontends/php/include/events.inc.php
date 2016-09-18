@@ -30,12 +30,12 @@
  * @return array|string
  */
 function eventSource($source = null) {
-	$sources = array(
+	$sources = [
 		EVENT_SOURCE_TRIGGERS => _('trigger'),
 		EVENT_SOURCE_DISCOVERY => _('discovery'),
 		EVENT_SOURCE_AUTO_REGISTRATION => _('auto registration'),
 		EVENT_SOURCE_INTERNAL => _x('internal', 'event source')
-	);
+	];
 
 	if ($source === null) {
 		return $sources;
@@ -59,14 +59,14 @@ function eventSource($source = null) {
  * @return array|string
  */
 function eventObject($object = null) {
-	$objects = array(
+	$objects = [
 		EVENT_OBJECT_TRIGGER => _('trigger'),
 		EVENT_OBJECT_DHOST => _('discovered host'),
 		EVENT_OBJECT_DSERVICE => _('discovered service'),
 		EVENT_OBJECT_AUTOREGHOST => _('auto-registered host'),
 		EVENT_OBJECT_ITEM => _('item'),
 		EVENT_OBJECT_LLDRULE => _('low-level discovery rule')
-	);
+	];
 
 	if ($object === null) {
 		return $objects;
@@ -85,28 +85,19 @@ function eventObject($object = null) {
  * @return array
  */
 function eventSourceObjects() {
-	return array(
-		array('source' => EVENT_SOURCE_TRIGGERS, 'object' => EVENT_OBJECT_TRIGGER),
-		array('source' => EVENT_SOURCE_DISCOVERY, 'object' => EVENT_OBJECT_DHOST),
-		array('source' => EVENT_SOURCE_DISCOVERY, 'object' => EVENT_OBJECT_DSERVICE),
-		array('source' => EVENT_SOURCE_AUTO_REGISTRATION, 'object' => EVENT_OBJECT_AUTOREGHOST),
-		array('source' => EVENT_SOURCE_INTERNAL, 'object' => EVENT_OBJECT_TRIGGER),
-		array('source' => EVENT_SOURCE_INTERNAL, 'object' => EVENT_OBJECT_ITEM),
-		array('source' => EVENT_SOURCE_INTERNAL, 'object' => EVENT_OBJECT_LLDRULE)
-	);
-}
-
-function get_tr_event_by_eventid($eventid) {
-	$sql = 'SELECT e.*,t.triggerid,t.description,t.expression,t.priority,t.status,t.type'.
-			' FROM events e,triggers t'.
-			' WHERE e.eventid='.zbx_dbstr($eventid).
-				' AND e.object='.EVENT_OBJECT_TRIGGER.
-				' AND t.triggerid=e.objectid';
-	return DBfetch(DBselect($sql));
+	return [
+		['source' => EVENT_SOURCE_TRIGGERS, 'object' => EVENT_OBJECT_TRIGGER],
+		['source' => EVENT_SOURCE_DISCOVERY, 'object' => EVENT_OBJECT_DHOST],
+		['source' => EVENT_SOURCE_DISCOVERY, 'object' => EVENT_OBJECT_DSERVICE],
+		['source' => EVENT_SOURCE_AUTO_REGISTRATION, 'object' => EVENT_OBJECT_AUTOREGHOST],
+		['source' => EVENT_SOURCE_INTERNAL, 'object' => EVENT_OBJECT_TRIGGER],
+		['source' => EVENT_SOURCE_INTERNAL, 'object' => EVENT_OBJECT_ITEM],
+		['source' => EVENT_SOURCE_INTERNAL, 'object' => EVENT_OBJECT_LLDRULE]
+	];
 }
 
 function get_events_unacknowledged($db_element, $value_trigger = null, $value_event = null, $ack = false) {
-	$elements = array('hosts' => array(), 'hosts_groups' => array(), 'triggers' => array());
+	$elements = ['hosts' => [], 'hosts_groups' => [], 'triggers' => []];
 	get_map_elements($db_element, $elements);
 
 	if (empty($elements['hosts_groups']) && empty($elements['hosts']) && empty($elements['triggers'])) {
@@ -114,15 +105,14 @@ function get_events_unacknowledged($db_element, $value_trigger = null, $value_ev
 	}
 
 	$config = select_config();
-	$options = array(
-		'nodeids' => get_current_nodeid(),
-		'output' => array('triggerid'),
+	$options = [
+		'output' => ['triggerid'],
 		'monitored' => 1,
 		'skipDependent' => 1,
 		'limit' => $config['search_limit'] + 1
-	);
+	];
 	if (!is_null($value_trigger)) {
-		$options['filter'] = array('value' => $value_trigger);
+		$options['filter'] = ['value' => $value_trigger];
 	}
 	if (!empty($elements['hosts_groups'])) {
 		$options['groupids'] = array_unique($elements['hosts_groups']);
@@ -135,19 +125,19 @@ function get_events_unacknowledged($db_element, $value_trigger = null, $value_ev
 	}
 	$triggerids = API::Trigger()->get($options);
 
-	return API::Event()->get(array(
+	return API::Event()->get([
 		'source' => EVENT_SOURCE_TRIGGERS,
 		'object' => EVENT_OBJECT_TRIGGER,
 		'countOutput' => true,
 		'objectids' => zbx_objectValues($triggerids, 'triggerid'),
-		'filter' => array(
+		'filter' => [
 			'value' => $value_event,
 			'acknowledged' => $ack ? 1 : 0
-		)
-	));
+		]
+	]);
 }
 
-function get_next_event($currentEvent, array $eventList = array()) {
+function get_next_event($currentEvent, array $eventList = []) {
 	$nextEvent = false;
 
 	foreach ($eventList as $event) {
@@ -175,59 +165,131 @@ function get_next_event($currentEvent, array $eventList = array()) {
 	return DBfetch(DBselect($sql, 1));
 }
 
-function make_event_details($event, $trigger) {
+/**
+ *
+ * @param array  $event								An array of event data.
+ * @param string $event['eventid']					Event ID.
+ * @param string $event['correlationid']			OK Event correlation ID.
+ * @param string $event['userid]					User ID who gerenerated the OK event.
+ * @param array  $trigger							An array of trigger data.
+ * @param string $backurl							A link back after acknowledgement has been clicked.
+ *
+ * @return CTableInfo
+ */
+function make_event_details($event, $trigger, $backurl) {
 	$config = select_config();
-	$table = new CTableInfo();
 
-	$table->addRow(array(_('Event'), CMacrosResolverHelper::resolveEventDescription(array_merge($trigger, $event))));
-	$table->addRow(array(_('Time'), zbx_date2str(_('d M Y H:i:s'), $event['clock'])));
+	$table = (new CTableInfo())
+		->addRow([
+			_('Event'),
+			CMacrosResolverHelper::resolveEventDescription(array_merge($trigger, $event))
+		])
+		->addRow([
+			_('Time'),
+			zbx_date2str(DATE_TIME_FORMAT_SECONDS, $event['clock'])
+		]);
 
-	if ($config['event_ack_enable']) {
+	if ($config['event_ack_enable'] && $event['value'] == TRIGGER_VALUE_TRUE) {
 		// to make resulting link not have hint with acknowledges
 		$event['acknowledges'] = count($event['acknowledges']);
-		$ack = getEventAckState($event, true);
-		$table->addRow(array(_('Acknowledged'), $ack));
+		$table->addRow([_('Acknowledged'), getEventAckState($event, $backurl)]);
 	}
+
+	if ($event['value'] == TRIGGER_VALUE_FALSE) {
+		if ($event['correlationid'] != 0) {
+			$correlations = API::Correlation()->get([
+				'output' => ['correlationid', 'name'],
+				'correlationids' => [$event['correlationid']]
+			]);
+
+			if ($correlations) {
+				if (CWebUser::getType() == USER_TYPE_SUPER_ADMIN) {
+					$correlation_name = (new CLink($correlations[0]['name'],
+						(new CUrl('correlation.php'))
+							->setArgument('correlationid', $correlations[0]['correlationid'])
+							->getUrl()
+					))->addClass(ZBX_STYLE_LINK_ALT);
+				}
+				else {
+					$correlation_name = $correlations[0]['name'];
+				}
+			}
+			else {
+				$correlation_name = _('Correlation rule');
+			}
+
+			$table->addRow([_('Generated by'), $correlation_name]);
+		}
+		elseif ($event['userid'] != 0) {
+			if ($event['userid'] == CWebUser::$data['userid']) {
+				$table->addRow([_('Generated by'), getUserFullname([
+					'alias' => CWebUser::$data['alias'],
+					'name' => CWebUser::$data['name'],
+					'surname' => CWebUser::$data['surname']
+				])]);
+			}
+			else {
+				$user = API::User()->get([
+					'output' => ['alias', 'name', 'surname'],
+					'userids' => [$event['userid']]
+				]);
+
+				if ($user) {
+					$table->addRow([_('Generated by'), getUserFullname($user[0])]);
+				}
+				else {
+					$table->addRow([_('Generated by'), _('User')]);
+				}
+			}
+		}
+		else {
+			$table->addRow([_('Generated by'), _('Trigger')]);
+		}
+	}
+
+	$tags = makeEventsTags([$event]);
+
+	$table->addRow([_('Tags'), $tags[$event['eventid']]]);
 
 	return $table;
 }
 
-function make_small_eventlist($startEvent) {
+function make_small_eventlist($startEvent, $backurl) {
 	$config = select_config();
 
-	$table = new CTableInfo(_('No events found.'));
-	$table->setHeader(array(
-		_('Time'),
-		_('Status'),
-		_('Duration'),
-		_('Age'),
-		$config['event_ack_enable'] ? _('Ack') : null, // if we need to chow acks
-		_('Actions')
-	));
+	$table = (new CTableInfo())
+		->setHeader([
+			_('Time'),
+			_('Status'),
+			_('Duration'),
+			_('Age'),
+			$config['event_ack_enable'] ? _('Ack') : null, // if we need to chow acks
+			_('Actions')
+		]);
 
 	$clock = $startEvent['clock'];
 
-	$events = API::Event()->get(array(
+	$events = API::Event()->get([
 		'source' => EVENT_SOURCE_TRIGGERS,
 		'object' => EVENT_OBJECT_TRIGGER,
 		'objectids' => $startEvent['objectid'],
 		'eventid_till' => $startEvent['eventid'],
-		'output' => API_OUTPUT_EXTEND,
+		'output' => ['eventid', 'source', 'object', 'objectid', 'clock', 'ns', 'value', 'acknowledged'],
 		'select_acknowledges' => API_OUTPUT_COUNT,
-		'sortfield' => array('clock', 'eventid'),
+		'sortfield' => ['clock', 'eventid'],
 		'sortorder' => ZBX_SORT_DOWN,
 		'limit' => 20
-	));
+	]);
 
-	$sortFields = array(
-		array('field' => 'clock', 'order' => ZBX_SORT_DOWN),
-		array('field' => 'eventid', 'order' => ZBX_SORT_DOWN)
-	);
+	$sortFields = [
+		['field' => 'clock', 'order' => ZBX_SORT_DOWN],
+		['field' => 'eventid', 'order' => ZBX_SORT_DOWN]
+	];
 	CArrayHelper::sort($events, $sortFields);
 
-	$actions = getEventActionsStatHints(zbx_objectValues($events, 'eventid'));
+	$actions = makeEventsActions($events);
 
-	foreach ($events as $event) {
+	foreach ($events as $index => $event) {
 		$lclock = $clock;
 		$duration = zbx_date2age($lclock, $event['clock']);
 		$clock = $event['clock'];
@@ -249,72 +311,110 @@ function make_small_eventlist($startEvent) {
 			$event['acknowledged']
 		);
 
-		$ack = getEventAckState($event, true);
-
-		$table->addRow(array(
-			new CLink(
-				zbx_date2str(_('d M Y H:i:s'), $event['clock']),
-				'tr_events.php?triggerid='.$event['objectid'].'&eventid='.$event['eventid'],
-				'action'
-			),
+		$table->addRow([
+			(new CLink(
+				zbx_date2str(DATE_TIME_FORMAT_SECONDS, $event['clock']),
+				'tr_events.php?triggerid='.$event['objectid'].'&eventid='.$event['eventid']))
+				->addClass('action'),
 			$eventStatusSpan,
 			$duration,
 			zbx_date2age($event['clock']),
-			$config['event_ack_enable'] ? $ack : null,
-			isset($actions[$event['eventid']]) ? $actions[$event['eventid']] : SPACE
-		));
+			$config['event_ack_enable']
+				? ($event['value'] == TRIGGER_VALUE_TRUE)
+					? getEventAckState($event, $backurl)
+					: ''
+				: null,
+			array_key_exists($index, $actions)
+				? (new CCol($actions[$index]))->addClass(ZBX_STYLE_NOWRAP)
+				: ''
+		]);
 	}
 
 	return $table;
 }
 
-function make_popup_eventlist($triggerId, $eventId) {
+/**
+ * Create table with trigger description and events.
+ *
+ * @param array  $trigger							An array of trigger data.
+ * @param string $trigger['triggerid']				Trigger ID to select events.
+ * @param string $trigger['description']			Trigger description.
+ * @param string $trigger['url']					Trigger URL.
+ * @param string $trigger['lastEvent']['eventid']	Last event ID
+ * @param string $backurl							URL to return to.
+ *
+ * @return CDiv
+ */
+function make_popup_eventlist($trigger, $backurl) {
+	// Show trigger description and URL.
+	$div = (new CDiv());
+
+	if ($trigger['comments'] !== '') {
+		$div->addItem(
+			(new CDiv())
+				->addItem(zbx_str2links($trigger['comments']))
+				->addClass(ZBX_STYLE_OVERLAY_DESCR)
+		);
+	}
+
+	if ($trigger['url'] !== '') {
+		$div->addItem(
+			(new CDiv())
+				->addItem(new CLink($trigger['url'], $trigger['url']))
+				->addClass(ZBX_STYLE_OVERLAY_DESCR_URL)
+		);
+	}
+
+	// Select and show events.
 	$config = select_config();
 
 	$table = new CTableInfo();
-	$table->setAttribute('style', 'width: 400px;');
 
-	// if acknowledges are turned on, we show 'ack' column
+	// If acknowledges are turned on, we show 'ack' column.
 	if ($config['event_ack_enable']) {
-		$table->setHeader(array(_('Time'), _('Status'), _('Duration'), _('Age'), _('Ack')));
+		$table->setHeader([_('Time'), _('Status'), _('Duration'), _('Age'), _('Ack')]);
 	}
 	else {
-		$table->setHeader(array(_('Time'), _('Status'), _('Duration'), _('Age')));
+		$table->setHeader([_('Time'), _('Status'), _('Duration'), _('Age')]);
 	}
 
-	$events = API::Event()->get(array(
-		'source' => EVENT_SOURCE_TRIGGERS,
-		'object' => EVENT_OBJECT_TRIGGER,
-		'output' => API_OUTPUT_EXTEND,
-		'objectids' => $triggerId,
-		'eventid_till' => $eventId,
-		'select_acknowledges' => API_OUTPUT_COUNT,
-		'sortfield' => array('clock', 'eventid'),
-		'sortorder' => ZBX_SORT_DOWN,
-		'limit' => ZBX_WIDGET_ROWS
-	));
+	if ($trigger['lastEvent']) {
+		$events = API::Event()->get([
+			'source' => EVENT_SOURCE_TRIGGERS,
+			'object' => EVENT_OBJECT_TRIGGER,
+			'output' => API_OUTPUT_EXTEND,
+			'objectids' => [$trigger['triggerid']],
+			'eventid_till' => $trigger['lastEvent']['eventid'],
+			'select_acknowledges' => API_OUTPUT_COUNT,
+			'sortfield' => ['clock', 'eventid'],
+			'sortorder' => ZBX_SORT_DOWN,
+			'limit' => ZBX_WIDGET_ROWS
+		]);
 
-	$lclock = time();
+		$lclock = time();
 
-	foreach ($events as $event) {
-		$duration = zbx_date2age($lclock, $event['clock']);
-		$lclock = $event['clock'];
+		foreach ($events as $event) {
+			$duration = zbx_date2age($lclock, $event['clock']);
+			$lclock = $event['clock'];
 
-		$eventStatusSpan = new CSpan(trigger_value2str($event['value']));
+			$eventStatusSpan = new CSpan(trigger_value2str($event['value']));
 
-		// add colors and blinking to span depending on configuration and trigger parameters
-		addTriggerValueStyle($eventStatusSpan, $event['value'], $event['clock'], $event['acknowledged']);
+			// add colors and blinking to span depending on configuration and trigger parameters
+			addTriggerValueStyle($eventStatusSpan, $event['value'], $event['clock'], $event['acknowledged']);
 
-		$table->addRow(array(
-			zbx_date2str(_('d M Y H:i:s'), $event['clock']),
-			$eventStatusSpan,
-			$duration,
-			zbx_date2age($event['clock']),
-			getEventAckState($event, false, false)
-		));
+			$table->addRow([
+				zbx_date2str(DATE_TIME_FORMAT_SECONDS, $event['clock']),
+				$eventStatusSpan,
+				$duration,
+				zbx_date2age($event['clock']),
+				$config['event_ack_enable'] ? getEventAckState($event, $backurl) : null
+			]);
+		}
 	}
 
-	return $table;
+	$div->addItem($table);
+
+	return $div;
 }
 
 /**
@@ -325,66 +425,187 @@ function make_popup_eventlist($triggerId, $eventId) {
  * @param int			$event['acknowledged']
  * @param int			$event['eventid']
  * @param int			$event['objectid']
- * @param array			$event['acknowledges']
- * @param bool|string	$backUrl if true, add backurl param to link with current page file name
- * @param bool			$isLink  if true, return link otherwise span
- * @param array			$params  additional params for link
+ * @param mixed			$event['acknowledges']
+ * @param string		$backurl  add url param to link with current page file name
  *
- * @return array|CLink|CSpan|null|string
+ * @deprecated use makeEventsAcknowledges instead
+ *
+ * @return CLink
  */
-function getEventAckState($event, $backUrl = false, $isLink = true, $params = array()) {
-	$config = select_config();
-
-	if (!$config['event_ack_enable']) {
-		return null;
+function getEventAckState($event, $backurl) {
+	if ($event['acknowledged'] == EVENT_ACKNOWLEDGED) {
+		$acknowledges_num = is_array($event['acknowledges']) ? count($event['acknowledges']) : $event['acknowledges'];
 	}
 
-	if ($isLink) {
-		if (!empty($backUrl)) {
-			if (is_bool($backUrl)) {
-				global $page;
-				$backurl = '&backurl='.$page['file'];
-			}
-			else {
-				$backurl = '&backurl='.$backUrl;
-			}
-		}
-		else {
-			$backurl = '';
-		}
+	$link = 'zabbix.php?action=acknowledge.edit&eventids[]='.$event['eventid'].'&backurl='.urlencode($backurl);
 
-		$additionalParams = '';
-		foreach ($params as $key => $value) {
-			$additionalParams .= '&'.$key.'='.$value;
+	if ($event['acknowledged'] == EVENT_ACKNOWLEDGED) {
+		$ack = (new CLink(_('Yes'), $link))
+			->addClass(ZBX_STYLE_LINK_ALT)
+			->addClass(ZBX_STYLE_GREEN);
+		if (is_array($event['acknowledges'])) {
+			$ack->setHint(makeAckTab(array_slice($event['acknowledges'], 0, ZBX_WIDGET_ROWS)), '', false);
 		}
-
-		if ($event['acknowledged'] == 0) {
-			$ack = new CLink(_('No'), 'acknow.php?eventid='.$event['eventid'].'&triggerid='.$event['objectid'].$backurl.$additionalParams, 'disabled');
-		}
-		else {
-			$ackLink = new CLink(_('Yes'), 'acknow.php?eventid='.$event['eventid'].'&triggerid='.$event['objectid'].$backurl.$additionalParams, 'enabled');
-			if (is_array($event['acknowledges'])) {
-				$ackLinkHints = makeAckTab($event);
-				if (!empty($ackLinkHints)) {
-					$ackLink->setHint($ackLinkHints, '', '', false);
-				}
-				$ack = array($ackLink, ' ('.count($event['acknowledges']).')');
-			}
-			else {
-				$ack = array($ackLink, ' ('.$event['acknowledges'].')');
-			}
-		}
+		$ack = [$ack, CViewHelper::showNum($acknowledges_num)];
 	}
 	else {
-		if ($event['acknowledged'] == 0) {
-			$ack = new CSpan(_('No'), 'on');
-		}
-		else {
-			$ack = array(new CSpan(_('Yes'), 'off'), ' ('.(is_array($event['acknowledges']) ? count($event['acknowledges']) : $event['acknowledges']).')');
-		}
+		$ack = (new CLink(_('No'), $link))
+			->addClass(ZBX_STYLE_LINK_ALT)
+			->addClass(ZBX_STYLE_RED);
 	}
 
 	return $ack;
+}
+
+/**
+ * Create element with event acknowledges info.
+ *
+ * @param array  $events
+ * @param int    $events[]['eventid']
+ * @param int    $events[]['objectid']
+ * @param array  $events[]['acknowledges']
+ * @param string $events[]['acknowledges'][]['userid']
+ * @param int    $events[]['acknowledges'][]['clock']
+ * @param string $events[]['acknowledges'][]['message']
+ * @param string $events[]['acknowledges'][]['action']
+ * @param string $backurl  add url param to link with current page file name
+ *
+ * @return array
+ */
+function makeEventsAcknowledges($events, $backurl) {
+	$db_users = [];
+	$userids = [];
+
+	foreach ($events as &$event) {
+		foreach ($event['acknowledges'] as $acknowledge) {
+			$userids[$acknowledge['userid']] = true;
+		}
+		CArrayHelper::sort($event['acknowledges'], [['field' => 'clock', 'order' => ZBX_SORT_DOWN]]);
+	}
+	unset($event);
+
+	if ($userids) {
+		$db_users = API::User()->get([
+			'output' => ['alias', 'name', 'surname'],
+			'userids' => array_keys($userids),
+			'preservekeys' => true
+		]);
+	}
+
+	$acknowledges = [];
+
+	foreach ($events as $event) {
+		$link = 'zabbix.php?action=acknowledge.edit&eventids[]='.$event['eventid'].'&backurl='.urlencode($backurl);
+
+		if ($event['acknowledges']) {
+			$hint = makeAcknowledgesTable(array_slice($event['acknowledges'], 0, ZBX_WIDGET_ROWS), $db_users);
+			$ack = (new CLink(_('Yes'), $link))
+				->setHint($hint, '', false)
+				->addClass(ZBX_STYLE_LINK_ALT)
+				->addClass(ZBX_STYLE_GREEN);
+			$acknowledges[$event['eventid']] = [$ack, CViewHelper::showNum(count($event['acknowledges']))];
+		}
+		else {
+			$acknowledges[$event['eventid']] = (new CLink(_('No'), $link))
+				->addClass(ZBX_STYLE_LINK_ALT)
+				->addClass(ZBX_STYLE_RED);
+		}
+	}
+
+	return $acknowledges;
+}
+
+/**
+ * Get acknowledgement table.
+ *
+ * @param array  $acknowledges
+ * @param string $acknowledges[]['userid']
+ * @param int    $acknowledges[]['clock']
+ * @param string $acknowledges[]['message']
+ * @param string $acknowledges[]['action']
+ *
+ * @return CTableInfo
+ */
+function makeAcknowledgesTable($acknowledges, $users) {
+	$table = (new CTableInfo())->setHeader([_('Time'), _('User'), _('Message'), _('User action')]);
+
+	foreach ($acknowledges as $acknowledge) {
+		$table->addRow([
+			zbx_date2str(DATE_TIME_FORMAT_SECONDS, $acknowledge['clock']),
+			array_key_exists($acknowledge['userid'], $users)
+				? getUserFullname($users[$acknowledge['userid']])
+				: _('Inaccessible user'),
+			zbx_nl2br($acknowledge['message']),
+			($acknowledge['action'] == ZBX_ACKNOWLEDGE_ACTION_CLOSE_PROBLEM) ? _('Close problem') : ''
+		]);
+	}
+
+	return $table;
+}
+
+/**
+ * Create element with event tags.
+ *
+ * @param array  $events
+ * @param string $events[]['eventid']
+ * @param array  $events[]['tags']
+ * @param string $events[]['tags']['tag']
+ * @param string $events[]['tags']['value']
+ * @param bool   $html
+ *
+ * @return CTableInfo
+ */
+function makeEventsTags($events, $html = true) {
+	$tags = [];
+
+	foreach ($events as $event) {
+		CArrayHelper::sort($event['tags'], ['tag', 'value']);
+
+		$tags[$event['eventid']] = [];
+
+		if ($html) {
+			// Show first 3 tags and "..." with hint box if there are more.
+
+			$tags_count = count($event['tags']);
+			$tags_shown = array_slice($event['tags'], 0, EVENTS_LIST_TAGS_COUNT);
+
+			foreach ($tags_shown as $tag) {
+				$value = $tag['tag'].(($tag['value'] === '') ? '' : ': '.$tag['value']);
+				$tags[$event['eventid']][] = (new CSpan($value))
+					->addClass(ZBX_STYLE_TAG)
+					->setHint($value);
+			}
+
+			if ($tags_count > count($tags_shown)) {
+				// Display all tags in hint box.
+
+				$hint_content = [];
+
+				foreach ($event['tags'] as $tag) {
+					$value = $tag['tag'].($tag['value'] === '' ? '' : ': '.$tag['value']);
+					$hint_content[$event['eventid']][] = (new CSpan($value))
+						->addClass(ZBX_STYLE_TAG)
+						->setHint($value);
+				}
+
+				$tags[$event['eventid']][] = (new CSpan(
+					(new CButton(null))
+						->addClass(ZBX_STYLE_ICON_WZRD_ACTION)
+						->setHint(new CDiv($hint_content), '', true, 'max-width: 500px')
+					))->addClass(ZBX_STYLE_REL_CONTAINER);
+			}
+		}
+		else {
+			// Show all and uncut for CSV.
+
+			foreach ($event['tags'] as $tag) {
+				$value = $tag['tag'].(($tag['value'] === '') ? '' : ': '.$tag['value']);
+				$tags[$event['eventid']][] = $value;
+			}
+		}
+	}
+
+	return $tags;
 }
 
 function getLastEvents($options) {
@@ -392,31 +613,28 @@ function getLastEvents($options) {
 		$options['limit'] = 15;
 	}
 
-	$triggerOptions = array(
-		'filter' => array(),
+	$triggerOptions = [
+		'filter' => [],
 		'skipDependent' => 1,
-		'selectHosts' => array('hostid', 'name'),
+		'selectHosts' => ['hostid', 'name'],
 		'output' => API_OUTPUT_EXTEND,
 		'sortfield' => 'lastchange',
 		'sortorder' => ZBX_SORT_DOWN,
 		'limit' => $options['triggerLimit']
-	);
+	];
 
-	$eventOptions = array(
+	$eventOptions = [
 		'source' => EVENT_SOURCE_TRIGGERS,
 		'object' => EVENT_OBJECT_TRIGGER,
 		'output' => API_OUTPUT_EXTEND,
-		'sortfield' => array('clock', 'eventid'),
+		'sortfield' => ['clock', 'eventid'],
 		'sortorder' => ZBX_SORT_DOWN
-	);
+	];
 
 	if (isset($options['eventLimit'])) {
 		$eventOptions['limit'] = $options['eventLimit'];
 	}
 
-	if (isset($options['nodeids'])) {
-		$triggerOptions['nodeids'] = $options['nodeids'];
-	}
 	if (isset($options['priority'])) {
 		$triggerOptions['filter']['priority'] = $options['priority'];
 	}
@@ -440,8 +658,8 @@ function getLastEvents($options) {
 	$eventOptions['objectids'] = zbx_objectValues($triggers, 'triggerid');
 	$events = API::Event()->get($eventOptions);
 
-	$sortClock = array();
-	$sortEvent = array();
+	$sortClock = [];
+	$sortEvent = [];
 	foreach ($events as $enum => $event) {
 		if (!isset($triggers[$event['objectid']])) {
 			continue;

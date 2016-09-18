@@ -24,19 +24,18 @@
  */
 class CTree {
 
-	public $tree;
-	public $fields;
-	public $treename;
+	protected $tree;
+	private $fields;
+	private $treename;
 	private $size;
 	private $maxlevel;
 
-	public function __construct($treename, $value = array(), $fields = array()) {
+	public function __construct($treename, $value = [], $fields = []) {
 		$this->maxlevel = 0;
 		$this->tree = $value;
 		$this->fields = $fields;
 		$this->treename = $treename;
 		$this->size = count($value);
-		unset($value, $fields);
 
 		if (!$this->checkTree()) {
 			$this->destroy();
@@ -58,22 +57,18 @@ class CTree {
 	}
 
 	private function makeHeaders() {
-		$c = 0;
-		$tr = new CRow($this->fields['caption'], 'header');
-		unset($this->fields['caption']);
+		$headers = array_values($this->fields);
 
-		foreach ($this->fields as $id => $caption) {
-			$tr->addItem($caption);
-			$fields[$c] = $id;
-			$c++;
-		}
-		$this->fields = $fields;
-		return $tr;
+		$keys = array_keys($this->fields);
+		array_shift($keys);
+		$this->fields = $keys;
+
+		return $headers;
 	}
 
 	private function simpleHTML() {
-		$table = new CTableInfo();
-		$table->addRow($this->makeHeaders());
+		$table = (new CTableInfo())
+			->setHeader($this->makeHeaders());
 
 		foreach ($this->tree as $id => $rows) {
 			$table->addRow($this->makeRow($id));
@@ -82,17 +77,12 @@ class CTree {
 	}
 
 	private function makeRow($id) {
-		$table = new CTable();
-		$tr = $this->makeSImgStr($id);
-		$tr->addItem($this->tree[$id]['caption']);
+		$tr = (new CRow())->setId('id_'.$id);
+		if ($this->tree[$id]['parentid'] != 0) {
+			$tr->setAttribute('style', 'display: none;');
+		}
 
-		$table->addRow($tr);
-
-		$tr = new CRow();
-		$tr->addItem($table);
-		$tr->setAttribute('id', 'id_'.$id);
-		$tr->setAttribute('style', $this->tree[$id]['parentid'] != '0' ? 'display: none;' : '');
-
+		$tr->addItem($this->makeCell($id));
 		foreach ($this->fields as $value) {
 			$tr->addItem($this->makeCol($id, $value));
 		}
@@ -111,78 +101,43 @@ class CTree {
 		return new CCol($this->tree[$rowId][$colName]);
 	}
 
-	private function makeSImgStr($id) {
-		$tr = new CRow();
-		$count = isset($this->tree[$id]['nodeimg']) ? zbx_strlen($this->tree[$id]['nodeimg']) : 0;
+	private function makeCell($id) {
+		$td = new CCol();
 
-		for ($i = 0; $i < $count; $i++) {
-			$td = new CCol();
-			$img = null;
+		$caption = new CSpan();
 
-			switch ($this->tree[$id]['nodeimg'][$i]) {
-				case 'O':
-					$img = new CImg('images/general/tree/zero.gif', 'o', '22', '14');
-					break;
-
-				case 'I':
-					$td->setAttribute('style', 'background-image: url(images/general/tree/pointc.gif);');
-					$img = new CImg('images/general/tree/zero.gif', 'i', '22', '14');
-					break;
-
-				case 'L':
-					$td->setAttribute('valign', 'top');
-					$div = new CTag('div', 'yes');
-					$div->setAttribute('style', 'height: 10px; background-image: url(images/general/tree/pointc.gif);');
-
-					if ($this->tree[$id]['nodetype'] == 2) {
-						$img = new CImg('images/general/tree/plus.gif', 'y', '22', '14');
-						$img->setAttribute('onclick', $this->treename.'.closeSNodeX("'.$id.'", this);');
-						$img->setAttribute('id', 'idi_'.$id);
-						$img->setAttribute('class', 'pointer');
-					}
-					else {
-						$img = new CImg('images/general/tree/pointl.gif', 'y', '22', '14');
-					}
-					$div->addItem($img);
-					$img = $div;
-					break;
-
-				case 'T':
-					$td->setAttribute('valign', 'top');
-					if ($this->tree[$id]['nodetype'] == 2) {
-						$td->setAttribute('style', 'background-image: url(images/general/tree/pointc.gif);');
-						$img = new CImg('images/general/tree/plus.gif', 't', '22', '14');
-						$img->setAttribute('onclick', $this->treename.'.closeSNodeX("'.$id.'", this);');
-						$img->setAttribute('id', 'idi_'.$id);
-						$img->setAttribute('class', 'pointer');
-						$img->setAttribute('style', 'top: 1px; position: relative;');
-					}
-					else {
-						$td->setAttribute('style', 'background-image: url(images/general/tree/pointc.gif);');
-						$img = new CImg('images/general/tree/pointl.gif', 't', '22', '14');
-					}
-					break;
-			}
-
-			$td->addItem($img);
-			$tr->addItem($td);
+		if ($id != 0 && array_key_exists('childnodes', $this->tree[$id])) {
+			$caption->addItem((new CSimpleButton((new CSpan())->addClass('arrow-right')))
+				->addClass(ZBX_STYLE_TREEVIEW)
+				->onClick($this->treename.'.closeSNodeX("'.$id.'", this.getElementsByTagName(\'span\')[0]);')
+				->setId('idi_'.$id)
+			);
 		}
+		$caption->addItem($this->tree[$id]['caption']);
 
-		return $tr;
+		if ($this->tree[$id]['Level'] != 0) {
+			$level = $this->tree[$id]['Level'];
+			$caption->setAttribute('style', 'padding-left:'.(2 * $level).'em;');
+		}
+		$td->addItem($caption);
+
+		return $td;
 	}
 
 	private function countDepth() {
 		foreach ($this->tree as $id => $rows) {
-			if ($rows['id'] == '0') {
+			if ($rows['id'] == 0) {
+				$this->tree[$id]['Level'] = 0;
 				continue;
 			}
 			$parentid = $this->tree[$id]['parentid'];
 
-			$this->tree[$id]['nodeimg'] = $this->getImg($id, isset($this->tree[$parentid]['nodeimg']) ? $this->tree[$parentid]['nodeimg'] : '');
 			$this->tree[$parentid]['nodetype'] = 2;
 			$this->tree[$id]['Level'] = isset($this->tree[$parentid]['Level']) ? $this->tree[$parentid]['Level'] + 1 : 1;
 
-			$this->maxlevel>$this->tree[$id]['Level'] ? '' : $this->maxlevel = $this->tree[$id]['Level'];
+			if ($this->maxlevel < $this->tree[$id]['Level']) {
+				$this->maxlevel = $this->tree[$id]['Level'];
+			}
 		}
 	}
 
@@ -208,22 +163,7 @@ class CTree {
 
 		zbx_add_post_js($this->treename.' = new CTree("tree_'.CWebUser::$data['alias'].'_'.$this->treename.'", '.$this->treename.'_tree);');
 
-		return new CJSscript($js);
-	}
-
-	private function getImg($id, $img) {
-		$img = str_replace('T', 'I', $img);
-		$img = str_replace('L', 'O', $img);
-		$ch = 'L';
-
-		$childs = $this->tree[$this->tree[$id]['parentid']]['childnodes'];
-		$childs_last = count($this->tree[$this->tree[$id]['parentid']]['childnodes']) - 1;
-
-		if (isset($childs[$childs_last]) && $childs[$childs_last] != $id) {
-			$ch = 'T';
-		}
-		$img .= $ch;
-		return $img;
+		return new CJsScript($js);
 	}
 
 	private function checkTree() {

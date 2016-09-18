@@ -643,7 +643,7 @@ static void 	lld_graph_make(zbx_vector_ptr_t *gitems_proto, zbx_vector_ptr_t *gr
 	if (NULL != (graph = lld_graph_get(graphs, &lld_row->item_links)))
 	{
 		buffer = zbx_strdup(buffer, name_proto);
-		substitute_discovery_macros(&buffer, jp_row, ZBX_MACRO_SIMPLE, NULL, 0);
+		substitute_lld_macros(&buffer, jp_row, ZBX_MACRO_SIMPLE, NULL, NULL, 0);
 		zbx_lrtrim(buffer, ZBX_WHITESPACE);
 		if (0 != strcmp(graph->name, buffer))
 		{
@@ -673,7 +673,7 @@ static void 	lld_graph_make(zbx_vector_ptr_t *gitems_proto, zbx_vector_ptr_t *gr
 
 		graph->name = zbx_strdup(NULL, name_proto);
 		graph->name_orig = NULL;
-		substitute_discovery_macros(&graph->name, jp_row, ZBX_MACRO_SIMPLE, NULL, 0);
+		substitute_lld_macros(&graph->name, jp_row, ZBX_MACRO_SIMPLE, NULL, NULL, 0);
 		zbx_lrtrim(graph->name, ZBX_WHITESPACE);
 
 		graph->ymin_itemid = ymin_itemid;
@@ -917,7 +917,7 @@ static void	lld_graphs_save(zbx_uint64_t hostid, zbx_uint64_t parent_graphid, zb
 	zbx_vector_ptr_t	upd_gitems; 	/* the ordered list of graphs_items which will be updated */
 	zbx_vector_uint64_t	del_gitemids;
 
-	zbx_uint64_t		graphid = 0, graphdiscoveryid = 0, gitemid = 0;
+	zbx_uint64_t		graphid = 0, gitemid = 0;
 	char			*sql = NULL, *name_esc, *color_esc;
 	size_t			sql_alloc = 8 * ZBX_KIBIBYTE, sql_offset = 0;
 	zbx_db_insert_t		db_insert, db_insert_gdiscovery, db_insert_gitems;
@@ -977,15 +977,13 @@ static void	lld_graphs_save(zbx_uint64_t hostid, zbx_uint64_t parent_graphid, zb
 	if (0 != new_graphs)
 	{
 		graphid = DBget_maxid_num("graphs", new_graphs);
-		graphdiscoveryid = DBget_maxid_num("graph_discovery", new_graphs);
 
 		zbx_db_insert_prepare(&db_insert, "graphs", "graphid", "name", "width", "height", "yaxismin",
 				"yaxismax", "show_work_period", "show_triggers", "graphtype", "show_legend", "show_3d",
 				"percent_left", "percent_right", "ymin_type", "ymin_itemid", "ymax_type",
 				"ymax_itemid", "flags", NULL);
 
-		zbx_db_insert_prepare(&db_insert_gdiscovery, "graph_discovery", "graphdiscoveryid", "graphid",
-				"parent_graphid", NULL);
+		zbx_db_insert_prepare(&db_insert_gdiscovery, "graph_discovery", "graphid", "parent_graphid", NULL);
 	}
 
 	if (0 != new_gitems)
@@ -1016,10 +1014,9 @@ static void	lld_graphs_save(zbx_uint64_t hostid, zbx_uint64_t parent_graphid, zb
 					(int)show_3d, percent_left, percent_right, (int)ymin_type, graph->ymin_itemid,
 					(int)ymax_type, graph->ymax_itemid, (int)ZBX_FLAG_DISCOVERY_CREATED);
 
-			zbx_db_insert_add_values(&db_insert_gdiscovery, graphdiscoveryid, graphid, parent_graphid);
+			zbx_db_insert_add_values(&db_insert_gdiscovery, graphid, parent_graphid);
 
 			graph->graphid = graphid++;
-			graphdiscoveryid++;
 		}
 		else if (0 != (graph->flags & ZBX_FLAG_LLD_GRAPH_UPDATE))
 		{

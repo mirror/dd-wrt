@@ -19,90 +19,80 @@
 **/
 
 
-$slideWidget = new CWidget('hat_slides');
+$widget = (new CWidget())
+	->setTitle(_('Slide shows'))
+	->addItem((new CList())
+	->addClass(ZBX_STYLE_OBJECT_GROUP)
+	->addItem([
+		(new CSpan())->addItem(new CLink(_('All slide shows'), 'slideconf.php')),
+		'/',
+		(new CSpan())
+			->addClass(ZBX_STYLE_SELECTED)
+			->addItem(
+				new CLink($data['screen']['name'], 'slides.php?elementid='.$data['screen']['slideshowid'].
+					'&fullscreen='.$data['fullscreen']
+				)
+			)
+	]));
 
-// create header form
-$slideHeaderForm = new CForm('get');
-$slideHeaderForm->setName('slideHeaderForm');
+// Create header form.
+$header = (new CForm('get'))
+	->setName('slideHeaderForm');
 
-$configComboBox = new CComboBox('config', 'slides.php', 'javascript: redirect(this.options[this.selectedIndex].value);');
-$configComboBox->addItem('screens.php', _('Screens'));
-$configComboBox->addItem('slides.php', _('Slide shows'));
-$slideHeaderForm->addItem($configComboBox);
+$controls = (new CList())->addItem(
+	new CComboBox('config', 'slides.php', 'redirect(this.options[this.selectedIndex].value);', [
+		'screens.php' => _('Screens'),
+		'slides.php' => _('Slide shows')
+	])
+);
 
-if (empty($this->data['slideshows'])) {
-	$slideWidget->addPageHeader(
-		_('SLIDE SHOWS'),
-		array(
-			$slideHeaderForm,
-			SPACE,
-			get_icon('fullscreen', array('fullscreen' => $this->data['fullscreen']))
-		)
-	);
-	$slideWidget->addItem(BR());
-	$slideWidget->addItem(new CTableInfo(_('No slide shows found.')));
-}
-else {
-	$favouriteIcon = $this->data['screen']
-		? get_icon('favourite', array('fav' => 'web.favorite.screenids', 'elname' => 'slideshowid', 'elid' => $this->data['elementid']))
-		: new CIcon(_('Favourites'), 'iconplus');
+$favourite_icon = $this->data['screen']
+	? get_icon('favourite', [
+		'fav' => 'web.favorite.screenids',
+		'elname' => 'slideshowid',
+		'elid' => $this->data['elementId']
+	])
+	: (new CIcon(_('Favourites')))->addClass('iconplus');
 
-	$refreshIcon = new CIcon(_('Menu'), 'iconmenu');
-	if (!empty($this->data['screen'])) {
-		$refreshIcon->addAction('onclick', 'javascript: create_page_menu(event, "hat_slides");');
-	}
+$refresh_icon = get_icon('screenconf');
 
-	$slideWidget->addPageHeader(
-		_('SLIDE SHOWS'),
-		array(
-			$slideHeaderForm,
-			SPACE,
-			$favouriteIcon,
-			SPACE,
-			$refreshIcon,
-			SPACE,
-			get_icon('fullscreen', array('fullscreen' => $this->data['fullscreen']))
-		)
-	);
-
-	$slideForm = new CForm('get');
-	$slideForm->setName('slideForm');
-	$slideForm->addVar('fullscreen', $this->data['fullscreen']);
-
-	$elementsComboBox = new CComboBox('elementid', $this->data['elementid'], 'submit()');
-	foreach ($this->data['slideshows'] as $slideshow) {
-		$elementsComboBox->addItem($slideshow['slideshowid'], get_node_name_by_elid($slideshow['slideshowid'], null, NAME_DELIMITER).$slideshow['name']);
-	}
-	$slideForm->addItem(array(_('Slide show').SPACE, $elementsComboBox));
-
-	$slideWidget->addHeader($this->data['slideshows'][$this->data['elementid']]['name'], $slideForm);
-
-	if (!empty($this->data['screen'])) {
-		if (isset($this->data['isDynamicItems'])) {
-			$slideForm->addItem(array(SPACE, _('Group'), SPACE, $this->data['pageFilter']->getGroupsCB()));
-			$slideForm->addItem(array(SPACE, _('Host'), SPACE, $this->data['pageFilter']->getHostsCB()));
-		}
-
-		$scrollDiv = new CDiv();
-		$scrollDiv->setAttribute('id', 'scrollbar_cntr');
-		$slideWidget->addFlicker($scrollDiv, CProfile::get('web.slides.filter.state', 1));
-		$slideWidget->addFlicker(BR(), CProfile::get('web.slides.filter.state', 1));
-
-		// js menu
-		insert_js('var page_menu='.zbx_jsvalue($this->data['menu']).";\n".'var page_submenu='.zbx_jsvalue($this->data['submenu']).";\n");
-
-		add_doll_objects(array(array(
-			'id' => 'hat_slides',
-			'frequency' => $this->data['element']['delay'] * $this->data['refresh_multiplier'],
-			'url' => 'slides.php?elementid='.$this->data['elementid'].url_param('groupid').url_param('hostid'),
-			'params'=> array('lastupdate' => time())
-		)));
-
-		$slideWidget->addItem(new CSpan(_('Loading...'), 'textcolorstyles'));
-	}
-	else {
-		$slideWidget->addItem(new CTableInfo(_('No slides found.')));
-	}
+if ($this->data['screen']) {
+	$refresh_icon->setMenuPopup(CMenuPopupHelper::getRefresh(
+		WIDGET_SLIDESHOW,
+		'x'.$this->data['refreshMultiplier'],
+		true,
+		[
+			'elementid' => $this->data['elementId']
+		]
+	));
 }
 
-return $slideWidget;
+$header->addVar('fullscreen', $this->data['fullscreen']);
+
+if (isset($this->data['isDynamicItems'])) {
+	$controls->addItem([SPACE, _('Group'), SPACE, $this->data['pageFilter']->getGroupsCB()]);
+	$controls->addItem([SPACE, _('Host'), SPACE, $this->data['pageFilter']->getHostsCB()]);
+}
+$controls
+	->addItem($data['screen']['editable']
+		? (new CButton('edit', _('Edit slide show')))
+			->onClick('redirect("slideconf.php?form=update&slideshowid='.$data['screen']['slideshowid'].'")')
+		: null
+	)
+	->addItem($favourite_icon)
+	->addItem($refresh_icon)
+	->addItem(get_icon('fullscreen', ['fullscreen' => $this->data['fullscreen']]));
+$header->addItem($controls);
+$widget->setControls($header);
+
+$filter = (new CFilter('web.slides.filter.state'))->addNavigator();
+$widget->addItem($filter);
+
+$widget->addItem(
+	(new CDiv((new CDiv())->addClass('preloader')))
+		->setId(WIDGET_SLIDESHOW)
+);
+
+require_once dirname(__FILE__).'/js/monitoring.slides.js.php';
+
+return $widget;

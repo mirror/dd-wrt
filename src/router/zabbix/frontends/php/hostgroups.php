@@ -24,359 +24,369 @@ require_once dirname(__FILE__).'/include/hosts.inc.php';
 
 $page['title'] = _('Configuration of host groups');
 $page['file'] = 'hostgroups.php';
-$page['hist_arg'] = array();
 
 require_once dirname(__FILE__).'/include/page_header.php';
 
 // VAR	TYPE	OPTIONAL	FLAGS	VALIDATION	EXCEPTION
-$fields = array(
-	'hosts' =>			array(T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		null),
-	'groups' =>			array(T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		null),
-	'hostids' =>		array(T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		null),
-	'groupids' =>		array(T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		null),
+$fields = [
+	'hosts' =>			[T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		null],
+	'groups' =>			[T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		null],
+	'groupids' =>		[T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		null],
 	// group
-	'groupid' =>		array(T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		'isset({form})&&{form}=="update"'),
-	'name' =>			array(T_ZBX_STR, O_OPT, null,	NOT_EMPTY,	'isset({save})'),
-	'twb_groupid' =>	array(T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		null),
+	'groupid' =>		[T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		'isset({form}) && {form} == "update"'],
+	'name' =>			[T_ZBX_STR, O_OPT, null,	NOT_EMPTY,	'isset({add}) || isset({update})', _('Group name')],
+	'twb_groupid' =>	[T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		null],
 	// actions
-	'go' =>				array(T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,	null),
-	'save' =>			array(T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,	null),
-	'clone' =>			array(T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,	null),
-	'delete' =>			array(T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,	null),
-	'cancel' =>			array(T_ZBX_STR, O_OPT, P_SYS,	null,		null),
+	'action' =>			[T_ZBX_STR, O_OPT, P_SYS|P_ACT,
+							IN('"hostgroup.massdelete","hostgroup.massdisable","hostgroup.massenable"'),
+							null
+						],
+	'add' =>			[T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,	null],
+	'update' =>			[T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,	null],
+	'clone' =>			[T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,	null],
+	'delete' =>			[T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,	null],
 	// other
-	'form' =>			array(T_ZBX_STR, O_OPT, P_SYS,	null,		null),
-	'form_refresh' =>	array(T_ZBX_STR, O_OPT, null,	null,		null)
-);
+	'form' =>			[T_ZBX_STR, O_OPT, P_SYS,	null,		null],
+	'form_refresh' =>	[T_ZBX_INT, O_OPT, null,	null,		null],
+	// filter
+	'filter_set' =>		[T_ZBX_STR, O_OPT, P_SYS,	null,		null],
+	'filter_rst' =>		[T_ZBX_STR, O_OPT, P_SYS,	null,		null],
+	'filter_name' =>	[T_ZBX_STR, O_OPT, null,	null,		null],
+	// sort and sortorder
+	'sort' =>			[T_ZBX_STR, O_OPT, P_SYS, IN('"name"'),								null],
+	'sortorder' =>		[T_ZBX_STR, O_OPT, P_SYS, IN('"'.ZBX_SORT_DOWN.'","'.ZBX_SORT_UP.'"'),	null]
+];
 check_fields($fields);
-validate_sort_and_sortorder('name', ZBX_SORT_UP);
-
-$_REQUEST['go'] = get_request('go', 'none');
 
 /*
- * Permissions
+ * Form actions
  */
-if (get_request('groupid') && !API::HostGroup()->isWritable(array($_REQUEST['groupid']))) {
-	access_deny();
-}
+if (hasRequest('form')) {
+	if (hasRequest('clone')) {
+		unset($_REQUEST['groupid']);
+	}
+	elseif (hasRequest('add') || hasRequest('update')) {
+		$hostIds = getRequest('hosts', []);
+		$groupId = getRequest('groupid');
+		$name = getRequest('name');
 
-/*
- * Actions
- */
-if (isset($_REQUEST['clone']) && isset($_REQUEST['groupid'])) {
-	unset($_REQUEST['groupid']);
-	$_REQUEST['form'] = 'clone';
-}
-elseif (isset($_REQUEST['save'])) {
-	$hostIds = get_request('hosts', array());
-
-	$hosts = API::Host()->get(array(
-		'hostids' => $hostIds,
-		'output' => array('hostid'),
-		'filter' => array('flags' => ZBX_FLAG_DISCOVERY_NORMAL),
-		'preservekeys' => true
-	));
-
-	$templates = API::Template()->get(array(
-		'templateids' => $hostIds,
-		'output' => array('templateid'),
-		'preservekeys' => true
-	));
-
-	$groupId = getRequest('groupid', 0);
-
-	if ($groupId != 0) {
 		DBstart();
 
-		$oldGroup = API::HostGroup()->get(array(
-			'groupids' => $_REQUEST['groupid'],
-			'output' => API_OUTPUT_EXTEND,
-			'selectHosts' => array('hostid'),
-			'selectTemplates' => array('templateid')
-		));
-		$oldGroup = reset($oldGroup);
+		if ($groupId) {
+			$messageSuccess = _('Group updated');
+			$messageFailed = _('Cannot update group');
 
-		$result = true;
-		// don't try to update the name for a discovered host group
-		if ($oldGroup['flags'] != ZBX_FLAG_DISCOVERY_CREATED) {
-			$result = API::HostGroup()->update(array(
-				'groupid' => $groupId,
-				'name' => $_REQUEST['name']
-			));
-		}
+			$data = [
+				'groupid' => getRequest('groupid'),
+				'name' => getRequest('name')
+			];
 
-		if ($result) {
-			$groups = API::HostGroup()->get(array(
-				'groupids' => $_REQUEST['groupid'],
-				'output' => API_OUTPUT_EXTEND
-			));
-
-			$hostIdsToAdd = array();
-			$hostIdsToRemove = array();
-			$templateIdsToAdd = array();
-			$templateIdsToRemove = array();
-
-			$oldHostIds = zbx_objectValues($oldGroup['hosts'], 'hostid');
-			$newHostIds = array_keys($hosts);
-			$oldTemplateIds = zbx_objectValues($oldGroup['templates'], 'templateid');
-			$newTemplateIds = array_keys($templates);
-
-			foreach (array_diff($newHostIds, $oldHostIds) as $hostId) {
-				$hostIdsToAdd[$hostId] = $hostId;
+			$oldGroups = API::HostGroup()->get([
+				'output' => ['name', 'flags'],
+				'selectHosts' => ['hostid'],
+				'selectTemplates' => ['templateid'],
+				'groupids' => [$groupId]
+			]);
+			if (!$oldGroups) {
+				access_deny();
 			}
+			$oldGroup = reset($oldGroups);
 
-			foreach (array_diff($oldHostIds, $newHostIds) as $hostId) {
-				$hostIdsToRemove[$hostId] = $hostId;
-			}
+			$result = true;
 
-			foreach (array_diff($newTemplateIds, $oldTemplateIds) as $templateId) {
-				$templateIdsToAdd[$templateId] = $templateId;
-			}
-
-			foreach (array_diff($oldTemplateIds, $newTemplateIds) as $templateId) {
-				$templateIdsToRemove[$templateId] = $templateId;
-			}
-
-			if ($hostIdsToAdd || $templateIdsToAdd) {
-				$massAdd = array(
-					'groups' => array('groupid' => $groupId)
-				);
-
-				if ($hostIdsToAdd) {
-					$massAdd['hosts'] = zbx_toObject($hostIdsToAdd, 'hostid');
-				}
-
-				if ($templateIdsToAdd) {
-					$massAdd['templates'] = zbx_toObject($templateIdsToAdd, 'templateid');
-				}
-
-				$result &= (bool) API::HostGroup()->massAdd($massAdd);
-			}
-
-			if ($hostIdsToRemove || $templateIdsToRemove) {
-				$massRemove = array(
-					'groupids' => array($groupId)
-				);
-
-				if ($hostIdsToRemove) {
-					$massRemove['hostids'] = $hostIdsToRemove;
-				}
-
-				if ($templateIdsToRemove) {
-					$massRemove['templateids'] = $templateIdsToRemove;
-				}
-
-				$result &= (bool) API::HostGroup()->massRemove($massRemove);
+			// don't try to update the name for a discovered host group
+			if ($oldGroup['flags'] != ZBX_FLAG_DISCOVERY_CREATED) {
+				$result = API::HostGroup()->update([
+					'groupid' => $groupId,
+					'name' => $name
+				]);
 			}
 
 			if ($result) {
-				$group = reset($groups);
+				$hosts = API::Host()->get([
+					'output' => ['hostid'],
+					'hostids' => $hostIds,
+					'filter' => ['flags' => ZBX_FLAG_DISCOVERY_NORMAL],
+					'preservekeys' => true
+				]);
 
-				add_audit_ext(AUDIT_ACTION_UPDATE, AUDIT_RESOURCE_HOST_GROUP, $group['groupid'], $group['name'],
-					'groups', array('name' => $oldGroup['name']), array('name' => $group['name']));
-			}
-		}
+				$templates = API::Template()->get([
+					'output' => ['templateid'],
+					'templateids' => $hostIds,
+					'preservekeys' => true
+				]);
 
-		$result = DBend($result);
+				$hostIdsToAdd = [];
+				$hostIdsToRemove = [];
+				$templateIdsToAdd = [];
+				$templateIdsToRemove = [];
 
-		$msgOk = _('Group updated');
-		$msgFail = _('Cannot update group');
-	}
-	else {
-		DBstart();
+				$oldHostIds = zbx_objectValues($oldGroup['hosts'], 'hostid');
+				$newHostIds = array_keys($hosts);
+				$oldTemplateIds = zbx_objectValues($oldGroup['templates'], 'templateid');
+				$newTemplateIds = array_keys($templates);
 
-		$result = API::HostGroup()->create(array('name' => $_REQUEST['name']));
+				foreach (array_diff($newHostIds, $oldHostIds) as $hostId) {
+					$hostIdsToAdd[$hostId] = $hostId;
+				}
 
-		if ($result) {
-			$groups = API::HostGroup()->get(array(
-				'groupids' => $result['groupids'],
-				'output' => API_OUTPUT_EXTEND
-			));
+				foreach (array_diff($oldHostIds, $newHostIds) as $hostId) {
+					$hostIdsToRemove[$hostId] = $hostId;
+				}
 
-			$result = API::HostGroup()->massAdd(array(
-				'hosts' => $hosts,
-				'templates' => $templates,
-				'groups' => $groups
-			));
+				foreach (array_diff($newTemplateIds, $oldTemplateIds) as $templateId) {
+					$templateIdsToAdd[$templateId] = $templateId;
+				}
 
-			if ($result) {
-				$group = reset($groups);
+				foreach (array_diff($oldTemplateIds, $newTemplateIds) as $templateId) {
+					$templateIdsToRemove[$templateId] = $templateId;
+				}
 
-				add_audit_ext(AUDIT_ACTION_ADD, AUDIT_RESOURCE_HOST_GROUP, $group['groupid'], $group['name'], null, null, null);
-			}
-		}
+				if ($hostIdsToAdd || $templateIdsToAdd) {
+					$massAdd = [
+						'groups' => ['groupid' => $groupId]
+					];
 
-		$result = DBend($result);
+					if ($hostIdsToAdd) {
+						$massAdd['hosts'] = zbx_toObject($hostIdsToAdd, 'hostid');
+					}
 
-		$msgOk = _('Group added');
-		$msgFail = _('Cannot add group');
-	}
+					if ($templateIdsToAdd) {
+						$massAdd['templates'] = zbx_toObject($templateIdsToAdd, 'templateid');
+					}
 
-	show_messages($result, $msgOk, $msgFail);
+					$result &= (bool) API::HostGroup()->massAdd($massAdd);
+				}
 
-	if ($result) {
-		unset($_REQUEST['form']);
-		clearCookies($result);
-	}
-	unset($_REQUEST['save']);
-}
-elseif (isset($_REQUEST['delete']) && isset($_REQUEST['groupid'])) {
-	$result = API::HostGroup()->delete($_REQUEST['groupid']);
+				if ($hostIdsToRemove || $templateIdsToRemove) {
+					$massRemove = [
+						'groupids' => [$groupId]
+					];
 
-	show_messages($result, _('Group deleted'), _('Cannot delete group'));
+					if ($hostIdsToRemove) {
+						$massRemove['hostids'] = $hostIdsToRemove;
+					}
 
-	if ($result) {
-		unset($_REQUEST['form']);
-		clearCookies($result);
-	}
-	unset($_REQUEST['delete']);
-}
-elseif ($_REQUEST['go'] == 'delete') {
-	$goResult = API::HostGroup()->delete(get_request('groups', array()));
+					if ($templateIdsToRemove) {
+						$massRemove['templateids'] = $templateIdsToRemove;
+					}
 
-	show_messages($goResult, _('Group deleted'), _('Cannot delete group'));
-	clearCookies($goResult);
-}
-elseif (str_in_array(getRequest('go'), array('activate', 'disable'))) {
-	$enable =(getRequest('go') == 'activate');
-	$status = $enable ? HOST_STATUS_MONITORED : HOST_STATUS_NOT_MONITORED;
-	$auditAction = $enable ? AUDIT_ACTION_ENABLE : AUDIT_ACTION_DISABLE;
+					$result &= (bool) API::HostGroup()->massRemove($massRemove);
+				}
 
-	$groups = getRequest('groups', array());
-
-	if ($groups) {
-		DBstart();
-
-		$hosts = API::Host()->get(array(
-			'groupids' => $groups,
-			'editable' => true,
-			'output' => API_OUTPUT_EXTEND
-		));
-
-		if ($hosts) {
-			$result = API::Host()->massUpdate(array(
-				'hosts' => $hosts,
-				'status' => $status
-			));
-
-			if ($result) {
-				foreach ($hosts as $host) {
-					add_audit_ext(
-						$auditAction,
-						AUDIT_RESOURCE_HOST,
-						$host['hostid'],
-						$host['host'],
-						'hosts',
-						array('status' => $host['status']),
-						array('status' => $status)
+				if ($result) {
+					add_audit_ext(AUDIT_ACTION_UPDATE, AUDIT_RESOURCE_HOST_GROUP, $groupId, $name, 'groups',
+						['name' => $oldGroup['name']], ['name' => $name]
 					);
 				}
 			}
 		}
 		else {
-			$result = true;
+			$messageSuccess = _('Group added');
+			$messageFailed = _('Cannot add group');
+
+			$result = API::HostGroup()->create(['name' => $name]);
+
+			if ($result) {
+				$groupId = $result['groupids'][0];
+
+				$hosts = API::Host()->get([
+					'output' => ['hostid'],
+					'hostids' => $hostIds,
+					'filter' => ['flags' => ZBX_FLAG_DISCOVERY_NORMAL]
+				]);
+
+				$templates = API::Template()->get([
+					'output' => ['templateid'],
+					'templateids' => $hostIds
+				]);
+
+				$result = API::HostGroup()->massAdd([
+					'groups' => [['groupid' => $groupId]],
+					'hosts' => $hosts,
+					'templates' => $templates
+				]);
+
+				if ($result) {
+					add_audit_ext(AUDIT_ACTION_ADD, AUDIT_RESOURCE_HOST_GROUP, $groupId, $name, null, null, null);
+				}
+			}
 		}
 
 		$result = DBend($result);
 
-		$updated = count($hosts);
-
-		$messageSuccess = $enable
-			? _n('Host enabled', 'Hosts enabled', $updated)
-			: _n('Host disabled', 'Hosts disabled', $updated);
-		$messageFailed = $enable
-			? _n('Cannot enable host', 'Cannot enable hosts', $updated)
-			: _n('Cannot disable host', 'Cannot disable hosts', $updated);
-
+		if ($result) {
+			unset($_REQUEST['form']);
+			uncheckTableRows();
+		}
 		show_messages($result, $messageSuccess, $messageFailed);
-		clearCookies($result);
+	}
+	elseif (hasRequest('delete') && hasRequest('groupid')) {
+		$result = API::HostGroup()->delete([getRequest('groupid')]);
+
+		if ($result) {
+			unset($_REQUEST['form']);
+			uncheckTableRows();
+		}
+		show_messages($result, _('Group deleted'), _('Cannot delete group'));
+
+		unset($_REQUEST['delete']);
+	}
+}
+/*
+ * List actions
+ */
+elseif (hasRequest('action')) {
+	if (getRequest('action') == 'hostgroup.massdelete') {
+		$groupIds = getRequest('groups', []);
+
+		if ($groupIds) {
+			$result = API::HostGroup()->delete($groupIds);
+
+			$updated = count($groupIds);
+
+			if ($result) {
+				uncheckTableRows();
+			}
+			show_messages($result,
+				_n('Group deleted', 'Groups deleted', $updated),
+				_n('Cannot delete group', 'Cannot delete groups', $updated)
+			);
+		}
+	}
+	elseif (getRequest('action') == 'hostgroup.massenable' || getRequest('action') == 'hostgroup.massdisable') {
+		$enable = (getRequest('action') == 'hostgroup.massenable');
+		$status = $enable ? HOST_STATUS_MONITORED : HOST_STATUS_NOT_MONITORED;
+		$auditAction = $enable ? AUDIT_ACTION_ENABLE : AUDIT_ACTION_DISABLE;
+
+		$groupIds = getRequest('groups', []);
+
+		if ($groupIds) {
+			DBstart();
+
+			$hosts = API::Host()->get([
+				'output' => ['hostid', 'status', 'host'],
+				'groupids' => $groupIds,
+				'editable' => true
+			]);
+
+			$result = true;
+
+			if ($hosts) {
+				$result = API::Host()->massUpdate([
+					'hosts' => $hosts,
+					'status' => $status
+				]);
+
+				if ($result) {
+					foreach ($hosts as $host) {
+						add_audit_ext($auditAction, AUDIT_RESOURCE_HOST, $host['hostid'], $host['host'], 'hosts',
+							['status' => $host['status']], ['status' => $status]
+						);
+					}
+				}
+			}
+
+			$result = DBend($result);
+
+			if ($result) {
+				uncheckTableRows();
+			}
+
+			$updated = count($hosts);
+
+			$messageSuccess = $enable
+				? _n('Host enabled', 'Hosts enabled', $updated)
+				: _n('Host disabled', 'Hosts disabled', $updated);
+			$messageFailed = $enable
+				? _n('Cannot enable host', 'Cannot enable hosts', $updated)
+				: _n('Cannot disable host', 'Cannot disable hosts', $updated);
+
+			show_messages($result, $messageSuccess, $messageFailed);
+		}
 	}
 }
 
 /*
- * Display
+ * Display form
  */
-if (isset($_REQUEST['form'])) {
-	$data = array(
-		'form' => get_request('form'),
-		'groupid' => get_request('groupid', 0),
-		'hosts' => get_request('hosts', array()),
-		'name' => get_request('name', ''),
-		'twb_groupid' => get_request('twb_groupid', -1)
-	);
+if (hasRequest('form')) {
+	$data = [
+		'form' => getRequest('form'),
+		'groupid' => getRequest('groupid', 0),
+		'name' => getRequest('name', ''),
+		'hosts' => getRequest('hosts', []),
+		'twb_groupid' => getRequest('twb_groupid', -1),
+		'r_hosts' => []
+	];
 
-	if ($data['groupid'] > 0) {
-		$data['group'] = get_hostgroup_by_groupid($data['groupid']);
+	if ($data['groupid'] != 0) {
+		/*
+		 * Permissions
+		 */
+		$groups = API::HostGroup()->get([
+			'output' => ['name', 'flags'],
+			'groupids' => $data['groupid'],
+			'editable' => true
+		]);
+		if (!$groups) {
+			access_deny();
+		}
+
+		$data['group'] = reset($groups);
 
 		// if first time select all hosts for group from db
-		if (!isset($_REQUEST['form_refresh'])) {
+		if (!hasRequest('form_refresh')) {
 			$data['name'] = $data['group']['name'];
 
-			$data['hosts'] = API::Host()->get(array(
+			$data['hosts'] = API::Host()->get([
 				'groupids' => $data['groupid'],
 				'templated_hosts' => true,
-				'output' => array('hostid')
-			));
+				'output' => ['hostid']
+			]);
 
 			$data['hosts'] = zbx_toHash(zbx_objectValues($data['hosts'], 'hostid'), 'hostid');
 		}
 	}
 
 	// get all possible groups
-	$data['db_groups'] = API::HostGroup()->get(array(
-		'not_proxy_host' => true,
-		'sortfield' => 'name',
-		'editable' => true,
-		'output' => API_OUTPUT_EXTEND
-	));
+	$data['db_groups'] = API::HostGroup()->get([
+		'output' => ['groupid', 'name'],
+		'with_hosts_and_templates' => true,
+		'editable' => true
+	]);
+	order_result($data['db_groups'], 'name');
 
 	if ($data['twb_groupid'] == -1) {
-		$gr = reset($data['db_groups']);
+		$dbGroup = reset($data['db_groups']);
 
-		$data['twb_groupid'] = $gr['groupid'];
+		$data['twb_groupid'] = $dbGroup['groupid'];
 	}
 
 	// get all possible hosts
-	$data['db_hosts'] = API::Host()->get(array(
+	$data['db_hosts'] = API::Host()->get([
+		'output' => ['hostid', 'name'],
 		'groupids' => $data['twb_groupid'] ? $data['twb_groupid'] : null,
 		'templated_hosts' => true,
-		'sortfield' => 'name',
 		'editable' => true,
-		'output' => API_OUTPUT_EXTEND,
-		'filter' => array('flags' => ZBX_FLAG_DISCOVERY_NORMAL)
-	));
+		'filter' => ['flags' => ZBX_FLAG_DISCOVERY_NORMAL]
+	]);
+	order_result($data['db_hosts'], 'name');
 
 	// get selected hosts
-	$data['r_hosts'] = API::Host()->get(array(
-		'hostids' => $data['hosts'],
-		'templated_hosts' => true,
-		'sortfield' => 'name',
-		'output' => API_OUTPUT_EXTEND
-	));
-	$data['r_hosts'] = zbx_toHash($data['r_hosts'], 'hostid');
-
-	// deletable groups
-	if (!empty($data['groupid'])) {
-		$data['deletableHostGroups'] = getDeletableHostGroups($data['groupid']);
+	if ($data['hosts']) {
+		$data['r_hosts'] = API::Host()->get([
+			'output' => ['hostid', 'name', 'flags'],
+			'hostids' => $data['hosts'],
+			'templated_hosts' => true,
+			'preservekeys' => true
+		]);
+		order_result($data['r_hosts'], 'name');
 	}
 
-	// nodes
-	if (is_array(get_current_nodeid())) {
-		foreach ($data['db_groups'] as $key => $group) {
-			$data['db_groups'][$key]['name'] =
-				get_node_name_by_elid($group['groupid'], true, NAME_DELIMITER).$group['name'];
-		}
-
-		foreach ($data['r_hosts'] as $key => $host) {
-			$data['r_hosts'][$key]['name'] = get_node_name_by_elid($host['hostid'], true, NAME_DELIMITER).$host['name'];
-		}
-
-		if (!$data['twb_groupid']) {
-			foreach ($data['db_hosts'] as $key => $host) {
-				$data['db_hosts'][$key]['name'] =
-					get_node_name_by_elid($host['hostid'], true, NAME_DELIMITER).$host['name'];
-			}
-		}
+	// deletable groups
+	if ($data['groupid'] != 0) {
+		$data['deletableHostGroups'] = getDeletableHostGroupIds([$data['groupid']]);
 	}
 
 	// render view
@@ -384,52 +394,77 @@ if (isset($_REQUEST['form'])) {
 	$hostgroupView->render();
 	$hostgroupView->show();
 }
+/*
+ * Display list
+ */
 else {
-	$data = array(
-		'config' => $config,
-		'displayNodes' => is_array(get_current_nodeid())
-	);
+	$sortField = getRequest('sort', CProfile::get('web.'.$page['file'].'.sort', 'name'));
+	$sortOrder = getRequest('sortorder', CProfile::get('web.'.$page['file'].'.sortorder', ZBX_SORT_UP));
 
-	$sortfield = getPageSortField('name');
-	$sortorder =  getPageSortOrder();
+	CProfile::update('web.'.$page['file'].'.sort', $sortField, PROFILE_TYPE_STR);
+	CProfile::update('web.'.$page['file'].'.sortorder', $sortOrder, PROFILE_TYPE_STR);
 
-	$groups = API::HostGroup()->get(array(
+	// filter
+	if (hasRequest('filter_set')) {
+		CProfile::update('web.groups.filter_name', getRequest('filter_name', ''), PROFILE_TYPE_STR);
+	}
+	elseif (hasRequest('filter_rst')) {
+		CProfile::delete('web.groups.filter_name');
+	}
+
+	$filter = [
+		'name' => CProfile::get('web.groups.filter_name', '')
+	];
+
+	$config = select_config();
+
+	$data = [
+		'sort' => $sortField,
+		'sortorder' => $sortOrder,
+		'filter' => $filter,
+		'config' => $config
+	];
+
+	$groups = API::HostGroup()->get([
+		'output' => ['groupid', $sortField],
+		'search' => [
+			'name' => ($filter['name'] === '') ? null : $filter['name']
+		],
 		'editable' => true,
-		'output' => array('groupid', $sortfield),
-		'sortfield' => $sortfield,
+		'sortfield' => $sortField,
 		'limit' => $config['search_limit'] + 1
-	));
-	order_result($groups, $sortfield, $sortorder);
+	]);
+	order_result($groups, $sortField, $sortOrder);
 
-	$data['paging'] = getPagingLine($groups, array('groupid'));
+	$data['paging'] = getPagingLine($groups, $sortOrder, new CUrl('hostgroups.php'));
+	$groupIds = zbx_objectValues($groups, 'groupid');
 
 	// get hosts and templates count
-	$data['groupCounts'] = API::HostGroup()->get(array(
-		'groupids' => zbx_objectValues($groups, 'groupid'),
+	$data['groupCounts'] = API::HostGroup()->get([
+		'output' => ['groupid'],
+		'groupids' => $groupIds,
 		'selectHosts' => API_OUTPUT_COUNT,
 		'selectTemplates' => API_OUTPUT_COUNT,
-		'nopermissions' => true
-	));
-	$data['groupCounts'] = zbx_toHash($data['groupCounts'], 'groupid');
+		'preservekeys' => true
+	]);
 
 	// get host groups
-	$data['groups'] = API::HostGroup()->get(array(
-		'groupids' => zbx_objectValues($groups, 'groupid'),
-		'selectHosts' => array('hostid', 'name', 'status'),
-		'selectTemplates' => array('hostid', 'name', 'status'),
-		'selectGroupDiscovery' => array('ts_delete'),
-		'selectDiscoveryRule' => array('itemid', 'name'),
-		'output' => API_OUTPUT_EXTEND,
+	$data['groups'] = API::HostGroup()->get([
+		'output' => ['groupid', 'name', 'flags'],
+		'groupids' => $groupIds,
+		'selectHosts' => ['hostid', 'name', 'status'],
+		'selectTemplates' => ['templateid', 'name'],
+		'selectGroupDiscovery' => ['ts_delete'],
+		'selectDiscoveryRule' => ['itemid', 'name'],
 		'limitSelects' => $config['max_in_table'] + 1
-	));
-	order_result($data['groups'], $sortfield, $sortorder);
+	]);
+	order_result($data['groups'], $sortField, $sortOrder);
 
-	// nodes
-	if ($data['displayNodes']) {
-		foreach ($data['groups'] as $key => $group) {
-			$data['groups'][$key]['nodename'] = get_node_name_by_elid($group['groupid'], true);
-		}
+	foreach ($data['groups'] as &$group) {
+		order_result($group['hosts'], 'name');
+		order_result($group['templates'], 'name');
 	}
+	unset($group);
 
 	// render view
 	$hostgroupView = new CView('configuration.hostgroups.list', $data);

@@ -14,7 +14,7 @@
 		});
 
 		jQuery('#algorithm').change(function() {
-			var statusDisabled = (jQuery(this).val() == <?php echo SERVICE_ALGORITHM_NONE ?>);
+			var statusDisabled = (jQuery(this).val() == <?= SERVICE_ALGORITHM_NONE ?>);
 			jQuery('#showsla, #trigger, #btn1, #goodsla').prop('disabled', statusDisabled);
 
 			if (!statusDisabled) {
@@ -42,12 +42,20 @@
 			inputName.setAttribute('name', 'children[' + serviceid + '][name]');
 			inputName.setAttribute('id', 'children_' + serviceid + '_name');
 
+			var inputTrigger = document.createElement('input');
+			inputTrigger.setAttribute('type', 'hidden');
+			inputTrigger.setAttribute('value', trigger);
+			inputTrigger.setAttribute('name', 'children[' + serviceid + '][trigger]');
+			inputTrigger.setAttribute('id', 'children_' + serviceid + '_trigger');
+
 			var url = document.createElement('a');
 			url.setAttribute('href', 'services.php?form=1&serviceid=' + serviceid);
+			url.setAttribute('target', '_blank');
 			url.appendChild(document.createTextNode(name));
 
 			td.appendChild(inputServiceId);
 			td.appendChild(inputName);
+			td.appendChild(inputTrigger);
 			td.appendChild(url);
 			tr.appendChild(td);
 
@@ -69,16 +77,15 @@
 
 			// column "action"
 			var td = document.createElement('td');
-			var inputRemove = document.createElement('input');
-			inputRemove.setAttribute('type', 'button');
-			inputRemove.setAttribute('value', <?php echo CJs::encodeJson(_('Remove')); ?>);
-			inputRemove.setAttribute('class', 'link_menu');
+			td.setAttribute('class', '<?= ZBX_STYLE_NOWRAP ?>');
+			var inputRemove = document.createElement('button');
+			inputRemove.setAttribute('class', '<?= ZBX_STYLE_BTN_LINK ?>');
 			inputRemove.setAttribute('onclick', 'javascript: removeDependentChild(\'' + serviceid + '\');');
+			inputRemove.appendChild(document.createTextNode(<?= CJs::encodeJson(_('Remove')) ?>));
 
 			td.appendChild(inputRemove);
 			tr.appendChild(td);
 			document.getElementById('service_children').firstChild.appendChild(tr);
-			jQuery('#service_children .message').css('display', 'none');
 		}
 	}
 
@@ -86,15 +93,16 @@
 		removeObjectById('children_' + serviceid);
 		removeObjectById('children_' + serviceid + '_name');
 		removeObjectById('children_' + serviceid + '_serviceid');
+		removeObjectById('children_' + serviceid + '_trigger');
 	}
 
 	function removeTime(id) {
+		var parent = jQuery('#times_' + id).parent();
+
 		removeObjectById('times_' + id);
 		removeObjectById('times_' + id + '_type');
 		removeObjectById('times_' + id + '_from');
 		removeObjectById('times_' + id + '_to');
 		removeObjectById('times_' + id + '_note');
 	}
-
-	createPlaceholders();
 </script>

@@ -20,6 +20,7 @@
 #include "checks_calculated.h"
 #include "zbxserver.h"
 #include "log.h"
+#include "../../libs/zbxserver/evalfunc.h"
 
 typedef struct
 {
@@ -88,27 +89,51 @@ static int	calcitem_parse_expression(DC_ITEM *dc_item, expression_t *exp, char *
 {
 	const char	*__function_name = "calcitem_parse_expression";
 	char		*e, *f, *func = NULL, *params = NULL;
-	size_t		exp_alloc = 128, exp_offset = 0;
+	size_t		exp_alloc = 128, exp_offset = 0, len;
 	int		functionid, ret;
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s() expression:'%s'", __function_name, dc_item->params);
-
-	assert(dc_item);
-	assert(exp);
 
 	exp->exp = zbx_malloc(exp->exp, exp_alloc);
 
 	for (e = dc_item->params; '\0' != *e; e++)
 	{
-		if (NULL != strchr(" \t\r\n", *e))
+		if ('{' == *e && '$' == *(e + 1))	/* user macro ? */
+		{
+			int	macro_r, context_l, context_r;
+
+			/* find length of user macro and copy the user macro verbatim */
+
+			if (SUCCEED == zbx_user_macro_parse(e, &macro_r, &context_l, &context_r))
+			{
+				zbx_strncpy_alloc(&exp->exp, &exp_alloc, &exp_offset, e, (size_t)macro_r + 1);
+				e += macro_r;	/* skip to position after user macro */
+			}
+			else
+				zbx_chrcpy_alloc(&exp->exp, &exp_alloc, &exp_offset, *e);
+
 			continue;
+		}
+
+		if (SUCCEED != is_function_char(*e))
+		{
+			zbx_chrcpy_alloc(&exp->exp, &exp_alloc, &exp_offset, *e);
+			continue;
+		}
+
+		if ((0 == strncmp("and", e, len = 3) || 0 == strncmp("not", e, 3) || 0 == strncmp("or", e, len = 2)) &&
+				NULL != strchr("()" ZBX_WHITESPACE, e[len]))
+		{
+			zbx_strncpy_alloc(&exp->exp, &exp_alloc, &exp_offset, e, len);
+			e += len - 1;
+			continue;
+		}
 
 		f = e;
-		if (FAIL == parse_function(&e, &func, &params))
+		if (SUCCEED != parse_function(&e, &func, &params))
 		{
 			e = f;
 			zbx_chrcpy_alloc(&exp->exp, &exp_alloc, &exp_offset, *f);
-
 			continue;
 		}
 		else
@@ -127,7 +152,7 @@ static int	calcitem_parse_expression(DC_ITEM *dc_item, expression_t *exp, char *
 
 	zabbix_log(LOG_LEVEL_DEBUG, "%s() expression:'%s'", __function_name, exp->exp);
 
-	if (FAIL == (ret = substitute_simple_macros(NULL, NULL, NULL, NULL, NULL, &dc_item->host, NULL,
+	if (FAIL == (ret = substitute_simple_macros(NULL, NULL, NULL, NULL, NULL, &dc_item->host, NULL, NULL,
 				&exp->exp, MACRO_TYPE_ITEM_EXPRESSION, error, max_error_len)))
 		ret = NOTSUPPORTED;
 
@@ -136,11 +161,12 @@ static int	calcitem_parse_expression(DC_ITEM *dc_item, expression_t *exp, char *
 	return ret;
 }
 
-static int	calcitem_evaluate_expression(DC_ITEM *dc_item, expression_t *exp, char *error, int max_error_len)
+static int	calcitem_evaluate_expression(DC_ITEM *dc_item, expression_t *exp, char *error, size_t max_error_len,
+		zbx_vector_ptr_t *unknown_msgs)
 {
 	const char	*__function_name = "calcitem_evaluate_expression";
-	function_t	*f;
-	char		*buf, replace[16];
+	function_t	*f = NULL;
+	char		*buf, replace[16], *errstr = NULL;
 	int		i, ret = SUCCEED;
 	time_t		now;
 	zbx_host_key_t	*keys = NULL;
@@ -152,9 +178,9 @@ static int	calcitem_evaluate_expression(DC_ITEM *dc_item, expression_t *exp, cha
 	if (0 == exp->functions_num)
 		return ret;
 
-	keys = zbx_malloc(keys, sizeof(zbx_host_key_t) * exp->functions_num);
-	items = zbx_malloc(items, sizeof(DC_ITEM) * exp->functions_num);
-	errcodes = zbx_malloc(errcodes, sizeof(int) * exp->functions_num);
+	keys = zbx_malloc(keys, sizeof(zbx_host_key_t) * (size_t)exp->functions_num);
+	items = zbx_malloc(items, sizeof(DC_ITEM) * (size_t)exp->functions_num);
+	errcodes = zbx_malloc(errcodes, sizeof(int) * (size_t)exp->functions_num);
 
 	for (i = 0; i < exp->functions_num; i++)
 	{
@@ -193,6 +219,9 @@ static int	calcitem_evaluate_expression(DC_ITEM *dc_item, expression_t *exp, cha
 
 	for (i = 0; i < exp->functions_num; i++)
 	{
+		int	ret_unknown = 0;	/* flag raised if current function evaluates to ZBX_UNKNOWN */
+		char	*unknown_msg;
+
 		f = &exp->functions[i];
 
 		if (SUCCEED != errcodes[i])
@@ -204,6 +233,8 @@ static int	calcitem_evaluate_expression(DC_ITEM *dc_item, expression_t *exp, cha
 			ret = NOTSUPPORTED;
 			break;
 		}
+
+		/* do not evaluate if the item is disabled or belongs to a disabled host */
 
 		if (ITEM_STATUS_ACTIVE != items[i].status)
 		{
@@ -225,26 +256,65 @@ static int	calcitem_evaluate_expression(DC_ITEM *dc_item, expression_t *exp, cha
 			break;
 		}
 
-		if (ITEM_STATE_NOTSUPPORTED == items[i].state)
+		/* If the item is NOTSUPPORTED then evaluation is allowed for:   */
+		/*   - functions white-listed in evaluatable_for_notsupported(). */
+		/*     Their values can be evaluated to regular numbers even for */
+		/*     NOTSUPPORTED items. */
+		/*   - other functions. Result of evaluation is ZBX_UNKNOWN.     */
+
+		if (ITEM_STATE_NOTSUPPORTED == items[i].state && FAIL == evaluatable_for_notsupported(f->func))
 		{
-			zbx_snprintf(error, max_error_len,
+			/* compose and store 'unknown' message for future use */
+			unknown_msg = zbx_dsprintf(NULL,
 					"Cannot evaluate function \"%s(%s)\": item \"%s:%s\" not supported.",
 					f->func, f->params, f->host, f->key);
-			ret = NOTSUPPORTED;
-			break;
+
+			zbx_vector_ptr_append(unknown_msgs, unknown_msg);
+			ret_unknown = 1;
 		}
 
 		f->value = zbx_malloc(f->value, MAX_BUFFER_LEN);
 
-		if (SUCCEED != evaluate_function(f->value, &items[i], f->func, f->params, now))
+		if (0 == ret_unknown &&
+				SUCCEED != evaluate_function(f->value, &items[i], f->func, f->params, now, &errstr))
 		{
-			zbx_snprintf(error, max_error_len, "Cannot evaluate function [%s(%s)].",
-					f->func, f->params);
-			ret = NOTSUPPORTED;
-			break;
+			/* compose and store error message for future use */
+			if (NULL != errstr)
+			{
+				unknown_msg = zbx_dsprintf(NULL, "Cannot evaluate function \"%s(%s)\": %s.",
+						f->func, f->params, errstr);
+				zbx_free(errstr);
+			}
+			else
+			{
+				unknown_msg = zbx_dsprintf(NULL, "Cannot evaluate function \"%s(%s)\".",
+						f->func, f->params);
+			}
+
+			zbx_vector_ptr_append(unknown_msgs, unknown_msg);
+			ret_unknown = 1;
 		}
 
-		f->value = zbx_realloc(f->value, strlen(f->value) + 1);
+		if (1 == ret_unknown || SUCCEED != is_double_suffix(f->value) || '-' == *f->value)
+		{
+			char	*wrapped;
+
+			if (0 == ret_unknown)
+			{
+				wrapped = zbx_dsprintf(NULL, "(%s)", f->value);
+			}
+			else
+			{
+				/* write a special token of unknown value with 'unknown' message number, like */
+				/* ZBX_UNKNOWN0, ZBX_UNKNOWN1 etc. not wrapped in () */
+				wrapped = zbx_dsprintf(NULL, ZBX_UNKNOWN_STR "%d", unknown_msgs->values_num - 1);
+			}
+
+			zbx_free(f->value);
+			f->value = wrapped;
+		}
+		else
+			f->value = zbx_realloc(f->value, strlen(f->value) + 1);
 
 		zbx_snprintf(replace, sizeof(replace), "{%d}", f->functionid);
 		buf = string_replace(exp->exp, replace, f->value);
@@ -258,16 +328,19 @@ out:
 	zbx_free(items);
 	zbx_free(keys);
 
+	zabbix_log(LOG_LEVEL_DEBUG, "End of %s():%s", __function_name, zbx_result_string(ret));
+
 	return ret;
 }
 
 int	get_value_calculated(DC_ITEM *dc_item, AGENT_RESULT *result)
 {
-	const char	*__function_name = "get_value_calculated";
-	expression_t	exp;
-	int		ret;
-	char		error[MAX_STRING_LEN];
-	double		value;
+	const char		*__function_name = "get_value_calculated";
+	expression_t		exp;
+	int			ret;
+	char			error[MAX_STRING_LEN];
+	double			value;
+	zbx_vector_ptr_t	unknown_msgs;		/* pointers to messages about origins of 'unknown' values */
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s() key:'%s' expression:'%s'", __function_name,
 			dc_item->key_orig, dc_item->params);
@@ -277,16 +350,20 @@ int	get_value_calculated(DC_ITEM *dc_item, AGENT_RESULT *result)
 	if (SUCCEED != (ret = calcitem_parse_expression(dc_item, &exp, error, sizeof(error))))
 	{
 		SET_MSG_RESULT(result, strdup(error));
-		goto clean;
+		goto clean1;
 	}
 
-	if (SUCCEED != (ret = calcitem_evaluate_expression(dc_item, &exp, error, sizeof(error))))
+	/* Assumption: most often there will be no NOTSUPPORTED items and function errors. */
+	/* Therefore initialize error messages vector but do not reserve any space. */
+	zbx_vector_ptr_create(&unknown_msgs);
+
+	if (SUCCEED != (ret = calcitem_evaluate_expression(dc_item, &exp, error, sizeof(error), &unknown_msgs)))
 	{
 		SET_MSG_RESULT(result, strdup(error));
 		goto clean;
 	}
 
-	if (SUCCEED != evaluate(&value, exp.exp, error, sizeof(error)))
+	if (SUCCEED != evaluate(&value, exp.exp, error, sizeof(error), &unknown_msgs))
 	{
 		SET_MSG_RESULT(result, strdup(error));
 		ret = NOTSUPPORTED;
@@ -297,17 +374,18 @@ int	get_value_calculated(DC_ITEM *dc_item, AGENT_RESULT *result)
 
 	if (ITEM_VALUE_TYPE_UINT64 == dc_item->value_type && 0 > value)
 	{
-		SET_MSG_RESULT(result, zbx_dsprintf(NULL,
-				"Received value [" ZBX_FS_DBL "] is not suitable"
-				" for value type [%s] and data type [%s]",
-				value, zbx_item_value_type_string(dc_item->value_type),
-				zbx_item_data_type_string(dc_item->data_type)));
+		SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Received value [" ZBX_FS_DBL "]"
+				" is not suitable for value type [%s].",
+				value, zbx_item_value_type_string(dc_item->value_type)));
 		ret = NOTSUPPORTED;
 		goto clean;
 	}
 
 	SET_DBL_RESULT(result, value);
 clean:
+	zbx_vector_ptr_clear_ext(&unknown_msgs, zbx_ptr_free);
+	zbx_vector_ptr_destroy(&unknown_msgs);
+clean1:
 	free_expression(&exp);
 
 	zabbix_log(LOG_LEVEL_DEBUG, "End of %s():%s", __function_name, zbx_result_string(ret));

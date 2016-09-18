@@ -31,73 +31,8 @@
 #if HAVE_POSTGRESQL
 extern char	ZBX_PG_ESCAPE_BACKSLASH;
 #endif
-/***************************************************************/
-/* ID structure: NNNSSSDDDDDDDDDDD, where                      */
-/*      NNN - nodeid (to which node the ID belongs to)         */
-/*      SSS - source nodeid (in which node was the ID created) */
-/*      DDDDDDDDDDD - the ID itself                            */
-/***************************************************************/
 
-/******************************************************************************
- *                                                                            *
- * Function: __DBnode                                                         *
- *                                                                            *
- * Purpose: prepare a SQL statement to select records from a specific node    *
- *                                                                            *
- * Parameters: field_name - [IN] the name of the field                        *
- *             nodeid     - [IN] node identificator from database             *
- *             op         - [IN] 0 - and; 1 - where                           *
- *                                                                            *
- * Return value:                                                              *
- *  An SQL condition like:                                                    *
- *   " and hostid between 100000000000000 and 199999999999999"                *
- *  or                                                                        *
- *   " where hostid between 100000000000000 and 199999999999999"              *
- *  or an empty string for a standalone setup (nodeid = 0)                    *
- *                                                                            *
- ******************************************************************************/
-const char	*__DBnode(const char *field_name, int nodeid, int op)
-{
-	static char	dbnode[62 + ZBX_FIELDNAME_LEN];
-	const char	*operators[] = {"and", "where"};
-
-	if (0 != nodeid)
-	{
-		zbx_uint64_t	min, max;
-
-		min = ZBX_DM_MAX_HISTORY_IDS * (zbx_uint64_t)nodeid;
-		max = min + ZBX_DM_MAX_HISTORY_IDS - 1;
-
-		zbx_snprintf(dbnode, sizeof(dbnode), " %s %s between " ZBX_FS_UI64 " and " ZBX_FS_UI64,
-				operators[op], field_name, min, max);
-	}
-	else
-		*dbnode = '\0';
-
-	return dbnode;
-}
-
-/******************************************************************************
- *                                                                            *
- * Function: DBis_node_id                                                     *
- *                                                                            *
- * Purpose: checks belonging of an identifier to a certain node               *
- *                                                                            *
- * Parameters: id     - [IN] the checked identifier                           *
- *             nodeid - [IN] node identificator from database                 *
- *                                                                            *
- * Return value: SUCCEED if identifier is belonging to a node, FAIL otherwise *
- *                                                                            *
- ******************************************************************************/
-int	DBis_node_id(zbx_uint64_t id, int nodeid)
-{
-	zbx_uint64_t	min, max;
-
-	min = ZBX_DM_MAX_HISTORY_IDS * (zbx_uint64_t)nodeid;
-	max = min + ZBX_DM_MAX_HISTORY_IDS - 1;
-
-	return min <= id && id <= max ? SUCCEED : FAIL;
-}
+static int	connection_failure;
 
 void	DBclose(void)
 {
@@ -120,6 +55,7 @@ void	DBclose(void)
 int	DBconnect(int flag)
 {
 	const char	*__function_name = "DBconnect";
+
 	int		err;
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s() flag:%d", __function_name, flag);
@@ -133,11 +69,18 @@ int	DBconnect(int flag)
 		if (ZBX_DB_FAIL == err || ZBX_DB_CONNECT_EXIT == flag)
 		{
 			zabbix_log(LOG_LEVEL_CRIT, "Cannot connect to the database. Exiting...");
-			exit(FAIL);
+			exit(EXIT_FAILURE);
 		}
 
-		zabbix_log(LOG_LEVEL_WARNING, "Database is down. Reconnecting in %d seconds.", ZBX_DB_WAIT_DOWN);
+		zabbix_log(LOG_LEVEL_ERR, "database is down: reconnecting in %d seconds", ZBX_DB_WAIT_DOWN);
+		connection_failure = 1;
 		zbx_sleep(ZBX_DB_WAIT_DOWN);
+	}
+
+	if (0 != connection_failure)
+	{
+		zabbix_log(LOG_LEVEL_ERR, "database connection re-established");
+		connection_failure = 0;
 	}
 
 	zabbix_log(LOG_LEVEL_DEBUG, "End of %s():%d", __function_name, err);
@@ -179,7 +122,8 @@ static void	DBtxn_operation(int (*txn_operation)())
 
 		if (ZBX_DB_DOWN == (rc = txn_operation()))
 		{
-			zabbix_log(LOG_LEVEL_WARNING, "Database is down. Retrying in %d seconds.", ZBX_DB_WAIT_DOWN);
+			zabbix_log(LOG_LEVEL_ERR, "database is down: retrying in %d seconds", ZBX_DB_WAIT_DOWN);
+			connection_failure = 1;
 			sleep(ZBX_DB_WAIT_DOWN);
 		}
 	}
@@ -196,7 +140,7 @@ static void	DBtxn_operation(int (*txn_operation)())
  * Comments: do nothing if DB does not support transactions                   *
  *                                                                            *
  ******************************************************************************/
-void	DBbegin()
+void	DBbegin(void)
 {
 	DBtxn_operation(zbx_db_begin);
 }
@@ -212,7 +156,7 @@ void	DBbegin()
  * Comments: do nothing if DB does not support transactions                   *
  *                                                                            *
  ******************************************************************************/
-void	DBcommit()
+void	DBcommit(void)
 {
 	DBtxn_operation(zbx_db_commit);
 }
@@ -228,7 +172,7 @@ void	DBcommit()
  * Comments: do nothing if DB does not support transactions                   *
  *                                                                            *
  ******************************************************************************/
-void	DBrollback()
+void	DBrollback(void)
 {
 	DBtxn_operation(zbx_db_rollback);
 }
@@ -273,7 +217,8 @@ void	DBstatement_prepare(const char *sql)
 
 		if (ZBX_DB_DOWN == (rc = zbx_db_statement_prepare(sql)))
 		{
-			zabbix_log(LOG_LEVEL_WARNING, "Database is down. Retrying in %d seconds.", ZBX_DB_WAIT_DOWN);
+			zabbix_log(LOG_LEVEL_ERR, "database is down: retrying in %d seconds", ZBX_DB_WAIT_DOWN);
+			connection_failure = 1;
 			sleep(ZBX_DB_WAIT_DOWN);
 		}
 	}
@@ -302,7 +247,8 @@ void	DBbind_parameter(int position, void *buffer, unsigned char type)
 
 		if (ZBX_DB_DOWN == (rc = zbx_db_bind_parameter(position, buffer, type)))
 		{
-			zabbix_log(LOG_LEVEL_WARNING, "Database is down. Retrying in %d seconds.", ZBX_DB_WAIT_DOWN);
+			zabbix_log(LOG_LEVEL_ERR, "database is down: retrying in %d seconds", ZBX_DB_WAIT_DOWN);
+			connection_failure = 1;
 			sleep(ZBX_DB_WAIT_DOWN);
 		}
 	}
@@ -330,7 +276,8 @@ int	DBstatement_execute()
 
 		if (ZBX_DB_DOWN == (rc = zbx_db_statement_execute()))
 		{
-			zabbix_log(LOG_LEVEL_WARNING, "Database is down. Retrying in %d seconds.", ZBX_DB_WAIT_DOWN);
+			zabbix_log(LOG_LEVEL_ERR, "database is down: retrying in %d seconds", ZBX_DB_WAIT_DOWN);
+			connection_failure = 1;
 			sleep(ZBX_DB_WAIT_DOWN);
 		}
 	}
@@ -364,7 +311,8 @@ int	__zbx_DBexecute(const char *fmt, ...)
 
 		if (ZBX_DB_DOWN == (rc = zbx_db_vexecute(fmt, args)))
 		{
-			zabbix_log(LOG_LEVEL_WARNING, "Database is down. Retrying in %d seconds.", ZBX_DB_WAIT_DOWN);
+			zabbix_log(LOG_LEVEL_ERR, "database is down: retrying in %d seconds", ZBX_DB_WAIT_DOWN);
+			connection_failure = 1;
 			sleep(ZBX_DB_WAIT_DOWN);
 		}
 	}
@@ -430,7 +378,8 @@ DB_RESULT	__zbx_DBselect(const char *fmt, ...)
 
 		if ((DB_RESULT)ZBX_DB_DOWN == (rc = zbx_db_vselect(fmt, args)))
 		{
-			zabbix_log(LOG_LEVEL_WARNING, "Database is down. Retrying in %d seconds.", ZBX_DB_WAIT_DOWN);
+			zabbix_log(LOG_LEVEL_ERR, "database is down: retrying in %d seconds", ZBX_DB_WAIT_DOWN);
+			connection_failure = 1;
 			sleep(ZBX_DB_WAIT_DOWN);
 		}
 	}
@@ -462,7 +411,8 @@ DB_RESULT	DBselectN(const char *query, int n)
 
 		if ((DB_RESULT)ZBX_DB_DOWN == (rc = zbx_db_select_n(query, n)))
 		{
-			zabbix_log(LOG_LEVEL_WARNING, "Database is down. Retrying in %d seconds.", ZBX_DB_WAIT_DOWN);
+			zabbix_log(LOG_LEVEL_ERR, "database is down: retrying in %d seconds", ZBX_DB_WAIT_DOWN);
+			connection_failure = 1;
 			sleep(ZBX_DB_WAIT_DOWN);
 		}
 	}
@@ -470,342 +420,10 @@ DB_RESULT	DBselectN(const char *query, int n)
 	return rc;
 }
 
-/******************************************************************************
- *                                                                            *
- * Function: process_trigger                                                  *
- *                                                                            *
- * Purpose: 1) generate sql statement for updating trigger                    *
- *          2) add events                                                     *
- *          3) update cached trigger                                          *
- *                                                                            *
- * Return value: SUCCEED - trigger processed successfully                     *
- *               FAIL    - no changes                                         *
- *                                                                            *
- * Comments: do not process if there are dependencies with value PROBLEM      *
- *                                                                            *
- ******************************************************************************/
-int	process_trigger(char **sql, size_t *sql_alloc, size_t *sql_offset, const struct _DC_TRIGGER *trigger)
-{
-	const char	*__function_name = "process_trigger";
-
-	const char	*new_error_local;
-	char		*new_error_esc;
-	int		new_state, new_value, new_lastchange, value_changed, state_changed, multiple_problem,
-			error_changed, ret = FAIL;
-
-	zabbix_log(LOG_LEVEL_DEBUG, "In %s() triggerid:" ZBX_FS_UI64 " value:%d(%d) new_value:%d",
-			__function_name, trigger->triggerid, trigger->value, trigger->state, trigger->new_value);
-
-	if (TRIGGER_VALUE_UNKNOWN == trigger->new_value)
-	{
-		new_state = TRIGGER_STATE_UNKNOWN;
-		new_value = trigger->value;
-	}
-	else
-	{
-		new_state = TRIGGER_STATE_NORMAL;
-		new_value = trigger->new_value;
-	}
-
-	/**************************************************************************************************/
-	/*                                                                                                */
-	/* The following table shows in which cases trigger should be updated and/or events should be     */
-	/* generated. Trigger value(state) changes from state "from" to state "to":                       */
-	/*                                                                                                */
-	/*   _          |                                                                                 */
-	/*    \__ to    |                                                                                 */
-	/*       \_____ |   OK           OK(?)        PROBLEM     PROBLEM(?)                              */
-	/*   from      \|                                                                                 */
-	/*              |                                                                                 */
-	/*  ------------+------------------------------------------------------                           */
-	/*              |                                                                                 */
-	/*  OK          |   no           T+I          T+E         I                                       */
-	/*              |                                                                                 */
-	/*  OK(?)       |   T+I          T(e)         T+E+I       -                                       */
-	/*              |                                                                                 */
-	/*  PROBLEM     |   T+E          I            T(m)+E(m)   T+I                                     */
-	/*              |                                                                                 */
-	/*  PROBLEM(?)  |   T+E+I        -            T+E(m)+I    T(e)                                    */
-	/*              |                                                                                 */
-	/*                                                                                                */
-	/* Legend:                                                                                        */
-	/*                                                                                                */
-	/*  ?   - unknown state                                                                           */
-	/*  -   - should never happen                                                                     */
-	/*  no  - do nothing                                                                              */
-	/*  T   - update a trigger                                                                        */
-	/*  E   - generate an event                                                                       */
-	/*  (m) - if it is a "multiple PROBLEM events" trigger                                            */
-	/*  (e) - if an error message has changed                                                         */
-	/*  I   - generate an internal event                                                              */
-	/*                                                                                                */
-	/**************************************************************************************************/
-
-	new_error_local = (NULL == trigger->new_error ? "" : trigger->new_error);
-	new_lastchange = trigger->timespec.sec;
-
-	value_changed = (trigger->value != new_value ||
-			(0 == trigger->lastchange && TRIGGER_STATE_UNKNOWN != new_state));
-	state_changed = (trigger->state != new_state);
-	multiple_problem = (TRIGGER_TYPE_MULTIPLE_TRUE == trigger->type && TRIGGER_VALUE_PROBLEM == new_value &&
-			TRIGGER_STATE_NORMAL == new_state);
-	error_changed = (0 != strcmp(trigger->error, new_error_local));
-
-	if (0 != value_changed || 0 != state_changed || 0 != multiple_problem || 0 != error_changed)
-	{
-		if (SUCCEED == DCconfig_check_trigger_dependencies(trigger->triggerid))
-		{
-			if (NULL == *sql)
-			{
-				*sql_alloc = 2 * ZBX_KIBIBYTE;
-				*sql = zbx_malloc(*sql, *sql_alloc);
-			}
-
-			zbx_strcpy_alloc(sql, sql_alloc, sql_offset, "update triggers set ");
-
-			if (0 != value_changed || 0 != multiple_problem)
-			{
-				DCconfig_set_trigger_value(trigger->triggerid, new_value, new_state, new_error_local,
-						&new_lastchange);
-
-				add_event(0, EVENT_SOURCE_TRIGGERS, EVENT_OBJECT_TRIGGER, trigger->triggerid,
-						&trigger->timespec, new_value, trigger->description,
-						trigger->expression_orig, trigger->priority, trigger->type);
-
-				zbx_snprintf_alloc(sql, sql_alloc, sql_offset, "lastchange=%d,", new_lastchange);
-			}
-			else
-			{
-				DCconfig_set_trigger_value(trigger->triggerid, new_value, new_state, new_error_local,
-						NULL);
-			}
-
-			if (0 != value_changed)
-				zbx_snprintf_alloc(sql, sql_alloc, sql_offset, "value=%d,", new_value);
-
-			if (0 != state_changed)
-			{
-				add_event(0, EVENT_SOURCE_INTERNAL, EVENT_OBJECT_TRIGGER, trigger->triggerid,
-						&trigger->timespec, new_state, trigger->description,
-						trigger->expression_orig, trigger->priority, trigger->type);
-
-				zbx_snprintf_alloc(sql, sql_alloc, sql_offset, "state=%d,", new_state);
-			}
-
-			if (0 != error_changed)
-			{
-				new_error_esc = DBdyn_escape_string_len(new_error_local, TRIGGER_ERROR_LEN);
-				zbx_snprintf_alloc(sql, sql_alloc, sql_offset, "error='%s',", new_error_esc);
-				zbx_free(new_error_esc);
-			}
-
-			(*sql_offset)--;
-
-			zbx_snprintf_alloc(sql, sql_alloc, sql_offset, " where triggerid=" ZBX_FS_UI64,
-					trigger->triggerid);
-
-			ret = SUCCEED;
-		}
-	}
-
-	zabbix_log(LOG_LEVEL_DEBUG, "End of %s():%s", __function_name, zbx_result_string(ret));
-
-	return ret;
-}
-
-/******************************************************************************
- *                                                                            *
- * Comments: helper function for process_triggers()                           *
- *                                                                            *
- ******************************************************************************/
-static int	zbx_trigger_topoindex_compare(const void *d1, const void *d2)
-{
-	const zbx_ptr_pair_t	*p1 = (const zbx_ptr_pair_t *)d1;
-	const zbx_ptr_pair_t	*p2 = (const zbx_ptr_pair_t *)d2;
-
-	const DC_TRIGGER	*t1 = (const DC_TRIGGER *)p1->first;
-	const DC_TRIGGER	*t2 = (const DC_TRIGGER *)p2->first;
-
-	ZBX_RETURN_IF_NOT_EQUAL(t1->topoindex, t2->topoindex);
-
-	return 0;
-}
-
-void	process_triggers(zbx_vector_ptr_t *triggers)
-{
-	const char		*__function_name = "process_triggers";
-
-	int			i, count = 0;
-	char			*sql = NULL;
-	size_t			sql_alloc, sql_offset;
-	zbx_vector_ptr_pair_t	trigger_sqls;
-
-	zabbix_log(LOG_LEVEL_DEBUG, "In %s() values_num:%d", __function_name, triggers->values_num);
-
-	if (0 == triggers->values_num)
-		goto out;
-
-	zbx_vector_ptr_pair_create(&trigger_sqls);
-	zbx_vector_ptr_pair_reserve(&trigger_sqls, triggers->values_num);
-
-	for (i = 0; i < triggers->values_num; i++)
-	{
-		zbx_ptr_pair_t	trigger_sql;
-
-		trigger_sql.first = triggers->values[i];
-		trigger_sql.second = NULL;
-
-		zbx_vector_ptr_pair_append(&trigger_sqls, trigger_sql);
-	}
-
-	zbx_vector_ptr_pair_sort(&trigger_sqls, zbx_trigger_topoindex_compare);
-
-	for (i = 0; i < trigger_sqls.values_num; i++)
-	{
-		zbx_ptr_pair_t	*trigger_sql = &trigger_sqls.values[i];
-		DC_TRIGGER	*trigger = (DC_TRIGGER *)trigger_sql->first;
-
-		sql_alloc = 0;
-		sql_offset = 0;
-
-		count += (SUCCEED == process_trigger((char **)&trigger_sql->second, &sql_alloc, &sql_offset, trigger));
-	}
-
-	if (0 == count)
-		goto clean;
-
-	zbx_vector_ptr_pair_sort(&trigger_sqls, ZBX_DEFAULT_UINT64_PTR_COMPARE_FUNC);
-
-	sql_alloc = 16 * ZBX_KIBIBYTE;
-	sql_offset = 0;
-
-	sql = zbx_malloc(sql, sql_alloc);
-
-	DBbegin_multiple_update(&sql, &sql_alloc, &sql_offset);
-
-	for (i = 0; i < trigger_sqls.values_num; i++)
-	{
-		if (NULL == trigger_sqls.values[i].second)
-			continue;
-
-		zbx_strcpy_alloc(&sql, &sql_alloc, &sql_offset, trigger_sqls.values[i].second);
-		zbx_strcpy_alloc(&sql, &sql_alloc, &sql_offset, ";\n");
-		DBexecute_overflowed_sql(&sql, &sql_alloc, &sql_offset);
-
-		zbx_free(trigger_sqls.values[i].second);
-	}
-
-	DBend_multiple_update(&sql, &sql_alloc, &sql_offset);
-
-	if (sql_offset > 16)	/* in ORACLE always present begin..end; */
-		DBexecute("%s", sql);
-
-	zbx_free(sql);
-clean:
-	zbx_vector_ptr_pair_destroy(&trigger_sqls);
-out:
-	zabbix_log(LOG_LEVEL_DEBUG, "End of %s()", __function_name);
-}
-
-void	DBadd_trend(zbx_uint64_t itemid, double value, int clock)
-{
-	const char	*__function_name = "DBadd_trend";
-	DB_RESULT	result;
-	DB_ROW		row;
-	int		hour, num;
-	double		value_min, value_avg, value_max;
-
-	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __function_name);
-
-	hour = clock - clock % SEC_PER_HOUR;
-
-	result = DBselect("select num,value_min,value_avg,value_max from trends where itemid=" ZBX_FS_UI64 " and clock=%d",
-			itemid, hour);
-
-	if (NULL != (row = DBfetch(result)))
-	{
-		num = atoi(row[0]);
-		value_min = atof(row[1]);
-		value_avg = atof(row[2]);
-		value_max = atof(row[3]);
-		if (value < value_min)
-			value_min = value;
-		if (value > value_max)
-			value_max = value;
-		value_avg = (num * value_avg + value) / (num + 1);
-		num++;
-
-		DBexecute("update trends"
-				" set num=%d,"
-				"value_min=" ZBX_FS_DBL ","
-				"value_avg=" ZBX_FS_DBL ","
-				"value_max=" ZBX_FS_DBL
-				" where itemid=" ZBX_FS_UI64
-					" and clock=%d",
-				num, value_min, value_avg, value_max, itemid, hour);
-	}
-	else
-	{
-		DBexecute("insert into trends (itemid,clock,num,value_min,value_avg,value_max)"
-				" values (" ZBX_FS_UI64 ",%d,%d," ZBX_FS_DBL "," ZBX_FS_DBL "," ZBX_FS_DBL ")",
-				itemid, hour, 1, value, value, value);
-	}
-	DBfree_result(result);
-
-	zabbix_log(LOG_LEVEL_DEBUG, "End of %s()", __function_name);
-}
-
-void	DBadd_trend_uint(zbx_uint64_t itemid, zbx_uint64_t value, int clock)
-{
-	const char	*__function_name = "DBadd_trend_uint";
-	DB_RESULT	result;
-	DB_ROW		row;
-	int		hour, num;
-	zbx_uint64_t	value_min, value_avg, value_max;
-
-	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __function_name);
-
-	hour = clock - clock % SEC_PER_HOUR;
-
-	result = DBselect("select num,value_min,value_avg,value_max from trends_uint where itemid=" ZBX_FS_UI64 " and clock=%d",
-		itemid, hour);
-
-	if (NULL != (row = DBfetch(result)))
-	{
-		num = atoi(row[0]);
-		ZBX_STR2UINT64(value_min, row[1]);
-		ZBX_STR2UINT64(value_avg, row[2]);
-		ZBX_STR2UINT64(value_max, row[3]);
-		if (value < value_min)
-			value_min = value;
-		if (value > value_max)
-			value_max = value;
-		value_avg = (num * value_avg + value) / (num + 1);
-		num++;
-
-		DBexecute("update trends_uint"
-				" set num=%d,"
-				"value_min=" ZBX_FS_UI64 ","
-				"value_avg=" ZBX_FS_UI64 ","
-				"value_max=" ZBX_FS_UI64
-				" where itemid=" ZBX_FS_UI64
-					" and clock=%d",
-				num, value_min, value_avg, value_max, itemid, hour);
-	}
-	else
-	{
-		DBexecute("insert into trends_uint (itemid,clock,num,value_min,value_avg,value_max)"
-				" values (" ZBX_FS_UI64 ",%d,%d," ZBX_FS_UI64 "," ZBX_FS_UI64 "," ZBX_FS_UI64 ")",
-				itemid, hour, 1, value, value, value);
-	}
-	DBfree_result(result);
-
-	zabbix_log(LOG_LEVEL_DEBUG, "End of %s()", __function_name);
-}
-
 int	DBget_row_count(const char *table_name)
 {
 	const char	*__function_name = "DBget_row_count";
+
 	int		count = 0;
 	DB_RESULT	result;
 	DB_ROW		row;
@@ -826,6 +444,7 @@ int	DBget_row_count(const char *table_name)
 int	DBget_proxy_lastaccess(const char *hostname, int *lastaccess, char **error)
 {
 	const char	*__function_name = "DBget_proxy_lastaccess";
+
 	DB_RESULT	result;
 	DB_ROW		row;
 	char		*host_esc;
@@ -844,7 +463,7 @@ int	DBget_proxy_lastaccess(const char *hostname, int *lastaccess, char **error)
 		ret = SUCCEED;
 	}
 	else
-		*error = zbx_dsprintf(*error, "proxy \"%s\" does not exist", hostname);
+		*error = zbx_dsprintf(*error, "Proxy \"%s\" does not exist.", hostname);
 	DBfree_result(result);
 
 	zabbix_log(LOG_LEVEL_DEBUG, "End of %s():%s", __function_name, zbx_result_string(ret));
@@ -882,29 +501,7 @@ char	*DBdyn_escape_like_pattern(const char *src)
 	return zbx_db_dyn_escape_like_pattern(src);
 }
 
-void	DBget_item_from_db(DB_ITEM *item, DB_ROW row)
-{
-	ZBX_STR2UINT64(item->itemid, row[0]);
-	item->key = row[1];
-	item->host_name = row[2];
-	item->type = atoi(row[3]);
-	item->history = atoi(row[4]);
-	item->trends = atoi(row[13]);
-	item->value_type = atoi(row[6]);
-
-	ZBX_STR2UINT64(item->hostid, row[5]);
-	item->delta = atoi(row[7]);
-
-	item->units = row[8];
-	item->multiplier = atoi(row[9]);
-	item->formula = row[10];
-	item->state = (unsigned char)atoi(row[11]);
-	ZBX_DBROW2UINT64(item->valuemapid, row[12]);
-
-	item->data_type = atoi(row[14]);
-}
-
-const ZBX_TABLE *DBget_table(const char *tablename)
+const ZBX_TABLE	*DBget_table(const char *tablename)
 {
 	int	t;
 
@@ -917,7 +514,7 @@ const ZBX_TABLE *DBget_table(const char *tablename)
 	return NULL;
 }
 
-const ZBX_FIELD *DBget_field(const ZBX_TABLE *table, const char *fieldname)
+const ZBX_FIELD	*DBget_field(const ZBX_TABLE *table, const char *fieldname)
 {
 	int	f;
 
@@ -945,33 +542,17 @@ const ZBX_FIELD *DBget_field(const ZBX_TABLE *table, const char *fieldname)
 static zbx_uint64_t	DBget_nextid(const char *tablename, int num)
 {
 	const char	*__function_name = "DBget_nextid";
+
 	DB_RESULT	result;
 	DB_ROW		row;
 	zbx_uint64_t	ret1, ret2;
-	zbx_uint64_t	min, max;
+	zbx_uint64_t	min = 0, max = ZBX_DB_MAX_ID;
 	int		found = FAIL, dbres;
 	const ZBX_TABLE	*table;
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s() tablename:'%s'", __function_name, tablename);
 
 	table = DBget_table(tablename);
-
-	if (0 == CONFIG_NODEID)
-	{
-		min = 0;
-		max = ZBX_STANDALONE_MAX_IDS;
-	}
-	else if (0 != (table->flags & ZBX_SYNC))
-	{
-		min = ZBX_DM_MAX_HISTORY_IDS * (zbx_uint64_t)CONFIG_NODEID +
-			ZBX_DM_MAX_CONFIG_IDS * (zbx_uint64_t)CONFIG_NODEID;
-		max = min + ZBX_DM_MAX_CONFIG_IDS - 1;
-	}
-	else
-	{
-		min = ZBX_DM_MAX_HISTORY_IDS * (zbx_uint64_t)CONFIG_NODEID;
-		max = min + ZBX_DM_MAX_HISTORY_IDS - 1;
-	}
 
 	while (FAIL == found)
 	{
@@ -982,8 +563,8 @@ static zbx_uint64_t	DBget_nextid(const char *tablename, int num)
 			return 0;
 		}
 
-		result = DBselect("select nextid from ids where nodeid=%d and table_name='%s' and field_name='%s'",
-				CONFIG_NODEID, table->table, table->recid);
+		result = DBselect("select nextid from ids where table_name='%s' and field_name='%s'",
+				table->table, table->recid);
 
 		if (NULL == (row = DBfetch(result)))
 		{
@@ -1004,21 +585,21 @@ static zbx_uint64_t	DBget_nextid(const char *tablename, int num)
 					zabbix_log(LOG_LEVEL_CRIT, "maximum number of id's exceeded"
 							" [table:%s, field:%s, id:" ZBX_FS_UI64 "]",
 							table->table, table->recid, ret1);
-					exit(FAIL);
+					exit(EXIT_FAILURE);
 				}
 			}
+
 			DBfree_result(result);
 
-			dbres = DBexecute("insert into ids (nodeid,table_name,field_name,nextid)"
-					" values (%d,'%s','%s'," ZBX_FS_UI64 ")",
-					CONFIG_NODEID, table->table, table->recid, ret1);
+			dbres = DBexecute("insert into ids (table_name,field_name,nextid)"
+					" values ('%s','%s'," ZBX_FS_UI64 ")",
+					table->table, table->recid, ret1);
 
 			if (ZBX_DB_OK > dbres)
 			{
 				/* solving the problem of an invisible record created in a parallel transaction */
-				DBexecute("update ids set nextid=nextid+1 where nodeid=%d and table_name='%s'"
-						" and field_name='%s'",
-						CONFIG_NODEID, table->table, table->recid);
+				DBexecute("update ids set nextid=nextid+1 where table_name='%s' and field_name='%s'",
+						table->table, table->recid);
 			}
 
 			continue;
@@ -1030,26 +611,28 @@ static zbx_uint64_t	DBget_nextid(const char *tablename, int num)
 
 			if (ret1 < min || ret1 >= max)
 			{
-				DBexecute("delete from ids where nodeid=%d and table_name='%s' and field_name='%s'",
-						CONFIG_NODEID, table->table, table->recid);
+				DBexecute("delete from ids where table_name='%s' and field_name='%s'",
+						table->table, table->recid);
 				continue;
 			}
 
-			DBexecute("update ids set nextid=nextid+%d where nodeid=%d and table_name='%s' and field_name='%s'",
-					num, CONFIG_NODEID, table->table, table->recid);
+			DBexecute("update ids set nextid=nextid+%d where table_name='%s' and field_name='%s'",
+					num, table->table, table->recid);
 
-			result = DBselect("select nextid from ids where nodeid=%d and table_name='%s' and field_name='%s'",
-					CONFIG_NODEID, table->table, table->recid);
+			result = DBselect("select nextid from ids where table_name='%s' and field_name='%s'",
+					table->table, table->recid);
 
 			if (NULL != (row = DBfetch(result)) && SUCCEED != DBis_null(row[0]))
 			{
 				ZBX_STR2UINT64(ret2, row[0]);
-				DBfree_result(result);
+
 				if (ret1 + num == ret2)
 					found = SUCCEED;
 			}
 			else
 				THIS_SHOULD_NEVER_HAPPEN;
+
+			DBfree_result(result);
 		}
 	}
 
@@ -1061,16 +644,14 @@ static zbx_uint64_t	DBget_nextid(const char *tablename, int num)
 
 zbx_uint64_t	DBget_maxid_num(const char *tablename, int num)
 {
-	if (0 == strcmp(tablename, "history_log") ||
-			0 == strcmp(tablename, "history_text") ||
-			0 == strcmp(tablename, "events") ||
+	if (0 == strcmp(tablename, "events") ||
+			0 == strcmp(tablename, "event_tag") ||
+			0 == strcmp(tablename, "problem_tag") ||
 			0 == strcmp(tablename, "dservices") ||
 			0 == strcmp(tablename, "dhosts") ||
 			0 == strcmp(tablename, "alerts") ||
 			0 == strcmp(tablename, "escalations") ||
-			0 == strcmp(tablename, "autoreg_host") ||
-			0 == strcmp(tablename, "graph_discovery") ||
-			0 == strcmp(tablename, "trigger_discovery"))
+			0 == strcmp(tablename, "autoreg_host"))
 		return DCget_nextid(tablename, num);
 
 	return DBget_nextid(tablename, num);
@@ -1479,10 +1060,8 @@ void	DBregister_host(zbx_uint64_t proxy_hostid, const char *host, const char *ip
 				"select hostid"
 				" from hosts"
 				" where proxy_hostid=" ZBX_FS_UI64
-					" and host='%s'"
-					ZBX_SQL_NODE,
-				proxy_hostid, host_esc,
-				DBand_node_local("hostid"));
+					" and host='%s'",
+				proxy_hostid, host_esc);
 
 		if (NULL != DBfetch(result))
 			res = FAIL;
@@ -1499,10 +1078,8 @@ void	DBregister_host(zbx_uint64_t proxy_hostid, const char *host, const char *ip
 				"select autoreg_hostid"
 				" from autoreg_host"
 				" where proxy_hostid%s"
-					" and host='%s'"
-					ZBX_SQL_NODE,
-				DBsql_id_cmp(proxy_hostid), host_esc,
-				DBand_node_local("autoreg_hostid"));
+					" and host='%s'",
+				DBsql_id_cmp(proxy_hostid), host_esc);
 
 		if (NULL != (row = DBfetch(result)))
 		{
@@ -1530,8 +1107,8 @@ void	DBregister_host(zbx_uint64_t proxy_hostid, const char *host, const char *ip
 		zbx_free(dns_esc);
 		zbx_free(ip_esc);
 
-		add_event(0, EVENT_SOURCE_AUTO_REGISTRATION, EVENT_OBJECT_ZABBIX_ACTIVE, autoreg_hostid, &ts,
-				TRIGGER_VALUE_PROBLEM, NULL, NULL, 0, 0);
+		add_event(EVENT_SOURCE_AUTO_REGISTRATION, EVENT_OBJECT_ZABBIX_ACTIVE, autoreg_hostid, &ts,
+				TRIGGER_VALUE_PROBLEM, NULL, NULL, NULL, 0, 0, NULL, 0, NULL);
 		process_events();
 	}
 
@@ -1613,7 +1190,7 @@ int	DBexecute_overflowed_sql(char **sql, size_t *sql_alloc, size_t *sql_offset)
  *                                                                            *
  * Parameters: host_name_sample - a host name to start constructing from      *
  *                                                                            *
- * Return value: unique host name which does not exist in the data base       *
+ * Return value: unique host name which does not exist in the database        *
  *                                                                            *
  * Author: Dmitry Borovikov                                                   *
  *                                                                            *
@@ -1626,6 +1203,7 @@ int	DBexecute_overflowed_sql(char **sql, size_t *sql_alloc, size_t *sql_offset)
 char	*DBget_unique_hostname_by_sample(const char *host_name_sample)
 {
 	const char		*__function_name = "DBget_unique_hostname_by_sample";
+
 	DB_RESULT		result;
 	DB_ROW			row;
 	int			full_match = 0, i;
@@ -1649,12 +1227,10 @@ char	*DBget_unique_hostname_by_sample(const char *host_name_sample)
 			" from hosts"
 			" where host like '%s%%' escape '%c'"
 				" and flags<>%d"
-				" and status in (%d,%d,%d)"
-				ZBX_SQL_NODE,
+				" and status in (%d,%d,%d)",
 			host_name_sample_esc, ZBX_SQL_LIKE_ESCAPE_CHAR,
 			ZBX_FLAG_DISCOVERY_PROTOTYPE,
-			HOST_STATUS_MONITORED, HOST_STATUS_NOT_MONITORED, HOST_STATUS_TEMPLATE,
-			DBand_node_local("hostid"));
+			HOST_STATUS_MONITORED, HOST_STATUS_NOT_MONITORED, HOST_STATUS_TEMPLATE);
 
 	zbx_free(host_name_sample_esc);
 
@@ -1822,12 +1398,12 @@ unsigned short	DBget_inventory_field_len(unsigned char inventory_link)
 
 #undef ZBX_MAX_INVENTORY_FIELDS
 
-int	DBtxn_status()
+int	DBtxn_status(void)
 {
 	return 0 == zbx_db_txn_error() ? SUCCEED : FAIL;
 }
 
-int	DBtxn_ongoing()
+int	DBtxn_ongoing(void)
 {
 	return 0 == zbx_db_txn_level() ? FAIL : SUCCEED;
 }
@@ -1835,6 +1411,9 @@ int	DBtxn_ongoing()
 int	DBtable_exists(const char *table_name)
 {
 	char		*table_name_esc;
+#ifdef HAVE_POSTGRESQL
+	char		*table_schema_esc;
+#endif
 	DB_RESULT	result;
 	int		ret;
 
@@ -1858,12 +1437,18 @@ int	DBtable_exists(const char *table_name)
 				" and lower(tname)='%s'",
 			table_name_esc);
 #elif defined(HAVE_POSTGRESQL)
+	table_schema_esc = DBdyn_escape_string(NULL == CONFIG_DBSCHEMA || '\0' == *CONFIG_DBSCHEMA ?
+			"public" : CONFIG_DBSCHEMA);
+
 	result = DBselect(
 			"select 1"
 			" from information_schema.tables"
 			" where table_name='%s'"
-				" and table_schema='public'",
-			table_name_esc);
+				" and table_schema='%s'",
+			table_name_esc, table_schema_esc);
+
+	zbx_free(table_schema_esc);
+
 #elif defined(HAVE_SQLITE3)
 	result = DBselect(
 			"select 1"
@@ -1895,7 +1480,7 @@ int	DBfield_exists(const char *table_name, const char *field_name)
 	char		*table_name_esc, *field_name_esc;
 	int		ret;
 #elif defined(HAVE_POSTGRESQL)
-	char		*table_name_esc, *field_name_esc;
+	char		*table_name_esc, *field_name_esc, *table_schema_esc;
 	int		ret;
 #elif defined(HAVE_SQLITE3)
 	char		*table_name_esc;
@@ -1950,6 +1535,8 @@ int	DBfield_exists(const char *table_name, const char *field_name)
 
 	DBfree_result(result);
 #elif defined(HAVE_POSTGRESQL)
+	table_schema_esc = DBdyn_escape_string(NULL == CONFIG_DBSCHEMA || '\0' == *CONFIG_DBSCHEMA ?
+			"public" : CONFIG_DBSCHEMA);
 	table_name_esc = DBdyn_escape_string(table_name);
 	field_name_esc = DBdyn_escape_string(field_name);
 
@@ -1957,11 +1544,13 @@ int	DBfield_exists(const char *table_name, const char *field_name)
 			"select 1"
 			" from information_schema.columns"
 			" where table_name='%s'"
-				" and column_name='%s'",
-			table_name_esc, field_name_esc);
+				" and column_name='%s'"
+				" and table_schema='%s'",
+			table_name_esc, field_name_esc, table_schema_esc);
 
 	zbx_free(field_name_esc);
 	zbx_free(table_name_esc);
+	zbx_free(table_schema_esc);
 
 	ret = (NULL == DBfetch(result) ? FAIL : SUCCEED);
 
@@ -2012,22 +1601,6 @@ void	DBselect_uint64(const char *sql, zbx_vector_uint64_t *ids)
 	DBfree_result(result);
 
 	zbx_vector_uint64_sort(ids, ZBX_DEFAULT_UINT64_COMPARE_FUNC);
-}
-
-/******************************************************************************
- *                                                                            *
- * Function: get_nodeid_by_id                                                 *
- *                                                                            *
- * Purpose: Get Node ID by resource ID                                        *
- *                                                                            *
- * Return value: Node ID                                                      *
- *                                                                            *
- * Author: Alexei Vladishev                                                   *
- *                                                                            *
- ******************************************************************************/
-int	get_nodeid_by_id(zbx_uint64_t id)
-{
-	return (int)(id / ZBX_DM_MAX_HISTORY_IDS);
 }
 
 void	DBexecute_multiple_query(const char *query, const char *field_name, zbx_vector_uint64_t *ids)
@@ -2131,7 +1704,7 @@ static char	*zbx_db_format_values(ZBX_FIELD **fields, const zbx_db_value_t *valu
  ******************************************************************************/
 void	zbx_db_insert_clean(zbx_db_insert_t *self)
 {
-	int		i, j;
+	int	i, j;
 
 	for (i = 0; i < self->rows.values_num; i++)
 	{
@@ -2218,9 +1791,6 @@ void	zbx_db_insert_prepare_dyn(zbx_db_insert_t *self, const ZBX_TABLE *table, co
  *             table - [IN] the target table name                             *
  *             ...   - [IN] names of the fields to insert                     *
  *             NULL  - [IN] terminating NULL pointer                          *
- *                                                                            *
- * Return value: Returns SUCCEED if the operation completed successfully or   *
- *               FAIL otherwise.                                              *
  *                                                                            *
  * Comments: This is a convenience wrapper for zbx_db_insert_prepare_dyn()    *
  *           function.                                                        *
@@ -2395,7 +1965,7 @@ void	zbx_db_insert_add_values(zbx_db_insert_t *self, ...)
 
 	zbx_db_insert_add_values_dyn(self, (const zbx_db_value_t **)values.values, values.values_num);
 
-	zbx_vector_ptr_clean(&values, zbx_ptr_free);
+	zbx_vector_ptr_clear_ext(&values, zbx_ptr_free);
 	zbx_vector_ptr_destroy(&values);
 }
 
@@ -2461,7 +2031,7 @@ int	zbx_db_insert_execute(zbx_db_insert_t *self)
 	{
 		field = (ZBX_FIELD *)self->fields.values[i];
 
-		zbx_chrcpy_alloc(&sql_command, &sql_command_alloc, &sql_command_offset, delim[(int)(0 == i)]);
+		zbx_chrcpy_alloc(&sql_command, &sql_command_alloc, &sql_command_offset, delim[0 == i]);
 		zbx_strcpy_alloc(&sql_command, &sql_command_alloc, &sql_command_offset, field->name);
 	}
 
@@ -2494,7 +2064,7 @@ int	zbx_db_insert_execute(zbx_db_insert_t *self)
 #ifdef HAVE_ORACLE
 	for (i = 0; i < self->fields.values_num; i++)
 	{
-		zbx_chrcpy_alloc(&sql_command, &sql_command_alloc, &sql_command_offset, delim[(int)(0 == i)]);
+		zbx_chrcpy_alloc(&sql_command, &sql_command_alloc, &sql_command_offset, delim[0 == i]);
 		zbx_snprintf_alloc(&sql_command, &sql_command_alloc, &sql_command_offset, ":%d", i + 1);
 	}
 	zbx_chrcpy_alloc(&sql_command, &sql_command_alloc, &sql_command_offset, ')');
@@ -2565,7 +2135,7 @@ int	zbx_db_insert_execute(zbx_db_insert_t *self)
 
 			field = self->fields.values[j];
 
-			zbx_chrcpy_alloc(&sql, &sql_alloc, &sql_offset, delim[(int)(0 == j)]);
+			zbx_chrcpy_alloc(&sql, &sql_alloc, &sql_offset, delim[0 == j]);
 
 			switch (field->type)
 			{
@@ -2665,7 +2235,70 @@ void	zbx_db_insert_autoincrement(zbx_db_insert_t *self, const char *field_name)
 	}
 
 	THIS_SHOULD_NEVER_HAPPEN;
-	exit(FAIL);
+	exit(EXIT_FAILURE);
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: zbx_db_get_database_type                                         *
+ *                                                                            *
+ * Purpose: determine is it a server or a proxy database                      *
+ *                                                                            *
+ * Return value: ZBX_DB_SERVER - server database                              *
+ *               ZBX_DB_PROXY - proxy database                                *
+ *               ZBX_DB_UNKNOWN - an error occurred                           *
+ *                                                                            *
+ ******************************************************************************/
+int	zbx_db_get_database_type(void)
+{
+	const char	*__function_name = "zbx_db_get_database_type";
+
+	const char	*result_string;
+	DB_RESULT	result;
+	DB_ROW		row;
+	int		ret = ZBX_DB_UNKNOWN;
+
+	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __function_name);
+
+	DBconnect(ZBX_DB_CONNECT_NORMAL);
+
+	if (NULL == (result = DBselectN("select userid from users", 1)))
+	{
+		zabbix_log(LOG_LEVEL_DEBUG, "cannot select records from \"users\" table");
+		goto out;
+	}
+
+	if (NULL != (row = DBfetch(result)))
+	{
+		zabbix_log(LOG_LEVEL_DEBUG, "there is at least 1 record in \"users\" table");
+		ret = ZBX_DB_SERVER;
+	}
+	else
+	{
+		zabbix_log(LOG_LEVEL_DEBUG, "no records in \"users\" table");
+		ret = ZBX_DB_PROXY;
+	}
+
+	DBfree_result(result);
+out:
+	DBclose();
+
+	switch (ret)
+	{
+		case ZBX_DB_SERVER:
+			result_string = "ZBX_DB_SERVER";
+			break;
+		case ZBX_DB_PROXY:
+			result_string = "ZBX_DB_PROXY";
+			break;
+		case ZBX_DB_UNKNOWN:
+			result_string = "ZBX_DB_UNKNOWN";
+			break;
+	}
+
+	zabbix_log(LOG_LEVEL_DEBUG, "End of %s():%s", __function_name, result_string);
+
+	return ret;
 }
 
 /******************************************************************************
@@ -2758,6 +2391,8 @@ int	DBlock_records(const char *table, const zbx_vector_uint64_t *ids)
 
 	result = DBselect("%s" ZBX_FOR_UPDATE, sql);
 
+	zbx_free(sql);
+
 	if (NULL == DBfetch(result))
 		ret = FAIL;
 	else
@@ -2769,3 +2404,70 @@ int	DBlock_records(const char *table, const zbx_vector_uint64_t *ids)
 
 	return ret;
 }
+
+/******************************************************************************
+ *                                                                            *
+ * Function: zbx_sql_add_host_availability                                    *
+ *                                                                            *
+ * Purpose: adds host availability update to sql statement                    *
+ *                                                                            *
+ * Parameters: sql        - [IN/OUT] the sql statement                        *
+ *             sql_alloc  - [IN/OUT] the number of bytes allocated for sql    *
+ *                                   statement                                *
+ *             sql_offset - [IN/OUT] the number of bytes used in sql          *
+ *                                   statement                                *
+ *             ha           [IN] the host availability data                   *
+ *                                                                            *
+ ******************************************************************************/
+int	zbx_sql_add_host_availability(char **sql, size_t *sql_alloc, size_t *sql_offset,
+		const zbx_host_availability_t *ha)
+{
+	const char	*field_prefix[ZBX_AGENT_MAX] = {"", "snmp_", "ipmi_", "jmx_"};
+	char		delim = ' ';
+	int		i;
+
+	if (FAIL == zbx_host_availability_is_set(ha))
+		return FAIL;
+
+	zbx_strcpy_alloc(sql, sql_alloc, sql_offset, "update hosts set");
+
+	for (i = 0; i < ZBX_AGENT_MAX; i++)
+	{
+		if (0 != (ha->agents[i].flags & ZBX_FLAGS_AGENT_STATUS_AVAILABLE))
+		{
+			zbx_snprintf_alloc(sql, sql_alloc, sql_offset, "%c%savailable=%d", delim, field_prefix[i],
+					(int)ha->agents[i].available);
+			delim = ',';
+		}
+
+		if (0 != (ha->agents[i].flags & ZBX_FLAGS_AGENT_STATUS_ERROR))
+		{
+			char	*error_esc;
+
+			error_esc = DBdyn_escape_string_len(ha->agents[i].error, HOST_ERROR_LEN);
+			zbx_snprintf_alloc(sql, sql_alloc, sql_offset, "%c%serror='%s'", delim, field_prefix[i],
+					error_esc);
+			zbx_free(error_esc);
+			delim = ',';
+		}
+
+		if (0 != (ha->agents[i].flags & ZBX_FLAGS_AGENT_STATUS_ERRORS_FROM))
+		{
+			zbx_snprintf_alloc(sql, sql_alloc, sql_offset, "%c%serrors_from=%d", delim, field_prefix[i],
+					ha->agents[i].errors_from);
+			delim = ',';
+		}
+
+		if (0 != (ha->agents[i].flags & ZBX_FLAGS_AGENT_STATUS_DISABLE_UNTIL))
+		{
+			zbx_snprintf_alloc(sql, sql_alloc, sql_offset, "%c%sdisable_until=%d", delim, field_prefix[i],
+					ha->agents[i].disable_until);
+			delim = ',';
+		}
+	}
+
+	zbx_snprintf_alloc(sql, sql_alloc, sql_offset, " where hostid=" ZBX_FS_UI64, ha->hostid);
+
+	return SUCCEED;
+}
+

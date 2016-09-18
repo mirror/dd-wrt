@@ -35,8 +35,8 @@ static int		__strpool_compare_func(const void *d1, const void *d2);
 
 ZBX_MEM_FUNC_DECL(__strpool);
 
-#define INIT_HASHSET_SIZE	1000
-#define	REFCOUNT_FIELD_SIZE	sizeof(uint32_t)
+#define INIT_HASHSET_SIZE	100
+#define	REFCOUNT_FIELD_SIZE	sizeof(zbx_uint32_t)
 
 /* private strpool functions */
 
@@ -65,7 +65,7 @@ void	zbx_strpool_create(size_t size)
 	if (-1 == (shm_key = zbx_ftok(CONFIG_FILE, ZBX_IPC_STRPOOL_ID)))
 	{
 		zabbix_log(LOG_LEVEL_CRIT, "cannot create IPC key for string pool");
-		exit(FAIL);
+		exit(EXIT_FAILURE);
 	}
 
 	zbx_mem_create(&strpool.mem_info, shm_key, ZBX_NO_MUTEX, size, "string pool", "CacheSize", 0);
@@ -92,7 +92,7 @@ void	zbx_strpool_destroy()
 const char	*zbx_strpool_intern(const char *str)
 {
 	void		*record;
-	uint32_t	*refcount;
+	zbx_uint32_t	*refcount;
 
 	record = zbx_hashset_search(strpool.hashset, str - REFCOUNT_FIELD_SIZE);
 
@@ -100,10 +100,10 @@ const char	*zbx_strpool_intern(const char *str)
 	{
 		record = zbx_hashset_insert_ext(strpool.hashset, str - REFCOUNT_FIELD_SIZE,
 				REFCOUNT_FIELD_SIZE + strlen(str) + 1, REFCOUNT_FIELD_SIZE);
-		*(uint32_t *)record = 0;
+		*(zbx_uint32_t *)record = 0;
 	}
 
-	refcount = (uint32_t *)record;
+	refcount = (zbx_uint32_t *)record;
 	(*refcount)++;
 
 	return (char *)record + REFCOUNT_FIELD_SIZE;
@@ -111,9 +111,9 @@ const char	*zbx_strpool_intern(const char *str)
 
 const char	*zbx_strpool_acquire(const char *str)
 {
-	uint32_t	*refcount;
+	zbx_uint32_t	*refcount;
 
-	refcount = (uint32_t *)(str - REFCOUNT_FIELD_SIZE);
+	refcount = (zbx_uint32_t *)(str - REFCOUNT_FIELD_SIZE);
 	(*refcount)++;
 
 	return str;
@@ -121,9 +121,9 @@ const char	*zbx_strpool_acquire(const char *str)
 
 void	zbx_strpool_release(const char *str)
 {
-	uint32_t	*refcount;
+	zbx_uint32_t	*refcount;
 
-	refcount = (uint32_t *)(str - REFCOUNT_FIELD_SIZE);
+	refcount = (zbx_uint32_t *)(str - REFCOUNT_FIELD_SIZE);
 	if (0 == --(*refcount))
 		zbx_hashset_remove(strpool.hashset, str - REFCOUNT_FIELD_SIZE);
 }

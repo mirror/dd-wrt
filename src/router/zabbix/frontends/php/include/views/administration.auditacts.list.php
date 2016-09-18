@@ -18,123 +18,102 @@
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
 
-
-$auditWidget = new CWidget();
-
-// header
-$configForm = new CForm('get');
-$configComboBox = new CComboBox('config', 'auditacts.php');
-$configComboBox->setAttribute('onchange', 'javascript: redirect(this.options[this.selectedIndex].value);');
-$configComboBox->addItem('auditlogs.php', _('Logs'));
-$configComboBox->addItem('auditacts.php', _('Actions'));
-$configForm->addItem($configComboBox);
-$auditWidget->addPageHeader(_('AUDIT ACTIONS'), $configForm);
-$auditWidget->addHeader(_('Actions'));
-$auditWidget->addHeaderRowNumber();
+$auditWidget = (new CWidget())->setTitle(_('Action log'));
 
 // create filter
-$filterForm = new CForm('get');
-$filterForm->setAttribute('name', 'zbx_filter');
-$filterForm->setAttribute('id', 'zbx_filter');
-$filterTable = new CTable('', 'filter');
-$filterTable->addRow(array(
-	array(
-		bold(_('Recipient')),
-		SPACE,
-		new CTextBox('alias', $this->data['alias'], 20),
-		new CButton('btn1', _('Select'), 'return PopUp("popup.php?dstfrm='.$filterForm->getName().
-			'&dstfld1=alias&srctbl=users&srcfld1=alias&real_hosts=1");', 'filter-select-button')
-	)
-));
-$filterButton = new CButton('filter', _('Filter'), "javascript: create_var('zbx_filter', 'filter_set', '1', true);");
-$filterButton->useJQueryStyle('main');
-$resetButton = new CButton('filter_rst', _('Reset'), 'javascript: var uri = new Curl(location.href); uri.setArgument("filter_rst", 1); location.href = uri.getUrl();');
-$resetButton->useJQueryStyle();
-$buttonsDiv = new CDiv(array($filterButton, SPACE, $resetButton));
-$buttonsDiv->setAttribute('style', 'padding: 4px 0px;');
+$filterForm = new CFilter('web.auditacts.filter.state');
 
-$filterTable->addRow(new CCol($buttonsDiv, 'controls'));
-$filterForm->addItem($filterTable);
+$filterColumn = new CFormList();
+$filterColumn->addRow(_('Recipient'), [
+	(new CTextBox('alias', $this->data['alias']))
+		->setWidth(ZBX_TEXTAREA_FILTER_STANDARD_WIDTH)
+		->setAttribute('autofocus', 'autofocus'),
+	(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
+	(new CButton('btn1', _('Select')))
+		->addClass(ZBX_STYLE_BTN_GREY)
+		->onClick('return PopUp("popup.php?dstfrm=zbx_filter&dstfld1=alias&srctbl=users&srcfld1=alias");')
+]);
 
-$auditWidget->addFlicker($filterForm, CProfile::get('web.auditacts.filter.state', 1));
-$auditWidget->addFlicker(new CDiv(null, null, 'scrollbar_cntr'), CProfile::get('web.auditacts.filter.state', 1));
+$filterForm->addColumn($filterColumn);
+$filterForm->addNavigator();
+$auditWidget->addItem($filterForm);
 
 // create form
-$auditForm = new CForm('get');
-$auditForm->setName('auditForm');
+$auditForm = (new CForm('get'))->setName('auditForm');
 
 // create table
-$auditTable = new CTableInfo(_('No audit entries found.'));
-$auditTable->setHeader(array(
-	is_show_all_nodes() ? _('Nodes') : null,
-	_('Time'),
-	_('Type'),
-	_('Status'),
-	_('Retries left'),
-	_('Recipient(s)'),
-	_('Message'),
-	_('Error')
-));
+$auditTable = (new CTableInfo())
+	->setHeader([
+		_('Time'),
+		_('Action'),
+		_('Type'),
+		_('Recipient'),
+		_('Message'),
+		_('Status'),
+		_('Info')
+	]);
+
 foreach ($this->data['alerts'] as $alert) {
 	$mediatype = array_pop($alert['mediatypes']);
-	if ($mediatype['mediatypeid'] == 0) {
-		$mediatype = array('description' => '');
-	}
 
 	if ($alert['status'] == ALERT_STATUS_SENT) {
-		if ($alert['alerttype'] == ALERT_TYPE_MESSAGE) {
-			$status = new CSpan(_('sent'), 'green');
-		}
-		else {
-			$status = new CSpan(_('executed'), 'green');
-		}
-		$retries = new CSpan(SPACE, 'green');
+		$status = ($alert['alerttype'] == ALERT_TYPE_MESSAGE)
+			? (new CSpan(_('Sent')))->addClass(ZBX_STYLE_GREEN)
+			: (new CSpan(_('Executed')))->addClass(ZBX_STYLE_GREEN);
 	}
 	elseif ($alert['status'] == ALERT_STATUS_NOT_SENT) {
-		$status = new CSpan(_('In progress'), 'orange');
-		$retries = new CSpan(ALERT_MAX_RETRIES - $alert['retries'], 'orange');
+		$status = (new CSpan([
+			_('In progress').':',
+			BR(),
+			_n('%1$s retry left', '%1$s retries left', ALERT_MAX_RETRIES - $alert['retries']),
+		]))->addClass(ZBX_STYLE_YELLOW);
 	}
 	else {
-		$status = new CSpan(_('not sent'), 'red');
-		$retries = new CSpan(0, 'red');
+		$status = (new CSpan(_('Failed')))->addClass(ZBX_STYLE_RED);
 	}
 
 	$message = ($alert['alerttype'] == ALERT_TYPE_MESSAGE)
-		? array(
-			bold(_('Subject').NAME_DELIMITER),
+		? [
+			bold(_('Subject').':'),
 			BR(),
 			$alert['subject'],
 			BR(),
 			BR(),
-			bold(_('Message').NAME_DELIMITER),
+			bold(_('Message').':'),
 			BR(),
 			zbx_nl2br($alert['message'])
-		)
-		: array(
-			bold(_('Command').NAME_DELIMITER),
+		]
+		: [
+			bold(_('Command').':'),
 			BR(),
 			zbx_nl2br($alert['message'])
-		);
+		];
 
-	$error = empty($alert['error']) ? new CSpan(SPACE, 'off') : new CSpan($alert['error'], 'on');
+	$info_icons = [];
+	if ($alert['error'] !== '') {
+		$info_icons[] = makeErrorIcon($alert['error']);
+	}
 
-	$auditTable->addRow(array(
-		get_node_name_by_elid($alert['alertid']),
-		new CCol(zbx_date2str(_('d M Y H:i:s'), $alert['clock']), 'top'),
-		new CCol($mediatype['description'], 'top'),
-		new CCol($status, 'top'),
-		new CCol($retries, 'top'),
-		new CCol($alert['sendto'], 'top'),
-		new CCol($message, 'wraptext top'),
-		new CCol($error, 'wraptext top')
-	));
+	$recipient = (isset($alert['userid']) && $alert['userid'])
+		? [bold(getUserFullname($this->data['users'][$alert['userid']])), BR(), $alert['sendto']]
+		: $alert['sendto'];
+
+	$auditTable->addRow([
+		zbx_date2str(DATE_TIME_FORMAT_SECONDS, $alert['clock']),
+		$this->data['actions'][$alert['actionid']]['name'],
+		($mediatype) ? $mediatype['description'] : '',
+		$recipient,
+		$message,
+		$status,
+		makeInformationList($info_icons)
+	]);
 }
 
 // append table to form
-$auditForm->addItem(array($this->data['paging'], $auditTable, $this->data['paging']));
+$auditForm->addItem([$auditTable, $this->data['paging']]);
 
 // append navigation bar js
-$objData = array(
+$objData = [
 	'id' => 'timeline_1',
 	'domid' => 'events',
 	'loadSBox' => 0,
@@ -144,8 +123,8 @@ $objData = array(
 	'mainObject' => 1,
 	'periodFixed' => CProfile::get('web.auditacts.timelinefixed', 1),
 	'sliderMaximumTimePeriod' => ZBX_MAX_PERIOD
-);
-zbx_add_post_js('timeControl.addObject(\'events\', '.zbx_jsvalue($data['timeline']).', '.zbx_jsvalue($objData).');');
+];
+zbx_add_post_js('timeControl.addObject("events", '.zbx_jsvalue($data['timeline']).', '.zbx_jsvalue($objData).');');
 zbx_add_post_js('timeControl.processObjects();');
 
 // append form to widget

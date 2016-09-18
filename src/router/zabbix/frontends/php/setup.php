@@ -21,111 +21,99 @@
 
 require_once dirname(__FILE__).'/include/classes/core/Z.php';
 
+$page['file'] = 'setup.php';
+
 try {
 	Z::getInstance()->run(ZBase::EXEC_MODE_SETUP);
 }
 catch (Exception $e) {
-	$warningView = new CView('general.warning', array(
-		'message' => array(
-			'header' => 'Configuration file error', 'text' => $e->getMessage()
-		)
-	));
-	$warningView->render();
+	(new CView('general.warning', [
+		'header' => $e->getMessage(),
+		'messages' => [],
+		'theme' => ZBX_DEFAULT_THEME
+	]))->render();
+
 	exit;
 }
 
-require_once dirname(__FILE__).'/include/setup.inc.php';
-
 // VAR	TYPE	OPTIONAL	FLAGS	VALIDATION	EXCEPTION
-$fields = array(
-	'type' =>				array(T_ZBX_STR, O_OPT, null,	IN('"'.ZBX_DB_MYSQL.'","'.ZBX_DB_POSTGRESQL.'","'.ZBX_DB_ORACLE.'","'.ZBX_DB_DB2.'","'.ZBX_DB_SQLITE3.'"'), null),
-	'server' =>				array(T_ZBX_STR, O_OPT, null,	null,				null),
-	'port' =>				array(T_ZBX_INT, O_OPT, null,	BETWEEN(0, 65535),	null, _('Database port')),
-	'database' =>			array(T_ZBX_STR, O_OPT, null,	NOT_EMPTY,			null, _('Database name')),
-	'user' =>				array(T_ZBX_STR, O_OPT, null,	null,				null),
-	'password' =>			array(T_ZBX_STR, O_OPT, null,	null, 				null),
-	'schema' =>				array(T_ZBX_STR, O_OPT, null,	null, 				null),
-	'zbx_server' =>			array(T_ZBX_STR, O_OPT, null,	null,				null),
-	'zbx_server_name' =>	array(T_ZBX_STR, O_OPT, null,	null,				null),
-	'zbx_server_port' =>	array(T_ZBX_INT, O_OPT, null,	BETWEEN(0, 65535),	null, _('Port')),
-	'message' =>			array(T_ZBX_STR, O_OPT, null,	null,				null),
+$fields = [
+	'type' =>				[T_ZBX_STR, O_OPT, null,	IN('"'.ZBX_DB_MYSQL.'","'.ZBX_DB_POSTGRESQL.'","'.ZBX_DB_ORACLE.'","'.ZBX_DB_DB2.'","'.ZBX_DB_SQLITE3.'"'), null],
+	'server' =>				[T_ZBX_STR, O_OPT, null,	null,				null],
+	'port' =>				[T_ZBX_INT, O_OPT, null,	BETWEEN(0, 65535),	null, _('Database port')],
+	'database' =>			[T_ZBX_STR, O_OPT, null,	NOT_EMPTY,			null, _('Database name')],
+	'user' =>				[T_ZBX_STR, O_OPT, null,	null,				null],
+	'password' =>			[T_ZBX_STR, O_OPT, null,	null, 				null],
+	'schema' =>				[T_ZBX_STR, O_OPT, null,	null, 				null],
+	'zbx_server' =>			[T_ZBX_STR, O_OPT, null,	null,				null],
+	'zbx_server_name' =>	[T_ZBX_STR, O_OPT, null,	null,				null],
+	'zbx_server_port' =>	[T_ZBX_INT, O_OPT, null,	BETWEEN(0, 65535),	null, _('Port')],
 	// actions
-	'save_config' =>		array(T_ZBX_STR, O_OPT, P_SYS,	null,				null),
-	'retry' =>				array(T_ZBX_STR, O_OPT, P_SYS,	null,				null),
-	'cancel' =>				array(T_ZBX_STR, O_OPT, P_SYS,	null,				null),
-	'finish' =>				array(T_ZBX_STR, O_OPT, P_SYS,	null,				null),
-	'next' =>				array(T_ZBX_STR, O_OPT, P_SYS,	null,				null),
-	'back' =>				array(T_ZBX_STR, O_OPT, P_SYS,	null,				null),
-	'form' =>				array(T_ZBX_STR, O_OPT, P_SYS,	null,				null),
-	'form_refresh' =>		array(T_ZBX_INT, O_OPT, null,	null,				null)
-);
+	'save_config' =>		[T_ZBX_STR, O_OPT, P_SYS,	null,				null],
+	'retry' =>				[T_ZBX_STR, O_OPT, P_SYS,	null,				null],
+	'cancel' =>				[T_ZBX_STR, O_OPT, P_SYS,	null,				null],
+	'finish' =>				[T_ZBX_STR, O_OPT, P_SYS,	null,				null],
+	'next' =>				[T_ZBX_STR, O_OPT, P_SYS,	null,				null],
+	'back' =>				[T_ZBX_STR, O_OPT, P_SYS,	null,				null],
+];
 
-// config
-$ZBX_CONFIG = get_cookie('ZBX_CONFIG', null);
-$ZBX_CONFIG = isset($ZBX_CONFIG) ? unserialize($ZBX_CONFIG) : array();
-$ZBX_CONFIG['check_fields_result'] = check_fields($fields, false);
-if (!isset($ZBX_CONFIG['step'])) {
-	$ZBX_CONFIG['step'] = 0;
+CSession::start();
+CSession::setValue('check_fields_result', check_fields($fields, false));
+if (!CSession::keyExists('step')) {
+	CSession::setValue('step', 0);
 }
 
 // if a guest or a non-super admin user is logged in
 if (CWebUser::$data && CWebUser::getType() < USER_TYPE_SUPER_ADMIN) {
 	// on the last step of the setup we always have a guest user logged in;
 	// when he presses the "Finish" button he must be redirected to the login screen
-	if (CWebUser::isGuest() && $ZBX_CONFIG['step'] == 5 && hasRequest('finish')) {
-		zbx_unsetcookie('ZBX_CONFIG');
+	if (CWebUser::isGuest() && CSession::getValue('step') == 5 && hasRequest('finish')) {
+		CSession::clear();
 		redirect('index.php');
 	}
 	// the guest user can also view the last step of the setup
 	// all other user types must not have access to the setup
-	elseif (!(CWebUser::isGuest() && $ZBX_CONFIG['step'] == 5)) {
+	elseif (!(CWebUser::isGuest() && CSession::getValue('step') == 5)) {
 		access_deny(ACCESS_DENY_PAGE);
 	}
 }
 // if a super admin or a non-logged in user presses the "Finish" or "Login" button - redirect him to the login screen
 elseif (hasRequest('cancel') || hasRequest('finish')) {
-	zbx_unsetcookie('ZBX_CONFIG');
+	CSession::clear();
 	redirect('index.php');
 }
+
+$theme = CWebUser::$data ? getUserTheme(CWebUser::$data) : ZBX_DEFAULT_THEME;
+
+DBclose();
 
 /*
  * Setup wizard
  */
-$ZBX_SETUP_WIZARD = new CSetupWizard($ZBX_CONFIG);
-
-zbx_setcookie('ZBX_CONFIG', serialize($ZBX_CONFIG));
-
-// page title
-$pageTitle = '';
-if (isset($ZBX_SERVER_NAME) && !zbx_empty($ZBX_SERVER_NAME)) {
-	$pageTitle = $ZBX_SERVER_NAME.NAME_DELIMITER;
-}
-$pageTitle .= _('Installation');
-
-$pageHeader = new CPageHeader($pageTitle);
-$pageHeader->addCssInit();
-$pageHeader->addCssFile('styles/themes/originalblue/main.css');
-$pageHeader->addJsFile('js/jquery/jquery.js');
-$pageHeader->addJsFile('js/jquery/jquery-ui.js');
-$pageHeader->addJsFile('js/functions.js');
+$ZBX_SETUP_WIZARD = new CSetupWizard();
 
 // if init fails due to missing configuration, set user as guest with default en_GB language
 if (!CWebUser::$data) {
 	CWebUser::setDefault();
 }
 
-$path = 'jsLoader.php?ver='.ZABBIX_VERSION.'&amp;lang='.CWebUser::$data['lang'].'&amp;files[]=common.js&amp;files[]=main.js';
-$pageHeader->addJsFile($path);
+// page title
+(new CPageHeader(_('Installation')))
+	->addCssFile('styles/'.CHtml::encode($theme).'.css')
+	->addJsFile('js/browsers.js')
+	->addJsFile('jsLoader.php?ver='.ZABBIX_VERSION.'&amp;lang='.CWebUser::$data['lang'])
+	->display();
 
-$pageHeader->display();
+/*
+ * Displaying
+ */
+$link = (new CLink('GPL v2', 'http://www.zabbix.com/license.php'))
+	->setTarget('_blank')
+	->addClass(ZBX_STYLE_GREY)
+	->addClass(ZBX_STYLE_LINK_ALT);
+$sub_footer = (new CDiv(['Licensed under ', $link]))->addClass(ZBX_STYLE_SIGNIN_LINKS);
+
+(new CTag('body', true, [(new CDiv([$ZBX_SETUP_WIZARD, $sub_footer]))->addClass(ZBX_STYLE_ARTICLE), makePageFooter()]))
+	->show();
 ?>
-<body class="originalblue">
-
-<?php $ZBX_SETUP_WIZARD->show(); ?>
-<script>
-	jQuery(function($) {
-		$(':submit').button();
-	});
-</script>
-</body>
 </html>
