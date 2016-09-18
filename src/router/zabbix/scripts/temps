@@ -1,0 +1,11 @@
+#!/bin/sh
+
+GETTEMP=`wl -i $1 phy_tempsense | awk '{ print $1}'`
+
+if [[ "$GETTEMP" ]]; then
+        TEMP=$((GETTEMP/2+20))
+else
+        TEMP="Not supported or disabled."
+fi
+
+echo "$TEMP"

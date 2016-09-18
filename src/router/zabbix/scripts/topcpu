@@ -1,0 +1,87 @@
+#!/opt/bin/bash
+#####################################################
+# topcpu
+# returns names of most CPU time consuming processes
+# as reported by 'top'
+#####################################################
+# 05-07-2010 by Jerry Lenk
+# 02-11-2010 by Frater (rewrite in bash)
+#
+# Use at your own risk!
+#####################################################
+
+# Add lsof to /etc/sudoers (as root) with the following command
+##########################
+#     echo zabbix ALL = NOPASSWD: `which lsof` >> /etc/sudoers
+
+# Comment out the tty requirement for sudo
+##########################
+#     sed -i -e 's/^Defaults.*requiretty/# &/' /etc/sudoers
+
+# Add to zabbix_agentd.conf
+###########################
+#     echo 'UserParameter=system.topcpu[*],/usr/local/sbin/topcpu $1 $2' >>/etc/zabbix/zabbix_agentd.conf
+
+# Restart Zabbix
+################
+#     /etc/init.d/zabbix-agent restart
+
+# Constants
+nodata='.'
+deflimit=4
+defanswers=1
+use_lsof=1
+GREP='grep --color=never -a'
+DEBUG=0
+
+# set limit to 1st argument (given from zabbix), or deflimit if not specified
+lim=`echo "$1" | tr -cd '0-9.'`
+[ -z "${lim}" ] && lim=${deflimit}
+
+answers=`echo "$2" | tr -cd '0-9'`
+[ -z "${answers}" ] && answers=${defanswers}
+[ $answers -gt 5  ] && answers=5
+[ $answers -lt 1  ] && answers=1
+
+toptail="`top -b -d1 -n2 | ${GREP} -A${answers} '^ *PID ' | tail -n${answers}`"
+cpu=`echo "${toptail}"  | head -n1 | awk '{print $9}'`
+
+[ ${DEBUG} -ne 0 ] && echo "Debug: \$1=$1  limit=$lim  cpu=$cpu"
+
+if expr ${cpu} \<= ${lim} >/dev/null ; then
+  echo "${nodata}"
+else
+  # get PID & FULL process name (it may contain more info)
+  pid=`echo "${toptail}" | head -n1 | awk '{print $1}'`
+  procname="`ps --pid ${pid} -o args --no-headers 2>/dev/null`"
+
+  if [ -z "${procname}" ] ; then
+    # process is not running anymore... I might as well return nothing and quit
+    echo "${nodata}"
+  else
+
+    user=`echo "${toptail}" | head -n1 | awk '{print $2}'`
+    # return CPU usage, process owner and process name
+    echo "${cpu}%   ${user}:${procname}"
+
+    if [ ${use_lsof} -ne 0 ] ; then
+      # calculate the limit when it should execute lsof
+      lim=$(( 2 * ${lim} + 5 ))
+      [ ${lim} -gt 50 ] && lim=50
+      expr ${cpu} \> ${lim} >/dev/null && sudo lsof -p ${pid} -S -b -w -n -Fftn0 | ${GREP} -v '^fDEL' | ${GREP} 'tREG'  | ${GREP} -o '/.*' | tr -d '\0' | ${GREP} -vE '(log$|^/var/lib|^/lib|^/opt/lib|^/var/run|^/tmp|^/usr/|^/var/log/)' | sort -u | head -n5
+    fi
+
+    n=2
+    while [ $n -le ${answers} ] ; do
+      topline="`echo "${toptail}" | tail -n+${n} | head -n1`"
+       pid=`echo "${topline}" | awk '{print $1}'`
+      user=`echo "${topline}" | awk '{print $2}'`
+       cpu=`echo "${topline}" | awk '{print $9}'`
+      procname="`ps --pid ${pid} -o args --no-headers 2>/dev/null`"
+      echo "${cpu}%   ${user}:${procname}"
+
+      n=$(($n + 1))
+    done
+
+  fi
+fi
