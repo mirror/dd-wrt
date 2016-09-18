@@ -471,6 +471,7 @@ static int	dns_query(AGENT_REQUEST *request, AGENT_RESULT *result, int short_ans
 		return SYSINFO_RET_FAIL;
 	}
 
+#if defined(HAVE_RES_MKQUERY) && defined(HAVE_RES_SEND) 
 	if (-1 == (res = res_mkquery(QUERY, zone, C_IN, type, NULL, 0, NULL, buf, sizeof(buf))))
 	{
 		SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot create DNS query: %s", zbx_strerror(errno)));
@@ -505,6 +506,11 @@ static int	dns_query(AGENT_REQUEST *request, AGENT_RESULT *result, int short_ans
 	_res.retry = retry;
 
 	res = res_send(buf, res, answer.buffer, sizeof(answer.buffer));
+#else /* defined(HAVE_RES_QUERY) && defined(HAVE_RES_SEND) */
+	/* retrand and retry are ignored */
+	if (-1 == (res = res_query(zone, C_IN, type, answer.buffer, sizeof(answer.buffer))))
+	return SYSINFO_RET_FAIL;
+#endif 
 
 	_res.options = saved_options;
 	_res.retrans = saved_retrans;
