@@ -96,70 +96,6 @@ function encodeValues(&$value, $encodeTwice = true) {
 	}
 }
 
-// add JavaScript for calling after page loading
-function zbx_add_post_js($script) {
-	global $ZBX_PAGE_POST_JS;
-
-	if (!isset($ZBX_PAGE_POST_JS)) {
-		$ZBX_PAGE_POST_JS = array();
-	}
-	if (!in_array($script, $ZBX_PAGE_POST_JS)) {
-		$ZBX_PAGE_POST_JS[] = $script;
-	}
-}
-
-function insert_javascript_for_editable_combobox() {
-	if (defined('EDITABLE_COMBOBOX_SCRIPT_INSERTTED')) {
-		return null;
-	}
-	define('EDITABLE_COMBOBOX_SCRIPT_INSERTTED', 1);
-
-	$js = '
-		function CEditableComboBoxInit(obj) {
-			// check if option exist
-			var opt = obj.options;
-			if (obj.value) {
-				obj.oldValue = obj.value;
-			}
-			for (var i = 0; i < opt.length; i++) {
-				if (-1 == opt.item(i).value) {
-					return null;
-				}
-			}
-			// create option
-			opt = document.createElement("option");
-			opt.value = -1;
-			if (IE) {
-				opt.innerHTML = "('._('other').' ...)";
-			}
-			else {
-				opt.text = "('._('other').' ...)";
-			}
-			obj.insertBefore(opt, obj.firstChild);
-		}
-
-		function CEditableComboBoxOnChange(obj, size) {
-			if (-1 != obj.value) {
-				obj.oldValue = obj.value;
-			}
-			else {
-				var new_obj = document.createElement("input");
-				new_obj.type = "text";
-				new_obj.name = obj.name;
-				if (size && size > 0) {
-					new_obj.size = size;
-				}
-				if (obj.oldValue) {
-					new_obj.value = obj.oldValue;
-				}
-				obj.parentNode.replaceChild(new_obj, obj);
-				new_obj.focus();
-				new_obj.select();
-			}
-		}';
-	insert_js($js);
-}
-
 function insert_show_color_picker_javascript() {
 	global $SHOW_COLOR_PICKER_SCRIPT_INSERTED;
 
@@ -167,68 +103,71 @@ function insert_show_color_picker_javascript() {
 		return;
 	}
 	$SHOW_COLOR_PICKER_SCRIPT_INSERTED = true;
-	$table = new CTable();
+	$table = [];
 
 	// gray colors
-	$row = array();
-	foreach (array('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F') as $c) {
+	$row = [];
+	foreach (['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'] as $c) {
 		$color = $c.$c.$c.$c.$c.$c;
-		$row[] = new CColorCell(null, $color, 'set_color("'.$color.'");');
+		$row[] = (new CColorCell(null, $color))
+			->setTitle('#'.$color)
+			->onClick('set_color("'.$color.'");');
 	}
-	$table->addRow($row);
+	$table[] = (new CDiv($row))->addClass(ZBX_STYLE_COLOR_PICKER);
 
 	// other colors
-	$colors = array(
-		array('r' => 0, 'g' => 0, 'b' => 1),
-		array('r' => 0, 'g' => 1, 'b' => 0),
-		array('r' => 1, 'g' => 0, 'b' => 0),
-		array('r' => 0, 'g' => 1, 'b' => 1),
-		array('r' => 1, 'g' => 0, 'b' => 1),
-		array('r' => 1, 'g' => 1, 'b' => 0)
-	);
+	$colors = [
+		['r' => 0, 'g' => 0, 'b' => 1],
+		['r' => 0, 'g' => 1, 'b' => 0],
+		['r' => 1, 'g' => 0, 'b' => 0],
+		['r' => 0, 'g' => 1, 'b' => 1],
+		['r' => 1, 'g' => 0, 'b' => 1],
+		['r' => 1, 'g' => 1, 'b' => 0]
+	];
 
-	$brigs = array(
-		array(0 => '0', 1 => '3'),
-		array(0 => '0', 1 => '4'),
-		array(0 => '0', 1 => '5'),
-		array(0 => '0', 1 => '6'),
-		array(0 => '0', 1 => '7'),
-		array(0 => '0', 1 => '8'),
-		array(0 => '0', 1 => '9'),
-		array(0 => '0', 1 => 'A'),
-		array(0 => '0', 1 => 'B'),
-		array(0 => '0', 1 => 'C'),
-		array(0 => '0', 1 => 'D'),
-		array(0 => '0', 1 => 'E'),
-		array(0 => '3', 1 => 'F'),
-		array(0 => '6', 1 => 'F'),
-		array(0 => '9', 1 => 'F'),
-		array(0 => 'C', 1 => 'F')
-	);
+	$brigs = [
+		[0 => '0', 1 => '3'],
+		[0 => '0', 1 => '4'],
+		[0 => '0', 1 => '5'],
+		[0 => '0', 1 => '6'],
+		[0 => '0', 1 => '7'],
+		[0 => '0', 1 => '8'],
+		[0 => '0', 1 => '9'],
+		[0 => '0', 1 => 'A'],
+		[0 => '0', 1 => 'B'],
+		[0 => '0', 1 => 'C'],
+		[0 => '0', 1 => 'D'],
+		[0 => '0', 1 => 'E'],
+		[0 => '3', 1 => 'F'],
+		[0 => '6', 1 => 'F'],
+		[0 => '9', 1 => 'F'],
+		[0 => 'C', 1 => 'F']
+	];
 
 	foreach ($colors as $c) {
-		$row = array();
+		$row = [];
 		foreach ($brigs as $br) {
 			$r = $br[$c['r']];
 			$g = $br[$c['g']];
 			$b = $br[$c['b']];
 
 			$color = $r.$r.$g.$g.$b.$b;
-			$row[] = new CColorCell(null, $color, 'set_color("'.$color.'");');
+			$row[] = (new CColorCell(null, $color))
+				->setTitle('#'.$color)
+				->onClick('set_color("'.$color.'");');
 		}
-		$table->addRow($row);
+		$table[] = (new CDiv($row))->addClass(ZBX_STYLE_COLOR_PICKER);
 	}
 
-	$cancel = new CSpan(_('Cancel'), 'link');
-	$cancel->setAttribute('onclick', 'javascript: hide_color_picker();');
+	$cancel = (new CSimpleButton())
+		->addClass(ZBX_STYLE_OVERLAY_CLOSE_BTN)
+		->onClick('javascript: hide_color_picker();');
 
-	$tmp = array($table, $cancel);
-	$script = '
-		var color_picker = null;
-		var curr_lbl = null;
-		var curr_txt = null;
-		var color_table = '.zbx_jsvalue(unpack_object($tmp))."\n";
-	insert_js($script);
+	$tmp = [$cancel, $table];
+	insert_js('var color_picker = null,'."\n".
+		'curr_lbl = null,'."\n".
+		'curr_txt = null,'."\n".
+		'color_table = '.zbx_jsvalue(unpack_object($tmp))."\n");
 	zbx_add_post_js('create_color_picker();');
 }
 
@@ -282,37 +221,8 @@ function insert_javascript_for_visibilitybox() {
 	insert_js($js);
 }
 
-function play_sound($filename) {
-	insert_js('
-		if (IE) {
-			document.writeln(\'<bgsound src="'.$filename.'" loop="0" />\');
-		}
-		else {
-			document.writeln(\'<embed src="'.$filename.'" autostart="true" width="0" height="0" loop="0" />\');
-			document.writeln(\'<noembed><bgsound src="'.$filename.'" loop="0" /></noembed>\');
-		}');
-}
-
 function insert_js_function($fnct_name) {
 	switch ($fnct_name) {
-		case 'add_item_variable':
-			insert_js('
-				function add_item_variable(s_formname, x_value) {
-					if (add_variable(null, "itemid[" + x_value + "]", x_value, s_formname, window.opener.document)) {
-						var o_form;
-						if (!(o_form = window.opener.document.forms[s_formname])) {
-							throw "Missing form with name [" + s_formname + "].";
-						}
-						var element = o_form.elements["itemid"];
-						if (element) {
-							element.name = "itemid[" + element.value + "]";
-						}
-						o_form.submit();
-					}
-					close_window();
-					return true;
-				}');
-			break;
 		case 'add_media':
 			insert_js('
 				function add_media(formname, media, mediatypeid, sendto, period, active, severity) {
@@ -333,80 +243,7 @@ function insert_js_function($fnct_name) {
 					return true;
 				}');
 			break;
-		case 'add_bitem':
-			insert_js('
-				function add_bitem(formname, caption, itemid, color, calc_fnc, axisside) {
-					var form = window.opener.document.forms[formname];
-					if (!form) {
-						close_window();
-						return false;
-					}
-					window.opener.create_var(form, "new_graph_item[caption]", caption);
-					window.opener.create_var(form, "new_graph_item[itemid]", itemid);
-					window.opener.create_var(form, "new_graph_item[color]", color);
-					window.opener.create_var(form, "new_graph_item[calc_fnc]", calc_fnc);
-					window.opener.create_var(form, "new_graph_item[axisside]", axisside);
 
-					form.submit();
-					close_window();
-					return true;
-				}');
-			break;
-		case 'update_bitem':
-			insert_js('
-				function update_bitem(formname, list_name, gid, caption, itemid, color, calc_fnc, axisside) {
-					var form = window.opener.document.forms[formname];
-					if (!form) {
-						close_window();
-						return false;
-					}
-					window.opener.create_var(form, list_name + "[" + gid + "][caption]", caption);
-					window.opener.create_var(form, list_name + "[" + gid + "][itemid]", itemid);
-					window.opener.create_var(form, list_name + "[" + gid + "][color]", color);
-					window.opener.create_var(form, list_name + "[" + gid + "][calc_fnc]", calc_fnc);
-					window.opener.create_var(form, list_name + "[" + gid + "][axisside]", axisside);
-
-					form.submit();
-					close_window();
-					return true;
-				}');
-			break;
-		case 'add_period':
-			insert_js('
-				function add_period(formname, caption, since, till, color) {
-					var form = window.opener.document.forms[formname];
-					if (!form) {
-						close_window();
-						return false;
-					}
-					window.opener.create_var(form, "new_period[caption]", caption);
-					window.opener.create_var(form, "new_period[report_timesince]", since);
-					window.opener.create_var(form, "new_period[report_timetill]", till);
-					window.opener.create_var(form, "new_period[color]", color);
-
-					form.submit();
-					close_window();
-					return true;
-				}');
-			break;
-		case 'update_period':
-			insert_js('
-				function update_period(pid, formname, caption, since, till, color) {
-					var form = window.opener.document.forms[formname];
-					if (!form) {
-						close_window();
-						return false;
-					}
-					window.opener.create_var(form, "periods[" + pid + "][caption]", caption);
-					window.opener.create_var(form, "periods[" + pid + "][report_timesince]", since);
-					window.opener.create_var(form, "periods[" + pid + "][report_timetill]", till);
-					window.opener.create_var(form, "periods[" + pid + "][color]", color);
-
-					form.submit();
-					close_window();
-					return true;
-				}');
-			break;
 		case 'addSelectedValues':
 			insert_js('
 				function addSelectedValues(form, object, parentId) {
@@ -442,6 +279,7 @@ function insert_js_function($fnct_name) {
 					parent.jQuery(parent.document).trigger("add.popup", data);
 				}');
 			break;
+
 		case 'addValue':
 			insert_js('
 				function addValue(object, singleValue, parentId) {
@@ -467,6 +305,7 @@ function insert_js_function($fnct_name) {
 					parent.jQuery(parent.document).trigger("add.popup", data);
 				}');
 			break;
+
 		case 'addValues':
 			insert_js('
 				function addValues(frame, values, submitParent) {
@@ -503,17 +342,6 @@ function insert_js_function($fnct_name) {
 					close_window();
 				}');
 			break;
-		case 'check_all':
-			insert_js('
-				function check_all(objname, value) {
-					$(objname).getInputs("checkbox").each(function(e) {
-						e.checked = value;
-					});
-				}');
-			break;
-		default:
-			insert_js('throw("JS function not found ['.$fnct_name.']");');
-			break;
 	}
 };
 
@@ -523,21 +351,27 @@ function insert_js($script, $jQueryDocumentReady = false) {
 
 function get_js($script, $jQueryDocumentReady = false) {
 	return $jQueryDocumentReady
-		? '<script type="text/javascript">// <![CDATA['."\n".'jQuery(document).ready(function() { '.$script.' });'."\n".'// ]]></script>'
-		: '<script type="text/javascript">// <![CDATA['."\n".$script."\n".'// ]]></script>';
+		? '<script type="text/javascript">'."\n".'jQuery(document).ready(function() { '.$script.' });'."\n".'</script>'
+		: '<script type="text/javascript">'."\n".$script."\n".'</script>';
+}
+
+// add JavaScript for calling after page loading
+function zbx_add_post_js($script) {
+	global $ZBX_PAGE_POST_JS;
+
+	if ($ZBX_PAGE_POST_JS === null) {
+		$ZBX_PAGE_POST_JS = [];
+	}
+
+	if (!in_array($script, $ZBX_PAGE_POST_JS)) {
+		$ZBX_PAGE_POST_JS[] = $script;
+	}
 }
 
 function insertPagePostJs() {
 	global $ZBX_PAGE_POST_JS;
 
-	if (!empty($ZBX_PAGE_POST_JS)) {
-		$js = '';
-		foreach ($ZBX_PAGE_POST_JS as $script) {
-			$js .= $script."\n";
-		}
-
-		if (!empty($js)) {
-			echo get_js($js, true);
-		}
+	if ($ZBX_PAGE_POST_JS) {
+		echo get_js(implode("\n", $ZBX_PAGE_POST_JS), true);
 	}
 }

@@ -26,53 +26,74 @@ require_once dirname(__FILE__).'/include/forms.inc.php';
 
 $page['title'] = _('Configuration of web monitoring');
 $page['file'] = 'httpconf.php';
-$page['hist_arg'] = array('groupid', 'hostid');
+$page['scripts'] = ['class.cviewswitcher.js'];
 
 require_once dirname(__FILE__).'/include/page_header.php';
 
 // VAR	TYPE	OPTIONAL	FLAGS	VALIDATION	EXCEPTION
-$fields = array(
-	'groupid'			=> array(T_ZBX_INT, O_OPT, P_SYS,	DB_ID,				null),
-	'new_httpstep'		=> array(T_ZBX_STR, O_OPT, null,	null,				null),
-	'sel_step'			=> array(T_ZBX_INT, O_OPT, null,	BETWEEN(0, 65534),	null),
-	'group_httptestid'	=> array(T_ZBX_INT, O_OPT, null,	DB_ID,				null),
-	'showdisabled'		=> array(T_ZBX_INT, O_OPT, P_SYS,	IN('0,1'),			null),
+$fields = [
+	'groupid'			=> [T_ZBX_INT, O_OPT, P_SYS,	DB_ID,				null],
+	'new_httpstep'		=> [T_ZBX_STR, O_OPT, null,	null,				null],
+	'sel_step'			=> [T_ZBX_INT, O_OPT, null,	BETWEEN(0, 65534),	null],
+	'group_httptestid'	=> [T_ZBX_INT, O_OPT, null,	DB_ID,				null],
 	// form
-	'hostid'          => array(T_ZBX_INT, O_OPT, P_SYS, DB_ID.NOT_ZERO,          'isset({form})||isset({save})'),
-	'applicationid'   => array(T_ZBX_INT, O_OPT, null,  DB_ID,                   null, _('Application')),
-	'httptestid'      => array(T_ZBX_INT, O_NO,  P_SYS, DB_ID,                   '(isset({form})&&({form}=="update"))'),
-	'name'            => array(T_ZBX_STR, O_OPT, null,  NOT_EMPTY,               'isset({save})', _('Name')),
-	'delay'           => array(T_ZBX_INT, O_OPT, null,  BETWEEN(1, SEC_PER_DAY), 'isset({save})', _('Update interval (in sec)')),
-	'retries'         => array(T_ZBX_INT, O_OPT, null,  BETWEEN(1, 10),          'isset({save})', _('Retries')),
-	'status'          => array(T_ZBX_STR, O_OPT, null,  null,                    null),
-	'agent'           => array(T_ZBX_STR, O_OPT, null,  null,                    'isset({save})'),
-	'variables'       => array(T_ZBX_STR, O_OPT, null,  null,                    'isset({save})'),
-	'steps'           => array(T_ZBX_STR, O_OPT, null,  null,                    'isset({save})', _('Steps')),
-	'authentication'  => array(T_ZBX_INT, O_OPT, null,  IN('0,1,2'),             'isset({save})'),
-	'http_user'       => array(T_ZBX_STR, O_OPT, null,  NOT_EMPTY,               'isset({save})&&isset({authentication})&&({authentication}=='.HTTPTEST_AUTH_BASIC.
-		'||{authentication}=='.HTTPTEST_AUTH_NTLM.')', _('User')),
-	'http_password'		=> array(T_ZBX_STR, O_OPT, null,	NOT_EMPTY,			'isset({save})&&isset({authentication})&&({authentication}=='.HTTPTEST_AUTH_BASIC.
-		'||{authentication}=='.HTTPTEST_AUTH_NTLM.')', _('Password')),
-	'http_proxy'		=> array(T_ZBX_STR, O_OPT, null,	null,				'isset({save})'),
-	'new_application'	=> array(T_ZBX_STR, O_OPT, null,	null,				null),
-	'hostname'			=> array(T_ZBX_STR, O_OPT, null,	null,				null),
-	'templated'			=> array(T_ZBX_STR, O_OPT, null,	null,				null),
+	'hostid'          => [T_ZBX_INT, O_OPT, P_SYS, DB_ID.NOT_ZERO,          'isset({form}) || isset({add}) || isset({update})'],
+	'applicationid'   => [T_ZBX_INT, O_OPT, null,  DB_ID,                   null, _('Application')],
+	'httptestid'      => [T_ZBX_INT, O_NO,  P_SYS, DB_ID,                   'isset({form}) && {form} == "update"'],
+	'name'            => [T_ZBX_STR, O_OPT, null,  NOT_EMPTY,               'isset({add}) || isset({update})', _('Name')],
+	'delay'           => [T_ZBX_INT, O_OPT, null,  BETWEEN(1, SEC_PER_DAY), 'isset({add}) || isset({update})', _('Update interval (in sec)')],
+	'retries'         => [T_ZBX_INT, O_OPT, null,  BETWEEN(1, 10),          'isset({add}) || isset({update})',
+		_('Attempts')
+	],
+	'status'          => [T_ZBX_STR, O_OPT, null,  null,                    null],
+	'agent'           => [T_ZBX_STR, O_OPT, null, null,                     'isset({add}) || isset({update})'],
+	'agent_other'     => [T_ZBX_STR, O_OPT, null, null,
+		'(isset({add}) || isset({update})) && {agent} == '.ZBX_AGENT_OTHER
+	],
+	'variables'       => [T_ZBX_STR, O_OPT, null,  null,                    'isset({add}) || isset({update})'],
+	'steps'           => [T_ZBX_STR, O_OPT, null,  null,                    'isset({add}) || isset({update})', _('Steps')],
+	'authentication'  => [T_ZBX_INT, O_OPT, null,  IN('0,1,2'),             'isset({add}) || isset({update})'],
+	'http_user'       => [T_ZBX_STR, O_OPT, null,  NOT_EMPTY,               '(isset({add}) || isset({update})) && isset({authentication}) && ({authentication} == '.HTTPTEST_AUTH_BASIC.
+		' || {authentication} == '.HTTPTEST_AUTH_NTLM.')', _('User')],
+	'http_password'		=> [T_ZBX_STR, O_OPT, P_NO_TRIM,	NOT_EMPTY,		'(isset({add}) || isset({update})) && isset({authentication}) && ({authentication} == '.HTTPTEST_AUTH_BASIC.
+		' || {authentication} == '.HTTPTEST_AUTH_NTLM.')', _('Password')],
+	'http_proxy'		=> [T_ZBX_STR, O_OPT, null,	null,				'isset({add}) || isset({update})'],
+	'new_application'	=> [T_ZBX_STR, O_OPT, null,	null,				null],
+	'hostname'			=> [T_ZBX_STR, O_OPT, null,	null,				null],
+	'templated'			=> [T_ZBX_STR, O_OPT, null,	null,				null],
+	'verify_host'		=> [T_ZBX_STR, O_OPT, null,	null,				null],
+	'verify_peer'		=> [T_ZBX_STR, O_OPT, null,	null,				null],
+	'headers'			=> [T_ZBX_STR, O_OPT, null, null,					'isset({add}) || isset({update})'],
+	'ssl_cert_file'		=> [T_ZBX_STR, O_OPT, null, null,					'isset({add}) || isset({update})'],
+	'ssl_key_file'		=> [T_ZBX_STR, O_OPT, null, null,					'isset({add}) || isset({update})'],
+	'ssl_key_password'	=> [T_ZBX_STR, O_OPT, P_NO_TRIM, null,				'isset({add}) || isset({update})'],
+	// filter
+	'filter_set' =>			[T_ZBX_STR, O_OPT, P_SYS,	null,		null],
+	'filter_rst' =>			[T_ZBX_STR, O_OPT, P_SYS,	null,		null],
+	'filter_status' =>		[T_ZBX_INT, O_OPT, null,
+		IN([-1, HTTPTEST_STATUS_ACTIVE, HTTPTEST_STATUS_DISABLED]), null
+	],
 	// actions
-	'go'				=> array(T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,			null),
-	'clone'				=> array(T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,			null),
-	'save'				=> array(T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,			null),
-	'delete'			=> array(T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,			null),
-	'cancel'			=> array(T_ZBX_STR, O_OPT, P_SYS,	null,				null),
-	'form'				=> array(T_ZBX_STR, O_OPT, P_SYS,	null,				null),
-	'form_refresh'		=> array(T_ZBX_INT, O_OPT, null,	null,				null)
-);
-$_REQUEST['showdisabled'] = get_request('showdisabled', CProfile::get('web.httpconf.showdisabled', 1));
+	'action'			=> [T_ZBX_STR, O_OPT, P_SYS|P_ACT,
+								IN('"httptest.massclearhistory","httptest.massdelete","httptest.massdisable",'.
+									'"httptest.massenable"'
+								),
+								null
+							],
+	'clone'				=> [T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,			null],
+	'del_history'		=> [T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,			null],
+	'add'				=> [T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,			null],
+	'update'			=> [T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,			null],
+	'delete'			=> [T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,			null],
+	'cancel'			=> [T_ZBX_STR, O_OPT, P_SYS,	null,				null],
+	'form'				=> [T_ZBX_STR, O_OPT, P_SYS,	null,				null],
+	'form_refresh'		=> [T_ZBX_INT, O_OPT, null,	null,				null],
+	// sort and sortorder
+	'sort'				=> [T_ZBX_STR, O_OPT, P_SYS, IN('"hostname","name","status"'),				null],
+	'sortorder'			=> [T_ZBX_STR, O_OPT, P_SYS, IN('"'.ZBX_SORT_DOWN.'","'.ZBX_SORT_UP.'"'),	null]
+];
 
 check_fields($fields);
-validate_sort_and_sortorder('name', ZBX_SORT_UP);
-
-$showDisabled = get_request('showdisabled', 1);
-CProfile::update('web.httpconf.showdisabled', $showDisabled, PROFILE_TYPE_INT);
 
 if (!empty($_REQUEST['steps'])) {
 	order_result($_REQUEST['steps'], 'no');
@@ -83,7 +104,7 @@ if (!empty($_REQUEST['steps'])) {
  */
 //*
 if (isset($_REQUEST['httptestid']) || !empty($_REQUEST['group_httptestid'])) {
-	$testIds = array();
+	$testIds = [];
 	if (isset($_REQUEST['httptestid'])) {
 		$testIds[] = $_REQUEST['httptestid'];
 	}
@@ -94,103 +115,166 @@ if (isset($_REQUEST['httptestid']) || !empty($_REQUEST['group_httptestid'])) {
 		access_deny();
 	}
 }
-$_REQUEST['go'] = get_request('go', 'none');
+$hostId = getRequest('hostid');
+if ($hostId && !API::Host()->isWritable([$hostId])) {
+	access_deny();
+}
 
+$groupId = getRequest('groupid');
+if ($groupId && !API::HostGroup()->get(['groupids' => $groupId])) {
+	access_deny();
+}
 
 /*
  * Actions
  */
 // add new steps
 if (isset($_REQUEST['new_httpstep'])) {
-	$_REQUEST['steps'] = get_request('steps', array());
+	$_REQUEST['steps'] = getRequest('steps', []);
 	$_REQUEST['new_httpstep']['no'] = count($_REQUEST['steps']) + 1;
 	array_push($_REQUEST['steps'], $_REQUEST['new_httpstep']);
 
 	unset($_REQUEST['new_httpstep']);
 }
 
-if (isset($_REQUEST['delete']) && isset($_REQUEST['httptestid'])) {
-	$result = false;
+if (hasRequest('delete') && hasRequest('httptestid')) {
+	DBstart();
 
-	$host = DBfetch(DBselect(
-		'SELECT h.host FROM hosts h,httptest ht WHERE ht.hostid=h.hostid AND ht.httptestid='.zbx_dbstr($_REQUEST['httptestid'])));
+	$result = API::HttpTest()->delete([getRequest('httptestid')]);
 
-	if ($httptest_data = get_httptest_by_httptestid($_REQUEST['httptestid'])) {
-		$result = API::HttpTest()->delete($_REQUEST['httptestid']);
+	$result = DBend($result);
+
+	if ($result) {
+		uncheckTableRows(getRequest('hostid'));
 	}
 
 	show_messages($result, _('Web scenario deleted'), _('Cannot delete web scenario'));
-	if ($result) {
-		add_audit(AUDIT_ACTION_DELETE, AUDIT_RESOURCE_SCENARIO, 'Web scenario ['.$httptest_data['name'].'] ['.
-			$_REQUEST['httptestid'].'] Host ['.$host['host'].']');
-	}
-	unset($_REQUEST['httptestid'], $_REQUEST['form']);
+
+	unset($_REQUEST['form']);
 }
 elseif (isset($_REQUEST['clone']) && isset($_REQUEST['httptestid'])) {
 	unset($_REQUEST['httptestid']);
 	unset($_REQUEST['templated']);
 	$_REQUEST['form'] = 'clone';
 }
-elseif (isset($_REQUEST['save'])) {
+elseif (hasRequest('del_history') && hasRequest('httptestid')) {
+	$result = true;
+
+	$httpTestId = getRequest('httptestid');
+
+	$httpTests = API::HttpTest()->get([
+		'output' => ['name'],
+		'httptestids' => [$httpTestId],
+		'selectHosts' => ['name'],
+		'editable' => true
+	]);
+
+	if ($httpTests) {
+		DBstart();
+
+		$result = deleteHistoryByHttpTestIds([$httpTestId]);
+		$result = ($result && DBexecute('UPDATE httptest SET nextcheck=0 WHERE httptestid='.zbx_dbstr($httpTestId)));
+
+		if ($result) {
+			$httpTest = reset($httpTests);
+			$host = reset($httpTest['hosts']);
+
+			add_audit(AUDIT_ACTION_UPDATE, AUDIT_RESOURCE_SCENARIO,
+				_('Web scenario').' ['.$httpTest['name'].'] ['.$httpTestId.'] '.
+					_('Host').' ['.$host['name'].'] '._('History cleared')
+			);
+		}
+
+		$result = DBend($result);
+	}
+
+	show_messages($result, _('History cleared'), _('Cannot clear history'));
+}
+elseif (hasRequest('add') || hasRequest('update')) {
+	if (hasRequest('update')) {
+		$action = AUDIT_ACTION_UPDATE;
+		$messageTrue = _('Web scenario updated');
+		$messageFalse = _('Cannot update web scenario');
+	}
+	else {
+		$action = AUDIT_ACTION_ADD;
+		$messageTrue = _('Web scenario added');
+		$messageFalse = _('Cannot add web scenario');
+	}
+
 	try {
 		DBstart();
 
-		if (isset($_REQUEST['httptestid'])) {
-			$action = AUDIT_ACTION_UPDATE;
-			$message_true = _('Scenario updated');
-			$message_false = _('Cannot update web scenario');
-		}
-		else {
-			$action = AUDIT_ACTION_ADD;
-			$message_true = _('Scenario added');
-			$message_false = _('Cannot add web scenario');
-		}
+		$new_application = getRequest('new_application');
 
-		if (!empty($_REQUEST['applicationid']) && !empty($_REQUEST['new_application'])) {
+		if (!empty($_REQUEST['applicationid']) && $new_application) {
 			throw new Exception(_('Cannot create new application, web scenario is already assigned to application.'));
 		}
 
-		$steps = get_request('steps', array());
+		$steps = getRequest('steps', []);
 		if (!empty($steps)) {
 			$i = 1;
-			foreach ($steps as $snum => $step) {
-				$steps[$snum]['no'] = $i++;
+			foreach ($steps as $stepNumber => &$step) {
+				$step['no'] = $i++;
+				$step['follow_redirects'] = $step['follow_redirects']
+					? HTTPTEST_STEP_FOLLOW_REDIRECTS_ON
+					: HTTPTEST_STEP_FOLLOW_REDIRECTS_OFF;
+				$step['retrieve_mode'] = $step['retrieve_mode']
+					? HTTPTEST_STEP_RETRIEVE_MODE_HEADERS
+					: HTTPTEST_STEP_RETRIEVE_MODE_CONTENT;
 			}
+			unset($step);
 		}
 
-		$httpTest = array(
+		$httpTest = [
 			'hostid' => $_REQUEST['hostid'],
 			'name' => $_REQUEST['name'],
 			'authentication' => $_REQUEST['authentication'],
-			'applicationid' => get_request('applicationid'),
+			'applicationid' => getRequest('applicationid'),
 			'delay' => $_REQUEST['delay'],
 			'retries' => $_REQUEST['retries'],
 			'status' => isset($_REQUEST['status']) ? 0 : 1,
-			'agent' => $_REQUEST['agent'],
+			'agent' => hasRequest('agent_other') ? getRequest('agent_other') : getRequest('agent'),
 			'variables' => $_REQUEST['variables'],
 			'http_proxy' => $_REQUEST['http_proxy'],
-			'steps' => $steps
-		);
+			'steps' => $steps,
+			'verify_peer' => getRequest('verify_peer', HTTPTEST_VERIFY_PEER_OFF),
+			'verify_host' => getRequest('verify_host', HTTPTEST_VERIFY_HOST_OFF),
+			'ssl_cert_file' => getRequest('ssl_cert_file'),
+			'ssl_key_file' => getRequest('ssl_key_file'),
+			'ssl_key_password' => getRequest('ssl_key_password'),
+			'headers' => getRequest('headers')
+		];
 
-		if (!empty($_REQUEST['new_application'])) {
-			$exApp = API::Application()->get(array(
-				'output' => array('applicationid'),
+		if ($new_application) {
+			$exApp = API::Application()->get([
+				'output' => ['applicationid', 'flags'],
 				'hostids' => $_REQUEST['hostid'],
-				'filter' => array('name' => $_REQUEST['new_application'])
-			));
+				'filter' => ['name' => $new_application]
+			]);
+
+			/*
+			 * If application exists and it is a discovered application, prevent adding it to web scenario. If it is
+			 * a normal application, assign it to web scenario. Otherwise create new application.
+			 */
 			if ($exApp) {
-				$httpTest['applicationid'] = $exApp[0]['applicationid'];
+				if ($exApp[0]['flags'] == ZBX_FLAG_DISCOVERY_CREATED) {
+					throw new Exception(_s('Application "%1$s" already exists.', $new_application));
+				}
+				else {
+					$httpTest['applicationid'] = $exApp[0]['applicationid'];
+				}
 			}
 			else {
-				$result = API::Application()->create(array(
-					'name' => $_REQUEST['new_application'],
+				$result = API::Application()->create([
+					'name' => $new_application,
 					'hostid' => $_REQUEST['hostid']
-				));
+				]);
 				if ($result) {
 					$httpTest['applicationid'] = reset($result['applicationids']);
 				}
 				else {
-					throw new Exception(_s('Cannot add new application "%1$s".', $_REQUEST['new_application']));
+					throw new Exception(_s('Cannot add new application "%1$s".', $new_application));
 				}
 			}
 		}
@@ -206,31 +290,30 @@ elseif (isset($_REQUEST['save'])) {
 
 		if (isset($_REQUEST['httptestid'])) {
 			// unset fields that did not change
-			$dbHttpTest = API::HttpTest()->get(array(
+			$dbHttpTest = API::HttpTest()->get([
 				'httptestids' => $_REQUEST['httptestid'],
 				'output' => API_OUTPUT_EXTEND,
 				'selectSteps' => API_OUTPUT_EXTEND
-			));
+			]);
 			$dbHttpTest = reset($dbHttpTest);
 			$dbHttpSteps = zbx_toHash($dbHttpTest['steps'], 'httpstepid');
 
-			$httpTest = CArrayHelper::unsetEqualValues($httpTest, $dbHttpTest, array('applicationid'));
+			$httpTest = CArrayHelper::unsetEqualValues($httpTest, $dbHttpTest, ['applicationid']);
 			foreach ($httpTest['steps'] as $snum => $step) {
-				if (isset($step['httpstepid'])) {
-					$newStep = CArrayHelper::unsetEqualValues($step, $dbHttpSteps[$step['httpstepid']], array('httpstepid'));
+				if (isset($step['httpstepid']) && isset($dbHttpSteps[$step['httpstepid']])) {
+					$newStep = CArrayHelper::unsetEqualValues($step, $dbHttpSteps[$step['httpstepid']], ['httpstepid']);
 					$httpTest['steps'][$snum] = $newStep;
 				}
 			}
 
-			$httpTest['httptestid'] = $httptestid = $_REQUEST['httptestid'];
+			$httpTest['httptestid'] = $httpTestId = $_REQUEST['httptestid'];
 			$result = API::HttpTest()->update($httpTest);
 			if (!$result) {
 				throw new Exception();
 			}
 			else {
-				clearCookies($result, $_REQUEST['hostid']);
+				uncheckTableRows(getRequest('hostid'));
 			}
-
 		}
 		else {
 			$result = API::HttpTest()->create($httpTest);
@@ -238,16 +321,18 @@ elseif (isset($_REQUEST['save'])) {
 				throw new Exception();
 			}
 			else {
-				clearCookies($result, $_REQUEST['hostid']);
+				uncheckTableRows(getRequest('hostid'));
 			}
-			$httptestid = reset($result['httptestids']);
+			$httpTestId = reset($result['httptestids']);
 		}
 
 		$host = get_host_by_hostid($_REQUEST['hostid']);
-		add_audit($action, AUDIT_RESOURCE_SCENARIO, 'Scenario ['.$_REQUEST['name'].'] ['.$httptestid.'] Host ['.$host['host'].']');
+		add_audit($action, AUDIT_RESOURCE_SCENARIO,
+			_('Web scenario').' ['.getRequest('name').'] ['.$httpTestId.'] '._('Host').' ['.$host['name'].']'
+		);
 
-		unset($_REQUEST['httptestid'], $_REQUEST['form']);
-		show_messages(true, $message_true);
+		unset($_REQUEST['form']);
+		show_messages(true, $messageTrue);
 		DBend(true);
 	}
 	catch (Exception $e) {
@@ -257,38 +342,59 @@ elseif (isset($_REQUEST['save'])) {
 		if (!empty($msg)) {
 			error($msg);
 		}
-		show_messages(false, null, $message_false);
+		show_messages(false, null, $messageFalse);
 	}
 }
-elseif (str_in_array(getRequest('go'), array('activate', 'disable')) && hasRequest('group_httptestid')) {
+elseif (hasRequest('action') && str_in_array(getRequest('action'), ['httptest.massenable', 'httptest.massdisable'])
+		&& hasRequest('group_httptestid') && is_array(getRequest('group_httptestid'))) {
 	$result = true;
-	$groupHttpTestId = getRequest('group_httptestid');
-	$enable = (getRequest('go') == 'activate');
+	$httpTestIds = getRequest('group_httptestid');
+	$enable = (getRequest('action') === 'httptest.massenable');
 	$status = $enable ? HTTPTEST_STATUS_ACTIVE : HTTPTEST_STATUS_DISABLED;
 	$statusName = $enable ? 'enabled' : 'disabled';
 	$auditAction = $enable ? AUDIT_ACTION_ENABLE : AUDIT_ACTION_DISABLE;
 	$updated = 0;
 
-	DBstart();
+	$httpTests = API::HttpTest()->get([
+		'output' => ['httptestid', 'name', 'status'],
+		'selectHosts' => ['name'],
+		'httptestids' => $httpTestIds,
+		'editable' => true
+	]);
 
-	foreach ($groupHttpTestId as $id) {
-		if (!($httpTestData = get_httptest_by_httptestid($id))) {
-			continue;
-		}
-		$result &= API::HttpTest()->update(array(
-			'httptestid' => $id,
-			'status' => $status
-		));
+	if ($httpTests) {
+		$httpTestsToUpdate = [];
 
-		if ($result) {
-			$host = DBfetch(DBselect(
-				'SELECT h.host FROM hosts h,httptest ht WHERE ht.hostid=h.hostid AND ht.httptestid='.zbx_dbstr($id)
-			));
-			add_audit($auditAction, AUDIT_RESOURCE_SCENARIO,
-				'Scenario ['.$httpTestData['name'].'] ['.$id.'] Host ['.$host['host'].'] '.$statusName
-			);
+		DBstart();
+
+		foreach ($httpTests as $httpTest) {
+			// change status if it's necessary
+			if ($httpTest['status'] != $status) {
+				$httpTestsToUpdate[] = [
+					'httptestid' => $httpTest['httptestid'],
+					'status' => $status
+				];
+			}
 		}
-		$updated++;
+
+		if ($httpTestsToUpdate) {
+			$result = API::HttpTest()->update($httpTestsToUpdate);
+
+			if ($result) {
+				foreach ($httpTests as $httpTest) {
+					$host = reset($httpTest['hosts']);
+
+					add_audit($auditAction, AUDIT_RESOURCE_SCENARIO,
+						_('Web scenario').' ['.$httpTest['name'].'] ['.$httpTest['httptestid'].'] '.
+							_('Host').' ['.$host['name'].'] '.$statusName
+					);
+				}
+			}
+		}
+
+		$result = DBend($result);
+
+		$updated = count($httpTests);
 	}
 
 	$messageSuccess = $enable
@@ -298,42 +404,61 @@ elseif (str_in_array(getRequest('go'), array('activate', 'disable')) && hasReque
 		? _n('Cannot enable web scenario', 'Cannot enable web scenarios', $updated)
 		: _n('Cannot disable web scenario', 'Cannot disable web scenarios', $updated);
 
-	$result = DBend($result);
+	if ($result) {
+		uncheckTableRows(getRequest('hostid'));
+	}
 
 	show_messages($result, $messageSuccess, $messageFailed);
-	clearCookies($result, getRequest('hostid'));
 }
-elseif ($_REQUEST['go'] == 'clean_history' && isset($_REQUEST['group_httptestid'])) {
-	$goResult = false;
-	$group_httptestid = $_REQUEST['group_httptestid'];
+elseif (hasRequest('action') && getRequest('action') === 'httptest.massclearhistory'
+		&& hasRequest('group_httptestid') && is_array(getRequest('group_httptestid'))) {
+	$result = false;
 
-	DBstart();
+	$httpTestIds = getRequest('group_httptestid');
 
-	foreach ($group_httptestid as $id) {
-		if (!($httptest_data = get_httptest_by_httptestid($id))) {
-			continue;
+	$httpTests = API::HttpTest()->get([
+		'output' => ['httptestid', 'name'],
+		'httptestids' => $httpTestIds,
+		'selectHosts' => ['name'],
+		'editable' => true
+	]);
+
+	if ($httpTests) {
+		DBstart();
+
+		$result = deleteHistoryByHttpTestIds($httpTestIds);
+		$result = ($result && DBexecute(
+			'UPDATE httptest SET nextcheck=0 WHERE '.dbConditionInt('httptestid', $httpTestIds)
+		));
+
+		if ($result) {
+			foreach ($httpTests as $httpTest) {
+				$host = reset($httpTest['hosts']);
+
+				add_audit(AUDIT_ACTION_UPDATE, AUDIT_RESOURCE_SCENARIO,
+					_('Web scenario').' ['.$httpTest['name'].'] ['.$httpTest['httptestid'].'] '.
+						_('Host').' ['.$host['name'].'] '._('History cleared')
+				);
+			}
 		}
-		if (delete_history_by_httptestid($id)) {
-			$goResult = true;
-			DBexecute('UPDATE httptest SET nextcheck=0 WHERE httptestid='.zbx_dbstr($id));
-			$host = DBfetch(DBselect(
-				'SELECT h.host FROM hosts h,httptest ht WHERE ht.hostid=h.hostid AND ht.httptestid='.zbx_dbstr($id)));
 
-			add_audit(AUDIT_ACTION_UPDATE, AUDIT_RESOURCE_SCENARIO, 'Scenario ['.$httptest_data['name'].'] ['.$id.
-				'] Host ['.$host['host'].'] history cleared');
+		$result = DBend($result);
+
+		if ($result) {
+			uncheckTableRows(getRequest('hostid'));
 		}
 	}
 
-	$goResult = DBend($goResult);
-
-	show_messages($goResult, _('History cleared'), null);
-	clearCookies($goResult, $_REQUEST['hostid']);
+	show_messages($result, _('History cleared'), _('Cannot clear history'));
 }
-elseif ($_REQUEST['go'] == 'delete' && isset($_REQUEST['group_httptestid'])) {
-	$goResult = API::HttpTest()->delete($_REQUEST['group_httptestid']);
+elseif (hasRequest('action') && getRequest('action') === 'httptest.massdelete'
+		&& hasRequest('group_httptestid') && is_array(getRequest('group_httptestid'))) {
+	$result = API::HttpTest()->delete(getRequest('group_httptestid'));
 
-	show_messages($goResult, _('Web scenario deleted'), _('Cannot delete web scenario'));
-	clearCookies($goResult, $_REQUEST['hostid']);
+	if ($result) {
+		uncheckTableRows(getRequest('hostid'));
+	}
+	show_messages($result, _('Web scenario deleted'), _('Cannot delete web scenario'));
 }
 
 show_messages();
@@ -342,13 +467,20 @@ show_messages();
  * Display
  */
 if (isset($_REQUEST['form'])) {
-	$data = array(
-		'hostid' => get_request('hostid', 0),
-		'httptestid' => get_request('httptestid', null),
-		'form' => get_request('form'),
-		'form_refresh' => get_request('form_refresh'),
-		'templates' => array()
-	);
+	$data = [
+		'hostid' => getRequest('hostid', 0),
+		'httptestid' => getRequest('httptestid'),
+		'form' => getRequest('form'),
+		'form_refresh' => getRequest('form_refresh'),
+		'templates' => []
+	];
+
+	$host = API::Host()->get([
+		'output' => ['status'],
+		'hostids' => $data['hostid'],
+		'templated_hosts' => true
+	]);
+	$data['host'] = reset($host);
 
 	if (isset($data['httptestid'])) {
 		// get templates
@@ -364,12 +496,10 @@ if (isset($_REQUEST['form'])) {
 
 			if (!empty($dbTest)) {
 				if (!idcmp($data['httptestid'], $dbTest['httptestid'])) {
-					$data['templates'][] = new CLink(
-						$dbTest['name'],
-						'httpconf.php?form=update&httptestid='.$dbTest['httptestid'].'&hostid='.$dbTest['hostid'],
-						'highlight underline weight_normal'
+					$data['templates'][] = new CLink($dbTest['name'],
+						'httpconf.php?form=update&httptestid='.$dbTest['httptestid'].'&hostid='.$dbTest['hostid']
 					);
-					$data['templates'][] = SPACE.RARR.SPACE;
+					$data['templates'][] = SPACE.'&rArr;'.SPACE;
 				}
 				$httpTestId = $dbTest['templateid'];
 			}
@@ -391,13 +521,30 @@ if (isset($_REQUEST['form'])) {
 		$data['delay'] = $dbHttpTest['delay'];
 		$data['retries'] = $dbHttpTest['retries'];
 		$data['status'] = $dbHttpTest['status'];
-		$data['agent'] = $dbHttpTest['agent'];
+
+		$data['agent'] = ZBX_AGENT_OTHER;
+		$data['agent_other'] = $dbHttpTest['agent'];
+
+		foreach (userAgents() as $userAgents) {
+			if (array_key_exists($dbHttpTest['agent'], $userAgents)) {
+				$data['agent'] = $dbHttpTest['agent'];
+				$data['agent_other'] = '';
+				break;
+			}
+		}
+
 		$data['variables'] = $dbHttpTest['variables'];
 		$data['authentication'] = $dbHttpTest['authentication'];
 		$data['http_user'] = $dbHttpTest['http_user'];
 		$data['http_password'] = $dbHttpTest['http_password'];
 		$data['http_proxy'] = $dbHttpTest['http_proxy'];
 		$data['templated'] = (bool) $dbHttpTest['templateid'];
+		$data['headers'] = $dbHttpTest['headers'];
+		$data['verify_peer'] = $dbHttpTest['verify_peer'];
+		$data['verify_host'] = $dbHttpTest['verify_host'];
+		$data['ssl_cert_file'] = $dbHttpTest['ssl_cert_file'];
+		$data['ssl_key_file'] = $dbHttpTest['ssl_key_file'];
+		$data['ssl_key_password'] = $dbHttpTest['ssl_key_password'];
 		$data['steps'] = DBfetchArray(DBselect('SELECT h.* FROM httpstep h WHERE h.httptestid='.zbx_dbstr($_REQUEST['httptestid']).' ORDER BY h.no'));
 	}
 	else {
@@ -408,24 +555,48 @@ if (isset($_REQUEST['form'])) {
 			$data['status'] = HTTPTEST_STATUS_ACTIVE;
 		}
 
-		$data['name'] = get_request('name', '');
-		$data['applicationid'] = get_request('applicationid');
-		$data['new_application'] = get_request('new_application', '');
-		$data['delay'] = get_request('delay', 60);
-		$data['retries'] = get_request('retries', 1);
-		$data['agent'] = get_request('agent', '');
-		$data['variables'] = get_request('variables', array());
-		$data['authentication'] = get_request('authentication', HTTPTEST_AUTH_NONE);
-		$data['http_user'] = get_request('http_user', '');
-		$data['http_password'] = get_request('http_password', '');
-		$data['http_proxy'] = get_request('http_proxy', '');
-		$data['templated'] = get_request('templated');
-		$data['steps'] = get_request('steps', array());
+		$data['name'] = getRequest('name', '');
+		$data['applicationid'] = getRequest('applicationid');
+		$data['new_application'] = getRequest('new_application', '');
+		$data['delay'] = getRequest('delay', 60);
+		$data['retries'] = getRequest('retries', 1);
+
+		$data['agent'] = getRequest('agent', ZBX_DEFAULT_AGENT);
+		$data['agent_other'] = getRequest('agent_other');
+
+		if ($data['agent'] == ZBX_AGENT_OTHER) {
+			foreach (userAgents() as $userAgents) {
+				if (array_key_exists($data['agent_other'], $userAgents)) {
+					$data['agent'] = $data['agent_other'];
+					$data['agent_other'] = '';
+					break;
+				}
+			}
+		}
+
+		$data['variables'] = getRequest('variables', []);
+		$data['authentication'] = getRequest('authentication', HTTPTEST_AUTH_NONE);
+		$data['http_user'] = getRequest('http_user', '');
+		$data['http_password'] = getRequest('http_password', '');
+		$data['http_proxy'] = getRequest('http_proxy', '');
+		$data['templated'] = (bool) getRequest('templated');
+		$data['steps'] = getRequest('steps', []);
+		$data['headers'] = getRequest('headers');
+		$data['verify_peer'] = getRequest('verify_peer');
+		$data['verify_host'] = getRequest('verify_host');
+		$data['ssl_cert_file'] = getRequest('ssl_cert_file');
+		$data['ssl_key_file'] = getRequest('ssl_key_file');
+		$data['ssl_key_password'] = getRequest('ssl_key_password');
 	}
 
-	$data['application_list'] = array();
+	$data['application_list'] = [];
 	if (!empty($data['hostid'])) {
-		$dbApps = DBselect('SELECT a.applicationid,a.name FROM applications a WHERE a.hostid='.zbx_dbstr($data['hostid']));
+		$dbApps = DBselect(
+			'SELECT a.applicationid,a.name'.
+			' FROM applications a'.
+			' WHERE a.hostid='.zbx_dbstr($data['hostid']).
+				' AND a.flags='.ZBX_FLAG_DISCOVERY_NORMAL
+		);
 		while ($dbApp = DBfetch($dbApps)) {
 			$data['application_list'][$dbApp['applicationid']] = $dbApp['name'];
 		}
@@ -437,37 +608,63 @@ if (isset($_REQUEST['form'])) {
 	$httpView->show();
 }
 else {
-	$pageFilter = new CPageFilter(array(
-		'groups' => array(
+	$sortField = getRequest('sort', CProfile::get('web.'.$page['file'].'.sort', 'name'));
+	$sortOrder = getRequest('sortorder', CProfile::get('web.'.$page['file'].'.sortorder', ZBX_SORT_UP));
+
+	CProfile::update('web.'.$page['file'].'.sort', $sortField, PROFILE_TYPE_STR);
+	CProfile::update('web.'.$page['file'].'.sortorder', $sortOrder, PROFILE_TYPE_STR);
+
+	if (hasRequest('filter_set')) {
+		CProfile::update('web.httpconf.filter_status', getRequest('filter_status', -1), PROFILE_TYPE_INT);
+	}
+	elseif (hasRequest('filter_rst')) {
+		CProfile::delete('web.httpconf.filter_status');
+	}
+
+	$pageFilter = new CPageFilter([
+		'groups' => [
 			'editable' => true
-		),
-		'hosts' => array(
+		],
+		'hosts' => [
 			'editable' => true,
 			'templated_hosts' => true
-		),
-		'hostid' => get_request('hostid'),
-		'groupid' => get_request('groupid')
-	));
+		],
+		'hostid' => getRequest('hostid'),
+		'groupid' => getRequest('groupid')
+	]);
 
-	$data = array(
+	$data = [
 		'hostid' => $pageFilter->hostid,
 		'pageFilter' => $pageFilter,
-		'showDisabled' => $showDisabled,
-		'httpTests' => array(),
+		'filter_status' => CProfile::get('web.httpconf.filter_status', -1),
+		'httpTests' => [],
+		'httpTestsLastData' => [],
 		'paging' => null,
-		'displayNodes' => (is_array(get_current_nodeid()) && empty($_REQUEST['groupid']) && empty($_REQUEST['hostid']))
-	);
+		'sort' => $sortField,
+		'sortorder' => $sortOrder
+	];
+
+	// show the error column only for hosts
+	if (getRequest('hostid') != 0) {
+		$data['showInfoColumn'] = (bool) API::Host()->get([
+			'hostids' => getRequest('hostid'),
+			'output' => ['status']
+		]);
+	}
+	else {
+		$data['showInfoColumn'] = true;
+	}
 
 	if ($data['pageFilter']->hostsSelected) {
-		$sortfield = getPageSortField('hostname');
+		$config = select_config();
 
-		$options = array(
+		$options = [
 			'editable' => true,
-			'output' => array('httptestid', $sortfield),
+			'output' => ['httptestid', $sortField],
 			'limit' => $config['search_limit'] + 1
-		);
-		if (empty($data['showDisabled'])) {
-			$options['filter']['status'] = HTTPTEST_STATUS_ACTIVE;
+		];
+		if ($data['filter_status'] != -1) {
+			$options['filter']['status'] = $data['filter_status'];
 		}
 		if ($data['pageFilter']->hostid > 0) {
 			$options['hostids'] = $data['pageFilter']->hostid;
@@ -478,19 +675,39 @@ else {
 		$httpTests = API::HttpTest()->get($options);
 
 		$dbHttpTests = DBselect(
-			'SELECT ht.httptestid,ht.name,ht.delay,ht.status,ht.hostid,ht.templateid,h.name AS hostname'.
+			'SELECT ht.httptestid,ht.name,ht.delay,ht.status,ht.hostid,ht.templateid,h.name AS hostname,ht.retries,'.
+				'ht.authentication,ht.http_proxy,a.applicationid,a.name AS application_name'.
 				' FROM httptest ht'.
 				' INNER JOIN hosts h ON h.hostid=ht.hostid'.
+				' LEFT JOIN applications a ON a.applicationid=ht.applicationid'.
 				' WHERE '.dbConditionInt('ht.httptestid', zbx_objectValues($httpTests, 'httptestid'))
 		);
-		$httpTests = array();
+		$httpTests = [];
 		while ($dbHttpTest = DBfetch($dbHttpTests)) {
 			$httpTests[$dbHttpTest['httptestid']] = $dbHttpTest;
 		}
 
-		order_result($httpTests, $sortfield, getPageSortOrder());
+		order_result($httpTests, $sortField, $sortOrder);
 
-		$data['paging'] = getPagingLine($httpTests, array('httptestid'));
+		$url = (new CUrl('httpconf.php'))
+			->setArgument('hostid', $data['hostid'])
+			->setArgument('groupid', $data['pageFilter']->groupid);
+
+		$data['paging'] = getPagingLine($httpTests, $sortOrder, $url);
+
+		if($data['showInfoColumn']) {
+			$httpTestsLastData = Manager::HttpTest()->getLastData(array_keys($httpTests));
+
+			foreach ($httpTestsLastData as $httpTestId => &$lastData) {
+				if ($lastData['lastfailedstep'] !== null) {
+					$lastData['failedstep'] = get_httpstep_by_no($httpTestId, $lastData['lastfailedstep']);
+				}
+			}
+			unset($lastData);
+		}
+		else {
+			$httpTestsLastData = [];
+		}
 
 		$dbHttpSteps = DBselect(
 			'SELECT hs.httptestid,COUNT(*) AS stepscnt'.
@@ -502,19 +719,12 @@ else {
 			$httpTests[$dbHttpStep['httptestid']]['stepscnt'] = $dbHttpStep['stepscnt'];
 		}
 
-		order_result($httpTests, $sortfield, getPageSortOrder());
+		order_result($httpTests, $sortField, $sortOrder);
 
 		$data['parentTemplates'] = getHttpTestsParentTemplates($httpTests);
 
 		$data['httpTests'] = $httpTests;
-	}
-
-	// nodes
-	if ($data['displayNodes']) {
-		foreach ($data['httpTests'] as &$httpTest) {
-			$httpTest['nodename'] = get_node_name_by_elid($httpTest['httptestid'], true);
-		}
-		unset($httpTest);
+		$data['httpTestsLastData'] = $httpTestsLastData;
 	}
 
 	// render view

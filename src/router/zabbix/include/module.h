@@ -25,9 +25,20 @@
 #define ZBX_MODULE_OK	0
 #define ZBX_MODULE_FAIL	-1
 
-#define ZBX_MODULE_API_VERSION_ONE	1
+/* zbx_module_api_version() MUST return this constant */
+#define ZBX_MODULE_API_VERSION	2
 
-#define get_rparam(request, num)	(request->nparam > num ? request->params[num] : NULL)
+/* old name alias is kept for source compatibility only, SHOULD NOT be used */
+#define ZBX_MODULE_API_VERSION_ONE	ZBX_MODULE_API_VERSION
+
+/* HINT: For conditional compilation with different module.h versions modules can use: */
+/* #if ZBX_MODULE_API_VERSION == X                                                     */
+/*         ...                                                                         */
+/* #endif                                                                              */
+
+#define get_rkey(request)		(request)->key
+#define get_rparams_num(request)	(request)->nparam
+#define get_rparam(request, num)	((request)->nparam > num ? (request)->params[num] : NULL)
 
 /* flags for command */
 #define CF_HAVEPARAMS		0x01	/* item accepts either optional or mandatory parameters */
@@ -58,28 +69,11 @@ typedef struct
 {
 	char		*value;
 	char		*source;
-	zbx_uint64_t	lastlogsize;
 	int		timestamp;
 	int		severity;
 	int		logeventid;
-	int		mtime;
 }
 zbx_log_t;
-
-/* agent return structure */
-typedef struct
-{
-	int	 	type;
-	zbx_uint64_t	ui64;
-	double		dbl;
-	char		*str;
-	char		*text;
-	char		*msg;
-
-	/* null-terminated list of pointers */
-	zbx_log_t	**logs;
-}
-AGENT_RESULT;
 
 /* agent result types */
 #define AR_UINT64	0x01
@@ -88,6 +82,22 @@ AGENT_RESULT;
 #define AR_TEXT		0x08
 #define AR_LOG		0x10
 #define AR_MESSAGE	0x20
+#define AR_META		0x40
+
+/* agent return structure */
+typedef struct
+{
+	zbx_uint64_t	lastlogsize;	/* meta information */
+	zbx_uint64_t	ui64;
+	double		dbl;
+	char		*str;
+	char		*text;
+	char		*msg;		/* possible error message */
+	zbx_log_t	*log;
+	int	 	type;		/* flags: see AR_* above */
+	int		mtime;		/* meta information */
+}
+AGENT_RESULT;
 
 /* SET RESULT */
 
@@ -121,7 +131,7 @@ AGENT_RESULT;
 #define SET_LOG_RESULT(res, val)		\
 (						\
 	(res)->type |= AR_LOG,			\
-	(res)->logs = (zbx_log_t **)(val)	\
+	(res)->log = (zbx_log_t *)(val)		\
 )
 
 /* NOTE: always allocate new memory for val! DON'T USE STATIC OR STACK MEMORY!!! */
@@ -133,5 +143,64 @@ AGENT_RESULT;
 
 #define SYSINFO_RET_OK		0
 #define SYSINFO_RET_FAIL	1
+
+typedef struct
+{
+	zbx_uint64_t	itemid;
+	int		clock;
+	int		ns;
+	double		value;
+}
+ZBX_HISTORY_FLOAT;
+
+typedef struct
+{
+	zbx_uint64_t	itemid;
+	int		clock;
+	int		ns;
+	zbx_uint64_t	value;
+}
+ZBX_HISTORY_INTEGER;
+
+typedef struct
+{
+	zbx_uint64_t	itemid;
+	int		clock;
+	int		ns;
+	const char	*value;
+}
+ZBX_HISTORY_STRING;
+
+typedef struct
+{
+	zbx_uint64_t	itemid;
+	int		clock;
+	int		ns;
+	const char	*value;
+}
+ZBX_HISTORY_TEXT;
+
+typedef struct
+{
+	zbx_uint64_t	itemid;
+	int		clock;
+	int		ns;
+	const char	*value;
+	const char	*source;
+	int		timestamp;
+	int		logeventid;
+	int		severity;
+}
+ZBX_HISTORY_LOG;
+
+typedef struct
+{
+	void	(*history_float_cb)(const ZBX_HISTORY_FLOAT *history, int history_num);
+	void	(*history_integer_cb)(const ZBX_HISTORY_INTEGER *history, int history_num);
+	void	(*history_string_cb)(const ZBX_HISTORY_STRING *history, int history_num);
+	void	(*history_text_cb)(const ZBX_HISTORY_TEXT *history, int history_num);
+	void	(*history_log_cb)(const ZBX_HISTORY_LOG *history, int history_num);
+}
+ZBX_HISTORY_WRITE_CBS;
 
 #endif

@@ -32,7 +32,8 @@
 
 #define	ALARM_ACTION_TIMEOUT	40
 
-extern unsigned char	process_type;
+extern unsigned char	process_type, program_type;
+extern int		server_num, process_num;
 
 /******************************************************************************
  *                                                                            *
@@ -53,17 +54,18 @@ int	execute_action(DB_ALERT *alert, DB_MEDIATYPE *mediatype, char *error, int ma
 {
 	const char	*__function_name = "execute_action";
 
-	int 	res = FAIL;
+	int		res = FAIL;
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s(): alertid [" ZBX_FS_UI64 "] mediatype [%d]",
 			__function_name, alert->alertid, mediatype->type);
 
 	if (MEDIA_TYPE_EMAIL == mediatype->type)
 	{
-		alarm(ALARM_ACTION_TIMEOUT);
-		res = send_email(mediatype->smtp_server, mediatype->smtp_helo, mediatype->smtp_email,
-				alert->sendto, alert->subject, alert->message, error, max_error_len);
-		alarm(0);
+		res = send_email(mediatype->smtp_server, mediatype->smtp_port, mediatype->smtp_helo,
+				mediatype->smtp_email, alert->sendto, alert->subject, alert->message,
+				mediatype->smtp_security, mediatype->smtp_verify_peer, mediatype->smtp_verify_host,
+				mediatype->smtp_authentication, mediatype->username, mediatype->passwd,
+				ALARM_ACTION_TIMEOUT, error, max_error_len);
 	}
 #ifdef HAVE_JABBER
 	else if (MEDIA_TYPE_JABBER == mediatype->type)
@@ -86,7 +88,7 @@ int	execute_action(DB_ALERT *alert, DB_MEDIATYPE *mediatype, char *error, int ma
 	}
 	else if (MEDIA_TYPE_EXEC == mediatype->type)
 	{
-		char	*cmd = NULL, *send_to, *subject, *message, *output = NULL;
+		char	*cmd = NULL, *output = NULL;
 		size_t	cmd_alloc = ZBX_KIBIBYTE, cmd_offset = 0;
 
 		cmd = zbx_malloc(cmd, cmd_alloc);
@@ -96,15 +98,28 @@ int	execute_action(DB_ALERT *alert, DB_MEDIATYPE *mediatype, char *error, int ma
 
 		if (0 == access(cmd, X_OK))
 		{
-			send_to = zbx_dyn_escape_shell_single_quote(alert->sendto);
-			subject = zbx_dyn_escape_shell_single_quote(alert->subject);
-			message = zbx_dyn_escape_shell_single_quote(alert->message);
+			char	*pstart, *pend, *param = NULL;
+			size_t	param_alloc = 0, param_offset;
 
-			zbx_snprintf_alloc(&cmd, &cmd_alloc, &cmd_offset, " '%s' '%s' '%s'", send_to, subject, message);
+			for (pstart = mediatype->exec_params; NULL != (pend = strchr(pstart, '\n')); pstart = pend + 1)
+			{
+				char	*param_esc;
 
-			zbx_free(message);
-			zbx_free(subject);
-			zbx_free(send_to);
+				param_offset = 0;
+
+				zbx_strncpy_alloc(&param, &param_alloc, &param_offset, pstart, pend - pstart);
+
+				substitute_simple_macros(NULL, NULL, NULL, NULL, NULL, NULL, NULL, alert, &param,
+						MACRO_TYPE_ALERT, NULL, 0);
+
+				param_esc = zbx_dyn_escape_shell_single_quote(param);
+
+				zbx_snprintf_alloc(&cmd, &cmd_alloc, &cmd_offset, " '%s'", param_esc);
+
+				zbx_free(param_esc);
+			}
+
+			zbx_free(param);
 
 			if (SUCCEED == (res = zbx_execute(cmd, &output, error, max_error_len, ALARM_ACTION_TIMEOUT)))
 			{
@@ -139,7 +154,7 @@ int	execute_action(DB_ALERT *alert, DB_MEDIATYPE *mediatype, char *error, int ma
  * Author: Alexei Vladishev                                                   *
  *                                                                            *
  ******************************************************************************/
-void	main_alerter_loop(void)
+ZBX_THREAD_ENTRY(alerter_thread, args)
 {
 	char		error[MAX_STRING_LEN], *error_esc;
 	int		res, alerts_success, alerts_fail;
@@ -149,12 +164,21 @@ void	main_alerter_loop(void)
 	DB_ALERT	alert;
 	DB_MEDIATYPE	mediatype;
 
+	process_type = ((zbx_thread_args_t *)args)->process_type;
+	server_num = ((zbx_thread_args_t *)args)->server_num;
+	process_num = ((zbx_thread_args_t *)args)->process_num;
+
+	zabbix_log(LOG_LEVEL_INFORMATION, "%s #%d started [%s #%d]", get_program_type_string(program_type),
+			server_num, get_process_type_string(process_type), process_num);
+
 	zbx_setproctitle("%s [connecting to the database]", get_process_type_string(process_type));
 
 	DBconnect(ZBX_DB_CONNECT_NORMAL);
 
 	for (;;)
 	{
+		zbx_handle_log();
+
 		zbx_setproctitle("%s [sending alerts]", get_process_type_string(process_type));
 
 		sec = zbx_time();
@@ -163,17 +187,17 @@ void	main_alerter_loop(void)
 
 		result = DBselect(
 				"select a.alertid,a.mediatypeid,a.sendto,a.subject,a.message,a.status,mt.mediatypeid,"
-				"mt.type,mt.description,mt.smtp_server,mt.smtp_helo,mt.smtp_email,mt.exec_path,"
-				"mt.gsm_modem,mt.username,mt.passwd,a.retries"
+					"mt.type,mt.description,mt.smtp_server,mt.smtp_helo,mt.smtp_email,mt.exec_path,"
+					"mt.gsm_modem,mt.username,mt.passwd,mt.smtp_port,mt.smtp_security,"
+					"mt.smtp_verify_peer,mt.smtp_verify_host,mt.smtp_authentication,mt.exec_params,"
+					"a.retries"
 				" from alerts a,media_type mt"
 				" where a.mediatypeid=mt.mediatypeid"
 					" and a.status=%d"
 					" and a.alerttype=%d"
-					ZBX_SQL_NODE
 				" order by a.alertid",
 				ALERT_STATUS_NOT_SENT,
-				ALERT_TYPE_MESSAGE,
-				DBand_node_local("mt.mediatypeid"));
+				ALERT_TYPE_MESSAGE);
 
 		while (NULL != (row = DBfetch(result)))
 		{
@@ -191,11 +215,17 @@ void	main_alerter_loop(void)
 			mediatype.smtp_helo = row[10];
 			mediatype.smtp_email = row[11];
 			mediatype.exec_path = row[12];
+			mediatype.exec_params = row[21];
 			mediatype.gsm_modem = row[13];
 			mediatype.username = row[14];
 			mediatype.passwd = row[15];
+			mediatype.smtp_port = (unsigned short)atoi(row[16]);
+			ZBX_STR2UCHAR(mediatype.smtp_security, row[17]);
+			ZBX_STR2UCHAR(mediatype.smtp_verify_peer, row[18]);
+			ZBX_STR2UCHAR(mediatype.smtp_verify_host, row[19]);
+			ZBX_STR2UCHAR(mediatype.smtp_authentication, row[20]);
 
-			alert.retries = atoi(row[16]);
+			alert.retries = atoi(row[22]);
 
 			*error = '\0';
 			res = execute_action(&alert, &mediatype, error, sizeof(error));

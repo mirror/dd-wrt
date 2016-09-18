@@ -1,11 +1,10 @@
 <script type="text/x-jquery-tmpl" id="groupPrototypeRow">
 	<tr class="form_row">
 		<td>
-			<input class="input text" name="group_prototypes[#{i}][name]" type="text" size="30" value="#{name}"
-				placeholder="{#MACRO}">
+			<input name="group_prototypes[#{i}][name]" type="text" value="#{name}" style="width: <?= ZBX_TEXTAREA_STANDARD_WIDTH ?>px" placeholder="{#MACRO}" maxlength="255" />
 		</td>
-		<td>
-			<input type="button" class="link_menu group-prototype-remove" name="remove" value="<?php echo CHtml::encode(_('Remove')); ?>" />
+		<td class="<?= ZBX_STYLE_NOWRAP ?>">
+			<button class="<?= ZBX_STYLE_BTN_LINK ?> group-prototype-remove" type="button" name="remove"><?= _('Remove') ?></button>
 			<input type="hidden" name="group_prototypes[#{i}][group_prototypeid]" value="#{group_prototypeid}" />
 		</td>
 	</tr>
@@ -29,7 +28,7 @@
 				addGroupPrototypeRow({})
 			});
 
-		jQuery('#tbl_group_prototypes').on('click', 'input.group-prototype-remove', function() {
+		jQuery('#tbl_group_prototypes').on('click', '.group-prototype-remove', function() {
 			jQuery(this).closest('.form_row').remove();
 		});
 
@@ -38,14 +37,14 @@
 			addGroupPrototypeRow({'name': '', 'group_prototypeid': ''});
 		<?php endif ?>
 		<?php foreach ($hostPrototype['groupPrototypes'] as $i => $groupPrototype): ?>
-			addGroupPrototypeRow(<?php echo CJs::encodeJson(array(
+			addGroupPrototypeRow(<?= CJs::encodeJson([
 				'name' => $groupPrototype['name'],
 				'group_prototypeid' => isset($groupPrototype['group_prototypeid']) ? $groupPrototype['group_prototypeid'] : null
-			)) ?>);
+			]) ?>);
 		<?php endforeach ?>
 
 		<?php if ($hostPrototype['templateid']): ?>
-			jQuery("#tbl_group_prototypes").find('input').prop("disabled", "disabled");
+			jQuery("#tbl_group_prototypes").find('input, .button').prop("disabled", "disabled");
 		<?php endif ?>
 	});
 </script>

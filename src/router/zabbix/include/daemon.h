@@ -24,20 +24,18 @@
 #	error "This module allowed only for Unix OS"
 #endif
 
-#define USE_PID_FILE	1
-
 extern char	*CONFIG_PID_FILE;
 
 #include "threads.h"
 
-int	daemon_start(int allow_root);
-void	daemon_stop();
+int	daemon_start(int allow_root, const char *user, unsigned int flags);
+void	daemon_stop(void);
 
-int	zbx_sigusr_send(zbx_task_t task);
+int	zbx_sigusr_send(int flags);
 
 #define ZBX_IS_RUNNING()	1
 #define ZBX_DO_EXIT()
 
-#define START_MAIN_ZABBIX_ENTRY(a)	daemon_start(a)
+#define START_MAIN_ZABBIX_ENTRY(allow_root, user, flags)	daemon_start(allow_root, user, flags)
 
 #endif	/* ZABBIX_DAEMON_H */

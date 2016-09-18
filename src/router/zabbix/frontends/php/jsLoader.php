@@ -42,15 +42,14 @@ if (isset($_GET['lang'])) {
 		textdomain('frontend');
 	}
 	// numeric Locale to default
-	setlocale(LC_NUMERIC, array('C', 'POSIX', 'en', 'en_US', 'en_US.UTF-8', 'English_United States.1252', 'en_GB', 'en_GB.UTF-8'));
+	setlocale(LC_NUMERIC, ['C', 'POSIX', 'en', 'en_US', 'en_US.UTF-8', 'English_United States.1252', 'en_GB', 'en_GB.UTF-8']);
 }
 
 require_once dirname(__FILE__).'/include/translateDefines.inc.php';
 
 // available scripts 'scriptFileName' => 'path relative to js/'
-$availableJScripts = array(
+$availableJScripts = [
 	'common.js' => '',
-	'menu.js' => '',
 	'menupopup.js' => '',
 	'gtlc.js' => '',
 	'functions.js' => '',
@@ -59,11 +58,11 @@ $availableJScripts = array(
 	'servercheck.js' => '',
 	'flickerfreescreen.js' => '',
 	'multiselect.js' => '',
+	'chkbxrange.js' => '',
 	// vendors
-	'prototype.js' => '',
-	'jquery.js' => 'jquery/',
-	'jquery-ui.js' => 'jquery/',
-	'activity-indicator.js' => 'vendors/',
+	'prototype.js' => 'vendors/',
+	'jquery.js' => 'vendors/',
+	'jquery-ui.js' => 'vendors/',
 	// classes
 	'class.bbcode.js' => '',
 	'class.calendar.js' => '',
@@ -82,11 +81,14 @@ $availableJScripts = array(
 	'class.cviewswitcher.js' => '',
 	'init.js' => '',
 	// templates
-	'sysmap.tpl.js' => 'templates/'
-);
+	'sysmap.tpl.js' => 'templates/',
+	// page-specific scripts
+	'items.js' => 'pages/',
+	'tr_logform.js' => 'pages/',
+];
 
-$tranStrings = array(
-	'gtlc.js' => array(
+$tranStrings = [
+	'gtlc.js' => [
 		'S_ALL_S' => _('All'),
 		'S_ZOOM' => _('Zoom'),
 		'S_FIXED_SMALL' => _('fixed'),
@@ -96,25 +98,18 @@ $tranStrings = array(
 		'S_MONTH_SHORT' => _x('m', 'month short'),
 		'S_DAY_SHORT' => _x('d', 'day short'),
 		'S_HOUR_SHORT' => _x('h', 'hour short'),
-		'S_DATE_FORMAT' => FILTER_TIMEBAR_DATE_FORMAT
-	),
-	'functions.js' => array(
+		'S_MINUTE_SHORT' => _x('m', 'minute short'),
+		'S_DATE_FORMAT' => DATE_TIME_FORMAT
+	],
+	'functions.js' => [
 		'Cancel' => _('Cancel'),
-		'DO_YOU_REPLACE_CONDITIONAL_EXPRESSION_Q' => _('Do you wish to replace the conditional expression?'),
-		'Events' => _('Events'),
 		'Execute' => _('Execute'),
-		'Execution confirmation' => _('Execution confirmation'),
-		'History' => _('History'),
-		'History and simple graphs' => _('History and simple graphs'),
-		'S_INSERT_MACRO' => _('Insert macro'),
-		'S_CREATE_LOG_TRIGGER' => _('Create trigger'),
-		'S_DELETE' => _('Delete'),
-		'S_DELETE_KEYWORD_Q' => _('Delete keyword?'),
-		'S_DELETE_EXPRESSION_Q' => _('Delete expression?'),
-		'Simple graphs' => _('Simple graphs'),
-		'Triggers' => _('Triggers')
-	),
-	'class.calendar.js' => array(
+		'Execution confirmation' => _('Execution confirmation')
+	],
+	'tr_logform.js' => [
+		'S_REMOVE' => _('Remove')
+	],
+	'class.calendar.js' => [
 		'S_JANUARY' => _('January'),
 		'S_FEBRUARY' => _('February'),
 		'S_MARCH' => _('March'),
@@ -137,8 +132,8 @@ $tranStrings = array(
 		'S_NOW' => _('Now'),
 		'S_DONE' => _('Done'),
 		'S_TIME' => _('Time')
-	),
-	'class.cmap.js' => array(
+	],
+	'class.cmap.js' => [
 		'S_ON' => _('On'),
 		'S_OFF' => _('Off'),
 		'S_HIDDEN' => _('Hidden'),
@@ -149,7 +144,6 @@ $tranStrings = array(
 		'S_HOST_GROUP' => _('Host group'),
 		'S_IMAGE' => _('Image'),
 		'S_DEFAULT' => _('Default'),
-		'S_CLOSE' => _('Close'),
 		'S_PLEASE_SELECT_TWO_ELEMENTS' => _('Please select two elements'),
 		'S_DOT' => _('Dot'),
 		'S_TWO_ELEMENTS_SHOULD_BE_SELECTED' => _('Two elements should be selected'),
@@ -159,71 +153,85 @@ $tranStrings = array(
 		'S_EACH_URL_SHOULD_HAVE_UNIQUE' => _('Each URL should have a unique name. Please make sure there is only one URL named'),
 		'S_DELETE_LINKS_BETWEEN_SELECTED_ELEMENTS_Q' => _('Delete links between selected elements?'),
 		'S_NO_IMAGES' => 'You need to have at least one image uploaded to create map element. Images can be uploaded in Administration->General->Images section.',
-		'S_ICONMAP_IS_NOT_ENABLED' => _('Iconmap is not enabled'),
 		'Colour "%1$s" is not correct: expecting hexadecimal colour code (6 symbols).' => _('Colour "%1$s" is not correct: expecting hexadecimal colour code (6 symbols).')
-	),
-	'class.cmessages.js' => array(
+	],
+	'class.cmessages.js' => [
 		'S_MUTE' => _('Mute'),
 		'S_UNMUTE' => _('Unmute'),
 		'S_MESSAGES' => _('Messages'),
 		'S_CLEAR' => _('Clear'),
-		'S_SNOOZE' => _('Snooze'),
-		'S_MOVE' => _('Move')
-	),
-	'class.cookie.js' => array(
+		'S_SNOOZE' => _('Snooze')
+	],
+	'class.cookie.js' => [
 		'S_MAX_COOKIE_SIZE_REACHED' => _('We are sorry, the maximum possible number of elements to remember has been reached.')
-	),
-	'main.js' => array(
-		'S_CLOSE' => _('Close'),
-		'S_NO_ELEMENTS_SELECTED' => _('No elements selected!')
-	),
-	'init.js' => array(
-		'Host screens' => _('Host screens'),
-		'Go to' => _('Go to'),
-		'Latest data' => _('Latest data'),
-		'Scripts' => _('Scripts'),
-		'Host inventories' => _('Host inventories'),
-		'Add service' => _('Add service'),
-		'Edit service' => _('Edit service'),
-		'Delete service' => _('Delete service'),
-		'Delete the selected service?' => _('Delete the selected service?')
-	),
-	'multiselect.js' => array(
+	],
+	'main.js' => [
+		'S_EXPAND' => _('Expand'),
+		'S_COLLAPSE' => _('Collapse'),
+	],
+	'multiselect.js' => [
 		'No matches found' => _('No matches found'),
 		'More matches found...' => _('More matches found...'),
 		'type here to search' => _('type here to search'),
 		'new' => _('new'),
 		'Select' => _('Select')
-	),
-	'menupopup.js' => array(
+	],
+	'menupopup.js' => [
 		'Acknowledge' => _('Acknowledge'),
+		'Add' => _('Add'),
 		'Configuration' => _('Configuration'),
-		'Events' => _('Events'),
+		'Create trigger' => _('Create trigger'),
+		'Delete service "%1$s"?' => _('Delete service "%1$s"?'),
+		'Do you wish to replace the conditional expression?' => _('Do you wish to replace the conditional expression?'),
+		'Edit trigger' => _('Edit trigger'),
+		'Favourite graphs' => _('Favourite graphs'),
+		'Favourite maps' => _('Favourite maps'),
+		'Favourite screens' => _('Favourite screens'),
+		'Favourite simple graphs' => _('Favourite simple graphs'),
+		'Favourite slide shows' => _('Favourite slide shows'),
+		'Insert expression' => _('Insert expression'),
+		'Trigger status "OK"' => _('Trigger status "OK"'),
+		'Trigger status "Problem"' => _('Trigger status "Problem"'),
+		'Item "%1$s"' => _('Item "%1$s"'),
 		'Go to' => _('Go to'),
+		'Graphs' => _('Graphs'),
 		'History' => _('History'),
 		'Host inventory' => _('Host inventory'),
 		'Host screens' => _('Host screens'),
 		'Latest data' => _('Latest data'),
-		'Latest events' => _('Latest events'),
 		'Latest values' => _('Latest values'),
 		'Last hour graph' => _('Last hour graph'),
 		'Last month graph' => _('Last month graph'),
 		'Last week graph' => _('Last week graph'),
+		'Problems' => _('Problems'),
+		'Refresh time' => _('Refresh time'),
+		'Refresh time multiplier' => _('Refresh time multiplier'),
+		'Remove' => _('Remove'),
+		'Remove all' => _('Remove all'),
 		'Scripts' => _('Scripts'),
-		'Status of triggers' => _('Status of triggers'),
 		'Submap' => _('Submap'),
 		'Trigger' => _('Trigger'),
+		'Triggers' => _('Triggers'),
 		'URL' => _('URL'),
-		'URLs' => _('URLs')
-	)
-);
+		'URLs' => _('URLs'),
+		'10 seconds' => _n('%1$s second', '%1$s seconds', 10),
+		'30 seconds' => _n('%1$s second', '%1$s seconds', 30),
+		'1 minute' => _n('%1$s minute', '%1$s minutes', 1),
+		'2 minutes' => _n('%1$s minute', '%1$s minutes', 2),
+		'10 minutes' => _n('%1$s minute', '%1$s minutes', 10),
+		'15 minutes' => _n('%1$s minute', '%1$s minutes', 15)
+	],
+	'items.js' => [
+		'To set a host interface select a single item type for all items' => _('To set a host interface select a single item type for all items'),
+		'No interface found' => _('No interface found')
+	]
+];
 
 if (empty($_GET['files'])) {
-	$files = array(
+	$files = [
 		'prototype.js',
 		'jquery.js',
 		'jquery-ui.js',
-		'activity-indicator.js',
 		'common.js',
 		'class.cdebug.js',
 		'class.cdate.js',
@@ -233,11 +241,12 @@ if (empty($_GET['files'])) {
 		'class.bbcode.js',
 		'class.csuggest.js',
 		'main.js',
+		'chkbxrange.js',
 		'functions.js',
-		'menu.js',
 		'menupopup.js',
 		'init.js'
-	);
+	];
+
 	// load frontend messaging only for some pages
 	if (isset($_GET['showGuiMessaging']) && $_GET['showGuiMessaging']) {
 		$files[] = 'class.cmessages.js';
@@ -267,7 +276,7 @@ $etag = md5($jsLength);
 if (isset($_SERVER['HTTP_IF_NONE_MATCH']) && $_SERVER['HTTP_IF_NONE_MATCH'] == $etag) {
 	header('HTTP/1.1 304 Not Modified');
 	header('ETag: '.$etag);
-	exit();
+	exit;
 }
 
 header('Content-type: text/javascript; charset=UTF-8');

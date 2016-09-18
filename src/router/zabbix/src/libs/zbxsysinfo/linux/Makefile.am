@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-noinst_LIBRARIES = libspecsysinfo.a
+noinst_LIBRARIES = libspecsysinfo.a libspechostnamesysinfo.a
 
 libspecsysinfo_a_CFLAGS = -I@top_srcdir@/src/zabbix_agent/
 
@@ -12,11 +12,15 @@ libspecsysinfo_a_SOURCES = \
 	hardware.c hardware.h \
 	inodes.c \
 	kernel.c \
+	linux.c \
 	memory.c \
 	net.c \
-	proc.c \
+	proc.c proc.h \
 	sensors.c \
 	software.c software.h \
 	system.c \
 	swap.c \
 	uptime.c
+
+libspechostnamesysinfo_a_SOURCES = \
+	hostname.c

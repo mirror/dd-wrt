@@ -50,7 +50,34 @@ jQuery(function($) {
 		},
 
 		refresh: function(id, isSelfRefresh) {
-			var screen = this.screens[id];
+			var screen = this.screens[id], ajaxParams;
+
+			switch (screen.resourcetype) {
+				case 21:
+					// SCREEN_RESOURCE_HTTPTEST_DETAILS
+					ajaxParams = ['mode', 'resourcetype', 'profileIdx2'];
+					break;
+
+				case 22:
+					// SCREEN_RESOURCE_DISCOVERY
+					ajaxParams = ['mode', 'resourcetype', 'data'];
+					break;
+
+				case 23:
+					// SCREEN_RESOURCE_HTTPTEST
+					ajaxParams = ['mode', 'groupid', 'hostid', 'resourcetype', 'data', 'page'];
+					break;
+
+				case 24:
+					// SCREEN_RESOURCE_PROBLEM
+					ajaxParams = ['mode', 'resourcetype', 'data', 'page'];
+					break;
+
+				default:
+					ajaxParams = ['mode', 'screenid', 'groupid', 'hostid', 'pageFile', 'profileIdx', 'profileIdx2',
+						'updateProfile', 'screenitemid'
+					];
+			}
 
 			if (empty(screen.id)) {
 				return;
@@ -66,22 +93,20 @@ jQuery(function($) {
 			var ajaxUrl = new Curl('jsrpc.php');
 			ajaxUrl.setArgument('type', 9); // PAGE_TYPE_TEXT
 			ajaxUrl.setArgument('method', 'screen.get');
-			ajaxUrl.setArgument('mode', screen.mode);
 			ajaxUrl.setArgument('timestamp', screen.timestampActual);
-			ajaxUrl.setArgument('flickerfreeScreenId', id);
-			ajaxUrl.setArgument('pageFile', screen.pageFile);
-			ajaxUrl.setArgument('screenid', screen.screenid);
-			ajaxUrl.setArgument('screenitemid', screen.screenitemid);
-			ajaxUrl.setArgument('groupid', screen.groupid);
-			ajaxUrl.setArgument('hostid', screen.hostid);
-			ajaxUrl.setArgument('profileIdx', empty(screen.profileIdx) ? null : screen.profileIdx);
-			ajaxUrl.setArgument('profileIdx2', empty(screen.profileIdx2) ? null : screen.profileIdx2);
-			ajaxUrl.setArgument('updateProfile', empty(screen.updateProfile) ? null : +screen.updateProfile);
-			ajaxUrl.setArgument('period', empty(screen.timeline.period) ? null : screen.timeline.period);
-			ajaxUrl.setArgument('stime', this.getCalculatedSTime(screen));
 
-			// SCREEN_RESOURCE_GRAPH
-			// SCREEN_RESOURCE_SIMPLE_GRAPH
+			for (var i = 0; i < ajaxParams.length; i++) {
+				ajaxUrl.setArgument(ajaxParams[i], empty(screen[ajaxParams[i]]) ? null : screen[ajaxParams[i]]);
+			}
+
+			// timeline params
+			// SCREEN_RESOURCE_HTTPTEST_DETAILS, SCREEN_RESOURCE_DISCOVERY, SCREEN_RESOURCE_HTTPTEST
+			if (jQuery.inArray(screen.resourcetype, [21, 22, 23]) === -1) {
+				ajaxUrl.setArgument('period', empty(screen.timeline.period) ? null : screen.timeline.period);
+				ajaxUrl.setArgument('stime', this.getCalculatedSTime(screen));
+			}
+
+			// SCREEN_RESOURCE_GRAPH or SCREEN_RESOURCE_SIMPLE_GRAPH
 			if (screen.resourcetype == 0 || screen.resourcetype == 1) {
 				if (isSelfRefresh || this.isRefreshAllowed(screen)) {
 					this.refreshImg(id, function() {
@@ -146,6 +171,16 @@ jQuery(function($) {
 				this.refreshProfile(id, ajaxUrl);
 			}
 
+			// SCREEN_RESOURCE_LLD_GRAPH
+			else if (screen.resourcetype == 20) {
+				this.refreshProfile(id, ajaxUrl);
+			}
+
+			// SCREEN_RESOURCE_LLD_SIMPLE_GRAPH
+			else if (screen.resourcetype == 19) {
+				this.refreshProfile(id, ajaxUrl);
+			}
+
 			// SCREEN_RESOURCE_PLAIN_TEXT
 			else if (screen.resourcetype == 3) {
 				if (isSelfRefresh || this.isRefreshAllowed(screen)) {
@@ -179,7 +214,7 @@ jQuery(function($) {
 			for (var id in this.screens) {
 				var screen = this.screens[id];
 
-				if (!empty(screen.id)) {
+				if (!empty(screen.id) && typeof screen.timeline !== 'undefined') {
 					screen.timeline.period = period;
 					screen.timeline.stime = stime;
 					screen.timeline.isNow = isNow;
@@ -231,6 +266,7 @@ jQuery(function($) {
 							window.flickerfreeScreenShadow.fadeSpeed(id, 0);
 							window.flickerfreeScreenShadow.validate(id);
 						}
+						chkbxRange.init();
 					},
 					error: function() {
 						window.flickerfreeScreen.calculateReRefresh(id);
@@ -390,7 +426,7 @@ jQuery(function($) {
 		},
 
 		getCalculatedSTime: function(screen) {
-			if (!empty(timeControl.timeline) && screen.timeline.period >= timeControl.timeline.maxperiod) {
+			if (!empty(timeControl.timeline) && screen.timeline.period > timeControl.timeline.maxperiod) {
 				return new CDate(timeControl.timeline.starttime() * 1000).getZBXDate();
 			}
 
@@ -546,7 +582,7 @@ jQuery(function($) {
 					}
 
 					// show loading indicator..
-					obj.append($('<div>', {'class': 'loading'})
+					obj.append($('<div>', {'class': 'preloader'})
 						.css({
 							width: '24px',
 							height: '24px',
@@ -556,15 +592,6 @@ jQuery(function($) {
 							left: item.position().left + Math.round(item.width() / 2) - 12
 						})
 					);
-					obj.find('.loading').activity({
-						segments: 12,
-						steps: 3,
-						opacity: 0.3,
-						width: 2,
-						space: 0,
-						length: 5,
-						color: '#0b0b0b'
-					});
 
 					timer.isShadowed = true;
 				}
@@ -581,7 +608,7 @@ jQuery(function($) {
 					return;
 				}
 
-				obj.find('.loading').remove();
+				obj.find('.preloader').remove();
 				obj.find('.shadow').remove();
 				obj.find(item.prop('nodeName')).fadeTo(0, 1);
 
@@ -611,10 +638,10 @@ jQuery(function($) {
 				}
 
 				// loading indicator
-				var loading = obj.find('.loading');
+				var preloader = obj.find('.preloader');
 
-				if (loading.length > 0) {
-					loading.css({
+				if (preloader.length > 0) {
+					preloader.css({
 						top: item.position().top + Math.round(item.height() / 2) - 12,
 						left: item.position().left + Math.round(item.width() / 2) - 12
 					});

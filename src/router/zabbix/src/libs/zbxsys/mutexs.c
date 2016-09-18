@@ -18,8 +18,8 @@
 **/
 
 #include "common.h"
-#include "mutexs.h"
 #include "log.h"
+#include "mutexs.h"
 
 #ifndef _WINDOWS
 #	if !HAVE_SEMUN
@@ -52,8 +52,8 @@
  *              name - name of mutex (index for nix system)                   *
  *              forced - remove mutex if exists (only for nix)                *
  *                                                                            *
- * Return value: If the function succeeds, then return ZBX_MUTEX_OK,          *
- *               ZBX_MUTEX_ERROR on an error                                  *
+ * Return value: If the function succeeds, then return SUCCEED,               *
+ *               FAIL on an error                                             *
  *                                                                            *
  * Author: Eugene Grigorjev                                                   *
  *                                                                            *
@@ -67,7 +67,7 @@ int zbx_mutex_create_ext(ZBX_MUTEX *mutex, ZBX_MUTEX_NAME name, unsigned char fo
 	if (NULL == (*mutex = CreateMutex(NULL, FALSE, name)))
 	{
 		zbx_error("error on mutex creating: %s", strerror_from_system(GetLastError()));
-		return ZBX_MUTEX_ERROR;
+		return FAIL;
 	}
 
 #else
@@ -86,11 +86,11 @@ int zbx_mutex_create_ext(ZBX_MUTEX *mutex, ZBX_MUTEX_NAME name, unsigned char fo
 		if (-1 == (sem_key = ftok(".", (int)'z')))
 		{
 			zbx_error("cannot create IPC key for path '.': %s", zbx_strerror(errno));
-			return ZBX_MUTEX_ERROR;
+			return FAIL;
 		}
 	}
 lbl_create:
-	if (-1 != ZBX_SEM_LIST_ID || -1 != (ZBX_SEM_LIST_ID = semget(sem_key, ZBX_MUTEX_COUNT, IPC_CREAT | IPC_EXCL | 0600 /* 0022 */)) )
+	if (-1 != ZBX_SEM_LIST_ID || -1 != (ZBX_SEM_LIST_ID = semget(sem_key, ZBX_MUTEX_COUNT, IPC_CREAT | IPC_EXCL | 0600 /* 0022 */)))
 	{
 		/* set default semaphore value */
 
@@ -100,7 +100,7 @@ lbl_create:
 			if (-1 == semctl(ZBX_SEM_LIST_ID, i, SETVAL, semopts))
 			{
 				zbx_error("semaphore [%i] error in semctl(SETVAL): %s", name, zbx_strerror(errno));
-				return ZBX_MUTEX_ERROR;
+				return FAIL;
 
 			}
 
@@ -118,7 +118,7 @@ lbl_create:
 			{
 				zbx_error("cannot recreate Zabbix semaphores for IPC key 0x%lx Semaphore ID %ld: %s",
 						sem_key, ZBX_SEM_LIST_ID, zbx_strerror(errno));
-				exit(FAIL);
+				exit(EXIT_FAILURE);
 			}
 
 			/* semaphore is successfully removed */
@@ -128,7 +128,7 @@ lbl_create:
 			{
 				zbx_error("cannot recreate Zabbix semaphores for IPC key 0x%lx: too many attempts",
 						sem_key);
-				exit(FAIL);
+				exit(EXIT_FAILURE);
 			}
 
 			if ((ZBX_MAX_ATTEMPTS / 2) < attempts)
@@ -155,12 +155,12 @@ lbl_create:
 		}
 
 		zbx_error("semaphore [%i] not initialized", name);
-		return ZBX_MUTEX_ERROR;
+		return FAIL;
 	}
 	else
 	{
 		zbx_error("cannot create Semaphore: %s", zbx_strerror(errno));
-		return ZBX_MUTEX_ERROR;
+		return FAIL;
 	}
 lbl_return:
 	*mutex = name;
@@ -168,7 +168,7 @@ lbl_return:
 
 #endif	/* _WINDOWS */
 
-	return ZBX_MUTEX_OK;
+	return SUCCEED;
 }
 
 /******************************************************************************
@@ -186,17 +186,27 @@ void	__zbx_mutex_lock(const char *filename, int line, ZBX_MUTEX *mutex)
 {
 #ifndef _WINDOWS
 	struct sembuf	sem_lock;
+#else
+	DWORD   dwWaitResult;
 #endif
 
 	if (ZBX_MUTEX_NULL == *mutex)
 		return;
 
 #ifdef _WINDOWS
-	if (WAIT_OBJECT_0 != WaitForSingleObject(*mutex, INFINITE))
+	dwWaitResult = WaitForSingleObject(*mutex, INFINITE);
+
+	switch (dwWaitResult)
 	{
-		zbx_error("[file:'%s',line:%d] lock failed: %s",
+		case WAIT_OBJECT_0:
+			break;
+		case WAIT_ABANDONED:
+			THIS_SHOULD_NEVER_HAPPEN;
+			exit(EXIT_FAILURE);
+		default:
+			zbx_error("[file:'%s',line:%d] lock failed: %s",
 				filename, line, strerror_from_system(GetLastError()));
-		exit(FAIL);
+			exit(EXIT_FAILURE);
 	}
 #else
 	sem_lock.sem_num = *mutex;
@@ -208,7 +218,7 @@ void	__zbx_mutex_lock(const char *filename, int line, ZBX_MUTEX *mutex)
 		if (EINTR != errno)
 		{
 			zbx_error("[file:'%s',line:%d] lock failed: %s", filename, line, zbx_strerror(errno));
-			exit(FAIL);
+			exit(EXIT_FAILURE);
 		}
 	}
 #endif
@@ -239,7 +249,7 @@ void	__zbx_mutex_unlock(const char *filename, int line, ZBX_MUTEX *mutex)
 	{
 		zbx_error("[file:'%s',line:%d] unlock failed: %s",
 				filename, line, strerror_from_system(GetLastError()));
-		exit(FAIL);
+		exit(EXIT_FAILURE);
 	}
 #else
 	sem_unlock.sem_num = *mutex;
@@ -251,7 +261,7 @@ void	__zbx_mutex_unlock(const char *filename, int line, ZBX_MUTEX *mutex)
 		if (EINTR != errno)
 		{
 			zbx_error("[file:'%s',line:%d] unlock failed: %s", filename, line, zbx_strerror(errno));
-			exit(FAIL);
+			exit(EXIT_FAILURE);
 		}
 	}
 #endif
@@ -274,12 +284,12 @@ int	zbx_mutex_destroy(ZBX_MUTEX *mutex)
 {
 #ifdef _WINDOWS
 	if (ZBX_MUTEX_NULL == *mutex)
-		return ZBX_MUTEX_OK;
+		return SUCCEED;
 
 	if (0 == CloseHandle(*mutex))
 	{
 		zbx_error("error on mutex destroying: %s", strerror_from_system(GetLastError()));
-		return ZBX_MUTEX_ERROR;
+		return FAIL;
 	}
 #else
 	if (0 == --mutexes)
@@ -288,5 +298,45 @@ int	zbx_mutex_destroy(ZBX_MUTEX *mutex)
 
 	*mutex = ZBX_MUTEX_NULL;
 
-	return ZBX_MUTEX_OK;
+	return SUCCEED;
 }
+
+#ifdef _WINDOWS
+/******************************************************************************
+ *                                                                            *
+ * Function: zbx_mutex_create_per_process_name                                *
+ *                                                                            *
+ * Purpose: Appends PID to the prefix of the mutex                            *
+ *                                                                            *
+ * Parameters: prefix - mutex type                                            *
+ *                                                                            *
+ * Return value: Dynamically allocated, NUL terminated name of the mutex      *
+ *                                                                            *
+ * Comments: The mutex name must be shorter than MAX_PATH characters,         *
+ *           otherwise the function calls exit()                              *
+ *                                                                            *
+ ******************************************************************************/
+ZBX_MUTEX_NAME  zbx_mutex_create_per_process_name(const ZBX_MUTEX_NAME prefix)
+{
+	ZBX_MUTEX_NAME	name = ZBX_MUTEX_NULL;
+	int		size;
+	wchar_t		*format = L"%s_PID_%lx";
+	DWORD		pid = GetCurrentProcessId();
+
+	/* exit if the mutex name length exceed the maximum allowed */
+	size = _scwprintf(format, prefix, pid);
+	if (MAX_PATH < size)
+	{
+		THIS_SHOULD_NEVER_HAPPEN;
+		exit(EXIT_FAILURE);
+	}
+
+	size = size + 1; /* for terminating '\0' */
+
+	name = zbx_malloc(NULL, sizeof(wchar_t) * size);
+	(void)_snwprintf_s(name, sizeof(wchar_t) * size, size, format, prefix, pid);
+	name[size - 1] = L'\0';
+
+	return name;
+}
+#endif

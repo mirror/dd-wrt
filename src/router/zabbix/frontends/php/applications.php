@@ -25,102 +25,115 @@ require_once dirname(__FILE__).'/include/forms.inc.php';
 
 $page['title'] = _('Configuration of applications');
 $page['file'] = 'applications.php';
-$page['hist_arg'] = array('groupid', 'hostid');
 
 require_once dirname(__FILE__).'/include/page_header.php';
 
 // VAR	TYPE	OPTIONAL	FLAGS	VALIDATION	EXCEPTION
-$fields = array(
-	'applications' =>		array(T_ZBX_INT, O_OPT, P_SYS,	DB_ID,			null),
-	'hostid' =>				array(T_ZBX_INT, O_OPT, P_SYS,	DB_ID.NOT_ZERO, 'isset({form})&&!isset({applicationid})'),
-	'groupid' =>			array(T_ZBX_INT, O_OPT, P_SYS,	DB_ID,			null),
-	'applicationid' =>		array(T_ZBX_INT, O_OPT, P_SYS,	DB_ID,			'isset({form})&&{form}=="update"'),
-	'appname' =>			array(T_ZBX_STR, O_OPT, null,	NOT_EMPTY,		'isset({save})', _('Name')),
+$fields = [
+	'applications' =>		[T_ZBX_INT, O_OPT, P_SYS,	DB_ID,			null],
+	'hostid' =>				[T_ZBX_INT, O_OPT, P_SYS,	DB_ID.NOT_ZERO, 'isset({form}) && !isset({applicationid})'],
+	'groupid' =>			[T_ZBX_INT, O_OPT, P_SYS,	DB_ID,			null],
+	'applicationid' =>		[T_ZBX_INT, O_OPT, P_SYS,	DB_ID,			'isset({form}) && {form} == "update"'],
+	'appname' =>			[T_ZBX_STR, O_OPT, null,	NOT_EMPTY,		'isset({add}) || isset({update})', _('Name')],
 	// actions
-	'go' =>					array(T_ZBX_STR, O_OPT, P_SYS|P_ACT,	null,	null),
-	'save' =>				array(T_ZBX_STR, O_OPT, P_SYS|P_ACT,	null,	null),
-	'clone' =>				array(T_ZBX_STR, O_OPT, P_SYS|P_ACT,	null,	null),
-	'delete' =>				array(T_ZBX_STR, O_OPT, P_SYS|P_ACT,	null,	null),
-	'form' =>				array(T_ZBX_STR, O_OPT, P_SYS,			null,	null),
-	'form_refresh' =>		array(T_ZBX_INT, O_OPT, null,			null,	null)
-);
+	'action' =>				[T_ZBX_STR, O_OPT, P_SYS|P_ACT,
+								IN('"application.massdelete","application.massdisable","application.massenable"'),
+								null
+							],
+	'add' =>				[T_ZBX_STR, O_OPT, P_SYS|P_ACT,	null,	null],
+	'update' =>				[T_ZBX_STR, O_OPT, P_SYS|P_ACT,	null,	null],
+	'clone' =>				[T_ZBX_STR, O_OPT, P_SYS|P_ACT,	null,	null],
+	'delete' =>				[T_ZBX_STR, O_OPT, P_SYS|P_ACT,	null,	null],
+	'form' =>				[T_ZBX_STR, O_OPT, P_SYS,			null,	null],
+	'form_refresh' =>		[T_ZBX_INT, O_OPT, null,			null,	null],
+	// sort and sortorder
+	'sort' =>				[T_ZBX_STR, O_OPT, P_SYS, IN('"name"'),								null],
+	'sortorder' =>			[T_ZBX_STR, O_OPT, P_SYS, IN('"'.ZBX_SORT_DOWN.'","'.ZBX_SORT_UP.'"'),	null]
+];
 check_fields($fields);
-validate_sort_and_sortorder('name', ZBX_SORT_UP);
 
 /*
  * Permissions
  */
 if (isset($_REQUEST['applicationid'])) {
-	$dbApplication = API::Application()->get(array(
-		'applicationids' => array($_REQUEST['applicationid']),
-		'output' => array('name', 'hostid')
-	));
+	$dbApplication = API::Application()->get([
+		'applicationids' => [$_REQUEST['applicationid']],
+		'output' => ['name', 'hostid']
+	]);
 	if (!$dbApplication) {
 		access_deny();
 	}
 }
-if (isset($_REQUEST['go'])) {
-	if (!isset($_REQUEST['applications']) || !is_array($_REQUEST['applications'])) {
+if (hasRequest('action')) {
+	if (!hasRequest('applications') || !is_array(getRequest('applications'))) {
 		access_deny();
 	}
 	else {
-		$dbApplications = API::Application()->get(array(
-			'applicationids' => $_REQUEST['applications'],
+		$dbApplications = API::Application()->get([
+			'applicationids' => getRequest('applications'),
 			'countOutput' => true
-		));
-		if ($dbApplications != count($_REQUEST['applications'])) {
+		]);
+		if ($dbApplications != count(getRequest('applications'))) {
 			access_deny();
 		}
 	}
 }
-if (get_request('groupid') && !API::HostGroup()->isWritable(array($_REQUEST['groupid']))) {
+if (getRequest('groupid') && !API::HostGroup()->isWritable([$_REQUEST['groupid']])) {
 	access_deny();
 }
-if (get_request('hostid') && !API::Host()->isWritable(array($_REQUEST['hostid']))) {
+if (getRequest('hostid') && !API::Host()->isWritable([$_REQUEST['hostid']])) {
 	access_deny();
 }
-$_REQUEST['go'] = get_request('go', 'none');
+
+$pageFilter = new CPageFilter([
+	'groups' => ['editable' => true, 'with_hosts_and_templates' => true],
+	'hosts' => ['editable' => true, 'templated_hosts' => true],
+	'hostid' => getRequest('hostid'),
+	'groupid' => getRequest('groupid')
+]);
 
 /*
  * Actions
  */
-if (isset($_REQUEST['save'])) {
+if (hasRequest('add') || hasRequest('update')) {
 	DBstart();
 
-	$application = array(
+	$application = [
 		'name' => $_REQUEST['appname'],
 		'hostid' => $_REQUEST['hostid']
-	);
+	];
 
 	if (isset($_REQUEST['applicationid'])) {
 		$application['applicationid'] = $_REQUEST['applicationid'];
 		$dbApplications = API::Application()->update($application);
 
-		$action = AUDIT_ACTION_UPDATE;
-		$msgOk = _('Application updated');
-		$msgFail = _('Cannot update application');
+		$messageSuccess = _('Application updated');
+		$messageFailed = _('Cannot update application');
+		$auditAction = AUDIT_ACTION_UPDATE;
 	}
 	else {
 		$dbApplications = API::Application()->create($application);
 
-		$action = AUDIT_ACTION_ADD;
-		$msgOk = _('Application added');
-		$msgFail = _('Cannot add application');
+		$messageSuccess = _('Application added');
+		$messageFailed = _('Cannot add application');
+		$auditAction = AUDIT_ACTION_ADD;
 	}
-	$result = DBend($dbApplications);
 
-	show_messages($result, $msgOk, $msgFail);
-
-	if ($result) {
+	if ($dbApplications) {
 		$applicationId = reset($dbApplications['applicationids']);
 
-		add_audit($action, AUDIT_RESOURCE_APPLICATION,
+		add_audit($auditAction, AUDIT_RESOURCE_APPLICATION,
 			_('Application').' ['.$_REQUEST['appname'].'] ['.$applicationId.']'
 		);
 		unset($_REQUEST['form']);
-		clearCookies($result, $_REQUEST['hostid']);
 	}
-	unset($_REQUEST['save']);
+
+	$result = DBend($dbApplications);
+
+	if ($result) {
+		uncheckTableRows(getRequest('hostid'));
+	}
+	show_messages($result, $messageSuccess, $messageFailed);
 }
 elseif (isset($_REQUEST['clone']) && isset($_REQUEST['applicationid'])) {
 	unset($_REQUEST['applicationid']);
@@ -130,102 +143,112 @@ elseif (isset($_REQUEST['delete'])) {
 	if (isset($_REQUEST['applicationid'])) {
 		$result = false;
 
+		DBstart();
+
 		if ($app = get_application_by_applicationid($_REQUEST['applicationid'])) {
 			$host = get_host_by_hostid($app['hostid']);
 
-			DBstart();
-
-			$result = API::Application()->delete($_REQUEST['applicationid']);
-			$result = DBend($result);
+			$result = API::Application()->delete([getRequest('applicationid')]);
 		}
 
-		show_messages($result, _('Application deleted'), _('Cannot delete application'));
-
 		if ($result) {
-			add_audit(AUDIT_ACTION_DELETE, AUDIT_RESOURCE_APPLICATION, 'Application ['.$app['name'].'] from host ['.$host['host'].']');
+			add_audit(AUDIT_ACTION_DELETE, AUDIT_RESOURCE_APPLICATION,
+				'Application ['.$app['name'].'] from host ['.$host['host'].']'
+			);
 		}
 
 		unset($_REQUEST['form'], $_REQUEST['applicationid']);
-		clearCookies($result, $_REQUEST['hostid']);
+
+		$result = DBend($result);
+
+		if ($result) {
+			uncheckTableRows(getRequest('hostid'));
+		}
+		show_messages($result, _('Application deleted'), _('Cannot delete application'));
 	}
 }
-elseif ($_REQUEST['go'] == 'delete') {
-	$goResult = true;
-	$applications = get_request('applications', array());
+elseif (hasRequest('action') && getRequest('action') == 'application.massdelete' && hasRequest('applications')) {
+	$result = true;
+	$applications = getRequest('applications');
+	$deleted = 0;
 
 	DBstart();
 
 	$dbApplications = DBselect(
 		'SELECT a.applicationid,a.name,a.hostid'.
 		' FROM applications a'.
-		' WHERE '.dbConditionInt('a.applicationid', $applications).
-			andDbNode('a.applicationid')
+		' WHERE '.dbConditionInt('a.applicationid', $applications)
 	);
+
 	while ($dbApplication = DBfetch($dbApplications)) {
 		if (!isset($applications[$dbApplication['applicationid']])) {
 			continue;
 		}
 
-		$goResult &= (bool) API::Application()->delete($dbApplication['applicationid']);
+		$result &= (bool) API::Application()->delete([$dbApplication['applicationid']]);
 
-		if ($goResult) {
+		if ($result) {
 			$host = get_host_by_hostid($dbApplication['hostid']);
 
 			add_audit(AUDIT_ACTION_DELETE, AUDIT_RESOURCE_APPLICATION,
-				'Application ['.$dbApplication['name'].'] from host ['.$host['host'].']');
+				'Application ['.$dbApplication['name'].'] from host ['.$host['host'].']'
+			);
 		}
+
+		$deleted++;
 	}
 
-	$goResult = DBend($goResult);
-
-	show_messages($goResult, _('Application deleted'), _('Cannot delete application'));
-	clearCookies($goResult, $_REQUEST['hostid']);
-}
-elseif (str_in_array(getRequest('go'), array('activate', 'disable'))) {
-	$result = true;
-	$hostId = getRequest('hostid');
-	$enable = (getRequest('go') == 'activate');
-	$updated = 0;
-
-	DBstart();
-	foreach (getRequest('applications') as $id => $appid) {
-		$dbItems = DBselect(
-			'SELECT ia.itemid,i.hostid,i.key_'.
-			' FROM items_applications ia'.
-				' LEFT JOIN items i ON ia.itemid=i.itemid'.
-			' WHERE ia.applicationid='.zbx_dbstr($appid).
-				' AND i.hostid='.zbx_dbstr($hostId).
-				' AND i.type<>'.ITEM_TYPE_HTTPTEST.
-				andDbNode('ia.applicationid')
-		);
-		while ($item = DBfetch($dbItems)) {
-			$result &= $enable ? activate_item($item['itemid']) : disable_item($item['itemid']);
-			$updated++;
-		}
-	}
 	$result = DBend($result);
 
-	$messageSuccess = $enable
+	if ($result) {
+		uncheckTableRows($pageFilter->hostid);
+	}
+	show_messages($result,
+		_n('Application deleted', 'Applications deleted', $deleted),
+		_n('Cannot delete application', 'Cannot delete applications', $deleted)
+	);
+}
+elseif (hasRequest('applications')
+		&& str_in_array(getRequest('action'), ['application.massenable', 'application.massdisable'])) {
+	$status = (getRequest('action') === 'application.massenable') ? ITEM_STATUS_ACTIVE : ITEM_STATUS_DISABLED;
+
+	$db_items = API::Item()->get([
+		'output' => ['itemid'],
+		'applicationids' => getRequest('applications', [])
+	]);
+
+	$items = [];
+	foreach ($db_items as $db_item) {
+		$items[] = ['itemid' => $db_item['itemid'], 'status' => $status];
+	}
+
+	$result = (bool) API::Item()->update($items);
+
+	if ($result) {
+		uncheckTableRows($pageFilter->hostid);
+	}
+
+	$updated = count($items);
+
+	$messageSuccess = ($status == ITEM_STATUS_ACTIVE)
 		? _n('Item enabled', 'Items enabled', $updated)
 		: _n('Item disabled', 'Items disabled', $updated);
-	$messageFailed = $enable
+	$messageFailed = ($status == ITEM_STATUS_ACTIVE)
 		? _n('Cannot enable item', 'Cannot enable items', $updated)
 		: _n('Cannot disable item', 'Cannot disable items', $updated);
 
 	show_messages($result, $messageSuccess, $messageFailed);
-	clearCookies($result, $hostId);
 }
 
 /*
  * Display
  */
 if (isset($_REQUEST['form'])) {
-	$data = array(
-		'applicationid' => get_request('applicationid'),
-		'groupid' => get_request('groupid', 0),
-		'form' => get_request('form'),
-		'form_refresh' => get_request('form_refresh', 0)
-	);
+	$data = [
+		'applicationid' => getRequest('applicationid'),
+		'form' => getRequest('form'),
+		'form_refresh' => getRequest('form_refresh', 0)
+	];
 
 	if (isset($data['applicationid']) && !isset($_REQUEST['form_refresh'])) {
 		$dbApplication = reset($dbApplication);
@@ -235,8 +258,8 @@ if (isset($_REQUEST['form'])) {
 
 	}
 	else {
-		$data['appname'] = get_request('appname', '');
-		$data['hostid'] = get_request('hostid');
+		$data['appname'] = getRequest('appname', '');
+		$data['hostid'] = getRequest('hostid');
 	}
 
 	// render view
@@ -245,46 +268,58 @@ if (isset($_REQUEST['form'])) {
 	$applicationView->show();
 }
 else {
-	$data = array(
-		'pageFilter' => new CPageFilter(array(
-			'groups' => array('editable' => true, 'with_hosts_and_templates' => true),
-			'hosts' => array('editable' => true, 'templated_hosts' => true),
-			'hostid' => get_request('hostid'),
-			'groupid' => get_request('groupid')
-		))
-	);
-	$data['groupid'] = $data['pageFilter']->groupid;
-	$data['hostid'] = $data['pageFilter']->hostid;
-	$data['displayNodes'] = (is_array(get_current_nodeid())
-		&& $data['pageFilter']->groupid == 0 && $data['pageFilter']->hostid == 0);
+	$sortField = getRequest('sort', CProfile::get('web.'.$page['file'].'.sort', 'name'));
+	$sortOrder = getRequest('sortorder', CProfile::get('web.'.$page['file'].'.sortorder', ZBX_SORT_UP));
 
-	if ($data['pageFilter']->hostsSelected) {
+	CProfile::update('web.'.$page['file'].'.sort', $sortField, PROFILE_TYPE_STR);
+	CProfile::update('web.'.$page['file'].'.sortorder', $sortOrder, PROFILE_TYPE_STR);
+
+	$pageFilter = new CPageFilter([
+		'groups' => ['editable' => true, 'with_hosts_and_templates' => true],
+		'hosts' => ['editable' => true, 'templated_hosts' => true],
+		'hostid' => getRequest('hostid'),
+		'groupid' => getRequest('groupid')
+	]);
+
+	$data = [
+		'pageFilter' => $pageFilter,
+		'sort' => $sortField,
+		'sortorder' => $sortOrder,
+		'hostid' => $pageFilter->hostid,
+		'groupid' => $pageFilter->groupid,
+		'showInfoColumn' => false
+	];
+
+	if ($pageFilter->hostsSelected) {
+		$config = select_config();
+
 		// get application ids
-		$sortfield = getPageSortField('name');
-		$sortorder = getPageSortOrder();
-
-		$data['applications'] = API::Application()->get(array(
-			'hostids' => ($data['pageFilter']->hostid > 0) ? $data['pageFilter']->hostid : null,
-			'groupids' => ($data['pageFilter']->groupid > 0) ? $data['pageFilter']->groupid : null,
-			'output' => array('applicationid'),
+		$applications = API::Application()->get([
+			'output' => ['applicationid'],
+			'hostids' => ($pageFilter->hostid > 0) ? $pageFilter->hostid : null,
+			'groupids' => ($pageFilter->groupid > 0) ? $pageFilter->groupid : null,
 			'editable' => true,
-			'sortfield' => $sortfield,
+			'sortfield' => $sortField,
 			'limit' => $config['search_limit'] + 1
-		));
+		]);
+		$applicationids = zbx_objectValues($applications, 'applicationid');
 
 		// get applications
-		$data['applications'] = API::Application()->get(array(
-			'applicationids' => zbx_objectValues($data['applications'], 'applicationid'),
-			'output' => API_OUTPUT_EXTEND,
-			'selectItems' => array('itemid'),
-			'expandData' => true
-		));
+		$data['applications'] = API::Application()->get([
+			'output' => ['applicationid', 'hostid', 'name', 'flags', 'templateids'],
+			'selectHost' => ['hostid', 'name'],
+			'selectItems' => ['itemid'],
+			'selectHost' => ['hostid', 'name'],
+			'selectDiscoveryRule' => ['itemid', 'name'],
+			'selectApplicationDiscovery' => ['ts_delete'],
+			'applicationids' => $applicationids
+		]);
 
-		order_result($data['applications'], $sortfield, $sortorder);
+		order_result($data['applications'], $sortField, $sortOrder);
 
 		// fetch template application source parents
-		$applicationSourceParentIds = getApplicationSourceParentIds(zbx_objectValues($data['applications'], 'applicationid'));
-		$parentAppIds = array();
+		$applicationSourceParentIds = getApplicationSourceParentIds($applicationids);
+		$parentAppIds = [];
 
 		foreach ($applicationSourceParentIds as $applicationParentIds) {
 			foreach ($applicationParentIds as $parentId) {
@@ -307,21 +342,64 @@ else {
 					}
 				}
 			}
+			unset($application);
 		}
 
-		// nodes
-		if ($data['displayNodes']) {
-			foreach ($data['applications'] as $key => $application) {
-				$data['applications'][$key]['nodename'] = get_node_name_by_elid($application['applicationid'], true);
+		/*
+		 * Calculate the 'ts_delete' which will display the of warning icon and hint telling when application will be
+		 * deleted. Also we need only 'ts_delete' for view, so get rid of the multidimensional array inside
+		 * 'applicationDiscovery' property.
+		 */
+		foreach ($data['applications'] as &$application) {
+			if ($application['applicationDiscovery']) {
+				if (count($application['applicationDiscovery']) > 1) {
+					$ts_delete = zbx_objectValues($application['applicationDiscovery'], 'ts_delete');
+
+					if (min($ts_delete) == 0) {
+						// One rule stops discovering application, but other rule continues to discover it.
+						unset($application['applicationDiscovery']);
+						$application['applicationDiscovery']['ts_delete'] = 0;
+					}
+					else {
+						// Both rules stop discovering application. Find maximum clock.
+						unset($application['applicationDiscovery']);
+						$application['applicationDiscovery']['ts_delete'] = max($ts_delete);
+					}
+				}
+				else {
+					// Application is discovered by one rule.
+					$ts_delete = $application['applicationDiscovery'][0]['ts_delete'];
+					unset($application['applicationDiscovery']);
+					$application['applicationDiscovery']['ts_delete'] = $ts_delete;
+				}
 			}
+		}
+		unset($application);
+
+		// Info column is show when all hosts are selected or current host is not a template.
+		if ($pageFilter->hostid > 0) {
+			$hosts = API::Host()->get([
+				'output' => ['status'],
+				'hostids' => [$pageFilter->hostid]
+			]);
+
+			$data['showInfoColumn'] = $hosts
+				&& ($hosts[0]['status'] == HOST_STATUS_MONITORED || $hosts[0]['status'] == HOST_STATUS_NOT_MONITORED);
+		}
+		else {
+			$data['showInfoColumn'] = true;
 		}
 	}
 	else {
-		$data['applications'] = array();
+		$data['applications'] = [];
 	}
 
 	// get paging
-	$data['paging'] = getPagingLine($data['applications'], array('applicationid'));
+	$url = (new CUrl('applications.php'))
+		->setArgument('groupid', $data['groupid'])
+		->setArgument('hostid', $data['hostid']);
+
+	$data['paging'] = getPagingLine($data['applications'], $sortOrder, $url);
 
 	// render view
 	$applicationView = new CView('configuration.application.list', $data);

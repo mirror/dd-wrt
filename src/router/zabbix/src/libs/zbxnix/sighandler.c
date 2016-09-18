@@ -23,6 +23,9 @@
 #include "log.h"
 #include "fatal.h"
 #include "sigcommon.h"
+#include "../../libs/zbxcrypto/tls.h"
+
+extern volatile sig_atomic_t	zbx_timed_out;
 
 int	sig_parent_pid = -1;
 int	sig_exiting = 0;
@@ -42,8 +45,12 @@ static void	fatal_signal_handler(int sig, siginfo_t *siginfo, void *context)
 			sig, get_signal_name(sig),
 			SIG_CHECKED_FIELD(siginfo, si_code),
 			SIG_CHECKED_FIELD_TYPE(siginfo, si_addr, void *));
-	print_fatal_info(sig, siginfo, context);
-	exit(FAIL);
+	print_fatal_info(context);
+
+#if defined(HAVE_POLARSSL) || defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
+	zbx_tls_free_on_signal();
+#endif
+	exit(EXIT_FAILURE);
 }
 
 /******************************************************************************
@@ -56,6 +63,8 @@ static void	fatal_signal_handler(int sig, siginfo_t *siginfo, void *context)
 static void	alarm_signal_handler(int sig, siginfo_t *siginfo, void *context)
 {
 	SIG_CHECK_PARAMS(sig, siginfo, context);
+
+	zbx_timed_out = 1;	/* set a global flag */
 }
 
 /******************************************************************************
@@ -71,15 +80,25 @@ static void	terminate_signal_handler(int sig, siginfo_t *siginfo, void *context)
 
 	if (!SIG_PARENT_PROCESS)
 	{
-		zabbix_log(sig_parent_pid == SIG_CHECKED_FIELD(siginfo, si_pid) ?
+		zabbix_log(sig_parent_pid == SIG_CHECKED_FIELD(siginfo, si_pid) || SIGINT == sig ?
 				LOG_LEVEL_DEBUG : LOG_LEVEL_WARNING,
 				"Got signal [signal:%d(%s),sender_pid:%d,sender_uid:%d,"
-				"reason:%d]. Exiting ...",
+				"reason:%d]. %s ...",
 				sig, get_signal_name(sig),
 				SIG_CHECKED_FIELD(siginfo, si_pid),
 				SIG_CHECKED_FIELD(siginfo, si_uid),
-				SIG_CHECKED_FIELD(siginfo, si_code));
-		exit(FAIL);
+				SIG_CHECKED_FIELD(siginfo, si_code),
+				SIGINT == sig ? "Ignoring" : "Exiting");
+
+		/* ignore interrupt signal in children - the parent */
+		/* process will send terminate signals instead      */
+		if (SIGINT == sig)
+			return;
+
+#if defined(HAVE_POLARSSL) || defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
+		zbx_tls_free_on_signal();
+#endif
+		exit(EXIT_FAILURE);
 	}
 	else
 	{
@@ -94,12 +113,14 @@ static void	terminate_signal_handler(int sig, siginfo_t *siginfo, void *context)
 					SIG_CHECKED_FIELD(siginfo, si_pid),
 					SIG_CHECKED_FIELD(siginfo, si_uid),
 					SIG_CHECKED_FIELD(siginfo, si_code));
+
+#if defined(HAVE_POLARSSL) || defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
+			zbx_tls_free_on_signal();
+#endif
 			zbx_on_exit();
 		}
 	}
 }
-
-
 
 /******************************************************************************
  *                                                                            *
@@ -113,13 +134,22 @@ static void	child_signal_handler(int sig, siginfo_t *siginfo, void *context)
 	SIG_CHECK_PARAMS(sig, siginfo, context);
 
 	if (!SIG_PARENT_PROCESS)
-		exit(FAIL);
+	{
+#if defined(HAVE_POLARSSL) || defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
+		zbx_tls_free_on_signal();
+#endif
+		exit(EXIT_FAILURE);
+	}
 
 	if (0 == sig_exiting)
 	{
 		sig_exiting = 1;
 		zabbix_log(LOG_LEVEL_CRIT, "One child process died (PID:%d,exitcode/signal:%d). Exiting ...",
 				SIG_CHECKED_FIELD(siginfo, si_pid), SIG_CHECKED_FIELD(siginfo, si_status));
+
+#if defined(HAVE_POLARSSL) || defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
+		zbx_tls_free_on_signal();
+#endif
 		zbx_on_exit();
 	}
 }
@@ -162,7 +192,6 @@ void	zbx_set_common_signal_handlers()
  * Purpose: set the handlers for child process signals                        *
  *                                                                            *
  ******************************************************************************/
-
 void 	zbx_set_child_signal_handler()
 {
 	struct sigaction	phan;
@@ -170,7 +199,7 @@ void 	zbx_set_child_signal_handler()
 	sig_parent_pid = (int)getpid();
 
 	sigemptyset(&phan.sa_mask);
-	phan.sa_flags = SA_SIGINFO;
+	phan.sa_flags = SA_SIGINFO | SA_NOCLDSTOP;
 
 	phan.sa_sigaction = child_signal_handler;
 	sigaction(SIGCHLD, &phan, NULL);

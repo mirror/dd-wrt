@@ -21,17 +21,8 @@
 
 require_once dirname(__FILE__).'/perm.inc.php';
 
-/**
- * Returns true if the user has the permissions to network discovery.
- *
- * @return bool
- */
-function check_right_on_discovery() {
-	return (CWebUser::getType() >= USER_TYPE_ZABBIX_ADMIN);
-}
-
-function svc_default_port($type_int) {
-	$typePort = array(
+function svc_default_port($type) {
+	$types = [
 		SVC_SSH =>		'22',
 		SVC_LDAP =>		'389',
 		SVC_SMTP =>		'25',
@@ -46,13 +37,13 @@ function svc_default_port($type_int) {
 		SVC_SNMPv3 =>	'161',
 		SVC_HTTPS =>	'443',
 		SVC_TELNET =>	'23'
-	);
+	];
 
-	return isset($typePort[$type_int]) ? $typePort[$type_int] : 0;
+	return isset($types[$type]) ? $types[$type] : 0;
 }
 
 function discovery_check_type2str($type = null) {
-	$discovery_types = array(
+	$types = [
 		SVC_SSH => _('SSH'),
 		SVC_LDAP => _('LDAP'),
 		SVC_SMTP => _('SMTP'),
@@ -69,18 +60,13 @@ function discovery_check_type2str($type = null) {
 		SVC_ICMPPING => _('ICMP ping'),
 		SVC_TELNET => _('Telnet'),
 		SVC_HTTPS => _('HTTPS')
-	);
+	];
 
-	if (is_null($type)) {
-		order_result($discovery_types);
-		return $discovery_types;
+	if ($type === null) {
+		return $types;
 	}
-	elseif (isset($discovery_types[$type])) {
-		return $discovery_types[$type];
-	}
-	else {
-		return false;
-	}
+
+	return isset($types[$type]) ? $types[$type] : false;
 }
 
 function discovery_check2str($type, $key, $port) {
@@ -117,32 +103,28 @@ function discovery_port2str($type_int, $port) {
 }
 
 function discovery_status2str($status = null) {
-	$discoveryStatus = array(
+	$statuses = [
 		DRULE_STATUS_ACTIVE => _('Enabled'),
 		DRULE_STATUS_DISABLED => _('Disabled')
-	);
+	];
 
 	if (is_null($status)) {
-		return $discoveryStatus;
+		return $statuses;
 	}
-	elseif (isset($discoveryStatus[$status])) {
-		return $discoveryStatus[$status];
-	}
-	else {
-		return _('Unknown');
-	}
+
+	return isset($statuses[$status]) ? $statuses[$status] : _('Unknown');
 }
 
 function discovery_status2style($status) {
 	switch ($status) {
 		case DRULE_STATUS_ACTIVE:
-			$status = 'off';
+			$status = ZBX_STYLE_GREEN;
 			break;
 		case DRULE_STATUS_DISABLED:
-			$status = 'on';
+			$status = ZBX_STYLE_RED;
 			break;
 		default:
-			$status = 'unknown';
+			$status = ZBX_STYLE_GREY;
 			break;
 	}
 
@@ -150,12 +132,12 @@ function discovery_status2style($status) {
 }
 
 function discovery_object_status2str($status = null) {
-	$discoveryStatus = array(
+	$discoveryStatus = [
 		DOBJECT_STATUS_UP => _x('Up', 'discovery status'),
 		DOBJECT_STATUS_DOWN => _x('Down', 'discovery status'),
 		DOBJECT_STATUS_DISCOVER => _('Discovered'),
 		DOBJECT_STATUS_LOST => _('Lost')
-	);
+	];
 
 	if (is_null($status)) {
 		order_result($discoveryStatus);

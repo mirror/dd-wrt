@@ -50,17 +50,20 @@ typedef struct
 	unsigned char	type;
 	unsigned char	type_orig;
 	unsigned char	useip;
+	unsigned char	bulk;
 #define ZBX_FLAG_LLD_INTERFACE_UPDATE_TYPE	__UINT64_C(0x00000001)	/* interface.type field should be updated  */
 #define ZBX_FLAG_LLD_INTERFACE_UPDATE_MAIN	__UINT64_C(0x00000002)	/* interface.main field should be updated */
 #define ZBX_FLAG_LLD_INTERFACE_UPDATE_USEIP	__UINT64_C(0x00000004)	/* interface.useip field should be updated */
 #define ZBX_FLAG_LLD_INTERFACE_UPDATE_IP	__UINT64_C(0x00000008)	/* interface.ip field should be updated */
 #define ZBX_FLAG_LLD_INTERFACE_UPDATE_DNS	__UINT64_C(0x00000010)	/* interface.dns field should be updated */
 #define ZBX_FLAG_LLD_INTERFACE_UPDATE_PORT	__UINT64_C(0x00000020)	/* interface.port field should be updated */
+#define ZBX_FLAG_LLD_INTERFACE_UPDATE_BULK	__UINT64_C(0x00000040)	/* interface.bulk field should be updated */
 #define ZBX_FLAG_LLD_INTERFACE_UPDATE								\
 		(ZBX_FLAG_LLD_INTERFACE_UPDATE_TYPE | ZBX_FLAG_LLD_INTERFACE_UPDATE_MAIN |	\
 		ZBX_FLAG_LLD_INTERFACE_UPDATE_USEIP | ZBX_FLAG_LLD_INTERFACE_UPDATE_IP |	\
-		ZBX_FLAG_LLD_INTERFACE_UPDATE_DNS | ZBX_FLAG_LLD_INTERFACE_UPDATE_PORT)
-#define ZBX_FLAG_LLD_INTERFACE_REMOVE		__UINT64_C(0x00000040)	/* interfaces which should be deleted */
+		ZBX_FLAG_LLD_INTERFACE_UPDATE_DNS | ZBX_FLAG_LLD_INTERFACE_UPDATE_PORT |	\
+		ZBX_FLAG_LLD_INTERFACE_UPDATE_BULK)
+#define ZBX_FLAG_LLD_INTERFACE_REMOVE		__UINT64_C(0x00000080)	/* interfaces which should be deleted */
 	zbx_uint64_t	flags;
 }
 zbx_lld_interface_t;
@@ -88,19 +91,31 @@ typedef struct
 	char			*name_orig;
 	int			lastcheck;
 	int			ts_delete;
-#define ZBX_FLAG_LLD_HOST_DISCOVERED		__UINT64_C(0x00000001)	/* hosts which should be updated or added */
-#define ZBX_FLAG_LLD_HOST_UPDATE_HOST		__UINT64_C(0x00000002)	/* hosts.host and host_discovery.host fields should be updated */
-#define ZBX_FLAG_LLD_HOST_UPDATE_NAME		__UINT64_C(0x00000004)	/* hosts.name field should be updated */
-#define ZBX_FLAG_LLD_HOST_UPDATE_PROXY		__UINT64_C(0x00000008)	/* hosts.proxy_hostid field should be updated */
-#define ZBX_FLAG_LLD_HOST_UPDATE_IPMI_AUTH	__UINT64_C(0x00000010)	/* hosts.ipmi_authtype field should be updated */
-#define ZBX_FLAG_LLD_HOST_UPDATE_IPMI_PRIV	__UINT64_C(0x00000020)	/* hosts.ipmi_privilege field should be updated */
-#define ZBX_FLAG_LLD_HOST_UPDATE_IPMI_USER	__UINT64_C(0x00000040)	/* hosts.ipmi_username field should be updated */
-#define ZBX_FLAG_LLD_HOST_UPDATE_IPMI_PASS	__UINT64_C(0x00000080)	/* hosts.ipmi_password field should be updated */
-#define ZBX_FLAG_LLD_HOST_UPDATE								\
-		(ZBX_FLAG_LLD_HOST_UPDATE_HOST | ZBX_FLAG_LLD_HOST_UPDATE_NAME |		\
-		ZBX_FLAG_LLD_HOST_UPDATE_PROXY | ZBX_FLAG_LLD_HOST_UPDATE_IPMI_AUTH |		\
-		ZBX_FLAG_LLD_HOST_UPDATE_IPMI_PRIV | ZBX_FLAG_LLD_HOST_UPDATE_IPMI_USER |	\
-		ZBX_FLAG_LLD_HOST_UPDATE_IPMI_PASS)
+
+#define ZBX_FLAG_LLD_HOST_DISCOVERED			__UINT64_C(0x00000001)	/* hosts which should be updated or added */
+#define ZBX_FLAG_LLD_HOST_UPDATE_HOST			__UINT64_C(0x00000002)	/* hosts.host and host_discovery.host fields should be updated */
+#define ZBX_FLAG_LLD_HOST_UPDATE_NAME			__UINT64_C(0x00000004)	/* hosts.name field should be updated */
+#define ZBX_FLAG_LLD_HOST_UPDATE_PROXY			__UINT64_C(0x00000008)	/* hosts.proxy_hostid field should be updated */
+#define ZBX_FLAG_LLD_HOST_UPDATE_IPMI_AUTH		__UINT64_C(0x00000010)	/* hosts.ipmi_authtype field should be updated */
+#define ZBX_FLAG_LLD_HOST_UPDATE_IPMI_PRIV		__UINT64_C(0x00000020)	/* hosts.ipmi_privilege field should be updated */
+#define ZBX_FLAG_LLD_HOST_UPDATE_IPMI_USER		__UINT64_C(0x00000040)	/* hosts.ipmi_username field should be updated */
+#define ZBX_FLAG_LLD_HOST_UPDATE_IPMI_PASS		__UINT64_C(0x00000080)	/* hosts.ipmi_password field should be updated */
+#define ZBX_FLAG_LLD_HOST_UPDATE_TLS_CONNECT		__UINT64_C(0x00000100)	/* hosts.tls_connect field should be updated */
+#define ZBX_FLAG_LLD_HOST_UPDATE_TLS_ACCEPT		__UINT64_C(0x00000200)	/* hosts.tls_accept field should be updated */
+#define ZBX_FLAG_LLD_HOST_UPDATE_TLS_ISSUER		__UINT64_C(0x00000400)	/* hosts.tls_issuer field should be updated */
+#define ZBX_FLAG_LLD_HOST_UPDATE_TLS_SUBJECT		__UINT64_C(0x00000800)	/* hosts.tls_subject field should be updated */
+#define ZBX_FLAG_LLD_HOST_UPDATE_TLS_PSK_IDENTITY	__UINT64_C(0x00001000)	/* hosts.tls_psk_identity field should be updated */
+#define ZBX_FLAG_LLD_HOST_UPDATE_TLS_PSK		__UINT64_C(0x00002000)	/* hosts.tls_psk field should be updated */
+
+#define ZBX_FLAG_LLD_HOST_UPDATE									\
+		(ZBX_FLAG_LLD_HOST_UPDATE_HOST | ZBX_FLAG_LLD_HOST_UPDATE_NAME |			\
+		ZBX_FLAG_LLD_HOST_UPDATE_PROXY | ZBX_FLAG_LLD_HOST_UPDATE_IPMI_AUTH |			\
+		ZBX_FLAG_LLD_HOST_UPDATE_IPMI_PRIV | ZBX_FLAG_LLD_HOST_UPDATE_IPMI_USER |		\
+		ZBX_FLAG_LLD_HOST_UPDATE_IPMI_PASS | ZBX_FLAG_LLD_HOST_UPDATE_TLS_CONNECT |		\
+		ZBX_FLAG_LLD_HOST_UPDATE_TLS_ACCEPT | ZBX_FLAG_LLD_HOST_UPDATE_TLS_ISSUER |		\
+		ZBX_FLAG_LLD_HOST_UPDATE_TLS_SUBJECT | ZBX_FLAG_LLD_HOST_UPDATE_TLS_PSK_IDENTITY |	\
+		ZBX_FLAG_LLD_HOST_UPDATE_TLS_PSK)
+
 	zbx_uint64_t		flags;
 	char			inventory_mode;
 }
@@ -111,9 +126,9 @@ static void	lld_host_free(zbx_lld_host_t *host)
 	zbx_vector_uint64_destroy(&host->new_groupids);
 	zbx_vector_uint64_destroy(&host->lnk_templateids);
 	zbx_vector_uint64_destroy(&host->del_templateids);
-	zbx_vector_ptr_clean(&host->new_hostmacros, (zbx_mem_free_func_t)lld_hostmacro_free);
+	zbx_vector_ptr_clear_ext(&host->new_hostmacros, (zbx_clean_func_t)lld_hostmacro_free);
 	zbx_vector_ptr_destroy(&host->new_hostmacros);
-	zbx_vector_ptr_clean(&host->interfaces, (zbx_mem_free_func_t)lld_interface_free);
+	zbx_vector_ptr_clear_ext(&host->interfaces, (zbx_clean_func_t)lld_interface_free);
 	zbx_vector_ptr_destroy(&host->interfaces);
 	zbx_free(host->host_proto);
 	zbx_free(host->host);
@@ -155,7 +170,7 @@ zbx_lld_group_t;
 
 static void	lld_group_free(zbx_lld_group_t *group)
 {
-	/* zbx_vector_ptr_clean(&group->hosts, (zbx_mem_free_func_t)lld_host_free); is not missing here */
+	/* zbx_vector_ptr_clear_ext(&group->hosts, (zbx_clean_func_t)lld_host_free); is not missing here */
 	zbx_vector_ptr_destroy(&group->hosts);
 	zbx_free(group->name_proto);
 	zbx_free(group->name);
@@ -163,19 +178,30 @@ static void	lld_group_free(zbx_lld_group_t *group)
 	zbx_free(group);
 }
 
+typedef struct
+{
+	char				*name;
+	/* permission pair (usrgrpid, permission) */
+	zbx_vector_uint64_pair_t	rights;
+	/* reference to the inherited rights */
+	zbx_vector_uint64_pair_t	*prights;
+}
+zbx_lld_group_rights_t;
+
 /******************************************************************************
  *                                                                            *
  * Function: lld_hosts_get                                                    *
  *                                                                            *
  * Purpose: retrieves existing hosts for the specified host prototype         *
  *                                                                            *
- * Parameters: parent_hostid - [IN] host prototype identificator              *
+ * Parameters: parent_hostid - [IN] host prototype identifier                 *
  *             hosts         - [OUT] list of hosts                            *
  *                                                                            *
  ******************************************************************************/
 static void	lld_hosts_get(zbx_uint64_t parent_hostid, zbx_vector_ptr_t *hosts, zbx_uint64_t proxy_hostid,
 		char ipmi_authtype, unsigned char ipmi_privilege, const char *ipmi_username, const char *ipmi_password,
-		char inventory_mode)
+		unsigned char tls_connect, unsigned char tls_accept, const char *tls_issuer,
+		const char *tls_subject, const char *tls_psk_identity, const char *tls_psk)
 {
 	const char	*__function_name = "lld_hosts_get";
 
@@ -188,7 +214,8 @@ static void	lld_hosts_get(zbx_uint64_t parent_hostid, zbx_vector_ptr_t *hosts, z
 
 	result = DBselect(
 			"select hd.hostid,hd.host,hd.lastcheck,hd.ts_delete,h.host,h.name,h.proxy_hostid,"
-				"h.ipmi_authtype,h.ipmi_privilege,h.ipmi_username,h.ipmi_password,hi.inventory_mode"
+				"h.ipmi_authtype,h.ipmi_privilege,h.ipmi_username,h.ipmi_password,hi.inventory_mode,"
+				"h.tls_connect,h.tls_accept,h.tls_issuer,h.tls_subject,h.tls_psk_identity,h.tls_psk"
 			" from host_discovery hd"
 				" join hosts h"
 					" on hd.hostid=h.hostid"
@@ -226,6 +253,24 @@ static void	lld_hosts_get(zbx_uint64_t parent_hostid, zbx_vector_ptr_t *hosts, z
 
 		if (0 != strcmp(row[10], ipmi_password))
 			host->flags |= ZBX_FLAG_LLD_HOST_UPDATE_IPMI_PASS;
+
+		if (atoi(row[12]) != tls_connect)
+			host->flags |= ZBX_FLAG_LLD_HOST_UPDATE_TLS_CONNECT;
+
+		if (atoi(row[13]) != tls_accept)
+			host->flags |= ZBX_FLAG_LLD_HOST_UPDATE_TLS_ACCEPT;
+
+		if (0 != strcmp(tls_issuer, row[14]))
+			host->flags |= ZBX_FLAG_LLD_HOST_UPDATE_TLS_ISSUER;
+
+		if (0 != strcmp(tls_subject, row[15]))
+			host->flags |= ZBX_FLAG_LLD_HOST_UPDATE_TLS_SUBJECT;
+
+		if (0 != strcmp(tls_psk_identity, row[16]))
+			host->flags |= ZBX_FLAG_LLD_HOST_UPDATE_TLS_PSK_IDENTITY;
+
+		if (0 != strcmp(tls_psk, row[17]))
+			host->flags |= ZBX_FLAG_LLD_HOST_UPDATE_TLS_PSK;
 
 		if (SUCCEED == DBis_null(row[11]))
 			host->inventory_mode = HOST_INVENTORY_DISABLED;
@@ -272,6 +317,8 @@ void	lld_hosts_validate(zbx_vector_ptr_t *hosts, char **error)
 	/* checking a host name validity */
 	for (i = 0; i < hosts->values_num; i++)
 	{
+		char	*ch_error;
+
 		host = (zbx_lld_host_t *)hosts->values[i];
 
 		if (0 == (host->flags & ZBX_FLAG_LLD_HOST_DISCOVERED))
@@ -282,11 +329,13 @@ void	lld_hosts_validate(zbx_vector_ptr_t *hosts, char **error)
 			continue;
 
 		/* host name is valid? */
-		if (SUCCEED == zbx_check_hostname(host->host))
+		if (SUCCEED == zbx_check_hostname(host->host, &ch_error))
 			continue;
 
-		*error = zbx_strdcatf(*error, "Cannot %s host: invalid host name \"%s\".\n",
-				(0 != host->hostid ? "update" : "create"), host->host);
+		*error = zbx_strdcatf(*error, "Cannot %s host \"%s\": %s.\n",
+				(0 != host->hostid ? "update" : "create"), host->host, ch_error);
+
+		zbx_free(ch_error);
 
 		if (0 != host->hostid)
 		{
@@ -524,7 +573,7 @@ static zbx_lld_host_t	*lld_host_make(zbx_vector_ptr_t *hosts, const char *host_p
 
 	char		*buffer = NULL;
 	int		i;
-	zbx_lld_host_t	*host;
+	zbx_lld_host_t	*host = NULL;
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __function_name);
 
@@ -536,7 +585,7 @@ static zbx_lld_host_t	*lld_host_make(zbx_vector_ptr_t *hosts, const char *host_p
 			continue;
 
 		buffer = zbx_strdup(buffer, host->host_proto);
-		substitute_discovery_macros(&buffer, jp_row, ZBX_MACRO_ANY, NULL, 0);
+		substitute_lld_macros(&buffer, jp_row, ZBX_MACRO_ANY, NULL, NULL, 0);
 		zbx_lrtrim(buffer, ZBX_WHITESPACE);
 
 		if (0 == strcmp(host->host, buffer))
@@ -553,10 +602,10 @@ static zbx_lld_host_t	*lld_host_make(zbx_vector_ptr_t *hosts, const char *host_p
 		host->ts_delete = 0;
 		host->host = zbx_strdup(NULL, host_proto);
 		host->host_orig = NULL;
-		substitute_discovery_macros(&host->host, jp_row, ZBX_MACRO_ANY, NULL, 0);
+		substitute_lld_macros(&host->host, jp_row, ZBX_MACRO_ANY, NULL, NULL, 0);
 		zbx_lrtrim(host->host, ZBX_WHITESPACE);
 		host->name = zbx_strdup(NULL, name_proto);
-		substitute_discovery_macros(&host->name, jp_row, ZBX_MACRO_ANY, NULL, 0);
+		substitute_lld_macros(&host->name, jp_row, ZBX_MACRO_ANY, NULL, NULL, 0);
 		zbx_lrtrim(host->name, ZBX_WHITESPACE);
 		host->name_orig = NULL;
 		zbx_vector_uint64_create(&host->new_groupids);
@@ -575,14 +624,14 @@ static zbx_lld_host_t	*lld_host_make(zbx_vector_ptr_t *hosts, const char *host_p
 		{
 			host->host_orig = host->host;
 			host->host = zbx_strdup(NULL, host_proto);
-			substitute_discovery_macros(&host->host, jp_row, ZBX_MACRO_ANY, NULL, 0);
+			substitute_lld_macros(&host->host, jp_row, ZBX_MACRO_ANY, NULL, NULL, 0);
 			zbx_lrtrim(host->host, ZBX_WHITESPACE);
 			host->flags |= ZBX_FLAG_LLD_HOST_UPDATE_HOST;
 		}
 
 		/* host visible name */
 		buffer = zbx_strdup(buffer, name_proto);
-		substitute_discovery_macros(&buffer, jp_row, ZBX_MACRO_ANY, NULL, 0);
+		substitute_lld_macros(&buffer, jp_row, ZBX_MACRO_ANY, NULL, NULL, 0);
 		zbx_lrtrim(buffer, ZBX_WHITESPACE);
 		if (0 != strcmp(host->name, buffer))
 		{
@@ -609,7 +658,7 @@ static zbx_lld_host_t	*lld_host_make(zbx_vector_ptr_t *hosts, const char *host_p
  * Purpose: retrieve list of host groups which should be present on the each  *
  *          discovered host                                                   *
  *                                                                            *
- * Parameters: parent_hostid - [IN] host prototype identificator              *
+ * Parameters: parent_hostid - [IN] host prototype identifier                 *
  *             groupids      - [OUT] sorted list of host groups               *
  *                                                                            *
  ******************************************************************************/
@@ -753,7 +802,7 @@ static void	lld_hostgroups_make(const zbx_vector_uint64_t *groupids, zbx_vector_
  *                                                                            *
  * Purpose: retrieve list of group prototypes                                 *
  *                                                                            *
- * Parameters: parent_hostid    - [IN] host prototype identificator           *
+ * Parameters: parent_hostid    - [IN] host prototype identifier              *
  *             group_prototypes - [OUT] sorted list of group prototypes       *
  *                                                                            *
  ******************************************************************************/
@@ -796,7 +845,7 @@ static void	lld_group_prototypes_get(zbx_uint64_t parent_hostid, zbx_vector_ptr_
  *                                                                            *
  * Purpose: retrieves existing groups for the specified host prototype        *
  *                                                                            *
- * Parameters: parent_hostid - [IN] host prototype identificator              *
+ * Parameters: parent_hostid - [IN] host prototype identifier                 *
  *             groups        - [OUT] list of groups                           *
  *                                                                            *
  ******************************************************************************/
@@ -854,7 +903,7 @@ static zbx_lld_group_t	*lld_group_make(zbx_vector_ptr_t *groups, zbx_uint64_t gr
 
 	char		*buffer = NULL;
 	int		i;
-	zbx_lld_group_t	*group;
+	zbx_lld_group_t	*group = NULL;
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __function_name);
 
@@ -869,7 +918,7 @@ static zbx_lld_group_t	*lld_group_make(zbx_vector_ptr_t *groups, zbx_uint64_t gr
 			continue;
 
 		buffer = zbx_strdup(buffer, group->name_proto);
-		substitute_discovery_macros(&buffer, jp_row, ZBX_MACRO_ANY, NULL, 0);
+		substitute_lld_macros(&buffer, jp_row, ZBX_MACRO_ANY, NULL, NULL, 0);
 		zbx_lrtrim(buffer, ZBX_WHITESPACE);
 
 		if (0 == strcmp(group->name, buffer))
@@ -881,7 +930,7 @@ static zbx_lld_group_t	*lld_group_make(zbx_vector_ptr_t *groups, zbx_uint64_t gr
 		/* trying to find an already existing group */
 
 		buffer = zbx_strdup(buffer, name_proto);
-		substitute_discovery_macros(&buffer, jp_row, ZBX_MACRO_ANY, NULL, 0);
+		substitute_lld_macros(&buffer, jp_row, ZBX_MACRO_ANY, NULL, NULL, 0);
 		zbx_lrtrim(buffer, ZBX_WHITESPACE);
 
 		for (i = 0; i < groups->values_num; i++)
@@ -907,7 +956,7 @@ static zbx_lld_group_t	*lld_group_make(zbx_vector_ptr_t *groups, zbx_uint64_t gr
 		zbx_vector_ptr_create(&group->hosts);
 		group->name_proto = NULL;
 		group->name = zbx_strdup(NULL, name_proto);
-		substitute_discovery_macros(&group->name, jp_row, ZBX_MACRO_ANY, NULL, 0);
+		substitute_lld_macros(&group->name, jp_row, ZBX_MACRO_ANY, NULL, NULL, 0);
 		zbx_lrtrim(group->name, ZBX_WHITESPACE);
 		group->name_orig = NULL;
 		group->lastcheck = 0;
@@ -923,7 +972,7 @@ static zbx_lld_group_t	*lld_group_make(zbx_vector_ptr_t *groups, zbx_uint64_t gr
 
 		/* group name */
 		buffer = zbx_strdup(buffer, name_proto);
-		substitute_discovery_macros(&buffer, jp_row, ZBX_MACRO_ANY, NULL, 0);
+		substitute_lld_macros(&buffer, jp_row, ZBX_MACRO_ANY, NULL, NULL, 0);
 		zbx_lrtrim(buffer, ZBX_WHITESPACE);
 		if (0 != strcmp(group->name, buffer))
 		{
@@ -974,12 +1023,51 @@ static void	lld_groups_make(zbx_lld_host_t *host, zbx_vector_ptr_t *groups, zbx_
 
 /******************************************************************************
  *                                                                            *
+ * Function: lld_validate_group_name                                          *
+ *                                                                            *
+ * Purpose: validate group name                                               *
+ *                                                                            *
+ * Return value: SUCCEED - the group name is valid                            *
+ *               FAIL    - otherwise                                          *
+ *                                                                            *
+ ******************************************************************************/
+static int	lld_validate_group_name(const char *name)
+{
+	/* group name cannot be empty */
+	if ('\0' == *name)
+		return FAIL;
+
+	/* group name must contain valid utf8 characters */
+	if (SUCCEED != zbx_is_utf8(name))
+		return FAIL;
+
+	/* group name cannot exceed field limits */
+	if (GROUP_NAME_LEN < zbx_strlen_utf8(name))
+		return FAIL;
+
+	/* group name contain an asterisk (*) */
+	if (NULL != strchr(name, '*'))
+		return FAIL;
+
+	/* group name cannot contain trailing and leading slashes (/) */
+	if ('/' == *name || '/' == name[strlen(name) - 1])
+		return FAIL;
+
+	/* group name cannot contain several slashes (/) in a row */
+	if (NULL != strstr(name, "//"))
+		return FAIL;
+
+	return SUCCEED;
+}
+
+/******************************************************************************
+ *                                                                            *
  * Function: lld_groups_validate                                              *
  *                                                                            *
  * Parameters: groups - [IN] list of groups; should be sorted by groupid      *
  *                                                                            *
  ******************************************************************************/
-void	lld_groups_validate(zbx_vector_ptr_t *groups, char **error)
+static void	lld_groups_validate(zbx_vector_ptr_t *groups, char **error)
 {
 	const char		*__function_name = "lld_groups_validate";
 
@@ -1007,12 +1095,8 @@ void	lld_groups_validate(zbx_vector_ptr_t *groups, char **error)
 		if (0 != group->groupid && 0 == (group->flags & ZBX_FLAG_LLD_GROUP_UPDATE_NAME))
 			continue;
 
-		/* group name is valid utf8 sequence and has a valid length */
-		if (SUCCEED == zbx_is_utf8(group->name) && '\0' != *group->name &&
-				GROUP_NAME_LEN >= zbx_strlen_utf8(group->name))
-		{
+		if (SUCCEED == lld_validate_group_name(group->name))
 			continue;
-		}
 
 		zbx_replace_invalid_utf8(group->name);
 		*error = zbx_strdcatf(*error, "Cannot %s group: invalid group name \"%s\".\n",
@@ -1136,6 +1220,204 @@ void	lld_groups_validate(zbx_vector_ptr_t *groups, char **error)
 
 /******************************************************************************
  *                                                                            *
+ * Function: lld_group_rights_compare                                         *
+ *                                                                            *
+ * Purpose: sorting function to sort group rights vector by name              *
+ *                                                                            *
+ ******************************************************************************/
+static int	lld_group_rights_compare(const void *d1, const void *d2)
+{
+	const zbx_lld_group_rights_t	*r1 = *(const zbx_lld_group_rights_t **)d1;
+	const zbx_lld_group_rights_t	*r2 = *(const zbx_lld_group_rights_t **)d2;
+
+	return strcmp(r1->name, r2->name);
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: lld_group_rights_append                                          *
+ *                                                                            *
+ * Purpose: append a new item to group rights vector                          *
+ *                                                                            *
+ * Return value: Index of the added item.                                     *
+ *                                                                            *
+ ******************************************************************************/
+static int	lld_group_rights_append(zbx_vector_ptr_t *group_rights, const char *name)
+{
+	zbx_lld_group_rights_t	*rights;
+
+	rights = (zbx_lld_group_rights_t *)zbx_malloc(NULL, sizeof(zbx_lld_group_rights_t));
+	rights->name = zbx_strdup(NULL, name);
+	zbx_vector_uint64_pair_create(&rights->rights);
+	rights->prights = NULL;
+
+	zbx_vector_ptr_append(group_rights, rights);
+
+	return group_rights->values_num - 1;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: lld_group_rights_free                                            *
+ *                                                                            *
+ * PUrpose: frees group rights data                                           *
+ *                                                                            *
+ ******************************************************************************/
+static void	lld_group_rights_free(zbx_lld_group_rights_t *rights)
+{
+	zbx_free(rights->name);
+	zbx_vector_uint64_pair_destroy(&rights->rights);
+	zbx_free(rights);
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: lld_groups_save_rights                                           *
+ *                                                                            *
+ * Parameters: groups - [IN] list of new groups                               *
+ *                                                                            *
+ ******************************************************************************/
+static void	lld_groups_save_rights(zbx_vector_ptr_t *groups)
+{
+	const char		*__function_name = "lld_groups_save_rights";
+
+	int			i, j;
+	DB_ROW			row;
+	DB_RESULT		result;
+	char			*ptr, *name, *sql = NULL;
+	size_t			sql_alloc = 0, sql_offset = 0, offset;
+	zbx_lld_group_t		*group;
+	zbx_vector_str_t	group_names;
+	zbx_vector_ptr_t	group_rights;
+	zbx_db_insert_t		db_insert;
+	zbx_lld_group_rights_t	*rights, rights_local, *parent_rights;
+	zbx_uint64_pair_t	pair;
+
+	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __function_name);
+
+	zbx_vector_str_create(&group_names);
+	zbx_vector_ptr_create(&group_rights);
+
+	/* make a list of direct parent group names and a list of new group rights */
+	for (i = 0; i < groups->values_num; i++)
+	{
+		group = (zbx_lld_group_t *)groups->values[i];
+
+		if (NULL == (ptr = strrchr(group->name, '/')))
+			continue;
+
+		lld_group_rights_append(&group_rights, group->name);
+
+		name = zbx_strdup(NULL, group->name);
+		name[ptr - group->name] = '\0';
+
+		if (FAIL != zbx_vector_str_search(&group_names, name, ZBX_DEFAULT_STR_COMPARE_FUNC))
+		{
+			zbx_free(name);
+			continue;
+		}
+
+		zbx_vector_str_append(&group_names, name);
+	}
+
+	if (0 == group_names.values_num)
+		goto out;
+
+	/* read the parent group rights */
+
+	zbx_db_insert_prepare(&db_insert, "rights", "rightid", "id", "permission", "groupid", NULL);
+	zbx_strcpy_alloc(&sql, &sql_alloc, &sql_offset,
+			"select g.name,r.permission,r.groupid from groups g,rights r"
+				" where r.id=g.groupid"
+				" and");
+
+	DBadd_str_condition_alloc(&sql, &sql_alloc, &sql_offset, "g.name", (const char **)group_names.values,
+			group_names.values_num);
+	result = DBselect("%s", sql);
+
+	while (NULL != (row = DBfetch(result)))
+	{
+		rights_local.name = row[0];
+		if (FAIL == (i = zbx_vector_ptr_search(&group_rights, &rights_local, lld_group_rights_compare)))
+			i = lld_group_rights_append(&group_rights, row[0]);
+
+		rights = (zbx_lld_group_rights_t *)group_rights.values[i];
+		rights->prights = &rights->rights;
+
+		ZBX_STR2UINT64(pair.first, row[2]);
+		pair.second = atoi(row[1]);
+
+		zbx_vector_uint64_pair_append(&rights->rights, pair);
+	}
+	DBfree_result(result);
+
+	zbx_vector_ptr_sort(&group_rights, lld_group_rights_compare);
+
+	/* assign rights for the new groups */
+	for (i = 0; i < group_rights.values_num; i++)
+	{
+		rights = (zbx_lld_group_rights_t *)group_rights.values[i];
+
+		if (NULL != rights->prights)
+			continue;
+
+		if (NULL == (ptr = strrchr(rights->name, '/')))
+			continue;
+
+		offset = ptr - rights->name;
+
+		for (j = 0; j < i; j++)
+		{
+			parent_rights = (zbx_lld_group_rights_t *)group_rights.values[j];
+
+			if (strlen(parent_rights->name) != offset)
+				continue;
+
+			if (0 != strncmp(parent_rights->name, rights->name, offset))
+				continue;
+
+			rights->prights = parent_rights->prights;
+			break;
+		}
+	}
+
+	/* save rights for the new groups */
+	for (i = 0; i < groups->values_num; i++)
+	{
+		group = (zbx_lld_group_t *)groups->values[i];
+
+		rights_local.name = group->name;
+		if (FAIL == (j = zbx_vector_ptr_bsearch(&group_rights, &rights_local, lld_group_rights_compare)))
+			continue;
+
+		rights = (zbx_lld_group_rights_t *)group_rights.values[j];
+
+		if (NULL == rights->prights)
+			continue;
+
+		for (j = 0; j < rights->prights->values_num; j++)
+		{
+			zbx_db_insert_add_values(&db_insert, __UINT64_C(0), group->groupid,
+					(int)rights->prights->values[j].second, rights->prights->values[j].first);
+		}
+	}
+
+	zbx_db_insert_autoincrement(&db_insert, "rightid");
+	zbx_db_insert_execute(&db_insert);
+	zbx_db_insert_clean(&db_insert);
+
+	zbx_free(sql);
+	zbx_vector_ptr_clear_ext(&group_rights, (zbx_clean_func_t)lld_group_rights_free);
+	zbx_vector_str_clear_ext(&group_names, zbx_ptr_free);
+out:
+	zbx_vector_ptr_destroy(&group_rights);
+	zbx_vector_str_destroy(&group_names);
+
+	zabbix_log(LOG_LEVEL_DEBUG, "End of %s()", __function_name);
+}
+
+/******************************************************************************
+ *                                                                            *
  * Function: lld_groups_save                                                  *
  *                                                                            *
  * Parameters: groups           - [IN/OUT] list of groups; should be sorted   *
@@ -1148,7 +1430,7 @@ static void	lld_groups_save(zbx_vector_ptr_t *groups, zbx_vector_ptr_t *group_pr
 {
 	const char			*__function_name = "lld_groups_save";
 
-	int				i, j, new_groups = 0, upd_groups = 0;
+	int				i, j, new_groups_num = 0, upd_groups_num = 0;
 	zbx_lld_group_t			*group;
 	zbx_lld_group_prototype_t	*group_prototype;
 	zbx_lld_host_t			*host;
@@ -1156,6 +1438,7 @@ static void	lld_groups_save(zbx_vector_ptr_t *groups, zbx_vector_ptr_t *group_pr
 	char				*sql = NULL, *name_esc, *name_proto_esc;
 	size_t				sql_alloc = 0, sql_offset = 0;
 	zbx_db_insert_t			db_insert, db_insert_gdiscovery;
+	zbx_vector_ptr_t		new_groups;
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __function_name);
 
@@ -1167,27 +1450,29 @@ static void	lld_groups_save(zbx_vector_ptr_t *groups, zbx_vector_ptr_t *group_pr
 			continue;
 
 		if (0 == group->groupid)
-			new_groups++;
+			new_groups_num++;
 		else if (0 != (group->flags & ZBX_FLAG_LLD_GROUP_UPDATE))
-			upd_groups++;
+			upd_groups_num++;
 	}
 
-	if (0 == new_groups && 0 == upd_groups)
+	if (0 == new_groups_num && 0 == upd_groups_num)
 		goto out;
 
 	DBbegin();
 
-	if (0 != new_groups)
+	if (0 != new_groups_num)
 	{
-		groupid = DBget_maxid_num("groups", new_groups);
+		groupid = DBget_maxid_num("groups", new_groups_num);
 
 		zbx_db_insert_prepare(&db_insert, "groups", "groupid", "name", "flags", NULL);
 
 		zbx_db_insert_prepare(&db_insert_gdiscovery, "group_discovery", "groupid", "parent_group_prototypeid",
 				"name", NULL);
+
+		zbx_vector_ptr_create(&new_groups);
 	}
 
-	if (0 != upd_groups)
+	if (0 != upd_groups_num)
 	{
 		DBbegin_multiple_update(&sql, &sql_alloc, &sql_offset);
 	}
@@ -1224,6 +1509,8 @@ static void	lld_groups_save(zbx_vector_ptr_t *groups, zbx_vector_ptr_t *group_pr
 				/* hosts will be linked to a new host groups */
 				zbx_vector_uint64_append(&host->new_groupids, group->groupid);
 			}
+
+			zbx_vector_ptr_append(&new_groups, group);
 		}
 		else
 		{
@@ -1265,20 +1552,23 @@ static void	lld_groups_save(zbx_vector_ptr_t *groups, zbx_vector_ptr_t *group_pr
 		}
 	}
 
-	if (0 != upd_groups)
+	if (0 != upd_groups_num)
 	{
 		DBend_multiple_update(&sql, &sql_alloc, &sql_offset);
 		DBexecute("%s", sql);
 		zbx_free(sql);
 	}
 
-	if (0 != new_groups)
+	if (0 != new_groups_num)
 	{
 		zbx_db_insert_execute(&db_insert);
 		zbx_db_insert_clean(&db_insert);
 
 		zbx_db_insert_execute(&db_insert_gdiscovery);
 		zbx_db_insert_clean(&db_insert_gdiscovery);
+
+		lld_groups_save_rights(&new_groups);
+		zbx_vector_ptr_destroy(&new_groups);
 	}
 
 	DBcommit();
@@ -1449,7 +1739,7 @@ static void	lld_hostmacros_make(const zbx_vector_ptr_t *hostmacros, zbx_vector_p
  *                                                                            *
  * Purpose: gets templates from a host prototype                              *
  *                                                                            *
- * Parameters: parent_hostid - [IN] host prototype identificator              *
+ * Parameters: parent_hostid - [IN] host prototype identifier                 *
  *             hosts         - [IN/OUT] list of hosts                         *
  *                                      should be sorted by hostid            *
  *                                                                            *
@@ -1567,15 +1857,16 @@ static void	lld_templates_make(zbx_uint64_t parent_hostid, zbx_vector_ptr_t *hos
  *                                                                            *
  * Parameters: hosts            - [IN] list of hosts;                         *
  *                                     should be sorted by hostid             *
- *             status           - [IN] initial host satatus                   *
+ *             status           - [IN] initial host status                    *
  *             del_hostgroupids - [IN] host groups which should be deleted    *
  *             del_hostmacroids - [IN] host macros which should be deleted    *
  *                                                                            *
  ******************************************************************************/
 static void	lld_hosts_save(zbx_uint64_t parent_hostid, zbx_vector_ptr_t *hosts, const char *host_proto,
 		zbx_uint64_t proxy_hostid, char ipmi_authtype, unsigned char ipmi_privilege, const char *ipmi_username,
-		const char *ipmi_password, unsigned char status, char inventory_mode,
-		zbx_vector_uint64_t *del_hostgroupids, zbx_vector_uint64_t *del_hostmacroids)
+		const char *ipmi_password, unsigned char status, char inventory_mode, unsigned char tls_connect,
+		unsigned char tls_accept, const char *tls_issuer, const char *tls_subject, const char *tls_psk_identity,
+		const char *tls_psk, zbx_vector_uint64_t *del_hostgroupids, zbx_vector_uint64_t *del_hostmacroids)
 {
 	const char		*__function_name = "lld_hosts_save";
 
@@ -1586,9 +1877,7 @@ static void	lld_hosts_save(zbx_uint64_t parent_hostid, zbx_vector_ptr_t *hosts, 
 	zbx_lld_interface_t	*interface;
 	zbx_vector_uint64_t	upd_host_inventory_hostids, del_host_inventory_hostids, del_interfaceids;
 	zbx_uint64_t		hostid = 0, hostgroupid = 0, hostmacroid = 0, interfaceid = 0;
-	char			*sql1 = NULL, *sql2 = NULL, *host_esc, *name_esc, *host_proto_esc,
-				*ipmi_username_esc, *ipmi_password_esc, *value_esc, *ip_esc, *dns_esc,
-				*port_esc;
+	char			*sql1 = NULL, *sql2 = NULL, *value_esc;
 	size_t			sql1_alloc = 0, sql1_offset = 0,
 				sql2_alloc = 0, sql2_offset = 0;
 	zbx_db_insert_t		db_insert, db_insert_hdiscovery, db_insert_hinventory, db_insert_hgroups,
@@ -1670,10 +1959,10 @@ static void	lld_hosts_save(zbx_uint64_t parent_hostid, zbx_vector_ptr_t *hosts, 
 		hostid = DBget_maxid_num("hosts", new_hosts);
 
 		zbx_db_insert_prepare(&db_insert, "hosts", "hostid", "host", "name", "proxy_hostid", "ipmi_authtype",
-				"ipmi_privilege", "ipmi_username", "ipmi_password", "status", "flags", NULL);
+				"ipmi_privilege", "ipmi_username", "ipmi_password", "status", "flags", "tls_connect",
+				"tls_accept", "tls_issuer", "tls_subject", "tls_psk_identity", "tls_psk", NULL);
 
-		zbx_db_insert_prepare(&db_insert_hdiscovery, "host_discovery", "hostid", "parent_hostid", "host",
-				NULL);
+		zbx_db_insert_prepare(&db_insert_hdiscovery, "host_discovery", "hostid", "parent_hostid", "host", NULL);
 	}
 
 	if (0 != new_host_inventories)
@@ -1705,7 +1994,7 @@ static void	lld_hosts_save(zbx_uint64_t parent_hostid, zbx_vector_ptr_t *hosts, 
 		interfaceid = DBget_maxid_num("interface", new_interfaces);
 
 		zbx_db_insert_prepare(&db_insert_interface, "interface", "interfaceid", "hostid", "type", "main",
-				"useip", "ip", "dns", "port", NULL);
+				"useip", "ip", "dns", "port", "bulk", NULL);
 
 		zbx_db_insert_prepare(&db_insert_idiscovery, "interface_discovery", "interfaceid",
 				"parent_interfaceid", NULL);
@@ -1724,7 +2013,8 @@ static void	lld_hosts_save(zbx_uint64_t parent_hostid, zbx_vector_ptr_t *hosts, 
 
 			zbx_db_insert_add_values(&db_insert, host->hostid, host->host, host->name, proxy_hostid,
 					(int)ipmi_authtype, (int)ipmi_privilege, ipmi_username, ipmi_password,
-					(int)status, (int)ZBX_FLAG_DISCOVERY_CREATED);
+					(int)status, (int)ZBX_FLAG_DISCOVERY_CREATED, (int)tls_connect,
+					(int)tls_accept, tls_issuer, tls_subject, tls_psk_identity, tls_psk);
 
 			zbx_db_insert_add_values(&db_insert_hdiscovery, host->hostid, parent_hostid, host_proto);
 
@@ -1740,22 +2030,22 @@ static void	lld_hosts_save(zbx_uint64_t parent_hostid, zbx_vector_ptr_t *hosts, 
 				zbx_strcpy_alloc(&sql1, &sql1_alloc, &sql1_offset, "update hosts set ");
 				if (0 != (host->flags & ZBX_FLAG_LLD_HOST_UPDATE_HOST))
 				{
-					host_esc = DBdyn_escape_string(host->host);
+					value_esc = DBdyn_escape_string(host->host);
 
-					zbx_snprintf_alloc(&sql1, &sql1_alloc, &sql1_offset, "host='%s'", host_esc);
+					zbx_snprintf_alloc(&sql1, &sql1_alloc, &sql1_offset, "host='%s'", value_esc);
 					d = ",";
 
-					zbx_free(host_esc);
+					zbx_free(value_esc);
 				}
 				if (0 != (host->flags & ZBX_FLAG_LLD_HOST_UPDATE_NAME))
 				{
-					name_esc = DBdyn_escape_string(host->name);
+					value_esc = DBdyn_escape_string(host->name);
 
 					zbx_snprintf_alloc(&sql1, &sql1_alloc, &sql1_offset,
-							"%sname='%s'", d, name_esc);
+							"%sname='%s'", d, value_esc);
 					d = ",";
 
-					zbx_free(name_esc);
+					zbx_free(value_esc);
 				}
 				if (0 != (host->flags & ZBX_FLAG_LLD_HOST_UPDATE_PROXY))
 				{
@@ -1777,22 +2067,74 @@ static void	lld_hosts_save(zbx_uint64_t parent_hostid, zbx_vector_ptr_t *hosts, 
 				}
 				if (0 != (host->flags & ZBX_FLAG_LLD_HOST_UPDATE_IPMI_USER))
 				{
-					ipmi_username_esc = DBdyn_escape_string(ipmi_username);
+					value_esc = DBdyn_escape_string(ipmi_username);
 
 					zbx_snprintf_alloc(&sql1, &sql1_alloc, &sql1_offset,
-							"%sipmi_username='%s'", d, ipmi_username_esc);
+							"%sipmi_username='%s'", d, value_esc);
 					d = ",";
 
-					zbx_free(ipmi_username_esc);
+					zbx_free(value_esc);
 				}
 				if (0 != (host->flags & ZBX_FLAG_LLD_HOST_UPDATE_IPMI_PASS))
 				{
-					ipmi_password_esc = DBdyn_escape_string(ipmi_password);
+					value_esc = DBdyn_escape_string(ipmi_password);
 
 					zbx_snprintf_alloc(&sql1, &sql1_alloc, &sql1_offset,
-							"%sipmi_password='%s'", d, ipmi_password_esc);
+							"%sipmi_password='%s'", d, value_esc);
+					d = ",";
 
-					zbx_free(ipmi_password_esc);
+					zbx_free(value_esc);
+				}
+				if (0 != (host->flags & ZBX_FLAG_LLD_HOST_UPDATE_TLS_CONNECT))
+				{
+					zbx_snprintf_alloc(&sql1, &sql1_alloc, &sql1_offset,
+							"%stls_connect=%d", d, tls_connect);
+					d = ",";
+				}
+				if (0 != (host->flags & ZBX_FLAG_LLD_HOST_UPDATE_TLS_ACCEPT))
+				{
+					zbx_snprintf_alloc(&sql1, &sql1_alloc, &sql1_offset,
+							"%stls_accept=%d", d, tls_accept);
+					d = ",";
+				}
+				if (0 != (host->flags & ZBX_FLAG_LLD_HOST_UPDATE_TLS_ISSUER))
+				{
+					value_esc = DBdyn_escape_string(tls_issuer);
+
+					zbx_snprintf_alloc(&sql1, &sql1_alloc, &sql1_offset,
+							"%stls_issuer='%s'", d, value_esc);
+					d = ",";
+
+					zbx_free(value_esc);
+				}
+				if (0 != (host->flags & ZBX_FLAG_LLD_HOST_UPDATE_TLS_SUBJECT))
+				{
+					value_esc = DBdyn_escape_string(tls_subject);
+
+					zbx_snprintf_alloc(&sql1, &sql1_alloc, &sql1_offset,
+							"%stls_subject='%s'", d, value_esc);
+					d = ",";
+
+					zbx_free(value_esc);
+				}
+				if (0 != (host->flags & ZBX_FLAG_LLD_HOST_UPDATE_TLS_PSK_IDENTITY))
+				{
+					value_esc = DBdyn_escape_string(tls_psk_identity);
+
+					zbx_snprintf_alloc(&sql1, &sql1_alloc, &sql1_offset,
+							"%stls_psk_identity='%s'", d, value_esc);
+					d = ",";
+
+					zbx_free(value_esc);
+				}
+				if (0 != (host->flags & ZBX_FLAG_LLD_HOST_UPDATE_TLS_PSK))
+				{
+					value_esc = DBdyn_escape_string(tls_psk);
+
+					zbx_snprintf_alloc(&sql1, &sql1_alloc, &sql1_offset,
+							"%stls_psk='%s'", d, value_esc);
+
+					zbx_free(value_esc);
 				}
 				zbx_snprintf_alloc(&sql1, &sql1_alloc, &sql1_offset, " where hostid=" ZBX_FS_UI64 ";\n",
 						host->hostid);
@@ -1803,15 +2145,15 @@ static void	lld_hosts_save(zbx_uint64_t parent_hostid, zbx_vector_ptr_t *hosts, 
 
 			if (0 != (host->flags & ZBX_FLAG_LLD_HOST_UPDATE_HOST))
 			{
-				host_proto_esc = DBdyn_escape_string(host_proto);
+				value_esc = DBdyn_escape_string(host_proto);
 
 				zbx_snprintf_alloc(&sql1, &sql1_alloc, &sql1_offset,
 						"update host_discovery"
 						" set host='%s'"
 						" where hostid=" ZBX_FS_UI64 ";\n",
-						host_proto_esc, host->hostid);
+						value_esc, host->hostid);
 
-				zbx_free(host_proto_esc);
+				zbx_free(value_esc);
 			}
 		}
 
@@ -1825,7 +2167,7 @@ static void	lld_hosts_save(zbx_uint64_t parent_hostid, zbx_vector_ptr_t *hosts, 
 
 				zbx_db_insert_add_values(&db_insert_interface, interface->interfaceid, host->hostid,
 						(int)interface->type, (int)interface->main, (int)interface->useip,
-						interface->ip, interface->dns, interface->port);
+						interface->ip, interface->dns, interface->port, (int)interface->bulk);
 
 				zbx_db_insert_add_values(&db_insert_idiscovery, interface->interfaceid,
 						interface->parent_interfaceid);
@@ -1855,24 +2197,30 @@ static void	lld_hosts_save(zbx_uint64_t parent_hostid, zbx_vector_ptr_t *hosts, 
 				}
 				if (0 != (interface->flags & ZBX_FLAG_LLD_INTERFACE_UPDATE_IP))
 				{
-					ip_esc = DBdyn_escape_string(interface->ip);
-					zbx_snprintf_alloc(&sql1, &sql1_alloc, &sql1_offset, "%sip='%s'", d, ip_esc);
-					zbx_free(ip_esc);
+					value_esc = DBdyn_escape_string(interface->ip);
+					zbx_snprintf_alloc(&sql1, &sql1_alloc, &sql1_offset, "%sip='%s'", d, value_esc);
+					zbx_free(value_esc);
 					d = ",";
 				}
 				if (0 != (interface->flags & ZBX_FLAG_LLD_INTERFACE_UPDATE_DNS))
 				{
-					dns_esc = DBdyn_escape_string(interface->dns);
-					zbx_snprintf_alloc(&sql1, &sql1_alloc, &sql1_offset, "%sdns='%s'", d, dns_esc);
-					zbx_free(dns_esc);
+					value_esc = DBdyn_escape_string(interface->dns);
+					zbx_snprintf_alloc(&sql1, &sql1_alloc, &sql1_offset, "%sdns='%s'", d, value_esc);
+					zbx_free(value_esc);
 					d = ",";
 				}
 				if (0 != (interface->flags & ZBX_FLAG_LLD_INTERFACE_UPDATE_PORT))
 				{
-					port_esc = DBdyn_escape_string(interface->port);
+					value_esc = DBdyn_escape_string(interface->port);
 					zbx_snprintf_alloc(&sql1, &sql1_alloc, &sql1_offset, "%sport='%s'",
-							d, port_esc);
-					zbx_free(port_esc);
+							d, value_esc);
+					zbx_free(value_esc);
+					d = ",";
+				}
+				if (0 != (interface->flags & ZBX_FLAG_LLD_INTERFACE_UPDATE_BULK))
+				{
+					zbx_snprintf_alloc(&sql1, &sql1_alloc, &sql1_offset, "%sbulk=%d",
+							d, (int)interface->bulk);
 				}
 				zbx_snprintf_alloc(&sql1, &sql1_alloc, &sql1_offset,
 						" where interfaceid=" ZBX_FS_UI64 ";\n", interface->interfaceid);
@@ -2264,7 +2612,7 @@ static void	lld_interfaces_get(zbx_uint64_t lld_ruleid, zbx_vector_ptr_t *interf
 	zbx_lld_interface_t	*interface;
 
 	result = DBselect(
-			"select hi.interfaceid,hi.type,hi.main,hi.useip,hi.ip,hi.dns,hi.port"
+			"select hi.interfaceid,hi.type,hi.main,hi.useip,hi.ip,hi.dns,hi.port,hi.bulk"
 			" from interface hi,items i"
 			" where hi.hostid=i.hostid"
 				" and i.itemid=" ZBX_FS_UI64,
@@ -2281,6 +2629,7 @@ static void	lld_interfaces_get(zbx_uint64_t lld_ruleid, zbx_vector_ptr_t *interf
 		interface->ip = zbx_strdup(NULL, row[4]);
 		interface->dns = zbx_strdup(NULL, row[5]);
 		interface->port = zbx_strdup(NULL, row[6]);
+		interface->bulk = (unsigned char)atoi(row[7]);
 
 		zbx_vector_ptr_append(interfaces, interface);
 	}
@@ -2296,9 +2645,9 @@ static void	lld_interfaces_get(zbx_uint64_t lld_ruleid, zbx_vector_ptr_t *interf
  ******************************************************************************/
 static void	lld_interface_make(zbx_vector_ptr_t *interfaces, zbx_uint64_t parent_interfaceid,
 		zbx_uint64_t interfaceid, unsigned char type, unsigned char main, unsigned char useip, const char *ip,
-		const char *dns, const char *port)
+		const char *dns, const char *port, unsigned char bulk)
 {
-	zbx_lld_interface_t	*interface;
+	zbx_lld_interface_t	*interface = NULL;
 	int			i;
 
 	for (i = 0; i < interfaces->values_num; i++)
@@ -2325,6 +2674,7 @@ static void	lld_interface_make(zbx_vector_ptr_t *interfaces, zbx_uint64_t parent
 		interface->ip = NULL;
 		interface->dns = NULL;
 		interface->port = NULL;
+		interface->bulk = SNMP_BULK_ENABLED;
 		interface->flags = ZBX_FLAG_LLD_INTERFACE_REMOVE;
 
 		zbx_vector_ptr_append(interfaces, interface);
@@ -2350,6 +2700,8 @@ static void	lld_interface_make(zbx_vector_ptr_t *interfaces, zbx_uint64_t parent
 			interface->flags |= ZBX_FLAG_LLD_INTERFACE_UPDATE_DNS;
 		if (0 != strcmp(interface->port, port))
 			interface->flags |= ZBX_FLAG_LLD_INTERFACE_UPDATE_PORT;
+		if (interface->bulk != bulk)
+			interface->flags |= ZBX_FLAG_LLD_INTERFACE_UPDATE_BULK;
 	}
 
 	interface->interfaceid = interfaceid;
@@ -2403,6 +2755,7 @@ static void	lld_interfaces_make(const zbx_vector_ptr_t *interfaces, zbx_vector_p
 			new_interface->ip = zbx_strdup(NULL, interface->ip);
 			new_interface->dns = zbx_strdup(NULL, interface->dns);
 			new_interface->port = zbx_strdup(NULL, interface->port);
+			new_interface->bulk = interface->bulk;
 			new_interface->flags = 0x00;
 
 			zbx_vector_ptr_append(&host->interfaces, new_interface);
@@ -2419,7 +2772,7 @@ static void	lld_interfaces_make(const zbx_vector_ptr_t *interfaces, zbx_vector_p
 
 		zbx_strcpy_alloc(&sql, &sql_alloc, &sql_offset,
 				"select hi.hostid,id.parent_interfaceid,hi.interfaceid,hi.type,hi.main,hi.useip,hi.ip,"
-					"hi.dns,hi.port"
+					"hi.dns,hi.port,hi.bulk"
 				" from interface hi"
 					" left join interface_discovery id"
 						" on hi.interfaceid=id.interfaceid"
@@ -2446,7 +2799,8 @@ static void	lld_interfaces_make(const zbx_vector_ptr_t *interfaces, zbx_vector_p
 
 			lld_interface_make(&host->interfaces, parent_interfaceid, interfaceid,
 					(unsigned char)atoi(row[3]), (unsigned char)atoi(row[4]),
-					(unsigned char)atoi(row[5]), row[6], row[7], row[8]);
+					(unsigned char)atoi(row[5]), row[6], row[7], row[8],
+					(unsigned char)atoi(row[9]));
 		}
 		DBfree_result(result);
 	}
@@ -2586,7 +2940,7 @@ static void	lld_interfaces_validate(zbx_vector_ptr_t *hosts, char **error)
 
 	/* validate interfaces which should be deleted */
 
-	interfaceids.values_num = 0;
+	zbx_vector_uint64_clear(&interfaceids);
 
 	for (i = 0; i < hosts->values_num; i++)
 	{
@@ -2689,14 +3043,16 @@ void	lld_update_hosts(zbx_uint64_t lld_ruleid, zbx_vector_ptr_t *lld_rows, char 
 	zbx_vector_uint64_t	del_hostgroupids;	/* list of host groups which should be deleted */
 	zbx_vector_uint64_t	del_hostmacroids;	/* list of host macros which should be deleted */
 	zbx_uint64_t		proxy_hostid;
-	char			*ipmi_username = NULL, *ipmi_password;
+	char			*ipmi_username = NULL, *ipmi_password, *tls_issuer, *tls_subject, *tls_psk_identity,
+				*tls_psk;
 	char			ipmi_authtype, inventory_mode;
-	unsigned char		ipmi_privilege;
+	unsigned char		ipmi_privilege, tls_connect, tls_accept;
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __function_name);
 
 	result = DBselect(
-			"select h.proxy_hostid,h.ipmi_authtype,h.ipmi_privilege,h.ipmi_username,h.ipmi_password"
+			"select h.proxy_hostid,h.ipmi_authtype,h.ipmi_privilege,h.ipmi_username,h.ipmi_password,"
+				"h.tls_connect,h.tls_accept,h.tls_issuer,h.tls_subject,h.tls_psk_identity,h.tls_psk"
 			" from hosts h,items i"
 			" where h.hostid=i.hostid"
 				" and i.itemid=" ZBX_FS_UI64,
@@ -2706,9 +3062,16 @@ void	lld_update_hosts(zbx_uint64_t lld_ruleid, zbx_vector_ptr_t *lld_rows, char 
 	{
 		ZBX_DBROW2UINT64(proxy_hostid, row[0]);
 		ipmi_authtype = (char)atoi(row[1]);
-		ipmi_privilege = (unsigned char)atoi(row[2]);
+		ZBX_STR2UCHAR(ipmi_privilege, row[2]);
 		ipmi_username = zbx_strdup(NULL, row[3]);
 		ipmi_password = zbx_strdup(NULL, row[4]);
+
+		ZBX_STR2UCHAR(tls_connect, row[5]);
+		ZBX_STR2UCHAR(tls_accept, row[6]);
+		tls_issuer = zbx_strdup(NULL, row[7]);
+		tls_subject = zbx_strdup(NULL, row[8]);
+		tls_psk_identity = zbx_strdup(NULL, row[9]);
+		tls_psk = zbx_strdup(NULL, row[10]);
 	}
 	DBfree_result(result);
 
@@ -2758,7 +3121,8 @@ void	lld_update_hosts(zbx_uint64_t lld_ruleid, zbx_vector_ptr_t *lld_rows, char 
 			inventory_mode = (char)atoi(row[4]);
 
 		lld_hosts_get(parent_hostid, &hosts, proxy_hostid, ipmi_authtype, ipmi_privilege, ipmi_username,
-				ipmi_password, inventory_mode);
+				ipmi_password, tls_connect, tls_accept, tls_issuer, tls_subject,
+				tls_psk_identity, tls_psk);
 
 		lld_simple_groups_get(parent_hostid, &groupids);
 
@@ -2787,7 +3151,8 @@ void	lld_update_hosts(zbx_uint64_t lld_ruleid, zbx_vector_ptr_t *lld_rows, char 
 
 		lld_groups_save(&groups, &group_prototypes);
 		lld_hosts_save(parent_hostid, &hosts, host_proto, proxy_hostid, ipmi_authtype, ipmi_privilege,
-				ipmi_username, ipmi_password, status, inventory_mode, &del_hostgroupids,
+				ipmi_username, ipmi_password, status, inventory_mode, tls_connect, tls_accept,
+				tls_issuer, tls_subject, tls_psk_identity, tls_psk, &del_hostgroupids,
 				&del_hostmacroids);
 
 		/* linking of the templates */
@@ -2796,18 +3161,18 @@ void	lld_update_hosts(zbx_uint64_t lld_ruleid, zbx_vector_ptr_t *lld_rows, char 
 		lld_hosts_remove(&hosts, lifetime, lastcheck);
 		lld_groups_remove(&groups, lifetime, lastcheck);
 
-		zbx_vector_ptr_clean(&groups, (zbx_mem_free_func_t)lld_group_free);
-		zbx_vector_ptr_clean(&group_prototypes, (zbx_mem_free_func_t)lld_group_prototype_free);
-		zbx_vector_ptr_clean(&hosts, (zbx_mem_free_func_t)lld_host_free);
+		zbx_vector_ptr_clear_ext(&groups, (zbx_clean_func_t)lld_group_free);
+		zbx_vector_ptr_clear_ext(&group_prototypes, (zbx_clean_func_t)lld_group_prototype_free);
+		zbx_vector_ptr_clear_ext(&hosts, (zbx_clean_func_t)lld_host_free);
 
-		groupids.values_num = 0;
-		del_hostgroupids.values_num = 0;
-		del_hostmacroids.values_num = 0;
+		zbx_vector_uint64_clear(&groupids);
+		zbx_vector_uint64_clear(&del_hostgroupids);
+		zbx_vector_uint64_clear(&del_hostmacroids);
 	}
 	DBfree_result(result);
 
-	zbx_vector_ptr_clean(&hostmacros, (zbx_mem_free_func_t)lld_hostmacro_free);
-	zbx_vector_ptr_clean(&interfaces, (zbx_mem_free_func_t)lld_interface_free);
+	zbx_vector_ptr_clear_ext(&hostmacros, (zbx_clean_func_t)lld_hostmacro_free);
+	zbx_vector_ptr_clear_ext(&interfaces, (zbx_clean_func_t)lld_interface_free);
 
 	zbx_vector_ptr_destroy(&hostmacros);
 	zbx_vector_ptr_destroy(&interfaces);
@@ -2818,6 +3183,10 @@ void	lld_update_hosts(zbx_uint64_t lld_ruleid, zbx_vector_ptr_t *lld_rows, char 
 	zbx_vector_uint64_destroy(&groupids);
 	zbx_vector_ptr_destroy(&hosts);
 
+	zbx_free(tls_psk);
+	zbx_free(tls_psk_identity);
+	zbx_free(tls_subject);
+	zbx_free(tls_issuer);
 	zbx_free(ipmi_password);
 	zbx_free(ipmi_username);
 

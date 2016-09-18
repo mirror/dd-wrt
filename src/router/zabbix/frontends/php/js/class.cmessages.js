@@ -27,7 +27,7 @@ function initMessages(args) {
 	return messagesListId;
 }
 
-var CMessageList = Class.create(CDebug, {
+var CMessageList = Class.create({
 	messageListId:		0,		// reference id
 	updateFrequency:	60,		// seconds
 	timeoutFrequency:	10,		// seconds
@@ -37,6 +37,7 @@ var CMessageList = Class.create(CDebug, {
 	lastupdate:			0,		// lastupdate timestamp
 	msgcounter:			0,		// how many messages have been added
 	pipeLength:			15,		// how many messages to show
+	messages:			{},		// received messages
 	messageList:		{},		// list of received messages
 	messagePipe:		[],		// messageid pipe line
 	messageLast:		{},		// last message's sourceid by caption
@@ -50,23 +51,21 @@ var CMessageList = Class.create(CDebug, {
 		'timeout':	0
 	},
 
-	initialize: function($super, messagesListId, args) {
+	initialize: function(messagesListId, args) {
 		this.messageListId = messagesListId;
-		$super('CMessageList[' + messagesListId + ']');
 		this.dom = {};
+		this.messages = {};
 		this.messageList = {};
 		this.messageLast = {};
 		this.updateSettings();
 		this.createContainer();
 
-		addListener(this.dom.closeAll, 'click', this.closeAllMessages.bindAsEventListener(this));
-		addListener(this.dom.snooze, 'click', this.stopSound.bindAsEventListener(this));
-		addListener(this.dom.mute, 'click', this.mute.bindAsEventListener(this));
+		addListener(this.dom.container.close, 'click', this.closeAllMessages.bindAsEventListener(this));
+		addListener(this.dom.snooze.button, 'click', this.snooze.bindAsEventListener(this));
+		addListener(this.dom.mute.button, 'click', this.mute.bindAsEventListener(this));
 
 		jQuery(this.dom.container).draggable({
-			handle: this.dom.header,
-			axis: 'y',
-			containment: [0, 0, 0, 1600]
+			handle: this.dom.header
 		});
 	},
 
@@ -98,11 +97,10 @@ var CMessageList = Class.create(CDebug, {
 	},
 
 	setSettings: function(settings) {
-		this.debug('setSettings');
 		this.sounds.repeat = settings['sounds.repeat'];
 		this.sounds.mute = settings['sounds.mute'];
 		if (this.sounds.mute == 1) {
-			this.dom.mute.className = 'iconmute menu_icon shadow';
+			this.dom.mute.button.className = 'btn-sound-off';
 		}
 
 		if (settings.enabled != 1) {
@@ -114,20 +112,18 @@ var CMessageList = Class.create(CDebug, {
 	},
 
 	updateSettings: function() {
-		this.debug('updateSettings');
 		var rpcRequest = {
 			'method': 'message.settings',
 			'params': {},
 			'onSuccess': this.setSettings.bind(this),
 			'onFailure': function() {
-				zbx_throw('Messages Widget: settings request failed.');
+				throw('Messages Widget: settings request failed.');
 			}
 		};
 		new RPC.Call(rpcRequest);
 	},
 
 	addMessage: function(newMessage) {
-		this.debug('addMessage');
 		newMessage = newMessage || {};
 
 		while (isset(this.msgcounter, this.messageList)) {
@@ -155,44 +151,67 @@ var CMessageList = Class.create(CDebug, {
 		return this.messageList[this.msgcounter];
 	},
 
-	mute: function(e) {
-		this.debug('mute');
+	snooze: function(e) {
 		e = e || window.event;
 		var icon = Event.element(e);
-		var newClass = switchElementsClass(icon, 'iconmute', 'iconsound');
 
-		if (newClass == 'iconmute') {
+		if (jQuery(icon).hasClass('btn-alarm-on')) {
+			jQuery(icon).removeClass('btn-alarm-on');
+			jQuery(icon).addClass('btn-alarm-off');
+		}
+
+		icon.blur();
+
+		this.stopSound();
+	},
+
+	mute: function(e) {
+		e = e || window.event;
+		var icon = Event.element(e),
+			newClass = switchElementClass(icon, 'btn-sound-off', 'btn-sound-on');
+
+		icon.blur();
+
+		if (newClass == 'btn-sound-off') {
 			var action = 'message.mute';
 			this.sounds.mute = 1;
+
+			this.stopSound();
 		}
 		else {
 			var action = 'message.unmute';
 			this.sounds.mute = 0;
+
+			this.playSound();
 		}
 
 		var rpcRequest = {
 			'method': action,
 			'params': {},
 			'onFailure': function() {
-				zbx_throw('Messages Widget: mute request failed.');
+				throw('Messages Widget: mute request failed.');
 			}
 		};
 		new RPC.Call(rpcRequest);
-		this.stopSound(e);
 	},
 
-	playSound: function(messages) {
-		this.debug('playSound');
+	playSound: function() {
+		if (jQuery(this.dom.snooze.button).hasClass('btn-alarm-off')) {
+			jQuery(this.dom.snooze.button).removeClass('btn-alarm-off');
+			jQuery(this.dom.snooze.button).addClass('btn-alarm-on');
+		}
 
 		if (this.sounds.mute != 0) {
 			return true;
 		}
+
 		this.stopSound();
 		this.sounds.priority = 0;
 		this.sounds.sound = null;
 
-		for (var i = 0; i < messages.length; i++) {
-			var message = messages[i];
+		for (var i = 0; i < this.messages.length; i++) {
+			var message = this.messages[i];
+
 			if (message.type != 1 && message.type != 3) {
 				continue;
 			}
@@ -205,35 +224,33 @@ var CMessageList = Class.create(CDebug, {
 		}
 
 		this.ready = true;
-		if (!is_null(this.sounds.sound)) {
+
+		if (this.sounds.sound !== null) {
 			if (this.sounds.repeat == 1) {
-				AudioList.play(this.sounds.sound);
+				AudioControl.playOnce(this.sounds.sound);
 			}
-			else if (this.sounds.repeat > 1) {
-				AudioList.loop(this.sounds.sound, {'seconds': this.sounds.repeat});
+			else if (this.sounds.repeat > 0) {
+				AudioControl.playLoop(this.sounds.sound, this.sounds.repeat);
 			}
 			else {
-				AudioList.loop(this.sounds.sound, {'seconds': this.sounds.timeout});
+				AudioControl.playLoop(this.sounds.sound, this.sounds.timeout);
 			}
 		}
 	},
 
 	stopSound: function() {
-		this.debug('stopSound');
-
 		if (!is_null(this.sounds.sound)) {
-			AudioList.stop(this.sounds.sound);
+			AudioControl.stop();
 		}
 	},
 
 	closeMessage: function(messageid, withEffect) {
-		this.debug('closeMessage', messageid);
-
 		if (!isset(messageid, this.messageList)) {
 			return true;
 		}
 
-		AudioList.stop(this.messageList[messageid].sound);
+		AudioControl.stop();
+
 		if (withEffect) {
 			this.messageList[messageid].remove();
 		}
@@ -261,7 +278,6 @@ var CMessageList = Class.create(CDebug, {
 	},
 
 	closeAllMessages: function() {
-		this.debug('closeAllMessages');
 		var lastMessageId = this.messagePipe.pop();
 		var rpcRequest = {
 			'method': 'message.closeAll',
@@ -272,7 +288,7 @@ var CMessageList = Class.create(CDebug, {
 				'messageid': this.messageList[lastMessageId].messageid
 			},
 			'onFailure': function(resp) {
-				zbx_throw('Messages Widget: message request failed.');
+				throw('Messages Widget: message request failed.');
 			}
 		};
 
@@ -295,11 +311,10 @@ var CMessageList = Class.create(CDebug, {
 			count++;
 		}
 
-		this.stopSound();
+		AudioControl.stop();
 	},
 
 	timeoutMessages: function() {
-		this.debug('timeoutMessages');
 		var now = parseInt(new Date().getTime() / 1000);
 		var timeout = 0;
 
@@ -316,7 +331,6 @@ var CMessageList = Class.create(CDebug, {
 	},
 
 	getServerMessages: function() {
-		this.debug('getServerMessages');
 		var now = parseInt(new Date().getTime() / 1000);
 		if (!this.ready || ((this.lastupdate + this.updateFrequency) > now)) {
 			return true;
@@ -330,7 +344,7 @@ var CMessageList = Class.create(CDebug, {
 			},
 			'onSuccess': this.serverRespond.bind(this),
 			'onFailure': function() {
-				zbx_throw('Messages Widget: message request failed.');
+				throw('Messages Widget: message request failed.');
 			}
 		};
 		new RPC.Call(rpcRequest);
@@ -338,16 +352,16 @@ var CMessageList = Class.create(CDebug, {
 	},
 
 	serverRespond: function(messages) {
-		this.debug('serverRespond');
 		for (var i = 0; i < messages.length; i++) {
 			this.addMessage(messages[i]);
 		}
-		this.playSound(messages);
+
+		this.messages = messages;
+		this.playSound();
 		this.ready = true;
 	},
 
 	createContainer: function() {
-		this.debug('createContainer');
 		this.dom.container = $('zbx_messages');
 		if (!empty(this.dom.container)) {
 			return false;
@@ -358,77 +372,72 @@ var CMessageList = Class.create(CDebug, {
 			return false;
 		}
 
+		// container
 		this.dom.container = document.createElement('div');
 		doc_body.appendChild(this.dom.container);
 
-		// container
 		this.dom.container.setAttribute('id', 'zbx_messages');
-		this.dom.container.className = 'messagecontainer';
+		this.dom.container.className = 'overlay-dialogue notif';
+		this.dom.container.style.right = '0px';
+		this.dom.container.style.top = '126px';
 		$(this.dom.container).hide();
+
+		// close all
+		this.dom.container.close = document.createElement('button');
+		this.dom.container.close.setAttribute('title', locale['S_CLEAR']);
+		this.dom.container.close.className = 'overlay-close-btn';
+		this.dom.container.appendChild(this.dom.container.close);
 
 		// header
 		this.dom.header = document.createElement('div');
+		this.dom.header.className = 'dashbrd-widget-head cursor-move';
 		this.dom.container.appendChild(this.dom.header);
-		this.dom.header.className = 'header';
-
-		// text
-		this.dom.caption = document.createElement('h3');
-		this.dom.caption.className = 'headertext move';
-		this.dom.caption.appendChild(document.createTextNode(locale['S_MESSAGES']));
-		this.dom.header.appendChild(this.dom.caption);
 
 		// controls
-		this.dom.controls = document.createElement('div');
+		this.dom.controls = document.createElement('ul');
 		this.dom.header.appendChild(this.dom.controls);
-		this.dom.controls.className = 'controls';
-
-		// buttons list
-		this.dom.controlList = new CList().node;
-		this.dom.controls.appendChild(this.dom.controlList);
-		this.dom.controlList.style.cssFloat = 'right';
 
 		// snooze
-		this.dom.snooze = document.createElement('div');
-		this.dom.snooze.setAttribute('title', locale['S_SNOOZE']);
-		this.dom.snooze.className = 'iconsnooze menu_icon shadow';
-		this.dom.controlList.addItem(this.dom.snooze, 'linear');
+		this.dom.snooze = document.createElement('li');
+		this.dom.controls.appendChild(this.dom.snooze);
+
+		this.dom.snooze.button = document.createElement('button');
+		this.dom.snooze.button.setAttribute('title', locale['S_SNOOZE']);
+		this.dom.snooze.button.className = 'btn-alarm-on';
+		this.dom.snooze.appendChild(this.dom.snooze.button);
 
 		// mute
-		this.dom.mute = document.createElement('div');
-		this.dom.mute.setAttribute('title', locale['S_MUTE'] + '/' + locale['S_UNMUTE']);
-		this.dom.mute.className = 'iconsound menu_icon shadow';
-		this.dom.controlList.addItem(this.dom.mute, 'linear');
+		this.dom.mute = document.createElement('li');
+		this.dom.controls.appendChild(this.dom.mute);
 
-		// close all
-		this.dom.closeAll = document.createElement('div');
-		this.dom.closeAll.setAttribute('title', locale['S_CLEAR']);
-		this.dom.closeAll.className = 'iconclose menu_icon shadow';
-		this.dom.controlList.addItem(this.dom.closeAll, 'linear');
+		this.dom.mute.button = document.createElement('button');
+		this.dom.mute.button.setAttribute('title', locale['S_MUTE'] + '/' + locale['S_UNMUTE']);
+		this.dom.mute.button.className = 'btn-sound-on';
+		this.dom.mute.appendChild(this.dom.mute.button);
 
 		// message list
-		this.dom.list = new CList().node;
+		this.dom.list = new CList('notif-body').node;
 		this.dom.container.appendChild(this.dom.list);
 	}
 });
 
-var CMessage = Class.create(CDebug, {
-	list:		null,		// link to message list containing this message
-	messageid:	null,		// msg id
-	caption:	'unknown',	// msg caption (events, actions, infos.. e.t.c.)
-	sourceid:	null,		// caption + sourceid = identifier for server
-	type:		0,			// 1 - sound, 2 - text, 3 - sound & text, 4 - notdefined
-	priority:	0,			// msg priority ASC
-	sound:		null,		// msg sound
-	color:		'ffffff',	// msg color
-	time:		0,			// msg time arrival
-	title:		'No title',	// msg header
-	body:		['No text'],// msg details
-	timeout:	60,			// msg timeout
-	dom:		{},			// msg dom links
+var CMessage = Class.create({
+	list:			null,			// link to message list containing this message
+	messageid:		null,			// msg id
+	caption:		'unknown',		// msg caption (events, actions, infos.. e.t.c.)
+	sourceid:		null,			// caption + sourceid = identifier for server
+	type:			0,				// 1 - sound, 2 - text, 3 - sound & text, 4 - notdefined
+	priority:		0,				// msg priority ASC
+	sound:			null,			// msg sound
+	severity_style:	'normal-bg',	// msg severity style
+	time:			0,				// msg time arrival
+	title:			'No title',		// msg header
+	body:			['No text'],	// msg details
+	timeout:		60,				// msg timeout
+	dom:			{},				// msg dom links
 
-	initialize: function($super, messageList, message) {
+	initialize: function(messageList, message) {
 		this.messageid = message.messageid;
-		$super('CMessage[' + this.messageid + ']');
 		this.dom = {};
 		this.list = messageList;
 
@@ -447,54 +456,35 @@ var CMessage = Class.create(CDebug, {
 	},
 
 	close: function() {
-		this.debug('close');
 		$(this.dom.listItem).remove();
 		this.dom = {};
 	},
 
 	remove: function() {
-		this.debug('remove');
 		jQuery(this.dom.listItem).slideUp(this.list.effectTimeout);
 		jQuery(this.dom.listItem).fadeOut(this.list.effectTimeout);
 		setTimeout(this.close.bind(this), this.list.effectTimeout);
 	},
 
 	createMessage: function() {
-		this.debug('createMessage');
-
 		// message
 		this.dom.message = document.createElement('div');
-		this.dom.message.className = 'message';
-		this.dom.message.style.backgroundColor = '#' + this.color;
+		this.dom.message.className = 'notif-indic ' + this.severity_style;
 
 		// li
-		this.dom.listItem = new CListItem(this.dom.message, 'listItem').node;
+		this.dom.listItem = new CListItem(this.dom.message).node;
 		$(this.list.dom.list).insert({'top': this.dom.listItem});
 
-		// message box
-		this.dom.messageBox = document.createElement('div');
-		this.dom.message.appendChild(this.dom.messageBox);
-		this.dom.messageBox.className = 'messagebox';
-
 		// title
-		this.dom.title = document.createElement('span');
-		this.dom.messageBox.appendChild(this.dom.title);
+		this.dom.title = document.createElement('h4');
+		this.dom.listItem.appendChild(this.dom.title);
 		$(this.dom.title).update(BBCode.Parse(this.title));
-		this.dom.title.className = 'title';
 
 		// body
-		if (!is_array(this.body)) {
-			this.body = [this.body];
-		}
 		for (var i = 0; i < this.body.length; i++) {
-			if (!isset(i, this.body) || empty(this.body[i])) {
-				continue;
-			}
-			this.dom.messageBox.appendChild(document.createElement('br'));
-			this.dom.body = document.createElement('span');
-			this.dom.messageBox.appendChild(this.dom.body);
+			this.dom.body = document.createElement('p');
+			this.dom.listItem.appendChild(this.dom.body);
 			$(this.dom.body).update(BBCode.Parse(this.body[i]));
-			this.dom.body.className = 'body';
 		}
 	},
 
@@ -532,9 +522,10 @@ var CList = Class.create(CNode, {
 	items: [],
 
 	initialize: function($super, className) {
-		className = className || '';
 		$super('ul');
-		this.setClass(this.classNames);
+		if (!empty(className)) {
+			this.setClass(className);
+		}
 		Object.extend(this.node, this);
 	},
 
@@ -552,10 +543,11 @@ var CListItem = Class.create(CNode, {
 	items: [],
 
 	initialize: function($super, item, className) {
-		className = className || '';
 		item = item || null;
 		$super('li');
-		this.setClass(className);
+		if (!empty(className)) {
+			this.setClass(className);
+		}
 		this.addItem(item);
 	},
 

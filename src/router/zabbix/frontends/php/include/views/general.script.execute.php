@@ -19,17 +19,15 @@
 **/
 
 
-$scriptWidget = new CWidget();
-
-$scriptForm = new CForm();
-
-$scriptTab = new CTabView();
-$scriptTab->addTab('scriptTab', _s(
-	'Result of "%s"', $this->data['info']['name']),
-	new CSpan($this->data['message'], 'pre fixedfont')
-);
-$scriptForm->addItem($scriptTab);
-
-$scriptWidget->addItem($scriptForm);
-
-return $scriptWidget;
+return (new CWidget())
+	->setTitle($data['name'])
+	->addItem(
+		(new CForm())
+			->addItem(
+				(new CTabView())->addTab('scriptTab', null,
+					(new CPre(
+						(new CList([bold($data['command']), SPACE, $data['message']]))
+					))
+				)
+			)
+	);

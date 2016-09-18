@@ -19,11 +19,7 @@
 
 #include "common.h"
 #include "sysinfo.h"
-
-#ifdef HAVE_ZONE_H
-#	include "zone.h"
-#	include "utmpx.h"
-#endif
+#include "log.h"
 
 int	SYSTEM_BOOTTIME(AGENT_REQUEST *request, AGENT_RESULT *result)
 {
@@ -38,19 +34,36 @@ int	SYSTEM_BOOTTIME(AGENT_REQUEST *request, AGENT_RESULT *result)
 		kstat_named_t	*kn;
 
 		if (NULL == (kc = kstat_open()))
-			return ret;
-
-		if (NULL != (kp = kstat_lookup(kc, "unix", 0, "system_misc")))
 		{
-			if (-1 != kstat_read(kc, kp, 0))
-			{
-				if (NULL != (kn = (kstat_named_t *)kstat_data_lookup(kp, "boot_time")))
-				{
-					SET_UI64_RESULT(result, get_kstat_numeric_value(kn));
-					ret = SYSINFO_RET_OK;
-				}
-			}
+			SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot open kernel statistics facility: %s",
+					zbx_strerror(errno)));
+			return ret;
 		}
+
+		if (NULL == (kp = kstat_lookup(kc, "unix", 0, "system_misc")))
+		{
+			SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot look up in kernel statistics facility: %s",
+					zbx_strerror(errno)));
+			goto clean;
+		}
+
+		if (-1 == kstat_read(kc, kp, 0))
+		{
+			SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot read from kernel statistics facility: %s",
+					zbx_strerror(errno)));
+			goto clean;
+		}
+
+		if (NULL == (kn = (kstat_named_t *)kstat_data_lookup(kp, "boot_time")))
+		{
+			SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot look up data in kernel statistics facility:"
+					" %s", zbx_strerror(errno)));
+			goto clean;
+		}
+
+		SET_UI64_RESULT(result, get_kstat_numeric_value(kn));
+		ret = SYSINFO_RET_OK;
+clean:
 		kstat_close(kc);
 #ifdef HAVE_ZONE_H
 	}
@@ -67,12 +80,11 @@ int	SYSTEM_BOOTTIME(AGENT_REQUEST *request, AGENT_RESULT *result)
 			SET_UI64_RESULT(result, utmpx->ut_xtime);
 			ret = SYSINFO_RET_OK;
 		}
+		else
+			SET_MSG_RESULT(result, zbx_strdup(NULL, "Cannot obtain system boot time."));
 
 		endutxent();
 	}
 #endif
-	if (SYSINFO_RET_OK != ret)
-		SET_MSG_RESULT(result, zbx_strdup(NULL, "Cannot obtain system boot time."));
-
 	return ret;
 }

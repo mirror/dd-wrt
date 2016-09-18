@@ -18,15 +18,18 @@
 **/
 
 
-// jQuery no conflict
-if (typeof(jQuery) != 'undefined') {
-	jQuery.noConflict();
-}
+jQuery.noConflict();
 
 function isset(key, obj) {
 	return (is_null(key) || is_null(obj)) ? false : (typeof(obj[key]) != 'undefined');
 }
 
+/**
+ * @deprecated  use strict comparison instead
+ *
+ * @param obj
+ * @returns {*}
+ */
 function empty(obj) {
 	if (is_null(obj)) {
 		return true;
@@ -44,6 +47,12 @@ function empty(obj) {
 	return is_array(obj) && obj.length == 0;
 }
 
+/**
+ * @deprecated use === null instead
+ *
+ * @param obj
+ * @returns {boolean}
+ */
 function is_null(obj) {
 	return (obj == null);
 }
@@ -73,58 +82,6 @@ function is_string(obj) {
 
 function is_array(obj) {
 	return (obj != null) && (typeof obj == 'object') && ('splice' in obj) && ('join' in obj);
-}
-
-function SDI(msg) {
-	if (GK || WK) {
-		console.log(msg);
-		return true;
-	}
-
-	var div_help = document.getElementById('div_help');
-
-	if (typeof(div_help) == 'undefined' || empty(div_help)) {
-		var div_help = document.createElement('div');
-		var doc_body = document.getElementsByTagName('body')[0];
-
-		if (empty(doc_body)) {
-			return false;
-		}
-
-		doc_body.appendChild(div_help);
-		div_help.setAttribute('id', 'div_help');
-		div_help.setAttribute('style', 'position: absolute; left: 10px; top: 100px; border: 1px red solid; width: 400px; height: 400px; background-color: white; font-size: 12px; overflow: auto; z-index: 20;');
-	}
-
-	var pre = document.createElement('pre');
-	pre.appendChild(document.createTextNode(msg));
-	div_help.appendChild(document.createTextNode('DEBUG INFO: '));
-	div_help.appendChild(document.createElement('br'));
-	div_help.appendChild(pre);
-	div_help.appendChild(document.createElement('br'));
-	div_help.appendChild(document.createElement('br'));
-	div_help.scrollTop = div_help.scrollHeight;
-
-	return true;
-}
-
-function SDJ(obj, name) {
-	if (GK || WK) {
-		console.dir(obj);
-		return true;
-	}
-
-	var debug = '';
-	name = name || 'none';
-
-	for (var key in obj) {
-		if (typeof(obj[key]) == name) {
-			continue;
-		}
-		debug += key + ': ' + obj[key] + ' (' + typeof(obj[key]) + ')' + '\n';
-	}
-
-	SDI(debug);
 }
 
 function addListener(element, eventname, expression, bubbling) {
@@ -166,10 +123,9 @@ function cancelEvent(e) {
 		e = window.event;
 	}
 
-	if (!IE8) {
-		e.stopPropagation();
-		e.preventDefault();
-	}
+	e.stopPropagation();
+	e.preventDefault();
+
 	if (IE) {
 		e.cancelBubble = true;
 		e.returnValue = false;
@@ -215,10 +171,12 @@ function add_variable(o_el, s_name, x_value, s_formname, o_document) {
 }
 
 function checkAll(form_name, chkMain, shkName) {
-	var frmForm = document.forms[form_name];
-	var value = frmForm.elements[chkMain].checked;
+	var frmForm = document.forms[form_name],
+		value = frmForm.elements[chkMain].checked;
 
-	chkbxRange.checkAll(shkName, value);
+	chkbxRange.checkObjectAll(shkName, value);
+	chkbxRange.update(shkName);
+	chkbxRange.saveCookies(shkName);
 
 	return true;
 }
@@ -236,51 +194,13 @@ function checkLocalAll(form_name, chkMain, chkName) {
 	return true;
 }
 
-function clearAllForm(form) {
-	form = $(form);
-
-	var inputs = form.getElementsByTagName('input');
-	for (var i = 0; i < inputs.length; i++) {
-		var type = inputs[i].getAttribute('type');
-		switch (type) {
-			case 'button':
-			case 'hidden':
-			case 'submit':
-				break;
-			case 'checkbox':
-				jQuery(inputs[i]).prop('checked', false).trigger('change');
-				break;
-			case 'text':
-			case 'password':
-			default:
-				jQuery(inputs[i]).val('').trigger('change');
-		}
-	}
-
-	var selects = form.getElementsByTagName('select');
-	for (var i = 0; i < selects.length; i++) {
-		jQuery(selects[i]).val(null).trigger('change');
-	}
-
-	var areas = form.getElementsByTagName('textarea');
-	for (var i = 0; i < areas.length; i++) {
-		jQuery(areas[i]).val('').trigger('change');
-	}
-
-	jQuery('.multiselect').each(function() {
-		jQuery(this).multiSelect.clean(jQuery(this).attr('id'));
-	});
-
-	return true;
-}
-
 function close_window() {
 	window.setTimeout('window.close();', 500); // solve bug for Internet Explorer
 	return false;
 }
 
 function Confirm(msg) {
-	return confirm(msg, 'title');
+	return confirm(msg);
 }
 
 function create_var(form_name, var_name, var_value, doSubmit) {
@@ -363,18 +283,6 @@ function getDimensions(obj, trueSide) {
 	return dim;
 }
 
-function getParent(obj, name) {
-	if (obj.parentNode.nodeName.toLowerCase() == name.toLowerCase()) {
-		return obj.parentNode;
-	}
-	else if (obj.parentNode.nodeName.toLowerCase() == 'body') {
-		return null;
-	}
-	else {
-		return getParent(obj.parentNode, name);
-	}
-}
-
 function getPosition(obj) {
 	obj = $(obj);
 	var pos = {top: 0, left: 0};
@@ -447,18 +355,6 @@ function get_scroll_pos() {
 	return [scrOfX, scrOfY];
 }
 
-function insertInElement(element_name, text, tagName) {
-	var elems = (IE)
-		? $$(tagName + '[name=' + element_name + ']')
-		: document.getElementsByName(element_name);
-
-	for (var key = 0; key < elems.length; key++) {
-		if (typeof(elems[key]) != 'undefined' && !is_null(elems[key])) {
-			$(elems[key]).update(text);
-		}
-	}
-}
-
 function openWinCentered(url, name, width, height, params) {
 	var top = Math.ceil((screen.height - height) / 2),
 		left = Math.ceil((screen.width - width) / 2);
@@ -475,10 +371,10 @@ function openWinCentered(url, name, width, height, params) {
 
 function PopUp(url, width, height, form_name) {
 	if (!width) {
-		width = 720;
+		width = 1024;
 	}
 	if (!height) {
-		height = 480;
+		height = 768;
 	}
 	if (!form_name) {
 		form_name = 'zbx_popup';
@@ -493,7 +389,7 @@ function PopUp(url, width, height, form_name) {
 	return false;
 }
 
-function redirect(uri, method, needle) {
+function redirect(uri, method, needle, invert_needle) {
 	method = method || 'get';
 	var url = new Curl(uri);
 
@@ -508,12 +404,17 @@ function redirect(uri, method, needle) {
 		domBody.appendChild(postForm);
 		postForm.setAttribute('method', 'post');
 
+		invert_needle = (typeof(invert_needle) != 'undefined' && invert_needle);
+
 		var args = url.getArguments();
 		for (var key in args) {
 			if (empty(args[key])) {
 				continue;
 			}
-			if (typeof(needle) != 'undefined' && key.indexOf(needle) > -1) {
+
+			var is_needle = (typeof(needle) != 'undefined' && key.indexOf(needle) > -1);
+
+			if ((is_needle && !invert_needle) || (!is_needle && invert_needle)) {
 				action += '&' + key + '=' + args[key];
 				continue;
 			}
@@ -532,24 +433,12 @@ function redirect(uri, method, needle) {
 	return false;
 }
 
-function showHide(obj, style) {
-	if (typeof(style) == 'undefined') {
-		style = 'inline';
-	}
-	if (is_string(obj)) {
-		obj = document.getElementById(obj);
-	}
-	if (!obj) {
-		throw 'showHide(): Object not found.';
-	}
-
-	if (obj.style.display != 'none') {
-		obj.style.display = 'none';
-		return 0;
+function showHide(obj) {
+	if (jQuery(obj).is(':hidden')) {
+		jQuery(obj).css('display', 'block');
 	}
 	else {
-		obj.style.display = style;
-		return 1;
+		jQuery(obj).css('display', 'none');
 	}
 }
 
@@ -586,38 +475,38 @@ function showHideByName(name, style) {
 	}
 }
 
-function switchElementsClass(obj, class1, class2) {
-	obj = $(obj);
-	if (!obj) {
-		return false;
+/**
+ * Switch element classes and return final class.
+ *
+ * @param object|string obj			object or object id
+ * @param string        class1
+ * @param string        class2
+ *
+ * @return string
+ */
+function switchElementClass(obj, class1, class2) {
+	obj = (typeof obj === 'string') ? jQuery('#' + obj) : jQuery(obj);
+
+	if (obj.length > 0) {
+		if (obj.hasClass(class1)) {
+			obj.removeClass(class1);
+			obj.addClass(class2);
+
+			return class2;
+		}
+		else if (obj.hasClass(class2)) {
+			obj.removeClass(class2);
+			obj.addClass(class1);
+
+			return class1;
+		}
 	}
 
-	var result = false;
-
-	if (obj.hasClassName(class1)) {
-		obj.removeClassName(class1);
-		obj.className = class2 + ' ' + obj.className;
-		result = class2;
-	}
-	else if (obj.hasClassName(class2)) {
-		obj.removeClassName(class2);
-		obj.className =  class1 + ' ' + obj.className;
-		result = class1;
-	}
-	else {
-		obj.className = class1 + ' ' + obj.className;
-		result = class1;
-	}
-
-	return result;
-}
-
-function zbx_throw(msg) {
-	throw(msg);
+	return null;
 }
 
 /**
- * Returns the file name of the given path
+ * Returns the file name of the given path.
  *
  * @param string path
  * @param string suffix
@@ -627,9 +516,35 @@ function zbx_throw(msg) {
 function basename(path, suffix) {
 	var name = path.replace(/^.*[\/\\]/g, '');
 
-	if (typeof(suffix) == 'string' && name.substr(name.length - suffix.length) == suffix) {
+	if (typeof suffix === 'string' && name.substr(name.length - suffix.length) == suffix) {
 		name = name.substr(0, name.length - suffix.length);
 	}
 
 	return name;
 }
+
+/**
+ * Transform datetime parts to two digits e.g., 2 becomes 02.
+ *
+ * @param int val
+ *
+ * @return string
+ */
+function appendZero(val) {
+	return val < 10 ? '0' + val : val;
+}
+
+/**
+ * Trims selected element values.
+ *
+ * @param array selectors
+ */
+jQuery.fn.trimValues = function(selectors) {
+	var form = this,
+		obj;
+
+	jQuery.each(selectors, function(i, value) {
+		obj = jQuery(value, form);
+		obj.val(jQuery.trim(obj.val()));
+	});
+};

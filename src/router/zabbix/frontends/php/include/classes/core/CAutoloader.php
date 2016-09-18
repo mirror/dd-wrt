@@ -29,7 +29,7 @@ class CAutoloader {
 	 *
 	 * @var array
 	 */
-	protected $includePaths = array();
+	protected $includePaths = [];
 
 	/**
 	 * Initializes object with array of include paths.
@@ -46,7 +46,7 @@ class CAutoloader {
 	 * @return bool
 	 */
 	public function register() {
-		return spl_autoload_register(array($this, 'loadClass'));
+		return spl_autoload_register([$this, 'loadClass']);
 	}
 
 	/**
@@ -68,25 +68,14 @@ class CAutoloader {
 	 * @return bool|string
 	 */
 	protected function findClassFile($className) {
-		$foundFile = false;
-
 		foreach ($this->includePaths as $includePath) {
 			$filePath = $includePath.'/'.$className.'.php';
 
 			if (is_file($filePath)) {
-				$foundFile = $filePath;
-				break;
-			}
-			else {
-				// fallback to old class names
-				$filePath = $includePath.'/class.'.strtolower($className).'.php';
-				if (is_file($filePath)) {
-					$foundFile = $filePath;
-					break;
-				}
+				return $filePath;
 			}
 		}
 
-		return $foundFile;
+		return false;
 	}
 }

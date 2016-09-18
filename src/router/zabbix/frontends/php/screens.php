@@ -26,151 +26,121 @@ require_once dirname(__FILE__).'/include/blocks.inc.php';
 
 $page['title'] = _('Custom screens');
 $page['file'] = 'screens.php';
-$page['hist_arg'] = array('elementid', 'screenname');
-$page['scripts'] = array('class.calendar.js', 'gtlc.js', 'flickerfreescreen.js');
+$page['scripts'] = ['class.calendar.js', 'gtlc.js', 'flickerfreescreen.js'];
 $page['type'] = detect_page_type(PAGE_TYPE_HTML);
 
 define('ZBX_PAGE_DO_JS_REFRESH', 1);
 
+ob_start();
 require_once dirname(__FILE__).'/include/page_header.php';
 
 // VAR	TYPE	OPTIONAL	FLAGS	VALIDATION	EXCEPTION
-$fields = array(
-	'groupid' =>	array(T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		null),
-	'hostid' =>		array(T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		null),
-	'tr_groupid' =>	array(T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		null),
-	'tr_hostid' =>	array(T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		null),
-	'elementid' =>	array(T_ZBX_INT, O_OPT, P_SYS|P_NZERO, DB_ID, null),
-	'screenname' =>	array(T_ZBX_STR, O_OPT, P_SYS,	null,		null),
-	'step' =>		array(T_ZBX_INT, O_OPT, P_SYS,	BETWEEN(0, 65535), null),
-	'period' =>		array(T_ZBX_INT, O_OPT, P_SYS,	null,		null),
-	'stime' =>		array(T_ZBX_STR, O_OPT, P_SYS,	null,		null),
-	'reset' =>		array(T_ZBX_STR, O_OPT, P_SYS,	IN("'reset'"), null),
-	'fullscreen' =>	array(T_ZBX_INT, O_OPT, P_SYS,	IN('0,1'), null),
+$fields = [
+	'groupid' =>	[T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		null],
+	'hostid' =>		[T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		null],
+	'tr_groupid' =>	[T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		null],
+	'tr_hostid' =>	[T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		null],
+	'elementid' =>	[T_ZBX_INT, O_OPT, P_SYS|P_NZERO, DB_ID, null],
+	'screenname' =>	[T_ZBX_STR, O_OPT, P_SYS,	null,		null],
+	'step' =>		[T_ZBX_INT, O_OPT, P_SYS,	BETWEEN(0, 65535), null],
+	'period' =>		[T_ZBX_INT, O_OPT, P_SYS,	null,		null],
+	'stime' =>		[T_ZBX_STR, O_OPT, P_SYS,	null,		null],
+	'reset' =>		[T_ZBX_STR, O_OPT, P_SYS,	IN('"reset"'), null],
+	'fullscreen' =>	[T_ZBX_INT, O_OPT, P_SYS,	IN('0,1'), null],
 	// ajax
-	'favobj' =>		array(T_ZBX_STR, O_OPT, P_ACT,	null,		null),
-	'favref' =>		array(T_ZBX_STR, O_OPT, P_ACT,	NOT_EMPTY,	null),
-	'favid' =>		array(T_ZBX_INT, O_OPT, P_ACT,	null,		null),
-	'favaction' =>	array(T_ZBX_STR, O_OPT, P_ACT,	IN("'add','remove','flop'"), null),
-	'favstate' =>	array(T_ZBX_INT, O_OPT, P_ACT,	NOT_EMPTY,	null)
-);
+	'favobj' =>		[T_ZBX_STR, O_OPT, P_ACT,	null,		null],
+	'favid' =>		[T_ZBX_INT, O_OPT, P_ACT,	null,		null]
+];
 check_fields($fields);
 
 /*
  * Permissions
  */
-// validate group IDs
-$validateGroupIds = array_filter(array(
-	get_request('groupid'),
-	get_request('tr_groupid')
-));
-if ($validateGroupIds && !API::HostGroup()->isReadable($validateGroupIds)) {
+// Validate group IDs.
+$validate_groupids = array_filter([
+	getRequest('groupid'),
+	getRequest('tr_groupid')
+]);
+if ($validate_groupids && !API::HostGroup()->isReadable($validate_groupids)) {
 	access_deny();
 }
 
-// validate host IDs
-$validateHostIds = array_filter(array(
-	get_request('hostid'),
-	get_request('tr_hostid')
-));
-if ($validateHostIds && !API::Host()->isReadable($validateHostIds)) {
+// Validate host IDs.
+$validate_hostids = array_filter([
+	getRequest('hostid'),
+	getRequest('tr_hostid')
+]);
+if ($validate_hostids && !API::Host()->isReadable($validate_hostids)) {
 	access_deny();
 }
-
-if (get_request('elementid')) {
-	$screens = API::Screen()->get(array(
-		'screenids' => array($_REQUEST['elementid']),
-		'output' => array('screenid')
-	));
-	if (!$screens) {
-		access_deny();
-	}
-}
-
 
 /*
  * Filter
  */
 if (isset($_REQUEST['favobj'])) {
-	if ($_REQUEST['favobj'] == 'filter') {
-		CProfile::update('web.screens.filter.state', $_REQUEST['favstate'], PROFILE_TYPE_INT);
-	}
-
-	if ($_REQUEST['favobj'] == 'timeline') {
-		if (isset($_REQUEST['elementid']) && isset($_REQUEST['period'])) {
-			navigation_bar_calc('web.screens', $_REQUEST['elementid'], true);
-		}
-	}
-
-	if (str_in_array($_REQUEST['favobj'], array('screenid', 'slideshowid'))) {
-		$result = false;
-		if ($_REQUEST['favaction'] == 'add') {
-			$result = CFavorite::add('web.favorite.screenids', $_REQUEST['favid'], $_REQUEST['favobj']);
-			if ($result) {
-				echo '$("addrm_fav").title = "'._('Remove from favourites').'";'."\n".
-					'$("addrm_fav").onclick = function() { rm4favorites("'.$_REQUEST['favobj'].'", "'.$_REQUEST['favid'].'", 0); }'."\n";
-			}
-		}
-		elseif ($_REQUEST['favaction'] == 'remove') {
-			$result = CFavorite::remove('web.favorite.screenids', $_REQUEST['favid'], $_REQUEST['favobj']);
-			if ($result) {
-				echo '$("addrm_fav").title = "'._('Add to favourites').'";'."\n".
-					'$("addrm_fav").onclick = function() { add2favorites("'.$_REQUEST['favobj'].'", "'.$_REQUEST['favid'].'"); }'."\n";
-			}
-		}
-
-		if ($page['type'] == PAGE_TYPE_JS && $result) {
-			echo 'switchElementsClass("addrm_fav", "iconminus", "iconplus");';
-		}
+	if (getRequest('favobj') === 'timeline' && hasRequest('elementid') && hasRequest('period')) {
+		navigation_bar_calc('web.screens', $_REQUEST['elementid'], true);
 	}
 
 	// saving fixed/dynamic setting to profile
-	if ($_REQUEST['favobj'] == 'timelinefixedperiod') {
-		if (isset($_REQUEST['favid'])) {
-			CProfile::update('web.screens.timelinefixed', $_REQUEST['favid'], PROFILE_TYPE_INT);
-		}
+	if ($_REQUEST['favobj'] == 'timelinefixedperiod' && isset($_REQUEST['favid'])) {
+		CProfile::update('web.screens.timelinefixed', $_REQUEST['favid'], PROFILE_TYPE_INT);
 	}
 }
 
 if ($page['type'] == PAGE_TYPE_JS || $page['type'] == PAGE_TYPE_HTML_BLOCK) {
 	require_once dirname(__FILE__).'/include/page_footer.php';
-	exit();
+	exit;
 }
 
 /*
  * Display
  */
-$data = array(
+$data = [
 	'fullscreen' => $_REQUEST['fullscreen'],
-	'period' => get_request('period'),
-	'stime' => get_request('stime'),
-	'elementid' => get_request('elementid', false),
+	'period' => getRequest('period'),
+	'stime' => getRequest('stime')
+];
 
-	// whether we should use screen name to fetch a screen (if this is false, elementid is used)
-	'use_screen_name' => isset($_REQUEST['screenname'])
-);
+$options = [
+	'output' => ['screenid', 'name']
+];
 
-// if none is provided
-if (empty($data['elementid']) && !$data['use_screen_name']) {
-	// get element id saved in profile from the last visit
-	$data['elementid'] = CProfile::get('web.screens.elementid', null);
+if (getRequest('elementid')) {
+	$options['screenids'] = getRequest('elementid');
+	CProfile::update('web.screens.elementid', getRequest('elementid') , PROFILE_TYPE_ID);
 }
-
-$data['screens'] = API::Screen()->get(array(
-	'nodeids' => get_current_nodeid(),
-	'output' => array('screenid', 'name')
-));
-
-// if screen name is provided it takes priority over elementid
-if ($data['use_screen_name']) {
-	$data['screens'] = zbx_toHash($data['screens'], 'name');
-	$data['elementIdentifier'] = get_request('screenname');
+elseif (hasRequest('screenname')) {
+	$options['filter']['name'] = getRequest('screenname');
+}
+elseif (CProfile::get('web.screens.elementid')) {
+	$options['screenids'] = CProfile::get('web.screens.elementid');
 }
 else {
-	$data['screens'] = zbx_toHash($data['screens'], 'screenid');
-	$data['elementIdentifier'] = $data['elementid'];
+	// Redirect to screen list.
+	ob_end_clean();
+	redirect('screenconf.php');
 }
-order_result($data['screens'], 'name');
+
+$screens = API::Screen()->get($options);
+
+if (!$screens && (getRequest('elementid') || hasRequest('screenname'))) {
+	access_deny();
+}
+elseif (!$screens) {
+	// Redirect to screen list.
+	ob_end_clean();
+	redirect('screenconf.php');
+}
+else {
+	$data['screen'] = reset($screens);
+	$data['screen']['editable'] = (bool) API::Screen()->get([
+		'output' => [],
+		'screenids' => [$data['screen']['screenid']],
+		'editable' => true
+	]);
+}
+ob_end_flush();
 
 // render view
 $screenView = new CView('monitoring.screen', $data);

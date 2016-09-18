@@ -40,6 +40,8 @@ static size_t	WRITEFUNCTION2(void *ptr, size_t size, size_t nmemb, void *userdat
 {
 	size_t	r_size = size * nmemb;
 
+	ZBX_UNUSED(userdata);
+
 	/* first piece of data */
 	if (NULL == page.data)
 	{
@@ -55,6 +57,9 @@ static size_t	WRITEFUNCTION2(void *ptr, size_t size, size_t nmemb, void *userdat
 
 static size_t	HEADERFUNCTION2(void *ptr, size_t size, size_t nmemb, void *userdata)
 {
+	ZBX_UNUSED(ptr);
+	ZBX_UNUSED(userdata);
+
 	return size * nmemb;
 }
 
@@ -213,6 +218,16 @@ int	send_ez_texting(const char *username, const char *password, const char *send
 	{
 		zbx_snprintf(error, max_error_len, "Could not set cURL option %d: [%s]", opt, curl_easy_strerror(err));
 		goto clean;
+	}
+
+	if (NULL != CONFIG_SOURCE_IP)
+	{
+		if (CURLE_OK != (err = curl_easy_setopt(easy_handle, opt = CURLOPT_INTERFACE, CONFIG_SOURCE_IP)))
+		{
+			zbx_snprintf(error, max_error_len, "Could not set cURL option %d: [%s]",
+					opt, curl_easy_strerror(err));
+			goto clean;
+		}
 	}
 
 	if (CURLE_OK != (err = curl_easy_perform(easy_handle)))

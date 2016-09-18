@@ -21,40 +21,53 @@
 
 require_once dirname(__FILE__).'/js/administration.general.gui.php';
 
-$comboTheme = new CComboBox('default_theme', $this->data['config']['default_theme'], null, Z::getThemes());
+$widget = (new CWidget())
+	->setTitle(_('GUI'))
+	->setControls((new CForm())
+		->cleanItems()
+		->addItem((new CList())->addItem(makeAdministrationGeneralMenu('adm.gui.php')))
+	);
 
-$comboDdFirstEntry = new CComboBox('dropdown_first_entry', $this->data['config']['dropdown_first_entry']);
-$comboDdFirstEntry->addItem(ZBX_DROPDOWN_FIRST_NONE, _('None'));
-$comboDdFirstEntry->addItem(ZBX_DROPDOWN_FIRST_ALL, _('All'));
+$guiTab = (new CFormList())
+	->addRow(_('Default theme'), new CComboBox('default_theme', $data['default_theme'], null, Z::getThemes()))
+	->addRow(_('Dropdown first entry'), [
+		new CComboBox('dropdown_first_entry', $data['dropdown_first_entry'], null, [
+			ZBX_DROPDOWN_FIRST_NONE => _('None'),
+			ZBX_DROPDOWN_FIRST_ALL => _('All')
+		]),
+		(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
+		new CLabel([
+			(new CCheckBox('dropdown_first_remember'))->setChecked($data['dropdown_first_remember'] == 1),
+			_('remember selected')
+		], 'dropdown_first_remember')
+	])
+	->addRow(_('Limit for search and filter results'),
+		(new CNumericBox('search_limit', $data['search_limit'], 6))->setWidth(ZBX_TEXTAREA_NUMERIC_STANDARD_WIDTH)
+	)
+	->addRow(_('Max count of elements to show inside table cell'),
+		(new CNumericBox('max_in_table', $data['max_in_table'], 5))->setWidth(ZBX_TEXTAREA_NUMERIC_STANDARD_WIDTH)
+	)
+	->addRow(_('Enable event acknowledgement'),
+		(new CCheckBox('event_ack_enable'))->setChecked($data['event_ack_enable'] == 1)
+	)
+	->addRow(_('Show events not older than (in days)'),
+		(new CTextBox('event_expire', $data['event_expire']))->setWidth(ZBX_TEXTAREA_TINY_WIDTH)
+	)
+	->addRow(_('Max count of events per trigger to show'),
+		(new CTextBox('event_show_max', $data['event_show_max']))->setWidth(ZBX_TEXTAREA_TINY_WIDTH)
+	)
+	->addRow(_('Show warning if Zabbix server is down'),
+		(new CCheckBox('server_check_interval', SERVER_CHECK_INTERVAL))
+			->setChecked($data['server_check_interval'] == SERVER_CHECK_INTERVAL)
+	);
 
-$guiTab = new CFormList('scriptsTab');
-$guiTab->addRow(_('Default theme'), array($comboTheme));
-$guiTab->addRow(_('Dropdown first entry'), array(
-	$comboDdFirstEntry,
-	new CCheckBox('dropdown_first_remember', $this->data['config']['dropdown_first_remember'], null, 1),
-	_('remember selected')
-));
-$guiTab->addRow(_('Search/Filter elements limit'),
-	new CNumericBox('search_limit', $this->data['config']['search_limit'], 6));
-$guiTab->addRow(_('Max count of elements to show inside table cell'),
-	new CNumericBox('max_in_table', $this->data['config']['max_in_table'], 5));
-$guiTab->addRow(_('Enable event acknowledges'),
-	new CCheckBox('event_ack_enable', $this->data['config']['event_ack_enable'], null, 1));
-$guiTab->addRow(_('Show events not older than (in days)'),
-	new CTextBox('event_expire', $this->data['config']['event_expire'], 5));
-$guiTab->addRow(_('Max count of events per trigger to show'),
-	new CTextBox('event_show_max', $this->data['config']['event_show_max'], 5));
-$guiTab->addRow(_('Show warning if Zabbix server is down'),
-	new CCheckBox('server_check_interval', $this->data['config']['server_check_interval'], null, SERVER_CHECK_INTERVAL));
+$guiView = (new CTabView())
+	->addTab('gui', _('GUI'), $guiTab)
+	->setFooter(makeFormFooter(new CSubmit('update', _('Update'))));
 
-$guiView = new CTabView();
-$guiView->addTab('gui', _('GUI'), $guiTab);
+$guiForm = (new CForm())
+	->addItem($guiView);
 
-$guiForm = new CForm();
-$guiForm->setName('guiForm');
-$guiForm->addVar('form_refresh', $this->data['form_refresh'] + 1);
-$guiForm->addItem($guiView);
-$guiForm->addItem(makeFormFooter(new CSubmit('save', _('Save'))));
+$widget->addItem($guiForm);
 
-return $guiForm;
-
+return $widget;

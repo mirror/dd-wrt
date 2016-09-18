@@ -28,7 +28,6 @@ typedef int	(*vmfunc_t)(AGENT_REQUEST *, const char *, const char *, AGENT_RESUL
 
 #define ZBX_VMWARE_PREFIX	"vmware."
 
-
 typedef struct
 {
 	const char	*key;
@@ -37,21 +36,24 @@ typedef struct
 zbx_vmcheck_t;
 
 #if defined(HAVE_LIBXML2) && defined(HAVE_LIBCURL)
-# define VMCHECK_FUNC(func)	func
+#	define VMCHECK_FUNC(func)	func
 #else
-# define VMCHECK_FUNC(func)	NULL
+#	define VMCHECK_FUNC(func)	NULL
 #endif
 
 static zbx_vmcheck_t	vmchecks[] =
 {
 	{"cluster.discovery", VMCHECK_FUNC(check_vcenter_cluster_discovery)},
 	{"cluster.status", VMCHECK_FUNC(check_vcenter_cluster_status)},
-	{"eventlog", VMCHECK_FUNC(check_vcenter_eventlog)},
 	{"version", VMCHECK_FUNC(check_vcenter_version)},
 	{"fullname", VMCHECK_FUNC(check_vcenter_fullname)},
 
 	{"hv.cluster.name", VMCHECK_FUNC(check_vcenter_hv_cluster_name)},
 	{"hv.cpu.usage", VMCHECK_FUNC(check_vcenter_hv_cpu_usage)},
+	{"hv.datacenter.name", VMCHECK_FUNC(check_vcenter_hv_datacenter_name)},
+	{"hv.datastore.discovery", VMCHECK_FUNC(check_vcenter_hv_datastore_discovery)},
+	{"hv.datastore.read", VMCHECK_FUNC(check_vcenter_hv_datastore_read)},
+	{"hv.datastore.write", VMCHECK_FUNC(check_vcenter_hv_datastore_write)},
 	{"hv.discovery", VMCHECK_FUNC(check_vcenter_hv_discovery)},
 	{"hv.fullname", VMCHECK_FUNC(check_vcenter_hv_fullname)},
 	{"hv.hw.cpu.num", VMCHECK_FUNC(check_vcenter_hv_hw_cpu_num)},
@@ -64,20 +66,19 @@ static zbx_vmcheck_t	vmchecks[] =
 	{"hv.hw.vendor", VMCHECK_FUNC(check_vcenter_hv_hw_vendor)},
 	{"hv.memory.size.ballooned", VMCHECK_FUNC(check_vcenter_hv_memory_size_ballooned)},
 	{"hv.memory.used", VMCHECK_FUNC(check_vcenter_hv_memory_used)},
+	{"hv.network.in", VMCHECK_FUNC(check_vcenter_hv_network_in)},
+	{"hv.network.out", VMCHECK_FUNC(check_vcenter_hv_network_out)},
+	{"hv.perfcounter", VMCHECK_FUNC(check_vcenter_hv_perfcounter)},
 	{"hv.status", VMCHECK_FUNC(check_vcenter_hv_status)},
 	{"hv.uptime", VMCHECK_FUNC(check_vcenter_hv_uptime)},
 	{"hv.version", VMCHECK_FUNC(check_vcenter_hv_version)},
 	{"hv.vm.num", VMCHECK_FUNC(check_vcenter_hv_vm_num)},
-	{"hv.network.in", VMCHECK_FUNC(check_vcenter_hv_network_in)},
-	{"hv.network.out", VMCHECK_FUNC(check_vcenter_hv_network_out)},
-	{"hv.datastore.discovery", VMCHECK_FUNC(check_vcenter_hv_datastore_discovery)},
-	{"hv.datastore.read", VMCHECK_FUNC(check_vcenter_hv_datastore_read)},
-	{"hv.datastore.write", VMCHECK_FUNC(check_vcenter_hv_datastore_write)},
-	{"hv.perfcounter", VMCHECK_FUNC(check_vcenter_hv_perfcounter)},
 
 	{"vm.cluster.name", VMCHECK_FUNC(check_vcenter_vm_cluster_name)},
 	{"vm.cpu.num", VMCHECK_FUNC(check_vcenter_vm_cpu_num)},
+	{"vm.cpu.ready", VMCHECK_FUNC(check_vcenter_vm_cpu_ready)},
 	{"vm.cpu.usage", VMCHECK_FUNC(check_vcenter_vm_cpu_usage)},
+	{"vm.datacenter.name", VMCHECK_FUNC(check_vcenter_vm_datacenter_name)},
 	{"vm.discovery", VMCHECK_FUNC(check_vcenter_vm_discovery)},
 	{"vm.hv.name", VMCHECK_FUNC(check_vcenter_vm_hv_name)},
 	{"vm.memory.size", VMCHECK_FUNC(check_vcenter_vm_memory_size)},
@@ -91,6 +92,7 @@ static zbx_vmcheck_t	vmchecks[] =
 	{"vm.net.if.discovery", VMCHECK_FUNC(check_vcenter_vm_net_if_discovery)},
 	{"vm.net.if.in", VMCHECK_FUNC(check_vcenter_vm_net_if_in)},
 	{"vm.net.if.out", VMCHECK_FUNC(check_vcenter_vm_net_if_out)},
+	{"vm.perfcounter", VMCHECK_FUNC(check_vcenter_vm_perfcounter)},
 	{"vm.powerstate", VMCHECK_FUNC(check_vcenter_vm_powerstate)},
 	{"vm.storage.committed", VMCHECK_FUNC(check_vcenter_vm_storage_committed)},
 	{"vm.storage.unshared", VMCHECK_FUNC(check_vcenter_vm_storage_unshared)},
@@ -101,7 +103,6 @@ static zbx_vmcheck_t	vmchecks[] =
 	{"vm.vfs.dev.write", VMCHECK_FUNC(check_vcenter_vm_vfs_dev_write)},
 	{"vm.vfs.fs.discovery", VMCHECK_FUNC(check_vcenter_vm_vfs_fs_discovery)},
 	{"vm.vfs.fs.size", VMCHECK_FUNC(check_vcenter_vm_vfs_fs_size)},
-	{"vm.perfcounter", VMCHECK_FUNC(check_vcenter_vm_perfcounter)},
 
 	{NULL, NULL}
 };
@@ -123,12 +124,12 @@ static int	get_vmware_function(const char *key, vmfunc_t *vmfunc)
 {
 	zbx_vmcheck_t	*check;
 
-	if (0 != strncmp(key, ZBX_VMWARE_PREFIX, sizeof(ZBX_VMWARE_PREFIX) - 1))
+	if (0 != strncmp(key, ZBX_VMWARE_PREFIX, ZBX_CONST_STRLEN(ZBX_VMWARE_PREFIX)))
 		return FAIL;
 
 	for (check = vmchecks; NULL != check->key; check++)
 	{
-		if (0 == strcmp(key + sizeof(ZBX_VMWARE_PREFIX) - 1, check->key))
+		if (0 == strcmp(key + ZBX_CONST_STRLEN(ZBX_VMWARE_PREFIX), check->key))
 		{
 			*vmfunc = check->func;
 			return SUCCEED;
@@ -138,7 +139,7 @@ static int	get_vmware_function(const char *key, vmfunc_t *vmfunc)
 	return FAIL;
 }
 
-int	get_value_simple(DC_ITEM *item, AGENT_RESULT *result)
+int	get_value_simple(DC_ITEM *item, AGENT_RESULT *result, zbx_vector_ptr_t *add_results)
 {
 	const char	*__function_name = "get_value_simple";
 
@@ -155,12 +156,12 @@ int	get_value_simple(DC_ITEM *item, AGENT_RESULT *result)
 
 	request.lastlogsize = item->lastlogsize;
 
-	if (0 == strcmp(request.key, "net.tcp.service"))
+	if (0 == strcmp(request.key, "net.tcp.service") || 0 == strcmp(request.key, "net.udp.service"))
 	{
 		if (SYSINFO_RET_OK == check_service(&request, item->interface.addr, result, 0))
 			ret = SUCCEED;
 	}
-	else if (0 == strcmp(request.key, "net.tcp.service.perf"))
+	else if (0 == strcmp(request.key, "net.tcp.service.perf") || 0 == strcmp(request.key, "net.udp.service.perf"))
 	{
 		if (SYSINFO_RET_OK == check_service(&request, item->interface.addr, result, 1))
 			ret = SUCCEED;
@@ -180,6 +181,15 @@ int	get_value_simple(DC_ITEM *item, AGENT_RESULT *result)
 		}
 		else
 			SET_MSG_RESULT(result, zbx_strdup(NULL, "Support for VMware checks was not compiled in."));
+	}
+	else if (0 == strcmp(request.key, ZBX_VMWARE_PREFIX "eventlog"))
+	{
+#if defined(HAVE_LIBXML2) && defined(HAVE_LIBCURL)
+		if (SYSINFO_RET_OK == check_vcenter_eventlog(&request, item, result, add_results))
+			ret = SUCCEED;
+#else
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Support for VMware checks was not compiled in."));
+#endif
 	}
 	else
 	{

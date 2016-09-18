@@ -20,8 +20,6 @@
 // Array indexOf method for javascript<1.6 compatibility
 if (!Array.prototype.indexOf) {
 	Array.prototype.indexOf = function (searchElement) {
-		'use strict';
-
 		if (this === void 0 || this === null) {
 			throw new TypeError();
 		}
@@ -103,7 +101,7 @@ var PageRefresh = {
  * Main menu
  */
 var MMenu = {
-	menus:			{'empty': 0, 'view': 0, 'cm': 0, 'reports': 0, 'config': 0, 'admin': 0},
+	menus:			{'view': 0, 'cm': 0, 'reports': 0, 'config': 0, 'admin': 0},
 	def_label:		null,
 	sub_active: 	false,
 	timeout_reset:	null,
@@ -111,7 +109,7 @@ var MMenu = {
 
 	mouseOver: function(show_label) {
 		clearTimeout(this.timeout_reset);
-		this.timeout_change = setTimeout('MMenu.showSubMenu("' + show_label + '")', 200);
+		this.timeout_change = setTimeout('MMenu.showSubMenu("' + show_label + '")', 10);
 		PageRefresh.restart();
 	},
 
@@ -127,23 +125,24 @@ var MMenu = {
 	},
 
 	showSubMenu: function(show_label) {
-		var menu_div = $('sub_' + show_label);
-		if (!is_null(menu_div)) {
-			$(show_label).className = 'active';
-			menu_div.show();
+		var sub_menu = $('sub_' + show_label);
+		if (sub_menu !== null) {
+			$(show_label).className = 'selected';
+			sub_menu.show();
+
 			for (var key in this.menus) {
 				if (key == show_label) {
 					continue;
 				}
 
 				var menu_cell = $(key);
-				if (!is_null(menu_cell)) {
-					if (menu_cell.tagName.toLowerCase() != 'select') {
-						menu_cell.className = '';
-					}
+				if (menu_cell !== null) {
+					menu_cell.className = '';
+					jQuery('a', menu_cell).blur();
 				}
+
 				var sub_menu_cell = $('sub_' + key);
-				if (!is_null(sub_menu_cell)) {
+				if (sub_menu_cell !== null) {
 					sub_menu_cell.hide();
 				}
 			}
@@ -152,504 +151,132 @@ var MMenu = {
 };
 
 /*
- * Automatic checkbox range selection
+ * Audio control system
  */
-var chkbxRange = {
-	startbox:		null,	// start checkbox obj
-	startboxName:	null,	// start checkbox name
-	chkboxes:		{},		// ckbx list
-	prefix:			null,	// prefix for cookie name
-	pageGoName:		null,	// which checkboxes should be counted by Go button
-	pageGoCount:	0,		// selected checkboxes
-	selectedIds:	{},		// ids of selected checkboxes
-	goButton:		null,
-	cookieName:		null,
+var AudioControl = {
 
-	init: function() {
-		var path = new Curl();
-		var filename = basename(path.getPath(), '.php');
-		this.cookieName = 'cb_' + filename + (this.prefix ? '_' + this.prefix : '');
-		this.selectedIds = cookie.readJSON(this.cookieName);
+	timeoutHandler: null,
 
-		var chkboxes = jQuery('.tableinfo .checkbox:not(:disabled)');
-		if (chkboxes.length > 0) {
-			for (var i = 0; i < chkboxes.length; i++) {
-				this.implement(chkboxes[i]);
-			}
-		}
-
-		this.selectMainCheckbox();
-
-		this.goButton = $('goButton');
-		if (!is_null(this.goButton)) {
-			addListener(this.goButton, 'click', this.submitGo.bindAsEventListener(this), false);
-		}
-
-		this.setGo();
-	},
-
-	implement: function(obj) {
-		var objName = obj.name.split('[')[0];
-
-		if (typeof(this.chkboxes[objName]) === 'undefined') {
-			this.chkboxes[objName] = [];
-		}
-		this.chkboxes[objName].push(obj);
-
-		addListener(obj, 'click', this.check.bindAsEventListener(this), false);
-
-		if (objName == this.pageGoName) {
-			var objId = jQuery(obj).val();
-			if (isset(objId, this.selectedIds)) {
-				obj.checked = true;
-			}
-		}
-	},
-
-	// check if all checkboxes are selected and select main checkbox, else disable checkbox, select options and button
-	selectMainCheckbox: function() {
-		var mainCheckbox = jQuery('.tableinfo .header .checkbox:not(:disabled)');
-		if (!mainCheckbox.length) {
-			return;
-		}
-
-		var countAvailable = jQuery('.tableinfo tr:not(.header) .checkbox:not(:disabled)').length;
-
-		if (countAvailable > 0) {
-			var countChecked = jQuery('.tableinfo tr:not(.header) .checkbox:not(:disabled):checked').length;
-
-			mainCheckbox = mainCheckbox[0];
-			mainCheckbox.checked = (countChecked == countAvailable);
-
-			if (mainCheckbox.checked) {
-				jQuery('.tableinfo .header').addClass('selectedMain');
-			}
-			else {
-				jQuery('.tableinfo .header').removeClass('selectedMain');
-			}
-		}
-		else {
-			mainCheckbox.disabled = true;
-		}
-	},
-
-	check: function(e) {
-		e = e || window.event;
-		var obj = Event.element(e);
-
-		PageRefresh.restart();
-
-		if (typeof(obj) === 'undefined' || obj.type.toLowerCase() != 'checkbox' || obj.disabled === true) {
-			return true;
-		}
-
-		this.setGo();
-
-		if (obj.name.indexOf('all_') > -1 || obj.name.indexOf('_single') > -1) {
-			return true;
-		}
-		var objName = obj.name.split('[')[0];
-
-		// check range selection
-		if (e.ctrlKey || e.shiftKey) {
-			if (!is_null(this.startbox) && this.startboxName == objName && obj.name != this.startbox.name) {
-				var chkboxes = this.chkboxes[objName];
-				var flag = false;
-
-				for (var i = 0; i < chkboxes.length; i++) {
-					if (typeof(chkboxes[i]) !== 'undefined') {
-						if (flag) {
-							chkboxes[i].checked = this.startbox.checked;
-						}
-						if (obj.name == chkboxes[i].name) {
-							break;
-						}
-						if (this.startbox.name == chkboxes[i].name) {
-							flag = true;
-						}
-					}
-				}
-
-				if (flag) {
-					this.setGo();
-					this.selectMainCheckbox();
-					return true;
+	loop: function(timeout) {
+		AudioControl.timeoutHandler = setTimeout(
+			function() {
+				if (new Date().getTime() >= timeout) {
+					AudioControl.stop();
 				}
 				else {
-					for (var i = chkboxes.length - 1; i >= 0; i--) {
-						if (typeof(chkboxes[i]) !== 'undefined') {
-							if (flag) {
-								chkboxes[i].checked = this.startbox.checked;
-							}
-
-							if (obj.name == chkboxes[i].name) {
-								this.setGo();
-								this.selectMainCheckbox();
-								return true;
-							}
-
-							if (this.startbox.name == chkboxes[i].name) {
-								flag = true;
-							}
-						}
-					}
+					AudioControl.loop(timeout);
 				}
-			}
-
-			this.setGo();
-		}
-		else {
-			this.selectMainCheckbox();
-		}
-
-		this.startbox = obj;
-		this.startboxName = objName;
+			},
+			1000
+		);
 	},
 
-	checkAll: function(name, value) {
-		if (typeof(this.chkboxes[name]) === 'undefined') {
-			return false;
-		}
-
-		var chkboxes = this.chkboxes[name];
-		for (var i = 0; i < chkboxes.length; i++) {
-			if (typeof(chkboxes[i]) !== 'undefined' && chkboxes[i].disabled !== true) {
-				var objName = chkboxes[i].name.split('[')[0];
-				if (objName == name) {
-					chkboxes[i].checked = value;
-				}
-			}
-		}
-
-		var mainCheckbox = jQuery('.tableinfo .header .checkbox:not(:disabled)')[0];
-		if (mainCheckbox.checked) {
-			jQuery('.tableinfo .header').addClass('selectedMain');
-		}
-		else {
-			jQuery('.tableinfo .header').removeClass('selectedMain');
-		}
-	},
-
-	clearSelectedOnFilterChange: function() {
-		cookie.eraseArray(this.cookieName);
-	},
-
-	setGo: function() {
-		if (!is_null(this.pageGoName)) {
-			if (typeof(this.chkboxes[this.pageGoName]) !== 'undefined') {
-				var chkboxes = this.chkboxes[this.pageGoName];
-				for (var i = 0; i < chkboxes.length; i++) {
-					if (typeof(chkboxes[i]) !== 'undefined') {
-						var box = chkboxes[i];
-						var objName = box.name.split('[')[0];
-						var objId = box.name.split('[')[1];
-						objId = objId.substring(0, objId.lastIndexOf(']'));
-						var crow = getParent(box, 'tr');
-
-						if (box.checked) {
-							if (!is_null(crow)) {
-								var origClass = crow.getAttribute('origClass');
-								if (is_null(origClass)) {
-									crow.setAttribute('origClass', crow.className);
-								}
-								crow.className = 'selected';
-							}
-							if (objName == this.pageGoName) {
-								this.selectedIds[objId] = objId;
-							}
-						}
-						else {
-							if (!is_null(crow)) {
-								var origClass = crow.getAttribute('origClass');
-
-								if (!is_null(origClass)) {
-									crow.className = origClass;
-									crow.removeAttribute('origClass');
-								}
-							}
-							if (objName == this.pageGoName) {
-								delete(this.selectedIds[objId]);
-							}
-						}
-					}
-				}
-
-			}
-
-			var countChecked = 0;
-			for (var key in this.selectedIds) {
-				if (!empty(this.selectedIds[key])) {
-					countChecked++;
-				}
-			}
-
-			if (!is_null(this.goButton)) {
-				var tmp_val = this.goButton.value.split(' ');
-				this.goButton.value = tmp_val[0] + ' (' + countChecked + ')';
-			}
-
-			cookie.createJSON(this.cookieName, this.selectedIds);
-
-			if (jQuery('#go').length) {
-				jQuery('#go')[0].disabled = (countChecked == 0);
-			}
-			if (jQuery('#goButton').length) {
-				jQuery('#goButton')[0].disabled = (countChecked == 0);
-			}
-
-			this.pageGoCount = countChecked;
-		}
-	},
-
-	submitGo: function(e) {
-		e = e || window.event;
-
-		var goSelect = $('go');
-		var confirmText = goSelect.options[goSelect.selectedIndex].getAttribute('confirm');
-
-		if (!is_null(confirmText) && !confirm(confirmText)) {
-			Event.stop(e);
-			return false;
-		}
-
-		var form = getParent(this.goButton, 'form');
-		for (var key in this.selectedIds) {
-			if (!empty(this.selectedIds[key])) {
-				create_var(form.name, this.pageGoName + '[' + key + ']', key, false);
-			}
-		}
-		return true;
-	}
-};
-
-/*
- * Audio Control System
- */
-var AudioList = {
-	list:		{}, // audio files options
-	dom:		{}, // dom objects links
-	standart:	{
-		'embed': {
-			'enablejavascript': 'true',
-			'autostart': 'false',
-			'loop': 0
-		},
-		'audio': {
-			'autobuffer': 'autobuffer',
-			'autoplay': null,
-			'controls': null
-		}
-	},
-
-	play: function(audiofile) {
-		if (!this.create(audiofile)) {
-			return false;
-		}
-		if (IE) {
-			try {
-				this.dom[audiofile].Play();
-			}
-			catch(e) {
-				setTimeout(this.play.bind(this, audiofile), 500);
-			}
-		}
-		else {
-			this.dom[audiofile].play();
-		}
-	},
-
-	pause: function(audiofile) {
-		if (!this.create(audiofile)) {
-			return false;
-		}
-		if (IE) {
-			try {
-				this.dom[audiofile].Stop();
-			}
-			catch(e) {
-				setTimeout(this.pause.bind(this, audiofile), 1000);
-			}
-		}
-		else {
-			this.dom[audiofile].pause();
-		}
-	},
-
-	stop: function(audiofile) {
-		if (!this.create(audiofile)) {
-			return false;
-		}
+	playOnce: function(name) {
+		this.stop();
 
 		if (IE) {
-			this.dom[audiofile].setAttribute('loop', '0');
+			this.create(name, false);
 		}
 		else {
-			this.dom[audiofile].removeAttribute('loop');
-		}
+			var obj = jQuery('#audio');
 
-		if (!IE) {
-			try {
-				if (!this.dom[audiofile].paused) {
-					this.dom[audiofile].currentTime = 0;
-				}
-				else if (this.dom[audiofile].currentTime > 0) {
-					this.dom[audiofile].play();
-					this.dom[audiofile].currentTime = 0;
-					this.dom[audiofile].pause();
-				}
-			}
-			catch(e) {
-			}
-		}
-
-		if (!is_null(this.list[audiofile].timeout)) {
-			clearTimeout(this.list[audiofile].timeout);
-			this.list[audiofile].timeout = null;
-		}
-
-		this.pause(audiofile);
-		this.endLoop(audiofile);
-	},
-
-	stopAll: function(e) {
-		for (var name in this.list) {
-			if (empty(this.dom[name])) {
-				continue;
-			}
-			this.stop(name);
-		}
-	},
-
-	volume: function(audiofile, vol) {
-		if (!this.create(audiofile)) {
-			return false;
-		}
-	},
-
-	loop: function(audiofile, params) {
-		if (!this.create(audiofile)) {
-			return false;
-		}
-
-		if (isset('repeat', params)) {
-			if (IE) {
-				this.play(audiofile);
+			if (obj.length > 0 && obj.data('name') === name) {
+				obj.trigger('play');
 			}
 			else {
-				if (this.list[audiofile].loop == 0) {
-					if (params.repeat != 0) {
-						this.startLoop(audiofile, params.repeat);
-					}
-					else {
-						this.endLoop(audiofile);
-					}
-				}
-				if (this.list[audiofile].loop != 0) {
-					this.list[audiofile].loop--;
-					this.play(audiofile);
-				}
+				this.create(name, false);
 			}
-		}
-		else if (isset('seconds', params)) {
-			if (IE) {
-				this.dom[audiofile].setAttribute('loop', '1');
-			}
-			else {
-				this.startLoop(audiofile, 9999999);
-				this.list[audiofile].loop--;
-			}
-			this.play(audiofile);
-			this.list[audiofile].timeout = setTimeout(AudioList.stop.bind(AudioList, audiofile), 1000 * parseInt(params.seconds, 10));
 		}
 	},
 
-	startLoop: function(audiofile, loop) {
-		if (!isset(audiofile, this.list)) {
-			return false;
-		}
-		if (isset('onEnded', this.list[audiofile])) {
-			this.endLoop(audiofile);
-		}
-		this.list[audiofile].loop = parseInt(loop, 10);
-		this.list[audiofile].onEnded = this.loop.bind(this, audiofile, {'repeat' : 0});
-		addListener(this.dom[audiofile], 'ended', this.list[audiofile].onEnded);
-	},
-
-	endLoop: function(audiofile) {
-		if (!isset(audiofile, this.list)) {
-			return true;
-		}
-		this.list[audiofile].loop = 0;
-
-		if (isset('onEnded', this.list[audiofile])) {
-			removeListener(this.dom[audiofile], 'ended', this.list[audiofile].onEnded);
-			this.list[audiofile].onEnded = null;
-			delete(this.list[audiofile].onEnded);
-		}
-	},
-
-	create: function(audiofile, params) {
-		if (typeof(audiofile) == 'undefined') {
-			return false;
-		}
-		if (isset(audiofile, this.list)) {
-			return true;
-		}
-		if (typeof(params) == 'undefined') {
-			params = {};
-		}
-		if (!isset('audioList', this.dom)) {
-			this.dom.audioList = document.createElement('div');
-			document.getElementsByTagName('body')[0].appendChild(this.dom.audioList);
-			this.dom.audioList.setAttribute('id', 'audiolist');
-		}
+	playLoop: function(name, delay) {
+		this.stop();
 
 		if (IE) {
-			this.dom[audiofile] = document.createElement('embed');
-			this.dom.audioList.appendChild(this.dom[audiofile]);
-			this.dom[audiofile].setAttribute('name', audiofile);
-			this.dom[audiofile].setAttribute('src', 'audio/' + audiofile);
-			this.dom[audiofile].style.display = 'none';
-
-			for (var key in this.standart.embed) {
-				if (isset(key, params)) {
-					this.dom[audiofile].setAttribute(key, params[key]);
-				}
-				else if (!is_null(this.standart.embed[key])) {
-					this.dom[audiofile].setAttribute(key, this.standart.embed[key]);
-				}
-			}
+			this.create(name, true);
 		}
 		else {
-			this.dom[audiofile] = document.createElement('audio');
-			this.dom.audioList.appendChild(this.dom[audiofile]);
-			this.dom[audiofile].setAttribute('id', audiofile);
-			this.dom[audiofile].setAttribute('src', 'audio/' + audiofile);
+			var obj = jQuery('#audio');
 
-			for (var key in this.standart.audio) {
-				if (isset(key, params)) {
-					this.dom[audiofile].setAttribute(key, params[key]);
-				}
-				else if (!is_null(this.standart.audio[key])) {
-					this.dom[audiofile].setAttribute(key, this.standart.audio[key]);
-				}
+			if (obj.length > 0 && obj.data('name') === name) {
+				obj.trigger('play');
 			}
-			this.dom[audiofile].load();
+			else {
+				this.create(name, true);
+			}
 		}
-		this.list[audiofile] = params;
-		this.list[audiofile].loop = 0;
-		this.list[audiofile].timeout = null;
-		return true;
+
+		AudioControl.loop(new Date().getTime() + delay * 1000);
 	},
 
-	remove: function(audiofile) {
-		if (!isset(audiofile, this.dom)) {
-			return true;
-		}
-		$(this.dom[audiofile]).remove();
+	stop: function() {
+		var obj = document.getElementById('audio');
 
-		delete(this.dom[audiofile]);
-		delete(this.list[audiofile]);
+		if (obj !== null) {
+			clearTimeout(AudioControl.timeoutHandler);
+
+			if (IE) {
+				obj.setAttribute('loop', false);
+				obj.setAttribute('playcount', 0);
+
+				try {
+					obj.stop();
+				}
+				catch (e) {
+					setTimeout(
+						function() {
+							try {
+								document.getElementById('audio').stop();
+							}
+							catch (e) {
+							}
+						},
+						100
+					);
+				}
+			}
+			else {
+				jQuery(obj).trigger('pause');
+			}
+		}
+	},
+
+	create: function(name, loop) {
+		if (IE) {
+			jQuery('#audio').remove();
+
+			jQuery('body').append(jQuery('<embed>', {
+				id: 'audio',
+				'data-name': name,
+				src: 'audio/' + name,
+				enablejavascript: true,
+				autostart: true,
+				loop: true,
+				playcount: loop ? 9999999 : 1,
+				height: 0
+			}));
+		}
+		else {
+			var obj = jQuery('#audio');
+
+			if (obj.length == 0 || obj.data('name') !== name) {
+				obj.remove();
+
+				var audioOptions = {
+					id: 'audio',
+					'data-name': name,
+					src: 'audio/' + name,
+					preload: 'auto',
+					autoplay: true
+				};
+
+				if (loop) {
+					audioOptions.loop = true;
+				}
+
+				jQuery('body').append(jQuery('<audio>', audioOptions));
+			}
+		}
 	}
 };
 
@@ -738,8 +365,22 @@ var jqBlink = {
  */
 var hintBox = {
 
-	createBox: function(e, target, hintText, width, className, isStatic) {
-		var box = jQuery('<div></div>').addClass('hintbox');
+	createBox: function(e, target, hintText, className, isStatic, styles) {
+		var box = jQuery('<div></div>').addClass('overlay-dialogue');
+
+		if (styles) {
+			// property1: value1; property2: value2; property(n): value(n)
+
+			var style_list = styles.split(';');
+
+			for (var i = 0; i < style_list.length; i++) {
+				var style_props = style_list[i].split(':');
+
+				if (style_props[1]) {
+					box.css(style_props[0].trim(), style_props[1].trim());
+				}
+			}
+		}
 
 		if (typeof hintText === 'string') {
 			hintText = hintText.replace(/\n/g, '<br />');
@@ -752,17 +393,11 @@ var hintBox = {
 			box.html(hintText);
 		}
 
-		if (!empty(width)) {
-			box.css('width', width + 'px');
-		}
-
 		if (isStatic) {
-			var close_link = jQuery('<div>' + locale['S_CLOSE'] + '</div>')
-				.addClass('link')
-				.css({
-					'text-align': 'right',
-					'border-bottom': '1px #333 solid'
-				}).click(function() {
+			var close_link = jQuery('<button>', {
+					'class': 'overlay-close-btn'}
+				)
+				.click(function() {
 					hintBox.hideHint(e, target, true);
 				});
 			box.prepend(close_link);
@@ -773,14 +408,14 @@ var hintBox = {
 		return box;
 	},
 
-	HintWraper: function(e, target, hintText, width, className) {
+	HintWraper: function(e, target, hintText, className, styles) {
 		target.isStatic = false;
 
 		jQuery(target).on('mouseenter', function(e, d) {
 			if (d) {
 				e = d;
 			}
-			hintBox.showHint(e, target, hintText, width, className, false);
+			hintBox.showHint(e, target, hintText, className, false, styles);
 
 		}).on('mouseleave', function(e) {
 			hintBox.hideHint(e, target);
@@ -793,13 +428,13 @@ var hintBox = {
 		jQuery(target).trigger('mouseenter', e);
 	},
 
-	showStaticHint: function(e, target, hint, width, className, resizeAfterLoad) {
+	showStaticHint: function(e, target, hint, className, resizeAfterLoad, styles) {
 		var isStatic = target.isStatic;
 		hintBox.hideHint(e, target, true);
 
 		if (!isStatic) {
 			target.isStatic = true;
-			hintBox.showHint(e, target, hint, width, className, true);
+			hintBox.showHint(e, target, hint, className, true, styles);
 
 			if (resizeAfterLoad) {
 				hint.one('load', function(e) {
@@ -809,12 +444,12 @@ var hintBox = {
 		}
 	},
 
-	showHint: function(e, target, hintText, width, className, isStatic) {
+	showHint: function(e, target, hintText, className, isStatic, styles) {
 		if (target.hintBoxItem) {
 			return;
 		}
 
-		target.hintBoxItem = hintBox.createBox(e, target, hintText, width, className, isStatic);
+		target.hintBoxItem = hintBox.createBox(e, target, hintText, className, isStatic, styles);
 		hintBox.positionHint(e, target);
 		target.hintBoxItem.show();
 	},
@@ -824,6 +459,8 @@ var hintBox = {
 			wHeight = jQuery(window).height(),
 			scrollTop = jQuery(window).scrollTop(),
 			scrollLeft = jQuery(window).scrollLeft(),
+			hint_width = jQuery(target.hintBoxItem).outerWidth(),
+			hint_height = jQuery(target.hintBoxItem).outerHeight(),
 			top, left;
 
 		// uses stored clientX on afterload positioning when there is no event
@@ -833,25 +470,25 @@ var hintBox = {
 		}
 
 		// doesn't fit in the screen horizontally
-		if (target.hintBoxItem.width() + 10 > wWidth) {
+		if (hint_width + 10 > wWidth) {
 			left = scrollLeft + 2;
 		}
 		// 10px to right if fit
-		else if (wWidth - target.clientX - 10 > target.hintBoxItem.width()) {
+		else if (wWidth - target.clientX - 10 > hint_width) {
 			left = scrollLeft + target.clientX + 10;
 		}
 		// 10px from screen right side
 		else {
-			left = scrollLeft + wWidth - 10 - target.hintBoxItem.width();
+			left = scrollLeft + wWidth - 10 - hint_width;
 		}
 
 		// 10px below if fit
-		if (wHeight - target.clientY - target.hintBoxItem.height() - 10 > 0) {
+		if (wHeight - target.clientY - hint_height - 10 > 0) {
 			top = scrollTop + target.clientY + 10;
 		}
 		// 10px above if fit
-		else if (target.clientY - target.hintBoxItem.height() - 10 > 0) {
-			top = scrollTop + target.clientY - target.hintBoxItem.height() - 10;
+		else if (target.clientY - hint_height - 10 > 0) {
+			top = scrollTop + target.clientY - hint_height - 10;
 		}
 		// 10px below as fallback
 		else {
@@ -859,21 +496,21 @@ var hintBox = {
 		}
 
 		// fallback if doesn't fit verticaly but could fit if aligned to right or left
-		if ((top - scrollTop + target.hintBoxItem.height() > wHeight)
-				&& (target.clientX - 10 > target.hintBoxItem.width() || wWidth - target.clientX - 10 > target.hintBoxItem.width())) {
+		if ((top - scrollTop + hint_height > wHeight)
+				&& (target.clientX - 10 > hint_width || wWidth - target.clientX - 10 > hint_width)) {
 
 			// align to left if fit
-			if (wWidth - target.clientX - 10 > target.hintBoxItem.width()) {
+			if (wWidth - target.clientX - 10 > hint_width) {
 				left = scrollLeft + target.clientX + 10;
 			}
 			// align to right
 			else {
-				left = scrollLeft + target.clientX - target.hintBoxItem.width() - 10;
+				left = scrollLeft + target.clientX - hint_width - 10;
 			}
 
 			// 10px from bottom if fit
-			if (wHeight - 10 > target.hintBoxItem.height()) {
-				top = scrollTop + wHeight - target.hintBoxItem.height() - 10;
+			if (wHeight - 10 > hint_height) {
+				top = scrollTop + wHeight - hint_height - 10;
 			}
 			// 10px from top
 			else {
@@ -917,7 +554,7 @@ function hide_color_picker() {
 	}
 
 	color_picker.style.zIndex = 1000;
-	color_picker.style.visibility = 'hidden';
+	color_picker.style.display = 'none';
 	color_picker.style.left = '-' + ((color_picker.style.width) ? color_picker.style.width : 100) + 'px';
 	curr_lbl = null;
 	curr_txt = null;
@@ -935,7 +572,7 @@ function show_color_picker(id) {
 	color_picker.y = pos.top;
 	color_picker.style.left = (color_picker.x + 20) + 'px';
 	color_picker.style.top = color_picker.y + 'px';
-	color_picker.style.visibility = 'visible';
+	color_picker.style.display = null;
 }
 
 function create_color_picker() {
@@ -944,7 +581,7 @@ function create_color_picker() {
 	}
 
 	color_picker = document.createElement('div');
-	color_picker.setAttribute('id', 'color_picker');
+	color_picker.setAttribute('class', 'overlay-dialogue');
 	color_picker.innerHTML = color_table;
 	document.body.appendChild(color_picker);
 	hide_color_picker();
@@ -967,200 +604,356 @@ function set_color_by_name(id, color) {
 	set_color(color);
 }
 
-/*
- * Zabbix ajax requests
+/**
+ * Add object to the list of favourites.
  */
-function add2favorites(favobj, favid) {
-	if ('undefined' == typeof(Ajax)) {
-		throw('Prototype.js lib is required!');
-	}
-
-	if (typeof(favid) == 'undefined' || empty(favid)) {
-		return;
-	}
-
-	var params = {
-		'favobj': favobj,
-		'favid': favid,
-		'favaction': 'add'
-	};
-
-	send_params(params);
-}
-
-function rm4favorites(favobj, favid, menu_rowid) {
-	if ('undefined' == typeof(Ajax)) {
-		throw('Prototype.js lib is required!');
-	}
-
-	if (typeof(favobj) == 'undefined' || typeof(favid) == 'undefined') {
-		throw 'No agruments sent to function [rm4favorites()].';
-	}
-
-	var params = {
-		'favobj': favobj,
-		'favid': favid,
-		'favcnt': menu_rowid,
-		'favaction': 'remove'
-	};
-
-	send_params(params);
-}
-
-function changeFlickerState(id) {
-	var state = showHide(id);
-
-	switchElementsClass($('flicker_icon_l'), 'dbl_arrow_up', 'dbl_arrow_down');
-	switchElementsClass($('flicker_icon_r'), 'dbl_arrow_up', 'dbl_arrow_down');
-
-	send_params({
-		favaction: 'flop',
-		favobj: 'filter',
-		favref: id,
-		favstate: state
-	});
-
-	// resize multiselect
-	if (typeof(flickerResizeMultiselect) === 'undefined' && state == 1) {
-		flickerResizeMultiselect = true;
-
-		if (jQuery('.multiselect').length > 0) {
-			jQuery('#' + id).multiSelect.resize();
+function add2favorites(object, objectid) {
+	sendAjaxData('zabbix.php?action=favourite.create', {
+		data: {
+			object: object,
+			objectid: objectid
 		}
-	}
+	});
 }
 
-function changeHatStateUI(icon, divid) {
-	var switchIcon = function() {
-		switchElementsClass(icon, 'arrowup', 'arrowdown');
-	};
-
-	jQuery($(divid).parentNode).
-		find('.body').toggle().end().
-		find('.footer').toggle().end();
-
-	switchIcon();
-
-	var hat_state = jQuery(icon).hasClass('arrowup') ? 1 : 0;
-	if (false === hat_state) {
-		return false;
-	}
-
-	var params = {
-		'favaction': 'flop',
-		'favobj': 'hat',
-		'favref': divid,
-		'favstate': hat_state
-	};
-
-	send_params(params);
+/**
+ * Remove object from the list of favourites. Remove all favourites if objectid==0.
+ */
+function rm4favorites(object, objectid) {
+	sendAjaxData('zabbix.php?action=favourite.delete', {
+		data: {
+			object: object,
+			objectid: objectid
+		}
+	});
 }
 
-function change_hat_state(icon, divid) {
-	var switchIcon = function() {
-		switchElementsClass(icon, 'arrowup', 'arrowdown');
-	};
-
-	var hat_state = showHide(divid);
-	switchIcon();
-
-	if (false === hat_state) {
-		return false;
-	}
-
-	var params = {
-		'favaction': 'flop',
-		'favobj': 'hat',
-		'favref': divid,
-		'favstate': hat_state
-	};
-
-	send_params(params);
+/**
+ * Toggles filter state and updates title and icons accordingly.
+ *
+ * @param {string} 	idx					User profile index
+ * @param {string} 	value_int			Integer value
+ * @param {object} 	idx2				An array of IDs
+ */
+function updateUserProfile(idx, value_int, idx2) {
+	sendAjaxData('zabbix.php?action=profile.update', {
+		data: {
+			idx: idx,
+			value_int: value_int,
+			idx2: idx2
+		}
+	});
 }
 
-function send_params(params) {
-	if (typeof(params) === 'undefined') {
-		params = [];
+function changeWidgetState(obj, widgetId, url) {
+	var widgetObj = jQuery('#' + widgetId + '_widget'),
+		css = switchElementClass(obj, 'btn-widget-collapse', 'btn-widget-expand'),
+		state = 0;
+
+	if (css === 'btn-widget-expand') {
+		jQuery('.body', widgetObj).slideUp(50);
+		jQuery('.dashbrd-widget-foot', widgetObj).slideUp(50);
+	}
+	else {
+		jQuery('.body', widgetObj).slideDown(50);
+		jQuery('.dashbrd-widget-foot', widgetObj).slideDown(50);
+
+		state = 1;
 	}
 
-	var url = new Curl(location.href);
-	url.setQuery('?output=ajax');
+	obj.title = (state == 1) ? locale['S_COLLAPSE'] : locale['S_EXPAND'];
 
-	new Ajax.Request(url.getUrl(), {
-			'method': 'post',
-			'parameters': params,
-			'onSuccess': function() { },
-			'onFailure': function() {
-				document.location = url.getPath() + '?' + Object.toQueryString(params);
+	sendAjaxData(url, {
+		data: {
+			widget: widgetId,
+			state: state
+		}
+	});
+}
+
+/**
+ * Send ajax data.
+ *
+ * @param string url
+ * @param object options
+ */
+function sendAjaxData(url, options) {
+	var url = new Curl(url);
+	url.setArgument('output', 'ajax');
+
+	options.type = 'post';
+	options.url = url.getUrl();
+
+	jQuery.ajax(options);
+}
+
+/**
+ * Converts number to letter representation.
+ * From A to Z, then from AA to ZZ etc.
+ * Example: 0 => A, 25 => Z, 26 => AA, 27 => AB, 52 => BA, ...
+ *
+ * Keep in sync with PHP num2letter().
+ *
+ * @param {int} number
+ *
+ * @return {string}
+ */
+function num2letter(number) {
+	var start = 'A'.charCodeAt(0);
+	var base = 26;
+	var str = '';
+	var level = 0;
+
+	do {
+		if (level++ > 0) {
+			number--;
+		}
+		var remainder = number % base;
+		number = (number - remainder) / base;
+		str = String.fromCharCode(start + remainder) + str;
+	} while (number);
+
+	return str;
+}
+
+/**
+ * Generate a formula from the given conditions with respect to the given evaluation type.
+ * Each condition must have a condition type, that will be used for grouping.
+ *
+ * Each condition object must have the following properties:
+ * - id		- ID used in the formula
+ * - type	- condition type used for grouping
+ *
+ * Supported evalType values:
+ * - 1 - or
+ * - 2 - and
+ * - 3 - and/or
+ *
+ * Example:
+ * getConditionFormula([{'id': 'A', 'type': '1'}, {'id': 'B', 'type': '1'}, {'id': 'C', 'type': '2'}], '1');
+ *
+ * // (A and B) and C
+ *
+ * Keep in sync with PHP CConditionHelper::getFormula().
+ *
+ * @param {array} 	conditions	array of condition objects
+ * @param {string} 	evalType
+ *
+ * @returns {string}
+ */
+function getConditionFormula(conditions, evalType) {
+	var conditionOperator, groupOperator;
+
+	switch (evalType) {
+		// and
+		case 1:
+			conditionOperator = 'and';
+			groupOperator = conditionOperator;
+
+			break;
+		// or
+		case 2:
+			conditionOperator = 'or';
+			groupOperator = conditionOperator;
+
+			break;
+		// and/or
+		default:
+			conditionOperator = 'or';
+			groupOperator = 'and';
+	}
+
+	var groupedFormulas = [];
+	for (var i = 0; i < conditions.length; i++) {
+		if (typeof conditions[i] === 'undefined') {
+			continue;
+		}
+
+		var groupedConditions = [];
+		groupedConditions.push(conditions[i].id);
+
+		// search for other conditions of the same type
+		for (var n = i + 1; n < conditions.length; n++) {
+			if (typeof conditions[n] !== 'undefined' && conditions[i].type == conditions[n].type) {
+				groupedConditions.push(conditions[n].id);
+				delete conditions[n];
 			}
 		}
-	);
-}
 
-function setRefreshRate(pmasterid, dollid, interval, params) {
-	if (typeof(Ajax) == 'undefined') {
-		throw('Prototype.js lib is required!');
+		// join conditions of the same type
+		if (groupedConditions.length > 1) {
+			groupedFormulas.push('(' + groupedConditions.join(' ' + conditionOperator + ' ') + ')');
+		}
+		else {
+			groupedFormulas.push(groupedConditions[0]);
+		}
 	}
 
-	if (typeof(params) == 'undefined' || is_null(params)) {
-		params = {};
-	}
-	params['pmasterid'] = pmasterid;
-	params['favobj'] = 'set_rf_rate';
-	params['favref'] = dollid;
-	params['favcnt'] = interval;
+	var formula = groupedFormulas.join(' ' + groupOperator + ' ');
 
-	send_params(params);
+	// strip parentheses if there's only one condition group
+	if (groupedFormulas.length == 1) {
+		formula = formula.substr(1, formula.length - 2);
+	}
+
+	return formula;
 }
 
-function switch_mute(icon) {
-	var sound_state = switchElementsClass(icon, 'iconmute', 'iconsound');
+(function($) {
+	/**
+	 * Creates a table with dynamic add/remove row buttons.
+	 *
+	 * Supported options:
+	 * - template		- row template selector
+	 * - row			- element row selector
+	 * - add			- add row button selector
+	 * - remove			- remove row button selector
+	 * - counter 		- number to start row enumeration from
+	 * - dataCallback	- function to generate the data passed to the template
+	 *
+	 * Triggered events:
+	 * - rowremove.dynamicRows 	- after removing a row (triggered before tableupdate.dynamicRows)
+	 * - tableupdate.dynamicRows 	- after adding or removing a row
+	 *
+	 * @param options
+	 */
+	$.fn.dynamicRows = function(options) {
+		options = $.extend({}, {
+			template: '',
+			row: '.form_row',
+			add: '.element-table-add',
+			remove: '.element-table-remove',
+			counter: null,
+			dataCallback: function(data) {
+				return {};
+			}
+		}, options);
 
-	if (false === sound_state) {
-		return false;
-	}
-	sound_state = (sound_state == 'iconmute') ? 1 : 0;
+		return this.each(function() {
+			var table = $(this);
 
-	var params = {
-		'favobj': 'sound',
-		'favref': 'sound',
-		'favstate': sound_state
-	};
+			table.data('dynamicRows', {
+				counter: (options.counter !== null) ? options.counter : $(options.row, table).length
+			});
 
-	send_params(params);
-}
+			// add buttons
+			table.on('click', options.add, function() {
+				// add the new row before the row with the "Add" button
+				addRow(table, $(this).closest('tr'), options);
+			});
 
-function createPlaceholders() {
-	if (IE) {
-		jQuery(document).ready(function() {
-			jQuery('[placeholder]')
-				.focus(function() {
-					var obj = jQuery(this);
-
-					if (obj.val() == obj.attr('placeholder')) {
-						obj.val('');
-						obj.removeClass('placeholder');
-					}
-				})
-				.blur(function() {
-					var obj = jQuery(this);
-
-					if (obj.val() == '' || obj.val() == obj.attr('placeholder')) {
-						obj.val(obj.attr('placeholder'));
-						obj.addClass('placeholder');
-					}
-				})
-				.blur();
-
-			jQuery('form').submit(function() {
-				jQuery('.placeholder').each(function() {
-					var obj = jQuery(this);
-
-					if (obj.val() == obj.attr('placeholder')) {
-						obj.val('');
-					}
-				});
+			// remove buttons
+			table.on('click', options.remove, function() {
+				// remove the parent row
+				removeRow(table, $(this).closest(options.row), options);
 			});
 		});
+	};
+
+	/**
+	 * Adds a row before the given row.
+	 *
+	 * @param {jQuery} table
+	 * @param {jQuery} beforeRow
+	 * @param {object} options
+	 */
+	function addRow(table, beforeRow, options) {
+		var data = {
+			rowNum: table.data('dynamicRows').counter
+		};
+		data = $.extend(data, options.dataCallback(data));
+
+		var template = new Template($(options.template).html());
+		beforeRow.before(template.evaluate(data));
+		table.data('dynamicRows').counter++;
+
+		table.trigger('tableupdate.dynamicRows', options);
 	}
-}
+
+	/**
+	 * Removes the given row.
+	 *
+	 * @param {jQuery} table
+	 * @param {jQuery} row
+	 * @param {object} options
+	 */
+	function removeRow(table, row, options) {
+		row.remove();
+
+		table.trigger('rowremove.dynamicRows', options);
+		table.trigger('tableupdate.dynamicRows', options);
+	}
+}(jQuery));
+
+jQuery(function ($) {
+	var verticalHeaderTables = {};
+
+	$.fn.makeVerticalRotation = function() {
+		this.each(function(i) {
+			var table = $(this);
+
+			if (table.data('rotated') == 1) {
+				return;
+			}
+			table.data('rotated', 1);
+
+			var cellsToRotate = $('.vertical_rotation', table),
+				betterCells = [];
+
+			// insert spans
+			cellsToRotate.each(function() {
+				var cell = $(this),
+					text = $('<span>', {
+						text: cell.html()
+					}).css({'white-space': 'nowrap'});
+
+				cell.text('').append(text);
+			});
+
+			// rotate cells
+			cellsToRotate.each(function() {
+				var cell = $(this),
+					span = cell.children(),
+					height = cell.height(),
+					width = span.width(),
+					transform = (width / 2) + 'px ' + (width / 2) + 'px';
+
+				var css = {};
+
+				if (IE9) {
+					css['-ms-transform-origin'] = transform;
+				}
+				else {
+					css['transform-origin'] = transform;
+					css['-webkit-transform-origin'] = transform;
+					css['-moz-transform-origin'] = transform;
+					css['-o-transform-origin'] = transform;
+				}
+
+				var divInner = $('<div>', {
+					'class': 'vertical_rotation_inner'
+				})
+					.css(css)
+					.append(span.text());
+
+				var div = $('<div>', {
+					height: width,
+					width: height
+				})
+					.append(divInner);
+
+				betterCells.push(div);
+			});
+
+			cellsToRotate.each(function(i) {
+				$(this).html(betterCells[i]);
+			});
+
+			table.on('remove', function() {
+				delete verticalHeaderTables[table.attr('id')];
+			});
+
+			verticalHeaderTables[table.attr('id')] = table;
+		});
+	};
+});

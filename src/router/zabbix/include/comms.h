@@ -26,22 +26,26 @@ typedef int	ssize_t;
 #	else
 typedef long	ssize_t;
 #	endif
+#endif
 
+#if defined(_WINDOWS)
 #	define ZBX_TCP_WRITE(s, b, bl)	((ssize_t)send((s), (b), (bl), 0))
 #	define ZBX_TCP_READ(s, b, bl)	((ssize_t)recv((s), (b), (bl), 0))
-#	define zbx_sock_close(s)	if (ZBX_SOCK_ERROR != (s)) closesocket(s)
-#	define zbx_sock_last_error()	WSAGetLastError()
+#	define zbx_socket_close(s)	if (ZBX_SOCKET_ERROR != (s)) closesocket(s)
+#	define zbx_socket_last_error()	WSAGetLastError()
 
-#	define ZBX_TCP_ERROR		SOCKET_ERROR
-#	define ZBX_SOCK_ERROR		INVALID_SOCKET
+#	define ZBX_PROTO_AGAIN		WSAEINTR
+#	define ZBX_PROTO_ERROR		SOCKET_ERROR
+#	define ZBX_SOCKET_ERROR		INVALID_SOCKET
 #else
 #	define ZBX_TCP_WRITE(s, b, bl)	((ssize_t)write((s), (b), (bl)))
 #	define ZBX_TCP_READ(s, b, bl)	((ssize_t)read((s), (b), (bl)))
-#	define zbx_sock_close(s)	if (ZBX_SOCK_ERROR != (s)) close(s)
-#	define zbx_sock_last_error()	errno
+#	define zbx_socket_close(s)	if (ZBX_SOCKET_ERROR != (s)) close(s)
+#	define zbx_socket_last_error()	errno
 
-#	define ZBX_TCP_ERROR		-1
-#	define ZBX_SOCK_ERROR		-1
+#	define ZBX_PROTO_AGAIN		EINTR
+#	define ZBX_PROTO_ERROR		-1
+#	define ZBX_SOCKET_ERROR		-1
 #endif
 
 #if defined(SOCKET) || defined(_WINDOWS)
@@ -52,13 +56,6 @@ typedef int	ZBX_SOCKET;
 
 typedef enum
 {
-	ZBX_TCP_ERR_NETWORK = 1,
-	ZBX_TCP_ERR_TIMEOUT
-}
-zbx_tcp_errors;
-
-typedef enum
-{
 	ZBX_BUF_TYPE_STAT = 0,
 	ZBX_BUF_TYPE_DYN
 }
@@ -66,65 +63,87 @@ zbx_buf_type_t;
 
 #define ZBX_SOCKET_COUNT	256
 #define ZBX_STAT_BUF_LEN	2048
+#define ZBX_SOCKET_PEER_BUF_LEN	129
+
+#if defined(HAVE_POLARSSL) || defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
+typedef struct zbx_tls_context	zbx_tls_context_t;
+#endif
 
 typedef struct
 {
-	int		num_socks;
-	ZBX_SOCKET	sockets[ZBX_SOCKET_COUNT];
-	ZBX_SOCKET	socket;
-	ZBX_SOCKET	socket_orig;
-	char		buf_stat[ZBX_STAT_BUF_LEN];
-	char		*buf_dyn;
-	zbx_buf_type_t	buf_type;
-	unsigned char	accepted;
-	int		timeout;
+	ZBX_SOCKET			socket;
+	ZBX_SOCKET			socket_orig;
+	size_t				read_bytes;
+	char				*buffer;
+	char				*next_line;
+#if defined(HAVE_POLARSSL) || defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
+	zbx_tls_context_t		*tls_ctx;
+#endif
+	unsigned int 			connection_type;	/* type of connection actually established: */
+								/* ZBX_TCP_SEC_UNENCRYPTED, ZBX_TCP_SEC_TLS_PSK or */
+								/* ZBX_TCP_SEC_TLS_CERT */
+	int				timeout;
+	zbx_buf_type_t			buf_type;
+	unsigned char			accepted;
+	int				num_socks;
+	ZBX_SOCKET			sockets[ZBX_SOCKET_COUNT];
+	char				buf_stat[ZBX_STAT_BUF_LEN];
+	/* Peer hostname or IP address for diagnostics (after TCP connection is established). */
+	/* TLS connection may be shut down at any time and it will not be possible to get peer IP address anymore. */
+	char				peer[ZBX_SOCKET_PEER_BUF_LEN];
 }
-zbx_sock_t;
+zbx_socket_t;
 
-const char	*zbx_tcp_strerror();
+const char	*zbx_socket_strerror(void);
 
 #if !defined(_WINDOWS)
 void	zbx_gethost_by_ip(const char *ip, char *host, size_t hostlen);
 #endif
 
-void	zbx_tcp_init(zbx_sock_t *s, ZBX_SOCKET o);
-int     zbx_tcp_connect(zbx_sock_t *s, const char *source_ip, const char *ip, unsigned short port, int timeout);
+int	zbx_tcp_connect(zbx_socket_t *s, const char *source_ip, const char *ip, unsigned short port, int timeout,
+		unsigned int tls_connect, char *tls_arg1, char *tls_arg2);
 
 #define ZBX_TCP_PROTOCOL	0x01
 
-#define zbx_tcp_send(s, d)		zbx_tcp_send_ext((s), (d), ZBX_TCP_PROTOCOL, 0)
-#define zbx_tcp_send_to(s, d, timeout)	zbx_tcp_send_ext((s), (d), ZBX_TCP_PROTOCOL, timeout)
-#define zbx_tcp_send_raw(s, d)		zbx_tcp_send_ext((s), (d), 0, 0)
+#define ZBX_TCP_SEC_UNENCRYPTED		1		/* do not use encryption with this socket */
+#define ZBX_TCP_SEC_TLS_PSK		2		/* use TLS with pre-shared key (PSK) with this socket */
+#define ZBX_TCP_SEC_TLS_CERT		4		/* use TLS with certificate with this socket */
+#define ZBX_TCP_SEC_UNENCRYPTED_TXT	"unencrypted"
+#define ZBX_TCP_SEC_TLS_PSK_TXT		"psk"
+#define ZBX_TCP_SEC_TLS_CERT_TXT	"cert"
 
-int     zbx_tcp_send_ext(zbx_sock_t *s, const char *data, unsigned char flags, int timeout);
+#define zbx_tcp_send(s, d)				zbx_tcp_send_ext((s), (d), strlen(d), ZBX_TCP_PROTOCOL, 0)
+#define zbx_tcp_send_to(s, d, timeout)			zbx_tcp_send_ext((s), (d), strlen(d), ZBX_TCP_PROTOCOL, timeout)
+#define zbx_tcp_send_bytes_to(s, d, len, timeout)	zbx_tcp_send_ext((s), (d), len, ZBX_TCP_PROTOCOL, timeout)
+#define zbx_tcp_send_raw(s, d)				zbx_tcp_send_ext((s), (d), strlen(d), 0, 0)
 
-void    zbx_tcp_close(zbx_sock_t *s);
+int	zbx_tcp_send_ext(zbx_socket_t *s, const char *data, size_t len, unsigned char flags, int timeout);
+
+void	zbx_tcp_close(zbx_socket_t *s);
 
 #if defined(HAVE_IPV6)
 int	get_address_family(const char *addr, int *family, char *error, int max_error_len);
 #endif
 
-int	zbx_tcp_listen(zbx_sock_t *s, const char *listen_ip, unsigned short listen_port);
+int	zbx_tcp_listen(zbx_socket_t *s, const char *listen_ip, unsigned short listen_port);
 
-int	zbx_tcp_accept(zbx_sock_t *s);
-void	zbx_tcp_unaccept(zbx_sock_t *s);
-
-void    zbx_tcp_free(zbx_sock_t *s);
+int	zbx_tcp_accept(zbx_socket_t *s, unsigned int tls_accept);
+void	zbx_tcp_unaccept(zbx_socket_t *s);
 
 #define ZBX_TCP_READ_UNTIL_CLOSE 0x01
 
-#define	zbx_tcp_recv(s, data) 			SUCCEED_OR_FAIL(zbx_tcp_recv_ext(s, data, 0, 0))
-#define	zbx_tcp_recv_to(s, data, timeout) 	SUCCEED_OR_FAIL(zbx_tcp_recv_ext(s, data, 0, timeout))
+#define	zbx_tcp_recv(s) 		SUCCEED_OR_FAIL(zbx_tcp_recv_ext(s, 0, 0))
+#define	zbx_tcp_recv_to(s, timeout) 	SUCCEED_OR_FAIL(zbx_tcp_recv_ext(s, 0, timeout))
 
-ssize_t	zbx_tcp_recv_ext(zbx_sock_t *s, char **data, unsigned char flags, int timeout);
+ssize_t		zbx_tcp_recv_ext(zbx_socket_t *s, unsigned char flags, int timeout);
+const char	*zbx_tcp_recv_line(zbx_socket_t *s);
 
-char    *get_ip_by_socket(zbx_sock_t *s);
-int	zbx_tcp_check_security(zbx_sock_t *s, const char *ip_list, int allow_if_empty);
+int	zbx_tcp_check_security(zbx_socket_t *s, const char *ip_list, int allow_if_empty);
 
-int	zbx_udp_connect(zbx_sock_t *s, const char *source_ip, const char *ip, unsigned short port, int timeout);
-int	zbx_udp_send(zbx_sock_t *s, const char *data, size_t data_len, int timeout);
-int	zbx_udp_recv(zbx_sock_t *s, char **data, size_t *data_len, int timeout);
-void	zbx_udp_close(zbx_sock_t *s);
+int	zbx_udp_connect(zbx_socket_t *s, const char *source_ip, const char *ip, unsigned short port, int timeout);
+int	zbx_udp_send(zbx_socket_t *s, const char *data, size_t data_len, int timeout);
+int	zbx_udp_recv(zbx_socket_t *s, int timeout);
+void	zbx_udp_close(zbx_socket_t *s);
 
 #define ZBX_DEFAULT_FTP_PORT		21
 #define ZBX_DEFAULT_SSH_PORT		22
@@ -145,7 +164,7 @@ void	zbx_udp_close(zbx_sock_t *s);
 #define ZBX_DEFAULT_AGENT_PORT_STR	"10050"
 #define ZBX_DEFAULT_SERVER_PORT_STR	"10051"
 
-int	zbx_send_response_ext(zbx_sock_t *sock, int result, const char *info, int protocol, int timeout);
+int	zbx_send_response_ext(zbx_socket_t *sock, int result, const char *info, int protocol, int timeout);
 
 #define zbx_send_response(sock, result, info, timeout) \
 		zbx_send_response_ext(sock, result, info, ZBX_TCP_PROTOCOL, timeout)
@@ -153,7 +172,7 @@ int	zbx_send_response_ext(zbx_sock_t *sock, int result, const char *info, int pr
 #define zbx_send_response_raw(sock, result, info, timeout) \
 		zbx_send_response_ext(sock, result, info, 0, timeout)
 
-int	zbx_recv_response(zbx_sock_t *sock, char **info, int timeout, char **error);
+int	zbx_recv_response(zbx_socket_t *sock, int timeout, char **error);
 
 #if defined(HAVE_IPV6)
 #define zbx_getnameinfo(sa, host, hostlen, serv, servlen, flags)						\

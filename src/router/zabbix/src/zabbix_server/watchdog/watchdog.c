@@ -44,8 +44,9 @@ ZBX_RECIPIENT;
 static zbx_vector_ptr_t	recipients;
 static int		lastsent = 0;
 
-extern unsigned char	process_type;
 extern int		CONFIG_CONFSYNCER_FREQUENCY;
+extern unsigned char	process_type, program_type;
+extern int		server_num, process_num;
 
 /******************************************************************************
  *                                                                            *
@@ -99,9 +100,9 @@ static void	sync_config(void)
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __function_name);
 
 	result = DBselect_once(
-			"select mt.mediatypeid,mt.type,mt.description,mt.smtp_server,"
-				"mt.smtp_helo,mt.smtp_email,mt.exec_path,mt.gsm_modem,"
-				"mt.username,mt.passwd,m.sendto"
+			"select mt.mediatypeid,mt.type,mt.description,mt.smtp_server,mt.smtp_helo,mt.smtp_email,"
+				"mt.exec_path,mt.gsm_modem,mt.username,mt.passwd,mt.smtp_port,mt.smtp_security,"
+				"mt.smtp_verify_peer,mt.smtp_verify_host,mt.smtp_authentication,mt.exec_params,m.sendto"
 			" from media m,users_groups u,config c,media_type mt"
 			" where m.userid=u.userid"
 				" and u.usrgrpid=c.alert_usrgrpid"
@@ -142,10 +143,17 @@ static void	sync_config(void)
 		STR_REPLACE(recipient->mediatype.smtp_helo, row[4]);
 		STR_REPLACE(recipient->mediatype.smtp_email, row[5]);
 		STR_REPLACE(recipient->mediatype.exec_path, row[6]);
+		STR_REPLACE(recipient->mediatype.exec_params, row[15]);
 		STR_REPLACE(recipient->mediatype.gsm_modem, row[7]);
 		STR_REPLACE(recipient->mediatype.username, row[8]);
 		STR_REPLACE(recipient->mediatype.passwd, row[9]);
-		STR_REPLACE(recipient->alert.sendto, row[10]);
+		recipient->mediatype.smtp_port = (unsigned short)atoi(row[10]);
+		ZBX_STR2UCHAR(recipient->mediatype.smtp_security, row[11]);
+		ZBX_STR2UCHAR(recipient->mediatype.smtp_verify_peer, row[12]);
+		ZBX_STR2UCHAR(recipient->mediatype.smtp_verify_host, row[13]);
+		ZBX_STR2UCHAR(recipient->mediatype.smtp_authentication, row[14]);
+
+		STR_REPLACE(recipient->alert.sendto, row[16]);
 
 		if (NULL == recipient->alert.subject)
 			recipient->alert.message = recipient->alert.subject = zbx_strdup(NULL, "Zabbix database is down.");
@@ -200,17 +208,24 @@ exit:
  * Author: Alexei Vladishev, Rudolfs Kreicbergs                               *
  *                                                                            *
  ******************************************************************************/
-void	main_watchdog_loop(void)
+ZBX_THREAD_ENTRY(watchdog_thread, args)
 {
 	int	now, nextsync = 0, action;
 	double	sec;
 
-	zabbix_log(LOG_LEVEL_DEBUG, "In main_watchdog_loop()");
+	process_type = ((zbx_thread_args_t *)args)->process_type;
+	server_num = ((zbx_thread_args_t *)args)->server_num;
+	process_num = ((zbx_thread_args_t *)args)->process_num;
+
+	zabbix_log(LOG_LEVEL_INFORMATION, "%s #%d started [%s #%d]", get_program_type_string(program_type),
+			server_num, get_process_type_string(process_type), process_num);
 
 	zbx_vector_ptr_create(&recipients);
 
 	for (;;)
 	{
+		zbx_handle_log();
+
 		zbx_setproctitle("%s [pinging database]", get_process_type_string(process_type));
 
 		sec = zbx_time();
