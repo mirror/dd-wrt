@@ -11,8 +11,13 @@ zabbix-install:
 	install -D zabbix/config/zabbix.startup $(INSTALLDIR)/zabbix/etc/config/zabbix.startup
 	install -D zabbix/config/zabbix.webservices $(INSTALLDIR)/zabbix/etc/config/zabbix.webservices
 	install -D zabbix/config/zbx_template.xml $(INSTALLDIR)/zabbix/etc/zabbix_template.xml
-	install -D zabbix/scripts/wclients $(INSTALLDIR)/zabbix/usr/sbin/wclients
-	install -D zabbix/scripts/clients $(INSTALLDIR)/zabbix/usr/sbin/clients
+ifeq ($(CONFIG_MADWIFI),y)
+	install -D zabbix/scripts/wclients.ath $(INSTALLDIR)/zabbix/usr/sbin/wclients
+	install -D zabbix/scripts/clients.ath $(INSTALLDIR)/zabbix/usr/sbin/clients
+else
+	install -D zabbix/scripts/wclients.brcm $(INSTALLDIR)/zabbix/usr/sbin/wclients
+	install -D zabbix/scripts/clients.brcm $(INSTALLDIR)/zabbix/usr/sbin/clients
+endif
 	install -D zabbix/scripts/topcpu $(INSTALLDIR)/zabbix/usr/sbin/topcpu
 	install -D zabbix/scripts/temps $(INSTALLDIR)/zabbix/usr/sbin/temps
 	install -D zabbix/src/zabbix_agent/zabbix_agentd $(INSTALLDIR)/zabbix/usr/sbin/zabbix_agentd
