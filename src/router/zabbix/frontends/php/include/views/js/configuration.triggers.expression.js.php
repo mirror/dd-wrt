@@ -8,11 +8,11 @@
 	}
 
 	function insertText(obj, value) {
-		<?php if ($this->data['dstfld1'] == 'expression') { ?>
+		<?php if ($this->data['dstfld1'] === 'expression' || $this->data['dstfld1'] === 'recovery_expression'): ?>
 			jQuery(obj).val(jQuery(obj).val() + value);
-		<?php } else { ?>
+		<?php else: ?>
 			jQuery(obj).val(value);
-		<?php } ?>
+		<?php endif ?>
 	}
 
 	jQuery(document).ready(function() {
@@ -23,10 +23,10 @@
 					|| jQuery('#expr_type option:selected').val().substr(0, 6) == 'strlen'
 					|| jQuery('#expr_type option:selected').val().substr(0, 4) == 'band') {
 				if (jQuery('#paramtype option:selected').val() == <?php echo PARAM_TYPE_COUNTS; ?>) {
-					jQuery('#param_0').removeAttr('readonly');
+					jQuery('#params_0').removeAttr('readonly');
 				}
 				else {
-					jQuery('#param_0').attr('readonly', 'readonly');
+					jQuery('#params_0').attr('readonly', 'readonly');
 				}
 			}
 		});
@@ -36,10 +36,10 @@
 					|| jQuery('#expr_type option:selected').val().substr(0, 6) == 'strlen'
 					|| jQuery('#expr_type option:selected').val().substr(0, 4) == 'band') {
 				if (jQuery('#paramtype option:selected').val() == <?php echo PARAM_TYPE_COUNTS; ?>) {
-					jQuery('#param_0').removeAttr('readonly');
+					jQuery('#params_0').removeAttr('readonly');
 				}
 				else {
-					jQuery('#param_0').attr('readonly', 'readonly');
+					jQuery('#params_0').attr('readonly', 'readonly');
 				}
 			}
 		});

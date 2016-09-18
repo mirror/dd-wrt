@@ -19,31 +19,52 @@
 **/
 
 
-$otherTab = new CFormList('scriptsTab');
+$widget = (new CWidget())
+	->setTitle(_('Other configuration parameters'))
+	->setControls((new CForm())
+		->cleanItems()
+		->addItem((new CList())->addItem(makeAdministrationGeneralMenu('adm.other.php')))
+	);
 
-$discoveryGroup = new CComboBox('discovery_groupid', $this->data['config']['discovery_groupid']);
-foreach ($this->data['discovery_groups'] as $group) {
+$otherTab = new CFormList();
+
+$discoveryGroup = new CComboBox('discovery_groupid', $data['discovery_groupid']);
+foreach ($data['discovery_groups'] as $group) {
 	$discoveryGroup->addItem($group['groupid'], $group['name']);
 }
 
-$alertUserGroup = new CComboBox('alert_usrgrpid', $this->data['config']['alert_usrgrpid']);
+$alertUserGroup = new CComboBox('alert_usrgrpid', $data['alert_usrgrpid']);
 $alertUserGroup->addItem(0, _('None'));
-foreach ($this->data['alert_usrgrps'] as $usrgrp) {
-	$alertUserGroup->addItem($usrgrp['usrgrpid'], get_node_name_by_elid($usrgrp['usrgrpid'], null, NAME_DELIMITER).$usrgrp['name']);
+foreach ($data['alert_usrgrps'] as $usrgrp) {
+	$alertUserGroup->addItem($usrgrp['usrgrpid'], $usrgrp['name']);
 }
 
-$otherTab->addRow(_('Refresh unsupported items (in sec)'), new CNumericBox('refresh_unsupported', $this->data['config']['refresh_unsupported'], 5));
-$otherTab->addRow(_('Group for discovered hosts'), $discoveryGroup);
-$otherTab->addRow(_('User group for database down message'), $alertUserGroup);
-$otherTab->addRow(_('Log unmatched SNMP traps'), new CCheckBox('snmptrap_logging', $this->data['config']['snmptrap_logging'], null, 1));
+$otherTab
+	->addRow(_('Refresh unsupported items (in sec)'),
+		(new CNumericBox('refresh_unsupported', $data['refresh_unsupported'], 5))
+			->setWidth(ZBX_TEXTAREA_NUMERIC_STANDARD_WIDTH)
+	)
+	->addRow(_('Group for discovered hosts'), $discoveryGroup)
+	->addRow(_('Default host inventory mode'),
+		(new CRadioButtonList('default_inventory_mode', (int) $data['default_inventory_mode']))
+			->addValue(_('Disabled'), HOST_INVENTORY_DISABLED)
+			->addValue(_('Manual'), HOST_INVENTORY_MANUAL)
+			->addValue(_('Automatic'), HOST_INVENTORY_AUTOMATIC)
+			->setModern(true)
+	)
+	->addRow(_('User group for database down message'), $alertUserGroup)
+	->addRow(_('Log unmatched SNMP traps'),
+		(new CCheckBox('snmptrap_logging'))->setChecked($data['snmptrap_logging'] == 1)
+	);
 
-$otherView = new CTabView();
-$otherView->addTab('other', _('Other parameters'), $otherTab);
+$otherForm = (new CForm())
+	->setName('otherForm')
+	->addItem(
+		(new CTabView())
+			->addTab('other', _('Other parameters'), $otherTab)
+			->setFooter(makeFormFooter(new CSubmit('update', _('Update'))))
+	);
 
-$otherForm = new CForm();
-$otherForm->setName('otherForm');
-$otherForm->addVar('form_refresh', $this->data['form_refresh'] + 1);
-$otherForm->addItem($otherView);
-$otherForm->addItem(makeFormFooter(new CSubmit('save', _('Save'))));
+$widget->addItem($otherForm);
 
-return $otherForm;
+return $widget;

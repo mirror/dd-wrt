@@ -20,6 +20,7 @@
 #define ZABBIX_VMWARE_H
 
 #include "common.h"
+#include "threads.h"
 
 /* the vmware service state */
 #define ZBX_VMWARE_STATE_NEW		0x001
@@ -110,6 +111,7 @@ typedef struct
 	char			*id;
 	char			*details;
 	char			*clusterid;
+	char			*datacenter_name;
 	zbx_vector_ptr_t	datastores;
 	zbx_vector_ptr_t	vms;
 }
@@ -183,7 +185,7 @@ typedef struct
 }
 zbx_vmware_stats_t;
 
-void	main_vmware_loop(void);
+ZBX_THREAD_ENTRY(vmware_thread, args);
 
 void	zbx_vmware_init(void);
 void	zbx_vmware_destroy(void);
@@ -267,7 +269,6 @@ zbx_vmware_perf_entity_t	*zbx_vmware_service_get_perf_entity(zbx_vmware_service_
 #	define ZBX_XPATH_LN3(LN1, LN2, LN3)	"/" ZBX_XPATH_LN(LN1) ZBX_XPATH_LN(LN2) ZBX_XPATH_LN(LN3)
 
 char	*zbx_xml_read_value(const char *data, const char *xpath);
-char	*zbx_xml_read_node_value(xmlDoc *doc, xmlNode *node, const char *xpath);
 int	zbx_xml_read_values(const char *data, const char *xpath, zbx_vector_str_t *values);
 
 #endif	/* defined(HAVE_LIBXML2) && defined(HAVE_LIBCURL) */

@@ -1,3 +1,23 @@
+CREATE TABLE users (
+	userid                   number(20)                                NOT NULL,
+	alias                    nvarchar2(100)  DEFAULT ''                ,
+	name                     nvarchar2(100)  DEFAULT ''                ,
+	surname                  nvarchar2(100)  DEFAULT ''                ,
+	passwd                   nvarchar2(32)   DEFAULT ''                ,
+	url                      nvarchar2(255)  DEFAULT ''                ,
+	autologin                number(10)      DEFAULT '0'               NOT NULL,
+	autologout               number(10)      DEFAULT '900'             NOT NULL,
+	lang                     nvarchar2(5)    DEFAULT 'en_GB'           ,
+	refresh                  number(10)      DEFAULT '30'              NOT NULL,
+	type                     number(10)      DEFAULT '1'               NOT NULL,
+	theme                    nvarchar2(128)  DEFAULT 'default'         ,
+	attempt_failed           number(10)      DEFAULT 0                 NOT NULL,
+	attempt_ip               nvarchar2(39)   DEFAULT ''                ,
+	attempt_clock            number(10)      DEFAULT 0                 NOT NULL,
+	rows_per_page            number(10)      DEFAULT 50                NOT NULL,
+	PRIMARY KEY (userid)
+);
+CREATE UNIQUE INDEX users_1 ON users (alias);
 CREATE TABLE maintenances (
 	maintenanceid            number(20)                                NOT NULL,
 	name                     nvarchar2(128)  DEFAULT ''                ,
@@ -8,13 +28,14 @@ CREATE TABLE maintenances (
 	PRIMARY KEY (maintenanceid)
 );
 CREATE INDEX maintenances_1 ON maintenances (active_since,active_till);
+CREATE UNIQUE INDEX maintenances_2 ON maintenances (name);
 CREATE TABLE hosts (
 	hostid                   number(20)                                NOT NULL,
 	proxy_hostid             number(20)                                NULL,
-	host                     nvarchar2(64)   DEFAULT ''                ,
+	host                     nvarchar2(128)  DEFAULT ''                ,
 	status                   number(10)      DEFAULT '0'               NOT NULL,
 	disable_until            number(10)      DEFAULT '0'               NOT NULL,
-	error                    nvarchar2(128)  DEFAULT ''                ,
+	error                    nvarchar2(2048) DEFAULT ''                ,
 	available                number(10)      DEFAULT '0'               NOT NULL,
 	errors_from              number(10)      DEFAULT '0'               NOT NULL,
 	lastaccess               number(10)      DEFAULT '0'               NOT NULL,
@@ -32,15 +53,22 @@ CREATE TABLE hosts (
 	maintenance_from         number(10)      DEFAULT '0'               NOT NULL,
 	ipmi_errors_from         number(10)      DEFAULT '0'               NOT NULL,
 	snmp_errors_from         number(10)      DEFAULT '0'               NOT NULL,
-	ipmi_error               nvarchar2(128)  DEFAULT ''                ,
-	snmp_error               nvarchar2(128)  DEFAULT ''                ,
+	ipmi_error               nvarchar2(2048) DEFAULT ''                ,
+	snmp_error               nvarchar2(2048) DEFAULT ''                ,
 	jmx_disable_until        number(10)      DEFAULT '0'               NOT NULL,
 	jmx_available            number(10)      DEFAULT '0'               NOT NULL,
 	jmx_errors_from          number(10)      DEFAULT '0'               NOT NULL,
-	jmx_error                nvarchar2(128)  DEFAULT ''                ,
-	name                     nvarchar2(64)   DEFAULT ''                ,
+	jmx_error                nvarchar2(2048) DEFAULT ''                ,
+	name                     nvarchar2(128)  DEFAULT ''                ,
 	flags                    number(10)      DEFAULT '0'               NOT NULL,
 	templateid               number(20)                                NULL,
+	description              nvarchar2(2048) DEFAULT ''                ,
+	tls_connect              number(10)      DEFAULT '1'               NOT NULL,
+	tls_accept               number(10)      DEFAULT '1'               NOT NULL,
+	tls_issuer               nvarchar2(1024) DEFAULT ''                ,
+	tls_subject              nvarchar2(1024) DEFAULT ''                ,
+	tls_psk_identity         nvarchar2(128)  DEFAULT ''                ,
+	tls_psk                  nvarchar2(512)  DEFAULT ''                ,
 	PRIMARY KEY (hostid)
 );
 CREATE INDEX hosts_1 ON hosts (host);
@@ -50,7 +78,7 @@ CREATE INDEX hosts_4 ON hosts (name);
 CREATE INDEX hosts_5 ON hosts (maintenanceid);
 CREATE TABLE groups (
 	groupid                  number(20)                                NOT NULL,
-	name                     nvarchar2(64)   DEFAULT ''                ,
+	name                     nvarchar2(255)  DEFAULT ''                ,
 	internal                 number(10)      DEFAULT '0'               NOT NULL,
 	flags                    number(10)      DEFAULT '0'               NOT NULL,
 	PRIMARY KEY (groupid)
@@ -59,7 +87,7 @@ CREATE INDEX groups_1 ON groups (name);
 CREATE TABLE group_prototype (
 	group_prototypeid        number(20)                                NOT NULL,
 	hostid                   number(20)                                NOT NULL,
-	name                     nvarchar2(64)   DEFAULT ''                ,
+	name                     nvarchar2(255)  DEFAULT ''                ,
 	groupid                  number(20)                                NULL,
 	templateid               number(20)                                NULL,
 	PRIMARY KEY (group_prototypeid)
@@ -79,6 +107,8 @@ CREATE TABLE screens (
 	hsize                    number(10)      DEFAULT '1'               NOT NULL,
 	vsize                    number(10)      DEFAULT '1'               NOT NULL,
 	templateid               number(20)                                NULL,
+	userid                   number(20)                                NULL,
+	private                  number(10)      DEFAULT '1'               NOT NULL,
 	PRIMARY KEY (screenid)
 );
 CREATE INDEX screens_1 ON screens (templateid);
@@ -91,8 +121,8 @@ CREATE TABLE screens_items (
 	height                   number(10)      DEFAULT '200'             NOT NULL,
 	x                        number(10)      DEFAULT '0'               NOT NULL,
 	y                        number(10)      DEFAULT '0'               NOT NULL,
-	colspan                  number(10)      DEFAULT '0'               NOT NULL,
-	rowspan                  number(10)      DEFAULT '0'               NOT NULL,
+	colspan                  number(10)      DEFAULT '1'               NOT NULL,
+	rowspan                  number(10)      DEFAULT '1'               NOT NULL,
 	elements                 number(10)      DEFAULT '25'              NOT NULL,
 	valign                   number(10)      DEFAULT '0'               NOT NULL,
 	halign                   number(10)      DEFAULT '0'               NOT NULL,
@@ -101,15 +131,51 @@ CREATE TABLE screens_items (
 	dynamic                  number(10)      DEFAULT '0'               NOT NULL,
 	sort_triggers            number(10)      DEFAULT '0'               NOT NULL,
 	application              nvarchar2(255)  DEFAULT ''                ,
+	max_columns              number(10)      DEFAULT '3'               NOT NULL,
 	PRIMARY KEY (screenitemid)
 );
 CREATE INDEX screens_items_1 ON screens_items (screenid);
+CREATE TABLE screen_user (
+	screenuserid             number(20)                                NOT NULL,
+	screenid                 number(20)                                NOT NULL,
+	userid                   number(20)                                NOT NULL,
+	permission               number(10)      DEFAULT '2'               NOT NULL,
+	PRIMARY KEY (screenuserid)
+);
+CREATE UNIQUE INDEX screen_user_1 ON screen_user (screenid,userid);
+CREATE TABLE screen_usrgrp (
+	screenusrgrpid           number(20)                                NOT NULL,
+	screenid                 number(20)                                NOT NULL,
+	usrgrpid                 number(20)                                NOT NULL,
+	permission               number(10)      DEFAULT '2'               NOT NULL,
+	PRIMARY KEY (screenusrgrpid)
+);
+CREATE UNIQUE INDEX screen_usrgrp_1 ON screen_usrgrp (screenid,usrgrpid);
 CREATE TABLE slideshows (
 	slideshowid              number(20)                                NOT NULL,
 	name                     nvarchar2(255)  DEFAULT ''                ,
 	delay                    number(10)      DEFAULT '0'               NOT NULL,
+	userid                   number(20)                                NOT NULL,
+	private                  number(10)      DEFAULT '1'               NOT NULL,
 	PRIMARY KEY (slideshowid)
 );
+CREATE UNIQUE INDEX slideshows_1 ON slideshows (name);
+CREATE TABLE slideshow_user (
+	slideshowuserid          number(20)                                NOT NULL,
+	slideshowid              number(20)                                NOT NULL,
+	userid                   number(20)                                NOT NULL,
+	permission               number(10)      DEFAULT '2'               NOT NULL,
+	PRIMARY KEY (slideshowuserid)
+);
+CREATE UNIQUE INDEX slideshow_user_1 ON slideshow_user (slideshowid,userid);
+CREATE TABLE slideshow_usrgrp (
+	slideshowusrgrpid        number(20)                                NOT NULL,
+	slideshowid              number(20)                                NOT NULL,
+	usrgrpid                 number(20)                                NOT NULL,
+	permission               number(10)      DEFAULT '2'               NOT NULL,
+	PRIMARY KEY (slideshowusrgrpid)
+);
+CREATE UNIQUE INDEX slideshow_usrgrp_1 ON slideshow_usrgrp (slideshowid,usrgrpid);
 CREATE TABLE slides (
 	slideid                  number(20)                                NOT NULL,
 	slideshowid              number(20)                                NOT NULL,
@@ -124,13 +190,14 @@ CREATE TABLE drules (
 	druleid                  number(20)                                NOT NULL,
 	proxy_hostid             number(20)                                NULL,
 	name                     nvarchar2(255)  DEFAULT ''                ,
-	iprange                  nvarchar2(255)  DEFAULT ''                ,
+	iprange                  nvarchar2(2048) DEFAULT ''                ,
 	delay                    number(10)      DEFAULT '3600'            NOT NULL,
 	nextcheck                number(10)      DEFAULT '0'               NOT NULL,
 	status                   number(10)      DEFAULT '0'               NOT NULL,
 	PRIMARY KEY (druleid)
 );
 CREATE INDEX drules_1 ON drules (proxy_hostid);
+CREATE UNIQUE INDEX drules_2 ON drules (name);
 CREATE TABLE dchecks (
 	dcheckid                 number(20)                                NOT NULL,
 	druleid                  number(20)                                NOT NULL,
@@ -153,6 +220,7 @@ CREATE TABLE applications (
 	applicationid            number(20)                                NOT NULL,
 	hostid                   number(20)                                NOT NULL,
 	name                     nvarchar2(255)  DEFAULT ''                ,
+	flags                    number(10)      DEFAULT '0'               NOT NULL,
 	PRIMARY KEY (applicationid)
 );
 CREATE UNIQUE INDEX applications_2 ON applications (hostid,name);
@@ -164,7 +232,7 @@ CREATE TABLE httptest (
 	delay                    number(10)      DEFAULT '60'              NOT NULL,
 	status                   number(10)      DEFAULT '0'               NOT NULL,
 	variables                nvarchar2(2048) DEFAULT ''                ,
-	agent                    nvarchar2(255)  DEFAULT ''                ,
+	agent                    nvarchar2(255)  DEFAULT 'Zabbix'          ,
 	authentication           number(10)      DEFAULT '0'               NOT NULL,
 	http_user                nvarchar2(64)   DEFAULT ''                ,
 	http_password            nvarchar2(64)   DEFAULT ''                ,
@@ -172,6 +240,12 @@ CREATE TABLE httptest (
 	templateid               number(20)                                NULL,
 	http_proxy               nvarchar2(255)  DEFAULT ''                ,
 	retries                  number(10)      DEFAULT '1'               NOT NULL,
+	ssl_cert_file            nvarchar2(255)  DEFAULT ''                ,
+	ssl_key_file             nvarchar2(255)  DEFAULT ''                ,
+	ssl_key_password         nvarchar2(64)   DEFAULT ''                ,
+	verify_peer              number(10)      DEFAULT '0'               NOT NULL,
+	verify_host              number(10)      DEFAULT '0'               NOT NULL,
+	headers                  nvarchar2(2048) DEFAULT ''                ,
 	PRIMARY KEY (httptestid)
 );
 CREATE INDEX httptest_1 ON httptest (applicationid);
@@ -183,12 +257,15 @@ CREATE TABLE httpstep (
 	httptestid               number(20)                                NOT NULL,
 	name                     nvarchar2(64)   DEFAULT ''                ,
 	no                       number(10)      DEFAULT '0'               NOT NULL,
-	url                      nvarchar2(255)  DEFAULT ''                ,
-	timeout                  number(10)      DEFAULT '30'              NOT NULL,
+	url                      nvarchar2(2048) DEFAULT ''                ,
+	timeout                  number(10)      DEFAULT '15'              NOT NULL,
 	posts                    nvarchar2(2048) DEFAULT ''                ,
 	required                 nvarchar2(255)  DEFAULT ''                ,
 	status_codes             nvarchar2(255)  DEFAULT ''                ,
 	variables                nvarchar2(2048) DEFAULT ''                ,
+	follow_redirects         number(10)      DEFAULT '1'               NOT NULL,
+	retrieve_mode            number(10)      DEFAULT '0'               NOT NULL,
+	headers                  nvarchar2(2048) DEFAULT ''                ,
 	PRIMARY KEY (httpstepid)
 );
 CREATE INDEX httpstep_1 ON httpstep (httptestid);
@@ -201,6 +278,7 @@ CREATE TABLE interface (
 	ip                       nvarchar2(64)   DEFAULT '127.0.0.1'       ,
 	dns                      nvarchar2(64)   DEFAULT ''                ,
 	port                     nvarchar2(64)   DEFAULT '10050'           ,
+	bulk                     number(10)      DEFAULT '1'               NOT NULL,
 	PRIMARY KEY (interfaceid)
 );
 CREATE INDEX interface_1 ON interface (hostid,type);
@@ -210,7 +288,7 @@ CREATE TABLE valuemaps (
 	name                     nvarchar2(64)   DEFAULT ''                ,
 	PRIMARY KEY (valuemapid)
 );
-CREATE INDEX valuemaps_1 ON valuemaps (name);
+CREATE UNIQUE INDEX valuemaps_1 ON valuemaps (name);
 CREATE TABLE items (
 	itemid                   number(20)                                NOT NULL,
 	type                     number(10)      DEFAULT '0'               NOT NULL,
@@ -232,8 +310,8 @@ CREATE TABLE items (
 	snmpv3_securitylevel     number(10)      DEFAULT '0'               NOT NULL,
 	snmpv3_authpassphrase    nvarchar2(64)   DEFAULT ''                ,
 	snmpv3_privpassphrase    nvarchar2(64)   DEFAULT ''                ,
-	formula                  nvarchar2(255)  DEFAULT '1'               ,
-	error                    nvarchar2(128)  DEFAULT ''                ,
+	formula                  nvarchar2(255)  DEFAULT ''                ,
+	error                    nvarchar2(2048) DEFAULT ''                ,
 	lastlogsize              number(20)      DEFAULT '0'               NOT NULL,
 	logtimefmt               nvarchar2(64)   DEFAULT ''                ,
 	templateid               number(20)                                NULL,
@@ -249,7 +327,6 @@ CREATE TABLE items (
 	privatekey               nvarchar2(64)   DEFAULT ''                ,
 	mtime                    number(10)      DEFAULT '0'               NOT NULL,
 	flags                    number(10)      DEFAULT '0'               NOT NULL,
-	filter                   nvarchar2(255)  DEFAULT ''                ,
 	interfaceid              number(20)                                NULL,
 	port                     nvarchar2(64)   DEFAULT ''                ,
 	description              nvarchar2(2048) DEFAULT ''                ,
@@ -259,6 +336,7 @@ CREATE TABLE items (
 	snmpv3_privprotocol      number(10)      DEFAULT '0'               NOT NULL,
 	state                    number(10)      DEFAULT '0'               NOT NULL,
 	snmpv3_contextname       nvarchar2(255)  DEFAULT ''                ,
+	evaltype                 number(10)      DEFAULT '0'               NOT NULL,
 	PRIMARY KEY (itemid)
 );
 CREATE UNIQUE INDEX items_1 ON items (hostid,key_);
@@ -296,28 +374,15 @@ CREATE TABLE media_type (
 	username                 nvarchar2(255)  DEFAULT ''                ,
 	passwd                   nvarchar2(255)  DEFAULT ''                ,
 	status                   number(10)      DEFAULT '0'               NOT NULL,
+	smtp_port                number(10)      DEFAULT '25'              NOT NULL,
+	smtp_security            number(10)      DEFAULT '0'               NOT NULL,
+	smtp_verify_peer         number(10)      DEFAULT '0'               NOT NULL,
+	smtp_verify_host         number(10)      DEFAULT '0'               NOT NULL,
+	smtp_authentication      number(10)      DEFAULT '0'               NOT NULL,
+	exec_params              nvarchar2(255)  DEFAULT ''                ,
 	PRIMARY KEY (mediatypeid)
 );
-CREATE TABLE users (
-	userid                   number(20)                                NOT NULL,
-	alias                    nvarchar2(100)  DEFAULT ''                ,
-	name                     nvarchar2(100)  DEFAULT ''                ,
-	surname                  nvarchar2(100)  DEFAULT ''                ,
-	passwd                   nvarchar2(32)   DEFAULT ''                ,
-	url                      nvarchar2(255)  DEFAULT ''                ,
-	autologin                number(10)      DEFAULT '0'               NOT NULL,
-	autologout               number(10)      DEFAULT '900'             NOT NULL,
-	lang                     nvarchar2(5)    DEFAULT 'en_GB'           ,
-	refresh                  number(10)      DEFAULT '30'              NOT NULL,
-	type                     number(10)      DEFAULT '1'               NOT NULL,
-	theme                    nvarchar2(128)  DEFAULT 'default'         ,
-	attempt_failed           number(10)      DEFAULT 0                 NOT NULL,
-	attempt_ip               nvarchar2(39)   DEFAULT ''                ,
-	attempt_clock            number(10)      DEFAULT 0                 NOT NULL,
-	rows_per_page            number(10)      DEFAULT 50                NOT NULL,
-	PRIMARY KEY (userid)
-);
-CREATE INDEX users_1 ON users (alias);
+CREATE UNIQUE INDEX media_type_1 ON media_type (description);
 CREATE TABLE usrgrp (
 	usrgrpid                 number(20)                                NOT NULL,
 	name                     nvarchar2(64)   DEFAULT ''                ,
@@ -326,7 +391,7 @@ CREATE TABLE usrgrp (
 	debug_mode               number(10)      DEFAULT '0'               NOT NULL,
 	PRIMARY KEY (usrgrpid)
 );
-CREATE INDEX usrgrp_1 ON usrgrp (name);
+CREATE UNIQUE INDEX usrgrp_1 ON usrgrp (name);
 CREATE TABLE users_groups (
 	id                       number(20)                                NOT NULL,
 	usrgrpid                 number(20)                                NOT NULL,
@@ -350,6 +415,7 @@ CREATE TABLE scripts (
 );
 CREATE INDEX scripts_1 ON scripts (usrgrpid);
 CREATE INDEX scripts_2 ON scripts (groupid);
+CREATE UNIQUE INDEX scripts_3 ON scripts (name);
 CREATE TABLE actions (
 	actionid                 number(20)                                NOT NULL,
 	name                     nvarchar2(255)  DEFAULT ''                ,
@@ -359,12 +425,14 @@ CREATE TABLE actions (
 	esc_period               number(10)      DEFAULT '0'               NOT NULL,
 	def_shortdata            nvarchar2(255)  DEFAULT ''                ,
 	def_longdata             nvarchar2(2048) DEFAULT ''                ,
-	recovery_msg             number(10)      DEFAULT '0'               NOT NULL,
 	r_shortdata              nvarchar2(255)  DEFAULT ''                ,
 	r_longdata               nvarchar2(2048) DEFAULT ''                ,
+	formula                  nvarchar2(255)  DEFAULT ''                ,
+	maintenance_mode         number(10)      DEFAULT '1'               NOT NULL,
 	PRIMARY KEY (actionid)
 );
 CREATE INDEX actions_1 ON actions (eventsource,status);
+CREATE UNIQUE INDEX actions_2 ON actions (name);
 CREATE TABLE operations (
 	operationid              number(20)                                NOT NULL,
 	actionid                 number(20)                                NOT NULL,
@@ -373,6 +441,7 @@ CREATE TABLE operations (
 	esc_step_from            number(10)      DEFAULT '1'               NOT NULL,
 	esc_step_to              number(10)      DEFAULT '1'               NOT NULL,
 	evaltype                 number(10)      DEFAULT '0'               NOT NULL,
+	recovery                 number(10)      DEFAULT '0'               NOT NULL,
 	PRIMARY KEY (operationid)
 );
 CREATE INDEX operations_1 ON operations (actionid);
@@ -463,6 +532,7 @@ CREATE TABLE conditions (
 	conditiontype            number(10)      DEFAULT '0'               NOT NULL,
 	operator                 number(10)      DEFAULT '0'               NOT NULL,
 	value                    nvarchar2(255)  DEFAULT ''                ,
+	value2                   nvarchar2(255)  DEFAULT ''                ,
 	PRIMARY KEY (conditionid)
 );
 CREATE INDEX conditions_1 ON conditions (actionid);
@@ -474,7 +544,7 @@ CREATE TABLE config (
 	event_ack_enable         number(10)      DEFAULT '1'               NOT NULL,
 	event_expire             number(10)      DEFAULT '7'               NOT NULL,
 	event_show_max           number(10)      DEFAULT '100'             NOT NULL,
-	default_theme            nvarchar2(128)  DEFAULT 'originalblue'    ,
+	default_theme            nvarchar2(128)  DEFAULT 'blue-theme'      ,
 	authentication_type      number(10)      DEFAULT '0'               NOT NULL,
 	ldap_host                nvarchar2(255)  DEFAULT ''                ,
 	ldap_port                number(10)      DEFAULT 389               NOT NULL,
@@ -487,12 +557,12 @@ CREATE TABLE config (
 	discovery_groupid        number(20)                                NOT NULL,
 	max_in_table             number(10)      DEFAULT '50'              NOT NULL,
 	search_limit             number(10)      DEFAULT '1000'            NOT NULL,
-	severity_color_0         nvarchar2(6)    DEFAULT 'DBDBDB'          ,
-	severity_color_1         nvarchar2(6)    DEFAULT 'D6F6FF'          ,
-	severity_color_2         nvarchar2(6)    DEFAULT 'FFF6A5'          ,
-	severity_color_3         nvarchar2(6)    DEFAULT 'FFB689'          ,
-	severity_color_4         nvarchar2(6)    DEFAULT 'FF9999'          ,
-	severity_color_5         nvarchar2(6)    DEFAULT 'FF3838'          ,
+	severity_color_0         nvarchar2(6)    DEFAULT '97AAB3'          ,
+	severity_color_1         nvarchar2(6)    DEFAULT '7499FF'          ,
+	severity_color_2         nvarchar2(6)    DEFAULT 'FFC859'          ,
+	severity_color_3         nvarchar2(6)    DEFAULT 'FFA059'          ,
+	severity_color_4         nvarchar2(6)    DEFAULT 'E97659'          ,
+	severity_color_5         nvarchar2(6)    DEFAULT 'E45959'          ,
 	severity_name_0          nvarchar2(32)   DEFAULT 'Not classified'  ,
 	severity_name_1          nvarchar2(32)   DEFAULT 'Information'     ,
 	severity_name_2          nvarchar2(32)   DEFAULT 'Warning'         ,
@@ -528,6 +598,7 @@ CREATE TABLE config (
 	hk_trends_mode           number(10)      DEFAULT '1'               NOT NULL,
 	hk_trends_global         number(10)      DEFAULT '0'               NOT NULL,
 	hk_trends                number(10)      DEFAULT '365'             NOT NULL,
+	default_inventory_mode   number(10)      DEFAULT '-1'              NOT NULL,
 	PRIMARY KEY (configid)
 );
 CREATE INDEX config_1 ON config (alert_usrgrpid);
@@ -547,10 +618,15 @@ CREATE TABLE triggers (
 	type                     number(10)      DEFAULT '0'               NOT NULL,
 	state                    number(10)      DEFAULT '0'               NOT NULL,
 	flags                    number(10)      DEFAULT '0'               NOT NULL,
+	recovery_mode            number(10)      DEFAULT '0'               NOT NULL,
+	recovery_expression      nvarchar2(2048) DEFAULT ''                ,
+	correlation_mode         number(10)      DEFAULT '0'               NOT NULL,
+	correlation_tag          nvarchar2(255)  DEFAULT ''                ,
+	manual_close             number(10)      DEFAULT '0'               NOT NULL,
 	PRIMARY KEY (triggerid)
 );
 CREATE INDEX triggers_1 ON triggers (status);
-CREATE INDEX triggers_2 ON triggers (value);
+CREATE INDEX triggers_2 ON triggers (value,lastchange);
 CREATE INDEX triggers_3 ON triggers (templateid);
 CREATE TABLE trigger_depends (
 	triggerdepid             number(20)                                NOT NULL,
@@ -612,36 +688,31 @@ CREATE INDEX graphs_items_1 ON graphs_items (itemid);
 CREATE INDEX graphs_items_2 ON graphs_items (graphid);
 CREATE TABLE graph_theme (
 	graphthemeid             number(20)                                NOT NULL,
-	description              nvarchar2(64)   DEFAULT ''                ,
 	theme                    nvarchar2(64)   DEFAULT ''                ,
-	backgroundcolor          nvarchar2(6)    DEFAULT 'F0F0F0'          ,
-	graphcolor               nvarchar2(6)    DEFAULT 'FFFFFF'          ,
-	graphbordercolor         nvarchar2(6)    DEFAULT '222222'          ,
-	gridcolor                nvarchar2(6)    DEFAULT 'CCCCCC'          ,
-	maingridcolor            nvarchar2(6)    DEFAULT 'AAAAAA'          ,
-	gridbordercolor          nvarchar2(6)    DEFAULT '000000'          ,
-	textcolor                nvarchar2(6)    DEFAULT '202020'          ,
-	highlightcolor           nvarchar2(6)    DEFAULT 'AA4444'          ,
-	leftpercentilecolor      nvarchar2(6)    DEFAULT '11CC11'          ,
-	rightpercentilecolor     nvarchar2(6)    DEFAULT 'CC1111'          ,
-	nonworktimecolor         nvarchar2(6)    DEFAULT 'CCCCCC'          ,
-	gridview                 number(10)      DEFAULT 1                 NOT NULL,
-	legendview               number(10)      DEFAULT 1                 NOT NULL,
+	backgroundcolor          nvarchar2(6)    DEFAULT ''                ,
+	graphcolor               nvarchar2(6)    DEFAULT ''                ,
+	gridcolor                nvarchar2(6)    DEFAULT ''                ,
+	maingridcolor            nvarchar2(6)    DEFAULT ''                ,
+	gridbordercolor          nvarchar2(6)    DEFAULT ''                ,
+	textcolor                nvarchar2(6)    DEFAULT ''                ,
+	highlightcolor           nvarchar2(6)    DEFAULT ''                ,
+	leftpercentilecolor      nvarchar2(6)    DEFAULT ''                ,
+	rightpercentilecolor     nvarchar2(6)    DEFAULT ''                ,
+	nonworktimecolor         nvarchar2(6)    DEFAULT ''                ,
 	PRIMARY KEY (graphthemeid)
 );
-CREATE INDEX graph_theme_1 ON graph_theme (description);
-CREATE INDEX graph_theme_2 ON graph_theme (theme);
+CREATE UNIQUE INDEX graph_theme_1 ON graph_theme (theme);
 CREATE TABLE globalmacro (
 	globalmacroid            number(20)                                NOT NULL,
-	macro                    nvarchar2(64)   DEFAULT ''                ,
+	macro                    nvarchar2(255)  DEFAULT ''                ,
 	value                    nvarchar2(255)  DEFAULT ''                ,
 	PRIMARY KEY (globalmacroid)
 );
-CREATE INDEX globalmacro_1 ON globalmacro (macro);
+CREATE UNIQUE INDEX globalmacro_1 ON globalmacro (macro);
 CREATE TABLE hostmacro (
 	hostmacroid              number(20)                                NOT NULL,
 	hostid                   number(20)                                NOT NULL,
-	macro                    nvarchar2(64)   DEFAULT ''                ,
+	macro                    nvarchar2(255)  DEFAULT ''                ,
 	value                    nvarchar2(255)  DEFAULT ''                ,
 	PRIMARY KEY (hostmacroid)
 );
@@ -736,7 +807,7 @@ CREATE TABLE icon_map (
 	default_iconid           number(20)                                NOT NULL,
 	PRIMARY KEY (iconmapid)
 );
-CREATE INDEX icon_map_1 ON icon_map (name);
+CREATE UNIQUE INDEX icon_map_1 ON icon_map (name);
 CREATE INDEX icon_map_2 ON icon_map (default_iconid);
 CREATE TABLE icon_mapping (
 	iconmappingid            number(20)                                NOT NULL,
@@ -778,9 +849,11 @@ CREATE TABLE sysmaps (
 	iconmapid                number(20)                                NULL,
 	expand_macros            number(10)      DEFAULT '0'               NOT NULL,
 	severity_min             number(10)      DEFAULT '0'               NOT NULL,
+	userid                   number(20)                                NOT NULL,
+	private                  number(10)      DEFAULT '1'               NOT NULL,
 	PRIMARY KEY (sysmapid)
 );
-CREATE INDEX sysmaps_1 ON sysmaps (name);
+CREATE UNIQUE INDEX sysmaps_1 ON sysmaps (name);
 CREATE INDEX sysmaps_2 ON sysmaps (backgroundid);
 CREATE INDEX sysmaps_3 ON sysmaps (iconmapid);
 CREATE TABLE sysmaps_elements (
@@ -802,6 +875,7 @@ CREATE TABLE sysmaps_elements (
 	height                   number(10)      DEFAULT '200'             NOT NULL,
 	viewtype                 number(10)      DEFAULT '0'               NOT NULL,
 	use_iconmap              number(10)      DEFAULT '1'               NOT NULL,
+	application              nvarchar2(255)  DEFAULT ''                ,
 	PRIMARY KEY (selementid)
 );
 CREATE INDEX sysmaps_elements_1 ON sysmaps_elements (sysmapid);
@@ -849,6 +923,22 @@ CREATE TABLE sysmap_url (
 	PRIMARY KEY (sysmapurlid)
 );
 CREATE UNIQUE INDEX sysmap_url_1 ON sysmap_url (sysmapid,name);
+CREATE TABLE sysmap_user (
+	sysmapuserid             number(20)                                NOT NULL,
+	sysmapid                 number(20)                                NOT NULL,
+	userid                   number(20)                                NOT NULL,
+	permission               number(10)      DEFAULT '2'               NOT NULL,
+	PRIMARY KEY (sysmapuserid)
+);
+CREATE UNIQUE INDEX sysmap_user_1 ON sysmap_user (sysmapid,userid);
+CREATE TABLE sysmap_usrgrp (
+	sysmapusrgrpid           number(20)                                NOT NULL,
+	sysmapid                 number(20)                                NOT NULL,
+	usrgrpid                 number(20)                                NOT NULL,
+	permission               number(10)      DEFAULT '2'               NOT NULL,
+	PRIMARY KEY (sysmapusrgrpid)
+);
+CREATE UNIQUE INDEX sysmap_usrgrp_1 ON sysmap_usrgrp (sysmapid,usrgrpid);
 CREATE TABLE maintenances_hosts (
 	maintenance_hostid       number(20)                                NOT NULL,
 	maintenanceid            number(20)                                NOT NULL,
@@ -868,7 +958,7 @@ CREATE INDEX maintenances_groups_2 ON maintenances_groups (groupid);
 CREATE TABLE timeperiods (
 	timeperiodid             number(20)                                NOT NULL,
 	timeperiod_type          number(10)      DEFAULT '0'               NOT NULL,
-	every                    number(10)      DEFAULT '0'               NOT NULL,
+	every                    number(10)      DEFAULT '1'               NOT NULL,
 	month                    number(10)      DEFAULT '0'               NOT NULL,
 	dayofweek                number(10)      DEFAULT '0'               NOT NULL,
 	day                      number(10)      DEFAULT '0'               NOT NULL,
@@ -891,7 +981,7 @@ CREATE TABLE regexps (
 	test_string              nvarchar2(2048) DEFAULT ''                ,
 	PRIMARY KEY (regexpid)
 );
-CREATE INDEX regexps_1 ON regexps (name);
+CREATE UNIQUE INDEX regexps_1 ON regexps (name);
 CREATE TABLE expressions (
 	expressionid             number(20)                                NOT NULL,
 	regexpid                 number(20)                                NOT NULL,
@@ -902,31 +992,11 @@ CREATE TABLE expressions (
 	PRIMARY KEY (expressionid)
 );
 CREATE INDEX expressions_1 ON expressions (regexpid);
-CREATE TABLE nodes (
-	nodeid                   number(10)                                NOT NULL,
-	name                     nvarchar2(64)   DEFAULT '0'               ,
-	ip                       nvarchar2(39)   DEFAULT ''                ,
-	port                     number(10)      DEFAULT '10051'           NOT NULL,
-	nodetype                 number(10)      DEFAULT '0'               NOT NULL,
-	masterid                 number(10)                                NULL,
-	PRIMARY KEY (nodeid)
-);
-CREATE INDEX nodes_1 ON nodes (masterid);
-CREATE TABLE node_cksum (
-	nodeid                   number(10)                                NOT NULL,
-	tablename                nvarchar2(64)   DEFAULT ''                ,
-	recordid                 number(20)                                NOT NULL,
-	cksumtype                number(10)      DEFAULT '0'               NOT NULL,
-	cksum                    nclob           DEFAULT ''                ,
-	sync                     nvarchar2(128)  DEFAULT ''                
-);
-CREATE INDEX node_cksum_1 ON node_cksum (nodeid,cksumtype,tablename,recordid);
 CREATE TABLE ids (
-	nodeid                   number(10)                                NOT NULL,
 	table_name               nvarchar2(64)   DEFAULT ''                ,
 	field_name               nvarchar2(64)   DEFAULT ''                ,
 	nextid                   number(20)                                NOT NULL,
-	PRIMARY KEY (nodeid,table_name,field_name)
+	PRIMARY KEY (table_name,field_name)
 );
 CREATE TABLE alerts (
 	alertid                  number(20)                                NOT NULL,
@@ -958,16 +1028,6 @@ CREATE TABLE history (
 	ns                       number(10)      DEFAULT '0'               NOT NULL
 );
 CREATE INDEX history_1 ON history (itemid,clock);
-CREATE TABLE history_sync (
-	id                       number(20)                                NOT NULL,
-	nodeid                   number(10)                                NOT NULL,
-	itemid                   number(20)                                NOT NULL,
-	clock                    number(10)      DEFAULT '0'               NOT NULL,
-	value                    number(20,4)    DEFAULT '0.0000'          NOT NULL,
-	ns                       number(10)      DEFAULT '0'               NOT NULL,
-	PRIMARY KEY (id)
-);
-CREATE INDEX history_sync_1 ON history_sync (nodeid,id);
 CREATE TABLE history_uint (
 	itemid                   number(20)                                NOT NULL,
 	clock                    number(10)      DEFAULT '0'               NOT NULL,
@@ -975,16 +1035,6 @@ CREATE TABLE history_uint (
 	ns                       number(10)      DEFAULT '0'               NOT NULL
 );
 CREATE INDEX history_uint_1 ON history_uint (itemid,clock);
-CREATE TABLE history_uint_sync (
-	id                       number(20)                                NOT NULL,
-	nodeid                   number(10)                                NOT NULL,
-	itemid                   number(20)                                NOT NULL,
-	clock                    number(10)      DEFAULT '0'               NOT NULL,
-	value                    number(20)      DEFAULT '0'               NOT NULL,
-	ns                       number(10)      DEFAULT '0'               NOT NULL,
-	PRIMARY KEY (id)
-);
-CREATE INDEX history_uint_sync_1 ON history_uint_sync (nodeid,id);
 CREATE TABLE history_str (
 	itemid                   number(20)                                NOT NULL,
 	clock                    number(10)      DEFAULT '0'               NOT NULL,
@@ -992,18 +1042,7 @@ CREATE TABLE history_str (
 	ns                       number(10)      DEFAULT '0'               NOT NULL
 );
 CREATE INDEX history_str_1 ON history_str (itemid,clock);
-CREATE TABLE history_str_sync (
-	id                       number(20)                                NOT NULL,
-	nodeid                   number(10)                                NOT NULL,
-	itemid                   number(20)                                NOT NULL,
-	clock                    number(10)      DEFAULT '0'               NOT NULL,
-	value                    nvarchar2(255)  DEFAULT ''                ,
-	ns                       number(10)      DEFAULT '0'               NOT NULL,
-	PRIMARY KEY (id)
-);
-CREATE INDEX history_str_sync_1 ON history_str_sync (nodeid,id);
 CREATE TABLE history_log (
-	id                       number(20)                                NOT NULL,
 	itemid                   number(20)                                NOT NULL,
 	clock                    number(10)      DEFAULT '0'               NOT NULL,
 	timestamp                number(10)      DEFAULT '0'               NOT NULL,
@@ -1011,21 +1050,16 @@ CREATE TABLE history_log (
 	severity                 number(10)      DEFAULT '0'               NOT NULL,
 	value                    nclob           DEFAULT ''                ,
 	logeventid               number(10)      DEFAULT '0'               NOT NULL,
-	ns                       number(10)      DEFAULT '0'               NOT NULL,
-	PRIMARY KEY (id)
+	ns                       number(10)      DEFAULT '0'               NOT NULL
 );
 CREATE INDEX history_log_1 ON history_log (itemid,clock);
-CREATE UNIQUE INDEX history_log_2 ON history_log (itemid,id);
 CREATE TABLE history_text (
-	id                       number(20)                                NOT NULL,
 	itemid                   number(20)                                NOT NULL,
 	clock                    number(10)      DEFAULT '0'               NOT NULL,
 	value                    nclob           DEFAULT ''                ,
-	ns                       number(10)      DEFAULT '0'               NOT NULL,
-	PRIMARY KEY (id)
+	ns                       number(10)      DEFAULT '0'               NOT NULL
 );
 CREATE INDEX history_text_1 ON history_text (itemid,clock);
-CREATE UNIQUE INDEX history_text_2 ON history_text (itemid,id);
 CREATE TABLE proxy_history (
 	id                       number(20)                                NOT NULL,
 	itemid                   number(20)                                NOT NULL,
@@ -1037,6 +1071,9 @@ CREATE TABLE proxy_history (
 	logeventid               number(10)      DEFAULT '0'               NOT NULL,
 	ns                       number(10)      DEFAULT '0'               NOT NULL,
 	state                    number(10)      DEFAULT '0'               NOT NULL,
+	lastlogsize              number(20)      DEFAULT '0'               NOT NULL,
+	mtime                    number(10)      DEFAULT '0'               NOT NULL,
+	flags                    number(10)      DEFAULT '0'               NOT NULL,
 	PRIMARY KEY (id)
 );
 CREATE INDEX proxy_history_1 ON proxy_history (clock);
@@ -1092,6 +1129,7 @@ CREATE TABLE acknowledges (
 	eventid                  number(20)                                NOT NULL,
 	clock                    number(10)      DEFAULT '0'               NOT NULL,
 	message                  nvarchar2(255)  DEFAULT ''                ,
+	action                   number(10)      DEFAULT '0'               NOT NULL,
 	PRIMARY KEY (acknowledgeid)
 );
 CREATE INDEX acknowledges_1 ON acknowledges (userid);
@@ -1197,14 +1235,11 @@ CREATE TABLE globalvars (
 	PRIMARY KEY (globalvarid)
 );
 CREATE TABLE graph_discovery (
-	graphdiscoveryid         number(20)                                NOT NULL,
 	graphid                  number(20)                                NOT NULL,
 	parent_graphid           number(20)                                NOT NULL,
-	name                     nvarchar2(128)  DEFAULT ''                ,
-	PRIMARY KEY (graphdiscoveryid)
+	PRIMARY KEY (graphid)
 );
-CREATE UNIQUE INDEX graph_discovery_1 ON graph_discovery (graphid,parent_graphid);
-CREATE INDEX graph_discovery_2 ON graph_discovery (parent_graphid);
+CREATE INDEX graph_discovery_1 ON graph_discovery (parent_graphid);
 CREATE TABLE host_inventory (
 	hostid                   number(20)                                NOT NULL,
 	inventory_mode           number(10)      DEFAULT '0'               NOT NULL,
@@ -1294,7 +1329,7 @@ CREATE TABLE images (
 	image                    blob            DEFAULT ''                NOT NULL,
 	PRIMARY KEY (imageid)
 );
-CREATE INDEX images_1 ON images (imagetype,name);
+CREATE UNIQUE INDEX images_1 ON images (name);
 CREATE TABLE item_discovery (
 	itemdiscoveryid          number(20)                                NOT NULL,
 	itemid                   number(20)                                NOT NULL,
@@ -1343,30 +1378,11 @@ CREATE TABLE sessions (
 );
 CREATE INDEX sessions_1 ON sessions (userid,status);
 CREATE TABLE trigger_discovery (
-	triggerdiscoveryid       number(20)                                NOT NULL,
 	triggerid                number(20)                                NOT NULL,
 	parent_triggerid         number(20)                                NOT NULL,
-	name                     nvarchar2(255)  DEFAULT ''                ,
-	PRIMARY KEY (triggerdiscoveryid)
+	PRIMARY KEY (triggerid)
 );
-CREATE UNIQUE INDEX trigger_discovery_1 ON trigger_discovery (triggerid,parent_triggerid);
-CREATE INDEX trigger_discovery_2 ON trigger_discovery (parent_triggerid);
-CREATE TABLE user_history (
-	userhistoryid            number(20)                                NOT NULL,
-	userid                   number(20)                                NOT NULL,
-	title1                   nvarchar2(255)  DEFAULT ''                ,
-	url1                     nvarchar2(255)  DEFAULT ''                ,
-	title2                   nvarchar2(255)  DEFAULT ''                ,
-	url2                     nvarchar2(255)  DEFAULT ''                ,
-	title3                   nvarchar2(255)  DEFAULT ''                ,
-	url3                     nvarchar2(255)  DEFAULT ''                ,
-	title4                   nvarchar2(255)  DEFAULT ''                ,
-	url4                     nvarchar2(255)  DEFAULT ''                ,
-	title5                   nvarchar2(255)  DEFAULT ''                ,
-	url5                     nvarchar2(255)  DEFAULT ''                ,
-	PRIMARY KEY (userhistoryid)
-);
-CREATE UNIQUE INDEX user_history_1 ON user_history (userid);
+CREATE INDEX trigger_discovery_1 ON trigger_discovery (parent_triggerid);
 CREATE TABLE application_template (
 	application_templateid   number(20)                                NOT NULL,
 	applicationid            number(20)                                NOT NULL,
@@ -1375,47 +1391,164 @@ CREATE TABLE application_template (
 );
 CREATE UNIQUE INDEX application_template_1 ON application_template (applicationid,templateid);
 CREATE INDEX application_template_2 ON application_template (templateid);
+CREATE TABLE item_condition (
+	item_conditionid         number(20)                                NOT NULL,
+	itemid                   number(20)                                NOT NULL,
+	operator                 number(10)      DEFAULT '8'               NOT NULL,
+	macro                    nvarchar2(64)   DEFAULT ''                ,
+	value                    nvarchar2(255)  DEFAULT ''                ,
+	PRIMARY KEY (item_conditionid)
+);
+CREATE INDEX item_condition_1 ON item_condition (itemid);
+CREATE TABLE application_prototype (
+	application_prototypeid  number(20)                                NOT NULL,
+	itemid                   number(20)                                NOT NULL,
+	templateid               number(20)                                NULL,
+	name                     nvarchar2(255)  DEFAULT ''                ,
+	PRIMARY KEY (application_prototypeid)
+);
+CREATE INDEX application_prototype_1 ON application_prototype (itemid);
+CREATE INDEX application_prototype_2 ON application_prototype (templateid);
+CREATE TABLE item_application_prototype (
+	item_application_prototypeid number(20)                                NOT NULL,
+	application_prototypeid  number(20)                                NOT NULL,
+	itemid                   number(20)                                NOT NULL,
+	PRIMARY KEY (item_application_prototypeid)
+);
+CREATE UNIQUE INDEX item_application_prototype_1 ON item_application_prototype (application_prototypeid,itemid);
+CREATE INDEX item_application_prototype_2 ON item_application_prototype (itemid);
+CREATE TABLE application_discovery (
+	application_discoveryid  number(20)                                NOT NULL,
+	applicationid            number(20)                                NOT NULL,
+	application_prototypeid  number(20)                                NOT NULL,
+	name                     nvarchar2(255)  DEFAULT ''                ,
+	lastcheck                number(10)      DEFAULT '0'               NOT NULL,
+	ts_delete                number(10)      DEFAULT '0'               NOT NULL,
+	PRIMARY KEY (application_discoveryid)
+);
+CREATE INDEX application_discovery_1 ON application_discovery (applicationid);
+CREATE INDEX application_discovery_2 ON application_discovery (application_prototypeid);
+CREATE TABLE opinventory (
+	operationid              number(20)                                NOT NULL,
+	inventory_mode           number(10)      DEFAULT '0'               NOT NULL,
+	PRIMARY KEY (operationid)
+);
+CREATE TABLE trigger_tag (
+	triggertagid             number(20)                                NOT NULL,
+	triggerid                number(20)                                NOT NULL,
+	tag                      nvarchar2(255)  DEFAULT ''                ,
+	value                    nvarchar2(255)  DEFAULT ''                ,
+	PRIMARY KEY (triggertagid)
+);
+CREATE INDEX trigger_tag_1 ON trigger_tag (triggerid);
+CREATE TABLE event_tag (
+	eventtagid               number(20)                                NOT NULL,
+	eventid                  number(20)                                NOT NULL,
+	tag                      nvarchar2(255)  DEFAULT ''                ,
+	value                    nvarchar2(255)  DEFAULT ''                ,
+	PRIMARY KEY (eventtagid)
+);
+CREATE INDEX event_tag_1 ON event_tag (eventid);
+CREATE TABLE problem (
+	eventid                  number(20)                                NOT NULL,
+	source                   number(10)      DEFAULT '0'               NOT NULL,
+	object                   number(10)      DEFAULT '0'               NOT NULL,
+	objectid                 number(20)      DEFAULT '0'               NOT NULL,
+	clock                    number(10)      DEFAULT '0'               NOT NULL,
+	ns                       number(10)      DEFAULT '0'               NOT NULL,
+	r_eventid                number(20)                                NULL,
+	r_clock                  number(10)      DEFAULT '0'               NOT NULL,
+	r_ns                     number(10)      DEFAULT '0'               NOT NULL,
+	correlationid            number(20)                                NULL,
+	userid                   number(20)                                NULL,
+	PRIMARY KEY (eventid)
+);
+CREATE INDEX problem_1 ON problem (source,object,objectid);
+CREATE INDEX problem_2 ON problem (r_clock);
+CREATE TABLE problem_tag (
+	problemtagid             number(20)                                NOT NULL,
+	eventid                  number(20)                                NOT NULL,
+	tag                      nvarchar2(255)  DEFAULT ''                ,
+	value                    nvarchar2(255)  DEFAULT ''                ,
+	PRIMARY KEY (problemtagid)
+);
+CREATE INDEX problem_tag_1 ON problem_tag (eventid);
+CREATE INDEX problem_tag_2 ON problem_tag (tag,value);
+CREATE TABLE event_recovery (
+	eventid                  number(20)                                NOT NULL,
+	r_eventid                number(20)                                NOT NULL,
+	c_eventid                number(20)                                NULL,
+	correlationid            number(20)                                NULL,
+	userid                   number(20)                                NULL,
+	PRIMARY KEY (eventid)
+);
+CREATE INDEX event_recovery_1 ON event_recovery (r_eventid);
+CREATE INDEX event_recovery_2 ON event_recovery (c_eventid);
+CREATE TABLE correlation (
+	correlationid            number(20)                                NOT NULL,
+	name                     nvarchar2(255)  DEFAULT ''                ,
+	description              nvarchar2(2048) DEFAULT ''                ,
+	evaltype                 number(10)      DEFAULT '0'               NOT NULL,
+	status                   number(10)      DEFAULT '0'               NOT NULL,
+	formula                  nvarchar2(255)  DEFAULT ''                ,
+	PRIMARY KEY (correlationid)
+);
+CREATE INDEX correlation_1 ON correlation (status);
+CREATE UNIQUE INDEX correlation_2 ON correlation (name);
+CREATE TABLE corr_condition (
+	corr_conditionid         number(20)                                NOT NULL,
+	correlationid            number(20)                                NOT NULL,
+	type                     number(10)      DEFAULT '0'               NOT NULL,
+	PRIMARY KEY (corr_conditionid)
+);
+CREATE INDEX corr_condition_1 ON corr_condition (correlationid);
+CREATE TABLE corr_condition_tag (
+	corr_conditionid         number(20)                                NOT NULL,
+	tag                      nvarchar2(255)  DEFAULT ''                ,
+	PRIMARY KEY (corr_conditionid)
+);
+CREATE TABLE corr_condition_group (
+	corr_conditionid         number(20)                                NOT NULL,
+	operator                 number(10)      DEFAULT '0'               NOT NULL,
+	groupid                  number(20)                                NOT NULL,
+	PRIMARY KEY (corr_conditionid)
+);
+CREATE INDEX corr_condition_group_1 ON corr_condition_group (groupid);
+CREATE TABLE corr_condition_tagpair (
+	corr_conditionid         number(20)                                NOT NULL,
+	oldtag                   nvarchar2(255)  DEFAULT ''                ,
+	newtag                   nvarchar2(255)  DEFAULT ''                ,
+	PRIMARY KEY (corr_conditionid)
+);
+CREATE TABLE corr_condition_tagvalue (
+	corr_conditionid         number(20)                                NOT NULL,
+	tag                      nvarchar2(255)  DEFAULT ''                ,
+	operator                 number(10)      DEFAULT '0'               NOT NULL,
+	value                    nvarchar2(255)  DEFAULT ''                ,
+	PRIMARY KEY (corr_conditionid)
+);
+CREATE TABLE corr_operation (
+	corr_operationid         number(20)                                NOT NULL,
+	correlationid            number(20)                                NOT NULL,
+	type                     number(10)      DEFAULT '0'               NOT NULL,
+	PRIMARY KEY (corr_operationid)
+);
+CREATE INDEX corr_operation_1 ON corr_operation (correlationid);
+CREATE TABLE task (
+	taskid                   number(20)                                NOT NULL,
+	type                     number(10)                                NOT NULL,
+	PRIMARY KEY (taskid)
+);
+CREATE TABLE task_close_problem (
+	taskid                   number(20)                                NOT NULL,
+	acknowledgeid            number(20)                                NOT NULL,
+	PRIMARY KEY (taskid)
+);
 CREATE TABLE dbversion (
 	mandatory                number(10)      DEFAULT '0'               NOT NULL,
 	optional                 number(10)      DEFAULT '0'               NOT NULL
 );
-INSERT INTO dbversion VALUES ('2020000','2020001');
-CREATE SEQUENCE history_sync_seq
-START WITH 1
-INCREMENT BY 1
-NOMAXVALUE
-/
-CREATE TRIGGER history_sync_tr
-BEFORE INSERT ON history_sync
-FOR EACH ROW
-BEGIN
-SELECT history_sync_seq.nextval INTO :new.id FROM dual;
-END;
-/
-CREATE SEQUENCE history_uint_sync_seq
-START WITH 1
-INCREMENT BY 1
-NOMAXVALUE
-/
-CREATE TRIGGER history_uint_sync_tr
-BEFORE INSERT ON history_uint_sync
-FOR EACH ROW
-BEGIN
-SELECT history_uint_sync_seq.nextval INTO :new.id FROM dual;
-END;
-/
-CREATE SEQUENCE history_str_sync_seq
-START WITH 1
-INCREMENT BY 1
-NOMAXVALUE
-/
-CREATE TRIGGER history_str_sync_tr
-BEFORE INSERT ON history_str_sync
-FOR EACH ROW
-BEGIN
-SELECT history_str_sync_seq.nextval INTO :new.id FROM dual;
-END;
-/
+INSERT INTO dbversion VALUES ('3020000','3020000');
 CREATE SEQUENCE proxy_history_seq
 START WITH 1
 INCREMENT BY 1
@@ -1461,7 +1594,17 @@ ALTER TABLE group_prototype ADD CONSTRAINT c_group_prototype_3 FOREIGN KEY (temp
 ALTER TABLE group_discovery ADD CONSTRAINT c_group_discovery_1 FOREIGN KEY (groupid) REFERENCES groups (groupid) ON DELETE CASCADE;
 ALTER TABLE group_discovery ADD CONSTRAINT c_group_discovery_2 FOREIGN KEY (parent_group_prototypeid) REFERENCES group_prototype (group_prototypeid);
 ALTER TABLE screens ADD CONSTRAINT c_screens_1 FOREIGN KEY (templateid) REFERENCES hosts (hostid) ON DELETE CASCADE;
+ALTER TABLE screens ADD CONSTRAINT c_screens_3 FOREIGN KEY (userid) REFERENCES users (userid);
 ALTER TABLE screens_items ADD CONSTRAINT c_screens_items_1 FOREIGN KEY (screenid) REFERENCES screens (screenid) ON DELETE CASCADE;
+ALTER TABLE screen_user ADD CONSTRAINT c_screen_user_1 FOREIGN KEY (screenid) REFERENCES screens (screenid) ON DELETE CASCADE;
+ALTER TABLE screen_user ADD CONSTRAINT c_screen_user_2 FOREIGN KEY (userid) REFERENCES users (userid) ON DELETE CASCADE;
+ALTER TABLE screen_usrgrp ADD CONSTRAINT c_screen_usrgrp_1 FOREIGN KEY (screenid) REFERENCES screens (screenid) ON DELETE CASCADE;
+ALTER TABLE screen_usrgrp ADD CONSTRAINT c_screen_usrgrp_2 FOREIGN KEY (usrgrpid) REFERENCES usrgrp (usrgrpid) ON DELETE CASCADE;
+ALTER TABLE slideshows ADD CONSTRAINT c_slideshows_3 FOREIGN KEY (userid) REFERENCES users (userid);
+ALTER TABLE slideshow_user ADD CONSTRAINT c_slideshow_user_1 FOREIGN KEY (slideshowid) REFERENCES slideshows (slideshowid) ON DELETE CASCADE;
+ALTER TABLE slideshow_user ADD CONSTRAINT c_slideshow_user_2 FOREIGN KEY (userid) REFERENCES users (userid) ON DELETE CASCADE;
+ALTER TABLE slideshow_usrgrp ADD CONSTRAINT c_slideshow_usrgrp_1 FOREIGN KEY (slideshowid) REFERENCES slideshows (slideshowid) ON DELETE CASCADE;
+ALTER TABLE slideshow_usrgrp ADD CONSTRAINT c_slideshow_usrgrp_2 FOREIGN KEY (usrgrpid) REFERENCES usrgrp (usrgrpid) ON DELETE CASCADE;
 ALTER TABLE slides ADD CONSTRAINT c_slides_1 FOREIGN KEY (slideshowid) REFERENCES slideshows (slideshowid) ON DELETE CASCADE;
 ALTER TABLE slides ADD CONSTRAINT c_slides_2 FOREIGN KEY (screenid) REFERENCES screens (screenid) ON DELETE CASCADE;
 ALTER TABLE drules ADD CONSTRAINT c_drules_1 FOREIGN KEY (proxy_hostid) REFERENCES hosts (hostid);
@@ -1536,6 +1679,7 @@ ALTER TABLE icon_mapping ADD CONSTRAINT c_icon_mapping_1 FOREIGN KEY (iconmapid)
 ALTER TABLE icon_mapping ADD CONSTRAINT c_icon_mapping_2 FOREIGN KEY (iconid) REFERENCES images (imageid);
 ALTER TABLE sysmaps ADD CONSTRAINT c_sysmaps_1 FOREIGN KEY (backgroundid) REFERENCES images (imageid);
 ALTER TABLE sysmaps ADD CONSTRAINT c_sysmaps_2 FOREIGN KEY (iconmapid) REFERENCES icon_map (iconmapid);
+ALTER TABLE sysmaps ADD CONSTRAINT c_sysmaps_3 FOREIGN KEY (userid) REFERENCES users (userid);
 ALTER TABLE sysmaps_elements ADD CONSTRAINT c_sysmaps_elements_1 FOREIGN KEY (sysmapid) REFERENCES sysmaps (sysmapid) ON DELETE CASCADE;
 ALTER TABLE sysmaps_elements ADD CONSTRAINT c_sysmaps_elements_2 FOREIGN KEY (iconid_off) REFERENCES images (imageid);
 ALTER TABLE sysmaps_elements ADD CONSTRAINT c_sysmaps_elements_3 FOREIGN KEY (iconid_on) REFERENCES images (imageid);
@@ -1548,6 +1692,10 @@ ALTER TABLE sysmaps_link_triggers ADD CONSTRAINT c_sysmaps_link_triggers_1 FOREI
 ALTER TABLE sysmaps_link_triggers ADD CONSTRAINT c_sysmaps_link_triggers_2 FOREIGN KEY (triggerid) REFERENCES triggers (triggerid) ON DELETE CASCADE;
 ALTER TABLE sysmap_element_url ADD CONSTRAINT c_sysmap_element_url_1 FOREIGN KEY (selementid) REFERENCES sysmaps_elements (selementid) ON DELETE CASCADE;
 ALTER TABLE sysmap_url ADD CONSTRAINT c_sysmap_url_1 FOREIGN KEY (sysmapid) REFERENCES sysmaps (sysmapid) ON DELETE CASCADE;
+ALTER TABLE sysmap_user ADD CONSTRAINT c_sysmap_user_1 FOREIGN KEY (sysmapid) REFERENCES sysmaps (sysmapid) ON DELETE CASCADE;
+ALTER TABLE sysmap_user ADD CONSTRAINT c_sysmap_user_2 FOREIGN KEY (userid) REFERENCES users (userid) ON DELETE CASCADE;
+ALTER TABLE sysmap_usrgrp ADD CONSTRAINT c_sysmap_usrgrp_1 FOREIGN KEY (sysmapid) REFERENCES sysmaps (sysmapid) ON DELETE CASCADE;
+ALTER TABLE sysmap_usrgrp ADD CONSTRAINT c_sysmap_usrgrp_2 FOREIGN KEY (usrgrpid) REFERENCES usrgrp (usrgrpid) ON DELETE CASCADE;
 ALTER TABLE maintenances_hosts ADD CONSTRAINT c_maintenances_hosts_1 FOREIGN KEY (maintenanceid) REFERENCES maintenances (maintenanceid) ON DELETE CASCADE;
 ALTER TABLE maintenances_hosts ADD CONSTRAINT c_maintenances_hosts_2 FOREIGN KEY (hostid) REFERENCES hosts (hostid) ON DELETE CASCADE;
 ALTER TABLE maintenances_groups ADD CONSTRAINT c_maintenances_groups_1 FOREIGN KEY (maintenanceid) REFERENCES maintenances (maintenanceid) ON DELETE CASCADE;
@@ -1555,8 +1703,6 @@ ALTER TABLE maintenances_groups ADD CONSTRAINT c_maintenances_groups_2 FOREIGN K
 ALTER TABLE maintenances_windows ADD CONSTRAINT c_maintenances_windows_1 FOREIGN KEY (maintenanceid) REFERENCES maintenances (maintenanceid) ON DELETE CASCADE;
 ALTER TABLE maintenances_windows ADD CONSTRAINT c_maintenances_windows_2 FOREIGN KEY (timeperiodid) REFERENCES timeperiods (timeperiodid) ON DELETE CASCADE;
 ALTER TABLE expressions ADD CONSTRAINT c_expressions_1 FOREIGN KEY (regexpid) REFERENCES regexps (regexpid) ON DELETE CASCADE;
-ALTER TABLE nodes ADD CONSTRAINT c_nodes_1 FOREIGN KEY (masterid) REFERENCES nodes (nodeid);
-ALTER TABLE node_cksum ADD CONSTRAINT c_node_cksum_1 FOREIGN KEY (nodeid) REFERENCES nodes (nodeid) ON DELETE CASCADE;
 ALTER TABLE alerts ADD CONSTRAINT c_alerts_1 FOREIGN KEY (actionid) REFERENCES actions (actionid) ON DELETE CASCADE;
 ALTER TABLE alerts ADD CONSTRAINT c_alerts_2 FOREIGN KEY (eventid) REFERENCES events (eventid) ON DELETE CASCADE;
 ALTER TABLE alerts ADD CONSTRAINT c_alerts_3 FOREIGN KEY (userid) REFERENCES users (userid) ON DELETE CASCADE;
@@ -1571,7 +1717,7 @@ ALTER TABLE dhosts ADD CONSTRAINT c_dhosts_1 FOREIGN KEY (druleid) REFERENCES dr
 ALTER TABLE dservices ADD CONSTRAINT c_dservices_1 FOREIGN KEY (dhostid) REFERENCES dhosts (dhostid) ON DELETE CASCADE;
 ALTER TABLE dservices ADD CONSTRAINT c_dservices_2 FOREIGN KEY (dcheckid) REFERENCES dchecks (dcheckid) ON DELETE CASCADE;
 ALTER TABLE graph_discovery ADD CONSTRAINT c_graph_discovery_1 FOREIGN KEY (graphid) REFERENCES graphs (graphid) ON DELETE CASCADE;
-ALTER TABLE graph_discovery ADD CONSTRAINT c_graph_discovery_2 FOREIGN KEY (parent_graphid) REFERENCES graphs (graphid) ON DELETE CASCADE;
+ALTER TABLE graph_discovery ADD CONSTRAINT c_graph_discovery_2 FOREIGN KEY (parent_graphid) REFERENCES graphs (graphid);
 ALTER TABLE host_inventory ADD CONSTRAINT c_host_inventory_1 FOREIGN KEY (hostid) REFERENCES hosts (hostid) ON DELETE CASCADE;
 ALTER TABLE item_discovery ADD CONSTRAINT c_item_discovery_1 FOREIGN KEY (itemid) REFERENCES items (itemid) ON DELETE CASCADE;
 ALTER TABLE item_discovery ADD CONSTRAINT c_item_discovery_2 FOREIGN KEY (parent_itemid) REFERENCES items (itemid) ON DELETE CASCADE;
@@ -1583,7 +1729,30 @@ ALTER TABLE interface_discovery ADD CONSTRAINT c_interface_discovery_2 FOREIGN K
 ALTER TABLE profiles ADD CONSTRAINT c_profiles_1 FOREIGN KEY (userid) REFERENCES users (userid) ON DELETE CASCADE;
 ALTER TABLE sessions ADD CONSTRAINT c_sessions_1 FOREIGN KEY (userid) REFERENCES users (userid) ON DELETE CASCADE;
 ALTER TABLE trigger_discovery ADD CONSTRAINT c_trigger_discovery_1 FOREIGN KEY (triggerid) REFERENCES triggers (triggerid) ON DELETE CASCADE;
-ALTER TABLE trigger_discovery ADD CONSTRAINT c_trigger_discovery_2 FOREIGN KEY (parent_triggerid) REFERENCES triggers (triggerid) ON DELETE CASCADE;
-ALTER TABLE user_history ADD CONSTRAINT c_user_history_1 FOREIGN KEY (userid) REFERENCES users (userid) ON DELETE CASCADE;
+ALTER TABLE trigger_discovery ADD CONSTRAINT c_trigger_discovery_2 FOREIGN KEY (parent_triggerid) REFERENCES triggers (triggerid);
 ALTER TABLE application_template ADD CONSTRAINT c_application_template_1 FOREIGN KEY (applicationid) REFERENCES applications (applicationid) ON DELETE CASCADE;
 ALTER TABLE application_template ADD CONSTRAINT c_application_template_2 FOREIGN KEY (templateid) REFERENCES applications (applicationid) ON DELETE CASCADE;
+ALTER TABLE item_condition ADD CONSTRAINT c_item_condition_1 FOREIGN KEY (itemid) REFERENCES items (itemid) ON DELETE CASCADE;
+ALTER TABLE application_prototype ADD CONSTRAINT c_application_prototype_1 FOREIGN KEY (itemid) REFERENCES items (itemid) ON DELETE CASCADE;
+ALTER TABLE application_prototype ADD CONSTRAINT c_application_prototype_2 FOREIGN KEY (templateid) REFERENCES application_prototype (application_prototypeid) ON DELETE CASCADE;
+ALTER TABLE item_application_prototype ADD CONSTRAINT c_item_application_prototype_1 FOREIGN KEY (application_prototypeid) REFERENCES application_prototype (application_prototypeid) ON DELETE CASCADE;
+ALTER TABLE item_application_prototype ADD CONSTRAINT c_item_application_prototype_2 FOREIGN KEY (itemid) REFERENCES items (itemid) ON DELETE CASCADE;
+ALTER TABLE application_discovery ADD CONSTRAINT c_application_discovery_1 FOREIGN KEY (applicationid) REFERENCES applications (applicationid) ON DELETE CASCADE;
+ALTER TABLE application_discovery ADD CONSTRAINT c_application_discovery_2 FOREIGN KEY (application_prototypeid) REFERENCES application_prototype (application_prototypeid) ON DELETE CASCADE;
+ALTER TABLE opinventory ADD CONSTRAINT c_opinventory_1 FOREIGN KEY (operationid) REFERENCES operations (operationid) ON DELETE CASCADE;
+ALTER TABLE trigger_tag ADD CONSTRAINT c_trigger_tag_1 FOREIGN KEY (triggerid) REFERENCES triggers (triggerid) ON DELETE CASCADE;
+ALTER TABLE event_tag ADD CONSTRAINT c_event_tag_1 FOREIGN KEY (eventid) REFERENCES events (eventid) ON DELETE CASCADE;
+ALTER TABLE problem ADD CONSTRAINT c_problem_1 FOREIGN KEY (eventid) REFERENCES events (eventid) ON DELETE CASCADE;
+ALTER TABLE problem ADD CONSTRAINT c_problem_2 FOREIGN KEY (r_eventid) REFERENCES events (eventid) ON DELETE CASCADE;
+ALTER TABLE problem_tag ADD CONSTRAINT c_problem_tag_1 FOREIGN KEY (eventid) REFERENCES problem (eventid) ON DELETE CASCADE;
+ALTER TABLE event_recovery ADD CONSTRAINT c_event_recovery_1 FOREIGN KEY (eventid) REFERENCES events (eventid) ON DELETE CASCADE;
+ALTER TABLE event_recovery ADD CONSTRAINT c_event_recovery_2 FOREIGN KEY (r_eventid) REFERENCES events (eventid) ON DELETE CASCADE;
+ALTER TABLE event_recovery ADD CONSTRAINT c_event_recovery_3 FOREIGN KEY (c_eventid) REFERENCES events (eventid) ON DELETE CASCADE;
+ALTER TABLE corr_condition ADD CONSTRAINT c_corr_condition_1 FOREIGN KEY (correlationid) REFERENCES correlation (correlationid) ON DELETE CASCADE;
+ALTER TABLE corr_condition_tag ADD CONSTRAINT c_corr_condition_tag_1 FOREIGN KEY (corr_conditionid) REFERENCES corr_condition (corr_conditionid) ON DELETE CASCADE;
+ALTER TABLE corr_condition_group ADD CONSTRAINT c_corr_condition_group_1 FOREIGN KEY (corr_conditionid) REFERENCES corr_condition (corr_conditionid) ON DELETE CASCADE;
+ALTER TABLE corr_condition_group ADD CONSTRAINT c_corr_condition_group_2 FOREIGN KEY (groupid) REFERENCES groups (groupid);
+ALTER TABLE corr_condition_tagpair ADD CONSTRAINT c_corr_condition_tagpair_1 FOREIGN KEY (corr_conditionid) REFERENCES corr_condition (corr_conditionid) ON DELETE CASCADE;
+ALTER TABLE corr_condition_tagvalue ADD CONSTRAINT c_corr_condition_tagvalue_1 FOREIGN KEY (corr_conditionid) REFERENCES corr_condition (corr_conditionid) ON DELETE CASCADE;
+ALTER TABLE corr_operation ADD CONSTRAINT c_corr_operation_1 FOREIGN KEY (correlationid) REFERENCES correlation (correlationid) ON DELETE CASCADE;
+ALTER TABLE task_close_problem ADD CONSTRAINT c_task_close_problem_1 FOREIGN KEY (taskid) REFERENCES task (taskid) ON DELETE CASCADE;

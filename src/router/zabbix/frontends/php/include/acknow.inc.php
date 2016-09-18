@@ -36,27 +36,27 @@ function get_last_event_by_triggerid($triggerId) {
 /**
  * Get acknowledgement table.
  *
- * @param array $event
- * @param array $event['acknowledges']
- * @param array $event['acknowledges']['clock']
- * @param array $event['acknowledges']['alias']
- * @param array $event['acknowledges']['message']
+ * @param array  $acknowledges
+ * @param string $acknowledges[]['clock']
+ * @param string $acknowledges[]['alias']
+ * @param string $acknowledges[]['name']
+ * @param string $acknowledges[]['surname']
+ * @param string $acknowledges[]['message']
+ * @param string $acknowledges[]['action']
  *
  * @return CTableInfo
  */
-function makeAckTab($event) {
-	$acknowledgeTable = new CTableInfo(_('No acknowledges found.'));
-	$acknowledgeTable->setHeader(array(_('Time'), _('User'), _('Comments')));
+function makeAckTab($acknowledges) {
+	$table = (new CTableInfo())->setHeader([_('Time'), _('User'), _('Message'), _('User action')]);
 
-	if (!empty($event['acknowledges']) && is_array($event['acknowledges'])) {
-		foreach ($event['acknowledges'] as $acknowledge) {
-			$acknowledgeTable->addRow(array(
-				zbx_date2str(_('d M Y H:i:s'), $acknowledge['clock']),
-				getUserFullname($acknowledge),
-				new CCol(zbx_nl2br($acknowledge['message']), 'wraptext')
-			));
-		}
+	foreach ($acknowledges as $acknowledge) {
+		$table->addRow([
+			zbx_date2str(DATE_TIME_FORMAT_SECONDS, $acknowledge['clock']),
+			getUserFullname($acknowledge),
+			zbx_nl2br($acknowledge['message']),
+			($acknowledge['action'] == ZBX_ACKNOWLEDGE_ACTION_CLOSE_PROBLEM) ? _('Close problem') : ''
+		]);
 	}
 
-	return $acknowledgeTable;
+	return $table;
 }

@@ -1,32 +1,41 @@
 <script type="text/x-jquery-tmpl" id="hostInterfaceRow">
 <tr class="interfaceRow" id="hostInterfaceRow_#{iface.interfaceid}" data-interfaceid="#{iface.interfaceid}">
-	<td class="interface-drag-control">
-		<input type="hidden" name="interfaces[#{iface.interfaceid}][isNew]" value="#{iface.isNew}" />
-		<input type="hidden" name="interfaces[#{iface.interfaceid}][interfaceid]" value="#{iface.interfaceid}" />
-		<input type="hidden" id="interface_type_#{iface.interfaceid}" name="interfaces[#{iface.interfaceid}][type]" value="#{iface.type}" />
+	<td class="interface-drag-control <?= ZBX_STYLE_TD_DRAG_ICON ?>">
+		<div class="<?= ZBX_STYLE_DRAG_ICON ?>"></div>
+		<input type="hidden" name="interfaces[#{iface.interfaceid}][items]" value="#{iface.items}" />
+		<input type="hidden" name="interfaces[#{iface.interfaceid}][locked]" value="#{iface.locked}" />
 	</td>
 	<td class="interface-ip">
-		<input class="input text" name="interfaces[#{iface.interfaceid}][ip]" type="text" size="24" maxlength="64" value="#{iface.ip}" />
-	</td>
-	<td class="interface-dns">
-		<input class="input text" name="interfaces[#{iface.interfaceid}][dns]" type="text" size="30" maxlength="64" value="#{iface.dns}" />
-	</td>
-	<td class="interface-connect-to">
-		<div class="jqueryinputset">
-			<input class="interface-useip" type="radio" id="radio_ip_#{iface.interfaceid}" name="interfaces[#{iface.interfaceid}][useip]" value="1" #{*attrs.checked_ip} />
-			<input class="interface-useip" type="radio" id="radio_dns_#{iface.interfaceid}" name="interfaces[#{iface.interfaceid}][useip]" value="0" #{*attrs.checked_dns} />
-			<label for="radio_ip_#{iface.interfaceid}"><?php echo _('IP'); ?></label><label for="radio_dns_#{iface.interfaceid}"><?php echo _('DNS'); ?></label>
+		<input type="hidden" name="interfaces[#{iface.interfaceid}][isNew]" value="#{iface.isNew}">
+		<input type="hidden" name="interfaces[#{iface.interfaceid}][interfaceid]" value="#{iface.interfaceid}">
+		<input type="hidden" id="interface_type_#{iface.interfaceid}" name="interfaces[#{iface.interfaceid}][type]" value="#{iface.type}">
+		<input name="interfaces[#{iface.interfaceid}][ip]" type="text" style="width: <?= ZBX_TEXTAREA_INTERFACE_IP_WIDTH ?>px" maxlength="64" value="#{iface.ip}">
+		<div class="interface-bulk">
+			<input type="checkbox" id="interfaces[#{iface.interfaceid}][bulk]" name="interfaces[#{iface.interfaceid}][bulk]" value="1" #{attrs.checked_bulk}>
+			<label for="interfaces[#{iface.interfaceid}][bulk]"><?= _('Use bulk requests') ?></label>
 		</div>
 	</td>
+	<td class="interface-dns">
+		<input name="interfaces[#{iface.interfaceid}][dns]" type="text" style="width: <?= ZBX_TEXTAREA_INTERFACE_DNS_WIDTH ?>px" maxlength="64" value="#{iface.dns}">
+	</td>
+	<?= (new CCol(
+			(new CRadioButtonList('interfaces[#{iface.interfaceid}][useip]', null))
+				->addValue(_('IP'), INTERFACE_USE_IP, 'interfaces[#{iface.interfaceid}][useip]['.INTERFACE_USE_IP.']')
+				->addValue(_('DNS'), INTERFACE_USE_DNS,
+					'interfaces[#{iface.interfaceid}][useip]['.INTERFACE_USE_DNS.']'
+				)
+				->setModern(true)
+		))->toString()
+	?>
 	<td class="interface-port">
-		<input class="input text" name="interfaces[#{iface.interfaceid}][port]" type="text" size="15" maxlength="64" value="#{iface.port}" />
+		<input name="interfaces[#{iface.interfaceid}][port]" type="text" style="width: <?= ZBX_TEXTAREA_INTERFACE_PORT_WIDTH ?>px" maxlength="64" value="#{iface.port}">
 	</td>
 	<td class="interface-default">
-		<input class="mainInterface" type="radio" id="interface_main_#{iface.interfaceid}" name="mainInterfaces[#{iface.type}]" value="#{iface.interfaceid}" />
+		<input class="mainInterface" type="radio" id="interface_main_#{iface.interfaceid}" name="mainInterfaces[#{iface.type}]" value="#{iface.interfaceid}">
 		<label class="checkboxLikeLabel" for="interface_main_#{iface.interfaceid}" style="height: 16px; width: 16px;"></label>
 	</td>
-	<td class="interface-control">
-		<button type="button" id="removeInterface_#{iface.interfaceid}" data-interfaceid="#{iface.interfaceid}" class="link_menu remove" #{*attrs.disabled}><?php echo _('Remove'); ?></button>
+	<td class="<?= ZBX_STYLE_NOWRAP ?> interface-control">
+		<button class="<?= ZBX_STYLE_BTN_LINK ?> remove" type="button" id="removeInterface_#{iface.interfaceid}" data-interfaceid="#{iface.interfaceid}" #{attrs.disabled}><?= _('Remove') ?></button>
 	</td>
 </tr>
 </script>
@@ -52,9 +61,14 @@
 			jQuery(domId).before(rowTemplate.evaluate({iface: hostInterface, attrs: domAttrs}));
 
 			domRow = jQuery('#hostInterfaceRow_' + hostInterface.interfaceid);
-			jQuery('.jqueryinputset', domRow).buttonset();
 
-			if (hostInterface.locked) {
+			if (hostInterface.type != <?= INTERFACE_TYPE_SNMP ?>) {
+				jQuery('.interface-bulk', domRow).remove();
+			}
+
+			jQuery('#interfaces_' + hostInterface.interfaceid + '_useip_' + hostInterface.useip).prop('checked', true);
+
+			if (hostInterface.locked > 0) {
 				addNotDraggableIcon(domRow);
 			}
 			else {
@@ -115,55 +129,53 @@
 		}
 
 		function addDraggableIcon(domElement) {
-			domElement.children().first().append('<span class="ui-icon ui-icon-arrowthick-2-n-s move"></span>');
 			domElement.draggable({
-				helper: 'clone',
-				handle: 'span.ui-icon-arrowthick-2-n-s',
+				handle: 'div.<?= ZBX_STYLE_DRAG_ICON ?>',
 				revert: 'invalid',
+				start: function(event, ui) {
+					jQuery(this).css({'z-index': '1000'})
+				},
 				stop: function(event, ui) {
 					var hostInterfaceId = jQuery(this).data('interfaceid');
 					resetMainInterfaces();
 					resetUseipInterface(hostInterfaceId)
+
+					jQuery(this).css({'z-index': ''})
 				}
 			});
 		}
 
 		function addNotDraggableIcon(domElement) {
-			domElement.children().first().append('<span class="ui-icon ui-icon-arrowthick-2-n-s state-disabled"></span>');
-			jQuery('.ui-icon', domElement).hover(
-				function (event) {
-					jQuery('<div>' + <?php echo CJs::encodeJson(_('Interface is used by items that require this type of the interface.')); ?> + '</div>')
-						.css({position: 'absolute', opacity: 1, padding: '2px'})
-						.addClass('ui-state-highlight')
-						.appendTo(event.target.parentNode);
-				},
-				function (event) {
-					jQuery(event.target).next().remove();
-				}
-			)
+			jQuery('td.<?= ZBX_STYLE_TD_DRAG_ICON ?> div.<?= ZBX_STYLE_DRAG_ICON ?>', domElement)
+				.addClass('<?= ZBX_STYLE_DISABLED ?>')
+				.hover(
+					function (event) {
+						hintBox.showHint(event, this,
+							<?= CJs::encodeJson(_('Interface is used by items that require this type of the interface.')) ?>
+						);
+					},
+					function (event) {
+						hintBox.hideHint(event, this);
+					}
+				);
 		}
 
 		function getDomElementsAttrsForInterface(hostInterface) {
 			var attrs = {
-				disabled: '',
-				checked_dns: '',
-				checked_ip: '',
-				checked_main: ''
+				disabled: ''
 			};
 
-			if (hostInterface.items) {
+			if (hostInterface.items > 0) {
 				attrs.disabled = 'disabled="disabled"';
 			}
 
-			if (hostInterface.useip == 0) {
-				attrs.checked_dns = 'checked="checked"';
-			}
-			else {
-				attrs.checked_ip = 'checked="checked"';
-			}
-
-			if (hostInterface.main) {
-				attrs.checked_main = 'checked="checked"';
+			if (hostInterface.type == <?= INTERFACE_TYPE_SNMP ?>) {
+				if (hostInterface.bulk == 1) {
+					attrs.checked_bulk = 'checked="checked"';
+				}
+				else {
+					attrs.checked_bulk = '';
+				}
 			}
 
 			return attrs;
@@ -191,28 +203,6 @@
 			return footerRowId;
 		}
 
-		function getHostInterfaceNumericType(typeName) {
-			var typeNum;
-
-			switch (typeName) {
-				case 'agent':
-					typeNum = '<?php echo INTERFACE_TYPE_AGENT; ?>';
-					break;
-				case 'snmp':
-					typeNum = '<?php echo INTERFACE_TYPE_SNMP; ?>';
-					break;
-				case 'jmx':
-					typeNum = '<?php echo INTERFACE_TYPE_JMX; ?>';
-					break;
-				case 'ipmi':
-					typeNum = '<?php echo INTERFACE_TYPE_IPMI; ?>';
-					break;
-				default:
-					throw new Error('Unknown host interface type name.');
-			}
-			return typeNum;
-		}
-
 		function createNewHostInterface(hostInterfaceType) {
 			var newInterface = {
 				isNew: true,
@@ -221,6 +211,10 @@
 				port: ports[hostInterfaceType],
 				ip: '127.0.0.1'
 			};
+
+			if (newInterface.type == <?= INTERFACE_TYPE_SNMP ?>) {
+				newInterface.bulk = 1;
+			}
 
 			newInterface.interfaceid = 1;
 			while (allHostInterfaces[newInterface.interfaceid] !== void(0)) {
@@ -257,9 +251,9 @@
 
 		return {
 			add: function(hostInterfaces) {
-				for (var hostInterfaceId in hostInterfaces) {
-					addHostInterface(hostInterfaces[hostInterfaceId]);
-					renderHostInterfaceRow(hostInterfaces[hostInterfaceId]);
+				for (var i = 0; i < hostInterfaces.length; i++) {
+					addHostInterface(hostInterfaces[i]);
+					renderHostInterfaceRow(hostInterfaces[i]);
 				}
 				resetMainInterfaces();
 			},
@@ -307,9 +301,11 @@
 
 			disable: function() {
 				jQuery('.interface-drag-control, .interface-control').html('');
-				jQuery('.interfaceRow').find('input').attr('readonly', true);
-				jQuery('.interfaceRow').find('input[type="radio"]').attr('disabled', true);
-				jQuery('.interface-connect-to').find('input').button('disable');
+				jQuery('.interfaceRow').find('input')
+					.removeAttr('id')
+					.removeAttr('name');
+				jQuery('.interfaceRow').find('input[type="text"]').attr('readonly', true);
+				jQuery('.interfaceRow').find('input[type="radio"], input[type="checkbox"]').attr('disabled', true);
 			}
 		}
 	}());
@@ -336,26 +332,73 @@
 			hostInterfacesManager.setUseipForInterface(interfaceId[0], jQuery(this).val());
 		});
 
+		jQuery('#tls_connect, #tls_in_psk, #tls_in_cert').change(function() {
+			// If certificate is selected or checked.
+			if (jQuery('input[name=tls_connect]:checked').val() == <?= HOST_ENCRYPTION_CERTIFICATE ?>
+					|| jQuery('#tls_in_cert').is(':checked')) {
+				jQuery('#tls_issuer, #tls_subject').closest('li').show();
+			}
+			else {
+				jQuery('#tls_issuer, #tls_subject').closest('li').hide();
+			}
+
+			// If PSK is selected or checked.
+			if (jQuery('input[name=tls_connect]:checked').val() == <?= HOST_ENCRYPTION_PSK ?>
+					|| jQuery('#tls_in_psk').is(':checked')) {
+				jQuery('#tls_psk, #tls_psk_identity').closest('li').show();
+			}
+			else {
+				jQuery('#tls_psk, #tls_psk_identity').closest('li').hide();
+			}
+		});
+
 		jQuery('#agentInterfaces, #SNMPInterfaces, #JMXInterfaces, #IPMIInterfaces').parent().droppable({
 			tolerance: 'pointer',
 			drop: function(event, ui) {
-				var hostInterfaceTypeName = jQuery('.formElementTable', this).data('type'),
+				var hostInterfaceTypeName = jQuery(this).data('type'),
 					hostInterfaceId = ui.draggable.data('interfaceid');
 
-				ui.helper.remove();
+				ui.helper.css({'left': '', 'top': ''});
+
+				if (getHostInterfaceNumericType(hostInterfaceTypeName) == <?= INTERFACE_TYPE_SNMP ?>) {
+					if (jQuery('.interface-bulk', jQuery('#hostInterfaceRow_' + hostInterfaceId)).length == 0) {
+						var bulkDiv = jQuery('<div>', {
+							'class': 'interface-bulk'
+						});
+
+						// append checkbox
+						bulkDiv.append(jQuery('<input>', {
+							id: 'interfaces[' + hostInterfaceId + '][bulk]',
+							'class': 'input checkbox pointer',
+							type: 'checkbox',
+							name: 'interfaces[' + hostInterfaceId + '][bulk]',
+							value: 1,
+							checked: true
+						}));
+
+						// append label
+						bulkDiv.append(jQuery('<label>', {
+							'for': 'interfaces[' + hostInterfaceId + '][bulk]',
+							text: '<?= _('Use bulk requests') ?>'
+						}));
+
+						jQuery('.interface-ip', jQuery('#hostInterfaceRow_' + hostInterfaceId)).append(bulkDiv);
+					}
+				}
+				else {
+					jQuery('.interface-bulk', jQuery('#hostInterfaceRow_' + hostInterfaceId)).remove();
+				}
 
 				hostInterfacesManager.setType(hostInterfaceId, hostInterfaceTypeName);
 				hostInterfacesManager.resetMainInterfaces();
 			},
 			activate: function(event, ui) {
 				if (!jQuery(this).find(ui.draggable).length) {
-					jQuery(this).addClass('dropArea');
-					jQuery('span.dragHelpText', this).toggle();
+					jQuery(this).addClass('<?= ZBX_STYLE_DRAG_DROP_AREA ?>');
 				}
 			},
 			deactivate: function(event, ui) {
-				jQuery(this).removeClass('dropArea');
-				jQuery('span.dragHelpText', this).toggle(false);
+				jQuery(this).removeClass('<?= ZBX_STYLE_DRAG_DROP_AREA ?>');
 			}
 		});
 
@@ -373,20 +416,20 @@
 		});
 
 		// radio button of inventory modes was clicked
-		jQuery('div.jqueryinputset input[name=inventory_mode]').click(function() {
+		jQuery('input[name=inventory_mode]').click(function() {
 			// action depending on which button was clicked
 			var inventoryFields = jQuery('#inventorylist :input:gt(2)');
 
 			switch (jQuery(this).val()) {
-				case '<?php echo HOST_INVENTORY_DISABLED; ?>':
+				case '<?= HOST_INVENTORY_DISABLED ?>':
 					inventoryFields.prop('disabled', true);
 					jQuery('.populating_item').hide();
 					break;
-				case '<?php echo HOST_INVENTORY_MANUAL; ?>':
+				case '<?= HOST_INVENTORY_MANUAL ?>':
 					inventoryFields.prop('disabled', false);
 					jQuery('.populating_item').hide();
 					break;
-				case '<?php echo HOST_INVENTORY_AUTOMATIC; ?>':
+				case '<?= HOST_INVENTORY_AUTOMATIC ?>':
 					inventoryFields.prop('disabled', false);
 					inventoryFields.filter('.linked_to_item').prop('disabled', true);
 					jQuery('.populating_item').show();
@@ -400,10 +443,57 @@
 		jQuery('#mass_replace_tpls').on('change', function() {
 			jQuery('#mass_clear_tpls').prop('disabled', !this.checked);
 		}).change();
+
+		// Refresh field visibility on document load.
+		if ((jQuery('#tls_accept').val() & <?= HOST_ENCRYPTION_NONE ?>) == <?= HOST_ENCRYPTION_NONE ?>) {
+			jQuery('#tls_in_none').prop('checked', true);
+		}
+		if ((jQuery('#tls_accept').val() & <?= HOST_ENCRYPTION_PSK ?>) == <?= HOST_ENCRYPTION_PSK ?>) {
+			jQuery('#tls_in_psk').prop('checked', true);
+		}
+		if ((jQuery('#tls_accept').val() & <?= HOST_ENCRYPTION_CERTIFICATE ?>) == <?= HOST_ENCRYPTION_CERTIFICATE ?>) {
+			jQuery('#tls_in_cert').prop('checked', true);
+		}
+
+		jQuery('input[name=tls_connect]').trigger('change');
+
+		// Depending on checkboxes, create a value for hidden field 'tls_accept'.
+		jQuery('#hostForm').submit(function() {
+			var tls_accept = 0x00;
+
+			if (jQuery('#tls_in_none').is(':checked')) {
+				tls_accept |= <?= HOST_ENCRYPTION_NONE ?>;
+			}
+			if (jQuery('#tls_in_psk').is(':checked')) {
+				tls_accept |= <?= HOST_ENCRYPTION_PSK ?>;
+			}
+			if (jQuery('#tls_in_cert').is(':checked')) {
+				tls_accept |= <?= HOST_ENCRYPTION_CERTIFICATE ?>;
+			}
+
+			jQuery('#tls_accept').val(tls_accept);
+		});
 	});
 
-	function removeTemplate(templateid) {
-		jQuery('#templates_' + templateid).remove();
-		jQuery('#template_row_' + templateid).remove();
+	function getHostInterfaceNumericType(typeName) {
+		var typeNum;
+
+		switch (typeName) {
+			case 'agent':
+				typeNum = '<?= INTERFACE_TYPE_AGENT ?>';
+				break;
+			case 'snmp':
+				typeNum = '<?= INTERFACE_TYPE_SNMP ?>';
+				break;
+			case 'jmx':
+				typeNum = '<?= INTERFACE_TYPE_JMX ?>';
+				break;
+			case 'ipmi':
+				typeNum = '<?= INTERFACE_TYPE_IPMI ?>';
+				break;
+			default:
+				throw new Error('Unknown host interface type name.');
+		}
+		return typeNum;
 	}
 </script>

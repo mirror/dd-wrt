@@ -31,80 +31,89 @@
 #define ISSET_TEXT(res)	((res)->type & AR_TEXT)
 #define ISSET_LOG(res)	((res)->type & AR_LOG)
 #define ISSET_MSG(res)	((res)->type & AR_MESSAGE)
+#define ISSET_META(res)	((res)->type & AR_META)
+
+#define ISSET_VALUE(res)	((res)->type & (AR_UINT64 | AR_DOUBLE | AR_STRING | AR_TEXT | AR_LOG))
 
 /* UNSET RESULT */
 
-#define UNSET_UI64_RESULT(res)			\
-(						\
-	(res)->type &= ~AR_UINT64,		\
-	(res)->ui64 = (zbx_uint64_t)0		\
-)
-
-#define UNSET_DBL_RESULT(res)			\
-(						\
-	(res)->type &= ~AR_DOUBLE,		\
-	(res)->dbl = (double)0			\
-)
-
-#define UNSET_STR_RESULT(res)			\
-						\
-do						\
-{						\
-	if ((res)->type & AR_STRING)		\
-	{					\
-		zbx_free((res)->str);		\
-		(res)->type &= ~AR_STRING;	\
-	}					\
-}						\
+#define UNSET_UI64_RESULT(res)						\
+									\
+do									\
+{									\
+	(res)->type &= ~AR_UINT64;					\
+	(res)->ui64 = (zbx_uint64_t)0;					\
+}									\
 while (0)
 
-#define UNSET_TEXT_RESULT(res)			\
-						\
-do						\
-{						\
-	if ((res)->type & AR_TEXT)		\
-	{					\
-		zbx_free((res)->text);		\
-		(res)->type &= ~AR_TEXT;	\
-	}					\
-}						\
+#define UNSET_DBL_RESULT(res)						\
+									\
+do									\
+{									\
+	(res)->type &= ~AR_DOUBLE;					\
+	(res)->dbl = (double)0;						\
+}									\
 while (0)
 
-#define UNSET_LOG_RESULT(res)			\
-						\
-do						\
-{						\
-	if ((res)->type & AR_LOG)		\
-	{					\
-		zbx_logs_free((res)->logs);	\
-		(res)->type &= ~AR_LOG;		\
-	}					\
-}						\
+#define UNSET_STR_RESULT(res)						\
+									\
+do									\
+{									\
+	if ((res)->type & AR_STRING)					\
+	{								\
+		zbx_free((res)->str);					\
+		(res)->type &= ~AR_STRING;				\
+	}								\
+}									\
 while (0)
 
-#define UNSET_MSG_RESULT(res)			\
-						\
-do						\
-{						\
-	if ((res)->type & AR_MESSAGE)		\
-	{					\
-		zbx_free((res)->msg);		\
-		(res)->type &= ~AR_MESSAGE;	\
-	}					\
-}						\
+#define UNSET_TEXT_RESULT(res)						\
+									\
+do									\
+{									\
+	if ((res)->type & AR_TEXT)					\
+	{								\
+		zbx_free((res)->text);					\
+		(res)->type &= ~AR_TEXT;				\
+	}								\
+}									\
 while (0)
 
-#define UNSET_RESULT_EXCLUDING(res, exc_type) 			\
-								\
-do								\
-{								\
-	if (!(exc_type & AR_UINT64))	UNSET_UI64_RESULT(res);	\
-	if (!(exc_type & AR_DOUBLE))	UNSET_DBL_RESULT(res);	\
-	if (!(exc_type & AR_STRING))	UNSET_STR_RESULT(res);	\
-	if (!(exc_type & AR_TEXT))	UNSET_TEXT_RESULT(res);	\
-	if (!(exc_type & AR_LOG))	UNSET_LOG_RESULT(res);	\
-	if (!(exc_type & AR_MESSAGE))	UNSET_MSG_RESULT(res);	\
-}								\
+#define UNSET_LOG_RESULT(res)						\
+									\
+do									\
+{									\
+	if ((res)->type & AR_LOG)					\
+	{								\
+		zbx_log_free((res)->log);				\
+		(res)->type &= ~AR_LOG;					\
+	}								\
+}									\
+while (0)
+
+#define UNSET_MSG_RESULT(res)						\
+									\
+do									\
+{									\
+	if ((res)->type & AR_MESSAGE)					\
+	{								\
+		zbx_free((res)->msg);					\
+		(res)->type &= ~AR_MESSAGE;				\
+	}								\
+}									\
+while (0)
+
+#define UNSET_RESULT_EXCLUDING(res, exc_type) 					\
+										\
+do										\
+{										\
+	if (!(exc_type & AR_UINT64))	UNSET_UI64_RESULT(res);			\
+	if (!(exc_type & AR_DOUBLE))	UNSET_DBL_RESULT(res);			\
+	if (!(exc_type & AR_STRING))	UNSET_STR_RESULT(res);			\
+	if (!(exc_type & AR_TEXT))	UNSET_TEXT_RESULT(res);			\
+	if (!(exc_type & AR_LOG))	UNSET_LOG_RESULT(res);			\
+	if (!(exc_type & AR_MESSAGE))	UNSET_MSG_RESULT(res);			\
+}										\
 while (0)
 
 /* RETRIEVE RESULT VALUE */
@@ -113,10 +122,12 @@ while (0)
 #define GET_DBL_RESULT(res)	((double *)get_result_value_by_type(res, AR_DOUBLE))
 #define GET_STR_RESULT(res)	((char **)get_result_value_by_type(res, AR_STRING))
 #define GET_TEXT_RESULT(res)	((char **)get_result_value_by_type(res, AR_TEXT))
-#define GET_LOG_RESULT(res)	((zbx_log_t **)get_result_value_by_type(res, AR_LOG))
+#define GET_LOG_RESULT(res)	((zbx_log_t *)get_result_value_by_type(res, AR_LOG))
 #define GET_MSG_RESULT(res)	((char **)get_result_value_by_type(res, AR_MESSAGE))
 
 void    *get_result_value_by_type(AGENT_RESULT *result, int require_type);
+
+#define ZBX_FLOAT_PRECISION	0.0001
 
 extern int	CONFIG_ENABLE_REMOTE_COMMANDS;
 extern int	CONFIG_LOG_REMOTE_COMMANDS;
@@ -129,6 +140,10 @@ extern int	CONFIG_UNSAFE_USER_PARAMETERS;
 #define ZBX_AVG15		2
 #define ZBX_AVG_COUNT		3
 
+#ifdef _WINDOWS
+#	define MAX_COLLECTOR_PERIOD	(15 * SEC_PER_MIN)
+#endif
+
 #define ZBX_CPU_STATE_USER	0
 #define ZBX_CPU_STATE_SYSTEM	1
 #define ZBX_CPU_STATE_NICE	2
@@ -137,12 +152,20 @@ extern int	CONFIG_UNSAFE_USER_PARAMETERS;
 #define ZBX_CPU_STATE_IOWAIT	5
 #define ZBX_CPU_STATE_SOFTIRQ	6
 #define ZBX_CPU_STATE_STEAL	7
-#define ZBX_CPU_STATE_COUNT	8
+#define ZBX_CPU_STATE_GCPU	8
+#define ZBX_CPU_STATE_GNICE	9
+#define ZBX_CPU_STATE_COUNT	10
 
 #define ZBX_PROC_STAT_ALL	0
 #define ZBX_PROC_STAT_RUN	1
 #define ZBX_PROC_STAT_SLEEP	2
 #define ZBX_PROC_STAT_ZOMB	3
+
+#define ZBX_DO_SUM		0
+#define ZBX_DO_MAX		1
+#define ZBX_DO_MIN		2
+#define ZBX_DO_AVG		3
+#define ZBX_DO_ONE		4
 
 #define ZBX_DSTAT_TYPE_SECT	0
 #define ZBX_DSTAT_TYPE_OPER	1
@@ -162,8 +185,9 @@ extern int	CONFIG_UNSAFE_USER_PARAMETERS;
 int	get_diskstat(const char *devname, zbx_uint64_t *dstat);
 
 /* flags for process */
-#define PROCESS_LOCAL_COMMAND	1
-#define PROCESS_MODULE_COMMAND	2
+#define PROCESS_LOCAL_COMMAND	0x1
+#define PROCESS_MODULE_COMMAND	0x2
+#define PROCESS_WITH_ALIAS	0x4
 
 void	init_metrics();
 int	add_metric(ZBX_METRIC *metric, char *error, size_t max_error_len);
@@ -177,7 +201,7 @@ void	test_parameters();
 void	test_parameter(const char *key);
 
 void	init_result(AGENT_RESULT *result);
-void	zbx_logs_free(zbx_log_t **logs);
+void	zbx_log_free(zbx_log_t *log);
 void	free_result(AGENT_RESULT *result);
 
 void	init_request(AGENT_REQUEST *request);
@@ -185,13 +209,11 @@ void	free_request(AGENT_REQUEST *request);
 
 int	parse_item_key(const char *itemkey, AGENT_REQUEST *request);
 
-zbx_log_t	*add_log_result(AGENT_RESULT *result, const char *value);
-void		set_log_result_empty(AGENT_RESULT *result);
-
 void	unquote_key_param(char *param);
-void	quote_key_param(char **param, int forced);
+int	quote_key_param(char **param, int forced);
 
 int	set_result_type(AGENT_RESULT *result, int value_type, int data_type, char *c);
+void	set_result_meta(AGENT_RESULT *result, zbx_uint64_t lastlogsize, int mtime);
 
 #ifdef HAVE_KSTAT_H
 zbx_uint64_t	get_kstat_numeric_value(const kstat_named_t *kn);
@@ -202,6 +224,11 @@ zbx_uint64_t	get_kstat_numeric_value(const kstat_named_t *kn);
 int	GET_SENSOR(AGENT_REQUEST *request, AGENT_RESULT *result);
 int	KERNEL_MAXFILES(AGENT_REQUEST *request, AGENT_RESULT *result);
 int	KERNEL_MAXPROC(AGENT_REQUEST *request, AGENT_RESULT *result);
+
+#ifdef ZBX_PROCSTAT_COLLECTOR
+int	PROC_CPU_UTIL(AGENT_REQUEST *request, AGENT_RESULT *result);
+#endif
+
 int	PROC_MEM(AGENT_REQUEST *request, AGENT_RESULT *result);
 int	PROC_NUM(AGENT_REQUEST *request, AGENT_RESULT *result);
 int	NET_IF_IN(AGENT_REQUEST *request, AGENT_RESULT *result);
@@ -216,6 +243,7 @@ int	SYSTEM_CPU_INTR(AGENT_REQUEST *request, AGENT_RESULT *result);
 int	SYSTEM_CPU_LOAD(AGENT_REQUEST *request, AGENT_RESULT *result);
 int	SYSTEM_CPU_UTIL(AGENT_REQUEST *request, AGENT_RESULT *result);
 int	SYSTEM_CPU_NUM(AGENT_REQUEST *request, AGENT_RESULT *result);
+int	SYSTEM_CPU_DISCOVERY(AGENT_REQUEST *request, AGENT_RESULT *result);
 int	SYSTEM_HOSTNAME(AGENT_REQUEST *request, AGENT_RESULT *result);
 int	SYSTEM_HW_CHASSIS(AGENT_REQUEST *request, AGENT_RESULT *result);
 int	SYSTEM_HW_CPU(AGENT_REQUEST *request, AGENT_RESULT *result);
@@ -240,6 +268,8 @@ int	VM_MEMORY_SIZE(AGENT_REQUEST *request, AGENT_RESULT *result);
 #ifdef _WINDOWS
 int	USER_PERF_COUNTER(AGENT_REQUEST *request, AGENT_RESULT *result);
 int	PERF_COUNTER(AGENT_REQUEST *request, AGENT_RESULT *result);
+int	SERVICE_DISCOVERY(AGENT_REQUEST *request, AGENT_RESULT *result);
+int	SERVICE_INFO(AGENT_REQUEST *request, AGENT_RESULT *result);
 int	SERVICE_STATE(AGENT_REQUEST *request, AGENT_RESULT *result);
 int	SERVICES(AGENT_REQUEST *request, AGENT_RESULT *result);
 int	PROC_INFO(AGENT_REQUEST *request, AGENT_RESULT *result);
@@ -257,5 +287,12 @@ typedef struct
 	int		(*function)();
 }
 MODE_FUNCTION;
+
+/* the fields used by proc queries */
+#define ZBX_SYSINFO_PROC_NONE		0x0000
+#define ZBX_SYSINFO_PROC_PID		0x0001
+#define ZBX_SYSINFO_PROC_NAME		0x0002
+#define ZBX_SYSINFO_PROC_CMDLINE	0x0004
+#define ZBX_SYSINFO_PROC_USER		0x0008
 
 #endif

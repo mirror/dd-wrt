@@ -28,8 +28,8 @@
 #include "httppoller.h"
 
 extern int		CONFIG_HTTPPOLLER_FORKS;
-extern unsigned char	process_type;
-extern int		process_num;
+extern unsigned char	process_type, program_type;
+extern int		server_num, process_num;
 
 /******************************************************************************
  *                                                                            *
@@ -37,16 +37,12 @@ extern int		process_num;
  *                                                                            *
  * Purpose: calculate when we have to process earliest httptest               *
  *                                                                            *
- * Parameters: now - current timestamp (not used)                             *
- *                                                                            *
  * Return value: timestamp of earliest check or -1 if not found               *
  *                                                                            *
  * Author: Alexei Vladishev                                                   *
  *                                                                            *
- * Comments:                                                                  *
- *                                                                            *
  ******************************************************************************/
-static int	get_minnextcheck(int now)
+static int	get_minnextcheck(void)
 {
 	DB_RESULT	result;
 	DB_ROW		row;
@@ -60,13 +56,11 @@ static int	get_minnextcheck(int now)
 				" and t.status=%d"
 				" and h.proxy_hostid is null"
 				" and h.status=%d"
-				" and (h.maintenance_status=%d or h.maintenance_type=%d)"
-				ZBX_SQL_NODE,
+				" and (h.maintenance_status=%d or h.maintenance_type=%d)",
 			CONFIG_HTTPPOLLER_FORKS, process_num - 1,
 			HTTPTEST_STATUS_MONITORED,
 			HOST_STATUS_MONITORED,
-			HOST_MAINTENANCE_STATUS_OFF, MAINTENANCE_TYPE_NORMAL,
-			DBand_node_local("t.httptestid"));
+			HOST_MAINTENANCE_STATUS_OFF, MAINTENANCE_TYPE_NORMAL);
 
 	if (NULL == (row = DBfetch(result)) || SUCCEED == DBis_null(row[0]))
 	{
@@ -96,11 +90,18 @@ static int	get_minnextcheck(int now)
  * Comments: never returns                                                    *
  *                                                                            *
  ******************************************************************************/
-void	main_httppoller_loop(void)
+ZBX_THREAD_ENTRY(httppoller_thread, args)
 {
 	int	now, nextcheck, sleeptime = -1, httptests_count = 0, old_httptests_count = 0;
 	double	sec, total_sec = 0.0, old_total_sec = 0.0;
 	time_t	last_stat_time;
+
+	process_type = ((zbx_thread_args_t *)args)->process_type;
+	server_num = ((zbx_thread_args_t *)args)->server_num;
+	process_num = ((zbx_thread_args_t *)args)->process_num;
+
+	zabbix_log(LOG_LEVEL_INFORMATION, "%s #%d started [%s #%d]", get_program_type_string(program_type),
+			server_num, get_process_type_string(process_type), process_num);
 
 #define STAT_INTERVAL	5	/* if a process is busy and does not sleep then update status not faster than */
 				/* once in STAT_INTERVAL seconds */
@@ -112,6 +113,8 @@ void	main_httppoller_loop(void)
 
 	for (;;)
 	{
+		zbx_handle_log();
+
 		if (0 != sleeptime)
 		{
 			zbx_setproctitle("%s #%d [got %d values in " ZBX_FS_DBL " sec, getting values]",
@@ -124,7 +127,7 @@ void	main_httppoller_loop(void)
 		httptests_count += process_httptests(process_num, now);
 		total_sec += zbx_time() - sec;
 
-		nextcheck = get_minnextcheck(now);
+		nextcheck = get_minnextcheck();
 		sleeptime = calculate_sleeptime(nextcheck, POLLER_DELAY);
 
 		if (0 != sleeptime || STAT_INTERVAL <= time(NULL) - last_stat_time)

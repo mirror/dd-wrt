@@ -19,26 +19,57 @@
 **/
 
 
-$valueMappingTable = new CTableInfo(_('No value maps found.'));
-$valueMappingTable->setHeader(array(
-	$this->data['displayNodes'] ? _('Node') : null,
-	_('Name'),
-	_('Value map')
-));
+$widget = (new CWidget())
+	->setTitle(_('Value mapping'))
+	->setControls((new CForm())
+		->cleanItems()
+		->addItem((new CList())
+			->addItem(makeAdministrationGeneralMenu('adm.valuemapping.php'))
+			->addItem(new CSubmit('form', _('Create value map')))
+			->addItem((new CButton('form', _('Import')))->onClick('redirect("conf.import.php?rules_preset=valuemap")'))
+		)
+	);
 
-foreach ($this->data['valuemaps'] as $valuemap) {
-	order_result($valuemap['maps'], 'value');
+$form = (new CForm())
+	->setName('valuemap_form');
 
-	$mappings = array();
-	foreach ($valuemap['maps'] as $map) {
-		$mappings[] = $map['value'].SPACE.RARR.SPACE.$map['newvalue'];
+$table = (new CTableInfo())
+	->setHeader([
+		(new CColHeader(
+			(new CCheckBox('all_valuemaps'))
+				->onClick("checkAll('".$form->getName()."', 'all_valuemaps', 'valuemapids');")
+		))->addClass(ZBX_STYLE_CELL_WIDTH),
+		make_sorting_header(_('Name'), 'name', $data['sort'], $data['sortorder']),
+		_('Value map'),
+		_('Used in items')
+	]);
+
+foreach ($data['valuemaps'] as $valuemap) {
+	$mappings = [];
+
+	foreach ($valuemap['mappings'] as $mapping) {
+		$mappings[] = $mapping['value'].' &rArr; '.$mapping['newvalue'];
 		$mappings[] = BR();
 	}
-	$valueMappingTable->addRow(array(
-		$this->data['displayNodes'] ? $valuemap['nodename'] : null,
+	array_pop($mappings);
+
+	$table->addRow([
+		new CCheckBox('valuemapids['.$valuemap['valuemapid'].']', $valuemap['valuemapid']),
 		new CLink($valuemap['name'], 'adm.valuemapping.php?form=update&valuemapid='.$valuemap['valuemapid']),
-		$mappings
-	));
+		$mappings,
+		$valuemap['used_in_items'] ? (new CCol(_('Yes')))->addClass(ZBX_STYLE_GREEN) : ''
+	]);
 }
 
-return $valueMappingTable;
+$form->addItem([
+	$table,
+	$data['paging'],
+	new CActionButtonList('action', 'valuemapids', [
+		'valuemap.export' => ['name' => _('Export')],
+		'valuemap.delete' => ['name' => _('Delete'), 'confirm' => _('Delete selected value maps?')]
+	])
+]);
+
+$widget->addItem($form);
+
+return $widget;

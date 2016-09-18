@@ -21,44 +21,44 @@
 
 require_once dirname(__FILE__).'/js/monitoring.triggerComment.js.php';
 
-$commentWidget = new CWidget('triggerComment');
-$commentWidget->addPageHeader(_('TRIGGER COMMENTS'));
+$commentWidget = (new CWidget())->setTitle(_('Comments'));
 
 // create form
-$commentForm = new CForm();
-$commentForm->setName('commentForm');
-$commentForm->addVar('triggerid', $this->data['triggerid']);
+$commentForm = (new CForm())
+	->addVar('triggerid', $this->data['triggerid']);
 
 // create form list
-$commentFormList = new CFormList('commentFormList');
+$commentTextArea = (new CTextArea('comments', CMacrosResolverHelper::resolveTriggerDescription($this->data['trigger']),
+	['rows' => 25, 'readonly' => $this->data['isCommentExist']]
+))
+	->setWidth(ZBX_TEXTAREA_BIG_WIDTH)
+	->setAttribute('autofocus', 'autofocus');
 
-$commentTextArea = new CTextArea('comments', CMacrosResolverHelper::resolveTriggerDescription($this->data['trigger']), array(
-	'rows' => 25, 'width' => ZBX_TEXTAREA_BIG_WIDTH, 'readonly' => $this->data['isCommentExist']
-));
-$commentTextArea->attr('autofocus', 'autofocus');
-$commentFormList->addRow(_('Comments'), $commentTextArea);
+$commentFormList = (new CFormList('commentFormList'))
+	->addRow(_('Description'), $commentTextArea);
 
 // append tabs to form
-$commentTab = new CTabView();
-$commentTab->addTab('commentTab', _s('Comments for "%s".', $this->data['trigger']['description']), $commentFormList);
-$commentForm->addItem($commentTab);
+$commentTab = (new CTabView())
+	->addTab('commentTab', _s('Description for "%s".', $this->data['trigger']['description']), $commentFormList);
 
 // append buttons to form
-$saveButton = new CSubmit('save', _('Save'));
-$saveButton->setEnabled(!$this->data['isCommentExist']);
+$updateButton = (new CSubmit('update', _('Update')))
+	->setEnabled(!$this->data['isCommentExist']);
+
+$buttons = [
+	new CButtonCancel('&triggerid='.$this->data['triggerid'])
+];
 
 if ($this->data['isCommentExist']) {
-	$editButton = new CButton('edit', _('Edit'));
-	$editButton->setEnabled($this->data['isTriggerEditable']);
-}
-else {
-	$editButton = null;
+	$editButton = (new CButton('edit', _('Edit')))
+		->setEnabled($this->data['isTriggerEditable']);
+
+	array_unshift($buttons, $editButton);
 }
 
-$commentForm->addItem(makeFormFooter(
-	$saveButton,
-	array($editButton, new CButtonCancel('&triggerid='.$this->data['triggerid']))
-));
+$commentTab->setFooter(makeFormFooter($updateButton, $buttons));
+
+$commentForm->addItem($commentTab);
 
 $commentWidget->addItem($commentForm);
 

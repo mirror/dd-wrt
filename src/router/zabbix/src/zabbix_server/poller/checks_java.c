@@ -71,9 +71,11 @@ static int	parse_response(const DC_ITEM *items, AGENT_RESULT *results, int *errc
 
 				if (SUCCEED == zbx_json_value_by_name_dyn(&jp_row, ZBX_PROTO_TAG_VALUE, &value, &value_alloc))
 				{
-					if (SUCCEED == set_result_type(&results[i],
-								items[i].value_type, items[i].data_type, value))
+					if (SUCCEED == set_result_type(&results[i], items[i].value_type,
+							items[i].data_type, value))
+					{
 						errcodes[i] = SUCCEED;
+					}
 					else
 						errcodes[i] = NOTSUPPORTED;
 				}
@@ -131,10 +133,9 @@ void	get_values_java(unsigned char request, const DC_ITEM *items, AGENT_RESULT *
 {
 	const char	*__function_name = "get_values_java";
 
-	zbx_sock_t	s;
+	zbx_socket_t	s;
 	struct zbx_json	json;
 	char		error[MAX_STRING_LEN];
-	char		*buffer = NULL;
 	int		i, j, err = SUCCEED;
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s() host:'%s' addr:'%s' num:%d",
@@ -202,18 +203,18 @@ void	get_values_java(unsigned char request, const DC_ITEM *items, AGENT_RESULT *
 	}
 	zbx_json_close(&json);
 
-	if (SUCCEED == (err = zbx_tcp_connect(&s, CONFIG_SOURCE_IP,
-					CONFIG_JAVA_GATEWAY, CONFIG_JAVA_GATEWAY_PORT, CONFIG_TIMEOUT)))
+	if (SUCCEED == (err = zbx_tcp_connect(&s, CONFIG_SOURCE_IP, CONFIG_JAVA_GATEWAY, CONFIG_JAVA_GATEWAY_PORT,
+			CONFIG_TIMEOUT, ZBX_TCP_SEC_UNENCRYPTED, NULL, NULL)))
 	{
 		zabbix_log(LOG_LEVEL_DEBUG, "JSON before sending [%s]", json.buffer);
 
 		if (SUCCEED == (err = zbx_tcp_send(&s, json.buffer)))
 		{
-			if (SUCCEED == (err = zbx_tcp_recv(&s, &buffer)))
+			if (SUCCEED == (err = zbx_tcp_recv(&s)))
 			{
-				zabbix_log(LOG_LEVEL_DEBUG, "JSON back [%s]", buffer);
+				zabbix_log(LOG_LEVEL_DEBUG, "JSON back [%s]", s.buffer);
 
-				err = parse_response(items, results, errcodes, num, buffer, error, sizeof(error));
+				err = parse_response(items, results, errcodes, num, s.buffer, error, sizeof(error));
 			}
 		}
 
@@ -224,7 +225,7 @@ void	get_values_java(unsigned char request, const DC_ITEM *items, AGENT_RESULT *
 
 	if (FAIL == err)
 	{
-		strscpy(error, zbx_tcp_strerror());
+		strscpy(error, zbx_socket_strerror());
 		err = GATEWAY_ERROR;
 	}
 exit:

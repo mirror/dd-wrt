@@ -24,7 +24,7 @@
 
 /* generic */
 
-typedef uint32_t zbx_hash_t;
+typedef zbx_uint32_t zbx_hash_t;
 
 zbx_hash_t	zbx_hash_lookup2(const void *data, size_t len, zbx_hash_t seed);
 zbx_hash_t	zbx_hash_modfnv(const void *data, size_t len, zbx_hash_t seed);
@@ -32,16 +32,20 @@ zbx_hash_t	zbx_hash_murmur2(const void *data, size_t len, zbx_hash_t seed);
 zbx_hash_t	zbx_hash_sdbm(const void *data, size_t len, zbx_hash_t seed);
 zbx_hash_t	zbx_hash_djb2(const void *data, size_t len, zbx_hash_t seed);
 
+#define ZBX_DEFAULT_HASH_ALGO		zbx_hash_modfnv
+#define ZBX_DEFAULT_PTR_HASH_ALGO	zbx_hash_modfnv
 #define ZBX_DEFAULT_UINT64_HASH_ALGO	zbx_hash_modfnv
 #define ZBX_DEFAULT_STRING_HASH_ALGO	zbx_hash_modfnv
 
 typedef zbx_hash_t (*zbx_hash_func_t)(const void *data);
 
+zbx_hash_t	zbx_default_ptr_hash_func(const void *data);
 zbx_hash_t	zbx_default_uint64_hash_func(const void *data);
 zbx_hash_t	zbx_default_string_hash_func(const void *data);
 
 #define ZBX_DEFAULT_HASH_SEED		0
 
+#define ZBX_DEFAULT_PTR_HASH_FUNC	zbx_default_ptr_hash_func
 #define ZBX_DEFAULT_UINT64_HASH_FUNC	zbx_default_uint64_hash_func
 #define ZBX_DEFAULT_STRING_HASH_FUNC	zbx_default_string_hash_func
 
@@ -144,6 +148,7 @@ void	*zbx_hashset_insert(zbx_hashset_t *hs, const void *data, size_t size);
 void	*zbx_hashset_insert_ext(zbx_hashset_t *hs, const void *data, size_t size, size_t offset);
 void	*zbx_hashset_search(zbx_hashset_t *hs, const void *data);
 void	zbx_hashset_remove(zbx_hashset_t *hs, const void *data);
+void	zbx_hashset_remove_direct(zbx_hashset_t *hs, const void *data);
 
 void	zbx_hashset_clear(zbx_hashset_t *hs);
 
@@ -231,6 +236,12 @@ typedef struct
 	int			options;
 	zbx_compare_func_t	compare_func;
 	zbx_hashmap_t		*key_index;
+
+	/* The binary heap is designed to work correctly only with memory allocation functions */
+	/* that return pointer to the allocated memory or quit. Functions that can return NULL */
+	/* are not supported (process will exit() if NULL return value is encountered). If     */
+	/* using zbx_mem_info_t and the associated memory functions then ensure that allow_oom */
+	/* is always set to 0.                                                                 */
 	zbx_mem_malloc_func_t	mem_malloc_func;
 	zbx_mem_realloc_func_t	mem_realloc_func;
 	zbx_mem_free_func_t	mem_free_func;
@@ -283,30 +294,35 @@ void	zbx_vector_ ## __id ## _remove(zbx_vector_ ## __id ## _t *vector, int index
 void	zbx_vector_ ## __id ## _sort(zbx_vector_ ## __id ## _t *vector, zbx_compare_func_t compare_func);	\
 void	zbx_vector_ ## __id ## _uniq(zbx_vector_ ## __id ## _t *vector, zbx_compare_func_t compare_func);	\
 														\
-int	zbx_vector_ ## __id ## _nearestindex(zbx_vector_ ## __id ## _t *vector, __type value,			\
+int	zbx_vector_ ## __id ## _nearestindex(const zbx_vector_ ## __id ## _t *vector, const __type value,	\
 									zbx_compare_func_t compare_func);	\
-int	zbx_vector_ ## __id ## _bsearch(zbx_vector_ ## __id ## _t *vector, __type value,			\
+int	zbx_vector_ ## __id ## _bsearch(const zbx_vector_ ## __id ## _t *vector, const __type value,		\
 									zbx_compare_func_t compare_func);	\
-int	zbx_vector_ ## __id ## _lsearch(zbx_vector_ ## __id ## _t *vector, __type value, int *index,		\
+int	zbx_vector_ ## __id ## _lsearch(const zbx_vector_ ## __id ## _t *vector, const __type value, int *index,\
 									zbx_compare_func_t compare_func);	\
-int	zbx_vector_ ## __id ## _search(zbx_vector_ ## __id ## _t *vector, __type value,				\
+int	zbx_vector_ ## __id ## _search(const zbx_vector_ ## __id ## _t *vector, const __type value,		\
+									zbx_compare_func_t compare_func);	\
+void	zbx_vector_ ## __id ## _setdiff(zbx_vector_ ## __id ## _t *left, const zbx_vector_ ## __id ## _t *right,\
 									zbx_compare_func_t compare_func);	\
 														\
 void	zbx_vector_ ## __id ## _reserve(zbx_vector_ ## __id ## _t *vector, size_t size);			\
 void	zbx_vector_ ## __id ## _clear(zbx_vector_ ## __id ## _t *vector);
 
+#define ZBX_PTR_VECTOR_DECL(__id, __type)									\
+														\
+ZBX_VECTOR_DECL(__id, __type);											\
+														\
+void	zbx_vector_ ## __id ## _clear_ext(zbx_vector_ ## __id ## _t *vector, zbx_clean_func_t clean_func);
+
 ZBX_VECTOR_DECL(uint64, zbx_uint64_t);
-ZBX_VECTOR_DECL(str, char *);
-ZBX_VECTOR_DECL(ptr, void *);
+ZBX_PTR_VECTOR_DECL(str, char *);
+ZBX_PTR_VECTOR_DECL(ptr, void *);
 ZBX_VECTOR_DECL(ptr_pair, zbx_ptr_pair_t);
 ZBX_VECTOR_DECL(uint64_pair, zbx_uint64_pair_t);
 
-void	zbx_vector_str_clean(zbx_vector_str_t *vector);
-void	zbx_vector_ptr_clean(zbx_vector_ptr_t *vector, zbx_mem_free_func_t free_func);
-
-/* this function is only for use with zbx_vector_ptr_clean()  */
+/* this function is only for use with zbx_vector_XXX_clear_ext() */
 /* and only if the vector does not contain nested allocations */
-void	zbx_ptr_free(void *ptr);
+void	zbx_ptr_free(void *data);
 
 /* 128 bit unsigned integer handling */
 #define uset128(base, hi64, lo64)	(base)->hi = hi64; (base)->lo = lo64
@@ -317,5 +333,44 @@ void	udiv128_64(zbx_uint128_t *result, const zbx_uint128_t *base, zbx_uint64_t v
 void	umul64_64(zbx_uint128_t *result, zbx_uint64_t value, zbx_uint64_t factor);
 
 unsigned int	zbx_isqrt32(unsigned int value);
+
+/* expression evaluation */
+
+#define ZBX_UNKNOWN_STR		"ZBX_UNKNOWN"	/* textual representation of ZBX_UNKNOWN */
+#define ZBX_UNKNOWN_STR_LEN	ZBX_CONST_STRLEN(ZBX_UNKNOWN_STR)
+
+int	evaluate(double *value, const char *expression, char *error, size_t max_error_len,
+		zbx_vector_ptr_t *unknown_msgs);
+
+/* forecasting */
+
+#define ZBX_MATH_ERROR	-1.0
+
+typedef enum
+{
+	FIT_LINEAR,
+	FIT_POLYNOMIAL,
+	FIT_EXPONENTIAL,
+	FIT_LOGARITHMIC,
+	FIT_POWER,
+	FIT_INVALID
+}
+zbx_fit_t;
+
+typedef enum
+{
+	MODE_VALUE,
+	MODE_MAX,
+	MODE_MIN,
+	MODE_DELTA,
+	MODE_AVG,
+	MODE_INVALID
+}
+zbx_mode_t;
+
+int	zbx_fit_code(char *fit_str, zbx_fit_t *fit, unsigned *k, char **error);
+int	zbx_mode_code(char *mode_str, zbx_mode_t *mode, char **error);
+double	zbx_forecast(double *t, double *x, int n, double now, double time, zbx_fit_t fit, unsigned k, zbx_mode_t mode);
+double	zbx_timeleft(double *t, double *x, int n, double now, double threshold, zbx_fit_t fit, unsigned k);
 
 #endif

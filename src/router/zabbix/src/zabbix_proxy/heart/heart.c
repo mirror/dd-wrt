@@ -25,27 +25,19 @@
 
 #include "heart.h"
 #include "../servercomms.h"
+#include "../../libs/zbxcrypto/tls.h"
 
-extern unsigned char	process_type;
+extern unsigned char	process_type, program_type;
+extern int		server_num, process_num;
 
 /******************************************************************************
  *                                                                            *
  * Function: send_heartbeat                                                   *
  *                                                                            *
- * Purpose:                                                                   *
- *                                                                            *
- * Parameters:                                                                *
- *                                                                            *
- * Return value:                                                              *
- *                                                                            *
- * Author: Alexander Vladishev                                                *
- *                                                                            *
- * Comments:                                                                  *
- *                                                                            *
  ******************************************************************************/
 static int	send_heartbeat(void)
 {
-	zbx_sock_t	sock;
+	zbx_socket_t	sock;
 	struct zbx_json	j;
 	int		ret = SUCCEED;
 	char		*error = NULL;
@@ -61,7 +53,8 @@ static int	send_heartbeat(void)
 
 	if (SUCCEED != put_data_to_server(&sock, &j, &error))
 	{
-		zabbix_log(LOG_LEVEL_WARNING, "sending heartbeat message to server failed: %s", error);
+		zabbix_log(LOG_LEVEL_WARNING, "cannot send heartbeat message to server at \"%s\": %s",
+				sock.peer, error);
 		ret = FAIL;
 	}
 
@@ -77,16 +70,8 @@ static int	send_heartbeat(void)
  *                                                                            *
  * Purpose: periodically send heartbeat message to the server                 *
  *                                                                            *
- * Parameters:                                                                *
- *                                                                            *
- * Return value:                                                              *
- *                                                                            *
- * Author: Alexander Vladishev                                                *
- *                                                                            *
- * Comments:                                                                  *
- *                                                                            *
  ******************************************************************************/
-void	main_heart_loop(void)
+ZBX_THREAD_ENTRY(heart_thread, args)
 {
 	int	start, sleeptime = 0, res;
 	double	sec, total_sec = 0.0, old_total_sec = 0.0;
@@ -95,12 +80,24 @@ void	main_heart_loop(void)
 #define STAT_INTERVAL	5	/* if a process is busy and does not sleep then update status not faster than */
 				/* once in STAT_INTERVAL seconds */
 
+	process_type = ((zbx_thread_args_t *)args)->process_type;
+	server_num = ((zbx_thread_args_t *)args)->server_num;
+	process_num = ((zbx_thread_args_t *)args)->process_num;
+
+	zabbix_log(LOG_LEVEL_INFORMATION, "%s #%d started [%s #%d]", get_program_type_string(program_type),
+			server_num, get_process_type_string(process_type), process_num);
+
+#if defined(HAVE_POLARSSL) || defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
+	zbx_tls_init_child();
+#endif
 	last_stat_time = time(NULL);
 
 	zbx_setproctitle("%s [sending heartbeat message]", get_process_type_string(process_type));
 
 	for (;;)
 	{
+		zbx_handle_log();
+
 		if (0 != sleeptime)
 		{
 			zbx_setproctitle("%s [sending heartbeat message %s in " ZBX_FS_DBL " sec, "

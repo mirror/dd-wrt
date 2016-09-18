@@ -20,22 +20,16 @@
 
 
 function getRegexp($regexpId) {
-	return DBfetch(DBselect(
-		'SELECT re.*'.
-		' FROM regexps re'.
-		' WHERE regexpid='.zbx_dbstr($regexpId).
-			andDbNode('re.regexpid')
-	));
+	return DBfetch(DBselect('SELECT re.* FROM regexps re WHERE regexpid='.zbx_dbstr($regexpId)));
 }
 
 function getRegexpExpressions($regexpId) {
-	$expressions = array();
+	$expressions = [];
 
 	$dbExpressions = DBselect(
 		'SELECT e.expressionid,e.expression,e.expression_type,e.exp_delimiter,e.case_sensitive'.
 		' FROM expressions e'.
-		' WHERE regexpid='.zbx_dbstr($regexpId).
-			andDbNode('e.expressionid')
+		' WHERE regexpid='.zbx_dbstr($regexpId)
 	);
 	while ($expression = DBfetch($dbExpressions)) {
 		$expressions[$expression['expressionid']] = $expression;
@@ -47,7 +41,9 @@ function getRegexpExpressions($regexpId) {
 function addRegexp(array $regexp, array $expressions) {
 	try {
 		// check required fields
-		$dbFields = array('name' => null, 'test_string' => '');
+		$dbFields = ['name' => null, 'test_string' => ''];
+
+		validateRegexp($expressions);
 
 		if (!check_db_fields($dbFields, $regexp)) {
 			throw new Exception(_('Incorrect arguments passed to function').' [addRegexp]');
@@ -56,13 +52,13 @@ function addRegexp(array $regexp, array $expressions) {
 		// check duplicate name
 		$sql = 'SELECT re.regexpid'.
 				' FROM regexps re'.
-				' WHERE re.name='.zbx_dbstr($regexp['name']).
-					andDbNode('re.regexpid');
+				' WHERE re.name='.zbx_dbstr($regexp['name']);
+
 		if (DBfetch(DBselect($sql))) {
 			throw new Exception(_s('Regular expression "%s" already exists.', $regexp['name']));
 		}
 
-		$regexpIds = DB::insert('regexps', array($regexp));
+		$regexpIds = DB::insert('regexps', [$regexp]);
 		$regexpId = reset($regexpIds);
 
 		addRegexpExpressions($regexpId, $expressions);
@@ -80,13 +76,15 @@ function updateRegexp(array $regexp, array $expressions) {
 		$regexpId = $regexp['regexpid'];
 		unset($regexp['regexpid']);
 
+		validateRegexp($expressions);
+
 		// check existence
 		if (!getRegexp($regexpId)) {
 			throw new Exception(_('Regular expression does not exist.'));
 		}
 
 		// check required fields
-		$dbFields = array('name' => null);
+		$dbFields = ['name' => null];
 		if (!check_db_fields($dbFields, $regexp)) {
 			throw new Exception(_('Incorrect arguments passed to function').' [updateRegexp]');
 		}
@@ -95,8 +93,7 @@ function updateRegexp(array $regexp, array $expressions) {
 		$dbRegexp = DBfetch(DBselect(
 			'SELECT re.regexpid'.
 			' FROM regexps re'.
-			' WHERE re.name='.zbx_dbstr($regexp['name']).
-				andDbNode('re.regexpid')
+			' WHERE re.name='.zbx_dbstr($regexp['name'])
 		));
 		if ($dbRegexp && bccomp($regexpId, $dbRegexp['regexpid']) != 0) {
 			throw new Exception(_s('Regular expression "%s" already exists.', $regexp['name']));
@@ -104,10 +101,10 @@ function updateRegexp(array $regexp, array $expressions) {
 
 		rewriteRegexpExpressions($regexpId, $expressions);
 
-		DB::update('regexps', array(
+		DB::update('regexps', [
 			'values' => $regexp,
-			'where' => array('regexpid' => $regexpId)
-		));
+			'where' => ['regexpid' => $regexpId]
+		]);
 	}
 	catch (Exception $e) {
 		error($e->getMessage());
@@ -115,6 +112,39 @@ function updateRegexp(array $regexp, array $expressions) {
 	}
 
 	return true;
+}
+
+function validateRegexp($expressions) {
+	$validator = new CRegexValidator([
+		'messageInvalid' => _('Regular expression must be a string'),
+		'messageRegex' => _('Incorrect regular expression "%1$s": "%2$s"')
+	]);
+
+	foreach ($expressions as $expression) {
+		switch ($expression['expression_type']) {
+			case EXPRESSION_TYPE_TRUE:
+			case EXPRESSION_TYPE_FALSE:
+				if (!$validator->validate($expression['expression'])) {
+					throw new Exception($validator->getError());
+				}
+				break;
+
+			case EXPRESSION_TYPE_INCLUDED:
+			case EXPRESSION_TYPE_NOT_INCLUDED:
+				if ($expression['expression'] === '') {
+					throw new Exception(_('Expression cannot be empty'));
+				}
+				break;
+
+			case EXPRESSION_TYPE_ANY_INCLUDED:
+				foreach (explode($expression['exp_delimiter'], $expression['expression']) as $string) {
+					if ($expression['expression'] === '') {
+						throw new Exception(_('Expression cannot be empty'));
+					}
+				}
+				break;
+		}
+	}
 }
 
 /**
@@ -128,8 +158,8 @@ function updateRegexp(array $regexp, array $expressions) {
 function rewriteRegexpExpressions($regexpId, array $expressions) {
 	$dbExpressions = getRegexpExpressions($regexpId);
 
-	$expressionsToAdd = array();
-	$expressionsToUpdate = array();
+	$expressionsToAdd = [];
+	$expressionsToUpdate = [];
 
 	foreach ($expressions as $expression) {
 		if (!isset($expression['expressionid'])) {
@@ -156,7 +186,7 @@ function rewriteRegexpExpressions($regexpId, array $expressions) {
 }
 
 function addRegexpExpressions($regexpId, array $expressions) {
-	$dbFields = array('expression' => null, 'expression_type' => null);
+	$dbFields = ['expression' => null, 'expression_type' => null];
 
 	foreach ($expressions as &$expression) {
 		if (!check_db_fields($dbFields, $expression)) {
@@ -175,26 +205,26 @@ function updateRegexpExpressions(array $expressions) {
 		$expressionId = $expression['expressionid'];
 		unset($expression['expressionid']);
 
-		DB::update('expressions', array(
+		DB::update('expressions', [
 			'values' => $expression,
-			'where' => array('expressionid' => $expressionId)
-		));
+			'where' => ['expressionid' => $expressionId]
+		]);
 	}
 	unset($expression);
 }
 
 function deleteRegexpExpressions(array $expressionIds) {
-	DB::delete('expressions', array('expressionid' => $expressionIds));
+	DB::delete('expressions', ['expressionid' => $expressionIds]);
 }
 
 function expression_type2str($type = null) {
-	$types = array(
+	$types = [
 		EXPRESSION_TYPE_INCLUDED => _('Character string included'),
 		EXPRESSION_TYPE_ANY_INCLUDED => _('Any character string included'),
 		EXPRESSION_TYPE_NOT_INCLUDED => _('Character string not included'),
 		EXPRESSION_TYPE_TRUE => _('Result is TRUE'),
 		EXPRESSION_TYPE_FALSE => _('Result is FALSE')
-	);
+	];
 
 	if ($type === null) {
 		return $types;
@@ -208,9 +238,9 @@ function expression_type2str($type = null) {
 }
 
 function expressionDelimiters() {
-	return array(
+	return [
 		',' => ',',
 		'.' => '.',
 		'/' => '/'
-	);
+	];
 }

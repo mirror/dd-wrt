@@ -17,36 +17,31 @@
 ** along with this program; if not, write to the Free Software
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
-?>
-<?php
-	require_once dirname(__FILE__).'/include/config.inc.php';
-	require_once dirname(__FILE__).'/include/users.inc.php';
 
-	$page['title'] = _('User groups');
-	$page['file'] = 'popup_usrgrp.php';
 
-	define('ZBX_PAGE_NO_MENU', 1);
+require_once dirname(__FILE__).'/include/config.inc.php';
+require_once dirname(__FILE__).'/include/users.inc.php';
+
+$page['title'] = _('User groups');
+$page['file'] = 'popup_usrgrp.php';
+
+define('ZBX_PAGE_NO_MENU', 1);
 
 require_once dirname(__FILE__).'/include/page_header.php';
 
-?>
-<?php
 //		VAR			TYPE	OPTIONAL FLAGS	VALIDATION	EXCEPTION
-	$fields=array(
-		'dstfrm'=>		array(T_ZBX_STR, O_MAND,	P_SYS,	NOT_EMPTY,	NULL),
-		'new_groups'=>	array(T_ZBX_STR, O_OPT,		P_SYS,	NOT_EMPTY,	NULL),
+	$fields=[
+		'dstfrm'=>		[T_ZBX_STR, O_MAND,	P_SYS,	NOT_EMPTY,	NULL],
+		'new_groups'=>	[T_ZBX_STR, O_OPT,		P_SYS,	NOT_EMPTY,	NULL],
 
-		'select'=>		array(T_ZBX_STR, O_OPT,		P_SYS|P_ACT,	NULL,	NULL)
-	);
+		'select'=>		[T_ZBX_STR, O_OPT,		P_SYS|P_ACT,	NULL,	NULL]
+	];
 
 	check_fields($fields);
 
 // destination form
-	$dstfrm	= get_request('dstfrm',	0);
-	$new_groups = get_request('new_groups', array());
-?>
-<?php
-	show_table_header(_('User groups'));
+	$dstfrm	= getRequest('dstfrm',	0);
+	$new_groups = getRequest('new_groups', []);
 ?>
 <script language="JavaScript" type="text/javascript">
 <!--
@@ -81,35 +76,37 @@ if(form){
 <?php
 	}
 
-	$form = new CForm();
-	$form->addVar('dstfrm', $dstfrm);
+	$form = (new CForm())
+		->setName('groups')
+		->addVar('dstfrm', $dstfrm);
 
-	$form->setName('groups');
+	$table = (new CTableInfo())
+		->setHeader([
+			(new CColHeader(
+				(new CCheckBox('all_groups'))->onClick("checkAll('".$form->getName()."','all_groups','new_groups');")
+			))->addClass(ZBX_STYLE_CELL_WIDTH),
+			_('Name')
+		]);
 
-	$table = new CTableInfo(_('No user groups found.'));
-	$table->setHeader(array(
-		new CCheckBox("all_groups",NULL,"checkAll('".$form->getName()."','all_groups','new_groups');"),
-		_('Name')
-		));
+	$userGroups = DBfetchArray(DBselect('SELECT ug.usrgrpid,ug.name FROM usrgrp ug'));
 
-	$userGroups = DBfetchArray(DBselect('SELECT ug.usrgrpid,ug.name FROM usrgrp ug '.whereDbNode('ug.usrgrpid')));
 	order_result($userGroups, 'name');
 
 	foreach ($userGroups as $userGroup) {
-		$table->addRow(array(
-			new CCheckBox('new_groups['.$userGroup['usrgrpid'].']',
-				isset($new_groups[$userGroup['usrgrpid']]), null, $userGroup['usrgrpid']),
+		$table->addRow([
+			(new CCheckBox('new_groups['.$userGroup['usrgrpid'].']', $userGroup['usrgrpid']))
+				->setChecked(isset($new_groups[$userGroup['usrgrpid']])),
 			$userGroup['name']
-		));
+		]);
 	}
 
 	$table->setFooter(new CCol(new CSubmit('select', _('Select'))));
 
 	$form->addItem($table);
-	$form->show();
-?>
-<?php
+
+	(new CWidget())
+		->setTitle($page['title'])
+		->addItem($form)
+		->show();
 
 require_once dirname(__FILE__).'/include/page_footer.php';
-
-?>

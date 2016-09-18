@@ -31,50 +31,68 @@ ob_start();
 require_once dirname(__FILE__).'/include/page_header.php';
 
 // VAR	TYPE	OPTIONAL	FLAGS	VALIDATION	EXCEPTION
-$fields = array(
-	'hostid' =>		array(T_ZBX_INT, O_OPT, P_ACT, DB_ID, null),
-	'scriptid' =>	array(T_ZBX_INT, O_OPT, null, DB_ID, null)
-);
+$fields = [
+	'hostid' =>		[T_ZBX_INT, O_MAND, P_SYS, DB_ID, null],
+	'scriptid' =>	[T_ZBX_INT, O_MAND, P_SYS, DB_ID, null]
+];
 check_fields($fields);
 
 ob_end_flush();
 
-$scriptId = getRequest('scriptid');
-$hostId = getRequest('hostid');
+$scriptid = getRequest('scriptid');
+$hostid = getRequest('hostid');
+$data = [
+	'name' => '',
+	'command' => '',
+	'message' => ''
+];
 
-$data = array(
-	'message' => '',
-	'info' => DBfetch(DBselect('SELECT s.name FROM scripts s WHERE s.scriptid='.zbx_dbstr($scriptId)))
-);
+$scripts = API::Script()->get([
+	'scriptids' => $scriptid,
+	'output' => ['name', 'command']
+]);
 
-$result = API::Script()->execute(array(
-	'hostid' => $hostId,
-	'scriptid' => $scriptId
-));
+$error_exist = false;
 
-$isErrorExist = false;
+if ($scripts) {
+	$script = $scripts[0];
 
-if (!$result) {
-	$isErrorExist = true;
-}
-elseif ($result['response'] == 'failed') {
-	error($result['value']);
+	$macros_data = CMacrosResolverHelper::resolve([
+		'config' => 'scriptConfirmation',
+		'data' => [$hostid => [$scriptid => $script['command']]]
+	]);
 
-	$isErrorExist = true;
+	$data['name'] = $script['name'];
+	$data['command'] = $macros_data[$hostid][$scriptid];
+
+	$result = API::Script()->execute([
+		'hostid' => $hostid,
+		'scriptid' => $scriptid
+	]);
+
+	if (!$result) {
+		$error_exist = true;
+	}
+	elseif ($result['response'] == 'failed') {
+		error($result['value']);
+		$error_exist = true;
+	}
+	else {
+		$data['message'] = $result['value'];
+	}
 }
 else {
-	$data['message'] = $result['value'];
+	error(_('No permissions to referred object or it does not exist!'));
+	$error_exist = true;
 }
 
-if ($isErrorExist) {
-	show_error_message(
-		_('Cannot connect to the trapper port of zabbix server daemon, but it should be available to run the script.')
-	);
+if ($error_exist) {
+	show_error_message(_('Cannot execute script'));
 }
 
 // render view
-$scriptView = new CView('general.script.execute', $data);
-$scriptView->render();
-$scriptView->show();
+(new CView('general.script.execute', $data))
+	->render()
+	->show();
 
 require_once dirname(__FILE__).'/include/page_footer.php';

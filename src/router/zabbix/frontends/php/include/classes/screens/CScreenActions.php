@@ -29,67 +29,55 @@ class CScreenActions extends CScreenBase {
 	public function get() {
 		$sortfield = 'clock';
 		$sortorder = ZBX_SORT_DOWN;
-		$sorttitle = _('Time');
 
 		switch ($this->screenitem['sort_triggers']) {
 			case SCREEN_SORT_TRIGGERS_TIME_ASC:
 				$sortfield = 'clock';
 				$sortorder = ZBX_SORT_UP;
-				$sorttitle = _('Time');
 				break;
+
 			case SCREEN_SORT_TRIGGERS_TIME_DESC:
 				$sortfield = 'clock';
 				$sortorder = ZBX_SORT_DOWN;
-				$sorttitle = _('Time');
 				break;
+
 			case SCREEN_SORT_TRIGGERS_TYPE_ASC:
 				$sortfield = 'description';
 				$sortorder = ZBX_SORT_UP;
-				$sorttitle = _('Type');
 				break;
+
 			case SCREEN_SORT_TRIGGERS_TYPE_DESC:
 				$sortfield = 'description';
 				$sortorder = ZBX_SORT_DOWN;
-				$sorttitle = _('Type');
 				break;
+
 			case SCREEN_SORT_TRIGGERS_STATUS_ASC:
 				$sortfield = 'status';
 				$sortorder = ZBX_SORT_UP;
-				$sorttitle = _('Status');
 				break;
+
 			case SCREEN_SORT_TRIGGERS_STATUS_DESC:
 				$sortfield = 'status';
 				$sortorder = ZBX_SORT_DOWN;
-				$sorttitle = _('Status');
 				break;
-			case SCREEN_SORT_TRIGGERS_RETRIES_LEFT_ASC:
-				$sortfield = 'retries';
-				$sortorder = ZBX_SORT_UP;
-				$sorttitle = _('Retries left');
-				break;
-			case SCREEN_SORT_TRIGGERS_RETRIES_LEFT_DESC:
-				$sortfield = 'retries';
-				$sortorder = ZBX_SORT_DOWN;
-				$sorttitle = _('Retries left');
-				break;
+
 			case SCREEN_SORT_TRIGGERS_RECIPIENT_ASC:
 				$sortfield = 'sendto';
 				$sortorder = ZBX_SORT_UP;
-				$sorttitle = _('Recipient(s)');
 				break;
+
 			case SCREEN_SORT_TRIGGERS_RECIPIENT_DESC:
 				$sortfield = 'sendto';
 				$sortorder = ZBX_SORT_DOWN;
-				$sorttitle = _('Recipient(s)');
 				break;
 		}
 
-		$sql = 'SELECT a.alertid,a.clock,mt.description,a.sendto,a.subject,a.message,a.status,a.retries,a.error'.
+		$sql = 'SELECT a.alertid,a.clock,a.sendto,a.subject,a.message,a.status,a.retries,a.error,'.
+					'a.userid,a.actionid,a.mediatypeid,mt.description'.
 				' FROM events e,alerts a'.
 					' LEFT JOIN media_type mt ON mt.mediatypeid=a.mediatypeid'.
 				' WHERE e.eventid=a.eventid'.
-					' AND alerttype='.ALERT_TYPE_MESSAGE.
-					andDbNode('a.alertid');
+					' AND alerttype='.ALERT_TYPE_MESSAGE;
 
 		if (CWebUser::getType() != USER_TYPE_SUPER_ADMIN) {
 			$userid = CWebUser::$data['userid'];
@@ -113,62 +101,83 @@ class CScreenActions extends CScreenBase {
 
 		order_result($alerts, $sortfield, $sortorder);
 
+		$userids = [];
+
+		foreach ($alerts as $alert) {
+			if ($alert['userid'] != 0) {
+				$userids[$alert['userid']] = true;
+			}
+		}
+
+		if ($userids) {
+			$dbUsers = API::User()->get([
+				'output' => ['userid', 'alias', 'name', 'surname'],
+				'userids' => array_keys($userids),
+				'preservekeys' => true
+			]);
+		}
+
 		// indicator of sort field
-		$sortfieldSpan = new CSpan(array($sorttitle, SPACE));
-		$sortorderSpan = new CSpan(SPACE, ($sortorder == ZBX_SORT_DOWN) ? 'icon_sortdown default_cursor' : 'icon_sortup default_cursor');
+		$sort_div = (new CSpan())->addClass(($sortorder === ZBX_SORT_DOWN) ? ZBX_STYLE_ARROW_DOWN : ZBX_STYLE_ARROW_UP);
 
 		// create alert table
-		$actionTable = new CTableInfo(_('No actions found.'));
-		$actionTable->setHeader(array(
-			is_show_all_nodes() ? _('Nodes') : null,
-			($sortfield == 'clock') ? array($sortfieldSpan, $sortorderSpan) : _('Time'),
-			($sortfield == 'description') ? array($sortfieldSpan, $sortorderSpan) : _('Type'),
-			($sortfield == 'status') ? array($sortfieldSpan, $sortorderSpan) : _('Status'),
-			($sortfield == 'retries') ? array($sortfieldSpan, $sortorderSpan) : _('Retries left'),
-			($sortfield == 'sendto') ? array($sortfieldSpan, $sortorderSpan) : _('Recipient(s)'),
-			_('Message'),
-			_('Error')
-		));
+		$table = (new CTableInfo())
+			->setHeader([
+				($sortfield === 'clock') ? [('Time'), $sort_div] : _('Time'),
+				_('Action'),
+				($sortfield === 'description') ? [_('Type'), $sort_div] : _('Type'),
+				($sortfield === 'sendto') ? [_('Recipient'), $sort_div] : _('Recipient'),
+				_('Message'),
+				($sortfield === 'status') ? [_('Status'), $sort_div] : _('Status'),
+				_('Info')
+			]);
+
+		$actions = API::Action()->get([
+			'output' => ['actionid', 'name'],
+			'actionids' => array_unique(zbx_objectValues($alerts, 'actionid')),
+			'preservekeys' => true
+		]);
 
 		foreach ($alerts as $alert) {
 			if ($alert['status'] == ALERT_STATUS_SENT) {
-				$status = new CSpan(_('sent'), 'green');
-				$retries = new CSpan(SPACE, 'green');
+				$status = (new CSpan(_('Sent')))->addClass(ZBX_STYLE_GREEN);
 			}
 			elseif ($alert['status'] == ALERT_STATUS_NOT_SENT) {
-				$status = new CSpan(_('In progress'), 'orange');
-				$retries = new CSpan(ALERT_MAX_RETRIES - $alert['retries'], 'orange');
+				$status = (new CSpan([
+					_('In progress').':',
+					BR(),
+					_n('%1$s retry left', '%1$s retries left', ALERT_MAX_RETRIES - $alert['retries'])])
+				)
+					->addClass(ZBX_STYLE_YELLOW);
 			}
 			else {
-				$status = new CSpan(_('not sent'), 'red');
-				$retries = new CSpan(0, 'red');
+				$status = (new CSpan(_('Failed')))->addClass(ZBX_STYLE_RED);
 			}
 
-			$message = array(
-				bold(_('Subject').NAME_DELIMITER),
-				br(),
-				$alert['subject'],
-				br(),
-				br(),
-				bold(_('Message').NAME_DELIMITER),
-				br(),
-				$alert['message']
-			);
+			$recipient = $alert['userid'] != 0
+				? [bold(getUserFullname($dbUsers[$alert['userid']])), BR(), $alert['sendto']]
+				: $alert['sendto'];
 
-			$error = empty($alert['error']) ? new CSpan(SPACE, 'off') : new CSpan($alert['error'], 'on');
+			$info_icons = [];
+			if ($alert['error'] !== '') {
+				$info_icons[] = makeErrorIcon($alert['error']);
+			}
 
-			$actionTable->addRow(array(
-				get_node_name_by_elid($alert['alertid']),
-				new CCol(zbx_date2str(HISTORY_OF_ACTIONS_DATE_FORMAT, $alert['clock']), 'top'),
-				new CCol(!empty($alert['description']) ? $alert['description'] : '-', 'top'),
-				new CCol($status, 'top'),
-				new CCol($retries, 'top'),
-				new CCol($alert['sendto'], 'top'),
-				new CCol($message, 'top pre'),
-				new CCol($error, 'wraptext top')
-			));
+			$table->addRow([
+				zbx_date2str(DATE_TIME_FORMAT_SECONDS, $alert['clock']),
+				$actions[$alert['actionid']]['name'],
+				$alert['mediatypeid'] == 0 ? '' : $alert['description'],
+				$recipient,
+				[bold($alert['subject']), BR(), BR(), zbx_nl2br($alert['message'])],
+				$status,
+				makeInformationList($info_icons)
+			]);
 		}
 
-		return $this->getOutput($actionTable);
+		$footer = (new CList())
+			->addItem(_s('Updated: %s', zbx_date2str(TIME_FORMAT_SECONDS)))
+			->addClass(ZBX_STYLE_DASHBRD_WIDGET_FOOT);
+
+		return $this->getOutput((new CUiWidget(uniqid(), [$table, $footer]))->setHeader(_('Action log')));
 	}
 }

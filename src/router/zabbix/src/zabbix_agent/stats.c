@@ -21,6 +21,8 @@
 #include "stats.h"
 #include "log.h"
 #include "zbxconf.h"
+#include "zbxself.h"
+
 #ifndef _WINDOWS
 #	include "diskdevices.h"
 #endif
@@ -37,9 +39,12 @@
 
 ZBX_COLLECTOR_DATA	*collector = NULL;
 
+extern ZBX_THREAD_LOCAL unsigned char	process_type;
+extern ZBX_THREAD_LOCAL int		server_num, process_num;
+
 #ifndef _WINDOWS
 static int		shm_id;
-int 			my_diskstat_shmid = NONEXISTENT_SHMID;
+int 			my_diskstat_shmid = ZBX_NONEXISTENT_SHMID;
 ZBX_DISKDEVICES_DATA	*diskdevices = NULL;
 ZBX_MUTEX		diskstats_lock = ZBX_MUTEX_NULL;
 #endif
@@ -152,7 +157,7 @@ void	init_collector_data()
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __function_name);
 
 	cpu_count = zbx_get_cpu_num();
-	sz = sizeof(ZBX_COLLECTOR_DATA);
+	sz = ZBX_SIZE_T_ALIGN8(sizeof(ZBX_COLLECTOR_DATA));
 
 #ifdef _WINDOWS
 	sz_cpu = sizeof(PERF_COUNTER_DATA *) * (cpu_count + 1);
@@ -160,7 +165,7 @@ void	init_collector_data()
 	collector = zbx_malloc(collector, sz + sz_cpu);
 	memset(collector, 0, sz + sz_cpu);
 
-	collector->cpus.cpu_counter = (PERF_COUNTER_DATA **)(collector + 1);
+	collector->cpus.cpu_counter = (PERF_COUNTER_DATA **)((char *)collector + sz);
 	collector->cpus.count = cpu_count;
 #else
 	sz_cpu = sizeof(ZBX_SINGLE_CPU_STAT_DATA) * (cpu_count + 1);
@@ -183,11 +188,15 @@ void	init_collector_data()
 		exit(EXIT_FAILURE);
 	}
 
-	collector->cpus.cpu = (ZBX_SINGLE_CPU_STAT_DATA *)(collector + 1);
+	collector->cpus.cpu = (ZBX_SINGLE_CPU_STAT_DATA *)((char *)collector + sz);
 	collector->cpus.count = cpu_count;
-	collector->diskstat_shmid = NONEXISTENT_SHMID;
+	collector->diskstat_shmid = ZBX_NONEXISTENT_SHMID;
 
-	if (ZBX_MUTEX_ERROR == zbx_mutex_create_force(&diskstats_lock, ZBX_MUTEX_DISKSTATS))
+#ifdef ZBX_PROCSTAT_COLLECTOR
+	zbx_procstat_init();
+#endif
+
+	if (FAIL == zbx_mutex_create_force(&diskstats_lock, ZBX_MUTEX_DISKSTATS))
 	{
 		zbx_error("cannot create mutex for disk statistics collector");
 		exit(EXIT_FAILURE);
@@ -219,13 +228,17 @@ void	free_collector_data()
 	if (NULL == collector)
 		return;
 
-	if (NONEXISTENT_SHMID != collector->diskstat_shmid)
+#ifdef ZBX_PROCSTAT_COLLECTOR
+	zbx_procstat_destroy();
+#endif
+
+	if (ZBX_NONEXISTENT_SHMID != collector->diskstat_shmid)
 	{
 		if (-1 == shmctl(collector->diskstat_shmid, IPC_RMID, 0))
 			zabbix_log(LOG_LEVEL_WARNING, "cannot remove shared memory for disk statistics collector: %s",
 					zbx_strerror(errno));
 		diskdevices = NULL;
-		collector->diskstat_shmid = NONEXISTENT_SHMID;
+		collector->diskstat_shmid = ZBX_NONEXISTENT_SHMID;
 	}
 
 	if (-1 == shmctl(shm_id, IPC_RMID, 0))
@@ -296,7 +309,7 @@ void	diskstat_shm_reattach()
 
 		old_shmid = my_diskstat_shmid;
 
-		if (NONEXISTENT_SHMID != my_diskstat_shmid)
+		if (ZBX_NONEXISTENT_SHMID != my_diskstat_shmid)
 		{
 			if (-1 == shmdt((void *) diskdevices))
 			{
@@ -305,7 +318,7 @@ void	diskstat_shm_reattach()
 				exit(EXIT_FAILURE);
 			}
 			diskdevices = NULL;
-			my_diskstat_shmid = NONEXISTENT_SHMID;
+			my_diskstat_shmid = ZBX_NONEXISTENT_SHMID;
 		}
 
 		if ((void *)(-1) == (diskdevices = shmat(collector->diskstat_shmid, NULL, 0)))
@@ -415,7 +428,11 @@ ZBX_THREAD_ENTRY(collector_thread, args)
 {
 	assert(args);
 
-	zabbix_log(LOG_LEVEL_INFORMATION, "agent #%d started [collector]", ((zbx_thread_args_t *)args)->thread_num);
+	process_type = ((zbx_thread_args_t *)args)->process_type;
+	server_num = ((zbx_thread_args_t *)args)->server_num;
+	process_num = ((zbx_thread_args_t *)args)->process_num;
+
+	zabbix_log(LOG_LEVEL_INFORMATION, "agent #%d started [collector]", server_num);
 
 	zbx_free(args);
 
@@ -424,6 +441,8 @@ ZBX_THREAD_ENTRY(collector_thread, args)
 
 	while (ZBX_IS_RUNNING())
 	{
+		zbx_handle_log();
+
 		zbx_setproctitle("collector [processing data]");
 #ifdef _WINDOWS
 		collect_perfstat();
@@ -433,6 +452,11 @@ ZBX_THREAD_ENTRY(collector_thread, args)
 
 		if (0 != DISKDEVICE_COLLECTOR_STARTED(collector))
 			collect_stats_diskdevices();
+
+#ifdef ZBX_PROCSTAT_COLLECTOR
+		zbx_procstat_collect();
+#endif
+
 #endif
 #ifdef _AIX
 		if (1 == collector->vmstat.enabled)
@@ -443,13 +467,11 @@ ZBX_THREAD_ENTRY(collector_thread, args)
 	}
 
 #ifdef _WINDOWS
-	if (CPU_COLLECTOR_STARTED(collector))
+	if (0 != CPU_COLLECTOR_STARTED(collector))
 		free_cpu_collector(&(collector->cpus));
-
-	zabbix_log(LOG_LEVEL_INFORMATION, "zabbix_agentd collector stopped");
 
 	ZBX_DO_EXIT();
 
-	zbx_thread_exit(0);
+	zbx_thread_exit(EXIT_SUCCESS);
 #endif
 }

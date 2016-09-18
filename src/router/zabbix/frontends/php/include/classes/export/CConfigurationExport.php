@@ -45,59 +45,61 @@ class CConfigurationExport {
 	 */
 	protected $dataFields;
 
-
 	/**
 	 * Constructor.
 	 *
 	 * @param array $options ids of elements that should be exported.
 	 */
 	public function __construct(array $options) {
-		$this->options = array(
-			'hosts' => array(),
-			'templates' => array(),
-			'groups' => array(),
-			'screens' => array(),
-			'images' => array(),
-			'maps' => array()
-		);
+		$this->options = [
+			'hosts' => [],
+			'templates' => [],
+			'groups' => [],
+			'screens' => [],
+			'images' => [],
+			'maps' => [],
+			'valueMaps' => []
+		];
+
 		$this->options = array_merge($this->options, $options);
 
-		$this->data = array(
-			'groups' => array(),
-			'templates' => array(),
-			'hosts' => array(),
-			'triggers' => array(),
-			'triggerPrototypes' => array(),
-			'graphs' => array(),
-			'graphPrototypes' => array(),
-			'screens' => array(),
-			'images' => array(),
-			'maps' => array()
-		);
+		$this->data = [
+			'groups' => [],
+			'templates' => [],
+			'hosts' => [],
+			'triggers' => [],
+			'triggerPrototypes' => [],
+			'graphs' => [],
+			'graphPrototypes' => [],
+			'screens' => [],
+			'images' => [],
+			'maps' => [],
+			'valueMaps' => []
+		];
 
-		$this->dataFields = array(
-			'item' => array('hostid', 'multiplier', 'type', 'snmp_community', 'snmp_oid', 'name', 'key_', 'delay', 'history',
+		$this->dataFields = [
+			'item' => ['hostid', 'multiplier', 'type', 'snmp_community', 'snmp_oid', 'name', 'key_', 'delay', 'history',
 				'trends', 'status', 'value_type', 'trapper_hosts', 'units', 'delta', 'snmpv3_contextname',
 				'snmpv3_securityname', 'snmpv3_securitylevel', 'snmpv3_authprotocol', 'snmpv3_authpassphrase',
 				'snmpv3_privprotocol', 'snmpv3_privpassphrase', 'formula', 'valuemapid', 'delay_flex', 'params',
 				'ipmi_sensor', 'data_type', 'authtype', 'username', 'password', 'publickey', 'privatekey',
 				'interfaceid', 'port', 'description', 'inventory_link', 'flags', 'logtimefmt'
-			),
-			'drule' => array('itemid', 'hostid', 'type', 'snmp_community', 'snmp_oid', 'name', 'key_', 'delay', 'history',
+			],
+			'drule' => ['itemid', 'hostid', 'type', 'snmp_community', 'snmp_oid', 'name', 'key_', 'delay', 'history',
 				'trends', 'status', 'value_type', 'trapper_hosts', 'units', 'delta', 'snmpv3_contextname',
 				'snmpv3_securityname', 'snmpv3_securitylevel', 'snmpv3_authprotocol', 'snmpv3_authpassphrase',
 				'snmpv3_privprotocol', 'snmpv3_privpassphrase', 'formula', 'valuemapid', 'delay_flex', 'params',
 				'ipmi_sensor', 'data_type', 'authtype', 'username', 'password', 'publickey', 'privatekey',
 				'interfaceid', 'port', 'description', 'inventory_link', 'flags', 'filter', 'lifetime'
-			),
-			'discoveryrule' => array('hostid', 'multiplier', 'type', 'snmp_community', 'snmp_oid', 'name', 'key_',
+			],
+			'item_prototype' => ['hostid', 'multiplier', 'type', 'snmp_community', 'snmp_oid', 'name', 'key_',
 				'delay', 'history', 'trends', 'status', 'value_type', 'trapper_hosts', 'units', 'delta',
 				'snmpv3_contextname', 'snmpv3_securityname', 'snmpv3_securitylevel', 'snmpv3_authprotocol',
 				'snmpv3_authpassphrase', 'snmpv3_privprotocol', 'snmpv3_privpassphrase', 'formula', 'valuemapid',
 				'delay_flex', 'params', 'ipmi_sensor', 'data_type', 'authtype', 'username', 'password', 'publickey',
 				'privatekey', 'interfaceid', 'port', 'description', 'inventory_link', 'flags', 'logtimefmt'
-			)
-		);
+			]
+		];
 	}
 
 	/**
@@ -131,27 +133,39 @@ class CConfigurationExport {
 		if ($this->data['groups']) {
 			$this->builder->buildGroups($this->data['groups']);
 		}
+
 		if ($this->data['templates']) {
 			$this->builder->buildTemplates($this->data['templates']);
 		}
+
 		if ($this->data['hosts']) {
 			$this->builder->buildHosts($this->data['hosts']);
 		}
+
 		if ($this->data['triggers']) {
 			$this->builder->buildTriggers($this->data['triggers']);
 		}
+
 		if ($this->data['graphs']) {
 			$this->builder->buildGraphs($this->data['graphs']);
 		}
+
 		if ($this->data['screens']) {
 			$this->builder->buildScreens($this->data['screens']);
 		}
+
 		if ($this->data['images']) {
 			$this->builder->buildImages($this->data['images']);
 		}
+
 		if ($this->data['maps']) {
 			$this->builder->buildMaps($this->data['maps']);
 		}
+
+		if ($this->data['valueMaps']) {
+			$this->builder->buildValueMaps($this->data['valueMaps']);
+		}
+
 		return $this->writer->write($this->builder->getExport());
 	}
 
@@ -165,6 +179,11 @@ class CConfigurationExport {
 			$this->gatherGroups($options['groups']);
 		}
 
+		// Gather value maps before items if possible.
+		if ($options['valueMaps']) {
+			$this->gatherValueMaps($options['valueMaps']);
+		}
+
 		if ($options['templates']) {
 			$this->gatherTemplates($options['templates']);
 		}
@@ -175,7 +194,7 @@ class CConfigurationExport {
 
 		if ($options['templates'] || $options['hosts']) {
 			$this->gatherGraphs($options['hosts'], $options['templates']);
-			$this->gathertriggers($options['hosts'], $options['templates']);
+			$this->gatherTriggers($options['hosts'], $options['templates']);
 		}
 
 		if ($options['screens']) {
@@ -197,11 +216,12 @@ class CConfigurationExport {
 	protected function filterOptions(array $options) {
 		if ($options['hosts']) {
 			// exclude discovered hosts
-			$hosts = API::Host()->get(array(
-				'output' => array('hostid'),
+			$hosts = API::Host()->get([
+				'output' => ['hostid'],
 				'hostids' => $options['hosts'],
-				'filter' => array('flags' => ZBX_FLAG_DISCOVERY_NORMAL)
-			));
+				'filter' => ['flags' => ZBX_FLAG_DISCOVERY_NORMAL]
+			]);
+
 			$options['hosts'] = zbx_objectValues($hosts, 'hostid');
 		}
 
@@ -214,11 +234,11 @@ class CConfigurationExport {
 	 * @param array $groupIds
 	 */
 	protected function gatherGroups(array $groupIds) {
-		$this->data['groups'] = API::HostGroup()->get(array(
+		$this->data['groups'] = API::HostGroup()->get([
+			'output' => ['name'],
 			'groupids' => $groupIds,
-			'preservekeys' => true,
-			'output' => API_OUTPUT_EXTEND
-		));
+			'preservekeys' => true
+		]);
 	}
 
 	/**
@@ -227,64 +247,36 @@ class CConfigurationExport {
 	 * @param array $templateIds
 	 */
 	protected function gatherTemplates(array $templateIds) {
-		$templates = API::Template()->get(array(
+		$templates = API::Template()->get([
 			'templateids' => $templateIds,
-			'output' => array('host', 'name'),
+			'output' => ['host', 'name', 'description'],
 			'selectMacros' => API_OUTPUT_EXTEND,
-			'selectGroups' => API_OUTPUT_EXTEND,
+			'selectGroups' => ['groupid', 'name'],
 			'selectParentTemplates' => API_OUTPUT_EXTEND,
 			'preservekeys' => true
-		));
+		]);
 
-		// merge host groups with all groups
-		$templateGroups = array();
 		foreach ($templates as &$template) {
-			$templateGroups += zbx_toHash($template['groups'], 'groupid');
+			// merge host groups with all groups
+			$this->data['groups'] += zbx_toHash($template['groups'], 'groupid');
 
-			$template['screens'] = array();
-			$template['applications'] = array();
-			$template['discoveryRules'] = array();
-			$template['items'] = array();
+			$template['screens'] = [];
+			$template['applications'] = [];
+			$template['discoveryRules'] = [];
+			$template['items'] = [];
+			$template['httptests'] = [];
 		}
 		unset($template);
-		$this->data['groups'] += $templateGroups;
 
-		// applications
-		$applications = API::Application()->get(array(
-			'hostids' => $templateIds,
-			'output' => API_OUTPUT_EXTEND,
-			'inherited' => false,
-			'preservekeys' => true
-		));
-
-		foreach ($applications as $application) {
-			if (!isset($templates[$application['hostid']]['applications'])) {
-				$templates[$application['hostid']]['applications'] = array();
-			}
-			$templates[$application['hostid']]['applications'][] = $application;
-		}
-
-		// screens
-		$screens = API::TemplateScreen()->get(array(
-			'templateids' => $templateIds,
-			'selectScreenItems' => API_OUTPUT_EXTEND,
-			'noInheritance' => true,
-			'output' => API_OUTPUT_EXTEND,
-			'preservekeys' => true
-		));
-		$this->prepareScreenExport($screens);
-
-		foreach ($screens as $screen) {
-			if (!isset($templates[$screen['templateid']]['screens'])) {
-				$templates[$screen['templateid']]['screens'] = array();
-			}
-			$templates[$screen['templateid']]['screens'][] = $screen;
+		if ($templates) {
+			$templates = $this->gatherTemplateScreens($templates);
+			$templates = $this->gatherApplications($templates);
+			$templates = $this->gatherItems($templates);
+			$templates = $this->gatherDiscoveryRules($templates);
+			$templates = $this->gatherHttpTests($templates);
 		}
 
 		$this->data['templates'] = $templates;
-
-		$this->gatherTemplateItems($templateIds);
-		$this->gatherTemplateDiscoveryRules($templateIds);
 	}
 
 	/**
@@ -293,135 +285,205 @@ class CConfigurationExport {
 	 * @param array $hostIds
 	 */
 	protected function gatherHosts(array $hostIds) {
-		$hosts = API::Host()->get(array(
-			'hostids' => $hostIds,
-			'output' => array('proxy_hostid', 'host', 'status', 'ipmi_authtype', 'ipmi_privilege', 'ipmi_username',
-				'ipmi_password', 'name'),
+		$hosts = API::Host()->get([
+			'output' => [
+				'proxy_hostid', 'host', 'status', 'ipmi_authtype', 'ipmi_privilege', 'ipmi_username', 'ipmi_password',
+				'name', 'description', 'tls_connect', 'tls_accept', 'tls_issuer', 'tls_subject', 'tls_psk_identity',
+				'tls_psk'
+			],
+			'selectInterfaces' => ['interfaceid', 'main', 'type', 'useip', 'ip', 'dns', 'port', 'bulk'],
 			'selectInventory' => true,
-			'selectInterfaces' => array('interfaceid', 'main', 'type', 'useip', 'ip', 'dns', 'port'),
 			'selectMacros' => API_OUTPUT_EXTEND,
-			'selectGroups' => API_OUTPUT_EXTEND,
+			'selectGroups' => ['groupid', 'name'],
 			'selectParentTemplates' => API_OUTPUT_EXTEND,
-			'preservekeys' => true
-		));
-
-		// merge host groups with all groups
-		$hostGroups = array();
-		foreach ($hosts as &$host) {
-			$hostGroups += zbx_toHash($host['groups'], 'groupid');
-			$host['applications'] = array();
-			$host['discoveryRules'] = array();
-			$host['items'] = array();
-		}
-		unset($host);
-		$this->data['groups'] += $hostGroups;
-
-		// applications
-		$applications = API::Application()->get(array(
 			'hostids' => $hostIds,
-			'output' => API_OUTPUT_EXTEND,
-			'inherited' => false,
 			'preservekeys' => true
-		));
-		foreach ($applications as $application) {
-			if (!isset($hosts[$application['hostid']]['applications'])) {
-				$hosts[$application['hostid']]['applications'] = array();
-			}
-			$hosts[$application['hostid']]['applications'][] = $application;
-		}
-
-		// proxies
-		$dbProxies = DBselect(
-			'SELECT h.hostid,h.host'.
-			' FROM hosts h'.
-			' WHERE '.dbConditionInt('h.hostid', zbx_objectValues($hosts, 'proxy_hostid'))
-		);
-		$proxies = array();
-		while ($proxy = DBfetch($dbProxies)) {
-			$proxies[$proxy['hostid']] = $proxy['host'];
-		}
+		]);
 
 		foreach ($hosts as &$host) {
-			$host['proxy'] = $host['proxy_hostid'] ? array('name' => $proxies[$host['proxy_hostid']]) : null;
+			// merge host groups with all groups
+			$this->data['groups'] += zbx_toHash($host['groups'], 'groupid');
+
+			$host['applications'] = [];
+			$host['discoveryRules'] = [];
+			$host['items'] = [];
+			$host['httptests'] = [];
 		}
 		unset($host);
+
+		if ($hosts) {
+			$hosts = $this->gatherProxies($hosts);
+			$hosts = $this->gatherApplications($hosts);
+			$hosts = $this->gatherItems($hosts);
+			$hosts = $this->gatherDiscoveryRules($hosts);
+			$hosts = $this->gatherHttpTests($hosts);
+		}
 
 		$this->data['hosts'] = $hosts;
+	}
 
-		$this->gatherHostItems($hostIds);
-		$this->gatherHostDiscoveryRules($hostIds);
+	/**
+	 * Get template screens from database.
+	 *
+	 * @param array $templates
+	 *
+	 * @return array
+	 */
+	protected function gatherTemplateScreens(array $templates) {
+		$screens = API::TemplateScreen()->get([
+			'output' => API_OUTPUT_EXTEND,
+			'selectScreenItems' => API_OUTPUT_EXTEND,
+			'templateids' => array_keys($templates),
+			'noInheritance' => true,
+			'preservekeys' => true
+		]);
+
+		$this->prepareScreenExport($screens);
+
+		foreach ($screens as $screen) {
+			$templates[$screen['templateid']]['screens'][] = $screen;
+		}
+
+		return $templates;
+	}
+
+	/**
+	 * Get proxies from database.
+	 *
+	 * @param array $hosts
+	 *
+	 * @return array
+	 */
+	protected function gatherProxies(array $hosts) {
+		$proxy_hostids = [];
+		$db_proxies = [];
+
+		foreach ($hosts as $host) {
+			if ($host['proxy_hostid'] != 0) {
+				$proxy_hostids[$host['proxy_hostid']] = true;
+			}
+		}
+
+		if ($proxy_hostids) {
+			$db_proxies = DBfetchArray(DBselect(
+				'SELECT h.hostid,h.host'.
+				' FROM hosts h'.
+				' WHERE '.dbConditionInt('h.hostid', array_keys($proxy_hostids))
+			));
+			$db_proxies = zbx_toHash($db_proxies, 'hostid');
+		}
+
+		foreach ($hosts as &$host) {
+			$host['proxy'] = ($host['proxy_hostid'] != 0 && array_key_exists($host['proxy_hostid'], $db_proxies))
+				? ['name' => $db_proxies[$host['proxy_hostid']]['host']]
+				: [];
+		}
+		unset($host);
+
+		return $hosts;
+	}
+
+	/**
+	 * Get host applications from database.
+	 *
+	 * @param array $hosts
+	 *
+	 * @return array
+	 */
+	protected function gatherApplications(array $hosts) {
+		$applications = API::Application()->get([
+			'output' => ['hostid', 'name'],
+			'hostids' => array_keys($hosts),
+			'filter' => ['flags' => ZBX_FLAG_DISCOVERY_NORMAL],
+			'inherited' => false,
+			'preservekeys' => true
+		]);
+
+		foreach ($applications as $application) {
+			$hosts[$application['hostid']]['applications'][] = ['name' => $application['name']];
+		}
+
+		return $hosts;
 	}
 
 	/**
 	 * Get hosts items from database.
 	 *
-	 * @param array $hostIds
-	 */
-	protected function gatherHostItems(array $hostIds) {
-		$items = API::Item()->get(array(
-			'hostids' => $hostIds,
-			'output' => $this->dataFields['item'],
-			'selectApplications' => API_OUTPUT_EXTEND,
-			'inherited' => false,
-			'filter' => array('flags' => array(ZBX_FLAG_DISCOVERY_NORMAL)),
-			'preservekeys' => true
-		));
-		$items = $this->prepareItems($items);
-		foreach ($items as $item) {
-			if (!isset($this->data['hosts'][$item['hostid']]['items'])) {
-				$this->data['hosts'][$item['hostid']]['items'] = array();
-			}
-
-			$this->data['hosts'][$item['hostid']]['items'][] = $item;
-		}
-	}
-
-	/**
-	 * Get templates items from database.
+	 * @param array $hosts
 	 *
-	 * @param array $templateIds
+	 * @return array
 	 */
-	protected function gatherTemplateItems(array $templateIds) {
-		$items = API::Item()->get(array(
-			'hostids' => $templateIds,
+	protected function gatherItems(array $hosts) {
+		$items = API::Item()->get([
 			'output' => $this->dataFields['item'],
-			'selectApplications' => API_OUTPUT_EXTEND,
+			'selectApplications' => ['name', 'flags'],
+			'hostids' => array_keys($hosts),
 			'inherited' => false,
-			'filter' => array('flags' => array(ZBX_FLAG_DISCOVERY_NORMAL)),
+			'filter' => ['flags' => ZBX_FLAG_DISCOVERY_NORMAL],
 			'preservekeys' => true
-		));
+		]);
 
 		$items = $this->prepareItems($items);
 
 		foreach ($items as $item) {
-			if (!isset($this->data['templates'][$item['hostid']]['items'])) {
-				$this->data['templates'][$item['hostid']]['items'] = array();
-			}
-
-			$this->data['templates'][$item['hostid']]['items'][] = $item;
+			$hosts[$item['hostid']]['items'][] = $item;
 		}
+
+		return $hosts;
 	}
 
 	/**
-	 * Get items related objects data from database.
+	 * Get items related objects data from database. and set 'valueMaps' data.
 	 *
 	 * @param array $items
 	 *
 	 * @return array
 	 */
 	protected function prepareItems(array $items) {
-		// gather value maps
-		$valueMapIds = zbx_objectValues($items, 'valuemapid');
-		$dbValueMaps = DBselect('SELECT vm.valuemapid, vm.name FROM valuemaps vm WHERE '.dbConditionInt('vm.valuemapid', $valueMapIds));
-		$valueMapNames = array();
-		while ($valueMap = DBfetch($dbValueMaps)) {
-			$valueMapNames[$valueMap['valuemapid']] = $valueMap['name'];
+		$valuemapids = [];
+
+		foreach ($items as $idx => $item) {
+			// Remove items linked to discovered applications.
+			foreach ($item['applications'] as $application) {
+				if ($application['flags'] == ZBX_FLAG_DISCOVERY_CREATED) {
+					unset($items[$idx]);
+					continue 2;
+				}
+			}
+
+			$valuemapids[$item['valuemapid']] = true;
 		}
 
-		foreach ($items as &$item) {
-			$item['valuemap'] = array();
-			if ($item['valuemapid']) {
-				$item['valuemap'] = array('name' => $valueMapNames[$item['valuemapid']]);
+		// Value map IDs that are zeroes, should be skipped.
+		unset($valuemapids[0]);
+
+		if ($this->data['valueMaps']) {
+			/*
+			 * If there is an option "valueMaps", some value maps may already been selected. Copy the result and remove
+			 * value map IDs that should not be selected again.
+			 */
+
+			foreach ($this->data['valueMaps'] as $valuemapid => $valuemap) {
+				if (array_key_exists($valuemapid, $valuemapids)) {
+					unset($valuemapids[$valuemapid]);
+				}
+			}
+		}
+
+		if ($valuemapids) {
+			$this->data['valueMaps'] += API::ValueMap()->get([
+				'output' => ['valuemapid', 'name'],
+				'selectMappings' => ['value', 'newvalue'],
+				'valuemapids' => array_keys($valuemapids),
+				'preservekeys' => true
+			]);
+		}
+
+		foreach ($items as $idx => &$item) {
+			$item['valuemap'] = [];
+
+			if ($item['valuemapid'] != 0) {
+				$item['valuemap'] = ['name' => $this->data['valueMaps'][$item['valuemapid']]['name']];
 			}
 		}
 		unset($item);
@@ -432,47 +494,26 @@ class CConfigurationExport {
 	/**
 	 * Get hosts discovery rules from database.
 	 *
-	 * @param array $hostIds
-	 */
-	protected function gatherHostDiscoveryRules(array $hostIds) {
-		$items = API::DiscoveryRule()->get(array(
-			'hostids' => $hostIds,
-			'output' => $this->dataFields['drule'],
-			'inherited' => false,
-			'preservekeys' => true
-		));
-
-		$items = $this->prepareDiscoveryRules($items);
-
-		foreach ($items as $item) {
-			if (!isset($this->data['hosts'][$item['hostid']]['items'])) {
-				$this->data['hosts'][$item['hostid']]['discoveryRules'] = array();
-			}
-			$this->data['hosts'][$item['hostid']]['discoveryRules'][] = $item;
-		}
-	}
-
-	/**
-	 * Get templates discovery rules from database.
+	 * @param array $hosts
 	 *
-	 * @param array $templateIds
+	 * @return array
 	 */
-	protected function gatherTemplateDiscoveryRules(array $templateIds) {
-		$items = API::DiscoveryRule()->get(array(
-			'hostids' => $templateIds,
+	protected function gatherDiscoveryRules(array $hosts) {
+		$discovery_rules = API::DiscoveryRule()->get([
 			'output' => $this->dataFields['drule'],
+			'selectFilter' => ['evaltype', 'formula', 'conditions'],
+			'hostids' => array_keys($hosts),
 			'inherited' => false,
 			'preservekeys' => true
-		));
+		]);
 
-		$items = $this->prepareDiscoveryRules($items);
+		$discovery_rules = $this->prepareDiscoveryRules($discovery_rules);
 
-		foreach ($items as $item) {
-			if (!isset($this->data['templates'][$item['hostid']]['discoveryRules'])) {
-				$this->data['templates'][$item['hostid']]['discoveryRules'] = array();
-			}
-			$this->data['templates'][$item['hostid']]['discoveryRules'][] = $item;
+		foreach ($discovery_rules as $discovery_rule) {
+			$hosts[$discovery_rule['hostid']]['discoveryRules'][] = $discovery_rule;
 		}
+
+		return $hosts;
 	}
 
 	/**
@@ -484,78 +525,109 @@ class CConfigurationExport {
 	 */
 	protected function prepareDiscoveryRules(array $items) {
 		foreach ($items as &$item) {
-			$item['itemPrototypes'] = array();
-			$item['graphPrototypes'] = array();
-			$item['triggerPrototypes'] = array();
-			$item['hostPrototypes'] = array();
+			$item['itemPrototypes'] = [];
+			$item['graphPrototypes'] = [];
+			$item['triggerPrototypes'] = [];
+			$item['hostPrototypes'] = [];
+
+			// unset unnecessary condition fields
+			foreach ($item['filter']['conditions'] as &$condition) {
+				unset($condition['item_conditionid'], $condition['itemid']);
+			}
+			unset($condition);
 		}
 		unset($item);
 
 		// gather item prototypes
-		$prototypes = API::ItemPrototype()->get(array(
+		$prototypes = API::ItemPrototype()->get([
+			'output' => $this->dataFields['item_prototype'],
+			'selectApplications' => ['name'],
+			'selectApplicationPrototypes' => ['name'],
+			'selectDiscoveryRule' => ['itemid'],
 			'discoveryids' => zbx_objectValues($items, 'itemid'),
-			'output' => $this->dataFields['discoveryrule'],
-			'selectApplications' => API_OUTPUT_EXTEND,
-			'selectDiscoveryRule' => array('itemid'),
 			'inherited' => false,
 			'preservekeys' => true
-		));
+		]);
 
-		// gather value maps
-		$valueMapIds = zbx_objectValues($prototypes, 'valuemapid');
-		$DbValueMaps = DBselect('SELECT vm.valuemapid, vm.name FROM valuemaps vm WHERE '.dbConditionInt('vm.valuemapid', $valueMapIds));
-		$valueMaps = array();
-		while ($valueMap = DBfetch($DbValueMaps)) {
-			$valueMaps[$valueMap['valuemapid']] = $valueMap['name'];
+		$valuemapids = [];
+
+		foreach ($prototypes as $prototype) {
+			$valuemapids[$prototype['valuemapid']] = true;
+		}
+
+		// Value map IDs that are zeroes, should be skipped.
+		unset($valuemapids[0]);
+
+		if ($this->data['valueMaps']) {
+			/*
+			 * If there is an option "valueMaps", some value maps may already been selected. Copy the result and remove
+			 * value map IDs that should not be selected again.
+			 */
+
+			foreach ($this->data['valueMaps'] as $valuemapid => $valuemap) {
+				if (array_key_exists($valuemapid, $valuemapids)) {
+					unset($valuemapids[$valuemapid]);
+				}
+			}
+		}
+
+		if ($valuemapids) {
+			$this->data['valueMaps'] += API::ValueMap()->get([
+				'output' => ['valuemapid', 'name'],
+				'selectMappings' => ['value', 'newvalue'],
+				'valuemapids' => array_keys($valuemapids),
+				'preservekeys' => true
+			]);
 		}
 
 		foreach ($prototypes as $prototype) {
-			$prototype['valuemap'] = array();
-			if ($prototype['valuemapid']) {
-				$prototype['valuemap']['name'] = $valueMaps[$prototype['valuemapid']];
+			$prototype['valuemap'] = [];
+
+			if ($prototype['valuemapid'] != 0) {
+				$prototype['valuemap']['name'] = $this->data['valueMaps'][$prototype['valuemapid']]['name'];
 			}
 
 			$items[$prototype['discoveryRule']['itemid']]['itemPrototypes'][] = $prototype;
 		}
 
 		// gather graph prototypes
-		$graphs = API::GraphPrototype()->get(array(
+		$graphs = API::GraphPrototype()->get([
 			'discoveryids' => zbx_objectValues($items, 'itemid'),
 			'selectDiscoveryRule' => API_OUTPUT_EXTEND,
 			'selectGraphItems' => API_OUTPUT_EXTEND,
 			'output' => API_OUTPUT_EXTEND,
 			'inherited' => false,
 			'preservekeys' => true
-		));
+		]);
+
 		$graphs = $this->prepareGraphs($graphs);
+
 		foreach ($graphs as $graph) {
 			$items[$graph['discoveryRule']['itemid']]['graphPrototypes'][] = $graph;
 		}
 
 		// gather trigger prototypes
-		$triggers = API::TriggerPrototype()->get(array(
-			'discoveryids' => zbx_objectValues($items, 'itemid'),
-			'output' => API_OUTPUT_EXTEND,
+		$triggers = API::TriggerPrototype()->get([
+			'output' => ['expression', 'description', 'url', 'status', 'priority', 'comments', 'type', 'recovery_mode',
+				'recovery_expression', 'correlation_mode', 'correlation_tag', 'manual_close'
+			],
 			'selectDiscoveryRule' => API_OUTPUT_EXTEND,
-			'selectItems' => array('flags', 'type'),
+			'selectDependencies' => ['expression', 'description', 'recovery_expression'],
+			'selectItems' => ['itemid', 'flags', 'type'],
+			'selectTags' => ['tag', 'value'],
+			'discoveryids' => zbx_objectValues($items, 'itemid'),
 			'inherited' => false,
-			'preservekeys' => true,
-			'expandData' => true
-		));
+			'preservekeys' => true
+		]);
 
-		foreach($triggers as $trigger){
-			foreach ($trigger['items'] as $item) {
-				if ($item['flags'] == ZBX_FLAG_DISCOVERY_CREATED || $item['type'] == ITEM_TYPE_HTTPTEST) {
-					continue 2;
-				}
-			}
+		$triggers = $this->prepareTriggers($triggers);
 
-			$trigger['expression'] = explode_exp($trigger['expression']);
+		foreach ($triggers as $trigger) {
 			$items[$trigger['discoveryRule']['itemid']]['triggerPrototypes'][] = $trigger;
 		}
 
 		// gather host prototypes
-		$hostPrototypes = API::HostPrototype()->get(array(
+		$hostPrototypes = API::HostPrototype()->get([
 			'discoveryids' => zbx_objectValues($items, 'itemid'),
 			'output' => API_OUTPUT_EXTEND,
 			'selectGroupLinks' => API_OUTPUT_EXTEND,
@@ -564,16 +636,18 @@ class CConfigurationExport {
 			'selectTemplates' => API_OUTPUT_EXTEND,
 			'inherited' => false,
 			'preservekeys' => true
-		));
+		]);
 
 		// replace group prototype group IDs with references
-		$groupIds = array();
+		$groupIds = [];
+
 		foreach ($hostPrototypes as $hostPrototype) {
 			foreach ($hostPrototype['groupLinks'] as $groupLink) {
-				$groupIds[$groupLink['groupid']] = $groupLink['groupid'];
+				$groupIds[$groupLink['groupid']] = true;
 			}
 		}
-		$groups = $this->getGroupsReferences($groupIds);
+
+		$groups = $this->getGroupsReferences(array_keys($groupIds));
 
 		// export the groups used in group prototypes
 		$this->data['groups'] += $groups;
@@ -583,10 +657,79 @@ class CConfigurationExport {
 				$groupLink['groupid'] = $groups[$groupLink['groupid']];
 			}
 			unset($groupLink);
+
 			$items[$hostPrototype['discoveryRule']['itemid']]['hostPrototypes'][] = $hostPrototype;
 		}
 
 		return $items;
+	}
+
+	/**
+	 * Get web scenarios from database.
+	 *
+	 * @param array $hosts
+	 *
+	 * @return array
+	 */
+	protected function gatherHttpTests(array $hosts) {
+		$httptests = API::HttpTest()->get([
+			'output' => ['name', 'hostid', 'applicationid', 'delay', 'retries', 'agent', 'http_proxy', 'variables',
+				'headers', 'status', 'authentication', 'http_user', 'http_password', 'verify_peer', 'verify_host',
+				'ssl_cert_file', 'ssl_key_file', 'ssl_key_password'
+			],
+			'selectSteps' => ['no', 'name', 'url', 'posts', 'variables', 'headers', 'follow_redirects', 'retrieve_mode',
+				'timeout', 'required', 'status_codes'
+			],
+			'hostids' => array_keys($hosts),
+			'inherited' => false,
+			'preservekeys' => true
+		]);
+
+		$httptests = $this->gatherHttpTestApplications($httptests);
+
+		foreach ($httptests as $httptest) {
+			$hosts[$httptest['hostid']]['httptests'][] = $httptest;
+		}
+
+		return $hosts;
+	}
+
+	/**
+	 * Get web scenario applications from database.
+	 *
+	 * @param array $httptests
+	 *
+	 * @return array
+	 */
+	protected function gatherHttpTestApplications(array $httptests) {
+		$applicationids = [];
+		$db_applications = [];
+
+		foreach ($httptests as $httptest) {
+			if ($httptest['applicationid'] != 0) {
+				$applicationids[$httptest['applicationid']] = true;
+			}
+		}
+
+		if ($applicationids) {
+			$db_applications = API::Application()->get([
+				'output' => ['name'],
+				'applicationids' => array_keys($applicationids),
+				'inherited' => false,
+				'preservekeys' => true
+			]);
+		}
+
+		foreach ($httptests as &$httptest) {
+			$httptest['application'] =
+				($httptest['applicationid'] != 0 && array_key_exists($httptest['applicationid'], $db_applications))
+					? ['name' => $db_applications[$httptest['applicationid']]['name']]
+					: null;
+			unset($httptest['applicationid']);
+		}
+		unset($httptest);
+
+		return $httptests;
 	}
 
 	/**
@@ -598,20 +741,20 @@ class CConfigurationExport {
 	protected function gatherGraphs(array $hostIds, array $templateIds) {
 		$hostIds = array_merge($hostIds, $templateIds);
 
-		$graphs = API::Graph()->get(array(
+		$graphs = API::Graph()->get([
 			'hostids' => $hostIds,
-			'filter' => array('flags' => array(ZBX_FLAG_DISCOVERY_NORMAL)),
+			'filter' => ['flags' => ZBX_FLAG_DISCOVERY_NORMAL],
 			'selectGraphItems' => API_OUTPUT_EXTEND,
 			'inherited' => false,
 			'output' => API_OUTPUT_EXTEND,
 			'preservekeys' => true
-		));
+		]);
 
 		$this->data['graphs'] = $this->prepareGraphs($graphs);
 	}
 
 	/**
-	 * Unset graphs that have lld created items or web items.
+	 * Unset graphs that have LLD created items or web items, or items containing LLD applications.
 	 *
 	 * @param array $graphs
 	 *
@@ -619,11 +762,13 @@ class CConfigurationExport {
 	 */
 	protected function prepareGraphs(array $graphs) {
 		// get item axis items info
-		$graphItemIds = array();
+		$graphItemIds = [];
+
 		foreach ($graphs as $graph) {
 			foreach ($graph['gitems'] as $gItem) {
 				$graphItemIds[$gItem['itemid']] = $gItem['itemid'];
 			}
+
 			if ($graph['ymin_itemid']) {
 				$graphItemIds[$graph['ymin_itemid']] = $graph['ymin_itemid'];
 			}
@@ -632,42 +777,65 @@ class CConfigurationExport {
 			}
 		}
 
-		$graphItems = API::Item()->get(array(
+		$graphItems = API::Item()->get([
+			'output' => ['itemid', 'key_', 'flags', 'type'],
+			'selectHosts' => ['host'],
+			'selectApplications' => ['flags'],
 			'itemids' => $graphItemIds,
-			'output' => array('key_', 'flags', 'type'),
 			'webitems' => true,
-			'selectHosts' => array('host'),
 			'preservekeys' => true,
-			'filter' => array('flags' => null)
-		));
+			'filter' => ['flags' => null]
+		]);
 
 		foreach ($graphs as $gnum => $graph) {
 			if ($graph['ymin_itemid'] && isset($graphItems[$graph['ymin_itemid']])) {
 				$axisItem = $graphItems[$graph['ymin_itemid']];
+
 				// unset lld and web graphs
 				if ($axisItem['flags'] == ZBX_FLAG_DISCOVERY_CREATED || $axisItem['type'] == ITEM_TYPE_HTTPTEST) {
 					unset($graphs[$gnum]);
 					continue;
 				}
 
+				// Remove graphs with items that are linked to discovered applications.
+				foreach ($axisItem['applications'] as $application) {
+					if ($application['flags'] == ZBX_FLAG_DISCOVERY_CREATED) {
+						unset($graphs[$gnum]);
+						continue 2;
+					}
+				}
+
 				$axisItemHost = reset($axisItem['hosts']);
-				$graphs[$gnum]['ymin_itemid'] = array(
+
+				$graphs[$gnum]['ymin_itemid'] = [
 					'host' => $axisItemHost['host'],
 					'key' => $axisItem['key_']
-				);
+				];
 			}
+
 			if ($graph['ymax_itemid'] && isset($graphItems[$graph['ymax_itemid']])) {
 				$axisItem = $graphItems[$graph['ymax_itemid']];
+
 				// unset lld and web graphs
 				if ($axisItem['flags'] == ZBX_FLAG_DISCOVERY_CREATED || $axisItem['type'] == ITEM_TYPE_HTTPTEST) {
 					unset($graphs[$gnum]);
 					continue;
 				}
+
+				// Remove graphs with items that are linked to discovered applications.
+				foreach ($axisItem['applications'] as $application) {
+					if ($application['flags'] == ZBX_FLAG_DISCOVERY_CREATED) {
+						unset($graphs[$gnum]);
+						continue 2;
+					}
+				}
+
 				$axisItemHost = reset($axisItem['hosts']);
-				$graphs[$gnum]['ymax_itemid'] = array(
+
+				$graphs[$gnum]['ymax_itemid'] = [
 					'host' => $axisItemHost['host'],
 					'key' => $axisItem['key_']
-				);
+				];
 			}
 
 			foreach ($graph['gitems'] as $ginum => $gItem) {
@@ -678,11 +846,21 @@ class CConfigurationExport {
 					unset($graphs[$gnum]);
 					continue 2;
 				}
+
+				// Remove graphs with items that are linked to discovered applications.
+				foreach ($item['applications'] as $application) {
+					if ($application['flags'] == ZBX_FLAG_DISCOVERY_CREATED) {
+						unset($graphs[$gnum]);
+						continue 3;
+					}
+				}
+
 				$itemHost = reset($item['hosts']);
-				$graphs[$gnum]['gitems'][$ginum]['itemid'] = array(
+
+				$graphs[$gnum]['gitems'][$ginum]['itemid'] = [
 					'host' => $itemHost['host'],
 					'key' => $item['key_']
-				);
+				];
 			}
 		}
 
@@ -698,33 +876,76 @@ class CConfigurationExport {
 	protected function gatherTriggers(array $hostIds, array $templateIds) {
 		$hostIds = array_merge($hostIds, $templateIds);
 
-		$triggers = API::Trigger()->get(array(
+		$triggers = API::Trigger()->get([
+			'output' => ['expression', 'description', 'url', 'status', 'priority', 'comments', 'type', 'recovery_mode',
+				'recovery_expression', 'correlation_mode', 'correlation_tag', 'manual_close'
+			],
+			'selectDependencies' => ['expression', 'description', 'recovery_expression'],
+			'selectItems' => ['itemid', 'flags', 'type'],
+			'selectTags' => ['tag', 'value'],
 			'hostids' => $hostIds,
-			'output' => API_OUTPUT_EXTEND,
-			'filter' => array('flags' => array(ZBX_FLAG_DISCOVERY_NORMAL)),
-			'selectDependencies' => API_OUTPUT_EXTEND,
-			'selectItems' => array('flags', 'type'),
+			'filter' => ['flags' => ZBX_FLAG_DISCOVERY_NORMAL],
 			'inherited' => false,
-			'preservekeys' => true,
-			'expandData' => true
-		));
+			'preservekeys' => true
+		]);
 
-		foreach($triggers as $trigger){
+		$this->data['triggers'] = $this->prepareTriggers($triggers);
+	}
+
+	/**
+	 * Prepare trigger expressions and unset triggers containing items with LLD applications.
+	 *
+	 * @param array $triggers
+	 *
+	 * @return array
+	 */
+	protected function prepareTriggers(array $triggers) {
+		$itemids = [];
+
+		foreach ($triggers as $trigger) {
+			$itemids = array_merge($itemids, zbx_objectValues($trigger['items'], 'itemid'));
+		}
+
+		$items = API::Item()->get([
+			'output' => ['itemid'],
+			'selectApplications' => ['flags'],
+			'itemids' => $itemids,
+			'preservekeys' => true
+		]);
+
+		foreach ($triggers as $idx => &$trigger) {
 			foreach ($trigger['items'] as $item) {
 				if ($item['flags'] == ZBX_FLAG_DISCOVERY_CREATED || $item['type'] == ITEM_TYPE_HTTPTEST) {
+					unset($triggers[$idx]);
 					continue 2;
+				}
+
+				/*
+				 * Function processes both triggers and trigger prototypes. Triggers can have items that belong to
+				 * discovered applications. Those triggers are removed. Trigger prototypes can have item prototypes that
+				 * also belong to applications, but those applications are regular applications. No discovered ones.
+				 */
+				if (array_key_exists($item['itemid'], $items)) {
+					foreach ($items[$item['itemid']]['applications'] as $application) {
+						if ($application['flags'] == ZBX_FLAG_DISCOVERY_CREATED) {
+							unset($triggers[$idx]);
+							continue 3;
+						}
+					}
 				}
 			}
 
-			$trigger['expression'] = explode_exp($trigger['expression']);
-
-			foreach ($trigger['dependencies'] as &$dependency) {
-				$dependency['expression'] = explode_exp($dependency['expression']);
-			}
-			unset($dependency);
-
-			$this->data['triggers'][] = $trigger;
+			$trigger['dependencies'] = CMacrosResolverHelper::resolveTriggerExpressions($trigger['dependencies'],
+				['sources' => ['expression', 'recovery_expression']]
+			);
 		}
+		unset($trigger);
+
+		$triggers = CMacrosResolverHelper::resolveTriggerExpressions($triggers,
+			['sources' => ['expression', 'recovery_expression']]
+		);
+
+		return $triggers;
 	}
 
 	/**
@@ -733,7 +954,7 @@ class CConfigurationExport {
 	 * @param array $mapIds
 	 */
 	protected function gatherMaps(array $mapIds) {
-		$sysmaps = API::Map()->get(array(
+		$sysmaps = API::Map()->get([
 			'sysmapids' => $mapIds,
 			'selectSelements' => API_OUTPUT_EXTEND,
 			'selectLinks' => API_OUTPUT_EXTEND,
@@ -741,23 +962,25 @@ class CConfigurationExport {
 			'selectUrls' => API_OUTPUT_EXTEND,
 			'output' => API_OUTPUT_EXTEND,
 			'preservekeys' => true
-		));
+		]);
+
 		$this->prepareMapExport($sysmaps);
+
 		$this->data['maps'] = $sysmaps;
 
-		$images = API::Image()->get(array(
-			'output' => array('imageid', 'name', 'imagetype'),
+		$images = API::Image()->get([
+			'output' => ['imageid', 'name', 'imagetype'],
 			'sysmapids' => zbx_objectValues($sysmaps, 'sysmapid'),
 			'select_image' => true,
 			'preservekeys' => true
-		));
+		]);
 
 		foreach ($images as &$image) {
-			$image = array(
+			$image = [
 				'name' => $image['name'],
 				'imagetype' => $image['imagetype'],
 				'encodedImage' => $image['image'],
-			);
+			];
 		}
 		unset($image);
 
@@ -770,14 +993,30 @@ class CConfigurationExport {
 	 * @param array $screenIds
 	 */
 	protected function gatherScreens(array $screenIds) {
-		$screens = API::Screen()->get(array(
+		$screens = API::Screen()->get([
 			'screenids' => $screenIds,
 			'selectScreenItems' => API_OUTPUT_EXTEND,
 			'output' => API_OUTPUT_EXTEND
-		));
+		]);
 
 		$this->prepareScreenExport($screens);
 		$this->data['screens'] = $screens;
+	}
+
+	/**
+	 * Get value maps for export builder from database.
+	 *
+	 * @param array $valuemapids
+	 *
+	 * return array
+	 */
+	protected function gatherValueMaps(array $valuemapids) {
+		$this->data['valueMaps'] = API::ValueMap()->get([
+			'output' => ['valuemapid', 'name'],
+			'selectMappings' => ['value', 'newvalue'],
+			'valuemapids' => $valuemapids,
+			'preservekeys' => true
+		]);
 	}
 
 	/**
@@ -786,26 +1025,22 @@ class CConfigurationExport {
 	 * @param array $exportScreens
 	 */
 	protected function prepareScreenExport(array &$exportScreens) {
-		$screenIds = array();
-		$sysmapIds = array();
-		$groupIds = array();
-		$hostIds = array();
-		$graphIds = array();
-		$itemIds = array();
+		$screenIds = [];
+		$sysmapIds = [];
+		$groupIds = [];
+		$hostIds = [];
+		$graphIds = [];
+		$itemIds = [];
 
 		// gather element ids that must be substituted
 		foreach ($exportScreens as $screen) {
 			foreach ($screen['screenitems'] as $screenItem) {
 				if ($screenItem['resourceid'] != 0) {
 					switch ($screenItem['resourcetype']) {
-						case SCREEN_RESOURCE_HOSTS_INFO:
-							// fall through
-						case SCREEN_RESOURCE_TRIGGERS_INFO:
-							// fall through
-						case SCREEN_RESOURCE_TRIGGERS_OVERVIEW:
-							// fall through
+						case SCREEN_RESOURCE_HOST_INFO:
+						case SCREEN_RESOURCE_TRIGGER_INFO:
+						case SCREEN_RESOURCE_TRIGGER_OVERVIEW:
 						case SCREEN_RESOURCE_DATA_OVERVIEW:
-							// fall through
 						case SCREEN_RESOURCE_HOSTGROUP_TRIGGERS:
 							$groupIds[$screenItem['resourceid']] = $screenItem['resourceid'];
 							break;
@@ -815,11 +1050,12 @@ class CConfigurationExport {
 							break;
 
 						case SCREEN_RESOURCE_GRAPH:
+						case SCREEN_RESOURCE_LLD_GRAPH:
 							$graphIds[$screenItem['resourceid']] = $screenItem['resourceid'];
 							break;
 
 						case SCREEN_RESOURCE_SIMPLE_GRAPH:
-							// fall through
+						case SCREEN_RESOURCE_LLD_SIMPLE_GRAPH:
 						case SCREEN_RESOURCE_PLAIN_TEXT:
 							$itemIds[$screenItem['resourceid']] = $screenItem['resourceid'];
 							break;
@@ -830,6 +1066,12 @@ class CConfigurationExport {
 
 						case SCREEN_RESOURCE_SCREEN:
 							$screenIds[$screenItem['resourceid']] = $screenItem['resourceid'];
+							break;
+
+						case SCREEN_RESOURCE_CLOCK:
+							if ($screenItem['style'] == TIME_TYPE_HOST) {
+								$itemIds[$screenItem['resourceid']] = $screenItem['resourceid'];
+							}
 							break;
 					}
 				}
@@ -846,17 +1088,13 @@ class CConfigurationExport {
 		foreach ($exportScreens as &$screen) {
 			unset($screen['screenid']);
 
-			foreach	($screen['screenitems'] as &$screenItem) {
+			foreach ($screen['screenitems'] as &$screenItem) {
 				if ($screenItem['resourceid'] != 0) {
 					switch ($screenItem['resourcetype']) {
-						case SCREEN_RESOURCE_HOSTS_INFO:
-							// fall through
-						case SCREEN_RESOURCE_TRIGGERS_INFO:
-							// fall through
-						case SCREEN_RESOURCE_TRIGGERS_OVERVIEW:
-							// fall through
+						case SCREEN_RESOURCE_HOST_INFO:
+						case SCREEN_RESOURCE_TRIGGER_INFO:
+						case SCREEN_RESOURCE_TRIGGER_OVERVIEW:
 						case SCREEN_RESOURCE_DATA_OVERVIEW:
-							// fall through
 						case SCREEN_RESOURCE_HOSTGROUP_TRIGGERS:
 							$screenItem['resourceid'] = $groups[$screenItem['resourceid']];
 							break;
@@ -866,11 +1104,12 @@ class CConfigurationExport {
 							break;
 
 						case SCREEN_RESOURCE_GRAPH:
+						case SCREEN_RESOURCE_LLD_GRAPH:
 							$screenItem['resourceid'] = $graphs[$screenItem['resourceid']];
 							break;
 
 						case SCREEN_RESOURCE_SIMPLE_GRAPH:
-							// fall through
+						case SCREEN_RESOURCE_LLD_SIMPLE_GRAPH:
 						case SCREEN_RESOURCE_PLAIN_TEXT:
 							$screenItem['resourceid'] = $items[$screenItem['resourceid']];
 							break;
@@ -881,6 +1120,12 @@ class CConfigurationExport {
 
 						case SCREEN_RESOURCE_SCREEN:
 							$screenItem['resourceid'] = $screens[$screenItem['resourceid']];
+							break;
+
+						case SCREEN_RESOURCE_CLOCK:
+							if ($screenItem['style'] == TIME_TYPE_HOST) {
+								$screenItem['resourceid'] = $items[$screenItem['resourceid']];
+							}
 							break;
 					}
 				}
@@ -896,11 +1141,7 @@ class CConfigurationExport {
 	 * @param array $exportMaps
 	 */
 	protected function prepareMapExport(array &$exportMaps) {
-		$sysmapIds = array();
-		$groupIds = array();
-		$hostIds = array();
-		$triggerIds = array();
-		$imageIds = array();
+		$sysmapIds = $groupIds = $hostIds = $triggerIds = $imageIds = [];
 
 		// gather element ids that must be substituted
 		foreach ($exportMaps as $sysmap) {
@@ -956,14 +1197,14 @@ class CConfigurationExport {
 
 		foreach ($exportMaps as &$sysmap) {
 			if (!empty($sysmap['iconmap'])) {
-				$sysmap['iconmap'] = array('name' => $sysmap['iconmap']['name']);
+				$sysmap['iconmap'] = ['name' => $sysmap['iconmap']['name']];
 			}
 
 			foreach ($sysmap['urls'] as $unum => $url) {
 				unset($sysmap['urls'][$unum]['sysmapurlid']);
 			}
 
-			$sysmap['backgroundid'] = ($sysmap['backgroundid'] > 0) ? $images[$sysmap['backgroundid']] : array();
+			$sysmap['backgroundid'] = ($sysmap['backgroundid'] > 0) ? $images[$sysmap['backgroundid']] : [];
 
 			foreach ($sysmap['selements'] as &$selement) {
 				switch ($selement['elementtype']) {
@@ -1007,18 +1248,18 @@ class CConfigurationExport {
 	 * @return array
 	 */
 	protected function getGroupsReferences(array $groupIds) {
-		$idents = array();
-		$groups = API::HostGroup()->get(array(
+		$groups = API::HostGroup()->get([
 			'groupids' => $groupIds,
-			'output' => array('name'),
-			'nodeids' => get_current_nodeid(true),
+			'output' => ['name'],
 			'preservekeys' => true
-		));
-		foreach ($groups as $id => $group) {
-			$idents[$id] = array('name' => $group['name']);
-		}
+		]);
 
-		return $idents;
+		foreach ($groups as &$group) {
+			$group = ['name' => $group['name']];
+		}
+		unset($group);
+
+		return $groups;
 	}
 
 	/**
@@ -1029,18 +1270,19 @@ class CConfigurationExport {
 	 * @return array
 	 */
 	protected function getHostsReferences(array $hostIds) {
-		$idents = array();
-		$hosts = API::Host()->get(array(
+		$ids = [];
+
+		$hosts = API::Host()->get([
 			'hostids' => $hostIds,
-			'output' => array('host'),
-			'nodeids' => get_current_nodeid(true),
+			'output' => ['host'],
 			'preservekeys' => true
-		));
+		]);
+
 		foreach ($hosts as $id => $host) {
-			$idents[$id] = array('host' => $host['host']);
+			$ids[$id] = ['host' => $host['host']];
 		}
 
-		return $idents;
+		return $ids;
 	}
 
 	/**
@@ -1051,18 +1293,19 @@ class CConfigurationExport {
 	 * @return array
 	 */
 	protected function getScreensReferences(array $screenIds) {
-		$idents = array();
-		$screens = API::Screen()->get(array(
+		$ids = [];
+
+		$screens = API::Screen()->get([
 			'screenids' => $screenIds,
 			'output' => API_OUTPUT_EXTEND,
-			'nodeids' => get_current_nodeid(true),
 			'preservekeys' => true
-		));
+		]);
+
 		foreach ($screens as $id => $screen) {
-			$idents[$id] = array('name' => $screen['name']);
+			$ids[$id] = ['name' => $screen['name']];
 		}
 
-		return $idents;
+		return $ids;
 	}
 
 	/**
@@ -1073,18 +1316,19 @@ class CConfigurationExport {
 	 * @return array
 	 */
 	protected function getMapsReferences(array $mapIds) {
-		$idents = array();
-		$maps = API::Map()->get(array(
+		$ids = [];
+
+		$maps = API::Map()->get([
 			'sysmapids' => $mapIds,
-			'output' => array('name'),
-			'nodeids' => get_current_nodeid(true),
+			'output' => ['name'],
 			'preservekeys' => true
-		));
+		]);
+
 		foreach ($maps as $id => $map) {
-			$idents[$id] = array('name' => $map['name']);
+			$ids[$id] = ['name' => $map['name']];
 		}
 
-		return $idents;
+		return $ids;
 	}
 
 	/**
@@ -1095,23 +1339,26 @@ class CConfigurationExport {
 	 * @return array
 	 */
 	protected function getGraphsReferences(array $graphIds) {
-		$idents = array();
-		$graphs = API::Graph()->get(array(
+		$ids = [];
+
+		$graphs = API::Graph()->get([
 			'graphids' => $graphIds,
-			'selectHosts' => array('host'),
-			'output' => array('name'),
-			'nodeids' => get_current_nodeid(true),
-			'preservekeys' => true
-		));
+			'selectHosts' => ['host'],
+			'output' => ['name'],
+			'preservekeys' => true,
+			'filter' => ['flags' => null]
+		]);
+
 		foreach ($graphs as $id => $graph) {
 			$host = reset($graph['hosts']);
-			$idents[$id] = array(
+
+			$ids[$id] = [
 				'name' => $graph['name'],
 				'host' => $host['host']
-			);
+			];
 		}
 
-		return $idents;
+		return $ids;
 	}
 
 	/**
@@ -1122,25 +1369,27 @@ class CConfigurationExport {
 	 * @return array
 	 */
 	protected function getItemsReferences(array $itemIds) {
-		$idents = array();
-		$items = API::Item()->get(array(
+		$ids = [];
+
+		$items = API::Item()->get([
 			'itemids' => $itemIds,
-			'output' => array('key_'),
-			'selectHosts' => array('host'),
-			'nodeids' => get_current_nodeid(true),
+			'output' => ['key_'],
+			'selectHosts' => ['host'],
 			'webitems' => true,
 			'preservekeys' => true,
-			'filter' => array('flags' => null)
-		));
+			'filter' => ['flags' => null]
+		]);
+
 		foreach ($items as $id => $item) {
 			$host = reset($item['hosts']);
-			$idents[$id] = array(
+
+			$ids[$id] = [
 				'key' => $item['key_'],
 				'host' => $host['host']
-			);
+			];
 		}
 
-		return $idents;
+		return $ids;
 	}
 
 	/**
@@ -1151,21 +1400,27 @@ class CConfigurationExport {
 	 * @return array
 	 */
 	protected function getTriggersReferences(array $triggerIds) {
-		$idents = array();
-		$triggers = API::Trigger()->get(array(
+		$ids = [];
+
+		$triggers = API::Trigger()->get([
+			'output' => ['expression', 'description', 'recovery_expression'],
 			'triggerids' => $triggerIds,
-			'output' => array('description', 'expression'),
-			'nodeids' => get_current_nodeid(true),
 			'preservekeys' => true
-		));
+		]);
+
+		$triggers = CMacrosResolverHelper::resolveTriggerExpressions($triggers,
+			['sources' => ['expression', 'recovery_expression']]
+		);
+
 		foreach ($triggers as $id => $trigger) {
-			$idents[$id] = array(
+			$ids[$id] = [
 				'description' => $trigger['description'],
-				'expression' => explode_exp($trigger['expression'])
-			);
+				'expression' => $trigger['expression'],
+				'recovery_expression' => $trigger['recovery_expression']
+			];
 		}
 
-		return $idents;
+		return $ids;
 	}
 
 	/**
@@ -1176,17 +1431,18 @@ class CConfigurationExport {
 	 * @return array
 	 */
 	protected function getImagesReferences(array $imageIds) {
-		$idents = array();
-		$images = API::Image()->get(array(
-			'output' => array('imageid', 'name'),
+		$ids = [];
+
+		$images = API::Image()->get([
+			'output' => ['imageid', 'name'],
 			'imageids' => $imageIds,
-			'nodeids' => get_current_nodeid(true),
 			'preservekeys' => true
-		));
+		]);
+
 		foreach ($images as $id => $image) {
-			$idents[$id] = array('name' => $image['name']);
+			$ids[$id] = ['name' => $image['name']];
 		}
 
-		return $idents;
+		return $ids;
 	}
 }

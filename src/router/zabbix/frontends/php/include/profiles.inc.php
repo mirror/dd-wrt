@@ -19,338 +19,87 @@
 **/
 
 
-class CProfile {
-
-	private static $userDetails = array();
-	private static $profiles = null;
-	private static $update = array();
-	private static $insert = array();
-	private static $stringProfileMaxLength;
-
-	public static function init() {
-		self::$userDetails = CWebUser::$data;
-		self::$profiles = array();
-
-		$profilesTableSchema = DB::getSchema('profiles');
-		self::$stringProfileMaxLength = $profilesTableSchema['fields']['value_str']['length'];
-
-		$db_profiles = DBselect(
-			'SELECT p.*'.
-			' FROM profiles p'.
-			' WHERE p.userid='.self::$userDetails['userid'].
-				andDbNode('p.profileid', false).
-			' ORDER BY p.userid,p.profileid'
-		);
-		while ($profile = DBfetch($db_profiles)) {
-			$value_type = self::getFieldByType($profile['type']);
-
-			if (!isset(self::$profiles[$profile['idx']])) {
-				self::$profiles[$profile['idx']] = array();
-			}
-			self::$profiles[$profile['idx']][$profile['idx2']] = $profile[$value_type];
-		}
-	}
-
-	public static function flush() {
-		// if not initialised, no changes were made
-		if (is_null(self::$profiles)) {
-			return true;
-		}
-
-		if (self::$userDetails['userid'] <= 0) {
-			return null;
-		}
-
-		if (!empty(self::$insert) || !empty(self::$update)) {
-			DBstart();
-			foreach (self::$insert as $idx => $profile) {
-				foreach ($profile as $idx2 => $data) {
-					self::insertDB($idx, $data['value'], $data['type'], $idx2);
-				}
-			}
-
-			ksort(self::$update);
-			foreach (self::$update as $idx => $profile) {
-				ksort($profile);
-				foreach ($profile as $idx2 => $data) {
-					self::updateDB($idx, $data['value'], $data['type'], $idx2);
-				}
-			}
-			DBend();
-		}
-	}
-
-	public static function clear() {
-		self::$insert = array();
-		self::$update = array();
-	}
-
-	public static function get($idx, $default_value = null, $idx2 = 0) {
-		// no user data available, just return the default value
-		if (!CWebUser::$data) {
-			return $default_value;
-		}
-
-		if (is_null(self::$profiles)) {
-			self::init();
-		}
-
-		if (isset(self::$profiles[$idx][$idx2])) {
-			return self::$profiles[$idx][$idx2];
-		}
-		else {
-			return $default_value;
-		}
-	}
-
-	/**
-	 * Removes profile values from DB and profiles cache
-	 *
-	 * @param string $idx	first identifier
-	 * @param mixed  $idx2	second identifier, which can be list of identifiers as well
-	 */
-	public static function delete($idx, $idx2) {
-		if (!is_array($idx2)) {
-			$idx2 = array($idx2);
-		}
-
-		// remove from DB
-		DB::delete('profiles', array('idx' => $idx, 'idx2' => $idx2, 'userid' => self::$userDetails['userid']));
-
-		// remove from cache
-		if (!is_null(self::$profiles)) {
-			foreach ($idx2 as $v) {
-				unset(self::$profiles[$idx][$v]);
-			}
-		}
-	}
-
-	/**
-	 * Update favorite values in DB profiles table.
-	 *
-	 * @param string	$idx		max length is 96
-	 * @param mixed		$value		max length 255 for string
-	 * @param int		$type
-	 * @param int		$idx2
-	 */
-	public static function update($idx, $value, $type, $idx2 = 0) {
-		if (is_null(self::$profiles)) {
-			self::init();
-		}
-
-		if (!self::checkValueType($value, $type)) {
-			return false;
-		}
-
-		$profile = array(
-			'idx' => $idx,
-			'value' => $value,
-			'type' => $type,
-			'idx2' => $idx2
-		);
-
-		$current = CProfile::get($idx, null, $idx2);
-		if (is_null($current)) {
-			if (!isset(self::$insert[$idx])) {
-				self::$insert[$idx] = array();
-			}
-			self::$insert[$idx][$idx2] = $profile;
-		}
-		else {
-			if ($current != $value) {
-				if (!isset(self::$update[$idx])) {
-					self::$update[$idx] = array();
-				}
-				self::$update[$idx][$idx2] = $profile;
-			}
-		}
-
-		if (!isset(self::$profiles[$idx])) {
-			self::$profiles[$idx] = array();
-		}
-		self::$profiles[$idx][$idx2] = $value;
-	}
-
-	private static function insertDB($idx, $value, $type, $idx2) {
-		$value_type = self::getFieldByType($type);
-
-		$values = array(
-			'profileid' => get_dbid('profiles', 'profileid'),
-			'userid' => self::$userDetails['userid'],
-			'idx' => zbx_dbstr($idx),
-			$value_type => zbx_dbstr($value),
-			'type' => $type,
-			'idx2' => $idx2
-		);
-		return DBexecute('INSERT INTO profiles ('.implode(', ', array_keys($values)).') VALUES ('.implode(', ', $values).')');
-	}
-
-	private static function updateDB($idx, $value, $type, $idx2) {
-		$sql_cond = '';
-
-		if ($idx != 'web.nodes.switch_node') {
-			$sql_cond .= andDbNode('profileid', false);
-		}
-
-		if ($idx2 > 0) {
-			$sql_cond .= ' AND idx2='.$idx2.andDbNode('idx2', false);
-		}
-
-		$value_type = self::getFieldByType($type);
-
-		return DBexecute(
-			'UPDATE profiles SET '.
-				$value_type.'='.zbx_dbstr($value).','.
-				' type='.$type.
-			' WHERE userid='.self::$userDetails['userid'].
-				' AND idx='.zbx_dbstr($idx).
-				$sql_cond
-		);
-	}
-
-	public static function getFieldByType($type) {
-		switch ($type) {
-			case PROFILE_TYPE_INT:
-				$field = 'value_int';
-				break;
-			case PROFILE_TYPE_STR:
-				$field = 'value_str';
-				break;
-			case PROFILE_TYPE_ID:
-			default:
-				$field = 'value_id';
-		}
-		return $field;
-	}
-
-	private static function checkValueType($value, $type) {
-		switch ($type) {
-			case PROFILE_TYPE_ID:
-				return zbx_ctype_digit($value);
-			case PROFILE_TYPE_INT:
-				return zbx_is_int($value);
-			case PROFILE_TYPE_STR:
-				return zbx_strlen($value) <= self::$stringProfileMaxLength;
-			default:
-				return true;
-		}
-	}
-}
-
-/************ CONFIG **************/
-function select_config($cache = true, $nodeid = null) {
-	global $page, $ZBX_LOCALNODEID;
+/**
+ * Select configuration parameters.
+ *
+ * @static array $config	Array containing configuration parameters.
+ *
+ * @return array
+ */
+function select_config() {
 	static $config;
 
-	if ($cache && isset($config)) {
-		return $config;
-	}
-	if (is_null($nodeid)) {
-		$nodeid = $ZBX_LOCALNODEID;
+	if (!isset($config)) {
+		$config = DBfetch(DBselect('SELECT c.* FROM config c'));
 	}
 
-	$db_config = DBfetch(DBselect(
-			'SELECT c.*'.
-			' FROM config c'.
-			whereDbNode('c.configid', $nodeid)
-	));
-	if (!empty($db_config)) {
-		$config = $db_config;
-		return $db_config;
-	}
-	elseif (isset($page['title']) && $page['title'] != _('Installation')) {
-		error(_('Unable to select configuration.'));
-	}
-	return $db_config;
+	return $config;
 }
 
-function update_config($configs) {
-	$update = array();
+function setHostGroupInternal($groupid, $internal) {
+	return DBexecute(
+		'UPDATE groups'.
+		' SET internal='.zbx_dbstr($internal).
+		' WHERE '.dbConditionInt('groupid', [$groupid])
+	);
+}
 
-	if (isset($configs['work_period'])) {
-		$timePeriodValidator = new CTimePeriodValidator();
-		if (!$timePeriodValidator->validate($configs['work_period'])) {
-			error(_('Incorrect working time.'));
-			return false;
-		}
-	}
-	if (isset($configs['alert_usrgrpid'])) {
-		if ($configs['alert_usrgrpid'] != 0 && !DBfetch(DBselect('SELECT u.usrgrpid FROM usrgrp u WHERE u.usrgrpid='.zbx_dbstr($configs['alert_usrgrpid'])))) {
-			error(_('Incorrect user group.'));
-			return false;
-		}
-	}
+function update_config($config) {
+	$configOrig = select_config();
 
-	if (isset($configs['discovery_groupid'])) {
-		$groupid = API::HostGroup()->get(array(
-			'groupids' => $configs['discovery_groupid'],
-			'output' => array('groupid'),
-			'preservekeys' => true
-		));
-		if (empty($groupid)) {
+	if (array_key_exists('discovery_groupid', $config)) {
+		$hostGroups = API::HostGroup()->get([
+			'output' => ['name'],
+			'groupids' => $config['discovery_groupid']
+		]);
+		if (!$hostGroups) {
 			error(_('Incorrect host group.'));
 			return false;
 		}
 	}
 
-	// checking color values to be correct hexadecimal numbers
-	$colors = array(
-		'severity_color_0',
-		'severity_color_1',
-		'severity_color_2',
-		'severity_color_3',
-		'severity_color_4',
-		'severity_color_5',
-		'problem_unack_color',
-		'problem_ack_color',
-		'ok_unack_color',
-		'ok_ack_color'
-	);
-	$colorvalidator = new CColorValidator();
-	foreach ($colors as $color) {
-		if (isset($configs[$color]) && !is_null($configs[$color])) {
-			if (!$colorvalidator->validate($configs[$color])) {
-				error($colorvalidator->getError());
+	if (array_key_exists('alert_usrgrpid', $config) && $config['alert_usrgrpid'] != 0) {
+		$userGroup = DBfetch(DBselect(
+			'SELECT u.name'.
+			' FROM usrgrp u'.
+			' WHERE u.usrgrpid='.zbx_dbstr($config['alert_usrgrpid'])
+		));
+		if (!$userGroup) {
+			error(_('Incorrect user group.'));
+			return false;
+		}
+	}
+
+	$updateSeverity = false;
+	for ($i = 0; $i < TRIGGER_SEVERITY_COUNT; $i++) {
+		if (isset($config['severity_name_'.$i])) {
+			$updateSeverity = true;
+			break;
+		}
+	}
+
+	if ($updateSeverity) {
+		// check duplicate severity names and if name is empty.
+		$names = [];
+		for ($i = 0; $i < TRIGGER_SEVERITY_COUNT; $i++) {
+			$varName = 'severity_name_'.$i;
+			if (!array_key_exists($varName, $config)) {
+				$config[$varName] = $configOrig[$varName];
+			}
+
+			if (isset($names[$config[$varName]])) {
+				error(_s('Duplicate severity name "%s".', $config[$varName]));
 				return false;
+			}
+			else {
+				$names[$config[$varName]] = true;
 			}
 		}
 	}
 
-	if (isset($configs['ok_period']) && !is_null($configs['ok_period']) && !ctype_digit($configs['ok_period'])) {
-		error(_('"Display OK triggers" needs to be "0" or a positive integer.'));
-		return false;
-	}
+	$update = [];
 
-	if (isset($configs['blink_period']) && !is_null($configs['blink_period']) && !ctype_digit($configs['blink_period'])) {
-		error(_('"Triggers blink on status change" needs to be "0" or a positive integer.'));
-		return false;
-	}
-
-	$currentConfig = select_config();
-
-	// check duplicate severity names and if name is empty.
-	$names = array();
-	for ($i = 0; $i < TRIGGER_SEVERITY_COUNT; $i++) {
-		$varName = 'severity_name_'.$i;
-		if (!isset($configs[$varName]) || is_null($configs[$varName])) {
-			$configs[$varName] = $currentConfig[$varName];
-		}
-
-		if ($configs[$varName] == '') {
-			error(_('Severity name cannot be empty.'));
-			return false;
-		}
-
-		if (isset($names[$configs[$varName]])) {
-			error(_s('Duplicate severity name "%s".', $configs[$varName]));
-			return false;
-		}
-		else {
-			$names[$configs[$varName]] = 1;
-		}
-	}
-
-	foreach ($configs as $key => $value) {
+	foreach ($config as $key => $value) {
 		if (!is_null($value)) {
 			if ($key == 'alert_usrgrpid') {
 				$update[] = $key.'='.(($value == '0') ? 'NULL' : $value);
@@ -366,107 +115,91 @@ function update_config($configs) {
 		return null;
 	}
 
-	return DBexecute(
-			'UPDATE config'.
-			' SET '.implode(',', $update).
-			whereDbNode('configid', false)
-	);
-}
+	$result = DBexecute('UPDATE config SET '.implode(',', $update));
 
-/************ HISTORY **************/
-function get_user_history() {
-	$result = array();
-	$delimiter = new CSpan('&raquo;', 'delimiter');
-
-	$history = DBfetch(DBSelect(
-		'SELECT uh.title1,uh.url1,uh.title2,uh.url2,uh.title3,uh.url3,uh.title4,uh.url4,uh.title5,uh.url5'.
-		' FROM user_history uh'.
-		' WHERE uh.userid='.CWebUser::$data['userid'])
-	);
-
-	if (!empty($history) && !zbx_empty($history['url4'])) {
-		CWebUser::$data['last_page'] = array('title' => $history['title4'], 'url' => $history['url4']);
-	}
-	else {
-		CWebUser::$data['last_page'] = array('title' => _('Dashboard'), 'url' => 'dashboard.php');
-	}
-
-	for ($i = 1; $i < 6; $i++) {
-		if (!zbx_empty($history['title'.$i])) {
-			$url = new CLink($history['title'.$i], $history['url'.$i], 'history');
-			array_push($result, array(SPACE, $url, SPACE));
-			array_push($result, $delimiter);
+	if ($result) {
+		$msg = [];
+		if (array_key_exists('hk_events_trigger', $config)) {
+			$msg[] = _s('Trigger event and alert data storage period (in days) "%1$s".', $config['hk_events_trigger']);
 		}
-	}
-	array_pop($result);
-	return $result;
-}
+		if (array_key_exists('hk_events_internal', $config)) {
+			$msg[] = _s('Internal event and alert data storage period (in days) "%1$s".',
+				$config['hk_events_internal']
+			);
+		}
+		if (array_key_exists('hk_events_discovery', $config)) {
+			$msg[] = _s('Network discovery event and alert data storage period (in days) "%1$s".',
+				$config['hk_events_discovery']
+			);
+		}
+		if (array_key_exists('hk_events_autoreg', $config)) {
+			$msg[] = _s('Auto-registration event and alert data storage period (in days) "%1$s".',
+				$config['hk_events_autoreg']
+			);
+		}
+		if (array_key_exists('hk_services', $config)) {
+			$msg[] = _s('IT service data storage period (in days) "%1$s".', $config['hk_services']);
+		}
+		if (array_key_exists('hk_audit', $config)) {
+			$msg[] = _s('Audit data storage period (in days) "%1$s".', $config['hk_audit']);
+		}
+		if (array_key_exists('hk_sessions', $config)) {
+			$msg[] = _s('User session data storage period (in days) "%1$s".', $config['hk_sessions']);
+		}
+		if (array_key_exists('hk_history', $config)) {
+			$msg[] = _s('History data storage period (in days) "%1$s".', $config['hk_history']);
+		}
+		if (array_key_exists('hk_trends', $config)) {
+			$msg[] = _s('Trend data storage period (in days) "%1$s".', $config['hk_trends']);
+		}
+		if (array_key_exists('work_period', $config)) {
+			$msg[] = _s('Working time "%1$s".', $config['work_period']);
+		}
+		if (array_key_exists('default_theme', $config)) {
+			$msg[] = _s('Default theme "%1$s".', $config['default_theme']);
+		}
+		if (array_key_exists('event_ack_enable', $config)) {
+			$msg[] = _s('Event acknowledges "%1$s".', $config['event_ack_enable']);
+		}
+		if (array_key_exists('event_expire', $config)) {
+			$msg[] = _s('Show events not older than (in days) "%1$s".', $config['event_expire']);
+		}
+		if (array_key_exists('event_show_max', $config)) {
+			$msg[] = _s('Show events max "%1$s".', $config['event_show_max']);
+		}
+		if (array_key_exists('dropdown_first_entry', $config)) {
+			$msg[] = _s('Dropdown first entry "%1$s".', $config['dropdown_first_entry']);
+		}
+		if (array_key_exists('dropdown_first_remember', $config)) {
+			$msg[] = _s('Dropdown remember selected "%1$s".', $config['dropdown_first_remember']);
+		}
+		if (array_key_exists('max_in_table', $config)) {
+			$msg[] = _s('Max count of elements to show inside table cell "%1$s".', $config['max_in_table']);
+		}
+		if (array_key_exists('server_check_interval', $config)) {
+			$msg[] = _s('Zabbix server is running check interval "%1$s".', $config['server_check_interval']);
+		}
+		if (array_key_exists('refresh_unsupported', $config)) {
+			$msg[] = _s('Refresh unsupported items (in sec) "%1$s".', $config['refresh_unsupported']);
+		}
+		if (array_key_exists('discovery_groupid', $config)) {
+			$msg[] = _s('Group for discovered hosts "%1$s".', $hostGroups[0]['name']);
 
-function add_user_history($page) {
-	$userid = CWebUser::$data['userid'];
-	$title = $page['title'];
-
-	if (isset($page['hist_arg']) && is_array($page['hist_arg'])) {
-		$url = '';
-		foreach ($page['hist_arg'] as $arg) {
-			if (isset($_REQUEST[$arg])) {
-				$url .= url_param($arg, true);
+			if (bccomp($config['discovery_groupid'], $configOrig['discovery_groupid']) != 0) {
+				setHostGroupInternal($configOrig['discovery_groupid'], ZBX_NOT_INTERNAL_GROUP);
+				setHostGroupInternal($config['discovery_groupid'], ZBX_INTERNAL_GROUP);
 			}
 		}
-		if (!empty($url)) {
-			$url[0] = '?';
+		if (array_key_exists('alert_usrgrpid', $config)) {
+			$msg[] = _s('User group for database down message "%1$s".',
+				$config['alert_usrgrpid'] != 0 ? $userGroup['name'] : _('None')
+			);
 		}
-		$url = $page['file'].$url;
-	}
-	else {
-		$url = $page['file'];
+
+		if ($msg) {
+			add_audit(AUDIT_ACTION_UPDATE, AUDIT_RESOURCE_ZABBIX_CONFIG, implode('; ', $msg));
+		}
 	}
 
-	// if url length is greater than db field size, skip history update
-	$historyTableSchema = DB::getSchema('user_history');
-	if (zbx_strlen($url) > $historyTableSchema['fields']['url5']['length']) {
-		return false;
-	}
-
-	$history5 = DBfetch(DBSelect(
-		'SELECT uh.title5,uh.url5'.
-		' FROM user_history uh'.
-		' WHERE uh.userid='.$userid
-	));
-
-	if ($history5 && ($history5['title5'] == $title)) {
-		if ($history5['url5'] != $url) {
-			// title same, url isnt, change only url
-			$sql = 'UPDATE user_history'.
-					' SET url5='.zbx_dbstr($url).
-					' WHERE userid='.$userid;
-		}
-		else {
-			// no need to change anything;
-			return null;
-		}
-	}
-	else {
-		// new page with new title is added
-		if ($history5 === false) {
-			$userhistoryid = get_dbid('user_history', 'userhistoryid');
-			$sql = 'INSERT INTO user_history (userhistoryid, userid, title5, url5)'.
-					' VALUES('.$userhistoryid.', '.$userid.', '.zbx_dbstr($title).', '.zbx_dbstr($url).')';
-		}
-		else {
-			$sql = 'UPDATE user_history'.
-					' SET title1=title2,'.
-						' url1=url2,'.
-						' title2=title3,'.
-						' url2=url3,'.
-						' title3=title4,'.
-						' url3=url4,'.
-						' title4=title5,'.
-						' url4=url5,'.
-						' title5='.zbx_dbstr($title).','.
-						' url5='.zbx_dbstr($url).
-					' WHERE userid='.$userid;
-		}
-	}
-	return DBexecute($sql);
+	return $result;
 }

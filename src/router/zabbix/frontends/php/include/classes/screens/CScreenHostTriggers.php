@@ -29,15 +29,14 @@ class CScreenHostTriggers extends CScreenBase {
 	 * @return CDiv (screen inside container)
 	 */
 	public function get() {
-		$params = array(
+		$params = [
 			'groupids' => null,
 			'hostids' => null,
-			'screenid' => $this->screenid,
 			'maintenance' => null,
+			'trigger_name' => '',
 			'severity' => null,
-			'limit' => $this->screenitem['elements'],
-			'backUrl' => $this->pageFile
-		);
+			'limit' => $this->screenitem['elements']
+		];
 
 		// by default triggers are sorted by date desc, do we need to override this?
 		switch ($this->screenitem['sort_triggers']) {
@@ -57,79 +56,94 @@ class CScreenHostTriggers extends CScreenBase {
 				break;
 		}
 
-		if ($this->screenitem['resourceid'] > 0) {
-			$hosts = API::Host()->get(array(
-				'hostids' => $this->screenitem['resourceid'],
-				'output' => API_OUTPUT_EXTEND
-			));
-			$host = reset($hosts);
+		if ($this->screenitem['resourceid'] != 0) {
+			$hosts = API::Host()->get([
+				'output' => ['name'],
+				'hostids' => [$this->screenitem['resourceid']]
+			]);
 
-			$item = new CSpan(_('Host').NAME_DELIMITER.$host['host'], 'white');
-			$params['hostids'] = $host['hostid'];
+			$header = (new CDiv([
+				new CTag('h4', true, _('Host issues')),
+				(new CList())->addItem([_('Host'), ':', SPACE, $hosts[0]['name']])
+			]))->addClass(ZBX_STYLE_DASHBRD_WIDGET_HEAD);
+
+			$params['hostids'] = $this->screenitem['resourceid'];
 		}
 		else {
-			$groupid = get_request('tr_groupid', CProfile::get('web.screens.tr_groupid', 0));
-			$hostid = get_request('tr_hostid', CProfile::get('web.screens.tr_hostid', 0));
+			$groupid = getRequest('tr_groupid', CProfile::get('web.screens.tr_groupid', 0));
+			$hostid = getRequest('tr_hostid', CProfile::get('web.screens.tr_hostid', 0));
 
 			CProfile::update('web.screens.tr_groupid', $groupid, PROFILE_TYPE_ID);
 			CProfile::update('web.screens.tr_hostid', $hostid, PROFILE_TYPE_ID);
 
 			// get groups
-			$groups = API::HostGroup()->get(array(
+			$groups = API::HostGroup()->get([
+				'output' => ['name'],
 				'monitored_hosts' => true,
-				'output' => API_OUTPUT_EXTEND
-			));
+				'preservekeys' => true
+			]);
 			order_result($groups, 'name');
 
+			foreach ($groups as &$group) {
+				$group = $group['name'];
+			}
+			unset($group);
+
 			// get hsots
-			$options = array(
+			$options = [
+				'output' => ['name'],
 				'monitored_hosts' => true,
-				'output' => API_OUTPUT_EXTEND
-			);
-			if ($groupid > 0) {
-				$options['groupids'] = $groupid;
+				'preservekeys' => true
+			];
+			if ($groupid != 0) {
+				$options['groupids'] = [$groupid];
 			}
 			$hosts = API::Host()->get($options);
-			$hosts = zbx_toHash($hosts, 'hostid');
-			order_result($hosts, 'host');
+			order_result($hosts, 'name');
 
-			if (!isset($hosts[$hostid])) {
+			foreach ($hosts as &$host) {
+				$host = $host['name'];
+			}
+			unset($host);
+
+			$groups = [0 => _('all')] + $groups;
+			$hosts = [0 => _('all')] + $hosts;
+
+			if (!array_key_exists($hostid, $hosts)) {
 				$hostid = 0;
 			}
 
-			if ($groupid > 0) {
+			if ($groupid != 0) {
 				$params['groupids'] = $groupid;
 			}
-			if ($hostid > 0) {
+			if ($hostid != 0) {
 				$params['hostids'] = $hostid;
 			}
 
-			$item = new CForm(null, $this->pageFile);
+			$groups_cb = (new CComboBox('tr_groupid', $groupid, 'submit()', $groups))
+				->setEnabled($this->mode != SCREEN_MODE_EDIT);
+			$hosts_cb = (new CComboBox('tr_hostid', $hostid, 'submit()', $hosts))
+				->setEnabled($this->mode != SCREEN_MODE_EDIT);
 
-			$groupComboBox = new CComboBox('tr_groupid', $groupid, 'submit()');
-			$groupComboBox->addItem(0, _('all'));
-			foreach ($groups as $group) {
-				$groupComboBox->addItem($group['groupid'], get_node_name_by_elid($group['groupid'], null, NAME_DELIMITER).$group['name']);
-			}
-
-			$hostsComboBox = new CComboBox('tr_hostid', $hostid, 'submit()');
-			$hostsComboBox->addItem(0, _('all'));
-			foreach ($hosts as $host) {
-				$hostsComboBox->addItem($host['hostid'], get_node_name_by_elid($host['hostid'], null, NAME_DELIMITER).$host['host']);
-			}
-
-			if ($this->mode == SCREEN_MODE_EDIT) {
-				$groupComboBox->attr('disabled', 'disabled');
-				$hostsComboBox->attr('disabled', 'disabled');
-			}
-
-			$item->addItem(array(_('Group').SPACE, $groupComboBox));
-			$item->addItem(array(SPACE._('Host').SPACE, $hostsComboBox));
+			$header = (new CDiv([
+				new CTag('h4', true, _('Host issues')),
+				(new CForm('get', $this->pageFile))
+					->addItem(
+						(new CList())
+							->addItem([_('Group'), SPACE, $groups_cb])
+							->addItem(SPACE)
+							->addItem([_('Host'), SPACE, $hosts_cb])
+					)
+			]))->addClass(ZBX_STYLE_DASHBRD_WIDGET_HEAD);
 		}
 
-		$output = new CUIWidget('hat_trstatus', make_latest_issues($params));
-		$output->setDoubleHeader(array(_('HOST ISSUES'), SPACE, zbx_date2str(_('[H:i:s]')), SPACE), $item);
+		list($table, $info) = make_latest_issues($params, $this->pageFile.'?screenid='.$this->screenid);
 
-		return $this->getOutput($output);
+		$footer = (new CList())
+			->addItem($info)
+			->addItem(_s('Updated: %s', zbx_date2str(TIME_FORMAT_SECONDS)))
+			->addClass(ZBX_STYLE_DASHBRD_WIDGET_FOOT);
+
+		return $this->getOutput(new CUiWidget('hat_trstatus', [$header, $table, $footer]));
 	}
 }

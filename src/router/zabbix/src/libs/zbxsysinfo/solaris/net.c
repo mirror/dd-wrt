@@ -21,8 +21,9 @@
 #include "sysinfo.h"
 #include "zbxjson.h"
 #include "../common/common.h"
+#include "log.h"
 
-static int	get_kstat_named_field(const char *name, const char *field, zbx_uint64_t *field_value)
+static int	get_kstat_named_field(const char *name, const char *field, zbx_uint64_t *field_value, char **error)
 {
 	int		ret = FAIL;
 	kstat_ctl_t	*kc;
@@ -30,7 +31,10 @@ static int	get_kstat_named_field(const char *name, const char *field, zbx_uint64
 	kstat_named_t	*kn;
 
 	if (NULL == (kc = kstat_open()))
+	{
+		*error = zbx_dsprintf(*error, "Cannot open kernel statistics facility: %s", zbx_strerror(errno));
 		return FAIL;
+	}
 
 	for (kp = kc->kc_chain; NULL != kp; kp = kp->ks_next)	/* traverse all kstat chain */
 	{
@@ -46,9 +50,22 @@ static int	get_kstat_named_field(const char *name, const char *field, zbx_uint64
 			break;
 	}
 
-	if (NULL == kp || -1 == kstat_read(kc, kp, 0) ||
-			NULL == (kn = (kstat_named_t *)kstat_data_lookup(kp, (char *)field)))
+	if (NULL == kp)
 	{
+		*error = zbx_dsprintf(*error, "Cannot look up interface \"%s\" in kernel statistics facility", name);
+		goto clean;
+	}
+
+	if (-1 == kstat_read(kc, kp, 0))
+	{
+		*error = zbx_dsprintf(*error, "Cannot read from kernel statistics facility: %s", zbx_strerror(errno));
+		goto clean;
+	}
+
+	if (NULL == (kn = (kstat_named_t *)kstat_data_lookup(kp, (char *)field)))
+	{
+		*error = zbx_dsprintf(*error, "Cannot look up data in kernel statistics facility: %s",
+				zbx_strerror(errno));
 		goto clean;
 	}
 
@@ -64,14 +81,18 @@ clean:
 static int	NET_IF_IN_BYTES(const char *if_name, AGENT_RESULT *result)
 {
 	zbx_uint64_t	value;
+	char		*error = NULL;
 
-	if (SUCCEED == get_kstat_named_field(if_name, "rbytes64", &value) ||
-			SUCCEED == get_kstat_named_field(if_name, "rbytes", &value))
+	if (SUCCEED == get_kstat_named_field(if_name, "rbytes64", &value, &error) ||
+			SUCCEED == get_kstat_named_field(if_name, "rbytes", &value, &error))
 	{
 		SET_UI64_RESULT(result, value);
+		zbx_free(error);
 
 		return SYSINFO_RET_OK;
 	}
+
+	SET_MSG_RESULT(result, error);
 
 	return SYSINFO_RET_FAIL;
 }
@@ -79,14 +100,18 @@ static int	NET_IF_IN_BYTES(const char *if_name, AGENT_RESULT *result)
 static int	NET_IF_IN_PACKETS(const char *if_name, AGENT_RESULT *result)
 {
 	zbx_uint64_t	value;
+	char		*error = NULL;
 
-	if (SUCCEED == get_kstat_named_field(if_name, "ipackets64", &value) ||
-			SUCCEED == get_kstat_named_field(if_name, "ipackets", &value))
+	if (SUCCEED == get_kstat_named_field(if_name, "ipackets64", &value, &error) ||
+			SUCCEED == get_kstat_named_field(if_name, "ipackets", &value, &error))
 	{
 		SET_UI64_RESULT(result, value);
+		zbx_free(error);
 
 		return SYSINFO_RET_OK;
 	}
+
+	SET_MSG_RESULT(result, error);
 
 	return SYSINFO_RET_FAIL;
 }
@@ -94,13 +119,16 @@ static int	NET_IF_IN_PACKETS(const char *if_name, AGENT_RESULT *result)
 static int	NET_IF_IN_ERRORS(const char *if_name, AGENT_RESULT *result)
 {
 	zbx_uint64_t	value;
+	char		*error = NULL;
 
-	if (SUCCEED == get_kstat_named_field(if_name, "ierrors", &value))
+	if (SUCCEED == get_kstat_named_field(if_name, "ierrors", &value, &error))
 	{
 		SET_UI64_RESULT(result, value);
 
 		return SYSINFO_RET_OK;
 	}
+
+	SET_MSG_RESULT(result, error);
 
 	return SYSINFO_RET_FAIL;
 }
@@ -108,14 +136,18 @@ static int	NET_IF_IN_ERRORS(const char *if_name, AGENT_RESULT *result)
 static int	NET_IF_OUT_BYTES(const char *if_name, AGENT_RESULT *result)
 {
 	zbx_uint64_t	value;
+	char		*error = NULL;
 
-	if (SUCCEED == get_kstat_named_field(if_name, "obytes64", &value) ||
-			SUCCEED == get_kstat_named_field(if_name, "obytes", &value))
+	if (SUCCEED == get_kstat_named_field(if_name, "obytes64", &value, &error) ||
+			SUCCEED == get_kstat_named_field(if_name, "obytes", &value, &error))
 	{
 		SET_UI64_RESULT(result, value);
+		zbx_free(error);
 
 		return SYSINFO_RET_OK;
 	}
+
+	SET_MSG_RESULT(result, error);
 
 	return SYSINFO_RET_FAIL;
 }
@@ -123,14 +155,18 @@ static int	NET_IF_OUT_BYTES(const char *if_name, AGENT_RESULT *result)
 static int	NET_IF_OUT_PACKETS(const char *if_name, AGENT_RESULT *result)
 {
 	zbx_uint64_t	value;
+	char		*error = NULL;
 
-	if (SUCCEED == get_kstat_named_field(if_name, "opackets64", &value) ||
-			SUCCEED == get_kstat_named_field(if_name, "opackets", &value))
+	if (SUCCEED == get_kstat_named_field(if_name, "opackets64", &value, &error) ||
+			SUCCEED == get_kstat_named_field(if_name, "opackets", &value, &error))
 	{
 		SET_UI64_RESULT(result, value);
+		zbx_free(error);
 
 		return SYSINFO_RET_OK;
 	}
+
+	SET_MSG_RESULT(result, error);
 
 	return SYSINFO_RET_FAIL;
 }
@@ -138,13 +174,16 @@ static int	NET_IF_OUT_PACKETS(const char *if_name, AGENT_RESULT *result)
 static int	NET_IF_OUT_ERRORS(const char *if_name, AGENT_RESULT *result)
 {
 	zbx_uint64_t	value;
+	char		*error = NULL;
 
-	if (SUCCEED == get_kstat_named_field(if_name, "oerrors", &value))
+	if (SUCCEED == get_kstat_named_field(if_name, "oerrors", &value, &error))
 	{
 		SET_UI64_RESULT(result, value);
 
 		return SYSINFO_RET_OK;
 	}
+
+	SET_MSG_RESULT(result, error);
 
 	return SYSINFO_RET_FAIL;
 }
@@ -152,16 +191,20 @@ static int	NET_IF_OUT_ERRORS(const char *if_name, AGENT_RESULT *result)
 static int	NET_IF_TOTAL_BYTES(const char *if_name, AGENT_RESULT *result)
 {
 	zbx_uint64_t	value_in, value_out;
+	char		*error = NULL;
 
-	if ((SUCCEED == get_kstat_named_field(if_name, "rbytes64", &value_in) &&
-			SUCCEED == get_kstat_named_field(if_name, "obytes64", &value_out)) ||
-			(SUCCEED == get_kstat_named_field(if_name, "rbytes", &value_in) &&
-			SUCCEED == get_kstat_named_field(if_name, "obytes", &value_out)))
+	if ((SUCCEED == get_kstat_named_field(if_name, "rbytes64", &value_in, &error) &&
+			SUCCEED == get_kstat_named_field(if_name, "obytes64", &value_out, &error)) ||
+			(SUCCEED == get_kstat_named_field(if_name, "rbytes", &value_in, &error) &&
+			SUCCEED == get_kstat_named_field(if_name, "obytes", &value_out, &error)))
 	{
 		SET_UI64_RESULT(result, value_in + value_out);
+		zbx_free(error);
 
 		return SYSINFO_RET_OK;
 	}
+
+	SET_MSG_RESULT(result, error);
 
 	return SYSINFO_RET_FAIL;
 }
@@ -169,16 +212,20 @@ static int	NET_IF_TOTAL_BYTES(const char *if_name, AGENT_RESULT *result)
 static int	NET_IF_TOTAL_PACKETS(const char *if_name, AGENT_RESULT *result)
 {
 	zbx_uint64_t	value_in, value_out;
+	char		*error = NULL;
 
-	if ((SUCCEED == get_kstat_named_field(if_name, "ipackets64", &value_in) &&
-			SUCCEED == get_kstat_named_field(if_name, "opackets64", &value_out)) ||
-			(SUCCEED == get_kstat_named_field(if_name, "ipackets", &value_in) &&
-			SUCCEED == get_kstat_named_field(if_name, "opackets", &value_out)))
+	if ((SUCCEED == get_kstat_named_field(if_name, "ipackets64", &value_in, &error) &&
+			SUCCEED == get_kstat_named_field(if_name, "opackets64", &value_out, &error)) ||
+			(SUCCEED == get_kstat_named_field(if_name, "ipackets", &value_in, &error) &&
+			SUCCEED == get_kstat_named_field(if_name, "opackets", &value_out, &error)))
 	{
 		SET_UI64_RESULT(result, value_in + value_out);
+		zbx_free(error);
 
 		return SYSINFO_RET_OK;
 	}
+
+	SET_MSG_RESULT(result, error);
 
 	return SYSINFO_RET_FAIL;
 }
@@ -186,14 +233,17 @@ static int	NET_IF_TOTAL_PACKETS(const char *if_name, AGENT_RESULT *result)
 static int	NET_IF_TOTAL_ERRORS(const char *if_name, AGENT_RESULT *result)
 {
 	zbx_uint64_t	value_in, value_out;
+	char		*error = NULL;
 
-	if (SUCCEED == get_kstat_named_field(if_name, "ierrors", &value_in) &&
-			SUCCEED == get_kstat_named_field(if_name, "oerrors", &value_out))
+	if (SUCCEED == get_kstat_named_field(if_name, "ierrors", &value_in, &error) &&
+			SUCCEED == get_kstat_named_field(if_name, "oerrors", &value_out, &error))
 	{
 		SET_UI64_RESULT(result, value_in + value_out);
 
 		return SYSINFO_RET_OK;
 	}
+
+	SET_MSG_RESULT(result, error);
 
 	return SYSINFO_RET_FAIL;
 }
@@ -201,22 +251,30 @@ static int	NET_IF_TOTAL_ERRORS(const char *if_name, AGENT_RESULT *result)
 int	NET_IF_COLLISIONS(AGENT_REQUEST *request, AGENT_RESULT *result)
 {
 	zbx_uint64_t	value;
-	char		*if_name;
+	char		*if_name, *error = NULL;
 
 	if (1 < request->nparam)
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Too many parameters."));
 		return SYSINFO_RET_FAIL;
+	}
 
 	if_name = get_rparam(request, 0);
 
 	if (NULL == if_name || '\0' == *if_name)
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid first parameter."));
 		return SYSINFO_RET_FAIL;
+	}
 
-	if (SUCCEED == get_kstat_named_field(if_name, "collisions", &value))
+	if (SUCCEED == get_kstat_named_field(if_name, "collisions", &value, &error))
 	{
 		SET_UI64_RESULT(result, value);
 
 		return SYSINFO_RET_OK;
 	}
+
+	SET_MSG_RESULT(result, error);
 
 	return SYSINFO_RET_FAIL;
 }
@@ -228,12 +286,18 @@ int	NET_TCP_LISTEN(AGENT_REQUEST *request, AGENT_RESULT *result)
 	int		res;
 
 	if (1 < request->nparam)
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Too many parameters."));
 		return SYSINFO_RET_FAIL;
+	}
 
 	port_str = get_rparam(request, 0);
 
 	if (NULL == port_str || SUCCEED != is_ushort(port_str, &port))
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid first parameter."));
 		return SYSINFO_RET_FAIL;
+	}
 
 	zbx_snprintf(command, sizeof(command), "netstat -an -P tcp | grep '\\.%hu[^.].*LISTEN' | wc -l", port);
 
@@ -253,12 +317,18 @@ int	NET_UDP_LISTEN(AGENT_REQUEST *request, AGENT_RESULT *result)
 	int		res;
 
 	if (1 < request->nparam)
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Too many parameters."));
 		return SYSINFO_RET_FAIL;
+	}
 
 	port_str = get_rparam(request, 0);
 
 	if (NULL == port_str || SUCCEED != is_ushort(port_str, &port))
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid first parameter."));
 		return SYSINFO_RET_FAIL;
+	}
 
 	zbx_snprintf(command, sizeof(command), "netstat -an -P udp | grep '\\.%hu[^.].*Idle' | wc -l", port);
 
@@ -277,13 +347,19 @@ int	NET_IF_IN(AGENT_REQUEST *request, AGENT_RESULT *result)
 	int	ret;
 
 	if (2 < request->nparam)
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Too many parameters."));
 		return SYSINFO_RET_FAIL;
+	}
 
 	if_name = get_rparam(request, 0);
 	mode = get_rparam(request, 1);
 
 	if (NULL == if_name || '\0' == *if_name)
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid first parameter."));
 		return SYSINFO_RET_FAIL;
+	}
 
 	if (NULL == mode || '\0' == *mode || 0 == strcmp(mode, "bytes"))
 		ret = NET_IF_IN_BYTES(if_name, result);
@@ -292,7 +368,10 @@ int	NET_IF_IN(AGENT_REQUEST *request, AGENT_RESULT *result)
 	else if (0 == strcmp(mode, "errors"))
 		ret = NET_IF_IN_ERRORS(if_name, result);
 	else
-		ret = SYSINFO_RET_FAIL;
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid second parameter."));
+		return SYSINFO_RET_FAIL;
+	}
 
 	return ret;
 }
@@ -303,13 +382,19 @@ int	NET_IF_OUT(AGENT_REQUEST *request, AGENT_RESULT *result)
 	int	ret;
 
 	if (2 < request->nparam)
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Too many parameters."));
 		return SYSINFO_RET_FAIL;
+	}
 
 	if_name = get_rparam(request, 0);
 	mode = get_rparam(request, 1);
 
 	if (NULL == if_name || '\0' == *if_name)
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid first parameter."));
 		return SYSINFO_RET_FAIL;
+	}
 
 	if (NULL == mode || '\0' == *mode || 0 ==strcmp(mode, "bytes"))
 		ret = NET_IF_OUT_BYTES(if_name, result);
@@ -318,7 +403,10 @@ int	NET_IF_OUT(AGENT_REQUEST *request, AGENT_RESULT *result)
 	else if (0 == strcmp(mode, "errors"))
 		ret = NET_IF_OUT_ERRORS(if_name, result);
 	else
-		ret = SYSINFO_RET_FAIL;
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid second parameter."));
+		return SYSINFO_RET_FAIL;
+	}
 
 	return ret;
 }
@@ -329,13 +417,19 @@ int	NET_IF_TOTAL(AGENT_REQUEST *request, AGENT_RESULT *result)
 	int	ret;
 
 	if (2 < request->nparam)
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Too many parameters."));
 		return SYSINFO_RET_FAIL;
+	}
 
 	if_name = get_rparam(request, 0);
 	mode = get_rparam(request, 1);
 
 	if (NULL == if_name || '\0' == *if_name)
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid first parameter."));
 		return SYSINFO_RET_FAIL;
+	}
 
 	if (NULL == mode || '\0' == *mode || 0 ==strcmp(mode, "bytes"))
 		ret = NET_IF_TOTAL_BYTES(if_name, result);
@@ -344,7 +438,10 @@ int	NET_IF_TOTAL(AGENT_REQUEST *request, AGENT_RESULT *result)
 	else if (0 == strcmp(mode, "errors"))
 		ret = NET_IF_TOTAL_ERRORS(if_name, result);
 	else
-		ret = SYSINFO_RET_FAIL;
+	{
+		SET_MSG_RESULT(result, zbx_strdup(NULL, "Invalid second parameter."));
+		return SYSINFO_RET_FAIL;
+	}
 
 	return ret;
 }
@@ -356,7 +453,10 @@ int	NET_IF_DISCOVERY(AGENT_REQUEST *request, AGENT_RESULT *result)
 	int			i;
 
 	if (NULL == (ni = if_nameindex()))
+	{
+		SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot obtain system information: %s", zbx_strerror(errno)));
 		return SYSINFO_RET_FAIL;
+	}
 
 	zbx_json_init(&j, ZBX_JSON_STAT_BUF_LEN);
 

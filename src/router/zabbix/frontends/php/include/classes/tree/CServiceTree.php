@@ -17,8 +17,7 @@
 ** along with this program; if not, write to the Free Software
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
-?>
-<?php
+
 
 /**
  * A class for rendering service trees.
@@ -36,26 +35,27 @@ class CServiceTree extends CTree {
 	 * @return CCol
 	 */
 	protected function makeCol($rowId, $colName) {
-		$class = null;
+		$config = select_config();
 
-		if ($colName == 'status' && zbx_is_int($this->tree[$rowId][$colName]) && $this->tree[$rowId]['id'] > 0) {
-			$status = $this->tree[$rowId][$colName];
+		switch ($colName) {
+			case 'status':
+				if (zbx_is_int($this->tree[$rowId][$colName]) && $this->tree[$rowId]['id'] > 0) {
+					$status = $this->tree[$rowId][$colName];
 
-			// do not show the severity for information and unclassified triggers
-			if (in_array($status, array(TRIGGER_SEVERITY_INFORMATION, TRIGGER_SEVERITY_NOT_CLASSIFIED))) {
-				$this->tree[$rowId][$colName] = new CSpan(_('OK'), 'green');
-			}
-			else {
-				$this->tree[$rowId][$colName] = getSeverityCaption($status);
-				$class = getSeverityStyle($status);
-			}
+					// do not show the severity for information and unclassified triggers
+					if (in_array($status, [TRIGGER_SEVERITY_INFORMATION, TRIGGER_SEVERITY_NOT_CLASSIFIED])) {
+						return (new CCol(_('OK')))->addClass(ZBX_STYLE_GREEN);
+					}
+					else {
+						return (new CCol(getSeverityName($status, $config)))->addClass(getSeverityStyle($status));
+					}
+				}
+				break;
+
+			case 'sla':
+				return parent::makeCol($rowId, $colName)->addClass(ZBX_STYLE_CELL_WIDTH);
 		}
 
-		$col = parent::makeCol($rowId, $colName);
-		$col->addClass($class);
-
-		return $col;
+		return parent::makeCol($rowId, $colName);
 	}
-
 }
-

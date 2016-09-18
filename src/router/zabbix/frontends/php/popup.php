@@ -24,17 +24,16 @@ require_once dirname(__FILE__).'/include/hosts.inc.php';
 require_once dirname(__FILE__).'/include/triggers.inc.php';
 require_once dirname(__FILE__).'/include/items.inc.php';
 require_once dirname(__FILE__).'/include/users.inc.php';
-require_once dirname(__FILE__).'/include/nodes.inc.php';
 require_once dirname(__FILE__).'/include/js.inc.php';
 require_once dirname(__FILE__).'/include/discovery.inc.php';
 
-$srctbl = get_request('srctbl', ''); // source table name
+$srctbl = getRequest('srctbl', ''); // source table name
 
 // set page title
 switch ($srctbl) {
 	case 'hosts':
 		$page['title'] = _('Hosts');
-		$min_user_type = USER_TYPE_ZABBIX_ADMIN;
+		$min_user_type = USER_TYPE_ZABBIX_USER;
 		break;
 	case 'templates':
 		$page['title'] = _('Templates');
@@ -60,21 +59,21 @@ switch ($srctbl) {
 		$page['title'] = _('Triggers');
 		$min_user_type = USER_TYPE_ZABBIX_USER;
 		break;
+	case 'trigger_prototypes':
+		$page['title'] = _('Trigger prototypes');
+		$min_user_type = USER_TYPE_ZABBIX_ADMIN;
+		break;
 	case 'usrgrp':
 		$page['title'] = _('User groups');
-		$min_user_type = USER_TYPE_ZABBIX_ADMIN;
+		$min_user_type = USER_TYPE_ZABBIX_USER;
 		break;
 	case 'users':
 		$page['title'] = _('Users');
-		$min_user_type = USER_TYPE_ZABBIX_ADMIN;
+		$min_user_type = USER_TYPE_ZABBIX_USER;
 		break;
 	case 'items':
 		$page['title'] = _('Items');
 		$min_user_type = USER_TYPE_ZABBIX_USER;
-		break;
-	case 'prototypes':
-		$page['title'] = _('Prototypes');
-		$min_user_type = USER_TYPE_ZABBIX_ADMIN;
 		break;
 	case 'help_items':
 		$page['title'] = _('Standard items');
@@ -92,6 +91,14 @@ switch ($srctbl) {
 		$page['title'] = _('Graphs');
 		$min_user_type = USER_TYPE_ZABBIX_USER;
 		break;
+	case 'graph_prototypes':
+		$page['title'] = _('Graph prototypes');
+		$min_user_type = USER_TYPE_ZABBIX_ADMIN;
+		break;
+	case 'item_prototypes':
+		$page['title'] = _('Item prototypes');
+		$min_user_type = USER_TYPE_ZABBIX_ADMIN;
+		break;
 	case 'sysmaps':
 		$page['title'] = _('Maps');
 		$min_user_type = USER_TYPE_ZABBIX_USER;
@@ -99,10 +106,6 @@ switch ($srctbl) {
 	case 'screens2':
 		$page['title'] = _('Screens');
 		$min_user_type = USER_TYPE_ZABBIX_ADMIN;
-		break;
-	case 'nodes':
-		$page['title'] = _('Nodes');
-		$min_user_type = USER_TYPE_ZABBIX_USER;
 		break;
 	case 'drules':
 		$page['title'] = _('Discovery rules');
@@ -138,18 +141,19 @@ if ($min_user_type > CWebUser::$data['type']) {
  * Fields
  */
 // allowed 'srcfld*' parameter values for each 'srctbl' value
-$allowedSrcFields = array(
+$allowedSrcFields = [
 	'users'					=> '"usergrpid", "alias", "fullname", "userid"',
 	'triggers'				=> '"description", "triggerid", "expression"',
+	'trigger_prototypes'	=> '"description", "triggerid", "expression"',
 	'items'					=> '"itemid", "name"',
-	'prototypes'			=> '"itemid", "name", "flags"',
 	'graphs'				=> '"graphid", "name"',
+	'graph_prototypes'		=> '"graphid", "name"',
+	'item_prototypes'		=> '"itemid", "name", "flags"',
 	'sysmaps'				=> '"sysmapid", "name"',
 	'slides'				=> '"slideshowid"',
 	'help_items'			=> '"key"',
 	'screens'				=> '"screenid"',
 	'screens2'				=> '"screenid", "name"',
-	'nodes'					=> '"nodeid", "name"',
 	'drules'				=> '"druleid", "name"',
 	'dchecks'				=> '"dcheckid", "name"',
 	'proxies'				=> '"hostid", "host"',
@@ -160,143 +164,128 @@ $allowedSrcFields = array(
 	'templates'				=> '"hostid", "host"',
 	'host_templates'		=> '"hostid", "host"',
 	'host_groups'			=> '"groupid", "name"'
-);
+];
 
 // VAR	TYPE	OPTIONAL	FLAGS	VALIDATION	EXCEPTION
-$fields = array(
-	'dstfrm' =>						array(T_ZBX_STR, O_OPT, P_SYS,	NOT_EMPTY,	'!isset({multiselect})'),
-	'dstfld1' =>					array(T_ZBX_STR, O_OPT, P_SYS,	NOT_EMPTY,	'!isset({multiselect})'),
-	'srctbl' =>						array(T_ZBX_STR, O_MAND, P_SYS,	NOT_EMPTY,	null),
-	'srcfld1' =>					array(T_ZBX_STR, O_MAND, P_SYS,	IN($allowedSrcFields[$_REQUEST['srctbl']]), null),
-	'nodeid' =>						array(T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		null),
-	'groupid' =>					array(T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		null),
-	'group' =>						array(T_ZBX_STR, O_OPT, null,	null,		null),
-	'hostid' =>						array(T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		null),
-	'host' =>						array(T_ZBX_STR, O_OPT, null,	null,		null),
-	'parent_discoveryid' =>			array(T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		null),
-	'screenid' =>					array(T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		null),
-	'templates' =>					array(T_ZBX_STR, O_OPT, null,	NOT_EMPTY,	null),
-	'host_templates' =>				array(T_ZBX_STR, O_OPT, null,	NOT_EMPTY,	null),
-	'multiselect' =>				array(T_ZBX_INT, O_OPT, null,	null,		null),
-	'submit' =>						array(T_ZBX_STR, O_OPT, null,	null,		null),
-	'excludeids' =>					array(T_ZBX_STR, O_OPT, null,	null,		null),
-	'only_hostid' =>				array(T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		null),
-	'monitored_hosts' =>			array(T_ZBX_INT, O_OPT, null,	IN('0,1'),	null),
-	'templated_hosts' =>			array(T_ZBX_INT, O_OPT, null,	IN('0,1'),	null),
-	'real_hosts' =>					array(T_ZBX_INT, O_OPT, null,	IN('0,1'),	null),
-	'normal_only' =>				array(T_ZBX_INT, O_OPT, null,	IN('0,1'),	null),
-	'with_applications' =>			array(T_ZBX_INT, O_OPT, null,	IN('0,1'),	null),
-	'with_graphs' =>				array(T_ZBX_INT, O_OPT, null,	IN('0,1'),	null),
-	'with_items' =>					array(T_ZBX_INT, O_OPT, null,	IN('0,1'),	null),
-	'with_simple_graph_items' =>	array(T_ZBX_INT, O_OPT, null,	IN('0,1'),	null),
-	'with_triggers' =>				array(T_ZBX_INT, O_OPT, null,	IN('0,1'),	null),
-	'with_monitored_triggers' =>	array(T_ZBX_INT, O_OPT, null,	IN('0,1'),	null),
-	'itemtype' =>					array(T_ZBX_INT, O_OPT, null,	null,		null),
-	'value_types' =>				array(T_ZBX_INT, O_OPT, null,	BETWEEN(0, 15), null),
-	'numeric' =>					array(T_ZBX_INT, O_OPT, null,	IN('0,1'),	null),
-	'reference' =>					array(T_ZBX_STR, O_OPT, null,	null,		null),
-	'writeonly' =>					array(T_ZBX_STR, O_OPT, null,	null,		null),
-	'noempty' =>					array(T_ZBX_STR, O_OPT, null,	null,		null),
-	'select' =>						array(T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,	null),
-	'submitParent' =>				array(T_ZBX_INT, O_OPT, null,	IN('0,1'),	null)
-);
+$fields = [
+	'dstfrm' =>						[T_ZBX_STR, O_OPT, P_SYS,	NOT_EMPTY,	'!isset({multiselect})'],
+	'dstfld1' =>					[T_ZBX_STR, O_OPT, P_SYS,	NOT_EMPTY,	'!isset({multiselect})'],
+	'srctbl' =>						[T_ZBX_STR, O_MAND, P_SYS,	NOT_EMPTY,	null],
+	'srcfld1' =>					[T_ZBX_STR, O_MAND, P_SYS,	IN($allowedSrcFields[$_REQUEST['srctbl']]), null],
+	'groupid' =>					[T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		null],
+	'group' =>						[T_ZBX_STR, O_OPT, null,	null,		null],
+	'hostid' =>						[T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		null],
+	'host' =>						[T_ZBX_STR, O_OPT, null,	null,		null],
+	'parent_discoveryid' =>			[T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		null],
+	'screenid' =>					[T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		null],
+	'templates' =>					[T_ZBX_STR, O_OPT, null,	NOT_EMPTY,	null],
+	'host_templates' =>				[T_ZBX_STR, O_OPT, null,	NOT_EMPTY,	null],
+	'multiselect' =>				[T_ZBX_INT, O_OPT, null,	null,		null],
+	'submit' =>						[T_ZBX_STR, O_OPT, null,	null,		null],
+	'excludeids' =>					[T_ZBX_STR, O_OPT, null,	null,		null],
+	'only_hostid' =>				[T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		null],
+	'monitored_hosts' =>			[T_ZBX_INT, O_OPT, null,	IN('0,1'),	null],
+	'templated_hosts' =>			[T_ZBX_INT, O_OPT, null,	IN('0,1'),	null],
+	'real_hosts' =>					[T_ZBX_INT, O_OPT, null,	IN('0,1'),	null],
+	'normal_only' =>				[T_ZBX_INT, O_OPT, null,	IN('0,1'),	null],
+	'with_applications' =>			[T_ZBX_INT, O_OPT, null,	IN('0,1'),	null],
+	'with_graphs' =>				[T_ZBX_INT, O_OPT, null,	IN('0,1'),	null],
+	'with_items' =>					[T_ZBX_INT, O_OPT, null,	IN('0,1'),	null],
+	'with_simple_graph_items' =>	[T_ZBX_INT, O_OPT, null,	IN('0,1'),	null],
+	'with_triggers' =>				[T_ZBX_INT, O_OPT, null,	IN('0,1'),	null],
+	'with_monitored_triggers' =>	[T_ZBX_INT, O_OPT, null,	IN('0,1'),	null],
+	'itemtype' =>					[T_ZBX_INT, O_OPT, null,	null,		null],
+	'value_types' =>				[T_ZBX_INT, O_OPT, null,	BETWEEN(0, 15), null],
+	'numeric' =>					[T_ZBX_INT, O_OPT, null,	IN('0,1'),	null],
+	'reference' =>					[T_ZBX_STR, O_OPT, null,	null,		null],
+	'writeonly' =>					[T_ZBX_STR, O_OPT, null,	null,		null],
+	'noempty' =>					[T_ZBX_STR, O_OPT, null,	null,		null],
+	'select' =>						[T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,	null],
+	'submitParent' =>				[T_ZBX_INT, O_OPT, null,	IN('0,1'),	null],
+	'templateid' =>					[T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		null]
+];
 
 // unset disabled item types
-$allowed_item_types = array(ITEM_TYPE_ZABBIX, ITEM_TYPE_ZABBIX_ACTIVE, ITEM_TYPE_SIMPLE, ITEM_TYPE_INTERNAL, ITEM_TYPE_AGGREGATE, ITEM_TYPE_SNMPTRAP);
-if (isset($_REQUEST['itemtype']) && !str_in_array($_REQUEST['itemtype'], $allowed_item_types)) {
+$allowedItemTypes = [ITEM_TYPE_ZABBIX, ITEM_TYPE_ZABBIX_ACTIVE, ITEM_TYPE_SIMPLE, ITEM_TYPE_INTERNAL,
+	ITEM_TYPE_AGGREGATE, ITEM_TYPE_SNMPTRAP, ITEM_TYPE_DB_MONITOR
+];
+if (hasRequest('itemtype') && !str_in_array(getRequest('itemtype'), $allowedItemTypes)) {
 	unset($_REQUEST['itemtype']);
 }
 
 // set destination/source fields
 $dstfldCount = countRequest('dstfld');
 for ($i = 2; $i <= $dstfldCount; $i++) {
-	$fields['dstfld'.$i] = array(T_ZBX_STR, O_OPT, P_SYS, null, null);
+	$fields['dstfld'.$i] = [T_ZBX_STR, O_OPT, P_SYS, null, null];
 }
 $srcfldCount = countRequest('srcfld');
 for ($i = 2; $i <= $srcfldCount; $i++) {
-	$fields['srcfld'.$i] = array(T_ZBX_STR, O_OPT, P_SYS, IN($allowedSrcFields[$_REQUEST['srctbl']]), null);
+	$fields['srcfld'.$i] = [T_ZBX_STR, O_OPT, P_SYS, IN($allowedSrcFields[$_REQUEST['srctbl']]), null];
 }
 check_fields($fields);
 
 // validate permissions
-if (get_request('only_hostid')) {
-	if (!API::Host()->isReadable(array($_REQUEST['only_hostid']))) {
+if (getRequest('only_hostid')) {
+	if (!API::Host()->isReadable([$_REQUEST['only_hostid']])) {
 		access_deny();
 	}
 }
 else {
-	if (get_request('hostid') && !API::Host()->isReadable(array($_REQUEST['hostid'])) ||
-			get_request('groupid') && !API::HostGroup()->isReadable(array($_REQUEST['groupid']))) {
+	if (getRequest('hostid') && !API::Host()->isReadable([$_REQUEST['hostid']]) ||
+			getRequest('groupid') && !API::HostGroup()->isReadable([$_REQUEST['groupid']])) {
 		access_deny();
 	}
-	if (get_request('nodeid')) {
-		$node = get_node_by_nodeid($_REQUEST['nodeid']);
-		if (!$node) {
-			access_deny();
-		}
-	}
 }
-if (get_request('parent_discoveryid') && !API::DiscoveryRule()->isReadable(array($_REQUEST['parent_discoveryid']))) {
+if (getRequest('parent_discoveryid') && !API::DiscoveryRule()->isReadable([$_REQUEST['parent_discoveryid']])) {
 	access_deny();
 }
 
-$dstfrm = get_request('dstfrm', ''); // destination form
-$dstfld1 = get_request('dstfld1', ''); // output field on destination form
-$dstfld2 = get_request('dstfld2', ''); // second output field on destination form
-$dstfld3 = get_request('dstfld3', ''); // third output field on destination form
-$srcfld1 = get_request('srcfld1', ''); // source table field [can be different from fields of source table]
-$srcfld2 = get_request('srcfld2', null); // second source table field [can be different from fields of source table]
-$srcfld3 = get_request('srcfld3', null); //  source table field [can be different from fields of source table]
-$multiselect = get_request('multiselect', 0); // if create popup with checkboxes
-$dstact = get_request('dstact', '');
-$writeonly = get_request('writeonly');
-$withApplications = get_request('with_applications', 0);
-$withGraphs = get_request('with_graphs', 0);
-$withItems = get_request('with_items', 0);
-$noempty = get_request('noempty'); // display/hide "Empty" button
-$excludeids = zbx_toHash(getRequest('excludeids', array()));
-$reference = get_request('reference', get_request('srcfld1', 'unknown'));
-$realHosts = get_request('real_hosts', 0);
-$monitoredHosts = get_request('monitored_hosts', 0);
-$templatedHosts = get_request('templated_hosts', 0);
-$withSimpleGraphItems = get_request('with_simple_graph_items', 0);
-$withTriggers = get_request('with_triggers', 0);
-$withMonitoredTriggers = get_request('with_monitored_triggers', 0);
-$submitParent = get_request('submitParent', 0);
-$normalOnly = get_request('normal_only');
-$nodeId = get_request('nodeid', get_current_nodeid(false));
-$group = get_request('group', '');
-$host = get_request('host', '');
-$onlyHostid = get_request('only_hostid', null);
+$dstfrm = getRequest('dstfrm', ''); // destination form
+$dstfld1 = getRequest('dstfld1', ''); // output field on destination form
+$dstfld2 = getRequest('dstfld2', ''); // second output field on destination form
+$dstfld3 = getRequest('dstfld3', ''); // third output field on destination form
+$srcfld1 = getRequest('srcfld1', ''); // source table field [can be different from fields of source table]
+$srcfld2 = getRequest('srcfld2'); // second source table field [can be different from fields of source table]
+$srcfld3 = getRequest('srcfld3'); //  source table field [can be different from fields of source table]
+$multiselect = getRequest('multiselect', 0); // if create popup with checkboxes
+$dstact = getRequest('dstact', '');
+$writeonly = getRequest('writeonly');
+$withApplications = getRequest('with_applications', 0);
+$withGraphs = getRequest('with_graphs', 0);
+$withItems = getRequest('with_items', 0);
+$noempty = getRequest('noempty'); // display/hide "Empty" button
+$excludeids = zbx_toHash(getRequest('excludeids', []));
+$reference = getRequest('reference', getRequest('srcfld1', 'unknown'));
+$realHosts = getRequest('real_hosts', 0);
+$monitoredHosts = getRequest('monitored_hosts', 0);
+$templatedHosts = getRequest('templated_hosts', 0);
+$withSimpleGraphItems = getRequest('with_simple_graph_items', 0);
+$withTriggers = getRequest('with_triggers', 0);
+$withMonitoredTriggers = getRequest('with_monitored_triggers', 0);
+$submitParent = getRequest('submitParent', 0);
+$normalOnly = getRequest('normal_only');
+$group = getRequest('group', '');
+$host = getRequest('host', '');
+$onlyHostid = getRequest('only_hostid');
+$parentDiscoveryId = getRequest('parent_discoveryid');
+$templateid = getRequest('templateid');
+
 if (isset($onlyHostid)) {
 	$_REQUEST['hostid'] = $onlyHostid;
-	unset($_REQUEST['groupid'], $_REQUEST['nodeid']);
+
+	unset($_REQUEST['groupid']);
 }
 
 // value types
 $value_types = null;
-if (get_request('value_types')) {
-	$value_types = get_request('value_types');
+if (getRequest('value_types')) {
+	$value_types = getRequest('value_types');
 }
-elseif (get_request('numeric')) {
-	$value_types = array(ITEM_VALUE_TYPE_FLOAT, ITEM_VALUE_TYPE_UINT64);
-}
-
-// choose nodes
-// if an LLD rule is selected, use its node
-if (hasRequest('parent_discoveryid')) {
-	$nodeId = id2nodeid(getRequest('parent_discoveryid'));
-}
-// if a host is selected, use its node
-elseif (hasRequest('only_hostid')) {
-	$nodeId = id2nodeid(getRequest('only_hostid'));
-}
-// if nothing specific is selected, use the chosen node or fall back to the local node
-else {
-	$nodeId = getRequest('nodeid', get_current_nodeid(false));
+elseif (getRequest('numeric')) {
+	$value_types = [ITEM_VALUE_TYPE_FLOAT, ITEM_VALUE_TYPE_UINT64];
 }
 
-clearCookies(true);
+uncheckTableRows();
 
 function get_window_opener($frame, $field, $value) {
 	if (empty($field)) {
@@ -328,13 +317,13 @@ if (!empty($host)) {
 	unset($dbHost);
 }
 
-$options = array(
-	'config' => array('select_latest' => true, 'deny_all' => true, 'popupDD' => true),
-	'groups' => array('nodeids' => $nodeId),
-	'hosts' => array('nodeids' => $nodeId),
-	'groupid' => get_request('groupid', null),
-	'hostid' => get_request('hostid', null)
-);
+$options = [
+	'config' => ['select_latest' => true, 'deny_all' => true, 'popupDD' => true],
+	'groups' => [],
+	'hosts' => [],
+	'groupid' => getRequest('groupid'),
+	'hostid' => getRequest('hostid')
+];
 
 if (!is_null($writeonly)) {
 	$options['groups']['editable'] = true;
@@ -415,6 +404,8 @@ if (isset($onlyHostid)) {
 /*
  * Display table header
  */
+$widget = (new CWidget())->setTitle($page['title']);
+
 $frmTitle = new CForm();
 if ($monitoredHosts) {
 	$frmTitle->addVar('monitored_hosts', 1);
@@ -455,8 +446,11 @@ if (hasRequest('excludeids')) {
 if (isset($onlyHostid)) {
 	$frmTitle->addVar('only_hostid', $onlyHostid);
 }
-if (get_request('screenid')) {
-	$frmTitle->addVar('screenid', get_request('screenid'));
+if (getRequest('screenid')) {
+	$frmTitle->addVar('screenid', getRequest('screenid'));
+}
+if (hasRequest('templateid')) {
+	$frmTitle->addVar('templateid', $templateid);
 }
 
 // adding param to a form, so that it would remain when page is refreshed
@@ -470,90 +464,80 @@ $frmTitle->addVar('submitParent', $submitParent);
 $frmTitle->addVar('noempty', $noempty);
 
 for ($i = 1; $i <= $dstfldCount; $i++) {
-	$frmTitle->addVar('dstfld'.$i, get_request('dstfld'.$i));
+	$frmTitle->addVar('dstfld'.$i, getRequest('dstfld'.$i));
 }
 for ($i = 1; $i <= $srcfldCount; $i++) {
-	$frmTitle->addVar('srcfld'.$i, get_request('srcfld'.$i));
-}
-
-/*
- * Nodes
- */
-// only display the node dropdown for DM setups
-// don't display it for help item pop ups
-if (ZBX_DISTRIBUTED && $srctbl != 'help_items' && $srctbl != 'nodes') {
-	$nodeComboBox = new CComboBox('nodeid', $nodeId, 'submit()');
-
-	$dbNodes = DBselect(
-		'SELECT n.*'.
-		' FROM nodes n'.
-		' WHERE '.dbConditionInt('n.nodeid', get_accessible_nodes_by_user(CWebUser::$data, PERM_READ))
-	);
-	while ($dbNode = DBfetch($dbNodes)) {
-		$nodeComboBox->addItem($dbNode['nodeid'], $dbNode['name']);
-	}
-
-	// disable node selection if we show objects from only one host or LLD rule
-	if (hasRequest('only_hostid') || hasRequest('parent_discoveryid')) {
-		$nodeComboBox->setEnabled('disabled');
-	}
-
-	$frmTitle->addItem(array(SPACE, _('Node'), SPACE, $nodeComboBox, SPACE));
+	$frmTitle->addVar('srcfld'.$i, getRequest('srcfld'.$i));
 }
 
 /*
  * Only host id
  */
+
+$controls = [];
+
 if (isset($onlyHostid)) {
-	$only_hosts = API::Host()->get(array(
+	$only_hosts = API::Host()->get([
 		'hostids' => $hostid,
 		'templated_hosts' => true,
-		'output' => array('hostid', 'host'),
+		'output' => ['hostid', 'host', 'name'],
 		'limit' => 1
-	));
+	]);
 	$host = reset($only_hosts);
 
 	$cmbHosts = new CComboBox('hostid', $hostid);
-	$cmbHosts->addItem($hostid, $host['host']);
-	$cmbHosts->setEnabled('disabled');
+	$cmbHosts->addItem($hostid, $host['name']);
+	$cmbHosts->setEnabled(false);
 	$cmbHosts->setAttribute('title', _('You can not switch hosts for current selection.'));
-	$frmTitle->addItem(array(SPACE, _('Host'), SPACE, $cmbHosts));
+	$controls[] = [SPACE, _('Host'), SPACE, $cmbHosts];
 }
 else {
-	if (str_in_array($srctbl, array('triggers', 'items', 'applications', 'graphs', 'templates', 'hosts',
-			'host_templates'))) {
-		$frmTitle->addItem(array(_('Group'), SPACE, $pageFilter->getGroupsCB()));
+	// show Group dropdown in header for these specified sources
+	$showGroupCmbBox = ['triggers', 'items', 'applications', 'graphs', 'graph_prototypes', 'item_prototypes',
+		'templates', 'hosts', 'host_templates'
+	];
+	if (str_in_array($srctbl, $showGroupCmbBox) && ($srctbl !== 'item_prototypes' || !$parentDiscoveryId)) {
+		$controls[] = [_('Group'), SPACE, $pageFilter->getGroupsCB()];
 	}
-	if (str_in_array($srctbl, array('help_items'))) {
-		$itemtype = get_request('itemtype', 0);
-		$cmbTypes = new CComboBox('itemtype', $itemtype, 'javascript: submit();');
 
-		foreach ($allowed_item_types as $type) {
+	// show Type dropdown in header for help items
+	if ($srctbl === 'help_items') {
+		$itemType = getRequest('itemtype', 0);
+		$cmbTypes = new CComboBox('itemtype', $itemType, 'javascript: submit();');
+
+		foreach ($allowedItemTypes as $type) {
 			$cmbTypes->addItem($type, item_type2str($type));
 		}
-		$frmTitle->addItem(array(_('Type'), SPACE, $cmbTypes));
+
+		$controls[] = [_('Type'), SPACE, $cmbTypes];
 	}
-	if (str_in_array($srctbl, array('triggers', 'items', 'applications', 'graphs'))) {
-		$frmTitle->addItem(array(SPACE, _('Host'), SPACE, $pageFilter->getHostsCB()));
+
+	// show Host dropdown in header for these specified sources
+	$showHostCmbBox = ['triggers', 'items', 'applications', 'graphs', 'graph_prototypes', 'item_prototypes'];
+	if (str_in_array($srctbl, $showHostCmbBox) && ($srctbl !== 'item_prototypes' || !$parentDiscoveryId)) {
+		$controls[] = [SPACE, _('Host'), SPACE, $pageFilter->getHostsCB()];
 	}
 }
 
-if (str_in_array($srctbl, array('applications', 'triggers'))) {
+if (str_in_array($srctbl, ['applications', 'triggers'])) {
 	if (zbx_empty($noempty)) {
-		$value1 = isset($_REQUEST['dstfld1']) && zbx_strpos($_REQUEST['dstfld1'], 'id') !== false ? 0 : '';
-		$value2 = isset($_REQUEST['dstfld2']) && zbx_strpos($_REQUEST['dstfld2'], 'id') !== false ? 0 : '';
-		$value3 = isset($_REQUEST['dstfld3']) && zbx_strpos($_REQUEST['dstfld3'], 'id') !== false ? 0 : '';
+		$value1 = isset($_REQUEST['dstfld1']) && strpos($_REQUEST['dstfld1'], 'id') !== false ? 0 : '';
+		$value2 = isset($_REQUEST['dstfld2']) && strpos($_REQUEST['dstfld2'], 'id') !== false ? 0 : '';
+		$value3 = isset($_REQUEST['dstfld3']) && strpos($_REQUEST['dstfld3'], 'id') !== false ? 0 : '';
 
 		$epmtyScript = get_window_opener($dstfrm, $dstfld1, $value1);
 		$epmtyScript .= get_window_opener($dstfrm, $dstfld2, $value2);
 		$epmtyScript .= get_window_opener($dstfrm, $dstfld3, $value3);
 		$epmtyScript .= ' close_window(); return false;';
 
-		$frmTitle->addItem(array(SPACE, new CButton('empty', _('Empty'), $epmtyScript)));
+		$controls[] = [SPACE, (new CButton('empty', _('Empty')))->onClick($epmtyScript)];
 	}
 }
 
-show_table_header($page['title'], $frmTitle);
+if ($controls) {
+	$frmTitle->addItem(new CList($controls));
+}
+$widget->setControls($frmTitle);
 
 insert_js_function('addSelectedValues');
 insert_js_function('addValues');
@@ -563,149 +547,182 @@ insert_js_function('addValue');
  * User group
  */
 if ($srctbl == 'usrgrp') {
-	$form = new CForm();
-	$form->setName('usrgrpform');
-	$form->setAttribute('id', 'usrgrps');
+	$form = (new CForm())
+		->setName('usrgrpform')
+		->setId('usrgrps');
 
-	$table = new CTableInfo(_('No user groups found.'));
-	$table->setHeader(array(
-		$multiselect ? new CCheckBox('all_usrgrps', null, "javascript: checkAll('".$form->getName()."', 'all_usrgrps', 'usrgrps');") : null,
-		_('Name')
-	));
+	$table = (new CTableInfo())
+		->setHeader([
+			$multiselect
+				? (new CColHeader(
+					(new CCheckBox('all_usrgrps'))
+						->onClick("javascript: checkAll('".$form->getName()."', 'all_usrgrps', 'usrgrps');")
+				))->addClass(ZBX_STYLE_CELL_WIDTH)
+				: null,
+			_('Name')
+		]);
 
-	$options = array(
-		'nodeids' => $nodeId,
+	$options = [
 		'output' => API_OUTPUT_EXTEND,
 		'preservekeys' => true
-	);
+	];
 	if (!is_null($writeonly)) {
 		$options['editable'] = true;
 	}
 	$userGroups = API::UserGroup()->get($options);
 	order_result($userGroups, 'name');
 
+	$parentid = $dstfld1 ? zbx_jsvalue($dstfld1) : 'null';
+
 	foreach ($userGroups as $userGroup) {
-		$name = new CSpan($userGroup['name'], 'link');
-		$name->attr('id', 'spanid'.$userGroup['usrgrpid']);
+		$name = (new CLink($userGroup['name'], 'javascript:void(0);'))
+			->setId('spanid'.$userGroup['usrgrpid']);
 
 		if ($multiselect) {
-			$js_action = "javascript: addValue(".zbx_jsvalue($reference).', '.zbx_jsvalue($userGroup['usrgrpid']).');';
+			$js_action = "javascript: addValue(".zbx_jsvalue($reference).', '.zbx_jsvalue($userGroup['usrgrpid']).', '.
+				$parentid.');';
 		}
 		else {
-			$values = array(
+			$values = [
 				$dstfld1 => $userGroup[$srcfld1],
 				$dstfld2 => $userGroup[$srcfld2]
-			);
-			$js_action = 'javascript: addValues('.zbx_jsvalue($dstfrm).', '.zbx_jsvalue($values).'); close_window(); return false;';
+			];
+			$js_action = 'javascript: addValues('.zbx_jsvalue($dstfrm).', '.zbx_jsvalue($values).', '.
+				$parentid.'); close_window(); return false;';
 		}
-		$name->setAttribute('onclick', $js_action.' jQuery(this).removeAttr("onclick");');
+		$name->onClick($js_action.' jQuery(this).removeAttr("onclick");');
 
-		$table->addRow(array(
-			$multiselect ? new CCheckBox('usrgrps['.$userGroup['usrgrpid'].']', null, null, $userGroup['usrgrpid']) : null,
+		$table->addRow([
+			$multiselect
+				? new CCheckBox('usrgrps['.$userGroup['usrgrpid'].']', $userGroup['usrgrpid'])
+				: null,
 			$name,
-		));
+		]);
 	}
 
 	if ($multiselect) {
-		$button = new CButton('select', _('Select'), "javascript: addSelectedValues('usrgrps', ".zbx_jsvalue($reference).');');
-		$table->setFooter(new CCol($button, 'right'));
+		$table->setFooter(
+			new CCol(
+				(new CButton('select', _('Select')))
+					->onClick("javascript: addSelectedValues('usrgrps', ".zbx_jsvalue($reference).', '.$parentid.');')
+			)
+		);
 
 		insert_js('var popupReference = '.zbx_jsvalue($userGroups, true).';');
 	}
-	zbx_add_post_js('chkbxRange.pageGoName = "usrgrps";');
 
 	$form->addItem($table);
-	$form->show();
+	$widget->addItem($form)->show();
 }
 /*
  * Users
  */
-elseif ($srctbl == 'users') {
-	$form = new CForm();
-	$form->setName('userform');
-	$form->setAttribute('id', 'users');
+elseif ($srctbl === 'users') {
+	$form = (new CForm())
+		->setName('userform')
+		->setId('users');
 
-	$table = new CTableInfo(_('No users found.'));
-	$table->setHeader(array(
-		($multiselect ? new CCheckBox('all_users', null, "javascript: checkAll('".$form->getName()."', 'all_users', 'users');") : null),
-		_('Alias'),
-		_('Name'),
-		_('Surname')
-	));
+	$table = (new CTableInfo())
+		->setHeader([
+			$multiselect
+				? (new CColHeader(
+					(new CCheckBox('all_users'))
+						->onClick("javascript: checkAll('".$form->getName()."', 'all_users', 'users');")
+				))->addClass(ZBX_STYLE_CELL_WIDTH)
+				: null,
+			_('Alias'),
+			_x('Name', 'user first name'),
+			_('Surname')
+		]);
 
-	$options = array(
-		'nodeids' => $nodeId,
-		'output' => array('alias', 'name', 'surname', 'type', 'theme', 'lang'),
+	$options = [
+		'output' => ['alias', 'name', 'surname', 'type', 'theme', 'lang'],
 		'preservekeys' => true
-	);
-	if (!is_null($writeonly)) {
+	];
+
+	if ($writeonly !== null) {
 		$options['editable'] = true;
 	}
+
 	$users = API::User()->get($options);
 	order_result($users, 'alias');
 
+	$data = [];
+	$parentid = $dstfld1 ? zbx_jsvalue($dstfld1) : 'null';
+
 	foreach ($users as &$user) {
-		$alias = new CSpan($user['alias'], 'link');
-		$alias->attr('id', 'spanid'.$user['userid']);
-
-		if (isset($srcfld2) && $srcfld2 == 'fullname') {
-			$user[$srcfld2] = getUserFullname($user);
-		}
-
 		if ($multiselect) {
-			$js_action = 'javascript: addValue('.zbx_jsvalue($reference).', '.zbx_jsvalue($user['userid']).');';
+			$checkBox = new CCheckBox('users['.$user['userid'].']', $user['userid']);
 		}
-		else {
-			$values = array(
-				$dstfld1 => $user[$srcfld1]
-			);
-			if (isset($srcfld2)) {
-				$values[$dstfld2] = $user[$srcfld2];
-			}
-			$js_action = 'javascript: addValues('.zbx_jsvalue($dstfrm).', '.zbx_jsvalue($values).'); close_window(); return false;';
-		}
-		$alias->setAttribute('onclick', $js_action.' jQuery(this).removeAttr("onclick");');
 
-		$table->addRow(array(
-			$multiselect ? new CCheckBox('users['.zbx_jsValue($user[$srcfld1]).']', null, null, $user['userid']) : null,
-			$alias,
-			$user['name'],
-			$user['surname']
-		));
+		$js_action = 'javascript: addValue('.zbx_jsvalue($reference).', '.zbx_jsvalue($user['userid']).', '.
+			$parentid.'); jQuery(this).removeAttr("onclick");';
+
+		$alias = (new CLink($user['alias'], 'javascript:void(0);'))
+			->setId('spanid'.$user['userid'])
+			->onClick($js_action);
+
+		if (isset($srcfld1)) {
+			if ($srcfld1 === 'userid') {
+				$data[$user['userid']]['id'] = $user['userid'];
+			}
+			elseif ($srcfld1 === 'alias') {
+				$data[$user['userid']]['name'] = $user['alias'];
+			}
+		}
+
+		if (isset($srcfld2)) {
+			if ($srcfld2 === 'fullname') {
+				$data[$user['userid']]['name'] = getUserFullname($user);
+			}
+			elseif (array_key_exists($srcfld2, $user)) {
+				$data[$user['userid']][$srcfld2] = $user[$srcfld2];
+			}
+		}
+
+		$table->addRow([$multiselect ? $checkBox : null, $alias, $user['name'], $user['surname']]);
 	}
 	unset($user);
 
 	if ($multiselect) {
-		$button = new CButton('select', _('Select'), "javascript: addSelectedValues('users', ".zbx_jsvalue($reference).');');
-		$table->setFooter(new CCol($button, 'right'));
-
-		insert_js('var popupReference = '.zbx_jsvalue($users, true).';');
+		$table->setFooter(
+			new CCol(
+				(new CButton('select', _('Select')))
+					->onClick("javascript: addSelectedValues('users', ".zbx_jsvalue($reference).', '.$parentid.');')
+			)
+		);
 	}
-	zbx_add_post_js('chkbxRange.pageGoName = "users";');
+
+	insert_js('var popupReference = '.zbx_jsvalue($data, true).';');
 
 	$form->addItem($table);
-	$form->show();
+	$widget->addItem($form)->show();
 }
 
 /*
  * Templates
  */
 elseif ($srctbl == 'templates') {
-	$form = new CForm();
-	$form->setName('templateform');
-	$form->setAttribute('id', 'templates');
+	$form = (new CForm())
+		->setName('templateform')
+		->setId('templates');
 
-	$table = new CTableInfo(_('No templates found.'));
-	$table->setHeader(array(($multiselect ? new CCheckBox('allTemplates', null,
-		"javascript: checkAll('".$form->getName()."', 'allTemplates', 'templates');") : null), _('Name')
-	));
+	$table = (new CTableInfo())
+		->setHeader([
+			$multiselect
+				? (new CColHeader(
+					(new CCheckBox('all_templates'))
+						->onClick("javascript: checkAll('".$form->getName()."', 'all_templates', 'templates');")
+				))->addClass(ZBX_STYLE_CELL_WIDTH)
+				: null,
+			_('Name')
+		]);
 
-	$options = array(
-		'output' => array('templateid', 'name'),
-		'nodeids' => $nodeId,
+	$options = [
+		'output' => ['templateid', 'name'],
 		'groupids' => $groupid,
 		'preservekeys' => true
-	);
+	];
 
 	if (!is_null($writeonly)) {
 		$options['editable'] = true;
@@ -714,75 +731,84 @@ elseif ($srctbl == 'templates') {
 	$templates = API::Template()->get($options);
 	order_result($templates, 'name');
 
-	$data = array();
+	$data = [];
 	$parentId = $dstfld1 ? zbx_jsvalue($dstfld1) : 'null';
 
 	foreach ($templates as &$template) {
-		$name = new CSpan($template['name'], 'link');
-		$name->attr('id', 'spanid'.$template['templateid']);
-
-		$jsAction = 'javascript: addValue('.zbx_jsvalue($reference).', '.zbx_jsvalue($template['templateid']).', '.
-			$parentId.');';
+		// dont show itself
+		if (bccomp($template['templateid'], $templateid) == 0) {
+			continue;
+		}
 
 		if ($multiselect) {
-			$checkBox = new CCheckBox('templates['.zbx_jsValue('templateid').']', null, null, $template['templateid']);
+			$checkBox = new CCheckBox('templates['.$template['templateid'].']', $template['templateid']);
 		}
 
 		// check for existing
 		if (isset($excludeids[$template['templateid']])) {
 			if ($multiselect) {
 				$checkBox->setChecked(1);
-				$checkBox->setEnabled('disabled');
+				$checkBox->setEnabled(false);
 			}
-			$name->removeAttr('class');
+			$name = $template['name'];
 		}
 		else {
-			$name->setAttribute('onclick', $jsAction.' jQuery(this).removeAttr("onclick");');
+			$js_action = 'javascript: addValue('.zbx_jsvalue($reference).', '.zbx_jsvalue($template['templateid']).', '.
+				$parentId.');';
 
-			$data[$template['templateid']] = array(
+			$name = (new CLink($template['name'], 'javascript:void(0);'))
+				->setId('spanid'.$template['templateid'])
+				->onClick($js_action.' jQuery(this).removeAttr("onclick");');
+
+			$data[$template['templateid']] = [
 				'id' => $template['templateid'],
-				'name' => $template['name'],
-				'prefix' => get_node_name_by_elid($template['templateid'], null, NAME_DELIMITER)
-			);
+				'name' => $template['name']
+			];
 		}
 
-		$table->addRow(array($multiselect ? $checkBox : null, $name));
+		$table->addRow([$multiselect ? $checkBox : null, $name]);
 	}
 	unset($template);
 
 	if ($multiselect) {
-		$button = new CButton('select', _('Select'),
-			"javascript: addSelectedValues('templates', ".zbx_jsvalue($reference).', '.$parentId.');'
+		$table->setFooter(
+			new CCol(
+				(new CButton('select', _('Select')))
+					->onClick("javascript: addSelectedValues('templates', ".zbx_jsvalue($reference).', '.$parentId.');')
+			)
 		);
-		$table->setFooter(new CCol($button, 'right'));
 	}
 
 	insert_js('var popupReference = '.zbx_jsvalue($data, true).';');
-	zbx_add_post_js('chkbxRange.pageGoName = "templates";');
 
 	$form->addItem($table);
-	$form->show();
+	$widget->addItem($form)->show();
 }
 
 /*
  * Hosts
  */
 elseif ($srctbl == 'hosts') {
-	$form = new CForm();
-	$form->setName('hostform');
-	$form->setAttribute('id', 'hosts');
+	$form = (new CForm())
+		->setName('hostform')
+		->setId('hosts');
 
-	$table = new CTableInfo(_('No hosts found.'));
-	$table->setHeader(array(($multiselect ? new CCheckBox('allHosts', null,
-		"javascript: checkAll('".$form->getName()."', 'allHosts', 'hosts');") : null), _('Name')
-	));
+	$table = (new CTableInfo())
+		->setHeader([
+			$multiselect
+				? (new CColHeader(
+					(new CCheckBox('all_hosts'))
+						->onClick("javascript: checkAll('".$form->getName()."', 'all_hosts', 'hosts');")
+				))->addClass(ZBX_STYLE_CELL_WIDTH)
+				: null,
+			_('Name')
+		]);
 
-	$options = array(
-		'output' => array('hostid', 'name'),
-		'nodeids' => $nodeId,
+	$options = [
+		'output' => ['hostid', 'name'],
 		'groupids' => $groupid,
 		'preservekeys' => true
-	);
+	];
 
 	if (!is_null($writeonly)) {
 		$options['editable'] = true;
@@ -791,76 +817,80 @@ elseif ($srctbl == 'hosts') {
 	$hosts = API::Host()->get($options);
 	order_result($hosts, 'name');
 
-	$data = array();
+	$data = [];
 	$parentId = $dstfld1 ? zbx_jsvalue($dstfld1) : 'null';
 
 	foreach ($hosts as &$host) {
-		$name = new CSpan($host['name'], 'link');
-		$name->attr('id', 'spanid'.$host['hostid']);
-
-		$jsAction = 'javascript: addValue('.zbx_jsvalue($reference).', '.zbx_jsvalue($host['hostid']).', '.
-			$parentId.');';
-
 		if ($multiselect) {
-			$checkBox = new CCheckBox('hosts['.zbx_jsValue('hostid').']', null, null, $host['hostid']);
+			$checkBox = new CCheckBox('hosts['.$host['hostid'].']', $host['hostid']);
 		}
 
 		// check for existing
 		if (isset($excludeids[$host['hostid']])) {
 			if ($multiselect) {
 				$checkBox->setChecked(1);
-				$checkBox->setEnabled('disabled');
+				$checkBox->setEnabled(false);
 			}
-			$name->removeAttr('class');
+			$name = $host['name'];
 		}
 		else {
-			$name->setAttribute('onclick', $jsAction.' jQuery(this).removeAttr("onclick");');
+			$js_action = 'javascript: addValue('.zbx_jsvalue($reference).', '.zbx_jsvalue($host['hostid']).', '.
+				$parentId.');';
 
-			$data[$host['hostid']] = array(
+			$name = (new CLink($host['name'], 'javascript:void(0);'))
+				->setId('spanid'.$host['hostid'])
+				->onClick($js_action.' jQuery(this).removeAttr("onclick");');
+
+			$data[$host['hostid']] = [
 				'id' => $host['hostid'],
-				'name' => $host['name'],
-				'prefix' => get_node_name_by_elid($host['hostid'], null, NAME_DELIMITER)
-			);
+				'name' => $host['name']
+			];
 		}
 
-		$table->addRow(array($multiselect ? $checkBox : null, $name));
+		$table->addRow([$multiselect ? $checkBox : null, $name]);
 	}
 	unset($host);
 
 	if ($multiselect) {
-		$button = new CButton('select', _('Select'),
-			"javascript: addSelectedValues('hosts', ".zbx_jsvalue($reference).', '.$parentId.');'
+		$table->setFooter(
+			new CCol(
+				(new CButton('select', _('Select')))
+					->onClick("javascript: addSelectedValues('hosts', ".zbx_jsvalue($reference).', '.$parentId.');')
+			)
 		);
-		$table->setFooter(new CCol($button, 'right'));
 	}
 
 	insert_js('var popupReference = '.zbx_jsvalue($data, true).';');
-	zbx_add_post_js('chkbxRange.pageGoName = "hosts";');
 
 	$form->addItem($table);
-	$form->show();
+	$widget->addItem($form)->show();
 }
 
 /*
  * Hosts and templates
  */
 elseif ($srctbl == 'host_templates') {
-	$form = new CForm();
-	$form->setName('hosttemplateform');
-	$form->setAttribute('id', 'hosts');
+	$form = (new CForm())
+		->setName('hosttemplateform')
+		->setId('hosts');
 
-	$table = new CTableInfo(_('No hosts found.'));
-	$table->setHeader(array(($multiselect ? new CCheckBox('allHosts', null,
-		"javascript: checkAll('".$form->getName()."', 'allHosts', 'hosts');") : null), _('Name')
-	));
+	$table = (new CTableInfo())
+		->setHeader([
+			$multiselect
+				? (new CColHeader(
+					(new CCheckBox('all_hosts'))
+						->onClick("javascript: checkAll('".$form->getName()."', 'all_hosts', 'hosts');")
+				))->addClass(ZBX_STYLE_CELL_WIDTH)
+				: null,
+			_('Name')
+		]);
 
-	$options = array(
-		'output' => array('hostid', 'name'),
-		'nodeids' => $nodeId,
+	$options = [
+		'output' => ['hostid', 'name'],
 		'groupids' => $groupid,
 		'templated_hosts' => true,
 		'preservekeys' => true
-	);
+	];
 
 	if (!is_null($writeonly)) {
 		$options['editable'] = true;
@@ -869,187 +899,226 @@ elseif ($srctbl == 'host_templates') {
 	$hosts = API::Host()->get($options);
 	order_result($hosts, 'name');
 
-	$data = array();
+	$data = [];
 	$parentId = $dstfld1 ? zbx_jsvalue($dstfld1) : 'null';
 
 	foreach ($hosts as &$host) {
-		$name = new CSpan($host['name'], 'link');
-		$name->attr('id', 'spanid'.$host['hostid']);
-
-		$jsAction = 'javascript: addValue('.zbx_jsvalue($reference).', '.zbx_jsvalue($host['hostid']).', '.
-			$parentId.');';
-
 		if ($multiselect) {
-			$checkBox = new CCheckBox('hosts['.zbx_jsValue('hostid').']', null, null, $host['hostid']);
+			$checkBox = new CCheckBox('hosts['.$host['hostid'].']', $host['hostid']);
 		}
 
 		// check for existing
 		if (isset($excludeids[$host['hostid']])) {
 			if ($multiselect) {
 				$checkBox->setChecked(1);
-				$checkBox->setEnabled('disabled');
+				$checkBox->setEnabled(false);
 			}
-			$name->removeAttr('class');
+			$name = $host['name'];
 		}
 		else {
-			$name->setAttribute('onclick', $jsAction.' jQuery(this).removeAttr("onclick");');
+			$js_action = 'javascript: addValue('.zbx_jsvalue($reference).', '.zbx_jsvalue($host['hostid']).', '.
+				$parentId.');';
 
-			$data[$host['hostid']] = array(
+			$name = (new CLink($host['name'], 'javascript:void(0);'))
+				->setId('spanid'.$host['hostid'])
+				->onClick($js_action.' jQuery(this).removeAttr("onclick");');
+
+			$data[$host['hostid']] = [
 				'id' => $host['hostid'],
-				'name' => $host['name'],
-				'prefix' => get_node_name_by_elid($host['hostid'], null, NAME_DELIMITER)
-			);
+				'name' => $host['name']
+			];
 		}
 
-		$table->addRow(array($multiselect ? $checkBox : null, $name));
+		$table->addRow([$multiselect ? $checkBox : null, $name]);
 	}
 	unset($host);
 
 	if ($multiselect) {
-		$button = new CButton('select', _('Select'),
-			"javascript: addSelectedValues('hosts', ".zbx_jsvalue($reference).', '.$parentId.');'
+		$table->setFooter(
+			new CCol(
+				(new CButton('select', _('Select')))
+					->onClick("javascript: addSelectedValues('hosts', ".zbx_jsvalue($reference).', '.$parentId.');')
+			)
 		);
-		$table->setFooter(new CCol($button, 'right'));
 	}
 
 	insert_js('var popupReference = '.zbx_jsvalue($data, true).';');
-	zbx_add_post_js('chkbxRange.pageGoName = "hosts";');
 
 	$form->addItem($table);
-	$form->show();
+	$widget->addItem($form)->show();
 }
 
 /*
  * Host group
  */
 elseif ($srctbl == 'host_groups') {
-	$form = new CForm();
-	$form->setName('hostGroupsform');
-	$form->setAttribute('id', 'hostGroups');
+	$form = (new CForm())
+		->setName('hostGroupsform')
+		->setId('hostGroups');
 
-	$table = new CTableInfo(_('No host groups found.'));
-	$table->setHeader(array(($multiselect ? new CCheckBox('allHostGroups', null,
-		"javascript: checkAll('".$form->getName()."', 'allHostGroups', 'hostGroups');") : null), _('Name')
-	));
+	$table = (new CTableInfo())
+		->setHeader([
+			$multiselect
+				? (new CColHeader(
+					(new CCheckBox('all_hostgroups'))
+						->onClick("javascript: checkAll('".$form->getName()."', 'all_hostgroups', 'hostGroups');")
+				))->addClass(ZBX_STYLE_CELL_WIDTH)
+				: null,
+			_('Name')
+		]);
 
-	$options = array(
-		'nodeids' => $nodeId,
-		'output' => array('groupid', 'name'),
+	$options = [
+		'output' => ['groupid', 'name'],
 		'preservekeys' => true
-	);
+	];
 	if (!is_null($writeonly)) {
 		$options['editable'] = true;
 	}
 	$hostgroups = API::HostGroup()->get($options);
 	order_result($hostgroups, 'name');
 
-	$data = array();
+	$data = [];
 	$parentId = $dstfld1 ? zbx_jsvalue($dstfld1) : 'null';
 
 	foreach ($hostgroups as &$hostgroup) {
-		$name = new CSpan($hostgroup['name'], 'link');
-		$name->attr('id', 'spanid'.$hostgroup['groupid']);
-
-		$jsAction = 'javascript: addValue('.zbx_jsvalue($reference).', '.zbx_jsvalue($hostgroup['groupid']).', '.
-			$parentId.');';
 		if ($multiselect) {
-			$checkBox = new CCheckBox('hostGroups['.zbx_jsValue('groupid').']', null, null, $hostgroup['groupid']);
+			$checkBox = new CCheckBox('hostGroups['.$hostgroup['groupid'].']', $hostgroup['groupid']);
 		}
 
 		// check for existing
 		if (isset($excludeids[$hostgroup['groupid']])) {
 			if ($multiselect) {
 				$checkBox->setChecked(1);
-				$checkBox->setEnabled('disabled');
+				$checkBox->setEnabled(false);
 			}
-			$name->removeAttr('class');
+			$name = $hostgroup['name'];
 		}
 		else {
-			$name->setAttribute('onclick', $jsAction.' jQuery(this).removeAttr("onclick");');
+			$js_action = 'javascript: addValue('.zbx_jsvalue($reference).', '.zbx_jsvalue($hostgroup['groupid']).', '.
+				$parentId.');';
 
-			$data[$hostgroup['groupid']] = array(
+			$name = (new CLink($hostgroup['name'], 'javascript:void(0);'))
+				->setId('spanid'.$hostgroup['groupid'])
+				->onClick($js_action.' jQuery(this).removeAttr("onclick");');
+
+			$data[$hostgroup['groupid']] = [
 				'id' => $hostgroup['groupid'],
-				'name' => $hostgroup['name'],
-				'prefix' => get_node_name_by_elid($hostgroup['groupid'], null, NAME_DELIMITER)
-			);
+				'name' => $hostgroup['name']
+			];
 		}
 
-		$table->addRow(array($multiselect ? $checkBox : null, $name));
+		$table->addRow([$multiselect ? $checkBox : null, $name]);
 	}
 	unset($hostgroup);
 
 	if ($multiselect) {
-		$button = new CButton('select', _('Select'),
-			"javascript: addSelectedValues('hostGroups', ".zbx_jsvalue($reference).', '.$parentId.');'
+		$table->setFooter(
+			new CCol(
+				(new CButton('select', _('Select')))
+					->onClick("javascript: addSelectedValues('hostGroups', ".zbx_jsvalue($reference).', '.$parentId.');')
+			)
 		);
-		$table->setFooter(new CCol($button, 'right'));
 	}
 
 	insert_js('var popupReference = '.zbx_jsvalue($data, true).';');
-	zbx_add_post_js('chkbxRange.pageGoName = "hostGroups";');
 
 	$form->addItem($table);
-	$form->show();
+	$widget->addItem($form)->show();
 }
 
 /*
  * Help items
  */
-elseif ($srctbl == 'help_items') {
-	$table = new CTableInfo(_('No item keys found.'));
-	$table->setHeader(array(_('Key'), _('Name')));
+elseif ($srctbl === 'help_items') {
+	$table = (new CTableInfo())->setHeader([_('Key'), _('Name')]);
 
 	$helpItems = new CHelpItems();
-	foreach ($helpItems->getByType($itemtype) as $helpItem) {
+	foreach ($helpItems->getByType($itemType) as $helpItem) {
 		$action = get_window_opener($dstfrm, $dstfld1, $helpItem[$srcfld1]).(isset($srcfld2) ? get_window_opener($dstfrm, $dstfld2, $row[$srcfld2]) : '');
-		$name = new CSpan($helpItem['key'], 'link');
-		$name->setAttribute('onclick', $action.' close_window(); return false;');
-		$table->addRow(array($name, $helpItem['description']));
+		$name = (new CLink($helpItem['key'], 'javascript:void(0);'))
+			->onClick($action.' close_window(); return false;');
+		$table->addRow([$name, $helpItem['description']]);
 	}
-	$table->show();
+	$widget->addItem($table)->show();
 }
 /*
- * Triggers
+ * Triggers and trigger prototypes
  */
-elseif ($srctbl == 'triggers') {
-	$form = new CForm();
-	$form->setName('triggerform');
-	$form->setAttribute('id', 'triggers');
+elseif ($srctbl === 'triggers' || $srctbl === 'trigger_prototypes') {
+	$config = select_config();
 
-	$table = new CTableInfo(_('No triggers found.'));
+	$form = (new CForm())
+		->setName('triggerform')
+		->setId('triggers');
 
-	$table->setHeader(array(
-		$multiselect ? new CCheckBox('all_triggers', null, "checkAll('".$form->getName()."', 'all_triggers', 'triggers');") : null,
-		_('Name'),
-		_('Severity'),
-		_('Status')
-	));
+	$table = (new CTableInfo())
+		->setHeader([
+			$multiselect
+				? (new CColHeader(
+					(new CCheckBox('all_triggers'))
+						->onClick("checkAll('".$form->getName()."', 'all_triggers', 'triggers');")
+				))->addClass(ZBX_STYLE_CELL_WIDTH)
+				: null,
+			_('Name'),
+			_('Severity'),
+			_('Status')
+		]);
 
-	$options = array(
-		'nodeids' => $nodeId,
-		'hostids' => $hostid,
-		'output' => array('triggerid', 'description', 'expression', 'priority', 'status', 'state'),
-		'selectHosts' => array('hostid', 'name'),
-		'selectDependencies' => API_OUTPUT_EXTEND,
+	$options = [
+		'output' => ['triggerid', 'expression', 'description', 'status', 'priority', 'state'],
+		'selectHosts' => ['name'],
+		'selectDependencies' => ['triggerid', 'expression', 'description'],
 		'expandDescription' => true
-	);
-	if (is_null($hostid)) {
-		$options['groupids'] = $groupid;
+	];
+
+	if ($srctbl === 'trigger_prototypes') {
+		if ($parentDiscoveryId) {
+			$options['discoveryids'] = [$parentDiscoveryId];
+		}
+		else {
+			$options['hostids'] = [$hostid];
+		}
+		if ($writeonly !== null) {
+			$options['editable'] = true;
+		}
+
+		if ($templated !== null) {
+			$options['templated'] = $templated;
+		}
+
+		$triggers = API::TriggerPrototype()->get($options);
 	}
-	if (!is_null($writeonly)) {
-		$options['editable'] = true;
+	else {
+		if ($hostid === null) {
+			$options['groupids'] = $groupid;
+		}
+		else {
+			$options['hostids'] = [$hostid];
+		}
+
+		if ($writeonly !== null) {
+			$options['editable'] = true;
+		}
+
+		if ($templated !== null) {
+			$options['templated'] = $templated;
+		}
+
+		if ($withMonitoredTriggers) {
+			$options['monitored'] = true;
+		}
+
+		if ($normalOnly) {
+			$options['filter']['flags'] = ZBX_FLAG_DISCOVERY_NORMAL;
+		}
+
+		$triggers = API::Trigger()->get($options);
 	}
-	if (!is_null($templated)) {
-		$options['templated'] = $templated;
-	}
-	if ($withMonitoredTriggers) {
-		$options['monitored'] = true;
-	}
-	$triggers = API::Trigger()->get($options);
+
 	order_result($triggers, 'description');
 
 	if ($multiselect) {
-		$jsTriggers = array();
+		$jsTriggers = [];
 	}
 
 	$parentId = $dstfld1 ? zbx_jsvalue($dstfld1) : 'null';
@@ -1058,141 +1127,163 @@ elseif ($srctbl == 'triggers') {
 		$host = reset($trigger['hosts']);
 		$trigger['hostname'] = $host['name'];
 
-		$description = new CSpan($trigger['description'], 'link');
+		$description = new CLink($trigger['description'], 'javascript:void(0);');
 		$trigger['description'] = $trigger['hostname'].NAME_DELIMITER.$trigger['description'];
 
 		if ($multiselect) {
 			$js_action = 'addValue('.zbx_jsvalue($reference).', '.zbx_jsvalue($trigger['triggerid']).', '.$parentId.');';
 		}
 		else {
-			$values = array(
+			$values = [
 				$dstfld1 => $trigger[$srcfld1],
 				$dstfld2 => $trigger[$srcfld2]
-			);
+			];
 			if (isset($srcfld3)) {
 				$values[$dstfld3] = $trigger[$srcfld3];
 			}
 			$js_action = 'addValues('.zbx_jsvalue($dstfrm).', '.zbx_jsvalue($values).'); return false;';
 		}
-		$description->setAttribute('onclick', $js_action.' jQuery(this).removeAttr("onclick");');
+		$description->onClick($js_action.' jQuery(this).removeAttr("onclick");');
 
-		if (count($trigger['dependencies']) > 0) {
-			$description = array(
-				$description,
-				BR(),
-				bold(_('Depends on')),
-				BR()
+		if ($trigger['dependencies']) {
+			$description = [$description, BR(), bold(_('Depends on')), BR()];
+
+			$dependencies = CMacrosResolverHelper::resolveTriggerNames(
+				zbx_toHash($trigger['dependencies'], 'triggerid')
 			);
 
-			foreach ($trigger['dependencies'] as $dependentTrigger) {
-				$description[] = array(CMacrosResolverHelper::resolveTriggerName($dependentTrigger), BR());
+			foreach ($dependencies as $dependency) {
+				$description[] = $dependency['description'];
+				$description[] = BR();
 			}
+			array_pop($description);
 		}
 
-		$table->addRow(array(
-			$multiselect ? new CCheckBox('triggers['.zbx_jsValue($trigger[$srcfld1]).']', null, null, $trigger['triggerid']) : null,
+		$table->addRow([
+			$multiselect
+				? new CCheckBox('triggers['.zbx_jsValue($trigger[$srcfld1]).']', $trigger['triggerid'])
+				: null,
 			$description,
-			getSeverityCell($trigger['priority']),
-			new CSpan(
-				triggerIndicator($trigger['status'], $trigger['state']),
-				triggerIndicatorStyle($trigger['status'], $trigger['state'])
-			)
-		));
+			getSeverityCell($trigger['priority'], $config),
+			(new CSpan(triggerIndicator($trigger['status'], $trigger['state'])))
+				->addClass(triggerIndicatorStyle($trigger['status'], $trigger['state']))
+		]);
 
 		// made to save memory usage
 		if ($multiselect) {
-			$jsTriggers[$trigger['triggerid']] = array(
+			$jsTriggers[$trigger['triggerid']] = [
 				'id' => $trigger['triggerid'],
 				'name' => $trigger['description'],
-				'prefix' => get_node_name_by_elid($trigger['triggerid'], null, NAME_DELIMITER),
 				'triggerid' => $trigger['triggerid'],
 				'description' => $trigger['description'],
 				'expression' => $trigger['expression'],
 				'priority' => $trigger['priority'],
 				'status' => $trigger['status'],
 				'host' => $trigger['hostname']
-			);
+			];
 		}
 	}
 
 	if ($multiselect) {
-		$button = new CButton('select', _('Select'), "addSelectedValues('triggers', ".zbx_jsvalue($reference).', '.$parentId.');');
-		$table->setFooter(new CCol($button, 'right'));
+		$table->setFooter(
+			new CCol(
+				(new CButton('select', _('Select')))
+					->onClick("addSelectedValues('triggers', ".zbx_jsvalue($reference).', '.$parentId.');')
+			)
+		);
 
 		insert_js('var popupReference = '.zbx_jsValue($jsTriggers, true).';');
 	}
-	zbx_add_post_js('chkbxRange.pageGoName = "triggers";');
 
 	$form->addItem($table);
-	$form->show();
+	$widget->addItem($form)->show();
 }
 
 /*
- * Items
+ * Items or Item prototypes
  */
-elseif ($srctbl == 'items') {
-	$form = new CForm();
-	$form->setName('itemform');
-	$form->setAttribute('id', 'items');
+elseif ($srctbl === 'items' || $srctbl === 'item_prototypes') {
+	$form = (new CForm())
+		->setName('itemform')
+		->setId('items');
 
-	$table = new CTableInfo(_('No items found.'));
+	$itemPrototypesPopup = ($srctbl === 'item_prototypes');
 
-	$header = array(
-		$pageFilter->hostsAll ? _('Host') : null,
-		$multiselect ? new CCheckBox('all_items', null, "javascript: checkAll('".$form->getName()."', 'all_items', 'items');") : null,
-		_('Name'),
-		_('Key'),
-		_('Type'),
-		_('Type of information'),
-		_('Status')
-	);
-	$table->setHeader($header);
+	$table = (new CTableInfo())
+		->setHeader([
+			$pageFilter->hostsAll ? _('Host') : null,
+			$multiselect
+				? (new CColHeader(
+					(new CCheckBox('all_items'))
+						->onClick("javascript: checkAll('".$form->getName()."', 'all_items', 'items');")
+				))->addClass(ZBX_STYLE_CELL_WIDTH)
+				: null,
+			_('Name'),
+			_('Key'),
+			_('Type'),
+			_('Type of information'),
+			_('Status')
+		]);
 
-	$options = array(
-		'nodeids' => $nodeId,
-		'hostids' => $hostid,
-		'webitems' => true,
-		'output' => array('itemid', 'hostid', 'name', 'key_', 'type', 'value_type', 'status', 'state'),
-		'selectHosts' => array('hostid', 'name')
-	);
-	if (!is_null($normalOnly)) {
-		$options['filter']['flags'] = ZBX_FLAG_DISCOVERY_NORMAL;
+	$options = [
+		'output' => ['itemid', 'hostid', 'name', 'key_', 'flags', 'type', 'value_type', 'status', 'state'],
+		'selectHosts' => ['name']
+	];
+
+	if ($parentDiscoveryId) {
+		$options['discoveryids'] = [$parentDiscoveryId];
 	}
-	if (!is_null($writeonly)) {
+	else {
+		$options['hostids'] = $hostid;
+	}
+
+	if ($templated == 1) {
+		$options['templated'] = true;
+	}
+
+	if ($writeonly !== null) {
 		$options['editable'] = true;
 	}
-	if (!is_null($templated) && $templated == 1) {
-		$options['templated'] = $templated;
-	}
-	if (!is_null($value_types)) {
+
+	if ($value_types !== null) {
 		$options['filter']['value_type'] = $value_types;
 	}
 
-	$items = API::Item()->get($options);
+	if ($itemPrototypesPopup) {
+		$items = API::ItemPrototype()->get($options);
+	}
+	else {
+		$options['webitems'] = true;
+
+		if ($normalOnly !== null) {
+			$options['filter']['flags'] = ZBX_FLAG_DISCOVERY_NORMAL;
+		}
+
+		$items = API::Item()->get($options);
+	}
 
 	$items = CMacrosResolverHelper::resolveItemNames($items);
-
 	order_result($items, 'name_expanded');
 
 	if ($multiselect) {
-		$jsItems = array();
+		$jsItems = [];
 	}
 
 	foreach ($items as $item) {
 		$host = reset($item['hosts']);
 		$item['hostname'] = $host['name'];
 
-		$description = new CLink($item['name_expanded'], '#');
+		$description = new CLink($item['name_expanded'], 'javascript:void(0);');
 		$item['name'] = $item['hostname'].NAME_DELIMITER.$item['name_expanded'];
 
 		if ($multiselect) {
 			$js_action = 'javascript: addValue('.zbx_jsvalue($reference).', '.zbx_jsvalue($item['itemid']).');';
 		}
 		else {
-			$values = array();
+			$values = [];
 			for ($i = 1; $i <= $dstfldCount; $i++) {
-				$dstfld = get_request('dstfld'.$i);
-				$srcfld = get_request('srcfld'.$i);
+				$dstfld = getRequest('dstfld'.$i);
+				$srcfld = getRequest('srcfld'.$i);
 
 				if (!empty($dstfld) && !empty($item[$srcfld])) {
 					$values[$dstfld] = $item[$srcfld];
@@ -1200,162 +1291,77 @@ elseif ($srctbl == 'items') {
 			}
 
 			// if we need to submit parent window
-			$js_action = 'javascript: addValues('.zbx_jsvalue($dstfrm).', '.zbx_jsvalue($values).', '.($submitParent ? 'true' : 'false').'); return false;';
+			$js_action = 'javascript: addValues('.zbx_jsvalue($dstfrm).', '.zbx_jsvalue($values).', '.
+				($submitParent ? 'true' : 'false').'); return false;';
 		}
-		$description->setAttribute('onclick', $js_action.' jQuery(this).removeAttr("onclick");');
 
-		$table->addRow(array(
+		$description->onClick($js_action.' jQuery(this).removeAttr("onclick");');
+
+		$table->addRow([
 			($hostid > 0) ? null : $item['hostname'],
-			$multiselect ? new CCheckBox('items['.zbx_jsValue($item[$srcfld1]).']', null, null, $item['itemid']) : null,
+			$multiselect
+				? new CCheckBox('items['.zbx_jsValue($item[$srcfld1]).']', $item['itemid'])
+				: null,
 			$description,
 			$item['key_'],
 			item_type2str($item['type']),
 			itemValueTypeString($item['value_type']),
-			new CSpan(itemIndicator($item['status'], $item['state']), itemIndicatorStyle($item['status'], $item['state']))
-		));
+			(new CSpan(itemIndicator($item['status'], $item['state'])))
+				->addClass(itemIndicatorStyle($item['status'], $item['state']))
+		]);
 
 		// made to save memory usage
 		if ($multiselect) {
-			$jsItems[$item['itemid']] = array(
+			$jsItems[$item['itemid']] = [
 				'itemid' => $item['itemid'],
 				'name' => $item['name'],
 				'key_' => $item['key_'],
+				'flags' => $item['flags'],
 				'type' => $item['type'],
 				'value_type' => $item['value_type'],
 				'host' => $item['hostname']
-			);
+			];
 		}
 	}
 
 	if ($multiselect) {
-		$button = new CButton('select', _('Select'), "javascript: addSelectedValues('items', ".zbx_jsvalue($reference).');');
-		$table->setFooter(new CCol($button, 'right'));
+		$table->setFooter(
+			new CCol(
+				(new CButton('select', _('Select')))
+					->onClick("javascript: addSelectedValues('items', ".zbx_jsvalue($reference).');')
+			)
+		);
 
 		insert_js('var popupReference = '.zbx_jsvalue($jsItems, true).';');
 	}
-	zbx_add_post_js('chkbxRange.pageGoName = "items";');
 
 	$form->addItem($table);
-	$form->show();
-}
-/*
- * Prototypes
- */
-elseif ($srctbl == 'prototypes') {
-	$form = new CForm();
-	$form->setName('itemform');
-	$form->setAttribute('id', 'items');
-
-	$table = new CTableInfo(_('No item prototypes found.'));
-
-	if ($multiselect) {
-		$header = array(
-			array(new CCheckBox('all_items', null, "javascript: checkAll('".$form->getName()."', 'all_items', 'items');"), _('Name')),
-			_('Key'),
-			_('Type'),
-			_('Type of information'),
-			_('Status')
-		);
-	}
-	else {
-		$header = array(
-			_('Name'),
-			_('Key'),
-			_('Type'),
-			_('Type of information'),
-			_('Status')
-		);
-	}
-	$table->setHeader($header);
-
-	$options = array(
-		'nodeids' => $nodeId,
-		'selectHosts' => array('name'),
-		'discoveryids' => get_request('parent_discoveryid'),
-		'output' => API_OUTPUT_EXTEND,
-		'preservekeys' => true
-	);
-	if (!is_null($value_types)) {
-		$options['filter']['value_type'] = $value_types;
-	}
-
-	$items = API::ItemPrototype()->get($options);
-
-	$items = CMacrosResolverHelper::resolveItemNames($items);
-
-	order_result($items, 'name_expanded');
-
-	foreach ($items as &$item) {
-		$host = reset($item['hosts']);
-
-		$description = new CSpan($item['name_expanded'], 'link');
-		$item['name'] = $host['name'].NAME_DELIMITER.$item['name_expanded'];
-
-		if ($multiselect) {
-			$js_action = 'javascript: addValue('.zbx_jsvalue($reference).', '.zbx_jsvalue($item['itemid']).');';
-		}
-		else {
-			$values = array();
-			for ($i = 1; $i <= $dstfldCount; $i++) {
-				$dstfld = get_request('dstfld'.$i);
-				$srcfld = get_request('srcfld'.$i);
-
-				if (!empty($dstfld) && !empty($item[$srcfld])) {
-					$values[$dstfld] = $item[$srcfld];
-				}
-			}
-
-			// if we need to submit parent window
-			$js_action = 'javascript: addValues('.zbx_jsvalue($dstfrm).', '.zbx_jsvalue($values).', '.($submitParent ? 'true' : 'false').'); return false;';
-		}
-		$description->setAttribute('onclick', $js_action.' jQuery(this).removeAttr("onclick");');
-
-		if ($multiselect) {
-			$description = new CCol(array(new CCheckBox('items['.zbx_jsValue($item[$srcfld1]).']', null, null, $item['itemid']), $description));
-		}
-
-		$table->addRow(array(
-			$description,
-			$item['key_'],
-			item_type2str($item['type']),
-			itemValueTypeString($item['value_type']),
-			new CSpan(itemIndicator($item['status']), itemIndicatorStyle($item['status']))
-		));
-	}
-
-	if ($multiselect) {
-		$button = new CButton('select', _('Select'), "javascript: addSelectedValues('items', ".zbx_jsvalue($reference).');');
-		$table->setFooter(new CCol($button, 'right'));
-
-		insert_js('var popupReference = '.zbx_jsvalue($items, true).';');
-	}
-	unset($items);
-
-	zbx_add_post_js('chkbxRange.pageGoName = "items";');
-
-	$form->addItem($table);
-	$form->show();
+	$widget->addItem($form)->show();
 }
 
 /*
  * Applications
  */
 elseif ($srctbl == 'applications') {
-	$form = new CForm();
-	$form->setName('applicationform');
-	$form->setAttribute('id', 'applications');
+	$form = (new CForm())
+		->setName('applicationform')
+		->setId('applications');
 
-	$table = new CTableInfo(_('No applications found.'));
-	$table->setHeader(array(($multiselect ? new CCheckBox('allApplications', null,
-		"javascript: checkAll('".$form->getName()."', 'allApplications', 'applications');") : null), _('Name')
-	));
+	$table = (new CTableInfo())
+		->setHeader([
+			$multiselect
+				? (new CColHeader(
+					(new CCheckBox('all_applications'))
+						->onClick("javascript: checkAll('".$form->getName()."', 'all_applications', 'applications');")
+				))->addClass(ZBX_STYLE_CELL_WIDTH)
+				: null,
+			_('Name')
+		]);
 
-	$options = array(
-		'output' => array('applicationid', 'name'),
-		'nodeids' => $nodeId,
-		'hostids' => $hostid,
-		'expandData' => true
-	);
+	$options = [
+		'output' => ['applicationid', 'name'],
+		'hostids' => $hostid
+	];
 	if (is_null($hostid)) {
 		$options['groupids'] = $groupid;
 	}
@@ -1366,99 +1372,75 @@ elseif ($srctbl == 'applications') {
 		$options['templated'] = $templated;
 	}
 	$apps = API::Application()->get($options);
-	CArrayHelper::sort($apps, array('name'));
+	CArrayHelper::sort($apps, ['name']);
 
-	$data = array();
-	$parentId = $dstfld1 ? zbx_jsvalue($dstfld1) : 'null';
+	$data = [];
+	$parentId = $dstfld1 ? CJs::encodeJson($dstfld1) : 'null';
 
-	foreach ($apps as &$app) {
-		$name = new CSpan($app['name'], 'link');
-		$name->attr('id', 'spanid'.$app['applicationid']);
-
-		$jsAction = 'javascript: addValue('.zbx_jsvalue($reference).', '.zbx_jsvalue($app['applicationid']).', '.
-			$parentId.');';
-
-		if ($multiselect) {
-			$checkBox = new CCheckBox('applications['.zbx_jsValue('applicationid').']', null, null,
-				$app['applicationid']
-			);
-		}
-
-		$name->setAttribute('onclick', $jsAction.' jQuery(this).removeAttr("onclick");');
-
-		$data[$app['applicationid']] = array(
+	foreach ($apps as $app) {
+		$data[$app['applicationid']] = [
 			'id' => $app['applicationid'],
-			'name' => $app['name'],
-			'prefix' => get_node_name_by_elid($app['applicationid'], null, NAME_DELIMITER)
-		);
+			'name' => $app['name']
+		];
 
-		$table->addRow(array($multiselect ? $checkBox : null, $name));
+		$table->addRow([
+			$multiselect
+				? (new CCheckBox('applications['.$app[$srcfld1].']', $app['applicationid']))
+				: null,
+			(new CLink($app['name'], 'javascript:void(0);'))
+				->setId('spanid'.$app['applicationid'])
+				->onClick(
+					'javascript: addValue('.CJs::encodeJson($reference).', '.$app['applicationid'].', '.$parentId.');'
+				)
+		]);
 	}
-	unset($app);
 
 	if ($multiselect) {
-		$button = new CButton('select', _('Select'),
-			"javascript: addSelectedValues('applications', ".zbx_jsvalue($reference).', '.$parentId.');'
+		$table->setFooter(
+			new CCol(
+				(new CButton('select', _('Select')))
+					->onClick(
+						"javascript: addSelectedValues('applications', ".CJs::encodeJson($reference).', '.$parentId.');'
+					)
+			)
 		);
-		$table->setFooter(new CCol($button, 'right'));
 	}
 
-	insert_js('var popupReference = '.zbx_jsvalue($data, true).';');
-	zbx_add_post_js('chkbxRange.pageGoName = "applications";');
+	insert_js('var popupReference = '.CJs::encodeJson($data, true).';');
 
 	$form->addItem($table);
-	$form->show();
+	$widget->addItem($form)->show();
 }
 
 /*
- * Nodes
+ * Graphs or Graph prototypes
  */
-elseif ($srctbl == 'nodes') {
-	$table = new CTableInfo();
-	$table->setHeader(_('Name'));
+elseif ($srctbl === 'graphs' || $srctbl === 'graph_prototypes') {
+	$form = (new CForm())
+		->setName('graphform')
+		->setId('graphs');
 
-	$result = DBselect('SELECT DISTINCT n.* FROM nodes n WHERE '.dbConditionInt('n.nodeid', get_accessible_nodes_by_user(CWebUser::$data, PERM_READ)));
-	while ($row = DBfetch($result)) {
-		$action = get_window_opener($dstfrm, $dstfld1, $row[$srcfld1]).(isset($srcfld2) ? get_window_opener($dstfrm, $dstfld2, $row[$srcfld2]) : '');
-		$name = new CSpan($row['name'], 'link');
-		$name->setAttribute('onclick', $action.' close_window(); return false;');
-		$table->addRow($name);
-	}
-	$table->show();
-}
-/*
- * Graphs
- */
-elseif ($srctbl == 'graphs') {
-	$form = new CForm();
-	$form->setName('graphform');
-	$form->setAttribute('id', 'graphs');
+	$graphPrototypesPopup = ($srctbl === 'graph_prototypes');
 
-	$table = new CTableInfo(_('No graphs found.'));
-
-	if ($multiselect) {
-		$header = array(
-			array(new CCheckBox('all_graphs', null, "javascript: checkAll('".$form->getName()."', 'all_graphs', 'graphs');"), _('Description')),
-			_('Graph type')
-		);
-	}
-	else {
-		$header = array(
+	$table = (new CTableInfo())
+		->setHeader([
+			$multiselect
+				? (new CColHeader(
+					(new CCheckBox('all_graphs'))
+						->onClick("javascript: checkAll('".$form->getName()."', 'all_graphs', 'graphs');")
+				))->addClass(ZBX_STYLE_CELL_WIDTH)
+				: null,
 			_('Name'),
 			_('Graph type')
-		);
-	}
-
-	$table->setHeader($header);
+		]);
 
 	if ($pageFilter->hostsSelected) {
-		$options = array(
-			'hostids' => $hostid,
+		$options = [
 			'output' => API_OUTPUT_EXTEND,
-			'nodeids' => $nodeId,
-			'selectHosts' => API_OUTPUT_EXTEND,
+			'hostids' => $hostid,
+			'selectHosts' => ['name'],
 			'preservekeys' => true
-		);
+		];
 
 		if (!is_null($writeonly)) {
 			$options['editable'] = true;
@@ -1466,34 +1448,37 @@ elseif ($srctbl == 'graphs') {
 		if (!is_null($templated)) {
 			$options['templated'] = $templated;
 		}
-		$graphs = API::Graph()->get($options);
+
+		if ($graphPrototypesPopup) {
+			$graphs = API::GraphPrototype()->get($options);
+		}
+		else {
+			$graphs = API::Graph()->get($options);
+		}
 		order_result($graphs, 'name');
 	}
 	else {
-		$graphs = array();
+		$graphs = [];
 	}
 
 	foreach ($graphs as $graph) {
 		$host = reset($graph['hosts']);
 		$graph['hostname'] = $host['name'];
-		$description = new CSpan($graph['name'], 'link');
+		$description = new CLink($graph['name'], 'javascript:void(0);');
 		$graph['name'] = $graph['hostname'].NAME_DELIMITER.$graph['name'];
 
 		if ($multiselect) {
 			$js_action = 'javascript: addValue('.zbx_jsvalue($reference).', '.zbx_jsvalue($graph['graphid']).');';
 		}
 		else {
-			$values = array(
+			$values = [
 				$dstfld1 => $graph[$srcfld1],
 				$dstfld2 => $graph[$srcfld2]
-			);
-			$js_action = 'javascript: addValues('.zbx_jsvalue($dstfrm).', '.zbx_jsvalue($values).'); close_window(); return false;';
+			];
+			$js_action = 'javascript: addValues('.zbx_jsvalue($dstfrm).', '.zbx_jsvalue($values).');'.
+				' close_window(); return false;';
 		}
-		$description->setAttribute('onclick', $js_action.' jQuery(this).removeAttr("onclick");');
-
-		if ($multiselect) {
-			$description = new CCol(array(new CCheckBox('graphs['.zbx_jsValue($graph[$srcfld1]).']', null, null, $graph['graphid']), $description));
-		}
+		$description->onClick($js_action.' jQuery(this).removeAttr("onclick");');
 
 		switch ($graph['graphtype']) {
 			case GRAPH_TYPE_STACKED:
@@ -1509,48 +1494,53 @@ elseif ($srctbl == 'graphs') {
 				$graphtype = _('Normal');
 				break;
 		}
-		$table->addRow(array(
+		$table->addRow([
+			$multiselect
+				? new CCheckBox('graphs['.zbx_jsValue($graph[$srcfld1]).']', $graph['graphid'])
+				: null,
 			$description,
 			$graphtype
-		));
+		]);
 		unset($description);
 	}
 
 	if ($multiselect) {
-		$button = new CButton('select', _('Select'), "javascript: addSelectedValues('graphs', ".zbx_jsvalue($reference).');');
-		$table->setFooter(new CCol($button, 'right'));
+		$table->setFooter(
+			new CCol(
+				(new CButton('select', _('Select')))
+					->onClick("javascript: addSelectedValues('graphs', ".zbx_jsvalue($reference).');')
+			)
+		);
 
 		insert_js('var popupReference = '.zbx_jsvalue($graphs, true).';');
 	}
-	zbx_add_post_js('chkbxRange.pageGoName = "graphs";');
 
 	$form->addItem($table);
-	$form->show();
+	$widget->addItem($form)->show();
 }
 /*
  * Sysmaps
  */
 elseif ($srctbl == 'sysmaps') {
-	$form = new CForm();
-	$form->setName('sysmapform');
-	$form->setAttribute('id', 'sysmaps');
+	$form = (new CForm())
+		->setName('sysmapform')
+		->setId('sysmaps');
 
-	$table = new CTableInfo(_('No maps found.'));
+	$table = (new CTableInfo())
+		->setHeader([
+			$multiselect
+				? (new CColHeader(
+					(new CCheckBox('all_sysmaps'))
+						->onClick("javascript: checkAll('".$form->getName()."', 'all_sysmaps', 'sysmaps');")
+				))->addClass(ZBX_STYLE_CELL_WIDTH)
+				: null,
+			_('Name')
+		]);
 
-	if ($multiselect) {
-		$header = array(array(new CCheckBox('all_sysmaps', null, "javascript: checkAll('".$form->getName()."', 'all_sysmaps', 'sysmaps');"), _('Name')));
-	}
-	else {
-		$header = array(_('Name'));
-	}
-
-	$table->setHeader($header);
-
-	$options = array(
-		'nodeids' => $nodeId,
+	$options = [
 		'output' => API_OUTPUT_EXTEND,
 		'preservekeys' => true
-	);
+	];
 	if (!is_null($writeonly)) {
 		$options['editable'] = true;
 	}
@@ -1558,44 +1548,45 @@ elseif ($srctbl == 'sysmaps') {
 	order_result($sysmaps, 'name');
 
 	foreach ($sysmaps as $sysmap) {
-		$sysmap['node_name'] = isset($sysmap['node_name']) ? '('.$sysmap['node_name'].') ' : '';
-		$name = $sysmap['node_name'].$sysmap['name'];
-		$description = new CSpan($sysmap['name'], 'link');
-
-		if ($multiselect) {
-			$js_action = 'javascript: addValue('.zbx_jsvalue($reference).', '.zbx_jsvalue($sysmap['sysmapid']).');';
-		}
-		else {
-			$values = array(
-				$dstfld1 => $sysmap[$srcfld1],
-				$dstfld2 => $sysmap[$srcfld2]
-			);
-			$js_action = 'javascript: addValues('.zbx_jsvalue($dstfrm).', '.zbx_jsvalue($values).'); close_window(); return false;';
-		}
 		if (isset($excludeids[$sysmap['sysmapid']])) {
-			$description->removeAttr('class');
+			$description = $sysmap['name'];
 		}
 		else {
-			$description->setAttribute('onclick', $js_action.' jQuery(this).removeAttr("onclick");');
+			if ($multiselect) {
+				$js_action = 'javascript: addValue('.zbx_jsvalue($reference).', '.zbx_jsvalue($sysmap['sysmapid']).');';
+			}
+			else {
+				$values = [
+					$dstfld1 => $sysmap[$srcfld1],
+					$dstfld2 => $sysmap[$srcfld2]
+				];
+				$js_action = 'javascript: addValues('.zbx_jsvalue($dstfrm).', '.zbx_jsvalue($values).'); close_window(); return false;';
+			}
+
+			$description = (new CLink($sysmap['name'], 'javascript:void(0);'))
+				->onClick($js_action.' jQuery(this).removeAttr("onclick");');
 		}
 
-		if ($multiselect) {
-			$description = new CCol(array(new CCheckBox('sysmaps['.zbx_jsValue($sysmap[$srcfld1]).']', null, null, $sysmap['sysmapid']), $description));
-		}
-		$table->addRow($description);
+		$table->addRow([
+			$multiselect ? new CCheckBox('sysmaps['.zbx_jsValue($sysmap[$srcfld1]).']', $sysmap['sysmapid']) : null,
+			$description
+		]);
 		unset($description);
 	}
 
 	if ($multiselect) {
-		$button = new CButton('select', _('Select'), "javascript: addSelectedValues('sysmaps', ".zbx_jsvalue($reference).');');
-		$table->setFooter(new CCol($button, 'right'));
+		$table->setFooter(
+			new CCol(
+				(new CButton('select', _('Select')))
+					->onClick("javascript: addSelectedValues('sysmaps', ".zbx_jsvalue($reference).');')
+			)
+		);
 
 		insert_js('var popupReference = '.zbx_jsvalue($sysmaps, true).';');
 	}
-	zbx_add_post_js('chkbxRange.pageGoName = "sysmaps";');
 
 	$form->addItem($table);
-	$form->show();
+	$widget->addItem($form)->show();
 }
 /*
  * Slides
@@ -1603,27 +1594,25 @@ elseif ($srctbl == 'sysmaps') {
 elseif ($srctbl == 'slides') {
 	require_once dirname(__FILE__).'/include/screens.inc.php';
 
-	$form = new CForm();
-	$form->setName('slideform');
-	$form->setAttribute('id', 'slides');
+	$form = (new CForm())
+		->setName('slideform')
+		->setId('slides');
 
-	$table = new CTableInfo(_('No slides found.'));
+	$table = (new CTableInfo())
+		->setHeader([
+			$multiselect
+				? (new CColHeader(
+					(new CCheckBox('all_slides'))
+						->onClick("javascript: checkAll('".$form->getName()."', 'all_slides', 'slides');")
+				))->addClass(ZBX_STYLE_CELL_WIDTH)
+				: null,
+			_('Name')
+		]);
 
-	if ($multiselect) {
-		$header = array(array(new CCheckBox('all_slides', null, "javascript: checkAll('".$form->getName()."', 'all_slides', 'slides');"), _('Name')),);
-	}
-	else {
-		$header = array(_('Name'));
-	}
+	$slideshows = [];
 
-	$table->setHeader($header);
+	$dbSlideshows = DBfetchArray(DBselect('SELECT s.slideshowid,s.name FROM slideshows s'));
 
-	$slideshows = array();
-	$dbSlideshows = DBfetchArray(DBselect(
-		'SELECT s.slideshowid,s.name'.
-		' FROM slideshows s'.
-		whereDbNode('s.slideshowid', $nodeId)
-	));
 	order_result($dbSlideshows, 'name');
 
 	foreach ($dbSlideshows as $dbSlideshow) {
@@ -1632,35 +1621,40 @@ elseif ($srctbl == 'slides') {
 		}
 		$slideshows[$dbSlideshow['slideshowid']] = $dbSlideshow;
 
-		$name = new CLink($dbSlideshow['name'], '#');
+		$name = new CLink($dbSlideshow['name'], 'javascript:void(0);');
 		if ($multiselect) {
 			$js_action = 'javascript: addValue('.zbx_jsvalue($reference).', '.zbx_jsvalue($dbSlideshow['slideshowid']).');';
 		}
 		else {
-			$values = array(
+			$values = [
 				$dstfld1 => $dbSlideshow[$srcfld1],
 				$dstfld2 => $dbSlideshow[$srcfld2]
-			);
+			];
 			$js_action = 'javascript: addValues('.zbx_jsvalue($dstfrm).', '.zbx_jsvalue($values).'); close_window(); return false;';
 		}
-		$name->setAttribute('onclick', $js_action.' jQuery(this).removeAttr("onclick");');
+		$name->onClick($js_action.' jQuery(this).removeAttr("onclick");');
 
-		if ($multiselect) {
-			$name = new CCol(array(new CCheckBox('slides['.zbx_jsValue($dbSlideshow[$srcfld1]).']', null, null, $dbSlideshow['slideshowid']), $name));
-		}
-		$table->addRow($name);
+		$table->addRow([
+			$multiselect
+				? new CCheckBox('slides['.zbx_jsValue($dbSlideshow[$srcfld1]).']', $dbSlideshow['slideshowid'])
+				: null,
+			$name
+		]);
 	}
 
 	if ($multiselect) {
-		$button = new CButton('select', _('Select'), "javascript: addSelectedValues('slides', ".zbx_jsvalue($reference).');');
-		$table->setFooter(new CCol($button, 'right'));
+		$table->setFooter(
+			new CCol(
+				(new CButton('select', _('Select')))
+					->onClick("javascript: addSelectedValues('slides', ".zbx_jsvalue($reference).');')
+			)
+		);
 
 		insert_js('var popupReference = '.zbx_jsvalue($slideshows, true).';');
 	}
-	zbx_add_post_js('chkbxRange.pageGoName = "slides";');
 
 	$form->addItem($table);
-	$form->show();
+	$widget->addItem($form)->show();
 }
 /*
  * Screens
@@ -1668,61 +1662,62 @@ elseif ($srctbl == 'slides') {
 elseif ($srctbl == 'screens') {
 	require_once dirname(__FILE__).'/include/screens.inc.php';
 
-	$form = new CForm();
-	$form->setName('screenform');
-	$form->setAttribute('id', 'screens');
+	$form = (new CForm())
+		->setName('screenform')
+		->setId('screens');
 
-	$table = new CTableInfo(_('No screens found.'));
+	$table = (new CTableInfo())
+		->setHeader([
+			$multiselect
+				? (new CColHeader(
+					(new CCheckBox('all_screens'))
+						->onClick("javascript: checkAll('".$form->getName()."', 'all_screens', 'screens');")
+				))->addClass(ZBX_STYLE_CELL_WIDTH)
+				: null,
+			_('Name')
+		]);
 
-	if ($multiselect) {
-		$header = array(
-			array(new CCheckBox('all_screens', null, "javascript: checkAll('".$form->getName()."', 'all_screens', 'screens');"), _('Name')),
-		);
-	}
-	else {
-		$header = array(_('Name'));
-	}
-	$table->setHeader($header);
-
-	$screens = API::Screen()->get(array(
-		'nodeids' => $nodeId,
-		'output' => array('screenid', 'name'),
+	$screens = API::Screen()->get([
+		'output' => ['screenid', 'name'],
 		'preservekeys' => true,
 		'editable' => ($writeonly === null) ? null: true
-	));
+	]);
 	order_result($screens, 'name');
 
 	foreach ($screens as $screen) {
-		$name = new CSpan($screen['name'], 'link');
+		$name = new CLink($screen['name'], 'javascript:void(0);');
 
 		if ($multiselect) {
 			$js_action = 'javascript: addValue('.zbx_jsvalue($reference).', '.zbx_jsvalue($screen['screenid']).');';
 		}
 		else {
-			$values = array(
+			$values = [
 				$dstfld1 => $screen[$srcfld1],
 				$dstfld2 => $screen[$srcfld2]
-			);
+			];
 			$js_action = 'javascript: addValues('.zbx_jsvalue($dstfrm).', '.zbx_jsvalue($values).'); close_window(); return false;';
 		}
-		$name->setAttribute('onclick', $js_action.' jQuery(this).removeAttr("onclick");');
+		$name->onClick($js_action.' jQuery(this).removeAttr("onclick");');
 
-		if ($multiselect) {
-			$name = new CCol(array(new CCheckBox('screens['.zbx_jsValue($screen[$srcfld1]).']', null, null, $screen['screenid']), $name));
-		}
-		$table->addRow($name);
+		$table->addRow([
+			$multiselect ? new CCheckBox('screens['.zbx_jsValue($screen[$srcfld1]).']', $screen['screenid']) : null,
+			$name
+		]);
 	}
 
 	if ($multiselect) {
-		$button = new CButton('select', _('Select'), "javascript: addSelectedValues('screens', ".zbx_jsvalue($reference).');');
-		$table->setFooter(new CCol($button, 'right'));
+		$table->setFooter(
+			new CCol(
+				(new CButton('select', _('Select')))
+					->onClick("javascript: addSelectedValues('screens', ".zbx_jsvalue($reference).');')
+			)
+		);
 
 		insert_js('var popupReference = '.zbx_jsvalue($screens, true).';');
 	}
-	zbx_add_post_js('chkbxRange.pageGoName = "screens";');
 
 	$form->addItem($table);
-	$form->show();
+	$widget->addItem($form)->show();
 }
 /*
  * Screens 2
@@ -1730,14 +1725,12 @@ elseif ($srctbl == 'screens') {
 elseif ($srctbl == 'screens2') {
 	require_once dirname(__FILE__).'/include/screens.inc.php';
 
-	$table = new CTableInfo(_('No screens found.'));
-	$table->setHeader(_('Name'));
+	$table = (new CTableInfo())->setHeader(_('Name'));
 
-	$screens = API::Screen()->get(array(
-		'nodeids' => $nodeId,
-		'output' => array('screenid', 'name'),
+	$screens = API::Screen()->get([
+		'output' => ['screenid', 'name'],
 		'editable' => ($writeonly === null) ? null: true
-	));
+	]);
 	order_result($screens, 'name');
 
 	foreach ($screens as $screen) {
@@ -1745,112 +1738,103 @@ elseif ($srctbl == 'screens2') {
 			continue;
 		}
 
-		$name = new CLink($screen['name'], '#');
+		$name = new CLink($screen['name'], 'javascript:void(0);');
 
 		$action = get_window_opener($dstfrm, $dstfld1, $screen[$srcfld1]).(isset($srcfld2) ? get_window_opener($dstfrm, $dstfld2, $screen[$srcfld2]) : '');
-		$name->setAttribute('onclick', $action.' close_window(); return false;');
+		$name->onClick($action.' close_window(); return false;');
 		$table->addRow($name);
 	}
-	$table->show();
+	$widget->addItem($table)->show();
 }
 
 /*
  * Discovery rules
  */
-elseif ($srctbl == 'drules') {
-	$table = new CTableInfo(_('No discovery rules found.'));
-	$table->setHeader(_('Name'));
+elseif ($srctbl === 'drules') {
+	$table = (new CTableInfo())->setHeader(_('Name'));
 
-	$result = DBselect(
-			'SELECT d.*'.
-			' FROM drules d'.
-			whereDbNode('d.druleid', $nodeId)
-	);
-	while ($row = DBfetch($result)) {
-		$action = get_window_opener($dstfrm, $dstfld1, $row[$srcfld1]).(isset($srcfld2) ? get_window_opener($dstfrm, $dstfld2, $row[$srcfld2]) : '');
-		$name = new CSpan($row['name'], 'link');
-		$name->setAttribute('onclick', $action.' close_window(); return false;');
+	$dRules = API::DRule()->get([
+		'output' => ['druleid', 'name']
+	]);
+
+	order_result($dRules, 'name');
+
+	foreach ($dRules as $dRule) {
+		$action = get_window_opener($dstfrm, $dstfld1, $dRule[$srcfld1]).(isset($srcfld2) ? get_window_opener($dstfrm, $dstfld2, $dRule[$srcfld2]) : '');
+		$name = (new CLink($dRule['name'], 'javascript:void(0);'))->onClick($action.' close_window(); return false;');
 		$table->addRow($name);
 	}
-	$table->show();
+	$widget->addItem($table)->show();
 }
 /*
  * Discovery checks
  */
-elseif ($srctbl == 'dchecks') {
-	$table = new CTableInfo(_('No discovery rules found.'));
-	$table->setHeader(_('Name'));
+elseif ($srctbl === 'dchecks') {
+	$table = (new CTableInfo())->setHeader(_('Name'));
 
-	$dRules = API::DRule()->get(array(
-		'selectDChecks' => array('dcheckid', 'type', 'key_', 'ports'),
-		'output' => array('name'),
-		'nodeids' => $nodeId
-	));
+	$dRules = API::DRule()->get([
+		'selectDChecks' => ['dcheckid', 'type', 'key_', 'ports'],
+		'output' => ['druleid', 'name']
+	]);
+
+	order_result($dRules, 'name');
+
 	foreach ($dRules as $dRule) {
 		foreach ($dRule['dchecks'] as $dCheck) {
 			$name = $dRule['name'].NAME_DELIMITER.discovery_check2str($dCheck['type'], $dCheck['key_'], $dCheck['ports']);
 			$action = get_window_opener($dstfrm, $dstfld1, $dCheck[$srcfld1]).
 				(isset($srcfld2) ? get_window_opener($dstfrm, $dstfld2, $name) : '');
-			$name = new CSpan($name, 'link');
-			$name->setAttribute('onclick', $action.' close_window(); return false;');
+			$name = (new CLink($name, 'javascript:void(0);'))->onClick($action.' close_window(); return false;');
 			$table->addRow($name);
 		}
 	}
-	$table->show();
+	$widget->addItem($table)->show();
 }
 /*
  * Proxies
  */
 elseif ($srctbl == 'proxies') {
-	$table = new CTableInfo(_('No proxies found.'));
-	$table->setHeader(_('Name'));
+	$table = (new CTableInfo())->setHeader(_('Name'));
 
 	$result = DBselect(
-			'SELECT h.hostid,h.host'.
-			' FROM hosts h'.
-			' WHERE h.status IN ('.HOST_STATUS_PROXY_ACTIVE.','.HOST_STATUS_PROXY_PASSIVE.')'.
-				andDbNode('h.hostid', $nodeId).
-			' ORDER BY h.host,h.hostid'
+		'SELECT h.hostid,h.host'.
+		' FROM hosts h'.
+		' WHERE h.status IN ('.HOST_STATUS_PROXY_ACTIVE.','.HOST_STATUS_PROXY_PASSIVE.')'.
+		' ORDER BY h.host,h.hostid'
 	);
+
 	while ($row = DBfetch($result)) {
 		$action = get_window_opener($dstfrm, $dstfld1, $row[$srcfld1]).(isset($srcfld2) ? get_window_opener($dstfrm, $dstfld2, $row[$srcfld2]) : '');
-		$name = new CSpan($row['host'], 'link');
-		$name->setAttribute('onclick', $action.' close_window(); return false;');
+		$name = (new CLink($row['host'], 'javascript:void(0);'))->onClick($action.' close_window(); return false;');
 		$table->addRow($name);
 	}
-	$table->show();
+	$widget->addItem($table)->show();
 }
 /*
  * Scripts
  */
 elseif ($srctbl == 'scripts') {
-	$form = new CForm();
-	$form->setName('scriptform');
-	$form->attr('id', 'scripts');
+	$form = (new CForm())
+		->setName('scriptform')
+		->setId('scripts');
 
-	$table = new CTableInfo(_('No scripts found.'));
-
-	if ($multiselect) {
-		$header = array(
-			array(new CCheckBox('all_scripts', null, "javascript: checkAll('".$form->getName()."', 'all_scripts', 'scripts');"), _('Name')),
-			_('Execute on'),
-			_('Commands')
-		);
-	}
-	else {
-		$header = array(
+	$table = (new CTableInfo())
+		->setHeader([
+			$multiselect
+				? (new CColHeader(
+					(new CCheckBox('all_scripts'))
+						->onClick("javascript: checkAll('".$form->getName()."', 'all_scripts', 'scripts');")
+				))->addClass(ZBX_STYLE_CELL_WIDTH)
+				: null,
 			_('Name'),
 			_('Execute on'),
 			_('Commands')
-		);
-	}
-	$table->setHeader($header);
+		]);
 
-	$options = array(
-		'nodeids' => $nodeId,
+	$options = [
 		'output' => API_OUTPUT_EXTEND,
 		'preservekeys' => true
-	);
+	];
 	if (is_null($hostid)) {
 		$options['groupids'] = $groupid;
 	}
@@ -1861,23 +1845,19 @@ elseif ($srctbl == 'scripts') {
 	order_result($scripts, 'name');
 
 	foreach ($scripts as $script) {
-		$description = new CLink($script['name'], '#');
+		$description = new CLink($script['name'], 'javascript:void(0);');
 
 		if ($multiselect) {
 			$js_action = 'javascript: addValue('.zbx_jsvalue($reference).', '.zbx_jsvalue($script['scriptid']).');';
 		}
 		else {
-			$values = array(
+			$values = [
 				$dstfld1 => $script[$srcfld1],
 				$dstfld2 => $script[$srcfld2]
-			);
+			];
 			$js_action = 'javascript: addValues('.zbx_jsvalue($dstfrm).', '.zbx_jsvalue($values).'); close_window(); return false;';
 		}
-		$description->setAttribute('onclick', $js_action.' jQuery(this).removeAttr("onclick");');
-
-		if ($multiselect) {
-			$description = new CCol(array(new CCheckBox('scripts['.zbx_jsValue($script[$srcfld1]).']', null, null, $script['scriptid']), $description));
-		}
+		$description->onClick($js_action.' jQuery(this).removeAttr("onclick");');
 
 		if ($script['type'] == ZBX_SCRIPT_TYPE_CUSTOM_SCRIPT) {
 			switch ($script['execute_on']) {
@@ -1892,22 +1872,26 @@ elseif ($srctbl == 'scripts') {
 		else {
 			$scriptExecuteOn = '';
 		}
-		$table->addRow(array(
+		$table->addRow([
+			$multiselect ? new CCheckBox('scripts['.zbx_jsValue($script[$srcfld1]).']', $script['scriptid']) : null,
 			$description,
 			$scriptExecuteOn,
 			zbx_nl2br(htmlspecialchars($script['command'], ENT_COMPAT, 'UTF-8')),
-		));
+		]);
 	}
 
 	if ($multiselect) {
-		$button = new CButton('select', _('Select'), "javascript: addSelectedValues('scripts', ".zbx_jsvalue($reference).');');
-		$table->setFooter(new CCol($button, 'right'));
+		$table->setFooter(
+			new CCol(
+				(new CButton('select', _('Select')))
+					->onClick("javascript: addSelectedValues('scripts', ".zbx_jsvalue($reference).');')
+			)
+		);
 		insert_js('var popupReference = '.zbx_jsvalue($scripts, true).';');
 	}
-	zbx_add_post_js('chkbxRange.pageGoName = "scripts";');
 
 	$form->addItem($table);
-	$form->show();
+	$widget->addItem($form)->show();
 }
 
 require_once dirname(__FILE__).'/include/page_footer.php';

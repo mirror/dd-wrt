@@ -36,8 +36,8 @@ class CScreenImporter extends CAbstractScreenImporter {
 		do {
 			$independentScreens = $this->getIndependentScreens($screens);
 
-			$screensToCreate = array();
-			$screensToUpdate = array();
+			$screensToCreate = [];
+			$screensToUpdate = [];
 			foreach ($independentScreens as $name) {
 				$screen = $screens[$name];
 				unset($screens[$name]);
@@ -67,7 +67,7 @@ class CScreenImporter extends CAbstractScreenImporter {
 
 		// if there are screens left in $screens, then they have unresolved references
 		foreach ($screens as $screen) {
-			$unresolvedReferences = array();
+			$unresolvedReferences = [];
 			foreach ($screen['screenitems'] as $screenItem) {
 				if ($screenItem['resourcetype'] == SCREEN_RESOURCE_SCREEN
 						&& !$this->referencer->resolveScreen($screenItem['resource']['name'])) {
@@ -89,8 +89,6 @@ class CScreenImporter extends CAbstractScreenImporter {
 	 * @see checkCircularRecursive
 	 *
 	 * @param array $screens
-	 *
-	 * @return void
 	 */
 	protected function checkCircularScreenReferences(array $screens) {
 		foreach ($screens as $screenName => $screen) {
@@ -99,7 +97,7 @@ class CScreenImporter extends CAbstractScreenImporter {
 			}
 
 			foreach ($screen['screenitems'] as $screenItem) {
-				$checked = array($screenName);
+				$checked = [$screenName];
 				if ($circScreens = $this->checkCircularRecursive($screenItem, $screens, $checked)) {
 					throw new Exception(_s('Circular reference in screens: %1$s.', implode(' - ', $circScreens)));
 				}

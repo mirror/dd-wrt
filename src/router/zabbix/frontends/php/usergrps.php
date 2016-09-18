@@ -28,178 +28,143 @@ require_once dirname(__FILE__).'/include/js.inc.php';
 
 $page['title'] = _('Configuration of user groups');
 $page['file'] = 'usergrps.php';
-$page['hist_arg'] = array('config');
+$page['scripts'] = ['multiselect.js'];
 
 require_once dirname(__FILE__).'/include/page_header.php';
 
 //	VAR		TYPE	OPTIONAL FLAGS	VALIDATION	EXCEPTION
-$fields = array(
-	'grpaction' =>			array(T_ZBX_INT, O_OPT, null,	IN('0,1'),	null),
+$fields = [
 	// group
-	'usrgrpid' =>			array(T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		'isset({grpaction})&&isset({form})&&{form}=="update"'),
-	'group_groupid' =>		array(T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		null),
-	'selusrgrp' =>			array(T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		null),
-	'gname' =>				array(T_ZBX_STR, O_OPT, null,	NOT_EMPTY,	'isset({save})'),
-	'users' =>				array(T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		null),
-	'gui_access' =>			array(T_ZBX_INT, O_OPT, null,	IN('0,1,2'),'isset({save})'),
-	'users_status' =>		array(T_ZBX_INT, O_OPT, null,	IN('0,1'),	null),
-	'debug_mode' =>			array(T_ZBX_INT, O_OPT, null,	IN('1'),	null),
-	'new_right' =>			array(T_ZBX_STR, O_OPT, null,	null,		null),
-	'right_to_del' =>		array(T_ZBX_STR, O_OPT, null,	null,		null),
-	'group_users_to_del' =>	array(T_ZBX_STR, O_OPT, null,	null,		null),
-	'group_users' =>		array(T_ZBX_STR, O_OPT, null,	null,		null),
-	'group_rights' =>		array(T_ZBX_STR, O_OPT, null,	null,		null),
-	'set_users_status' =>	array(T_ZBX_INT, O_OPT, null,	IN('0,1'),	null),
-	'set_gui_access' =>		array(T_ZBX_INT, O_OPT, null,	IN('0,1,2'),null),
-	'set_debug_mode' =>		array(T_ZBX_INT, O_OPT, null,	IN('0,1'),	null),
+	'usrgrpid' =>			[T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		'isset({form}) && {form} == "update"'],
+	'group_groupid' =>		[T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		null],
+	'selusrgrp' =>			[T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		null],
+	'gname' =>				[T_ZBX_STR, O_OPT, null,	NOT_EMPTY,	'isset({add}) || isset({update})', _('Group name')],
+	'gui_access' =>			[T_ZBX_INT, O_OPT, null,	IN('0,1,2'),'isset({add}) || isset({update})'],
+	'users_status' =>		[T_ZBX_INT, O_OPT, null,	IN([GROUP_STATUS_ENABLED, GROUP_STATUS_DISABLED]),	null],
+	'debug_mode' =>			[T_ZBX_INT, O_OPT, null,	IN('1'),	null],
+	'group_users' =>		[T_ZBX_STR, O_OPT, null,	null,		null],
+	'groups_rights' =>		[T_ZBX_STR, O_OPT, null,	null,		null],
+	'set_gui_access' =>		[T_ZBX_INT, O_OPT, null,	IN('0,1,2'),null],
 	// actions
-	'go' =>					array(T_ZBX_STR, O_OPT, P_SYS|P_ACT, null, null),
-	'register' =>			array(T_ZBX_STR, O_OPT, P_SYS|P_ACT, IN('"add permission","delete permission"'), null),
-	'save' =>				array(T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,	null),
-	'delete' =>				array(T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,	null),
-	'delete_selected' =>	array(T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,	null),
-	'del_user_group' =>		array(T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,	null),
-	'del_user_media' =>		array(T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,	null),
-	'del_read_only' =>		array(T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,	null),
-	'del_read_write' =>		array(T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,	null),
-	'del_deny' =>			array(T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,	null),
-	'del_group_user' =>		array(T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,	null),
-	'add_read_only' =>		array(T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,	null),
-	'add_read_write' =>		array(T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,	null),
-	'add_deny' =>			array(T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,	null),
-	'change_password' =>	array(T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,	null),
-	'cancel' =>				array(T_ZBX_STR, O_OPT, P_SYS,		 null,	null),
+	'action' =>				[T_ZBX_STR, O_OPT, P_SYS|P_ACT,
+								IN('"usergroup.massdisable","usergroup.massdisabledebug","usergroup.massdelete",'.
+									'"usergroup.massenable","usergroup.massenabledebug","usergroup.set_gui_access"'
+								),
+								null
+							],
+	'add' =>				[T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,	null],
+	'update' =>				[T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,	null],
+	'delete' =>				[T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,	null],
+	'delete_selected' =>	[T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,	null],
+	'add_permission' =>		[T_ZBX_STR, O_OPT, null,		 null,	null],
+	'new_permission' =>		[T_ZBX_STR, O_OPT, null,		 null,	null],
+	'groupids' =>			[T_ZBX_STR, O_OPT, null,		 null,	null],
+	'groupids_subgroupids' => [T_ZBX_STR, O_OPT, null,		 null,	null],
 	// form
-	'form' =>				array(T_ZBX_STR, O_OPT, P_SYS,		 null,	null),
-	'form_refresh' =>		array(T_ZBX_STR, O_OPT, null,		 null,	null)
-);
+	'form' =>				[T_ZBX_STR, O_OPT, P_SYS,		 null,	null],
+	'form_refresh' =>		[T_ZBX_INT, O_OPT, null,		 null,	null],
+	// filter
+	'filter_set' =>			[T_ZBX_STR, O_OPT, P_SYS,	null,		null],
+	'filter_rst' =>			[T_ZBX_STR, O_OPT, P_SYS,	null,		null],
+	'filter_name' =>		[T_ZBX_STR, O_OPT, null,	null,		null],
+	'filter_users_status' =>[T_ZBX_INT, O_OPT, null,	IN([-1, GROUP_STATUS_ENABLED, GROUP_STATUS_DISABLED]),		null],
+	// sort and sortorder
+	'sort' =>				[T_ZBX_STR, O_OPT, P_SYS, IN('"name"'),								null],
+	'sortorder' =>			[T_ZBX_STR, O_OPT, P_SYS, IN('"'.ZBX_SORT_DOWN.'","'.ZBX_SORT_UP.'"'),	null]
+];
 check_fields($fields);
-validate_sort_and_sortorder('name', ZBX_SORT_UP);
 
-$_REQUEST['users_status'] = isset($_REQUEST['users_status']) ? 0 : 1;
-$_REQUEST['debug_mode'] = get_request('debug_mode', 0);
+$_REQUEST['users_status'] = hasRequest('users_status') ? GROUP_STATUS_ENABLED : GROUP_STATUS_DISABLED;
+$_REQUEST['debug_mode'] = getRequest('debug_mode', 0);
 
 /*
  * Permissions
  */
 if (isset($_REQUEST['usrgrpid'])) {
-	$dbUserGroup = API::UserGroup()->get(array(
+	$dbUserGroup = API::UserGroup()->get([
 		'usrgrpids' => $_REQUEST['usrgrpid'],
 		'output' => API_OUTPUT_EXTEND
-	));
+	]);
 
 	if (!$dbUserGroup) {
 		access_deny();
 	}
 }
-elseif (isset($_REQUEST['go'])) {
-	if (!isset($_REQUEST['group_groupid']) || !is_array($_REQUEST['group_groupid'])) {
+elseif (hasRequest('action')) {
+	if (!hasRequest('group_groupid') || !is_array(getRequest('group_groupid'))) {
 		access_deny();
 	}
 	else {
-		$dbUserGroupCount = API::UserGroup()->get(array(
-			'usrgrpids' => $_REQUEST['group_groupid'],
+		$dbUserGroupCount = API::UserGroup()->get([
+			'output' => ['usrgrpid'],
+			'usrgrpids' => getRequest('group_groupid'),
 			'countOutput' => true
-		));
+		]);
 
-		if ($dbUserGroupCount != count($_REQUEST['group_groupid'])) {
+		if ($dbUserGroupCount != count(getRequest('group_groupid'))) {
 			access_deny();
 		}
 	}
 }
-$_REQUEST['go'] = get_request('go', 'none');
 
 /*
  * Actions
  */
-if (isset($_REQUEST['del_deny']) && isset($_REQUEST['right_to_del']['deny'])) {
-	$_REQUEST['group_rights'] = get_request('group_rights', array());
+if (hasRequest('add') || hasRequest('update')) {
+	$userGroup = [
+		'name' => getRequest('gname'),
+		'users_status' => getRequest('users_status'),
+		'gui_access' => getRequest('gui_access'),
+		'debug_mode' => getRequest('debug_mode'),
+		'userids' => getRequest('group_users', []),
+		'rights' => [],
+	];
 
-	foreach ($_REQUEST['right_to_del']['deny'] as $name) {
-		if (!isset($_REQUEST['group_rights'][$name])) {
-			continue;
-		}
+	$groups_rights = applyHostGroupRights(getRequest('groups_rights', []));
 
-		if ($_REQUEST['group_rights'][$name]['permission'] == PERM_DENY) {
-			unset($_REQUEST['group_rights'][$name]);
-		}
-	}
-}
-elseif (isset($_REQUEST['del_read_only']) && isset($_REQUEST['right_to_del']['read_only'])) {
-	$_REQUEST['group_rights'] = get_request('group_rights', array());
-
-	foreach ($_REQUEST['right_to_del']['read_only'] as $name) {
-		if (!isset($_REQUEST['group_rights'][$name])) {
-			continue;
-		}
-
-		if ($_REQUEST['group_rights'][$name]['permission'] == PERM_READ) {
-			unset($_REQUEST['group_rights'][$name]);
+	foreach ($groups_rights as $groupid => $group_rights) {
+		if ($groupid != 0 && $group_rights['permission'] != PERM_NONE) {
+			$userGroup['rights'][] = [
+				'id' => $groupid,
+				'permission' => $group_rights['permission']
+			];
 		}
 	}
-}
-elseif (isset($_REQUEST['del_read_write']) && isset($_REQUEST['right_to_del']['read_write'])) {
-	$_REQUEST['group_rights'] = get_request('group_rights', array());
 
-	foreach ($_REQUEST['right_to_del']['read_write'] as $name) {
-		if (!isset($_REQUEST['group_rights'][$name])) {
-			continue;
-		}
+	DBstart();
 
-		if ($_REQUEST['group_rights'][$name]['permission'] == PERM_READ_WRITE) {
-			unset($_REQUEST['group_rights'][$name]);
-		}
-	}
-}
-elseif (isset($_REQUEST['new_right'])) {
-	$_REQUEST['group_rights'] = get_request('group_rights', array());
-
-	foreach ($_REQUEST['new_right'] as $id => $right) {
-		$_REQUEST['group_rights'][$id] = array(
-			'name' => $right['name'],
-			'permission' => $right['permission'],
-			'id' => $id
-		);
-	}
-}
-elseif (isset($_REQUEST['save'])) {
-	$userGroup = array(
-		'name' => $_REQUEST['gname'],
-		'users_status' => $_REQUEST['users_status'],
-		'gui_access' => $_REQUEST['gui_access'],
-		'debug_mode' => $_REQUEST['debug_mode'],
-		'userids' => get_request('group_users', array()),
-		'rights' => array_values(get_request('group_rights', array()))
-	);
-
-	if (isset($_REQUEST['usrgrpid'])) {
-		$userGroup['usrgrpid'] = $_REQUEST['usrgrpid'];
+	if (hasRequest('update')) {
+		$userGroup['usrgrpid'] = getRequest('usrgrpid');
 		$result = API::UserGroup()->update($userGroup);
 
+		$messageSuccess = _('Group updated');
+		$messageFailed = _('Cannot update group');
 		$action = AUDIT_ACTION_UPDATE;
-		show_messages($result, _('Group updated'), _('Cannot update group'));
 	}
 	else {
 		$result = API::UserGroup()->create($userGroup);
 
+		$messageSuccess = _('Group added');
+		$messageFailed = _('Cannot add group');
 		$action = AUDIT_ACTION_ADD;
-		show_messages($result, _('Group added'), _('Cannot add group'));
 	}
 
 	if ($result) {
-		add_audit($action, AUDIT_RESOURCE_USER_GROUP, 'Group name ['.$_REQUEST['gname'].']');
+		add_audit($action, AUDIT_RESOURCE_USER_GROUP, 'Group name ['.$userGroup['name'].']');
 		unset($_REQUEST['form']);
-		clearCookies($result);
 	}
+
+	$result = DBend($result);
+
+	if ($result) {
+		uncheckTableRows();
+	}
+	show_messages($result, $messageSuccess, $messageFailed);
 }
 elseif (isset($_REQUEST['delete'])) {
 	DBstart();
 
-	$result = API::UserGroup()->delete(array($_REQUEST['usrgrpid']));
-	$result = DBend($result);
-
-	show_messages($result, _('Group deleted'), _('Cannot delete group'));
-	clearCookies($result);
+	$result = API::UserGroup()->delete([$_REQUEST['usrgrpid']]);
 
 	if ($result) {
 		$group = reset($dbUserGroup);
@@ -207,16 +172,22 @@ elseif (isset($_REQUEST['delete'])) {
 		add_audit(AUDIT_ACTION_DELETE, AUDIT_RESOURCE_USER_GROUP, 'Group name ['.$group['name'].']');
 		unset($_REQUEST['usrgrpid'], $_REQUEST['form']);
 	}
+
+	$result = DBend($result);
+
+	if ($result) {
+		uncheckTableRows();
+	}
+	show_messages($result, _('Group deleted'), _('Cannot delete group'));
 }
-elseif ($_REQUEST['go'] == 'delete') {
-	$groupIds = get_request('group_groupid', array());
-	$groups = array();
+elseif (hasRequest('action') && getRequest('action') === 'usergroup.massdelete' && hasRequest('group_groupid')) {
+	$groupIds = getRequest('group_groupid');
+	$groups = [];
 
 	$dbGroups = DBselect(
 		'SELECT ug.usrgrpid,ug.name'.
 		' FROM usrgrp ug'.
-		' WHERE '.dbConditionInt('ug.usrgrpid', $groupIds).
-			andDbNode('ug.usrgrpid')
+		' WHERE '.dbConditionInt('ug.usrgrpid', $groupIds)
 	);
 	while ($group = DBfetch($dbGroups)) {
 		$groups[$group['usrgrpid']] = $group;
@@ -225,30 +196,31 @@ elseif ($_REQUEST['go'] == 'delete') {
 	if ($groups) {
 		DBstart();
 
-		$goResult = API::UserGroup()->delete($groupIds);
+		$result = API::UserGroup()->delete($groupIds);
 
-		if ($goResult) {
+		if ($result) {
 			foreach ($groups as $groupId => $group) {
 				add_audit(AUDIT_ACTION_DELETE, AUDIT_RESOURCE_USER_GROUP, 'Group name ['.$group['name'].']');
 			}
 		}
 
-		$goResult = DBend($goResult);
+		$result = DBend($result);
 
-		show_messages($goResult, _('Group deleted'), _('Cannot delete group'));
-		clearCookies($goResult);
+		if ($result) {
+			uncheckTableRows();
+		}
+		show_messages($result, _('Group deleted'), _('Cannot delete group'));
 	}
 }
-elseif ($_REQUEST['go'] == 'set_gui_access') {
-	$groupIds = get_request('group_groupid', get_request('usrgrpid'));
+elseif (hasRequest('action') && getRequest('action') === 'usergroup.set_gui_access') {
+	$groupIds = getRequest('group_groupid', getRequest('usrgrpid'));
 	zbx_value2array($groupIds);
 
-	$groups = array();
+	$groups = [];
 	$dbGroups = DBselect(
 		'SELECT ug.usrgrpid,ug.name'.
 		' FROM usrgrp ug'.
-		' WHERE '.dbConditionInt('ug.usrgrpid', $groupIds).
-			andDbNode('ug.usrgrpid')
+		' WHERE '.dbConditionInt('ug.usrgrpid', $groupIds)
 	);
 	while ($group = DBfetch($dbGroups)) {
 		$groups[$group['usrgrpid']] = $group;
@@ -257,34 +229,35 @@ elseif ($_REQUEST['go'] == 'set_gui_access') {
 	if ($groups) {
 		DBstart();
 
-		$goResult = change_group_gui_access($groupIds, $_REQUEST['set_gui_access']);
+		$result = change_group_gui_access($groupIds, getRequest('set_gui_access'));
 
-		if ($goResult) {
-			$auditAction = ($_REQUEST['set_gui_access'] == GROUP_GUI_ACCESS_DISABLED) ? AUDIT_ACTION_DISABLE : AUDIT_ACTION_ENABLE;
+		if ($result) {
+			$auditAction = (getRequest('set_gui_access') == GROUP_GUI_ACCESS_DISABLED) ? AUDIT_ACTION_DISABLE : AUDIT_ACTION_ENABLE;
 
 			foreach ($groups as $groupId => $group) {
 				add_audit($auditAction, AUDIT_RESOURCE_USER_GROUP, 'GUI access for group name ['.$group['name'].']');
 			}
 		}
 
-		$goResult = DBend($goResult);
+		$result = DBend($result);
 
-		show_messages($goResult, _('Frontend access updated'), _('Cannot update frontend access'));
-		clearCookies($goResult);
+		if ($result) {
+			uncheckTableRows();
+		}
+		show_messages($result, _('Frontend access updated'), _('Cannot update frontend access'));
 	}
 }
-elseif (str_in_array($_REQUEST['go'], array('enable_debug', 'disable_debug'))) {
-	$groupIds = get_request('group_groupid', get_request('usrgrpid'));
+elseif (hasRequest('action') && str_in_array(getRequest('action'), ['usergroup.massenabledebug', 'usergroup.massdisabledebug'])) {
+	$groupIds = getRequest('group_groupid', getRequest('usrgrpid'));
 	zbx_value2array($groupIds);
 
-	$setDebugMode = ($_REQUEST['go'] == 'enable_debug') ? GROUP_DEBUG_MODE_ENABLED : GROUP_DEBUG_MODE_DISABLED;
+	$setDebugMode = (getRequest('action') == 'usergroup.massenabledebug') ? GROUP_DEBUG_MODE_ENABLED : GROUP_DEBUG_MODE_DISABLED;
 
-	$groups = array();
+	$groups = [];
 	$dbGroup = DBselect(
 		'SELECT ug.usrgrpid,ug.name'.
 		' FROM usrgrp ug'.
-		' WHERE '.dbConditionInt('ug.usrgrpid', $groupIds).
-			andDbNode('ug.usrgrpid')
+		' WHERE '.dbConditionInt('ug.usrgrpid', $groupIds)
 	);
 	while ($group = DBfetch($dbGroup)) {
 		$groups[$group['usrgrpid']] = $group;
@@ -293,9 +266,9 @@ elseif (str_in_array($_REQUEST['go'], array('enable_debug', 'disable_debug'))) {
 	if ($groups) {
 		DBstart();
 
-		$goResult = change_group_debug_mode($groupIds, $setDebugMode);
+		$result = change_group_debug_mode($groupIds, $setDebugMode);
 
-		if ($goResult) {
+		if ($result) {
 			$auditAction = ($setDebugMode == GROUP_DEBUG_MODE_DISABLED) ? AUDIT_ACTION_DISABLE : AUDIT_ACTION_ENABLE;
 
 			foreach ($groups as $groupId => $group) {
@@ -303,26 +276,27 @@ elseif (str_in_array($_REQUEST['go'], array('enable_debug', 'disable_debug'))) {
 			}
 		}
 
-		$goResult = DBend($goResult);
+		$result = DBend($result);
 
-		show_messages($goResult, _('Debug mode updated'), _('Cannot update debug mode'));
-		clearCookies($goResult);
+		if ($result) {
+			uncheckTableRows();
+		}
+		show_messages($result, _('Debug mode updated'), _('Cannot update debug mode'));
 	}
 }
-elseif (str_in_array(getRequest('go'), array('enable_status', 'disable_status'))) {
+elseif (hasRequest('action') && str_in_array(getRequest('action'), ['usergroup.massenable', 'usergroup.massdisable'])) {
 	$groupIds = getRequest('group_groupid', getRequest('usrgrpid'));
 	zbx_value2array($groupIds);
 
-	$enable = (getRequest('go') == 'enable_status');
+	$enable = (getRequest('action') == 'usergroup.massenable');
 	$status = $enable ? GROUP_STATUS_ENABLED : GROUP_STATUS_DISABLED;
 	$auditAction = $enable ? AUDIT_ACTION_ENABLE : AUDIT_ACTION_DISABLE;
-	$groups = array();
+	$groups = [];
 
 	$dbGroups = DBselect(
 		'SELECT ug.usrgrpid,ug.name'.
 		' FROM usrgrp ug'.
-		' WHERE '.dbConditionInt('ug.usrgrpid', $groupIds).
-			andDbNode('ug.usrgrpid')
+		' WHERE '.dbConditionInt('ug.usrgrpid', $groupIds)
 	);
 	while ($group = DBfetch($dbGroups)) {
 		$groups[$group['usrgrpid']] = $group;
@@ -349,90 +323,79 @@ elseif (str_in_array(getRequest('go'), array('enable_status', 'disable_status'))
 
 		$result = DBend($result);
 
+		if ($result) {
+			uncheckTableRows();
+		}
 		show_messages($result, $messageSuccess, $messageFailed);
-		clearCookies($result);
 	}
 }
 
 /*
  * Display
  */
-if (isset($_REQUEST['form'])) {
-	$data = array(
-		'usrgrpid' => get_request('usrgrpid'),
-		'form' => get_request('form'),
-		'form_refresh' => get_request('form_refresh', 0)
-	);
+if (hasRequest('form')) {
+	$data = [
+		'usrgrpid' => getRequest('usrgrpid', 0),
+		'form' => getRequest('form'),
+		'name' => getRequest('gname', ''),
+		'users_status' => hasRequest('form_refresh') ? getRequest('users_status') : GROUP_STATUS_ENABLED,
+		'gui_access' => getRequest('gui_access', GROUP_GUI_ACCESS_SYSTEM),
+		'debug_mode' => getRequest('debug_mode', GROUP_DEBUG_MODE_DISABLED),
+		'group_users' => hasRequest('form_refresh') ? getRequest('group_users', []) : [],
+		'form_refresh' => getRequest('form_refresh', 0)
+	];
 
-	if (isset($_REQUEST['usrgrpid'])) {
-		$data['usrgrp'] = reset($dbUserGroup);
-	}
+	if ($data['usrgrpid'] != 0) {
+		// User group exists, but there might be no permissions set yet.
+		$db_user_group = reset($dbUserGroup);
+		$data['name'] = getRequest('gname', $db_user_group['name']);
+		$data['users_status'] = hasRequest('form_refresh')
+			? getRequest('users_status')
+			: $db_user_group['users_status'];
+		$data['gui_access'] = getRequest('gui_access', $db_user_group['gui_access']);
+		$data['debug_mode'] = hasRequest('form_refresh') ? getRequest('debug_mode') : $db_user_group['debug_mode'];
 
-	if (isset($_REQUEST['usrgrpid']) && !isset($_REQUEST['form_refresh'])) {
-		$data['name'] = $data['usrgrp']['name'];
-		$data['users_status'] = $data['usrgrp']['users_status'];
-		$data['gui_access'] = $data['usrgrp']['gui_access'];
-		$data['debug_mode'] = $data['usrgrp']['debug_mode'];
-
-		// group users
-		$data['group_users'] = array();
-
-		$dbUsers = DBselect(
-			'SELECT DISTINCT u.userid '.
-			' FROM users u,users_groups ug '.
-			' WHERE u.userid=ug.userid '.
-				' AND ug.usrgrpid='.zbx_dbstr($data['usrgrpid'])
-		);
-		while ($dbUser = DBfetch($dbUsers)) {
-			$data['group_users'][$dbUser['userid']] = $dbUser['userid'];
-		}
-
-		// group rights
-		$data['group_rights'] = array();
-
-		$dbRights = DBselect(
-			'SELECT r.*,n.name AS nodename,g.name AS name'.
-			' FROM groups g'.
-				' LEFT JOIN rights r ON r.id=g.groupid'.
-				' LEFT JOIN nodes n ON n.nodeid='.DBid2nodeid('g.groupid').
-			' WHERE r.groupid='.zbx_dbstr($data['usrgrpid'])
-		);
-		while ($dbRight = DBfetch($dbRights)) {
-			if (!empty($dbRight['nodename'])) {
-				$dbRight['name'] = $dbRight['nodename'].NAME_DELIMITER.$dbRight['name'];
-			}
-
-			$data['group_rights'][$dbRight['id']] = array(
-				'permission' => $dbRight['permission'],
-				'name' => $dbRight['name'],
-				'id' => $dbRight['id']
+		if (!hasRequest('form_refresh')) {
+			$dbUsers = DBselect(
+				'SELECT ug.userid'.
+				' FROM users_groups ug'.
+				' WHERE ug.usrgrpid='.zbx_dbstr($data['usrgrpid'])
 			);
+
+			while ($dbUser = DBfetch($dbUsers)) {
+				$data['group_users'][] = $dbUser['userid'];
+			}
 		}
 	}
-	else {
-		$data['name'] = get_request('gname', '');
-		$data['users_status'] = get_request('users_status', GROUP_STATUS_ENABLED);
-		$data['gui_access'] = get_request('gui_access', GROUP_GUI_ACCESS_SYSTEM);
-		$data['debug_mode'] = get_request('debug_mode', GROUP_DEBUG_MODE_DISABLED);
-		$data['group_users'] = get_request('group_users', array());
-		$data['group_rights'] = get_request('group_rights', array());
+
+	$data['groups_rights'] = hasRequest('form_refresh')
+		? getRequest('groups_rights', [])
+		: collapseHostGroupRights(getHostGroupsRights($data['usrgrpid'] == 0 ? [] : [$data['usrgrpid']]));
+
+	if (hasRequest('add_permission')) {
+		// Add new permission with submit().
+
+		$groupids = getRequest('groupids', []);
+		$groupids_subgroupids = getRequest('groupids_subgroupids', []);
+		$new_permission = getRequest('new_permission', PERM_NONE);
+
+		$data['groups_rights'] = collapseHostGroupRights(
+			applyHostGroupRights($data['groups_rights'], $groupids, $groupids_subgroupids, $new_permission)
+		);
 	}
 
-	$data['selected_usrgrp'] = get_request('selusrgrp', 0);
-
-	// sort group rights
-	order_result($data['group_rights'], 'name');
+	$data['selected_usrgrp'] = getRequest('selusrgrp', 0);
 
 	// get users
 	if ($data['selected_usrgrp'] > 0) {
 		$sqlFrom = ',users_groups g';
 		$sqlWhere =
 			' WHERE '.dbConditionInt('u.userid', $data['group_users']).
-				' OR (u.userid=g.userid AND g.usrgrpid='.zbx_dbstr($data['selected_usrgrp']).andDbNode('u.userid').')';
+				' OR (u.userid=g.userid AND g.usrgrpid='.zbx_dbstr($data['selected_usrgrp']).')';
 	}
 	else {
 		$sqlFrom = '';
-		$sqlWhere = whereDbNode('u.userid');
+		$sqlWhere = '';
 	}
 
 	$data['users'] = DBfetchArray(DBselect(
@@ -444,47 +407,67 @@ if (isset($_REQUEST['form'])) {
 
 	// get user groups
 	$data['usergroups'] = DBfetchArray(DBselect(
-		'SELECT ug.usrgrpid,ug.name'.
-		' FROM usrgrp ug'.
-			whereDbNode('usrgrpid')
+		'SELECT ug.usrgrpid,ug.name FROM usrgrp ug'
 	));
+
 	order_result($data['usergroups'], 'name');
 
 	// render view
-	$userGroupsView = new CView('administration.usergroups.edit', $data);
-	$userGroupsView->render();
-	$userGroupsView->show();
+	$view = new CView('administration.usergroups.edit', $data);
 }
 else {
-	$data = array(
-		'displayNodes' => is_array(get_current_nodeid())
-	);
+	$sortField = getRequest('sort', CProfile::get('web.'.$page['file'].'.sort', 'name'));
+	$sortOrder = getRequest('sortorder', CProfile::get('web.'.$page['file'].'.sortorder', ZBX_SORT_UP));
 
-	$sortfield = getPageSortField('name');
+	CProfile::update('web.'.$page['file'].'.sort', $sortField, PROFILE_TYPE_STR);
+	CProfile::update('web.'.$page['file'].'.sortorder', $sortOrder, PROFILE_TYPE_STR);
 
-	$data['usergroups'] = API::UserGroup()->get(array(
-		'output' => API_OUTPUT_EXTEND,
-		'selectUsers' => API_OUTPUT_EXTEND,
-		'sortfield' => $sortfield,
-		'limit' => $config['search_limit'] + 1
-	));
-
-	// sorting & paging
-	order_result($data['usergroups'], $sortfield, getPageSortOrder());
-	$data['paging'] = getPagingLine($data['usergroups'], array('usrgrpid'));
-
-	// nodes
-	if ($data['displayNodes']) {
-		foreach ($data['usergroups'] as &$userGroup) {
-			$userGroup['nodename'] = get_node_name_by_elid($userGroup['usrgrpid'], true);
-		}
-		unset($userGroup);
+	// filter
+	if (hasRequest('filter_set')) {
+		CProfile::update('web.usergroup.filter_name', getRequest('filter_name', ''), PROFILE_TYPE_STR);
+		CProfile::update('web.usergroup.filter_users_status', getRequest('filter_users_status', -1), PROFILE_TYPE_INT);
+	}
+	elseif (hasRequest('filter_rst')) {
+		CProfile::delete('web.usergroup.filter_name');
+		CProfile::delete('web.usergroup.filter_users_status');
 	}
 
+	$filter = [
+		'name' => CProfile::get('web.usergroup.filter_name', ''),
+		'users_status' => CProfile::get('web.usergroup.filter_users_status', -1)
+	];
+
+	$config = select_config();
+
+	$data = [
+		'sort' => $sortField,
+		'sortorder' => $sortOrder,
+		'filter' => $filter,
+		'config' => $config
+	];
+
+	$data['usergroups'] = API::UserGroup()->get([
+		'output' => API_OUTPUT_EXTEND,
+		'selectUsers' => API_OUTPUT_EXTEND,
+		'search' => [
+			'name' => ($filter['name'] === '') ? null : $filter['name']
+		],
+		'filter' => [
+			'users_status' => ($filter['users_status'] == -1) ? null : $filter['users_status']
+		],
+		'sortfield' => $sortField,
+		'limit' => $config['search_limit'] + 1
+	]);
+
+	// sorting & paging
+	order_result($data['usergroups'], $sortField, $sortOrder);
+	$data['paging'] = getPagingLine($data['usergroups'], $sortOrder, new CUrl('usergrps.php'));
+
 	// render view
-	$userGroupsView = new CView('administration.usergroups.list', $data);
-	$userGroupsView->render();
-	$userGroupsView->show();
+	$view = new CView('administration.usergroups.list', $data);
 }
+
+$view->render();
+$view->show();
 
 require_once dirname(__FILE__).'/include/page_footer.php';

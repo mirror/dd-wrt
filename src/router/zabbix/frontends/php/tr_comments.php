@@ -23,18 +23,19 @@ require_once dirname(__FILE__).'/include/config.inc.php';
 require_once dirname(__FILE__).'/include/triggers.inc.php';
 require_once dirname(__FILE__).'/include/forms.inc.php';
 
-$page['title'] = _('Trigger comments');
+$page['title'] = _('Trigger description');
 $page['file'] = 'tr_comments.php';
 
 require_once dirname(__FILE__).'/include/page_header.php';
 
 // VAR	TYPE	OPTIONAL	FLAGS	VALIDATION	EXCEPTION
-$fields = array(
-	'triggerid' =>	array(T_ZBX_INT, O_MAND, P_SYS,			DB_ID,	null),
-	'comments' =>	array(T_ZBX_STR, O_OPT, null,			null,	'isset({save})'),
-	'save' =>		array(T_ZBX_STR, O_OPT, P_SYS|P_ACT,	null,	null),
-	'cancel' =>		array(T_ZBX_STR, O_OPT, P_SYS|P_ACT,	null,	null)
-);
+$fields = [
+	'triggerid' =>	[T_ZBX_INT, O_MAND, P_SYS,			DB_ID,	null],
+	'comments' =>	[T_ZBX_STR, O_OPT, null,			null,	'isset({update})'],
+	// actions
+	'update' =>		[T_ZBX_STR, O_OPT, P_SYS|P_ACT,	null,	null],
+	'cancel' =>		[T_ZBX_STR, O_OPT, P_SYS|P_ACT,	null,	null]
+];
 check_fields($fields);
 
 if (!isset($_REQUEST['triggerid'])) {
@@ -44,12 +45,11 @@ if (!isset($_REQUEST['triggerid'])) {
 /*
  * Permissions
  */
-$trigger = API::Trigger()->get(array(
-	'nodeids' => get_current_nodeid(true),
+$trigger = API::Trigger()->get([
 	'triggerids' => $_REQUEST['triggerid'],
 	'output' => API_OUTPUT_EXTEND,
 	'expandDescription' => true
-));
+]);
 
 if (!$trigger) {
 	access_deny();
@@ -60,42 +60,47 @@ $trigger = reset($trigger);
 /*
  * Actions
  */
-if (isset($_REQUEST['save'])) {
+if (hasRequest('update')) {
+	DBstart();
+
 	$result = DBexecute(
 		'UPDATE triggers'.
-		' SET comments='.zbx_dbstr($_REQUEST['comments']).
-		' WHERE triggerid='.zbx_dbstr($_REQUEST['triggerid'])
+		' SET comments='.zbx_dbstr(getRequest('comments')).
+		' WHERE triggerid='.zbx_dbstr(getRequest('triggerid'))
 	);
-	show_messages($result, _('Comment updated'), _('Cannot update comment'));
 
 	$trigger['comments'] = $_REQUEST['comments'];
 
 	if ($result) {
 		add_audit(AUDIT_ACTION_UPDATE, AUDIT_RESOURCE_TRIGGER,
 			_('Trigger').' ['.$_REQUEST['triggerid'].'] ['.$trigger['description'].'] '.
-			_('Comments').' ['.$_REQUEST['comments'].']');
+			_('Comments').' ['.$_REQUEST['comments'].']'
+		);
 	}
+
+	$result = DBend($result);
+	show_messages($result, _('Description updated'), _('Cannot update description'));
 }
 elseif (isset($_REQUEST['cancel'])) {
 	jsRedirect('tr_status.php');
-	exit();
+	exit;
 }
 
 /*
  * Display
  */
-$triggerEditable = API::Trigger()->get(array(
+$triggerEditable = API::Trigger()->get([
 	'triggerids' => $_REQUEST['triggerid'],
-	'output' => array('triggerid'),
+	'output' => ['triggerid'],
 	'editable' => true
-));
+]);
 
-$data = array(
-	'triggerid' => get_request('triggerid'),
+$data = [
+	'triggerid' => getRequest('triggerid'),
 	'trigger' => $trigger,
 	'isTriggerEditable' => !empty($triggerEditable),
 	'isCommentExist' => !empty($trigger['comments'])
-);
+];
 
 // render view
 $triggerCommentView = new CView('monitoring.triggerComment', $data);

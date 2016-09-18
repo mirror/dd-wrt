@@ -17,6 +17,8 @@
 ** along with this program; if not, write to the Free Software
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
+
+
 function sdb($return = false) {
 	$backtrace = debug_backtrace();
 	array_shift($backtrace);
@@ -24,7 +26,7 @@ function sdb($return = false) {
 	foreach ($backtrace as $n => $bt) {
 		$result .= '  --['.$n.']-- '.$bt['file'].' : '.$bt['line'].'<br/>';
 		$result .= "&nbsp;&nbsp;<b>".(isset($bt['class']) ? $bt['class'].$bt['type'].$bt['function'] : $bt['function']).'</b>';
-		$args = array();
+		$args = [];
 		foreach ($bt['args'] as $arg) {
 			$args[] = is_array($arg) ? print_r($arg, true) : $arg;
 		}
@@ -41,7 +43,7 @@ function sdb($return = false) {
 function sdi($msg = 'SDI') {
 	echo 'DEBUG INFO: ';
 	var_dump($msg);
-	echo SBR;
+	echo BR();
 }
 
 function sdii($msg = 'SDII', $for = '', $showInvisible = true) {
@@ -58,7 +60,7 @@ function sdii($msg = 'SDII', $for = '', $showInvisible = true) {
 	}
 	echo 'DEBUG INFO: '.$for;
 	echo '<pre>'.print_r($msg, true).'</pre>';
-	echo SBR;
+	echo BR();
 }
 
 function vdp($var, $msg = null) {
@@ -67,11 +69,11 @@ function vdp($var, $msg = null) {
 		echo '"'.$msg.'"'.SPACE;
 	}
 	var_dump($var);
-	echo SBR;
+	echo BR();
 }
 
 function todo($msg) {
-	echo 'TODO: '.$msg.SBR;
+	echo 'TODO: '.$msg.BR();
 }
 
 
@@ -98,7 +100,7 @@ function sdFile($data, $persist = false, $fileName = 'debug.txt') {
 function sdff($msg, $fileName = '/tmp/zabbix.log') {
 	$fileStreem = @fopen($fileName, 'a');
 	if (is_array($msg)) {
-		$toImplode = array();
+		$toImplode = [];
 		foreach ($msg as $key => $value) {
 			$toImplode[] = var_export($key, true).'=>'.var_export($value, true);
 		}
@@ -127,7 +129,7 @@ function sdf(&$var) {
 	else {
 		echo $value;
 	}
-	echo SBR;
+	echo BR();
 }
 
 /**
@@ -147,7 +149,7 @@ function ilb($limit = 100) {
 }
 
 function timer($timer = null) {
-	static $timers = array();
+	static $timers = [];
 
 	if ($timer === null) {
 		$timer = '_general_';
@@ -173,4 +175,3 @@ function timer($timer = null) {
 function sdex($ex = 'My exception') {
 	throw new APIException(ZBX_API_ERROR_INTERNAL, $ex);
 }
-?>

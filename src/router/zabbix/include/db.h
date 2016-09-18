@@ -32,8 +32,6 @@ extern char	*CONFIG_DBUSER;
 extern char	*CONFIG_DBPASSWORD;
 extern char	*CONFIG_DBSOCKET;
 extern int	CONFIG_DBPORT;
-extern int	CONFIG_NODEID;
-extern int	CONFIG_MASTER_NODEID;
 extern int	CONFIG_HISTSYNCER_FORKS;
 extern int	CONFIG_UNAVAILABLE_DELAY;
 
@@ -66,6 +64,12 @@ struct	_DC_TRIGGER;
 #define ZBX_DB_CONNECT_EXIT	1
 #define ZBX_DB_CONNECT_ONCE	2
 
+/* type of database */
+#define ZBX_DB_UNKNOWN	0
+#define ZBX_DB_SERVER	1
+#define ZBX_DB_PROXY	2
+
+#define TRIGGER_URL_LEN			255
 #define TRIGGER_DESCRIPTION_LEN		255
 #define TRIGGER_EXPRESSION_LEN		2048
 #define TRIGGER_EXPRESSION_LEN_MAX	(TRIGGER_EXPRESSION_LEN + 1)
@@ -75,13 +79,15 @@ struct	_DC_TRIGGER;
 #else
 #	define TRIGGER_COMMENTS_LEN	65535
 #endif
+#define TAG_NAME_LEN			255
+#define TAG_VALUE_LEN			255
 
-#define GROUP_NAME_LEN			64
+#define GROUP_NAME_LEN			255
 
 #define HOST_HOST_LEN			MAX_ZBX_HOSTNAME_LEN
 #define HOST_HOST_LEN_MAX		(HOST_HOST_LEN + 1)
-#define HOST_NAME_LEN			64
-#define HOST_ERROR_LEN			128
+#define HOST_NAME_LEN			128
+#define HOST_ERROR_LEN			2048
 #define HOST_ERROR_LEN_MAX		(HOST_ERROR_LEN + 1)
 #define HOST_IPMI_USERNAME_LEN		16
 #define HOST_IPMI_USERNAME_LEN_MAX	(HOST_IPMI_USERNAME_LEN + 1)
@@ -99,11 +105,12 @@ struct	_DC_TRIGGER;
 
 #define ITEM_NAME_LEN			255
 #define ITEM_KEY_LEN			255
+#define ITEM_UNITS_LEN			255
 #define ITEM_SNMP_COMMUNITY_LEN		64
 #define ITEM_SNMP_COMMUNITY_LEN_MAX	(ITEM_SNMP_COMMUNITY_LEN + 1)
 #define ITEM_SNMP_OID_LEN		255
 #define ITEM_SNMP_OID_LEN_MAX		(ITEM_SNMP_OID_LEN + 1)
-#define ITEM_ERROR_LEN			128
+#define ITEM_ERROR_LEN			2048
 #define ITEM_ERROR_LEN_MAX		(ITEM_ERROR_LEN + 1)
 #define ITEM_TRAPPER_HOSTS_LEN		255
 #define ITEM_TRAPPER_HOSTS_LEN_MAX	(ITEM_TRAPPER_HOSTS_LEN + 1)
@@ -159,12 +166,9 @@ struct	_DC_TRIGGER;
 
 #define DSERVICE_KEY_LEN		255
 #define DSERVICE_VALUE_LEN		255
-#define DSERVICE_VALUE_LEN_MAX		(DSERVICE_VALUE_LEN + 1)
 
 #define HTTPTEST_HTTP_USER_LEN		64
-#define HTTPTEST_HTTP_USER_LEN_MAX	(HTTPTEST_HTTP_USER_LEN + 1)
 #define HTTPTEST_HTTP_PASSWORD_LEN	64
-#define HTTPTEST_HTTP_PASSWORD_LEN_MAX	(HTTPTEST_HTTP_PASSWORD_LEN + 1)
 
 #define PROXY_DHISTORY_KEY_LEN		255
 #define PROXY_DHISTORY_VALUE_LEN	255
@@ -205,9 +209,7 @@ struct	_DC_TRIGGER;
 
 #define ZBX_MAX_SQL_LEN		65535
 
-#define ZBX_STANDALONE_MAX_IDS	(zbx_uint64_t)__UINT64_C(0x7fffffffffffffff)
-#define ZBX_DM_MAX_HISTORY_IDS	(zbx_uint64_t)__UINT64_C(100000000000000)
-#define ZBX_DM_MAX_CONFIG_IDS	(zbx_uint64_t)__UINT64_C(100000000000)
+#define ZBX_DB_MAX_ID	(zbx_uint64_t)__UINT64_C(0x7fffffffffffffff)
 
 typedef struct
 {
@@ -250,7 +252,7 @@ typedef struct
 	int		status;
 	int		lastup;
 	int		lastdown;
-	char		value[DSERVICE_VALUE_LEN_MAX];
+	char		*value;
 }
 DB_DSERVICE;
 
@@ -259,24 +261,35 @@ typedef struct
 	zbx_uint64_t	triggerid;
 	char		*description;
 	char		*expression;
+	char		*recovery_expression;
 	char		*url;
 	char		*comments;
+	char		*correlation_tag;
 	unsigned char	priority;
 	unsigned char	type;
+	unsigned char	recovery_mode;
+	unsigned char	correlation_mode;
 }
 DB_TRIGGER;
 
 typedef struct
 {
-	DB_TRIGGER	trigger;
-	zbx_uint64_t	eventid;
-	zbx_uint64_t	objectid;
-	int		source;
-	int		object;
-	int		clock;
-	int		value;
-	int		acknowledged;
-	int		ns;
+	DB_TRIGGER		trigger;
+	zbx_uint64_t		eventid;
+	zbx_uint64_t		objectid;
+	int			source;
+	int			object;
+	int			clock;
+	int			value;
+	int			acknowledged;
+	int			ns;
+
+	zbx_vector_ptr_t	tags;
+
+#define ZBX_FLAGS_DB_EVENT_UNSET		0x0000
+#define ZBX_FLAGS_DB_EVENT_CREATE		0x0001
+#define ZBX_FLAGS_DB_EVENT_NO_ACTION		0x0002
+	zbx_uint64_t		flags;
 }
 DB_EVENT;
 
@@ -307,33 +320,29 @@ typedef struct
 {
 	zbx_uint64_t		mediatypeid;
 	zbx_media_type_t	type;
-	char	*description;
-	char	*smtp_server;
-	char	*smtp_helo;
-	char	*smtp_email;
-	char	*exec_path;
-	char	*gsm_modem;
-	char	*username;
-	char	*passwd;
+	char			*description;
+	char			*smtp_server;
+	char			*smtp_helo;
+	char			*smtp_email;
+	char			*exec_path;
+	char			*exec_params;
+	char			*gsm_modem;
+	char			*username;
+	char			*passwd;
+	unsigned short		smtp_port;
+	unsigned char		smtp_security;
+	unsigned char		smtp_verify_peer;
+	unsigned char		smtp_verify_host;
+	unsigned char		smtp_authentication;
 }
 DB_MEDIATYPE;
-
-typedef struct
-{
-	zbx_uint64_t	actionid;
-	char		*shortdata;
-	char		*longdata;
-	int		esc_period;
-	unsigned char	eventsource;
-	unsigned char	recovery_msg;
-}
-DB_ACTION;
 
 typedef struct
 {
 	zbx_uint64_t	conditionid;
 	zbx_uint64_t	actionid;
 	char		*value;
+	char		*value2;
 	unsigned char	conditiontype;
 	unsigned char	operator;
 }
@@ -367,12 +376,18 @@ typedef struct
 	zbx_uint64_t	httptestid;
 	char		*name;
 	char		*variables;
+	char		*headers;
 	char		*agent;
 	char		*http_user;
 	char		*http_password;
 	char		*http_proxy;
+	char		*ssl_cert_file;
+	char		*ssl_key_file;
+	char		*ssl_key_password;
 	int		authentication;
 	int		retries;
+	int		verify_peer;
+	int		verify_host;
 }
 DB_HTTPTEST;
 
@@ -388,6 +403,9 @@ typedef struct
 	int		no;
 	int		timeout;
 	char		*variables;
+	int		follow_redirects;
+	int		retrieve_mode;
+	char		*headers;
 }
 DB_HTTPSTEP;
 
@@ -405,18 +423,8 @@ typedef struct
 }
 DB_ESCALATION;
 
-#define ZBX_SQL_NODE				"%s"
-#define DBand_node_local(field_name)		__DBnode(field_name, CONFIG_NODEID, 0)
-#define DBwhere_node_local(field_name)		__DBnode(field_name, CONFIG_NODEID, 1)
-#define DBand_node(field_name, nodeid)		__DBnode(field_name, nodeid, 0)
-#define DBwhere_node(field_name, nodeid)	__DBnode(field_name, nodeid, 1)
-const char	*__DBnode(const char *field_name, int nodeid, int op);
-#define DBis_node_local_id(id)			DBis_node_id(id, CONFIG_NODEID)
-int	DBis_node_id(zbx_uint64_t id, int nodeid);
-
 int	DBconnect(int flag);
 void	DBinit(void);
-
 void	DBclose(void);
 
 #ifdef HAVE_ORACLE
@@ -444,9 +452,9 @@ DB_RESULT	__zbx_DBselect(const char *fmt, ...);
 DB_RESULT	DBselectN(const char *query, int n);
 DB_ROW		DBfetch(DB_RESULT result);
 int		DBis_null(const char *field);
-void		DBbegin();
-void		DBcommit();
-void		DBrollback();
+void		DBbegin(void);
+void		DBcommit(void);
+void		DBrollback(void);
 void		DBend(int ret);
 
 const ZBX_TABLE	*DBget_table(const char *tablename);
@@ -478,8 +486,36 @@ typedef struct
 }
 ZBX_GRAPH_ITEMS;
 
-void	process_triggers(zbx_vector_ptr_t *triggers);
-int	process_trigger(char **sql, size_t *sql_alloc, size_t *sql_offset, const struct _DC_TRIGGER *trigger);
+typedef struct
+{
+	zbx_uint64_t	triggerid;
+	unsigned char	value;
+	unsigned char	state;
+	unsigned char	priority;
+	int		lastchange;
+	int		problem_count;
+	char		*error;
+
+#define ZBX_FLAGS_TRIGGER_DIFF_UNSET				0x0000
+#define ZBX_FLAGS_TRIGGER_DIFF_UPDATE_VALUE			0x0001
+#define ZBX_FLAGS_TRIGGER_DIFF_UPDATE_LASTCHANGE		0x0002
+#define ZBX_FLAGS_TRIGGER_DIFF_UPDATE_STATE			0x0004
+#define ZBX_FLAGS_TRIGGER_DIFF_UPDATE_ERROR			0x0008
+#define ZBX_FLAGS_TRIGGER_DIFF_UPDATE_PROBLEM_COUNT		0x0010
+#define ZBX_FLAGS_TRIGGER_DIFF_UPDATE										\
+		(ZBX_FLAGS_TRIGGER_DIFF_UPDATE_VALUE | ZBX_FLAGS_TRIGGER_DIFF_UPDATE_LASTCHANGE | 		\
+		ZBX_FLAGS_TRIGGER_DIFF_UPDATE_STATE | ZBX_FLAGS_TRIGGER_DIFF_UPDATE_ERROR |			\
+		ZBX_FLAGS_TRIGGER_DIFF_UPDATE_PROBLEM_COUNT)
+#define ZBX_FLAGS_TRIGGER_DIFF_RECALCULATE_PROBLEM_COUNT	0x1000
+	zbx_uint64_t			flags;
+}
+zbx_trigger_diff_t;
+
+void	zbx_process_triggers(zbx_vector_ptr_t *triggers, zbx_vector_ptr_t *diffs);
+void	zbx_save_trigger_changes(const zbx_vector_ptr_t *diffs);
+void	zbx_trigger_diff_free(zbx_trigger_diff_t *diff);
+void	zbx_append_trigger_diff(zbx_vector_ptr_t *trigger_diff, zbx_uint64_t triggerid, unsigned char priority,
+		zbx_uint64_t flags, unsigned char value, unsigned char state, int lastchange, const char *error);
 
 int	DBupdate_item_status_to_notsupported(DB_ITEM *item, int clock, const char *error);
 int	DBget_row_count(const char *table_name);
@@ -488,8 +524,6 @@ int	DBget_proxy_lastaccess(const char *hostname, int *lastaccess, char **error);
 char	*DBdyn_escape_string(const char *src);
 char	*DBdyn_escape_string_len(const char *src, size_t max_src_len);
 char	*DBdyn_escape_like_pattern(const char *src);
-
-void    DBget_item_from_db(DB_ITEM *item, DB_ROW row);
 
 zbx_uint64_t	DBadd_host(char *server, int port, int status, int useip, char *ip, int disable_until, int available);
 int	DBhost_exists(char *server);
@@ -512,14 +546,11 @@ void	DBdelete_graphs(zbx_vector_uint64_t *graphids);
 void	DBdelete_hosts(zbx_vector_uint64_t *hostids);
 void	DBdelete_hosts_with_prototypes(zbx_vector_uint64_t *hostids);
 
-int	DBupdate_itservices(const DB_EVENT *events, size_t events_num);
+int	DBupdate_itservices(zbx_vector_ptr_t *trigger_diff);
 int	DBremove_triggers_from_itservices(zbx_uint64_t *triggerids, int triggerids_num);
 
 void	zbx_create_itservices_lock();
 void	zbx_destroy_itservices_lock();
-
-void	DBadd_trend(zbx_uint64_t itemid, double value, int clock);
-void	DBadd_trend_uint(zbx_uint64_t itemid, zbx_uint64_t value, int clock);
 
 void	DBadd_condition_alloc(char **sql, size_t *sql_alloc, size_t *sql_offset, const char *fieldname,
 		const zbx_uint64_t *values, const int num);
@@ -546,8 +577,11 @@ zbx_uint64_t	DBadd_interface(zbx_uint64_t hostid, unsigned char type,
 const char	*DBget_inventory_field(unsigned char inventory_link);
 unsigned short	DBget_inventory_field_len(unsigned char inventory_link);
 
-int	DBtxn_status();
-int	DBtxn_ongoing();
+void	DBset_host_inventory(zbx_uint64_t hostid, int inventory_mode);
+void	DBadd_host_inventory(zbx_uint64_t hostid, int inventory_mode);
+
+int	DBtxn_status(void);
+int	DBtxn_ongoing(void);
 
 int	DBtable_exists(const char *table_name);
 int	DBfield_exists(const char *table_name, const char *field_name);
@@ -564,13 +598,6 @@ int	DBlock_records(const char *table, const zbx_vector_uint64_t *ids);
 void	DBdelete_groups(zbx_vector_uint64_t *groupids);
 
 void	DBselect_uint64(const char *sql, zbx_vector_uint64_t *ids);
-
-int	get_nodeid_by_id(zbx_uint64_t id);
-
-#ifdef HAVE_POSTGRESQL
-#	define DBbytea_escape	zbx_db_bytea_escape
-size_t	zbx_db_bytea_escape(const u_char *input, size_t ilen, char **output, size_t *olen);
-#endif
 
 /* bulk insert support */
 
@@ -606,5 +633,50 @@ void	zbx_db_insert_add_values(zbx_db_insert_t *self, ...);
 int	zbx_db_insert_execute(zbx_db_insert_t *self);
 void	zbx_db_insert_clean(zbx_db_insert_t *self);
 void	zbx_db_insert_autoincrement(zbx_db_insert_t *self, const char *field_name);
+int	zbx_db_get_database_type(void);
+
+/* agent (ZABBIX, SNMP, IPMI, JMX) availability data */
+typedef struct
+{
+	/* flags specifying which fields are set, see ZBX_FLAGS_AGENT_STATUS_* defines */
+	unsigned char	flags;
+
+	/* agent availability fields */
+	unsigned char	available;
+	char		*error;
+	int		errors_from;
+	int		disable_until;
+}
+zbx_agent_availability_t;
+
+#define ZBX_FLAGS_AGENT_STATUS_NONE		0x00000000
+#define ZBX_FLAGS_AGENT_STATUS_AVAILABLE	0x00000001
+#define ZBX_FLAGS_AGENT_STATUS_ERROR		0x00000002
+#define ZBX_FLAGS_AGENT_STATUS_ERRORS_FROM	0x00000004
+#define ZBX_FLAGS_AGENT_STATUS_DISABLE_UNTIL	0x00000008
+
+#define ZBX_FLAGS_AGENT_STATUS		(ZBX_FLAGS_AGENT_STATUS_AVAILABLE |	\
+					ZBX_FLAGS_AGENT_STATUS_ERROR |		\
+					ZBX_FLAGS_AGENT_STATUS_ERRORS_FROM |	\
+					ZBX_FLAGS_AGENT_STATUS_DISABLE_UNTIL)
+
+#define ZBX_AGENT_ZABBIX	(INTERFACE_TYPE_AGENT - 1)
+#define ZBX_AGENT_SNMP		(INTERFACE_TYPE_SNMP - 1)
+#define ZBX_AGENT_IPMI		(INTERFACE_TYPE_IPMI - 1)
+#define ZBX_AGENT_JMX		(INTERFACE_TYPE_JMX - 1)
+#define ZBX_AGENT_UNKNOWN 	255
+#define ZBX_AGENT_MAX		INTERFACE_TYPE_COUNT
+
+typedef struct
+{
+	zbx_uint64_t			hostid;
+
+	zbx_agent_availability_t	agents[ZBX_AGENT_MAX];
+}
+zbx_host_availability_t;
+
+
+int	zbx_sql_add_host_availability(char **sql, size_t *sql_alloc, size_t *sql_offset,
+		const zbx_host_availability_t *ha);
 
 #endif

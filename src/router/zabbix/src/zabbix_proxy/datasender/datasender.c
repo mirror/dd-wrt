@@ -25,31 +25,25 @@
 #include "zbxjson.h"
 #include "proxy.h"
 #include "zbxself.h"
+#include "dbcache.h"
 
 #include "datasender.h"
 #include "../servercomms.h"
+#include "../../libs/zbxcrypto/tls.h"
 
-extern unsigned char	process_type;
+extern unsigned char	process_type, program_type;
+extern int		server_num, process_num;
 
 /******************************************************************************
  *                                                                            *
  * Function: host_availability_sender                                         *
  *                                                                            *
- * Purpose:                                                                   *
- *                                                                            *
- * Parameters:                                                                *
- *                                                                            *
- * Return value:                                                              *
- *                                                                            *
- * Author: Alexander Vladishev                                                *
- *                                                                            *
- * Comments:                                                                  *
- *                                                                            *
  ******************************************************************************/
 static void	host_availability_sender(struct zbx_json *j)
 {
 	const char	*__function_name = "host_availability_sender";
-	zbx_sock_t	sock;
+	zbx_socket_t	sock;
+	int		ts;
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __function_name);
 
@@ -57,14 +51,19 @@ static void	host_availability_sender(struct zbx_json *j)
 	zbx_json_addstring(j, ZBX_PROTO_TAG_REQUEST, ZBX_PROTO_VALUE_HOST_AVAILABILITY, ZBX_JSON_TYPE_STRING);
 	zbx_json_addstring(j, ZBX_PROTO_TAG_HOST, CONFIG_HOSTNAME, ZBX_JSON_TYPE_STRING);
 
-	if (SUCCEED == get_host_availability_data(j))
+	if (SUCCEED == get_host_availability_data(j, &ts))
 	{
 		char	*error = NULL;
 
 		connect_to_server(&sock, 600, CONFIG_PROXYDATA_FREQUENCY); /* retry till have a connection */
 
 		if (SUCCEED != put_data_to_server(&sock, j, &error))
-			zabbix_log(LOG_LEVEL_WARNING, "sending host availability data to server failed: %s", error);
+		{
+			zabbix_log(LOG_LEVEL_WARNING, "cannot send host availability data to server at \"%s\": %s",
+					sock.peer, error);
+		}
+		else
+			zbx_set_availability_diff_ts(ts);
 
 		zbx_free(error);
 		disconnect_server(&sock);
@@ -77,23 +76,13 @@ static void	host_availability_sender(struct zbx_json *j)
  *                                                                            *
  * Function: history_sender                                                   *
  *                                                                            *
- * Purpose:                                                                   *
- *                                                                            *
- * Parameters:                                                                *
- *                                                                            *
- * Return value:                                                              *
- *                                                                            *
- * Author: Alexander Vladishev                                                *
- *                                                                            *
- * Comments:                                                                  *
- *                                                                            *
  ******************************************************************************/
 static void	history_sender(struct zbx_json *j, int *records, const char *tag,
 		int (*f_get_data)(), void (*f_set_lastid)())
 {
 	const char	*__function_name = "history_sender";
 
-	zbx_sock_t	sock;
+	zbx_socket_t	sock;
 	zbx_uint64_t	lastid;
 	zbx_timespec_t	ts;
 	int		ret = SUCCEED;
@@ -123,7 +112,8 @@ static void	history_sender(struct zbx_json *j, int *records, const char *tag,
 		if (SUCCEED != (ret = put_data_to_server(&sock, j, &error)))
 		{
 			*records = 0;
-			zabbix_log(LOG_LEVEL_WARNING, "sending data to server failed: %s", error);
+			zabbix_log(LOG_LEVEL_WARNING, "cannot send history data to server at \"%s\": %s",
+					sock.peer, error);
 		}
 
 		zbx_free(error);
@@ -146,21 +136,23 @@ static void	history_sender(struct zbx_json *j, int *records, const char *tag,
  *                                                                            *
  * Purpose: periodically sends history and events to the server               *
  *                                                                            *
- * Parameters:                                                                *
- *                                                                            *
- * Return value:                                                              *
- *                                                                            *
- * Author: Alexander Vladishev                                                *
- *                                                                            *
- * Comments: never returns                                                    *
- *                                                                            *
  ******************************************************************************/
-void	main_datasender_loop(void)
+ZBX_THREAD_ENTRY(datasender_thread, args)
 {
 	int		records = 0, r;
 	double		sec = 0.0;
 	struct zbx_json	j;
 
+	process_type = ((zbx_thread_args_t *)args)->process_type;
+	server_num = ((zbx_thread_args_t *)args)->server_num;
+	process_num = ((zbx_thread_args_t *)args)->process_num;
+
+	zabbix_log(LOG_LEVEL_INFORMATION, "%s #%d started [%s #%d]", get_program_type_string(program_type),
+			server_num, get_process_type_string(process_type), process_num);
+
+#if defined(HAVE_POLARSSL) || defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
+	zbx_tls_init_child();
+#endif
 	zbx_setproctitle("%s [connecting to the database]", get_process_type_string(process_type));
 
 	DBconnect(ZBX_DB_CONNECT_NORMAL);
@@ -169,6 +161,8 @@ void	main_datasender_loop(void)
 
 	for (;;)
 	{
+		zbx_handle_log();
+
 		zbx_setproctitle("%s [sent %d values in " ZBX_FS_DBL " sec, sending data]",
 				get_process_type_string(process_type), records, sec);
 

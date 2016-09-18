@@ -18,26 +18,31 @@
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
 
+$widget = (new CWidget())
+	->setTitle(_('Images'))
+	->setControls((new CForm())
+		->cleanItems()
+		->addItem((new CList())->addItem(makeAdministrationGeneralMenu('adm.images.php')))
+	);
 
-$imageForm = new CForm('post', null, 'multipart/form-data');
-$imageForm->setName('imageForm');
-$imageForm->addVar('form', $this->data['form']);
-$imageForm->addVar('imageid', $this->data['imageid']);
-
-$imageComboBox = new CComboBox('imagetype', $this->data['imagetype']);
-$imageComboBox->addItem(IMAGE_TYPE_ICON, _('Icon'));
-$imageComboBox->addItem(IMAGE_TYPE_BACKGROUND, _('Background'));
+$imageForm = (new CForm('post', null, 'multipart/form-data'))
+	->addVar('form', $this->data['form']);
+if (isset($this->data['imageid'])) {
+	$imageForm->addVar('imageid', $this->data['imageid']);
+}
+$imageForm->addVar('imagetype', $this->data['imagetype']);
 
 // append form list
-$imageFormList = new CFormList('imageFormList');
-$nameTextBox = new CTextBox('name', $this->data['imagename'], 64, 'no', 64);
-$nameTextBox->attr('autofocus', 'autofocus');
-$imageFormList->addRow(_('Name'), $nameTextBox);
-$imageFormList->addRow(_('Type'), $imageComboBox);
-$imageFormList->addRow(_('Upload'), new CFile('image'));
+$imageFormList = (new CFormList('imageFormList'))
+	->addRow(_('Name'),
+		(new CTextBox('name', $this->data['imagename'], false, 64))
+			->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
+			->setAttribute('autofocus', 'autofocus')
+	)
+	->addRow(_('Upload'), (new CFile('image'))->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH));
 
-if (!empty($this->data['imageid'])) {
-	if ($data['imagetype'] == IMAGE_TYPE_BACKGROUND) {
+if (isset($this->data['imageid'])) {
+	if ($this->data['imagetype'] == IMAGE_TYPE_BACKGROUND) {
 		$imageFormList->addRow(_('Image'), new CLink(new CImg('imgstore.php?width=200&height=200&iconid='.$this->data['imageid'], 'no image'), 'image.php?imageid='.$this->data['imageid']));
 	}
 	else {
@@ -46,22 +51,30 @@ if (!empty($this->data['imageid'])) {
 }
 
 // append tab
-$imageTab = new CTabView();
-$imageTab->addTab('imageTab', _('Image'), $imageFormList);
-$imageForm->addItem($imageTab);
+$imageTab = (new CTabView())
+	->addTab('imageTab', ($this->data['imagetype'] == IMAGE_TYPE_ICON) ? _('Icon') : _('Background'), $imageFormList);
 
 // append buttons
-if (empty($this->data['imageid'])) {
-	$imageForm->addItem(makeFormFooter(new CSubmit('save', _('Save')), new CButtonCancel()));
+if (isset($this->data['imageid'])) {
+	$imageTab->setFooter(makeFormFooter(
+		new CSubmit('update', _('Update')),
+		[
+			new CButtonDelete(_('Delete selected image?'), url_param('form').url_param('imageid').
+				url_param($data['imagetype'], false, 'imagetype')
+			),
+			new CButtonCancel(url_param($data['imagetype'], false, 'imagetype'))
+		]
+	));
 }
 else {
-	$imageForm->addItem(makeFormFooter(
-		new CSubmit('save', _('Save')),
-		array(
-			new CButtonDelete(_('Delete selected image?'), url_param('form').url_param('imageid')),
-			new CButtonCancel()
-		)
+	$imageTab->setFooter(makeFormFooter(
+		new CSubmit('add', _('Add')),
+		[new CButtonCancel(url_param($data['imagetype'], false, 'imagetype'))]
 	));
 }
 
-return $imageForm;
+$imageForm->addItem($imageTab);
+
+$widget->addItem($imageForm);
+
+return $widget;
