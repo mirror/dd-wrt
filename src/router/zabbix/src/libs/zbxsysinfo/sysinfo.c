@@ -396,41 +396,41 @@ void	test_parameter(const char *key)
 	AGENT_RESULT	result;
 	int		n;
 
-	n = printf("%s", key);
+	n = fprintf(stdout,"%s", key);
 
 	if (0 < n && ZBX_COL_WIDTH > n)
-		printf("%-*s", ZBX_COL_WIDTH - n, " ");
+		fprintf(stdout,"%-*s", ZBX_COL_WIDTH - n, " ");
 
 	init_result(&result);
 
 	if (SUCCEED == process(key, PROCESS_WITH_ALIAS, &result))
 	{
 		if (0 != ISSET_UI64(&result))
-			printf(" [u|" ZBX_FS_UI64 "]", result.ui64);
+			fprintf(stdout," [u|" ZBX_FS_UI64 "]", result.ui64);
 
 		if (0 != ISSET_DBL(&result))
-			printf(" [d|" ZBX_FS_DBL "]", result.dbl);
+			fprintf(stdout," [d|" ZBX_FS_DBL "]", result.dbl);
 
 		if (0 != ISSET_STR(&result))
-			printf(" [s|%s]", result.str);
+			fprintf(stdout," [s|%s]", result.str);
 
 		if (0 != ISSET_TEXT(&result))
-			printf(" [t|%s]", result.text);
+			fprintf(stdout," [t|%s]", result.text);
 
 		if (0 != ISSET_MSG(&result))
-			printf(" [m|%s]", result.msg);
+			fprintf(stdout," [m|%s]", result.msg);
 	}
 	else
 	{
 		if (0 != ISSET_MSG(&result))
-			printf(" [m|" ZBX_NOTSUPPORTED "] [%s]", result.msg);
+			fprintf(stdout," [m|" ZBX_NOTSUPPORTED "] [%s]", result.msg);
 		else
-			printf(" [m|" ZBX_NOTSUPPORTED "]");
+			fprintf(stdout," [m|" ZBX_NOTSUPPORTED "]");
 	}
 
 	free_result(&result);
 
-	printf("\n");
+	printf(stdout,"\n");
 
 	fflush(stdout);
 }
