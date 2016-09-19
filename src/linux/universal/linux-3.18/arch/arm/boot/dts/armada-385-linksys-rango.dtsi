@@ -116,15 +116,12 @@
 				status = "okay";
 			};
 
-			mvsdio@d4000 {
-				pinctrl-0 = <&sdio_pins3>;
-				pinctrl-names = "default";
+			sdhci@d8000 {
+				clock-frequency = <200000000>;
+				broken-cd;
+				wp-inverted;
+				bus-width = <8>;
 				status = "okay";
-				/*
-				 * No CD or WP GPIOs: SDIO interface used for
-				 * Wifi/Bluetooth chip
-				 */
-				 broken-cd;
 			};
 
 			/* USB part of the eSATA/USB 2.0 port */
