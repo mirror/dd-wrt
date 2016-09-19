@@ -99,7 +99,7 @@ struct nvram_param srouter_defaults[] = {
 #elif HAVE_ONNET
 	{"router_style", "onnet"},
 #elif HAVE_RAYTRONIK
-	{"router_style", "raytronik"},
+	{"router_style", "onnet"},
 #elif HAVE_KORENRON
 	{"router_style", "korenron"},
 #elif HAVE_TESTEM
@@ -1072,8 +1072,8 @@ struct nvram_param srouter_defaults[] = {
 	{"ath1_ssid", "OTAi_1"},
 #endif
 #elif defined(HAVE_RAYTRONIK)
-	{"ath0_ssid", "raytronik"},
-	{"ath1_ssid", "raytronik"},
+	{"ath0_ssid", "onnet2"},
+	{"ath1_ssid", "onnet2"},
 #elif defined(HAVE_GGEW) && defined(HAVE_NS5)
 	{"ath0_ssid", "GGEWnet-WLAN"},	/* Service set ID (network name) */
 #elif defined(HAVE_GGEW) && defined(HAVE_EOC5610)
