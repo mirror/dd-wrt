@@ -467,6 +467,18 @@
 				clock-output-names = "nand";
 			};
 
+			mvsdio@d4000 {
+				compatible = "marvell,orion-sdio";
+				reg = <0xd4000 0x200>;
+				interrupts = <GIC_SPI 25 IRQ_TYPE_LEVEL_HIGH>;
+				clocks = <&gateclk 17>;
+				bus-width = <4>;
+				cap-sdio-irq;
+				cap-sd-highspeed;
+				cap-mmc-highspeed;
+				status = "disabled";
+			};
+
 			thermal@e8078 {
 				compatible = "marvell,armada380-thermal";
 				reg = <0xe4078 0x4>, <0xe4074 0x4>;
