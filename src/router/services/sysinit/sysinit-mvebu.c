@@ -168,6 +168,8 @@ void start_sysinit(void)
 		set_smp_affinity(27, 2);
 	} else {
 		set_smp_affinity(65, 2);
+		set_smp_affinity(193, 1);
+		set_smp_affinity(194, 2);
 		set_smp_affinity(195, 2);
 	}
 	return;
