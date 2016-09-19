@@ -515,11 +515,22 @@ ifeq ($(CONFIG_ONNET),y)
 endif
 
 ifeq ($(CONFIG_RAYTRONIK),y)
-	mkdir $(INSTALLDIR)/www/style/raytronik
-	cp raytronik/style.css $(INSTALLDIR)/www/style/raytronik
-	cp raytronik/images/* $(INSTALLDIR)/www/images
-	cp raytronik/About.htm $(INSTALLDIR)/www
-	cp raytronik/help/* $(INSTALLDIR)/www/help
+#	mkdir $(INSTALLDIR)/www/style/raytronik
+#	cp raytronik/style.css $(INSTALLDIR)/www/style/raytronik
+#	cp raytronik/images/* $(INSTALLDIR)/www/images
+#	cp raytronik/About.htm $(INSTALLDIR)/www
+#	cp raytronik/help/* $(INSTALLDIR)/www/help
+	mkdir $(INSTALLDIR)/www/style/onnet
+	cp onnet/style.css $(INSTALLDIR)/www/style/onnet
+	cp onnet/SuperChannel.asp $(INSTALLDIR)/www
+	cp onnet/images/* $(INSTALLDIR)/www/images
+	cp onnet/help/* $(INSTALLDIR)/www/help
+	cp onnet_blank/help/logo-help.png $(INSTALLDIR)/www/help/logo-help.png
+	cp onnet_blank/images/bg_header.jpg $(INSTALLDIR)/www/images/bg_header.jpg
+	#cp -f maksat/SuperChannel.asp $(INSTALLDIR)/www
+	cp onnet_blank/About.htm $(INSTALLDIR)/www/About.htm
+	rm -f $(INSTALLDIR)/www/images/favicon.ico
+	ls -l $(INSTALLDIR)/www/help/
 endif
 
 ifeq ($(CONFIG_GLAUCO),y)
