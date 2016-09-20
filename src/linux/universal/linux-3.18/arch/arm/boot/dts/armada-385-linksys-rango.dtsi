@@ -223,18 +223,6 @@
 
 	usb3_phy: usb3_phy {
 		compatible = "usb-nop-xceiv";
-		vcc-supply = <&reg_xhci0_vbus>;
-	};
-
-	reg_xhci0_vbus: xhci0-vbus {
-		compatible = "regulator-fixed";
-		pinctrl-names = "default";
-		pinctrl-0 = <&xhci0_vbus_pins>;
-		regulator-name = "xhci0-vbus";
-		regulator-min-microvolt = <5000000>;
-		regulator-max-microvolt = <5000000>;
-		enable-active-high;
-		gpio = <&gpio1 18 GPIO_ACTIVE_HIGH>;
 	};
 
 	gpio_keys {
@@ -259,26 +247,22 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
-		pinctrl-0 = <&power_led_pin &sata_led_pin>;
+		pinctrl-0 = <&power_led_pin>;
 		pinctrl-names = "default";
 
 		power {
-			gpios = <&gpio1 23 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio1 24 GPIO_ACTIVE_HIGH>;
 			default-state = "on";
-		};
-
-		sata {
-			gpios = <&gpio1 22 GPIO_ACTIVE_LOW>;
-			default-state = "off";
 		};
 	};
 
-			mvsdio@d4000 {
-				pinctrl-0 = <&sdio_pins1>;
-				pinctrl-names = "default";
-				status = "okay";
-				broken-cd;
-			};
+	mvsdio@d4000 {
+		compatible = "marvell,orion-sdio";
+		pinctrl-0 = <&sdio_pins1>;
+		pinctrl-names = "default";
+		status = "okay";
+		broken-cd;
+	};
 
 	mvsw61xx {
 		#address-cells = <1>;
@@ -306,16 +290,11 @@
 
 	sata_led_pin: sata-led-pin {
 		marvell,pins = "mpp21";
-		marvell,function = "gpio";
+		marvell,function = "sata1";
 	};
 
-	sdio_pins1 {
+	sdio_pins1: sdio_pins1 {
 		marvell,pins = "mpp50", "mpp54", "mpp55", "mpp57", "mpp58", "mpp59";
 		marvell,function = "sd0";
-	};
-
-	xhci0_vbus_pins: xhci0-vbus-pins {
-		marvell,pins = "mpp50";
-		marvell,function = "gpio";
 	};
 };
