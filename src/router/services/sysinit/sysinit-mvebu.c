@@ -96,6 +96,7 @@ void start_sysinit(void)
 	insmod("pwm-fan");
 	insmod("armada_thermal");
 	insmod("tmp421");
+	insmod("mvsdio");
 	insmod("rtc-armada38x");	// for WRT1200AC / WRT1900ACv2 only
 	insmod("mii");
 	// crypto drivers
@@ -108,6 +109,13 @@ void start_sysinit(void)
 	insmod("/lib/ath9k/cfg80211.ko");
 	insmod("/lib/ath9k/mac80211.ko");
 	insmod("/lib/ath9k/mwlwifi.ko");
+	insmod("/lib/ath9k/mwifiex.ko");
+	insmod("/lib/ath9k/mwifiex_sdio.ko");
+
+	insmod("bluetooth");
+	insmod("btmrvl");
+	insmod("btmrvl_sdio");
+
 	int s;
 	struct ifreq ifr;
 	char *recovery = getUEnv("auto_recovery");
