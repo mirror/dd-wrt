@@ -790,6 +790,10 @@ endif
 CFLAGS += -DHAVE_MINIDLNA
 endif
 
+ifeq ($(CONFIG_SOFTETHER),y)
+CFLAGS += HAVE_SOFTETHER
+endif
+
 ifeq ($(CONFIG_PRIVOXY),y)
 CFLAGS += -DHAVE_PRIVOXY
 endif
