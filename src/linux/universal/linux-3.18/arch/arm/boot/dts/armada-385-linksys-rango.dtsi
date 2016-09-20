@@ -273,6 +273,13 @@
 		};
 	};
 
+			mvsdio@d4000 {
+				pinctrl-0 = <&sdio_pins1>;
+				pinctrl-names = "default";
+				status = "okay";
+				broken-cd;
+			};
+
 	mvsw61xx {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -293,13 +300,18 @@
 	};
 
 	power_led_pin: power-led-pin {
-		marvell,pins = "mpp55";
+		marvell,pins = "mpp56";
 		marvell,function = "gpio";
 	};
 
 	sata_led_pin: sata-led-pin {
-		marvell,pins = "mpp54";
+		marvell,pins = "mpp21";
 		marvell,function = "gpio";
+	};
+
+	sdio_pins1 {
+		marvell,pins = "mpp50", "mpp54", "mpp55", "mpp57", "mpp58", "mpp59";
+		marvell,function = "sd0";
 	};
 
 	xhci0_vbus_pins: xhci0-vbus-pins {
