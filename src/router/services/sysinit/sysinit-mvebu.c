@@ -96,7 +96,14 @@ void start_sysinit(void)
 	insmod("pwm-fan");
 	insmod("armada_thermal");
 	insmod("tmp421");
+
+	insmod("sdhci");
+	insmod("sdhci-pltfm");
+	insmod("sdhci-pxav3");
+	insmod("mmc_core");
+	insmod("mmc_block");
 	insmod("mvsdio");
+
 	insmod("rtc-armada38x");	// for WRT1200AC / WRT1900ACv2 only
 	insmod("mii");
 	// crypto drivers
