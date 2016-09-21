@@ -1923,6 +1923,7 @@ service.softether_legend="SoftEther VPN";
 service.softether_bridge="Bridge";
 service.softether_client="Client";
 service.softether_server="Server";
+service.softether_config="Config";
 
 // Zabbix
 service.zabbix_legend="Zabbix";
