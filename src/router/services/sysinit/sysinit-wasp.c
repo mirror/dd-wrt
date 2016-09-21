@@ -242,7 +242,7 @@ void start_sysinit(void)
 	}
 #endif
 
-#if defined(HAVE_ONNET)
+#if defined(HAVE_ONNET) || defined(HAVE_RAYTRONIK)
 	runStartup("/etc/config/", ".onnet");
 #endif
 
