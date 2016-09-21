@@ -114,6 +114,10 @@ void start_sysinit(void)
 
 	detect_wireless_devices();
 
+#if defined(HAVE_ONNET) || defined(HAVE_RAYTRONIK)
+	runStartup("/etc/config/", ".onnet");
+#endif
+
 #ifdef HAVE_ALFANX
 	eval("/sbin/wlanled", "-L", "generic_12:-94", "-L", "generic_8:-80", "-L", "generic_6:-73", "-L", "generic_7:-65");
 #endif
