@@ -522,6 +522,7 @@ ifeq ($(CONFIG_RAYTRONIK),y)
 	cp raytronik/help/* $(INSTALLDIR)/www/help
 
   ifeq ($(CONFIG_AC722),y)
+	mkdir -p $(INSTALLDIR)/etc/config/
 	cp raytronik/extra/* $(INSTALLDIR)/etc/config/
   endif
 endif
