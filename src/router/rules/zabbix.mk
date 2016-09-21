@@ -33,3 +33,4 @@ zabbix-configure:
 	--disable-server --disable-proxy --disable-java --enable-agent \
 	-with-iconv-include=$(TOP)/glib20/libiconv/include --with-iconv-lib=$(TOP)/glib20/libiconv/lib/.libs \
 	CFLAGS="$(COPTS) $(MIPS16_OPT) -DOLD_LIBC_MODE -ffunction-sections -fdata-sections -Wl,--gc-section"
+	cd zabbix && touch *
