@@ -30,8 +30,6 @@ endif
 ifdef CONFIG_ONNET
 ifdef CONFIG_ONNET_BLANK
  MOTD_ADD:=.onnet_blank
-ifdef CONFIG_RAYTRONIK
- MOTD_ADD:=.raytronik
 else
  MOTD_ADD:=.onnet
 endif
@@ -41,6 +39,9 @@ ifdef CONFIG_HDWIFI
 endif
 ifdef CONFIG_ESPOD
  MOTD_ADD:=.espod
+endif
+ifdef CONFIG_RAYTRONIK
+ MOTD_ADD:=.raytronik
 endif
 
 install:
