@@ -1283,6 +1283,9 @@ struct nvram_param srouter_defaults[] = {
 	{"ath0_mode", "ap"},	/* AP mode (ap|sta|wds) */
 #elif HAVE_CARLSONWIRELES
 	{"ath0_mode", "wdsap"},	/* AP mode (wdsap) */
+#elif HAVE_RAYTRONIK
+	{"ath0_mode", "wdsap"},	/* AP mode (wdsap) */
+	{"ath0_channelbw", "2040"},	/* LAN IP address */
 #else
 	{"ath0_mode", "ap"},	/* AP mode (ap|sta|wds) */
 	{"ath1_mode", "ap"},	/* AP mode (ap|sta|wds) */
