@@ -1272,6 +1272,8 @@ void ej_get_sysmodel(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "TESTEM %s", nvram_get("DD_BOARD"));
 #elif HAVE_HOBBIT
 	websWrite(wp, "HQ-NDS %s", nvram_get("DD_BOARD"));
+#elif HAVE_RAYTRONIK
+	websWrite(wp, "RN-150M %s", nvram_get("DD_BOARD"));
 #else
 	websWrite(wp, "%s", nvram_safe_get("DD_BOARD"));
 #endif
