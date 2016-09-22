@@ -30,6 +30,8 @@ endif
 ifdef CONFIG_ONNET
 ifdef CONFIG_ONNET_BLANK
  MOTD_ADD:=.onnet_blank
+ifdef CONFIG_RAYTRONIK
+ MOTD_ADD:=.raytronik
 else
  MOTD_ADD:=.onnet
 endif
