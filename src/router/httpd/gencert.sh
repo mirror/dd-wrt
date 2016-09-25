@@ -8,8 +8,8 @@ openssl req -new -sha256 -out cert.csr -config openssl.cnf -keyout privkey.pem -
 openssl rsa -in privkey.pem -out key.pem -passin pass:password
 # convert the certificate request into a signed certificate
 SECS="1145611923"
-openssl x509 -in cert.csr -out cert.pem -req -signkey key.pem -days 3650
+openssl x509 -sha256 -in cert.csr -out cert.pem -req -signkey key.pem -days 3650
 # Show human-readable format
-openssl x509 -in cert.pem -text -noout
+openssl x509 -sha256 -in cert.pem -text -noout
 # Remove unused files
 #rm -f /tmp/cert.csr /tmp/privkey.pem
