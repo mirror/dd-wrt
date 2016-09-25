@@ -91,12 +91,12 @@ much traffic. */
  * Including multiple keysize variants the same cipher 
  * (eg AES256 as well as AES128) will result in a minimal size increase.*/
 #define DROPBEAR_AES128
-#define DROPBEAR_3DES
+//#define DROPBEAR_3DES
 #define DROPBEAR_AES256
 /* Compiling in Blowfish will add ~6kB to runtime heap memory usage */
 /*#define DROPBEAR_BLOWFISH*/
-#define DROPBEAR_TWOFISH256
-#define DROPBEAR_TWOFISH128
+//#define DROPBEAR_TWOFISH256
+//#define DROPBEAR_TWOFISH128
 
 /* Enable CBC mode for ciphers. This has security issues though
  * is the most compatible with older SSH implementations */
@@ -146,7 +146,7 @@ If you test it please contact the Dropbear author */
  * Removing either of these won't save very much space.
  * SSH2 RFC Draft requires dss, recommends rsa */
 #define DROPBEAR_RSA
-#define DROPBEAR_DSS
+// #define DROPBEAR_DSS
 /* ECDSA is significantly faster than RSA or DSS. Compiling in ECC
  * code (either ECDSA or ECDH) increases binary size - around 30kB
  * on x86-64 */
