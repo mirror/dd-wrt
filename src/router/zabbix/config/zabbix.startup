@@ -14,6 +14,9 @@ SRVIP="$(nvram get zabbix_serverip)"
 IP="$(nvram get lan_ipaddr)"
 
 ZABBIX_CONF=$( cat <<EOF
+LogType=file
+LogFile=/var/log/zabbix.log
+LogFileSize=1
 Server=$SRVIP
 Hostname=$HOST
 ListenIP=$IP
