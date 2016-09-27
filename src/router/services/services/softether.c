@@ -69,21 +69,24 @@ void start_softether(void)
 
 static void stop_softetherclient(void)
 {
-	eval("vpnclient", "stop");
+	if (pidof("vpnclient") > 0)
+		eval("vpnclient", "stop");
 	stop_process("vpnclient", "SoftEther Client");
 	return;
 }
 
 static void stop_softetherbridge(void)
 {
-	eval("vpnbridge", "stop");
+	if (pidof("vpnbridge") > 0)
+		eval("vpnbridge", "stop");
 	stop_process("vpnbridge", "SoftEther Bridge");
 	return;
 }
 
 static void stop_softetherserver(void)
 {
-	eval("vpnserver", "stop");
+	if (pidof("vpnserver") > 0)
+		eval("vpnserver", "stop");
 	stop_process("vpnserver", "SoftEther Server");
 	return;
 }
