@@ -71,8 +71,11 @@ void start_snmp(void)
 #ifdef HAVE_NEXTMEDIA
 		if (!f_exists("/jffs/custom_snmp/snmpd.tail")) {
 #endif
+#ifdef HAVE_RAYTRONIK
+			fprintf(fp, "pass_persist .1.3.6.1.4.1.41404.255 /etc/config/wl_snmpd.sh\n");
+#else
 			fprintf(fp, "pass_persist .1.3.6.1.4.1.2021.255 /etc/wl_snmpd.sh\n");
-
+#endif
 			fclose(fp);
 #ifdef HAVE_NEXTMEDIA
 		} else {
