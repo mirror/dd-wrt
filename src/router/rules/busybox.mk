@@ -432,6 +432,9 @@ endif
 	echo "# CONFIG_FEATURE_VOLUMEID_BCACHE is not set" >> busybox/.config
 	echo "# CONFIG_UBIRENAME is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_IP_NEIGH is not set" >> busybox/.config
+ifeq ($(CONFIG_BUSYBOX_INETD),y)
+	sed -i 's/\# CONFIG_INETD is not set/CONFIG_INETD=y/g' busybox/.config
+endif
 	cd busybox && make oldconfig
 	
 	-$(MAKE) -j 4 -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox
