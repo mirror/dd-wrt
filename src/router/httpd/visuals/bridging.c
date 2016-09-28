@@ -144,9 +144,9 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 				  "<td><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bridge_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script></td></tr>\n",
 				  count);
 			// don't show that here, since that is under Basic Setup
-			websWrite(wp, "<tr><td colspan=\"7\" align=\"center\">");
+/*			websWrite(wp, "<tr><td colspan=\"7\" align=\"center\">");
 			show_ipnetmask(wp, bridge);
-			websWrite(wp, "</td></tr>");
+			websWrite(wp, "</td></tr>");*/
 		} else {
 			websWrite(wp,
 				  "<td><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" disabled />\");\n//]]>\n</script></td></tr>\n");
