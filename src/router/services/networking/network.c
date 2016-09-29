@@ -5163,7 +5163,7 @@ void start_hotplug_net(void)
 	if (!strcmp(action, "add")) {
 		int cpumask = 0;
 		int cpucount = sysconf(_SC_NPROCESSORS_ONLN);
-		if (cpucount > 1) {
+		if (cpucount > 1 && nvram_matchi("wshaper_enable", 0)) {
 			cpumask = (1 << cpucount) - 1;
 		}
 		writenet("queues/rx-0/rps_cpus", cpumask, interface);
