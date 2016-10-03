@@ -86,7 +86,7 @@ static struct clk_hw *krait_mux_get_safe_parent(struct clk_hw *hw)
 		if (mux->safe_sel == mux->parent_map[i])
 			break;
 
-	return __clk_get_hw(clk_hw_get_parent_by_index(hw->clk, i));
+	return __clk_get_hw(clk_get_parent_by_index(hw->clk, i));
 }
 
 static int krait_mux_enable(struct clk_hw *hw)
@@ -119,7 +119,7 @@ EXPORT_SYMBOL_GPL(krait_mux_clk_ops);
 static long krait_div2_round_rate(struct clk_hw *hw, unsigned long rate,
 				  unsigned long *parent_rate)
 {
-	*parent_rate = clk_hw_round_rate(clk_hw_get_parent(hw->clk), rate * 2);
+	*parent_rate = __clk_round_rate(__clk_get_parent(hw->clk), rate * 2);
 	return DIV_ROUND_UP(*parent_rate, 2);
 }
 
