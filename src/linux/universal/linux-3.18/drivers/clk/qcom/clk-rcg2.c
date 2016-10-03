@@ -63,7 +63,7 @@ static int clk_rcg2_is_enabled(struct clk_hw *hw)
 static u8 clk_rcg2_get_parent(struct clk_hw *hw)
 {
 	struct clk_rcg2 *rcg = to_clk_rcg2(hw);
-	int num_parents = clk_hw_get_num_parents(hw);
+	int num_parents = __clk_get_num_parents(hw->clk);
 	u32 cfg;
 	int i, ret;
 
@@ -593,7 +593,7 @@ static int clk_byte2_set_rate(struct clk_hw *hw, unsigned long rate,
 	struct clk_rcg2 *rcg = to_clk_rcg2(hw);
 	struct freq_tbl f = { 0 };
 	unsigned long div;
-	int i, num_parents = clk_hw_get_num_parents(hw);
+	int i, num_parents = __clk_get_num_parents(hw->clk);
 	u32 mask = BIT(rcg->hid_width) - 1;
 	u32 cfg;
 
@@ -675,7 +675,7 @@ static int clk_pixel_set_rate(struct clk_hw *hw, unsigned long rate,
 	int delta = 100000;
 	u32 mask = BIT(rcg->hid_width) - 1;
 	u32 hid_div, cfg;
-	int i, num_parents = clk_hw_get_num_parents(hw);
+	int i, num_parents = __clk_get_num_parents(hw->clk);
 
 	regmap_read(rcg->clkr.regmap, rcg->cmd_rcgr + CFG_REG, &cfg);
 	cfg &= CFG_SRC_SEL_MASK;
