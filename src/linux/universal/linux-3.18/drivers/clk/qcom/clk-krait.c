@@ -79,7 +79,7 @@ static struct clk_hw *krait_mux_get_safe_parent(struct clk_hw *hw)
 {
 	int i;
 	struct krait_mux_clk *mux = to_krait_mux_clk(hw);
-	int num_parents = clk_hw_get_num_parents(hw->clk);
+	int num_parents = __clk_get_num_parents(hw->clk);
 
 	i = mux->safe_sel;
 	for (i = 0; i < num_parents; i++)
