@@ -135,19 +135,18 @@ struct pll_freq_tbl *find_freq(const struct pll_freq_tbl *f, unsigned long rate)
 	return NULL;
 }
 
-static int
-clk_pll_determine_rate(struct clk_hw *hw, struct clk_rate_request *req)
+static long
+clk_pll_determine_rate(struct clk_hw *hw, unsigned long rate,
+		       unsigned long *p_rate, struct clk **p)
 {
 	struct clk_pll *pll = to_clk_pll(hw);
 	const struct pll_freq_tbl *f;
 
-	f = find_freq(pll->freq_tbl, req->rate);
+	f = find_freq(pll->freq_tbl, rate);
 	if (!f)
-		req->rate = clk_pll_recalc_rate(hw, req->best_parent_rate);
-	else
-		req->rate = f->freq;
+		return clk_pll_recalc_rate(hw, *p_rate);
 
-	return 0;
+	return f->freq;
 }
 
 static int
