@@ -440,7 +440,7 @@ endif
 	cp $(ARCH)-uclibc/uImage $(ARCH)-uclibc/ipq806x-EA8500-uImage;
 	cat $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq8064-r7500.dtb >> $(ARCH)-uclibc/ipq806x-R7500-uImage;
 	cat $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq8064-r7500v2.dtb >> $(ARCH)-uclibc/ipq806x-R7500v2-uImage;
-	cat $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq8064-r7800.dtb >> $(ARCH)-uclibc/ipq806x-R7800-uImage;
+	cat $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq8065-r7800.dtb >> $(ARCH)-uclibc/ipq806x-R7800-uImage;
 	cat $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq8064-tew827.dtb >> $(ARCH)-uclibc/ipq806x-TEW827-uImage;
 	cat $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq8064-ea8500.dtb >> $(ARCH)-uclibc/ipq806x-EA8500-uImage;
 	
