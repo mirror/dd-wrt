@@ -45,7 +45,7 @@ static u32 src_to_ns(struct src_sel *s, u8 src, u32 ns)
 static u8 clk_rcg_get_parent(struct clk_hw *hw)
 {
 	struct clk_rcg *rcg = to_clk_rcg(hw);
-	int num_parents = clk_hw_get_num_parents(hw);
+	int num_parents = __clk_get_num_parents(hw->clk);
 	u32 ns;
 	int i, ret;
 
@@ -72,7 +72,7 @@ static int reg_to_bank(struct clk_dyn_rcg *rcg, u32 bank)
 static u8 clk_dyn_rcg_get_parent(struct clk_hw *hw)
 {
 	struct clk_dyn_rcg *rcg = to_clk_dyn_rcg(hw);
-	int num_parents = clk_hw_get_num_parents(hw);
+	int num_parents = __clk_get_num_parents(hw->clk);
 	u32 ns, reg;
 	int bank;
 	int i, ret;
@@ -560,7 +560,7 @@ static int clk_rcg_bypass2_set_rate(struct clk_hw *hw, unsigned long rate,
 	struct clk_rcg *rcg = to_clk_rcg(hw);
 	struct freq_tbl f = { 0 };
 	u32 ns, src;
-	int i, ret, num_parents = clk_hw_get_num_parents(hw);
+	int i, ret, num_parents = __clk_get_num_parents(hw->clk);
 
 	ret = regmap_read(rcg->clkr.regmap, rcg->ns_reg, &ns);
 	if (ret)
@@ -631,7 +631,7 @@ static int clk_rcg_pixel_set_rate(struct clk_hw *hw, unsigned long rate,
 	unsigned long request;
 	struct freq_tbl f = { 0 };
 	u32 ns, src;
-	int i, ret, num_parents = clk_hw_get_num_parents(hw);
+	int i, ret, num_parents = __clk_get_num_parents(hw->clk);
 
 	ret = regmap_read(rcg->clkr.regmap, rcg->ns_reg, &ns);
 	if (ret)
@@ -702,7 +702,7 @@ static int clk_rcg_esc_set_rate(struct clk_hw *hw, unsigned long rate,
 	int pre_div_max = BIT(rcg->p.pre_div_width);
 	int div;
 	u32 ns;
-	int i, ret, num_parents = clk_hw_get_num_parents(hw);
+	int i, ret, num_parents = __clk_get_num_parents(hw->clk);
 
 	if (rate == 0)
 		return -EINVAL;
