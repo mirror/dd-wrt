@@ -45,7 +45,7 @@ static void __clk_hfpll_init_once(struct clk_hw *hw)
 		u32 regval = hd->user_val;
 		unsigned long rate;
 
-		rate = clk_hw_get_rate(hw->clk);
+		rate = __clk_get_rate(hw->clk);
 
 		/* Pick the right VCO. */
 		if (hd->user_vco_mask && rate > hd->low_vco_max_rate)
