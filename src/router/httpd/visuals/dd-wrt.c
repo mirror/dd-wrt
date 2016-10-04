@@ -74,9 +74,9 @@ void show_ip(webs_t wp, char *prefix, char *var, int nm, char *type)
 {
 	char name[64];
 	if (prefix)
-		snprintf(name, "%s_%s", prefix, var);
+		snprintf(name, 64, "%s_%s", prefix, var);
 	else
-		snprintf(name, "%s", var);
+		snprintf(name, 64, "%s", var);
 	char *ipv = nvram_default_get(name, "0.0.0.0");
 	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,%d,%d,%s)\" name=\"%s_0\" value=\"%d\" />.", nm ? 0 : 1, nm ? 255 : 223, type, name, get_single_ip(ipv, 0));
 	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,%s)\" name=\"%s_1\" value=\"%d\" />.", type, name, get_single_ip(ipv, 1));
@@ -1011,7 +1011,7 @@ void ej_show_dhcpd_settings(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<input type=\"hidden\" name=\"wan_wins\" value=\"4\" />\n");
 		char *wins = nvram_default_get("wan_wins", "0.0.0.0");
 
-		show_ip(wp, NULL, "wan_wins", 0, "&#34;WINS&#34;");
+		show_ip(wp, NULL, "wan_wins", 1, "&#34;WINS&#34;");
 
 		websWrite(wp, "</div>\n<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(idx.dhcp_dnsmasq)</script></div>\n");
@@ -1217,7 +1217,7 @@ void ej_show_usb_diskinfo(webs_t wp, int argc, char_t ** argv)
 	if (!nvram_matchi("usb_automnt", 1))
 		return;
 	//exclude proftpd bind mount points and don't display the first 3 lines which are header and rootfs
-	sysprintf("df -P -h | grep -v proftpd | awk '{ print $3 \" \" $4 \" \" $5 \" \" $6}' | tail -n +4 > /tmp/df");
+	sysprintf("df -P -h | grep -v proftpd | awk '{ print $3 \" \" $4 \" \" $5 \" \" $6}' | tail -n +3 > /tmp/df");
 
 	if ((fp = fopen("/tmp/df", "r"))) {
 
@@ -1646,7 +1646,7 @@ void show_rates(webs_t wp, char *prefix, int maxrate)
 	websWrite(wp, "</script>\n");
 	char **rate;
 	char **showrates = NULL;
-	int len;
+	int len = 0;
 	char mode[32];
 	char bw[16];
 
@@ -2012,7 +2012,7 @@ static void showbridgesettings(webs_t wp, char *var, int mcast, int dual)
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(share.subnet)</script></div>\n");
 	websWrite(wp, "<input type=\"hidden\" name=\"%s_netmask\" value=\"4\" />\n", var);
-	show_ip(wp, var, "netmask", 0, "share.subnet");
+	show_ip(wp, var, "netmask", 1, "share.subnet");
 	websWrite(wp, "</div>\n");
 
 #ifdef HAVE_MADWIFI
@@ -2423,7 +2423,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 			websWrite(wp, "<div class=\"setting\">\n");
 			websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(share.subnet)</script></div>\n");
 
-			show_ip(wp, var, "ipaddr", 0, "share.subnet");
+			show_ip(wp, var, "ipaddr", 1, "share.subnet");
 			websWrite(wp, "</div>\n");
 
 			sprintf(ssid, "%s_ap_isolate", var);
