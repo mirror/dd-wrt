@@ -155,6 +155,7 @@
 		};
 
 		sata@29000000 {
+			ports-implemented = <0x1>;
 			status = "ok";
 		};
 
@@ -187,6 +188,7 @@
 			reset-gpio = <&qcom_pinmux 3 GPIO_ACTIVE_LOW>;
 			pinctrl-0 = <&pcie0_pins>;
 			pinctrl-names = "default";
+			phy-tx0-term-offset = <7>;
 		};
 
 		pcie1: pci@1b700000 {
@@ -194,6 +196,7 @@
 			reset-gpio = <&qcom_pinmux 48 GPIO_ACTIVE_LOW>;
 			pinctrl-0 = <&pcie1_pins>;
 			pinctrl-names = "default";
+			phy-tx0-term-offset = <7>;
 		};
 
 		nand@1ac00000 {
@@ -203,6 +206,7 @@
 			pinctrl-names = "default";
 
 			nand-ecc-strength = <4>;
+			nand-ecc-step-size = <512>;
 			nand-bus-width = <8>;
 
 			#address-cells = <1>;

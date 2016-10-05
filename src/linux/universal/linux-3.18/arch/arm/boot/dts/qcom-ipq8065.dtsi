@@ -38,7 +38,7 @@
 
 			operating-points-0-0 = <
 				/* kHz      uV */
-				1725000 1262500
+				1728000 1262500
 				1400000 1175000
 				1000000 1100000
 				 800000 1050000
@@ -47,7 +47,7 @@
  			>;
 			operating-points-0-1 = <
 				/* kHz      uV */
-				1725000 1262500
+				1728000 1262500
 				1400000 1175000
 				1000000 1100000
 				 800000 1050000
@@ -56,7 +56,7 @@
 			>;
 			operating-points-0-2 = <
 				/* kHz      uV */
-				1725000 1200000
+				1728000 1200000
 				1400000 1125000
 				1000000 1050000
 				 800000 1000000
@@ -65,7 +65,7 @@
 			>;
 			operating-points-0-3 = <
 				/* kHz      uV */
-				1725000 1175000
+				1728000 1175000
 				1400000 1100000
 				1000000 1025000
 				 800000 975000
@@ -74,7 +74,7 @@
 			>;
 			operating-points-0-4 = <
 				/* kHz      uV */
-				1725000 1150000
+				1728000 1150000
 				1400000 1075000
 				1000000 1000000
 				 800000 950000
@@ -83,7 +83,7 @@
 			>;
 			operating-points-0-5 = <
 				/* kHz      uV */
-				1725000 1100000
+				1728000 1100000
 				1400000 1025000
 				1000000 950000
 				 800000 900000
@@ -92,7 +92,7 @@
 			>;
 			operating-points-0-6 = <
 				/* kHz      uV */
-				1725000 1050000
+				1728000 1050000
 				1400000 975000
 				1000000 900000
 				 800000 850000
@@ -120,7 +120,7 @@
 
 			operating-points-0-0 = <
 				/* kHz      uV */
-				1725000 1262500
+				1728000 1262500
 				1400000 1175000
 				1000000 1100000
 				 800000 1050000
@@ -129,7 +129,7 @@
  			>;
 			operating-points-0-1 = <
 				/* kHz      uV */
-				1725000 1262500
+				1728000 1262500
 				1400000 1175000
 				1000000 1100000
 				 800000 1050000
@@ -138,7 +138,7 @@
 			>;
 			operating-points-0-2 = <
 				/* kHz      uV */
-				1725000 1200000
+				1728000 1200000
 				1400000 1125000
 				1000000 1050000
 				 800000 1000000
@@ -147,7 +147,7 @@
 			>;
 			operating-points-0-3 = <
 				/* kHz      uV */
-				1725000 1175000
+				1728000 1175000
 				1400000 1100000
 				1000000 1025000
 				 800000 975000
@@ -156,7 +156,7 @@
 			>;
 			operating-points-0-4 = <
 				/* kHz      uV */
-				1725000 1150000
+				1728000 1150000
 				1400000 1075000
 				1000000 1000000
 				 800000 950000
@@ -165,7 +165,7 @@
 			>;
 			operating-points-0-5 = <
 				/* kHz      uV */
-				1725000 1100000
+				1728000 1100000
 				1400000 1025000
 				1000000 950000
 				 800000 900000
@@ -174,7 +174,7 @@
 			>;
 			operating-points-0-6 = <
 				/* kHz      uV */
-				1725000 1050000
+				1728000 1050000
 				1400000 975000
 				1000000 900000
 				 800000 850000
@@ -220,6 +220,18 @@
 	};
 
 	clocks {
+		cxo_board {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <19200000>;
+		};
+
+		pxo_board {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <27000000>;
+		};
+		
 		sleep_clk: sleep_clk {
 			compatible = "fixed-clock";
 			clock-frequency = <32768>;
@@ -235,49 +247,49 @@
 	qcom,pvs {
 		qcom,pvs-format-a;
 		qcom,speed0-pvs0-bin-v0 =
-			< 1725000000 1262500 >,
+			< 1728000000 1262500 >,
 			< 1400000000 1175000 >,
 			< 1000000000 1100000 >,
 			 < 800000000 1050000 >,
 			 < 600000000 1000000 >,
 			 < 384000000 975000 >;
 		qcom,speed0-pvs1-bin-v0 =
-			< 1725000000 1262500 >,
+			< 1728000000 1262500 >,
 			< 1400000000 1175000 >,
 			< 1000000000 1100000 >,
 			 < 800000000 1050000 >,
 			 < 600000000 1000000 >,
 			 < 384000000 950000 >;
 		qcom,speed0-pvs2-bin-v0 =
-			< 1725000000 1200000 >,
+			< 1728000000 1200000 >,
 			< 1400000000 1125000 >,
 			< 1000000000 1050000 >,
 			 < 800000000 1000000 >,
 			 < 600000000 950000 >,
 			 < 384000000 925000 >;
 		qcom,speed0-pvs3-bin-v0 =
-			< 1725000000 1175000 >,
+			< 1728000000 1175000 >,
 			< 1400000000 1100000 >,
 			< 1000000000 1025000 >,
 			 < 800000000 975000 >,
 			 < 600000000 925000 >,
 			 < 384000000 900000 >;
 		qcom,speed0-pvs4-bin-v0 =
-			< 1725000000 1150000 >,
+			< 1728000000 1150000 >,
 			< 1400000000 1075000 >,
 			< 1000000000 1000000 >,
 			 < 800000000 950000 >,
 			 < 600000000 900000 >,
 			 < 384000000 875000 >;
 		qcom,speed0-pvs5-bin-v0 =
-			< 1725000000 1100000 >,
+			< 1728000000 1100000 >,
 			< 1400000000 1025000 >,
 			< 1000000000 950000 >,
 			 < 800000000 900000 >,
 			 < 600000000 850000 >,
 			 < 384000000 825000 >;
 		qcom,speed0-pvs6-bin-v0 =
-			< 1725000000 1050000 >,
+			< 1728000000 1050000 >,
 			< 1400000000 975000 >,
 			< 1000000000 900000 >,
 			 < 800000000 850000 >,
@@ -330,7 +342,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 
-			smb208_regulators {
+			regulators {
 				compatible = "qcom,rpm-smb208-regulators";
 
 				smb208_s1a: s1a {
@@ -358,46 +370,113 @@
 				};
 			};
 
-			rpm_clocks {
+			
+			cxo_clk: cxo-clk {
+				reg = <QCOM_RPM_CXO_CLK>;
+				qcom,rpm-clk-name = "cxo";
+				qcom,rpm-clk-freq = <19200000>;
 				#clock-cells = <0>;
 				compatible = "qcom,rpm-clk";
 				qcom,rpm-clk-active-only;
+			};
+			
+			pxo_clk: pxo-clk {
+				reg = <QCOM_RPM_PXO_CLK>;
+				qcom,rpm-clk-name = "pxo";
+				qcom,rpm-clk-freq = <27000000>;
+				#clock-cells = <0>;
+				compatible = "qcom,rpm-clk";
+				qcom,rpm-clk-active-only;
+			};
 
-				cxo_clk: cxo {
-					reg = <QCOM_RPM_CXO_CLK>;
-					qcom,rpm-clk-name = "cxo";
-					qcom,rpm-clk-freq = <25000000>;
-				};
+			ebi1_clk: ebi1-clk {
+				reg = <QCOM_RPM_EBI1_CLK>;
+				qcom,rpm-clk-name = "ebi1";
+				qcom,rpm-clk-freq = <533000000>;
+				#clock-cells = <0>;
+				compatible = "qcom,rpm-clk";
+				qcom,rpm-clk-active-only;
+			};
 
-				pxo_clk: pxo {
-					reg = <QCOM_RPM_PXO_CLK>;
-					qcom,rpm-clk-name = "pxo";
-					qcom,rpm-clk-freq = <25000000>;
-				};
+			apps_fabric_clk: apps-fabric-clk {
+				reg = <QCOM_RPM_APPS_FABRIC_CLK>;
+				qcom,rpm-clk-name = "apps-fabric";
+				qcom,rpm-clk-freq = <533000000>;
+				#clock-cells = <0>;
+				compatible = "qcom,rpm-clk";
+				qcom,rpm-clk-active-only;
+			};
 
-				ebi1_clk: ebi1 {
-					reg = <QCOM_RPM_EBI1_CLK>;
-					qcom,rpm-clk-name = "ebi1";
-					qcom,rpm-clk-freq = <533000000>;
-				};
+			daytona_fabric_clk: daytona-fabric-clk {
+				reg = <QCOM_RPM_DAYTONA_FABRIC_CLK>;
+				qcom,rpm-clk-name = "daytona-fabric";
+				qcom,rpm-clk-freq = <64000000>;
+				#clock-cells = <0>;
+				compatible = "qcom,rpm-clk";
+				qcom,rpm-clk-active-only;
+			};
 
-				apps_fabric_clk: apps-fabric {
-					reg = <QCOM_RPM_APPS_FABRIC_CLK>;
-					qcom,rpm-clk-name = "apps-fabric";
-					qcom,rpm-clk-freq = <533000000>;
-				};
+			cfpb_clk: cfpb-clk {
+				reg = <QCOM_RPM_CFPB_CLK>;
+				qcom,rpm-clk-name = "cfpb";
+				qcom,rpm-clk-freq = <64000000>;
+				#clock-cells = <0>;
+				compatible = "qcom,rpm-clk";
+				qcom,rpm-clk-active-only;
+			};
 
-				nss_fabric0_clk: nss-fabric0 {
-					reg = <QCOM_RPM_NSS_FABRIC_0_CLK>;
-					qcom,rpm-clk-name = "nss-fabric0";
-					qcom,rpm-clk-freq = <533000000>;
-				};
+			mm_fabric_clk: mm-fabric-clk {
+				reg = <QCOM_RPM_MM_FABRIC_CLK>;
+				qcom,rpm-clk-name = "mm-fabric";
+				qcom,rpm-clk-freq = <220000000>;
+				#clock-cells = <0>;
+				compatible = "qcom,rpm-clk";
+				qcom,rpm-clk-active-only;
+			};
 
-				nss_fabric1_clk: nss-fabric1 {
-					reg = <QCOM_RPM_NSS_FABRIC_1_CLK>;
-					qcom,rpm-clk-name = "nss-fabric1";
-					qcom,rpm-clk-freq = <266000000>;
-				};
+			mmfpb_clk: mmfpb-clk {
+				reg = <QCOM_RPM_MMFPB_CLK>;
+				qcom,rpm-clk-name = "mmfpb-fabric";
+				qcom,rpm-clk-freq = <83000000>;
+				#clock-cells = <0>;
+				compatible = "qcom,rpm-clk";
+				qcom,rpm-clk-active-only;
+			};
+
+			sys_fabric_clk: sys-fabric-clk {
+				reg = <QCOM_RPM_SYS_FABRIC_CLK>;
+				qcom,rpm-clk-name = "sys-fabric";
+				qcom,rpm-clk-freq = <160000000>;
+				#clock-cells = <0>;
+				compatible = "qcom,rpm-clk";
+				qcom,rpm-clk-active-only;
+			};
+
+			sfpb_clk: sfpb-clk {
+				reg = <QCOM_RPM_SFPB_CLK>;
+				qcom,rpm-clk-name = "sfpb";
+				qcom,rpm-clk-freq = <64000000>;
+				#clock-cells = <0>;
+				compatible = "qcom,rpm-clk";
+				qcom,rpm-clk-active-only;
+			};
+
+			nss_fabric0_clk: nss-fabric0-clk {
+				reg = <QCOM_RPM_NSS_FABRIC_0_CLK>;
+				qcom,rpm-clk-name = "nss-fabric0";
+				qcom,rpm-clk-freq = <533000000>;
+				#clock-cells = <0>;
+				compatible = "qcom,rpm-clk";
+				qcom,rpm-clk-active-only;
+			};
+
+			nss_fabric1_clk: nss-fabric1-clk {
+				reg = <QCOM_RPM_NSS_FABRIC_1_CLK>;
+				qcom,rpm-clk-name = "nss-fabric1";
+				qcom,rpm-clk-freq = <266000000>;
+				#clock-cells = <0>;
+				compatible = "qcom,rpm-clk";
+				qcom,rpm-clk-active-only;
 			};
 		};
 
@@ -478,14 +557,14 @@
 		};
 
 		timer@200a000 {
-			compatible = "qcom,kpss-timer", "qcom,msm-timer";
+			compatible = "qcom,kpss-timer", "qcom,kpss-wdt-ipq8064", "qcom,msm-timer";
 			interrupts = <1 1 0x301>,
 				     <1 2 0x301>,
 				     <1 3 0x301>,
 				     <1 4 0x301>,
 				     <1 5 0x301>;
 			reg = <0x0200a000 0x100>;
-			clock-frequency = <25000000>,
+			clock-frequency = <27000000>,
 					  <32768>;
 			clocks = <&sleep_clk>;
 			clock-names = "sleep";
@@ -1103,7 +1182,7 @@
 		adm_dma: dma@18300000 {
 			compatible = "qcom,adm";
 			reg = <0x18300000 0x100000>;
-			interrupts = <0 170 0>;
+			interrupts = <GIC_SPI 170 IRQ_TYPE_NONE>;
 			#dma-cells = <1>;
 
 			clocks = <&gcc ADM0_CLK>, <&gcc ADM0_PBUS_CLK>;
