@@ -12,7 +12,9 @@
 -- <code>undefined</code>.) <code>NULL</code> values in JSON are represented by
 -- the special value <code>json.NULL</code>.
 --
--- @author Martin Holst Swende (originally), David Fifield, Patrick Donnelly
+-- @author Martin Holst Swende
+-- @author David Fifield
+-- @author Patrick Donnelly
 -- @copyright Same as Nmap--See https://nmap.org/book/man-legal.html
 
 -- Version 0.4
@@ -68,7 +70,6 @@ end
 
 --- Makes a table be treated as a JSON Object when generating JSON
 --
--- A table treated as an Object has all non-number indices ignored.
 -- @param t a table to be treated as an object
 function make_object(t)
   local mt = getmetatable(t) or {}
@@ -170,17 +171,6 @@ end
 --Some local shortcuts
 local function dbg(str,...)
   stdnse.debug1("Json:"..str, ...)
-end
-local function d4(str,...)
-  if nmap.debugging() > 3 then dbg(str, ...) end
-end
-local function d3(str,...)
-  if nmap.debugging() > 2 then dbg(str, ...) end
-end
-
---local dbg =stdnse.debug
-local function dbg_err(str,...)
-  stdnse.debug1("json-ERR:"..str, ...)
 end
 
 -- See section 2.5 for escapes.

@@ -29,21 +29,25 @@ local libs = {
 "afp",
 "ajp",
 "amqp",
+"anyconnect",
 "asn1",
 "base32",
 "base64",
 "bin",
 "bitcoin",
 "bit",
+"bits",
 "bittorrent",
 "bjnp",
 "brute",
 "cassandra",
 "citrixxml",
+"coap",
 "comm",
 "creds",
 "cvs",
 "datafiles",
+"datetime",
 "dhcp6",
 "dhcp",
 "dnsbl",
@@ -63,6 +67,7 @@ local libs = {
 "imap",
 "informix",
 "ipOps",
+"ipmi",
 "ipp",
 "iscsi",
 "isns",
@@ -75,10 +80,12 @@ local libs = {
 "membase",
 "mobileme",
 "mongodb",
+"mqtt",
 "msrpc",
 "msrpcperformance",
 "msrpctypes",
 "mssql",
+"multicast",
 "mysql",
 "natpmp",
 "ncp",
@@ -98,6 +105,7 @@ local libs = {
 "proxy",
 "rdp",
 "redis",
+"re",
 "rmi",
 "rpcap",
 "rpc",
@@ -106,6 +114,7 @@ local libs = {
 "sasl",
 "shortport",
 "sip",
+"slaxml",
 "smbauth",
 "smb",
 "smtp",
@@ -115,12 +124,15 @@ local libs = {
 "ssh1",
 "ssh2",
 "sslcert",
+"sslv2",
 "stdnse",
 "strbuf",
+--"strict", -- behaves oddly
 "stun",
 "tab",
 "target",
 "tftp",
+"tls",
 "tns",
 "unicode",
 "unittest",
@@ -163,7 +175,7 @@ run_tests = function(to_test)
     stdnse.debug1("Testing %s", lib)
     local status, thelib = pcall(require, lib)
     if not status then
-      stdnse.debug1("Failed to load %s", lib)
+      stdnse.debug1("Failed to load %s: %s", lib, thelib)
     else
       local failed = 0
       if rawget(thelib,"test_suite") ~= nil then
@@ -302,6 +314,86 @@ table_equal = function(a, b)
   end
 end
 
+--- Test associative tables for equality, 1 level deep
+-- @param a The first table to test
+-- @param b The second table to test
+-- @return bool True if a[k] == b[k] for all k in a and b
+keys_equal = function(a, b)
+  return function (suite)
+    local seen = {}
+    for k, v in pairs(a) do
+      if b[k] ~= v then
+        return false, ("%s ~= %s at key %s"):format(v, b[k], k)
+      end
+      seen[k] = true
+    end
+    for k, v in pairs(b) do
+      if not seen[k] then
+        return false, ("Key %s not present in table a"):format(k)
+      end
+    end
+    return true
+  end
+end
+
+--- Test two values for equality, recursively if necessary.
+--
+-- This function checks that both values are indistinguishable in all
+-- but memory location.
+--
+-- @param a The first value to test.
+-- @param b The second value to test
+-- @return bool True if values are indistinguishable, false otherwise.
+-- @return note Nil if values are indistinguishable, description of
+--         distinguishability otherwise.
+identical = function(a, b)
+  return function(suite)
+    function identical(val1, val2, path)
+      local table_size = function(tbl)
+        local count = 0
+        for k in pairs(tbl) do
+          count = count + 1
+        end
+        return count
+      end
+
+      -- Both values must be of the same type
+      local t1, t2 = type(val1), type(val2)
+      if t1 ~= t2 then
+        return false, string.format("Types of %s are not equal: %s ~= %s", path, t1, t2)
+      end
+
+      -- For non-tables, we can make a direct comparison.
+      if t1 ~= "table" then
+        if val1 ~= val2 then
+          return false, string.format("Values of %s are not equal: %s ~= %s", path, val1, val2)
+        end
+        return true
+      end
+
+      -- For tables, we must first check that they are of equal size.
+      local len1, len2 = table_size(val1), table_size(val2)
+      if len1 ~= len2 then
+        return false, string.format("Sizes of %s are not equal: %s ~= %s", path, len1, len2)
+      end
+
+      -- Finally, we must recursively check all of the values in the tables.
+      for k,v in pairs(val1) do
+        -- Check that the key's value is identical in both tables, passing
+        -- along the path of keys we have taken to get here.
+        local status, note = identical(val1[k], val2[k], string.format('%s["%s"]', path, k))
+        if not status then
+          return false, note
+        end
+      end
+
+      return true
+    end
+
+    return identical(a, b, "<top>")
+  end
+end
+
 --- Test for equality
 -- @param a The first value to test
 -- @param b The second value to test
@@ -369,11 +461,10 @@ length_is = make_test(length_is, "Length of %s is not %s")
 expected_failure = function(test)
   return function(suite)
     if test(suite) then
-      return true, "Test unexpectedly passed"
-    else
-      return true, "Test failed as expected"
+      return false, "Test unexpectedly passed"
     end
-    return true
+
+    return true, "Test failed as expected"
   end
 end
 
@@ -393,7 +484,12 @@ test_suite:add_test(is_false(1.9999 == 2.0), "Boolean expression evaluates to fa
 test_suite:add_test(lt(1, 999), "1 < 999")
 test_suite:add_test(lte(8, 8), "8 <= 8")
 test_suite:add_test(expected_failure(not_nil(nil)), "Test expected to fail fails")
-test_suite:add_test(expected_failure(is_nil(nil)), "Test expected to fail succeeds")
-test_suite:add_test(length_is(test_suite.tests, 10), "Number of tests is 10")
+test_suite:add_test(expected_failure(expected_failure(is_nil(nil))), "Test expected to succeed does not fail")
+test_suite:add_test(keys_equal({one=1,two=2,[3]="three"},{[3]="three",one=1,two=2}), "identical tables are identical")
+test_suite:add_test(expected_failure(keys_equal({one=1,two=2},{[3]="three",one=1,two=2}), "dissimilar tables are dissimilar"))
+test_suite:add_test(identical(0, 0), "integer === integer")
+test_suite:add_test(identical(nil, nil), "nil === nil")
+test_suite:add_test(identical({}, {}), "{} === {}")
+test_suite:add_test(length_is(test_suite.tests, 15), "Number of tests is 15")
 
 return _ENV;

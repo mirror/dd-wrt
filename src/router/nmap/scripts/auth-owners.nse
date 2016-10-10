@@ -70,7 +70,7 @@ action = function(host, port)
     owner = nil
   else
     owner = string.match(owner,
-      "%d+%s*,%s*%d+%s*:%s*USERID%s*:%s*.+%s*:%s*(.+)\r?\n")
+      "%d+%s*,%s*%d+%s*:%s*USERID%s*:%s*[^:]+%s*:[ \t]*([^\r\n]+)\r?\n")
   end
 
   try(client_ident:close())

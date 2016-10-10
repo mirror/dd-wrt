@@ -4,7 +4,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2015 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2016 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
@@ -120,7 +120,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nmap_ftp.h 34719 2015-06-23 15:52:58Z dmiller $ */
+/* $Id: nmap_ftp.h 36034 2016-07-26 14:06:22Z vincent $ */
 
 #ifndef NMAP_FTP_H
 #define NMAP_FTP_H
@@ -137,7 +137,7 @@ class Target;
 struct ftpinfo {
   char user[64];
   char pass[256]; /* methinks you're paranoid if you need this much space */
-  char server_name[MAXHOSTNAMELEN + 1];
+  char server_name[FQDN_LEN + 1];
   struct in_addr server;
   u16 port;
   int sd; /* socket descriptor */
