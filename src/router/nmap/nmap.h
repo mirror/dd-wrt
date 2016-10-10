@@ -6,7 +6,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2015 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2016 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
@@ -122,7 +122,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nmap.h 35743 2016-03-28 16:57:02Z dmiller $ */
+/* $Id: nmap.h 36333 2016-09-28 03:34:44Z dmiller $ */
 
 #ifndef NMAP_H
 #define NMAP_H
@@ -193,13 +193,13 @@
 #ifndef NMAP_VERSION
 /* Edit this definition only within the quotes, because it is read from this
    file by the makefiles. */
-#define NMAP_VERSION "7.12"
-#define NMAP_NUM_VERSION "7.0.12.0"
+#define NMAP_VERSION "7.30"
+#define NMAP_NUM_VERSION "7.0.30.0"
 #endif
 /* The version number of updates retrieved by the nmap-update
    program. It can be different (but should always be the same or
    earlier) than NMAP_VERSION. */
-#define NMAP_UPDATE_CHANNEL "6.49"
+#define NMAP_UPDATE_CHANNEL "7.30"
 
 #define NMAP_XMLOUTPUTVERSION "1.04"
 
@@ -322,6 +322,9 @@
 #ifndef MAXHOSTNAMELEN
 #define MAXHOSTNAMELEN 64
 #endif
+
+/* Length of longest DNS name */
+#define FQDN_LEN 254
 
 /* Max payload: Worst case is IPv4 with 40bytes of options and TCP with 20
  * bytes of options. */

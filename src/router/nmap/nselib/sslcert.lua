@@ -19,7 +19,7 @@
 -- * VNC (TLS and VeNCrypt auth types)
 -- * XMPP
 --
--- @author "Patrik Karlsson <patrik@cqure.net>"
+-- @author Patrik Karlsson <patrik@cqure.net>
 
 local asn1 = require "asn1"
 local bin = require "bin"
@@ -43,7 +43,8 @@ _ENV = stdnse.module("sslcert", stdnse.seeall)
 --@name parse_ssl_certificate
 --@class function
 --@param der DER-encoded certificate
---@return table containing decoded certificate
+--@return table containing decoded certificate or nil on failure
+--@return error string if parsing failed
 --@see nmap.get_ssl_certificate
 _ENV.parse_ssl_certificate = nmap.socket.parse_ssl_certificate
 
@@ -248,13 +249,18 @@ StartTLS = {
       return false, "Failed to connect to LDAP server"
     end
 
-    -- Create an ExtendedRequest and specify the OID for the
-    -- Start TTLS operation (see http://www.ietf.org/rfc/rfc2830.txt)
+    -- Create an LDAP extendedRequest and specify the OID for the
+    -- STARTTLS operation (see http://www.ietf.org/rfc/rfc2830.txt)
+    local oid = "1.3.6.1.4.1.1466.20037"
+
+    -- 0x80  = 10000001  =  10        0                 00000
+    -- hex     binary       Context   Primitive value   Field: requestName  Value: 0
+    local encodedOID = bin.pack('HAA' , '80', string.char(#oid), oid)
+
+    local ldapRequest, ldapRequestId
     local ExtendedRequest = 23
     local ExtendedResponse = 24
-    local oid, ldapRequest, ldapRequestId
-    oid = ldap.encode("1.3.6.1.4.1.1466.20037")
-    ldapRequest = ldap.encodeLDAPOp(ExtendedRequest, true, oid)
+    ldapRequest = ldap.encodeLDAPOp(ExtendedRequest, true, encodedOID)
     ldapRequestId = ldap.encode(1)
 
     -- Send the STARTTLS request
@@ -466,7 +472,7 @@ StartTLS = {
     while optype ~= mssql.PreLoginPacket.OPTION_TYPE.Terminator do
       --stdnse.debug1("optype: %d, oppos: %x, oplen: %d", optype, oppos, oplen)
       if optype == mssql.PreLoginPacket.OPTION_TYPE.Encryption then
-        encryption = bin.unpack('C', result, oppos + 1)
+        pos, encryption = bin.unpack('C', result, oppos + 1)
         break
       end
       pos, optype, oppos, oplen = bin.unpack('>CSS', result, pos)
@@ -568,51 +574,36 @@ StartTLS = {
     local sock = v.socket
     if v:supportsSecType(vnc.VNC.sectypes.VENCRYPT) then
 
-      status = sock:send( bin.pack("C", vnc.VNC.sectypes.VENCRYPT) )
+      status, data = v:handshake_vencrypt()
       if not status then
-        return false, "Failed to select VeNCrypt authentication type"
+        return false, string.format("Failed VeNCrypt handshake: %s", data)
       end
-
-      local status, buf = sock:receive_buf(match.numbytes(2), true)
-      local pos, maj, min = bin.unpack("CC", buf)
-      if maj ~= 0 or min ~= 2 then
-        return false, string.format("Unknown VeNCrypt version: %d.%d", maj, min)
-      end
-      sock:send(bin.pack("CC", maj, min))
-      status, buf = sock:receive_buf(match.numbytes(1), true)
-      pos, status = bin.unpack("C", buf)
-      if status ~= 0 then
-        return false, string.format("Server refused VeNCrypt version %d.%d", maj, min)
-      end
-
-      status, buf = sock:receive_buf(match.numbytes(1), true)
-      local pos, nauth = bin.unpack("C", buf)
-      if nauth == 0 then
-        return false, "No VeNCrypt auth subtypes received"
-      end
-
-      -- vencrypt auth types are u32
-      status, buf = sock:receive_buf(match.numbytes(nauth * 4), true)
+      local auth_order = {
+        -- X509 types are not anonymous, have real certs
+        vnc.VENCRYPT_SUBTYPES.X509VNC,
+        vnc.VENCRYPT_SUBTYPES.X509SASL,
+        vnc.VENCRYPT_SUBTYPES.X509NONE,
+        vnc.VENCRYPT_SUBTYPES.X509PLAIN,
+        -- TLS types use anonymous DH handshakes
+        vnc.VENCRYPT_SUBTYPES.TLSVNC,
+        vnc.VENCRYPT_SUBTYPES.TLSSASL,
+        vnc.VENCRYPT_SUBTYPES.TLSNONE,
+        vnc.VENCRYPT_SUBTYPES.TLSPLAIN,
+        -- PLAIN type doesn't use TLS
+      }
       local best
-      pos = 1
-      for i=1, nauth do
-        local auth
-        pos, auth = bin.unpack(">I", buf, pos)
-        if auth >= 260 and auth <= 263 then
-          -- X509 auth subtype
-          best = auth
+      for i=1, #auth_order do
+        if stdnse.contains(v.vencrypt.types, auth_order[i]) then
+          best = auth_order[i]
           break
-        elseif auth >= 257 then
-          -- other TLS auth subtype (Plain is 256)
-          -- These are anon types, so no cert available
-          best = auth
         end
       end
+
       if not best then
         return false, "No TLS VeNCrypt auth subtype received"
       end
       sock:send(bin.pack(">I", best))
-      status, buf = sock:receive_buf(match.numbytes(1), true)
+      local status, buf = sock:receive_buf(match.numbytes(1), true)
       if not status or string.byte(buf, 1) ~= 1 then
         return false, "VeNCrypt auth subtype refused"
       end
@@ -837,8 +828,14 @@ function getCertificate(host, port)
   end
 
   local cert
-  -- do we have to use a wrapper and do a manual handshake?
-  local wrapper = SPECIALIZED_WRAPPED_TLS_WITHOUT_RECONNECT[port.service] or SPECIALIZED_WRAPPED_TLS_WITHOUT_RECONNECT[port.number]
+
+  -- If we don't already know the service is TLS wrapped check to see if we
+  -- have to use a wrapper and do a manual handshake
+  local wrapper
+  if not ( port.version.service_tunnel == 'ssl' ) then
+    wrapper = SPECIALIZED_WRAPPED_TLS_WITHOUT_RECONNECT[port.service] or SPECIALIZED_WRAPPED_TLS_WITHOUT_RECONNECT[port.number]
+  end
+
   if wrapper then
     local status, socket = wrapper(host, port)
     if not status then
@@ -897,14 +894,18 @@ function getCertificate(host, port)
       return false, "Server sent no certificate"
     end
 
-    cert = parse_ssl_certificate(certs.certificates[1])
+    cert, err = parse_ssl_certificate(certs.certificates[1])
     if not cert then
       mutex "done"
-      return false, "Unable to get cert"
+      return false, ("Unable to get cert: %s"):format(err)
     end
   else
-    -- Is there a specialized function for this port?
-    local specialized = SPECIALIZED_PREPARE_TLS[port.service] or SPECIALIZED_PREPARE_TLS[port.number]
+    -- If we don't already know the service is TLS wrapped check to see if
+    -- there a specialized function for this port
+    local specialized
+    if not ( port.version.service_tunnel == 'ssl' ) then
+      specialized = SPECIALIZED_PREPARE_TLS[port.service] or SPECIALIZED_PREPARE_TLS[port.number]
+    end
     local status
     local socket = nmap.new_socket()
     if specialized then
