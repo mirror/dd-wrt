@@ -552,11 +552,13 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 			}
 		}
 	}
-	if (d->iftype && sinfo[NL80211_STA_INFO_EXPECTED_THROUGHPUT]) {
-		unsigned int tx = nla_get_u32(sinfo[NL80211_STA_INFO_EXPECTED_THROUGHPUT]);
-		tx = tx * 1000;
-		tx = tx / 1024;
-		mac80211_info->wci->txrate = tx / 100;
+	if (is_ath10k(mac80211_info->wci->ifname)) {
+		if (d->iftype && sinfo[NL80211_STA_INFO_EXPECTED_THROUGHPUT]) {
+			unsigned int tx = nla_get_u32(sinfo[NL80211_STA_INFO_EXPECTED_THROUGHPUT]);
+			tx = tx * 1000;
+			tx = tx / 1024;
+			mac80211_info->wci->txrate = tx / 100;
+		}
 	}
 	if (sinfo[NL80211_STA_INFO_STA_FLAGS]) {
 		sta_flags = (struct nl80211_sta_flag_update *)
