@@ -1015,8 +1015,12 @@ ifeq ($(CONFIG_IPR),y)
 else
 ifeq ($(CONFIG_ONNET),y)
 	$(MAKE) -C $(SRCBASE)/router/kromo/dd-wrt/onnet/common/ install
+else 
+ifeq ($(CONFIG_RAYTRONIK),y)
+	$(MAKE) -C $(SRCBASE)/router/kromo/dd-wrt/raytronik/common/ install
 else
 	$(MAKE) -C $(SRCBASE)/router/kromo/common/ install
+endif
 endif
 endif
 endif
