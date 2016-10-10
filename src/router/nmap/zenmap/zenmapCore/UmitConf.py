@@ -3,7 +3,7 @@
 
 # ***********************IMPORTANT NMAP LICENSE TERMS************************
 # *                                                                         *
-# * The Nmap Security Scanner is (C) 1996-2015 Insecure.Com LLC. Nmap is    *
+# * The Nmap Security Scanner is (C) 1996-2016 Insecure.Com LLC. Nmap is    *
 # * also a registered trademark of Insecure.Com LLC.  This program is free  *
 # * software; you may redistribute and/or modify it under the terms of the  *
 # * GNU General Public License as published by the Free Software            *
@@ -123,6 +123,7 @@ import re
 
 from types import StringTypes
 from ConfigParser import DuplicateSectionError, NoSectionError, NoOptionError
+from ConfigParser import Error as ConfigParser_Error
 
 from zenmapCore.Paths import Path
 from zenmapCore.UmitLogging import log
@@ -253,14 +254,16 @@ class Profile(UmitConfigParser, object):
     def __init__(self, user_profile=None, *args):
         UmitConfigParser.__init__(self, *args)
 
-        if not user_profile:
-            user_profile = Path.scan_profile
+        try:
+            if not user_profile:
+                user_profile = Path.scan_profile
 
-        fconf = open(user_profile, 'r')
-        self.readfp(fconf, user_profile)
-
-        fconf.close()
-        del(fconf)
+            self.read(user_profile)
+        except ConfigParser_Error as e:
+            # No scan profiles found is not a reason to crash.
+            self.add_profile(_("Profiles not found"),
+                    command="nmap",
+                    description=_("The {} file is missing or corrupted").format(user_profile))
 
         self.attributes = {}
 
@@ -416,6 +419,11 @@ class CommandProfile (Profile, object):
 
     def get_command(self, profile):
         command_string = self._get_it(profile, 'command')
+        # Corrupted config file can include multiple commands. Take the first one.
+        if isinstance(command_string, list):
+            command_string = command_string[0]
+        if not hasattr(command_string, "endswith"):
+            return "nmap"
         # Old versions of Zenmap used to append "%s" to commands and use that
         # to substitute the target. Ignore it if present.
         if command_string.endswith("%s"):

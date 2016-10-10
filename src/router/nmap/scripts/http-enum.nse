@@ -73,7 +73,7 @@ database can specify their own criteria for accepting a page as valid.
 -- |   /nfservlets/servlet/SPSRouterServlet/: netForensics
 -- |_  /nfservlets/servlet/SPSRouterServlet/: netForensics
 
-author = "Ron Bowes, Andrew Orr, Rob Nicholls"
+author = {"Ron Bowes", "Andrew Orr", "Rob Nicholls"}
 
 license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 
@@ -396,21 +396,22 @@ action = function(host, port)
   for i = 1, #fingerprints, 1 do
     -- Add each path. The order very much matters here.
     for j = 1, #fingerprints[i].probes, 1 do
-      if fingerprints[i].probes[j].nopipeline then
-        local res = http.generic_request(host, port, fingerprints[i].probes[j].method or 'GET', basepath .. fingerprints[i].probes[j].path, nil)
+      local probe = fingerprints[i].probes[j]
+      if probe.nopipeline then
+        local res = http.generic_request(host, port, probe.method or 'GET', basepath .. probe.path, probe.options or nil)
         if res.status then
           table.insert(results_nopipeline, res)
         else
           table.insert(results_nopipeline, false)
         end
       else
-        all = http.pipeline_add(basepath .. fingerprints[i].probes[j].path, nil, all, fingerprints[i].probes[j].method or 'GET')
+        all = http.pipeline_add(basepath .. probe.path, probe.options or nil, all, probe.method or 'GET')
       end
     end
   end
 
   -- Perform all the requests.
-  local results = http.pipeline_go(host, port, all, nil)
+  local results = http.pipeline_go(host, port, all)
 
   -- Check for http.pipeline error
   if(results == nil) then

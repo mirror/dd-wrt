@@ -1,5 +1,5 @@
 # Nmap nmap payload database -*- mode: fundamental; -*-
-# $Id: nmap-payloads 35742 2016-03-28 16:48:38Z dmiller $
+# $Id: nmap-payloads 36305 2016-09-23 05:18:16Z dmiller $
 #
 # These payloads are sent with every host discovery or port scan probe
 # by default. This database should only include payloads that are
@@ -67,6 +67,13 @@ udp 161
 # http://cgit.freedesktop.org/xorg/doc/xorg-docs/plain/hardcopy/XDMCP/xdmcp.PS.gz
 udp 177 "\x00\x01\x00\x02\x00\x01\x00"
 
+# Connectionless LDAP - used by Microsoft Active Directory
+udp 389 
+  "\x30\x84\x00\x00\x00\x2d\x02\x01\x07\x63\x84\x00\x00\x00\x24\x04\x00"
+  "\x0a\x01\x00\x0a\x01\x00\x02\x01\x00\x02\x01\x64\x01\x01\x00\x87\x0b"
+  "\x6f\x62\x6a\x65\x63\x74\x43\x6c\x61\x73\x73\x30\x84\x00\x00\x00\x00"
+
+
 # svrloc
 udp 427
   "\x02\x01\x00\x006 \x00\x00\x00\x00\x00\x01\x00\x02en\x00\x00\x00\x15"
@@ -74,8 +81,8 @@ udp 427
 
 # DTLS
 udp 443,4433,4740,5349,5684,6514,6636,10161,10162
-  # DTLS 1.2, length 52
-  "\x16\xfe\xfd\x00\x00\x00\x00\x00\x00\x00\x00\x00\x36"
+  # DTLS 1.0, length 52
+  "\x16\xfe\xff\x00\x00\x00\x00\x00\x00\x00\x00\x00\x36"
   # ClientHello, length 40, sequence 0, offset 0
   "\x01\x00\x00\x2a\x00\x00\x00\x00\x00\x00\x00\x2a"
   # DTLS 1.2
@@ -131,6 +138,12 @@ source 500
 udp 520
   "\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
   "\x00\x00\x00\x00\x00\x00\x00\x10"
+
+# IPMI
+# RMCP Get Channel Auth Capabilities
+udp 623
+  "\x06\x00\xff\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x09\x20\x18"
+  "\xc8\x81\x00\x38\x8e\x04\xb5"
 
 # serialnumberd. This service runs on Mac OS X Server. This probe
 # requests the serial number of another server. In response we expect a
@@ -219,6 +232,9 @@ udp 5351 "\x00\x00"
 udp 5353
   "\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00"
   "\x09_services\x07_dns-sd\x04_udp\x05local\x00\x00\x0C\x00\x01"
+
+# CoAP GET .well-known/core
+udp 5683 "@\x01\x01\xce\xbb.well-known\x04core"
 
 # Amanda backup service noop request. I think that this does nothing on the
 # server but only asks it to send back its feature list. In reply we expect an

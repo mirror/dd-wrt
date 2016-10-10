@@ -9,7 +9,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2015 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2016 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
@@ -125,7 +125,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: output.cc 35576 2016-01-13 20:53:39Z dmiller $ */
+/* $Id: output.cc 36298 2016-09-21 03:55:12Z dmiller $ */
 
 #include "nmap.h"
 #include "output.h"
@@ -467,7 +467,8 @@ static std::string escape_for_screen(const std::string s) {
   for (unsigned int i = 0; i < s.size(); i++) {
     char buf[5];
     unsigned char c = s[i];
-    if (c == '\t' || c == '\r' || c == '\n' || (0x20 <= c && c <= 0x7e)) {
+    // Printable and some whitespace ok. "\r" not ok because it overwrites the line.
+    if (c == '\t' || c == '\n' || (0x20 <= c && c <= 0x7e)) {
       r += c;
     } else {
       Snprintf(buf, sizeof(buf), "\\x%02X", c);
@@ -1008,9 +1009,6 @@ void log_vwrite(int logt, const char *fmt, va_list ap) {
       case LOG_MACHINE:
       case LOG_SKID:
       case LOG_XML:
-        len = alloc_vsprintf(&writebuf, fmt, ap);
-        if (writebuf == NULL)
-          fatal("%s: alloc_vsprintf failed.", __func__);
         if (logtype == LOG_SKID_NOXLT)
             l = LOG_SKID;
         else
@@ -1021,17 +1019,22 @@ void log_vwrite(int logt, const char *fmt, va_list ap) {
           l >>= 1;
         }
         assert(fileidx < LOG_NUM_FILES);
-        if (o.logfd[fileidx] && len) {
-          if ((logtype & (LOG_SKID|LOG_SKID_NOXLT)) && !skid_noxlate)
-            skid_output(writebuf);
+        if (o.logfd[fileidx]) {
+          len = alloc_vsprintf(&writebuf, fmt, ap);
+          if (writebuf == NULL)
+            fatal("%s: alloc_vsprintf failed.", __func__);
+          if (len) {
+            if ((logtype & (LOG_SKID|LOG_SKID_NOXLT)) && !skid_noxlate)
+              skid_output(writebuf);
 
-          rc = fwrite(writebuf, len, 1, o.logfd[fileidx]);
-          if (rc != 1) {
-            fatal("Failed to write %d bytes of data to (logt==%d) stream. fwrite returned %d.  Quitting.", len, logtype, rc);
+            rc = fwrite(writebuf, len, 1, o.logfd[fileidx]);
+            if (rc != 1) {
+              fatal("Failed to write %d bytes of data to (logt==%d) stream. fwrite returned %d.  Quitting.", len, logtype, rc);
+            }
+            va_end(apcopy);
           }
-          va_end(apcopy);
+          free(writebuf);
         }
-        free(writebuf);
         break;
 
       default:
@@ -1939,7 +1942,7 @@ void printosscanoutput(Target *currenths, risultatoScan *risultatoHost) {
     xml_open_start_tag("portused");
     xml_attribute("state", "open");
     xml_attribute("proto", "tcp");
-    xml_attribute("portid", "%hu", FPR->osscan_opentcpport);
+    xml_attribute("portid", "%d", FPR->osscan_opentcpport);
     xml_close_empty_tag();
     xml_newline();
   }
@@ -1947,7 +1950,7 @@ void printosscanoutput(Target *currenths, risultatoScan *risultatoHost) {
     xml_open_start_tag("portused");
     xml_attribute("state", "closed");
     xml_attribute("proto", "tcp");
-    xml_attribute("portid", "%hu", FPR->osscan_closedtcpport);
+    xml_attribute("portid", "%d", FPR->osscan_closedtcpport);
     xml_close_empty_tag();
     xml_newline();
   }
@@ -1955,7 +1958,7 @@ void printosscanoutput(Target *currenths, risultatoScan *risultatoHost) {
     xml_open_start_tag("portused");
     xml_attribute("state", "closed");
     xml_attribute("proto", "udp");
-    xml_attribute("portid", "%hu", FPR->osscan_closedudpport);
+    xml_attribute("portid", "%d", FPR->osscan_closedudpport);
     xml_close_empty_tag();
     xml_newline();
   }
@@ -2166,7 +2169,7 @@ void printserviceinfooutput(Target *currenths) {
   Port port;
   struct serviceDeductions sd;
   int i, numhostnames = 0, numostypes = 0, numdevicetypes = 0, numcpes = 0;
-  char hostname_tbl[MAX_SERVICE_INFO_FIELDS][MAXHOSTNAMELEN];
+  char hostname_tbl[MAX_SERVICE_INFO_FIELDS][FQDN_LEN+1];
   char ostype_tbl[MAX_SERVICE_INFO_FIELDS][64];
   char devicetype_tbl[MAX_SERVICE_INFO_FIELDS][64];
   char cpe_tbl[MAX_SERVICE_INFO_FIELDS][80];
@@ -2555,7 +2558,7 @@ void print_xml_finished_open(time_t timep, const struct timeval *tv) {
   xml_attribute("timestr", "%s", mytime);
   xml_attribute("elapsed", "%.2f", o.TimeSinceStart(tv));
   xml_attribute("summary",
-    "Nmap done at %s; %d %s (%d %s up) scanned in %.2f seconds",
+    "Nmap done at %s; %u %s (%u %s up) scanned in %.2f seconds",
     mytime, o.numhosts_scanned,
     (o.numhosts_scanned == 1) ? "IP address" : "IP addresses",
     o.numhosts_up, (o.numhosts_up == 1) ? "host" : "hosts",
@@ -2600,7 +2603,7 @@ void printfinaloutput() {
   }
 
   log_write(LOG_STDOUT | LOG_SKID,
-            "Nmap done: %d %s (%d %s up) scanned in %.2f seconds\n",
+            "Nmap done: %u %s (%u %s up) scanned in %.2f seconds\n",
             o.numhosts_scanned,
             (o.numhosts_scanned == 1) ? "IP address" : "IP addresses",
             o.numhosts_up, (o.numhosts_up == 1) ? "host" : "hosts",
@@ -2622,7 +2625,7 @@ void printfinaloutput() {
   xml_newline();
 
   log_write(LOG_NORMAL | LOG_MACHINE,
-            "# Nmap done at %s -- %d %s (%d %s up) scanned in %.2f seconds\n",
+            "# Nmap done at %s -- %u %s (%u %s up) scanned in %.2f seconds\n",
             mytime, o.numhosts_scanned,
             (o.numhosts_scanned == 1) ? "IP address" : "IP addresses",
             o.numhosts_up, (o.numhosts_up == 1) ? "host" : "hosts",

@@ -2,7 +2,7 @@
  * ncat_ssl.c -- SSL support functions.                                    *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2015 Insecure.Com LLC. Nmap is    *
+ * The Nmap Security Scanner is (C) 1996-2016 Insecure.Com LLC. Nmap is    *
  * also a registered trademark of Insecure.Com LLC.  This program is free  *
  * software; you may redistribute and/or modify it under the terms of the  *
  * GNU General Public License as published by the Free Software            *
@@ -118,7 +118,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: ncat_ssl.c 35385 2015-11-05 20:41:05Z dmiller $ */
+/* $Id: ncat_ssl.c 36271 2016-09-09 19:57:43Z dmiller $ */
 
 #include "nbase.h"
 #include "ncat_config.h"
@@ -132,6 +132,14 @@
 #include <openssl/rand.h>
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
+
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && !defined LIBRESSL_VERSION_NUMBER
+#define HAVE_OPAQUE_STRUCTS 1
+#define FUNC_ASN1_STRING_data ASN1_STRING_get0_data
+#else
+#define FUNC_ASN1_STRING_data ASN1_STRING_data
+#endif
+
 /* Required for windows compilation to Eliminate APPLINK errors.
    See http://www.openssl.org/support/faq.html#PROG2 */
 #ifdef WIN32
@@ -315,7 +323,8 @@ static int cert_match_dnsname(X509 *cert, const char *hostname,
 
     /* We must copy this address into a temporary variable because ASN1_item_d2i
        increments it. We don't want it to corrupt ext->value->data. */
-    data = ext->value->data;
+    ASN1_OCTET_STRING* asn1_str = X509_EXTENSION_get_data(ext);
+    data = asn1_str->data;
     /* Here we rely on the fact that the internal representation (the "i" in
        "i2d") for NID_subject_alt_name is STACK_OF(GENERAL_NAME). Converting it
        to a stack of CONF_VALUE with a i2v method is not satisfactory, because a
@@ -323,13 +332,15 @@ static int cert_match_dnsname(X509 *cert, const char *hostname,
        presence of null bytes. */
 #if (OPENSSL_VERSION_NUMBER > 0x00907000L)
     if (method->it != NULL) {
+        ASN1_OCTET_STRING* asn1_str_a = X509_EXTENSION_get_data(ext);
         gen_names = (STACK_OF(GENERAL_NAME) *) ASN1_item_d2i(NULL,
             (const unsigned char **) &data,
-            ext->value->length, ASN1_ITEM_ptr(method->it));
+            asn1_str_a->length, ASN1_ITEM_ptr(method->it));
     } else {
+        ASN1_OCTET_STRING* asn1_str_b = X509_EXTENSION_get_data(ext);
         gen_names = (STACK_OF(GENERAL_NAME) *) method->d2i(NULL,
             (const unsigned char **) &data,
-            ext->value->length);
+            asn1_str_b->length);
     }
 #else
     gen_names = (STACK_OF(GENERAL_NAME) *) method->d2i(NULL,
@@ -347,10 +358,10 @@ static int cert_match_dnsname(X509 *cert, const char *hostname,
         gen_name = sk_GENERAL_NAME_value(gen_names, i);
         if (gen_name->type == GEN_DNS) {
             if (o.debug > 1)
-                logdebug("Checking certificate DNS name \"%s\" against \"%s\".\n", ASN1_STRING_data(gen_name->d.dNSName), hostname);
+                logdebug("Checking certificate DNS name \"%s\" against \"%s\".\n", FUNC_ASN1_STRING_data(gen_name->d.dNSName), hostname);
             if (num_checked != NULL)
                 (*num_checked)++;
-            if (wildcard_match((char *) ASN1_STRING_data(gen_name->d.dNSName), hostname, ASN1_STRING_length(gen_name->d.dNSName)))
+            if (wildcard_match((char *) FUNC_ASN1_STRING_data(gen_name->d.dNSName), hostname, ASN1_STRING_length(gen_name->d.dNSName)))
                 return 1;
         }
     }
@@ -406,8 +417,8 @@ static int most_specific_commonname(X509_NAME *subject, const char **result)
         /* We use "not less specific" instead of "more specific" to allow later
            entries to supersede earlier ones. */
         if (best == NULL
-            || !less_specific(ASN1_STRING_data(cur), ASN1_STRING_length(cur),
-                              ASN1_STRING_data(best), ASN1_STRING_length(best))) {
+            || !less_specific(FUNC_ASN1_STRING_data(cur), ASN1_STRING_length(cur),
+                              FUNC_ASN1_STRING_data(best), ASN1_STRING_length(best))) {
             best = cur;
         }
     }
@@ -416,7 +427,7 @@ static int most_specific_commonname(X509_NAME *subject, const char **result)
         *result = NULL;
         return -1;
     } else {
-        *result = (char *) ASN1_STRING_data(best);
+        *result = (char *) FUNC_ASN1_STRING_data(best);
         return ASN1_STRING_length(best);
     }
 }
@@ -493,13 +504,14 @@ int ssl_post_connect_check(SSL *ssl, const char *hostname)
    "Making Certificates"; and apps/req.c in the OpenSSL source. */
 static int ssl_gen_cert(X509 **cert, EVP_PKEY **key)
 {
-    RSA *rsa;
+    RSA *rsa = NULL;
     X509_NAME *subj;
     X509_EXTENSION *ext;
     X509V3_CTX ctx;
+    BIGNUM *bne = NULL;
     const char *commonName = "localhost";
     char dNSName[128];
-    int rc;
+    int rc, ret=0;
 
     *cert = NULL;
     *key = NULL;
@@ -509,9 +521,17 @@ static int ssl_gen_cert(X509 **cert, EVP_PKEY **key)
     if (*key == NULL)
         goto err;
     do {
-        rsa = RSA_generate_key(DEFAULT_KEY_BITS, RSA_F4, NULL, NULL);
-        if (rsa == NULL)
+        /* Generate RSA key. */
+        bne = BN_new();
+        ret = BN_set_word(bne, RSA_F4);
+        if (ret != 1)
             goto err;
+
+        rsa = RSA_new();
+        ret = RSA_generate_key_ex(rsa, DEFAULT_KEY_BITS, bne, NULL);
+        if (ret != 1)
+            goto err;
+
         rc = RSA_check_key(rsa);
     } while (rc == 0);
     if (rc == -1)
