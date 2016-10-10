@@ -487,7 +487,8 @@ endif
 ifeq ($(CONFIG_ONNET),y)
 	mkdir $(INSTALLDIR)/www/style/onnet
 	cp onnet/style.css $(INSTALLDIR)/www/style/onnet
-	cp onnet/SuperChannel.asp $(INSTALLDIR)/www
+	cp onnet/*.asp $(INSTALLDIR)/www
+	cp onnet/common.js $(INSTALLDIR)/www
 	cp onnet/images/* $(INSTALLDIR)/www/images
 	cp onnet/help/* $(INSTALLDIR)/www/help
   ifeq ($(CONFIG_ONNET_BLANK),y)
@@ -511,6 +512,9 @@ ifeq ($(CONFIG_ONNET),y)
   endif
   ifeq ($(CONFIG_AP120C),y)
 	cp onnet/extra/ap120c.onnet $(INSTALLDIR)/etc/config/
+  endif
+  ifeq ($(CONFIG_AC722),y)
+	cp onnet/extra/alfa_n5.onnet $(INSTALLDIR)/etc/config/
   endif
 endif
 
