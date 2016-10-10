@@ -552,13 +552,11 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 			}
 		}
 	}
-	if (is_ath10k(mac80211_info->wci->ifname)) {
-		if (d->iftype && sinfo[NL80211_STA_INFO_EXPECTED_THROUGHPUT]) {
-			unsigned int tx = nla_get_u32(sinfo[NL80211_STA_INFO_EXPECTED_THROUGHPUT]);
-			tx = tx * 1000;
-			tx = tx / 1024;
-			mac80211_info->wci->txrate = tx / 100;
-		}
+	if (d->iftype && sinfo[NL80211_STA_INFO_EXPECTED_THROUGHPUT]) {
+		unsigned int tx = nla_get_u32(sinfo[NL80211_STA_INFO_EXPECTED_THROUGHPUT]);
+		tx = tx * 1000;
+		tx = tx / 1024;
+		mac80211_info->wci->txrate = tx / 100;
 	}
 	if (sinfo[NL80211_STA_INFO_STA_FLAGS]) {
 		sta_flags = (struct nl80211_sta_flag_update *)
@@ -627,12 +625,12 @@ struct mac80211_info *mac80211_assoclist(char *interface)
 		ifname = strrchr(globbuf.gl_pathv[i], '/');
 		if (!ifname)
 			continue;
-		// get noise for the actaul interface
+		// get noise for the actual interface
 		getNoise_mac80211_internal(ifname + 1, data.mac80211_info);
 		msg = unl_genl_msg(&unl, NL80211_CMD_GET_STATION, true);
 		NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, if_nametoindex(ifname + 1));
 #ifdef HAVE_ATH10K
-		if (is_ath10k(interface))
+		if (is_ath10k(ifname + 1))
 			data.iftype = 1;
 #endif
 		unl_genl_request(&unl, msg, mac80211_cb_stations, &data);
