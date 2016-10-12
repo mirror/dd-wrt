@@ -185,7 +185,7 @@ addEvent(window, "unload", function() {
 								    <textarea cols="60" rows="12" id="ripd_conf" name="ripd_conf"></textarea>
 								    <script type="text/javascript">
 								    //<![CDATA[
-								    var ospfd_conf = fix_cr( '<% nvg("ripd_conf"); %>' );
+								    var ripd_conf = fix_cr( '<% nvg("ripd_conf"); %>' );
 								    document.getElementById("ripd_conf").value = ripd_conf;
 								    //]]>
 								    </script>
