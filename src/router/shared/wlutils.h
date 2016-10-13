@@ -169,7 +169,7 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 #define AUTO_FORCEHT40 1
 #define AUTO_FORCEVHT80 2
 #define AUTO_FORCEVHT160 4
-#define AUTO_ALL 0 
+#define AUTO_ALL 0
 
 extern struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int scans, int ammount, int enable_passive, int htflags);
 extern void mac80211_set_antennas(int phy, uint32_t tx_ant, uint32_t rx_ant);
@@ -186,19 +186,9 @@ struct wifi_channels {
 	int channel;
 	int freq;
 	int noise;
-	unsigned char ht40minus;
-	unsigned char ht40plus;
-	unsigned char dfs;
 	int max_eirp;
 	int hw_eirp;
-	unsigned char no_outdoor;
-	unsigned char no_indoor;
-	unsigned char no_ofdm;
-	unsigned char no_cck;
-	unsigned char ptp_only;
-	unsigned char ptmp_only;
-	unsigned char passive_scan;
-	unsigned char no_ibss;
+	unsigned int no_outdoor:1, no_indoor:1, no_ofdm:1, no_cck:1, ptp_only:1, ptmp_only:1, passive_scan:1, no_ibss:1, ht40minus:1, ht40plus:1, dfs:1;
 };
 
 struct mac80211_info {
@@ -224,21 +214,8 @@ struct wifi_client_info {
 	uint32_t snr;
 	int8_t mcs;
 	int8_t rx_mcs;
-	char is_40mhz;
-	char is_80mhz;
-	char is_160mhz;
-	char is_80p80mhz;
-	char is_ht;
-	char is_vht;
-	char is_short_gi;
-	char rx_is_40mhz;
-	char rx_is_80mhz;
-	char rx_is_160mhz;
-	char rx_is_80p80mhz;
-	char rx_is_ht;
-	char rx_is_vht;
-	char rx_is_short_gi;
-	char ht40intol;
+	unsigned int is_40mhz:1, is_80mhz:1, is_160mhz:1, is_80p80mhz:1, is_ht:1, is_vht:1, is_short_gi:1, rx_is_40mhz:1, rx_is_80mhz:1, rx_is_160mhz:1, rx_is_80p80mhz:1, rx_is_ht:1, rx_is_vht:1, rx_is_short_gi:1,
+	    ht40intol:1;
 	uint32_t inactive_time;
 	uint32_t rx_packets;
 	uint32_t tx_packets;
