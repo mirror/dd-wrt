@@ -707,6 +707,11 @@ int has_2ghz(char *prefix)
 {
 	int devnum;
 	sscanf(prefix, "ath%d", &devnum);
+#ifdef HAVE_MVEBU
+//	fprintf(stderr, "is mvebu %d\n",is_mvebu(prefix));
+	if (is_mvebu(prefix) && !strncmp(prefix,"ath0", 4))
+		return 0;
+#endif
 #ifdef HAVE_ATH9K
 	if (is_ath9k(prefix))
 		return mac80211_check_band(prefix, 2);
@@ -1074,6 +1079,10 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 						isband = 1;
 					if (freq_mhz >= 5500)
 						isband = 2;
+#ifdef HAVE_MVEBU
+					if (phy == 0 && isband == 0)
+						continue;
+#endif
 					startfreq = 0;
 					stopfreq = 0;
 					int startlowbound = 0;
