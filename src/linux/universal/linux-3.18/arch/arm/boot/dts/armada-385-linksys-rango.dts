@@ -105,7 +105,7 @@
 		pcie-controller {
 			pcie@1,0 {
 				mwlwifi {
-					marvell,2ghz = <1>;
+					/* marvell,2ghz = <1>; */
 					marvell,chainmask = <4 4>;
 				};
 			};
