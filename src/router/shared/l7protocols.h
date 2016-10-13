@@ -312,7 +312,7 @@ l7filters filters_list[] = {
 	{"noe", NDPI_ONLY},
 #endif
 	{"ntp", DPI},
-#ifdef HAVE_OPENDPI	
+#ifdef HAVE_OPENDPI
 	{"ocs", NDPI_ONLY},
 	{"off", NDPI_ONLY},
 	{"office_365", NDPI_ONLY},
