@@ -1197,11 +1197,19 @@ void print_vht_info(__u32 capa, const __u8 *mcs)
 	case 0:
 		printf("neither 160 nor 80+80\n");
 		site_survey_lists[sscount].channel |= 0x1000;
-		fillENC("VHT80", " ");
+		if (capa & BIT(5)) {
+			fillENC("VHT80SGI", " ");
+		} else {
+			fillENC("VHT80", " ");
+		}
 		break;
 	case 1:
 		printf("160 MHz\n");
-		fillENC("VHT160", " ");
+		if (capa & BIT(6)) {
+			fillENC("VHT160SGI", " ");
+		} else {
+			fillENC("VHT160", " ");
+		}
 		site_survey_lists[sscount].channel |= 0x1100;
 		break;
 	case 2:
@@ -1214,17 +1222,7 @@ void print_vht_info(__u32 capa, const __u8 *mcs)
 	}
 	PRINT_VHT_CAPA(4, "RX LDPC");
 	PRINT_VHT_CAPA(5, "short GI (80 MHz)");
-
-	if (capa & BIT(5)) {
-		site_survey_lists[sscount].channel |= 0x1000;
-		fillENC("SGI", " ");
-	}
-
-	PRINT_VHT_CAPA(6, "short GI (160/80+80 MHz)");
-	if (capa & BIT(6)) {
-//              site_survey_lists[sscount].channel |= 0x1200;
-		fillENC("SGI", " ");
-	}
+	PRINT_VHT_CAPA(6, "short GI (160 MHz)");
 	PRINT_VHT_CAPA(7, "TX STBC");
 	/* RX STBC */
 	PRINT_VHT_CAPA(11, "SU Beamformer");
@@ -1321,11 +1319,20 @@ static void print_ht_capability(__u16 cap)
 	PRINT_HT_CAP((cap & BIT(1)), "HT20/HT40");
 	if (cap & BIT(1)) {
 		site_survey_lists[sscount].channel |= 0x2000;
-		fillENC("HT20 HT40", " ");
-	}
-	PRINT_HT_CAP(!(cap & BIT(1)), "HT20");
+		if ((cap & BIT(6))) {
+			fillENC("HT40SGI", " ");
+		} else {
+			fillENC("HT40", " ");
+		}
+	} else
+
+		PRINT_HT_CAP(!(cap & BIT(1)), "HT20");
 	if (!(cap & BIT(1))) {
-		fillENC("HT20", " ");
+		if ((cap & BIT(5))) {
+			fillENC("HT20SGI", " ");
+		} else {
+			fillENC("HT20", " ");
+		}
 	}
 
 	PRINT_HT_CAP(((cap >> 2) & 0x3) == 0, "Static SM Power Save");
