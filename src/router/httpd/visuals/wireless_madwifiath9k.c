@@ -89,6 +89,8 @@ int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifnam
 		int vht = 0;
 		char info[32];
 
+		if (!wc->rx_is_ht)
+			ht = 5;
 		if (wc->rx_is_40mhz || wc->is_40mhz)
 			ht = 1;
 		if (wc->rx_is_80mhz || wc->is_80mhz)
@@ -97,12 +99,15 @@ int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifnam
 			ht = 3;
 		if (wc->rx_is_80p80mhz || wc->is_80p80mhz)
 			ht = 4;
-		if (!wc->rx_is_ht)
-			ht = 5;
 		if (wc->rx_is_vht || wc->is_vht)
 			vht = 1;
 		if (wc->rx_is_short_gi || wc->is_short_gi)
 			sgi = 1;
+
+		if (ht == 5 && sgi) 
+			ht=0;
+		if (ht == 5 && vht) 
+			ht=0;
 
 		if (vht)
 			sprintf(info, "VHT");
