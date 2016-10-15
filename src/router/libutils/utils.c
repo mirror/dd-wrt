@@ -5239,7 +5239,10 @@ char *cpustring(void)
 	if (getRouterBrand() == ROUTER_WRT_1900AC) {
 		strcpy(buf, "Marvel Armada 370/XP");
 	} else {
-		strcpy(buf, "Marvel Armada 385");
+		if (nvram_match("DD_BOARD", "Linksys WRT3200ACM"))
+			strcpy(buf, "Marvel Armada 395");
+		else
+			strcpy(buf, "Marvel Armada 385");
 	}
 	return buf;
 #elif HAVE_IPQ806X
@@ -7515,7 +7518,7 @@ int VHTTxRate(unsigned int mcs, unsigned int vhtmcs, unsigned int sgi, unsigned 
 		260000, 520000, 780000, 1040000, 1560000, 2080000, 2340000, 2600000, 3120000, 3466700,
 	};
 
-	int *table=table = vHTTxRate20_400;
+	int *table = vHTTxRate20_400;
 	if (sgi) {
 		switch (bw) {
 		case 20:
