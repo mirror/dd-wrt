@@ -708,8 +708,8 @@ int has_2ghz(char *prefix)
 	int devnum;
 	sscanf(prefix, "ath%d", &devnum);
 #ifdef HAVE_MVEBU
-//	fprintf(stderr, "is mvebu %d\n",is_mvebu(prefix));
-	if (is_mvebu(prefix) && !strncmp(prefix,"ath0", 4))
+//      fprintf(stderr, "is mvebu %d\n",is_mvebu(prefix));
+	if (is_mvebu(prefix) && !strncmp(prefix, "ath0", 4))
 		return 0;
 #endif
 #ifdef HAVE_ATH9K
