@@ -2066,7 +2066,7 @@ int internal_getRouterBrand()
 	FILE *fp = fopen("/sys/firmware/devicetree/base/model", "rb");
 	if (!fp) {
 		fprintf(stderr, "error opening device tree\n");
-		setRouter("Linksys WRT 1900AC");
+		setRouter("Linksys WRT1900AC");
 		return ROUTER_WRT_1900AC;
 	}
 	char vendorstr[32];
@@ -2074,24 +2074,24 @@ int internal_getRouterBrand()
 	fscanf(fp, "%s %s", &vendorstr[0], &modelstr[0]);
 	fclose(fp);
 	if (!strcmp(modelstr, "WRT1200AC")) {
-		setRouter("Linksys WRT 1200AC");
+		setRouter("Linksys WRT1200AC");
 		return ROUTER_WRT_1200AC;
 	}
 	if (!strcmp(modelstr, "WRT1900ACv2")) {
-		setRouter("Linksys WRT 1900ACv2");
+		setRouter("Linksys WRT1900ACv2");
 		return ROUTER_WRT_1900ACV2;	// similar
 	}
 	if (!strcmp(modelstr, "WRT1900AC")) {
-		setRouter("Linksys WRT 1900AC");
+		setRouter("Linksys WRT1900AC");
 		return ROUTER_WRT_1900AC;	// similar
 	}
 
 	if (!strcmp(modelstr, "WRT1900ACS")) {
-		setRouter("Linksys WRT 1900ACS");
+		setRouter("Linksys WRT1900ACS");
 		return ROUTER_WRT_1900ACS;	// similar
 	}
 	if (!strcmp(modelstr, "WRT3200ACM")) {
-		setRouter("Linksys WRT 3200ACM");
+		setRouter("Linksys WRT3200ACM");
 		return ROUTER_WRT_1900ACS;	// similar
 	}
 #elif HAVE_IPQ806X
