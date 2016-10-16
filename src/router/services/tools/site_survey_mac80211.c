@@ -129,6 +129,8 @@ static void fillENC(const char *text, const char *space)
 {
 	char *buf;
 	buf = site_survey_lists[sscount].ENCINFO;
+	if (strstr(buf, text))
+		return;
 	buf += strlen(buf);
 	buf += sprintf(buf, "%s%s", text, space);
 }
@@ -1492,7 +1494,7 @@ void mac80211_site_survey(char *interface)
 	char scaninterface[32];
 	char macaddr[32];
 	unsigned char hwbuff[16];
-	bzero(site_survey_lists, sizeof(site_survey_lists));
+	bzero(site_survey_lists, sizeof(struct site_survey_list) * SITE_SURVEY_NUM);
 	eval("iw", "dev", interface, "scan");
 	mac80211_scan(interface);
 	write_site_survey();
@@ -1521,7 +1523,7 @@ static int write_site_survey(void)
 {
 	FILE *fp;
 	if ((fp = fopen(SITE_SURVEY_DB, "w"))) {
-		fwrite(&site_survey_lists[0], sizeof(site_survey_lists), 1, fp);
+		fwrite(&site_survey_lists[0], sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1, fp);
 		fclose(fp);
 		return 0;
 	}
@@ -1533,7 +1535,7 @@ static int open_site_survey(void)
 	FILE *fp;
 	bzero(site_survey_lists, sizeof(site_survey_lists));
 	if ((fp = fopen(SITE_SURVEY_DB, "r"))) {
-		fread(&site_survey_lists[0], sizeof(site_survey_lists), 1, fp);
+		fread(&site_survey_lists[0], sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1, fp);
 		fclose(fp);
 		return 1;
 	}
@@ -1542,8 +1544,10 @@ static int open_site_survey(void)
 
 int site_survey_main_mac802211(int argc, char *argv[])
 {
+	site_survey_lists = malloc(sizeof(struct site_survey_list) * SITE_SURVEY_NUM);
 	unlink(SITE_SURVEY_DB);
 	char *sta = nvram_safe_get("wifi_display");
 	mac80211_site_survey(sta);
+	free(site_survey_lists);
 	return 0;
 }
