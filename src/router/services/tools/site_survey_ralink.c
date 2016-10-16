@@ -82,7 +82,7 @@ int write_site_survey(void);
 static int open_site_survey(void);
 int write_site_survey(void);
 
-static struct site_survey_list site_survey_lists[SITE_SURVEY_NUM];
+static struct site_survey_list *site_survey_lists;
 
 static void skipline(FILE * in)
 {

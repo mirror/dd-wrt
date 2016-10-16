@@ -301,7 +301,7 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 			  site_survey_lists[i].RSSI, site_survey_lists[i].phy_noise, site_survey_lists[i].beacon_period, open, site_survey_lists[i].ENCINFO, dtim_period(site_survey_lists[i].dtim_period, dtim), rates);
 
 	}
-	free(site_survey_lists)
+	free(site_survey_lists);
 
 	return;
 }
