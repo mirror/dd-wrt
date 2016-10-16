@@ -39,7 +39,7 @@ int write_site_survey(void);
 static int open_site_survey(void);
 int write_site_survey(void);
 
-struct site_survey_list site_survey_lists[SITE_SURVEY_NUM];
+struct site_survey_list *site_survey_lists;
 
 /* 802.11i/WPA RSN IE parsing utilities */
 typedef struct {
