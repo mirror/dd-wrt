@@ -377,6 +377,10 @@ int get_legacy(unsigned char *rates, int count)
 
 int site_survey_main(int argc, char *argv[])
 {
+	site_survey_lists = malloc(sizeof(struct site_survey_list) * SITE_SURVEY_NUM);
+
+	memset(site_survey_lists, 0, sizeof(struct site_survey_list) * SITE_SURVEY_NUM);
+
 	char tmp[32];
 	sprintf(tmp, "%s_ifname", nvram_safe_get("wifi_display"));
 	char *name = nvram_safe_get(tmp);
@@ -512,6 +516,7 @@ endss:
 
 	C_led(0);
 	eval("wl", "-i", name, "up");
+	free(site_survey_lists);
 	return 0;
 }
 
@@ -520,7 +525,7 @@ int write_site_survey(void)
 	FILE *fp;
 
 	if ((fp = fopen(SITE_SURVEY_DB, "w"))) {
-		fwrite(&site_survey_lists[0], sizeof(site_survey_lists), 1, fp);
+		fwrite(&site_survey_lists[0], sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1, fp);
 		fclose(fp);
 		return FALSE;
 	}
@@ -534,7 +539,7 @@ static int open_site_survey(void)
 	bzero(site_survey_lists, sizeof(site_survey_lists));
 
 	if ((fp = fopen(SITE_SURVEY_DB, "r"))) {
-		fread(&site_survey_lists[0], sizeof(site_survey_lists), 1, fp);
+		fread(&site_survey_lists[0], sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1, fp);
 		fclose(fp);
 		return TRUE;
 	}

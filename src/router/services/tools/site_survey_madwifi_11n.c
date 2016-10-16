@@ -239,6 +239,7 @@ static const char *ieee80211_ntoa(const uint8_t mac[IEEE80211_ADDR_LEN])
 
 int site_survey_main_11n(int argc, char *argv[])
 {
+	site_survey_lists = malloc(sizeof(struct site_survey_list) * SITE_SURVEY_NUM);
 	char *name = nvram_safe_get("wl0_ifname");
 	unsigned char mac[20];
 	int i = 0, c;
@@ -254,7 +255,7 @@ int site_survey_main_11n(int argc, char *argv[])
 	int len;
 	char *sta = nvram_safe_get("wifi_display");
 
-	memset(site_survey_lists, 0, sizeof(site_survey_lists));
+	memset(site_survey_lists, 0, sizeof(struct site_survey_list) * SITE_SURVEY_NUM);
 	memset(buf, 0, 24 * 1024);
 	eval("iwlist", sta, "scan");
 	len = do80211priv(sta, IEEE80211_IOCTL_SCAN_RESULTS, buf, 24 * 1024);
@@ -332,7 +333,7 @@ int site_survey_main_11n(int argc, char *argv[])
 			site_survey_lists[i].phy_noise,
 			site_survey_lists[i].beacon_period, site_survey_lists[i].capability, site_survey_lists[i].dtim_period, site_survey_lists[i].rate_count, site_survey_lists[i].ENCINFO);
 	}
-
+	free(site_survey_lists);
 	return 0;
 }
 
@@ -340,7 +341,7 @@ static int write_site_survey(void)
 {
 	FILE *fp;
 	if ((fp = fopen(SITE_SURVEY_DB, "w"))) {
-		fwrite(&site_survey_lists[0], sizeof(site_survey_lists), 1, fp);
+		fwrite(&site_survey_lists[0], sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1, fp);
 		fclose(fp);
 		return 0;
 	}
@@ -352,7 +353,7 @@ static int open_site_survey(void)
 	FILE *fp;
 	bzero(site_survey_lists, sizeof(site_survey_lists));
 	if ((fp = fopen(SITE_SURVEY_DB, "r"))) {
-		fread(&site_survey_lists[0], sizeof(site_survey_lists), 1, fp);
+		fread(&site_survey_lists[0], sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1, fp);
 		fclose(fp);
 		return 1;
 	}
