@@ -87,16 +87,16 @@ static char *speedstr(int speed, char *buf)
 	return buf;
 }
 
-static struct site_survey_list site_survey_lists[SITE_SURVEY_NUM];
+static struct site_survey_list *site_survey_lists;
 
 static int open_site_survey(void)
 {
 	FILE *fp;
-
-	bzero(site_survey_lists, sizeof(site_survey_lists));
+	site_survey_lists = malloc(sizeof(struct site_survey_list) * SITE_SURVEY_NUM);
+	memset(site_survey_lists, 0, sizeof(struct site_survey_list) * SITE_SURVEY_NUM);
 
 	if ((fp = fopen(SITE_SURVEY_DB, "r"))) {
-		fread(&site_survey_lists[0], sizeof(site_survey_lists), 1, fp);
+		fread(&site_survey_lists[0], sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1, fp);
 		fclose(fp);
 		return TRUE;
 	}
@@ -135,6 +135,7 @@ void ej_list_fbn(webs_t wp, int argc, char_t ** argv)
 		}
 
 	}
+	free(site_survey_lists)
 }
 
 #endif
@@ -300,6 +301,7 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 			  site_survey_lists[i].RSSI, site_survey_lists[i].phy_noise, site_survey_lists[i].beacon_period, open, site_survey_lists[i].ENCINFO, dtim_period(site_survey_lists[i].dtim_period, dtim), rates);
 
 	}
+	free(site_survey_lists)
 
 	return;
 }
