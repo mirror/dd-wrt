@@ -1489,6 +1489,7 @@ static int open_site_survey(void);
 
 void mac80211_site_survey(char *interface)
 {
+	site_survey_lists = malloc(sizeof(struct site_survey_list) * SITE_SURVEY_NUM);
 	int i;
 	int phy, wdev;
 	char scaninterface[32];
@@ -1516,7 +1517,7 @@ void mac80211_site_survey(char *interface)
 			site_survey_lists[i].phy_noise,
 			site_survey_lists[i].beacon_period, site_survey_lists[i].capability, site_survey_lists[i].dtim_period, site_survey_lists[i].rate_count, site_survey_lists[i].ENCINFO);
 	}
-
+	free(site_survey_lists);
 }
 
 static int write_site_survey(void)
@@ -1544,10 +1545,8 @@ static int open_site_survey(void)
 
 int site_survey_main_mac802211(int argc, char *argv[])
 {
-	site_survey_lists = malloc(sizeof(struct site_survey_list) * SITE_SURVEY_NUM);
 	unlink(SITE_SURVEY_DB);
 	char *sta = nvram_safe_get("wifi_display");
 	mac80211_site_survey(sta);
-	free(site_survey_lists);
 	return 0;
 }
