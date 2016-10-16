@@ -106,7 +106,7 @@ static int copy_essid(char buf[], size_t bufsize, const u_int8_t *essid, size_t 
 static int write_site_survey(void);
 static int open_site_survey(void);
 
-static struct site_survey_list site_survey_lists[SITE_SURVEY_NUM];
+static struct site_survey_list *site_survey_lists;
 
 #define LE_READ_4(p)					\
 	((u_int32_t)					\
