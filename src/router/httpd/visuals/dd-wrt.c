@@ -187,9 +187,11 @@ void ej_show_routing(webs_t wp, int argc, char_t ** argv)
 
 void ej_has_routing(webs_t wp, int argc, char_t ** argv)
 {
-	char *sub;
 	char var[32], *next;
-	sub = nvram_safe_get("wk_mode");
+	char *sub = websGetVar(wp, "wk_mode", NULL);
+	if (sub == NULL)
+		sub = nvram_safe_get("wk_mode");
+
 	foreach(var, sub, next) {
 		if (!strcmp(argv[0], "zebra") && !strcmp(var, "bgp"))
 			return;
