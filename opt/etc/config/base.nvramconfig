@@ -162,6 +162,8 @@
  "zebra_copt"  "Zebra copt"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"
  "zebra_enable"  "Zebra"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"
  "bird_ospf" "Routing"  "NULL"  "TRUE" "0"
+ "ripd_conf"  "ripd conf"  "NULL" "TRUE" "0"
+ "ospfd_conf"  "ospfd conf"  "NULL" "TRUE" "0"
  "zebra_conf"  "Zebra conf"  "NULL"  "TRUE" "0"
  "zebra_log"  "Zebra log"  "CHOICE" "2" "0"  "1"  "FALSE" "0" 
  "snmpd_enable"  "Snmpd"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
