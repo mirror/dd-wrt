@@ -915,7 +915,7 @@ static int svqos_iptables(void)
 		if (strstr(type, "dpi")) {
 			char dpi[32];
 			sprintf(dpi, "--%s", name);
-			eval("insmod", "xt_ndpi", "bt_hash_size=2", "bt_hash_timeout=3600");
+			insmod("xt_ndpi");
 			eval("iptables", "-t", "mangle", "-A", "SVQOS_SVCS", "-m", "ndpi", dpi, "-j", "MARK", "--set-mark", qos_nfmark(level));
 		}
 #endif
