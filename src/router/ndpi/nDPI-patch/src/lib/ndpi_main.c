@@ -150,7 +150,7 @@ static int kstrtoint(const char *s, unsigned int base, int *res)
 }
 #endif
 
-extern int atoi(const char *str) {
+static int atoi(const char *str) {
   int rc;
 
   if(kstrtoint(str, 0, &rc) == 0 /* Success */)

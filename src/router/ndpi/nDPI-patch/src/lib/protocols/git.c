@@ -29,7 +29,7 @@
 #define GIT_PORT 9418
 
 #ifdef __KERNEL__
-extern int atoi(const char *str);
+static int atoi(const char *str);
 #endif
 
 static void ndpi_search_git(struct ndpi_detection_module_struct *ndpi_struct,

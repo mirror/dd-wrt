@@ -7278,7 +7278,7 @@ static ndpi_network host_protocol_list[] = {
   HTTPS: Server certificate name
 */
 
-ndpi_protocol_match host_match[] = {
+static ndpi_protocol_match host_match[] = {
   { "amazon.",  			"Amazon",		NDPI_SERVICE_AMAZON, NDPI_PROTOCOL_ACCEPTABLE },
   { "amazon.com",  			"Amazon",		NDPI_SERVICE_AMAZON, NDPI_PROTOCOL_ACCEPTABLE },
   { "images-amazon.com", 		"Amazon",		NDPI_SERVICE_AMAZON, NDPI_PROTOCOL_ACCEPTABLE },
