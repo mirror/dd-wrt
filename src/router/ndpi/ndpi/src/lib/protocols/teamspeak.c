@@ -27,8 +27,8 @@ static void ndpi_int_teamspeak_add_connection(struct ndpi_detection_module_struc
 {
   ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_TEAMSPEAK, NDPI_PROTOCOL_UNKNOWN);
 }
-  u_int16_t tdport = 0, tsport = 0;
-  u_int16_t udport = 0, usport = 0;
+static  u_int16_t b_tdport = 0, b_tsport = 0;
+static  u_int16_t b_udport = 0, b_usport = 0;
 
 
 static void ndpi_search_teamspeak(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
@@ -36,15 +36,15 @@ static void ndpi_search_teamspeak(struct ndpi_detection_module_struct *ndpi_stru
     struct ndpi_packet_struct *packet = &flow->packet;
 
 if (packet->udp != NULL) {
-  usport = ntohs(packet->udp->source), udport = ntohs(packet->udp->dest);
+  b_usport = ntohs(packet->udp->source), b_udport = ntohs(packet->udp->dest);
   /* http://www.imfirewall.com/en/protocols/teamSpeak.htm  */
-  if (((usport == 9987 || udport == 9987) || (usport == 8767 || udport == 8767)) && packet->payload_packet_len >= 20) {
+  if (((b_usport == 9987 || b_udport == 9987) || (b_usport == 8767 || b_udport == 8767)) && packet->payload_packet_len >= 20) {
      NDPI_LOG(NDPI_PROTOCOL_TEAMSPEAK, ndpi_struct, NDPI_LOG_DEBUG, "found TEAMSPEAK udp.\n");
      ndpi_int_teamspeak_add_connection(ndpi_struct, flow);
   }
 }
 else if (packet->tcp != NULL) {
-  tsport = ntohs(packet->tcp->source), tdport = ntohs(packet->tcp->dest);
+  b_tsport = ntohs(packet->tcp->source), b_tdport = ntohs(packet->tcp->dest);
   /* https://github.com/Youx/soliloque-server/wiki/Connection-packet */
   if(packet->payload_packet_len >= 20) {
     if (((memcmp(packet->payload, "\xf4\xbe\x03\x00", 4) == 0)) ||
@@ -53,7 +53,7 @@ else if (packet->tcp != NULL) {
      NDPI_LOG(NDPI_PROTOCOL_TEAMSPEAK, ndpi_struct, NDPI_LOG_DEBUG, "found TEAMSPEAK tcp.\n");
      ndpi_int_teamspeak_add_connection(ndpi_struct, flow);
     }  /* http://www.imfirewall.com/en/protocols/teamSpeak.htm  */
-  } else if ((tsport == 14534 || tdport == 14534) || (tsport == 51234 || tdport == 51234)) {
+  } else if ((b_tsport == 14534 || b_tdport == 14534) || (b_tsport == 51234 || b_tdport == 51234)) {
      NDPI_LOG(NDPI_PROTOCOL_TEAMSPEAK, ndpi_struct, NDPI_LOG_DEBUG, "found TEAMSPEAK.\n");
      ndpi_int_teamspeak_add_connection(ndpi_struct, flow);
    }
