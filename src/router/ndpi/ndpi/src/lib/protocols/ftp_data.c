@@ -229,7 +229,7 @@ static void ndpi_check_ftp_data(struct ndpi_detection_module_struct *ndpi_struct
     NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_FTP_DATA);  
 }
 
-void ndpi_search_ftp_data(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
+static void ndpi_search_ftp_data(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
 	
   /* Break after 20 packets. */
   if(flow->packet_counter > 20) {
@@ -243,7 +243,7 @@ void ndpi_search_ftp_data(struct ndpi_detection_module_struct *ndpi_struct, stru
 }
 
 
-void init_ftp_data_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+static void init_ftp_data_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
 {
   ndpi_set_bitmask_protocol_detection("FTP_DATA", ndpi_struct, detection_bitmask, *id,
 				      NDPI_PROTOCOL_FTP_DATA,

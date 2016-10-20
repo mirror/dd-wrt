@@ -59,7 +59,7 @@ static u_int getNameLength(u_int i, const u_int8_t *payload, u_int payloadLen) {
 
 /* *********************************************** */
 
-void ndpi_search_dns(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
+static void ndpi_search_dns(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
   int x;
   u_int8_t is_query;
   u_int16_t s_port = 0, d_port = 0;
@@ -234,7 +234,7 @@ void ndpi_search_dns(struct ndpi_detection_module_struct *ndpi_struct, struct nd
   } 
 }
 
-void init_dns_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+static void init_dns_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
 {
   ndpi_set_bitmask_protocol_detection("DNS", ndpi_struct, detection_bitmask, *id,
 				      NDPI_PROTOCOL_DNS,

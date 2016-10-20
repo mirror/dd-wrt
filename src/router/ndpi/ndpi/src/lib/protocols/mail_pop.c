@@ -129,7 +129,7 @@ static int ndpi_int_mail_pop_check_for_client_commands(struct ndpi_detection_mod
 
 
 
-void ndpi_search_mail_pop_tcp(struct ndpi_detection_module_struct
+static void ndpi_search_mail_pop_tcp(struct ndpi_detection_module_struct
 								*ndpi_struct, struct ndpi_flow_struct *flow)
 {
 	struct ndpi_packet_struct *packet = &flow->packet;
@@ -203,7 +203,7 @@ void ndpi_search_mail_pop_tcp(struct ndpi_detection_module_struct
 }
 
 
-void init_mail_pop_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+static void init_mail_pop_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
 {
   ndpi_set_bitmask_protocol_detection("MAIL_POP", ndpi_struct, detection_bitmask, *id,
 				      NDPI_PROTOCOL_MAIL_POP,

@@ -66,7 +66,7 @@
 
 #ifdef __KERNEL__
 
-long atol(const char *nptr) {
+static long atol(const char *nptr) {
   long l;
   char *endp;
 
@@ -76,7 +76,7 @@ long atol(const char *nptr) {
 #endif
 
 
-void ndpi_DeleteEntry(void *a) {
+static void ndpi_DeleteEntry(void *a) {
   ndpi_free(a);
 }
 
@@ -85,7 +85,7 @@ void ndpi_DeleteEntry(void *a) {
 /* ndpi_prefix_tochar
  * convert prefix information to bytes
  */
-u_char *
+static u_char *
 ndpi_prefix_tochar (prefix_t * prefix)
 {
   if(prefix == NULL)
@@ -94,7 +94,7 @@ ndpi_prefix_tochar (prefix_t * prefix)
   return ((u_char *) & prefix->add.sin);
 }
 
-int ndpi_comp_with_mask (void *addr, void *dest, u_int mask) {
+static int ndpi_comp_with_mask (void *addr, void *dest, u_int mask) {
   if( /* mask/8 == 0 || */ memcmp (addr, dest, mask / 8) == 0) {
     int n = mask / 8;
     int m = ((-1) << (8 - (mask % 8)));
@@ -113,7 +113,7 @@ int ndpi_comp_with_mask (void *addr, void *dest, u_int mask) {
  * Only supports AF_INET.  Follows standard error return conventions of 
  * inet_pton.
  */
-int
+static int
 inet_pton (int af, const char *src, void *dst)
 {
   u_long result;  
@@ -147,7 +147,7 @@ inet_pton (int af, const char *src, void *dst)
 #endif
 
 /* this allows imcomplete prefix */
-int
+static int
 ndpi_my_inet_pton (int af, const char *src, void *dst)
 {
   if(af == AF_INET) {
@@ -197,7 +197,7 @@ ndpi_my_inet_pton (int af, const char *src, void *dst)
  * convert prefix information to ascii string with length
  * thread safe and (almost) re-entrant implementation
  */
-char *
+static char *
 ndpi_prefix_toa2x (prefix_t *prefix, char *buff, int with_len)
 {
   if(prefix == NULL)
@@ -256,7 +256,7 @@ ndpi_prefix_toa2x (prefix_t *prefix, char *buff, int with_len)
 /* ndpi_prefix_toa2
  * convert prefix information to ascii string
  */
-char *
+static char *
 ndpi_prefix_toa2 (prefix_t *prefix, char *buff)
 {
   return (ndpi_prefix_toa2x (prefix, buff, 0));
@@ -264,13 +264,13 @@ ndpi_prefix_toa2 (prefix_t *prefix, char *buff)
 
 /* ndpi_prefix_toa
  */
-char *
+static char *
 ndpi_prefix_toa (prefix_t * prefix)
 {
   return (ndpi_prefix_toa2 (prefix, (char *) NULL));
 }
 
-prefix_t *
+static prefix_t *
 ndpi_New_Prefix2 (int family, void *dest, int bitlen, prefix_t *prefix)
 {
   int dynamic_allocated = 0;
@@ -315,14 +315,14 @@ ndpi_New_Prefix2 (int family, void *dest, int bitlen, prefix_t *prefix)
   return (prefix);
 }
 
-prefix_t *
+static prefix_t *
 ndpi_New_Prefix (int family, void *dest, int bitlen)
 {
   return (ndpi_New_Prefix2 (family, dest, bitlen, NULL));
 }
 
 /* ndpi_ascii2prefix */
-prefix_t *
+static prefix_t *
 ndpi_ascii2prefix (int family, char *string)
 {
   long bitlen;
@@ -391,7 +391,7 @@ ndpi_ascii2prefix (int family, char *string)
     return (NULL);
 }
 
-prefix_t *
+static prefix_t *
 ndpi_Ref_Prefix (prefix_t * prefix)
 {
   if(prefix == NULL)
@@ -405,7 +405,7 @@ ndpi_Ref_Prefix (prefix_t * prefix)
   return (prefix);
 }
 
-void 
+static void 
 ndpi_Deref_Prefix (prefix_t * prefix)
 {
   if(prefix == NULL)
@@ -427,7 +427,7 @@ static int num_active_patricia = 0;
 
 /* these routines support continuous mask only */
 
-patricia_tree_t *
+static patricia_tree_t *
 ndpi_New_Patricia (int maxbits)
 {
   patricia_tree_t *patricia = (patricia_tree_t*)ndpi_calloc(1, sizeof *patricia);
@@ -445,7 +445,7 @@ ndpi_New_Patricia (int maxbits)
  * if func is supplied, it will be called as func(node->data)
  * before deleting the node
  */
-void
+static void
 ndpi_Clear_Patricia (patricia_tree_t *patricia, void_fn_t func)
 {
   assert (patricia);
@@ -489,7 +489,7 @@ ndpi_Clear_Patricia (patricia_tree_t *patricia, void_fn_t func)
 }
 
 
-void
+static void
 ndpi_Destroy_Patricia (patricia_tree_t *patricia, void_fn_t func)
 {
   ndpi_Clear_Patricia (patricia, func);
@@ -501,7 +501,7 @@ ndpi_Destroy_Patricia (patricia_tree_t *patricia, void_fn_t func)
 /*
  * if func is supplied, it will be called as func(node->prefix, node->data)
  */
-void
+static void
 ndpi_patricia_process (patricia_tree_t *patricia, void_fn2_t func)
 {
   patricia_node_t *node;
@@ -512,7 +512,7 @@ ndpi_patricia_process (patricia_tree_t *patricia, void_fn2_t func)
   } PATRICIA_WALK_END;
 }
 
-size_t
+static size_t
 ndpi_patricia_walk_inorder(patricia_node_t *node, void_fn2_t func)
 {
   size_t n = 0;
@@ -535,7 +535,7 @@ ndpi_patricia_walk_inorder(patricia_node_t *node, void_fn2_t func)
 }
 
 
-patricia_node_t *
+static patricia_node_t *
 ndpi_patricia_search_exact (patricia_tree_t *patricia, prefix_t *prefix)
 {
   patricia_node_t *node;
@@ -606,7 +606,7 @@ ndpi_patricia_search_exact (patricia_tree_t *patricia, prefix_t *prefix)
 
 
 /* if inclusive != 0, "best" may be the given prefix itself */
-patricia_node_t *
+static patricia_node_t *
 ndpi_patricia_search_best2 (patricia_tree_t *patricia, prefix_t *prefix, int inclusive)
 {
   patricia_node_t *node;
@@ -699,14 +699,14 @@ ndpi_patricia_search_best2 (patricia_tree_t *patricia, prefix_t *prefix, int inc
 }
 
 
-patricia_node_t *
+static patricia_node_t *
 ndpi_patricia_search_best (patricia_tree_t *patricia, prefix_t *prefix)
 {
   return (ndpi_patricia_search_best2 (patricia, prefix, 1));
 }
 
 
-patricia_node_t *
+static patricia_node_t *
 ndpi_patricia_lookup (patricia_tree_t *patricia, prefix_t *prefix)
 {
   patricia_node_t *node, *new_node, *parent, *glue;
@@ -921,7 +921,7 @@ ndpi_patricia_lookup (patricia_tree_t *patricia, prefix_t *prefix)
 }
 
 
-void
+static void
 ndpi_patricia_remove (patricia_tree_t *patricia, patricia_node_t *node)
 {
   patricia_node_t *parent, *child;
@@ -1029,7 +1029,7 @@ ndpi_patricia_remove (patricia_tree_t *patricia, patricia_node_t *node)
 /* { from demo.c */
 #if 0
 
-patricia_node_t *
+static patricia_node_t *
 ndpi_make_and_lookup (patricia_tree_t *tree, char *string)
 {
   prefix_t *prefix;
@@ -1042,7 +1042,7 @@ ndpi_make_and_lookup (patricia_tree_t *tree, char *string)
   return (node);
 }
 
-patricia_node_t *
+static patricia_node_t *
 ndpi_try_search_exact (patricia_tree_t *tree, char *string)
 {
   prefix_t *prefix;
@@ -1061,7 +1061,7 @@ ndpi_try_search_exact (patricia_tree_t *tree, char *string)
   return (node);
 }
 
-void
+static void
 ndpi_lookup_then_remove (patricia_tree_t *tree, char *string)
 {
   patricia_node_t *node;

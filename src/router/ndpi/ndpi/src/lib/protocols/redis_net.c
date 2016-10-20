@@ -76,7 +76,7 @@ static void ndpi_check_redis(struct ndpi_detection_module_struct *ndpi_struct, s
     return; /* Too early */
 }
 
-void ndpi_search_redis(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
+static void ndpi_search_redis(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
   struct ndpi_packet_struct *packet = &flow->packet;
 
   NDPI_LOG(NDPI_PROTOCOL_REDIS, ndpi_struct, NDPI_LOG_DEBUG, "Redis detection...\n");
@@ -90,7 +90,7 @@ void ndpi_search_redis(struct ndpi_detection_module_struct *ndpi_struct, struct 
 }
 
 
-void init_redis_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+static void init_redis_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
 {
   ndpi_set_bitmask_protocol_detection("Redis", ndpi_struct, detection_bitmask, *id,
 				      NDPI_PROTOCOL_REDIS,

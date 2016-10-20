@@ -16,7 +16,7 @@ struct tpkt {
   u_int16_t len;
 };
 
-void ndpi_search_h323(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+static void ndpi_search_h323(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = &flow->packet;
   u_int16_t dport = 0, sport = 0;
@@ -97,7 +97,7 @@ void ndpi_search_h323(struct ndpi_detection_module_struct *ndpi_struct, struct n
 
 }
 
-void init_h323_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+static void init_h323_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
 {
   ndpi_set_bitmask_protocol_detection("H323", ndpi_struct, detection_bitmask, *id,
 				      NDPI_PROTOCOL_H323,
