@@ -318,7 +318,7 @@ void add_client_dev_srvfilter(char *name, char *type, char *data, char *level, i
 	if (strstr(type, "dpi")) {
 		char ndpi[32];
 		snprintf(ndpi, 32, "--%s", name);
-		eval("insmod", "xt_opendpi", "bt_hash_size=2", "bt_hash_timeout=3600");
+		insmod("xt_ndpi");
 		eval("iptables", "-t", "mangle", "-A", chain, "-m", "ndpi", ndpi, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 	}
 #endif
@@ -400,7 +400,7 @@ void add_client_mac_srvfilter(char *name, char *type, char *data, char *level, i
 	if (strstr(type, "dpi")) {
 		char ndpi[32];
 		snprintf(ndpi, 32, "--%s", name);
-		eval("insmod", "xt_opendpi", "bt_hash_size=2", "bt_hash_timeout=3600");
+		insmod("xt_ndpi");
 		eval("iptables", "-t", "mangle", "-I", "FILTER_IN", "3", "-m", "mac", "--mac-source", client, "-m", "ndpi", ndpi, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 	}
 #endif
@@ -501,7 +501,7 @@ void add_client_ip_srvfilter(char *name, char *type, char *data, char *level, in
 	if (strstr(type, "dpi")) {
 		char ndpi[32];
 		snprintf(ndpi, 32, "--%s", name);
-		eval("insmod", "xt_opendpi", "bt_hash_size=2", "bt_hash_timeout=3600");
+		insmod("xt_ndpi");
 
 		eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "3", "-s", client, "-m", "ndpi", ndpi, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
 		eval("iptables", "-t", "mangle", "-I", "FILTER_OUT", "3", "-d", client, "-m", "ndpi", ndpi, "-j", "MARK", "--set-mark", qos_nfmark(base + idx));
