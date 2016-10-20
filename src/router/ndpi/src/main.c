@@ -87,8 +87,8 @@ static NDPI_PROTOCOL_BITMASK protocols_bitmask;
 static atomic_t protocols_cnt[NDPI_LAST_IMPLEMENTED_PROTOCOL];
 static u8 nfndpi_protocols_http[NDPI_LAST_IMPLEMENTED_PROTOCOL];
 
-DEFINE_SPINLOCK(flow_lock);
-DEFINE_SPINLOCK(ipq_lock);
+static DEFINE_SPINLOCK(flow_lock);
+static DEFINE_SPINLOCK(ipq_lock);
 
 
 /* detection */
