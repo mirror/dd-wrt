@@ -46,7 +46,7 @@ static void ndpi_int_jabber_add_connection(struct ndpi_detection_module_struct *
   ndpi_set_detected_protocol(ndpi_struct, flow, protocol, NDPI_PROTOCOL_UNKNOWN);
 }
 
-static void check_content_type_and_change_protocol(struct ndpi_detection_module_struct *ndpi_struct,
+static void j_check_content_type_and_change_protocol(struct ndpi_detection_module_struct *ndpi_struct,
 						   struct ndpi_flow_struct *flow, u_int16_t x)
 {
   struct ndpi_packet_struct *packet = &flow->packet;
@@ -62,7 +62,7 @@ static void check_content_type_and_change_protocol(struct ndpi_detection_module_
   }  
 }
 
-void ndpi_search_jabber_tcp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+static void ndpi_search_jabber_tcp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = &flow->packet;
   struct ndpi_id_struct *src = flow->src;
@@ -285,7 +285,7 @@ void ndpi_search_jabber_tcp(struct ndpi_detection_module_struct *ndpi_struct, st
       ndpi_int_jabber_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_UNENCRYPED_JABBER);
 
       /* search for subprotocols */
-      check_content_type_and_change_protocol(ndpi_struct, flow, 13);
+      j_check_content_type_and_change_protocol(ndpi_struct, flow, 13);
       return;
     }
   }
@@ -305,7 +305,7 @@ void ndpi_search_jabber_tcp(struct ndpi_detection_module_struct *ndpi_struct, st
 }
 
 
-void init_jabber_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+static void init_jabber_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
 {
   ndpi_set_bitmask_protocol_detection("Unencryped_Jabber", ndpi_struct, detection_bitmask, *id,
 				      NDPI_PROTOCOL_UNENCRYPED_JABBER,

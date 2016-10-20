@@ -141,7 +141,7 @@ static u_int8_t ndpi_check_for_IRC_traces(const u_int8_t * ptr, u_int16_t len)
 }
 
 
-u_int8_t ndpi_search_irc_ssl_detect_ninty_percent_but_very_fast(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+static u_int8_t ndpi_search_irc_ssl_detect_ninty_percent_but_very_fast(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
 
   struct ndpi_packet_struct *packet = &flow->packet;
@@ -362,7 +362,7 @@ u_int8_t ndpi_search_irc_ssl_detect_ninty_percent_but_very_fast(struct ndpi_dete
 }
 
 
-void ndpi_search_irc_tcp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+static void ndpi_search_irc_tcp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = &flow->packet;
 	
@@ -802,7 +802,7 @@ void ndpi_search_irc_tcp(struct ndpi_detection_module_struct *ndpi_struct, struc
 }
 
 
-void init_irc_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+static void init_irc_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
 {
   ndpi_set_bitmask_protocol_detection("IRC", ndpi_struct, detection_bitmask, *id,
 				      NDPI_PROTOCOL_IRC,

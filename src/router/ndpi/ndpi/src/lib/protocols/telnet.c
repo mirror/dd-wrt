@@ -73,7 +73,7 @@ u_int8_t search_iac(struct ndpi_detection_module_struct *ndpi_struct, struct ndp
 }
 
 /* this detection also works asymmetrically */
-void ndpi_search_telnet_tcp(struct ndpi_detection_module_struct
+static void ndpi_search_telnet_tcp(struct ndpi_detection_module_struct
 			    *ndpi_struct, struct ndpi_flow_struct *flow)
 {
   //  struct ndpi_packet_struct *packet = &flow->packet;
@@ -105,7 +105,7 @@ void ndpi_search_telnet_tcp(struct ndpi_detection_module_struct
 }
 
 
-void init_telnet_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+static void init_telnet_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
 {
   ndpi_set_bitmask_protocol_detection("Telnet", ndpi_struct, detection_bitmask, *id,
 				      NDPI_PROTOCOL_TELNET,

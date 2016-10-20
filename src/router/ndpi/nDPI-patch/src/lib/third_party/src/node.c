@@ -41,16 +41,16 @@
    different depths */
 
 /* Private function prototype */
-void node_init         (AC_NODE_t * thiz);
-int  node_edge_compare (const void * l, const void * r);
-int  node_has_matchstr (AC_NODE_t * thiz, AC_PATTERN_t * newstr);
+static void node_init         (AC_NODE_t * thiz);
+static int  node_edge_compare (const void * l, const void * r);
+static int  node_has_matchstr (AC_NODE_t * thiz, AC_PATTERN_t * newstr);
 
 
 /******************************************************************************
  * FUNCTION: node_create
  * Create the node
  ******************************************************************************/
-AC_NODE_t * node_create(void)
+static AC_NODE_t * node_create(void)
 {
   AC_NODE_t * thiz =  (AC_NODE_t *) ndpi_malloc (sizeof(AC_NODE_t));
   node_init(thiz);
@@ -62,7 +62,7 @@ AC_NODE_t * node_create(void)
  * FUNCTION: node_init
  * Initialize node
  ******************************************************************************/
-void node_init(AC_NODE_t * thiz)
+static void node_init(AC_NODE_t * thiz)
 {
   memset(thiz, 0, sizeof(AC_NODE_t));
 
@@ -79,7 +79,7 @@ void node_init(AC_NODE_t * thiz)
  * FUNCTION: node_release
  * Release node
  ******************************************************************************/
-void node_release(AC_NODE_t * thiz)
+static void node_release(AC_NODE_t * thiz)
 {
   ndpi_free(thiz->matched_patterns);
   ndpi_free(thiz->outgoing);
@@ -92,7 +92,7 @@ void node_release(AC_NODE_t * thiz)
  * the pre-processing stage in which edge array is not sorted. so it uses
  * linear search.
  ******************************************************************************/
-AC_NODE_t * node_find_next(AC_NODE_t * thiz, AC_ALPHABET_t alpha)
+static AC_NODE_t * node_find_next(AC_NODE_t * thiz, AC_ALPHABET_t alpha)
 {
   int i;
 

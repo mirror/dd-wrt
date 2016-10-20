@@ -33,7 +33,7 @@ static void ndpi_int_hep_add_connection(struct ndpi_detection_module_struct
   ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_HEP, NDPI_PROTOCOL_UNKNOWN);
 }
 
-void ndpi_search_hep(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+static void ndpi_search_hep(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = &flow->packet;
   const u_int8_t *packet_payload = packet->payload;
@@ -53,7 +53,7 @@ void ndpi_search_hep(struct ndpi_detection_module_struct *ndpi_struct, struct nd
 }
 
 
-void init_hep_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+static void init_hep_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
 {
   ndpi_set_bitmask_protocol_detection("HEP", ndpi_struct, detection_bitmask, *id,
 				      NDPI_PROTOCOL_HEP,

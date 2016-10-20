@@ -24,7 +24,7 @@
 #ifdef NDPI_PROTOCOL_TEREDO
 
 /* https://en.wikipedia.org/wiki/Teredo_tunneling */
-void ndpi_search_teredo(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+static void ndpi_search_teredo(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = &flow->packet;
 
@@ -39,7 +39,7 @@ void ndpi_search_teredo(struct ndpi_detection_module_struct *ndpi_struct, struct
 }
 
 
-void init_teredo_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+static void init_teredo_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
 {
   ndpi_set_bitmask_protocol_detection("TEREDO", ndpi_struct, detection_bitmask, *id,
 				      NDPI_PROTOCOL_TEREDO,

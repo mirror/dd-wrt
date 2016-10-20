@@ -237,7 +237,7 @@ static void ndpi_check_steam_udp3(struct ndpi_detection_module_struct *ndpi_stru
   }
 }
 
-void ndpi_search_steam(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
+static void ndpi_search_steam(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
   struct ndpi_packet_struct *packet = &flow->packet;
 	
   /* Break after 20 packets. */
@@ -285,7 +285,7 @@ void ndpi_search_steam(struct ndpi_detection_module_struct *ndpi_struct, struct 
 }
 
 
-void init_steam_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+static void init_steam_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
 {
   ndpi_set_bitmask_protocol_detection("Steam", ndpi_struct, detection_bitmask, *id,
 				      NDPI_PROTOCOL_STEAM,

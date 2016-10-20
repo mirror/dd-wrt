@@ -36,6 +36,7 @@
 #include "ndpi_content_match.c.inc"
 #include "third_party/include/ndpi_patricia.h"
 #include "third_party/src/ndpi_patricia.c"
+#include "protocols.c"
 
 
 /* implementation of the punycode check function */
@@ -373,7 +374,7 @@ u_int32_t ndpi_detection_get_sizeof_ndpi_id_struct(void)
 
 /* ******************************************************************** */
 
-char* ndpi_get_proto_by_id(struct ndpi_detection_module_struct *ndpi_mod, u_int id) {
+static char* ndpi_get_proto_by_id(struct ndpi_detection_module_struct *ndpi_mod, u_int id) {
   return((id >= ndpi_mod->ndpi_num_supported_protocols) ? NULL : ndpi_mod->proto_defaults[id].protoName);
 }
 
@@ -410,7 +411,7 @@ ndpi_port_range* ndpi_build_default_ports_range(ndpi_port_range *ports,
 
 /* ******************************************************************** */
 
-ndpi_port_range* ndpi_build_default_ports(ndpi_port_range *ports,
+static ndpi_port_range* ndpi_build_default_ports(ndpi_port_range *ports,
 					  u_int16_t portA,
 					  u_int16_t portB,
 					  u_int16_t portC,
@@ -647,7 +648,7 @@ static void init_string_based_protocols(struct ndpi_detection_module_struct *ndp
     ndpi_init_protocol_match(ndpi_mod, &host_match[i]);
 
 #ifdef DEBUG
-  ac_automata_display(ndpi_mod->host_automa.ac_automa, 'n');
+//  ac_automata_display(ndpi_mod->host_automa.ac_automa, 'n');
 #endif
 
   for(i=0; content_match[i].string_to_match != NULL; i++)
@@ -1631,7 +1632,7 @@ static u_int8_t tor_ptree_match(struct ndpi_detection_module_struct *ndpi_struct
 
 /* ******************************************* */
 
-u_int8_t ndpi_is_tor_flow(struct ndpi_detection_module_struct *ndpi_struct,
+static u_int8_t ndpi_is_tor_flow(struct ndpi_detection_module_struct *ndpi_struct,
 			  struct ndpi_flow_struct *flow) {
   struct ndpi_packet_struct *packet = &flow->packet;
 
@@ -1815,7 +1816,7 @@ static void free_ptree_data(void *data) { ; }
 
 /* ****************************************************** */
 
-void ndpi_exit_detection_module(struct ndpi_detection_module_struct *ndpi_struct) {
+static void ndpi_exit_detection_module(struct ndpi_detection_module_struct *ndpi_struct) {
   if(ndpi_struct != NULL) {
     int i;
 
@@ -1848,7 +1849,7 @@ void ndpi_exit_detection_module(struct ndpi_detection_module_struct *ndpi_struct
 
 /* ****************************************************** */
 
-int ndpi_get_protocol_id_master_proto(struct ndpi_detection_module_struct *ndpi_struct,
+static int ndpi_get_protocol_id_master_proto(struct ndpi_detection_module_struct *ndpi_struct,
 				      u_int16_t protocol_id,
 				      u_int16_t** tcp_master_proto,
 				      u_int16_t** udp_master_proto) {
@@ -4361,7 +4362,7 @@ ndpi_protocol ndpi_guess_undetected_protocol(struct ndpi_detection_module_struct
 
 /* ****************************************************** */
 
-char* ndpi_protocol2name(struct ndpi_detection_module_struct *ndpi_mod,
+static char* ndpi_protocol2name(struct ndpi_detection_module_struct *ndpi_mod,
 			 ndpi_protocol proto, char *buf, u_int buf_len) {
   if((proto.master_protocol != NDPI_PROTOCOL_UNKNOWN)
      && (proto.master_protocol != proto.protocol)) {
@@ -4377,7 +4378,7 @@ char* ndpi_protocol2name(struct ndpi_detection_module_struct *ndpi_mod,
 
 /* ****************************************************** */
 
-char* ndpi_get_proto_name(struct ndpi_detection_module_struct *ndpi_mod, u_int16_t proto_id) {
+static char* ndpi_get_proto_name(struct ndpi_detection_module_struct *ndpi_mod, u_int16_t proto_id) {
   if((proto_id >= ndpi_mod->ndpi_num_supported_protocols)
      || ((proto_id < (NDPI_MAX_SUPPORTED_PROTOCOLS+NDPI_MAX_NUM_CUSTOM_PROTOCOLS))
 	 && (ndpi_mod->proto_defaults[proto_id].protoName == NULL)))
@@ -4388,7 +4389,7 @@ char* ndpi_get_proto_name(struct ndpi_detection_module_struct *ndpi_mod, u_int16
 
 /* ****************************************************** */
 
-ndpi_protocol_breed_t ndpi_get_proto_breed(struct ndpi_detection_module_struct *ndpi_mod,
+static ndpi_protocol_breed_t ndpi_get_proto_breed(struct ndpi_detection_module_struct *ndpi_mod,
 					   u_int16_t proto_id) {
   if((proto_id >= ndpi_mod->ndpi_num_supported_protocols)
      || ((proto_id < (NDPI_MAX_SUPPORTED_PROTOCOLS+NDPI_MAX_NUM_CUSTOM_PROTOCOLS))
@@ -4400,7 +4401,7 @@ ndpi_protocol_breed_t ndpi_get_proto_breed(struct ndpi_detection_module_struct *
 
 /* ****************************************************** */
 
-char* ndpi_get_proto_breed_name(struct ndpi_detection_module_struct *ndpi_mod,
+static char* ndpi_get_proto_breed_name(struct ndpi_detection_module_struct *ndpi_mod,
 				ndpi_protocol_breed_t breed_id) {
   switch(breed_id) {
   case NDPI_PROTOCOL_SAFE:
@@ -4428,7 +4429,7 @@ char* ndpi_get_proto_breed_name(struct ndpi_detection_module_struct *ndpi_mod,
 
 /* ****************************************************** */
 
-int ndpi_get_protocol_id(struct ndpi_detection_module_struct *ndpi_mod, char *proto) {
+static int ndpi_get_protocol_id(struct ndpi_detection_module_struct *ndpi_mod, char *proto) {
   int i;
 
   for(i=0; i<(int)ndpi_mod->ndpi_num_supported_protocols; i++)
@@ -4440,7 +4441,7 @@ int ndpi_get_protocol_id(struct ndpi_detection_module_struct *ndpi_mod, char *pr
 
 /* ****************************************************** */
 
-void ndpi_dump_protocols(struct ndpi_detection_module_struct *ndpi_mod) {
+static void ndpi_dump_protocols(struct ndpi_detection_module_struct *ndpi_mod) {
   int i;
 
   for(i=0; i<(int)ndpi_mod->ndpi_num_supported_protocols; i++)
@@ -4453,7 +4454,7 @@ void ndpi_dump_protocols(struct ndpi_detection_module_struct *ndpi_mod) {
  * Find the first occurrence of find in s, where the search is limited to the
  * first slen characters of s.
  */
-char* ndpi_strnstr(const char *s, const char *find, size_t slen) {
+static char* ndpi_strnstr(const char *s, const char *find, size_t slen) {
   char c, sc;
   size_t len;
 
@@ -4474,7 +4475,7 @@ char* ndpi_strnstr(const char *s, const char *find, size_t slen) {
 
 /* ****************************************************** */
 
-int ndpi_match_prefix(const u_int8_t *payload, size_t payload_len,
+static int ndpi_match_prefix(const u_int8_t *payload, size_t payload_len,
     const char *str, size_t str_len)
 {
   return str_len <= payload_len
@@ -4484,7 +4485,7 @@ int ndpi_match_prefix(const u_int8_t *payload, size_t payload_len,
 
 /* ****************************************************** */
 
-int ndpi_match_string_subprotocol(struct ndpi_detection_module_struct *ndpi_struct,
+static int ndpi_match_string_subprotocol(struct ndpi_detection_module_struct *ndpi_struct,
 				  char *string_to_match, u_int string_to_match_len,
 				  u_int8_t is_host_match) {
   int matching_protocol_id = NDPI_PROTOCOL_UNKNOWN;
@@ -4549,7 +4550,7 @@ static int ndpi_automa_match_string_subprotocol(struct ndpi_detection_module_str
 
 /* ****************************************************** */
 
-int ndpi_match_host_subprotocol(struct ndpi_detection_module_struct *ndpi_struct,
+static int ndpi_match_host_subprotocol(struct ndpi_detection_module_struct *ndpi_struct,
 				struct ndpi_flow_struct *flow,
 				char *string_to_match, u_int string_to_match_len,
 				u_int16_t master_protocol_id) {

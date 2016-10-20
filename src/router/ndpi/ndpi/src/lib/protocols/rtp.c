@@ -109,7 +109,7 @@ static void ndpi_rtp_search(struct ndpi_detection_module_struct *ndpi_struct,
   NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_RTP);
 }
 
-void ndpi_search_rtp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+static void ndpi_search_rtp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = &flow->packet;
 
@@ -151,7 +151,7 @@ static inline
 #else
 __forceinline static
 #endif
-void init_seq(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow,
+static void init_seq(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow,
 	      u_int8_t direction, u_int16_t seq, u_int8_t include_current_packet)
 {
   flow->rtp_seqnum[direction] = seq;
@@ -311,7 +311,7 @@ static void ndpi_rtp_search(struct ndpi_detection_module_struct *ndpi_struct,
 }
 
 
-void ndpi_search_rtp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+static void ndpi_search_rtp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = &flow->packet;
 
@@ -380,7 +380,7 @@ void ndpi_search_rtp(struct ndpi_detection_module_struct *ndpi_struct, struct nd
 #endif
 
 
-void init_rtp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+static void init_rtp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
 {
   ndpi_set_bitmask_protocol_detection("RTP", ndpi_struct, detection_bitmask, *id,
 				      NDPI_PROTOCOL_RTP,

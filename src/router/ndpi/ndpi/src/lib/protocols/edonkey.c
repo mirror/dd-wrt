@@ -195,7 +195,7 @@ static void ndpi_check_edonkey(struct ndpi_detection_module_struct *ndpi_struct,
   }
 }
 
-void ndpi_search_edonkey(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
+static void ndpi_search_edonkey(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
   struct ndpi_packet_struct *packet = &flow->packet;
 
   NDPI_LOG(NDPI_PROTOCOL_EDONKEY, ndpi_struct, NDPI_LOG_DEBUG, "EDONKEY detection...\n");
@@ -209,7 +209,7 @@ void ndpi_search_edonkey(struct ndpi_detection_module_struct *ndpi_struct, struc
 }
 
 
-void init_edonkey_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+static void init_edonkey_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
 {
   ndpi_set_bitmask_protocol_detection("eDonkey", ndpi_struct, detection_bitmask, *id,
 				      NDPI_PROTOCOL_EDONKEY,

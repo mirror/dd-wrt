@@ -25,7 +25,7 @@
 #ifdef NDPI_PROTOCOL_SOULSEEK
 
 
-void ndpi_search_soulseek_tcp(struct ndpi_detection_module_struct *ndpi_struct,
+static void ndpi_search_soulseek_tcp(struct ndpi_detection_module_struct *ndpi_struct,
 			      struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = &flow->packet;
@@ -311,7 +311,7 @@ void ndpi_search_soulseek_tcp(struct ndpi_detection_module_struct *ndpi_struct,
 }
 
 
-void init_soulseek_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+static void init_soulseek_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
 {
   ndpi_set_bitmask_protocol_detection("Soulseek", ndpi_struct, detection_bitmask, *id,
 				      NDPI_PROTOCOL_SOULSEEK,

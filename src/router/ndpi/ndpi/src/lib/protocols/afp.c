@@ -33,7 +33,7 @@ static void ndpi_int_afp_add_connection(struct ndpi_detection_module_struct *ndp
 }
 
 
-void ndpi_search_afp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+static void ndpi_search_afp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = &flow->packet;
   //  struct ndpi_id_struct *src = flow->src;
@@ -72,7 +72,7 @@ void ndpi_search_afp(struct ndpi_detection_module_struct *ndpi_struct, struct nd
 }
 
 
-void init_afp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+static void init_afp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
 {
   ndpi_set_bitmask_protocol_detection("AFP", ndpi_struct, detection_bitmask, *id,
 				      NDPI_PROTOCOL_AFP,
