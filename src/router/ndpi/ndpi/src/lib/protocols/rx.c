@@ -53,7 +53,7 @@ struct ndpi_rx_header {
 #define	ACKALL	           5	
 #define	CHALLENGE          6	
 #define	RESPONSE           7	
-#define	DEBUG	           8	
+#define	RX_DEBUG	           8	
 #define	PARAM_1            9	
 #define	PARAM_2           10	
 #define	PARAM_3           11	
@@ -148,7 +148,7 @@ static void ndpi_check_rx(struct ndpi_detection_module_struct *ndpi_struct,
 	goto security;
       case ABORT:
 	goto security;
-      case DEBUG:
+      case RX_DEBUG:
 	goto security;
       case PARAM_1:
 	goto security;
