@@ -54,7 +54,7 @@ static void ndpi_check_vhua(struct ndpi_detection_module_struct *ndpi_struct, st
   }
 }
 
-void ndpi_search_vhua(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
+static void ndpi_search_vhua(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
   struct ndpi_packet_struct *packet = &flow->packet;
 
   NDPI_LOG(NDPI_PROTOCOL_VHUA, ndpi_struct, NDPI_LOG_TRACE, "VHUA detection...\n");
@@ -66,7 +66,7 @@ void ndpi_search_vhua(struct ndpi_detection_module_struct *ndpi_struct, struct n
 }
 
 
-void init_vhua_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+static void init_vhua_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
 {
   ndpi_set_bitmask_protocol_detection("VHUA", ndpi_struct, detection_bitmask, *id,
 				      NDPI_PROTOCOL_VHUA,

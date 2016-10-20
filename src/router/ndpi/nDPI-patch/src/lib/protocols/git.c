@@ -32,7 +32,7 @@
 extern int atoi(const char *str);
 #endif
 
-void ndpi_search_git(struct ndpi_detection_module_struct *ndpi_struct,
+static void ndpi_search_git(struct ndpi_detection_module_struct *ndpi_struct,
 		     struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct * packet = &flow->packet;
@@ -75,7 +75,7 @@ void ndpi_search_git(struct ndpi_detection_module_struct *ndpi_struct,
 /* ***************************************************************** */
 
 
-void init_git_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id,
+static void init_git_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id,
 			NDPI_PROTOCOL_BITMASK *detection_bitmask)
 {
   ndpi_set_bitmask_protocol_detection("Git", ndpi_struct, detection_bitmask, *id,

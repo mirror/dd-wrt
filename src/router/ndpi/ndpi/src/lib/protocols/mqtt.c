@@ -58,7 +58,7 @@ static void ndpi_int_mqtt_add_connection (struct ndpi_detection_module_struct *n
 /**
  * Dissector function that searches Mqtt headers
  */
-void ndpi_search_mqtt (struct ndpi_detection_module_struct *ndpi_struct,
+static void ndpi_search_mqtt (struct ndpi_detection_module_struct *ndpi_struct,
 		struct ndpi_flow_struct *flow)
 {
 	NDPI_LOG(NDPI_PROTOCOL_MQTT, ndpi_struct, NDPI_LOG_DEBUG, "Mqtt search called...\n");
@@ -238,7 +238,7 @@ void ndpi_search_mqtt (struct ndpi_detection_module_struct *ndpi_struct,
 /**
  * Entry point for the ndpi library
  */
-void init_mqtt_dissector (struct ndpi_detection_module_struct *ndpi_struct,
+static void init_mqtt_dissector (struct ndpi_detection_module_struct *ndpi_struct,
 		u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
 {
 	NDPI_LOG(NDPI_PROTOCOL_MQTT, ndpi_struct, NDPI_LOG_DEBUG, "Mqtt dissector init...\n");

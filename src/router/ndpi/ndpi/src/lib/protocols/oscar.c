@@ -792,7 +792,7 @@ static void ndpi_search_oscar_tcp_connect(struct ndpi_detection_module_struct
   }
 }
 
-void ndpi_search_oscar(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+static void ndpi_search_oscar(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = &flow->packet;
   if (packet->tcp != NULL) {
@@ -802,7 +802,7 @@ void ndpi_search_oscar(struct ndpi_detection_module_struct *ndpi_struct, struct 
 }
 
 
-void init_oscar_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+static void init_oscar_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
 {
   ndpi_set_bitmask_protocol_detection("Oscar", ndpi_struct, detection_bitmask, *id,
 				      NDPI_PROTOCOL_OSCAR,

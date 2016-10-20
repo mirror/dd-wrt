@@ -49,7 +49,7 @@ static void ndpi_int_direct_download_link_add_connection(struct ndpi_detection_m
   return 0 if nothing has been detected
   return 1 if it is a megaupload packet
 */
-u_int8_t search_ddl_domains(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+static u_int8_t search_ddl_domains(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = &flow->packet;
   //      struct ndpi_id_struct         *src=ndpi_struct->src;
@@ -705,7 +705,7 @@ u_int8_t search_ddl_domains(struct ndpi_detection_module_struct *ndpi_struct, st
 }
 
 
-void ndpi_search_direct_download_link_tcp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+static void ndpi_search_direct_download_link_tcp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = &flow->packet;
 
@@ -722,7 +722,7 @@ void ndpi_search_direct_download_link_tcp(struct ndpi_detection_module_struct *n
 
 }
 
-void init_directdownloadlink_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+static void init_directdownloadlink_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
 {
   ndpi_set_bitmask_protocol_detection("Direct_Download_Link", ndpi_struct, detection_bitmask, *id,
 				      NDPI_PROTOCOL_DIRECT_DOWNLOAD_LINK,

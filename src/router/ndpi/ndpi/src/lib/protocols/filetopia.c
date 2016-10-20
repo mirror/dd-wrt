@@ -32,7 +32,7 @@ static void ndpi_int_filetopia_add_connection(struct ndpi_detection_module_struc
   ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_FILETOPIA, NDPI_PROTOCOL_UNKNOWN);
 }
 
-void ndpi_search_filetopia_tcp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+static void ndpi_search_filetopia_tcp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
 	struct ndpi_packet_struct *packet = &flow->packet;
 	
@@ -81,7 +81,7 @@ void ndpi_search_filetopia_tcp(struct ndpi_detection_module_struct *ndpi_struct,
 }
 
 
-void init_filetopia_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+static void init_filetopia_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
 {
   ndpi_set_bitmask_protocol_detection("Filetopia", ndpi_struct, detection_bitmask, *id,
 				      NDPI_PROTOCOL_FILETOPIA,
