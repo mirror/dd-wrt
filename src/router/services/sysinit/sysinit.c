@@ -3043,6 +3043,20 @@ void start_drivers(void)
 		led_control(LED_USB1, LED_OFF);
 	}
 #endif
+#ifdef HAVE_MVEBU
+	insmod("mmc_core");
+	insmod("mmc_block");
+	insmod("sdhci");
+	insmod("sdhci-pltfm");
+	insmod("sdhci-pxav3");
+	sleep(2);
+	insmod("mvsdio");
+	sleep(2);
+	insmod("/lib/ath9k/mwifiex_sdio.ko");
+	insmod("bluetooth");
+	insmod("btmrvl");
+	insmod("btmrvl_sdio");
+#endif
 #ifdef HAVE_NORTHSTAR
 	set_smp_affinity(111, 2);
 	set_smp_affinity(112, 2);
