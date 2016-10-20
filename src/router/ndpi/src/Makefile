@@ -27,7 +27,7 @@ all:
 modules:
 	make -C ${KERNEL_DIR} M=$$PWD $@;
 modules_install:
-	install -D xt_opendpi.ko $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/xt_opendpi.ko
+	install -D xt_ndpi.ko $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/xt_ndpi.ko
 clean:
 	make -C ${KERNEL_DIR} M=$$PWD $@;
 	rm -rf modules.order ${NDPI_SRC}
