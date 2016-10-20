@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r3193 | brainslayer | 2016-10-20 12:56:51 +0200 (Thu, 20 Oct 2016) | 1 line
+
+fix some unmerged code
+------------------------------------------------------------------------
 r3192 | brainslayer | 2016-10-19 17:27:52 +0200 (Wed, 19 Oct 2016) | 1 line
 
 fix mac addr for some board with on board eeprom which needs still need a local modified mac address
