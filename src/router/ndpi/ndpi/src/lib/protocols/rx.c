@@ -46,7 +46,7 @@ struct ndpi_rx_header {
 } PACK_OFF;
 
 /* Type values */
-#define DATA	           1
+#define RX_DATA	           1
 #define	ACK	           2
 #define	BUSY	           3	
 #define	ABORT	           4	
@@ -73,7 +73,7 @@ struct ndpi_rx_header {
 
 
 
-void ndpi_check_rx(struct ndpi_detection_module_struct *ndpi_struct,
+static void ndpi_check_rx(struct ndpi_detection_module_struct *ndpi_struct,
                    struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = &flow->packet;
@@ -109,7 +109,7 @@ void ndpi_check_rx(struct ndpi_detection_module_struct *ndpi_struct,
   **/
   
   /* TYPE field */
-  if((header->type < DATA) || (header->type > VERSION)) {
+  if((header->type < RX_DATA) || (header->type > VERSION)) {
     NDPI_LOG(NDPI_PROTOCOL_RX, ndpi_struct, NDPI_LOG_DEBUG, "excluding RX\n");
     NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_RX);
     return;
@@ -125,7 +125,7 @@ void ndpi_check_rx(struct ndpi_detection_module_struct *ndpi_struct,
     /* TYPE and FLAGS combo */
     switch(header->type)
     {
-      case DATA:
+      case RX_DATA:
 	if(header->flags == LAST_PKT || header->flags == EMPTY ||
 	   header->flags == PLUS_0 || header->flags == PLUS_1 ||
 	   header->flags == PLUS_2 || header->flags == REQ_ACK ||
@@ -206,7 +206,7 @@ void ndpi_check_rx(struct ndpi_detection_module_struct *ndpi_struct,
   }
 }
 
-void ndpi_search_rx(struct ndpi_detection_module_struct *ndpi_struct,
+static void ndpi_search_rx(struct ndpi_detection_module_struct *ndpi_struct,
                     struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = &flow->packet;
@@ -217,7 +217,7 @@ void ndpi_search_rx(struct ndpi_detection_module_struct *ndpi_struct,
   }
 }
 
-void init_rx_dissector(struct ndpi_detection_module_struct *ndpi_struct,
+static void init_rx_dissector(struct ndpi_detection_module_struct *ndpi_struct,
                        u_int32_t *id,
                        NDPI_PROTOCOL_BITMASK *detection_bitmask)
 {

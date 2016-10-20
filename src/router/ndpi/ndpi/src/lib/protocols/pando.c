@@ -125,7 +125,7 @@ static void ndpi_check_pando_udp(struct ndpi_detection_module_struct *ndpi_struc
 	}
 }
 
-void ndpi_search_pando(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
+static void ndpi_search_pando(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
 	struct ndpi_packet_struct *packet = &flow->packet;
 
 	/* Break after 20 packets. */
@@ -155,7 +155,7 @@ void ndpi_search_pando(struct ndpi_detection_module_struct *ndpi_struct, struct 
 }
 
 
-void init_pando_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+static void init_pando_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
 {
   ndpi_set_bitmask_protocol_detection("Pando_Media_Booster", ndpi_struct, detection_bitmask, *id,
 				      NDPI_PROTOCOL_PANDO,

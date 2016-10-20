@@ -100,7 +100,7 @@ static int isCoAPport(u_int16_t port) {
 /**
  * Dissector function that searches CoAP headers
  */
-void ndpi_search_coap (struct ndpi_detection_module_struct *ndpi_struct,
+static void ndpi_search_coap (struct ndpi_detection_module_struct *ndpi_struct,
 		       struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = &flow->packet;
@@ -150,7 +150,7 @@ void ndpi_search_coap (struct ndpi_detection_module_struct *ndpi_struct,
 /**
  * Entry point for the ndpi library
  */
-void init_coap_dissector (struct ndpi_detection_module_struct *ndpi_struct,
+static void init_coap_dissector (struct ndpi_detection_module_struct *ndpi_struct,
 			  u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
 {
   ndpi_set_bitmask_protocol_detection ("COAP", ndpi_struct, detection_bitmask, *id,

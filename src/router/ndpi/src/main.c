@@ -37,6 +37,7 @@
 
 #include <net/netfilter/nf_conntrack.h>
 #include <net/netfilter/nf_conntrack_ecache.h>
+#include "ndpi_cpy/lib/ndpi_main.c"
 
 #include "ndpi_main.h"
 #include "xt_ndpi.h"

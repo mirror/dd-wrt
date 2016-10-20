@@ -37,7 +37,7 @@
   }
 
 
-void ndpi_search_in_non_tcp_udp(struct ndpi_detection_module_struct
+static void ndpi_search_in_non_tcp_udp(struct ndpi_detection_module_struct
 				*ndpi_struct, struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = &flow->packet;
@@ -105,7 +105,7 @@ void ndpi_search_in_non_tcp_udp(struct ndpi_detection_module_struct
 }
 
 
-void init_non_tcp_udp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+static void init_non_tcp_udp_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
 {
   
   /* always add non tcp/udp if one protocol is compiled in */

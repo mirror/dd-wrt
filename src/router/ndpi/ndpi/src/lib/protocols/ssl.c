@@ -31,7 +31,7 @@
 #define NDPI_MAX_SSL_REQUEST_SIZE 10000
 
 /* Skype.c */
-extern u_int8_t is_skype_flow(struct ndpi_detection_module_struct *ndpi_struct,
+static  u_int8_t is_skype_flow(struct ndpi_detection_module_struct *ndpi_struct,
 			      struct ndpi_flow_struct *flow);
 
 static u_int32_t ndpi_ssl_refine_master_protocol(struct ndpi_detection_module_struct *ndpi_struct,
@@ -149,7 +149,7 @@ static void stripCertificateTrailer(char *buffer, int buffer_len) {
 }
 
 /* Code fixes courtesy of Alexsandro Brahm <alex@digistar.com.br> */
-int getSSLcertificate(struct ndpi_detection_module_struct *ndpi_struct,
+static int getSSLcertificate(struct ndpi_detection_module_struct *ndpi_struct,
 		      struct ndpi_flow_struct *flow,
 		      char *buffer, int buffer_len) {
   struct ndpi_packet_struct *packet = &flow->packet;
@@ -310,7 +310,7 @@ int getSSLcertificate(struct ndpi_detection_module_struct *ndpi_struct,
   return(0); /* Not found */
 }
 
-int sslDetectProtocolFromCertificate(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
+static int sslDetectProtocolFromCertificate(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow) {
   struct ndpi_packet_struct *packet = &flow->packet;
 
   if((packet->payload_packet_len > 9)
@@ -559,7 +559,7 @@ static u_int8_t ndpi_search_sslv3_direction1(struct ndpi_detection_module_struct
   return 0;
 }
 
-void ndpi_search_ssl_tcp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+static void ndpi_search_ssl_tcp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
   struct ndpi_packet_struct *packet = &flow->packet;
 
@@ -671,7 +671,7 @@ void ndpi_search_ssl_tcp(struct ndpi_detection_module_struct *ndpi_struct, struc
 }
 
 
-void init_ssl_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+static void init_ssl_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
 {
   ndpi_set_bitmask_protocol_detection("SSL", ndpi_struct, detection_bitmask, *id,
 				      NDPI_PROTOCOL_SSL,

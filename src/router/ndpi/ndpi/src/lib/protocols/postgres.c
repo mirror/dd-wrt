@@ -33,7 +33,7 @@ static void ndpi_int_postgres_add_connection(struct ndpi_detection_module_struct
   ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_POSTGRES, NDPI_PROTOCOL_UNKNOWN);
 }
 
-void ndpi_search_postgres_tcp(struct ndpi_detection_module_struct
+static void ndpi_search_postgres_tcp(struct ndpi_detection_module_struct
 								*ndpi_struct, struct ndpi_flow_struct *flow)
 {
 	struct ndpi_packet_struct *packet = &flow->packet;
@@ -118,7 +118,7 @@ void ndpi_search_postgres_tcp(struct ndpi_detection_module_struct
 }
 
 
-void init_postgres_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
+static void init_postgres_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK *detection_bitmask)
 {
   ndpi_set_bitmask_protocol_detection("PostgreSQL", ndpi_struct, detection_bitmask, *id,
 				      NDPI_PROTOCOL_POSTGRES,
