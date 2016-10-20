@@ -73,7 +73,7 @@ struct osdpi_id_node {
 };
 
 
-u64 gc_interval_timeout = 0;
+static u64 gc_interval_timeout = 0;
 static u32 size_id_struct = 0;
 static u32 size_flow_struct = 0;
 
