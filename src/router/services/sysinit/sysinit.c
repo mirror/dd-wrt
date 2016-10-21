@@ -3048,10 +3048,10 @@ void start_drivers(void)
 	insmod("mmc_block");
 	insmod("sdhci");
 	insmod("sdhci-pltfm");
-	insmod("sdhci-pxav3");
-	sleep(2);
-	insmod("mvsdio");
-	sleep(2);
+	if (!insmod("sdhci-pxav3"))
+	    sleep(2);
+	if (!insmod("mvsdio"))
+	    sleep(2);
 	insmod("/lib/ath9k/mwifiex_sdio.ko");
 	insmod("bluetooth");
 	insmod("btmrvl");
