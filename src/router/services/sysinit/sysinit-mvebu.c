@@ -176,6 +176,7 @@ void start_sysinit(void)
 		set_smp_affinity(194, 2);
 		set_smp_affinity(195, 2);
 	}
+
 	return;
 	cprintf("done\n");
 }
