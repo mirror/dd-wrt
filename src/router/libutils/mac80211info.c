@@ -847,7 +847,7 @@ int has_subeamforming(char *interface)
 {
 #if defined(HAVE_ATH10K) || defined(HAVE_MVEBU)
 	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1, 1, 1);
-	if (strstr(vhtcaps, "SU-BEAMFORMER")) {
+	if (strstr(vhtcaps, "SU-BEAMFORMER") || strstr(vhtcaps, "SU-BEAMFORMEE")) {
 		free(vhtcaps);
 		return 1;
 	}
@@ -860,7 +860,7 @@ int has_mubeamforming(char *interface)
 {
 #if defined(HAVE_ATH10K) || defined(HAVE_MVEBU)
 	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1, 1, 1);
-	if (strstr(vhtcaps, "MU-BEAMFORMER")) {
+	if (strstr(vhtcaps, "MU-BEAMFORMER") || strstr(vhtcaps, "MU-BEAMFORMEE")) {
 		free(vhtcaps);
 		return 1;
 	}
