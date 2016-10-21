@@ -588,11 +588,9 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 				} else {
 					if (nvram_match(bw, "80+80")) {
 						fprintf(fp, "vht_oper_chwidth=3\n");
-						int idx = 114;
-						if (channel < 100)
-							idx = 50;
-						fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", idx);
-						fprintf(fp, "vht_oper_centr_freq_seg1_idx=%d\n", idx);
+						int idx = channel + (6 * iht);
+						fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n",idx);
+						fprintf(fp, "vht_oper_centr_freq_seg1_idx=155\n");
 					} else {
 						fprintf(fp, "vht_oper_chwidth=0\n");
 					}
