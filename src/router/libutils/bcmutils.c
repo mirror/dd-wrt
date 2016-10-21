@@ -387,12 +387,10 @@ int has_mimo(char *prefix)
 	else
 		return 0;
 }
-
+#ifndef HAVE_ATH10K
 int has_ac(char *prefix)
 {
-#ifdef HAVE_ATH10K
-	return (is_ath10k(prefix) || is_mvebu(prefix) || has_vht80(prefix));
-#elif HAVE_ATH9K
+#ifdef HAVE_ATH9K
 	return 0;
 #else
 #ifdef HAVE_QTN
@@ -408,6 +406,7 @@ int has_ac(char *prefix)
 		return 0;
 #endif
 }
+#endif
 #endif
 
 int has_qtn(char *prefix)
