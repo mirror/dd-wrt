@@ -552,12 +552,14 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 			}
 		}
 	}
+#ifdef HAVE_ATH10K
 	if (d->iftype && sinfo[NL80211_STA_INFO_EXPECTED_THROUGHPUT]) {
 		unsigned int tx = nla_get_u32(sinfo[NL80211_STA_INFO_EXPECTED_THROUGHPUT]);
 		tx = tx * 1000;
 		tx = tx / 1024;
 		mac80211_info->wci->txrate = tx / 100;
 	}
+#endif
 	if (sinfo[NL80211_STA_INFO_STA_FLAGS]) {
 		sta_flags = (struct nl80211_sta_flag_update *)
 		    nla_data(sinfo[NL80211_STA_INFO_STA_FLAGS]);
@@ -629,6 +631,7 @@ struct mac80211_info *mac80211_assoclist(char *interface)
 		getNoise_mac80211_internal(ifname + 1, data.mac80211_info);
 		msg = unl_genl_msg(&unl, NL80211_CMD_GET_STATION, true);
 		NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, if_nametoindex(ifname + 1));
+		data.iftype = 0;
 #ifdef HAVE_ATH10K
 		if (is_ath10k(ifname + 1))
 			data.iftype = 1;
