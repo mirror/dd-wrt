@@ -387,6 +387,7 @@ int has_mimo(char *prefix)
 	else
 		return 0;
 }
+
 #ifndef HAVE_ATH10K
 int has_ac(char *prefix)
 {
