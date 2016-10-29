@@ -706,13 +706,29 @@ int has_5ghz(char *prefix)
 	return has_athmask(devnum, 0x1);
 }
 
+#ifdef HAVE_MVEBU
+int is_mamba(){
+	FILE *fp = fopen("/proc/device-tree/model", "r");
+	if(fp){
+		char modelstr[32];
+		fread(modelstr, 1, 31, fp);
+		if (strstr(modelstr, "Mamba")){
+			fclose(fp);
+			return 1;
+		}
+		fclose(fp);
+	}
+	return 0;
+}
+#endif
+
 int has_2ghz(char *prefix)
 {
 	int devnum;
 	sscanf(prefix, "ath%d", &devnum);
 #ifdef HAVE_MVEBU
 //      fprintf(stderr, "is mvebu %d\n",is_mvebu(prefix));
-	if (is_mvebu(prefix) && !strncmp(prefix, "ath0", 4))
+	if (!is_mamba() && is_mvebu(prefix) && !strncmp(prefix, "ath0", 4))
 		return 0;
 #endif
 #ifdef HAVE_ATH9K
@@ -1102,7 +1118,7 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 					if (freq_mhz >= 5500)
 						isband = 2;
 #ifdef HAVE_MVEBU
-					if (phy == 0 && isband == 0)
+					if (!is_mamba() && phy == 0 && isband == 0)
 						continue;
 #endif
 					startfreq = 0;
