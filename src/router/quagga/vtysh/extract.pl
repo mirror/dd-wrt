@@ -32,6 +32,7 @@ EOF
 
 $ignore{'"interface IFNAME"'} = "ignore";
 $ignore{'"interface IFNAME " "vrf <0-65535>"'} = "ignore";
+$ignore{'"link-params"'} = "ignore";
 $ignore{'"ip vrf NAME"'} = "ignore";
 $ignore{'"router rip"'} = "ignore";
 $ignore{'"router ripng"'} = "ignore";
@@ -45,7 +46,7 @@ $ignore{'"router zebra"'} = "ignore";
 $ignore{'"address-family ipv4"'} = "ignore";
 $ignore{'"address-family ipv4 (unicast|multicast)"'} = "ignore";
 $ignore{'"address-family ipv6"'} = "ignore";
-$ignore{'"address-family ipv6 unicast"'} = "ignore";
+$ignore{'"address-family ipv6 (unicast|multicast)"'} = "ignore";
 $ignore{'"address-family vpnv4"'} = "ignore";
 $ignore{'"address-family vpnv4 unicast"'} = "ignore";
 $ignore{'"address-family ipv4 vrf NAME"'} = "ignore";
@@ -180,7 +181,7 @@ foreach (@ARGV) {
     }
 }
 
-my $bad_cli_stomps = 89;
+my $bad_cli_stomps = 102;
 # Currently we have $bad_cli_stomps.  This was determined by
 # running this script and counting up the collisions from what
 # was returned.
@@ -220,7 +221,7 @@ foreach (keys %live) {
 # Output install_element
 print <<EOF;
 void
-vtysh_init_cmd ()
+vtysh_init_cmd (void)
 {
 EOF
 

@@ -107,7 +107,7 @@ struct bgp
   struct thread *t_startup;
 
   /* BGP flags. */
-  u_int16_t flags;
+  u_int32_t flags;
 #define BGP_FLAG_ALWAYS_COMPARE_MED       (1 << 0)
 #define BGP_FLAG_DETERMINISTIC_MED        (1 << 1)
 #define BGP_FLAG_MED_MISSING_AS_WORST     (1 << 2)
@@ -124,6 +124,7 @@ struct bgp
 #define BGP_FLAG_ASPATH_CONFED            (1 << 13)
 #define BGP_FLAG_ASPATH_MULTIPATH_RELAX   (1 << 14)
 #define BGP_FLAG_DELETING                 (1 << 15)
+#define BGP_FLAG_RR_ALLOW_OUTBOUND_POLICY (1 << 16)
 
   /* BGP Per AF flags */
   u_int16_t af_flags[AFI_MAX][SAFI_MAX];
@@ -156,6 +157,11 @@ struct bgp
   u_char distance_ebgp;
   u_char distance_ibgp;
   u_char distance_local;
+
+  /* BGP ipv6 distance configuration.  */
+  u_char ipv6_distance_ebgp;
+  u_char ipv6_distance_ibgp;
+  u_char ipv6_distance_local;
   
   /* BGP default local-preference.  */
   u_int32_t default_local_pref;
@@ -271,6 +277,8 @@ typedef enum
   BGP_PEER_INTERNAL,
   BGP_PEER_CONFED,
 } bgp_peer_sort_t;
+
+#define BGP_MAX_PACKET_SIZE_OVERFLOW          1024
 
 /* BGP neighbor structure. */
 struct peer
@@ -791,9 +799,6 @@ enum bgp_clear_type
 #define BGP_IS_VALID_STATE_FOR_NOTIF(S)\
         (((S) == OpenSent) || ((S) == OpenConfirm) || ((S) == Established))
 
-/* Count prefix size from mask length */
-#define PSIZE(a) (((a) + 7) / (8))
-
 /* BGP error codes.  */
 #define BGP_SUCCESS                               0
 #define BGP_ERR_INVALID_VALUE                    -1
@@ -885,7 +890,8 @@ extern int bgp_flag_check (struct bgp *, int);
 extern void bgp_lock (struct bgp *);
 extern void bgp_unlock (struct bgp *);
 
-extern int bgp_router_id_set (struct bgp *, struct in_addr *);
+extern void bgp_router_id_zebra_bump (void);
+extern int bgp_router_id_static_set (struct bgp *, struct in_addr);
 
 extern int bgp_cluster_id_set (struct bgp *, struct in_addr *);
 extern int bgp_cluster_id_unset (struct bgp *);
@@ -897,7 +903,7 @@ extern int bgp_confederation_peers_check (struct bgp *, as_t);
 extern int bgp_confederation_peers_add (struct bgp *, as_t);
 extern int bgp_confederation_peers_remove (struct bgp *, as_t);
 
-extern int bgp_timers_set (struct bgp *, u_int32_t, u_int32_t);
+extern int bgp_timers_set (struct bgp *, u_int32_t keepalive, u_int32_t holdtime);
 extern int bgp_timers_unset (struct bgp *);
 
 extern int bgp_default_local_preference_set (struct bgp *, u_int32_t);
@@ -913,6 +919,7 @@ extern int peer_group_remote_as_delete (struct peer_group *);
 
 extern int peer_activate (struct peer *, afi_t, safi_t);
 extern int peer_deactivate (struct peer *, afi_t, safi_t);
+extern int peer_afc_set (struct peer *, afi_t, safi_t, int);
 
 extern int peer_group_bind (struct bgp *, union sockunion *, struct peer_group *,
 		     afi_t, safi_t, as_t *);
@@ -929,11 +936,11 @@ extern int peer_af_flag_check (struct peer *, afi_t, safi_t, u_int32_t);
 extern int peer_ebgp_multihop_set (struct peer *, int);
 extern int peer_ebgp_multihop_unset (struct peer *);
 
-extern int peer_description_set (struct peer *, char *);
+extern int peer_description_set (struct peer *, const char *);
 extern int peer_description_unset (struct peer *);
 
 extern int peer_update_source_if_set (struct peer *, const char *);
-extern int peer_update_source_addr_set (struct peer *, union sockunion *);
+extern int peer_update_source_addr_set (struct peer *, const union sockunion *);
 extern int peer_update_source_unset (struct peer *);
 
 extern int peer_default_originate_set (struct peer *, afi_t, safi_t, const char *);
@@ -945,7 +952,7 @@ extern int peer_port_unset (struct peer *);
 extern int peer_weight_set (struct peer *, u_int16_t);
 extern int peer_weight_unset (struct peer *);
 
-extern int peer_timers_set (struct peer *, u_int32_t, u_int32_t);
+extern int peer_timers_set (struct peer *, u_int32_t keepalive, u_int32_t holdtime);
 extern int peer_timers_unset (struct peer *);
 
 extern int peer_timers_connect_set (struct peer *, u_int32_t);
@@ -991,4 +998,5 @@ extern int peer_clear_soft (struct peer *, afi_t, safi_t, enum bgp_clear_type);
 extern int peer_ttl_security_hops_set (struct peer *, int);
 extern int peer_ttl_security_hops_unset (struct peer *);
 
+extern void bgp_scan_finish (void);
 #endif /* _QUAGGA_BGPD_H */

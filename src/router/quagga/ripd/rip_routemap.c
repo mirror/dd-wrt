@@ -58,10 +58,10 @@ rip_route_match_add (struct vty *vty, struct route_map_index *index,
       switch (ret)
 	{
 	case RMAP_RULE_MISSING:
-	  vty_out (vty, "%% Can't find rule.%s", VTY_NEWLINE);
+	  vty_out (vty, "%% RIP Can't find rule.%s", VTY_NEWLINE);
 	  return CMD_WARNING;
 	case RMAP_COMPILE_ERROR:
-	  vty_out (vty, "%% Argument is malformed.%s", VTY_NEWLINE);
+	  vty_out (vty, "%% RIP Argument is malformed.%s", VTY_NEWLINE);
 	  return CMD_WARNING;
 	}
     }
@@ -81,10 +81,10 @@ rip_route_match_delete (struct vty *vty, struct route_map_index *index,
       switch (ret)
 	{
 	case RMAP_RULE_MISSING:
-	  vty_out (vty, "%% Can't find rule.%s", VTY_NEWLINE);
+	  vty_out (vty, "%% RIP Can't find rule.%s", VTY_NEWLINE);
 	  return CMD_WARNING;
 	case RMAP_COMPILE_ERROR:
-	  vty_out (vty, "%% Argument is malformed.%s", VTY_NEWLINE);
+	  vty_out (vty, "%% RIP Argument is malformed.%s", VTY_NEWLINE);
 	  return CMD_WARNING;
 	}
     }
@@ -104,7 +104,7 @@ rip_route_set_add (struct vty *vty, struct route_map_index *index,
       switch (ret)
 	{
 	case RMAP_RULE_MISSING:
-	  vty_out (vty, "%% Can't find rule.%s", VTY_NEWLINE);
+	  vty_out (vty, "%% RIP Can't find rule.%s", VTY_NEWLINE);
 	  return CMD_WARNING;
 	case RMAP_COMPILE_ERROR:
 	  /* rip, ripng and other protocols share the set metric command
@@ -112,7 +112,7 @@ rip_route_set_add (struct vty *vty, struct route_map_index *index,
 	     if metric is out of range for rip and ripng, it is not for
 	     other protocols. Do not return an error */
 	  if (strcmp(command, "metric")) {
-	     vty_out (vty, "%% Argument is malformed.%s", VTY_NEWLINE);
+	     vty_out (vty, "%% RIP Argument is malformed.%s", VTY_NEWLINE);
 	     return CMD_WARNING;
 	  }
 	}
@@ -133,10 +133,10 @@ rip_route_set_delete (struct vty *vty, struct route_map_index *index,
       switch (ret)
 	{
 	case RMAP_RULE_MISSING:
-	  vty_out (vty, "%% Can't find rule.%s", VTY_NEWLINE);
+	  vty_out (vty, "%% RIP Can't find rule.%s", VTY_NEWLINE);
 	  return CMD_WARNING;
 	case RMAP_COMPILE_ERROR:
-	  vty_out (vty, "%% Argument is malformed.%s", VTY_NEWLINE);
+	  vty_out (vty, "%% RIP Argument is malformed.%s", VTY_NEWLINE);
 	  return CMD_WARNING;
 	}
     }
@@ -463,7 +463,7 @@ static route_map_result_t
 route_match_tag (void *rule, struct prefix *prefix, 
 		    route_map_object_t type, void *object)
 {
-  u_short *tag;
+  route_tag_t *tag;
   struct rip_info *rinfo;
 
   if (type == RMAP_RIP)
@@ -484,10 +484,23 @@ route_match_tag (void *rule, struct prefix *prefix,
 static void *
 route_match_tag_compile (const char *arg)
 {
-  u_short *tag;
+  route_tag_t *tag;
+  route_tag_t tmp;
+
+  /* tag value shoud be integer. */
+  if (! all_digit (arg))
+    return NULL;
+
+  tmp = atoi(arg);
+  if (tmp < 1)
+    return NULL;
 
   tag = XMALLOC (MTYPE_ROUTE_MAP_COMPILED, sizeof (u_short));
-  *tag = atoi (arg);
+
+  if (!tag)
+    return tag;
+
+  *tag = tmp;
 
   return tag;
 }
@@ -674,7 +687,7 @@ static route_map_result_t
 route_set_tag (void *rule, struct prefix *prefix, 
 		      route_map_object_t type, void *object)
 {
-  u_short *tag;
+  route_tag_t *tag;
   struct rip_info *rinfo;
 
   if(type == RMAP_RIP)
@@ -695,7 +708,7 @@ route_set_tag (void *rule, struct prefix *prefix,
 static void *
 route_set_tag_compile (const char *arg)
 {
-  u_short *tag;
+  route_tag_t *tag;
 
   tag = XMALLOC (MTYPE_ROUTE_MAP_COMPILED, sizeof (u_short));
   *tag = atoi (arg);
@@ -937,7 +950,7 @@ ALIAS (no_match_ip_address_prefix_list,
 
 DEFUN (match_tag, 
        match_tag_cmd,
-       "match tag <0-65535>",
+       "match tag <1-65535>",
        MATCH_STR
        "Match tag of route\n"
        "Metric value\n")
@@ -960,7 +973,7 @@ DEFUN (no_match_tag,
 
 ALIAS (no_match_tag,
        no_match_tag_val_cmd,
-       "no match tag <0-65535>",
+       "no match tag <1-65535>",
        NO_STR
        MATCH_STR
        "Match tag of route\n"
@@ -1000,11 +1013,18 @@ DEFUN (no_set_metric,
 
 ALIAS (no_set_metric,
        no_set_metric_val_cmd,
-       "no set metric (<0-4294967295>|<+/-metric>)",
+       "no set metric <0-4294967295>",
        NO_STR
        SET_STR
        "Metric value for destination routing protocol\n"
-       "Metric value\n"
+       "Metric value\n")
+
+ALIAS (no_set_metric,
+       no_set_metric_addsub_cmd,
+       "no set metric <+/-metric>",
+       NO_STR
+       SET_STR
+       "Metric value for destination routing protocol\n"
        "Add or subtract metric\n")
 
 DEFUN (set_ip_nexthop,
@@ -1053,7 +1073,7 @@ ALIAS (no_set_ip_nexthop,
 
 DEFUN (set_tag,
        set_tag_cmd,
-       "set tag <0-65535>",
+       "set tag <1-65535>",
        SET_STR
        "Tag value for routing protocol\n"
        "Tag value\n")
@@ -1076,7 +1096,7 @@ DEFUN (no_set_tag,
 
 ALIAS (no_set_tag,
        no_set_tag_val_cmd,
-       "no set tag <0-65535>",
+       "no set tag <1-65535>",
        NO_STR
        SET_STR
        "Tag value for routing protocol\n"
@@ -1135,6 +1155,7 @@ rip_route_map_init ()
   install_element (RMAP_NODE, &set_metric_addsub_cmd);
   install_element (RMAP_NODE, &no_set_metric_cmd);
   install_element (RMAP_NODE, &no_set_metric_val_cmd);
+  install_element (RMAP_NODE, &no_set_metric_addsub_cmd);
   install_element (RMAP_NODE, &set_ip_nexthop_cmd);
   install_element (RMAP_NODE, &no_set_ip_nexthop_cmd);
   install_element (RMAP_NODE, &no_set_ip_nexthop_val_cmd);

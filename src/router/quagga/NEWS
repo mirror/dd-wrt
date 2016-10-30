@@ -1,5 +1,25 @@
 Note: this file lists major user-visible changes only.
 
+* Changes in Quagga []
+
+- [zebra] "no link-detect" is no longer the default.  
+
+    The previous release of Quagga always explicitly writes-out the
+    link-detect configuration state.  Therefore, to retain current behavior
+    save your config with the prior release before updating.
+
+    Otherwise, review your configuration.  Note, most users will generally
+    want to have link-detect enabled, and so can just remove 'no
+    link-detect' from their interface configuration.
+
+    This release also adds a global configuration to specify the default,
+    which can be specified in the zebra configuration as:
+
+      default link-detect (on|off)
+
+    This will then apply to any interface which does not have link-detect
+    explicitly configured.
+
 * Changes in Quagga 0.99.24
 
 User-visible changes:

@@ -495,6 +495,7 @@ attrhash_key_make (void *p)
       MIX(extra->weight);
       MIX(extra->mp_nexthop_global_in.s_addr);
       MIX(extra->originator_id.s_addr);
+      MIX(extra->tag);
     }
   
   if (attr->aspath)
@@ -540,6 +541,7 @@ attrhash_cmp (const void *p1, const void *p2)
           && ae1->aggregator_as == ae2->aggregator_as
           && ae1->aggregator_addr.s_addr == ae2->aggregator_addr.s_addr
           && ae1->weight == ae2->weight
+          && ae1->tag == ae2->tag
           && ae1->mp_nexthop_len == ae2->mp_nexthop_len
           && IPV6_ADDR_SAME (&ae1->mp_nexthop_global, &ae2->mp_nexthop_global)
           && IPV6_ADDR_SAME (&ae1->mp_nexthop_local, &ae2->mp_nexthop_local)
@@ -691,6 +693,7 @@ bgp_attr_default_set (struct attr *attr, u_char origin)
   attr->aspath = aspath_empty ();
   attr->flag |= ATTR_FLAG_BIT (BGP_ATTR_AS_PATH);
   attr->extra->weight = BGP_ATTR_DEFAULT_WEIGHT;
+  attr->extra->tag = 0;
   attr->flag |= ATTR_FLAG_BIT (BGP_ATTR_NEXT_HOP);
   attr->extra->mp_nexthop_len = IPV6_MAX_BYTELEN;
 
@@ -717,10 +720,12 @@ bgp_attr_default_intern (u_char origin)
   return new;
 }
 
+/* Create the attributes for an aggregate */
 struct attr *
 bgp_attr_aggregate_intern (struct bgp *bgp, u_char origin,
 			   struct aspath *aspath,
-			   struct community *community, int as_set)
+			   struct community *community, int as_set,
+			   u_char atomic_aggregate)
 {
   struct attr attr;
   struct attr *new;
@@ -753,7 +758,7 @@ bgp_attr_aggregate_intern (struct bgp *bgp, u_char origin,
   attre.weight = BGP_ATTR_DEFAULT_WEIGHT;
   attre.mp_nexthop_len = IPV6_MAX_BYTELEN;
 
-  if (! as_set)
+  if (! as_set || atomic_aggregate)
     attr.flag |= ATTR_FLAG_BIT (BGP_ATTR_ATOMIC_AGGREGATE);
   attr.flag |= ATTR_FLAG_BIT (BGP_ATTR_AGGREGATOR);
   if (CHECK_FLAG (bgp->config, BGP_CONFIG_CONFEDERATION))
@@ -998,8 +1003,7 @@ const u_int8_t attr_flags_values [] = {
   [BGP_ATTR_AS4_PATH] =         BGP_ATTR_FLAG_OPTIONAL | BGP_ATTR_FLAG_TRANS,
   [BGP_ATTR_AS4_AGGREGATOR] =   BGP_ATTR_FLAG_OPTIONAL | BGP_ATTR_FLAG_TRANS,
 };
-static const size_t attr_flags_values_max =
-  sizeof (attr_flags_values) / sizeof (attr_flags_values[0]);
+static const size_t attr_flags_values_max = array_size(attr_flags_values) - 1;
 
 static int
 bgp_attr_flag_invalid (struct bgp_attr_parser_args *args)
@@ -1249,7 +1253,8 @@ bgp_attr_nexthop (struct bgp_attr_parser_args *args)
      gets ignored in any of these cases. */
   nexthop_n = stream_get_ipv4 (peer->ibuf);
   nexthop_h = ntohl (nexthop_n);
-  if (IPV4_NET0 (nexthop_h) || IPV4_NET127 (nexthop_h) || IPV4_CLASS_DE (nexthop_h))
+  if ((IPV4_NET0 (nexthop_h) || IPV4_NET127 (nexthop_h) || IPV4_CLASS_DE (nexthop_h))
+      && !BGP_DEBUG (allow_martians, ALLOW_MARTIANS)) /* loopbacks may be used in testing */
     {
       char buf[INET_ADDRSTRLEN];
       inet_ntop (AF_INET, &nexthop_n, buf, INET_ADDRSTRLEN);
@@ -1870,8 +1875,8 @@ bgp_attr_encap(
   }
 
   while (length >= 4) {
-    uint16_t	subtype;
-    uint16_t	sublength;
+    uint16_t	subtype = 0;
+    uint16_t	sublength = 0;
     struct bgp_attr_encap_subtlv *tlv;
 
     if (BGP_ATTR_ENCAP == type) {
@@ -2151,9 +2156,11 @@ bgp_attr_parse (struct peer *peer, struct attr *attr, bgp_size_t size,
 	{
 	  zlog (peer->log, LOG_WARNING, 
 		"%s: BGP type %d length %d is too large, attribute total length is %d.  attr_endp is %p.  endp is %p", peer->host, type, length, size, attr_endp, endp);
-	  bgp_notify_send (peer, 
-			   BGP_NOTIFY_UPDATE_ERR, 
-			   BGP_NOTIFY_UPDATE_ATTR_LENG_ERR);
+	  zlog_warn ("%s: BGP type %d length %d is too large, attribute total length is %d.  attr_endp is %p.  endp is %p", peer->host, type, length, size, attr_endp, endp);
+          bgp_notify_send_with_data (peer,
+                                     BGP_NOTIFY_UPDATE_ERR,
+                                     BGP_NOTIFY_UPDATE_ATTR_LENG_ERR,
+                                     startp, attr_endp - startp);
 	  return BGP_ATTR_PARSE_ERROR;
 	}
 	

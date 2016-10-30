@@ -23,21 +23,14 @@
 #ifndef _ZEBRA_RIB_H
 #define _ZEBRA_RIB_H
 
+#include "zebra.h"
 #include "linklist.h"
 #include "prefix.h"
 #include "table.h"
 #include "queue.h"
+#include "nexthop.h"
 
 #define DISTANCE_INFINITY  255
-
-/* Routing information base. */
-
-union g_addr {
-  struct in_addr ipv4;
-#ifdef HAVE_IPV6
-  struct in6_addr ipv6;
-#endif /* HAVE_IPV6 */
-};
 
 struct rib
 {
@@ -51,6 +44,9 @@ struct rib
   /* Refrence count. */
   unsigned long refcnt;
   
+  /* Tag */
+  route_tag_t tag;
+
   /* Uptime. */
   time_t uptime;
 
@@ -186,6 +182,9 @@ struct static_route
   /* Administrative distance. */
   u_char distance;
 
+  /* Tag */
+  route_tag_t tag;
+
   /* Flag for this static route's type. */
   u_char type;
 #define STATIC_IPV4_GATEWAY          1
@@ -205,50 +204,6 @@ struct static_route
  see ZEBRA_FLAG_REJECT
      ZEBRA_FLAG_BLACKHOLE
  */
-};
-
-enum nexthop_types_t
-{
-  NEXTHOP_TYPE_IFINDEX = 1,      /* Directly connected.  */
-  NEXTHOP_TYPE_IFNAME,           /* Interface route.  */
-  NEXTHOP_TYPE_IPV4,             /* IPv4 nexthop.  */
-  NEXTHOP_TYPE_IPV4_IFINDEX,     /* IPv4 nexthop with ifindex.  */
-  NEXTHOP_TYPE_IPV4_IFNAME,      /* IPv4 nexthop with ifname.  */
-  NEXTHOP_TYPE_IPV6,             /* IPv6 nexthop.  */
-  NEXTHOP_TYPE_IPV6_IFINDEX,     /* IPv6 nexthop with ifindex.  */
-  NEXTHOP_TYPE_IPV6_IFNAME,      /* IPv6 nexthop with ifname.  */
-  NEXTHOP_TYPE_BLACKHOLE,        /* Null0 nexthop.  */
-};
-
-/* Nexthop structure. */
-struct nexthop
-{
-  struct nexthop *next;
-  struct nexthop *prev;
-
-  /* Interface index. */
-  char *ifname;
-  ifindex_t ifindex;
-  
-  enum nexthop_types_t type;
-
-  u_char flags;
-#define NEXTHOP_FLAG_ACTIVE     (1 << 0) /* This nexthop is alive. */
-#define NEXTHOP_FLAG_FIB        (1 << 1) /* FIB nexthop. */
-#define NEXTHOP_FLAG_RECURSIVE  (1 << 2) /* Recursive nexthop. */
-#define NEXTHOP_FLAG_ONLINK     (1 << 3) /* Nexthop should be installed onlink. */
-
-  /* Nexthop address */
-  union g_addr gate;
-  union g_addr src;
-
-  /* Nexthops obtained by recursive resolution.
-   *
-   * If the nexthop struct needs to be resolved recursively,
-   * NEXTHOP_FLAG_RECURSIVE will be set in flags and the nexthops
-   * obtained by recursive resolution will be added to `resolved'.
-   * Only one level of recursive resolution is currently supported. */
-  struct nexthop *resolved;
 };
 
 /* The following for loop allows to iterate over the nexthop
@@ -370,6 +325,9 @@ struct zebra_vrf
 #if defined (HAVE_RTADV)
   struct rtadv rtadv;
 #endif /* HAVE_RTADV */
+
+  /* Recursive Nexthop table */
+  struct route_table *rnh_table[AFI_MAX];
 };
 
 /*
@@ -425,18 +383,20 @@ extern void multicast_mode_ipv4_set (enum multicast_mode mode);
 extern enum multicast_mode multicast_mode_ipv4_get (void);
 
 extern const char *nexthop_type_to_str (enum nexthop_types_t nh_type);
-extern struct nexthop *nexthop_ifindex_add (struct rib *, ifindex_t);
-extern struct nexthop *nexthop_ifname_add (struct rib *, char *);
-extern struct nexthop *nexthop_blackhole_add (struct rib *);
-extern struct nexthop *nexthop_ipv4_add (struct rib *, struct in_addr *,
-					 struct in_addr *);
-extern struct nexthop *nexthop_ipv4_ifindex_add (struct rib *,
-                                                 struct in_addr *,
-                                                 struct in_addr *,
-                                                 ifindex_t);
+extern struct nexthop *rib_nexthop_ifindex_add (struct rib *, ifindex_t);
+extern struct nexthop *rib_nexthop_ifname_add (struct rib *, char *);
+extern struct nexthop *rib_nexthop_blackhole_add (struct rib *);
+extern struct nexthop *rib_nexthop_ipv4_add (struct rib *, struct in_addr *,
+					     struct in_addr *);
+extern struct nexthop *rib_nexthop_ipv4_ifindex_add (struct rib *,
+						     struct in_addr *,
+						     struct in_addr *,
+						     ifindex_t);
+
+extern void rib_nexthop_add (struct rib *rib, struct nexthop *nexthop);
+
 extern int nexthop_has_fib_child(struct nexthop *);
 extern void rib_lookup_and_dump (struct prefix_ipv4 *);
-extern void rib_lookup_and_pushup (struct prefix_ipv4 *);
 #define rib_dump(prefix ,rib) _rib_dump(__func__, prefix, rib)
 extern void _rib_dump (const char *,
 		       union prefix46constptr, const struct rib *);
@@ -448,8 +408,12 @@ extern int rib_lookup_ipv4_route (struct prefix_ipv4 *, union sockunion *,
 #define ZEBRA_RIB_FOUND_CONNECTED 2
 #define ZEBRA_RIB_NOTFOUND 3
 
-extern struct nexthop *nexthop_ipv6_add (struct rib *, struct in6_addr *);
+extern struct nexthop *rib_nexthop_ipv6_add (struct rib *, struct in6_addr *);
+extern struct nexthop *rib_nexthop_ipv6_ifindex_add (struct rib *,
+                                                     struct in6_addr *,
+                                                     ifindex_t);
 
+extern struct zebra_vrf *zebra_vrf_lookup (vrf_id_t vrf_id);
 extern struct zebra_vrf *zebra_vrf_alloc (vrf_id_t);
 extern struct route_table *zebra_vrf_table (afi_t, safi_t, vrf_id_t);
 extern struct route_table *zebra_vrf_static_table (afi_t, safi_t, vrf_id_t);
@@ -487,11 +451,12 @@ extern unsigned long rib_score_proto (u_char proto);
 
 extern int
 static_add_ipv4_safi (safi_t safi, struct prefix *p, struct in_addr *gate,
-		      const char *ifname, u_char flags, u_char distance,
-		      vrf_id_t vrf_id);
+		      const char *ifname, u_char flags, route_tag_t, 
+		      u_char distance, vrf_id_t vrf_id);
 extern int
 static_delete_ipv4_safi (safi_t safi, struct prefix *p, struct in_addr *gate,
-			 const char *ifname, u_char distance, vrf_id_t vrf_id);
+			 const char *ifname, route_tag_t tag, u_char distance,
+			 vrf_id_t vrf_id);
 
 extern int
 rib_add_ipv6 (int type, int flags, struct prefix_ipv6 *p,
@@ -511,12 +476,16 @@ extern struct route_table *rib_table_ipv6;
 
 extern int
 static_add_ipv6 (struct prefix *p, u_char type, struct in6_addr *gate,
-		 const char *ifname, u_char flags, u_char distance,
-		 vrf_id_t vrf_id);
+		 const char *ifname, u_char flags, route_tag_t, 
+		 u_char distance, vrf_id_t vrf_id);
+
+extern int
+rib_add_ipv6_multipath (struct prefix_ipv6 *, struct rib *, safi_t);
 
 extern int
 static_delete_ipv6 (struct prefix *p, u_char type, struct in6_addr *gate,
-		    const char *ifname, u_char distance, vrf_id_t vrf_id);
+		    const char *ifname, route_tag_t, u_char distance, 
+		    vrf_id_t vrf_id);
 
 extern int rib_gc_dest (struct route_node *rn);
 extern struct route_table *rib_tables_iter_next (rib_tables_iter_t *iter);

@@ -31,11 +31,19 @@ Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 #define BGP_PRIVATE_AS_MIN       64512U
 #define BGP_PRIVATE_AS_MAX       65535U
 
+/* Private 4 byte AS range defined in RFC6996.  */
+#define BGP_PRIVATE_AS4_MIN     4200000000U
+#define BGP_PRIVATE_AS4_MAX     4294967294U
+
 /* we leave BGP_AS_MAX as the 16bit AS MAX number.  */
 #define BGP_AS_MAX		     65535U
 #define BGP_AS4_MAX		4294967295U
 /* Transition 16Bit AS as defined by IANA */
 #define BGP_AS_TRANS		 23456U
+
+#define BGP_AS_IS_PRIVATE(ASN) \
+    (((ASN) >= BGP_PRIVATE_AS_MIN && (ASN) <= BGP_PRIVATE_AS_MAX) || \
+     ((ASN) >= BGP_PRIVATE_AS4_MIN && (ASN) <= BGP_PRIVATE_AS4_MAX))
 
 /* AS_PATH segment data in abstracted form, no limit is placed on length */
 struct assegment
@@ -69,6 +77,7 @@ extern void aspath_finish (void);
 extern struct aspath *aspath_parse (struct stream *, size_t, int);
 extern struct aspath *aspath_dup (struct aspath *);
 extern struct aspath *aspath_aggregate (struct aspath *, struct aspath *);
+extern struct aspath *aspath_aggregate_mpath (struct aspath *, struct aspath *);
 extern struct aspath *aspath_prepend (struct aspath *, struct aspath *);
 extern struct aspath *aspath_filter_exclude (struct aspath *, struct aspath *);
 extern struct aspath *aspath_add_seq_n (struct aspath *, as_t, unsigned);
@@ -94,7 +103,7 @@ extern int aspath_firstas_check (struct aspath *, as_t);
 extern int aspath_confed_check (struct aspath *);
 extern int aspath_left_confed_check (struct aspath *);
 extern unsigned long aspath_count (void);
-extern unsigned int aspath_count_hops (struct aspath *);
+extern unsigned int aspath_count_hops (const struct aspath *);
 extern unsigned int aspath_count_confeds (struct aspath *);
 extern unsigned int aspath_size (struct aspath *);
 extern as_t aspath_highest (struct aspath *);

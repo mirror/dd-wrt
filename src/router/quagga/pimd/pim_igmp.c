@@ -111,7 +111,9 @@ static int igmp_sock_open(struct in_addr ifaddr, ifindex_t ifindex,
 static void igmp_sock_dump(array_t *igmp_sock_array)
 {
   int size = array_size(igmp_sock_array);
-  for (int i = 0; i < size; ++i) {
+  int i;
+  
+  for (i = 0; i < size; ++i) {
     
     struct igmp_sock *igmp = array_get(igmp_sock_array, i);
     

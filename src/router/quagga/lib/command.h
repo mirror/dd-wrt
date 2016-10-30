@@ -26,6 +26,7 @@
 #include "vector.h"
 #include "vty.h"
 #include "lib/route_types.h"
+#include "hash.h"
 
 /* Host configuration variable */
 struct host
@@ -108,6 +109,8 @@ enum node_type
   FORWARDING_NODE,		/* IP forwarding node. */
   PROTOCOL_NODE,                /* protocol filtering node */
   VTY_NODE,			/* Vty node. */
+  LINK_PARAMS_NODE,		/* Link-parameters node */
+  ZEBRA_IF_DEFAULTS_NODE,	/* If defaults dummy node */
 };
 
 /* Node which has some commands and prompt string and configuration
@@ -127,7 +130,10 @@ struct cmd_node
   int (*func) (struct vty *);
 
   /* Vector of this node's command list. */
-  vector cmd_vector;	
+  vector cmd_vector;
+  
+  /* Hashed index of command node list, for de-dupping primarily */
+  struct hash *cmd_hash;
 };
 
 enum
@@ -479,6 +485,10 @@ struct cmd_token
 #define CLEAR_STR "Reset functions\n"
 #define RIP_STR "RIP information\n"
 #define BGP_STR "BGP information\n"
+#define BGP_SOFT_STR "Soft reconfig inbound and outbound updates\n"
+#define BGP_SOFT_IN_STR "Send route-refresh unless using 'soft-reconfiguration inbound'\n"
+#define BGP_SOFT_OUT_STR "Resend all outbound updates\n"
+#define BGP_SOFT_RSCLIENT_RIB_STR "Soft reconfig for rsclient RIB\n"
 #define OSPF_STR "OSPF information\n"
 #define NEIGHBOR_STR "Specify neighbor router\n"
 #define DEBUG_STR "Debugging functions (see also 'undebug')\n"
@@ -505,6 +515,10 @@ struct cmd_token
 "(neighbor|interface|area|lsa|zebra|config|dbex|spf|route|lsdb|redistribute|hook|asbr|prefix|abr)"
 #define ISIS_STR "IS-IS information\n"
 #define AREA_TAG_STR "[area tag]\n"
+#define MPLS_TE_STR "MPLS-TE specific commands\n"
+#define LINK_PARAMS_STR "Configure interface link parameters\n"
+#define OSPF_RI_STR "OSPF Router Information specific commands\n"
+#define PCE_STR "PCE Router Information specific commands\n"
 
 #define CONF_BACKUP_EXT ".sav"
 
@@ -556,7 +570,7 @@ extern struct cmd_element config_exit_cmd;
 extern struct cmd_element config_quit_cmd;
 extern struct cmd_element config_help_cmd;
 extern struct cmd_element config_list_cmd;
-extern char *host_config_file (void);
+extern const char *host_config_get (void);
 extern void host_config_set (char *);
 
 extern void print_version (const char *);

@@ -48,6 +48,8 @@ extern void zebra_interface_address_add_update (struct interface *,
 extern void zebra_interface_address_delete_update (struct interface *,
 						   struct connected *c);
 
+extern void zebra_interface_parameters_update (struct interface *);
+
 extern int zebra_check_addr (struct prefix *);
 
 extern int is_default (struct prefix *);

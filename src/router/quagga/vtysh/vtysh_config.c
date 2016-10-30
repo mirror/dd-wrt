@@ -166,7 +166,7 @@ vtysh_config_parse_line (const char *line)
       /* Store line to current configuration. */
       if (config)
 	{
-	  if (strncmp (line, " address-family vpnv4",
+          if (strncmp (line, " address-family vpnv4",
 	      strlen (" address-family vpnv4")) == 0)
 	    config = config_get (BGP_VPNV4_NODE, line);
 	  else if (strncmp (line, " address-family vpn6",
@@ -185,7 +185,6 @@ vtysh_config_parse_line (const char *line)
 		   strlen (" address-family ipv6")) == 0)
 	    config = config_get (BGP_IPV6_NODE, line);
 	  else if (config->index == RMAP_NODE ||
-	           config->index == INTERFACE_NODE ||
 		   config->index == VTY_NODE)
 	    config_add_line_uniq (config->line, line);
 	  else

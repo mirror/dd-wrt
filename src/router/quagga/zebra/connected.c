@@ -77,7 +77,15 @@ connected_announce (struct interface *ifp, struct connected *ifc)
 {
   if (!ifc)
     return;
-  
+
+  if (!if_is_loopback(ifp) && ifc->address->family == AF_INET)
+    {
+      if (ifc->address->prefixlen == 32)
+        SET_FLAG (ifc->flags, ZEBRA_IFA_UNNUMBERED);
+      else
+        UNSET_FLAG (ifc->flags, ZEBRA_IFA_UNNUMBERED);
+    }
+
   listnode_add (ifp->connected, ifc);
 
   /* Update interface address information to protocol daemon. */

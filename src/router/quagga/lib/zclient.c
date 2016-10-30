@@ -181,6 +181,7 @@ zclient_socket(void)
   ret = connect (sock, (struct sockaddr *) &serv, sizeof (serv));
   if (ret < 0)
     {
+      zlog_warn ("%s connect failure: %d", __PRETTY_FUNCTION__, errno);
       close (sock);
       return -1;
     }
@@ -216,6 +217,7 @@ zclient_socket_un (const char *path)
   ret = connect (sock, (struct sockaddr *) &addr, len);
   if (ret < 0)
     {
+      zlog_warn ("%s connect failure: %d", __PRETTY_FUNCTION__, errno);
       close (sock);
       return -1;
     }
@@ -429,11 +431,23 @@ zclient_start (struct zclient *zclient)
   if (zclient->t_connect)
     return 0;
 
-  if (zclient_socket_connect(zclient) < 0)
+  /*
+   * If we fail to connect to the socket on initialization,
+   * Let's wait a second and see if we can reconnect.
+   * Cause if we don't connect, we never attempt to
+   * reconnect.  On startup if zebra is slow we
+   * can get into this situation.
+   */
+  while (zclient_socket_connect(zclient) < 0 && zclient->fail < 5)
     {
       if (zclient_debug)
 	zlog_debug ("zclient connection fail");
       zclient->fail++;
+      sleep (1);
+    }
+
+  if (zclient->sock < 0)
+    {
       zclient_event (ZCLIENT_CONNECT, zclient);
       return -1;
     }
@@ -516,6 +530,8 @@ zclient_connect (struct thread *t)
   * If ZAPI_MESSAGE_METRIC is set, the metric value is written as an 8
   * byte value.
   *
+  * If ZAPI_MESSAGE_TAG is set, the tag value is written as a 2 byte value
+  *
   * XXX: No attention paid to alignment.
   */ 
 int
@@ -574,6 +590,8 @@ zapi_ipv4_route (u_char cmd, struct zclient *zclient, struct prefix_ipv4 *p,
     stream_putl (s, api->metric);
   if (CHECK_FLAG (api->message, ZAPI_MESSAGE_MTU))
     stream_putl (s, api->mtu);
+  if (CHECK_FLAG (api->message, ZAPI_MESSAGE_TAG))
+    stream_putl (s, api->tag);
 
   /* Put length at the first point of the stream. */
   stream_putw_at (s, 0, stream_get_endp (s));
@@ -630,6 +648,8 @@ zapi_ipv6_route (u_char cmd, struct zclient *zclient, struct prefix_ipv6 *p,
     stream_putl (s, api->metric);
   if (CHECK_FLAG (api->message, ZAPI_MESSAGE_MTU))
     stream_putl (s, api->mtu);
+  if (CHECK_FLAG (api->message, ZAPI_MESSAGE_TAG))
+    stream_putl (s, api->tag);
 
   /* Put length at the first point of the stream. */
   stream_putw_at (s, 0, stream_get_endp (s));
@@ -693,8 +713,6 @@ zebra_router_id_update_read (struct stream *s, struct prefix *rid)
  * ZEBRA_INTERFACE_DELETE from zebra to the client is:
  *     0                   1                   2                   3
  *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
- * +-+-+-+-+-+-+-+-+
- * |   type        |
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * |  ifname                                                       |
  * |                                                               |
@@ -702,20 +720,32 @@ zebra_router_id_update_read (struct stream *s, struct prefix *rid)
  * |                                                               |
  * |                                                               |
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- * |         ifindex                                               |
+ * |  ifindex                                                      |
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- * |         if_flags                                              |
+ * |  status       |
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |  if_flags                                                     |
  * |                                                               |
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- * |         metric                                                |
+ * |  metric                                                       |
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- * |         ifmtu                                                 |
+ * |  ifmtu                                                        |
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- * |         ifmtu6                                                |
+ * |  ifmtu6                                                       |
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- * |         bandwidth                                             |
+ * |  bandwidth                                                    |
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- * |         sockaddr_dl                                           |
+ * |  Link Layer Type                                              |
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |  Harware Address Length                                       |
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |  Hardware Address      if HW lenght different from 0          |
+ * |   ...                  max INTERFACE_HWADDR_MAX               |
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |  Link_params? |  Whether a link-params follows: 1 or 0.       
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |  Link_params    0 or 1 INTERFACE_LINK_PARAMS_SIZE sized       |
+ * |   ....          (struct if_link_params).                      |
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  */
 
@@ -768,7 +798,136 @@ zebra_interface_state_read (struct stream *s, vrf_id_t vrf_id)
   return ifp;
 }
 
-/* 
+static void
+link_params_set_value(struct stream *s, struct if_link_params *iflp)
+{
+  
+  if (iflp == NULL)
+    return;
+  
+  iflp->lp_status = stream_getl (s);
+  iflp->te_metric = stream_getl (s);
+  iflp->max_bw = stream_getf (s);
+  iflp->max_rsv_bw = stream_getf (s);
+  uint32_t bwclassnum = stream_getl (s);
+  {
+    unsigned int i;
+    for (i = 0; i < bwclassnum && i < MAX_CLASS_TYPE; i++)
+      iflp->unrsv_bw[i] = stream_getf (s);
+    if (i < bwclassnum)
+      zlog_err ("%s: received %d > %d (MAX_CLASS_TYPE) bw entries"
+                " - outdated library?",
+                __func__, bwclassnum, MAX_CLASS_TYPE);
+  }
+  iflp->admin_grp = stream_getl (s);
+  iflp->rmt_as = stream_getl (s);
+  iflp->rmt_ip.s_addr = stream_get_ipv4 (s);
+  
+  iflp->av_delay = stream_getl (s);
+  iflp->min_delay = stream_getl (s);
+  iflp->max_delay = stream_getl (s);
+  iflp->delay_var = stream_getl (s);
+  
+  iflp->pkt_loss = stream_getf (s);
+  iflp->res_bw = stream_getf (s);
+  iflp->ava_bw = stream_getf (s);
+  iflp->use_bw = stream_getf (s);
+}
+
+struct interface *
+zebra_interface_link_params_read (struct stream *s)
+{
+  struct if_link_params *iflp;
+  uint32_t ifindex = stream_getl (s);
+
+  struct interface *ifp = if_lookup_by_index (ifindex);
+
+  if (ifp == NULL || s == NULL)
+    {
+      zlog_err ("%s: unknown ifindex %u, shouldn't happen",
+                __func__, ifindex);
+      return NULL;
+    }
+
+  if ((iflp = if_link_params_get (ifp)) == NULL)
+    return NULL;
+
+  link_params_set_value(s, iflp);
+  
+  return ifp;
+}
+
+void
+zebra_interface_if_set_value (struct stream *s, struct interface *ifp)
+{
+  u_char link_params_status = 0;
+
+  /* Read interface's index. */
+  ifp->ifindex = stream_getl (s);
+  ifp->status = stream_getc (s);
+
+  /* Read interface's value. */
+  ifp->flags = stream_getq (s);
+  ifp->metric = stream_getl (s);
+  ifp->mtu = stream_getl (s);
+  ifp->mtu6 = stream_getl (s);
+  ifp->bandwidth = stream_getl (s);
+  ifp->ll_type = stream_getl (s);
+  ifp->hw_addr_len = stream_getl (s);
+  if (ifp->hw_addr_len)
+    stream_get (ifp->hw_addr, s, MIN(ifp->hw_addr_len, INTERFACE_HWADDR_MAX));
+
+  /* Read Traffic Engineering status */
+  link_params_status = stream_getc (s);
+  /* Then, Traffic Engineering parameters if any */
+  if (link_params_status)
+    {
+      struct if_link_params *iflp = if_link_params_get (ifp);
+      link_params_set_value(s, iflp);
+    }
+}
+
+size_t
+zebra_interface_link_params_write (struct stream *s, struct interface *ifp)
+{
+  size_t w;
+  struct if_link_params *iflp;
+  int i;
+  
+  if (s == NULL || ifp == NULL || ifp->link_params == NULL)
+    return 0;
+  
+  iflp = ifp->link_params;
+  w = 0;
+    
+  w += stream_putl (s, iflp->lp_status);
+
+  w += stream_putl (s, iflp->te_metric);
+  w += stream_putf (s, iflp->max_bw);
+  w += stream_putf (s, iflp->max_rsv_bw);
+  
+  w += stream_putl (s, MAX_CLASS_TYPE);
+  for (i = 0; i < MAX_CLASS_TYPE; i++)
+    w += stream_putf (s, iflp->unrsv_bw[i]);
+  
+  w += stream_putl (s, iflp->admin_grp);
+  w += stream_putl (s, iflp->rmt_as);
+  w += stream_put_in_addr (s, &iflp->rmt_ip);
+  
+  w += stream_putl (s, iflp->av_delay);
+  w += stream_putl (s, iflp->min_delay);
+  w += stream_putl (s, iflp->max_delay);
+  w += stream_putl (s, iflp->delay_var);
+  
+  w += stream_putf (s, iflp->pkt_loss);
+  w += stream_putf (s, iflp->res_bw);
+  w += stream_putf (s, iflp->ava_bw);
+  w += stream_putf (s, iflp->use_bw);
+  
+  return w;
+}
+
+/*
  * format of message for address additon is:
  *    0
  *  0 1 2 3 4 5 6 7
@@ -797,27 +956,7 @@ zebra_interface_state_read (struct stream *s, vrf_id_t vrf_id)
  * :               :
  * |               |
  * +-+-+-+-+-+-+-+-+
- *
  */
-
-void
-zebra_interface_if_set_value (struct stream *s, struct interface *ifp)
-{
-  /* Read interface's index. */
-  ifp->ifindex = stream_getl (s);
-  ifp->status = stream_getc (s);
-
-  /* Read interface's value. */
-  ifp->flags = stream_getq (s);
-  ifp->metric = stream_getl (s);
-  ifp->mtu = stream_getl (s);
-  ifp->mtu6 = stream_getl (s);
-  ifp->bandwidth = stream_getl (s);
-  ifp->ll_type = stream_getl (s);
-  ifp->hw_addr_len = stream_getl (s);
-  if (ifp->hw_addr_len)
-    stream_get (ifp->hw_addr, s, MIN(ifp->hw_addr_len, INTERFACE_HWADDR_MAX));
-}
 
 static int
 memconstant(const void *s, int c, size_t n)
@@ -1044,6 +1183,13 @@ zclient_read (struct thread *thread)
     case ZEBRA_IPV6_ROUTE_DELETE:
       if (zclient->ipv6_route_delete)
 	(*zclient->ipv6_route_delete) (command, zclient, length, vrf_id);
+      break;
+    case ZEBRA_INTERFACE_LINK_PARAMS:
+      if (zclient->interface_link_params)
+        (*zclient->interface_link_params) (command, zclient, length);
+    case ZEBRA_NEXTHOP_UPDATE:
+      if (zclient->nexthop_update)
+	(*zclient->nexthop_update) (command, zclient, length, vrf_id);
       break;
     default:
       break;

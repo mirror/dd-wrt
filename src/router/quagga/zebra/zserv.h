@@ -67,6 +67,37 @@ struct zserv
 
   /* Router-id information. */
   vrf_bitmap_t ridinfo;
+
+  /* client's protocol */
+  u_char proto;
+
+  /* Statistics */
+  u_int32_t redist_v4_add_cnt;
+  u_int32_t redist_v4_del_cnt;
+  u_int32_t redist_v6_add_cnt;
+  u_int32_t redist_v6_del_cnt;
+  u_int32_t v4_route_add_cnt;
+  u_int32_t v4_route_upd8_cnt;
+  u_int32_t v4_route_del_cnt;
+  u_int32_t v6_route_add_cnt;
+  u_int32_t v6_route_del_cnt;
+  u_int32_t v6_route_upd8_cnt;
+  u_int32_t connected_rt_add_cnt;
+  u_int32_t connected_rt_del_cnt;
+  u_int32_t ifup_cnt;
+  u_int32_t ifdown_cnt;
+  u_int32_t ifadd_cnt;
+  u_int32_t ifdel_cnt;
+
+  time_t connect_time;
+  time_t last_read_time;
+  time_t last_write_time;
+  time_t nh_reg_time;
+  time_t nh_dereg_time;
+  time_t nh_last_upd_time;
+
+  int last_read_cmd;
+  int last_write_cmd;
 };
 
 /* Zebra instance */
@@ -83,9 +114,6 @@ struct zebra_t
   struct work_queue *ribq;
   struct meta_queue *mq;
 };
-
-/* Count prefix size from mask length */
-#define PSIZE(a) (((a) + 7) / (8))
 
 /* Prototypes. */
 extern void zebra_init (void);
@@ -111,6 +139,11 @@ extern int zsend_route_multipath (int, struct zserv *, struct prefix *,
 extern int zsend_router_id_update (struct zserv *, struct prefix *,
                                    vrf_id_t);
 
+extern int zsend_interface_link_params (struct zserv *, struct interface *);
+
 extern pid_t pid;
+
+extern void zserv_create_header(struct stream *s, uint16_t cmd, vrf_id_t);
+extern int zebra_server_send_message(struct zserv *client);
 
 #endif /* _ZEBRA_ZEBRA_H */
