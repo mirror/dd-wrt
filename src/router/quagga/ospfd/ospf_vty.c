@@ -63,7 +63,7 @@ static const char *ospf_network_type_str[] =
 
 
 /* Utility functions. */
-static int
+int
 ospf_str2area_id (const char *str, struct in_addr *area_id, int *format)
 {
   char *endptr = NULL;
@@ -3117,7 +3117,7 @@ DEFUN (show_ip_ospf_interface,
 static void
 show_ip_ospf_neighbour_header (struct vty *vty)
 {
-  vty_out (vty, "%s%15s %3s %-15s %9s %-15s %-20s %5s %5s %5s%s",
+  vty_out (vty, "%s%-15s %3s %-15s %9s %-15s %-20s %5s %5s %5s%s",
            VTY_NEWLINE,
            "Neighbor ID", "Pri", "State", "Dead Time",
            "Address", "Interface", "RXmtL", "RqstL", "DBsmL",
@@ -5184,11 +5184,12 @@ ALIAS (ip_ospf_dead_interval_minimal,
 
 DEFUN (no_ip_ospf_dead_interval,
        no_ip_ospf_dead_interval_addr_cmd,
-       "no ip ospf dead-interval A.B.C.D",
+       "no ip ospf dead-interval <1-65535> A.B.C.D",
        NO_STR
        "IP Information\n"
        "OSPF interface commands\n"
        "Interval after which a neighbor is declared dead\n"
+       "Seconds\n"
        "Address of interface")
 {
   struct interface *ifp = vty->index;
@@ -5201,9 +5202,9 @@ DEFUN (no_ip_ospf_dead_interval,
   ifp = vty->index;
   params = IF_DEF_PARAMS (ifp);
 
-  if (argc == 1)
+  if (argc == 2)
     {
-      ret = inet_aton(argv[0], &addr);
+      ret = inet_aton(argv[1], &addr);
       if (!ret)
 	{
 	  vty_out (vty, "Please specify interface address by A.B.C.D%s",
@@ -5249,6 +5250,15 @@ DEFUN (no_ip_ospf_dead_interval,
 
   return CMD_SUCCESS;
 }
+
+ALIAS (no_ip_ospf_dead_interval,
+       no_ip_ospf_dead_interval_seconds_cmd,
+       "no ip ospf dead-interval <1-65535>",
+       NO_STR
+       "IP Information\n"
+       "OSPF interface commands\n"
+       "Interval after which a neighbor is declared dead\n"
+       "Seconds\n")
 
 ALIAS (no_ip_ospf_dead_interval,
        no_ip_ospf_dead_interval_cmd,
@@ -5328,11 +5338,12 @@ ALIAS (ip_ospf_hello_interval,
 
 DEFUN (no_ip_ospf_hello_interval,
        no_ip_ospf_hello_interval_addr_cmd,
-       "no ip ospf hello-interval A.B.C.D",
+       "no ip ospf hello-interval <1-65535> A.B.C.D",
        NO_STR
        "IP Information\n"
        "OSPF interface commands\n"
        "Time between HELLO packets\n"
+       "Seconds\n"
        "Address of interface")
 {
   struct interface *ifp = vty->index;
@@ -5343,9 +5354,9 @@ DEFUN (no_ip_ospf_hello_interval,
   ifp = vty->index;
   params = IF_DEF_PARAMS (ifp);
 
-  if (argc == 1)
+  if (argc == 2)
     {
-      ret = inet_aton(argv[0], &addr);
+      ret = inet_aton(argv[1], &addr);
       if (!ret)
 	{
 	  vty_out (vty, "Please specify interface address by A.B.C.D%s",
@@ -5369,6 +5380,15 @@ DEFUN (no_ip_ospf_hello_interval,
 
   return CMD_SUCCESS;
 }
+
+ALIAS (no_ip_ospf_hello_interval,
+       no_ip_ospf_hello_interval_seconds_cmd,
+       "no ip ospf hello-interval <1-65535>",
+       NO_STR
+       "IP Information\n"
+       "OSPF interface commands\n"
+       "Time between HELLO packets\n"
+       "Seconds\n")
 
 ALIAS (no_ip_ospf_hello_interval,
        no_ip_ospf_hello_interval_cmd,
@@ -7529,7 +7549,6 @@ ospf_vty_show_init (void)
 {
   /* "show ip ospf" commands. */
   install_element (VIEW_NODE, &show_ip_ospf_cmd);
-  install_element (ENABLE_NODE, &show_ip_ospf_cmd);
 
   /* "show ip ospf database" commands. */
   install_element (VIEW_NODE, &show_ip_ospf_database_type_cmd);
@@ -7539,17 +7558,9 @@ ospf_vty_show_init (void)
   install_element (VIEW_NODE, &show_ip_ospf_database_type_id_self_cmd);
   install_element (VIEW_NODE, &show_ip_ospf_database_type_self_cmd);
   install_element (VIEW_NODE, &show_ip_ospf_database_cmd);
-  install_element (ENABLE_NODE, &show_ip_ospf_database_type_cmd);
-  install_element (ENABLE_NODE, &show_ip_ospf_database_type_id_cmd);
-  install_element (ENABLE_NODE, &show_ip_ospf_database_type_id_adv_router_cmd);
-  install_element (ENABLE_NODE, &show_ip_ospf_database_type_adv_router_cmd);
-  install_element (ENABLE_NODE, &show_ip_ospf_database_type_id_self_cmd);
-  install_element (ENABLE_NODE, &show_ip_ospf_database_type_self_cmd);
-  install_element (ENABLE_NODE, &show_ip_ospf_database_cmd);
 
   /* "show ip ospf interface" commands. */
   install_element (VIEW_NODE, &show_ip_ospf_interface_cmd);
-  install_element (ENABLE_NODE, &show_ip_ospf_interface_cmd);
 
   /* "show ip ospf neighbor" commands. */
   install_element (VIEW_NODE, &show_ip_ospf_neighbor_int_detail_cmd);
@@ -7559,19 +7570,10 @@ ospf_vty_show_init (void)
   install_element (VIEW_NODE, &show_ip_ospf_neighbor_detail_cmd);
   install_element (VIEW_NODE, &show_ip_ospf_neighbor_cmd);
   install_element (VIEW_NODE, &show_ip_ospf_neighbor_all_cmd);
-  install_element (ENABLE_NODE, &show_ip_ospf_neighbor_int_detail_cmd);
-  install_element (ENABLE_NODE, &show_ip_ospf_neighbor_int_cmd);
-  install_element (ENABLE_NODE, &show_ip_ospf_neighbor_id_cmd);
-  install_element (ENABLE_NODE, &show_ip_ospf_neighbor_detail_all_cmd);
-  install_element (ENABLE_NODE, &show_ip_ospf_neighbor_detail_cmd);
-  install_element (ENABLE_NODE, &show_ip_ospf_neighbor_cmd);
-  install_element (ENABLE_NODE, &show_ip_ospf_neighbor_all_cmd);
 
   /* "show ip ospf route" commands. */
   install_element (VIEW_NODE, &show_ip_ospf_route_cmd);
-  install_element (ENABLE_NODE, &show_ip_ospf_route_cmd);
   install_element (VIEW_NODE, &show_ip_ospf_border_routers_cmd);
-  install_element (ENABLE_NODE, &show_ip_ospf_border_routers_cmd);
 }
 
 
@@ -7637,12 +7639,14 @@ ospf_vty_if_init (void)
   install_element (INTERFACE_NODE, &ip_ospf_dead_interval_minimal_cmd);
   install_element (INTERFACE_NODE, &no_ip_ospf_dead_interval_addr_cmd);
   install_element (INTERFACE_NODE, &no_ip_ospf_dead_interval_cmd);
+  install_element (INTERFACE_NODE, &no_ip_ospf_dead_interval_seconds_cmd);
   
   /* "ip ospf hello-interval" commands. */
   install_element (INTERFACE_NODE, &ip_ospf_hello_interval_addr_cmd);
   install_element (INTERFACE_NODE, &ip_ospf_hello_interval_cmd);
   install_element (INTERFACE_NODE, &no_ip_ospf_hello_interval_addr_cmd);
   install_element (INTERFACE_NODE, &no_ip_ospf_hello_interval_cmd);
+  install_element (INTERFACE_NODE, &no_ip_ospf_hello_interval_seconds_cmd);
 
   /* "ip ospf network" commands. */
   install_element (INTERFACE_NODE, &ip_ospf_network_cmd);
@@ -7729,6 +7733,51 @@ static struct cmd_node ospf_node =
   "%s(config-router)# ",
   1
 };
+
+static void
+ospf_interface_clear (struct interface *ifp)
+{
+  if (!if_is_operative (ifp)) return;
+
+  if (IS_DEBUG_OSPF (ism, ISM_EVENTS))
+    zlog (NULL, LOG_DEBUG, "ISM[%s]: clear by reset", ifp->name);
+
+  ospf_if_reset(ifp);
+}
+
+DEFUN (clear_ip_ospf_interface,
+       clear_ip_ospf_interface_cmd,
+       "clear ip ospf interface [IFNAME]",
+       CLEAR_STR
+       IP_STR
+       "OSPF information\n"
+       "Interface information\n"
+       "Interface name\n")
+{
+  struct interface *ifp;
+  struct listnode *node;
+
+  if (argc == 0) /* Clear all the ospfv2 interfaces. */
+    {
+      for (ALL_LIST_ELEMENTS_RO (iflist, node, ifp))
+        ospf_interface_clear(ifp);
+    }
+  else /* Interface name is specified. */
+    {
+      if ((ifp = if_lookup_by_name (argv[0])) == NULL)
+        vty_out (vty, "No such interface name%s", VTY_NEWLINE);
+      else
+        ospf_interface_clear(ifp);
+    }
+
+  return CMD_SUCCESS;
+}
+
+void
+ospf_vty_clear_init (void)
+{
+  install_element (ENABLE_NODE, &clear_ip_ospf_interface_cmd);
+}
 
 
 /* Install OSPF related vty commands. */

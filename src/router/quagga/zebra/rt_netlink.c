@@ -38,6 +38,7 @@
 #include "thread.h"
 #include "privs.h"
 #include "vrf.h"
+#include "nexthop.h"
 
 #include "zebra/zserv.h"
 #include "zebra/rt.h"
@@ -855,12 +856,12 @@ netlink_routing_table (struct sockaddr_nl *snl, struct nlmsghdr *h,
               if (gate)
                 {
                   if (index)
-                    nexthop_ipv4_ifindex_add (rib, gate, src, index);
+                    rib_nexthop_ipv4_ifindex_add (rib, gate, src, index);
                   else
-                    nexthop_ipv4_add (rib, gate, src);
+                    rib_nexthop_ipv4_add (rib, gate, src);
                 }
               else
-                nexthop_ifindex_add (rib, index);
+                rib_nexthop_ifindex_add (rib, index);
 
               len -= NLMSG_ALIGN(rtnh->rtnh_len);
               rtnh = RTNH_NEXT(rtnh);
@@ -911,6 +912,7 @@ netlink_route_change (struct sockaddr_nl *snl, struct nlmsghdr *h,
   int len;
   struct rtmsg *rtm;
   struct rtattr *tb[RTA_MAX + 1];
+  u_char zebra_flags = 0;
 
   char anyaddr[16] = { 0 };
 
@@ -968,6 +970,8 @@ netlink_route_change (struct sockaddr_nl *snl, struct nlmsghdr *h,
 
   if (rtm->rtm_protocol == RTPROT_ZEBRA && h->nlmsg_type == RTM_NEWROUTE)
     return 0;
+  if (rtm->rtm_protocol == RTPROT_ZEBRA)
+    SET_FLAG(zebra_flags, ZEBRA_FLAG_SELFROUTE);
 
   if (rtm->rtm_src_len != 0)
     {
@@ -1069,12 +1073,12 @@ netlink_route_change (struct sockaddr_nl *snl, struct nlmsghdr *h,
                   if (gate)
                     {
                       if (index)
-                        nexthop_ipv4_ifindex_add (rib, gate, src, index);
+                        rib_nexthop_ipv4_ifindex_add (rib, gate, src, index);
                       else
-                        nexthop_ipv4_add (rib, gate, src);
+                        rib_nexthop_ipv4_add (rib, gate, src);
                     }
                   else
-                    nexthop_ifindex_add (rib, index);
+                    rib_nexthop_ifindex_add (rib, index);
 
                   len -= NLMSG_ALIGN(rtnh->rtnh_len);
                   rtnh = RTNH_NEXT(rtnh);
@@ -1087,8 +1091,8 @@ netlink_route_change (struct sockaddr_nl *snl, struct nlmsghdr *h,
             }
         }
       else
-        rib_delete_ipv4 (ZEBRA_ROUTE_KERNEL, 0, &p, gate, index, vrf_id,
-                         SAFI_UNICAST);
+        rib_delete_ipv4 (ZEBRA_ROUTE_KERNEL, zebra_flags, &p, gate,
+			 index, vrf_id, SAFI_UNICAST);
     }
 
 #ifdef HAVE_IPV6
@@ -1112,7 +1116,7 @@ netlink_route_change (struct sockaddr_nl *snl, struct nlmsghdr *h,
         rib_add_ipv6 (ZEBRA_ROUTE_KERNEL, 0, &p, gate, index, vrf_id, table,
                       0, mtu, 0, SAFI_UNICAST);
       else
-        rib_delete_ipv6 (ZEBRA_ROUTE_KERNEL, 0, &p, gate, index, vrf_id,
+        rib_delete_ipv6 (ZEBRA_ROUTE_KERNEL, zebra_flags, &p, gate, index, vrf_id,
                          SAFI_UNICAST);
     }
 #endif /* HAVE_IPV6 */
@@ -1332,7 +1336,7 @@ netlink_route_read (struct zebra_vrf *zvrf)
 /* Utility function  comes from iproute2. 
    Authors:	Alexey Kuznetsov, <kuznet@ms2.inr.ac.ru> */
 int
-addattr_l (struct nlmsghdr *n, size_t maxlen, int type, void *data, int alen)
+addattr_l (struct nlmsghdr *n, size_t maxlen, int type, void *data, size_t alen)
 {
   size_t len;
   struct rtattr *rta;
@@ -1352,9 +1356,10 @@ addattr_l (struct nlmsghdr *n, size_t maxlen, int type, void *data, int alen)
 }
 
 int
-rta_addattr_l (struct rtattr *rta, int maxlen, int type, void *data, int alen)
+rta_addattr_l (struct rtattr *rta, size_t maxlen, int type, void *data, 
+               size_t alen)
 {
-  int len;
+  size_t len;
   struct rtattr *subrta;
 
   len = RTA_LENGTH (alen);

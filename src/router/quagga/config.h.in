@@ -15,6 +15,9 @@
 /* daemon vty directory */
 #undef DAEMON_VTY_DIR
 
+/* Build for development */
+#undef DEV_BUILD
+
 /* Disable BGP installation to zebra */
 #undef DISABLE_BGP_ANNOUNCE
 
@@ -75,6 +78,9 @@
 
 /* Define to 1 if you have the <fcntl.h> header file. */
 #undef HAVE_FCNTL_H
+
+/* Define to 1 if you have the <features.h> header file. */
+#undef HAVE_FEATURES_H
 
 /* Define to 1 if your system has a working POSIX `fnmatch' function. */
 #undef HAVE_FNMATCH
@@ -277,6 +283,9 @@
 /* Define to 1 if you have the <priv.h> header file. */
 #undef HAVE_PRIV_H
 
+/* protobuf */
+#undef HAVE_PROTOBUF
+
 /* prctl */
 #undef HAVE_PR_SET_KEEPCAPS
 
@@ -294,9 +303,6 @@
 
 /* Define to 1 if you have the `setns' function. */
 #undef HAVE_SETNS
-
-/* Have setproctitle */
-#undef HAVE_SETPROCTITLE
 
 /* Define to 1 if you have the <signal.h> header file. */
 #undef HAVE_SIGNAL_H
@@ -635,15 +641,11 @@
    slash. */
 #undef LSTAT_FOLLOWS_SLASHED_SYMLINK
 
-/* Define to the sub-directory in which libtool stores uninstalled libraries.
-   */
+/* Define to the sub-directory where libtool stores uninstalled libraries. */
 #undef LT_OBJDIR
 
 /* Maximum number of paths for a route */
 #undef MULTIPATH_NUM
-
-/* Define to 1 if your C compiler doesn't accept -c and -o together. */
-#undef NO_MINUS_C_MINUS_O
 
 /* OpenBSD */
 #undef OPEN_BSD

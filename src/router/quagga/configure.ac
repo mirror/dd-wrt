@@ -7,7 +7,7 @@
 ##
 AC_PREREQ(2.60)
 
-AC_INIT(Quagga, 1.0.20160315, [https://bugzilla.quagga.net])
+AC_INIT(Quagga, 1.1.0, [https://bugzilla.quagga.net])
 CONFIG_ARGS="$*"
 AC_SUBST(CONFIG_ARGS)
 AC_CONFIG_SRCDIR(lib/zebra.h)
@@ -20,7 +20,11 @@ AC_CANONICAL_BUILD()
 AC_CANONICAL_HOST()
 AC_CANONICAL_TARGET()
 
-AM_INIT_AUTOMAKE(1.6)
+# Disable portability warnings -- our automake code (in particular
+# common.am) uses some constructs specific to gmake.
+AM_INIT_AUTOMAKE([1.6 -Wno-portability])
+
+m4_ifndef([AM_SILENT_RULES], [m4_define([AM_SILENT_RULES],[])])
 AM_SILENT_RULES([yes])
 AC_CONFIG_HEADERS(config.h)
 
@@ -299,6 +303,11 @@ AC_ARG_ENABLE(fpm,
   AS_HELP_STRING([--enable-fpm], [enable Forwarding Plane Manager support]))
 AC_ARG_ENABLE(werror,
   AS_HELP_STRING([--enable-werror], [enable -Werror (recommended for developers only)]))
+AC_ARG_ENABLE([protobuf],
+  AS_HELP_STRING([--enable-protobuf], [Enable experimental protobuf support]))
+
+AC_ARG_ENABLE([dev_build],
+    AS_HELP_STRING([--enable-dev-build], [build for development]))
 
 if test x"${enable_gcc_rdynamic}" != x"no" ; then
   if test x"${enable_gcc_rdynamic}" = x"yes" -o x"$COMPILER" = x"GCC"; then
@@ -317,6 +326,53 @@ fi
 if test "${enable_fpm}" = "yes"; then
    AC_DEFINE(HAVE_FPM,,Forwarding Plane Manager support)
 fi
+
+if test "x${enable_dev_build}" = "xyes"; then
+   AC_DEFINE(DEV_BUILD,,Build for development)
+fi
+AM_CONDITIONAL([DEV_BUILD], [test "x$enable_dev_build" = "xyes"])
+
+#
+# Logic for protobuf support.
+#
+if test "$enable_protobuf" = "yes"; then
+   have_protobuf=yes
+
+   # Check for protoc-c
+   AC_CHECK_PROG([PROTOC_C], [protoc-c], [protoc-c], [/bin/false])
+   if test "x$PROTOC_C" = "x/bin/false"; then
+      have_protobuf=no
+   else
+      found_protobuf_c=no
+      PKG_CHECK_MODULES([PROTOBUF_C], libprotobuf-c >= 0.14,
+                     [found_protobuf_c=yes],
+                     [AC_MSG_RESULT([pkg-config did not find libprotobuf-c])])
+
+      if test "x$found_protobuf_c" = "xyes"; then
+         LDFLAGS="$LDFLAGS $PROTOBUF_C_LIBS"
+         CFLAGS="$CFLAGS $PROTOBUF_C_CFLAGS"
+      else
+        AC_CHECK_HEADER([google/protobuf-c/protobuf-c.h], [],
+                        [have_protobuf=no; AC_MSG_RESULT([Couldn't find google/protobuf-c.h])])
+      fi
+   fi
+fi
+
+# Fail if the user explicity enabled protobuf support and we couldn't
+# find the compiler or libraries.
+if test "x$have_protobuf" = "xno" && test "x$enable_protobuf" = "xyes"; then
+   AC_MSG_ERROR([Protobuf enabled explicitly but can't find libraries/tools])
+fi
+
+if test "x$have_protobuf" = "xyes"; then
+   AC_DEFINE(HAVE_PROTOBUF,, protobuf)
+fi
+
+AM_CONDITIONAL([HAVE_PROTOBUF], [test "x$have_protobuf" = "xyes"])
+
+#
+# End of logic for protobuf support.
+#
 
 if test "${enable_tcp_zebra}" = "yes"; then
   AC_DEFINE(HAVE_TCP_ZEBRA,,Use TCP for zebra communication)
@@ -440,7 +496,7 @@ dnl -------------------------
 AC_CHECK_HEADERS([stropts.h sys/ksym.h sys/times.h sys/select.h \
 	sys/types.h linux/version.h netdb.h asm/types.h \
 	sys/cdefs.h sys/param.h limits.h signal.h \
-	sys/socket.h netinet/in.h time.h sys/time.h])
+	sys/socket.h netinet/in.h time.h sys/time.h features.h])
 
 dnl Utility macro to avoid retyping includes all the time
 m4_define([QUAGGA_INCLUDES],
@@ -785,14 +841,6 @@ AC_CHECK_FUNCS([dup2 ftruncate getcwd gethostbyname getpagesize gettimeofday \
 	if_nametoindex if_indextoname getifaddrs \
 	uname fcntl getgrouplist])
 
-AC_CHECK_FUNCS(setproctitle, ,
-  [AC_CHECK_LIB(util, setproctitle, 
-     [LIBS="$LIBS -lutil"
-      AC_DEFINE(HAVE_SETPROCTITLE,, Have setproctitle)
-     ]
-   )
-  ]
-)
 
 AC_CHECK_HEADER([asm-generic/unistd.h],
                 [AC_CHECK_DECL(__NR_setns,
@@ -1536,7 +1584,7 @@ AC_CACHE_VAL(ac_cv_htonl_works,
 )
 AC_MSG_RESULT($ac_cv_htonl_works)
 
-AC_CONFIG_FILES([Makefile lib/Makefile zebra/Makefile ripd/Makefile 
+AC_CONFIG_FILES([Makefile lib/Makefile qpb/Makefile zebra/Makefile ripd/Makefile 
 	  ripngd/Makefile bgpd/Makefile ospfd/Makefile watchquagga/Makefile
 	  ospf6d/Makefile isisd/Makefile vtysh/Makefile
 	  doc/Makefile ospfclient/Makefile tests/Makefile m4/Makefile
@@ -1545,6 +1593,7 @@ AC_CONFIG_FILES([Makefile lib/Makefile zebra/Makefile ripd/Makefile
 	  tests/libzebra.tests/Makefile
 	  redhat/Makefile
 	  pkgsrc/Makefile
+	  fpm/Makefile
 	  redhat/quagga.spec 
 	  lib/version.h
 	  doc/defines.texi
@@ -1576,6 +1625,7 @@ group to run as		: ${enable_group}
 group for vty sockets	: ${enable_vty_group}
 config file mask        : ${enable_configfile_mask}
 log file mask           : ${enable_logfile_mask}
+zebra protobuf enabled  : ${have_protobuf:-no}
 
 The above user and group must have read/write access to the state file
 directory and to the config files in the config file directory."

@@ -72,6 +72,7 @@ struct memory_list memory_list_lib[] =
   { MTYPE_VRF,			"VRF"				},
   { MTYPE_VRF_NAME,		"VRF name"			},
   { MTYPE_VRF_BITMAP,		"VRF bit-map"			},
+  { MTYPE_IF_LINK_PARAMS,       "Informational Link Parameters" },
   { -1, NULL },
 };
 
@@ -86,6 +87,7 @@ struct memory_list memory_list_zebra[] =
   { MTYPE_RIB_DEST,		"RIB destination"		},
   { MTYPE_RIB_TABLE_INFO,	"RIB table info"		},
   { MTYPE_NETLINK_NAME,	"Netlink name"			},
+  { MTYPE_RNH,		        "Nexthop tracking object"	},
   { -1, NULL },
 };
 
@@ -214,6 +216,8 @@ struct memory_list memory_list_ospf[] =
   { MTYPE_OSPF_IF_INFO,       "OSPF if info"			},
   { MTYPE_OSPF_IF_PARAMS,     "OSPF if params"			},
   { MTYPE_OSPF_MESSAGE,		"OSPF message"			},
+  { MTYPE_OSPF_MPLS_TE,       "OSPF MPLS parameters"            },
+  { MTYPE_OSPF_PCE_PARAMS,    "OSPF PCE parameters"             },
   { -1, NULL },
 };
 
@@ -234,6 +238,7 @@ struct memory_list memory_list_ospf6[] =
   { MTYPE_OSPF6_NEXTHOP,      "OSPF6 nexthop"			},
   { MTYPE_OSPF6_EXTERNAL_INFO,"OSPF6 ext. info"			},
   { MTYPE_OSPF6_OTHER,        "OSPF6 other"			},
+  { MTYPE_OSPF6_DISTANCE,     "OSPF6 distance"			},
   { -1, NULL },
 };
 
@@ -255,6 +260,7 @@ struct memory_list memory_list_isis[] =
   { MTYPE_ISIS_NEXTHOP6,      "ISIS nexthop6"			},
   { MTYPE_ISIS_DICT,          "ISIS dictionary"			},
   { MTYPE_ISIS_DICT_NODE,     "ISIS dictionary node"		},
+  { MTYPE_ISIS_MPLS_TE,       "ISIS MPLS_TE parameters"         },
   { -1, NULL },
 };
 

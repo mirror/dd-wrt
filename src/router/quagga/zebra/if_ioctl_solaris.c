@@ -31,6 +31,7 @@
 #include "log.h"
 #include "privs.h"
 #include "vrf.h"
+#include "vty.h"
 
 #include "zebra/interface.h"
 #include "zebra/ioctl_solaris.h"

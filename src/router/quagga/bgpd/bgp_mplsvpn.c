@@ -1062,22 +1062,4 @@ bgp_mplsvpn_init (void)
   install_element (VIEW_NODE, &show_bgp_ipv6_vpn_neighbor_advertised_routes_cmd);
   install_element (VIEW_NODE, &show_bgp_ipv6_vpn_rd_neighbor_advertised_routes_cmd);
   install_element (VIEW_NODE, &show_bgp_ipv6_vpn_rd_neighbor_routes_cmd);
-
-  install_element (ENABLE_NODE, &show_bgp_ipv4_vpn_cmd);
-  install_element (ENABLE_NODE, &show_bgp_ipv4_vpn_rd_cmd);
-  install_element (ENABLE_NODE, &show_bgp_ipv4_vpn_tags_cmd);
-  install_element (ENABLE_NODE, &show_bgp_ipv4_vpn_rd_tags_cmd);
-  install_element (ENABLE_NODE, &show_bgp_ipv4_vpn_neighbor_routes_cmd);
-  install_element (ENABLE_NODE, &show_bgp_ipv4_vpn_neighbor_advertised_routes_cmd);
-  install_element (ENABLE_NODE, &show_bgp_ipv4_vpn_rd_neighbor_advertised_routes_cmd);
-  install_element (ENABLE_NODE, &show_bgp_ipv4_vpn_rd_neighbor_routes_cmd);
-
-  install_element (ENABLE_NODE, &show_bgp_ipv6_vpn_cmd);
-  install_element (ENABLE_NODE, &show_bgp_ipv6_vpn_rd_cmd);
-  install_element (ENABLE_NODE, &show_bgp_ipv6_vpn_tags_cmd);
-  install_element (ENABLE_NODE, &show_bgp_ipv6_vpn_rd_tags_cmd);
-  install_element (ENABLE_NODE, &show_bgp_ipv6_vpn_neighbor_routes_cmd);
-  install_element (ENABLE_NODE, &show_bgp_ipv6_vpn_neighbor_advertised_routes_cmd);
-  install_element (ENABLE_NODE, &show_bgp_ipv6_vpn_rd_neighbor_advertised_routes_cmd);
-  install_element (ENABLE_NODE, &show_bgp_ipv6_vpn_rd_neighbor_routes_cmd);
 }

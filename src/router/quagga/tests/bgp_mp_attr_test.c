@@ -758,6 +758,7 @@ main (void)
   bgp_option_set (BGP_OPT_NO_LISTEN);
   bgp_attr_init ();
   bgp_address_init ();
+  bgp_scan_init ();
   
   if (fileno (stdout) >= 0) 
     tty = isatty (fileno (stdout));

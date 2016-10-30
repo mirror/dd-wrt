@@ -31,6 +31,6 @@
 int pim_nexthop_lookup(struct pim_nexthop *nexthop,
 		       struct in_addr addr);
 enum pim_rpf_result pim_rpf_update(struct pim_upstream *up,
-				   struct in_addr *old_rpf_addr);
+				   struct pim_rpf *old_rpf);
 
 #endif /* PIM_RPF_H */
