@@ -747,11 +747,11 @@ struct bgp_nlri
 #define Receive_UPDATE_message                  12
 #define Receive_NOTIFICATION_message            13
 #define Clearing_Completed                      14
-#define BGP_EVENTS_MAX                          15
+#define NHT_Update                              15
+#define BGP_EVENTS_MAX                          16
 
 /* BGP timers default value.  */
-#define BGP_INIT_START_TIMER                     5
-#define BGP_LARGE_HOLDTIME                     240
+#define BGP_INIT_START_TIMER                     1
 #define BGP_DEFAULT_HOLDTIME                   180
 #define BGP_DEFAULT_KEEPALIVE                   60 
 #define BGP_DEFAULT_EBGP_ROUTEADV               30
