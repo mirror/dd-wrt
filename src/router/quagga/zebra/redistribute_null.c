@@ -78,3 +78,7 @@ void zebra_interface_address_delete_update (struct interface *a,
                                                 struct connected *b)
 { return; }
 #endif
+
+/* Interface parameters update */
+void zebra_interface_parameters_update (struct interface *ifp)
+{ return; };

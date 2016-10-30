@@ -240,7 +240,7 @@ ospf6_asbr_lsa_remove (struct ospf6_lsa *lsa)
 {
   struct ospf6_as_external_lsa *external;
   struct prefix prefix;
-  struct ospf6_route *route;
+  struct ospf6_route *route, *nroute;
   char buf[64];
 
   external = (struct ospf6_as_external_lsa *)
@@ -274,8 +274,9 @@ ospf6_asbr_lsa_remove (struct ospf6_lsa *lsa)
 
   for (ospf6_route_lock (route);
        route && ospf6_route_is_prefix (&prefix, route);
-       route = ospf6_route_next (route))
+       route = nroute)
     {
+      nroute = ospf6_route_next (route);
       if (route->type != OSPF6_DEST_TYPE_NETWORK)
         continue;
       if (route->path.origin.type != lsa->header->type)
@@ -680,6 +681,15 @@ DEFUN (no_ospf6_redistribute,
   return CMD_SUCCESS;
 }
 
+ALIAS (no_ospf6_redistribute,
+       no_ospf6_redistribute_route_map_cmd,
+       "no redistribute " QUAGGA_REDIST_STR_OSPF6D " route-map WORD",
+       NO_STR
+       "Redistribute\n"
+       QUAGGA_REDIST_HELP_STR_OSPF6D
+       "Route map reference\n"
+       "Route map name\n")
+
 int
 ospf6_redistribute_config_write (struct vty *vty)
 {
@@ -968,13 +978,13 @@ route_map_command_status (struct vty *vty, int ret)
   switch (ret)
     {
     case RMAP_RULE_MISSING:
-      vty_out (vty, "Can't find rule.%s", VNL);
+      vty_out (vty, "OSPF6 Can't find rule.%s", VNL);
       break;
     case RMAP_COMPILE_ERROR:
-      vty_out (vty, "Argument is malformed.%s", VNL);
+      vty_out (vty, "OSPF6 Argument is malformed.%s", VNL);
       break;
     default:
-      vty_out (vty, "route-map add set failed.%s", VNL);
+      vty_out (vty, "OSPF6 route-map add set failed.%s", VNL);
       break;
     }
   return CMD_WARNING;
@@ -1089,16 +1099,29 @@ DEFUN (set_metric,
 /* delete "set metric" */
 DEFUN (no_set_metric,
        no_set_metric_cmd,
-       "no set metric <0-4294967295>",
+       "no set metric",
        NO_STR
-       "Set value\n"
-       "Metric\n"
-       "METRIC value\n")
+       SET_STR
+       "Metric value for destination routing protocol\n")
 {
-  int ret = route_map_delete_set ((struct route_map_index *) vty->index,
-                                  "metric", argv[0]);
+  int ret = 0;
+
+  if (argc == 0)
+    ret = route_map_delete_set ((struct route_map_index *) vty->index,
+                                "metric", NULL);
+  else
+    ret = route_map_delete_set ((struct route_map_index *) vty->index,
+                                "metric", argv[0]);
   return route_map_command_status (vty, ret);
 }
+
+ALIAS (no_set_metric,
+       no_set_metric_val_cmd,
+       "no set metric <0-4294967295>",
+       NO_STR
+       SET_STR
+       "Metric value for destination routing protocol\n"
+       "Metric value\n")
 
 /* add "set forwarding-address" */
 DEFUN (ospf6_routemap_set_forwarding,
@@ -1158,6 +1181,7 @@ ospf6_routemap_init (void)
   /* ASE Metric */
   install_element (RMAP_NODE, &set_metric_cmd);
   install_element (RMAP_NODE, &no_set_metric_cmd);
+  install_element (RMAP_NODE, &no_set_metric_val_cmd);
 
   /* ASE Metric */
   install_element (RMAP_NODE, &ospf6_routemap_set_forwarding_cmd);
@@ -1277,6 +1301,8 @@ DEFUN (show_ipv6_ospf6_redistribute,
 {
   struct ospf6_route *route;
 
+  OSPF6_CMD_CHECK_RUNNING ();
+
   ospf6_redistribute_show_config (vty);
 
   for (route = ospf6_route_head (ospf6->external_table); route;
@@ -1303,11 +1329,11 @@ ospf6_asbr_init (void)
   ospf6_install_lsa_handler (&as_external_handler);
 
   install_element (VIEW_NODE, &show_ipv6_ospf6_redistribute_cmd);
-  install_element (ENABLE_NODE, &show_ipv6_ospf6_redistribute_cmd);
 
   install_element (OSPF6_NODE, &ospf6_redistribute_cmd);
   install_element (OSPF6_NODE, &ospf6_redistribute_routemap_cmd);
   install_element (OSPF6_NODE, &no_ospf6_redistribute_cmd);
+  install_element (OSPF6_NODE, &no_ospf6_redistribute_route_map_cmd);
 }
 
 void

@@ -82,6 +82,14 @@ struct ospf6
   struct thread *maxage_remover;
 
   u_int32_t ref_bandwidth;
+
+  /* Distance parameters */
+  u_char distance_all;
+  u_char distance_intra;
+  u_char distance_inter;
+  u_char distance_external;
+
+  struct route_table *distance_table;
 };
 
 #define OSPF6_DISABLED    0x01
@@ -97,5 +105,3 @@ extern void ospf6_delete (struct ospf6 *o);
 extern void ospf6_maxage_remove (struct ospf6 *o);
 
 #endif /* OSPF6_TOP_H */
-
-

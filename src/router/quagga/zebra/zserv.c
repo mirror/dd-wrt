@@ -37,12 +37,14 @@
 #include "network.h"
 #include "buffer.h"
 #include "vrf.h"
+#include "nexthop.h"
 
 #include "zebra/zserv.h"
 #include "zebra/router-id.h"
 #include "zebra/redistribute.h"
 #include "zebra/debug.h"
 #include "zebra/ipforward.h"
+#include "zebra/zebra_rnh.h"
 
 /* Event list of zebra. */
 enum event { ZEBRA_SERV, ZEBRA_READ, ZEBRA_WRITE };
@@ -99,14 +101,19 @@ zserv_flush_data(struct thread *thread)
     case BUFFER_EMPTY:
       break;
     }
+
+  client->last_write_time = quagga_time(NULL);
   return 0;
 }
 
-static int
+int
 zebra_server_send_message(struct zserv *client)
 {
   if (client->t_suicide)
     return -1;
+
+  stream_set_getp(client->obuf, 0);
+  client->last_write_cmd = stream_getw_from(client->obuf, 4);
   switch (buffer_write(client->wb, client->sock, STREAM_DATA(client->obuf),
 		       stream_get_endp(client->obuf)))
     {
@@ -128,10 +135,12 @@ zebra_server_send_message(struct zserv *client)
 		      zserv_flush_data, client, client->sock);
       break;
     }
+
+  client->last_write_time = quagga_time(NULL);
   return 0;
 }
 
-static void
+void
 zserv_create_header (struct stream *s, uint16_t cmd, vrf_id_t vrf_id)
 {
   /* length placeholder, caller can update */
@@ -158,6 +167,16 @@ zserv_encode_interface (struct stream *s, struct interface *ifp)
   stream_putl (s, ifp->hw_addr_len);
   if (ifp->hw_addr_len)
     stream_put (s, ifp->hw_addr, ifp->hw_addr_len);
+
+  zlog_info("Try to set TE Link Param");
+  /* Then, Traffic Engineering parameters if any */
+  if (HAS_LINK_PARAMS(ifp) && IS_LINK_PARAMS_SET(ifp->link_params))
+    {
+      stream_putc (s, 1);
+      zebra_interface_link_params_write (s, ifp);
+    }
+  else
+    stream_putc (s, 0);
 
   /* Write packet size. */
   stream_putw_at (s, 0, stream_get_endp (s));
@@ -189,6 +208,7 @@ zsend_interface_add (struct zserv *client, struct interface *ifp)
   zserv_create_header (s, ZEBRA_INTERFACE_ADD, ifp->vrf_id);
   zserv_encode_interface (s, ifp);
 
+  client->ifadd_cnt++;
   return zebra_server_send_message(client);
 }
 
@@ -208,6 +228,36 @@ zsend_interface_delete (struct zserv *client, struct interface *ifp)
   zserv_create_header (s, ZEBRA_INTERFACE_DELETE, ifp->vrf_id);
   zserv_encode_interface (s, ifp);
 
+  client->ifdel_cnt++;
+  return zebra_server_send_message (client);
+}
+
+int
+zsend_interface_link_params (struct zserv *client, struct interface *ifp)
+{
+  struct stream *s;
+  
+  /* Check this client need interface information. */
+  if (! client->ifinfo)
+    return 0;
+  
+  if (!ifp->link_params)
+    return 0;
+  s = client->obuf;
+  stream_reset (s);
+  
+  zserv_create_header (s, ZEBRA_INTERFACE_LINK_PARAMS, ifp->vrf_id);
+  
+  /* Add Interface Index */
+  stream_putl (s, ifp->ifindex);
+
+  /* Then TE Link Parameters */
+  if (zebra_interface_link_params_write (s, ifp) == 0)
+    return 0;
+
+  /* Write packet size. */
+  stream_putw_at (s, 0, stream_get_endp (s));
+  
   return zebra_server_send_message (client);
 }
 
@@ -293,6 +343,7 @@ zsend_interface_address (int cmd, struct zserv *client,
   /* Write packet size. */
   stream_putw_at (s, 0, stream_get_endp (s));
 
+  client->connected_rt_add_cnt++;
   return zebra_server_send_message(client);
 }
 
@@ -320,6 +371,11 @@ zsend_interface_update (int cmd, struct zserv *client, struct interface *ifp)
 
   zserv_create_header (s, cmd, ifp->vrf_id);
   zserv_encode_interface (s, ifp);
+
+  if (cmd == ZEBRA_INTERFACE_UP)
+    client->ifup_cnt++;
+  else
+    client->ifdown_cnt++;
 
   return zebra_server_send_message(client);
 }
@@ -453,6 +509,12 @@ zsend_route_multipath (int cmd, struct zserv *client, struct prefix *p,
       stream_putl (s, rib->metric);
       SET_FLAG (zapi_flags, ZAPI_MESSAGE_MTU);
       stream_putl (s, rib->mtu);
+      /* tag */
+      if (rib->tag)
+        {
+          SET_FLAG(zapi_flags, ZAPI_MESSAGE_TAG);
+          stream_putl (s, rib->tag);
+        }
     }
   
   /* write real message flags value */
@@ -532,7 +594,7 @@ zsend_ipv6_nexthop_lookup (struct zserv *client, struct in6_addr *addr,
     }
 
   stream_putw_at (s, 0, stream_get_endp (s));
-  
+
   return zebra_server_send_message(client);
 }
 #endif /* HAVE_IPV6 */
@@ -626,7 +688,8 @@ zsend_ipv4_nexthop_lookup_mrib (struct zserv *client, struct in_addr addr,
   stream_reset (s);
 
   /* Fill in result. */
-  zserv_create_header (s, ZEBRA_IPV4_NEXTHOP_LOOKUP_MRIB, rib->vrf_id);
+  zserv_create_header (s, ZEBRA_IPV4_NEXTHOP_LOOKUP_MRIB, 
+		       rib ? rib->vrf_id : VRF_DEFAULT);
   stream_put_in_addr (s, &addr);
 
   if (rib)
@@ -675,6 +738,77 @@ zsend_ipv4_nexthop_lookup_mrib (struct zserv *client, struct in_addr addr,
   stream_putw_at (s, 0, stream_get_endp (s));
   
   return zebra_server_send_message(client);
+}
+
+/* Nexthop register */
+static int
+zserv_nexthop_register (struct zserv *client, int sock, u_short length, vrf_id_t vrf_id)
+{
+  struct rnh *rnh;
+  struct stream *s;
+  struct prefix p;
+  u_short l = 0;
+  u_char connected;
+
+  if (IS_ZEBRA_DEBUG_NHT)
+    zlog_debug("nexthop_register msg from client %s: length=%d\n",
+	       zebra_route_string(client->proto), length);
+
+  s = client->ibuf;
+
+  while (l < length)
+    {
+      connected = stream_getc(s);
+      p.family = stream_getw(s);
+      p.prefixlen = stream_getc(s);
+      l += 4;
+      stream_get(&p.u.prefix, s, PSIZE(p.prefixlen));
+      l += PSIZE(p.prefixlen);
+      rnh = zebra_add_rnh(&p, 0);
+
+      client->nh_reg_time = quagga_time(NULL);
+      
+      if (connected)
+	SET_FLAG(rnh->flags, ZEBRA_NHT_CONNECTED);
+
+      zebra_add_rnh_client(rnh, client, vrf_id);
+    }
+  zebra_evaluate_rnh_table(0, AF_INET);
+  zebra_evaluate_rnh_table(0, AF_INET6);
+  return 0;
+}
+
+/* Nexthop register */
+static int
+zserv_nexthop_unregister (struct zserv *client, int sock, u_short length)
+{
+  struct rnh *rnh;
+  struct stream *s;
+  struct prefix p;
+  u_short l = 0;
+
+  if (IS_ZEBRA_DEBUG_NHT)
+    zlog_debug("nexthop_unregister msg from client %s: length=%d\n",
+	       zebra_route_string(client->proto), length);
+
+  s = client->ibuf;
+
+  while (l < length)
+    {
+      (void)stream_getc(s);
+      p.family = stream_getw(s);
+      p.prefixlen = stream_getc(s);
+      l += 4;
+      stream_get(&p.u.prefix, s, PSIZE(p.prefixlen));
+      l += PSIZE(p.prefixlen);
+      rnh = zebra_lookup_rnh(&p, 0);
+      if (rnh)
+	{
+	  client->nh_dereg_time = quagga_time(NULL);
+	  zebra_remove_rnh_client(rnh, client);
+	}
+    }
+  return 0;
 }
 
 static int
@@ -736,7 +870,7 @@ zsend_ipv4_import_lookup (struct zserv *client, struct prefix_ipv4 *p,
     }
 
   stream_putw_at (s, 0, stream_get_endp (s));
-  
+
   return zebra_server_send_message(client);
 }
 
@@ -830,7 +964,7 @@ zread_ipv4_add (struct zserv *client, u_short length, vrf_id_t vrf_id)
   ifindex_t ifindex;
   u_char ifname_len;
   safi_t safi;	
-
+  int ret;
 
   /* Get input stream.  */
   s = client->ibuf;
@@ -867,7 +1001,7 @@ zread_ipv4_add (struct zserv *client, u_short length, vrf_id_t vrf_id)
 	    {
 	    case ZEBRA_NEXTHOP_IFINDEX:
 	      ifindex = stream_getl (s);
-	      nexthop_ifindex_add (rib, ifindex);
+	      rib_nexthop_ifindex_add (rib, ifindex);
 	      break;
 	    case ZEBRA_NEXTHOP_IFNAME:
 	      ifname_len = stream_getc (s);
@@ -875,18 +1009,18 @@ zread_ipv4_add (struct zserv *client, u_short length, vrf_id_t vrf_id)
 	      break;
 	    case ZEBRA_NEXTHOP_IPV4:
 	      nexthop.s_addr = stream_get_ipv4 (s);
-	      nexthop_ipv4_add (rib, &nexthop, NULL);
+	      rib_nexthop_ipv4_add (rib, &nexthop, NULL);
 	      break;
 	    case ZEBRA_NEXTHOP_IPV4_IFINDEX:
 	      nexthop.s_addr = stream_get_ipv4 (s);
 	      ifindex = stream_getl (s);
-	      nexthop_ipv4_ifindex_add (rib, &nexthop, NULL, ifindex);
+	      rib_nexthop_ipv4_ifindex_add (rib, &nexthop, NULL, ifindex);
 	      break;
 	    case ZEBRA_NEXTHOP_IPV6:
 	      stream_forward_getp (s, IPV6_MAX_BYTELEN);
 	      break;
             case ZEBRA_NEXTHOP_BLACKHOLE:
-              nexthop_blackhole_add (rib);
+              rib_nexthop_blackhole_add (rib);
               break;
             }
 	}
@@ -902,10 +1036,19 @@ zread_ipv4_add (struct zserv *client, u_short length, vrf_id_t vrf_id)
     
   if (CHECK_FLAG (message, ZAPI_MESSAGE_MTU))
     rib->mtu = stream_getl (s);
+  /* Tag */
+  if (CHECK_FLAG (message, ZAPI_MESSAGE_TAG))
+    rib->tag = stream_getl (s);
 
   /* Table */
   rib->table=zebrad.rtm_table_default;
-  rib_add_ipv4_multipath (&p, rib, safi);
+  ret = rib_add_ipv4_multipath (&p, rib, safi);
+
+  /* Stats */
+  if (ret > 0)
+    client->v4_route_add_cnt++;
+  else if (ret < 0)
+    client->v4_route_upd8_cnt++;
   return 0;
 }
 
@@ -986,8 +1129,15 @@ zread_ipv4_delete (struct zserv *client, u_short length, vrf_id_t vrf_id)
   else
     api.metric = 0;
     
+  /* tag */
+  if (CHECK_FLAG (api.message, ZAPI_MESSAGE_TAG))
+    api.tag = stream_getl (s);
+  else
+    api.tag = 0;
+
   rib_delete_ipv4 (api.type, api.flags, &p, nexthop_p, ifindex,
                    vrf_id, api.safi);
+  client->v4_route_del_cnt++;
   return 0;
 }
 
@@ -1040,34 +1190,51 @@ zread_ipv6_add (struct zserv *client, u_short length, vrf_id_t vrf_id)
 {
   int i;
   struct stream *s;
-  struct zapi_ipv6 api;
   struct in6_addr nexthop;
-  unsigned long ifindex;
+  struct rib *rib;
+  u_char message;
+  u_char gateway_num;
+  u_char nexthop_type;
   struct prefix_ipv6 p;
-  
+  safi_t safi;
+  static struct in6_addr nexthops[MULTIPATH_NUM];
+  static unsigned int ifindices[MULTIPATH_NUM];
+  int ret;
+
+  /* Get input stream.  */
   s = client->ibuf;
-  ifindex = 0;
+
   memset (&nexthop, 0, sizeof (struct in6_addr));
 
-  /* Type, flags, message. */
-  api.type = stream_getc (s);
-  api.flags = stream_getc (s);
-  api.message = stream_getc (s);
-  api.safi = stream_getw (s);
+  /* Allocate new rib. */
+  rib = XCALLOC (MTYPE_RIB, sizeof (struct rib));
 
-  /* IPv4 prefix. */
+  /* Type, flags, message. */
+  rib->type = stream_getc (s);
+  rib->flags = stream_getc (s);
+  message = stream_getc (s);
+  safi = stream_getw (s);
+  rib->uptime = time (NULL);
+
+  /* IPv6 prefix. */
   memset (&p, 0, sizeof (struct prefix_ipv6));
   p.family = AF_INET6;
   p.prefixlen = stream_getc (s);
   stream_get (&p.prefix, s, PSIZE (p.prefixlen));
 
-  /* Nexthop, ifindex, distance, metric. */
-  if (CHECK_FLAG (api.message, ZAPI_MESSAGE_NEXTHOP))
+  /* We need to give nh-addr, nh-ifindex with the same next-hop object
+   * to the rib to ensure that IPv6 multipathing works; need to coalesce
+   * these. Clients should send the same number of paired set of
+   * next-hop-addr/next-hop-ifindices. */
+  if (CHECK_FLAG (message, ZAPI_MESSAGE_NEXTHOP))
     {
-      u_char nexthop_type;
+      int nh_count = 0;
+      int if_count = 0;
+      int max_nh_if = 0;
+      unsigned int ifindex;
 
-      api.nexthop_num = stream_getc (s);
-      for (i = 0; i < api.nexthop_num; i++)
+      gateway_num = stream_getc (s);
+      for (i = 0; i < gateway_num; i++)
 	{
 	  nexthop_type = stream_getc (s);
 
@@ -1075,37 +1242,61 @@ zread_ipv6_add (struct zserv *client, u_short length, vrf_id_t vrf_id)
 	    {
 	    case ZEBRA_NEXTHOP_IPV6:
 	      stream_get (&nexthop, s, 16);
+              if (nh_count < MULTIPATH_NUM) {
+	        nexthops[nh_count++] = nexthop;
+              }
 	      break;
 	    case ZEBRA_NEXTHOP_IFINDEX:
 	      ifindex = stream_getl (s);
+              if (if_count < MULTIPATH_NUM) {
+	        ifindices[if_count++] = ifindex;
+              }
 	      break;
+	    }
+	}
+
+      max_nh_if = (nh_count > if_count) ? nh_count : if_count;
+      for (i = 0; i < max_nh_if; i++)
+        {
+	  if ((i < nh_count) && !IN6_IS_ADDR_UNSPECIFIED (&nexthops[i]))
+	    {
+	      if ((i < if_count) && ifindices[i])
+		rib_nexthop_ipv6_ifindex_add (rib, &nexthops[i], ifindices[i]);
+	      else
+		rib_nexthop_ipv6_add (rib, &nexthops[i]);
+	    }
+          else
+	    {
+	      if ((i < if_count) && ifindices[i])
+		rib_nexthop_ifindex_add (rib, ifindices[i]);
 	    }
 	}
     }
 
-  if (CHECK_FLAG (api.message, ZAPI_MESSAGE_DISTANCE))
-    api.distance = stream_getc (s);
-  else
-    api.distance = 0;
+  /* Distance. */
+  if (CHECK_FLAG (message, ZAPI_MESSAGE_DISTANCE))
+    rib->distance = stream_getc (s);
 
-  if (CHECK_FLAG (api.message, ZAPI_MESSAGE_METRIC))
-    api.metric = stream_getl (s);
-  else
-    api.metric = 0;
+  /* Metric. */
+  if (CHECK_FLAG (message, ZAPI_MESSAGE_METRIC))
+    rib->metric = stream_getl (s);
 
-  if (CHECK_FLAG (api.message, ZAPI_MESSAGE_MTU))
-    api.mtu = stream_getl (s);
-  else
-    api.mtu = 0;
-    
-  if (IN6_IS_ADDR_UNSPECIFIED (&nexthop))
-    rib_add_ipv6 (api.type, api.flags, &p, NULL, ifindex,
-                  vrf_id, zebrad.rtm_table_default, api.metric,
-                  api.mtu, api.distance, api.safi);
-  else
-    rib_add_ipv6 (api.type, api.flags, &p, &nexthop, ifindex,
-                  vrf_id, zebrad.rtm_table_default, api.metric,
-                  api.mtu, api.distance, api.safi);
+  if (CHECK_FLAG (message, ZAPI_MESSAGE_MTU))
+    rib->mtu = stream_getl (s);
+
+  /* Tag */
+  if (CHECK_FLAG (message, ZAPI_MESSAGE_TAG))
+    rib->tag = stream_getl (s);
+
+  /* Table */
+  rib->table=zebrad.rtm_table_default;
+  ret = rib_add_ipv6_multipath (&p, rib, safi);
+  /* Stats */
+  if (ret > 0)
+    client->v6_route_add_cnt++;
+  else if (ret < 0)
+    client->v6_route_upd8_cnt++;
+
   return 0;
 }
 
@@ -1158,21 +1349,32 @@ zread_ipv6_delete (struct zserv *client, u_short length, vrf_id_t vrf_id)
 	}
     }
 
+  /* Distance. */
   if (CHECK_FLAG (api.message, ZAPI_MESSAGE_DISTANCE))
     api.distance = stream_getc (s);
   else
     api.distance = 0;
+
+  /* Metric. */
   if (CHECK_FLAG (api.message, ZAPI_MESSAGE_METRIC))
     api.metric = stream_getl (s);
   else
     api.metric = 0;
     
+  /* tag */
+  if (CHECK_FLAG (api.message, ZAPI_MESSAGE_TAG))
+    api.tag = stream_getl (s);
+  else
+    api.tag = 0;
+
   if (IN6_IS_ADDR_UNSPECIFIED (&nexthop))
     rib_delete_ipv6 (api.type, api.flags, &p, NULL, ifindex, vrf_id,
                      api.safi);
   else
     rib_delete_ipv6 (api.type, api.flags, &p, &nexthop, ifindex, vrf_id,
                      api.safi);
+
+  client->v6_route_del_cnt++;
   return 0;
 }
 
@@ -1236,6 +1438,7 @@ zread_hello (struct zserv *client)
                     client->sock);
 
       route_type_oaths[proto] = client->sock;
+      client->proto = proto;
     }
 }
 
@@ -1276,6 +1479,9 @@ zebra_score_rib (int client_sock)
 static void
 zebra_client_close (struct zserv *client)
 {
+  zebra_cleanup_rnh_client(0, AF_INET, client);
+  zebra_cleanup_rnh_client(0, AF_INET6, client);
+
   /* Close file descriptor. */
   if (client->sock)
     {
@@ -1312,7 +1518,7 @@ zebra_client_create (int sock)
   struct zserv *client;
   int i;
 
-  client = XCALLOC (0, sizeof (struct zserv));
+  client = XCALLOC (MTYPE_TMP, sizeof (struct zserv));
 
   /* Make client input/output buffer. */
   client->sock = sock;
@@ -1329,6 +1535,7 @@ zebra_client_create (int sock)
   client->redist_default = vrf_bitmap_init ();
   client->ifinfo = vrf_bitmap_init ();
   client->ridinfo = vrf_bitmap_init ();
+  client->connect_time = quagga_time(NULL);
 
   /* Add this client to linked list. */
   listnode_add (zebrad.client_list, client);
@@ -1444,6 +1651,9 @@ zebra_client_read (struct thread *thread)
     zlog_debug ("zebra message received [%s] %d in VRF %u",
 	       zserv_command_string (command), length, vrf_id);
 
+  client->last_read_time = quagga_time(NULL);
+  client->last_read_cmd = command;
+
   switch (command) 
     {
     case ZEBRA_ROUTER_ID_ADD:
@@ -1503,6 +1713,11 @@ zebra_client_read (struct thread *thread)
       break;
     case ZEBRA_VRF_UNREGISTER:
       zread_vrf_unregister (client, length, vrf_id);
+    case ZEBRA_NEXTHOP_REGISTER:
+      zserv_nexthop_register(client, sock, length, vrf_id);
+      break;
+    case ZEBRA_NEXTHOP_UNREGISTER:
+      zserv_nexthop_unregister(client, sock, length);
       break;
     default:
       zlog_info ("Zebra received unknown command %d", command);
@@ -1701,6 +1916,127 @@ zebra_event (enum event event, int sock, struct zserv *client)
     }
 }
 
+#define ZEBRA_TIME_BUF 32
+static char *
+zserv_time_buf(time_t *time1, char *buf, int buflen)
+{
+  struct tm *tm;
+  time_t now;
+
+  assert (buf != NULL);
+  assert (buflen >= ZEBRA_TIME_BUF);
+  assert (time1 != NULL);
+
+  if (!*time1)
+    {
+      snprintf(buf, buflen, "never   ");
+      return (buf);
+    }
+
+  now = quagga_time(NULL);
+  now -= *time1;
+  tm = gmtime(&now);
+
+  /* Making formatted timer strings. */
+#define ONE_DAY_SECOND 60*60*24
+#define ONE_WEEK_SECOND 60*60*24*7
+
+  if (now < ONE_DAY_SECOND)
+    snprintf (buf, buflen, "%02d:%02d:%02d",
+	      tm->tm_hour, tm->tm_min, tm->tm_sec);
+  else if (now < ONE_WEEK_SECOND)
+    snprintf (buf, buflen, "%dd%02dh%02dm",
+	      tm->tm_yday, tm->tm_hour, tm->tm_min);
+  else
+    snprintf (buf, buflen, "%02dw%dd%02dh",
+	      tm->tm_yday/7, tm->tm_yday - ((tm->tm_yday/7) * 7), tm->tm_hour);
+  return buf;
+}
+
+static void
+zebra_show_client_detail (struct vty *vty, struct zserv *client)
+{
+  char cbuf[ZEBRA_TIME_BUF], rbuf[ZEBRA_TIME_BUF];
+  char wbuf[ZEBRA_TIME_BUF], nhbuf[ZEBRA_TIME_BUF], mbuf[ZEBRA_TIME_BUF];
+
+  vty_out (vty, "Client: %s %s",
+	   zebra_route_string(client->proto), VTY_NEWLINE);
+  vty_out (vty, "------------------------ %s", VTY_NEWLINE);
+  vty_out (vty, "FD: %d %s", client->sock, VTY_NEWLINE);
+  vty_out (vty, "Route Table ID: %d %s", client->rtm_table, VTY_NEWLINE);
+
+  vty_out (vty, "Connect Time: %s %s",
+	   zserv_time_buf(&client->connect_time, cbuf, ZEBRA_TIME_BUF),
+	   VTY_NEWLINE);
+  if (client->nh_reg_time)
+    {
+      vty_out (vty, "Nexthop Registry Time: %s %s",
+	       zserv_time_buf(&client->nh_reg_time, nhbuf, ZEBRA_TIME_BUF),
+	       VTY_NEWLINE);
+      if (client->nh_last_upd_time)
+	vty_out (vty, "Nexthop Last Update Time: %s %s",
+		 zserv_time_buf(&client->nh_last_upd_time, mbuf, ZEBRA_TIME_BUF),
+		 VTY_NEWLINE);
+      else
+	vty_out (vty, "No Nexthop Update sent%s", VTY_NEWLINE);
+    }
+  else
+    vty_out (vty, "Not registered for Nexthop Updates%s", VTY_NEWLINE);
+
+  vty_out (vty, "Last Msg Rx Time: %s %s",
+	   zserv_time_buf(&client->last_read_time, rbuf, ZEBRA_TIME_BUF),
+	   VTY_NEWLINE);
+  vty_out (vty, "Last Msg Tx Time: %s %s",
+	   zserv_time_buf(&client->last_write_time, wbuf, ZEBRA_TIME_BUF),
+	   VTY_NEWLINE);
+  if (client->last_read_time)
+    vty_out (vty, "Last Rcvd Cmd: %s %s",
+	     zserv_command_string(client->last_read_cmd), VTY_NEWLINE);
+  if (client->last_write_time)
+    vty_out (vty, "Last Sent Cmd: %s %s",
+	     zserv_command_string(client->last_write_cmd), VTY_NEWLINE);
+  vty_out (vty, "%s", VTY_NEWLINE);
+
+  vty_out (vty, "Type        Add        Update     Del %s", VTY_NEWLINE);
+  vty_out (vty, "================================================== %s", VTY_NEWLINE);
+  vty_out (vty, "IPv4        %-12d%-12d%-12d%s", client->v4_route_add_cnt,
+	   client->v4_route_upd8_cnt, client->v4_route_del_cnt, VTY_NEWLINE);
+  vty_out (vty, "IPv6        %-12d%-12d%-12d%s", client->v6_route_add_cnt,
+	   client->v6_route_upd8_cnt, client->v6_route_del_cnt, VTY_NEWLINE);
+  vty_out (vty, "Redist:v4   %-12d%-12d%-12d%s", client->redist_v4_add_cnt, 0,
+	   client->redist_v4_del_cnt, VTY_NEWLINE);
+  vty_out (vty, "Redist:v6   %-12d%-12d%-12d%s", client->redist_v6_add_cnt, 0,
+	   client->redist_v6_del_cnt, VTY_NEWLINE);
+  vty_out (vty, "Connected   %-12d%-12d%-12d%s", client->ifadd_cnt, 0,
+	   client->ifdel_cnt, VTY_NEWLINE);
+  vty_out (vty, "Interface Up Notifications: %d%s", client->ifup_cnt,
+	   VTY_NEWLINE);
+  vty_out (vty, "Interface Down Notifications: %d%s", client->ifdown_cnt,
+	   VTY_NEWLINE);
+
+  vty_out (vty, "%s", VTY_NEWLINE);
+  return;
+}
+
+static void
+zebra_show_client_brief (struct vty *vty, struct zserv *client)
+{
+  char cbuf[ZEBRA_TIME_BUF], rbuf[ZEBRA_TIME_BUF];
+  char wbuf[ZEBRA_TIME_BUF];
+
+  vty_out (vty, "%-8s%12s %12s%12s%8d/%-8d%8d/%-8d%s",
+	   zebra_route_string(client->proto),
+	   zserv_time_buf(&client->connect_time, cbuf, ZEBRA_TIME_BUF),
+	   zserv_time_buf(&client->last_read_time, rbuf, ZEBRA_TIME_BUF),
+	   zserv_time_buf(&client->last_write_time, wbuf, ZEBRA_TIME_BUF),
+	   client->v4_route_add_cnt+client->v4_route_upd8_cnt,
+	   client->v4_route_del_cnt,
+	   client->v6_route_add_cnt+client->v6_route_upd8_cnt,
+	   client->v6_route_del_cnt, VTY_NEWLINE);
+
+}
+
+
 /* Display default rtm_table for all clients. */
 DEFUN (show_table,
        show_table_cmd,
@@ -1778,8 +2114,31 @@ DEFUN (show_zebra_client,
   struct zserv *client;
 
   for (ALL_LIST_ELEMENTS_RO (zebrad.client_list, node, client))
-    vty_out (vty, "Client fd %d%s", client->sock, VTY_NEWLINE);
-  
+    zebra_show_client_detail(vty, client);
+
+  return CMD_SUCCESS;
+}
+
+/* This command is for debugging purpose. */
+DEFUN (show_zebra_client_summary,
+       show_zebra_client_summary_cmd,
+       "show zebra client summary",
+       SHOW_STR
+       "Zebra information brief"
+       "Client information brief")
+{
+  struct listnode *node;
+  struct zserv *client;
+
+  vty_out (vty, "Name    Connect Time    Last Read  Last Write  IPv4 Routes       IPv6 Routes    %s",
+	   VTY_NEWLINE);
+  vty_out (vty,"--------------------------------------------------------------------------------%s",
+	   VTY_NEWLINE);
+
+  for (ALL_LIST_ELEMENTS_RO (zebrad.client_list, node, client))
+    zebra_show_client_brief(vty, client);
+
+  vty_out (vty, "Routes column shows (added+updated)/deleted%s", VTY_NEWLINE);
   return CMD_SUCCESS;
 }
 
@@ -1921,6 +2280,24 @@ static struct cmd_node forwarding_node =
   1
 };
 
+#ifdef HAVE_FPM
+/* function to write the fpm config info */
+static int 
+config_write_fpm (struct vty *vty)
+{
+  return 
+     fpm_remote_srv_write (vty);
+}
+
+/* Zebra node  */
+static struct cmd_node zebra_node = 
+{
+  ZEBRA_NODE,
+  "",
+  1
+};
+#endif
+
 
 /* Initialisation of zebra and installation of commands. */
 void
@@ -1932,22 +2309,23 @@ zebra_init (void)
   /* Install configuration write function. */
   install_node (&table_node, config_write_table);
   install_node (&forwarding_node, config_write_forwarding);
+#ifdef HAVE_FPM
+  install_node (&zebra_node, config_write_fpm);
+#endif
 
   install_element (VIEW_NODE, &show_ip_forwarding_cmd);
-  install_element (ENABLE_NODE, &show_ip_forwarding_cmd);
   install_element (CONFIG_NODE, &ip_forwarding_cmd);
   install_element (CONFIG_NODE, &no_ip_forwarding_cmd);
   install_element (ENABLE_NODE, &show_zebra_client_cmd);
+  install_element (ENABLE_NODE, &show_zebra_client_summary_cmd);
 
 #ifdef HAVE_NETLINK
   install_element (VIEW_NODE, &show_table_cmd);
-  install_element (ENABLE_NODE, &show_table_cmd);
   install_element (CONFIG_NODE, &config_table_cmd);
 #endif /* HAVE_NETLINK */
 
 #ifdef HAVE_IPV6
   install_element (VIEW_NODE, &show_ipv6_forwarding_cmd);
-  install_element (ENABLE_NODE, &show_ipv6_forwarding_cmd);
   install_element (CONFIG_NODE, &ipv6_forwarding_cmd);
   install_element (CONFIG_NODE, &no_ipv6_forwarding_cmd);
 #endif /* HAVE_IPV6 */

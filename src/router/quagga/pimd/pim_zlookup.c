@@ -155,7 +155,6 @@ static int zclient_read_nexthop(struct zclient *zlookup,
   u_char version;
   uint16_t vrf_id;
   uint16_t command;
-  int nbytes;
   struct in_addr raddr;
   uint8_t distance;
   uint32_t metric;
@@ -189,14 +188,6 @@ static int zclient_read_nexthop(struct zclient *zlookup,
     return -2;
   }
   
-  nbytes = stream_read(s, zlookup->sock, length);
-  if (nbytes < length) {
-    zlog_err("%s %s: failure reading zclient lookup socket: nbytes=%d < len=%d",
-	     __FILE__, __PRETTY_FUNCTION__, nbytes, length);
-    zclient_lookup_failed(zlookup);
-    return -3;
-  }
-
   if (command != ZEBRA_IPV4_NEXTHOP_LOOKUP_MRIB) {
     zlog_err("%s: socket %d command mismatch: %d",
             __func__, zlookup->sock, command);

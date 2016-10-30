@@ -21,7 +21,10 @@ Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 #ifndef _QUAGGA_BGP_ROUTE_H
 #define _QUAGGA_BGP_ROUTE_H
 
+#include "queue.h"
 #include "bgp_table.h"
+
+struct bgp_nexthop_cache;
 
 /* Ancillary information to struct bgp_info, 
  * used for uncommonly used data (aggregation, MPLS, etc.)
@@ -47,7 +50,16 @@ struct bgp_info
   /* For linked list. */
   struct bgp_info *next;
   struct bgp_info *prev;
-  
+
+  /* For nexthop linked list */
+  LIST_ENTRY(bgp_info) nh_thread;
+
+  /* Back pointer to the prefix node */
+  struct bgp_node *net;
+
+  /* Back pointer to the nexthop structure */
+  struct bgp_nexthop_cache *nexthop;
+
   /* Peer structure.  */
   struct peer *peer;
 
@@ -127,6 +139,10 @@ struct bgp_static
   u_char tag[3];
 };
 
+#define BGP_INFO_COUNTABLE(BI) \
+  (! CHECK_FLAG ((BI)->flags, BGP_INFO_HISTORY) \
+   && ! CHECK_FLAG ((BI)->flags, BGP_INFO_REMOVED))
+
 /* Flags which indicate a route is unuseable in some form */
 #define BGP_INFO_UNUSEABLE \
   (BGP_INFO_HISTORY|BGP_INFO_DAMPED|BGP_INFO_REMOVED)
@@ -172,6 +188,13 @@ enum bgp_clear_route_type
   BGP_CLEAR_ROUTE_MY_RSCLIENT
 };
 
+enum bgp_path_type
+{
+  BGP_PATH_ALL,
+  BGP_PATH_BESTPATH,
+  BGP_PATH_MULTIPATH
+};
+
 /* Prototypes. */
 extern void bgp_route_init (void);
 extern void bgp_route_finish (void);
@@ -202,7 +225,7 @@ extern int bgp_maximum_prefix_overflow (struct peer *, afi_t, safi_t, int);
 
 extern void bgp_redistribute_add (struct prefix *, const struct in_addr *,
 				  const struct in6_addr *,
-				  u_int32_t, u_char);
+				  u_int32_t, u_char, route_tag_t);
 extern void bgp_redistribute_delete (struct prefix *, u_char);
 extern void bgp_redistribute_withdraw (struct bgp *, afi_t, int);
 
@@ -227,7 +250,7 @@ extern int bgp_withdraw (struct peer *, struct prefix *, struct attr *,
 /* for bgp_nexthop and bgp_damp */
 extern void bgp_process (struct bgp *, struct bgp_node *, afi_t, safi_t);
 extern int bgp_config_write_network (struct vty *, struct bgp *, afi_t, safi_t, int *);
-extern int bgp_config_write_distance (struct vty *, struct bgp *);
+extern int bgp_config_write_distance (struct vty *, struct bgp *, afi_t, safi_t, int *);
 
 extern void bgp_aggregate_increment (struct bgp *, struct prefix *, struct bgp_info *,
 			      afi_t, safi_t);
@@ -235,6 +258,7 @@ extern void bgp_aggregate_decrement (struct bgp *, struct prefix *, struct bgp_i
 			      afi_t, safi_t);
 
 extern u_char bgp_distance_apply (struct prefix *, struct bgp_info *, struct bgp *);
+extern u_char ipv6_bgp_distance_apply (struct prefix *, struct bgp_info *, struct bgp *);
 
 extern afi_t bgp_node_afi (struct vty *);
 extern safi_t bgp_node_safi (struct vty *);

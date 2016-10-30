@@ -341,10 +341,10 @@ static void scan_upstream_rpf_cache()
   struct pim_upstream *up;
 
   for (ALL_LIST_ELEMENTS(qpim_upstream_list, up_node, up_nextnode, up)) {
-    struct in_addr      old_rpf_addr;
+    struct pim_rpf		old_rpf;
     enum pim_rpf_result rpf_result;
 
-    rpf_result = pim_rpf_update(up, &old_rpf_addr);
+    rpf_result = pim_rpf_update(up, &old_rpf);
     if (rpf_result == PIM_RPF_FAILURE)
       continue;
 
@@ -368,8 +368,8 @@ static void scan_upstream_rpf_cache()
 
     
 	/* send Prune(S,G) to the old upstream neighbor */
-	pim_joinprune_send(up->rpf.source_nexthop.interface,
-			   old_rpf_addr,
+	pim_joinprune_send(old_rpf.source_nexthop.interface,
+			   old_rpf.rpf_addr,
 			   up->source_addr,
 			   up->group_addr,
 			   0 /* prune */);
