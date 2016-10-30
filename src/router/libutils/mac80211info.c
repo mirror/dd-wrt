@@ -730,6 +730,8 @@ int has_2ghz(char *prefix)
 //      fprintf(stderr, "is mvebu %d\n",is_mvebu(prefix));
 	if (!is_mamba() && is_mvebu(prefix) && !strncmp(prefix, "ath0", 4))
 		return 0;
+	if (is_mamba() && is_mvebu(prefix) && !strncmp(prefix, "ath1", 4))
+		return 0;
 #endif
 #ifdef HAVE_ATH9K
 	if (is_ath9k(prefix))
