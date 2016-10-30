@@ -62,7 +62,8 @@ extern int ospf_route_map_set_compare (struct route_map_set_values *,
 extern struct external_info *ospf_external_info_add (u_char, 
                                               struct prefix_ipv4,
 					      ifindex_t, 
-					      struct in_addr);
+					      struct in_addr,
+					      route_tag_t);
 extern void ospf_external_info_delete (u_char, struct prefix_ipv4);
 extern struct external_info *ospf_external_info_lookup (u_char, 
                                                  struct prefix_ipv4 *);

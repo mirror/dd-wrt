@@ -90,6 +90,7 @@ static u_char restricted_mode = 0;
 /* Integrated configuration file path */
 char integrate_default[] = SYSCONFDIR INTEGRATE_DEFAULT_CONFIG;
 
+static int do_log_commands = 0;
 
 /* VTY standard output function. */
 int
@@ -209,7 +210,7 @@ vty_log_out (struct vty *vty, const char *level, const char *proto_str,
 void
 vty_time_print (struct vty *vty, int cr)
 {
-  char buf [25];
+  char buf[QUAGGA_TIMESTAMP_LEN];
   
   if (quagga_timestamp(0, buf, sizeof(buf)) == 0)
     {
@@ -401,12 +402,13 @@ vty_command (struct vty *vty, char *buf)
   int ret;
   vector vline;
   const char *protocolname;
-  char *cp;
+  char *cp = NULL;
 
   /*
    * Log non empty command lines
    */
-  cp = buf;
+  if (do_log_commands)
+    cp = buf;
   if (cp != NULL)
     {
       /* Skip white spaces. */
@@ -423,7 +425,7 @@ vty_command (struct vty *vty, char *buf)
       snprintf(vty_str, sizeof(vty_str), "vty[??]@%s", vty->address);
       if (vty)
         for (i = 0; i < vector_active (vtyvec); i++)
-          if ((vty == vector_slot (vtyvec, i)))
+          if (vty == vector_slot (vtyvec, i))
             {
               snprintf(vty_str, sizeof(vty_str), "vty[%d]@%s",
                                                  i, vty->address);
@@ -434,7 +436,7 @@ vty_command (struct vty *vty, char *buf)
       snprintf(prompt_str, sizeof(prompt_str), cmd_prompt (vty->node), vty_str);
 
       /* now log the command */
-      zlog(NULL, LOG_NOTICE, "%s%s", prompt_str, buf);
+      zlog(NULL, LOG_ERR, "%s%s", prompt_str, buf);
     }
   /* Split readline string up into the vector */
   vline = cmd_make_strvec (buf);
@@ -2666,8 +2668,8 @@ vty_event (enum event event, int sock, struct vty *vty)
     }
 }
 
-DEFUN (config_who,
-       config_who_cmd,
+DEFUN (who,
+       who_cmd,
        "who",
        "Display who is on vty\n")
 {
@@ -2938,6 +2940,17 @@ DEFUN (show_history,
   return CMD_SUCCESS;
 }
 
+/* vty login. */
+DEFUN (log_commands,
+       log_commands_cmd,
+       "log commands",
+       "Logging control\n"
+       "Log all commands (can't be unset without restart)\n")
+{
+  do_log_commands = 1;
+  return CMD_SUCCESS;
+}
+
 /* Display current configuration. */
 static int
 vty_config_write (struct vty *vty)
@@ -2970,6 +2983,9 @@ vty_config_write (struct vty *vty)
         vty_out (vty, " anonymous restricted%s", VTY_NEWLINE);
     }
   
+  if (do_log_commands)
+    vty_out (vty, "log commands%s", VTY_NEWLINE);
+     
   vty_out (vty, "!%s", VTY_NEWLINE);
 
   return CMD_SUCCESS;
@@ -3082,19 +3098,18 @@ vty_init (struct thread_master *master_thread)
   /* Install bgp top node. */
   install_node (&vty_node, vty_config_write);
 
-  install_element (RESTRICTED_NODE, &config_who_cmd);
+  install_element (RESTRICTED_NODE, &who_cmd);
   install_element (RESTRICTED_NODE, &show_history_cmd);
-  install_element (VIEW_NODE, &config_who_cmd);
+  install_element (VIEW_NODE, &who_cmd);
   install_element (VIEW_NODE, &show_history_cmd);
-  install_element (ENABLE_NODE, &config_who_cmd);
   install_element (CONFIG_NODE, &line_vty_cmd);
   install_element (CONFIG_NODE, &service_advanced_vty_cmd);
   install_element (CONFIG_NODE, &no_service_advanced_vty_cmd);
   install_element (CONFIG_NODE, &show_history_cmd);
+  install_element (CONFIG_NODE, &log_commands_cmd);
   install_element (ENABLE_NODE, &terminal_monitor_cmd);
   install_element (ENABLE_NODE, &terminal_no_monitor_cmd);
   install_element (ENABLE_NODE, &no_terminal_monitor_cmd);
-  install_element (ENABLE_NODE, &show_history_cmd);
 
   install_default (VTY_NODE);
   install_element (VTY_NODE, &exec_timeout_min_cmd);

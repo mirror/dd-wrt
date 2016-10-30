@@ -112,7 +112,7 @@ ospf6_serv_sock (void)
 }
 
 /* ospf6 set socket option */
-void
+int
 ospf6_sso (ifindex_t ifindex, struct in6_addr *group, int option)
 {
   struct ipv6_mreq mreq6;
@@ -125,8 +125,12 @@ ospf6_sso (ifindex_t ifindex, struct in6_addr *group, int option)
   ret = setsockopt (ospf6_sock, IPPROTO_IPV6, option,
                     &mreq6, sizeof (mreq6));
   if (ret < 0)
-    zlog_err ("Network: setsockopt (%d) on ifindex %d failed: %s",
-              option, ifindex, safe_strerror (errno));
+    {
+      zlog_err ("Network: setsockopt (%d) on ifindex %d failed: %s",
+                option, ifindex, safe_strerror (errno));
+    }
+
+  return ret;
 }
 
 static int

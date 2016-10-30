@@ -620,7 +620,7 @@ ospf6_route_remove (struct ospf6_route *route,
 
   if (node->info == route)
     {
-      if (route->next && ospf6_route_is_same (route->next, route))
+      if (route->next && route->next->rnode == node)
         {
           node->info = route->next;
           SET_FLAG (route->next->flag, OSPF6_ROUTE_BEST);
@@ -821,8 +821,8 @@ ospf6_route_show (struct vty *vty, struct ospf6_route *route)
            OSPF6_PATH_TYPE_SUBSTR (route->path.type),
            destination, nexthop, IFNAMSIZ, ifname, duration, VNL);
 
-  for (i = 1; ospf6_nexthop_is_set (&route->nexthop[i]) &&
-       i < OSPF6_MULTI_PATH_LIMIT; i++)
+  for (i = 1; i < OSPF6_MULTI_PATH_LIMIT &&
+       ospf6_nexthop_is_set (&route->nexthop[i]); i++)
     {
       /* nexthop */
       inet_ntop (AF_INET6, &route->nexthop[i].address, nexthop,
@@ -918,8 +918,8 @@ ospf6_route_show_detail (struct vty *vty, struct ospf6_route *route)
 
   /* Nexthops */
   vty_out (vty, "Nexthop:%s", VNL);
-  for (i = 0; ospf6_nexthop_is_set (&route->nexthop[i]) &&
-       i < OSPF6_MULTI_PATH_LIMIT; i++)
+  for (i = 0; i < OSPF6_MULTI_PATH_LIMIT &&
+       ospf6_nexthop_is_set (&route->nexthop[i]); i++)
     {
       /* nexthop */
       inet_ntop (AF_INET6, &route->nexthop[i].address, nexthop,

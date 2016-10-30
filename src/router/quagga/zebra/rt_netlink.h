@@ -30,10 +30,10 @@
 extern int
 addattr32 (struct nlmsghdr *n, size_t maxlen, int type, int data);
 extern int
-addattr_l (struct nlmsghdr *n, size_t maxlen, int type, void *data, int alen);
+addattr_l (struct nlmsghdr *n, size_t maxlen, int type, void *data, size_t alen);
 
 extern int
-rta_addattr_l (struct rtattr *rta, int maxlen, int type, void *data, int alen);
+rta_addattr_l (struct rtattr *rta, size_t maxlen, int type, void *data, size_t alen);
 
 extern const char *
 nl_msg_type_to_str (uint16_t msg_type);

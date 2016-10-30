@@ -65,6 +65,7 @@ struct bgp_node
 
   u_char flags;
 #define BGP_NODE_PROCESS_SCHEDULED	(1 << 0)
+#define BGP_NODE_USER_CLEAR             (1 << 1)
 };
 
 /*
@@ -115,44 +116,6 @@ static inline struct bgp_table *
 bgp_node_table (struct bgp_node *node)
 {
   return bgp_node_to_rnode (node)->table->info;
-}
-
-/*
- * bgp_node_info
- *
- * Returns the 'info' pointer corresponding to a bgp node.
- */
-static inline void *
-bgp_node_info (const struct bgp_node *node)
-{
-  return node->info;
-}
-
-/*
- * bgp_node_set_info
- */
-static inline void
-bgp_node_set_info (struct bgp_node *node, void *info)
-{
-  node->info = info;
-}
-
-/*
- * bgp_node_prefix
- */
-static inline struct prefix *
-bgp_node_prefix (struct bgp_node *node)
-{
-  return &node->p;
-}
-
-/*
- * bgp_node_prefixlen
- */
-static inline u_char
-bgp_node_prefixlen (struct bgp_node *node)
-{
-  return bgp_node_prefix (node)->prefixlen;
 }
 
 /*

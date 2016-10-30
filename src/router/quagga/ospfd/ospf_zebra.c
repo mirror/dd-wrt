@@ -48,6 +48,7 @@
 #ifdef HAVE_SNMP
 #include "ospfd/ospf_snmp.h"
 #endif /* HAVE_SNMP */
+#include "ospfd/ospf_te.h"
 
 /* Zebra structure to hold current status. */
 struct zclient *zclient = NULL;
@@ -326,6 +327,24 @@ ospf_interface_address_delete (int command, struct zclient *zclient,
   return 0;
 }
 
+static int
+ospf_interface_link_params (int command, struct zclient *zclient,
+                        zebra_size_t length)
+{
+  struct interface *ifp;
+
+  ifp = zebra_interface_link_params_read (zclient->ibuf);
+
+  if (ifp == NULL)
+    return 0;
+
+  /* Update TE TLV */
+  ospf_mpls_te_update_if (ifp);
+
+  return 0;
+}
+
+
 void
 ospf_zebra_add (struct prefix_ipv4 *p, struct ospf_route *or)
 {
@@ -350,6 +369,12 @@ ospf_zebra_add (struct prefix_ipv4 *p, struct ospf_route *or)
       distance = ospf_distance_apply (p, or);
       if (distance)
         SET_FLAG (message, ZAPI_MESSAGE_DISTANCE);
+
+      /* Check if path type is ASE */
+      if (((or->path_type == OSPF_PATH_TYPE1_EXTERNAL) ||
+          (or->path_type == OSPF_PATH_TYPE2_EXTERNAL)) &&
+           (or->u.ext.tag > 0) && (or->u.ext.tag <= ROUTE_TAG_MAX))
+        SET_FLAG (message, ZAPI_MESSAGE_TAG);
 
       /* Make packet. */
       s = zclient->obuf;
@@ -417,6 +442,9 @@ ospf_zebra_add (struct prefix_ipv4 *p, struct ospf_route *or)
           else
             stream_putl (s, or->cost);
         }
+
+      if (CHECK_FLAG (message, ZAPI_MESSAGE_TAG))
+         stream_putl (s, or->u.ext.tag);
 
       stream_putw_at (s, 0, stream_get_endp (s));
 
@@ -526,6 +554,7 @@ ospf_zebra_add_discard (struct prefix_ipv4 *p)
       SET_FLAG (api.message, ZAPI_MESSAGE_NEXTHOP);
       api.nexthop_num = 0;
       api.ifindex_num = 0;
+      api.tag = 0;
 
       zapi_ipv4_route (ZEBRA_IPV4_ROUTE_ADD, zclient, p, &api);
 
@@ -550,6 +579,7 @@ ospf_zebra_delete_discard (struct prefix_ipv4 *p)
       SET_FLAG (api.message, ZAPI_MESSAGE_NEXTHOP);
       api.nexthop_num = 0;
       api.ifindex_num = 0;
+      api.tag = 0;
 
       zapi_ipv4_route (ZEBRA_IPV4_ROUTE_DELETE, zclient, p, &api);
 
@@ -869,6 +899,10 @@ ospf_zebra_read_ipv4 (int command, struct zclient *zclient,
     api.distance = stream_getc (s);
   if (CHECK_FLAG (api.message, ZAPI_MESSAGE_METRIC))
     api.metric = stream_getl (s);
+  if (CHECK_FLAG (api.message, ZAPI_MESSAGE_TAG))
+    api.tag = stream_getl (s);
+  else
+    api.tag = 0;
 
   ospf = ospf_lookup ();
   if (ospf == NULL)
@@ -886,8 +920,12 @@ ospf_zebra_read_ipv4 (int command, struct zclient *zclient,
        *     || CHECK_FLAG (api.flags, ZEBRA_FLAG_REJECT))
        * return 0;
        */
-        
-      ei = ospf_external_info_add (api.type, p, ifindex, nexthop);
+
+      /* Protocol tag overwrites all other tag value send by zebra */
+      if (ospf->dtag[api.type] > 0)
+       api.tag = ospf->dtag[api.type];
+
+      ei = ospf_external_info_add (api.type, p, ifindex, nexthop, api.tag);
 
       if (ospf->router_id.s_addr == 0)
         /* Set flags to generate AS-external-LSA originate event
@@ -1319,6 +1357,8 @@ ospf_zebra_init (struct thread_master *master)
   zclient->interface_down = ospf_interface_state_down;
   zclient->interface_address_add = ospf_interface_address_add;
   zclient->interface_address_delete = ospf_interface_address_delete;
+  zclient->interface_link_params = ospf_interface_link_params;
+
   zclient->ipv4_route_add = ospf_zebra_read_ipv4;
   zclient->ipv4_route_delete = ospf_zebra_read_ipv4;
 

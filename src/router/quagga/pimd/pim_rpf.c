@@ -121,14 +121,14 @@ static int nexthop_mismatch(const struct pim_nexthop *nh1,
 }
 
 enum pim_rpf_result pim_rpf_update(struct pim_upstream *up,
-				   struct in_addr *old_rpf_addr)
+				   struct pim_rpf *old_rpf)
 {
-  struct in_addr      save_rpf_addr;
   struct pim_nexthop  save_nexthop;
+  struct pim_rpf	  save_rpf;
   struct pim_rpf     *rpf = &up->rpf;
 
   save_nexthop  = rpf->source_nexthop; /* detect change in pim_nexthop */
-  save_rpf_addr = rpf->rpf_addr;       /* detect change in RPF'(S,G) */
+  save_rpf = up->rpf;
 
   if (pim_nexthop_lookup(&rpf->source_nexthop,
 			 up->source_addr)) {
@@ -193,11 +193,11 @@ enum pim_rpf_result pim_rpf_update(struct pim_upstream *up,
   }
 
   /* detect change in RPF'(S,G) */
-  if (save_rpf_addr.s_addr != rpf->rpf_addr.s_addr) {
+  if (save_rpf.rpf_addr.s_addr != rpf->rpf_addr.s_addr) {
 
     /* return old rpf to caller ? */
-    if (old_rpf_addr)
-      *old_rpf_addr = save_rpf_addr;
+    if (old_rpf)
+      *old_rpf = save_rpf;
 
     return PIM_RPF_CHANGED;
   }

@@ -307,11 +307,18 @@ zprivs_caps_init (struct zebra_privs_t *zprivs)
 
       current_caps = cap_get_proc();
       if (current_caps)
+        {
           current_caps_text = cap_to_text(current_caps, NULL);
+          cap_free(current_caps);
+        }
 
       wanted_caps_text = cap_to_text(zprivs_state.caps, NULL);
       fprintf(stderr, "Wanted caps: %s\n", wanted_caps_text ? wanted_caps_text : "???");
       fprintf(stderr, "Have   caps: %s\n", current_caps_text ? current_caps_text : "???");
+      if (current_caps_text)
+          cap_free(current_caps_text);
+      if (wanted_caps_text)
+          cap_free(wanted_caps_text);
 
       exit (1);
     }
@@ -664,6 +671,7 @@ zprivs_init(struct zebra_privs_t *zprivs)
   struct group *grentry = NULL;
   gid_t groups[NGROUPS_MAX];
   int i, ngroups = 0;
+  int found = 0;
 
   if (!zprivs)
     {
@@ -729,8 +737,17 @@ zprivs_init(struct zebra_privs_t *zprivs)
 
           for ( i = 0; i < ngroups; i++ )
             if ( groups[i] == zprivs_state.vtygrp )
-              break;
+              {
+                found++;
+                break;
+              }
 
+          if (!found)
+            {
+	      fprintf (stderr, "privs_init: user(%s) is not part of vty group specified(%s)\n",
+		       zprivs->user, zprivs->vty_group);
+              exit (1);
+            }
           if ( i >= ngroups && ngroups < (int) ZEBRA_NUM_OF(groups) )
             {
               groups[i] = zprivs_state.vtygrp;

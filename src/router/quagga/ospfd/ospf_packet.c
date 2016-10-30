@@ -882,7 +882,7 @@ ospf_hello (struct ip *iph, struct ospf_header *ospfh,
   /* Compare options. */
 #define REJECT_IF_TBIT_ON	1 /* XXX */
 #ifdef REJECT_IF_TBIT_ON
-  if (CHECK_FLAG (hello->options, OSPF_OPTION_T))
+  if (CHECK_FLAG (hello->options, OSPF_OPTION_MT))
     {
       /*
        * This router does not support non-zero TOS.
@@ -1231,7 +1231,7 @@ ospf_db_desc (struct ip *iph, struct ospf_header *ospfh,
     }
 
 #ifdef REJECT_IF_TBIT_ON
-  if (CHECK_FLAG (dd->options, OSPF_OPTION_T))
+  if (CHECK_FLAG (dd->options, OSPF_OPTION_MT))
     {
       /*
        * In Hello protocol, optional capability must have checked
@@ -3022,7 +3022,8 @@ ospf_make_hello (struct ospf_interface *oi, struct stream *s)
   int flag = 0;
 
   /* Set netmask of interface. */
-  if (oi->type != OSPF_IFTYPE_POINTOPOINT &&
+  if (!(CHECK_FLAG(oi->connected->flags, ZEBRA_IFA_UNNUMBERED) &&
+        oi->type == OSPF_IFTYPE_POINTOPOINT) &&
       oi->type != OSPF_IFTYPE_VIRTUALLINK)
     masklen2ip (oi->address->prefixlen, &mask);
   else
@@ -3830,9 +3831,12 @@ ospf_ls_ack_send_list (struct ospf_interface *oi, struct list *ack,
   /* Set packet length. */
   op->length = length;
 
-  /* Set destination IP address. */
-  op->dst = dst;
-  
+  /* Decide destination address. */
+  if (oi->type == OSPF_IFTYPE_POINTOPOINT)
+    op->dst.s_addr = htonl (OSPF_ALLSPFROUTERS);
+  else
+    op->dst.s_addr = dst.s_addr;
+
   /* Add packet to the interface output queue. */
   ospf_packet_add (oi, op);
 

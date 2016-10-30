@@ -139,26 +139,45 @@ bgp_info_nexthop_cmp (struct bgp_info *bi1, struct bgp_info *bi2)
 
   compare = IPV4_ADDR_CMP (&bi1->attr->nexthop, &bi2->attr->nexthop);
 
-  if (!compare && ae1 && ae2 && (ae1->mp_nexthop_len == ae2->mp_nexthop_len))
+  if (!compare && ae1 && ae2)
     {
-      switch (ae1->mp_nexthop_len)
+      if (ae1->mp_nexthop_len == ae2->mp_nexthop_len)
         {
-        case 4:
-        case 12:
-          compare = IPV4_ADDR_CMP (&ae1->mp_nexthop_global_in,
-                                   &ae2->mp_nexthop_global_in);
-          break;
-        case 16:
-          compare = IPV6_ADDR_CMP (&ae1->mp_nexthop_global,
-                                   &ae2->mp_nexthop_global);
-          break;
-        case 32:
+          switch (ae1->mp_nexthop_len)
+            {
+            case 4:
+            case 12:
+              compare = IPV4_ADDR_CMP (&ae1->mp_nexthop_global_in,
+                                       &ae2->mp_nexthop_global_in);
+              break;
+            case 16:
+              compare = IPV6_ADDR_CMP (&ae1->mp_nexthop_global,
+                                       &ae2->mp_nexthop_global);
+              break;
+            case 32:
+              compare = IPV6_ADDR_CMP (&ae1->mp_nexthop_global,
+                                       &ae2->mp_nexthop_global);
+              if (!compare)
+                compare = IPV6_ADDR_CMP (&ae1->mp_nexthop_local,
+                                         &ae2->mp_nexthop_local);
+              break;
+            }
+        }
+
+      /* This can happen if one IPv6 peer sends you global and link-local
+       * nexthops but another IPv6 peer only sends you global
+       */
+      else if (ae1->mp_nexthop_len == 16 || ae1->mp_nexthop_len == 32)
+        {
           compare = IPV6_ADDR_CMP (&ae1->mp_nexthop_global,
                                    &ae2->mp_nexthop_global);
           if (!compare)
-            compare = IPV6_ADDR_CMP (&ae1->mp_nexthop_local,
-                                     &ae2->mp_nexthop_local);
-          break;
+            {
+              if (ae1->mp_nexthop_len < ae2->mp_nexthop_len)
+                compare = -1;
+              else
+                compare = 1;
+            }
         }
     }
 
@@ -427,7 +446,7 @@ bgp_info_mpath_update (struct bgp_node *rn, struct bgp_info *new_best,
   struct listnode *mp_node, *mp_next_node;
   struct bgp_info *cur_mpath, *new_mpath, *next_mpath, *prev_mpath;
   int mpath_changed, debug;
-  char pfx_buf[INET_ADDRSTRLEN], nh_buf[2][INET_ADDRSTRLEN];
+  char pfx_buf[INET6_ADDRSTRLEN], nh_buf[2][INET6_ADDRSTRLEN];
   struct bgp_maxpaths_cfg *mpath_cfg = NULL;
 
   mpath_changed = 0;
@@ -695,7 +714,7 @@ bgp_info_mpath_aggregate_update (struct bgp_info *new_best,
   for (mpinfo = bgp_info_mpath_first (new_best); mpinfo;
        mpinfo = bgp_info_mpath_next (mpinfo))
     {
-      asmerge = aspath_aggregate (aspath, mpinfo->attr->aspath);
+      asmerge = aspath_aggregate_mpath (aspath, mpinfo->attr->aspath);
       aspath_free (aspath);
       aspath = asmerge;
 

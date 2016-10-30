@@ -306,6 +306,10 @@ nsm_negotiation_done (struct ospf_neighbor *nbr)
     LSDB_LOOP (OPAQUE_AS_LSDB (nbr->oi->ospf), rn, lsa)
       ospf_db_summary_add (nbr, lsa);
 
+  /* Send Link State Request. */
+  if (nbr->t_ls_req == NULL)
+    ospf_ls_req_send (nbr);
+
   return 0;
 }
 
@@ -314,10 +318,10 @@ nsm_exchange_done (struct ospf_neighbor *nbr)
 {
   if (ospf_ls_request_isempty (nbr))
     return NSM_Full;
-
-  /* Send Link State Request. */
-  ospf_ls_req_send (nbr);
-
+  
+  if (nbr->t_ls_req == NULL)
+    ospf_ls_req_send (nbr);
+  
   return NSM_Loading;
 }
 
