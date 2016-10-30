@@ -707,12 +707,12 @@ int has_5ghz(char *prefix)
 }
 
 #ifdef HAVE_MVEBU
-int is_mamba(){
+static int is_wrt3200(){
 	FILE *fp = fopen("/proc/device-tree/model", "r");
 	if(fp){
 		char modelstr[32];
 		fread(modelstr, 1, 31, fp);
-		if (strstr(modelstr, "Mamba")){
+		if (strstr(modelstr, "WRT3200ACM")){
 			fclose(fp);
 			return 1;
 		}
@@ -728,9 +728,7 @@ int has_2ghz(char *prefix)
 	sscanf(prefix, "ath%d", &devnum);
 #ifdef HAVE_MVEBU
 //      fprintf(stderr, "is mvebu %d\n",is_mvebu(prefix));
-	if (!is_mamba() && is_mvebu(prefix) && !strncmp(prefix, "ath0", 4))
-		return 0;
-	if (is_mamba() && is_mvebu(prefix) && !strncmp(prefix, "ath1", 4))
+	if (is_wrt3200() && is_mvebu(prefix) && !strncmp(prefix, "ath0", 4))
 		return 0;
 #endif
 #ifdef HAVE_ATH9K
@@ -1120,7 +1118,7 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 					if (freq_mhz >= 5500)
 						isband = 2;
 #ifdef HAVE_MVEBU
-					if (!is_mamba() && phy == 0 && isband == 0)
+					if (!is_wrt3200() && phy == 0 && isband == 0)
 						continue;
 #endif
 					startfreq = 0;
