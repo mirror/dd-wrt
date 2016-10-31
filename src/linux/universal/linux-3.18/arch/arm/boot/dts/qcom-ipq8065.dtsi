@@ -800,18 +800,19 @@
 		};
 
 		hs_phy_1: phy@100f8800 {
-			compatible = "qcom,dwc3-hs-usb-phy";
+			compatible = "qcom,dwc3-hsphy","qcom,dwc3-hsphy-ipq8064";
 			reg = <0x100f8800 0x30>;
 			clocks = <&gcc USB30_1_UTMI_CLK>;
-			clock-names = "ref";
+			clock-names = "utmi";
 			#phy-cells = <0>;
 
 			status = "disabled";
 		};
 
 		ss_phy_1: phy@100f8830 {
-			compatible = "qcom,dwc3-ss-usb-phy";
+			compatible = "qcom,dwc3-ssphy","qcom,dwc3-ssphy-ipq8064";
 			reg = <0x100f8830 0x30>;
+
 			clocks = <&gcc USB30_1_MASTER_CLK>;
 			clock-names = "ref";
 			#phy-cells = <0>;
@@ -820,18 +821,19 @@
 		};
 
 		hs_phy_0: phy@110f8800 {
-			compatible = "qcom,dwc3-hs-usb-phy";
+			compatible = "qcom,dwc3-hsphy","qcom,dwc3-hsphy-ipq8064";
 			reg = <0x110f8800 0x30>;
 			clocks = <&gcc USB30_0_UTMI_CLK>;
-			clock-names = "ref";
+			clock-names = "utmi";
 			#phy-cells = <0>;
 
 			status = "disabled";
 		};
 
 		ss_phy_0: phy@110f8830 {
-			compatible = "qcom,dwc3-ss-usb-phy";
+			compatible = "qcom,dwc3-ssphy","qcom,dwc3-ssphy-ipq8064";
 			reg = <0x110f8830 0x30>;
+
 			clocks = <&gcc USB30_0_MASTER_CLK>;
 			clock-names = "ref";
 			#phy-cells = <0>;
@@ -856,7 +858,7 @@
 				compatible = "snps,dwc3";
 				reg = <0x11000000 0xcd00>;
 				interrupts = <0 110 0x4>;
-				phys = <&hs_phy_0>, <&ss_phy_0>;
+				usb-phy = <&hs_phy_0>, <&ss_phy_0>;
 				phy-names = "usb2-phy", "usb3-phy";
 				tx-fifo-resize;
 				dr_mode = "host";
@@ -878,7 +880,7 @@
 				compatible = "snps,dwc3";
 				reg = <0x10000000 0xcd00>;
 				interrupts = <0 205 0x4>;
-				phys = <&hs_phy_1>, <&ss_phy_1>;
+				usb-phy = <&hs_phy_1>, <&ss_phy_1>;
 				phy-names = "usb2-phy", "usb3-phy";
 				tx-fifo-resize;
 				dr_mode = "host";
