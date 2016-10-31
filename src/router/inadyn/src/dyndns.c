@@ -816,17 +816,13 @@ RC_TYPE dyn_dns_construct(DYN_DNS_CLIENT **pp_self)
 
     if (rc != RC_OK)
     {
-        if (*pp_self)
-        {
-            free(*pp_self);
-        }
         if (p_self->p_work_buffer != NULL)
         {
             free(p_self->p_work_buffer);
         }
         if (p_self->p_req_buffer != NULL)
         {
-            free (p_self->p_work_buffer);
+            free (p_self->p_req_buffer);
         }
         if (http_to_dyndns_constructed) 
         {
@@ -835,7 +831,11 @@ RC_TYPE dyn_dns_construct(DYN_DNS_CLIENT **pp_self)
         if (http_to_ip_constructed) 
         {
             http_client_destruct(&p_self->http_to_ip_server);
-        }            
+        }  
+        if (*pp_self)
+        {
+            free(*pp_self);
+        }
     }
 
 	return RC_OK;
