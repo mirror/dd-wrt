@@ -688,9 +688,10 @@ static struct DEVICES devicelist[] = {
 	{0x1199, 0x68a2, "sierra", "2", "0", 1 | QMI, NULL, "Sierra MC7710 (modem)"},	// also cdc_mbim
 	{0x1199, 0x68a3, "sierra", "3", "3", 1, &reset_mc, "Sierra MC8700/Compass Direct IP"},	//
 	{0x1199, 0x68aa, "sierra", "3", "3", 1, NULL, "Sierra AC320U/AC330U Direct IP"},	//
-	{0x1199, 0x9011, "sierra", "2", "0", 1 | QMI, &select_config1, "Sierra MC8305 (modem)"},	// cdc_mbim in default config2
-	{0x1199, 0x9013, "sierra", "2", "0", 1 | QMI, &select_config1, "Sierra MC8355 (modem)"},	// cdc_mbim in default config2
-	{0x1199, 0x9051, "sierra", "2", "0", 1 | QMI, &select_config1, "Netgear AC340U (modem)"},	// cdc_mbim in default config2
+	{0x1199, 0x9011, "qcserial", "2", "0", 1 | QMI, &select_config1, "Sierra MC8305 (modem)"},	// cdc_mbim in default config2
+	{0x1199, 0x9013, "qcserial", "2", "0", 1 | QMI, &select_config1, "Sierra MC8355 (modem)"},	// cdc_mbim in default config2
+	{0x1199, 0x9051, "qcserial", "2", "0", 1 | QMI, &select_config1, "Netgear AC340U (modem)"},	// cdc_mbim in default config2
+	{0x1199, 0x9071, "qcserial", "2", "0", 1 | QMI, &select_config1, "Sierra MC7430 (modem)"},	// cdc_mbim in default config2
 
 // Pirelli Broadband Solutions
 	{0x1266, 0x1000, "option", "0", "0", 0, &modeswitch_std_eject, "Pirelli"},	//
