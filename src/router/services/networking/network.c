@@ -3533,7 +3533,7 @@ void start_wan(int status)
 		char *controldevice = get3GControlDevice();
 		int timeout = 5;
 #ifdef HAVE_UQMI
-		if (controldevice && !strcmp(controldevice, "qmi")) {
+		if (controldevice && (!strcmp(controldevice, "qmi") || !strcmp(controldevice, "qmiraw"))) {
 			/* disconnect network */
 			int clientid = 0;
 			FILE *fp = fopen("/tmp/qmi-clientid", "rb");
@@ -3595,6 +3595,8 @@ void start_wan(int status)
 			} else {
 				fprintf(fp, "uqmi -d /dev/cdc-wdm0 --set-client-id wds,${CLIENTID} --start-network %s --auth-type both --keep-client-id wds\n", nvram_safe_get("wan_apn"));
 			}
+			if (!strcmp(controldevice, "qmiraw"))
+			    sysprintf("echo Y > /sys/class/net/wwan0/qmi/raw_ip");
 			fprintf(fp, "ifconfig wwan0 up\n");
 			fprintf(fp, "ln -s /sbin/rc /tmp/udhcpc\n");
 			fprintf(fp, "udhcpc -i wwan0 -p /var/run/udhcpc.pid -s /tmp/udhcpc\n");
@@ -3607,7 +3609,7 @@ void start_wan(int status)
 
 		} else
 #elif HAVE_LIBQMI
-		if (controldevice && !strcmp(controldevice, "qmi")) {
+		if (controldevice && (!strcmp(controldevice, "qmi") || !strcmp(controldevice, "qmiraw"))) {
 			if (nvram_matchi("wan_conmode", 6))
 				sysprintf("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=LTE");
 //              if (nvram_match("wan_conmode","5")) //unsupported and useless. i dont know what that means
@@ -3637,6 +3639,8 @@ void start_wan(int status)
 
 			eval("qmi-network", "/dev/cdc-wdm0", "stop");	//release it before
 			eval("qmi-network", "/dev/cdc-wdm0", "start");
+			if (!strcmp(controldevice, "qmiraw"))
+			    sysprintf("echo Y > /sys/class/net/wwan0/qmi/raw_ip");
 			eval("ifconfig", "wwan0", "up");
 			start_dhcpc("wwan0", NULL, NULL, 1);
 			if (status != REDIAL) {
