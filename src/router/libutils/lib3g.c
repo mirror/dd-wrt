@@ -351,6 +351,7 @@ static void modeswitch_others(int needreset, int devicecount)
 	eval("usb_modeswitch", "-v", "0x2020", "-p", "0x0002", "-M", "5553424312345678c0000000800003f0010100000000000000000000000000");
 }
 
+#define QMIRAW 0x2000		// usbnet, qmi_wwan, cdc_wdm, rawip
 #define H_NCM 0x1000		// usbnet, cdc_ncm, huawei_cdc_ncm, cdc_wdm
 #define NCM 0x800		// usbnet, cdc_ncm, cdc_wdm
 #define MBIM 0x400		// usbnet, cdc_ncm, cdc_mbim,
@@ -691,7 +692,7 @@ static struct DEVICES devicelist[] = {
 	{0x1199, 0x9011, "qcserial", "2", "0", 1 | QMI, &select_config1, "Sierra MC8305 (modem)"},	// cdc_mbim in default config2
 	{0x1199, 0x9013, "qcserial", "2", "0", 1 | QMI, &select_config1, "Sierra MC8355 (modem)"},	// cdc_mbim in default config2
 	{0x1199, 0x9051, "qcserial", "2", "0", 1 | QMI, &select_config1, "Netgear AC340U (modem)"},	// cdc_mbim in default config2
-	{0x1199, 0x9071, "qcserial", "2", "0", 1 | QMI, &select_config1, "Sierra MC7430 (modem)"},	// cdc_mbim in default config2
+	{0x1199, 0x9071, "qcserial", "2", "0", 1 | QMIRAW, &select_config1, "Sierra MC7430 (modem)"},	// cdc_mbim in default config2
 
 // Pirelli Broadband Solutions
 	{0x1266, 0x1000, "option", "0", "0", 0, &modeswitch_std_eject, "Pirelli"},	//
@@ -1407,6 +1408,19 @@ char *get3GControlDevice(void)
 				}
 				sprintf(control, "qmi");
 				nvram_set("3gdata", "qmi");
+				return control;
+			}
+
+			if ((devicelist[devicecount].modeswitch & QMIRAW)) {
+				insmod("cdc-wdm usbnet qmi_wwan");
+				//start custom setup, if defined
+				if (devicelist[devicecount].customsetup) {
+					fprintf(stderr, "customsetup QMI RawIP\n");
+					devicelist[devicecount].customsetup(needreset, devicecount);
+					sleep(2);
+				}
+				sprintf(control, "qmiraw");
+				nvram_set("3gdata", "qmiraw");
 				return control;
 			}
 #endif
