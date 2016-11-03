@@ -118,7 +118,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: ncat_listen.c 36055 2016-07-30 00:13:18Z dmiller $ */
+/* $Id: ncat_listen.c 36366 2016-10-17 11:16:30Z vincent $ */
 
 #include "ncat.h"
 
@@ -326,7 +326,7 @@ static int ncat_listen_stream(int proto)
         /* We pass these temporary descriptor sets to fselect, since fselect
            modifies the sets it receives. */
         fd_set readfds = master_readfds, writefds = master_writefds;
-        struct fdinfo *fdi = NULL;
+        
 
         if (o.debug > 1)
             logdebug("selecting, fdmax %d\n", client_fdlist.fdmax);
@@ -362,6 +362,7 @@ static int ncat_listen_stream(int proto)
 #ifdef HAVE_OPENSSL
             /* Is this an ssl socket pending a handshake? If so handle it. */
             if (o.ssl && FD_ISSET(i, &sslpending_fds)) {
+                struct fdinfo *fdi = NULL;
                 FD_CLR(i, &master_readfds);
                 FD_CLR(i, &master_writefds);
                 fdi = get_fdinfo(&client_fdlist, i);

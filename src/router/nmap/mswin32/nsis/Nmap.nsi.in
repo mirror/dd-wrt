@@ -7,7 +7,6 @@
 ;;   /NMAP=NO          don't install Nmap
 ;;   /REGISTERPATH=NO  don't add the installation directory to PATH
 ;;   /NPCAP=NO         don't install Npcap
-;;   /NPCAPDIR=C:\dir\ install Npcap to C:\dir\... (passed as /D to Npcap's installer)
 ;;   /REGISTRYMODS=NO  don't install performance-related registry mods
 ;;   /ZENMAP=NO        don't install Zenmap
 ;;   /NCAT=NO          don't install Ncat
@@ -223,27 +222,21 @@ SectionEnd
 Section "Npcap @@NPCAP_VERSION@@" SecNpcap
   SetOutPath "$INSTDIR"
   SetOverwrite on
-  StrCpy $1 ""
-  ${GetParameters} $R0
-  ClearErrors
-  ${GetOptions} $R0 "/NPCAPDIR=" $2
-  IfErrors NoNpcapDir 0
-    StrCpy $1 '/D="$2"'
-  NoNpcapDir:
   File ..\npcap-@@NPCAP_VERSION@@.exe
   ; If the Nmap installer was launched using /S then pass some arguments to Npcap
   IfSilent npcap_silent npcap_loud
   npcap_silent:
+    StrCpy $1 ""
     ${GetParameters} $R0
     ClearErrors
     ${GetOptions} $R0 "/NPFSTARTUP=" $2
     StrCmp $2 "NO" 0 NoSkipNPFStartup
     StrCpy $1 "/NPFSTARTUP=NO $1"
     NoSkipNPFStartup:
-    ExecWait '"$INSTDIR\npcap-@@NPCAP_VERSION@@.exe" /S /winpcap_mode=no $1'
+    ExecWait '"$INSTDIR\npcap-@@NPCAP_VERSION@@.exe" $1 /S /winpcap_mode=no'
     Goto delete_npcap
   npcap_loud:
-    ExecWait '"$INSTDIR\npcap-@@NPCAP_VERSION@@.exe" /winpcap_mode=no $1'
+    ExecWait '"$INSTDIR\npcap-@@NPCAP_VERSION@@.exe" /winpcap_mode=no'
   delete_npcap:
   Delete "$INSTDIR\npcap-@@NPCAP_VERSION@@.exe"
 SectionEnd
