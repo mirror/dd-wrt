@@ -125,7 +125,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: output.cc 36298 2016-09-21 03:55:12Z dmiller $ */
+/* $Id: output.cc 36349 2016-09-30 05:30:44Z dmiller $ */
 
 #include "nmap.h"
 #include "output.h"
@@ -149,11 +149,6 @@
 #include <vector>
 #include <list>
 #include <sstream>
-
-#ifdef RAISENTINET3
-/* sentinet3 */
-risultatoScan *risultatoHost;
-#endif /* RAISENTINET3 */
 
 extern NmapOps o;
 static const char *logtypes[LOG_NUM_FILES] = LOG_NAMES;
@@ -541,11 +536,7 @@ static char *formatScriptOutput(ScriptResult sr) {
    ports found on the machine.  It also handles the Machine/Grepable
    output and the XML output.  It is pretty ugly -- in particular I
    should write helper functions to handle the table creation */
-#ifndef RAISENTINET3
 void printportoutput(Target *currenths, PortList *plist) {
-#else /* RAISENTINET3 */
-void printportoutput(Target *currenths, PortList *plist, risultatoScan *risultatoHost) {
-#endif /* RAISENTINET3 */
   char protocol[MAX_IPPROTOSTRLEN + 1];
   char portinfo[64];
   char grepvers[256];
@@ -662,10 +653,6 @@ void printportoutput(Target *currenths, PortList *plist, risultatoScan *risultat
     log_write(LOG_PLAIN, "%d %s %s", plist->getStateCounts(istate),
               statenum2str(istate), desc);
     prevstate = istate;
-#ifdef RAISENTINET3
-
-    printf(" # ");
-#endif /* RAISENTINET3 */
   }
 
   if (prevstate != PORT_UNKNOWN)
@@ -881,14 +868,6 @@ void printportoutput(Target *currenths, PortList *plist, risultatoScan *risultat
 
   // Now we write the table for the user
   log_write(LOG_PLAIN, "%s", Tbl->printableTable(NULL));
-#ifdef RAISENTINET3
-
-  risultatoHost->OpenPort = (char *)malloc((strlen(Tbl->printableTable(NULL))+1)*sizeof(char));  
-  sprintf(risultatoHost->OpenPort,"%s",Tbl->printableTable(NULL));
-  
-  //printf("\n--->\n%s<---\n", Tbl->printableTable(NULL));
-  
-#endif /* RAISENTINET3 */
   delete Tbl;
 
   // There may be service fingerprints I would like the user to submit
@@ -1450,11 +1429,7 @@ void write_host_header(Target *currenths) {
       log_write(LOG_PLAIN, "]\n");
     }
   }
-#ifndef RAISENTINET3
   write_host_status(currenths);
-#else /* RAISENTINET3 */
-  write_host_status(currenths, NULL);
-#endif /* RAISENTINET3 */
   if (currenths->TargetName() != NULL
       && currenths->resolved_addrs.size() > 1) {
     const struct sockaddr_storage *hs_ss = currenths->TargetSockAddr();
@@ -1482,11 +1457,7 @@ void write_host_header(Target *currenths) {
 /* Writes host status info to the log streams (including STDOUT).  An
    example is "Host: 10.11.12.13 (foo.bar.example.com)\tStatus: Up\n" to
    machine log. */
-#ifndef RAISENTINET3
 void write_host_status(Target *currenths) {
-#else /* RAISENTINET3 */
-void write_host_status(Target *currenths, risultatoScan *risultatoHost) {
-#endif /* RAISENTINET3 */
   if (o.listscan) {
     /* write "unknown" to machine and xml */
     log_write(LOG_MACHINE, "Host: %s (%s)\tStatus: Unknown\n",
@@ -1532,16 +1503,6 @@ void write_host_status(Target *currenths, risultatoScan *risultatoHost) {
 
       log_write(LOG_MACHINE, "Host: %s (%s)\tStatus: Up\n",
                 currenths->targetipstr(), currenths->HostName());
-#ifdef RAISENTINET3
-
-	if (risultatoHost != NULL) {
-		//risultatoHost = (risultatoScan*)malloc(sizeof(risultatoScan));
-		risultatoHost->Dns = (char *)malloc((strlen((strcmp(currenths->HostName(),"") == 0)? "noDNS" : currenths->HostName())+1)*sizeof(char));
-		sprintf(risultatoHost->Ip,"%s",currenths->targetipstr());
-		sprintf(risultatoHost->Dns,"%s",((strcmp(currenths->HostName(),"") == 0)? "noDNS" : currenths->HostName()));
-		//printf("\n---Ip=%s HostName=%s\n", currenths->targetipstr(), (strcmp(currenths->HostName(),"") == 0)? "noDNS" : currenths->HostName());
-	}
-#endif /* RAISENTINET3 */
     } else if (currenths->flags & HOST_DOWN) {
       log_write(LOG_MACHINE, "Host: %s (%s)\tStatus: Down\n",
                 currenths->targetipstr(), currenths->HostName());
@@ -1699,11 +1660,7 @@ static void printosclassificationoutput(const struct
    network.  This only prints to human output -- XML is handled by a
    separate call ( print_MAC_XML_Info ) because it needs to be printed
    in a certain place to conform to DTD. */
-#ifndef RAISENTINET3
 void printmacinfo(Target *currenths) {
-#else /* RAISENTINET3 */
-void printmacinfo(Target *currenths, risultatoScan *risultatoHost) {
-#endif /* RAISENTINET3 */
   const u8 *mac = currenths->MACAddress();
   char macascii[32];
 
@@ -1713,19 +1670,6 @@ void printmacinfo(Target *currenths, risultatoScan *risultatoHost) {
              mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
     log_write(LOG_PLAIN, "MAC Address: %s (%s)\n", macascii,
               macvendor ? macvendor : "Unknown");
-#ifdef RAISENTINET3
-
-    risultatoHost->Mac = (char *)malloc((strlen(macascii)+1)*sizeof(char));
-    risultatoHost->MacVendor = (char *)malloc((strlen(macvendor? macvendor : "Unknown")+1)*sizeof(char));
-    sprintf(risultatoHost->Mac,"%s",macascii);
-    sprintf(risultatoHost->MacVendor,"%s",(macvendor? macvendor : "Unknown"));
-    //printf("###--- %s %s \n",risultatoHost->Mac,risultatoHost->MacVendor);
-  } else {
-    risultatoHost->Mac = (char *)malloc(2*sizeof(char));
-    risultatoHost->MacVendor = (char *)malloc(2*sizeof(char));
-    sprintf(risultatoHost->Mac,"%s","-");
-    sprintf(risultatoHost->MacVendor,"%s","-");
-#endif /* RAISENTINET3 */
   }
 }
 
@@ -1919,11 +1863,7 @@ static void write_merged_fpr(const FingerPrintResults *FPR,
 
 /* Prints the formatted OS Scan output to stdout, logfiles, etc (but only
    if an OS Scan was performed).*/
-#ifndef RAISENTINET3
 void printosscanoutput(Target *currenths) {
-#else /* RAISENTINET3 */
-void printosscanoutput(Target *currenths, risultatoScan *risultatoHost) {
-#endif /* RAISENTINET3 */
   int i;
   char numlst[512];             /* For creating lists of numbers */
   char *p;                      /* Used in manipulating numlst above */
@@ -1984,18 +1924,22 @@ void printosscanoutput(Target *currenths, risultatoScan *risultatoHost) {
       for (i = 1; i < FPR->num_perfect_matches; i++)
         log_write(LOG_MACHINE, "|%s", FPR->matches[i]->OS_name);
 
-#ifdef RAISENTINET3
-      risultatoHost->OS = (char *)malloc((strlen(FPR->matches[0]->OS_name)+1)*sizeof(char));
-      sprintf(risultatoHost->OS,"%s",FPR->matches[0]->OS_name);
-      //printf("---OS details: %s\n", FPR->matches[0]->OS_name);
-
-#endif /* RAISENTINET3 */
+      unsigned short numprints = FPR->matches[0]->numprints;
       log_write(LOG_PLAIN, "OS details: %s", FPR->matches[0]->OS_name);
-      for (i = 1; i < FPR->num_perfect_matches; i++)
+      for (i = 1; i < FPR->num_perfect_matches; i++) {
+        numprints = MIN(numprints, FPR->matches[i]->numprints);
         log_write(LOG_PLAIN, ", %s", FPR->matches[i]->OS_name);
+      }
       log_write(LOG_PLAIN, "\n");
 
-      if (o.debugging || o.verbose > 1)
+      /* Suggest submission of an already-matching IPv6 fingerprint with
+       * decreasing probability as numprints increases, and never if the group
+       * has 5 or more prints or if the print is unsuitable. */
+      bool suggest_submission = currenths->af() == AF_INET6 && reason == NULL && rand() % 5 >= numprints;
+      if (suggest_submission)
+        log_write(LOG_NORMAL | LOG_SKID_NOXLT | LOG_STDOUT,
+            "Nmap needs more fingerprint submissions of this type. Please submit via https://nmap.org/submit/\n");
+      if (suggest_submission || o.debugging || o.verbose > 1)
         write_merged_fpr(FPR, currenths, reason == NULL, true);
     } else {
       /* No perfect matches. */
@@ -2016,11 +1960,6 @@ void printosscanoutput(Target *currenths, risultatoScan *risultatoHost) {
         log_write(LOG_PLAIN, "\n");
       }
 
-#ifdef RAISENTINET3
-      risultatoHost->OS = (char *)malloc((strlen(FPR->matches[0]->OS_name)+1)*sizeof(char));
-      sprintf(risultatoHost->OS,"%s",FPR->matches[0]->OS_name);
-
-#endif /* RAISENTINET3 */
       if (!reason) {
         log_write(LOG_NORMAL | LOG_SKID_NOXLT | LOG_STDOUT,
                   "No exact OS matches for host (If you know what OS is running on it, see https://nmap.org/submit/ ).\n");
