@@ -278,6 +278,10 @@ static void handleConnectResult(UltraScanInfo *USI, HostScanStats *hss,
       break;
 #ifdef ENOPROTOOPT
     case ENOPROTOOPT:
+      newhoststate = HOST_DOWN;
+      newportstate = PORT_FILTERED;
+      current_reason = ER_PROTOUNREACH;
+      break;
 #endif
     case EHOSTUNREACH:
       newhoststate = HOST_DOWN;
@@ -301,6 +305,14 @@ static void handleConnectResult(UltraScanInfo *USI, HostScanStats *hss,
       newportstate = PORT_FILTERED;
       current_reason = ER_NETUNREACH;
       break;
+#ifdef ENONET
+    case ENONET:
+      /* For Linux at least, this means ICMP type 3 code 8, source host isolated */
+      newhoststate = HOST_DOWN;
+      newportstate = PORT_FILTERED;
+      current_reason = ER_DESTUNREACH;
+      break;
+#endif
     case ENETDOWN:
     case ENETRESET:
     case ECONNABORTED:
@@ -479,7 +491,7 @@ bool do_one_select_round(UltraScanInfo *USI, struct timeval *stime) {
   int timeleft;
   ConnectScanInfo *CSI = USI->gstats->CSI;
   int sd;
-  std::set<HostScanStats *>::iterator hostI;
+  std::multiset<HostScanStats *>::iterator hostI;
   HostScanStats *host;
   UltraProbe *probe = NULL;
   int optval;
@@ -520,7 +532,7 @@ bool do_one_select_round(UltraScanInfo *USI, struct timeval *stime) {
      and find the relevant ones. Note the peculiar structure of the loop--we
      iterate through both incompleteHosts and completedHosts, because global
      timing pings are sent to hosts in completedHosts. */
-  std::set<HostScanStats *>::iterator incompleteHostI, completedHostI;
+  std::multiset<HostScanStats *>::iterator incompleteHostI, completedHostI;
   incompleteHostI = USI->incompleteHosts.begin();
   completedHostI = USI->completedHosts.begin();
   while ((incompleteHostI != USI->incompleteHosts.end()

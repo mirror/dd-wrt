@@ -1,4 +1,5 @@
 #!/bin/sh
+set -x
 
 export source=$1
 export version=$(grep '^\#[ \t]*define[ \t]\+NMAP_VERSION' ../nmap.h | sed -e 's/.*"\(.*\)".*/\1/' -e 'q')
@@ -70,6 +71,19 @@ echo '
 	end tell
 ' | osascript
 
-hdiutil detach ${device}
+if [ $? -ne 0 ]; then
+	echo "Problem with AppleScript"
+	exit 1
+fi
+
+for i in 1 2 5; do
+  sleep $i
+  hdiutil detach ${device} && break
+  if [ $i -eq 5 ]; then
+    echo "Unable to detach ${device}"
+    exit 1
+  fi
+done
+
 hdiutil convert "pack.temp.dmg" -format UDZO -imagekey zlib-level=9 -o "${finalDMGName}"
 rm -f pack.temp.dmg

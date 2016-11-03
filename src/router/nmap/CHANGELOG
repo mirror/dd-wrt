@@ -1,4 +1,37 @@
-# Nmap Changelog ($Id: CHANGELOG 36342 2016-09-29 15:23:29Z dmiller $); -*-text-*-
+# Nmap Changelog ($Id: CHANGELOG 36374 2016-10-18 13:36:24Z dmiller $); -*-text-*-
+
+Nmap 7.31 [2016-10-20]
+
+o Fixed the way Nmap handles scanning names that resolve to the same IP. Due to
+  changes in 7.30, the IP was only being scanned once, with bogus results
+  displayed for the other names. The previous behavior is now restored.
+  [Tudor Emil Coman]
+
+o [GH#350] Fix an assertion failure due to floating point error in equality
+  comparison, which triggered mainly on OpenBSD:
+    assertion "diff <= interval" failed: file "timing.cc", line 440
+  This was reported earlier as [GH#472] but the assertion fixed there was a
+  different one. [David Carlier]
+
+o [Nping][GH#559] Fix Nping's ability to use Npcap on Windows. A privilege
+  check was performed too late, so the Npcap loading code assumed the user had no
+  rights. [Yang Luo, Daniel Miller]
+
+o [Zenmap] Fix a crash in the About page in the Spanish translation due to a
+  missing format specifier:
+    File "zenmapGUI\About.pyo", line 217, in __init__
+    TypeError: not all arguments converted during string formatting
+  [Daniel Miller]
+
+o [Zenmap][GH#556] Better visual indication that display of hostname is tied to
+  address in the Topology page. You can show numeric addresses with hostnames
+  or without, but you can't show hostnames without numeric addresses when they
+  are not available. [Daniel Miller]
+
+o To increase the number of IPv6 fingerprint submissions, a prompt for
+  submission will be shown with some random chance for successful matches of OS
+  classes that are based on only a few submissions. Previously, only
+  unsuccessful matches produced such a prompt. [Daniel Miller]
 
 Nmap 7.30 [2016-09-29]
 
