@@ -1,4 +1,9 @@
 ------------------------------------------------------------------------
+r3207 | brainslayer | 2016-11-03 13:46:11 +0100 (Thu, 03 Nov 2016) | 2 lines
+
+mac80211: allow using AP_LINK_PS with
+ mac80211-generated TIM IE
+------------------------------------------------------------------------
 r3206 | brainslayer | 2016-11-02 22:43:12 +0100 (Wed, 02 Nov 2016) | 1 line
 
 workaround for broken qca firmwares in sta mode
