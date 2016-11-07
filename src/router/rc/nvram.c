@@ -7,12 +7,6 @@
 #include <bcmnvram.h>
 #include <utils.h>
 
-static void usage(void)
-{
-	fprintf(stderr, "usage: nvram [get name] [set name=value] [unset name] [show] [backup filename] [restore filename]\n");
-	exit(0);
-}
-
 #ifdef NVRAM_SPACE_256
 #define NVRAMSPACE NVRAM_SPACE_256
 #elif HAVE_NVRAM_128
@@ -28,7 +22,7 @@ static void usage(void)
 /* 
  * NVRAM utility 
  */
-int main(int argc, char **argv)
+static int nvram_main(int argc, char **argv)
 {
 	char *name, *value, buf[NVRAMSPACE];
 	int size;
@@ -39,8 +33,10 @@ int main(int argc, char **argv)
 	--argc;
 	++argv;
 
-	if (!*argv)
-		usage();
+	if (!*argv){
+	fprintf(stderr, "usage: nvram [get name] [set name=value] [unset name] [show] [backup filename] [restore filename]\n");
+	exit(0);
+	}
 
 	/* 
 	 * Process the remaining arguments. 

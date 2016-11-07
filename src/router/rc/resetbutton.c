@@ -58,7 +58,7 @@
 static unsigned int *page;
 static int fd;
 
-void init_gpio()
+static  void init_gpio()
 {
 	void *start = 0;
 
@@ -93,7 +93,7 @@ void init_gpio()
 
 }
 
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return (*REG(page, GPIO0_IR) & GPIO_BUTTON) == 0;
 
@@ -101,7 +101,7 @@ int getbuttonstate()
 #endif
 
 #if defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600)  || defined(HAVE_LS5) || defined(HAVE_WP54G) || defined(HAVE_NP28G) || defined(HAVE_SOLO51) || defined(HAVE_OPENRISC)
-int getbuttonstate()
+static int getbuttonstate()
 {
 #if defined(HAVE_EAP3660) || defined(HAVE_EOC2610) || defined(HAVE_EOC1650) || defined(HAVE_ECB3500)
 	return !get_gpio(5);
@@ -126,32 +126,32 @@ int getbuttonstate()
 #endif
 }
 #elif defined(HAVE_VENTANA)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(496);
 }
 #elif defined(HAVE_E200)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(0);
 }
 #elif defined(HAVE_EROUTER)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(11);
 }
 #elif defined(HAVE_UNIWIP)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(232);
 }
 #elif defined(HAVE_WDR4900)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return get_gpio(3);
 }
 #elif defined(HAVE_MVEBU)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	int ret;
 	if (getRouterBrand() == ROUTER_WRT_1900AC)
@@ -161,7 +161,7 @@ int getbuttonstate()
 	return !ret;
 }
 #elif defined(HAVE_IPQ806X)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	int ret = 0;
 	switch (getRouterBrand()) {
@@ -174,12 +174,12 @@ int getbuttonstate()
 	return !ret;
 }
 #elif defined(HAVE_DAP3410)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(17);
 }
 #elif defined(HAVE_UBNTM)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	int brand = getRouterBrand();
 	if (brand == ROUTER_UBNT_UAPAC)
@@ -187,28 +187,28 @@ int getbuttonstate()
 	return !get_gpio(12);
 }
 #elif defined(HAVE_RB2011)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return 0;
 }
 #elif defined(HAVE_WDR4300)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(16);
 }
 #elif defined(HAVE_WNDR3700V4)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(21);
 }
 #elif defined(HAVE_DIR862)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(17);
 
 }
 #elif defined(HAVE_MMS344)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return 0;
 	int ret = get_gpio(12);
@@ -218,272 +218,272 @@ int getbuttonstate()
 	return 0;
 }
 #elif defined(HAVE_WR1043V2)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(16);
 }
 #elif defined(HAVE_WZR450HP2)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(17);
 }
 #elif defined(HAVE_WR615N)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(17);
 }
 #elif defined(HAVE_E325N)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(20);
 }
 #elif defined(HAVE_E355AC)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(17);
 }
 #elif defined(HAVE_AP120C)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(16);
 }
 #elif defined(HAVE_WR650AC)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(19);
 }
 #elif defined(HAVE_XD3200)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(2);
 }
 #elif defined(HAVE_E380AC)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(19);
 }
 #elif defined(HAVE_DIR869)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(1);
 }
 #elif defined(HAVE_DIR859)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(2);
 }
 #elif defined(HAVE_JWAP606)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(15);
 }
 #elif defined(HAVE_DIR825C1)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(17);
 }
 #elif defined(HAVE_WASP)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(12);
 }
 #elif defined(HAVE_CARAMBOLA)
 #ifdef HAVE_ERC
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return get_gpio(12);
 
 }
 #else
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(11);
 }
 #endif
 #elif defined(HAVE_HORNET)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(12);
 }
 #elif defined(HAVE_WNR2200)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(38);
 }
 #elif defined(HAVE_WNR2000)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(40);
 }
 #elif defined(HAVE_WDR2543)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(11);
 }
 #elif defined(HAVE_WHRHPGN)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(11);
 
 }
 #elif defined(HAVE_DAP3320)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(12);
 }
 #elif defined(HAVE_DAP2330)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(17);
 }
 #elif defined(HAVE_DAP2230)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(17);
 }
 #elif defined(HAVE_WR941V6)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(1);
 }
 #elif defined(HAVE_WR841V9)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(12);
 }
 #elif defined(HAVE_DIR615I)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(17);
 }
 #elif defined(HAVE_DIR615E)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(8);
 }
 #elif defined(HAVE_WNDR3700)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(8);
 }
 #elif defined(HAVE_DIR825)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(3);
 
 }
 #elif defined(HAVE_WRT400)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(8);
 }
 #elif defined(HAVE_WRT160NL)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(21);
 }
 #elif defined(HAVE_TG2521)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(21);
 
 }
 #elif defined(HAVE_TG1523)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(0);
 
 }
 #elif defined(HAVE_WR941)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(3);
 
 }
 #elif defined(HAVE_WR741V4)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return get_gpio(11);
 }
 #elif defined(HAVE_WR741)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(11);
 }
 #elif defined(HAVE_WR1043)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(3);
 
 }
 #elif defined(HAVE_WZRG300NH2)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(1);	// nxp multiplexer connected
 }
 #elif defined(HAVE_WZRG450)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(6);	// nxp multiplexer connected
 }
 #elif defined(HAVE_DIR632)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(8);	// nxp multiplexer connected
 
 }
 #elif defined(HAVE_WZRG300NH)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(24);	// nxp multiplexer connected
 }
 #elif defined(HAVE_WZRHPAG300NH)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(11);
 }
 #elif defined(HAVE_TEW632BRP)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(21);
 }
 #elif defined(HAVE_JA76PF)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(11);
 }
 #elif defined(HAVE_ALFAAP94)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(11);
 }
 #elif defined(HAVE_JWAP003)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(11);
 }
 #elif defined(HAVE_ALFANX)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(11);
 }
 #elif defined(HAVE_LSX)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(8);
 }
 #elif defined(HAVE_WMBR_G300NH)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(37);
 }
 #elif defined(HAVE_VF803)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return !get_gpio(28);
 }
 #elif defined(HAVE_SX763)
-int getbuttonstate()
+static int getbuttonstate()
 {
 	return get_gpio(14);
 }
@@ -515,7 +515,7 @@ struct gpio_bit {
 
 char *filename = "/dev/gpio";
 
-int read_bit(int bit)
+static int read_bit(int bit)
 {
 
 	int file;
@@ -560,7 +560,7 @@ int read_bit(int bit)
 	return _bit.state;
 }
 
-int isCompex(void)
+static int isCompex(void)
 {
 	static int compex = -1;
 
@@ -586,7 +586,7 @@ int isCompex(void)
 	return compex;
 }
 
-int isGW2369(void)
+static int isGW2369(void)
 {
 
 	int brand = getRouterBrand();
@@ -595,7 +595,7 @@ int isGW2369(void)
 	return 0;
 }
 
-int isGW2350(void)
+static int isGW2350(void)
 {
 	if (nvram_match("DD_BOARD", "Gateworks Cambria GW2350")
 	    || nvram_match("DD_BOARD2", "Gateworks Cambria GW2350"))
@@ -603,7 +603,7 @@ int isGW2350(void)
 	return 0;
 }
 
-int getbuttonstate()
+static int getbuttonstate()
 {
 	FILE *in;
 	int ret;
@@ -663,7 +663,7 @@ static void alarmtimer(unsigned long sec, unsigned long usec)
 	setitimer(ITIMER_REAL, &itv, NULL);
 }
 
-int endswith(char *str, char *cmp)
+/*static int endswith(char *str, char *cmp)
 {
 	int cmp_len, str_len, i;
 
@@ -676,9 +676,9 @@ int endswith(char *str, char *cmp)
 			return (0);
 	}
 	return (1);
-}
+}*/
 
-void runStartup(char *folder, char *extension)
+static void runStartup(char *folder, char *extension)
 {
 	struct dirent *entry;
 	DIR *directory;
@@ -701,7 +701,7 @@ void runStartup(char *folder, char *extension)
  * 0); eval("reboot"); } 
  */
 
-void service_restart(void)
+static void service_restart(void)
 {
 	DEBUG("resetbutton: restart\n");
 	/* 
@@ -887,7 +887,7 @@ static void handle_ses(void)
 
 }
 
-void period_check(int sig)
+static void period_check(int sig)
 {
 	FILE *fp;
 	unsigned int val = 0;
@@ -1500,7 +1500,7 @@ void period_check(int sig)
 	}
 }
 
-int main(int argc, char *argv[])
+static int resetbutton_main(int argc, char *argv[])
 {
 	brand = getRouterBrand();
 #ifndef HAVE_MI424WR

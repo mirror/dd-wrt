@@ -39,9 +39,8 @@ INITCFLAGS = $(call cc-option,-Os -ffunction-sections -fdata-sections,)
 
 #LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
 
-OBJS := rc.o event.o
+OBJS := rc.o event.o ntp.o
 #http.o stats.o
-OBJS += watchdog.o
 
 #ifdef $(CONFIG_DIST)
 CFLAGS += -DDIST=\"$(CONFIG_DIST)\"
@@ -340,7 +339,7 @@ ifeq ($(CONFIG_WNDR3700V4),y)
 CFLAGS += -DHAVE_WNDR3700V4
 endif
 ifeq ($(CONFIG_ALFANX),y)
-CFLAGS += -DHAVE_ALFANX
+CFLAGS += -DHAVE_ALFANX -DHAVE_WLANLED  -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(LINUXDIR)/include  -D_GNU_SOURCE  -I$(TOP)/libubox -I$(TOP)/libnl-tiny/include
 endif
 ifeq ($(CONFIG_USR8200),y)
 CFLAGS += -DHAVE_USR8200
@@ -656,7 +655,7 @@ ifeq ($(CONFIG_TEW632BRP),y)
 CFLAGS += -DHAVE_TEW632BRP
 endif
 ifeq ($(CONFIG_UBNTM),y)
-CFLAGS += -DHAVE_UBNTM
+CFLAGS += -DHAVE_UBNTM -DHAVE_WLANLED -D_GNU_SOURCE  -I$(TOP)/libubox -I$(TOP)/libnl-tiny/include
 endif
 ifeq ($(CONFIG_DAP3410),y)
 CFLAGS += -DHAVE_DAP3410
@@ -877,6 +876,7 @@ endif
 
 ifeq ($(CONFIG_MADWIFI),y)
 CFLAGS +=  -DHAVE_MADWIFI -DHAVE_ROAMING 
+LDFLAGS += ../wireless-tools/libiw.so
 endif
 ifeq ($(CONFIG_MADWIFI_MIMO),y)
 CFLAGS +=  -DHAVE_MADWIFI_MIMO
@@ -889,7 +889,6 @@ CFLAGS += -DHAVE_SNMP
 endif
 
 ifeq ($(CONFIG_WOL),y)
-OBJS +=wol.o
 CFLAGS += -DHAVE_WOL
 endif
 
@@ -926,6 +925,9 @@ endif
 
 ifeq ($(CONFIG_ANTIFLASH),y)
 CFLAGS += -DANTI_FLASH
+endif
+ifeq ($(CONFIG_GPIOWATCHER),y)
+CFLAGS += -DHAVE_GPIOWATCHER
 endif
 
 ifeq ($(CONFIG_FREEBIRD),y)
@@ -1011,35 +1013,35 @@ install: all
 	install -d $(INSTALLDIR)/usr/sbin
 	install -d $(INSTALLDIR)/sbin
 	install rc $(INSTALLDIR)/sbin	
-	install ttraff $(INSTALLDIR)/sbin	
+#	install ttraff $(INSTALLDIR)/sbin	
 ifneq ($(CONFIG_RT2880),y)
 	install wland $(INSTALLDIR)/sbin	
 endif
-	install process_monitor $(INSTALLDIR)/sbin	
-	install resetbutton $(INSTALLDIR)/sbin	
-ifeq ($(CONFIG_GPIOWATCHER),y)
-	install gpiowatcher $(INSTALLDIR)/sbin	
-endif
+#	install process_monitor $(INSTALLDIR)/sbin	
+#	install resetbutton $(INSTALLDIR)/sbin	
+#ifeq ($(CONFIG_GPIOWATCHER),y)
+#	install gpiowatcher $(INSTALLDIR)/sbin	
+#endif
 	install init $(INSTALLDIR)/sbin	
-	install check_ps $(INSTALLDIR)/sbin	
-	install nvram $(INSTALLDIR)/usr/sbin	
-	install ledtool $(INSTALLDIR)/sbin	
-ifeq ($(CONFIG_WPS),y)
-	install wpswatcher $(INSTALLDIR)/sbin	
-endif
-ifeq ($(CONFIG_UBNTM),y)
-	install wlanled $(INSTALLDIR)/sbin	
-endif
-ifeq ($(CONFIG_ALFANX),y)
-	install wlanled $(INSTALLDIR)/sbin	
-endif
+#	install check_ps $(INSTALLDIR)/sbin	
+#	install nvram $(INSTALLDIR)/usr/sbin	
+#	install ledtool $(INSTALLDIR)/sbin	
+#ifeq ($(CONFIG_WPS),y)
+#	install wpswatcher $(INSTALLDIR)/sbin	
+#endif
+#ifeq ($(CONFIG_UBNTM),y)
+#	install wlanled $(INSTALLDIR)/sbin	
+#endif
+#ifeq ($(CONFIG_ALFANX),y)
+#	install wlanled $(INSTALLDIR)/sbin	
+#endif
 ifeq ($(CONFIG_QTN),y)
 	install qtn_monitor $(INSTALLDIR)/sbin	
 endif
 #	install event $(INSTALLDIR)/sbin	
-	install radio_timer $(INSTALLDIR)/sbin
-	install hotplug $(INSTALLDIR)/sbin
-	install listen $(INSTALLDIR)/sbin
+#	install radio_timer $(INSTALLDIR)/sbin
+#	install hotplug $(INSTALLDIR)/sbin
+#	install listen $(INSTALLDIR)/sbin
 	$(STRIP) $(INSTALLDIR)/sbin/rc
 #	cd $(INSTALLDIR)/sbin && ln -sf rc init
 ifneq ($(CONFIG_TW6600),y)
@@ -1051,16 +1053,16 @@ ifeq ($(CONFIG_DIST),"micro-special")
 	cd $(INSTALLDIR)/sbin && ln -sf rc brctl
 endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc erase
-#	cd $(INSTALLDIR)/sbin && ln -sf rc roaming_daemon
+	cd $(INSTALLDIR)/sbin && ln -sf rc roaming_daemon
 	cd $(INSTALLDIR)/sbin && ln -sf rc get_wanface
-#	cd $(INSTALLDIR)/sbin && ln -sf rc ledtool
+	cd $(INSTALLDIR)/sbin && ln -sf rc ledtool
 	cd $(INSTALLDIR)/sbin && ln -sf rc write
 	cd $(INSTALLDIR)/sbin && ln -sf rc restore
 #	cd $(INSTALLDIR)/sbin && ln -sf rc stats
 	cd $(INSTALLDIR)/sbin && ln -sf rc event
-#	cd $(INSTALLDIR)/sbin && ln -sf rc hotplug  //done in hotplug.c
+	cd $(INSTALLDIR)/sbin && ln -sf rc hotplug
 	cd $(INSTALLDIR)/sbin && ln -sf rc filter
-#	cd $(INSTALLDIR)/sbin && ln -sf rc resetbutton
+	cd $(INSTALLDIR)/sbin && ln -sf rc resetbutton
 	cd $(INSTALLDIR)/sbin && ln -sf rc filtersync
 	cd $(INSTALLDIR)/sbin && ln -sf rc ntpd
 	cd $(INSTALLDIR)/sbin && ln -sf rc getbridge
@@ -1069,28 +1071,40 @@ endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc ipupdated
 	cd $(INSTALLDIR)/sbin && ln -sf rc redial
 	cd $(INSTALLDIR)/sbin && ln -sf rc setuserpasswd
-#	cd $(INSTALLDIR)/usr/sbin && ln -sf /sbin/rc nvram
+	cd $(INSTALLDIR)/usr/sbin && ln -sf /sbin/rc nvram
 	cd $(INSTALLDIR)/sbin && ln -sf rc hb_connect
 	cd $(INSTALLDIR)/sbin && ln -sf rc hb_disconnect
 	cd $(INSTALLDIR)/sbin && ln -sf rc gpio
 	cd $(INSTALLDIR)/sbin && ln -sf rc softwarerevision
 	cd $(INSTALLDIR)/sbin && ln -sf rc mtd
+ifeq ($(CONFIG_GPIOWATCHER),y)
+	cd $(INSTALLDIR)/sbin && ln -sf rc gpiowatcher
+endif
+ifeq ($(CONFIG_UBNTM),y)
+	cd $(INSTALLDIR)/sbin && ln -sf rc wlanled
+endif
+ifeq ($(CONFIG_ALFANX),y)
+	cd $(INSTALLDIR)/sbin && ln -sf rc wlanled
+endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc beep
 	cd $(INSTALLDIR)/sbin && ln -sf rc ledtracking
 ifeq ($(CONFIG_IPV6),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc dhcp6c-state
 endif
+ifeq ($(CONFIG_WPS),y)
+	cd $(INSTALLDIR)/sbin && ln -sf rc wpswatcher
+endif
 ifeq ($(CONFIG_REGISTER),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc regshell
 endif
-#	cd $(INSTALLDIR)/sbin && ln -sf rc listen
+	cd $(INSTALLDIR)/sbin && ln -sf rc listen
 	cd $(INSTALLDIR)/sbin && ln -sf rc supplicant
-#	cd $(INSTALLDIR)/sbin && ln -sf rc check_ps
+	cd $(INSTALLDIR)/sbin && ln -sf rc check_ps
 	cd $(INSTALLDIR)/sbin && ln -sf rc ddns_success
-#	cd $(INSTALLDIR)/sbin && ln -sf rc process_monitor
+	cd $(INSTALLDIR)/sbin && ln -sf rc process_monitor
 	cd $(INSTALLDIR)/sbin && ln -sf rc site_survey
-#	cd $(INSTALLDIR)/sbin && ln -sf rc radio_timer
-#	cd $(INSTALLDIR)/sbin && ln -sf rc ttraff	
+	cd $(INSTALLDIR)/sbin && ln -sf rc radio_timer
+	cd $(INSTALLDIR)/sbin && ln -sf rc ttraff	
 ifeq ($(CONFIG_WIVIZ),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc run_wiviz
 	cd $(INSTALLDIR)/sbin && ln -sf rc autokill_wiviz
@@ -1164,40 +1178,36 @@ endif
 rc: $(OBJS)
 #	$(AR) arc -o $@.a $^
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lwireless
-ifeq ($(CONFIG_MADWIFI),y)
-	$(CC) $(CFLAGS) -o roaming_daemon roaming_daemon.c $(LDFLAGS) ../wireless-tools/libiw.so 
-endif
+#ifeq ($(CONFIG_MADWIFI),y)
+#	$(CC) $(CFLAGS) -o roaming_daemon roaming_daemon.c $(LDFLAGS) ../wireless-tools/libiw.so 
+#endif
 ifeq ($(CONFIG_QTN),y)
 	$(CC) $(CFLAGS) -o qtn_monitor qtn_monitor.c $(LDFLAGS) $(QTNFLAGS)
 endif
-	$(CC) $(CFLAGS) -o ttraff ttraff.c $(LDFLAGS)
+#	$(CC) $(CFLAGS) -o ttraff ttraff.c $(LDFLAGS)
 	$(CC) $(CFLAGS) -o wland wland.c $(LDFLAGS) -lwireless
-	$(CC) $(CFLAGS) -o process_monitor process_monitor.c ntp.c $(LDFLAGS)
-	$(CC) $(CFLAGS) -o resetbutton resetbutton.c $(LDFLAGS) -lwireless
-	$(CC) $(CFLAGS) -o gpiowatcher gpiowatcher.c $(LDFLAGS)
+#	$(CC) $(CFLAGS) -o process_monitor process_monitor.c ntp.c $(LDFLAGS)
+#	$(CC) $(CFLAGS) -o resetbutton resetbutton.c $(LDFLAGS) -lwireless
+#	$(CC) $(CFLAGS) -o gpiowatcher gpiowatcher.c $(LDFLAGS)
 ifeq ($(CONFIG_NORTHSTAR),y)
 	$(CC) $(CFLAGS) -I$(LINUXDIR)/brcm/arm/include  -o et et.c   $(LDFLAGS)
 endif
-#ifeq ($(CONFIG_LSX),y)
-#	$(CC) $(CFLAGS) $(INITCFLAGS) -L$(TOP)/libutils -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -o init init.c $(TOP)/nvram/libnvram.a $(TOP)/libutils/libutils.a
-#else
 	$(CC) $(CFLAGS) $(INITCFLAGS) -L$(TOP)/libutils -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -o init init.c -lnvram -lutils  $(LDFLAGS) 
+#	$(CC) $(CFLAGS) -o check_ps check_ps.c $(LDFLAGS)
+#	$(CC) $(CFLAGS) -o nvram nvram.c -L../nvram -lnvram  
+#	$(CC) $(CFLAGS) -o ledtool ledtool.c $(LDFLAGS)
+#ifeq ($(CONFIG_WPS),y)
+#	$(CC) $(CFLAGS) -o wpswatcher wpswatcher.c $(LDFLAGS)
 #endif
-	$(CC) $(CFLAGS) -o check_ps check_ps.c $(LDFLAGS)
-	$(CC) $(CFLAGS) -o nvram nvram.c -L../nvram -lnvram  
-	$(CC) $(CFLAGS) -o ledtool ledtool.c $(LDFLAGS)
-ifeq ($(CONFIG_WPS),y)
-	$(CC) $(CFLAGS) -o wpswatcher wpswatcher.c $(LDFLAGS)
-endif
-ifeq ($(CONFIG_UBNTM),y)
-	$(CC) -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(LINUXDIR)/include $(CFLAGS) -D_GNU_SOURCE  -I$(TOP)/libubox -I$(TOP)/libnl-tiny/include -o wlanled wlanled.c $(LDFLAGS) -lwireless
-endif
-ifeq ($(CONFIG_ALFANX),y)
-	$(CC) -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(LINUXDIR)/include $(CFLAGS) -D_GNU_SOURCE  -I$(TOP)/libubox -I$(TOP)/libnl-tiny/include -o wlanled wlanled.c $(LDFLAGS) -lwireless
-endif
+#ifeq ($(CONFIG_UBNTM),y)
+#	$(CC) -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(LINUXDIR)/include $(CFLAGS) -D_GNU_SOURCE  -I$(TOP)/libubox -I$(TOP)/libnl-tiny/include -o wlanled wlanled.c $(LDFLAGS) -lwireless
+#endif
+#ifeq ($(CONFIG_ALFANX),y)
+#	$(CC) -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(LINUXDIR)/include $(CFLAGS) -D_GNU_SOURCE  -I$(TOP)/libubox -I$(TOP)/libnl-tiny/include -o wlanled wlanled.c $(LDFLAGS) -lwireless
+#endif
 #	$(CC) $(CFLAGS) -o event event.c
-	$(CC) $(CFLAGS) -o radio_timer radio_timer.c $(LDFLAGS)
-	$(CC) $(CFLAGS) -o hotplug hotplug.c $(LDFLAGS)
-	$(CC) $(CFLAGS) -o listen listen.c $(LDFLAGS)
+#	$(CC) $(CFLAGS) -o radio_timer radio_timer.c $(LDFLAGS)
+#	$(CC) $(CFLAGS) -o hotplug hotplug.c $(LDFLAGS)
+#	$(CC) $(CFLAGS) -o listen listen.c $(LDFLAGS)
 
 $(OBJS): $(CY_DEPS)

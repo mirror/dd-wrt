@@ -164,7 +164,7 @@ static void watchdog(void)
 	}
 }
 
-int watchdog_main(int argc, char *argv[])
+static int watchdog_main(int argc, char *argv[])
 {
 
 	/* 
