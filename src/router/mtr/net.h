@@ -20,6 +20,7 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <sys/select.h>
 #include <sys/socket.h>
 #ifdef ENABLE_IPV6
 #include <netinet/ip6.h>
