@@ -152,7 +152,7 @@ static int ledtool_main(int argc, char **argv);
 extern int filtersync_main(void);
 extern int filter_add(int seq);
 extern int filter_del(int seq);
-static  int resetbutton_main(int argc, char **argv);
+static int resetbutton_main(int argc, char **argv);
 
 // extern int ntp_main(int argc, char **argv);
 void ntp_main(timer_t t, int arg);

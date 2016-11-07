@@ -361,10 +361,10 @@ static struct MAIN maincalls[] = {
 	{"check_ps", NULL, check_ps_main},
 	{"resetbutton", NULL, resetbutton_main},
 	{"process_monitor", NULL, process_monitor_main},
-	{"listen", NULL,listen_main},
-	{"radio_timer", NULL,radio_timer_main},
+	{"listen", NULL, listen_main},
+	{"radio_timer", NULL, radio_timer_main},
 #ifdef HAVE_MADWIFI
-	{"roaming_daemon", NULL,roaming_daemon_main},
+	{"roaming_daemon", NULL, roaming_daemon_main},
 #endif
 #ifdef HAVE_GPIOWATCHER
 	{"gpiowatcher", NULL, gpiowatcher_main},
