@@ -39,14 +39,14 @@ extern int Interactive;
 extern int MaxPing;
 extern int ForceMaxPing;
 extern float WaitTime;
+extern float GraceTime;
 double dnsinterval;
 extern int mtrtype;
 
 static struct timeval intervaltime;
 int display_offset = 0;
 
-
-#define GRACETIME (5 * 1000*1000)
+#define GRACETIME (GraceTime * 1000*1000)
 
 void select_loop(void) {
   fd_set readfd;
@@ -240,15 +240,12 @@ void select_loop(void) {
 	break;
 #ifdef IPINFO
       case ActionII:
-	if (ipinfo_no >= 0) {
-	  ipinfo_no++;
-          if (ipinfo_no > ipinfo_max)
-            ipinfo_no = 0;
-	}
+	ipinfo_no++;
+	if (ipinfo_no > ipinfo_max)
+	  ipinfo_no = 0;
 	break;
       case ActionAS:
-	if (ipinfo_no >= 0)
-          ipinfo_no = ipinfo_no?0:ipinfo_max;
+	ipinfo_no = ipinfo_no?0:ipinfo_max;
 	break;
 #endif
 
