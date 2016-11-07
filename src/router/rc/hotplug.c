@@ -31,7 +31,6 @@
 #include <utils.h>
 #include <errno.h>
 
-
 static int hotplug_main(int argc, char **argv)
 {
 	if (argc >= 2) {
