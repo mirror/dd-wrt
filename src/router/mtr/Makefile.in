@@ -275,8 +275,6 @@ ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
 GREP = @GREP@
-GTK_CFLAGS = @GTK_CFLAGS@
-GTK_LIBS = @GTK_LIBS@
 GTK_OBJ = @GTK_OBJ@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
@@ -298,7 +296,6 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
-PKG_CONFIG = @PKG_CONFIG@
 RESOLV_LIBS = @RESOLV_LIBS@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
@@ -979,7 +976,8 @@ uninstall-man: uninstall-man8
 	uninstall-sbinPROGRAMS
 
 install-exec-hook: 
-	chmod u+s $(DESTDIR)$(sbindir)/mtr
+	`setcap cap_net_raw+ep $(DESTDIR)$(sbindir)/mtr` \
+	|| chmod u+s $(DESTDIR)$(sbindir)/mtr
 
 version.h: version.h.tmp Makefile $(mtr_SOURCES)
 	@cat version.h.tmp > $@; \
