@@ -31,13 +31,8 @@
 #include <utils.h>
 #include <errno.h>
 
-#define start_service(a) eval("startservice",a);
-#define start_service_force(a) eval("startservice",a,"-f");
-#define start_service_force_f(a) eval("startservice_f",a,"-f");
-#define stop_service(a) eval("stopservice",a);
-#define startstop(a) eval("startstop",a);
 
-int main(int argc, char **argv)
+static int hotplug_main(int argc, char **argv)
 {
 	if (argc >= 2) {
 		if (!strcmp(argv[1], "net")) {

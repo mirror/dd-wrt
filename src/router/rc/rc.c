@@ -44,7 +44,32 @@
 #include "servicemanager.c"
 #include "services.c"
 #include "mtd.c"
+#include "hotplug.c"
+#include "nvram.c"
 #include "mtd_main.c"
+#include "ledtool.c"
+#include "check_ps.c"
+#include "resetbutton.c"
+#include "process_monitor.c"
+#include "listen.c"
+#include "radio_timer.c"
+#include "watchdog.c"
+#ifdef HAVE_WOL
+#include "wol.c"
+#endif
+#ifdef HAVE_MADWIFI
+#include "roaming_daemon.c"
+#endif
+#ifdef HAVE_GPIOWATCHER
+#include "gpiowatcher.c"
+#endif
+#ifdef HAVE_WLANLED
+#include "wlanled.c"
+#endif
+#include "ttraff.c"
+#ifdef HAVE_WPS
+#include "wpswatcher.c"
+#endif
 #ifdef HAVE_PPTPD
 #include "pptpd.c"
 #endif
@@ -329,6 +354,27 @@ static struct MAIN maincalls[] = {
 	{"udhcpc_tv", "udhcpc_tv", NULL},
 	{"udhcpc", "udhcpc", NULL},
 	{"mtd", NULL, mtd_main},
+	{"hotplug", NULL, hotplug_main},
+	{"nvram", NULL, nvram_main},
+	{"ttraff", NULL, ttraff_main},
+	{"ledtool", NULL, ledtool_main},
+	{"check_ps", NULL, check_ps_main},
+	{"resetbutton", NULL, resetbutton_main},
+	{"process_monitor", NULL, process_monitor_main},
+	{"listen", NULL,listen_main},
+	{"radio_timer", NULL,radio_timer_main},
+#ifdef HAVE_MADWIFI
+	{"roaming_daemon", NULL,roaming_daemon_main},
+#endif
+#ifdef HAVE_GPIOWATCHER
+	{"gpiowatcher", NULL, gpiowatcher_main},
+#endif
+#ifdef HAVE_WLANLED
+	{"wlanled", NULL, wlanled_main},
+#endif
+#ifdef HAVE_WPS
+	{"wpswatcher", NULL, wpswatcher_main},
+#endif
 #ifdef HAVE_PPTPD
 	{"poptop", NULL, &pptpd_main},
 #endif

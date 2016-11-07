@@ -56,7 +56,7 @@ static int wol_run(void)
 	return ret;
 }
 
-int wol_main(int argc, char **argv)
+static int wol_main(int argc, char **argv)
 {
 	/* 
 	 * Run it in the background 

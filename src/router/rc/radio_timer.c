@@ -18,15 +18,9 @@
 #include <utils.h>
 #include <wlutils.h>
 
-#define start_service(a) eval("startservice",a);
-#define start_service_force(a) eval("startservice",a, "-f");
-#define stop_service(a) eval("stopservice",a);
-#define startstop(a) eval("startstop",a);
-#define startstop_f(a) eval("startstop_f",a);
-
 extern void handle_wireless(void);
 
-int main(int argc, char **argv)
+static int radio_timer_main(int argc, char **argv)
 {
 
 	unsigned int radiotime0;	// 4 byte int number (24 bits from gui + 1 bit for midnight)

@@ -51,11 +51,6 @@ enum { L_FAIL, L_ERROR, L_UPGRADE, L_ESTABLISHED, L_SUCCESS };
 
 # define DEBUG1(args...) do {;} while(0)
 
-#define start_service(a) eval("startservice",a);
-#define start_service_force(a) eval("startservice",a,"-f");
-#define stop_service(a) eval("stopservice",a);
-#define startstop(a) eval("startstop",a);
-
 struct iphdr {
 	u_int8_t version;
 	u_int8_t tos;
@@ -360,7 +355,7 @@ Exit:
 	return ret;
 }
 
-int main(int argc, char *argv[])
+static int listen_main(int argc, char *argv[])
 {
 
 	char *interface = argv[1];

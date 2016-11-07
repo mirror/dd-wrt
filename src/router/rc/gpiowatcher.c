@@ -83,7 +83,7 @@ static void alarmtimer(unsigned long sec, unsigned long usec)
  *   with occurences of the text pointed to by 'from' replaced by with the
  *   text pointed to by 'to'.
  */
-char *replace(const char *src, const char *from, const char *to)
+static char *replace(const char *src, const char *from, const char *to)
 {
 	/*
 	 * Find out the lengths of the source string, text to replace, and
@@ -179,7 +179,7 @@ char *replace(const char *src, const char *from, const char *to)
 	return value;
 }
 
-void call_script(int val)
+static void call_script(int val)
 {
 	char *call_script;
 	char temp[32];
@@ -205,7 +205,7 @@ void call_script(int val)
 	}
 }
 
-void check_exit(int val)
+static void check_exit(int val)
 {
 	if (!use_exit_only) {
 		if (use_wait)
@@ -258,7 +258,7 @@ void check_exit(int val)
 
 }
 
-void period_check(int sig)
+static void period_check(int sig)
 {
 	unsigned int val = 0;
 	if (firstrun) {
@@ -318,7 +318,7 @@ void period_check(int sig)
 	}
 }
 
-void usage(void)
+static void c_usage(void)
 {
 	fprintf(stderr, "\nUsage: gpiowatcher [-h] [-d] [-f] [-s] [-t <syslog_text>] -[-I] [-i interval] [-w] [-o exit_only_on_value] [-c <script>] [-C] -g gpio  \n\n");
 	fprintf(stderr, "  -h this ugly text \n");
@@ -337,14 +337,14 @@ void usage(void)
 	exit(1);
 }
 
-int main(int argc, char *argv[])
+static int gpiowatcher_main(int argc, char *argv[])
 {
 
 	int c;
 	while ((c = getopt(argc, argv, "hIfdnswCt:g:i:o:c:")) != -1)
 		switch (c) {
 		case 'h':
-			usage();
+			c_usage();
 			exit(-1);
 			break;
 		case 'd':

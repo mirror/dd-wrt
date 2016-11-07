@@ -29,7 +29,7 @@
 
 #include <avl.h>
 //#include <list.h>
-#include <linux/nl80211.h>
+#include "nl80211.h"
 #include <unl.h>
 
 #define DEFAULT_POLL_DELAY	1000
@@ -37,6 +37,7 @@
 
 #define LED_PREFIX "/sys/class/leds/"
 #define LED_SUFFIX "/brightness"
+
 
 static struct unl unl;
 static LIST_HEAD(interfaces);
@@ -246,7 +247,7 @@ static void run_loop(void)
 	free(list);
 }
 
-static int usage(const char *progname)
+static int b_usage(const char *progname)
 {
 	fprintf(stderr, "Usage: %s [options]\n"
 		"\n"
@@ -273,7 +274,7 @@ static void setup_sigint(void)
 	sigaction(SIGINT, &s, NULL);
 }
 
-int main(int argc, char **argv)
+static int wlanled_main(int argc, char **argv)
 {
 	int ch;
 
@@ -284,11 +285,11 @@ int main(int argc, char **argv)
 			break;
 		case 'l':
 			if (!add_led(optarg, 0))
-				return usage(argv[0]);
+				return b_usage(argv[0]);
 			break;
 		case 'L':
 			if (!add_led(optarg, 1))
-				return usage(argv[0]);
+				return b_usage(argv[0]);
 			break;
 		case 'd':
 			poll_delay = atoi(optarg);
@@ -298,7 +299,7 @@ int main(int argc, char **argv)
 
 	if (list_empty(&leds)) {
 		fprintf(stderr, "Error: no LEDs specified\n");
-		return usage(argv[0]);
+		return b_usage(argv[0]);
 	}
 
 	if (unl_genl_init(&unl, "nl80211") < 0) {
