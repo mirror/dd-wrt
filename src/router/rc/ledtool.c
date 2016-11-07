@@ -17,7 +17,7 @@
 #include <utils.h>
 #include <nvparse.h>
 
-int main(int argc, char **argv)
+static int ledtool_main(int argc, char **argv)
 {
 	/* 
 	 * Run it in the background 

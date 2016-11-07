@@ -40,16 +40,16 @@
 
 static int open_site_survey(void);
 
-struct site_survey_list site_survey_lists[SITE_SURVEY_NUM];
+struct site_survey_list *site_survey_lists;
 
 static int open_site_survey(void)
 {
 	FILE *fp;
-
-	bzero(site_survey_lists, sizeof(site_survey_lists));
+	site_survey_lists = malloc(sizeof(struct site_survey_list) * SITE_SURVEY_NUM);
+	bzero(site_survey_lists, sizeof(struct site_survey_list) * SITE_SURVEY_NUM);
 
 	if ((fp = fopen(SITE_SURVEY_DB, "r"))) {
-		fread(&site_survey_lists[0], sizeof(site_survey_lists), 1, fp);
+		fread(&site_survey_lists[0], sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1, fp);
 		fclose(fp);
 		return 1;
 	}
@@ -58,7 +58,7 @@ static int open_site_survey(void)
 
 #include "regexp/regexp.c"
 
-int roaming_daemon(void)
+static int roaming_daemon(void)
 {
 	nvram_seti("roaming_enable", 0);
 	nvram_set("roaming_ssid", "");
@@ -148,7 +148,7 @@ int roaming_daemon(void)
 
 }
 
-int main(int argc, char *argv[])
+static int roaming_daemon_main(int argc, char *argv[])
 {
 
 	switch (fork()) {

@@ -17,7 +17,7 @@
 #include <utils.h>
 #include <nvparse.h>
 
-int main(int argc, char **argv)
+static int wpswatcher_main(int argc, char **argv)
 {
 	/* 
 	 * Run it in the background 
