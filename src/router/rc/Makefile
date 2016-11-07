@@ -876,7 +876,7 @@ endif
 
 ifeq ($(CONFIG_MADWIFI),y)
 CFLAGS +=  -DHAVE_MADWIFI -DHAVE_ROAMING 
-LDFLAGS += ../wireless-tools/libiw.so
+LDFLAGS +=  -L$(TOP)/wireless-tools -liw
 endif
 ifeq ($(CONFIG_MADWIFI_MIMO),y)
 CFLAGS +=  -DHAVE_MADWIFI_MIMO
@@ -1178,6 +1178,7 @@ endif
 rc: $(OBJS)
 #	$(AR) arc -o $@.a $^
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lwireless
+
 #ifeq ($(CONFIG_MADWIFI),y)
 #	$(CC) $(CFLAGS) -o roaming_daemon roaming_daemon.c $(LDFLAGS) ../wireless-tools/libiw.so 
 #endif
