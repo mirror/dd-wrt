@@ -38,7 +38,7 @@ extern int DisplayMode;
 #define mtr_curses_open()
 #define mtr_curses_close()
 #define mtr_curses_redraw()
-#define mtr_curses_keyaction()
+#define mtr_curses_keyaction() 0
 #define mtr_curses_clear()
 #else
 #include "mtr-curses.h"
@@ -88,6 +88,9 @@ void display_open(void)
   case DisplayTXT:
     txt_open();
     break;
+  case DisplayJSON:
+    json_open();
+    break;
   case DisplayXML:
     xml_open();
     break;
@@ -106,6 +109,10 @@ void display_open(void)
     break;
   case DisplayGTK:
     gtk_open();
+#ifdef IPINFO
+    if (ipinfo_no >= 0)
+        asn_open();
+#endif
     break;
   }
 }
@@ -119,6 +126,9 @@ void display_close(time_t now)
     break;
   case DisplayTXT:
     txt_close();
+    break;
+  case DisplayJSON:
+    json_close();
     break;
   case DisplayXML:
     xml_close();
@@ -178,11 +188,22 @@ int display_keyaction(void)
 }
 
 
-void display_rawping(int host, int msec) 
+void display_rawxmit(int host, int seq)
+{
+  switch(DisplayMode) {
+  case DisplayRaw:
+    raw_rawxmit (host, seq);
+    break;
+  }
+}
+
+
+void display_rawping(int host, int msec, int seq)
 {
   switch(DisplayMode) {
   case DisplayReport:
   case DisplayTXT:
+  case DisplayJSON:
   case DisplayXML:
   case DisplayCSV:
   case DisplaySplit:
@@ -190,7 +211,7 @@ void display_rawping(int host, int msec)
   case DisplayGTK:
     break;
   case DisplayRaw:
-    raw_rawping (host, msec);
+    raw_rawping (host, msec, seq);
     break;
   }
 }
@@ -201,6 +222,7 @@ void display_rawhost(int host, ip_t *ip_addr)
   switch(DisplayMode) {
   case DisplayReport:
   case DisplayTXT:
+  case DisplayJSON:
   case DisplayXML:
   case DisplayCSV:
   case DisplaySplit:
@@ -219,6 +241,7 @@ void display_loop(void)
   switch(DisplayMode) {
   case DisplayReport:
   case DisplayTXT:
+  case DisplayJSON:
   case DisplayXML:
   case DisplayCSV:
   case DisplaySplit:
@@ -241,6 +264,7 @@ void display_clear(void)
     break;
   case DisplayReport:
   case DisplayTXT:
+  case DisplayJSON:
   case DisplayXML:
   case DisplayCSV:
   case DisplaySplit:

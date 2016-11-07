@@ -27,14 +27,15 @@ enum { ActionNone,  ActionQuit,  ActionReset,  ActionDisplay,
 #endif
        ActionScrollDown, ActionScrollUp  };
 enum { DisplayReport, DisplayCurses, DisplayGTK, DisplaySplit, 
-       DisplayRaw,    DisplayXML,    DisplayCSV, DisplayTXT};
+       DisplayRaw,    DisplayXML,    DisplayCSV, DisplayTXT, DisplayJSON};
 
 /*  Prototypes for display.c  */
 void display_detect(int *argc, char ***argv);
 void display_open(void);
 void display_close(time_t now);
 void display_redraw(void);
-void display_rawping(int hostnum, int msec);
+void display_rawxmit(int hostnum, int seq);
+void display_rawping(int hostnum, int msec, int seq);
 void display_rawhost(int hostnum, ip_t *ip_addr);
 int display_keyaction(void);
 void display_loop(void);

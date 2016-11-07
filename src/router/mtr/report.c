@@ -253,8 +253,101 @@ void txt_open(void)
 
 
 void txt_close(void)
-{ 
+{
   report_close();
+}
+
+
+void json_open(void)
+{
+}
+
+
+void json_close(void)
+{
+  int i, j, at, first, max;
+  ip_t *addr;
+  char name[81];
+
+  printf("{\n");
+  printf("  \"report\": {\n");
+  printf("    \"mtr\": {\n");
+  printf("      \"src\": \"%s\",\n", LocalHostname);
+  printf("      \"dst\": \"%s\",\n", Hostname);
+  printf("      \"tos\": \"0x%X\",\n", tos);
+  if(cpacketsize >= 0) {
+    printf("      \"psize\": \"%d\",\n", cpacketsize);
+  } else {
+    printf("      \"psize\": \"rand(%d-%d)\",\n",MINPACKET, -cpacketsize);
+  }
+  if( bitpattern>=0 ) {
+    printf("      \"bitpattern\": \"0x%02X\",\n", (unsigned char)(bitpattern));
+  } else {
+    printf("      \"bitpattern\": \"rand(0x00-FF)\",\n");
+  }
+  printf("      \"tests\": \"%d\"\n", MaxPing);
+  printf("    },\n");
+
+  printf("    \"hubs\": [");
+
+  max = net_max();
+  at = first = net_min();
+  for(; at < max; at++) {
+    addr = net_addr(at);
+    snprint_addr(name, sizeof(name), addr);
+
+    if(at == first) {
+      printf("{\n");
+    } else {
+      printf("    {\n");
+    }
+    printf("      \"count\": \"%d\",\n", at+1);
+    printf("      \"host\": \"%s\",\n", name);
+    for( i=0; i<MAXFLD; i++ ) {
+      j = fld_index[fld_active[i]];
+
+      /* Commas */
+      if(i + 1 == MAXFLD) {
+        printf("\n");
+      } else if (j > 0 && i != 0) {
+        printf(",\n");
+      }
+
+      if (j <= 0) continue; // Field nr 0, " " shouldn't be printed in this method.
+
+      /* Format value */
+      const char *format;
+      format = data_fields[j].format;
+      if( index(format, 'f') ) {
+        format = "%.2f";
+      } else {
+        format = "%d";
+      }
+
+      /* Format json line */
+      strcpy(name, "      \"%s\": ");
+      strcat(name, format);
+
+      /* Output json line */
+      if(index(data_fields[j].format, 'f')) {
+        /* 1000.0 is a temporay hack for stats usec to ms, impacted net_loss. */
+        printf(name,
+               data_fields[j].title,
+               data_fields[j].net_xxx(at) / 1000.0);
+      } else {
+        printf(name,
+               data_fields[j].title,
+               data_fields[j].net_xxx(at));
+      }
+    }
+    if(at+1 == max) {
+      printf("    }]\n");
+    } else {
+      printf("    },\n");
+    }
+  }
+  printf("  }\n");
+  printf("}\n");
 }
 
 
@@ -294,7 +387,7 @@ void xml_close(void)
     printf("    <HUB COUNT=\"%d\" HOST=\"%s\">\n", at+1, name);
     for( i=0; i<MAXFLD; i++ ) {
       j = fld_index[fld_active[i]];
-      if (j < 0) continue;
+      if (j <= 0) continue; // Field nr 0, " " shouldn't be printed in this method. 
 
       strcpy(name, "        <%s>");
       strcat(name, data_fields[j].format);
@@ -347,27 +440,41 @@ void csv_close(time_t now)
     addr = net_addr(at);
     snprint_addr(name, sizeof(name), addr);
 
-    int last = net_last(at);
+    if (at == net_min()) {
+      printf("Mtr_Version,Start_Time,Status,Host,Hop,Ip,");
+#ifdef IPINFO
+      if(!ipinfo_no) {
+	printf("Asn,");
+      }
+#endif
+      for( i=0; i<MAXFLD; i++ ) {
+	j = fld_index[fld_active[i]];
+	if (j < 0) continue;
+	printf("%s,", data_fields[j].title);
+      }
+      printf("\n");
+    }
+
 #ifdef IPINFO
     if(!ipinfo_no) {
       char* fmtinfo = fmt_ipinfo(addr);
       if (fmtinfo != NULL) fmtinfo = trim(fmtinfo);
-      printf("MTR.%s;%lld;%s;%s;%d;%s;%s;%d", MTR_VERSION, (long long)now, "OK", Hostname,
-             at+1, name, fmtinfo, last);
+      printf("MTR.%s,%lld,%s,%s,%d,%s,%s", MTR_VERSION, (long long)now, "OK", Hostname,
+             at+1, name, fmtinfo);
     } else
 #endif
-      printf("MTR.%s;%lld;%s;%s;%d;%s;%d", MTR_VERSION, (long long)now, "OK", Hostname,
-             at+1, name, last);
+      printf("MTR.%s,%lld,%s,%s,%d,%s", MTR_VERSION, (long long)now, "OK", Hostname,
+             at+1, name);
 
     for( i=0; i<MAXFLD; i++ ) {
-      j = fld_index[fld_active[j]];
+      j = fld_index[fld_active[i]];
       if (j < 0) continue; 
 
       /* 1000.0 is a temporay hack for stats usec to ms, impacted net_loss. */
       if( index( data_fields[j].format, 'f' ) ) {
-	printf( ", %.2f", data_fields[j].net_xxx(at) / 1000.0);
+	printf( ",%.2f", data_fields[j].net_xxx(at) / 1000.0);
       } else {
-	printf( ", %d",   data_fields[j].net_xxx(at) );
+	printf( ",%d",   data_fields[j].net_xxx(at) );
       }
     }
     printf("\n");
