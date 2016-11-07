@@ -1557,3 +1557,4 @@ static int resetbutton_main(int argc, char *argv[])
 	return 0;
 #endif
 }
+#undef DEBUG
