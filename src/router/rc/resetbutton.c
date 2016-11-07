@@ -58,7 +58,7 @@
 static unsigned int *page;
 static int fd;
 
-static  void init_gpio()
+static void init_gpio()
 {
 	void *start = 0;
 
