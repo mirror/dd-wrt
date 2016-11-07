@@ -38,7 +38,6 @@
 #define LED_PREFIX "/sys/class/leds/"
 #define LED_SUFFIX "/brightness"
 
-
 static struct unl unl;
 static LIST_HEAD(interfaces);
 static LIST_HEAD(wdev);
