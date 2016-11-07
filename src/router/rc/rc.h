@@ -124,7 +124,6 @@ extern int dropbearkey_main(int argc, char **argv);
 extern int dropbear_main(int argc, char **argv);
 extern int scp_main(int argc, char **argv);
 #endif
-static int roaming_daemon_main(int argc, char *argv[]);
 
 #ifdef HAVE_PPTPD
 extern int pptpd_main(int argc, char **argv);
@@ -146,13 +145,10 @@ extern int zebra_ripd_init(void);
 #define RC_STARTUP  "rc_startup"
 #define RC_SHUTDOWN "rc_shutdown"
 
-static int nvram_main(int argc, char **argv);
-static int ledtool_main(int argc, char **argv);
 
 extern int filtersync_main(void);
 extern int filter_add(int seq);
 extern int filter_del(int seq);
-static int resetbutton_main(int argc, char **argv);
 
 // extern int ntp_main(int argc, char **argv);
 void ntp_main(timer_t t, int arg);
@@ -170,17 +166,10 @@ extern char *range(char *start, char *end, char *buf);
 extern void stop_heartbeat(void);
 extern int hb_connect_main(int argc, char **argv);
 extern int hb_disconnect_main(int argc, char **argv);
-static int check_ps_main(int argc, char **argv);
-static int listen_main(int argc, char **argv);
 extern int ddns_success_main(int argc, char **argv);
-static int process_monitor_main(int argc, char **argv);
-static int radio_timer_main(int argc, char **argv);
-static int ttraff_main(int argc, char **argv);
-static int wol_main(int argc, char **argv);
 extern int sendudp_main(int argc, char *argv[]);
 extern int autokill_wiviz_main(int argc, char **argv);
 extern int run_wiviz_main(int argc, char **argv);
-static int watchdog_main(int argc, char *argv[]);
 extern int event_main(int argc, char **argv);
 void cfe_default(void);
 
