@@ -1155,7 +1155,7 @@ int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, char_t *
 		else
 			sprintf(path, "%s.asp", submit_button);
 	}
-
+	fprintf(stderr, "refresh %s\n",path);		
 	if (!strncmp(path, "WL_FilterTable", 14))
 		do_filtertable(NULL, path, wp, NULL);	// refresh
 #ifdef HAVE_FREERADIUS
