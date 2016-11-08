@@ -1157,7 +1157,6 @@ int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, char_t *
 		else
 			sprintf(path, "%s.asp", submit_button);
 	}
-	fprintf(stderr, "refresh %s\n",path);		
 	if (!strncmp(path, "WL_FilterTable", 14))
 		do_filtertable(NULL, path, wp, NULL);	// refresh
 #ifdef HAVE_FREERADIUS
@@ -1544,7 +1543,6 @@ footer:
 				sprintf(path, "%s.asp", submit_button);
 		}
 
-		fprintf(stderr, "Apply refresh %s\n",path);		
 		if (!strncmp(path, "WL_FilterTable", 14))
 			do_filtertable(NULL, path, wp, NULL);	// refresh
 #ifdef HAVE_FREERADIUS
@@ -2082,7 +2080,6 @@ char *live_translate(const char *tran)
 		cur_language = nvram_safe_get("language");
 	} else {
 		if (!nvram_match("language", cur_language)) {
-//                      fprintf(stderr,"clear translation\n");
 			clear_translationcache();
 			cur_language = nvram_safe_get("language");
 		}
@@ -2098,16 +2095,13 @@ char *live_translate(const char *tran)
 				translationcache[i].time = cur;
 			}
 			if (translationcache[i].request != NULL && cur > translationcache[i].time + 120) {	// free translation if not used for 2 minutes
-//                              fprintf(stderr,"free translation result %s\n",translationcache[i].translation);
 				free(translationcache[i].translation);
-//                              fprintf(stderr,"free translation request %s\n",translationcache[i].request);
 				free(translationcache[i].request);
 				translationcache[i].request = NULL;
 				translationcache[i].translation = NULL;
 			}
 		}
 		if (translation) {
-//                      fprintf(stderr,"return from cache\n");
 			return translation;
 		}
 	}
@@ -2115,29 +2109,24 @@ char *live_translate(const char *tran)
 	struct cacheentry *entry = NULL;
 	/* fill hole if there is any */
 	int i;
-//      fprintf(stderr,"seek hole\n");
 	for (i = 0; i < cachecount; i++) {
 		if (translationcache[i].request == NULL) {
-//                      fprintf(stderr,"hole found at %d\n",i);
 			entry = &translationcache[i];
 			break;
 		}
 
 	}
 	if (!entry) {
-//      fprintf(stderr,"realloc translation\n");
 		/* no hole has been found, alloc a new one */
 		translationcache = (struct cacheentry *)realloc(translationcache, sizeof(struct cacheentry) * (cachecount + 1));
 		entry = &translationcache[cachecount++];
 	}
-//      fprintf(stderr,"strdup tran %s\n",tran);
 	entry->request = strdup(tran);
 	entry->time = cur;
 	if (ret)
 		entry->translation = ret;
 	else
 		entry->translation = strdup("Error");
-//      fprintf(stderr,"leave translation \"%s\":\"%s\"\n",entry->request,entry->translation);
 	return entry->translation;
 }
 
