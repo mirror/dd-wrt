@@ -3576,7 +3576,6 @@ if (!strcmp(prefix, "wl2"))
 		}
 #endif
 	}
-
 #if !defined(HAVE_BUFFALO)
 #if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K) && !defined(HAVE_MADIFI_MIMO)
 #if defined(HAVE_ATH10K)
