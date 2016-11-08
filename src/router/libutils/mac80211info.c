@@ -1118,7 +1118,7 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 					if (freq_mhz >= 5500)
 						isband = 2;
 #ifdef HAVE_MVEBU
-					if (!is_wrt3200() && phy == 0 && isband == 0)
+					if (is_wrt3200() && phy == 0 && isband == 0)
 						continue;
 #endif
 					startfreq = 0;
