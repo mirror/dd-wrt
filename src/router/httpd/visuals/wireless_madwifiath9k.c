@@ -104,10 +104,10 @@ int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifnam
 		if (wc->rx_is_short_gi || wc->is_short_gi)
 			sgi = 1;
 
-		if (ht == 5 && sgi) 
-			ht=0;
-		if (ht == 5 && vht) 
-			ht=0;
+		if (ht == 5 && sgi)
+			ht = 0;
+		if (ht == 5 && vht)
+			ht = 0;
 
 		if (vht)
 			sprintf(info, "VHT");
@@ -129,7 +129,7 @@ int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifnam
 		if (wc->ht40intol)
 			sprintf(info, "%si", info);	//ht40 intolerant
 		if (sgi)
-			sprintf(info, "%sSGI",info);
+			sprintf(info, "%sSGI", info);
 
 		websWrite(wp, "'%s','%s','%s','%dM','%dM','%s','%d','%d','%d','%d'", mac, wc->ifname, UPTIME(wc->uptime), wc->txrate / 10, wc->rxrate / 10, info, wc->signal + bias, wc->noise + bias,
 			  wc->signal - wc->noise, qual);

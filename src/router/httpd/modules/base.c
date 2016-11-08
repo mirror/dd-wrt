@@ -442,7 +442,7 @@ void do_filtertable(struct mime_handler *handler, char *path, webs_t stream, cha
 {
 	char ifname[32];
 	char *temp2;
-	memset(ifname,0,sizeof(ifname));
+	memset(ifname, 0, sizeof(ifname));
 	int idx = indexof(path, '-');
 	if (idx > 0) {
 		temp2 = &path[idx + 1];
@@ -456,12 +456,12 @@ void do_filtertable(struct mime_handler *handler, char *path, webs_t stream, cha
 	}
 	idx = indexof(ifname, '.');
 	if (idx > 0)
-	    ifname[idx] = 0;
-	
+		ifname[idx] = 0;
+
 	if (!strlen(ifname))
-	    return;
+		return;
 	rep(ifname, '.', 'X');
-	
+
 	char *temp = insert(ifname, "0", "WL_FilterTable.asp");
 	do_ej_buffer(temp, stream);
 	free(temp);
@@ -710,8 +710,8 @@ void do_activetable(struct mime_handler *handler, char *path, webs_t stream, cha
 	memset(ifname, 0, sizeof(ifname));
 	int idx = indexof(path, '-');
 	if (idx > 0) {
-    	    char *temp2 = &path[idx + 1];
-	    strncpy(ifname, temp2, sizeof(ifname));
+		char *temp2 = &path[idx + 1];
+		strncpy(ifname, temp2, sizeof(ifname));
 	}
 
 	char *temp3 = websGetVar(stream, "ifname", NULL);
@@ -723,9 +723,9 @@ void do_activetable(struct mime_handler *handler, char *path, webs_t stream, cha
 
 	idx = indexof(ifname, '.');
 	if (idx > 0)
-	    ifname[idx] = 0;
+		ifname[idx] = 0;
 	if (!strlen(ifname))
-	    return;
+		return;
 	char *temp = insert(ifname, "0", "WL_ActiveTable.asp");
 	do_ej_buffer(temp, stream);
 	free(temp);
