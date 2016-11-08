@@ -440,14 +440,14 @@ static char *insert(char *ifname, char *index, char *filename)
 // and now the tricky part (more dirty as dirty)
 void do_filtertable(struct mime_handler *handler, char *path, webs_t stream, char *query)
 {
-	int idx = indexof(path, '-');
-	if (idx < 0)
-		return;
-	char *temp2 = &path[idx + 1];
 	char ifname[32];
-
-	strncpy(ifname, temp2, sizeof(ifname));
-
+	char *temp2;
+	memset(ifname,0,sizeof(ifname));
+	int idx = indexof(path, '-');
+	if (idx) {
+		temp2 = &path[idx + 1];
+		strncpy(ifname, temp2, sizeof(ifname));
+	}
 	char *temp3 = websGetVar(stream, "ifname", NULL);
 	if (temp3) {
 		if (strlen(temp3) > 0) {
@@ -455,11 +455,13 @@ void do_filtertable(struct mime_handler *handler, char *path, webs_t stream, cha
 		}
 	}
 	idx = indexof(ifname, '.');
-	if (idx < 0)
-		return;
-	ifname[idx] = 0;
+	if (idx)
+	    ifname[idx] = 0;
+	
+	if (!strlen(ifname))
+	    return;
 	rep(ifname, '.', 'X');
-
+	
 	char *temp = insert(ifname, "0", "WL_FilterTable.asp");
 	do_ej_buffer(temp, stream);
 	free(temp);
@@ -1349,7 +1351,7 @@ static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, ch
 	cprintf("get change_action = %s\n", value);
 
 	if (value && !strcmp(value, "gozila_cgi")) {
-		fprintf(stderr, "[APPLY] %s %s %s\n", websGetVar(wp, "submit_button", NULL), websGetVar(wp, "sbumit_type", NULL), websGetVar(wp, "call", NULL));
+		fprintf(stderr, "[APPLY] %s %s %s\n", websGetVar(wp, "submit_button", NULL), websGetVar(wp, "submit_type", NULL), websGetVar(wp, "call", NULL));
 		gozila_cgi(wp, urlPrefix, webDir, arg, url, path, query);
 		return 1;
 	}
@@ -1542,6 +1544,7 @@ footer:
 				sprintf(path, "%s.asp", submit_button);
 		}
 
+		fprintf(stderr, "Apply refresh %s\n",path);		
 		if (!strncmp(path, "WL_FilterTable", 14))
 			do_filtertable(NULL, path, wp, NULL);	// refresh
 #ifdef HAVE_FREERADIUS
