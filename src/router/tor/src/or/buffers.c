@@ -1,14 +1,15 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2015, The Tor Project, Inc. */
+ * Copyright (c) 2007-2016, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
  * \file buffers.c
  * \brief Implements a generic interface buffer.  Buffers are
  * fairly opaque string holders that can read to or flush from:
- * memory, file descriptors, or TLS connections.
+ * memory, file descriptors, or TLS connections.  Buffers are implemented
+ * as linked lists of memory chunks.
  **/
 #define BUFFERS_PRIVATE
 #include "or.h"
@@ -69,16 +70,37 @@ static int parse_socks_client(const uint8_t *data, size_t datalen,
 
 #define CHUNK_HEADER_LEN STRUCT_OFFSET(chunk_t, mem[0])
 
+/* We leave this many NUL bytes at the end of the buffer. */
+#define SENTINEL_LEN 4
+
+/* Header size plus NUL bytes at the end */
+#define CHUNK_OVERHEAD (CHUNK_HEADER_LEN + SENTINEL_LEN)
+
 /** Return the number of bytes needed to allocate a chunk to hold
  * <b>memlen</b> bytes. */
-#define CHUNK_ALLOC_SIZE(memlen) (CHUNK_HEADER_LEN + (memlen))
+#define CHUNK_ALLOC_SIZE(memlen) (CHUNK_OVERHEAD + (memlen))
 /** Return the number of usable bytes in a chunk allocated with
  * malloc(<b>memlen</b>). */
-#define CHUNK_SIZE_WITH_ALLOC(memlen) ((memlen) - CHUNK_HEADER_LEN)
+#define CHUNK_SIZE_WITH_ALLOC(memlen) ((memlen) - CHUNK_OVERHEAD)
+
+#define DEBUG_SENTINEL
+
+#ifdef DEBUG_SENTINEL
+#define DBG_S(s) s
+#else
+#define DBG_S(s) (void)0
+#endif
+
+#define CHUNK_SET_SENTINEL(chunk, alloclen) do {                        \
+    uint8_t *a = (uint8_t*) &(chunk)->mem[(chunk)->memlen];             \
+    DBG_S(uint8_t *b = &((uint8_t*)(chunk))[(alloclen)-SENTINEL_LEN]);  \
+    DBG_S(tor_assert(a == b));                                          \
+    memset(a,0,SENTINEL_LEN);                                           \
+  } while (0)
 
 /** Return the next character in <b>chunk</b> onto which data can be appended.
  * If the chunk is full, this might be off the end of chunk->mem. */
-static INLINE char *
+static inline char *
 CHUNK_WRITE_PTR(chunk_t *chunk)
 {
   return chunk->data + chunk->datalen;
@@ -86,7 +108,7 @@ CHUNK_WRITE_PTR(chunk_t *chunk)
 
 /** Return the number of bytes that can be written onto <b>chunk</b> without
  * running out of space. */
-static INLINE size_t
+static inline size_t
 CHUNK_REMAINING_CAPACITY(const chunk_t *chunk)
 {
   return (chunk->mem + chunk->memlen) - (chunk->data + chunk->datalen);
@@ -94,7 +116,7 @@ CHUNK_REMAINING_CAPACITY(const chunk_t *chunk)
 
 /** Move all bytes stored in <b>chunk</b> to the front of <b>chunk</b>->mem,
  * to free up space at the end. */
-static INLINE void
+static inline void
 chunk_repack(chunk_t *chunk)
 {
   if (chunk->datalen && chunk->data != &chunk->mem[0]) {
@@ -118,7 +140,7 @@ chunk_free_unchecked(chunk_t *chunk)
   total_bytes_allocated_in_chunks -= CHUNK_ALLOC_SIZE(chunk->memlen);
   tor_free(chunk);
 }
-static INLINE chunk_t *
+static inline chunk_t *
 chunk_new_with_alloc_size(size_t alloc)
 {
   chunk_t *ch;
@@ -131,27 +153,30 @@ chunk_new_with_alloc_size(size_t alloc)
   ch->memlen = CHUNK_SIZE_WITH_ALLOC(alloc);
   total_bytes_allocated_in_chunks += alloc;
   ch->data = &ch->mem[0];
+  CHUNK_SET_SENTINEL(ch, alloc);
   return ch;
 }
 
 /** Expand <b>chunk</b> until it can hold <b>sz</b> bytes, and return a
  * new pointer to <b>chunk</b>.  Old pointers are no longer valid. */
-static INLINE chunk_t *
+static inline chunk_t *
 chunk_grow(chunk_t *chunk, size_t sz)
 {
   off_t offset;
-  size_t memlen_orig = chunk->memlen;
+  const size_t memlen_orig = chunk->memlen;
+  const size_t orig_alloc = CHUNK_ALLOC_SIZE(memlen_orig);
+  const size_t new_alloc = CHUNK_ALLOC_SIZE(sz);
   tor_assert(sz > chunk->memlen);
   offset = chunk->data - chunk->mem;
-  chunk = tor_realloc(chunk, CHUNK_ALLOC_SIZE(sz));
+  chunk = tor_realloc(chunk, new_alloc);
   chunk->memlen = sz;
   chunk->data = chunk->mem + offset;
 #ifdef DEBUG_CHUNK_ALLOC
-  tor_assert(chunk->DBG_alloc == CHUNK_ALLOC_SIZE(memlen_orig));
-  chunk->DBG_alloc = CHUNK_ALLOC_SIZE(sz);
+  tor_assert(chunk->DBG_alloc == orig_alloc);
+  chunk->DBG_alloc = new_alloc;
 #endif
-  total_bytes_allocated_in_chunks +=
-    CHUNK_ALLOC_SIZE(sz) - CHUNK_ALLOC_SIZE(memlen_orig);
+  total_bytes_allocated_in_chunks += new_alloc - orig_alloc;
+  CHUNK_SET_SENTINEL(chunk, new_alloc);
   return chunk;
 }
 
@@ -165,7 +190,7 @@ chunk_grow(chunk_t *chunk, size_t sz)
 
 /** Return the allocation size we'd like to use to hold <b>target</b>
  * bytes. */
-static INLINE size_t
+static inline size_t
 preferred_chunk_size(size_t target)
 {
   size_t sz = MIN_CHUNK_ALLOC;
@@ -255,7 +280,7 @@ buf_get_first_chunk_data(const buf_t *buf, const char **cp, size_t *sz)
 #endif
 
 /** Remove the first <b>n</b> bytes from buf. */
-static INLINE void
+static inline void
 buf_remove_from_front(buf_t *buf, size_t n)
 {
   tor_assert(buf->datalen >= n);
@@ -452,7 +477,7 @@ buf_get_total_allocation(void)
  * <b>chunk</b> (which must be on <b>buf</b>). If we get an EOF, set
  * *<b>reached_eof</b> to 1.  Return -1 on error, 0 on eof or blocking,
  * and the number of bytes read otherwise. */
-static INLINE int
+static inline int
 read_to_chunk(buf_t *buf, chunk_t *chunk, tor_socket_t fd, size_t at_most,
               int *reached_eof, int *socket_error)
 {
@@ -488,7 +513,7 @@ read_to_chunk(buf_t *buf, chunk_t *chunk, tor_socket_t fd, size_t at_most,
 
 /** As read_to_chunk(), but return (negative) error code on error, blocking,
  * or TLS, and the number of bytes read otherwise. */
-static INLINE int
+static inline int
 read_to_chunk_tls(buf_t *buf, chunk_t *chunk, tor_tls_t *tls,
                   size_t at_most)
 {
@@ -611,7 +636,7 @@ read_to_buf_tls(tor_tls_t *tls, size_t at_most, buf_t *buf)
  * the bytes written from *<b>buf_flushlen</b>.  Return the number of bytes
  * written on success, 0 on blocking, -1 on failure.
  */
-static INLINE int
+static inline int
 flush_chunk(tor_socket_t s, buf_t *buf, chunk_t *chunk, size_t sz,
             size_t *buf_flushlen)
 {
@@ -646,7 +671,7 @@ flush_chunk(tor_socket_t s, buf_t *buf, chunk_t *chunk, size_t sz,
  * bytes written from *<b>buf_flushlen</b>.  Return the number of bytes
  * written on success, and a TOR_TLS error code on failure or blocking.
  */
-static INLINE int
+static inline int
 flush_chunk_tls(tor_tls_t *tls, buf_t *buf, chunk_t *chunk,
                 size_t sz, size_t *buf_flushlen)
 {
@@ -797,7 +822,7 @@ write_to_buf(const char *string, size_t string_len, buf_t *buf)
 /** Helper: copy the first <b>string_len</b> bytes from <b>buf</b>
  * onto <b>string</b>.
  */
-static INLINE void
+static inline void
 peek_from_buf(char *string, size_t string_len, const buf_t *buf)
 {
   chunk_t *chunk;
@@ -842,7 +867,7 @@ fetch_from_buf(char *string, size_t string_len, buf_t *buf)
 
 /** True iff the cell command <b>command</b> is one that implies a
  * variable-length cell in Tor link protocol <b>linkproto</b>. */
-static INLINE int
+static inline int
 cell_command_is_var_length(uint8_t command, int linkproto)
 {
   /* If linkproto is v2 (2), CELL_VERSIONS is the only variable-length cells
@@ -1083,7 +1108,7 @@ buf_find_pos_of_char(char ch, buf_pos_t *out)
 
 /** Advance <b>pos</b> by a single character, if there are any more characters
  * in the buffer.  Returns 0 on success, -1 on failure. */
-static INLINE int
+static inline int
 buf_pos_inc(buf_pos_t *pos)
 {
   ++pos->pos;
@@ -1945,7 +1970,7 @@ parse_socks(const char *data, size_t datalen, socks_request_t *req,
         log_warn(LD_PROTOCOL,
                  "Your application (using socks4 to port %d) gave Tor "
                  "a malformed hostname: %s. Rejecting the connection.",
-                 req->port, escaped(req->address));
+                 req->port, escaped_safe_str_client(req->address));
         return -1;
       }
       if (authend != authstart) {
