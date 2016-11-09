@@ -190,8 +190,12 @@ static int mac80211_cb_survey(struct nl_msg *msg, void *data)
 		if (sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_EXT_BUSY])
 			mac80211_info->extension_channel_busy_time = nla_get_u64(sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_EXT_BUSY]);
 
-		if (sinfo[NL80211_SURVEY_INFO_NOISE])
+		if (sinfo[NL80211_SURVEY_INFO_NOISE]) {
 			mac80211_info->noise = nla_get_u8(sinfo[NL80211_SURVEY_INFO_NOISE]);
+#ifdef HAVE_MVEBU
+		mac80211_info->noise -=10;
+#endif
+		}
 
 		if (sinfo[NL80211_SURVEY_INFO_FREQUENCY])
 			mac80211_info->frequency = freq;
