@@ -167,8 +167,13 @@ static int mac80211_cb_survey(struct nl_msg *msg, void *data)
 		goto out;
 
 	freq = nla_get_u32(sinfo[NL80211_SURVEY_INFO_FREQUENCY]);
-	if (!mac80211_info->noise)
+	if (!mac80211_info->noise) {
+#ifdef HAVE_MVEBU
+		mac80211_info->noise = -104;
+#else
 		mac80211_info->noise = -95;
+#endif
+	}
 	if (sinfo[NL80211_SURVEY_INFO_IN_USE]) {
 
 		if (sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME] && sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_BUSY]) {
