@@ -1,5 +1,5 @@
 /*
- * iperf, Copyright (c) 2014, 2015, The Regents of the University of
+ * iperf, Copyright (c) 2014, 2015, 2016, The Regents of the University of
  * California, through Lawrence Berkeley National Laboratory (subject
  * to receipt of any required approvals from the U.S. Dept. of
  * Energy).  All rights reserved.
@@ -62,6 +62,11 @@
 #include "iperf_util.h"
 #include "iperf_locale.h"
 
+#if defined(HAVE_TCP_CONGESTION)
+#if !defined(TCP_CA_NAME_MAX)
+#define TCP_CA_NAME_MAX 16
+#endif /* TCP_CA_NAME_MAX */
+#endif /* HAVE_TCP_CONGESTION */
 
 int
 iperf_server_listen(struct iperf_test *test)
@@ -410,8 +415,12 @@ static void
 cleanup_server(struct iperf_test *test)
 {
     /* Close open test sockets */
-    close(test->ctrl_sck);
-    close(test->listener);
+    if (test->ctrl_sck) {
+	close(test->ctrl_sck);
+    }
+    if (test->listener) {
+	close(test->listener);
+    }
 
     /* Cancel any remaining timers. */
     if (test->stats_timer != NULL) {
@@ -506,6 +515,33 @@ iperf_run_server(struct iperf_test *test)
                         return -1;
 		    }
 
+#if defined(HAVE_TCP_CONGESTION)
+		    if (test->protocol->id == Ptcp) {
+			if (test->congestion) {
+			    if (setsockopt(s, IPPROTO_TCP, TCP_CONGESTION, test->congestion, strlen(test->congestion)) < 0) {
+				close(s);
+				cleanup_server(test);
+				i_errno = IESETCONGESTION;
+				return -1;
+			    } 
+			}
+			{
+			    int len = TCP_CA_NAME_MAX;
+			    char ca[TCP_CA_NAME_MAX + 1];
+			    if (getsockopt(s, IPPROTO_TCP, TCP_CONGESTION, ca, &len) < 0) {
+				close(s);
+				cleanup_server(test);
+				i_errno = IESETCONGESTION;
+				return -1;
+			    }
+			    test->congestion_used = strdup(ca);
+			    if (test->debug) {
+				printf("Congestion algorithm is %s\n", test->congestion_used);
+			    }
+			}
+		    }
+#endif /* HAVE_TCP_CONGESTION */
+
                     if (!is_closed(s)) {
                         sp = iperf_new_stream(test, s);
                         if (!sp) {
@@ -545,6 +581,7 @@ iperf_run_server(struct iperf_test *test)
                         if (test->no_delay || test->settings->mss || test->settings->socket_bufsize) {
                             FD_CLR(test->listener, &test->read_set);
                             close(test->listener);
+			    test->listener = 0;
                             if ((s = netannounce(test->settings->domain, Ptcp, test->bind_address, test->server_port)) < 0) {
 				cleanup_server(test);
                                 i_errno = IELISTEN;
