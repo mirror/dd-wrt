@@ -1330,6 +1330,8 @@ send_parameters(struct iperf_test *test)
 	    cJSON_AddStringToObject(j, "title", test->title);
 	if (test->congestion)
 	    cJSON_AddStringToObject(j, "congestion", test->congestion);
+	if (test->congestion_used)
+	    cJSON_AddStringToObject(j, "congestion_used", test->congestion_used);
 	if (test->get_server_output)
 	    cJSON_AddNumberToObject(j, "get_server_output", iperf_get_test_get_server_output(test));
 	if (test->udp_counters_64bit)
@@ -1410,6 +1412,8 @@ get_parameters(struct iperf_test *test)
 	    test->title = strdup(j_p->valuestring);
 	if ((j_p = cJSON_GetObjectItem(j, "congestion")) != NULL)
 	    test->congestion = strdup(j_p->valuestring);
+	if ((j_p = cJSON_GetObjectItem(j, "congestion_used")) != NULL)
+	    test->congestion_used = strdup(j_p->valuestring);
 	if ((j_p = cJSON_GetObjectItem(j, "get_server_output")) != NULL)
 	    iperf_set_test_get_server_output(test, 1);
 	if ((j_p = cJSON_GetObjectItem(j, "udp_counters_64bit")) != NULL)
@@ -1451,6 +1455,9 @@ send_results(struct iperf_test *test)
 	else
 	    sender_has_retransmits = test->sender_has_retransmits;
 	cJSON_AddNumberToObject(j, "sender_has_retransmits", sender_has_retransmits);
+	if ( test->congestion_used ) {
+	    cJSON_AddStringToObject(j, "congestion_used", test->congestion_used);
+	}
 
 	/* If on the server and sending server output, then do this */
 	if (test->role == 's' && test->get_server_output) {
@@ -1525,6 +1532,7 @@ get_results(struct iperf_test *test)
     cJSON *j_cpu_util_total;
     cJSON *j_cpu_util_user;
     cJSON *j_cpu_util_system;
+    cJSON *j_remote_congestion_used;
     cJSON *j_sender_has_retransmits;
     int result_has_retransmits;
     cJSON *j_streams;
@@ -1633,6 +1641,12 @@ get_results(struct iperf_test *test)
 		}
 	    }
 	}
+
+	j_remote_congestion_used = cJSON_GetObjectItem(j, "congestion_used");
+	if (j_remote_congestion_used != NULL) {
+	    test->remote_congestion_used = strdup(j_remote_congestion_used->valuestring);
+	}
+
 	cJSON_Delete(j);
     }
     return r;
@@ -1829,6 +1843,8 @@ iperf_defaults(struct iperf_test *testp)
 #endif /* HAVE_CPUSET_SETAFFINITY */
     testp->title = NULL;
     testp->congestion = NULL;
+    testp->congestion_used = NULL;
+    testp->remote_congestion_used = NULL;
     testp->server_port = PORT;
     testp->ctrl_sck = -1;
     testp->prot_listener = -1;
@@ -1838,6 +1854,10 @@ iperf_defaults(struct iperf_test *testp)
 
     testp->stats_interval = testp->reporter_interval = 1;
     testp->num_streams = 1;
+
+#if ! defined(HAVE_SO_MAX_PACING_RATE)
+    testp->no_fq_socket_pacing = 1;
+#endif
 
     testp->settings->domain = AF_UNSPEC;
     testp->settings->unit_format = 'a';
@@ -1957,6 +1977,10 @@ iperf_free_test(struct iperf_test *test)
 	free(test->title);
     if (test->congestion)
 	free(test->congestion);
+    if (test->congestion_used)
+	free(test->congestion_used);
+    if (test->remote_congestion_used)
+	free(test->remote_congestion_used);
     if (test->omit_timer != NULL)
 	tmr_cancel(test->omit_timer);
     if (test->timer != NULL)
@@ -2492,11 +2516,47 @@ iperf_print_results(struct iperf_test *test)
         }
     }
 
-    if (test->json_output)
+    if (test->json_output) {
 	cJSON_AddItemToObject(test->json_end, "cpu_utilization_percent", iperf_json_printf("host_total: %f  host_user: %f  host_system: %f  remote_total: %f  remote_user: %f  remote_system: %f", (double) test->cpu_util[0], (double) test->cpu_util[1], (double) test->cpu_util[2], (double) test->remote_cpu_util[0], (double) test->remote_cpu_util[1], (double) test->remote_cpu_util[2]));
+	if (test->protocol->id == Ptcp) {
+	    char *snd_congestion = NULL, *rcv_congestion = NULL;
+	    if (test->sender) {
+		snd_congestion = test->congestion_used;
+		rcv_congestion = test->remote_congestion_used;
+	    }
+	    else {
+		snd_congestion = test->remote_congestion_used;
+		rcv_congestion = test->congestion_used;
+	    }
+	    if (snd_congestion) {
+		cJSON_AddStringToObject(test->json_end, "sender_tcp_congestion", snd_congestion);
+	    }
+	    if (rcv_congestion) {
+		cJSON_AddStringToObject(test->json_end, "receiver_tcp_congestion", rcv_congestion);
+	    }
+	}
+    }
     else {
 	if (test->verbose) {
 	    iprintf(test, report_cpu, report_local, test->sender?report_sender:report_receiver, test->cpu_util[0], test->cpu_util[1], test->cpu_util[2], report_remote, test->sender?report_receiver:report_sender, test->remote_cpu_util[0], test->remote_cpu_util[1], test->remote_cpu_util[2]);
+
+	    if (test->protocol->id == Ptcp) {
+		char *snd_congestion = NULL, *rcv_congestion = NULL;
+		if (test->sender) {
+		    snd_congestion = test->congestion_used;
+		    rcv_congestion = test->remote_congestion_used;
+		}
+		else {
+		    snd_congestion = test->remote_congestion_used;
+		    rcv_congestion = test->congestion_used;
+		}
+		if (snd_congestion) {
+		    iprintf(test, "snd_tcp_congestion %s\n", snd_congestion);
+		}
+		if (rcv_congestion) {
+		    iprintf(test, "rcv_tcp_congestion %s\n", rcv_congestion);
+		}
+	    }
 	}
 
 	/* Print server output if we're on the client and it was requested/provided */
@@ -2585,7 +2645,12 @@ print_interval_results(struct iperf_test *test, struct iperf_stream *sp, cJSON *
     }
 
     unit_snprintf(ubuf, UNIT_LEN, (double) (irp->bytes_transferred), 'A');
-    bandwidth = (double) irp->bytes_transferred / (double) irp->interval_duration;
+    if (irp->interval_duration > 0.0) {
+	bandwidth = (double) irp->bytes_transferred / (double) irp->interval_duration;
+    }
+    else {
+	bandwidth = 0.0;
+    }
     unit_snprintf(nbuf, UNIT_LEN, bandwidth, test->settings->unit_format);
     
     st = timeval_diff(&sp->result->start_time, &irp->interval_start_time);
