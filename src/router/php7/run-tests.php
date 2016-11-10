@@ -24,7 +24,7 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id: 66fcdd7fb3143633d8581278e023dd8132ba806c $ */
+/* $Id: fef39c50b820b589ab0c53e82635319ed1b00525 $ */
 
 /* Sanity check to ensure that pcre extension needed by this script is available.
  * In the event it is not, print a nice error message indicating that this script will
@@ -164,7 +164,7 @@ if (getenv('TEST_PHP_EXECUTABLE')) {
 			$phpdbg = $cwd . '/sapi/phpdbg/phpdbg';
 
 			if (file_exists($phpdbg)) {
-				putenv("TEST_PHP_CGI_EXECUTABLE=$phpdbg");
+				putenv("TEST_PHPDBG_EXECUTABLE=$phpdbg");
 			} else {
 				$phpdbg = null;
 			}
@@ -696,7 +696,7 @@ if (isset($argc) && $argc > 1) {
 					$html_output = is_resource($html_file);
 					break;
 				case '--version':
-					echo '$Id: 66fcdd7fb3143633d8581278e023dd8132ba806c $' . "\n";
+					echo '$Id: fef39c50b820b589ab0c53e82635319ed1b00525 $' . "\n";
 					exit(1);
 
 				default:

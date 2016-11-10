@@ -145,7 +145,8 @@ static const zend_internal_function zend_pass_function = {
 	((ZEND_VM_STACK_PAGE_SLOTS(gen) - ZEND_VM_STACK_HEADER_SLOTS) * sizeof(zval))
 
 #define ZEND_VM_STACK_PAGE_ALIGNED_SIZE(gen, size) \
-	(((size) + (ZEND_VM_STACK_FREE_PAGE_SIZE(gen) - 1)) & ~(ZEND_VM_STACK_PAGE_SIZE(gen) - 1))
+	(((size) + ZEND_VM_STACK_HEADER_SLOTS * sizeof(zval) \
+	  + (ZEND_VM_STACK_PAGE_SIZE(gen) - 1)) & ~(ZEND_VM_STACK_PAGE_SIZE(gen) - 1))
 
 static zend_always_inline zend_vm_stack zend_vm_stack_new_page(size_t size, zend_vm_stack prev) {
 	zend_vm_stack page = (zend_vm_stack)emalloc(size);
@@ -584,7 +585,17 @@ static inline void zend_assign_to_variable_reference(zval *variable_ptr, zval *v
 
 	ref = Z_REF_P(value_ptr);
 	GC_REFCOUNT(ref)++;
-	zval_ptr_dtor(variable_ptr);
+	if (Z_REFCOUNTED_P(variable_ptr)) {
+		zend_refcounted *garbage = Z_COUNTED_P(variable_ptr);
+
+		if (--GC_REFCOUNT(garbage) == 0) {
+			ZVAL_REF(variable_ptr, ref);
+			zval_dtor_func_for_ptr(garbage);
+			return;
+		} else {
+			GC_ZVAL_CHECK_POSSIBLE_ROOT(variable_ptr);
+		}
+	}
 	ZVAL_REF(variable_ptr, ref);
 }
 
@@ -592,7 +603,9 @@ static inline void zend_assign_to_variable_reference(zval *variable_ptr, zval *v
 static inline int make_real_object(zval *object)
 {
 	if (UNEXPECTED(Z_TYPE_P(object) != IS_OBJECT)) {
-		if (EXPECTED(Z_TYPE_P(object) <= IS_FALSE)) {
+		if (UNEXPECTED(object == &EG(error_zval))) {
+			return 0;
+		} else if (EXPECTED(Z_TYPE_P(object) <= IS_FALSE)) {
 			/* nothing to destroy */
 		} else if (EXPECTED((Z_TYPE_P(object) == IS_STRING && Z_STRLEN_P(object) == 0))) {
 			zval_ptr_dtor_nogc(object);
@@ -822,11 +835,8 @@ static zend_always_inline int zend_verify_arg_type(zend_function *zf, uint32_t a
 				} else {
 					ce = zend_verify_arg_class_kind(cur_arg_info);
 					if (UNEXPECTED(!ce)) {
-						if (Z_TYPE_P(arg) == IS_OBJECT) {
-							zend_verify_arg_error(zf, arg_num, "be an instance of ", ZSTR_VAL(cur_arg_info->class_name), "instance of ", ZSTR_VAL(Z_OBJCE_P(arg)->name), arg);
-						} else {
-							zend_verify_arg_error(zf, arg_num, "be an instance of ", ZSTR_VAL(cur_arg_info->class_name), "", zend_zval_type_name(arg), arg);
-						}
+						ZEND_ASSERT(Z_TYPE_P(arg) != IS_OBJECT);
+						zend_verify_arg_error(zf, arg_num, "be an instance of ", ZSTR_VAL(cur_arg_info->class_name), "", zend_zval_type_name(arg), arg);
 						return 0;
 					}
 					*cache_slot = (void*)ce;
@@ -1333,6 +1343,7 @@ static void zend_assign_to_string_offset(zval *str, zend_long offset, zval *valu
 		zend_string_release(tmp);
 	} else {
 		Z_STRVAL_P(str)[offset] = Z_STRVAL_P(value)[0];
+		zend_string_forget_hash_val(Z_STR_P(str));
 	}
 	/*
 	 * the value of an assignment to a string offset is undefined

@@ -23,7 +23,7 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id: c439c7358da4f516666244bec94da72b8aa630c4 $ */
+/* $Id: e384f3c044b57ae590d48d1349dc1c478db63a22 $ */
 #define IS_EXT_MODULE
 
 #ifdef HAVE_CONFIG_H
@@ -271,7 +271,7 @@ PHP_MINFO_FUNCTION(ldap)
 
 	php_info_print_table_start();
 	php_info_print_table_row(2, "LDAP Support", "enabled");
-	php_info_print_table_row(2, "RCS Version", "$Id: c439c7358da4f516666244bec94da72b8aa630c4 $");
+	php_info_print_table_row(2, "RCS Version", "$Id: e384f3c044b57ae590d48d1349dc1c478db63a22 $");
 
 	if (LDAPG(max_links) == -1) {
 		snprintf(tmp, 31, ZEND_LONG_FMT "/unlimited", LDAPG(num_links));
@@ -370,6 +370,7 @@ PHP_FUNCTION(ldap_connect)
 			int	urllen = hostlen + sizeof( "ldap://:65535" );
 
 			if (port <= 0 || port > 65535) {
+				efree(ld);
 				php_error_docref(NULL, E_WARNING, "invalid port number: %ld", port);
 				RETURN_FALSE;
 			}

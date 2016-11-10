@@ -5303,7 +5303,8 @@ PHP_FUNCTION(openssl_encrypt)
 	size_t data_len, method_len, password_len, iv_len = 0, max_iv_len;
 	const EVP_CIPHER *cipher_type;
 	EVP_CIPHER_CTX cipher_ctx;
-	int i=0, outlen, keylen;
+	int i=0, keylen;
+	size_t outlen;
 	zend_string *outbuf;
 	unsigned char *key;
 	zend_bool free_iv;
@@ -5334,7 +5335,7 @@ PHP_FUNCTION(openssl_encrypt)
 	}
 	free_iv = php_openssl_validate_iv(&iv, &iv_len, max_iv_len);
 
-	outlen = (int)data_len + EVP_CIPHER_block_size(cipher_type);
+	outlen = data_len + EVP_CIPHER_block_size(cipher_type);
 	outbuf = zend_string_alloc(outlen, 0);
 
 	EVP_EncryptInit(&cipher_ctx, cipher_type, NULL, NULL);
@@ -5386,7 +5387,8 @@ PHP_FUNCTION(openssl_decrypt)
 	size_t data_len, method_len, password_len, iv_len = 0;
 	const EVP_CIPHER *cipher_type;
 	EVP_CIPHER_CTX cipher_ctx;
-	int i, outlen, keylen;
+	int i, keylen;
+	size_t outlen;
 	zend_string *outbuf;
 	unsigned char *key;
 	zend_string *base64_str = NULL;
@@ -5410,7 +5412,7 @@ PHP_FUNCTION(openssl_decrypt)
 	}
 
 	if (!(options & OPENSSL_RAW_DATA)) {
-		base64_str = php_base64_decode((unsigned char*)data, (int)data_len);
+		base64_str = php_base64_decode((unsigned char*)data, data_len);
 		if (!base64_str) {
 			php_error_docref(NULL, E_WARNING, "Failed to base64 decode the input");
 			RETURN_FALSE;
@@ -5430,7 +5432,7 @@ PHP_FUNCTION(openssl_decrypt)
 
 	free_iv = php_openssl_validate_iv(&iv, &iv_len, EVP_CIPHER_iv_length(cipher_type));
 
-	outlen = (int)data_len + EVP_CIPHER_block_size(cipher_type);
+	outlen = data_len + EVP_CIPHER_block_size(cipher_type);
 	outbuf = zend_string_alloc(outlen, 0);
 
 	EVP_DecryptInit(&cipher_ctx, cipher_type, NULL, NULL);
@@ -5546,15 +5548,18 @@ PHP_FUNCTION(openssl_random_pseudo_bytes)
 		return;
 	}
 
-	if (buffer_length <= 0) {
-		RETURN_FALSE;
-	}
-
 	if (zstrong_result_returned) {
 		zval_dtor(zstrong_result_returned);
 		ZVAL_FALSE(zstrong_result_returned);
 	}
 
+	if (buffer_length <= 0
+#ifndef PHP_WIN32
+		|| ZEND_LONG_INT_OVFL(buffer_length)
+#endif
+			) {
+		RETURN_FALSE;
+	}
 	buffer = zend_string_alloc(buffer_length, 0);
 
 #ifdef PHP_WIN32
@@ -5570,6 +5575,7 @@ PHP_FUNCTION(openssl_random_pseudo_bytes)
 
 	PHP_OPENSSL_CHECK_LONG_TO_INT(buffer_length, length);
 	PHP_OPENSSL_RAND_ADD_TIME();
+	/* FIXME loop if requested size > INT_MAX */
 	if (RAND_bytes((unsigned char*)ZSTR_VAL(buffer), (int)buffer_length) <= 0) {
 		zend_string_release(buffer);
 		if (zstrong_result_returned) {

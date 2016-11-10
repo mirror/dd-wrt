@@ -960,6 +960,7 @@ with_openssl
 with_kerberos
 with_system_ciphers
 with_pcre_regex
+with_pcre_jit
 with_sqlite3
 with_zlib
 with_zlib_dir
@@ -1788,6 +1789,7 @@ Extensions:
   --with-system-ciphers   OPENSSL: Use system default cipher list instead of hardcoded value
   --with-pcre-regex=DIR   Include Perl Compatible Regular Expressions support.
                           DIR is the PCRE install prefix BUNDLED
+  --with-pcre-jit         Enable PCRE JIT functionality
   --without-sqlite3=DIR   Do not include SQLite3 support. DIR is the prefix to
                           SQLite3 installation directory.
   --with-zlib=DIR         Include ZLIB support (requires zlib >= 1.0.9)
@@ -3649,7 +3651,7 @@ ac_config_headers="$ac_config_headers main/php_config.h"
 
 PHP_MAJOR_VERSION=7
 PHP_MINOR_VERSION=0
-PHP_RELEASE_VERSION=10
+PHP_RELEASE_VERSION=13
 PHP_EXTRA_VERSION=""
 PHP_VERSION="$PHP_MAJOR_VERSION.$PHP_MINOR_VERSION.$PHP_RELEASE_VERSION$PHP_EXTRA_VERSION"
 PHP_VERSION_ID=`expr $PHP_MAJOR_VERSION \* 10000 + $PHP_MINOR_VERSION \* 100 + $PHP_RELEASE_VERSION`
@@ -5887,17 +5889,7 @@ if test -n "$ac_cv_pthreads_cflags"; then
 fi
 
 
-if test "$cross_compiling" = yes; then :
-
-    pthreads_working=no
-  case $host_alias in
-  *netware*)
-    pthreads_working=yes
-  esac
-
-
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 #include <pthread.h>
@@ -5915,19 +5907,18 @@ int main() {
     return pthread_create(&thd, NULL, thread_routine, &data);
 }
 _ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
+if ac_fn_c_try_link "$LINENO"; then :
 
-  pthreads_working=yes
+  pthreads_checked=yes
 
 else
 
-  pthreads_working=no
+  pthreads_checked=no
+
 
 fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
   LIBS=$save_LIBS
   CFLAGS=$save_CFLAGS
 
@@ -5943,17 +5934,7 @@ else
       ac_save=$CFLAGS
       CFLAGS="$CFLAGS $flag"
 
-if test "$cross_compiling" = yes; then :
-
-    pthreads_working=no
-  case $host_alias in
-  *netware*)
-    pthreads_working=yes
-  esac
-
-
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 #include <pthread.h>
@@ -5971,55 +5952,43 @@ int main() {
     return pthread_create(&thd, NULL, thread_routine, &data);
 }
 _ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
+if ac_fn_c_try_link "$LINENO"; then :
 
-  pthreads_working=yes
+  pthreads_checked=yes
 
 else
 
-  pthreads_working=no
+  pthreads_checked=no
+
 
 fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
       CFLAGS=$ac_save
-      if test "$pthreads_working" = "yes"; then
+      if test "$pthreads_checked" = "yes"; then
         ac_cv_pthreads_cflags=$flag
         break
       fi
     done
   fi
-fi
 
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_pthreads_cflags" >&5
 $as_echo "$ac_cv_pthreads_cflags" >&6; }
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for pthreads_lib" >&5
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pthreads_lib" >&5
 $as_echo_n "checking for pthreads_lib... " >&6; }
 if ${ac_cv_pthreads_lib+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
-ac_cv_pthreads_lib=
-if test "$pthreads_working" != "yes"; then
-  for lib in pthread pthreads c_r; do
-    ac_save=$LIBS
-    LIBS="$LIBS -l$lib"
+  ac_cv_pthreads_lib=
+  if test "$pthreads_working" != "yes"; then
+   for lib in pthread pthreads c_r; do
+      ac_save=$LIBS
+      LIBS="$LIBS -l$lib"
 
-if test "$cross_compiling" = yes; then :
-
-    pthreads_working=no
-  case $host_alias in
-  *netware*)
-    pthreads_working=yes
-  esac
-
-
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 #include <pthread.h>
@@ -6037,30 +6006,34 @@ int main() {
     return pthread_create(&thd, NULL, thread_routine, &data);
 }
 _ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
+if ac_fn_c_try_link "$LINENO"; then :
 
-  pthreads_working=yes
+  pthreads_checked=yes
 
 else
 
-  pthreads_working=no
+  pthreads_checked=no
+
 
 fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
-    LIBS=$ac_save
-    if test "$pthreads_working" = "yes"; then
-      ac_cv_pthreads_lib=$lib
-      break
-    fi
-  done
-fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+      LIBS=$ac_save
+      if test "$pthreads_checked" = "yes"; then
+        ac_cv_pthreads_lib=$lib
+        break
+      fi
+    done
+  fi
 
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_pthreads_lib" >&5
 $as_echo "$ac_cv_pthreads_lib" >&6; }
+
+  if test "x$ac_cv_pthreads_cflags" != "x" -o "x$ac_cv_pthreads_lib" != "x"; then
+    pthreads_working="yes"
+  fi
+fi
 
 if test "$pthreads_working" = "yes"; then
   threads_result="POSIX-Threads found"
@@ -19613,6 +19586,43 @@ EOF
 $as_echo "#define HAVE_BUNDLED_PCRE 1" >>confdefs.h
 
   fi
+
+
+php_with_pcre_jit=yes
+
+
+
+# Check whether --with-pcre-jit was given.
+if test "${with_pcre_jit+set}" = set; then :
+  withval=$with_pcre_jit; PHP_PCRE_JIT=$withval
+else
+
+  PHP_PCRE_JIT=yes
+
+
+fi
+
+
+ext_output=$PHP_PCRE_JIT
+
+
+
+
+  if test "$PHP_PCRE_REGEX" != "no"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable PCRE JIT functionality" >&5
+$as_echo_n "checking whether to enable PCRE JIT functionality... " >&6; }
+    if test "$PHP_PCRE_JIT" != "no"; then
+
+$as_echo "#define HAVE_PCRE_JIT_SUPPORT 1" >>confdefs.h
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+    fi
+  fi
+
 
 
 
@@ -53342,7 +53352,6 @@ $as_echo "#define MYSQLI_USE_MYSQLND 1" >>confdefs.h
 
   fi
 fi
-
 
 
 
@@ -91944,6 +91953,9 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
+if test "$ac_cv_sizeof_off_t" = "0" ; then
+  as_fn_error $? "off_t undefined; check your library configuration" "$LINENO" 5
+fi
 # The cast to long int works around a bug in the HP C Compiler
 # version HP92453-01 B.11.11.23709.GP, which incorrectly rejects
 # declarations like `int a3[[(sizeof (unsigned char)) >= 0]];'.
@@ -95514,17 +95526,7 @@ if test -n "$ac_cv_pthreads_cflags"; then
 fi
 
 
-if test "$cross_compiling" = yes; then :
-
-    pthreads_working=no
-  case $host_alias in
-  *netware*)
-    pthreads_working=yes
-  esac
-
-
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 #include <pthread.h>
@@ -95542,19 +95544,18 @@ int main() {
     return pthread_create(&thd, NULL, thread_routine, &data);
 }
 _ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
+if ac_fn_c_try_link "$LINENO"; then :
 
-  pthreads_working=yes
+  pthreads_checked=yes
 
 else
 
-  pthreads_working=no
+  pthreads_checked=no
+
 
 fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
   LIBS=$save_LIBS
   CFLAGS=$save_CFLAGS
 
@@ -95570,17 +95571,7 @@ else
       ac_save=$CFLAGS
       CFLAGS="$CFLAGS $flag"
 
-if test "$cross_compiling" = yes; then :
-
-    pthreads_working=no
-  case $host_alias in
-  *netware*)
-    pthreads_working=yes
-  esac
-
-
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 #include <pthread.h>
@@ -95598,55 +95589,43 @@ int main() {
     return pthread_create(&thd, NULL, thread_routine, &data);
 }
 _ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
+if ac_fn_c_try_link "$LINENO"; then :
 
-  pthreads_working=yes
+  pthreads_checked=yes
 
 else
 
-  pthreads_working=no
+  pthreads_checked=no
+
 
 fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
       CFLAGS=$ac_save
-      if test "$pthreads_working" = "yes"; then
+      if test "$pthreads_checked" = "yes"; then
         ac_cv_pthreads_cflags=$flag
         break
       fi
     done
   fi
-fi
 
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_pthreads_cflags" >&5
 $as_echo "$ac_cv_pthreads_cflags" >&6; }
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for pthreads_lib" >&5
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pthreads_lib" >&5
 $as_echo_n "checking for pthreads_lib... " >&6; }
 if ${ac_cv_pthreads_lib+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
-ac_cv_pthreads_lib=
-if test "$pthreads_working" != "yes"; then
-  for lib in pthread pthreads c_r; do
-    ac_save=$LIBS
-    LIBS="$LIBS -l$lib"
+  ac_cv_pthreads_lib=
+  if test "$pthreads_working" != "yes"; then
+   for lib in pthread pthreads c_r; do
+      ac_save=$LIBS
+      LIBS="$LIBS -l$lib"
 
-if test "$cross_compiling" = yes; then :
-
-    pthreads_working=no
-  case $host_alias in
-  *netware*)
-    pthreads_working=yes
-  esac
-
-
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 #include <pthread.h>
@@ -95664,30 +95643,34 @@ int main() {
     return pthread_create(&thd, NULL, thread_routine, &data);
 }
 _ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
+if ac_fn_c_try_link "$LINENO"; then :
 
-  pthreads_working=yes
+  pthreads_checked=yes
 
 else
 
-  pthreads_working=no
+  pthreads_checked=no
+
 
 fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
-    LIBS=$ac_save
-    if test "$pthreads_working" = "yes"; then
-      ac_cv_pthreads_lib=$lib
-      break
-    fi
-  done
-fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+      LIBS=$ac_save
+      if test "$pthreads_checked" = "yes"; then
+        ac_cv_pthreads_lib=$lib
+        break
+      fi
+    done
+  fi
 
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_pthreads_lib" >&5
 $as_echo "$ac_cv_pthreads_lib" >&6; }
+
+  if test "x$ac_cv_pthreads_cflags" != "x" -o "x$ac_cv_pthreads_lib" != "x"; then
+    pthreads_working="yes"
+  fi
+fi
 
 if test "$pthreads_working" = "yes"; then
   threads_result="POSIX-Threads found"
