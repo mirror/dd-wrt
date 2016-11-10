@@ -18,7 +18,7 @@
   +----------------------------------------------------------------------+
 */
 
-/* $Id: 3b27656786ea29ce872a5d3c850e387528e13eb5 $ */
+/* $Id: a0c9e98a9e216920fcf75a02da085c9616b16cc8 $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -356,7 +356,10 @@ long_dim:
 					_node_as_zval(sxe, node, rv, newtype, name, sxe->iter.nsprefix, sxe->iter.isprefix);
 				}
 #else
-				_node_as_zval(sxe, node, rv, SXE_ITER_ELEMENT, name, sxe->iter.nsprefix, sxe->iter.isprefix);
+				/* In BP_VAR_IS mode only return a proper node if it actually exists. */
+				if (type != BP_VAR_IS || sxe_find_element_by_name(sxe, node->children, (xmlChar *) name)) {
+					_node_as_zval(sxe, node, rv, SXE_ITER_ELEMENT, name, sxe->iter.nsprefix, sxe->iter.isprefix);
+				}
 #endif
 			}
 		}
@@ -607,7 +610,7 @@ long_dim:
 				while (node) {
 					SKIP_TEXT(node);
 
-					if (!xmlStrcmp(node->name, (xmlChar *)Z_STRVAL_P(member))) {
+					if (!xmlStrcmp(node->name, (xmlChar *)Z_STRVAL_P(member)) && match_ns(sxe, node, sxe->iter.nsprefix, sxe->iter.isprefix)) {
 						newnode = node;
 						++counter;
 					}
@@ -801,17 +804,8 @@ static int sxe_prop_dim_exists(zval *object, zval *member, int check_empty, zend
 					node = php_sxe_get_first_node(sxe, node);
 				}
 				node = sxe_get_element_by_offset(sxe, Z_LVAL_P(member), node, NULL);
-			}
-			else {
-				node = node->children;
-				while (node) {
-					xmlNodePtr nnext;
-					nnext = node->next;
-					if ((node->type == XML_ELEMENT_NODE) && !xmlStrcmp(node->name, (xmlChar *)Z_STRVAL_P(member))) {
-						break;
-					}
-					node = nnext;
-				}
+			} else {
+				node = sxe_find_element_by_name(sxe, node->children, (xmlChar *)Z_STRVAL_P(member));
 			}
 			if (node) {
 				exists = 1;
@@ -937,7 +931,7 @@ static void sxe_prop_dim_delete(zval *object, zval *member, zend_bool elements, 
 
 					SKIP_TEXT(node);
 
-					if (!xmlStrcmp(node->name, (xmlChar *)Z_STRVAL_P(member))) {
+					if (!xmlStrcmp(node->name, (xmlChar *)Z_STRVAL_P(member)) && match_ns(sxe, node, sxe->iter.nsprefix, sxe->iter.isprefix)) {
 						xmlUnlinkNode(node);
 						php_libxml_node_free_resource(node);
 					}
@@ -1478,9 +1472,15 @@ SXE_METHOD(asXML)
 	if (node) {
 		if (node->parent && (XML_DOCUMENT_NODE == node->parent->type)) {
 			xmlDocDumpMemoryEnc((xmlDocPtr) sxe->document->ptr, &strval, &strval_len, (const char *) ((xmlDocPtr) sxe->document->ptr)->encoding);
-			RETVAL_STRINGL((char *)strval, strval_len);
+			if (!strval) {
+				RETVAL_FALSE;
+			} else {
+				RETVAL_STRINGL((char *)strval, strval_len);
+			}
 			xmlFree(strval);
 		} else {
+			char *return_content;
+			size_t return_len;
 			/* Should we be passing encoding information instead of NULL? */
 			outbuf = xmlAllocOutputBuffer(NULL);
 
@@ -1491,10 +1491,17 @@ SXE_METHOD(asXML)
 			xmlNodeDumpOutput(outbuf, (xmlDocPtr) sxe->document->ptr, node, 0, 0, (const char *) ((xmlDocPtr) sxe->document->ptr)->encoding);
 			xmlOutputBufferFlush(outbuf);
 #ifdef LIBXML2_NEW_BUFFER
-			RETVAL_STRINGL((char *)xmlOutputBufferGetContent(outbuf), xmlOutputBufferGetSize(outbuf));
+			return_content = (char *)xmlOutputBufferGetContent(outbuf);
+			return_len = xmlOutputBufferGetSize(outbuf);
 #else
-			RETVAL_STRINGL((char *)outbuf->buffer->content, outbuf->buffer->use);
+			return_content = (char *)outbuf->buffer->content;
+			return_len = outbuf->buffer->use;
 #endif
+			if (!return_content) {
+				RETVAL_FALSE;
+			} else {
+				RETVAL_STRINGL(return_content, return_len);
+			}
 			xmlOutputBufferClose(outbuf);
 		}
 	} else {
@@ -2758,7 +2765,7 @@ PHP_MINFO_FUNCTION(simplexml)
 {
 	php_info_print_table_start();
 	php_info_print_table_header(2, "Simplexml support", "enabled");
-	php_info_print_table_row(2, "Revision", "$Id: 3b27656786ea29ce872a5d3c850e387528e13eb5 $");
+	php_info_print_table_row(2, "Revision", "$Id: a0c9e98a9e216920fcf75a02da085c9616b16cc8 $");
 	php_info_print_table_row(2, "Schema support",
 #ifdef LIBXML_SCHEMAS_ENABLED
 		"enabled");

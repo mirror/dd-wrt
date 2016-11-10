@@ -19,7 +19,7 @@
   +----------------------------------------------------------------------+
 */
 
-/* $Id: 2c8dde9d49ae877877eccaf496c8f5a733b4f1c2 $ */
+/* $Id: 613c0b75ea13d5c3f89571bd253d16ac861b43fc $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -328,7 +328,7 @@ PHP_MINFO_FUNCTION(filter)
 {
 	php_info_print_table_start();
 	php_info_print_table_row( 2, "Input Validation and Filtering", "enabled" );
-	php_info_print_table_row( 2, "Revision", "$Id: 2c8dde9d49ae877877eccaf496c8f5a733b4f1c2 $");
+	php_info_print_table_row( 2, "Revision", "$Id: 613c0b75ea13d5c3f89571bd253d16ac861b43fc $");
 	php_info_print_table_end();
 
 	DISPLAY_INI_ENTRIES();
@@ -395,7 +395,7 @@ static void php_zval_filter(zval *value, zend_long filter, zend_long flags, zval
 			} else {
 				ZVAL_FALSE(value);
 			}
-			return;
+			goto handle_default;
 		}
 	}
 
@@ -404,6 +404,7 @@ static void php_zval_filter(zval *value, zend_long filter, zend_long flags, zval
 
 	filter_func.function(value, flags, options, charset);
 
+handle_default:
 	if (options && (Z_TYPE_P(options) == IS_ARRAY || Z_TYPE_P(options) == IS_OBJECT) &&
 		((flags & FILTER_NULL_ON_FAILURE && Z_TYPE_P(value) == IS_NULL) ||
 		(!(flags & FILTER_NULL_ON_FAILURE) && Z_TYPE_P(value) == IS_FALSE)) &&

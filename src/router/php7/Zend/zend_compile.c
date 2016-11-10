@@ -1944,10 +1944,42 @@ static inline uint32_t zend_emit_jump(uint32_t opnum_target) /* {{{ */
 }
 /* }}} */
 
+ZEND_API int zend_is_smart_branch(zend_op *opline) /* {{{ */
+{
+	switch (opline->opcode) {
+		case ZEND_IS_IDENTICAL:
+		case ZEND_IS_NOT_IDENTICAL:
+		case ZEND_IS_EQUAL:
+		case ZEND_IS_NOT_EQUAL:
+		case ZEND_IS_SMALLER:
+		case ZEND_IS_SMALLER_OR_EQUAL:
+		case ZEND_CASE:
+		case ZEND_ISSET_ISEMPTY_VAR:
+		case ZEND_ISSET_ISEMPTY_DIM_OBJ:
+		case ZEND_ISSET_ISEMPTY_PROP_OBJ:
+		case ZEND_INSTANCEOF:
+		case ZEND_TYPE_CHECK:
+		case ZEND_DEFINED:
+			return 1;
+		default:
+			return 0;
+	}
+}
+/* }}} */
+
 static inline uint32_t zend_emit_cond_jump(zend_uchar opcode, znode *cond, uint32_t opnum_target) /* {{{ */
 {
 	uint32_t opnum = get_next_op_number(CG(active_op_array));
-	zend_op *opline = zend_emit_op(NULL, opcode, cond, NULL);
+	zend_op *opline;
+
+	if ((cond->op_type & (IS_CV|IS_CONST))
+	 && opnum > 0
+	 && zend_is_smart_branch(CG(active_op_array)->opcodes + opnum - 1)) {
+		/* emit extra NOP to avoid incorrect SMART_BRANCH in very rare cases */
+		zend_emit_op(NULL, ZEND_NOP, NULL, NULL);
+		opnum = get_next_op_number(CG(active_op_array));
+	}
+	opline = zend_emit_op(NULL, opcode, cond, NULL);
 	opline->op2.opline_num = opnum_target;
 	return opnum;
 }
@@ -5467,6 +5499,41 @@ static void zend_check_already_in_use(uint32_t type, zend_string *old_name, zend
 }
 /* }}} */
 
+static void zend_check_use_conflict(
+		uint32_t type, zend_string *old_name, zend_string *new_name, zend_string *lookup_name) {
+	switch (type) {
+		case T_CLASS:
+		{
+			zend_class_entry *ce = zend_hash_find_ptr(CG(class_table), lookup_name);
+			if (ce && ce->type == ZEND_USER_CLASS
+				&& ce->info.user.filename == CG(compiled_filename)
+			) {
+				zend_check_already_in_use(type, old_name, new_name, lookup_name);
+			}
+			break;
+		}
+		case T_FUNCTION:
+		{
+			zend_function *fn = zend_hash_find_ptr(CG(function_table), lookup_name);
+			if (fn && fn->type == ZEND_USER_FUNCTION
+				&& fn->op_array.filename == CG(compiled_filename)
+			) {
+				zend_check_already_in_use(type, old_name, new_name, lookup_name);
+			}
+			break;
+		}
+		case T_CONST:
+		{
+			zend_string *filename = zend_hash_find_ptr(&CG(const_filenames), lookup_name);
+			if (filename && filename == CG(compiled_filename)) {
+				zend_check_already_in_use(type, old_name, new_name, lookup_name);
+			}
+			break;
+		}
+		EMPTY_SWITCH_DEFAULT_CASE()
+	}
+}
+
 void zend_compile_use(zend_ast *ast) /* {{{ */
 {
 	zend_ast_list *list = zend_ast_get_list(ast);
@@ -5523,43 +5590,11 @@ void zend_compile_use(zend_ast *ast) /* {{{ */
 			ZSTR_VAL(ns_name)[ZSTR_LEN(current_ns)] = '\\';
 			memcpy(ZSTR_VAL(ns_name) + ZSTR_LEN(current_ns) + 1, ZSTR_VAL(lookup_name), ZSTR_LEN(lookup_name));
 
-			if (zend_hash_exists(CG(class_table), ns_name)) {
-				zend_check_already_in_use(type, old_name, new_name, ns_name);
-			}
+			zend_check_use_conflict(type, old_name, new_name, ns_name);
 
 			zend_string_free(ns_name);
 		} else {
-			switch (type) {
-				case T_CLASS:
-				{
-					zend_class_entry *ce = zend_hash_find_ptr(CG(class_table), lookup_name);
-					if (ce && ce->type == ZEND_USER_CLASS
-						&& ce->info.user.filename == CG(compiled_filename)
-					) {
-						zend_check_already_in_use(type, old_name, new_name, lookup_name);
-					}
-					break;
-				}
-				case T_FUNCTION:
-				{
-					zend_function *fn = zend_hash_find_ptr(CG(function_table), lookup_name);
-					if (fn && fn->type == ZEND_USER_FUNCTION
-						&& fn->op_array.filename == CG(compiled_filename)
-					) {
-						zend_check_already_in_use(type, old_name, new_name, lookup_name);
-					}
-					break;
-				}
-				case T_CONST:
-				{
-					zend_string *filename = zend_hash_find_ptr(&CG(const_filenames), lookup_name);
-					if (filename && filename == CG(compiled_filename)) {
-						zend_check_already_in_use(type, old_name, new_name, lookup_name);
-					}
-					break;
-				}
-				EMPTY_SWITCH_DEFAULT_CASE()
-			}
+			zend_check_use_conflict(type, old_name, new_name, lookup_name);
 		}
 
 		zend_string_addref(old_name);
@@ -5918,7 +5953,11 @@ static zend_bool zend_try_ct_eval_array(zval *result, zend_ast *ast) /* {{{ */
 					break;
 			}
 		} else {
-			zend_hash_next_index_insert(Z_ARRVAL_P(result), value);
+			if (!zend_hash_next_index_insert(Z_ARRVAL_P(result), value)) {
+				zval_ptr_dtor_nogc(value);
+				zval_ptr_dtor(result);
+				return 0;
+			}
 		}
 	}
 
