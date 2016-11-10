@@ -1115,7 +1115,7 @@ void gdImageLine (gdImagePtr im, int x1, int y1, int x2, int y2, int color)
 	}
 
 	/* 2.0.10: Nick Atty: clip to edges of drawing rectangle, return if no points need to be drawn */
-	if (!clip_1d(&x1,&y1,&x2,&y2,gdImageSX(im)) || !clip_1d(&y1,&x1,&y2,&x2,gdImageSY(im))) {
+	if (!clip_1d(&x1,&y1,&x2,&y2,gdImageSX(im)-1) || !clip_1d(&y1,&x1,&y2,&x2,gdImageSY(im)-1)) {
 		return;
 	}
 
@@ -1296,57 +1296,12 @@ inline static void gdImageSetAAPixelColor(gdImagePtr im, int x, int y, int color
 void gdImageAALine (gdImagePtr im, int x1, int y1, int x2, int y2, int col)
 {
 	/* keep them as 32bits */
-	long x, y, inc;
+	long x, y, inc, frac;
 	long dx, dy,tmp;
 
-	if (y1 < 0 && y2 < 0) {
+	/* 2.0.10: Nick Atty: clip to edges of drawing rectangle, return if no points need to be drawn */
+	if (!clip_1d(&x1,&y1,&x2,&y2,gdImageSX(im)-1) || !clip_1d(&y1,&x1,&y2,&x2,gdImageSY(im)-1)) {
 		return;
-	}
-	if (y1 < 0) {
-		x1 += (y1 * (x1 - x2)) / (y2 - y1);
-		y1 = 0;
-	}
-	if (y2 < 0) {
-		x2 += (y2 * (x1 - x2)) / (y2 - y1);
-		y2 = 0;
-	}
-
-	/* bottom edge */
-	if (y1 >= im->sy && y2 >= im->sy) {
-		return;
-	}
-	if (y1 >= im->sy) {
-		x1 -= ((im->sy - y1) * (x1 - x2)) / (y2 - y1);
-		y1 = im->sy - 1;
-	}
-	if (y2 >= im->sy) {
-		x2 -= ((im->sy - y2) * (x1 - x2)) / (y2 - y1);
-		y2 = im->sy - 1;
-	}
-
-	/* left edge */
-	if (x1 < 0 && x2 < 0) {
-		return;
-	}
-	if (x1 < 0) {
-		y1 += (x1 * (y1 - y2)) / (x2 - x1);
-		x1 = 0;
-	}
-	if (x2 < 0) {
-		y2 += (x2 * (y1 - y2)) / (x2 - x1);
-		x2 = 0;
-	}
-	/* right edge */
-	if (x1 >= im->sx && x2 >= im->sx) {
-		return;
-	}
-	if (x1 >= im->sx) {
-		y1 -= ((im->sx - x1) * (y1 - y2)) / (x2 - x1);
-		x1 = im->sx - 1;
-	}
-	if (x2 >= im->sx) {
-		y2 -= ((im->sx - x2) * (y1 - y2)) / (x2 - x1);
-		x2 = im->sx - 1;
 	}
 
 	dx = x2 - x1;
@@ -1366,16 +1321,22 @@ void gdImageAALine (gdImagePtr im, int x1, int y1, int x2, int y2, int col)
 			dx = x2 - x1;
 			dy = y2 - y1;
 		}
-		x = x1 << 16;
-		y = y1 << 16;
+		y = y1;
 		inc = (dy * 65536) / dx;
-		while ((x >> 16) <= x2) {
-			gdImageSetAAPixelColor(im, x >> 16, y >> 16, col, (y >> 8) & 0xFF);
-			if ((y >> 16) + 1 < im->sy) {
-				gdImageSetAAPixelColor(im, x >> 16, (y >> 16) + 1,col, (~y >> 8) & 0xFF);
+		frac = 0;
+		for (x = x1; x <= x2; x++) {
+			gdImageSetAAPixelColor(im, x, y, col, (frac >> 8) & 0xFF);
+			if (y + 1 < im->sy) {
+				gdImageSetAAPixelColor(im, x, y + 1, col, (~frac >> 8) & 0xFF);
 			}
-			x += (1 << 16);
-			y += inc;
+			frac += inc;
+			if (frac >= 65536) {
+				frac -= 65536;
+				y++;
+			} else if (frac < 0) {
+				frac += 65536;
+				y--;
+			}
 		}
 	} else {
 		if (dy < 0) {
@@ -1388,16 +1349,22 @@ void gdImageAALine (gdImagePtr im, int x1, int y1, int x2, int y2, int col)
 			dx = x2 - x1;
 			dy = y2 - y1;
 		}
-		x = x1 << 16;
-		y = y1 << 16;
+		x = x1;
 		inc = (dx * 65536) / dy;
-		while ((y>>16) <= y2) {
-			gdImageSetAAPixelColor(im, x >> 16, y >> 16, col, (x >> 8) & 0xFF);
-			if ((x >> 16) + 1 < im->sx) {
-				gdImageSetAAPixelColor(im, (x >> 16) + 1, (y >> 16),col, (~x >> 8) & 0xFF);
+		frac = 0;
+		for (y = y1; y <= y2; y++) {
+			gdImageSetAAPixelColor(im, x, y, col, (frac >> 8) & 0xFF);
+			if (x + 1 < im->sx) {
+				gdImageSetAAPixelColor(im, x + 1, y, col, (~frac >> 8) & 0xFF);
 			}
-			x += inc;
-			y += (1<<16);
+			frac += inc;
+			if (frac >= 65536) {
+				frac -= 65536;
+				x++;
+			} else if (frac < 0) {
+				frac += 65536;
+				x--;
+			}
 		}
 	}
 }
@@ -1778,7 +1745,7 @@ void gdImageFillToBorder (gdImagePtr im, int x, int y, int border, int color)
 	int leftLimit = -1, rightLimit;
 	int i, restoreAlphaBlending = 0;
 
-	if (border < 0) {
+	if (border < 0 || color < 0) {
 		/* Refuse to fill to a non-solid border */
 		return;
 	}
@@ -2245,7 +2212,9 @@ void gdImageCopy (gdImagePtr dst, gdImagePtr src, int dstX, int dstY, int srcX, 
 			for (y = 0; (y < h); y++) {
 				for (x = 0; (x < w); x++) {
 					int c = gdImageGetTrueColorPixel (src, srcX + x, srcY + y);
-					gdImageSetPixel (dst, dstX + x, dstY + y, c);
+					if (c != src->transparent) {
+						gdImageSetPixel (dst, dstX + x, dstY + y, c);
+					}
 				}
 			}
 		} else {
@@ -2258,26 +2227,6 @@ void gdImageCopy (gdImagePtr dst, gdImagePtr src, int dstX, int dstY, int srcX, 
 					}
 				}
 			}
-		}
-		return;
-	}
-
-	/* Destination is palette based */
-	if (src->trueColor) { /* But source is truecolor (Ouch!) */
-		toy = dstY;
-		for (y = srcY; (y < (srcY + h)); y++) {
-			tox = dstX;
-			for (x = srcX; x < (srcX + w); x++) {
-				int nc;
-				c = gdImageGetPixel (src, x, y);
-
-				/* Get best match possible. */
-				nc = gdImageColorResolveAlpha(dst, gdTrueColorGetRed(c), gdTrueColorGetGreen(c), gdTrueColorGetBlue(c), gdTrueColorGetAlpha(c));
-
-				gdImageSetPixel(dst, tox, toy, nc);
-				tox++;
-			}
-			toy++;
 		}
 		return;
 	}

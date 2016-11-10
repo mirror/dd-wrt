@@ -1292,6 +1292,9 @@
 #undef HAVE_PCRE
 
 /* */
+#undef HAVE_PCRE_JIT_SUPPORT
+
+/* */
 #undef HAVE_PDO_DBLIB
 
 /* */

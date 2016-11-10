@@ -2299,6 +2299,7 @@ void pdo_stmt_init(void)
 	pdo_row_ce->ce_flags |= ZEND_ACC_FINAL; /* when removing this a lot of handlers need to be redone */
 	pdo_row_ce->create_object = pdo_row_new;
 	pdo_row_ce->serialize = pdo_row_serialize;
+	pdo_row_ce->unserialize = zend_class_unserialize_deny;
 }
 
 PDO_API void php_pdo_free_statement(pdo_stmt_t *stmt)
@@ -2564,7 +2565,14 @@ static int row_prop_exists(zval *object, zval *member, int check_empty, void **c
 		for (colno = 0; colno < stmt->column_count; colno++) {
 			if (ZSTR_LEN(stmt->columns[colno].name) == Z_STRLEN_P(member) &&
 			    strncmp(ZSTR_VAL(stmt->columns[colno].name), Z_STRVAL_P(member), Z_STRLEN_P(member)) == 0) {
-				return 1;
+					int res;
+					zval val;
+
+					fetch_value(stmt, &val, colno, NULL TSRMLS_CC);
+					res = check_empty ? i_zend_is_true(&val) : Z_TYPE(val) != IS_NULL;
+					zval_dtor(&val);
+
+					return res;
 			}
 		}
 	}
