@@ -16,7 +16,7 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id: f5b5ea2aa882feca4f4bc1874f9f1f9d57f7ea02 $ */
+/* $Id: 857251902ff74a11d4752e21a67ea824e5c71c4c $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -42,7 +42,7 @@
 /* {{{ inifile_version */
 char *inifile_version()
 {
-	return "1.0, $Id: f5b5ea2aa882feca4f4bc1874f9f1f9d57f7ea02 $";
+	return "1.0, $Id: 857251902ff74a11d4752e21a67ea824e5c71c4c $";
 }
 /* }}} */
 
@@ -250,6 +250,7 @@ val_type inifile_fetch(inifile *dba, const key_type *key, int skip) {
 	if (skip == -1 && dba->next.key.group && dba->next.key.name && !inifile_key_cmp(&dba->next.key, key)) {
 		/* we got position already from last fetch */
 		php_stream_seek(dba->fp, dba->next.pos, SEEK_SET);
+		ln.key.group = estrdup(dba->next.key.group);
 	} else {
 		/* specific instance or not same key -> restart search */
 		/* the slow way: restart and seacrch */

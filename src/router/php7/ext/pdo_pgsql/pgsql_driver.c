@@ -44,6 +44,8 @@
 #include "php_pdo_pgsql_int.h"
 #include "zend_exceptions.h"
 
+static int pgsql_handle_in_transaction(pdo_dbh_t *dbh);
+
 static char * _pdo_pgsql_trim_message(const char *message, int persistent)
 {
 	register int i = strlen(message)-1;
@@ -361,31 +363,45 @@ static char *pdo_pgsql_last_insert_id(pdo_dbh_t *dbh, const char *name, size_t *
 {
 	pdo_pgsql_db_handle *H = (pdo_pgsql_db_handle *)dbh->driver_data;
 	char *id = NULL;
+	PGresult *res;
+	ExecStatusType status;
+	zend_bool savepoint = 0;
 
 	if (name == NULL) {
-		if (H->pgoid == InvalidOid) {
-			return NULL;
+		savepoint = pgsql_handle_in_transaction(dbh);
+
+		if (savepoint) {
+			/* The savepoint is overwritten every time. */
+			(void)PQexec(H->server, "SAVEPOINT _php_lastid_savepoint");
 		}
-		*len = spprintf(&id, 0, ZEND_LONG_FMT, (zend_long) H->pgoid);
+		res = PQexec(H->server, "SELECT LASTVAL()");
 	} else {
-		PGresult *res;
-		ExecStatusType status;
 		const char *q[1];
 		q[0] = name;
+
 		res = PQexecParams(H->server, "SELECT CURRVAL($1)", 1, NULL, q, NULL, NULL, 0);
-		status = PQresultStatus(res);
-
-		if (res && (status == PGRES_TUPLES_OK)) {
-			id = estrdup((char *)PQgetvalue(res, 0, 0));
-			*len = PQgetlength(res, 0, 0);
-		} else {
-			pdo_pgsql_error(dbh, status, pdo_pgsql_sqlstate(res));
-		}
-
-		if (res) {
-			PQclear(res);
-		}
 	}
+	status = PQresultStatus(res);
+
+	if (res && (status == PGRES_TUPLES_OK)) {
+		id = estrdup((char *)PQgetvalue(res, 0, 0));
+		*len = PQgetlength(res, 0, 0);
+	} else {
+		if (savepoint) {
+			(void)PQexec(H->server, "ROLLBACK TO SAVEPOINT _php_lastid_savepoint");
+		}
+		pdo_pgsql_error(dbh, status, pdo_pgsql_sqlstate(res));
+		*len = spprintf(&id, 0, ZEND_LONG_FMT, (zend_long) H->pgoid);
+	}
+
+	if (savepoint) {
+		(void)PQexec(H->server, "RELEASE SAVEPOINT _php_lastid_savepoint");
+	}
+
+	if (res) {
+		PQclear(res);
+	}
+
 	return id;
 }
 

@@ -197,7 +197,6 @@ ZEND_API char *zend_zval_type_name(const zval *arg) /* {{{ */
 }
 /* }}} */
 
-#ifdef FAST_ZPP
 ZEND_API ZEND_COLD void ZEND_FASTCALL zend_wrong_paramers_count_error(int num_args, int min_num_args, int max_num_args) /* {{{ */
 {
 	zend_function *active_function = EG(current_execute_data)->func;
@@ -291,7 +290,6 @@ ZEND_API int ZEND_FASTCALL zend_parse_arg_class(zval *arg, zend_class_entry **pc
 	return 1;
 }
 /* }}} */
-#endif
 
 ZEND_API int ZEND_FASTCALL zend_parse_arg_bool_weak(zval *arg, zend_bool *dest) /* {{{ */
 {
@@ -1861,7 +1859,7 @@ static int zend_startup_module_zval(zval *zv) /* {{{ */
 {
 	zend_module_entry *module = Z_PTR_P(zv);
 
-	return zend_startup_module_ex(module);
+	return (zend_startup_module_ex(module) == SUCCESS) ? ZEND_HASH_APPLY_KEEP : ZEND_HASH_APPLY_REMOVE;
 }
 /* }}} */
 
@@ -3846,6 +3844,24 @@ ZEND_API void zend_update_property_null(zend_class_entry *scope, zval *object, c
 
 	ZVAL_NULL(&tmp);
 	zend_update_property(scope, object, name, name_length, &tmp);
+}
+/* }}} */
+
+ZEND_API void zend_unset_property(zend_class_entry *scope, zval *object, const char *name, size_t name_length) /* {{{ */
+{
+	zval property;
+	zend_class_entry *old_scope = EG(scope);
+
+	EG(scope) = scope;
+
+	if (!Z_OBJ_HT_P(object)->unset_property) {
+		zend_error_noreturn(E_CORE_ERROR, "Property %s of class %s cannot be unset", name, ZSTR_VAL(Z_OBJCE_P(object)->name));
+	}
+	ZVAL_STRINGL(&property, name, name_length);
+	Z_OBJ_HT_P(object)->unset_property(object, &property, 0);
+	zval_ptr_dtor(&property);
+
+	EG(scope) = old_scope;
 }
 /* }}} */
 
