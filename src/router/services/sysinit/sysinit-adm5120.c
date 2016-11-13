@@ -365,7 +365,7 @@ void start_sysinit(void)
 	 */
 	detect_wireless_devices();
 
-	if (!nvram_matchi("disable_watchdog",1))
+	if (!nvram_matchi("disable_watchdog", 1))
 		eval("watchdog");
 
 #ifdef HAVE_WP54G
