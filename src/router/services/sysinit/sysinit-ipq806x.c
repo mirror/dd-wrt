@@ -298,7 +298,7 @@ void *get_deviceinfo(char *var)
 	memset(res, 0, sizeof(res));
 	FILE *fp = fopen("/dev/mtdblock/12", "rb");
 	if (!fp)
-	    return NULL;
+		return NULL;
 	char newname[64];
 	snprintf(newname, 64, "%s=", var);
 	char *mem = safe_malloc(0x2000);
@@ -324,7 +324,7 @@ void start_sysinit(void)
 	struct stat tmp_stat;
 	time_t tm = 0;
 	FILE *fp = NULL;
-	if (!nvram_matchi("disable_watchdog",1))
+	if (!nvram_matchi("disable_watchdog", 1))
 		eval("watchdog");
 
 	/*
@@ -397,7 +397,7 @@ void start_sysinit(void)
 	insmod("stmmac");	//for debugging purposes compiled as module
 	insmod("stmmac-platform");	//for debugging purposes compiled as module
 	insmod("qcom-wdt");
-	
+
 	/*
 	 * network drivers 
 	 */

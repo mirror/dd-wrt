@@ -108,14 +108,12 @@ static void setdlinkcountry(void)
 	if (set) {
 		if (!nvram_get("nocountrysel"))
 			nvram_seti("nocountrysel", 1);
-		nvram_set("ath0_regdomain",set);
-		nvram_set("ath1_regdomain",set);
+		nvram_set("ath0_regdomain", set);
+		nvram_set("ath1_regdomain", set);
 	}
 }
 
-
 #endif
-
 
 void start_sysinit(void)
 {
@@ -123,7 +121,7 @@ void start_sysinit(void)
 	struct ifreq ifr;
 	int s;
 
-	if (!nvram_matchi("disable_watchdog",1))
+	if (!nvram_matchi("disable_watchdog", 1))
 		eval("watchdog");
 
 	/*
@@ -337,7 +335,7 @@ void start_sysinit(void)
 		if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
 			strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 			ioctl(s, SIOCGIFHWADDR, &ifr);
-			memcpy(mac,ifr.ifr_hwaddr.sa_data,6);
+			memcpy(mac, ifr.ifr_hwaddr.sa_data, 6);
 			close(s);
 		}
 		strcpy(macaddr, ether_etoa(mac, eabuf));

@@ -58,7 +58,7 @@ void start_sysinit(void)
 {
 	time_t tm = 0;
 
-	if (!nvram_matchi("disable_watchdog",1))
+	if (!nvram_matchi("disable_watchdog", 1))
 		eval("watchdog");
 
 	/*
@@ -206,7 +206,6 @@ void start_sysinit(void)
 	eval("vconfig", "add", "eth1", "1");
 	eval("vconfig", "add", "eth1", "2");
 #endif
-
 
 #ifndef HAVE_ERC
 #ifndef HAVE_GL150
