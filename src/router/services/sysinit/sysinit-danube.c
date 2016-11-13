@@ -110,7 +110,7 @@ void start_sysinit(void)
 	time_t tm = 0;
 
 	cprintf("sysinit() setup console\n");
-	if (!nvram_matchi("disable_watchdog",1))
+	if (!nvram_matchi("disable_watchdog", 1))
 		eval("watchdog");
 	/*
 	 * Setup console 

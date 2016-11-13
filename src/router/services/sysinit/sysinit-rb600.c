@@ -266,7 +266,7 @@ void start_sysinit(void)
 #else
 	set_gpio(244, 1);	//gps
 #endif
-	if (!nvram_matchi("disable_watchdog",1))
+	if (!nvram_matchi("disable_watchdog", 1))
 		eval("watchdog");
 
 	/*
