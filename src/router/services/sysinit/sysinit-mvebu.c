@@ -61,7 +61,7 @@ void start_sysinit(void)
 	time_t tm = 0;
 	FILE *fp;
 
-	if (!nvram_matchi("disable_watchdog",1)) {
+	if (!nvram_matchi("disable_watchdog", 1)) {
 		insmod("orion_wdt");
 		eval("watchdog");
 	}
@@ -96,7 +96,6 @@ void start_sysinit(void)
 	insmod("pwm-fan");
 	insmod("armada_thermal");
 	insmod("tmp421");
-
 
 	insmod("rtc-armada38x");	// for WRT1200AC / WRT1900ACv2 only
 	insmod("mii");
@@ -176,6 +175,7 @@ void start_sysinit(void)
 		set_smp_affinity(194, 2);
 		set_smp_affinity(195, 2);
 	}
+	nvram_seti("sdio_loaded", 0);
 
 	return;
 	cprintf("done\n");

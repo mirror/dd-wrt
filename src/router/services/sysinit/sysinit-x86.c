@@ -140,10 +140,10 @@ void start_sysinit(void)
 		fclose(in);
 	}
 
-	if (!nvram_matchi("disable_watchdog",1))
+	if (!nvram_matchi("disable_watchdog", 1))
 		eval("watchdog");	// system watchdog
 #ifdef HAVE_ERC
-	if (isregistered_real() && nvram_matchi("ree_resetme",1)) {
+	if (isregistered_real() && nvram_matchi("ree_resetme", 1)) {
 		fprintf(stderr, "Restoring REE default nvram\n");
 		eval("nvram", "restore", "/etc/defaults/x86ree.backup");
 		eval("reboot");
@@ -245,7 +245,7 @@ void start_sysinit(void)
 		nvram_set("et0macaddr", ether_etoa((char *)ifr.ifr_hwaddr.sa_data, eabuf));
 		close(s);
 	}
-	FILE *fp = fopen("/sys/bus/pci/devices/0000:04:00.0/device", "rb"); //pcengines apu fuckup check
+	FILE *fp = fopen("/sys/bus/pci/devices/0000:04:00.0/device", "rb");	//pcengines apu fuckup check
 	if (fp) {
 		char checkbuf[32];
 		fscanf(fp, "%s", &checkbuf[0]);
@@ -253,7 +253,7 @@ void start_sysinit(void)
 		if (!strcmp(&checkbuf[0], "0xabcd")) {
 			sys_reboot();
 		}
-	
+
 	}
 
 	detect_wireless_devices();
