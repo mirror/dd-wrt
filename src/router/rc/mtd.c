@@ -598,7 +598,7 @@ int mtd_write(const char *path, const char *mtd)
 
 		if (((count < len)
 		     && (len - off) > (mtd_info.erasesize * mul))
-		    || (count == 0)) {
+		    || (count == 0 && feof(fp))) {
 			fprintf(stderr, "%s: Truncated file (actual %d expect %d)\n", path, count - off, len - off);
 			goto fail;
 		}
