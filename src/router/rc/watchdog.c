@@ -137,14 +137,13 @@ static void watchdog(void)
 				fscanf(tempfp, "%d", &cpu);
 				fclose(tempfp);
 				int target = cpu - ((nvram_geti("hwmon_temp_max") + 10) * 1000);
-				if (target<0) target=0;
-				if (target > 10000) 
-				    target = 10000;
+				if (target < 0)
+					target = 0;
+				if (target > 10000)
+					target = 10000;
 				target *= 255;
 				target /= 10000;
-				sysprintf("/bin/echo %d > /sys/class/hwmon/hwmon0/pwm1",target);
-				}
-
+				sysprintf("/bin/echo %d > /sys/class/hwmon/hwmon0/pwm1", target);
 			}
 
 		}
