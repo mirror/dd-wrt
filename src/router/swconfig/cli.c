@@ -24,7 +24,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <stdbool.h>
-//#include <uci.h>
 
 #include <linux/types.h>
 #include <linux/netlink.h>
@@ -69,7 +68,7 @@ print_attrs(const struct switch_attr *attr)
 				type = "unknown";
 				break;
 		}
-		fprintf(stderr,"\tAttribute %d (%s): %s (%s)\n", ++i, type, attr->name, attr->description);
+		fprintf(stdout, "\tAttribute %d (%s): %s (%s)\n", ++i, type, attr->name, attr->description);
 		attr = attr->next;
 	}
 }
@@ -77,37 +76,70 @@ print_attrs(const struct switch_attr *attr)
 static void
 list_attributes(struct switch_dev *dev)
 {
-	fprintf(stderr,"%s: %s(%s), ports: %d (cpu @ %d), vlans: %d\n", dev->dev_name, dev->alias, dev->name, dev->ports, dev->cpu_port, dev->vlans);
-	fprintf(stderr,"     --switch\n");
+	fprintf(stdout, "%s: %s(%s), ports: %d (cpu @ %d), vlans: %d\n", dev->dev_name, dev->alias, dev->name, dev->ports, dev->cpu_port, dev->vlans);
+	fprintf(stdout, "     --switch\n");
 	print_attrs(dev->ops);
-	fprintf(stderr,"     --vlan\n");
+	fprintf(stdout, "     --vlan\n");
 	print_attrs(dev->vlan_ops);
-	fprintf(stderr,"     --port\n");
+	fprintf(stdout, "     --port\n");
 	print_attrs(dev->port_ops);
+}
+
+static const char *
+speed_str(int speed)
+{
+	switch (speed) {
+	case 10:
+		return "10baseT";
+	case 100:
+		return "100baseT";
+	case 1000:
+		return "1000baseT";
+	default:
+		break;
+	}
+
+	return "unknown";
 }
 
 static void
 print_attr_val(const struct switch_attr *attr, const struct switch_val *val)
 {
+	struct switch_port_link *link;
 	int i;
 
 	switch (attr->type) {
 	case SWITCH_TYPE_INT:
-		fprintf(stderr,"%d", val->value.i);
+		fprintf(stdout, "%d", val->value.i);
 		break;
 	case SWITCH_TYPE_STRING:
-		fprintf(stderr,"%s", val->value.s);
+		fprintf(stdout, "%s", val->value.s);
 		break;
 	case SWITCH_TYPE_PORTS:
 		for(i = 0; i < val->len; i++) {
-			fprintf(stderr,"%d%s ",
+			fprintf(stdout, "%d%s ",
 				val->value.ports[i].id,
 				(val->value.ports[i].flags &
 				 SWLIB_PORT_FLAG_TAGGED) ? "t" : "");
 		}
 		break;
+	case SWITCH_TYPE_LINK:
+		link = val->value.link;
+		if (link->link)
+			fprintf(stdout, "port:%d link:up speed:%s %s-duplex %s%s%s%s%s",
+				val->port_vlan,
+				speed_str(link->speed),
+				link->duplex ? "full" : "half",
+				link->tx_flow ? "txflow " : "",
+				link->rx_flow ? "rxflow " : "",
+				link->eee & SWLIB_LINK_FLAG_EEE_100BASET ? "eee100 " : "",
+				link->eee & SWLIB_LINK_FLAG_EEE_1000BASET ? "eee1000 " : "",
+				link->aneg ? "auto" : "");
+		else
+			fprintf(stdout, "port:%d link:down", val->port_vlan);
+		break;
 	default:
-		fprintf(stderr,"?unknown-type?");
+		fprintf(stdout, "?unknown-type?");
 	}
 }
 
@@ -116,9 +148,9 @@ show_attrs(struct switch_dev *dev, struct switch_attr *attr, struct switch_val *
 {
 	while (attr) {
 		if (attr->type != SWITCH_TYPE_NOVAL) {
-			fprintf(stderr,"\t%s: ", attr->name);
+			fprintf(stdout, "\t%s: ", attr->name);
 			if (swlib_get_attr(dev, attr, val) < 0)
-				fprintf(stderr,"???");
+				fprintf(stdout, "???");
 			else
 				print_attr_val(attr, val);
 			putchar('\n');
@@ -132,7 +164,7 @@ show_global(struct switch_dev *dev)
 {
 	struct switch_val val;
 
-	fprintf(stderr,"Global attributes:\n");
+	fprintf(stdout, "Global attributes:\n");
 	show_attrs(dev, dev->ops, &val);
 }
 
@@ -141,7 +173,7 @@ show_port(struct switch_dev *dev, int port)
 {
 	struct switch_val val;
 
-	fprintf(stderr,"Port %d:\n", port);
+	fprintf(stdout, "Port %d:\n", port);
 	val.port_vlan = port;
 	show_attrs(dev, dev->port_ops, &val);
 }
@@ -163,15 +195,15 @@ show_vlan(struct switch_dev *dev, int vlan, bool all)
 			return;
 	}
 
-	fprintf(stderr,"VLAN %d:\n", vlan);
+	fprintf(stdout, "VLAN %d:\n", vlan);
 	show_attrs(dev, dev->vlan_ops, &val);
 }
 
 static void
 print_usage(void)
 {
-	fprintf(stderr,"swconfig list\n");
-	fprintf(stderr,"swconfig dev <dev> [port <port>|vlan <vlan>] (help|set <key> <value>|get <key>|load <config>|show)\n");
+	fprintf(stdout, "swconfig list\n");
+	fprintf(stdout, "swconfig dev <dev> [port <port>|vlan <vlan>] (help|set <key> <value>|get <key>|load <config>|show)\n");
 	exit(1);
 }
 
@@ -194,13 +226,13 @@ swconfig_load_uci(struct switch_dev *dev, const char *name)
 
 	ret = swlib_apply_from_uci(dev, p);
 	if (ret < 0)
-		fprintf(stderr, "Failed to apply configuration for switch '%s'\n", dev->dev_name);
+		fprintf(stdout, "Failed to apply configuration for switch '%s'\n", dev->dev_name);
 
 out:
 	uci_free_context(ctx);
 	exit(ret);
-}
-*/
+}*/
+
 int main(int argc, char **argv)
 {
 	int retval = 0;
