@@ -1,7 +1,7 @@
 /*
  * swconfig.c: Switch configuration API
  *
- * Copyright (C) 2008 Felix Fietkau <nbd@openwrt.org>
+ * Copyright (C) 2008 Felix Fietkau <nbd@nbd.name>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -25,12 +25,13 @@
 #include <linux/switch.h>
 #include <linux/of.h>
 #include <linux/version.h>
+#include <uapi/linux/mii.h>
 
 #define SWCONFIG_DEVNAME	"switch%d"
 
 #include "swconfig_leds.c"
 
-MODULE_AUTHOR("Felix Fietkau <nbd@openwrt.org>");
+MODULE_AUTHOR("Felix Fietkau <nbd@nbd.name>");
 MODULE_LICENSE("GPL");
 
 static int swdev_id;
@@ -127,30 +128,21 @@ swconfig_get_pvid(struct switch_dev *dev, const struct switch_attr *attr,
 	return dev->ops->get_port_pvid(dev, val->port_vlan, &val->value.i);
 }
 
-static const char *
-swconfig_speed_str(enum switch_port_speed speed)
+static int
+swconfig_set_link(struct switch_dev *dev, const struct switch_attr *attr,
+			struct switch_val *val)
 {
-	switch (speed) {
-	case SWITCH_PORT_SPEED_10:
-		return "10baseT";
-	case SWITCH_PORT_SPEED_100:
-		return "100baseT";
-	case SWITCH_PORT_SPEED_1000:
-		return "1000baseT";
-	default:
-		break;
-	}
+	if (!dev->ops->set_port_link)
+		return -EOPNOTSUPP;
 
-	return "unknown";
+	return dev->ops->set_port_link(dev, val->port_vlan, val->value.link);
 }
 
 static int
 swconfig_get_link(struct switch_dev *dev, const struct switch_attr *attr,
 			struct switch_val *val)
 {
-	struct switch_port_link link;
-	int len;
-	int ret;
+	struct switch_port_link *link = val->value.link;
 
 	if (val->port_vlan >= dev->ports)
 		return -EINVAL;
@@ -158,32 +150,8 @@ swconfig_get_link(struct switch_dev *dev, const struct switch_attr *attr,
 	if (!dev->ops->get_port_link)
 		return -EOPNOTSUPP;
 
-	memset(&link, 0, sizeof(link));
-	ret = dev->ops->get_port_link(dev, val->port_vlan, &link);
-	if (ret)
-		return ret;
-
-	memset(dev->buf, 0, sizeof(dev->buf));
-
-	if (link.link)
-		len = snprintf(dev->buf, sizeof(dev->buf),
-			       "port:%d link:up speed:%s %s-duplex %s%s%s%s%s",
-			       val->port_vlan,
-			       swconfig_speed_str(link.speed),
-			       link.duplex ? "full" : "half",
-			       link.tx_flow ? "txflow " : "",
-			       link.rx_flow ?	"rxflow " : "",
-			       link.eee & ADVERTISED_100baseT_Full ? "eee100 " : "",
-			       link.eee & ADVERTISED_1000baseT_Full ? "eee1000 " : "",
-			       link.aneg ? "auto" : "");
-	else
-		len = snprintf(dev->buf, sizeof(dev->buf), "port:%d link:down",
-			       val->port_vlan);
-
-	val->value.s = dev->buf;
-	val->len = len;
-
-	return 0;
+	memset(link, 0, sizeof(*link));
+	return dev->ops->get_port_link(dev, val->port_vlan, link);
 }
 
 static int
@@ -246,10 +214,10 @@ static struct switch_attr default_port[] = {
 		.get = swconfig_get_pvid,
 	},
 	[PORT_LINK] = {
-		.type = SWITCH_TYPE_STRING,
+		.type = SWITCH_TYPE_LINK,
 		.name = "link",
 		.description = "Get port link information",
-		.set = NULL,
+		.set = swconfig_set_link,
 		.get = swconfig_get_link,
 	}
 };
@@ -323,6 +291,12 @@ static const struct nla_policy switch_policy[SWITCH_ATTR_MAX+1] = {
 static const struct nla_policy port_policy[SWITCH_PORT_ATTR_MAX+1] = {
 	[SWITCH_PORT_ID] = { .type = NLA_U32 },
 	[SWITCH_PORT_FLAG_TAGGED] = { .type = NLA_FLAG },
+};
+
+static struct nla_policy link_policy[SWITCH_LINK_ATTR_MAX] = {
+	[SWITCH_LINK_FLAG_DUPLEX] = { .type = NLA_FLAG },
+	[SWITCH_LINK_FLAG_ANEG] = { .type = NLA_FLAG },
+	[SWITCH_LINK_SPEED] = { .type = NLA_U32 },
 };
 
 static inline void
@@ -638,12 +612,31 @@ swconfig_parse_ports(struct sk_buff *msg, struct nlattr *head,
 }
 
 static int
+swconfig_parse_link(struct sk_buff *msg, struct nlattr *nla,
+		    struct switch_port_link *link)
+{
+	struct nlattr *tb[SWITCH_LINK_ATTR_MAX + 1];
+
+	if (nla_parse_nested(tb, SWITCH_LINK_ATTR_MAX, nla, link_policy))
+		return -EINVAL;
+
+	link->duplex = !!tb[SWITCH_LINK_FLAG_DUPLEX];
+	link->aneg = !!tb[SWITCH_LINK_FLAG_ANEG];
+	link->speed = nla_get_u32(tb[SWITCH_LINK_SPEED]);
+
+	return 0;
+}
+
+static int
 swconfig_set_attr(struct sk_buff *skb, struct genl_info *info)
 {
 	const struct switch_attr *attr;
 	struct switch_dev *dev;
 	struct switch_val val;
 	int err = -EINVAL;
+
+	if (!capable(CAP_NET_ADMIN))
+		return -EPERM;
 
 	dev = swconfig_get_dev(info);
 	if (!dev)
@@ -680,6 +673,21 @@ swconfig_set_attr(struct sk_buff *skb, struct genl_info *info)
 			err = swconfig_parse_ports(skb,
 				info->attrs[SWITCH_ATTR_OP_VALUE_PORTS],
 				&val, dev->ports);
+			if (err < 0)
+				goto error;
+		} else {
+			val.len = 0;
+			err = 0;
+		}
+		break;
+	case SWITCH_TYPE_LINK:
+		val.value.link = &dev->linkbuf;
+		memset(&dev->linkbuf, 0, sizeof(struct switch_port_link));
+
+		if (info->attrs[SWITCH_ATTR_OP_VALUE_LINK]) {
+			err = swconfig_parse_link(skb,
+						  info->attrs[SWITCH_ATTR_OP_VALUE_LINK],
+						  val.value.link);
 			if (err < 0)
 				goto error;
 		} else {
@@ -771,6 +779,53 @@ done:
 }
 
 static int
+swconfig_send_link(struct sk_buff *msg, struct genl_info *info, int attr,
+		   const struct switch_port_link *link)
+{
+	struct nlattr *p = NULL;
+	int err = 0;
+
+	p = nla_nest_start(msg, attr);
+	if (link->link) {
+		if (nla_put_flag(msg, SWITCH_LINK_FLAG_LINK))
+			goto nla_put_failure;
+	}
+	if (link->duplex) {
+		if (nla_put_flag(msg, SWITCH_LINK_FLAG_DUPLEX))
+			goto nla_put_failure;
+	}
+	if (link->aneg) {
+		if (nla_put_flag(msg, SWITCH_LINK_FLAG_ANEG))
+			goto nla_put_failure;
+	}
+	if (link->tx_flow) {
+		if (nla_put_flag(msg, SWITCH_LINK_FLAG_TX_FLOW))
+			goto nla_put_failure;
+	}
+	if (link->rx_flow) {
+		if (nla_put_flag(msg, SWITCH_LINK_FLAG_RX_FLOW))
+			goto nla_put_failure;
+	}
+	if (nla_put_u32(msg, SWITCH_LINK_SPEED, link->speed))
+		goto nla_put_failure;
+	if (link->eee & ADVERTISED_100baseT_Full) {
+		if (nla_put_flag(msg, SWITCH_LINK_FLAG_EEE_100BASET))
+			goto nla_put_failure;
+	}
+	if (link->eee & ADVERTISED_1000baseT_Full) {
+		if (nla_put_flag(msg, SWITCH_LINK_FLAG_EEE_1000BASET))
+			goto nla_put_failure;
+	}
+	nla_nest_end(msg, p);
+
+	return err;
+
+nla_put_failure:
+	nla_nest_cancel(msg, p);
+	return -1;
+}
+
+static int
 swconfig_get_attr(struct sk_buff *skb, struct genl_info *info)
 {
 	struct genlmsghdr *hdr = nlmsg_data(info->nlhdr);
@@ -794,6 +849,9 @@ swconfig_get_attr(struct sk_buff *skb, struct genl_info *info)
 		val.value.ports = dev->portbuf;
 		memset(dev->portbuf, 0,
 			sizeof(struct switch_port) * dev->ports);
+	} else if (attr->type == SWITCH_TYPE_LINK) {
+		val.value.link = &dev->linkbuf;
+		memset(&dev->linkbuf, 0, sizeof(struct switch_port_link));
 	}
 
 	err = attr->get(dev, attr, &val);
@@ -821,6 +879,12 @@ swconfig_get_attr(struct sk_buff *skb, struct genl_info *info)
 	case SWITCH_TYPE_PORTS:
 		err = swconfig_send_ports(&msg, info,
 				SWITCH_ATTR_OP_VALUE_PORTS, &val);
+		if (err < 0)
+			goto nla_put_failure;
+		break;
+	case SWITCH_TYPE_LINK:
+		err = swconfig_send_link(msg, info,
+					 SWITCH_ATTR_OP_VALUE_LINK, val.value.link);
 		if (err < 0)
 			goto nla_put_failure;
 		break;
@@ -961,16 +1025,19 @@ static struct genl_ops swconfig_ops[] = {
 	},
 	{
 		.cmd = SWITCH_CMD_SET_GLOBAL,
+		.flags = GENL_ADMIN_PERM,
 		.doit = swconfig_set_attr,
 		.policy = switch_policy,
 	},
 	{
 		.cmd = SWITCH_CMD_SET_VLAN,
+		.flags = GENL_ADMIN_PERM,
 		.doit = swconfig_set_attr,
 		.policy = switch_policy,
 	},
 	{
 		.cmd = SWITCH_CMD_SET_PORT,
+		.flags = GENL_ADMIN_PERM,
 		.doit = swconfig_set_attr,
 		.policy = switch_policy,
 	},
@@ -1108,12 +1175,47 @@ unregister_switch(struct switch_dev *dev)
 }
 EXPORT_SYMBOL_GPL(unregister_switch);
 
+int
+switch_generic_set_link(struct switch_dev *dev, int port,
+			struct switch_port_link *link)
+{
+	if (WARN_ON(!dev->ops->phy_write16))
+		return -ENOTSUPP;
+
+	/* Generic implementation */
+	if (link->aneg) {
+		dev->ops->phy_write16(dev, port, MII_BMCR, 0x0000);
+		dev->ops->phy_write16(dev, port, MII_BMCR, BMCR_ANENABLE | BMCR_ANRESTART);
+	} else {
+		u16 bmcr = 0;
+
+		if (link->duplex)
+			bmcr |= BMCR_FULLDPLX;
+
+		switch (link->speed) {
+		case SWITCH_PORT_SPEED_10:
+			break;
+		case SWITCH_PORT_SPEED_100:
+			bmcr |= BMCR_SPEED100;
+			break;
+		case SWITCH_PORT_SPEED_1000:
+			bmcr |= BMCR_SPEED1000;
+			break;
+		default:
+			return -ENOTSUPP;
+		}
+
+		dev->ops->phy_write16(dev, port, MII_BMCR, bmcr);
+	}
+
+	return 0;
+}
 
 static int __init
 swconfig_init(void)
 {
-	int err;
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(3,13,0))
+	int err;
 	int i;
 #endif
 
@@ -1135,10 +1237,7 @@ unregister:
 	genl_unregister_family(&switch_fam);
 	return err;
 #else
-	err = genl_register_family_with_ops(&switch_fam, swconfig_ops);
-	if (err)
-		return err;
-	return 0;
+	return genl_register_family_with_ops(&switch_fam, swconfig_ops);
 #endif
 }
 

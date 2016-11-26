@@ -1,7 +1,7 @@
 /*
  * ar8216.h: AR8216 switch driver
  *
- * Copyright (C) 2009 Felix Fietkau <nbd@openwrt.org>
+ * Copyright (C) 2009 Felix Fietkau <nbd@nbd.name>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -32,6 +32,9 @@
 #define AR8X16_MAX_VLANS	128
 #define AR8X16_PROBE_RETRIES	10
 #define AR8X16_MAX_PORTS	8
+
+#define AR8XXX_REG_ARL_CTRL_AGE_TIME_SECS	7
+#define AR8XXX_DEFAULT_ARL_AGE_TIME		300
 
 /* Atheros specific MII registers */
 #define MII_ATH_MMD_ADDR		0x0d
@@ -384,6 +387,8 @@ struct ar8xxx_chip {
 	unsigned reg_port_stats_start;
 	unsigned reg_port_stats_length;
 
+	unsigned reg_arl_ctrl;
+
 	int (*hw_init)(struct ar8xxx_priv *priv);
 	void (*cleanup)(struct ar8xxx_priv *priv);
 
@@ -449,6 +454,7 @@ struct ar8xxx_priv {
 	u8 vlan_table[AR8X16_MAX_VLANS];
 	u8 vlan_tagged;
 	u16 pvid[AR8X16_MAX_PORTS];
+	int arl_age_time;
 
 	/* mirroring */
 	bool mirror_rx;
@@ -472,9 +478,9 @@ void
 ar8xxx_phy_dbg_write(struct ar8xxx_priv *priv, int phy_addr,
 		     u16 dbg_addr, u16 dbg_data);
 void
-ar8xxx_phy_mmd_write(struct ar8xxx_priv *priv, int phy_addr, u16 addr, u16 data);
+ar8xxx_phy_mmd_write(struct ar8xxx_priv *priv, int phy_addr, u16 addr, u16 reg, u16 data);
 u16
-ar8xxx_phy_mmd_read(struct ar8xxx_priv *priv, int phy_addr, u16 addr);
+ar8xxx_phy_mmd_read(struct ar8xxx_priv *priv, int phy_addr, u16 addr, u16 reg);
 void
 ar8xxx_phy_init(struct ar8xxx_priv *priv);
 int
@@ -538,6 +544,14 @@ int
 ar8xxx_sw_get_port_mib(struct switch_dev *dev,
                        const struct switch_attr *attr,
                        struct switch_val *val);
+int
+ar8xxx_sw_get_arl_age_time(struct switch_dev *dev,
+			   const struct switch_attr *attr,
+			   struct switch_val *val);
+int
+ar8xxx_sw_set_arl_age_time(struct switch_dev *dev,
+			   const struct switch_attr *attr,
+			   struct switch_val *val);
 int
 ar8xxx_sw_get_arl_table(struct switch_dev *dev,
 			const struct switch_attr *attr,
