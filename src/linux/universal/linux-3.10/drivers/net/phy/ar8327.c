@@ -1,7 +1,7 @@
 /*
  * ar8327.c: AR8216 switch driver
  *
- * Copyright (C) 2009 Felix Fietkau <nbd@openwrt.org>
+ * Copyright (C) 2009 Felix Fietkau <nbd@nbd.name>
  * Copyright (C) 2011-2012 Gabor Juhos <juhosg@openwrt.org>
  *
  * This program is free software; you can redistribute it and/or
@@ -139,13 +139,10 @@ ar8327_phy_fixup(struct ar8xxx_priv *priv, int phy)
 		break;
 
 	case 2:
-		ar8xxx_phy_mmd_write(priv, phy, 0x7, 0x3c);
-		ar8xxx_phy_mmd_write(priv, phy, 0x4007, 0x0);
+		ar8xxx_phy_mmd_write(priv, phy, 0x7, 0x3c, 0x0);
 		/* fallthrough */
 	case 4:
-		ar8xxx_phy_mmd_write(priv, phy, 0x3, 0x800d);
-		ar8xxx_phy_mmd_write(priv, phy, 0x4003, 0x803f);
-
+		ar8xxx_phy_mmd_write(priv, phy, 0x3, 0x800d, 0x803f);
 		ar8xxx_phy_dbg_write(priv, phy, 0x3d, 0x6860);
 		ar8xxx_phy_dbg_write(priv, phy, 0x5, 0x2c46);
 		ar8xxx_phy_dbg_write(priv, phy, 0x3c, 0x6000);
@@ -744,8 +741,7 @@ ar8327_read_port_eee_status(struct ar8xxx_priv *priv, int port)
 	phy = port - 1;
 
 	/* EEE Ability Auto-negotiation Result */
-	ar8xxx_phy_mmd_write(priv, phy, 0x7, 0x8000);
-	t = ar8xxx_phy_mmd_read(priv, phy, 0x4007);
+	t = ar8xxx_phy_mmd_read(priv, phy, 0x7, 0x8000);
 
 	return mmd_eee_adv_to_ethtool_adv_t(t);
 }
@@ -781,6 +777,45 @@ ar8327_atu_flush_port(struct ar8xxx_priv *priv, int port)
 	}
 
 	return ret;
+}
+
+static int
+ar8327_get_port_igmp(struct ar8xxx_priv *priv, int port)
+{
+	u32 fwd_ctrl, frame_ack;
+
+	fwd_ctrl = (BIT(port) << AR8327_FWD_CTRL1_IGMP_S);
+	frame_ack = ((AR8327_FRAME_ACK_CTRL_IGMP_MLD |
+		      AR8327_FRAME_ACK_CTRL_IGMP_JOIN |
+		      AR8327_FRAME_ACK_CTRL_IGMP_LEAVE) <<
+		     AR8327_FRAME_ACK_CTRL_S(port));
+
+	return (ar8xxx_read(priv, AR8327_REG_FWD_CTRL1) &
+			fwd_ctrl) == fwd_ctrl &&
+		(ar8xxx_read(priv, AR8327_REG_FRAME_ACK_CTRL(port)) &
+			frame_ack) == frame_ack;
+}
+
+static void
+ar8327_set_port_igmp(struct ar8xxx_priv *priv, int port, int enable)
+{
+	int reg_frame_ack = AR8327_REG_FRAME_ACK_CTRL(port);
+	u32 val_frame_ack = (AR8327_FRAME_ACK_CTRL_IGMP_MLD |
+			  AR8327_FRAME_ACK_CTRL_IGMP_JOIN |
+			  AR8327_FRAME_ACK_CTRL_IGMP_LEAVE) <<
+			 AR8327_FRAME_ACK_CTRL_S(port);
+
+	if (enable) {
+		ar8xxx_rmw(priv, AR8327_REG_FWD_CTRL1,
+			   BIT(port) << AR8327_FWD_CTRL1_MC_FLOOD_S,
+			   BIT(port) << AR8327_FWD_CTRL1_IGMP_S);
+		ar8xxx_reg_set(priv, reg_frame_ack, val_frame_ack);
+	} else {
+		ar8xxx_rmw(priv, AR8327_REG_FWD_CTRL1,
+			   BIT(port) << AR8327_FWD_CTRL1_IGMP_S,
+			   BIT(port) << AR8327_FWD_CTRL1_MC_FLOOD_S);
+		ar8xxx_reg_clear(priv, reg_frame_ack, val_frame_ack);
+	}
 }
 
 static void
@@ -1084,6 +1119,110 @@ ar8327_sw_hw_apply(struct switch_dev *dev)
 	return 0;
 }
 
+int
+ar8327_sw_get_port_igmp_snooping(struct switch_dev *dev,
+				 const struct switch_attr *attr,
+				 struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	int port = val->port_vlan;
+
+	if (port >= dev->ports)
+		return -EINVAL;
+
+	mutex_lock(&priv->reg_mutex);
+	val->value.i = ar8327_get_port_igmp(priv, port);
+	mutex_unlock(&priv->reg_mutex);
+
+	return 0;
+}
+
+int
+ar8327_sw_set_port_igmp_snooping(struct switch_dev *dev,
+				 const struct switch_attr *attr,
+				 struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	int port = val->port_vlan;
+
+	if (port >= dev->ports)
+		return -EINVAL;
+
+	mutex_lock(&priv->reg_mutex);
+	ar8327_set_port_igmp(priv, port, val->value.i);
+	mutex_unlock(&priv->reg_mutex);
+
+	return 0;
+}
+
+int
+ar8327_sw_get_igmp_snooping(struct switch_dev *dev,
+			    const struct switch_attr *attr,
+			    struct switch_val *val)
+{
+	int port;
+
+	for (port = 0; port < dev->ports; port++) {
+		val->port_vlan = port;
+		if (ar8327_sw_get_port_igmp_snooping(dev, attr, val) ||
+		    !val->value.i)
+			break;
+	}
+
+	return 0;
+}
+
+int
+ar8327_sw_set_igmp_snooping(struct switch_dev *dev,
+			    const struct switch_attr *attr,
+			    struct switch_val *val)
+{
+	int port;
+
+	for (port = 0; port < dev->ports; port++) {
+		val->port_vlan = port;
+		if (ar8327_sw_set_port_igmp_snooping(dev, attr, val))
+			break;
+	}
+
+	return 0;
+}
+
+int
+ar8327_sw_get_igmp_v3(struct switch_dev *dev,
+		      const struct switch_attr *attr,
+		      struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	u32 val_reg;
+
+	mutex_lock(&priv->reg_mutex);
+	val_reg = ar8xxx_read(priv, AR8327_REG_FRAME_ACK_CTRL1);
+	val->value.i = ((val_reg & AR8327_FRAME_ACK_CTRL_IGMP_V3_EN) != 0);
+	mutex_unlock(&priv->reg_mutex);
+
+	return 0;
+}
+
+int
+ar8327_sw_set_igmp_v3(struct switch_dev *dev,
+		      const struct switch_attr *attr,
+		      struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+
+	mutex_lock(&priv->reg_mutex);
+	if (val->value.i)
+		ar8xxx_reg_set(priv, AR8327_REG_FRAME_ACK_CTRL1,
+			       AR8327_FRAME_ACK_CTRL_IGMP_V3_EN);
+	else
+		ar8xxx_reg_clear(priv, AR8327_REG_FRAME_ACK_CTRL1,
+				 AR8327_FRAME_ACK_CTRL_IGMP_V3_EN);
+	mutex_unlock(&priv->reg_mutex);
+
+	return 0;
+}
+
 static const struct switch_attr ar8327_sw_attr_globals[] = {
 	{
 		.type = SWITCH_TYPE_INT,
@@ -1132,6 +1271,13 @@ static const struct switch_attr ar8327_sw_attr_globals[] = {
 		.max = AR8327_NUM_PORTS - 1
  	},
 	{
+		.type = SWITCH_TYPE_INT,
+		.name = "arl_age_time",
+		.description = "ARL age time (secs)",
+		.set = ar8xxx_sw_set_arl_age_time,
+		.get = ar8xxx_sw_get_arl_age_time,
+	},
+	{
 		.type = SWITCH_TYPE_STRING,
 		.name = "arl_table",
 		.description = "Get ARL table",
@@ -1143,6 +1289,22 @@ static const struct switch_attr ar8327_sw_attr_globals[] = {
 		.name = "flush_arl_table",
 		.description = "Flush ARL table",
 		.set = ar8xxx_sw_set_flush_arl_table,
+	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "igmp_snooping",
+		.description = "Enable IGMP Snooping",
+		.set = ar8327_sw_set_igmp_snooping,
+		.get = ar8327_sw_get_igmp_snooping,
+		.max = 1
+	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "igmp_v3",
+		.description = "Enable IGMPv3 support",
+		.set = ar8327_sw_set_igmp_v3,
+		.get = ar8327_sw_get_igmp_v3,
+		.max = 1
 	},
 };
 
@@ -1173,6 +1335,14 @@ static const struct switch_attr ar8327_sw_attr_port[] = {
 		.name = "flush_arl_table",
 		.description = "Flush port's ARL table entries",
 		.set = ar8xxx_sw_set_flush_port_arl_table,
+	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "igmp_snooping",
+		.description = "Enable port's IGMP Snooping",
+		.set = ar8327_sw_set_port_igmp_snooping,
+		.get = ar8327_sw_get_port_igmp_snooping,
+		.max = 1
 	},
 };
 
@@ -1210,6 +1380,7 @@ const struct ar8xxx_chip ar8327_chip = {
 
 	.reg_port_stats_start = 0x1000,
 	.reg_port_stats_length = 0x100,
+	.reg_arl_ctrl = AR8327_REG_ARL_CTRL,
 
 	.hw_init = ar8327_hw_init,
 	.cleanup = ar8327_cleanup,
@@ -1244,6 +1415,7 @@ const struct ar8xxx_chip ar8337_chip = {
 
 	.reg_port_stats_start = 0x1000,
 	.reg_port_stats_length = 0x100,
+	.reg_arl_ctrl = AR8327_REG_ARL_CTRL,
 
 	.hw_init = ar8327_hw_init,
 	.cleanup = ar8327_cleanup,
