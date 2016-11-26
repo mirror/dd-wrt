@@ -105,19 +105,24 @@ enum swlib_port_flags {
 	SWLIB_PORT_FLAG_TAGGED = (1 << 0),
 };
 
+enum swlib_link_flags {
+	SWLIB_LINK_FLAG_EEE_100BASET = (1 << 0),
+	SWLIB_LINK_FLAG_EEE_1000BASET = (1 << 1),
+};
 
 struct switch_dev;
 struct switch_attr;
 struct switch_port;
 struct switch_port_map;
+struct switch_port_link;
 struct switch_val;
 struct uci_package;
 
 struct switch_dev {
 	int id;
 	char dev_name[IFNAMSIZ];
-	const char *name;
-	const char *alias;
+	char *name;
+	char *alias;
 	int ports;
 	int vlans;
 	int cpu_port;
@@ -135,9 +140,10 @@ struct switch_val {
 	int err;
 	int port_vlan;
 	union {
-		const char *s;
+		char *s;
 		int i;
 		struct switch_port *ports;
+		struct switch_port_link *link;
 	} value;
 };
 
@@ -146,8 +152,8 @@ struct switch_attr {
 	int atype;
 	int id;
 	int type;
-	const char *name;
-	const char *description;
+	char *name;
+	char *description;
 	struct switch_attr *next;
 };
 
@@ -158,7 +164,18 @@ struct switch_port {
 
 struct switch_portmap {
 	unsigned int virt;
-	const char *segment;
+	char *segment;
+};
+
+struct switch_port_link {
+	int link:1;
+	int duplex:1;
+	int aneg:1;
+	int tx_flow:1;
+	int rx_flow:1;
+	int speed;
+	/* in ethtool adv_t format */
+	uint32_t eee;
 };
 
 /**
