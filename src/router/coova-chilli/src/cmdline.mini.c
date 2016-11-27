@@ -311,7 +311,7 @@ int mini_cmdline_parser2(int argc, char **argv,
           break;
 
           case '?':
-            fprintf(stderr,"invlid option %s\n", argv[optind-1]);
+            fprintf(stderr,"invalid option %s\n", argv[optind-1]);
             ret = -1;
             break;
 

@@ -543,7 +543,7 @@ int mopt_main(int argc, char **argv) {
   _options.bwbucketminsize = args_info.bwbucketminsize_arg;
 #endif
 
-#ifdef ENABLE_PROXYVSA
+#if defined(ENABLE_PROXYVSA) || defined(ENABLE_LOCATION)
   _options.vlanlocation = args_info.vlanlocation_flag;
   _options.location_stop_start = args_info.locationstopstart_flag;
   _options.location_copy_called = args_info.locationcopycalled_flag;
@@ -722,6 +722,27 @@ int mopt_main(int argc, char **argv) {
 
   syslog(LOG_DEBUG, "DHCP Listen: %s", inet_ntoa(_options.dhcplisten));
   syslog(LOG_DEBUG, "UAM Listen: %s", inet_ntoa(_options.uamlisten));
+
+  if (args_info.rfc7710uri_given) {
+    /*
+     * When given, but set to an empty string, the feature is disabled.
+     */
+    if (strlen(args_info.rfc7710uri_arg) > 255) {
+      syslog(LOG_ERR, "Captive portal URI is too long for DHCP option.");
+      if (!args_info.forgiving_flag)
+	goto end_processing;
+    } else {
+      _options.rfc7710uri = STRDUP(args_info.rfc7710uri_arg);
+    }
+  } else {
+    /*
+     * When not explicitly set, default to the /prelogin routine.
+     */
+    char uri[128];
+    snprintf(uri, sizeof(uri), "http://%s:%d/prelogin",
+	     inet_ntoa(_options.uamlisten), _options.uamport);
+    _options.rfc7710uri = STRDUP(uri);
+  }
 
   if (!args_info.uamserver_arg) {
     syslog(LOG_ERR, "WARNING: No uamserver defiend!");
@@ -1396,7 +1417,7 @@ int mopt_main(int argc, char **argv) {
   _options.ieee8021q_only = args_info.only8021q_flag;
   _options.vlanupdate = STRDUP(args_info.vlanupdate_arg);
 #endif
-#ifdef ENABLE_PROXYVSA
+#if defined(ENABLE_PROXYVSA) || defined(ENABLE_LOCATION)
   _options.locationupdate = STRDUP(args_info.locationupdate_arg);
 #endif
   _options.nochallenge = args_info.nochallenge_flag;

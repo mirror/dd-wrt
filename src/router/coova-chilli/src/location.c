@@ -87,8 +87,7 @@ void location_close_conn(struct app_conn_t *conn, int close) {
 }
 
 static int
-avl_comp(const void *k1, const void *k2,
-	 void *ptr __attribute__ ((unused))) {
+avl_comp(const void *k1, const void *k2) {
   int result = strncmp(k1, k2, MAX_LOCATION_LENGTH);
   syslog(LOG_DEBUG, "%s result %d",__FUNCTION__,result);
   /* log_dbg("k1: %s k2: %s",k1,k2); */
@@ -514,7 +513,7 @@ void location_init() {
 #ifdef HAVE_AVL
   struct app_conn_t *conn = firstusedconn;
   memset(&loc_search_tree, 0, sizeof(loc_search_tree));
-  avl_init(&loc_search_tree, avl_comp, false, NULL);
+  avl_init(&loc_search_tree, avl_comp, false);
   while (conn) {
     syslog(LOG_DEBUG, "restoring location (%s) of conn %X-%X-%X-%X-%X-%X\n",
            conn->s_state.location,

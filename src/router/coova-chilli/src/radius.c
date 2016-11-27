@@ -56,7 +56,7 @@ void radius_addcalledstation(struct radius_t *this,
   uint8_t b[32];
   uint8_t *mac = NULL;
 
-#ifdef ENABLE_PROXYVSA
+#if defined(ENABLE_PROXYVSA) || defined(ENABLE_LOCATION)
   if (state->redir.calledlen) {
     radius_addattr(this, pack, RADIUS_ATTR_CALLED_STATION_ID, 0, 0, 0,
                    state->redir.called, state->redir.calledlen);
