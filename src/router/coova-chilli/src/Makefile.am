@@ -34,7 +34,7 @@ AM_CFLAGS = -D_GNU_SOURCE -Wall -fno-builtin -fno-strict-aliasing \
 chilli_multicall_SOURCES = multicall.c main.c main-radconfig.c main-response.c main-query.c main-opt.c
 
 libchilli_la_LIBADD = $(top_builddir)/bstring/libbstring.la 
-LDADD = libchilli.la ${LIBRT} $(top_builddir)/bstring/libbstring.la 
+LDADD = libchilli.la ${LIBRT} $(top_builddir)/bstring/libbstring.la ${LIBJSON}
 
 chilli_multicall_LDADD = $(LDADD)
 

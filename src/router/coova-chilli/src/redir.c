@@ -3277,9 +3277,11 @@ pid_t redir_fork(int in, int out) {
     }
 
 #if defined(F_DUPFD)
-    if (fcntl(in,F_GETFL,0) == -1) return -1; safe_close(0);
+    if (fcntl(in,F_GETFL,0) == -1) return -1;
+    safe_close(0);
     if (fcntl(in,F_DUPFD,0) == -1) return -1;
-    if (fcntl(out,F_GETFL,1) == -1) return -1; safe_close(1);
+    if (fcntl(out,F_GETFL,1) == -1) return -1;
+    safe_close(1);
     if (fcntl(out,F_DUPFD,1) == -1) return -1;
 #else
     if (dup2(in,0) == -1) return -1;

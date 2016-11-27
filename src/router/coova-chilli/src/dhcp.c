@@ -1522,20 +1522,21 @@ size_t icmpfrag(struct dhcp_conn_t *conn,
   {
     struct pkt_ethhdr_t *pack_ethh  = pkt_ethhdr(pack);
     struct pkt_iphdr_t *pack_iph = pkt_iphdr(pack);
-    struct pkt_icmphdr_t *pack_icmph = pkt_icmphdr(pack);
+    struct pkt_icmphdr_t *pack_icmph;
 
     /* eth */
     memcpy(pack_ethh->dst, orig_pack_ethh->src, PKT_ETH_ALEN);
     memcpy(pack_ethh->src, orig_pack_ethh->dst, PKT_ETH_ALEN);
 
     /* ip */
+    pack_iph->version_ihl = PKT_IP_VER_HLEN;
     pack_iph->saddr = conn->ourip.s_addr;
     pack_iph->daddr = orig_pack_iph->saddr;
     pack_iph->protocol = PKT_IP_PROTO_ICMP;
-    pack_iph->version_ihl = PKT_IP_VER_HLEN;
     pack_iph->ttl = 0x10;
     pack_iph->tot_len = htons(icmp_ip_len);
 
+    pack_icmph = pkt_icmphdr(pack);
     pack_icmph->type = 3;
     pack_icmph->code = 4;
 
@@ -3240,6 +3241,15 @@ static int dhcp_accept_opt(struct dhcp_conn_t *conn, uint8_t *o, int pos) {
   }
 #endif
 
+  if (_options.rfc7710uri) {
+    o[pos++] = DHCP_OPTION_CAPTIVE_PORTAL_URI;
+    o[pos++] = strlen(_options.rfc7710uri);
+    memcpy(&o[pos], _options.rfc7710uri, strlen(_options.rfc7710uri));
+    pos += strlen(_options.rfc7710uri);
+    if (_options.debug)
+      syslog(LOG_DEBUG, "DHCP Captive Portal URI %s\n", _options.rfc7710uri);
+  }
+
   o[pos++] = DHCP_OPTION_END;
 
   return pos;
@@ -3736,8 +3746,8 @@ int dhcp_receive_ip(struct dhcp_ctx *ctx, uint8_t *pack, size_t len) {
   struct dhcp_t *this = ctx->parent;
   struct pkt_ethhdr_t *pack_ethh = pkt_ethhdr(pack);
   struct pkt_iphdr_t  *pack_iph  = pkt_iphdr(pack);
-  struct pkt_tcphdr_t *pack_tcph = pkt_tcphdr(pack);
-  struct pkt_udphdr_t *pack_udph = pkt_udphdr(pack);
+  struct pkt_tcphdr_t *pack_tcph = 0;
+  struct pkt_udphdr_t *pack_udph = 0;
   struct dhcp_conn_t *conn = 0;
   struct in_addr ourip;
   struct in_addr addr;
@@ -3835,7 +3845,6 @@ int dhcp_receive_ip(struct dhcp_ctx *ctx, uint8_t *pack, size_t len) {
   }
 #endif
 
-
   /*
    * Sanity check on IP total length
    */
@@ -3863,6 +3872,16 @@ int dhcp_receive_ip(struct dhcp_ctx *ctx, uint8_t *pack, size_t len) {
     return 0;
   }
 
+  /* Validate IP header length */
+  if ((pack_iph->version_ihl & 0xf) < 5 ||
+      (pack_iph->version_ihl & 0xf) * 4 > iph_tot_len) {
+#if(_debug_)
+    if (_options.debug)
+      syslog(LOG_DEBUG, "dropping invalid-IPv4");
+#endif
+    return 0;
+  }
+
   /*
    * Do not drop all fragments, only if they have DF bit.
    * Note: this is as in SVN before R462 / git e4a934 (2012-03-01 15:46:22).
@@ -3871,7 +3890,9 @@ int dhcp_receive_ip(struct dhcp_ctx *ctx, uint8_t *pack, size_t len) {
   if (iph_tot_len > _options.mtu && (pack_iph->opt_off_high & 64)) {
     uint8_t icmp_pack[1500];
     if (_options.debug)
-      syslog(LOG_DEBUG, "ICMP frag forbidden for IP packet with length %d > %d", iph_tot_len, _options.mtu);
+      syslog(LOG_DEBUG,
+             "ICMP frag forbidden for IP packet with length %d > %d",
+             iph_tot_len, _options.mtu);
     dhcp_send(this, ctx->idx, pack_ethh->src, icmp_pack,
 	      icmpfrag(conn, icmp_pack, sizeof(icmp_pack), pack));
     OTHER_SENDING(conn, pkt_iphdr(icmp_pack));
@@ -3892,8 +3913,10 @@ int dhcp_receive_ip(struct dhcp_ctx *ctx, uint8_t *pack, size_t len) {
    * Note: we cannot check fragments.
    */
   if (pack_iph->protocol == PKT_IP_PROTO_UDP) {
+    pack_udph = pkt_udphdr(pack);
     uint16_t udph_len = ntohs(pack_udph->len);
     if (udph_len < PKT_UDP_HLEN ||
+        iph_tot_len < PKT_IP_HLEN + PKT_UDP_HLEN ||
         (iph_tot_len != udph_len + PKT_IP_HLEN &&
          iphdr_more_frag(pack_iph) == 0 &&
          iphdr_offset(pack_iph) == 0)) {
@@ -3901,6 +3924,17 @@ int dhcp_receive_ip(struct dhcp_ctx *ctx, uint8_t *pack, size_t len) {
         syslog(LOG_DEBUG, "dropping udp packet; ip-len=%d != udp-len=%d + ip-hdr=20",
                (int) iph_tot_len,
                (int) udph_len);
+      OTHER_RECEIVED(conn, pack_iph);
+      return 0;
+    }
+  }
+
+  if (pack_iph->protocol == PKT_IP_PROTO_TCP) {
+    pack_tcph = pkt_tcphdr(pack);
+    if (iph_tot_len < PKT_IP_HLEN + PKT_TCP_HLEN) {
+      if (_options.debug)
+        syslog(LOG_DEBUG, "dropping tcp packet; ip-len=%d",
+               (int) iph_tot_len);
       OTHER_RECEIVED(conn, pack_iph);
       return 0;
     }
@@ -3942,8 +3976,7 @@ int dhcp_receive_ip(struct dhcp_ctx *ctx, uint8_t *pack, size_t len) {
   is_dhcp = (((pack_iph->daddr == 0) ||
 	      (pack_iph->daddr == 0xffffffff) ||
 	      (pack_iph->daddr == ourip.s_addr)) &&
-	     ((pack_iph->protocol == PKT_IP_PROTO_UDP) &&
-	      (pack_udph->dst == htons(DHCP_BOOTPS))));
+	     (pack_udph && (pack_udph->dst == htons(DHCP_BOOTPS))));
 
   if (is_dhcp
 #ifdef ENABLE_LAYER3
@@ -4127,7 +4160,8 @@ int dhcp_receive_ip(struct dhcp_ctx *ctx, uint8_t *pack, size_t len) {
   }
 
   if (_options.uamalias.s_addr &&
-      pack_iph->daddr == _options.uamalias.s_addr) {
+      pack_iph->daddr == _options.uamalias.s_addr &&
+      pack_tcph) {
 
     do_checksum = 1;
     dhcp_uam_nat(conn, pack_ethh, pack_iph, pack_tcph, &this->uamlisten,

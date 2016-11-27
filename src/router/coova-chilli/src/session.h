@@ -103,10 +103,12 @@ struct redir_state {
   char acceptlanguage[128];
 #endif
 
-#ifdef ENABLE_PROXYVSA
-#define RADIUS_PROXYVSA 256
+#if defined(ENABLE_LOCATION) || defined(ENABLE_PROXYVSA)
   uint8_t called[RADIUS_ATTR_VLEN];
   uint8_t calledlen;
+#endif
+#ifdef ENABLE_PROXYVSA
+#define RADIUS_PROXYVSA 256
   uint8_t vsa[RADIUS_PROXYVSA];
   size_t vsalen;
 #endif

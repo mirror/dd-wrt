@@ -1769,7 +1769,7 @@ static void setup_one_ring(net_interface *iface, unsigned ring_size, int mtu, in
   struct ring *ring = NULL;
   const char *name = NULL;
   int ret = -1;
-  memset(req, 0, sizeof(struct tpacket_req));
+  memset(&req, 0, sizeof(struct tpacket_req));
 
   name = what == PACKET_RX_RING ? "RX" : "TX";
   ring = what == PACKET_RX_RING ? &iface->rx_ring : &iface->tx_ring;

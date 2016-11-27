@@ -1,6 +1,7 @@
-KERNEL_DIR ?= /usr/src/linux-headers-$(shell uname -r)
+#check if this makefile is being processed from kbuild
+ifeq ($(KERNELRELEASE),)
 
-obj-m += xt_coova.o
+KERNEL_DIR ?= /lib/modules/$(shell uname -r)/build
 
 all: libxt_coova.so
 	make -C ${KERNEL_DIR} M=$$PWD;
@@ -21,7 +22,7 @@ lib%.so: lib%.o
 	$(CC) $(CFLAGS) -shared -o $@ $^;
 
 lib%.o: lib%.c
-	$(CC) $(CFLAGS) -fPIC -O2 -Wall -I${KERNEL_DIR}/include -D_INIT=lib$*_init -c -o $@ $<;
+	$(CC) $(CFLAGS) -fPIC -O2 -Wall -D_INIT=lib$*_init -c -o $@ $<;
 
 install: modules_install libxt_coova.so
 	mkdir -p $(DESTDIR)/lib/xtables/
@@ -30,3 +31,8 @@ install: modules_install libxt_coova.so
 distdir:
 
 distclean: clean
+
+else
+#kbuild variables for xtables coova module
+obj-m += xt_coova.o
+endif
