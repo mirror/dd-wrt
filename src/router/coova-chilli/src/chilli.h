@@ -287,6 +287,8 @@ void child_killall(int sig);
 
 #ifdef ENABLE_PROXYVSA
 int radius_addvsa(struct radius_packet_t *pack, struct redir_state *state);
+#endif
+#if defined(ENABLE_LOCATION) || defined(ENABLE_PROXYVSA)
 int chilli_learn_location(uint8_t *loc, int loclen,
 			  struct app_conn_t *appconn, char force);
 #endif

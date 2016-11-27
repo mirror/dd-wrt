@@ -482,7 +482,7 @@ int ippool_newip(struct ippool_t *this,
 	return -1;
       }
       if ((addr->s_addr & this->statmask.s_addr) != this->stataddr.s_addr) {
-	syslog(LOG_ERR, "Static out of range");
+	syslog(LOG_ERR, "Static out of range (%s)", inet_ntoa(*addr));
 	return -1;
       }
 #ifdef ENABLE_UAMANYIP

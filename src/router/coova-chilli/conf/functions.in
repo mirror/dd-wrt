@@ -230,6 +230,7 @@ writeconfig() {
 	[ "$HS_PAP_OK" = "on" ] && addconfig2 "papalwaysok"
 	[ "$HS_MACAUTH" = "on" ] && addconfig2 "macauth"
 	[ "$HS_MACAUTH" = "on" -a -n "$HS_MACPASSWD" ] && addconfig2 "macpasswd \"$HS_MACPASSWD\""
+	[ "$HS_MACAUTH" = "on" -a -n "$HS_MACSUFFIX" ] && addconfig2 "macsuffix \"$HS_MACSUFFIX\""
 	[ "$HS_MACREAUTH" = "on" ] && addconfig2 "macreauth"
 	[ "$HS_MACAUTHDENY" = "on" ] && addconfig2 "macauthdeny"
 	[ "$HS_WPAGUESTS" = "on" ] && addconfig2 "wpaguests"

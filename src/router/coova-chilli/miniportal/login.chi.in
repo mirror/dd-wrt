@@ -50,7 +50,7 @@ else
 	then
 	    error "$FORM_reply"
 	else
-	    error "Username and/or passowrd was not valid"
+	    error "Username and/or password was not valid"
 	fi
     fi
     
