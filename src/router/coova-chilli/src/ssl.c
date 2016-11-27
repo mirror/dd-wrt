@@ -92,7 +92,7 @@ openssl_verify_peer(openssl_env *env, int mode) {
 int
 openssl_use_certificate(openssl_env *env, char *file) {
   if (file)
-    if (SSL_CTX_use_certificate_file(env->ctx, file, SSL_FILETYPE_PEM) > 0)
+    if (SSL_CTX_use_certificate_chain_file(env->ctx, file) > 0)
       return 1;
   syslog(LOG_ERR, "%s: could not load certificate file %s\n", strerror(errno), file);
   return 0;

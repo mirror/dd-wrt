@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.59])
-AC_INIT([coova-chilli],[1.3.1.4],[support@coova.com])
+AC_INIT([coova-chilli],[1.3.2],[support@coova.com])
 AC_CONFIG_SRCDIR([src/chilli.c])
 
 AM_INIT_AUTOMAKE
@@ -210,6 +210,12 @@ AC_ARG_ENABLE(json, [AS_HELP_STRING([--enable-json],[Enable support for JSON])],
 
 if test x"$enable_json" = xyes; then
    AC_DEFINE(ENABLE_JSON,1,[Define to enable Chilli JSON])
+   AC_CHECK_LIB([json-c], [json_object_new_object],
+	      [AC_SUBST([LIBJSON], ["-ljson-c"])],
+				   [AC_CHECK_LIB([json], [json_object_new_object],
+				   [AC_SUBST([LIBJSON], ["-ljson"])],
+				   [AC_MSG_FAILURE(
+				   [--enable-json was given, but test for libjson failed])],)])
 fi
 
 AC_ARG_ENABLE(debug, [AS_HELP_STRING([--disable-debug],[Disable debugging messages])], 

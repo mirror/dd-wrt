@@ -1,3 +1,17 @@
+== ChangeLog (CoovaChilli-v1.3.2) ==
+* Certificate bundles now support using SSL_CTX_use_certificate_chain_file() via #204
+* Add a preliminary configuration file for use with Doxygen. via #142
+* Spelling mistake fixed in login.chi.in
+* writeconfig() includes macsuffix setting in generated config from conf/functions.in
+* Static out of range error includes IP address
+* RFC 7710 - Captive Portal URI DHCP option implemented
+* ipt_coova Makefile refactored to fix build errors
+* ipt_coova now uses netfilter uapi-headers from /usr/include/linux
+* Code with misleading indentation pointed out by gcc-6 fixed
+* Build with --enable-json fixed
+* libjson-dev added to installed dependency list in Travis config file
+* --enable-location without --enable-proxyvsa now permissible
+
 == ChangeLog (CoovaChilli-v1.3.1.4) ==
 * Update refs to site to http://coova.github.io/ and fix software name.
 * xt_coova.c with kernel version >= 3.10.0 fixed

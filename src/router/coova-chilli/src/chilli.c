@@ -557,7 +557,7 @@ double mainclock_diffd(struct timespec * past) {
 }
 
 uint8_t* chilli_called_station(struct session_state *state) {
-#ifdef ENABLE_PROXYVSA
+#ifdef ENABLE_LOCATION
   if (_options.location_copy_called && state->redir.calledlen) {
     return state->redir.called;
   }
@@ -2519,6 +2519,7 @@ int cb_tun_ind(struct tun_t *tun, struct pkt_buffer *pb, int idx) {
   size_t len = pkt_buffer_length(pb);
 
   int ethhdr = (tun(tun, idx).flags & NET_ETHHDR) != 0;
+  size_t ip_len = len;
 
 #ifdef ENABLE_TAP
   if (idx) ethhdr = 0;
@@ -2534,6 +2535,7 @@ int cb_tun_ind(struct tun_t *tun, struct pkt_buffer *pb, int idx) {
     prot = ntohs(ethh->prot);
 
     ipph = (struct pkt_ipphdr_t *)((char *)pack + PKT_ETH_HLEN);
+    ip_len -= PKT_ETH_HLEN;
 
     switch (prot) {
       case PKT_ETH_PROTO_IPv6:
@@ -2664,6 +2666,15 @@ int cb_tun_ind(struct tun_t *tun, struct pkt_buffer *pb, int idx) {
     ipph = (struct pkt_ipphdr_t *)pack;
   }
 
+  size_t hlen = (ipph->version_ihl & 0x0f) << 2;
+  if (ntohs(ipph->tot_len) > ip_len || hlen > ip_len) {
+    if (_options.debug)
+      syslog(LOG_DEBUG, "invalid IP packet %d / %zu",
+             ntohs(ipph->tot_len),
+             len);
+    return 0;
+  }
+
   /*
    *  Filter out unsupported / unhandled protocols,
    *  and check some basic length sanity.
@@ -2674,31 +2685,20 @@ int cb_tun_ind(struct tun_t *tun, struct pkt_buffer *pb, int idx) {
     case PKT_IP_PROTO_ICMP:
     case PKT_IP_PROTO_ESP:
     case PKT_IP_PROTO_AH:
-      {
-        if (ntohs(ipph->tot_len) > len) {
-          if (_options.debug)
-            syslog(LOG_DEBUG, "invalid IP packet %d / %zu",
-                   ntohs(ipph->tot_len),
-                   len);
-          return 0;
-        }
-      }
       break;
     case PKT_IP_PROTO_UDP:
       {
-        size_t hlen = (ipph->version_ihl & 0x0f) << 2;
         /*
          * Only the first IP fragment has the UDP header.
          */
         if (iphdr_offset((struct pkt_iphdr_t*)ipph) == 0) {
           udph = (struct pkt_udphdr_t *)(((void *)ipph) + hlen);
         }
-        if (ntohs(ipph->tot_len) > len ||
-            (udph && (ntohs(udph->len) > len))) {
+        if (udph && (ntohs(udph->len) > ip_len)) {
           if (_options.debug)
             syslog(LOG_DEBUG, "invalid UDP packet %d / %d / %zu",
                    ntohs(ipph->tot_len),
-                   udph?ntohs(udph->len):-1, len);
+                   udph ? ntohs(udph->len) : -1, ip_len);
           return 0;
         }
       }
@@ -3094,8 +3094,10 @@ static int
 chilli_proxy_radlocation(struct radius_packet_t *pack,
 			 struct app_conn_t *appconn, char force) {
   struct radius_attr_t *attr = 0;
+#ifdef ENABLE_PROXYVSA
   uint8_t * vsa = appconn->s_state.redir.vsa;
   int instance=0;
+#endif
 
   if (_options.location_copy_called) {
     if (!radius_getattr(pack, &attr, RADIUS_ATTR_CALLED_STATION_ID, 0, 0, 0)) {
@@ -3108,6 +3110,7 @@ chilli_proxy_radlocation(struct radius_packet_t *pack,
     }
   }
 
+#ifdef ENABLE_PROXYVSA
   do {
     attr=NULL;
     if (!radius_getattr(pack, &attr, RADIUS_ATTR_VENDOR_SPECIFIC, 0, 0,
@@ -3129,6 +3132,7 @@ chilli_proxy_radlocation(struct radius_packet_t *pack,
 #endif
     }
   } while (attr);
+#endif
 
 #ifdef ENABLE_LOCATION
   if (_options.proxy_loc[0].attr) {
@@ -4356,7 +4360,10 @@ static int chilliauth_cb(struct radius_t *radius,
 	    while (!differ && r1 > 0 && r2 > 0);
 	  }
 
-	  if (oldfd) safe_close(oldfd); oldfd=0;
+	  if (oldfd) {
+		  safe_close(oldfd);
+		  oldfd=0;
+	  }
 
 	  if (differ) {
             if (_options.debug)
@@ -4431,6 +4438,7 @@ int cb_radius_auth_conf(struct radius_t *radius,
 
   struct radius_attr_t *stateattr = NULL;
   struct radius_attr_t *classattr = NULL;
+  struct radius_attr_t *uidattr = NULL;
 
 #ifdef ENABLE_RADPROXY
   int instance = 0;
@@ -4676,6 +4684,18 @@ int cb_radius_auth_conf(struct radius_t *radius,
   if (_options.debug)
     syslog(LOG_DEBUG, "Received RADIUS Access-Accept");
 #endif
+
+  if (!radius_getattr(pack, &uidattr, RADIUS_ATTR_USER_NAME, 0, 0, 0)) {
+    if (uidattr->l-2 < USERNAMESIZE) {
+      memcpy(appconn->s_state.redir.username,
+        (char *)uidattr->v.t, uidattr->l-2);
+        appconn->s_state.redir.username[uidattr->l-2]=0;
+    }
+#if(_debug_)
+    if (_options.debug)
+      syslog(LOG_DEBUG, "Received User-Name override from RADIUS Access-Accept: %s", appconn->s_state.redir.username);
+#endif
+  }
 
   /* Class */
   if (!radius_getattr(pack, &classattr, RADIUS_ATTR_CLASS, 0, 0, 0)) {
