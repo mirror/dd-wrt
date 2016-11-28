@@ -57,7 +57,8 @@ typedef struct {
 			FORMAT_BYTES_OUT,
 
 			FORMAT_KEEPALIVE_COUNT,
-			FORMAT_RESPONSE_HEADER
+			FORMAT_RESPONSE_HEADER,
+			FORMAT_NOTE
 	} type;
 } format_mapping;
 
@@ -90,7 +91,7 @@ static const format_mapping fmap[] =
 	{ 'H', FORMAT_REQUEST_PROTOCOL },
 	{ 'k', FORMAT_KEEPALIVE_COUNT },
 	{ 'm', FORMAT_REQUEST_METHOD },
-	{ 'n', FORMAT_UNSUPPORTED }, /* we have no notes */
+	{ 'n', FORMAT_NOTE },
 	{ 'p', FORMAT_SERVER_PORT },
 	{ 'P', FORMAT_UNSUPPORTED }, /* we are only one process */
 	{ 'q', FORMAT_QUERY_STRING },
@@ -663,13 +664,12 @@ SIGHUP_FUNC(log_access_cycle) {
 			if (-1 != s->log_access_fd) close(s->log_access_fd);
 
 			if (-1 == (s->log_access_fd =
-				   open(s->access_logfile->ptr, O_APPEND | O_WRONLY | O_CREAT | O_LARGEFILE, 0644))) {
+				   fdevent_open_cloexec(s->access_logfile->ptr, O_APPEND | O_WRONLY | O_CREAT | O_LARGEFILE, 0644))) {
 
 				log_error_write(srv, __FILE__, __LINE__, "ss", "cycling access-log failed:", strerror(errno));
 
 				return HANDLER_ERROR;
 			}
-			fd_close_on_exec(s->log_access_fd);
 		}
 	}
 
@@ -943,6 +943,7 @@ REQUESTDONE_FUNC(log_access_write) {
 				}
 				break;
 			case FORMAT_ENV:
+			case FORMAT_NOTE:
 				if (NULL != (ds = (data_string *)array_get_element(con->environment, f->string->ptr))) {
 					accesslog_append_escaped(b, ds->value);
 				} else {

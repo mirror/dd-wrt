@@ -122,6 +122,7 @@ static int network_ssl_servername_callback(SSL *ssl, int *al, server *srv) {
 	config_setup_connection(srv, con);
 
 	con->conditional_is_valid[COMP_SERVER_SOCKET] = 1;
+	con->conditional_is_valid[COMP_HTTP_REMOTE_IP] = 1;
 	con->conditional_is_valid[COMP_HTTP_SCHEME] = 1;
 	con->conditional_is_valid[COMP_HTTP_HOST] = 1;
 	config_patch_connection(srv, con);
@@ -382,7 +383,7 @@ static int network_server_init(server *srv, buffer *host_token, specific_config 
 	if (AF_UNIX == srv_socket->addr.plain.sa_family) {
 		/* check if the socket exists and try to connect to it. */
 		force_assert(host); /*(static analysis hint)*/
-		if (-1 == (srv_socket->fd = socket(srv_socket->addr.plain.sa_family, SOCK_STREAM, 0))) {
+		if (-1 == (srv_socket->fd = fdevent_socket_cloexec(srv_socket->addr.plain.sa_family, SOCK_STREAM, 0))) {
 			log_error_write(srv, __FILE__, __LINE__, "ss", "socket failed:", strerror(errno));
 			goto error_free_socket;
 		}
@@ -409,10 +410,12 @@ static int network_server_init(server *srv, buffer *host_token, specific_config 
 
 			goto error_free_socket;
 		}
+
+		fdevent_fcntl_set_nb(srv->ev, srv_socket->fd);
 	} else
 #endif
 	{
-		if (-1 == (srv_socket->fd = socket(srv_socket->addr.plain.sa_family, SOCK_STREAM, IPPROTO_TCP))) {
+		if (-1 == (srv_socket->fd = fdevent_socket_nb_cloexec(srv_socket->addr.plain.sa_family, SOCK_STREAM, IPPROTO_TCP))) {
 			log_error_write(srv, __FILE__, __LINE__, "ss", "socket failed:", strerror(errno));
 			goto error_free_socket;
 		}
@@ -432,9 +435,6 @@ static int network_server_init(server *srv, buffer *host_token, specific_config 
 		}
 #endif
 	}
-
-	/* set FD_CLOEXEC now, fdevent_fcntl_set is called later; needed for pipe-logger forks */
-	fd_close_on_exec(srv_socket->fd);
 
 	/* */
 	srv->cur_fds = srv_socket->fd;
@@ -495,7 +495,7 @@ static int network_server_init(server *srv, buffer *host_token, specific_config 
 		}
 #endif
 #if defined(__FreeBSD__) || defined(__NetBSD__) \
- || defined(__OpenBSD__) || defined(__DragonflyBSD__)
+ || defined(__OpenBSD__) || defined(__DragonFly__)
 	} else if (!buffer_is_empty(s->bsd_accept_filter)
 		   && (buffer_is_equal_string(s->bsd_accept_filter, CONST_STR_LEN("httpready"))
 			|| buffer_is_equal_string(s->bsd_accept_filter, CONST_STR_LEN("dataready")))) {

@@ -140,14 +140,11 @@ static int connection_close(server *srv, connection *con) {
 				"(warning) close:", con->fd, strerror(errno));
 	}
 #endif
+	else {
+		srv->cur_fds--;
+	}
+
 	con->fd = -1;
-
-	srv->cur_fds--;
-#if 0
-	log_error_write(srv, __FILE__, __LINE__, "sd",
-			"closed()", con->fd);
-#endif
-
 	connection_del(srv, con);
 	connection_set_state(srv, con, CON_STATE_CONNECT);
 
@@ -183,7 +180,7 @@ static void connection_handle_shutdown(server *srv, connection *con) {
 
 #ifdef USE_OPENSSL
 	server_socket *srv_sock = con->srv_socket;
-	if (srv_sock->is_ssl) {
+	if (srv_sock->is_ssl && SSL_is_init_finished(con->ssl)) {
 		int ret, ssl_r;
 		unsigned long err;
 		ERR_clear_error();
@@ -439,6 +436,16 @@ static int connection_handle_write_prepare(server *srv, connection *con) {
 			response_header_overwrite(srv, con, CONST_STR_LEN("Content-Type"), CONST_STR_LEN("text/html"));
 		}
 		break;
+	}
+
+	/* Allow filter plugins to change response headers before they are written. */
+	switch(plugins_call_handle_response_start(srv, con)) {
+	case HANDLER_GO_ON:
+	case HANDLER_FINISHED:
+		break;
+	default:
+		log_error_write(srv, __FILE__, __LINE__, "s", "response_start plugin failed");
+		return -1;
 	}
 
 	if (con->file_finished) {
@@ -904,16 +911,18 @@ found_header_end:
 			}
 
 			connection_set_state(srv, con, CON_STATE_REQUEST_END);
-		} else if (chunkqueue_length(cq) > 64 * 1024) {
-			log_error_write(srv, __FILE__, __LINE__, "s", "oversized request-header -> sending Status 414");
-
-			con->http_status = 414; /* Request-URI too large */
-			con->keep_alive = 0;
-			connection_set_state(srv, con, CON_STATE_HANDLE_REQUEST);
 		} else if (is_closed) {
 			/* the connection got closed and we didn't got enough data to leave CON_STATE_READ;
 			 * the only way is to leave here */
 			connection_set_state(srv, con, CON_STATE_ERROR);
+		}
+
+		if ((last_chunk ? buffer_string_length(con->request.request) : (size_t)chunkqueue_length(cq))
+		    > srv->srvconf.max_request_field_size) {
+			log_error_write(srv, __FILE__, __LINE__, "s", "oversized request-header -> sending Status 431");
+			con->http_status = 431; /* Request Header Fields Too Large */
+			con->keep_alive = 0;
+			connection_set_state(srv, con, CON_STATE_HANDLE_REQUEST);
 		}
 
 	chunkqueue_remove_finished_chunks(cq);
@@ -943,43 +952,6 @@ static handler_t connection_handle_fdevent(server *srv, void *context, int reven
 	}
 
 
-	if (revents & ~(FDEVENT_IN | FDEVENT_OUT)) {
-		/* looks like an error */
-
-		/* FIXME: revents = 0x19 still means that we should read from the queue */
-		if (revents & FDEVENT_HUP) {
-			if (con->state == CON_STATE_CLOSE) {
-				con->close_timeout_ts = srv->cur_ts - (HTTP_LINGER_TIMEOUT+1);
-			} else {
-				/* sigio reports the wrong event here
-				 *
-				 * there was no HUP at all
-				 */
-#ifdef USE_LINUX_SIGIO
-				if (srv->ev->in_sigio == 1) {
-					log_error_write(srv, __FILE__, __LINE__, "sd",
-						"connection closed: poll() -> HUP", con->fd);
-				} else {
-					connection_set_state(srv, con, CON_STATE_ERROR);
-				}
-#else
-				connection_set_state(srv, con, CON_STATE_ERROR);
-#endif
-
-			}
-		} else if (revents & FDEVENT_ERR) {
-			/* error, connection reset, whatever... we don't want to spam the logfile */
-#if 0
-			log_error_write(srv, __FILE__, __LINE__, "sd",
-					"connection closed: poll() -> ERR", con->fd);
-#endif
-			connection_set_state(srv, con, CON_STATE_ERROR);
-		} else {
-			log_error_write(srv, __FILE__, __LINE__, "sd",
-					"connection closed: poll() -> ???", revents);
-		}
-	}
-
 	if (con->state == CON_STATE_READ) {
 		connection_handle_read_state(srv, con);
 	}
@@ -1008,6 +980,27 @@ static handler_t connection_handle_fdevent(server *srv, void *context, int reven
 		}
 	}
 
+
+	/* attempt (above) to read data in kernel socket buffers
+	 * prior to handling FDEVENT_HUP and FDEVENT_ERR */
+
+	if ((revents & ~(FDEVENT_IN | FDEVENT_OUT)) && con->state != CON_STATE_ERROR) {
+		if (con->state == CON_STATE_CLOSE) {
+			con->close_timeout_ts = srv->cur_ts - (HTTP_LINGER_TIMEOUT+1);
+		} else if (revents & FDEVENT_HUP) {
+			if (fdevent_is_tcp_half_closed(con->fd)) {
+				con->keep_alive = 0;
+			} else {
+				connection_set_state(srv, con, CON_STATE_ERROR);
+			}
+		} else if (revents & FDEVENT_ERR) { /* error, connection reset */
+			connection_set_state(srv, con, CON_STATE_ERROR);
+		} else {
+			log_error_write(srv, __FILE__, __LINE__, "sd",
+					"connection closed: poll() -> ???", revents);
+		}
+	}
+
 	return HANDLER_FINISHED;
 }
 
@@ -1033,7 +1026,16 @@ connection *connection_accept(server *srv, server_socket *srv_socket) {
 
 	cnt_len = sizeof(cnt_addr);
 
-	if (-1 == (cnt = accept(srv_socket->fd, (struct sockaddr *) &cnt_addr, &cnt_len))) {
+#if defined(SOCK_CLOEXEC) && defined(SOCK_NONBLOCK)
+#if defined(__NetBSD__)
+	cnt = paccept(srv_socket->fd, (struct sockaddr *) &cnt_addr, &cnt_len, NULL, SOCK_CLOEXEC | SOCK_NONBLOCK);
+#else
+	cnt = accept4(srv_socket->fd, (struct sockaddr *) &cnt_addr, &cnt_len, SOCK_CLOEXEC | SOCK_NONBLOCK);
+#endif
+#else
+	cnt = accept(srv_socket->fd, (struct sockaddr *) &cnt_addr, &cnt_len);
+#endif
+	if (-1 == cnt) {
 		switch (errno) {
 		case EAGAIN:
 #if EWOULDBLOCK != EAGAIN
@@ -1084,8 +1086,9 @@ connection *connection_accepted(server *srv, server_socket *srv_socket, sock_add
 		buffer_copy_string(con->dst_addr_buf, inet_ntop_cache_get_ip(srv, &(con->dst_addr)));
 		con->srv_socket = srv_socket;
 
-		if (-1 == (fdevent_fcntl_set(srv->ev, con->fd))) {
+		if (-1 == fdevent_fcntl_set_nb_cloexec_sock(srv->ev, con->fd)) {
 			log_error_write(srv, __FILE__, __LINE__, "ss", "fcntl failed: ", strerror(errno));
+			connection_close(srv, con);
 			return NULL;
 		}
 #ifdef USE_OPENSSL
@@ -1095,6 +1098,7 @@ connection *connection_accepted(server *srv, server_socket *srv_socket, sock_add
 				log_error_write(srv, __FILE__, __LINE__, "ss", "SSL:",
 						ERR_error_string(ERR_get_error(), NULL));
 
+				connection_close(srv, con);
 				return NULL;
 			}
 
@@ -1105,6 +1109,7 @@ connection *connection_accepted(server *srv, server_socket *srv_socket, sock_add
 			if (1 != (SSL_set_fd(con->ssl, cnt))) {
 				log_error_write(srv, __FILE__, __LINE__, "ss", "SSL:",
 						ERR_error_string(ERR_get_error(), NULL));
+				connection_close(srv, con);
 				return NULL;
 			}
 		}
@@ -1276,6 +1281,9 @@ int connection_state_machine(server *srv, connection *con) {
 				break;
 			}
 
+			if (con->state == CON_STATE_HANDLE_REQUEST && ostate == CON_STATE_READ_POST) {
+				ostate = CON_STATE_HANDLE_REQUEST;
+			}
 			break;
 		case CON_STATE_RESPONSE_START:
 			/*

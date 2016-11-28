@@ -468,9 +468,11 @@ static chunk *chunkqueue_get_append_tempfile(chunkqueue *cq) {
 			buffer_append_slash(template);
 			buffer_append_string_len(template, CONST_STR_LEN("lighttpd-upload-XXXXXX"));
 
+			/* coverity[secure_temp : FALSE] */
 			if (-1 != (fd = mkstemp(template->ptr))) break;
 		}
 	} else {
+		/* coverity[secure_temp : FALSE] */
 		fd = mkstemp(template->ptr);
 	}
 
@@ -478,6 +480,13 @@ static chunk *chunkqueue_get_append_tempfile(chunkqueue *cq) {
 		buffer_free(template);
 		return NULL;
 	}
+
+	if (0 != fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_APPEND)) {
+		close(fd);
+		buffer_free(template);
+		return NULL;
+	}
+	fd_close_on_exec(fd);
 
 	c = chunkqueue_get_unused_chunk(cq);
 	c->type = FILE_CHUNK;
@@ -547,6 +556,8 @@ int chunkqueue_append_mem_to_tempfile(server *srv, chunkqueue *dest, const char 
 			return -1;
 		}
 
+		/* (dst_c->file.fd >= 0) */
+		/* coverity[negative_returns : FALSE] */
 		written = write(dst_c->file.fd, mem, len);
 
 		if ((size_t) written == len) {
@@ -585,14 +596,14 @@ int chunkqueue_append_mem_to_tempfile(server *srv, chunkqueue *dest, const char 
 					return -1;
 				}
 			}
-			if (!retry) return -1;
+			if (!retry) break; /* return -1; */
 
 			/* continue; retry */
 		}
 
 	} while (dst_c);
 
-	return -1; /*(not reached)*/
+	return -1;
 }
 
 int chunkqueue_steal_with_tempfiles(server *srv, chunkqueue *dest, chunkqueue *src, off_t len) {
