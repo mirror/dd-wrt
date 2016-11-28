@@ -12,4 +12,4 @@ openssl x509 -sha256 -in cert.csr -out cert.pem -req -signkey key.pem -days 3650
 # Show human-readable format
 openssl x509 -sha256 -in cert.pem -text -noout
 # Remove unused files
-#rm -f /tmp/cert.csr /tmp/privkey.pem
+rm -f cert.csr privkey.pem
