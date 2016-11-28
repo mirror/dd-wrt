@@ -25,6 +25,23 @@
 #include <glob.h>
 
 
+#if defined(HAVE_MYSQL) || (defined(HAVE_LDAP_H) && defined(HAVE_LBER_H) && defined(HAVE_LIBLDAP) && defined(HAVE_LIBLBER))
+static void config_warn_authn_module (server *srv, const char *module) {
+	size_t len = strlen(module);
+	for (size_t i = 0; i < srv->config_context->used; ++i) {
+		const data_config *config = (data_config const*)srv->config_context->data[i];
+		const data_unset *du = array_get_element(config->value, "auth.backend");
+		if (NULL != du && du->type == TYPE_STRING) {
+			data_string *ds = (data_string *)du;
+			if (buffer_is_equal_string(ds->value, module, len)) {
+				log_error_write(srv, __FILE__, __LINE__, "SSSsSSS", "Warning: please add \"mod_authn_", module, "\" to server.modules list in lighttpd.conf.  A future release of lighttpd 1.4.x will not automatically load mod_authn_", module, "and lighttpd will fail to start up since your lighttpd.conf uses auth.backend = \"", module, "\".");
+				return;
+			}
+		}
+	}
+}
+#endif
+
 static int config_insert(server *srv) {
 	size_t i;
 	int ret = 0;
@@ -44,7 +61,7 @@ static int config_insert(server *srv) {
 
 		{ "server.event-handler",              NULL, T_CONFIG_STRING,  T_CONFIG_SCOPE_SERVER     }, /* 10 */
 		{ "server.pid-file",                   NULL, T_CONFIG_STRING,  T_CONFIG_SCOPE_SERVER     }, /* 11 */
-		{ "server.max-request-size",           NULL, T_CONFIG_INT,     T_CONFIG_SCOPE_SERVER     }, /* 12 */
+		{ "server.max-request-size",           NULL, T_CONFIG_INT,     T_CONFIG_SCOPE_CONNECTION }, /* 12 */
 		{ "server.max-worker",                 NULL, T_CONFIG_SHORT,   T_CONFIG_SCOPE_SERVER     }, /* 13 */
 		{ "server.document-root",              NULL, T_CONFIG_STRING,  T_CONFIG_SCOPE_CONNECTION }, /* 14 */
 		{ "server.force-lowercase-filenames",  NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 15 */
@@ -122,6 +139,7 @@ static int config_insert(server *srv) {
 		{ "server.bsd-accept-filter",          NULL, T_CONFIG_STRING,  T_CONFIG_SCOPE_CONNECTION }, /* 75 */
 		{ "server.stream-request-body",        NULL, T_CONFIG_SHORT,   T_CONFIG_SCOPE_CONNECTION }, /* 76 */
 		{ "server.stream-response-body",       NULL, T_CONFIG_SHORT,   T_CONFIG_SCOPE_CONNECTION }, /* 77 */
+		{ "server.max-request-field-size",     NULL, T_CONFIG_INT,     T_CONFIG_SCOPE_SERVER     }, /* 78 */
 
 		{ NULL,                                NULL, T_CONFIG_UNSET,   T_CONFIG_SCOPE_UNSET      }
 	};
@@ -160,10 +178,13 @@ static int config_insert(server *srv) {
 	cv[72].destination = &(srv->srvconf.http_header_strict);
 	cv[73].destination = &(srv->srvconf.http_host_strict);
 	cv[74].destination = &(srv->srvconf.http_host_normalize);
+	cv[78].destination = &(srv->srvconf.max_request_field_size);
 
 	srv->config_storage = calloc(1, srv->config_context->used * sizeof(specific_config *));
 
 	force_assert(srv->config_storage);
+	force_assert(srv->config_context->used); /* static analysis hint for ccc
+-analyzer */
 
 	for (i = 0; i < srv->config_context->used; i++) {
 		data_config const* config = (data_config const*)srv->config_context->data[i];
@@ -184,7 +205,7 @@ static int config_insert(server *srv) {
 		s->ssl_ec_curve  = buffer_init();
 		s->errorfile_prefix = buffer_init();
 	      #if defined(__FreeBSD__) || defined(__NetBSD__) \
-	       || defined(__OpenBSD__) || defined(__DragonflyBSD__)
+	       || defined(__OpenBSD__) || defined(__DragonFly__)
 		s->bsd_accept_filter = (i == 0)
 		  ? buffer_init()
 		  : buffer_init_buffer(srv->config_storage[0]->bsd_accept_filter);
@@ -285,7 +306,7 @@ static int config_insert(server *srv) {
 		cv[70].destination = &(s->listen_backlog);
 		cv[71].destination = s->error_handler_404;
 	      #if defined(__FreeBSD__) || defined(__NetBSD__) \
-	       || defined(__OpenBSD__) || defined(__DragonflyBSD__)
+	       || defined(__OpenBSD__) || defined(__DragonFly__)
 		cv[75].destination = s->bsd_accept_filter;
 	      #endif
 		cv[76].destination = &(s->stream_request_body);
@@ -341,6 +362,10 @@ static int config_insert(server *srv) {
 		int prepend_mod_indexfile = 1;
 		int append_mod_dirlisting = 1;
 		int append_mod_staticfile = 1;
+		int append_mod_authn_file = 1;
+		int append_mod_authn_ldap = 1;
+		int append_mod_authn_mysql = 1;
+		int contains_mod_auth = 0;
 
 		/* prepend default modules */
 		for (i = 0; i < srv->srvconf.modules->used; i++) {
@@ -358,9 +383,29 @@ static int config_insert(server *srv) {
 				append_mod_dirlisting = 0;
 			}
 
+			if (buffer_is_equal_string(ds->value, CONST_STR_LEN("mod_authn_file"))) {
+				append_mod_authn_file = 0;
+			}
+
+			if (buffer_is_equal_string(ds->value, CONST_STR_LEN("mod_authn_ldap"))) {
+				append_mod_authn_ldap = 0;
+			}
+
+			if (buffer_is_equal_string(ds->value, CONST_STR_LEN("mod_authn_mysql"))) {
+				append_mod_authn_mysql = 0;
+			}
+
+			if (buffer_is_equal_string(ds->value, CONST_STR_LEN("mod_auth"))) {
+				contains_mod_auth = 1;
+			}
+
 			if (0 == prepend_mod_indexfile &&
 			    0 == append_mod_dirlisting &&
-			    0 == append_mod_staticfile) {
+			    0 == append_mod_staticfile &&
+			    0 == append_mod_authn_file &&
+			    0 == append_mod_authn_ldap &&
+			    0 == append_mod_authn_mysql &&
+			    1 == contains_mod_auth) {
 				break;
 			}
 		}
@@ -393,6 +438,33 @@ static int config_insert(server *srv) {
 			ds = data_string_init();
 			buffer_copy_string_len(ds->value, CONST_STR_LEN("mod_staticfile"));
 			array_insert_unique(srv->srvconf.modules, (data_unset *)ds);
+		}
+
+		/* mod_auth.c,http_auth.c auth backends were split into separate modules
+		 * Automatically load auth backend modules for compatibility with
+		 * existing lighttpd 1.4.x configs */
+		if (contains_mod_auth) {
+			if (append_mod_authn_file) {
+				ds = data_string_init();
+				buffer_copy_string_len(ds->value, CONST_STR_LEN("mod_authn_file"));
+				array_insert_unique(srv->srvconf.modules, (data_unset *)ds);
+			}
+			if (append_mod_authn_ldap) {
+			      #if defined(HAVE_LDAP_H) && defined(HAVE_LBER_H) && defined(HAVE_LIBLDAP) && defined(HAVE_LIBLBER)
+				ds = data_string_init();
+				buffer_copy_string_len(ds->value, CONST_STR_LEN("mod_authn_ldap"));
+				array_insert_unique(srv->srvconf.modules, (data_unset *)ds);
+				config_warn_authn_module(srv, "ldap");
+			      #endif
+			}
+			if (append_mod_authn_mysql) {
+			      #if defined(HAVE_MYSQL)
+				ds = data_string_init();
+				buffer_copy_string_len(ds->value, CONST_STR_LEN("mod_authn_mysql"));
+				array_insert_unique(srv->srvconf.modules, (data_unset *)ds);
+				config_warn_authn_module(srv, "mysql");
+			      #endif
+			}
 		}
 	}
 

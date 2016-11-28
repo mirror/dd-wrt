@@ -2,74 +2,46 @@
 #define _HTTP_AUTH_H_
 #include "first.h"
 
-#include "server.h"
-#include "plugin.h"
+#include "base.h"
 
-#if defined(HAVE_LDAP_H) && defined(HAVE_LBER_H) && defined(HAVE_LIBLDAP) && defined(HAVE_LIBLBER)
-# define USE_LDAP
-# include <ldap.h>
-#endif
+struct http_auth_scheme_t;
+struct http_auth_require_t;
+struct http_auth_backend_t;
 
-typedef enum {
-	AUTH_BACKEND_UNSET,
-	AUTH_BACKEND_PLAIN,
-	AUTH_BACKEND_LDAP,
-	AUTH_BACKEND_HTPASSWD,
-	AUTH_BACKEND_HTDIGEST
-} auth_backend_t;
+typedef struct http_auth_require_t {
+    const struct http_auth_scheme_t *scheme;
+    buffer *realm;
+    int valid_user;
+    array *user;
+    array *group;
+    array *host;
+} http_auth_require_t;
 
-typedef struct {
-	/* auth */
-	array  *auth_require;
+http_auth_require_t * http_auth_require_init (void);
+void http_auth_require_free (http_auth_require_t *require);
+int http_auth_match_rules (const http_auth_require_t *require, const char *user, const char *group, const char *host);
 
-	buffer *auth_plain_groupfile;
-	buffer *auth_plain_userfile;
+typedef struct http_auth_backend_t {
+    const char *name;
+    handler_t(*basic)(server *srv, connection *con, void *p_d, const http_auth_require_t *require, const buffer *username, const char *pw);
+    handler_t(*digest)(server *srv, connection *con, void *p_d, const char *username, const char *realm, unsigned char HA1[16]);
+    void *p_d;
+} http_auth_backend_t;
 
-	buffer *auth_htdigest_userfile;
-	buffer *auth_htpasswd_userfile;
+typedef struct http_auth_scheme_t {
+    const char *name;
+    handler_t(*checkfn)(server *srv, connection *con, void *p_d, const struct http_auth_require_t *require, const struct http_auth_backend_t *backend);
+    /*(backend is arg only because auth.backend is separate config directive)*/
+    void *p_d;
+} http_auth_scheme_t;
 
-	buffer *auth_backend_conf;
+const http_auth_scheme_t * http_auth_scheme_get (const buffer *name);
+void http_auth_scheme_set (const http_auth_scheme_t *scheme);
+const http_auth_backend_t * http_auth_backend_get (const buffer *name);
+void http_auth_backend_set (const http_auth_backend_t *backend);
 
-	buffer *auth_ldap_hostname;
-	buffer *auth_ldap_basedn;
-	buffer *auth_ldap_binddn;
-	buffer *auth_ldap_bindpw;
-	buffer *auth_ldap_filter;
-	buffer *auth_ldap_cafile;
-	unsigned short auth_ldap_starttls;
-	unsigned short auth_ldap_allow_empty_pw;
+void http_auth_setenv(array *env, const char *username, size_t ulen, const char *auth_type, size_t alen);
 
-	unsigned short auth_debug;
-
-	/* generated */
-	auth_backend_t auth_backend;
-
-#ifdef USE_LDAP
-	LDAP *ldap;
-
-	buffer *ldap_filter_pre;
-	buffer *ldap_filter_post;
-#endif
-} mod_auth_plugin_config;
-
-typedef struct {
-	PLUGIN_DATA;
-	buffer *tmp_buf;
-
-	buffer *auth_user;
-
-#ifdef USE_LDAP
-	buffer *ldap_filter;
-#endif
-
-	mod_auth_plugin_config **config_storage;
-
-	mod_auth_plugin_config conf, *anon_conf; /* this is only used as long as no handler_ctx is setup */
-} mod_auth_plugin_data;
-
-int http_auth_basic_check(server *srv, connection *con, mod_auth_plugin_data *p, array *req, const char *realm_str);
-int http_auth_digest_check(server *srv, connection *con, mod_auth_plugin_data *p, array *req, const char *realm_str);
-int http_auth_digest_generate_nonce(server *srv, mod_auth_plugin_data *p, buffer *fn, char (*hh)[33]);
-int http_auth_match_rules(server *srv, array *req, const char *username, const char *group, const char *host);
+int http_auth_md5_hex2bin (const char *md5hex, size_t len, unsigned char md5bin[16]);
 
 #endif

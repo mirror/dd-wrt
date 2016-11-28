@@ -329,7 +329,7 @@ typedef struct {
 	off_t *global_bytes_per_second_cnt_ptr; /*  */
 
 #if defined(__FreeBSD__) || defined(__NetBSD__) \
- || defined(__OpenBSD__) || defined(__DragonflyBSD__)
+ || defined(__OpenBSD__) || defined(__DragonFly__)
 	buffer *bsd_accept_filter;
 #endif
 
@@ -539,6 +539,7 @@ typedef struct {
 	array *modules;
 	array *upload_tempdirs;
 	unsigned int upload_temp_file_size;
+	unsigned int max_request_field_size;
 
 	unsigned short max_worker;
 	unsigned short max_fds;
@@ -562,6 +563,8 @@ typedef struct {
 	unsigned short http_host_strict;
 	unsigned short http_host_normalize;
 	unsigned short high_precision_timestamps;
+	time_t loadts;
+	double loadavg[3];
 } server_config;
 
 typedef struct server_socket {
@@ -640,7 +643,6 @@ typedef struct server {
 	time_t startup_ts;
 
 	char entropy[8]; /* from /dev/[u]random if possible, otherwise rand() */
-	char is_real_entropy; /* whether entropy is from /dev/[u]random */
 
 	buffer *ts_debug_str;
 	buffer *ts_date_str;

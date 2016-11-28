@@ -19,7 +19,6 @@
 #include <assert.h>
 #include <setjmp.h>
 
-#ifdef HAVE_LUA_H
 #include <lua.h>
 #include <lauxlib.h>
 
@@ -239,7 +238,6 @@ static int magnet_array_next(lua_State *L) {
 					lua_pushnil(L);
 				}
 				break;
-			case TYPE_COUNT:
 			case TYPE_INTEGER:
 				di = (data_integer *)du;
 				lua_pushinteger(L, di->value);
@@ -1032,6 +1030,10 @@ static handler_t magnet_attract_array(server *srv, connection *con, plugin_data 
 	/* no filename set */
 	if (files->used == 0) return HANDLER_GO_ON;
 
+      #ifdef USE_OPENSSL
+	if (con->ssl) http_cgi_ssl_env(srv, con);
+      #endif
+
 	/**
 	 * execute all files and jump out on the first !HANDLER_GO_ON
 	 */
@@ -1090,14 +1092,3 @@ int mod_magnet_plugin_init(plugin *p) {
 
 	return 0;
 }
-
-#else
-
-#pragma message("lua is required, but was not found")
-
-int mod_magnet_plugin_init(plugin *p);
-int mod_magnet_plugin_init(plugin *p) {
-	UNUSED(p);
-	return -1;
-}
-#endif

@@ -13,7 +13,7 @@
 
 #define DATA_IS_STRING(x) (x->type == TYPE_STRING)
 
-typedef enum { TYPE_UNSET, TYPE_STRING, TYPE_COUNT, TYPE_ARRAY, TYPE_INTEGER, TYPE_FASTCGI, TYPE_CONFIG } data_type_t;
+typedef enum { TYPE_UNSET, TYPE_STRING, TYPE_OTHER, TYPE_ARRAY, TYPE_INTEGER, TYPE_FASTCGI, TYPE_CONFIG } data_type_t;
 #define DATA_UNSET \
 	data_type_t type; \
 	buffer *key; \
@@ -42,14 +42,6 @@ typedef struct {
 typedef struct {
 	DATA_UNSET;
 
-	int count;
-} data_count;
-
-data_count *data_count_init(void);
-
-typedef struct {
-	DATA_UNSET;
-
 	buffer *value;
 } data_string;
 
@@ -72,7 +64,8 @@ typedef enum {
 	CONFIG_COND_EQ,      /** == */
 	CONFIG_COND_MATCH,   /** =~ */
 	CONFIG_COND_NE,      /** != */
-	CONFIG_COND_NOMATCH  /** !~ */
+	CONFIG_COND_NOMATCH, /** !~ */
+	CONFIG_COND_ELSE     /** (always true if reached) */
 } config_cond_t;
 
 /**
