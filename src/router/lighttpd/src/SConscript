@@ -35,14 +35,25 @@ def RemoveDuplicateLibs(libs):
 
 Import('env')
 
+def WorkaroundFreeBSDLibOrder(libs):
+	# lib(re)ssl includes (weak) arc4random functions
+	# which "on purpose" might conflict with those in libc
+	# => link libc first solves this
+	# (required for FreeBSD11 fullstatic build)
+	import platform
+	if ('c' in libs) and (platform.system() == 'FreeBSD'):
+		return ['c'] + libs
+	return libs
+
 def GatherLibs(env, *libs):
-	return RemoveDuplicateLibs(env['LIBS'] + list(libs) + [env['APPEND_LIBS']])
+	libs = RemoveDuplicateLibs(env['LIBS'] + list(libs) + [env['APPEND_LIBS']])
+	return WorkaroundFreeBSDLibOrder(libs)
 
 common_src = Split("base64.c buffer.c log.c \
 	keyvalue.c chunk.c  \
 	http_chunk.c stream.c fdevent.c \
 	stat_cache.c plugin.c joblist.c etag.c array.c \
-	data_string.c data_count.c data_array.c \
+	data_string.c data_array.c \
 	data_integer.c md5.c data_fastcgi.c \
 	vector.c \
 	fdevent_select.c fdevent_libev.c \
@@ -54,11 +65,13 @@ common_src = Split("base64.c buffer.c log.c \
 	connections-glue.c \
 	configfile-glue.c \
 	http-header-glue.c \
+	http_auth.c \
 	splaytree.c network_writev.c \
 	network_write_mmap.c network_write_no_mmap.c \
 	network_write.c network_linux_sendfile.c \
 	network_freebsd_sendfile.c  \
 	network_solaris_sendfilev.c network_openssl.c \
+	rand.c \
 	status_counter.c safe_memclear.c network_darwin_sendfile.c \
 ")
 
@@ -97,28 +110,40 @@ modules = {
 	'mod_expire' : { 'src' : [ 'mod_expire.c' ] },
 	'mod_status' : { 'src' : [ 'mod_status.c' ] },
 	'mod_compress' : { 'src' : [ 'mod_compress.c' ], 'lib' : [ env['LIBZ'], env['LIBBZ2'] ] },
+	'mod_deflate' : { 'src' : [ 'mod_deflate.c' ], 'lib' : [ env['LIBZ'], env['LIBBZ2'] ] },
 	'mod_redirect' : { 'src' : [ 'mod_redirect.c' ], 'lib' : [ env['LIBPCRE'] ] },
 	'mod_rewrite' : { 'src' : [ 'mod_rewrite.c' ], 'lib' : [ env['LIBPCRE'] ] },
-	'mod_auth' : {
-		'src' : [ 'mod_auth.c', 'http_auth.c' ],
-		'lib' : [ env['LIBCRYPT'], env['LIBLDAP'], env['LIBLBER'] ] },
+	'mod_auth' : { 'src' : [ 'mod_auth.c' ] },
+	'mod_authn_file' : { 'src' : [ 'mod_authn_file.c' ], 'lib' : [ env['LIBCRYPT'] ] },
 	'mod_webdav' : { 'src' : [ 'mod_webdav.c' ], 'lib' : [ env['LIBXML2'], env['LIBSQLITE3'], env['LIBUUID'] ] },
-	'mod_mysql_vhost' : { 'src' : [ 'mod_mysql_vhost.c' ], 'lib' : [ env['LIBMYSQL'] ] },
-#	'mod_uploadprogress' : { 'src' : [ 'mod_uploadprogress.c' ] },
+	'mod_uploadprogress' : { 'src' : [ 'mod_uploadprogress.c' ] },
 	'mod_evasive' : { 'src' : [ 'mod_evasive.c' ] },
 	'mod_ssi' : { 'src' : [ 'mod_ssi_exprparser.c', 'mod_ssi_expr.c', 'mod_ssi.c' ] },
 	'mod_flv_streaming' : { 'src' : [ 'mod_flv_streaming.c' ] },
-	'mod_cml': {
-		'src' : [ 'mod_cml_lua.c', 'mod_cml.c', 'mod_cml_funcs.c' ],
-		'lib' : [ env['LIBPCRE'], env['LIBMEMCACHED'], env['LIBLUA'] ]
-	},
 }
 
-if env['with_memcached']:
-	modules['mod_trigger_b4_dl'] = { 'src' : [ 'mod_trigger_b4_dl.c' ], 'lib' : [ env['LIBPCRE'], env['LIBMEMCACHED'] ] }
+if env['with_geoip']:
+	modules['mod_geoip'] = { 'src' : [ 'mod_geoip.c' ], 'lib' : [ env['LIBGEOIP'] ] }
+
+if env['with_krb5']:
+	modules['mod_authn_gssapi'] = { 'src' : [ 'mod_authn_gssapi.c' ], 'lib' : [ env['LIBKRB5'], env['LIBGSSAPI_KRB5'] ] }
+
+if env['with_ldap']:
+	modules['mod_authn_ldap'] = { 'src' : [ 'mod_authn_ldap.c' ], 'lib' : [ env['LIBLDAP'], env['LIBLBER'] ] }
 
 if env['with_lua']:
 	modules['mod_magnet'] = { 'src' : [ 'mod_magnet.c', 'mod_magnet_cache.c' ], 'lib' : [ env['LIBLUA'] ] }
+	modules['mod_cml'] = {
+		'src' : [ 'mod_cml_lua.c', 'mod_cml.c', 'mod_cml_funcs.c' ],
+		'lib' : [ env['LIBPCRE'], env['LIBMEMCACHED'], env['LIBLUA'] ]
+	}
+
+if env['with_pcre'] and (env['with_memcached'] or env['with_gdbm']):
+	modules['mod_trigger_b4_dl'] = { 'src' : [ 'mod_trigger_b4_dl.c' ], 'lib' : [ env['LIBPCRE'], env['LIBMEMCACHED'] ] }
+
+if env['with_mysql']:
+	modules['mod_authn_mysql'] = { 'src' : [ 'mod_authn_mysql.c' ], 'lib' : [ env['LIBCRYPT'], env['LIBMYSQL'] ] }
+	modules['mod_mysql_vhost'] = { 'src' : [ 'mod_mysql_vhost.c' ], 'lib' : [ env['LIBMYSQL'] ] }
 
 staticenv = env.Clone(CPPFLAGS=[ env['CPPFLAGS'], '-DLIGHTTPD_STATIC' ])
 

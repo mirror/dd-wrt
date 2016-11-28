@@ -22,6 +22,7 @@ option(WITH_WEBDAV_PROPS "with property-support for mod_webdav [default: off]")
 option(WITH_WEBDAV_LOCKS "locks in webdav [default: off]")
 option(WITH_BZIP "with bzip2-support for mod_compress [default: off]")
 option(WITH_ZLIB "with deflate-support for mod_compress [default: on]" ON)
+option(WITH_KRB5 "with Kerberos5-support for the mod_auth [default: off]")
 option(WITH_LDAP "with LDAP-support for the mod_auth [default: off]")
 option(WITH_LUA "with lua 5.1 for mod_magnet [default: off]")
 # option(WITH_VALGRIND "with internal support for valgrind [default: off]")
@@ -31,6 +32,7 @@ option(WITH_GDBM "gdbm storage for mod_trigger_b4_dl [default: off]")
 option(WITH_MEMCACHED "memcached storage for mod_trigger_b4_dl [default: off]")
 option(WITH_LIBEV "libev support for fdevent handlers [default: off]")
 option(WITH_LIBUNWIND "with libunwind to print backtraces in asserts [default: off]")
+option(WITH_GEOIP "with GeoIP-support mod_geoip [default: off]")
 
 if(CMAKE_C_COMPILER_ID MATCHES "GNU" OR CMAKE_C_COMPILER_ID MATCHES "Clang")
 	option(BUILD_EXTRA_WARNINGS "extra warnings")
@@ -119,16 +121,25 @@ set(CMAKE_EXTRA_INCLUDE_FILES sys/socket.h)
 check_type_size(socklen_t HAVE_SOCKLEN_T)
 set(CMAKE_EXTRA_INCLUDE_FILES)
 
+check_include_files(linux/random.h HAVE_LINUX_RANDOM_H)
+set(CMAKE_EXTRA_INCLUDE_FILES linux/random.h)
+check_function_exists(getrandom HAVE_GETRANDOM)
+set(CMAKE_EXTRA_INCLUDE_FILES)
+
 check_type_size(long SIZEOF_LONG)
 check_type_size(off_t SIZEOF_OFF_T)
 
+check_function_exists(arc4random HAVE_ARC4RANDOM)
 check_function_exists(chroot HAVE_CHROOT)
 check_function_exists(epoll_ctl HAVE_EPOLL_CTL)
 check_function_exists(fork HAVE_FORK)
+check_function_exists(getentropy HAVE_GETENTROPY)
+check_function_exists(getloadavg HAVE_GETLOADAVG)
 check_function_exists(getrlimit HAVE_GETRLIMIT)
 check_function_exists(getuid HAVE_GETUID)
 check_function_exists(gmtime_r HAVE_GMTIME_R)
 check_function_exists(inet_ntop HAVE_INET_NTOP)
+check_function_exists(jrand48 HAVE_JRAND48)
 check_function_exists(kqueue HAVE_KQUEUE)
 check_function_exists(localtime_r HAVE_LOCALTIME_R)
 check_function_exists(lstat HAVE_LSTAT)
@@ -150,6 +161,7 @@ check_function_exists(sendfilev HAVE_SENDFILEV)
 check_function_exists(sigaction HAVE_SIGACTION)
 check_function_exists(signal HAVE_SIGNAL)
 check_function_exists(sigtimedwait HAVE_SIGTIMEDWAIT)
+check_function_exists(srandom HAVE_SRANDOM)
 check_function_exists(strptime HAVE_STRPTIME)
 check_function_exists(syslog HAVE_SYSLOG)
 check_function_exists(writev HAVE_WRITEV)
@@ -457,6 +469,10 @@ if(WITH_MEMCACHED)
 	endif()
 endif()
 
+if(WITH_GEOIP)
+	check_library_exists(geoip GeoIP_country_name_by_addr "" HAVE_GEOIP)
+endif()
+
 if(NOT BUILD_STATIC)
 	check_include_files(dlfcn.h HAVE_DLFCN_H)
 else()
@@ -500,7 +516,7 @@ set(COMMON_SRC
 	keyvalue.c chunk.c
 	http_chunk.c stream.c fdevent.c
 	stat_cache.c plugin.c joblist.c etag.c array.c
-	data_string.c data_count.c data_array.c
+	data_string.c data_array.c
 	data_integer.c md5.c data_fastcgi.c
 	vector.c
 	fdevent_select.c fdevent_libev.c
@@ -512,11 +528,13 @@ set(COMMON_SRC
 	connections-glue.c
 	configfile-glue.c
 	http-header-glue.c
+	http_auth.c
 	splaytree.c network_writev.c
 	network_write_mmap.c network_write_no_mmap.c
 	network_write.c network_linux_sendfile.c
 	network_freebsd_sendfile.c
 	network_solaris_sendfilev.c network_openssl.c
+	rand.c
 	status_counter.c safe_memclear.c network_darwin_sendfile.c
 )
 
@@ -526,10 +544,6 @@ if(WIN32)
 endif()
 
 add_executable(lemon lemon.c)
-if(CMAKE_C_COMPILER_ID MATCHES "GNU" OR CMAKE_C_COMPILER_ID MATCHES "Clang")
-	# yeah, lemon is a mess... but: it only needs to run at compile time
-	add_target_properties(lemon COMPILE_FLAGS -Wno-cast-align)
-endif()
 
 ## Build parsers by using lemon...
 lemon_parser(configparser.y)
@@ -557,12 +571,13 @@ set(L_INSTALL_TARGETS ${L_INSTALL_TARGETS} lighttpd)
 add_and_install_library(mod_access mod_access.c)
 add_and_install_library(mod_accesslog mod_accesslog.c)
 add_and_install_library(mod_alias mod_alias.c)
-add_and_install_library(mod_auth "mod_auth.c;http_auth.c")
+add_and_install_library(mod_auth "mod_auth.c")
+add_and_install_library(mod_authn_file "mod_authn_file.c")
 if(NOT WIN32)
 	add_and_install_library(mod_cgi mod_cgi.c)
 endif()
-add_and_install_library(mod_cml "mod_cml.c;mod_cml_lua.c;mod_cml_funcs.c")
 add_and_install_library(mod_compress mod_compress.c)
+add_and_install_library(mod_deflate mod_deflate.c)
 add_and_install_library(mod_dirlisting mod_dirlisting.c)
 add_and_install_library(mod_evasive mod_evasive.c)
 add_and_install_library(mod_evhost mod_evhost.c)
@@ -571,8 +586,6 @@ add_and_install_library(mod_extforward mod_extforward.c)
 add_and_install_library(mod_fastcgi mod_fastcgi.c)
 add_and_install_library(mod_flv_streaming mod_flv_streaming.c)
 add_and_install_library(mod_indexfile mod_indexfile.c)
-add_and_install_library(mod_magnet "mod_magnet.c;mod_magnet_cache.c")
-add_and_install_library(mod_mysql_vhost mod_mysql_vhost.c)
 add_and_install_library(mod_proxy mod_proxy.c)
 add_and_install_library(mod_redirect mod_redirect.c)
 add_and_install_library(mod_rewrite mod_rewrite.c)
@@ -584,8 +597,7 @@ add_and_install_library(mod_simple_vhost mod_simple_vhost.c)
 add_and_install_library(mod_ssi "mod_ssi_exprparser.c;mod_ssi_expr.c;mod_ssi.c")
 add_and_install_library(mod_staticfile mod_staticfile.c)
 add_and_install_library(mod_status mod_status.c)
-add_and_install_library(mod_trigger_b4_dl mod_trigger_b4_dl.c)
-# add_and_install_library(mod_uploadprogress mod_uploadprogress.c)
+add_and_install_library(mod_uploadprogress mod_uploadprogress.c)
 add_and_install_library(mod_userdir mod_userdir.c)
 add_and_install_library(mod_usertrack mod_usertrack.c)
 add_and_install_library(mod_webdav mod_webdav.c)
@@ -609,6 +621,7 @@ add_executable(test_configfile
 	array.c
 	data_string.c
 	keyvalue.c
+	vector.c
 	log.c
 )
 add_test(NAME test_configfile COMMAND test_configfile)
@@ -622,21 +635,42 @@ if(HAVE_PCRE_H)
 	add_target_properties(mod_dirlisting COMPILE_FLAGS ${PCRE_CFLAGS})
 	target_link_libraries(mod_redirect ${PCRE_LDFLAGS})
 	add_target_properties(mod_redirect COMPILE_FLAGS ${PCRE_CFLAGS})
-	target_link_libraries(mod_trigger_b4_dl ${PCRE_LDFLAGS})
-	add_target_properties(mod_trigger_b4_dl COMPILE_FLAGS ${PCRE_CFLAGS})
 	target_link_libraries(test_configfile ${PCRE_LDFLAGS})
 	add_target_properties(test_configfile COMPILE_FLAGS ${PCRE_CFLAGS})
 endif()
 
-target_link_libraries(mod_magnet ${LUA_LDFLAGS})
-add_target_properties(mod_magnet COMPILE_FLAGS ${LUA_CFLAGS})
+if(WITH_PCRE AND (WITH_MEMCACHED OR WITH_GDBM))
+	add_and_install_library(mod_trigger_b4_dl mod_trigger_b4_dl.c)
+	target_link_libraries(mod_trigger_b4_dl ${PCRE_LDFLAGS})
+	add_target_properties(mod_trigger_b4_dl COMPILE_FLAGS ${PCRE_CFLAGS})
+endif()
 
-target_link_libraries(mod_cml ${LUA_LDFLAGS})
-add_target_properties(mod_cml COMPILE_FLAGS ${LUA_CFLAGS})
+if(WITH_LUA)
+	add_and_install_library(mod_magnet "mod_magnet.c;mod_magnet_cache.c")
+	target_link_libraries(mod_magnet ${LUA_LDFLAGS})
+	add_target_properties(mod_magnet COMPILE_FLAGS ${LUA_CFLAGS})
+
+	add_and_install_library(mod_cml "mod_cml.c;mod_cml_lua.c;mod_cml_funcs.c")
+	target_link_libraries(mod_cml ${LUA_LDFLAGS})
+	add_target_properties(mod_cml COMPILE_FLAGS ${LUA_CFLAGS})
+endif()
+
+if(WITH_GEOIP)
+	add_and_install_library(mod_geoip mod_geoip.c)
+	target_link_libraries(mod_geoip GeoIP)
+endif()
 
 if(HAVE_MYSQL_H AND HAVE_MYSQL)
+	add_and_install_library(mod_mysql_vhost "mod_mysql_vhost.c")
 	target_link_libraries(mod_mysql_vhost mysqlclient)
 	include_directories(/usr/include/mysql)
+
+	add_and_install_library(mod_authn_mysql "mod_authn_mysql.c")
+	set(L_MOD_AUTHN_MYSQL)
+	if(HAVE_LIBCRYPT)
+		set(L_MOD_AUTHN_MYSQL ${L_MOD_AUTHN_MYSQL} crypt)
+	endif()
+	target_link_libraries(mod_authn_mysql ${L_MOD_AUTHN_MYSQL} mysqlclient)
 endif()
 
 set(L_MOD_WEBDAV)
@@ -654,21 +688,32 @@ endif()
 
 target_link_libraries(mod_webdav ${L_MOD_WEBDAV})
 
-set(L_MOD_AUTH)
+set(L_MOD_AUTHN_FILE)
 if(HAVE_LIBCRYPT)
-	set(L_MOD_AUTH ${L_MOD_AUTH} crypt)
+	set(L_MOD_AUTHN_FILE ${L_MOD_AUTHN_FILE} crypt)
+endif()
+target_link_libraries(mod_authn_file ${L_MOD_AUTHN_FILE})
+
+if(WITH_KRB5)
+	check_library_exists(krb5 krb5_init_context "" HAVE_KRB5)
+	add_and_install_library(mod_authn_gssapi "mod_authn_gssapi.c")
+	set(L_MOD_AUTHN_GSSAPI ${L_MOD_AUTHN_GSSAPI} krb5 gssapi_krb5)
+	target_link_libraries(mod_authn_gssapi ${L_MOD_AUTHN_GSSAPI})
 endif()
 
-if(HAVE_LDAP_H)
-	set(L_MOD_AUTH ${L_MOD_AUTH} ldap lber)
+if(WITH_LDAP)
+	add_and_install_library(mod_authn_ldap "mod_authn_ldap.c")
+	set(L_MOD_AUTHN_LDAP ${L_MOD_AUTHN_LDAP} ldap lber)
+	target_link_libraries(mod_authn_ldap ${L_MOD_AUTHN_LDAP})
 endif()
-target_link_libraries(mod_auth ${L_MOD_AUTH})
 
 if(HAVE_ZLIB_H)
 	if(HAVE_BZLIB_H)
 		target_link_libraries(mod_compress ${ZLIB_LIBRARY} bz2)
+		target_link_libraries(mod_deflate ${ZLIB_LIBRARY} bz2)
 	else()
 		target_link_libraries(mod_compress ${ZLIB_LIBRARY})
+		target_link_libraries(mod_deflate ${ZLIB_LIBRARY})
 	endif()
 endif()
 
