@@ -55,8 +55,8 @@ void start_softether(void)
 	if (nvram_matchi("setherserver_enable", 1)) {
 		write_nvram("/tmp/vpn_server.config", "sether_config");
 		eval("ln", "-s", "/usr/bin/hamcore.se2", "/tmp/");
-		eval("ln", "-s", "/usr/bin/vpncmd", "/tmp/");
-		eval("/tmp/vpncmd", "start");
+		eval("ln", "-s", "/usr/bin/vpnserver", "/tmp/");
+		eval("/tmp/vpnserver", "start");
 	}
 	if (nvram_matchi("setherbridge_enable", 1)) {
 		write_nvram("/tmp/vpn_bridge.config", "sether_config");
