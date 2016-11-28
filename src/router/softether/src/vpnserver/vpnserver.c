@@ -175,13 +175,13 @@ int main(int argc, char *argv[])
 	char *xn = argv[0];
 	int r;
 
-	if(strstr(xn,"vpnserver") == 0)
+	if(strstr(xn,"vpnserver"))
 		r = vpnserver_main(argc,argv);
-	else if(strstr(xn,"vpnclient") == 0)
+	else if(strstr(xn,"vpnclient"))
 		r = vpncsvc_main(argc,argv);
-	else if(strstr(xn,"vpnbridge") == 0)
+	else if(strstr(xn,"vpnbridge"))
 		r = vpnbridge_main(argc,argv);
-	else if(strstr(xn,"vpncmd") == 0)
+	else if(strstr(xn,"vpncmd"))
 		r = vpncmd_main(argc,argv);
 	else
 		r = 1;
