@@ -198,27 +198,27 @@ static int configparser_remoteip_normalize_compat(buffer *rvalue) {
 */
 /*  */
 #define YYCODETYPE unsigned char
-#define YYNOCODE 48
+#define YYNOCODE 50
 #define YYACTIONTYPE unsigned char
 #define configparserTOKENTYPE buffer *
 typedef union {
   configparserTOKENTYPE yy0;
-  config_cond_t yy27;
-  array * yy40;
-  data_unset * yy41;
-  buffer * yy43;
-  data_config * yy78;
-  int yy95;
+  data_config * yy2;
+  array * yy22;
+  data_unset * yy59;
+  config_cond_t yy75;
+  buffer * yy87;
+  int yy99;
 } YYMINORTYPE;
 #define YYSTACKDEPTH 100
 #define configparserARG_SDECL config_t *ctx;
 #define configparserARG_PDECL ,config_t *ctx
 #define configparserARG_FETCH config_t *ctx = yypParser->ctx
 #define configparserARG_STORE yypParser->ctx = ctx
-#define YYNSTATE 63
-#define YYNRULE 40
+#define YYNSTATE 68
+#define YYNRULE 43
 #define YYERRORSYMBOL 26
-#define YYERRSYMDT yy95
+#define YYERRSYMDT yy99
 #define YY_NO_ACTION      (YYNSTATE+YYNRULE+2)
 #define YY_ACCEPT_ACTION  (YYNSTATE+YYNRULE+1)
 #define YY_ERROR_ACTION   (YYNSTATE+YYNRULE)
@@ -271,63 +271,67 @@ typedef union {
 **  yy_default[]       Default action for each state.
 */
 static YYACTIONTYPE yy_action[] = {
- /*     0 */     2,    3,    4,    5,   13,   14,   63,   15,    7,   45,
- /*    10 */    20,   88,   16,   46,   28,   49,   41,   10,   40,   25,
- /*    20 */    22,   50,   46,    8,   15,  104,    1,   20,   28,   18,
- /*    30 */    58,   60,    6,   25,   22,   40,   47,   62,   11,   46,
- /*    40 */    20,    9,   23,   24,   26,   29,   89,   58,   60,   10,
- /*    50 */    17,   38,   28,   27,   37,   19,   30,   25,   22,   34,
- /*    60 */    15,  100,   20,   20,   23,   24,   26,   12,   19,   31,
- /*    70 */    32,   40,   19,   44,   43,   46,   95,   35,   90,   89,
- /*    80 */    28,   49,   42,   58,   60,   25,   22,   59,   28,   27,
- /*    90 */    33,   48,   52,   25,   22,   34,   28,   49,   51,   28,
- /*   100 */    36,   25,   22,   61,   25,   22,   89,   28,   39,   89,
- /*   110 */    89,   89,   25,   22,   54,   55,   56,   57,   89,   28,
- /*   120 */    53,   21,   89,   89,   25,   22,   25,   22,
+ /*     0 */     2,    3,    4,    5,   14,   15,  112,    1,    7,   46,
+ /*    10 */    68,   16,  103,   17,   21,   47,   16,   42,   11,   21,
+ /*    20 */    18,   39,   41,    9,   10,   12,   47,   41,   93,   63,
+ /*    30 */    13,   47,   11,   64,   59,   61,   29,   28,   38,   59,
+ /*    40 */    61,   31,   26,   23,   35,   16,   20,    8,   21,   36,
+ /*    50 */    16,   20,  108,   21,   32,   33,   41,   20,   45,  102,
+ /*    60 */    47,   41,   44,   67,   48,   47,   95,   52,   59,   61,
+ /*    70 */    29,   28,   34,   59,   61,   43,   26,   23,   35,   21,
+ /*    80 */    53,   24,   25,   27,   30,   49,   29,   50,    6,   29,
+ /*    90 */    50,   65,   26,   23,   51,   26,   23,   60,   66,   29,
+ /*   100 */    50,   94,   94,   94,   94,   26,   23,   62,   94,   94,
+ /*   110 */    21,   94,   24,   25,   27,   29,   19,   29,   37,   29,
+ /*   120 */    40,   26,   23,   26,   23,   26,   23,   55,   56,   57,
+ /*   130 */    58,   29,   54,   22,   94,   94,   94,   26,   23,   26,
+ /*   140 */    23,
 };
 static YYCODETYPE yy_lookahead[] = {
- /*     0 */    29,   30,   31,   32,   33,   34,    0,    1,   44,   38,
- /*    10 */     4,   15,   41,   16,   35,   36,   45,   46,   12,   40,
- /*    20 */    41,   42,   16,   15,    1,   27,   28,    4,   35,   36,
- /*    30 */    24,   25,    1,   40,   41,   12,   17,   14,   13,   16,
- /*    40 */     4,   38,    6,    7,    8,    9,   15,   24,   25,   46,
- /*    50 */     2,    3,   35,   36,   37,    5,   39,   40,   41,   42,
- /*    60 */     1,   11,    4,    4,    6,    7,    8,   28,    5,    9,
- /*    70 */    10,   12,    5,   14,   28,   16,   13,   11,   13,   47,
- /*    80 */    35,   36,   13,   24,   25,   40,   41,   42,   35,   36,
- /*    90 */    37,   18,   43,   40,   41,   42,   35,   36,   19,   35,
- /*   100 */    36,   40,   41,   42,   40,   41,   47,   35,   36,   47,
- /*   110 */    47,   47,   40,   41,   20,   21,   22,   23,   47,   35,
- /*   120 */    36,   35,   47,   47,   40,   41,   40,   41,
+ /*     0 */    29,   30,   31,   32,   33,   34,   27,   28,   45,   38,
+ /*    10 */     0,    1,   13,   42,    4,   16,    1,   46,   47,    4,
+ /*    20 */     2,    3,   12,   38,   39,   13,   16,   12,   15,   14,
+ /*    30 */    28,   16,   47,   48,   24,   25,   35,   36,   37,   24,
+ /*    40 */    25,   40,   41,   42,   43,    1,    5,   15,    4,   11,
+ /*    50 */     1,    5,   11,    4,    9,   10,   12,    5,   14,   13,
+ /*    60 */    16,   12,   28,   14,   17,   16,   13,   19,   24,   25,
+ /*    70 */    35,   36,   37,   24,   25,   13,   41,   42,   43,    4,
+ /*    80 */    44,    6,    7,    8,    9,   18,   35,   36,    1,   35,
+ /*    90 */    36,   13,   41,   42,   43,   41,   42,   43,   28,   35,
+ /*   100 */    36,   49,   15,   49,   49,   41,   42,   43,   49,   49,
+ /*   110 */     4,   49,    6,    7,    8,   35,   36,   35,   36,   35,
+ /*   120 */    36,   41,   42,   41,   42,   41,   42,   20,   21,   22,
+ /*   130 */    23,   35,   36,   35,   49,   49,   49,   41,   42,   41,
+ /*   140 */    42,
 };
-#define YY_SHIFT_USE_DFLT (-5)
+#define YY_SHIFT_USE_DFLT (-2)
 static signed char yy_shift_ofst[] = {
- /*     0 */    -5,    6,   -5,   -5,   -5,   31,   -4,    8,   -3,   -5,
- /*    10 */    25,   -5,   23,   -5,   -5,   -5,   48,   58,   67,   58,
- /*    20 */    -5,   -5,   -5,   -5,   -5,   -5,   36,   50,   -5,   -5,
- /*    30 */    60,   -5,   58,   -5,   66,   58,   67,   -5,   58,   67,
- /*    40 */    65,   69,   -5,   59,   -5,   -5,   19,   73,   58,   67,
- /*    50 */    79,   94,   58,   63,   -5,   -5,   -5,   -5,   58,   -5,
- /*    60 */    58,   -5,   -5,
+ /*     0 */    -2,   10,   -2,   -2,   -2,   87,   13,   32,   -1,   -2,
+ /*    10 */    -2,   12,   -2,   15,   -2,   -2,   -2,   18,  106,   52,
+ /*    20 */   106,   -2,   -2,   -2,   -2,   -2,   -2,   75,   41,   -2,
+ /*    30 */    -2,   45,   -2,  106,   -2,   38,  106,   52,   -2,  106,
+ /*    40 */    52,   53,   62,   -2,   44,   -2,   -2,   47,   67,  106,
+ /*    50 */    52,   48,  107,  106,   46,   -2,   -2,   -2,   -2,  106,
+ /*    60 */    -2,  106,   -2,   -2,   78,   -2,   49,   -2,
 };
-#define YY_REDUCE_USE_DFLT (-37)
+#define YY_REDUCE_USE_DFLT (-38)
 static signed char yy_reduce_ofst[] = {
- /*     0 */    -2,  -29,  -37,  -37,  -37,  -36,  -37,  -37,    3,  -37,
- /*    10 */   -37,   39,  -29,  -37,  -37,  -37,  -37,   -7,  -37,   86,
- /*    20 */   -37,  -37,  -37,  -37,  -37,  -37,   17,  -37,  -37,  -37,
- /*    30 */   -37,  -37,   53,  -37,  -37,   64,  -37,  -37,   72,  -37,
- /*    40 */   -37,  -37,   46,  -29,  -37,  -37,  -37,  -37,  -21,  -37,
- /*    50 */   -37,   49,   84,  -37,  -37,  -37,  -37,  -37,   45,  -37,
- /*    60 */    61,  -37,  -37,
+ /*     0 */   -21,  -29,  -38,  -38,  -38,  -37,  -38,  -38,  -15,  -38,
+ /*    10 */   -38,  -38,    2,  -29,  -38,  -38,  -38,  -38,   80,  -38,
+ /*    20 */    98,  -38,  -38,  -38,  -38,  -38,  -38,    1,  -38,  -38,
+ /*    30 */   -38,  -38,  -38,   35,  -38,  -38,   82,  -38,  -38,   84,
+ /*    40 */   -38,  -38,  -38,   34,  -29,  -38,  -38,  -38,  -38,   51,
+ /*    50 */   -38,  -38,   36,   96,  -38,  -38,  -38,  -38,  -38,   54,
+ /*    60 */   -38,   64,  -38,  -38,  -38,   70,  -29,  -38,
 };
 static YYACTIONTYPE yy_default[] = {
- /*     0 */    65,  103,   64,   66,   67,  103,   68,  103,  103,   92,
- /*    10 */   103,   65,  103,   69,   70,   71,  103,  103,   72,  103,
- /*    20 */    74,   75,   77,   78,   79,   80,  103,   86,   76,   81,
- /*    30 */   103,   82,   84,   83,  103,  103,   87,   85,  103,   73,
- /*    40 */   103,  103,   65,  103,   91,   93,  103,  103,  103,  100,
- /*    50 */   103,  103,  103,  103,   96,   97,   98,   99,  103,  101,
- /*    60 */   103,  102,   94,
+ /*     0 */    70,  111,   69,   71,   72,  111,   73,  111,  111,   97,
+ /*    10 */    98,  111,   70,  111,   74,   75,   76,  111,  111,   77,
+ /*    20 */   111,   79,   80,   82,   83,   84,   85,  111,   91,   81,
+ /*    30 */    86,  111,   87,   89,   88,  111,  111,   92,   90,  111,
+ /*    40 */    78,  111,  111,   70,  111,   96,   99,  111,  111,  111,
+ /*    50 */   108,  111,  111,  111,  111,  104,  105,  106,  107,  111,
+ /*    60 */   109,  111,  110,  100,  111,   70,  111,  101,
 };
 #define YY_SZ_ACTTAB (sizeof(yy_action)/sizeof(yy_action[0]))
 
@@ -424,9 +428,10 @@ static const char *yyTokenName[] = {
   "INCLUDE",       "INCLUDE_SHELL",  "error",         "input",       
   "metalines",     "metaline",      "varline",       "global",      
   "condlines",     "include",       "include_shell",  "value",       
-  "expression",    "aelement",      "condline",      "aelements",   
-  "array",         "key",           "stringop",      "cond",        
-  "eols",          "globalstart",   "context",     
+  "expression",    "aelement",      "condline",      "cond_else",   
+  "aelements",     "array",         "key",           "stringop",    
+  "cond",          "eols",          "globalstart",   "context",     
+  "context_else",
 };
 #endif /* NDEBUG */
 
@@ -464,16 +469,19 @@ static const char *yyRuleName[] = {
  /*  27 */ "globalstart ::= GLOBAL",
  /*  28 */ "global ::= globalstart LCURLY metalines RCURLY",
  /*  29 */ "condlines ::= condlines eols ELSE condline",
- /*  30 */ "condlines ::= condline",
- /*  31 */ "condline ::= context LCURLY metalines RCURLY",
- /*  32 */ "context ::= DOLLAR SRVVARNAME LBRACKET stringop RBRACKET cond expression",
- /*  33 */ "cond ::= EQ",
- /*  34 */ "cond ::= MATCH",
- /*  35 */ "cond ::= NE",
- /*  36 */ "cond ::= NOMATCH",
- /*  37 */ "stringop ::= expression",
- /*  38 */ "include ::= INCLUDE stringop",
- /*  39 */ "include_shell ::= INCLUDE_SHELL stringop",
+ /*  30 */ "condlines ::= condlines eols ELSE cond_else",
+ /*  31 */ "condlines ::= condline",
+ /*  32 */ "condline ::= context LCURLY metalines RCURLY",
+ /*  33 */ "cond_else ::= context_else LCURLY metalines RCURLY",
+ /*  34 */ "context ::= DOLLAR SRVVARNAME LBRACKET stringop RBRACKET cond expression",
+ /*  35 */ "context_else ::=",
+ /*  36 */ "cond ::= EQ",
+ /*  37 */ "cond ::= MATCH",
+ /*  38 */ "cond ::= NE",
+ /*  39 */ "cond ::= NOMATCH",
+ /*  40 */ "stringop ::= expression",
+ /*  41 */ "include ::= INCLUDE stringop",
+ /*  42 */ "include_shell ::= INCLUDE_SHELL stringop",
 };
 #endif /* NDEBUG */
 
@@ -558,44 +566,44 @@ static void yy_destructor(YYCODETYPE yymajor, YYMINORTYPE *yypminor){
     case 23:
     case 24:
     case 25:
-#line 182 "../../src/configparser.y"
+#line 183 "../../src/configparser.y"
 { buffer_free((yypminor->yy0)); }
-#line 563 "configparser.c"
+#line 571 "configparser.c"
       break;
     case 35:
-#line 173 "../../src/configparser.y"
-{ if ((yypminor->yy41)) (yypminor->yy41)->free((yypminor->yy41)); }
-#line 568 "configparser.c"
+#line 174 "../../src/configparser.y"
+{ if ((yypminor->yy59)) (yypminor->yy59)->free((yypminor->yy59)); }
+#line 576 "configparser.c"
       break;
     case 36:
-#line 174 "../../src/configparser.y"
-{ if ((yypminor->yy41)) (yypminor->yy41)->free((yypminor->yy41)); }
-#line 573 "configparser.c"
+#line 175 "../../src/configparser.y"
+{ if ((yypminor->yy59)) (yypminor->yy59)->free((yypminor->yy59)); }
+#line 581 "configparser.c"
       break;
     case 37:
-#line 175 "../../src/configparser.y"
-{ if ((yypminor->yy41)) (yypminor->yy41)->free((yypminor->yy41)); }
-#line 578 "configparser.c"
-      break;
-    case 39:
 #line 176 "../../src/configparser.y"
-{ array_free((yypminor->yy40)); }
-#line 583 "configparser.c"
+{ if ((yypminor->yy59)) (yypminor->yy59)->free((yypminor->yy59)); }
+#line 586 "configparser.c"
       break;
     case 40:
 #line 177 "../../src/configparser.y"
-{ array_free((yypminor->yy40)); }
-#line 588 "configparser.c"
+{ array_free((yypminor->yy22)); }
+#line 591 "configparser.c"
       break;
     case 41:
 #line 178 "../../src/configparser.y"
-{ buffer_free((yypminor->yy43)); }
-#line 593 "configparser.c"
+{ array_free((yypminor->yy22)); }
+#line 596 "configparser.c"
       break;
     case 42:
 #line 179 "../../src/configparser.y"
-{ buffer_free((yypminor->yy43)); }
-#line 598 "configparser.c"
+{ buffer_free((yypminor->yy87)); }
+#line 601 "configparser.c"
+      break;
+    case 43:
+#line 180 "../../src/configparser.y"
+{ buffer_free((yypminor->yy87)); }
+#line 606 "configparser.c"
       break;
     default:  break;   /* If no destructor action specified: do nothing */
   }
@@ -783,33 +791,36 @@ static struct {
   { 29, 1 },
   { 30, 3 },
   { 30, 3 },
-  { 41, 1 },
+  { 42, 1 },
   { 36, 3 },
   { 36, 1 },
   { 35, 1 },
   { 35, 1 },
   { 35, 1 },
   { 35, 1 },
-  { 40, 2 },
+  { 41, 2 },
+  { 41, 3 },
   { 40, 3 },
-  { 39, 3 },
-  { 39, 2 },
-  { 39, 1 },
+  { 40, 2 },
+  { 40, 1 },
   { 37, 1 },
   { 37, 3 },
-  { 44, 1 },
-  { 44, 0 },
   { 45, 1 },
+  { 45, 0 },
+  { 46, 1 },
   { 31, 4 },
+  { 32, 4 },
   { 32, 4 },
   { 32, 1 },
   { 38, 4 },
-  { 46, 7 },
+  { 39, 4 },
+  { 47, 7 },
+  { 48, 0 },
+  { 44, 1 },
+  { 44, 1 },
+  { 44, 1 },
+  { 44, 1 },
   { 43, 1 },
-  { 43, 1 },
-  { 43, 1 },
-  { 43, 1 },
-  { 42, 1 },
   { 33, 2 },
   { 34, 2 },
 };
@@ -869,8 +880,8 @@ static void yy_reduce(
         break;
       case 5:
 #line 156 "../../src/configparser.y"
-{ yymsp[-1].minor.yy78 = NULL; }
-#line 873 "configparser.c"
+{ yymsp[-1].minor.yy2 = NULL; }
+#line 884 "configparser.c"
   yy_destructor(1,&yymsp[0].minor);
         break;
       case 6:
@@ -883,152 +894,152 @@ static void yy_reduce(
   yy_destructor(1,&yymsp[0].minor);
         break;
       case 9:
-#line 184 "../../src/configparser.y"
+#line 185 "../../src/configparser.y"
 {
   if (ctx->ok) {
-    buffer_copy_buffer(yymsp[0].minor.yy41->key, yymsp[-2].minor.yy43);
-    if (strncmp(yymsp[-2].minor.yy43->ptr, "env.", sizeof("env.") - 1) == 0) {
+    buffer_copy_buffer(yymsp[0].minor.yy59->key, yymsp[-2].minor.yy87);
+    if (strncmp(yymsp[-2].minor.yy87->ptr, "env.", sizeof("env.") - 1) == 0) {
       fprintf(stderr, "Setting env variable is not supported in conditional %d %s: %s\n",
           ctx->current->context_ndx,
-          ctx->current->key->ptr, yymsp[-2].minor.yy43->ptr);
+          ctx->current->key->ptr, yymsp[-2].minor.yy87->ptr);
       ctx->ok = 0;
-    } else if (NULL == array_get_element(ctx->current->value, yymsp[0].minor.yy41->key->ptr)) {
-      array_insert_unique(ctx->current->value, yymsp[0].minor.yy41);
-      yymsp[0].minor.yy41 = NULL;
+    } else if (NULL == array_get_element(ctx->current->value, yymsp[0].minor.yy59->key->ptr)) {
+      array_insert_unique(ctx->current->value, yymsp[0].minor.yy59);
+      yymsp[0].minor.yy59 = NULL;
     } else {
       fprintf(stderr, "Duplicate config variable in conditional %d %s: %s\n",
               ctx->current->context_ndx,
-              ctx->current->key->ptr, yymsp[0].minor.yy41->key->ptr);
+              ctx->current->key->ptr, yymsp[0].minor.yy59->key->ptr);
       ctx->ok = 0;
-      yymsp[0].minor.yy41->free(yymsp[0].minor.yy41);
-      yymsp[0].minor.yy41 = NULL;
+      yymsp[0].minor.yy59->free(yymsp[0].minor.yy59);
+      yymsp[0].minor.yy59 = NULL;
     }
   }
-  buffer_free(yymsp[-2].minor.yy43);
-  yymsp[-2].minor.yy43 = NULL;
+  buffer_free(yymsp[-2].minor.yy87);
+  yymsp[-2].minor.yy87 = NULL;
 }
-#line 910 "configparser.c"
+#line 921 "configparser.c"
   yy_destructor(2,&yymsp[-1].minor);
         break;
       case 10:
-#line 208 "../../src/configparser.y"
+#line 209 "../../src/configparser.y"
 {
   if (ctx->ok) {
     array *vars = ctx->current->value;
     data_unset *du;
 
-    if (strncmp(yymsp[-2].minor.yy43->ptr, "env.", sizeof("env.") - 1) == 0) {
+    if (strncmp(yymsp[-2].minor.yy87->ptr, "env.", sizeof("env.") - 1) == 0) {
       fprintf(stderr, "Appending env variable is not supported in conditional %d %s: %s\n",
           ctx->current->context_ndx,
-          ctx->current->key->ptr, yymsp[-2].minor.yy43->ptr);
+          ctx->current->key->ptr, yymsp[-2].minor.yy87->ptr);
       ctx->ok = 0;
-    } else if (NULL != (du = array_extract_element(vars, yymsp[-2].minor.yy43->ptr)) || NULL != (du = configparser_get_variable(ctx, yymsp[-2].minor.yy43))) {
-      du = configparser_merge_data(du, yymsp[0].minor.yy41);
+    } else if (NULL != (du = array_extract_element(vars, yymsp[-2].minor.yy87->ptr)) || NULL != (du = configparser_get_variable(ctx, yymsp[-2].minor.yy87))) {
+      du = configparser_merge_data(du, yymsp[0].minor.yy59);
       if (NULL == du) {
         ctx->ok = 0;
       }
       else {
-        buffer_copy_buffer(du->key, yymsp[-2].minor.yy43);
+        buffer_copy_buffer(du->key, yymsp[-2].minor.yy87);
         array_insert_unique(ctx->current->value, du);
       }
-      yymsp[0].minor.yy41->free(yymsp[0].minor.yy41);
+      yymsp[0].minor.yy59->free(yymsp[0].minor.yy59);
     } else {
-      buffer_copy_buffer(yymsp[0].minor.yy41->key, yymsp[-2].minor.yy43);
-      array_insert_unique(ctx->current->value, yymsp[0].minor.yy41);
+      buffer_copy_buffer(yymsp[0].minor.yy59->key, yymsp[-2].minor.yy87);
+      array_insert_unique(ctx->current->value, yymsp[0].minor.yy59);
     }
-    buffer_free(yymsp[-2].minor.yy43);
-    yymsp[-2].minor.yy43 = NULL;
-    yymsp[0].minor.yy41 = NULL;
+    buffer_free(yymsp[-2].minor.yy87);
+    yymsp[-2].minor.yy87 = NULL;
+    yymsp[0].minor.yy59 = NULL;
   }
 }
-#line 944 "configparser.c"
+#line 955 "configparser.c"
   yy_destructor(3,&yymsp[-1].minor);
         break;
       case 11:
-#line 238 "../../src/configparser.y"
+#line 239 "../../src/configparser.y"
 {
   if (strchr(yymsp[0].minor.yy0->ptr, '.') == NULL) {
-    yygotominor.yy43 = buffer_init_string("var.");
-    buffer_append_string_buffer(yygotominor.yy43, yymsp[0].minor.yy0);
+    yygotominor.yy87 = buffer_init_string("var.");
+    buffer_append_string_buffer(yygotominor.yy87, yymsp[0].minor.yy0);
     buffer_free(yymsp[0].minor.yy0);
     yymsp[0].minor.yy0 = NULL;
   } else {
-    yygotominor.yy43 = yymsp[0].minor.yy0;
+    yygotominor.yy87 = yymsp[0].minor.yy0;
     yymsp[0].minor.yy0 = NULL;
   }
 }
-#line 960 "configparser.c"
+#line 971 "configparser.c"
         break;
       case 12:
-#line 250 "../../src/configparser.y"
+#line 251 "../../src/configparser.y"
 {
-  yygotominor.yy41 = NULL;
+  yygotominor.yy59 = NULL;
   if (ctx->ok) {
-    yygotominor.yy41 = configparser_merge_data(yymsp[-2].minor.yy41, yymsp[0].minor.yy41);
-    if (NULL == yygotominor.yy41) {
+    yygotominor.yy59 = configparser_merge_data(yymsp[-2].minor.yy59, yymsp[0].minor.yy59);
+    if (NULL == yygotominor.yy59) {
       ctx->ok = 0;
     }
-    yymsp[-2].minor.yy41 = NULL;
-    yymsp[0].minor.yy41->free(yymsp[0].minor.yy41);
-    yymsp[0].minor.yy41 = NULL;
+    yymsp[-2].minor.yy59 = NULL;
+    yymsp[0].minor.yy59->free(yymsp[0].minor.yy59);
+    yymsp[0].minor.yy59 = NULL;
   }
 }
-#line 976 "configparser.c"
+#line 987 "configparser.c"
   yy_destructor(5,&yymsp[-1].minor);
         break;
       case 13:
-#line 263 "../../src/configparser.y"
+#line 264 "../../src/configparser.y"
 {
-  yygotominor.yy41 = yymsp[0].minor.yy41;
-  yymsp[0].minor.yy41 = NULL;
+  yygotominor.yy59 = yymsp[0].minor.yy59;
+  yymsp[0].minor.yy59 = NULL;
 }
-#line 985 "configparser.c"
+#line 996 "configparser.c"
         break;
       case 14:
-#line 268 "../../src/configparser.y"
+#line 269 "../../src/configparser.y"
 {
-  yygotominor.yy41 = NULL;
+  yygotominor.yy59 = NULL;
   if (ctx->ok) {
-    if (strncmp(yymsp[0].minor.yy43->ptr, "env.", sizeof("env.") - 1) == 0) {
+    if (strncmp(yymsp[0].minor.yy87->ptr, "env.", sizeof("env.") - 1) == 0) {
       char *env;
 
-      if (NULL != (env = getenv(yymsp[0].minor.yy43->ptr + 4))) {
+      if (NULL != (env = getenv(yymsp[0].minor.yy87->ptr + 4))) {
         data_string *ds;
         ds = data_string_init();
         buffer_append_string(ds->value, env);
-        yygotominor.yy41 = (data_unset *)ds;
+        yygotominor.yy59 = (data_unset *)ds;
       }
       else {
-        fprintf(stderr, "Undefined env variable: %s\n", yymsp[0].minor.yy43->ptr + 4);
+        fprintf(stderr, "Undefined env variable: %s\n", yymsp[0].minor.yy87->ptr + 4);
         ctx->ok = 0;
       }
-    } else if (NULL == (yygotominor.yy41 = configparser_get_variable(ctx, yymsp[0].minor.yy43))) {
-      fprintf(stderr, "Undefined config variable: %s\n", yymsp[0].minor.yy43->ptr);
+    } else if (NULL == (yygotominor.yy59 = configparser_get_variable(ctx, yymsp[0].minor.yy87))) {
+      fprintf(stderr, "Undefined config variable: %s\n", yymsp[0].minor.yy87->ptr);
       ctx->ok = 0;
     }
-    buffer_free(yymsp[0].minor.yy43);
-    yymsp[0].minor.yy43 = NULL;
+    buffer_free(yymsp[0].minor.yy87);
+    yymsp[0].minor.yy87 = NULL;
   }
 }
-#line 1013 "configparser.c"
+#line 1024 "configparser.c"
         break;
       case 15:
-#line 293 "../../src/configparser.y"
+#line 294 "../../src/configparser.y"
 {
-  yygotominor.yy41 = (data_unset *)data_string_init();
-  buffer_copy_buffer(((data_string *)(yygotominor.yy41))->value, yymsp[0].minor.yy0);
+  yygotominor.yy59 = (data_unset *)data_string_init();
+  buffer_copy_buffer(((data_string *)(yygotominor.yy59))->value, yymsp[0].minor.yy0);
   buffer_free(yymsp[0].minor.yy0);
   yymsp[0].minor.yy0 = NULL;
 }
-#line 1023 "configparser.c"
+#line 1034 "configparser.c"
         break;
       case 16:
-#line 300 "../../src/configparser.y"
+#line 301 "../../src/configparser.y"
 {
   char *endptr;
-  yygotominor.yy41 = (data_unset *)data_integer_init();
+  yygotominor.yy59 = (data_unset *)data_integer_init();
   errno = 0;
-  ((data_integer *)(yygotominor.yy41))->value = strtol(yymsp[0].minor.yy0->ptr, &endptr, 10);
+  ((data_integer *)(yygotominor.yy59))->value = strtol(yymsp[0].minor.yy0->ptr, &endptr, 10);
   /* skip trailing whitespace */
   if (endptr != yymsp[0].minor.yy0->ptr) while (isspace(*endptr)) endptr++;
   if (0 != errno || *endptr != '\0') {
@@ -1038,104 +1049,104 @@ static void yy_reduce(
   buffer_free(yymsp[0].minor.yy0);
   yymsp[0].minor.yy0 = NULL;
 }
-#line 1041 "configparser.c"
+#line 1052 "configparser.c"
         break;
       case 17:
-#line 314 "../../src/configparser.y"
+#line 315 "../../src/configparser.y"
 {
-  yygotominor.yy41 = (data_unset *)data_array_init();
-  array_free(((data_array *)(yygotominor.yy41))->value);
-  ((data_array *)(yygotominor.yy41))->value = yymsp[0].minor.yy40;
-  yymsp[0].minor.yy40 = NULL;
+  yygotominor.yy59 = (data_unset *)data_array_init();
+  array_free(((data_array *)(yygotominor.yy59))->value);
+  ((data_array *)(yygotominor.yy59))->value = yymsp[0].minor.yy22;
+  yymsp[0].minor.yy22 = NULL;
 }
-#line 1051 "configparser.c"
+#line 1062 "configparser.c"
         break;
       case 18:
-#line 320 "../../src/configparser.y"
+#line 321 "../../src/configparser.y"
 {
-  yygotominor.yy40 = array_init();
+  yygotominor.yy22 = array_init();
 }
-#line 1058 "configparser.c"
+#line 1069 "configparser.c"
   yy_destructor(8,&yymsp[-1].minor);
   yy_destructor(9,&yymsp[0].minor);
         break;
       case 19:
-#line 323 "../../src/configparser.y"
+#line 324 "../../src/configparser.y"
 {
-  yygotominor.yy40 = yymsp[-1].minor.yy40;
-  yymsp[-1].minor.yy40 = NULL;
+  yygotominor.yy22 = yymsp[-1].minor.yy22;
+  yymsp[-1].minor.yy22 = NULL;
 }
-#line 1068 "configparser.c"
+#line 1079 "configparser.c"
   yy_destructor(8,&yymsp[-2].minor);
   yy_destructor(9,&yymsp[0].minor);
         break;
       case 20:
-#line 328 "../../src/configparser.y"
+#line 329 "../../src/configparser.y"
 {
-  yygotominor.yy40 = NULL;
+  yygotominor.yy22 = NULL;
   if (ctx->ok) {
-    if (buffer_is_empty(yymsp[0].minor.yy41->key) ||
-        NULL == array_get_element(yymsp[-2].minor.yy40, yymsp[0].minor.yy41->key->ptr)) {
-      array_insert_unique(yymsp[-2].minor.yy40, yymsp[0].minor.yy41);
-      yymsp[0].minor.yy41 = NULL;
+    if (buffer_is_empty(yymsp[0].minor.yy59->key) ||
+        NULL == array_get_element(yymsp[-2].minor.yy22, yymsp[0].minor.yy59->key->ptr)) {
+      array_insert_unique(yymsp[-2].minor.yy22, yymsp[0].minor.yy59);
+      yymsp[0].minor.yy59 = NULL;
     } else {
       fprintf(stderr, "Error: duplicate array-key: %s. Please get rid of the duplicate entry.\n",
-              yymsp[0].minor.yy41->key->ptr);
+              yymsp[0].minor.yy59->key->ptr);
       ctx->ok = 0;
-      yymsp[0].minor.yy41->free(yymsp[0].minor.yy41);
-      yymsp[0].minor.yy41 = NULL;
+      yymsp[0].minor.yy59->free(yymsp[0].minor.yy59);
+      yymsp[0].minor.yy59 = NULL;
     }
 
-    yygotominor.yy40 = yymsp[-2].minor.yy40;
-    yymsp[-2].minor.yy40 = NULL;
+    yygotominor.yy22 = yymsp[-2].minor.yy22;
+    yymsp[-2].minor.yy22 = NULL;
   }
 }
-#line 1093 "configparser.c"
+#line 1104 "configparser.c"
   yy_destructor(10,&yymsp[-1].minor);
         break;
       case 21:
-#line 348 "../../src/configparser.y"
+#line 349 "../../src/configparser.y"
 {
-  yygotominor.yy40 = yymsp[-1].minor.yy40;
-  yymsp[-1].minor.yy40 = NULL;
+  yygotominor.yy22 = yymsp[-1].minor.yy22;
+  yymsp[-1].minor.yy22 = NULL;
 }
-#line 1102 "configparser.c"
+#line 1113 "configparser.c"
   yy_destructor(10,&yymsp[0].minor);
         break;
       case 22:
-#line 353 "../../src/configparser.y"
+#line 354 "../../src/configparser.y"
 {
-  yygotominor.yy40 = NULL;
+  yygotominor.yy22 = NULL;
   if (ctx->ok) {
-    yygotominor.yy40 = array_init();
-    array_insert_unique(yygotominor.yy40, yymsp[0].minor.yy41);
-    yymsp[0].minor.yy41 = NULL;
+    yygotominor.yy22 = array_init();
+    array_insert_unique(yygotominor.yy22, yymsp[0].minor.yy59);
+    yymsp[0].minor.yy59 = NULL;
   }
 }
-#line 1115 "configparser.c"
+#line 1126 "configparser.c"
         break;
       case 23:
-#line 362 "../../src/configparser.y"
+#line 363 "../../src/configparser.y"
 {
-  yygotominor.yy41 = yymsp[0].minor.yy41;
-  yymsp[0].minor.yy41 = NULL;
+  yygotominor.yy59 = yymsp[0].minor.yy59;
+  yymsp[0].minor.yy59 = NULL;
 }
-#line 1123 "configparser.c"
+#line 1134 "configparser.c"
         break;
       case 24:
-#line 366 "../../src/configparser.y"
+#line 367 "../../src/configparser.y"
 {
-  yygotominor.yy41 = NULL;
+  yygotominor.yy59 = NULL;
   if (ctx->ok) {
-    buffer_copy_buffer(yymsp[0].minor.yy41->key, yymsp[-2].minor.yy43);
-    buffer_free(yymsp[-2].minor.yy43);
-    yymsp[-2].minor.yy43 = NULL;
+    buffer_copy_buffer(yymsp[0].minor.yy59->key, yymsp[-2].minor.yy87);
+    buffer_free(yymsp[-2].minor.yy87);
+    yymsp[-2].minor.yy87 = NULL;
 
-    yygotominor.yy41 = yymsp[0].minor.yy41;
-    yymsp[0].minor.yy41 = NULL;
+    yygotominor.yy59 = yymsp[0].minor.yy59;
+    yymsp[0].minor.yy59 = NULL;
   }
 }
-#line 1138 "configparser.c"
+#line 1149 "configparser.c"
   yy_destructor(11,&yymsp[-1].minor);
         break;
       case 25:
@@ -1144,61 +1155,130 @@ static void yy_reduce(
       case 26:
         break;
       case 27:
-#line 381 "../../src/configparser.y"
+#line 382 "../../src/configparser.y"
 {
   data_config *dc;
   dc = (data_config *)array_get_element(ctx->srv->config_context, "global");
   force_assert(dc);
   configparser_push(ctx, dc, 0);
 }
-#line 1154 "configparser.c"
+#line 1165 "configparser.c"
   yy_destructor(12,&yymsp[0].minor);
         break;
       case 28:
-#line 388 "../../src/configparser.y"
+#line 389 "../../src/configparser.y"
 {
   force_assert(ctx->current);
   configparser_pop(ctx);
   force_assert(ctx->current);
 }
-#line 1164 "configparser.c"
+#line 1175 "configparser.c"
         /* No destructor defined for globalstart */
   yy_destructor(13,&yymsp[-2].minor);
         /* No destructor defined for metalines */
   yy_destructor(14,&yymsp[0].minor);
         break;
       case 29:
-#line 394 "../../src/configparser.y"
+#line 395 "../../src/configparser.y"
 {
-  yygotominor.yy78 = NULL;
+  yygotominor.yy2 = NULL;
   if (ctx->ok) {
-    if (yymsp[-3].minor.yy78->context_ndx >= yymsp[0].minor.yy78->context_ndx) {
+    if (yymsp[-3].minor.yy2->context_ndx >= yymsp[0].minor.yy2->context_ndx) {
       fprintf(stderr, "unreachable else condition\n");
       ctx->ok = 0;
     }
-    yymsp[0].minor.yy78->prev = yymsp[-3].minor.yy78;
-    yymsp[-3].minor.yy78->next = yymsp[0].minor.yy78;
-    yygotominor.yy78 = yymsp[0].minor.yy78;
-    yymsp[-3].minor.yy78 = NULL;
-    yymsp[0].minor.yy78 = NULL;
+    if (yymsp[-3].minor.yy2->cond == CONFIG_COND_ELSE) {
+      fprintf(stderr, "unreachable condition following else catch-all\n");
+      ctx->ok = 0;
+    }
+    yymsp[0].minor.yy2->prev = yymsp[-3].minor.yy2;
+    yymsp[-3].minor.yy2->next = yymsp[0].minor.yy2;
+    yygotominor.yy2 = yymsp[0].minor.yy2;
+    yymsp[-3].minor.yy2 = NULL;
+    yymsp[0].minor.yy2 = NULL;
   }
 }
-#line 1186 "configparser.c"
+#line 1201 "configparser.c"
         /* No destructor defined for eols */
   yy_destructor(15,&yymsp[-1].minor);
         break;
       case 30:
-#line 409 "../../src/configparser.y"
-{
-  yygotominor.yy78 = yymsp[0].minor.yy78;
-  yymsp[0].minor.yy78 = NULL;
-}
-#line 1196 "configparser.c"
-        break;
-      case 31:
 #line 414 "../../src/configparser.y"
 {
-  yygotominor.yy78 = NULL;
+  yygotominor.yy2 = NULL;
+  if (ctx->ok) {
+    if (yymsp[-3].minor.yy2->context_ndx >= yymsp[0].minor.yy2->context_ndx) {
+      fprintf(stderr, "unreachable else condition\n");
+      ctx->ok = 0;
+    }
+    if (yymsp[-3].minor.yy2->cond == CONFIG_COND_ELSE) {
+      fprintf(stderr, "unreachable condition following else catch-all\n");
+      ctx->ok = 0;
+    }
+  }
+  if (ctx->ok) {
+    size_t pos;
+    data_config *dc;
+    dc = (data_config *)array_extract_element(ctx->all_configs, yymsp[0].minor.yy2->key->ptr);
+    force_assert(yymsp[0].minor.yy2 == dc);
+    buffer_copy_buffer(yymsp[0].minor.yy2->key, yymsp[-3].minor.yy2->key);
+    /*buffer_copy_buffer(yymsp[0].minor.yy2->comp_key, yymsp[-3].minor.yy2->comp_key);*/
+    /*yymsp[0].minor.yy2->string = buffer_init_buffer(yymsp[-3].minor.yy2->string);*/
+    pos = buffer_string_length(yymsp[0].minor.yy2->key)-buffer_string_length(yymsp[-3].minor.yy2->string)-2;
+    switch(yymsp[-3].minor.yy2->cond) {
+    case CONFIG_COND_NE:
+      yymsp[0].minor.yy2->key->ptr[pos] = '='; /* opposite cond */
+      /*buffer_copy_string_len(yymsp[0].minor.yy2->op, CONST_STR_LEN("=="));*/
+      break;
+    case CONFIG_COND_EQ:
+      yymsp[0].minor.yy2->key->ptr[pos] = '!'; /* opposite cond */
+      /*buffer_copy_string_len(yymsp[0].minor.yy2->op, CONST_STR_LEN("!="));*/
+      break;
+    case CONFIG_COND_NOMATCH:
+      yymsp[0].minor.yy2->key->ptr[pos] = '='; /* opposite cond */
+      /*buffer_copy_string_len(yymsp[0].minor.yy2->op, CONST_STR_LEN("=~"));*/
+      break;
+    case CONFIG_COND_MATCH:
+      yymsp[0].minor.yy2->key->ptr[pos] = '!'; /* opposite cond */
+      /*buffer_copy_string_len(yymsp[0].minor.yy2->op, CONST_STR_LEN("!~"));*/
+      break;
+    default: /* should not happen; CONFIG_COND_ELSE checked further above */
+      force_assert(0);
+    }
+
+    if (NULL == (dc = (data_config *)array_get_element(ctx->all_configs, yymsp[0].minor.yy2->key->ptr))) {
+      /* re-insert into ctx->all_configs with new yymsp[0].minor.yy2->key */
+      array_insert_unique(ctx->all_configs, (data_unset *)yymsp[0].minor.yy2);
+      yymsp[0].minor.yy2->prev = yymsp[-3].minor.yy2;
+      yymsp[-3].minor.yy2->next = yymsp[0].minor.yy2;
+    } else {
+      fprintf(stderr, "unreachable else condition\n");
+      ctx->ok = 0;
+      yymsp[0].minor.yy2->free((data_unset *)yymsp[0].minor.yy2);
+      yymsp[0].minor.yy2 = dc;
+    }
+
+    yygotominor.yy2 = yymsp[0].minor.yy2;
+    yymsp[-3].minor.yy2 = NULL;
+    yymsp[0].minor.yy2 = NULL;
+  }
+}
+#line 1266 "configparser.c"
+        /* No destructor defined for eols */
+  yy_destructor(15,&yymsp[-1].minor);
+        break;
+      case 31:
+#line 474 "../../src/configparser.y"
+{
+  yygotominor.yy2 = yymsp[0].minor.yy2;
+  yymsp[0].minor.yy2 = NULL;
+}
+#line 1276 "configparser.c"
+        break;
+      case 32:
+#line 479 "../../src/configparser.y"
+{
+  yygotominor.yy2 = NULL;
   if (ctx->ok) {
     data_config *cur;
 
@@ -1207,28 +1287,49 @@ static void yy_reduce(
 
     force_assert(cur && ctx->current);
 
-    yygotominor.yy78 = cur;
+    yygotominor.yy2 = cur;
   }
 }
-#line 1213 "configparser.c"
+#line 1293 "configparser.c"
         /* No destructor defined for context */
   yy_destructor(13,&yymsp[-2].minor);
         /* No destructor defined for metalines */
   yy_destructor(14,&yymsp[0].minor);
         break;
-      case 32:
-#line 428 "../../src/configparser.y"
+      case 33:
+#line 493 "../../src/configparser.y"
+{
+  yygotominor.yy2 = NULL;
+  if (ctx->ok) {
+    data_config *cur;
+
+    cur = ctx->current;
+    configparser_pop(ctx);
+
+    force_assert(cur && ctx->current);
+
+    yygotominor.yy2 = cur;
+  }
+}
+#line 1314 "configparser.c"
+        /* No destructor defined for context_else */
+  yy_destructor(13,&yymsp[-2].minor);
+        /* No destructor defined for metalines */
+  yy_destructor(14,&yymsp[0].minor);
+        break;
+      case 34:
+#line 507 "../../src/configparser.y"
 {
   data_config *dc;
   buffer *b, *rvalue, *op;
 
-  if (ctx->ok && yymsp[0].minor.yy41->type != TYPE_STRING) {
+  if (ctx->ok && yymsp[0].minor.yy59->type != TYPE_STRING) {
     fprintf(stderr, "rvalue must be string");
     ctx->ok = 0;
   }
 
   if (ctx->ok) {
-    switch(yymsp[-1].minor.yy27) {
+    switch(yymsp[-1].minor.yy75) {
     case CONFIG_COND_NE:
       op = buffer_init_string("!=");
       break;
@@ -1250,9 +1351,9 @@ static void yy_reduce(
     buffer_copy_buffer(b, ctx->current->key);
     buffer_append_string(b, "/");
     buffer_append_string_buffer(b, yymsp[-5].minor.yy0);
-    buffer_append_string_buffer(b, yymsp[-3].minor.yy43);
+    buffer_append_string_buffer(b, yymsp[-3].minor.yy87);
     buffer_append_string_buffer(b, op);
-    rvalue = ((data_string*)yymsp[0].minor.yy41)->value;
+    rvalue = ((data_string*)yymsp[0].minor.yy59)->value;
     buffer_append_string_buffer(b, rvalue);
 
     if (NULL != (dc = (data_config *)array_get_element(ctx->all_configs, b->ptr))) {
@@ -1287,9 +1388,9 @@ static void yy_reduce(
       buffer_copy_buffer(dc->op, op);
       buffer_copy_buffer(dc->comp_key, yymsp[-5].minor.yy0);
       buffer_append_string_len(dc->comp_key, CONST_STR_LEN("[\""));
-      buffer_append_string_buffer(dc->comp_key, yymsp[-3].minor.yy43);
+      buffer_append_string_buffer(dc->comp_key, yymsp[-3].minor.yy87);
       buffer_append_string_len(dc->comp_key, CONST_STR_LEN("\"]"));
-      dc->cond = yymsp[-1].minor.yy27;
+      dc->cond = yymsp[-1].minor.yy75;
 
       for (i = 0; comps[i].comp_key; i ++) {
         if (buffer_is_equal_string(
@@ -1359,7 +1460,7 @@ static void yy_reduce(
         }
       }
 
-      if (ctx->ok) switch(yymsp[-1].minor.yy27) {
+      if (ctx->ok) switch(yymsp[-1].minor.yy75) {
       case CONFIG_COND_NE:
       case CONFIG_COND_EQ:
         dc->string = buffer_init_buffer(rvalue);
@@ -1399,7 +1500,7 @@ static void yy_reduce(
 #else
         fprintf(stderr, "can't handle '$%s[%s] =~ ...' as you compiled without pcre support. \n"
                         "(perhaps just a missing pcre-devel package ?) \n",
-                        yymsp[-5].minor.yy0->ptr, yymsp[-3].minor.yy43->ptr);
+                        yymsp[-5].minor.yy0->ptr, yymsp[-3].minor.yy87->ptr);
         ctx->ok = 0;
  #endif
         break;
@@ -1407,7 +1508,7 @@ static void yy_reduce(
 
       default:
         fprintf(stderr, "unknown condition for $%s[%s]\n",
-                        yymsp[-5].minor.yy0->ptr, yymsp[-3].minor.yy43->ptr);
+                        yymsp[-5].minor.yy0->ptr, yymsp[-3].minor.yy87->ptr);
         ctx->ok = 0;
         break;
       }
@@ -1423,95 +1524,109 @@ static void yy_reduce(
     buffer_free(op);
     buffer_free(yymsp[-5].minor.yy0);
     yymsp[-5].minor.yy0 = NULL;
-    buffer_free(yymsp[-3].minor.yy43);
-    yymsp[-3].minor.yy43 = NULL;
-    yymsp[0].minor.yy41->free(yymsp[0].minor.yy41);
-    yymsp[0].minor.yy41 = NULL;
+    buffer_free(yymsp[-3].minor.yy87);
+    yymsp[-3].minor.yy87 = NULL;
+    yymsp[0].minor.yy59->free(yymsp[0].minor.yy59);
+    yymsp[0].minor.yy59 = NULL;
   }
 }
-#line 1432 "configparser.c"
+#line 1533 "configparser.c"
   yy_destructor(16,&yymsp[-6].minor);
   yy_destructor(18,&yymsp[-4].minor);
   yy_destructor(19,&yymsp[-2].minor);
         break;
-      case 33:
-#line 639 "../../src/configparser.y"
-{
-  yygotominor.yy27 = CONFIG_COND_EQ;
-}
-#line 1442 "configparser.c"
-  yy_destructor(20,&yymsp[0].minor);
-        break;
-      case 34:
-#line 642 "../../src/configparser.y"
-{
-  yygotominor.yy27 = CONFIG_COND_MATCH;
-}
-#line 1450 "configparser.c"
-  yy_destructor(21,&yymsp[0].minor);
-        break;
       case 35:
-#line 645 "../../src/configparser.y"
+#line 719 "../../src/configparser.y"
 {
-  yygotominor.yy27 = CONFIG_COND_NE;
+  if (ctx->ok) {
+    data_config *dc = data_config_init();
+    buffer_copy_buffer(dc->key, ctx->current->key);
+    buffer_append_string_len(dc->key, CONST_STR_LEN("/"));
+    buffer_append_string_len(dc->key, CONST_STR_LEN("else_tmp_token"));
+    dc->cond = CONFIG_COND_ELSE;
+    configparser_push(ctx, dc, 1);
+  }
 }
-#line 1458 "configparser.c"
-  yy_destructor(22,&yymsp[0].minor);
+#line 1550 "configparser.c"
         break;
       case 36:
-#line 648 "../../src/configparser.y"
+#line 730 "../../src/configparser.y"
 {
-  yygotominor.yy27 = CONFIG_COND_NOMATCH;
+  yygotominor.yy75 = CONFIG_COND_EQ;
 }
-#line 1466 "configparser.c"
-  yy_destructor(23,&yymsp[0].minor);
+#line 1557 "configparser.c"
+  yy_destructor(20,&yymsp[0].minor);
         break;
       case 37:
-#line 652 "../../src/configparser.y"
+#line 733 "../../src/configparser.y"
 {
-  yygotominor.yy43 = NULL;
+  yygotominor.yy75 = CONFIG_COND_MATCH;
+}
+#line 1565 "configparser.c"
+  yy_destructor(21,&yymsp[0].minor);
+        break;
+      case 38:
+#line 736 "../../src/configparser.y"
+{
+  yygotominor.yy75 = CONFIG_COND_NE;
+}
+#line 1573 "configparser.c"
+  yy_destructor(22,&yymsp[0].minor);
+        break;
+      case 39:
+#line 739 "../../src/configparser.y"
+{
+  yygotominor.yy75 = CONFIG_COND_NOMATCH;
+}
+#line 1581 "configparser.c"
+  yy_destructor(23,&yymsp[0].minor);
+        break;
+      case 40:
+#line 743 "../../src/configparser.y"
+{
+  yygotominor.yy87 = NULL;
   if (ctx->ok) {
-    if (yymsp[0].minor.yy41->type == TYPE_STRING) {
-      yygotominor.yy43 = buffer_init_buffer(((data_string*)yymsp[0].minor.yy41)->value);
-    } else if (yymsp[0].minor.yy41->type == TYPE_INTEGER) {
-      yygotominor.yy43 = buffer_init();
-      buffer_copy_int(yygotominor.yy43, ((data_integer *)yymsp[0].minor.yy41)->value);
+    if (yymsp[0].minor.yy59->type == TYPE_STRING) {
+      yygotominor.yy87 = buffer_init_buffer(((data_string*)yymsp[0].minor.yy59)->value);
+    } else if (yymsp[0].minor.yy59->type == TYPE_INTEGER) {
+      yygotominor.yy87 = buffer_init();
+      buffer_copy_int(yygotominor.yy87, ((data_integer *)yymsp[0].minor.yy59)->value);
     } else {
       fprintf(stderr, "operand must be string");
       ctx->ok = 0;
     }
   }
-  yymsp[0].minor.yy41->free(yymsp[0].minor.yy41);
-  yymsp[0].minor.yy41 = NULL;
+  yymsp[0].minor.yy59->free(yymsp[0].minor.yy59);
+  yymsp[0].minor.yy59 = NULL;
 }
-#line 1487 "configparser.c"
+#line 1602 "configparser.c"
         break;
-      case 38:
-#line 669 "../../src/configparser.y"
+      case 41:
+#line 760 "../../src/configparser.y"
 {
   if (ctx->ok) {
-    if (0 != config_parse_file(ctx->srv, ctx, yymsp[0].minor.yy43->ptr)) {
+    if (0 != config_parse_file(ctx->srv, ctx, yymsp[0].minor.yy87->ptr)) {
       ctx->ok = 0;
     }
-    buffer_free(yymsp[0].minor.yy43);
-    yymsp[0].minor.yy43 = NULL;
+    buffer_free(yymsp[0].minor.yy87);
+    yymsp[0].minor.yy87 = NULL;
   }
 }
-#line 1500 "configparser.c"
+#line 1615 "configparser.c"
   yy_destructor(24,&yymsp[-1].minor);
         break;
-      case 39:
-#line 679 "../../src/configparser.y"
+      case 42:
+#line 770 "../../src/configparser.y"
 {
   if (ctx->ok) {
-    if (0 != config_parse_cmd(ctx->srv, ctx, yymsp[0].minor.yy43->ptr)) {
+    if (0 != config_parse_cmd(ctx->srv, ctx, yymsp[0].minor.yy87->ptr)) {
       ctx->ok = 0;
     }
-    buffer_free(yymsp[0].minor.yy43);
-    yymsp[0].minor.yy43 = NULL;
+    buffer_free(yymsp[0].minor.yy87);
+    yymsp[0].minor.yy87 = NULL;
   }
 }
-#line 1514 "configparser.c"
+#line 1629 "configparser.c"
   yy_destructor(25,&yymsp[-1].minor);
         break;
   };
@@ -1545,7 +1660,7 @@ static void yy_parse_failed(
 
   ctx->ok = 0;
 
-#line 1548 "configparser.c"
+#line 1663 "configparser.c"
   configparserARG_STORE; /* Suppress warning about unused %extra_argument variable */
 }
 

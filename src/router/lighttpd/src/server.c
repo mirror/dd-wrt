@@ -5,6 +5,7 @@
 #include "network.h"
 #include "log.h"
 #include "keyvalue.h"
+#include "rand.h"
 #include "response.h"
 #include "request.h"
 #include "chunk.h"
@@ -202,8 +203,6 @@ static int daemonize(void) {
 
 static server *server_init(void) {
 	int i;
-	FILE *frandom = NULL;
-
 	server *srv = calloc(1, sizeof(*srv));
 	force_assert(srv);
 #define CLEAN(x) \
@@ -244,20 +243,8 @@ static server *server_init(void) {
 		srv->mtime_cache[i].str = buffer_init();
 	}
 
-	if ((NULL != (frandom = fopen("/dev/urandom", "rb")) || NULL != (frandom = fopen("/dev/random", "rb")))
-	            && 1 == fread(srv->entropy, sizeof(srv->entropy), 1, frandom)) {
-		unsigned int e;
-		memcpy(&e, srv->entropy, sizeof(e) < sizeof(srv->entropy) ? sizeof(e) : sizeof(srv->entropy));
-		srand(e);
-		srv->is_real_entropy = 1;
-	} else {
-		unsigned int j;
-		srand(time(NULL) ^ getpid());
-		srv->is_real_entropy = 0;
-		for (j = 0; j < sizeof(srv->entropy); j++)
-			srv->entropy[j] = rand();
-	}
-	if (frandom) fclose(frandom);
+	li_rand_reseed();
+	li_rand_bytes((unsigned char *)srv->entropy, (int)sizeof(srv->entropy));
 
 	srv->cur_ts = time(NULL);
 	srv->startup_ts = srv->cur_ts;
@@ -281,6 +268,10 @@ static server *server_init(void) {
 	srv->srvconf.http_host_strict    = 1; /*(implies http_host_normalize)*/
 	srv->srvconf.http_host_normalize = 0;
 	srv->srvconf.high_precision_timestamps = 0;
+	srv->srvconf.max_request_field_size = 8192;
+	srv->srvconf.loadavg[0] = 0.0;
+	srv->srvconf.loadavg[1] = 0.0;
+	srv->srvconf.loadavg[2] = 0.0;
 
 	/* use syslog */
 	srv->errorlog_fd = STDERR_FILENO;
@@ -403,6 +394,7 @@ static void server_free(server *srv) {
 		EVP_cleanup();
 	}
 #endif
+	li_rand_cleanup();
 
 	free(srv);
 }
@@ -663,9 +655,14 @@ static void show_features (void) {
       "\t- PCRE support\n"
 #endif
 #ifdef HAVE_MYSQL
-      "\t+ mySQL support\n"
+      "\t+ MySQL support\n"
 #else
-      "\t- mySQL support\n"
+      "\t- MySQL support\n"
+#endif
+#ifdef HAVE_KRB5
+      "\t+ Kerberos support\n"
+#else
+      "\t- Kerberos support\n"
 #endif
 #if defined(HAVE_LDAP_H) && defined(HAVE_LBER_H) && defined(HAVE_LIBLDAP) && defined(HAVE_LIBLBER)
       "\t+ LDAP support\n"
@@ -926,7 +923,7 @@ int main (int argc, char **argv) {
 
 	/* open pid file BEFORE chroot */
 	if (!buffer_string_is_empty(srv->srvconf.pid_file)) {
-		if (-1 == (pid_fd = open(srv->srvconf.pid_file->ptr, O_WRONLY | O_CREAT | O_EXCL | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH))) {
+		if (-1 == (pid_fd = fdevent_open_cloexec(srv->srvconf.pid_file->ptr, O_WRONLY | O_CREAT | O_EXCL | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH))) {
 			struct stat st;
 			if (errno != EEXIST) {
 				log_error_write(srv, __FILE__, __LINE__, "sbs",
@@ -951,7 +948,6 @@ int main (int argc, char **argv) {
 				return -1;
 			}
 		}
-		fd_close_on_exec(pid_fd);
 	}
 
 	if (srv->event_handler == FDEVENT_HANDLER_SELECT) {
@@ -1436,6 +1432,8 @@ int main (int argc, char **argv) {
 			pid_fd = -1;
 		}
 		buffer_reset(srv->srvconf.pid_file);
+
+		li_rand_reseed();
 	}
 #endif
 
@@ -1484,6 +1482,7 @@ int main (int argc, char **argv) {
 		FAMNoExists(&srv->stat_cache->fam);
 #endif
 
+		fd_close_on_exec(FAMCONNECTION_GETFD(&srv->stat_cache->fam));
 		fdevent_register(srv->ev, FAMCONNECTION_GETFD(&srv->stat_cache->fam), stat_cache_handle_fdevent, NULL);
 		fdevent_event_set(srv->ev, &(srv->stat_cache->fam_fcce_ndx), FAMCONNECTION_GETFD(&srv->stat_cache->fam), FDEVENT_IN);
 	}
@@ -1497,7 +1496,7 @@ int main (int argc, char **argv) {
 	for (i = 0; i < srv->srv_sockets.used; i++) {
 		server_socket *srv_socket = srv->srv_sockets.ptr[i];
 		if (srv->sockets_disabled) continue; /* lighttpd -1 (one-shot mode) */
-		if (-1 == fdevent_fcntl_set(srv->ev, srv_socket->fd)) {
+		if (-1 == fdevent_fcntl_set_nb_cloexec_sock(srv->ev, srv_socket->fd)) {
 			log_error_write(srv, __FILE__, __LINE__, "ss", "fcntl failed:", strerror(errno));
 			return -1;
 		}
@@ -1586,6 +1585,15 @@ int main (int argc, char **argv) {
 							"s exceeded, initiating graceful shutdown");
 					graceful_shutdown = 2; /* value 2 indicates idle timeout */
 				}
+
+			      #ifdef HAVE_GETLOADAVG
+				/* refresh loadavg data every 30 seconds */
+				if (srv->srvconf.loadts + 30 < min_ts) {
+					if (-1 != getloadavg(srv->srvconf.loadavg, 3)) {
+						srv->srvconf.loadts = min_ts;
+					}
+				}
+			      #endif
 
 				/* cleanup stat-cache */
 				stat_cache_trigger_cleanup(srv);
@@ -1792,8 +1800,11 @@ int main (int argc, char **argv) {
 				fd      = fdevent_event_get_fd     (srv->ev, fd_ndx);
 				handler = fdevent_get_handler(srv->ev, fd);
 				context = fdevent_get_context(srv->ev, fd);
-				(*handler)(srv, context, revents);
+				if (NULL != handler) {
+					(*handler)(srv, context, revents);
+				}
 			} while (--n > 0);
+			fdevent_sched_run(srv, srv->ev);
 		} else if (n < 0 && errno != EINTR) {
 			log_error_write(srv, __FILE__, __LINE__, "ss",
 					"fdevent_poll failed:",

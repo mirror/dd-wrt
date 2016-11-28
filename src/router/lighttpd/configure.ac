@@ -1,7 +1,7 @@
 dnl                                               -*- Autoconf -*-
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.57)
-AC_INIT([lighttpd], [1.4.41], [contact@lighttpd.net])
+AC_INIT([lighttpd], [1.4.43], [contact@lighttpd.net])
 AC_CONFIG_SRCDIR([src/server.c])
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_MACRO_DIR([m4])
@@ -62,6 +62,7 @@ AC_DEFUN([TRY_LDFLAGS],
 
 dnl Checks for programs.
 AC_PROG_CC
+AX_PROG_CC_FOR_BUILD
 AM_PROG_CC_C_O
 AC_PROG_LD
 AC_PROG_INSTALL
@@ -177,6 +178,7 @@ fi
 
 AC_SUBST(LIBEV_CFLAGS)
 AC_SUBST(LIBEV_LIBS)
+AC_MSG_RESULT([$WITH_LIBEV])
 
 dnl Checks for database.
 MYSQL_INCLUDE=""
@@ -224,6 +226,7 @@ dnl check for errmsg.h, which isn't installed by some versions of 3.21
 else
   AC_MSG_RESULT(no)
 fi
+AM_CONDITIONAL(BUILD_WITH_MYSQL, test ! $WITH_MYSQL = no)
 
 AC_SUBST(MYSQL_LIBS)
 AC_SUBST(MYSQL_INCLUDE)
@@ -252,6 +255,7 @@ if test "$WITH_LDAP" != "no"; then
  ])
  AC_SUBST(LBER_LIB)
 fi
+AM_CONDITIONAL(BUILD_WITH_LDAP, test ! $WITH_LDAP = no)
 
 dnl Check for xattr
 AC_MSG_CHECKING(for extended attributes support)
@@ -281,7 +285,6 @@ fi
 dnl openssl on solaris needs -lsocket -lnsl
 AC_SEARCH_LIBS(socket,socket)
 AC_SEARCH_LIBS(gethostbyname,nsl socket)
-AC_SEARCH_LIBS(hstrerror,resolv)
 
 dnl On Haiku accept() and friends are in libnetwork
 AC_SEARCH_LIBS(accept,network)
@@ -322,6 +325,47 @@ if test "$WITH_LIBUNWIND" != "no"; then
   PKG_CHECK_MODULES(LIBUNWIND, libunwind)
   AC_DEFINE(HAVE_LIBUNWIND, 1, [Have libunwind support])
 fi
+AC_MSG_RESULT([$WITH_LIBUNWIND])
+
+dnl Checking for kerberos5
+AC_MSG_CHECKING(for kerberos5)
+AC_ARG_WITH(krb5,
+	AC_HELP_STRING([--with-krb5@<:@=DIR@:>@],[Use Kerberos 5]),
+	[WITH_KRB5=$withval],[WITH_KRB5=no])
+if test "$WITH_KRB5" != "no"; then
+	use_krb5=yes
+	if test "x$WITH_KRB5" != "xyes"; then
+		CPPFLAGS="$CPPFLAGS -I$WITH_KRB5/include"
+		LDFLAGS="$LDFLAGS -L$WITH_KRB5/lib"
+	fi
+else
+	use_krb5=no
+fi
+AC_MSG_RESULT([$use_krb5])
+AM_CONDITIONAL(BUILD_WITH_KRB5, test ! $WITH_KRB5 = no)
+
+AC_ARG_WITH(krb5-includes,
+	AC_HELP_STRING([--with-krb5-includes=DIR],[Kerberos includes]),
+	[ use_krb5=yes CPPFLAGS="$CPPFLAGS -I$withval" ]
+)
+
+AC_ARG_WITH(krb5-libs,
+	AC_HELP_STRING([--with-krb5-libs=DIR],[Kerberos libraries]),
+	[ use_krb5=yes LDFLAGS="$LDFLAGS -L$withval" ]
+)
+
+if test "x$use_krb5" = "xyes"; then
+	AC_CHECK_LIB(gssapi_krb5, gss_acquire_cred, [
+		AC_CHECK_HEADERS([gssapi/gssapi_krb5.h],[
+			KRB5_LIB="-lkrb5 -lgssapi_krb5"
+			AC_DEFINE(HAVE_KRB5, [1], [libgssapi_krb5])
+		])
+	])
+	if test "x$KRB5_LIB" = x; then
+		AC_MSG_ERROR([gssapi_krb5 headers and/or libs where not found, install them or build with --without-krb5])
+	fi
+fi
+AC_SUBST(KRB5_LIB)
 
 dnl Check for openssl
 AC_MSG_CHECKING(for OpenSSL)
@@ -350,13 +394,8 @@ AC_ARG_WITH(openssl-libs,
     [ use_openssl=yes LDFLAGS="$LDFLAGS -L$withval" ]
 )
 
-AC_ARG_WITH(kerberos5,
-    AC_HELP_STRING([--with-kerberos5],[use Kerberos5 support with OpenSSL]),
-    [ use_kerberos=yes ], [use_kerberos=no]
-)
-
 if test "x$use_openssl" = "xyes"; then
-    if test "x$use_kerberos" = "xyes"; then
+    if test "x$use_krb5" = "xyes"; then
         AC_DEFINE([USE_OPENSSL_KERBEROS], [1], [with kerberos])
     fi
 
@@ -589,6 +628,33 @@ if test "$WITH_GDBM" != "no"; then
     AC_MSG_ERROR([gdbm headers and/or libs were not found, install them or build with --without-gdbm])
   fi
 fi
+AM_CONDITIONAL(BUILD_WITH_GDBM, test ! $WITH_GDBM = no)
+
+dnl Check for GeoIP
+AC_MSG_CHECKING(for GeoIP)
+AC_ARG_WITH(geoip, AC_HELP_STRING([--with-geoip],[IP-based geolocation lookup]),
+[WITH_GEOIP=$withval],[WITH_GEOIP=no])
+AC_MSG_RESULT([$WITH_GEOIP])
+
+if test "$WITH_GEOIP" != "no"; then
+		if test "$WITH_GEOIP" != "yes"; then
+			GEOIP_LIB="-L$WITH_GEOIP -lGeoIP"
+			CPPFLAGS="$CPPFLAGS -I$WITH_GEOIP"
+		else
+			AC_CHECK_LIB(GeoIP, GeoIP_country_name_by_addr, [
+			  AC_CHECK_HEADERS([GeoIP.h],[GEOIP_LIB=-lGeoIP])
+			])
+		fi
+
+  if test x"$GEOIP_LIB" != x; then
+    AC_DEFINE([HAVE_GEOIP], [1], [libGeoIP])
+    AC_DEFINE([HAVE_GEOIP_H], [1])
+    AC_SUBST(GEOIP_LIB)
+  else
+    AC_MSG_ERROR([GeoIP headers and/or libs were not found, install them or build with --without-geoip])
+  fi
+fi
+AM_CONDITIONAL(BUILD_WITH_GEOIP, test ! $WITH_GEOIP = no)
 
 dnl Check for memcached
 AC_MSG_CHECKING(for memcached)
@@ -615,6 +681,9 @@ if test "$WITH_MEMCACHED" != "no"; then
     AC_MSG_ERROR([memcached headers and/or libs were not found, install them or build with --without-memcached])
   fi
 fi
+AM_CONDITIONAL(BUILD_WITH_MEMCACHED, test ! $WITH_MEMCACHED = no)
+
+AM_CONDITIONAL(BUILD_MOD_TRIGGER_B4_DL, test ! $WITH_MEMCACHED = no || test ! $WITH_GDBM = no)
 
 dnl Check for lua
 AC_MSG_CHECKING(if lua-support is requested)
@@ -658,6 +727,7 @@ if test "$WITH_LUA" != "no"; then
     AC_MSG_ERROR([lua headers and/or libs were not found, install them or build with --without-lua])
   fi
 fi
+AM_CONDITIONAL(BUILD_WITH_LUA, test ! $WITH_LUA = no)
 
 dnl search for crypt_r and (fallback) for crypt
 save_LIBS=$LIBS
@@ -702,7 +772,11 @@ AC_CHECK_FUNCS([dup2 getcwd inet_ntoa inet_ntop inet_pton issetugid memset mmap 
 		  gethostbyname poll epoll_ctl getrlimit chroot \
 		  getuid select signal pathconf madvise posix_fadvise posix_madvise \
 		  writev sigaction sendfile64 send_file kqueue port_create localtime_r gmtime_r \
-		  memset_s explicit_bzero clock_gettime])
+		  memset_s explicit_bzero clock_gettime \
+		  getentropy arc4random jrand48 srandom getloadavg])
+AC_CHECK_HEADERS([linux/random.h],[
+  AC_CHECK_FUNC([getrandom], AC_DEFINE([HAVE_GETRANDOM], [1], [getrandom]))
+])
 
 AC_MSG_CHECKING(if weak symbols are supported)
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[
@@ -788,9 +862,6 @@ if test x$mmap = xtrue; then
   AC_DEFINE(ENABLE_MMAP, [1], [Use mmap if available])
 fi
 
-
-AM_CONDITIONAL(CROSS_COMPILING, test "x$cross_compiling" = xyes)
-
 dnl check for fastcgi lib, for the tests only
 fastcgi_found=no
 AC_CHECK_LIB(fcgi, FCGI_Accept, [
@@ -845,10 +916,10 @@ AC_CONFIG_FILES([Makefile src/Makefile
 AC_OUTPUT
 
 
-do_build="mod_cgi mod_fastcgi mod_extforward mod_proxy mod_evhost mod_simple_vhost mod_access mod_alias mod_setenv mod_usertrack mod_auth mod_status mod_accesslog"
-do_build="$do_build mod_rrdtool mod_secdownload mod_expire mod_compress mod_dirlisting mod_indexfile mod_userdir mod_webdav mod_staticfile mod_scgi mod_flv_streaming mod_ssi"
+do_build="mod_cgi mod_fastcgi mod_extforward mod_proxy mod_evhost mod_simple_vhost mod_access mod_alias mod_setenv mod_usertrack mod_auth mod_authn_file mod_status mod_accesslog"
+do_build="$do_build mod_rrdtool mod_secdownload mod_expire mod_compress mod_dirlisting mod_indexfile mod_userdir mod_webdav mod_staticfile mod_scgi mod_flv_streaming mod_ssi mod_deflate"
 
-plugins="mod_rewrite mod_redirect mod_trigger_b4_dl"
+plugins="mod_rewrite mod_redirect"
 features="regex-conditionals"
 if test ! "x$PCRE_LIB" = x; then
 	do_build="$do_build $plugins"
@@ -858,7 +929,16 @@ else
 	disable_feature="$features"
 fi
 
-plugins="mod_mysql_vhost"
+plugins="mod_trigger_b4_dl"
+if test ! "x$PCRE_LIB" = x; then
+if test ! "x$WITH_MEMCACHED" = xno || test ! "x$WITH_GDBM" = xno; then
+	do_build="$do_build $plugins"
+else
+	no_build="$no_build $plugins"
+fi
+fi
+
+plugins="mod_authn_mysql mod_mysql_vhost"
 if test ! "x$MYSQL_LIBS" = x; then
 	do_build="$do_build $plugins"
 else
@@ -867,6 +947,13 @@ fi
 
 plugins="mod_cml mod_magnet"
 if test ! "x$LUA_LIBS" = x; then
+	do_build="$do_build $plugins"
+else
+	no_build="$no_build $plugins"
+fi
+
+plugins="mod_geoip"
+if test ! "x$GEOIP_LIB" = x; then
 	do_build="$do_build $plugins"
 else
 	no_build="$no_build $plugins"
@@ -900,11 +987,18 @@ else
 	disable_feature="$disable_feature $features"
 fi
 
-features="auth-ldap"
-if test ! "x$LDAP_LIB" = x; then
-	enable_feature="$enable_feature $features"
+plugins="mod_authn_gssapi"
+if test ! "x$KRB5_LIB" = x; then
+	do_build="$do_build $plugins"
 else
-	disable_feature="$disable_feature $features"
+	no_build="$no_build $plugins"
+fi
+
+plugins="mod_authn_ldap"
+if test ! "x$LDAP_LIB" = x; then
+	do_build="$do_build $plugins"
+else
+	no_build="$no_build $plugins"
 fi
 
 features="network-openssl"

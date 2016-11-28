@@ -7,7 +7,7 @@ BEGIN {
 }
 
 use strict;
-use Test::More tests => 58;
+use Test::More tests => 60;
 use LightyTest;
 
 my $tf = LightyTest->new();
@@ -264,7 +264,7 @@ SKIP: {
 }
 
 SKIP: {
-	skip "no fcgi-auth found", 5 unless -x $tf->{BASEDIR}."/tests/fcgi-auth" || -x $tf->{BASEDIR}."/tests/fcgi-auth.exe"; 
+	skip "no fcgi-auth found", 7 unless -x $tf->{BASEDIR}."/tests/fcgi-auth" || -x $tf->{BASEDIR}."/tests/fcgi-auth.exe";
 
 	$tf->{CONFIGFILE} = 'fastcgi-auth.conf';
 	ok($tf->start_proc == 0, "Starting lighttpd with $tf->{CONFIGFILE}") or die();
@@ -291,6 +291,23 @@ EOF
  );
 	$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 200 } ];
 	ok($tf->handle_http($t) == 0, 'FastCGI - Auth in subdirectory');
+
+	$t->{REQUEST}  = ( <<EOF
+GET /index.fcgi?varfail HTTP/1.0
+Host: www.example.org
+EOF
+ );
+	$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 403 } ];
+	ok($tf->handle_http($t) == 0, 'FastCGI - Auth Fail with FastCGI responder afterwards');
+
+	$t->{REQUEST}  = ( <<EOF
+GET /index.fcgi?var HTTP/1.0
+Host: www.example.org
+EOF
+ );
+	$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 200, 'HTTP-Content' => 'LighttpdTestContent' } ];
+	ok($tf->handle_http($t) == 0, 'FastCGI - Auth Success with Variable- to Env expansion');
+
 
 	ok($tf->stop_proc == 0, "Stopping lighttpd");
 }
