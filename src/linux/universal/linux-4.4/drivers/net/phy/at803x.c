@@ -55,6 +55,7 @@
 #define AT803X_PHY_ID_MASK			0xffffffef
 #define ATH8030_PHY_ID				0x004dd076
 #define ATH8031_PHY_ID				0x004dd074
+#define ATH8032_PHY_ID				0x004dd023
 #define ATH8035_PHY_ID				0x004dd072
 
 MODULE_DESCRIPTION("Atheros 803x PHY driver");
@@ -241,6 +242,7 @@ static int at803x_resume(struct phy_device *phydev)
 
 static int at803x_probe(struct phy_device *phydev)
 {
+	struct at803x_platform_data *pdata;
 	struct device *dev = &phydev->dev;
 	struct at803x_priv *priv;
 	struct gpio_desc *gpiod_reset;
@@ -249,12 +251,23 @@ static int at803x_probe(struct phy_device *phydev)
 	if (!priv)
 		return -ENOMEM;
 
-	gpiod_reset = devm_gpiod_get_optional(dev, "reset", GPIOD_OUT_HIGH);
+	if (phydev->drv->phy_id != ATH8030_PHY_ID &&
+	    phydev->drv->phy_id != ATH8032_PHY_ID)
+		goto does_not_require_reset_workaround;
+
+	pdata = dev_get_platdata(&phydev->dev);
+	if (pdata && pdata->has_reset_gpio) {
+		devm_gpio_request(dev, pdata->reset_gpio, "reset");
+		gpio_direction_output(pdata->reset_gpio, 1);
+	}
+
+	gpiod_reset = devm_gpiod_get_optional(dev, "reset", GPIOD_OUT_LOW);
 	if (IS_ERR(gpiod_reset))
 		return PTR_ERR(gpiod_reset);
 
 	priv->gpiod_reset = gpiod_reset;
 
+does_not_require_reset_workaround:
 	phydev->priv = priv;
 
 	return 0;
@@ -367,27 +380,33 @@ static void at803x_link_change_notify(struct phy_device *phydev)
 	 * in the FIFO. In such cases, the FIFO enters an error mode it
 	 * cannot recover from by software.
 	 */
-	if (phydev->drv->phy_id == ATH8030_PHY_ID) {
-		if (phydev->state == PHY_NOLINK) {
-			if (priv->gpiod_reset && !priv->phy_reset) {
-				struct at803x_context context;
+	if (phydev->state == PHY_NOLINK) {
+		if ((priv->gpiod_reset || pdata->has_reset_gpio) &&
+		    !priv->phy_reset) {
+			struct at803x_context context;
 
-				at803x_context_save(phydev, &context);
+			at803x_context_save(phydev, &context);
 
-				gpiod_set_value(priv->gpiod_reset, 0);
+			if (pdata->has_reset_gpio) {
+				gpio_set_value_cansleep(pdata->reset_gpio, 0);
 				msleep(1);
+				gpio_set_value_cansleep(pdata->reset_gpio, 1);
+				msleep(1);
+			} else {
 				gpiod_set_value(priv->gpiod_reset, 1);
 				msleep(1);
-
-				at803x_context_restore(phydev, &context);
-
-				dev_dbg(&phydev->dev, "%s(): phy was reset\n",
-					__func__);
-				priv->phy_reset = true;
+				gpiod_set_value(priv->gpiod_reset, 0);
+				msleep(1);
 			}
-		} else {
-			priv->phy_reset = false;
+
+			at803x_context_restore(phydev, &context);
+
+			dev_dbg(&phydev->dev, "%s(): phy was reset\n",
+				__func__);
+			priv->phy_reset = true;
 		}
+	} else {
+		priv->phy_reset = false;
 	}
 }
 
@@ -420,7 +439,6 @@ static struct phy_driver at803x_driver[] = {
 	.phy_id_mask		= AT803X_PHY_ID_MASK,
 	.probe			= at803x_probe,
 	.config_init		= at803x_config_init,
-	.link_change_notify	= at803x_link_change_notify,
 	.set_wol		= at803x_set_wol,
 	.get_wol		= at803x_get_wol,
 	.suspend		= at803x_suspend,
@@ -438,6 +456,26 @@ static struct phy_driver at803x_driver[] = {
 	/* ATHEROS 8031 */
 	.phy_id			= ATH8031_PHY_ID,
 	.name			= "Atheros 8031/8033 ethernet",
+	.phy_id_mask		= AT803X_PHY_ID_MASK,
+	.probe			= at803x_probe,
+	.config_init		= at803x_config_init,
+	.set_wol		= at803x_set_wol,
+	.get_wol		= at803x_get_wol,
+	.suspend		= at803x_suspend,
+	.resume			= at803x_resume,
+	.features		= PHY_GBIT_FEATURES,
+	.flags			= PHY_HAS_INTERRUPT,
+	.config_aneg		= genphy_config_aneg,
+	.read_status		= genphy_read_status,
+	.ack_interrupt		= &at803x_ack_interrupt,
+	.config_intr		= &at803x_config_intr,
+	.driver			= {
+		.owner = THIS_MODULE,
+	},
+}, {
+	/* ATHEROS 8032 */
+	.phy_id			= ATH8032_PHY_ID,
+	.name			= "Atheros 8032 ethernet",
 	.phy_id_mask		= AT803X_PHY_ID_MASK,
 	.probe			= at803x_probe,
 	.config_init		= at803x_config_init,
@@ -462,6 +500,7 @@ module_phy_driver(at803x_driver);
 static struct mdio_device_id __maybe_unused atheros_tbl[] = {
 	{ ATH8030_PHY_ID, AT803X_PHY_ID_MASK },
 	{ ATH8031_PHY_ID, AT803X_PHY_ID_MASK },
+	{ ATH8032_PHY_ID, AT803X_PHY_ID_MASK },
 	{ ATH8035_PHY_ID, AT803X_PHY_ID_MASK },
 	{ }
 };
