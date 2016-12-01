@@ -466,6 +466,20 @@ static struct mdio_board_info cf_e380ac_mdio0_info[] = {
 	},
 };
 
+
+static struct at803x_platform_data ubnt_loco_m_xw_at803x_data = {
+	.has_reset_gpio = 1,
+	.reset_gpio = 0,
+};
+
+static struct mdio_board_info ubnt_loco_m_xw_mdio_info[] = {
+	{
+		.bus_id = "ag71xx-mdio.0",
+		.phy_addr = 1,
+		.platform_data = &ubnt_loco_m_xw_at803x_data,
+	},
+};
+
 static void __init ap136_gmac_setup(u32 mask)
 {
 	void __iomem *base;
@@ -1414,6 +1428,8 @@ int __init ar7240_platform_init(void)
 	ar71xx_add_device_eth(0);
     #elif CONFIG_UBNTXW
 	#ifdef CONFIG_XWLOCO
+	mdiobus_register_board_info(ubnt_loco_m_xw_mdio_info,
+				    ARRAY_SIZE(ubnt_loco_m_xw_mdio_info));
 	ar71xx_add_device_mdio(0, ~BIT(1));
 	ar71xx_eth0_data.phy_mask = BIT(1);	
 	#else
