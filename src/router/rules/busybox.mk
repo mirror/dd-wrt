@@ -390,6 +390,8 @@ endif
 	echo "CONFIG_SHA3_SMALL=1" >> busybox/.config
 
 ifeq ($(CONFIG_SMP),y)
+	sed -i 's/\# CONFIG_TASKSET is not set//g' busybox/.config
+	sed -i 's/\# CONFIG_FEATURE_TASKSET_FANCY is not set//g' busybox/.config
 	echo "CONFIG_TASKSET=y" >> busybox/.config
 	echo "CONFIG_FEATURE_TASKSET_FANCY=y" >> busybox/.config
 else
