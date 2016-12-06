@@ -1207,11 +1207,14 @@ void start_restore_defaults(void)
 		{"wan_default", "vlan2"},
 		{0, 0}
 	};
+	
 
 	struct nvram_param *generic = NULL;
 
 	int wrt_brand = getRouterBrand();
 	if (wrt_brand == ROUTER_LINKSYS_EA8500)
+		generic = ea8500;
+	else if (wrt_brand == ROUTER_NETGEAR_R7800)
 		generic = ea8500;
 	else
 		generic = ipq806x;
@@ -3035,12 +3038,12 @@ void start_drivers(void)
 #ifdef HAVE_NTFS3G
 		rmmod("fuse");
 #endif
-
 		led_control(USB_POWER, LED_OFF);
 		led_control(USB_POWER1, LED_OFF);
 
 		led_control(LED_USB, LED_OFF);
 		led_control(LED_USB1, LED_OFF);
+
 	}
 #endif
 #ifdef HAVE_MVEBU
