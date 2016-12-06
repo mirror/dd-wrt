@@ -1011,7 +1011,7 @@ void start_lan(void)
 		}
 		strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
 		break;
-//      case ROUTER_NETGEAR_R7800:
+	case ROUTER_NETGEAR_R7800:
 	case ROUTER_LINKSYS_EA8500:
 		if (getSTA() || getWET() || CANBRIDGE()) {
 			nvram_setz(lan_ifnames, "vlan1 vlan2 ath0 ath1");
@@ -3080,10 +3080,16 @@ void start_wan(int status)
 		pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname", "") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
 #elif HAVE_IPQ806X
 	char *pppoe_wan_ifname;
-	if (getRouterBrand() == ROUTER_LINKSYS_EA8500)
+	int board = getRouterBrand();
+	switch (board) {
+	case ROUTER_LINKSYS_EA8500:
+	case ROUTER_NETGEAR_R7800: 
 		pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname", "") ? nvram_safe_get("pppoe_wan_ifname") : "vlan2";
-	else
+		break;
+	default:
 		pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname", "") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
+		break;
+	}
 #elif HAVE_WDR4900
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
 						"") ? nvram_safe_get("pppoe_wan_ifname") : "vlan2";
@@ -5188,6 +5194,7 @@ void start_hotplug_net(void)
 		writenet("queues/tx-7/xps_cpus", cpumask, interface);
 	}
 #endif
+
 #ifdef HAVE_MADWIFI
 	// sysprintf("echo \"Hotplug %s=%s\" > /dev/console\n",action,interface);
 	if (strncmp(interface, "ath", 3))
