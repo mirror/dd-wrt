@@ -1215,7 +1215,7 @@ void start_restore_defaults(void)
 	if (wrt_brand == ROUTER_LINKSYS_EA8500)
 		generic = ea8500;
 	else if (wrt_brand == ROUTER_NETGEAR_R7800)
-		generic = ea8500;
+		generic = ipq806x;
 	else
 		generic = ipq806x;
 
