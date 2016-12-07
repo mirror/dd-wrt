@@ -506,7 +506,7 @@ swconfig_lookup_attr(struct switch_dev *dev, struct genl_info *info,
 	struct genlmsghdr *hdr = nlmsg_data(info->nlhdr);
 	const struct switch_attrlist *alist;
 	const struct switch_attr *attr = NULL;
-	int attr_id;
+	unsigned int attr_id;
 
 	/* defaults */
 	struct switch_attr *def_list;
@@ -590,10 +590,12 @@ swconfig_parse_ports(struct sk_buff *msg, struct nlattr *head,
 	val->len = 0;
 	nla_for_each_nested(nla, head, rem) {
 		struct nlattr *tb[SWITCH_PORT_ATTR_MAX+1];
-		struct switch_port *port = &val->value.ports[val->len];
+		struct switch_port *port;
 
 		if (val->len >= max)
 			return -EINVAL;
+
+		port = &val->value.ports[val->len];
 
 		if (nla_parse_nested(tb, SWITCH_PORT_ATTR_MAX, nla,
 				port_policy))
@@ -1111,6 +1113,11 @@ register_switch(struct switch_dev *dev, struct net_device *netdev)
 	}
 	BUG_ON(!dev->alias);
 
+	/* Make sure swdev_id doesn't overflow */
+	if (swdev_id == INT_MAX) {
+		return -ENOMEM;
+	}
+
 	if (dev->ports > 0) {
 		dev->portbuf = kzalloc(sizeof(struct switch_port) *
 				dev->ports, GFP_KERNEL);
@@ -1218,9 +1225,7 @@ swconfig_init(void)
 	int err;
 	int i;
 #endif
-
 	INIT_LIST_HEAD(&swdevs);
-	
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(3,13,0))
 	err = genl_register_family(&switch_fam);
 	if (err)
@@ -1237,6 +1242,7 @@ unregister:
 	genl_unregister_family(&switch_fam);
 	return err;
 #else
+	
 	return genl_register_family_with_ops(&switch_fam, swconfig_ops);
 #endif
 }
@@ -1249,4 +1255,3 @@ swconfig_exit(void)
 
 module_init(swconfig_init);
 module_exit(swconfig_exit);
-
