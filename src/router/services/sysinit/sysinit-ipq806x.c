@@ -433,7 +433,7 @@ void start_sysinit(void)
 	switch (board) {
 	case ROUTER_NETGEAR_R7800:
 		system("swconfig dev switch0 set reset 1");
-		system("swconfig dev switch0 set enable_vlan 1");
+		system("swconfig dev switch0 set enable_vlan 0");
 		system("swconfig dev switch0 vlan 1 set ports \"6 1 2 3 4\"");
 		system("swconfig dev switch0 vlan 2 set ports \"0 5\"");
 		system("swconfig dev switch0 set apply");
