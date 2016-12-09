@@ -109,7 +109,8 @@ void routing_init(char *ip) {
       }
       break;
     }
-#else /* Solaris */ 
+#endif /* Solaris */ 
+#if defined(__linux)
   char buf[256];
   FILE *p;
 
@@ -120,7 +121,7 @@ void routing_init(char *ip) {
   route = strdup(buf);
   pclose(p);
   /* TODO: check for failure of command */
-#endif /* Solaris */
+#endif /* __linux__ */
 }
 
 void routing_start(void) {
@@ -143,14 +144,15 @@ void routing_start(void) {
   if ( write(rts, &rtm, rtm.hdr.rtm_msglen) != rtm.hdr.rtm_msglen ) {
     log("Error adding route: %s", strerror(errno));
   }
-#else /* Solaris */
+#endif
+#if defined(__linux__)
   char buf[256];
   FILE *p;
 
   snprintf(buf, 255, "%s route replace %s", IP_BINARY, route);
   p = popen(buf, "r");
   pclose(p);
-#endif /* Solaris */
+#endif /* __linux__ */
 }
 
 void routing_end(void) {
@@ -173,12 +175,13 @@ void routing_end(void) {
   if ( write(rts, &rtm, rtm.hdr.rtm_msglen) != rtm.hdr.rtm_msglen ) {
     log("Error deleting route: %s", strerror(errno));
   }
-#else /* Solaris */
+#endif /* Solaris */
+#if defined(__linux__)
   char buf[256];
   FILE *p;
 
   snprintf(buf, 255, "%s route delete %s", IP_BINARY, route);
   p = popen(buf, "r");
   pclose(p);
-#endif /* Solaris */
+#endif /* __linux__ */
 }

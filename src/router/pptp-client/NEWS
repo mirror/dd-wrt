@@ -1,3 +1,20 @@
+Release 1.9.0: (29th November 2016)
+
+- close a memory leak in pqueue,
+- avoid spurious error about /bin/ip on FreeBSD,
+- fix compiler warnings,
+- avoid clobbering heap (RHBZ #1183627),
+- fix use after free in call close request handler,
+- make clean to clean pptpsetup.8 (Debian #831032),
+- add --missing-window option (Debian #680455, Ubuntu #681617),
+- randomise call-id (Debian #721963),
+- replace gethostbyname(3) with getaddrinfo(3),
+- fix typo in pptp_ctrl manpage,
+- place pptpsetup manpage in correct section,
+- don't set build flags; use defaults,
+- remove pptpsetup.8 from source as it is generated,
+- fix for (null) in "pptp: GRE-to-PPP gateway on (null)".
+
 Release 1.8.0: (23rd October 2013)
 
 - options file, fix option documentation and links [Howarth]

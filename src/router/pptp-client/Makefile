@@ -1,5 +1,5 @@
 # $Id: Makefile,v 1.51 2011/11/29 22:05:07 quozl Exp $
-VERSION=1.8.0
+VERSION=1.9.0
 RELEASE=
 
 #################################################################
@@ -53,7 +53,7 @@ vector_test: vector_test.o vector.o
 	$(CC) -o vector_test vector_test.o vector.o
 
 clean:
-	$(RM) *.o config.h
+	$(RM) *.o config.h pptpsetup.8
 
 clobber: clean
 	$(RM) $(PPTP_BIN) vector_test
