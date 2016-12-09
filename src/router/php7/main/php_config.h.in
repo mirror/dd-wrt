@@ -530,7 +530,7 @@
 #undef HAVE_CURL_MULTI_STRERROR
 
 /* Have cURL with OpenSSL support */
-#undef HAVE_CURL_OPENSSL
+#define HAVE_CURL_OPENSSL 1
 
 /* Have cURL with SSL support */
 #undef HAVE_CURL_SSL
@@ -1271,7 +1271,7 @@
 #undef HAVE_OPCACHE_FILE_CACHE
 
 /* Define to 1 if you have the <openssl/crypto.h> header file. */
-#undef HAVE_OPENSSL_CRYPTO_H
+#define HAVE_OPENSSL_CRYPTO_H 1
 
 /* */
 #undef HAVE_OPENSSL_EXT
