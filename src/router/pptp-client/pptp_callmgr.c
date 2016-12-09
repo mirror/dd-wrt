@@ -404,14 +404,13 @@ void close_unixsock(int fd, struct in_addr inetaddr)
 }
 
 /*** make a unix socket address ***********************************************/
-void callmgr_name_unixsock(struct sockaddr_un *where, 
+void callmgr_name_unixsock(struct sockaddr_un *where,
 			   struct in_addr inetaddr,
 			   struct in_addr localbind)
 {
-    char localaddr[16], remoteaddr[16];
+    char localaddr[16];
     where->sun_family = AF_UNIX;
-    strncpy(localaddr,  inet_ntoa(localbind), 16);
-    strncpy(remoteaddr, inet_ntoa(inetaddr),  16);
+    strcpy(localaddr, inet_ntoa(localbind));
     snprintf(where->sun_path, sizeof(where->sun_path),
-            PPTP_SOCKET_PREFIX "%s:%s", localaddr, remoteaddr);
+	     PPTP_SOCKET_PREFIX "%s:%s", localaddr, inet_ntoa(inetaddr));
 }

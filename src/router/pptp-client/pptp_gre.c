@@ -54,13 +54,19 @@ int dequeue_gre(callback_t callback, int cl);
 /* test redirection function pointers */
 struct test_redirections *my;
 
-#if 1
+unsigned char dest[2 * PACKET_MAX + 2]; /* largest expansion possible */
+
+#undef PRINT_PACKETS
+#ifdef PRINT_PACKETS
+
 #include <stdio.h>
 void print_packet(int fd, void *pack, unsigned int len)
 {
     unsigned char *b = (unsigned char *)pack;
     unsigned int i,j;
-    FILE *out = fdopen(fd, "w");
+    static FILE *out = NULL;
+
+    if (out == NULL) out = fdopen(fd, "w");
     fprintf(out,"-- begin packet (%u) --\n", len);
     for (i = 0; i < len; i += 16) {
         for (j = 0; j < 8; j++)
@@ -75,7 +81,7 @@ void print_packet(int fd, void *pack, unsigned int len)
     fprintf(out, "-- end packet --\n");
     fflush(out);
 }
-#endif
+#endif /* PRINT_PACKETS */
 
 /*** time_now_usecs ***********************************************************/
 uint64_t time_now_usecs(void)
@@ -301,7 +307,6 @@ int decaps_hdlc(int fd, int (*cb)(int cl, void *pack, unsigned int len), int cl)
 int encaps_hdlc(int fd, void *pack, unsigned int len)
 {
     unsigned char *source = (unsigned char *)pack;
-    unsigned char dest[2 * PACKET_MAX + 2]; /* largest expansion possible */
     unsigned int pos = 0, i;
     u_int16_t fcs;
     /* in synchronous mode there is little to do */
@@ -421,8 +426,9 @@ int decaps_gre (int fd, callback_t callback, int cl)
                 seq, seq_recv + 1);
         stats.rx_underwin++;
     /* sequence number too high, is it reasonably close? */
-    } else if ( seq < seq_recv + MISSING_WINDOW ||
-                WRAPPED(seq, seq_recv + MISSING_WINDOW) ) {
+    } else if ( (seq < seq_recv + missing_window ||
+                 WRAPPED(seq, seq_recv + missing_window)) ||
+		(missing_window == -1) ) {
 	stats.rx_buffered++;
         if ( log_level >= 1 )
             log("%s packet %d (expecting %d, lost or reordered)",
@@ -533,8 +539,10 @@ int encaps_gre (int fd, void *pack, unsigned int len)
     memcpy(u.buffer + header_len, pack, len);
     /* record and increment sequence numbers */
     seq_sent = seq; seq++;
+#ifdef PRINT_PACKETS
+    print_packet(2, u.buffer, header_len + len);
+#endif
     /* write this baby out to the net */
-    /* print_packet(2, u.buffer, header_len + len); */
     rc = (*my->write)(fd, u.buffer, header_len + len);
     if (rc < 0) {
         if (errno == ENOBUFS)

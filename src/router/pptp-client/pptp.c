@@ -79,6 +79,7 @@ int log_level = 1;
 int disable_buffer = 0;
 int test_type = 0;
 int test_rate = 100;
+int missing_window = MISSING_WINDOW;
 
 struct in_addr get_ip_address(char *name);
 int open_callmgr(struct in_addr inetaddr, char *phonenr, int argc,char **argv,char **envp, int pty_fd, int gre_fd);
@@ -125,7 +126,9 @@ void usage(char *progname)
             "  --nohostroute		Do not add host route towards <hostname>\n"
             "  --loglevel <level>	Sets the debugging level (0=low, 1=default, 2=high)\n"
             "  --test-type <type>	Damage the packet stream by reordering\n"
-            "  --test-rate <n>		Do the test every n packets\n",
+            "  --test-rate <n>          Do the test every n packets\n"
+            "  --missing-window <n>     Enable 'missing window' validation and set packet\n"
+            "                           polerance (300=default, 6000=recommended)\n",
 
             version, progname, progname);
     log("%s called with wrong arguments, program not started.", progname);
@@ -189,7 +192,7 @@ int main(int argc, char **argv, char **envp)
     struct in_addr inetaddr;
     volatile int callmgr_sock = -1;
     char ttydev[PATH_MAX];
-    char *tty_name;
+    char *pty_name;
     int pty_fd, tty_fd, gre_fd, rc;
     volatile pid_t parent_pid, child_pid;
     u_int16_t call_id, peer_call_id;
@@ -221,6 +224,7 @@ int main(int argc, char **argv, char **envp)
 	    {"test-rate", 1, 0, 0},
 	    {"rtmark", 1, 0, 0},
 	    {"nohostroute", 0, 0, 0},
+	    {"missing-window", 1, 0, 0},
             {0, 0, 0, 0}
         };
         int option_index = 0;
@@ -309,6 +313,26 @@ int main(int argc, char **argv, char **envp)
 #endif
 		} else if (option_index == 16) { /* --nohostroute */
 		    nohostroute = 1;
+		} else if (option_index == 17) { /* --missing window */
+		    int x = atoi(optarg);
+		    if (x <= 0) {
+			fprintf(stderr, "--missing-window must be integer "
+				"greater than zero\n");
+			log("--missing-window must be integer "
+			    "greater than zero\n");
+			exit(2);
+		    } else if (x < 300) {
+			fprintf(stderr, "--missing-window is set very low: "
+				"default=300, recommended=6000 - proceeding");
+			log("--missing-window is set very low: "
+			    "default=300, recommended=6000 - proceeding\n");
+		    } else {
+			fprintf(stderr, "--missing-window validation is active "
+				"and set to: %d\n", x);
+			log("--missing-window validation is active "
+			    "and set to: %d\n", x);
+			missing_window = x;
+		    }
                 }
                 break;
             case '?': /* unrecognised option */
@@ -316,7 +340,6 @@ int main(int argc, char **argv, char **envp)
             default:
 		usage(argv[0]);
         }
-        if (c == -1) break;  /* no more options for pptp */
     }
 
     /* at least one argument is required */
@@ -337,7 +360,6 @@ int main(int argc, char **argv, char **envp)
        documented in <1026868263.2855.67.camel@jander> */
     gre_fd = pptp_gre_bind(inetaddr);
     if (gre_fd < 0) {
-        close(callmgr_sock);
         fatal("Cannot bind GRE socket, aborting.");
     }
 
@@ -345,7 +367,6 @@ int main(int argc, char **argv, char **envp)
     if(launchpppd){
         rc = openpty (&pty_fd, &tty_fd, ttydev, NULL, NULL);
         if (rc < 0) { 
-            close(callmgr_sock); 
             fatal("Could not find free pty.");
         }
 
@@ -410,9 +431,9 @@ int main(int argc, char **argv, char **envp)
         file2fd("/dev/null", "wb", STDERR_FILENO);
     }
 
-    tty_name = ttyname(tty_fd);
+    pty_name = ttyname(pty_fd);
     snprintf(buf, sizeof(buf), "pptp: GRE-to-PPP gateway on %s",
-              tty_name ? tty_name : "(null)");
+              pty_name ? pty_name : "(null)");
 #ifdef PR_SET_NAME
     rc = prctl(PR_SET_NAME, "pptpgw", 0, 0, 0);
     if (rc != 0) perror("prctl");
@@ -442,19 +463,27 @@ shutdown:
 /*** get the ipaddress coming from the command line ***************************/
 struct in_addr get_ip_address(char *name)
 {
+    int rc;
     struct in_addr retval;
-    struct hostent *host = gethostbyname(name);
-    if (host == NULL) {
-        if (h_errno == HOST_NOT_FOUND)
-            fatal("gethostbyname '%s': HOST NOT FOUND", name);
-        else if (h_errno == NO_ADDRESS)
-            fatal("gethostbyname '%s': NO IP ADDRESS", name);
-        else
-            fatal("gethostbyname '%s': name server error", name);
-    }
-    if (host->h_addrtype != AF_INET)
-        fatal("Host '%s' has non-internet address", name);
-    memcpy(&retval.s_addr, host->h_addr, sizeof(retval.s_addr));
+    struct addrinfo hints, *ai;
+
+    memset(&hints, '\0', sizeof(hints));
+    hints.ai_family = AF_INET;
+#if defined(__linux__) || defined(__FreeBSD__)
+    hints.ai_flags = AI_ADDRCONFIG;     /* Unknown in OpenBSD. */
+#endif
+
+    if ( (rc = getaddrinfo(name, NULL, &hints, &ai)) )
+        fatal("getaddrinfo(): %s", gai_strerror(rc));
+
+    if (ai->ai_addr->sa_family != AF_INET)       /* Should never happen. */
+        fatal("Host '%s' possesses no IPv4 address", name);
+
+    memcpy(&retval.s_addr,
+            &(((struct sockaddr_in *) ai->ai_addr)->sin_addr.s_addr),
+            sizeof(retval.s_addr));
+    freeaddrinfo(ai);
+
     return retval;
 }
 
