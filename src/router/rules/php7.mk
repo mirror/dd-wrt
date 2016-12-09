@@ -160,6 +160,7 @@ PHP_CONFIGURE_ARGS= \
 	ac_cv_lib_ssl_DSA_get_default_method="yes" \
 	ac_cv_func_crypt="yes" \
 	ac_cv_lib_crypto_CRYPTO_free="yes" \
+	ac_cv_header_openssl_crypto_h="yes" \
 	ac_cv_lib_ssl_SSL_CTX_set_ssl_version="yes" \
 	ac_cv_glob="yes" \
 	ICONV_DIR="$(TOP)/glib20/libiconv" \
