@@ -20,6 +20,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <fcntl.h>
+#include <time.h>
 #include "pptp_msg.h"
 #include "pptp_ctrl.h"
 #include "pptp_options.h"
@@ -133,7 +134,7 @@ static const struct {
 #define PPTP_GENERAL_ERROR_BAD_CALLID           5
     { "(Bad-Call ID)", "The Call ID is invalid in this context" },
 #define PPTP_GENERAL_ERROR_PAC_ERROR            6
-    { "(PAC-Error)", "A generic vendor-specific error occured in the PAC" }
+    { "(PAC-Error)", "A generic vendor-specific error occurred in the PAC" }
 };
 
 #define  MAX_GENERAL_ERROR ( sizeof(pptp_general_errors) / \
@@ -325,6 +326,26 @@ int pptp_conn_established(PPTP_CONN *conn) {
   return (conn->conn_state == CONN_ESTABLISHED);
 }
 
+int randci ()
+{
+	unsigned short int i=0;
+	int fd;
+
+	fd = open("/dev/random", O_RDONLY);
+	if (fd >= 0) {
+		read(fd, &i, 2);
+		close(fd);
+	}
+
+	if (i == 0) {
+		log("problem: opening /dev/random or getting number");
+		log("using rand()");
+		srand(time(NULL));
+		i = (unsigned short int) (rand() & 0xffff);
+	}
+	return i;
+}
+
 /* This currently *only* works for client call requests.
  * We need to do something else to allocate calls for incoming requests.
  */
@@ -348,6 +369,8 @@ PPTP_CALL * pptp_call_open(PPTP_CONN * conn, pptp_call_cb callback,
     if (!vector_scan(conn->call, 0, PPTP_MAX_CHANNELS - 1, &i))
         /* no more calls available! */
         return NULL;
+    if (i == 0)
+        i = randci();
     /* allocate structure. */
     if ((call = malloc(sizeof(*call))) == NULL) return NULL;
     /* Initialize call structure */
@@ -928,6 +951,7 @@ int ctrlp_disp(PPTP_CONN * conn, void * buffer, size_t size)
                 PPTP_HEADER_CTRL(PPTP_CALL_CLEAR_NTFY), packet->call_id,
                 1, PPTP_GENERAL_ERROR_NONE, 0, 0, {0}
             };
+            int i;
             log("Received Call Clear Request.");
             if (vector_contains(conn->call, ntoh16(packet->call_id))) {
                 PPTP_CALL * call;
@@ -935,8 +959,9 @@ int ctrlp_disp(PPTP_CONN * conn, void * buffer, size_t size)
                 if (call->callback != NULL)
                     call->callback(conn, call, CALL_CLOSE_RQST);
                 if (pptp_send_ctrl_packet(conn, &reply, sizeof(reply))) {
+                    i = call->call_id;
                     pptp_call_destroy(conn, call);
-                    log("Call closed (RQST) (call id %d)", (int) call->call_id);
+                    log("Call closed (RQST) (call id %d)", i);
                 }
             }
             break;
