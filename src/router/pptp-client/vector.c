@@ -115,7 +115,7 @@ int  vector_remove(VECTOR *v, int key)
     assert(v != NULL);
     if ((tmp =binary_search(v,key)) == NULL) return FALSE;
     assert(tmp >= v->item && tmp < v->item + v->size);
-    memmove(tmp, tmp + 1, (v->size - (v->item - tmp) - 1) * sizeof(*(v->item)));
+    memmove(tmp, tmp + 1, (v->size - (tmp - v->item) - 1) * sizeof(*(v->item)));
     v->size--;
     return TRUE;
 }

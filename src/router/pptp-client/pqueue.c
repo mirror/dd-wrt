@@ -29,6 +29,18 @@ static pqueue_t *pq_freelist_head = NULL;
 
 
 
+static void pq_freelist_add(pqueue_t *point) {
+  /* add point to the freelist */
+  point->next = pq_freelist_head;
+  point->prev = NULL;
+
+  if (point->next)
+    point->next->prev = point;
+  pq_freelist_head = point;
+}
+
+
+
 static int pqueue_alloc(u_int32_t seq, unsigned char *packet, int packlen, pqueue_t **new) {
 
   pqueue_t *newent;
@@ -137,6 +149,7 @@ int pqueue_add (u_int32_t seq, unsigned char *packet, int packlen) {
     if (point->seq == seq) {
       // queue already contains this packet
       warn("discarding duplicate packet %d", seq);
+      pq_freelist_add(point);
       return -1;
     }
     if (point->seq > seq) {
@@ -191,25 +204,21 @@ int pqueue_del (pqueue_t *point) {
   if (point->next) point->next->prev = point->prev;
 
   /* add point to the freelist */
-  point->next = pq_freelist_head;
-  point->prev = NULL;
-
-  if (point->next)
-    point->next->prev = point;
-  pq_freelist_head = point;
+  pq_freelist_add(point);
 
   DEBUG_CMD(
     int pq_count = 0;
     int pq_freelist_count = 0;
-    pqueue_t *point;
-    for ( point = pq_head; point ; point = point->next) {
+    pqueue_t *dpoint;
+    for (dpoint = pq_head; dpoint ; dpoint = dpoint->next) {
       ++pq_count;
     }
 
-    for ( point = pq_freelist_head; point ; point = point->next) {
+    for (dpoint = pq_freelist_head; dpoint ; dpoint = dpoint->next) {
       ++pq_freelist_count;
     }
-    log("queue length is %d, freelist length is %d", pq_count, pq_freelist_count);
+    log("queue length is %d, freelist length is %d", pq_count,
+        pq_freelist_count);
     );
 
   return 0;
