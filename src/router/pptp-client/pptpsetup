@@ -1,0 +1,273 @@
+#!/usr/bin/perl
+
+use strict;
+use Getopt::Long;
+
+use vars qw($VERSION);
+$VERSION = '0.03';
+
+# Command-line parameters:
+
+# actions
+my ( $_create, $_delete, $_help );
+
+# values
+my ( $SERVER, $DOMAIN, $USERNAME, $PASSWORD, $ENCRYPT, $START );
+
+my $result = GetOptions(
+    "create|c=s"   => \$_create,    # --create foo -> &create("foo")
+    "delete=s"     => \$_delete,    # --delete foo -> &delete("foo")
+    "help|h"       => \$_help,      # --help       -> &help()
+    "server|s=s"   => \$SERVER,
+    "domain|d=s"   => \$DOMAIN,
+    "username|u=s" => \$USERNAME,
+    "password|p=s" => \$PASSWORD,
+    "encrypt|e"    => \$ENCRYPT,
+    "start"        => \$START,
+);
+
+if ($_create) {
+    &create($_create);
+} elsif ($_delete) {
+    &delete($_delete);
+} elsif ($_help) {
+    &help();
+} else {
+    die "$0: too few arguments.\nTry '$0 --help' for more information.\n";
+}
+
+exit;
+
+####
+
+sub create {
+    my $TUNNEL = shift;
+
+    # input validation
+    ($TUNNEL) = $TUNNEL =~ m{^(\w+)$}
+      or die "$0: invalid tunnel name.\nTry '$0 --help' for more information.\n";
+    ($SERVER) = $SERVER =~ m{^(.+)$}
+      or die "$0: invalid server.\nTry '$0 --help' for more information.\n";
+    ($USERNAME) = $USERNAME =~ m{^(.+)$}
+      or die "$0: invalid username.\nTry '$0 --help' for more information.\n";
+
+    # ask password
+    if ( !$PASSWORD ) {
+        print "Password: ";
+        $PASSWORD = <STDIN>;
+        chomp $PASSWORD;
+    }
+
+    # put '\' between domain and username IF specified a domain
+    $DOMAIN = "$DOMAIN\\" if $DOMAIN;
+
+    # create or add lines to the /etc/ppp/chap-secrets file,
+    # which holds usernames and passwords
+    my $chap_secrets_file = '/etc/ppp/chap-secrets';
+    open( FILE, ">>$chap_secrets_file" )
+      or die "$0: can't write to '$chap_secrets_file': $!\n";
+
+    print FILE "\n# added by pptpsetup for $TUNNEL\n$DOMAIN$USERNAME $TUNNEL \"$PASSWORD\" *\n";
+
+    close FILE;
+
+    # create a /etc/ppp/peers/$TUNNEL file
+    my $tunnel_file = "/etc/ppp/peers/$TUNNEL";
+    open( FILE, ">$tunnel_file" )
+      or die "$0: can't write to '$tunnel_file': $!\n";
+
+    print FILE <<"TUNNEL";
+# written by pptpsetup
+pty "pptp $SERVER --nolaunchpppd"
+lock
+noauth
+nobsdcomp
+nodeflate
+name $DOMAIN$USERNAME
+remotename $TUNNEL
+ipparam $TUNNEL
+TUNNEL
+
+    print FILE "require-mppe-128\n" if $ENCRYPT;
+
+    close FILE;
+
+    # start tunneling
+    if ($START) {
+        system("pppd call $TUNNEL updetach");
+    }
+}
+
+####
+
+sub help {
+    print <<'EOF';
+pptpsetup --create <TUNNEL> --server <SERVER> [--domain <DOMAIN>]
+          --username <USERNAME> [--password <PASSWORD>]
+          [--encrypt] [--start]
+
+pptpsetup --delete <TUNNEL> 
+
+Options:
+
+* the name you wish to use to refer to the tunnel (you choose it),
+* the IP address or host name of the server,
+* the authentication domain name (optional),
+* the username you are to use,
+* the password you are to use,
+* whether encryption is required,
+* whether to start the connection after configuration.
+
+pptpsetup - Point-to-Point Tunneling Protocol setup
+
+Copyright (C) 2006 Nelson Ferraz
+
+pptpsetup comes with ABSOLUTELY NO WARRANTY; for details see source.
+This is free software, and you are welcome to redistribute it
+under certain conditions; see source for details.
+
+EOF
+
+    exit;
+}
+
+####
+
+sub delete {
+    my $tunnel = shift;
+
+    # input validation
+    ($tunnel) = $tunnel =~ m{^(\w+)$}
+      or die "$0: invalid tunnel name.\nTry '$0 --help' for more information.\n";
+
+    # delete tunnel file
+    my $tunnel_file = "/etc/ppp/peers/$tunnel";
+    unlink $tunnel_file
+        or die "$0: can't delete '$tunnel_file': $!\n";
+
+    # delete entry from chap-secrets
+    my $chap_file = '/etc/ppp/chap-secrets';
+    my $mode = (stat($chap_file))[2] & 07777;
+
+    open( FILE, $chap_file )
+        or die "$0: can't read '$chap_file': $!\n";
+    my @chap = <FILE>;
+    close FILE;
+
+    my $new_chap = '';
+    foreach (@chap) {
+        $new_chap .= $_ unless /\b$tunnel\b/;
+    }
+
+    # backup
+    rename( $chap_file, "$chap_file.bkp" );
+
+    # write new chap-secrets
+    open( FILE, ">$chap_file" )
+        or die "$0: can't write '$chap_file': $!\n";
+    chmod $mode, $chap_file;
+    print FILE $new_chap;
+    close FILE;
+
+    exit;
+}
+
+__END__
+
+=head1 NAME
+
+pptpsetup - Point-to-Point Tunneling Protocol setup
+
+=head1 SYNOPSIS
+
+    pptpsetup --create <TUNNEL> --server <SERVER> [--domain <DOMAIN>]
+              --username <USERNAME> [--password <PASSWORD>]
+              [--encrypt] [--start]
+
+    pptpsetup --delete <TUNNEL>
+
+=head1 DESCRIPTION
+
+PPTP Client is a Linux, FreeBSD, NetBSD and OpenBSD client for the 
+proprietary Microsoft Point-to-Point Tunneling Protocol, PPTP. 
+
+This script configures PPTP Client on Linux.
+
+=head1 OPTIONS
+
+=over 16
+
+=item --create TUNNEL
+
+create a tunnel named TUNNEL
+
+=item --delete TUNNEL
+
+delete the file /etc/ppp/peers/TUNNEL and any lines from 
+/etc/ppp/chap-secrets that contains "TUNNEL" as a single word
+
+=item --server SERVER
+
+the IP address or host name of the server
+
+=item --domain DOMAIN
+
+the authentication domain name (optional)
+
+=item --username USERNAME
+
+the username you are to use
+
+=item --password PASSWORD
+
+the password you are to use. If you don't specify a password, 
+pptpsetup will ask for one.
+
+=item --encrypt
+
+whether encryption is required
+
+=item --start
+
+whether the connection should be started after configuration.
+
+=back
+
+=head1 AUTHOR
+
+Nelson Ferraz <nferraz at gmail.com>,
+based on James Cameron's PPTP Client Debian HOWTO.
+
+=head1 SEE ALSO
+
+=over 16
+
+=item PPTP Client Debian HOWTO
+
+http://pptpclient.sourceforge.net/howto-debian.phtml
+
+=item PPTP Client Diagnosis HOWTO
+
+http://pptpclient.sourceforge.net/howto-diagnosis.phtml
+
+=back
+
+=head1 COPYRIGHT
+
+pptpsetup - Point-to-Point Tunneling Protocol setup
+
+Copyright (C) 2006 Nelson Ferraz
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
