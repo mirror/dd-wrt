@@ -97,14 +97,14 @@ void
 throw_signal (const int signum)
 {
   siginfo_static.signal_received = signum;
-  siginfo_static.hard = true;
+  siginfo_static.source = SIG_SOURCE_HARD;
 }
 
 void
 throw_signal_soft (const int signum, const char *signal_text)
 {
   siginfo_static.signal_received = signum;
-  siginfo_static.hard = false;
+  siginfo_static.source = SIG_SOURCE_SOFT;
   siginfo_static.signal_text = signal_text;
 }
 
@@ -115,7 +115,7 @@ signal_reset (struct signal_info *si)
     {
       si->signal_received = 0;
       si->signal_text = NULL;
-      si->hard = false;
+      si->source = SIG_SOURCE_SOFT;
     }
 }
 
@@ -124,9 +124,23 @@ print_signal (const struct signal_info *si, const char *title, int msglevel)
 {
   if (si)
     {
-      const char *hs = (si->hard ? "hard" : "soft");
       const char *type = (si->signal_text ? si->signal_text : "");
       const char *t = (title ? title : "process");
+      const char *hs = NULL;
+      switch (si->source)
+        {
+        case SIG_SOURCE_SOFT:
+          hs= "soft";
+          break;
+        case SIG_SOURCE_HARD:
+          hs = "hard";
+          break;
+        case SIG_SOURCE_CONNECTION_FAILED:
+          hs = "connection failed(soft)";
+          break;
+        default:
+          ASSERT(0);
+        }
 
       switch (si->signal_received)
 	{
@@ -175,8 +189,10 @@ signal_restart_status (const struct signal_info *si)
 	management_set_state (management,
 			      state,
 			      si->signal_text ? si->signal_text : signal_name (si->signal_received, true),
-			      (in_addr_t)0,
-			      (in_addr_t)0);
+                              NULL,
+                              NULL,
+                              NULL,
+                              NULL);
     }
 #endif
 }
@@ -205,7 +221,7 @@ static int signal_mode; /* GLOBAL */
 void
 pre_init_signal_catch (void)
 {
-#ifndef WIN32
+#ifndef _WIN32
 #ifdef HAVE_SIGNAL_H
   signal_mode = SM_PRE_INIT;
   signal (SIGINT, signal_handler);
@@ -215,13 +231,13 @@ pre_init_signal_catch (void)
   signal (SIGUSR2, SIG_IGN);
   signal (SIGPIPE, SIG_IGN);
 #endif /* HAVE_SIGNAL_H */
-#endif /* WIN32 */
+#endif /* _WIN32 */
 }
 
 void
 post_init_signal_catch (void)
 {
-#ifndef WIN32
+#ifndef _WIN32
 #ifdef HAVE_SIGNAL_H
   signal_mode = SM_POST_INIT;
   signal (SIGINT, signal_handler);
@@ -265,9 +281,9 @@ print_status (const struct context *c, struct status_output *so)
   status_printf (so, "TCP/UDP read bytes," counter_format, c->c2.link_read_bytes);
   status_printf (so, "TCP/UDP write bytes," counter_format, c->c2.link_write_bytes);
   status_printf (so, "Auth read bytes," counter_format, c->c2.link_read_bytes_auth);
-#ifdef ENABLE_LZO
-  if (lzo_defined (&c->c2.lzo_compwork))
-    lzo_print_stats (&c->c2.lzo_compwork, so);
+#ifdef USE_COMP
+  if (c->c2.comp_context)
+    comp_print_stats (c->c2.comp_context, so);
 #endif
 #ifdef PACKET_TRUNCATION_CHECK
   status_printf (so, "TUN read truncations," counter_format, c->c2.n_trunc_tun_read);
@@ -275,7 +291,7 @@ print_status (const struct context *c, struct status_output *so)
   status_printf (so, "Pre-encrypt truncations," counter_format, c->c2.n_trunc_pre_encrypt);
   status_printf (so, "Post-decrypt truncations," counter_format, c->c2.n_trunc_post_decrypt);
 #endif
-#ifdef WIN32
+#ifdef _WIN32
   if (tuntap_defined (c->c1.tuntap))
     status_printf (so, "TAP-WIN32 driver status,\"%s\"",
 	 tap_win_getinfo (c->c1.tuntap, &gc));
@@ -362,7 +378,8 @@ process_sigterm (struct context *c)
 
 /**
  * If a restart signal is received during exit-notification, reset the
- * signal and return true.
+ * signal and return true. If its a soft restart signal from the event loop
+ * which implies the loop cannot continue, remap to SIGTERM to exit promptly.
  */
 static bool
 ignore_restart_signals (struct context *c)
@@ -372,10 +389,20 @@ ignore_restart_signals (struct context *c)
   if ( (c->sig->signal_received == SIGUSR1 || c->sig->signal_received == SIGHUP) &&
         event_timeout_defined(&c->c2.explicit_exit_notification_interval) )
     {
-       msg (M_INFO, "Ignoring %s received during exit notification",
-            signal_name(c->sig->signal_received, true));
-       signal_reset (c->sig);
-       ret = true;
+       if (c->sig->source == SIG_SOURCE_HARD)
+         {
+            msg (M_INFO, "Ignoring %s received during exit notification",
+                 signal_name(c->sig->signal_received, true));
+            signal_reset (c->sig);
+            ret = true;
+         }
+       else
+         {
+            msg (M_INFO, "Converting soft %s received during exit notification to SIGTERM",
+                 signal_name(c->sig->signal_received, true));
+            register_signal(c, SIGTERM, "exit-with-notification");
+            ret = false;
+         }
     }
 #endif
   return ret;

@@ -105,8 +105,8 @@ DIST_COMMON = $(top_srcdir)/build/ltrc.inc $(srcdir)/Makefile.in \
 # we want unicode entry point but not the macro
 @WIN32_TRUE@am__append_1 = -municode -UUNICODE
 sbin_PROGRAMS = openvpn$(EXEEXT)
-@WIN32_TRUE@am__append_2 = openvpn_win32_resources.rc
-@WIN32_TRUE@am__append_3 = -lgdi32 -lws2_32 -lwininet -lcrypt32 -liphlpapi -lrpcrt4 -lwinmm
+@WIN32_TRUE@am__append_2 = openvpn_win32_resources.rc block_dns.c block_dns.h
+@WIN32_TRUE@am__append_3 = -lgdi32 -lws2_32 -lwininet -lcrypt32 -liphlpapi -lwinmm -lfwpuclnt -lrpcrt4
 subdir = src/openvpn
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ax_emptyarray.m4 \
@@ -119,61 +119,67 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/ax_emptyarray.m4 \
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
-CONFIG_HEADER = $(top_builddir)/config.h
+CONFIG_HEADER = $(top_builddir)/config.h \
+	$(top_builddir)/include/openvpn-plugin.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(sbindir)"
 PROGRAMS = $(sbin_PROGRAMS)
-am__openvpn_SOURCES_DIST = base64.c base64.h basic.h buffer.c buffer.h \
-	circ_list.h clinat.c clinat.h common.h crypto.c crypto.h \
-	crypto_backend.h crypto_openssl.c crypto_openssl.h \
-	crypto_polarssl.c crypto_polarssl.h dhcp.c dhcp.h errlevel.h \
+am__openvpn_SOURCES_DIST = argv.c argv.h base64.c base64.h basic.h \
+	buffer.c buffer.h circ_list.h clinat.c clinat.h common.h \
+	comp.c comp.h compstub.c comp-lz4.c comp-lz4.h crypto.c \
+	crypto.h crypto_backend.h crypto_openssl.c crypto_openssl.h \
+	crypto_mbedtls.c crypto_mbedtls.h dhcp.c dhcp.h errlevel.h \
 	error.c error.h event.c event.h fdmisc.c fdmisc.h forward.c \
 	forward.h forward-inline.h fragment.c fragment.h gremlin.c \
 	gremlin.h helper.c helper.h httpdigest.c httpdigest.h lladdr.c \
 	lladdr.h init.c init.h integer.h interval.c interval.h list.c \
 	list.h lzo.c lzo.h manage.c manage.h mbuf.c mbuf.h memdbg.h \
 	misc.c misc.h platform.c platform.h console.c console.h \
-	mroute.c mroute.h mss.c mss.h mstats.c mstats.h mtcp.c mtcp.h \
-	mtu.c mtu.h mudp.c mudp.h multi.c multi.h ntlm.c ntlm.h occ.c \
-	occ.h occ-inline.h pkcs11.c pkcs11.h pkcs11_backend.h \
-	pkcs11_openssl.c pkcs11_polarssl.c openvpn.c openvpn.h \
-	options.c options.h otime.c otime.h packet_id.c packet_id.h \
-	perf.c perf.h pf.c pf.h pf-inline.h ping.c ping.h \
-	ping-inline.h plugin.c plugin.h pool.c pool.h proto.c proto.h \
-	proxy.c proxy.h ps.c ps.h push.c push.h pushlist.h reliable.c \
-	reliable.h route.c route.h schedule.c schedule.h session_id.c \
-	session_id.h shaper.c shaper.h sig.c sig.h socket.c socket.h \
-	socks.c socks.h ssl.c ssl.h ssl_backend.h ssl_openssl.c \
-	ssl_openssl.h ssl_polarssl.c ssl_polarssl.h ssl_common.h \
-	ssl_verify.c ssl_verify.h ssl_verify_backend.h \
-	ssl_verify_openssl.c ssl_verify_openssl.h \
-	ssl_verify_polarssl.c ssl_verify_polarssl.h status.c status.h \
-	syshead.h tun.c tun.h win32.h win32_wfp.h win32.c cryptoapi.h \
-	cryptoapi.c openvpn_win32_resources.rc
-@WIN32_TRUE@am__objects_1 = openvpn_win32_resources.$(OBJEXT)
-am_openvpn_OBJECTS = base64.$(OBJEXT) buffer.$(OBJEXT) \
-	clinat.$(OBJEXT) crypto.$(OBJEXT) crypto_openssl.$(OBJEXT) \
-	crypto_polarssl.$(OBJEXT) dhcp.$(OBJEXT) error.$(OBJEXT) \
+	console_builtin.c console_systemd.c mroute.c mroute.h mss.c \
+	mss.h mstats.c mstats.h mtcp.c mtcp.h mtu.c mtu.h mudp.c \
+	mudp.h multi.c multi.h ntlm.c ntlm.h occ.c occ.h occ-inline.h \
+	pkcs11.c pkcs11.h pkcs11_backend.h pkcs11_openssl.c \
+	pkcs11_mbedtls.c openvpn.c openvpn.h options.c options.h \
+	otime.c otime.h packet_id.c packet_id.h perf.c perf.h pf.c \
+	pf.h pf-inline.h ping.c ping.h ping-inline.h plugin.c plugin.h \
+	pool.c pool.h proto.c proto.h proxy.c proxy.h ps.c ps.h push.c \
+	push.h pushlist.h reliable.c reliable.h route.c route.h \
+	schedule.c schedule.h session_id.c session_id.h shaper.c \
+	shaper.h sig.c sig.h socket.c socket.h socks.c socks.h ssl.c \
+	ssl.h ssl_backend.h ssl_openssl.c ssl_openssl.h ssl_mbedtls.c \
+	ssl_mbedtls.h ssl_common.h ssl_verify.c ssl_verify.h \
+	ssl_verify_backend.h ssl_verify_openssl.c ssl_verify_openssl.h \
+	ssl_verify_mbedtls.c ssl_verify_mbedtls.h status.c status.h \
+	syshead.h tls_crypt.c tls_crypt.h tun.c tun.h win32.h win32.c \
+	cryptoapi.h cryptoapi.c openvpn_win32_resources.rc block_dns.c \
+	block_dns.h
+@WIN32_TRUE@am__objects_1 = openvpn_win32_resources.$(OBJEXT) \
+@WIN32_TRUE@	block_dns.$(OBJEXT)
+am_openvpn_OBJECTS = argv.$(OBJEXT) base64.$(OBJEXT) buffer.$(OBJEXT) \
+	clinat.$(OBJEXT) comp.$(OBJEXT) compstub.$(OBJEXT) \
+	comp-lz4.$(OBJEXT) crypto.$(OBJEXT) crypto_openssl.$(OBJEXT) \
+	crypto_mbedtls.$(OBJEXT) dhcp.$(OBJEXT) error.$(OBJEXT) \
 	event.$(OBJEXT) fdmisc.$(OBJEXT) forward.$(OBJEXT) \
 	fragment.$(OBJEXT) gremlin.$(OBJEXT) helper.$(OBJEXT) \
 	httpdigest.$(OBJEXT) lladdr.$(OBJEXT) init.$(OBJEXT) \
 	interval.$(OBJEXT) list.$(OBJEXT) lzo.$(OBJEXT) \
 	manage.$(OBJEXT) mbuf.$(OBJEXT) misc.$(OBJEXT) \
-	platform.$(OBJEXT) console.$(OBJEXT) mroute.$(OBJEXT) \
-	mss.$(OBJEXT) mstats.$(OBJEXT) mtcp.$(OBJEXT) mtu.$(OBJEXT) \
-	mudp.$(OBJEXT) multi.$(OBJEXT) ntlm.$(OBJEXT) occ.$(OBJEXT) \
-	pkcs11.$(OBJEXT) pkcs11_openssl.$(OBJEXT) \
-	pkcs11_polarssl.$(OBJEXT) openvpn.$(OBJEXT) options.$(OBJEXT) \
-	otime.$(OBJEXT) packet_id.$(OBJEXT) perf.$(OBJEXT) \
-	pf.$(OBJEXT) ping.$(OBJEXT) plugin.$(OBJEXT) pool.$(OBJEXT) \
-	proto.$(OBJEXT) proxy.$(OBJEXT) ps.$(OBJEXT) push.$(OBJEXT) \
-	reliable.$(OBJEXT) route.$(OBJEXT) schedule.$(OBJEXT) \
-	session_id.$(OBJEXT) shaper.$(OBJEXT) sig.$(OBJEXT) \
-	socket.$(OBJEXT) socks.$(OBJEXT) ssl.$(OBJEXT) \
-	ssl_openssl.$(OBJEXT) ssl_polarssl.$(OBJEXT) \
-	ssl_verify.$(OBJEXT) ssl_verify_openssl.$(OBJEXT) \
-	ssl_verify_polarssl.$(OBJEXT) status.$(OBJEXT) tun.$(OBJEXT) \
+	platform.$(OBJEXT) console.$(OBJEXT) console_builtin.$(OBJEXT) \
+	console_systemd.$(OBJEXT) mroute.$(OBJEXT) mss.$(OBJEXT) \
+	mstats.$(OBJEXT) mtcp.$(OBJEXT) mtu.$(OBJEXT) mudp.$(OBJEXT) \
+	multi.$(OBJEXT) ntlm.$(OBJEXT) occ.$(OBJEXT) pkcs11.$(OBJEXT) \
+	pkcs11_openssl.$(OBJEXT) pkcs11_mbedtls.$(OBJEXT) \
+	openvpn.$(OBJEXT) options.$(OBJEXT) otime.$(OBJEXT) \
+	packet_id.$(OBJEXT) perf.$(OBJEXT) pf.$(OBJEXT) ping.$(OBJEXT) \
+	plugin.$(OBJEXT) pool.$(OBJEXT) proto.$(OBJEXT) \
+	proxy.$(OBJEXT) ps.$(OBJEXT) push.$(OBJEXT) reliable.$(OBJEXT) \
+	route.$(OBJEXT) schedule.$(OBJEXT) session_id.$(OBJEXT) \
+	shaper.$(OBJEXT) sig.$(OBJEXT) socket.$(OBJEXT) \
+	socks.$(OBJEXT) ssl.$(OBJEXT) ssl_openssl.$(OBJEXT) \
+	ssl_mbedtls.$(OBJEXT) ssl_verify.$(OBJEXT) \
+	ssl_verify_openssl.$(OBJEXT) ssl_verify_mbedtls.$(OBJEXT) \
+	status.$(OBJEXT) tls_crypt.$(OBJEXT) tun.$(OBJEXT) \
 	win32.$(OBJEXT) cryptoapi.$(OBJEXT) $(am__objects_1)
 openvpn_OBJECTS = $(am_openvpn_OBJECTS)
 am__DEPENDENCIES_1 =
@@ -181,7 +187,8 @@ openvpn_DEPENDENCIES = $(top_builddir)/src/compat/libcompat.la \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
@@ -198,7 +205,7 @@ AM_V_at = $(am__v_at_@AM_V@)
 am__v_at_ = $(am__v_at_@AM_DEFAULT_V@)
 am__v_at_0 = @
 am__v_at_1 = 
-DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
+DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir) -I$(top_builddir)/include
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
 am__mv = mv -f
@@ -294,24 +301,31 @@ LIBTOOL = @LIBTOOL@
 LIPO = @LIPO@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
+LZ4_CFLAGS = @LZ4_CFLAGS@
+LZ4_LIBS = @LZ4_LIBS@
 LZO_CFLAGS = @LZO_CFLAGS@
 LZO_LIBS = @LZO_LIBS@
 MAKEINFO = @MAKEINFO@
 MAN2HTML = @MAN2HTML@
 MANIFEST_TOOL = @MANIFEST_TOOL@
+MBEDTLS_CFLAGS = @MBEDTLS_CFLAGS@
+MBEDTLS_LIBS = @MBEDTLS_LIBS@
 MKDIR_P = @MKDIR_P@
 NETSTAT = @NETSTAT@
 NM = @NM@
 NMEDIT = @NMEDIT@
 OBJDUMP = @OBJDUMP@
 OBJEXT = @OBJEXT@
-OPENSSL_CRYPTO_CFLAGS = @OPENSSL_CRYPTO_CFLAGS@
-OPENSSL_CRYPTO_LIBS = @OPENSSL_CRYPTO_LIBS@
-OPENSSL_SSL_CFLAGS = @OPENSSL_SSL_CFLAGS@
-OPENSSL_SSL_LIBS = @OPENSSL_SSL_LIBS@
+OPENSSL_CFLAGS = @OPENSSL_CFLAGS@
+OPENSSL_LIBS = @OPENSSL_LIBS@
+OPENVPN_VERSION_MAJOR = @OPENVPN_VERSION_MAJOR@
+OPENVPN_VERSION_MINOR = @OPENVPN_VERSION_MINOR@
+OPENVPN_VERSION_PATCH = @OPENVPN_VERSION_PATCH@
 OPTIONAL_CRYPTO_CFLAGS = @OPTIONAL_CRYPTO_CFLAGS@
 OPTIONAL_CRYPTO_LIBS = @OPTIONAL_CRYPTO_LIBS@
 OPTIONAL_DL_LIBS = @OPTIONAL_DL_LIBS@
+OPTIONAL_LZ4_CFLAGS = @OPTIONAL_LZ4_CFLAGS@
+OPTIONAL_LZ4_LIBS = @OPTIONAL_LZ4_LIBS@
 OPTIONAL_LZO_CFLAGS = @OPTIONAL_LZO_CFLAGS@
 OPTIONAL_LZO_LIBS = @OPTIONAL_LZO_LIBS@
 OPTIONAL_PKCS11_HELPER_CFLAGS = @OPTIONAL_PKCS11_HELPER_CFLAGS@
@@ -337,8 +351,6 @@ PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
 PKG_CONFIG_PATH = @PKG_CONFIG_PATH@
 PLUGIN_AUTH_PAM_CFLAGS = @PLUGIN_AUTH_PAM_CFLAGS@
 PLUGIN_AUTH_PAM_LIBS = @PLUGIN_AUTH_PAM_LIBS@
-POLARSSL_CFLAGS = @POLARSSL_CFLAGS@
-POLARSSL_LIBS = @POLARSSL_LIBS@
 RANLIB = @RANLIB@
 RC = @RC@
 ROUTE = @ROUTE@
@@ -426,42 +438,43 @@ EXTRA_DIST = \
 	openvpn.vcxproj \
 	openvpn.vcxproj.filters
 
-INCLUDES = \
+AM_CPPFLAGS = \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/src/compat
 
 AM_CFLAGS = $(TAP_CFLAGS) $(OPTIONAL_CRYPTO_CFLAGS) \
-	$(OPTIONAL_LZO_CFLAGS) $(OPTIONAL_PKCS11_HELPER_CFLAGS) \
-	$(am__append_1)
-openvpn_SOURCES = base64.c base64.h basic.h buffer.c buffer.h \
-	circ_list.h clinat.c clinat.h common.h crypto.c crypto.h \
+	$(OPTIONAL_LZO_CFLAGS) $(OPTIONAL_LZ4_CFLAGS) \
+	$(OPTIONAL_PKCS11_HELPER_CFLAGS) $(am__append_1)
+openvpn_SOURCES = argv.c argv.h base64.c base64.h basic.h buffer.c \
+	buffer.h circ_list.h clinat.c clinat.h common.h comp.c comp.h \
+	compstub.c comp-lz4.c comp-lz4.h crypto.c crypto.h \
 	crypto_backend.h crypto_openssl.c crypto_openssl.h \
-	crypto_polarssl.c crypto_polarssl.h dhcp.c dhcp.h errlevel.h \
+	crypto_mbedtls.c crypto_mbedtls.h dhcp.c dhcp.h errlevel.h \
 	error.c error.h event.c event.h fdmisc.c fdmisc.h forward.c \
 	forward.h forward-inline.h fragment.c fragment.h gremlin.c \
 	gremlin.h helper.c helper.h httpdigest.c httpdigest.h lladdr.c \
 	lladdr.h init.c init.h integer.h interval.c interval.h list.c \
 	list.h lzo.c lzo.h manage.c manage.h mbuf.c mbuf.h memdbg.h \
 	misc.c misc.h platform.c platform.h console.c console.h \
-	mroute.c mroute.h mss.c mss.h mstats.c mstats.h mtcp.c mtcp.h \
-	mtu.c mtu.h mudp.c mudp.h multi.c multi.h ntlm.c ntlm.h occ.c \
-	occ.h occ-inline.h pkcs11.c pkcs11.h pkcs11_backend.h \
-	pkcs11_openssl.c pkcs11_polarssl.c openvpn.c openvpn.h \
-	options.c options.h otime.c otime.h packet_id.c packet_id.h \
-	perf.c perf.h pf.c pf.h pf-inline.h ping.c ping.h \
-	ping-inline.h plugin.c plugin.h pool.c pool.h proto.c proto.h \
-	proxy.c proxy.h ps.c ps.h push.c push.h pushlist.h reliable.c \
-	reliable.h route.c route.h schedule.c schedule.h session_id.c \
-	session_id.h shaper.c shaper.h sig.c sig.h socket.c socket.h \
-	socks.c socks.h ssl.c ssl.h ssl_backend.h ssl_openssl.c \
-	ssl_openssl.h ssl_polarssl.c ssl_polarssl.h ssl_common.h \
-	ssl_verify.c ssl_verify.h ssl_verify_backend.h \
-	ssl_verify_openssl.c ssl_verify_openssl.h \
-	ssl_verify_polarssl.c ssl_verify_polarssl.h status.c status.h \
-	syshead.h tun.c tun.h win32.h win32_wfp.h win32.c cryptoapi.h \
-	cryptoapi.c $(am__append_2)
+	console_builtin.c console_systemd.c mroute.c mroute.h mss.c \
+	mss.h mstats.c mstats.h mtcp.c mtcp.h mtu.c mtu.h mudp.c \
+	mudp.h multi.c multi.h ntlm.c ntlm.h occ.c occ.h occ-inline.h \
+	pkcs11.c pkcs11.h pkcs11_backend.h pkcs11_openssl.c \
+	pkcs11_mbedtls.c openvpn.c openvpn.h options.c options.h \
+	otime.c otime.h packet_id.c packet_id.h perf.c perf.h pf.c \
+	pf.h pf-inline.h ping.c ping.h ping-inline.h plugin.c plugin.h \
+	pool.c pool.h proto.c proto.h proxy.c proxy.h ps.c ps.h push.c \
+	push.h pushlist.h reliable.c reliable.h route.c route.h \
+	schedule.c schedule.h session_id.c session_id.h shaper.c \
+	shaper.h sig.c sig.h socket.c socket.h socks.c socks.h ssl.c \
+	ssl.h ssl_backend.h ssl_openssl.c ssl_openssl.h ssl_mbedtls.c \
+	ssl_mbedtls.h ssl_common.h ssl_verify.c ssl_verify.h \
+	ssl_verify_backend.h ssl_verify_openssl.c ssl_verify_openssl.h \
+	ssl_verify_mbedtls.c ssl_verify_mbedtls.h status.c status.h \
+	syshead.h tls_crypt.c tls_crypt.h tun.c tun.h win32.h win32.c \
+	cryptoapi.h cryptoapi.c $(am__append_2)
 openvpn_LDADD = $(top_builddir)/src/compat/libcompat.la \
-	$(SOCKETS_LIBS) $(OPTIONAL_LZO_LIBS) \
+	$(SOCKETS_LIBS) $(OPTIONAL_LZO_LIBS) $(OPTIONAL_LZ4_LIBS) \
 	$(OPTIONAL_PKCS11_HELPER_LIBS) $(OPTIONAL_CRYPTO_LIBS) \
 	$(OPTIONAL_SELINUX_LIBS) $(OPTIONAL_SYSTEMD_LIBS) \
 	$(OPTIONAL_DL_LIBS) $(am__append_3)
@@ -560,13 +573,20 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/argv.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/base64.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/block_dns.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/buffer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/clinat.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comp-lz4.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comp.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/compstub.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/console.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/console_builtin.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/console_systemd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/crypto.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/crypto_mbedtls.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/crypto_openssl.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/crypto_polarssl.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cryptoapi.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dhcp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/error.Po@am__quote@
@@ -602,8 +622,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pf.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ping.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pkcs11.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pkcs11_mbedtls.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pkcs11_openssl.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pkcs11_polarssl.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/platform.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/plugin.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pool.Po@am__quote@
@@ -620,12 +640,13 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/socket.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/socks.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ssl.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ssl_mbedtls.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ssl_openssl.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ssl_polarssl.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ssl_verify.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ssl_verify_mbedtls.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ssl_verify_openssl.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ssl_verify_polarssl.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/status.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tls_crypt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tun.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win32.Po@am__quote@
 

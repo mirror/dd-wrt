@@ -1,3 +1,4 @@
+/* include/openvpn-plugin.h.  Generated from openvpn-plugin.h.in by configure.  */
 /*
  *  OpenVPN -- An application to securely tunnel IP networks
  *             over a single TCP/UDP port, with support for SSL/TLS-based
@@ -27,12 +28,12 @@
 
 #define OPENVPN_PLUGIN_VERSION 3
 
-#ifdef ENABLE_SSL
-#ifdef ENABLE_CRYPTO_POLARSSL
-#include <polarssl/x509_crt.h>
+#ifdef ENABLE_CRYPTO
+#ifdef ENABLE_CRYPTO_MBEDTLS
+#include <mbedtls/x509_crt.h>
 #ifndef __OPENVPN_X509_CERT_T_DECLARED
 #define __OPENVPN_X509_CERT_T_DECLARED
-typedef x509_crt openvpn_x509_cert_t;
+typedef mbedtls_x509_crt openvpn_x509_cert_t;
 #endif
 #else
 #include <openssl/x509.h>
@@ -48,6 +49,13 @@ typedef X509 openvpn_x509_cert_t;
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/* Provide some basic version information to plug-ins at OpenVPN compile time
+ * This is will not be the complete version
+ */
+#define OPENVPN_VERSION_MAJOR 2
+#define OPENVPN_VERSION_MINOR 4
+#define OPENVPN_VERSION_PATCH "_rc1"
 
 /*
  * Plug-in types.  These types correspond to the set of script callbacks
@@ -147,7 +155,7 @@ typedef void *openvpn_plugin_handle_t;
 /*
  * For Windows (needs to be modified for MSVC)
  */
-#if defined(WIN32) && !defined(OPENVPN_PLUGIN_H)
+#if defined(_WIN32) && !defined(OPENVPN_PLUGIN_H)
 # define OPENVPN_EXPORT __declspec(dllexport)
 #else
 # define OPENVPN_EXPORT
@@ -208,8 +216,11 @@ struct openvpn_plugin_string_list
  *           which identifies the SSL implementation OpenVPN is compiled
  *           against.
  *
+ *    3      Added ovpn_version, ovpn_version_major, ovpn_version_minor
+ *           and ovpn_version_patch to provide the runtime version of
+ *           OpenVPN to plug-ins.
  */
-#define OPENVPN_PLUGINv3_STRUCTVER 2
+#define OPENVPN_PLUGINv3_STRUCTVER 3
 
 /**
  * Definitions needed for the plug-in callback functions.
@@ -246,7 +257,7 @@ typedef void (*plugin_vlog_t) (openvpn_plugin_log_flags_t flags,
                                const char *format,
                                va_list arglist) _ovpn_chk_fmt(3, 0);
 
-#undef _ovpn_chk_fmt
+/* #undef _ovpn_chk_fmt */
 
 /**
  * Used by the openvpn_plugin_open_v3() function to pass callback
@@ -267,13 +278,13 @@ struct openvpn_plugin_callbacks
 /**
  * Used by the openvpn_plugin_open_v3() function to indicate to the
  * plug-in what kind of SSL implementation OpenVPN uses.  This is
- * to avoid SEGV issues when OpenVPN is complied against PolarSSL
+ * to avoid SEGV issues when OpenVPN is complied against mbed TLS
  * and the plug-in against OpenSSL.
  */
 typedef enum {
   SSLAPI_NONE,
   SSLAPI_OPENSSL,
-  SSLAPI_POLARSSL
+  SSLAPI_MBEDTLS
 } ovpnSSLAPI;
 
 /**
@@ -304,6 +315,10 @@ struct openvpn_plugin_args_open_in
   const char ** const envp;
   struct openvpn_plugin_callbacks *callbacks;
   const ovpnSSLAPI ssl_api;
+  const char *ovpn_version;
+  const unsigned int ovpn_version_major;
+  const unsigned int ovpn_version_minor;
+  const char * const ovpn_version_patch;
 };
 
 
@@ -358,9 +373,9 @@ struct openvpn_plugin_args_open_return
  * *per_client_context : the per-client context pointer which was returned by
  *        openvpn_plugin_client_constructor_v1, if defined.
  *
- * current_cert_depth : Certificate depth of the certificate being passed over (only if compiled with ENABLE_SSL defined)
+ * current_cert_depth : Certificate depth of the certificate being passed over (only if compiled with ENABLE_CRYPTO defined)
  *
- * *current_cert : X509 Certificate object received from the client (only if compiled with ENABLE_SSL defined)
+ * *current_cert : X509 Certificate object received from the client (only if compiled with ENABLE_CRYPTO defined)
  *
  */
 struct openvpn_plugin_args_func_in
@@ -370,7 +385,7 @@ struct openvpn_plugin_args_func_in
   const char ** const envp;
   openvpn_plugin_handle_t handle;
   void *per_client_context;
-#ifdef ENABLE_SSL
+#ifdef ENABLE_CRYPTO
   int current_cert_depth;
   openvpn_x509_cert_t *current_cert;
 #else
