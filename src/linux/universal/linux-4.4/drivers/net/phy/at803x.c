@@ -65,6 +65,7 @@ MODULE_LICENSE("GPL");
 struct at803x_priv {
 	bool phy_reset:1;
 	struct gpio_desc *gpiod_reset;
+	int prev_speed;
 };
 
 struct at803x_context {
@@ -242,7 +243,6 @@ static int at803x_resume(struct phy_device *phydev)
 
 static int at803x_probe(struct phy_device *phydev)
 {
-	struct at803x_platform_data *pdata;
 	struct device *dev = &phydev->dev;
 	struct at803x_priv *priv;
 	struct gpio_desc *gpiod_reset;
@@ -254,12 +254,6 @@ static int at803x_probe(struct phy_device *phydev)
 	if (phydev->drv->phy_id != ATH8030_PHY_ID &&
 	    phydev->drv->phy_id != ATH8032_PHY_ID)
 		goto does_not_require_reset_workaround;
-
-	pdata = dev_get_platdata(&phydev->dev);
-	if (pdata && pdata->has_reset_gpio) {
-		devm_gpio_request(dev, pdata->reset_gpio, "reset");
-		gpio_direction_output(pdata->reset_gpio, 1);
-	}
 
 	gpiod_reset = devm_gpiod_get_optional(dev, "reset", GPIOD_OUT_LOW);
 	if (IS_ERR(gpiod_reset))
@@ -372,6 +366,8 @@ static int at803x_config_intr(struct phy_device *phydev)
 static void at803x_link_change_notify(struct phy_device *phydev)
 {
 	struct at803x_priv *priv = phydev->priv;
+	struct at803x_platform_data *pdata;
+	pdata = dev_get_platdata(&phydev->dev);
 
 	/*
 	 * Conduct a hardware reset for AT8030 every time a link loss is
@@ -381,23 +377,15 @@ static void at803x_link_change_notify(struct phy_device *phydev)
 	 * cannot recover from by software.
 	 */
 	if (phydev->state == PHY_NOLINK) {
-		if ((priv->gpiod_reset || pdata->has_reset_gpio) &&
-		    !priv->phy_reset) {
+		if (priv->gpiod_reset && !priv->phy_reset) {
 			struct at803x_context context;
 
 			at803x_context_save(phydev, &context);
 
-			if (pdata->has_reset_gpio) {
-				gpio_set_value_cansleep(pdata->reset_gpio, 0);
-				msleep(1);
-				gpio_set_value_cansleep(pdata->reset_gpio, 1);
-				msleep(1);
-			} else {
-				gpiod_set_value(priv->gpiod_reset, 1);
-				msleep(1);
-				gpiod_set_value(priv->gpiod_reset, 0);
-				msleep(1);
-			}
+			gpiod_set_value(priv->gpiod_reset, 1);
+			msleep(1);
+			gpiod_set_value(priv->gpiod_reset, 0);
+			msleep(1);
 
 			at803x_context_restore(phydev, &context);
 
@@ -407,6 +395,26 @@ static void at803x_link_change_notify(struct phy_device *phydev)
 		}
 	} else {
 		priv->phy_reset = false;
+	}
+	if (pdata && pdata->fixup_rgmii_tx_delay &&
+	    phydev->speed != priv->prev_speed) {
+		switch (phydev->speed) {
+		case SPEED_10:
+		case SPEED_100:
+			at803x_dbg_reg_set(phydev,
+				AT803X_DEBUG_SYSTEM_MODE_CTRL,
+				AT803X_DEBUG_RGMII_TX_CLK_DLY);
+			break;
+		case SPEED_1000:
+			at803x_dbg_reg_clr(phydev,
+				AT803X_DEBUG_SYSTEM_MODE_CTRL,
+				AT803X_DEBUG_RGMII_TX_CLK_DLY);
+			break;
+		default:
+			break;
+		}
+
+		priv->prev_speed = phydev->speed;
 	}
 }
 
@@ -418,7 +426,6 @@ static struct phy_driver at803x_driver[] = {
 	.phy_id_mask		= AT803X_PHY_ID_MASK,
 	.probe			= at803x_probe,
 	.config_init		= at803x_config_init,
-	.link_change_notify	= at803x_link_change_notify,
 	.set_wol		= at803x_set_wol,
 	.get_wol		= at803x_get_wol,
 	.suspend		= at803x_suspend,
@@ -439,6 +446,7 @@ static struct phy_driver at803x_driver[] = {
 	.phy_id_mask		= AT803X_PHY_ID_MASK,
 	.probe			= at803x_probe,
 	.config_init		= at803x_config_init,
+	.link_change_notify	= at803x_link_change_notify,
 	.set_wol		= at803x_set_wol,
 	.get_wol		= at803x_get_wol,
 	.suspend		= at803x_suspend,
