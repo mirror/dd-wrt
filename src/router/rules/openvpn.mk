@@ -39,8 +39,8 @@ CONFIGURE_ARGS_OVPN += \
 	--enable-multihome \
 	--with-crypto-library=$(SSL_TYPE) \
 	$(SSL_ADDOPT) \
-	CFLAGS="$(COPTS) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/lzo -L$(TOP)/lzo/src/.libs -ldl" \
+	CFLAGS="$(COPTS) -I$(SSLPATH)/include  -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(SSL_LIB_PATH) -L$(TOP)/lzo -L$(TOP)/lzo/src/.libs -ldl" \
 	ac_cv_func_epoll_create=yes
 
 openvpn-conf-prep:
