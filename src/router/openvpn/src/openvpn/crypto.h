@@ -86,6 +86,30 @@
  * <tt>   [ HMAC ] [ - IV - ] [ * packet payload * ] </tt>
  *
  * @par
+ * <b>GCM data channel crypto format</b> \n
+ * GCM modes are only supported in TLS mode.  In these modes, the IV consists of
+ * the 32-bit packet counter followed by data from the HMAC key.  The HMAC key
+ * can be used as IV, since in GCM and CCM modes the HMAC key is not used for
+ * the HMAC.  The packet counter may not roll over within a single TLS sessions.
+ * This results in a unique IV for each packet, as required by GCM.
+ *
+ * @par
+ * The HMAC key data is pre-shared during the connection setup, and thus can be
+ * omitted in on-the-wire packets, saving 8 bytes per packet (for GCM and CCM).
+ *
+ * @par
+ * In GCM mode, P_DATA_V2 headers (the opcode and peer-id) are also
+ * authenticated as Additional Data.
+ *
+ * @par
+ * <i>GCM IV format:</i> \n
+ * <tt>   [ - packet ID - ] [ - HMAC key data - ] </tt>\n
+ * <i>P_DATA_V1 GCM data channel crypto format:</i> \n
+ * <tt>   [ opcode ] [ - packet ID - ] [ TAG ] [ * packet payload * ] </tt>
+ * <i>P_DATA_V2 GCM data channel crypto format:</i> \n
+ * <tt>   [ - opcode/peer-id - ] [ - packet ID - ] [ TAG ] [ * packet payload * ] </tt>
+ *
+ * @par
  * <b>No-crypto data channel format</b> \n
  * In no-crypto mode (\c \-\-cipher \c none is specified), both TLS-mode and
  * static key mode are supported. No encryption will be performed on the packet,
@@ -107,6 +131,11 @@
 #include "buffer.h"
 #include "packet_id.h"
 #include "mtu.h"
+
+/** Wrapper struct to pass around MD5 digests */
+struct md5_digest {
+  uint8_t digest[MD5_DIGEST_LENGTH];
+};
 
 /*
  * Defines a key type and key length for both cipher and HMAC.
@@ -133,13 +162,16 @@ struct key
 
 
 /**
- * Container for one set of OpenSSL cipher and/or HMAC contexts.
+ * Container for one set of cipher and/or HMAC contexts.
  * @ingroup control_processor
  */
 struct key_ctx
 {
   cipher_ctx_t *cipher;      	/**< Generic cipher %context. */
-  hmac_ctx_t *hmac;               /**< Generic HMAC %context. */
+  hmac_ctx_t *hmac;             /**< Generic HMAC %context. */
+  uint8_t implicit_iv[OPENVPN_MAX_IV_LENGTH];
+				/**< The implicit part of the IV */
+  size_t implicit_iv_len;       /**< The length of implicit_iv */
 };
 
 #define KEY_DIRECTION_BIDIRECTIONAL 0 /* same keys for both directions */
@@ -190,10 +222,11 @@ struct key_direction_state
  */
 struct key_ctx_bi
 {
-  struct key_ctx encrypt;       /**< OpenSSL cipher and/or HMAC contexts
-                                 *   for sending direction. */
-  struct key_ctx decrypt;       /**< OpenSSL cipher and/or HMAC contexts
-                                 *   for receiving direction. */
+  struct key_ctx encrypt;       /**< Cipher and/or HMAC contexts for sending
+				 *   direction. */
+  struct key_ctx decrypt;       /**< cipher and/or HMAC contexts for
+                                 *   receiving direction. */
+  bool initialized;
 };
 
 /**
@@ -202,11 +235,11 @@ struct key_ctx_bi
  */
 struct crypto_options
 {
-  struct key_ctx_bi *key_ctx_bi;
+  struct key_ctx_bi key_ctx_bi;
                                 /**< OpenSSL cipher and HMAC contexts for
                                  *   both sending and receiving
                                  *   directions. */
-  struct packet_id *packet_id;  /**< Current packet ID state for both
+  struct packet_id packet_id;   /**< Current packet ID state for both
                                  *   sending and receiving directions. */
   struct packet_id_persist *pid_persist;
                                 /**< Persistent packet ID state for
@@ -233,6 +266,15 @@ struct crypto_options
                                  *   security operation functions. */
 };
 
+#define CRYPT_ERROR(format) \
+  do { msg (D_CRYPT_ERRORS, "%s: " format, error_prefix); goto error_exit; } while (false)
+
+/**
+ * Minimal IV length for AEAD mode ciphers (in bytes):
+ * 4-byte packet id + 8 bytes implicit IV.
+ */
+#define OPENVPN_AEAD_MIN_IV_LEN (sizeof (packet_id_type) + 8)
+
 #define RKF_MUST_SUCCEED (1<<0)
 #define RKF_INLINE       (1<<1)
 void read_key_file (struct key2 *key2, const char *file, const unsigned int flags);
@@ -257,9 +299,20 @@ bool write_key (const struct key *key, const struct key_type *kt,
 
 int read_key (struct key *key, const struct key_type *kt, struct buffer *buf);
 
+/**
+ * Initialize a key_type structure with.
+ *
+ * @param kt          The struct key_type to initialize
+ * @param ciphername  The name of the cipher to use
+ * @param authname    The name of the HMAC digest to use
+ * @param keysize     The length of the cipher key to use, in bytes.  Only valid
+ *                    for ciphers that support variable length keys.
+ * @param tls_mode    Specifies wether we are running in TLS mode, which allows
+ *                    more ciphers than static key mode.
+ * @param warn        Print warnings when null cipher / auth is used.
+ */
 void init_key_type (struct key_type *kt, const char *ciphername,
-    bool ciphername_defined, const char *authname, bool authname_defined,
-    int keysize, bool cfb_ofb_allowed, bool warn);
+    const char *authname, int keysize, bool tls_mode, bool warn);
 
 /*
  * Key context functions
@@ -296,18 +349,16 @@ void free_key_ctx_bi (struct key_ctx_bi *ctx);
  *
  * @param buf          - The %buffer containing the packet on which to
  *                       perform security operations.
- * @param work         - A working %buffer.
+ * @param work         - An initialized working %buffer.
  * @param opt          - The security parameter state for this VPN tunnel.
- * @param frame        - The packet geometry parameters for this VPN
- *                       tunnel.
+ *
  * @return This function returns void.\n On return, the \a buf argument
  *     will point to the resulting %buffer.  This %buffer will either
  *     contain the processed packet ready for sending, or be empty if an
  *     error occurred.
  */
 void openvpn_encrypt (struct buffer *buf, struct buffer work,
-		      const struct crypto_options *opt,
-		      const struct frame* frame);
+		      struct crypto_options *opt);
 
 
 /**
@@ -333,6 +384,8 @@ void openvpn_encrypt (struct buffer *buf, struct buffer work,
  * @param opt          - The security parameter state for this VPN tunnel.
  * @param frame        - The packet geometry parameters for this VPN
  *                       tunnel.
+ * @param ad_start     - A pointer into buf, indicating from where to start
+ *                       authenticating additional data (AEAD mode only).
  *
  * @return
  * @li True, if the packet was authenticated and decrypted successfully.
@@ -342,18 +395,35 @@ void openvpn_encrypt (struct buffer *buf, struct buffer work,
  *     an error occurred.
  */
 bool openvpn_decrypt (struct buffer *buf, struct buffer work,
-		      const struct crypto_options *opt,
-		      const struct frame* frame);
+		      struct crypto_options *opt, const struct frame* frame,
+		      const uint8_t *ad_start);
 
 /** @} name Functions for performing security operations on data channel packets */
 
+/**
+ * Check packet ID for replay, and perform replay administration.
+ *
+ * @param opt	Crypto options for this packet, contains replay state.
+ * @param pin	Packet ID read from packet.
+ * @param error_prefix	Prefix to use when printing error messages.
+ * @param gc	Garbage collector to use.
+ *
+ * @return true if packet ID is validated to be not a replay, false otherwise.
+ */
+bool crypto_check_replay(struct crypto_options *opt,
+    const struct packet_id_net *pin, const char *error_prefix,
+    struct gc_arena *gc);
+
+
+/** Calculate crypto overhead and adjust frame to account for that */
 void crypto_adjust_frame_parameters(struct frame *frame,
 				    const struct key_type* kt,
-				    bool cipher_defined,
 				    bool use_iv,
 				    bool packet_id,
 				    bool packet_id_long_form);
 
+/** Return the worst-case OpenVPN crypto overhead (in bytes) */
+size_t crypto_max_overhead(void);
 
 /* Minimum length of the nonce used by the PRNG */
 #define NONCE_SECRET_LEN_MIN 16
@@ -392,7 +462,7 @@ void prng_bytes (uint8_t *output, int len);
 
 void prng_uninit ();
 
-void test_crypto (const struct crypto_options *co, struct frame* f);
+void test_crypto (struct crypto_options *co, struct frame* f);
 
 
 /* key direction functions */
@@ -413,45 +483,31 @@ void key2_print (const struct key2* k,
 		 const char* prefix0,
 		 const char* prefix1);
 
-#ifdef ENABLE_SSL
-
-#define GHK_INLINE  (1<<0)
-void get_tls_handshake_key (const struct key_type *key_type,
-			    struct key_ctx_bi *ctx,
-			    const char *passphrase_file,
-			    const int key_direction,
-			    const unsigned int flags);
-
-#else
-
-void init_ssl_lib (void);
-void free_ssl_lib (void);
-
-#endif /* ENABLE_SSL */
-
-/*
- * md5 functions
- */
-
-struct md5_state {
-  md_ctx_t ctx;
-};
-
-struct md5_digest {
-  uint8_t digest [MD5_DIGEST_LENGTH];
-};
-
-const char *md5sum(uint8_t *buf, int len, int n_print_chars, struct gc_arena *gc);
-void md5_state_init (struct md5_state *s);
-void md5_state_update (struct md5_state *s, void *data, size_t len);
-void md5_state_final (struct md5_state *s, struct md5_digest *out);
-void md5_digest_clear (struct md5_digest *digest);
-bool md5_digest_defined (const struct md5_digest *digest);
-bool md5_digest_equal (const struct md5_digest *d1, const struct md5_digest *d2);
+void crypto_read_openvpn_key (const struct key_type *key_type,
+	struct key_ctx_bi *ctx, const char *key_file, const char *key_inline,
+	const int key_direction, const char *key_name, const char *opt_name);
 
 /*
  * Inline functions
  */
+
+/**
+ * As memcmp(), but constant-time.
+ * Returns 0 when data is equal, non-zero otherwise.
+ */
+static inline int
+memcmp_constant_time (const void *a, const void *b, size_t size) {
+  const uint8_t * a1 = a;
+  const uint8_t * b1 = b;
+  int ret = 0;
+  size_t i;
+
+  for (i = 0; i < size; i++) {
+      ret |= *a1++ ^ *b1++;
+  }
+
+  return ret;
+}
 
 static inline bool
 key_ctx_bi_defined(const struct key_ctx_bi* key)

@@ -25,6 +25,7 @@
 #ifndef MISC_H
 #define MISC_H
 
+#include "argv.h"
 #include "basic.h"
 #include "common.h"
 #include "integer.h"
@@ -36,14 +37,6 @@
 
 /* forward declarations */
 struct plugin_list;
-
-/* used by argv_x functions */
-struct argv {
-  size_t capacity;
-  size_t argc;
-  char **argv;
-  char *system_str;
-};
 
 /*
  * Handle environmental variable lists
@@ -63,7 +56,7 @@ void run_up_down (const char *command,
 		  const struct plugin_list *plugins,
 		  int plugin_type,
 		  const char *arg,
-#ifdef WIN32
+#ifdef _WIN32
 		  DWORD adapter_index,
 #endif
 		  const char *dev_type,
@@ -77,9 +70,6 @@ void run_up_down (const char *command,
 		  struct env_set *es);
 
 void write_pid (const char *filename);
-
-/* check file protections */
-void warn_if_group_others_accessible(const char* filename);
 
 /* system flags */
 #define S_SCRIPT (1<<0)
@@ -136,6 +126,12 @@ void setenv_str (struct env_set *es, const char *name, const char *value);
 void setenv_str_safe (struct env_set *es, const char *name, const char *value);
 void setenv_del (struct env_set *es, const char *name);
 
+/**
+ * Store the supplied name value pair in the env_set.  If the variable with the
+ * supplied name  already exists, append _N to the name, starting at N=1.
+ */
+void setenv_str_incr(struct env_set *es, const char *name, const char *value);
+
 void setenv_int_i (struct env_set *es, const char *name, const int value, const int i);
 void setenv_str_i (struct env_set *es, const char *name, const char *value, const int i);
 
@@ -145,6 +141,7 @@ struct env_set *env_set_create (struct gc_arena *gc);
 void env_set_destroy (struct env_set *es);
 bool env_set_del (struct env_set *es, const char *str);
 void env_set_add (struct env_set *es, const char *str);
+const char* env_set_get (const struct env_set *es, const char *name);
 
 void env_set_print (int msglevel, const struct env_set *es);
 
@@ -161,10 +158,6 @@ const char **make_env_array (const struct env_set *es,
 
 const char **make_arg_array (const char *first, const char *parms, struct gc_arena *gc);
 const char **make_extended_arg_array (char **p, struct gc_arena *gc);
-
-/* convert netmasks for iproute2 */
-int count_netmask_bits(const char *);
-unsigned int count_bits(unsigned int );
 
 /* an analogue to the random() function, but use OpenSSL functions if available */
 #ifdef ENABLE_CRYPTO
@@ -253,6 +246,8 @@ struct static_challenge_info {};
 #define GET_USER_PASS_STATIC_CHALLENGE       (1<<8) /* SCRV1 protocol -- static challenge */
 #define GET_USER_PASS_STATIC_CHALLENGE_ECHO  (1<<9) /* SCRV1 protocol -- echo response */
 
+#define GET_USER_PASS_INLINE_CREDS (1<<10)  /* indicates that auth_file is actually inline creds */
+
 bool get_user_pass_cr (struct user_pass *up,
 		       const char *auth_file,
 		       const char *prefix,
@@ -320,49 +315,17 @@ extern int script_security; /* GLOBAL */
 /* return the next largest power of 2 */
 size_t adjust_power_of_2 (size_t u);
 
-/*
- * A printf-like function (that only recognizes a subset of standard printf
- * format operators) that prints arguments to an argv list instead
- * of a standard string.  This is used to build up argv arrays for passing
- * to execve.
- */
-void argv_init (struct argv *a);
-struct argv argv_new (void);
-void argv_reset (struct argv *a);
-char *argv_term (const char **f);
-const char *argv_str (const struct argv *a, struct gc_arena *gc, const unsigned int flags);
-struct argv argv_insert_head (const struct argv *a, const char *head);
-void argv_msg (const int msglev, const struct argv *a);
-void argv_msg_prefix (const int msglev, const struct argv *a, const char *prefix);
-const char *argv_system_str (const struct argv *a);
-
-#define APA_CAT (1<<0) /* concatentate onto existing struct argv list */
-void argv_printf_arglist (struct argv *a, const char *format, const unsigned int flags, va_list arglist);
-
-void argv_printf (struct argv *a, const char *format, ...)
-#ifdef __GNUC__
-#if __USE_MINGW_ANSI_STDIO
-	__attribute__ ((format (gnu_printf, 2, 3)))
-#else
-	__attribute__ ((format (__printf__, 2, 3)))
-#endif
-#endif
-  ;
-
-void argv_printf_cat (struct argv *a, const char *format, ...)
-#ifdef __GNUC__
-#if __USE_MINGW_ANSI_STDIO
-	__attribute__ ((format (gnu_printf, 2, 3)))
-#else
-	__attribute__ ((format (__printf__, 2, 3)))
-#endif
-#endif
-  ;
-
 #define COMPAT_FLAG_QUERY         0       /** compat_flags operator: Query for a flag */
 #define COMPAT_FLAG_SET           (1<<0)  /** compat_flags operator: Set a compat flag */
 #define COMPAT_NAMES              (1<<1)  /** compat flag: --compat-names set */
 #define COMPAT_NO_NAME_REMAPPING  (1<<2)  /** compat flag: --compat-names without char remapping */
 bool compat_flag (unsigned int flag);
+
+#if P2MP_SERVER
+/* helper to parse peer_info received from multi client, validate
+ * (this is untrusted data) and put into environment */
+bool validate_peer_info_line(char *line);
+void output_peer_info_env (struct env_set *es, const char * peer_info);
+#endif /* P2MP_SERVER */
 
 #endif

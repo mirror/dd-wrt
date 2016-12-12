@@ -103,14 +103,15 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/ax_emptyarray.m4 \
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
-CONFIG_HEADER = $(top_builddir)/config.h
+CONFIG_HEADER = $(top_builddir)/config.h \
+	$(top_builddir)/include/openvpn-plugin.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libcompat_la_LIBADD =
 am_libcompat_la_OBJECTS = compat-dirname.lo compat-basename.lo \
 	compat-gettimeofday.lo compat-daemon.lo compat-inet_ntop.lo \
-	compat-inet_pton.lo
+	compat-inet_pton.lo compat-lz4.lo
 libcompat_la_OBJECTS = $(am_libcompat_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -128,7 +129,7 @@ AM_V_at = $(am__v_at_@AM_V@)
 am__v_at_ = $(am__v_at_@AM_DEFAULT_V@)
 am__v_at_0 = @
 am__v_at_1 = 
-DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
+DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir) -I$(top_builddir)/include
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
 am__mv = mv -f
@@ -224,24 +225,31 @@ LIBTOOL = @LIBTOOL@
 LIPO = @LIPO@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
+LZ4_CFLAGS = @LZ4_CFLAGS@
+LZ4_LIBS = @LZ4_LIBS@
 LZO_CFLAGS = @LZO_CFLAGS@
 LZO_LIBS = @LZO_LIBS@
 MAKEINFO = @MAKEINFO@
 MAN2HTML = @MAN2HTML@
 MANIFEST_TOOL = @MANIFEST_TOOL@
+MBEDTLS_CFLAGS = @MBEDTLS_CFLAGS@
+MBEDTLS_LIBS = @MBEDTLS_LIBS@
 MKDIR_P = @MKDIR_P@
 NETSTAT = @NETSTAT@
 NM = @NM@
 NMEDIT = @NMEDIT@
 OBJDUMP = @OBJDUMP@
 OBJEXT = @OBJEXT@
-OPENSSL_CRYPTO_CFLAGS = @OPENSSL_CRYPTO_CFLAGS@
-OPENSSL_CRYPTO_LIBS = @OPENSSL_CRYPTO_LIBS@
-OPENSSL_SSL_CFLAGS = @OPENSSL_SSL_CFLAGS@
-OPENSSL_SSL_LIBS = @OPENSSL_SSL_LIBS@
+OPENSSL_CFLAGS = @OPENSSL_CFLAGS@
+OPENSSL_LIBS = @OPENSSL_LIBS@
+OPENVPN_VERSION_MAJOR = @OPENVPN_VERSION_MAJOR@
+OPENVPN_VERSION_MINOR = @OPENVPN_VERSION_MINOR@
+OPENVPN_VERSION_PATCH = @OPENVPN_VERSION_PATCH@
 OPTIONAL_CRYPTO_CFLAGS = @OPTIONAL_CRYPTO_CFLAGS@
 OPTIONAL_CRYPTO_LIBS = @OPTIONAL_CRYPTO_LIBS@
 OPTIONAL_DL_LIBS = @OPTIONAL_DL_LIBS@
+OPTIONAL_LZ4_CFLAGS = @OPTIONAL_LZ4_CFLAGS@
+OPTIONAL_LZ4_LIBS = @OPTIONAL_LZ4_LIBS@
 OPTIONAL_LZO_CFLAGS = @OPTIONAL_LZO_CFLAGS@
 OPTIONAL_LZO_LIBS = @OPTIONAL_LZO_LIBS@
 OPTIONAL_PKCS11_HELPER_CFLAGS = @OPTIONAL_PKCS11_HELPER_CFLAGS@
@@ -267,8 +275,6 @@ PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
 PKG_CONFIG_PATH = @PKG_CONFIG_PATH@
 PLUGIN_AUTH_PAM_CFLAGS = @PLUGIN_AUTH_PAM_CFLAGS@
 PLUGIN_AUTH_PAM_LIBS = @PLUGIN_AUTH_PAM_LIBS@
-POLARSSL_CFLAGS = @POLARSSL_CFLAGS@
-POLARSSL_LIBS = @POLARSSL_LIBS@
 RANLIB = @RANLIB@
 RC = @RC@
 ROUTE = @ROUTE@
@@ -355,13 +361,13 @@ EXTRA_DIST = \
 noinst_LTLIBRARIES = libcompat.la
 libcompat_la_SOURCES = \
 	compat.h \
-	compat-stdbool.h \
 	compat-dirname.c \
 	compat-basename.c \
 	compat-gettimeofday.c \
 	compat-daemon.c \
 	compat-inet_ntop.c \
 	compat-inet_pton.c \
+	compat-lz4.c compat-lz4.h \
 	compat-versionhelpers.h
 
 all: all-am
@@ -425,6 +431,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/compat-gettimeofday.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/compat-inet_ntop.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/compat-inet_pton.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/compat-lz4.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

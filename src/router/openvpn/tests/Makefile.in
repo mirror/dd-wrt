@@ -25,6 +25,7 @@
 #  Copyright (C) 2006-2012 Alon Bar-Lev <alon.barlev@gmail.com>
 #
 
+
 VPATH = @srcdir@
 am__is_gnu_make = test -n '$(MAKEFILE_LIST)' && test -n '$(MAKELEVEL)'
 am__make_running_with_option = \
@@ -92,7 +93,8 @@ host_triplet = @host@
 @ENABLE_CRYPTO_TRUE@am__append_1 = t_lpback.sh t_cltsrv.sh
 subdir = tests
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
-	$(srcdir)/t_client.sh.in $(am__dist_noinst_SCRIPTS_DIST)
+	$(srcdir)/t_client.sh.in $(am__dist_noinst_SCRIPTS_DIST) \
+	$(dist_noinst_DATA)
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ax_emptyarray.m4 \
 	$(top_srcdir)/m4/ax_socklen_t.m4 \
@@ -104,11 +106,12 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/ax_emptyarray.m4 \
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
-CONFIG_HEADER = $(top_builddir)/config.h
+CONFIG_HEADER = $(top_builddir)/config.h \
+	$(top_builddir)/include/openvpn-plugin.h
 CONFIG_CLEAN_FILES = t_client.sh
 CONFIG_CLEAN_VPATH_FILES =
 am__dist_noinst_SCRIPTS_DIST = t_client.sh t_lpback.sh t_cltsrv.sh \
-	t_cltsrv-down.sh
+	t_cltsrv-down.sh update_t_client_ips.sh
 SCRIPTS = $(dist_noinst_SCRIPTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -137,6 +140,7 @@ am__can_run_installinfo = \
     n|no|NO) false;; \
     *) (install-info --version) >/dev/null 2>&1;; \
   esac
+DATA = $(dist_noinst_DATA)
 RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 am__recursive_targets = \
@@ -260,24 +264,31 @@ LIBTOOL = @LIBTOOL@
 LIPO = @LIPO@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
+LZ4_CFLAGS = @LZ4_CFLAGS@
+LZ4_LIBS = @LZ4_LIBS@
 LZO_CFLAGS = @LZO_CFLAGS@
 LZO_LIBS = @LZO_LIBS@
 MAKEINFO = @MAKEINFO@
 MAN2HTML = @MAN2HTML@
 MANIFEST_TOOL = @MANIFEST_TOOL@
+MBEDTLS_CFLAGS = @MBEDTLS_CFLAGS@
+MBEDTLS_LIBS = @MBEDTLS_LIBS@
 MKDIR_P = @MKDIR_P@
 NETSTAT = @NETSTAT@
 NM = @NM@
 NMEDIT = @NMEDIT@
 OBJDUMP = @OBJDUMP@
 OBJEXT = @OBJEXT@
-OPENSSL_CRYPTO_CFLAGS = @OPENSSL_CRYPTO_CFLAGS@
-OPENSSL_CRYPTO_LIBS = @OPENSSL_CRYPTO_LIBS@
-OPENSSL_SSL_CFLAGS = @OPENSSL_SSL_CFLAGS@
-OPENSSL_SSL_LIBS = @OPENSSL_SSL_LIBS@
+OPENSSL_CFLAGS = @OPENSSL_CFLAGS@
+OPENSSL_LIBS = @OPENSSL_LIBS@
+OPENVPN_VERSION_MAJOR = @OPENVPN_VERSION_MAJOR@
+OPENVPN_VERSION_MINOR = @OPENVPN_VERSION_MINOR@
+OPENVPN_VERSION_PATCH = @OPENVPN_VERSION_PATCH@
 OPTIONAL_CRYPTO_CFLAGS = @OPTIONAL_CRYPTO_CFLAGS@
 OPTIONAL_CRYPTO_LIBS = @OPTIONAL_CRYPTO_LIBS@
 OPTIONAL_DL_LIBS = @OPTIONAL_DL_LIBS@
+OPTIONAL_LZ4_CFLAGS = @OPTIONAL_LZ4_CFLAGS@
+OPTIONAL_LZ4_LIBS = @OPTIONAL_LZ4_LIBS@
 OPTIONAL_LZO_CFLAGS = @OPTIONAL_LZO_CFLAGS@
 OPTIONAL_LZO_LIBS = @OPTIONAL_LZO_LIBS@
 OPTIONAL_PKCS11_HELPER_CFLAGS = @OPTIONAL_PKCS11_HELPER_CFLAGS@
@@ -303,8 +314,6 @@ PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
 PKG_CONFIG_PATH = @PKG_CONFIG_PATH@
 PLUGIN_AUTH_PAM_CFLAGS = @PLUGIN_AUTH_PAM_CFLAGS@
 PLUGIN_AUTH_PAM_LIBS = @PLUGIN_AUTH_PAM_LIBS@
-POLARSSL_CFLAGS = @POLARSSL_CFLAGS@
-POLARSSL_LIBS = @POLARSSL_LIBS@
 RANLIB = @RANLIB@
 RC = @RC@
 ROUTE = @ROUTE@
@@ -390,7 +399,11 @@ TESTS_ENVIRONMENT = top_srcdir="$(top_srcdir)"
 TESTS = $(test_scripts)
 dist_noinst_SCRIPTS = \
 	$(test_scripts) \
-	t_cltsrv-down.sh
+	t_cltsrv-down.sh \
+	update_t_client_ips.sh
+
+dist_noinst_DATA = \
+	t_client.rc-sample
 
 all: all-recursive
 
@@ -684,7 +697,7 @@ distdir: $(DISTFILES)
 check-am: all-am
 	$(MAKE) $(AM_MAKEFLAGS) check-TESTS
 check: check-recursive
-all-am: Makefile $(SCRIPTS)
+all-am: Makefile $(SCRIPTS) $(DATA)
 installdirs: installdirs-recursive
 installdirs-am:
 install: install-recursive

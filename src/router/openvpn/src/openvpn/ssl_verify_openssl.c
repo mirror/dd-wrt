@@ -35,11 +35,15 @@
 
 #include "syshead.h"
 
-#if defined(ENABLE_SSL) && defined(ENABLE_CRYPTO_OPENSSL)
+#if defined(ENABLE_CRYPTO) && defined(ENABLE_CRYPTO_OPENSSL)
 
+#include "ssl_verify_openssl.h"
+
+#include "error.h"
+#include "ssl_openssl.h"
 #include "ssl_verify.h"
 #include "ssl_verify_backend.h"
-#include "ssl_openssl.h"
+
 #include <openssl/x509v3.h>
 #include <openssl/err.h>
 
@@ -57,8 +61,8 @@ verify_callback (int preverify_ok, X509_STORE_CTX * ctx)
   session = (struct tls_session *) SSL_get_ex_data (ssl, mydata_index);
   ASSERT (session);
 
-  cert_hash_remember (session, ctx->error_depth,
-      x509_get_sha1_hash(ctx->current_cert, &gc));
+  struct buffer cert_hash = x509_get_sha256_fingerprint(ctx->current_cert, &gc);
+  cert_hash_remember (session, ctx->error_depth, &cert_hash);
 
   /* did peer present cert which was signed by our root cert? */
   if (!preverify_ok)
@@ -66,14 +70,27 @@ verify_callback (int preverify_ok, X509_STORE_CTX * ctx)
       /* get the X509 name */
       char *subject = x509_get_subject(ctx->current_cert, &gc);
 
-      if (subject)
+      if (!subject)
 	{
-	  /* Remote site specified a certificate, but it's not correct */
-	  msg (D_TLS_ERRORS, "VERIFY ERROR: depth=%d, error=%s: %s",
-	      ctx->error_depth,
-	      X509_verify_cert_error_string (ctx->error),
-	      subject);
+	  subject = "(Failed to retrieve certificate subject)";
 	}
+
+      /* Log and ignore missing CRL errors */
+      if (ctx->error == X509_V_ERR_UNABLE_TO_GET_CRL)
+	{
+	  msg (D_TLS_DEBUG_LOW, "VERIFY WARNING: depth=%d, %s: %s",
+	       ctx->error_depth,
+	       X509_verify_cert_error_string (ctx->error),
+	       subject);
+	  ret = 1;
+	  goto cleanup;
+	}
+
+      /* Remote site specified a certificate, but it's not correct */
+      msg (D_TLS_ERRORS, "VERIFY ERROR: depth=%d, error=%s: %s",
+	   ctx->error_depth,
+	   X509_verify_cert_error_string (ctx->error),
+	   subject);
 
       ERR_clear_error();
 
@@ -134,8 +151,8 @@ bool extract_x509_extension(X509 *cert, char *fieldname, char *out, int size)
                   }
                 break;
               default:
-                msg (D_TLS_ERRORS, "ASN1 ERROR: can not handle field type %i",
-                     name->type);
+                msg (D_TLS_DEBUG, "%s: ignoring general name field type %i",
+                    __func__, name->type);
                 break;
             }
           }
@@ -165,8 +182,8 @@ extract_x509_field_ssl (X509_NAME *x509, const char *field_name, char *out,
   int tmp = -1;
   X509_NAME_ENTRY *x509ne = 0;
   ASN1_STRING *asn1 = 0;
-  unsigned char *buf = (unsigned char *)1; /* bug in OpenSSL 0.9.6b ASN1_STRING_to_UTF8 requires this workaround */
-  int nid = OBJ_txt2nid((char *)field_name);
+  unsigned char *buf = NULL;
+  int nid = OBJ_txt2nid(field_name);
 
   ASSERT (size > 0);
   *out = '\0';
@@ -244,11 +261,21 @@ backend_x509_get_serial_hex (openvpn_x509_cert_t *cert, struct gc_arena *gc)
   return format_hex_ex(asn1_i->data, asn1_i->length, 0, 1, ":", gc);
 }
 
-unsigned char *
-x509_get_sha1_hash (X509 *cert, struct gc_arena *gc)
+struct buffer
+x509_get_sha1_fingerprint (X509 *cert, struct gc_arena *gc)
 {
-  unsigned char *hash = gc_malloc(SHA_DIGEST_LENGTH, false, gc);
-  memcpy(hash, cert->sha1_hash, SHA_DIGEST_LENGTH);
+  struct buffer hash = alloc_buf_gc(sizeof(cert->sha1_hash), gc);
+  memcpy(BPTR(&hash), cert->sha1_hash, sizeof(cert->sha1_hash));
+  ASSERT (buf_inc_len(&hash, sizeof (cert->sha1_hash)));
+  return hash;
+}
+
+struct buffer
+x509_get_sha256_fingerprint (X509 *cert, struct gc_arena *gc)
+{
+  struct buffer hash = alloc_buf_gc((EVP_sha256())->md_size, gc);
+  X509_digest(cert, EVP_sha256(), BPTR(&hash), NULL);
+  ASSERT (buf_inc_len(&hash, (EVP_sha256())->md_size));
   return hash;
 }
 
@@ -299,7 +326,26 @@ err:
 }
 
 
-#ifdef ENABLE_X509_TRACK
+/*
+ * x509-track implementation -- save X509 fields to environment,
+ * using the naming convention:
+ *
+ *  X509_{cert_depth}_{name}={value}
+ *
+ * This function differs from x509_setenv below in the following ways:
+ *
+ * (1) Only explicitly named attributes in xt are saved, per usage
+ *     of "x509-track" program options.
+ * (2) Only the level 0 cert info is saved unless the XT_FULL_CHAIN
+ *     flag is set in xt->flags (corresponds with prepending a '+'
+ *     to the name when specified by "x509-track" program option).
+ * (3) This function supports both X509 subject name fields as
+ *     well as X509 V3 extensions.
+ * (4) This function can return the SHA1 fingerprint of a cert, e.g.
+ *       x509-track "+SHA1"
+ *     will return the SHA1 fingerprint for each certificate in the
+ *     peer chain.
+ */
 
 void
 x509_track_add (const struct x509_track **ll_head, const char *name, int msglevel, struct gc_arena *gc)
@@ -342,60 +388,82 @@ do_setenv_x509 (struct env_set *es, const char *name, char *value, int depth)
 void
 x509_setenv_track (const struct x509_track *xt, struct env_set *es, const int depth, X509 *x509)
 {
+  struct gc_arena gc = gc_new();
   X509_NAME *x509_name = X509_get_subject_name (x509);
   const char nullc = '\0';
-  int i;
 
   while (xt)
     {
       if (depth == 0 || (xt->flags & XT_FULL_CHAIN))
 	{
-	  i = X509_NAME_get_index_by_NID(x509_name, xt->nid, -1);
-	  if (i >= 0)
+	  switch (xt->nid)
 	    {
-	      X509_NAME_ENTRY *ent = X509_NAME_get_entry(x509_name, i);
-	      if (ent)
-		{
-		  ASN1_STRING *val = X509_NAME_ENTRY_get_data (ent);
-		  unsigned char *buf;
-		  buf = (unsigned char *)1; /* bug in OpenSSL 0.9.6b ASN1_STRING_to_UTF8 requires this workaround */
-		  if (ASN1_STRING_to_UTF8 (&buf, val) > 0)
-		    {
-		      do_setenv_x509(es, xt->name, (char *)buf, depth);
-		      OPENSSL_free (buf);
-		    }
-		}
-	    }
-	  else
-	    {
-	      i = X509_get_ext_by_NID(x509, xt->nid, -1);
-	      if (i >= 0)
-		{
-		  X509_EXTENSION *ext = X509_get_ext(x509, i);
-		  if (ext)
-		    {
-		      BIO *bio = BIO_new(BIO_s_mem());
-		      if (bio)
-			{
-			  if (X509V3_EXT_print(bio, ext, 0, 0))
-			    {
-			      if (BIO_write(bio, &nullc, 1) == 1)
-				{
-				  char *str;
-				  BIO_get_mem_data(bio, &str);
-				  do_setenv_x509(es, xt->name, str, depth);
-				}
-			    }
-			  BIO_free(bio);
-			}
-		    }
-		}
+	    case NID_sha1:
+	    case NID_sha256:
+	      {
+		struct buffer fp_buf;
+		char *fp_str = NULL;
+
+		if (xt->nid == NID_sha1)
+		  fp_buf = x509_get_sha1_fingerprint(x509, &gc);
+		else
+		  fp_buf = x509_get_sha256_fingerprint(x509, &gc);
+
+		fp_str = format_hex_ex(BPTR(&fp_buf), BLEN(&fp_buf), 0,
+		    1 | FHE_CAPS, ":", &gc);
+		do_setenv_x509(es, xt->name, fp_str, depth);
+	      }
+	      break;
+	    default:
+	      {
+		int i = X509_NAME_get_index_by_NID(x509_name, xt->nid, -1);
+		if (i >= 0)
+		  {
+		    X509_NAME_ENTRY *ent = X509_NAME_get_entry(x509_name, i);
+		    if (ent)
+		      {
+			ASN1_STRING *val = X509_NAME_ENTRY_get_data (ent);
+			unsigned char *buf;
+			buf = (unsigned char *)1; /* bug in OpenSSL 0.9.6b ASN1_STRING_to_UTF8 requires this workaround */
+			if (ASN1_STRING_to_UTF8 (&buf, val) > 0)
+			  {
+			    do_setenv_x509(es, xt->name, (char *)buf, depth);
+			    OPENSSL_free (buf);
+			  }
+		      }
+		  }
+		else
+		  {
+		    i = X509_get_ext_by_NID(x509, xt->nid, -1);
+		    if (i >= 0)
+		      {
+			X509_EXTENSION *ext = X509_get_ext(x509, i);
+			if (ext)
+			  {
+			    BIO *bio = BIO_new(BIO_s_mem());
+			    if (bio)
+			      {
+				if (X509V3_EXT_print(bio, ext, 0, 0))
+				  {
+				    if (BIO_write(bio, &nullc, 1) == 1)
+				      {
+					char *str;
+					BIO_get_mem_data(bio, &str);
+					do_setenv_x509(es, xt->name, str, depth);
+				      }
+				  }
+				BIO_free(bio);
+			      }
+			  }
+		      }
+		  }
+	      }
 	    }
 	}
       xt = xt->next;
     }
+  gc_free(&gc);
 }
-#endif
 
 /*
  * Save X509 fields to environment, using the naming convention:
@@ -444,7 +512,7 @@ x509_setenv (struct env_set *es, int cert_depth, openvpn_x509_cert_t *peer_cert)
 	  objbuf);
       string_mod (name_expand, CC_PRINT, CC_CRLF, '_');
       string_mod ((char*)buf, CC_PRINT, CC_CRLF, '_');
-      setenv_str (es, name_expand, (char*)buf);
+      setenv_str_incr (es, name_expand, (char*)buf);
       free (name_expand);
       OPENSSL_free (buf);
     }
@@ -464,8 +532,6 @@ x509_verify_ns_cert_type(const openvpn_x509_cert_t *peer_cert, const int usage)
 
   return FAILURE;
 }
-
-#if OPENSSL_VERSION_NUMBER >= 0x00907000L
 
 result_t
 x509_verify_cert_ku (X509 *x509, const unsigned * const expected_ku,
@@ -572,61 +638,28 @@ x509_write_pem(FILE *peercert_file, X509 *peercert)
   return SUCCESS;
 }
 
-#endif /* OPENSSL_VERSION_NUMBER */
-
-/*
- * check peer cert against CRL
- */
-result_t
-x509_verify_crl(const char *crl_file, X509 *peer_cert, const char *subject)
+bool
+tls_verify_crl_missing(const struct tls_options *opt)
 {
-  X509_CRL *crl=NULL;
-  X509_REVOKED *revoked;
-  BIO *in=NULL;
-  int n,i;
-  result_t retval = FAILURE;
-  struct gc_arena gc = gc_new();
-  char *serial;
-
-  in = BIO_new_file (crl_file, "r");
-
-  if (in == NULL) {
-    msg (M_WARN, "CRL: cannot read: %s", crl_file);
-    goto end;
-  }
-  crl=PEM_read_bio_X509_CRL(in,NULL,NULL,NULL);
-  if (crl == NULL) {
-    msg (M_WARN, "CRL: cannot read CRL from file %s", crl_file);
-    goto end;
-  }
-
-  if (X509_NAME_cmp(X509_CRL_get_issuer(crl), X509_get_issuer_name(peer_cert)) != 0) {
-    msg (M_WARN, "CRL: CRL %s is from a different issuer than the issuer of "
-	"certificate %s", crl_file, subject);
-    retval = SUCCESS;
-    goto end;
-  }
-
-  n = sk_X509_REVOKED_num(X509_CRL_get_REVOKED(crl));
-  for (i = 0; i < n; i++) {
-    revoked = (X509_REVOKED *)sk_X509_REVOKED_value(X509_CRL_get_REVOKED(crl), i);
-    if (ASN1_INTEGER_cmp(revoked->serialNumber, X509_get_serialNumber(peer_cert)) == 0) {
-      serial = backend_x509_get_serial_hex(peer_cert, &gc);
-      msg (D_HANDSHAKE, "CRL CHECK FAILED: %s (serial %s) is REVOKED", subject, (serial ? serial : "NOT AVAILABLE"));
-      goto end;
+  if (!opt->crl_file || (opt->ssl_flags & SSLF_CRL_VERIFY_DIR))
+    {
+      return false;
     }
-  }
 
-  retval = SUCCESS;
-  msg (D_HANDSHAKE, "CRL CHECK OK: %s",subject);
+  X509_STORE *store = SSL_CTX_get_cert_store(opt->ssl_ctx.ctx);
+  if (!store)
+    crypto_msg (M_FATAL, "Cannot get certificate store");
 
-end:
-  gc_free(&gc);
-  BIO_free(in);
-  if (crl)
-    X509_CRL_free (crl);
-
-  return retval;
+  for (int i = 0; i < sk_X509_OBJECT_num(store->objs); i++)
+    {
+      X509_OBJECT* obj = sk_X509_OBJECT_value(store->objs, i);
+      ASSERT(obj);
+      if (obj->type == X509_LU_CRL)
+	{
+	  return false;
+	}
+    }
+  return true;
 }
 
-#endif /* defined(ENABLE_SSL) && defined(ENABLE_CRYPTO_OPENSSL) */
+#endif /* defined(ENABLE_CRYPTO) && defined(ENABLE_CRYPTO_OPENSSL) */

@@ -135,6 +135,9 @@ struct frame {
   int align_adjust;
 };
 
+/* Forward declarations, to prevent includes */
+struct options;
+
 /* Routines which read struct frame should use the macros below */
 
 /*
@@ -207,7 +210,7 @@ void frame_print (const struct frame *frame,
 		  int level,
 		  const char *prefix);
 
-void set_mtu_discover_type (int sd, int mtu_type);
+void set_mtu_discover_type (int sd, int mtu_type, sa_family_t proto_af);
 int translate_mtu_discover_type_name (const char *name);
 
 /*
@@ -226,6 +229,9 @@ void alloc_buf_sock_tun (struct buffer *buf,
 			 const struct frame *frame,
 			 const bool tuntap_buffer,
 			 const unsigned int align_mask);
+
+/** Set the --mssfix option. */
+void frame_init_mssfix (struct frame *frame, const struct options *options);
 
 /*
  * EXTENDED_SOCKET_ERROR_CAPABILITY functions -- print extra error info

@@ -33,11 +33,14 @@
 #include "push.h"
 #include "options.h"
 #include "ssl.h"
+#include "ssl_verify.h"
 #include "manage.h"
 
 #include "memdbg.h"
 
 #if P2MP
+
+static char push_reply_cmd[] = "PUSH_REPLY";
 
 /*
  * Auth username/password
@@ -49,7 +52,8 @@ void
 receive_auth_failed (struct context *c, const struct buffer *buffer)
 {
   msg (M_VERB0, "AUTH: Received control message: %s", BSTR(buffer));
-  connection_list_set_no_advance(&c->options);
+  c->options.no_advance=true;
+
   if (c->options.pull)
     {
       switch (auth_retry_get ())
@@ -120,8 +124,7 @@ server_pushed_signal (struct context *c, const struct buffer *buffer, const bool
 		else if (m[i] == 'N')
 		  {
 		    /* next server? */
-		    if (c->options.connection_list)
-		      c->options.connection_list->no_advance = false;
+		    c->options.no_advance = false;
 		  }
 	      }
 	  }
@@ -149,6 +152,30 @@ server_pushed_signal (struct context *c, const struct buffer *buffer, const bool
 }
 
 #if P2MP_SERVER
+/**
+ * Add an option to the given push list by providing a format string.
+ *
+ * The string added to the push options is allocated in o->gc, so the caller
+ * does not have to preserve anything.
+ *
+ * @param gc        GC arena where options are allocated
+ * @param push_list Push list containing options
+ * @param msglevel  The message level to use when printing errors
+ * @param fmt       Format string for the option
+ * @param ...       Format string arguments
+ *
+ * @return true on success, false on failure.
+ */
+static bool push_option_fmt(struct gc_arena *gc, struct push_list *push_list,
+			    int msglevel, const char *fmt, ...)
+#ifdef __GNUC__
+#if __USE_MINGW_ANSI_STDIO
+    __attribute__ ((format (gnu_printf, 4, 5)))
+#else
+    __attribute__ ((format (__printf__, 4, 5)))
+#endif
+#endif
+    ;
 
 /*
  * Send auth failed message from server to client.
@@ -214,11 +241,37 @@ incoming_push_message (struct context *c, const struct buffer *buffer)
     {
       c->options.push_option_types_found |= option_types_found;
 
+      /* delay bringing tun/tap up until --push parms received from remote */
       if (status == PUSH_MSG_REPLY)
-	do_up (c, true, c->options.push_option_types_found ); /* delay bringing tun/tap up until --push parms received from remote */
+	{
+	  if (!do_up (c, true, c->options.push_option_types_found))
+	    {
+	      msg (D_PUSH_ERRORS, "Failed to open tun/tap interface");
+	      goto error;
+	    }
+	}
       event_timeout_clear (&c->c2.push_request_interval);
     }
+  else if (status == PUSH_MSG_REQUEST)
+    {
+      if (c->options.mode == MODE_SERVER)
+	{
+	  struct tls_session *session = &c->c2.tls_multi->session[TM_ACTIVE];
+	  /* Do not regenerate keys if client send a second push request */
+	  if (!session->key[KS_PRIMARY].crypto_options.key_ctx_bi.initialized &&
+	      !tls_session_update_crypto_params (session, &c->options,
+		  &c->c2.frame))
+	    {
+	      msg (D_TLS_ERRORS, "TLS Error: initializing data channel failed");
+	      goto error;
+	    }
+	}
+    }
 
+  goto cleanup;
+error:
+  register_signal (c, SIGUSR1, "process-push-msg-failed");
+cleanup:
   gc_free (&gc);
 }
 
@@ -241,79 +294,162 @@ send_push_request (struct context *c)
 
 #if P2MP_SERVER
 
-bool
-send_push_reply (struct context *c)
+/**
+ * Prepare push options, based on local options and available peer info.
+ *
+ * @param context	context structure storing data for VPN tunnel
+ * @param gc     	gc arena for allocating push options
+ * @param push_list	push list to where options are added
+ *
+ * @return true on success, false on failure.
+ */
+static bool
+prepare_push_reply (struct context *c, struct gc_arena *gc,
+		    struct push_list *push_list)
 {
-  struct gc_arena gc = gc_new ();
-  struct buffer buf = alloc_buf_gc (PUSH_BUNDLE_SIZE, &gc);
-  struct push_entry *e = c->options.push_list.head;
-  bool multi_push = false;
-  static char cmd[] = "PUSH_REPLY";
-  const int extra = 84; /* extra space for possible trailing ifconfig and push-continuation */
-  const int safe_cap = BCAP (&buf) - extra;
-  bool push_sent = false;
+  const char *optstr = NULL;
+  struct tls_multi *tls_multi = c->c2.tls_multi;
+  const char * const peer_info = tls_multi->peer_info;
+  struct options *o = &c->options;
 
-  msg( M_INFO, "send_push_reply(): safe_cap=%d", safe_cap );
-
-  buf_printf (&buf, "%s", cmd);
-
-  if ( c->c2.push_ifconfig_ipv6_defined )
+  /* ipv6 */
+  if (c->c2.push_ifconfig_ipv6_defined && !o->push_ifconfig_ipv6_blocked)
     {
-      /* IPv6 is put into buffer first, could be lengthy */
-      buf_printf( &buf, ",ifconfig-ipv6 %s/%d %s",
-		    print_in6_addr( c->c2.push_ifconfig_ipv6_local, 0, &gc),
-		    c->c2.push_ifconfig_ipv6_netbits,
-		    print_in6_addr( c->c2.push_ifconfig_ipv6_remote, 0, &gc) );
-      if (BLEN (&buf) >= safe_cap)
+      push_option_fmt (gc, push_list, M_USAGE, "ifconfig-ipv6 %s/%d %s",
+		       print_in6_addr (c->c2.push_ifconfig_ipv6_local, 0, gc),
+		       c->c2.push_ifconfig_ipv6_netbits,
+		       print_in6_addr (c->c2.push_ifconfig_ipv6_remote,
+				       0, gc));
+    }
+
+  /* ipv4 */
+  if (c->c2.push_ifconfig_defined && c->c2.push_ifconfig_local &&
+      c->c2.push_ifconfig_remote_netmask)
+    {
+      in_addr_t ifconfig_local = c->c2.push_ifconfig_local;
+      if (c->c2.push_ifconfig_local_alias)
+	ifconfig_local = c->c2.push_ifconfig_local_alias;
+      push_option_fmt (gc, push_list, M_USAGE, "ifconfig %s %s",
+		       print_in_addr_t (ifconfig_local, 0, gc),
+		       print_in_addr_t (c->c2.push_ifconfig_remote_netmask,
+					0, gc));
+    }
+
+  /* Send peer-id if client supports it */
+  optstr = peer_info ? strstr(peer_info, "IV_PROTO=") : NULL;
+  if (optstr)
+    {
+      int proto = 0;
+      int r = sscanf(optstr, "IV_PROTO=%d", &proto);
+      if ((r == 1) && (proto >= 2))
 	{
-	  msg (M_WARN, "--push ifconfig-ipv6 option is too long");
-	  goto fail;
+	  push_option_fmt(gc, push_list, M_USAGE, "peer-id %d",
+			  tls_multi->peer_id);
 	}
     }
+
+  /* Push cipher if client supports Negotiable Crypto Parameters */
+  if (tls_peer_info_ncp_ver (peer_info) >= 2 && o->ncp_enabled)
+    {
+      /* if we have already created our key, we cannot change our own
+       * cipher, so disable NCP and warn = explain why
+       */
+      const struct tls_session *session = &tls_multi->session[TM_ACTIVE];
+      if ( session->key[KS_PRIMARY].crypto_options.key_ctx_bi.initialized )
+	{
+	   msg( M_INFO, "PUSH: client wants to negotiate cipher (NCP), but "
+			"server has already generated data channel keys, "
+			"ignoring client request" );
+	}
+      else
+	{
+	  /* Push the first cipher from --ncp-ciphers to the client.
+	   * TODO: actual negotiation, instead of server dictatorship. */
+	  char *push_cipher = string_alloc(o->ncp_ciphers, &o->gc);
+	  o->ciphername = strtok (push_cipher, ":");
+	  push_option_fmt(gc, push_list, M_USAGE, "cipher %s", o->ciphername);
+	}
+    }
+  else if (o->ncp_enabled)
+    {
+      tls_poor_mans_ncp (o, tls_multi->remote_ciphername);
+    }
+
+  /* If server uses --auth-gen-token and we have an auth token
+   * to send to the client
+   */
+  if (false == tls_multi->auth_token_sent && NULL != tls_multi->auth_token)
+    {
+      push_option_fmt(gc, push_list, M_USAGE,
+                      "auth-token %s", tls_multi->auth_token);
+      tls_multi->auth_token_sent = true;
+    }
+  return true;
+}
+
+static bool
+send_push_options (struct context *c, struct buffer *buf,
+		   struct push_list *push_list, int safe_cap,
+		   bool *push_sent, bool *multi_push)
+{
+  struct push_entry *e = push_list->head;
 
   while (e)
     {
       if (e->enable)
 	{
 	  const int l = strlen (e->option);
-	  if (BLEN (&buf) + l >= safe_cap)
+	  if (BLEN (buf) + l >= safe_cap)
 	    {
-	      buf_printf (&buf, ",push-continuation 2");
-	      {
-		const bool status = send_control_channel_string (c, BSTR (&buf), D_PUSH);
-		if (!status)
-		  goto fail;
-		push_sent = true;
-		multi_push = true;
-		buf_reset_len (&buf);
-		buf_printf (&buf, "%s", cmd);
-	      }
+	      buf_printf (buf, ",push-continuation 2");
+		{
+		  const bool status = send_control_channel_string (c, BSTR (buf), D_PUSH);
+		  if (!status)
+		    return false;
+		  *push_sent = true;
+		  *multi_push = true;
+		  buf_reset_len (buf);
+		  buf_printf (buf, "%s", push_reply_cmd);
+		}
 	    }
-	  if (BLEN (&buf) + l >= safe_cap)
+	  if (BLEN (buf) + l >= safe_cap)
 	    {
 	      msg (M_WARN, "--push option is too long");
-	      goto fail;
+	      return false;
 	    }
-	  buf_printf (&buf, ",%s", e->option);
+	  buf_printf (buf, ",%s", e->option);
 	}
       e = e->next;
     }
+  return true;
+}
 
-  if (c->c2.push_ifconfig_defined && c->c2.push_ifconfig_local && c->c2.push_ifconfig_remote_netmask)
-    {
-      in_addr_t ifconfig_local = c->c2.push_ifconfig_local;
-#ifdef ENABLE_CLIENT_NAT
-      if (c->c2.push_ifconfig_local_alias)
-	ifconfig_local = c->c2.push_ifconfig_local_alias;
-#endif
-      buf_printf (&buf, ",ifconfig %s %s",
-		  print_in_addr_t (ifconfig_local, 0, &gc),
-		  print_in_addr_t (c->c2.push_ifconfig_remote_netmask, 0, &gc));
-    }
+static bool
+send_push_reply (struct context *c, struct push_list *per_client_push_list)
+{
+  struct gc_arena gc = gc_new ();
+  struct buffer buf = alloc_buf_gc (PUSH_BUNDLE_SIZE, &gc);
+  bool multi_push = false;
+  const int extra = 84; /* extra space for possible trailing ifconfig and push-continuation */
+  const int safe_cap = BCAP (&buf) - extra;
+  bool push_sent = false;
+
+  buf_printf (&buf, "%s", push_reply_cmd);
+
+  /* send options which are common to all clients */
+  if (!send_push_options (c, &buf, &c->options.push_list, safe_cap,
+			  &push_sent, &multi_push))
+    goto fail;
+
+  /* send client-specific options */
+  if (!send_push_options (c, &buf, per_client_push_list, safe_cap,
+			  &push_sent, &multi_push))
+    goto fail;
+
   if (multi_push)
     buf_printf (&buf, ",push-continuation 1");
 
-  if (BLEN (&buf) > sizeof(cmd)-1)
+  if (BLEN (&buf) > sizeof(push_reply_cmd)-1)
     {
       const bool status = send_control_channel_string (c, BSTR (&buf), D_PUSH);
       if (!status)
@@ -329,7 +465,7 @@ send_push_reply (struct context *c)
       bool status = false;
 
       buf_reset_len (&buf);
-      buf_printf (&buf, "%s", cmd);
+      buf_printf (&buf, "%s", push_reply_cmd);
       status = send_control_channel_string (c, BSTR(&buf), D_PUSH);
       if (!status)
 	goto fail;
@@ -344,7 +480,8 @@ send_push_reply (struct context *c)
 }
 
 static void
-push_option_ex (struct options *o, const char *opt, bool enable, int msglevel)
+push_option_ex (struct gc_arena *gc, struct push_list *push_list,
+		const char *opt, bool enable, int msglevel)
 {
   if (!string_class (opt, CC_ANY, CC_COMMA))
     {
@@ -353,20 +490,20 @@ push_option_ex (struct options *o, const char *opt, bool enable, int msglevel)
   else
     {
       struct push_entry *e;
-      ALLOC_OBJ_CLEAR_GC (e, struct push_entry, &o->gc);
+      ALLOC_OBJ_CLEAR_GC (e, struct push_entry, gc);
       e->enable = true;
       e->option = opt;
-      if (o->push_list.head)
+      if (push_list->head)
 	{
-	  ASSERT(o->push_list.tail);
-	  o->push_list.tail->next = e;
-	  o->push_list.tail = e;
+	  ASSERT(push_list->tail);
+	  push_list->tail->next = e;
+	  push_list->tail = e;
 	}
       else
 	{
-	  ASSERT(!o->push_list.tail);
-	  o->push_list.head = e;
-	  o->push_list.tail = e;
+	  ASSERT(!push_list->tail);
+	  push_list->head = e;
+	  push_list->tail = e;
 	}
     }
 }
@@ -374,7 +511,7 @@ push_option_ex (struct options *o, const char *opt, bool enable, int msglevel)
 void
 push_option (struct options *o, const char *opt, int msglevel)
 {
-  push_option_ex (o, opt, true, msglevel);
+  push_option_ex (&o->gc, &o->push_list, opt, true, msglevel);
 }
 
 void
@@ -386,7 +523,8 @@ clone_push_list (struct options *o)
       push_reset (o);
       while (e)
 	{
-	  push_option_ex (o, string_alloc (e->option, &o->gc), true, M_FATAL);
+	  push_option_ex (&o->gc, &o->push_list,
+			  string_alloc (e->option, &o->gc), true, M_FATAL);
 	  e = e->next;
 	}
     }
@@ -400,15 +538,110 @@ push_options (struct options *o, char **p, int msglevel, struct gc_arena *gc)
   push_option (o, opt, msglevel);
 }
 
+static bool push_option_fmt(struct gc_arena *gc, struct push_list *push_list,
+			    int msglevel, const char *format, ...)
+{
+  va_list arglist;
+  char tmp[256] = {0};
+  int len;
+  va_start (arglist, format);
+  len = vsnprintf (tmp, sizeof(tmp), format, arglist);
+  va_end (arglist);
+  if (len > sizeof(tmp)-1)
+    return false;
+  push_option_ex (gc, push_list, string_alloc (tmp, gc), true, msglevel);
+  return true;
+}
+
 void
 push_reset (struct options *o)
 {
   CLEAR (o->push_list);
 }
+
+void
+push_remove_option (struct options *o, const char *p)
+{
+  msg (D_PUSH_DEBUG, "PUSH_REMOVE searching for: '%s'", p);
+
+  /* ifconfig-ipv6 is special, as not part of the push list */
+  if ( streq( p, "ifconfig-ipv6" ))
+    {
+      o->push_ifconfig_ipv6_blocked = true;
+      return;
+    }
+
+  if (o && o->push_list.head )
+    {
+      struct push_entry *e = o->push_list.head;
+
+      /* cycle through the push list */
+      while (e)
+	{
+	  if ( e->enable &&
+               strncmp( e->option, p, strlen(p) ) == 0 )
+	    {
+	      msg (D_PUSH_DEBUG, "PUSH_REMOVE removing: '%s'", e->option);
+	      e->enable = false;
+	    }
+
+	  e = e->next;
+	}
+    }
+}
+#endif
+
+#if P2MP_SERVER
+int
+process_incoming_push_request (struct context *c)
+{
+  int ret = PUSH_MSG_ERROR;
+
+#ifdef ENABLE_ASYNC_PUSH
+  c->c2.push_request_received = true;
+#endif
+  if (tls_authentication_status (c->c2.tls_multi, 0) == TLS_AUTHENTICATION_FAILED || c->c2.context_auth == CAS_FAILED)
+    {
+      const char *client_reason = tls_client_reason (c->c2.tls_multi);
+      send_auth_failed (c, client_reason);
+      ret = PUSH_MSG_AUTH_FAILURE;
+    }
+  else if (!c->c2.push_reply_deferred && c->c2.context_auth == CAS_SUCCEEDED)
+    {
+      time_t now;
+
+      openvpn_time (&now);
+      if (c->c2.sent_push_reply_expiry > now)
+	{
+	  ret = PUSH_MSG_ALREADY_REPLIED;
+	}
+      else
+	{
+	  /* per-client push options - peer-id, cipher, ifconfig, ipv6-ifconfig */
+	  struct push_list push_list;
+	  struct gc_arena gc = gc_new ();
+
+	  CLEAR (push_list);
+	  if (prepare_push_reply (c, &gc, &push_list) &&
+	      send_push_reply (c, &push_list))
+	    {
+	      ret = PUSH_MSG_REQUEST;
+	      c->c2.sent_push_reply_expiry = now + 30;
+	    }
+	  gc_free(&gc);
+	}
+    }
+  else
+    {
+      ret = PUSH_MSG_REQUEST_DEFERRED;
+    }
+
+  return ret;
+}
 #endif
 
 static void
-push_update_digest(struct md5_state *ctx, struct buffer *buf)
+push_update_digest(md_ctx_t *ctx, struct buffer *buf)
 {
   char line[OPTION_PARM_SIZE];
   while (buf_parse (buf, ',', line, sizeof (line)))
@@ -416,7 +649,7 @@ push_update_digest(struct md5_state *ctx, struct buffer *buf)
       /* peer-id might change on restart and this should not trigger reopening tun */
       if (strstr (line, "peer-id ") != line)
 	{
-	  md5_state_update (ctx, line, strlen(line));
+	  md_ctx_update (ctx, (const uint8_t *) line, strlen(line));
 	}
     }
 }
@@ -434,34 +667,7 @@ process_incoming_push_msg (struct context *c,
 #if P2MP_SERVER
   if (buf_string_compare_advance (&buf, "PUSH_REQUEST"))
     {
-      if (tls_authentication_status (c->c2.tls_multi, 0) == TLS_AUTHENTICATION_FAILED || c->c2.context_auth == CAS_FAILED)
-	{
-	  const char *client_reason = tls_client_reason (c->c2.tls_multi);
-	  send_auth_failed (c, client_reason);
-	  ret = PUSH_MSG_AUTH_FAILURE;
-	}
-      else if (!c->c2.push_reply_deferred && c->c2.context_auth == CAS_SUCCEEDED)
-	{
-	  time_t now;
-
-	  openvpn_time(&now);
-	  if (c->c2.sent_push_reply_expiry > now)
-	    {
-	      ret = PUSH_MSG_ALREADY_REPLIED;
-	    }
-	  else
-	    {
-	      if (send_push_reply (c))
-		{
-		  ret = PUSH_MSG_REQUEST;
-		  c->c2.sent_push_reply_expiry = now + 30;
-		}
-	    }
-	}
-      else
-	{
-	  ret = PUSH_MSG_REQUEST_DEFERRED;
-	}
+      ret = process_incoming_push_request(c);
     }
   else
 #endif
@@ -474,12 +680,12 @@ process_incoming_push_msg (struct context *c,
 	  struct buffer buf_orig = buf;
 	  if (!c->c2.pulled_options_md5_init_done)
 	    {
-	      md5_state_init (&c->c2.pulled_options_state);
+	      md_ctx_init(&c->c2.pulled_options_state, md_kt_get("MD5"));
 	      c->c2.pulled_options_md5_init_done = true;
 	    }
 	  if (!c->c2.did_pre_pull_restore)
 	    {
-	      pre_pull_restore (&c->options);
+	      pre_pull_restore (&c->options, &c->c2.gc);
 	      c->c2.did_pre_pull_restore = true;
 	    }
 	  if (apply_push_options (&c->options,
@@ -493,7 +699,8 @@ process_incoming_push_msg (struct context *c,
 		{
 		  case 0:
 		  case 1:
-		    md5_state_final (&c->c2.pulled_options_state, &c->c2.pulled_options_digest);
+		    md_ctx_final (&c->c2.pulled_options_state, c->c2.pulled_options_digest.digest);
+		    md_ctx_cleanup (&c->c2.pulled_options_state);
 		    c->c2.pulled_options_md5_init_done = false;
 		    ret = PUSH_MSG_REPLY;
 		    break;
@@ -533,7 +740,8 @@ remove_iroutes_from_push_route_list (struct options *o)
 
 	  /* parse the push item */
 	  CLEAR (p);
-	  if (parse_line (e->option, p, SIZE (p), "[PUSH_ROUTE_REMOVE]", 1, D_ROUTE_DEBUG, &gc))
+	  if ( e->enable &&
+               parse_line (e->option, p, SIZE (p), "[PUSH_ROUTE_REMOVE]", 1, D_ROUTE_DEBUG, &gc))
 	    {
 	      /* is the push item a route directive? */
 	      if (p[0] && !strcmp (p[0], "route") && !p[3])
@@ -559,12 +767,12 @@ remove_iroutes_from_push_route_list (struct options *o)
 			}
 		    }
 		}
-	    }
 
-	  /* should we copy the push item? */
-	  e->enable = enable;
-	  if (!enable)
-	    msg (D_PUSH, "REMOVE PUSH ROUTE: '%s'", e->option);
+	      /* should we copy the push item? */
+	      e->enable = enable;
+	      if (!enable)
+		msg (D_PUSH, "REMOVE PUSH ROUTE: '%s'", e->option);
+	    }
 
 	  e = e->next;
 	}
