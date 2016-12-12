@@ -223,12 +223,12 @@ port_share_sendmsg (const socket_descriptor_t sd,
 
       if (socket_defined (sd_send))
 	{
-	  *((socket_descriptor_t*)CMSG_DATA(h)) = sd_send;
+	  memcpy (CMSG_DATA(h), &sd_send, sizeof (sd_send));
 	}
       else
 	{
 	  socketpair (PF_UNIX, SOCK_DGRAM, 0, sd_null);
-	  *((socket_descriptor_t*)CMSG_DATA(h)) = sd_null[0];
+	  memcpy (CMSG_DATA(h), &sd_null[0], sizeof (sd_null[0]));
 	}
 
       status = sendmsg (sd, &mesg, MSG_NOSIGNAL);
@@ -330,8 +330,8 @@ journal_add (const char *journal_dir, struct proxy_connection *pc, struct proxy_
   if (!getpeername (pc->sd, (struct sockaddr *) &from.addr.sa, &slen)
       && !getsockname (cp->sd, (struct sockaddr *) &to.addr.sa, &dlen))
     {
-      const char *f = print_sockaddr_ex (&from, ":", PS_SHOW_PORT, &gc);
-      const char *t = print_sockaddr_ex (&to, ":", PS_SHOW_PORT, &gc);
+      const char *f = print_openvpn_sockaddr (&from, &gc);
+      const char *t = print_openvpn_sockaddr (&to, &gc);
       fnlen =  strlen(journal_dir) + strlen(t) + 2;
       jfn = (char *) malloc(fnlen);
       check_malloc_return (jfn);
@@ -340,7 +340,8 @@ journal_add (const char *journal_dir, struct proxy_connection *pc, struct proxy_
       fd = platform_open (jfn, O_CREAT | O_TRUNC | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP);
       if (fd != -1)
 	{
-	  write(fd, f, strlen(f));
+	  if (write(fd, f, strlen(f)) != strlen(f))
+	    msg(M_WARN, "PORT SHARE: writing to journal file (%s) failed", jfn);
 	  close (fd);
 	  cp->jfn = jfn;
 	}
@@ -371,17 +372,6 @@ proxy_list_close (struct proxy_connection **list)
     }
 }
 
-static void
-sock_addr_set (struct openvpn_sockaddr *osaddr,
-	       const in_addr_t addr,
-	       const int port)
-{
-  CLEAR (*osaddr);
-  osaddr->addr.in4.sin_family = AF_INET;
-  osaddr->addr.in4.sin_addr.s_addr = htonl (addr);
-  osaddr->addr.in4.sin_port = htons (port);
-}
-
 static inline void
 proxy_connection_io_requeue (struct proxy_connection *pc, const int rwflags_new, struct event_set *es)
 {
@@ -403,26 +393,23 @@ proxy_connection_io_requeue (struct proxy_connection *pc, const int rwflags_new,
 static bool
 proxy_entry_new (struct proxy_connection **list,
 		 struct event_set *es,
-		 const in_addr_t server_addr,
-		 const int server_port,
+		 const struct sockaddr_in server_addr,
 		 const socket_descriptor_t sd_client,
 		 struct buffer *initial_data,
 		 const char *journal_dir)
 {
-  struct openvpn_sockaddr osaddr;
   socket_descriptor_t sd_server;
   int status;
   struct proxy_connection *pc;
   struct proxy_connection *cp;
 
   /* connect to port share server */
-  sock_addr_set (&osaddr, server_addr, server_port);
   if ((sd_server = socket (PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0)
     {
       msg (M_WARN|M_ERRNO, "PORT SHARE PROXY: cannot create socket");
       return false;
     }
-  status = openvpn_connect (sd_server, &osaddr, 5, NULL);
+  status = openvpn_connect (sd_server,(const struct sockaddr*)  &server_addr, 5, NULL);
   if (status)
     {
       msg (M_WARN, "PORT SHARE PROXY: connect to port-share server failed");
@@ -482,8 +469,7 @@ static bool
 control_message_from_parent (const socket_descriptor_t sd_control,
 			     struct proxy_connection **list,
 			     struct event_set *es,
-			     const in_addr_t server_addr,
-			     const int server_port,
+			     const struct sockaddr_in server_addr,
 			     const int max_initial_buf,
 			     const char *journal_dir)
 {
@@ -516,7 +502,8 @@ control_message_from_parent (const socket_descriptor_t sd_control,
   h->cmsg_len = CMSG_LEN(sizeof(socket_descriptor_t));
   h->cmsg_level = SOL_SOCKET;
   h->cmsg_type = SCM_RIGHTS;
-  *((socket_descriptor_t*)CMSG_DATA(h)) = SOCKET_UNDEFINED;
+  static const socket_descriptor_t socket_undefined = SOCKET_UNDEFINED;
+  memcpy (CMSG_DATA(h), &socket_undefined, sizeof(socket_undefined));
 
   status = recvmsg (sd_control, &mesg, MSG_NOSIGNAL);
   if (status != -1)
@@ -530,7 +517,8 @@ control_message_from_parent (const socket_descriptor_t sd_control,
 	}
       else
 	{
-	  const socket_descriptor_t received_fd = *((socket_descriptor_t*)CMSG_DATA(h));
+	  socket_descriptor_t received_fd;
+	  memcpy (&received_fd, CMSG_DATA(h), sizeof(received_fd));
 	  dmsg (D_PS_PROXY_DEBUG, "PORT SHARE PROXY: RECEIVED sd=%d", (int)received_fd);
 
 	  if (status >= 2 && command == COMMAND_REDIRECT)
@@ -539,7 +527,6 @@ control_message_from_parent (const socket_descriptor_t sd_control,
 	      if (proxy_entry_new (list,
 				   es,
 				   server_addr,
-				   server_port,
 				   received_fd,
 				   &buf,
 				   journal_dir))
@@ -716,8 +703,7 @@ proxy_connection_io_dispatch (struct proxy_connection *pc,
  * This is the main function for the port share proxy background process.
  */
 static void
-port_share_proxy (const in_addr_t hostaddr,
-		  const int port,
+port_share_proxy (const struct sockaddr_in hostaddr,
 		  const socket_descriptor_t sd_control,
 		  const int max_initial_buf,
 		  const char *journal_dir)
@@ -754,7 +740,7 @@ port_share_proxy (const in_addr_t hostaddr,
 		  const struct event_set_return *e = &esr[i];
 		  if (e->arg == sd_control_marker)
 		    {
-		      if (!control_message_from_parent (sd_control, &list, es, hostaddr, port, max_initial_buf, journal_dir))
+		      if (!control_message_from_parent (sd_control, &list, es, hostaddr, max_initial_buf, journal_dir))
 			goto done;
 		    }
 		  else
@@ -789,14 +775,16 @@ port_share_proxy (const in_addr_t hostaddr,
  */
 struct port_share *
 port_share_open (const char *host,
-		 const int port,
+		 const char *port,
 		 const int max_initial_buf,
 		 const char *journal_dir)
 {
   pid_t pid;
   socket_descriptor_t fd[2];
-  in_addr_t hostaddr;
+  struct sockaddr_in hostaddr;
   struct port_share *ps;
+  int status;
+  struct addrinfo* ai;
 
   ALLOC_OBJ_CLEAR (ps, struct port_share);
   ps->foreground_fd = -1;
@@ -805,7 +793,12 @@ port_share_open (const char *host,
   /*
    * Get host's IP address
    */
-  hostaddr = getaddr (GETADDR_RESOLVE|GETADDR_HOST_ORDER|GETADDR_FATAL, host, 0, NULL, NULL);
+
+  status = openvpn_getaddrinfo (GETADDR_RESOLVE|GETADDR_FATAL,
+                                 host, port,  0, NULL, AF_INET, &ai);
+  ASSERT (status==0);
+  hostaddr = *((struct sockaddr_in*) ai->ai_addr);
+  freeaddrinfo(ai);
 
   /*
    * Make a socket for foreground and background processes
@@ -881,7 +874,7 @@ port_share_open (const char *host,
       prng_init (NULL, 0);
 
       /* execute the event loop */
-      port_share_proxy (hostaddr, port, fd[1], max_initial_buf, journal_dir);
+      port_share_proxy (hostaddr, fd[1], max_initial_buf, journal_dir);
 
       openvpn_close_socket (fd[1]);
 

@@ -30,8 +30,6 @@
 #ifndef SOCKS_H
 #define SOCKS_H
 
-#ifdef ENABLE_SOCKS
-
 #include "buffer.h"
 
 struct openvpn_sockaddr;
@@ -39,26 +37,24 @@ struct link_socket_actual;
 
 struct socks_proxy_info {
   bool defined;
-  bool retry;
 
   char server[128];
-  int port;
+  const char *port;
   char authfile[256];
 };
 
 void socks_adjust_frame_parameters (struct frame *frame, int proto);
 
 struct socks_proxy_info *socks_proxy_new (const char *server,
-					  int port,
-					  const char *authfile,
-					  bool retry);
+					  const char *port,
+					  const char *authfile);
 
 void socks_proxy_close (struct socks_proxy_info *sp);
 
 void establish_socks_proxy_passthru (struct socks_proxy_info *p,
 				     socket_descriptor_t sd, /* already open to proxy */
 				     const char *host,       /* openvpn server remote */
-				     const int port,         /* openvpn server port */
+				     const char *servname,         /* openvpn server port */
 				     volatile int *signal_received);
 
 void establish_socks_proxy_udpassoc (struct socks_proxy_info *p,
@@ -73,5 +69,4 @@ void socks_process_incoming_udp (struct buffer *buf,
 int socks_process_outgoing_udp (struct buffer *buf,
 				const struct link_socket_actual *to);
 
-#endif
 #endif

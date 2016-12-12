@@ -113,6 +113,8 @@ man_help ()
 #ifdef MANAGMENT_EXTERNAL_KEY
   msg (M_CLIENT, "rsa-sig                : Enter an RSA signature in response to >RSA_SIGN challenge");
   msg (M_CLIENT, "                         Enter signature base64 on subsequent lines followed by END");
+  msg (M_CLIENT, "certificate            : Enter a client certificate in response to >NEED-CERT challenge");
+  msg (M_CLIENT, "                         Enter certificate base64 on subsequent lines followed by END");
 #endif
   msg (M_CLIENT, "signal s               : Send signal s to daemon,");
   msg (M_CLIENT, "                         s = SIGHUP|SIGTERM|SIGUSR1|SIGUSR2.");
@@ -268,7 +270,7 @@ man_delete_unix_socket (struct management *man)
 static void
 man_close_socket (struct management *man, const socket_descriptor_t sd)
 {
-#ifndef WIN32
+#ifndef _WIN32
   /*
    * Windows doesn't need this because the ne32 event is permanently
    * enabled at struct management scope.
@@ -701,7 +703,7 @@ man_query_need_str (struct management *man, const char *type, const char *action
 static void
 man_forget_passwords (struct management *man)
 {
-#if defined(ENABLE_CRYPTO) && defined(ENABLE_SSL)
+#ifdef ENABLE_CRYPTO
   ssl_purge_auth (false);
   msg (M_CLIENT, "SUCCESS: Passwords were forgotten");
 #endif
@@ -868,6 +870,12 @@ in_extra_dispatch (struct management *man)
       man->connection.ext_key_input = man->connection.in_extra;
       man->connection.in_extra = NULL;
       return;
+    case IEC_CERTIFICATE:
+      man->connection.ext_cert_state = EKS_READY;
+      buffer_list_free (man->connection.ext_cert_input);
+      man->connection.ext_cert_input = man->connection.in_extra;
+      man->connection.in_extra = NULL;
+      return;
 #endif
     }
    in_extra_reset (&man->connection, IER_RESET);
@@ -1030,6 +1038,20 @@ man_rsa_sig (struct management *man)
     msg (M_CLIENT, "ERROR: The rsa-sig command is not currently available");
 }
 
+static void
+man_certificate (struct management *man)
+{
+  struct man_connection *mc = &man->connection;
+  if (mc->ext_cert_state == EKS_SOLICIT)
+    {
+      mc->ext_cert_state = EKS_INPUT;
+      mc->in_extra_cmd = IEC_CERTIFICATE;
+      in_extra_reset (mc, IER_NEW);
+    }
+  else
+    msg (M_CLIENT, "ERROR: The certificate command is not currently available");
+}
+
 #endif
 
 static void
@@ -1105,6 +1127,27 @@ man_remote (struct management *man, const char **p)
     }
 }
 
+#ifdef TARGET_ANDROID
+static void
+man_network_change (struct management *man, bool samenetwork)
+{
+  /* Called to signal the OpenVPN that the network configuration has changed and
+     the client should either float or reconnect.
+
+     The code is currently only used by ics-openvpn
+  */
+  if (man->persist.callback.network_change)
+    {
+      int fd = (*man->persist.callback.network_change)
+	(man->persist.callback.arg, samenetwork);
+      man->connection.fdtosend = fd;
+      msg (M_CLIENT, "PROTECTFD: fd '%d' sent to be protected", fd);
+      if (fd == -2)
+	man_signal (man, "SIGUSR1");
+    }
+}
+#endif
+
 static void
 man_dispatch_command (struct management *man, struct status_output *so, const char **p, const int nparms)
 {
@@ -1148,6 +1191,16 @@ man_dispatch_command (struct management *man, struct status_output *so, const ch
       if (man_need (man, p, 1, 0))
 	man_signal (man, p[1]);
     }
+#ifdef TARGET_ANDROID
+  else if (streq (p[0], "network-change"))
+    {
+      bool samenetwork = false;
+      if (p[1] && streq(p[1], "samenetwork"))
+	samenetwork = true;
+
+      man_network_change(man, samenetwork);
+    }
+#endif
   else if (streq (p[0], "load-stats"))
     {
       man_load_stats (man);
@@ -1311,6 +1364,10 @@ man_dispatch_command (struct management *man, struct status_output *so, const ch
     {
       man_rsa_sig (man);
     }
+  else if (streq (p[0], "certificate"))
+    {
+      man_certificate (man);
+    }
 #endif
 #ifdef ENABLE_PKCS11
   else if (streq (p[0], "pkcs11-id-count"))
@@ -1356,7 +1413,7 @@ man_dispatch_command (struct management *man, struct status_output *so, const ch
   gc_free (&gc);
 }
 
-#ifdef WIN32
+#ifdef _WIN32
 
 static void
 man_start_ne32 (struct management *man)
@@ -1446,7 +1503,7 @@ man_new_connection_post (struct management *man, const char *description)
 
   man_connection_settings_reset (man);
 
-#ifdef WIN32
+#ifdef _WIN32
   man_start_ne32 (man);
 #endif
 
@@ -1461,7 +1518,7 @@ man_new_connection_post (struct management *man, const char *description)
 #endif
     msg (D_MANAGEMENT, "MANAGEMENT: %s %s",
 	 description,
-	 print_sockaddr (&man->settings.local, &gc));
+	 print_sockaddr (man->settings.local->ai_addr, &gc));
 
   buffer_list_reset (man->connection.out);
 
@@ -1533,7 +1590,7 @@ man_accept (struct management *man)
 
       if (socket_defined (man->connection.sd_top))
 	{
-#ifdef WIN32
+#ifdef _WIN32
 	  man_stop_ne32 (man);
 #endif
 	}
@@ -1568,8 +1625,9 @@ man_listen (struct management *man)
       else
 #endif
 	{
-	  man->connection.sd_top = create_socket_tcp (AF_INET);
-	  socket_bind (man->connection.sd_top, &man->settings.local, "MANAGEMENT");
+	  man->connection.sd_top = create_socket_tcp (man->settings.local);
+	  socket_bind (man->connection.sd_top, man->settings.local,
+                       man->settings.local->ai_family, "MANAGEMENT", false);
 	}
 
       /*
@@ -1593,10 +1651,10 @@ man_listen (struct management *man)
       else
 #endif
 	msg (D_MANAGEMENT, "MANAGEMENT: TCP Socket listening on %s",
-	     print_sockaddr (&man->settings.local, &gc));
+	     print_sockaddr (man->settings.local->ai_addr, &gc));
     }
 
-#ifdef WIN32
+#ifdef _WIN32
   man_start_ne32 (man);
 #endif
   
@@ -1634,9 +1692,9 @@ man_connect (struct management *man)
   else
 #endif
     {
-      man->connection.sd_cli = create_socket_tcp (AF_INET);
+      man->connection.sd_cli = create_socket_tcp (man->settings.local);
       status = openvpn_connect (man->connection.sd_cli,
-				&man->settings.local,
+				man->settings.local->ai_addr,
 				5,
 				&signal_received);
     }
@@ -1661,7 +1719,7 @@ man_connect (struct management *man)
 #endif
       msg (D_LINK_ERRORS,
 	   "MANAGEMENT: connect to %s failed: %s",
-	   print_sockaddr (&man->settings.local, &gc),
+	   print_sockaddr (man->settings.local->ai_addr, &gc),
 	   strerror_ts (status, &gc));
       throw_signal_soft (SIGTERM, "management-connect-failed");
       goto done;
@@ -1679,7 +1737,7 @@ man_reset_client_socket (struct management *man, const bool exiting)
 {
   if (socket_defined (man->connection.sd_cli))
     {
-#ifdef WIN32
+#ifdef _WIN32
       man_stop_ne32 (man);
 #endif
       man_close_socket (man, man->connection.sd_cli);
@@ -1694,7 +1752,7 @@ man_reset_client_socket (struct management *man, const bool exiting)
     }
   if (!exiting)
     {
-#if defined(ENABLE_CRYPTO) && defined(ENABLE_SSL)
+#ifdef ENABLE_CRYPTO
       if (man->settings.flags & MF_FORGET_DISCONNECT)
 	ssl_purge_auth (false);
 #endif
@@ -1779,6 +1837,120 @@ man_io_error (struct management *man, const char *prefix)
     return false;
 }
 
+#ifdef TARGET_ANDROID
+static ssize_t man_send_with_fd (int fd, void *ptr, size_t nbytes, int flags, int sendfd)
+{
+  struct msghdr msg;
+  struct iovec iov[1];
+
+  union {
+    struct cmsghdr cm;
+    char    control[CMSG_SPACE(sizeof(int))];
+  } control_un;
+  struct cmsghdr *cmptr;
+
+  msg.msg_control = control_un.control;
+  msg.msg_controllen = sizeof(control_un.control);
+
+  cmptr = CMSG_FIRSTHDR(&msg);
+  cmptr->cmsg_len = CMSG_LEN(sizeof(int));
+  cmptr->cmsg_level = SOL_SOCKET;
+  cmptr->cmsg_type = SCM_RIGHTS;
+  *((int *) CMSG_DATA(cmptr)) = sendfd;
+
+  msg.msg_name = NULL;
+  msg.msg_namelen = 0;
+
+  iov[0].iov_base = ptr;
+  iov[0].iov_len = nbytes;
+  msg.msg_iov = iov;
+  msg.msg_iovlen = 1;
+
+  return (sendmsg(fd, &msg, flags));
+}
+
+static ssize_t man_recv_with_fd (int fd, void *ptr, size_t nbytes, int flags, int *recvfd)
+{
+  struct msghdr msghdr;
+  struct iovec iov[1];
+  ssize_t n;
+
+  union {
+    struct cmsghdr cm;
+    char     control[CMSG_SPACE(sizeof (int))];
+  } control_un;
+  struct cmsghdr  *cmptr;
+
+  msghdr.msg_control  = control_un.control;
+  msghdr.msg_controllen = sizeof(control_un.control);
+
+  msghdr.msg_name = NULL;
+  msghdr.msg_namelen = 0;
+
+  iov[0].iov_base = ptr;
+  iov[0].iov_len = nbytes;
+  msghdr.msg_iov = iov;
+  msghdr.msg_iovlen = 1;
+
+  if ( (n = recvmsg(fd, &msghdr, flags)) <= 0)
+    return (n);
+
+  if ( (cmptr = CMSG_FIRSTHDR(&msghdr)) != NULL &&
+       cmptr->cmsg_len == CMSG_LEN(sizeof(int))) {
+    if (cmptr->cmsg_level != SOL_SOCKET)
+      msg (M_ERR, "control level != SOL_SOCKET");
+    if (cmptr->cmsg_type != SCM_RIGHTS)
+      msg (M_ERR, "control type != SCM_RIGHTS");
+    *recvfd = *((int *) CMSG_DATA(cmptr));
+  } else
+    *recvfd = -1;           /* descriptor was not passed */
+
+  return (n);
+}
+
+/*
+ * The android control method will instruct the GUI part of openvpn to do
+ * the route/ifconfig/open tun command.   See doc/android.txt for details.
+ */
+bool management_android_control (struct management *man, const char *command, const char *msg)
+{
+  struct user_pass up;
+  CLEAR(up);
+  strncpy (up.username, msg, sizeof(up.username)-1);
+
+  management_query_user_pass(management, &up , command, GET_USER_PASS_NEED_OK,(void*) 0);
+  return strcmp ("ok", up.password)==0;
+}
+
+/*
+ * In Android 4.4 it is not possible to open a new tun device and then close the
+ * old tun device without breaking the whole VPNService stack until the device
+ * is rebooted. This management method ask the UI what method should be taken to
+ * ensure the optimal solution for the situation
+ */
+int managment_android_persisttun_action (struct management *man)
+{
+  struct user_pass up;
+  CLEAR(up);
+  strcpy(up.username,"tunmethod");
+  management_query_user_pass(management, &up , "PERSIST_TUN_ACTION",
+			     GET_USER_PASS_NEED_OK,(void*) 0);
+  if (!strcmp("NOACTION", up.password))
+    return ANDROID_KEEP_OLD_TUN;
+  else if (!strcmp ("OPEN_AFTER_CLOSE", up.password))
+    return ANDROID_OPEN_AFTER_CLOSE;
+  else if (!strcmp ("OPEN_BEFORE_CLOSE", up.password))
+    return ANDROID_OPEN_BEFORE_CLOSE;
+  else
+    msg (M_ERR, "Got unrecognised '%s' from management for PERSIST_TUN_ACTION query", up.password);
+
+  ASSERT(0);
+  return ANDROID_OPEN_AFTER_CLOSE;
+}
+
+
+#endif
+
 static int
 man_read (struct management *man)
 {
@@ -1788,7 +1960,15 @@ man_read (struct management *man)
   unsigned char buf[256];
   int len = 0;
 
+#ifdef TARGET_ANDROID
+  int fd;
+  len = man_recv_with_fd (man->connection.sd_cli, buf, sizeof (buf), MSG_NOSIGNAL, &fd);
+  if(fd >= 0)
+     man->connection.lastfdreceived = fd;
+#else
   len = recv (man->connection.sd_cli, buf, sizeof (buf), MSG_NOSIGNAL);
+#endif
+
   if (len == 0)
     {
       man_reset_client_socket (man, false);
@@ -1865,6 +2045,13 @@ man_write (struct management *man)
   if (buf && BLEN (buf))
     {
       const int len = min_int (size_hint, BLEN (buf));
+#ifdef TARGET_ANDROID
+      if (man->connection.fdtosend > 0)
+        {
+         sent = man_send_with_fd (man->connection.sd_cli, BPTR (buf), len, MSG_NOSIGNAL,man->connection.fdtosend);
+            man->connection.fdtosend = -1;
+        } else
+#endif
       sent = send (man->connection.sd_cli, BPTR (buf), len, MSG_NOSIGNAL);
       if (sent >= 0)
 	{
@@ -1957,7 +2144,7 @@ man_persist_close (struct man_persist *mp)
 static void
 man_settings_init (struct man_settings *ms,
 		   const char *addr,
-		   const int port,
+		   const char *port,
 		   const char *pass_file,
 		   const char *client_user,
 		   const char *client_group,
@@ -2010,12 +2197,6 @@ man_settings_init (struct man_settings *ms,
       else
 #endif
 	{
-	  /*
-	   * Initialize socket address
-	   */
-	  ms->local.addr.in4.sin_family = AF_INET;
-	  ms->local.addr.in4.sin_addr.s_addr = 0;
-	  ms->local.addr.in4.sin_port = htons (port);
 
 	  /*
 	   * Run management over tunnel, or
@@ -2027,8 +2208,15 @@ man_settings_init (struct man_settings *ms,
 	    }
 	  else
 	    {
-	      ms->local.addr.in4.sin_addr.s_addr = getaddr
-		(GETADDR_RESOLVE|GETADDR_WARN_ON_SIGNAL|GETADDR_FATAL, addr, 0, NULL, NULL);
+	      int status;
+	      int resolve_flags = GETADDR_RESOLVE|GETADDR_WARN_ON_SIGNAL|GETADDR_FATAL;
+
+	      if (! (flags & MF_CONNECT_AS_CLIENT))
+		  resolve_flags |= GETADDR_PASSIVE;
+
+              status = openvpn_getaddrinfo (resolve_flags, addr, port, 0,
+					    NULL, AF_UNSPEC, &ms->local);
+              ASSERT(status==0);
 	    }
 	}
       
@@ -2054,6 +2242,8 @@ man_settings_init (struct man_settings *ms,
 static void
 man_settings_close (struct man_settings *ms)
 {
+  if (ms->local)
+    freeaddrinfo(ms->local);
   free (ms->write_peer_info_file);
   CLEAR (*ms);
 }
@@ -2064,7 +2254,7 @@ man_connection_init (struct management *man)
 {
   if (man->connection.state == MS_INITIAL)
     {
-#ifdef WIN32
+#ifdef _WIN32
       /*
        * This object is a sort of TCP/IP helper
        * for Windows.
@@ -2105,7 +2295,7 @@ man_connection_close (struct management *man)
 
   if (mc->es)
     event_free (mc->es);
-#ifdef WIN32
+#ifdef _WIN32
   net_event_win32_close (&mc->ne32);
 #endif
   if (socket_defined (mc->sd_top))
@@ -2147,7 +2337,7 @@ management_init (void)
 bool
 management_open (struct management *man,
 		 const char *addr,
-		 const int port,
+		 const char *port,
 		 const char *pass_file,
 		 const char *client_user,
 		 const char *client_group,
@@ -2232,8 +2422,10 @@ void
 management_set_state (struct management *man,
 		      const int state,
 		      const char *detail,
-		      const in_addr_t tun_local_ip,
-		      const in_addr_t tun_remote_ip)
+                      const in_addr_t *tun_local_ip,
+                      const struct in6_addr *tun_local_ip6,
+                      const struct openvpn_sockaddr *local,
+                      const struct openvpn_sockaddr *remote)
 {
   if (man->persist.state && (!(man->settings.flags & MF_SERVER) || state < OPENVPN_STATE_CLIENT_BASE))
     {
@@ -2246,9 +2438,15 @@ management_set_state (struct management *man,
       e.timestamp = now;
       e.u.state = state;
       e.string = detail;
-      e.local_ip = tun_local_ip;
-      e.remote_ip = tun_remote_ip;
-      
+      if (tun_local_ip)
+        e.local_ip = *tun_local_ip;
+      if (tun_local_ip6)
+        e.local_ip6 = *tun_local_ip6;
+      if (local)
+        e.local_sock = *local;
+      if (remote)
+        e.remote_sock = *remote;
+
       log_history_add (man->persist.state, &e);
 
       if (man->connection.state_realtime)
@@ -2361,33 +2559,6 @@ management_notify_generic (struct management *man, const char *str)
 
 #ifdef MANAGEMENT_DEF_AUTH
 
-static bool
-validate_peer_info_line(const char *line)
-{
-  uint8_t c;
-  int state = 0;
-  while ((c=*line++))
-    {
-      switch (state)
-	{
-	case 0:
-	case 1:
-	  if (c == '=' && state == 1)
-	    state = 2;
-	  else if (isalnum(c) || c == '_')
-	    state = 1;
-	  else
-	    return false;
-	case 2:
-	  if (isprint(c))
-	    ;
-	  else
-	    return false;
-	}
-    }
-  return (state == 2);
-}
-
 static void
 man_output_peer_info_env (struct management *man, struct man_def_auth_context *mdac)
 {
@@ -2426,7 +2597,8 @@ management_notify_client_needing_auth (struct management *management,
 	mode = "REAUTH";
       msg (M_CLIENT, ">CLIENT:%s,%lu,%u", mode, mdac->cid, mda_key_id);
       man_output_extra_env (management, "CLIENT");
-      man_output_peer_info_env(management, mdac);
+      if (management->connection.env_filter_level>0)
+        man_output_peer_info_env(management, mdac);
       man_output_env (es, true, management->connection.env_filter_level, "CLIENT");
       mdac->flags |= DAF_INITIAL_AUTH;
     }
@@ -2513,7 +2685,13 @@ management_post_tunnel_open (struct management *man, const in_addr_t tun_local_i
       && man->connection.state == MS_INITIAL)
     {
       /* listen on our local TUN/TAP IP address */
-      man->settings.local.addr.in4.sin_addr.s_addr = htonl (tun_local_ip);
+      struct in_addr ia;
+      int ret;
+
+      ia.s_addr = htonl(tun_local_ip);
+      ret = openvpn_getaddrinfo(GETADDR_PASSIVE, inet_ntoa(ia), NULL, 0, NULL,
+                                AF_INET, &man->settings.local);
+      ASSERT (ret==0);
       man_connection_init (man);
     }
 
@@ -2553,7 +2731,7 @@ man_persist_state (unsigned int *persistent, const int n)
   return true;
 }
 
-#ifdef WIN32
+#ifdef _WIN32
 
 void
 management_socket_set (struct management *man,
@@ -2845,7 +3023,8 @@ management_event_loop_n_seconds (struct management *man, int sec)
 	    man_check_for_signals (&signal_received);
 	  if (signal_received)
 	    return;
-	} while (expire);
+	  update_time();
+	} while (expire && expire > now);
 
       /* revert state */
       man->persist.standalone_disabled = standalone_disabled_save;
@@ -2975,7 +3154,7 @@ management_query_user_pass (struct management *man,
 	  man->connection.up_query.nocache = up->nocache; /* preserve caller's nocache setting */
 	  *up = man->connection.up_query;
 	}
-      CLEAR (man->connection.up_query);
+      secure_memzero (&man->connection.up_query, sizeof (man->connection.up_query));
     }
 
   gc_free (&gc);
@@ -2984,15 +3163,14 @@ management_query_user_pass (struct management *man,
 
 #ifdef MANAGMENT_EXTERNAL_KEY
 
-char * /* returns allocated base64 signature */
-management_query_rsa_sig (struct management *man,
-			  const char *b64_data)
+int
+management_query_multiline (struct management *man,
+			  const char *b64_data, const char *prompt, const char *cmd, int *state, struct buffer_list **input)
 {
   struct gc_arena gc = gc_new ();
-  char *ret = NULL;
+  int ret = 0;
   volatile int signal_received = 0;
   struct buffer alert_msg = clear_buf();
-  struct buffer *buf;
   const bool standalone_disabled_save = man->persist.standalone_disabled;
   struct man_connection *mc = &man->connection;
 
@@ -3001,10 +3179,15 @@ management_query_rsa_sig (struct management *man,
       man->persist.standalone_disabled = false; /* This is so M_CLIENT messages will be correctly passed through msg() */
       man->persist.special_state_msg = NULL;
 
-      mc->ext_key_state = EKS_SOLICIT;
+      *state = EKS_SOLICIT;
 
-      alert_msg = alloc_buf_gc (strlen(b64_data)+64, &gc);
-      buf_printf (&alert_msg, ">RSA_SIGN:%s", b64_data);
+      if (b64_data) {
+        alert_msg = alloc_buf_gc (strlen(b64_data)+strlen(prompt)+3, &gc);
+        buf_printf (&alert_msg, ">%s:%s", prompt, b64_data);
+      } else {
+        alert_msg = alloc_buf_gc (strlen(prompt)+3, &gc);
+        buf_printf (&alert_msg, ">%s", prompt);
+      }
 
       man_wait_for_client_connection (man, &signal_received, 0, MWCC_OTHER_WAIT);
 
@@ -3022,38 +3205,105 @@ management_query_rsa_sig (struct management *man,
 	    man_check_for_signals (&signal_received);
 	  if (signal_received)
 	    goto done;
-	} while (mc->ext_key_state != EKS_READY);
+	} while (*state != EKS_READY);
 
-      if (buffer_list_defined(mc->ext_key_input))
-	{
-	  buffer_list_aggregate (mc->ext_key_input, 2048);
-	  buf = buffer_list_peek (mc->ext_key_input);
-	  if (buf && BLEN(buf) > 0)
-	    {
-	      ret = (char *) malloc(BLEN(buf)+1);
-	      check_malloc_return(ret);
-	      memcpy(ret, buf->data, BLEN(buf));
-	      ret[BLEN(buf)] = '\0';
-	    }
-	}
+      ret = 1;
     }
 
  done:
-  if (mc->ext_key_state == EKS_READY && ret)
-    msg (M_CLIENT, "SUCCESS: rsa-sig command succeeded");
-  else if (mc->ext_key_state == EKS_INPUT || mc->ext_key_state == EKS_READY)
-    msg (M_CLIENT, "ERROR: rsa-sig command failed");
+  if (*state == EKS_READY && ret)
+    msg (M_CLIENT, "SUCCESS: %s command succeeded", cmd);
+  else if (*state == EKS_INPUT || *state == EKS_READY)
+    msg (M_CLIENT, "ERROR: %s command failed", cmd);
 
   /* revert state */
   man->persist.standalone_disabled = standalone_disabled_save;
   man->persist.special_state_msg = NULL;
   in_extra_reset (mc, IER_RESET);
-  mc->ext_key_state = EKS_UNDEF;
-  buffer_list_free (mc->ext_key_input);
-  mc->ext_key_input = NULL;
+  *state = EKS_UNDEF;
 
   gc_free (&gc);
   return ret;
+}
+
+char * /* returns allocated base64 signature */
+management_query_multiline_flatten_newline (struct management *man,
+    const char *b64_data, const char *prompt, const char *cmd, int *state, struct buffer_list **input)
+{
+  int ok;
+  char *result = NULL;
+  struct buffer *buf;
+
+  ok = management_query_multiline(man, b64_data, prompt, cmd, state, input);
+  if (ok && buffer_list_defined(*input))
+  {
+    buffer_list_aggregate_separator (*input, 10000, "\n");
+    buf = buffer_list_peek (*input);
+    if (buf && BLEN(buf) > 0)
+    {
+      result = (char *) malloc(BLEN(buf)+1);
+      check_malloc_return(result);
+      memcpy(result, buf->data, BLEN(buf));
+      result[BLEN(buf)] = '\0';
+    }
+  }
+
+  buffer_list_free (*input);
+  *input = NULL;
+
+  return result;
+}
+
+char * /* returns allocated base64 signature */
+management_query_multiline_flatten (struct management *man,
+    const char *b64_data, const char *prompt, const char *cmd, int *state, struct buffer_list **input)
+{
+  int ok;
+  char *result = NULL;
+  struct buffer *buf;
+
+  ok = management_query_multiline(man, b64_data, prompt, cmd, state, input);
+  if (ok && buffer_list_defined(*input))
+  {
+    buffer_list_aggregate (*input, 2048);
+    buf = buffer_list_peek (*input);
+    if (buf && BLEN(buf) > 0)
+    {
+      result = (char *) malloc(BLEN(buf)+1);
+      check_malloc_return(result);
+      memcpy(result, buf->data, BLEN(buf));
+      result[BLEN(buf)] = '\0';
+    }
+  }
+
+  buffer_list_free (*input);
+  *input = NULL;
+
+  return result;
+}
+
+char * /* returns allocated base64 signature */
+management_query_rsa_sig (struct management *man,
+			  const char *b64_data)
+{
+  return management_query_multiline_flatten(man, b64_data, "RSA_SIGN", "rsa-sign",
+      &man->connection.ext_key_state, &man->connection.ext_key_input);
+}
+
+
+char* management_query_cert (struct management *man, const char *cert_name)
+{
+  const char prompt_1[] = "NEED-CERTIFICATE:";
+  struct buffer buf_prompt = alloc_buf(strlen(cert_name) + 20);
+  buf_write(&buf_prompt, prompt_1, strlen(prompt_1));
+  buf_write(&buf_prompt, cert_name, strlen(cert_name)+1); // +1 for \0
+
+  char *result;
+  result = management_query_multiline_flatten_newline(management,
+      NULL, (char*)buf_bptr(&buf_prompt), "certificate",
+      &man->connection.ext_cert_state, &man->connection.ext_cert_input);
+  free_buf(&buf_prompt);
+  return result;
 }
 
 #endif
@@ -3082,12 +3332,13 @@ management_should_daemonize (struct management *man)
  * Return true if the caller should not sleep for an additional time interval.
  */
 bool
-management_hold (struct management *man)
+management_hold (struct management *man, int holdtime)
 {
   if (management_would_hold (man))
     {
       volatile int signal_received = 0;
       const bool standalone_disabled_save = man->persist.standalone_disabled;
+      struct gc_arena gc = gc_new ();
 
       man->persist.standalone_disabled = false; /* This is so M_CLIENT messages will be correctly passed through msg() */
       man->persist.special_state_msg = NULL;
@@ -3097,7 +3348,9 @@ management_hold (struct management *man)
 
       if (!signal_received)
 	{
-	  man->persist.special_state_msg = ">HOLD:Waiting for hold release";
+	  struct buffer out = alloc_buf_gc (128, &gc);
+	  buf_printf (&out, ">HOLD:Waiting for hold release:%d", holdtime);
+	  man->persist.special_state_msg = BSTR (&out);
 	  msg (M_CLIENT, "%s", man->persist.special_state_msg);
 
 	  /* run command processing event loop until we get our username/password */
@@ -3116,6 +3369,7 @@ management_hold (struct management *man)
       man->persist.special_state_msg = NULL;
       man->settings.mansig &= ~MANSIG_IGNORE_USR1_HUP;
 
+      gc_free (&gc);
       return true;
     }
   return false;
@@ -3218,7 +3472,14 @@ log_entry_print (const struct log_entry *e, unsigned int flags, struct gc_arena 
   if (flags & LOG_PRINT_LOCAL_IP)
     buf_printf (&out, ",%s", print_in_addr_t (e->local_ip, IA_EMPTY_IF_UNDEF, gc));
   if (flags & LOG_PRINT_REMOTE_IP)
-    buf_printf (&out, ",%s", print_in_addr_t (e->remote_ip, IA_EMPTY_IF_UNDEF, gc));
+    {
+      buf_printf (&out, ",%s", (!addr_defined (&e->remote_sock) ? "," :
+        print_sockaddr_ex (&e->remote_sock.addr.sa, ",", PS_DONT_SHOW_FAMILY|PS_SHOW_PORT, gc)));
+      buf_printf (&out, ",%s", (!addr_defined (&e->local_sock) ? "," :
+        print_sockaddr_ex (&e->local_sock.addr.sa, ",", PS_DONT_SHOW_FAMILY|PS_SHOW_PORT, gc)));
+    }
+  if (flags & LOG_PRINT_LOCAL_IP && !IN6_IS_ADDR_UNSPECIFIED(&e->local_ip6))
+    buf_printf (&out, ",%s", print_in6_addr (e->local_ip6, IA_EMPTY_IF_UNDEF, gc));
   if (flags & LOG_ECHO_TO_LOG)
     msg (D_MANAGEMENT, "MANAGEMENT: %s", BSTR (&out));
   if (flags & LOG_PRINT_CRLF)

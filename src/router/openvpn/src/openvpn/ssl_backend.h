@@ -38,10 +38,10 @@
 #include "ssl_verify_openssl.h"
 #define SSLAPI SSLAPI_OPENSSL
 #endif
-#ifdef ENABLE_CRYPTO_POLARSSL
-#include "ssl_polarssl.h"
-#include "ssl_verify_polarssl.h"
-#define SSLAPI SSLAPI_POLARSSL
+#ifdef ENABLE_CRYPTO_MBEDTLS
+#include "ssl_mbedtls.h"
+#include "ssl_verify_mbedtls.h"
+#define SSLAPI SSLAPI_MBEDTLS
 #endif
 
 /* Ensure that SSLAPI got a sane value if SSL is disabled or unknown */
@@ -124,21 +124,21 @@ int tls_version_parse(const char *vstr, const char *extra);
  */
 int tls_version_max(void);
 
+#ifdef ENABLE_CRYPTO
+
 /**
  * Initialise a library-specific TLS context for a server.
  *
  * @param ctx		TLS context to initialise
- * @param ssl_flags     SSLF_x flags from ssl_common.h
  */
-void tls_ctx_server_new(struct tls_root_ctx *ctx, unsigned int ssl_flags);
+void tls_ctx_server_new(struct tls_root_ctx *ctx);
 
 /**
  * Initialises a library-specific TLS context for a client.
  *
  * @param ctx		TLS context to initialise
- * @param ssl_flags     SSLF_x flags from ssl_common.h
  */
-void tls_ctx_client_new(struct tls_root_ctx *ctx, unsigned int ssl_flags);
+void tls_ctx_client_new(struct tls_root_ctx *ctx);
 
 /**
  * Frees the library-specific TLSv1 context
@@ -170,8 +170,9 @@ void tls_ctx_set_options (struct tls_root_ctx *ctx, unsigned int ssl_flags);
 /**
  * Restrict the list of ciphers that can be used within the TLS context.
  *
- * @param ctx		TLS context to restrict
- * @param ciphers	String containing : delimited cipher names.
+ * @param ctx		TLS context to restrict, must be valid.
+ * @param ciphers	String containing : delimited cipher names, or NULL to use
+ *					sane defaults.
  */
 void tls_ctx_restrict_ciphers(struct tls_root_ctx *ctx, const char *ciphers);
 
@@ -195,6 +196,16 @@ void tls_ctx_check_cert_time (const struct tls_root_ctx *ctx);
  */
 void tls_ctx_load_dh_params(struct tls_root_ctx *ctx, const char *dh_file,
     const char *dh_file_inline);
+
+/**
+ * Load Elliptic Curve Parameters, and load them into the library-specific
+ * TLS context.
+ *
+ * @param ctx          TLS context to use
+ * @param curve_name   The name of the elliptic curve to load.
+ */
+void tls_ctx_load_ecdh_params(struct tls_root_ctx *ctx, const char *curve_name
+    );
 
 /**
  * Load PKCS #12 file for key, cert and (optionally) CA certs, and add to
@@ -221,7 +232,7 @@ int tls_ctx_load_pkcs12(struct tls_root_ctx *ctx, const char *pkcs12_file,
  */
 #ifdef ENABLE_CRYPTOAPI
 void tls_ctx_load_cryptoapi(struct tls_root_ctx *ctx, const char *cryptoapi_cert);
-#endif /* WIN32 */
+#endif /* _WIN32 */
 
 /**
  * Load certificate file into the given TLS context. If the given certificate
@@ -299,9 +310,9 @@ void tls_ctx_load_extra_certs (struct tls_root_ctx *ctx, const char *extra_certs
     const char *extra_certs_file_inline
     );
 
-#ifdef ENABLE_CRYPTO_POLARSSL
+#ifdef ENABLE_CRYPTO_MBEDTLS
 /**
- * Add a personalisation string to the PolarSSL RNG, based on the certificate
+ * Add a personalisation string to the mbed TLS RNG, based on the certificate
  * loaded into the given context.
  *
  * @param ctx			TLS context to use
@@ -333,6 +344,30 @@ void key_state_ssl_init(struct key_state_ssl *ks_ssl,
  * @param ks_ssl	The SSL channel's state info to free
  */
 void key_state_ssl_free(struct key_state_ssl *ks_ssl);
+
+/**
+ * Reload the Certificate Revocation List for the SSL channel
+ *
+ * @param ssl_ctx       The TLS context to use when reloading the CRL
+ * @param crl_file      The file name to load the CRL from, or
+ *                      "[[INLINE]]" in the case of inline files.
+ * @param crl_inline    A string containing the CRL
+ */
+void backend_tls_ctx_reload_crl(struct tls_root_ctx *ssl_ctx,
+    const char *crl_file, const char *crl_inline);
+
+/**
+ * Keying Material Exporters [RFC 5705] allows additional keying material to be
+ * derived from existing TLS channel. This exported keying material can then be
+ * used for a variety of purposes.
+ *
+ * @param ks_ssl       The SSL channel's state info
+ * @param session      The session associated with the given key_state
+ */
+
+void
+key_state_export_keying_material(struct key_state_ssl *ks_ssl,
+    struct tls_session *session) __attribute__((nonnull));
 
 /**************************************************************************/
 /** @addtogroup control_tls
@@ -472,6 +507,11 @@ void print_details (struct key_state_ssl * ks_ssl, const char *prefix);
 void show_available_tls_ciphers (const char *tls_ciphers);
 
 /*
+ * Show the available elliptic curves in the crypto library
+ */
+void show_available_curves (void);
+
+/*
  * The OpenSSL library has a notion of preference in TLS ciphers.  Higher
  * preference == more secure. Return the highest preference cipher.
  */
@@ -483,4 +523,5 @@ void get_highest_preference_tls_cipher (char *buf, int size);
  */
 const char * get_ssl_library_version(void);
 
+#endif /* ENABLE_CRYPTO */
 #endif /* SSL_BACKEND_H_ */

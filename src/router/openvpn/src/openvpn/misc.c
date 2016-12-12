@@ -6,6 +6,8 @@
  *             packet compression.
  *
  *  Copyright (C) 2002-2010 OpenVPN Technologies, Inc. <sales@openvpn.net>
+ *  Copyright (C) 2014-2015 David Sommerseth <davids@redhat.com>
+ *  Copyright (C) 2016      David Sommerseth <davids@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -62,7 +64,7 @@ run_up_down (const char *command,
 	     const struct plugin_list *plugins,
 	     int plugin_type,
 	     const char *arg,
-#ifdef WIN32
+#ifdef _WIN32
 	     DWORD adapter_index,
 #endif
 	     const char *dev_type,
@@ -85,7 +87,7 @@ run_up_down (const char *command,
   setenv_str (es, "dev", arg);
   if (dev_type)
     setenv_str (es, "dev_type", dev_type);
-#ifdef WIN32
+#ifdef _WIN32
   setenv_int (es, "dev_idx", adapter_index);
 #endif
 
@@ -118,13 +120,9 @@ run_up_down (const char *command,
       struct argv argv = argv_new ();
       ASSERT (arg);
       setenv_str (es, "script_type", script_type);
-      argv_printf (&argv,
-		  "%sc %s %d %d %s %s %s",
-		  command,
-		  arg,
-		  tun_mtu, link_mtu,
-		  ifconfig_local, ifconfig_remote,
-		  context);
+      argv_parse_cmd (&argv, command);
+      argv_printf_cat (&argv, "%s %d %d %s %s %s", arg, tun_mtu, link_mtu,
+                       ifconfig_local, ifconfig_remote, context);
       argv_msg (M_INFO, &argv);
       openvpn_run_script (&argv, es, S_FATAL, "--up/--down");
       argv_reset (&argv);
@@ -192,38 +190,13 @@ save_inetd_socket_descriptor (void)
 }
 
 /*
- * Warn if a given file is group/others accessible.
- */
-void
-warn_if_group_others_accessible (const char* filename)
-{
-#ifndef WIN32
-#ifdef HAVE_STAT
-  if (strcmp (filename, INLINE_FILE_TAG))
-    {
-      struct stat st;
-      if (stat (filename, &st))
-	{
-	  msg (M_WARN | M_ERRNO, "WARNING: cannot stat file '%s'", filename);
-	}
-      else
-	{
-	  if (st.st_mode & (S_IRWXG|S_IRWXO))
-	    msg (M_WARN, "WARNING: file '%s' is group or others accessible", filename);
-	}
-    }
-#endif
-#endif
-}
-
-/*
  * Print an error message based on the status code returned by system().
  */
 const char *
 system_error_message (int stat, struct gc_arena *gc)
 {
   struct buffer out = alloc_buf_gc (256, gc);
-#ifdef WIN32
+#ifdef _WIN32
   if (stat == -1)
     buf_printf (&out, "external program did not execute -- ");
   buf_printf (&out, "returned error code %d", stat);
@@ -279,7 +252,7 @@ openvpn_execve_allowed (const unsigned int flags)
 }
 
 
-#ifndef WIN32
+#ifndef _WIN32
 /*
  * Run execve() inside a fork().  Designed to replicate the semantics of system() but
  * in a safer way that doesn't require the invocation of a shell or the risks
@@ -362,27 +335,29 @@ openvpn_popen (const struct argv *a,  const struct env_set *es)
 		      pid = fork ();
 		      if (pid == (pid_t)0) /* child side */
 			{
-			  close (pipe_stdout[0]);
+			  close (pipe_stdout[0]);  /* Close read end */
 			  dup2 (pipe_stdout[1],1);
 			  execve (cmd, argv, envp);
 			  exit (127);
 			}
-		      else if (pid < (pid_t)0) /* fork failed */
-			{
-			  msg (M_ERR, "openvpn_popen: unable to fork");
-			}
-		      else /* parent side */
+		      else if (pid > (pid_t)0) /* parent side */
 			{
                           int status = 0;
 
+                          close (pipe_stdout[1]); /* Close write end */
                           waitpid(pid, &status, 0);
                           ret = pipe_stdout[0];
+			}
+		      else /* fork failed */
+			{
+                          close (pipe_stdout[0]);
                           close (pipe_stdout[1]);
+			  msg (M_ERR, "openvpn_popen: unable to fork %s", cmd);
 			}
 	      }
 	      else {
-		      msg (M_WARN, "openvpn_popen: unable to create stdout pipe");
-		      ret = -1;
+                msg (M_WARN, "openvpn_popen: unable to create stdout pipe for %s", cmd);
+                ret = -1;
 	      }
 	}
       else if (!warn_shown && (script_security < SSEC_SCRIPTS))
@@ -526,7 +501,7 @@ remove_env_item (const char *str, const bool do_free, struct env_item **list)
 	    *list = current->next;
 	  if (do_free)
 	    {
-	      memset (current->string, 0, strlen (current->string));
+	      secure_memzero (current->string, strlen (current->string));
 	      free (current->string);
 	      free (current);
 	    }
@@ -609,6 +584,16 @@ env_set_add (struct env_set *es, const char *str)
   ASSERT (es);
   ASSERT (str);
   env_set_add_nolock (es, str);
+}
+
+const char*
+env_set_get (const struct env_set *es, const char *name)
+{
+  const struct env_item *item = es->list;
+  while (item && !env_string_equal(item->string, name)) {
+      item = item->next;
+  }
+  return item ? item->string : NULL;
 }
 
 void
@@ -701,14 +686,6 @@ env_set_remove_from_environment (const struct env_set *es)
     }
 }
 
-#ifdef HAVE_PUTENV
-
-/* companion functions to putenv */
-
-static struct env_item *global_env = NULL; /* GLOBAL */
-
-#endif
-
 /* add/modify/delete environmental strings */
 
 void
@@ -751,6 +728,28 @@ setenv_str_safe (struct env_set *es, const char *name, const char *value)
     setenv_str (es, BSTR(&buf), value);
   else
     msg (M_WARN, "setenv_str_safe: name overflow");
+}
+
+void setenv_str_incr(struct env_set *es, const char *name, const char *value)
+{
+  unsigned int counter = 1;
+  const size_t tmpname_len = strlen(name) + 5; /* 3 digits counter max */
+  char *tmpname = gc_malloc(tmpname_len, true, NULL);
+  strcpy(tmpname, name);
+  while (NULL != env_set_get(es, tmpname) && counter < 1000)
+    {
+      ASSERT (openvpn_snprintf (tmpname, tmpname_len, "%s_%u", name, counter));
+      counter++;
+    }
+  if (counter < 1000)
+    {
+      setenv_str (es, tmpname, value);
+    }
+  else
+    {
+      msg (D_TLS_DEBUG_MED, "Too many same-name env variables, ignoring: %s", name);
+    }
+  free (tmpname);
 }
 
 void
@@ -828,32 +827,6 @@ setenv_str_i (struct env_set *es, const char *name, const char *value, const int
   const char *name_str = setenv_format_indexed_name (name, i, &gc);
   setenv_str (es, name_str, value);
   gc_free (&gc);
-}
-
-/*
- * taken from busybox networking/ifupdown.c
- */
-unsigned int
-count_bits(unsigned int a)
-{
-  unsigned int result;
-  result = (a & 0x55) + ((a >> 1) & 0x55);
-  result = (result & 0x33) + ((result >> 2) & 0x33);
-  return((result & 0x0F) + ((result >> 4) & 0x0F));
-}
-
-int
-count_netmask_bits(const char *dotted_quad)
-{
-  unsigned int result, a, b, c, d;
-  /* Found a netmask...  Check if it is dotted quad */
-  if (sscanf(dotted_quad, "%u.%u.%u.%u", &a, &b, &c, &d) != 4)
-    return -1;
-  result = count_bits(a);
-  result += count_bits(b);
-  result += count_bits(c);
-  result += count_bits(d);
-  return ((int)result);
 }
 
 /* return true if filename can be opened for read */
@@ -977,7 +950,7 @@ hostname_randomize(const char *hostname, struct gc_arena *gc)
 const char *
 gen_path (const char *directory, const char *filename, struct gc_arena *gc)
 {
-#if WIN32
+#ifdef _WIN32
   const int CC_PATH_RESERVED = CC_LESS_THAN|CC_GREATER_THAN|CC_COLON|
     CC_DOUBLE_QUOTE|CC_SLASH|CC_BACKSLASH|CC_PIPE|CC_QUESTION_MARK|CC_ASTERISK;
 #else
@@ -988,7 +961,7 @@ gen_path (const char *directory, const char *filename, struct gc_arena *gc)
   if (safe_filename
       && strcmp (safe_filename, ".")
       && strcmp (safe_filename, "..")
-#ifdef WIN32
+#ifdef _WIN32
       && win_safe_filename (safe_filename)
 #endif
       )
@@ -1016,7 +989,7 @@ absolute_pathname (const char *pathname)
   if (pathname)
     {
       const int c = pathname[0];
-#ifdef WIN32
+#ifdef _WIN32
       return c == '\\' || (isalpha(c) && pathname[1] == ':' && pathname[2] == '\\');
 #else
       return c == '/';
@@ -1085,12 +1058,22 @@ get_user_pass_cr (struct user_pass *up,
 	  struct buffer user_prompt = alloc_buf_gc (128, &gc);
 
 	  buf_printf (&user_prompt, "NEED-OK|%s|%s:", prefix, up->username);
-	  
-	  if (!get_console_input (BSTR (&user_prompt), true, up->password, USER_PASS_LEN))
-	    msg (M_FATAL, "ERROR: could not read %s ok-confirmation from stdin", prefix);
+	  if (!query_user_SINGLE (BSTR(&user_prompt), BLEN(&user_prompt),
+                                  up->password, USER_PASS_LEN, false))
+            {
+              msg (M_FATAL, "ERROR: could not read %s ok-confirmation from stdin", prefix);
+            }
 	  
 	  if (!strlen (up->password))
 	    strcpy (up->password, "ok");
+	}
+      else if (flags & GET_USER_PASS_INLINE_CREDS)
+	{
+	  struct buffer buf;
+	  buf_set_read (&buf, (uint8_t*) auth_file, strlen (auth_file) + 1);
+	  if (!(flags & GET_USER_PASS_PASSWORD_ONLY))
+	    buf_parse (&buf, '\n', up->username, USER_PASS_LEN);
+	  buf_parse (&buf, '\n', up->password, USER_PASS_LEN);
 	}
       /*
        * Read from auth file unless this is a dynamic challenge request.
@@ -1102,8 +1085,6 @@ get_user_pass_cr (struct user_pass *up,
            */
           FILE *fp;
           char password_buf[USER_PASS_LEN] = { '\0' };
-
-          warn_if_group_others_accessible (auth_file);
 
           fp = platform_fopen (auth_file, "r");
           if (!fp)
@@ -1155,13 +1136,17 @@ get_user_pass_cr (struct user_pass *up,
 	      if (ac)
 		{
 		  char *response = (char *) gc_malloc (USER_PASS_LEN, false, &gc);
-		  struct buffer packed_resp;
+		  struct buffer packed_resp, challenge;
 
+		  challenge = alloc_buf_gc (14+strlen(ac->challenge_text), &gc);
+		  buf_printf (&challenge, "CHALLENGE: %s", ac->challenge_text);
 		  buf_set_write (&packed_resp, (uint8_t*)up->password, USER_PASS_LEN);
-		  msg (M_INFO|M_NOPREFIX, "CHALLENGE: %s", ac->challenge_text);
-                  if (!get_console_input (ac->challenge_text, BOOL_CAST(ac->flags&CR_ECHO),
-                                          response, USER_PASS_LEN))
-		    msg (M_FATAL, "ERROR: could not read challenge response from stdin");
+
+		  if (!query_user_SINGLE (BSTR(&challenge), BLEN(&challenge),
+                                          response, USER_PASS_LEN, BOOL_CAST(ac->flags&CR_ECHO)))
+		    {
+		      msg (M_FATAL, "ERROR: could not read challenge response from stdin");
+		    }
 		  strncpynt (up->username, ac->user, USER_PASS_LEN);
 		  buf_printf (&packed_resp, "CRV1::%s::%s", ac->state_id, response);
 		}
@@ -1176,32 +1161,49 @@ get_user_pass_cr (struct user_pass *up,
 	      struct buffer user_prompt = alloc_buf_gc (128, &gc);
 	      struct buffer pass_prompt = alloc_buf_gc (128, &gc);
 
+	      query_user_clear ();
 	      buf_printf (&user_prompt, "Enter %s Username:", prefix);
 	      buf_printf (&pass_prompt, "Enter %s Password:", prefix);
 
 	      if (username_from_stdin && !(flags & GET_USER_PASS_PASSWORD_ONLY))
 		{
-		  if (!get_console_input (BSTR (&user_prompt), true, up->username, USER_PASS_LEN))
-		    msg (M_FATAL, "ERROR: could not read %s username from stdin", prefix);
+		  query_user_add (BSTR(&user_prompt), BLEN(&user_prompt),
+                                  up->username, USER_PASS_LEN, true);
+		}
+
+	      if (password_from_stdin)
+                {
+                  query_user_add (BSTR(&pass_prompt), BLEN(&pass_prompt),
+                                  up->password, USER_PASS_LEN, false);
+                }
+
+	      if( !query_user_exec () )
+		{
+		  msg(M_FATAL, "ERROR: Failed retrieving username or password");
+		}
+
+	      if (!(flags & GET_USER_PASS_PASSWORD_ONLY))
+		{
 		  if (strlen (up->username) == 0)
 		    msg (M_FATAL, "ERROR: %s username is empty", prefix);
 		}
-
-	      if (password_from_stdin && !get_console_input (BSTR (&pass_prompt), false, up->password, USER_PASS_LEN))
-		msg (M_FATAL, "ERROR: could not not read %s password from stdin", prefix);
 
 #ifdef ENABLE_CLIENT_CR
               if (auth_challenge && (flags & GET_USER_PASS_STATIC_CHALLENGE) && response_from_stdin)
 		{
 		  char *response = (char *) gc_malloc (USER_PASS_LEN, false, &gc);
-		  struct buffer packed_resp;
+		  struct buffer packed_resp, challenge;
 		  char *pw64=NULL, *resp64=NULL;
 
-		  msg (M_INFO|M_NOPREFIX, "CHALLENGE: %s", auth_challenge);
+		  challenge = alloc_buf_gc (14+strlen(auth_challenge), &gc);
+		  buf_printf (&challenge, "CHALLENGE: %s", auth_challenge);
 
-                  if (!get_console_input (auth_challenge, BOOL_CAST(flags & GET_USER_PASS_STATIC_CHALLENGE_ECHO),
-                                          response, USER_PASS_LEN))
-		    msg (M_FATAL, "ERROR: could not read static challenge response from stdin");
+		  if (!query_user_SINGLE (BSTR(&challenge), BLEN(&challenge),
+                                          response, USER_PASS_LEN,
+                                          BOOL_CAST(flags & GET_USER_PASS_STATIC_CHALLENGE_ECHO)))
+		    {
+		      msg (M_FATAL, "ERROR: could not retrieve static challenge response");
+		    }
 		  if (openvpn_base64_encode(up->password, strlen(up->password), &pw64) == -1
 		      || openvpn_base64_encode(response, strlen(response), &resp64) == -1)
 		    msg (M_FATAL, "ERROR: could not base64-encode password/static_response");
@@ -1340,7 +1342,7 @@ purge_user_pass (struct user_pass *up, const bool force)
   static bool warn_shown = false;
   if (nocache || force)
     {
-      CLEAR (*up);
+      secure_memzero (up, sizeof(*up));
       up->nocache = nocache;
     }
   else if (!warn_shown)
@@ -1555,465 +1557,6 @@ adjust_power_of_2 (size_t u)
 }
 
 /*
- * A printf-like function (that only recognizes a subset of standard printf
- * format operators) that prints arguments to an argv list instead
- * of a standard string.  This is used to build up argv arrays for passing
- * to execve.
- */
-
-void
-argv_init (struct argv *a)
-{
-  a->capacity = 0;
-  a->argc = 0;
-  a->argv = NULL;
-  a->system_str = NULL;
-}
-
-struct argv
-argv_new (void)
-{
-  struct argv ret;
-  argv_init (&ret);
-  return ret;
-}
-
-void
-argv_reset (struct argv *a)
-{
-  size_t i;
-  for (i = 0; i < a->argc; ++i)
-    free (a->argv[i]);
-  free (a->argv);
-  free (a->system_str);
-  argv_init (a);
-}
-
-static void
-argv_extend (struct argv *a, const size_t newcap)
-{
-  if (newcap > a->capacity)
-    {
-      char **newargv;
-      size_t i;
-      ALLOC_ARRAY_CLEAR (newargv, char *, newcap);
-      for (i = 0; i < a->argc; ++i)
-	newargv[i] = a->argv[i];
-      free (a->argv);
-      a->argv = newargv;
-      a->capacity = newcap;
-    }
-}
-
-static void
-argv_grow (struct argv *a, const size_t add)
-{
-  const size_t newargc = a->argc + add + 1;
-  ASSERT (newargc > a->argc);
-  argv_extend (a, adjust_power_of_2 (newargc));
-}
-
-static void
-argv_append (struct argv *a, char *str) /* str must have been malloced or be NULL */
-{
-  argv_grow (a, 1);
-  a->argv[a->argc++] = str;
-}
-
-static void
-argv_system_str_append (struct argv *a, const char *str, const bool enquote)
-{
-  if (str)
-    {
-      char *newstr;
-
-      /* compute length of new system_str */
-      size_t l = strlen (str) + 1; /* space for new string plus trailing '\0' */
-      if (a->system_str)
-	l += strlen (a->system_str) + 1; /* space for existing string + space (" ") separator */
-      if (enquote)
-	l += 2; /* space for two quotes */
-
-      /* build new system_str */
-      newstr = (char *) malloc (l);
-      newstr[0] = '\0';
-      check_malloc_return (newstr);
-      if (a->system_str)
-	{
-	  strcpy (newstr, a->system_str);
-	  strcat (newstr, " ");
-	}
-      if (enquote)
-	strcat (newstr, "\"");
-      strcat (newstr, str);
-      if (enquote)
-	strcat (newstr, "\"");
-      free (a->system_str);
-      a->system_str = newstr;
-    }
-}
-
-static char *
-argv_extract_cmd_name (const char *path)
-{
-  char *ret = NULL;
-  if (path)
-    {
-      char *path_cp = string_alloc(path, NULL); /* POSIX basename() implementaions may modify its arguments */
-      const char *bn = basename (path_cp);
-      if (bn)
-	{
-	  char *dot = NULL;
-	  ret = string_alloc (bn, NULL);
-	  dot = strrchr (ret, '.');
-	  if (dot)
-	    *dot = '\0';
-	  free(path_cp);
-	  if (ret[0] == '\0')
-	    {
-	      free(ret);
-	      ret = NULL;
-	    }
-	}
-    }
-  return ret;
-}
-
-const char *
-argv_system_str (const struct argv *a)
-{
-  return a->system_str;
-}
-
-struct argv
-argv_clone (const struct argv *a, const size_t headroom)
-{
-  struct argv r;
-  size_t i;
-
-  argv_init (&r);
-  for (i = 0; i < headroom; ++i)
-    argv_append (&r, NULL);
-  if (a)
-    {
-      for (i = 0; i < a->argc; ++i)
-	argv_append (&r, string_alloc (a->argv[i], NULL));
-      r.system_str = string_alloc (a->system_str, NULL);
-    }
-  return r;
-}
-
-struct argv
-argv_insert_head (const struct argv *a, const char *head)
-{
-  struct argv r;
-  char *s;
-
-  r = argv_clone (a, 1);
-  r.argv[0] = string_alloc (head, NULL);
-  s = r.system_str;
-  r.system_str = string_alloc (head, NULL);
-  if (s)
-    {
-      argv_system_str_append (&r, s, false);
-      free (s);
-    }
-  return r;
-}
-
-char *
-argv_term (const char **f)
-{
-  const char *p = *f;
-  const char *term = NULL;
-  size_t termlen = 0;
-
-  if (*p == '\0')
-    return NULL;
-
-  while (true)
-    {
-      const int c = *p;
-      if (c == '\0')
-	break;
-      if (term)
-	{
-	  if (!isspace (c))
-	    ++termlen;
-	  else
-	    break;
-	}
-      else
-	{
-	  if (!isspace (c))
-	    {
-	      term = p;
-	      termlen = 1;
-	    }
-	}
-      ++p;
-    }
-  *f = p;
-
-  if (term)
-    {
-      char *ret;
-      ASSERT (termlen > 0);
-      ret = malloc (termlen + 1);
-      check_malloc_return (ret);
-      memcpy (ret, term, termlen);
-      ret[termlen] = '\0';
-      return ret;
-    }
-  else
-    return NULL;
-}
-
-const char *
-argv_str (const struct argv *a, struct gc_arena *gc, const unsigned int flags)
-{
-  if (a->argv)
-    return print_argv ((const char **)a->argv, gc, flags);
-  else
-    return "";
-}
-
-void
-argv_msg (const int msglev, const struct argv *a)
-{
-  struct gc_arena gc = gc_new ();
-  msg (msglev, "%s", argv_str (a, &gc, 0));
-  gc_free (&gc);
-}
-
-void
-argv_msg_prefix (const int msglev, const struct argv *a, const char *prefix)
-{
-  struct gc_arena gc = gc_new ();
-  msg (msglev, "%s: %s", prefix, argv_str (a, &gc, 0));
-  gc_free (&gc);
-}
-
-void
-argv_printf (struct argv *a, const char *format, ...)
-{
-  va_list arglist;
-  va_start (arglist, format);
-  argv_printf_arglist (a, format, 0, arglist);
-  va_end (arglist);
- }
-
-void
-argv_printf_cat (struct argv *a, const char *format, ...)
-{
-  va_list arglist;
-  va_start (arglist, format);
-  argv_printf_arglist (a, format, APA_CAT, arglist);
-  va_end (arglist);
-}
-
-void
-argv_printf_arglist (struct argv *a, const char *format, const unsigned int flags, va_list arglist)
-{
-  struct gc_arena gc = gc_new ();
-  char *term;
-  const char *f = format;
-
-  if (!(flags & APA_CAT))
-    argv_reset (a);
-  argv_extend (a, 1); /* ensure trailing NULL */
-
-  while ((term = argv_term (&f)) != NULL) 
-    {
-      if (term[0] == '%')
-	{
-	  if (!strcmp (term, "%s"))
-	    {
-	      char *s = va_arg (arglist, char *);
-	      if (!s)
-		s = "";
-	      argv_append (a, string_alloc (s, NULL));
-	      argv_system_str_append (a, s, true);
-	    }
-	  else if (!strcmp (term, "%sc"))
-	    {
-	      char *s = va_arg (arglist, char *);
-	      if (s)
-		{
-		  int nparms;
-		  char *parms[MAX_PARMS+1];
-		  int i;
-
-		  nparms = parse_line (s, parms, MAX_PARMS, "SCRIPT-ARGV", 0, D_ARGV_PARSE_CMD, &gc);
-		  if (nparms)
-		    {
-		      for (i = 0; i < nparms; ++i)
-			argv_append (a, string_alloc (parms[i], NULL));
-		    }
-		  else
-		    argv_append (a, string_alloc (s, NULL));
-
-		  argv_system_str_append (a, s, false);
-		}
-	      else
-		{
-		  argv_append (a, string_alloc ("", NULL));
-		  argv_system_str_append (a, "echo", false);
-		}
-	    }
-	  else if (!strcmp (term, "%d"))
-	    {
-	      char numstr[64];
-	      openvpn_snprintf (numstr, sizeof (numstr), "%d", va_arg (arglist, int));
-	      argv_append (a, string_alloc (numstr, NULL));
-	      argv_system_str_append (a, numstr, false);
-	    }
-	  else if (!strcmp (term, "%u"))
-	    {
-	      char numstr[64];
-	      openvpn_snprintf (numstr, sizeof (numstr), "%u", va_arg (arglist, unsigned int));
-	      argv_append (a, string_alloc (numstr, NULL));
-	      argv_system_str_append (a, numstr, false);
-	    }
-	  else if (!strcmp (term, "%s/%d"))
-	    {
-	      char numstr[64];
-	      char *s = va_arg (arglist, char *);
-
-	      if (!s)
-		s = "";
-
-	      openvpn_snprintf (numstr, sizeof (numstr), "%d", va_arg (arglist, int));
-
-	      {
-		const size_t len = strlen(s) + strlen(numstr) + 2;
-		char *combined = (char *) malloc (len);
-		check_malloc_return (combined);
-
-		strcpy (combined, s);
-		strcat (combined, "/");
-		strcat (combined, numstr);
-		argv_append (a, combined);
-		argv_system_str_append (a, combined, false);
-	      }
-	    }
-	  else if (!strcmp (term, "%s%sc"))
-	    {
-	      char *s1 = va_arg (arglist, char *);
-	      char *s2 = va_arg (arglist, char *);
-	      char *combined;
-	      char *cmd_name;
-
-	      if (!s1) s1 = "";
-	      if (!s2) s2 = "";
-	      combined = (char *) malloc (strlen(s1) + strlen(s2) + 1);
-	      check_malloc_return (combined);
-	      strcpy (combined, s1);
-	      strcat (combined, s2);
-	      argv_append (a, combined);
-
-	      cmd_name = argv_extract_cmd_name (combined);
-	      if (cmd_name)
-		{
-		  argv_system_str_append (a, cmd_name, false);
-		  free (cmd_name);
-		}
-	    }
-	  else
-	    ASSERT (0);
-	  free (term);
-	}
-      else
-	{
-	  argv_append (a, term);
-	  argv_system_str_append (a, term, false);
-	}
-    }
-  gc_free (&gc);
-}
-
-#ifdef ARGV_TEST
-void
-argv_test (void)
-{
-  struct gc_arena gc = gc_new ();
-  const char *s;
-
-  struct argv a;
-
-  argv_init (&a);
-  argv_printf (&a, "%sc foo bar %s", "c:\\\\src\\\\test\\\\jyargs.exe", "foo bar");
-  argv_msg_prefix (M_INFO, &a, "ARGV");
-  msg (M_INFO, "ARGV-S: %s", argv_system_str(&a));
-  /*openvpn_execve_check (&a, NULL, 0, "command failed");*/
-
-  argv_printf (&a, "%sc %s %s", "c:\\\\src\\\\test files\\\\batargs.bat", "foo", "bar");  
-  argv_msg_prefix (M_INFO, &a, "ARGV");
-  msg (M_INFO, "ARGV-S: %s", argv_system_str(&a));
-  /*openvpn_execve_check (&a, NULL, 0, "command failed");*/
-
-  argv_printf (&a, "%s%sc foo bar %s %s/%d %d %u", "/foo", "/bar.exe", "one two", "1.2.3.4", 24, -69, 96);
-  argv_msg_prefix (M_INFO, &a, "ARGV");
-  msg (M_INFO, "ARGV-S: %s", argv_system_str(&a));
-  /*openvpn_execve_check (&a, NULL, 0, "command failed");*/
-
-  argv_printf (&a, "this is a %s test of int %d unsigned %u", "FOO", -69, 42);
-  s = argv_str (&a, &gc, PA_BRACKET);
-  printf ("PF: %s\n", s);
-  printf ("PF-S: %s\n", argv_system_str(&a));
-
-  {
-    struct argv b = argv_insert_head (&a, "MARK");
-    s = argv_str (&b, &gc, PA_BRACKET);
-    printf ("PF: %s\n", s);
-    printf ("PF-S: %s\n", argv_system_str(&b));
-    argv_reset (&b);
-  }
-
-  argv_printf (&a, "%sc foo bar %d", "\"multi term\" command      following \\\"spaces", 99);
-  s = argv_str (&a, &gc, PA_BRACKET);
-  printf ("PF: %s\n", s);
-  printf ("PF-S: %s\n", argv_system_str(&a));
-  argv_reset (&a);
-
-  s = argv_str (&a, &gc, PA_BRACKET);
-  printf ("PF: %s\n", s);
-  printf ("PF-S: %s\n", argv_system_str(&a));
-  argv_reset (&a);
-
-  argv_printf (&a, "foo bar %d", 99);
-  argv_printf_cat (&a, "bar %d foo %sc", 42, "nonesuch");
-  argv_printf_cat (&a, "cool %s %d u %s/%d end", "frood", 4, "hello", 7);
-  s = argv_str (&a, &gc, PA_BRACKET);
-  printf ("PF: %s\n", s);
-  printf ("PF-S: %s\n", argv_system_str(&a));
-  argv_reset (&a);
-
-#if 0
-  {
-    char line[512];
-    while (fgets (line, sizeof(line), stdin) != NULL)
-      {
-	char *term;
-	const char *f = line;
-	int i = 0;
-
-	while ((term = argv_term (&f)) != NULL) 
-	  {
-	    printf ("[%d] '%s'\n", i, term);
-	    ++i;
-	    free (term);
-	  }
-      }
-  }
-#endif
-
-  argv_reset (&a);
-  gc_free (&gc);
-}
-#endif
-
-/*
  * Remove security-sensitive strings from control message
  * so that they will not be output to log file.
  */
@@ -2038,6 +1581,15 @@ sanitize_control_message(const char *src, struct gc_arena *gc)
       else if (c == 'e' && !strncmp(src, "echo ", 5))
 	{
 	  skip = 4;
+	  redact = true;
+	}
+      else if (!check_debug_level(D_SHOW_KEYS)
+               && (c == 'a' && !strncmp(src, "auth-token ", 11)))
+	{
+          /* Unless --verb is 7 or higher (D_SHOW_KEYS), hide
+           * the auth-token value coming in the src string
+           */
+	  skip = 10;
 	  redact = true;
 	}
 
@@ -2084,3 +1636,59 @@ compat_flag (unsigned int flag)
   return (compat_flags & (flag >> 1));
 
 }
+
+#if P2MP_SERVER
+
+/* helper to parse peer_info received from multi client, validate
+ * (this is untrusted data) and put into environment
+ */
+bool
+validate_peer_info_line(char *line)
+{
+  uint8_t c;
+  int state = 0;
+  while (*line)
+    {
+      c = *line;
+      switch (state)
+	{
+	case 0:
+	case 1:
+	  if (c == '=' && state == 1)
+	    state = 2;
+	  else if (isalnum(c) || c == '_')
+	    state = 1;
+	  else
+	    return false;
+	case 2:
+	  /* after the '=', replace non-printable or shell meta with '_' */
+	  if (!isprint(c) || isspace(c) ||
+	       c == '$' || c == '(' || c == '`' )
+	    *line = '_';
+	}
+      line++;
+    }
+  return (state == 2);
+}
+
+void
+output_peer_info_env (struct env_set *es, const char * peer_info)
+{
+  char line[256];
+  struct buffer buf;
+  buf_set_read (&buf, (const uint8_t *) peer_info, strlen(peer_info));
+  while (buf_parse (&buf, '\n', line, sizeof (line)))
+    {
+      chomp (line);
+      if (validate_peer_info_line(line) &&
+            (strncmp(line, "IV_", 3) == 0 || strncmp(line, "UV_", 3) == 0) )
+	{
+	  msg (M_INFO, "peer info: %s", line);
+	  env_set_add(es, line);
+	}
+      else
+	msg (M_WARN, "validation failed on peer_info line received from client");
+    }
+}
+
+#endif /* P2MP_SERVER */

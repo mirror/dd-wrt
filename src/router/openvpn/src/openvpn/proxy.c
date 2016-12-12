@@ -41,8 +41,7 @@
 #include "httpdigest.h"
 #include "ntlm.h"
 #include "memdbg.h"
-
-#ifdef ENABLE_HTTP_PROXY
+#include "forward.h"
 
 #define UP_TYPE_PROXY        "HTTP Proxy"
 
@@ -54,7 +53,6 @@ init_http_proxy_options_once (struct http_proxy_options **hpo,
     {
       ALLOC_OBJ_CLEAR_GC (*hpo, struct http_proxy_options, gc);
       /* http proxy defaults */
-      (*hpo)->timeout = 5;
       (*hpo)->http_version = "1.0";
     }
   return *hpo;
@@ -243,6 +241,8 @@ get_user_pass_http (struct http_proxy_info *p, const bool force)
       unsigned int flags = GET_USER_PASS_MANAGEMENT;
       if (p->queried_creds)
 	flags |= GET_USER_PASS_PREVIOUS_CREDS_FAILED;
+      if (p->options.inline_creds)
+	flags |= GET_USER_PASS_INLINE_CREDS;
       get_user_pass (&static_proxy_user_pass,
 		     p->options.auth_file,
 		     UP_TYPE_PROXY,
@@ -257,6 +257,8 @@ clear_user_pass_http (void)
   purge_user_pass (&static_proxy_user_pass, true);
 }
 
+#if 0
+/* function only used in #if 0 debug statement */
 static void
 dump_residual (socket_descriptor_t sd,
 	       int timeout,
@@ -271,6 +273,7 @@ dump_residual (socket_descriptor_t sd,
       msg (D_PROXY, "PROXY HEADER: '%s'", buf);
     }
 }
+#endif
 
 /*
  * Extract the Proxy-Authenticate header from the stream.
@@ -439,12 +442,11 @@ struct http_proxy_info *
 http_proxy_new (const struct http_proxy_options *o)
 {
   struct http_proxy_info *p;
-  struct http_proxy_options opt;
 
   if (!o || !o->server)
     msg (M_FATAL, "HTTP_PROXY: server not specified");
 
-  ASSERT (legal_ipv4_port (o->port));
+  ASSERT ( o->port);
 
   ALLOC_OBJ_CLEAR (p, struct http_proxy_info);
   p->options = *o;
@@ -490,10 +492,72 @@ http_proxy_close (struct http_proxy_info *hp)
 }
 
 bool
+add_proxy_headers (struct http_proxy_info *p,
+		  socket_descriptor_t sd, /* already open to proxy */
+		  const char *host,	  /* openvpn server remote */
+		  const char* port	  /* openvpn server port */
+		  )
+{
+  char buf[512];
+  int i;
+  bool host_header_sent=false;
+
+  /*
+   * Send custom headers if provided
+   * If content is NULL the whole header is in name
+   * Also remember if we already sent a Host: header
+   */
+  for  (i=0; i < MAX_CUSTOM_HTTP_HEADER && p->options.custom_headers[i].name;i++)
+    {
+      if (p->options.custom_headers[i].content)
+	{
+	  openvpn_snprintf (buf, sizeof(buf), "%s: %s",
+			    p->options.custom_headers[i].name,
+			    p->options.custom_headers[i].content);
+	  if (!strcasecmp(p->options.custom_headers[i].name, "Host"))
+	      host_header_sent=true;
+	}
+      else
+	{
+	  openvpn_snprintf (buf, sizeof(buf), "%s",
+			    p->options.custom_headers[i].name);
+	  if (!strncasecmp(p->options.custom_headers[i].name, "Host:", 5))
+	      host_header_sent=true;
+	}
+
+      msg (D_PROXY, "Send to HTTP proxy: '%s'", buf);
+      if (!send_line_crlf (sd, buf))
+	return false;
+    }
+
+  if (!host_header_sent)
+    {
+      openvpn_snprintf (buf, sizeof(buf), "Host: %s", host);
+      msg (D_PROXY, "Send to HTTP proxy: '%s'", buf);
+      if (!send_line_crlf(sd, buf))
+        return false;
+    }
+
+  /* send User-Agent string if provided */
+  if (p->options.user_agent)
+    {
+      openvpn_snprintf (buf, sizeof(buf), "User-Agent: %s",
+			p->options.user_agent);
+      msg (D_PROXY, "Send to HTTP proxy: '%s'", buf);
+      if (!send_line_crlf (sd, buf))
+	return false;
+    }
+
+  return true;
+}
+
+
+bool
 establish_http_proxy_passthru (struct http_proxy_info *p,
 			       socket_descriptor_t sd, /* already open to proxy */
 			       const char *host,       /* openvpn server remote */
-			       const int port,         /* openvpn server port */
+			       const char *port,         /* openvpn server port */
+			       struct event_timeout* server_poll_timeout,
 			       struct buffer *lookahead,
 			       volatile int *signal_received)
 {
@@ -521,7 +585,7 @@ establish_http_proxy_passthru (struct http_proxy_info *p,
   else
     {
       /* format HTTP CONNECT message */
-      openvpn_snprintf (buf, sizeof(buf), "CONNECT %s:%d HTTP/%s",
+      openvpn_snprintf (buf, sizeof(buf), "CONNECT %s:%s HTTP/%s",
 			host,
 			port,
 			p->options.http_version);
@@ -532,18 +596,8 @@ establish_http_proxy_passthru (struct http_proxy_info *p,
       if (!send_line_crlf (sd, buf))
 	goto error;
 
-      openvpn_snprintf(buf, sizeof(buf), "Host: %s", host);
-      if (!send_line_crlf(sd, buf))
-        goto error;
-
-      /* send User-Agent string if provided */
-      if (p->options.user_agent)
-	{
-	  openvpn_snprintf (buf, sizeof(buf), "User-Agent: %s",
-			    p->options.user_agent);
-	  if (!send_line_crlf (sd, buf))
-	    goto error;
-	}
+      if (!add_proxy_headers (p, sd, host, port))
+	goto error;
 
       /* auth specified? */
       switch (p->auth_method)
@@ -586,7 +640,7 @@ establish_http_proxy_passthru (struct http_proxy_info *p,
 	goto error;
 
       /* receive reply from proxy */
-      if (!recv_line (sd, buf, sizeof(buf), p->options.timeout, true, NULL, signal_received))
+      if (!recv_line (sd, buf, sizeof(buf), get_server_poll_remaining_time (server_poll_timeout), true, NULL, signal_received))
 	goto error;
 
       /* remove trailing CR, LF */
@@ -615,7 +669,7 @@ establish_http_proxy_passthru (struct http_proxy_info *p,
 
           while (true)
             {
-              if (!recv_line (sd, buf, sizeof(buf), p->options.timeout, true, NULL, signal_received))
+              if (!recv_line (sd, buf, sizeof(buf), get_server_poll_remaining_time (server_poll_timeout), true, NULL, signal_received))
                 goto error;
               chomp (buf);
               msg (D_PROXY, "HTTP proxy returned: '%s'", buf);
@@ -642,7 +696,7 @@ establish_http_proxy_passthru (struct http_proxy_info *p,
           /* now send the phase 3 reply */
 
           /* format HTTP CONNECT message */
-          openvpn_snprintf (buf, sizeof(buf), "CONNECT %s:%d HTTP/%s",
+          openvpn_snprintf (buf, sizeof(buf), "CONNECT %s:%s HTTP/%s",
 			    host,
 			    port,
 			    p->options.http_version);
@@ -658,14 +712,11 @@ establish_http_proxy_passthru (struct http_proxy_info *p,
           if (!send_line_crlf (sd, buf))
             goto error;
 
-          
           /* send HOST etc, */
-          openvpn_snprintf (buf, sizeof(buf), "Host: %s", host);
-          msg (D_PROXY, "Send to HTTP proxy: '%s'", buf);
-          if (!send_line_crlf (sd, buf))
-            goto error;
+	  if (!add_proxy_headers (p, sd, host, port))
+	    goto error;
 
-          msg (D_PROXY, "Attempting NTLM Proxy-Authorization phase 3");
+	  msg (D_PROXY, "Attempting NTLM Proxy-Authorization phase 3");
 	  {
 	    const char *np3 = ntlm_phase_3 (p, buf2, &gc);
 	    if (!np3)
@@ -685,7 +736,7 @@ establish_http_proxy_passthru (struct http_proxy_info *p,
             goto error;
 
           /* receive reply from proxy */
-          if (!recv_line (sd, buf, sizeof(buf), p->options.timeout, true, NULL, signal_received))
+          if (!recv_line (sd, buf, sizeof(buf), get_server_poll_remaining_time (server_poll_timeout), true, NULL, signal_received))
             goto error;
 
           /* remove trailing CR, LF */
@@ -730,7 +781,7 @@ establish_http_proxy_passthru (struct http_proxy_info *p,
 
 
 	      /* build the digest response */
-	      openvpn_snprintf (uri, sizeof(uri), "%s:%d",
+	      openvpn_snprintf (uri, sizeof(uri), "%s:%s",
 				host,
 				port);
 
@@ -771,9 +822,7 @@ establish_http_proxy_passthru (struct http_proxy_info *p,
 		goto error;
 
 	      /* send HOST etc, */
-	      openvpn_snprintf (buf, sizeof(buf), "Host: %s", host);
-	      msg (D_PROXY, "Send to HTTP proxy: '%s'", buf);
-	      if (!send_line_crlf (sd, buf))
+	      if (!add_proxy_headers (p, sd, host, port))
 		goto error;
 
 	      /* send digest response */
@@ -795,7 +844,7 @@ establish_http_proxy_passthru (struct http_proxy_info *p,
 		goto error;
 
 	      /* receive reply from proxy */
-	      if (!recv_line (sd, buf, sizeof(buf), p->options.timeout, true, NULL, signal_received))
+	      if (!recv_line (sd, buf, sizeof(buf), get_server_poll_remaining_time (server_poll_timeout), true, NULL, signal_received))
 		goto error;
 
 	      /* remove trailing CR, LF */
@@ -819,7 +868,7 @@ establish_http_proxy_passthru (struct http_proxy_info *p,
 	  /* figure out what kind of authentication the proxy needs */
 	  char *pa = NULL;
 	  const int method = get_proxy_authenticate(sd,
-						    p->options.timeout,
+						    get_server_poll_remaining_time (server_poll_timeout),
 						    &pa,
 						    NULL,
 						    signal_received);
@@ -863,7 +912,7 @@ establish_http_proxy_passthru (struct http_proxy_info *p,
       msg (D_LINK_ERRORS, "HTTP proxy returned bad status");
 #if 0
       /* DEBUGGING -- show a multi-line HTTP error response */
-      dump_residual(sd, p->options.timeout, signal_received);
+      dump_residual(sd, get_server_poll_remaining_time (server_poll_timeout), signal_received);
 #endif
       goto error;
     }
@@ -871,7 +920,7 @@ establish_http_proxy_passthru (struct http_proxy_info *p,
   /* SUCCESS */
 
   /* receive line from proxy and discard */
-  if (!recv_line (sd, NULL, 0, p->options.timeout, true, NULL, signal_received))
+  if (!recv_line (sd, NULL, 0, get_server_poll_remaining_time (server_poll_timeout), true, NULL, signal_received))
     goto error;
 
   /*
@@ -894,14 +943,8 @@ establish_http_proxy_passthru (struct http_proxy_info *p,
   return ret;
 
  error:
-  /* on error, should we exit or restart? */
   if (!*signal_received)
-    *signal_received = (p->options.retry ? SIGUSR1 : SIGTERM); /* SOFT-SIGUSR1 -- HTTP proxy error */
+    *signal_received = SIGUSR1; /* SOFT-SIGUSR1 -- HTTP proxy error */
   gc_free (&gc);
   return ret;
 }
-
-#else
-static void dummy(void) {}
-#endif /* ENABLE_HTTP_PROXY */
-

@@ -18,20 +18,26 @@
 /* Dimension to use for empty array declaration */
 #undef EMPTY_ARRAY_SIZE
 
+/* Enable async push */
+#undef ENABLE_ASYNC_PUSH
+
 /* Enable client capability only */
 #undef ENABLE_CLIENT_ONLY
 
 /* Enable client/server capability */
 #undef ENABLE_CLIENT_SERVER
 
+/* Enable compression stub capability */
+#undef ENABLE_COMP_STUB
+
 /* Enable crypto library */
 #undef ENABLE_CRYPTO
 
+/* Use mbed TLS library */
+#undef ENABLE_CRYPTO_MBEDTLS
+
 /* Use OpenSSL library */
 #undef ENABLE_CRYPTO_OPENSSL
-
-/* Use PolarSSL library */
-#undef ENABLE_CRYPTO_POLARSSL
 
 /* Enable debugging support */
 #undef ENABLE_DEBUG
@@ -45,17 +51,14 @@
 /* Enable internal fragmentation support */
 #undef ENABLE_FRAGMENT
 
-/* Enable HTTP proxy support */
-#undef ENABLE_HTTP_PROXY
-
 /* enable iproute2 support */
 #undef ENABLE_IPROUTE
 
+/* Enable LZ4 compression library */
+#undef ENABLE_LZ4
+
 /* Enable LZO compression library */
 #undef ENABLE_LZO
-
-/* Enable LZO stub capability */
-#undef ENABLE_LZO_STUB
 
 /* Enable management server capability */
 #undef ENABLE_MANAGEMENT
@@ -84,12 +87,6 @@
 /* Enable smaller executable size */
 #undef ENABLE_SMALL
 
-/* Enable Socks proxy support */
-#undef ENABLE_SOCKS
-
-/* Enable ssl library */
-#undef ENABLE_SSL
-
 /* Enable strict options check between peers */
 #undef ENABLE_STRICT_OPTIONS_CHECK
 
@@ -104,6 +101,12 @@
 
 /* Define to 1 if you have the `access' function. */
 #undef HAVE_ACCESS
+
+/* Use crypto library */
+#undef HAVE_AEAD_CIPHER_MODES
+
+/* Compiler supports anonymous unions */
+#undef HAVE_ANONYMOUS_UNION_SUPPORT
 
 /* Define to 1 if you have the <arpa/inet.h> header file. */
 #undef HAVE_ARPA_INET_H
@@ -184,6 +187,9 @@
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
+/* Define to 1 if you have the <dmalloc.h> header file. */
+#undef HAVE_DMALLOC_H
+
 /* Define to 1 if you have the `dup' function. */
 #undef HAVE_DUP
 
@@ -207,6 +213,9 @@
 
 /* Define to 1 if you have the <err.h> header file. */
 #undef HAVE_ERR_H
+
+/* Define to 1 if you have the `EVP_aes_256_gcm' function. */
+#undef HAVE_EVP_AES_256_GCM
 
 /* Define to 1 if you have the `EVP_CIPHER_CTX_set_key_length' function. */
 #undef HAVE_EVP_CIPHER_CTX_SET_KEY_LENGTH
@@ -277,6 +286,9 @@
 /* struct in_pktinfo needed for IP_PKTINFO support */
 #undef HAVE_IN_PKTINFO
 
+/* Define to 1 if the system has the type `in_port_t'. */
+#undef HAVE_IN_PORT_T
+
 /* struct iovec needed for IPv6 support */
 #undef HAVE_IOVEC
 
@@ -286,11 +298,11 @@
 /* struct iphdr needed for IPv6 support */
 #undef HAVE_IPHDR
 
+/* struct in_pktinfo.ipi_spec_dst needed for IP_PKTINFO support */
+#undef HAVE_IPI_SPEC_DST
+
 /* Define to 1 if you have the <libgen.h> header file. */
 #undef HAVE_LIBGEN_H
-
-/* Define to 1 if you have the `polarssl' library (-lpolarssl). */
-#undef HAVE_LIBPOLARSSL
 
 /* Define to 1 if you have the <limits.h> header file. */
 #undef HAVE_LIMITS_H
@@ -307,6 +319,9 @@
 /* Define to 1 if you have the `listen' function. */
 #undef HAVE_LISTEN
 
+/* Define to 1 if you have the <lz4.h> header file. */
+#undef HAVE_LZ4_H
+
 /* Define to 1 if you have the <lzo1x.h> header file. */
 #undef HAVE_LZO1X_H
 
@@ -318,6 +333,12 @@
 
 /* Define to 1 if you have the <lzo/lzoutil.h> header file. */
 #undef HAVE_LZO_LZOUTIL_H
+
+/* Define to 1 if you have the `mbedtls_cipher_check_tag' function. */
+#undef HAVE_MBEDTLS_CIPHER_CHECK_TAG
+
+/* Define to 1 if you have the `mbedtls_cipher_write_tag' function. */
+#undef HAVE_MBEDTLS_CIPHER_WRITE_TAG
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
@@ -364,7 +385,7 @@
 /* Define to 1 if you have the `openlog' function. */
 #undef HAVE_OPENLOG
 
-/* Use crypto library */
+/* OpenSSL engine support available */
 #undef HAVE_OPENSSL_ENGINE
 
 /* Define to 1 if you have the `poll' function. */
@@ -390,6 +411,9 @@
 
 /* Define to 1 if you have the <resolv.h> header file. */
 #undef HAVE_RESOLV_H
+
+/* sa_family_t, needed to hold AF_* info */
+#undef HAVE_SA_FAMILY_T
 
 /* Define to 1 if you have the `sd_booted' function. */
 #undef HAVE_SD_BOOTED
@@ -430,14 +454,14 @@
 /* struct sock_extended_err needed for extended socket error support */
 #undef HAVE_SOCK_EXTENDED_ERR
 
+/* Define to 1 if you have the `SSL_CTX_new' function. */
+#undef HAVE_SSL_CTX_NEW
+
 /* Define to 1 if you have the `stat' function. */
 #undef HAVE_STAT
 
 /* Define to 1 if you have the <stdarg.h> header file. */
 #undef HAVE_STDARG_H
-
-/* Define to 1 if you have the <stdbool.h> header file. */
-#undef HAVE_STDBOOL_H
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
@@ -480,6 +504,9 @@
 
 /* Define to 1 if you have the <sys/file.h> header file. */
 #undef HAVE_SYS_FILE_H
+
+/* Define to 1 if you have the <sys/inotify.h> header file. */
+#undef HAVE_SYS_INOTIFY_H
 
 /* Define to 1 if you have the <sys/ioctl.h> header file. */
 #undef HAVE_SYS_IOCTL_H
@@ -535,6 +562,9 @@
 /* Define to 1 if you have the `unlink' function. */
 #undef HAVE_UNLINK
 
+/* Define to 1 if you have the <valgrind/memcheck.h> header file. */
+#undef HAVE_VALGRIND_MEMCHECK_H
+
 /* Define to 1 if you have the <versionhelpers.h> header file. */
 #undef HAVE_VERSIONHELPERS_H
 
@@ -575,6 +605,18 @@
    */
 #undef LT_OBJDIR
 
+/* use copy of LZ4 source in compat/ */
+#undef NEED_COMPAT_LZ4
+
+/* OpenVPN major version - integer */
+#undef OPENVPN_VERSION_MAJOR
+
+/* OpenVPN minor version - integer */
+#undef OPENVPN_VERSION_MINOR
+
+/* OpenVPN patch level - may be a string or integer */
+#undef OPENVPN_VERSION_PATCH
+
 /* Version in windows resource format */
 #undef OPENVPN_VERSION_RESOURCE
 
@@ -604,6 +646,9 @@
 
 /* Path separator */
 #undef PATH_SEPARATOR_STR
+
+/* Enable pedantic mode */
+#undef PEDANTIC
 
 /* Define as the return type of signal handlers (`int' or `void'). */
 #undef RETSIGTYPE
@@ -638,6 +683,9 @@
 /* Path to systemd-ask-password tool */
 #undef SYSTEMD_ASK_PASSWORD_PATH
 
+/* systemd is newer than v216 */
+#undef SYSTEMD_NEWER_THAN_216
+
 /* The tap-windows id */
 #undef TAP_WIN_COMPONENT_ID
 
@@ -646,6 +694,9 @@
 
 /* The tap-windows version number is required for OpenVPN */
 #undef TAP_WIN_MIN_MINOR
+
+/* Are we running AIX? */
+#undef TARGET_AIX
 
 /* A string representing our host */
 #undef TARGET_ALIAS
@@ -741,6 +792,9 @@
 
 /* Workaround missing in_addr_t */
 #undef in_addr_t
+
+/* Workaround missing in_port_t */
+#undef in_port_t
 
 /* Define to `__inline__' or `__inline' if that's what the C compiler
    calls it, or to nothing if 'inline' is not supported under any name.  */

@@ -32,8 +32,8 @@
 #ifdef ENABLE_CRYPTO_OPENSSL
 #include "ssl_verify_openssl.h"
 #endif
-#ifdef ENABLE_CRYPTO_POLARSSL
-#include "ssl_verify_polarssl.h"
+#ifdef ENABLE_CRYPTO_MBEDTLS
+#include "ssl_verify_mbedtls.h"
 #endif
 #include "openvpn-plugin.h"
 
@@ -59,7 +59,7 @@ struct plugin {
   unsigned int plugin_type_mask;
   int requested_initialization_point;
 
-#ifndef WIN32
+#ifndef _WIN32
   void *handle;
 #else
   HMODULE module;
@@ -127,7 +127,7 @@ int plugin_call_ssl (const struct plugin_list *pl,
 		 const struct argv *av,
 		 struct plugin_return *pr,
 		 struct env_set *es
-#ifdef ENABLE_SSL
+#ifdef ENABLE_CRYPTO
 		 , int current_cert_depth,
 		 openvpn_x509_cert_t *current_cert
 #endif
@@ -183,7 +183,7 @@ plugin_call_ssl (const struct plugin_list *pl,
 	     const struct argv *av,
 	     struct plugin_return *pr,
 	     struct env_set *es
-#ifdef ENABLE_SSL
+#ifdef ENABLE_CRYPTO
 	     , int current_cert_depth,
 	     openvpn_x509_cert_t *current_cert
 #endif
@@ -202,7 +202,7 @@ plugin_call(const struct plugin_list *pl,
 	struct env_set *es)
 {
   return plugin_call_ssl(pl, type, av, pr, es
-#ifdef ENABLE_SSL
+#ifdef ENABLE_CRYPTO
       , -1, NULL
 #endif
       );

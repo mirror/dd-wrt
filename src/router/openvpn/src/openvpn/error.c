@@ -75,6 +75,10 @@ static bool std_redir;      /* GLOBAL */
 /* Should messages be written to the syslog? */
 static bool use_syslog;     /* GLOBAL */
 
+/* Should stdout/stderr be be parsable and always be prefixed with time
+ * and message flags */
+static bool machine_readable_output;   /* GLOBAL */
+
 /* Should timestamps be included on messages to stdout/stderr? */
 static bool suppress_timestamps; /* GLOBAL */
 
@@ -148,10 +152,17 @@ set_suppress_timestamps (bool suppressed)
 }
 
 void
+set_machine_readable_output (bool parsable)
+{
+  machine_readable_output = parsable;
+}
+
+void
 error_reset ()
 {
   use_syslog = std_redir = false;
   suppress_timestamps = false;
+  machine_readable_output = false;
   x_debug_level = 1;
   mute_cutoff = 0;
   mute_count = 0;
@@ -301,7 +312,22 @@ void x_msg_va (const unsigned int flags, const char *format, va_list arglist)
 	  FILE *fp = msg_fp(flags);
 	  const bool show_usec = check_debug_level (DEBUG_LEVEL_USEC_TIME);
 
-	  if ((flags & M_NOPREFIX) || suppress_timestamps)
+	  if (machine_readable_output)
+	    {
+	      struct timeval tv;
+	      gettimeofday (&tv, NULL);
+
+	      fprintf (fp, "%lu.%06lu %x %s%s%s%s",
+		       tv.tv_sec,
+		       (unsigned long)tv.tv_usec,
+		       flags,
+		       prefix,
+		       prefix_sep,
+		       m1,
+		       "\n");
+
+	    }
+	  else if ((flags & M_NOPREFIX) || suppress_timestamps)
 	    {
 	      fprintf (fp, "%s%s%s%s",
 		       prefix,
@@ -427,7 +453,7 @@ close_syslog ()
 #endif
 }
 
-#ifdef WIN32
+#ifdef _WIN32
 
 static HANDLE orig_stderr;
 
@@ -445,7 +471,7 @@ get_orig_stderr (void)
 void
 redirect_stdout_stderr (const char *file, bool append)
 {
-#if defined(WIN32)
+#if defined(_WIN32)
   if (!std_redir)
     {
       struct gc_arena gc = gc_new ();
@@ -577,7 +603,7 @@ x_check_status (int status,
   const char *extended_msg = NULL;
 
   msg (x_cs_verbose_level, "%s %s returned %d",
-       sock ? proto2ascii (sock->info.proto, true) : "",
+       sock ? proto2ascii (sock->info.proto, sock->info.af, true) : "",
        description,
        status);
 
@@ -596,7 +622,7 @@ x_check_status (int status,
 	      sock->info.mtu_changed = true;
 	    }
 	}
-#elif defined(WIN32)
+#elif defined(_WIN32)
       /* get possible driver error from TAP-Windows driver */
       extended_msg = tap_win_getinfo (tt, &gc);
 #endif
@@ -605,14 +631,14 @@ x_check_status (int status,
 	  if (extended_msg)
 	    msg (x_cs_info_level, "%s %s [%s]: %s (code=%d)",
 		 description,
-		 sock ? proto2ascii (sock->info.proto, true) : "",
+		 sock ? proto2ascii (sock->info.proto, sock->info.af, true) : "",
 		 extended_msg,
 		 strerror_ts (my_errno, &gc),
 		 my_errno);
 	  else
 	    msg (x_cs_info_level, "%s %s: %s (code=%d)",
 		 description,
-		 sock ? proto2ascii (sock->info.proto, true) : "",
+		 sock ? proto2ascii (sock->info.proto, sock->info.af, true) : "",
 		 strerror_ts (my_errno, &gc),
 		 my_errno);
 
@@ -651,7 +677,7 @@ openvpn_exit (const int status)
 
       tun_abort();
 
-#ifdef WIN32
+#ifdef _WIN32
       uninit_win32 ();
 #endif
 
@@ -711,7 +737,7 @@ crash (void)
 }
 #endif
 
-#ifdef WIN32
+#ifdef _WIN32
 
 const char *
 strerror_win32 (DWORD errnum, struct gc_arena *gc)
