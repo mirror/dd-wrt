@@ -39,7 +39,7 @@
 #include "plugin.h"
 #include "manage.h"
 #include "proxy.h"
-#include "lzo.h"
+#include "comp.h"
 #include "pushlist.h"
 #include "clinat.h"
 
@@ -71,44 +71,37 @@ struct options_pre_pull
   bool routes_ipv6_defined;
   struct route_ipv6_option_list *routes_ipv6;
 
-#ifdef ENABLE_CLIENT_NAT
   bool client_nat_defined;
   struct client_nat_option_list *client_nat;
-#endif
 
   int foreign_option_index;
 };
 
 #endif
-#if defined(ENABLE_CRYPTO) && !defined(ENABLE_CRYPTO_OPENSSL) && !defined(ENABLE_CRYPTO_POLARSSL)
-# error "At least one of OpenSSL or PolarSSL needs to be defined."
+#if defined(ENABLE_CRYPTO) && !defined(ENABLE_CRYPTO_OPENSSL) && !defined(ENABLE_CRYPTO_MBEDTLS)
+# error "At least one of OpenSSL or mbed TLS needs to be defined."
 #endif
 
 struct connection_entry
 {
   int proto;
-  int local_port;
+  sa_family_t af;
+  const char* local_port;
   bool local_port_defined;
-  int remote_port;
+  const char *remote_port;
   const char *local;
   const char *remote;
   bool remote_float;
   bool bind_defined;
+  bool bind_ipv6_only;
   bool bind_local;
   int connect_retry_seconds;
-  bool connect_retry_defined;
-  int connect_retry_max;
+  int connect_retry_seconds_max;
   int connect_timeout;
-  bool connect_timeout_defined;
-#ifdef ENABLE_HTTP_PROXY
   struct http_proxy_options *http_proxy_options;
-#endif  
-#ifdef ENABLE_SOCKS
   const char *socks_proxy_server;
-  int socks_proxy_port;
+  const char *socks_proxy_port;
   const char *socks_proxy_authfile;
-  bool socks_proxy_retry;
-#endif
 
   int tun_mtu;           /* MTU of tun device */
   bool tun_mtu_defined;  /* true if user overriding parm with command line option */
@@ -124,9 +117,7 @@ struct connection_entry
   int mssfix;            /* Upper bound on TCP MSS */
   bool mssfix_default;   /* true if --mssfix was supplied without a parameter */
 
-#ifdef ENABLE_OCC
-  int explicit_exit_notification;  /* Explicitly tell peer when we are exiting via OCC_EXIT message */
-#endif
+  int explicit_exit_notification;  /* Explicitly tell peer when we are exiting via OCC_EXIT or [RESTART] message */
 
 # define CE_DISABLED (1<<0)
 # define CE_MAN_QUERY_PROXY (1<<1)
@@ -143,8 +134,9 @@ struct connection_entry
 struct remote_entry
 {
   const char *remote;
-  int remote_port;
+  const char *remote_port;
   int proto;
+  sa_family_t af;
 };
 
 #define CONNECTION_LIST_SIZE 64
@@ -153,8 +145,6 @@ struct connection_list
 {
   int len;
   int current;
-  int n_cycles;
-  bool no_advance;
   struct connection_entry *array[CONNECTION_LIST_SIZE];
 };
 
@@ -168,6 +158,8 @@ struct remote_host_store
 {
 # define RH_HOST_LEN 80
   char host[RH_HOST_LEN];
+#define RH_PORT_LEN 20
+  char port[RH_PORT_LEN];
 };
 
 /* Command line options */
@@ -198,20 +190,23 @@ struct options
   bool show_ciphers;
   bool show_digests;
   bool show_engines;
-#ifdef ENABLE_SSL
   bool show_tls_ciphers;
-#endif
+  bool show_curves;
   bool genkey;
 #endif
 
   /* Networking parms */
+  int connect_retry_max;
   struct connection_entry ce;
-  char *remote_ip_hint;
   struct connection_list *connection_list;
-  struct remote_list *remote_list;
-  bool force_connection_list;
 
-#if HTTP_PROXY_OVERRIDE
+  struct remote_list *remote_list;
+  /* Do not advanced the connection or remote addr list*/
+  bool no_advance;
+  /* Counts the number of unsuccessful connection attempts */
+  unsigned int unsuccessful_attempts;
+
+#if ENABLE_MANAGEMENT
   struct http_proxy_options *http_proxy_override;
 #endif
 
@@ -256,7 +251,6 @@ struct options
   int ping_send_timeout;        /* Send a TCP/UDP ping to remote every n seconds */
   int ping_rec_timeout;         /* Expect a TCP/UDP ping from remote at least once every n seconds */
   bool ping_timer_remote;       /* Run ping timer only if we have a remote address */
-  bool tun_ipv6;                /* Build tun dev that supports IPv6 */
 
 # define PING_UNDEF   0
 # define PING_EXIT    1
@@ -273,6 +267,8 @@ struct options
 #endif
 
   int resolve_retry_seconds;    /* If hostname resolve fails, retry for n seconds */
+  bool resolve_in_advance;
+  const char *ip_remote_hint;
 
   struct tuntap_options tuntap_options;
 
@@ -300,6 +296,7 @@ struct options
 
   bool log;
   bool suppress_timestamps;
+  bool machine_readable_output;
   int nice;
   int verbosity;
   int mute;
@@ -315,9 +312,8 @@ struct options
   /* optimize TUN/TAP/UDP writes */
   bool fast_io;
 
-#ifdef ENABLE_LZO
-  /* LZO_x flags from lzo.h */
-  unsigned int lzo;
+#ifdef USE_COMP
+  struct compress_options comp;
 #endif
 
   /* buffer sizes */
@@ -339,16 +335,12 @@ struct options
   int route_delay;
   int route_delay_window;
   bool route_delay_defined;
-  int max_routes;
   struct route_option_list *routes;
   struct route_ipv6_option_list *routes_ipv6;			/* IPv6 */
   bool route_nopull;
   bool route_gateway_via_dhcp;
   bool allow_pull_fqdn; /* as a client, allow server to push a FQDN for certain parameters */
-
-#ifdef ENABLE_CLIENT_NAT
   struct client_nat_option_list *client_nat;
-#endif
 
 #ifdef ENABLE_OCC
   /* Enable options consistency check between peers */
@@ -357,7 +349,7 @@ struct options
 
 #ifdef ENABLE_MANAGEMENT
   const char *management_addr;
-  int management_port;
+  const char *management_port;
   const char *management_user_pass;
   int management_log_history_cache;
   int management_echo_buffer_size;
@@ -369,6 +361,7 @@ struct options
 
   /* Mask of MF_ values of manage.h */
   unsigned int management_flags;
+  const char *management_certificate;
 #endif
 
 #ifdef ENABLE_PLUGIN
@@ -429,9 +422,7 @@ struct options
   bool push_ifconfig_defined;
   in_addr_t push_ifconfig_local;
   in_addr_t push_ifconfig_remote_netmask;
-#ifdef ENABLE_CLIENT_NAT
   in_addr_t push_ifconfig_local_alias;
-#endif
   bool push_ifconfig_constraint_defined;
   in_addr_t push_ifconfig_constraint_network;
   in_addr_t push_ifconfig_constraint_netmask;
@@ -439,6 +430,7 @@ struct options
   struct in6_addr push_ifconfig_ipv6_local;		/* IPv6 */
   int 		  push_ifconfig_ipv6_netbits;		/* IPv6 */
   struct in6_addr push_ifconfig_ipv6_remote;		/* IPv6 */
+  bool            push_ifconfig_ipv6_blocked;		/* IPv6 */
   bool enable_c2c;
   bool duplicate_cn;
   int cf_max;
@@ -450,9 +442,11 @@ struct options
 
   const char *auth_user_pass_verify_script;
   bool auth_user_pass_verify_script_via_file;
+  bool auth_token_generate;
+  unsigned int auth_token_lifetime;
 #if PORT_SHARE
   char *port_share_host;
-  int port_share_port;
+  char *port_share_port;
   const char *port_share_journal_dir;
 #endif
 #endif
@@ -463,8 +457,6 @@ struct options
   unsigned int push_option_types_found;
   const char *auth_user_pass_file;
   struct options_pre_pull *pre_pull;
-
-  int server_poll_timeout;
 
   int scheduled_exit_interval;
 
@@ -478,9 +470,9 @@ struct options
   const char *shared_secret_file;
   const char *shared_secret_file_inline;
   int key_direction;
-  bool ciphername_defined;
   const char *ciphername;
-  bool authname_defined;
+  bool ncp_enabled;
+  const char *ncp_ciphers;
   const char *authname;
   int keysize;
   const char *prng_hash;
@@ -497,7 +489,6 @@ struct options
   bool use_prediction_resistance;
 #endif
 
-#ifdef ENABLE_SSL
   /* TLS (control channel) parms */
   bool tls_server;
   bool tls_client;
@@ -509,6 +500,7 @@ struct options
   const char *priv_key_file;
   const char *pkcs12_file;
   const char *cipher_list;
+  const char *ecdh_curve;
   const char *tls_verify;
   int verify_x509_type;
   const char *verify_x509_name;
@@ -518,6 +510,7 @@ struct options
   const char *ca_file_inline;
   const char *cert_file_inline;
   const char *extra_certs_file_inline;
+  const char *crl_file_inline;
   char *priv_key_file_inline;
   const char *dh_file_inline;
   const char *pkcs12_file_inline; /* contains the base64 encoding of pkcs12 file */
@@ -565,9 +558,13 @@ struct options
   /* Old key allowed to live n seconds after new key goes active */
   int transition_window;
 
-  /* Special authentication MAC for TLS control channel */
-  const char *tls_auth_file;		/* shared secret */
+  /* Shared secret used for TLS control channel authentication */
+  const char *tls_auth_file;
   const char *tls_auth_file_inline;
+
+  /* Shared secret used for TLS control channel authenticated encryption */
+  const char *tls_crypt_file;
+  const char *tls_crypt_inline;
 
   /* Allow only one session */
   bool single_session;
@@ -578,17 +575,15 @@ struct options
 
   bool tls_exit;
 
-#endif /* ENABLE_SSL */
 #endif /* ENABLE_CRYPTO */
 
-#ifdef ENABLE_X509_TRACK
   const struct x509_track *x509_track;
-#endif
 
   /* special state parms */
   int foreign_option_index;
 
-#ifdef WIN32
+#ifdef _WIN32
+  HANDLE msg_channel;
   const char *exit_event_name;
   bool exit_event_initial_state;
   bool show_net_up;
@@ -598,6 +593,18 @@ struct options
 
   bool use_peer_id;
   uint32_t peer_id;
+
+#if defined(ENABLE_CRYPTO_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10001000
+  /* Keying Material Exporters [RFC 5705] */
+  const char *keying_material_exporter_label;
+  int keying_material_exporter_length;
+#endif
+
+  struct pull_filter_list *pull_filter_list;
+
+  /* Useful when packets sent by openvpn itself are not subject
+     to the routing tables that would move packets into the tunnel. */
+  bool allow_recursive_routing;
 };
 
 #define streq(x, y) (!strcmp((x), (y)))
@@ -617,7 +624,7 @@ struct options
 #define OPT_P_PERSIST_IP      (1<<9)
 #define OPT_P_COMP            (1<<10) /* TODO */
 #define OPT_P_MESSAGES        (1<<11)
-#define OPT_P_CRYPTO          (1<<12) /* TODO */
+#define OPT_P_NCP             (1<<12) /**< Negotiable crypto parameters */
 #define OPT_P_TLS_PARMS       (1<<13) /* TODO */
 #define OPT_P_MTU             (1<<14) /* TODO */
 #define OPT_P_NICE            (1<<15)
@@ -652,7 +659,7 @@ struct options
 #define PUSH_DEFINED(opt) (false)
 #endif
 
-#ifdef WIN32
+#ifdef _WIN32
 #define ROUTE_OPTION_FLAGS(o) ((o)->route_method & ROUTE_METHOD_MASK)
 #else
 #define ROUTE_OPTION_FLAGS(o) (0)
@@ -690,7 +697,7 @@ void usage_small (void);
 
 void show_library_versions(const unsigned int flags);
 
-#ifdef WIN32
+#ifdef _WIN32
 void show_windows_version(const unsigned int flags);
 #endif
 
@@ -719,10 +726,24 @@ void options_warning (char *actual, const char *expected);
 
 #endif
 
+/**
+ * Given an OpenVPN options string, extract the value of an option.
+ *
+ * @param options_string	Zero-terminated, comma-separated options string
+ * @param opt_name		The name of the option to extract
+ * @param gc			The gc to allocate the return value
+ *
+ * @return gc-allocated value of option with name opt_name if option was found,
+ *         or NULL otherwise.
+ */
+char *options_string_extract_option (const char *options_string,
+    const char *opt_name, struct gc_arena *gc);
+
+
 void options_postprocess (struct options *options);
 
 void pre_pull_save (struct options *o);
-void pre_pull_restore (struct options *o);
+void pre_pull_restore (struct options *o, struct gc_arena *gc);
 
 bool apply_push_options (struct options *options,
 			 struct buffer *buf,
@@ -784,20 +805,5 @@ void options_string_import (struct options *options,
 bool get_ipv6_addr( const char * prefix_str, struct in6_addr *network,
 		    unsigned int * netbits, int msglevel );
 
-/*
- * inline functions
- */
-static inline bool
-connection_list_defined (const struct options *o)
-{
-  return o->connection_list != NULL;
-}
-
-static inline void
-connection_list_set_no_advance (struct options *o)
-{
-  if (o->connection_list)
-    o->connection_list->no_advance = true;
-}
 
 #endif

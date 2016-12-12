@@ -91,7 +91,7 @@ build_triplet = @build@
 host_triplet = @host@
 subdir = include
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
-	$(include_HEADERS)
+	$(srcdir)/openvpn-plugin.h.in $(include_HEADERS)
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ax_emptyarray.m4 \
 	$(top_srcdir)/m4/ax_socklen_t.m4 \
@@ -103,7 +103,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/ax_emptyarray.m4 \
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
-CONFIG_HEADER = $(top_builddir)/config.h
+CONFIG_HEADER = $(top_builddir)/config.h openvpn-plugin.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 AM_V_P = $(am__v_P_@AM_V@)
@@ -154,7 +154,8 @@ am__uninstall_files_from_dir = { \
   }
 am__installdirs = "$(DESTDIR)$(includedir)"
 HEADERS = $(include_HEADERS)
-am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
+am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) \
+	$(LISP)openvpn-plugin.h.in
 # Read a list of newline-separated strings from the standard input,
 # and print each of them once, without duplicates.  Input order is
 # *not* preserved.
@@ -221,24 +222,31 @@ LIBTOOL = @LIBTOOL@
 LIPO = @LIPO@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
+LZ4_CFLAGS = @LZ4_CFLAGS@
+LZ4_LIBS = @LZ4_LIBS@
 LZO_CFLAGS = @LZO_CFLAGS@
 LZO_LIBS = @LZO_LIBS@
 MAKEINFO = @MAKEINFO@
 MAN2HTML = @MAN2HTML@
 MANIFEST_TOOL = @MANIFEST_TOOL@
+MBEDTLS_CFLAGS = @MBEDTLS_CFLAGS@
+MBEDTLS_LIBS = @MBEDTLS_LIBS@
 MKDIR_P = @MKDIR_P@
 NETSTAT = @NETSTAT@
 NM = @NM@
 NMEDIT = @NMEDIT@
 OBJDUMP = @OBJDUMP@
 OBJEXT = @OBJEXT@
-OPENSSL_CRYPTO_CFLAGS = @OPENSSL_CRYPTO_CFLAGS@
-OPENSSL_CRYPTO_LIBS = @OPENSSL_CRYPTO_LIBS@
-OPENSSL_SSL_CFLAGS = @OPENSSL_SSL_CFLAGS@
-OPENSSL_SSL_LIBS = @OPENSSL_SSL_LIBS@
+OPENSSL_CFLAGS = @OPENSSL_CFLAGS@
+OPENSSL_LIBS = @OPENSSL_LIBS@
+OPENVPN_VERSION_MAJOR = @OPENVPN_VERSION_MAJOR@
+OPENVPN_VERSION_MINOR = @OPENVPN_VERSION_MINOR@
+OPENVPN_VERSION_PATCH = @OPENVPN_VERSION_PATCH@
 OPTIONAL_CRYPTO_CFLAGS = @OPTIONAL_CRYPTO_CFLAGS@
 OPTIONAL_CRYPTO_LIBS = @OPTIONAL_CRYPTO_LIBS@
 OPTIONAL_DL_LIBS = @OPTIONAL_DL_LIBS@
+OPTIONAL_LZ4_CFLAGS = @OPTIONAL_LZ4_CFLAGS@
+OPTIONAL_LZ4_LIBS = @OPTIONAL_LZ4_LIBS@
 OPTIONAL_LZO_CFLAGS = @OPTIONAL_LZO_CFLAGS@
 OPTIONAL_LZO_LIBS = @OPTIONAL_LZO_LIBS@
 OPTIONAL_PKCS11_HELPER_CFLAGS = @OPTIONAL_PKCS11_HELPER_CFLAGS@
@@ -264,8 +272,6 @@ PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
 PKG_CONFIG_PATH = @PKG_CONFIG_PATH@
 PLUGIN_AUTH_PAM_CFLAGS = @PLUGIN_AUTH_PAM_CFLAGS@
 PLUGIN_AUTH_PAM_LIBS = @PLUGIN_AUTH_PAM_LIBS@
-POLARSSL_CFLAGS = @POLARSSL_CFLAGS@
-POLARSSL_LIBS = @POLARSSL_LIBS@
 RANLIB = @RANLIB@
 RC = @RC@
 ROUTE = @ROUTE@
@@ -343,10 +349,15 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 MAINTAINERCLEANFILES = \
-	$(srcdir)/Makefile.in
+	$(srcdir)/Makefile.in \
+	$(srcdir)/openvpn-plugin.h.in
 
-include_HEADERS = openvpn-plugin.h
-all: all-am
+include_HEADERS = \
+	openvpn-plugin.h \
+	openvpn-msg.h
+
+all: openvpn-plugin.h
+	$(MAKE) $(AM_MAKEFLAGS) all-am
 
 .SUFFIXES:
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
@@ -379,6 +390,17 @@ $(top_srcdir)/configure:  $(am__configure_deps)
 $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
+
+openvpn-plugin.h: stamp-h2
+	@test -f $@ || rm -f stamp-h2
+	@test -f $@ || $(MAKE) $(AM_MAKEFLAGS) stamp-h2
+
+stamp-h2: $(srcdir)/openvpn-plugin.h.in $(top_builddir)/config.status
+	@rm -f stamp-h2
+	cd $(top_builddir) && $(SHELL) ./config.status include/openvpn-plugin.h
+
+distclean-hdr:
+	-rm -f openvpn-plugin.h stamp-h2
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -491,7 +513,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(HEADERS)
+all-am: Makefile $(HEADERS) openvpn-plugin.h
 installdirs:
 	for dir in "$(DESTDIR)$(includedir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
@@ -533,7 +555,7 @@ clean-am: clean-generic clean-libtool mostlyclean-am
 
 distclean: distclean-am
 	-rm -f Makefile
-distclean-am: clean-am distclean-generic distclean-tags
+distclean-am: clean-am distclean-generic distclean-hdr distclean-tags
 
 dvi: dvi-am
 
@@ -593,21 +615,21 @@ ps-am:
 
 uninstall-am: uninstall-includeHEADERS
 
-.MAKE: install-am install-strip
+.MAKE: all install-am install-strip
 
 .PHONY: CTAGS GTAGS TAGS all all-am check check-am clean clean-generic \
 	clean-libtool cscopelist-am ctags ctags-am distclean \
-	distclean-generic distclean-libtool distclean-tags distdir dvi \
-	dvi-am html html-am info info-am install install-am \
-	install-data install-data-am install-dvi install-dvi-am \
-	install-exec install-exec-am install-html install-html-am \
-	install-includeHEADERS install-info install-info-am \
-	install-man install-pdf install-pdf-am install-ps \
-	install-ps-am install-strip installcheck installcheck-am \
-	installdirs maintainer-clean maintainer-clean-generic \
-	mostlyclean mostlyclean-generic mostlyclean-libtool pdf pdf-am \
-	ps ps-am tags tags-am uninstall uninstall-am \
-	uninstall-includeHEADERS
+	distclean-generic distclean-hdr distclean-libtool \
+	distclean-tags distdir dvi dvi-am html html-am info info-am \
+	install install-am install-data install-data-am install-dvi \
+	install-dvi-am install-exec install-exec-am install-html \
+	install-html-am install-includeHEADERS install-info \
+	install-info-am install-man install-pdf install-pdf-am \
+	install-ps install-ps-am install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-generic \
+	mostlyclean-libtool pdf pdf-am ps ps-am tags tags-am uninstall \
+	uninstall-am uninstall-includeHEADERS
 
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

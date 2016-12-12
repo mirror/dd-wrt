@@ -35,7 +35,7 @@
 
 #include "syshead.h"
 
-#if defined(ENABLE_SSL) && defined(ENABLE_CRYPTO_OPENSSL)
+#if defined(ENABLE_CRYPTO) && defined(ENABLE_CRYPTO_OPENSSL)
 
 #include "errlevel.h"
 #include "buffer.h"
@@ -56,6 +56,9 @@
 #include <openssl/pkcs12.h>
 #include <openssl/x509.h>
 #include <openssl/crypto.h>
+#ifndef OPENSSL_NO_EC
+#include <openssl/ec.h>
+#endif
 
 /*
  * Allocate space in SSL objects in which to store a struct tls_session
@@ -93,62 +96,23 @@ tls_clear_error()
   ERR_clear_error ();
 }
 
-/*
- * OpenSSL callback to get a temporary RSA key, mostly
- * used for export ciphers.
- */
-static RSA *
-tmp_rsa_cb (SSL * s, int is_export, int keylength)
-{
-  static RSA *rsa_tmp = NULL;
-  if (rsa_tmp == NULL)
-    {
-      int ret = -1;
-      BIGNUM *bn = BN_new();
-      rsa_tmp = RSA_new();
-
-      msg (D_HANDSHAKE, "Generating temp (%d bit) RSA key", keylength);
-
-      if(!bn || !BN_set_word(bn, RSA_F4) ||
-	  !RSA_generate_key_ex(rsa_tmp, keylength, bn, NULL))
-	crypto_msg(M_FATAL, "Failed to generate temp RSA key");
-
-      if (bn) BN_free( bn );
-    }
-  return (rsa_tmp);
-}
-
 void
-tls_ctx_server_new(struct tls_root_ctx *ctx, unsigned int ssl_flags)
+tls_ctx_server_new(struct tls_root_ctx *ctx)
 {
-  const int tls_version_max =
-      (ssl_flags >> SSLF_TLS_VERSION_MAX_SHIFT) & SSLF_TLS_VERSION_MAX_MASK;
-
   ASSERT(NULL != ctx);
 
-  if (tls_version_max == TLS_VER_1_0)
-    ctx->ctx = SSL_CTX_new (TLSv1_server_method ());
-  else
-    ctx->ctx = SSL_CTX_new (SSLv23_server_method ());
+  ctx->ctx = SSL_CTX_new (SSLv23_server_method ());
 
   if (ctx->ctx == NULL)
     crypto_msg (M_FATAL, "SSL_CTX_new SSLv23_server_method");
-
-  SSL_CTX_set_tmp_rsa_callback (ctx->ctx, tmp_rsa_cb);
 }
 
 void
-tls_ctx_client_new(struct tls_root_ctx *ctx, unsigned int ssl_flags)
+tls_ctx_client_new(struct tls_root_ctx *ctx)
 {
-  const int tls_version_max =
-      (ssl_flags >> SSLF_TLS_VERSION_MAX_SHIFT) & SSLF_TLS_VERSION_MAX_MASK;
-
   ASSERT(NULL != ctx);
 
-  if (tls_version_max == TLS_VER_1_0)
-    ctx->ctx = SSL_CTX_new (TLSv1_client_method ());
-  else
-    ctx->ctx = SSL_CTX_new (SSLv23_client_method ());
+  ctx->ctx = SSL_CTX_new (SSLv23_client_method ());
 
   if (ctx->ctx == NULL)
     crypto_msg (M_FATAL, "SSL_CTX_new SSLv23_client_method");
@@ -167,6 +131,38 @@ bool tls_ctx_initialised(struct tls_root_ctx *ctx)
 {
   ASSERT(NULL != ctx);
   return NULL != ctx->ctx;
+}
+
+void
+key_state_export_keying_material(struct key_state_ssl *ssl,
+                                 struct tls_session *session)
+{
+  if (session->opt->ekm_size > 0)
+    {
+#if (OPENSSL_VERSION_NUMBER >= 0x10001000)
+      unsigned int size = session->opt->ekm_size;
+      struct gc_arena gc = gc_new();
+      unsigned char* ekm = (unsigned char*) gc_malloc(size, true, &gc);
+
+      if (SSL_export_keying_material(ssl->ssl, ekm, size,
+          session->opt->ekm_label, session->opt->ekm_label_size, NULL, 0, 0))
+       {
+         unsigned int len = (size * 2) + 2;
+
+         const char *key = format_hex_ex (ekm, size, len, 0, NULL, &gc);
+         setenv_str (session->opt->es, "exported_keying_material", key);
+
+         dmsg(D_TLS_DEBUG_MED, "%s: exported keying material: %s",
+              __func__, key);
+       }
+      else
+       {
+         msg (M_WARN, "WARNING: Export keying material failed!");
+         setenv_del (session->opt->es, "exported_keying_material");
+       }
+      gc_free(&gc);
+#endif
+    }
 }
 
 /*
@@ -217,14 +213,18 @@ tls_ctx_set_options (struct tls_root_ctx *ctx, unsigned int ssl_flags)
 {
   ASSERT(NULL != ctx);
 
+  /* default certificate verification flags */
+  int flags = SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT;
+
   /* process SSL options including minimum TLS version we will accept from peer */
   {
     long sslopt = SSL_OP_SINGLE_DH_USE | SSL_OP_NO_TICKET | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
+    int tls_ver_max = TLS_VER_UNSPEC;
     const int tls_ver_min =
 	(ssl_flags >> SSLF_TLS_VERSION_MIN_SHIFT) & SSLF_TLS_VERSION_MIN_MASK;
-    int tls_ver_max =
-	(ssl_flags >> SSLF_TLS_VERSION_MAX_SHIFT) & SSLF_TLS_VERSION_MAX_MASK;
 
+    tls_ver_max =
+	(ssl_flags >> SSLF_TLS_VERSION_MAX_SHIFT) & SSLF_TLS_VERSION_MAX_MASK;
     if (tls_ver_max <= TLS_VER_UNSPEC)
 	tls_ver_max = tls_version_max();
 
@@ -245,6 +245,9 @@ tls_ctx_set_options (struct tls_root_ctx *ctx, unsigned int ssl_flags)
     SSL_CTX_set_options (ctx->ctx, sslopt);
   }
 
+#ifdef SSL_MODE_RELEASE_BUFFERS
+  SSL_CTX_set_mode (ctx->ctx, SSL_MODE_RELEASE_BUFFERS);
+#endif
   SSL_CTX_set_session_cache_mode (ctx->ctx, SSL_SESS_CACHE_OFF);
   SSL_CTX_set_default_passwd_cb (ctx->ctx, pem_password_callback);
 
@@ -252,14 +255,14 @@ tls_ctx_set_options (struct tls_root_ctx *ctx, unsigned int ssl_flags)
 #if P2MP_SERVER
   if (ssl_flags & SSLF_CLIENT_CERT_NOT_REQUIRED)
     {
-      msg (M_WARN, "WARNING: POTENTIALLY DANGEROUS OPTION "
-	  "--client-cert-not-required may accept clients which do not present "
-	  "a certificate");
+      flags = 0;
     }
-  else
+  else if (ssl_flags & SSLF_CLIENT_CERT_OPTIONAL)
+    {
+      flags = SSL_VERIFY_PEER;
+    }
 #endif
-  SSL_CTX_set_verify (ctx->ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
-		      verify_callback);
+  SSL_CTX_set_verify (ctx->ctx, flags, verify_callback);
 
   SSL_CTX_set_info_callback (ctx->ctx, info_callback);
 }
@@ -275,12 +278,17 @@ tls_ctx_restrict_ciphers(struct tls_root_ctx *ctx, const char *ciphers)
 	  "DEFAULT"
 	  /* Disable export ciphers and openssl's 'low' and 'medium' ciphers */
 	  ":!EXP:!LOW:!MEDIUM"
+	  /* Disable static (EC)DH keys (no forward secrecy) */
+	  ":!kDH:!kECDH"
+	  /* Disable DSA private keys */
+	  ":!DSS"
 	  /* Disable unsupported TLS modes */
 	  ":!PSK:!SRP:!kRSA"))
 	crypto_msg (M_FATAL, "Failed to set default TLS cipher list.");
       return;
     }
 
+  /* Parse supplied cipher list and pass on to OpenSSL */
   size_t begin_of_cipher, end_of_cipher;
 
   const char *current_cipher;
@@ -294,7 +302,7 @@ tls_ctx_restrict_ciphers(struct tls_root_ctx *ctx, const char *ciphers)
 
   ASSERT(NULL != ctx);
 
-  /* Translate IANA cipher suite names to OpenSSL names */
+  // Translate IANA cipher suite names to OpenSSL names
   begin_of_cipher = end_of_cipher = 0;
   for (; begin_of_cipher < strlen(ciphers); begin_of_cipher = end_of_cipher) {
       end_of_cipher += strcspn(&ciphers[begin_of_cipher], ":");
@@ -302,32 +310,32 @@ tls_ctx_restrict_ciphers(struct tls_root_ctx *ctx, const char *ciphers)
 
       if (NULL == cipher_pair)
         {
-	  /* No translation found, use original */
-	  current_cipher = &ciphers[begin_of_cipher];
-	  current_cipher_len = end_of_cipher - begin_of_cipher;
+          // No translation found, use original
+          current_cipher = &ciphers[begin_of_cipher];
+          current_cipher_len = end_of_cipher - begin_of_cipher;
 
-	  /* Issue warning on missing translation
-	   * %.*s format specifier expects length of type int, so guarantee
-	   * that length is small enough and cast to int.
-	   */
-	  msg (M_WARN, "No valid translation found for TLS cipher '%.*s'",
-	      (int) MIN(current_cipher_len, 256), current_cipher);
+          // Issue warning on missing translation
+          // %.*s format specifier expects length of type int, so guarantee
+          // that length is small enough and cast to int.
+          msg (D_LOW, "No valid translation found for TLS cipher '%.*s'",
+                 constrain_int(current_cipher_len, 0, 256), current_cipher);
         }
       else
 	{
-	  /* Use OpenSSL name */
-	  current_cipher = cipher_pair->openssl_name;
-	  current_cipher_len = strlen(current_cipher);
+	  // Use OpenSSL name
+          current_cipher = cipher_pair->openssl_name;
+          current_cipher_len = strlen(current_cipher);
 
 	  if (end_of_cipher - begin_of_cipher == current_cipher_len &&
-	      0 == memcmp (&ciphers[begin_of_cipher], cipher_pair->openssl_name, end_of_cipher - begin_of_cipher))
+	      0 != memcmp (&ciphers[begin_of_cipher], cipher_pair->iana_name,
+		  end_of_cipher - begin_of_cipher))
 	    {
-	      /* Non-IANA name used, show warning */
+	      // Non-IANA name used, show warning
 	      msg (M_WARN, "Deprecated TLS cipher name '%s', please use IANA name '%s'", cipher_pair->openssl_name, cipher_pair->iana_name);
 	    }
 	}
 
-      /* Make sure new cipher name fits in cipher string */
+      // Make sure new cipher name fits in cipher string
       if (((sizeof(openssl_ciphers)-1) - openssl_ciphers_len) < current_cipher_len)
 	{
 	  msg (M_FATAL,
@@ -335,7 +343,7 @@ tls_ctx_restrict_ciphers(struct tls_root_ctx *ctx, const char *ciphers)
 	      (int)sizeof(openssl_ciphers)-1);
 	}
 
-      /* Concatenate cipher name to OpenSSL cipher string */
+      // Concatenate cipher name to OpenSSL cipher string
       memcpy(&openssl_ciphers[openssl_ciphers_len], current_cipher, current_cipher_len);
       openssl_ciphers_len += current_cipher_len;
       openssl_ciphers[openssl_ciphers_len] = ':';
@@ -347,7 +355,7 @@ tls_ctx_restrict_ciphers(struct tls_root_ctx *ctx, const char *ciphers)
   if (openssl_ciphers_len > 0)
     openssl_ciphers[openssl_ciphers_len-1] = '\0';
 
-  /* Set OpenSSL cipher list */
+  // Set OpenSSL cipher list
   if(!SSL_CTX_set_cipher_list(ctx->ctx, openssl_ciphers))
     crypto_msg (M_FATAL, "Failed to set restricted TLS cipher list: %s", openssl_ciphers);
 }
@@ -437,6 +445,78 @@ tls_ctx_load_dh_params (struct tls_root_ctx *ctx, const char *dh_file,
   DH_free (dh);
 }
 
+void
+tls_ctx_load_ecdh_params (struct tls_root_ctx *ctx, const char *curve_name
+    )
+{
+#ifndef OPENSSL_NO_EC
+  int nid = NID_undef;
+  EC_KEY *ecdh = NULL;
+  const char *sname = NULL;
+
+  /* Generate a new ECDH key for each SSL session (for non-ephemeral ECDH) */
+  SSL_CTX_set_options(ctx->ctx, SSL_OP_SINGLE_ECDH_USE);
+#if OPENSSL_VERSION_NUMBER >= 0x10002000L
+  /* OpenSSL 1.0.2 and newer can automatically handle ECDH parameter loading */
+  if (NULL == curve_name) {
+    SSL_CTX_set_ecdh_auto(ctx->ctx, 1);
+    return;
+  }
+#endif
+  /* For older OpenSSL, we'll have to do the parameter loading on our own */
+  if (curve_name != NULL)
+    {
+      /* Use user supplied curve if given */
+      msg (D_TLS_DEBUG, "Using user specified ECDH curve (%s)", curve_name);
+      nid = OBJ_sn2nid(curve_name);
+    }
+  else
+    {
+      /* Extract curve from key */
+      EC_KEY *eckey = NULL;
+      const EC_GROUP *ecgrp = NULL;
+      EVP_PKEY *pkey = NULL;
+
+      /* Little hack to get private key ref from SSL_CTX, yay OpenSSL... */
+      SSL ssl;
+      ssl.cert = ctx->ctx->cert;
+      pkey = SSL_get_privatekey(&ssl);
+
+      msg (D_TLS_DEBUG, "Extracting ECDH curve from private key");
+
+      if (pkey != NULL && (eckey = EVP_PKEY_get1_EC_KEY(pkey)) != NULL &&
+          (ecgrp = EC_KEY_get0_group(eckey)) != NULL)
+        nid = EC_GROUP_get_curve_name(ecgrp);
+    }
+
+  /* Translate NID back to name , just for kicks */
+  sname = OBJ_nid2sn(nid);
+  if (sname == NULL) sname = "(Unknown)";
+
+  /* Create new EC key and set as ECDH key */
+  if (NID_undef == nid || NULL == (ecdh = EC_KEY_new_by_curve_name(nid)))
+    {
+      /* Creating key failed, fall back on sane default */
+      ecdh = EC_KEY_new_by_curve_name(NID_secp384r1);
+      const char *source = (NULL == curve_name) ?
+          "extract curve from certificate" : "use supplied curve";
+      msg (D_TLS_DEBUG_LOW,
+          "Failed to %s (%s), using secp384r1 instead.", source, sname);
+      sname = OBJ_nid2sn(NID_secp384r1);
+    }
+
+  if (!SSL_CTX_set_tmp_ecdh(ctx->ctx, ecdh))
+    crypto_msg (M_FATAL, "SSL_CTX_set_tmp_ecdh: cannot add curve");
+
+  msg (D_TLS_DEBUG_LOW, "ECDH curve %s added", sname);
+
+  EC_KEY_free(ecdh);
+#else
+  msg (M_DEBUG, "Your OpenSSL library was built without elliptic curve support."
+		" Skipping ECDH parameter loading.");
+#endif /* OPENSSL_NO_EC */
+}
+
 int
 tls_ctx_load_pkcs12(struct tls_root_ctx *ctx, const char *pkcs12_file,
     const char *pkcs12_file_inline,
@@ -502,7 +582,6 @@ tls_ctx_load_pkcs12(struct tls_root_ctx *ctx, const char *pkcs12_file,
   /* Load Private Key */
   if (!SSL_CTX_use_PrivateKey (ctx->ctx, pkey))
     crypto_msg (M_FATAL, "Cannot use private key");
-  warn_if_group_others_accessible (pkcs12_file);
 
   /* Check Private Key */
   if (!SSL_CTX_check_private_key (ctx->ctx))
@@ -553,7 +632,7 @@ tls_ctx_load_cryptoapi(struct tls_root_ctx *ctx, const char *cryptoapi_cert)
   if (!SSL_CTX_use_CryptoAPI_certificate (ctx->ctx, cryptoapi_cert))
     crypto_msg (M_FATAL, "Cannot load certificate \"%s\" from Microsoft Certificate Store", cryptoapi_cert);
 }
-#endif /* WIN32 */
+#endif /* ENABLE_CRYPTOAPI */
 
 static void
 tls_ctx_add_extra_certs (struct tls_root_ctx *ctx, BIO *bio)
@@ -646,7 +725,6 @@ tls_ctx_load_priv_file (struct tls_root_ctx *ctx, const char *priv_key_file,
     const char *priv_key_file_inline
     )
 {
-  int status;
   SSL_CTX *ssl_ctx = NULL;
   BIO *in = NULL;
   EVP_PKEY *pkey = NULL;
@@ -679,7 +757,6 @@ tls_ctx_load_priv_file (struct tls_root_ctx *ctx, const char *priv_key_file,
       crypto_msg (M_WARN, "Cannot load private key file %s", priv_key_file);
       goto end;
     }
-  warn_if_group_others_accessible (priv_key_file);
 
   /* Check Private Key */
   if (!SSL_CTX_check_private_key (ssl_ctx))
@@ -693,6 +770,64 @@ end:
     BIO_free (in);
   return ret;
 }
+
+void
+backend_tls_ctx_reload_crl(struct tls_root_ctx *ssl_ctx, const char *crl_file,
+        const char *crl_inline)
+{
+  X509_CRL *crl = NULL;
+  BIO *in = NULL;
+
+  X509_STORE *store = SSL_CTX_get_cert_store(ssl_ctx->ctx);
+  if (!store)
+    crypto_msg (M_FATAL, "Cannot get certificate store");
+
+  /* Always start with a cleared CRL list, for that we
+   * we need to manually find the CRL object from the stack
+   * and remove it */
+  for (int i = 0; i < sk_X509_OBJECT_num(store->objs); i++)
+    {
+      X509_OBJECT* obj = sk_X509_OBJECT_value(store->objs, i);
+      ASSERT(obj);
+      if (obj->type == X509_LU_CRL)
+	{
+	  sk_X509_OBJECT_delete(store->objs, i);
+	  X509_OBJECT_free_contents(obj);
+	  OPENSSL_free(obj);
+	}
+    }
+
+  X509_STORE_set_flags (store, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
+
+  if (!strcmp (crl_file, INLINE_FILE_TAG) && crl_inline)
+    in = BIO_new_mem_buf ((char *)crl_inline, -1);
+  else
+    in = BIO_new_file (crl_file, "r");
+
+  if (in == NULL)
+    {
+      msg (M_WARN, "CRL: cannot read: %s", crl_file);
+      goto end;
+    }
+
+  crl = PEM_read_bio_X509_CRL(in, NULL, NULL, NULL);
+  if (crl == NULL)
+    {
+      msg (M_WARN, "CRL: cannot read CRL from file %s", crl_file);
+      goto end;
+    }
+
+  if (!X509_STORE_add_crl(store, crl))
+    {
+      msg (M_WARN, "CRL: cannot add %s to store", crl_file);
+      goto end;
+    }
+
+end:
+  X509_CRL_free(crl);
+  BIO_free(in);
+}
+
 
 #ifdef MANAGMENT_EXTERNAL_KEY
 
@@ -967,11 +1102,7 @@ tls_ctx_load_ca (struct tls_root_ctx *ctx, const char *ca_file,
         msg(M_WARN, "WARNING: experimental option --capath %s", ca_path);
       else
 	crypto_msg (M_FATAL, "Cannot add lookup at --capath %s", ca_path);
-#if OPENSSL_VERSION_NUMBER >= 0x00907000L
       X509_STORE_set_flags (store, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
-#else
-      msg(M_WARN, "WARNING: this version of OpenSSL cannot handle CRL files in capath");
-#endif
     }
 }
 
@@ -1387,7 +1518,6 @@ show_available_tls_ciphers (const char *cipher_list)
   struct tls_root_ctx tls_ctx;
   SSL *ssl;
   const char *cipher_name;
-  const char *print_name;
   const tls_cipher_name_pair *pair;
   int priority = 0;
 
@@ -1408,7 +1538,7 @@ show_available_tls_ciphers (const char *cipher_list)
       pair = tls_get_cipher_name_pair(cipher_name, strlen(cipher_name));
 
       if (NULL == pair) {
-          /* No translation found, print warning */
+          // No translation found, print warning
 	  printf ("%s (No IANA name known to OpenVPN, use OpenSSL name.)\n", cipher_name);
       } else {
 	  printf ("%s\n", pair->iana_name);
@@ -1419,6 +1549,43 @@ show_available_tls_ciphers (const char *cipher_list)
 
   SSL_free (ssl);
   SSL_CTX_free (tls_ctx.ctx);
+}
+
+/*
+ * Show the Elliptic curves that are available for us to use
+ * in the OpenSSL library.
+ */
+void
+show_available_curves()
+{
+#ifndef OPENSSL_NO_EC
+  EC_builtin_curve *curves = NULL;
+  size_t crv_len = 0;
+  size_t n = 0;
+
+  crv_len = EC_get_builtin_curves(NULL, 0);
+  ALLOC_ARRAY(curves, EC_builtin_curve, crv_len);
+  if (EC_get_builtin_curves(curves, crv_len))
+  {
+    printf ("Available Elliptic curves:\n");
+    for (n = 0; n < crv_len; n++)
+    {
+      const char *sname;
+      sname   = OBJ_nid2sn(curves[n].nid);
+      if (sname == NULL) sname = "";
+
+      printf("%s\n", sname);
+    }
+  }
+  else
+  {
+    crypto_msg (M_FATAL, "Cannot get list of builtin curves");
+  }
+  free(curves);
+#else
+  msg (M_WARN, "Your OpenSSL library was built without elliptic curve support. "
+	       "No curves available.");
+#endif
 }
 
 void
@@ -1448,4 +1615,4 @@ get_ssl_library_version(void)
     return SSLeay_version(SSLEAY_VERSION);
 }
 
-#endif /* defined(ENABLE_SSL) && defined(ENABLE_CRYPTO_OPENSSL) */
+#endif /* defined(ENABLE_CRYPTO) && defined(ENABLE_CRYPTO_OPENSSL) */

@@ -33,11 +33,29 @@
 #ifdef ENABLE_CRYPTO_OPENSSL
 #include "crypto_openssl.h"
 #endif
-#ifdef ENABLE_CRYPTO_POLARSSL
-#include "crypto_polarssl.h"
+#ifdef ENABLE_CRYPTO_MBEDTLS
+#include "crypto_mbedtls.h"
 #endif
 #include "basic.h"
 
+/* TLS uses a tag of 128 bytes, let's do the same for OpenVPN */
+#define OPENVPN_AEAD_TAG_LENGTH 16
+
+/* Maximum cipher block size (bytes) */
+#define OPENVPN_MAX_CIPHER_BLOCK_SIZE 32
+
+/* Maximum HMAC digest size (bytes) */
+#define OPENVPN_MAX_HMAC_SIZE 	64
+
+/** Struct used in cipher name translation table */
+typedef struct {
+  const char *openvpn_name;	/**< Cipher name used by OpenVPN */
+  const char *lib_name;		/**< Cipher name used by crypto library */
+} cipher_name_pair;
+
+/** Cipher name translation table */
+extern const cipher_name_pair cipher_name_translation_table[];
+extern const size_t cipher_name_translation_table_count;
 
 /*
  * This routine should have additional OpenSSL crypto library initialisations
@@ -177,7 +195,8 @@ void cipher_des_encrypt_ecb (const unsigned char key[DES_KEY_LENGTH],
  * 			\c AES-128-CBC).
  *
  * @return		A statically allocated structure containing parameters
- * 			for the given cipher.
+ * 			for the given cipher, or NULL if no matching parameters
+ * 			were found.
  */
 const cipher_kt_t * cipher_kt_get (const char *ciphername);
 
@@ -221,6 +240,16 @@ int cipher_kt_iv_size (const cipher_kt_t *cipher_kt);
 int cipher_kt_block_size (const cipher_kt_t *cipher_kt);
 
 /**
+ * Returns the MAC tag size of the cipher, in bytes.
+ *
+ * @param ctx		Static cipher parameters.
+ *
+ * @return		Tag size in bytes, or 0 if the tag size could not be
+ * 			determined.
+ */
+int cipher_kt_tag_size (const cipher_kt_t *cipher_kt);
+
+/**
  * Returns the mode that the cipher runs in.
  *
  * @param cipher_kt	Static cipher parameters. May not be NULL.
@@ -248,6 +277,15 @@ bool cipher_kt_mode_cbc(const cipher_kt_t *cipher);
  */
 bool cipher_kt_mode_ofb_cfb(const cipher_kt_t *cipher);
 
+/**
+ * Check if the supplied cipher is a supported AEAD mode cipher.
+ *
+ * @param cipher	Static cipher parameters.
+ *
+ * @return		true iff the cipher is a AEAD mode cipher.
+ */
+bool cipher_kt_mode_aead(const cipher_kt_t *cipher);
+
 
 /**
  *
@@ -263,7 +301,7 @@ bool cipher_kt_mode_ofb_cfb(const cipher_kt_t *cipher);
  * @param key_len 	Length of the key, in bytes
  * @param kt		Static cipher parameters to use
  * @param enc		Whether to encrypt or decrypt (either
- * 			\c POLARSSL_OP_ENCRYPT or \c POLARSSL_OP_DECRYPT).
+ * 			\c MBEDTLS_OP_ENCRYPT or \c MBEDTLS_OP_DECRYPT).
  */
 void cipher_ctx_init (cipher_ctx_t *ctx, uint8_t *key, int key_len,
     const cipher_kt_t *kt, int enc);
@@ -287,6 +325,15 @@ void cipher_ctx_cleanup (cipher_ctx_t *ctx);
 int cipher_ctx_iv_length (const cipher_ctx_t *ctx);
 
 /**
+ * Gets the computed message authenticated code (MAC) tag for this cipher.
+ *
+ * @param ctx		The cipher's context
+ * @param tag		The buffer to write computed tag in.
+ * @param tag_size	The tag buffer size, in bytes.
+ */
+int cipher_ctx_get_tag (cipher_ctx_t *ctx, uint8_t* tag, int tag_len);
+
+/**
  * Returns the block size of the cipher, in bytes.
  *
  * @param ctx	 	The cipher's context
@@ -308,12 +355,12 @@ int cipher_ctx_mode (const cipher_ctx_t *ctx);
 /**
  * Returns the static cipher parameters for this context.
  *
- * @param ctx 		Cipher's context. May not be NULL.
+ * @param ctx 		Cipher's context.
  *
- * @return 		Static cipher parameters for the supplied context.
+ * @return 		Static cipher parameters for the supplied context, or
+ * 			NULL if unable to determine cipher parameters.
  */
-const cipher_kt_t *cipher_ctx_get_cipher_kt (const cipher_ctx_t *ctx)
-  __attribute__((nonnull));
+const cipher_kt_t *cipher_ctx_get_cipher_kt (const cipher_ctx_t *ctx);
 
 /**
  * Resets the given cipher context, setting the IV to the specified value.
@@ -325,6 +372,18 @@ const cipher_kt_t *cipher_ctx_get_cipher_kt (const cipher_ctx_t *ctx)
  * @return 		\c 0 on failure, \c 1 on success.
  */
 int cipher_ctx_reset (cipher_ctx_t *ctx, uint8_t *iv_buf);
+
+/**
+ * Updates the given cipher context, providing additional data (AD) for
+ * authenticated encryption with additional data (AEAD) cipher modes.
+ *
+ * @param ctx 		Cipher's context. May not be NULL.
+ * @param src		Source buffer
+ * @param src_len	Length of the source buffer, in bytes
+ *
+ * @return 		\c 0 on failure, \c 1 on success.
+ */
+int cipher_ctx_update_ad (cipher_ctx_t *ctx, const uint8_t *src, int src_len);
 
 /**
  * Updates the given cipher context, encrypting data in the source buffer, and
@@ -357,6 +416,23 @@ int cipher_ctx_update (cipher_ctx_t *ctx, uint8_t *dst, int *dst_len,
  * @return 		\c 0 on failure, \c 1 on success.
  */
 int cipher_ctx_final (cipher_ctx_t *ctx, uint8_t *dst, int *dst_len);
+
+/**
+ * Like \c cipher_ctx_final, but check the computed authentication tag against
+ * the supplied (expected) tag. This function reports failure when the tags
+ * don't match.
+ *
+ * @param ctx           Cipher's context. May not be NULL.
+ * @param dst           Destination buffer.
+ * @param dst_len       Length of the destination buffer, in bytes.
+ * @param tag           The expected authentication tag.
+ * @param tag_len       The length of tag, in bytes.
+ *
+ * @return              \c 0 on failure, \c 1 on success.
+ */
+int cipher_ctx_final_check_tag (cipher_ctx_t *ctx, uint8_t *dst, int *dst_len,
+    uint8_t *tag, size_t tag_len);
+
 
 /*
  *
@@ -524,5 +600,25 @@ void hmac_ctx_update (hmac_ctx_t *ctx, const uint8_t *src, int src_len);
  * @param dst		buffer to write the HMAC to. May not be NULL.
  */
 void hmac_ctx_final (hmac_ctx_t *ctx, uint8_t *dst);
+
+/**
+ * Translate an OpenVPN cipher name to a crypto library cipher name.
+ *
+ * @param cipher_name	An OpenVPN cipher name
+ *
+ * @return		The corresponding crypto library cipher name, or NULL
+ * 			if no matching cipher name was found.
+ */
+const char * translate_cipher_name_from_openvpn (const char *cipher_name);
+
+/**
+ * Translate a crypto library cipher name to an OpenVPN cipher name.
+ *
+ * @param cipher_name	A crypto library cipher name
+ *
+ * @return		The corresponding OpenVPN cipher name, or NULL if no
+ * 			matching cipher name was found.
+ */
+const char * translate_cipher_name_to_openvpn (const char *cipher_name);
 
 #endif /* CRYPTO_BACKEND_H_ */

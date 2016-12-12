@@ -210,7 +210,7 @@ struct packet_id
   struct packet_id_rec rec;
 };
 
-void packet_id_init (struct packet_id *p, bool tcp_mode, int seq_backtrack, int time_backtrack, const char *name, int unit);
+void packet_id_init (struct packet_id *p, int seq_backtrack, int time_backtrack, const char *name, int unit);
 void packet_id_free (struct packet_id *p);
 
 /* should we accept an incoming packet id ? */
@@ -257,6 +257,12 @@ bool packet_id_write (const struct packet_id_net *pin, struct buffer *buf, bool 
 /*
  * Inline functions.
  */
+
+/** Is this struct packet_id initialized? */
+static inline bool packet_id_initialized (const struct packet_id *pid)
+{
+  return pid->rec.initialized;
+}
 
 /* are we in enabled state? */
 static inline bool

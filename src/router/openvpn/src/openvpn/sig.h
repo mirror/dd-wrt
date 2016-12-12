@@ -28,6 +28,15 @@
 #include "status.h"
 #include "win32.h"
 
+
+
+#define SIG_SOURCE_SOFT 0
+#define SIG_SOURCE_HARD 1
+/* CONNECTION_FAILED is also a "soft" status,
+ * It is thrown if a connection attempt fails
+ */
+#define SIG_SOURCE_CONNECTION_FAILED 2
+
 /*
  * Signal information, including signal code
  * and descriptive text.
@@ -35,7 +44,7 @@
 struct signal_info
 {
   volatile int signal_received;
-  volatile bool hard;
+  volatile int source;
   const char *signal_text;
 };
 
@@ -70,7 +79,7 @@ void register_signal (struct context *c, int sig, const char *text);
 void process_explicit_exit_notification_timer_wakeup (struct context *c);
 #endif
 
-#ifdef WIN32
+#ifdef _WIN32
 
 static inline void
 get_signal (volatile int *sig)

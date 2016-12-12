@@ -149,7 +149,12 @@ struct key_source2 {
 struct key_state
 {
   int state;
-  int key_id;			/* inherited from struct tls_session below */
+
+  /**
+   * Key id for this key_state,  inherited from struct tls_session.
+   * @see tls_session::key_id.
+   */
+  int key_id;
 
   struct key_state_ssl ks_ssl;	/* contains SSL object and BIOs for the control channel */
 
@@ -160,9 +165,8 @@ struct key_state
   int initial_opcode;		/* our initial P_ opcode */
   struct session_id session_id_remote;   /* peer's random session ID */
   struct link_socket_actual remote_addr; /* peer's IP addr */
-  struct packet_id packet_id;	       /* for data channel, to prevent replay attacks */
 
-  struct key_ctx_bi key;	       /* data channel keys for encrypt/decrypt/hmac */
+  struct crypto_options crypto_options;/* data channel crypto options */
 
   struct key_source2 *key_src;         /* source entropy for key expansion */
 
@@ -200,6 +204,18 @@ struct key_state
 #endif
 };
 
+/** Control channel wrapping (--tls-auth/--tls-crypt) context */
+struct tls_wrap_ctx
+{
+  enum {
+    TLS_WRAP_NONE = 0,	/**< No control channel wrapping */
+    TLS_WRAP_AUTH,	/**< Control channel authentication */
+    TLS_WRAP_CRYPT,	/**< Control channel encryption and authentication */
+  } mode;			/**< Control channel wrapping mode */
+  struct crypto_options opt;	/**< Crypto state */
+  struct buffer work;		/**< Work buffer (only for --tls-crypt) */
+};
+
 /*
  * Our const options, obtained directly or derived from
  * command line options.
@@ -232,6 +248,8 @@ struct tls_options
 #ifdef ENABLE_OCC
   bool disable_occ;
 #endif
+  int mode;
+  bool pull;
 #ifdef ENABLE_PUSH_PEER_INFO
   int push_peer_info_detail;
 #endif
@@ -248,6 +266,7 @@ struct tls_options
   int verify_x509_type;
   const char *verify_x509_name;
   const char *crl_file;
+  const char *crl_file_inline;
   int ns_cert_type;
   unsigned remote_cert_ku[MAX_PARMS];
   const char *remote_cert_eku;
@@ -259,6 +278,7 @@ struct tls_options
   bool pass_config_info;
 
   /* struct crypto_option flags */
+  unsigned int crypto_flags;
   unsigned int crypto_flags_and;
   unsigned int crypto_flags_or;
 
@@ -266,9 +286,12 @@ struct tls_options
   int replay_time;                     /* --replay-window parm */
   bool tcp_mode;
 
-  /* packet authentication for TLS handshake */
-  struct crypto_options tls_auth;
-  struct key_ctx_bi tls_auth_key;
+  const char *config_ciphername;
+  const char *config_authname;
+  bool ncp_enabled;
+
+  /** TLS handshake wrapping state */
+  struct tls_wrap_ctx tls_wrap;
 
   /* frame parameters for TLS control channel */
   struct frame frame;
@@ -278,6 +301,9 @@ struct tls_options
   bool auth_user_pass_verify_script_via_file;
   const char *tmp_dir;
   const char *auth_user_pass_file;
+  bool auth_token_generate;     /**< Generate auth-tokens on successful user/pass auth,
+                                 *   set via options->auth_token_generate. */
+  unsigned int auth_token_lifetime;
 
   /* use the client-config-dir as a positive authenticator */
   const char *client_config_dir_exclusive;
@@ -286,10 +312,16 @@ struct tls_options
   struct env_set *es;
   const struct plugin_list *plugins;
 
+  /* compression parms */
+#ifdef USE_COMP
+  struct compress_options comp_options;
+#endif
+
   /* configuration file SSL-related boolean and low-permutation options */
 # define SSLF_CLIENT_CERT_NOT_REQUIRED (1<<0)
-# define SSLF_USERNAME_AS_COMMON_NAME  (1<<1)
-# define SSLF_AUTH_USER_PASS_OPTIONAL  (1<<2)
+# define SSLF_CLIENT_CERT_OPTIONAL     (1<<1)
+# define SSLF_USERNAME_AS_COMMON_NAME  (1<<2)
+# define SSLF_AUTH_USER_PASS_OPTIONAL  (1<<3)
 # define SSLF_OPT_VERIFY               (1<<4)
 # define SSLF_CRL_VERIFY_DIR           (1<<5)
 # define SSLF_TLS_VERSION_MIN_SHIFT    6
@@ -302,9 +334,7 @@ struct tls_options
   struct man_def_auth_context *mda_context;
 #endif
 
-#ifdef ENABLE_X509_TRACK
   const struct x509_track *x509_track;
-#endif
 
 #ifdef ENABLE_CLIENT_CR
   const struct static_challenge_info *sci;
@@ -312,6 +342,11 @@ struct tls_options
 
   /* --gremlin bits */
   int gremlin;
+
+  /* Keying Material Exporter [RFC 5705] parameters */
+  const char *ekm_label;
+  size_t ekm_label_size;
+  size_t ekm_size;
 };
 
 /** @addtogroup control_processor
@@ -328,6 +363,9 @@ struct tls_options
 /** @} name Index of key_state objects within a tls_session structure */
 /** @} addtogroup control_processor */
 
+#define AUTH_TOKEN_SIZE 32      /**< Size of server side generated auth tokens.
+                                 *   32 bytes == 256 bits
+                                 */
 
 /**
  * Security parameter state of a single session within a VPN tunnel.
@@ -354,12 +392,17 @@ struct tls_session
   bool burst;
 
   /* authenticate control packets */
-  struct crypto_options tls_auth;
-  struct packet_id tls_auth_pid;
+  struct tls_wrap_ctx tls_wrap;
 
   int initial_opcode;		/* our initial P_ opcode */
   struct session_id session_id;	/* our random session ID */
-  int key_id;			/* increments with each soft reset (for key renegotiation) */
+
+  /**
+   * The current active key id, used to keep track of renegotiations.
+   * key_id increments with each soft reset to KEY_ID_MASK then recycles back
+   * to 1.  This way you know that if key_id is 0, it is the first key.
+   */
+  int key_id;
 
   int limit_next;               /* used for traffic shaping on the control channel */
 
@@ -481,20 +524,31 @@ struct tls_multi
    */
   char *client_reason;
 
+  /* Time of last call to tls_authentication_status */
+  time_t tas_last;
+#endif
+
+#if P2MP_SERVER
   /*
    * A multi-line string of general-purpose info received from peer
    * over control channel.
    */
   char *peer_info;
-
-  /* Time of last call to tls_authentication_status */
-  time_t tas_last;
 #endif
 
   /* For P_DATA_V2 */
   uint32_t peer_id;
   bool use_peer_id;
 
+  char *remote_ciphername;	/**< cipher specified in peer's config file */
+
+  char *auth_token;      /**< If server sends a generated auth-token,
+                          *   this is the token to use for future
+                          *   user/pass authentications in this session.
+                          */
+  time_t auth_token_tstamp; /**< timestamp of the generated token */
+  bool auth_token_sent;  /**< If server uses --auth-gen-token and
+                          *   token has been sent to client */
   /*
    * Our session objects.
    */

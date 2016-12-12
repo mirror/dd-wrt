@@ -25,7 +25,7 @@
 #ifndef TUN_H
 #define TUN_H
 
-#ifdef WIN32
+#ifdef _WIN32
 #include <winioctl.h>
 #include <tap-windows.h>
 #endif
@@ -38,7 +38,7 @@
 #include "proto.h"
 #include "misc.h"
 
-#ifdef WIN32
+#if defined(_WIN32) || defined(TARGET_ANDROID)
 
 #define TUN_ADAPTER_INDEX_INVALID ((DWORD)-1)
 
@@ -57,6 +57,10 @@ struct tuntap_options {
 # define IPW32_SET_ADAPTIVE     4  /* "--ip-win32 adaptive" */
 # define IPW32_SET_N            5
   int ip_win32_type;
+
+#ifdef _WIN32
+  HANDLE msg_channel;
+#endif
 
   /* --ip-win32 dynamic options */
   bool dhcp_masq_custom_offset;
@@ -103,6 +107,9 @@ struct tuntap_options {
   bool dhcp_release;
 
   bool register_dns;
+
+  struct in6_addr dns6[N_DHCP_ADDR];
+  int dns6_len;
 };
 
 #elif TARGET_LINUX
@@ -135,8 +142,6 @@ struct tuntap
   bool did_ifconfig_ipv6_setup;
   bool did_ifconfig;
 
-  bool ipv6;
-
   bool persistent_if;		/* if existed before, keep on program end */
 
   struct tuntap_options options; /* options set on command line */
@@ -155,7 +160,7 @@ struct tuntap
   struct in6_addr remote_ipv6;
   int netbits_ipv6;
 
-#ifdef WIN32
+#ifdef _WIN32
   HANDLE hand;
   struct overlapped_io reads;
   struct overlapped_io writes;
@@ -195,7 +200,7 @@ struct tuntap
 static inline bool
 tuntap_defined (const struct tuntap *tt)
 {
-#ifdef WIN32
+#ifdef _WIN32
   return tt && tt->hand != NULL;
 #else
   return tt && tt->fd >= 0;
@@ -232,8 +237,8 @@ struct tuntap *init_tun (const char *dev,       /* --dev option */
 			 const char *ifconfig_ipv6_local_parm,     /* --ifconfig parm 1 / IPv6 */
 			 int ifconfig_ipv6_netbits_parm,           /* --ifconfig parm 1 / bits */
 			 const char *ifconfig_ipv6_remote_parm,    /* --ifconfig parm 2 / IPv6 */
-			 in_addr_t local_public,
-			 in_addr_t remote_public,
+			 struct addrinfo *local_public,
+			 struct addrinfo *remote_public,
 			 const bool strict_warn,
 			 struct env_set *es);
 
@@ -296,14 +301,31 @@ ifconfig_order(void)
   return IFCONFIG_AFTER_TUN_OPEN;
 #elif defined(TARGET_NETBSD)
   return IFCONFIG_AFTER_TUN_OPEN;
-#elif defined(WIN32)
+#elif defined(_WIN32)
+  return IFCONFIG_AFTER_TUN_OPEN;
+#elif defined(TARGET_ANDROID)
   return IFCONFIG_BEFORE_TUN_OPEN;
 #else
   return IFCONFIG_DEFAULT;
 #endif
 }
 
-#ifdef WIN32
+#define ROUTE_BEFORE_TUN 0
+#define ROUTE_AFTER_TUN 1
+#define ROUTE_ORDER_DEFAULT ROUTE_AFTER_TUN
+
+static inline int
+route_order(void)
+{
+#if defined(TARGET_ANDROID)
+    return ROUTE_BEFORE_TUN;
+#else
+    return ROUTE_ORDER_DEFAULT;
+#endif
+}
+
+
+#ifdef _WIN32
 
 #define TUN_PASS_BUFFER
 
@@ -457,7 +479,7 @@ tun_standby (struct tuntap *tt)
 static inline event_t
 tun_event_handle (const struct tuntap *tt)
 {
-#ifdef WIN32
+#ifdef _WIN32
   return &tt->rw_handle;
 #else
   return tt->fd;
@@ -480,7 +502,7 @@ tun_set (struct tuntap *tt,
 	  if (persistent)
 	    *persistent = rwflags;
 	}
-#ifdef WIN32
+#ifdef _WIN32
       if (rwflags & EVENT_READ)
 	tun_read_queue (tt, 0);
 #endif
