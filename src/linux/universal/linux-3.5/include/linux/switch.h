@@ -1,7 +1,7 @@
 /*
  * switch.h: Switch configuration API
  *
- * Copyright (C) 2008 Felix Fietkau <nbd@openwrt.org>
+ * Copyright (C) 2008 Felix Fietkau <nbd@nbd.name>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -51,6 +51,7 @@ enum {
 	SWITCH_ATTR_OP_VALUE_INT,
 	SWITCH_ATTR_OP_VALUE_STR,
 	SWITCH_ATTR_OP_VALUE_PORTS,
+	SWITCH_ATTR_OP_VALUE_LINK,
 	SWITCH_ATTR_OP_DESCRIPTION,
 	/* port lists */
 	SWITCH_ATTR_PORT,
@@ -87,6 +88,7 @@ enum switch_val_type {
 	SWITCH_TYPE_INT,
 	SWITCH_TYPE_STRING,
 	SWITCH_TYPE_PORTS,
+	SWITCH_TYPE_LINK,
 	SWITCH_TYPE_NOVAL,
 };
 
@@ -98,8 +100,22 @@ enum {
 	SWITCH_PORT_ATTR_MAX
 };
 
+/* link nested attributes */
+enum {
+	SWITCH_LINK_UNSPEC,
+	SWITCH_LINK_FLAG_LINK,
+	SWITCH_LINK_FLAG_DUPLEX,
+	SWITCH_LINK_FLAG_ANEG,
+	SWITCH_LINK_FLAG_TX_FLOW,
+	SWITCH_LINK_FLAG_RX_FLOW,
+	SWITCH_LINK_SPEED,
+	SWITCH_LINK_FLAG_EEE_100BASET,
+	SWITCH_LINK_FLAG_EEE_1000BASET,
+	SWITCH_LINK_ATTR_MAX,
+};
+
 #define SWITCH_ATTR_DEFAULTS_OFFSET	0x1000
-#ifdef __KERNEL__
+
 struct switch_dev;
 struct switch_op;
 struct switch_val;
@@ -176,8 +192,13 @@ struct switch_dev_ops {
 
 	int (*get_port_link)(struct switch_dev *dev, int port,
 			     struct switch_port_link *link);
+	int (*set_port_link)(struct switch_dev *dev, int port,
+			     struct switch_port_link *link);
 	int (*get_port_stats)(struct switch_dev *dev, int port,
 			      struct switch_port_stats *stats);
+
+	int (*phy_read16)(struct switch_dev *dev, int addr, u8 reg, u16 *value);
+	int (*phy_write16)(struct switch_dev *dev, int addr, u8 reg, u16 value);
 };
 
 struct switch_dev {
@@ -203,6 +224,7 @@ struct switch_dev {
 	struct mutex sw_mutex;
 	struct switch_port *portbuf;
 	struct switch_portmap *portmap;
+	struct switch_port_link linkbuf;
 
 	char buf[128];
 
@@ -229,6 +251,7 @@ struct switch_val {
 		const char *s;
 		u32 i;
 		struct switch_port *ports;
+		struct switch_port_link *link;
 	} value;
 };
 
@@ -246,5 +269,8 @@ struct switch_attr {
 	int ofs;
 	int max;
 };
-#endif
+
+int switch_generic_set_link(struct switch_dev *dev, int port,
+			    struct switch_port_link *link);
+
 #endif /* _LINUX_SWITCH_H */
