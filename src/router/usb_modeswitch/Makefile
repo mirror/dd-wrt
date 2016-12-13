@@ -1,5 +1,5 @@
 PROG        = usb_modeswitch
-VERS        = 2.2.0
+VERS        = 2.4.0
 CC          ?= gcc
 #CFLAGS      += -Wall
 CFLAGS     = $(COPTS)  $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections    -D_GNU_SOURCE -DNEED_PRINTF -Ilibusb/libusb 
@@ -101,7 +101,7 @@ install-common: $(PROG) usb_modeswitch_dispatcher
 	install -D --mode=755 usb_modeswitch_dispatcher $(SBINDIR)/usb_modeswitch_dispatcher
 	install -d $(DESTDIR)/var/lib/usb_modeswitch
 	test -d $(UPSDIR) -a -e /sbin/initctl && install --mode=644 usb-modeswitch-upstart.conf $(UPSDIR) || test 1
-	test -d $(SYSDIR) -a -e /usr/bin/systemctl && install --mode=644 usb_modeswitch@.service $(SYSDIR) || test 1
+	test -d $(SYSDIR) -a \( -e /usr/bin/systemctl -o -e /bin/systemctl \) && install --mode=644 usb_modeswitch@.service $(SYSDIR) || test 1
 
 install: install-script
 

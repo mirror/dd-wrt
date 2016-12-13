@@ -2,8 +2,8 @@
   This file is part of usb_modeswitch, a mode switching tool for controlling
   the mode of 'multi-state' USB devices
 
-  Version 2.2.0, 2014/05/29
-  Copyright (C) 2007 - 2014  Josua Dietze
+  Version 2.4.0, 2016/06/12
+  Copyright (C) 2007 - 2016  Josua Dietze
 
   Config file parsing stuff borrowed from Guillaume Dargaud
   (http://www.gdargaud.net/Hack/SourceCode.html)
@@ -46,23 +46,24 @@ int switchSonyMode();
 int detachDriver();
 int checkSuccess();
 int sendMessage(char* message, int count);
-int write_bulk(int endpoint, char *message, int length);
-int read_bulk(int endpoint, char *buffer, int length);
+int write_bulk(int endpoint, unsigned char *message, int length);
+int read_bulk(int endpoint, unsigned char *buffer, int length);
 void release_usb_device(int dummy);
 struct libusb_device* search_devices( int *numFound, int vendor, char* productList,
 		int targetClass, int configuration, int mode);
 int find_first_bulk_endpoint(int direction);
-int get_current_configuration();
+int get_current_config_value();
 int get_interface_class();
 char* ReadParseParam(const char* FileName, char *VariableName);
 int hex2num(char c);
 int hex2byte(const char *hex);
-int hexstr2bin(const char *hex, char *buffer, int len);
+int hexstr2bin(const char *hex, unsigned char *buffer, int len);
 void printVersion();
 void printHelp();
+void close_all();
+void abortExit();
 int readArguments(int argc, char **argv);
 void deviceDescription();
-int deviceInquire();
 void resetUSB();
 void release_usb_device(int dummy);
 int findMBIMConfig(int vendor, int product, int mode);
