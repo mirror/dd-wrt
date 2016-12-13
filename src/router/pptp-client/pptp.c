@@ -460,6 +460,10 @@ shutdown:
     exit(0);
 }
 
+#ifndef AI_ADDRCONFIG
+#define AI_ADDRCONFIG   0x20
+#endif
+
 /*** get the ipaddress coming from the command line ***************************/
 struct in_addr get_ip_address(char *name)
 {
