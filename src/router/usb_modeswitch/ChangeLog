@@ -2,6 +2,59 @@
 History of USB_ModeSwitch
 =========================
 
+Version 2.4.0, 2016/06/12
+    ATTENTION: All ad-hoc driver binding code (using new_id driver attribute)
+    removed - was a potential source of side effects and should now be
+    obsoleted by good kernel support for modems; Added "dummy" setting for
+    config files, to conditionally refrain from handling a device (see this
+    topic: www.draisberghof.de/usb_modeswitch/bb/viewtopic.php?f=4&t=2458 );
+    extended StandardEject sequence to include LUN 1, required for some D-Link
+    devices; add device class 239 ("miscellaneous") to sanity check (thanks to
+    Daniel Drake for reporting); udev shell script - removed driver binding,
+    removed almost all waiting and forking, improved check for systemd (thanks
+    to Daniel Drake for problem analysis and solution, see this topic/patch:
+    www.draisberghof.de/usb_modeswitch/bb/viewtopic.php?p=16777#p16777 ,
+    gist.github.com/dsd/9f83c4830ab78ce94078aedb2cf16a8f )
+Version 2.3.0, 2016/01/12
+    ATTENTION: -I flag is now history and being ignored - determining SCSI
+    attributes is really an 'outside task'; -n flag (NeedResponse) is being
+    ignored, CSW response will now always be read; introduction of parameter
+    "OptionMode", wrapping the standard bulk message for all newer Huawei
+    devices; fixed missing variable initialization in dispatcher script which
+    could lead to crash (thanks, Dmitry Kunilov!); fixed bug which prevented
+    early logging; fixed success report for Cisco AM10; some source code
+    formatting and clean-up
+Version 2.2.6, 2015/11/01
+    Renamed function abort(), avoiding possible conflicts in static builds
+    with libjim (thanks, Gustavo Zacharias); removed storage class check of
+    interface 0 from dispatcher, enabling new multi-config devices in data
+    package 20151101
+Version 2.2.5, 2015/07/16
+    Fixed bug in configuration check, possibly leading to segfault (thanks,
+    Leonid Lisovskiy); fixed Pantech commandline parameter evaluation (was
+    not working at all); added driver unbind step via sysfs in wrapper,
+    getting rid of the USB subsystem complaint "interface 0 claimed by
+    usb-storage while 'usb_modeswitch' <does this and that>"
+Version 2.2.4, 2015/07/14
+    Fixed buggy check of USB configuration selection (possibly leading
+    to segfault), tested with Alcatel X602D; removed call to 'libusb_strerror'
+    from libusb initialization - not available in earlier libusb1 versions
+Version 2.2.3, 2015/06/29
+    Fixed problem arising with systemd version 221 (220 untested), which
+    affects starting the usb_modeswitch systemd unit from the sh script
+    (reported by Archlinux users)
+Version 2.2.2, 2015/06/27
+    Added catch for libusb init error (thanks, Henrik Gustafsson); removed
+    global function result variable; added catch for USB configuration
+    read error (both thanks to "otila"); fixed wrapper script where port
+    search for symlinking modem port was broken ("/dev/gsmmodem"); changed
+    PantechMode parameter to represent different targets; added global
+    config option to disable MBIM checking and setting alltogether (request
+    from "kai"); changed udev sh script so that systemd processing takes
+    precedence over upstart; changed systemd template unit parameter to
+    avoid escaping problems
+Version 2.2.1, 2015/01/15
+    Fixed unreliable switching function for Cisco AM10
 Version 2.2.0, 2014/05/29
     Introduction of parameter "HuaweiNewMode", wrapping the standard bulk
     message for all newer Huawei devices; support for generic fall-back
@@ -41,7 +94,7 @@ Version 2.0.0, 2013/09/01
     install the matching service file; you may want to adapt it better to
     your respective system, possibly adding dependencies/targets to the
     services. Note that the udev starter script usb_modeswitch.sh also
-    checks for the existence of the service files
+    checks for the existence of the service/unit files
 Version 1.2.7, 2013/08/07
     Two new dedicated control message functions to support Pantech LTE
     (thanks to Adam Goode) and Blackberry Q10/Z10 (thanks to Daniel Mende)

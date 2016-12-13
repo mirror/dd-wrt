@@ -1,5 +1,5 @@
 #!/bin/sh
-# part of usb_modeswitch 2.2.0
+# part of usb_modeswitch 2.4.0
 device_in()
 {
 	if [ ! -e /var/lib/usb_modeswitch/$1 ]; then
@@ -40,27 +40,7 @@ fi
 PATH=/sbin:/usr/sbin:$PATH
 case "$1" in
 	--driver-bind)
-		(
-		dir=$(ls -d /sys$2/ttyUSB* 2>/dev/null)
-		sleep 1
-		if [ ! -z "$dir" ]; then
-			exit 0
-		fi
-		set +e
-		device_in "bind_list" $v_id $p_id
-		if [ "$?" = "1" ]; then
-			id_attr="/sys/bus/usb-serial/drivers/option1/new_id"
-			if [ ! -e "$id_attr" ]; then
-				modprobe option 2>/dev/null || true
-			fi
-			if [ -e "$id_attr" ]; then
-				echo "$v_id $p_id ff" > $id_attr
-			else
-				modprobe -r usbserial 2>/dev/null
-				modprobe usbserial "vendor=0x$v_id" "product=0x$p_id" 2>/dev/null
-			fi
-		fi
-		) &
+		# driver binding code removed
 		exit 0
 		;;
 	--symlink-name)
@@ -73,23 +53,20 @@ case "$1" in
 		exit 0
 		;;
 esac
-exec 1<&- 2<&- 5<&- 7<&-
-(
-count=20
-while [ $count != 0 ]; do
-	if [ ! -e "/usr/sbin/usb_modeswitch_dispatcher" ]; then
-		sleep 1
-		count=$(($count - 1))
-	else
-		if [ -e "/etc/init/usb-modeswitch-upstart.conf" ]; then
-			exec /sbin/initctl emit --no-wait usb-modeswitch-upstart UMS_PARAM=$1
-		elif [ -e "/etc/systemd/system/usb_modeswitch@.service" ]; then
-			exec /usr/bin/systemctl --no-block start usb_modeswitch@$1.service
-		else
-			exec /usr/sbin/usb_modeswitch_dispatcher --switch-mode $1 &
-		fi
-		exit 0
-	fi
-done
-) &
+
+IFS='/' read -r p1 p2 <<EOF
+$1
+EOF
+
+PATH=/bin:/sbin:/usr/bin:/usr/sbin
+init_path=`readlink /sbin/init`
+if [ `basename $init_path` = "systemd" ]; then
+	systemctl --no-block start usb_modeswitch@$p1'_'$p2.service
+elif [ -e "/etc/init/usb-modeswitch-upstart.conf" ]; then
+	initctl emit --no-wait usb-modeswitch-upstart UMS_PARAM=$1
+else
+	# only old distros, new udev will kill all subprocesses
+	exec 1<&- 2<&- 5<&- 7<&-
+	exec usb_modeswitch_dispatcher --switch-mode $1 &
+fi
 exit 0
