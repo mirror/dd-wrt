@@ -1312,7 +1312,7 @@ static struct DEVICES devicelist[] = {
 /* D-Link (2nd VID) */
 	{0x2001, 0x00a6, "option", "0", "0", 2, &modeswitch_std_eject, "D-Link DWM-157 B1 (cdrom)"},	// also cdc_mbim
 	{0x2001, 0x00a7, "option", "0", "0", 2, &modeswitch_std_eject, "D-Link DWM-157 C1 (cdrom)"},	// also cdc_mbim
-	{0x2001, 0x7600, "option", "2", "1", 2 | GENERIC, &modeswitch_select_config2, "D-Link DWM-157 B1 (cdrom)"},
+	{0x2001, 0x7600, "option", "2", "1", 2 | GENERIC, &select_config2, "D-Link DWM-157 B1 (cdrom)"},
 	{0x2001, 0x7901, "option", "1", "3", 2 | GENERIC, NULL, "D-Link DWM-157 A1 (modem)"},	//
 	{0x2001, 0x7d00, "option", "1", "0", 2 | GENERIC, NULL, "D-Link DWM-156 A6 (modem)"},	//
 	{0x2001, 0x7d01, "option", "1", "0", 2, NULL, "D-Link DWM-156 A7 (modem)"},	// also cdc_mbim
