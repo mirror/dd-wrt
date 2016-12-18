@@ -103,7 +103,7 @@ openssl-clean:
 
 
 OPENSSL_NO_CIPHERS:= no-idea no-md2 no-mdc2 no-rc5 no-sha0 no-smime \
-					no-rmd160 no-aes192 no-camellia no-ripemd no-ans1 no-krb5
+					no-aes192 no-camellia no-ans1 no-krb5
 
 OPENSSL_OPTIONS:= no-err no-hw threads no-ssl2 no-ssl3 zlib-dynamic no-ec2m
 
