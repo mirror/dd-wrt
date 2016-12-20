@@ -816,6 +816,48 @@ static void handle_wifi(void)
 
 }
 
+static void handle_wifi24(void)
+{
+
+	led_control(LED_WLAN, LED_FLASH);	// when pressed, blink white
+	count = 0;
+	switch (wifi_mode) {
+	case 1:
+		dd_syslog(LOG_DEBUG, "Wifi button: turning radio(s) on\n");
+		sysprintf("startstop radio_on_0");
+		wifi_mode = 0;
+		break;
+	case 0:
+		// (AOSS) led
+		dd_syslog(LOG_DEBUG, "Wifi button: turning radio(s) off\n");
+		sysprintf("startstop radio_off_0");
+		wifi_mode = 1;
+		break;
+	}
+
+}
+
+static void handle_wifi5(void)
+{
+
+	led_control(LED_WLAN, LED_FLASH);	// when pressed, blink white
+	count = 0;
+	switch (wifi_mode) {
+	case 1:
+		dd_syslog(LOG_DEBUG, "Wifi button: turning radio(s) on\n");
+		sysprintf("startstop radio_on_1");
+		wifi_mode = 0;
+		break;
+	case 0:
+		// (AOSS) led
+		dd_syslog(LOG_DEBUG, "Wifi button: turning radio(s) off\n");
+		sysprintf("startstop radio_off_1");
+		wifi_mode = 1;
+		break;
+	}
+
+}
+
 static void handle_ses(void)
 {
 
@@ -1004,9 +1046,11 @@ static void period_check(int sig)
 #if defined(HAVE_IPQ806X) || defined(HAVE_MVEBU) || (HAVE_XSCALE) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_GATEWORX) || defined(HAVE_STORM) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600)  || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_WP54G) || defined(HAVE_NP28G) || defined(HAVE_SOLO51) || defined(HAVE_OPENRISC) || defined(HAVE_DANUBE) || defined(HAVE_UNIWIP) || defined(HAVE_EROUTER) || defined(HAVE_VENTANA)
 	state = val;
 	int sesgpio = 0xfff;
-	int wifigpio = 0xfff;
+	int wifi24gpio = 0xfff;
+	int wifi5gpio = 0xfff;
 	int pushses;
-	int pushwifi;
+	int pushwifi24;
+	int pushwifi5;
 #ifdef HAVE_WZRG300NH
 	sesgpio = 0x117;
 	val |= get_gpio(23) << 23;	//aoss pushbutton
@@ -1036,7 +1080,7 @@ static void period_check(int sig)
 	val |= get_gpio(5) << 5;	//aoss pushbutton
 #elif defined(HAVE_CARAMBOLA)
 #if defined(HAVE_ERC)
-//      wifigpio = 0x117;
+//      wifi24gpio = 0x117;
 //      val |= get_gpio(23) << 23;
 #endif
 #elif defined(HAVE_HORNET)
@@ -1049,7 +1093,7 @@ static void period_check(int sig)
 //      sesgpio = 0x110;
 //      val |= get_gpio(16) << 16;      //aoss pushbutton
 #elif defined(HAVE_WNDR3700V4)
-	wifigpio = 0x10f;
+	wifi24gpio = 0x10f;
 	sesgpio = 0x10c;
 	val |= get_gpio(15) << 15;	//aoss pushbutton
 	val |= get_gpio(12) << 12;	//aoss pushbutton
@@ -1139,7 +1183,7 @@ static void period_check(int sig)
 	sesgpio = 0x103;
 	val |= get_gpio(3) << 3;	//aoss pushbutton
 #elif defined(HAVE_WNDR3700)
-	wifigpio = 0x10b;
+	wifi24gpio = 0x10b;
 	sesgpio = 0x103;
 	val |= get_gpio(3) << 3;	//aoss pushbutton
 	val |= get_gpio(11) << 11;	//aoss pushbutton
@@ -1196,9 +1240,11 @@ static void period_check(int sig)
 	 * 0xff = button disabled / not available 
 	 */
 	int pushses;
-	int pushwifi;
+	int pushwifi24;
+	int pushwifi5;
 	int sesgpio;
-	int wifigpio = 0xfff;
+	int wifi24gpio = 0xfff;
+	int wifi5gpio = 0xfff;
 
 	switch (brand) {
 	case ROUTER_BUFFALO_WHRG54S:
@@ -1274,31 +1320,31 @@ static void period_check(int sig)
 		sesgpio = 0x107;	// gpio 7, inversed
 		break;
 	case ROUTER_ASUS_AC67U:
-		wifigpio = 0x10f;
+		wifi24gpio = 0x10f;
 		sesgpio = 0x107;	// gpio 7, inversed
 		break;
 	case ROUTER_ASUS_AC87U:
 		sesgpio = 0x102;	// gpio 2, inversed
-		wifigpio = 0x10f;
+		wifi24gpio = 0x10f;
 		break;
 	case ROUTER_ASUS_AC88U:
 	case ROUTER_ASUS_AC3100:
 		sesgpio = 0x114;	// gpio 20, inversed
-		wifigpio = 0x112;	// gpio 18, inversed
+		wifi24gpio = 0x112;	// gpio 18, inversed
 		break;
 	case ROUTER_ASUS_AC1200:
 		sesgpio = 0x109;	// gpio 9, inversed
 		break;
 	case ROUTER_ASUS_AC5300:
-		wifigpio = 0x114;	// gpio 20, inversed
+		wifi24gpio = 0x114;	// gpio 20, inversed
 		sesgpio = 0x112;	// gpio 18, inversed
 		break;
 	case ROUTER_ASUS_AC3200:
 		sesgpio = 0x107;	// gpio 2, inversed
-		wifigpio = 0x104;
+		wifi24gpio = 0x104;
 		break;
 	case ROUTER_ASUS_AC56U:
-		wifigpio = 0x107;	// gpio 7, inversed
+		wifi24gpio = 0x107;	// gpio 7, inversed
 		sesgpio = 0x10f;	// gpio 7, inversed
 		break;
 	case ROUTER_ASUS_RTN18U:
@@ -1342,7 +1388,7 @@ static void period_check(int sig)
 		break;
 	case ROUTER_NETGEAR_WNR3500LV2:
 		sesgpio = 0x106;	// gpio 6, inversed
-		wifigpio = 0x108;
+		wifi24gpio = 0x108;
 		break;
 	case ROUTER_WRT320N:
 	case ROUTER_WRT160NV3:
@@ -1353,7 +1399,7 @@ static void period_check(int sig)
 	case ROUTER_NETGEAR_R6250:
 	case ROUTER_NETGEAR_R6300V2:
 	case ROUTER_NETGEAR_R7000:
-		wifigpio = 0x105;
+		wifi24gpio = 0x105;
 		//fall through
 	case ROUTER_WRT54G:
 	case ROUTER_WRT54G_V8:
@@ -1372,24 +1418,24 @@ static void period_check(int sig)
 		break;
 	case ROUTER_NETGEAR_R6400:
 		sesgpio = 0x103;
-		wifigpio = 0x104;
+		wifi24gpio = 0x104;
 		break;
 	case ROUTER_NETGEAR_R7500:
 	case ROUTER_NETGEAR_R7500V2:
 	case ROUTER_NETGEAR_R7800:
-		wifigpio = 0x106;
+		wifi24gpio = 0x106;
 		break;
 	case ROUTER_NETGEAR_R8000:
 		sesgpio = 0x105;
-		wifigpio = 0x104;
+		wifi24gpio = 0x104;
 		break;
 	case ROUTER_NETGEAR_R8500:
 		sesgpio = 0x104;
-		wifigpio = 0x113;
+		wifi24gpio = 0x113;
 		break;
 	case ROUTER_LINKSYS_EA6500:
 	case ROUTER_NETGEAR_EX6200:
-		wifigpio = 0x104;
+		wifi24gpio = 0x104;
 		break;
 	case ROUTER_WRT310NV2:
 		sesgpio = 0x105;	// gpio 5, inversed
@@ -1403,18 +1449,25 @@ static void period_check(int sig)
 		sesgpio = 0x109;	// gpio 9, inversed
 		break;
 	case ROUTER_LINKSYS_EA8500:
-		sesgpio = 0x165;
+		sesgpio = 0x141;
+		wifigpio24 = 0x143;
+		break;
+	case ROUTER_ASROCK_G10:
+		wifigpio5 = 0x141;
+		wifigpio24 = 0x140;
 		break;
 
 #endif
 	default:
 		sesgpio = 0xfff;	// gpio unknown, disabled
-		wifigpio = 0xfff;	// gpio unknown, disabled
+		wifi24gpio = 0xfff;	// gpio unknown, disabled
+		wifi5gpio = 0xfff;	// gpio unknown, disabled
 	}
 #endif
 
 	pushses = 1 << (sesgpio & 0x0ff);	// calculate push value from ses gpio
-	pushwifi = 1 << (wifigpio & 0x0ff);	// calculate push value from ses gpio 
+	pushwifi24 = 1 << (wifi24gpio & 0x0ff);	// calculate push value from ses gpio 
+	pushwifi5 = 1 << (wifi5gpio & 0x0ff);	// calculate push value from ses gpio 
 	// 
 	// 
 	// 
@@ -1452,7 +1505,7 @@ static void period_check(int sig)
 			ses_pushed = 1;
 			handle_ses();
 		}
-	} else if ((wifigpio != 0xfff) && (((wifigpio & 0x100) == 0 && (val & pushwifi)) || ((wifigpio & 0x100) == 0x100 && !(val & pushwifi)))) {
+	} else if ((wifi24gpio != 0xfff && wifi5gpio == 0xfff) && (((wifi24gpio & 0x100) == 0 && (val & pushwifi24)) || ((wifi24gpio & 0x100) == 0x100 && !(val & pushwifi24)))) {
 		if (!wifi_pushed && (++count > SES_WAIT)) {
 			if (check_action() != ACT_IDLE) {	// Don't execute during upgrading
 				fprintf(stderr, "resetbutton: nothing to do...\n");
@@ -1462,6 +1515,29 @@ static void period_check(int sig)
 			count = 0;
 			wifi_pushed = 1;
 			handle_wifi();
+		}
+
+	} else if ((wifi24gpio != 0xfff && wifi5gpio != 0xfff) && (((wifi24gpio & 0x100) == 0 && (val & pushwifi24)) || ((wifi24gpio & 0x100) == 0x100 && !(val & pushwifi24)))) {
+		if (!wifi_pushed && (++count > SES_WAIT)) {
+			if (check_action() != ACT_IDLE) {	// Don't execute during upgrading
+				fprintf(stderr, "resetbutton: nothing to do...\n");
+				alarmtimer(0, 0);	/* Stop the timer alarm */
+				return;
+			}
+			count = 0;
+			wifi_pushed = 1;
+			handle_wifi24();
+		}
+	} else if ((wifi24gpio != 0xfff && wifi5gpio != 0xfff) && (((wifi5gpio & 0x100) == 0 && (val & pushwifi5)) || ((wifi5gpio & 0x100) == 0x100 && !(val & pushwifi5)))) {
+		if (!wifi_pushed && (++count > SES_WAIT)) {
+			if (check_action() != ACT_IDLE) {	// Don't execute during upgrading
+				fprintf(stderr, "resetbutton: nothing to do...\n");
+				alarmtimer(0, 0);	/* Stop the timer alarm */
+				return;
+			}
+			count = 0;
+			wifi_pushed = 1;
+			handle_wifi5();
 		}
 
 	} else {
