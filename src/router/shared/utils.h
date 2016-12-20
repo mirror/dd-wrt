@@ -746,6 +746,8 @@
 
 #define ROUTER_ASUS_AC3100 0xfd1b
 
+#define ROUTER_ASROCK_G10 0xfe0f
+
 #define NVROUTER "DD_BOARD"
 
 static inline int startswith(char *source, char *cmp)
