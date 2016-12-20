@@ -168,6 +168,9 @@ static int getbuttonstate()
 	case ROUTER_LINKSYS_EA8500:
 		ret = get_gpio(68);
 		break;
+	case ROUTER_ASROCK_G10:
+		ret = get_gpio(16);
+		break;
 	default:
 		ret = get_gpio(54);
 	}
