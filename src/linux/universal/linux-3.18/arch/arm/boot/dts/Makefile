@@ -328,6 +328,7 @@ dtb-$(CONFIG_ARCH_QCOM) += \
 	qcom-ipq8064-r7500v2.dtb \
 	qcom-ipq8065-r7800.dtb \
 	qcom-ipq8064-tew827.dtb \
+	qcom-ipq8064-asrockg10.dtb \
 	qcom-ipq8064-ea8500.dtb \
 	qcom-msm8660-surf.dtb \
 	qcom-msm8960-cdp.dtb \
