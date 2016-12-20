@@ -1002,6 +1002,7 @@ void start_lan(void)
 	int board = getRouterBrand();
 	switch (board) {
 	case ROUTER_TRENDNET_TEW827:
+	case ROUTER_ASROCK_G10:
 		if (getSTA() || getWET() || CANBRIDGE()) {
 			nvram_setz(lan_ifnames, "eth0 eth1 ath0");
 			PORTSETUPWAN("");
