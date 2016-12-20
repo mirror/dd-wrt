@@ -2129,6 +2129,11 @@ int internal_getRouterBrand()
 		setRouter("Trendnet TEW-827");
 		return ROUTER_TRENDNET_TEW827;
 	}
+
+	if (!strcmp(modelstr, "G10")) {
+		setRouter("ASRock G10");
+		return ROUTER_ASROCK_G10;
+	}
 #elif HAVE_MERAKI
 	setRouter("Meraki Mini");
 	return ROUTER_BOARD_MERAKI;
@@ -6754,6 +6759,11 @@ int led_control(int type, int act)
 		//wlan_gpio = 0x008;    // wifi button led used for 5G
 		usb_gpio = 0x004;	//usb1 
 		usb_gpio1 = 0x005;	//usb2
+		break;
+	case ROUTER_ASROCK_G10:
+		diag_gpio = 0x009;	// power led orange     
+		connected_gpio = 0x008;	// wan led
+		disconnected_gpio = 0x007;	// wan led
 		break;
 	case ROUTER_TRENDNET_TEW827:
 		power_gpio = 0x135;	// power led 
