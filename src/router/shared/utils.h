@@ -746,7 +746,7 @@
 
 #define ROUTER_ASUS_AC3100 0xfd1b
 
-#define ROUTER_ASROCK_G10 0xfe0f
+#define ROUTER_ASROCK_G10 0xfe01
 
 #define NVROUTER "DD_BOARD"
 
