@@ -223,9 +223,9 @@
 			pinctrl-0 = <&mdio0_pins>;
 			pinctrl-names = "default";
 
-			phy0: ethernet-phy@0 {
+			phy4: ethernet-phy@4 {
 				device_type = "ethernet-phy";
-				reg = <0>;
+				reg = <4>;
 				qca,ar8327-initvals = <
 					0x00004 0x7600000   /* PAD0_MODE */
 					0x00008 0x1000000   /* PAD5_MODE */
@@ -251,10 +251,11 @@
 					>;
 			};
 
-			phy4: ethernet-phy@4 {
+			phy0: ethernet-phy@0 {
 				device_type = "ethernet-phy";
-				reg = <4>;
+				reg = <0>;
 			};
+
 		};
 
 		gmac1: ethernet@37200000 {
