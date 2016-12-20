@@ -319,29 +319,6 @@
 		};
 	};
 
-	gpio-keys {
-		compatible = "gpio-keys";
-
-		wifi {
-			label = "wifi";
-			gpios = <&qcom_pinmux 67 1>;
-			linux,code = <KEY_WLAN>;
-		};
-
-		reset {
-			label = "reset";
-			gpios = <&qcom_pinmux 68 1>;
-			linux,code = <KEY_RESTART>;
-		};
-
-		wps {
-			label = "wps";
-			gpios = <&qcom_pinmux 65 1>;
-			linux,code = <KEY_WPS_BUTTON>;
-		};
-
-	};
-
 	gpio-leds {
 		compatible = "gpio-leds";
 
