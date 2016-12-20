@@ -121,6 +121,7 @@ void start_finishupgrade(void)
 			for (i = 0; i < ipq_smem_bootconfig_v2_info->numaltpart; i++) {
 				if (!strncmp(ipq_smem_bootconfig_v2_info->per_part_entry[i].name, "rootfs", 6)) {
 					ipq_smem_bootconfig_v2_info->per_part_entry[i].primaryboot = !ipq_smem_bootconfig_v2_info->per_part_entry[i].primaryboot;
+					ipq_smem_bootconfig_v2_info->per_part_entry[i].upgraded = 0;
 				}
 			}
 		}
@@ -134,6 +135,7 @@ void start_finishupgrade(void)
 			for (i = 0; i < ipq_smem_bootconfig_info->numaltpart; i++) {
 				if (!strncmp(ipq_smem_bootconfig_info->per_part_entry[i].name, "rootfs", 6)) {
 					ipq_smem_bootconfig_info->per_part_entry[i].primaryboot = !ipq_smem_bootconfig_info->per_part_entry[i].primaryboot;
+					ipq_smem_bootconfig_info->per_part_entry[i].upgraded = 0;
 				}
 			}
 		}
@@ -256,7 +258,7 @@ static void setbootdevice(int dev)
 		for (i = 0; i < ipq_smem_bootconfig_v2_info->numaltpart; i++) {
 			if (!strncmp(ipq_smem_bootconfig_v2_info->per_part_entry[i].name, "rootfs", 6)) {
 				fprintf(stderr, "set bootdevice from %d to %d\n", ipq_smem_bootconfig_v2_info->per_part_entry[i].primaryboot, dev);
-				ipq_smem_bootconfig_v2_info->per_part_entry[i].primaryboot = dev;
+				ipq_smem_bootconfig_v2_info->per_part_entry[i].upgraded = 1;
 			}
 		}
 		ipq_smem_bootconfig_v2_info->upgradeinprogress = 0;
@@ -268,7 +270,7 @@ static void setbootdevice(int dev)
 		for (i = 0; i < ipq_smem_bootconfig_info->numaltpart; i++) {
 			if (!strncmp(ipq_smem_bootconfig_info->per_part_entry[i].name, "rootfs", 6)) {
 				fprintf(stderr, "set bootdevice from %d to %d\n", ipq_smem_bootconfig_info->per_part_entry[i].primaryboot, dev);
-				ipq_smem_bootconfig_info->per_part_entry[i].primaryboot = dev;
+				ipq_smem_bootconfig_info->per_part_entry[i].upgraded = 1;
 			}
 		}
 		ipq_smem_bootconfig_info->upgradeinprogress = 0;
@@ -318,6 +320,32 @@ void *get_deviceinfo(char *var)
 	return NULL;
 }
 
+void *get_deviceinfo_g10(char *var)
+{
+	static char res[256];
+	memset(res, 0, sizeof(res));
+	FILE *fp = fopen("/dev/mtdblock/9", "rb");
+	if (!fp)
+		return NULL;
+	char newname[64];
+	snprintf(newname, 64, "%s=", var);
+	char *mem = safe_malloc(0x2000);
+	fread(mem, 0x2000, 1, fp);
+	fclose(fp);
+	int s = (0x2000 - 1) - strlen(newname);
+	int i;
+	int l = strlen(newname);
+	for (i = 0; i < s; i++) {
+		if (!strncmp(mem + i, newname, l)) {
+			strncpy(res, mem + i + l, 13);
+			free(mem);
+			return res;
+		}
+	}
+	free(mem);
+	return NULL;
+}
+
 void start_sysinit(void)
 {
 	char buf[PATH_MAX];
@@ -351,6 +379,15 @@ void start_sysinit(void)
 		if (board == ROUTER_LINKSYS_EA8500)
 			maddr = get_deviceinfo("hw_mac_addr");
 
+		if (board == ROUTER_ASROCK_G10) {
+			static char mg10[20];
+			maddr = get_deviceinfo_g10("HW.LAN.MAC.Address");
+			if (maddr) {
+			sprintf(mg10,"%c%c:%c%c:%c%c:%c%c:%c%c:%c%c",maddr[0]&0xff,maddr[1]&0xff,maddr[2]&0xff,maddr[3]&0xff,maddr[4]&0xff,maddr[5]&0xff,maddr[6]&0xff,maddr[7]&0xff,maddr[8]&0xff,maddr[9]&0xff,maddr[10]&0xff,maddr[11]&0xff);
+			maddr = &mg10[0];
+			}
+		}
+
 		if (maddr) {
 			fprintf(stderr, "sysinit using mac %s\n", maddr);
 			sscanf(maddr, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0], &newmac[1], &newmac[2], &newmac[3], &newmac[4], &newmac[5]);
@@ -361,7 +398,7 @@ void start_sysinit(void)
 		fread(smem, 0x8000, 1, fp);
 
 		fclose(fp);
-		if (maddr && (board == ROUTER_TRENDNET_TEW827 || board == ROUTER_LINKSYS_EA8500)) {	// board calibration data with real mac addresses
+		if (maddr && (board == ROUTER_TRENDNET_TEW827 || board == ROUTER_LINKSYS_EA8500 || board == ROUTER_ASROCK_G10)) {	// board calibration data with real mac addresses
 			int i;
 			for (i = 0; i < 6; i++) {
 				smem[i + 6] = newmac[i];
@@ -417,6 +454,17 @@ void start_sysinit(void)
 		else
 			nvram_seti("bootpartition", 0);
 		break;
+	case ROUTER_ASROCK_G10:
+		if (maddr) {
+			eval("ifconfig", "eth1", "hw", "ether", maddr);
+			eval("ifconfig", "eth0", "hw", "ether", maddr);
+		}
+		start_finishupgrade();
+		if (getbootdevice())
+			nvram_seti("bootpartition", 1);
+		else
+			nvram_seti("bootpartition", 0);
+		break;
 	case ROUTER_LINKSYS_EA8500:
 		if (maddr) {
 			eval("ifconfig", "eth1", "hw", "ether", maddr);
@@ -436,6 +484,18 @@ void start_sysinit(void)
 		system("swconfig dev switch0 set enable_vlan 0");
 		system("swconfig dev switch0 vlan 1 set ports \"6 1 2 3 4\"");
 		system("swconfig dev switch0 vlan 2 set ports \"0 5\"");
+		system("swconfig dev switch0 set apply");
+		eval("ifconfig", "eth0", "up");
+		eval("ifconfig", "eth1", "up");
+//		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+//		eval("vconfig", "add", "eth1", "1");
+//		eval("vconfig", "add", "eth0", "2");
+		break;
+	case ROUTER_ASROCK_G10:
+		system("swconfig dev switch0 set reset 1");
+		system("swconfig dev switch0 set enable_vlan 0");
+		system("swconfig dev switch0 vlan 1 set ports \"2 3 4 5 6\"");
+		system("swconfig dev switch0 vlan 2 set ports \"0 1\"");
 		system("swconfig dev switch0 set apply");
 		eval("ifconfig", "eth0", "up");
 		eval("ifconfig", "eth1", "up");

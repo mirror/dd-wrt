@@ -292,6 +292,7 @@ int mtd_write(const char *path, const char *mtd)
 		break;
 #endif
 	case ROUTER_TRENDNET_TEW827:
+	case ROUTER_ASROCK_G10:
 		if (nvram_matchi("bootpartition", 0)) {
 			mtd = "linux2";
 			eval("startservice", "bootsecondary");
