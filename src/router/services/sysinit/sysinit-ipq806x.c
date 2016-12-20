@@ -261,7 +261,7 @@ static void setbootdevice(int dev)
 				ipq_smem_bootconfig_v2_info->per_part_entry[i].upgraded = 1;
 			}
 		}
-		ipq_smem_bootconfig_v2_info->upgradeinprogress = 0;
+		ipq_smem_bootconfig_v2_info->upgradeinprogress = 1;
 	}
 	if (ipq_smem_bootconfig_info) {
 		fprintf(stderr, "upgrade in progress: %d\n", ipq_smem_bootconfig_info->upgradeinprogress);
@@ -273,7 +273,7 @@ static void setbootdevice(int dev)
 				ipq_smem_bootconfig_info->per_part_entry[i].upgraded = 1;
 			}
 		}
-		ipq_smem_bootconfig_info->upgradeinprogress = 0;
+		ipq_smem_bootconfig_info->upgradeinprogress = 1;
 	}
 	fp = fopen(mtdpath, "wb");
 	if (fp) {
