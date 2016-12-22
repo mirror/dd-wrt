@@ -3,7 +3,7 @@ gmp-configure:
 		--build=$(ARCH)-linux \
 		--host=$(ARCH)-linux-gnu \
 		--prefix=/usr \
-		CFLAGS="$(COPTS) -fPIC -I$(TOP)/iptables/include/libipq/" LDFLAGS="-L$(TOP)/iptables/libipq"
+		CFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC -I$(TOP)/iptables/include/libipq/" LDFLAGS="-L$(TOP)/iptables/libipq"
 
 
 gmp:
