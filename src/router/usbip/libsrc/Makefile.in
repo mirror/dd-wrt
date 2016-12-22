@@ -121,7 +121,7 @@ LTLIBRARIES = $(lib_LTLIBRARIES)
 libusbip_la_LIBADD =
 am_libusbip_la_OBJECTS = libusbip_la-names.lo \
 	libusbip_la-usbip_host_driver.lo libusbip_la-usbip_common.lo \
-	libusbip_la-vhci_driver.lo
+	libusbip_la-vhci_driver.lo libusbip_la-sysfs_utils.lo
 libusbip_la_OBJECTS = $(am_libusbip_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -243,17 +243,12 @@ OTOOL = @OTOOL@
 OTOOL64 = @OTOOL64@
 PACKAGE = @PACKAGE@
 PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
-PACKAGE_CFLAGS = @PACKAGE_CFLAGS@
-PACKAGE_LIBS = @PACKAGE_LIBS@
 PACKAGE_NAME = @PACKAGE_NAME@
 PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
-PKG_CONFIG = @PKG_CONFIG@
-PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
-PKG_CONFIG_PATH = @PKG_CONFIG_PATH@
 RANLIB = @RANLIB@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
@@ -318,7 +313,8 @@ libusbip_la_CFLAGS = @EXTRA_CFLAGS@
 libusbip_la_LDFLAGS = -version-info @LIBUSBIP_VERSION@
 lib_LTLIBRARIES := libusbip.la
 libusbip_la_SOURCES := names.c names.h usbip_host_driver.c usbip_host_driver.h \
-		       usbip_common.c usbip_common.h vhci_driver.c vhci_driver.h
+		       usbip_common.c usbip_common.h vhci_driver.c vhci_driver.h \
+		       sysfs_utils.c sysfs_utils.h
 
 all: all-am
 
@@ -400,6 +396,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libusbip_la-names.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libusbip_la-sysfs_utils.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libusbip_la-usbip_common.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libusbip_la-usbip_host_driver.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libusbip_la-vhci_driver.Plo@am__quote@
@@ -452,6 +449,13 @@ libusbip_la-vhci_driver.lo: vhci_driver.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='vhci_driver.c' object='libusbip_la-vhci_driver.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libusbip_la_CPPFLAGS) $(CPPFLAGS) $(libusbip_la_CFLAGS) $(CFLAGS) -c -o libusbip_la-vhci_driver.lo `test -f 'vhci_driver.c' || echo '$(srcdir)/'`vhci_driver.c
+
+libusbip_la-sysfs_utils.lo: sysfs_utils.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libusbip_la_CPPFLAGS) $(CPPFLAGS) $(libusbip_la_CFLAGS) $(CFLAGS) -MT libusbip_la-sysfs_utils.lo -MD -MP -MF $(DEPDIR)/libusbip_la-sysfs_utils.Tpo -c -o libusbip_la-sysfs_utils.lo `test -f 'sysfs_utils.c' || echo '$(srcdir)/'`sysfs_utils.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libusbip_la-sysfs_utils.Tpo $(DEPDIR)/libusbip_la-sysfs_utils.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='sysfs_utils.c' object='libusbip_la-sysfs_utils.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libusbip_la_CPPFLAGS) $(CPPFLAGS) $(libusbip_la_CFLAGS) $(CFLAGS) -c -o libusbip_la-sysfs_utils.lo `test -f 'sysfs_utils.c' || echo '$(srcdir)/'`sysfs_utils.c
 
 mostlyclean-libtool:
 	-rm -f *.lo

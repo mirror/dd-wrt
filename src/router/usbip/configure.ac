@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT([usbip-utils], [1.1.1], [linux-usb@vger.kernel.org])
+AC_INIT([usbip-utils], [2.0], [linux-usb@vger.kernel.org])
 AC_DEFINE([USBIP_VERSION], [0x00000111], [binary-coded decimal version number])
 
 CURRENT=0
@@ -44,11 +44,11 @@ AC_FUNC_REALLOC
 AC_CHECK_FUNCS([memset mkdir regcomp socket strchr strerror strstr dnl
 		strtoul])
 
-AC_CHECK_HEADER([sysfs/libsysfs.h],
-		[AC_CHECK_LIB([sysfs], [sysfs_open_directory_list],
-			      [LIBS="$LIBS -lsysfs"],
-			      [AC_MSG_ERROR([Missing sysfs2 library!])])],
-		[AC_MSG_ERROR([Missing /usr/include/sysfs/libsysfs.h])])
+AC_CHECK_HEADER([libudev.h],
+		[AC_CHECK_LIB([udev], [udev_new],
+			      [LIBS="$LIBS -ludev"],
+			      [AC_MSG_ERROR([Missing udev library!])])],
+		[AC_MSG_ERROR([Missing /usr/include/libudev.h])])
 
 # Checks for libwrap library.
 AC_MSG_CHECKING([whether to use the libwrap (TCP wrappers) library])
@@ -56,11 +56,11 @@ AC_ARG_WITH([tcp-wrappers],
 	    [AS_HELP_STRING([--with-tcp-wrappers],
 			    [use the libwrap (TCP wrappers) library])],
 	    dnl [ACTION-IF-GIVEN]
-	    [saved_LIBS="$LIBS"
-	     if test "$withval" = "yes"; then
+	    [if test "$withval" = "yes"; then
 		     AC_MSG_RESULT([yes])
 		     AC_MSG_CHECKING([for hosts_access in -lwrap])
-		     LIBS="-lwrap $LIBS"
+		     saved_LIBS="$LIBS"
+		     LIBS="-lwrap $saved_LIBS"
 		     AC_TRY_LINK(
 		       [int hosts_access(); int allow_severity, deny_severity;],
 		       [hosts_access()],
@@ -69,9 +69,8 @@ AC_ARG_WITH([tcp-wrappers],
 				  [use tcp wrapper]) wrap_LIB="-lwrap"],
 		       [AC_MSG_RESULT([not found]); exit 1])
 	     else
-		     AC_MSG_RESULT([no])
-	     fi
-	     LIBS="$saved_LIBS"],
+		     AC_MSG_RESULT([no]);
+	     fi],
 	    dnl [ACTION-IF-NOT-GIVEN]
 	    [AC_MSG_RESULT([(default)])
 	     AC_MSG_CHECKING([for hosts_access in -lwrap])
@@ -91,10 +90,22 @@ AC_ARG_WITH([usbids-dir],
 	    [USBIDS_DIR=$withval], [USBIDS_DIR="/usr/share/hwdata/"])
 AC_SUBST([USBIDS_DIR])
 
-GLIB2_REQUIRED=2.6.0
-PKG_CHECK_MODULES([PACKAGE], [glib-2.0 >= $GLIB2_REQUIRED])
-AC_SUBST([PACKAGE_CFLAGS])
-AC_SUBST([PACKAGE_LIBS])
+# use _FORTIFY_SOURCE
+AC_MSG_CHECKING([whether to use fortify])
+AC_ARG_WITH([fortify],
+	    [AS_HELP_STRING([--with-fortify],
+			    [use _FORTIFY_SROUCE option when compiling)])],
+			    dnl [ACTION-IF-GIVEN]
+			    [if test "$withval" = "yes"; then
+				AC_MSG_RESULT([yes])
+				CFLAGS="$CFLAGS -D_FORTIFY_SOURCE -O"
+			     else
+			     	AC_MSG_RESULT([no])
+				CFLAGS="$CFLAGS -U_FORTIFY_SOURCE"
+			     fi
+			    ],
+			    dnl [ACTION-IF-NOT-GIVEN]
+			    [AC_MSG_RESULT([default])])
 
 AC_CONFIG_FILES([Makefile libsrc/Makefile src/Makefile])
 AC_OUTPUT
