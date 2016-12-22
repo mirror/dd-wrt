@@ -20,6 +20,9 @@
 #include "../config.h"
 #endif
 
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
 #include <errno.h>
 #include <unistd.h>
 #include <netdb.h>
@@ -42,6 +45,7 @@
 #include "usbip_host_driver.h"
 #include "usbip_common.h"
 #include "usbip_network.h"
+#include "list.h"
 
 #undef  PROGNAME
 #define PROGNAME "usbipd"
@@ -91,6 +95,7 @@ static int recv_request_import(int sockfd)
 	struct op_import_request req;
 	struct usbip_exported_device *edev;
 	struct usbip_usb_device pdu_udev;
+	struct list_head *i;
 	int found = 0;
 	int error = 0;
 	int rc;
@@ -104,8 +109,8 @@ static int recv_request_import(int sockfd)
 	}
 	PACK_OP_IMPORT_REQUEST(0, &req);
 
-	dlist_for_each_data(host_driver->edev_list, edev,
-			    struct usbip_exported_device) {
+	list_for_each(i, &host_driver->edev_list) {
+		edev = list_entry(i, struct usbip_exported_device, node);
 		if (!strncmp(req.busid, edev->udev.busid, SYSFS_BUS_ID_SIZE)) {
 			info("found requested device: %s", req.busid);
 			found = 1;
@@ -158,13 +163,12 @@ static int send_reply_devlist(int connfd)
 	struct usbip_usb_device pdu_udev;
 	struct usbip_usb_interface pdu_uinf;
 	struct op_devlist_reply reply;
-	int i;
-	int rc;
+	struct list_head *j;
+	int rc, i;
 
 	reply.ndev = 0;
 	/* number of exported devices */
-	dlist_for_each_data(host_driver->edev_list, edev,
-			    struct usbip_exported_device) {
+	list_for_each(j, &host_driver->edev_list) {
 		reply.ndev += 1;
 	}
 	info("exportable devices: %d", reply.ndev);
@@ -182,8 +186,8 @@ static int send_reply_devlist(int connfd)
 		return -1;
 	}
 
-	dlist_for_each_data(host_driver->edev_list, edev,
-			    struct usbip_exported_device) {
+	list_for_each(j, &host_driver->edev_list) {
+		edev = list_entry(j, struct usbip_exported_device, node);
 		dump_usb_device(&edev->udev);
 		memcpy(&pdu_udev, &edev->udev, sizeof(pdu_udev));
 		usbip_net_pack_usb_device(1, &pdu_udev);
@@ -200,9 +204,9 @@ static int send_reply_devlist(int connfd)
 			usbip_net_pack_usb_interface(1, &pdu_uinf);
 
 			rc = usbip_net_send(connfd, &pdu_uinf,
-					    sizeof(pdu_uinf));
+					sizeof(pdu_uinf));
 			if (rc < 0) {
-				dbg("usbip_net_send failed: pdu_uinf");
+				err("usbip_net_send failed: pdu_uinf");
 				return -1;
 			}
 		}
