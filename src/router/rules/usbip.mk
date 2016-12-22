@@ -1,20 +1,39 @@
-usbip-configure:
-	cd usbip/libsysfs && ./configure --host=$(ARCH)-linux CC="$(CC)" CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -D_GNU_SOURCE -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_malloc=malloc"
-	make -C usbip/libsysfs clean all
-	cd usbip && ./configure --disable-static --enable-shared --host=$(ARCH)-linux CC="$(CC)" CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -D_GNU_SOURCE -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_realloc=realloc -Drpl_malloc=malloc -I$(TOP)/usbip/libsysfs/include" LDFLAGS="-L$(TOP)/usbip/libsysfs/lib/.libs" PACKAGE_CFLAGS="-I$(TOP)/glib20/libglib" PACKAGE_LIBS="-L$(TOP)/glib20/libglib/glib/.libs"
+usbip-configure: util-linux
+	make -C util-linux clean
+	make -C util-linux
+	make -C util-linux install DESTDIR=$(INSTALLDIR)/util-linux
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.a
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.la
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.so*
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.la
+	rm -f $(TOP)/util-linux/.libs/libuuid.a
+	rm -f $(TOP)/util-linux/.libs/libblkid.so*
+	cd usbip/eudev && ./configure --host=$(ARCH)-linux CC="$(CC)" BLKID_CFLAGS=" " BLKID_LIBS="-lblkid -luuid" CFLAGS="$(COPTS) $(MIPS16_OPT)  -L$(TOP)/$(ARCH)-uclibc/install/util-linux/usr/lib -DNEED_PRINTF -D_GNU_SOURCE -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_realloc=realloc -Drpl_malloc=malloc"  --disable-nls --prefix=/usr --disable-hwdb --disable-introspection --disable-manpages --disable-selinux --enable-blkid --disable-kmod
+	make -C usbip/eudev
+	cd usbip && ./autogen.sh
+	cd usbip && ./configure --disable-static --enable-shared --host=$(ARCH)-linux CC="$(CC)" CFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/$(ARCH)-uclibc/install/util-linux/usr/lib  -DNEED_PRINTF -D_GNU_SOURCE -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_realloc=realloc -Drpl_malloc=malloc -I$(TOP)/usbip/eudev/src/libudev -L$(TOP)/usbip/eudev/src/libudev/.libs"
 
-usbip:
-	$(MAKE) -C usbip CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -D_GNU_SOURCE -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_realloc=realloc -Drpl_malloc=malloc -I$(TOP)/usbip/libsysfs/include -I$(TOP)/glib20/libglib/glib" LDFLAGS="-L$(TOP)/usbip/libsysfs/lib/.libs -L$(TOP)/glib20/libglib/glib/.libs -lglib-2.0"
+usbip: util-linux
+	make -C usbip/eudev
+	$(MAKE) -C usbip 
 
 usbip-clean:
+	if test -e "usbip/eudev/Makefile"; then make -C usbip/eudev clean; fi
 	if test -e "usbip/Makefile"; then make -C usbip clean; fi
 	@true
 
 usbip-install:
-#	install -D usbip/src/.libs/usbip_bind_driver $(INSTALLDIR)/usbip/usr/sbin/usbip_bind_driver
+	make -C usbip/eudev install DESTDIR=$(INSTALLDIR)/usbip
+	rm -rf $(INSTALLDIR)/usbip/usr/bin
+	rm -rf $(INSTALLDIR)/usbip/usr/etc
+	rm -rf $(INSTALLDIR)/usbip/usr/include
+	rm -f $(INSTALLDIR)/usbip/usr/lib/*.a
+	rm -f $(INSTALLDIR)/usbip/usr/lib/*.la
+	rm -rf $(INSTALLDIR)/usbip/usr/lib/pkgconfig
+	rm -rf $(INSTALLDIR)/usbip/usr/lib/udev
+	rm -rf $(INSTALLDIR)/usbip/usr/sbin
+	rm -rf $(INSTALLDIR)/usbip/usr/share/pkgconfig
 	install -D usbip/src/.libs/usbip $(INSTALLDIR)/usbip/usr/sbin/usbip
 	install -D usbip/src/.libs/usbipd $(INSTALLDIR)/usbip/usr/sbin/usbipd
 	install -D usbip/libsrc/.libs/libusbip.so.0 $(INSTALLDIR)/usbip/usr/lib/libusbip.so.0
-	install -D usbip/libsysfs/lib/.libs/libsysfs.so.2 $(INSTALLDIR)/usbip/usr/lib/libsysfs.so.2
 	install -D usbip/usb.ids $(INSTALLDIR)/usbip/usr/share/hwdata/usb.ids
-	rm -rf $(INSTALLDIR)/libffi/usr/lib/libffi-3.2.1
