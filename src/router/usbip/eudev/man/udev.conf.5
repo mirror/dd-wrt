@@ -1,0 +1,58 @@
+'\" t
+.\"     Title: udev.conf
+.\"    Author: Kay Sievers <kay@vrfy.org>
+.\" Generator: DocBook XSL Stylesheets v1.79.0 <http://docbook.sf.net/>
+.\"      Date: 06/01/2016
+.\"    Manual: udev.conf
+.\"    Source: eudev
+.\"  Language: English
+.\"
+.TH "UDEV\&.CONF" "5" "" "eudev" "udev.conf"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+udev.conf \- Configuration for device event managing daemon
+.SH "SYNOPSIS"
+.PP
+/etc/udev/udev\&.conf
+.SH "DESCRIPTION"
+.PP
+\fBudevd\fR(8)
+expects its main configuration file at
+/etc/udev/udev\&.conf\&. It consists of a set of variables allowing the user to override default udev values\&. All empty lines or lines beginning with \*(Aq#\*(Aq are ignored\&. The following variables can be set:
+.PP
+\fIudev_log\fR
+.RS 4
+The log level\&. Valid values are the numerical syslog priorities or their textual representations:
+\fBerr\fR,
+\fBinfo\fR
+and
+\fBdebug\fR\&.
+.RE
+.PP
+In addition,
+udevd
+can be configured by command\-line options and the kernel command line (see
+\fBudevd\fR(8))\&.
+.SH "SEE ALSO"
+.PP
+\fBudevd\fR(8),
+\fBudev\fR(7),
+\fBudevadm\fR(8)
