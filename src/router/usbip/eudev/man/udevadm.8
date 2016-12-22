@@ -1,0 +1,421 @@
+'\" t
+.\"     Title: udevadm
+.\"    Author: Kay Sievers <kay@vrfy.org>
+.\" Generator: DocBook XSL Stylesheets v1.79.0 <http://docbook.sf.net/>
+.\"      Date: 06/01/2016
+.\"    Manual: udevadm
+.\"    Source: eudev
+.\"  Language: English
+.\"
+.TH "UDEVADM" "8" "" "eudev" "udevadm"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+udevadm \- udev management tool
+.SH "SYNOPSIS"
+.HP \w'\fBudevadm\fR\ 'u
+\fBudevadm\fR [\fB\-\-debug\fR] [\fB\-\-version\fR] [\fB\-\-help\fR]
+.HP \w'\fBudevadm\ info\ \fR\fB\fIoptions\fR\fR\ 'u
+\fBudevadm info \fR\fB\fIoptions\fR\fR
+.HP \w'\fBudevadm\ trigger\ \fR\fB[options]\fR\ 'u
+\fBudevadm trigger \fR\fB[options]\fR
+.HP \w'\fBudevadm\ settle\ \fR\fB[options]\fR\ 'u
+\fBudevadm settle \fR\fB[options]\fR
+.HP \w'\fBudevadm\ control\ \fR\fB\fIcommand\fR\fR\ 'u
+\fBudevadm control \fR\fB\fIcommand\fR\fR
+.HP \w'\fBudevadm\ monitor\ \fR\fB[options]\fR\ 'u
+\fBudevadm monitor \fR\fB[options]\fR
+.HP \w'\fBudevadm\ hwdb\ \fR\fB[options]\fR\ 'u
+\fBudevadm hwdb \fR\fB[options]\fR
+.HP \w'\fBudevadm\ test\ \fR\fB[options]\fR\fB\ \fR\fB\fIdevpath\fR\fR\ 'u
+\fBudevadm test \fR\fB[options]\fR\fB \fR\fB\fIdevpath\fR\fR
+.HP \w'\fBudevadm\ test\-builtin\ \fR\fB[options]\fR\fB\ \fR\fB\fIcommand\fR\fR\fB\ \fR\fB\fIdevpath\fR\fR\ 'u
+\fBudevadm test\-builtin \fR\fB[options]\fR\fB \fR\fB\fIcommand\fR\fR\fB \fR\fB\fIdevpath\fR\fR
+.SH "DESCRIPTION"
+.PP
+\fBudevadm\fR
+expects a command and command specific options\&. It controls the runtime behavior of
+\fBudev\fR, requests kernel events, manages the event queue, and provides simple debugging mechanisms\&.
+.SH "OPTIONS"
+.PP
+\fB\-\-debug\fR
+.RS 4
+Print debug messages to standard error\&.
+.RE
+.PP
+\fB\-\-version\fR
+.RS 4
+Print version number\&.
+.RE
+.PP
+\fB\-h\fR, \fB\-\-help\fR
+.RS 4
+Print help text\&.
+.RE
+.SS "udevadm info [\fIoptions\fR] [\fIdevpath\fR|\fIfile\fR]"
+.PP
+Queries the udev database for device information stored in the udev database\&. It can also query the properties of a device from its sysfs representation to help creating udev rules that match this device\&.
+.PP
+\fB\-q\fR, \fB\-\-query=\fR\fB\fITYPE\fR\fR
+.RS 4
+Query the database for the specified type of device data\&. It needs the
+\fB\-\-path\fR
+or
+\fB\-\-name\fR
+to identify the specified device\&. Valid
+\fITYPE\fRs are:
+\fBname\fR,
+\fBsymlink\fR,
+\fBpath\fR,
+\fBproperty\fR,
+\fBall\fR\&.
+.RE
+.PP
+\fB\-p\fR, \fB\-\-path=\fR\fB\fIDEVPATH\fR\fR
+.RS 4
+The
+/sys
+path of the device to query, e\&.g\&.
+[/sys]/class/block/sda\&. Note that this option usually is not very useful, since
+\fBudev\fR
+can guess the type of the argument, so
+\fBudevadm \-\-devpath=/class/block/sda\fR
+is equivalent to
+\fBudevadm /sys/class/block/sda\fR\&.
+.RE
+.PP
+\fB\-n\fR, \fB\-\-name=\fR\fB\fIFILE\fR\fR
+.RS 4
+The name of the device node or a symlink to query, e\&.g\&.
+[/dev]/sda\&. Note that this option usually is not very useful, since
+\fBudev\fR
+can guess the type of the argument, so
+\fBudevadm \-\-name=sda\fR
+is equivalent to
+\fBudevadm /dev/sda\fR\&.
+.RE
+.PP
+\fB\-r\fR, \fB\-\-root\fR
+.RS 4
+Print absolute paths in
+\fBname\fR
+or
+\fBsymlink\fR
+query\&.
+.RE
+.PP
+\fB\-a\fR, \fB\-\-attribute\-walk\fR
+.RS 4
+Print all sysfs properties of the specified device that can be used in udev rules to match the specified device\&. It prints all devices along the chain, up to the root of sysfs that can be used in udev rules\&.
+.RE
+.PP
+\fB\-x\fR, \fB\-\-export\fR
+.RS 4
+Print output as key/value pairs\&. Values are enclosed in single quotes\&.
+.RE
+.PP
+\fB\-P\fR, \fB\-\-export\-prefix=\fR\fB\fINAME\fR\fR
+.RS 4
+Add a prefix to the key name of exported values\&.
+.RE
+.PP
+\fB\-d\fR, \fB\-\-device\-id\-of\-file=\fR\fB\fIFILE\fR\fR
+.RS 4
+Print major/minor numbers of the underlying device, where the file lives on\&.
+.RE
+.PP
+\fB\-e\fR, \fB\-\-export\-db\fR
+.RS 4
+Export the content of the udev database\&.
+.RE
+.PP
+\fB\-c\fR, \fB\-\-cleanup\-db\fR
+.RS 4
+Cleanup the udev database\&.
+.RE
+.PP
+\fB\-\-version\fR
+.RS 4
+Print version\&.
+.RE
+.PP
+\fB\-h\fR, \fB\-\-help\fR
+.RS 4
+Print help text\&.
+.RE
+.PP
+In addition an optional positional argument can be used to specify a device name or a sys path\&. It must start with
+/dev
+or
+/sys
+respectively\&.
+.SS "udevadm trigger [\fIoptions\fR] [\fIdevpath\fR|\fIfile\fR...]"
+.PP
+Request device events from the kernel\&. Primarily used to replay events at system coldplug time\&.
+.PP
+\fB\-v\fR, \fB\-\-verbose\fR
+.RS 4
+Print the list of devices which will be triggered\&.
+.RE
+.PP
+\fB\-n\fR, \fB\-\-dry\-run\fR
+.RS 4
+Do not actually trigger the event\&.
+.RE
+.PP
+\fB\-t\fR, \fB\-\-type=\fR\fB\fITYPE\fR\fR
+.RS 4
+Trigger a specific type of devices\&. Valid types are:
+\fBdevices\fR,
+\fBsubsystems\fR\&. The default value is
+\fBdevices\fR\&.
+.RE
+.PP
+\fB\-c\fR, \fB\-\-action=\fR\fB\fIACTION\fR\fR
+.RS 4
+Type of event to be triggered\&. The default value is
+\fBchange\fR\&.
+.RE
+.PP
+\fB\-s\fR, \fB\-\-subsystem\-match=\fR\fB\fISUBSYSTEM\fR\fR
+.RS 4
+Trigger events for devices which belong to a matching subsystem\&. This option can be specified multiple times and supports shell style pattern matching\&.
+.RE
+.PP
+\fB\-S\fR, \fB\-\-subsystem\-nomatch=\fR\fB\fISUBSYSTEM\fR\fR
+.RS 4
+Do not trigger events for devices which belong to a matching subsystem\&. This option can be specified multiple times and supports shell style pattern matching\&.
+.RE
+.PP
+\fB\-a\fR, \fB\-\-attr\-match=\fR\fB\fIATTRIBUTE\fR\fR\fB=\fR\fB\fIVALUE\fR\fR
+.RS 4
+Trigger events for devices with a matching sysfs attribute\&. If a value is specified along with the attribute name, the content of the attribute is matched against the given value using shell style pattern matching\&. If no value is specified, the existence of the sysfs attribute is checked\&. This option can be specified multiple times\&.
+.RE
+.PP
+\fB\-A\fR, \fB\-\-attr\-nomatch=\fR\fB\fIATTRIBUTE\fR\fR\fB=\fR\fB\fIVALUE\fR\fR
+.RS 4
+Do not trigger events for devices with a matching sysfs attribute\&. If a value is specified along with the attribute name, the content of the attribute is matched against the given value using shell style pattern matching\&. If no value is specified, the existence of the sysfs attribute is checked\&. This option can be specified multiple times\&.
+.RE
+.PP
+\fB\-p\fR, \fB\-\-property\-match=\fR\fB\fIPROPERTY\fR\fR\fB=\fR\fB\fIVALUE\fR\fR
+.RS 4
+Trigger events for devices with a matching property value\&. This option can be specified multiple times and supports shell style pattern matching\&.
+.RE
+.PP
+\fB\-g\fR, \fB\-\-tag\-match=\fR\fB\fIPROPERTY\fR\fR
+.RS 4
+Trigger events for devices with a matching tag\&. This option can be specified multiple times\&.
+.RE
+.PP
+\fB\-y\fR, \fB\-\-sysname\-match=\fR\fB\fIPATH\fR\fR
+.RS 4
+Trigger events for devices with a matching sys device path\&. This option can be specified multiple times and supports shell style pattern matching\&.
+.RE
+.PP
+\fB\-\-name\-match=\fR\fB\fINAME\fR\fR
+.RS 4
+Trigger events for devices with a matching device path\&. This options can be specified multiple times\&.
+.RE
+.PP
+\fB\-b\fR, \fB\-\-parent\-match=\fR\fB\fISYSPATH\fR\fR
+.RS 4
+Trigger events for all children of a given device\&.
+.RE
+.PP
+\fB\-h\fR, \fB\-\-help\fR
+.RS 4
+Print help text\&.
+.RE
+.PP
+In addition optional positional arguments can be used to specify device names or sys paths\&. They must start with
+/dev
+or
+/sys
+respectively\&.
+.SS "udevadm settle [\fIoptions\fR]"
+.PP
+Watches the udev event queue, and exits if all current events are handled\&.
+.PP
+\fB\-t\fR, \fB\-\-timeout=\fR\fB\fISECONDS\fR\fR
+.RS 4
+Maximum number of seconds to wait for the event queue to become empty\&. The default value is 120 seconds\&. A value of 0 will check if the queue is empty and always return immediately\&.
+.RE
+.PP
+\fB\-E\fR, \fB\-\-exit\-if\-exists=\fR\fB\fIFILE\fR\fR
+.RS 4
+Stop waiting if file exists\&.
+.RE
+.PP
+\fB\-h\fR, \fB\-\-help\fR
+.RS 4
+Print help text\&.
+.RE
+.SS "udevadm control \fIcommand\fR"
+.PP
+Modify the internal state of the running udev daemon\&.
+.PP
+\fB\-x\fR, \fB\-\-exit\fR
+.RS 4
+Signal and wait for udevd to exit\&.
+.RE
+.PP
+\fB\-l\fR, \fB\-\-log\-priority=\fR\fB\fIvalue\fR\fR
+.RS 4
+Set the internal log level of
+udevd\&. Valid values are the numerical syslog priorities or their textual representations:
+\fBemerg\fR,
+\fBalert\fR,
+\fBcrit\fR,
+\fBerr\fR,
+\fBwarning\fR,
+\fBnotice\fR,
+\fBinfo\fR, and
+\fBdebug\fR\&.
+.RE
+.PP
+\fB\-s\fR, \fB\-\-stop\-exec\-queue\fR
+.RS 4
+Signal udevd to stop executing new events\&. Incoming events will be queued\&.
+.RE
+.PP
+\fB\-S\fR, \fB\-\-start\-exec\-queue\fR
+.RS 4
+Signal udevd to enable the execution of events\&.
+.RE
+.PP
+\fB\-R\fR, \fB\-\-reload\fR
+.RS 4
+Signal udevd to reload the rules files and other databases like the kernel module index\&. Reloading rules and databases does not apply any changes to already existing devices; the new configuration will only be applied to new events\&.
+.RE
+.PP
+\fB\-p\fR, \fB\-\-property=\fR\fB\fIKEY\fR\fR\fB=\fR\fB\fIvalue\fR\fR
+.RS 4
+Set a global property for all events\&.
+.RE
+.PP
+\fB\-m\fR, \fB\-\-children\-max=\fR\fIvalue\fR
+.RS 4
+Set the maximum number of events, udevd will handle at the same time\&.
+.RE
+.PP
+\fB\-\-timeout=\fR\fIseconds\fR
+.RS 4
+The maximum number of seconds to wait for a reply from udevd\&.
+.RE
+.PP
+\fB\-h\fR, \fB\-\-help\fR
+.RS 4
+Print help text\&.
+.RE
+.SS "udevadm monitor [\fIoptions\fR]"
+.PP
+Listens to the kernel uevents and events sent out by a udev rule and prints the devpath of the event to the console\&. It can be used to analyze the event timing, by comparing the timestamps of the kernel uevent and the udev event\&.
+.PP
+\fB\-k\fR, \fB\-\-kernel\fR
+.RS 4
+Print the kernel uevents\&.
+.RE
+.PP
+\fB\-u\fR, \fB\-\-udev\fR
+.RS 4
+Print the udev event after the rule processing\&.
+.RE
+.PP
+\fB\-p\fR, \fB\-\-property\fR
+.RS 4
+Also print the properties of the event\&.
+.RE
+.PP
+\fB\-s\fR, \fB\-\-subsystem\-match=\fR\fB\fIstring[/string]\fR\fR
+.RS 4
+Filter events by subsystem[/devtype]\&. Only udev events with a matching subsystem value will pass\&.
+.RE
+.PP
+\fB\-t\fR, \fB\-\-tag\-match=\fR\fB\fIstring\fR\fR
+.RS 4
+Filter events by property\&. Only udev events with a given tag attached will pass\&.
+.RE
+.PP
+\fB\-h\fR, \fB\-\-help\fR
+.RS 4
+Print help text\&.
+.RE
+.SS "udevadm hwdb [\fIoptions\fR]"
+.PP
+Maintain the hardware database index in
+/etc/udev/hwdb\&.bin\&.
+.PP
+\fB\-u\fR, \fB\-\-update\fR
+.RS 4
+Compile the hardware database information located in /usr/lib/udev/hwdb\&.d/, /etc/udev/hwdb\&.d/ and store it in
+/etc/udev/hwdb\&.bin\&. This should be done after any update to the source files; it will not be called automatically\&. The running udev daemon will detect a new database on its own and does not need to be notified about it\&.
+.RE
+.PP
+\fB\-t\fR, \fB\-\-test=\fR\fB\fIstring\fR\fR
+.RS 4
+Query the database with a modalias string, and print the retrieved properties\&.
+.RE
+.PP
+\fB\-r\fR, \fB\-\-root=\fR\fB\fIstring\fR\fR
+.RS 4
+Alternative root path in the file system for reading and writing files\&.
+.RE
+.PP
+\fB\-h\fR, \fB\-\-help\fR
+.RS 4
+Print help text\&.
+.RE
+.SS "udevadm test [\fIoptions\fR] [\fIdevpath\fR]"
+.PP
+Simulate a udev event run for the given device, and print debug output\&.
+.PP
+\fB\-a\fR, \fB\-\-action=\fR\fB\fIstring\fR\fR
+.RS 4
+The action string\&.
+.RE
+.PP
+\fB\-N\fR, \fB\-\-resolve\-names=\fR\fB\fBearly\fR\fR\fB|\fR\fB\fBlate\fR\fR\fB|\fR\fB\fBnever\fR\fR
+.RS 4
+Specify when udevadm should resolve names of users and groups\&. When set to
+\fBearly\fR
+(the default), names will be resolved when the rules are parsed\&. When set to
+\fBlate\fR, names will be resolved for every event\&. When set to
+\fBnever\fR, names will never be resolved and all devices will be owned by root\&.
+.RE
+.PP
+\fB\-h\fR, \fB\-\-help\fR
+.RS 4
+Print help text\&.
+.RE
+.SS "udevadm test\-builtin [\fIoptions\fR] [\fIcommand\fR] [\fIdevpath\fR]"
+.PP
+Run a built\-in command
+\fICOMMAND\fR
+for device
+\fIDEVPATH\fR, and print debug output\&.
+.PP
+\fB\-h\fR, \fB\-\-help\fR
+.RS 4
+Print help text\&.
+.RE
+.SH "SEE ALSO"
+.PP
+\fBudev\fR(7),
+\fBudevd.service\fR(8)
