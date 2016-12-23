@@ -1196,7 +1196,29 @@ static void period_check(int sig)
 #elif defined(HAVE_OPENRISC)
 	sesgpio = 0x005;
 	val |= get_gpio(5) << 5;	//aoss pushbutton
+#elif defined(HAVE_IPQ806X)
+	switch (brand) {
+	case ROUTER_LINKSYS_EA8500:
+		sesgpio = 0x105;
+		wifi24gpio = 0x106;
+		val |= get_gpio(65) << 5;
+		val |= get_gpio(67) << 6;
+		break;
+	case ROUTER_ASROCK_G10:
+		wifi5gpio = 0x105;
+		wifi24gpio = 0x106;
+		val |= get_gpio(65) << 5;
+		val |= get_gpio(64) << 6;
+		break;
+	case ROUTER_NETGEAR_R7500:
+	case ROUTER_NETGEAR_R7500V2:
+	case ROUTER_NETGEAR_R7800:
+		wifi24gpio = 0x106;
+		val |= get_gpio(6) << 6;
+		break;
+	}
 #endif
+
 #ifdef HAVE_WRT160NL
 	sesgpio = 0x107;
 	val |= get_gpio(7) << 7;	//wps/ses pushbutton
@@ -1420,11 +1442,6 @@ static void period_check(int sig)
 		sesgpio = 0x103;
 		wifi24gpio = 0x104;
 		break;
-	case ROUTER_NETGEAR_R7500:
-	case ROUTER_NETGEAR_R7500V2:
-	case ROUTER_NETGEAR_R7800:
-		wifi24gpio = 0x106;
-		break;
 	case ROUTER_NETGEAR_R8000:
 		sesgpio = 0x105;
 		wifi24gpio = 0x104;
@@ -1447,14 +1464,6 @@ static void period_check(int sig)
 	case ROUTER_LINKSYS_E1550:
 	case ROUTER_LINKSYS_E2500:
 		sesgpio = 0x109;	// gpio 9, inversed
-		break;
-	case ROUTER_LINKSYS_EA8500:
-		sesgpio = 0x141;
-		wifi24gpio = 0x143;
-		break;
-	case ROUTER_ASROCK_G10:
-		wifi5gpio = 0x141;
-		wifi24gpio = 0x140;
 		break;
 
 #endif
@@ -1636,4 +1645,5 @@ static int resetbutton_main(int argc, char *argv[])
 	return 0;
 #endif
 }
+
 #undef DEBUG
