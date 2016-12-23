@@ -1450,18 +1450,18 @@ static void period_check(int sig)
 		break;
 	case ROUTER_LINKSYS_EA8500:
 		sesgpio = 0x141;
-		wifigpio24 = 0x143;
+		wifi24gpio = 0x143;
 		break;
 	case ROUTER_ASROCK_G10:
-		wifigpio5 = 0x141;
-		wifigpio24 = 0x140;
+		wifi5gpio = 0x141;
+		wifi24gpio = 0x140;
 		break;
 
 #endif
 	default:
 		sesgpio = 0xfff;	// gpio unknown, disabled
-		wifi24gpio = 0xfff;	// gpio unknown, disabled
 		wifi5gpio = 0xfff;	// gpio unknown, disabled
+		wifi24gpio = 0xfff;	// gpio unknown, disabled
 	}
 #endif
 
