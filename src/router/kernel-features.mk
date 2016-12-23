@@ -125,7 +125,10 @@ define kernelfeatures
 		echo "CONFIG_USBIP_VHCI_HCD=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_USBIP_HOST=m" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_USBIP_DEBUG is not set" >> $(LINUXDIR)/.config; \
-	fi
+		echo "CONFIG_USBIP_VHCI_HC_PORTS=8" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_USBIP_VHCI_NR_HCS=1" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_USBIP_VUDC is not set" >> $(LINUXDIR)/.config; \
+	fi	
 	if [ "$(CONFIG_IPVS)" = "y" ]; then \
 	sed -i 's/\# CONFIG_IP_VS is not set/CONFIG_IP_VS=m/g' $(LINUXDIR)/.config; \
 	echo "CONFIG_NETFILTER_XT_MATCH_IPVS=m" >> $(LINUXDIR)/.config; \
