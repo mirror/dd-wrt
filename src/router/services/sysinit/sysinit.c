@@ -2958,7 +2958,7 @@ void start_drivers(void)
 #ifdef HAVE_USBIP
 		if (nvram_matchi("usb_ip", 1)) {
 			cprintf("loading usb over ip drivers\n");
-			insmod("usbip_common_mod usbip usbip-core usbip-host");
+			insmod("usbip_common_mod usbip usbip-core usbip-host vhci-hcd");
 			eval("usbipd", "-D");
 		}
 #endif
