@@ -648,7 +648,8 @@ static int wifi_mode = 0;	/* mode 1 : pushed */
 static int count = 0;
 
 static int ses_pushed = 0;
-static int wifi_pushed = 0;
+static int wifi24_pushed = 0;
+static int wifi5_pushed = 0;
 #ifdef HAVE_RADIOOFF
 static int initses = 1;
 #endif
@@ -1515,43 +1516,44 @@ static void period_check(int sig)
 			handle_ses();
 		}
 	} else if ((wifi24gpio != 0xfff && wifi5gpio == 0xfff) && (((wifi24gpio & 0x100) == 0 && (val & pushwifi24)) || ((wifi24gpio & 0x100) == 0x100 && !(val & pushwifi24)))) {
-		if (!wifi_pushed && (++count > SES_WAIT)) {
+		if (!wifi24_pushed && (++count > SES_WAIT)) {
 			if (check_action() != ACT_IDLE) {	// Don't execute during upgrading
 				fprintf(stderr, "resetbutton: nothing to do...\n");
 				alarmtimer(0, 0);	/* Stop the timer alarm */
 				return;
 			}
 			count = 0;
-			wifi_pushed = 1;
+			wifi24_pushed = 1;
 			handle_wifi();
 		}
 
 	} else if ((wifi24gpio != 0xfff && wifi5gpio != 0xfff) && (((wifi24gpio & 0x100) == 0 && (val & pushwifi24)) || ((wifi24gpio & 0x100) == 0x100 && !(val & pushwifi24)))) {
-		if (!wifi_pushed && (++count > SES_WAIT)) {
+		if (!wifi24_pushed && (++count > SES_WAIT)) {
 			if (check_action() != ACT_IDLE) {	// Don't execute during upgrading
 				fprintf(stderr, "resetbutton: nothing to do...\n");
 				alarmtimer(0, 0);	/* Stop the timer alarm */
 				return;
 			}
 			count = 0;
-			wifi_pushed = 1;
+			wifi24_pushed = 1;
 			handle_wifi24();
 		}
 	} else if ((wifi24gpio != 0xfff && wifi5gpio != 0xfff) && (((wifi5gpio & 0x100) == 0 && (val & pushwifi5)) || ((wifi5gpio & 0x100) == 0x100 && !(val & pushwifi5)))) {
-		if (!wifi_pushed && (++count > SES_WAIT)) {
+		if (!wifi5_pushed && (++count > SES_WAIT)) {
 			if (check_action() != ACT_IDLE) {	// Don't execute during upgrading
 				fprintf(stderr, "resetbutton: nothing to do...\n");
 				alarmtimer(0, 0);	/* Stop the timer alarm */
 				return;
 			}
 			count = 0;
-			wifi_pushed = 1;
+			wifi5_pushed = 1;
 			handle_wifi5();
 		}
 
 	} else {
 		count = 0;	// reset counter to avoid factory default
-		wifi_pushed = 0;
+		wifi24_pushed = 0;
+		wifi5_pushed = 0;
 		ses_pushed = 0;
 		/* 
 		 * Although it's unpushed now, it had ever been pushed 
