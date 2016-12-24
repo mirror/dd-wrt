@@ -263,8 +263,7 @@ void Initnvramtab()
 				}
 				while (1) {
 					tmp = (struct variable *)
-					    safe_malloc(sizeof(struct variable));
-					memset(tmp, 0, sizeof(struct variable));
+					    calloc(sizeof(struct variable), 1);
 					tmp->name = getFileString(in);
 					if (tmp->name == NULL)
 						break;
@@ -408,8 +407,7 @@ static char *insert(char *ifname, char *index, char *filename)
 	int i;
 	int ai = 0;
 	int length = calclength(webfile, ifname);
-	char *temp = safe_malloc(length);
-	memset(temp, 0, length);
+	char *temp = calloc(length, 1);
 
 	for (i = 0; i < weblen; i++) {
 		if (webfile[i] == '%') {
@@ -2360,16 +2358,14 @@ static void do_language(struct mime_handler *handler, char *path, webs_t stream,
 	char *langname = getLanguageName();
 	char *prefix, *lang;
 
-	prefix = safe_malloc(strlen(path) - strlen("lang_pack/language.js") + 1);
-	memset(prefix, 0, strlen(path) - strlen("lang_pack/language.js") + 1);
+	prefix = calloc(strlen(path) - strlen("lang_pack/language.js") + 1, 1);
 	strncpy(prefix, path, strlen(path) - strlen("lang_pack/language.js"));
 
-	lang = safe_malloc(strlen(prefix) + strlen(langname) + 1);
-	sprintf(lang, "%s%s", prefix, langname);
+	asprintf(&lang, "%s%s", prefix, langname);
 	do_file(handler, lang, stream, NULL);
 
-	free(prefix);
 	free(lang);
+	free(prefix);
 	free(langname);
 	return;
 }

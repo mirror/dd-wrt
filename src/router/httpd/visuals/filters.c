@@ -867,8 +867,7 @@ void filter_port_services_get(webs_t wp, char *type, int which)
 			int servicelen = strlen(nvram_safe_get("filter_services")) + strlen(nvram_safe_get("filter_services_1"));
 			if (servicelen == 0)
 				return;
-			services = malloc(servicelen + 1);
-			(void)memset(services, 0, servicelen + 1);
+			services = calloc(servicelen + 1, 1);
 			strcat(services, nvram_safe_get("filter_services"));	// this 
 			// is 
 			// user 
