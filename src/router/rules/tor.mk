@@ -22,11 +22,14 @@ tor-configure: libevent
 	CFLAGS="$(COPTS) $(MIPS16_OPT) -std=gnu99 -ffunction-sections -fdata-sections -Wl,--gc-sections  -I$(TOP)/zlib -I$(TOP) -I$(TOP)/openssl/include -I$(TOP)/libevent -I$(TOP)/libevent/include" \
 	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -std=gnu99 -ffunction-sections -fdata-sections -Wl,--gc-sections  -I$(TOP)/zlib -I$(TOP) -I$(TOP)/openssl/include -I$(TOP)/libevent  -I$(TOP)/libevent/include" \
 	LDFLAGS="$(COPTS) $(MIPS16_OPT) -std=gnu99  -L$(TOP)/zlib   -L$(TOP)/openssl -L$(TOP)/libevent/.libs" 
+	touch tor/*
 
 tor: libevent
+	touch tor/*
 	make -C tor
 
 tor-clean:
+	touch tor/*
 	make -C tor clean
 
 tor-install:
