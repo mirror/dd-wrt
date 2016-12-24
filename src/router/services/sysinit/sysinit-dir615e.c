@@ -87,8 +87,7 @@ void start_sysinit(void)
 #else
 		fseek(in, 0x30000, SEEK_SET);
 #endif
-		unsigned char *config = malloc(65536);
-		memset(config, 0, 65536);
+		unsigned char *config = calloc(65536, 1);
 		fread(config, 65536, 1, in);
 		int len = sizeof("lan_mac=");
 		int i;

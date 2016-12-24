@@ -192,9 +192,9 @@ void start_samba3(void)
 		fclose(fp);
 	}
 	chmod("/jffs", 0777);
-	
+
 	char conffile[64];
-	
+
 	fp = fopen("/jffs/etc/smb.conf", "r");	//test if custom config is available
 	if (fp != NULL) {
 		strcpy(conffile, "--configfile=/jffs/etc/smb.conf");

@@ -221,8 +221,7 @@ void start_sysinit(void)
 #ifdef HAVE_HAMEA15
 	FILE *in = fopen("/dev/mtdblock/1", "rb");
 	if (in != NULL) {
-		unsigned char *config = malloc(65536);
-		memset(config, 0, 65536);
+		unsigned char *config = calloc(65536, 1);
 		fread(config, 65536, 1, in);
 		int len = strlen("WAN_MAC_ADDR=");
 		int i;
@@ -246,8 +245,7 @@ void start_sysinit(void)
 
 	FILE *in = fopen("/dev/mtdblock/1", "rb");
 	if (in != NULL) {
-		unsigned char *config = malloc(65536);
-		memset(config, 0, 65536);
+		unsigned char *config = calloc(65536, 1);
 		fread(config, 65536, 1, in);
 #if defined(HAVE_AR670W) || defined(HAVE_AR690W)
 		int len = strlen("lanmac=");

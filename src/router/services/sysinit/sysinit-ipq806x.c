@@ -93,8 +93,7 @@ void start_finishupgrade(void)
 	ipq_smem_bootconfig_info_t *ipq_smem_bootconfig_info = NULL;
 	ipq_smem_bootconfig_v2_info_t *ipq_smem_bootconfig_v2_info = NULL;
 
-	unsigned int *smem = (unsigned int *)malloc(0x60000);
-	memset(smem, 0, 0x60000);
+	unsigned int *smem = (unsigned int *)calloc(0x60000, 1);
 	FILE *fp = fopen(mtdpath, "rb");
 	if (fp) {
 		fread(smem, 0x60000, 1, fp);
@@ -175,8 +174,7 @@ static int getbootdevice(void)
 	ipq_smem_bootconfig_v2_info_t *ipq_smem_bootconfig_v2_info = NULL;
 	int ret = -1;
 
-	unsigned int *smem = (unsigned int *)malloc(0x60000);
-	memset(smem, 0, 0x60000);
+	unsigned int *smem = (unsigned int *)calloc(0x60000, 1);
 	FILE *fp = fopen(mtdpath, "rb");
 	if (fp) {
 		fread(smem, 0x60000, 1, fp);
@@ -231,8 +229,7 @@ static void setbootdevice(int dev)
 	ipq_smem_bootconfig_info_t *ipq_smem_bootconfig_info = NULL;
 	ipq_smem_bootconfig_v2_info_t *ipq_smem_bootconfig_v2_info = NULL;
 
-	unsigned int *smem = (unsigned int *)malloc(0x60000);
-	memset(smem, 0, 0x60000);
+	unsigned int *smem = (unsigned int *)calloc(0x60000, 1);
 	FILE *fp = fopen(mtdpath, "rb");
 	if (fp) {
 		fread(smem, 0x60000, 1, fp);
@@ -383,8 +380,9 @@ void start_sysinit(void)
 			static char mg10[20];
 			maddr = get_deviceinfo_g10("HW.LAN.MAC.Address");
 			if (maddr) {
-			sprintf(mg10,"%c%c:%c%c:%c%c:%c%c:%c%c:%c%c",maddr[0]&0xff,maddr[1]&0xff,maddr[2]&0xff,maddr[3]&0xff,maddr[4]&0xff,maddr[5]&0xff,maddr[6]&0xff,maddr[7]&0xff,maddr[8]&0xff,maddr[9]&0xff,maddr[10]&0xff,maddr[11]&0xff);
-			maddr = &mg10[0];
+				sprintf(mg10, "%c%c:%c%c:%c%c:%c%c:%c%c:%c%c", maddr[0] & 0xff, maddr[1] & 0xff, maddr[2] & 0xff, maddr[3] & 0xff, maddr[4] & 0xff, maddr[5] & 0xff, maddr[6] & 0xff, maddr[7] & 0xff,
+					maddr[8] & 0xff, maddr[9] & 0xff, maddr[10] & 0xff, maddr[11] & 0xff);
+				maddr = &mg10[0];
 			}
 		}
 
@@ -487,9 +485,9 @@ void start_sysinit(void)
 		system("swconfig dev switch0 set apply");
 		eval("ifconfig", "eth0", "up");
 		eval("ifconfig", "eth1", "up");
-//		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
-//		eval("vconfig", "add", "eth1", "1");
-//		eval("vconfig", "add", "eth0", "2");
+//              eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+//              eval("vconfig", "add", "eth1", "1");
+//              eval("vconfig", "add", "eth0", "2");
 		break;
 	case ROUTER_ASROCK_G10:
 		system("swconfig dev switch0 set reset 1");
@@ -499,9 +497,9 @@ void start_sysinit(void)
 		system("swconfig dev switch0 set apply");
 		eval("ifconfig", "eth0", "up");
 		eval("ifconfig", "eth1", "up");
-//		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
-//		eval("vconfig", "add", "eth1", "1");
-//		eval("vconfig", "add", "eth0", "2");
+//              eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+//              eval("vconfig", "add", "eth1", "1");
+//              eval("vconfig", "add", "eth0", "2");
 		break;
 	case ROUTER_LINKSYS_EA8500:
 		system("swconfig dev switch0 set reset 1");

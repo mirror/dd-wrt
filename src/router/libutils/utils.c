@@ -5031,9 +5031,8 @@ int getifcount(const char *ifprefix)
 	 * FILE *in = popen (devcall, "rb"); if (in == NULL) return 0; int count;
 	 * fscanf (in, "%d", &count); pclose (in); return count;
 	 */
-	char *iflist = safe_malloc(256);
+	char *iflist = calloc(256, 1);
 
-	memset(iflist, 0, 256);
 	int c = getIfList(iflist, ifprefix);
 
 	free(iflist);

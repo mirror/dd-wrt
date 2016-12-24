@@ -726,9 +726,7 @@ void addList(char *listname, char *value)
 		listlen = strlen(list);
 	newlist = safe_malloc(strlen(value) + listlen + 2);
 	if (list) {
-		strcpy(newlist, list);
-		strcat(newlist, " ");
-		strcat(newlist, value);
+		sprintf(newlist, "%s %s", list, value);
 	} else {
 		strcpy(newlist, value);
 	}

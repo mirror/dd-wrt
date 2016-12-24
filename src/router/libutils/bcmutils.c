@@ -468,12 +468,10 @@ struct dns_lists *get_dns_list(void)
 	struct dns_lists *dns_list = NULL;
 	int i, match = 0, altdns_index = 1;
 
-	dns_list = (struct dns_lists *)malloc(sizeof(struct dns_lists));
-	memset(dns_list, 0, sizeof(struct dns_lists));
+	dns_list = (struct dns_lists *)calloc(sizeof(struct dns_lists), 1);
 
 	dns_list->num_servers = 0;
-	list = malloc(256);
-	memset(list, 0, 256);
+	list = calloc(256, 1);
 	char *sv_localdns = nvram_safe_get("sv_localdns");
 	char *wan_dns = nvram_safe_get("wan_dns");
 	char *wan_get_dns = nvram_safe_get("wan_get_dns");
@@ -1971,11 +1969,7 @@ void addAction(char *action)
 		}
 	}
 	if (strlen(services) > 0) {
-		actionstack = safe_malloc(strlen(services) + strlen(action) + 2);
-		memset(actionstack, 0, strlen(services) + strlen(action) + 2);
-		strcpy(actionstack, action);
-		strcat(actionstack, " ");
-		strcat(actionstack, services);
+		asprintf(&actionstack, "%s %s", action, services);
 		nvram_set("action_service", actionstack);
 		free(actionstack);
 	} else {

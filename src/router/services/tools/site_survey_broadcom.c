@@ -377,9 +377,8 @@ int get_legacy(unsigned char *rates, int count)
 
 int site_survey_main(int argc, char *argv[])
 {
-	site_survey_lists = malloc(sizeof(struct site_survey_list) * SITE_SURVEY_NUM);
+	site_survey_lists = calloc(sizeof(struct site_survey_list) * SITE_SURVEY_NUM,1);
 
-	memset(site_survey_lists, 0, sizeof(struct site_survey_list) * SITE_SURVEY_NUM);
 
 	char tmp[32];
 	sprintf(tmp, "%s_ifname", nvram_safe_get("wifi_display"));
