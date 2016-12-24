@@ -139,8 +139,7 @@ void init_event_queue(int n)
 	struct itimerval tv_empty;
 
 	g_maxevents = n;
-	event_freelist = (struct event *)safe_malloc(n * sizeof(struct event));
-	memset(event_freelist, 0, n * sizeof(struct event));
+	event_freelist = (struct event *)calloc(n * sizeof(struct event), 1);
 
 	for (i = 0; i < (n - 1); i++)
 		event_freelist[i].next = &event_freelist[i + 1];

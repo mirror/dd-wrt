@@ -193,7 +193,7 @@ static int mac80211_cb_survey(struct nl_msg *msg, void *data)
 		if (sinfo[NL80211_SURVEY_INFO_NOISE]) {
 			mac80211_info->noise = nla_get_u8(sinfo[NL80211_SURVEY_INFO_NOISE]);
 #ifdef HAVE_MVEBU
-		mac80211_info->noise -=10;
+			mac80211_info->noise -= 10;
 #endif
 		}
 
@@ -716,12 +716,13 @@ int has_5ghz(char *prefix)
 }
 
 #ifdef HAVE_MVEBU
-static int is_wrt3200(){
+static int is_wrt3200()
+{
 	FILE *fp = fopen("/proc/device-tree/model", "r");
-	if(fp){
+	if (fp) {
 		char modelstr[32];
 		fread(modelstr, 1, 31, fp);
-		if (strstr(modelstr, "WRT3200ACM")){
+		if (strstr(modelstr, "WRT3200ACM")) {
 			fclose(fp);
 			return 1;
 		}
@@ -1089,8 +1090,7 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 	}
 	for (run = 0; run < 2; run++) {
 		if (run == 1) {
-			list = (struct wifi_channels *)malloc(sizeof(struct wifi_channels) * (chancount + 1));
-			(void)memset(list, 0, (sizeof(struct wifi_channels) * (chancount + 1)));
+			list = (struct wifi_channels *)calloc(sizeof(struct wifi_channels) * (chancount + 1), 1);
 		}
 		nla_for_each_nested(band, bands, rem) {
 			freqlist = nla_find(nla_data(band), nla_len(band), NL80211_BAND_ATTR_FREQS);

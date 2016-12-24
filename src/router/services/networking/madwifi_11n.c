@@ -610,7 +610,8 @@ void configure_single_11n(int count)
 	setsysctrl(wif, "maxvaps", vapcount);
 
 	char primary[32] = {
-	0};
+		0
+	};
 	apm = nvram_default_get(wl, "ap");
 
 	if (!strcmp(apm, "ap") || !strcmp(apm, "wdsap")) {
@@ -1144,11 +1145,14 @@ void configure_single_11n(int count)
 
 		for (s = 1; s <= 10; s++) {
 			char wdsvarname[32] = {
-			0};
+				0
+			};
 			char wdsdevname[32] = {
-			0};
+				0
+			};
 			char wdsmacname[32] = {
-			0};
+				0
+			};
 			char *wdsdev;
 			char *hwaddr;
 

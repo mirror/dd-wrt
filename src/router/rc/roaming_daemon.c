@@ -45,8 +45,7 @@ struct site_survey_list *site_survey_lists;
 static int open_site_survey(void)
 {
 	FILE *fp;
-	site_survey_lists = malloc(sizeof(struct site_survey_list) * SITE_SURVEY_NUM);
-	bzero(site_survey_lists, sizeof(struct site_survey_list) * SITE_SURVEY_NUM);
+	site_survey_lists = calloc(sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1);
 
 	if ((fp = fopen(SITE_SURVEY_DB, "r"))) {
 		fread(&site_survey_lists[0], sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1, fp);
