@@ -845,8 +845,7 @@ static void handle_request(void)
 	// save the originally requested url
 	if (request_url)	// ahm, we should check for null
 		free(request_url);
-	request_url = safe_malloc(len + 1);
-	strcpy(request_url, file);
+	request_url = strdup(file);
 
 #ifdef HAVE_SKYTRON
 	if (file[0] == '\0' || file[len - 1] == '/') {

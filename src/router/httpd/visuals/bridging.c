@@ -250,8 +250,7 @@ void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 
 	memset(finalbuffer, 0, 512);
 	getIfListB(finalbuffer, NULL, 1);
-	char *checkbuffer = safe_malloc(strlen(finalbuffer) + 6);
-	memset(checkbuffer, 0, strlen(finalbuffer) + 6);
+	char *checkbuffer = calloc(strlen(finalbuffer) + 6, 1);
 	strcpy(checkbuffer, "none ");
 	strcat(checkbuffer, finalbuffer);
 	strcpy(finalbuffer, checkbuffer);

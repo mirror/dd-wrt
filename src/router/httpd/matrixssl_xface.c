@@ -68,9 +68,8 @@ matrixssl_buf *matrixssl_newbuf(int fp)
 
 	for (i = 0; i < MAX_MATRIXSSL_SESSIONS; i++) {
 		if (bufs[i] == NULL) {
-			bufs[i] = (matrixssl_buf *) malloc(sizeof(matrixssl_buf));
+			bufs[i] = (matrixssl_buf *) calloc(sizeof(matrixssl_buf), 1);
 			if (bufs[i]) {
-				memset(bufs[i], 0, sizeof(matrixssl_buf));
 				bufs[i]->fp = fp;
 				no_matrixssl_sessions++;
 			}
