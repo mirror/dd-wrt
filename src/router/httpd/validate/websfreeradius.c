@@ -147,11 +147,8 @@ void add_radius_client(webs_t wp)
 	} else {
 		db->users = realloc(db->users, sizeof(struct radiusclient) * (db->usercount + 1));
 	}
-	db->users[db->usercount].fieldlen = sizeof(struct radiususer) - 8;
-	db->users[db->usercount].clientsize = 0;
-	db->users[db->usercount].client = NULL;
-	db->users[db->usercount].passwd = NULL;
-	db->users[db->usercount].passwordsize = 0;
+	memset(&db->users[db->usercount], 0, sizeof(struct radiususer));
+	db->users[db->usercount].fieldlen = sizeof(struct radiususer) - (sizeof(char *) * 2);
 	db->usercount++;
 	writeradiusclientdb(db);
 	freeradiusclientdb(db);
@@ -201,11 +198,9 @@ static void save_radius_clients(webs_t wp)
 
 		db->users = realloc(db->users, sizeof(struct radiusclient) * (db->usercount + 1));
 
-		db->users[db->usercount].client = safe_malloc(strlen(u) + 1);
-		strcpy(db->users[db->usercount].client, u);
+		db->users[db->usercount].client = strdup(u);
 		db->users[db->usercount].clientsize = strlen(u) + 1;
-		db->users[db->usercount].passwd = safe_malloc(strlen(p) + 1);
-		strcpy(db->users[db->usercount].passwd, p);
+		db->users[db->usercount].passwd = strdup(p);
 		db->users[db->usercount].passwordsize = strlen(p) + 1;
 		db->usercount++;
 	}
@@ -261,11 +256,9 @@ static void save_radius_users(webs_t wp)
 			break;
 		db->users = realloc(db->users, sizeof(struct radiususer) * (db->usercount + 1));
 
-		db->users[db->usercount].user = safe_malloc(strlen(u) + 1);
-		strcpy(db->users[db->usercount].user, u);
+		db->users[db->usercount].user = strdup(u);
 		db->users[db->usercount].usersize = strlen(u) + 1;
-		db->users[db->usercount].passwd = safe_malloc(strlen(p) + 1);
-		strcpy(db->users[db->usercount].passwd, p);
+		db->users[db->usercount].passwd = strdup(p);
 		db->users[db->usercount].passwordsize = strlen(p) + 1;
 		db->users[db->usercount].downstream = atoi(d);
 		db->users[db->usercount].upstream = atoi(up);

@@ -2052,8 +2052,7 @@ void validate_iradius(webs_t wp, char *value, struct variable *v)
 	char *leases;
 	int i;
 
-	leases = (char *)safe_malloc((128 * leasenum) + 1);
-	memset(leases, 0, (128 * leasenum) + 1);
+	leases = (char *)calloc((128 * leasenum) + 1, 1);
 	int leasen = 0;
 
 	cprintf("build mac list\n");
@@ -2125,8 +2124,7 @@ void validate_userlist(webs_t wp, char *value, struct variable *v)
 	char *leases;
 	int i;
 
-	leases = (char *)safe_malloc((128 * leasenum) + 1);
-	memset(leases, 0, (128 * leasenum) + 1);
+	leases = (char *)calloc((128 * leasenum) + 1, 1);
 
 	for (i = 0; i < leasenum; i++) {
 		snprintf(username, 31, "fon_user%d_name", i);
@@ -2204,8 +2202,7 @@ void validate_staticleases(webs_t wp, char *value, struct variable *v)
 	char *leases;
 	int i;
 
-	leases = (char *)safe_malloc((54 * leasenum) + 1);
-	memset(leases, 0, (54 * leasenum) + 1);
+	leases = (char *)calloc((54 * leasenum) + 1, 1);
 
 	for (i = 0; i < leasenum; i++) {
 		snprintf(lease_hwaddr, 31, "lease%d_hwaddr", i);
