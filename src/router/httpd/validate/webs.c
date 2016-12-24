@@ -374,10 +374,8 @@ char *num_to_protocol(int num)
 
 void validate_services_port(webs_t wp)
 {
-	char *buf = (char *)safe_malloc(8192);
-	char *services = (char *)safe_malloc(8192);
-	memset(buf, 0, 8192);
-	memset(services, 0, 8192);
+	char *buf = (char *)calloc(8192, 1);
+	char *services = (char *)calloc(8192, 1);
 	char *cur = buf, *svcs = NULL;
 
 	char *services_array = websGetVar(wp, "services_array0", NULL);
@@ -518,11 +516,9 @@ void delete_static_route(webs_t wp)
 {
 	addAction("routing");
 	nvram_seti("nowebaction", 1);
-	char *buf = safe_malloc(2500);
-	char *buf_name = safe_malloc(2500);
+	char *buf = calloc(2500, 1);
+	char *buf_name = calloc(2500, 1);
 
-	memset(buf, 0, 2500);
-	memset(buf_name, 0, 2500);
 	char *cur = buf;
 	char *cur_name = buf_name;
 	char word[256], *next;
@@ -940,9 +936,8 @@ void add_active_mac(webs_t wp)
 {
 	int i, count = 0;
 	int msize = 4608;	// 18 chars * 256 entries
-	char *buf = malloc(msize);
+	char *buf = calloc(msize, 1);
 	char *cur = buf;
-	memset(buf, 0, msize);
 	char *ifname = websGetVar(wp, "ifname", NULL);
 
 	nvram_seti("wl_active_add_mac", 1);
@@ -1973,8 +1968,7 @@ void remove_mdhcp(char *iface)
 		if (next) {
 			// cut entry
 			len = strlen(next);
-			suff = safe_malloc(len + 1);
-			strncpy(suff, next, len);
+			suff = strdup(next);
 			suff[len - 1] = '\0';
 		} else {
 			// entry at the end?
@@ -2010,11 +2004,10 @@ void move_mdhcp(char *siface, char *tiface)
 {
 
 	char *start;
-	char *mdhcpds = safe_malloc(strlen(nvram_safe_get("mdhcpd")) + 1);
+	char *mdhcpds = NULL;
 	int i, len, pos;
 	char iface[16];
-
-	strcpy(mdhcpds, nvram_safe_get("mdhcpd"));
+	mdhcpds = strdup(nvram_safe_get("mdhcpd"));
 	start = strstr(mdhcpds, siface);
 	if (start) {
 		strcpy(iface, tiface);
@@ -2417,8 +2410,7 @@ void del_bond(webs_t wp)
 	int todel = atoi(val);
 
 	wordlist = nvram_safe_get("bondings");
-	newwordlist = (char *)safe_malloc(strlen(wordlist));
-	memset(newwordlist, 0, strlen(wordlist));
+	newwordlist = (char *)calloc(strlen(wordlist) + 2, 1);
 	int count = 0;
 
 	foreach(word, wordlist, next) {
@@ -2474,9 +2466,8 @@ void del_olsrd(webs_t wp)
 		return;
 	int d = atoi(del);
 	char *wordlist = nvram_safe_get("olsrd_interfaces");
-	char *newlist = (char *)safe_malloc(strlen(wordlist) + 1);
+	char *newlist = (char *)calloc(strlen(wordlist) + 2, 1);
 
-	memset(newlist, 0, strlen(wordlist));
 	char *next;
 	char word[128];
 	int count = 0;
@@ -2495,9 +2486,8 @@ void del_olsrd(webs_t wp)
 void save_olsrd(webs_t wp)
 {
 	char *wordlist = nvram_safe_get("olsrd_interfaces");
-	char *newlist = (char *)safe_malloc(strlen(wordlist) + 512);
+	char *newlist = (char *)calloc(strlen(wordlist) + 512, 1);
 
-	memset(newlist, 0, strlen(wordlist) + 512);
 	char *next;
 	char word[64];
 
@@ -2941,8 +2931,7 @@ void del_vlan(webs_t wp)
 	int todel = atoi(val);
 
 	wordlist = nvram_safe_get("vlan_tags");
-	newwordlist = (char *)safe_malloc(strlen(wordlist));
-	memset(newwordlist, 0, strlen(wordlist));
+	newwordlist = (char *)calloc(strlen(wordlist) + 2, 1);
 	int count = 0;
 
 	foreach(word, wordlist, next) {
@@ -3011,8 +3000,7 @@ void del_mdhcp(webs_t wp)
 	int todel = atoi(val);
 
 	wordlist = nvram_safe_get("mdhcpd");
-	newwordlist = (char *)safe_malloc(strlen(wordlist));
-	memset(newwordlist, 0, strlen(wordlist));
+	newwordlist = (char *)calloc(strlen(wordlist) + 2, 1);
 	int count = 0;
 
 	foreach(word, wordlist, next) {
@@ -3047,8 +3035,7 @@ void del_bridge(webs_t wp)
 	int todel = atoi(val);
 
 	wordlist = nvram_safe_get("bridges");
-	newwordlist = (char *)safe_malloc(strlen(wordlist));
-	memset(newwordlist, 0, strlen(wordlist));
+	newwordlist = (char *)calloc(strlen(wordlist) + 2, 1);
 	int count = 0;
 
 	foreach(word, wordlist, next) {
@@ -3116,8 +3103,7 @@ void del_bridgeif(webs_t wp)
 	int todel = atoi(val);
 
 	wordlist = nvram_safe_get("bridgesif");
-	newwordlist = (char *)safe_malloc(strlen(wordlist));
-	memset(newwordlist, 0, strlen(wordlist));
+	newwordlist = (char *)calloc(strlen(wordlist) + 2, 1);
 	int count = 0;
 
 	foreach(word, wordlist, next) {
@@ -3201,8 +3187,7 @@ void del_ipvs(webs_t wp)
 	int todel = atoi(val);
 
 	wordlist = nvram_safe_get("ipvs");
-	newwordlist = (char *)safe_malloc(strlen(wordlist));
-	memset(newwordlist, 0, strlen(wordlist));
+	newwordlist = (char *)calloc(strlen(wordlist), 1);
 	int count = 0;
 
 	foreach(word, wordlist, next) {
@@ -3259,8 +3244,7 @@ void del_ipvstarget(webs_t wp)
 	int todel = atoi(val);
 
 	wordlist = nvram_safe_get("ipvstarget");
-	newwordlist = (char *)safe_malloc(strlen(wordlist));
-	memset(newwordlist, 0, strlen(wordlist));
+	newwordlist = (char *)calloc(strlen(wordlist), 1);
 	int count = 0;
 
 	foreach(word, wordlist, next) {
