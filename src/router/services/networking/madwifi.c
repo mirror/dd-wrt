@@ -796,9 +796,8 @@ void setupHS20(FILE * fp, char *prefix)
 void addWPS(FILE * fp, char *prefix, int configured)
 {
 #ifdef HAVE_WPS
-	char *config_methods = safe_malloc(strlen("label keypad") + 1);
-	memset(config_methods, 0, strlen(config_methods));
-	strcpy(config_methods, "label keypad");
+	char *config_methods;
+	asprintf(&config_methods, "label keypad");
 	fprintf(fp, "ctrl_interface=/var/run/hostapd\n");	// for cli
 	if (!strcmp(prefix, "ath0")
 	    || !strcmp(prefix, "ath1")) {

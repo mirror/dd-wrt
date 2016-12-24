@@ -2422,9 +2422,9 @@ static void mangle_table(void)
 	 * Clamp TCP MSS to PMTU of WAN interface 
 	 */
 	save2file("-I FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
-	
+
 #ifdef HAVE_PRIVOXY
-	if ( (nvram_matchi("privoxy_enable", 1)) && (nvram_matchi("wshaper_enable", 1)) ) {	
+	if ((nvram_matchi("privoxy_enable", 1)) && (nvram_matchi("wshaper_enable", 1))) {
 		save2file("-I OUTPUT -p tcp --sport 8118 -j IMQ --todev 0\n");
 	}
 #endif
