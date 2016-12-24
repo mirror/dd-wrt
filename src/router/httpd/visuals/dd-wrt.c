@@ -523,8 +523,7 @@ void ej_show_iradius(webs_t wp, int argc, char_t ** argv)
 
 	cprintf("collection result %s", u);
 	if (u != NULL) {
-		userlist = (char *)safe_malloc(strlen(u) + 1);
-		strcpy(userlist, u);
+		userlist = strdup(u);
 		free(u);
 		o = userlist;
 	} else {
@@ -605,9 +604,7 @@ void ej_show_userlist(webs_t wp, int argc, char_t ** argv)
 	char username[32];
 	char password[32];
 	char *u = nvram_safe_get("fon_userlist");
-	char *userlist = (char *)safe_malloc(strlen(u) + 1);
-
-	strcpy(userlist, u);
+	char *userlist = strdup(u);
 	char *o = userlist;
 
 	for (i = 0; i < leasenum; i++) {
@@ -649,11 +646,10 @@ void ej_show_staticleases(webs_t wp, int argc, char_t ** argv)
 		return;
 	// cprintf("get leases");
 	char *nvleases = nvram_safe_get("static_leases");
-	char *leases = (char *)safe_malloc(strlen(nvleases) + 1);
+	char *leases = strdup(nvleases);
 	char *originalpointer = leases;	// strsep destroys the pointer by
 
 	// moving it
-	strcpy(leases, nvleases);
 	for (i = 0; i < leasenum; i++) {
 		char *sep = strsep(&leases, "=");
 
