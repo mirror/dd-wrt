@@ -1831,8 +1831,7 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 		achans = chans;
 
 	// fprintf(stderr,"channel number %d\n", achans.ic_nchans);
-	struct wifi_channels *list = (struct wifi_channels *)safe_malloc(sizeof(struct wifi_channels) * (achans.ic_nchans + 1));
-	(void)memset(list, 0, (sizeof(struct wifi_channels) * ((achans.ic_nchans + 1))));
+	struct wifi_channels *list = (struct wifi_channels *)calloc(sizeof(struct wifi_channels) * (achans.ic_nchans + 1), 1);
 
 	char wl_mode[16];
 	char wl_turbo[16];
@@ -1936,9 +1935,8 @@ int getRssi(char *ifname, unsigned char *mac)
 		return getRssi_11n(ifname, mac);
 	}
 #endif
-	unsigned char *buf = safe_malloc(24 * 1024);
+	unsigned char *buf = calloc(24 * 1024, 1);
 
-	memset(buf, 0, 1024 * 24);
 	unsigned char *cp;
 	int len;
 	struct iwreq iwr;
@@ -2007,9 +2005,8 @@ int getUptime(char *ifname, unsigned char *mac)
 		return getUptime_11n(ifname, mac);
 	}
 #endif
-	unsigned char *buf = safe_malloc(24 * 1024);
+	unsigned char *buf = calloc(24 * 1024, 1);
 
-	memset(buf, 0, 24 * 1024);
 	unsigned char *cp;
 	int len;
 	struct iwreq iwr;
@@ -2075,9 +2072,8 @@ int getNoise(char *ifname, unsigned char *mac)
 		return getNoise_11n(ifname, mac);
 	}
 #endif
-	unsigned char *buf = safe_malloc(24 * 1024);
+	unsigned char *buf = calloc(24 * 1024, 1);
 
-	memset(buf, 0, 24 * 1024);
 	unsigned char *cp;
 	int len;
 	struct iwreq iwr;
@@ -2147,8 +2143,7 @@ int getassoclist(char *ifname, unsigned char *list)
 #endif
 	unsigned char *buf;
 
-	buf = safe_malloc(24 * 1024);
-	memset(buf, 0, 1024 * 24);
+	buf = calloc(24 * 1024, 1);
 	unsigned char *cp;
 	int len;
 	struct iwreq iwr;

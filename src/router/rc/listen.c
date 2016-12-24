@@ -421,6 +421,7 @@ static int listen_main(int argc, char *argv[])
 		break;
 	}
 }
+
 #undef DEBUG
 #undef DEBUG1
 #undef LOG

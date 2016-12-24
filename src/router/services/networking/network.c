@@ -3086,7 +3086,7 @@ void start_wan(int status)
 	case ROUTER_LINKSYS_EA8500:
 		pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname", "") ? nvram_safe_get("pppoe_wan_ifname") : "vlan2";
 		break;
-	case ROUTER_NETGEAR_R7800: 
+	case ROUTER_NETGEAR_R7800:
 	default:
 		pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname", "") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
 		break;
@@ -3603,7 +3603,7 @@ void start_wan(int status)
 				fprintf(fp, "uqmi -d /dev/cdc-wdm0 --set-client-id wds,${CLIENTID} --start-network %s --auth-type both --keep-client-id wds\n", nvram_safe_get("wan_apn"));
 			}
 			if (!strcmp(controldevice, "qmiraw"))
-			    sysprintf("echo Y > /sys/class/net/wwan0/qmi/raw_ip");
+				sysprintf("echo Y > /sys/class/net/wwan0/qmi/raw_ip");
 			fprintf(fp, "ifconfig wwan0 up\n");
 			fprintf(fp, "ln -s /sbin/rc /tmp/udhcpc\n");
 			fprintf(fp, "udhcpc -i wwan0 -p /var/run/udhcpc.pid -s /tmp/udhcpc\n");
@@ -3647,7 +3647,7 @@ void start_wan(int status)
 			eval("qmi-network", "/dev/cdc-wdm0", "stop");	//release it before
 			eval("qmi-network", "/dev/cdc-wdm0", "start");
 			if (!strcmp(controldevice, "qmiraw"))
-			    sysprintf("echo Y > /sys/class/net/wwan0/qmi/raw_ip");
+				sysprintf("echo Y > /sys/class/net/wwan0/qmi/raw_ip");
 			eval("ifconfig", "wwan0", "up");
 			start_dhcpc("wwan0", NULL, NULL, 1);
 			if (status != REDIAL) {
@@ -3740,29 +3740,28 @@ void start_wan(int status)
 			fprintf(fp, "460800\n");
 //      fprintf(fp,"connect \"/usr/sbin/comgt DIAL -d %s\"\n",controldevice);
 			char *dial = NULL;
-			switch(nvram_geti("wan_dial"))
-			{
+			switch (nvram_geti("wan_dial")) {
 			case 0:
 				dial = "ATD*99***1#";
-			break;
-			case 1:	
+				break;
+			case 1:
 				dial = "ATD*99#";
-			break;
-			case 2:	
+				break;
+			case 2:
 				dial = "ATDT#777";
-			break;
-			case 3:	
+				break;
+			case 3:
 				dial = "ATD*99***3#";
-			break;
-			case 4:	
+				break;
+			case 4:
 				dial = "ATD*99***2#";
-			break;
-			case 5:	
+				break;
+			case 5:
 				dial = "ATD*99***4#";
-			break;			
+				break;
 			default:
 				dial = "*99***1#";
-			break;
+				break;
 			}
 			fprintf(fp, "connect \"COMGTDIAL='%s' /usr/sbin/comgt DIAL -d %s >/tmp/comgt.out 2>&1\"\n", dial, nvram_safe_get("3gdata"));
 			if (strlen(username))

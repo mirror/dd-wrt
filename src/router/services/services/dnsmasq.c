@@ -187,8 +187,7 @@ void start_dnsmasq(void)
 	}
 	int mdhcpcount = 0;
 	if (nvram_get("mdhcpd_count") != NULL) {
-		char *word = malloc(128);
-		memset(word, 0, 128);
+		char *word = calloc(128, 1);
 		mdhcpcount = nvram_geti("mdhcpd_count");
 		for (i = 0; i < mdhcpcount; i++) {
 			if (strlen(nvram_nget("%s_ipaddr", getmdhcp(0, i, word))) == 0 || strlen(nvram_nget("%s_netmask", getmdhcp(0, i, word)))
@@ -253,8 +252,7 @@ void start_dnsmasq(void)
 
 		int dhcp_max = 0;
 
-		char *word = malloc(128);
-		memset(word, 0, 128);
+		char *word = calloc(128, 1);
 
 		if (landhcp())
 			dhcp_max += nvram_geti("dhcp_num") + nvram_geti("static_leasenum");
@@ -302,8 +300,7 @@ void start_dnsmasq(void)
 		} else {
 #ifdef HAVE_UNBOUND
 			if (nvram_matchi("recursive_dns", 1)) {
-				char *word = malloc(128);
-				memset(word, 0, 128);
+				char *word = calloc(128, 1);
 				fprintf(fp, "dhcp-option=%s,6,%s\n", nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ipaddr"));
 				for (i = 0; i < mdhcpcount; i++) {
 					if (strlen(nvram_nget("%s_ipaddr", getmdhcp(0, i, word))) == 0 || strlen(nvram_nget("%s_netmask", getmdhcp(0, i, word)))
@@ -329,8 +326,7 @@ void start_dnsmasq(void)
 		}
 
 		for (i = 0; i < mdhcpcount; i++) {
-			char *word = malloc(128);
-			memset(word, 0, 128);
+			char *word = calloc(128, 1);
 			if (strcmp(getmdhcp(1, i, word), "On"))
 				continue;
 			if (strlen(nvram_nget("%s_ipaddr", getmdhcp(0, i, word))) == 0 || strlen(nvram_nget("%s_netmask", getmdhcp(0, i, word)))

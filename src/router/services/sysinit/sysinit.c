@@ -1207,7 +1207,6 @@ void start_restore_defaults(void)
 		{"wan_default", "vlan2"},
 		{0, 0}
 	};
-	
 
 	struct nvram_param *generic = NULL;
 
@@ -3376,8 +3375,7 @@ void start_nvram(void)
 	char *qos_mac = nvram_safe_get("svqos_macs");
 
 	if (strlen(qos_mac) > 0) {
-		char *newqos = malloc(strlen(qos_mac) + 254);
-		memset(newqos, 0, strlen(qos_mac) + 254);
+		char *newqos = calloc(strlen(qos_mac) + 254, 1);
 
 		char level[32], level2[32], data[32], type[32], level3[32], prio[32];
 
@@ -3408,8 +3406,7 @@ void start_nvram(void)
 	char *qos_ip = nvram_safe_get("svqos_ips");
 
 	if (strlen(qos_ip) > 0) {
-		char *newip = malloc(strlen(qos_ip) + 254);
-		memset(newip, 0, strlen(qos_ip) + 254);
+		char *newip = calloc(strlen(qos_ip) + 254, 1);
 
 		char data[32], level[32], level2[32], level3[32], prio[32];
 

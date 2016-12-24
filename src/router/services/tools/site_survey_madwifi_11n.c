@@ -239,7 +239,7 @@ static const char *ieee80211_ntoa(const uint8_t mac[IEEE80211_ADDR_LEN])
 
 int site_survey_main_11n(int argc, char *argv[])
 {
-	site_survey_lists = malloc(sizeof(struct site_survey_list) * SITE_SURVEY_NUM);
+	site_survey_lists = calloc(sizeof(struct site_survey_list) * SITE_SURVEY_NUM,1);
 	char *name = nvram_safe_get("wl0_ifname");
 	unsigned char mac[20];
 	int i = 0, c;
@@ -255,7 +255,6 @@ int site_survey_main_11n(int argc, char *argv[])
 	int len;
 	char *sta = nvram_safe_get("wifi_display");
 
-	memset(site_survey_lists, 0, sizeof(struct site_survey_list) * SITE_SURVEY_NUM);
 	memset(buf, 0, 24 * 1024);
 	eval("iwlist", sta, "scan");
 	len = do80211priv(sta, IEEE80211_IOCTL_SCAN_RESULTS, buf, 24 * 1024);
