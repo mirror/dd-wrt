@@ -866,45 +866,26 @@ void ej_show_forward(webs_t wp, int argc, char_t ** argv)
 	count = nvram_safe_get("forward_entries");
 	if (count == NULL || strlen(count) == 0 || (c = atoi(count)) <= 0) {
 		// return -1; botho 07/03/06 add "- None -" if empty
-		websWrite(wp, "<tr>\n");
-		websWrite(wp, "<td colspan=\"6\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
-		websWrite(wp, "</tr>\n");
+		websWrite(wp, "<tr>\n<td colspan=\"6\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n</tr>\n");
 	}
 	for (i = 0; i < c; i++) {
-		websWrite(wp, "<tr><td>\n");
-		websWrite(wp, "<input maxlength=\"12\" size=\"12\" name=\"name%d\" onblur=\"valid_name(this,'Name')\" value=\"", i);
+		websWrite(wp, "<tr><td>\n<input maxlength=\"12\" size=\"12\" name=\"name%d\" onblur=\"valid_name(this,'Name')\" value=\"", i);
 		port_forward_table(wp, "name", i);
-		websWrite(wp, "\" /></td>\n");
-		websWrite(wp, "<td>\n");
-		websWrite(wp, "<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"from%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"", i);
+		websWrite(wp, "\" /></td>\n<td>\n<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"from%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"", i);
 		port_forward_table(wp, "from", i);
-		websWrite(wp, "\" /></td>\n");
-		websWrite(wp, "<td>\n");
-		websWrite(wp, "<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"to%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"", i);
+		websWrite(wp, "\" /></td>\n<td>\n<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"to%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"", i);
 		port_forward_table(wp, "to", i);
-		websWrite(wp, "\"/></td>\n");
-		websWrite(wp, "<td><select size=\"1\" name=\"pro%d\">\n", i);
-		websWrite(wp, "<option value=\"tcp\" ");
+		websWrite(wp, "\"/></td>\n<td><select size=\"1\" name=\"pro%d\">\n<option value=\"tcp\" ", i);
 		port_forward_table(wp, "sel_tcp", i);
-		websWrite(wp, ">TCP</option>\n");
-		websWrite(wp, "<option value=\"udp\" ");
+		websWrite(wp, ">TCP</option>\n<option value=\"udp\" ");
 		port_forward_table(wp, "sel_udp", i);
-		websWrite(wp, ">UDP</option>\n");
-		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n"	//
-			  "document.write(\"<option value=\\\"both\\\" ");
+		websWrite(wp, ">UDP</option>\n<script type=\"text/javascript\">\n//<![CDATA[\ndocument.write(\"<option value=\\\"both\\\" ");
 		port_forward_table(wp, "sel_both", i);
-		websWrite(wp, " >\" + share.both + \"</option>\");\n"	//
-			  "\n//]]>\n</script>\n");
-		websWrite(wp, "</select></td>\n");
-		websWrite(wp, "<td>\n");
-		websWrite(wp, "<input class=\"num\" maxlength=\"15\" size=\"15\" name=\"ip%d\" value=\"", i);
+		websWrite(wp, " >\" + share.both + \"</option>\");\n\n//]]>\n</script>\n</select></td>\n<td>\n<input class=\"num\" maxlength=\"15\" size=\"15\" name=\"ip%d\" value=\"", i);
 		port_forward_table(wp, "ip", i);
-		websWrite(wp, "\" /></td>\n");
-		websWrite(wp, "<td>\n");
-		websWrite(wp, "<input type=\"checkbox\" value=\"on\" name=\"enable%d\" ", i);
+		websWrite(wp, "\" /></td>\n<td>\n<input type=\"checkbox\" value=\"on\" name=\"enable%d\" ", i);
 		port_forward_table(wp, "enable", i);
-		websWrite(wp, " /></td>\n");
-		websWrite(wp, "</tr>\n");
+		websWrite(wp, " /></td>\n</tr>\n");
 	}
 	return;
 }
@@ -921,63 +902,29 @@ void ej_show_forward_spec(webs_t wp, int argc, char_t ** argv)
 	if (count == NULL || strlen(count) == 0 || (c = atoi(count)) <= 0) {
 		// return -1; botho 07/03/06 add "- None -" if empty
 		// websWrite (wp, "<tr></tr><tr></tr>\n");
-		websWrite(wp, "<tr>\n");
-		websWrite(wp, "<td colspan=\"7\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
-		websWrite(wp, "</tr>\n");
+		websWrite(wp, "<tr>\n<td colspan=\"7\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n</tr>\n");
 	}
 	for (i = 0; i < c; i++) {
 		//name
-		websWrite(wp, "<tr><td>\n");
-		websWrite(wp, "<input maxlength=\"12\" size=\"10\" name=\"name%d\" onblur=\"valid_name(this,'Name')\" value=\"", i);
+		websWrite(wp, "<tr><td>\n<input maxlength=\"12\" size=\"10\" name=\"name%d\" onblur=\"valid_name(this,'Name')\" value=\"", i);
 		port_forward_spec(wp, "name", i);
-		websWrite(wp, "\" /></td>\n");
-
-		//proto
-		websWrite(wp, "<td><select size=\"1\" name=\"pro%d\">\n", i);
-		websWrite(wp, "<option value=\"tcp\" ");
+		websWrite(wp, "\" /></td>\n<td><select size=\"1\" name=\"pro%d\">\n<option value=\"tcp\" ", i);
 		port_forward_spec(wp, "sel_tcp", i);
-		websWrite(wp, ">TCP</option>\n");
-		websWrite(wp, "<option value=\"udp\" ");
+		websWrite(wp, ">TCP</option>\n<option value=\"udp\" ");
 		port_forward_spec(wp, "sel_udp", i);
-		websWrite(wp, ">UDP</option>\n");
-		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n"	//
-			  "document.write(\"<option value=\\\"both\\\" ");
+		websWrite(wp, ">UDP</option>\n<script type=\"text/javascript\">\n//<![CDATA[\ndocument.write(\"<option value=\\\"both\\\" ");
 		port_forward_spec(wp, "sel_both", i);
-		websWrite(wp, " >\" + share.both + \"</option>\");\n" "\n//]]>\n</script>\n");
-		websWrite(wp, "</select></td>\n");
-
-		//src net
-		websWrite(wp, "<td>\n");
-		websWrite(wp, "<input class=\"num\" maxlength=\"15\" size=\"15\" name=\"src%d\" value=\"", i);
+		websWrite(wp, " >\" + share.both + \"</option>\");\n" "\n//]]>\n</script>\n</select></td>\n<td>\n<input class=\"num\" maxlength=\"15\" size=\"15\" name=\"src%d\" value=\"", i);
 		port_forward_spec(wp, "src", i);
-		websWrite(wp, "\" /></td>\n");
-
-		//from
-		websWrite(wp, "<td>\n");
-		websWrite(wp, "<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"from%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"", i);
+		websWrite(wp, "\" /></td>\n<td>\n<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"from%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"", i);
 		port_forward_spec(wp, "from", i);
-		websWrite(wp, "\" /></td>\n");
-
-		//dest ip
-		websWrite(wp, "<td>\n");
-		websWrite(wp, "<input class=\"num\" maxlength=\"15\" size=\"15\" name=\"ip%d\" value=\"", i);
+		websWrite(wp, "\" /></td>\n<td>\n<input class=\"num\" maxlength=\"15\" size=\"15\" name=\"ip%d\" value=\"", i);
 		port_forward_spec(wp, "ip", i);
-		websWrite(wp, "\" /></td>\n");
-
-		//port to
-		websWrite(wp, "<td>\n");
-		websWrite(wp, "<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"to%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"", i);
+		websWrite(wp, "\" /></td>\n<td>\n<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"to%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"", i);
 		port_forward_spec(wp, "to", i);
-		websWrite(wp, "\" /></td>\n");
-
-		//checkbox
-		websWrite(wp, "<td>\n");
-		websWrite(wp, "<input type=\"checkbox\" value=\"on\" name=\"enable%d\" ", i);
+		websWrite(wp, "\" /></td>\n<td>\n<input type=\"checkbox\" value=\"on\" name=\"enable%d\" ", i);
 		port_forward_spec(wp, "enable", i);
-		websWrite(wp, " /></td>\n");
-
-		//end of table
-		websWrite(wp, "</tr>\n");
+		websWrite(wp, " /></td>\n</tr>\n");
 	}
 	return;
 }
@@ -990,43 +937,30 @@ void ej_show_triggering(webs_t wp, int argc, char_t ** argv)
 
 	count = nvram_safe_get("trigger_entries");
 	if (count == NULL || strlen(count) == 0 || (c = atoi(count)) <= 0) {
-		websWrite(wp, "<tr>\n");
-		websWrite(wp, "<td colspan=\"6\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
-		websWrite(wp, "</tr>\n");
+		websWrite(wp, "<tr>\n<td colspan=\"6\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n</tr>\n");
 	}
 	for (i = 0; i < c; i++) {
-		websWrite(wp, "<tr>\n");
-		websWrite(wp, "<td><input maxlength=\"12\" size=\"12\" name=\"name%d\" onblur=\"valid_name(this,'Name')\" value=\"", i);
+		websWrite(wp, "<tr>\n<td><input maxlength=\"12\" size=\"12\" name=\"name%d\" onblur=\"valid_name(this,'Name')\" value=\"", i);
 		port_trigger_table(wp, "name", i);
-		websWrite(wp, "\" /></td>\n");
-		websWrite(wp, "<td><input class=\"num\" maxlength=\"5\" size=\"5\" name=\"i_from%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"", i);
+		websWrite(wp, "\" /></td>\n<td><input class=\"num\" maxlength=\"5\" size=\"5\" name=\"i_from%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"", i);
 		port_trigger_table(wp, "i_from", i);
-		websWrite(wp, "\" /></td>\n");
-		websWrite(wp, "<td><input class=\"num\" maxlength=\"5\" size=\"5\" name=\"i_to%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"", i);
+		websWrite(wp, "\" /></td>\n<td><input class=\"num\" maxlength=\"5\" size=\"5\" name=\"i_to%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"", i);
 		port_trigger_table(wp, "i_to", i);
-		websWrite(wp, "\" /></td>\n");
-		websWrite(wp, "<td><select size=\"1\" name=\"pro%d\">\n", i);
-		websWrite(wp, "<option value=\"tcp\" ");
+		websWrite(wp, "\" /></td>\n<td><select size=\"1\" name=\"pro%d\">\n<option value=\"tcp\" ", i);
 		port_trigger_table(wp, "sel_tcp", i);
-		websWrite(wp, ">TCP</option>\n");
-		websWrite(wp, "<option value=\"udp\" ");
+		websWrite(wp, ">TCP</option>\n<option value=\"udp\" ");
 		port_trigger_table(wp, "sel_udp", i);
-		websWrite(wp, ">UDP</option>\n");
-		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n"	//
-			  "document.write(\"<option value=\\\"both\\\" ");
+		websWrite(wp, ">UDP</option>\n<script type=\"text/javascript\">\n//<![CDATA[\ndocument.write(\"<option value=\\\"both\\\" ");
 		port_trigger_table(wp, "sel_both", i);
-		websWrite(wp, " >\" + share.both + \"</option>\");\n" "\n//]]>\n</script>\n");
-		websWrite(wp, "</select></td>\n");
-		websWrite(wp, "<td><input class=\"num\" maxlength=\"5\" size=\"5\" name=\"o_from%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"", i);
+		websWrite(wp,
+			  " >\" + share.both + \"</option>\");\n"
+			  "\n//]]>\n</script>\n</select></td>\n<td><input class=\"num\" maxlength=\"5\" size=\"5\" name=\"o_from%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"", i);
 		port_trigger_table(wp, "o_from", i);
-		websWrite(wp, "\" /></td>\n");
-		websWrite(wp, "<td><input class=\"num\" maxlength=\"5\" size=\"5\" name=\"o_to%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"", i);
+		websWrite(wp, "\" /></td>\n<td><input class=\"num\" maxlength=\"5\" size=\"5\" name=\"o_to%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"", i);
 		port_trigger_table(wp, "o_to", i);
-		websWrite(wp, "\" /></td>\n");
-		websWrite(wp, "<td><input type=\"checkbox\" value=\"on\" name=\"enable%d\" ", i);
+		websWrite(wp, "\" /></td>\n<td><input type=\"checkbox\" value=\"on\" name=\"enable%d\" ", i);
 		port_trigger_table(wp, "enable", i);
-		websWrite(wp, " /></td>\n");
-		websWrite(wp, "</tr>\n");
+		websWrite(wp, " /></td>\n</tr>\n");
 	}
 	return;
 }
@@ -1105,8 +1039,7 @@ static int checkandadd(char *name)
 		return 0;
 	}
 	if (!list) {
-		list = malloc(strlen(name) + 1);
-		strcpy(list, name);
+		list = strdup(name);
 	} else {
 		char cap[128];
 		char *next;
@@ -1151,16 +1084,14 @@ void ej_show_modules(webs_t wp, int argc, char_t ** argv)
 					}
 #endif
 					sprintf(buf, "%s/%s", directories[idx], entry->d_name);
-					result[resultcount] = malloc(strlen(entry->d_name) + 1);
-					strcpy(result[resultcount], entry->d_name);
+					result[resultcount] = strdup(entry->d_name);
 					resultcount++;
 					result[resultcount] = NULL;
 				}
 			} else {
 				if (endswith(entry->d_name, ".webconfig")) {
 					sprintf(buf, "%s/%s", directories[idx], entry->d_name);
-					result[resultcount] = malloc(strlen(entry->d_name) + 1);
-					strcpy(result[resultcount], entry->d_name);
+					result[resultcount] = strdup(entry->d_name);
 					resultcount++;
 					result[resultcount] = NULL;
 				}
@@ -2268,6 +2199,7 @@ void ej_get_service_state(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "&nbsp;</div>");
 #endif
 }
+
 #include "cputemp.c"
 #include "voltage.c"
 
@@ -2508,6 +2440,7 @@ void ej_show_openvpn_status(webs_t wp, int argc, char_t ** argv)
 		wfputs(buffer, wp);
 	}
 	fclose(in);
+	free(buffer);
 	websWrite(wp, "</fieldset><br />");
 
 }
@@ -2958,10 +2891,7 @@ void ej_spotpass_servers(webs_t wp, int argc, char_t ** argv)
 	char dummy1[1], dummy2[8];
 	int port1, port2;
 	char *ptr;
-	char *serverlist = (char *)
-	    safe_malloc(strlen(nvram_default_get("spotpass_servers", "")) + 1);
-
-	strcpy(serverlist, nvram_get("spotpass_servers"));
+	char *serverlist = strdup(nvram_safe_get("spotpass_servers"));
 	ptr = strtok(serverlist, "|");
 	while (ptr != NULL) {
 		if (sscanf(ptr, "%s %s %s %s %d %d", &dummy1, &url, &proto, &dummy2, &port1, &port2) == 6) {

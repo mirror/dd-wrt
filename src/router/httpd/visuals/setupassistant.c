@@ -1584,6 +1584,7 @@ void sas_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *prefix, cha
 {
 	char *type, *security_mode;
 	char var[80];
+	int s_free = 0;
 
 	fprintf(stderr, "[security prefix] %s\n", security_prefix);
 	sprintf(var, "%s_security_mode", prefix);
@@ -1595,10 +1596,7 @@ void sas_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *prefix, cha
 		//security_mode = nvram_safe_get(var);
 		security_mode = nvram_selget(wp, var);
 	if (strcmp(security_mode, security_prefix)) {
-		if (strlen(security_prefix) > strlen(security_mode)) {
-			security_mode = (char *)safe_malloc(strlen(security_prefix));
-		}
-		sprintf(security_mode, "%s", security_prefix);
+		security_mode = security_prefix;
 	}
 	rep(var, 'X', '.');
 	cprintf("security mode %s = %s\n", security_mode, var);
