@@ -40,6 +40,7 @@ typedef struct _GCharsetConverter             GCharsetConverter;
 typedef struct _GConverter                    GConverter;
 typedef struct _GConverterInputStream         GConverterInputStream;
 typedef struct _GConverterOutputStream        GConverterOutputStream;
+typedef struct _GDatagramBased                GDatagramBased;
 typedef struct _GDataInputStream              GDataInputStream;
 typedef struct _GSimplePermission             GSimplePermission;
 typedef struct _GZlibCompressor               GZlibCompressor;
@@ -103,6 +104,7 @@ typedef struct _GIcon                         GIcon; /* Dummy typedef */
 typedef struct _GInetAddress                  GInetAddress;
 typedef struct _GInetAddressMask              GInetAddressMask;
 typedef struct _GInetSocketAddress            GInetSocketAddress;
+typedef struct _GNativeSocketAddress          GNativeSocketAddress;
 typedef struct _GInputStream                  GInputStream;
 typedef struct _GInitable                     GInitable;
 typedef struct _GIOModule                     GIOModule;
@@ -221,6 +223,9 @@ typedef struct _GTcpWrapperConnection                       GTcpWrapperConnectio
  * Since: 2.22
  **/
 typedef struct _GThreadedSocketService                      GThreadedSocketService;
+typedef struct _GDtlsConnection               GDtlsConnection;
+typedef struct _GDtlsClientConnection         GDtlsClientConnection; /* Dummy typedef */
+typedef struct _GDtlsServerConnection         GDtlsServerConnection; /* Dummy typedef */
 typedef struct _GThemedIcon                   GThemedIcon;
 typedef struct _GTlsCertificate               GTlsCertificate;
 typedef struct _GTlsClientConnection          GTlsClientConnection; /* Dummy typedef */
@@ -389,6 +394,24 @@ typedef gboolean (*GSocketSourceFunc) (GSocket *socket,
 				       gpointer user_data);
 
 /**
+ * GDatagramBasedSourceFunc:
+ * @datagram_based: the #GDatagramBased
+ * @condition: the current condition at the source fired
+ * @user_data: data passed in by the user
+ *
+ * This is the function type of the callback used for the #GSource
+ * returned by g_datagram_based_create_source().
+ *
+ * Returns: %G_SOURCE_REMOVE if the source should be removed,
+ *   %G_SOURCE_CONTINUE otherwise
+ *
+ * Since: 2.48
+ */
+typedef gboolean (*GDatagramBasedSourceFunc) (GDatagramBased *datagram_based,
+                                              GIOCondition    condition,
+                                              gpointer        user_data);
+
+/**
  * GInputVector:
  * @buffer: Pointer to a buffer where data will be written.
  * @size: the available size in @buffer.
@@ -405,6 +428,60 @@ typedef struct _GInputVector GInputVector;
 struct _GInputVector {
   gpointer buffer;
   gsize size;
+};
+
+/**
+ * GInputMessage:
+ * @address: (optional) (out) (transfer full): return location
+ *   for a #GSocketAddress, or %NULL
+ * @vectors: (array length=num_vectors) (out): pointer to an
+ *   array of input vectors
+ * @num_vectors: the number of input vectors pointed to by @vectors
+ * @bytes_received: (out): will be set to the number of bytes that have been
+ *   received
+ * @flags: (out): collection of #GSocketMsgFlags for the received message,
+ *   outputted by the call
+ * @control_messages: (array length=num_control_messages) (optional)
+ *   (out) (transfer full): return location for a
+ *   caller-allocated array of #GSocketControlMessages, or %NULL
+ * @num_control_messages: (out) (optional): return location for the number of
+ *   elements in @control_messages
+ *
+ * Structure used for scatter/gather data input when receiving multiple
+ * messages or packets in one go. You generally pass in an array of empty
+ * #GInputVectors and the operation will use all the buffers as if they
+ * were one buffer, and will set @bytes_received to the total number of bytes
+ * received across all #GInputVectors.
+ *
+ * This structure closely mirrors `struct mmsghdr` and `struct msghdr` from
+ * the POSIX sockets API (see `man 2 recvmmsg`).
+ *
+ * If @address is non-%NULL then it is set to the source address the message
+ * was received from, and the caller must free it afterwards.
+ *
+ * If @control_messages is non-%NULL then it is set to an array of control
+ * messages received with the message (if any), and the caller must free it
+ * afterwards. @num_control_messages is set to the number of elements in
+ * this array, which may be zero.
+ *
+ * Flags relevant to this message will be returned in @flags. For example,
+ * `MSG_EOR` or `MSG_TRUNC`.
+ *
+ * Since: 2.48
+ */
+typedef struct _GInputMessage GInputMessage;
+
+struct _GInputMessage {
+  GSocketAddress         **address;
+
+  GInputVector            *vectors;
+  guint                    num_vectors;
+
+  gsize                    bytes_received;
+  gint                     flags;
+
+  GSocketControlMessage ***control_messages;
+  guint                   *num_control_messages;
 };
 
 /**
@@ -537,7 +614,7 @@ typedef struct _GDBusObjectManagerServer    GDBusObjectManagerServer;
  * that @manager was constructed in.
  *
  * Returns: A #GType to use for the remote object. The returned type
- *   must be a #GDBusProxy<!-- -->- or #GDBusObjectProxy<!-- -->-derived
+ *   must be a #GDBusProxy or #GDBusObjectProxy -derived
  *   type.
  *
  * Since: 2.30

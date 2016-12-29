@@ -31,10 +31,8 @@
 #include "gwin32outputstream.h"
 #include "giowin32-priv.h"
 #include "gcancellable.h"
-#include "gsimpleasyncresult.h"
 #include "gasynchelper.h"
 #include "glibintl.h"
-
 
 /**
  * SECTION:gwin32outputstream
@@ -50,79 +48,22 @@
  * when using it.
  */
 
-enum {
-  PROP_0,
-  PROP_HANDLE,
-  PROP_CLOSE_HANDLE
-};
-
 struct _GWin32OutputStreamPrivate {
   HANDLE handle;
   gboolean close_handle;
   gint fd;
 };
 
+enum {
+  PROP_0,
+  PROP_HANDLE,
+  PROP_CLOSE_HANDLE,
+  LAST_PROP
+};
+
+static GParamSpec *props[LAST_PROP];
+
 G_DEFINE_TYPE_WITH_PRIVATE (GWin32OutputStream, g_win32_output_stream, G_TYPE_OUTPUT_STREAM)
-
-static void     g_win32_output_stream_set_property (GObject              *object,
-						    guint                 prop_id,
-						    const GValue         *value,
-						    GParamSpec           *pspec);
-static void     g_win32_output_stream_get_property (GObject              *object,
-						    guint                 prop_id,
-						    GValue               *value,
-						    GParamSpec           *pspec);
-static gssize   g_win32_output_stream_write        (GOutputStream        *stream,
-						    const void           *buffer,
-						    gsize                 count,
-						    GCancellable         *cancellable,
-						    GError              **error);
-static gboolean g_win32_output_stream_close        (GOutputStream        *stream,
-						    GCancellable         *cancellable,
-						    GError              **error);
-
-
-static void
-g_win32_output_stream_class_init (GWin32OutputStreamClass *klass)
-{
-  GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
-  GOutputStreamClass *stream_class = G_OUTPUT_STREAM_CLASS (klass);
-
-  gobject_class->get_property = g_win32_output_stream_get_property;
-  gobject_class->set_property = g_win32_output_stream_set_property;
-
-  stream_class->write_fn = g_win32_output_stream_write;
-  stream_class->close_fn = g_win32_output_stream_close;
-
-   /**
-   * GWin32OutputStream:handle:
-   *
-   * The file handle that the stream writes to.
-   *
-   * Since: 2.26
-   */
-  g_object_class_install_property (gobject_class,
-				   PROP_HANDLE,
-				   g_param_spec_pointer ("handle",
-							 P_("File handle"),
-							 P_("The file handle to write to"),
-							 G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_NAME | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB));
-
-  /**
-   * GWin32OutputStream:close-handle:
-   *
-   * Whether to close the file handle when the stream is closed.
-   *
-   * Since: 2.26
-   */
-  g_object_class_install_property (gobject_class,
-				   PROP_CLOSE_HANDLE,
-				   g_param_spec_boolean ("close-handle",
-							 P_("Close file handle"),
-							 P_("Whether to close the file handle when the stream is closed"),
-							 TRUE,
-							 G_PARAM_READABLE | G_PARAM_WRITABLE | G_PARAM_STATIC_NAME | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB));
-}
 
 static void
 g_win32_output_stream_set_property (GObject         *object,
@@ -169,6 +110,167 @@ g_win32_output_stream_get_property (GObject    *object,
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
     }
+}
+
+static gssize
+g_win32_output_stream_write (GOutputStream  *stream,
+			    const void     *buffer,
+			    gsize           count,
+			    GCancellable   *cancellable,
+			    GError        **error)
+{
+  GWin32OutputStream *win32_stream;
+  BOOL res;
+  DWORD nbytes, nwritten;
+  OVERLAPPED overlap = { 0, };
+  gssize retval = -1;
+
+  win32_stream = G_WIN32_OUTPUT_STREAM (stream);
+
+  if (g_cancellable_set_error_if_cancelled (cancellable, error))
+    return -1;
+
+  if (count > G_MAXINT)
+    nbytes = G_MAXINT;
+  else
+    nbytes = count;
+
+  overlap.hEvent = CreateEvent (NULL, FALSE, FALSE, NULL);
+  g_return_val_if_fail (overlap.hEvent != NULL, -1);
+
+  res = WriteFile (win32_stream->priv->handle, buffer, nbytes, &nwritten, &overlap);
+  if (res)
+    retval = nwritten;
+  else
+    {
+      int errsv = GetLastError ();
+
+      if (errsv == ERROR_IO_PENDING &&
+          _g_win32_overlap_wait_result (win32_stream->priv->handle,
+                                        &overlap, &nwritten, cancellable))
+        {
+          retval = nwritten;
+          goto end;
+        }
+
+      if (g_cancellable_set_error_if_cancelled (cancellable, error))
+        goto end;
+
+      errsv = GetLastError ();
+      if (errsv == ERROR_HANDLE_EOF ||
+          errsv == ERROR_BROKEN_PIPE)
+        {
+          retval = 0;
+        }
+      else
+        {
+          gchar *emsg;
+
+          emsg = g_win32_error_message (errsv);
+          g_set_error (error, G_IO_ERROR,
+                       g_io_error_from_win32_error (errsv),
+                       _("Error writing to handle: %s"),
+                       emsg);
+          g_free (emsg);
+        }
+    }
+
+end:
+  CloseHandle (overlap.hEvent);
+  return retval;
+}
+
+static gboolean
+g_win32_output_stream_close (GOutputStream  *stream,
+			     GCancellable   *cancellable,
+			     GError        **error)
+{
+  GWin32OutputStream *win32_stream;
+  BOOL res;
+
+  win32_stream = G_WIN32_OUTPUT_STREAM (stream);
+
+  if (!win32_stream->priv->close_handle)
+    return TRUE;
+
+  if (win32_stream->priv->fd != -1)
+    {
+      if (close (win32_stream->priv->fd) < 0)
+	{
+	  int errsv = errno;
+
+	  g_set_error (error, G_IO_ERROR,
+	               g_io_error_from_errno (errsv),
+	               _("Error closing file descriptor: %s"),
+	               g_strerror (errsv));
+	  return FALSE;
+	}
+    }
+  else
+    {
+      res = CloseHandle (win32_stream->priv->handle);
+      if (!res)
+	{
+	  int errsv = GetLastError ();
+	  gchar *emsg = g_win32_error_message (errsv);
+
+	  g_set_error (error, G_IO_ERROR,
+		       g_io_error_from_win32_error (errsv),
+		       _("Error closing handle: %s"),
+		       emsg);
+	  g_free (emsg);
+	  return FALSE;
+	}
+    }
+
+  return TRUE;
+}
+
+static void
+g_win32_output_stream_class_init (GWin32OutputStreamClass *klass)
+{
+  GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
+  GOutputStreamClass *stream_class = G_OUTPUT_STREAM_CLASS (klass);
+
+  gobject_class->get_property = g_win32_output_stream_get_property;
+  gobject_class->set_property = g_win32_output_stream_set_property;
+
+  stream_class->write_fn = g_win32_output_stream_write;
+  stream_class->close_fn = g_win32_output_stream_close;
+
+   /**
+   * GWin32OutputStream:handle:
+   *
+   * The file handle that the stream writes to.
+   *
+   * Since: 2.26
+   */
+  props[PROP_HANDLE] =
+    g_param_spec_pointer ("handle",
+                          P_("File handle"),
+                          P_("The file handle to write to"),
+                          G_PARAM_READABLE |
+                          G_PARAM_WRITABLE |
+                          G_PARAM_CONSTRUCT_ONLY |
+                          G_PARAM_STATIC_STRINGS);
+
+  /**
+   * GWin32OutputStream:close-handle:
+   *
+   * Whether to close the file handle when the stream is closed.
+   *
+   * Since: 2.26
+   */
+  props[PROP_CLOSE_HANDLE] =
+    g_param_spec_boolean ("close-handle",
+                          P_("Close file handle"),
+                          P_("Whether to close the file handle when the stream is closed"),
+                          TRUE,
+                          G_PARAM_READABLE |
+                          G_PARAM_WRITABLE |
+                          G_PARAM_STATIC_STRINGS);
+
+  g_object_class_install_properties (gobject_class, LAST_PROP, props);
 }
 
 static void
@@ -271,120 +373,9 @@ g_win32_output_stream_get_handle (GWin32OutputStream *stream)
   return stream->priv->handle;
 }
 
-static gssize
-g_win32_output_stream_write (GOutputStream  *stream,
-			    const void     *buffer,
-			    gsize           count,
-			    GCancellable   *cancellable,
-			    GError        **error)
-{
-  GWin32OutputStream *win32_stream;
-  BOOL res;
-  DWORD nbytes, nwritten;
-  OVERLAPPED overlap = { 0, };
-  gssize retval = -1;
-
-  win32_stream = G_WIN32_OUTPUT_STREAM (stream);
-
-  if (g_cancellable_set_error_if_cancelled (cancellable, error))
-    return -1;
-
-  if (count > G_MAXINT)
-    nbytes = G_MAXINT;
-  else
-    nbytes = count;
-
-  overlap.hEvent = CreateEvent (NULL, FALSE, FALSE, NULL);
-  g_return_val_if_fail (overlap.hEvent != NULL, -1);
-
-  res = WriteFile (win32_stream->priv->handle, buffer, nbytes, &nwritten, &overlap);
-  if (res)
-    retval = nwritten;
-  else
-    {
-      int errsv = GetLastError ();
-
-      if (errsv == ERROR_IO_PENDING &&
-          _g_win32_overlap_wait_result (win32_stream->priv->handle,
-                                        &overlap, &nwritten, cancellable))
-        {
-          retval = nwritten;
-          goto end;
-        }
-
-      if (g_cancellable_set_error_if_cancelled (cancellable, error))
-        goto end;
-
-      errsv = GetLastError ();
-      if (errsv == ERROR_HANDLE_EOF ||
-          errsv == ERROR_BROKEN_PIPE)
-        {
-          retval = 0;
-        }
-      else
-        {
-          gchar *emsg;
-
-          emsg = g_win32_error_message (errsv);
-          g_set_error (error, G_IO_ERROR,
-                       g_io_error_from_win32_error (errsv),
-                       _("Error writing to handle: %s"),
-                       emsg);
-          g_free (emsg);
-        }
-    }
-
-end:
-  CloseHandle (overlap.hEvent);
-  return retval;
-}
-
-static gboolean
-g_win32_output_stream_close (GOutputStream  *stream,
-			     GCancellable   *cancellable,
-			     GError        **error)
-{
-  GWin32OutputStream *win32_stream;
-  BOOL res;
-
-  win32_stream = G_WIN32_OUTPUT_STREAM (stream);
-
-  if (!win32_stream->priv->close_handle)
-    return TRUE;
-
-  if (win32_stream->priv->fd != -1)
-    {
-      if (close (win32_stream->priv->fd) < 0)
-	{
-	  g_set_error_literal (error, G_IO_ERROR,
-			       g_io_error_from_errno (errno),
-			       g_strerror (errno));
-	  return FALSE;
-	}
-    }
-  else
-    {
-      res = CloseHandle (win32_stream->priv->handle);
-      if (!res)
-	{
-	  int errsv = GetLastError ();
-	  gchar *emsg = g_win32_error_message (errsv);
-
-	  g_set_error (error, G_IO_ERROR,
-		       g_io_error_from_win32_error (errsv),
-		       _("Error closing handle: %s"),
-		       emsg);
-	  g_free (emsg);
-	  return FALSE;
-	}
-    }
-
-  return TRUE;
-}
-
 GOutputStream *
 g_win32_output_stream_new_from_fd (gint      fd,
-				  gboolean  close_fd)
+                                   gboolean  close_fd)
 {
   GWin32OutputStream *win32_stream;
 

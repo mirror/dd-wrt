@@ -785,6 +785,106 @@ g_async_queue_sort_unlocked (GAsyncQueue      *queue,
                 &sd);
 }
 
+/**
+ * g_async_queue_remove:
+ * @queue: a #GAsyncQueue
+ * @item: the data to remove from the @queue
+ *
+ * Remove an item from the queue.
+ *
+ * Returns: %TRUE if the item was removed
+ *
+ * Since: 2.46
+ */
+gboolean
+g_async_queue_remove (GAsyncQueue *queue,
+                      gpointer     item)
+{
+  gboolean ret;
+
+  g_return_val_if_fail (queue != NULL, FALSE);
+  g_return_val_if_fail (item != NULL, FALSE);
+
+  g_mutex_lock (&queue->mutex);
+  ret = g_async_queue_remove_unlocked (queue, item);
+  g_mutex_unlock (&queue->mutex);
+
+  return ret;
+}
+
+/**
+ * g_async_queue_remove_unlocked:
+ * @queue: a #GAsyncQueue
+ * @item: the data to remove from the @queue
+ *
+ * Remove an item from the queue.
+ *
+ * This function must be called while holding the @queue's lock.
+ *
+ * Returns: %TRUE if the item was removed
+ *
+ * Since: 2.46
+ */
+gboolean
+g_async_queue_remove_unlocked (GAsyncQueue *queue,
+                               gpointer     item)
+{
+  g_return_val_if_fail (queue != NULL, FALSE);
+  g_return_val_if_fail (item != NULL, FALSE);
+
+  return g_queue_remove (&queue->queue, item);
+}
+
+/**
+ * g_async_queue_push_front:
+ * @queue: a #GAsyncQueue
+ * @item: data to push into the @queue
+ *
+ * Pushes the @item into the @queue. @item must not be %NULL.
+ * In contrast to g_async_queue_push(), this function
+ * pushes the new item ahead of the items already in the queue,
+ * so that it will be the next one to be popped off the queue.
+ *
+ * Since: 2.46
+ */
+void
+g_async_queue_push_front (GAsyncQueue *queue,
+                          gpointer     item)
+{
+  g_return_if_fail (queue != NULL);
+  g_return_if_fail (item != NULL);
+
+  g_mutex_lock (&queue->mutex);
+  g_async_queue_push_front_unlocked (queue, item);
+  g_mutex_unlock (&queue->mutex);
+}
+
+/**
+ * g_async_queue_push_front_unlocked:
+ * @queue: a #GAsyncQueue
+ * @item: data to push into the @queue
+ *
+ * Pushes the @item into the @queue. @item must not be %NULL.
+ * In contrast to g_async_queue_push_unlocked(), this function
+ * pushes the new item ahead of the items already in the queue,
+ * so that it will be the next one to be popped off the queue.
+ *
+ * This function must be called while holding the @queue's lock.
+ *
+ * Since: 2.46
+ */
+void
+g_async_queue_push_front_unlocked (GAsyncQueue *queue,
+                                   gpointer     item)
+{
+  g_return_if_fail (queue != NULL);
+  g_return_if_fail (item != NULL);
+
+  g_queue_push_tail (&queue->queue, item);
+  if (queue->waiting_threads > 0)
+    g_cond_signal (&queue->cond);
+}
+
 /*
  * Private API
  */

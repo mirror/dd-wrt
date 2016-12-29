@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Extension Points: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="extending.html" title="Extending GIO">
 <link rel="prev" href="GIOModule.html" title="GIOModule">
 <link rel="next" href="tools.html" title="GIO Tools">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -33,7 +33,7 @@
 </tr></table></div>
 <div class="refsect1">
 <a name="gio-Extension-Points.functions"></a><h2>Functions</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="functions_return">
 <col class="functions_name">
@@ -48,7 +48,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gint"><span class="returnvalue">gint</span></a>
+<a href="../glib-Basic-Types.html#gint"><span class="returnvalue">gint</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="gio-Extension-Points.html#g-io-extension-get-priority" title="g_io_extension_get_priority ()">g_io_extension_get_priority</a> <span class="c_punctuation">()</span>
@@ -56,7 +56,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a href="https://developer.gnome.org/gobject/unstable/gobject-Type-Information.html#GType"><span class="returnvalue">GType</span></a>
+<a href="../gobject-Type-Information.html#GType"><span class="returnvalue">GType</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="gio-Extension-Points.html#g-io-extension-get-type" title="g_io_extension_get_type ()">g_io_extension_get_type</a> <span class="c_punctuation">()</span>
@@ -72,7 +72,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a href="https://developer.gnome.org/glib/unstable/glib-Doubly-Linked-Lists.html#GList"><span class="returnvalue">GList</span></a> *
+<a href="../glib-Doubly-Linked-Lists.html#GList"><span class="returnvalue">GList</span></a> *
 </td>
 <td class="function_name">
 <a class="link" href="gio-Extension-Points.html#g-io-extension-point-get-extensions" title="g_io_extension_point_get_extensions ()">g_io_extension_point_get_extensions</a> <span class="c_punctuation">()</span>
@@ -80,7 +80,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a href="https://developer.gnome.org/gobject/unstable/gobject-Type-Information.html#GType"><span class="returnvalue">GType</span></a>
+<a href="../gobject-Type-Information.html#GType"><span class="returnvalue">GType</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="gio-Extension-Points.html#g-io-extension-point-get-required-type" title="g_io_extension_point_get_required_type ()">g_io_extension_point_get_required_type</a> <span class="c_punctuation">()</span>
@@ -120,7 +120,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a href="https://developer.gnome.org/gobject/unstable/gobject-Type-Information.html#GTypeClass"><span class="returnvalue">GTypeClass</span></a> *
+<a href="../gobject-Type-Information.html#GTypeClass"><span class="returnvalue">GTypeClass</span></a> *
 </td>
 <td class="function_name">
 <a class="link" href="gio-Extension-Points.html#g-io-extension-ref-class" title="g_io_extension_ref_class ()">g_io_extension_ref_class</a> <span class="c_punctuation">()</span>
@@ -131,7 +131,7 @@
 </div>
 <div class="refsect1">
 <a name="gio-Extension-Points.other"></a><h2>Types and Values</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="name">
 <col class="description">
@@ -163,7 +163,7 @@ require that any implementation must be of a certain type (or derived
 thereof). Use <a class="link" href="gio-Extension-Points.html#g-io-extension-point-register" title="g_io_extension_point_register ()"><code class="function">g_io_extension_point_register()</code></a> to register an
 extension point, and <a class="link" href="gio-Extension-Points.html#g-io-extension-point-set-required-type" title="g_io_extension_point_set_required_type ()"><code class="function">g_io_extension_point_set_required_type()</code></a> to
 set a required type.</p>
-<p>A module can implement an extension point by specifying the <a href="https://developer.gnome.org/gobject/unstable/gobject-Type-Information.html#GType"><span class="type">GType</span></a> 
+<p>A module can implement an extension point by specifying the <a href="../gobject-Type-Information.html#GType"><span class="type">GType</span></a> 
 that implements the functionality. Additionally, each implementation
 of an extension point has a name, and a priority. Use
 <a class="link" href="gio-Extension-Points.html#g-io-extension-point-implement" title="g_io_extension_point_implement ()"><code class="function">g_io_extension_point_implement()</code></a> to implement an extension point.</p>
@@ -176,11 +176,11 @@ of an extension point has a name, and a priority. Use
 3
 4
 5</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="usertype">GIOExtensionPoint</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">ep</span><span class="symbol">;</span>
+        <td class="listing_code"><pre class="programlisting">GIOExtensionPoint <span class="gtkdoc opt">*</span>ep<span class="gtkdoc opt">;</span>
 
-<span class="comment">// Register an extension point</span>
-<span class="normal">ep </span><span class="symbol">=</span><span class="normal"> </span><span class="function"><a href="gio-Extension-Points.html#g-io-extension-point-register">g_io_extension_point_register</a></span><span class="normal"> </span><span class="symbol">(</span><span class="string">"my-extension-point"</span><span class="symbol">);</span>
-<span class="function"><a href="gio-Extension-Points.html#g-io-extension-point-set-required-type">g_io_extension_point_set_required_type</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">ep</span><span class="symbol">,</span><span class="normal"> MY_TYPE_EXAMPLE</span><span class="symbol">);</span></pre></td>
+<span class="gtkdoc slc">// Register an extension point</span>
+ep <span class="gtkdoc opt">=</span> <span class="function"><a href="gio-Extension-Points.html#g-io-extension-point-register">g_io_extension_point_register</a></span> <span class="gtkdoc opt">(</span><span class="string">&quot;my-extension-point&quot;</span><span class="gtkdoc opt">);</span>
+<span class="function"><a href="gio-Extension-Points.html#g-io-extension-point-set-required-type">g_io_extension_point_set_required_type</a></span> <span class="gtkdoc opt">(</span>ep<span class="gtkdoc opt">,</span> MY_TYPE_EXAMPLE<span class="gtkdoc opt">);</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -197,12 +197,12 @@ of an extension point has a name, and a priority. Use
 4
 5
 6</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="comment">// Implement an extension point</span>
-<span class="function"><a href="https://developer.gnome.org/gobject/unstable/gobject-Type-Information.html#G-DEFINE-TYPE:CAPS">G_DEFINE_TYPE</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">MyExampleImpl</span><span class="symbol">,</span><span class="normal"> my_example_impl</span><span class="symbol">,</span><span class="normal"> MY_TYPE_EXAMPLE</span><span class="symbol">);</span>
-<span class="function"><a href="gio-Extension-Points.html#g-io-extension-point-implement">g_io_extension_point_implement</a></span><span class="normal"> </span><span class="symbol">(</span><span class="string">"my-extension-point"</span><span class="symbol">,</span>
-<span class="normal">                                </span><span class="function">my_example_impl_get_type</span><span class="normal"> </span><span class="symbol">(),</span>
-<span class="normal">                                </span><span class="string">"my-example"</span><span class="symbol">,</span>
-<span class="normal">                                </span><span class="number">10</span><span class="symbol">);</span></pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="gtkdoc slc">// Implement an extension point</span>
+<span class="function"><a href="../gobject-Type-Information.html#G-DEFINE-TYPE:CAPS">G_DEFINE_TYPE</a></span> <span class="gtkdoc opt">(</span>MyExampleImpl<span class="gtkdoc opt">,</span> my_example_impl<span class="gtkdoc opt">,</span> MY_TYPE_EXAMPLE<span class="gtkdoc opt">);</span>
+<span class="function"><a href="gio-Extension-Points.html#g-io-extension-point-implement">g_io_extension_point_implement</a></span> <span class="gtkdoc opt">(</span><span class="string">&quot;my-extension-point&quot;</span><span class="gtkdoc opt">,</span>
+                                <span class="function">my_example_impl_get_type</span> <span class="gtkdoc opt">(),</span>
+                                <span class="string">&quot;my-example&quot;</span><span class="gtkdoc opt">,</span>
+                                <span class="number">10</span><span class="gtkdoc opt">);</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -216,7 +216,7 @@ of an extension point has a name, and a priority. Use
  one by name.</p>
 <p> To avoid opening all modules just to find out what extension
  points they implement, GIO makes use of a caching mechanism,
- see <a href="gio-querymodules.html">gio-querymodules</a>.
+ see gio-querymodules.
  You are expected to run this command after installing a
  GIO module.</p>
 <p> The <code class="literal">GIO_EXTRA_MODULES</code> environment variable can be used to
@@ -238,8 +238,8 @@ g_io_extension_get_name (<em class="parameter"><code><a class="link" href="gio-E
 <p>Note that the same type may be registered as extension
 for multiple extension points, under different names.</p>
 <div class="refsect3">
-<a name="id-1.4.24.4.7.2.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-io-extension-get-name.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -253,7 +253,7 @@ for multiple extension points, under different names.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.24.4.7.2.7"></a><h4>Returns</h4>
+<a name="g-io-extension-get-name.returns"></a><h4>Returns</h4>
 <p> the name of <em class="parameter"><code>extension</code></em>
 .</p>
 </div>
@@ -261,13 +261,13 @@ for multiple extension points, under different names.</p>
 <hr>
 <div class="refsect2">
 <a name="g-io-extension-get-priority"></a><h3>g_io_extension_get_priority ()</h3>
-<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gint"><span class="returnvalue">gint</span></a>
+<pre class="programlisting"><a href="../glib-Basic-Types.html#gint"><span class="returnvalue">gint</span></a>
 g_io_extension_get_priority (<em class="parameter"><code><a class="link" href="gio-Extension-Points.html#GIOExtension" title="GIOExtension"><span class="type">GIOExtension</span></a> *extension</code></em>);</pre>
 <p>Gets the priority with which <em class="parameter"><code>extension</code></em>
  was registered.</p>
 <div class="refsect3">
-<a name="id-1.4.24.4.7.3.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-io-extension-get-priority.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -281,7 +281,7 @@ g_io_extension_get_priority (<em class="parameter"><code><a class="link" href="g
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.24.4.7.3.6"></a><h4>Returns</h4>
+<a name="g-io-extension-get-priority.returns"></a><h4>Returns</h4>
 <p> the priority of <em class="parameter"><code>extension</code></em>
 </p>
 </div>
@@ -289,13 +289,13 @@ g_io_extension_get_priority (<em class="parameter"><code><a class="link" href="g
 <hr>
 <div class="refsect2">
 <a name="g-io-extension-get-type"></a><h3>g_io_extension_get_type ()</h3>
-<pre class="programlisting"><a href="https://developer.gnome.org/gobject/unstable/gobject-Type-Information.html#GType"><span class="returnvalue">GType</span></a>
+<pre class="programlisting"><a href="../gobject-Type-Information.html#GType"><span class="returnvalue">GType</span></a>
 g_io_extension_get_type (<em class="parameter"><code><a class="link" href="gio-Extension-Points.html#GIOExtension" title="GIOExtension"><span class="type">GIOExtension</span></a> *extension</code></em>);</pre>
 <p>Gets the type associated with <em class="parameter"><code>extension</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.4.24.4.7.4.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-io-extension-get-type.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -309,7 +309,7 @@ g_io_extension_get_type (<em class="parameter"><code><a class="link" href="gio-E
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.24.4.7.4.6"></a><h4>Returns</h4>
+<a name="g-io-extension-get-type.returns"></a><h4>Returns</h4>
 <p> the type of <em class="parameter"><code>extension</code></em>
 </p>
 </div>
@@ -323,8 +323,8 @@ g_io_extension_point_get_extension_by_name
                                 <em class="parameter"><code>const <span class="type">char</span> *name</code></em>);</pre>
 <p>Finds a <a class="link" href="gio-Extension-Points.html#GIOExtension" title="GIOExtension"><span class="type">GIOExtension</span></a> for an extension point by name.</p>
 <div class="refsect3">
-<a name="id-1.4.24.4.7.5.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-io-extension-point-get-extension-by-name.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -345,23 +345,23 @@ g_io_extension_point_get_extension_by_name
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.24.4.7.5.6"></a><h4>Returns</h4>
+<a name="g-io-extension-point-get-extension-by-name.returns"></a><h4>Returns</h4>
 <p> the <a class="link" href="gio-Extension-Points.html#GIOExtension" title="GIOExtension"><span class="type">GIOExtension</span></a> for <em class="parameter"><code>extension_point</code></em>
 that has the
-given name, or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> if there is no extension with that name. </p>
+given name, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> if there is no extension with that name. </p>
 <p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
 </div>
 </div>
 <hr>
 <div class="refsect2">
 <a name="g-io-extension-point-get-extensions"></a><h3>g_io_extension_point_get_extensions ()</h3>
-<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Doubly-Linked-Lists.html#GList"><span class="returnvalue">GList</span></a> *
+<pre class="programlisting"><a href="../glib-Doubly-Linked-Lists.html#GList"><span class="returnvalue">GList</span></a> *
 g_io_extension_point_get_extensions (<em class="parameter"><code><a class="link" href="gio-Extension-Points.html#GIOExtensionPoint" title="GIOExtensionPoint"><span class="type">GIOExtensionPoint</span></a> *extension_point</code></em>);</pre>
 <p>Gets a list of all extensions that implement this extension point.
 The list is sorted by priority, beginning with the highest priority.</p>
 <div class="refsect3">
-<a name="id-1.4.24.4.7.6.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-io-extension-point-get-extensions.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -375,8 +375,8 @@ The list is sorted by priority, beginning with the highest priority.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.24.4.7.6.6"></a><h4>Returns</h4>
-<p> a <a href="https://developer.gnome.org/glib/unstable/glib-Doubly-Linked-Lists.html#GList"><span class="type">GList</span></a> of
+<a name="g-io-extension-point-get-extensions.returns"></a><h4>Returns</h4>
+<p> a <a href="../glib-Doubly-Linked-Lists.html#GList"><span class="type">GList</span></a> of
 <a href="gio-Extension-Points.html#GIOExtension"><span class="type">GIOExtensions</span></a>. The list is owned by GIO and should not be
 modified. </p>
 <p><span class="annotation">[<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> GIOExtension][<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
@@ -385,14 +385,14 @@ modified. </p>
 <hr>
 <div class="refsect2">
 <a name="g-io-extension-point-get-required-type"></a><h3>g_io_extension_point_get_required_type ()</h3>
-<pre class="programlisting"><a href="https://developer.gnome.org/gobject/unstable/gobject-Type-Information.html#GType"><span class="returnvalue">GType</span></a>
+<pre class="programlisting"><a href="../gobject-Type-Information.html#GType"><span class="returnvalue">GType</span></a>
 g_io_extension_point_get_required_type
                                (<em class="parameter"><code><a class="link" href="gio-Extension-Points.html#GIOExtensionPoint" title="GIOExtensionPoint"><span class="type">GIOExtensionPoint</span></a> *extension_point</code></em>);</pre>
 <p>Gets the required type for <em class="parameter"><code>extension_point</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.4.24.4.7.7.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-io-extension-point-get-required-type.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -406,9 +406,9 @@ g_io_extension_point_get_required_type
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.24.4.7.7.6"></a><h4>Returns</h4>
-<p> the <a href="https://developer.gnome.org/gobject/unstable/gobject-Type-Information.html#GType"><span class="type">GType</span></a> that all implementations must have,
-or <a href="https://developer.gnome.org/gobject/unstable/gobject-Type-Information.html#G-TYPE-INVALID:CAPS"><span class="type">G_TYPE_INVALID</span></a> if the extension point has no required type</p>
+<a name="g-io-extension-point-get-required-type.returns"></a><h4>Returns</h4>
+<p> the <a href="../gobject-Type-Information.html#GType"><span class="type">GType</span></a> that all implementations must have,
+or <a href="../gobject-Type-Information.html#G-TYPE-INVALID:CAPS"><span class="type">G_TYPE_INVALID</span></a> if the extension point has no required type</p>
 </div>
 </div>
 <hr>
@@ -416,9 +416,9 @@ or <a href="https://developer.gnome.org/gobject/unstable/gobject-Type-Informatio
 <a name="g-io-extension-point-implement"></a><h3>g_io_extension_point_implement ()</h3>
 <pre class="programlisting"><a class="link" href="gio-Extension-Points.html#GIOExtension" title="GIOExtension"><span class="returnvalue">GIOExtension</span></a> *
 g_io_extension_point_implement (<em class="parameter"><code>const <span class="type">char</span> *extension_point_name</code></em>,
-                                <em class="parameter"><code><a href="https://developer.gnome.org/gobject/unstable/gobject-Type-Information.html#GType"><span class="type">GType</span></a> type</code></em>,
+                                <em class="parameter"><code><a href="../gobject-Type-Information.html#GType"><span class="type">GType</span></a> type</code></em>,
                                 <em class="parameter"><code>const <span class="type">char</span> *extension_name</code></em>,
-                                <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gint"><span class="type">gint</span></a> priority</code></em>);</pre>
+                                <em class="parameter"><code><a href="../glib-Basic-Types.html#gint"><span class="type">gint</span></a> priority</code></em>);</pre>
 <p>Registers <em class="parameter"><code>type</code></em>
  as extension for the extension point with name
 <em class="parameter"><code>extension_point_name</code></em>
@@ -427,8 +427,8 @@ g_io_extension_point_implement (<em class="parameter"><code>const <span class="t
  has already been registered as an extension for this 
 extension point, the existing <a class="link" href="gio-Extension-Points.html#GIOExtension" title="GIOExtension"><span class="type">GIOExtension</span></a> object is returned.</p>
 <div class="refsect3">
-<a name="id-1.4.24.4.7.8.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-io-extension-point-implement.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -442,7 +442,7 @@ extension point, the existing <a class="link" href="gio-Extension-Points.html#GI
 </tr>
 <tr>
 <td class="parameter_name"><p>type</p></td>
-<td class="parameter_description"><p>the <a href="https://developer.gnome.org/gobject/unstable/gobject-Type-Information.html#GType"><span class="type">GType</span></a> to register as extension </p></td>
+<td class="parameter_description"><p>the <a href="../gobject-Type-Information.html#GType"><span class="type">GType</span></a> to register as extension </p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 <tr>
@@ -459,8 +459,8 @@ extension point, the existing <a class="link" href="gio-Extension-Points.html#GI
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.24.4.7.8.7"></a><h4>Returns</h4>
-<p> a <a class="link" href="gio-Extension-Points.html#GIOExtension" title="GIOExtension"><span class="type">GIOExtension</span></a> object for <a href="https://developer.gnome.org/gobject/unstable/gobject-Type-Information.html#GType"><span class="type">GType</span></a>. </p>
+<a name="g-io-extension-point-implement.returns"></a><h4>Returns</h4>
+<p> a <a class="link" href="gio-Extension-Points.html#GIOExtension" title="GIOExtension"><span class="type">GIOExtension</span></a> object for <a href="../gobject-Type-Information.html#GType"><span class="type">GType</span></a>. </p>
 <p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
 </div>
 </div>
@@ -471,8 +471,8 @@ extension point, the existing <a class="link" href="gio-Extension-Points.html#GI
 g_io_extension_point_lookup (<em class="parameter"><code>const <span class="type">char</span> *name</code></em>);</pre>
 <p>Looks up an existing extension point.</p>
 <div class="refsect3">
-<a name="id-1.4.24.4.7.9.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-io-extension-point-lookup.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -486,8 +486,8 @@ g_io_extension_point_lookup (<em class="parameter"><code>const <span class="type
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.24.4.7.9.6"></a><h4>Returns</h4>
-<p> the <a class="link" href="gio-Extension-Points.html#GIOExtensionPoint" title="GIOExtensionPoint"><span class="type">GIOExtensionPoint</span></a>, or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> if there
+<a name="g-io-extension-point-lookup.returns"></a><h4>Returns</h4>
+<p> the <a class="link" href="gio-Extension-Points.html#GIOExtensionPoint" title="GIOExtensionPoint"><span class="type">GIOExtensionPoint</span></a>, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> if there
 is no registered extension point with the given name. </p>
 <p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
 </div>
@@ -499,8 +499,8 @@ is no registered extension point with the given name. </p>
 g_io_extension_point_register (<em class="parameter"><code>const <span class="type">char</span> *name</code></em>);</pre>
 <p>Registers an extension point.</p>
 <div class="refsect3">
-<a name="id-1.4.24.4.7.10.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-io-extension-point-register.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -514,7 +514,7 @@ g_io_extension_point_register (<em class="parameter"><code>const <span class="ty
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.24.4.7.10.6"></a><h4>Returns</h4>
+<a name="g-io-extension-point-register.returns"></a><h4>Returns</h4>
 <p> the new <a class="link" href="gio-Extension-Points.html#GIOExtensionPoint" title="GIOExtensionPoint"><span class="type">GIOExtensionPoint</span></a>. This object is
 owned by GIO and should not be freed. </p>
 <p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
@@ -526,14 +526,14 @@ owned by GIO and should not be freed. </p>
 <pre class="programlisting"><span class="returnvalue">void</span>
 g_io_extension_point_set_required_type
                                (<em class="parameter"><code><a class="link" href="gio-Extension-Points.html#GIOExtensionPoint" title="GIOExtensionPoint"><span class="type">GIOExtensionPoint</span></a> *extension_point</code></em>,
-                                <em class="parameter"><code><a href="https://developer.gnome.org/gobject/unstable/gobject-Type-Information.html#GType"><span class="type">GType</span></a> type</code></em>);</pre>
+                                <em class="parameter"><code><a href="../gobject-Type-Information.html#GType"><span class="type">GType</span></a> type</code></em>);</pre>
 <p>Sets the required type for <em class="parameter"><code>extension_point</code></em>
  to <em class="parameter"><code>type</code></em>
 . 
 All implementations must henceforth have this type.</p>
 <div class="refsect3">
-<a name="id-1.4.24.4.7.11.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-io-extension-point-set-required-type.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -547,7 +547,7 @@ All implementations must henceforth have this type.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>type</p></td>
-<td class="parameter_description"><p>the <a href="https://developer.gnome.org/gobject/unstable/gobject-Type-Information.html#GType"><span class="type">GType</span></a> to require</p></td>
+<td class="parameter_description"><p>the <a href="../gobject-Type-Information.html#GType"><span class="type">GType</span></a> to require</p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 </tbody>
@@ -557,14 +557,14 @@ All implementations must henceforth have this type.</p>
 <hr>
 <div class="refsect2">
 <a name="g-io-extension-ref-class"></a><h3>g_io_extension_ref_class ()</h3>
-<pre class="programlisting"><a href="https://developer.gnome.org/gobject/unstable/gobject-Type-Information.html#GTypeClass"><span class="returnvalue">GTypeClass</span></a> *
+<pre class="programlisting"><a href="../gobject-Type-Information.html#GTypeClass"><span class="returnvalue">GTypeClass</span></a> *
 g_io_extension_ref_class (<em class="parameter"><code><a class="link" href="gio-Extension-Points.html#GIOExtension" title="GIOExtension"><span class="type">GIOExtension</span></a> *extension</code></em>);</pre>
 <p>Gets a reference to the class for the type that is 
 associated with <em class="parameter"><code>extension</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.4.24.4.7.12.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-io-extension-ref-class.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -578,8 +578,8 @@ associated with <em class="parameter"><code>extension</code></em>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.24.4.7.12.6"></a><h4>Returns</h4>
-<p> the <a href="https://developer.gnome.org/gobject/unstable/gobject-Type-Information.html#GTypeClass"><span class="type">GTypeClass</span></a> for the type of <em class="parameter"><code>extension</code></em>
+<a name="g-io-extension-ref-class.returns"></a><h4>Returns</h4>
+<p> the <a href="../gobject-Type-Information.html#GTypeClass"><span class="type">GTypeClass</span></a> for the type of <em class="parameter"><code>extension</code></em>
 . </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
@@ -607,6 +607,6 @@ using the following functions.</p>
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

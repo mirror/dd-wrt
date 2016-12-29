@@ -808,6 +808,159 @@ test_busy (void)
   session_bus_down ();
 }
 
+/*
+ * Test that handle-local-options works as expected
+ */
+
+static gint
+test_local_options (GApplication *app,
+                    GVariantDict *options,
+                    gpointer      data)
+{
+  gboolean *called = data;
+
+  *called = TRUE;
+
+  if (g_variant_dict_contains (options, "success"))
+    return 0;
+  else if (g_variant_dict_contains (options, "failure"))
+    return 1;
+  else
+    return -1;
+}
+
+static gint
+second_handler (GApplication *app,
+                GVariantDict *options,
+                gpointer      data)
+{
+  gboolean *called = data;
+
+  *called = TRUE;
+
+  return 2;
+}
+
+static void
+test_handle_local_options_success (void)
+{
+  if (g_test_subprocess ())
+    {
+      char *binpath = g_test_build_filename (G_TEST_BUILT, "unimportant", NULL);
+      gchar *argv[] = { binpath, "--success", NULL };
+      GApplication *app;
+      gboolean called = FALSE;
+      gboolean called2 = FALSE;
+      int status;
+
+      app = g_application_new ("org.gtk.TestApplication", 0);
+      g_application_add_main_option (app, "success", 0, G_OPTION_FLAG_NONE, G_OPTION_ARG_NONE, "", "");
+      g_application_add_main_option (app, "failure", 0, G_OPTION_FLAG_NONE, G_OPTION_ARG_NONE, "", "");
+      g_signal_connect (app, "handle-local-options", G_CALLBACK (test_local_options), &called);
+      g_signal_connect (app, "handle-local-options", G_CALLBACK (second_handler), &called2);
+
+      status = g_application_run (app, G_N_ELEMENTS (argv) -1, argv);
+      g_assert (called);
+      g_assert (!called2);
+      g_assert_cmpint (status, ==, 0);
+
+      g_object_unref (app);
+      g_free (binpath);
+      return;
+    }
+
+  g_test_trap_subprocess (NULL, 0, G_TEST_SUBPROCESS_INHERIT_STDOUT | G_TEST_SUBPROCESS_INHERIT_STDERR);
+  g_test_trap_assert_passed ();
+}
+
+static void
+test_handle_local_options_failure (void)
+{
+  if (g_test_subprocess ())
+    {
+      char *binpath = g_test_build_filename (G_TEST_BUILT, "unimportant", NULL);
+      gchar *argv[] = { binpath, "--failure", NULL };
+      GApplication *app;
+      gboolean called = FALSE;
+      gboolean called2 = FALSE;
+      int status;
+
+      app = g_application_new ("org.gtk.TestApplication", 0);
+      g_application_add_main_option (app, "success", 0, G_OPTION_FLAG_NONE, G_OPTION_ARG_NONE, "", "");
+      g_application_add_main_option (app, "failure", 0, G_OPTION_FLAG_NONE, G_OPTION_ARG_NONE, "", "");
+      g_signal_connect (app, "handle-local-options", G_CALLBACK (test_local_options), &called);
+      g_signal_connect (app, "handle-local-options", G_CALLBACK (second_handler), &called2);
+
+      status = g_application_run (app, G_N_ELEMENTS (argv) -1, argv);
+      g_assert (called);
+      g_assert (!called2);
+      g_assert_cmpint (status, ==, 1);
+
+      g_object_unref (app);
+      g_free (binpath);
+      return;
+    }
+
+  g_test_trap_subprocess (NULL, 0, G_TEST_SUBPROCESS_INHERIT_STDOUT | G_TEST_SUBPROCESS_INHERIT_STDERR);
+  g_test_trap_assert_passed ();
+}
+
+static void
+test_handle_local_options_passthrough (void)
+{
+  if (g_test_subprocess ())
+    {
+      char *binpath = g_test_build_filename (G_TEST_BUILT, "unimportant", NULL);
+      gchar *argv[] = { binpath, NULL };
+      GApplication *app;
+      gboolean called = FALSE;
+      gboolean called2 = FALSE;
+      int status;
+
+      app = g_application_new ("org.gtk.TestApplication", 0);
+      g_application_add_main_option (app, "success", 0, G_OPTION_FLAG_NONE, G_OPTION_ARG_NONE, "", "");
+      g_application_add_main_option (app, "failure", 0, G_OPTION_FLAG_NONE, G_OPTION_ARG_NONE, "", "");
+      g_signal_connect (app, "handle-local-options", G_CALLBACK (test_local_options), &called);
+      g_signal_connect (app, "handle-local-options", G_CALLBACK (second_handler), &called2);
+
+      status = g_application_run (app, G_N_ELEMENTS (argv) -1, argv);
+      g_assert (called);
+      g_assert (called2);
+      g_assert_cmpint (status, ==, 2);
+
+      g_object_unref (app);
+      g_free (binpath);
+      return;
+    }
+
+  g_test_trap_subprocess (NULL, 0, G_TEST_SUBPROCESS_INHERIT_STDOUT | G_TEST_SUBPROCESS_INHERIT_STDERR);
+  g_test_trap_assert_passed ();
+}
+
+static void
+test_api (void)
+{
+  GApplication *app;
+  GSimpleAction *action;
+
+  app = g_application_new ("org.gtk.TestApplication", 0);
+
+  /* add an action without a name */
+  g_test_expect_message (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL, "*assertion*failed*");
+  action = g_simple_action_new (NULL, NULL);
+  g_assert (action == NULL);
+  g_test_assert_expected_messages ();
+
+  /* also, gapplication shouldn't accept actions without names */
+  action = g_object_new (G_TYPE_SIMPLE_ACTION, NULL);
+  g_test_expect_message (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL, "*action has no name*");
+  g_action_map_add_action (G_ACTION_MAP (app), G_ACTION (action));
+  g_test_assert_expected_messages ();
+
+  g_object_unref (action);
+  g_object_unref (app);
+}
+
 int
 main (int argc, char **argv)
 {
@@ -829,6 +982,10 @@ main (int argc, char **argv)
   g_test_add_func ("/gapplication/resource-path", test_resource_path);
   g_test_add_func ("/gapplication/test-help", test_help);
   g_test_add_func ("/gapplication/test-busy", test_busy);
+  g_test_add_func ("/gapplication/test-handle-local-options1", test_handle_local_options_success);
+  g_test_add_func ("/gapplication/test-handle-local-options2", test_handle_local_options_failure);
+  g_test_add_func ("/gapplication/test-handle-local-options3", test_handle_local_options_passthrough);
+  g_test_add_func ("/gapplication/api", test_api);
 
   return g_test_run ();
 }

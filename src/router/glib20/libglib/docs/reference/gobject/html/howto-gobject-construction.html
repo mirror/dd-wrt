@@ -2,13 +2,13 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>Object Construction: GObject Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<title>Object construction: GObject Reference Manual</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GObject Reference Manual">
 <link rel="up" href="howto-gobject.html" title="How to define and implement a new GObject">
 <link rel="prev" href="howto-gobject-code.html" title="Boilerplate code">
-<link rel="next" href="howto-gobject-destruction.html" title="Object Destruction">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<link rel="next" href="howto-gobject-destruction.html" title="Object destruction">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -21,7 +21,7 @@
 </tr></table>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="howto-gobject-construction"></a>Object Construction</h2></div></div></div>
+<a name="howto-gobject-construction"></a>Object construction</h2></div></div></div>
 <p>
       People often get confused when trying to construct their GObjects because of the
       sheer number of different ways to hook into the objects's construction process: it is
@@ -31,23 +31,27 @@
       <a class="xref" href="chapter-gobject.html#gobject-construction-table" title="Table 4. g_object_new">Table 4, “g_object_new”</a> shows what user-provided functions
       are invoked during object instantiation and in which order they are invoked.
       A user looking for the equivalent of the simple C++ constructor function should use
-      the instance_init method. It will be invoked after all the parent's instance_init
+      the <code class="function">instance_init</code> method. It will be invoked after
+      all the parents’ <code class="function">instance_init</code>
       functions have been invoked. It cannot take arbitrary construction parameters 
       (as in C++) but if your object needs arbitrary parameters to complete initialization,
       you can use construction properties.
     </p>
 <p>
-      Construction properties will be set only after all instance_init functions have run.
+      Construction properties will be set only after all
+      <code class="function">instance_init</code> functions have run.
       No object reference will be returned to the client of <code class="function"><a class="link" href="gobject-The-Base-Object-Type.html#g-object-new" title="g_object_new ()">g_object_new</a></code>
       until all the construction properties have been set.
     </p>
 <p>
       It is important to note that object construction cannot <span class="emphasis"><em>ever</em></span>
       fail. If you require a fallible GObject construction, you can use the
-      GInitable and GAsyncInitable interfaces provided by the GIO library
+      <a href="https://developer.gnome.org/gio/unstable/GInitable.html#GInitable-struct"><span class="type">GInitable</span></a> and
+      <a href="https://developer.gnome.org/gio/unstable/GAsyncInitable.html#GAsyncInitable-struct"><span class="type">GAsyncInitable</span></a>
+      interfaces provided by the GIO library.
     </p>
 <p>
-      As such, I would recommend writing the following code first:
+      You should write the following code first:
 </p>
 <div class="informalexample">
   <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
@@ -68,21 +72,21 @@
 13
 14
 15</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="function"><a href="gobject-Type-Information.html#G-DEFINE-TYPE-WITH-PRIVATE:CAPS">G_DEFINE_TYPE_WITH_PRIVATE</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">MamanBar</span><span class="symbol">,</span><span class="normal"> maman_bar</span><span class="symbol">,</span><span class="normal"> <a href="gobject-Type-Information.html#G-TYPE-OBJECT:CAPS">G_TYPE_OBJECT</a></span><span class="symbol">)</span>
+        <td class="listing_code"><pre class="programlisting"><span class="function"><a href="gobject-Type-Information.html#G-DEFINE-TYPE-WITH-PRIVATE:CAPS">G_DEFINE_TYPE_WITH_PRIVATE</a></span> <span class="gtkdoc opt">(</span>ViewerFile<span class="gtkdoc opt">,</span> viewer_file<span class="gtkdoc opt">,</span> G_TYPE_OBJECT<span class="gtkdoc opt">)</span>
 
-<span class="keyword">static</span><span class="normal"> </span><span class="type">void</span>
-<span class="function">maman_bar_class_init</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">MamanBarClass</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">klass</span><span class="symbol">)</span>
-<span class="cbracket">{</span>
-<span class="cbracket">}</span>
+<span class="gtkdoc kwb">static void</span>
+<span class="function">viewer_file_class_init</span> <span class="gtkdoc opt">(</span>ViewerFileClass <span class="gtkdoc opt">*</span>klass<span class="gtkdoc opt">)</span>
+<span class="gtkdoc opt">{</span>
+<span class="gtkdoc opt">}</span>
 
-<span class="keyword">static</span><span class="normal"> </span><span class="type">void</span>
-<span class="function">maman_bar_init</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">MamanBar</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">self</span><span class="symbol">)</span>
-<span class="cbracket">{</span>
-<span class="normal">  self</span><span class="symbol">-&gt;</span><span class="normal">priv </span><span class="symbol">=</span><span class="normal"> </span><span class="function">maman_bar_get_instance_private</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">self</span><span class="symbol">);</span>
+<span class="gtkdoc kwb">static void</span>
+<span class="function">viewer_file_init</span> <span class="gtkdoc opt">(</span>ViewerFile <span class="gtkdoc opt">*</span>self<span class="gtkdoc opt">)</span>
+<span class="gtkdoc opt">{</span>
+  ViewerFilePrivate <span class="gtkdoc opt">*</span>priv <span class="gtkdoc opt">=</span> <span class="function">viewer_file_get_instance_private</span> <span class="gtkdoc opt">(</span>self<span class="gtkdoc opt">);</span>
 
-<span class="normal">  </span><span class="comment">/* initialize all public and private members to reasonable default values.</span>
+  <span class="comment">/* initialize all public and private members to reasonable default values.</span>
 <span class="comment">   * They are all automatically initialized to 0 to begin with. */</span>
-<span class="cbracket">}</span></pre></td>
+<span class="gtkdoc opt">}</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -91,10 +95,16 @@
 <p>
     </p>
 <p>
-      If you need special construction properties, install the properties in
+      If you need special construction properties (with
+      <a class="link" href="gobject-GParamSpec.html#G-PARAM-CONSTRUCT-ONLY:CAPS"><code class="function">G_PARAM_CONSTRUCT_ONLY</code></a>
+      set), install the properties in
       the <code class="function">class_init()</code> function, override the <code class="function">set_property()</code>
       and <code class="function">get_property()</code> methods of the GObject class,
       and implement them as described by <a class="xref" href="gobject-properties.html" title="Object properties">the section called “Object properties”</a>.
+    </p>
+<p>
+      Property IDs must start from 1, as 0 is reserved for internal use by
+      GObject.
 </p>
 <div class="informalexample">
   <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
@@ -131,39 +141,49 @@
 29
 30
 31
-32</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="keyword">enum</span><span class="normal"> </span><span class="cbracket">{</span>
-<span class="normal">  PROP_0</span><span class="symbol">,</span>
+32
+33
+34
+35
+36
+37</pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="gtkdoc kwb">enum</span>
+<span class="gtkdoc opt">{</span>
+  PROP_FILENAME <span class="gtkdoc opt">=</span> <span class="number">1</span><span class="gtkdoc opt">,</span>
+  PROP_ZOOM_LEVEL<span class="gtkdoc opt">,</span>
+  N_PROPERTIES
+<span class="gtkdoc opt">};</span>
 
-<span class="normal">  PROP_MAMAN</span><span class="symbol">,</span>
+<span class="gtkdoc kwb">static</span> GParamSpec <span class="gtkdoc opt">*</span>obj_properties<span class="gtkdoc opt">[</span>N_PROPERTIES<span class="gtkdoc opt">] = {</span> NULL<span class="gtkdoc opt">, };</span>
 
-<span class="normal">  N_PROPERTIES</span>
-<span class="cbracket">}</span><span class="symbol">;</span>
+<span class="gtkdoc kwb">static void</span>
+<span class="function">viewer_file_class_init</span> <span class="gtkdoc opt">(</span>ViewerFileClass <span class="gtkdoc opt">*</span>klass<span class="gtkdoc opt">)</span>
+<span class="gtkdoc opt">{</span>
+  GObjectClass <span class="gtkdoc opt">*</span>object_class <span class="gtkdoc opt">=</span> <span class="function"><a href="gobject-The-Base-Object-Type.html#G-OBJECT-CLASS:CAPS">G_OBJECT_CLASS</a></span> <span class="gtkdoc opt">(</span>klass<span class="gtkdoc opt">);</span>
 
-<span class="comment">/* Keep a pointer to the properties definition */</span>
-<span class="keyword">static</span><span class="normal"> </span><span class="usertype">GParamSpec</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">obj_properties</span><span class="symbol">[</span><span class="normal">N_PROPERTIES</span><span class="symbol">]</span><span class="normal"> </span><span class="symbol">=</span><span class="normal"> </span><span class="cbracket">{</span><span class="normal"> <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">,</span><span class="normal"> </span><span class="cbracket">}</span><span class="symbol">;</span>
+  object_class<span class="gtkdoc opt">-&gt;</span>set_property <span class="gtkdoc opt">=</span> viewer_file_set_property<span class="gtkdoc opt">;</span>
+  object_class<span class="gtkdoc opt">-&gt;</span>get_property <span class="gtkdoc opt">=</span> viewer_file_get_property<span class="gtkdoc opt">;</span>
 
-<span class="keyword">static</span><span class="normal"> </span><span class="type">void</span>
-<span class="function">bar_class_init</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">MamanBarClass</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">klass</span><span class="symbol">)</span>
-<span class="cbracket">{</span>
-<span class="normal">  </span><span class="usertype">GObjectClass</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">gobject_class </span><span class="symbol">=</span><span class="normal"> </span><span class="function"><a href="gobject-The-Base-Object-Type.html#G-OBJECT-CLASS:CAPS">G_OBJECT_CLASS</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">klass</span><span class="symbol">);</span>
+  obj_properties<span class="gtkdoc opt">[</span>PROP_FILENAME<span class="gtkdoc opt">] =</span>
+    <span class="function"><a href="gobject-Standard-Parameter-and-Value-Types.html#g-param-spec-string">g_param_spec_string</a></span> <span class="gtkdoc opt">(</span><span class="string">&quot;filename&quot;</span><span class="gtkdoc opt">,</span>
+                         <span class="string">&quot;Filename&quot;</span><span class="gtkdoc opt">,</span>
+                         <span class="string">&quot;Name of the file to load and display from.&quot;</span><span class="gtkdoc opt">,</span>
+                         NULL  <span class="comment">/* default value */</span><span class="gtkdoc opt">,</span>
+                         G_PARAM_CONSTRUCT_ONLY <span class="gtkdoc opt">|</span> G_PARAM_READWRITE<span class="gtkdoc opt">));</span>
 
-<span class="normal">  gobject_class</span><span class="symbol">-&gt;</span><span class="normal">set_property </span><span class="symbol">=</span><span class="normal"> bar_set_property</span><span class="symbol">;</span>
-<span class="normal">  gobject_class</span><span class="symbol">-&gt;</span><span class="normal">get_property </span><span class="symbol">=</span><span class="normal"> bar_get_property</span><span class="symbol">;</span>
+  obj_properties<span class="gtkdoc opt">[</span>PROP_ZOOM_LEVEL<span class="gtkdoc opt">] =</span>
+    <span class="function"><a href="gobject-Standard-Parameter-and-Value-Types.html#g-param-spec-uint">g_param_spec_uint</a></span> <span class="gtkdoc opt">(</span><span class="string">&quot;zoom-level&quot;</span><span class="gtkdoc opt">,</span>
+                       <span class="string">&quot;Zoom level&quot;</span><span class="gtkdoc opt">,</span>
+                       <span class="string">&quot;Zoom level to view the file at.&quot;</span><span class="gtkdoc opt">,</span>
+                       <span class="number">0</span>  <span class="comment">/* minimum value */</span><span class="gtkdoc opt">,</span>
+                       <span class="number">10</span> <span class="comment">/* maximum value */</span><span class="gtkdoc opt">,</span>
+                       <span class="number">2</span>  <span class="comment">/* default value */</span><span class="gtkdoc opt">,</span>
+                       G_PARAM_READWRITE<span class="gtkdoc opt">));</span>
 
-<span class="normal">  obj_properties</span><span class="symbol">[</span><span class="normal">PROP_MAMAN</span><span class="symbol">]</span><span class="normal"> </span><span class="symbol">=</span>
-<span class="normal">    </span><span class="function"><a href="gobject-Standard-Parameter-and-Value-Types.html#g-param-spec-string">g_param_spec_string</a></span><span class="normal"> </span><span class="symbol">(</span><span class="string">"maman"</span><span class="symbol">,</span>
-<span class="normal">                         </span><span class="string">"Maman construct prop"</span><span class="symbol">,</span>
-<span class="normal">                         </span><span class="string">"Set maman's name"</span><span class="symbol">,</span>
-<span class="normal">                         </span><span class="string">"no-name-set"</span><span class="normal"> </span><span class="comment">/* default value */</span><span class="symbol">,</span>
-<span class="normal">                         <a href="gobject-GParamSpec.html#G-PARAM-CONSTRUCT-ONLY:CAPS">G_PARAM_CONSTRUCT_ONLY</a> </span><span class="symbol">|</span>
-<span class="normal">                         <a href="gobject-GParamSpec.html#G-PARAM-READWRITE:CAPS">G_PARAM_READWRITE</a> </span><span class="symbol">|</span>
-<span class="normal">                         <a href="gobject-GParamSpec.html#G-PARAM-STATIC-STRINGS:CAPS">G_PARAM_STATIC_STRINGS</a></span><span class="symbol">);</span>
-
-<span class="normal">  </span><span class="function"><a href="gobject-The-Base-Object-Type.html#g-object-class-install-properties">g_object_class_install_properties</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">gobject_class</span><span class="symbol">,</span>
-<span class="normal">                                     N_PROPERTIES</span><span class="symbol">,</span>
-<span class="normal">                                     obj_properties</span><span class="symbol">);</span>
-<span class="cbracket">}</span></pre></td>
+  <span class="function"><a href="gobject-The-Base-Object-Type.html#g-object-class-install-properties">g_object_class_install_properties</a></span> <span class="gtkdoc opt">(</span>object_class<span class="gtkdoc opt">,</span>
+                                     N_PROPERTIES<span class="gtkdoc opt">,</span>
+                                     obj_properties<span class="gtkdoc opt">);</span>
+<span class="gtkdoc opt">}</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -179,15 +199,16 @@
       of a type only after the properties passed to the constructors have been
       set. This is possible through the use of the <code class="function">constructor()</code>
       class method as described in <a class="xref" href="chapter-gobject.html#gobject-instantiation" title="Object instantiation">the section called “Object instantiation”</a> or,
-      more simply, using the <code class="function">constructed()</code> class method
-      available since GLib 2.12. Note that the <code class="function">constructed()</code>
+      more simply, using the <code class="function">constructed()</code> class method.
+      Note that the <code class="function">constructed()</code>
       virtual function will only be invoked after the properties marked as
-      G_PARAM_CONSTRUCT_ONLY or G_PARAM_CONSTRUCT have been consumed, but
+      <code class="function">G_PARAM_CONSTRUCT_ONLY</code> or
+      <code class="function">G_PARAM_CONSTRUCT</code> have been consumed, but
       before the regular properties passed to <code class="function">g_object_new()</code>
       have been set.
     </p>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

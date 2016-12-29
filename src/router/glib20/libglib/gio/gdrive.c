@@ -267,6 +267,31 @@ g_drive_is_media_check_automatic (GDrive *drive)
 }
 
 /**
+ * g_drive_is_removable:
+ * @drive: a #GDrive.
+ *
+ * Checks if the #GDrive and/or its media is considered removable by the user.
+ * See g_drive_is_media_removable().
+ *
+ * Returns: %TRUE if @drive and/or its media is considered removable, %FALSE otherwise.
+ *
+ * Since: 2.50
+ **/
+gboolean
+g_drive_is_removable (GDrive *drive)
+{
+  GDriveIface *iface;
+
+  g_return_val_if_fail (G_IS_DRIVE (drive), FALSE);
+
+  iface = G_DRIVE_GET_IFACE (drive);
+  if (iface->is_removable != NULL)
+    return iface->is_removable (drive);
+
+  return FALSE;
+}
+
+/**
  * g_drive_is_media_removable:
  * @drive: a #GDrive.
  * 
@@ -389,7 +414,7 @@ g_drive_eject (GDrive              *drive,
       g_task_report_new_error (drive, callback, user_data,
                                g_drive_eject_with_operation,
                                G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
-                               _("drive doesn't implement eject"));
+                               _("drive doesn’t implement eject"));
       return;
     }
   
@@ -467,7 +492,7 @@ g_drive_eject_with_operation (GDrive              *drive,
                                /* Translators: This is an error
                                 * message for drive objects that
                                 * don't implement any of eject or eject_with_operation. */
-                               _("drive doesn't implement eject or eject_with_operation"));
+                               _("drive doesn’t implement eject or eject_with_operation"));
       return;
     }
 
@@ -543,7 +568,7 @@ g_drive_poll_for_media (GDrive              *drive,
       g_task_report_new_error (drive, callback, user_data,
                                g_drive_poll_for_media,
                                G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
-                               _("drive doesn't implement polling for media"));
+                               _("drive doesn’t implement polling for media"));
       return;
     }
   
@@ -748,7 +773,7 @@ g_drive_start (GDrive              *drive,
       g_task_report_new_error (drive, callback, user_data,
                                g_drive_start,
                                G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
-                               _("drive doesn't implement start"));
+                               _("drive doesn’t implement start"));
       return;
     }
 
@@ -850,7 +875,7 @@ g_drive_stop (GDrive               *drive,
       g_task_report_new_error (drive, callback, user_data,
                                g_drive_start,
                                G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
-                               _("drive doesn't implement stop"));
+                               _("drive doesn’t implement stop"));
       return;
     }
 

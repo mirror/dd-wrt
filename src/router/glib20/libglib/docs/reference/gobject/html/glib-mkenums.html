@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>glib-mkenums: GObject Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GObject Reference Manual">
 <link rel="up" href="rn02.html" title="Tools Reference">
 <link rel="prev" href="rn02.html" title="Tools Reference">
 <link rel="next" href="glib-genmarshal.html" title="glib-genmarshal">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -61,11 +61,11 @@ the following example enum definition is assumed:
 3
 4
 5</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="keyword">typedef</span><span class="normal"> </span><span class="keyword">enum</span>
-<span class="cbracket">{</span>
-<span class="normal">  PREFIX_THE_XVALUE    </span><span class="symbol">=</span><span class="normal"> </span><span class="number">1</span><span class="normal"> </span><span class="symbol">&lt;&lt;</span><span class="normal"> </span><span class="number">3</span><span class="symbol">,</span>
-<span class="normal">  PREFIX_ANOTHER_VALUE </span><span class="symbol">=</span><span class="normal"> </span><span class="number">1</span><span class="normal"> </span><span class="symbol">&lt;&lt;</span><span class="normal"> </span><span class="number">4</span>
-<span class="cbracket">}</span><span class="normal"> PrefixTheXEnum</span><span class="symbol">;</span></pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="gtkdoc kwc">typedef</span> <span class="gtkdoc kwb">enum</span>
+<span class="gtkdoc opt">{</span>
+  PREFIX_THE_XVALUE    <span class="gtkdoc opt">=</span> <span class="number">1</span> <span class="gtkdoc opt">&lt;&lt;</span> <span class="number">3</span><span class="gtkdoc opt">,</span>
+  PREFIX_ANOTHER_VALUE <span class="gtkdoc opt">=</span> <span class="number">1</span> <span class="gtkdoc opt">&lt;&lt;</span> <span class="number">4</span>
+<span class="gtkdoc opt">}</span> PrefixTheXEnum<span class="gtkdoc opt">;</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -214,17 +214,17 @@ Examples:
 9
 10
 11</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="keyword">typedef</span><span class="normal"> </span><span class="keyword">enum</span><span class="normal"> </span><span class="comment">/*&lt; skip &gt;*/</span>
-<span class="cbracket">{</span>
-<span class="normal">  PREFIX_FOO</span>
-<span class="cbracket">}</span><span class="normal"> PrefixThisEnumWillBeSkipped</span><span class="symbol">;</span>
-<span class="keyword">typedef</span><span class="normal"> </span><span class="keyword">enum</span><span class="normal"> </span><span class="comment">/*&lt; flags,prefix=PREFIX &gt;*/</span>
-<span class="cbracket">{</span>
-<span class="normal">  PREFIX_THE_ZEROTH_VALUE</span><span class="symbol">,</span><span class="normal">  </span><span class="comment">/*&lt; skip &gt;*/</span>
-<span class="normal">  PREFIX_THE_FIRST_VALUE</span><span class="symbol">,</span>
-<span class="normal">  PREFIX_THE_SECOND_VALUE</span><span class="symbol">,</span>
-<span class="normal">  PREFIX_THE_THIRD_VALUE</span><span class="symbol">,</span><span class="normal">   </span><span class="comment">/*&lt; nick=the-last-value &gt;*/</span>
-<span class="cbracket">}</span><span class="normal"> PrefixTheFlagsEnum</span><span class="symbol">;</span></pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="gtkdoc kwc">typedef</span> <span class="gtkdoc kwb">enum</span> <span class="comment">/*&lt; skip &gt;*/</span>
+<span class="gtkdoc opt">{</span>
+  PREFIX_FOO
+<span class="gtkdoc opt">}</span> PrefixThisEnumWillBeSkipped<span class="gtkdoc opt">;</span>
+<span class="gtkdoc kwc">typedef</span> <span class="gtkdoc kwb">enum</span> <span class="comment">/*&lt; flags,prefix=PREFIX &gt;*/</span>
+<span class="gtkdoc opt">{</span>
+  PREFIX_THE_ZEROTH_VALUE<span class="gtkdoc opt">,</span>	<span class="comment">/*&lt; skip &gt;*/</span>
+  PREFIX_THE_FIRST_VALUE<span class="gtkdoc opt">,</span>
+  PREFIX_THE_SECOND_VALUE<span class="gtkdoc opt">,</span>
+  PREFIX_THE_THIRD_VALUE<span class="gtkdoc opt">,</span>	<span class="comment">/*&lt; nick=the-last-value &gt;*/</span>
+<span class="gtkdoc opt">}</span> PrefixTheFlagsEnum<span class="gtkdoc opt">;</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -359,6 +359,12 @@ Print brief help and exit.
 Print version and exit.
 </p></td>
 </tr>
+<tr>
+<td><p><span class="term"><code class="option">--output=FILE</code></span></p></td>
+<td><p>
+Write output to FILE instead of stdout.
+</p></td>
+</tr>
 </tbody>
 </table></div>
 </div>
@@ -370,6 +376,6 @@ Print version and exit.
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

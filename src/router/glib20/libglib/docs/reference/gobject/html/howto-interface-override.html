@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Overriding interface methods: GObject Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GObject Reference Manual">
 <link rel="up" href="howto-interface.html" title="How to define and implement interfaces">
 <link rel="prev" href="howto-interface-properties.html" title="Interface properties">
 <link rel="next" href="howto-signals.html" title="How to create and use signals">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -23,16 +23,17 @@
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
 <a name="howto-interface-override"></a>Overriding interface methods</h2></div></div></div>
 <p>
-      If a base class already implements an interface, and in a derived
-      class you wish to implement the same interface overriding only certain
-      methods of that interface, you just reimplement the interface and
-      set only the interface methods you wish to override.
+      If a base class already implements an interface and a derived
+      class needs to implement the same interface but needs to override certain
+      methods, you must reimplement the interface and set only the interface
+      methods which need overriding.
     </p>
 <p>
-      In this example MamanDerivedBaz is derived from MamanBaz. Both
-      implement the MamanIbaz interface. MamanDerivedBaz only implements one
-      method of the MamanIbaz interface and uses the base class implementation
-      of the other.
+      In this example, <span class="type">ViewerAudioFile</span> is derived from
+      <span class="type">ViewerFile</span>. Both implement the <span class="type">ViewerEditable</span>
+      interface. <span class="type">ViewerAudioFile</span> only implements one method of the
+      <span class="type">ViewerEditable</span> interface and uses the base class implementation of
+      the other.
 </p>
 <div class="informalexample">
   <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
@@ -71,41 +72,45 @@
 31
 32
 33
-34</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="keyword">static</span><span class="normal"> </span><span class="type">void</span>
-<span class="function">maman_derived_ibaz_do_action</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">MamanIbaz</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">ibaz</span><span class="symbol">)</span>
-<span class="cbracket">{</span>
-<span class="normal">  </span><span class="usertype">MamanDerivedBaz</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">self </span><span class="symbol">=</span><span class="normal"> </span><span class="function">MAMAN_DERIVED_BAZ</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">ibaz</span><span class="symbol">);</span>
-<span class="normal">  </span><span class="function"><a href="https://developer.gnome.org/glib/unstable/glib-Warnings-and-Assertions.html#g-print">g_print</a></span><span class="normal"> </span><span class="symbol">(</span><span class="string">"DerivedBaz implementation of Ibaz interface Action</span><span class="specialchar">\n</span><span class="string">"</span><span class="symbol">);</span>
-<span class="cbracket">}</span>
+34
+35
+36</pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="gtkdoc kwb">static void</span>
+<span class="function">viewer_audio_file_editable_save</span> <span class="gtkdoc opt">(</span>ViewerEditable  <span class="gtkdoc opt">*</span>editable<span class="gtkdoc opt">,</span>
+                                 GError         <span class="gtkdoc opt">**</span>error<span class="gtkdoc opt">)</span>
+<span class="gtkdoc opt">{</span>
+  ViewerAudioFile <span class="gtkdoc opt">*</span>self <span class="gtkdoc opt">=</span> <span class="function">VIEWER_AUDIO_FILE</span> <span class="gtkdoc opt">(</span>editable<span class="gtkdoc opt">);</span>
 
-<span class="keyword">static</span><span class="normal"> </span><span class="type">void</span>
-<span class="function">maman_derived_ibaz_interface_init</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">MamanIbazInterface</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">iface</span><span class="symbol">)</span>
-<span class="cbracket">{</span>
-<span class="normal">  </span><span class="comment">/* Override the implementation of do_action */</span>
-<span class="normal">  iface</span><span class="symbol">-&gt;</span><span class="normal">do_action </span><span class="symbol">=</span><span class="normal"> maman_derived_ibaz_do_action</span><span class="symbol">;</span>
+  <span class="function"><a href="../glib-Warnings-and-Assertions.html#g-print">g_print</a></span> <span class="gtkdoc opt">(</span><span class="string">&quot;Audio file implementation of editable interface save method.</span><span class="gtkdoc esc">\n</span><span class="string">&quot;</span><span class="gtkdoc opt">);</span>
+<span class="gtkdoc opt">}</span>
 
-<span class="normal">  </span><span class="comment">/*</span>
-<span class="comment">   * We simply leave iface-&gt;do_something alone, it is already set to the</span>
+<span class="gtkdoc kwb">static void</span>
+<span class="function">viewer_audio_file_editable_interface_init</span> <span class="gtkdoc opt">(</span>ViewerEditableInterface <span class="gtkdoc opt">*</span>iface<span class="gtkdoc opt">)</span>
+<span class="gtkdoc opt">{</span>
+  <span class="comment">/* Override the implementation of save(). */</span>
+  iface<span class="gtkdoc opt">-&gt;</span>save <span class="gtkdoc opt">=</span> viewer_audio_file_editable_save<span class="gtkdoc opt">;</span>
+
+  <span class="comment">/*</span>
+<span class="comment">   * Leave iface-&gt;undo and -&gt;redo alone, they are already set to the</span>
 <span class="comment">   * base class implementation.</span>
 <span class="comment">   */</span>
-<span class="cbracket">}</span>
+<span class="gtkdoc opt">}</span>
 
-<span class="function"><a href="gobject-Type-Information.html#G-DEFINE-TYPE-WITH-CODE:CAPS">G_DEFINE_TYPE_WITH_CODE</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">MamanDerivedBaz</span><span class="symbol">,</span><span class="normal"> maman_derived_baz</span><span class="symbol">,</span><span class="normal"> MAMAN_TYPE_BAZ</span><span class="symbol">,</span>
-<span class="normal">                         </span><span class="function"><a href="gobject-Type-Information.html#G-IMPLEMENT-INTERFACE:CAPS">G_IMPLEMENT_INTERFACE</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">MAMAN_TYPE_IBAZ</span><span class="symbol">,</span>
-<span class="normal">                                                maman_derived_ibaz_interface_init</span><span class="symbol">)</span>
+<span class="function"><a href="gobject-Type-Information.html#G-DEFINE-TYPE-WITH-CODE:CAPS">G_DEFINE_TYPE_WITH_CODE</a></span> <span class="gtkdoc opt">(</span>ViewerAudioFile<span class="gtkdoc opt">,</span> viewer_audio_file<span class="gtkdoc opt">,</span> VIEWER_TYPE_FILE<span class="gtkdoc opt">,</span>
+                         <span class="function"><a href="gobject-Type-Information.html#G-IMPLEMENT-INTERFACE:CAPS">G_IMPLEMENT_INTERFACE</a></span> <span class="gtkdoc opt">(</span>VIEWER_TYPE_EDITABLE<span class="gtkdoc opt">,</span>
+                                                viewer_audio_file_editable_interface_init<span class="gtkdoc opt">))</span>
 
-<span class="keyword">static</span><span class="normal"> </span><span class="type">void</span>
-<span class="function">maman_derived_baz_class_init</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">MamanDerivedBazClass</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">klass</span><span class="symbol">)</span>
-<span class="cbracket">{</span>
+<span class="gtkdoc kwb">static void</span>
+<span class="function">viewer_audio_file_class_init</span> <span class="gtkdoc opt">(</span>ViewerAudioFileClass <span class="gtkdoc opt">*</span>klass<span class="gtkdoc opt">)</span>
+<span class="gtkdoc opt">{</span>
+  <span class="comment">/* Nothing here. */</span>
+<span class="gtkdoc opt">}</span>
 
-<span class="cbracket">}</span>
-
-<span class="keyword">static</span><span class="normal"> </span><span class="type">void</span>
-<span class="function">maman_derived_baz_init</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">MamanDerivedBaz</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">self</span><span class="symbol">)</span>
-<span class="cbracket">{</span>
-
-<span class="cbracket">}</span></pre></td>
+<span class="gtkdoc kwb">static void</span>
+<span class="function">viewer_audio_file_init</span> <span class="gtkdoc opt">(</span>ViewerAudioFile <span class="gtkdoc opt">*</span>self<span class="gtkdoc opt">)</span>
+<span class="gtkdoc opt">{</span>
+  <span class="comment">/* Nothing here. */</span>
+<span class="gtkdoc opt">}</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -119,15 +124,15 @@
       from within an interface's <code class="function">default_init</code> function.
     </p>
 <p>
-      If you wish to call the base class implementation of an interface
+      To call the base class implementation of an interface
       method from an derived class where than interface method has been
-      overridden then you can stash away the pointer returned from
+      overridden, stash away the pointer returned from
       <code class="function"><a class="link" href="gobject-Type-Information.html#g-type-interface-peek-parent" title="g_type_interface_peek_parent ()">g_type_interface_peek_parent</a></code>
       in a global variable.
     </p>
 <p>
-      In this example MamanDerivedBaz overides the
-      <code class="function">do_action</code> interface method. In its overridden method
+      In this example <span class="type">ViewerAudioFile</span> overrides the
+      <code class="function">save</code> interface method. In its overridden method
       it calls the base class implementation of the same interface method.
 </p>
 <div class="informalexample">
@@ -165,39 +170,49 @@
 29
 30
 31
-32</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="keyword">static</span><span class="normal"> </span><span class="usertype">MamanIbazInterface</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">maman_ibaz_parent_interface </span><span class="symbol">=</span><span class="normal"> <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">;</span>
+32
+33
+34
+35
+36
+37</pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="gtkdoc kwb">static</span> ViewerEditableInterface <span class="gtkdoc opt">*</span>viewer_editable_parent_interface <span class="gtkdoc opt">=</span> NULL<span class="gtkdoc opt">;</span>
 
-<span class="keyword">static</span><span class="normal"> </span><span class="type">void</span>
-<span class="function">maman_derived_ibaz_do_action</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">MamanIbaz</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">ibaz</span><span class="symbol">)</span>
-<span class="cbracket">{</span>
-<span class="normal">  </span><span class="usertype">MamanDerivedBaz</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">self </span><span class="symbol">=</span><span class="normal"> </span><span class="function">MAMAN_DERIVED_BAZ</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">ibaz</span><span class="symbol">);</span>
-<span class="normal">  </span><span class="function"><a href="https://developer.gnome.org/glib/unstable/glib-Warnings-and-Assertions.html#g-print">g_print</a></span><span class="normal"> </span><span class="symbol">(</span><span class="string">"DerivedBaz implementation of Ibaz interface Action</span><span class="specialchar">\n</span><span class="string">"</span><span class="symbol">);</span>
+<span class="gtkdoc kwb">static void</span>
+<span class="function">viewer_audio_file_editable_save</span> <span class="gtkdoc opt">(</span>ViewerEditable  <span class="gtkdoc opt">*</span>editable<span class="gtkdoc opt">,</span>
+                                 GError         <span class="gtkdoc opt">**</span>error<span class="gtkdoc opt">)</span>
+<span class="gtkdoc opt">{</span>
+  ViewerAudioFile <span class="gtkdoc opt">*</span>self <span class="gtkdoc opt">=</span> <span class="function">VIEWER_AUDIO_FILE</span> <span class="gtkdoc opt">(</span>editable<span class="gtkdoc opt">);</span>
 
-<span class="normal">  </span><span class="comment">/* Now we call the base implementation */</span>
-<span class="normal">  maman_ibaz_parent_interface</span><span class="symbol">-&gt;</span><span class="function">do_action</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">ibaz</span><span class="symbol">);</span>
-<span class="cbracket">}</span>
+  <span class="function"><a href="../glib-Warnings-and-Assertions.html#g-print">g_print</a></span> <span class="gtkdoc opt">(</span><span class="string">&quot;Audio file implementation of editable interface save method.</span><span class="gtkdoc esc">\n</span><span class="string">&quot;</span><span class="gtkdoc opt">);</span>
 
-<span class="keyword">static</span><span class="normal"> </span><span class="type">void</span>
-<span class="function">maman_derived_ibaz_interface_init</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">MamanIbazInterface</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">iface</span><span class="symbol">)</span>
-<span class="cbracket">{</span>
-<span class="normal">  maman_ibaz_parent_interface </span><span class="symbol">=</span><span class="normal"> </span><span class="function"><a href="gobject-Type-Information.html#g-type-interface-peek-parent">g_type_interface_peek_parent</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">iface</span><span class="symbol">);</span>
-<span class="normal">  iface</span><span class="symbol">-&gt;</span><span class="normal">do_action </span><span class="symbol">=</span><span class="normal"> maman_derived_ibaz_do_action</span><span class="symbol">;</span>
-<span class="cbracket">}</span>
+  <span class="comment">/* Now call the base implementation */</span>
+  viewer_editable_parent_interface<span class="gtkdoc opt">-&gt;</span><span class="function">save</span> <span class="gtkdoc opt">(</span>editable<span class="gtkdoc opt">,</span> error<span class="gtkdoc opt">);</span>
+<span class="gtkdoc opt">}</span>
 
-<span class="function"><a href="gobject-Type-Information.html#G-DEFINE-TYPE-WITH-CODE:CAPS">G_DEFINE_TYPE_WITH_CODE</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">MamanDerivedBaz</span><span class="symbol">,</span><span class="normal"> maman_derived_baz</span><span class="symbol">,</span><span class="normal"> MAMAN_TYPE_BAZ</span><span class="symbol">,</span>
-<span class="normal">                         </span><span class="function"><a href="gobject-Type-Information.html#G-IMPLEMENT-INTERFACE:CAPS">G_IMPLEMENT_INTERFACE</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">MAMAN_TYPE_IBAZ</span><span class="symbol">,</span>
-<span class="normal">                                                maman_derived_ibaz_interface_init</span><span class="symbol">))</span>
+<span class="gtkdoc kwb">static void</span>
+<span class="function">viewer_audio_file_editable_interface_init</span> <span class="gtkdoc opt">(</span>ViewerEditableInterface <span class="gtkdoc opt">*</span>iface<span class="gtkdoc opt">)</span>
+<span class="gtkdoc opt">{</span>
+  viewer_editable_parent_interface <span class="gtkdoc opt">=</span> <span class="function"><a href="gobject-Type-Information.html#g-type-interface-peek-parent">g_type_interface_peek_parent</a></span> <span class="gtkdoc opt">(</span>iface<span class="gtkdoc opt">);</span>
 
-<span class="keyword">static</span><span class="normal"> </span><span class="type">void</span>
-<span class="function">maman_derived_baz_class_init</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">MamanDerivedBazClass</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">klass</span><span class="symbol">)</span>
-<span class="cbracket">{</span>
-<span class="cbracket">}</span>
+  iface<span class="gtkdoc opt">-&gt;</span>save <span class="gtkdoc opt">=</span> viewer_audio_file_editable_save<span class="gtkdoc opt">;</span>
+<span class="gtkdoc opt">}</span>
 
-<span class="keyword">static</span><span class="normal"> </span><span class="type">void</span>
-<span class="function">maman_derived_baz_init</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">MamanDerivedBaz</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">self</span><span class="symbol">)</span>
-<span class="cbracket">{</span>
-<span class="cbracket">}</span></pre></td>
+<span class="function"><a href="gobject-Type-Information.html#G-DEFINE-TYPE-WITH-CODE:CAPS">G_DEFINE_TYPE_WITH_CODE</a></span> <span class="gtkdoc opt">(</span>ViewerAudioFile<span class="gtkdoc opt">,</span> viewer_audio_file<span class="gtkdoc opt">,</span> VIEWER_TYPE_FILE<span class="gtkdoc opt">,</span>
+                         <span class="function"><a href="gobject-Type-Information.html#G-IMPLEMENT-INTERFACE:CAPS">G_IMPLEMENT_INTERFACE</a></span> <span class="gtkdoc opt">(</span>VIEWER_TYPE_EDITABLE<span class="gtkdoc opt">,</span>
+                                                viewer_audio_file_editable_interface_init<span class="gtkdoc opt">))</span>
+
+<span class="gtkdoc kwb">static void</span>
+<span class="function">viewer_audio_file_class_init</span> <span class="gtkdoc opt">(</span>ViewerAudioFileClass <span class="gtkdoc opt">*</span>klass<span class="gtkdoc opt">)</span>
+<span class="gtkdoc opt">{</span>
+  <span class="comment">/* Nothing here. */</span>
+<span class="gtkdoc opt">}</span>
+
+<span class="gtkdoc kwb">static void</span>
+<span class="function">viewer_audio_file_init</span> <span class="gtkdoc opt">(</span>ViewerAudioFile <span class="gtkdoc opt">*</span>self<span class="gtkdoc opt">)</span>
+<span class="gtkdoc opt">{</span>
+  <span class="comment">/* Nothing here. */</span>
+<span class="gtkdoc opt">}</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -207,6 +222,6 @@
     </p>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

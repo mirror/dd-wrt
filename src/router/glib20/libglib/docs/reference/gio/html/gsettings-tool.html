@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gsettings: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="tools.html" title="GIO Tools">
 <link rel="prev" href="gio-querymodules.html" title="gio-querymodules">
 <link rel="next" href="glib-compile-schemas.html" title="glib-compile-schemas">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -34,6 +34,7 @@
 <div class="cmdsynopsis"><p><code class="command">gsettings</code>   monitor   <em class="replaceable"><code>SCHEMA</code></em> [:<em class="replaceable"><code>PATH</code></em>]  [<em class="replaceable"><code>KEY</code></em>]</p></div>
 <div class="cmdsynopsis"><p><code class="command">gsettings</code>   writable   <em class="replaceable"><code>SCHEMA</code></em> [:<em class="replaceable"><code>PATH</code></em>]   <em class="replaceable"><code>KEY</code></em> </p></div>
 <div class="cmdsynopsis"><p><code class="command">gsettings</code>   range   <em class="replaceable"><code>SCHEMA</code></em> [:<em class="replaceable"><code>PATH</code></em>]   <em class="replaceable"><code>KEY</code></em> </p></div>
+<div class="cmdsynopsis"><p><code class="command">gsettings</code>   describe   <em class="replaceable"><code>SCHEMA</code></em> [:<em class="replaceable"><code>PATH</code></em>]   <em class="replaceable"><code>KEY</code></em> </p></div>
 <div class="cmdsynopsis"><p><code class="command">gsettings</code>   set   <em class="replaceable"><code>SCHEMA</code></em> [:<em class="replaceable"><code>PATH</code></em>]   <em class="replaceable"><code>KEY</code></em>   <em class="replaceable"><code>VALUE</code></em> </p></div>
 <div class="cmdsynopsis"><p><code class="command">gsettings</code>   reset   <em class="replaceable"><code>SCHEMA</code></em> [:<em class="replaceable"><code>PATH</code></em>]   <em class="replaceable"><code>KEY</code></em> </p></div>
 <div class="cmdsynopsis"><p><code class="command">gsettings</code>   reset-recursively   <em class="replaceable"><code>SCHEMA</code></em> [:<em class="replaceable"><code>PATH</code></em>] </p></div>
@@ -45,7 +46,7 @@
 <div class="cmdsynopsis"><p><code class="command">gsettings</code>   help  [<em class="replaceable"><code>COMMAND</code></em>]</p></div>
 </div>
 <div class="refsect1">
-<a name="id-1.4.25.3.5"></a><h2>Description</h2>
+<a name="id-1.4.26.3.5"></a><h2>Description</h2>
 <p><span class="command"><strong>gsettings</strong></span> offers a simple commandline
 interface to <a class="link" href="GSettings.html" title="GSettings"><span class="type">GSettings</span></a>.
 It lets you get, set or monitor an individual key for changes.
@@ -60,7 +61,7 @@ if the schema does not have a fixed path.
 <p>
 When setting a key, you also need specify a <em class="replaceable"><code>VALUE</code></em>
 The format for the value is that of a serialized
-<a href="https://developer.gnome.org/glib/unstable/glib-GVariant.html#GVariant"><span class="type">GVariant</span></a>,
+<a href="../glib-GVariant.html#GVariant"><span class="type">GVariant</span></a>,
 so e.g. a string
 must include explicit quotes: "'foo'". This format is also used when printing
 out values.
@@ -71,7 +72,7 @@ the dconf database.
 </p>
 </div>
 <div class="refsect1">
-<a name="id-1.4.25.3.6"></a><h2>Commands</h2>
+<a name="id-1.4.26.3.6"></a><h2>Commands</h2>
 <div class="variablelist"><table border="0" class="variablelist">
 <colgroup>
 <col align="left" valign="top">
@@ -83,7 +84,7 @@ the dconf database.
 <td><p>
 Gets the value of <em class="replaceable"><code>KEY</code></em>.
 The value is printed out as a serialised
-<a href="https://developer.gnome.org/glib/unstable/glib-GVariant.html#GVariant"><span class="type">GVariant</span></a>.
+<a href="../glib-GVariant.html#GVariant"><span class="type">GVariant</span></a>.
 </p></td>
 </tr>
 <tr>
@@ -107,11 +108,17 @@ Queries the range of valid values for <em class="replaceable"><code>KEY</code></
 </p></td>
 </tr>
 <tr>
+<td><p><span class="term"><code class="option">describe</code></span></p></td>
+<td><p>
+Queries the description of valid values for <em class="replaceable"><code>KEY</code></em>.
+</p></td>
+</tr>
+<tr>
 <td><p><span class="term"><code class="option">set</code></span></p></td>
 <td><p>
 Sets the value of <em class="replaceable"><code>KEY</code></em> to
 <em class="replaceable"><code>VALUE</code></em>. The value is specified as a serialised
-<a href="https://developer.gnome.org/glib/unstable/glib-GVariant.html#GVariant"><span class="type">GVariant</span></a>.
+<a href="../glib-GVariant.html#GVariant"><span class="type">GVariant</span></a>.
 </p></td>
 </tr>
 <tr>
@@ -172,6 +179,6 @@ Prints help and exits.
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

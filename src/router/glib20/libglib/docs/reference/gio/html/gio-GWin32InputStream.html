@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GWin32InputStream: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="streaming.html" title="Streaming I/O">
 <link rel="prev" href="GUnixOutputStream.html" title="GUnixOutputStream">
 <link rel="next" href="gio-GWin32OutputStream.html" title="GWin32OutputStream">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -33,7 +33,7 @@
 </tr></table></div>
 <div class="refsect1">
 <a name="gio-GWin32InputStream.functions"></a><h2>Functions</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="functions_return">
 <col class="functions_name">
@@ -57,7 +57,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
+<a href="../glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="gio-GWin32InputStream.html#g-win32-input-stream-get-close-handle" title="g_win32_input_stream_get_close_handle ()">g_win32_input_stream_get_close_handle</a> <span class="c_punctuation">()</span>
@@ -76,7 +76,7 @@
 </div>
 <div class="refsect1">
 <a name="gio-GWin32InputStream.other"></a><h2>Types and Values</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="name">
 <col class="description">
@@ -106,17 +106,17 @@ when using it.</p>
 <a name="g-win32-input-stream-new"></a><h3>g_win32_input_stream_new ()</h3>
 <pre class="programlisting"><a class="link" href="GInputStream.html" title="GInputStream"><span class="returnvalue">GInputStream</span></a> *
 g_win32_input_stream_new (<em class="parameter"><code><span class="type">void</span> *handle</code></em>,
-                          <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="type">gboolean</span></a> close_handle</code></em>);</pre>
+                          <em class="parameter"><code><a href="../glib-Basic-Types.html#gboolean"><span class="type">gboolean</span></a> close_handle</code></em>);</pre>
 <p>Creates a new <a class="link" href="gio-GWin32InputStream.html#GWin32InputStream" title="struct GWin32InputStream"><span class="type">GWin32InputStream</span></a> for the given <em class="parameter"><code>handle</code></em>
 .</p>
 <p>If <em class="parameter"><code>close_handle</code></em>
- is <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a>, the handle will be closed
+ is <a href="../glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a>, the handle will be closed
 when the stream is closed.</p>
 <p>Note that "handle" here means a Win32 HANDLE, not a "file descriptor"
 as used in the Windows C libraries.</p>
 <div class="refsect3">
-<a name="id-1.4.7.21.7.2.7"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-win32-input-stream-new.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -130,14 +130,14 @@ as used in the Windows C libraries.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>close_handle</p></td>
-<td class="parameter_description"><p><a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a> to close the handle when done</p></td>
+<td class="parameter_description"><p><a href="../glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a> to close the handle when done</p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 </tbody>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.7.21.7.2.8"></a><h4>Returns</h4>
+<a name="g-win32-input-stream-new.returns"></a><h4>Returns</h4>
 <p> a new <a class="link" href="gio-GWin32InputStream.html#GWin32InputStream" title="struct GWin32InputStream"><span class="type">GWin32InputStream</span></a></p>
 </div>
 </div>
@@ -146,13 +146,13 @@ as used in the Windows C libraries.</p>
 <a name="g-win32-input-stream-set-close-handle"></a><h3>g_win32_input_stream_set_close_handle ()</h3>
 <pre class="programlisting"><span class="returnvalue">void</span>
 g_win32_input_stream_set_close_handle (<em class="parameter"><code><a class="link" href="gio-GWin32InputStream.html#GWin32InputStream" title="struct GWin32InputStream"><span class="type">GWin32InputStream</span></a> *stream</code></em>,
-                                       <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="type">gboolean</span></a> close_handle</code></em>);</pre>
+                                       <em class="parameter"><code><a href="../glib-Basic-Types.html#gboolean"><span class="type">gboolean</span></a> close_handle</code></em>);</pre>
 <p>Sets whether the handle of <em class="parameter"><code>stream</code></em>
  shall be closed
 when the stream is closed.</p>
 <div class="refsect3">
-<a name="id-1.4.7.21.7.3.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-win32-input-stream-set-close-handle.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -166,7 +166,7 @@ when the stream is closed.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>close_handle</p></td>
-<td class="parameter_description"><p><a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a> to close the handle when done</p></td>
+<td class="parameter_description"><p><a href="../glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a> to close the handle when done</p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 </tbody>
@@ -177,14 +177,14 @@ when the stream is closed.</p>
 <hr>
 <div class="refsect2">
 <a name="g-win32-input-stream-get-close-handle"></a><h3>g_win32_input_stream_get_close_handle ()</h3>
-<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
+<pre class="programlisting"><a href="../glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 g_win32_input_stream_get_close_handle (<em class="parameter"><code><a class="link" href="gio-GWin32InputStream.html#GWin32InputStream" title="struct GWin32InputStream"><span class="type">GWin32InputStream</span></a> *stream</code></em>);</pre>
 <p>Returns whether the handle of <em class="parameter"><code>stream</code></em>
  will be
 closed when the stream is closed.</p>
 <div class="refsect3">
-<a name="id-1.4.7.21.7.4.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-win32-input-stream-get-close-handle.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -198,8 +198,8 @@ closed when the stream is closed.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.7.21.7.4.6"></a><h4>Returns</h4>
-<p> <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a> if the handle is closed when done</p>
+<a name="g-win32-input-stream-get-close-handle.returns"></a><h4>Returns</h4>
+<p> <a href="../glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a> if the handle is closed when done</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-26.html#api-index-2.26">2.26</a></p>
 </div>
@@ -210,8 +210,8 @@ closed when the stream is closed.</p>
 g_win32_input_stream_get_handle (<em class="parameter"><code><a class="link" href="gio-GWin32InputStream.html#GWin32InputStream" title="struct GWin32InputStream"><span class="type">GWin32InputStream</span></a> *stream</code></em>);</pre>
 <p>Return the Windows file handle that the stream reads from.</p>
 <div class="refsect3">
-<a name="id-1.4.7.21.7.5.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-win32-input-stream-get-handle.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -225,7 +225,7 @@ g_win32_input_stream_get_handle (<em class="parameter"><code><a class="link" hre
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.7.21.7.5.6"></a><h4>Returns</h4>
+<a name="g-win32-input-stream-get-handle.returns"></a><h4>Returns</h4>
 <p> The file handle of <em class="parameter"><code>stream</code></em>
 </p>
 </div>
@@ -249,6 +249,6 @@ g_win32_input_stream_get_handle (<em class="parameter"><code><a class="link" hre
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

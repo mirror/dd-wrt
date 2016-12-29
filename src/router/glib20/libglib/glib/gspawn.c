@@ -105,7 +105,7 @@ G_DEFINE_QUARK (g-spawn-exit-error-quark, g_spawn_exit_error)
 
 /**
  * g_spawn_async:
- * @working_directory: (allow-none): child's current working directory, or %NULL to inherit parent's
+ * @working_directory: (type filename) (allow-none): child's current working directory, or %NULL to inherit parent's
  * @argv: (array zero-terminated=1): child's argument vector
  * @envp: (array zero-terminated=1) (allow-none): child's environment, or %NULL to inherit parent's
  * @flags: flags from #GSpawnFlags
@@ -215,7 +215,7 @@ read_data (GString *str,
 
 /**
  * g_spawn_sync:
- * @working_directory: (allow-none): child's current working directory, or %NULL to inherit parent's
+ * @working_directory: (type filename) (allow-none): child's current working directory, or %NULL to inherit parent's
  * @argv: (array zero-terminated=1): child's argument vector
  * @envp: (array zero-terminated=1) (allow-none): child's environment, or %NULL to inherit parent's
  * @flags: flags from #GSpawnFlags
@@ -467,7 +467,7 @@ g_spawn_sync (const gchar          *working_directory,
 
 /**
  * g_spawn_async_with_pipes:
- * @working_directory: (allow-none): child's current working directory, or %NULL to inherit parent's, in the GLib file name encoding
+ * @working_directory: (type filename) (allow-none): child's current working directory, or %NULL to inherit parent's, in the GLib file name encoding
  * @argv: (array zero-terminated=1): child's argument vector, in the GLib file name encoding
  * @envp: (array zero-terminated=1) (allow-none): child's environment, or %NULL to inherit parent's, in the GLib file name encoding
  * @flags: flags from #GSpawnFlags
@@ -509,13 +509,8 @@ g_spawn_sync (const gchar          *working_directory,
  * main(). wmain() has a wide character argument vector as parameter.
  *
  * At least currently, mingw doesn't support wmain(), so if you use
- * mingw to develop the spawned program, it will have to call the
- * undocumented function __wgetmainargs() to get the wide character
- * argument vector and environment. See gspawn-win32-helper.c in the
- * GLib sources or init.c in the mingw runtime sources for a prototype
- * for that function. Alternatively, you can retrieve the Win32 system
- * level wide character command line passed to the spawned program
- * using the GetCommandLineW() function.
+ * mingw to develop the spawned program, it should call
+ * g_win32_get_command_line() to get arguments in UTF-8.
  *
  * On Windows the low-level child process creation API CreateProcess()
  * doesn't use argument vectors, but a command line. The C runtime
@@ -1492,7 +1487,7 @@ fork_exec_with_pipes (gboolean              intermediate_child,
               g_set_error (error,
                            G_SPAWN_ERROR,
                            G_SPAWN_ERROR_CHDIR,
-                           _("Failed to change to directory '%s' (%s)"),
+                           _("Failed to change to directory “%s” (%s)"),
                            working_directory,
                            g_strerror (buf[1]));
 
@@ -1502,7 +1497,7 @@ fork_exec_with_pipes (gboolean              intermediate_child,
               g_set_error (error,
                            G_SPAWN_ERROR,
                            exec_err_to_g_error (buf[1]),
-                           _("Failed to execute child process \"%s\" (%s)"),
+                           _("Failed to execute child process “%s” (%s)"),
                            argv[0],
                            g_strerror (buf[1]));
 
@@ -1529,7 +1524,7 @@ fork_exec_with_pipes (gboolean              intermediate_child,
               g_set_error (error,
                            G_SPAWN_ERROR,
                            G_SPAWN_ERROR_FAILED,
-                           _("Unknown error executing child process \"%s\""),
+                           _("Unknown error executing child process “%s”"),
                            argv[0]);
               break;
             }

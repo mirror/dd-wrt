@@ -1,7 +1,5 @@
 NULL =
 
-SUBDIRS = gdbus-object-manager-example
-
 # The name of the module.
 DOC_MODULE=gio
 
@@ -13,10 +11,11 @@ SCAN_OPTIONS=--deprecated-guards="G_DISABLE_DEPRECATED" \
              --ignore-decorators="G_GNUC_WARN_UNUSED_RESULT"
 
 # The directory containing the source code. Relative to $(srcdir)
-DOC_SOURCE_DIR=$(top_srcdir)/gio
+DOC_SOURCE_DIR =$(top_srcdir)/gio $(top_builddir)/gio
 
-BUILT_HFILES=gioenumtypes.h
-HFILE_GLOB=$(top_srcdir)/gio/*.h
+HFILE_GLOB= \
+    $(top_srcdir)/gio/*.h \
+    $(top_builddir)/gio/gioenumtypes.h
 CFILE_GLOB=$(top_srcdir)/gio/*.c
 
 IGNORE_HFILES = \
@@ -52,6 +51,7 @@ IGNORE_HFILES = \
 	gfileattribute-priv.h		\
 	gfileinfo-priv.h		\
 	ghttpproxy.h			\
+	gio_trace.h			\
 	giomodule-priv.h		\
 	gioprivate.h			\
 	giowin32-priv.h			\
@@ -141,6 +141,7 @@ content_files =			\
 	gresource.xml		\
 	gdbus.xml		\
 	gdbus-codegen.xml	\
+	gio.xml			\
 	$(NULL)
 
 expand_content_files =		\
@@ -168,15 +169,17 @@ man_MANS =
 
 if ENABLE_MAN
 
-man_MANS +=			\
-	gapplication.1		\
-	gio-querymodules.1	\
-	glib-compile-schemas.1	\
+man_MANS +=				\
+	gapplication.1			\
+	gio-querymodules.1		\
+	glib-compile-schemas.1		\
 	glib-compile-resources.1	\
-	gsettings.1		\
-	gresource.1		\
-	gdbus.1			\
-	gdbus-codegen.1
+	gsettings.1			\
+	gresource.1			\
+	gdbus.1				\
+	gdbus-codegen.1			\
+	gio.1				\
+	$(NULL)
 
 XSLTPROC_FLAGS = \
         --nonet \

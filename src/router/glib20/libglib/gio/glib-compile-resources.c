@@ -214,9 +214,10 @@ end_element (GMarkupParseContext  *context,
 
   else if (strcmp (element_name, "file") == 0)
     {
-      gchar *file, *real_file;
+      gchar *file;
+      gchar *real_file = NULL;
       gchar *key;
-      FileData *data;
+      FileData *data = NULL;
       char *tmp_file = NULL;
       char *tmp_file2 = NULL;
 
@@ -238,15 +239,13 @@ end_element (GMarkupParseContext  *context,
 	  return;
 	}
 
-      data = g_new0 (FileData, 1);
-
       if (sourcedirs != NULL)
         {
 	  real_file = find_file (file);
-	  if (real_file == NULL)
+	  if (real_file == NULL && state->collect_data)
 	    {
 		g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED,
-			     _("Failed to locate '%s' in any source directory"), file);
+			     _("Failed to locate “%s” in any source directory"), file);
 		return;
 	    }
 	}
@@ -254,15 +253,18 @@ end_element (GMarkupParseContext  *context,
         {
 	  gboolean exists;
 	  exists = g_file_test (file, G_FILE_TEST_EXISTS);
-	  if (!exists)
+	  if (!exists && state->collect_data)
 	    {
 	      g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED,
-			   _("Failed to locate '%s' in current directory"), file);
+			   _("Failed to locate “%s” in current directory"), file);
 	      return;
 	    }
-	  real_file = g_strdup (file);
 	}
 
+      if (real_file == NULL)
+        real_file = g_strdup (file);
+
+      data = g_new0 (FileData, 1);
       data->filename = g_strdup (real_file);
       if (!state->collect_data)
         goto done;
@@ -285,7 +287,7 @@ end_element (GMarkupParseContext  *context,
               else
                 {
                   g_set_error (error, G_MARKUP_ERROR, G_MARKUP_ERROR_INVALID_CONTENT,
-                               _("Unknown processing option \"%s\""), options[i]);
+                               _("Unknown processing option “%s”"), options[i]);
                   g_strfreev (options);
                   goto cleanup;
                 }
@@ -413,9 +415,9 @@ end_element (GMarkupParseContext  *context,
 	  data->flags |= G_RESOURCE_FLAGS_COMPRESSED;
 	}
 
-    done:
-
+done:
       g_hash_table_insert (state->table, key, data);
+      data = NULL;
 
     cleanup:
       /* Cleanup */
@@ -440,6 +442,9 @@ end_element (GMarkupParseContext  *context,
           unlink (tmp_file2);
           g_free (tmp_file2);
         }
+
+      if (data != NULL)
+        file_data_free (data);
     }
 }
 
@@ -470,7 +475,8 @@ text (GMarkupParseContext  *context,
 
 static GHashTable *
 parse_resource_file (const gchar *filename,
-                     gboolean collect_data)
+                     gboolean     collect_data,
+                     GHashTable  *files)
 {
   GMarkupParser parser = { start_element, end_element, text };
   ParseState state = { 0, };
@@ -487,8 +493,8 @@ parse_resource_file (const gchar *filename,
       return NULL;
     }
 
-  state.table = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, (GDestroyNotify)file_data_free);
   state.collect_data = collect_data;
+  state.table = g_hash_table_ref (files);
 
   context = g_markup_parse_context_new (&parser,
 					G_MARKUP_TREAT_CDATA_AS_TEXT |
@@ -501,7 +507,7 @@ parse_resource_file (const gchar *filename,
       g_printerr ("%s: %s.\n", filename, error->message);
       g_clear_error (&error);
     }
-  else if (collect_data)
+  else
     {
       GHashTableIter iter;
       const char *key;
@@ -541,10 +547,6 @@ parse_resource_file (const gchar *filename,
 			       g_variant_builder_end (&builder));
 	}
     }
-  else
-    {
-      table = g_hash_table_ref (state.table);
-    }
 
   g_hash_table_unref (state.table);
   g_markup_parse_context_free (context);
@@ -567,12 +569,41 @@ write_to_file (GHashTable   *table,
   return success;
 }
 
+static gboolean
+extension_in_set (const char *str,
+                  ...)
+{
+  va_list list;
+  const char *ext, *value;
+  gboolean rv = FALSE;
+
+  ext = strrchr (str, '.');
+  if (ext == NULL)
+    return FALSE;
+
+  ext++;
+  va_start (list, str);
+  while ((value = va_arg (list, const char *)) != NULL)
+    {
+      if (g_ascii_strcasecmp (ext, value) != 0)
+        continue;
+
+      rv = TRUE;
+      break;
+    }
+
+  va_end (list);
+  return rv;
+}
+
 int
 main (int argc, char **argv)
 {
   GError *error;
   GHashTable *table;
+  GHashTable *files;
   gchar *srcfile;
+  gboolean show_version_and_exit = FALSE;
   gchar *target = NULL;
   gchar *binary_target = NULL;
   gboolean generate_automatic = FALSE;
@@ -581,19 +612,22 @@ main (int argc, char **argv)
   gboolean manual_register = FALSE;
   gboolean internal = FALSE;
   gboolean generate_dependencies = FALSE;
+  char *dependency_file = NULL;
   char *c_name = NULL;
   char *c_name_no_underscores;
   const char *linkage = "extern";
   GOptionContext *context;
   GOptionEntry entries[] = {
+    { "version", 0, 0, G_OPTION_ARG_NONE, &show_version_and_exit, N_("Show program version and exit"), NULL },
     { "target", 0, 0, G_OPTION_ARG_FILENAME, &target, N_("name of the output file"), N_("FILE") },
     { "sourcedir", 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &sourcedirs, N_("The directories where files are to be read from (default to current directory)"), N_("DIRECTORY") },
     { "generate", 0, 0, G_OPTION_ARG_NONE, &generate_automatic, N_("Generate output in the format selected for by the target filename extension"), NULL },
     { "generate-header", 0, 0, G_OPTION_ARG_NONE, &generate_header, N_("Generate source header"), NULL },
     { "generate-source", 0, 0, G_OPTION_ARG_NONE, &generate_source, N_("Generate sourcecode used to link in the resource file into your code"), NULL },
     { "generate-dependencies", 0, 0, G_OPTION_ARG_NONE, &generate_dependencies, N_("Generate dependency list"), NULL },
-    { "manual-register", 0, 0, G_OPTION_ARG_NONE, &manual_register, N_("Don't automatically create and register resource"), NULL },
-    { "internal", 0, 0, G_OPTION_ARG_NONE, &internal, N_("Don't export functions; declare them G_GNUC_INTERNAL"), NULL },
+    { "dependency-file", 0, 0, G_OPTION_ARG_FILENAME, &dependency_file, N_("name of the dependency file to generate"), N_("FILE") },
+    { "manual-register", 0, 0, G_OPTION_ARG_NONE, &manual_register, N_("Don’t automatically create and register resource"), NULL },
+    { "internal", 0, 0, G_OPTION_ARG_NONE, &internal, N_("Don’t export functions; declare them G_GNUC_INTERNAL"), NULL },
     { "c-name", 0, 0, G_OPTION_ARG_STRING, &c_name, N_("C identifier name used for the generated source code"), NULL },
     { NULL }
   };
@@ -634,9 +668,16 @@ main (int argc, char **argv)
 
   g_option_context_free (context);
 
+  if (show_version_and_exit)
+    {
+      g_print (PACKAGE_VERSION "\n");
+      return 0;
+    }
+
   if (argc != 2)
     {
       g_printerr (_("You should give exactly one file name\n"));
+      g_free (c_name);
       return 1;
     }
 
@@ -690,18 +731,76 @@ main (int argc, char **argv)
     }
   else if (generate_automatic)
     {
-      if (g_str_has_suffix (target, ".c"))
+      if (extension_in_set (target, "c", "cc", "cpp", "cxx", "c++", NULL))
         generate_source = TRUE;
-      else if (g_str_has_suffix (target, ".h"))
+      else if (extension_in_set (target, "h", "hh", "hpp", "hxx", "h++", NULL))
         generate_header = TRUE;
-      else if (g_str_has_suffix (target, ".gresource"))
+      else if (extension_in_set (target, "gresource", NULL))
         ;
     }
 
-  if ((table = parse_resource_file (srcfile, !generate_dependencies)) == NULL)
+  files = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, (GDestroyNotify)file_data_free);
+
+  if ((table = parse_resource_file (srcfile, !generate_dependencies, files)) == NULL)
     {
       g_free (target);
+      g_free (c_name);
       return 1;
+    }
+
+  /* This can be used in the same invocation
+     as other generate commands */
+  if (dependency_file != NULL)
+    {
+      /* Generate a .d file that describes the dependencies for
+       * build tools, gcc -M -MF style */
+      GString *dep_string;
+      GHashTableIter iter;
+      gpointer key, data;
+      FileData *file_data;
+
+      g_hash_table_iter_init (&iter, files);
+
+      dep_string = g_string_new (NULL);
+      g_string_printf (dep_string, "%s:", srcfile);
+
+      /* First rule: foo.xml: resource1 resource2.. */
+      while (g_hash_table_iter_next (&iter, &key, &data))
+        {
+          file_data = data;
+          if (!g_str_equal (file_data->filename, srcfile))
+            g_string_append_printf (dep_string, " %s", file_data->filename);
+        }
+
+      g_string_append (dep_string, "\n\n");
+
+      /* One rule for every resource: resourceN: */
+      g_hash_table_iter_init (&iter, files);
+      while (g_hash_table_iter_next (&iter, &key, &data))
+        {
+          file_data = data;
+          if (!g_str_equal (file_data->filename, srcfile))
+            g_string_append_printf (dep_string, "%s:\n\n", file_data->filename);
+        }
+
+      if (g_str_equal (dependency_file, "-"))
+        {
+          g_print ("%s\n", dep_string->str);
+        }
+      else
+        {
+          if (!g_file_set_contents (dependency_file, dep_string->str, dep_string->len, &error))
+            {
+              g_printerr ("Error writing dependency file: %s\n", error->message);
+              g_string_free (dep_string, TRUE);
+              g_free (dependency_file);
+              g_error_free (error);
+              return 1;
+            }
+        }
+
+      g_string_free (dep_string, TRUE);
+      g_free (dependency_file);
     }
 
   if (generate_dependencies)
@@ -710,11 +809,13 @@ main (int argc, char **argv)
       gpointer key, data;
       FileData *file_data;
 
-      g_hash_table_iter_init (&iter, table);
+      g_hash_table_iter_init (&iter, files);
+
+      /* Generate list of files for direct use as dependencies in a Makefile */
       while (g_hash_table_iter_next (&iter, &key, &data))
         {
           file_data = data;
-          g_print ("%s\n",file_data->filename);
+          g_print ("%s\n", file_data->filename);
         }
     }
   else if (generate_source || generate_header)
@@ -725,6 +826,7 @@ main (int argc, char **argv)
 	  if (fd == -1)
 	    {
 	      g_printerr ("Can't open temp file\n");
+	      g_free (c_name);
 	      return 1;
 	    }
 	  close (fd);
@@ -770,6 +872,7 @@ main (int argc, char **argv)
     {
       g_printerr ("%s\n", error->message);
       g_free (target);
+      g_free (c_name);
       return 1;
     }
 
@@ -781,6 +884,7 @@ main (int argc, char **argv)
       if (file == NULL)
 	{
 	  g_printerr ("can't write to file %s", target);
+	  g_free (c_name);
 	  return 1;
 	}
 
@@ -817,6 +921,7 @@ main (int argc, char **argv)
 				&data_size, NULL))
 	{
 	  g_printerr ("can't read back temporary file");
+	  g_free (c_name);
 	  return 1;
 	}
       g_unlink (binary_target);
@@ -825,6 +930,7 @@ main (int argc, char **argv)
       if (file == NULL)
 	{
 	  g_printerr ("can't write to file %s", target);
+	  g_free (c_name);
 	  return 1;
 	}
 
@@ -920,6 +1026,7 @@ main (int argc, char **argv)
   g_free (target);
   g_hash_table_destroy (table);
   g_free (xmllint);
+  g_free (c_name);
 
   return 0;
 }

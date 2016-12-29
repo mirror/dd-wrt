@@ -89,6 +89,20 @@ typedef struct _GFileInfoClass   GFileInfoClass;
 #define G_FILE_ATTRIBUTE_STANDARD_IS_VIRTUAL "standard::is-virtual"         /* boolean */
 
 /**
+ * G_FILE_ATTRIBUTE_STANDARD_IS_VOLATILE:
+ *
+ * A key in the "standard" namespace for checking if a file is
+ * volatile. This is meant for opaque, non-POSIX-like backends to
+ * indicate that the URI is not persistent. Applications should look
+ * at #G_FILE_ATTRIBUTE_STANDARD_SYMLINK_TARGET for the persistent URI.
+ *
+ * Corresponding #GFileAttributeType is %G_FILE_ATTRIBUTE_TYPE_BOOLEAN.
+ *
+ * Since: 2.46
+ **/
+#define G_FILE_ATTRIBUTE_STANDARD_IS_VOLATILE "standard::is-volatile"      /* boolean */
+
+/**
  * G_FILE_ATTRIBUTE_STANDARD_NAME:
  *
  * A key in the "standard" namespace for getting the name of the file.
@@ -789,6 +803,15 @@ typedef struct _GFileInfoClass   GFileInfoClass;
  * #GFilesystemPreviewType.
  **/
 #define G_FILE_ATTRIBUTE_FILESYSTEM_USE_PREVIEW "filesystem::use-preview"        /* uint32 (GFilesystemPreviewType) */
+
+/**
+ * G_FILE_ATTRIBUTE_FILESYSTEM_REMOTE:
+ *
+ * A key in the "filesystem" namespace for checking if the file system
+ * is remote. Is set to %TRUE if the file system is remote.
+ * Corresponding #GFileAttributeType is %G_FILE_ATTRIBUTE_TYPE_BOOLEAN.
+ **/
+#define G_FILE_ATTRIBUTE_FILESYSTEM_REMOTE "filesystem::remote"                   /* boolean */
 
 /**
  * G_FILE_ATTRIBUTE_GVFS_BACKEND:

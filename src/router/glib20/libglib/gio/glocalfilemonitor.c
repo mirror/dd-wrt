@@ -344,7 +344,8 @@ g_file_monitor_source_handle_event (GFileMonitorSource *fms,
   g_assert (!child || is_basename (child));
   g_assert (!rename_to || is_basename (rename_to));
 
-  if (fms->basename && (!child || !g_str_equal (child, fms->basename)))
+  if (fms->basename && (!child || !g_str_equal (child, fms->basename))
+                    && (!rename_to || !g_str_equal (rename_to, fms->basename)))
     return TRUE;
 
   g_mutex_lock (&fms->lock);
@@ -385,7 +386,7 @@ g_file_monitor_source_handle_event (GFileMonitorSource *fms,
       g_assert (!rename_to);
       if (fms->flags & G_FILE_MONITOR_WATCH_MOVES)
         g_file_monitor_source_send_event (fms, G_FILE_MONITOR_EVENT_MOVED_OUT, child, other);
-      else if (fms->flags & G_FILE_MONITOR_SEND_MOVED)
+      else if (other && (fms->flags & G_FILE_MONITOR_SEND_MOVED))
         g_file_monitor_source_send_event (fms, G_FILE_MONITOR_EVENT_MOVED, child, other);
       else
         g_file_monitor_source_send_event (fms, G_FILE_MONITOR_EVENT_DELETED, child, NULL);
@@ -408,7 +409,6 @@ g_file_monitor_source_handle_event (GFileMonitorSource *fms,
 
           other = g_local_file_new_from_dirname_and_basename (fms->dirname, rename_to);
           g_file_monitor_source_file_changes_done (fms, rename_to);
-          g_print ("send %s %s\n", child, g_file_get_path (other));
           g_file_monitor_source_send_event (fms, G_FILE_MONITOR_EVENT_MOVED, child, other);
           g_object_unref (other);
         }
@@ -504,7 +504,7 @@ g_file_monitor_source_dispatch (GSource     *source,
   g_mutex_lock (&fms->lock);
 
   /* Create events for any pending changes that are due to fire */
-  while (g_sequence_get_length (fms->pending_changes))
+  while (!g_sequence_is_empty (fms->pending_changes))
     {
       GSequenceIter *iter = g_sequence_get_begin_iter (fms->pending_changes);
       PendingChange *pending = g_sequence_get (iter);
@@ -572,7 +572,7 @@ g_file_monitor_source_dispose (GFileMonitorSource *fms)
       while ((event = g_queue_pop_head (&fms->event_queue)))
         queued_event_free (event);
 
-      g_assert (g_sequence_get_length (fms->pending_changes) == 0);
+      g_assert (g_sequence_is_empty (fms->pending_changes));
       g_assert (g_hash_table_size (fms->pending_changes_table) == 0);
       g_assert (fms->event_queue.length == 0);
       fms->instance = NULL;
@@ -592,7 +592,7 @@ g_file_monitor_source_finalize (GSource *source)
 
   /* should already have been cleared in dispose of the monitor */
   g_assert (fms->instance == NULL);
-  g_assert (g_sequence_get_length (fms->pending_changes) == 0);
+  g_assert (g_sequence_is_empty (fms->pending_changes));
   g_assert (g_hash_table_size (fms->pending_changes_table) == 0);
   g_assert (fms->event_queue.length == 0);
 
@@ -748,6 +748,9 @@ g_local_file_monitor_start (GLocalFileMonitor *local_monitor,
 
   g_assert (!local_monitor->source);
 
+  source = g_file_monitor_source_new (local_monitor, filename, is_directory, flags);
+  local_monitor->source = source; /* owns the ref */
+
   if (is_directory && !class->mount_notify && (flags & G_FILE_MONITOR_WATCH_MOUNTS))
     {
 #ifdef G_OS_WIN32
@@ -770,9 +773,6 @@ g_local_file_monitor_start (GLocalFileMonitor *local_monitor,
                                G_CALLBACK (g_local_file_monitor_mounts_changed), local_monitor, 0);
 #endif
     }
-
-  source = g_file_monitor_source_new (local_monitor, filename, is_directory, flags);
-  local_monitor->source = source; /* owns the ref */
 
   G_LOCAL_FILE_MONITOR_GET_CLASS (local_monitor)->start (local_monitor,
                                                          source->dirname, source->basename, source->filename,

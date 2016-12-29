@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
-<book xmlns="" title="GObject Reference Manual" link="index.html" author="" name="gobject" version="2" language="c">
+<book xmlns="http://www.devhelp.net/book" title="GObject Reference Manual" link="index.html" author="" name="gobject" version="2" language="c" online="https://developer.gnome.org/gobject/unstable/">
   <chapters>
     <sub name="Introduction" link="pr01.html"/>
     <sub name="Concepts" link="pt01.html">
@@ -49,8 +49,8 @@
       <sub name="How to define and implement a new GObject" link="howto-gobject.html">
         <sub name="Boilerplate header code" link="howto-gobject.html#howto-gobject-header"/>
         <sub name="Boilerplate code" link="howto-gobject-code.html"/>
-        <sub name="Object Construction" link="howto-gobject-construction.html"/>
-        <sub name="Object Destruction" link="howto-gobject-destruction.html"/>
+        <sub name="Object construction" link="howto-gobject-construction.html"/>
+        <sub name="Object destruction" link="howto-gobject-destruction.html"/>
         <sub name="Object methods" link="howto-gobject-methods.html"/>
         <sub name="Chaining up" link="howto-gobject-chainup.html"/>
       </sub>
@@ -94,6 +94,7 @@
     <sub name="Index of new symbols in 2.40" link="api-index-2-40.html"/>
     <sub name="Index of new symbols in 2.42" link="api-index-2-42.html"/>
     <sub name="Index of new symbols in 2.44" link="api-index-2-44.html"/>
+    <sub name="Index of new symbols in 2.46" link="api-index-2-46.html"/>
     <sub name="Annotation Glossary" link="annotation-glossary.html"/>
   </chapters>
   <functions>
@@ -203,7 +204,6 @@
     <keyword type="macro" name="G_DEFINE_BOXED_TYPE_WITH_CODE()" link="gobject-Type-Information.html#G-DEFINE-BOXED-TYPE-WITH-CODE:CAPS" since="2.26"/>
     <keyword type="macro" name="G_DEFINE_POINTER_TYPE()" link="gobject-Type-Information.html#G-DEFINE-POINTER-TYPE:CAPS" since="2.26"/>
     <keyword type="macro" name="G_DEFINE_POINTER_TYPE_WITH_CODE()" link="gobject-Type-Information.html#G-DEFINE-POINTER-TYPE-WITH-CODE:CAPS" since="2.26"/>
-    <keyword type="macro" name="G_TYPE_CHECKSUM" link="gobject-Type-Information.html#G-TYPE-CHECKSUM:CAPS" since="2.36"/>
     <keyword type="typedef" name="GType" link="gobject-Type-Information.html#GType"/>
     <keyword type="macro" name="G_TYPE_FUNDAMENTAL_MAX" link="gobject-Type-Information.html#G-TYPE-FUNDAMENTAL-MAX:CAPS"/>
     <keyword type="struct" name="struct GTypeInterface" link="gobject-Type-Information.html#GTypeInterface"/>
@@ -241,6 +241,7 @@
     <keyword type="macro" name="G_TYPE_OBJECT" link="gobject-Type-Information.html#G-TYPE-OBJECT:CAPS"/>
     <keyword type="macro" name="G_TYPE_GTYPE" link="gobject-Type-Information.html#G-TYPE-GTYPE:CAPS"/>
     <keyword type="macro" name="G_TYPE_VARIANT" link="gobject-Type-Information.html#G-TYPE-VARIANT:CAPS" since="2.26"/>
+    <keyword type="macro" name="G_TYPE_CHECKSUM" link="gobject-Type-Information.html#G-TYPE-CHECKSUM:CAPS" since="2.36"/>
     <keyword type="macro" name="G_TYPE_RESERVED_GLIB_FIRST" link="gobject-Type-Information.html#G-TYPE-RESERVED-GLIB-FIRST:CAPS"/>
     <keyword type="macro" name="G_TYPE_RESERVED_GLIB_LAST" link="gobject-Type-Information.html#G-TYPE-RESERVED-GLIB-LAST:CAPS"/>
     <keyword type="macro" name="G_TYPE_RESERVED_BSE_FIRST" link="gobject-Type-Information.html#G-TYPE-RESERVED-BSE-FIRST:CAPS"/>
@@ -405,15 +406,12 @@
     <keyword type="macro" name="G_TYPE_POLLFD" link="gobject-Boxed-Types.html#G-TYPE-POLLFD:CAPS" since="2.36"/>
     <keyword type="macro" name="G_TYPE_THREAD" link="gobject-Boxed-Types.html#G-TYPE-THREAD:CAPS" since="2.36"/>
     <keyword type="macro" name="G_TYPE_OPTION_GROUP" link="gobject-Boxed-Types.html#G-TYPE-OPTION-GROUP:CAPS" since="2.44"/>
-    <keyword type="typedef" name="GStrv" link="gobject-Boxed-Types.html#GStrv"/>
     <keyword type="macro" name="G_VALUE_HOLDS()" link="gobject-Generic-values.html#G-VALUE-HOLDS:CAPS"/>
     <keyword type="macro" name="G_VALUE_TYPE()" link="gobject-Generic-values.html#G-VALUE-TYPE:CAPS"/>
     <keyword type="macro" name="G_VALUE_TYPE_NAME()" link="gobject-Generic-values.html#G-VALUE-TYPE-NAME:CAPS"/>
     <keyword type="macro" name="G_TYPE_IS_VALUE()" link="gobject-Generic-values.html#G-TYPE-IS-VALUE:CAPS"/>
     <keyword type="macro" name="G_TYPE_IS_VALUE_ABSTRACT()" link="gobject-Generic-values.html#G-TYPE-IS-VALUE-ABSTRACT:CAPS"/>
     <keyword type="macro" name="G_IS_VALUE()" link="gobject-Generic-values.html#G-IS-VALUE:CAPS"/>
-    <keyword type="macro" name="G_TYPE_VALUE" link="gobject-Generic-values.html#G-TYPE-VALUE:CAPS"/>
-    <keyword type="macro" name="G_TYPE_VALUE_ARRAY" link="gobject-Generic-values.html#G-TYPE-VALUE-ARRAY:CAPS" deprecated="2.32: Use #GArray instead of #GValueArray"/>
     <keyword type="function" name="g_value_init ()" link="gobject-Generic-values.html#g-value-init"/>
     <keyword type="function" name="g_value_copy ()" link="gobject-Generic-values.html#g-value-copy"/>
     <keyword type="function" name="g_value_reset ()" link="gobject-Generic-values.html#g-value-reset"/>
@@ -430,6 +428,8 @@
     <keyword type="function" name="g_strdup_value_contents ()" link="gobject-Generic-values.html#g-strdup-value-contents"/>
     <keyword type="macro" name="G_VALUE_INIT" link="gobject-Generic-values.html#G-VALUE-INIT:CAPS" since="2.30"/>
     <keyword type="struct" name="GValue" link="gobject-Generic-values.html#GValue"/>
+    <keyword type="macro" name="G_TYPE_VALUE" link="gobject-Generic-values.html#G-TYPE-VALUE:CAPS"/>
+    <keyword type="macro" name="G_TYPE_VALUE_ARRAY" link="gobject-Generic-values.html#G-TYPE-VALUE-ARRAY:CAPS" deprecated="2.32: Use #GArray instead of #GValueArray"/>
     <keyword type="macro" name="G_IS_PARAM_SPEC_BOOLEAN()" link="gobject-Standard-Parameter-and-Value-Types.html#G-IS-PARAM-SPEC-BOOLEAN:CAPS"/>
     <keyword type="macro" name="G_PARAM_SPEC_BOOLEAN()" link="gobject-Standard-Parameter-and-Value-Types.html#G-PARAM-SPEC-BOOLEAN:CAPS"/>
     <keyword type="macro" name="G_VALUE_HOLDS_BOOLEAN()" link="gobject-Standard-Parameter-and-Value-Types.html#G-VALUE-HOLDS-BOOLEAN:CAPS"/>
@@ -572,7 +572,6 @@
     <keyword type="macro" name="G_IS_PARAM_SPEC_VARIANT()" link="gobject-Standard-Parameter-and-Value-Types.html#G-IS-PARAM-SPEC-VARIANT:CAPS" since="2.26"/>
     <keyword type="macro" name="G_PARAM_SPEC_VARIANT()" link="gobject-Standard-Parameter-and-Value-Types.html#G-PARAM-SPEC-VARIANT:CAPS" since="2.26"/>
     <keyword type="macro" name="G_VALUE_HOLDS_VARIANT()" link="gobject-Standard-Parameter-and-Value-Types.html#G-VALUE-HOLDS-VARIANT:CAPS" since="2.26"/>
-    <keyword type="macro" name="G_TYPE_PARAM_VARIANT" link="gobject-Standard-Parameter-and-Value-Types.html#G-TYPE-PARAM-VARIANT:CAPS" since="2.26"/>
     <keyword type="function" name="g_param_spec_variant ()" link="gobject-Standard-Parameter-and-Value-Types.html#g-param-spec-variant" since="2.26"/>
     <keyword type="function" name="g_value_get_variant ()" link="gobject-Standard-Parameter-and-Value-Types.html#g-value-get-variant" since="2.26"/>
     <keyword type="function" name="g_value_dup_variant ()" link="gobject-Standard-Parameter-and-Value-Types.html#g-value-dup-variant" since="2.26"/>
@@ -623,6 +622,7 @@
     <keyword type="struct" name="struct GParamSpecOverride" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecOverride" since="2.4"/>
     <keyword type="macro" name="G_TYPE_PARAM_GTYPE" link="gobject-Standard-Parameter-and-Value-Types.html#G-TYPE-PARAM-GTYPE:CAPS" since="2.10"/>
     <keyword type="struct" name="struct GParamSpecGType" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecGType" since="2.10"/>
+    <keyword type="macro" name="G_TYPE_PARAM_VARIANT" link="gobject-Standard-Parameter-and-Value-Types.html#G-TYPE-PARAM-VARIANT:CAPS" since="2.26"/>
     <keyword type="struct" name="struct GParamSpecVariant" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecVariant" since="2.26"/>
     <keyword type="macro" name="G_TYPE_IS_PARAM()" link="gobject-GParamSpec.html#G-TYPE-IS-PARAM:CAPS"/>
     <keyword type="macro" name="G_PARAM_SPEC()" link="gobject-GParamSpec.html#G-PARAM-SPEC:CAPS"/>
@@ -633,7 +633,6 @@
     <keyword type="macro" name="G_PARAM_SPEC_TYPE()" link="gobject-GParamSpec.html#G-PARAM-SPEC-TYPE:CAPS"/>
     <keyword type="macro" name="G_PARAM_SPEC_TYPE_NAME()" link="gobject-GParamSpec.html#G-PARAM-SPEC-TYPE-NAME:CAPS"/>
     <keyword type="macro" name="G_PARAM_SPEC_VALUE_TYPE()" link="gobject-GParamSpec.html#G-PARAM-SPEC-VALUE-TYPE:CAPS"/>
-    <keyword type="macro" name="G_PARAM_STATIC_STRINGS" link="gobject-GParamSpec.html#G-PARAM-STATIC-STRINGS:CAPS"/>
     <keyword type="function" name="g_param_spec_ref ()" link="gobject-GParamSpec.html#g-param-spec-ref"/>
     <keyword type="function" name="g_param_spec_unref ()" link="gobject-GParamSpec.html#g-param-spec-unref"/>
     <keyword type="function" name="g_param_spec_sink ()" link="gobject-GParamSpec.html#g-param-spec-sink"/>
@@ -645,6 +644,7 @@
     <keyword type="function" name="g_param_value_convert ()" link="gobject-GParamSpec.html#g-param-value-convert"/>
     <keyword type="function" name="g_param_values_cmp ()" link="gobject-GParamSpec.html#g-param-values-cmp"/>
     <keyword type="function" name="g_param_spec_get_name ()" link="gobject-GParamSpec.html#g-param-spec-get-name"/>
+    <keyword type="function" name="g_param_spec_get_name_quark ()" link="gobject-GParamSpec.html#g-param-spec-get-name-quark" since="2.46"/>
     <keyword type="function" name="g_param_spec_get_nick ()" link="gobject-GParamSpec.html#g-param-spec-get-nick"/>
     <keyword type="function" name="g_param_spec_get_blurb ()" link="gobject-GParamSpec.html#g-param-spec-get-blurb"/>
     <keyword type="function" name="g_param_spec_get_qdata ()" link="gobject-GParamSpec.html#g-param-spec-get-qdata"/>
@@ -663,6 +663,7 @@
     <keyword type="struct" name="struct GParamSpec" link="gobject-GParamSpec.html#GParamSpec"/>
     <keyword type="struct" name="struct GParamSpecClass" link="gobject-GParamSpec.html#GParamSpecClass"/>
     <keyword type="enum" name="enum GParamFlags" link="gobject-GParamSpec.html#GParamFlags"/>
+    <keyword type="macro" name="G_PARAM_STATIC_STRINGS" link="gobject-GParamSpec.html#G-PARAM-STATIC-STRINGS:CAPS"/>
     <keyword type="macro" name="G_PARAM_MASK" link="gobject-GParamSpec.html#G-PARAM-MASK:CAPS"/>
     <keyword type="macro" name="G_PARAM_USER_SHIFT" link="gobject-GParamSpec.html#G-PARAM-USER-SHIFT:CAPS"/>
     <keyword type="struct" name="struct GParamSpecTypeInfo" link="gobject-GParamSpec.html#GParamSpecTypeInfo"/>
@@ -675,7 +676,6 @@
     <keyword type="macro" name="G_VALUE_COLLECT_FORMAT_MAX_LENGTH" link="gobject-Varargs-Value-Collection.html#G-VALUE-COLLECT-FORMAT-MAX-LENGTH:CAPS"/>
     <keyword type="function" name="GSignalAccumulator ()" link="gobject-Signals.html#GSignalAccumulator"/>
     <keyword type="function" name="GSignalEmissionHook ()" link="gobject-Signals.html#GSignalEmissionHook"/>
-    <keyword type="macro" name="G_SIGNAL_TYPE_STATIC_SCOPE" link="gobject-Signals.html#G-SIGNAL-TYPE-STATIC-SCOPE:CAPS"/>
     <keyword type="function" name="g_signal_new ()" link="gobject-Signals.html#g-signal-new"/>
     <keyword type="function" name="g_signal_newv ()" link="gobject-Signals.html#g-signal-newv"/>
     <keyword type="function" name="g_signal_new_valist ()" link="gobject-Signals.html#g-signal-new-valist"/>
@@ -728,6 +728,7 @@
     <keyword type="enum" name="enum GSignalFlags" link="gobject-Signals.html#GSignalFlags"/>
     <keyword type="enum" name="enum GSignalMatchType" link="gobject-Signals.html#GSignalMatchType"/>
     <keyword type="struct" name="struct GSignalQuery" link="gobject-Signals.html#GSignalQuery"/>
+    <keyword type="macro" name="G_SIGNAL_TYPE_STATIC_SCOPE" link="gobject-Signals.html#G-SIGNAL-TYPE-STATIC-SCOPE:CAPS"/>
     <keyword type="macro" name="G_SIGNAL_MATCH_MASK" link="gobject-Signals.html#G-SIGNAL-MATCH-MASK:CAPS"/>
     <keyword type="macro" name="G_SIGNAL_FLAGS_MASK" link="gobject-Signals.html#G-SIGNAL-FLAGS-MASK:CAPS"/>
     <keyword type="enum" name="enum GConnectFlags" link="gobject-Signals.html#GConnectFlags"/>
@@ -736,7 +737,6 @@
     <keyword type="macro" name="G_CCLOSURE_SWAP_DATA()" link="gobject-Closures.html#G-CCLOSURE-SWAP-DATA:CAPS"/>
     <keyword type="macro" name="G_CALLBACK()" link="gobject-Closures.html#G-CALLBACK:CAPS"/>
     <keyword type="function" name="GCallback ()" link="gobject-Closures.html#GCallback"/>
-    <keyword type="macro" name="G_TYPE_CLOSURE" link="gobject-Closures.html#G-TYPE-CLOSURE:CAPS"/>
     <keyword type="function" name="GClosureMarshal ()" link="gobject-Closures.html#GClosureMarshal"/>
     <keyword type="function" name="GVaClosureMarshal ()" link="gobject-Closures.html#GVaClosureMarshal"/>
     <keyword type="function" name="GClosureNotify ()" link="gobject-Closures.html#GClosureNotify"/>
@@ -807,6 +807,7 @@
     <keyword type="function" name="g_cclosure_marshal_BOOLEAN__FLAGSv ()" link="gobject-Closures.html#g-cclosure-marshal-BOOLEAN--FLAGSv"/>
     <keyword type="function" name="g_cclosure_marshal_BOOLEAN__BOXED_BOXEDv ()" link="gobject-Closures.html#g-cclosure-marshal-BOOLEAN--BOXED-BOXEDv"/>
     <keyword type="struct" name="struct GClosure" link="gobject-Closures.html#GClosure"/>
+    <keyword type="macro" name="G_TYPE_CLOSURE" link="gobject-Closures.html#G-TYPE-CLOSURE:CAPS"/>
     <keyword type="struct" name="struct GCClosure" link="gobject-Closures.html#GCClosure"/>
     <keyword type="macro" name="g_cclosure_marshal_BOOL__FLAGS" link="gobject-Closures.html#g-cclosure-marshal-BOOL--FLAGS"/>
     <keyword type="macro" name="g_cclosure_marshal_BOOL__BOXED_BOXED" link="gobject-Closures.html#g-cclosure-marshal-BOOL--BOXED-BOXED"/>
@@ -882,5 +883,150 @@
     <keyword type="constant" name="G_BINDING_BIDIRECTIONAL" link="GBinding.html#G-BINDING-BIDIRECTIONAL:CAPS"/>
     <keyword type="constant" name="G_BINDING_SYNC_CREATE" link="GBinding.html#G-BINDING-SYNC-CREATE:CAPS"/>
     <keyword type="constant" name="G_BINDING_INVERT_BOOLEAN" link="GBinding.html#G-BINDING-INVERT-BOOLEAN:CAPS"/>
+    <keyword type="member" name="GTypeInfo.class-size" link="gobject-Type-Information.html#GTypeInfo.class-size"/>
+    <keyword type="member" name="GTypeInfo.base-init" link="gobject-Type-Information.html#GTypeInfo.base-init"/>
+    <keyword type="member" name="GTypeInfo.base-finalize" link="gobject-Type-Information.html#GTypeInfo.base-finalize"/>
+    <keyword type="member" name="GTypeInfo.class-init" link="gobject-Type-Information.html#GTypeInfo.class-init"/>
+    <keyword type="member" name="GTypeInfo.class-finalize" link="gobject-Type-Information.html#GTypeInfo.class-finalize"/>
+    <keyword type="member" name="GTypeInfo.class-data" link="gobject-Type-Information.html#GTypeInfo.class-data"/>
+    <keyword type="member" name="GTypeInfo.instance-size" link="gobject-Type-Information.html#GTypeInfo.instance-size"/>
+    <keyword type="member" name="GTypeInfo.n-preallocs" link="gobject-Type-Information.html#GTypeInfo.n-preallocs"/>
+    <keyword type="member" name="GTypeInfo.instance-init" link="gobject-Type-Information.html#GTypeInfo.instance-init"/>
+    <keyword type="member" name="GTypeInfo.value-table" link="gobject-Type-Information.html#GTypeInfo.value-table"/>
+    <keyword type="member" name="GTypeFundamentalInfo.type-flags" link="gobject-Type-Information.html#GTypeFundamentalInfo.type-flags"/>
+    <keyword type="member" name="GInterfaceInfo.interface-init" link="gobject-Type-Information.html#GInterfaceInfo.interface-init"/>
+    <keyword type="member" name="GInterfaceInfo.interface-finalize" link="gobject-Type-Information.html#GInterfaceInfo.interface-finalize"/>
+    <keyword type="member" name="GInterfaceInfo.interface-data" link="gobject-Type-Information.html#GInterfaceInfo.interface-data"/>
+    <keyword type="member" name="GTypeValueTable.value-init" link="gobject-Type-Information.html#GTypeValueTable.value-init"/>
+    <keyword type="member" name="GTypeValueTable.value-free" link="gobject-Type-Information.html#GTypeValueTable.value-free"/>
+    <keyword type="member" name="GTypeValueTable.value-copy" link="gobject-Type-Information.html#GTypeValueTable.value-copy"/>
+    <keyword type="member" name="GTypeValueTable.value-peek-pointer" link="gobject-Type-Information.html#GTypeValueTable.value-peek-pointer"/>
+    <keyword type="member" name="GTypeValueTable.collect-format" link="gobject-Type-Information.html#GTypeValueTable.collect-format"/>
+    <keyword type="member" name="GTypeValueTable.collect-value" link="gobject-Type-Information.html#GTypeValueTable.collect-value"/>
+    <keyword type="member" name="GTypeValueTable.lcopy-format" link="gobject-Type-Information.html#GTypeValueTable.lcopy-format"/>
+    <keyword type="member" name="GTypeValueTable.lcopy-value" link="gobject-Type-Information.html#GTypeValueTable.lcopy-value"/>
+    <keyword type="member" name="GTypeQuery.type" link="gobject-Type-Information.html#GTypeQuery.type"/>
+    <keyword type="member" name="GTypeQuery.type-name" link="gobject-Type-Information.html#GTypeQuery.type-name"/>
+    <keyword type="member" name="GTypeQuery.class-size" link="gobject-Type-Information.html#GTypeQuery.class-size"/>
+    <keyword type="member" name="GTypeQuery.instance-size" link="gobject-Type-Information.html#GTypeQuery.instance-size"/>
+    <keyword type="member" name="GTypePluginClass.use-plugin" link="GTypePlugin.html#GTypePluginClass.use-plugin"/>
+    <keyword type="member" name="GTypePluginClass.unuse-plugin" link="GTypePlugin.html#GTypePluginClass.unuse-plugin"/>
+    <keyword type="member" name="GTypePluginClass.complete-type-info" link="GTypePlugin.html#GTypePluginClass.complete-type-info"/>
+    <keyword type="member" name="GTypePluginClass.complete-interface-info" link="GTypePlugin.html#GTypePluginClass.complete-interface-info"/>
+    <keyword type="member" name="GTypeModule-struct.name" link="GTypeModule.html#GTypeModule-struct.name"/>
+    <keyword type="member" name="GTypeModuleClass.load" link="GTypeModule.html#GTypeModuleClass.load"/>
+    <keyword type="member" name="GTypeModuleClass.unload" link="GTypeModule.html#GTypeModuleClass.unload"/>
+    <keyword type="member" name="GObjectClass.g-type-class" link="gobject-The-Base-Object-Type.html#GObjectClass.g-type-class"/>
+    <keyword type="member" name="GObjectClass.constructor" link="gobject-The-Base-Object-Type.html#GObjectClass.constructor"/>
+    <keyword type="member" name="GObjectClass.set-property" link="gobject-The-Base-Object-Type.html#GObjectClass.set-property"/>
+    <keyword type="member" name="GObjectClass.get-property" link="gobject-The-Base-Object-Type.html#GObjectClass.get-property"/>
+    <keyword type="member" name="GObjectClass.dispose" link="gobject-The-Base-Object-Type.html#GObjectClass.dispose"/>
+    <keyword type="member" name="GObjectClass.finalize" link="gobject-The-Base-Object-Type.html#GObjectClass.finalize"/>
+    <keyword type="member" name="GObjectClass.dispatch-properties-changed" link="gobject-The-Base-Object-Type.html#GObjectClass.dispatch-properties-changed"/>
+    <keyword type="member" name="GObjectClass.notify" link="gobject-The-Base-Object-Type.html#GObjectClass.notify"/>
+    <keyword type="member" name="GObjectClass.constructed" link="gobject-The-Base-Object-Type.html#GObjectClass.constructed"/>
+    <keyword type="member" name="GObjectConstructParam.pspec" link="gobject-The-Base-Object-Type.html#GObjectConstructParam.pspec"/>
+    <keyword type="member" name="GObjectConstructParam.value" link="gobject-The-Base-Object-Type.html#GObjectConstructParam.value"/>
+    <keyword type="member" name="GParameter.name" link="gobject-The-Base-Object-Type.html#GParameter.name"/>
+    <keyword type="member" name="GParameter.value" link="gobject-The-Base-Object-Type.html#GParameter.value"/>
+    <keyword type="member" name="GEnumClass.g-type-class" link="gobject-Enumeration-and-Flag-Types.html#GEnumClass.g-type-class"/>
+    <keyword type="member" name="GEnumClass.minimum" link="gobject-Enumeration-and-Flag-Types.html#GEnumClass.minimum"/>
+    <keyword type="member" name="GEnumClass.maximum" link="gobject-Enumeration-and-Flag-Types.html#GEnumClass.maximum"/>
+    <keyword type="member" name="GEnumClass.n-values" link="gobject-Enumeration-and-Flag-Types.html#GEnumClass.n-values"/>
+    <keyword type="member" name="GEnumClass.values" link="gobject-Enumeration-and-Flag-Types.html#GEnumClass.values"/>
+    <keyword type="member" name="GFlagsClass.g-type-class" link="gobject-Enumeration-and-Flag-Types.html#GFlagsClass.g-type-class"/>
+    <keyword type="member" name="GFlagsClass.mask" link="gobject-Enumeration-and-Flag-Types.html#GFlagsClass.mask"/>
+    <keyword type="member" name="GFlagsClass.n-values" link="gobject-Enumeration-and-Flag-Types.html#GFlagsClass.n-values"/>
+    <keyword type="member" name="GFlagsClass.values" link="gobject-Enumeration-and-Flag-Types.html#GFlagsClass.values"/>
+    <keyword type="member" name="GEnumValue.value" link="gobject-Enumeration-and-Flag-Types.html#GEnumValue.value"/>
+    <keyword type="member" name="GEnumValue.value-name" link="gobject-Enumeration-and-Flag-Types.html#GEnumValue.value-name"/>
+    <keyword type="member" name="GEnumValue.value-nick" link="gobject-Enumeration-and-Flag-Types.html#GEnumValue.value-nick"/>
+    <keyword type="member" name="GFlagsValue.value" link="gobject-Enumeration-and-Flag-Types.html#GFlagsValue.value"/>
+    <keyword type="member" name="GFlagsValue.value-name" link="gobject-Enumeration-and-Flag-Types.html#GFlagsValue.value-name"/>
+    <keyword type="member" name="GFlagsValue.value-nick" link="gobject-Enumeration-and-Flag-Types.html#GFlagsValue.value-nick"/>
+    <keyword type="member" name="GParamSpecBoolean.default-value" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecBoolean.default-value"/>
+    <keyword type="member" name="GParamSpecChar.minimum" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecChar.minimum"/>
+    <keyword type="member" name="GParamSpecChar.maximum" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecChar.maximum"/>
+    <keyword type="member" name="GParamSpecChar.default-value" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecChar.default-value"/>
+    <keyword type="member" name="GParamSpecUChar.minimum" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecUChar.minimum"/>
+    <keyword type="member" name="GParamSpecUChar.maximum" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecUChar.maximum"/>
+    <keyword type="member" name="GParamSpecUChar.default-value" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecUChar.default-value"/>
+    <keyword type="member" name="GParamSpecInt.minimum" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecInt.minimum"/>
+    <keyword type="member" name="GParamSpecInt.maximum" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecInt.maximum"/>
+    <keyword type="member" name="GParamSpecInt.default-value" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecInt.default-value"/>
+    <keyword type="member" name="GParamSpecUInt.minimum" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecUInt.minimum"/>
+    <keyword type="member" name="GParamSpecUInt.maximum" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecUInt.maximum"/>
+    <keyword type="member" name="GParamSpecUInt.default-value" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecUInt.default-value"/>
+    <keyword type="member" name="GParamSpecLong.minimum" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecLong.minimum"/>
+    <keyword type="member" name="GParamSpecLong.maximum" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecLong.maximum"/>
+    <keyword type="member" name="GParamSpecLong.default-value" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecLong.default-value"/>
+    <keyword type="member" name="GParamSpecULong.minimum" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecULong.minimum"/>
+    <keyword type="member" name="GParamSpecULong.maximum" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecULong.maximum"/>
+    <keyword type="member" name="GParamSpecULong.default-value" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecULong.default-value"/>
+    <keyword type="member" name="GParamSpecInt64.minimum" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecInt64.minimum"/>
+    <keyword type="member" name="GParamSpecInt64.maximum" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecInt64.maximum"/>
+    <keyword type="member" name="GParamSpecInt64.default-value" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecInt64.default-value"/>
+    <keyword type="member" name="GParamSpecUInt64.minimum" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecUInt64.minimum"/>
+    <keyword type="member" name="GParamSpecUInt64.maximum" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecUInt64.maximum"/>
+    <keyword type="member" name="GParamSpecUInt64.default-value" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecUInt64.default-value"/>
+    <keyword type="member" name="GParamSpecFloat.minimum" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecFloat.minimum"/>
+    <keyword type="member" name="GParamSpecFloat.maximum" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecFloat.maximum"/>
+    <keyword type="member" name="GParamSpecFloat.default-value" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecFloat.default-value"/>
+    <keyword type="member" name="GParamSpecFloat.epsilon" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecFloat.epsilon"/>
+    <keyword type="member" name="GParamSpecDouble.minimum" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecDouble.minimum"/>
+    <keyword type="member" name="GParamSpecDouble.maximum" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecDouble.maximum"/>
+    <keyword type="member" name="GParamSpecDouble.default-value" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecDouble.default-value"/>
+    <keyword type="member" name="GParamSpecDouble.epsilon" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecDouble.epsilon"/>
+    <keyword type="member" name="GParamSpecEnum.enum-class" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecEnum.enum-class"/>
+    <keyword type="member" name="GParamSpecEnum.default-value" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecEnum.default-value"/>
+    <keyword type="member" name="GParamSpecFlags.flags-class" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecFlags.flags-class"/>
+    <keyword type="member" name="GParamSpecFlags.default-value" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecFlags.default-value"/>
+    <keyword type="member" name="GParamSpecString.default-value" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecString.default-value"/>
+    <keyword type="member" name="GParamSpecString.cset-first" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecString.cset-first"/>
+    <keyword type="member" name="GParamSpecString.cset-nth" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecString.cset-nth"/>
+    <keyword type="member" name="GParamSpecString.substitutor" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecString.substitutor"/>
+    <keyword type="member" name="GParamSpecString.null-fold-if-empty" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecString.null-fold-if-empty"/>
+    <keyword type="member" name="GParamSpecString.ensure-non-null" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecString.ensure-non-null"/>
+    <keyword type="member" name="GParamSpecUnichar.default-value" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecUnichar.default-value"/>
+    <keyword type="member" name="GParamSpecValueArray.element-spec" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecValueArray.element-spec"/>
+    <keyword type="member" name="GParamSpecValueArray.fixed-n-elements" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecValueArray.fixed-n-elements"/>
+    <keyword type="member" name="GParamSpecGType.is-a-type" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecGType.is-a-type"/>
+    <keyword type="member" name="GParamSpecVariant.type" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecVariant.type"/>
+    <keyword type="member" name="GParamSpecVariant.default-value" link="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecVariant.default-value"/>
+    <keyword type="member" name="GParamSpec.g-type-instance" link="gobject-GParamSpec.html#GParamSpec.g-type-instance"/>
+    <keyword type="member" name="GParamSpec.name" link="gobject-GParamSpec.html#GParamSpec.name"/>
+    <keyword type="member" name="GParamSpec.flags" link="gobject-GParamSpec.html#GParamSpec.flags"/>
+    <keyword type="member" name="GParamSpec.value-type" link="gobject-GParamSpec.html#GParamSpec.value-type"/>
+    <keyword type="member" name="GParamSpec.owner-type" link="gobject-GParamSpec.html#GParamSpec.owner-type"/>
+    <keyword type="member" name="GParamSpecClass.g-type-class" link="gobject-GParamSpec.html#GParamSpecClass.g-type-class"/>
+    <keyword type="member" name="GParamSpecClass.value-type" link="gobject-GParamSpec.html#GParamSpecClass.value-type"/>
+    <keyword type="member" name="GParamSpecClass.finalize" link="gobject-GParamSpec.html#GParamSpecClass.finalize"/>
+    <keyword type="member" name="GParamSpecClass.value-set-default" link="gobject-GParamSpec.html#GParamSpecClass.value-set-default"/>
+    <keyword type="member" name="GParamSpecClass.value-validate" link="gobject-GParamSpec.html#GParamSpecClass.value-validate"/>
+    <keyword type="member" name="GParamSpecClass.values-cmp" link="gobject-GParamSpec.html#GParamSpecClass.values-cmp"/>
+    <keyword type="member" name="GParamSpecTypeInfo.instance-size" link="gobject-GParamSpec.html#GParamSpecTypeInfo.instance-size"/>
+    <keyword type="member" name="GParamSpecTypeInfo.n-preallocs" link="gobject-GParamSpec.html#GParamSpecTypeInfo.n-preallocs"/>
+    <keyword type="member" name="GParamSpecTypeInfo.instance-init" link="gobject-GParamSpec.html#GParamSpecTypeInfo.instance-init"/>
+    <keyword type="member" name="GParamSpecTypeInfo.value-type" link="gobject-GParamSpec.html#GParamSpecTypeInfo.value-type"/>
+    <keyword type="member" name="GParamSpecTypeInfo.finalize" link="gobject-GParamSpec.html#GParamSpecTypeInfo.finalize"/>
+    <keyword type="member" name="GParamSpecTypeInfo.value-set-default" link="gobject-GParamSpec.html#GParamSpecTypeInfo.value-set-default"/>
+    <keyword type="member" name="GParamSpecTypeInfo.value-validate" link="gobject-GParamSpec.html#GParamSpecTypeInfo.value-validate"/>
+    <keyword type="member" name="GParamSpecTypeInfo.values-cmp" link="gobject-GParamSpec.html#GParamSpecTypeInfo.values-cmp"/>
+    <keyword type="member" name="GSignalInvocationHint.signal-id" link="gobject-Signals.html#GSignalInvocationHint.signal-id"/>
+    <keyword type="member" name="GSignalInvocationHint.detail" link="gobject-Signals.html#GSignalInvocationHint.detail"/>
+    <keyword type="member" name="GSignalInvocationHint.run-type" link="gobject-Signals.html#GSignalInvocationHint.run-type"/>
+    <keyword type="member" name="GSignalQuery.signal-id" link="gobject-Signals.html#GSignalQuery.signal-id"/>
+    <keyword type="member" name="GSignalQuery.signal-name" link="gobject-Signals.html#GSignalQuery.signal-name"/>
+    <keyword type="member" name="GSignalQuery.itype" link="gobject-Signals.html#GSignalQuery.itype"/>
+    <keyword type="member" name="GSignalQuery.signal-flags" link="gobject-Signals.html#GSignalQuery.signal-flags"/>
+    <keyword type="member" name="GSignalQuery.return-type" link="gobject-Signals.html#GSignalQuery.return-type"/>
+    <keyword type="member" name="GSignalQuery.n-params" link="gobject-Signals.html#GSignalQuery.n-params"/>
+    <keyword type="member" name="GSignalQuery.param-types" link="gobject-Signals.html#GSignalQuery.param-types"/>
+    <keyword type="member" name="GClosure.in-marshal" link="gobject-Closures.html#GClosure.in-marshal"/>
+    <keyword type="member" name="GClosure.is-invalid" link="gobject-Closures.html#GClosure.is-invalid"/>
+    <keyword type="member" name="GCClosure.closure" link="gobject-Closures.html#GCClosure.closure"/>
+    <keyword type="member" name="GCClosure.callback" link="gobject-Closures.html#GCClosure.callback"/>
+    <keyword type="member" name="GValueArray.n-values" link="gobject-Value-arrays.html#GValueArray.n-values"/>
+    <keyword type="member" name="GValueArray.values" link="gobject-Value-arrays.html#GValueArray.values"/>
   </functions>
 </book>

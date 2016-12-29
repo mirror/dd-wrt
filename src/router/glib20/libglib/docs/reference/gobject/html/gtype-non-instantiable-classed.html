@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Non-instantiable classed types: interfaces: GObject Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GObject Reference Manual">
 <link rel="up" href="chapter-gtype.html" title="The GLib Dynamic Type System">
 <link rel="prev" href="gtype-instantiable-classed.html" title="Instantiable classed types: objects">
 <link rel="next" href="chapter-gobject.html" title="The GObject base class">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -23,9 +23,14 @@
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
 <a name="gtype-non-instantiable-classed"></a>Non-instantiable classed types: interfaces</h2></div></div></div>
 <p>
+          This section covers the theory behind interfaces. See
+          <a class="xref" href="howto-interface.html" title="How to define and implement interfaces"><i>How to define and implement interfaces</i></a> for the recommended way to define an
+          interface.
+        </p>
+<p>
           GType's interfaces are very similar to Java's interfaces. They allow
           to describe a common API that several classes will adhere to.
-          Imagine the play, pause and stop buttons on hi-fi equipment - those can
+          Imagine the play, pause and stop buttons on hi-fi equipment — those can
           be seen as a playback interface. Once you know what they do, you can
           control your CD player, MP3 player or anything that uses these symbols.
           To declare an interface you have to register a non-instantiable
@@ -47,36 +52,26 @@
 9
 10
 11
-12
-13
-14
-15
-16
-17</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="preproc">#define</span><span class="normal"> </span><span class="function">MAMAN_TYPE_IBAZ</span><span class="normal">                </span><span class="symbol">(</span><span class="function">maman_ibaz_get_type</span><span class="normal"> </span><span class="symbol">())</span>
-<span class="preproc">#define</span><span class="normal"> </span><span class="function">MAMAN_IBAZ</span><span class="symbol">(</span><span class="normal">obj</span><span class="symbol">)</span><span class="normal">                </span><span class="symbol">(</span><span class="function"><a href="gobject-Type-Information.html#G-TYPE-CHECK-INSTANCE-CAST:CAPS">G_TYPE_CHECK_INSTANCE_CAST</a></span><span class="normal"> </span><span class="symbol">((</span><span class="normal">obj</span><span class="symbol">),</span><span class="normal"> MAMAN_TYPE_IBAZ</span><span class="symbol">,</span><span class="normal"> MamanIbaz</span><span class="symbol">))</span>
-<span class="preproc">#define</span><span class="normal"> </span><span class="function">MAMAN_IS_IBAZ</span><span class="symbol">(</span><span class="normal">obj</span><span class="symbol">)</span><span class="normal">             </span><span class="symbol">(</span><span class="function"><a href="gobject-Type-Information.html#G-TYPE-CHECK-INSTANCE-TYPE:CAPS">G_TYPE_CHECK_INSTANCE_TYPE</a></span><span class="normal"> </span><span class="symbol">((</span><span class="normal">obj</span><span class="symbol">),</span><span class="normal"> MAMAN_TYPE_IBAZ</span><span class="symbol">))</span>
-<span class="preproc">#define</span><span class="normal"> </span><span class="function">MAMAN_IBAZ_GET_INTERFACE</span><span class="symbol">(</span><span class="normal">inst</span><span class="symbol">)</span><span class="normal"> </span><span class="symbol">(</span><span class="function"><a href="gobject-Type-Information.html#G-TYPE-INSTANCE-GET-INTERFACE:CAPS">G_TYPE_INSTANCE_GET_INTERFACE</a></span><span class="normal"> </span><span class="symbol">((</span><span class="normal">inst</span><span class="symbol">),</span><span class="normal"> MAMAN_TYPE_IBAZ</span><span class="symbol">,</span><span class="normal"> MamanIbazInterface</span><span class="symbol">))</span>
+12</pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="gtkdoc ppc">#define VIEWER_TYPE_EDITABLE viewer_editable_get_type ()</span>
+<span class="function"><a href="gobject-Type-Information.html#G-DECLARE-INTERFACE:CAPS">G_DECLARE_INTERFACE</a></span> <span class="gtkdoc opt">(</span>ViewerEditable<span class="gtkdoc opt">,</span> viewer_editable<span class="gtkdoc opt">,</span> VIEWER<span class="gtkdoc opt">,</span> EDITABLE<span class="gtkdoc opt">,</span> GObject<span class="gtkdoc opt">)</span>
 
-<span class="keyword">typedef</span><span class="normal"> </span><span class="keyword">struct</span><span class="normal"> </span><span class="classname">_MamanIbaz</span><span class="normal"> MamanIbaz</span><span class="symbol">;</span><span class="normal"> </span><span class="comment">/* dummy object */</span>
-<span class="keyword">typedef</span><span class="normal"> </span><span class="keyword">struct</span><span class="normal"> </span><span class="classname">_MamanIbazInterface</span><span class="normal"> MamanIbazInterface</span><span class="symbol">;</span>
+<span class="gtkdoc kwb">struct</span> _ViewerEditableInterface <span class="gtkdoc opt">{</span>
+  GTypeInterface parent<span class="gtkdoc opt">;</span>
 
-<span class="keyword">struct</span><span class="normal"> </span><span class="classname">_MamanIbazInterface</span><span class="normal"> </span><span class="cbracket">{</span>
-<span class="normal">  </span><span class="usertype">GTypeInterface</span><span class="normal"> parent</span><span class="symbol">;</span>
+  <span class="gtkdoc kwb">void</span> <span class="gtkdoc opt">(*</span>save<span class="gtkdoc opt">) (</span>ViewerEditable  <span class="gtkdoc opt">*</span>self<span class="gtkdoc opt">,</span>
+                GError         <span class="gtkdoc opt">**</span>error<span class="gtkdoc opt">);</span>
+<span class="gtkdoc opt">};</span>
 
-<span class="normal">  </span><span class="type">void</span><span class="normal"> </span><span class="symbol">(*</span><span class="normal">do_action</span><span class="symbol">)</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">MamanIbaz</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">self</span><span class="symbol">);</span>
-<span class="cbracket">}</span><span class="symbol">;</span>
-
-<span class="usertype">GType</span><span class="normal"> </span><span class="function">maman_ibaz_get_type</span><span class="normal"> </span><span class="symbol">(</span><span class="type">void</span><span class="symbol">);</span>
-
-<span class="type">void</span><span class="normal"> </span><span class="function">maman_ibaz_do_action</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">MamanIbaz</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">self</span><span class="symbol">);</span></pre></td>
+<span class="gtkdoc kwb">void</span> <span class="function">viewer_editable_save</span> <span class="gtkdoc opt">(</span>ViewerEditable  <span class="gtkdoc opt">*</span>self<span class="gtkdoc opt">,</span>
+                           GError         <span class="gtkdoc opt">**</span>error<span class="gtkdoc opt">);</span></pre></td>
       </tr>
     </tbody>
   </table>
 </div>
 
 <p>
-          The interface function, <code class="function">maman_ibaz_do_action</code> is implemented
+          The interface function, <code class="function">viewer_editable_save</code> is implemented
           in a pretty simple way:
 </p>
 <div class="informalexample">
@@ -86,34 +81,100 @@
         <td class="listing_lines" align="right"><pre>1
 2
 3
-4</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="type">void</span><span class="normal"> </span><span class="function">maman_ibaz_do_action</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">MamanIbaz</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">self</span><span class="symbol">)</span>
-<span class="cbracket">{</span>
-<span class="normal">  </span><span class="function">MAMAN_IBAZ_GET_INTERFACE</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">self</span><span class="symbol">)-&gt;</span><span class="function">do_action</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">self</span><span class="symbol">);</span>
-<span class="cbracket">}</span></pre></td>
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13</pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="gtkdoc kwb">void</span>
+<span class="function">viewer_editable_save</span> <span class="gtkdoc opt">(</span>ViewerEditable  <span class="gtkdoc opt">*</span>self<span class="gtkdoc opt">,</span>
+                      GError         <span class="gtkdoc opt">**</span>error<span class="gtkdoc opt">)</span>
+<span class="gtkdoc opt">{</span>
+  ViewerEditableinterface <span class="gtkdoc opt">*</span>iface<span class="gtkdoc opt">;</span>
+
+  <span class="function"><a href="../glib-Warnings-and-Assertions.html#g-return-if-fail">g_return_if_fail</a></span> <span class="gtkdoc opt">(</span><span class="function">VIEWER_IS_EDITABLE</span> <span class="gtkdoc opt">(</span>self<span class="gtkdoc opt">));</span>
+  <span class="function"><a href="../glib-Warnings-and-Assertions.html#g-return-if-fail">g_return_if_fail</a></span> <span class="gtkdoc opt">(</span>error <span class="gtkdoc opt">==</span> NULL <span class="gtkdoc opt">|| *</span>error <span class="gtkdoc opt">==</span> NULL<span class="gtkdoc opt">);</span>
+
+  iface <span class="gtkdoc opt">=</span> <span class="function">VIEWER_EDITABLE_GET_INTERFACE</span> <span class="gtkdoc opt">(</span>self<span class="gtkdoc opt">);</span>
+  <span class="function"><a href="../glib-Warnings-and-Assertions.html#g-return-if-fail">g_return_if_fail</a></span> <span class="gtkdoc opt">(</span>iface<span class="gtkdoc opt">-&gt;</span>save <span class="gtkdoc opt">!=</span> NULL<span class="gtkdoc opt">);</span>
+  iface<span class="gtkdoc opt">-&gt;</span><span class="function">save</span> <span class="gtkdoc opt">(</span>self<span class="gtkdoc opt">);</span>
+<span class="gtkdoc opt">}</span></pre></td>
       </tr>
     </tbody>
   </table>
 </div>
 
 <p>
-         <code class="function">maman_ibaz_get_type</code> registers a type named <span class="emphasis"><em>MamanIbaz</em></span>
-         which inherits from G_TYPE_INTERFACE. All interfaces must be children of G_TYPE_INTERFACE in the 
-         inheritance tree.
+         <code class="function">viewer_editable_get_type</code> registers a type named <span class="emphasis"><em>ViewerEditable</em></span>
+         which inherits from <span class="type">G_TYPE_INTERFACE</span>. All interfaces must
+         be children of <span class="type">G_TYPE_INTERFACE</span> in the  inheritance tree.
         </p>
 <p>
           An interface is defined by only one structure which must contain as first member
           a <a class="link" href="gobject-Type-Information.html#GTypeInterface" title="struct GTypeInterface"><span class="type">GTypeInterface</span></a> structure. The interface structure is expected to
           contain the function pointers of the interface methods. It is good style to 
           define helper functions for each of the interface methods which simply call
-          the interface' method directly: <code class="function">maman_ibaz_do_action</code>
+          the interface's method directly: <code class="function">viewer_editable_save</code>
           is one of these.
         </p>
 <p>
-          Once an interface type is registered, you must register implementations for these
-          interfaces. The function named <code class="function">maman_baz_get_type</code> registers
-          a new GType named MamanBaz which inherits from <a class="link" href="gobject-The-Base-Object-Type.html#GObject"><span class="type">GObject</span></a> and which
-          implements the interface <span class="type">MamanIbaz</span>.
+        If you have no special requirements you can use the
+        <a class="link" href="gobject-Type-Information.html#G-IMPLEMENT-INTERFACE:CAPS" title="G_IMPLEMENT_INTERFACE()">G_IMPLEMENT_INTERFACE</a> macro
+        to implement an interface:
+</p>
+<div class="informalexample">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15</pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="gtkdoc kwb">static void</span>
+<span class="function">viewer_file_save</span> <span class="gtkdoc opt">(</span>ViewerEditable <span class="gtkdoc opt">*</span>self<span class="gtkdoc opt">)</span>
+<span class="gtkdoc opt">{</span>
+  <span class="function"><a href="../glib-Warnings-and-Assertions.html#g-print">g_print</a></span> <span class="gtkdoc opt">(</span><span class="string">&quot;File implementation of editable interface save method.</span><span class="gtkdoc esc">\n</span><span class="string">&quot;</span><span class="gtkdoc opt">);</span>
+<span class="gtkdoc opt">}</span>
+
+<span class="gtkdoc kwb">static void</span>
+<span class="function">viewer_file_editable_interface_init</span> <span class="gtkdoc opt">(</span>ViewerEditableInterface <span class="gtkdoc opt">*</span>iface<span class="gtkdoc opt">)</span>
+<span class="gtkdoc opt">{</span>
+  iface<span class="gtkdoc opt">-&gt;</span>save <span class="gtkdoc opt">=</span> viewer_file_save<span class="gtkdoc opt">;</span>
+<span class="gtkdoc opt">}</span>
+
+<span class="function"><a href="gobject-Type-Information.html#G-DEFINE-TYPE-WITH-CODE:CAPS">G_DEFINE_TYPE_WITH_CODE</a></span> <span class="gtkdoc opt">(</span>ViewerFile<span class="gtkdoc opt">,</span> viewer_file<span class="gtkdoc opt">,</span> VIEWER_TYPE_FILE<span class="gtkdoc opt">,</span>
+                         <span class="function"><a href="gobject-Type-Information.html#G-IMPLEMENT-INTERFACE:CAPS">G_IMPLEMENT_INTERFACE</a></span> <span class="gtkdoc opt">(</span>VIEWER_TYPE_EDITABLE<span class="gtkdoc opt">,</span>
+                                                viewer_file_editable_interface_init<span class="gtkdoc opt">));</span></pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<p>
+        </p>
+<p>
+          If your code does have special requirements, you must write a custom
+          <code class="function">get_type</code> function to register your GType which
+          inherits from some <a class="link" href="gobject-The-Base-Object-Type.html#GObject"><span class="type">GObject</span></a>
+          and which implements the interface <span class="type">ViewerEditable</span>. For
+          example, this code registers a new <span class="type">ViewerFile</span> class which
+          implements <span class="type">ViewerEditable</span>:
 </p>
 <div class="informalexample">
   <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
@@ -161,50 +222,54 @@
 40
 41
 42
-43</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="keyword">static</span><span class="normal"> </span><span class="type">void</span><span class="normal"> </span><span class="function">maman_baz_do_action</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">MamanIbaz</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">self</span><span class="symbol">)</span>
-<span class="cbracket">{</span>
-<span class="normal">  </span><span class="function"><a href="https://developer.gnome.org/glib/unstable/glib-Warnings-and-Assertions.html#g-print">g_print</a></span><span class="normal"> </span><span class="symbol">(</span><span class="string">"Baz implementation of Ibaz interface Action.</span><span class="specialchar">\n</span><span class="string">"</span><span class="symbol">);</span>
-<span class="cbracket">}</span>
+43
+44
+45</pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="gtkdoc kwb">static void</span>
+<span class="function">viewer_file_save</span> <span class="gtkdoc opt">(</span>ViewerEditable <span class="gtkdoc opt">*</span>editable<span class="gtkdoc opt">)</span>
+<span class="gtkdoc opt">{</span>
+  <span class="function"><a href="../glib-Warnings-and-Assertions.html#g-print">g_print</a></span> <span class="gtkdoc opt">(</span><span class="string">&quot;File implementation of editable interface save method.</span><span class="gtkdoc esc">\n</span><span class="string">&quot;</span><span class="gtkdoc opt">);</span>
+<span class="gtkdoc opt">}</span>
 
-<span class="keyword">static</span><span class="normal"> </span><span class="type">void</span>
-<span class="function">baz_interface_init</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">gpointer</span><span class="normal">         g_iface</span><span class="symbol">,</span>
-<span class="normal">                    </span><span class="usertype">gpointer</span><span class="normal">         iface_data</span><span class="symbol">)</span>
-<span class="cbracket">{</span>
-<span class="normal">  </span><span class="usertype">MamanIbazInterface</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">iface </span><span class="symbol">=</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">MamanIbazInterface </span><span class="symbol">*)</span><span class="normal">g_iface</span><span class="symbol">;</span>
-<span class="normal">  iface</span><span class="symbol">-&gt;</span><span class="normal">do_action </span><span class="symbol">=</span><span class="normal"> maman_baz_do_action</span><span class="symbol">;</span>
-<span class="cbracket">}</span>
+<span class="gtkdoc kwb">static void</span>
+<span class="function">viewer_file_editable_interface_init</span> <span class="gtkdoc opt">(</span>gpointer g_iface<span class="gtkdoc opt">,</span>
+                                     gpointer iface_data<span class="gtkdoc opt">)</span>
+<span class="gtkdoc opt">{</span>
+  ViewerEditableInterface <span class="gtkdoc opt">*</span>iface <span class="gtkdoc opt">=</span> g_iface<span class="gtkdoc opt">;</span>
 
-<span class="normal"><a href="gobject-Type-Information.html#GType">GType</a> </span>
-<span class="function">maman_baz_get_type</span><span class="normal"> </span><span class="symbol">(</span><span class="type">void</span><span class="symbol">)</span>
-<span class="cbracket">{</span>
-<span class="normal">  </span><span class="keyword">static</span><span class="normal"> </span><span class="usertype">GType</span><span class="normal"> type </span><span class="symbol">=</span><span class="normal"> </span><span class="number">0</span><span class="symbol">;</span>
-<span class="normal">  </span><span class="keyword">if</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">type </span><span class="symbol">==</span><span class="normal"> </span><span class="number">0</span><span class="symbol">)</span><span class="normal"> </span><span class="cbracket">{</span>
-<span class="normal">    </span><span class="keyword">const</span><span class="normal"> </span><span class="usertype">GTypeInfo</span><span class="normal"> info </span><span class="symbol">=</span><span class="normal"> </span><span class="cbracket">{</span>
-<span class="normal">      </span><span class="keyword">sizeof</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">MamanBazClass</span><span class="symbol">),</span>
-<span class="normal">      <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">,</span><span class="normal">   </span><span class="comment">/* base_init */</span>
-<span class="normal">      <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">,</span><span class="normal">   </span><span class="comment">/* base_finalize */</span>
-<span class="normal">      <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">,</span><span class="normal">   </span><span class="comment">/* class_init */</span>
-<span class="normal">      <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">,</span><span class="normal">   </span><span class="comment">/* class_finalize */</span>
-<span class="normal">      <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">,</span><span class="normal">   </span><span class="comment">/* class_data */</span>
-<span class="normal">      </span><span class="keyword">sizeof</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">MamanBaz</span><span class="symbol">),</span>
-<span class="normal">      </span><span class="number">0</span><span class="symbol">,</span><span class="normal">      </span><span class="comment">/* n_preallocs */</span>
-<span class="normal">      <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS">NULL</a>    </span><span class="comment">/* instance_init */</span>
-<span class="normal">    </span><span class="cbracket">}</span><span class="symbol">;</span>
-<span class="normal">    </span><span class="keyword">const</span><span class="normal"> </span><span class="usertype">GInterfaceInfo</span><span class="normal"> ibaz_info </span><span class="symbol">=</span><span class="normal"> </span><span class="cbracket">{</span>
-<span class="normal">      </span><span class="symbol">(</span><span class="normal"><a href="gobject-Type-Information.html#GInterfaceInitFunc">GInterfaceInitFunc</a></span><span class="symbol">)</span><span class="normal"> baz_interface_init</span><span class="symbol">,</span><span class="normal">    </span><span class="comment">/* interface_init */</span>
-<span class="normal">      <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">,</span><span class="normal">               </span><span class="comment">/* interface_finalize */</span>
-<span class="normal">      <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS">NULL</a>          </span><span class="comment">/* interface_data */</span>
-<span class="normal">    </span><span class="cbracket">}</span><span class="symbol">;</span>
-<span class="normal">    type </span><span class="symbol">=</span><span class="normal"> </span><span class="function"><a href="gobject-Type-Information.html#g-type-register-static">g_type_register_static</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal"><a href="gobject-Type-Information.html#G-TYPE-OBJECT:CAPS">G_TYPE_OBJECT</a></span><span class="symbol">,</span>
-<span class="normal">                                   </span><span class="string">"MamanBazType"</span><span class="symbol">,</span>
-<span class="normal">                                   </span><span class="symbol">&amp;</span><span class="normal">info</span><span class="symbol">,</span><span class="normal"> </span><span class="number">0</span><span class="symbol">);</span>
-<span class="normal">    </span><span class="function"><a href="gobject-Type-Information.html#g-type-add-interface-static">g_type_add_interface_static</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">type</span><span class="symbol">,</span>
-<span class="normal">                                 MAMAN_TYPE_IBAZ</span><span class="symbol">,</span>
-<span class="normal">                                 </span><span class="symbol">&amp;</span><span class="normal">ibaz_info</span><span class="symbol">);</span>
-<span class="normal">  </span><span class="cbracket">}</span>
-<span class="normal">  </span><span class="keyword">return</span><span class="normal"> type</span><span class="symbol">;</span>
-<span class="cbracket">}</span></pre></td>
+  iface<span class="gtkdoc opt">-&gt;</span>save <span class="gtkdoc opt">=</span> viewer_file_save<span class="gtkdoc opt">;</span>
+<span class="gtkdoc opt">}</span>
+
+GType 
+<span class="function">viewer_file_get_type</span> <span class="gtkdoc opt">(</span><span class="gtkdoc kwb">void</span><span class="gtkdoc opt">)</span>
+<span class="gtkdoc opt">{</span>
+  <span class="gtkdoc kwb">static</span> GType type <span class="gtkdoc opt">=</span> <span class="number">0</span><span class="gtkdoc opt">;</span>
+  <span class="keyword">if</span> <span class="gtkdoc opt">(</span>type <span class="gtkdoc opt">==</span> <span class="number">0</span><span class="gtkdoc opt">) {</span>
+    <span class="gtkdoc kwb">const</span> GTypeInfo info <span class="gtkdoc opt">= {</span>
+      <span class="keyword">sizeof</span> <span class="gtkdoc opt">(</span>ViewerFileClass<span class="gtkdoc opt">),</span>
+      NULL<span class="gtkdoc opt">,</span>   <span class="comment">/* base_init */</span>
+      NULL<span class="gtkdoc opt">,</span>   <span class="comment">/* base_finalize */</span>
+      NULL<span class="gtkdoc opt">,</span>   <span class="comment">/* class_init */</span>
+      NULL<span class="gtkdoc opt">,</span>   <span class="comment">/* class_finalize */</span>
+      NULL<span class="gtkdoc opt">,</span>   <span class="comment">/* class_data */</span>
+      <span class="keyword">sizeof</span> <span class="gtkdoc opt">(</span>ViewerFile<span class="gtkdoc opt">),</span>
+      <span class="number">0</span><span class="gtkdoc opt">,</span>      <span class="comment">/* n_preallocs */</span>
+      NULL    <span class="comment">/* instance_init */</span>
+    <span class="gtkdoc opt">};</span>
+    <span class="gtkdoc kwb">const</span> GInterfaceInfo editable_info <span class="gtkdoc opt">= {</span>
+      <span class="gtkdoc opt">(</span>GInterfaceInitFunc<span class="gtkdoc opt">)</span> viewer_file_editable_interface_init<span class="gtkdoc opt">,</span>  <span class="comment">/* interface_init */</span>
+      NULL<span class="gtkdoc opt">,</span>   <span class="comment">/* interface_finalize */</span>
+      NULL    <span class="comment">/* interface_data */</span>
+    <span class="gtkdoc opt">};</span>
+    type <span class="gtkdoc opt">=</span> <span class="function"><a href="gobject-Type-Information.html#g-type-register-static">g_type_register_static</a></span> <span class="gtkdoc opt">(</span>VIEWER_TYPE_FILE<span class="gtkdoc opt">,</span>
+                                   <span class="string">&quot;ViewerFile&quot;</span><span class="gtkdoc opt">,</span>
+                                   <span class="gtkdoc opt">&amp;</span>info<span class="gtkdoc opt">,</span> <span class="number">0</span><span class="gtkdoc opt">);</span>
+    <span class="function"><a href="gobject-Type-Information.html#g-type-add-interface-static">g_type_add_interface_static</a></span> <span class="gtkdoc opt">(</span>type<span class="gtkdoc opt">,</span>
+                                 VIEWER_TYPE_EDITABLE<span class="gtkdoc opt">,</span>
+                                 <span class="gtkdoc opt">&amp;</span>editable_info<span class="gtkdoc opt">);</span>
+  <span class="gtkdoc opt">}</span>
+  <span class="keyword">return</span> type<span class="gtkdoc opt">;</span>
+<span class="gtkdoc opt">}</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -230,58 +295,12 @@
 4
 5
 6</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="keyword">struct</span><span class="normal"> </span><span class="classname">_GInterfaceInfo</span>
-<span class="cbracket">{</span>
-<span class="normal">  </span><span class="usertype">GInterfaceInitFunc</span><span class="normal">     interface_init</span><span class="symbol">;</span>
-<span class="normal">  </span><span class="usertype">GInterfaceFinalizeFunc</span><span class="normal"> interface_finalize</span><span class="symbol">;</span>
-<span class="normal">  </span><span class="usertype">gpointer</span><span class="normal">               interface_data</span><span class="symbol">;</span>
-<span class="cbracket">}</span><span class="symbol">;</span></pre></td>
-      </tr>
-    </tbody>
-  </table>
-</div>
-
-<p>
-        </p>
-<p>
-        If you have no special requirements you can use the
-        <a class="link" href="gobject-Type-Information.html#G-IMPLEMENT-INTERFACE:CAPS" title="G_IMPLEMENT_INTERFACE()">G_IMPLEMENT_INTERFACE</a> macro
-        to implement an interface:
-</p>
-<div class="informalexample">
-  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
-    <tbody>
-      <tr>
-        <td class="listing_lines" align="right"><pre>1
-2
-3
-4
-5
-6
-7
-8
-9
-10
-11
-12
-13
-14
-15</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="keyword">static</span><span class="normal"> </span><span class="type">void</span>
-<span class="function">maman_baz_do_action</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">MamanIbaz</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">self</span><span class="symbol">)</span>
-<span class="cbracket">{</span>
-<span class="normal">  </span><span class="function"><a href="https://developer.gnome.org/glib/unstable/glib-Warnings-and-Assertions.html#g-print">g_print</a></span><span class="normal"> </span><span class="symbol">(</span><span class="string">"Baz implementation of Ibaz interface Action.</span><span class="specialchar">\n</span><span class="string">"</span><span class="symbol">);</span>
-<span class="cbracket">}</span>
-
-<span class="keyword">static</span><span class="normal"> </span><span class="type">void</span>
-<span class="function">maman_ibaz_interface_init</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">MamanIbazInterface</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">iface</span><span class="symbol">)</span>
-<span class="cbracket">{</span>
-<span class="normal">  iface</span><span class="symbol">-&gt;</span><span class="normal">do_action </span><span class="symbol">=</span><span class="normal"> maman_baz_do_action</span><span class="symbol">;</span>
-<span class="cbracket">}</span>
-
-<span class="function"><a href="gobject-Type-Information.html#G-DEFINE-TYPE-WITH-CODE:CAPS">G_DEFINE_TYPE_WITH_CODE</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">MamanBaz</span><span class="symbol">,</span><span class="normal"> maman_baz</span><span class="symbol">,</span><span class="normal"> <a href="gobject-Type-Information.html#G-TYPE-OBJECT:CAPS">G_TYPE_OBJECT</a></span><span class="symbol">,</span>
-<span class="normal">                         </span><span class="function"><a href="gobject-Type-Information.html#G-IMPLEMENT-INTERFACE:CAPS">G_IMPLEMENT_INTERFACE</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">MAMAN_TYPE_IBAZ</span><span class="symbol">,</span>
-<span class="normal">                                                maman_ibaz_interface_init</span><span class="symbol">));</span></pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="gtkdoc kwb">struct</span> _GInterfaceInfo
+<span class="gtkdoc opt">{</span>
+  GInterfaceInitFunc     interface_init<span class="gtkdoc opt">;</span>
+  GInterfaceFinalizeFunc interface_finalize<span class="gtkdoc opt">;</span>
+  gpointer               interface_data<span class="gtkdoc opt">;</span>
+<span class="gtkdoc opt">};</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -304,10 +323,13 @@
             First a memory buffer is allocated to hold the interface structure. The parent's
             interface structure is then copied over to the new interface structure (the parent
             interface is already initialized at that point). If there is no parent interface,
-            the interface structure is initialized with zeros. The g_type and the g_instance_type
-            fields are then initialized: g_type is set to the type of the most-derived interface
-            and g_instance_type is set to the type of the most derived type which implements 
-            this interface.
+            the interface structure is initialized with zeros. The
+            <em class="structfield"><code>g_type</code></em> and the
+            <em class="structfield"><code>g_instance_type</code></em> fields are then
+            initialized: <em class="structfield"><code>g_type</code></em> is set to the type of
+            the most-derived interface and
+            <em class="structfield"><code>g_instance_type</code></em> is set to the type of the
+            most derived type which implements  this interface.
           </p>
 <p>
             The interface's <code class="function">base_init</code> function is called,
@@ -338,13 +360,13 @@
 5
 6
 7</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="function"><a href="gobject-Type-Information.html#G-DEFINE-INTERFACE:CAPS">G_DEFINE_INTERFACE</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">MamanIbaz</span><span class="symbol">,</span><span class="normal"> maman_ibaz</span><span class="symbol">,</span><span class="normal"> <a href="gobject-Type-Information.html#G-TYPE-OBJECT:CAPS">G_TYPE_OBJECT</a></span><span class="symbol">);</span>
+        <td class="listing_code"><pre class="programlisting"><span class="function"><a href="gobject-Type-Information.html#G-DEFINE-INTERFACE:CAPS">G_DEFINE_INTERFACE</a></span> <span class="gtkdoc opt">(</span>ViewerEditable<span class="gtkdoc opt">,</span> viewer_editable<span class="gtkdoc opt">,</span> G_TYPE_OBJECT<span class="gtkdoc opt">);</span>
 
-<span class="keyword">static</span><span class="normal"> </span><span class="type">void</span>
-<span class="function">maman_ibaz_default_init</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">MamanIbazInterface</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">iface</span><span class="symbol">)</span>
-<span class="cbracket">{</span>
-<span class="normal">  </span><span class="comment">/* add properties and signals here, will only called once */</span>
-<span class="cbracket">}</span></pre></td>
+<span class="gtkdoc kwb">static void</span>
+<span class="function">viewer_editable_default_init</span> <span class="gtkdoc opt">(</span>ViewerEditableInterface <span class="gtkdoc opt">*</span>iface<span class="gtkdoc opt">)</span>
+<span class="gtkdoc opt">{</span>
+  <span class="comment">/* add properties and signals here, will only be called once */</span>
+<span class="gtkdoc opt">}</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -388,35 +410,35 @@
 27
 28
 29</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="normal"><a href="gobject-Type-Information.html#GType">GType</a></span>
-<span class="function">maman_ibaz_get_type</span><span class="normal"> </span><span class="symbol">(</span><span class="type">void</span><span class="symbol">)</span>
-<span class="cbracket">{</span>
-<span class="normal">  </span><span class="keyword">static</span><span class="normal"> </span><span class="keyword">volatile</span><span class="normal"> </span><span class="usertype">gsize</span><span class="normal"> type_id </span><span class="symbol">=</span><span class="normal"> </span><span class="number">0</span><span class="symbol">;</span>
-<span class="normal">  </span><span class="keyword">if</span><span class="normal"> </span><span class="symbol">(</span><span class="function"><a href="https://developer.gnome.org/glib/unstable/glib-Threads.html#g-once-init-enter">g_once_init_enter</a></span><span class="normal"> </span><span class="symbol">(&amp;</span><span class="normal">type_id</span><span class="symbol">))</span><span class="normal"> </span><span class="cbracket">{</span>
-<span class="normal">    </span><span class="keyword">const</span><span class="normal"> </span><span class="usertype">GTypeInfo</span><span class="normal"> info </span><span class="symbol">=</span><span class="normal"> </span><span class="cbracket">{</span>
-<span class="normal">      </span><span class="keyword">sizeof</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">MamanIbazInterface</span><span class="symbol">),</span>
-<span class="normal">      <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">,</span><span class="normal">   </span><span class="comment">/* base_init */</span>
-<span class="normal">      <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">,</span><span class="normal">   </span><span class="comment">/* base_finalize */</span>
-<span class="normal">      maman_ibaz_default_init</span><span class="symbol">,</span><span class="normal"> </span><span class="comment">/* class_init */</span>
-<span class="normal">      <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">,</span><span class="normal">   </span><span class="comment">/* class_finalize */</span>
-<span class="normal">      <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">,</span><span class="normal">   </span><span class="comment">/* class_data */</span>
-<span class="normal">      </span><span class="number">0</span><span class="symbol">,</span><span class="normal">      </span><span class="comment">/* instance_size */</span>
-<span class="normal">      </span><span class="number">0</span><span class="symbol">,</span><span class="normal">      </span><span class="comment">/* n_preallocs */</span>
-<span class="normal">      <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS">NULL</a>    </span><span class="comment">/* instance_init */</span>
-<span class="normal">    </span><span class="cbracket">}</span><span class="symbol">;</span>
-<span class="normal">    </span><span class="usertype">GType</span><span class="normal"> type </span><span class="symbol">=</span><span class="normal"> </span><span class="function"><a href="gobject-Type-Information.html#g-type-register-static">g_type_register_static</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal"><a href="gobject-Type-Information.html#G-TYPE-INTERFACE:CAPS">G_TYPE_INTERFACE</a></span><span class="symbol">,</span>
-<span class="normal">                                        </span><span class="string">"MamanIbaz"</span><span class="symbol">,</span>
-<span class="normal">                                        </span><span class="symbol">&amp;</span><span class="normal">info</span><span class="symbol">,</span><span class="normal"> </span><span class="number">0</span><span class="symbol">);</span>
-<span class="normal">    </span><span class="function"><a href="https://developer.gnome.org/glib/unstable/glib-Threads.html#g-once-init-leave">g_once_init_leave</a></span><span class="normal"> </span><span class="symbol">(&amp;</span><span class="normal">type_id</span><span class="symbol">,</span><span class="normal"> type</span><span class="symbol">);</span>
-<span class="normal">  </span><span class="cbracket">}</span>
-<span class="normal">  </span><span class="keyword">return</span><span class="normal"> type_id</span><span class="symbol">;</span>
-<span class="cbracket">}</span>
+        <td class="listing_code"><pre class="programlisting">GType
+<span class="function">viewer_editable_get_type</span> <span class="gtkdoc opt">(</span><span class="gtkdoc kwb">void</span><span class="gtkdoc opt">)</span>
+<span class="gtkdoc opt">{</span>
+  <span class="gtkdoc kwb">static</span> <span class="gtkdoc kwc">volatile</span> gsize type_id <span class="gtkdoc opt">=</span> <span class="number">0</span><span class="gtkdoc opt">;</span>
+  <span class="keyword">if</span> <span class="gtkdoc opt">(</span><span class="function"><a href="../glib-Threads.html#g-once-init-enter">g_once_init_enter</a></span> <span class="gtkdoc opt">(&amp;</span>type_id<span class="gtkdoc opt">)) {</span>
+    <span class="gtkdoc kwb">const</span> GTypeInfo info <span class="gtkdoc opt">= {</span>
+      <span class="keyword">sizeof</span> <span class="gtkdoc opt">(</span>ViewerEditableInterface<span class="gtkdoc opt">),</span>
+      NULL<span class="gtkdoc opt">,</span>   <span class="comment">/* base_init */</span>
+      NULL<span class="gtkdoc opt">,</span>   <span class="comment">/* base_finalize */</span>
+      viewer_editable_default_init<span class="gtkdoc opt">,</span> <span class="comment">/* class_init */</span>
+      NULL<span class="gtkdoc opt">,</span>   <span class="comment">/* class_finalize */</span>
+      NULL<span class="gtkdoc opt">,</span>   <span class="comment">/* class_data */</span>
+      <span class="number">0</span><span class="gtkdoc opt">,</span>      <span class="comment">/* instance_size */</span>
+      <span class="number">0</span><span class="gtkdoc opt">,</span>      <span class="comment">/* n_preallocs */</span>
+      NULL    <span class="comment">/* instance_init */</span>
+    <span class="gtkdoc opt">};</span>
+    GType type <span class="gtkdoc opt">=</span> <span class="function"><a href="gobject-Type-Information.html#g-type-register-static">g_type_register_static</a></span> <span class="gtkdoc opt">(</span>G_TYPE_INTERFACE<span class="gtkdoc opt">,</span>
+                                         <span class="string">&quot;ViewerEditable&quot;</span><span class="gtkdoc opt">,</span>
+                                         <span class="gtkdoc opt">&amp;</span>info<span class="gtkdoc opt">,</span> <span class="number">0</span><span class="gtkdoc opt">);</span>
+    <span class="function"><a href="../glib-Threads.html#g-once-init-leave">g_once_init_leave</a></span> <span class="gtkdoc opt">(&amp;</span>type_id<span class="gtkdoc opt">,</span> type<span class="gtkdoc opt">);</span>
+  <span class="gtkdoc opt">}</span>
+  <span class="keyword">return</span> type_id<span class="gtkdoc opt">;</span>
+<span class="gtkdoc opt">}</span>
 
-<span class="keyword">static</span><span class="normal"> </span><span class="type">void</span>
-<span class="function">maman_ibaz_default_init</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">MamanIbazInterface</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">iface</span><span class="symbol">)</span>
-<span class="cbracket">{</span>
-<span class="normal">  </span><span class="comment">/* add properties and signals here, will only called once */</span>
-<span class="cbracket">}</span></pre></td>
+<span class="gtkdoc kwb">static void</span>
+<span class="function">viewer_editable_default_init</span> <span class="gtkdoc opt">(</span>ViewerEditableInterface <span class="gtkdoc opt">*</span>iface<span class="gtkdoc opt">)</span>
+<span class="gtkdoc opt">{</span>
+  <span class="comment">/* add properties and signals here, will only called once */</span>
+<span class="gtkdoc opt">}</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -425,15 +447,13 @@
 <p>
           </p>
 <p>
-          If you have found the stuff about interface hairy, you are right: it is hairy but
-          there is not much I can do about it. What I can do is summarize what you need to know
-          about interfaces:          
+          In summary, interface initialization uses the following functions:
         </p>
 <p>
           </p>
 <div class="table">
 <a name="ginterface-init-table"></a><p class="title"><b>Table 2. Interface Initialization</b></p>
-<div class="table-contents"><table summary="Interface Initialization" border="1">
+<div class="table-contents"><table class="table" summary="Interface Initialization" border="1">
 <colgroup>
 <col align="left">
 <col align="left">
@@ -478,9 +498,6 @@
 </table></div>
 </div>
 <p><br class="table-break">
-          It is highly unlikely (i.e. I do not know of <span class="emphasis"><em>anyone</em></span> who actually 
-          used it) you will ever need other more fancy things such as the ones described in the
-          following section (<a class="xref" href="gtype-non-instantiable-classed.html#gtype-non-instantiable-classed-dest" title="Interface Destruction">the section called “Interface Destruction”</a>).
         </p>
 </div>
 <div class="sect2">
@@ -511,7 +528,7 @@
           </p>
 <div class="table">
 <a name="ginterface-fini-table"></a><p class="title"><b>Table 3. Interface Finalization</b></p>
-<div class="table-contents"><table summary="Interface Finalization" border="1">
+<div class="table-contents"><table class="table" summary="Interface Finalization" border="1">
 <colgroup>
 <col align="left">
 <col align="left">
@@ -527,12 +544,12 @@
 <td rowspan="2" align="left">Last call to <code class="function"><a class="link" href="gobject-Type-Information.html#g-type-free-instance" title="g_type_free_instance ()">g_type_free_instance</a></code> for type
                     implementing interface
                    </td>
-<td align="left">interface' interface_finalize function</td>
-<td align="left">On interface' vtable</td>
+<td align="left">interface's <code class="function">interface_finalize</code> function</td>
+<td align="left">On interface's vtable</td>
 </tr>
 <tr>
-<td align="left">interface' base_finalize function</td>
-<td align="left">On interface' vtable</td>
+<td align="left">interface's <code class="function">base_finalize</code> function</td>
+<td align="left">On interface's vtable</td>
 </tr>
 </tbody>
 </table></div>
@@ -542,6 +559,6 @@
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

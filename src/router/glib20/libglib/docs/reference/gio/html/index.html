@@ -3,10 +3,10 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GIO Reference Manual: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="next" href="pt01.html" title="Part I. GIO Overview">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -15,7 +15,7 @@
 <div>
 <div><table class="navigation" id="top" width="100%" cellpadding="2" cellspacing="0"><tr><th valign="middle"><p class="title">GIO Reference Manual</p></th></tr></table></div>
 <div><p class="releaseinfo">
-      for GIO 2.45.2
+      for GIO 2.51.0
 
       The latest version of this documentation can be found on-line at
       <a class="ulink" href="https://developer.gnome.org/gio/unstable/" target="_top">https://developer.gnome.org/gio/unstable/</a>.
@@ -259,6 +259,9 @@
 <span class="refentrytitle"><a href="GSocket.html">GSocket</a></span><span class="refpurpose"> — Low-level socket object</span>
 </dt>
 <dt>
+<span class="refentrytitle"><a href="GDatagramBased.html">GDatagramBased</a></span><span class="refpurpose"> — Low-level datagram communications interface</span>
+</dt>
+<dt>
 <span class="refentrytitle"><a href="GInetAddress.html">GInetAddress</a></span><span class="refpurpose"> — An IPv4/IPv6 address</span>
 </dt>
 <dt>
@@ -346,6 +349,15 @@
 </dt>
 <dt>
 <span class="refentrytitle"><a href="GTlsServerConnection.html">GTlsServerConnection</a></span><span class="refpurpose"> — TLS server-side connection</span>
+</dt>
+<dt>
+<span class="refentrytitle"><a href="GDtlsConnection.html">GDtlsConnection</a></span><span class="refpurpose"> — DTLS connection type</span>
+</dt>
+<dt>
+<span class="refentrytitle"><a href="GDtlsClientConnection.html">GDtlsClientConnection</a></span><span class="refpurpose"> — DTLS client-side connection</span>
+</dt>
+<dt>
+<span class="refentrytitle"><a href="GDtlsServerConnection.html">GDtlsServerConnection</a></span><span class="refpurpose"> — DTLS server-side connection</span>
 </dt>
 <dt>
 <span class="refentrytitle"><a href="GTlsBackend.html">GTlsBackend</a></span><span class="refpurpose"> — TLS backend implementation</span>
@@ -489,6 +501,10 @@
 <span class="refentrytitle"><a href="GListStore.html">GListStore</a></span><span class="refpurpose"> — A simple implementation of <span class="type">GListModel</span></span>
 </dt>
 </dl></dd>
+<dt><span class="chapter"><a href="registry.html">Win32 registry support</a></span></dt>
+<dd><dl><dt>
+<span class="refentrytitle"><a href="gio-GWin32RegistryKey.html">GWin32RegistryKey</a></span><span class="refpurpose"> — W32 registry access helper</span>
+</dt></dl></dd>
 <dt><span class="chapter"><a href="application.html">Application support</a></span></dt>
 <dd><dl>
 <dt>
@@ -578,6 +594,9 @@
 <dt>
 <span class="refentrytitle"><a href="gapplication-tool.html">gapplication</a></span><span class="refpurpose"> — D-Bus application launcher</span>
 </dt>
+<dt>
+<span class="refentrytitle"><a href="gio.html">gio</a></span><span class="refpurpose"> — GIO commandline tool</span>
+</dt>
 </dl></dd>
 <dt><span class="chapter"><a href="testing.html">GIO Testing</a></span></dt>
 <dd><dl><dt>
@@ -586,50 +605,29 @@
 </dl></dd>
 <dt><span class="part"><a href="migrating.html">III. Migrating to GIO</a></span></dt>
 <dd><dl>
-<dt><span class="chapter"><a href="ch32.html">Migrating from GnomeVFS to GIO</a></span></dt>
+<dt><span class="chapter"><a href="ch33.html">Migrating from GnomeVFS to GIO</a></span></dt>
 <dd><dl>
-<dt><span class="section"><a href="ch32.html#id-1.5.3.3">Trash handling</a></span></dt>
-<dt><span class="section"><a href="ch32s02.html">Operations on multiple files</a></span></dt>
-<dt><span class="section"><a href="ch32s03.html">Mime monitoring</a></span></dt>
+<dt><span class="section"><a href="ch33.html#id-1.5.3.3">Trash handling</a></span></dt>
+<dt><span class="section"><a href="ch33s02.html">Operations on multiple files</a></span></dt>
+<dt><span class="section"><a href="ch33s03.html">Mime monitoring</a></span></dt>
 </dl></dd>
-<dt><span class="chapter"><a href="ch33.html">Migrating from GConf to GSettings</a></span></dt>
+<dt><span class="chapter"><a href="ch34.html">Migrating from GConf to GSettings</a></span></dt>
 <dd><dl>
-<dt><span class="section"><a href="ch33.html#id-1.5.4.2">Before you start</a></span></dt>
-<dt><span class="section"><a href="ch33s02.html">Conceptual differences</a></span></dt>
-<dt><span class="section"><a href="ch33s03.html">GConfClient (and GConfBridge) API conversion</a></span></dt>
-<dt><span class="section"><a href="ch33s04.html">Change notification</a></span></dt>
-<dt><span class="section"><a href="ch33s05.html">Change sets</a></span></dt>
-<dt><span class="section"><a href="ch33s06.html">Schema conversion</a></span></dt>
-<dt><span class="section"><a href="ch33s07.html">Data conversion</a></span></dt>
+<dt><span class="section"><a href="ch34.html#id-1.5.4.2">Before you start</a></span></dt>
+<dt><span class="section"><a href="ch34s02.html">Conceptual differences</a></span></dt>
+<dt><span class="section"><a href="ch34s03.html">GConfClient (and GConfBridge) API conversion</a></span></dt>
+<dt><span class="section"><a href="ch34s04.html">Change notification</a></span></dt>
+<dt><span class="section"><a href="ch34s05.html">Change sets</a></span></dt>
+<dt><span class="section"><a href="ch34s06.html">Schema conversion</a></span></dt>
+<dt><span class="section"><a href="ch34s07.html">Data conversion</a></span></dt>
 </dl></dd>
-<dt><span class="chapter"><a href="ch34.html">Migrating to GDBus</a></span></dt>
+<dt><span class="chapter"><a href="ch35.html">Migrating to GDBus</a></span></dt>
 <dd><dl>
-<dt><span class="section"><a href="ch34.html#id-1.5.5.2">Conceptual differences</a></span></dt>
-<dt><span class="section"><a href="ch34s02.html">API comparison</a></span></dt>
-<dt><span class="section"><a href="ch34s03.html">Owning bus names</a></span></dt>
-<dt><span class="section"><a href="ch34s04.html">Creating proxies for well-known names</a></span></dt>
-<dt><span class="section"><a href="ch34s05.html">Generating code and docs</a></span></dt>
-<dd><dl>
-<dt><span class="section"><a href="ch34s05.html#gdbus-example-gdbus-codegen">Using gdbus-codegen</a></span></dt>
-<dt>
-<span class="refentrytitle"><a href="gdbus-org.gtk.GDBus.Example.ObjectManager.Animal.html">org.gtk.GDBus.Example.ObjectManager.Animal</a></span><span class="refpurpose"> — Example docs generated by gdbus-codegen</span>
-</dt>
-<dt>
-<span class="refentrytitle"><a href="gdbus-org.gtk.GDBus.Example.ObjectManager.Cat.html">org.gtk.GDBus.Example.ObjectManager.Cat</a></span><span class="refpurpose"> — More example docs generated by gdbus-codegen</span>
-</dt>
-<dt>
-<span class="refentrytitle"><a href="ExampleAnimal.html">ExampleAnimal</a></span><span class="refpurpose"> — Generated C code for the org.gtk.GDBus.Example.ObjectManager.Animal D-Bus interface</span>
-</dt>
-<dt>
-<span class="refentrytitle"><a href="ExampleCat.html">ExampleCat</a></span><span class="refpurpose"> — Generated C code for the org.gtk.GDBus.Example.ObjectManager.Cat D-Bus interface</span>
-</dt>
-<dt>
-<span class="refentrytitle"><a href="ExampleObject.html">ExampleObject</a></span><span class="refpurpose"> — Specialized GDBusObject types</span>
-</dt>
-<dt>
-<span class="refentrytitle"><a href="ExampleObjectManagerClient.html">ExampleObjectManagerClient</a></span><span class="refpurpose"> — Generated GDBusObjectManagerClient type</span>
-</dt>
-</dl></dd>
+<dt><span class="section"><a href="ch35.html#id-1.5.5.2">Conceptual differences</a></span></dt>
+<dt><span class="section"><a href="ch35s02.html">API comparison</a></span></dt>
+<dt><span class="section"><a href="ch35s03.html">Owning bus names</a></span></dt>
+<dt><span class="section"><a href="ch35s04.html">Creating proxies for well-known names</a></span></dt>
+<dt><span class="section"><a href="gdbus-example-gdbus-codegen.html">Using gdbus-codegen</a></span></dt>
 </dl></dd>
 </dl></dd>
 <dt><span class="chapter"><a href="gio-hierarchy.html">Object Hierarchy</a></span></dt>
@@ -649,10 +647,13 @@
 <dt><span class="index"><a href="api-index-2-40.html">Index of new symbols in 2.40</a></span></dt>
 <dt><span class="index"><a href="api-index-2-42.html">Index of new symbols in 2.42</a></span></dt>
 <dt><span class="index"><a href="api-index-2-44.html">Index of new symbols in 2.44</a></span></dt>
+<dt><span class="index"><a href="api-index-2-46.html">Index of new symbols in 2.46</a></span></dt>
+<dt><span class="index"><a href="api-index-2-48.html">Index of new symbols in 2.48</a></span></dt>
+<dt><span class="index"><a href="api-index-2-50.html">Index of new symbols in 2.50</a></span></dt>
 <dt><span class="glossary"><a href="annotation-glossary.html">Annotation Glossary</a></span></dt>
 </dl></div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

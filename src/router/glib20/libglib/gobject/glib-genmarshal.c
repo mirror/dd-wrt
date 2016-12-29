@@ -122,6 +122,9 @@ static const GScannerConfig scanner_config_template =
 };
 static gchar		* const std_marshaller_prefix = "g_cclosure_marshal";
 static gchar		*marshaller_prefix = "g_cclosure_user_marshal";
+static gchar		*output_fn = NULL;
+static gint		 output_fd = -1;
+static gchar		*output_tmpfn = NULL;
 static GHashTable	*marshallers = NULL;
 static FILE             *fout = NULL;
 static gboolean		 gen_cheader = FALSE;
@@ -412,9 +415,9 @@ generate_marshal (const gchar *signame,
       g_fprintf (fout, "%s%s data2);\n", indent (ind), pad ("gpointer"));
 
       /* cfile marshal variables */
-      g_fprintf (fout, "  register GMarshalFunc_%s callback;\n", signame);
-      g_fprintf (fout, "  register GCClosure *cc = (GCClosure*) closure;\n");
-      g_fprintf (fout, "  register gpointer data1, data2;\n");
+      g_fprintf (fout, "  GMarshalFunc_%s callback;\n", signame);
+      g_fprintf (fout, "  GCClosure *cc = (GCClosure*) closure;\n");
+      g_fprintf (fout, "  gpointer data1, data2;\n");
       if (sig->rarg->setter)
 	g_fprintf (fout, "  %s v_return;\n", sig->rarg->ctype);
 
@@ -807,8 +810,22 @@ main (int   argc,
 
   /* setup auxiliary structs */
   scanner = g_scanner_new (&scanner_config_template);
-  fout = stdout;
   marshallers = g_hash_table_new (g_str_hash, g_str_equal);
+
+  if (output_fn)
+    {
+      output_tmpfn = g_strconcat (output_fn, ".XXXXXX", NULL);
+      if ((output_fd = g_mkstemp (output_tmpfn)) == -1)
+        {
+          g_printerr ("Failed to create temp file \"%s\": %s\n", output_tmpfn, g_strerror (errno));
+          return EXIT_FAILURE;
+        }
+
+      fout = fdopen (output_fd, "wb");
+      g_assert (fout != NULL);
+    }
+  else
+    fout = stdout;
 
   /* add standard marshallers of the GObject library */
   if (std_includes)
@@ -939,6 +956,19 @@ main (int   argc,
   g_hash_table_foreach_remove (marshallers, string_key_destroy, NULL);
   g_hash_table_destroy (marshallers);
 
+  if (output_fn)
+    {
+      fclose (fout);
+      if (g_rename (output_tmpfn, output_fn) != 0)
+        {
+	  g_printerr ("Failed to rename \"%s\" to \"%s\": %s\n", output_tmpfn, output_fn, g_strerror (errno));
+          g_unlink (output_tmpfn);
+          exit_status = EXIT_FAILURE;
+        }
+
+      g_free (output_tmpfn);
+    }
+
   return exit_status;
 }
 
@@ -993,10 +1023,25 @@ parse_args (gint    *argc_p,
           gchar *equal = argv[i] + 8;
 
 	  if (*equal == '=')
-	    marshaller_prefix = g_strdup (equal + 1);
+	    marshaller_prefix = equal + 1;
 	  else if (i + 1 < argc)
 	    {
-	      marshaller_prefix = g_strdup (argv[i + 1]);
+	      marshaller_prefix = argv[i + 1];
+	      argv[i] = NULL;
+	      i += 1;
+	    }
+	  argv[i] = NULL;
+	}
+      else if ((strcmp ("--output", argv[i]) == 0) ||
+	       (strncmp ("--output=", argv[i], 9) == 0))
+	{
+          gchar *equal = argv[i] + 8;
+
+	  if (*equal == '=')
+	    output_fn = equal + 1;
+	  else if (i + 1 < argc)
+	    {
+	      output_fn = argv[i + 1];
 	      argv[i] = NULL;
 	      i += 1;
 	    }
@@ -1072,6 +1117,7 @@ print_blurb (FILE    *bout,
       g_fprintf (bout, "  --header                   Generate C headers\n");
       g_fprintf (bout, "  --body                     Generate C code\n");
       g_fprintf (bout, "  --prefix=string            Specify marshaller prefix\n");
+      g_fprintf (bout, "  --output=file              Write output into the specified file\n");
       g_fprintf (bout, "  --skip-source              Skip source location comments\n");
       g_fprintf (bout, "  --stdinc, --nostdinc       Include/use standard marshallers\n");
       g_fprintf (bout, "  --internal                 Mark generated functions as internal\n");

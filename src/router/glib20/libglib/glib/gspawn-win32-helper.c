@@ -67,31 +67,15 @@ write_err_and_exit (gint    fd,
  * but a WinMain().
  */
 
-/* Info peeked from mingw runtime's source code. __wgetmainargs() is a
- * function to get the program's argv in wide char format.
- */
-
-typedef struct {
-  int newmode;
-} _startupinfo;
-
-extern void __wgetmainargs(int *argc,
-			   wchar_t ***wargv,
-			   wchar_t ***wenviron,
-			   int expand_wildcards,
-			   _startupinfo *startupinfo);
-
 /* Copy of protect_argv that handles wchar_t strings */
 
 static gint
-protect_wargv (wchar_t  **wargv,
+protect_wargv (gint       argc,
+	       wchar_t  **wargv,
 	       wchar_t ***new_wargv)
 {
   gint i;
-  gint argc = 0;
   
-  while (wargv[argc])
-    ++argc;
   *new_wargv = g_new (wchar_t *, argc+1);
 
   /* Quote each argv element if necessary, so that it will get
@@ -211,8 +195,7 @@ main (int ignored_argc, char **ignored_argv)
   wchar_t **new_wargv;
   int argc;
   char **argv;
-  wchar_t **wargv, **wenvp;
-  _startupinfo si = { 0 };
+  wchar_t **wargv;
   char c;
 
 #if (defined (_MSC_VER) && _MSC_VER >= 1400)
@@ -226,7 +209,7 @@ main (int ignored_argc, char **ignored_argv)
 #endif
 
   /* Fetch the wide-char argument vector */
-  __wgetmainargs (&argc, &wargv, &wenvp, 0, &si);
+  wargv = CommandLineToArgvW (GetCommandLineW(), &argc);
 
   g_assert (argc >= ARG_COUNT);
 
@@ -365,7 +348,7 @@ main (int ignored_argc, char **ignored_argv)
   /* For the program name passed to spawnv(), don't use the quoted
    * version.
    */
-  protect_wargv (wargv + argv_zero_offset, &new_wargv);
+  protect_wargv (argc - argv_zero_offset, wargv + argv_zero_offset, &new_wargv);
 
   if (argv[ARG_USE_PATH][0] == 'y')
     handle = _wspawnvp (mode, wargv[ARG_PROGRAM], (const wchar_t **) new_wargv);
@@ -382,6 +365,7 @@ main (int ignored_argc, char **ignored_argv)
 
   read (helper_sync_fd, &c, 1);
 
+  LocalFree (wargv);
   g_strfreev (argv);
 
   return 0;

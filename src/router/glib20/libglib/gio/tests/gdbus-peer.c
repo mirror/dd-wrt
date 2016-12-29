@@ -646,7 +646,7 @@ read_all_from_fd (gint fd, gsize *out_len, GError **error)
 
  error:
   if (out_len != NULL)
-    out_len = 0;
+    *out_len = 0;
   g_string_free (str, TRUE);
   return NULL;
 }
@@ -835,8 +835,7 @@ test_peer (void)
                          &len2,
                          &error);
     g_assert_no_error (error);
-    g_assert_cmpint (len, ==, len2);
-    g_assert (memcmp (buf, buf2, len) == 0);
+    g_assert_cmpmem (buf, len, buf2, len2);
     g_free (buf2);
     g_free (buf);
   }

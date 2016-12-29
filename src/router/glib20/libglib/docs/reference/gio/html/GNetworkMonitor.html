@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GNetworkMonitor: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="highlevel-socket.html" title="High-level network functionallity">
 <link rel="prev" href="GThreadedSocketService.html" title="GThreadedSocketService">
 <link rel="next" href="tls.html" title="TLS (SSL) support">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -37,7 +37,7 @@
 </tr></table></div>
 <div class="refsect1">
 <a name="GNetworkMonitor.functions"></a><h2>Functions</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="functions_return">
 <col class="functions_name">
@@ -53,7 +53,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
+<a href="../glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="GNetworkMonitor.html#g-network-monitor-get-network-available" title="g_network_monitor_get_network_available ()">g_network_monitor_get_network_available</a> <span class="c_punctuation">()</span>
@@ -61,7 +61,15 @@
 </tr>
 <tr>
 <td class="function_type">
-<a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
+<a href="../glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
+</td>
+<td class="function_name">
+<a class="link" href="GNetworkMonitor.html#g-network-monitor-get-network-metered" title="g_network_monitor_get_network_metered ()">g_network_monitor_get_network_metered</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a href="../glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="GNetworkMonitor.html#g-network-monitor-can-reach" title="g_network_monitor_can_reach ()">g_network_monitor_can_reach</a> <span class="c_punctuation">()</span>
@@ -77,7 +85,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
+<a href="../glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="GNetworkMonitor.html#g-network-monitor-can-reach-finish" title="g_network_monitor_can_reach_finish ()">g_network_monitor_can_reach_finish</a> <span class="c_punctuation">()</span>
@@ -96,7 +104,7 @@
 </div>
 <div class="refsect1">
 <a name="GNetworkMonitor.properties"></a><h2>Properties</h2>
-<div class="informaltable"><table border="0">
+<div class="informaltable"><table class="informaltable" border="0">
 <colgroup>
 <col width="150px" class="properties_type">
 <col width="300px" class="properties_name">
@@ -109,8 +117,13 @@
 <td class="property_flags">Read</td>
 </tr>
 <tr>
-<td class="property_type"><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="type">gboolean</span></a></td>
+<td class="property_type"><a href="../glib-Basic-Types.html#gboolean"><span class="type">gboolean</span></a></td>
 <td class="property_name"><a class="link" href="GNetworkMonitor.html#GNetworkMonitor--network-available" title="The “network-available” property">network-available</a></td>
+<td class="property_flags">Read</td>
+</tr>
+<tr>
+<td class="property_type"><a href="../glib-Basic-Types.html#gboolean"><span class="type">gboolean</span></a></td>
+<td class="property_name"><a class="link" href="GNetworkMonitor.html#GNetworkMonitor--network-metered" title="The “network-metered” property">network-metered</a></td>
 <td class="property_flags">Read</td>
 </tr>
 </tbody>
@@ -118,7 +131,7 @@
 </div>
 <div class="refsect1">
 <a name="GNetworkMonitor.signals"></a><h2>Signals</h2>
-<div class="informaltable"><table border="0">
+<div class="informaltable"><table class="informaltable" border="0">
 <colgroup>
 <col width="150px" class="signals_return">
 <col width="300px" class="signals_name">
@@ -127,13 +140,13 @@
 <tbody><tr>
 <td class="signal_type"><span class="returnvalue">void</span></td>
 <td class="signal_name"><a class="link" href="GNetworkMonitor.html#GNetworkMonitor-network-changed" title="The “network-changed” signal">network-changed</a></td>
-<td class="signal_flags"><a href="https://developer.gnome.org/gobject/unstable/gobject-Signals.html#G-SIGNAL-RUN-LAST:CAPS">Run Last</a></td>
+<td class="signal_flags"><a href="../gobject-Signals.html#G-SIGNAL-RUN-LAST:CAPS">Run Last</a></td>
 </tr></tbody>
 </table></div>
 </div>
 <div class="refsect1">
 <a name="GNetworkMonitor.other"></a><h2>Types and Values</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="name">
 <col class="description">
@@ -168,7 +181,7 @@
 <a name="GNetworkMonitor.prerequisites"></a><h2>Prerequisites</h2>
 <p>
 GNetworkMonitor requires
- <a class="link" href="GInitable.html" title="GInitable">GInitable</a> and  <a href="https://developer.gnome.org/gobject/unstable/gobject-The-Base-Object-Type.html#GObject">GObject</a>.</p>
+ <a class="link" href="GInitable.html" title="GInitable">GInitable</a> and  <a href="../gobject-The-Base-Object-Type.html#GObject-struct">GObject</a>.</p>
 </div>
 <div class="refsect1">
 <a name="GNetworkMonitor.includes"></a><h2>Includes</h2>
@@ -189,7 +202,7 @@ is based on the kernel's netlink interface.</p>
 g_network_monitor_get_default (<em class="parameter"><code><span class="type">void</span></code></em>);</pre>
 <p>Gets the default <a class="link" href="GNetworkMonitor.html" title="GNetworkMonitor"><span class="type">GNetworkMonitor</span></a> for the system.</p>
 <div class="refsect3">
-<a name="id-1.4.14.10.11.2.5"></a><h4>Returns</h4>
+<a name="g-network-monitor-get-default.returns"></a><h4>Returns</h4>
 <p> a <a class="link" href="GNetworkMonitor.html" title="GNetworkMonitor"><span class="type">GNetworkMonitor</span></a>. </p>
 <p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
 </div>
@@ -198,7 +211,7 @@ g_network_monitor_get_default (<em class="parameter"><code><span class="type">vo
 <hr>
 <div class="refsect2">
 <a name="g-network-monitor-get-network-available"></a><h3>g_network_monitor_get_network_available ()</h3>
-<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
+<pre class="programlisting"><a href="../glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 g_network_monitor_get_network_available
                                (<em class="parameter"><code><a class="link" href="GNetworkMonitor.html" title="GNetworkMonitor"><span class="type">GNetworkMonitor</span></a> *monitor</code></em>);</pre>
 <p>Checks if the network is available. "Available" here means that the
@@ -206,8 +219,8 @@ system has a default route available for at least one of IPv4 or
 IPv6. It does not necessarily imply that the public Internet is
 reachable. See <a class="link" href="GNetworkMonitor.html#GNetworkMonitor--network-available" title="The “network-available” property"><span class="type">“network-available”</span></a> for more details.</p>
 <div class="refsect3">
-<a name="id-1.4.14.10.11.3.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-network-monitor-get-network-available.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -221,33 +234,61 @@ reachable. See <a class="link" href="GNetworkMonitor.html#GNetworkMonitor--netwo
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.14.10.11.3.6"></a><h4>Returns</h4>
+<a name="g-network-monitor-get-network-available.returns"></a><h4>Returns</h4>
 <p> whether the network is available</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-32.html#api-index-2.32">2.32</a></p>
 </div>
 <hr>
 <div class="refsect2">
+<a name="g-network-monitor-get-network-metered"></a><h3>g_network_monitor_get_network_metered ()</h3>
+<pre class="programlisting"><a href="../glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
+g_network_monitor_get_network_metered (<em class="parameter"><code><a class="link" href="GNetworkMonitor.html" title="GNetworkMonitor"><span class="type">GNetworkMonitor</span></a> *monitor</code></em>);</pre>
+<p>Checks if the network is metered.
+See <a class="link" href="GNetworkMonitor.html#GNetworkMonitor--network-metered" title="The “network-metered” property"><span class="type">“network-metered”</span></a> for more details.</p>
+<div class="refsect3">
+<a name="g-network-monitor-get-network-metered.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>monitor</p></td>
+<td class="parameter_description"><p>the <a class="link" href="GNetworkMonitor.html" title="GNetworkMonitor"><span class="type">GNetworkMonitor</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="g-network-monitor-get-network-metered.returns"></a><h4>Returns</h4>
+<p> whether the connection is metered</p>
+</div>
+<p class="since">Since: <a class="link" href="api-index-2-46.html#api-index-2.46">2.46</a></p>
+</div>
+<hr>
+<div class="refsect2">
 <a name="g-network-monitor-can-reach"></a><h3>g_network_monitor_can_reach ()</h3>
-<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
+<pre class="programlisting"><a href="../glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 g_network_monitor_can_reach (<em class="parameter"><code><a class="link" href="GNetworkMonitor.html" title="GNetworkMonitor"><span class="type">GNetworkMonitor</span></a> *monitor</code></em>,
                              <em class="parameter"><code><a class="link" href="GSocketConnectable.html" title="GSocketConnectable"><span class="type">GSocketConnectable</span></a> *connectable</code></em>,
                              <em class="parameter"><code><a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a> *cancellable</code></em>,
-                             <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
+                             <em class="parameter"><code><a href="../glib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
 <p>Attempts to determine whether or not the host pointed to by
 <em class="parameter"><code>connectable</code></em>
  can be reached, without actually trying to connect to
 it.</p>
-<p>This may return <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a> even when <a class="link" href="GNetworkMonitor.html#GNetworkMonitor--network-available" title="The “network-available” property"><span class="type">“network-available”</span></a>
-is <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#FALSE:CAPS"><code class="literal">FALSE</code></a>, if, for example, <em class="parameter"><code>monitor</code></em>
+<p>This may return <a href="../glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a> even when <a class="link" href="GNetworkMonitor.html#GNetworkMonitor--network-available" title="The “network-available” property"><span class="type">“network-available”</span></a>
+is <a href="../glib-Standard-Macros.html#FALSE:CAPS"><code class="literal">FALSE</code></a>, if, for example, <em class="parameter"><code>monitor</code></em>
  can determine that
 <em class="parameter"><code>connectable</code></em>
  refers to a host on a local network.</p>
 <p>If <em class="parameter"><code>monitor</code></em>
  believes that an attempt to connect to <em class="parameter"><code>connectable</code></em>
 
-will succeed, it will return <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a>. Otherwise, it will return
-<a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#FALSE:CAPS"><code class="literal">FALSE</code></a> and set <em class="parameter"><code>error</code></em>
+will succeed, it will return <a href="../glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a>. Otherwise, it will return
+<a href="../glib-Standard-Macros.html#FALSE:CAPS"><code class="literal">FALSE</code></a> and set <em class="parameter"><code>error</code></em>
  to an appropriate error (such as
 <a class="link" href="gio-GIOError.html#G-IO-ERROR-HOST-UNREACHABLE:CAPS"><code class="literal">G_IO_ERROR_HOST_UNREACHABLE</code></a>).</p>
 <p>Note that although this does not attempt to connect to
@@ -256,8 +297,8 @@ will succeed, it will return <a href="https://developer.gnome.org/glib/unstable/
 trying to do multicast DNS on the local network), so if you do not
 want to block, you should use <a class="link" href="GNetworkMonitor.html#g-network-monitor-can-reach-async" title="g_network_monitor_can_reach_async ()"><code class="function">g_network_monitor_can_reach_async()</code></a>.</p>
 <div class="refsect3">
-<a name="id-1.4.14.10.11.4.8"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-network-monitor-can-reach.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -276,21 +317,21 @@ want to block, you should use <a class="link" href="GNetworkMonitor.html#g-netwo
 </tr>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
-<td class="parameter_description"><p> a <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a>, or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
+<td class="parameter_description"><p> a <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a>, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
-<td class="parameter_description"><p>return location for a <a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a>, or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a></p></td>
+<td class="parameter_description"><p>return location for a <a href="../glib-Error-Reporting.html#GError"><span class="type">GError</span></a>, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a></p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 </tbody>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.14.10.11.4.9"></a><h4>Returns</h4>
-<p> <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a> if <em class="parameter"><code>connectable</code></em>
-is reachable, <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#FALSE:CAPS"><code class="literal">FALSE</code></a> if not.</p>
+<a name="g-network-monitor-can-reach.returns"></a><h4>Returns</h4>
+<p> <a href="../glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a> if <em class="parameter"><code>connectable</code></em>
+is reachable, <a href="../glib-Standard-Macros.html#FALSE:CAPS"><code class="literal">FALSE</code></a> if not.</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-32.html#api-index-2.32">2.32</a></p>
 </div>
@@ -302,7 +343,7 @@ g_network_monitor_can_reach_async (<em class="parameter"><code><a class="link" h
                                    <em class="parameter"><code><a class="link" href="GSocketConnectable.html" title="GSocketConnectable"><span class="type">GSocketConnectable</span></a> *connectable</code></em>,
                                    <em class="parameter"><code><a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a> *cancellable</code></em>,
                                    <em class="parameter"><code><a class="link" href="GAsyncResult.html#GAsyncReadyCallback" title="GAsyncReadyCallback ()"><span class="type">GAsyncReadyCallback</span></a> callback</code></em>,
-                                   <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gpointer"><span class="type">gpointer</span></a> user_data</code></em>);</pre>
+                                   <em class="parameter"><code><a href="../glib-Basic-Types.html#gpointer"><span class="type">gpointer</span></a> user_data</code></em>);</pre>
 <p>Asynchronously attempts to determine whether or not the host
 pointed to by <em class="parameter"><code>connectable</code></em>
  can be reached, without actually
@@ -313,8 +354,8 @@ trying to connect to it.</p>
 You can then call <a class="link" href="GNetworkMonitor.html#g-network-monitor-can-reach-finish" title="g_network_monitor_can_reach_finish ()"><code class="function">g_network_monitor_can_reach_finish()</code></a>
 to get the result of the operation.</p>
 <div class="refsect3">
-<a name="id-1.4.14.10.11.5.7"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-network-monitor-can-reach-async.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -333,7 +374,7 @@ to get the result of the operation.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
-<td class="parameter_description"><p> a <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a>, or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
+<td class="parameter_description"><p> a <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a>, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
 </tr>
 <tr>
@@ -354,15 +395,15 @@ request is satisfied. </p></td>
 <hr>
 <div class="refsect2">
 <a name="g-network-monitor-can-reach-finish"></a><h3>g_network_monitor_can_reach_finish ()</h3>
-<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
+<pre class="programlisting"><a href="../glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 g_network_monitor_can_reach_finish (<em class="parameter"><code><a class="link" href="GNetworkMonitor.html" title="GNetworkMonitor"><span class="type">GNetworkMonitor</span></a> *monitor</code></em>,
                                     <em class="parameter"><code><a class="link" href="GAsyncResult.html" title="GAsyncResult"><span class="type">GAsyncResult</span></a> *result</code></em>,
-                                    <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
+                                    <em class="parameter"><code><a href="../glib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
 <p>Finishes an async network connectivity test.
 See <a class="link" href="GNetworkMonitor.html#g-network-monitor-can-reach-async" title="g_network_monitor_can_reach_async ()"><code class="function">g_network_monitor_can_reach_async()</code></a>.</p>
 <div class="refsect3">
-<a name="id-1.4.14.10.11.6.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-network-monitor-can-reach-finish.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -381,15 +422,15 @@ See <a class="link" href="GNetworkMonitor.html#g-network-monitor-can-reach-async
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
-<td class="parameter_description"><p>return location for errors, or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a></p></td>
+<td class="parameter_description"><p>return location for errors, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a></p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 </tbody>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.14.10.11.6.6"></a><h4>Returns</h4>
-<p> <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a> if network is reachable, <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#FALSE:CAPS"><code class="literal">FALSE</code></a> if not.</p>
+<a name="g-network-monitor-can-reach-finish.returns"></a><h4>Returns</h4>
+<p> <a href="../glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a> if network is reachable, <a href="../glib-Standard-Macros.html#FALSE:CAPS"><code class="literal">FALSE</code></a> if not.</p>
 </div>
 </div>
 <hr>
@@ -399,9 +440,9 @@ See <a class="link" href="GNetworkMonitor.html#g-network-monitor-can-reach-async
 g_network_monitor_get_connectivity (<em class="parameter"><code><a class="link" href="GNetworkMonitor.html" title="GNetworkMonitor"><span class="type">GNetworkMonitor</span></a> *monitor</code></em>);</pre>
 <p>Gets a more detailed networking state than
 <a class="link" href="GNetworkMonitor.html#g-network-monitor-get-network-available" title="g_network_monitor_get_network_available ()"><code class="function">g_network_monitor_get_network_available()</code></a>.</p>
-<p>If <a class="link" href="GNetworkMonitor.html#GNetworkMonitor--network-available" title="The “network-available” property"><span class="type">“network-available”</span></a> is <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#FALSE:CAPS"><code class="literal">FALSE</code></a>, then the
+<p>If <a class="link" href="GNetworkMonitor.html#GNetworkMonitor--network-available" title="The “network-available” property"><span class="type">“network-available”</span></a> is <a href="../glib-Standard-Macros.html#FALSE:CAPS"><code class="literal">FALSE</code></a>, then the
 connectivity state will be <a class="link" href="GNetworkMonitor.html#G-NETWORK-CONNECTIVITY-LOCAL:CAPS"><code class="literal">G_NETWORK_CONNECTIVITY_LOCAL</code></a>.</p>
-<p>If <a class="link" href="GNetworkMonitor.html#GNetworkMonitor--network-available" title="The “network-available” property"><span class="type">“network-available”</span></a> is <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a>, then the
+<p>If <a class="link" href="GNetworkMonitor.html#GNetworkMonitor--network-available" title="The “network-available” property"><span class="type">“network-available”</span></a> is <a href="../glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a>, then the
 connectivity state will be <a class="link" href="GNetworkMonitor.html#G-NETWORK-CONNECTIVITY-FULL:CAPS"><code class="literal">G_NETWORK_CONNECTIVITY_FULL</code></a> (if there
 is full Internet connectivity), <a class="link" href="GNetworkMonitor.html#G-NETWORK-CONNECTIVITY-LIMITED:CAPS"><code class="literal">G_NETWORK_CONNECTIVITY_LIMITED</code></a> (if
 the host has a default route, but appears to be unable to actually
@@ -414,8 +455,8 @@ reachable but others are not. In this case, applications can
 attempt to connect to remote servers, but should gracefully fall
 back to their "offline" behavior if the connection attempt fails.</p>
 <div class="refsect3">
-<a name="id-1.4.14.10.11.7.8"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-network-monitor-get-connectivity.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -429,7 +470,7 @@ back to their "offline" behavior if the connection attempt fails.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.14.10.11.7.9"></a><h4>Returns</h4>
+<a name="g-network-monitor-get-connectivity.returns"></a><h4>Returns</h4>
 <p> the network connectivity state</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-44.html#api-index-2.44">2.44</a></p>
@@ -469,19 +510,14 @@ indicates when a possibly-user-visible change has occurred.</p>
 </pre>
 <p>The virtual function table for <a class="link" href="GNetworkMonitor.html" title="GNetworkMonitor"><span class="type">GNetworkMonitor</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.4.14.10.12.3.5"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GNetworkMonitorInterface.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="struct_members_name">
 <col class="struct_members_description">
 <col width="200px" class="struct_members_annotations">
 </colgroup>
 <tbody>
-<tr>
-<td class="struct_member_name"><p><a href="https://developer.gnome.org/gobject/unstable/gobject-Type-Information.html#GTypeInterface"><span class="type">GTypeInterface</span></a> <em class="structfield"><code><a name="GNetworkMonitorInterface.g-iface"></a>g_iface</code></em>;</p></td>
-<td class="struct_member_description"><p>The parent interface.</p></td>
-<td class="struct_member_annotations"> </td>
-</tr>
 <tr>
 <td class="struct_member_name"><p><em class="structfield"><code><a name="GNetworkMonitorInterface.network-changed"></a>network_changed</code></em> ()</p></td>
 <td class="struct_member_description"><p>the virtual function pointer for the
@@ -524,8 +560,8 @@ See Extending GIO.</p>
 <a name="GNetworkConnectivity"></a><h3>enum GNetworkConnectivity</h3>
 <p>The host's network connectivity state, as reported by <a class="link" href="GNetworkMonitor.html" title="GNetworkMonitor"><span class="type">GNetworkMonitor</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.4.14.10.12.5.4"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GNetworkConnectivity.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="enum_members_name">
 <col class="enum_members_description">
@@ -587,7 +623,7 @@ See <a class="link" href="GNetworkMonitor.html#g-network-monitor-get-connectivit
 <hr>
 <div class="refsect2">
 <a name="GNetworkMonitor--network-available"></a><h3>The <code class="literal">“network-available”</code> property</h3>
-<pre class="programlisting">  “network-available”        <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="type">gboolean</span></a></pre>
+<pre class="programlisting">  “network-available”        <a href="../glib-Basic-Types.html#gboolean"><span class="type">gboolean</span></a></pre>
 <p>Whether the network is considered available. That is, whether the
 system has a default route for at least one of IPv4 or IPv6.</p>
 <p>Real-world networks are of course much more complicated than
@@ -599,13 +635,35 @@ active. Other hosts might only be accessible when the VPN is
 not active. Thus, it is best to use <a class="link" href="GNetworkMonitor.html#g-network-monitor-can-reach" title="g_network_monitor_can_reach ()"><code class="function">g_network_monitor_can_reach()</code></a>
 or <a class="link" href="GNetworkMonitor.html#g-network-monitor-can-reach-async" title="g_network_monitor_can_reach_async ()"><code class="function">g_network_monitor_can_reach_async()</code></a> to test for reachability
 on a host-by-host basis. (On the other hand, when the property is
-<a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#FALSE:CAPS"><code class="literal">FALSE</code></a>, the application can reasonably expect that no remote
+<a href="../glib-Standard-Macros.html#FALSE:CAPS"><code class="literal">FALSE</code></a>, the application can reasonably expect that no remote
 hosts at all are reachable, and should indicate this to the user
 in its UI.)</p>
 <p>See also <a class="link" href="GNetworkMonitor.html#GNetworkMonitor-network-changed" title="The “network-changed” signal"><span class="type">“network-changed”</span></a>.</p>
 <p>Flags: Read</p>
 <p>Default value: FALSE</p>
 <p class="since">Since: <a class="link" href="api-index-2-32.html#api-index-2.32">2.32</a></p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="GNetworkMonitor--network-metered"></a><h3>The <code class="literal">“network-metered”</code> property</h3>
+<pre class="programlisting">  “network-metered”          <a href="../glib-Basic-Types.html#gboolean"><span class="type">gboolean</span></a></pre>
+<p>Whether the network is considered metered. That is, whether the
+system has traffic flowing through the default connection that is
+subject to limitations set by service providers. For example, traffic
+might be billed by the amount of data transmitted, or there might be a
+quota on the amount of traffic per month. This is typical with tethered
+connections (3G and 4G) and in such situations, bandwidth intensive
+applications may wish to avoid network activity where possible if it will
+cost the user money or use up their limited quota.</p>
+<p>If more information is required about specific devices then the
+system network management API should be used instead (for example,
+NetworkManager or ConnMan).</p>
+<p>If this information is not available then no networks will be
+marked as metered.</p>
+<p>See also <a class="link" href="GNetworkMonitor.html#GNetworkMonitor--network-available" title="The “network-available” property"><span class="type">“network-available”</span></a>.</p>
+<p>Flags: Read</p>
+<p>Default value: FALSE</p>
+<p class="since">Since: <a class="link" href="api-index-2-46.html#api-index-2.46">2.46</a></p>
 </div>
 </div>
 <div class="refsect1">
@@ -614,18 +672,18 @@ in its UI.)</p>
 <a name="GNetworkMonitor-network-changed"></a><h3>The <code class="literal">“network-changed”</code> signal</h3>
 <pre class="programlisting"><span class="returnvalue">void</span>
 user_function (<a class="link" href="GNetworkMonitor.html" title="GNetworkMonitor"><span class="type">GNetworkMonitor</span></a> *monitor,
-               <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="type">gboolean</span></a>         available,
-               <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gpointer"><span class="type">gpointer</span></a>         user_data)</pre>
+               <a href="../glib-Basic-Types.html#gboolean"><span class="type">gboolean</span></a>         available,
+               <a href="../glib-Basic-Types.html#gpointer"><span class="type">gpointer</span></a>         user_data)</pre>
 <p>Emitted when the network configuration changes. If <em class="parameter"><code>available</code></em>
  is
-<a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a>, then some hosts may be reachable that were not reachable
+<a href="../glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a>, then some hosts may be reachable that were not reachable
 before, while others that were reachable before may no longer be
 reachable. If <em class="parameter"><code>available</code></em>
- is <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#FALSE:CAPS"><code class="literal">FALSE</code></a>, then no remote hosts are
+ is <a href="../glib-Standard-Macros.html#FALSE:CAPS"><code class="literal">FALSE</code></a>, then no remote hosts are
 reachable.</p>
 <div class="refsect3">
-<a name="id-1.4.14.10.14.2.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GNetworkMonitor-network-changed.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -650,12 +708,12 @@ reachable.</p>
 </tbody>
 </table></div>
 </div>
-<p>Flags: <a href="https://developer.gnome.org/gobject/unstable/gobject-Signals.html#G-SIGNAL-RUN-LAST:CAPS">Run Last</a></p>
+<p>Flags: <a href="../gobject-Signals.html#G-SIGNAL-RUN-LAST:CAPS">Run Last</a></p>
 <p class="since">Since: <a class="link" href="api-index-2-32.html#api-index-2.32">2.32</a></p>
 </div>
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

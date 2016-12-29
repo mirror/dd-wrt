@@ -9,16 +9,20 @@
 		Value="9"
 	/>
 	<UserMacro
+		Name="GlibVersion"
+		Value="2.51.0"
+	/>
+	<UserMacro
+		Name="ApiVersion"
+		Value="2.0"
+	/>
+	<UserMacro
 		Name="GlibEtcInstallRoot"
 		Value="..\..\..\..\vs$(VSVer)\$(PlatformName)"
 	/>
 	<UserMacro
 		Name="CopyDir"
 		Value="$(GlibEtcInstallRoot)"
-	/>
-	<UserMacro
-		Name="ApiVersion"
-		Value="2.0"
 	/>
 	<UserMacro
 		Name="GlibLibtoolCompatibleDllPrefix"

@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Arrays: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-data-types.html" title="GLib Data Types">
 <link rel="prev" href="glib-String-Chunks.html" title="String Chunks">
 <link rel="next" href="glib-Pointer-Arrays.html" title="Pointer Arrays">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -34,7 +34,7 @@
 </tr></table></div>
 <div class="refsect1">
 <a name="glib-Arrays.functions"></a><h2>Functions</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="functions_return">
 <col class="functions_name">
@@ -74,7 +74,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="returnvalue">guint</span></a>
+<a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="returnvalue">guint</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="glib-Arrays.html#g-array-get-element-size" title="g_array_get_element_size ()">g_array_get_element_size</a> <span class="c_punctuation">()</span>
@@ -197,7 +197,7 @@
 </div>
 <div class="refsect1">
 <a name="glib-Arrays.other"></a><h2>Types and Values</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="name">
 <col class="description">
@@ -244,18 +244,18 @@ are the same size), and the array can be automatically cleared to
 10
 11
 12</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="usertype">GArray</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">garray</span><span class="symbol">;</span>
-<span class="usertype">gint</span><span class="normal"> i</span><span class="symbol">;</span>
-<span class="comment">// We create a new array to store gint values.</span>
-<span class="comment">// We don't want it zero-terminated or cleared to 0's.</span>
-<span class="normal">garray </span><span class="symbol">=</span><span class="normal"> </span><span class="function"><a href="glib-Arrays.html#g-array-new">g_array_new</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal"><a href="glib-Standard-Macros.html#FALSE:CAPS">FALSE</a></span><span class="symbol">,</span><span class="normal"> <a href="glib-Standard-Macros.html#FALSE:CAPS">FALSE</a></span><span class="symbol">,</span><span class="normal"> </span><span class="keyword">sizeof</span><span class="normal"> </span><span class="symbol">(</span><span class="normal"><a href="glib-Basic-Types.html#gint">gint</a></span><span class="symbol">));</span>
-<span class="keyword">for</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">i </span><span class="symbol">=</span><span class="normal"> </span><span class="number">0</span><span class="symbol">;</span><span class="normal"> i </span><span class="symbol">&lt;</span><span class="normal"> </span><span class="number">10000</span><span class="symbol">;</span><span class="normal"> i</span><span class="symbol">++)</span>
-<span class="normal">  </span><span class="function"><a href="glib-Arrays.html#g-array-append-val">g_array_append_val</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">garray</span><span class="symbol">,</span><span class="normal"> i</span><span class="symbol">);</span>
-<span class="keyword">for</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">i </span><span class="symbol">=</span><span class="normal"> </span><span class="number">0</span><span class="symbol">;</span><span class="normal"> i </span><span class="symbol">&lt;</span><span class="normal"> </span><span class="number">10000</span><span class="symbol">;</span><span class="normal"> i</span><span class="symbol">++)</span>
-<span class="normal">  </span><span class="keyword">if</span><span class="normal"> </span><span class="symbol">(</span><span class="function"><a href="glib-Arrays.html#g-array-index">g_array_index</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">garray</span><span class="symbol">,</span><span class="normal"> <a href="glib-Basic-Types.html#gint">gint</a></span><span class="symbol">,</span><span class="normal"> i</span><span class="symbol">)</span><span class="normal"> </span><span class="symbol">!=</span><span class="normal"> i</span><span class="symbol">)</span>
-<span class="normal">    </span><span class="function"><a href="glib-Warnings-and-Assertions.html#g-print">g_print</a></span><span class="normal"> </span><span class="symbol">(</span><span class="string">"ERROR: got %d instead of %d</span><span class="specialchar">\n</span><span class="string">"</span><span class="symbol">,</span>
-<span class="normal">             </span><span class="function"><a href="glib-Arrays.html#g-array-index">g_array_index</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">garray</span><span class="symbol">,</span><span class="normal"> <a href="glib-Basic-Types.html#gint">gint</a></span><span class="symbol">,</span><span class="normal"> i</span><span class="symbol">),</span><span class="normal"> i</span><span class="symbol">);</span>
-<span class="function"><a href="glib-Arrays.html#g-array-free">g_array_free</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">garray</span><span class="symbol">,</span><span class="normal"> <a href="glib-Standard-Macros.html#TRUE:CAPS">TRUE</a></span><span class="symbol">);</span></pre></td>
+        <td class="listing_code"><pre class="programlisting">GArray <span class="gtkdoc opt">*</span>garray<span class="gtkdoc opt">;</span>
+gint i<span class="gtkdoc opt">;</span>
+<span class="gtkdoc slc">// We create a new array to store gint values.</span>
+<span class="gtkdoc slc">// We don&apos;t want it zero-terminated or cleared to 0&apos;s.</span>
+garray <span class="gtkdoc opt">=</span> <span class="function"><a href="glib-Arrays.html#g-array-new">g_array_new</a></span> <span class="gtkdoc opt">(</span>FALSE<span class="gtkdoc opt">,</span> FALSE<span class="gtkdoc opt">,</span> <span class="keyword">sizeof</span> <span class="gtkdoc opt">(</span>gint<span class="gtkdoc opt">));</span>
+<span class="keyword">for</span> <span class="gtkdoc opt">(</span>i <span class="gtkdoc opt">=</span> <span class="number">0</span><span class="gtkdoc opt">;</span> i <span class="gtkdoc opt">&lt;</span> <span class="number">10000</span><span class="gtkdoc opt">;</span> i<span class="gtkdoc opt">++)</span>
+  <span class="function"><a href="glib-Arrays.html#g-array-append-val">g_array_append_val</a></span> <span class="gtkdoc opt">(</span>garray<span class="gtkdoc opt">,</span> i<span class="gtkdoc opt">);</span>
+<span class="keyword">for</span> <span class="gtkdoc opt">(</span>i <span class="gtkdoc opt">=</span> <span class="number">0</span><span class="gtkdoc opt">;</span> i <span class="gtkdoc opt">&lt;</span> <span class="number">10000</span><span class="gtkdoc opt">;</span> i<span class="gtkdoc opt">++)</span>
+  <span class="keyword">if</span> <span class="gtkdoc opt">(</span><span class="function"><a href="glib-Arrays.html#g-array-index">g_array_index</a></span> <span class="gtkdoc opt">(</span>garray<span class="gtkdoc opt">,</span> gint<span class="gtkdoc opt">,</span> i<span class="gtkdoc opt">) !=</span> i<span class="gtkdoc opt">)</span>
+    <span class="function"><a href="glib-Warnings-and-Assertions.html#g-print">g_print</a></span> <span class="gtkdoc opt">(</span><span class="string">&quot;ERROR: got %d instead of %d</span><span class="gtkdoc esc">\n</span><span class="string">&quot;</span><span class="gtkdoc opt">,</span>
+             <span class="function"><a href="glib-Arrays.html#g-array-index">g_array_index</a></span> <span class="gtkdoc opt">(</span>garray<span class="gtkdoc opt">,</span> gint<span class="gtkdoc opt">,</span> i<span class="gtkdoc opt">),</span> i<span class="gtkdoc opt">);</span>
+<span class="function"><a href="glib-Arrays.html#g-array-free">g_array_free</a></span> <span class="gtkdoc opt">(</span>garray<span class="gtkdoc opt">,</span> TRUE<span class="gtkdoc opt">);</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -270,11 +270,11 @@ are the same size), and the array can be automatically cleared to
 <pre class="programlisting"><a class="link" href="glib-Arrays.html#GArray" title="struct GArray"><span class="returnvalue">GArray</span></a> *
 g_array_new (<em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gboolean" title="gboolean"><span class="type">gboolean</span></a> zero_terminated</code></em>,
              <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gboolean" title="gboolean"><span class="type">gboolean</span></a> clear_</code></em>,
-             <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> element_size</code></em>);</pre>
+             <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> element_size</code></em>);</pre>
 <p>Creates a new <a class="link" href="glib-Arrays.html#GArray" title="struct GArray"><span class="type">GArray</span></a> with a reference count of 1.</p>
 <div class="refsect3">
-<a name="id-1.6.10.7.2.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-array-new.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -302,7 +302,7 @@ to 0 when they are allocated</p></td>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.6.10.7.2.6"></a><h4>Returns</h4>
+<a name="g-array-new.returns"></a><h4>Returns</h4>
 <p> the new <a class="link" href="glib-Arrays.html#GArray" title="struct GArray"><span class="type">GArray</span></a></p>
 </div>
 </div>
@@ -312,16 +312,16 @@ to 0 when they are allocated</p></td>
 <pre class="programlisting"><a class="link" href="glib-Arrays.html#GArray" title="struct GArray"><span class="returnvalue">GArray</span></a> *
 g_array_sized_new (<em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gboolean" title="gboolean"><span class="type">gboolean</span></a> zero_terminated</code></em>,
                    <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gboolean" title="gboolean"><span class="type">gboolean</span></a> clear_</code></em>,
-                   <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> element_size</code></em>,
-                   <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> reserved_size</code></em>);</pre>
+                   <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> element_size</code></em>,
+                   <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> reserved_size</code></em>);</pre>
 <p>Creates a new <a class="link" href="glib-Arrays.html#GArray" title="struct GArray"><span class="type">GArray</span></a> with <em class="parameter"><code>reserved_size</code></em>
  elements preallocated and
 a reference count of 1. This avoids frequent reallocation, if you
 are going to add many elements to the array. Note however that the
 size of the array is still 0.</p>
 <div class="refsect3">
-<a name="id-1.6.10.7.3.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-array-sized-new.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -354,7 +354,7 @@ allocation</p></td>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.6.10.7.3.6"></a><h4>Returns</h4>
+<a name="g-array-sized-new.returns"></a><h4>Returns</h4>
 <p> the new <a class="link" href="glib-Arrays.html#GArray" title="struct GArray"><span class="type">GArray</span></a></p>
 </div>
 </div>
@@ -367,8 +367,8 @@ g_array_ref (<em class="parameter"><code><a class="link" href="glib-Arrays.html#
  by one.
 This function is MT-safe and may be called from any thread.</p>
 <div class="refsect3">
-<a name="id-1.6.10.7.4.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-array-ref.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -382,7 +382,7 @@ This function is MT-safe and may be called from any thread.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.6.10.7.4.6"></a><h4>Returns</h4>
+<a name="g-array-ref.returns"></a><h4>Returns</h4>
 <p> The passed in <a class="link" href="glib-Arrays.html#GArray" title="struct GArray"><span class="type">GArray</span></a></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-22.html#api-index-2.22">2.22</a></p>
@@ -398,8 +398,8 @@ reference count drops to 0, all memory allocated by the array is
 released. This function is MT-safe and may be called from any
 thread.</p>
 <div class="refsect3">
-<a name="id-1.6.10.7.5.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-array-unref.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -417,13 +417,13 @@ thread.</p>
 <hr>
 <div class="refsect2">
 <a name="g-array-get-element-size"></a><h3>g_array_get_element_size ()</h3>
-<pre class="programlisting"><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="returnvalue">guint</span></a>
+<pre class="programlisting"><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="returnvalue">guint</span></a>
 g_array_get_element_size (<em class="parameter"><code><a class="link" href="glib-Arrays.html#GArray" title="struct GArray"><span class="type">GArray</span></a> *array</code></em>);</pre>
 <p>Gets the size of the elements in <em class="parameter"><code>array</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.6.10.7.6.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-array-get-element-size.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -437,7 +437,7 @@ g_array_get_element_size (<em class="parameter"><code><a class="link" href="glib
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.6.10.7.6.6"></a><h4>Returns</h4>
+<a name="g-array-get-element-size.returns"></a><h4>Returns</h4>
 <p> Size of each element, in bytes</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-22.html#api-index-2.22">2.22</a></p>
@@ -453,8 +453,8 @@ parameter <em class="parameter"><code>v</code></em>
 . This means that you cannot use it with literal values
 such as "27". You must use variables.</p>
 <div class="refsect3">
-<a name="id-1.6.10.7.7.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-array-append-val.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -475,7 +475,7 @@ such as "27". You must use variables.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.6.10.7.7.7"></a><h4>Returns</h4>
+<a name="g-array-append-val.returns"></a><h4>Returns</h4>
 <p> the <a class="link" href="glib-Arrays.html#GArray" title="struct GArray"><span class="type">GArray</span></a></p>
 </div>
 </div>
@@ -485,12 +485,12 @@ such as "27". You must use variables.</p>
 <pre class="programlisting"><a class="link" href="glib-Arrays.html#GArray" title="struct GArray"><span class="returnvalue">GArray</span></a> *
 g_array_append_vals (<em class="parameter"><code><a class="link" href="glib-Arrays.html#GArray" title="struct GArray"><span class="type">GArray</span></a> *array</code></em>,
                      <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gconstpointer" title="gconstpointer"><span class="type">gconstpointer</span></a> data</code></em>,
-                     <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> len</code></em>);</pre>
+                     <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> len</code></em>);</pre>
 <p>Adds <em class="parameter"><code>len</code></em>
  elements onto the end of the array.</p>
 <div class="refsect3">
-<a name="id-1.6.10.7.8.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-array-append-vals.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -504,8 +504,8 @@ g_array_append_vals (<em class="parameter"><code><a class="link" href="glib-Arra
 </tr>
 <tr>
 <td class="parameter_name"><p>data</p></td>
-<td class="parameter_description"><p>a pointer to the elements to append to the end of the array</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> a pointer to the elements to append to the end of the array. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL must not be passed as the value in, out, in-out; or as a return value."><span class="acronym">not nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>len</p></td>
@@ -516,7 +516,7 @@ g_array_append_vals (<em class="parameter"><code><a class="link" href="glib-Arra
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.6.10.7.8.6"></a><h4>Returns</h4>
+<a name="g-array-append-vals.returns"></a><h4>Returns</h4>
 <p> the <a class="link" href="glib-Arrays.html#GArray" title="struct GArray"><span class="type">GArray</span></a></p>
 </div>
 </div>
@@ -534,8 +534,8 @@ parameter <em class="parameter"><code>v</code></em>
 . This means that you cannot use it with literal values
 such as "27". You must use variables.</p>
 <div class="refsect3">
-<a name="id-1.6.10.7.9.7"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-array-prepend-val.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -556,7 +556,7 @@ such as "27". You must use variables.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.6.10.7.9.8"></a><h4>Returns</h4>
+<a name="g-array-prepend-val.returns"></a><h4>Returns</h4>
 <p> the <a class="link" href="glib-Arrays.html#GArray" title="struct GArray"><span class="type">GArray</span></a></p>
 </div>
 </div>
@@ -566,15 +566,15 @@ such as "27". You must use variables.</p>
 <pre class="programlisting"><a class="link" href="glib-Arrays.html#GArray" title="struct GArray"><span class="returnvalue">GArray</span></a> *
 g_array_prepend_vals (<em class="parameter"><code><a class="link" href="glib-Arrays.html#GArray" title="struct GArray"><span class="type">GArray</span></a> *array</code></em>,
                       <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gconstpointer" title="gconstpointer"><span class="type">gconstpointer</span></a> data</code></em>,
-                      <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> len</code></em>);</pre>
+                      <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> len</code></em>);</pre>
 <p>Adds <em class="parameter"><code>len</code></em>
  elements onto the start of the array.</p>
 <p>This operation is slower than <a class="link" href="glib-Arrays.html#g-array-append-vals" title="g_array_append_vals ()"><code class="function">g_array_append_vals()</code></a> since the
 existing elements in the array have to be moved to make space for
 the new elements.</p>
 <div class="refsect3">
-<a name="id-1.6.10.7.10.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-array-prepend-vals.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -588,8 +588,8 @@ the new elements.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>data</p></td>
-<td class="parameter_description"><p>a pointer to the elements to prepend to the start of the array</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> a pointer to the elements to prepend to the start of the array. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL must not be passed as the value in, out, in-out; or as a return value."><span class="acronym">not nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>len</p></td>
@@ -600,7 +600,7 @@ the new elements.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.6.10.7.10.7"></a><h4>Returns</h4>
+<a name="g-array-prepend-vals.returns"></a><h4>Returns</h4>
 <p> the <a class="link" href="glib-Arrays.html#GArray" title="struct GArray"><span class="type">GArray</span></a></p>
 </div>
 </div>
@@ -614,8 +614,8 @@ parameter <em class="parameter"><code>v</code></em>
 . This means that you cannot use it with literal values
 such as "27". You must use variables.</p>
 <div class="refsect3">
-<a name="id-1.6.10.7.11.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-array-insert-val.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -641,7 +641,7 @@ such as "27". You must use variables.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.6.10.7.11.7"></a><h4>Returns</h4>
+<a name="g-array-insert-val.returns"></a><h4>Returns</h4>
 <p> the <a class="link" href="glib-Arrays.html#GArray" title="struct GArray"><span class="type">GArray</span></a></p>
 </div>
 </div>
@@ -650,14 +650,14 @@ such as "27". You must use variables.</p>
 <a name="g-array-insert-vals"></a><h3>g_array_insert_vals ()</h3>
 <pre class="programlisting"><a class="link" href="glib-Arrays.html#GArray" title="struct GArray"><span class="returnvalue">GArray</span></a> *
 g_array_insert_vals (<em class="parameter"><code><a class="link" href="glib-Arrays.html#GArray" title="struct GArray"><span class="type">GArray</span></a> *array</code></em>,
-                     <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> index_</code></em>,
+                     <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> index_</code></em>,
                      <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gconstpointer" title="gconstpointer"><span class="type">gconstpointer</span></a> data</code></em>,
-                     <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> len</code></em>);</pre>
+                     <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> len</code></em>);</pre>
 <p>Inserts <em class="parameter"><code>len</code></em>
  elements into a <a class="link" href="glib-Arrays.html#GArray" title="struct GArray"><span class="type">GArray</span></a> at the given index.</p>
 <div class="refsect3">
-<a name="id-1.6.10.7.12.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-array-insert-vals.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -676,8 +676,8 @@ g_array_insert_vals (<em class="parameter"><code><a class="link" href="glib-Arra
 </tr>
 <tr>
 <td class="parameter_name"><p>data</p></td>
-<td class="parameter_description"><p>a pointer to the elements to insert</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> a pointer to the elements to insert. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL must not be passed as the value in, out, in-out; or as a return value."><span class="acronym">not nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>len</p></td>
@@ -688,7 +688,7 @@ g_array_insert_vals (<em class="parameter"><code><a class="link" href="glib-Arra
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.6.10.7.12.6"></a><h4>Returns</h4>
+<a name="g-array-insert-vals.returns"></a><h4>Returns</h4>
 <p> the <a class="link" href="glib-Arrays.html#GArray" title="struct GArray"><span class="type">GArray</span></a></p>
 </div>
 </div>
@@ -697,12 +697,12 @@ g_array_insert_vals (<em class="parameter"><code><a class="link" href="glib-Arra
 <a name="g-array-remove-index"></a><h3>g_array_remove_index ()</h3>
 <pre class="programlisting"><a class="link" href="glib-Arrays.html#GArray" title="struct GArray"><span class="returnvalue">GArray</span></a> *
 g_array_remove_index (<em class="parameter"><code><a class="link" href="glib-Arrays.html#GArray" title="struct GArray"><span class="type">GArray</span></a> *array</code></em>,
-                      <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> index_</code></em>);</pre>
+                      <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> index_</code></em>);</pre>
 <p>Removes the element at the given index from a <a class="link" href="glib-Arrays.html#GArray" title="struct GArray"><span class="type">GArray</span></a>. The following
 elements are moved down one place.</p>
 <div class="refsect3">
-<a name="id-1.6.10.7.13.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-array-remove-index.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -723,7 +723,7 @@ elements are moved down one place.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.6.10.7.13.6"></a><h4>Returns</h4>
+<a name="g-array-remove-index.returns"></a><h4>Returns</h4>
 <p> the <a class="link" href="glib-Arrays.html#GArray" title="struct GArray"><span class="type">GArray</span></a></p>
 </div>
 </div>
@@ -732,14 +732,14 @@ elements are moved down one place.</p>
 <a name="g-array-remove-index-fast"></a><h3>g_array_remove_index_fast ()</h3>
 <pre class="programlisting"><a class="link" href="glib-Arrays.html#GArray" title="struct GArray"><span class="returnvalue">GArray</span></a> *
 g_array_remove_index_fast (<em class="parameter"><code><a class="link" href="glib-Arrays.html#GArray" title="struct GArray"><span class="type">GArray</span></a> *array</code></em>,
-                           <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> index_</code></em>);</pre>
+                           <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> index_</code></em>);</pre>
 <p>Removes the element at the given index from a <a class="link" href="glib-Arrays.html#GArray" title="struct GArray"><span class="type">GArray</span></a>. The last
 element in the array is used to fill in the space, so this function
 does not preserve the order of the <a class="link" href="glib-Arrays.html#GArray" title="struct GArray"><span class="type">GArray</span></a>. But it is faster than
 <a class="link" href="glib-Arrays.html#g-array-remove-index" title="g_array_remove_index ()"><code class="function">g_array_remove_index()</code></a>.</p>
 <div class="refsect3">
-<a name="id-1.6.10.7.14.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-array-remove-index-fast.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -761,7 +761,7 @@ does not preserve the order of the <a class="link" href="glib-Arrays.html#GArray
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.6.10.7.14.6"></a><h4>Returns</h4>
+<a name="g-array-remove-index-fast.returns"></a><h4>Returns</h4>
 <p> the <a class="link" href="glib-Arrays.html#GArray" title="struct GArray"><span class="type">GArray</span></a></p>
 </div>
 </div>
@@ -770,13 +770,13 @@ does not preserve the order of the <a class="link" href="glib-Arrays.html#GArray
 <a name="g-array-remove-range"></a><h3>g_array_remove_range ()</h3>
 <pre class="programlisting"><a class="link" href="glib-Arrays.html#GArray" title="struct GArray"><span class="returnvalue">GArray</span></a> *
 g_array_remove_range (<em class="parameter"><code><a class="link" href="glib-Arrays.html#GArray" title="struct GArray"><span class="type">GArray</span></a> *array</code></em>,
-                      <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> index_</code></em>,
-                      <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> length</code></em>);</pre>
+                      <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> index_</code></em>,
+                      <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> length</code></em>);</pre>
 <p>Removes the given number of elements starting at the given index
 from a <a class="link" href="glib-Arrays.html#GArray" title="struct GArray"><span class="type">GArray</span></a>.  The following elements are moved to close the gap.</p>
 <div class="refsect3">
-<a name="id-1.6.10.7.15.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-array-remove-range.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -803,7 +803,7 @@ from a <a class="link" href="glib-Arrays.html#GArray" title="struct GArray"><spa
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.6.10.7.15.6"></a><h4>Returns</h4>
+<a name="g-array-remove-range.returns"></a><h4>Returns</h4>
 <p> the <a class="link" href="glib-Arrays.html#GArray" title="struct GArray"><span class="type">GArray</span></a></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-4.html#api-index-2.4">2.4</a></p>
@@ -821,8 +821,8 @@ than second arg, zero for equal, greater zero if first arg is
 greater than second arg).</p>
 <p>This is guaranteed to be a stable sort since version 2.32.</p>
 <div class="refsect3">
-<a name="id-1.6.10.7.16.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-array-sort.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -857,8 +857,8 @@ user data argument.</p>
 using the addresses of the elements in the comparison function.
 This did not actually work, so any such code should be removed.</p>
 <div class="refsect3">
-<a name="id-1.6.10.7.17.7"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-array-sort-with-data.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -900,10 +900,10 @@ value is cast to the given type.</p>
 2
 3
 4</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="usertype">EDayViewEvent</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">event</span><span class="symbol">;</span>
-<span class="comment">// This gets a pointer to the 4th element in the array of</span>
-<span class="comment">// EDayViewEvent structs.</span>
-<span class="normal">event </span><span class="symbol">=</span><span class="normal"> </span><span class="symbol">&amp;</span><span class="function"><a href="glib-Arrays.html#g-array-index">g_array_index</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">events</span><span class="symbol">,</span><span class="normal"> EDayViewEvent</span><span class="symbol">,</span><span class="normal"> </span><span class="number">3</span><span class="symbol">);</span></pre></td>
+        <td class="listing_code"><pre class="programlisting">EDayViewEvent <span class="gtkdoc opt">*</span>event<span class="gtkdoc opt">;</span>
+<span class="gtkdoc slc">// This gets a pointer to the 4th element in the array of</span>
+<span class="gtkdoc slc">// EDayViewEvent structs.</span>
+event <span class="gtkdoc opt">= &amp;</span><span class="function"><a href="glib-Arrays.html#g-array-index">g_array_index</a></span> <span class="gtkdoc opt">(</span>events<span class="gtkdoc opt">,</span> EDayViewEvent<span class="gtkdoc opt">,</span> <span class="number">3</span><span class="gtkdoc opt">);</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -911,8 +911,8 @@ value is cast to the given type.</p>
 
 <p></p>
 <div class="refsect3">
-<a name="id-1.6.10.7.18.8"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-array-index.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -938,7 +938,7 @@ value is cast to the given type.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.6.10.7.18.9"></a><h4>Returns</h4>
+<a name="g-array-index.returns"></a><h4>Returns</h4>
 <p> the element of the <a class="link" href="glib-Arrays.html#GArray" title="struct GArray"><span class="type">GArray</span></a> at the index given by <em class="parameter"><code>i</code></em>
 </p>
 </div>
@@ -948,13 +948,13 @@ value is cast to the given type.</p>
 <a name="g-array-set-size"></a><h3>g_array_set_size ()</h3>
 <pre class="programlisting"><a class="link" href="glib-Arrays.html#GArray" title="struct GArray"><span class="returnvalue">GArray</span></a> *
 g_array_set_size (<em class="parameter"><code><a class="link" href="glib-Arrays.html#GArray" title="struct GArray"><span class="type">GArray</span></a> *array</code></em>,
-                  <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> length</code></em>);</pre>
+                  <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> length</code></em>);</pre>
 <p>Sets the size of the array, expanding it if necessary. If the array
 was created with <em class="parameter"><code>clear_</code></em>
  set to <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a>, the new elements are set to 0.</p>
 <div class="refsect3">
-<a name="id-1.6.10.7.19.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-array-set-size.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -975,7 +975,7 @@ was created with <em class="parameter"><code>clear_</code></em>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.6.10.7.19.6"></a><h4>Returns</h4>
+<a name="g-array-set-size.returns"></a><h4>Returns</h4>
 <p> the <a class="link" href="glib-Arrays.html#GArray" title="struct GArray"><span class="type">GArray</span></a></p>
 </div>
 </div>
@@ -996,8 +996,8 @@ functions, <em class="parameter"><code>clear_func</code></em>
  is expected to clear the contents of
 the array element it is given, but not free the element itself.</p>
 <div class="refsect3">
-<a name="id-1.6.10.7.20.7"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-array-set-clear-func.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1041,8 +1041,8 @@ of <em class="parameter"><code>array</code></em>
 <p>If array elements contain dynamically-allocated memory, they should
 be freed separately.</p>
 <div class="refsect3">
-<a name="id-1.6.10.7.21.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-array-free.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1063,7 +1063,7 @@ be freed separately.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.6.10.7.21.7"></a><h4>Returns</h4>
+<a name="g-array-free.returns"></a><h4>Returns</h4>
 <p> the element data if <em class="parameter"><code>free_segment</code></em>
 is <a class="link" href="glib-Standard-Macros.html#FALSE:CAPS" title="FALSE"><code class="literal">FALSE</code></a>, otherwise
 <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. The element data should be freed using <a class="link" href="glib-Memory-Allocation.html#g-free" title="g_free ()"><code class="function">g_free()</code></a>.</p>
@@ -1081,8 +1081,8 @@ is <a class="link" href="glib-Standard-Macros.html#FALSE:CAPS" title="FALSE"><co
 </pre>
 <p>Contains the public fields of a GArray.</p>
 <div class="refsect3">
-<a name="id-1.6.10.8.2.5"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GArray.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="struct_members_name">
 <col class="struct_members_description">
@@ -1096,7 +1096,7 @@ elements are added to the <a class="link" href="glib-Arrays.html#GArray" title="
 <td class="struct_member_annotations"> </td>
 </tr>
 <tr>
-<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> <em class="structfield"><code><a name="GArray.len"></a>len</code></em>;</p></td>
+<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> <em class="structfield"><code><a name="GArray.len"></a>len</code></em>;</p></td>
 <td class="struct_member_description"><p>the number of elements in the <a class="link" href="glib-Arrays.html#GArray" title="struct GArray"><span class="type">GArray</span></a> not including the
 possible terminating zero element.</p></td>
 <td class="struct_member_annotations"> </td>
@@ -1108,6 +1108,6 @@ possible terminating zero element.</p></td>
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

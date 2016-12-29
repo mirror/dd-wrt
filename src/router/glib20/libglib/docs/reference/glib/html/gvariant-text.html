@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GVariant Text Format: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-data-types.html" title="GLib Data Types">
 <link rel="prev" href="gvariant-format-strings.html" title="GVariant Format Strings">
 <link rel="next" href="deprecated.html" title="Deprecated APIs">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -54,7 +54,7 @@
     <tbody>
       <tr>
         <td class="listing_lines" align="right"><pre>1</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="symbol">[[</span><span class="number">1</span><span class="symbol">,</span><span class="normal"> </span><span class="number">2</span><span class="symbol">,</span><span class="normal"> </span><span class="number">3</span><span class="symbol">],</span><span class="normal"> </span><span class="symbol">[</span><span class="number">4</span><span class="symbol">,</span><span class="normal"> </span><span class="number">5</span><span class="symbol">,</span><span class="normal"> </span><span class="number">6</span><span class="symbol">]]</span></pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="gtkdoc opt">[[</span><span class="number">1</span><span class="gtkdoc opt">,</span> <span class="number">2</span><span class="gtkdoc opt">,</span> <span class="number">3</span><span class="gtkdoc opt">], [</span><span class="number">4</span><span class="gtkdoc opt">,</span> <span class="number">5</span><span class="gtkdoc opt">,</span> <span class="number">6</span><span class="gtkdoc opt">]]</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -70,7 +70,7 @@
     <tbody>
       <tr>
         <td class="listing_lines" align="right"><pre>1</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="symbol">[[</span><span class="number">1</span><span class="symbol">,</span><span class="normal"> </span><span class="number">2</span><span class="symbol">,</span><span class="normal"> </span><span class="number">3</span><span class="symbol">],</span><span class="normal"> </span><span class="symbol">[</span><span class="number">4</span><span class="symbol">,</span><span class="normal"> </span><span class="number">5</span><span class="symbol">,</span><span class="normal"> </span><span class="number">6.0</span><span class="symbol">]]</span></pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="gtkdoc opt">[[</span><span class="number">1</span><span class="gtkdoc opt">,</span> <span class="number">2</span><span class="gtkdoc opt">,</span> <span class="number">3</span><span class="gtkdoc opt">], [</span><span class="number">4</span><span class="gtkdoc opt">,</span> <span class="number">5</span><span class="gtkdoc opt">,</span> <span class="number">6.0</span><span class="gtkdoc opt">]]</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -89,7 +89,7 @@
     <tbody>
       <tr>
         <td class="listing_lines" align="right"><pre>1</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="symbol">[</span><span class="string">"hello"</span><span class="symbol">,</span><span class="normal"> nothing</span><span class="symbol">]</span></pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="gtkdoc opt">[</span><span class="string">&quot;hello&quot;</span><span class="gtkdoc opt">,</span> nothing<span class="gtkdoc opt">]</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -115,7 +115,7 @@
    The following table describes the rough meaning of symbols that may appear inside GVariant text format.
    Each symbol is described in detail in its own section, including usage examples.
   </p>
-<div class="informaltable"><table border="1">
+<div class="informaltable"><table class="informaltable" border="1">
 <colgroup>
 <col class="col_0">
 <col class="col_1">
@@ -142,7 +142,7 @@
       </td>
 <td>
        <p>
-         <a href="gvariant-text.html#gvariant-text-booleans">Booleans</a>.
+         Booleans.
        </p>
       </td>
 </tr>
@@ -155,7 +155,7 @@
       </td>
 <td>
        <p>
-         String literal.  See <a href="gvariant-text.html#gvariant-text-strings">Strings</a> below.
+         String literal.  See Strings below.
        </p>
       </td>
 </tr>
@@ -167,7 +167,7 @@
       </td>
 <td>
        <p>
-        See <a href="gvariant-text.html#gvariant-text-numbers">Numbers</a> below.
+        See Numbers below.
        </p>
       </td>
 </tr>
@@ -179,7 +179,7 @@
       </td>
 <td>
        <p>
-        <a href="gvariant-text.html#gvariant-text-tuples">Tuples</a>.
+        Tuples.
        </p>
       </td>
 </tr>
@@ -191,7 +191,7 @@
       </td>
 <td>
        <p>
-        <a href="gvariant-text.html#gvariant-text-arrays">Arrays</a>.
+        Arrays.
        </p>
       </td>
 </tr>
@@ -203,7 +203,7 @@
       </td>
 <td>
        <p>
-        <a href="gvariant-text.html#gvariant-text-dictionaries">Dictionaries and Dictionary Entries</a>.
+        Dictionaries and Dictionary Entries.
        </p>
       </td>
 </tr>
@@ -215,7 +215,7 @@
       </td>
 <td>
        <p>
-        <a href="gvariant-text.html#gvariant-text-variants">Variants</a>.
+        Variants.
        </p>
       </td>
 </tr>
@@ -228,7 +228,7 @@
       </td>
 <td>
        <p>
-        <a href="gvariant-text.html#gvariant-text-maybe-types">Maybe Types</a>.
+        Maybe Types.
        </p>
       </td>
 </tr>
@@ -240,7 +240,7 @@
       </td>
 <td>
        <p>
-        <a href="gvariant-text.html#gvariant-text-type-annotations">Type Annotations</a>.
+        Type Annotations.
        </p>
       </td>
 </tr>
@@ -267,7 +267,7 @@
         <code class="literal">signature</code>
        </p>
        <p>
-        See <a href="gvariant-text.html#gvariant-text-type-annotations">Type Annotations</a> below.
+        See Type Annotations below.
        </p>
       </td>
 </tr>
@@ -280,7 +280,7 @@
       </td>
 <td>
        <p>
-        <a href="gvariant-text.html#gvariant-text-bytestrings">Bytestrings</a>.
+        Bytestrings.
        </p>
       </td>
 </tr>
@@ -292,7 +292,7 @@
       </td>
 <td>
        <p>
-        <a href="gvariant-text.html#gvariant-text-positional">Positional Parameters</a>.
+        Positional Parameters.
        </p>
       </td>
 </tr>
@@ -366,7 +366,7 @@
    </p>
 <p>
     <code class="literal">uint64 7</code> parses seven as a uint64.
-    See <a href="gvariant-text.html#gvariant-text-type-annotations">Type Annotations</a>.
+    See Type Annotations.
    </p>
 </div>
 <hr>
@@ -426,7 +426,7 @@
    </p>
 <p>
     <code class="literal">[b'hello', []]</code> looks odd but will parse properly.
-    See <a href="gvariant-text.html#gvariant-text-bytestrings">Bytestrings</a>
+    See Bytestrings
    </p>
 <p>
     And some examples of errors:
@@ -621,7 +621,7 @@
    </p>
 <p>
     A positional parameter is indicated with a <code class="literal">%</code> followed by any valid
-    <a href="gvariant-format-strings.html">GVariant Format String</a>.  Variable arguments are collected as
+    GVariant Format String.  Variable arguments are collected as
     specified by the format string and the resulting value is inserted at the current position.
    </p>
 <p>
@@ -636,11 +636,11 @@
 3
 4
 5</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="type">char</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">t </span><span class="symbol">=</span><span class="normal"> </span><span class="string">"xyz"</span><span class="symbol">;</span>
-<span class="usertype">gboolean</span><span class="normal"> en </span><span class="symbol">=</span><span class="normal"> false</span><span class="symbol">;</span>
-<span class="usertype">GVariant</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">value</span><span class="symbol">;</span>
+        <td class="listing_code"><pre class="programlisting"><span class="gtkdoc kwb">char</span> <span class="gtkdoc opt">*</span>t <span class="gtkdoc opt">=</span> <span class="string">&quot;xyz&quot;</span><span class="gtkdoc opt">;</span>
+gboolean en <span class="gtkdoc opt">=</span> <span class="keyword">false</span><span class="gtkdoc opt">;</span>
+GVariant <span class="gtkdoc opt">*</span>value<span class="gtkdoc opt">;</span>
 
-<span class="normal">value </span><span class="symbol">=</span><span class="normal"> </span><span class="function"><a href="glib-GVariant.html#g-variant-new-parsed">g_variant_new_parsed</a></span><span class="normal"> </span><span class="symbol">(</span><span class="string">"{'title': &lt;%s&gt;, 'enabled': &lt;%b&gt;}"</span><span class="symbol">,</span><span class="normal"> t</span><span class="symbol">,</span><span class="normal"> en</span><span class="symbol">);</span></pre></td>
+value <span class="gtkdoc opt">=</span> <span class="function"><a href="glib-GVariant.html#g-variant-new-parsed">g_variant_new_parsed</a></span> <span class="gtkdoc opt">(</span><span class="string">&quot;{&apos;title&apos;: &lt;%s&gt;, &apos;enabled&apos;: &lt;%b&gt;}&quot;</span><span class="gtkdoc opt">,</span> t<span class="gtkdoc opt">,</span> en<span class="gtkdoc opt">);</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -661,6 +661,6 @@
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

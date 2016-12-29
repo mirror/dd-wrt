@@ -29,6 +29,7 @@
 #include "gdbusintrospection.h"
 #include "gdbuserror.h"
 #include "gdbusprivate.h"
+#include "gioerror.h"
 
 #ifdef G_OS_UNIX
 #include "gunixfdlist.h"
@@ -393,6 +394,16 @@ g_dbus_method_invocation_return_value_internal (GDBusMethodInvocation *invocatio
   g_return_if_fail (G_IS_DBUS_METHOD_INVOCATION (invocation));
   g_return_if_fail ((parameters == NULL) || g_variant_is_of_type (parameters, G_VARIANT_TYPE_TUPLE));
 
+  if (g_dbus_message_get_flags (invocation->message) & G_DBUS_MESSAGE_FLAGS_NO_REPLY_EXPECTED)
+    {
+      if (parameters != NULL)
+        {
+          g_variant_ref_sink (parameters);
+          g_variant_unref (parameters);
+        }
+      goto out;
+    }
+
   if (parameters == NULL)
     parameters = g_variant_new_tuple (NULL, 0);
 
@@ -505,7 +516,8 @@ g_dbus_method_invocation_return_value_internal (GDBusMethodInvocation *invocatio
   error = NULL;
   if (!g_dbus_connection_send_message (g_dbus_method_invocation_get_connection (invocation), reply, G_DBUS_SEND_MESSAGE_FLAGS_NONE, NULL, &error))
     {
-      g_warning ("Error sending message: %s", error->message);
+      if (!g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CLOSED))
+        g_warning ("Error sending message: %s", error->message);
       g_error_free (error);
     }
   g_object_unref (reply);
@@ -525,6 +537,11 @@ g_dbus_method_invocation_return_value_internal (GDBusMethodInvocation *invocatio
  * It is an error if @parameters is not of the right format.
  *
  * This method will free @invocation, you cannot use it afterwards.
+ *
+ * Since 2.48, if the method call requested for a reply not to be sent
+ * then this call will sink @parameters and free @invocation, but
+ * otherwise do nothing (as per the recommendations of the D-Bus
+ * specification).
  *
  * Since: 2.26
  */
@@ -583,6 +600,10 @@ g_dbus_method_invocation_return_value_with_unix_fd_list (GDBusMethodInvocation *
  * or use g_dbus_method_invocation_return_dbus_error().
  *
  * This method will free @invocation, you cannot use it afterwards.
+ *
+ * Since 2.48, if the method call requested for a reply not to be sent
+ * then this call will free @invocation but otherwise do nothing (as per
+ * the recommendations of the D-Bus specification).
  *
  * Since: 2.26
  */
@@ -745,6 +766,9 @@ g_dbus_method_invocation_return_dbus_error (GDBusMethodInvocation *invocation,
   g_return_if_fail (error_name != NULL && g_dbus_is_name (error_name));
   g_return_if_fail (error_message != NULL);
 
+  if (g_dbus_message_get_flags (invocation->message) & G_DBUS_MESSAGE_FLAGS_NO_REPLY_EXPECTED)
+    goto out;
+
   if (G_UNLIKELY (_g_dbus_debug_return ()))
     {
       _g_dbus_debug_print_lock ();
@@ -771,5 +795,6 @@ g_dbus_method_invocation_return_dbus_error (GDBusMethodInvocation *invocation,
   g_dbus_connection_send_message (g_dbus_method_invocation_get_connection (invocation), reply, G_DBUS_SEND_MESSAGE_FLAGS_NONE, NULL, NULL);
   g_object_unref (reply);
 
+out:
   g_object_unref (invocation);
 }

@@ -149,7 +149,7 @@ g_file_monitor_class_init (GFileMonitorClass *klass)
    *
    * Emitted when @file has been changed.
    *
-   * If using %G_FILE_MONITOR_WATCH_RENAMES on a directory monitor, and
+   * If using %G_FILE_MONITOR_WATCH_MOVES on a directory monitor, and
    * the information is available (and if supported by the backend),
    * @event_type may be %G_FILE_MONITOR_EVENT_RENAMED,
    * %G_FILE_MONITOR_EVENT_MOVED_IN or %G_FILE_MONITOR_EVENT_MOVED_OUT.
@@ -168,7 +168,7 @@ g_file_monitor_class_init (GFileMonitorClass *klass)
    * %G_FILE_MONITOR_EVENT_DELETED, with extra information.
    * %G_FILE_MONITOR_EVENT_RENAMED is equivalent to a delete/create
    * pair.  This is exactly how the events will be reported in the case
-   * that the %G_FILE_MONITOR_WATCH_RENAMES flag is not in use.
+   * that the %G_FILE_MONITOR_WATCH_MOVES flag is not in use.
    *
    * If using the deprecated flag %G_FILE_MONITOR_SEND_MOVED flag and @event_type is
    * #G_FILE_MONITOR_EVENT_MOVED, @file will be set to a #GFile containing the
@@ -259,6 +259,21 @@ g_file_monitor_set_rate_limit (GFileMonitor *monitor,
   g_object_set (monitor, "rate-limit", limit_msecs, NULL);
 }
 
+/**
+ * g_file_monitor_emit_event:
+ * @monitor: a #GFileMonitor.
+ * @child: a #GFile.
+ * @other_file: a #GFile.
+ * @event_type: a set of #GFileMonitorEvent flags.
+ *
+ * Emits the #GFileMonitor::changed signal if a change
+ * has taken place. Should be called from file monitor
+ * implementations only.
+ *
+ * Implementations are responsible to call this method from the
+ * [thread-default main context][g-main-context-push-thread-default] of the
+ * thread that the monitor was created in.
+ **/
 void
 g_file_monitor_emit_event (GFileMonitor      *monitor,
                            GFile             *child,

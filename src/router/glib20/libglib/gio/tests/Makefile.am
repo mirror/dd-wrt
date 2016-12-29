@@ -27,6 +27,7 @@ test_programs = \
 	buffered-output-stream			\
 	cancellable				\
 	contexts				\
+	contenttype				\
 	converter-stream			\
 	credentials				\
 	data-input-stream			\
@@ -57,12 +58,14 @@ test_programs = \
 	sleepy-stream				\
 	socket					\
 	socket-listener				\
+	socket-service				\
 	srvtarget				\
 	task					\
 	tls-interaction				\
 	vfs					\
 	volumemonitor				\
 	glistmodel				\
+	testfilemonitor				\
 	$(NULL)
 
 uninstalled_test_programs = \
@@ -74,7 +77,6 @@ dist_test_data = \
 	$(NULL)
 
 test_data = \
-	test.gresource				\
 	$(NULL)
 
 uninstalled_test_extra_programs = \
@@ -241,9 +243,9 @@ gdbus_daemon_SOURCES = \
 
 if OS_UNIX
 test_programs += \
-	contenttype				\
 	file					\
 	gdbus-peer-object-manager		\
+	gdbus-unix-addresses			\
 	live-g-file				\
 	socket-address				\
 	stream-rw_all				\
@@ -253,6 +255,7 @@ test_programs += \
 
 test_extra_programs += \
 	basic-application			\
+	dbus-launch				\
 	$(NULL)
 
 # Uninstalled because of the check-for-executable logic in DesktopAppInfo unable to find the installed executable
@@ -370,6 +373,9 @@ gdbus_non_socket_SOURCES = \
 # These three are manual-run tests because they need a session bus but don't bring one up themselves
 uninstalled_test_extra_programs += gdbus-example-objectmanager-client
 gdbus_example_objectmanager_client_LDADD = gdbus-object-manager-example/libgdbus-example-objectmanager.la $(LDADD)
+
+uninstalled_test_extra_programs += gdbus-example-objectmanager-server
+gdbus_example_objectmanager_server_LDADD = gdbus-object-manager-example/libgdbus-example-objectmanager.la $(LDADD)
 
 test_extra_programs += gsubprocess-testprog
 
@@ -499,8 +505,10 @@ test_programs += \
 endif
 
 # -----------------------------------------------------------------------------
-#  The resources test is a bit more complicated...
+#  The resources test is a bit more complicated, and we cannot build it when
+#  cross-compiling GIO because it requires running a binary...
 
+if !CROSS_COMPILING
 test_programs += resources
 resources_SOURCES = resources.c
 nodist_resources_SOURCES = test_resources.c test_resources2.c test_resources2.h
@@ -510,6 +518,8 @@ test_ltlibraries += libresourceplugin.la
 libresourceplugin_la_SOURCES = resourceplugin.c plugin_resources.c
 libresourceplugin_la_LDFLAGS = -avoid-version -module -export-dynamic $(no_undefined)
 libresourceplugin_la_LIBADD = $(LDADD)
+
+test_data += test.gresource
 
 # libtool contains a bug whereby the created .la file doesn't contain the correct dlname='' in the case that
 # you're building a library but not installing it.  This is apparently because the only considered use for an
@@ -522,11 +532,11 @@ if !ENABLE_INSTALLED_TESTS
 libresourceplugin_la_LDFLAGS += -rpath /
 endif
 
-if CROSS_COMPILING
-  glib_compile_resources=$(GLIB_COMPILE_RESOURCES)
-else
-  glib_compile_resources=$(top_builddir)/gio/glib-compile-resources
-endif
+glib_compile_resources=$(top_builddir)/gio/glib-compile-resources
+
+test-generated.txt: test1.txt
+	$(AM_V_GEN) echo "Generated" > $@ && \
+	  cat $< >> $@
 
 resources.o: test_resources2.h
 test_resources.c: test2.gresource.xml Makefile $(shell $(glib_compile_resources) --sourcedir=$(srcdir) --generate-dependencies $(srcdir)/test2.gresource.xml)
@@ -538,12 +548,12 @@ test_resources2.h test_resources2.c: test3.gresource.xml Makefile $(shell $(glib
 plugin_resources.c: test4.gresource.xml Makefile $(shell $(glib_compile_resources) --sourcedir=$(srcdir) --generate-dependencies $(srcdir)/test4.gresource.xml)
 	$(AM_V_GEN) $(glib_compile_resources) --target=$@ --sourcedir=$(srcdir) --generate-source --c-name _g_plugin $<
 
-test.gresource: test.gresource.xml Makefile $(shell $(glib_compile_resources) --sourcedir=$(srcdir) --generate-dependencies $(srcdir)/test.gresource.xml)
-	$(AM_V_GEN) $(glib_compile_resources) --target=$@ --sourcedir=$(srcdir) $<
+test.gresource: test.gresource.xml Makefile $(shell $(glib_compile_resources) --sourcedir=. --sourcedir=$(srcdir) --generate-dependencies $(srcdir)/test.gresource.xml)
+	$(AM_V_GEN) $(glib_compile_resources) --target=$@ --sourcedir=. --sourcedir=$(srcdir) $<
 
 EXTRA_DIST += test.gresource.xml test1.txt test2.gresource.xml test2.txt test3.gresource.xml test3.txt test4.gresource.xml
-
-CLEANFILES += test_resources.c test_resources2.[ch] plugin_resources.c test.gresource
+CLEANFILES += test-generated.txt test_resources.c test_resources2.[ch] plugin_resources.c test.gresource
+endif # !CROSS_COMPILING
 
 BUILT_SOURCES += giotypefuncs.c
 
@@ -553,7 +563,7 @@ giotypefuncs.c: Makefile
 	  ${CPP} $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) xgen-giosrc.c | \
 	  $(GREP) -o '\bg_[A-Za-z0-9_]*_get_type\b' | \
 	  $(GREP) -v 'g_io_extension_get_type\|g_variant_get_type' | \
-	  sort | uniq | \
+	  LC_ALL=C sort | uniq | \
 	  $(SED) -e 's/^/*tp++ = /' -e 's/$$/ ();/' >> xgen-gio && \
 	  cp xgen-gio $@ # && rm -f xgen-gio xgen-giosrc.c
 

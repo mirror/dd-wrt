@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Watching Bus Names: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="gdbus-convenience.html" title="High-level D-Bus Support">
 <link rel="prev" href="gio-Owning-Bus-Names.html" title="Owning Bus Names">
 <link rel="next" href="GDBusInterface.html" title="GDBusInterface">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -33,7 +33,7 @@
 </tr></table></div>
 <div class="refsect1">
 <a name="gio-Watching-Bus-Names.functions"></a><h2>Functions</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="functions_return">
 <col class="functions_name">
@@ -57,7 +57,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#guint"><span class="returnvalue">guint</span></a>
+<a href="../glib-Basic-Types.html#guint"><span class="returnvalue">guint</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="gio-Watching-Bus-Names.html#g-bus-watch-name" title="g_bus_watch_name ()">g_bus_watch_name</a> <span class="c_punctuation">()</span>
@@ -65,7 +65,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#guint"><span class="returnvalue">guint</span></a>
+<a href="../glib-Basic-Types.html#guint"><span class="returnvalue">guint</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="gio-Watching-Bus-Names.html#g-bus-watch-name-on-connection" title="g_bus_watch_name_on_connection ()">g_bus_watch_name_on_connection</a> <span class="c_punctuation">()</span>
@@ -81,7 +81,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#guint"><span class="returnvalue">guint</span></a>
+<a href="../glib-Basic-Types.html#guint"><span class="returnvalue">guint</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="gio-Watching-Bus-Names.html#g-bus-watch-name-with-closures" title="g_bus_watch_name_with_closures ()">g_bus_watch_name_with_closures</a> <span class="c_punctuation">()</span>
@@ -89,7 +89,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#guint"><span class="returnvalue">guint</span></a>
+<a href="../glib-Basic-Types.html#guint"><span class="returnvalue">guint</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="gio-Watching-Bus-Names.html#g-bus-watch-name-on-connection-with-closures" title="g_bus_watch_name_on_connection_with_closures ()">g_bus_watch_name_on_connection_with_closures</a> <span class="c_punctuation">()</span>
@@ -100,7 +100,7 @@
 </div>
 <div class="refsect1">
 <a name="gio-Watching-Bus-Names.other"></a><h2>Types and Values</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="name">
 <col class="description">
@@ -128,13 +128,13 @@
 <a name="GBusNameAppearedCallback"></a><h3>GBusNameAppearedCallback ()</h3>
 <pre class="programlisting"><span class="returnvalue">void</span>
 <span class="c_punctuation">(</span>*GBusNameAppearedCallback<span class="c_punctuation">)</span> (<em class="parameter"><code><a class="link" href="GDBusConnection.html" title="GDBusConnection"><span class="type">GDBusConnection</span></a> *connection</code></em>,
-                             <em class="parameter"><code>const <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *name</code></em>,
-                             <em class="parameter"><code>const <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *name_owner</code></em>,
-                             <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gpointer"><span class="type">gpointer</span></a> user_data</code></em>);</pre>
+                             <em class="parameter"><code>const <a href="../glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *name</code></em>,
+                             <em class="parameter"><code>const <a href="../glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *name_owner</code></em>,
+                             <em class="parameter"><code><a href="../glib-Basic-Types.html#gpointer"><span class="type">gpointer</span></a> user_data</code></em>);</pre>
 <p>Invoked when the name being watched is known to have to have a owner.</p>
 <div class="refsect3">
-<a name="id-1.4.18.3.7.2.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GBusNameAppearedCallback.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -171,16 +171,16 @@
 <a name="GBusNameVanishedCallback"></a><h3>GBusNameVanishedCallback ()</h3>
 <pre class="programlisting"><span class="returnvalue">void</span>
 <span class="c_punctuation">(</span>*GBusNameVanishedCallback<span class="c_punctuation">)</span> (<em class="parameter"><code><a class="link" href="GDBusConnection.html" title="GDBusConnection"><span class="type">GDBusConnection</span></a> *connection</code></em>,
-                             <em class="parameter"><code>const <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *name</code></em>,
-                             <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gpointer"><span class="type">gpointer</span></a> user_data</code></em>);</pre>
+                             <em class="parameter"><code>const <a href="../glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *name</code></em>,
+                             <em class="parameter"><code><a href="../glib-Basic-Types.html#gpointer"><span class="type">gpointer</span></a> user_data</code></em>);</pre>
 <p>Invoked when the name being watched is known not to have to have a owner.</p>
 <p>This is also invoked when the <span class="type">GDBusConection</span> on which the watch was
 established has been closed.  In that case, <em class="parameter"><code>connection</code></em>
  will be
-<a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>.</p>
+<a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>.</p>
 <div class="refsect3">
-<a name="id-1.4.18.3.7.3.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GBusNameVanishedCallback.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -190,7 +190,7 @@ established has been closed.  In that case, <em class="parameter"><code>connecti
 <tr>
 <td class="parameter_name"><p>connection</p></td>
 <td class="parameter_description"><p>The <a class="link" href="GDBusConnection.html" title="GDBusConnection"><span class="type">GDBusConnection</span></a> the name is being watched on, or
-<a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>.</p></td>
+<a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>.</p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 <tr>
@@ -211,14 +211,14 @@ established has been closed.  In that case, <em class="parameter"><code>connecti
 <hr>
 <div class="refsect2">
 <a name="g-bus-watch-name"></a><h3>g_bus_watch_name ()</h3>
-<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#guint"><span class="returnvalue">guint</span></a>
+<pre class="programlisting"><a href="../glib-Basic-Types.html#guint"><span class="returnvalue">guint</span></a>
 g_bus_watch_name (<em class="parameter"><code><a class="link" href="GDBusConnection.html#GBusType" title="enum GBusType"><span class="type">GBusType</span></a> bus_type</code></em>,
-                  <em class="parameter"><code>const <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *name</code></em>,
+                  <em class="parameter"><code>const <a href="../glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *name</code></em>,
                   <em class="parameter"><code><a class="link" href="gio-Watching-Bus-Names.html#GBusNameWatcherFlags" title="enum GBusNameWatcherFlags"><span class="type">GBusNameWatcherFlags</span></a> flags</code></em>,
                   <em class="parameter"><code><a class="link" href="gio-Watching-Bus-Names.html#GBusNameAppearedCallback" title="GBusNameAppearedCallback ()"><span class="type">GBusNameAppearedCallback</span></a> name_appeared_handler</code></em>,
                   <em class="parameter"><code><a class="link" href="gio-Watching-Bus-Names.html#GBusNameVanishedCallback" title="GBusNameVanishedCallback ()"><span class="type">GBusNameVanishedCallback</span></a> name_vanished_handler</code></em>,
-                  <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gpointer"><span class="type">gpointer</span></a> user_data</code></em>,
-                  <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Datasets.html#GDestroyNotify"><span class="type">GDestroyNotify</span></a> user_data_free_func</code></em>);</pre>
+                  <em class="parameter"><code><a href="../glib-Basic-Types.html#gpointer"><span class="type">gpointer</span></a> user_data</code></em>,
+                  <em class="parameter"><code><a href="../glib-Datasets.html#GDestroyNotify"><span class="type">GDestroyNotify</span></a> user_data_free_func</code></em>);</pre>
 <p>Starts watching <em class="parameter"><code>name</code></em>
  on the bus specified by <em class="parameter"><code>bus_type</code></em>
  and calls
@@ -227,7 +227,7 @@ g_bus_watch_name (<em class="parameter"><code><a class="link" href="GDBusConnect
  when the name is
 known to have a owner respectively known to lose its
 owner. Callbacks will be invoked in the
-<a href="https://developer.gnome.org/glib/unstable/glib-The-Main-Event-Loop.html#g-main-context-push-thread-default">thread-default main context</a>
+<a href="../glib-The-Main-Event-Loop.html#g-main-context-push-thread-default">thread-default main context</a>
 of the thread you are calling this function from.</p>
 <p>You are guaranteed that one of the handlers will be invoked after
 calling this function. When you are done watching the name, just
@@ -256,8 +256,8 @@ Basically, the application should create object proxies in
 <em class="parameter"><code>name_vanished_handler</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.4.18.3.7.4.9"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-bus-watch-name.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -282,13 +282,13 @@ Basically, the application should create object proxies in
 <tr>
 <td class="parameter_name"><p>name_appeared_handler</p></td>
 <td class="parameter_description"><p> Handler to invoke when <em class="parameter"><code>name</code></em>
-is known to exist or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
+is known to exist or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>name_vanished_handler</p></td>
 <td class="parameter_description"><p> Handler to invoke when <em class="parameter"><code>name</code></em>
-is known to not exist or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
+is known to not exist or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
 </tr>
 <tr>
@@ -299,14 +299,14 @@ is known to not exist or <a href="https://developer.gnome.org/glib/unstable/glib
 <tr>
 <td class="parameter_name"><p>user_data_free_func</p></td>
 <td class="parameter_description"><p> Function for freeing <em class="parameter"><code>user_data</code></em>
-or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
+or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.18.3.7.4.10"></a><h4>Returns</h4>
+<a name="g-bus-watch-name.returns"></a><h4>Returns</h4>
 <p> An identifier (never 0) that an be used with
 <a class="link" href="gio-Watching-Bus-Names.html#g-bus-unwatch-name" title="g_bus_unwatch_name ()"><code class="function">g_bus_unwatch_name()</code></a> to stop watching the name.</p>
 </div>
@@ -315,19 +315,19 @@ or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#
 <hr>
 <div class="refsect2">
 <a name="g-bus-watch-name-on-connection"></a><h3>g_bus_watch_name_on_connection ()</h3>
-<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#guint"><span class="returnvalue">guint</span></a>
+<pre class="programlisting"><a href="../glib-Basic-Types.html#guint"><span class="returnvalue">guint</span></a>
 g_bus_watch_name_on_connection (<em class="parameter"><code><a class="link" href="GDBusConnection.html" title="GDBusConnection"><span class="type">GDBusConnection</span></a> *connection</code></em>,
-                                <em class="parameter"><code>const <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *name</code></em>,
+                                <em class="parameter"><code>const <a href="../glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *name</code></em>,
                                 <em class="parameter"><code><a class="link" href="gio-Watching-Bus-Names.html#GBusNameWatcherFlags" title="enum GBusNameWatcherFlags"><span class="type">GBusNameWatcherFlags</span></a> flags</code></em>,
                                 <em class="parameter"><code><a class="link" href="gio-Watching-Bus-Names.html#GBusNameAppearedCallback" title="GBusNameAppearedCallback ()"><span class="type">GBusNameAppearedCallback</span></a> name_appeared_handler</code></em>,
                                 <em class="parameter"><code><a class="link" href="gio-Watching-Bus-Names.html#GBusNameVanishedCallback" title="GBusNameVanishedCallback ()"><span class="type">GBusNameVanishedCallback</span></a> name_vanished_handler</code></em>,
-                                <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gpointer"><span class="type">gpointer</span></a> user_data</code></em>,
-                                <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Datasets.html#GDestroyNotify"><span class="type">GDestroyNotify</span></a> user_data_free_func</code></em>);</pre>
+                                <em class="parameter"><code><a href="../glib-Basic-Types.html#gpointer"><span class="type">gpointer</span></a> user_data</code></em>,
+                                <em class="parameter"><code><a href="../glib-Datasets.html#GDestroyNotify"><span class="type">GDestroyNotify</span></a> user_data_free_func</code></em>);</pre>
 <p>Like <a class="link" href="gio-Watching-Bus-Names.html#g-bus-watch-name" title="g_bus_watch_name ()"><code class="function">g_bus_watch_name()</code></a> but takes a <a class="link" href="GDBusConnection.html" title="GDBusConnection"><span class="type">GDBusConnection</span></a> instead of a
 <a class="link" href="GDBusConnection.html#GBusType" title="enum GBusType"><span class="type">GBusType</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.4.18.3.7.5.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-bus-watch-name-on-connection.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -352,13 +352,13 @@ g_bus_watch_name_on_connection (<em class="parameter"><code><a class="link" href
 <tr>
 <td class="parameter_name"><p>name_appeared_handler</p></td>
 <td class="parameter_description"><p> Handler to invoke when <em class="parameter"><code>name</code></em>
-is known to exist or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
+is known to exist or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>name_vanished_handler</p></td>
 <td class="parameter_description"><p> Handler to invoke when <em class="parameter"><code>name</code></em>
-is known to not exist or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
+is known to not exist or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
 </tr>
 <tr>
@@ -369,14 +369,14 @@ is known to not exist or <a href="https://developer.gnome.org/glib/unstable/glib
 <tr>
 <td class="parameter_name"><p>user_data_free_func</p></td>
 <td class="parameter_description"><p> Function for freeing <em class="parameter"><code>user_data</code></em>
-or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
+or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.18.3.7.5.6"></a><h4>Returns</h4>
+<a name="g-bus-watch-name-on-connection.returns"></a><h4>Returns</h4>
 <p> An identifier (never 0) that an be used with
 <a class="link" href="gio-Watching-Bus-Names.html#g-bus-unwatch-name" title="g_bus_unwatch_name ()"><code class="function">g_bus_unwatch_name()</code></a> to stop watching the name.</p>
 </div>
@@ -386,11 +386,11 @@ or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#
 <div class="refsect2">
 <a name="g-bus-unwatch-name"></a><h3>g_bus_unwatch_name ()</h3>
 <pre class="programlisting"><span class="returnvalue">void</span>
-g_bus_unwatch_name (<em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#guint"><span class="type">guint</span></a> watcher_id</code></em>);</pre>
+g_bus_unwatch_name (<em class="parameter"><code><a href="../glib-Basic-Types.html#guint"><span class="type">guint</span></a> watcher_id</code></em>);</pre>
 <p>Stops watching a name.</p>
 <div class="refsect3">
-<a name="id-1.4.18.3.7.6.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-bus-unwatch-name.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -408,18 +408,18 @@ g_bus_unwatch_name (<em class="parameter"><code><a href="https://developer.gnome
 <hr>
 <div class="refsect2">
 <a name="g-bus-watch-name-with-closures"></a><h3>g_bus_watch_name_with_closures ()</h3>
-<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#guint"><span class="returnvalue">guint</span></a>
+<pre class="programlisting"><a href="../glib-Basic-Types.html#guint"><span class="returnvalue">guint</span></a>
 g_bus_watch_name_with_closures (<em class="parameter"><code><a class="link" href="GDBusConnection.html#GBusType" title="enum GBusType"><span class="type">GBusType</span></a> bus_type</code></em>,
-                                <em class="parameter"><code>const <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *name</code></em>,
+                                <em class="parameter"><code>const <a href="../glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *name</code></em>,
                                 <em class="parameter"><code><a class="link" href="gio-Watching-Bus-Names.html#GBusNameWatcherFlags" title="enum GBusNameWatcherFlags"><span class="type">GBusNameWatcherFlags</span></a> flags</code></em>,
-                                <em class="parameter"><code><a href="https://developer.gnome.org/gobject/unstable/gobject-Closures.html#GClosure"><span class="type">GClosure</span></a> *name_appeared_closure</code></em>,
-                                <em class="parameter"><code><a href="https://developer.gnome.org/gobject/unstable/gobject-Closures.html#GClosure"><span class="type">GClosure</span></a> *name_vanished_closure</code></em>);</pre>
+                                <em class="parameter"><code><a href="../gobject-Closures.html#GClosure"><span class="type">GClosure</span></a> *name_appeared_closure</code></em>,
+                                <em class="parameter"><code><a href="../gobject-Closures.html#GClosure"><span class="type">GClosure</span></a> *name_vanished_closure</code></em>);</pre>
 <p>Version of <a class="link" href="gio-Watching-Bus-Names.html#g-bus-watch-name" title="g_bus_watch_name ()"><code class="function">g_bus_watch_name()</code></a> using closures instead of callbacks for
 easier binding in other languages.</p>
 <p><span class="annotation">[<acronym title="Rename the original symbol's name to SYMBOL."><span class="acronym">rename-to</span></acronym> g_bus_watch_name]</span></p>
 <div class="refsect3">
-<a name="id-1.4.18.3.7.7.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-bus-watch-name-with-closures.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -443,23 +443,23 @@ easier binding in other languages.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>name_appeared_closure</p></td>
-<td class="parameter_description"><p> <a href="https://developer.gnome.org/gobject/unstable/gobject-Closures.html#GClosure"><span class="type">GClosure</span></a> to invoke when <em class="parameter"><code>name</code></em>
+<td class="parameter_description"><p> <a href="../gobject-Closures.html#GClosure"><span class="type">GClosure</span></a> to invoke when <em class="parameter"><code>name</code></em>
 is known
-to exist or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
+to exist or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>name_vanished_closure</p></td>
-<td class="parameter_description"><p> <a href="https://developer.gnome.org/gobject/unstable/gobject-Closures.html#GClosure"><span class="type">GClosure</span></a> to invoke when <em class="parameter"><code>name</code></em>
+<td class="parameter_description"><p> <a href="../gobject-Closures.html#GClosure"><span class="type">GClosure</span></a> to invoke when <em class="parameter"><code>name</code></em>
 is known
-to not exist or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
+to not exist or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.18.3.7.7.7"></a><h4>Returns</h4>
+<a name="g-bus-watch-name-with-closures.returns"></a><h4>Returns</h4>
 <p> An identifier (never 0) that an be used with
 <a class="link" href="gio-Watching-Bus-Names.html#g-bus-unwatch-name" title="g_bus_unwatch_name ()"><code class="function">g_bus_unwatch_name()</code></a> to stop watching the name.</p>
 </div>
@@ -468,19 +468,19 @@ to not exist or <a href="https://developer.gnome.org/glib/unstable/glib-Standard
 <hr>
 <div class="refsect2">
 <a name="g-bus-watch-name-on-connection-with-closures"></a><h3>g_bus_watch_name_on_connection_with_closures ()</h3>
-<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#guint"><span class="returnvalue">guint</span></a>
+<pre class="programlisting"><a href="../glib-Basic-Types.html#guint"><span class="returnvalue">guint</span></a>
 g_bus_watch_name_on_connection_with_closures
                                (<em class="parameter"><code><a class="link" href="GDBusConnection.html" title="GDBusConnection"><span class="type">GDBusConnection</span></a> *connection</code></em>,
-                                <em class="parameter"><code>const <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *name</code></em>,
+                                <em class="parameter"><code>const <a href="../glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *name</code></em>,
                                 <em class="parameter"><code><a class="link" href="gio-Watching-Bus-Names.html#GBusNameWatcherFlags" title="enum GBusNameWatcherFlags"><span class="type">GBusNameWatcherFlags</span></a> flags</code></em>,
-                                <em class="parameter"><code><a href="https://developer.gnome.org/gobject/unstable/gobject-Closures.html#GClosure"><span class="type">GClosure</span></a> *name_appeared_closure</code></em>,
-                                <em class="parameter"><code><a href="https://developer.gnome.org/gobject/unstable/gobject-Closures.html#GClosure"><span class="type">GClosure</span></a> *name_vanished_closure</code></em>);</pre>
+                                <em class="parameter"><code><a href="../gobject-Closures.html#GClosure"><span class="type">GClosure</span></a> *name_appeared_closure</code></em>,
+                                <em class="parameter"><code><a href="../gobject-Closures.html#GClosure"><span class="type">GClosure</span></a> *name_vanished_closure</code></em>);</pre>
 <p>Version of <a class="link" href="gio-Watching-Bus-Names.html#g-bus-watch-name-on-connection" title="g_bus_watch_name_on_connection ()"><code class="function">g_bus_watch_name_on_connection()</code></a> using closures instead of callbacks for
 easier binding in other languages.</p>
 <p><span class="annotation">[<acronym title="Rename the original symbol's name to SYMBOL."><span class="acronym">rename-to</span></acronym> g_bus_watch_name_on_connection]</span></p>
 <div class="refsect3">
-<a name="id-1.4.18.3.7.8.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-bus-watch-name-on-connection-with-closures.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -504,23 +504,23 @@ easier binding in other languages.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>name_appeared_closure</p></td>
-<td class="parameter_description"><p> <a href="https://developer.gnome.org/gobject/unstable/gobject-Closures.html#GClosure"><span class="type">GClosure</span></a> to invoke when <em class="parameter"><code>name</code></em>
+<td class="parameter_description"><p> <a href="../gobject-Closures.html#GClosure"><span class="type">GClosure</span></a> to invoke when <em class="parameter"><code>name</code></em>
 is known
-to exist or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
+to exist or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>name_vanished_closure</p></td>
-<td class="parameter_description"><p> <a href="https://developer.gnome.org/gobject/unstable/gobject-Closures.html#GClosure"><span class="type">GClosure</span></a> to invoke when <em class="parameter"><code>name</code></em>
+<td class="parameter_description"><p> <a href="../gobject-Closures.html#GClosure"><span class="type">GClosure</span></a> to invoke when <em class="parameter"><code>name</code></em>
 is known
-to not exist or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
+to not exist or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.18.3.7.8.7"></a><h4>Returns</h4>
+<a name="g-bus-watch-name-on-connection-with-closures.returns"></a><h4>Returns</h4>
 <p> An identifier (never 0) that an be used with
 <a class="link" href="gio-Watching-Bus-Names.html#g-bus-unwatch-name" title="g_bus_unwatch_name ()"><code class="function">g_bus_unwatch_name()</code></a> to stop watching the name.</p>
 </div>
@@ -533,8 +533,8 @@ to not exist or <a href="https://developer.gnome.org/glib/unstable/glib-Standard
 <a name="GBusNameWatcherFlags"></a><h3>enum GBusNameWatcherFlags</h3>
 <p>Flags used in <a class="link" href="gio-Watching-Bus-Names.html#g-bus-watch-name" title="g_bus_watch_name ()"><code class="function">g_bus_watch_name()</code></a>.</p>
 <div class="refsect3">
-<a name="id-1.4.18.3.8.2.4"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GBusNameWatcherFlags.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="enum_members_name">
 <col class="enum_members_description">
@@ -565,6 +565,6 @@ name.</p>
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

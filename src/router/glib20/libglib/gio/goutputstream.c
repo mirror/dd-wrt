@@ -40,7 +40,10 @@
  * (g_output_stream_flush()). 
  *
  * To copy the content of an input stream to an output stream without 
- * manually handling the reads and writes, use g_output_stream_splice(). 
+ * manually handling the reads and writes, use g_output_stream_splice().
+ *
+ * See the documentation for #GIOStream for details of thread safety of
+ * streaming APIs.
  *
  * All of these functions have async variants too.
  **/
@@ -206,7 +209,7 @@ g_output_stream_write (GOutputStream  *stream,
   if (class->write_fn == NULL) 
     {
       g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
-                           _("Output stream doesn't implement write"));
+                           _("Output stream doesn’t implement write"));
       return -1;
     }
   
@@ -554,7 +557,7 @@ g_output_stream_real_splice (GOutputStream             *stream,
   if (class->write_fn == NULL)
     {
       g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
-                           _("Output stream doesn't implement write"));
+                           _("Output stream doesn’t implement write"));
       res = FALSE;
       goto notsupported;
     }
@@ -605,7 +608,8 @@ g_output_stream_real_splice (GOutputStream             *stream,
   if (flags & G_OUTPUT_STREAM_SPLICE_CLOSE_TARGET)
     {
       /* But write errors on close are bad! */
-      res = g_output_stream_internal_close (stream, cancellable, error);
+      if (!g_output_stream_internal_close (stream, cancellable, error))
+        res = FALSE;
     }
 
   if (res)
@@ -994,6 +998,7 @@ g_output_stream_write_all_async (GOutputStream       *stream,
   data->buffer = buffer;
   data->to_write = count;
 
+  g_task_set_source_tag (task, g_output_stream_write_all_async);
   g_task_set_task_data (task, data, free_async_write_all);
   g_task_set_priority (task, io_priority);
 
@@ -1111,6 +1116,7 @@ g_output_stream_write_bytes_async (GOutputStream       *stream,
   data = g_bytes_get_data (bytes, &size);
 
   task = g_task_new (stream, cancellable, callback, user_data);
+  g_task_set_source_tag (task, g_output_stream_write_bytes_async);
   g_task_set_task_data (task, g_bytes_ref (bytes),
                         (GDestroyNotify) g_bytes_unref);
 

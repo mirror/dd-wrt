@@ -20,6 +20,7 @@
 #include "config.h"
 
 #include "glib-private.h"
+#include "glib-init.h"
 
 /**
  * glib__private__:
@@ -44,7 +45,9 @@ glib__private__ (void)
     g_main_context_new_with_next_id,
 
     g_dir_open_with_errno,
-    g_dir_new_from_dirp
+    g_dir_new_from_dirp,
+
+    glib_init,
   };
 
   return &table;

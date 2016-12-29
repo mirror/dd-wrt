@@ -146,7 +146,7 @@ g_tls_certificate_class_init (GTlsCertificateClass *class)
   g_object_class_install_property (gobject_class, PROP_PRIVATE_KEY,
 				   g_param_spec_boxed ("private-key",
 						       P_("Private key"),
-						       P_("The DER representation of the certificate's private key"),
+						       P_("The DER representation of the certificate’s private key"),
 						       G_TYPE_BYTE_ARRAY,
 						       G_PARAM_WRITABLE |
 						       G_PARAM_CONSTRUCT_ONLY |
@@ -170,7 +170,7 @@ g_tls_certificate_class_init (GTlsCertificateClass *class)
   g_object_class_install_property (gobject_class, PROP_PRIVATE_KEY_PEM,
 				   g_param_spec_string ("private-key-pem",
 							P_("Private key (PEM)"),
-							P_("The PEM representation of the certificate's private key"),
+							P_("The PEM representation of the certificate’s private key"),
 							NULL,
 							G_PARAM_WRITABLE |
 							G_PARAM_CONSTRUCT_ONLY |
@@ -335,12 +335,18 @@ parse_and_create_certificate_list (const gchar  *data,
   while (p && *p)
     {
       gchar *cert_pem;
+      GError *error = NULL;
 
-      cert_pem = parse_next_pem_certificate (&p, end, FALSE, NULL);
-      if (!cert_pem)
+      cert_pem = parse_next_pem_certificate (&p, end, FALSE, &error);
+      if (error)
         {
           g_slist_free_full (pem_list, g_free);
+          g_error_free (error);
           return first_pem_list;
+        }
+      else if (!cert_pem)
+        {
+          break;
         }
 
       pem_list = g_slist_prepend (pem_list, cert_pem);
@@ -465,17 +471,22 @@ g_tls_certificate_new_from_pem  (const gchar  *data,
 				 gssize        length,
 				 GError      **error)
 {
+  GError *child_error = NULL;
   gchar *key_pem;
   GTlsCertificate *cert;
 
   g_return_val_if_fail (data != NULL, NULL);
+  g_return_val_if_fail (error == NULL || *error == NULL, NULL);
 
   if (length == -1)
     length = strlen (data);
 
-  key_pem = parse_private_key (data, length, FALSE, error);
-  if (error && *error)
-    return NULL;
+  key_pem = parse_private_key (data, length, FALSE, &child_error);
+  if (child_error != NULL)
+    {
+      g_propagate_error (error, child_error);
+      return NULL;
+    }
 
   cert = parse_and_create_certificate (data, length, key_pem, error);
   g_free (key_pem);
@@ -485,7 +496,7 @@ g_tls_certificate_new_from_pem  (const gchar  *data,
 
 /**
  * g_tls_certificate_new_from_file:
- * @file: file containing a PEM-encoded certificate to import
+ * @file: (type filename): file containing a PEM-encoded certificate to import
  * @error: #GError for error reporting, or %NULL to ignore.
  *
  * Creates a #GTlsCertificate from the PEM-encoded data in @file. The
@@ -524,9 +535,10 @@ g_tls_certificate_new_from_file (const gchar  *file,
 
 /**
  * g_tls_certificate_new_from_files:
- * @cert_file: file containing one or more PEM-encoded certificates to
- * import
- * @key_file: file containing a PEM-encoded private key to import
+ * @cert_file: (type filename): file containing one or more PEM-encoded
+ *     certificates to import
+ * @key_file: (type filename): file containing a PEM-encoded private key
+ *     to import
  * @error: #GError for error reporting, or %NULL to ignore.
  *
  * Creates a #GTlsCertificate from the PEM-encoded data in @cert_file
@@ -580,7 +592,7 @@ g_tls_certificate_new_from_files (const gchar  *cert_file,
 
 /**
  * g_tls_certificate_list_new_from_file:
- * @file: file containing PEM-encoded certificates to import
+ * @file: (type filename): file containing PEM-encoded certificates to import
  * @error: #GError for error reporting, or %NULL to ignore.
  *
  * Creates one or more #GTlsCertificates from the PEM-encoded
