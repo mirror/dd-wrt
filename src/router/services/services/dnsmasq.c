@@ -106,7 +106,7 @@ static int hasmdhcp(void)
 
 static int canlan(void)
 {
-	if (nvram_matchi("dhcpfwd_enable", 0))
+	if (nvram_matchi("dhcpfwd_enable", 0) || nvram_matchi("dns_crypt", 1))
 		return 1;
 	return 0;
 }
@@ -148,6 +148,13 @@ void start_dnsmasq(void)
 	if (!nvram_invmatchi("dnsmasq_enable", 0)) {
 		stop_dnsmasq();
 		return;
+	}
+	
+	update_timezone();
+	
+	if (nvram_matchi("dns_crypt", 1)){
+		eval("killall", "dnscrypt-proxy");
+		eval("dnscrypt-proxy", "-a", "127.0.0.1:30", "-R", nvram_get("dns_crypt_resolver"), "-L", "/etc/dnscrypt/dnscrypt-resolvers.csv");
 	}
 
 	usejffs = 0;
@@ -209,9 +216,15 @@ void start_dnsmasq(void)
 		free(word);
 	}
 	fprintf(fp, "\n");
-	fprintf(fp, "resolv-file=/tmp/resolv.dnsmasq\n" "all-servers\n");
+	fprintf(fp, "resolv-file=/tmp/resolv.dnsmasq\n");
+	//fprintf(fp, "all-servers\n");
 	if (nvram_matchi("dnsmasq_strict", 1))
 		fprintf(fp, "strict-order\n");
+	
+	if (nvram_matchi("dns_crypt", 1)){
+		fprintf(fp, "no-resolv\n");
+		fprintf(fp, "server=127.0.0.1#30\n");
+	}
 
 #ifdef HAVE_UNBOUND
 	if (nvram_matchi("recursive_dns", 1)) {
@@ -338,8 +351,8 @@ void start_dnsmasq(void)
 			char *ip = nvram_nget("%s_ipaddr", ifname);
 			char *netmask = nvram_nget("%s_netmask", ifname);
 			char *leasetime = getmdhcp(4, i, word);
-			free(word);
 			makeentry(fp, ifname, dhcpnum, dhcpstart, ip, netmask, leasetime);
+			free(word);
 		}
 
 		int leasenum = nvram_geti("static_leasenum");
@@ -389,7 +402,32 @@ void start_dnsmasq(void)
 	dns_to_resolv();
 
 	chmod("/etc/lease_update.sh", 0700);
-	eval("dnsmasq", "-u", "root", "-g", "root", "--conf-file=/tmp/dnsmasq.conf", "--cache-size=1500");
+	
+	char wpad[64];
+#ifdef HAVE_PRIVOXY
+	if (nvram_matchi("privoxy_enable", 1)){
+		if (nvram_matchi("privoxy_transp_enable", 1)) {
+			sprintf(wpad, "--dhcp-option=252,http://config.privoxy.org/wpad.dat");
+		} else {
+			sprintf(wpad, "--dhcp-option=252,http://%s/wpad.dat", nvram_safe_get("lan_ipaddr"));
+		}
+	} else {
+		sprintf(wpad, "--dhcp-option=252,\"\n\"");
+	}
+#else
+	sprintf(wpad, "--dhcp-option=252,\"\n\"");
+#endif
+	
+	FILE *conf = NULL;
+	conf = fopen("/jffs/etc/dnsmasq.conf", "r");	//test if custom config is available
+
+	if (conf != NULL) {
+		eval("dnsmasq", "-u", "root", "-g", "root", "--conf-file=/jffs/etc/dnsmasq.conf", "--cache-size=1500", wpad);
+		fclose(conf);
+	} else {
+		eval("dnsmasq", "-u", "root", "-g", "root", "--conf-file=/tmp/dnsmasq.conf", "--cache-size=1500", wpad);
+	}
+
 	dd_syslog(LOG_INFO, "dnsmasq : dnsmasq daemon successfully started\n");
 
 	cprintf("done\n");
