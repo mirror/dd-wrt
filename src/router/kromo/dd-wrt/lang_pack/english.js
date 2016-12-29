@@ -860,18 +860,20 @@ var privoxy=new Object();
 privoxy.titl="Adblocking";
 privoxy.server="Privoxy";
 privoxy.legend="Filtering Proxy Server";
+privoxy.pac="Provide Proxy Autoconfig";
 privoxy.transp="Transparent Mode";
 privoxy.exclude="Exclude IP";
 privoxy.whitel="Whitelist";
 privoxy.custom="Custom Configuration";
 
 var hprivoxy=new Object();
-hprivoxy.right2="Enable privoxy and configure your clients proxy settings. Proxy IP = <b>Router IP</b> Proxy Port = <b>8118</b>";
+hprivoxy.right2="Enable privoxy and configure your clients proxy settings. <br><br>Proxy IP = <b>Router IP</b> <br>Proxy Port = <b>8118</b>";
 
 //help page
 hprivoxy.page1="<dd>Privoxy enables you to filter common ads. <br/><ul><br/></ul></dd>";
-hprivoxy.page2="<dd>Transparent Mode : <br/><ul><li>Traffic to Port is 80 is intercepted by privoxy even if client did not configure any proxy settings</li><li>Thus you can enforce filtering</li><li>Transparent mode cannot intercept https connections. So all https traffic will still pass privoxy</li></ul></dd>";
-hprivoxy.page3="<dd>Custom configuration: <br/><ul><li>Allows you to specify custom settings and paths to custom filters on external media e.g. usb disk</li></ul></dd>";
+hprivoxy.page2="<dd><br/><ul><li>Publishes a wpad/pac file that clients use to automatically setup proxy details.</li><li>On some clients you need to set the option to use automatic proxy config</li><li>If your client is part of a domain you need to setup dnsmasq to send the local domain via dhcp to the client</li></ul></dd>";
+hprivoxy.page3="<dd><br/><ul><li>Traffic to Port is 80 is intercepted by privoxy even if client did not configure any proxy settings</li><li>Thus you can enforce filtering</li><li>Transparent mode cannot intercept https connections. So all https traffic will still pass privoxy unless the client uses the proxy autoconfig to configure https connections through the proxy</li></ul></dd>";
+hprivoxy.page4="<dd><br/><ul><li>Allows you to specify custom settings and paths to custom filters on external media e.g. usb disk</li></ul></dd>";
 
 //** Lighttpd.asp **//
 var lighttpd=new Object();
@@ -1604,6 +1606,8 @@ service.dhcp_landomain="LAN Domain";
 service.dhcp_option="Additional DHCPd Options";
 service.dnsmasq_legend="DNSMasq";
 service.dnsmasq_srv="DNSMasq";
+service.dns_crypt="Encrypt DNS";
+service.dns_crypt_resolv="Resolver";
 service.dnsmasq_loc="Local DNS";
 service.dnsmasq_no_dns_rebind="No DNS Rebind";
 service.dnsmasq_strict="Query DNS in Strict Order";
