@@ -24,10 +24,6 @@ util-linux-install:
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.a
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.a
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.la
-	rm -f $(TOP)/util-linux/.libmount.la
-	rm -f $(TOP)/util-linux/.libs/libuuid.a
-	rm -f $(TOP)/util-linux/.libs/libblkid.a
-	rm -f $(TOP)/util-linux/.libs/libmount.la
 ifneq ($(CONFIG_ASTERISK),y)
 	rm -rf $(INSTALLDIR)/util-linux/usr/sbin
 	rm -rf $(INSTALLDIR)/util-linux/usr/bin

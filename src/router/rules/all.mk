@@ -205,6 +205,7 @@ include rules/ethtool.mk
 include rules/openlldp.mk
 include rules/ipsec-tools.mk
 include rules/strace.mk
+include rules/util-linux.mk
 include rules/asterisk.mk
 include rules/zaptel.mk
 include rules/iperf.mk
