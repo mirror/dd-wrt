@@ -2147,6 +2147,7 @@ struct nvram_param srouter_defaults[] = {
 	{"cron_jobs", ""},
 	{"dhcpd_options", ""},
 	{"dhcpd_usenvram", "0"},
+	{"dns_crypt", "0"},
 	{"local_dns", "0"},
 	{"dnsmasq_no_dns_rebind", "1"},
 	{"dnsmasq_strict", "1"},
@@ -3566,6 +3567,7 @@ struct nvram_param srouter_defaults[] = {
 #ifdef HAVE_PRIVOXY
 	{"privoxy_enable", "0"},
 	{"privoxy_advanced", "0"},
+	{"privoxy_pac_enable", "0"},
 	{"privoxy_transp_enable", "0"},
 #endif
 #ifdef HAVE_SOFTETHER
